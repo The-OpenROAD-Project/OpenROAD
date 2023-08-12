@@ -862,9 +862,9 @@ PinSetWidget::PinSetWidget(bool add_remove_button, QWidget* parent)
   clear_->setToolTip(tr("Clear pins"));
   clear_->setAutoDefault(false);
   clear_->setDefault(false);
-  connect(clear_, SIGNAL(pressed()), this, SLOT(clearPins()));
+  connect(clear_, &QPushButton::pressed, this, &PinSetWidget::clearPins);
 
-  connect(find_pin_, SIGNAL(returnPressed()), this, SLOT(findPin()));
+  connect(find_pin_, &QLineEdit::returnPressed, this, &PinSetWidget::findPin);
 
   QVBoxLayout* layout = new QVBoxLayout;
   QHBoxLayout* row_layout = new QHBoxLayout;
@@ -890,9 +890,9 @@ PinSetWidget::PinSetWidget(bool add_remove_button, QWidget* parent)
 
   box_->setContextMenuPolicy(Qt::CustomContextMenu);
   connect(box_,
-          SIGNAL(customContextMenuRequested(const QPoint&)),
+          &QListWidget::customContextMenuRequested,
           this,
-          SLOT(showMenu(const QPoint)));
+          &PinSetWidget::showMenu);
 }
 
 void PinSetWidget::setAddMode()
@@ -1047,7 +1047,7 @@ void PinSetWidget::showMenu(const QPoint& point)
   QAction* remove_sel = pin_menu.addAction("Remove selected");
   connect(remove_sel, &QAction::triggered, [this]() { removeSelectedPins(); });
   QAction* clear_all = pin_menu.addAction("Clear all");
-  connect(clear_all, SIGNAL(triggered()), this, SLOT(clearPins()));
+  connect(clear_all, &QAction::triggered, this, &PinSetWidget::clearPins);
   QAction* inspect_action = pin_menu.addAction("Inspect");
   connect(inspect_action, &QAction::triggered, [this, pin]() {
     auto* gui = Gui::get();
@@ -1121,7 +1121,10 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
             sta_->setCorner(corner);
           });
 
-  connect(expand_clk_, SIGNAL(toggled(bool)), this, SIGNAL(expandClock(bool)));
+  connect(expand_clk_,
+          &QCheckBox::toggled,
+          this,
+          &TimingControlsDialog ::expandClock);
 
   sta_->setIncludeCapturePaths(true);
 }
@@ -1138,10 +1141,7 @@ void TimingControlsDialog::setupPinRow(const QString& label,
 
   row->setSTA(sta_->getSTA());
 
-  connect(row,
-          SIGNAL(inspect(const Selected&)),
-          this,
-          SIGNAL(inspect(const Selected&)));
+  connect(row, &PinSetWidget::inspect, this, &TimingControlsDialog::inspect);
 }
 
 void TimingControlsDialog::setSTA(sta::dbSta* sta)
@@ -1255,9 +1255,9 @@ void TimingControlsDialog::addThruRow(const std::set<const sta::Pin*>& pins)
   row->setPins(pins);
 
   connect(row,
-          SIGNAL(addRemoveTriggered(PinSetWidget*)),
+          &PinSetWidget::addRemoveTriggered,
           this,
-          SLOT(addRemoveThru(PinSetWidget*)));
+          &TimingControlsDialog::addRemoveThru);
 
   for (const auto& lower_row : thru_) {
     lower_row->setRemoveMode();

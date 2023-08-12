@@ -41,6 +41,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <vector>
 
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "debug_gui.h"
 #include "gmat.h"
@@ -49,6 +50,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "node.h"
 #include "odb/db.h"
 #include "sta/Corner.hh"
+#include "sta/DcalcAnalysisPt.hh"
+#include "sta/Liberty.hh"
 #include "utl/Logger.h"
 
 namespace psm {
@@ -75,137 +78,71 @@ void PDNSim::setDebugGui()
   debug_gui_ = std::make_unique<DebugGui>(this);
 }
 
-void PDNSim::set_power_net(const std::string& net)
+void PDNSim::setNetVoltage(odb::dbNet* net, float voltage)
 {
-  power_net_ = net;
+  net_voltage_map_[net] = voltage;
 }
 
-void PDNSim::set_bump_pitch_x(float bump_pitch)
-{
-  bump_pitch_x_ = bump_pitch;
-}
-
-void PDNSim::set_bump_pitch_y(float bump_pitch)
-{
-  bump_pitch_y_ = bump_pitch;
-}
-
-void PDNSim::set_node_density(float node_density)
-{
-  node_density_ = node_density;
-}
-
-void PDNSim::set_node_density_factor(int node_density_factor)
-{
-  node_density_factor_ = node_density_factor;
-}
-
-void PDNSim::set_pdnsim_net_voltage(std::string net, float voltage)
-{
-  net_voltage_map_.insert(std::pair<std::string, float>(net, voltage));
-}
-
-void PDNSim::import_vsrc_cfg(const std::string& vsrc)
+void PDNSim::setVsrcCfg(const std::string& vsrc)
 {
   vsrc_loc_ = vsrc;
   logger_->info(utl::PSM, 1, "Reading voltage source file: {}.", vsrc_loc_);
 }
 
-void PDNSim::import_out_file(const std::string& out_file)
+std::unique_ptr<IRSolver> PDNSim::getIRSolver(bool require_voltage)
 {
-  out_file_ = out_file;
-  logger_->info(
-      utl::PSM, 2, "Output voltage file is specified as: {}.", out_file_);
-}
-
-void PDNSim::import_error_file(const std::string& error_file)
-{
-  error_file_ = error_file;
-  logger_->info(utl::PSM, 83, "Error file is specified as: {}.", error_file_);
-}
-
-void PDNSim::import_em_out_file(const std::string& em_out_file)
-{
-  em_out_file_ = em_out_file;
-  logger_->info(utl::PSM, 3, "Output current file specified {}.", em_out_file_);
-}
-void PDNSim::import_enable_em(bool enable_em)
-{
-  enable_em_ = enable_em;
-  if (enable_em_) {
-    logger_->info(utl::PSM, 4, "EM calculation is enabled.");
+  if (corner_ == nullptr) {
+    corner_ = sta_->cmdCorner();
   }
+  if (corner_ == nullptr) {
+    corner_ = sta_->corners()->findCorner(0);
+  }
+  if (corner_ == nullptr) {
+    logger_->error(utl::PSM, 84, "Unable to proceed without a valid corner");
+  }
+
+  std::optional<float> voltage = getNetVoltage(net_, require_voltage);
+
+  return std::make_unique<IRSolver>(db_,
+                                    sta_,
+                                    resizer_,
+                                    logger_,
+                                    net_,
+                                    voltage,
+                                    vsrc_loc_,
+                                    require_voltage,
+                                    bump_pitch_x_,
+                                    bump_pitch_y_,
+                                    node_density_,
+                                    node_density_factor_,
+                                    corner_);
 }
 
-void PDNSim::import_spice_out_file(const std::string& out_file)
+void PDNSim::writeSpice(const std::string& file)
 {
-  spice_out_file_ = out_file;
-  logger_->info(
-      utl::PSM, 5, "Output spice file is specified as: {}.", spice_out_file_);
-}
-
-void PDNSim::write_pg_spice()
-{
-  auto irsolve_h = std::make_unique<IRSolver>(db_,
-                                              sta_,
-                                              resizer_,
-                                              logger_,
-                                              vsrc_loc_,
-                                              power_net_,
-                                              out_file_,
-                                              error_file_,
-                                              em_out_file_,
-                                              spice_out_file_,
-                                              enable_em_,
-                                              bump_pitch_x_,
-                                              bump_pitch_y_,
-                                              node_density_,
-                                              node_density_factor_,
-                                              net_voltage_map_,
-                                              corner_);
+  auto irsolve_h = getIRSolver(false);
 
   if (irsolve_h->build()) {
-    int check_spice = irsolve_h->printSpice();
-    if (check_spice) {
-      logger_->info(
-          utl::PSM, 6, "SPICE file is written at: {}.", spice_out_file_);
-    } else {
-      logger_->error(
-          utl::PSM, 7, "Failed to write out spice file: {}.", spice_out_file_);
-    }
+    irsolve_h->writeSpiceFile(file);
   }
 }
 
-void PDNSim::analyze_power_grid()
+void PDNSim::analyzePowerGrid(const std::string& voltage_file,
+                              bool enable_em,
+                              const std::string& em_file,
+                              const std::string& error_file)
 {
-  GMat* gmat_obj;
-  auto irsolve_h = std::make_unique<IRSolver>(db_,
-                                              sta_,
-                                              resizer_,
-                                              logger_,
-                                              vsrc_loc_,
-                                              power_net_,
-                                              out_file_,
-                                              error_file_,
-                                              em_out_file_,
-                                              spice_out_file_,
-                                              enable_em_,
-                                              bump_pitch_x_,
-                                              bump_pitch_y_,
-                                              node_density_,
-                                              node_density_factor_,
-                                              net_voltage_map_,
-                                              corner_);
+  auto irsolve_h = getIRSolver(enable_em);
 
-  if (!irsolve_h->build()) {
+  if (!irsolve_h->build(error_file)) {
     logger_->error(
         utl::PSM, 78, "IR drop setup failed.  Analysis can't proceed.");
   }
-  gmat_obj = irsolve_h->getGMat();
+  GMat* gmat_obj = irsolve_h->getGMat();
   const std::string corner_name
       = corner_ != nullptr ? corner_->name() : "default";
   const std::string metric_suffix
-      = fmt::format("__net:{}__corner:{}", power_net_, corner_name);
+      = fmt::format("__net:{}__corner:{}", net_->getName(), corner_name);
   irsolve_h->solveIR();
   logger_->report("########## IR report #################");
   logger_->report("Corner: {}", corner_name);
@@ -228,7 +165,11 @@ void PDNSim::analyze_power_grid()
   logger_->metric(fmt::format("design_powergrid__drop__worst{}", metric_suffix),
                   worst_drop);
 
-  if (enable_em_) {
+  if (!voltage_file.empty()) {
+    irsolve_h->writeVoltageFile(voltage_file);
+  }
+
+  if (enable_em) {
     logger_->report("########## EM analysis ###############");
     logger_->report("Maximum current: {:3.2e} A", irsolve_h->getMaxCurrent());
     logger_->report("Average current: {:3.2e} A", irsolve_h->getAvgCurrent());
@@ -241,6 +182,10 @@ void PDNSim::analyze_power_grid()
     logger_->metric(
         fmt::format("design_powergrid__current__max{}", metric_suffix),
         irsolve_h->getMaxCurrent());
+
+    if (!em_file.empty()) {
+      irsolve_h->writeEMFile(em_file);
+    }
   }
 
   IRDropByLayer ir_drop;
@@ -269,27 +214,14 @@ void PDNSim::analyze_power_grid()
   }
 }
 
-bool PDNSim::check_connectivity()
+bool PDNSim::checkConnectivity(const std::string& error_file)
 {
-  auto irsolve_h = std::make_unique<IRSolver>(db_,
-                                              sta_,
-                                              resizer_,
-                                              logger_,
-                                              vsrc_loc_,
-                                              power_net_,
-                                              out_file_,
-                                              error_file_,
-                                              em_out_file_,
-                                              spice_out_file_,
-                                              enable_em_,
-                                              bump_pitch_x_,
-                                              bump_pitch_y_,
-                                              node_density_,
-                                              node_density_factor_,
-                                              net_voltage_map_,
-                                              corner_);
-  if (!irsolve_h->buildConnection()) {
+  auto irsolve_h = getIRSolver(false);
+  if (!irsolve_h->build(error_file, true)) {
     return false;
+  }
+  if (debug_gui_) {
+    debug_gui_->setSources(irsolve_h->getSources());
   }
   return irsolve_h->getConnectionTest();
 }
@@ -321,9 +253,46 @@ int PDNSim::getMinimumResolution()
   return min_resolution_;
 }
 
-void PDNSim::setCorner(sta::Corner* corner)
+std::optional<float> PDNSim::getNetVoltage(odb::dbNet* net,
+                                           bool require_voltage) const
 {
-  corner_ = corner;
+  if (net == nullptr) {
+    return {};
+  }
+
+  auto find_net = net_voltage_map_.find(net);
+  if (find_net != net_voltage_map_.end()) {
+    return find_net->second;
+  }
+
+  if (net->getSigType() == odb::dbSigType::GROUND) {
+    return 0.0;
+  }
+
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::LibertyLibrary* default_library = network->defaultLibertyLibrary();
+  if (default_library == nullptr) {
+    if (!require_voltage) {
+      return {};
+    }
+
+    logger_->error(
+        utl::PSM,
+        79,
+        "Can't determine the supply voltage as no Liberty is loaded.");
+  }
+
+  const sta::DcalcAnalysisPt* dcalc_ap
+      = corner_->findDcalcAnalysisPt(sta::MinMax::max());
+  const sta::Pvt* pvt = dcalc_ap->operatingConditions();
+  if (pvt == nullptr) {
+    pvt = default_library->defaultOperatingConditions();
+  }
+  if (pvt) {
+    return pvt->voltage();
+  }
+
+  return {};
 }
 
 }  // namespace psm

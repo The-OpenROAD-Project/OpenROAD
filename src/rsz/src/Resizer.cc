@@ -2640,13 +2640,13 @@ Resizer::holdBufferCount() const
 
 ////////////////////////////////////////////////////////////////
 void
-Resizer::recoverPower()
+Resizer::recoverPower(float recover_power_percent)
 {
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
     opendp_->initMacrosAndGrid();
   }
-  recover_power_->recoverPower();
+  recover_power_->recoverPower(recover_power_percent);
 }
 ////////////////////////////////////////////////////////////////
 // Journal to roll back changes (OpenDB not up to the task).

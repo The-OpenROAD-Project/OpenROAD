@@ -113,6 +113,8 @@ class SimulatedAnnealing
   int getSlotIdxByPosition(const odb::Point& position, int layer) const;
   bool isFreeForMirrored(int slot_idx, int& mirrored_idx) const;
   int getMirroredSlotIdx(int slot_idx) const;
+  void updateSlotsFromGroup(const std::vector<int>& prev_slots_, bool block);
+  void countLonePins();
 
   // [pin] -> slot
   std::vector<int> pin_assignment_;

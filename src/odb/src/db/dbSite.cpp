@@ -32,6 +32,8 @@
 
 #include "dbSite.h"
 
+#include <unordered_map>
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbLib.h"
@@ -228,6 +230,50 @@ void dbSite::setClass(dbSiteClass type)
 {
   _dbSite* site = (_dbSite*) this;
   site->_flags._class = type.getValue();
+}
+
+void dbSite::setRowPattern(
+    std::vector<std::pair<std::string, std::string>>& row_pattern)
+{
+  _dbSite* site = (_dbSite*) this;
+  site->_row_patterns.reserve(row_pattern.size());
+  std::unordered_map<std::string, dbOrientType::Value> orientationMap
+      = {{"N", dbOrientType::R0},
+         {"W", dbOrientType::R270},
+         {"S", dbOrientType::R180},
+         {"E", dbOrientType::R90},
+         {"FN", dbOrientType::MYR90},
+         {"FW", dbOrientType::MY},
+         {"FS", dbOrientType::MXR90},
+         {"FE", dbOrientType::MX}};
+
+  for (auto& row : row_pattern) {
+    dbOrientType orient = dbOrientType::R0;
+    auto it = orientationMap.find(row.second);
+    if (it != orientationMap.end()) {
+      orient = it->second;
+    }
+    site->_row_patterns.emplace_back(row.first, orient);
+  }
+}
+
+bool dbSite::hasRowPattern()
+{
+  _dbSite* site = (_dbSite*) this;
+  return !site->_row_patterns.empty();
+}
+std::vector<std::pair<dbSite*, dbOrientType>> dbSite::getRowPattern()
+{
+  _dbSite* site = (_dbSite*) this;
+  std::vector<std::pair<dbSite*, dbOrientType>> row_patterns;
+  for (auto& row : site->_row_patterns) {
+    dbSite* site = getLib()->findSite(row.first.c_str());
+    if (site == nullptr) {
+      continue;
+    }
+    row_patterns.emplace_back(site, row.second);
+  }
+  return row_patterns;
 }
 
 dbLib* dbSite::getLib()
