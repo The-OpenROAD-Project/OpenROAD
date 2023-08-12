@@ -1,8 +1,7 @@
-/////////////////////////////////////////////////////////////////////////////
-//
+//////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, The Regents of the University of California
+// Copyright (c) 2023, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,32 +29,40 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "definComponentMaskShift.h"
 
-#include "gui/gui.h"
+#include "odb/db.h"
+#include "utl/Logger.h"
 
-namespace stt {
+namespace odb {
 
-struct Tree;
-
-// Simple general purpose render for a group of lines.
-class LinesRenderer : public gui::Renderer
+definComponentMaskShift::definComponentMaskShift()
 {
- public:
-  void highlight(std::vector<std::pair<odb::Point, odb::Point>>& lines,
-                 const gui::Painter::Color& color);
-  void drawObjects(gui::Painter& /* painter */) override;
-  // singleton for debug functions
-  static LinesRenderer* lines_renderer;
+  init();
+}
 
- private:
-  std::vector<std::pair<odb::Point, odb::Point>> lines_;
-  gui::Painter::Color color_;
-};
+void definComponentMaskShift::init()
+{
+  definBase::init();
+  _layers.clear();
+}
 
-void highlightSteinerTree(const Tree& tree, gui::Gui* gui);
+void definComponentMaskShift::addLayer(const char* layer)
+{
+  odb::dbTechLayer* db_layer = _tech->findLayer(layer);
+  if (db_layer == nullptr) {
+    _logger->warn(
+        utl::ODB, 425, "error: undefined layer ({}) referenced", layer);
+    ++_errors;
+  } else {
+    _layers.push_back(db_layer);
+  }
+}
 
-}  // namespace stt
+void definComponentMaskShift::setLayers()
+{
+  _block->setComponentMaskShift(_layers);
+}
+
+}  // namespace odb

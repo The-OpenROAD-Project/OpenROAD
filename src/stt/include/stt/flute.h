@@ -41,7 +41,6 @@ namespace stt {
 namespace flt {
 
 using stt::Branch;
-using stt::DTYPE;
 using stt::Tree;
 
 /*****************************/
@@ -60,50 +59,50 @@ using stt::Tree;
 // User-Callable Functions
 // Delete LUT tables for exit so they are not leaked.
 void deleteLUT();
-DTYPE flute_wl(int d,
-               const std::vector<DTYPE>& x,
-               const std::vector<DTYPE>& y,
-               int acc);
-Tree flute(const std::vector<DTYPE>& x, const std::vector<DTYPE>& y, int acc);
-DTYPE wirelength(Tree t);
+int flute_wl(int d,
+             const std::vector<int>& x,
+             const std::vector<int>& y,
+             int acc);
+Tree flute(const std::vector<int>& x, const std::vector<int>& y, int acc);
+int wirelength(Tree t);
 void plottree(Tree t);
 void write_svg(Tree t, const char* filename);
 
 // Other useful functions
-DTYPE flutes_wl_LD(int d,
-                   const std::vector<DTYPE>& xs,
-                   const std::vector<DTYPE>& ys,
-                   const std::vector<int>& s);
-DTYPE flutes_wl_MD(int d,
-                   const std::vector<DTYPE>& xs,
-                   const std::vector<DTYPE>& ys,
-                   const std::vector<int>& s,
-                   int acc);
-DTYPE flutes_wl_RDP(int d,
-                    std::vector<DTYPE> xs,
-                    std::vector<DTYPE> ys,
-                    std::vector<int> s,
-                    int acc);
+int flutes_wl_LD(int d,
+                 const std::vector<int>& xs,
+                 const std::vector<int>& ys,
+                 const std::vector<int>& s);
+int flutes_wl_MD(int d,
+                 const std::vector<int>& xs,
+                 const std::vector<int>& ys,
+                 const std::vector<int>& s,
+                 int acc);
+int flutes_wl_RDP(int d,
+                  std::vector<int> xs,
+                  std::vector<int> ys,
+                  std::vector<int> s,
+                  int acc);
 Tree flutes_LD(int d,
-               const std::vector<DTYPE>& xs,
-               const std::vector<DTYPE>& ys,
+               const std::vector<int>& xs,
+               const std::vector<int>& ys,
                const std::vector<int>& s);
 Tree flutes_MD(int d,
-               const std::vector<DTYPE>& xs,
-               const std::vector<DTYPE>& ys,
+               const std::vector<int>& xs,
+               const std::vector<int>& ys,
                const std::vector<int>& s,
                int acc);
 Tree flutes_RDP(int d,
-                std::vector<DTYPE> xs,
-                std::vector<DTYPE> ys,
+                std::vector<int> xs,
+                std::vector<int> ys,
                 std::vector<int> s,
                 int acc);
 
-inline DTYPE flutes_wl_LMD(int d,
-                           const std::vector<DTYPE>& xs,
-                           const std::vector<DTYPE>& ys,
-                           const std::vector<int>& s,
-                           int acc)
+inline int flutes_wl_LMD(int d,
+                         const std::vector<int>& xs,
+                         const std::vector<int>& ys,
+                         const std::vector<int>& s,
+                         int acc)
 {
   if (d <= FLUTE_D) {
     return flutes_wl_LD(d, xs, ys, s);
@@ -111,20 +110,20 @@ inline DTYPE flutes_wl_LMD(int d,
   return flutes_wl_MD(d, xs, ys, s, acc);
 }
 
-inline DTYPE flutes_wl_ALLD(int d,
-                            const std::vector<DTYPE>& xs,
-                            const std::vector<DTYPE>& ys,
-                            const std::vector<int>& s,
-                            int acc)
+inline int flutes_wl_ALLD(int d,
+                          const std::vector<int>& xs,
+                          const std::vector<int>& ys,
+                          const std::vector<int>& s,
+                          int acc)
 {
   return flutes_wl_LMD(d, xs, ys, s, acc);
 }
 
-inline DTYPE flutes_wl(int d,
-                       const std::vector<DTYPE>& xs,
-                       const std::vector<DTYPE>& ys,
-                       const std::vector<int>& s,
-                       int acc)
+inline int flutes_wl(int d,
+                     const std::vector<int>& xs,
+                     const std::vector<int>& ys,
+                     const std::vector<int>& s,
+                     int acc)
 {
   if (FLUTE_REMOVE_DUPLICATE_PIN == 1) {
     return flutes_wl_RDP(d, xs, ys, s, acc);
@@ -133,8 +132,8 @@ inline DTYPE flutes_wl(int d,
 }
 
 inline Tree flutes_ALLD(int d,
-                        const std::vector<DTYPE>& xs,
-                        const std::vector<DTYPE>& ys,
+                        const std::vector<int>& xs,
+                        const std::vector<int>& ys,
                         const std::vector<int>& s,
                         int acc)
 {
@@ -144,8 +143,8 @@ inline Tree flutes_ALLD(int d,
   return flutes_MD(d, xs, ys, s, acc);
 }
 
-inline Tree flutes(const std::vector<DTYPE>& xs,
-                   const std::vector<DTYPE>& ys,
+inline Tree flutes(const std::vector<int>& xs,
+                   const std::vector<int>& ys,
                    const std::vector<int>& s,
                    int acc)
 {
@@ -157,8 +156,8 @@ inline Tree flutes(const std::vector<DTYPE>& xs,
 }
 
 inline Tree flutes_LMD(int d,
-                       const std::vector<DTYPE>& xs,
-                       const std::vector<DTYPE>& ys,
+                       const std::vector<int>& xs,
+                       const std::vector<int>& ys,
                        const std::vector<int>& s,
                        int acc)
 {
