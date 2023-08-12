@@ -1688,7 +1688,7 @@ void lefin::site(lefiSite* lefsite)
 
   if (lefsite->hasRowPattern()) {
     auto rowPattern = lefsite->getRowPatterns();
-    site->setRowPattern(_lib, rowPattern);
+    site->setRowPattern(rowPattern);
   }
 }
 

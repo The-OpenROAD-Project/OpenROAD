@@ -233,7 +233,6 @@ void dbSite::setClass(dbSiteClass type)
 }
 
 void dbSite::setRowPattern(
-    dbLib* lib_,
     std::vector<std::pair<std::string, std::string>>& row_pattern)
 {
   _dbSite* site = (_dbSite*) this;

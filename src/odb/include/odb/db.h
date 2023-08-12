@@ -5335,7 +5335,6 @@ class dbSite : public dbObject
   /// set the row pattern of this site
   ///
   void setRowPattern(
-      dbLib* lib_,
       std::vector<std::pair<std::string, std::string>>& row_pattern);
 
   ///
