@@ -119,14 +119,12 @@ SITE HybridA
  SYMMETRY y ;
  CLASS core ;
  SIZE 0.054 BY 0.216 ;
- ROWPATTERN HybridA N ;
 END HybridA
 
 SITE HybridB
  SYMMETRY y ;
  CLASS core ;
  SIZE 0.054 BY 0.270 ;
- ROWPATTERN HybridB N ;
 END HybridB
 
 SITE HybridAB

@@ -223,14 +223,21 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
       }
       int cux = core.xMax();
       int cuy = core.yMax();
-      int rows_placed
-          = makeRows(site, clx, cly, cux, cuy, x_height_site, row_index);
-      row_index += rows_placed;
-      if (site->hasRowPattern()) {
-        rows_placed = makeHybridRows(site->getRowPattern(),
-                                     odb::Point(clx, cly),
-                                     odb::Point(cux, cuy),
-                                     row_index);
+      auto row_pattern = site->getRowPattern();
+      int rows_placed = 0;
+      if (!site->isHybrid()) {
+        rows_placed
+            += makeRows(site, clx, cly, cux, cuy, x_height_site, row_index);
+        row_index += rows_placed;
+      } else if (site->hasRowPattern()) {
+        logger_->warn(IFP, 48, "Site {} is a hybrid site", site->getName());
+        std::vector<string> site_row_pattern;
+        for (auto& p : row_pattern) {
+          site_row_pattern.push_back(p.first->getName());
+        }
+        _hybrid_sites_map[site_row_pattern] = site;
+        rows_placed = makeHybridRows(
+            row_pattern, odb::Point(clx, cly), odb::Point(cux, cuy), row_index);
         row_index += rows_placed;
       }
 
@@ -434,10 +441,10 @@ std::set<dbSite*> InitFloorplan::getSites() const
   for (auto site : sites) {
     // check if the site height is a multiple of the smallest site height
     if (site->getHeight() % min_site_height != 0) {
-      if (site->hasRowPattern()) {
+      if (site->isHybrid()) {
         logger_->warn(IFP,
                       46,
-                      "Site {} has row pattern (might be a hybrid row), but "
+                      "Site {} is a hybrid row, but "
                       "its height {} is not a "
                       "multiple of the smallest site height {}.",
                       site->getName(),
@@ -508,17 +515,20 @@ int InitFloorplan::makeHybridRows(
     int row_index)
 {
   // This method create alternating rows patterns with given sites.
-  // either their collective height should be equal to the core height, or equal
-  // to one of the prefix sum of the sites height
-  // This is because we start at the bottom of the core and go up using one
-  // after the other of the hybrid sites
-
   if (hybrid_sites.empty()) {
     return 0;
   }
   auto hybrid_site = hybrid_sites[0].first;
   int site_width = hybrid_site->getWidth();
   for (auto [site, site_orientation] : hybrid_sites) {
+    debugPrint(logger_,
+               utl::IFP,
+               "hybrid",
+               1,
+               "Site {} with width {} and height {}",
+               site->getName(),
+               site->getWidth(),
+               site->getHeight());
     if (site->getWidth() != site_width) {
       logger_->error(
           IFP,
@@ -539,30 +549,64 @@ int InitFloorplan::makeHybridRows(
   std::vector<std::vector<dbSite*>> patterns_to_construct;
   generateContiguousHybridRows(hybrid_sites, patterns_to_construct);
   for (auto& pattern : patterns_to_construct) {
+    std::string pattern_sites = "[";
+    for (int i = 0; i < pattern.size(); i++) {
+      pattern_sites += pattern[i]->getName() + ",]"[i == pattern.size() - 1];
+    }
+    debugPrint(logger_,
+               utl::IFP,
+               "hybrid",
+               1,
+               "Pattern {} with {} sites",
+               pattern_sites,
+               pattern.size());
     int y = core_l.y(), pattern_iterator = 0;
 
     while (y < core_height) {
+      // TODO: should I get orient from hybrid_sites.second?
       dbOrientType orient = (pattern_iterator % 2 == 0)
                                 ? dbOrientType::R0   // N
                                 : dbOrientType::MX;  // FS
       string row_name = stdstrPrint("ROW_%d", row_index + row);
-      dbSite* site_it;
+      dbSite* site_it = nullptr;
       if (pattern.size() == 1) {
-        site_it = pattern[pattern_iterator % pattern.size()];
+        site_it = hybrid_sites[pattern_iterator % hybrid_sites.size()].first;
       } else {
-        // TODO: THIS IS WRONG. we should find the site that represents the set
-        // of sites inside of it
-        site_it = pattern[pattern_iterator % pattern.size()];
+        // search the _hybrid_sites_map for this pattern
+        std::vector<string> pattern_sites;
+        string full_pattern_sites = "[";
+        pattern_sites.reserve(pattern.size());
+        for (auto site : pattern) {
+          pattern_sites.push_back(site->getName());
+          full_pattern_sites += site->getName() + ",]"[site == pattern.back()];
+        }
+        // print the map contents
+        for (auto& [key, value] : _hybrid_sites_map) {
+          std::string key_sites = "[";
+          for (int i = 0; i < key.size(); i++) {
+            key_sites += key[i] + ",]"[i == key.size() - 1];
+          }
+        }
+
+        auto it = _hybrid_sites_map.find(pattern_sites);
+        if (it == _hybrid_sites_map.end()) {
+          logger_->warn(IFP,
+                        49,
+                        "Pattern {} not found in the hybrid sites map.",
+                        full_pattern_sites);
+          break;
+        }
+        site_it = it->second;
       }
-      dbRow::create(block_,
-                    row_name.c_str(),
-                    site_it,
-                    core_l.x(),
-                    y,
-                    orient,
-                    dbRowDir::HORIZONTAL,
-                    rows_x,
-                    site_width);
+      auto created_row = dbRow::create(block_,
+                                       (row_name).c_str(),
+                                       site_it,
+                                       core_l.x(),
+                                       y,
+                                       orient,
+                                       dbRowDir::HORIZONTAL,
+                                       rows_x,
+                                       site_width);
       y += site_it->getHeight();
       ++pattern_iterator;
       ++row;
@@ -575,6 +619,15 @@ void InitFloorplan::generateContiguousHybridRows(
     const std::vector<std::pair<dbSite*, dbOrientType>>& hybrid_sites,
     std::vector<std::vector<dbSite*>>& output_patterns_list)
 {
+  // Creates a list of patterns of sites that are adjacent to each other.  The
+  // patterns will be of length 1 to n.
+  // The patterns will be constructed by starting at each site, and then going
+  // to the next site in the list, and then going to the next site in the list,
+  // and so on, until the end of the list is reached.  If the end of the list is
+  // reached, then the next site in the list will be the first site in the list.
+  // For example, This allows creating both, AB and BA, when given A,B as hybrid
+  // sites.
+
   int n = hybrid_sites.size();
   output_patterns_list.clear();
   output_patterns_list.reserve(n);

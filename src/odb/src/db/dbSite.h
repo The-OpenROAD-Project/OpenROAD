@@ -52,7 +52,8 @@ struct dbSiteFlags
   uint _y_symmetry : 1;
   uint _R90_symmetry : 1;
   dbSiteClass::Value _class : 4;
-  uint _spare_bits : 25;
+  uint _is_hybrid : 1;
+  uint _spare_bits : 24;
 };
 
 class _dbSite : public _dbObject

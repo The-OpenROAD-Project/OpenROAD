@@ -5342,6 +5342,11 @@ class dbSite : public dbObject
   bool hasRowPattern();
 
   ///
+  /// Returns true if this cell is a hybrid cell
+  ///
+  bool isHybrid();
+
+  ///
   /// returns the row pattern if available
   ///
   std::vector<std::pair<dbSite*, dbOrientType>> getRowPattern();

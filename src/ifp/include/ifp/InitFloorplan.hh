@@ -35,6 +35,7 @@
 
 #pragma once
 
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -130,6 +131,10 @@ class InitFloorplan
   dbBlock* block_;
   Logger* logger_;
   sta::dbNetwork* network_;
+
+ private:
+  // this is a map of the ROWPATTERN to their corresponding dbSite.
+  std::map<std::vector<std::string>, dbSite*> _hybrid_sites_map;
 };
 
 }  // namespace ifp

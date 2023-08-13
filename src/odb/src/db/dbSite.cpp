@@ -237,6 +237,7 @@ void dbSite::setRowPattern(
 {
   _dbSite* site = (_dbSite*) this;
   site->_row_patterns.reserve(row_pattern.size());
+  site->_flags._is_hybrid = 1;
   std::unordered_map<std::string, dbOrientType::Value> orientationMap
       = {{"N", dbOrientType::R0},
          {"W", dbOrientType::R270},
@@ -249,6 +250,8 @@ void dbSite::setRowPattern(
 
   for (auto& row : row_pattern) {
     dbOrientType orient = dbOrientType::R0;
+    auto _site = (_dbSite*) getLib()->findSite(row.first.c_str());
+    _site->_flags._is_hybrid = 1;
     auto it = orientationMap.find(row.second);
     if (it != orientationMap.end()) {
       orient = it->second;
@@ -262,12 +265,21 @@ bool dbSite::hasRowPattern()
   _dbSite* site = (_dbSite*) this;
   return !site->_row_patterns.empty();
 }
+
+bool dbSite::isHybrid()
+{
+  _dbSite* site = (_dbSite*) this;
+  return site->_flags._is_hybrid != 0;
+}
+
 std::vector<std::pair<dbSite*, dbOrientType>> dbSite::getRowPattern()
 {
   _dbSite* site = (_dbSite*) this;
   std::vector<std::pair<dbSite*, dbOrientType>> row_patterns;
   for (auto& row : site->_row_patterns) {
     dbSite* site = getLib()->findSite(row.first.c_str());
+    auto _site = (_dbSite*) site;
+    _site->_flags._is_hybrid = 1;
     if (site == nullptr) {
       continue;
     }
