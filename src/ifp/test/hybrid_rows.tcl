@@ -7,7 +7,7 @@ link_design top
 set_debug_level IFP hybrid 1
 initialize_floorplan -die_area "0 0 100 100" \
   -core_area "10 10 90 90" 
-write_def hybrid_rows_test.defok
+
 set def_file [make_result_file hybrid_rows.def]
 write_def $def_file
 diff_files hybrid_rows.defok $def_file

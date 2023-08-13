@@ -1,0 +1,25 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 135 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0222] Reading LEF file: Nangate45/fake_macros.lef
+[INFO ODB-0225]     Created 8 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/fake_macros.lef
+[WARNING ORD-2011] LEF master MOCK_HYBRID_A has no liberty cell.
+[WARNING ORD-2011] LEF master MOCK_HYBRID_AB has no liberty cell.
+[WARNING ORD-2011] LEF master MOCK_HYBRID_B has no liberty cell.
+[WARNING IFP-0046] Site HybridB is a hybrid row, but its height 540 is not a multiple of the smallest site height 432.
+[WARNING IFP-0046] Site HybridAB is a hybrid row, but its height 972 is not a multiple of the smallest site height 432.
+[WARNING IFP-0028] Core area lower left (10.000, 10.000) snapped to (10.044, 10.152).
+[WARNING IFP-0028] Core area lower left (10.000, 10.000) snapped to (10.044, 10.206).
+[WARNING IFP-0048] Site HybridAB is a hybrid site
+[DEBUG IFP-hybrid] Site HybridA with width 108 and height 432
+[DEBUG IFP-hybrid] Site HybridB with width 108 and height 540
+[DEBUG IFP-hybrid] Pattern [HybridA] with 1 sites
+[DEBUG IFP-hybrid] Pattern [HybridB] with 1 sites
+[DEBUG IFP-hybrid] Pattern [HybridA,HybridB] with 2 sites
+[DEBUG IFP-hybrid] Pattern [HybridB,HybridA] with 2 sites
+[WARNING IFP-0049] Pattern [HybridB,HybridA] not found in the hybrid sites map.
+[WARNING IFP-0028] Core area lower left (10.000, 10.000) snapped to (10.044, 10.260).
+No differences found.
