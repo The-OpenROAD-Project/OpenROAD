@@ -690,11 +690,11 @@ bool IRSolver::createJ()
             dbTechLayer* pin_layer = box->getTechLayer();
             if (pin_layer) {
               Gmat_->foreachNode(pin_layer->getRoutingLevel(),
-                                  inst_bBox->xMin(),
-                                  inst_bBox->xMax(),
-                                  inst_bBox->yMin(),
-                                  inst_bBox->yMax(),
-                                  [&](Node* node) { nodes_J.insert(node); });
+                                 inst_bBox->xMin(),
+                                 inst_bBox->xMax(),
+                                 inst_bBox->yMin(),
+                                 inst_bBox->yMax(),
+                                 [&](Node* node) { nodes_J.insert(node); });
             }
           }
         }
@@ -918,6 +918,18 @@ void IRSolver::createGmatViaNodes()
 
 void IRSolver::createGmatWireNodes()
 {
+  std::set<odb::dbITerm*> macros_terms;
+  dbBlock* block = db_->getChip()->getBlock();
+  for (auto* inst : block->getInsts()) {
+    if (inst->isBlock() || inst->isPad()) {
+      for (auto* iterm : inst->getITerms()) {
+        if (iterm->getNet() == net_) {
+          macros_terms.insert(iterm);
+        }
+      }
+    }
+  }
+
   for (auto curWire : power_wires_) {
     // For a stripe we create nodes at the ends of the stripes and at a fixed
     // frequency in the lowermost layer.
@@ -945,6 +957,30 @@ void IRSolver::createGmatWireNodes()
     // For all layers we create the end nodes
     Gmat_->setNode({x_loc1, y_loc1}, l);
     Gmat_->setNode({x_loc2, y_loc2}, l);
+
+    // Check if shape overlaps a macro pin
+    // and add node if there is an overlap with the current shape
+    for (auto* iterm : macros_terms) {
+      if (iterm->getBBox().intersects(curWire->getBox())) {
+        odb::dbTransform xform;
+        iterm->getInst()->getTransform(xform);
+        for (auto* mpin : iterm->getMTerm()->getMPins()) {
+          for (auto* geom : mpin->getGeometry()) {
+            if (geom->getTechLayer() != wire_layer) {
+              continue;
+            }
+            odb::Rect pin_rect = geom->getBox();
+            xform.apply(pin_rect);
+            if (pin_rect.intersects(curWire->getBox())) {
+              // add node at center of overlap
+              const odb::Rect overlap = pin_rect.intersect(curWire->getBox());
+
+              Gmat_->setNode({overlap.xCenter(), overlap.yCenter()}, l);
+            }
+          }
+        }
+      }
+    }
 
     if (l != bottom_layer_) {
       continue;
