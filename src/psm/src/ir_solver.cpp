@@ -658,10 +658,8 @@ bool IRSolver::createJ()
   const int num_nodes = Gmat_->getNumNodes();
   J_.resize(num_nodes, 0);
 
-  odb::dbTech* tech = db_->getTech();
-
   for (auto [inst, power] : getPower()) {
-    if (!inst->getPlacementStatus().isPlaced()) {
+    if (!inst->isPlaced()) {
       logger_->warn(utl::PSM,
                     71,
                     "Instance {} is not placed. Therefore, the"
@@ -678,86 +676,38 @@ bool IRSolver::createJ()
     // TODO: The condition for PADs needs to be handled sperately once an
     // appropriate testcase is found. Conditionally treated the same as a macro.
     if (inst->isBlock() || inst->isPad()) {
+      std::set<Node*> nodes_J;
       dbBox* inst_bBox = inst->getBBox();
       std::set<int> pin_layers;
       auto iterms = inst->getITerms();
       // Find the pin layers for the macro
-      for (auto&& iterm : iterms) {
-        if (iterm->getSigType() == net_->getSigType()) {
-          auto mterm = iterm->getMTerm();
-          for (auto mpin : mterm->getMPins()) {
-            for (auto box : mpin->getGeometry()) {
-              dbTechLayer* pin_layer = box->getTechLayer();
-              if (pin_layer) {
-                pin_layers.insert(pin_layer->getRoutingLevel());
-              }
+      for (auto* iterm : iterms) {
+        if (iterm->getNet() != net_) {
+          continue;
+        }
+        for (auto mpin : iterm->getMTerm()->getMPins()) {
+          for (auto box : mpin->getGeometry()) {
+            dbTechLayer* pin_layer = box->getTechLayer();
+            if (pin_layer) {
+              Gmat_->foreachNode(pin_layer->getRoutingLevel(),
+                                 inst_bBox->xMin(),
+                                 inst_bBox->xMax(),
+                                 inst_bBox->yMin(),
+                                 inst_bBox->yMax(),
+                                 [&](Node* node) { nodes_J.insert(node); });
             }
           }
         }
-      }
-      // Search for all nodes within the macro boundary
-      vector<Node*> nodes_J;
-      for (auto ll : pin_layers) {
-        Gmat_->foreachNode(ll,
-                           inst_bBox->xMin(),
-                           inst_bBox->xMax(),
-                           inst_bBox->yMin(),
-                           inst_bBox->yMax(),
-                           [&](Node* node) { nodes_J.push_back(node); });
       }
       double num_nodes = nodes_J.size();
       // If nodes are not found on the pin layers we search for the lowest
       // metal layer that overlaps the macro
       if (num_nodes == 0) {
-        const int max_l
-            = *std::max_element(pin_layers.begin(), pin_layers.end());
-        for (int pl = bottom_layer_ + 1; pl <= top_layer_; pl++) {
-          Gmat_->foreachNode(pl,
-                             inst_bBox->xMin(),
-                             inst_bBox->xMax(),
-                             inst_bBox->yMin(),
-                             inst_bBox->yMax(),
-                             [&](Node* node) { nodes_J.push_back(node); });
-
-          num_nodes = nodes_J.size();
-          if (num_nodes > 0) {
-            logger_->warn(
-                utl::PSM,
-                74,
-                "No nodes found in macro or pad bounding box for Instance {} "
-                "for the pin layer at routing level {}. Using layer {}.",
-                inst->getName(),
-                tech->findRoutingLayer(max_l)->getName(),
-                tech->findRoutingLayer(pl)->getName());
-            break;
-          }
-        }
-        // If nodes are still not found we connect to the neartest node on the
-        // highest pin layer with a warning
-        if (num_nodes == 0) {
-          if (Gmat_->findLayer(max_l)) {
-            Node* node_J = Gmat_->getNode(x, y, max_l, true);
-            nodes_J = {node_J};
-            num_nodes = 1.0;
-            const Point node_loc = node_J->getLoc();
-            logger_->warn(
-                utl::PSM,
-                72,
-                "No nodes found in macro/pad bounding box for Instance {}."
-                "Using nearest node at ({}, {}) on the pin layer at "
-                "routing level {}.",
-                inst->getName(),
-                node_loc.getX(),
-                node_loc.getY(),
-                tech->findRoutingLayer(max_l)->getName());
-          } else {
-            logger_->error(utl::PSM,
-                           42,
-                           "Unable to connect macro/pad Instance {} "
-                           "to the power grid.",
-                           inst->getName());
-          }
-        }
+        logger_->error(utl::PSM,
+                       42,
+                       "Unable to connect macro/pad Instance {} "
+                       "to the power grid.",
+                       inst->getName());
       }
       // Distribute the power across all nodes within the bounding box
       for (auto node_J : nodes_J) {
@@ -966,8 +916,20 @@ void IRSolver::createGmatViaNodes()
   }
 }
 
-void IRSolver::createGmatWireNodes(const vector<odb::Rect>& macros)
+void IRSolver::createGmatWireNodes()
 {
+  std::set<odb::dbITerm*> macros_terms;
+  dbBlock* block = db_->getChip()->getBlock();
+  for (auto* inst : block->getInsts()) {
+    if (inst->isBlock() || inst->isPad()) {
+      for (auto* iterm : inst->getITerms()) {
+        if (iterm->getNet() == net_) {
+          macros_terms.insert(iterm);
+        }
+      }
+    }
+  }
+
   for (auto curWire : power_wires_) {
     // For a stripe we create nodes at the ends of the stripes and at a fixed
     // frequency in the lowermost layer.
@@ -995,28 +957,31 @@ void IRSolver::createGmatWireNodes(const vector<odb::Rect>& macros)
     // For all layers we create the end nodes
     Gmat_->setNode({x_loc1, y_loc1}, l);
     Gmat_->setNode({x_loc2, y_loc2}, l);
-    // Special condition: if the stripe ovelaps a macro ensure a node is
-    // created
-    for (const auto& macro : macros) {
-      if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-        // y range is withing the marco (min, max)
-        if (y_loc1 >= macro.yMin() && y_loc1 <= macro.yMax()) {
-          // Both x values outside the macro
-          // (Values inside will already have a node at endpoints)
-          if (x_loc1 < macro.xMin() && x_loc2 > macro.xMax()) {
-            const int x = (macro.xMin() + macro.xMax()) / 2;
-            Gmat_->setNode({x, y_loc1}, l);
-          }
-        }
-      } else {
-        if (x_loc1 >= macro.xMin() && x_loc1 <= macro.xMax()) {
-          if (y_loc1 < macro.yMin() && y_loc2 > macro.yMax()) {
-            const int y = (macro.yMin() + macro.yMax()) / 2;
-            Gmat_->setNode({x_loc1, y}, l);
+
+    // Check if shape overlaps a macro pin
+    // and add node if there is an overlap with the current shape
+    for (auto* iterm : macros_terms) {
+      if (iterm->getBBox().intersects(curWire->getBox())) {
+        odb::dbTransform xform;
+        iterm->getInst()->getTransform(xform);
+        for (auto* mpin : iterm->getMTerm()->getMPins()) {
+          for (auto* geom : mpin->getGeometry()) {
+            if (geom->getTechLayer() != wire_layer) {
+              continue;
+            }
+            odb::Rect pin_rect = geom->getBox();
+            xform.apply(pin_rect);
+            if (pin_rect.intersects(curWire->getBox())) {
+              // add node at center of overlap
+              const odb::Rect overlap = pin_rect.intersect(curWire->getBox());
+
+              Gmat_->setNode({overlap.xCenter(), overlap.yCenter()}, l);
+            }
           }
         }
       }
     }
+
     if (l != bottom_layer_) {
       continue;
     }
@@ -1333,20 +1298,6 @@ int IRSolver::createSourceNodes(bool connection_only, int unit_micron)
   return num;
 }
 
-//! Function to find and store the macro boundaries
-vector<odb::Rect> IRSolver::getMacroBoundaries()
-{
-  dbChip* chip = db_->getChip();
-  dbBlock* block = chip->getBlock();
-  vector<odb::Rect> macro_boundaries;
-  for (auto* inst : block->getInsts()) {
-    if (inst->isBlock() || inst->isPad()) {
-      macro_boundaries.push_back(inst->getBBox()->getBox());
-    }
-  }
-  return macro_boundaries;
-}
-
 //! Function to create a G matrix using the nodes
 bool IRSolver::createGmat(bool connection_only)
 {
@@ -1389,7 +1340,6 @@ bool IRSolver::createGmat(bool connection_only)
   }
 
   Gmat_ = std::make_unique<GMat>(num_routing_layers, logger_, db_->getTech());
-  const auto macro_boundaries = getMacroBoundaries();
   debugPrint(logger_,
              utl::PSM,
              "G Matrix",
@@ -1399,7 +1349,7 @@ bool IRSolver::createGmat(bool connection_only)
 
   // Create all the nodes for the G matrix
   createGmatViaNodes();
-  createGmatWireNodes(macro_boundaries);
+  createGmatWireNodes();
 
   if (Gmat_->getNumNodes() == 0) {
     logger_->warn(utl::PSM,
