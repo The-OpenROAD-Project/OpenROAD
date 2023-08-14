@@ -276,6 +276,8 @@ int FastRouteCore::threeDVIA()
   int numVIA = 0;
 
   for (int netID = 0; netID < netCount(); netID++) {
+    if (nets_[netID]->isRouted())
+      continue;
     const auto& treeedges = sttrees_[netID].edges;
     int num_edges = sttrees_[netID].num_edges();
 
