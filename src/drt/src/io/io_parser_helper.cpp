@@ -589,6 +589,9 @@ void io::Parser::checkPins()
     dbTransform xform = inst->getUpdatedXform();
     int grid = tech_->getManufacturingGrid();
     for (auto& iTerm : inst->getInstTerms()) {
+      if (!iTerm->hasNet() || iTerm->getNet()->isSpecial()) {
+        continue;
+      }
       auto uTerm = iTerm->getTerm();
       bool foundTracks = false;
       bool foundCenterTracks = false;
@@ -712,18 +715,14 @@ void io::Parser::checkPins()
           }
         }
       }
-      if (iTerm->hasNet() && !iTerm->getNet()->isSpecial()) {
-        if (!foundTracks) {
-          logger_->warn(DRT,
-                        418,
-                        "Term {} has no pins on routing grid",
-                        iTerm->getName());
-        } else if (!foundCenterTracks && !hasPolys) {
-          logger_->warn(DRT,
-                        419,
-                        "No routing tracks pass through the center of Term {}",
-                        iTerm->getName());
-        }
+      if (!foundTracks) {
+        logger_->warn(
+            DRT, 418, "Term {} has no pins on routing grid", iTerm->getName());
+      } else if (!foundCenterTracks && !hasPolys) {
+        logger_->warn(DRT,
+                      419,
+                      "No routing tracks pass through the center of Term {}",
+                      iTerm->getName());
       }
     }
   }
