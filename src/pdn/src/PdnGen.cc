@@ -718,7 +718,7 @@ void PdnGen::createSrouteWires(
               if ((direction == 1) && (stripe_metal_layer == metal_layer)
                   && (wire->getDY() == stripDY)
                   && (std::abs(wire->yMin() - actualy)
-                     < std::abs(pdn_wire->yMin() - actualy))) {
+                      < std::abs(pdn_wire->yMin() - actualy))) {
                 pdn_wire = wire;
               }
             }
