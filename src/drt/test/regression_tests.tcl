@@ -2,6 +2,7 @@ record_tests {
   ispd18_sample
   ndr_vias1
   ndr_vias2
+  obstruction
   single_step
   ta_ap_aligned
   ta_pin_aligned
