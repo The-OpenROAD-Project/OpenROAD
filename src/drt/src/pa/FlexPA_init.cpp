@@ -294,14 +294,14 @@ void FlexPA::initViaRawPriority()
     }
     for (auto& viaDef : design_->getTech()->getLayer(layerNum)->getViaDefs()) {
       int cutNum = int(viaDef->getCutFigs().size());
-      viaRawPriorityTuple priority;
+      ViaRawPriorityTuple priority;
       getViaRawPriority(viaDef, priority);
       layerNum2ViaDefs_[layerNum][cutNum][priority] = viaDef;
     }
   }
 }
 
-void FlexPA::getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority)
+void FlexPA::getViaRawPriority(frViaDef* viaDef, ViaRawPriorityTuple& priority)
 {
   bool isNotDefaultVia = !(viaDef->getDefault());
   bool isNotUpperAlign = false;

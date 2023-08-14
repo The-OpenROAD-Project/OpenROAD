@@ -154,6 +154,22 @@ void FlexPA::prep()
   prepPattern();
 }
 
+void FlexPA::setTargetInstances(const frCollection<odb::dbInst*>& insts)
+{
+  target_insts_ = insts;
+}
+
+void FlexPA::setDistributed(const std::string& rhost,
+                            const ushort rport,
+                            const std::string& shared_vol,
+                            const int cloud_sz)
+{
+  remote_host_ = rhost;
+  remote_port_ = rport;
+  shared_vol_ = shared_vol;
+  cloud_sz_ = cloud_sz;
+}
+
 int FlexPA::main()
 {
   ProfileTask profile("PA:main");
