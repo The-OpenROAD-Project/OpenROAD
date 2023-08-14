@@ -653,8 +653,8 @@ void PdnGen::createSrouteWires(
   std::vector<odb::dbSBox*> rings;
   for (auto* swire : net_->getSWires()) {
     for (auto* wire : swire->getWires()) {
-      if (((wire->getDY() == hDY) & (wire->getDX() == hDX))
-          || ((wire->getDX() == vDX) & (wire->getDY() == vDY))) {
+      if (((wire->getDY() == hDY) && (wire->getDX() == hDX))
+          || ((wire->getDX() == vDX) && (wire->getDY() == vDY))) {
         rings.push_back(wire);
       }
     }
@@ -709,15 +709,15 @@ void PdnGen::createSrouteWires(
             stripe_metal_layer = wire->getTechLayer();
             direction = wire->getDir();
             if (first) {
-              if ((direction == 1) & (stripe_metal_layer == metal_layer)
-                  & (wire->getDY() == stripDY)) {
+              if ((direction == 1) && (stripe_metal_layer == metal_layer)
+                  && (wire->getDY() == stripDY)) {
                 first = false;
                 pdn_wire = wire;
               }
             } else {
-              if ((direction == 1) & (stripe_metal_layer == metal_layer)
-                  & (wire->getDY() == stripDY)
-                  & (std::abs(wire->yMin() - actualy)
+              if ((direction == 1) && (stripe_metal_layer == metal_layer)
+                  && (wire->getDY() == stripDY)
+                  && (std::abs(wire->yMin() - actualy)
                      < std::abs(pdn_wire->yMin() - actualy))) {
                 pdn_wire = wire;
               }
@@ -731,13 +731,13 @@ void PdnGen::createSrouteWires(
           for (auto* wire : swire->getWires()) {
             direction = wire->getDir();
             if (first) {
-              if ((direction == 0) & (wire->xMax() > actualx)) {
+              if ((direction == 0) && (wire->xMax() > actualx)) {
                 first = false;
                 right_pdn_wire = wire;
               }
             } else {
-              if ((direction == 0) & (wire->xMax() < pdn_wire->xMax())
-                  & (wire->xMax() > actualx)) {
+              if ((direction == 0) && (wire->xMax() < pdn_wire->xMax())
+                  && (wire->xMax() > actualx)) {
                 right_pdn_wire = wire;
               }
             }
@@ -751,13 +751,13 @@ void PdnGen::createSrouteWires(
           for (auto* wire : swire->getWires()) {
             direction = wire->getDir();
             if (first) {
-              if ((direction == 0) & (wire->xMin() < actualx)) {
+              if ((direction == 0) && (wire->xMin() < actualx)) {
                 first = false;
                 left_pdn_wire = wire;
               }
             } else {
-              if ((direction == 0) & (wire->xMin() > pdn_wire->xMin())
-                  & (wire->xMin() < actualx)) {
+              if ((direction == 0) && (wire->xMin() > pdn_wire->xMin())
+                  && (wire->xMin() < actualx)) {
                 left_pdn_wire = wire;
               }
             }
@@ -798,7 +798,7 @@ void PdnGen::createSrouteWires(
                                 + metalWidths[metalWidths.size() - 1] / 2,
                             odb::dbWireShapeType::NONE);
 
-        if ((pdn_wire->yMax() > highy) & (pdn_wire->yMax() > lowy)) {
+        if ((pdn_wire->yMax() > highy) && (pdn_wire->yMax() > lowy)) {
           odb::dbSBox::create(nwsw,
                               ongrid[ongrid.size() - 1],
                               actualx - metalWidths[0],
@@ -809,7 +809,7 @@ void PdnGen::createSrouteWires(
                               odb::dbWireShapeType::NONE);
         }
         // middle
-        else if ((pdn_wire->yMax() < highy) & (pdn_wire->yMin() > lowy)) {
+        else if ((pdn_wire->yMax() < highy) && (pdn_wire->yMin() > lowy)) {
           odb::dbSBox::create(nwsw,
                               ongrid[ongrid.size() - 1],
                               actualx - metalWidths[0],
@@ -839,10 +839,10 @@ void PdnGen::createSrouteWires(
             int cols_
                 = (rings[index]->xMax() - rings[index]->xMin() - cut_pitch_x)
                   / (cut_pitch_x + box->getDX());
-            long centerX = cols_ / 2;
-            long centerY = rows_ / 2;
-            long row = 0;
-            long col = 0;
+            int64_t centerX = cols_ / 2;
+            int64_t centerY = rows_ / 2;
+            int64_t row = 0;
+            int64_t col = 0;
             if (rows_ % 2 == 1) {
               row = (pdn_wire->yMin() + pdn_wire->yMax()) / 2
                     - centerY * (via_width + cut_pitch_y) - via_width / 2;
@@ -856,7 +856,7 @@ void PdnGen::createSrouteWires(
                       - centerX * (via_width + cut_pitch_x) - via_width / 2;
               } else {
                 col = (rings[index]->xMin() + rings[index]->xMax()) / 2
-                      - centerX * (via_width) -std::max(centerX - 1, long(0))
+                      - centerX * (via_width) -std::max(centerX - 1, int64_t(0))
                             * cut_pitch_x
                       - cut_pitch_x / 2;
               }
@@ -893,10 +893,10 @@ void PdnGen::createSrouteWires(
                       / (cut_pitch_y + box->getDY());
           int cols_
               = (metalWidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX());
-          long centerX = cols_ / 2;
-          long centerY = rows_ / 2;
-          long row = 0;
-          long col = 0;
+          int64_t centerX = cols_ / 2;
+          int64_t centerY = rows_ / 2;
+          int64_t row = 0;
+          int64_t col = 0;
           if (rows_ % 2 == 1) {
             row = (pdn_wire->yMin() + pdn_wire->yMax()) / 2
                   - centerY * (via_width + cut_pitch_y) - via_width / 2;
@@ -910,7 +910,7 @@ void PdnGen::createSrouteWires(
                     - centerX * (via_width + cut_pitch_x) - via_width / 2;
             } else {
               col = actualx - metalWidths[0] / 2
-                    - centerX * (via_width) -std::max(centerX - 1, long(0))
+                    - centerX * (via_width) -std::max(centerX - 1, int64_t(0))
                           * cut_pitch_x
                     - cut_pitch_x / 2;
             }
@@ -963,10 +963,10 @@ void PdnGen::createSrouteWires(
                         / (cut_pitch_y + box->getDY());
             int cols_
                 = (metalWidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX());
-            long centerX = cols_ / 2;
-            long centerY = rows_ / 2;
-            long row = 0;
-            long col = 0;
+            int64_t centerX = cols_ / 2;
+            int64_t centerY = rows_ / 2;
+            int64_t row = 0;
+            int64_t col = 0;
             if (rows_ % 2 == 1) {
               row = (bbox.yMax() + bbox.yMin()) / 2
                     - centerY * (via_width + cut_pitch_y) - via_width / 2;
@@ -980,7 +980,7 @@ void PdnGen::createSrouteWires(
                       - centerX * (via_width + cut_pitch_x) - via_width / 2;
               } else {
                 col = actualx - metalWidths[0] / 2
-                      - centerX * (via_width) -std::max(centerX - 1, long(0))
+                      - centerX * (via_width) -std::max(centerX - 1, int64_t(0))
                             * cut_pitch_x
                       - cut_pitch_x / 2;
               }
@@ -1049,10 +1049,10 @@ void PdnGen::createSrouteWires(
                       / (cut_pitch_y + box->getDY());
           int cols_
               = (metalWidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX());
-          long centerX = cols_ / 2;
-          long centerY = rows_ / 2;
-          long row = 0;
-          long col = 0;
+          int64_t centerX = cols_ / 2;
+          int64_t centerY = rows_ / 2;
+          int64_t row = 0;
+          int64_t col = 0;
           if (rows_ % 2 == 1) {
             row = (pdn_wire->yMin() + pdn_wire->yMax()) / 2
                   - centerY * (via_width + cut_pitch_y) - via_width / 2;
@@ -1066,7 +1066,7 @@ void PdnGen::createSrouteWires(
                     - centerX * (via_width + cut_pitch_x) - via_width / 2;
             } else {
               col = actualx - metalWidths[0] / 2
-                    - centerX * (via_width) -std::max(centerX - 1, long(0))
+                    - centerX * (via_width) -std::max(centerX - 1, int64_t(0))
                           * cut_pitch_x
                     - cut_pitch_x / 2;
             }
@@ -1119,10 +1119,10 @@ void PdnGen::createSrouteWires(
                         / (cut_pitch_y + box->getDY());
             int cols_
                 = (metalWidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX());
-            long centerX = cols_ / 2;
-            long centerY = rows_ / 2;
-            long row = 0;
-            long col = 0;
+            int64_t centerX = cols_ / 2;
+            int64_t centerY = rows_ / 2;
+            int64_t row = 0;
+            int64_t col = 0;
             if (rows_ % 2 == 1) {
               row = (bbox.yMax() + bbox.yMin()) / 2
                     - centerY * (via_width + cut_pitch_y) - via_width / 2;
@@ -1136,7 +1136,7 @@ void PdnGen::createSrouteWires(
                       - centerX * (via_width + cut_pitch_x) - via_width / 2;
               } else {
                 col = actualx - metalWidths[0] / 2
-                      - centerX * (via_width) -std::max(centerX - 1, long(0))
+                      - centerX * (via_width) -std::max(centerX - 1, int64_t(0))
                             * cut_pitch_x
                       - cut_pitch_x / 2;
               }
@@ -1209,8 +1209,8 @@ void PdnGen::addSrouteInst(const char* net,
   std::vector<odb::dbSBox*> rings;
   for (auto* swire : net_->getSWires()) {
     for (auto* wire : swire->getWires()) {
-      if (((wire->getDY() == hDY) & (wire->getDX() == hDX))
-          || ((wire->getDX() == vDX) & (wire->getDY() == vDY))) {
+      if (((wire->getDY() == hDY) && (wire->getDX() == hDX))
+          || ((wire->getDX() == vDX) && (wire->getDY() == vDY))) {
         rings.push_back(wire);
       }
     }
