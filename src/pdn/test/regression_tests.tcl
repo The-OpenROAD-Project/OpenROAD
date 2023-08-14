@@ -99,4 +99,6 @@ record_tests {
   power_switch_cut_rows
   
   repair_vias
+
+  sroute_test
 }
