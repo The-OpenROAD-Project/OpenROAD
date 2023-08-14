@@ -40,14 +40,17 @@ class dbDatabase;
 namespace dst {
 class Distributed;
 }
+
 namespace boost::serialization {
 class access;
 }
+
 namespace fr {
 // not default via, upperWidth, lowerWidth, not align upper, upperArea,
 // lowerArea, not align lower, via name
-typedef std::tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool>
-    viaRawPriorityTuple;
+using ViaRawPriorityTuple
+    = std::tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool>;
+
 class FlexPinAccessPattern;
 class FlexDPNode;
 class FlexPAGraphics;
@@ -61,29 +64,17 @@ class FlexPA
     Commit
   };
 
-  // constructor
   FlexPA(frDesign* in, Logger* logger, dst::Distributed* dist);
   ~FlexPA();
-  // getters
-  frDesign* getDesign() const { return design_; }
-  frTechObject* getTech() const { return design_->getTech(); }
-  // setters
-  int main();
+
   void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
-  void setTargetInstances(frCollection<odb::dbInst*> insts)
-  {
-    target_insts_ = insts;
-  }
-  void setDistributed(std::string rhost,
+  void setTargetInstances(const frCollection<odb::dbInst*>& insts);
+  void setDistributed(const std::string& rhost,
                       ushort rport,
-                      std::string shared_vol,
-                      int cloud_sz)
-  {
-    remote_host_ = rhost;
-    remote_port_ = rport;
-    shared_vol_ = shared_vol;
-    cloud_sz_ = cloud_sz;
-  }
+                      const std::string& shared_vol,
+                      int cloud_sz);
+
+  int main();
 
  private:
   frDesign* design_;
@@ -114,7 +105,7 @@ class FlexPA
 
   // helper structures
   std::vector<std::map<frCoord, frAccessPointEnum>> trackCoords_;
-  std::map<frLayerNum, std::map<int, std::map<viaRawPriorityTuple, frViaDef*>>>
+  std::map<frLayerNum, std::map<int, std::map<ViaRawPriorityTuple, frViaDef*>>>
       layerNum2ViaDefs_;
   map<frMaster*,
       map<dbOrientType, map<vector<frCoord>, set<frInst*, frBlockObjectComp>>>,
@@ -128,11 +119,13 @@ class FlexPA
   int cloud_sz_;
 
   // helper functions
+  frDesign* getDesign() const { return design_; }
+  frTechObject* getTech() const { return design_->getTech(); }
   void setDesign(frDesign* in) { design_ = in; }
   void applyPatternsFile(const char* file_path);
   void getPrefTrackPatterns(std::vector<frTrackPattern*>& prefTrackPatterns);
   bool hasTrackPattern(frTrackPattern* tp, const Rect& box);
-  void getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority);
+  void getViaRawPriority(frViaDef* viaDef, ViaRawPriorityTuple& priority);
   bool isSkipInstTerm(frInstTerm* in);
   bool isDistributed() const { return !remote_host_.empty(); }
 
