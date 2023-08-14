@@ -97,7 +97,6 @@ RepairDesign::init()
   db_network_ = resizer_->db_network_;
   dbu_ = resizer_->dbu_;
   pre_checks_ = new PreChecks(resizer_);
-  pre_checks_->init();
   copyState(sta_);
 }
 

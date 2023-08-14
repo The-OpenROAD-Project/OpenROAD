@@ -51,11 +51,6 @@ PreChecks::PreChecks(Resizer* resizer) :
         sta_(nullptr),
         resizer_(resizer),
         best_case_slew_computed_(false) {
-}
-
-void
-PreChecks::init()
-{
   logger_ = resizer_->logger_;
   sta_ = resizer_->sta_;
 }

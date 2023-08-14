@@ -45,7 +45,6 @@ using dbSta = sta::dbSta;
 class PreChecks {
 public:
   PreChecks(Resizer* resizer);
-  void init();
   void checkSlewLimit(float ref_cap, float max_load_slew);
 
 private:
