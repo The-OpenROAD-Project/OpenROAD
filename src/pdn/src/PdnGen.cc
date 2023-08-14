@@ -764,7 +764,7 @@ void PdnGen::createSrouteWires(
 
         // if center point is in the middle of two wire
         if ((left_pdn_wire->xMax() < actualx)
-            & (right_pdn_wire->xMin() > actualx)) {
+            && (right_pdn_wire->xMin() > actualx)) {
           if ((left_pdn_wire->xMax() + metalspaces[0] + metalWidths[0] / 2)
               > actualx) {
             actualx
