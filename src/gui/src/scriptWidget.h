@@ -101,6 +101,10 @@ class ScriptWidget : public QDockWidget
 
   void pause(int timeout);
 
+  // This can be used by other widgets to "write" commands
+  // in the Tcl command input
+  void setCommand(const QString& command);
+
  private slots:
   void outputChanged();
 
