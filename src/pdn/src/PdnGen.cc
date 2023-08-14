@@ -113,7 +113,6 @@ void PdnGen::buildGrids(bool trim)
   for (auto* grid : grids) {
     grid->getGridLevelObstructions(block_obs);
   }
-  
   ShapeTreeMap all_shapes;
 
   // get special shapes
