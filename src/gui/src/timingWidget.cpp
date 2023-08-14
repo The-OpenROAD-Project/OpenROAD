@@ -299,21 +299,40 @@ void TimingWidget::writePathReportCommand(const QModelIndex& selected_index,
   QString end_node = QString::fromStdString(selected_path->getEndStageName());
 
   if (type == CLOSEST_MATCH) {
-    QString start_rise_or_fall
-        = selected_path->isStartStageRising() ? "-rise_from " : "-fall_from ";
+    TimingNodeList* node_list = &selected_path->getPathNodes();
+
+    const int start_idx = selected_path->getClkPathEndIndex() + 1;
+
+    QString start_rise_or_fall = (*node_list)[start_idx]->isRisingEdge()
+                                     ? "-rise_from "
+                                     : "-fall_from ";
+    QString closest_match_command
+        = "report_checks " + start_rise_or_fall + start_node;
+
+    for (int node_idx = (start_idx + 1); node_idx < ((*node_list).size() - 1);
+         node_idx++) {
+      QString through_node
+          = QString::fromStdString((*node_list)[node_idx]->getNodeName());
+      QString through_rise_or_fall = (*node_list)[node_idx]->isRisingEdge()
+                                         ? " -rise_through "
+                                         : " -fall_through ";
+
+      closest_match_command += through_rise_or_fall + through_node;
+    }
 
     QString end_rise_or_fall
-        = selected_path->isEndStageRising() ? " -rise_to " : " -fall_to ";
+        = (*node_list).back()->isRisingEdge() ? " -rise_to " : " -fall_to ";
 
     QString path_delay_config = focus_view_ == setup_timing_table_view_
                                     ? " -path_delay max"
                                     : " -path_delay min";
 
-    QString closest_match_command
-        = "report_checks " + start_rise_or_fall + start_node + end_rise_or_fall
-          + end_node + path_delay_config
-          + " -fields {capacitance slew input_pins nets fanout}"
-          + " -format full_clock_expanded";
+    QString fields_and_format
+        = " -fields {capacitance slew input_pins nets fanout} -format "
+          "full_clock_expanded";
+
+    closest_match_command
+        += end_rise_or_fall + end_node + path_delay_config + fields_and_format;
 
     emit setCommand(closest_match_command);
   }

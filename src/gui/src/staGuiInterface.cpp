@@ -324,20 +324,6 @@ std::string TimingPath::getEndStageName() const
   return path_nodes_.back()->getNodeName();
 }
 
-bool TimingPath::isStartStageRising() const
-{
-  const int start_idx = getClkPathEndIndex() + 1;
-  if (start_idx >= path_nodes_.size()) {
-    return path_nodes_[0]->isRisingEdge();
-  }
-  return path_nodes_[start_idx]->isRisingEdge();
-}
-
-bool TimingPath::isEndStageRising() const
-{
-  return path_nodes_.back()->isRisingEdge();
-}
-
 void TimingPath::computeClkEndIndex(TimingNodeList& nodes, int& index)
 {
   for (int i = 0; i < nodes.size(); i++) {
