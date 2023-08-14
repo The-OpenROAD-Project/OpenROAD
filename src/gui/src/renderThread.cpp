@@ -32,6 +32,8 @@
 
 #include "renderThread.h"
 
+#include <QPainterPath>
+
 #include "layoutViewer.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
@@ -692,9 +694,6 @@ bool RenderThread::drawTextInBBox(const QColor& text_color,
   }
   text_bounding_box = font_metrics.boundingRect(name);
 
-  painter->setPen(QPen(text_color, 0));
-  painter->setBrush(QBrush(text_color));
-
   const QTransform initial_xfm = painter->transform();
 
   painter->translate(bbox.xMin(), bbox.yMin());
@@ -721,7 +720,16 @@ bool RenderThread::drawTextInBBox(const QColor& text_color,
       painter->translate(xOffset, -yOffset);
     }
   }
-  painter->drawText(0, 0, name);
+  if (center) {
+    QPainterPath path;
+    path.addText(0, 0, painter->font(), name);
+    painter->strokePath(path, QPen(Qt::black, 2));  // outline
+    painter->fillPath(path, QBrush(text_color));    // fill
+  } else {
+    painter->setPen(QPen(text_color, 0));
+    painter->setBrush(QBrush(text_color));
+    painter->drawText(0, 0, name);
+  }
 
   painter->setTransform(initial_xfm);
 
