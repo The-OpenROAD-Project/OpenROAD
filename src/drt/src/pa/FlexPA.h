@@ -84,15 +84,15 @@ class FlexPA
   std::unique_ptr<FlexPAGraphics> graphics_;
   std::string debugPinName_;
 
-  int stdCellPinGenApCnt_;
-  int stdCellPinValidPlanarApCnt_;
-  int stdCellPinValidViaApCnt_;
-  int stdCellPinNoApCnt_;
+  int stdCellPinGenApCnt_ = 0;
+  int stdCellPinValidPlanarApCnt_ = 0;
+  int stdCellPinValidViaApCnt_ = 0;
+  int stdCellPinNoApCnt_ = 0;
   int instTermValidViaApCnt_ = 0;
-  int macroCellPinGenApCnt_;
-  int macroCellPinValidPlanarApCnt_;
-  int macroCellPinValidViaApCnt_;
-  int macroCellPinNoApCnt_;
+  int macroCellPinGenApCnt_ = 0;
+  int macroCellPinValidPlanarApCnt_ = 0;
+  int macroCellPinValidViaApCnt_ = 0;
+  int macroCellPinNoApCnt_ = 0;
 
   std::vector<frInst*> uniqueInstances_;
   std::map<frInst*, frInst*, frBlockObjectComp> inst2unique_;
