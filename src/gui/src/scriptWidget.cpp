@@ -288,6 +288,11 @@ void ScriptWidget::pause(int timeout)
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
+void ScriptWidget::setCommand(const QString& command)
+{
+  input_->setText(command);
+}
+
 void ScriptWidget::unpause()
 {
   paused_ = false;

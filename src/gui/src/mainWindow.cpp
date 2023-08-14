@@ -331,6 +331,11 @@ MainWindow::MainWindow(QWidget* parent)
           viewer_,
           qOverload<>(&LayoutViewer::update));
 
+  connect(timing_widget_,
+          &TimingWidget::setCommand,
+          script_,
+          &ScriptWidget::setCommand);
+
   connect(this, &MainWindow::designLoaded, this, &MainWindow::setBlock);
   connect(this, &MainWindow::designLoaded, drc_viewer_, &DRCWidget::setBlock);
   connect(
