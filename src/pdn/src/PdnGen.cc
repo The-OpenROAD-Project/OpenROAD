@@ -57,7 +57,6 @@ namespace pdn {
 using utl::Logger;
 
 using odb::dbBlock;
-using odb::dbBox;
 using odb::dbInst;
 using odb::dbMaster;
 using odb::dbMTerm;
