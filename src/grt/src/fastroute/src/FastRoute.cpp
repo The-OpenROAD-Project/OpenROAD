@@ -813,9 +813,13 @@ void FastRouteCore::updateDbCongestion()
 NetRouteMap FastRouteCore::run()
 {
   clock_t main_clock = clock();
+  printf("DebugInfo grid size: %d %d\n", x_grid_, y_grid_);
   if (netCount() == 0) {
     return getRoutes();
   }
+
+  v_used_ggrid_.clear();
+  h_used_ggrid_.clear();
 
   int tUsage;
   int cost_step;
@@ -1264,6 +1268,8 @@ NetRouteMap FastRouteCore::run()
       }
     }
   }
+
+  printf("DebugInfo used ggrids h: %ld v: %ld\n", h_used_ggrid_.size(), v_used_ggrid_.size());
 
   NetRouteMap routes = getRoutes();
   net_eo_.clear();

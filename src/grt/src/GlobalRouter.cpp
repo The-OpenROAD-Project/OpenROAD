@@ -3928,6 +3928,8 @@ void GlobalRouter::updateDirtyRoutes()
       return;
     }
 
+    printf("DebugInfo dirty nets: %ld\n", dirty_nets.size());
+
     initFastRouteIncr(dirty_nets);
 
     NetRouteMap new_route
