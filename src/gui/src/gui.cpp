@@ -511,8 +511,25 @@ bool Gui::filterSelectionProperties(const Descriptor::Properties& properties,
   for (Descriptor::Property property : properties) {
     if (attribute == property.name) {
       is_valid_attribute = true;
-      if (Descriptor::Property::toString(value)
-          == Descriptor::Property::toString(property.value)) {
+      if (auto props_selected_set
+          = std::any_cast<SelectionSet>(&property.value)) {
+        for (auto selected : *props_selected_set) {
+          if (Descriptor::Property::toString(value) == selected.getName()) {
+            return true;
+          }
+        }
+      } else if (auto props_list
+                 = std::any_cast<Descriptor::PropertyList>(&property.value)) {
+        for (auto prop : *props_list) {
+          if (Descriptor::Property::toString(prop.first)
+                  == Descriptor::Property::toString(value)
+              || Descriptor::Property::toString(prop.second)
+                     == Descriptor::Property::toString(value)) {
+            return true;
+          }
+        }
+      } else if (Descriptor::Property::toString(value)
+                 == Descriptor::Property::toString(property.value)) {
         return true;
       }
     }
