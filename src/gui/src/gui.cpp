@@ -481,10 +481,10 @@ int Gui::select(const std::string& type,
 
           if (!is_valid_attribute) {
             logger_->error(
-                utl::GUI, 75, "Entered attribute {} is not valid.", attribute);
+                utl::GUI, 59, "Entered attribute {} is not valid.", attribute);
           } else if (selected_set.empty()) {
             logger_->error(utl::GUI,
-                           90,
+                           75,
                            "Couldn't find any object for the specified value.");
           }
         }
