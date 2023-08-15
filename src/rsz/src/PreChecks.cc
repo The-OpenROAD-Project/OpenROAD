@@ -38,6 +38,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "sta/Corner.hh"
 #include "sta/LibertyClass.hh"
+#include "sta/Units.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
@@ -50,6 +51,8 @@ PreChecks::PreChecks(Resizer* resizer) :
         logger_(nullptr),
         sta_(nullptr),
         resizer_(resizer),
+        best_case_slew_(-1.0),
+        best_case_slew_load_(-1.0),
         best_case_slew_computed_(false) {
   logger_ = resizer_->logger_;
   sta_ = resizer_->sta_;
@@ -72,8 +75,13 @@ void PreChecks::checkSlewLimit(float ref_cap, float max_load_slew) {
   }
 
   if (max_load_slew < best_case_slew_) {
-    logger_->error(RSZ, 90, "Max transition time from SDC is {}. Best achievable transition time is {} with a load of {}",
-                   max_load_slew, best_case_slew_, best_case_slew_load_);
+    const sta::Unit *time_unit = sta_->units()->timeUnit();
+    const sta::Unit *cap_unit = sta_->units()->capacitanceUnit();
+
+    logger_->error(RSZ, 90, "Max transition time from SDC is {}{}s. Best achievable transition time is {}{}s with a load of {}{}F",
+                   time_unit->asString(max_load_slew), time_unit->scaleAbbreviation(),
+                   time_unit->asString(best_case_slew_), time_unit->scaleAbbreviation(),
+                   cap_unit->asString(best_case_slew_load_, 2), cap_unit->scaleAbbreviation());
   }
 }
 } // namespace rsz
