@@ -806,8 +806,8 @@ void FastRouteCore::updateDbCongestion()
 
 NetRouteMap FastRouteCore::run()
 {
-  clock_t main_clock = clock();
-  printf("DebugInfo grid size: %d %d\n", x_grid_, y_grid_);
+  //clock_t main_clock = clock();
+  //printf("DebugInfo grid size: %d %d\n", x_grid_, y_grid_);
   if (netCount() == 0) {
     return getRoutes();
   }
@@ -857,7 +857,7 @@ NetRouteMap FastRouteCore::run()
   int slope;
   int max_adj;
 
-  clock_t first_clock = clock();
+  //clock_t first_clock = clock();
   // call FLUTE to generate RSMT and break the nets into segments (2-pin nets)
 
   via_cost_ = 0;
@@ -871,9 +871,9 @@ NetRouteMap FastRouteCore::run()
   spiralRouteAll();
   newrouteZAll(10);
   int past_cong = getOverflow2D(&maxOverflow);
-  printf("DebugRuntime first: %.2f\n", (double)(clock() - first_clock)/CLOCKS_PER_SEC);
+  //printf("DebugRuntime first: %.2f\n", (double)(clock() - first_clock)/CLOCKS_PER_SEC);
 
-  clock_t convert_clock = clock();
+  //clock_t convert_clock = clock();
   convertToMazeroute();
 
   int enlarge_ = 10;
@@ -947,13 +947,13 @@ NetRouteMap FastRouteCore::run()
 
   SaveLastRouteLen();
 
-  printf("DebugRuntime convert: %.2f\n", (double)(clock() - convert_clock)/CLOCKS_PER_SEC);
+  //printf("DebugRuntime convert: %.2f\n", (double)(clock() - convert_clock)/CLOCKS_PER_SEC);
 
   const int max_overflow_increases = 25;
 
   float slack_th = std::numeric_limits<float>::min();
 
-  clock_t overflow_clock = clock();
+  //clock_t overflow_clock = clock();
   // set overflow_increases as -1 since the first iteration always sum 1
   int overflow_increases = -1;
   int last_total_overflow = 0;
@@ -1189,9 +1189,9 @@ NetRouteMap FastRouteCore::run()
       saveCongestion(i);
     }
   }  // end overflow iterations
-  printf("DebugRuntime overflow: %.2f\n", (double)(clock() - overflow_clock)/CLOCKS_PER_SEC);
+  //printf("DebugRuntime overflow: %.2f\n", (double)(clock() - overflow_clock)/CLOCKS_PER_SEC);
 
-  clock_t last_clock = clock();
+  //clock_t last_clock = clock();
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn() && debug_->tree2D_) {
     for (int netID = 0; netID < netCount(); netID++) {
@@ -1226,14 +1226,14 @@ NetRouteMap FastRouteCore::run()
 
   freeRR();
 
-  printf("DebugRuntime last1: %.2f\n", (double)(clock() - last_clock)/CLOCKS_PER_SEC);
+  //printf("DebugRuntime last1: %.2f\n", (double)(clock() - last_clock)/CLOCKS_PER_SEC);
   removeLoops();
 
   getOverflow2Dmaze(&maxOverflow, &tUsage);
 
   layerAssignment();
 
-  printf("DebugRuntime last2: %.2f\n", (double)(clock() - last_clock)/CLOCKS_PER_SEC);
+  //printf("DebugRuntime last2: %.2f\n", (double)(clock() - last_clock)/CLOCKS_PER_SEC);
   costheight_ = 3;
   via_cost_ = 1;
 
@@ -1242,7 +1242,7 @@ NetRouteMap FastRouteCore::run()
     mazeRouteMSMDOrder3D(enlarge_, 0, 12, layer_orientation_);
   }
 
-  printf("DebugRuntime last3: %.2f\n", (double)(clock() - last_clock)/CLOCKS_PER_SEC);
+  //printf("DebugRuntime last3: %.2f\n", (double)(clock() - last_clock)/CLOCKS_PER_SEC);
   fillVIA();
   const int finallength = getOverflow3D();
   const int numVia = threeDVIA();
@@ -1263,12 +1263,12 @@ NetRouteMap FastRouteCore::run()
     }
   }
 
-  printf("DebugInfo used ggrids h: %ld v: %ld\n", h_used_ggrid_.size(), v_used_ggrid_.size());
+  //printf("DebugInfo used ggrids h: %ld v: %ld\n", h_used_ggrid_.size(), v_used_ggrid_.size());
 
   NetRouteMap routes = getRoutes();
   net_eo_.clear();
-  printf("DebugRuntime last: %.2f\n", (double)(clock() - last_clock)/CLOCKS_PER_SEC);
-  printf("DebugRuntime main: %.2f\n", (double)(clock() - main_clock)/CLOCKS_PER_SEC);
+  //printf("DebugRuntime last: %.2f\n", (double)(clock() - last_clock)/CLOCKS_PER_SEC);
+  //printf("DebugRuntime main: %.2f\n", (double)(clock() - main_clock)/CLOCKS_PER_SEC);
   return routes;
 }
 

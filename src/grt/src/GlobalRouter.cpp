@@ -3910,7 +3910,7 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
 void GlobalRouter::updateDirtyRoutes()
 {
   if (!dirty_nets_.empty()) {
-    clock_t grt_clock = clock();
+    //clock_t grt_clock = clock();
     fastroute_->setVerbose(false);
     if (verbose_)
       logger_->info(GRT, 9, "rerouting {} nets.", dirty_nets_.size());
@@ -3927,7 +3927,7 @@ void GlobalRouter::updateDirtyRoutes()
       return;
     }
 
-    printf("DebugInfo dirty nets: %ld\n", dirty_nets.size());
+    //printf("DebugInfo dirty nets: %ld\n", dirty_nets.size());
 
     initFastRouteIncr(dirty_nets);
 
@@ -3940,7 +3940,7 @@ void GlobalRouter::updateDirtyRoutes()
     if (fastroute_->has2Doverflow() && !allow_congestion_) {
       // The maximum number of times that the nets traversing the congestion
       // area will be added
-      clock_t cong_clock = clock();
+      //clock_t cong_clock = clock();
       int add_max = 30;
       // The set will contain the nets for routing
       std::set<odb::dbNet*> congestion_nets;
@@ -3964,7 +3964,7 @@ void GlobalRouter::updateDirtyRoutes()
         mergeResults(new_route);
         add_max--;
       }
-      printf("DebugRuntime congestion: %.2f\n", (double)(clock() - cong_clock)/CLOCKS_PER_SEC);
+      //printf("DebugRuntime congestion: %.2f\n", (double)(clock() - cong_clock)/CLOCKS_PER_SEC);
       if (fastroute_->has2Doverflow()) {
         logger_->error(GRT,
                        232,
@@ -3972,7 +3972,7 @@ void GlobalRouter::updateDirtyRoutes()
                        "heatmap in the GUI.");
       }
     }
-    printf("DebugRuntime grt: %.2f\n", (double)(clock() - grt_clock)/CLOCKS_PER_SEC);
+    //printf("DebugRuntime grt: %.2f\n", (double)(clock() - grt_clock)/CLOCKS_PER_SEC);
   }
 }
 
