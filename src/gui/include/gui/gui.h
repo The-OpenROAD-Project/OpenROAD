@@ -769,7 +769,7 @@ class Gui
                           const Descriptor* descriptor);
   const Descriptor* getDescriptor(const std::type_info& type) const;
   void unregisterDescriptor(const std::type_info& type);
-  
+
   bool filterSelectionProperties(const Descriptor::Properties& properties,
                                  const std::string& attribute,
                                  const std::any& value,

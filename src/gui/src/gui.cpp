@@ -513,6 +513,10 @@ bool Gui::filterSelectionProperties(const Descriptor::Properties& properties,
       is_valid_attribute = true;
       if (auto props_selected_set
           = std::any_cast<SelectionSet>(&property.value)) {
+        if (Descriptor::Property::toString(value) == "CONNECTED"
+            && (*props_selected_set).size() != 0) {
+          return true;
+        }
         for (auto selected : *props_selected_set) {
           if (Descriptor::Property::toString(value) == selected.getName()) {
             return true;
