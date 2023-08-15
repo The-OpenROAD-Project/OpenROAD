@@ -64,6 +64,7 @@ target_link_libraries(psm
     rsz_lib
     Eigen3::Eigen
     gui
+    pad
 )
 
 messages(
