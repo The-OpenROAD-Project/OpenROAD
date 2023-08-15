@@ -190,39 +190,34 @@ proc select { args } {
   sta::parse_key_args "select" args \
     keys {-type -name -highlight -filter} flags {-case_insensitive}
   sta::check_argc_eq0 "select" $args
-  
+
   set type ""
   if { [info exists keys(-type)] } {
     set type $keys(-type)
   } else {
     utl::error GUI 38 "Must specify -type."
   }
-  
+
   set highlight -1
   if { [info exists keys(-highlight)] } {
     set highlight $keys(-highlight)
   }
-  
+
   set name ""
   if { [info exists keys(-name)] } {
     set name $keys(-name)
   }
-  
+
   set attribute ""
   set value ""
   if { [info exists keys(-filter)] } {
-    if { $name != "" } {
-      utl::error GUI 59 "-filter not available when using -name."
+    set filter $keys(-filter)
+    set filter [split $filter "="]
+    if {[llength $filter] != 2} {
+      utl::error GUI 56 "Invalid syntax for -filter. Use -filter attribute=value."
     } else {
-      set filter $keys(-filter)
-      set filter [split $filter "="]
-      set length [llength $filter]
-      if { $length != 2 } {
-        utl::error GUI 56 "Invalid syntax for -filter. Use -filter attribute=value."
-      } else {
-        set attribute [lindex $filter 0]
-        set value [lindex $filter 1]
-      }     
+      set attribute [lindex $filter 0]
+      set value [lindex $filter 1]
     }
   }
 
