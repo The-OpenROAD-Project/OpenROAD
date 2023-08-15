@@ -45,6 +45,7 @@
 
 #include "GRoute.h"
 #include "RoutePt.h"
+#include "ant/AntennaChecker.hh"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "sta/Liberty.hh"
@@ -135,7 +136,7 @@ struct PinGridLocation
 
 typedef std::vector<std::pair<int, odb::Rect>> Guides;
 
-class GlobalRouter
+class GlobalRouter : public ant::GlobalRouteSource
 {
  public:
   GlobalRouter();
@@ -169,6 +170,7 @@ class GlobalRouter
                            float reduction_percentage);
   void setVerbose(const bool v);
   void setOverflowIterations(int iterations);
+  void setCongestionReportIterStep(int congestion_report_iter_step);
   void setCongestionReportFile(const char* file_name);
   void setGridOrigin(int x, int y);
   void setAllowCongestion(bool allow_congestion);
@@ -194,7 +196,6 @@ class GlobalRouter
                    bool end_incremental = false);
   void saveCongestion();
   NetRouteMap& getRoutes() { return routes_; }
-  bool haveRoutes();
   Net* getNet(odb::dbNet* db_net);
   int getTileSize() const;
 
@@ -208,8 +209,9 @@ class GlobalRouter
   void addDirtyNet(odb::dbNet* net);
   std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
   // check_antennas
-  void makeNetWires();
-  void destroyNetWires();
+  bool haveRoutes() override;
+  void makeNetWires() override;
+  void destroyNetWires() override;
 
   double dbuToMicrons(int64_t dbu);
 
@@ -405,6 +407,7 @@ class GlobalRouter
   int layer_for_guide_dimension_;
   int gcells_offset_;
   int overflow_iterations_;
+  int congestion_report_iter_step_;
   bool allow_congestion_;
   std::vector<int> vertical_capacities_;
   std::vector<int> horizontal_capacities_;

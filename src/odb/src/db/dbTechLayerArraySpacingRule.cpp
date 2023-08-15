@@ -40,8 +40,6 @@
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "dbTechLayerCutClassRule.h"
-// User Code Begin Includes
-// User Code End Includes
 namespace odb {
 template class dbTable<_dbTechLayerArraySpacingRule>;
 
@@ -71,16 +69,12 @@ bool _dbTechLayerArraySpacingRule::operator==(
   if (cut_class_ != rhs.cut_class_)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
 bool _dbTechLayerArraySpacingRule::operator<(
     const _dbTechLayerArraySpacingRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -99,8 +93,6 @@ void _dbTechLayerArraySpacingRule::differences(
   DIFF_FIELD(within_);
   DIFF_FIELD(array_width_);
   DIFF_FIELD(cut_class_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -119,8 +111,6 @@ void _dbTechLayerArraySpacingRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(array_width_);
   DIFF_OUT_FIELD(cut_class_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
@@ -132,8 +122,6 @@ _dbTechLayerArraySpacingRule::_dbTechLayerArraySpacingRule(_dbDatabase* db)
   cut_spacing_ = 0;
   within_ = 0;
   array_width_ = 0;
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 _dbTechLayerArraySpacingRule::_dbTechLayerArraySpacingRule(
@@ -150,8 +138,6 @@ _dbTechLayerArraySpacingRule::_dbTechLayerArraySpacingRule(
   within_ = r.within_;
   array_width_ = r.array_width_;
   cut_class_ = r.cut_class_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerArraySpacingRule& obj)
@@ -164,8 +150,6 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerArraySpacingRule& obj)
   stream >> obj.array_width_;
   stream >> obj.array_spacing_map_;
   stream >> obj.cut_class_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
@@ -180,19 +164,12 @@ dbOStream& operator<<(dbOStream& stream,
   stream << obj.array_width_;
   stream << obj.array_spacing_map_;
   stream << obj.cut_class_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
 _dbTechLayerArraySpacingRule::~_dbTechLayerArraySpacingRule()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

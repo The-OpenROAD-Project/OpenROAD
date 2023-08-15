@@ -36,16 +36,11 @@
 #include "dbCore.h"
 #include "odb.h"
 
-// User Code Begin Includes
-// User Code End Includes
-
 namespace odb {
 class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-// User Code Begin Classes
-// User Code End Classes
 
 struct dbTechLayerCutClassRuleFlags
 {
@@ -53,15 +48,10 @@ struct dbTechLayerCutClassRuleFlags
   bool cuts_valid_ : 1;
   uint spare_bits_ : 30;
 };
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbTechLayerCutClassRule : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
-
   _dbTechLayerCutClassRule(_dbDatabase*, const _dbTechLayerCutClassRule& r);
   _dbTechLayerCutClassRule(_dbDatabase*);
   ~_dbTechLayerCutClassRule();
@@ -76,8 +66,6 @@ class _dbTechLayerCutClassRule : public _dbObject
                    const char* field,
                    const _dbTechLayerCutClassRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 
   dbTechLayerCutClassRuleFlags flags_;
   char* _name;
@@ -85,13 +73,8 @@ class _dbTechLayerCutClassRule : public _dbObject
   int length_;
   int num_cuts_;
   dbId<_dbTechLayerCutClassRule> _next_entry;
-
-  // User Code Begin Fields
-  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassRule& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header

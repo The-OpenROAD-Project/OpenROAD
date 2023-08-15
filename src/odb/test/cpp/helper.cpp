@@ -29,9 +29,9 @@ dbDatabase* createSimpleDB()
   utl::Logger* logger = new utl::Logger();
   dbDatabase* db = dbDatabase::create();
   db->setLogger(logger);
-  dbTech* tech = dbTech::create(db);
+  dbTech* tech = dbTech::create(db, "tech");
   dbTechLayer::create(tech, "L1", dbTechLayerType::MASTERSLICE);
-  dbLib* lib = dbLib::create(db, "lib1", ',');
+  dbLib* lib = dbLib::create(db, "lib1", tech, ',');
   dbChip* chip = dbChip::create(db);
   dbBlock::create(chip, "simple_block");
   createMaster2X1(lib, "and2", 1000, 1000, "a", "b", "o");

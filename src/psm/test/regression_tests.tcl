@@ -13,6 +13,7 @@ record_tests {
   aes_asap7_vdd
   check_power_grid
   check_power_grid_disconnected
+  check_power_grid_macros
   corners
   aes_test_bterms
   aes_test_multiple_bterms

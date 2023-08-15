@@ -55,6 +55,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
     : max_degree_(0),
       db_(db),
       overflow_iterations_(0),
+      congestion_report_iter_step_(0),
       layer_orientation_(0),
       x_range_(0),
       y_range_(0),
@@ -806,6 +807,10 @@ void FastRouteCore::updateDbCongestion()
 
 NetRouteMap FastRouteCore::run()
 {
+  if (netCount() == 0) {
+    return getRoutes();
+  }
+
   int tUsage;
   int cost_step;
   int maxOverflow = 0;
@@ -1168,6 +1173,11 @@ NetRouteMap FastRouteCore::run()
     }
 
     last_total_overflow = total_overflow_;
+
+    // generate DRC report each interval
+    if (congestion_report_iter_step_ && i % congestion_report_iter_step_ == 0) {
+      saveCongestion(i);
+    }
   }  // end overflow iterations
 
   // Debug mode Tree 2D after overflow iterations
@@ -1262,6 +1272,22 @@ void FastRouteCore::setMakeWireParasiticsBuilder(
 void FastRouteCore::setOverflowIterations(int iterations)
 {
   overflow_iterations_ = iterations;
+}
+
+void FastRouteCore::setCongestionReportIterStep(int congestion_report_iter_step)
+{
+  congestion_report_iter_step_ = congestion_report_iter_step;
+}
+
+void FastRouteCore::setCongestionReportFile(const char* congestion_file_name)
+{
+  congestion_file_name_ = congestion_file_name;
+}
+
+void FastRouteCore::setGridMax(int x_max, int y_max)
+{
+  x_grid_max_ = x_max;
+  y_grid_max_ = y_max;
 }
 
 std::vector<int> FastRouteCore::getOriginalResources()

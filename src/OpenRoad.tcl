@@ -34,10 +34,10 @@
 ############################################################################
 
 # -library is the default
-sta::define_cmd_args "read_lef" {[-tech] [-library] filename}
+sta::define_cmd_args "read_lef" {[-tech] [-library] [-tech_name name] filename}
 
 proc read_lef { args } {
-  sta::parse_key_args "read_lef" args keys {} flags {-tech -library}
+  sta::parse_key_args "read_lef" args keys {-tech_name} flags {-tech -library}
   sta::check_argc_eq1 "read_lef" $args
 
   set filename [file nativename [lindex $args 0]]
@@ -52,19 +52,33 @@ proc read_lef { args } {
   set make_lib [info exists flags(-library)]
   if { !$make_tech && !$make_lib} {
     set make_lib 1
-    set make_tech [expr ![ord::db_has_tech]]
+    if { [info exists keys(-tech_name)] } {
+      set make_tech 1
+    } else {
+      set make_tech [expr ![ord::db_has_tech]]
+    }
   }
+
+  set tech_name ""
   set lib_name [file rootname [file tail $filename]]
-  ord::read_lef_cmd $filename $lib_name $make_tech $make_lib
+  if { [info exists keys(-tech_name)] } {
+    set tech_name $keys(-tech_name)
+  } elseif { $make_tech } {
+    set tech_name $lib_name
+  }
+  
+  ord::read_lef_cmd $filename $lib_name $tech_name $make_tech $make_lib
 }
 
 sta::define_cmd_args "read_def" {[-floorplan_initialize|-incremental|-child]\
                                    [-continue_on_errors]\
+                                   [-tech name] \
                                    filename}
 
 proc read_def { args } {
-  sta::parse_key_args "read_def" args keys {} flags {-floorplan_initialize -incremental\
-                                                       -order_wires -continue_on_errors -child}
+  sta::parse_key_args "read_def" args keys {-tech} \
+      flags {-floorplan_initialize -incremental \
+             -order_wires -continue_on_errors -child}
   sta::check_argc_eq1 "read_def" $args
   set filename [file nativename [lindex $args 0]]
   if { ![file exists $filename] } {
@@ -73,7 +87,10 @@ proc read_def { args } {
   if { ![file readable $filename] || ![file isfile $filename] } {
     utl::error "ORD" 4 "$filename is not readable."
   }
-  if { ![ord::db_has_tech] } {
+  set tech_name ""
+  if { [info exists keys(-tech)] } {
+    set tech_name $keys(-tech)
+  } elseif { ![ord::db_has_tech] } {
     utl::error "ORD" 5 "No technology has been read."
   }
   if { [info exists flags(-order_wires)] } {
@@ -86,7 +103,7 @@ proc read_def { args } {
   if { $floorplan_init + $incremental + $child > 1} {
     utl::error ORD 16 "Options -incremental, -floorplan_initialization, and -child are mutually exclusive."
   }
-  ord::read_def_cmd $filename $continue_on_errors $floorplan_init \
+  ord::read_def_cmd $filename $tech_name $continue_on_errors $floorplan_init \
       $incremental $child
 }
 
@@ -140,7 +157,7 @@ proc write_abstract_lef { args } {
   
   sta::check_argc_eq1 "write_abstract_lef" $args
   set filename [file nativename [lindex $args 0]]
-  [ord::get_db_block] saveLef $filename $bloat_factor $bloat_occupied_layers
+  ord::write_abstract_lef_cmd $filename $bloat_factor $bloat_occupied_layers
 }
 
 sta::define_cmd_args "write_cdl" {[-include_fillers]

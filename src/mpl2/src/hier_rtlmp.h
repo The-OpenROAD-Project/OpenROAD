@@ -113,6 +113,7 @@ class HierRTLMP
                       float fence_ux,
                       float fence_uy);
   void setHaloWidth(float halo_width);
+  void setHaloHeight(float halo_height);
   // Hierarchical Clustering Related Options
   void setNumBundledIOsPerBoundary(int num_bundled_ios);
   void setClusterSize(int max_num_macro,
@@ -285,6 +286,7 @@ class HierRTLMP
   float global_fence_uy_ = 0.0;
 
   float halo_width_ = 0.0;
+  float halo_height_ = 0.0;
 
   const int num_runs_ = 10;     // number of runs for SA
   const int num_threads_ = 10;  // number of threads

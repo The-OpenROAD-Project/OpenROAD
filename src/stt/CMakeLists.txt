@@ -85,6 +85,8 @@ target_include_directories(stt_lib
 target_include_directories(stt
   PUBLIC
     include
+  PRIVATE
+    src
 )
 
 target_link_libraries(stt_lib

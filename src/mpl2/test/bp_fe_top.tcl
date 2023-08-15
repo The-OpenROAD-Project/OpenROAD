@@ -36,6 +36,4 @@ rtl_macro_placer -report_directory results/bp_fe_top
 set def_file [make_result_file bp_fe_top_out.def]
 write_def $def_file
 
-exit
-
 #diff_files bp_fe_top.defok $def_file

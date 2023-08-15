@@ -745,11 +745,13 @@ HardMacro::HardMacro(float width, float height, const std::string& name)
 HardMacro::HardMacro(odb::dbInst* inst,
                      float dbu,
                      int manufacturing_grid,
-                     float halo_width)
+                     float halo_width,
+                     float halo_height)
 {
   inst_ = inst;
   dbu_ = dbu;
   halo_width_ = halo_width;
+  halo_height_ = halo_height;
   manufacturing_grid_ = manufacturing_grid;
 
   // set name
@@ -757,7 +759,7 @@ HardMacro::HardMacro(odb::dbInst* inst,
   odb::dbMaster* master = inst->getMaster();
   // set the width and height
   width_ = dbuToMicron(master->getWidth(), dbu) + 2 * halo_width;
-  height_ = dbuToMicron(master->getHeight(), dbu) + 2 * halo_width;
+  height_ = dbuToMicron(master->getHeight(), dbu) + 2 * halo_height;
   // Set the position of virtual pins
   // Here we only consider signal pins
   odb::Rect bbox;
@@ -773,7 +775,7 @@ HardMacro::HardMacro(odb::dbInst* inst,
     }
   }
   pin_x_ = dbuToMicron((bbox.xMin() + bbox.xMax()) / 2.0, dbu) + halo_width_;
-  pin_y_ = dbuToMicron((bbox.yMin() + bbox.yMax()) / 2.0, dbu) + halo_width_;
+  pin_y_ = dbuToMicron((bbox.yMin() + bbox.yMax()) / 2.0, dbu) + halo_height_;
 }
 
 // overload the comparison operators
@@ -878,7 +880,7 @@ void HardMacro::setRealLocation(const std::pair<float, float>& location)
   }
 
   x_ = location.first - halo_width_;
-  y_ = location.second - halo_width_;
+  y_ = location.second - halo_height_;
 }
 
 void HardMacro::setRealX(float x)
@@ -896,12 +898,12 @@ void HardMacro::setRealY(float y)
     return;
   }
 
-  y_ = y - halo_width_;
+  y_ = y - halo_height_;
 }
 
 const std::pair<float, float> HardMacro::getRealLocation() const
 {
-  return std::pair<float, float>(x_ + halo_width_, y_ + halo_width_);
+  return std::pair<float, float>(x_ + halo_width_, y_ + halo_height_);
 }
 
 float HardMacro::getRealX() const
@@ -911,7 +913,7 @@ float HardMacro::getRealX() const
 
 float HardMacro::getRealY() const
 {
-  return y_ + halo_width_;
+  return y_ + halo_height_;
 }
 
 float HardMacro::getRealWidth() const
@@ -921,7 +923,7 @@ float HardMacro::getRealWidth() const
 
 float HardMacro::getRealHeight() const
 {
-  return height_ - 2 * halo_width_;
+  return height_ - 2 * halo_height_;
 }
 
 // Orientation support
@@ -964,36 +966,101 @@ const std::string HardMacro::getMasterName() const
 }
 
 // update the location and orientation of the macro inst in OpenDB
-void HardMacro::updateDb(float pitch_x, float pitch_y)
+void HardMacro::updateDb(float pitch_x, float pitch_y, odb::dbBlock* block)
 {
   if ((inst_ == nullptr) || (dbu_ <= 0.0)) {
     return;
   }
-  float lx = getRealX();
-  float ly = getRealY();
-  float ux = lx + getRealWidth();
-  float uy = ly + getRealHeight();
-  lx = std::round(lx / pitch_x) * pitch_x;
-  ux = std::round(ux / pitch_x) * pitch_x;
-  ly = std::round(ly / pitch_y) * pitch_y;
-  uy = std::round(uy / pitch_y) * pitch_y;
-  int round_lx = std::round(float(micronToDbu(lx, dbu_)) / manufacturing_grid_)
-                 * manufacturing_grid_;
-  int round_ly = std::round(float(micronToDbu(ly, dbu_)) / manufacturing_grid_)
-                 * manufacturing_grid_;
-  int round_ux = std::round(float(micronToDbu(ux, dbu_)) / manufacturing_grid_)
-                 * manufacturing_grid_;
-  int round_uy = std::round(float(micronToDbu(uy, dbu_)) / manufacturing_grid_)
-                 * manufacturing_grid_;
-  if (orientation_.getString() == std::string("MX")) {
-    inst_->setLocation(round_lx, round_uy);
-  } else if (orientation_.getString() == std::string("MY")) {
-    inst_->setLocation(round_ux, round_ly);
-  } else if (orientation_.getString() == std::string("R180")) {
-    inst_->setLocation(round_ux, round_uy);
-  } else {
-    inst_->setLocation(round_lx, round_ly);
+
+  float offset_x = 0.0;
+  float offset_y = 0.0;
+  float pin_width_x = 0.0;
+  float pin_width_y = 0.0;
+
+  // get the offset and pitch of related routing layers
+  odb::dbMaster* master = inst_->getMaster();
+  for (odb::dbMTerm* mterm : master->getMTerms()) {
+    if (mterm->getSigType() == odb::dbSigType::SIGNAL) {
+      for (odb::dbMPin* mpin : mterm->getMPins()) {
+        for (odb::dbBox* box : mpin->getGeometry()) {
+          odb::dbTechLayer* layer = box->getTechLayer();
+          // check the routing direction
+          if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+            // check the grid first
+            odb::dbTrackGrid* grid = block->findTrackGrid(layer);
+            if (grid != nullptr) {
+              std::vector<int> y_grid;
+              grid->getGridY(y_grid);
+              // use the origin as the offset and the step as the pitch
+              offset_y = dbuToMicron(static_cast<float>(y_grid[0]), dbu_);
+              pitch_y = dbuToMicron(static_cast<float>(y_grid[1] - y_grid[0]),
+                                    dbu_);
+            } else {
+              pitch_y
+                  = dbuToMicron(static_cast<float>(layer->getPitchY()), dbu_);
+              offset_y
+                  = dbuToMicron(static_cast<float>(layer->getOffsetY()), dbu_);
+            }
+            pin_width_y = dbuToMicron(static_cast<float>(box->getDY()), dbu_);
+          } else if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+            odb::dbTrackGrid* grid = block->findTrackGrid(layer);
+            if (grid != nullptr) {
+              std::vector<int> x_grid;
+              grid->getGridX(x_grid);
+              // use the origin as the offset and the step as the pitch
+              offset_x = dbuToMicron(static_cast<float>(x_grid[0]), dbu_);
+              pitch_x = dbuToMicron(static_cast<float>(x_grid[1] - x_grid[0]),
+                                    dbu_);
+            } else {
+              pitch_x
+                  = dbuToMicron(static_cast<float>(layer->getPitchX()), dbu_);
+              offset_x
+                  = dbuToMicron(static_cast<float>(layer->getOffsetX()), dbu_);
+            }
+            pin_width_x = dbuToMicron(static_cast<float>(box->getDX()), dbu_);
+          }
+        }
+      }
+    }
   }
+
+  const float lx = getRealX();
+  const float ly = getRealY();
+  const float ux = lx + getRealWidth();
+  const float uy = ly + getRealHeight();
+
+  // Defaults for R0
+  float origin_x = lx;
+  float origin_y = ly;
+  float pin_offset_x = pin_width_x / 2;
+  float pin_offset_y = pin_width_y / 2;
+
+  if (orientation_ == odb::dbOrientType::MX) {
+    origin_y = uy;
+    pin_offset_y = -pin_offset_y;
+  } else if (orientation_ == odb::dbOrientType::MY) {
+    origin_x = ux;
+    pin_offset_x = -pin_offset_x;
+  } else if (orientation_ == odb::dbOrientType::R180) {
+    origin_x = ux;
+    origin_y = uy;
+    pin_offset_x = -pin_offset_x;
+    pin_offset_y = -pin_offset_y;
+  }
+
+  origin_x = std::round((origin_x - offset_x) / pitch_x) * pitch_x + offset_x
+             - pin_offset_x;
+  origin_y = std::round((origin_y - offset_y) / pitch_y) * pitch_y + offset_y
+             - pin_offset_y;
+
+  const int snap_origin_x
+      = std::round(float(micronToDbu(origin_x, dbu_)) / manufacturing_grid_)
+        * manufacturing_grid_;
+  const int snap_origin_y
+      = std::round(float(micronToDbu(origin_y, dbu_)) / manufacturing_grid_)
+        * manufacturing_grid_;
+
+  inst_->setOrigin(snap_origin_x, snap_origin_y);
   inst_->setOrient(orientation_);
   inst_->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
 }

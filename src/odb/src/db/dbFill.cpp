@@ -116,8 +116,8 @@ void _dbFill::out(dbDiff& diff, char side, const char* field) const
 
 _dbTechLayer* _dbFill::getTechLayer() const
 {
-  _dbDatabase* db = (_dbDatabase*) getDatabase();
-  _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
+  _dbBlock* block = (_dbBlock*) getOwner();
+  _dbTech* tech = block->getTech();
   return tech->_layer_tbl->getPtr(_flags._layer_id);
 }
 

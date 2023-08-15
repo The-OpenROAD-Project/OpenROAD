@@ -93,6 +93,7 @@ GlobalRouter::GlobalRouter()
       layer_for_guide_dimension_(3),
       gcells_offset_(2),
       overflow_iterations_(50),
+      congestion_report_iter_step_(0),
       allow_congestion_(false),
       macro_extension_(0),
       verbose_(false),
@@ -172,6 +173,11 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
 
   fastroute_->setVerbose(verbose_);
   fastroute_->setOverflowIterations(overflow_iterations_);
+  fastroute_->setCongestionReportIterStep(congestion_report_iter_step_);
+
+  if (congestion_file_name_ != nullptr) {
+    fastroute_->setCongestionReportFile(congestion_file_name_);
+  }
 
   initRoutingLayers();
   reportLayerSettings(min_routing_layer, max_routing_layer);
@@ -216,53 +222,8 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
 // previous congestion report file.
 void GlobalRouter::saveCongestion()
 {
-  if (congestion_file_name_ == nullptr) {
-    return;
-  }
-  std::ofstream out(congestion_file_name_);
-
-  std::vector<CongestionInformation> congestionGridsV, congestionGridsH;
-  fastroute_->getCongestionGrid(congestionGridsV, congestionGridsH);
-  for (auto& it : congestionGridsH) {
-    const auto& [seg, tile, srcs] = it;
-    out << "violation type: Horizontal congestion\n";
-    const int capacity = tile.capacity;
-    const int usage = tile.usage;
-
-    out << "\tsrcs: ";
-    for (const auto& net : srcs) {
-      out << "net:" << net->getName() << " ";
-    }
-    out << "\n";
-    out << "\tcongestion information: capacity:" << capacity
-        << " usage:" << usage << " overflow:" << usage - capacity << "\n";
-    odb::Rect rect = globalRoutingToBox(seg);
-    out << "\tbbox = ";
-    out << "( " << dbuToMicrons(rect.xMin()) << ", "
-        << dbuToMicrons(rect.yMin()) << " ) - ";
-    out << "( " << dbuToMicrons(rect.xMax()) << ", "
-        << dbuToMicrons(rect.yMax()) << ") on Layer -\n";
-  }
-
-  for (auto& it : congestionGridsV) {
-    const auto& [seg, tile, srcs] = it;
-    out << "violation type: Vertical congestion\n";
-    const int capacity = tile.capacity;
-    const int usage = tile.usage;
-
-    out << "\tsrcs: ";
-    for (const auto& net : srcs) {
-      out << "net:" << net->getName() << " ";
-    }
-    out << "\n";
-    out << "\tcongestion information: capacity:" << capacity
-        << " usage:" << usage << " overflow:" << usage - capacity << "\n";
-    odb::Rect rect = globalRoutingToBox(seg);
-    out << "\tbbox = ";
-    out << "( " << dbuToMicrons(rect.xMin()) << ", "
-        << dbuToMicrons(rect.yMin()) << " ) - ";
-    out << "( " << dbuToMicrons(rect.xMax()) << ", "
-        << dbuToMicrons(rect.yMax()) << ") on Layer -\n";
+  if (congestion_file_name_ != nullptr) {
+    fastroute_->saveCongestion();
   }
 }
 
@@ -497,6 +458,8 @@ void GlobalRouter::initCoreGrid(int max_routing_layer)
   fastroute_->setTileSize(grid_->getTileSize());
   fastroute_->setGridsAndLayers(
       grid_->getXGrids(), grid_->getYGrids(), grid_->getNumLayers());
+  fastroute_->setGridMax(grid_->getGridArea().xMax(),
+                         grid_->getGridArea().yMax());
 }
 
 void GlobalRouter::initRoutingLayers()
@@ -841,6 +804,8 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
   fastroute_->setMaxNetDegree(max_degree);
 
   if (verbose_) {
+    min_degree = nets.empty() ? 0 : min_degree;
+    max_degree = nets.empty() ? 0 : max_degree;
     logger_->info(GRT, 1, "Minimum degree: {}", min_degree);
     logger_->info(GRT, 2, "Maximum degree: {}", max_degree);
   }
@@ -1396,6 +1361,11 @@ void GlobalRouter::setVerbose(const bool v)
 void GlobalRouter::setOverflowIterations(int iterations)
 {
   overflow_iterations_ = iterations;
+}
+
+void GlobalRouter::setCongestionReportIterStep(int congestion_report_iter_step)
+{
+  congestion_report_iter_step_ = congestion_report_iter_step;
 }
 
 void GlobalRouter::setCongestionReportFile(const char* file_name)
@@ -2803,7 +2773,7 @@ std::vector<Net*> GlobalRouter::initNetlist()
 Net* GlobalRouter::addNet(odb::dbNet* db_net)
 {
   if (!db_net->getSigType().isSupply() && !db_net->isSpecial()
-      && db_net->getSWires().empty()) {
+      && db_net->getSWires().empty() && !db_net->isConnectedByAbutment()) {
     Net* net = new Net(db_net, db_net->getWire() != nullptr);
     db_net_map_[db_net] = net;
     makeItermPins(net, db_net, grid_->getGridArea());

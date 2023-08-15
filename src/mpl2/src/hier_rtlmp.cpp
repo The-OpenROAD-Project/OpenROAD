@@ -134,6 +134,11 @@ void HierRTLMP::setHaloWidth(float halo_width)
   halo_width_ = halo_width;
 }
 
+void HierRTLMP::setHaloHeight(float halo_height)
+{
+  halo_height_ = halo_height;
+}
+
 // Options related to clustering
 void HierRTLMP::setNumBundledIOsPerBoundary(int num_bundled_ios)
 {
@@ -392,6 +397,7 @@ void HierRTLMP::hierRTLMacroPlacer()
   logger_->report("notch_weight_ = {}", notch_weight_);
   logger_->report("macro_blockage_weight_ = {}", macro_blockage_weight_);
   logger_->report("halo_width_ = {}", halo_width_);
+  logger_->report("halo_height_ = {}", halo_height_);
   logger_->report("bus_planning_flag_ = {}", bus_planning_flag_);
 
   //
@@ -535,24 +541,37 @@ void HierRTLMP::hierRTLMacroPlacer()
   // Step 2: In a bottom-up approach (Post-Order DFS), determine the macro
   // tilings within each cluster.
   //
-  logger_->report(
-      "Determine shaping function for clusters -- Macro Tilings.\n");
-  calClusterMacroTilings(root_cluster_);
-
-  // create pin blockage for IO pins
-  createPinBlockage();
-  //
-  // Perform macro placement in a top-down manner (pre-order DFS)
-  //
-  logger_->report("Perform Multilevel macro placement...");
-  if (bus_planning_flag_ == true) {
-    multiLevelMacroPlacement(root_cluster_);
+  // Check if the root cluster has other children clusters
+  bool macro_only_flag = true;
+  for (auto& cluster : root_cluster_->getChildren()) {
+    if (cluster->getIOClusterFlag() == false) {
+      macro_only_flag = false;
+      break;
+    }
+  }
+  if (macro_only_flag == true) {
+    logger_->report("The design only has macros.\n");
+    hardMacroClusterMacroPlacement(root_cluster_);
   } else {
-    multiLevelMacroPlacementWithoutBusPlanning(root_cluster_);
+    logger_->report(
+        "Determine shaping function for clusters -- Macro Tilings.\n");
+    calClusterMacroTilings(root_cluster_);
+
+    // create pin blockage for IO pins
+    createPinBlockage();
+    //
+    // Perform macro placement in a top-down manner (pre-order DFS)
+    //
+    logger_->report("Perform Multilevel macro placement...");
+    if (bus_planning_flag_ == true) {
+      multiLevelMacroPlacement(root_cluster_);
+    } else {
+      multiLevelMacroPlacementWithoutBusPlanning(root_cluster_);
+    }
   }
 
   for (auto& [inst, hard_macro] : hard_macro_map_) {
-    hard_macro->updateDb(pitch_x_, pitch_y_);
+    hard_macro->updateDb(pitch_x_, pitch_y_, block_);
   }
 
   // Clear the memory to avoid memory leakage
@@ -607,14 +626,14 @@ Metrics* HierRTLMP::computeMetrics(odb::dbModule* module)
     if (master->isPad() || master->isCover()) {
       continue;
     }
-
-    float inst_area = liberty_cell->area();
+    float inst_area = dbuToMicron(master->getWidth(), dbu_)
+                      * dbuToMicron(master->getHeight(), dbu_);
     if (master->isBlock()) {  // a macro
       num_macro += 1;
       macro_area += inst_area;
       // add hard macro to corresponding map
-      HardMacro* macro
-          = new HardMacro(inst, dbu_, manufacturing_grid_, halo_width_);
+      HardMacro* macro = new HardMacro(
+          inst, dbu_, manufacturing_grid_, halo_width_, halo_height_);
       hard_macro_map_[inst] = macro;
     } else {
       num_std_cell += 1;
@@ -948,8 +967,8 @@ void HierRTLMP::multiLevelCluster(Cluster* parent)
   min_num_macro_ = min_num_macro_ * (1 - tolerance_);
   if (min_num_macro_ <= 0) {
     min_num_macro_ = 1;
-    // max_num_macro_ = min_num_macro_ * coarsening_ratio_ / 2.0;
-    max_num_macro_ = min_num_macro_;
+    max_num_macro_ = min_num_macro_ * coarsening_ratio_ / 2.0;
+    // max_num_macro_ = min_num_macro_;
   }
 
   if (min_num_inst_ <= 0) {
@@ -4993,10 +5012,6 @@ void HierRTLMP::callBusPlanning(std::vector<SoftMacro>& shaped_macros,
 // place macros within the HardMacroCluster
 void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
 {
-  // Check if the cluster is a HardMacroCluster
-  if (cluster->getClusterType() != HardMacroCluster) {
-    return;
-  }
   logger_->report(
       "\n[Hier-RTLMP::HardMacroClusterMacroPlacement] Place macros in cluster: "
       "{}",

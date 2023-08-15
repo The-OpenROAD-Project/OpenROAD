@@ -172,6 +172,18 @@ void ICeWall::makeBTerm(odb::dbNet* net,
   odb::dbBox::create(
       pin, layer, shape.xMin(), shape.yMin(), shape.xMax(), shape.yMax());
   pin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+
+  const double dbus = getBlock()->getDbUnitsPerMicron();
+  logger_->info(utl::PAD,
+                116,
+                "Creating terminal for {} on {} at ({:.3f}um, {:.3f}um) - "
+                "({:.3f}um, {:.3f}um)",
+                net->getName(),
+                layer->getName(),
+                shape.xMin() / dbus,
+                shape.yMin() / dbus,
+                shape.xMax() / dbus,
+                shape.yMax() / dbus);
   Utilities::makeSpecial(net);
 }
 
@@ -257,7 +269,7 @@ void ICeWall::makeFakeSite(const std::string& name, int width, int height)
 {
   auto* lib = db_->findLib(fake_library_name_);
   if (lib == nullptr) {
-    lib = odb::dbLib::create(db_, fake_library_name_);
+    lib = odb::dbLib::create(db_, fake_library_name_, db_->getTech());
   }
 
   auto* site = odb::dbSite::create(lib, name.c_str());
@@ -918,6 +930,68 @@ void ICeWall::placeBondPads(odb::dbMaster* bond,
       pad_term->connect(net);
       makeBTerm(net, bond_layer, bpin_shape);
     }
+  }
+}
+
+void ICeWall::placeTerminals(const std::vector<odb::dbITerm*>& iterms)
+{
+  auto* block = getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  auto* tech = block->getDataBase()->getTech();
+  auto* top_layer = tech->findRoutingLayer(tech->getRoutingLayerCount());
+
+  for (auto* iterm : iterms) {
+    if (iterm == nullptr) {
+      continue;
+    }
+    auto* net = iterm->getNet();
+    if (net == nullptr) {
+      continue;
+    }
+    auto* inst = iterm->getInst();
+    if (!inst->isFixed()) {
+      continue;
+    }
+    if (!inst->isPad()) {
+      continue;
+    }
+
+    odb::dbTransform pad_transform;
+    inst->getTransform(pad_transform);
+
+    auto* mterm = iterm->getMTerm();
+    odb::dbBox* pin_shape = nullptr;
+    for (auto* mpin : mterm->getMPins()) {
+      for (auto* geom : mpin->getGeometry()) {
+        auto* layer = geom->getTechLayer();
+        if (layer == nullptr) {
+          continue;
+        }
+        if (layer != top_layer) {
+          continue;
+        }
+
+        pin_shape = geom;
+        break;
+      }
+    }
+
+    if (pin_shape == nullptr) {
+      logger_->error(utl::PAD,
+                     115,
+                     "Unable to place a terminal on {} for {}/{}",
+                     top_layer->getName(),
+                     inst->getName(),
+                     mterm->getName());
+    }
+
+    odb::Rect shape = pin_shape->getBox();
+    pad_transform.apply(shape);
+
+    makeBTerm(net, top_layer, shape);
   }
 }
 
