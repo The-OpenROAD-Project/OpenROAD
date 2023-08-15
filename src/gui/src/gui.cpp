@@ -29,7 +29,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include <iostream>
+
 #include "gui/gui.h"
 
 #include <QApplication>
@@ -466,9 +466,26 @@ int Gui::select(const std::string& type,
         }
 
         if (!attribute.empty()) {
-          for (Selected selected : selected_set) {
-            Descriptor::Properties properties = descriptor->getProperties(selected.getObject());
-            filterSelectionProperties(selected_set, properties, attribute, value);
+          bool is_valid_attribute = false;
+          for (SelectionSet::iterator selected_iter = selected_set.begin();
+               selected_iter != selected_set.end();) {
+            Descriptor::Properties properties
+                = descriptor->getProperties(selected_iter->getObject());
+            if (filterSelectionProperties(
+                    properties, attribute, value, is_valid_attribute)) {
+              ++selected_iter;
+            } else {
+              selected_iter = selected_set.erase(selected_iter);
+            }
+          }
+
+          if (!is_valid_attribute) {
+            logger_->error(
+                utl::GUI, 75, "Entered attribute {} is not valid.", attribute);
+          } else if (selected_set.empty()) {
+            logger_->error(utl::GUI,
+                           90,
+                           "Couldn't find any object for the specified value.");
           }
         }
 
@@ -486,16 +503,22 @@ int Gui::select(const std::string& type,
   logger_->error(utl::GUI, 35, "Unable to find descriptor for: {}", type);
 }
 
-void Gui::filterSelectionProperties(const SelectionSet& selected_set,
-                                    const Descriptor::Properties& properties,
+bool Gui::filterSelectionProperties(const Descriptor::Properties& properties,
                                     const std::string& attribute,
-                                    const std::any& value)
+                                    const std::any& value,
+                                    bool& is_valid_attribute)
 {
   for (Descriptor::Property property : properties) {
     if (attribute == property.name) {
-      // Compare attribute.value and property.value
+      is_valid_attribute = true;
+      if (Descriptor::Property::toString(value)
+          == Descriptor::Property::toString(property.value)) {
+        return true;
+      }
     }
   }
+
+  return false;
 }
 
 void Gui::clearSelections()

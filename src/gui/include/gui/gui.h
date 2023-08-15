@@ -770,10 +770,10 @@ class Gui
   const Descriptor* getDescriptor(const std::type_info& type) const;
   void unregisterDescriptor(const std::type_info& type);
   
-  void filterSelectionProperties(const SelectionSet& selected_set,
-                                 const Descriptor::Properties& properties,
+  bool filterSelectionProperties(const Descriptor::Properties& properties,
                                  const std::string& attribute,
-                                 const std::any& value);
+                                 const std::any& value,
+                                 bool& is_valid_attribute);
 
   // flag to indicate if tcl should take over after gui closes
   bool continue_after_close_;
