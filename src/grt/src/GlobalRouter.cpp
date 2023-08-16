@@ -3932,7 +3932,6 @@ void GlobalRouter::updateDirtyRoutes()
     NetRouteMap new_route
         = findRouting(dirty_nets, min_routing_layer_, max_routing_layer_);
     mergeResults(new_route);
-    dirty_nets_.clear();
 
     bool reroutingOverflow = true;
     if (fastroute_->has2Doverflow() && !allow_congestion_) {
