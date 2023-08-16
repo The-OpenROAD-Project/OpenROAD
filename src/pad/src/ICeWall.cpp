@@ -1123,7 +1123,7 @@ std::set<odb::dbNet*> ICeWall::connectByAbutment(
 
 std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>> ICeWall::getTouchingIterms(
     odb::dbInst* inst0,
-    odb::dbInst* inst1) const
+    odb::dbInst* inst1)
 {
   if (!inst0->getBBox()->getBox().intersects(inst1->getBBox()->getBox())) {
     return {};
