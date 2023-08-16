@@ -89,7 +89,7 @@ pygments_style = None
 mermaid_output_format = 'png'
 mermaid_params = ['-p', 'puppeteer-config.json',
                   '--theme', 'forest',
-                  '--width', '600',
+                  '--width', '800',
                   '--backgroundColor', 'transparent']
 mermaid_init_js = "mermaid.initialize({startOnLoad:true, flowchart:{useMaxWidth:false}})"
 
