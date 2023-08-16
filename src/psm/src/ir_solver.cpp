@@ -1487,95 +1487,62 @@ bool IRSolver::checkConnectivity(const std::string& error_file,
   return !unconnected_node;
 }
 
-void IRSolver::findUnconnectedInstances()
+bool IRSolver::isStdCell(odb::dbInst* inst) const
 {
-  unconnected_insts_.clear();
-
-  std::set<odb::dbInst*> connected_insts;
-  for (Node* node : Gmat_->getAllNodes()) {
-    if (node->hasInstances()) {
-      for (odb::dbInst* inst : node->getInstances()) {
-        connected_insts.insert(inst);
-      }
-    }
+  if (inst->isCore()) {
+    return true;
   }
-  struct InstCompare
-  {
-    bool operator()(odb::dbInst* lhs, odb::dbInst* rhs) const
-    {
-      return lhs->getId() < rhs->getId();
-    }
-  };
-  std::map<odb::dbInst*, std::vector<odb::dbITerm*>, InstCompare> iterms;
-  for (odb::dbInst* inst : db_->getChip()->getBlock()->getInsts()) {
-    if (!inst->isPlaced()) {
-      continue;
-    }
-    const bool has_inst = connected_insts.find(inst) != connected_insts.end();
-    if (has_inst) {
-      continue;
-    }
-    for (auto* iterm : inst->getITerms()) {
-      if (iterm->getNet() == net_) {
-        iterms[inst].push_back(iterm);
-      }
-    }
-  }
-
-  // Candidates processing
-  auto is_iterm_connected = [this](odb::dbITerm* iterm) -> bool {
-    odb::dbTransform xform;
-    iterm->getInst()->getTransform(xform);
-
-    for (auto* mpin : iterm->getMTerm()->getMPins()) {
-      for (auto* geom : mpin->getGeometry()) {
-        auto* layer = geom->getTechLayer();
-        if (layer == nullptr) {
-          continue;
-        }
-        odb::Rect pin_shape = geom->getBox();
-        xform.apply(pin_shape);
-        bool has_connection = false;
-        Gmat_->foreachNode(layer->getRoutingLevel(),
-                           pin_shape.xMin(),
-                           pin_shape.xMax(),
-                           pin_shape.yMin(),
-                           pin_shape.yMax(),
-                           [&](Node* node) { has_connection = true; });
-
-        if (has_connection) {
-          return true;
-        }
-      }
-    }
+  if (inst->isBlock() || inst->isPad() || inst->getMaster()->isCover()) {
     return false;
-  };
-
-  auto is_stdcell = [](odb::dbInst* inst) -> bool {
-    if (inst->isCore()) {
-      return true;
-    }
-    if (inst->isBlock() || inst->isPad() || inst->getMaster()->isCover()) {
+  }
+  if (inst->isEndCap()) {
+    if (inst->getMaster()->getType() == odb::dbMasterType::ENDCAP_BOTTOMLEFT
+        || inst->getMaster()->getType() == odb::dbMasterType::ENDCAP_BOTTOMRIGHT
+        || inst->getMaster()->getType() == odb::dbMasterType::ENDCAP_TOPLEFT
+        || inst->getMaster()->getType() == odb::dbMasterType::ENDCAP_TOPRIGHT) {
+      // endcap is pad
       return false;
     }
-    if (inst->isEndCap()) {
-      if (inst->getMaster()->getType() == odb::dbMasterType::ENDCAP_BOTTOMLEFT
-          || inst->getMaster()->getType()
-                 == odb::dbMasterType::ENDCAP_BOTTOMRIGHT
-          || inst->getMaster()->getType() == odb::dbMasterType::ENDCAP_TOPLEFT
-          || inst->getMaster()->getType()
-                 == odb::dbMasterType::ENDCAP_TOPRIGHT) {
-        // endcap is pad
-        return false;
+  }
+  return true;
+}
+
+bool IRSolver::isConnected(odb::dbITerm* iterm) const
+{
+  odb::dbTransform xform;
+  iterm->getInst()->getTransform(xform);
+
+  for (auto* mpin : iterm->getMTerm()->getMPins()) {
+    for (auto* geom : mpin->getGeometry()) {
+      auto* layer = geom->getTechLayer();
+      if (layer == nullptr) {
+        continue;
+      }
+      odb::Rect pin_shape = geom->getBox();
+      xform.apply(pin_shape);
+      bool has_connection = false;
+      Gmat_->foreachNode(layer->getRoutingLevel(),
+                         pin_shape.xMin(),
+                         pin_shape.xMax(),
+                         pin_shape.yMin(),
+                         pin_shape.yMax(),
+                         [&](Node* node) { has_connection = true; });
+
+      if (has_connection) {
+        return true;
       }
     }
-    return true;
-  };
+  }
+  return false;
+}
 
-  // handle stdcells first
+void IRSolver::findUnconnectedInstancesByStdCells(
+    ITermMap& iterms,
+    std::set<odb::dbInst*>& connected_insts)
+{
   for (auto itr = iterms.begin(); itr != iterms.end();) {
     odb::dbInst* inst = itr->first;
-    if (!is_stdcell(inst)) {
+    if (!isStdCell(inst)) {
       itr++;
       continue;
     }
@@ -1589,8 +1556,12 @@ void IRSolver::findUnconnectedInstances()
     }
     itr = iterms.erase(itr);
   }
+}
 
-  // handle iterms connected to grid
+void IRSolver::findUnconnectedInstancesByITerms(
+    ITermMap& iterms,
+    std::set<odb::dbInst*>& connected_insts)
+{
   for (auto itr = iterms.begin(); itr != iterms.end();) {
     odb::dbInst* inst = itr->first;
 
@@ -1599,7 +1570,7 @@ void IRSolver::findUnconnectedInstances()
 
     bool all_connected = true;
     for (auto* iterm : itr->second) {
-      if (!is_iterm_connected(iterm)) {
+      if (!isConnected(iterm)) {
         all_connected = false;
       }
     }
@@ -1610,20 +1581,23 @@ void IRSolver::findUnconnectedInstances()
       itr++;
     }
   }
+}
 
-  // handle iterms connected to grid by abutment
-  // Collect all touching iterms
+void IRSolver::findUnconnectedInstancesByAbutment(
+    ITermMap& iterms,
+    std::set<odb::dbInst*>& connected_insts)
+{
   std::set<odb::dbInst*> inst_set;
   std::set<odb::dbITerm*> terminals_connected_to_grid;
   for (auto* iterm : net_->getITerms()) {
     odb::dbInst* inst = iterm->getInst();
-    if (is_stdcell(inst)) {
+    if (isStdCell(inst)) {
       continue;
     }
     inst_set.insert(inst);
     const bool inst_connected
         = connected_insts.find(inst) != connected_insts.end();
-    if (inst_connected || is_iterm_connected(iterm)) {
+    if (inst_connected || isConnected(iterm)) {
       terminals_connected_to_grid.insert(iterm);
     }
   }
@@ -1682,6 +1656,40 @@ void IRSolver::findUnconnectedInstances()
       itr++;
     }
   }
+}
+
+void IRSolver::findUnconnectedInstances()
+{
+  unconnected_insts_.clear();
+
+  std::set<odb::dbInst*> connected_insts;
+  for (Node* node : Gmat_->getAllNodes()) {
+    if (node->hasInstances()) {
+      for (odb::dbInst* inst : node->getInstances()) {
+        connected_insts.insert(inst);
+      }
+    }
+  }
+
+  ITermMap iterms;
+  for (odb::dbInst* inst : db_->getChip()->getBlock()->getInsts()) {
+    if (!inst->isPlaced()) {
+      continue;
+    }
+    const bool has_inst = connected_insts.find(inst) != connected_insts.end();
+    if (has_inst) {
+      continue;
+    }
+    for (auto* iterm : inst->getITerms()) {
+      if (iterm->getNet() == net_) {
+        iterms[inst].push_back(iterm);
+      }
+    }
+  }
+
+  findUnconnectedInstancesByStdCells(iterms, connected_insts);
+  findUnconnectedInstancesByITerms(iterms, connected_insts);
+  findUnconnectedInstancesByAbutment(iterms, connected_insts);
 
   for (const auto& [inst, inst_iterms] : iterms) {
     unconnected_insts_.push_back(inst);
