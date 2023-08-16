@@ -1615,6 +1615,7 @@ void IOPlacer::initConstraints(bool annealing)
 {
   std::reverse(constraints_.begin(), constraints_.end());
   int constraint_idx = 0;
+  int constraints_no_slots = 0;
   for (Constraint& constraint : constraints_) {
     getPinsFromDirectionConstraint(constraint);
     constraint.sections = createSectionsPerConstraint(constraint);
@@ -1625,9 +1626,16 @@ void IOPlacer::initConstraints(bool annealing)
     if (num_slots > 0) {
       constraint.pins_per_slots
           = static_cast<float>(constraint.pin_list.size()) / num_slots;
+      if (constraint.pins_per_slots > 1) {
+        logger_->warn(PPL,
+                      110,
+                      "Constraint has {} pins, but only {} available slots",
+                      constraint.pin_list.size(),
+                      num_slots);
+        constraints_no_slots++;
+      }
     } else {
-      logger_->error(
-          PPL, 76, "Constraint does not have available slots for its pins.");
+      logger_->error(PPL, 76, "Constraint does not have available slots.");
     }
 
     for (odb::dbBTerm* term : constraint.pin_list) {
@@ -1637,6 +1645,14 @@ void IOPlacer::initConstraints(bool annealing)
       constraint.pin_indices.push_back(pin_idx);
     }
     constraint_idx++;
+  }
+
+  if (constraints_no_slots > 0) {
+    logger_->error(PPL,
+                   111,
+                   "{} constraint(s) does not have available slots "
+                   "for the pins.",
+                   constraints_no_slots);
   }
 
   if (!annealing) {
