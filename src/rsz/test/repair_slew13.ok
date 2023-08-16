@@ -21,11 +21,10 @@ b1/A                                    0.03    0.07   -0.04 (VIOLATED)
 
 [INFO RSZ-0058] Using max wire length 2393um.
 [INFO RSZ-0034] Found 1 slew violations.
-[INFO RSZ-0038] Inserted 1 buffers in 1 nets.
 [INFO RSZ-0039] Resized 1 instances.
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-b1/A                                    0.03    0.04   -0.01 (VIOLATED)
+b1/A                                    0.03    0.07   -0.04 (VIOLATED)
 

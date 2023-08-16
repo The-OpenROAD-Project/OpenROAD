@@ -1,9 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// BSD 3-Clause License
-//
-// Copyright (c) 2019, The Regents of the University of California
+// Copyright (c) 2023, Precision Innovations Inc.
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -34,28 +34,28 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include "db_sta/dbSta.hh"
 
-#include "gui/gui.h"
+namespace rsz {
 
-namespace stt {
+class Resizer;
+using utl::Logger;
+using dbSta = sta::dbSta;
 
-struct Tree;
+class PreChecks {
+public:
+  PreChecks(Resizer* resizer);
+  void checkSlewLimit(float ref_cap, float max_load_slew);
 
-// Simple general purpose render for a group of lines.
-class LinesRenderer : public gui::Renderer
-{
- public:
-  void highlight(std::vector<std::pair<odb::Point, odb::Point>>& lines,
-                 const gui::Painter::Color& color);
-  void drawObjects(gui::Painter& /* painter */) override;
-  // singleton for debug functions
-  static LinesRenderer* lines_renderer;
+private:
+  Logger *logger_;
+  dbSta *sta_;
+  Resizer *resizer_;
 
- private:
-  std::vector<std::pair<odb::Point, odb::Point>> lines_;
-  gui::Painter::Color color_;
+  // best slew numbers to ensure the max_slew in SDC is reasonable
+  float best_case_slew_;
+  float best_case_slew_load_;
+  bool best_case_slew_computed_;
 };
 
-void highlightSteinerTree(const Tree& tree, gui::Gui* gui);
-
-}  // namespace stt
+} // namespace rsz

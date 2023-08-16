@@ -44,6 +44,7 @@ swig_lib(NAME      rsz
 add_library(rsz_lib
     BufferedNet.cc
     Journal.cc
+    PreChecks.cc      
     RecoverPower.cc    
     RepairDesign.cc
     RepairHold.cc

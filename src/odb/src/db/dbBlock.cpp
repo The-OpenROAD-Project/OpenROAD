@@ -3453,43 +3453,6 @@ dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, u
 #endif
 
 //
-// Utility to save_lef
-//
-
-void dbBlock::saveLef(char* filename,
-                      int bloat_factor,
-                      bool bloat_occupied_layers)
-{
-  std::ofstream os;
-  os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
-  os.open(filename);
-  lefout writer(getImpl()->getLogger(), os);
-  writer.setBloatFactor(bloat_factor);
-  writer.setBloatOccupiedLayers(bloat_occupied_layers);
-  writer.writeAbstractLef(this);
-}
-
-//
-// Utility to save_def
-//
-
-void dbBlock::saveDef(char* filename, char* nets)
-{
-  std::vector<dbNet*> inets;
-  findSomeNet(nets, inets);
-  defout writer(getImpl()->getLogger());
-  dbNet* net;
-  uint jj;
-  for (jj = 0; jj < inets.size(); jj++) {
-    net = inets[jj];
-    writer.selectNet(net);
-  }
-  if (!writer.writeBlock(this, filename))
-    getImpl()->getLogger()->warn(
-        utl::ODB, 17, "Failed to write def file {}", filename);
-}
-
-//
 // Utility to write db file
 //
 

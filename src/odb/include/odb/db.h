@@ -1094,17 +1094,6 @@ class dbBlock : public dbObject
   bool findSomeNet(const char* names, std::vector<dbNet*>& nets);
 
   //
-  // Utility to save_lef
-  //
-  void saveLef(char* filename, int bloat_factor, bool bloat_occupied_layers);
-
-  //
-  // Utility to save_def
-  //
-  // void dbBlock::saveDef(char *filename, char *nets);
-  void saveDef(char* filename, char* nets);
-
-  //
   // Utility to write db file
   //
   // void dbBlock::writeDb(char *filename, int allNode=0);

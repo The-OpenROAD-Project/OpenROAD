@@ -1,6 +1,8 @@
+/////////////////////////////////////////////////////////////////////////////
+//
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, MICL, DD-Lab, University of Michigan
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -28,43 +30,34 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
 
-#include "ant/MakeAntennaChecker.hh"
+#pragma once
 
-#include "ant/AntennaChecker.hh"
-#include "grt/GlobalRouter.h"
-#include "ord/OpenRoad.hh"
-#include "sta/StaMain.hh"
+#include "gui/gui.h"
 
-namespace sta {
-// Tcl files encoded into strings.
-extern const char* ant_tcl_inits[];
-}  // namespace sta
+namespace stt {
 
-extern "C" {
-extern int Ant_Init(Tcl_Interp* interp);
-}
+struct Tree;
 
-namespace ord {
-
-ant::AntennaChecker* makeAntennaChecker()
+// Simple general purpose render for a group of lines.
+class LinesRenderer : public gui::Renderer
 {
-  return new ant::AntennaChecker;
-}
+ public:
+  using LineSegment = std::pair<odb::Point, odb::Point>;
+  using LineSegments = std::vector<LineSegment>;
 
-void deleteAntennaChecker(ant::AntennaChecker* antenna_checker)
-{
-  delete antenna_checker;
-}
+  void highlight(const LineSegments& lines, const gui::Painter::Color& color);
+  void drawObjects(gui::Painter& /* painter */) override;
+  // singleton for debug functions
+  static LinesRenderer* lines_renderer;
 
-void initAntennaChecker(OpenRoad* openroad)
-{
-  Tcl_Interp* tcl_interp = openroad->tclInterp();
+ private:
+  LineSegments lines_;
+  gui::Painter::Color color_;
+};
 
-  Ant_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::ant_tcl_inits);
-  openroad->getAntennaChecker()->init(
-      openroad->getDb(), openroad->getGlobalRouter(), openroad->getLogger());
-}
+void highlightSteinerTree(const Tree& tree, gui::Gui* gui);
 
-}  // namespace ord
+}  // namespace stt
