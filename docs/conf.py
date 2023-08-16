@@ -86,7 +86,7 @@ exclude_patterns = [
 pygments_style = None
 
 # Mermaid related args
-mermaid_output_format = 'png'
+#mermaid_output_format = 'png'
 mermaid_params = ['-p', 'puppeteer-config.json',
                   '--theme', 'forest',
                   '--width', '800',
