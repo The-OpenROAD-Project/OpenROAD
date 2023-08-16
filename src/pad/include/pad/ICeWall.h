@@ -135,6 +135,10 @@ class ICeWall
 
   void connectByAbutment();
 
+  static std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>> getTouchingIterms(
+      odb::dbInst* inst0,
+      odb::dbInst* inst1);
+
  private:
   odb::dbBlock* getBlock() const;
   int snapToRowSite(odb::dbRow* row, int location) const;
@@ -148,10 +152,6 @@ class ICeWall
                      odb::dbInst* inst,
                      const odb::dbOrientType& base_orient,
                      bool allow_overlap = false) const;
-
-  std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>> getTouchingIterms(
-      odb::dbInst* inst0,
-      odb::dbInst* inst1) const;
 
   void makeBTerm(odb::dbNet* net,
                  odb::dbTechLayer* layer,
