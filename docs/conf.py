@@ -92,6 +92,7 @@ mermaid_params = ['-p', 'puppeteer-config.json',
                   '--width', '800',
                   '--backgroundColor', 'transparent']
 mermaid_init_js = "mermaid.initialize({startOnLoad:true, flowchart:{useMaxWidth:false}})"
+mermaid_verbose = True
 
 # -- Options for HTML output -------------------------------------------------
 
