@@ -171,7 +171,7 @@ class IRSolver
 
   double getResistance(odb::dbTechLayer* layer) const;
 
-  void findFloatingInstances();
+  void findUnconnectedInstances();
 
   std::optional<float> supply_voltage_src_;
   //! Worst case voltage at the lowest layer nodes
@@ -225,6 +225,6 @@ class IRSolver
   std::map<NodeIdx, double> source_nodes_;
 
   std::vector<odb::dbSBox*> power_wires_;
-  std::vector<odb::dbInst*> disconnected_insts_;
+  std::vector<odb::dbInst*> unconnected_insts_;
 };
 }  // namespace psm

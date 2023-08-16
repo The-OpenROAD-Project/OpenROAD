@@ -14,7 +14,7 @@ record_tests {
   check_power_grid
   check_power_grid_disconnected
   check_power_grid_macros
-  check_power_grid_floating_macro
+  check_power_grid_disconnected_macro
   corners
   aes_test_bterms
   aes_test_multiple_bterms
