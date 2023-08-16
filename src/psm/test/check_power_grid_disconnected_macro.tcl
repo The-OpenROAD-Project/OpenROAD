@@ -7,8 +7,8 @@ read_lef asap7_data/fakeram7_256x32.lef
 read_def asap7_data/riscv.def
 
 
-set error_report [make_result_file check_power_grid_floating_macro.rpt]
+set error_report [make_result_file check_power_grid_disconnected_macro.rpt]
 catch {check_power_grid -net VDD -error_file $error_report} err
 puts $err
 
-diff_files $error_report check_power_grid_floating_macro.rptok
+diff_files $error_report check_power_grid_disconnected_macro.rptok

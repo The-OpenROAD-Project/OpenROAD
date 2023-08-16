@@ -1464,8 +1464,8 @@ bool IRSolver::checkConnectivity(const std::string& error_file,
       }
     }
   }
-  findFloatingInstances();
-  for (auto* inst : disconnected_insts_) {
+  findUnconnectedInstances();
+  for (auto* inst : unconnected_insts_) {
     unconnected_node = true;
     logger_->warn(utl::PSM,
                   94,
@@ -1487,11 +1487,10 @@ bool IRSolver::checkConnectivity(const std::string& error_file,
   return !unconnected_node;
 }
 
-void IRSolver::findFloatingInstances()
+void IRSolver::findUnconnectedInstances()
 {
-  disconnected_insts_.clear();
+  unconnected_insts_.clear();
 
-  // Check for floating instances
   std::set<odb::dbInst*> connected_insts;
   for (Node* node : Gmat_->getAllNodes()) {
     if (node->hasInstances()) {
@@ -1584,7 +1583,7 @@ void IRSolver::findFloatingInstances()
     inst->getLocation(x, y);
     Node* node = Gmat_->getNode(x, y, bottom_layer_, true);
     if (!node) {
-      disconnected_insts_.push_back(inst);
+      unconnected_insts_.push_back(inst);
     } else {
       connected_insts.insert(inst);
     }
@@ -1685,7 +1684,7 @@ void IRSolver::findFloatingInstances()
   }
 
   for (const auto& [inst, inst_iterms] : iterms) {
-    disconnected_insts_.push_back(inst);
+    unconnected_insts_.push_back(inst);
   }
 }
 
@@ -1716,7 +1715,7 @@ void IRSolver::writeErrorFile(const std::string& file) const
                    << endl;
     }
   }
-  for (auto* inst : disconnected_insts_) {
+  for (auto* inst : unconnected_insts_) {
     const odb::Rect inst_rect = inst->getBBox()->getBox();
     error_report << "violation type: Unconnected instance" << endl;
     error_report << "  srcs: inst:" << inst->getName() << endl;
