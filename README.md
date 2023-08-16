@@ -23,40 +23,30 @@ RTL-GDSII for rapid design exploration and physical design implementation.
     }
   }
 }%%
-flowchart LR
-    b1[ ] --- ORFlow --- b2[ ]
-    style b1 stroke-width:0px, fill: #FFFFFF
-    style b2 stroke-width:0px, fill: #FFFFFF
-    linkStyle 0 stroke-width:0px
-    linkStyle 1 stroke-width:0px
 
+flowchart TB
+    A[Verilog\n+ libraries\n + constraints] --> FLOW
+    style A fill:#74c2b5,stroke:#000000,stroke-width:4px
+    subgraph FLOW
+    style FLOW fill:#FFFFFF00,stroke-width:4px
 
-    subgraph ORFlow
     direction TB
-    style ORFlow fill:#ffffff, stroke-width:0px
-        A[Verilog\n+ libraries\n + constraints] --> FLOW
-        style A fill:#74c2b5,stroke:#000000,stroke-width:4px
-        subgraph FLOW
-        style FLOW fill:#FFFFFF00,stroke-width:4px
-
-        direction TB
-            B[Synthesis]
-            B --> C[Floorplan] 
-            C --> D[Placement]
-            D --> E[Clock Tree Synthesis]
-            E --> F[Routing]
-            F --> G[Finishing]
-            style B fill:#f8cecc,stroke:#000000,stroke-width:4px
-            style C fill:#fff2cc,stroke:#000000,stroke-width:4px
-            style D fill:#cce5ff,stroke:#000000,stroke-width:4px
-            style E fill:#67ab9f,stroke:#000000,stroke-width:4px
-            style F fill:#fa6800,stroke:#000000,stroke-width:4px
-            style G fill:#ff6666,stroke:#000000,stroke-width:4px
-        end
-
-        FLOW --> H[GDSII\n Final Layout]
-        style H fill:#ff0000,stroke:#000000,stroke-width:4px
+        B[Synthesis]
+        B --> C[Floorplan] 
+        C --> D[Placement]
+        D --> E[Clock Tree Synthesis]
+        E --> F[Routing]
+        F --> G[Finishing]
+        style B fill:#f8cecc,stroke:#000000,stroke-width:4px
+        style C fill:#fff2cc,stroke:#000000,stroke-width:4px
+        style D fill:#cce5ff,stroke:#000000,stroke-width:4px
+        style E fill:#67ab9f,stroke:#000000,stroke-width:4px
+        style F fill:#fa6800,stroke:#000000,stroke-width:4px
+        style G fill:#ff6666,stroke:#000000,stroke-width:4px
     end
+
+    FLOW --> H[GDSII\n Final Layout]
+    style H fill:#ff0000,stroke:#000000,stroke-width:4px
 ```
 
 Documentation is also available [here](https://openroad.readthedocs.io/en/latest/main/README.html).
