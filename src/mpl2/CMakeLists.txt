@@ -85,6 +85,7 @@ messages(
 target_include_directories(mpl2
   PUBLIC
     include
+  PRIVATE
     src
 )
 

@@ -479,6 +479,13 @@ void dbITerm::connect(dbNet* net_)
                              net->_name);
   }
 
+  if (net_->getBlock() != getInst()->getBlock()) {
+    inst->getLogger()->error(utl::ODB,
+                             433,
+                             "Connecting instances on different dies into "
+                             "one net is currently not supported");
+  }
+
   if (iterm->_net != 0)
     disconnect();
 

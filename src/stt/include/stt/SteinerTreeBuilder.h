@@ -59,18 +59,16 @@ namespace stt {
 
 using utl::Logger;
 
-using DTYPE = int;
-
 struct Branch
 {
-  DTYPE x, y;  // starting point of the branch
-  int n;       // index of neighbor
+  int x, y;  // starting point of the branch
+  int n;     // index of neighbor
 };
 
 struct Tree
 {
   int deg;                     // degree
-  DTYPE length;                // total wirelength
+  int length;                  // total wirelength
   std::vector<Branch> branch;  // array of tree branches
 
   void printTree(utl::Logger* logger) const;
