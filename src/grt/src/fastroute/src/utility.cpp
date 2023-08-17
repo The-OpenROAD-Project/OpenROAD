@@ -33,6 +33,7 @@
 #include <algorithm>
 #include <fstream>
 #include <queue>
+#include <iostream>
 
 #include "DataType.h"
 #include "FastRoute.h"
@@ -1159,6 +1160,12 @@ float FastRouteCore::CalculatePartialSlack()
   // defined by the user
   const int threshold_index = std::ceil(slacks.size() * update_slack_ / 100);
   const float slack_th = slacks[threshold_index];
+
+  for (int netID = 0; netID < netCount(); netID++) {
+    if(nets_[netID]->getSlack() > slack_th) {
+      nets_[netID]->setSlack((std::ceil(slack_th)));
+    }
+  }
 
   return slack_th;
 }
