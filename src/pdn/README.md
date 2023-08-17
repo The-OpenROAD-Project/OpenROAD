@@ -145,7 +145,7 @@ define_pdn_grid -macro -name ram          -orient {R0 R180 MX MY} -grid_over_pg_
 define_pdn_grid -macro -name rotated_rams -orient {E FE W FW}     -grid_over_boundary -starts_with POWER -pin_direction horizontal
 ```
 
-#### Define a grid for an existing routing
+### Define a grid for an existing routing
 
 ```
 define_pdn_grid [-name <name>] \
@@ -166,7 +166,7 @@ define_pdn_grid [-name <name>] \
 define_pdn_grid -name main_grid -existing
 ```
 
-#### Power switch insertion
+### Power switch insertion
 
 ```
 define_pdn_grid [-name <name>] \
@@ -190,7 +190,7 @@ The `-power_control` argument specifies the name of the power control signal tha
 
 The `-power_control_network` argument specifies how the power control signal is to be connected to the power switches. If STAR is specified, then the network is wired as a high-fanout net with the power control signal driving the power control pin on every power switch. If DAISY is specified then the power switches are connected in a daisy-chain configuration - note, this requires that the power swich defined by the `define_power_switch_cell`  command defines an acknowledge pin for the switch.
 
-#### Add straps / stripes
+### Add straps / stripes
 
 Defines a pattern of power and ground stripes in a single layer to be added to a power grid.
 
@@ -234,7 +234,7 @@ add_pdn_stripe -grid main_grid -layer metal2 -width 0.17 -followpins
 add pdn_stripe -grid main_grid -layer metal4 -width 0.48 -pitch 56.0 -offset 2 -starts_with GROUND
 ```
 
-#### Add rings
+### Add rings
 
 The `add_pnd_ring` command is used to define power/ground rings around a grid region. The ring structure is built using two layers that are orthogonal to each other. A power/ground pair will be added above and below the grid using the horizontal layer, with another power/ground pair to the left and right using the vertical layer. Together these 4 pairs of power/ground stripes form a ring around the specified grid. Power straps on these layers that are inside the enclosed region are extend to connect to the ring.
 
@@ -275,7 +275,7 @@ add_pdn_ring [-grid grid_name] \
 add_pdn_ring -grid main_grid -layer {metal6 metal7} -widths 5.0 -spacings  3.0 -core_offset 5
 ```
 
-#### Add connections
+### Add connections
 
 The `add_pdn_connect` command is used to define which layers in the power grid are to be connected together. During power grid generation, vias will be added for overlapping power nets and overlapping ground nets. The use of fixed vias from the technology file can be specified or else via stacks will be constructed using VIARULEs. If VIARULEs are not available in the technology, then fixed vias must be used.
 
@@ -409,7 +409,7 @@ add_pdn_connect -layers {metal9 metal10}
 pdngen
 ```
 
-#### Sroute
+### Sroute
 
 The `add_sroute_connect` command is employed for connecting pins located outside of a specific power domain to the power ring, especially in cases where multiple power domains are present. During sroute, multi-cut vias will be added for new connections. The use of fixed vias from the technology file should be specified for the connection using sroute command. The use of max_rows and max_columns defines the row and column limit for the via stack. The use of hDX, hDY, vDX and vDY should be specified for finding the power ring that the pins will get connected to. 
 
