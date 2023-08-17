@@ -1,0 +1,29 @@
+[INFO ODB-0222] Reading LEF file: asap7/asap7_tech_1x_201209.lef
+[INFO ODB-0223]     Created 24 technology layers
+[INFO ODB-0224]     Created 9 technology vias
+[INFO ODB-0226] Finished LEF file:  asap7/asap7_tech_1x_201209.lef
+[INFO ODB-0222] Reading LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef
+[INFO ODB-0225]     Created 212 library cells
+[INFO ODB-0226] Finished LEF file:  asap7/asap7sc7p5t_28_R_1x_220121a.lef
+[INFO ODB-0222] Reading LEF file: asap7_data/fakeram7_256x32.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  asap7_data/fakeram7_256x32.lef
+[INFO ODB-0128] Design: riscv_top
+[INFO ODB-0130]     Created 135 pins.
+[INFO ODB-0131]     Created 12161 components and 58747 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 24322 connections.
+[INFO ODB-0133]     Created 9585 nets and 34425 connections.
+[WARNING PSM-0016] Voltage pad location (VSRC) file not specified, defaulting pad location to checkerboard pattern on core area.
+[WARNING PSM-0017] X direction bump pitch is not specified, defaulting to 140um.
+[WARNING PSM-0018] Y direction bump pitch is not specified, defaulting to 140um.
+[WARNING PSM-0063] Specified bump pitches of 140.000 and 140.000 are less than core width of 69.930 or core height of 79.650. Changing bump location to the center of the die at (39.987, 44.955).
+[WARNING PSM-0065] VSRC location not specified, using default checkerboard pattern with one VDD every size bumps in x-direction and one in two bumps in the y-direction
+[INFO PSM-0076] Setting metal node density to be standard cell height times 5.
+[INFO PSM-0031] Number of PDN nodes on net VDD = 33520.
+[INFO PSM-0064] Number of voltage sources = 1.
+[WARNING PSM-0094] dmem/dmem0 is not connected to VDD.
+[WARNING PSM-0094] dmem/dmem1 is not connected to VDD.
+[WARNING PSM-0094] dmem/dmem2 is not connected to VDD.
+[ERROR PSM-0069] Check connectivity failed.
+PSM-0069
+No differences found.
