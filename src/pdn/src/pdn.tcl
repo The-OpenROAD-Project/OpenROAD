@@ -648,7 +648,7 @@ sta::define_cmd_args "add_sroute_connect" {[-net net] \
                                            [-vDX vDX] \
                                            [-vDY vDY] \
                                            [-stripDY stripDY] \
-                                           [-metalWidths metalWidths] \
+                                           [-metalwidths metalwidths] \
                                            [-metalspaces metalspaces] \
                                            [-ongrid ongrid_layers] \
                                            [-split_cuts split_cuts_mapping]
@@ -656,7 +656,7 @@ sta::define_cmd_args "add_sroute_connect" {[-net net] \
 
 proc add_sroute_connect {args} {
   sta::parse_key_args "add_sroute_connect" args \
-    keys {-net -outerNet -layers -cut_pitch -fixed_vias -dont_use_vias -max_rows -max_columns -hDX -hDY -vDX -vDY -stripDY -metalWidths -metalspaces -ongrid -split_cuts} \
+    keys {-net -outerNet -layers -cut_pitch -fixed_vias -dont_use_vias -max_rows -max_columns -hDX -hDY -vDX -vDY -stripDY -metalwidths -metalspaces -ongrid -split_cuts} \
     flags {}
 
   set l0 [pdn::get_layer [lindex $keys(-layers) 0]]
@@ -732,10 +732,10 @@ proc add_sroute_connect {args} {
     }
   }
 
-  set metalWidths {}
-  if {[info exists keys(-metalWidths)]} {
-    foreach l $keys(-metalWidths) {
-      lappend metalWidths $l
+  set metalwidths {}
+  if {[info exists keys(-metalwidths)]} {
+    foreach l $keys(-metalwidths) {
+      lappend metalwidths $l
     }
   }
 
@@ -779,7 +779,7 @@ proc add_sroute_connect {args} {
                          $vDX \
                          $vDY \
                          $stripDY \
-                         $metalWidths \
+                         $metalwidths \
                          $metalspaces
 }
 
