@@ -50,7 +50,9 @@ class gcNet : public gcBlockObject
         pins_(numLayers),
         owner_(nullptr),
         taperedRects(numLayers),
-        nonTaperedRects(numLayers)
+        nonTaperedRects(numLayers),
+        isBlockage_(false),
+        designRuleWidth_(-1)
   {
   }
   // setters
@@ -93,6 +95,8 @@ class gcNet : public gcBlockObject
     pins_[layerNum].push_back(std::move(pin));
   }
   void setOwner(frBlockObject* in) { owner_ = in; }
+  void setBlockage(bool value) { isBlockage_ = value; }
+  void setDesignRuleWidth(frCoord value) { designRuleWidth_ = value; }
   void clear()
   {
     auto size = routePolygons_.size();
@@ -158,6 +162,11 @@ class gcNet : public gcBlockObject
   }
   bool hasOwner() const { return owner_; }
   frBlockObject* getOwner() const { return owner_; }
+  bool isBlockage() const { return isBlockage_; }
+  frCoord getDesignRuleWidth() const
+  {
+    return designRuleWidth_;
+  }
   // others
   frBlockObjectEnum typeId() const override { return gccNet; }
 
@@ -244,6 +253,8 @@ class gcNet : public gcBlockObject
   // A non-tapered rect within a tapered max rectangle still require nondefault
   // spacing. This list hold these rectangles
   vector<unique_ptr<gcRect>> specialSpacingRects;
+  bool isBlockage_;
+  frCoord designRuleWidth_;
 
   void init();
 };
