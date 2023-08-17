@@ -25,19 +25,11 @@ RTL-GDSII for rapid design exploration and physical design implementation.
 }%%
 
 flowchart LR
-    b0[ ] --- b2[ ] --- b4[ ] --- ORFlow --- b1[ ] --- b3[ ] --- b5[ ]
+    b0[ ] --- ORFlow --- b1[ ]
     style b0 stroke-width:0px, fill: #FFFFFF00
     style b1 stroke-width:0px, fill: #FFFFFF00
-    style b2 stroke-width:0px, fill: #FFFFFF00
-    style b3 stroke-width:0px, fill: #FFFFFF00
-    style b4 stroke-width:0px, fill: #FFFFFF00
-    style b5 stroke-width:0px, fill: #FFFFFF00
     linkStyle 0 stroke-width:0px
     linkStyle 1 stroke-width:0px
-    linkStyle 2 stroke-width:0px
-    linkStyle 3 stroke-width:0px
-    linkStyle 4 stroke-width:0px
-    linkStyle 5 stroke-width:0px
 
 
     subgraph ORFlow
@@ -64,6 +56,11 @@ flowchart LR
         end
 
         FLOW --> H[GDSII\n Final Layout]
+        H --- H1[ ]
+        style H1 stroke-width:0px, fill: #FFFFFF00
+        linkStyle 9 stroke-width:0px
+
+
         style H fill:#ff0000,stroke:#000000,stroke-width:4px
     end
 ```
