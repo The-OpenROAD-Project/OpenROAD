@@ -105,7 +105,23 @@ class FlexGCWorker::Impl
   {
     auto uNet = std::make_unique<gcNet>(getTech()->getLayers().size());
     auto net = uNet.get();
-    net->setOwner(owner);
+    if (owner
+        && (owner->typeId() == frcInstBlockage
+            || owner->typeId() == frcBlockage)) {
+      net->setBlockage(true);
+      if (owner->typeId() == frcInstBlockage) {
+        net->setOwner(static_cast<frInstBlockage*>(owner)->getInst());
+        net->setDesignRuleWidth(static_cast<frInstBlockage*>(owner)
+                                    ->getBlockage()
+                                    ->getDesignRuleWidth());
+      } else {
+        net->setOwner(owner);
+        net->setDesignRuleWidth(
+            static_cast<frBlockage*>(owner)->getDesignRuleWidth());
+      }
+    } else {
+      net->setOwner(owner);
+    }
     net->setId(nets_.size());
     nets_.push_back(std::move(uNet));
     owner2nets_[owner] = net;

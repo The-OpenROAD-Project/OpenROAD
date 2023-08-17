@@ -1306,10 +1306,9 @@ void TritonRoute::reportDRC(const string& file_name,
               drcRpt << "bterm:" << bterm->getName() << " ";
               break;
             }
-            case frcInstBlockage: {
-              frInstBlockage* instBlockage
-                  = (static_cast<frInstBlockage*>(src));
-              drcRpt << "inst:" << instBlockage->getInst()->getName() << " ";
+            case frcInst: {
+              frInst* inst = (static_cast<frInst*>(src));
+              drcRpt << "inst:" << inst->getName() << " ";
               break;
             }
             case frcBlockage: {
