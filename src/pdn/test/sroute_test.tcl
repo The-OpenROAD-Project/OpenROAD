@@ -44,7 +44,7 @@ pdngen
 pdn::add_sroute_inst "VIN" "PHY_34" "VPWR" 57220 5000 5000 58200
 pdn::add_sroute_inst "VIN" "PHY_23" "VPWR" 57220 5000 5000 58200
 
-add_sroute_connect -net "VIN" -outerNet "VDD" -layers {met1 met4} -cut_pitch {200 200} -fixed_vias {M4M5_PR_M} -hDX 57220 -hDY 5000 -vDX 5000 -vDY 58200 -metalWidths {1500 1500} -metalspaces {500} -ongrid {met5 met4} -stripDY 480
+add_sroute_connect -net "VIN" -outerNet "VDD" -layers {met1 met4} -cut_pitch {200 200} -fixed_vias {M4M5_PR_M} -hDX 57220 -hDY 5000 -vDX 5000 -vDY 58200 -metalwidths {1500 1500} -metalspaces {500} -ongrid {met5 met4} -stripDY 480
 
 set def_file [make_result_file sroute_test.def]
 write_def $def_file
