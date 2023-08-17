@@ -207,7 +207,7 @@ class PdnGen
                          int vDX,
                          int vDY,
                          int stripDY,
-                         std::vector<int> metalWidths,
+                         std::vector<int> metalwidths,
                          std::vector<int> metalspaces);
 
   void addSrouteInst(const char* net,
