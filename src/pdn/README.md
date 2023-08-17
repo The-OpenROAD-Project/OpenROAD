@@ -56,7 +56,7 @@ set_voltage_domain [-name name] \
                    [-switched_power <switched_power_net>]
 ```
 
-##### Options
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -67,7 +67,7 @@ set_voltage_domain [-name name] \
 | `-secondary_power` | Specifies the name of the secondary power net for this voltage domain |
 | `-switched_power` | Specifies the name of the switched power net for switched power domains, |
 
-##### Examples
+#### Examples
 ```
 set_voltage_domain -power VDD -ground VSS
 set_voltage_domain -name TEMP_ANALOG -region TEMP_ANALOG -power VIN -ground VSS
@@ -87,7 +87,7 @@ define_pdn_grid [-name <name>] \
                 [-obstructions <list_of_layers>]
 ```
 
-##### Options
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -98,14 +98,14 @@ define_pdn_grid [-name <name>] \
 | `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations |
 
 
-##### Examples
+#### Examples
 
 ```
 define_pdn_grid -name main_grid -pins {metal7} -voltage_domain {CORE TEMP_ANALOG}
 ```
 
 
-#### Define a macro power grid
+### Define a macro power grid
 
 ```
 define_pdn_grid -macro \
@@ -121,7 +121,7 @@ define_pdn_grid -macro \
                 [-obstructions <list_of_layers>]  
 ```
 
-##### Options
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -138,7 +138,7 @@ define_pdn_grid -macro \
 | `-halo` | Specifies the default minimum separation of selected macros from other cells in the design. This is only used if the macro does not define halo values in the LEF description. If 1 value is specified it will be used on all 4 sides, if two values are specified, the first will be applied to left/right sides and the second will be applied to top/bottom sides, if 4 values are specified, then they are applied to left, bottom, right and top sides respectively. (Default: 0) |
 | `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations |
 
-##### Examples
+#### Examples
 
 ```
 define_pdn_grid -macro -name ram          -orient {R0 R180 MX MY} -grid_over_pg_pins  -starts_with POWER -pin_direction vertical
@@ -153,14 +153,14 @@ define_pdn_grid [-name <name>] \
                 [-obstructions <list_of_layers>]
 ```
 
-##### Options
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
 | `-name` | Defines a name to use when referring to this grid definition. Defaults to `existing_grid` |
 | `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations |
 
-##### Examples
+#### Examples
 
 ```
 define_pdn_grid -name main_grid -existing
@@ -175,7 +175,7 @@ define_pdn_grid [-name <name>] \
                 [-power_control_network (STAR|DAISY)]
 ```
 
-##### Options
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -210,7 +210,7 @@ add_pdn_stripe [-grid grid_name] \
                 [-nets list_of_nets]
 ```
 
-##### Options
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -227,7 +227,7 @@ add_pdn_stripe [-grid grid_name] \
 | `-number_of_straps` | Number of power/ground pairs to add |
 | `-nets` | Limit straps to just this list of nets |
 
-##### Examples
+#### Examples
 ```
 add_pdn_stripe -grid main_grid -layer metal1 -followpins
 add_pdn_stripe -grid main_grid -layer metal2 -width 0.17 -followpins
@@ -253,7 +253,7 @@ add_pdn_ring [-grid grid_name] \
              [-nets list_of_nets]
 ```
 
-##### Options
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -270,7 +270,7 @@ add_pdn_ring [-grid grid_name] \
 | `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: grid setting) |
 | `-nets` | Limit straps to just this list of nets |
 
-##### Examples
+#### Examples
 ```
 add_pdn_ring -grid main_grid -layer {metal6 metal7} -widths 5.0 -spacings  3.0 -core_offset 5
 ```
@@ -291,7 +291,7 @@ add_pdn_connect [-grid grid_name] \
                 [-split_cuts split_cuts_mapping]
 ```
 
-##### Options
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -305,7 +305,7 @@ add_pdn_connect [-grid grid_name] \
 | `-ongrid` | List of intermediate layers in a via stack to snap onto a routing grid |
 | `-split_cuts` | Specifies layers to use split cuts on with an associated pitch, for example `{metal3 0.380 metal5 0.500}`. |
 
-##### Examples
+#### Examples
 
 ```
 add_pdn_connect -grid main_grid -layers {metal1 metal2} -cut_pitch 0.16
@@ -333,7 +333,7 @@ pdngen [-skip_trim] \
        [-failed_via_report file]
 ```
 
-##### Options
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -353,7 +353,7 @@ repair_pdn_vias [-all] \
                 [-net net_name]
 ```
 
-##### Options
+#### Options
 
 | Name | Description |
 | ----- | ----- |
@@ -370,7 +370,7 @@ the conversion to ensure nothing was missed.
 convert_pdn_config config_file
 ```
 
-##### Options
+#### Options
 
 | Name | Description |
 | ----- | ----- |
@@ -433,7 +433,7 @@ The `add_sroute_connect` command is employed for connecting pins located outside
                      [-split_cuts split_cuts_mapping]
 ```
 
-##### Options
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -455,7 +455,7 @@ The `add_sroute_connect` command is employed for connecting pins located outside
 | `-ongrid` | List of intermediate layers in a via stack to snap onto a routing grid |
 | `-split_cuts` | Specifies layers to use split cuts on with an associated pitch, for example `{metal3 0.380 metal5 0.500}`. |
 
-##### Examples
+#### Examples
 
 ```
 add_sroute_connect -net "VIN" -outerNet "VDD" -layers {met1 met4} -cut_pitch {200 200} -fixed_vias {M4M5_PR_M} -hDX 57220 -hDY 5000 -vDX 5000 -vDY 58200 -metalWidths {1500 1500} -metalspaces {500} -ongrid {met5 met4} -stripDY 480
