@@ -234,7 +234,7 @@ void createSrouteWires(
     int vDX,
     int vDY,
     int stripDY,
-    std::vector<int> metalWidths,
+    std::vector<int> metalwidths,
     std::vector<int> metalspaces)
 {
   PdnGen* pdngen = ord::getPdnGen();
@@ -260,7 +260,7 @@ void createSrouteWires(
                             vDX,
                             vDY,
                             stripDY,
-                            metalWidths,
+                            metalwidths,
                             metalspaces);
 }
 
