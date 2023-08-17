@@ -163,10 +163,7 @@ class gcNet : public gcBlockObject
   bool hasOwner() const { return owner_; }
   frBlockObject* getOwner() const { return owner_; }
   bool isBlockage() const { return isBlockage_; }
-  frCoord getDesignRuleWidth() const
-  {
-    return designRuleWidth_;
-  }
+  frCoord getDesignRuleWidth() const { return designRuleWidth_; }
   // others
   frBlockObjectEnum typeId() const override { return gccNet; }
 
