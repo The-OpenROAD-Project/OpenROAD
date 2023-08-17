@@ -458,8 +458,8 @@ The `add_sroute_connect` command is employed for connecting pins located outside
 #### Examples
 
 ```
-add_sroute_connect -net "VIN" -outerNet "VDD" -layers {met1 met4} -cut_pitch {200 200} -fixed_vias {M4M5_PR_M} -hDX 57220 -hDY 5000 -vDX 5000 -vDY 58200 -metalWidths {1500 1500} -metalspaces {500} -ongrid {met5 met4} -stripDY 480
-add_sroute_connect -net "VIN" -outerNet "VDD" -layers {met1 met4} -cut_pitch {200 200} -fixed_vias {M3M4_PR_M} -hDX 45280 -hDY 5000 -vDX 5000 -vDY 43920 -metalWidths {1000 1000} -metalspaces {800} -ongrid {met3 met4} -stripDY 490
+add_sroute_connect -net "VIN" -outerNet "VDD" -layers {met1 met4} -cut_pitch {200 200} -fixed_vias {M4M5_PR_M} -hDX 57220 -hDY 5000 -vDX 5000 -vDY 58200 -metalwidths {1500 1500} -metalspaces {500} -ongrid {met5 met4} -stripDY 480
+add_sroute_connect -net "VIN" -outerNet "VDD" -layers {met1 met4} -cut_pitch {200 200} -fixed_vias {M3M4_PR_M} -hDX 45280 -hDY 5000 -vDX 5000 -vDY 43920 -metalwidths {1000 1000} -metalspaces {800} -ongrid {met3 met4} -stripDY 490
 
 ```
 ## Regression tests
