@@ -791,9 +791,14 @@ void FastRouteCore::updateDbCongestion()
     const unsigned short capH = h_capacity_3D_[k];
     const unsigned short capV = v_capacity_3D_[k];
     for (int y = 0; y < y_grid_; y++) {
-      for (int x = 0; x < x_grid_ - 1; x++) {
-        const unsigned short blockageH = capH - h_edges_3D_[k][y][x].cap;
-        const unsigned short blockageV = capV - v_edges_3D_[k][y][x].cap;
+      for (int x = 0; x < x_grid_; x++) {
+        // use std::abs because in the last col/row, the edge capacity can be
+        // greater than the default cap of the layer, since these col/row are
+        // larger
+        const unsigned short blockageH
+            = std::abs(capH - h_edges_3D_[k][y][x].cap);
+        const unsigned short blockageV
+            = std::abs(capV - v_edges_3D_[k][y][x].cap);
         const unsigned short usageH = h_edges_3D_[k][y][x].usage + blockageH;
         const unsigned short usageV = v_edges_3D_[k][y][x].usage + blockageV;
         db_gcell->setCapacity(layer, x, y, capH, capV, 0);
