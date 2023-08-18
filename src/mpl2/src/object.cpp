@@ -115,15 +115,6 @@ void Metrics::addMetrics(const Metrics& metrics)
   num_macro_ += metrics.num_macro_;
   std_cell_area_ += metrics.std_cell_area_;
   macro_area_ += metrics.macro_area_;
-  inflate_std_cell_area_ += metrics.inflate_std_cell_area_;
-  inflate_macro_area_ += metrics.inflate_macro_area_;
-}
-
-void Metrics::inflateStdCellArea(float std_cell_util)
-{
-  if ((std_cell_util > 0.0) && (std_cell_util < 1.0)) {
-    inflate_std_cell_area_ /= std_cell_util;
-  }
 }
 
 const std::pair<unsigned int, unsigned int> Metrics::getCountStats() const
@@ -134,11 +125,6 @@ const std::pair<unsigned int, unsigned int> Metrics::getCountStats() const
 const std::pair<float, float> Metrics::getAreaStats() const
 {
   return std::pair<float, float>(std_cell_area_, macro_area_);
-}
-
-const std::pair<float, float> Metrics::getInflateAreaStats() const
-{
-  return std::pair<float, float>(inflate_std_cell_area_, inflate_macro_area_);
 }
 
 unsigned int Metrics::getNumMacro() const
@@ -164,21 +150,6 @@ float Metrics::getMacroArea() const
 float Metrics::getArea() const
 {
   return std_cell_area_ + macro_area_;
-}
-
-float Metrics::getInflateStdCellArea() const
-{
-  return inflate_std_cell_area_;
-}
-
-float Metrics::getInflateMacroArea() const
-{
-  return inflate_macro_area_;
-}
-
-float Metrics::getInflateArea() const
-{
-  return inflate_std_cell_area_ + inflate_macro_area_;
 }
 
 ///////////////////////////////////////////////////////////////////////

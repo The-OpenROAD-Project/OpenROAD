@@ -1185,11 +1185,7 @@ void TechChar::create()
     printCharacterization();
     printSolution();
   }
-  // super confused -cherry
-  if (openStaChar_ != nullptr) {
-    openStaChar_->clear();
-    openStaChar_.reset(nullptr);
-  }
+  odb::dbBlock::destroy(charBlock_);
 }
 
 }  // namespace cts
