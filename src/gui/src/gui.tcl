@@ -215,10 +215,9 @@ proc select { args } {
     set filter [split $filter "="]
     if {[llength $filter] != 2} {
       utl::error GUI 56 "Invalid syntax for -filter. Use -filter attribute=value."
-    } else {
-      set attribute [lindex $filter 0]
-      set value [lindex $filter 1]
     }
+    set attribute [lindex $filter 0]
+    set value [lindex $filter 1]
   }
 
   set case_sense 1
