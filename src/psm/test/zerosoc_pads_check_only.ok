@@ -1,0 +1,25 @@
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0225]     Created 437 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0222] Reading LEF file: sky130hd_data/ram/sky130_sram_2kbyte_1rw1r_32x512_8.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hd_data/ram/sky130_sram_2kbyte_1rw1r_32x512_8.lef
+[INFO ODB-0222] Reading LEF file: sky130hd_data/io/sky130_dummy_io.lef
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file sky130hd_data/io/sky130_dummy_io.lef at line 2.
+
+[INFO ODB-0225]     Created 32 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hd_data/io/sky130_dummy_io.lef
+[INFO ODB-0128] Design: asic_top
+[INFO ODB-0130]     Created 40 pins.
+[INFO ODB-0131]     Created 44647 components and 163994 component-terminals.
+[INFO ODB-0132]     Created 48 special nets and 114246 connections.
+[INFO ODB-0133]     Created 13655 nets and 49143 connections.
+[INFO PSM-0076] Setting metal node density to be standard cell height times 5.
+[INFO PSM-0031] Number of PDN nodes on net vdd = 138729.
+[INFO PSM-0064] Number of voltage sources = 5068.
+[INFO PSM-0040] All PDN stripes on net vdd are connected.
