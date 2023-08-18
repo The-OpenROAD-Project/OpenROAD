@@ -24,8 +24,6 @@ entries:
         title: Unit Tests (Python)
       - file: main/src/odb/doc/OpenDB-AddFieldsInDbObjects
         title: Add Fields in DB Objects
-      - file: contrib/DatabaseMath.md
-        title: Database Math
   - file: main/src/gui/README
     title: GUI
   - file: main/src/par/README
@@ -73,13 +71,13 @@ entries:
     title: Antenna Checker
   - file: main/src/drt/README
     title: Detail Routing
+  - file: main/src/fin/README
+    title: Metal Fill
   - file: main/src/rcx/README
     title: Parasitics Extraction
     entries:
     - file: main/src/rcx/doc/calibration
       title: Calibration
-  - file: main/src/fin/README
-    title: Metal Fill
   - file: main/src/sta/README
     title: Static Timing Analyzer (external)
   - file: user/MessagesFinal.md

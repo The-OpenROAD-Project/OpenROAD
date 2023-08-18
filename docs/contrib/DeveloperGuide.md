@@ -295,3 +295,10 @@ cmake . -B build  # generate build files
 clang-tidy -p ./build source_file.cpp
 clang-format -i -style=file:.clang-format source_file.cpp
 ```
+
+## Guidelines
+
+1. The **only** place that the database distance units should appear in any
+program should be in the user interface, because humans like microns
+more than DBUs. Internally, code should use `int` for all database units
+and `int64_t` for all area calculations. For a more detailed writeup, refer to this [link](DatabaseMath.md).

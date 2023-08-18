@@ -98,9 +98,4 @@ representations is to compensate for the inability to represent floating-point
 fractions exactly. Results like $5.99999999992$ need to be "fixed".
 This problem does not exist if fixed-point arithmetic is used.
 
-### Conclusion
 
-The **only** place that the database distance units should appear in any
-program should be in the user interface, because humans like microns
-more than DBUs. Internally, code should use `int` for all database units
-and `int64_t` for all area calculations.
