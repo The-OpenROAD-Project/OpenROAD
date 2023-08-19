@@ -25,7 +25,7 @@ RTL-GDSII for rapid design exploration and physical design implementation.
 }%%
 
 flowchart LR
-    b0[           .       ] --- b2[ ] --- b4[ ] --- ORFlow --- b1[ ] --- b3[ ] --- b5[          .        ]
+    b0[                  ] --- b2[ ] --- b4[ ] --- ORFlow --- b1[ ] --- b3[ ] --- b5[                  ]
     style b0 stroke-width:0px, fill: #FFFFFF00, color:#FFFFFF00
     style b1 stroke-width:0px, fill: #FFFFFF00
     style b2 stroke-width:0px, fill: #FFFFFF00
