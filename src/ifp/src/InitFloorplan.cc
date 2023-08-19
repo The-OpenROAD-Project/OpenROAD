@@ -192,18 +192,16 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
     int row_index = 0;
     eval_upf(network_, logger_, block_);
     for (const auto& [site_name, site] : sites_by_name) {
-      // Destroy any existing rows.
       int x_height_site = site->getHeight() / min_site_height;
       auto rows = block_->getRows();
       for (dbSet<dbRow>::iterator row_itr = rows.begin();
            row_itr != rows.end();) {
-        if (site != row_itr->getSite()) {
+        if (site != row_itr->getSite() || row_itr->getSite()->isHybrid()) {
           row_itr++;
         } else {
           row_itr = dbRow::destroy(row_itr);
         }
       }
-
       uint site_dx = site->getWidth();
       uint site_dy = site->getHeight();
       // core lower left corner to multiple of site dx/dy.
@@ -598,15 +596,15 @@ int InitFloorplan::makeHybridRows(
         }
         site_it = it->second;
       }
-      auto created_row = dbRow::create(block_,
-                                       (row_name).c_str(),
-                                       site_it,
-                                       core_l.x(),
-                                       y,
-                                       orient,
-                                       dbRowDir::HORIZONTAL,
-                                       rows_x,
-                                       site_width);
+      dbRow::create(block_,
+                    (row_name).c_str(),
+                    site_it,
+                    core_l.x(),
+                    y,
+                    orient,
+                    dbRowDir::HORIZONTAL,
+                    rows_x,
+                    site_width);
       y += site_it->getHeight();
       ++pattern_iterator;
       ++row;
