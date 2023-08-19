@@ -52,6 +52,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "node.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "pad/ICeWall.h"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 
@@ -658,10 +659,8 @@ bool IRSolver::createJ()
   const int num_nodes = Gmat_->getNumNodes();
   J_.resize(num_nodes, 0);
 
-  odb::dbTech* tech = db_->getTech();
-
   for (auto [inst, power] : getPower()) {
-    if (!inst->getPlacementStatus().isPlaced()) {
+    if (!inst->isPlaced()) {
       logger_->warn(utl::PSM,
                     71,
                     "Instance {} is not placed. Therefore, the"
@@ -678,86 +677,41 @@ bool IRSolver::createJ()
     // TODO: The condition for PADs needs to be handled sperately once an
     // appropriate testcase is found. Conditionally treated the same as a macro.
     if (inst->isBlock() || inst->isPad()) {
-      dbBox* inst_bBox = inst->getBBox();
+      std::set<Node*> nodes_J;
       std::set<int> pin_layers;
       auto iterms = inst->getITerms();
       // Find the pin layers for the macro
-      for (auto&& iterm : iterms) {
-        if (iterm->getSigType() == net_->getSigType()) {
-          auto mterm = iterm->getMTerm();
-          for (auto mpin : mterm->getMPins()) {
-            for (auto box : mpin->getGeometry()) {
-              dbTechLayer* pin_layer = box->getTechLayer();
-              if (pin_layer) {
-                pin_layers.insert(pin_layer->getRoutingLevel());
-              }
+      for (auto* iterm : iterms) {
+        if (iterm->getNet() != net_) {
+          continue;
+        }
+        odb::dbTransform xform;
+        inst->getTransform(xform);
+        for (auto mpin : iterm->getMTerm()->getMPins()) {
+          for (auto box : mpin->getGeometry()) {
+            dbTechLayer* pin_layer = box->getTechLayer();
+            if (pin_layer) {
+              odb::Rect pin_shape = box->getBox();
+              xform.apply(pin_shape);
+              Gmat_->foreachNode(pin_layer->getRoutingLevel(),
+                                 pin_shape.xMin(),
+                                 pin_shape.xMax(),
+                                 pin_shape.yMin(),
+                                 pin_shape.yMax(),
+                                 [&](Node* node) { nodes_J.insert(node); });
             }
           }
         }
-      }
-      // Search for all nodes within the macro boundary
-      vector<Node*> nodes_J;
-      for (auto ll : pin_layers) {
-        Gmat_->foreachNode(ll,
-                           inst_bBox->xMin(),
-                           inst_bBox->xMax(),
-                           inst_bBox->yMin(),
-                           inst_bBox->yMax(),
-                           [&](Node* node) { nodes_J.push_back(node); });
       }
       double num_nodes = nodes_J.size();
       // If nodes are not found on the pin layers we search for the lowest
       // metal layer that overlaps the macro
       if (num_nodes == 0) {
-        const int max_l
-            = *std::max_element(pin_layers.begin(), pin_layers.end());
-        for (int pl = bottom_layer_ + 1; pl <= top_layer_; pl++) {
-          Gmat_->foreachNode(pl,
-                             inst_bBox->xMin(),
-                             inst_bBox->xMax(),
-                             inst_bBox->yMin(),
-                             inst_bBox->yMax(),
-                             [&](Node* node) { nodes_J.push_back(node); });
-
-          num_nodes = nodes_J.size();
-          if (num_nodes > 0) {
-            logger_->warn(
-                utl::PSM,
-                74,
-                "No nodes found in macro or pad bounding box for Instance {} "
-                "for the pin layer at routing level {}. Using layer {}.",
-                inst->getName(),
-                tech->findRoutingLayer(max_l)->getName(),
-                tech->findRoutingLayer(pl)->getName());
-            break;
-          }
-        }
-        // If nodes are still not found we connect to the neartest node on the
-        // highest pin layer with a warning
-        if (num_nodes == 0) {
-          if (Gmat_->findLayer(max_l)) {
-            Node* node_J = Gmat_->getNode(x, y, max_l, true);
-            nodes_J = {node_J};
-            num_nodes = 1.0;
-            const Point node_loc = node_J->getLoc();
-            logger_->warn(
-                utl::PSM,
-                72,
-                "No nodes found in macro/pad bounding box for Instance {}."
-                "Using nearest node at ({}, {}) on the pin layer at "
-                "routing level {}.",
-                inst->getName(),
-                node_loc.getX(),
-                node_loc.getY(),
-                tech->findRoutingLayer(max_l)->getName());
-          } else {
-            logger_->error(utl::PSM,
-                           42,
-                           "Unable to connect macro/pad Instance {} "
-                           "to the power grid.",
-                           inst->getName());
-          }
-        }
+        logger_->error(utl::PSM,
+                       42,
+                       "Unable to connect macro/pad Instance {} "
+                       "to the power grid.",
+                       inst->getName());
       }
       // Distribute the power across all nodes within the bounding box
       for (auto node_J : nodes_J) {
@@ -966,8 +920,20 @@ void IRSolver::createGmatViaNodes()
   }
 }
 
-void IRSolver::createGmatWireNodes(const vector<odb::Rect>& macros)
+void IRSolver::createGmatWireNodes()
 {
+  std::set<odb::dbITerm*> macros_terms;
+  dbBlock* block = db_->getChip()->getBlock();
+  for (auto* inst : block->getInsts()) {
+    if (inst->isBlock() || inst->isPad()) {
+      for (auto* iterm : inst->getITerms()) {
+        if (iterm->getNet() == net_) {
+          macros_terms.insert(iterm);
+        }
+      }
+    }
+  }
+
   for (auto curWire : power_wires_) {
     // For a stripe we create nodes at the ends of the stripes and at a fixed
     // frequency in the lowermost layer.
@@ -995,28 +961,31 @@ void IRSolver::createGmatWireNodes(const vector<odb::Rect>& macros)
     // For all layers we create the end nodes
     Gmat_->setNode({x_loc1, y_loc1}, l);
     Gmat_->setNode({x_loc2, y_loc2}, l);
-    // Special condition: if the stripe ovelaps a macro ensure a node is
-    // created
-    for (const auto& macro : macros) {
-      if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-        // y range is withing the marco (min, max)
-        if (y_loc1 >= macro.yMin() && y_loc1 <= macro.yMax()) {
-          // Both x values outside the macro
-          // (Values inside will already have a node at endpoints)
-          if (x_loc1 < macro.xMin() && x_loc2 > macro.xMax()) {
-            const int x = (macro.xMin() + macro.xMax()) / 2;
-            Gmat_->setNode({x, y_loc1}, l);
-          }
-        }
-      } else {
-        if (x_loc1 >= macro.xMin() && x_loc1 <= macro.xMax()) {
-          if (y_loc1 < macro.yMin() && y_loc2 > macro.yMax()) {
-            const int y = (macro.yMin() + macro.yMax()) / 2;
-            Gmat_->setNode({x_loc1, y}, l);
+
+    // Check if shape overlaps a macro pin
+    // and add node if there is an overlap with the current shape
+    for (auto* iterm : macros_terms) {
+      if (iterm->getBBox().intersects(curWire->getBox())) {
+        odb::dbTransform xform;
+        iterm->getInst()->getTransform(xform);
+        for (auto* mpin : iterm->getMTerm()->getMPins()) {
+          for (auto* geom : mpin->getGeometry()) {
+            if (geom->getTechLayer() != wire_layer) {
+              continue;
+            }
+            odb::Rect pin_rect = geom->getBox();
+            xform.apply(pin_rect);
+            if (pin_rect.intersects(curWire->getBox())) {
+              // add node at center of overlap
+              const odb::Rect overlap = pin_rect.intersect(curWire->getBox());
+
+              Gmat_->setNode({overlap.xCenter(), overlap.yCenter()}, l);
+            }
           }
         }
       }
     }
+
     if (l != bottom_layer_) {
       continue;
     }
@@ -1333,20 +1302,6 @@ int IRSolver::createSourceNodes(bool connection_only, int unit_micron)
   return num;
 }
 
-//! Function to find and store the macro boundaries
-vector<odb::Rect> IRSolver::getMacroBoundaries()
-{
-  dbChip* chip = db_->getChip();
-  dbBlock* block = chip->getBlock();
-  vector<odb::Rect> macro_boundaries;
-  for (auto* inst : block->getInsts()) {
-    if (inst->isBlock() || inst->isPad()) {
-      macro_boundaries.push_back(inst->getBBox()->getBox());
-    }
-  }
-  return macro_boundaries;
-}
-
 //! Function to create a G matrix using the nodes
 bool IRSolver::createGmat(bool connection_only)
 {
@@ -1389,7 +1344,6 @@ bool IRSolver::createGmat(bool connection_only)
   }
 
   Gmat_ = std::make_unique<GMat>(num_routing_layers, logger_, db_->getTech());
-  const auto macro_boundaries = getMacroBoundaries();
   debugPrint(logger_,
              utl::PSM,
              "G Matrix",
@@ -1399,7 +1353,7 @@ bool IRSolver::createGmat(bool connection_only)
 
   // Create all the nodes for the G matrix
   createGmatViaNodes();
-  createGmatWireNodes(macro_boundaries);
+  createGmatWireNodes();
 
   if (Gmat_->getNumNodes() == 0) {
     logger_->warn(utl::PSM,
@@ -1510,6 +1464,15 @@ bool IRSolver::checkConnectivity(const std::string& error_file,
       }
     }
   }
+  findUnconnectedInstances();
+  for (auto* inst : unconnected_insts_) {
+    unconnected_node = true;
+    logger_->warn(utl::PSM,
+                  94,
+                  "{} is not connected to {}.",
+                  inst->getName(),
+                  net_->getName());
+  }
   if (!unconnected_node) {
     logger_->info(utl::PSM,
                   40,
@@ -1522,6 +1485,215 @@ bool IRSolver::checkConnectivity(const std::string& error_file,
   }
 
   return !unconnected_node;
+}
+
+bool IRSolver::isStdCell(odb::dbInst* inst) const
+{
+  if (inst->isCore()) {
+    return true;
+  }
+  if (inst->isBlock() || inst->isPad() || inst->getMaster()->isCover()) {
+    return false;
+  }
+  if (inst->isEndCap()) {
+    if (inst->getMaster()->getType() == odb::dbMasterType::ENDCAP_BOTTOMLEFT
+        || inst->getMaster()->getType() == odb::dbMasterType::ENDCAP_BOTTOMRIGHT
+        || inst->getMaster()->getType() == odb::dbMasterType::ENDCAP_TOPLEFT
+        || inst->getMaster()->getType() == odb::dbMasterType::ENDCAP_TOPRIGHT) {
+      // endcap is pad
+      return false;
+    }
+  }
+  return true;
+}
+
+bool IRSolver::isConnected(odb::dbITerm* iterm) const
+{
+  odb::dbTransform xform;
+  iterm->getInst()->getTransform(xform);
+
+  for (auto* mpin : iterm->getMTerm()->getMPins()) {
+    for (auto* geom : mpin->getGeometry()) {
+      auto* layer = geom->getTechLayer();
+      if (layer == nullptr) {
+        continue;
+      }
+      odb::Rect pin_shape = geom->getBox();
+      xform.apply(pin_shape);
+      bool has_connection = false;
+      Gmat_->foreachNode(layer->getRoutingLevel(),
+                         pin_shape.xMin(),
+                         pin_shape.xMax(),
+                         pin_shape.yMin(),
+                         pin_shape.yMax(),
+                         [&](Node* node) { has_connection = true; });
+
+      if (has_connection) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+void IRSolver::findUnconnectedInstancesByStdCells(
+    ITermMap& iterms,
+    std::set<odb::dbInst*>& connected_insts)
+{
+  for (auto itr = iterms.begin(); itr != iterms.end();) {
+    odb::dbInst* inst = itr->first;
+    if (!isStdCell(inst)) {
+      itr++;
+      continue;
+    }
+    int x, y;
+    inst->getLocation(x, y);
+    Node* node = Gmat_->getNode(x, y, bottom_layer_, true);
+    if (!node) {
+      unconnected_insts_.push_back(inst);
+    } else {
+      connected_insts.insert(inst);
+    }
+    itr = iterms.erase(itr);
+  }
+}
+
+void IRSolver::findUnconnectedInstancesByITerms(
+    ITermMap& iterms,
+    std::set<odb::dbInst*>& connected_insts)
+{
+  for (auto itr = iterms.begin(); itr != iterms.end();) {
+    odb::dbInst* inst = itr->first;
+
+    odb::dbTransform xform;
+    inst->getTransform(xform);
+
+    bool all_connected = true;
+    for (auto* iterm : itr->second) {
+      if (!isConnected(iterm)) {
+        all_connected = false;
+      }
+    }
+    if (all_connected) {
+      connected_insts.insert(inst);
+      itr = iterms.erase(itr);
+    } else {
+      itr++;
+    }
+  }
+}
+
+void IRSolver::findUnconnectedInstancesByAbutment(
+    ITermMap& iterms,
+    std::set<odb::dbInst*>& connected_insts)
+{
+  std::set<odb::dbInst*> inst_set;
+  std::set<odb::dbITerm*> terminals_connected_to_grid;
+  for (auto* iterm : net_->getITerms()) {
+    odb::dbInst* inst = iterm->getInst();
+    if (isStdCell(inst)) {
+      continue;
+    }
+    inst_set.insert(inst);
+    const bool inst_connected
+        = connected_insts.find(inst) != connected_insts.end();
+    if (inst_connected || isConnected(iterm)) {
+      terminals_connected_to_grid.insert(iterm);
+    }
+  }
+  std::vector<odb::dbInst*> insts;
+  insts.insert(insts.begin(), inst_set.begin(), inst_set.end());
+
+  std::map<odb::dbITerm*, std::set<odb::dbITerm*>> connections;
+  for (size_t i = 0; i < insts.size(); i++) {
+    auto* inst0 = insts[i];
+    for (size_t j = i + 1; j < insts.size(); j++) {
+      auto* inst1 = insts[j];
+      const auto inst_connections
+          = pad::ICeWall::getTouchingIterms(inst0, inst1);
+      for (const auto& [iterm0, iterm1] : inst_connections) {
+        connections[iterm0].insert(iterm1);
+        connections[iterm1].insert(iterm0);
+      }
+    }
+  }
+
+  for (auto itr = iterms.begin(); itr != iterms.end();) {
+    bool connected = false;
+    for (auto* iterm : itr->second) {
+      if (terminals_connected_to_grid.find(iterm)
+          != terminals_connected_to_grid.end()) {
+        connected = true;
+        break;
+      }
+
+      std::queue<odb::dbITerm*> terms_to_check;
+      terms_to_check.push(iterm);
+      std::set<odb::dbITerm*> checked;
+      while (!terms_to_check.empty()) {
+        odb::dbITerm* check_term = terms_to_check.front();
+        terms_to_check.pop();
+        checked.insert(check_term);
+
+        if (terminals_connected_to_grid.find(check_term)
+            != terminals_connected_to_grid.end()) {
+          connected = true;
+          terminals_connected_to_grid.insert(iterm);
+          break;
+        } else {
+          for (auto* next_iterm : connections[check_term]) {
+            if (checked.find(next_iterm) == checked.end()) {
+              terms_to_check.push(next_iterm);
+            }
+          }
+        }
+      }
+    }
+
+    if (connected) {
+      itr = iterms.erase(itr);
+    } else {
+      itr++;
+    }
+  }
+}
+
+void IRSolver::findUnconnectedInstances()
+{
+  unconnected_insts_.clear();
+
+  std::set<odb::dbInst*> connected_insts;
+  for (Node* node : Gmat_->getAllNodes()) {
+    if (node->hasInstances()) {
+      for (odb::dbInst* inst : node->getInstances()) {
+        connected_insts.insert(inst);
+      }
+    }
+  }
+
+  ITermMap iterms;
+  for (odb::dbInst* inst : db_->getChip()->getBlock()->getInsts()) {
+    if (!inst->isPlaced()) {
+      continue;
+    }
+    const bool has_inst = connected_insts.find(inst) != connected_insts.end();
+    if (has_inst) {
+      continue;
+    }
+    for (auto* iterm : inst->getITerms()) {
+      if (iterm->getNet() == net_) {
+        iterms[inst].push_back(iterm);
+      }
+    }
+  }
+
+  findUnconnectedInstancesByStdCells(iterms, connected_insts);
+  findUnconnectedInstancesByITerms(iterms, connected_insts);
+  findUnconnectedInstancesByAbutment(iterms, connected_insts);
+
+  for (const auto& [inst, inst_iterms] : iterms) {
+    unconnected_insts_.push_back(inst);
+  }
 }
 
 void IRSolver::writeErrorFile(const std::string& file) const
@@ -1550,6 +1722,19 @@ void IRSolver::writeErrorFile(const std::string& file) const
           tech->findRoutingLayer(node->getLayerNum())->getName())
                    << endl;
     }
+  }
+  for (auto* inst : unconnected_insts_) {
+    const odb::Rect inst_rect = inst->getBBox()->getBox();
+    error_report << "violation type: Unconnected instance" << endl;
+    error_report << "  srcs: inst:" << inst->getName() << endl;
+    error_report << fmt::format(
+        "    bbox = ({}, {}) - ({}, {}) on Layer {}",
+        inst_rect.xMin() / unit_micron,
+        inst_rect.yMin() / unit_micron,
+        inst_rect.xMax() / unit_micron,
+        inst_rect.yMax() / unit_micron,
+        tech->findRoutingLayer(bottom_layer_)->getName())
+                 << endl;
   }
 }
 

@@ -61,6 +61,16 @@ struct PARinfo;
 struct ARinfo;
 struct AntennaModel;
 
+class GlobalRouteSource
+{
+ public:
+  virtual ~GlobalRouteSource() = default;
+
+  virtual bool haveRoutes() = 0;
+  virtual void makeNetWires() = 0;
+  virtual void destroyNetWires() = 0;
+};
+
 struct Violation
 {
   int routing_level;
@@ -75,7 +85,7 @@ class AntennaChecker
   ~AntennaChecker();
 
   void init(odb::dbDatabase* db,
-            grt::GlobalRouter* global_router,
+            GlobalRouteSource* global_route_source,
             utl::Logger* logger);
 
   // net nullptr -> check all nets
@@ -199,7 +209,7 @@ class AntennaChecker
   odb::dbDatabase* db_{nullptr};
   odb::dbBlock* block_{nullptr};
   int dbu_per_micron_{0};
-  grt::GlobalRouter* global_router_{nullptr};
+  GlobalRouteSource* global_route_source_{nullptr};
   utl::Logger* logger_{nullptr};
   std::map<odb::dbTechLayer*, AntennaModel> layer_info_;
   int net_violation_count_{0};

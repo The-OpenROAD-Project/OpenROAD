@@ -150,9 +150,7 @@ class IRSolver
   //! Function to create the nodes of vias in the G matrix
   void createGmatViaNodes();
   //! Function to create the nodes of wires in the G matrix
-  void createGmatWireNodes(const std::vector<odb::Rect>& macros);
-  //! Function to find and store the macro boundaries
-  std::vector<odb::Rect> getMacroBoundaries();
+  void createGmatWireNodes();
 
   NodeEnclosure getViaEnclosure(int layer, odb::dbSet<odb::dbBox> via_boxes);
 
@@ -172,6 +170,29 @@ class IRSolver
   bool checkValidR(double R) const;
 
   double getResistance(odb::dbTechLayer* layer) const;
+
+  struct InstCompare
+  {
+    bool operator()(odb::dbInst* lhs, odb::dbInst* rhs) const
+    {
+      return lhs->getId() < rhs->getId();
+    }
+  };
+  using ITermMap
+      = std::map<odb::dbInst*, std::vector<odb::dbITerm*>, InstCompare>;
+  void findUnconnectedInstances();
+  void findUnconnectedInstancesByStdCells(
+      ITermMap& iterms,
+      std::set<odb::dbInst*>& connected_insts);
+  void findUnconnectedInstancesByITerms(
+      ITermMap& iterms,
+      std::set<odb::dbInst*>& connected_insts);
+  void findUnconnectedInstancesByAbutment(
+      ITermMap& iterms,
+      std::set<odb::dbInst*>& connected_insts);
+
+  bool isStdCell(odb::dbInst* inst) const;
+  bool isConnected(odb::dbITerm* iterm) const;
 
   std::optional<float> supply_voltage_src_;
   //! Worst case voltage at the lowest layer nodes
@@ -225,5 +246,6 @@ class IRSolver
   std::map<NodeIdx, double> source_nodes_;
 
   std::vector<odb::dbSBox*> power_wires_;
+  std::vector<odb::dbInst*> unconnected_insts_;
 };
 }  // namespace psm
