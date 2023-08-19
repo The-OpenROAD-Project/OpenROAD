@@ -9,10 +9,12 @@
 [WARNING ORD-2011] LEF master MOCK_HYBRID_A has no liberty cell.
 [WARNING ORD-2011] LEF master MOCK_HYBRID_AG has no liberty cell.
 [WARNING ORD-2011] LEF master MOCK_HYBRID_G has no liberty cell.
+[WARNING IFP-0046] Site HybridG is a hybrid row, but its height 800000 is not a multiple of the smallest site height 600000.
+[WARNING IFP-0046] Site HybridAG is a hybrid row, but its height 1400000 is not a multiple of the smallest site height 600000.
 [WARNING IFP-0028] Core area lower left (1000.000, 1000.000) snapped to (1000.000, 1200.000).
-[WARNING IFP-0028] Core area lower left (1000.000, 1000.000) snapped to (1000.000, 1600.000).
+[WARNING IFP-0028] Core area lower left (1000.000, 1000.000) snapped to (1000.000, 1400.000).
 [WARNING IFP-0048] Site HybridAG is a hybrid site
-[DEBUG IFP-hybrid] Site HybridA with width 200000 and height 800000
+[DEBUG IFP-hybrid] Site HybridA with width 200000 and height 600000
 [DEBUG IFP-hybrid] Site HybridG with width 200000 and height 800000
 [DEBUG IFP-hybrid] Pattern [HybridA] with 1 sites
 [DEBUG IFP-hybrid] Pattern [HybridG] with 1 sites
