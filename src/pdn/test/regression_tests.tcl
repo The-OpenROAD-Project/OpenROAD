@@ -91,6 +91,7 @@ record_tests {
   asap7_taper
   asap7_offcenter_via
   asap7_no_via_generate_v1_snapped
+  asap7_failed_macro_grid
 
   existing
 
