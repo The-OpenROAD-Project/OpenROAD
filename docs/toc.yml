@@ -6,7 +6,7 @@ entries:
   - file: user/Build.md
     title: Building OpenROAD
   - file: user/ORFS.md
-    title: Getting Started with the OpenROAD flow - OpenROAD-flow-scripts
+    title: Getting Started with the OpenROAD Flow - OpenROAD-flow-scripts
   - file: tutorials/index
     title: Tutorials
   - file: contrib/GitGuide
@@ -47,7 +47,7 @@ entries:
       title: IR Drop Analysis
       entries:
       - file: main/src/psm/doc/Vsrc_description
-        title: VSRC description
+        title: VSRC Description
   - file: main/src/gpl/README
     title: Global Placement
     entries:
