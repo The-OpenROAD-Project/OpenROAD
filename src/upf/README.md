@@ -16,14 +16,14 @@ Sources the UPF file.
 
 ```tcl
 read_upf
-    [-file file]
+    -file file
 ```
 
 #### Options
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `-file` | `.upf` filename |
+| `-file` | Path to `.upf` file. |
 
 ### Create Power Domain
 
@@ -37,8 +37,8 @@ create_power_domain
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `-elements` | list of module paths that belong this this domain OR `*` for top domain |
-| `name` | domain name |
+| `-elements` | List of module paths that belong this this domain OR `*` for top domain. |
+| `name` | Domain name. |
 
 ### Create Logic Port
 
@@ -52,8 +52,8 @@ create_logic_port
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `-direction` | direction of the port (`in`, `out`, `inout`) |
-| `port_name` | port name |
+| `-direction` | Direction of the port (`in`, `out`, `inout`). |
+| `port_name` | Port name. |
 
 ### Create Power Switch
 
@@ -71,12 +71,12 @@ create_power_switch
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `-domain` | power domain name |
-| `-output_supply_port` | output supply port of the switch |
-| `-input_supply_port` | input supply port of the switch |
-| `-control_port` | a control port on the switch |
-| `-on_state` | {`state_name` `input_supply_port` {`boolean_expression`}} |
-| `name` | power switch name |
+| `-domain` | Power domain name. |
+| `-output_supply_port` | Output supply port of the switch. |
+| `-input_supply_port` | Input supply port of the switch. |
+| `-control_port` | Control port on the switch. |
+| `-on_state` | One of {`state_name` `input_supply_port` {`boolean_expression`}}. |
+| `name` | Power switch name. |
 
 ### Create or Update Isolation Strategy
 
@@ -96,14 +96,14 @@ set_isolation
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `-domain` | power domain |
-| `-applies_to` | restricts the strategy to apply one of these (`inputs`, `outputs`, `both`) |
-| `clamp_value` | value the isolation can drive (`0`, `1`) |
-| `isolation_signal` | The control signal for this strategy |
-| `isolation_sense` | The active level of isolation control signal |
-| `location` | domain in which isolation cells are placed (`parent`, `self`, `fanout`) |
-| `update` | flag if use existing strategy, will error if strategy doesn't exist |
-| `name` | isolation strategy name |
+| `-domain` | Power domain |
+| `-applies_to` | Restricts the strategy to apply one of these (`inputs`, `outputs`, `both`). |
+| `clamp_value` | Value the isolation can drive (`0`, `1`). |
+| `isolation_signal` | The control signal for this strategy. |
+| `isolation_sense` | The active level of isolation control signal. |
+| `location` | Domain in which isolation cells are placed (`parent`, `self`, `fanout`). |
+| `update` | Flag if use existing strategy, will error if strategy doesn't exist. |
+| `name` | Isolation strategy name. |
 
 ### Set Interface cell
 
@@ -118,9 +118,9 @@ use_interface_cell
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `-domain` | power domain name |
-| `-strategy` | isolation strategy name |
-| `-lib_cells` | list of lib cells that could be used |
+| `-domain` | Power domain name. |
+| `-strategy` | Isolation strategy name. |
+| `-lib_cells` | List of lib cells that could be used. |
 
 ### Set Domain Area
 
@@ -133,8 +133,8 @@ set_domain_area
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `domain_name` | power domain name |
-| `llx, lly, urx, ury` | the lower left and upper right x-/y- coordinates respectively of the power domain area (microns) |
+| `domain_name` | Power domain name. |
+| `llx, lly, urx, ury` | The lower left and upper right x-/y- coordinates respectively of the power domain area (microns). |
 
 ## Example scripts
 
