@@ -197,6 +197,9 @@ class Grid
 
   virtual std::set<odb::dbInst*> getInstances() const;
 
+  bool hasShapes() const;
+  bool hasVias() const;
+
  protected:
   // find all intersections in the shapes which may become vias
   virtual void getIntersections(std::vector<ViaPtr>& intersections,
