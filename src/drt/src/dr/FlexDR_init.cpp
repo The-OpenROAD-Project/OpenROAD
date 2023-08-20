@@ -2348,6 +2348,12 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
                   cout << "PIN/" << bterm->getName() << " ";
                   break;
                 }
+                case frcInstBlockage: {
+                  frInst* inst = (static_cast<frInstBlockage*>(src))->getInst();
+                  cout << inst->getName() << "/OBS"
+                       << " ";
+                  break;
+                }
                 case frcInst: {
                   frInst* inst = (static_cast<frInst*>(src));
                   cout << inst->getName() << "/OBS"

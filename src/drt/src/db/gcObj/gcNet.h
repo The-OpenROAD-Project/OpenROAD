@@ -33,6 +33,8 @@
 #include "db/gcObj/gcBlockObject.h"
 #include "db/gcObj/gcPin.h"
 #include "db/obj/frNet.h"
+#include "db/obj/frInstBlockage.h"
+#include "db/obj/frBlockage.h"
 
 namespace fr {
 class frNet;
@@ -50,9 +52,7 @@ class gcNet : public gcBlockObject
         pins_(numLayers),
         owner_(nullptr),
         taperedRects(numLayers),
-        nonTaperedRects(numLayers),
-        isBlockage_(false),
-        designRuleWidth_(-1)
+        nonTaperedRects(numLayers)
   {
   }
   // setters
@@ -95,8 +95,6 @@ class gcNet : public gcBlockObject
     pins_[layerNum].push_back(std::move(pin));
   }
   void setOwner(frBlockObject* in) { owner_ = in; }
-  void setBlockage(bool value) { isBlockage_ = value; }
-  void setDesignRuleWidth(frCoord value) { designRuleWidth_ = value; }
   void clear()
   {
     auto size = routePolygons_.size();
@@ -162,8 +160,30 @@ class gcNet : public gcBlockObject
   }
   bool hasOwner() const { return owner_; }
   frBlockObject* getOwner() const { return owner_; }
-  bool isBlockage() const { return isBlockage_; }
-  frCoord getDesignRuleWidth() const { return designRuleWidth_; }
+  bool isBlockage() const
+  {
+    return hasOwner()
+           && (owner_->typeId() == frcInstBlockage
+               || owner_->typeId() == frcInst
+               || owner_->typeId() == frcBlockage);
+  }
+  frCoord getDesignRuleWidth() const
+  {
+    if (hasOwner()) {
+      switch (owner_->typeId()) {
+        case frcInstBlockage:
+          return static_cast<frInstBlockage*>(owner_)
+              ->getBlockage()
+              ->getDesignRuleWidth();
+        case frcBlockage:
+          return static_cast<frBlockage*>(owner_)->getDesignRuleWidth();
+        default:
+          return -1;
+      }
+    } else {
+      return -1;
+    }
+  }
   // others
   frBlockObjectEnum typeId() const override { return gccNet; }
 
@@ -250,8 +270,6 @@ class gcNet : public gcBlockObject
   // A non-tapered rect within a tapered max rectangle still require nondefault
   // spacing. This list hold these rectangles
   vector<unique_ptr<gcRect>> specialSpacingRects;
-  bool isBlockage_;
-  frCoord designRuleWidth_;
 
   void init();
 };
