@@ -2252,7 +2252,6 @@ void io::Parser::setMasters(odb::dbDatabase* db)
         }
       }
 
-      using namespace gtl::operators;
       vector<gtl::polygon_90_set_data<frCoord>> layerPolys(
           tech_->getLayers().size());
       for (auto obs : master->getObstructions()) {
@@ -2311,6 +2310,7 @@ void io::Parser::setMasters(odb::dbDatabase* db)
         }
         if (obs->getDesignRuleWidth() == -1) {
           gtl::rectangle_data<frCoord> rect(xl, yl, xh, yh);
+          using gtl::operators::operator+=;
           layerPolys[layerNum] += rect;
         } else {
           auto blkIn = make_unique<frBlockage>();
