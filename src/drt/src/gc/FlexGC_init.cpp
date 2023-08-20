@@ -66,7 +66,14 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
       }
       break;
     }
-    case frcInstBlockage:
+    case frcInstBlockage: {
+      auto iblkg = static_cast<frInstBlockage*>(obj);
+      if (iblkg->getBlockage()->getDesignRuleWidth() != -1) {
+        owner = iblkg;
+      } else {
+        owner = iblkg->getInst();
+      }
+    }
     case frcBlockage: {
       owner = obj;
       break;
