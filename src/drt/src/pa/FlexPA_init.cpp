@@ -389,7 +389,7 @@ void FlexPA::initTrackCoords()
   vector<vector<frCoord>> halfTrackCoords(numLayers);
   for (int i = 0; i < numLayers; i++) {
     frCoord prevFullCoord = std::numeric_limits<frCoord>::max();
-    
+
     for (auto& [currFullCoord, cost] : trackCoords_[i]) {
       if (currFullCoord > prevFullCoord) {
         const frCoord currHalfGrid
