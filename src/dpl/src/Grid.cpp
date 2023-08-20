@@ -610,7 +610,7 @@ int Opendp::map_coordinates(int original_coordinate,
                             int original_step,
                             int target_step) const
 {
-  return divFloor(original_step * original_coordinate, target_step);
+  return divCeil(original_step * original_coordinate, target_step);
 }
 
 void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
@@ -647,39 +647,90 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
     int layer_x_end = map_coordinates(x_end, site_width, site_width);
     int layer_y = map_coordinates(grid_y, row_height, layer.first);
     int layer_y_end = map_coordinates(y_end, row_height, layer.first);
+    debugPrint(logger_,
+               DPL,
+               "detailed",
+               1,
+               "y_end {} original step {} target step {} layer_y_end {}",
+               y_end,
+               row_height,
+               layer.first,
+               layer_y_end);
+
+    debugPrint(
+        logger_,
+        DPL,
+        "detailed",
+        1,
+        "Mapping coordinates start from layer {} to layer {}. From [x{} y{}] "
+        "it became [x{} y{}].",
+        row_height,
+        layer.first,
+        grid_x,
+        grid_y,
+        layer_x,
+        layer_y);
+    debugPrint(
+        logger_,
+        DPL,
+        "detailed",
+        1,
+        "Mapping coordinates end from layer {} to layer {}. From [x{} y{}] "
+        "it became [x{} y{}].",
+        row_height,
+        layer.first,
+        x_end,
+        y_end,
+        layer_x_end,
+        layer_y_end);
+
     if (layer_x_end == layer_x) {
       ++layer_x_end;
     }
 
     if (layer_y_end == layer_y) {
       ++layer_y_end;
+      debugPrint(
+          logger_, DPL, "detailed", 1, "added 1 go layer_end {}", layer_y_end);
     }
 
     for (int x = layer_x; x < layer_x_end; x++) {
       for (int y = layer_y; y < layer_y_end; y++) {
         Pixel* pixel = gridPixel(layer.second.grid_index, x, y);
-        if (pixel->cell) {
+        if (pixel && pixel->cell) {
           // Checks that the row heights of the found cell match the row height
           // of this layer. If they don't, it means that this pixel is partially
           // filled by a single-height or shorter cell, which is allowed.
           // However, if they do match, it means that we are trying to overwrite
           // a double-height cell placement, which is an error.
 
+          debugPrint(logger_,
+                     DPL,
+                     "detailed",
+                     1,
+                     "Found cell {} at [x{} y{}].",
+                     pixel->cell->name(),
+                     x,
+                     y);
           pair<int, GridInfo> grid_info_candidate = getRowInfo(pixel->cell);
           if (grid_info_candidate.first == layer.first) {
             // Occupied by a multi-height cell this should not happen.
-            logger_->error(
-                DPL,
-                41,
-                "Cannot paint grid because another layer is already occupied.");
+            logger_->error(DPL,
+                           41,
+                           "Cannot paint grid with cell {} because another "
+                           "layer [{}] is already occupied by cell {}.",
+                           cell->name(),
+                           layer.first,
+                           pixel->cell->name());
           } else {
             // We might not want to overwrite the cell that's already here.
             continue;
           }
         }
-
-        pixel->cell = cell;
-        pixel->util = 1.0;
+        if (pixel) {
+          pixel->cell = cell;
+          pixel->util = 1.0;
+        }
       }
     }
   }

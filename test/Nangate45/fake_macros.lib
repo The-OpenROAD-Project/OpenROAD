@@ -118,7 +118,7 @@ library(fake_macros) {
     }
 
     cell(MOCK_HYBRID_A){
-        area : 10000;
+        area : 1000;
         interface_timing : true;
         is_macro : true;
 
@@ -131,7 +131,7 @@ library(fake_macros) {
     }
 
     cell(MOCK_HYBRID_G){
-        area : 10000;
+        area : 1000;
         interface_timing : true;
         is_macro : true;
 
@@ -144,7 +144,7 @@ library(fake_macros) {
     }
 
     cell(MOCK_HYBRID_AG){
-        area : 20000;
+        area : 2000;
         interface_timing : true;
         is_macro : true;
 
