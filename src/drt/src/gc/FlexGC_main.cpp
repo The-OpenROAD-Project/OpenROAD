@@ -250,16 +250,18 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_prl_getReqSpcVal(
     if (USEMINSPACING_OBS) {
       width1 = currLayer->getWidth();
     }
-    if (rect1->getNet()->getDesignRuleWidth() != -1)
+    if (rect1->getNet()->getDesignRuleWidth() != -1) {
       width1 = rect1->getNet()->getDesignRuleWidth();
+    }
   }
   if (rect2->getNet()->isBlockage()) {
     isObs = true;
     if (USEMINSPACING_OBS) {
       width2 = currLayer->getWidth();
     }
-    if (rect2->getNet()->getDesignRuleWidth() != -1)
+    if (rect2->getNet()->getDesignRuleWidth() != -1) {
       width2 = rect2->getNet()->getDesignRuleWidth();
+    }
   }
   // check if width is a result of route shape
   // if the width a shape is smaller if only using fixed shape, then it's route
@@ -809,10 +811,11 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1,
     if (prlY == 0) {
       gtl::bloat(markerRect, gtl::VERTICAL, 1);
     }
-    if (ptr1->getNet()->isBlockage() || ptr2->getNet()->isBlockage())
+    if (ptr1->getNet()->isBlockage() || ptr2->getNet()->isBlockage()) {
       checkMetalSpacing_short_obs(ptr1, ptr2, markerRect);
-    else
+    } else {
       checkMetalSpacing_short(ptr1, ptr2, markerRect);
+    }
     // prl
   } else {
     checkMetalSpacing_prl(ptr1,
@@ -2439,8 +2442,9 @@ frCoord FlexGCWorker::Impl::checkLef58CutSpacing_spc_getReqSpcVal(
       auto ptr1Layer = getTech()->getLayer(ptr1LayerNum);
       if (ptr1->getNet()->isBlockage()) {
         frCoord width1 = ptr1->width();
-        if (ptr1->getNet()->getDesignRuleWidth() != -1)
+        if (ptr1->getNet()->getDesignRuleWidth() != -1) {
           width1 = ptr1->getNet()->getDesignRuleWidth();
+        }
         if (width1 > int(ptr1Layer->getWidth()))
           maxSpcVal = con->getCutWithin();
       }
@@ -2448,8 +2452,9 @@ frCoord FlexGCWorker::Impl::checkLef58CutSpacing_spc_getReqSpcVal(
       auto ptr2Layer = getTech()->getLayer(ptr2LayerNum);
       if (ptr2->getNet()->isBlockage()) {
         frCoord width2 = ptr2->width();
-        if (ptr2->getNet()->getDesignRuleWidth() != -1)
+        if (ptr2->getNet()->getDesignRuleWidth() != -1) {
           width2 = ptr2->getNet()->getDesignRuleWidth();
+        }
         if (width2 > int(ptr2Layer->getWidth()))
           maxSpcVal = con->getCutWithin();
       }
