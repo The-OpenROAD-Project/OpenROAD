@@ -322,7 +322,7 @@ class FlexPA
                   int currUniqueInstIdx,
                   int maxAccessPointSize);
   bool genPatterns_commit(
-      std::vector<FlexDPNode>& nodes,
+      const std::vector<FlexDPNode>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       bool& isValid,
       std::set<std::vector<int>>& instAccessPatterns,
@@ -342,10 +342,11 @@ class FlexPA
   void getNestedIdx(int flatIdx, int& idx1, int& idx2, int idx2Dim);
   int getFlatEdgeIdx(int prevIdx1, int prevIdx2, int currIdx2, int idx2Dim);
 
-  bool genPatterns_gc(std::set<frBlockObject*> targetObjs,
-                      std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
-                      const PatternType patternType,
-                      std::set<frBlockObject*>* owners = nullptr);
+  bool genPatterns_gc(
+      const std::set<frBlockObject*>& targetObjs,
+      const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
+      const PatternType patternType,
+      std::set<frBlockObject*>* owners = nullptr);
 
   void getInsts(std::vector<frInst*>& insts);
   void genInstRowPattern(std::vector<frInst*>& insts);
@@ -359,7 +360,7 @@ class FlexPA
                                const std::vector<frInst*>& insts);
   int getEdgeCost(int prevNodeIdx,
                   int currNodeIdx,
-                  std::vector<FlexDPNode>& nodes,
+                  const std::vector<FlexDPNode>& nodes,
                   const std::vector<frInst*>& insts);
   void revertAccessPoints();
   void addAccessPatternObj(
