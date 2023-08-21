@@ -145,6 +145,21 @@ void PdnGen::buildGrids(bool trim)
     cleanupVias();
   }
 
+  bool failed = false;
+  for (auto* grid : grids) {
+    if (grid->hasShapes() || grid->hasVias()) {
+      continue;
+    }
+    logger_->warn(utl::PDN,
+                  232,
+                  "{} does not contain any shapes or vias.",
+                  grid->getLongName());
+    failed = true;
+  }
+  if (failed) {
+    logger_->error(utl::PDN, 233, "Failed to generate full power grid.");
+  }
+
   updateRenderer();
   debugPrint(logger_, utl::PDN, "Make", 1, "Build - end");
 }
