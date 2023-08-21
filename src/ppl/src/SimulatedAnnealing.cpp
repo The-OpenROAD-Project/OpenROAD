@@ -303,9 +303,11 @@ int SimulatedAnnealing::randomAssignmentForGroups(
       }
       group_slot = slot;
     } else {
+      int slot = slot_indices[slot_idx];
       while (!isFreeForGroup(
-          slot_indices[slot_idx], group.pin_indices.size(), num_slots_ - 1)) {
+          slot, group.pin_indices.size(), num_slots_ - 1)) {
         slot_idx++;
+        slot = slot_indices[slot_idx];
       }
       group_slot = slot_indices[slot_idx];
     }
@@ -617,13 +619,14 @@ double SimulatedAnnealing::dbuToMicrons(int64_t dbu)
   return (double) dbu / (db_->getChip()->getBlock()->getDbUnitsPerMicron());
 }
 
-bool SimulatedAnnealing::isFreeForGroup(int slot_idx,
+bool SimulatedAnnealing::isFreeForGroup(int& slot_idx,
                                         int group_size,
                                         int last_slot)
 {
   bool free_slot = false;
   while (!free_slot) {
     if ((slot_idx + group_size >= last_slot)) {
+      free_slot = false;
       break;
     }
 
