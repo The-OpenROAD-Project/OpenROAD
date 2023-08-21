@@ -311,7 +311,7 @@ void OpenRoad::readDef(const char* filename,
 {
   if (!floorplan_init && !incremental && !child && db_->getChip()
       && db_->getChip()->getBlock()) {
-    logger_->info(ORD, 48, "Loading second DEF.");
+    logger_->info(ORD, 48, "Loading an additional DEF.");
   }
 
   odb::defin::MODE mode = odb::defin::DEFAULT;
