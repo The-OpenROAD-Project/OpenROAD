@@ -30,6 +30,7 @@
 
 #include <boost/polygon/polygon.hpp>
 
+#include "FlexPA_unique.h"
 #include "frDesign.h"
 namespace gtl = boost::polygon;
 
@@ -93,24 +94,15 @@ class FlexPA
   int macroCellPinValidPlanarApCnt_ = 0;
   int macroCellPinValidViaApCnt_ = 0;
   int macroCellPinNoApCnt_ = 0;
-
-  std::vector<frInst*> uniqueInstances_;
-  std::map<frInst*, frInst*, frBlockObjectComp> inst2unique_;
-  std::map<frInst*, set<frInst*, frBlockObjectComp>*> inst2Class_;
-  std::map<frInst*, int, frBlockObjectComp>
-      unique2paidx_;  // unique instance to pinaccess index
-  std::map<frInst*, int, frBlockObjectComp> unique2Idx_;
   std::vector<std::vector<std::unique_ptr<FlexPinAccessPattern>>>
       uniqueInstPatterns_;
+
+  UniqueInsts unique_insts_;
 
   // helper structures
   std::vector<std::map<frCoord, frAccessPointEnum>> trackCoords_;
   std::map<frLayerNum, std::map<int, std::map<ViaRawPriorityTuple, frViaDef*>>>
       layerNum2ViaDefs_;
-  map<frMaster*,
-      map<dbOrientType, map<vector<frCoord>, set<frInst*, frBlockObjectComp>>>,
-      frBlockObjectComp>
-      masterOT2Insts;  // master orient track-offset to instances
   frCollection<odb::dbInst*> target_insts_;
 
   std::string remote_host_;
@@ -123,29 +115,14 @@ class FlexPA
   frTechObject* getTech() const { return design_->getTech(); }
   void setDesign(frDesign* in) { design_ = in; }
   void applyPatternsFile(const char* file_path);
-  void getPrefTrackPatterns(std::vector<frTrackPattern*>& prefTrackPatterns);
-  bool hasTrackPattern(frTrackPattern* tp, const Rect& box);
   void getViaRawPriority(frViaDef* viaDef, ViaRawPriorityTuple& priority);
   bool isSkipInstTerm(frInstTerm* in);
   bool isDistributed() const { return !remote_host_.empty(); }
 
   // init
   void init();
-  void initUniqueInstance();
-  void initUniqueInstance_master2PinLayerRange(
-      std::map<frMaster*,
-               std::tuple<frLayerNum, frLayerNum>,
-               frBlockObjectComp>& master2PinLayerRange);
-  void initUniqueInstance_main(
-      const std::map<frMaster*,
-                     std::tuple<frLayerNum, frLayerNum>,
-                     frBlockObjectComp>& master2PinLayerRange,
-      const std::vector<frTrackPattern*>& prefTrackPatterns);
-  bool isNDRInst(frInst& inst);
-  void initPinAccess();
   void initTrackCoords();
   void initViaRawPriority();
-  void checkFigsOnGrid(const frMPin* pin);
   // prep
   void prep();
   void prepPoint();

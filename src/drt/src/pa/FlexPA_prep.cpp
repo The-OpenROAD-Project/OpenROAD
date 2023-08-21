@@ -1295,26 +1295,18 @@ bool FlexPA::prepPoint_pin_helper(
   if (isStdCellPin && nSparseAPs >= MINNUMACCESSPOINT_STDCELLPIN) {
     prepPoint_pin_updateStat(aps, pin, instTerm);
     // write to pa
-    auto it = unique2paidx_.find(instTerm->getInst());
-    if (it == unique2paidx_.end()) {
-      logger_->error(DRT, 71, "prepPoint_pin_helper unique2paidx not found.");
-    } else {
-      for (auto& ap : aps) {
-        pin->getPinAccess(it->second)->addAccessPoint(std::move(ap));
-      }
+    const int paIdx = unique_insts_.getPAIndex(instTerm->getInst());
+    for (auto& ap : aps) {
+      pin->getPinAccess(paIdx)->addAccessPoint(std::move(ap));
     }
     return true;
   }
   if (isMacroCellPin && nSparseAPs >= MINNUMACCESSPOINT_MACROCELLPIN) {
     prepPoint_pin_updateStat(aps, pin, instTerm);
     // write to pa
-    auto it = unique2paidx_.find(instTerm->getInst());
-    if (it == unique2paidx_.end()) {
-      logger_->error(DRT, 72, "prepPoint_pin_helper unique2paidx not found.");
-    } else {
-      for (auto& ap : aps) {
-        pin->getPinAccess(it->second)->addAccessPoint(std::move(ap));
-      }
+    const int paIdx = unique_insts_.getPAIndex(instTerm->getInst());
+    for (auto& ap : aps) {
+      pin->getPinAccess(paIdx)->addAccessPoint(std::move(ap));
     }
     return true;
   }
@@ -1354,7 +1346,7 @@ int FlexPA::prepPoint_pin(T* pin, frInstTerm* instTerm)
   if (graphics_) {
     set<frInst*, frBlockObjectComp>* instClass = nullptr;
     if (instTerm) {
-      instClass = inst2Class_[instTerm->getInst()];
+      instClass = unique_insts_.getClass(instTerm->getInst());
     }
     graphics_->startPin(pin, instTerm, instClass);
   }
@@ -1397,13 +1389,9 @@ int FlexPA::prepPoint_pin(T* pin, frInstTerm* instTerm)
     }
   } else {
     // write to pa
-    const auto it = unique2paidx_.find(instTerm->getInst());
-    if (it == unique2paidx_.end()) {
-      logger_->error(DRT, 75, "prepPoint_pin unique2paidx not found.");
-    } else {
-      for (auto& ap : aps) {
-        pin->getPinAccess(it->second)->addAccessPoint(std::move(ap));
-      }
+    const int paIdx = unique_insts_.getPAIndex(instTerm->getInst());
+    for (auto& ap : aps) {
+      pin->getPinAccess(paIdx)->addAccessPoint(std::move(ap));
     }
   }
   return nAps;
@@ -1436,10 +1424,11 @@ void FlexPA::prepPoint()
 
   omp_set_num_threads(MAX_THREADS);
   ThreadException exception;
+  const auto& unique = unique_insts_.getUnique();
 #pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < (int) uniqueInstances_.size(); i++) {
+  for (int i = 0; i < (int) unique.size(); i++) {
     try {
-      auto& inst = uniqueInstances_[i];
+      auto& inst = unique[i];
       // only do for core and block cells
       dbMasterType masterType = inst->getMaster()->getMasterType();
       if (masterType != dbMasterType::CORE
@@ -1638,19 +1627,20 @@ void FlexPA::prepPattern()
 {
   ProfileTask profile("PA:pattern");
 
+  const auto& unique = unique_insts_.getUnique();
+
   // revert access points to origin
-  uniqueInstPatterns_.resize(uniqueInstances_.size());
+  uniqueInstPatterns_.resize(unique.size());
 
   int cnt = 0;
 
   omp_set_num_threads(MAX_THREADS);
   ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
-  for (int currUniqueInstIdx = 0;
-       currUniqueInstIdx < (int) uniqueInstances_.size();
+  for (int currUniqueInstIdx = 0; currUniqueInstIdx < (int) unique.size();
        currUniqueInstIdx++) {
     try {
-      auto& inst = uniqueInstances_[currUniqueInstIdx];
+      auto& inst = unique[currUniqueInstIdx];
       // only do for core and block cells
       // TODO the above comment says "block cells" but that's not what the code
       // does?
@@ -1762,14 +1752,15 @@ void FlexPA::prepPattern()
 
 void FlexPA::revertAccessPoints()
 {
-  for (auto& inst : uniqueInstances_) {
+  const auto& unique = unique_insts_.getUnique();
+  for (auto& inst : unique) {
     const dbTransform xform = inst->getTransform();
     const Point offset(xform.getOffset());
     dbTransform revertXform;
     revertXform.setOffset(Point(-offset.getX(), -offset.getY()));
     revertXform.setOrient(dbOrientType::R0);
 
-    const auto paIdx = unique2paidx_[inst];
+    const auto paIdx = unique_insts_.getPAIndex(inst);
     for (auto& instTerm : inst->getInstTerms()) {
       // if (isSkipInstTerm(instTerm.get())) {
       //   continue;
@@ -1831,8 +1822,7 @@ void FlexPA::genInstRowPattern_init(std::vector<FlexDPNode>& nodes,
   // init inst nodes
   for (int idx1 = 0; idx1 < (int) insts.size(); idx1++) {
     auto& inst = insts[idx1];
-    auto& uniqueInst = inst2unique_[inst];
-    auto uniqueInstIdx = unique2Idx_[uniqueInst];
+    const int uniqueInstIdx = unique_insts_.getIndex(inst);
     auto& instPatterns = uniqueInstPatterns_[uniqueInstIdx];
     for (int idx2 = 0; idx2 < (int) instPatterns.size(); idx2++) {
       const int nodeIdx
@@ -1896,8 +1886,7 @@ void FlexPA::genInstRowPattern_commit(std::vector<FlexDPNode>& nodes,
 
       auto& inst = insts[currIdx1];
       int accessPointIdx = 0;
-      auto& uniqueInst = inst2unique_[inst];
-      auto& uniqueInstIdx = unique2Idx_[uniqueInst];
+      const int uniqueInstIdx = unique_insts_.getIndex(inst);
       auto accessPattern = uniqueInstPatterns_[uniqueInstIdx][currIdx2].get();
       auto& accessPoints = accessPattern->getPattern();
 
@@ -1959,8 +1948,7 @@ void FlexPA::genInstRowPattern_print(std::vector<FlexDPNode>& nodes,
       // print debug information
       auto& inst = insts[currIdx1];
       int accessPointIdx = 0;
-      auto& uniqueInst = inst2unique_[inst];
-      auto& uniqueInstIdx = unique2Idx_[uniqueInst];
+      const int uniqueInstIdx = unique_insts_.getIndex(inst);
       auto accessPattern = uniqueInstPatterns_[uniqueInstIdx][currIdx2].get();
       auto& accessPoints = accessPattern->getPattern();
 
@@ -2021,9 +2009,9 @@ int FlexPA::getEdgeCost(const int prevNodeIdx,
   std::vector<std::pair<frConnFig*, frBlockObject*>> objs;
   // push the vias from prev inst access pattern and curr inst access pattern
   const auto prevInst = insts[prevIdx1];
-  const auto prevUniqueInstIdx = unique2Idx_[inst2unique_[prevInst]];
+  const auto prevUniqueInstIdx = unique_insts_.getIndex(prevInst);
   const auto currInst = insts[currIdx1];
-  const auto currUniqueInstIdx = unique2Idx_[inst2unique_[currInst]];
+  const auto currUniqueInstIdx = unique_insts_.getIndex(currInst);
   const auto prevPinAccessPattern
       = uniqueInstPatterns_[prevUniqueInstIdx][prevIdx2].get();
   const auto currPinAccessPattern
@@ -2098,8 +2086,9 @@ void FlexPA::getInsts(std::vector<frInst*>& insts)
     if (!target_insts_.empty()
         && target_frinsts.find(inst.get()) == target_frinsts.end())
       continue;
-    if (inst2unique_.find(inst.get()) == inst2unique_.end())
+    if (!unique_insts_.hasUnique(inst.get())) {
       continue;
+    }
     dbMasterType masterType = inst->getMaster()->getMasterType();
     if (masterType != dbMasterType::CORE
         && masterType != dbMasterType::CORE_TIEHIGH
@@ -2120,29 +2109,35 @@ void FlexPA::getInsts(std::vector<frInst*>& insts)
   }
 }
 
+// Skip power pins, pins connected to special nets, and dangling pins
+// (since we won't route these).  We have to be careful that these
+// conditions are true not only of the unique instance but also all
+// the equivalent instances.
 bool FlexPA::isSkipInstTerm(frInstTerm* in)
 {
-  if (in->getTerm()->getType().isSupply())
+  if (in->getTerm()->getType().isSupply()) {
     return true;
-  if (!in->getNet() || in->getNet()->isSpecial()) {
-    auto instClass = inst2Class_[in->getInst()];
-    if (instClass != nullptr) {
-      for (auto& inst : *instClass) {
-        frInstTerm* it = inst->getInstTerm(in->getTerm()->getName());
-        if (!in->getNet()) {
-          if (it->getNet()) {
-            return false;
-          }
-        } else if (in->getNet()->isSpecial()) {
-          if (it->getNet() && !it->getNet()->isSpecial()) {
-            return false;
-          }
+  }
+  auto in_net = in->getNet();
+  if (in_net && !in_net->isSpecial()) {
+    return false;
+  }
+  auto instClass = unique_insts_.getClass(in->getInst());
+  if (instClass != nullptr) {
+    for (auto& inst : *instClass) {
+      frInstTerm* it = inst->getInstTerm(in->getTerm()->getName());
+      if (!in_net) {
+        if (it->getNet()) {
+          return false;
+        }
+      } else if (in_net->isSpecial()) {
+        if (it->getNet() && !it->getNet()->isSpecial()) {
+          return false;
         }
       }
     }
-    return true;
   }
-  return false;
+  return true;
 }
 
 // the input inst must be unique instance
@@ -2152,7 +2147,7 @@ int FlexPA::prepPattern_inst(frInst* inst,
 {
   std::vector<std::pair<frCoord, std::pair<frMPin*, frInstTerm*>>> pins;
   // TODO: add assert in case input inst is not unique inst
-  int paIdx = unique2paidx_[inst];
+  int paIdx = unique_insts_.getPAIndex(inst);
   for (auto& instTerm : inst->getInstTerms()) {
     if (isSkipInstTerm(instTerm.get())) {
       continue;
@@ -2204,7 +2199,7 @@ int FlexPA::genPatterns(
   }
 
   int maxAccessPointSize = 0;
-  int paIdx = unique2paidx_[pins[0].second->getInst()];
+  int paIdx = unique_insts_.getPAIndex(pins[0].second->getInst());
   for (auto& [pin, instTerm] : pins) {
     maxAccessPointSize = std::max(
         maxAccessPointSize, pin->getPinAccess(paIdx)->getNumAccessPoints());
@@ -2321,7 +2316,7 @@ void FlexPA::genPatterns_init(
   // init pin nodes
   int pinIdx = 0;
   int apIdx = 0;
-  int paIdx = unique2paidx_[pins[0].second->getInst()];
+  int paIdx = unique_insts_.getPAIndex(pins[0].second->getInst());
 
   for (auto& [pin, instTerm] : pins) {
     apIdx = 0;
@@ -2481,13 +2476,13 @@ int FlexPA::getEdgeCost(
   if (vioEdges[edgeIdx] != -1) {
     hasVio = (vioEdges[edgeIdx] == 1);
   } else {
-    auto& currUniqueInst = uniqueInstances_[currUniqueInstIdx];
+    auto currUniqueInst = unique_insts_.getUnique(currUniqueInstIdx);
     dbTransform xform = currUniqueInst->getUpdatedXform(true);
     // check DRC
     vector<pair<frConnFig*, frBlockObject*>> objs;
     const auto& [pin1, instTerm1] = pins[prevIdx1];
     const auto targetObj = instTerm1->getInst();
-    const int paIdx = unique2paidx_[targetObj];
+    const int paIdx = unique_insts_.getPAIndex(targetObj);
     const auto pa1 = pin1->getPinAccess(paIdx);
     unique_ptr<frVia> via1;
     if (pa1->getAccessPoint(prevIdx2)->hasAccess(frDirEnum::U)) {
@@ -2624,7 +2619,7 @@ bool FlexPA::genPatterns_commit(
       auto& [pin, instTerm] = pins[idx1];
       auto inst = instTerm->getInst();
       targetObj = inst;
-      const int paIdx = unique2paidx_[inst];
+      const int paIdx = unique_insts_.getPAIndex(inst);
       const auto pa = pin->getPinAccess(paIdx);
       const auto accessPoint = pa->getAccessPoint(idx2);
       pin2AP[pin] = accessPoint;
@@ -2742,7 +2737,7 @@ void FlexPA::genPatterns_print_debug(
       auto& [pin, instTerm] = pins[pinCnt];
       auto inst = instTerm->getInst();
       cout << " " << instTerm->getTerm()->getName();
-      int paIdx = unique2paidx_[inst];
+      const int paIdx = unique_insts_.getPAIndex(inst);
       auto pa = pin->getPinAccess(paIdx);
       int currIdx1, currIdx2;
       getNestedIdx(currNodeIdx, currIdx1, currIdx2, maxAccessPointSize);
@@ -2777,7 +2772,7 @@ void FlexPA::genPatterns_print(
     if (pinCnt != (int) pins.size()) {
       auto& [pin, instTerm] = pins[pinCnt];
       auto inst = instTerm->getInst();
-      int paIdx = unique2paidx_[inst];
+      const int paIdx = unique_insts_.getPAIndex(inst);
       auto pa = pin->getPinAccess(paIdx);
       int currIdx1, currIdx2;
       getNestedIdx(currNodeIdx, currIdx1, currIdx2, maxAccessPointSize);
