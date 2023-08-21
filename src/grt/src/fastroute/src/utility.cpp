@@ -1480,8 +1480,6 @@ void FastRouteCore::check2DEdgesUsage()
 
   // check horizontal edges
   for (const auto& [i,j] : h_used_ggrid_) {
-  //for (int i = 0; i < y_grid_; i++) {
-    //for (int j = 0; j < x_grid_ - 1; j++) {
       if (h_edges_[i][j].usage > max_h_edge_usage) {
         logger_->error(GRT,
                        228,
@@ -1492,13 +1490,10 @@ void FastRouteCore::check2DEdgesUsage()
                        h_edges_[i][j].usage,
                        max_h_edge_usage);
       }
-    //}
   }
 
   // check vertical edges
   for (const auto& [i,j] : v_used_ggrid_) {
-  //for (int i = 0; i < y_grid_ - 1; i++) {
-    //for (int j = 0; j < x_grid_; j++) {
       if (v_edges_[i][j].usage > max_v_edge_usage) {
         logger_->error(GRT,
                        229,
@@ -1509,7 +1504,6 @@ void FastRouteCore::check2DEdgesUsage()
                        v_edges_[i][j].usage,
                        max_v_edge_usage);
       }
-    //}
   }
 }
 
