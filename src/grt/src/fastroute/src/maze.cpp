@@ -584,32 +584,32 @@ void FastRouteCore::updateCongestionHistory(const int upType,
   int maxlimit = 0;
 
   if (upType == 1) {
-    for (const auto& [i,j] : h_used_ggrid_) {
-        const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
+    for (const auto& [i, j] : h_used_ggrid_) {
+      const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
 
-        if (overflow > 0) {
-          h_edges_[i][j].last_usage += overflow;
-          h_edges_[i][j].congCNT++;
-        } else {
-          if (!stopDEC) {
-            h_edges_[i][j].last_usage = h_edges_[i][j].last_usage * 0.9;
-          }
+      if (overflow > 0) {
+        h_edges_[i][j].last_usage += overflow;
+        h_edges_[i][j].congCNT++;
+      } else {
+        if (!stopDEC) {
+          h_edges_[i][j].last_usage = h_edges_[i][j].last_usage * 0.9;
         }
-        maxlimit = std::max<int>(maxlimit, h_edges_[i][j].last_usage);
+      }
+      maxlimit = std::max<int>(maxlimit, h_edges_[i][j].last_usage);
     }
 
-    for (const auto& [i,j] : v_used_ggrid_) {
-        const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
+    for (const auto& [i, j] : v_used_ggrid_) {
+      const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
 
-        if (overflow > 0) {
-          v_edges_[i][j].last_usage += overflow;
-          v_edges_[i][j].congCNT++;
-        } else {
-          if (!stopDEC) {
-            v_edges_[i][j].last_usage = v_edges_[i][j].last_usage * 0.9;
-          }
+      if (overflow > 0) {
+        v_edges_[i][j].last_usage += overflow;
+        v_edges_[i][j].congCNT++;
+      } else {
+        if (!stopDEC) {
+          v_edges_[i][j].last_usage = v_edges_[i][j].last_usage * 0.9;
         }
-        maxlimit = std::max<int>(maxlimit, v_edges_[i][j].last_usage);
+      }
+      maxlimit = std::max<int>(maxlimit, v_edges_[i][j].last_usage);
     }
   } else if (upType == 2) {
     if (max_adj < ahth_) {
@@ -617,105 +617,105 @@ void FastRouteCore::updateCongestionHistory(const int upType,
     } else {
       stopDEC = false;
     }
-    for (const auto& [i,j] : h_used_ggrid_) {
-        const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
+    for (const auto& [i, j] : h_used_ggrid_) {
+      const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
 
-        if (overflow > 0) {
-          h_edges_[i][j].congCNT++;
-          h_edges_[i][j].last_usage += overflow;
-        } else {
-          if (!stopDEC) {
-            h_edges_[i][j].congCNT--;
-            h_edges_[i][j].congCNT = std::max<int>(0, h_edges_[i][j].congCNT);
-            h_edges_[i][j].last_usage = h_edges_[i][j].last_usage * 0.9;
-          }
+      if (overflow > 0) {
+        h_edges_[i][j].congCNT++;
+        h_edges_[i][j].last_usage += overflow;
+      } else {
+        if (!stopDEC) {
+          h_edges_[i][j].congCNT--;
+          h_edges_[i][j].congCNT = std::max<int>(0, h_edges_[i][j].congCNT);
+          h_edges_[i][j].last_usage = h_edges_[i][j].last_usage * 0.9;
         }
-        maxlimit = std::max<int>(maxlimit, h_edges_[i][j].last_usage);
+      }
+      maxlimit = std::max<int>(maxlimit, h_edges_[i][j].last_usage);
     }
 
-    for (const auto& [i,j] : v_used_ggrid_) {
-        const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
+    for (const auto& [i, j] : v_used_ggrid_) {
+      const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
 
-        if (overflow > 0) {
-          v_edges_[i][j].congCNT++;
-          v_edges_[i][j].last_usage += overflow;
-        } else {
-          if (!stopDEC) {
-            v_edges_[i][j].congCNT--;
-            v_edges_[i][j].congCNT = std::max<int>(0, v_edges_[i][j].congCNT);
-            v_edges_[i][j].last_usage = v_edges_[i][j].last_usage * 0.9;
-          }
+      if (overflow > 0) {
+        v_edges_[i][j].congCNT++;
+        v_edges_[i][j].last_usage += overflow;
+      } else {
+        if (!stopDEC) {
+          v_edges_[i][j].congCNT--;
+          v_edges_[i][j].congCNT = std::max<int>(0, v_edges_[i][j].congCNT);
+          v_edges_[i][j].last_usage = v_edges_[i][j].last_usage * 0.9;
         }
-        maxlimit = std::max<int>(maxlimit, v_edges_[i][j].last_usage);
+      }
+      maxlimit = std::max<int>(maxlimit, v_edges_[i][j].last_usage);
     }
 
   } else if (upType == 3) {
-    for (const auto& [i,j] : h_used_ggrid_) {
-        const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
+    for (const auto& [i, j] : h_used_ggrid_) {
+      const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
 
-        if (overflow > 0) {
-          h_edges_[i][j].congCNT++;
+      if (overflow > 0) {
+        h_edges_[i][j].congCNT++;
+        h_edges_[i][j].last_usage += overflow;
+      } else {
+        if (!stopDEC) {
+          h_edges_[i][j].congCNT--;
+          h_edges_[i][j].congCNT = std::max<int>(0, h_edges_[i][j].congCNT);
           h_edges_[i][j].last_usage += overflow;
-        } else {
-          if (!stopDEC) {
-            h_edges_[i][j].congCNT--;
-            h_edges_[i][j].congCNT = std::max<int>(0, h_edges_[i][j].congCNT);
-            h_edges_[i][j].last_usage += overflow;
-            h_edges_[i][j].last_usage
-                = std::max<int>(h_edges_[i][j].last_usage, 0);
-          }
+          h_edges_[i][j].last_usage
+              = std::max<int>(h_edges_[i][j].last_usage, 0);
         }
-        maxlimit = std::max<int>(maxlimit, h_edges_[i][j].last_usage);
+      }
+      maxlimit = std::max<int>(maxlimit, h_edges_[i][j].last_usage);
     }
 
-    for (const auto& [i,j] : v_used_ggrid_) {
-        const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
+    for (const auto& [i, j] : v_used_ggrid_) {
+      const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
 
-        if (overflow > 0) {
-          v_edges_[i][j].congCNT++;
+      if (overflow > 0) {
+        v_edges_[i][j].congCNT++;
+        v_edges_[i][j].last_usage += overflow;
+      } else {
+        if (!stopDEC) {
+          v_edges_[i][j].congCNT--;
           v_edges_[i][j].last_usage += overflow;
-        } else {
-          if (!stopDEC) {
-            v_edges_[i][j].congCNT--;
-            v_edges_[i][j].last_usage += overflow;
-            v_edges_[i][j].last_usage
-                = std::max<int>(v_edges_[i][j].last_usage, 0);
-          }
+          v_edges_[i][j].last_usage
+              = std::max<int>(v_edges_[i][j].last_usage, 0);
         }
-        maxlimit = std::max<int>(maxlimit, v_edges_[i][j].last_usage);
+      }
+      maxlimit = std::max<int>(maxlimit, v_edges_[i][j].last_usage);
     }
 
   } else if (upType == 4) {
-    for (const auto& [i,j] : h_used_ggrid_) {
-        const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
+    for (const auto& [i, j] : h_used_ggrid_) {
+      const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
 
-        if (overflow > 0) {
-          h_edges_[i][j].congCNT++;
-          h_edges_[i][j].last_usage += overflow;
-        } else {
-          if (!stopDEC) {
-            h_edges_[i][j].congCNT--;
-            h_edges_[i][j].congCNT = std::max<int>(0, h_edges_[i][j].congCNT);
-            h_edges_[i][j].last_usage = h_edges_[i][j].last_usage * 0.9;
-          }
+      if (overflow > 0) {
+        h_edges_[i][j].congCNT++;
+        h_edges_[i][j].last_usage += overflow;
+      } else {
+        if (!stopDEC) {
+          h_edges_[i][j].congCNT--;
+          h_edges_[i][j].congCNT = std::max<int>(0, h_edges_[i][j].congCNT);
+          h_edges_[i][j].last_usage = h_edges_[i][j].last_usage * 0.9;
         }
-        maxlimit = std::max<int>(maxlimit, h_edges_[i][j].last_usage);
+      }
+      maxlimit = std::max<int>(maxlimit, h_edges_[i][j].last_usage);
     }
 
-    for (const auto& [i,j] : v_used_ggrid_) {
-        const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
+    for (const auto& [i, j] : v_used_ggrid_) {
+      const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
 
-        if (overflow > 0) {
-          v_edges_[i][j].congCNT++;
-          v_edges_[i][j].last_usage += overflow;
-        } else {
-          if (!stopDEC) {
-            v_edges_[i][j].congCNT--;
-            v_edges_[i][j].congCNT = std::max<int>(0, v_edges_[i][j].congCNT);
-            v_edges_[i][j].last_usage = v_edges_[i][j].last_usage * 0.9;
-          }
+      if (overflow > 0) {
+        v_edges_[i][j].congCNT++;
+        v_edges_[i][j].last_usage += overflow;
+      } else {
+        if (!stopDEC) {
+          v_edges_[i][j].congCNT--;
+          v_edges_[i][j].congCNT = std::max<int>(0, v_edges_[i][j].congCNT);
+          v_edges_[i][j].last_usage = v_edges_[i][j].last_usage * 0.9;
         }
-        maxlimit = std::max<int>(maxlimit, v_edges_[i][j].last_usage);
+      }
+      maxlimit = std::max<int>(maxlimit, v_edges_[i][j].last_usage);
     }
   }
 
@@ -2292,24 +2292,24 @@ void FastRouteCore::getCongestionNets(std::set<odb::dbNet*>& congestion_nets)
   std::vector<int> xs, ys, dirs;
   int n = 0;
   // Find horizontal ggrids with congestion
-  for (const auto& [i,j] : h_used_ggrid_) {
-      const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
-      if (overflow > 0) {
-        xs.push_back(j);
-        ys.push_back(i);
-        dirs.push_back(1);
-        n++;
-      }
+  for (const auto& [i, j] : h_used_ggrid_) {
+    const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
+    if (overflow > 0) {
+      xs.push_back(j);
+      ys.push_back(i);
+      dirs.push_back(1);
+      n++;
+    }
   }
   // Find vertical ggrids with congestion
-  for (const auto& [i,j] : v_used_ggrid_) {
-      const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
-      if (overflow > 0) {
-        xs.push_back(j);
-        ys.push_back(i);
-        dirs.push_back(0);
-        n++;
-      }
+  for (const auto& [i, j] : v_used_ggrid_) {
+    const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
+    if (overflow > 0) {
+      xs.push_back(j);
+      ys.push_back(i);
+      dirs.push_back(0);
+      n++;
+    }
   }
 
   int old_size = congestion_nets.size();
@@ -2337,24 +2337,24 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
   check2DEdgesUsage();
 
   int total_usage = 0;
-  for (const auto& [i,j] : h_used_ggrid_) {
-      total_usage += h_edges_[i][j].usage;
-      const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
-      if (overflow > 0) {
-        H_overflow += overflow;
-        max_H_overflow = std::max(max_H_overflow, overflow);
-        numedges++;
-      }
+  for (const auto& [i, j] : h_used_ggrid_) {
+    total_usage += h_edges_[i][j].usage;
+    const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
+    if (overflow > 0) {
+      H_overflow += overflow;
+      max_H_overflow = std::max(max_H_overflow, overflow);
+      numedges++;
+    }
   }
 
-  for (const auto& [i,j] : v_used_ggrid_) {
-      total_usage += v_edges_[i][j].usage;
-      const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
-      if (overflow > 0) {
-        V_overflow += overflow;
-        max_V_overflow = std::max(max_V_overflow, overflow);
-        numedges++;
-      }
+  for (const auto& [i, j] : v_used_ggrid_) {
+    total_usage += v_edges_[i][j].usage;
+    const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
+    if (overflow > 0) {
+      V_overflow += overflow;
+      max_V_overflow = std::max(max_V_overflow, overflow);
+      numedges++;
+    }
   }
 
   int max_overflow = std::max(max_H_overflow, max_V_overflow);
@@ -2400,26 +2400,26 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
 
   int total_usage = 0;
 
-  for (const auto& [i,j] : h_used_ggrid_) {
-      total_usage += h_edges_[i][j].est_usage;
-      const int overflow = h_edges_[i][j].est_usage - h_edges_[i][j].cap;
-      hCap += h_edges_[i][j].cap;
-      if (overflow > 0) {
-        H_overflow += overflow;
-        max_H_overflow = std::max(max_H_overflow, overflow);
-        numedges++;
-      }
+  for (const auto& [i, j] : h_used_ggrid_) {
+    total_usage += h_edges_[i][j].est_usage;
+    const int overflow = h_edges_[i][j].est_usage - h_edges_[i][j].cap;
+    hCap += h_edges_[i][j].cap;
+    if (overflow > 0) {
+      H_overflow += overflow;
+      max_H_overflow = std::max(max_H_overflow, overflow);
+      numedges++;
+    }
   }
 
-  for (const auto& [i,j] : v_used_ggrid_) {
-      total_usage += v_edges_[i][j].est_usage;
-      const int overflow = v_edges_[i][j].est_usage - v_edges_[i][j].cap;
-      vCap += v_edges_[i][j].cap;
-      if (overflow > 0) {
-        V_overflow += overflow;
-        max_V_overflow = std::max(max_V_overflow, overflow);
-        numedges++;
-      }
+  for (const auto& [i, j] : v_used_ggrid_) {
+    total_usage += v_edges_[i][j].est_usage;
+    const int overflow = v_edges_[i][j].est_usage - v_edges_[i][j].cap;
+    vCap += v_edges_[i][j].cap;
+    if (overflow > 0) {
+      V_overflow += overflow;
+      max_V_overflow = std::max(max_V_overflow, overflow);
+      numedges++;
+    }
   }
 
   const int max_overflow = std::max(max_H_overflow, max_V_overflow);
