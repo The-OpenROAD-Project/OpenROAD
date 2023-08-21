@@ -185,7 +185,7 @@ RecoverPower::recoverPower(float recover_power_percent)
 	    // Undo the change here.
         ++failed_move_threshold;
         if (failed_move_threshold > failed_move_threshold_limit_) {
-          logger_->info(RSZ, 141, "{} successive tries yielded negative slack. Ending power recovery",
+          logger_->info(RSZ, 142, "{} successive tries yielded negative slack. Ending power recovery",
                      failed_move_threshold_limit_);
 
           break;
