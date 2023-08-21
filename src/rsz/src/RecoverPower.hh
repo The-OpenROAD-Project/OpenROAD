@@ -126,8 +126,14 @@ private:
   int rebuffer_net_count_;
   int swap_pin_count_;
   std::unordered_map<const sta::Instance *, int> swap_pin_inst_map_;
-  const MinMax *min_;
   const MinMax *max_;
+
+  // Paths with slack more than this would be considered for power recovery
+  static constexpr float setup_slack_margin_ = 1e-11;
+  // For paths with no timing the max margin is INT_MAX. We need to filter those out (using 1e-4)
+  static constexpr float setup_slack_max_margin_ = 1e-4;
+  // Threshold for failed successive moves for power recovery before we stop trying
+  static constexpr int failed_move_threshold_limit_ = 500;
 
   sta::UnorderedMap<LibertyCell *, sta::LibertyPortSet> equiv_pin_map_;
 

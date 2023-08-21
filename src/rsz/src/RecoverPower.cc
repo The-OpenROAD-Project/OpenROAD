@@ -92,7 +92,6 @@ RecoverPower::RecoverPower(Resizer* resizer)
       inserted_buffer_count_(0),
       rebuffer_net_count_(0),
       swap_pin_count_(0),
-      min_(MinMax::min()),
       max_(MinMax::max())
 {
 }
@@ -110,10 +109,7 @@ void
 RecoverPower::recoverPower(float recover_power_percent)
 {
   init();
-  float setup_slack_margin = 1e-11;
-  float setup_slack_max_margin = 1e-4; // 100us
   constexpr int digits = 3;
-  constexpr int failed_move_threshold_limit = 500;
   int failed_move_threshold = 0;
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
@@ -126,7 +122,7 @@ RecoverPower::recoverPower(float recover_power_percent)
   VertexSeq ends_with_slack;
   for (Vertex *end : *endpoints) {
     Slack end_slack = sta_->vertexSlack(end, max_);
-    if (end_slack > setup_slack_margin && end_slack < setup_slack_max_margin)  {
+    if (end_slack > setup_slack_margin_ && end_slack < setup_slack_max_margin_)  {
       ends_with_slack.push_back(end);
     }
   }
@@ -148,7 +144,7 @@ RecoverPower::recoverPower(float recover_power_percent)
   }
 
 
-  Slack worst_slack_before, tns_slack_before;
+  Slack worst_slack_before;
   Vertex *worst_vertex;
   resizer_->incrementalParasiticsBegin();
   resizer_->updateParasitics();
@@ -161,7 +157,7 @@ RecoverPower::recoverPower(float recover_power_percent)
     //=====================================================================
     // Just a counter to know when to break out
     end_index++;
-    debugPrint(logger_, RSZ, "recover_power", 1, "Doing {} /{}", end_index,
+    debugPrint(logger_, RSZ, "recover_power", 2, "Doing {} /{}", end_index,
                max_end_count);
     if (end_index > max_end_count)
       break;
@@ -189,25 +185,24 @@ RecoverPower::recoverPower(float recover_power_percent)
       if (better) {
         failed_move_threshold = 0;
         resizer_->journalBegin();
-        // TODO Remove this
-        printf("%5d/%6d good move .... %0.10g -> %0.10g\n",
-               end_index, ends_with_slack.size(),
-               worst_slack_before, worst_slack_after);
-        fflush(stdout);
+        debugPrint(logger_, RSZ, "recover_power", 2, "{}/{} Resize for power Slack change {} -> {}",
+                   end_index, ends_with_slack.size(), worst_slack_before, worst_slack_after);
       }
       else {
 	    // Undo the change here.
         ++failed_move_threshold;
-        if (failed_move_threshold > failed_move_threshold_limit) {
+        if (failed_move_threshold > failed_move_threshold_limit_) {
+          logger_->info(RSZ, 141, "{} successive tries yielded negative slack. Ending power recovery",
+                     failed_move_threshold_limit_);
+
           break;
         }
         int resize_count = 100, inserted_buffer_count = 100, cloned_gate_count = 100;
         resizer_->journalRestore(resize_count, inserted_buffer_count, cloned_gate_count);
         resizer_->updateParasitics();
         sta_->findRequireds();
-        // TODO Remove
-        printf("%5d/%6d bad move undone .... %0.10g  \n", end_index, ends_with_slack.size(), worst_slack_percent);
-        fflush(stdout);
+        debugPrint(logger_, RSZ, "recover_power", 2, "{}/{} Undo resize for power Slack change {} -> {}",
+                   end_index, ends_with_slack.size(), worst_slack_before, worst_slack_after);
       }
       if (resizer_->overMaxArea()) {
         break;
