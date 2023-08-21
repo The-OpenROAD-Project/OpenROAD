@@ -291,8 +291,8 @@ void LayoutTabs::clearNetTracks()
 
 void LayoutTabs::exit()
 {
-  if (current_viewer_) {
-    current_viewer_->exit();
+  for (auto viewer : viewers_) {
+    viewer->exit();
   }
 }
 
