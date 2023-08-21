@@ -113,6 +113,8 @@ RecoverPower::recoverPower(float recover_power_percent)
   float setup_slack_margin = 1e-11;
   float setup_slack_max_margin = 1e-4; // 100us
   constexpr int digits = 3;
+  constexpr int failed_move_threshold_limit = 500;
+  int failed_move_threshold = 0;
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
   resizer_->buffer_moved_into_core_ = false;
@@ -152,11 +154,10 @@ RecoverPower::recoverPower(float recover_power_percent)
   resizer_->updateParasitics();
   sta_->findRequireds();
   sta_->worstSlack(max_, worst_slack_before, worst_vertex);
-  tns_slack_before = sta_->totalNegativeSlack(max_);
 
   for (Vertex *end : ends_with_slack) {
     Slack end_slack_before = sta_->vertexSlack(end, max_);
-    Slack worst_slack_after, tns_slack_after;
+    Slack worst_slack_after;
     //=====================================================================
     // Just a counter to know when to break out
     end_index++;
@@ -174,33 +175,39 @@ RecoverPower::recoverPower(float recover_power_percent)
       Slack end_slack_after = sta_->vertexSlack(end, max_);
 
       sta_->worstSlack(max_, worst_slack_after, worst_vertex);
-      tns_slack_after = sta_->totalNegativeSlack(max_);
+      // tns_slack_after = sta_->totalNegativeSlack(max_);
 
       float worst_slack_percent = fabs((worst_slack_before - worst_slack_after) / worst_slack_before * 100);
-      float tns_slack_percent = fabs((tns_slack_before - tns_slack_after) / tns_slack_before * 100);
-
-      bool better = (worst_slack_percent < 0.0001 && tns_slack_percent < 0.0001);
+      bool better = (worst_slack_percent < 0.0001 ||
+              (worst_slack_before > 0 && worst_slack_after/worst_slack_before > 0.5));
 
       debugPrint(logger_, RSZ, "recover_power", 2,
-                 "slack = {} worst_slack = {} tns = {}  better = {}",
+                 "slack = {} worst_slack = {} better = {}",
                  delayAsString(end_slack_after, sta_, digits), delayAsString(worst_slack_after, sta_, digits),
-                 delayAsString(tns_slack_after, sta_, digits),
                  better ? "save" : "");
 
       if (better) {
+        failed_move_threshold = 0;
         resizer_->journalBegin();
         // TODO Remove this
-        printf("%5d good move .... %0.3g -> %0.3g %0.3g -> %0.3g\n", end_index, worst_slack_before, worst_slack_after,
-               tns_slack_before, tns_slack_after);
+        printf("%5d/%6d good move .... %0.10g -> %0.10g\n",
+               end_index, ends_with_slack.size(),
+               worst_slack_before, worst_slack_after);
+        fflush(stdout);
       }
       else {
 	    // Undo the change here.
+        ++failed_move_threshold;
+        if (failed_move_threshold > failed_move_threshold_limit) {
+          break;
+        }
         int resize_count = 100, inserted_buffer_count = 100, cloned_gate_count = 100;
         resizer_->journalRestore(resize_count, inserted_buffer_count, cloned_gate_count);
         resizer_->updateParasitics();
         sta_->findRequireds();
         // TODO Remove
-        // printf("%5d bad move undone .... %0.10g  %0.10g\n", end_index, worst_slack_percent, tns_slack_percent);
+        printf("%5d/%6d bad move undone .... %0.10g  \n", end_index, ends_with_slack.size(), worst_slack_percent);
+        fflush(stdout);
       }
       if (resizer_->overMaxArea()) {
         break;
