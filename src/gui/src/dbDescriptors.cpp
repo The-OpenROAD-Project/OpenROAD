@@ -45,8 +45,6 @@
 #include "dbShape.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "layoutTabs.h"
-#include "layoutViewer.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
