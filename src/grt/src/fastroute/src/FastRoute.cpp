@@ -318,6 +318,7 @@ void FastRouteCore::initEdges()
       for (int k = 0; k < num_layers_; k++) {
         h_edges_3D_[k][i][j].cap = h_capacity_3D_[k];
         h_edges_3D_[k][i][j].usage = 0;
+        h_edges_3D_[k][i][j].red = 0;
       }
     }
   }
@@ -334,6 +335,7 @@ void FastRouteCore::initEdges()
       for (int k = 0; k < num_layers_; k++) {
         v_edges_3D_[k][i][j].cap = v_capacity_3D_[k];
         v_edges_3D_[k][i][j].usage = 0;
+        v_edges_3D_[k][i][j].red = 0;
       }
     }
   }
@@ -383,6 +385,8 @@ void FastRouteCore::addAdjustment(int x1,
     if (!isReduce) {
       const int increase = reducedCap - cap;
       h_edges_[y1][x1].cap += increase;
+    } else {
+      h_edges_3D_[k][y1][x1].red += reduce;
     }
 
     h_edges_[y1][x1].cap -= reduce;
@@ -411,6 +415,8 @@ void FastRouteCore::addAdjustment(int x1,
     if (!isReduce) {
       int increase = reducedCap - cap;
       v_edges_[y1][x1].cap += increase;
+    } else {
+      v_edges_3D_[k][y1][x1].red += reduce;
     }
 
     v_edges_[y1][x1].cap -= reduce;
@@ -792,13 +798,8 @@ void FastRouteCore::updateDbCongestion()
     const unsigned short capV = v_capacity_3D_[k];
     for (int y = 0; y < y_grid_; y++) {
       for (int x = 0; x < x_grid_; x++) {
-        // use std::abs because in the last col/row, the edge capacity can be
-        // greater than the default cap of the layer, since these col/row are
-        // larger
-        const unsigned short blockageH
-            = std::abs(capH - h_edges_3D_[k][y][x].cap);
-        const unsigned short blockageV
-            = std::abs(capV - v_edges_3D_[k][y][x].cap);
+        const unsigned short blockageH = h_edges_3D_[k][y][x].red;
+        const unsigned short blockageV = v_edges_3D_[k][y][x].red;
         const unsigned short usageH = h_edges_3D_[k][y][x].usage + blockageH;
         const unsigned short usageV = v_edges_3D_[k][y][x].usage + blockageV;
         db_gcell->setCapacity(layer, x, y, capH, capV, 0);
