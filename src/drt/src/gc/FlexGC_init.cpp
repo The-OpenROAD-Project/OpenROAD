@@ -73,6 +73,7 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
       } else {
         owner = iblkg->getInst();
       }
+      break;
     }
     case frcBlockage: {
       owner = obj;

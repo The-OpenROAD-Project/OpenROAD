@@ -32,9 +32,9 @@
 
 #include "db/gcObj/gcBlockObject.h"
 #include "db/gcObj/gcPin.h"
-#include "db/obj/frNet.h"
-#include "db/obj/frInstBlockage.h"
 #include "db/obj/frBlockage.h"
+#include "db/obj/frInstBlockage.h"
+#include "db/obj/frNet.h"
 
 namespace fr {
 class frNet;
