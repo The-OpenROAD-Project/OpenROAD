@@ -82,9 +82,6 @@ public:
   void recoverPower(float recover_power_percent);
   // For testing.
   void recoverPower(const Pin *end_pin);
-  // Rebuffer one net (for testing).
-  // resizerPreamble() required.
-  void rebufferNet(const Pin *drvr_pin);
 
 private:
   void init();
@@ -119,13 +116,7 @@ private:
   dbNetwork *db_network_;
   Resizer *resizer_;
   const Corner *corner_;
-  LibertyPort *drvr_port_;
-
   int resize_count_;
-  int inserted_buffer_count_;
-  int rebuffer_net_count_;
-  int swap_pin_count_;
-  std::unordered_map<const sta::Instance *, int> swap_pin_inst_map_;
   const MinMax *max_;
 
   // Paths with slack more than this would be considered for power recovery

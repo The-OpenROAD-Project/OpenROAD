@@ -87,11 +87,7 @@ RecoverPower::RecoverPower(Resizer* resizer)
       db_network_(nullptr),
       resizer_(resizer),
       corner_(nullptr),
-      drvr_port_(nullptr),
       resize_count_(0),
-      inserted_buffer_count_(0),
-      rebuffer_net_count_(0),
-      swap_pin_count_(0),
       max_(MinMax::max())
 {
 }
@@ -111,11 +107,8 @@ RecoverPower::recoverPower(float recover_power_percent)
   init();
   constexpr int digits = 3;
   int failed_move_threshold = 0;
-  inserted_buffer_count_ = 0;
   resize_count_ = 0;
   resizer_->buffer_moved_into_core_ = false;
-
-  //logger_->setDebugLevel(RSZ, "recover_power", 5);
 
   // Sort failing endpoints by slack.
   VertexSet *endpoints = sta_->endpoints();
@@ -226,9 +219,7 @@ void
 RecoverPower::recoverPower(const Pin *end_pin)
 {
   init();
-  inserted_buffer_count_ = 0;
   resize_count_ = 0;
-  swap_pin_count_ = 0;
 
   Vertex *vertex = graph_->pinLoadVertex(end_pin);
   Slack slack = sta_->vertexSlack(vertex, max_);
