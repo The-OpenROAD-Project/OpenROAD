@@ -147,7 +147,7 @@ class LayoutViewer : public QWidget
                const std::set<odb::dbNet*>& focus_nets,
                const std::set<odb::dbNet*>& route_guides,
                const std::set<odb::dbNet*>& net_tracks,
-               Gui * gui,
+               Gui* gui,
                const std::function<bool(void)>& usingDBU,
                const std::function<bool(void)>& showRulerAsEuclidian,
                QWidget* parent = nullptr);

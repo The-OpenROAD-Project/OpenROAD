@@ -75,7 +75,7 @@ class LayoutTabs : public QTabWidget
   const std::set<odb::dbNet*>& getFocusNets() { return focus_nets_; }
   const std::set<odb::dbNet*>& getRouteGuides() { return route_guides_; }
   const std::set<odb::dbNet*>& getNetTracks() { return net_tracks_; }
-  
+
   void addFocusNet(odb::dbNet* net);
   void removeFocusNet(odb::dbNet* net);
   void addRouteGuides(odb::dbNet* net);
@@ -85,7 +85,7 @@ class LayoutTabs : public QTabWidget
   void clearFocusNets();
   void clearRouteGuides();
   void clearNetTracks();
-                         
+
  signals:
   void setCurrentBlock(odb::dbBlock* block);
   void newViewer(LayoutViewer* viewer);
