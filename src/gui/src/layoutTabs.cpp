@@ -32,6 +32,8 @@
 
 #include "layoutTabs.h"
 
+#include <utility>
+
 #include "colorGenerator.h"
 #include "layoutViewer.h"
 #include "utl/Logger.h"
@@ -54,8 +56,8 @@ LayoutTabs::LayoutTabs(Options* options,
       highlighted_(highlighted),
       rulers_(rulers),
       gui_(gui),
-      usingDBU_(usingDBU),
-      showRulerAsEuclidian_(showRulerAsEuclidian)
+      usingDBU_(std::move(usingDBU)),
+      showRulerAsEuclidian_(std::move(showRulerAsEuclidian))
 {
   setTabBarAutoHide(true);
   connect(this, &QTabWidget::currentChanged, this, &LayoutTabs::tabChange);
