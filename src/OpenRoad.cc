@@ -311,10 +311,10 @@ void OpenRoad::readDef(const char* filename,
 {
   if (!floorplan_init && !incremental && !child && db_->getChip()
       && db_->getChip()->getBlock()) {
-    logger_->error(
+    logger_->info(
         ORD,
         48,
-        "You can't load a new DEF file as the db is already populated.");
+        "Loading second DEF.");
   }
 
   odb::defin::MODE mode = odb::defin::DEFAULT;
