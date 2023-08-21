@@ -45,8 +45,7 @@ class GotoLocationDialog : public QDialog, public Ui::GotoLocDialog
   LayoutTabs* viewers_;
 
  public:
-  GotoLocationDialog(QWidget* parent = nullptr,
-                     LayoutTabs* viewers_ = nullptr);
+  GotoLocationDialog(QWidget* parent = nullptr, LayoutTabs* viewers_ = nullptr);
  public slots:
   void updateLocation(QLineEdit* xEdit, QLineEdit* yEdit);
   void updateUnits(int dbu_per_micron, bool useDBU);
