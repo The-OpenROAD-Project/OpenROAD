@@ -276,8 +276,9 @@ int FastRouteCore::threeDVIA()
   int numVIA = 0;
 
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted())
+    if (nets_[netID]->isRouted()) {
       continue;
+    }
     const auto& treeedges = sttrees_[netID].edges;
     int num_edges = sttrees_[netID].num_edges();
 
@@ -1479,31 +1480,31 @@ void FastRouteCore::check2DEdgesUsage()
   int max_v_edge_usage = max_usage_multiplier * v_capacity_;
 
   // check horizontal edges
-  for (const auto& [i,j] : h_used_ggrid_) {
-      if (h_edges_[i][j].usage > max_h_edge_usage) {
-        logger_->error(GRT,
-                       228,
-                       "Horizontal edge usage exceeds the maximum allowed. "
-                       "({}, {}) usage={} limit={}",
-                       i,
-                       j,
-                       h_edges_[i][j].usage,
-                       max_h_edge_usage);
-      }
+  for (const auto& [i, j] : h_used_ggrid_) {
+    if (h_edges_[i][j].usage > max_h_edge_usage) {
+      logger_->error(GRT,
+                     228,
+                     "Horizontal edge usage exceeds the maximum allowed. "
+                     "({}, {}) usage={} limit={}",
+                     i,
+                     j,
+                     h_edges_[i][j].usage,
+                     max_h_edge_usage);
+    }
   }
 
   // check vertical edges
-  for (const auto& [i,j] : v_used_ggrid_) {
-      if (v_edges_[i][j].usage > max_v_edge_usage) {
-        logger_->error(GRT,
-                       229,
-                       "Vertical edge usage exceeds the maximum allowed. "
-                       "({}, {}) usage={} limit={}",
-                       i,
-                       j,
-                       v_edges_[i][j].usage,
-                       max_v_edge_usage);
-      }
+  for (const auto& [i, j] : v_used_ggrid_) {
+    if (v_edges_[i][j].usage > max_v_edge_usage) {
+      logger_->error(GRT,
+                     229,
+                     "Vertical edge usage exceeds the maximum allowed. "
+                     "({}, {}) usage={} limit={}",
+                     i,
+                     j,
+                     v_edges_[i][j].usage,
+                     max_v_edge_usage);
+    }
   }
 }
 
