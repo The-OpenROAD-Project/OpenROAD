@@ -268,12 +268,14 @@ std::vector<std::string> dbPowerSwitch::getOnStates()
   return obj->_on_state;
 }
 
-std::vector<std::string> dbPowerSwitch::getLibCells(){
+std::vector<std::string> dbPowerSwitch::getLibCells()
+{
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
   return obj->_lib_cells;
 }
 
-std::map<std::string, std::string> dbPowerSwitch::getPortMap(){
+std::map<std::string, std::string> dbPowerSwitch::getPortMap()
+{
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
   return obj->_port_map;
 }

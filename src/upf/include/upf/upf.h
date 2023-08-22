@@ -105,14 +105,14 @@ bool eval_upf(sta::dbNetwork* network,
               odb::dbBlock* block);
 
 bool update_power_switch_cell(utl::Logger* logger,
-                            odb::dbBlock* block,
-                            const char* name,
-                            const char* cell);
+                              odb::dbBlock* block,
+                              const char* name,
+                              const char* cell);
 
 bool update_power_switch_port_map(utl::Logger* logger,
-                            odb::dbBlock* block,
-                            const char* name,
-                            const char* model_port,
-                            const char* switch_port);
+                                  odb::dbBlock* block,
+                                  const char* name,
+                                  const char* model_port,
+                                  const char* switch_port);
 
 }  // namespace upf
