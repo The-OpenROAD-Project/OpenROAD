@@ -389,6 +389,7 @@ static bool associate_groups(
 
     // Create region + group for this domain
     auto region = odb::dbRegion::create(block, domain->getName());
+    region->setRegionType(odb::dbRegionType::EXCLUSIVE);
     if (!region) {
       logger->warn(
           utl::UPF, 10016, "Creation of '%s' region failed", domain->getName());

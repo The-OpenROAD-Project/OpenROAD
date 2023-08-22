@@ -26,7 +26,7 @@ global_placement -skip_initial_place
 
 detailed_placement
 improve_placement
-check_placement
+check_placement -verbose -report_file_name "upf_test.json"
 
 
 set def_file [make_result_file upf_test.def]
