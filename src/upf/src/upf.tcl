@@ -301,5 +301,52 @@ proc set_domain_area { args } {
   upf::set_domain_area_cmd $domain_name $llx $lly $urx $ury
 }
 
+# Specify which power-switch model is to be used for the implementation of the corresponding switch
+# instance
+#
+#
+# Argument list: 
+#  - switch_name_list []: A list of switches (as defined by create_power_switch) to map.
+#  - lib_cells [] : A list of library cells.
+#  - port_map {{mapped_model_port switch_port_or_supply_net_ref} *} : mapped_model_ port is a port on the model being mapped.
+#                                                                     switch_ port_or_supply_net_ref indicates a supply or logic port on a
+#                                                                     switch: an input supply port, output supply port, control port, or
+#                                                                     acknowledge port; or it references a supply net from a supply set
+#                                                                     associated with the switch.
 
+sta::define_cmd_args "map_power_switch" { \
+    [-switch_name_list switch_name_list] \
+    [-lib_cells lib_cells] \
+    [-port_map port_map] 
+}
 
+proc map_power_switch { args } {
+
+    sta::parse_key_args "map_power_switch" args \
+        keys {switch_name_list -lib_cells -port_map} flags {}
+
+    sta::check_argc_eq1 "map_power_switch" $args
+
+    set switch_name_list [lindex $args 0]
+    set lib_cells {}
+    set port_map {}
+
+    if { [info exists keys(-lib_cells)] } {
+        set lib_cells $keys(-lib_cells)
+    }
+
+    if { [info exists keys(-port_map)] } {
+        set port_map $keys(-port_map)
+    }
+
+    foreach {switch} $switch_name_list {
+
+        foreach {cell} $lib_cells {
+            upf::set_power_switch_cell $switch $cell
+        }
+
+        foreach {port} $port_map {
+            upf::set_power_switch_port $switch [lindex $port 0] [lindex $port 1]
+        }
+    }
+}

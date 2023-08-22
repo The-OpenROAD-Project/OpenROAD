@@ -106,4 +106,18 @@
                         x2,
                         y2);
   }
+
+  void set_power_switch_cell(char* name, char* cell)
+  {
+    odb::dbDatabase* db = getOpenRoad()->getDb();
+    upf::update_power_switch_cell(
+        getOpenRoad()->getLogger(), db->getChip()->getBlock(), name, cell); 
+  }
+
+  void set_power_switch_port_map(char* name, char* model_port, char* switch_port)
+  {
+    odb::dbDatabase* db = getOpenRoad()->getDb();
+    upf::update_power_switch_port_map(
+        getOpenRoad()->getLogger(), db->getChip()->getBlock(), name, model_port, switch_port); 
+  }
 %}  // inline

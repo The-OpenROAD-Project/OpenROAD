@@ -56,3 +56,8 @@ set_isolation iso_aes_2 \
   -domain PD_AES_2 \
   -update \
   -location parent
+
+
+map_power_switch {psw_aes_1 psw_aes_2} \
+-lib_cells {sw1 sw2} \
+-port_map {{inp1 vin1} {inp2 vin2} {outp vout} {c1 ctrl_small} {c2 ctrl_large}}

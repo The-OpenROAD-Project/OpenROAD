@@ -68,6 +68,8 @@ class _dbPowerSwitch : public _dbObject
   dbVector<std::string> _control_port;
   dbVector<std::string> _on_state;
   dbId<_dbNet> _control_net;
+  dbVector<std::string> _lib_cells;
+  std::map<std::string, std::string> _port_map;
   dbId<_dbPowerDomain> _power_domain;
 };
 dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj);
