@@ -39,6 +39,16 @@
       "parent":"dbBlock"
     },
     {
+      "name": "_lib_cells",
+      "type": "dbVector<std::string>",
+      "flags": ["no-set", "no-get"]
+    },
+    {
+      "name": "_port_map",
+      "type": "std::map<std::string, std::string>",
+      "flags": ["no-set", "no-get", "no-template"]
+    },
+    {
       "name":"_power_domain",
       "type":"dbId<_dbPowerDomain>",
       "flags":[],

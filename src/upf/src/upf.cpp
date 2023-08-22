@@ -157,6 +157,46 @@ bool update_power_switch_on(utl::Logger* logger,
   return true;
 }
 
+
+bool update_power_switch_cell(utl::Logger* logger,
+                            odb::dbBlock* block,
+                            const char* name,
+                            const char* cell)
+{
+  odb::dbPowerSwitch* ps = block->findPowerSwitch(name);
+  if (ps == nullptr) {
+    logger->warn(
+        utl::UPF,
+        10028,
+        "Couldn't retrieve power switch '%s' while adding cell '%s'",
+        name,
+        cell);
+    return false;
+  }
+  ps->addLibCell(cell);
+  return true;
+}
+
+
+bool update_power_switch_port_map(utl::Logger* logger,
+                            odb::dbBlock* block,
+                            const char* name,
+                            const char* model_port,
+                            const char* switch_port)
+{
+  odb::dbPowerSwitch* ps = block->findPowerSwitch(name);
+  if (ps == nullptr) {
+    logger->warn(
+        utl::UPF,
+        10029,
+        "Couldn't retrieve power switch '%s' while updating port mapping",
+        name);
+    return false;
+  }
+  ps->addPortMap(model_port, switch_port);
+  return true;
+}
+
 bool set_isolation(utl::Logger* logger,
                    odb::dbBlock* block,
                    const char* name,

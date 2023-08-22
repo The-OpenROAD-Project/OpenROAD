@@ -7583,8 +7583,13 @@ class dbPowerSwitch : public dbObject
   void setOutSupplyPort(const std::string& out_port);
   void addControlPort(const std::string& control_port);
   void addOnState(const std::string& on_state);
+  void addLibCell(const std::string& lib_cell);
+  void addPortMap(const std::string& model_port,
+                  const std::string& switch_port);
   std::vector<std::string> getControlPorts();
   std::vector<std::string> getOnStates();
+  std::vector<std::string> getLibCells();
+  std::map<std::string, std::string> getPortMap();
   // User Code End dbPowerSwitch
 };
 

@@ -118,6 +118,8 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj)
   stream >> obj._control_port;
   stream >> obj._on_state;
   stream >> obj._control_net;
+  stream >> obj._lib_cells;
+  stream >> obj._port_map;
   stream >> obj._power_domain;
   return stream;
 }
@@ -131,6 +133,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbPowerSwitch& obj)
   stream << obj._control_port;
   stream << obj._on_state;
   stream << obj._control_net;
+  stream << obj._lib_cells;
+  stream << obj._port_map;
   stream << obj._power_domain;
   return stream;
 }
@@ -240,6 +244,19 @@ void dbPowerSwitch::addOnState(const std::string& on_state)
   obj->_on_state.push_back(on_state);
 }
 
+void dbPowerSwitch::addLibCell(const std::string& lib_cell)
+{
+  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
+  obj->_lib_cells.push_back(lib_cell);
+}
+
+void dbPowerSwitch::addPortMap(const std::string& model_port,
+                               const std::string& switch_port)
+{
+  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
+  obj->_port_map[model_port] = switch_port;
+}
+
 std::vector<std::string> dbPowerSwitch::getControlPorts()
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
@@ -249,6 +266,16 @@ std::vector<std::string> dbPowerSwitch::getOnStates()
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
   return obj->_on_state;
+}
+
+std::vector<std::string> dbPowerSwitch::getLibCells(){
+  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
+  return obj->_lib_cells;
+}
+
+std::map<std::string, std::string> dbPowerSwitch::getPortMap(){
+  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
+  return obj->_port_map;
 }
 // User Code End dbPowerSwitchPublicMethods
 }  // namespace odb
