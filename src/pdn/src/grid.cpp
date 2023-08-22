@@ -1080,6 +1080,21 @@ void Grid::removeStrap(Straps* strap)
                              }));
 }
 
+bool Grid::hasShapes() const
+{
+  for (const auto& [layer, shapes] : getShapes()) {
+    if (!shapes.empty()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool Grid::hasVias() const
+{
+  return !vias_.empty();
+}
+
 ///////////////
 
 CoreGrid::CoreGrid(VoltageDomain* domain,
