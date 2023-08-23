@@ -264,7 +264,7 @@ class HierRTLMP
   const bool dynamic_congestion_weight_flag_ = false;
   // Our experiments show that for most testcases, turn off bus planning
   // can generate better results.
-  // We recommand that you turn off this flag for technology nodes with very
+  // We recommend that you turn on this flag for technology nodes with very
   // limited routing layers such as SkyWater130.  But for NanGate45,
   // ASASP7, you should turn off this option.
   bool bus_planning_flag_ = false;
