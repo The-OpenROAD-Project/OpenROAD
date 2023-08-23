@@ -251,27 +251,18 @@ microns to 60.5 microns, and the left edge from its beginning to 50 microns.
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/IOPlacer.cpp) or the [swig file](./src/IOPlacer.i).
 
-```tcl
-# parse edge/direction/exclude args/group pins arg/layer name/pin name
-parse_edge cmd edge
-parse_direction cmd direction
-parse_excludes_arg args_var
-parse_group_pins_arg args_var
-parse_layer_name layer_name
-parse_pin_names cmd names
-
-# get extremes of edge
-get_edge_extreme cmd begin edge
-
-# set exclude interval
-exclude_intervals cmd intervals
-
-# add pins to constrained region
-add_pins_to_constraint cmd names edge begin end edge_name
-
-# add pins to top layer
-add_pins_to_top_layer cmd names llx lly urx ury
-```
+| Function Name | Description |
+| ----- | ----- |
+| `parse_edge` | Parse edge (top/bottom/left/right). |
+| `parse_direction` | Parse direction. |
+| `parse_excludes_arg` | Parse excluded arguments. |
+| `parse_group_pins_arg` | Parse group pins arguments. | 
+| `parse_layer_name` | Parse layer name. |
+| `parse_pin_names` | Parse pin names. |
+| `get_edge_extreme` | Get extremes of edge. |
+| `exclude_intervals` | Set exclude interval. |
+| `add_pins_to_constraint` | Add pins to constrained region. |
+| `add_pins_to_top_layer` | Add pins to top layer. | 
 
 ### Useful developer arguments
 
