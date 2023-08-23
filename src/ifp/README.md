@@ -15,30 +15,41 @@ Do note that there are two ways of setting the floorplan dimensions.
 The user can either specify manually die/core area, or
 specify the utilization/aspect ratio.
 
+#### Method 1: Automatical die size calculation
+
 ```tcl
-# Method 1: Automatical die size calculation
 initialize_floorplan
   [-utilization util]
   [-aspect_ratio ratio]
   [-core_space space | {bottom top left right}]
   [-sites site_name]
-# Method 2: Set die/core area
-initialize_floorplan
-  [-die_area {lx ly ux uy}]
-  [-core_area {lx ly ux uy}]
-  [-sites site_name]
 ```
-
-#### Options
+##### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-utilization` | Percentage utilization (0-100). |
-| `-aspect_ratio` | Ratio $\frac{height}{width}$ (default 1.0, float). |
-| `-core_space` | Space around core, default 0.0 microns. should be either one value for all margins or 4 values, one for each margin. |
+| `-utilization` | Percentage utilization. Allowed values are `double` in the range `(0-100]`. |
+| `-aspect_ratio` | Ratio $\frac{height}{width}$. The default value is `1.0` and the allowed values are floats `[0, 1.0]`. |
+| `-core_space` | Space around the core, default `0.0` microns. Allowed values are either one value for all margins or a set of four values, one for each margin. The order of the four values are: `{bottom top left right}`. |
+| `-sites` | Tcl list of sites to make rows for (e.g. `{SITEXX, SITEYY}`) |
+
+
+#### Method 2: Set die/core area
+
+```tcl
+initialize_floorplan
+  [-die_area {llx lly urx ury}]
+  [-core_area {llx lly urx ury}]
+  [-sites site_name]
+```
+
+##### Options
+
+| Switch Name | Description |
+| ----- | ----- |
 | `-die_area` | Die area coordinates in microns (lower left and upper right x-/y- coordinates). |
 | `-core_area` | Core area coordinates in microns (lower left and upper right x-/y- coordinates). |
-| `-sites` | Tcl list of sites to make rows for (e.g. `{SITEXX, SITEYY}`) |
+| `-sites` | Tcl list of sites to make rows for (e.g. `{SITEXX, ...}`) |
 
 The die area and core area used to write ROWs can be specified explicitly
 with the `-die_area` and `-core_area` arguments. Alternatively, the die and
@@ -77,8 +88,8 @@ make_tracks
 | Switch Name | Description |
 | ----- | ----- |
 | `layer` | Select layer name to make tracks for (default all layers). |
-| `-x_pitch`, `-y_pitch` | If set, overrides the LEF technology x-/y- pitch. |
-| `-x_offset`, `-y_offset` | If set, overrides the LEF technology x-/y- offset. |
+| `-x_pitch`, `-y_pitch` | If set, overrides the LEF technology x-/y- pitch. Use the same unit as in the LEF file. |
+| `-x_offset`, `-y_offset` | If set, overrides the LEF technology x-/y- offset. Use the same unit as in the LEFT file. |
 
 ### Inserting tieoff cells
 
@@ -101,10 +112,9 @@ insert_tiecells
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/InitFloorplan.cc) or the [swig file](./src/InitFloorPlan.i).
 
-```tcl
-# convert microns to manufacturing grid dbu
-microns_to_mfg_grid microns
-```
+| Switch Name | Description |
+| ----- | ----- |
+| `microns_to_mfg_grid` | Convert microns to manufacturing grid DBU. |
 
 ## Example scripts
 
