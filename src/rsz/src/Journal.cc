@@ -89,7 +89,7 @@ UndoBuffer::UndoBuffer(Instance* inst)
   buffer_inst_ = inst;
 }
 
-int UndoBuffer::UndoOperation(Logger *logger,  Network *network, dbSta *sta)
+int UndoBuffer::UndoOperation(Logger *logger, Network *network, dbSta *sta)
 {
   // Resize the instance back to the original cell
   // resized_inst_->setMaster(original_cell_);
@@ -104,7 +104,7 @@ UndoPinSwap::UndoPinSwap(Instance* inst, LibertyPort* swap_port1, LibertyPort* s
   swap_port2_ = swap_port2;
 }
 
-int UndoPinSwap::UndoOperation(Logger *logger,  Network *network, dbSta *sta)
+int UndoPinSwap::UndoOperation(Logger *logger, Network *network, dbSta *sta)
 {
   // Swap the pins back
   // swap_inst_->swapPins(swap_port1_, swap_port2_);
@@ -146,7 +146,7 @@ UndoClone::UndoClone()
 {
 }
 
-int UndoClone::UndoOperation(Logger *logger,  Network *network, dbSta *sta)
+int UndoClone::UndoOperation(Logger *logger, Network *network, dbSta *sta)
 {
     // Undo gate cloning
     Instance *original_inst = nullptr; // TODO std::get<0>(element);
@@ -189,11 +189,10 @@ int UndoClone::UndoOperation(Logger *logger,  Network *network, dbSta *sta)
 }
 
 //============================================================================
-Journal::Journal(Logger* logger, Network* network, dbSta* sta)
+Journal::Journal(Resizer *resizer, Logger* logger)
 {
-  logger_ = logger;
-  network_ = network;
-  sta_ = sta;
+    resizer_ = resizer;
+    logger_ = logger;
 }
 
 void Journal::begin()
@@ -213,16 +212,16 @@ void Journal::swapPins(Instance* inst, LibertyPort* port1,
                               LibertyPort* port2)
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal swap pins {} ({}->{})",
-             network_->pathName(inst), port1->name(), port2->name());
+             network()->pathName(inst), port1->name(), port2->name());
   std::unique_ptr<Undo> element(new UndoPinSwap(inst, port1, port2));
   journal_stack_.emplace(std::move(element));
 }
 
 void Journal::instReplaceCellBefore(Instance* inst)
 {
-  LibertyCell *lib_cell = network_->libertyCell(inst);
+  LibertyCell *lib_cell = network()->libertyCell(inst);
   debugPrint(logger_, RSZ, "journal", 1, "journal replace {} ({})",
-             network_->pathName(inst),
+             network()->pathName(inst),
              lib_cell->name());
    std::unique_ptr<Undo> element(new UndoResize(inst, lib_cell));
    journal_stack_.emplace(std::move(element));
@@ -231,7 +230,7 @@ void Journal::instReplaceCellBefore(Instance* inst)
 void Journal::makeBuffer(Instance* buffer)
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal make_buffer {}",
-             network_->pathName(buffer));
+             network()->pathName(buffer));
   std::unique_ptr<Undo> element(new UndoBuffer(buffer));
   journal_stack_.emplace(std::move(element));
 }
@@ -242,8 +241,19 @@ void Journal::restore(int& resize_count, int& inserted_buffer_count,
   while (!journal_stack_.empty()) {
     std::unique_ptr<Undo> &element = journal_stack_.top();
     journal_stack_.pop();
-    element->UndoOperation(logger_, network_, sta_);
+    element->UndoOperation(logger_, network(), sta());
   }
 }
+
+sta::Network * Journal::network()
+{
+  return resizer_->network_;
+}
+
+dbSta *Journal::sta()
+{
+  return resizer_->sta_;
+}
+
 
 }  // namespace rsz

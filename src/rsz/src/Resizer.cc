@@ -177,7 +177,6 @@ Resizer::Resizer()
       journal_(nullptr),
       opendp_(nullptr)
 {
-  journal_ = new Journal(logger_, network_, sta_);
 }
 
 Resizer::~Resizer()
@@ -208,6 +207,7 @@ void Resizer::init(Logger* logger,
   resized_multi_output_insts_ = InstanceSet(db_network_);
   inserted_buffer_set_ = InstanceSet(db_network_);
   steiner_renderer_ = std::move(steiner_renderer);
+  journal_ = new Journal(this, logger_);
   copyState(sta);
 }
 

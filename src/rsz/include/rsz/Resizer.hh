@@ -663,6 +663,7 @@ protected:
 
   friend class BufferedNet;
   friend class GateCloner;
+  friend class Journal;
   friend class PreChecks;
   friend class RecoverPower;
   friend class RepairDesign;

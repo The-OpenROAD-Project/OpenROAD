@@ -78,7 +78,7 @@ class Undo {
  public:
   // base class for undo elements
   Undo() {};
-  virtual int UndoOperation(Logger *logger,  Network *network, dbSta *sta) = 0;
+  virtual int UndoOperation(Logger *logger, Network *network, dbSta *sta) = 0;
 };
 
 class UndoBufferToInverter: public Undo {
@@ -86,7 +86,7 @@ class UndoBufferToInverter: public Undo {
   // buffer to inverter element
   UndoBufferToInverter(Instance *inv_buffer1, Instance *inv_buffer2,
                  Instance *inv_inverter1, Instance *inv_inverter2);
-  int UndoOperation(Logger *logger,  Network *network, dbSta *sta);
+  int UndoOperation(Logger *logger, Network *network, dbSta *sta);
  private:
   // four instance pointers for inverter to buffer conversion
   Instance *inv_buffer1_;
@@ -99,7 +99,7 @@ class UndoBuffer : public Undo {
  public:
   // swap pin element
   UndoBuffer(Instance* inst);
-  int UndoOperation(Logger *logger,  Network *network, dbSta *sta);
+  int UndoOperation(Logger *logger, Network *network, dbSta *sta);
  private:
   Instance *buffer_inst_;
 };
@@ -133,14 +133,14 @@ class UndoClone
   public:
   // clone element
   UndoClone();
-  int UndoOperation(Logger *logger,  Network *network, dbSta *sta);
+  int UndoOperation(Logger *logger, Network *network, dbSta *sta);
  private:
 };
 
 class Journal
 {
 public:
-  Journal(Logger *logger, Network *network, dbSta *sta);
+  Journal(Resizer *, Logger *logger);
 
   void begin();
   void end();
@@ -150,9 +150,12 @@ public:
   void makeBuffer(Instance *buffer);
 
  private:
+  sta::Network *network();
+  dbSta *sta();
+
+ private:
+  Resizer *resizer_;
   Logger *logger_;
-  Network *network_;
-  dbSta *sta_;
   std::stack<std::unique_ptr<Undo>> journal_stack_;
 };
 
