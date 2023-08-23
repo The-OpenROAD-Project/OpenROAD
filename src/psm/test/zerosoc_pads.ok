@@ -19,10 +19,9 @@ The NOWIREEXTENSIONATPIN statement will be ignored. See file sky130hd_data/io/sk
 [INFO ODB-0131]     Created 44647 components and 163994 component-terminals.
 [INFO ODB-0132]     Created 48 special nets and 114246 connections.
 [INFO ODB-0133]     Created 13655 nets and 49143 connections.
-[WARNING PSM-0019] Voltage on net vdd is not explicitly set.
-[WARNING PSM-0022] Using voltage 1.800V for VDD network.
+[INFO PSM-0022] Using 1.800V for vdd
 [INFO PSM-0076] Setting metal node density to be standard cell height times 5.
-[INFO PSM-0031] Number of PDN nodes on net vdd = 138740.
+[INFO PSM-0031] Number of PDN nodes on net vdd = 138729.
 [INFO PSM-0064] Number of voltage sources = 5068.
 [INFO PSM-0040] All PDN stripes on net vdd are connected.
 ########## IR report #################

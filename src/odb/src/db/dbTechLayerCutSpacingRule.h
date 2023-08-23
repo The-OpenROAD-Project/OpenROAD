@@ -36,9 +36,6 @@
 #include "dbCore.h"
 #include "odb.h"
 
-// User Code Begin Includes
-// User Code End Includes
-
 namespace odb {
 class dbIStream;
 class dbOStream;
@@ -46,8 +43,6 @@ class dbDiff;
 class _dbDatabase;
 class _dbTechLayer;
 class _dbTechLayerCutClassRule;
-// User Code Begin Classes
-// User Code End Classes
 
 struct dbTechLayerCutSpacingRuleFlags
 {
@@ -92,15 +87,10 @@ struct dbTechLayerCutSpacingRuleFlags
   bool par_within_enclosure_valid_ : 1;
   uint spare_bits_ : 22;
 };
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbTechLayerCutSpacingRule : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
-
   _dbTechLayerCutSpacingRule(_dbDatabase*, const _dbTechLayerCutSpacingRule& r);
   _dbTechLayerCutSpacingRule(_dbDatabase*);
   ~_dbTechLayerCutSpacingRule();
@@ -115,8 +105,6 @@ class _dbTechLayerCutSpacingRule : public _dbObject
                    const char* field,
                    const _dbTechLayerCutSpacingRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 
   dbTechLayerCutSpacingRuleFlags flags_;
   int cut_spacing_;
@@ -145,13 +133,8 @@ class _dbTechLayerCutSpacingRule : public _dbObject
   uint prl_;
   uint par_length_;
   int cut_area_;
-
-  // User Code Begin Fields
-  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutSpacingRule& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutSpacingRule& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header

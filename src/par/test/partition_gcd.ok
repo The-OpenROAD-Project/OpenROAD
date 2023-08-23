@@ -34,6 +34,7 @@
 [INFO PAR-0176] Hyperedges = 451
 [INFO PAR-0177] Number of timing paths = 52
 [STATUS] Finish reading netlist****
+[WARNING PAR-0352] no base balance is specified. Use default value.
 [INFO PAR-0077] hyperedge weight factor : [ 1.000000  ]
 [INFO PAR-0078] vertex weight factor : [ 1.000000  ]
 [INFO PAR-0079] placement weight factor : [  ]

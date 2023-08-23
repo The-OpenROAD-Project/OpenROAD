@@ -116,8 +116,8 @@ void _dbTrackGrid::out(dbDiff& diff, char side, const char* field) const
 dbTechLayer* dbTrackGrid::getTechLayer()
 {
   _dbTrackGrid* grid = (_dbTrackGrid*) this;
-  _dbDatabase* db = grid->getDatabase();
-  _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
+  _dbBlock* block = (_dbBlock*) grid->getOwner();
+  _dbTech* tech = block->getTech();
   return (dbTechLayer*) tech->_layer_tbl->getPtr(grid->_layer);
 }
 

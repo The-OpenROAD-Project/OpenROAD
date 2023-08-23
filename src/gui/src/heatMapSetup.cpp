@@ -157,68 +157,71 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
 
   updateWidgets();
 
-  connect(log_scale_, SIGNAL(stateChanged(int)), this, SLOT(updateScale(int)));
+  connect(
+      log_scale_, &QCheckBox::stateChanged, this, &HeatMapSetup::updateScale);
 
   connect(reverse_log_scale_,
-          SIGNAL(stateChanged(int)),
+          &QCheckBox::stateChanged,
           this,
-          SLOT(updateReverseScale(int)));
+          &HeatMapSetup::updateReverseScale);
 
   if (!use_dbu_) {
     connect(grid_x_size_,
-            SIGNAL(valueChanged(double)),
+            qOverload<double>(&QDoubleSpinBox::valueChanged),
             this,
-            SLOT(updateGridSize()));
+            &HeatMapSetup::updateGridSize);
     connect(grid_y_size_,
-            SIGNAL(valueChanged(double)),
+            qOverload<double>(&QDoubleSpinBox::valueChanged),
             this,
-            SLOT(updateGridSize()));
+            &HeatMapSetup::updateGridSize);
   } else {
     connect(grid_x_size_dbu_,
-            SIGNAL(valueChanged(int)),
+            qOverload<int>(&QSpinBox::valueChanged),
             this,
-            SLOT(updateGridSize()));
+            &HeatMapSetup::updateGridSize);
     connect(grid_y_size_dbu_,
-            SIGNAL(valueChanged(int)),
+            qOverload<int>(&QSpinBox::valueChanged),
             this,
-            SLOT(updateGridSize()));
+            &HeatMapSetup::updateGridSize);
   }
 
   connect(show_numbers_,
-          SIGNAL(stateChanged(int)),
+          &QCheckBox::stateChanged,
           this,
-          SLOT(updateShowNumbers(int)));
+          &HeatMapSetup::updateShowNumbers);
 
   connect(show_legend_,
-          SIGNAL(stateChanged(int)),
+          &QCheckBox::stateChanged,
           this,
-          SLOT(updateShowLegend(int)));
+          &HeatMapSetup::updateShowLegend);
 
   connect(min_range_selector_,
-          SIGNAL(valueChanged(double)),
+          qOverload<double>(&QDoubleSpinBox::valueChanged),
           this,
-          SLOT(updateRange()));
+          &HeatMapSetup::updateRange);
   connect(max_range_selector_,
-          SIGNAL(valueChanged(double)),
+          qOverload<double>(&QDoubleSpinBox::valueChanged),
           this,
-          SLOT(updateRange()));
+          &HeatMapSetup::updateRange);
   connect(show_mins_,
-          SIGNAL(stateChanged(int)),
+          &QCheckBox::stateChanged,
           this,
-          SLOT(updateShowMinRange(int)));
+          &HeatMapSetup::updateShowMinRange);
   connect(show_maxs_,
-          SIGNAL(stateChanged(int)),
+          &QCheckBox::stateChanged,
           this,
-          SLOT(updateShowMaxRange(int)));
+          &HeatMapSetup::updateShowMaxRange);
 
-  connect(
-      alpha_selector_, SIGNAL(valueChanged(int)), this, SLOT(updateAlpha(int)));
+  connect(alpha_selector_,
+          qOverload<int>(&QSpinBox::valueChanged),
+          this,
+          &HeatMapSetup::updateAlpha);
 
-  connect(this, SIGNAL(changed()), this, SLOT(updateWidgets()));
+  connect(this, &HeatMapSetup::changed, this, &HeatMapSetup::updateWidgets);
 
-  connect(rebuild_, SIGNAL(pressed()), this, SLOT(destroyMap()));
+  connect(rebuild_, &QPushButton::pressed, this, &HeatMapSetup::destroyMap);
 
-  connect(close_, SIGNAL(pressed()), this, SLOT(accept()));
+  connect(close_, &QPushButton::pressed, this, &HeatMapSetup::accept);
 }
 
 void HeatMapSetup::updateWidgets()

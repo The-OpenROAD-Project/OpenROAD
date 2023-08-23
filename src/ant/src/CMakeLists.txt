@@ -55,14 +55,13 @@ target_link_libraries(ant_lib
   PUBLIC
     odb
     OpenSTA
-    grt_lib
     utl_lib
 )
 
 target_link_libraries(ant
   PUBLIC
     ant_lib
-    grt
+    grt_lib
     utl
 )
 

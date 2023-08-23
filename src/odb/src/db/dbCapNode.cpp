@@ -326,10 +326,6 @@ void dbCapNode::accAllCcCap(double* totalcap, double MillerMult)
   for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ++ccitr) {
     double ccmult = MillerMult;
     dbCCSeg* cc = *ccitr;
-#ifdef TMG_SI
-    if (MillerMult < 0)
-      ccmult = getExtCCmult(cc->getTheOtherCapn(this, cid)->getNet());
-#endif
     cc->accAllCcCap(totalcap, ccmult);
   }
 }

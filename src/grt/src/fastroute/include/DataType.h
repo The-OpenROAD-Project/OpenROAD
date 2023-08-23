@@ -153,6 +153,7 @@ struct Edge3D
 {
   unsigned short cap;    // the capacity of the edge
   unsigned short usage;  // the usage of the edge
+  unsigned short red;    // the reduction of capacity of the edge
 };
 
 struct TreeNode

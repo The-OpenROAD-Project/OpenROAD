@@ -91,6 +91,7 @@ class defout_impl
   void writeGCells(dbBlock* block);
   void writeVias(dbBlock* block);
   void writeVia(dbVia* via);
+  void writeComponentMaskShift(dbBlock* block);
   void writeInsts(dbBlock* block);
   void writeNonDefaultRules(dbBlock* block);
   void writeNonDefaultRule(dbTechNonDefaultRule* rule);

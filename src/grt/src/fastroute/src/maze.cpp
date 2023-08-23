@@ -2172,16 +2172,22 @@ void FastRouteCore::findCongestedEdgesNets(
           const int xreal = tile_size_ * (gridsX[i] + 0.5) + x_corner_;
           const int yreal = tile_size_ * (gridsY[i] + 0.5) + y_corner_;
 
+          // a zero-length edge does not store any congestion info.
+          if (lastX == xreal && lastY == yreal) {
+            continue;
+          }
+
           bool vertical_edge = xreal == lastX;
 
           if (vertical_edge == vertical) {
+            // the congestion information on an edge (x1, y1) -> (x2, y2) is
+            // stored only in (x1, y1), where x1 <= x2 and y1 <= y2. therefore,
+            // it gets the min between each value to properly define which nets
+            // are crossing a congested area.
+            int x = std::min(lastX, xreal);
+            int y = std::min(lastY, yreal);
             NetsPerCongestedArea::iterator it
-                = nets_in_congested_edges.find({lastX, lastY});
-            if (it != nets_in_congested_edges.end()) {
-              it->second.nets.insert(nets_[netID]->getDbNet());
-            }
-
-            it = nets_in_congested_edges.find({xreal, yreal});
+                = nets_in_congested_edges.find({x, y});
             if (it != nets_in_congested_edges.end()) {
               it->second.nets.insert(nets_[netID]->getDbNet());
             }

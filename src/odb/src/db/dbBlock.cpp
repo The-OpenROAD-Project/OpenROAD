@@ -112,6 +112,7 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
+#include "dbTechLayer.h"
 #include "dbTechLayerRule.h"
 #include "dbTechNonDefaultRule.h"
 #include "dbTrackGrid.h"
@@ -156,11 +157,7 @@ template class dbHashTable<_dbBTerm>;
 _dbBlock::_dbBlock(_dbDatabase* db)
 {
   _flags._valid_bbox = 0;
-  _flags._buffer_altered = 1;
-  _flags._active_pins = 0;
-  _flags._skip_hier_stream = 0;
-  _flags._mme = 0;
-  _flags._spare_bits_27 = 0;
+  _flags._spare_bits = 0;
   _def_units = 100;
   _dbu_per_micron = 1000;
   _hier_delimeter = 0;
@@ -173,8 +170,6 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _maxCapNodeId = 0;
   _maxRSegId = 0;
   _maxCCSegId = 0;
-  _minExtModelIndex = -1;
-  _maxExtModelIndex = -1;
 
   _bterm_tbl = new dbTable<_dbBTerm>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbBTermObj);
@@ -376,11 +371,8 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _num_ext_dbs = 1;
   _searchDb = nullptr;
   _extmi = nullptr;
-  _ptFile = nullptr;
   _journal = nullptr;
   _journal_pending = nullptr;
-
-  _bterm_pins = nullptr;
 }
 
 _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
@@ -395,6 +387,7 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
       _corner_name_list(block._corner_name_list),
       _name(nullptr),
       _die_area(block._die_area),
+      _tech(block._tech),
       _chip(block._chip),
       _bbox(block._bbox),
       _parent(block._parent),
@@ -417,9 +410,8 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
       _maxCapNodeId(block._maxCapNodeId),
       _maxRSegId(block._maxRSegId),
       _maxCCSegId(block._maxCCSegId),
-      _minExtModelIndex(block._minExtModelIndex),
-      _maxExtModelIndex(block._maxExtModelIndex),
       _children(block._children),
+      _component_mask_shift(block._component_mask_shift),
       _currentCcAdjOrder(block._currentCcAdjOrder)
 {
   if (block._name) {
@@ -572,8 +564,6 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
   _prop_itr = new dbPropertyItr(_prop_tbl);
 
   _num_ext_dbs = 0;
-  _ptFile = nullptr;
-  _bterm_pins = nullptr;
 
   // ??? Initialize search-db on copy?
   _searchDb = nullptr;
@@ -678,6 +668,7 @@ void dbBlock::clear()
   _dbDatabase* db = block->getDatabase();
   _dbBlock* parent = (_dbBlock*) getParent();
   _dbChip* chip = (_dbChip*) getChip();
+  _dbTech* tech = (_dbTech*) getTech();
 
   // save a copy of the name
   char* name = strdup(block->_name);
@@ -701,8 +692,8 @@ void dbBlock::clear()
   // call in-place new to create new block
   new (block) _dbBlock(db);
 
-  // nitialize the
-  block->initialize(chip, parent, name, delimeter);
+  // initialize the
+  block->initialize(chip, tech, parent, name, delimeter);
 
   // restore callbacks
   block->_callbacks.swap(callbacks);
@@ -721,6 +712,7 @@ void dbBlock::clear()
 }
 
 void _dbBlock::initialize(_dbChip* chip,
+                          _dbTech* tech,
                           _dbBlock* parent,
                           const char* name,
                           char delimeter)
@@ -734,6 +726,7 @@ void _dbBlock::initialize(_dbChip* chip,
   box->_shape._rect.reset(INT_MAX, INT_MAX, INT_MIN, INT_MIN);
   _bbox = box->getOID();
   _chip = chip->getOID();
+  _tech = tech->getOID();
   _hier_delimeter = delimeter;
   // create top module
   _dbModule* _top = (_dbModule*) dbModule::create((dbBlock*) this, name);
@@ -883,18 +876,14 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._corner_name_list;
   stream << block._name;
   stream << block._die_area;
+  stream << block._tech;
   stream << block._chip;
   stream << block._bbox;
   stream << block._parent;
   stream << block._next_block;
   stream << block._gcell_grid;
-  if (block._flags._skip_hier_stream) {
-    stream << 0;
-    stream << 0;
-  } else {
-    stream << block._parent_block;
-    stream << block._parent_inst;
-  }
+  stream << block._parent_block;
+  stream << block._parent_inst;
   stream << block._top_module;
   stream << block._net_hash;
   stream << block._inst_hash;
@@ -910,15 +899,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._maxCapNodeId;
   stream << block._maxRSegId;
   stream << block._maxCCSegId;
-  stream << block._minExtModelIndex;
-  stream << block._maxExtModelIndex;
-  if (block._flags._skip_hier_stream) {
-    block.getImpl()->getLogger()->info(
-        utl::ODB, 4, "Hierarchical block information is lost");
-    stream << 0;
-  } else
-    stream << block._children;
-
+  stream << block._children;
+  stream << block._component_mask_shift;
   stream << block._currentCcAdjOrder;
   stream << *block._bterm_tbl;
   stream << *block._iterm_tbl;
@@ -992,6 +974,11 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block._corner_name_list;
   stream >> block._name;
   stream >> block._die_area;
+  // In the older schema we can't set the tech here, we handle this later in
+  // dbDatabase.
+  if (db->isSchema(db_schema_block_tech)) {
+    stream >> block._tech;
+  }
   stream >> block._chip;
   stream >> block._bbox;
   stream >> block._parent;
@@ -1014,9 +1001,16 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block._maxCapNodeId;
   stream >> block._maxRSegId;
   stream >> block._maxCCSegId;
-  stream >> block._minExtModelIndex;
-  stream >> block._maxExtModelIndex;
+  if (!db->isSchema(db_schema_block_ext_model_index)) {
+    int ignore_minExtModelIndex;
+    int ignore_maxExtModelIndex;
+    stream >> ignore_minExtModelIndex;
+    stream >> ignore_maxExtModelIndex;
+  }
   stream >> block._children;
+  if (db->isSchema(db_schema_block_component_mask_shift)) {
+    stream >> block._component_mask_shift;
+  }
   stream >> block._currentCcAdjOrder;
   stream >> *block._bterm_tbl;
   stream >> *block._iterm_tbl;
@@ -1145,6 +1139,9 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
   if (_die_area != rhs._die_area)
     return false;
 
+  if (_tech != rhs._tech)
+    return false;
+
   if (_chip != rhs._chip)
     return false;
 
@@ -1211,13 +1208,10 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
   if (_maxCCSegId != rhs._maxCCSegId)
     return false;
 
-  if (_minExtModelIndex != rhs._minExtModelIndex)
-    return false;
-
-  if (_maxExtModelIndex != rhs._maxExtModelIndex)
-    return false;
-
   if (_children != rhs._children)
+    return false;
+
+  if (_component_mask_shift != rhs._component_mask_shift)
     return false;
 
   if (_currentCcAdjOrder != rhs._currentCcAdjOrder)
@@ -1359,6 +1353,7 @@ void _dbBlock::differences(dbDiff& diff,
   DIFF_FIELD(_name);
   DIFF_FIELD(_corner_name_list);
   DIFF_FIELD(_die_area);
+  DIFF_FIELD(_tech);
   DIFF_FIELD(_chip);
   DIFF_FIELD(_bbox);
   DIFF_FIELD(_parent);
@@ -1385,9 +1380,8 @@ void _dbBlock::differences(dbDiff& diff,
   DIFF_FIELD(_maxCapNodeId);
   DIFF_FIELD(_maxRSegId);
   DIFF_FIELD(_maxCCSegId);
-  DIFF_FIELD(_minExtModelIndex);
-  DIFF_FIELD(_maxExtModelIndex);
   DIFF_VECTOR(_children);
+  DIFF_VECTOR(_component_mask_shift);
   DIFF_FIELD(_currentCcAdjOrder);
   DIFF_TABLE(_bterm_tbl);
   DIFF_TABLE_NO_DEEP(_iterm_tbl);
@@ -1453,6 +1447,7 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_name);
   DIFF_OUT_FIELD(_corner_name_list);
   DIFF_OUT_FIELD(_die_area);
+  DIFF_OUT_FIELD(_tech);
   DIFF_OUT_FIELD(_chip);
   DIFF_OUT_FIELD(_bbox);
   DIFF_OUT_FIELD(_parent);
@@ -1479,9 +1474,8 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_maxCapNodeId);
   DIFF_OUT_FIELD(_maxRSegId);
   DIFF_OUT_FIELD(_maxCCSegId);
-  DIFF_OUT_FIELD(_minExtModelIndex);
-  DIFF_OUT_FIELD(_maxExtModelIndex);
   DIFF_OUT_VECTOR(_children);
+  DIFF_OUT_VECTOR(_component_mask_shift);
   DIFF_OUT_FIELD(_currentCcAdjOrder);
   DIFF_OUT_TABLE(_bterm_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_iterm_tbl);
@@ -1772,6 +1766,25 @@ dbSet<dbGlobalConnect> dbBlock::getGlobalConnects()
 {
   _dbBlock* block = (_dbBlock*) this;
   return dbSet<dbGlobalConnect>(block, block->global_connect_tbl_);
+}
+
+std::vector<dbTechLayer*> dbBlock::getComponentMaskShift()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  _dbTech* tech = block->getTech();
+  std::vector<dbTechLayer*> layers;
+  for (const auto& layer_id : block->_component_mask_shift) {
+    layers.push_back((dbTechLayer*) tech->_layer_tbl->getPtr(layer_id));
+  }
+  return layers;
+}
+
+void dbBlock::setComponentMaskShift(const std::vector<dbTechLayer*>& layers)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  for (auto* layer : layers) {
+    block->_component_mask_shift.push_back(layer->getId());
+  }
 }
 
 dbInst* dbBlock::findInst(const char* name)
@@ -2137,18 +2150,6 @@ Rect dbBlock::getCoreArea()
   }
   // Default to die area if there aren't any rows.
   return getDieArea();
-}
-
-FILE* dbBlock::getPtFile()
-{
-  _dbBlock* block = (_dbBlock*) this;
-  return block->_ptFile;
-}
-
-void dbBlock::setPtFile(FILE* ptf)
-{
-  _dbBlock* block = (_dbBlock*) this;
-  block->_ptFile = ptf;
 }
 
 void dbBlock::setExtmi(void* ext)
@@ -2535,7 +2536,7 @@ dbBlock* dbBlock::createExtCornerBlock(uint corner)
 {
   char cornerName[64];
   sprintf(cornerName, "extCornerBlock__%d", corner);
-  dbBlock* extBlk = dbBlock::create(this, cornerName, '/');
+  dbBlock* extBlk = dbBlock::create(this, cornerName, nullptr, '/');
   assert(extBlk);
   dbSet<dbNet> nets = getNets();
   dbSet<dbNet>::iterator nitr;
@@ -2643,33 +2644,45 @@ void dbBlock::copyViaTable(dbBlock* dst_, dbBlock* src_)
   dst->_via_tbl = new dbTable<_dbVia>(dst->getDatabase(), dst, *src->_via_tbl);
 }
 
-dbBlock* dbBlock::create(dbChip* chip_, const char* name_, char hier_delimeter_)
+dbBlock* dbBlock::create(dbChip* chip_,
+                         const char* name_,
+                         dbTech* tech_,
+                         char hier_delimeter_)
 {
   _dbChip* chip = (_dbChip*) chip_;
 
   if (chip->_top != 0)
     return nullptr;
 
+  if (!tech_) {
+    tech_ = chip_->getDb()->getTech();
+  }
+
   _dbBlock* top = chip->_block_tbl->create();
-  top->initialize(chip, nullptr, name_, hier_delimeter_);
+  _dbTech* tech = (_dbTech*) tech_;
+  top->initialize(chip, tech, nullptr, name_, hier_delimeter_);
   chip->_top = top->getOID();
-  _dbTech* tech = (_dbTech*) chip->getDb()->getTech();
   top->_dbu_per_micron = tech->_dbu_per_micron;
   return (dbBlock*) top;
 }
 
 dbBlock* dbBlock::create(dbBlock* parent_,
                          const char* name_,
+                         dbTech* tech_,
                          char hier_delimeter)
 {
   if (parent_->findChild(name_))
     return nullptr;
 
+  if (!tech_) {
+    tech_ = parent_->getTech();
+  }
+
   _dbBlock* parent = (_dbBlock*) parent_;
   _dbChip* chip = (_dbChip*) parent->getOwner();
   _dbBlock* child = chip->_block_tbl->create();
-  child->initialize(chip, parent, name_, hier_delimeter);
-  _dbTech* tech = (_dbTech*) parent->getDb()->getTech();
+  _dbTech* tech = (_dbTech*) tech_;
+  child->initialize(chip, tech, parent, name_, hier_delimeter);
   child->_dbu_per_micron = tech->_dbu_per_micron;
   return (dbBlock*) child;
 }
@@ -2756,21 +2769,6 @@ dbSet<dbBlock>::iterator dbBlock::destroy(dbSet<dbBlock>::iterator& itr)
   dbSet<dbBlock>::iterator next = ++itr;
   destroy(bt);
   return next;
-}
-void dbBlock::set_skip_hier_stream(bool value)
-{
-  _dbBlock* block = (_dbBlock*) this;
-  block->_flags._skip_hier_stream = value ? 1 : 0;
-}
-bool dbBlock::isBufferAltered()
-{
-  _dbBlock* block = (_dbBlock*) this;
-  return block->_flags._buffer_altered == 1;
-}
-void dbBlock::setBufferAltered(bool value)
-{
-  _dbBlock* block = (_dbBlock*) this;
-  block->_flags._buffer_altered = value ? 1 : 0;
 }
 
 dbBlockSearch* dbBlock::getSearchDb()
@@ -3455,43 +3453,6 @@ dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, u
 #endif
 
 //
-// Utility to save_lef
-//
-
-void dbBlock::saveLef(char* filename,
-                      int bloat_factor,
-                      bool bloat_occupied_layers)
-{
-  std::ofstream os;
-  os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
-  os.open(filename);
-  lefout writer(getImpl()->getLogger(), os);
-  writer.setBloatFactor(bloat_factor);
-  writer.setBloatOccupiedLayers(bloat_occupied_layers);
-  writer.writeAbstractLef(this);
-}
-
-//
-// Utility to save_def
-//
-
-void dbBlock::saveDef(char* filename, char* nets)
-{
-  std::vector<dbNet*> inets;
-  findSomeNet(nets, inets);
-  defout writer(getImpl()->getLogger());
-  dbNet* net;
-  uint jj;
-  for (jj = 0; jj < inets.size(); jj++) {
-    net = inets[jj];
-    writer.selectNet(net);
-  }
-  if (!writer.writeBlock(this, filename))
-    getImpl()->getLogger()->warn(
-        utl::ODB, 17, "Failed to write def file {}", filename);
-}
-
-//
 // Utility to write db file
 //
 
@@ -4112,6 +4073,18 @@ int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects)
   }
 
   return connected_iterms.size();
+}
+
+_dbTech* _dbBlock::getTech()
+{
+  _dbDatabase* db = getDatabase();
+  return db->_tech_tbl->getPtr(_tech);
+}
+
+dbTech* dbBlock::getTech()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return (dbTech*) block->getTech();
 }
 
 }  // namespace odb

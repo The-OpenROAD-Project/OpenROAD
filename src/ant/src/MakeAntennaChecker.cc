@@ -32,6 +32,7 @@
 #include "ant/MakeAntennaChecker.hh"
 
 #include "ant/AntennaChecker.hh"
+#include "grt/GlobalRouter.h"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
 

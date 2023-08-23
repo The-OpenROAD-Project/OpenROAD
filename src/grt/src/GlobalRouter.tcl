@@ -42,7 +42,7 @@ proc set_global_routing_layer_adjustment { args } {
     if {$layer == "*"} {
       sta::check_positive_float "adjustment" $adj
       grt::set_capacity_adjustment $adj
-    } elseif [regexp -all {([a-zA-Z0-9]+)-([a-zA-Z0-9]+)} $layer] {
+    } elseif [regexp -all {([^-]+)-([^ ]+)} $layer] {
       lassign [grt::parse_layer_range "set_global_routing_layer_adjustment" $layer] first_layer last_layer
       for {set l $first_layer} {$l <= $last_layer} {incr l} {
         grt::check_routing_layer $l
@@ -193,6 +193,7 @@ proc set_global_routing_random { args } {
 sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-congestion_iterations iterations] \
                                   [-congestion_report_file file_name] \
+                                  [-congestion_report_iter_step steps] \
                                   [-grid_origin origin] \
                                   [-overflow_iterations iterations] \
                                   [-critical_nets_percentage percent] \
@@ -206,7 +207,7 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
     keys {-guide_file -congestion_iterations -congestion_report_file \
-          -overflow_iterations -grid_origin -critical_nets_percentage
+          -overflow_iterations -grid_origin -critical_nets_percentage -congestion_report_iter_step
          } \
     flags {-allow_congestion -allow_overflow -verbose -start_incremental -end_incremental}
 
@@ -245,6 +246,13 @@ proc global_route { args } {
   if { [info exists keys(-congestion_report_file) ] } {
     set file_name $keys(-congestion_report_file)
     grt::set_congestion_report_file $file_name
+  }
+
+  if { [info exists keys(-congestion_report_iter_step) ] } {
+    set steps $keys(-congestion_report_iter_step)
+    grt::set_congestion_report_iter_step $steps
+  } else {
+    grt::set_congestion_report_iter_step 0
   }
 
   if { [info exists keys(-overflow_iterations)] } {
@@ -483,7 +491,7 @@ proc parse_layer_name { layer_name } {
 }
 
 proc parse_layer_range { cmd layer_range } {
-  if [regexp -all {([a-zA-Z0-9]+)-([a-zA-Z0-9]+)} $layer_range - min_layer_name max_layer_name] {
+  if [regexp -all {([^-]+)-([^ ]+)} $layer_range - min_layer_name max_layer_name] {
     set min_layer [parse_layer_name $min_layer_name]
     set max_layer [parse_layer_name $max_layer_name]
 
