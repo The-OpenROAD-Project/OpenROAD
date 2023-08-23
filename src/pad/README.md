@@ -1,6 +1,7 @@
 # Chip-level Connections
 
-In OpenROAD, chip-level connections are performed with the ICeWall algorithm.
+The chip-level connections module in OpenROAD (`pad`) is based on 
+the open-source ICeWall algorithm.
 In this utility, either place an IO ring around the boundary of the a chip 
 and connect with either wirebond pads or a bump array.
 
@@ -55,8 +56,7 @@ make_io_bump_array
 | `-rows` | Number of rows to create. |
 | `-columns` | Number of columns to create. |
 | `-pitch` | Pitch of the array. |
-| `-prefix` | Name prefix for the bump array (default: `BUMP_`). |
-
+| `-prefix` | Name prefix for the bump array. The default value is `BUMP_`. |
 Example usage:
 
 ```tcl
@@ -154,9 +154,9 @@ make_io_sites
 | `-vertical_site` | Name of the site for the vertical pads (north and south). |
 | `-corner_site` | Name of the site for the corner cells. |
 | `-offset` | Offset from the die edge to place the rows. |
-| `-rotation_horizontal` | Rotation to apply to the horizontal sites to ensure pads are placed correctly (defaults to R0). |
-| `-rotation_vertical` | Rotation to apply to the vertical sites to ensure pads are placed correctly (defaults to R0). |
-| `-rotation_corner` | Rotation to apply to the corner sites to ensure pads are placed correctly (defaults to R0). |
+| `-rotation_horizontal` | Rotation to apply to the horizontal sites to ensure pads are placed correctly. The default value is `R0`. |
+| `-rotation_vertical` | Rotation to apply to the vertical sites to ensure pads are placed correctly. The default value is `R0`. |
+| `-rotation_corner` | Rotation to apply to the corner sites to ensure pads are placed correctly. The default value is `R0`. |
 | `-ring_index` | Used to specify the index of the ring in case of multiple rings. |
 
 Example usage:
@@ -343,9 +343,9 @@ rdl_route
 | `-layer` | Layer to route on. |
 | `-bump_via` | Via to use to to connect the bump to the routing layer. |
 | `-pad_via` | Via to use to to connect the pad cell to the routing layer. |
-| `-width` | Width of the routing (defaults to minimum width). |
-| `-spacing` | Spacing of the routing (defaults to minimum spacing). |
-| `-turn_penalty` | Scaling factor to apply to discurage turning to allow for straighter routes (defaults to 2.0). |
+| `-width` | Width of the routing. Defaults to minimum width for each respective layer. |
+| `-spacing` | Spacing of the routing. Defaults to minimum spacing for each respective layer. |
+| `-turn_penalty` | Scaling factor to apply to discurage turning to allow for straighter routes. The default value is `2.0`, and the allowed values are floats. |
 | `-allow45` | Specifies that 45 degree routing is permitted. |
 | `nets` | Nets to route. |
 
@@ -374,7 +374,7 @@ convert_tcl
 
 ## Example scripts
 
-Example scripts for running ICeWall functions can be found in `/test`.
+Example scripts for running ICeWall functions can be found in `./test`.
 
 ```tcl
 ./test/assign_bumps.tcl
@@ -393,7 +393,7 @@ Example scripts for running ICeWall functions can be found in `/test`.
 
 ## Regression tests
 
-There are a set of regression tests in `/test`. For more information, refer to this [section](../../README.md#regression-tests).
+There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
 Simply run the following script:
 
