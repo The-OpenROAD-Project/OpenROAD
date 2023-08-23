@@ -1,6 +1,7 @@
 # IR Drop Analysis
 
-PDNSim is an open-source static IR analyzer.
+The IR Drop Analysis module in OpenROAD (`pdn`) is based on PDNSim, 
+an open-source static IR analyzer.
 
 Features:
 
@@ -48,10 +49,10 @@ analyze_power_grid
 | `-net` | Name of the net to analyze, power or ground net name. |
 | `-enable_em` | Flag to report current per power grid segment. |
 | `-outfile` | Filename specified per-instance voltage written into file. |
-| `-em_outfile` | Filename to write out the per segment current values into a file, can be specified only if enable_em is flag exists. |
+| `-em_outfile` | Filename to write out the per segment current values into a file, can be specified only if `enable_em` flag is set. |
 | `-voltage` | Sets the voltage on a specific net. If this command is not run, the voltage value is obtained from operating conditions in the Liberty file. |
 | `-node_density` | This value can be specfied by the user in microns to determine the node density on the standard cell rails. Cannot be used together with `node_density_factor`. |
-| `-node_density_factor` | Factor which is multiplied by standard cell height to determine the node density on the std. cell rails. Cannot be used together with node_density (default 5, integer). |
+| `-node_density_factor` | Factor which is multiplied by standard cell height to determine the node density on the std. cell rails. Cannot be used together with `node_density` The default value is `5`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-corner` | Corner to use for analysis. | 
 
 ### Check Power Grid
