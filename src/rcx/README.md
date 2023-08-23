@@ -1,6 +1,8 @@
 # Parasitics Extraction
 
-OpenRCX is a Parasitic Extraction (PEX, or RCX) tool that works on OpenDB design APIs.
+The parasitics extraction module in OpenROAD (`rcx`) is based on the 
+open-source OpenRCX, a Parasitic Extraction (PEX, or RCX) tool that 
+works on OpenDB design APIs.
 It extracts routed designs based on the LEF/DEF layout model.
 
 OpenRCX extracts both Resistance and Capacitance for wires, based on coupling
@@ -64,11 +66,11 @@ extract_parasitics
 | `-ext_model_file` | Specify the Extraction Rules file used for the extraction. |
 | `-corner_cnt` | Defines the number of corners used during the parasitic extraction. |
 | `-max_res` | Combines resistors in series up to the threshold value. |
-| `-coupling_threshold` | Coupling below this threshold is grounded (default 0.1, units: fF) |
+| `-coupling_threshold` | Coupling below this threshold is grounded. The default value is `0.1`, units are in `fF`, accepted values are floats. |
 | `-debug_net_id` | *Developer Option*: Net ID to evaluate. |
 | `-lef_res` | Override LEF resistance per unit. |
-| `-cc_model` | Specify the maximum number of tracks of lateral context that the tool considers on the same routing level (default 10). |
-| `-context_depth` | Specify the number of levels of vertical context that OpenRCX needs to consider for the over/under context overlap for capacitance calculation (default 5). |
+| `-cc_model` | Specify the maximum number of tracks of lateral context that the tool considers on the same routing level. The default value is `10`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-context_depth` | Specify the number of levels of vertical context that OpenRCX needs to consider for the over/under context overlap for capacitance calculation. The default value is `5`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-no_merge_via_res` | Separates the via resistance from the wire resistance. |
 
 ### Write SPEF
@@ -166,10 +168,10 @@ bench_wires
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-met_cnt` | Specifies the number of layers used in each pattern (default -1 meaning not set, integer). |
-| `-cnt` | Specifies the number of wires in each pattern (default 5, integer). |
-| `-len` | Specify the wire length in microns in the pattern (default 100, integer). | 
-| `-all` | Specify all different pattern geometries (over, under, over_under, and diagonal). |
+| `-met_cnt` | Specifies the number of layers used in each pattern. The default value is `-1` meaning not set, and the allowed values are integers `[0, MAX_INT]`. |
+| `-cnt` | Specifies the number of wires in each pattern. The default value is `5`, and the default values are integers `[0, MAX_INT]`. |
+| `-len` | Specify the wire length in microns in the pattern. The default value is `100`, and the allowed values are integers `[0, MAX_INT]`. | 
+| `-all` | Specify all different pattern geometries (`over`, `under`, `over_under`, and `diagonal`). |
 | `-db_only` | Run with db values only. All parameters in `bench_wires` are ignored. |
 | `-under_met` | Under metal layer. |
 | `-w_list` | Specifies the lists of wire width multipliers from the minimum spacing defined in the LEF. |
