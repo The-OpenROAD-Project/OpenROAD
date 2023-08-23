@@ -114,6 +114,7 @@ class SimulatedAnnealing
                             const int min_slot,
                             bool move_to_max);
   int rearrangeConstrainedGroups(int constraint_idx);
+  int moveGroup(int pin_idx);
   void restorePreviousAssignment();
   double dbuToMicrons(int64_t dbu);
   bool isFreeForGroup(int& slot_idx, int group_size, int last_slot);
@@ -151,6 +152,8 @@ class SimulatedAnnealing
   // perturbation variables
   const float swap_pins_ = 0.5;
   const int move_fail_ = -1;
+  const float shift_group_ = 0.8;
+  const float group_to_free_slots_ = 0.7;
 
   Logger* logger_ = nullptr;
   odb::dbDatabase* db_;

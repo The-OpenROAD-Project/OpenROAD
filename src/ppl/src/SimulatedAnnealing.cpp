@@ -459,14 +459,14 @@ int SimulatedAnnealing::movePinToFreeSlot(bool lone_pin)
   } else {
     const IOPin& io_pin = netlist_->getIoPin(pin);
     if (io_pin.isInGroup()) {
-      int prev_cost = moveGroupToFreeSlots(io_pin.getGroupIdx());
+      int prev_cost = moveGroup(pin);
       return prev_cost;
     }
 
     if (io_pin.isMirrored()) {
       const IOPin& mirrored_pin = netlist_->getIoPin(io_pin.getMirrorPinIdx());
       if (mirrored_pin.isInGroup()) {
-        int prev_cost = moveGroupToFreeSlots(mirrored_pin.getGroupIdx());
+        int prev_cost = moveGroup(io_pin.getMirrorPinIdx());
         return prev_cost;
       }
     }
@@ -655,10 +655,12 @@ int SimulatedAnnealing::shiftGroup(int group_idx)
     slot++;
   }
 
-  if (min_count > max_count) {
-    shiftGroupToPosition(pin_indices, min_count, min_slot, false);
-  } else {
-    shiftGroupToPosition(pin_indices, max_count, min_slot, true);
+  if (min_count + max_count > 0) {
+    if (min_count > max_count) {
+      shiftGroupToPosition(pin_indices, min_count, min_slot, false);
+    } else {
+      shiftGroupToPosition(pin_indices, max_count, min_slot, true);
+    }
   }
 
   return prev_cost;
@@ -758,6 +760,34 @@ int SimulatedAnnealing::rearrangeConstrainedGroups(int constraint_idx)
   }
 
   return prev_cost;
+}
+
+int SimulatedAnnealing::moveGroup(int pin_idx)
+{
+  const IOPin& io_pin = netlist_->getIoPin(pin_idx);
+  int group_idx = io_pin.getGroupIdx();
+  if (io_pin.getConstraintIdx() != -1) {
+    const Constraint& constraint = constraints_[io_pin.getConstraintIdx()];
+    if (constraint.pins_per_slots <= 0.6) {
+      boost::random::uniform_real_distribution<float> distribution;
+      const float move = distribution(generator_);
+      if (move <= group_to_free_slots_) {
+        return moveGroupToFreeSlots(group_idx);
+      } else {
+        return shiftGroup(group_idx);
+      }
+    } else {
+      boost::random::uniform_real_distribution<float> distribution;
+      const float move = distribution(generator_);
+      if (move > shift_group_ && constraint.pin_groups.size() > 1) {
+        return rearrangeConstrainedGroups(io_pin.getConstraintIdx());
+      } else {
+        return shiftGroup(group_idx);
+      }
+    }
+  }
+
+  return moveGroupToFreeSlots(group_idx);
 }
 
 void SimulatedAnnealing::restorePreviousAssignment()
