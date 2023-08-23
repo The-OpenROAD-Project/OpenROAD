@@ -1,6 +1,7 @@
 # Restructure
 
-Restructure is an interface to ABC for local resynthesis. The package allows
+The restructure module in OpenROAD (`rmp`) is based on 
+an interface to ABC for local resynthesis. The package allows
 logic restructuring that targets area or timing. It extracts a cloud of logic
 using the OpenSTA timing engine, and passes it to ABC through `blif` interface.
 Multiple recipes for area or timing are run to obtain multiple structures from ABC;
@@ -54,7 +55,7 @@ restructure
 
 ## Example scripts
 
-Example scripts on running Restructure for a sample design of `gcd` as follows:
+Example scripts on running `rmp` for a sample design of `gcd` as follows:
 
 ```tcl
 ./test/gcd_restructure.tcl
@@ -62,7 +63,7 @@ Example scripts on running Restructure for a sample design of `gcd` as follows:
 
 ## Regression tests
 
-There are a set of regression tests in `/test`. For more information, refer to this [section](../../README.md#regression-tests).
+There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
 Simply run the following script:
 
