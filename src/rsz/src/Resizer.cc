@@ -173,7 +173,7 @@ Resizer::Resizer()
       buffer_moved_into_core_(false),
       max_wire_length_(0),
       worst_slack_nets_percent_(10),
-      new_journal_(false),
+      new_journal_(true),
       journal_(nullptr),
       opendp_(nullptr)
 {

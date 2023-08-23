@@ -239,9 +239,9 @@ void Journal::restore(int& resize_count, int& inserted_buffer_count,
                              int& cloned_gate_count)
 {
   while (!journal_stack_.empty()) {
-    std::unique_ptr<Undo> &element = journal_stack_.top();
-    journal_stack_.pop();
+    Undo *element = journal_stack_.top().get();
     element->UndoOperation(logger_, network(), sta());
+    journal_stack_.pop();
   }
 }
 
