@@ -37,7 +37,7 @@ macro_placement
 | `-channel` | Horizontal and vertical channel width between macros (microns). |
 | `-fence_region` | Restrict macro placements to a region (microns). Defaults to the core area. |
 | `-snap_layer_number` | Snap macro origins to this routing layer track. |
-| `-style` | Placement style, to choose either `corner_max_wl` or `corner_min_wl` (default `corner_max_wl`). |
+| `-style` | Placement style, to choose either `corner_max_wl` or `corner_min_wl`. The default value is `corner_max_wl`. |
 
 For placement style, `corner_max_wl` means that choosing the partitions that maximise the wirelength 
 of connections between the macros to force them to the corners. Vice versa for `corner_min_wl`.
@@ -51,7 +51,7 @@ channel/halo.
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/MacroPlacer.cpp) or the [swig file](./src/MacroPlacer.i).
 
-| Function Name | Description |
+| Command Name | Description |
 | ----- | ----- |
 | `macro_placement_debug` | Macro placement debugging. Note that GUI must be present for this command, otherwise a segfault will occur. | 
 
