@@ -92,6 +92,7 @@ triton_part_hypergraph
     -hypergraph_file hypergraph_file  
     -num_parts num_parts  
     -balance_constraint balance_constraint 
+    [-base_balance base_balance]
     [-seed seed] 
     [-vertex_dimension vertex_dimension] 
     [-hyperedge_dimension hyperedge_dimension] 
@@ -127,12 +128,13 @@ triton_part_hypergraph
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `-num_parts` | Number of partitions (default 2, integer). |
-| `-balance_constraint` | Allowed imbalance between blocks (default 1.0, float). |
-| `-seed` | Random seed (default 0, integer). |
-| `-vertex_dimension` | Number of vertices in the hypergraph (default 1, integer). |
-| `-hyperedge_dimension` | Number of hyperedges in hypergraph (default 1, integer). |
-| `-placement_dimension` | Number of dimensions for canvas, if placement information is provided (default 0, integer). |
+| `-num_parts` | Number of partitions. The default value is `2`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-balance_constraint` | Allowed imbalance between blocks. The default value is `1.0`, and the allowed values are floats. |
+| `-base_balance` | Tcl list of baseline imbalance between partitions. The default value is `{1.0}`, the allowed values are floats that sum up to `1.0`. |
+| `-seed` | Random seed. The default value is `0`, and the allowed values are integers `[-MAX_INT, MAX_INT]`. |
+| `-vertex_dimension` | Number of vertices in the hypergraph. The default value is `1`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-hyperedge_dimension` | Number of hyperedges in hypergraph. The default value is `1`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-placement_dimension` | Number of dimensions for canvas, if placement information is provided. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-hypergraph_file` | Path to hypergraph file. |
 | `-fixed_file` | Path to fixed vertices constraint file. |
 | `-community_file` | Path to `community` attributes file to guide the partitioning process. |
@@ -152,7 +154,7 @@ triton_part_hypergraph
 | `-num_best_initial_solutions` | Number of top initial solutions to filter out (default 10, integer). |
 | `-refiner_iters` | Refinement iterations (default 10, integer). |
 | `-max_moves` | The allowed moves for each Fiduccia-Mattheyes (FM) algorithm pass or greedy refinement (default 60, integer). |
-| `-early_stop_ratio` | Describes ratio $e$ where if the $n_{moved vertices} > n_{vertices} * e$, exit current FM pass. The intention behind this being most of the gains are achieved by the first few FM moves. (default 0.5) |
+| `-early_stop_ratio` | Describes the ratio $e$ where if the $n_{moved vertices} > n_{vertices} * e$, the tool exits the current FM pass. The intention behind this is that most of the gains are achieved by the first few FM moves. (default 0.5, float). |
 | `-total_corking_passes` | Maximum level of traversing the buckets to solve the "corking effect" (default 25, integer). |
 | `-v_cycle_flag` | Disables v-cycle is used to refine partitions (default true, bool). |
 | `-max_num_vcycle` | Maximum number of `vcycles` (default 1, integer). |
@@ -168,6 +170,7 @@ evaluate_hypergraph_solution
   -balance_constraint balance_constraint
   -hypergraph_file hypergraph_file
   -solution_file solution_file
+  [-base_balance base_balance]
   [-vertex_dimension vertex_dimension]
   [-hyperedge_dimension hyperedge_dimension]
   [-fixed_file fixed_file]
@@ -180,12 +183,13 @@ evaluate_hypergraph_solution
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `-num_parts` | Number of partitions (default 2, integer). |
-| `-balance_constraint` | Allowed imbalance between blocks (default 1.0, float). |
-| `-vertex_dimension` | Number of vertices in the hypergraph (default 1, integer). |
-| `-hyperedge_dimension` | Number of hyperedges in hypergraph (default 1, integer). |
+| `-num_parts` | Number of partitions. The default value is `2`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-balance_constraint` | Allowed imbalance between blocks. The default value is `1.0`, and the allowed values are floats. |
+| `-vertex_dimension` | Number of vertices in the hypergraph. The default value is `1`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-hyperedge_dimension` | Number of hyperedges in hypergraph. The default value is `1`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-hypergraph_file` | Path to hypergraph file. |
 | `-solution_file` | Path to solution file. |
+| `-base_balance` | Tcl list of baseline imbalance between partitions. The default value is `{1.0}`, the allowed values are floats that sum up to `1.0`. |
 | `-fixed_file` | Path to fixed vertices constraint file. |
 | `-group_file` | Path to `stay together` attributes file. |
 | `-e_wt_factors` | Hyperedge weight factor. |
@@ -198,6 +202,7 @@ evaluate_hypergraph_solution
 triton_part_design
     [-num_parts num_parts]
     [-balance_constraint balance_constraint]
+    [-base_balance base_balance]
     [-seed seed]
     [-timing_aware_flag timing_aware_flag]
     [-top_n top_n]
@@ -244,17 +249,18 @@ triton_part_design
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-num_parts` | Number of partitions (default 2, integer). |
-| `-balance_constraint` | Allowed imbalance between blocks (default 1.0, float). |
-| `-seed` | Random seed (default 1, integer). |
-| `-timing_aware_flag` | Enable timing-driven mode (default true, bool). |
-| `-top_n` | Extract the top n critical timing paths (default 1000, integer). |
-| `-placement_flag` | Enable placement driven partitioning (default false, bool). |
-| `-fence_flag ` | Consider fences in the partitioning (default false, bool) |
-| `-fence_lx ` | Fence lower left x in microns (default 0.0, float). |
-| `-fence_ly ` | Fence lower left y in microns (default 0.0, float). |
-| `-fence_ux ` | Fence upper right x in microns (default 0.0, float). |
-| `-fence_uy ` | Fence upper right y in microns (default 0.0, float). | 
+| `-num_parts` | Number of partitions. The default value is `2`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-balance_constraint` | Allowed imbalance between blocks. The default value is `1.0`, and the allowed values are floats. |
+| `-base_balance` | Tcl list of baseline imbalance between partitions. The default value is `{1.0}`, the allowed values are floats that sum up to `1.0`. |
+| `-seed` | Random seed. The default value is `1`, and the allowed values are integers `[-MAX_INT, MAX_INT]`. |
+| `-timing_aware_flag` | Enable timing-driven mode. The default value is `true`, and the allowed values are booleans. |
+| `-top_n` | Extract the top n critical timing paths. The default value is `1000`, and the allowed values are integers `[0, MAX_INT`. |
+| `-placement_flag` | Enable placement driven partitioning. The default value is `false`, and the allowed values are booleans. |
+| `-fence_flag ` | Consider fences in the partitioning. The default value is `false`, and the allowed values are booleans. |
+| `-fence_lx ` | Fence lower left x in microns. The default value is `0.0`, and the allowed values are floats. |
+| `-fence_ly ` | Fence lower left y in microns. The default value is `0.0`, and the allowed values are floats. |
+| `-fence_ux ` | Fence upper right x in microns. The default value is `0.0`, and the allowed values are floats. |
+| `-fence_uy ` | Fence upper right y in microns. The default value is `0.0`, and the allowed values are floats. |
 | `-fixed_file` | Path to fixed vertices constraint file |
 | `-community_file` | Path to `community` attributes file to guide the partitioning process. |
 | `-group_file` | Path to `stay together` attributes file. |
@@ -268,25 +274,24 @@ triton_part_design
 | `-e_wt_factors` | Hyperedge weight factor. |
 | `-v_wt_factors` | Vertex weight factor. |
 | `-placement_wt_factors` | Placement weight factor. |
-| `-thr_coarsen_hyperedge_size_skip` | Threshold for ignoring large hyperedge (default 1000, integer). |
-| `-thr_coarsen_vertices` | Number of vertices of coarsest hypergraph (default 10, integer). |
-| `-thr_coarsen_hyperedges` | Number of vertices of coarsest hypergraph (default 50, integer). |
-| `-coarsening_ratio` | Coarsening ratio of two adjacent hypergraphs (default 1.5, float). |
-| `-max_coarsen_iters` | Number of iterations (default 30, integer). |
-| `-adj_diff_ratio` | Minimum difference of two adjacent hypergraphs (default 0.0001, float). |
-| `-min_num_vertices_each_part` | Minimum number of vertices in each partition (default 4, integer). |
-| `-num_initial_solutions` | Number of initial solutions (default 100, integer). |
-| `-num_best_initial_solutions` | Number of top initial solutions to filter out (default 10, integer). |
-| `-refiner_iters` | Refinment iterations (default 10, integer). |
-| `-max_moves` | The allowed moves for each Fiduccia-Mattheyes (FM) algorithm pass or greedy refinement (default 100, integer). |
-| `-early_stop_ratio` | Describes the ratio $e$ where if the $n_{moved vertices} > n_{vertices} * e$, the tool exists the current FM pass. The intention behind this being that most of the gains are achieved by the first few FM moves. (default 0.5, float). |
-| `-total_corking_passes` | Maximum level of traversing the buckets to solve the "corking effect" (default 25, integer). |
-| `-v_cycle_flag` | Disables v-cycle is used to refine partitions (default true, bool). |
-| `-max_num_vcycle` | Maximum number of vcycles (default 1, integer). |
-| `-num_coarsen_solutions` | Number of coarsening solutions with different randoms seed (default 4, integer). |
-| `-num_vertices_threshold_ilp` | Describes threshold $t$, the number of vertices used for integer linear programming (ILP) partitioning. if $n_{vertices} > t$, do not use ILP-based partitioning. (default 50, integer). |
-| `-global_net_threshold` | If the net is larger than this, it will be ignored by TritonPart (default 1000, integer). |
-
+| `-thr_coarsen_hyperedge_size_skip` | Threshold for ignoring large hyperedge. The default value is `1000`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-thr_coarsen_vertices` | Number of vertices of coarsest hypergraph. The default value is `10`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-thr_coarsen_hyperedges` | Number of vertices of coarsest hypergraph. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-coarsening_ratio` | Coarsening ratio of two adjacent hypergraphs. The default value is `1.5`, and the allowed values are floats. |
+| `-max_coarsen_iters` | Number of iterations. The default value is `30`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-adj_diff_ratio` | Minimum ratio difference of two adjacent hypergraphs. The default value is `0.0001`, and the allowed values are floats. |
+| `-min_num_vertices_each_part` | Minimum number of vertices in each partition. The default value is `4`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-num_initial_solutions` | Number of initial solutions. The default value is `100`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-num_best_initial_solutions` | Number of top initial solutions to filter out. The default value is `10`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-refiner_iters` | Refinement iterations. The default value is `10`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-max_moves` | The allowed moves for each Fiduccia-Mattheyes (FM) algorithm pass or greedy refinement. The default value is `100`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-early_stop_ratio` | Describes the ratio $e$ where if the $n_{moved vertices} > n_{vertices} * e$, the tool exists the current FM pass. The intention behind this being that most of the gains are achieved by the first few FM moves. The default value is `0.5`, and the allowed values are floats. |
+| `-total_corking_passes` | Maximum level of traversing the buckets to solve the "corking effect". The default value is `25`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-v_cycle_flag` | Disables v-cycle is used to refine partitions. The default value is `true`, and the allowed values are booleans. |
+| `-max_num_vcycle` | Maximum number of vcycles. The default value is `1`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-num_coarsen_solutions` | Number of coarsening solutions with different randoms seed. The default value is `4`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-num_vertices_threshold_ilp` | Describes threshold $t$, the number of vertices used for integer linear programming (ILP) partitioning. if $n_{vertices} > t$, do not use ILP-based partitioning. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-global_net_threshold` | If the net is larger than this, it will be ignored by TritonPart. The default value is `1000`, and the allowed values are integers `[0, MAX_INT]`. |
 
 ### Evaluation Netlist Partition
 
@@ -294,6 +299,7 @@ triton_part_design
 evaluate_part_design_solution
     [-num_parts num_parts]
     [-balance_constraint balance_constraint]
+    [-base_balance base_balance]
     [-timing_aware_flag timing_aware_flag]
     [-top_n top_n]
     [-fence_flag fence_flag]
@@ -321,27 +327,28 @@ evaluate_part_design_solution
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-num_parts` | Number of partitions (default 2, integer). |
-| `-balance_constraint` | Allowed imbalance between blocks (default 1.0, float). |
-| `-timing_aware_flag` | Enable timing-driven mode (default true, bool). |
-| `-top_n` | Extract the top n critical timing paths (default 1000, integer). |
-| `-fence_flag ` | Consider fences in the partitioning (default false, bool). |
-| `-fence_lx ` | Fence lower left x in microns (default 0.0, float). |
-| `-fence_ly ` | Fence lower left y in microns (default 0.0, float). |
-| `-fence_ux ` | Fence upper right x in microns (default 0.0, float). |
-| `-fence_uy ` | Fence upper right y in microns (default 0.0, float). | 
+| `-num_parts` | Number of partitions. The default value is `2`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-balance_constraint` | Allowed imbalance between blocks. The default value is `1.0`, and the allowed values are floats. |
+| `-base_balance` | Tcl list of baseline imbalance between partitions. The default value is `{1.0}`, the allowed values are floats that sum up to `1.0`. |
+| `-timing_aware_flag` | Enable timing-driven mode. The default value is `true`, and the allowed values are booleans. |
+| `-top_n` | Extract the top n critical timing paths. The default value is `1000`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-fence_flag ` | Consider fences in the partitioning. The default value is `false`, and the allowed values are booleans. |
+| `-fence_lx ` | Fence lower left x in microns. The default value is `0.0`, and the allowed values are floats. |
+| `-fence_ly ` | Fence lower left y in microns. The default value is `0.0`, and the allowed values are floats. |
+| `-fence_ux ` | Fence upper right x in microns. The default value is `0.0`, and the allowed values are floats. |
+| `-fence_uy ` | Fence upper right y in microns. The default value is `0.0`, and the allowed values are floats. | 
 | `-fixed_file` | Path to fixed vertices constraint file. |
 | `-community_file` | Path to `community` attributes file to guide the partitioning process. |
 | `-group_file` | Path to `stay together` attributes file. |
 | `-hypergraph_file` | Path to hypergraph file. |
 | `-hypergraph_int_weight_file` | Path to `hMETIS` format integer weight file. |
 | `-solution_file` | Path to solution file. |
-| `-net_timing_factor` | Hyperedge timing weight factor (default 1.0, float). |
-| `-path_timing_factor` | Cutting critical timing path weight factor (default 1.0, float). |
-| `-path_snaking_factor` | Snaking a critical path weight factor (default 1.0, float). |
-| `-timing_exp_factor` | Timing exponential factor for normalized slack (default 1.0, float). |
-| `-extra_delay` | Extra delay introduced by a cut (default 1e-9, float). |
-| `-guardband_flag` | Enable timing guardband option (default false, bool). |
+| `-net_timing_factor` | Hyperedge timing weight factor. The default value is `1.0`, and the allowed values are floats. |
+| `-path_timing_factor` | Cutting critical timing path weight factor. The default value is `1.0`, and the allowed values are floats. |
+| `-path_snaking_factor` | Snaking a critical path weight factor. The default value is `1.0`, and the allowed values are floats. |
+| `-timing_exp_factor` | Timing exponential factor for normalized slack. Thedefault value is `1.0`, and the allowed values are floats. |
+| `-extra_delay` | Extra delay introduced by a cut. The default value is `1e-9`, and the allowed values are floats. |
+| `-guardband_flag` | Enable timing guardband option. The default value is 1`false`, and the allowed values are booleans. |
 | `-e_wt_factors` | Hyperedge weight factors. |
 | `-v_wt_factors` | Vertex weight factors. |
 
