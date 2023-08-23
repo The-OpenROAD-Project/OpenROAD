@@ -112,6 +112,22 @@ struct Master
   bool is_multi_row = false;
 };
 
+struct Grid_map_key
+{
+  int cell_height;
+  bool is_hybrid_parent;
+  bool operator<(const Grid_map_key& other) const
+  {
+    if (cell_height < other.cell_height) {
+      return true;
+    } else if (cell_height > other.cell_height) {
+      return false;
+    }
+    // If values are equal, compare based on the boolean flag
+    return is_hybrid_parent != other.is_hybrid_parent;
+  }
+};
+
 struct Cell
 {
   const char* name() const;
@@ -246,6 +262,7 @@ class Opendp
   const vector<Cell>& getCells() const { return cells_; }
   Rect getCore() const { return core_; }
   int getRowHeight() const { return row_height_; }
+  int getRowHeight(const Cell* cell) const;
   int getSiteWidth() const { return site_width_; }
   int getRowCount() const { return row_count_; }
   int getRowSiteCount() const { return row_site_count_; }
@@ -265,6 +282,8 @@ class Opendp
   bool isFixed(const Cell* cell) const;  // fixed cell or not
   bool isMultiRow(const Cell* cell) const;
   void updateDbInstLocations();
+  Grid_map_key getGridMapKey(const Cell* cell) const;
+  Grid_map_key getGridMapKey(dbSite* site);
 
   void makeMaster(Master* master, dbMaster* db_master);
 
@@ -395,7 +414,7 @@ class Opendp
   void deleteGrid();
   Pixel* gridPixel(int grid_idx, int x, int y) const;
   // Cell initial location wrt core origin.
-  int getRowHeight(const Cell* cell) const;
+
   int getSiteWidth(const Cell* cell) const;
   int getRowCount(const Cell* cell) const;
   int getRowCount(int row_height) const;
@@ -478,7 +497,7 @@ class Opendp
   vector<Group> groups_;
 
   map<const dbMaster*, Master> db_master_map_;
-  map<int, GridInfo> grid_info_map_;
+  map<Grid_map_key, GridInfo> grid_info_map_;
   std::vector<GridInfo*> grid_info_vector_;
   map<dbInst*, Cell*> db_inst_map_;
 

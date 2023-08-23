@@ -325,6 +325,12 @@ void Opendp::place()
   if (have_multi_row_cells_) {
     for (Cell* cell : sorted_cells) {
       if (isMultiRow(cell) && cellFitsInCore(cell)) {
+        debugPrint(logger_,
+                   DPL,
+                   "place",
+                   1,
+                   "Placing multi-row cell {}",
+                   cell->name());
         if (!mapMove(cell)) {
           shiftMove(cell);
         }
@@ -576,7 +582,27 @@ bool Opendp::mapMove(Cell* cell, const Point& grid_pt)
 {
   int grid_x = grid_pt.getX();
   int grid_y = grid_pt.getY();
+  debugPrint(logger_,
+             DPL,
+             "place",
+             1,
+             "Map move {} ({}, {}) to ({}, {})",
+             cell->name(),
+             cell->x_,
+             cell->y_,
+             grid_x,
+             grid_y);
   PixelPt pixel_pt = diamondSearch(cell, grid_x, grid_y);
+  debugPrint(logger_,
+             DPL,
+             "place",
+             1,
+             "Diamond search {} ({}, {}) to ({}, {})",
+             cell->name(),
+             cell->x_,
+             cell->y_,
+             pixel_pt.pt.getX(),
+             pixel_pt.pt.getY());
   if (pixel_pt.pixel) {
     paintPixel(cell, pixel_pt.pt.getX(), pixel_pt.pt.getY());
     if (debug_observer_) {
@@ -594,7 +620,13 @@ void Opendp::shiftMove(Cell* cell)
   int grid_y = grid_pt.getY();
   int row_height = getRowHeight(cell);
   int site_width = getSiteWidth(cell);
-  int grid_index = grid_info_map_[row_height].grid_index;
+  Grid_map_key grid_key = getGridMapKey(cell);
+  auto grid_mapped_entry = grid_info_map_.find(grid_key);
+  if (grid_mapped_entry == grid_info_map_.end()) {
+    logger_->error(
+        DPL, 18, "Cannot find grid info for row height {}.", row_height);
+  }
+  int grid_index = grid_mapped_entry->second.grid_index;
   // magic number alert
   int boundary_margin = 3;
   int margin_width = gridPaddedWidth(cell, site_width) * boundary_margin;
@@ -856,7 +888,12 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
   int row_height = getRowHeight(cell);
   int height = gridHeight(cell, row_height);
   int y_end = bin_y + height;
-  auto grid_info = grid_info_map_.at(row_height);
+  auto grid_mapped_entry = grid_info_map_.find(getGridMapKey(cell));
+  if (grid_mapped_entry == grid_info_map_.end()) {
+    logger_->error(
+        DPL, 14, "Cannot find grid info for row height {}.", row_height);
+  }
+  auto grid_info = grid_mapped_entry->second;
   if (debug_observer_) {
     debug_observer_->binSearch(cell, bin_x, bin_y, x_end, y_end);
   }
@@ -1009,7 +1046,7 @@ bool Opendp::checkPixels(const Cell* cell,
         return false;
       }
 
-      int min_row_height = grid_info_map_.begin()->first;
+      int min_row_height = row_height_;
       int steps = row_info.first / min_row_height;
       // This is needed for the scenario where we are placing a triple height
       // cell and we are not sure if there is a single height cell direcly in
@@ -1055,7 +1092,12 @@ Point Opendp::legalPt(const Cell* cell,
   if (row_height == -1) {
     row_height = getRowHeight(cell);
   }
-  auto grid_info = grid_info_map_.at(row_height);
+  auto grid_mapped_entry = grid_info_map_.find(getGridMapKey(cell));
+  if (grid_mapped_entry == grid_info_map_.end()) {
+    logger_->error(
+        DPL, 19, "Cannot find grid info for row height {}.", row_height);
+  }
+  auto grid_info = grid_mapped_entry->second;
   if (site_width == -1) {
     site_width = getSiteWidth(cell);
   }
@@ -1233,7 +1275,7 @@ Point Opendp::pointOffMacro(const Cell& cell)
   Point init = initialLocation(&cell, false);
   int init_x = init.getX();
   int init_y = init.getY();
-  int row_height = row_height_;
+  int row_height = getRowHeight(&cell);
   int site_width = site_width_;
 
   auto grid_info = getGridInfo(&cell);
@@ -1283,14 +1325,14 @@ void Opendp::legalCellPos(dbInst* db_inst)
   Point legal_pt = pointOffMacro(cell);      // return real position
   Point new_pos = legalPt(&cell, legal_pt);  // return real position
 
-  int row_height = row_height_;
+  int row_height = getRowHeight(&cell);
   int site_width = site_width_;
   // transform to grid Pos for align
   Point legal_grid_pt = Point(gridX(new_pos.getX(), site_width),
                               gridY(new_pos.getY(), row_height));
   // Transform position on real position
   int x = (legal_grid_pt.getX() + padLeft(&cell)) * site_width_;
-  int y = legal_grid_pt.getY() * row_height_;
+  int y = legal_grid_pt.getY() * row_height;
   // Set position of cell on db
   db_inst->setLocation(core_.xMin() + x, core_.yMin() + y);
 }
@@ -1322,6 +1364,15 @@ Point Opendp::legalPt(const Cell* cell,
   int grid_x = gridX(legal_pt.getX(), site_width);
   int grid_y = gridY(legal_pt.getY(), row_height);
   debugPrint(logger_, DPL, "place", 1, "grid_x {} grid_y {}", grid_x, grid_y);
+  debugPrint(logger_,
+             DPL,
+             "place",
+             1,
+             "legalPt {} {} {} {}",
+             cell->name(),
+             legal_pt.getX(),
+             legal_pt.getY(),
+             grid_info.grid_index);
 
   Pixel* pixel = gridPixel(grid_info.grid_index, grid_x, grid_y);
   if (pixel) {
@@ -1365,6 +1416,13 @@ Point Opendp::legalGridPt(const Cell* cell,
   }
   if (row_height == -1) {
     row_height = getRowHeight(cell);
+    debugPrint(logger_,
+               DPL,
+               "place",
+               1,
+               "cell {} row_height {}",
+               cell->name(),
+               row_height);
   }
   Point pt = legalPt(cell, padded, row_height, site_width);
   return Point(gridX(pt.getX(), site_width), gridY(pt.getY(), row_height));

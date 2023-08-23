@@ -576,7 +576,8 @@ pair<int, GridInfo> Opendp::getRowInfo(const Cell* cell) const
   if (grid_info_map_.empty()) {
     logger_->error(DPL, 43, "No grid layers mapped.");
   }
-  auto layer = this->grid_info_map_.lower_bound(cell->height_);
+  Grid_map_key key = getGridMapKey(cell);
+  auto layer = this->grid_info_map_.find(key);
   if (layer == this->grid_info_map_.end()) {
     // this means the cell is taller than any layer
     logger_->error(DPL,
@@ -585,13 +586,32 @@ pair<int, GridInfo> Opendp::getRowInfo(const Cell* cell) const
                    cell->name(),
                    cell->height_);
   }
-  return std::make_pair(layer->first, layer->second);
+  return std::make_pair(layer->first.cell_height, layer->second);
+}
+
+Grid_map_key Opendp::getGridMapKey(const Cell* cell) const
+{
+  auto site = cell->db_inst_->getMaster()->getSite();
+  if (site == nullptr) {
+    logger_->error(DPL, 49, "Cell {} has no site.", cell->name());
+  }
+  Grid_map_key gmk;
+  gmk.cell_height = cell->height_;
+  gmk.is_hybrid_parent = site->isHybrid() && site->hasRowPattern();
+  return gmk;
+}
+
+Grid_map_key Opendp::getGridMapKey(dbSite* site)
+{
+  Grid_map_key gmk;
+  gmk.cell_height = site->getHeight();
+  gmk.is_hybrid_parent = site->isHybrid() && site->hasRowPattern();
+  return gmk;
 }
 
 GridInfo Opendp::getGridInfo(const Cell* cell) const
 {
-  int layer_height = getRowHeight(cell);
-  return grid_info_map_.at(layer_height);
+  return grid_info_map_.at(getGridMapKey(cell));
 }
 
 int Opendp::getSiteWidth(const Cell* cell) const

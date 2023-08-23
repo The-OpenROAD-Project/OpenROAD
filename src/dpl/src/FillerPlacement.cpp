@@ -66,7 +66,8 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
   if (!grid_info_map_.empty()) {
     const auto& layer = *grid_info_map_.begin();
     for (int row = 0; row < layer.second.row_count; row++) {
-      placeRowFillers(row, prefix, filler_masters, layer.first, layer.second);
+      placeRowFillers(
+          row, prefix, filler_masters, layer.first.cell_height, layer.second);
     }
   }
 

@@ -275,6 +275,10 @@ bool dbSite::isHybrid()
 std::vector<std::pair<dbSite*, dbOrientType>> dbSite::getRowPattern()
 {
   _dbSite* site = (_dbSite*) this;
+  if (site == nullptr) {
+    throw ZException("Site is null");
+    return {};
+  }
   std::vector<std::pair<dbSite*, dbOrientType>> row_patterns;
   for (auto& row : site->_row_patterns) {
     dbSite* site = getLib()->findSite(row.first.c_str());
