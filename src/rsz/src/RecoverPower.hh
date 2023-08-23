@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2023, The Regents of the University of California
+// Copyright (c) 2023, Precision Innovations Inc.
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -79,7 +79,7 @@ class RecoverPower : StaState
 {
 public:
   RecoverPower(Resizer *resizer);
-  void recoverPower();
+  void recoverPower(float recover_power_percent);
   // For testing.
   void recoverPower(const Pin *end_pin);
   // Rebuffer one net (for testing).

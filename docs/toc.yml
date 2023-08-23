@@ -5,6 +5,8 @@ entries:
   entries:
   - file: user/Build.md
     title: How to Build OpenROAD
+  - file: user/ORFS.md
+    title: OpenROAD Flow Scripts
 
 - file: tutorials/index
   title: Tutorials
@@ -38,6 +40,8 @@ entries:
     title: Chip-level Connections
   - file: main/src/mpl/README
     title: Macro Placement
+  - file: main/src/mpl2/README
+    title: Hierarchical Macro Placement
   - file: main/src/tap/README
     title: Tapcell Insertion
   - file: main/src/pdn/README

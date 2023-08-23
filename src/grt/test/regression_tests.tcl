@@ -26,6 +26,7 @@ record_tests {
   ndr_1w_3s
   ndr_2w_3s
   no_tracks
+  obstruction
   obs_out_of_die
   overlapping_edges
   pd1

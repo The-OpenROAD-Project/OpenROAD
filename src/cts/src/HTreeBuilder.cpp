@@ -160,32 +160,33 @@ void HTreeBuilder::preSinkClustering(
 
 void HTreeBuilder::initSinkRegion()
 {
-  const unsigned wireSegmentUnitInMicron = techChar_->getLengthUnit();
+  const unsigned wireSegmentUnitInDbu = techChar_->getLengthUnit();
   const int dbUnits = options_->getDbUnits();
-  wireSegmentUnit_ = wireSegmentUnitInMicron * dbUnits;
+  wireSegmentUnit_ = wireSegmentUnitInDbu;
 
   logger_->info(CTS,
                 20,
                 " Wire segment unit: {}  dbu ({} um).",
                 wireSegmentUnit_,
-                wireSegmentUnitInMicron);
+                wireSegmentUnitInDbu / dbUnits);
 
   if (options_->isSimpleSegmentEnabled()) {
     const int remainingLength
-        = options_->getBufferDistance() / (wireSegmentUnitInMicron * 2);
+        = options_->getBufferDistance() / (wireSegmentUnitInDbu * 2);
     logger_->info(CTS,
                   21,
                   " Distance between buffers: {} units ({} um).",
                   remainingLength,
-                  static_cast<int>(options_->getBufferDistance()));
+                  static_cast<int>(options_->getBufferDistance() / dbUnits));
     if (options_->isVertexBuffersEnabled()) {
       const int vertexBufferLength
-          = options_->getVertexBufferDistance() / (wireSegmentUnitInMicron * 2);
-      logger_->info(CTS,
-                    22,
-                    " Branch length for Vertex Buffer: {} units ({} um).",
-                    vertexBufferLength,
-                    static_cast<int>(options_->getVertexBufferDistance()));
+          = options_->getVertexBufferDistance() / (wireSegmentUnitInDbu * 2);
+      logger_->info(
+          CTS,
+          22,
+          " Branch length for Vertex Buffer: {} units ({} um).",
+          vertexBufferLength,
+          static_cast<int>(options_->getVertexBufferDistance() / dbUnits));
     }
   }
 

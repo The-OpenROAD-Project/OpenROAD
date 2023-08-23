@@ -32,6 +32,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 
+#include <optional>
+
 #include "gmat.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
@@ -81,56 +83,62 @@ class IRSolver
            sta::dbSta* sta,
            rsz::Resizer* resizer,
            utl::Logger* logger,
+           odb::dbNet* net,
+           const std::optional<float>& voltage,
            const std::string& vsrc_loc,
-           const std::string& power_net,
-           const std::string& out_file,
-           const std::string& error_file,
-           const std::string& em_out_file,
-           const std::string& spice_out_file,
            bool em_analyze,
            int bump_pitch_x,
            int bump_pitch_y,
            float node_density_um,
            int node_density_factor_user,
-           const std::map<std::string, float>& net_voltage_map,
            sta::Corner* corner);
   //! IRSolver destructor
   ~IRSolver();
   //! Returns the created G matrix for the design
   GMat* getGMat();
   //! Returns current map represented as a 1D vector
-  std::vector<double> getJ();
+  const std::vector<double>& getJ() const;
   //! Function to solve for IR drop
   void solveIR();
   //! Function to get the power value from OpenSTA
-  std::vector<std::pair<odb::dbInst*, double>> getPower();
-  std::pair<double, double> getSupplyVoltage();
+  std::vector<std::pair<odb::dbInst*, float>> getPower();
 
-  bool getConnectionTest();
+  bool getConnectionTest() const;
+  int getMinimumResolution() const;
 
-  int getMinimumResolution();
+  void writeSpiceFile(const std::string& file) const;
+  void writeVoltageFile(const std::string& file) const;
+  void writeEMFile(const std::string& file) const;
+  void writeErrorFile(const std::string& file) const;
 
-  int printSpice();
-
-  bool build();
-  bool buildConnection();
+  bool build(const std::string& error_file = "",
+             bool connectivity_only = false);
 
   const std::vector<SourceData>& getSources() const { return sources_; }
 
-  double getWorstCaseVoltage() const { return wc_voltage; }
-  double getMaxCurrent() const { return max_cur; }
-  double getAvgCurrent() const { return avg_cur; }
-  int getNumResistors() const { return num_res; }
-  double getAvgVoltage() const { return avg_voltage; }
-  float getSupplyVoltageSrc() const { return supply_voltage_src; }
+  double getWorstCaseVoltage() const { return wc_voltage_; }
+  double getMaxCurrent() const { return max_cur_; }
+  double getAvgCurrent() const { return avg_cur_; }
+  int getNumResistors() const { return num_res_; }
+  double getAvgVoltage() const { return avg_voltage_; }
+  float getSupplyVoltageSrc() const
+  {
+    if (supply_voltage_src_.has_value()) {
+      return supply_voltage_src_.value();
+    } else {
+      return 0.0;
+    }
+  }
 
  private:
   //! Function to add sources to the G matrix
   bool addSources();
   //! Function that parses the Vsrc file
   void readSourceData(bool require_voltage);
-  bool createSourcesFromBTerms(odb::dbNet* net, double voltage);
-  bool createSourcesFromPads(odb::dbNet* net, double voltage);
+  void createSourcesFromVsrc(const std::string& file);
+  bool createSourcesFromBTerms();
+  bool createSourcesFromPads();
+  void createDefaultSources();
   //! Function to create a J vector from the current map
   bool createJ();
   //! Function to create a G matrix using the nodes
@@ -138,13 +146,11 @@ class IRSolver
   //! Function to find and store the upper and lower PDN layers and return a
   //! list
   // of wires for all PDN tasks
-  void findPdnWires(odb::dbNet* power_net);
+  void findPdnWires();
   //! Function to create the nodes of vias in the G matrix
   void createGmatViaNodes();
   //! Function to create the nodes of wires in the G matrix
-  void createGmatWireNodes(const std::vector<odb::Rect>& macros);
-  //! Function to find and store the macro boundaries
-  std::vector<odb::Rect> getMacroBoundaries();
+  void createGmatWireNodes();
 
   NodeEnclosure getViaEnclosure(int layer, odb::dbSet<odb::dbBox> via_boxes);
 
@@ -159,25 +165,46 @@ class IRSolver
   int createSourceNodes(bool connection_only, int unit_micron);
   //! Function to create the connections of the G matrix
   void createGmatConnections(bool connection_only);
-  bool checkConnectivity(bool connection_only = false);
-  bool checkValidR(double R);
-  bool getResult();
+  bool checkConnectivity(const std::string& error_file = "",
+                         bool connection_only = false);
+  bool checkValidR(double R) const;
 
   double getResistance(odb::dbTechLayer* layer) const;
 
-  float supply_voltage_src{0};
+  struct InstCompare
+  {
+    bool operator()(odb::dbInst* lhs, odb::dbInst* rhs) const
+    {
+      return lhs->getId() < rhs->getId();
+    }
+  };
+  using ITermMap
+      = std::map<odb::dbInst*, std::vector<odb::dbITerm*>, InstCompare>;
+  void findUnconnectedInstances();
+  void findUnconnectedInstancesByStdCells(
+      ITermMap& iterms,
+      std::set<odb::dbInst*>& connected_insts);
+  void findUnconnectedInstancesByITerms(
+      ITermMap& iterms,
+      std::set<odb::dbInst*>& connected_insts);
+  void findUnconnectedInstancesByAbutment(
+      ITermMap& iterms,
+      std::set<odb::dbInst*>& connected_insts);
+
+  bool isStdCell(odb::dbInst* inst) const;
+  bool isConnected(odb::dbITerm* iterm) const;
+
+  std::optional<float> supply_voltage_src_;
   //! Worst case voltage at the lowest layer nodes
-  double wc_voltage{0};
+  double wc_voltage_{0};
   //! Worst case current at the lowest layer nodes
-  double max_cur{0};
+  double max_cur_{0};
   //! Average current at the lowest layer nodes
-  double avg_cur{0};
+  double avg_cur_{0};
   //! number of resistances
-  int num_res{0};
+  int num_res_{0};
   //! Average voltage at lowest layer nodes
-  double avg_voltage{0};
-  //! Vector of worstcase voltages in the lowest layers
-  std::vector<double> wc_volt_layer;
+  double avg_voltage_{0};
   //! Pointer to the Db
   odb::dbDatabase* db_;
   //! Pointer to STA
@@ -186,15 +213,12 @@ class IRSolver
   rsz::Resizer* resizer_;
   //! Pointer to Logger
   utl::Logger* logger_;
+
+  odb::dbNet* net_;
+
   //! Voltage source file
   std::string vsrc_file_;
-  std::string power_net_;
-  //! Resistance configuration file
-  std::string out_file_;
-  std::string error_file_;
-  std::string em_out_file_;
   bool em_flag_;
-  std::string spice_out_file_;
   //! G matrix for voltage
   std::unique_ptr<GMat> Gmat_;
   //! Node density in the lower most layer to append the current sources
@@ -211,22 +235,17 @@ class IRSolver
 
   int bottom_layer_{10};
 
-  bool result_{false};
   bool connection_{false};
 
   sta::Corner* corner_;
-
-  odb::dbSigType power_net_type_;
-  std::map<std::string, float> net_voltage_map_;
   //! Current vector 1D
   std::vector<double> J_;
   //! source locations and values
   std::vector<SourceData> sources_;
-  //! Per unit R and via R for each routing layer
-  std::vector<std::tuple<int, double, double>> layer_res_;
   //! Locations of the source in the G matrix
   std::map<NodeIdx, double> source_nodes_;
 
   std::vector<odb::dbSBox*> power_wires_;
+  std::vector<odb::dbInst*> unconnected_insts_;
 };
 }  // namespace psm

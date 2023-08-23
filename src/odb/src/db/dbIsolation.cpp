@@ -43,8 +43,6 @@
 #include "dbPowerDomain.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-// User Code Begin Includes
-// User Code End Includes
 namespace odb {
 template class dbTable<_dbIsolation>;
 
@@ -67,15 +65,11 @@ bool _dbIsolation::operator==(const _dbIsolation& rhs) const
   if (_power_domain != rhs._power_domain)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
 bool _dbIsolation::operator<(const _dbIsolation& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -92,8 +86,6 @@ void _dbIsolation::differences(dbDiff& diff,
   DIFF_FIELD(_isolation_sense);
   DIFF_FIELD(_location);
   DIFF_FIELD(_power_domain);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -109,15 +101,11 @@ void _dbIsolation::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_location);
   DIFF_OUT_FIELD(_power_domain);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
 _dbIsolation::_dbIsolation(_dbDatabase* db)
 {
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 _dbIsolation::_dbIsolation(_dbDatabase* db, const _dbIsolation& r)
@@ -130,8 +118,6 @@ _dbIsolation::_dbIsolation(_dbDatabase* db, const _dbIsolation& r)
   _isolation_sense = r._isolation_sense;
   _location = r._location;
   _power_domain = r._power_domain;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbIsolation& obj)
@@ -145,8 +131,6 @@ dbIStream& operator>>(dbIStream& stream, _dbIsolation& obj)
   stream >> obj._location;
   stream >> obj._isolation_cells;
   stream >> obj._power_domain;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
@@ -161,8 +145,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbIsolation& obj)
   stream << obj._location;
   stream << obj._isolation_cells;
   stream << obj._power_domain;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
@@ -170,12 +152,7 @@ _dbIsolation::~_dbIsolation()
 {
   if (_name)
     free((void*) _name);
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

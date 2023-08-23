@@ -136,6 +136,11 @@ class IOPin
   {
     constraint_idx_ = constraint_idx;
   }
+  int getMirrorPinIdx() const { return mirror_pin_idx_; }
+  void setMirrorPinIdx(const int mirror_pin_idx)
+  {
+    mirror_pin_idx_ = mirror_pin_idx;
+  }
   bool isPlaced() const { return is_placed_; }
   void setPlaced() { is_placed_ = true; }
   bool isInGroup() const { return in_group_; }
@@ -160,6 +165,7 @@ class IOPin
   int layer_{-1};
   int group_idx_{-1};
   int constraint_idx_{-1};
+  int mirror_pin_idx_{-1};
   bool is_placed_{false};
   bool in_group_{false};
   bool in_constraint_{false};

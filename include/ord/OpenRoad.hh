@@ -203,16 +203,22 @@ class OpenRoad
 
   void readLef(const char* filename,
                const char* lib_name,
+               const char* tech_name,
                bool make_tech,
                bool make_library);
 
   void readDef(const char* filename,
+               odb::dbTech* tech,
                bool continue_on_errors,
                bool floorplan_init,
                bool incremental,
                bool child);
 
   void writeLef(const char* filename);
+
+  void writeAbstractLef(const char* filename,
+                        int bloat_factor,
+                        bool bloat_occupied_layers);
 
   void writeDef(const char* filename,
                 // major.minor (avoid including defout.h)

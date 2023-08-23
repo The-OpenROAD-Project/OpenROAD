@@ -254,7 +254,7 @@ public:
   int holdBufferCount() const;
 
   ////////////////////////////////////////////////////////////////
-  void recoverPower();
+  void recoverPower(float recover_power_percent);
 
   ////////////////////////////////////////////////////////////////
   // Area of the design in meter^2.
@@ -538,6 +538,9 @@ protected:
                                         const Corner *corner);
   BufferedNetPtr makeBufferedNetGroute(const Pin *drvr_pin,
                                        const Corner *corner);
+  float bufferSlew(LibertyCell *buffer_cell,
+                   float load_cap,
+                   const DcalcAnalysisPt *dcalc_ap);
   float maxInputSlew(const LibertyPort *input,
                      const Corner *corner) const;
   void checkLoadSlews(const Pin *drvr_pin,
@@ -656,6 +659,7 @@ protected:
 
   friend class BufferedNet;
   friend class GateCloner;
+  friend class PreChecks;
   friend class RecoverPower;
   friend class RepairDesign;
   friend class RepairSetup;

@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2023, The Regents of the University of California
+// Copyright (c) 2023, Precision Innovations Inc.
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -107,7 +107,7 @@ RecoverPower::init()
 }
 
 void
-RecoverPower::recoverPower()
+RecoverPower::recoverPower(float recover_power_percent)
 {
   init();
   float setup_slack_margin = 1e-11;
@@ -140,12 +140,18 @@ RecoverPower::recoverPower()
              int(ends_with_slack.size() / double(endpoints->size()) * 100));
 
   int end_index = 0;
-  int max_end_count = ends_with_slack.size()/5; // 20%
+  int max_end_count = ends_with_slack.size() * recover_power_percent;
+
+  // As long as we are here fix at least one path
+  if (max_end_count == 0) {
+    max_end_count = 1;
+  }
 
   resizer_->incrementalParasiticsBegin();
+  resizer_->updateParasitics();
+  sta_->findRequireds();
+
   for (Vertex *end : ends_with_slack) {
-    resizer_->updateParasitics();
-    sta_->findRequireds();
     Slack end_slack = sta_->vertexSlack(end, max_);
     Slack worst_slack;
     Vertex* worst_vertex;
@@ -185,15 +191,16 @@ RecoverPower::recoverPower()
       if (better) {
         resizer_->journalBegin();
       }
+      else {
+        // TODO: Undo the changes and we probably need to update parasitics again
+      }
       if (resizer_->overMaxArea()) {
         break;
       }
     }
-    // Leave the parasitics up to date.
-    resizer_->updateParasitics();
-    resizer_->incrementalParasiticsEnd();
   }
 
+  resizer_->incrementalParasiticsEnd();
   // TODO: Add the appropriate metric here
   // logger_->metric("design__instance__count__setup_buffer", inserted_buffer_count_);
   if (resize_count_ > 0) {
@@ -202,7 +209,6 @@ RecoverPower::recoverPower()
   if (resizer_->overMaxArea()) {
     logger_->error(RSZ, 125, "max utilization reached.");
   }
-
 }
 
 // For testing.

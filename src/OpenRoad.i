@@ -307,22 +307,36 @@ openroad_git_describe()
 void
 read_lef_cmd(const char *filename,
 	     const char *lib_name,
+	     const char *tech_name,
 	     bool make_tech,
 	     bool make_library)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->readLef(filename, lib_name, make_tech, make_library);
+  ord->readLef(filename, lib_name, tech_name, make_tech, make_library);
 }
 
 void
 read_def_cmd(const char *filename,
+             const char* tech_name,
              bool continue_on_errors,
              bool floorplan_init,
              bool incremental,
              bool child)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->readDef(filename, continue_on_errors, floorplan_init, incremental, child);
+  auto* db = ord->getDb();
+  dbTech* tech;
+  if (tech_name[0] != '\0') {
+    tech = db->findTech(tech_name);
+  } else {
+    tech = db->getTech();
+  }
+  if (!tech) {
+    auto logger = getLogger();
+    logger->error(utl::ORD, 52, "Technology {} not found", tech_name);
+  }
+  ord->readDef(filename, tech, continue_on_errors,
+               floorplan_init, incremental, child);
 }
 
 void
@@ -338,6 +352,15 @@ write_lef_cmd(const char *filename)
 {
   OpenRoad *ord = getOpenRoad();
   ord->writeLef(filename);
+}
+
+void
+write_abstract_lef_cmd(const char *filename,
+                       int bloat_factor,
+                       bool bloat_occupied_layers)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->writeAbstractLef(filename, bloat_factor, bloat_occupied_layers);
 }
 
 

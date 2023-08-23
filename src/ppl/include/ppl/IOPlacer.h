@@ -56,6 +56,7 @@ class dbTechLayer;
 }  // namespace odb
 
 namespace ppl {
+class AbstractIOPlacerRenderer;
 class Core;
 class Interval;
 class IOPin;
@@ -123,9 +124,9 @@ class IOPlacer
   void clear();
   void clearConstraints();
   void run(bool random_mode);
-  void runAnnealing();
+  void runAnnealing(bool random);
   void reportHPWL();
-  void printConfig();
+  void printConfig(bool annealing = false);
   Parameters* getParameters() { return parms_.get(); }
   int64 computeIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
@@ -163,6 +164,16 @@ class IOPlacer
                           int perturb_per_iter,
                           float alpha);
   void checkPinPlacement();
+
+  void setRenderer(std::unique_ptr<AbstractIOPlacerRenderer> ioplacer_renderer);
+  AbstractIOPlacerRenderer* getRenderer();
+
+  // annealing debug functions
+  void setAnnealingDebugOn();
+  bool isAnnealingDebugOn() const;
+
+  void setAnnealingDebugPaintInterval(int iters_between_paintings);
+  void setAnnealingDebugNoPauseMode(bool no_pause_mode);
 
  private:
   void createTopLayerPinPattern();
@@ -253,6 +264,7 @@ class IOPlacer
   void getBlockedRegionsFromMacros();
   void getBlockedRegionsFromDbObstructions();
   double dbuToMicrons(int64_t dbu);
+  int micronsToDbu(double microns);
 
   // db functions
   void populateIOPlacer(const std::set<int>& hor_layer_idx,
@@ -273,6 +285,9 @@ class IOPlacer
 
   int slots_per_section_ = 0;
   float slots_increase_factor_ = 0;
+  // set the offset on tracks as 15 to approximate the size of a GCell in global
+  // router
+  const int num_tracks_offset_ = 15;
 
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
@@ -291,11 +306,16 @@ class IOPlacer
   std::set<int> ver_layers_;
   std::unique_ptr<TopLayerGrid> top_grid_;
 
+  std::unique_ptr<AbstractIOPlacerRenderer> ioplacer_renderer_;
+
   // simulated annealing variables
   float init_temperature_ = 0;
   int max_iterations_ = 0;
   int perturb_per_iter_ = 0;
   float alpha_ = 0;
+
+  // simulated annealing debugger variables
+  bool annealing_debug_mode_ = false;
 
   // db variables
   odb::dbDatabase* db_ = nullptr;

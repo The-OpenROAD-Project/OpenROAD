@@ -1,4 +1,5 @@
 record_tests {
+  multi_tech
   transform
   rounding
   sky130hd_multi_patterned
@@ -11,6 +12,7 @@ record_tests {
   dump_via_rules
   dump_vias
   read_def
+  read_def58
   dump_nets
   lef_mask
   write_lef_and_def

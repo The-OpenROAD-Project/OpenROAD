@@ -12,5 +12,7 @@ target_link_libraries(odb_swig_common
   PUBLIC
     defin
     lefin
+    defout
+    lefout
     utl
 )

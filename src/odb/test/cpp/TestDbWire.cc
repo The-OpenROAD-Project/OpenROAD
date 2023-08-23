@@ -29,7 +29,9 @@ class OdbMultiPatternedTest : public ::testing::Test
         db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
     lib_ = OdbUniquePtr<odb::dbLib>(
         lef_reader.createTechAndLib(
-            "multipatterned", "data/sky130hd/sky130hd_multi_patterned.tlef"),
+            "multipatterned",
+            "multipatterned",
+            "data/sky130hd/sky130hd_multi_patterned.tlef"),
         &odb::dbLib::destroy);
 
     chip_ = OdbUniquePtr<odb::dbChip>(odb::dbChip::create(db_.get()),

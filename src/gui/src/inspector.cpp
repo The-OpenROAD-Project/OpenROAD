@@ -660,32 +660,27 @@ Inspector::Inspector(const SelectionSet& selected,
   });
 
   connect(model_,
-          SIGNAL(selectedItemChanged(const QModelIndex&)),
+          &SelectedItemModel::selectedItemChanged,
           this,
-          SLOT(updateSelectedFields(const QModelIndex&)));
+          &Inspector::updateSelectedFields);
 
-  connect(view_,
-          SIGNAL(clicked(const QModelIndex&)),
-          this,
-          SLOT(clicked(const QModelIndex&)));
+  connect(view_, &ObjectTree::clicked, this, &Inspector::clicked);
 
-  connect(button_prev_, SIGNAL(pressed()), this, SLOT(selectPrevious()));
+  connect(
+      button_prev_, &QPushButton::pressed, this, &Inspector::selectPrevious);
 
-  connect(button_next_, SIGNAL(pressed()), this, SLOT(selectNext()));
+  connect(button_next_, &QPushButton::pressed, this, &Inspector::selectNext);
 
   view_->setMouseTracking(true);
-  connect(view_,
-          SIGNAL(entered(const QModelIndex&)),
-          this,
-          SLOT(focusIndex(const QModelIndex&)));
+  connect(view_, &ObjectTree::entered, this, &Inspector::focusIndex);
 
-  connect(view_, SIGNAL(viewportEntered()), this, SLOT(defocus()));
-  connect(view_, SIGNAL(mouseExited()), this, SLOT(defocus()));
+  connect(view_, &ObjectTree::viewportEntered, this, &Inspector::defocus);
+  connect(view_, &ObjectTree::mouseExited, this, &Inspector::defocus);
 
   mouse_timer_.setInterval(mouse_double_click_scale_
                            * QApplication::doubleClickInterval());
   mouse_timer_.setSingleShot(true);
-  connect(&mouse_timer_, SIGNAL(timeout()), this, SLOT(indexClicked()));
+  connect(&mouse_timer_, &QTimer::timeout, this, &Inspector::indexClicked);
 }
 
 void Inspector::adjustHeaders()

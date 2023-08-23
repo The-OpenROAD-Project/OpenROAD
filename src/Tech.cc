@@ -70,7 +70,8 @@ void Tech::readLef(const std::string& file_name)
     lib_name.erase(lib_name.begin() + dot_pos, lib_name.end());
   }
 
-  app->readLef(file_name.c_str(), lib_name.c_str(), make_tech, make_library);
+  app->readLef(
+      file_name.c_str(), lib_name.c_str(), "", make_tech, make_library);
 }
 
 void Tech::readLiberty(const std::string& file_name)

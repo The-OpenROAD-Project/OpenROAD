@@ -10,8 +10,6 @@
 [INFO ODB-0131]     Created 170 components and 1258 component-terminals.
 [INFO ODB-0133]     Created 15 nets and 72 connections.
 [INFO DRT-0167] List of default vias:
-  Layer mcon
-    default via: L1M1_PR
   Layer via
     default via: M1M2_PR
   Layer via2

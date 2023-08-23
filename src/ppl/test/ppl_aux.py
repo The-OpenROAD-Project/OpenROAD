@@ -98,9 +98,6 @@ def place_pins(design, *,
     if corner_avoidance != None:
         distance = corner_avoidance
         params.setCornerAvoidance(design.micronToDBU(distance))
-    else:
-        utl.report(f"Using {distance}u default distance from corners.")
-        params.setCornerAvoidance(design.micronToDBU(distance))
 
     min_dist = 2
     if min_distance != None:

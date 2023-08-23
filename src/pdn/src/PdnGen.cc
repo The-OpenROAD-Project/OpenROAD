@@ -145,6 +145,21 @@ void PdnGen::buildGrids(bool trim)
     cleanupVias();
   }
 
+  bool failed = false;
+  for (auto* grid : grids) {
+    if (grid->hasShapes() || grid->hasVias()) {
+      continue;
+    }
+    logger_->warn(utl::PDN,
+                  232,
+                  "{} does not contain any shapes or vias.",
+                  grid->getLongName());
+    failed = true;
+  }
+  if (failed) {
+    logger_->error(utl::PDN, 233, "Failed to generate full power grid.");
+  }
+
   updateRenderer();
   debugPrint(logger_, utl::PDN, "Make", 1, "Build - end");
 }
@@ -814,6 +829,21 @@ void PdnGen::checkDesign(odb::dbBlock* block) const
             inst->getName());
       }
     }
+  }
+
+  bool unplaced_macros = false;
+  for (auto* inst : block->getInsts()) {
+    if (!inst->isBlock()) {
+      continue;
+    }
+    if (!inst->getPlacementStatus().isFixed()) {
+      unplaced_macros = true;
+      logger_->warn(
+          utl::PDN, 234, "{} has not been placed and fixed.", inst->getName());
+    }
+  }
+  if (unplaced_macros) {
+    logger_->error(utl::PDN, 235, "Design has unplaced macros.");
   }
 }
 

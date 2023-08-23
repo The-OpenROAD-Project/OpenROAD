@@ -1,0 +1,67 @@
+{
+    "DRC": [
+        {
+            "name": "Placement_failures",
+            "description": "Cells that DPL failed to place.",
+            "violations": [
+                {
+                    "type": "box",
+                    "shape": [
+                        {
+                            "x": "14",
+                            "y": "14"
+                        },
+                        {
+                            "x": "14.57",
+                            "y": "15.4"
+                        }
+                    ],
+                    "sources": [
+                        {
+                            "type": "inst",
+                            "name": "f2\/_285_"
+                        }
+                    ]
+                },
+                {
+                    "type": "box",
+                    "shape": [
+                        {
+                            "x": "14",
+                            "y": "14"
+                        },
+                        {
+                            "x": "14.57",
+                            "y": "15.4"
+                        }
+                    ],
+                    "sources": [
+                        {
+                            "type": "inst",
+                            "name": "f2\/_289_"
+                        }
+                    ]
+                },
+                {
+                    "type": "box",
+                    "shape": [
+                        {
+                            "x": "14",
+                            "y": "14"
+                        },
+                        {
+                            "x": "14.380000000000001",
+                            "y": "15.4"
+                        }
+                    ],
+                    "sources": [
+                        {
+                            "type": "inst",
+                            "name": "f2\/_293_"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

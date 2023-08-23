@@ -219,6 +219,8 @@ Resizer::incrementalParasiticsBegin()
     break;
   case ParasiticsSrc::global_routing:
     incr_groute_ = new IncrementalGRoute(global_router_, block_);
+    // Don't print verbose messages for incremental routing
+    global_router_->setVerbose(false);
     break;
   case ParasiticsSrc::none:
     break;
