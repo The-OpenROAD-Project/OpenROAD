@@ -52,7 +52,7 @@ rtl_macro_placer
 | ----- | ----- |
 | `-max_num_macro`, `-min_num_macro` | Maximum/minimum number of macros in a cluster. The default value is `0` for both, and the allowed values are integers `[0, MAX_INT]`. |
 | `-max_num_inst`, `-min_num_inst` | Maximum/minimum number of standard cells in a cluster. The default value is `0` for both, and the allowed values are integers `[0, MAX_INT]`. |
-| `-tolerance` | A factor of $(1 + tol)$ is multiplied to the max, $(1 - tol)$ to the min number of macros/std cells in a cluster, respectively. This is to improve the robustness of hierarchical clustering. The allowed values are floats `[0, 1)`, and the default value is `0.1`. |
+| `-tolerance` | Add a margin to the minimum and maximum number of macros/std cells in a cluster. For min, we multiply by (1 - `tol`), and for the max (1 + `tol`). This is to improve the robustness of hierarchical clustering. The allowed values are floats `[0, 1)`, and the default value is `0.1`. |
 | `-max_num_level` | Maximum depth of physical hierarchical tree. The default value is `2`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-coarsening_ratio` | The larger the coarsening_ratio, the faster the convergence process. The allowed values are floats, and the default value is `10.0`. |
 | `-num_bundled_ios` | Specifies the number of bundled pins for the left, right, top, and bottom boundaries. The default value is `3`, and the allowed values are integers `[0, MAX_INT]`. |
