@@ -602,6 +602,92 @@ int SimulatedAnnealing::moveGroupToFreeSlots(const int group_idx)
   return prev_cost;
 }
 
+int SimulatedAnnealing::shiftGroup(int group_idx)
+{
+  const PinGroupByIndex& group = pin_groups_[group_idx];
+  const std::vector<int>& pin_indices = group.pin_indices;
+  int prev_cost = getGroupCost(group_idx);
+  for (int pin_idx : group.pin_indices) {
+    prev_slots_.push_back(pin_assignment_[pin_idx]);
+    pins_.push_back(pin_idx);
+    if (netlist_->getIoPin(pin_idx).isMirrored()) {
+      int mirrored_idx = netlist_->getIoPin(pin_idx).getMirrorPinIdx();
+      prev_slots_.push_back(pin_assignment_[mirrored_idx]);
+      pins_.push_back(mirrored_idx);
+      prev_cost += getPinCost(mirrored_idx);
+    }
+  }
+
+  const int min_slot = std::min(pin_assignment_[pin_indices.front()],
+                                pin_assignment_[pin_indices.back()]);
+  const int max_slot = std::max(pin_assignment_[pin_indices.front()],
+                                pin_assignment_[pin_indices.back()]);
+
+  bool free_slot = true;
+  bool same_edge_slot = true;
+  const Edge& edge = slots_[min_slot].edge;
+
+  int min_count = 0;
+  int slot = min_slot - 1;
+  while (free_slot && same_edge_slot) {
+    free_slot = slots_[slot].isAvailable();
+    same_edge_slot = slots_[slot].edge == edge;
+    if (!free_slot || !same_edge_slot) {
+      break;
+    }
+
+    min_count++;
+    slot--;
+  }
+
+  free_slot = true;
+  same_edge_slot = true;
+
+  int max_count = 0;
+  slot = max_slot + 1;
+  while (free_slot && same_edge_slot) {
+    free_slot = slots_[slot].isAvailable();
+    same_edge_slot = slots_[slot].edge == edge;
+    if (!free_slot || !same_edge_slot) {
+      break;
+    }
+
+    max_count++;
+    slot++;
+  }
+
+  if (min_count > max_count) {
+    shiftGroupToPosition(pin_indices, min_count, min_slot, false);
+  } else {
+    shiftGroupToPosition(pin_indices, max_count, min_slot, true);
+  }
+
+  return prev_cost;
+}
+
+void SimulatedAnnealing::shiftGroupToPosition(
+    const std::vector<int>& pin_indices,
+    int free_slots_count,
+    const int min_slot,
+    bool move_to_max)
+{
+  boost::random::uniform_int_distribution<int> distribution(1,
+                                                            free_slots_count);
+  int move_count = distribution(generator_);
+  int new_slot = move_to_max ? min_slot + move_count : min_slot - move_count;
+  for (int pin_idx : pin_indices) {
+    const IOPin& io_pin = netlist_->getIoPin(pin_idx);
+    pin_assignment_[pin_idx] = new_slot;
+    new_slots_.push_back(new_slot);
+    if (io_pin.isMirrored()) {
+      int mirrored_slot = getMirroredSlotIdx(new_slot);
+      pin_assignment_[io_pin.getMirrorPinIdx()] = mirrored_slot;
+      new_slots_.push_back(mirrored_slot);
+    }
+    new_slot++;
+  }
+}
+
 void SimulatedAnnealing::restorePreviousAssignment()
 {
   if (!prev_slots_.empty()) {

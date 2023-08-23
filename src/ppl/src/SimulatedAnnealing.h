@@ -106,6 +106,11 @@ class SimulatedAnnealing
   int swapPins();
   int movePinToFreeSlot(bool lone_pin = false);
   int moveGroupToFreeSlots(int group_idx);
+  int shiftGroup(int group_idx);
+  void shiftGroupToPosition(const std::vector<int>& pin_indices,
+                            int free_slots_count,
+                            const int min_slot,
+                            bool move_to_max);
   void restorePreviousAssignment();
   double dbuToMicrons(int64_t dbu);
   bool isFreeForGroup(int& slot_idx, int group_size, int last_slot);
