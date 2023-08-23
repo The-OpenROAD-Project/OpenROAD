@@ -41,6 +41,7 @@
 
 #include "AbstractSteinerRenderer.h"
 #include "BufferedNet.hh"
+#include "Journal.hh"
 #include "RecoverPower.hh"
 #include "RepairDesign.hh"
 #include "RepairHold.hh"
@@ -172,12 +173,16 @@ Resizer::Resizer()
       buffer_moved_into_core_(false),
       max_wire_length_(0),
       worst_slack_nets_percent_(10),
+      new_journal_(false),
+      journal_(nullptr),
       opendp_(nullptr)
 {
+  journal_ = new Journal(logger_, network_, sta_);
 }
 
 Resizer::~Resizer()
 {
+  delete journal_;
   delete repair_design_;
   delete repair_setup_;
   delete repair_hold_;
@@ -2693,7 +2698,7 @@ Resizer::journalSwapPins(Instance *inst, LibertyPort *port1,
   debugPrint(logger_, RSZ, "journal", 1, "journal swap pins {} ({}->{})",
              network_->pathName(inst),port1->name(), port2->name());
   if (new_journal_) {
-
+    journal_->swapPins(inst, port1, port2);
   }
   else {
     swapped_pins_[inst] = std::make_tuple(port1, port2);
@@ -2704,7 +2709,7 @@ void
 Resizer::journalInstReplaceCellBefore(Instance *inst)
 {
   if (new_journal_) {
-
+    journal_->instReplaceCellBefore(inst);
   }
   else {
     // Do not clobber an existing checkpoint cell.
@@ -2719,7 +2724,7 @@ void
 Resizer::journalMakeBuffer(Instance *buffer)
 {
   if (new_journal_) {
-
+    journal_->makeBuffer(buffer);
   }
   else {
     debugPrint(logger_, RSZ, "journal", 1, "journal make_buffer {}", network_->pathName(buffer));
@@ -2731,53 +2736,49 @@ Resizer::journalMakeBuffer(Instance *buffer)
 void
 Resizer::journalUndoGateCloning(int &cloned_gate_count)
 {
-  if (new_journal_) {
+  // Undo gate cloning
+  while (!cloned_gates_.empty()) {
+    auto element = cloned_gates_.top();
+    cloned_gates_.pop();
+    auto original_inst = std::get<0>(element);
+    auto cloned_inst = std::get<1>(element);
+    debugPrint(logger_, RSZ, "journal", 1, "journal unclone {} ({}) -> {} ({})", network_->pathName(original_inst),
+               network_->libertyCell(original_inst)->name(), network_->pathName(cloned_inst),
+               network_->libertyCell(cloned_inst)->name());
 
-  }
-  else {
-    // Undo gate cloning
-    while (!cloned_gates_.empty()) {
-      auto element = cloned_gates_.top();
-      cloned_gates_.pop();
-      auto original_inst = std::get<0>(element);
-      auto cloned_inst = std::get<1>(element);
-      debugPrint(logger_, RSZ, "journal", 1, "journal unclone {} ({}) -> {} ({})", network_->pathName(original_inst),
-                 network_->libertyCell(original_inst)->name(), network_->pathName(cloned_inst),
-                 network_->libertyCell(cloned_inst)->name());
-
-      const Pin* original_output_pin = nullptr;
-      std::vector<const Pin*> clone_pins = getPins(cloned_inst);
-      std::vector<const Pin*> original_pins = getPins(original_inst);
-      for (auto& pin : original_pins) {
-        if (network_->direction(pin)->isOutput()) {
-          original_output_pin = pin;
-          break;
-        }
+    const Pin* original_output_pin = nullptr;
+    std::vector<const Pin*> clone_pins = getPins(cloned_inst);
+    std::vector<const Pin*> original_pins = getPins(original_inst);
+    for (auto& pin : original_pins) {
+      if (network_->direction(pin)->isOutput()) {
+        original_output_pin = pin;
+        break;
       }
-      Net* original_out_net = network_->net(original_output_pin);
-      // Net* clone_out_net = nullptr;
-
-      for (auto& pin : clone_pins) {
-        // Disconnect all pins from the new net. Also store the output net
-        // if (network_->direction(pin)->isOutput()) {
-        //  clone_out_net = network_->net(pin);
-        //}
-        sta_->disconnectPin(const_cast<Pin*>(pin));
-        // Connect them to the original nets if they are inputs
-        if (network_->direction(pin)->isInput()) {
-          Instance* inst = network_->instance(pin);
-          auto term_port = network_->port(pin);
-          sta_->connectPin(inst, term_port, original_out_net);
-        }
-      }
-      // Final cleanup
-      // sta_->deleteNet(clone_out_net);
-      sta_->deleteInstance(cloned_inst);
-      sta_->graphDelayCalc()->delaysInvalid();
-      --cloned_gate_count;
     }
-    cloned_inst_set_.clear();
+    Net* original_out_net = network_->net(original_output_pin);
+    // Net* clone_out_net = nullptr;
+
+    for (auto& pin : clone_pins) {
+      // Disconnect all pins from the new net. Also store the output net
+      // if (network_->direction(pin)->isOutput()) {
+      //  clone_out_net = network_->net(pin);
+      //}
+      sta_->disconnectPin(const_cast<Pin*>(pin));
+      // Connect them to the original nets if they are inputs
+      if (network_->direction(pin)->isInput()) {
+        Instance* inst = network_->instance(pin);
+        auto term_port = network_->port(pin);
+        sta_->connectPin(inst, term_port, original_out_net);
+      }
+    }
+    // Final cleanup
+    // sta_->deleteNet(clone_out_net);
+    sta_->deleteInstance(cloned_inst);
+    sta_->graphDelayCalc()->delaysInvalid();
+    --cloned_gate_count;
   }
+  cloned_inst_set_.clear();
+
 }
 
 void
@@ -2786,7 +2787,7 @@ Resizer::journalRestore(int &resize_count,
                         int &cloned_gate_count)
 {
   if (new_journal_) {
-
+    journal_->restore(resize_count, inserted_buffer_count, cloned_gate_count);
   }
   else {
     for (auto [inst, lib_cell] : resized_inst_map_) {

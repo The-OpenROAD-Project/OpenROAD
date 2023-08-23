@@ -77,7 +77,7 @@ using BufferedNetSeq = vector<BufferedNetPtr>;
 class Undo {
  public:
   // base class for undo elements
-  Undo();
+  Undo() {};
   virtual int UndoOperation(Logger *logger,  Network *network, dbSta *sta) = 0;
 };
 
@@ -142,13 +142,13 @@ class Journal
 public:
   Journal(Logger *logger, Network *network, dbSta *sta);
 
-  void journalBegin();
-  void journalEnd();
-  void journalSwapPins(Instance *inst, LibertyPort *port1, LibertyPort *port2);
-  void journalInstReplaceCellBefore(Instance *inst);
-  void journalMakeBuffer(Instance *buffer);
-  void journalRestore(int& resize_count, int& inserted_buffer_count,
-                      int& cloned_gate_count);
+  void begin();
+  void end();
+  void restore(int& resize_count, int& inserted_buffer_count, int& cloned_gate_count);
+  void swapPins(Instance *inst, LibertyPort *port1, LibertyPort *port2);
+  void instReplaceCellBefore(Instance *inst);
+  void makeBuffer(Instance *buffer);
+
  private:
   Logger *logger_;
   Network *network_;

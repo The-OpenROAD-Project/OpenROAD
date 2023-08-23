@@ -196,20 +196,20 @@ Journal::Journal(Logger* logger, Network* network, dbSta* sta)
   sta_ = sta;
 }
 
-void Journal::journalBegin()
+void Journal::begin()
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal begin");
   journal_stack_ = {};
 }
 
-void Journal::journalEnd()
+void Journal::end()
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal end");
   // We need to do something with cloned instances here
   journal_stack_ = {};
 }
 
-void Journal::journalSwapPins(Instance* inst, LibertyPort* port1,
+void Journal::swapPins(Instance* inst, LibertyPort* port1,
                               LibertyPort* port2)
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal swap pins {} ({}->{})",
@@ -218,7 +218,7 @@ void Journal::journalSwapPins(Instance* inst, LibertyPort* port1,
   journal_stack_.emplace(std::move(element));
 }
 
-void Journal::journalInstReplaceCellBefore(Instance* inst)
+void Journal::instReplaceCellBefore(Instance* inst)
 {
   LibertyCell *lib_cell = network_->libertyCell(inst);
   debugPrint(logger_, RSZ, "journal", 1, "journal replace {} ({})",
@@ -228,7 +228,7 @@ void Journal::journalInstReplaceCellBefore(Instance* inst)
    journal_stack_.emplace(std::move(element));
 }
 
-void Journal::journalMakeBuffer(Instance* buffer)
+void Journal::makeBuffer(Instance* buffer)
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal make_buffer {}",
              network_->pathName(buffer));
@@ -236,7 +236,7 @@ void Journal::journalMakeBuffer(Instance* buffer)
   journal_stack_.emplace(std::move(element));
 }
 
-void Journal::journalRestore(int& resize_count, int& inserted_buffer_count,
+void Journal::restore(int& resize_count, int& inserted_buffer_count,
                              int& cloned_gate_count)
 {
   while (!journal_stack_.empty()) {

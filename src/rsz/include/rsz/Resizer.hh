@@ -123,6 +123,7 @@ typedef std::tuple<Instance *, Instance *>  InstanceTuple;
 
 class AbstractSteinerRenderer;
 class SteinerTree;
+class Journal;
 typedef int SteinerPt;
 
 class BufferedNet;
@@ -644,6 +645,7 @@ protected:
 
   // Journal to roll back changes (OpenDB not up to the task).
   bool new_journal_; // boolean to switch between old and new journal code
+  Journal *journal_;
   // Variables for the older journal code (to be removed later)
   Map<Instance*, LibertyCell*> resized_inst_map_;
   InstanceSeq inserted_buffers_;
