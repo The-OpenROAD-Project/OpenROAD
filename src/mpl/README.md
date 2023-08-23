@@ -67,7 +67,7 @@ Example scripts demonstrating how to run TritonMacroPlace on a sample design of 
 
 ## Regression tests
 
-There are a set of regression tests in `/test`. For more information, refer to this [section](../../README.md#regression-tests).
+There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
 Simply run the following script:
 
