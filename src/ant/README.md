@@ -40,7 +40,7 @@ check_antennas
 | Switch Name | Description |
 | ----- | ----- |
 | `-verbose` | Report all antenna calculations for violating nets. |
-| `-net` | Check antennas on specified net. |
+| `-net` | Check antennas on the specified net. |
 
 ## Regression tests
 
