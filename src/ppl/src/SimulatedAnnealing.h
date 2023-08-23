@@ -61,6 +61,8 @@ struct DebugSettings
 
 using utl::Logger;
 
+using GroupLimits = std::pair<int, int>;
+
 struct Constraint;
 
 class SimulatedAnnealing
@@ -111,6 +113,7 @@ class SimulatedAnnealing
                             int free_slots_count,
                             const int min_slot,
                             bool move_to_max);
+  int rearrangeConstrainedGroups(int constraint_idx);
   void restorePreviousAssignment();
   double dbuToMicrons(int64_t dbu);
   bool isFreeForGroup(int& slot_idx, int group_size, int last_slot);
