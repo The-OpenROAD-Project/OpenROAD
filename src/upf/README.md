@@ -138,7 +138,7 @@ set_domain_area
 
 ## Example scripts
 
-Example script demonstrating how to run UPF related commands can be found here:
+Example script demonstrating how to run `upf` related commands can be found here:
 
 ```tcl
 ./test/upf_test.tcl
