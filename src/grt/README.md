@@ -11,21 +11,38 @@ FastRoute4.1 algorithm.
 - Parameters without square brackets `-param2 param2` are required.
 ```
 
-### Global Route
-
-```tcl
-global_route 
-    [-guide_file out_file]
-    [-congestion_iterations iterations]
-    [-congestion_report_file file_name]
-    [-congestion_report_iter_step steps]
-    [-grid_origin {x y}]
-    [-critical_nets_percentage percent]
-    [-allow_congestion]
-    [-verbose]
-    [-start_incremental]
-    [-end_incremental]
 ```
+global_route [-guide_file out_file]
+             [-congestion_iterations iterations]
+             [-congestion_report_file file_name]
+             [-congestion_report_iter_step steps]
+             [-grid_origin {x y}]
+             [-critical_nets_percentage percent]
+             [-allow_congestion]
+             [-verbose]
+             [-start_incremental]
+             [-end_incremental]
+```
+
+Options description:
+
+-   `guide_file`: Set the output guides file name (e.g., -guide_file
+    `route.guide`).
+-   `congestion_iterations`: Set the number of iterations made to remove the
+    overflow of the routing (e.g., `-congestion_iterations 50`)
+-   `congestion_report_file`: Set the file name to save congestion report. The 
+    file generated can be read by DRC viewer in the gui (e.g., -congestion_report_file 
+    `report_file.rpt`)
+-   `congestion_report_iter_step`: Set the iteration interval that a congestion report file will be generated during the congestion iterations.
+-   `grid_origin`: Set the (x, y) origin of the routing grid in DBU. For
+    example, `-grid_origin {1 1}` corresponds to the die (0, 0) + 1 DBU in each
+    x-, y- direction.
+-   `critical_nets_percentage`: Set the percentage of nets with the worst slack value that are considered timing critical, having preference over other nets during congestion iterations (e.g. `-critical_nets_percentage 30`). The default percentage is 0%.
+-   `allow_congestion`: Allow global routing results to be generated with remaining congestion.
+-   `verbose`: This flag enables the full reporting of the global routing.
+-   `start_incremental`: This flag initializes the GRT listener to get the net modified.
+-   `end_incremental`: This flag run incremental GRT with the nets modified.
+global_route 
 
 #### Options
 
