@@ -1,9 +1,10 @@
 # Clock Tree Synthesis
 
-TritonCTS 2.0 is available under the OpenROAD app as `clock_tree_synthesis`
-command.  TritonCTS 2.0 performs on-the-fly characterization. Thus there is
+The clock tree synthesis module in OpenROAD (`cts`) is based on TritonCTS 
+2.0. It is available from the `clock_tree_synthesis` command.  
+TritonCTS 2.0 performs on-the-fly characterization. Thus there is
 no need to generate characterization data. On-the-fly characterization feature
-could still be optionally controlled by parameters specified to 
+can be optionally controlled by parameters specified to 
 `configure_cts_characterization` command. Use `set_wire_rc` command to 
 set clock routing layer.
 
@@ -28,8 +29,8 @@ configure_cts_characterization
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `-max_slew` | Max slew value (in seconds) that the characterization will test. If this parameter is omitted, the code would use max slew value for specified buffer in `buf_list` from liberty file. |
-| `-max_cap` | Max capacitance value (in farad) that the characterization will test. If this parameter is omitted, the code would use max cap value for specified buffer in `buf_list` from liberty file. |
+| `-max_slew` | Max slew value (in the current time unit) that the characterization will test. If this parameter is omitted, the code would use max slew value for specified buffer in `buf_list` from liberty file. |
+| `-max_cap` | Max capacitance value (in the current capacitance unit) that the characterization will test. If this parameter is omitted, the code would use max cap value for specified buffer in `buf_list` from liberty file. |
 | `-slew_steps` | Number of steps that `max_slew` will be divided into for characterization. (default 12) |
 | `-cap_steps` | Number of steps that `max_cap` will be divided into for characterization. (default 34) |
 
@@ -48,6 +49,8 @@ clock_tree_synthesis
     [-sink_clustering_enable]
     [-sink_clustering_size cluster_size]
     [-sink_clustering_max_diameter max_diameter]
+    [-num_static_layers]
+    [-sink_clustering_buffer]
 ```
 
 #### Options
@@ -57,19 +60,21 @@ clock_tree_synthesis
 | `-buf_list` | Tcl list of master cells (buffers) that will be considered when making the wire segments (e.g. `{BUFXX, BUFYY}`). |
 | `-root_buffer` | The master cell of the buffer that serves as root for the clock tree. If this parameter is omitted, the first master cell from `-buf_list` is taken. |
 | `-wire_unit` | Minimum unit distance between buffers for a specific wire. If this parameter is omitted, the code gets the value from ten times the height of `-root_buffer`. |
-| `-clk_nets` | String containing the names of the clock roots. If this parameter is omitted, TritonCTS looks for the clock roots automatically. |
-| `-distance_between_buffers` | Distance (in microns) between buffers that TritonCTS should use when creating the tree. When using this parameter, the clock tree algorithm is simplified, and only uses a fraction of the segments from the LUT. |
+| `-clk_nets` | String containing the names of the clock roots. If this parameter is omitted, `cts` automatically looks for the clock roots automatically. |
+| `-distance_between_buffers` | Distance (in microns) between buffers that `cts` should use when creating the tree. When using this parameter, the clock tree algorithm is simplified and only uses a fraction of the segments from the LUT. |
 | `-branching_point_buffers_distance` | Distance (in microns) that a branch has to have in order for a buffer to be inserted on a branch end-point. This requires the `-distance_between_buffers` value to be set. |
 | `-clustering_exponent` | Value that determines the power used on the difference between sink and means on the CKMeans clustering algorithm. (default 4, integer). |
-| `-clustering_unbalance_ratio` | Value that determines the maximum capacity of each cluster during CKMeans. A value of 50% means that each cluster will have exactly half of all sinks for a specific region (half for each branch). (default 0.6, float). |
+| `-clustering_unbalance_ratio` | Value determines each cluster's maximum capacity during CKMeans. A value of `0.5` (i.e., 50%) means that each cluster will have exactly half of all sinks for a specific region (half for each branch). (default 0.6, float). |
 | `-sink_clustering_enable` | Enables pre-clustering of sinks to create one level of sub-tree before building H-tree. Each cluster is driven by buffer which becomes end point of H-tree structure. |
 | `-sink_clustering_size` | Specifies the maximum number of sinks per cluster. (default 20, integer). |
 | `sink_clustering_max_diameter` | Specifies maximum diameter (in microns) of sink cluster (default 50, integer). |
-| `-clk_nets` | String containing the names of the clock roots. If this parameter is omitted, TritonCTS looks for the clock roots automatically. |
+| `-clk_nets` | String containing the names of the clock roots. If this parameter is omitted, `cts` looks for the clock roots automatically. |
+| `-num_static_layers` | Set the number of static layers (default 0, integer). |
+| `-sink_clustering_buffer` | Set the sink clustering buffer(s) to be used. |
 
 ### Report CTS
 
-Another command available from TritonCTS is `report_cts`. It is used to
+Another command available from `cts` is `report_cts`. It is used to
 extract metrics after a successful `clock_tree_synthesis` run. These are:
  
 - Number of Clock Roots
@@ -86,7 +91,7 @@ report_cts
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-out_file` | The file containing the TritonCTS reports. If this parameter is omitted, the metrics are streamed to `stdout` and not saved. |
+| `-out_file` | The file to save `cts` reports. If this parameter is omitted, the report is streamed to `stdout` and not saved. |
 
 ### Useful developer functions
 
