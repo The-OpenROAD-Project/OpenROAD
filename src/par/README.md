@@ -151,13 +151,13 @@ triton_part_hypergraph
 | `-num_initial_solutions` | Number of initial solutions (default 50, integer). |
 | `-num_best_initial_solutions` | Number of top initial solutions to filter out (default 10, integer). |
 | `-refiner_iters` | Refinement iterations (default 10, integer). |
-| `-max_moves` | The allowed moves for each pass of Fiduccia-Mattheyes (FM) algorithm or greedy refinement (default 60, integer). |
-| `-early_stop_ratio` | Describes ratio $e$ where if the $n_{moved vertices} > n_{vertices} * e$, exit current FM pass. the intution behind this being most of the gains are achieved by the first few FM moves. (default 0.5) |
+| `-max_moves` | The allowed moves for each Fiduccia-Mattheyes (FM) algorithm pass or greedy refinement (default 60, integer). |
+| `-early_stop_ratio` | Describes ratio $e$ where if the $n_{moved vertices} > n_{vertices} * e$, exit current FM pass. The intention behind this being most of the gains are achieved by the first few FM moves. (default 0.5) |
 | `-total_corking_passes` | Maximum level of traversing the buckets to solve the "corking effect" (default 25, integer). |
 | `-v_cycle_flag` | Disables v-cycle is used to refine partitions (default true, bool). |
-| `-max_num_vcycle` | Maximum number of vcycles(default 1, integer). |
+| `-max_num_vcycle` | Maximum number of `vcycles` (default 1, integer). |
 | `-num_coarsen_solutions` | Number of coarsening solutions with different randoms seed (default 3, integer). |
-| `-num_vertices_threshold_ilp` | Describes threshold $t$, number of vertices used for integer linear programming (ILP) partitioning. if $n_{vertices} > t$, do not use ILP-based partitioning.(default 50, integer). |
+| `-num_vertices_threshold_ilp` | Describes threshold $t$, the number of vertices used for integer linear programming (ILP) partitioning. if $n_{vertices} > t$, do not use ILP-based partitioning.(default 50, integer). |
 | `-global_net_threshold` | If the net is larger than this, it will be ignored by TritonPart (default 1000, integer). |
 
 ### Evaluate Hypergraph Partition
@@ -245,11 +245,11 @@ triton_part_design
 | Switch Name | Description |
 | ----- | ----- |
 | `-num_parts` | Number of partitions (default 2, integer). |
-| `-balance_constraint` | Allowed imbalance between blocks (default 1.0, float)/ |
+| `-balance_constraint` | Allowed imbalance between blocks (default 1.0, float). |
 | `-seed` | Random seed (default 1, integer). |
 | `-timing_aware_flag` | Enable timing-driven mode (default true, bool). |
 | `-top_n` | Extract the top n critical timing paths (default 1000, integer). |
-| `-placement_flag` | Enable placement-information driven partitioning (default false, bool). |
+| `-placement_flag` | Enable placement driven partitioning (default false, bool). |
 | `-fence_flag ` | Consider fences in the partitioning (default false, bool) |
 | `-fence_lx ` | Fence lower left x in microns (default 0.0, float). |
 | `-fence_ly ` | Fence lower left y in microns (default 0.0, float). |
@@ -276,15 +276,15 @@ triton_part_design
 | `-adj_diff_ratio` | Minimum difference of two adjacent hypergraphs (default 0.0001, float). |
 | `-min_num_vertices_each_part` | Minimum number of vertices in each partition (default 4, integer). |
 | `-num_initial_solutions` | Number of initial solutions (default 100, integer). |
-| `-num_best_initial_solutions` | Number of top initial solution to filter out (default 10, integer). |
+| `-num_best_initial_solutions` | Number of top initial solutions to filter out (default 10, integer). |
 | `-refiner_iters` | Refinment iterations (default 10, integer). |
-| `-max_moves` | The allowed moves for each pass of Fiduccia-Mattheyes (FM) algorithm or greedy refinement (default 100, integer). |
-| `-early_stop_ratio` | Describes ratio $e$ where if the $n_{moved vertices} > n_{vertices} * e$, exit current FM pass. the intution behind this being most of the gains are achieved by the first few FM moves. (default 0.5, float). |
+| `-max_moves` | The allowed moves for each Fiduccia-Mattheyes (FM) algorithm pass or greedy refinement (default 100, integer). |
+| `-early_stop_ratio` | Describes the ratio $e$ where if the $n_{moved vertices} > n_{vertices} * e$, the tool exists the current FM pass. The intention behind this being that most of the gains are achieved by the first few FM moves. (default 0.5, float). |
 | `-total_corking_passes` | Maximum level of traversing the buckets to solve the "corking effect" (default 25, integer). |
 | `-v_cycle_flag` | Disables v-cycle is used to refine partitions (default true, bool). |
 | `-max_num_vcycle` | Maximum number of vcycles (default 1, integer). |
 | `-num_coarsen_solutions` | Number of coarsening solutions with different randoms seed (default 4, integer). |
-| `-num_vertices_threshold_ilp` | Describes threshold $t$, number of vertices used for integer linear programming (ILP) partitioning. if $n_{vertices} > t$, do not use ILP-based partitioning. (default 50, integer). |
+| `-num_vertices_threshold_ilp` | Describes threshold $t$, the number of vertices used for integer linear programming (ILP) partitioning. if $n_{vertices} > t$, do not use ILP-based partitioning. (default 50, integer). |
 | `-global_net_threshold` | If the net is larger than this, it will be ignored by TritonPart (default 1000, integer). |
 
 
@@ -358,8 +358,9 @@ write_partition_verilog
 
 | Switch Name | Description |
 | ----- | ----- |
-| `port_prefix` | Port name prefix. |
-| `module_suffix` | Module name suffix. |
+| `-port_prefix` | Port name prefix. |
+| `-module_suffix` | Module name suffix. |
+| `file` | Filename to write parition verilog to. |
 
 ### Read Partition file
 
@@ -373,7 +374,7 @@ read_partitioning
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-read_file` | Read partitioning file (.part). |
+| `-read_file` | Read partitioning file (usually with the extension `.part`). The file format must match the same format as the output of `write_partition_verilog`. |
 | `-instance_map_file` | Instance mapping file. |
 
 
