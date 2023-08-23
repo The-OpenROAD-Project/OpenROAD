@@ -31,8 +31,8 @@ configure_cts_characterization
 | ----- | ----- |
 | `-max_slew` | Max slew value (in the current time unit) that the characterization will test. If this parameter is omitted, the code would use max slew value for specified buffer in `buf_list` from liberty file. |
 | `-max_cap` | Max capacitance value (in the current capacitance unit) that the characterization will test. If this parameter is omitted, the code would use max cap value for specified buffer in `buf_list` from liberty file. |
-| `-slew_steps` | Number of steps that `max_slew` will be divided into for characterization. (default 12) |
-| `-cap_steps` | Number of steps that `max_cap` will be divided into for characterization. (default 34) |
+| `-slew_steps` | Number of steps that `max_slew` will be divided into for characterization. The default value is `12`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-cap_steps` | Number of steps that `max_cap` will be divided into for characterization. The default value is `34`, and the allowed values are integers `[0, MAX_INT]`. |
 
 ### Clock Tree Synthesis
 
@@ -63,13 +63,13 @@ clock_tree_synthesis
 | `-clk_nets` | String containing the names of the clock roots. If this parameter is omitted, `cts` automatically looks for the clock roots automatically. |
 | `-distance_between_buffers` | Distance (in microns) between buffers that `cts` should use when creating the tree. When using this parameter, the clock tree algorithm is simplified and only uses a fraction of the segments from the LUT. |
 | `-branching_point_buffers_distance` | Distance (in microns) that a branch has to have in order for a buffer to be inserted on a branch end-point. This requires the `-distance_between_buffers` value to be set. |
-| `-clustering_exponent` | Value that determines the power used on the difference between sink and means on the CKMeans clustering algorithm. (default 4, integer). |
-| `-clustering_unbalance_ratio` | Value determines each cluster's maximum capacity during CKMeans. A value of `0.5` (i.e., 50%) means that each cluster will have exactly half of all sinks for a specific region (half for each branch). (default 0.6, float). |
+| `-clustering_exponent` | Value that determines the power used on the difference between sink and means on the CKMeans clustering algorithm. The default value is `4`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-clustering_unbalance_ratio` | Value determines each cluster's maximum capacity during CKMeans. A value of `0.5` (i.e., 50%) means that each cluster will have exactly half of all sinks for a specific region (half for each branch). The default value is `0.6`, and the allowed values are floats `[0, 1.0]`. |
 | `-sink_clustering_enable` | Enables pre-clustering of sinks to create one level of sub-tree before building H-tree. Each cluster is driven by buffer which becomes end point of H-tree structure. |
-| `-sink_clustering_size` | Specifies the maximum number of sinks per cluster. (default 20, integer). |
-| `sink_clustering_max_diameter` | Specifies maximum diameter (in microns) of sink cluster (default 50, integer). |
+| `-sink_clustering_size` | Specifies the maximum number of sinks per cluster. The default value is `20`, and the allowed values are integers `[0, MAX_INT]`. |
+| `sink_clustering_max_diameter` | Specifies maximum diameter (in microns) of sink cluster. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-clk_nets` | String containing the names of the clock roots. If this parameter is omitted, `cts` looks for the clock roots automatically. |
-| `-num_static_layers` | Set the number of static layers (default 0, integer). |
+| `-num_static_layers` | Set the number of static layers. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-sink_clustering_buffer` | Set the sink clustering buffer(s) to be used. |
 
 ### Report CTS
