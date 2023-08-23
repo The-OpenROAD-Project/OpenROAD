@@ -35,7 +35,7 @@ define_pin_shape_pattern
 | Switch Name | Description |
 | ----- | ----- |
 | `-layer` | Defines a single top-most routing layer of the placement grid. |
-| `-x_step`, `-y_step` | Define the distance (in microns) between each valid position on the grid, in the x- and y-directions, respectively. |
+| `-x_step`, `-y_step` | Define the distance (in microns) between each valid position on the grid in the x- and y-directions, respectively. |
 | `-region` | Defines the `{llx, lly, urx, ury}` region of the placement grid (in microns). |
 | `-size` | Defines the width and height (in microns) of the pins assigned to this grid. The centers of the pins are placed on the grid positions. Pins may have half of their shapes outside the defined region. |
 | `-pin_keepout` | Defines the boundary (in microns) around existing routing obstructions that the pins should avoid; this defaults to the `layer` minimum spacing. |
@@ -77,12 +77,11 @@ set_io_pin_constraint
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-direction` | Pin direction (input, output, inout, or feedthrough). |
-| `-pin_names` | List of names. Only one of these two (`-direction`, `-pin_names`) should be used in a single call for the `set_io_pin_constraint` command. |
-| `-region` | Syntax is `-region edge:interval`. The `edge` values are (top|bottom|left|right). The `interval` can be the whole edge, with the `*` value, or a range of values. |
+| `-pin_names` | List of names. Only one of (`-direction`, `-pin_names`) should be used in a single call for the `set_io_pin_constraint` command. |
+| `-region` | Syntax is `-region edge:interval`. The `edge` values are (`top|bottom|left|right`). The `interval` can be the whole edge with the wildcard `*` value or a range of values. |
 | `-mirrored_pins` | List of pins that sets pairs of pins that will be symmetrically placed in the vertical or the horizontal edges. The number of pins in this list **must be even**. For example, in `set_io_pin_constraint -mirrored_pins {pin1 pin2 pin3 pin4 pin5 pin6}`, the pins `pin1` and `pin2` will be placed symmetrically to each other. Same for `pin3` and `pin4`, and for `pin5` and `pin6`. |
-| `-group` | Flag places together on the die boundary the pin list defined in `-pin_names`, similar to the `-group_pins` option on `place_pins` command. |
-| `-order` | Flag places the pins ordered in ascending x/y position, and must be used only when `-group` is also used. |
+| `-group` | Flag places together on the die boundary the pin list defined in `-pin_names,` similar to the `-group_pins` option on the `place_pins` command. |
+| `-order` | Flag places the pins ordered in ascending x/y position and must be used only when `-group` is also used. |
 
 The `edge` values are (up, top, bottom, left, right), where `up` is
 the grid created by `define_pin_shape_pattern`. To restrict pins to the
@@ -120,8 +119,8 @@ set_pin_length
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-hor_length` | Defines the length (in microns) of the horizontal pins. |
-| `-ver_length` | Defines the length (in microns) of the vertical pins. |
+| `-hor_length` | The length (in microns) of the horizontal pins. |
+| `-ver_length` | The length (in microns) of the vertical pins. |
 
 ### Set Pin Extension
 
@@ -139,8 +138,8 @@ set_pin_length_extension
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-hor_extension` | Defines the extension length (in microns) for the horizontal pins. |
-| `-ver_extension` | Defines the extension length (in microns) for the vertical pins. |
+| `-hor_extension` | The length (in microns) for the horizontal pins. |
+| `-ver_extension` | The length (in microns) for the vertical pins. |
 
 ### Set Pin Thick Multiplier
 
@@ -157,8 +156,8 @@ set_pin_thick_multiplier
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-hor_multiplier` | Defines the thickness multiplier for the horizontal pins. |
-| `-ver_multiplier` | Defines the thickness multiplier for the vertical pins. |
+| `-hor_multiplier` | The thickness multiplier for the horizontal pins. |
+| `-ver_multiplier` | The thickness multiplier for the vertical pins. |
 
 ### Set Simulated Annealing Parameters
 
@@ -176,10 +175,10 @@ set_simulated_annealing
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-temperature` | Specify the temperature parameter, must be positive. |
-| `-max_iterations` | Specify the maximum number of iterations. |
-| `-perturb_per_iter` | Specify the number of perturbations per iteration. |
-| `-alpha` | Specify the temperature decay factor, must be positive. |
+| `-temperature` | Temperature parameter, must be positive. |
+| `-max_iterations` | The maximum number of iterations. |
+| `-perturb_per_iter` | The number of perturbations per iteration. |
+| `-alpha` | The temperature decay factor, must be positive. |
 
 ### Place Individual Pin
 
@@ -276,7 +275,7 @@ add_pins_to_top_layer cmd names llx lly urx ury
 
 ## Example scripts
 
-Example scripts of IOPlacer running on a sample design of `gcd` as follows:
+Example scripts of `ppl` running on a sample design of `gcd` as follows:
 
 ```tcl
 ./test/gcd.tcl
@@ -284,7 +283,7 @@ Example scripts of IOPlacer running on a sample design of `gcd` as follows:
 
 ## Regression tests
 
-There are a set of regression tests in `/test`. For more information, refer to this [section](../../README.md#regression-tests).
+There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
 Simply run the following script:
 
