@@ -62,27 +62,32 @@ detailed_route
 | `-output_drc` | Path to output DRC report file (e.g. `.output.drc.rpt`). |
 | `-output_cmap` | Path to output congestion map file (e.g. `.output.cmap`). |
 | `-output_guide_coverage` | Path to output guide coverage file (e.g. `sample_coverage.csv`). |
-| `-drc_report_iter_step` | Report DRC on each iteration which is a multiple of this step (default 0, integer). |
+| `-drc_report_iter_step` | Report DRC on each iteration which is a multiple of this step. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-db_process_node` | Specify the process node. |
-| `-disable_via_gen` | Option to diable via generation with bottom and top routing layer. (default not set) | 
-| `-droute_end_iter` | Number of detailed routing iterations (must be a positive integer <= 64). |
+| `-disable_via_gen` | Option to diable via generation with bottom and top routing layer. The default value is disabled. | 
+| `-droute_end_iter` | Number of detailed routing iterations. The default value is `-1`, and the allowed values are integers `[1, 64]`. |
 | `-via_in_pin_bottom_layer` | Via-in pin bottom layer name. |
 | `-via_in_pin_top_layer` | Via-in pin top layer name. |
-| `-or_seed` | Refer to developer arguments [here](#useful-developer-arguments). |
-| `-or_k` | Refer to developer arguments [here](#useful-developer-arguments). |
+| `-or_seed` | Refer to developer arguments [here](#developer-arguments). |
+| `-or_k` | Refer to developer arguments [here](#developer-arguments). |
 | `-bottom_routing_layer` | Bottommost routing layer name. |
 | `-top_routing_layer` | Topmost routing layer name. |
 | `-verbose` | Sets verbose mode if the value is greater than 1, else non-verbose mode (must be integer, or error will be triggered.) |
 | `-distributed` | Refer to distributed arguments [here](#distributed-arguments). |
-| `-remote_host` | Refer to distributed arguments [here](#distributed-arguments). |
-| `-remote_port` | Refer to distributed arguments [here](#distributed-arguments). |
-| `-shared_volume` | Refer to distributed arguments [here](#distributed-arguments). |
-| `-cloud_size` | Refer to distributed arguments [here](#distributed-arguments). |
 | `-clean_patches` | Clean unneeded patches during detailed routing. | 
 | `-no_pin_access` | Disables pin access for routing. |
 | `-min_access_points` | Minimum access points for standard cell and macro cell pins. | 
 | `-save_guide_updates` | Flag to save guides updates. |
-| `-repair_pdn_vias` | This option is used for some PDKs which have M1 and M2 layers that run in parallel. |
+| `-repair_pdn_vias` | This option is used for PDKs where M1 and M2 power rails run in parallel. |
+
+### Developer arguments
+
+Some arguments that are helpful for developers are listed here. 
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-or_seed` | Random seed for the order of nets to reroute. The default value is `-1`, and the allowed values are integers `[0, MAX_INT]`. | 
+| `-or_k` | Number of swaps is given by $k * sizeof(rerouteNets)$. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 
 ### Detailed Route Debugging
 
@@ -118,7 +123,7 @@ detailed_route_debug
 | `-net` | Enable debug for net name. |
 | `-pin` | Enable debug for pin name. |
 | `-worker` | Debugs routes that pass through the point `{x, y}`. |
-| `-iter` | Specifies the number of debug iterations. (default 0, integer) |
+| `-iter` | Specifies the number of debug iterations. The default value is `0`, and the accepted values are integers `[0, MAX_INT`. |
 | `-pa_markers` | Enable pin access markers. |
 | `-dump_dr` | Filename for detailed routing dump. |
 | `-dump_dir` | Directory for detailed routing dump. |
@@ -152,10 +157,6 @@ pin_access
 | `-min_access_points` | Minimum number of access points per pin. |
 | `-verbose` | Sets verbose mode if the value is greater than 1, else non-verbose mode (must be integer, or error will be triggered.) |
 | `-distributed` | Refer to distributed arguments [here](#distributed-arguments). |
-| `-remote_host` | Refer to distributed arguments [here](#distributed-arguments). |
-| `-remote_port` | Refer to distributed arguments [here](#distributed-arguments). |
-| `-shared_volume` | Refer to distributed arguments [here](#distributed-arguments). |
-| `-cloud_size` | Refer to distributed arguments [here](#distributed-arguments). |
 
 ### Distributed arguments
 
@@ -184,14 +185,6 @@ If you are a developer, you might find these useful. More details can be found i
 | `step_dr` | Refer to function `detailed_route_step_drt`. | 
 | `check_drc` | Refer to function `check_drc_cmd`. |
 
-### Useful developer arguments
-
-Some arguments that are helpful for developers are listed here. 
-
-| Switch Name | Description |
-| ----- | ----- |
-| `-or_seed` | Random seed for the order of nets to reroute (default -1, integer). | 
-| `-or_k` | Number of swaps is given by $k * sizeof(rerouteNets)$ (default 0, integer). |
 
 
 ## Example scripts
