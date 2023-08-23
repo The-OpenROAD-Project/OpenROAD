@@ -51,8 +51,8 @@ tapcell
 | `-incnrcap_nwout_master` | Master cell placed at the corners of macros, according the row orientation. |
 | `-cnrcap_nwin_master` | Macro cell placed at the corners the core area according the row orientation. |
 | `-cnrcap_nwout_master` | Macro cell placed at the corners the core area according the row orientation. |
-| `-tap_prefix` | Prefix for the tapcell instances. The default is `TAP_`. |
-| `-endcap_prefix` | Prefix for the endcaps instances. The default is `PHY_`. |
+| `-tap_prefix` | Prefix for the tapcell instances. The default value is `TAP_`. |
+| `-endcap_prefix` | Prefix for the endcaps instances. The default value is `PHY_`. |
 
 The figures below show two examples of tapcell insertion. When only the 
 `-tapcell_master` and `-endcap_master` masters are given, the tapcell placement
@@ -76,9 +76,9 @@ cut_rows
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-endcap_master` | Specify the master used as an endcap. |
-| `-halo_width_x` | Specify the horizontal halo size (in microns) around macros during cut rows. |
-| `-halo_width_y` | Specify the vertical halo size (in microns) around macros during cut rows. |
+| `-endcap_master` | Master used as an endcap. |
+| `-halo_width_x` | Horizontal halo size (in microns) around macros during cut rows. |
+| `-halo_width_y` | Vertical halo size (in microns) around macros during cut rows. |
 
 ### Only adding boundary/endcap cells
 
@@ -142,7 +142,7 @@ place_tapcells
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-master` | Specifies the master to use for the tapcells. |
+| `-master` | Master to use for the tapcells. |
 | `-distance` | Distance between tapcells. |
 
 
