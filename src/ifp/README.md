@@ -15,7 +15,7 @@ Do note that there are two ways of setting the floorplan dimensions.
 The user can either specify manually die/core area, or
 specify the utilization/aspect ratio.
 
-#### Method 1: Automatical die size calculation
+#### Method 1: Automatic die size calculation
 
 ```tcl
 initialize_floorplan
@@ -47,8 +47,8 @@ initialize_floorplan
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-die_area` | Die area coordinates in microns (lower left and upper right x-/y- coordinates). |
-| `-core_area` | Core area coordinates in microns (lower left and upper right x-/y- coordinates). |
+| `-die_area` | Die area coordinates in microns (lower left x/y and upper right x/y coordinates). |
+| `-core_area` | Core area coordinates in microns (lower left x/y and upper right x/y coordinates). |
 | `-sites` | Tcl list of sites to make rows for (e.g. `{SITEXX, ...}`) |
 
 The die area and core area used to write ROWs can be specified explicitly
@@ -87,7 +87,7 @@ make_tracks
 
 | Switch Name | Description |
 | ----- | ----- |
-| `layer` | Select layer name to make tracks for (default all layers). |
+| `layer` | Select layer name to make tracks for. Defaults to all layers. |
 | `-x_pitch`, `-y_pitch` | If set, overrides the LEF technology x-/y- pitch. Use the same unit as in the LEF file. |
 | `-x_offset`, `-y_offset` | If set, overrides the LEF technology x-/y- offset. Use the same unit as in the LEFT file. |
 
@@ -112,13 +112,13 @@ insert_tiecells
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/InitFloorplan.cc) or the [swig file](./src/InitFloorPlan.i).
 
-| Switch Name | Description |
+| Command Name | Description |
 | ----- | ----- |
 | `microns_to_mfg_grid` | Convert microns to manufacturing grid DBU. |
 
 ## Example scripts
 
-Example scripts on running InitFloorplan for a sample design of `mpd_top` are as follows:
+Example scripts on running `ifp` for a sample design of `mpd_top` are as follows:
 
 ```tcl
 ./test/upf_test.tcl
@@ -126,7 +126,7 @@ Example scripts on running InitFloorplan for a sample design of `mpd_top` are as
 
 ## Regression tests
 
-There are a set of regression tests in `/test`. For more information, refer to this [section](../../README.md#regression-tests).
+There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
 Simply run the following script:
 
