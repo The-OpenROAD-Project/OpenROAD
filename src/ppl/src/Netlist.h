@@ -184,7 +184,7 @@ class Netlist
                     bool order,
                     int group_idx);
   void addIOGroup(const std::vector<int>& pin_group, bool order);
-  const std::vector<PinGroupByIndex>& getIOGroups() { return io_groups_; }
+  std::vector<PinGroupByIndex>& getIOGroups() { return io_groups_; }
   void setIOGroups(const std::vector<PinGroupByIndex>& io_groups)
   {
     io_groups_ = io_groups;

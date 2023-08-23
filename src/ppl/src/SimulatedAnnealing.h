@@ -123,6 +123,8 @@ class SimulatedAnnealing
   bool isFreeForMirrored(int slot_idx, int& mirrored_idx) const;
   int getMirroredSlotIdx(int slot_idx) const;
   void updateSlotsFromGroup(const std::vector<int>& prev_slots_, bool block);
+  int computeGroupPrevCost(int group_idx);
+  void updateGroupSlots(const std::vector<int>& pin_indices, int& new_slot);
   void countLonePins();
 
   // [pin] -> slot
@@ -131,7 +133,7 @@ class SimulatedAnnealing
   Netlist* netlist_;
   Core* core_;
   std::vector<Slot>& slots_;
-  const std::vector<PinGroupByIndex>& pin_groups_;
+  std::vector<PinGroupByIndex>& pin_groups_;
   const std::vector<Constraint>& constraints_;
   int num_slots_;
   int num_pins_;
