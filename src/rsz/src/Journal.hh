@@ -52,7 +52,6 @@ using std::vector;
 using utl::Logger;
 
 using sta::dbSta;
-using sta::PathExpanded;
 using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::Instance;
@@ -60,23 +59,24 @@ using sta::Network;
 
 class BufferedNet;
 enum class BufferedNetType;
-typedef std::shared_ptr<BufferedNet> BufferedNetPtr;
+using BufferedNetPtr = std::shared_ptr<BufferedNet> ;
 using BufferedNetSeq = vector<BufferedNetPtr>;
 
-
-class Undo {
+class Undo
+{
  public:
   // base class for undo elements
-  Undo() {};
+  Undo() = default;
   virtual int UndoOperation(Logger *logger, Network *network, dbSta *sta) = 0;
 };
 
-class UndoBufferToInverter: public Undo {
+class UndoBufferToInverter: public Undo
+{
  public:
   // buffer to inverter element
   UndoBufferToInverter(Instance *inv_buffer1, Instance *inv_buffer2,
                  Instance *inv_inverter1, Instance *inv_inverter2);
-  int UndoOperation(Logger *logger, Network *network, dbSta *sta);
+  int UndoOperation(Logger *logger, Network *network, dbSta *sta) override;
  private:
   // four instance pointers for inverter to buffer conversion
   Instance *inv_buffer1_;
@@ -85,21 +85,23 @@ class UndoBufferToInverter: public Undo {
   Instance *inv_inverter2_;
 };
 
-class UndoBuffer : public Undo {
+class UndoBuffer : public Undo
+{
  public:
   // swap pin element
   UndoBuffer(Instance* inst);
-  int UndoOperation(Logger *logger, Network *network, dbSta *sta);
+  int UndoOperation(Logger *logger, Network *network, dbSta *sta) override;
  private:
   Instance *buffer_inst_;
 };
 
-class UndoPinSwap : public Undo {
+class UndoPinSwap : public Undo
+{
  public:
   // swap pin element
   UndoPinSwap(Instance* inst, LibertyPort* swap_port1,
               LibertyPort* swap_port2);
-  int UndoOperation(Logger *logger,  Network *network, dbSta *sta);
+  int UndoOperation(Logger *logger,  Network *network, dbSta *sta) override;
  private:
   // Two pin pointers to undo pin swapping.
   Instance *swap_inst_;
@@ -107,23 +109,24 @@ class UndoPinSwap : public Undo {
   LibertyPort *swap_port2_;
 };
 
-class UndoResize : public Undo {
+class UndoResize : public Undo
+{
   public:
   // resize element
   UndoResize(Instance *inst, LibertyCell *cell);
-  int UndoOperation(Logger *logger,  Network *network, dbSta *sta);
+  int UndoOperation(Logger *logger,  Network *network, dbSta *sta) override;
  private:
   // Original cell used for resize and the instance
   Instance *resized_inst_;
   LibertyCell *original_cell_;
 };
 
-class UndoClone
+class UndoClone : public Undo
 {
   public:
   // clone element
   UndoClone();
-  int UndoOperation(Logger *logger, Network *network, dbSta *sta);
+  int UndoOperation(Logger *logger, Network *network, dbSta *sta) override;
  private:
 };
 

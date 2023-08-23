@@ -2715,8 +2715,9 @@ Resizer::journalInstReplaceCellBefore(Instance *inst)
     // Do not clobber an existing checkpoint cell.
     LibertyCell* lib_cell = network_->libertyCell(inst);
     debugPrint(logger_, RSZ, "journal", 1, "journal replace {} ({})", network_->pathName(inst), lib_cell->name());
-    if (!resized_inst_map_.hasKey(inst))
+    if (!resized_inst_map_.hasKey(inst)) {
       resized_inst_map_[inst] = lib_cell;
+    }
   }
 }
 
@@ -2817,11 +2818,11 @@ Resizer::journalRestore(int &resize_count,
     // Undo pin swaps
     for (const auto& element : swapped_pins_) {
       Instance* inst = element.first;
-      LibertyPort* port1 = std::get<0>(element.second);
-      LibertyPort* port2 = std::get<1>(element.second);
-      debugPrint(logger_, RSZ, "journal", 1, "journal unswap pins {} ({}<-{})", network_->pathName(inst), port1->name(),
-                 port2->name());
-      swapPins(inst, port2, port1, false);
+      LibertyPort* original_port = std::get<0>(element.second);
+      LibertyPort* swapped_port = std::get<1>(element.second);
+      debugPrint(logger_, RSZ, "journal", 1, "journal unswap pins {} ({}<-{})", network_->pathName(inst),
+                 original_port->name(), swapped_port->name());
+      swapPins(inst, swapped_port, original_port, false);
     }
     swapped_pins_.clear();
     journalUndoGateCloning(cloned_gate_count);
