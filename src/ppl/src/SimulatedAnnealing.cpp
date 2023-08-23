@@ -304,8 +304,7 @@ int SimulatedAnnealing::randomAssignmentForGroups(
       group_slot = slot;
     } else {
       int slot = slot_indices[slot_idx];
-      while (!isFreeForGroup(
-          slot, group.pin_indices.size(), num_slots_ - 1)) {
+      while (!isFreeForGroup(slot, group.pin_indices.size(), num_slots_ - 1)) {
         slot_idx++;
         slot = slot_indices[slot_idx];
       }
@@ -686,6 +685,79 @@ void SimulatedAnnealing::shiftGroupToPosition(
     }
     new_slot++;
   }
+}
+
+int SimulatedAnnealing::rearrangeConstrainedGroups(int constraint_idx)
+{
+  int prev_cost = 0;
+  const Constraint& constraint = constraints_[constraint_idx];
+  std::vector<int> group_indices;
+  std::vector<int> aux_indices;
+  std::vector<GroupLimits> group_limits_list;
+
+  if (constraint.pin_groups.size() > 1) {
+    int groups_cnt = 0;
+    for (int group_idx : constraint.pin_groups) {
+      group_indices.push_back(group_idx);
+      aux_indices.push_back(groups_cnt);
+      const PinGroupByIndex& group = pin_groups_[group_idx];
+      prev_cost += getGroupCost(group_idx);
+      for (int pin_idx : group.pin_indices) {
+        prev_slots_.push_back(pin_assignment_[pin_idx]);
+        pins_.push_back(pin_idx);
+        if (netlist_->getIoPin(pin_idx).isMirrored()) {
+          int mirrored_idx = netlist_->getIoPin(pin_idx).getMirrorPinIdx();
+          prev_slots_.push_back(pin_assignment_[mirrored_idx]);
+          pins_.push_back(mirrored_idx);
+          prev_cost += getPinCost(mirrored_idx);
+        }
+      }
+
+      const std::vector<int>& pin_indices = group.pin_indices;
+
+      const int min_slot = std::min(pin_assignment_[pin_indices.front()],
+                                    pin_assignment_[pin_indices.back()]);
+      const int max_slot = std::max(pin_assignment_[pin_indices.front()],
+                                    pin_assignment_[pin_indices.back()]);
+
+      GroupLimits group_limits(min_slot, max_slot);
+      group_limits_list.push_back(group_limits);
+      groups_cnt++;
+    }
+
+    std::sort(group_limits_list.begin(), group_limits_list.end());
+    utl::shuffle(aux_indices.begin(), aux_indices.end(), generator_);
+
+    int cnt = 0;
+    int new_slot = group_limits_list[cnt].first;
+    for (int idx : aux_indices) {
+      int group_idx = group_indices[idx];
+      const PinGroupByIndex& group = pin_groups_[group_idx];
+      const std::vector<int>& pin_indices = group.pin_indices;
+      for (int pin_idx : pin_indices) {
+        const IOPin& io_pin = netlist_->getIoPin(pin_idx);
+        pin_assignment_[pin_idx] = new_slot;
+        new_slots_.push_back(new_slot);
+        if (io_pin.isMirrored()) {
+          int mirrored_slot = getMirroredSlotIdx(new_slot);
+          pin_assignment_[io_pin.getMirrorPinIdx()] = mirrored_slot;
+          new_slots_.push_back(mirrored_slot);
+        }
+        new_slot++;
+      }
+      cnt++;
+      if (cnt < group_limits_list.size()) {
+        new_slot += group_limits_list[cnt].first
+                    - group_limits_list[cnt - 1].second - 1;
+      }
+    }
+  } else {
+    for (int group_idx : constraint.pin_groups) {
+      prev_cost = shiftGroup(group_idx);
+    }
+  }
+
+  return prev_cost;
 }
 
 void SimulatedAnnealing::restorePreviousAssignment()
