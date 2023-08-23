@@ -56,30 +56,10 @@
 
 namespace rsz {
 
-using std::abs;
-using std::map;
-using std::max;
-using std::min;
-using std::pair;
 using std::string;
 using std::vector;
 
 using utl::RSZ;
-
-using sta::Clock;
-using sta::Corners;
-using sta::Edge;
-using sta::fuzzyEqual;
-using sta::fuzzyGreater;
-using sta::fuzzyGreaterEqual;
-using sta::fuzzyLess;
-using sta::fuzzyLessEqual;
-using sta::INF;
-using sta::InputDrive;
-using sta::PathExpanded;
-using sta::Unit;
-using sta::VertexOutEdgeIterator;
-
 
 //============================================================================
 // Buffer insertion
@@ -142,9 +122,7 @@ int UndoResize::UndoOperation(Logger *logger,  Network *network, dbSta *sta)
 }
 //============================================================================
 // clone element
-UndoClone::UndoClone()
-{
-}
+UndoClone::UndoClone() = default;
 
 int UndoClone::UndoOperation(Logger *logger, Network *network, dbSta *sta)
 {

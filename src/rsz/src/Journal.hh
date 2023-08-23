@@ -50,21 +50,11 @@ namespace rsz {
 class Resizer;
 using std::vector;
 using utl::Logger;
-using sta::StaState;
+
 using sta::dbSta;
-using sta::dbNetwork;
-using sta::Pin;
-using sta::Net;
-using sta::PathRef;
-using sta::MinMax;
-using sta::Slack;
 using sta::PathExpanded;
 using sta::LibertyCell;
 using sta::LibertyPort;
-using sta::TimingArc;
-using sta::DcalcAnalysisPt;
-using sta::Vertex;
-using sta::Corner;
 using sta::Instance;
 using sta::Network;
 
