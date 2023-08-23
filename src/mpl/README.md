@@ -1,6 +1,7 @@
 # Macro Placement
 
-TritonMacroPlacer is a ParquetFP-based macro cell placer.
+The macro placement module in OpenROAD (`mpl`) is based on 
+TritonMacroPlacer, an open-source ParquetFP-based macro cell placer.
 The macro placer places macros/blocks honoring halos, channels
 and cell row "snapping".
 Run `global_placement` before macro placement.
@@ -17,7 +18,7 @@ heuristic evaluation function is kept.
 - Parameters without square brackets `-param2 param2` are required.
 ```
 
-### Triton Macro Placer
+### Macro Placement
 
 ```tcl
 macro_placement 
@@ -32,8 +33,8 @@ macro_placement
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-halo` | Horizontal/vertical halo around macros (microns). |
-| `-channel` | Horizontal/vertical channel width between macros (microns). |
+| `-halo` | Horizontal and vertical halo around macros (microns). |
+| `-channel` | Horizontal and vertical channel width between macros (microns). |
 | `-fence_region` | Restrict macro placements to a region (microns). Defaults to the core area. |
 | `-snap_layer_number` | Snap macro origins to this routing layer track. |
 | `-style` | Placement style, to choose either `corner_max_wl` or `corner_min_wl` (default `corner_max_wl`). |
@@ -50,10 +51,9 @@ channel/halo.
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/MacroPlacer.cpp) or the [swig file](./src/MacroPlacer.i).
 
-```tcl
-# macro placer debug. note that GUI must be present for this command, otherwise a segfault will occur.
-macro_placement_debug -partitions
-```
+| Function Name | Description |
+| ----- | ----- |
+| `macro_placement_debug` | Macro placement debugging. Note that GUI must be present for this command, otherwise a segfault will occur. | 
 
 ## Example scripts
 
