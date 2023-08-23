@@ -78,17 +78,17 @@ global_placement
 | `-routability_driven` | Enable routability-driven mode. |
 | `-skip_initial_place` | Skip the initial placement (Biconjugate gradient stabilized, or BiCGSTAB solving) before Nesterov placement. Initial placement improves HPWL by ~5% on large designs. Equivalent to `-initial_place_max_iter 0`. | 
 | `-incremental` | Enable the incremental global placement. Users would need to tune other parameters (e.g., `init_density_penalty`) with pre-placed solutions. | 
-| `-bin_grid_count` | Set bin grid's counts. Default value is defined by internal heuristic. Allowed values are  `[64,128,256,512,..., int]`. |
-| `-density` | Set target density. Default value is 0.70. Allowed values are `[0-1, float]`. |
-| `-init_density_penalty` | Set initial density penalty. Default value is 8e-5. Allowed values are `[1e-6 - 1e6, float]`. |
-| `-init_wirelength_coef` | Set initial wirelength coefficient. Default value is 0.25. Allowed values are `[unlimited, float]`. |
-| `-min_phi_coef` | Set `pcof_min` ($\mu_k$ Lower Bound). Default value is 0.95. Allowed values are `[0.95-1.05, float]`. |
+| `-bin_grid_count` | Set bin grid's counts. The internal heuristic defines the default value. Allowed values are integers `[64,128,256,512,...]`. |
+| `-density` | Set target density. The default value is `0.7` (i.e., 70%). Allowed values are floats `[0, 1]`. |
+| `-init_density_penalty` | Set initial density penalty. The default value is `8e-5`. Allowed values are floats `[1e-6, 1e6]`. |
+| `-init_wirelength_coef` | Set initial wirelength coefficient. The default value is `0.25`. Allowed values are floats. |
+| `-min_phi_coef` | Set `pcof_min` ($\mu_k$ Lower Bound). The default value is `0.95`. Allowed values are floats `[0.95, 1.05]`. |
 | `-max_phi_coef` | Set `pcof_max` ($\mu_k$ Upper Bound). Default value is 1.05. Allowed values are `[1.00-1.20, float]`. |
-| `-overflow` | Set target overflow for termination condition. Default value is 0.1. Allowed values are `[0-1, float]`. |
-| `-initial_place_max_iter` | Set maximum iterations in initial place. Default value is 20. Allowed values are `[0-MAX_INT, int]`. |
+| `-overflow` | Set target overflow for termination condition. The default value is `0.1`. Allowed values are floats `[0, 1]`. |
+| `-initial_place_max_iter` | Set maximum iterations in the initial place. The default value is 20. Allowed values are integers `[0, MAX_INT]`. |
 | `-initial_place_max_fanout` | Set net escape condition in initial place when $fanout \geq initial\_place\_max\_fanout$. The default value is 200. Allowed values are integers `[1, MAX_INT]`. |
 | `-timing_driven_net_reweight_overflow` | Set overflow threshold for timing-driven net reweighting. Allowed value is a Tcl list of integers where each number is `[0, 100]`. |
-| `-timing_driven_net_weight_max` | Set the multiplier for the most timing-critical nets. The default value is `1.9`. |
+| `-timing_driven_net_weight_max` | Set the multiplier for the most timing-critical nets. The default value is `1.9`, and the allowed values are floats. |
 | `-timing_driven_nets_percentage` | Set the reweighted percentage of nets in timing-driven mode. The default value is 10. Allowed values are floats `[0, 100]`. |
 | `-verbose_level` | Set verbose level for `gpl`. The default value is 1. Allowed values are integers `[0, 5]`. |
 | `-force_cpu` | Force to use the CPU solver even if the GPU is available. |
