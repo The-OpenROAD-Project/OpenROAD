@@ -1,6 +1,7 @@
 # Global Placement
 
-OpenROAD performs global placement using the RePlAce algorithm, from the
+The global placement module in OpenROAD (`gpl`) is based on the open-source
+RePlAce algorithm, from the
 paper "Advancing Solution Quality and Routability Validation in
 Global Placement".
 
@@ -27,7 +28,8 @@ Features:
 
 ### Global Placement
 
-`-timing_driven` does a virtual `repair_design` to find slacks and
+When using the `-timing_driven` flag, `gpl` does a virtual `repair_design` 
+to find slacks and
 weight nets with low slack. It adjusts the worst slacks (modified with 
 `-timing_driven_nets_percentage`) using a multiplier (modified with 
 `-timing_driven_net_weight_max`). The multiplier
@@ -84,13 +86,12 @@ global_placement
 | `-max_phi_coef` | Set `pcof_max` ($\mu_k$ Upper Bound). Default value is 1.05. Allowed values are `[1.00-1.20, float]`. |
 | `-overflow` | Set target overflow for termination condition. Default value is 0.1. Allowed values are `[0-1, float]`. |
 | `-initial_place_max_iter` | Set maximum iterations in initial place. Default value is 20. Allowed values are `[0-MAX_INT, int]`. |
-| `-initial_place_max_fanout` | Set net escape condition in initial place when $fanout \geq initial\_place\_max\_fanout$. Default value is 200. Allowed values are `[1-MAX_INT, int]`. |
-| `-timing_driven_net_reweight_overflow` | Set overflow threshold for timing-driven net reweighting. Allowed values are `tcl list of [0-100, int]`. |
-| `-timing_driven_net_weight_max` | Set the multiplier for the most timing critical nets. Default value is 1.9. |
-| `-timing_driven_nets_percentage` | Set the percentage of nets that are reweighted in timing-driven mode. Default value is 10. Allowed values are `[0-100, float]`. |
-| `-verbose_level` | Set verbose level for RePlAce. Default value is 1. Allowed values are `[0-5, int]`. |
-| `-force_cpu` | Force to use the CPU solver even if the GPU is available. | 
-
+| `-initial_place_max_fanout` | Set net escape condition in initial place when $fanout \geq initial\_place\_max\_fanout$. The default value is 200. Allowed values are integers `[1, MAX_INT]`. |
+| `-timing_driven_net_reweight_overflow` | Set overflow threshold for timing-driven net reweighting. Allowed value is a Tcl list of integers where each number is `[0, 100]`. |
+| `-timing_driven_net_weight_max` | Set the multiplier for the most timing-critical nets. The default value is `1.9`. |
+| `-timing_driven_nets_percentage` | Set the reweighted percentage of nets in timing-driven mode. The default value is 10. Allowed values are floats `[0, 100]`. |
+| `-verbose_level` | Set verbose level for `gpl`. The default value is 1. Allowed values are integers `[0, 5]`. |
+| `-force_cpu` | Force to use the CPU solver even if the GPU is available. |
 
 ### Useful developer functions
 
@@ -106,7 +107,7 @@ get_global_placement_uniform_density -pad_left -pad_right
 
 ## Example scripts
 
-Example scripts demonstrating how to run RePlAce on a sample design on `core01` as follows:
+Example scripts demonstrating how to run `gpl` on a sample design on `core01` as follows:
 
 ```shell
 ./test/core01.tcl
@@ -114,7 +115,7 @@ Example scripts demonstrating how to run RePlAce on a sample design on `core01` 
 
 ## Regression tests
 
-There are a set of regression tests in `/test`. For more information, refer to this [section](../../README.md#regression-tests).
+There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
 Simply run the following script:
 
