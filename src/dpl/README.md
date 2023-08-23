@@ -1,9 +1,7 @@
 # Detailed Placement
 
-In OpenROAD, detailed placement is performed using OpenDP, or 
-Open-Source Detailed Placement Engine.
-
-Features:
+The detailed placement module in OpenROAD (`dpl`) is based on OpenDP, or 
+Open-Source Detailed Placement Engine. Its key features are: 
 
 -   Fence region.
 -   Fragmented ROWs.
@@ -19,14 +17,16 @@ to legal locations after global placement.
 detailed_placement
     [-max_displacement disp|{disp_x disp_y}]
     [-disallow_one_site_gaps]
+    [-report_file_name filename]
 ```
 
 #### Options
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `-max_displacement` | How far an instance (in microns) can be moved when finding a site where it can be placed. Either set one value for both directions or set {disp_x disp_y} for individual directions. (default 0, 0, integer). |
-| `-disallow_one_site_gaps` | Disable one site gaps during placement. |
+| `-max_displacement` | Max distance that an instance can be moved (in microns) when finding a site where it can be placed. Either set one value for both directions or set `{disp_x disp_y}` for individual directions. (default `{0, 0}`, integer). |
+| `-disallow_one_site_gaps` | Disable one site gap during placement check. |
+| `-report_file_name` | File name for saving the report to (e.g. `report.json`. |
 
 ### Set Placement Padding
 
@@ -49,11 +49,19 @@ set_placement_padding
 
 #### Options
 
+```{warning}
+Either one of these flags must be set: `-global | -masters | -instances`.
+The order of preference is `global > masters > instances`
+```
+
 | Switch Name | Description | 
 | ----- | ----- |
-| `-global` or `-masters` or `-instances` | Either flag must be set. For `-global`, you will set padding globally using `left` and `right` values. For `-masters`, you will set padding only for these masters using `left` and `right` values. For `-instances`, you will set padding only for these insts using `left` and `right` values. |
-| `left` | Left padding (in site count). |
-| `right` | Right padding (in site count). |
+| `-global` | Set padding globally using `left` and `right` values. |
+| `-masters` |  Set padding only for these masters using `left` and `right` values. | 
+| `-instances` | For `-instances`, you will set padding only for these insts using `left` and `right` values. |
+| `-left` | Left padding (in site count). |
+| `-right` | Right padding (in site count). |
+| `instances` | Set padding for these list of instances. Not to be confused with the `-instances` switch above. |
 
 ### Filler Placement
 
@@ -79,6 +87,8 @@ filler_placement
 
 ### Remove Fillers
 
+This command removes all filler cells.
+
 ```tcl
 remove_fillers 
 ```
@@ -94,6 +104,7 @@ The `check_placement` command checks the placement legality. It returns
 check_placement
     [-verbose]
     [-disallow_one_site_gaps]
+    [-report_filename filename]
 ```
 
 #### Options
@@ -101,12 +112,13 @@ check_placement
 | Switch Name | Description |
 | ----- | ----- |
 | `-verbose` | Enable verbose logging. |
-| `-disallow_one_site_gaps` | Disable one site gaps during placement. |
+| `-disallow_one_site_gaps` | Disable one site gap during placement check. |
+| `-report_file_name` | File name for saving the report to (e.g. `report.json`. |
 
 ### Optimize Mirroring
 
 The `optimize_mirroring` command mirrors instances about the Y axis in
-a weak attempt to reduce total half-perimeter wirelength (HPWL).
+a weak attempt to reduce the total half-perimeter wirelength (HPWL).
 
 ```tcl
 optimize_mirroring
@@ -118,31 +130,18 @@ No arguments are needed for this function.
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/Opendp.cpp) or the [swig file](./src/Opendp.i).
 
-```tcl
-# debug detailed placement
-detailed_placement_debug 
-    -min_displacement disp
-    -instance inst
-
-# get masters from a design
-get_masters_arg
-
-# get bounding box of an instance
-get_inst_bbox inst_name
-
-# get grid bounding box of an instance
-get_inst_grid_bbox inst_name
-
-# format grid (takes in length x and site width w)
-format_grid x w
-
-# get row site name
-get_row_site
-```
+| Function Name | Description |
+| ----- | ----- |
+| `detailed_placement_debug` | Debug detailed placement. |
+| `get_masters_arg` | Get masters from a design. |
+| `get_inst_bbox` | Get bounding box of an instance. |
+| `get_inst_grid_bbox` | Get grid bounding box of an instance. |
+| `format_grid` | Format grid (takes in length `x` and site width `w` as inputs). |
+| `get_row_site` | Get row site name.
 
 ## Example scripts
 
-Examples scripts demonstrating how to run OpenDP on a sample design of `aes` as follows:
+Examples scripts demonstrating how to run `dpl` on a sample design of `aes` as follows:
 
 ```shell
 ./test/aes.tcl
@@ -150,7 +149,7 @@ Examples scripts demonstrating how to run OpenDP on a sample design of `aes` as 
 
 ## Regression tests
 
-There are a set of regression tests in `/test`. For more information, refer to this [section](../../README.md#regression-tests). 
+There are a set of regression tests in `./test`. Refer to this [section](../../README.md#regression-tests) for more information.
 
 Simply run the following script: 
 
