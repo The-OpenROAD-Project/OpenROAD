@@ -518,7 +518,7 @@ int SimulatedAnnealing::movePinToFreeSlot(bool lone_pin)
 
 int SimulatedAnnealing::moveGroupToFreeSlots(const int group_idx)
 {
-  PinGroupByIndex& group = pin_groups_[group_idx];
+  const PinGroupByIndex& group = pin_groups_[group_idx];
   int prev_cost = computeGroupPrevCost(group_idx);
   updateSlotsFromGroup(prev_slots_, false);
 
@@ -563,13 +563,8 @@ int SimulatedAnnealing::moveGroupToFreeSlots(const int group_idx)
   }
 
   if (free_slot && same_edge_slot) {
-    std::vector<int>& pin_indices = group.pin_indices;
-    if (group.order
-        && (slots_[new_slot].edge == Edge::top
-            || slots_[new_slot].edge == Edge::left)) {
-      std::reverse(pin_indices.begin(), pin_indices.end());
-    }
-    updateGroupSlots(pin_indices, new_slot);
+    netlist_->sortPinsFromGroup(group_idx, slots_[new_slot].edge);
+    updateGroupSlots(group.pin_indices, new_slot);
   } else {
     prev_slots_.clear();
     new_slots_.clear();
@@ -684,14 +679,9 @@ int SimulatedAnnealing::rearrangeConstrainedGroups(int constraint_idx)
     int new_slot = group_limits_list[cnt].first;
     for (int idx : aux_indices) {
       int group_idx = group_indices[idx];
-      PinGroupByIndex& group = pin_groups_[group_idx];
-      std::vector<int>& pin_indices = group.pin_indices;
-      if (group.order
-          && (slots_[new_slot].edge == Edge::top
-              || slots_[new_slot].edge == Edge::left)) {
-        std::reverse(pin_indices.begin(), pin_indices.end());
-      }
-      updateGroupSlots(pin_indices, new_slot);
+      const PinGroupByIndex& group = pin_groups_[group_idx];
+      netlist_->sortPinsFromGroup(group_idx, slots_[new_slot].edge);
+      updateGroupSlots(group.pin_indices, new_slot);
       cnt++;
       if (cnt < group_limits_list.size()) {
         new_slot += group_limits_list[cnt].first
@@ -719,7 +709,7 @@ int SimulatedAnnealing::moveGroup(int pin_idx)
       if (move <= group_to_free_slots_) {
         return moveGroupToFreeSlots(group_idx);
       }
-      
+
       return shiftGroup(group_idx);
     } else {
       boost::random::uniform_real_distribution<float> distribution;
@@ -727,7 +717,7 @@ int SimulatedAnnealing::moveGroup(int pin_idx)
       if (move > shift_group_ && constraint.pin_groups.size() > 1) {
         return rearrangeConstrainedGroups(io_pin.getConstraintIdx());
       }
-      
+
       return shiftGroup(group_idx);
     }
   }

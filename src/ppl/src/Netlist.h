@@ -184,7 +184,7 @@ class Netlist
                     bool order,
                     int group_idx);
   void addIOGroup(const std::vector<int>& pin_group, bool order);
-  std::vector<PinGroupByIndex>& getIOGroups() { return io_groups_; }
+  const std::vector<PinGroupByIndex>& getIOGroups() { return io_groups_; }
   void setIOGroups(const std::vector<PinGroupByIndex>& io_groups)
   {
     io_groups_ = io_groups;
@@ -199,6 +199,7 @@ class Netlist
 
   int computeIONetHPWL(int idx, const odb::Point& slot_pos);
   int computeDstIOtoPins(int idx, const odb::Point& slot_pos);
+  void sortPinsFromGroup(int group_idx, Edge edge);
   odb::Rect getBB(int idx, const odb::Point& slot_pos);
   void clear();
 
