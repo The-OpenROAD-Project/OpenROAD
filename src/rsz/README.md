@@ -37,7 +37,7 @@ set_wire_rc
 | ----- | ----- |
 | `-clock` | Enable setting of RC for clock nets. |
 | `-signal` | Enable setting of RC for signal nets. | 
-| `-layer` | If `-layer` is used, the LEF technology resistance and area/edge capacitance values for the layer are used for a default width wire on the layer. |
+| `-layer` | Use the LEF technology resistance and area/edge capacitance values for the layer. This is used for a default width wire on the layer. |
 | `-resistance` | Resistance per unit length, units are from the first Liberty file read, usually in the form of $\frac{resistanceUnit}{distanceUnit}$. Usually kΩ/µm. |
 | `-capacitance` | Capacitance per unit length, units are from the first Liberty file read, usually in the form of $\frac{capacitanceUnit}{distanceUnit}$. Usually pF/µm. |
 
@@ -61,8 +61,8 @@ set_layer_rc
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-layer` | Set **routing** layer name to modify. |
-| `-via` | Select via layer name. note that via resistance is per cut/via, not area based. |
+| `-layer` | Set layer name to modify. Note that the layer must be a routing layer. |
+| `-via` | Select via layer name. Note that via resistance is per cut/via, not area-based. |
 | `-resistance` | Resistance per unit length, same convention as `set_wire_rc`. |
 | `-capacitance` | Capacitance per unit length, same convention as `set_wire_rc`. |
 | `-corner` | Process corner to use. |
@@ -353,7 +353,7 @@ report_wns
 
 ## Regression tests
 
-There are a set of regression tests in `/test`. For more information, refer to this [section](../../README.md#regression-tests). 
+There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests). 
 
 Simply run the following script: 
 
