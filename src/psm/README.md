@@ -51,7 +51,7 @@ analyze_power_grid
 | `-outfile` | Write per-instance voltage into the file. |
 | `-em_outfile` | Write the per-segment current values into a file. This option is only available if used in combination with `-enable_em`. |
 | `-voltage` | Sets the voltage on a specific net. If this option is not set, the Liberty file's voltage value is obtained from operating conditions. |
-| `-node_density` | This value can be specfied by the user in microns to determine the node density on the standard cell rails. Cannot be used together with `node_density_factor`. |
+| `-node_density` | Node density (in microns) on the standard cell rails. It cannot be used together with `-node_density_factor`. |
 | `-node_density_factor` | Factor which is multiplied by standard cell height to determine the node density on the std cell rails. It cannot be used together with `-node_density`. The default value is `5`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-corner` | Corner to use for analysis. | 
 
