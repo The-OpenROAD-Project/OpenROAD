@@ -133,7 +133,7 @@ class SimulatedAnnealing
   Netlist* netlist_;
   Core* core_;
   std::vector<Slot>& slots_;
-  std::vector<PinGroupByIndex>& pin_groups_;
+  const std::vector<PinGroupByIndex>& pin_groups_;
   const std::vector<Constraint>& constraints_;
   int num_slots_;
   int num_pins_;
