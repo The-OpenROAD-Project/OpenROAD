@@ -109,9 +109,9 @@ adjust_rc
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-res_factor` | Specifies the scale factor for resistance. |
-| `-cc_factor` | Specifies the scale factor for coupling capacitance. |
-| `-gndc_factor` | Specifies the scale factor for ground capacitance. |
+| `-res_factor` | Scale factor for resistance. |
+| `-cc_factor` | Scale factor for coupling capacitance. |
+| `-gndc_factor` | Scale factor for ground capacitance. |
 
 ### Comparing SPEF files
 
@@ -168,15 +168,15 @@ bench_wires
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-met_cnt` | Specifies the number of layers used in each pattern. The default value is `-1` meaning not set, and the allowed values are integers `[0, MAX_INT]`. |
-| `-cnt` | Specifies the number of wires in each pattern. The default value is `5`, and the default values are integers `[0, MAX_INT]`. |
-| `-len` | Specify the wire length in microns in the pattern. The default value is `100`, and the allowed values are integers `[0, MAX_INT]`. | 
-| `-all` | Specify all different pattern geometries (`over`, `under`, `over_under`, and `diagonal`). |
+| `-met_cnt` | Number of layers used in each pattern. The default value is `-1`, meaning it is not set, and the allowed values are integers `[0, MAX_INT]`. |
+| `-cnt` | Number of wires in each pattern. The default value is `5`, and the default values are integers `[0, MAX_INT]`. |
+| `-len` | Wirelength in microns in the pattern. The default value is `100`, and the allowed values are integers `[0, MAX_INT]`. | 
+| `-all` | Consider all different pattern geometries (`over`, `under`, `over_under`, and `diagonal`). |
 | `-db_only` | Run with db values only. All parameters in `bench_wires` are ignored. |
-| `-under_met` | Under metal layer. |
-| `-w_list` | Specifies the lists of wire width multipliers from the minimum spacing defined in the LEF. |
-| `-s_list` | Specifies the lists of wire spacing multipliers from the minimum spacing defined in the LEF. The list will be the input index on the OpenRCX RC table (Extraction Rules file). |
-| `-over_dist`, `-under_dist` | Over and under metal distance respectively. |
+| `-under_met` | Consider under metal layer. |
+| `-w_list` | Lists of wire width multipliers from the minimum spacing defined in the LEF. |
+| `-s_list` | Lists of wire spacing multipliers from the minimum spacing defined in the LEF. The list will be the input index on the OpenRCX RC table (Extraction Rules file). |
+| `-over_dist`, `-under_dist` | Consider over and under metal distance respectively. |
 
 ### Generate verilog netlist
 
@@ -198,7 +198,7 @@ bench_verilog
 
 | Switch Name | Description |
 | ----- | ----- |
-| `filename` | Name for the Verilog output file `.v`. |
+| `filename` | Name for the Verilog output file (e.g., `output.v`). |
 
 ### Read SPEF
 
