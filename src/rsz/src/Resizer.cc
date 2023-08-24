@@ -2743,6 +2743,15 @@ int Resizer::undoGateCloning(Instance *original_inst, Instance *cloned_inst)
   sta_->deleteInstance(cloned_inst);
   sta_->graphDelayCalc()->delaysInvalid();
   return 1;
+
+Instance *
+Resizer::journalCloneInstance(LibertyCell *cell, const char *name,  Instance *original_inst,
+                              Instance *parent,  const Point& loc)
+{
+  Instance *clone_inst = makeInstance(cell, name, parent, loc);
+  cloned_gates_.push(std::tuple(original_inst, clone_inst));
+  cloned_inst_set_.insert(clone_inst);
+  return clone_inst;
 }
 
 void
