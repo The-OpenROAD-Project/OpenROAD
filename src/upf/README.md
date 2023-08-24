@@ -75,7 +75,7 @@ create_power_switch
 | `-output_supply_port` | Output supply port of the switch. |
 | `-input_supply_port` | Input supply port of the switch. |
 | `-control_port` | Control port on the switch. |
-| `-on_state` | One of {`state_name` `input_supply_port` {`boolean_expression`}}. |
+| `-on_state` | One of {`state_name`, `input_supply_port`, `boolean_expression`}. |
 | `name` | Power switch name. |
 
 ### Create or Update Isolation Strategy
@@ -98,11 +98,11 @@ set_isolation
 | ----- | ----- |
 | `-domain` | Power domain |
 | `-applies_to` | Restricts the strategy to apply one of these (`inputs`, `outputs`, `both`). |
-| `clamp_value` | Value the isolation can drive (`0`, `1`). |
-| `isolation_signal` | The control signal for this strategy. |
-| `isolation_sense` | The active level of isolation control signal. |
-| `location` | Domain in which isolation cells are placed (`parent`, `self`, `fanout`). |
-| `update` | Flag if use existing strategy, will error if strategy doesn't exist. |
+| `-clamp_value` | Value the isolation can drive (`0`, `1`). |
+| `-isolation_signal` | The control signal for this strategy. |
+| `-isolation_sense` | The active level of isolation control signal. |
+| `-location` | Domain in which isolation cells are placed (`parent`, `self`, `fanout`). |
+| `-update` | Only available if using existing strategy, will error if the strategy doesn't exist. |
 | `name` | Isolation strategy name. |
 
 ### Set Interface cell
@@ -126,7 +126,8 @@ use_interface_cell
 
 ```tcl
 set_domain_area
-    {domain_name -area {llx lly urx ury}}
+    domain_name
+    -area {llx lly urx ury}
 ```
 
 #### Options
@@ -134,7 +135,7 @@ set_domain_area
 | Switch Name | Description | 
 | ----- | ----- |
 | `domain_name` | Power domain name. |
-| `llx, lly, urx, ury` | The lower left and upper right x-/y- coordinates respectively of the power domain area (microns). |
+| `-area` | x-/y- coordinates in microns for the lower left and upper right corners of the power domain area. |
 
 ## Example scripts
 

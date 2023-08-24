@@ -44,7 +44,7 @@ entries:
     title: PDN Analysis
     entries: 
     - file: main/src/upf/README
-      title: Read UPF utility
+      title: Read UPF Utility
   - file: main/src/psm/README
     title: IR Drop Analysis
     entries:
