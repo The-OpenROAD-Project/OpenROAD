@@ -123,6 +123,7 @@ typedef std::tuple<Instance *, Instance *>  InstanceTuple;
 
 class AbstractSteinerRenderer;
 class SteinerTree;
+class Journal;
 typedef int SteinerPt;
 
 class BufferedNet;
@@ -410,8 +411,7 @@ protected:
   float portCapacitance(LibertyPort *input,
                         const Corner *corner) const;
   float pinCapacitance(const Pin *pin, const DcalcAnalysisPt *dcalc_ap) const;
-  void swapPins(Instance *inst, LibertyPort *port1,
-                LibertyPort *port2, bool journal);
+
   void findSwapPinCandidate(LibertyPort *input_port, LibertyPort *drvr_port,
                             float load_cap, const DcalcAnalysisPt *dcalc_ap,
                             // Return value
@@ -510,13 +510,15 @@ protected:
                                 SteinerTree *tree,
                                 SteinerPt pt,
                                 const ParasiticAnalysisPt *parasitics_ap);
-
-  bool replaceCell(Instance *inst,
-                   LibertyCell *cell,
-                   bool journal);
-
   void findResizeSlacks1();
+  
+public:
   void removeBuffer(Instance *buffer);
+  void swapPins(Instance *inst, LibertyPort *port1,
+                LibertyPort *port2, bool journal);
+  bool replaceCell(Instance *inst, LibertyCell *cell, bool journal);
+
+protected:
   Instance *makeInstance(LibertyCell *cell,
                          const char *name,
                          Instance *parent,
@@ -645,6 +647,9 @@ protected:
   NetSeq worst_slack_nets_;
 
   // Journal to roll back changes (OpenDB not up to the task).
+  bool new_journal_; // boolean to switch between old and new journal code
+  Journal *journal_;
+  // Variables for the older journal code (to be removed later)
   Map<Instance*, LibertyCell*> resized_inst_map_;
   InstanceSeq inserted_buffers_;
   InstanceSet inserted_buffer_set_;
@@ -661,6 +666,7 @@ protected:
 
   friend class BufferedNet;
   friend class GateCloner;
+  friend class Journal;
   friend class PreChecks;
   friend class RecoverPower;
   friend class RepairDesign;
