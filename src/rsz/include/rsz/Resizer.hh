@@ -566,7 +566,7 @@ protected:
   void journalInstReplaceCellBefore(Instance *inst);
   void journalMakeBuffer(Instance *buffer);
   Instance *journalCloneInstance(LibertyCell *cell, const char *name,  Instance *original_inst,
-                                 Instance *parent,  Point loc);
+                                 Instance *parent,  const Point& loc);
   ////////////////////////////////////////////////////////////////
   // API for logic resynthesis
   VertexSet findFaninFanouts(VertexSet &ends);
