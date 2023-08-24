@@ -156,6 +156,7 @@ class SimulatedAnnealing
   const int move_fail_ = -1;
   const float shift_group_ = 0.8;
   const float group_to_free_slots_ = 0.7;
+  const float pins_per_slot_limit_ = 0.5;
 
   Logger* logger_ = nullptr;
   odb::dbDatabase* db_;
