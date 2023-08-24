@@ -2734,6 +2734,16 @@ Resizer::journalMakeBuffer(Instance *buffer)
   }
 }
 
+Instance *
+Resizer::journalCloneInstance(LibertyCell *cell, const char *name,  Instance *original_inst,
+                              Instance *parent,  const Point& loc)
+{
+  Instance *clone_inst = makeInstance(cell, name, parent, loc);
+  cloned_gates_.push(std::tuple(original_inst, clone_inst));
+  cloned_inst_set_.insert(clone_inst);
+  return clone_inst;
+}
+
 void
 Resizer::journalUndoGateCloning(int &cloned_gate_count)
 {
