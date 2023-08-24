@@ -46,6 +46,9 @@ entries:
     title: Tapcell Insertion
   - file: main/src/pdn/README
     title: PDN Analysis
+    entries: 
+    - file: main/src/upf/README
+      title: Read UPF Utility
   - file: main/src/psm/README
     title: IR Drop Analysis
     entries:
