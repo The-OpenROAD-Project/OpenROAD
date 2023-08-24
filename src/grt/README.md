@@ -31,9 +31,9 @@ global_route
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `-guide_file` | Set the output guides file name (e.g., `-guide_file route.guide`). |
+| `-guide_file` | Set the output guides file name (e.g., `route.guide`). |
 | `-congestion_iterations` | Set the number of iterations made to remove the overflow of the routing. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
-| `-congestion_report_file` | Set the file name to save congestion report. The file generated can be read by DRC viewer in the gui (e.g., `-congestion_report_file report_file.rpt`). |
+| `-congestion_report_file` | Set the file name to save the congestion report. The file generated can be read by the DRC viewer in the GUI (e.g., `report_file.rpt`). |
 | `-congestion_report_iter_step` | Set the number of iterations to report. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-grid_origin` | Set the (x, y) origin of the routing grid in DBU. For example, `-grid_origin {1 1}` corresponds to the die (0, 0) + 1 DBU in each x--, y- direction. |
 | `-critical_nets_percentage` | Set the percentage of nets with the worst slack value that are considered timing critical, having preference over other nets during congestion iterations (e.g. `-critical_nets_percentage 30`). The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
