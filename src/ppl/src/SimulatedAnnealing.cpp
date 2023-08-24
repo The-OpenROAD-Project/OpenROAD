@@ -718,17 +718,17 @@ int SimulatedAnnealing::moveGroup(int pin_idx)
       const float move = distribution(generator_);
       if (move <= group_to_free_slots_) {
         return moveGroupToFreeSlots(group_idx);
-      } else {
-        return shiftGroup(group_idx);
       }
+      
+      return shiftGroup(group_idx);
     } else {
       boost::random::uniform_real_distribution<float> distribution;
       const float move = distribution(generator_);
       if (move > shift_group_ && constraint.pin_groups.size() > 1) {
         return rearrangeConstrainedGroups(io_pin.getConstraintIdx());
-      } else {
-        return shiftGroup(group_idx);
       }
+      
+      return shiftGroup(group_idx);
     }
   }
 
