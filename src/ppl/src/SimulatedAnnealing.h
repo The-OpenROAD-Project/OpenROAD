@@ -111,7 +111,7 @@ class SimulatedAnnealing
   int shiftGroup(int group_idx);
   void shiftGroupToPosition(const std::vector<int>& pin_indices,
                             int free_slots_count,
-                            const int min_slot,
+                            int min_slot,
                             bool move_to_max);
   int rearrangeConstrainedGroups(int constraint_idx);
   int moveGroup(int pin_idx);
