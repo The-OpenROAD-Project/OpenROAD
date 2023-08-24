@@ -593,7 +593,7 @@ int SimulatedAnnealing::shiftGroup(int group_idx)
 
   int min_count = 0;
   int slot = min_slot - 1;
-  while (free_slot && same_edge_slot) {
+  while (free_slot && same_edge_slot && slot >= 0) {
     free_slot = slots_[slot].isAvailable();
     same_edge_slot = slots_[slot].edge == edge;
     if (!free_slot || !same_edge_slot) {
@@ -609,7 +609,7 @@ int SimulatedAnnealing::shiftGroup(int group_idx)
 
   int max_count = 0;
   slot = max_slot + 1;
-  while (free_slot && same_edge_slot) {
+  while (free_slot && same_edge_slot && slot < slots_.size()) {
     free_slot = slots_[slot].isAvailable();
     same_edge_slot = slots_[slot].edge == edge;
     if (!free_slot || !same_edge_slot) {
