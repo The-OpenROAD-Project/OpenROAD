@@ -713,7 +713,7 @@ int SimulatedAnnealing::moveGroup(int pin_idx)
   int group_idx = io_pin.getGroupIdx();
   if (io_pin.getConstraintIdx() != -1) {
     const Constraint& constraint = constraints_[io_pin.getConstraintIdx()];
-    if (constraint.pins_per_slots <= 0.6) {
+    if (constraint.pins_per_slots <= pins_per_slot_limit_) {
       boost::random::uniform_real_distribution<float> distribution;
       const float move = distribution(generator_);
       if (move <= group_to_free_slots_) {
