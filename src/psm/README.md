@@ -1,6 +1,6 @@
 # IR Drop Analysis
 
-The IR Drop Analysis module in OpenROAD (`pdn`) is based on PDNSim, 
+The IR Drop Analysis module in OpenROAD (`psm`) is based on PDNSim, 
 an open-source static IR analyzer.
 
 Features:
@@ -47,12 +47,12 @@ analyze_power_grid
 | `-vsrc` | File to set the location of the power C4 bumps/IO pins. [Vsrc_aes.loc file](test/Vsrc_aes_vdd.loc) for an example with a description specified [here](doc/Vsrc_description.md). |
 | `-dx`,`-dy` | These arguments set the bump pitch to decide the voltage source location in the absence of a vsrc file. Default bump pitch of 140um used in absence of these arguments and vsrc. |
 | `-net` | Name of the net to analyze, power or ground net name. |
-| `-enable_em` | Flag to report current per power grid segment. |
-| `-outfile` | Filename specified per-instance voltage written into file. |
-| `-em_outfile` | Filename to write out the per segment current values into a file, can be specified only if `enable_em` flag is set. |
-| `-voltage` | Sets the voltage on a specific net. If this command is not run, the voltage value is obtained from operating conditions in the Liberty file. |
+| `-enable_em` | Report current per power grid segment. |
+| `-outfile` | Write per-instance voltage into the file. |
+| `-em_outfile` | Write the per-segment current values into a file. This option is only available if used in combination with `-enable_em`. |
+| `-voltage` | Sets the voltage on a specific net. If this option is not set, the Liberty file's voltage value is obtained from operating conditions. |
 | `-node_density` | This value can be specfied by the user in microns to determine the node density on the standard cell rails. Cannot be used together with `node_density_factor`. |
-| `-node_density_factor` | Factor which is multiplied by standard cell height to determine the node density on the std. cell rails. Cannot be used together with `node_density` The default value is `5`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-node_density_factor` | Factor which is multiplied by standard cell height to determine the node density on the std cell rails. It cannot be used together with `-node_density`. The default value is `5`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-corner` | Corner to use for analysis. | 
 
 ### Check Power Grid
@@ -65,7 +65,7 @@ check_power_grid -net net_name
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-net` | Name of the net to analyze, power or ground net name. |
+| `-net` | Name of the net to analyze. Must be a power or ground net name. |
 
 ### Write Spice Power Grid
 
@@ -83,10 +83,10 @@ write_pg_spice
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-vsrc` | File to set the location of the power C4 bumps/IO pins. [Vsrc_aes.loc file](test/Vsrc_aes_vdd.loc) for an example with a description specified [here](doc/Vsrc_description.md). |
-| `-dx`,`-dy` | These arguments set the bump pitch to decide the voltage source location in the absence of a vsrc file. Default bump pitch of 140um used in absence of these arguments and vsrc. |
-| `-net` | Name of the net to analyze, power or ground net name. |
-| `-outfile` | Filename specified per-instance voltage written into file. |
+| `-vsrc` | File to set the location of the power C4 bumps/IO pins. See [Vsrc_aes.loc file](test/Vsrc_aes_vdd.loc) for an example and its [description](doc/Vsrc_description.md). |
+| `-dx`,`-dy` | Set the bump pitch to decide the voltage source location in the absence of a `vsrc` file. The default bump pitch is 140um if neither these arguments nor a `vsrc` file are given. |
+| `-net` | Name of the net to analyze. Must be a power or ground net name. |
+| `-outfile` | Write per-instance voltage written into the file. |
 | `-corner` | Corner to use for analysis. | 
 
 ### Set PDNSim Net voltage
@@ -101,8 +101,8 @@ set_pdnsim_net_voltage
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-net` | Name of the net to analyze, power or ground net name. |
-| `-voltage` | Sets the voltage on a specific net. If this command is not run, the voltage value is obtained from operating conditions in the Liberty file. |
+| `-net` | Name of the net to analyze. It must be a power or ground net name. |
+| `-voltage` | Sets the voltage on a specific net. If this option is not given, the Liberty file's voltage value is obtained from operating conditions. |
 
 ### Useful developer functions
 
@@ -124,7 +124,7 @@ Example scripts demonstrating how to run PDNSim on a sample design on `aes` as f
 
 ## Regression tests
 
-There are a set of regression tests in `/test`. For more information, refer to this [section](../../README.md#regression-tests).
+There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
 Simply run the following script:
 
