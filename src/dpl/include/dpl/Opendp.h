@@ -283,7 +283,7 @@ class Opendp
   bool isMultiRow(const Cell* cell) const;
   void updateDbInstLocations();
   Grid_map_key getGridMapKey(const Cell* cell) const;
-  Grid_map_key getGridMapKey(dbSite* site);
+  Grid_map_key getGridMapKey(const dbSite* site) const;
 
   void makeMaster(Master* master, dbMaster* db_master);
 
@@ -499,6 +499,7 @@ class Opendp
   map<const dbMaster*, Master> db_master_map_;
   map<Grid_map_key, GridInfo> grid_info_map_;
   std::vector<GridInfo*> grid_info_vector_;
+  std::map<string, dbSite*> hybrid_sites_mapper;
   map<dbInst*, Cell*> db_inst_map_;
 
   Rect core_;

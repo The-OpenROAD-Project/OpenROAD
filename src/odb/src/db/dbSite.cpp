@@ -148,7 +148,7 @@ _dbSite::~_dbSite()
 //
 ////////////////////////////////////////////////////////////////////
 
-std::string dbSite::getName()
+std::string dbSite::getName() const
 {
   _dbSite* site = (_dbSite*) this;
   return site->_name;
@@ -172,7 +172,7 @@ void dbSite::setWidth(uint w)
   site->_width = w;
 }
 
-uint dbSite::getHeight()
+uint dbSite::getHeight() const
 {
   _dbSite* site = (_dbSite*) this;
   return site->_height;
@@ -260,13 +260,13 @@ void dbSite::setRowPattern(
   }
 }
 
-bool dbSite::hasRowPattern()
+bool dbSite::hasRowPattern() const
 {
   _dbSite* site = (_dbSite*) this;
   return !site->_row_patterns.empty();
 }
 
-bool dbSite::isHybrid()
+bool dbSite::isHybrid() const
 {
   _dbSite* site = (_dbSite*) this;
   return site->_flags._is_hybrid != 0;

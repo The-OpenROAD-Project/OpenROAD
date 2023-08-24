@@ -5263,7 +5263,7 @@ class dbSite : public dbObject
   ///
   /// Get the site name.
   ///
-  std::string getName();
+  std::string getName() const;
 
   ///
   /// Get the site name.
@@ -5283,7 +5283,7 @@ class dbSite : public dbObject
   ///
   /// Get the height of this site
   ///
-  uint getHeight();
+  uint getHeight() const;
 
   ///
   /// Set the height of this site
@@ -5339,12 +5339,12 @@ class dbSite : public dbObject
   ///
   /// Returns true if the row pattern is not empty
   ///
-  bool hasRowPattern();
+  bool hasRowPattern() const;
 
   ///
   /// Returns true if this cell is a hybrid cell
   ///
-  bool isHybrid();
+  bool isHybrid() const;
 
   ///
   /// returns the row pattern if available
@@ -5379,7 +5379,7 @@ class dbMaster : public dbObject
   ///
   /// Get the master cell name.
   ///
-  std::string getName();
+  std::string getName() const;
 
   ///
   /// Get the master cell name.

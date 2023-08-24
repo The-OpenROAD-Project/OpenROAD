@@ -156,4 +156,65 @@ library(fake_macros) {
     }
     }
 
+    cell(MOCK_SINGLE) {
+        area : 1000;
+        interface_timing : true;
+        is_macro : true;
+
+    pin (I1) {
+        direction : input;
+    }
+    pin (I2) {
+        direction : input;
+    }
+    pin (I3) {
+        direction : input;
+    }
+    pin (I4) {
+        direction : input;
+    }
+    pin (O1) {
+        direction : output;
+    }
+    pin (O2) {
+        direction : output;
+    }
+    pin (O3) {
+        direction : output;
+    }
+    pin (O4) {
+        direction : output;
+    }
+    }
+
+    cell(MOCK_DOUBLE) {
+        area : 2000;
+        interface_timing : true;
+        is_macro : true;
+
+    pin (I1) {
+        direction : input;
+    }
+    pin (I2) {
+        direction : input;
+    }
+    pin (I3) {
+        direction : input;
+    }
+    pin (I4) {
+        direction : input;
+    }
+    pin (O1) {
+        direction : output;
+    }
+    pin (O2) {
+        direction : output;
+    }
+    pin (O3) {
+        direction : output;
+    }
+    pin (O4) {
+        direction : output;
+    }
+    }
 }

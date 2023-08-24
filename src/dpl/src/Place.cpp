@@ -580,6 +580,7 @@ bool Opendp::mapMove(Cell* cell)
 
 bool Opendp::mapMove(Cell* cell, const Point& grid_pt)
 {
+  logger_->info(DPL, 1232121, "Placing {} at ({}, {})", cell->name());
   int grid_x = grid_pt.getX();
   int grid_y = grid_pt.getY();
   debugPrint(logger_,
@@ -604,6 +605,12 @@ bool Opendp::mapMove(Cell* cell, const Point& grid_pt)
              pixel_pt.pt.getX(),
              pixel_pt.pt.getY());
   if (pixel_pt.pixel) {
+    logger_->info(DPL,
+                  13212121,
+                  "Placing {} at ({}, {})",
+                  cell->name(),
+                  pixel_pt.pt.getX(),
+                  pixel_pt.pt.getY());
     paintPixel(cell, pixel_pt.pt.getX(), pixel_pt.pt.getY());
     if (debug_observer_) {
       debug_observer_->placeInstance(cell->db_inst_);

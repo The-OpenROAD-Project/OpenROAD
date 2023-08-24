@@ -60,7 +60,7 @@ void Opendp::initGridLayersMap()
   int grid_index = 0;
   grid_info_map_.clear();
   grid_info_vector_.clear();
-  std::map<string, dbSite*> hybrid_sites_mapper;
+  hybrid_sites_mapper.clear();
   for (auto db_row : block_->getRows()) {
     if (db_row->getSite()->hasRowPattern()) {
       auto row_pattern = db_row->getSite()->getRowPattern();
@@ -72,22 +72,24 @@ void Opendp::initGridLayersMap()
   // print hybrid sites mapper
   for (auto [site_name, site] : hybrid_sites_mapper) {
     logger_->warn(DPL,
-                  13331,
+                  1331,
                   "hybrid site name {} mapped to {}",
                   site_name,
                   site->getName());
   }
 
   auto calculate_row_counts = [&](dbSite* parent_hybrid_site) {
-    logger_->warn(
-        DPL, 16331, "Hybrid site is null?", parent_hybrid_site == nullptr);
     logger_->warn(DPL,
-                  13331,
+                  16331,
+                  "Hybrid site is null?",
+                  parent_hybrid_site == nullptr ? "true" : "false");
+    logger_->warn(DPL,
+                  13931,
                   "calculate fine? site name {}",
                   parent_hybrid_site->getName());
 
     auto row_pattern = parent_hybrid_site->getRowPattern();
-    logger_->warn(DPL, 13331, "Row pattern size {}", row_pattern.size());
+    logger_->warn(DPL, 13351, "Row pattern size {}", row_pattern.size());
 
     int rows_count = getRowCount(parent_hybrid_site->getHeight());
     int remaining_core_height
@@ -113,7 +115,6 @@ void Opendp::initGridLayersMap()
     if (db_row->getSite()->getClass() == odb::dbSiteClass::PAD) {
       continue;
     }
-    logger_->warn(DPL, 23331, "row {} iteration", db_row->getName());
     // we check if the row is hybrid or not. if yes, we want the smaller
     // components of the bigger hybrid cells to map to the same grid index.
     // i.e. if A and B are hybrid sites, we want both of them to map to the same
@@ -121,19 +122,15 @@ void Opendp::initGridLayersMap()
     // considered hybrid, but it has a row pattern, and we want it to go to a
     // separate grid layer.
     dbSite* working_site = db_row->getSite();
-    Grid_map_key gmk;
     int row_height = working_site->getHeight();
-    if (working_site->isHybrid() && !working_site->hasRowPattern()) {
-      working_site = hybrid_sites_mapper[db_row->getSite()->getName()];
-      gmk = Grid_map_key{row_height, true};
-    } else {
-      gmk = Grid_map_key{row_height, false};
-    }
-
+    Grid_map_key gmk = getGridMapKey(working_site);
     if (grid_info_map_.find(gmk) == grid_info_map_.end()) {
+      logger_->warn(DPL, 13331, "Cell {}", db_row->getSite()->getName());
+      logger_->warn(
+          DPL, 13341, "GMK: {} {}", gmk.cell_height, gmk.is_hybrid_parent);
       grid_info_map_.emplace(
           gmk,
-          GridInfo{!gmk.is_hybrid_parent
+          GridInfo{gmk.is_hybrid_parent
                        ? getRowCount(row_height)
                        : calculate_row_counts(
                            hybrid_sites_mapper[db_row->getSite()->getName()]),
@@ -146,7 +143,7 @@ void Opendp::initGridLayersMap()
     }
   }
   grid_info_vector_.resize(grid_info_map_.size());
-  for (auto& [row_height, grid_info] : grid_info_map_) {
+  for (auto& [_, grid_info] : grid_info_map_) {
     grid_info_vector_[grid_info.grid_index] = &grid_info;
   }
   debugPrint(logger_, DPL, "grid", 1, "grid layers map initialized");
@@ -166,7 +163,16 @@ void Opendp::initGrid()
   if (grid_.empty()) {
     grid_.resize(grid_info_map_.size());
 
-    for (auto& [row_height, grid_info] : grid_info_map_) {
+    for (auto& [gmk, grid_info] : grid_info_map_) {
+      logger_->warn(DPL,
+                    13631,
+                    "Grid Map key {} {} and grid Info index: {} row count: {} "
+                    "site count: {}",
+                    gmk.is_hybrid_parent,
+                    gmk.cell_height,
+                    grid_info.grid_index,
+                    grid_info.row_count,
+                    grid_info.site_count);
       int layer_row_count = grid_info.row_count;
       int index = grid_info.grid_index;
       grid_[index].resize(layer_row_count);
@@ -703,16 +709,6 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
   int row_height = gmk.cell_height;
   setGridPaddedLoc(cell, grid_x, grid_y, site_width, row_height);
   cell->is_placed_ = true;
-  debugPrint(logger_,
-             DPL,
-             "place",
-             1,
-             "Painting cell {} at [x{} y{}] [x{} y{}].",
-             cell->name(),
-             grid_x,
-             grid_y,
-             x_end,
-             y_end);
   for (int x = grid_x; x < x_end; x++) {
     for (int y = grid_y; y < y_end; y++) {
       Pixel* pixel = gridPixel(index_in_grid, x, y);
@@ -791,15 +787,6 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
           // filled by a single-height or shorter cell, which is allowed.
           // However, if they do match, it means that we are trying to overwrite
           // a double-height cell placement, which is an error.
-
-          debugPrint(logger_,
-                     DPL,
-                     "detailed",
-                     1,
-                     "Found cell {} at [x{} y{}].",
-                     pixel->cell->name(),
-                     x,
-                     y);
           pair<int, GridInfo> grid_info_candidate = getRowInfo(pixel->cell);
           if (grid_info_candidate.first == layer.first.cell_height) {
             // Occupied by a multi-height cell this should not happen.
