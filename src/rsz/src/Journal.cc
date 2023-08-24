@@ -36,16 +36,15 @@
 #include "Journal.hh"
 
 #include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
-#include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/InputDrive.hh"
 #include "sta/Liberty.hh"
 #include "sta/Parasitics.hh"
-#include "sta/PathExpanded.hh"
 #include "sta/PathRef.hh"
 #include "sta/PathVertex.hh"
 #include "sta/PortDirection.hh"
@@ -59,6 +58,7 @@ namespace rsz {
 using std::string;
 using std::vector;
 
+using sta::Instance;
 using utl::RSZ;
 
 //============================================================================
@@ -69,10 +69,10 @@ UndoBuffer::UndoBuffer(Instance* inst)
   buffer_inst_ = inst;
 }
 
-int UndoBuffer::UndoOperation(Logger *logger, Network *network, dbSta *sta)
+int UndoBuffer::UndoOperation(Resizer *resizer)
 {
-  // Resize the instance back to the original cell
-  buffer_inst_->setMaster(original_cell_);
+  // Remove the inserted buffer
+  resizer->removeBuffer(const_cast<Instance*>(buffer_inst_));
   return 0;
 }
 //============================================================================
@@ -84,10 +84,10 @@ UndoPinSwap::UndoPinSwap(Instance* inst, LibertyPort* swap_port1, LibertyPort* s
   swap_port2_ = swap_port2;
 }
 
-int UndoPinSwap::UndoOperation(Logger *logger, Network *network, dbSta *sta)
+int UndoPinSwap::UndoOperation(Resizer *resizer)
 {
-  // Swap the pins back
-  swap_inst_->swapPins(swap_port1_, swap_port2_);
+  // Swap the pins back and do not journal (since it is the undo operation)
+  resizer->swapPins(swap_inst_, swap_port1_, swap_port2_, false);
   return 0;
 }
 //============================================================================
@@ -101,10 +101,13 @@ UndoBufferToInverter::UndoBufferToInverter(Instance* inv_buffer1, Instance* inv_
   inv_inverter2_ = inv_inverter2;
 }
 
-int UndoBufferToInverter::UndoOperation(utl::Logger* logger, sta::Network* network, sta::dbSta* sta)
+int UndoBufferToInverter::UndoOperation(Resizer *resizer)
 {
-  logger->Error(RSZ, 1, "journal", "journal unbuffer_to_inverter {} {} {} {}", network->pathName(inv_buffer1_),
+  // TODO
+  /*
+  resizer->logger_->Error(RSZ, 1, "journal", "journal unbuffer_to_inverter {} {} {} {}", network->pathName(inv_buffer1_),
                 network->pathName(inv_buffer2_), network->pathName(inv_inverter1_), network->pathName(inv_inverter2_));
+                */
  return 0;
 }
 //============================================================================
@@ -116,22 +119,24 @@ UndoResize::UndoResize(Instance* inst, LibertyCell* cell)
   original_cell_ = cell;
 }
 
-int UndoResize::UndoOperation(Logger *logger,  Network *network, dbSta *sta)
+int UndoResize::UndoOperation(Resizer *resizer)
 {
     // Resize the instance back to the original cell
-    resized_inst_->setMaster(original_cell_);
+    resizer->replaceCell(resized_inst_, original_cell_, false);
     return 0;
 }
 //============================================================================
 // clone element
 UndoClone::UndoClone() = default;
 
-int UndoClone::UndoOperation(Logger *logger, Network *network, dbSta *sta)
+int UndoClone::UndoOperation(Resizer *resizer)
 {
-    // Undo gate cloning
+    // Undo gate cloning: Needs to move to Resizer
+    /*
     Instance *original_inst = nullptr; // TODO std::get<0>(element);
     Instance *cloned_inst = nullptr; // TODO std::get<1>(element);
-    debugPrint(logger, RSZ, "journal", 1, "journal unclone {} ({}) -> {} ({})", network->pathName(original_inst),
+    auto network = resizer->network_;
+    debugPrint(resizer->logger_, RSZ, "journal", 1, "journal unclone {} ({}) -> {} ({})", network->pathName(original_inst),
                network->libertyCell(original_inst)->name(), network->pathName(cloned_inst),
                network->libertyCell(cloned_inst)->name());
 
@@ -165,6 +170,7 @@ int UndoClone::UndoOperation(Logger *logger, Network *network, dbSta *sta)
     sta->deleteInstance(cloned_inst);
     sta->graphDelayCalc()->delaysInvalid();
     // TODO --cloned_gate_count;
+     */
     return 0;
 }
 
@@ -222,7 +228,7 @@ void Journal::restore(int& resize_count, int& inserted_buffer_count,
 {
   while (!journal_stack_.empty()) {
     Undo *element = journal_stack_.top().get();
-    element->UndoOperation(logger_, network(), sta());
+    element->UndoOperation(resizer_);
     journal_stack_.pop();
   }
 }

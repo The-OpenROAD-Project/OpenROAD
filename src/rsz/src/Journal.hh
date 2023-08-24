@@ -67,7 +67,7 @@ class Undo
  public:
   // base class for undo elements
   Undo() = default;
-  virtual int UndoOperation(Logger *logger, Network *network, dbSta *sta) = 0;
+  virtual int UndoOperation(Resizer *resizer) = 0;
 };
 
 class UndoBufferToInverter: public Undo
@@ -76,7 +76,7 @@ class UndoBufferToInverter: public Undo
   // buffer to inverter element
   UndoBufferToInverter(Instance *inv_buffer1, Instance *inv_buffer2,
                  Instance *inv_inverter1, Instance *inv_inverter2);
-  int UndoOperation(Logger *logger, Network *network, dbSta *sta) override;
+  int UndoOperation(Resizer *resizer) override;
  private:
   // four instance pointers for inverter to buffer conversion
   Instance *inv_buffer1_;
@@ -90,7 +90,7 @@ class UndoBuffer : public Undo
  public:
   // swap pin element
   UndoBuffer(Instance* inst);
-  int UndoOperation(Logger *logger, Network *network, dbSta *sta) override;
+  int UndoOperation(Resizer *resizer) override;
  private:
   Instance *buffer_inst_;
 };
@@ -101,7 +101,7 @@ class UndoPinSwap : public Undo
   // swap pin element
   UndoPinSwap(Instance* inst, LibertyPort* swap_port1,
               LibertyPort* swap_port2);
-  int UndoOperation(Logger *logger,  Network *network, dbSta *sta) override;
+  int UndoOperation(Resizer *resizer) override;
  private:
   // Two pin pointers to undo pin swapping.
   Instance *swap_inst_;
@@ -114,7 +114,7 @@ class UndoResize : public Undo
   public:
   // resize element
   UndoResize(Instance *inst, LibertyCell *cell);
-  int UndoOperation(Logger *logger,  Network *network, dbSta *sta) override;
+  int UndoOperation(Resizer *resizer) override;
  private:
   // Original cell used for resize and the instance
   Instance *resized_inst_;
@@ -126,7 +126,7 @@ class UndoClone : public Undo
   public:
   // clone element
   UndoClone();
-  int UndoOperation(Logger *logger, Network *network, dbSta *sta) override;
+  int UndoOperation(Resizer *resizer) override;
  private:
 };
 
