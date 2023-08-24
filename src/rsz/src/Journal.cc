@@ -72,7 +72,7 @@ UndoBuffer::UndoBuffer(Instance* inst)
 int UndoBuffer::UndoOperation(Logger *logger, Network *network, dbSta *sta)
 {
   // Resize the instance back to the original cell
-  // resized_inst_->setMaster(original_cell_);
+  buffer_inst_->setMaster(original_cell_);
   return 0;
 }
 //============================================================================
@@ -87,7 +87,7 @@ UndoPinSwap::UndoPinSwap(Instance* inst, LibertyPort* swap_port1, LibertyPort* s
 int UndoPinSwap::UndoOperation(Logger *logger, Network *network, dbSta *sta)
 {
   // Swap the pins back
-  // swap_inst_->swapPins(swap_port1_, swap_port2_);
+  swap_inst_->swapPins(swap_port1_, swap_port2_);
   return 0;
 }
 //============================================================================
@@ -103,6 +103,8 @@ UndoBufferToInverter::UndoBufferToInverter(Instance* inv_buffer1, Instance* inv_
 
 int UndoBufferToInverter::UndoOperation(utl::Logger* logger, sta::Network* network, sta::dbSta* sta)
 {
+  logger->Error(RSZ, 1, "journal", "journal unbuffer_to_inverter {} {} {} {}", network->pathName(inv_buffer1_),
+                network->pathName(inv_buffer2_), network->pathName(inv_inverter1_), network->pathName(inv_inverter2_));
  return 0;
 }
 //============================================================================
@@ -117,7 +119,7 @@ UndoResize::UndoResize(Instance* inst, LibertyCell* cell)
 int UndoResize::UndoOperation(Logger *logger,  Network *network, dbSta *sta)
 {
     // Resize the instance back to the original cell
-    // resized_inst_->setMaster(original_cell_);
+    resized_inst_->setMaster(original_cell_);
     return 0;
 }
 //============================================================================
@@ -176,7 +178,9 @@ Journal::Journal(Resizer *resizer, Logger* logger)
 void Journal::begin()
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal begin");
-  journal_stack_ = {};
+  while (!journal_stack_.empty()) {
+    journal_stack_.pop();
+  }
 }
 
 void Journal::end()
