@@ -80,7 +80,7 @@ detailed_route
 | `-save_guide_updates` | Flag to save guides updates. |
 | `-repair_pdn_vias` | This option is used for PDKs where M1 and M2 power rails run in parallel. |
 
-### Developer arguments
+#### Developer arguments
 
 Some arguments that are helpful for developers are listed here. 
 
