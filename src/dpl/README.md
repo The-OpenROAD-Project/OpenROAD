@@ -126,11 +126,11 @@ optimize_mirroring
 
 No arguments are needed for this function. 
 
-### Useful developer functions
+### Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/Opendp.cpp) or the [swig file](./src/Opendp.i).
 
-| Function Name | Description |
+| Command Name | Description |
 | ----- | ----- |
 | `detailed_placement_debug` | Debug detailed placement. |
 | `get_masters_arg` | Get masters from a design. |
