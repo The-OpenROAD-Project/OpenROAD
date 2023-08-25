@@ -127,51 +127,16 @@ int UndoResize::UndoOperation(Resizer *resizer)
 }
 //============================================================================
 // clone element
-UndoClone::UndoClone() = default;
+UndoClone::UndoClone(Instance *original_inst, Instance *cloned_inst)
+{
+    original_inst_ = original_inst;
+    cloned_inst_ = cloned_inst;
+}
 
 int UndoClone::UndoOperation(Resizer *resizer)
 {
-    // Undo gate cloning: Needs to move to Resizer
-    /*
-    Instance *original_inst = nullptr; // TODO std::get<0>(element);
-    Instance *cloned_inst = nullptr; // TODO std::get<1>(element);
-    auto network = resizer->network_;
-    debugPrint(resizer->logger_, RSZ, "journal", 1, "journal unclone {} ({}) -> {} ({})", network->pathName(original_inst),
-               network->libertyCell(original_inst)->name(), network->pathName(cloned_inst),
-               network->libertyCell(cloned_inst)->name());
-
-    const Pin* original_output_pin = nullptr;
-    std::vector<const Pin*> clone_pins; // TODO getPins(cloned_inst);
-    std::vector<const Pin*> original_pins; // TODO getPins(original_inst);
-    for (auto& pin : original_pins) {
-      if (network->direction(pin)->isOutput()) {
-        original_output_pin = pin;
-        break;
-      }
-    }
-    Net* original_out_net = network->net(original_output_pin);
-    // Net* clone_out_net = nullptr;
-
-    for (auto& pin : clone_pins) {
-      // Disconnect all pins from the new net. Also store the output net
-      // if (network_->direction(pin)->isOutput()) {
-      //  clone_out_net = network_->net(pin);
-      //}
-      sta->disconnectPin(const_cast<Pin*>(pin));
-      // Connect them to the original nets if they are inputs
-      if (network->direction(pin)->isInput()) {
-        Instance* inst = network->instance(pin);
-        auto term_port = network->port(pin);
-        sta->connectPin(inst, term_port, original_out_net);
-      }
-    }
-    // Final cleanup
-    // sta_->deleteNet(clone_out_net);
-    sta->deleteInstance(cloned_inst);
-    sta->graphDelayCalc()->delaysInvalid();
-    // TODO --cloned_gate_count;
-     */
-    return 0;
+  resizer->undoGateCloning(original_inst_, cloned_inst_);
+  return 1;
 }
 
 //============================================================================
@@ -204,6 +169,17 @@ void Journal::swapPins(Instance* inst, LibertyPort* port1,
   std::unique_ptr<Undo> element(new UndoPinSwap(inst, port1, port2));
   journal_stack_.emplace(std::move(element));
 }
+
+
+Instance *Journal::cloneInstance(LibertyCell *cell, const char *name,  Instance *original_inst,
+                                 Instance *parent,  const Point& loc)
+ {
+   Instance *clone_inst = resizer_->makeInstance(cell, name, parent, loc);
+   std::unique_ptr<Undo> element(new UndoClone(original_inst, clone_inst));
+   journal_stack_.emplace(std::move(element));
+   return clone_inst;
+}
+
 
 void Journal::instReplaceCellBefore(Instance* inst)
 {

@@ -48,6 +48,7 @@ class PathExpanded;
 
 namespace rsz {
 class Resizer;
+using odb::Point;
 using std::vector;
 using utl::Logger;
 
@@ -125,9 +126,11 @@ class UndoClone : public Undo
 {
   public:
   // clone element
-  UndoClone();
+  UndoClone(Instance *original_inst, Instance *cloned_inst);
   int UndoOperation(Resizer *resizer) override;
  private:
+  Instance *original_inst_;
+  Instance *cloned_inst_;
 };
 
 class Journal
@@ -141,7 +144,8 @@ public:
   void swapPins(Instance *inst, LibertyPort *port1, LibertyPort *port2);
   void instReplaceCellBefore(Instance *inst);
   void makeBuffer(Instance *buffer);
-
+  Instance *cloneInstance(LibertyCell *cell, const char *name,  Instance *original_inst,
+                                  Instance *parent,  const Point& loc);
  private:
   sta::Network *network();
   dbSta *sta();
