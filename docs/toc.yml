@@ -75,7 +75,7 @@ entries:
   - file: main/src/ant/README
     title: Antenna Checker
   - file: main/src/drt/README
-    title: Detail Routing
+    title: Detailed Routing
   - file: main/src/fin/README
     title: Metal Fill
   - file: main/src/stt/src/flt/README
