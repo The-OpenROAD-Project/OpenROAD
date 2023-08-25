@@ -257,27 +257,47 @@ from [here](docs/user/Build.md).
 
 ## Regression Tests
 
-There are a set of regression tests in `test/`.
+There are a set of executable regression test scripts in `./test/`.
 
 ``` shell
-# run all tool unit tests
-test/regression
+# run tests for all tools
+./test/regression
+
 # run all flow tests
-test/regression flow
+./test/regression flow
+
 # run <tool> tests
-test/regression <tool>
-# run <tool> tool tests
-src/<tool>/test/regression
+./test/regression <tool>
+
+# run all <tool>-specific unit tests
+cd src/<tool>
+./test/regression
+
+# run only <TEST_NAME> for <tool>
+cd src/<tool>
+./test/regression <TEST_NAME>
 ```
 
 The flow tests check results such as worst slack against reference values.
 Use `report_flow_metrics [test]...` to see all of the metrics.
-Use `save_flow_metrics [test]...` to add margins to the metrics and save them to <test>.metrics_limits.
 
 ``` text
 % report_flow_metrics gcd_nangate45
                        insts    area util slack_min slack_max  tns_max clk_skew max_slew max_cap max_fanout DPL ANT drv
 gcd_nangate45            368     564  8.8     0.112    -0.015     -0.1    0.004        0       0          0   0   0   0
+```
+
+To update a failing regression, follow the instructions below:
+
+```tcl
+# update log files (i.e. *ok)
+save_ok <TEST_NAME>
+
+# update "*.metrics" for tests that use flow test
+save_flow_metrics <TEST_NAME> 
+
+# update "*.metrics_limits" files
+save_flow_metrics_limits <TEST_NAME>
 ```
 
 ## Run

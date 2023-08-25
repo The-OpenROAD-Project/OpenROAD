@@ -97,16 +97,19 @@ void defin::useBlockName(const char* name)
   _reader->useBlockName(name);
 }
 
-dbChip* defin::createChip(std::vector<dbLib*>& libs, const char* def_file)
+dbChip* defin::createChip(std::vector<dbLib*>& libs,
+                          const char* def_file,
+                          dbTech* tech)
 {
-  return _reader->createChip(libs, def_file);
+  return _reader->createChip(libs, def_file, tech);
 }
 
 dbBlock* defin::createBlock(dbBlock* parent,
                             std::vector<dbLib*>& libs,
-                            const char* def_file)
+                            const char* def_file,
+                            dbTech* tech)
 {
-  return _reader->createBlock(parent, libs, def_file);
+  return _reader->createBlock(parent, libs, def_file, tech);
 }
 
 bool defin::replaceWires(dbBlock* block, const char* def_file)

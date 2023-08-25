@@ -200,6 +200,12 @@ _dbVia::~_dbVia()
     free((void*) _pattern);
 }
 
+_dbTech* _dbVia::getTech()
+{
+  _dbBlock* block = (_dbBlock*) getOwner();
+  return block->getTech();
+}
+
 dbOStream& operator<<(dbOStream& stream, const _dbVia& v)
 {
   uint* bit_field = (uint*) &v._flags;
@@ -310,8 +316,7 @@ dbTechVia* dbVia::getTechVia()
   if ((via->_flags._is_rotated == 0) || (via->_flags._is_tech_via == 0))
     return nullptr;
 
-  _dbDatabase* db = via->getDatabase();
-  _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
+  _dbTech* tech = via->getTech();
   _dbTechVia* v = tech->_via_tbl->getPtr(via->_rotated_via_id);
   return (dbTechVia*) v;
 }
@@ -342,8 +347,7 @@ dbTechLayer* dbVia::getTopLayer()
   if (via->_top == 0)
     return nullptr;
 
-  _dbDatabase* db = via->getDatabase();
-  _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
+  _dbTech* tech = via->getTech();
   return (dbTechLayer*) tech->_layer_tbl->getPtr(via->_top);
 }
 
@@ -354,8 +358,7 @@ dbTechLayer* dbVia::getBottomLayer()
   if (via->_bottom == 0)
     return nullptr;
 
-  _dbDatabase* db = via->getDatabase();
-  _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
+  _dbTech* tech = via->getTech();
   return (dbTechLayer*) tech->_layer_tbl->getPtr(via->_bottom);
 }
 
@@ -378,10 +381,8 @@ dbTechViaGenerateRule* dbVia::getViaGenerateRule()
   if (via->_generate_rule == 0)
     return nullptr;
 
-  _dbDatabase* db = via->getDatabase();
-  _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
-  _dbTechViaGenerateRule* rule
-      = tech->_via_generate_rule_tbl->getPtr(via->_generate_rule);
+  _dbTech* tech = via->getTech();
+  auto rule = tech->_via_generate_rule_tbl->getPtr(via->_generate_rule);
   return (dbTechViaGenerateRule*) rule;
 }
 
@@ -418,9 +419,7 @@ void dbVia::getViaParams(dbViaParams& params)
     params = dbViaParams();
   else {
     params = via->_via_params;
-    _dbDatabase* db = via->getDatabase();
-    _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
-    params._tech = (dbTech*) tech;
+    params._tech = (dbTech*) via->getTech();
   }
 }
 

@@ -594,6 +594,8 @@ class Gui
 
   int select(const std::string& type,
              const std::string& name_filter = "",
+             const std::string& attribute = "",
+             const std::any& value = "",
              bool filter_case_sensitive = true,
              int highlight_group = -1);
 
@@ -614,7 +616,10 @@ class Gui
 
   // Save clock tree view
   void saveClockTreeImage(const std::string& clock_name,
-                          const std::string& filename);
+                          const std::string& filename,
+                          const std::string& corner = "",
+                          int width_px = 0,
+                          int height_px = 0);
 
   // modify display controls
   void setDisplayControlsVisible(const std::string& name, bool value);
@@ -764,6 +769,11 @@ class Gui
                           const Descriptor* descriptor);
   const Descriptor* getDescriptor(const std::type_info& type) const;
   void unregisterDescriptor(const std::type_info& type);
+
+  bool filterSelectionProperties(const Descriptor::Properties& properties,
+                                 const std::string& attribute,
+                                 const std::any& value,
+                                 bool& is_valid_attribute);
 
   // flag to indicate if tcl should take over after gui closes
   bool continue_after_close_;

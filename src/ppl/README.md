@@ -275,6 +275,23 @@ If you are a developer, you might find these useful. More details can be found i
 | `add_pins_to_top_layer` | Add pins to top layer. | 
 
 
+#### Configure Simulated Annealing Solver
+
+The `set_simulated_annealing` command defines the parameters of the Simulated Annealing
+solver.
+
+```
+set_simulated_annealing [-temperature temperature]
+                        [-max_iterations iters]
+                        [-perturb_per_iter perturbs]
+                        [-alpha alpha]
+```
+
+- The `-temperature` sets the initial temperature of the Simulated Annealing solver.
+- The `-max_iterations` sets the number of iterations performed by the Simulated Annealing solver.
+- The `-perturb_per_iter` sets the number of perturbations performed at each iteration.
+- The `-alpha` sets the reduction factor of the temperature at each iteration.
+
 ## Example scripts
 
 Example scripts of `ppl` running on a sample design of `gcd` as follows:

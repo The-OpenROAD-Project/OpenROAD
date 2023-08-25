@@ -9,7 +9,6 @@
 [INFO ODB-0133]     Created 54 nets and 88 connections.
 [INFO PPL-0070] Pin clk placed at (4um, 4um).
 Found 0 macro blocks.
-Using 1u default distance from corners.
 Using 2 tracks default min distance between IO pins.
 [INFO PPL-0007] Random pin placement.
 No differences found.

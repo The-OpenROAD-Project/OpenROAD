@@ -20,8 +20,7 @@
 [WARNING STA-0164] asap7_data/asap7.lib line 14771, timing group from output port.
 [WARNING STA-0164] asap7_data/asap7.lib line 14804, timing group from output port.
 [WARNING STA-0164] asap7_data/asap7.lib line 14837, timing group from output port.
-[WARNING PSM-0019] Voltage on net VDD is not explicitly set.
-[WARNING PSM-0022] Using voltage 0.700V for VDD network.
+[INFO PSM-0022] Using 0.700V for VDD
 [WARNING PSM-0016] Voltage pad location (VSRC) file not specified, defaulting pad location to checkerboard pattern on core area.
 [WARNING PSM-0017] X direction bump pitch is not specified, defaulting to 140um.
 [WARNING PSM-0018] Y direction bump pitch is not specified, defaulting to 140um.

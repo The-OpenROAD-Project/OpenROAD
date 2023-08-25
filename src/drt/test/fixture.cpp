@@ -87,7 +87,7 @@ void Fixture::setupTech(frTechObject* tech)
   tech->setDBUPerUU(1000);
 
   auto db = odb::dbDatabase::create();
-  db_tech = odb::dbTech::create(db);
+  db_tech = odb::dbTech::create(db, "tech");
   // TR assumes that masterslice always exists
   addLayer(tech, "masterslice", dbTechLayerType::MASTERSLICE);
   addLayer(tech, "v0", dbTechLayerType::CUT);

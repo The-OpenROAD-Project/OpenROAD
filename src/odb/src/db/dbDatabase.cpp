@@ -87,9 +87,6 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   if (_chip != rhs._chip)
     return false;
 
-  if (_tech != rhs._tech)
-    return false;
-
   if (*_tech_tbl != *rhs._tech_tbl)
     return false;
 
@@ -115,7 +112,6 @@ void _dbDatabase::differences(dbDiff& diff,
   DIFF_BEGIN
   DIFF_FIELD(_master_id);
   DIFF_FIELD(_chip);
-  DIFF_FIELD(_tech);
   DIFF_TABLE_NO_DEEP(_tech_tbl);
   DIFF_TABLE_NO_DEEP(_lib_tbl);
   DIFF_TABLE_NO_DEEP(_chip_tbl);
@@ -129,7 +125,6 @@ void _dbDatabase::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(_master_id);
   DIFF_OUT_FIELD(_chip);
-  DIFF_OUT_FIELD(_tech);
   DIFF_OUT_TABLE_NO_DEEP(_tech_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_lib_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_chip_tbl);
@@ -175,7 +170,6 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */)
   _schema_major = db_schema_major;
   _schema_minor = db_schema_minor;
   _master_id = 0;
-  _file = nullptr;
   _logger = nullptr;
   _unique_id = db_unique_id++;
 
@@ -208,7 +202,6 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   _schema_major = db_schema_major;
   _schema_minor = db_schema_minor;
   _master_id = 0;
-  _file = nullptr;
   _logger = nullptr;
   _unique_id = id;
 
@@ -237,16 +230,9 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, const _dbDatabase& d)
       _schema_minor(d._schema_minor),
       _master_id(d._master_id),
       _chip(d._chip),
-      _tech(d._tech),
       _unique_id(db_unique_id++),
-      _file(nullptr),
       _logger(nullptr)
 {
-  if (d._file) {
-    _file = strdup(d._file);
-    ZALLOCATED(_file);
-  }
-
   _chip_tbl = new dbTable<_dbChip>(this, this, *d._chip_tbl);
 
   _tech_tbl = new dbTable<_dbTech>(this, this, *d._tech_tbl);
@@ -269,9 +255,6 @@ _dbDatabase::~_dbDatabase()
   delete _name_cache;
   // dimitri_fix
   // delete _prop_itr;
-
-  if (_file)
-    free(_file);
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbDatabase& db)
@@ -282,7 +265,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbDatabase& db)
   stream << db._schema_minor;
   stream << db._master_id;
   stream << db._chip;
-  stream << db._tech;
   stream << *db._tech_tbl;
   stream << *db._lib_tbl;
   stream << *db._chip_tbl;
@@ -313,15 +295,42 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& db)
   if (db._schema_minor < db_schema_initial)
     throw ZException("incompatible database schema revision");
 
+  if (db._schema_minor > db_schema_minor)
+    throw ZException("incompatible database schema revision %d.%d > %d.%d",
+                     db._schema_major,
+                     db._schema_minor,
+                     db_schema_major,
+                     db_schema_minor);
+
   stream >> db._master_id;
 
   stream >> db._chip;
-  stream >> db._tech;
+
+  dbId<_dbTech> old_db_tech;
+  if (!db.isSchema(db_schema_block_tech)) {
+    stream >> old_db_tech;
+  }
   stream >> *db._tech_tbl;
   stream >> *db._lib_tbl;
   stream >> *db._chip_tbl;
   stream >> *db._prop_tbl;
   stream >> *db._name_cache;
+
+  // Set the _tech on the block & libs now they are loaded
+  if (!db.isSchema(db_schema_block_tech)) {
+    if (db._chip) {
+      _dbChip* chip = db._chip_tbl->getPtr(db._chip);
+      if (chip->_top) {
+        chip->_block_tbl->getPtr(chip->_top)->_tech = old_db_tech;
+      }
+    }
+
+    auto db_public = (dbDatabase*) &db;
+    for (auto lib : db_public->getLibs()) {
+      _dbLib* lib_impl = (_dbLib*) lib;
+      lib_impl->_tech = old_db_tech;
+    }
+  }
 
   // Fix up the owner id of properties of this db, this value changes.
   dbSet<_dbProperty> props(&db, db._prop_tbl);
@@ -366,6 +375,24 @@ dbLib* dbDatabase::findLib(const char* name)
   return nullptr;
 }
 
+dbSet<dbTech> dbDatabase::getTechs()
+{
+  _dbDatabase* db = (_dbDatabase*) this;
+  return dbSet<dbTech>(db, db->_tech_tbl);
+}
+
+dbTech* dbDatabase::findTech(const char* name)
+{
+  for (auto tech : getTechs()) {
+    auto tech_impl = (_dbTech*) tech;
+    if (tech_impl->_name == name) {
+      return tech;
+    }
+  }
+
+  return nullptr;
+}
+
 dbMaster* dbDatabase::findMaster(const char* name)
 {
   dbSet<dbLib> libs = getLibs();
@@ -403,12 +430,20 @@ dbChip* dbDatabase::getChip()
 
 dbTech* dbDatabase::getTech()
 {
-  _dbDatabase* db = (_dbDatabase*) this;
+  auto techs = getTechs();
 
-  if (db->_tech == 0)
+  const int num_tech = techs.size();
+  if (num_tech == 0) {
     return nullptr;
+  }
 
-  return (dbTech*) db->_tech_tbl->getPtr(db->_tech);
+  if (num_tech == 1) {
+    return *techs.begin();
+  }
+
+  auto impl = (_dbDatabase*) this;
+  impl->_logger->error(
+      utl::ODB, 432, "getTech() is obsolete in a multi-tech db");
 }
 
 void dbDatabase::read(std::ifstream& file)
@@ -424,7 +459,7 @@ void dbDatabase::readTech(std::ifstream& file)
   _dbTech* tech = (_dbTech*) getTech();
 
   if (tech == nullptr)
-    tech = (_dbTech*) dbTech::create(this);
+    tech = (_dbTech*) dbTech::create(this, "");
   else {
     tech->~_dbTech();
     new (tech) _dbTech(db);

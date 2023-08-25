@@ -36,6 +36,7 @@
 #pragma once
 
 #include "BufferedNet.hh"
+#include "PreChecks.hh"
 #include "db_sta/dbSta.hh"
 #include "sta/Corner.hh"
 #include "sta/Delay.hh"
@@ -136,11 +137,12 @@ protected:
                  float max_cap,
                  int max_length, // dbu
                  const Corner *corner);
-  void repairNet(BufferedNetPtr bnet,
+  void repairNet(const BufferedNetPtr &bnet,
                  int level,
                  // Return values.
                  int &wire_length,
                  PinSeq &load_pins);
+  void checkSlewLimit(float ref_cap, float max_load_slew);
   void repairNetWire(BufferedNetPtr bnet,
                      int level,
                      // Return values.
@@ -215,9 +217,6 @@ protected:
                     Pin *&repeater_out_pin);
   LibertyCell *findBufferUnderSlew(float max_slew,
                                    float load_cap);
-  float bufferSlew(LibertyCell *buffer_cell,
-                   float load_cap,
-                   const DcalcAnalysisPt *dcalc_ap);
   bool hasInputPort(const Net *net);
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
@@ -228,6 +227,7 @@ protected:
   Logger *logger_;
   dbSta *sta_;
   dbNetwork *db_network_;
+  PreChecks *pre_checks_;
   Resizer *resizer_;
   int dbu_;
 

@@ -39,7 +39,8 @@ parser.add_argument("--src_dir", action="store", required=True)
 parser.add_argument("--include_dir", action="store", required=True)
 parser.add_argument("--templates", action="store", required=True)
 parser.add_argument("--log", action="store", default="INFO")
-parser.add_argument("--keep", action="store_true")
+parser.add_argument("--keep_generated", action="store_true")
+parser.add_argument("--keep_empty", action="store_true")
 
 args = parser.parse_args()
 
@@ -48,7 +49,8 @@ srcDir = args.src_dir
 includeDir = args.include_dir
 templates = args.templates
 loglevel = args.log
-keep_generated = args.keep
+keep_generated = args.keep_generated
+keep_empty = args.keep_empty
 
 numeric_level = getattr(logging, loglevel.upper(), None)
 if not isinstance(numeric_level, int):
@@ -338,16 +340,13 @@ for item in toBeMerged:
         p = Parser(os.path.join(dr, item))
         if item == "CMakeLists.txt":
             p.set_comment_str("#")
-        assert p.parse_user_code()
-        assert p.clean_code()
-        assert p.parse_source_code(os.path.join("generated", item))
-        assert p.write_in_file(os.path.join(dr, item))
+        p.parse_user_code()
+        p.clean_code()
+        p.parse_source_code(os.path.join("generated", item))
+        p.write_in_file(os.path.join(dr, item), keep_empty)
     else:
-        with open(os.path.join("generated", item), "r", encoding="ascii") as read, open(
-            os.path.join(dr, item), "w", encoding="ascii"
-        ) as out:
-            text = read.read()
-            out.write(text)
+        shutil.copy(os.path.join("generated", item),
+                    os.path.join(dr, item))
     if item != "CMakeLists.txt":
         cf = ["clang-format", "-i", os.path.join(dr, item)]
         retcode = call(cf)
