@@ -76,7 +76,7 @@ void dbWireShapeItr::begin(dbWire* wire)
 {
   _wire = (_dbWire*) wire;
   _block = wire->getBlock();
-  _tech = _block->getDb()->getTech();
+  _tech = _block->getTech();
   _idx = 0;
   _prev_x = 0;
   _prev_y = 0;
