@@ -232,8 +232,8 @@ place_pins
 | ----- | ----- |
 | `-hor_layers` | The layers to create the metal shapes of pins placed in horizontal tracks. It can be a single layer or a list of layer names. |
 | `-ver_layers` | The layers to create the metal shapes of pins placed in vertical tracks. It can be a single layer or a list of layer names. |
-| `-random_seed` | Refer to the developer arguments [here](#useful-developer-arguments). |
-| `-random` | Refer to the developer arguments [here](#useful-developer-arguments). |
+| `-random_seed` | Refer to the developer arguments [here](#developer-arguments). |
+| `-random` | Refer to the developer arguments [here](#developer-arguments). |
 | `-corner_avoidance` | The distance (in microns) from each corner within which pin placement should be avoided. |
 | `-min_distance` | The minimum distance between pins on the die boundary. This distance can be in microns (default) or in number of tracks between each pin. |
 | `-min_distance_in_tracks` | Flag that allows setting the min distance in number of tracks instead of microns. |
@@ -248,11 +248,20 @@ value, or a range of values. For example, in `place_pins -hor_layers metal2
 three intervals are excluded: the whole top edge, the right edge from 15
 microns to 60.5 microns, and the left edge from its beginning to 50 microns.
 
-### Useful developer functions
+### Developer Arguments
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-random_seed` | Specify the seed for random operations. |
+| `-random` | When this flag is enabled, the pin placement is random. |
+
+
+
+### Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/IOPlacer.cpp) or the [swig file](./src/IOPlacer.i).
 
-| Function Name | Description |
+| Command Name | Description |
 | ----- | ----- |
 | `parse_edge` | Parse edge (top/bottom/left/right). |
 | `parse_direction` | Parse direction. |
@@ -264,13 +273,6 @@ If you are a developer, you might find these useful. More details can be found i
 | `exclude_intervals` | Set exclude interval. |
 | `add_pins_to_constraint` | Add pins to constrained region. |
 | `add_pins_to_top_layer` | Add pins to top layer. | 
-
-### Useful developer arguments
-
-| Switch Name | Description |
-| ----- | ----- |
-| `-random_seed` | Specify the seed for random operations. |
-| `-random` | When this flag is enabled, the pin placement is random. |
 
 
 ## Example scripts
