@@ -67,9 +67,6 @@ entries:
     title: Detailed Placement
   - file: main/src/cts/README
     title: Clock Tree Synthesis
-    entries:
-    - file: main/src/cts/doc/cts_lut_characterization
-      title: CTS LUT Characterization
   - file: main/src/grt/README
     title: Global Routing
   - file: main/src/ant/README
