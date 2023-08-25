@@ -1,6 +1,7 @@
 # PDN Analysis
 
-PDN Analysis is performed using the PDNGEN tool. 
+The power distribution netowrk (PDN) analysis module in OpenROAD (`psm`) 
+is based on the PDNGEN tool. 
 This utility aims to simplify the process of adding a power grid into a
 floorplan. The aim is to specify a small set of power grid policies to be
 applied to the design, such as layers to use, stripe width and spacing,
@@ -414,7 +415,7 @@ pdngen
 
 ## Regression tests
 
-There are a set of regression tests in `/test`. For more information, refer to this [section](../../README.md#regression-tests).
+There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
 Simply run the following script:
 
