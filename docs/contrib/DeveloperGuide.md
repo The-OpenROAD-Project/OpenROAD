@@ -299,7 +299,7 @@ clang-format -i -style=file:.clang-format source_file.cpp
 
 ## Doxygen
 
-OpenROAD's Doxygen pages may be found [here](../doxygen_output/html/classes.html).
+OpenROAD's Doxygen pages may be found [here](./doxygen_output/html/classes.html).
 
 In addition, OpenROAD uses Doxygen style comments. Our preferred syntax 
 for Doxygen comments can be found in this [file](../../src/odb/include/odb/odb.h).
