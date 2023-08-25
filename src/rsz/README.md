@@ -170,8 +170,8 @@ repair_design
 | Switch Name | Description |
 | ----- | ----- |
 | `-max_wire_length` | Maximum length of wires (in microns), defaults to a value that minimizes the wire delay for the wire RC values specified by `set_wire_rc`. |
-| `-slew_margin` | Add a slew margin (0-100, integer). |
-| `-cap_margin` | Add a capactitance margin (0-100, integer). |
+| `-slew_margin` | Add a slew margin. The default value is `0`, the allowed values are integers `[0, 100]`. |
+| `-cap_margin` | Add a capactitance margin. The default value is `0`, the allowed values are integers `[0, 100]`. |
 | `-max_utilization` | Defines the percentage of core area used. |
 | `-verbose` | Enable verbose logging on progress of the repair. |
 
@@ -284,40 +284,23 @@ report_floating_nets
 | ----- | ----- |
 | `-verbose` | Print the net names. |
 
-### Useful developer functions
+### Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/Resizer.cc) or the [swig file](./src/Resizer.i).
 
-```tcl
-# repair setup pin 
-repair_setup_pin end_pin 
-
-# check if estimate_parasitics command has been called
-check_parsitics
-
-# parse timing margins
-parse_time_margin_arg key keys_var
-parse_percent_margin_arg key keys_var
-parse_margin_arg key keys_var
-
-# check max utilisation
-parse_max_util keys_var
-
-# get max wirelength
-parse_max_wire_length keys_var
-
-# check wire capacitance for corner
-check_corner_wire_caps
-
-# check if wirelength is allowed by rsz for minimum delay
-check_max_wire_length
-
-# get layer RC values
-dblayer_wire_rc layer
-
-# set layer RC values
-set_dblayer_wire_rc layer res cap
-```
+| Command Name | Description |
+| ----- | ----- |
+| `repair_setup_pin` | Repair setup pin violation. |
+| `check_parasitics` | Check if the `estimate_parasitics` command has been called. |
+| `parse_time_margin_arg` | Get the raw value for timing margin (e.g. `slack_margin`, `setup_margin`, `hold_margin`) |
+| `parse_percent_margin_arg` | Get the above margin in perentage format. |
+| `parse_margin_arg` | Same as `parse_percent_margin_arg`. |
+| `parse_max_util` | Check maximum utilization. |
+| `parse_max_wire_length` | Get maximum wirelength. |
+| `check_corner_wire_caps` | Check wire capacitance for corner. |
+| `check_max_wire_length` | Check if wirelength is allowed by rsz for minimum delay. |
+| `dblayer_wire_rc` | Get layer RC values. |
+| `set_dblayer_wire_rc` | Set layer RC values. |
 
 ## Example scripts
 
