@@ -93,13 +93,13 @@ report_cts
 | ----- | ----- |
 | `-out_file` | The file to save `cts` reports. If this parameter is omitted, the report is streamed to `stdout` and not saved. |
 
-### Useful developer functions
+### Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/TritonCTS.cpp) or the [swig file](./src/TritonCTS.i).
 
-```
-clock_tree_synthesis_debug -plot # choose to plot the CTS to GUI
-```
+| Command Name | Description |
+| ----- | ----- | 
+| `clock_tree_synthesis_debug` | Option to plot the CTS to GUI. |
 
 ## Example scripts
 
@@ -112,7 +112,7 @@ report_cts "file.txt"
 
 ## Regression tests
 
-There are a set of regression tests in `/test`. For more information, refer to this [section](../../README.md#regression-tests).
+There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
 Simply run the following script:
 
