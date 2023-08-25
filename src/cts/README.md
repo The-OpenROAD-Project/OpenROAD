@@ -1,12 +1,11 @@
 # Clock Tree Synthesis
 
-The clock tree synthesis module in OpenROAD (`cts`) is based on TritonCTS 
-2.0. It is available from the `clock_tree_synthesis` command.  
-TritonCTS 2.0 performs on-the-fly characterization. Thus there is
-no need to generate characterization data. On-the-fly characterization feature
-can be optionally controlled by parameters specified to 
-`configure_cts_characterization` command. Use `set_wire_rc` command to 
-set clock routing layer.
+The clock tree synthesis module in OpenROAD (`cts`) is based on TritonCTS
+2.0. It is available from the `clock_tree_synthesis` command. TritonCTS 2.0
+performs on-the-fly characterization. Thus, there is no need to generate
+characterization data. The on-the-fly characterization feature can be optionally
+controlled by parameters specified by the `configure_cts_characterization`
+command. Use `set_wire_rc` command to set the clock routing layer.
 
 ## Commands
 
