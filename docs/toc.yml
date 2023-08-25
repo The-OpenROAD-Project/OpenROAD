@@ -21,8 +21,6 @@ entries:
         title: Unit Tests (Python)
       - file: main/src/odb/doc/OpenDB-AddFieldsInDbObjects
         title: Add Fields in DB Objects
-      - file: api/odb
-        title: ODB functions
   - file: main/src/rcx/README
     title: Parasitics Extraction
     entries:
