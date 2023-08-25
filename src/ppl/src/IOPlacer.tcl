@@ -336,6 +336,25 @@ proc set_simulated_annealing { args } {
   ppl::set_simulated_annealing $temperature $max_iterations $perturb_per_iter $alpha
 }
 
+sta::define_cmd_args "simulated_annealing_debug" {
+  [-iters_between_paintings iters]
+  [-no_pause_mode no_pause_mode] # Print solver state every second based on iters_between_paintings
+}
+
+proc simulated_annealing_debug { args } {
+  sta::parse_key_args "simulated_annealing_debug" args \
+  keys {-iters_between_paintings} \
+  flags {-no_pause_mode}
+
+  if [info exists keys(-iters_between_paintings)] {
+    set iters $keys(-iters_between_paintings)
+    sta::check_positive_int "-iters_between_paintings" $iters
+    ppl::simulated_annealing_debug $iters [info exists flags(-no_pause_mode)]
+  } else {
+    utl::error PPL 108 "The -iters_between_paintings argument is required when using debug."
+  }
+}
+
 sta::define_cmd_args "place_pin" {[-pin_name pin_name]\
                                   [-layer layer]\
                                   [-location location]\
@@ -469,9 +488,6 @@ proc place_pins { args } {
   if [info exists keys(-corner_avoidance)] {
     set distance $keys(-corner_avoidance)
     ppl::set_corner_avoidance [ord::microns_to_dbu $distance]
-  } else {
-    utl::report "Using ${distance}u default distance from corners."
-    ppl::set_corner_avoidance [ord::microns_to_dbu $distance]
   }
 
   set min_dist 2
@@ -586,7 +602,7 @@ proc place_pins { args } {
   }
 
   if { [info exists flags(-annealing)] } {
-    ppl::run_annealing
+    ppl::run_annealing [info exists flags(-random)]
   } else {
     ppl::run_io_placement [info exists flags(-random)]
   }

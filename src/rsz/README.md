@@ -204,6 +204,7 @@ cause setup checks to fail.
 
 The worst setup path is always repaired.  Next, violating paths to
 endpoints are repaired to reduced the total negative slack. 
+
 ```tcl
 repair_timing 
     [-setup]
@@ -230,6 +231,10 @@ repair_timing
 | `-max_utilization` | Defines the percentage of core area used. |
 | `-max_buffer_percent` | Specify a maximum number of buffers to insert to repair hold violations as a percentage of the number of instances in the design. The default value is `20`, and the allowed values are integers `[0, 100]`. |
 | `-verbose` | Enable verbose logging of the repair progress. |
+
+Use`-recover_power` to specify the percent of paths with positive slack which
+will be considered for gate resizing to save power. It is recommended that
+this option be used with global routing based parasitics. 
 
 ### Repair Clock Nets
 

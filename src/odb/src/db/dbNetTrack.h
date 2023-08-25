@@ -36,9 +36,6 @@
 #include "dbCore.h"
 #include "odb.h"
 
-// User Code Begin Includes
-// User Code End Includes
-
 namespace odb {
 class dbIStream;
 class dbOStream;
@@ -46,18 +43,10 @@ class dbDiff;
 class _dbDatabase;
 class _dbNet;
 class _dbTechLayer;
-// User Code Begin Classes
-// User Code End Classes
-
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbNetTrack : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
-
   _dbNetTrack(_dbDatabase*, const _dbNetTrack& r);
   _dbNetTrack(_dbDatabase*);
   ~_dbNetTrack();
@@ -69,20 +58,13 @@ class _dbNetTrack : public _dbObject
                    const char* field,
                    const _dbNetTrack& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 
   dbId<_dbNet> net_;
   Rect box_;
   dbId<_dbTechLayer> layer_;
   dbId<_dbNetTrack> track_next_;
-
-  // User Code Begin Fields
-  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbNetTrack& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbNetTrack& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header

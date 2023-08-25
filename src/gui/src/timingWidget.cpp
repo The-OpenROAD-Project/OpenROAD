@@ -49,6 +49,7 @@ namespace gui {
 
 TimingWidget::TimingWidget(QWidget* parent)
     : QDockWidget("Timing Report", parent),
+      commands_menu_(new QMenu("Commands Menu", this)),
       setup_timing_table_view_(new QTableView(this)),
       hold_timing_table_view_(new QTableView(this)),
       path_details_table_view_(new QTableView(this)),
@@ -101,19 +102,33 @@ TimingWidget::TimingWidget(QWidget* parent)
   container->setLayout(layout);
   setWidget(container);
 
-  connect(
-      dbchange_listener_, SIGNAL(dbUpdated()), this, SLOT(handleDbChange()));
-  connect(update_button_, SIGNAL(clicked()), this, SLOT(populatePaths()));
-  connect(update_button_, SIGNAL(clicked()), dbchange_listener_, SLOT(reset()));
+  addCommandsMenuActions();
 
-  connect(settings_button_, SIGNAL(clicked()), this, SLOT(showSettings()));
+  connect(dbchange_listener_,
+          &GuiDBChangeListener::dbUpdated,
+          this,
+          &TimingWidget::handleDbChange);
+  connect(update_button_,
+          &QPushButton::clicked,
+          this,
+          &TimingWidget::populatePaths);
+  connect(update_button_,
+          &QPushButton::clicked,
+          dbchange_listener_,
+          &GuiDBChangeListener::reset);
+
+  connect(settings_button_,
+          &QPushButton::clicked,
+          this,
+          &TimingWidget::showSettings);
+
+  connect(
+      settings_, &TimingControlsDialog::inspect, this, &TimingWidget::inspect);
 
   connect(settings_,
-          SIGNAL(inspect(const Selected&)),
+          &TimingControlsDialog::expandClock,
           this,
-          SIGNAL(inspect(const Selected&)));
-
-  connect(settings_, SIGNAL(expandClock(bool)), this, SLOT(updateClockRows()));
+          &TimingWidget::updateClockRows);
 }
 
 TimingWidget::~TimingWidget()
@@ -156,47 +171,52 @@ void TimingWidget::init(sta::dbSta* sta)
       3, Qt::AscendingOrder);
 
   connect(setup_timing_paths_model_,
-          SIGNAL(modelReset()),
+          &TimingPathsModel::modelReset,
           this,
-          SLOT(modelWasReset()));
+          &TimingWidget::modelWasReset);
   connect(hold_timing_paths_model_,
-          SIGNAL(modelReset()),
+          &TimingPathsModel::modelReset,
           this,
-          SLOT(modelWasReset()));
+          &TimingWidget::modelWasReset);
 
   connect(setup_timing_table_view_->horizontalHeader(),
-          SIGNAL(sortIndicatorChanged(int, Qt::SortOrder)),
+          &QHeaderView::sortIndicatorChanged,
           setup_timing_table_view_->model(),
-          SLOT(sort(int, Qt::SortOrder)));
+          &QAbstractItemModel::sort);
   connect(hold_timing_table_view_->horizontalHeader(),
-          SIGNAL(sortIndicatorChanged(int, Qt::SortOrder)),
+          &QHeaderView::sortIndicatorChanged,
           hold_timing_table_view_->model(),
-          SLOT(sort(int, Qt::SortOrder)));
+          &QAbstractItemModel::sort);
 
-  connect(
-      setup_timing_table_view_->selectionModel(),
-      SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
-      this,
-      SLOT(selectedRowChanged(const QItemSelection&, const QItemSelection&)));
+  connect(setup_timing_table_view_->selectionModel(),
+          &QItemSelectionModel::selectionChanged,
+          this,
+          &TimingWidget::selectedRowChanged);
 
-  connect(
-      hold_timing_table_view_->selectionModel(),
-      SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
-      this,
-      SLOT(selectedRowChanged(const QItemSelection&, const QItemSelection&)));
+  connect(setup_timing_table_view_,
+          &QTableView::customContextMenuRequested,
+          this,
+          &TimingWidget::showCommandsMenu);
 
-  connect(
-      path_details_table_view_->selectionModel(),
-      SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
-      this,
-      SLOT(selectedDetailRowChanged(const QItemSelection&,
-                                    const QItemSelection&)));
-  connect(
-      capture_details_table_view_->selectionModel(),
-      SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
-      this,
-      SLOT(selectedCaptureRowChanged(const QItemSelection&,
-                                     const QItemSelection&)));
+  connect(hold_timing_table_view_->selectionModel(),
+          &QItemSelectionModel::selectionChanged,
+          this,
+          &TimingWidget::selectedRowChanged);
+
+  connect(hold_timing_table_view_,
+          &QTableView::customContextMenuRequested,
+          this,
+          &TimingWidget::showCommandsMenu);
+
+  connect(path_details_table_view_->selectionModel(),
+          &QItemSelectionModel::selectionChanged,
+          this,
+          &TimingWidget::selectedDetailRowChanged);
+
+  connect(capture_details_table_view_->selectionModel(),
+          &QItemSelectionModel::selectionChanged,
+          this,
+          &TimingWidget::selectedCaptureRowChanged);
 
   clearPathDetails();
 }
@@ -241,6 +261,87 @@ void TimingWidget::keyPressEvent(QKeyEvent* key_event)
   if (key_event->matches(QKeySequence::Copy)) {
     copy();
     key_event->accept();
+  }
+}
+
+void TimingWidget::addCommandsMenuActions()
+{
+  connect(
+      commands_menu_->addAction("Closest Match"), &QAction::triggered, [this] {
+        writePathReportCommand(timing_paths_table_index_, CLOSEST_MATCH);
+      });
+
+  connect(commands_menu_->addAction("From Start to End"),
+          &QAction::triggered,
+          [this] {
+            writePathReportCommand(timing_paths_table_index_,
+                                   FROM_START_TO_END);
+          });
+}
+
+void TimingWidget::showCommandsMenu(const QPoint& pos)
+{
+  timing_paths_table_index_ = focus_view_->indexAt(pos);
+
+  commands_menu_->popup(focus_view_->viewport()->mapToGlobal(pos));
+}
+
+void TimingWidget::writePathReportCommand(const QModelIndex& selected_index,
+                                          const CommandType& type)
+{
+  TimingPathsModel* focus_model
+      = static_cast<TimingPathsModel*>(focus_view_->model());
+
+  TimingPath* selected_path = focus_model->getPathAt(selected_index);
+
+  QString start_node
+      = QString::fromStdString(selected_path->getStartStageName());
+  QString end_node = QString::fromStdString(selected_path->getEndStageName());
+
+  if (type == CLOSEST_MATCH) {
+    TimingNodeList* node_list = &selected_path->getPathNodes();
+
+    const int start_idx = selected_path->getClkPathEndIndex() + 1;
+
+    QString start_rise_or_fall = (*node_list)[start_idx]->isRisingEdge()
+                                     ? "-rise_from "
+                                     : "-fall_from ";
+    QString closest_match_command
+        = "report_checks " + start_rise_or_fall + start_node;
+
+    for (int node_idx = (start_idx + 1); node_idx < ((*node_list).size() - 1);
+         node_idx++) {
+      QString through_node
+          = QString::fromStdString((*node_list)[node_idx]->getNodeName());
+      QString through_rise_or_fall = (*node_list)[node_idx]->isRisingEdge()
+                                         ? " -rise_through "
+                                         : " -fall_through ";
+
+      closest_match_command += through_rise_or_fall + through_node;
+    }
+
+    QString end_rise_or_fall
+        = (*node_list).back()->isRisingEdge() ? " -rise_to " : " -fall_to ";
+
+    QString path_delay_config = focus_view_ == setup_timing_table_view_
+                                    ? " -path_delay max"
+                                    : " -path_delay min";
+
+    QString fields_and_format
+        = " -fields {capacitance slew input_pins nets fanout} -format "
+          "full_clock_expanded";
+
+    closest_match_command
+        += end_rise_or_fall + end_node + path_delay_config + fields_and_format;
+
+    emit setCommand(closest_match_command);
+  }
+
+  if (type == FROM_START_TO_END) {
+    QString from_start_to_end_command
+        = "report_checks -from " + start_node + " -to " + end_node;
+
+    emit setCommand(from_start_to_end_command);
   }
 }
 

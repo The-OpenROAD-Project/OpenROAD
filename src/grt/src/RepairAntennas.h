@@ -143,6 +143,9 @@ class RepairAntennas
                            const int pin_layer,
                            const std::vector<odb::Rect>& pin_boxes,
                            const GRoute& route);
+  void createEncoderPath(odb::dbWireEncoder& wire_encoder,
+                         int jct_id,
+                         odb::dbTechLayer* layer);
 
   GlobalRouter* grouter_;
   ant::AntennaChecker* arc_;

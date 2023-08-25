@@ -89,6 +89,19 @@ add_library(db
     dbGroupPowerNetItr.cpp
     dbGroupGroundNetItr.cpp
     # Generator Code Begin cpp
+    dbAccessPoint.cpp
+    dbGCellGrid.cpp
+    dbGlobalConnect.cpp
+    dbGroup.cpp
+    dbGuide.cpp
+    dbIsolation.cpp
+    dbLogicPort.cpp
+    dbMetalWidthViaMap.cpp
+    dbModInst.cpp
+    dbModule.cpp
+    dbNetTrack.cpp
+    dbPowerDomain.cpp
+    dbPowerSwitch.cpp
     dbTechLayer.cpp
     dbTechLayerAreaRule.cpp
     dbTechLayerArraySpacingRule.cpp
@@ -106,19 +119,6 @@ add_library(db
     dbTechLayerSpacingEolRule.cpp
     dbTechLayerSpacingTablePrlRule.cpp
     dbTechLayerWidthTableRule.cpp
-    dbAccessPoint.cpp
-    dbGCellGrid.cpp
-    dbGlobalConnect.cpp
-    dbGroup.cpp
-    dbGuide.cpp
-    dbIsolation.cpp
-    dbLogicPort.cpp
-    dbMetalWidthViaMap.cpp
-    dbModInst.cpp
-    dbModule.cpp
-    dbNetTrack.cpp
-    dbPowerDomain.cpp
-    dbPowerSwitch.cpp
     dbModuleInstItr.cpp
     dbModuleModInstItr.cpp
     dbGroupModInstItr.cpp
@@ -144,8 +144,6 @@ set_target_properties(db
 
 target_link_libraries(db
     PUBLIC
-        lefout
-        defout
         tm
         zutil
         utl_lib

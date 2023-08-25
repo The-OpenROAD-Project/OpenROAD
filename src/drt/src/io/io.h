@@ -114,6 +114,7 @@ class Parser
   void convertLef58MinCutConstraints();
 
   // postProcess functions
+  void checkPins();
   void buildGCellPatterns(odb::dbDatabase* db);
   void buildGCellPatterns_helper(frCoord& GCELLGRIDX,
                                  frCoord& GCELLGRIDY,

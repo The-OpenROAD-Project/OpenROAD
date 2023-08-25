@@ -60,8 +60,6 @@ bool _dbGlobalConnect::operator==(const _dbGlobalConnect& rhs) const
   if (pin_pattern_ != rhs.pin_pattern_)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
@@ -76,8 +74,6 @@ bool _dbGlobalConnect::operator<(const _dbGlobalConnect& rhs) const
   if (pin_pattern_ >= rhs.pin_pattern_)
     return false;
 
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -90,8 +86,6 @@ void _dbGlobalConnect::differences(dbDiff& diff,
   DIFF_FIELD(net_);
   DIFF_FIELD(inst_pattern_);
   DIFF_FIELD(pin_pattern_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -103,15 +97,11 @@ void _dbGlobalConnect::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(inst_pattern_);
   DIFF_OUT_FIELD(pin_pattern_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
 _dbGlobalConnect::_dbGlobalConnect(_dbDatabase* db)
 {
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 _dbGlobalConnect::_dbGlobalConnect(_dbDatabase* db, const _dbGlobalConnect& r)
@@ -143,19 +133,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbGlobalConnect& obj)
   stream << obj.net_;
   stream << obj.inst_pattern_;
   stream << obj.pin_pattern_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
 _dbGlobalConnect::~_dbGlobalConnect()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

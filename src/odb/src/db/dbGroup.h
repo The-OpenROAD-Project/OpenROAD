@@ -49,23 +49,16 @@ class _dbInst;
 class _dbModInst;
 class _dbNet;
 class _dbRegion;
-// User Code Begin Classes
-// User Code End Classes
 
 struct dbGroupFlags
 {
   uint _type : 2;
   uint spare_bits_ : 30;
 };
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbGroup : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
-
   _dbGroup(_dbDatabase*, const _dbGroup& r);
   _dbGroup(_dbDatabase*);
   ~_dbGroup();
@@ -75,8 +68,6 @@ class _dbGroup : public _dbObject
   bool operator<(const _dbGroup& rhs) const;
   void differences(dbDiff& diff, const char* field, const _dbGroup& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 
   dbGroupFlags flags_;
   char* _name;
@@ -91,13 +82,8 @@ class _dbGroup : public _dbObject
   dbId<_dbGroup> region_next_;
   dbId<_dbGroup> region_prev_;
   dbId<_dbRegion> region_;
-
-  // User Code Begin Fields
-  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbGroup& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGroup& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header

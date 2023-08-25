@@ -80,6 +80,7 @@ class MacroPlacer2
              const int large_net_threshold,
              const int signature_net_threshold,
              const float halo_width,
+             const float halo_height,
              const float fence_lx,
              const float fence_ly,
              const float fence_ux,

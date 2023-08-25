@@ -175,7 +175,7 @@ void dbWireEncoder::begin(dbWire* wire)
   clear();
   _wire = (_dbWire*) wire;
   _block = wire->getBlock();
-  _tech = _block->getDb()->getTech();
+  _tech = _block->getTech();
 }
 
 void dbWireEncoder::clear()
