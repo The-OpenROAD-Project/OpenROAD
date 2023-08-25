@@ -58,9 +58,9 @@ detailed_route
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-output_maze` | Path to output maze log file (e.g. `.output.maze.log`). |
-| `-output_drc` | Path to output DRC report file (e.g. `.output.drc.rpt`). |
-| `-output_cmap` | Path to output congestion map file (e.g. `.output.cmap`). |
+| `-output_maze` | Path to output maze log file (e.g. `output_maze.log`). |
+| `-output_drc` | Path to output DRC report file (e.g. `output_drc.rpt`). |
+| `-output_cmap` | Path to output congestion map file (e.g. `output.cmap`). |
 | `-output_guide_coverage` | Path to output guide coverage file (e.g. `sample_coverage.csv`). |
 | `-drc_report_iter_step` | Report DRC on each iteration which is a multiple of this step. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-db_process_node` | Specify the process node. |
