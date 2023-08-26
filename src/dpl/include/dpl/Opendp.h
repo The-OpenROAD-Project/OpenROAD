@@ -243,7 +243,7 @@ class Opendp
                               const std::string& violation_type = "") const;
   void checkPlacement(bool verbose,
                       bool disallow_one_site_gaps = false,
-                      string report_file_name = "report.json");
+                      string report_file_name = "");
   void writeJsonReport(const string& filename,
                        const vector<Cell*>& placed_failures,
                        const vector<Cell*>& in_rows_failures,
