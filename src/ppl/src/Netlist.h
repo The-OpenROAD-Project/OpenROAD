@@ -199,6 +199,7 @@ class Netlist
 
   int computeIONetHPWL(int idx, const odb::Point& slot_pos);
   int computeDstIOtoPins(int idx, const odb::Point& slot_pos);
+  void sortPinsFromGroup(int group_idx, Edge edge);
   odb::Rect getBB(int idx, const odb::Point& slot_pos);
   void clear();
 

@@ -77,7 +77,7 @@ void IRDropDataSource::setBlock(odb::dbBlock* block)
 {
   gui::HeatMapDataSource::setBlock(block);
   if (block != nullptr) {
-    tech_ = block->getDb()->getTech();
+    tech_ = block->getTech();
   }
 }
 

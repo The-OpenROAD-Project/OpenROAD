@@ -45,6 +45,7 @@ if (Qt5_FOUND AND BUILD_GUI)
   target_sources(gui
    PRIVATE
     src/layoutViewer.cpp
+    src/layoutTabs.cpp
     src/renderThread.cpp
     src/painter.cpp
     src/mainWindow.cpp

@@ -37,252 +37,6 @@
 using namespace std;
 using namespace fr;
 
-void FlexPA::getPrefTrackPatterns(vector<frTrackPattern*>& prefTrackPatterns)
-{
-  for (auto& trackPattern : design_->getTopBlock()->getTrackPatterns()) {
-    auto isVerticalTrack
-        = trackPattern->isHorizontal();  // yes = vertical track
-    if (design_->getTech()->getLayer(trackPattern->getLayerNum())->getDir()
-        == dbTechLayerDir::HORIZONTAL) {
-      if (!isVerticalTrack) {
-        prefTrackPatterns.push_back(trackPattern);
-      }
-    } else {
-      if (isVerticalTrack) {
-        prefTrackPatterns.push_back(trackPattern);
-      }
-    }
-  }
-}
-
-void FlexPA::initUniqueInstance_master2PinLayerRange(
-    map<frMaster*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>&
-        master2PinLayerRange)
-{
-  std::set<frString> masters;
-  for (auto inst : target_insts_)
-    masters.insert(inst->getMaster()->getName());
-  int numLayers = design_->getTech()->getLayers().size();
-  for (auto& uMaster : design_->getMasters()) {
-    auto master = uMaster.get();
-    if (!masters.empty() && masters.find(master->getName()) == masters.end())
-      continue;
-    frLayerNum minLayerNum = std::numeric_limits<frLayerNum>::max();
-    frLayerNum maxLayerNum = std::numeric_limits<frLayerNum>::min();
-    for (auto& uTerm : master->getTerms()) {
-      if (uTerm.get()->getType().isSupply()) {
-        continue;
-      }
-      for (auto& uPin : uTerm->getPins()) {
-        for (auto& uPinFig : uPin->getFigs()) {
-          auto pinFig = uPinFig.get();
-          if (pinFig->typeId() == frcRect) {
-            auto lNum = static_cast<frRect*>(pinFig)->getLayerNum();
-            if (lNum >= getDesign()->getTech()->getBottomLayerNum()) {
-              minLayerNum = std::min(minLayerNum, lNum);
-            }
-            maxLayerNum = std::max(maxLayerNum, lNum);
-          } else if (pinFig->typeId() == frcPolygon) {
-            auto lNum = static_cast<frPolygon*>(pinFig)->getLayerNum();
-            if (lNum >= getDesign()->getTech()->getBottomLayerNum()) {
-              minLayerNum = std::min(minLayerNum, lNum);
-            }
-            maxLayerNum = std::max(maxLayerNum, lNum);
-          } else {
-            logger_->error(DRT, 65, "instAnalysis unsupported pinFig.");
-          }
-        }
-      }
-    }
-    if (minLayerNum < getDesign()->getTech()->getBottomLayerNum()
-        || maxLayerNum > getDesign()->getTech()->getTopLayerNum()) {
-      logger_->warn(DRT,
-                    66,
-                    "instAnalysis skips {} due to no pin shapes.",
-                    master->getName());
-      continue;
-    }
-    maxLayerNum = std::min(maxLayerNum + 2, numLayers);
-    master2PinLayerRange[master] = make_tuple(minLayerNum, maxLayerNum);
-  }
-  // cout <<"  master pin layer range done" <<endl;
-}
-
-bool FlexPA::hasTrackPattern(frTrackPattern* tp, const Rect& box)
-{
-  auto isVerticalTrack = tp->isHorizontal();  // yes = vertical track
-  frCoord low = tp->getStartCoord();
-  frCoord high = low
-                 + (frCoord) (tp->getTrackSpacing())
-                       * ((frCoord) (tp->getNumTracks()) - 1);
-  if (isVerticalTrack) {
-    return !(low > box.xMax() || high < box.xMin());
-  } else {
-    return !(low > box.yMax() || high < box.yMin());
-  }
-}
-
-// must init all unique, including filler, macro, etc. to ensure frInst
-// pinAccessIdx is active
-void FlexPA::initUniqueInstance_main(
-    const map<frMaster*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>&
-        master2PinLayerRange,
-    const vector<frTrackPattern*>& prefTrackPatterns)
-{
-  vector<frInst*> ndrInsts;
-  vector<frCoord> offset;
-  std::set<frInst*> target_frinsts;
-  for (auto inst : target_insts_)
-    target_frinsts.insert(design_->getTopBlock()->findInst(inst->getName()));
-  for (auto& inst : design_->getTopBlock()->getInsts()) {
-    if (!target_insts_.empty()
-        && target_frinsts.find(inst.get()) == target_frinsts.end())
-      continue;
-    if (!AUTO_TAPER_NDR_NETS && isNDRInst(*inst)) {
-      ndrInsts.push_back(inst.get());
-      continue;
-    }
-    Point origin = inst->getOrigin();
-    Rect boundaryBBox = inst->getBoundaryBBox();
-    auto orient = inst->getOrient();
-    auto& [minLayerNum, maxLayerNum]
-        = master2PinLayerRange.find(inst->getMaster())->second;
-    offset.clear();
-    for (auto& tp : prefTrackPatterns) {
-      if (tp->getLayerNum() >= minLayerNum
-          && tp->getLayerNum() <= maxLayerNum) {
-        if (hasTrackPattern(tp, boundaryBBox)) {
-          // vertical track
-          if (tp->isHorizontal()) {
-            offset.push_back(origin.x() % tp->getTrackSpacing());
-          } else {
-            offset.push_back(origin.y() % tp->getTrackSpacing());
-          }
-        } else {
-          offset.push_back(tp->getTrackSpacing());
-        }
-      } else {
-        offset.push_back(tp->getTrackSpacing());
-      }
-    }
-    masterOT2Insts[inst->getMaster()][orient][offset].insert(inst.get());
-  }
-
-  frString orientName;
-  for (auto& [master, orientMap] : masterOT2Insts) {
-    for (auto& [orient, offsetMap] : orientMap) {
-      for (auto& [vec, insts] : offsetMap) {
-        auto uniqueInst = *(insts.begin());
-        uniqueInstances_.push_back(uniqueInst);
-        for (auto i : insts) {
-          inst2unique_[i] = uniqueInst;
-          inst2Class_[i] = &insts;
-        }
-      }
-    }
-  }
-  for (frInst* inst : ndrInsts) {
-    uniqueInstances_.push_back(inst);
-    inst2unique_[inst] = inst;
-    inst2Class_[inst] = nullptr;
-  }
-
-  // init unique2Idx
-  for (int i = 0; i < (int) uniqueInstances_.size(); i++) {
-    unique2Idx_[uniqueInstances_[i]] = i;
-  }
-}
-
-bool FlexPA::isNDRInst(frInst& inst)
-{
-  for (auto& a : inst.getInstTerms()) {
-    if (a->getNet()
-        && a->getNet()
-               ->getNondefaultRule()) {  // this criterion can be improved
-      return true;
-    }
-  }
-  return false;
-}
-
-void FlexPA::initUniqueInstance()
-{
-  vector<frTrackPattern*> prefTrackPatterns;
-  getPrefTrackPatterns(prefTrackPatterns);
-
-  map<frMaster*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>
-      master2PinLayerRange;
-  initUniqueInstance_master2PinLayerRange(master2PinLayerRange);
-
-  initUniqueInstance_main(master2PinLayerRange, prefTrackPatterns);
-}
-
-void FlexPA::checkFigsOnGrid(const frMPin* pin)
-{
-  const frMTerm* term = pin->getTerm();
-  const int grid = getTech()->getManufacturingGrid();
-  for (auto& fig : pin->getFigs()) {
-    if (fig->typeId() == frcRect) {
-      auto box = static_cast<frRect*>(fig.get())->getBBox();
-      if (box.xMin() % grid || box.yMin() % grid || box.xMax() % grid
-          || box.yMax() % grid) {
-        logger_->error(DRT,
-                       320,
-                       "Term {} of {} contains offgrid pin shape",
-                       term->getName(),
-                       term->getMaster()->getName());
-      }
-    } else if (fig->typeId() == frcPolygon) {
-      auto polygon = static_cast<frPolygon*>(fig.get());
-      for (Point pt : polygon->getPoints()) {
-        if (pt.getX() % grid || pt.getY() % grid) {
-          logger_->error(DRT,
-                         321,
-                         "Term {} of {} contains offgrid pin shape",
-                         term->getName(),
-                         term->getMaster()->getName());
-        }
-      }
-    } else {
-      logger_->error(DRT, 322, "checkFigsOnGrid unsupported pinFig.");
-    }
-  }
-}
-
-void FlexPA::initPinAccess()
-{
-  for (auto& inst : uniqueInstances_) {
-    for (auto& instTerm : inst->getInstTerms()) {
-      for (auto& pin : instTerm->getTerm()->getPins()) {
-        if (unique2paidx_.find(inst) == unique2paidx_.end()) {
-          unique2paidx_[inst] = pin->getNumPinAccess();
-        } else {
-          if (unique2paidx_[inst] != pin->getNumPinAccess()) {
-            logger_->error(DRT, 69, "initPinAccess error.");
-            exit(1);
-          }
-        }
-        checkFigsOnGrid(pin.get());
-        auto pa = make_unique<frPinAccess>();
-        pin->addPinAccess(std::move(pa));
-      }
-    }
-    inst->setPinAccessIdx(unique2paidx_[inst]);
-  }
-  for (auto& [inst, uniqueInst] : inst2unique_) {
-    inst->setPinAccessIdx(uniqueInst->getPinAccessIdx());
-  }
-
-  // IO terms
-  if (target_insts_.empty())
-    for (auto& term : getDesign()->getTopBlock()->getTerms()) {
-      for (auto& pin : term->getPins()) {
-        auto pa = make_unique<frPinAccess>();
-        pin->addPinAccess(std::move(pa));
-      }
-    }
-}
-
 void FlexPA::initViaRawPriority()
 {
   for (auto layerNum = design_->getTech()->getBottomLayerNum();
@@ -293,23 +47,21 @@ void FlexPA::initViaRawPriority()
       continue;
     }
     for (auto& viaDef : design_->getTech()->getLayer(layerNum)->getViaDefs()) {
-      int cutNum = int(viaDef->getCutFigs().size());
-      viaRawPriorityTuple priority;
+      const int cutNum = int(viaDef->getCutFigs().size());
+      ViaRawPriorityTuple priority;
       getViaRawPriority(viaDef, priority);
       layerNum2ViaDefs_[layerNum][cutNum][priority] = viaDef;
     }
   }
 }
 
-void FlexPA::getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority)
+void FlexPA::getViaRawPriority(frViaDef* viaDef, ViaRawPriorityTuple& priority)
 {
-  bool isNotDefaultVia = !(viaDef->getDefault());
-  bool isNotUpperAlign = false;
-  bool isNotLowerAlign = false;
+  const bool isNotDefaultVia = !(viaDef->getDefault());
   gtl::polygon_90_set_data<frCoord> viaLayerPS1;
 
   for (auto& fig : viaDef->getLayer1Figs()) {
-    Rect bbox = fig->getBBox();
+    const Rect bbox = fig->getBBox();
     gtl::rectangle_data<frCoord> bboxRect(
         bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     using namespace boost::polygon::operators;
@@ -317,48 +69,44 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority)
   }
   gtl::rectangle_data<frCoord> layer1Rect;
   gtl::extents(layer1Rect, viaLayerPS1);
-  bool isLayer1Horz = (gtl::xh(layer1Rect) - gtl::xl(layer1Rect))
-                      > (gtl::yh(layer1Rect) - gtl::yl(layer1Rect));
-  frCoord layer1Width = std::min((gtl::xh(layer1Rect) - gtl::xl(layer1Rect)),
-                                 (gtl::yh(layer1Rect) - gtl::yl(layer1Rect)));
-  isNotLowerAlign
-      = (isLayer1Horz
-         && (getDesign()->getTech()->getLayer(viaDef->getLayer1Num())->getDir()
-             == dbTechLayerDir::VERTICAL))
-        || (!isLayer1Horz
-            && (getDesign()
-                    ->getTech()
-                    ->getLayer(viaDef->getLayer1Num())
-                    ->getDir()
-                == dbTechLayerDir::HORIZONTAL));
+  const bool isLayer1Horz = (gtl::xh(layer1Rect) - gtl::xl(layer1Rect))
+                            > (gtl::yh(layer1Rect) - gtl::yl(layer1Rect));
+  const frCoord layer1Width
+      = std::min((gtl::xh(layer1Rect) - gtl::xl(layer1Rect)),
+                 (gtl::yh(layer1Rect) - gtl::yl(layer1Rect)));
+
+  const auto layer1Num = viaDef->getLayer1Num();
+  const auto dir1 = getDesign()->getTech()->getLayer(layer1Num)->getDir();
+
+  const bool isNotLowerAlign
+      = (isLayer1Horz && (dir1 == dbTechLayerDir::VERTICAL))
+        || (!isLayer1Horz && (dir1 == dbTechLayerDir::HORIZONTAL));
 
   gtl::polygon_90_set_data<frCoord> viaLayerPS2;
   for (auto& fig : viaDef->getLayer2Figs()) {
-    Rect bbox = fig->getBBox();
-    gtl::rectangle_data<frCoord> bboxRect(
+    const Rect bbox = fig->getBBox();
+    const gtl::rectangle_data<frCoord> bboxRect(
         bbox.xMin(), bbox.yMin(), bbox.xMax(), bbox.yMax());
     using namespace boost::polygon::operators;
     viaLayerPS2 += bboxRect;
   }
   gtl::rectangle_data<frCoord> layer2Rect;
   gtl::extents(layer2Rect, viaLayerPS2);
-  bool isLayer2Horz = (gtl::xh(layer2Rect) - gtl::xl(layer2Rect))
-                      > (gtl::yh(layer2Rect) - gtl::yl(layer2Rect));
-  frCoord layer2Width = std::min((gtl::xh(layer2Rect) - gtl::xl(layer2Rect)),
-                                 (gtl::yh(layer2Rect) - gtl::yl(layer2Rect)));
-  isNotUpperAlign
-      = (isLayer2Horz
-         && (getDesign()->getTech()->getLayer(viaDef->getLayer2Num())->getDir()
-             == dbTechLayerDir::VERTICAL))
-        || (!isLayer2Horz
-            && (getDesign()
-                    ->getTech()
-                    ->getLayer(viaDef->getLayer2Num())
-                    ->getDir()
-                == dbTechLayerDir::HORIZONTAL));
+  const bool isLayer2Horz = (gtl::xh(layer2Rect) - gtl::xl(layer2Rect))
+                            > (gtl::yh(layer2Rect) - gtl::yl(layer2Rect));
+  const frCoord layer2Width
+      = std::min((gtl::xh(layer2Rect) - gtl::xl(layer2Rect)),
+                 (gtl::yh(layer2Rect) - gtl::yl(layer2Rect)));
 
-  frCoord layer1Area = gtl::area(viaLayerPS1);
-  frCoord layer2Area = gtl::area(viaLayerPS2);
+  const auto layer2Num = viaDef->getLayer2Num();
+  const auto dir2 = getDesign()->getTech()->getLayer(layer2Num)->getDir();
+
+  const bool isNotUpperAlign
+      = (isLayer2Horz && (dir2 == dbTechLayerDir::VERTICAL))
+        || (!isLayer2Horz && (dir2 == dbTechLayerDir::HORIZONTAL));
+
+  const frCoord layer1Area = gtl::area(viaLayerPS1);
+  const frCoord layer2Area = gtl::area(viaLayerPS2);
 
   priority = std::make_tuple(isNotDefaultVia,
                              layer1Width,
@@ -371,17 +119,17 @@ void FlexPA::getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority)
 
 void FlexPA::initTrackCoords()
 {
-  int numLayers = getDesign()->getTech()->getLayers().size();
-  frCoord manuGrid = getDesign()->getTech()->getManufacturingGrid();
+  const int numLayers = getDesign()->getTech()->getLayers().size();
+  const frCoord manuGrid = getDesign()->getTech()->getManufacturingGrid();
 
   // full coords
   trackCoords_.clear();
   trackCoords_.resize(numLayers);
   for (auto& trackPattern : design_->getTopBlock()->getTrackPatterns()) {
-    auto layerNum = trackPattern->getLayerNum();
-    auto isVLayer = (design_->getTech()->getLayer(layerNum)->getDir()
-                     == dbTechLayerDir::VERTICAL);
-    auto isVTrack = trackPattern->isHorizontal();  // yes = vertical track
+    const auto layerNum = trackPattern->getLayerNum();
+    const auto isVLayer = (design_->getTech()->getLayer(layerNum)->getDir()
+                           == dbTechLayerDir::VERTICAL);
+    const auto isVTrack = trackPattern->isHorizontal();  // yes = vertical track
     if ((!isVLayer && !isVTrack) || (isVLayer && isVTrack)) {
       frCoord currCoord = trackPattern->getStartCoord();
       for (int i = 0; i < (int) trackPattern->getNumTracks(); i++) {
@@ -395,9 +143,10 @@ void FlexPA::initTrackCoords()
   vector<vector<frCoord>> halfTrackCoords(numLayers);
   for (int i = 0; i < numLayers; i++) {
     frCoord prevFullCoord = std::numeric_limits<frCoord>::max();
+
     for (auto& [currFullCoord, cost] : trackCoords_[i]) {
       if (currFullCoord > prevFullCoord) {
-        frCoord currHalfGrid
+        const frCoord currHalfGrid
             = (currFullCoord + prevFullCoord) / 2 / manuGrid * manuGrid;
         if (currHalfGrid != currFullCoord && currHalfGrid != prevFullCoord) {
           halfTrackCoords[i].push_back(currHalfGrid);

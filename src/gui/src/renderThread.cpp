@@ -1041,7 +1041,7 @@ void RenderThread::drawBlock(QPainter* painter,
   drawBlockages(painter, block, bounds);
   debugPrint(logger_, GUI, "draw", 1, "blockages {}", inst_blockages);
 
-  dbTech* tech = block->getDataBase()->getTech();
+  dbTech* tech = block->getTech();
   for (dbTechLayer* layer : tech->getLayers()) {
     if (restart_) {
       break;
@@ -1319,7 +1319,7 @@ void RenderThread::drawModuleView(QPainter* painter,
       continue;
     }
 
-    const auto setting = viewer_->modules_[module];
+    const auto setting = viewer_->modules_.at(module);
 
     if (!setting.visible) {
       continue;
