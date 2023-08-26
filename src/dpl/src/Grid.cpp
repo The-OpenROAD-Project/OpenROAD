@@ -177,13 +177,6 @@ void Opendp::initGrid()
         pixel.is_hopeless = false;
         if (!grid_info.sites.empty()) {
           pixel.site = grid_info.sites[j % grid_info.sites.size()].first;
-          logger_->info(DPL,
-                        7252,
-                        "pixel {} {} {} has site {}",
-                        index,
-                        j,
-                        k,
-                        pixel.site->getName());
         } else {
           pixel.site = nullptr;
         }
