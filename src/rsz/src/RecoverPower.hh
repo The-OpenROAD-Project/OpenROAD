@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2023, The Regents of the University of California
+// Copyright (c) 2023, Precision Innovations Inc.
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -79,12 +79,9 @@ class RecoverPower : StaState
 {
 public:
   RecoverPower(Resizer *resizer);
-  void recoverPower();
+  void recoverPower(float recover_power_percent);
   // For testing.
   void recoverPower(const Pin *end_pin);
-  // Rebuffer one net (for testing).
-  // resizerPreamble() required.
-  void rebufferNet(const Pin *drvr_pin);
 
 private:
   void init();
@@ -119,15 +116,15 @@ private:
   dbNetwork *db_network_;
   Resizer *resizer_;
   const Corner *corner_;
-  LibertyPort *drvr_port_;
-
   int resize_count_;
-  int inserted_buffer_count_;
-  int rebuffer_net_count_;
-  int swap_pin_count_;
-  std::unordered_map<const sta::Instance *, int> swap_pin_inst_map_;
-  const MinMax *min_;
   const MinMax *max_;
+
+  // Paths with slack more than this would be considered for power recovery
+  static constexpr float setup_slack_margin_ = 1e-11;
+  // For paths with no timing the max margin is INT_MAX. We need to filter those out (using 1e-4)
+  static constexpr float setup_slack_max_margin_ = 1e-4;
+  // Threshold for failed successive moves for power recovery before we stop trying
+  static constexpr int failed_move_threshold_limit_ = 500;
 
   sta::UnorderedMap<LibertyCell *, sta::LibertyPortSet> equiv_pin_map_;
 

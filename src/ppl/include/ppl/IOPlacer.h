@@ -126,7 +126,7 @@ class IOPlacer
   void run(bool random_mode);
   void runAnnealing(bool random);
   void reportHPWL();
-  void printConfig();
+  void printConfig(bool annealing = false);
   Parameters* getParameters() { return parms_.get(); }
   int64 computeIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);

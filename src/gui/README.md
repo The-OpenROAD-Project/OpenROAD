@@ -76,19 +76,26 @@ Options description:
 ### Save screenshot of clock trees
 
 ```
-gui::save_clocktree_image filename
-                          clock_name
+save_clocktree_image filename
+                     -clock clock_name
+                     [-width width]
+                     [-height height]
+                     [-corner corner]
 ```
 
 Options description:
 - ``filename`` path to save the image to.
-- ``clock_name`` name of the clock to save the clocktree for.
+- ``-clock`` name of the clock to save the clocktree for.
+- ``-corner`` name of the timing corner to save the clocktree for, default to the first corner defined.
+- ``-height`` height of the image in pixels, defaults to the height of the GUI widget.
+- ``-width`` width of the image in pixels, defualts to the width of the GUI widget.
 
 ### Selecting objects
 
 ```
 select -type object_type
        [-name glob_pattern]
+       [-filter attribute=value]
        [-case_insensitive]
        [-highlight group]
 ```
@@ -98,6 +105,7 @@ Returns: number of objects selected.
 Options description:
 - ``object_type``: name of the object type. For example, ``Inst`` for instances, ``Net`` for nets, and ``DRC`` for DRC violations.
 - ``glob_pattern``: (optional) filter selection by the specified name. For example, to only select clk nets ``*clk*``. Use ``-case_insensitive`` to filter based on case insensitive instead of case sensitive.
+- ``attribute=value``: (optional) filter selection based on the objects' properties. ``attribute`` represents the property's name and ``value`` the property's value. In case the property holds a collection (e. g. BTerms in a Net) or a table (e. g. Layers in a Generate Via Rule) ``value`` can be any element within those. A special case exists for checking whether a collection is empty or not by using the value ``CONNECTED``. This can be useful to select a specific group of elements (e. g. BTerms=CONNECTED will select only Nets connected to Input/Output Pins).
 - ``group``: (optional) add the selection to the specific highlighting group. Values can be 0 to 7.
 
 ### Displaying timing cones

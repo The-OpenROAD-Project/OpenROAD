@@ -112,6 +112,7 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTech.h"
+#include "dbTechLayer.h"
 #include "dbTechLayerRule.h"
 #include "dbTechNonDefaultRule.h"
 #include "dbTrackGrid.h"
@@ -410,6 +411,7 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
       _maxRSegId(block._maxRSegId),
       _maxCCSegId(block._maxCCSegId),
       _children(block._children),
+      _component_mask_shift(block._component_mask_shift),
       _currentCcAdjOrder(block._currentCcAdjOrder)
 {
   if (block._name) {
@@ -898,6 +900,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._maxRSegId;
   stream << block._maxCCSegId;
   stream << block._children;
+  stream << block._component_mask_shift;
   stream << block._currentCcAdjOrder;
   stream << *block._bterm_tbl;
   stream << *block._iterm_tbl;
@@ -1005,6 +1008,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
     stream >> ignore_maxExtModelIndex;
   }
   stream >> block._children;
+  if (db->isSchema(db_schema_block_component_mask_shift)) {
+    stream >> block._component_mask_shift;
+  }
   stream >> block._currentCcAdjOrder;
   stream >> *block._bterm_tbl;
   stream >> *block._iterm_tbl;
@@ -1205,6 +1211,9 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
   if (_children != rhs._children)
     return false;
 
+  if (_component_mask_shift != rhs._component_mask_shift)
+    return false;
+
   if (_currentCcAdjOrder != rhs._currentCcAdjOrder)
     return false;
 
@@ -1372,6 +1381,7 @@ void _dbBlock::differences(dbDiff& diff,
   DIFF_FIELD(_maxRSegId);
   DIFF_FIELD(_maxCCSegId);
   DIFF_VECTOR(_children);
+  DIFF_VECTOR(_component_mask_shift);
   DIFF_FIELD(_currentCcAdjOrder);
   DIFF_TABLE(_bterm_tbl);
   DIFF_TABLE_NO_DEEP(_iterm_tbl);
@@ -1465,6 +1475,7 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_maxRSegId);
   DIFF_OUT_FIELD(_maxCCSegId);
   DIFF_OUT_VECTOR(_children);
+  DIFF_OUT_VECTOR(_component_mask_shift);
   DIFF_OUT_FIELD(_currentCcAdjOrder);
   DIFF_OUT_TABLE(_bterm_tbl);
   DIFF_OUT_TABLE_NO_DEEP(_iterm_tbl);
@@ -1755,6 +1766,25 @@ dbSet<dbGlobalConnect> dbBlock::getGlobalConnects()
 {
   _dbBlock* block = (_dbBlock*) this;
   return dbSet<dbGlobalConnect>(block, block->global_connect_tbl_);
+}
+
+std::vector<dbTechLayer*> dbBlock::getComponentMaskShift()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  _dbTech* tech = block->getTech();
+  std::vector<dbTechLayer*> layers;
+  for (const auto& layer_id : block->_component_mask_shift) {
+    layers.push_back((dbTechLayer*) tech->_layer_tbl->getPtr(layer_id));
+  }
+  return layers;
+}
+
+void dbBlock::setComponentMaskShift(const std::vector<dbTechLayer*>& layers)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  for (auto* layer : layers) {
+    block->_component_mask_shift.push_back(layer->getId());
+  }
 }
 
 dbInst* dbBlock::findInst(const char* name)
@@ -3421,43 +3451,6 @@ dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, u
 	return nwnet;
 }
 #endif
-
-//
-// Utility to save_lef
-//
-
-void dbBlock::saveLef(char* filename,
-                      int bloat_factor,
-                      bool bloat_occupied_layers)
-{
-  std::ofstream os;
-  os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
-  os.open(filename);
-  lefout writer(getImpl()->getLogger(), os);
-  writer.setBloatFactor(bloat_factor);
-  writer.setBloatOccupiedLayers(bloat_occupied_layers);
-  writer.writeAbstractLef(this);
-}
-
-//
-// Utility to save_def
-//
-
-void dbBlock::saveDef(char* filename, char* nets)
-{
-  std::vector<dbNet*> inets;
-  findSomeNet(nets, inets);
-  defout writer(getImpl()->getLogger());
-  dbNet* net;
-  uint jj;
-  for (jj = 0; jj < inets.size(); jj++) {
-    net = inets[jj];
-    writer.selectNet(net);
-  }
-  if (!writer.writeBlock(this, filename))
-    getImpl()->getLogger()->warn(
-        utl::ODB, 17, "Failed to write def file {}", filename);
-}
 
 //
 // Utility to write db file

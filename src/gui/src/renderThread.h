@@ -109,7 +109,8 @@ class RenderThread : public QThread
                       const QFont& text_font,
                       odb::Rect bbox,
                       QString name,
-                      QPainter* painter);
+                      QPainter* painter,
+                      bool center);
 
   void drawBlockages(QPainter* painter,
                      odb::dbBlock* block,

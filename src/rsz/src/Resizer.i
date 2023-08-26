@@ -537,11 +537,11 @@ hold_buffer_count()
 
 ////////////////////////////////////////////////////////////////
 void
-recover_power()
+recover_power(float recover_power_percent)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->recoverPower();
+  resizer->recoverPower(recover_power_percent);
 }
 
 ////////////////////////////////////////////////////////////////

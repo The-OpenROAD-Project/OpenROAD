@@ -354,6 +354,15 @@ write_lef_cmd(const char *filename)
   ord->writeLef(filename);
 }
 
+void
+write_abstract_lef_cmd(const char *filename,
+                       int bloat_factor,
+                       bool bloat_occupied_layers)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->writeAbstractLef(filename, bloat_factor, bloat_occupied_layers);
+}
+
 
 void 
 write_cdl_cmd(const char *outFilename,
@@ -437,7 +446,7 @@ get_db_tech()
 bool
 db_has_tech()
 {
-  return getDb()->getTech() != nullptr;
+  return !getDb()->getTechs().empty();
 }
 
 odb::dbBlock *

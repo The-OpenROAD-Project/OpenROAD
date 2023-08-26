@@ -80,6 +80,7 @@ target_sources(dpl
 target_include_directories(dpl
   PUBLIC
     include
+  PRIVATE
     src
 )
 

@@ -42,6 +42,7 @@
 #include "dbShape.h"
 #include "definBlockage.h"
 #include "definComponent.h"
+#include "definComponentMaskShift.h"
 #include "definFill.h"
 #include "definGCell.h"
 #include "definGroup.h"
@@ -87,6 +88,7 @@ definReader::definReader(dbDatabase* db, utl::Logger* logger, defin::MODE mode)
 
   _blockageR = new definBlockage;
   _componentR = new definComponent;
+  _componentMaskShift = new definComponentMaskShift;
   _fillR = new definFill;
   _gcellR = new definGCell;
   _netR = new definNet;
@@ -103,6 +105,7 @@ definReader::definReader(dbDatabase* db, utl::Logger* logger, defin::MODE mode)
 
   _interfaces.push_back(_blockageR);
   _interfaces.push_back(_componentR);
+  _interfaces.push_back(_componentMaskShift);
   _interfaces.push_back(_fillR);
   _interfaces.push_back(_gcellR);
   _interfaces.push_back(_netR);
@@ -123,6 +126,7 @@ definReader::~definReader()
 {
   delete _blockageR;
   delete _componentR;
+  delete _componentMaskShift;
   delete _fillR;
   delete _gcellR;
   delete _netR;
@@ -508,11 +512,16 @@ int definReader::componentsCallback(defrCallbackType_e /* unused: type */,
 
 int definReader::componentMaskShiftCallback(
     defrCallbackType_e /* unused: type */,
-    defiComponentMaskShiftLayer* /* unused: shiftLayers */,
+    defiComponentMaskShiftLayer* shiftLayers,
     defiUserData data)
 {
   definReader* reader = (definReader*) data;
-  UNSUPPORTED("COMPONENTMASKSHIFT is unsupported");
+  for (int i = 0; i < shiftLayers->numMaskShiftLayers(); i++) {
+    reader->_componentMaskShift->addLayer(shiftLayers->maskShiftLayer(i));
+  }
+
+  reader->_componentMaskShift->setLayers();
+
   return PARSE_OK;
 }
 
@@ -1639,8 +1648,9 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs,
   } else if (chip != nullptr) {
     fprintf(stderr, "Error: Chip already exists\n");
     return nullptr;
-  } else
+  } else {
     chip = dbChip::create(_db);
+  }
 
   assert(chip);
   setTech(tech);

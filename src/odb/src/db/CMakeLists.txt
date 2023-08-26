@@ -144,8 +144,6 @@ set_target_properties(db
 
 target_link_libraries(db
     PUBLIC
-        lefout
-        defout
         tm
         zutil
         utl_lib

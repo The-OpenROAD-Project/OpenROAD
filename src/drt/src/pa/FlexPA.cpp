@@ -55,25 +55,16 @@ FlexPA::FlexPA(frDesign* in, Logger* logger, dst::Distributed* dist)
     : design_(in),
       logger_(logger),
       dist_(dist),
-      stdCellPinGenApCnt_(0),
-      stdCellPinValidPlanarApCnt_(0),
-      stdCellPinValidViaApCnt_(0),
-      stdCellPinNoApCnt_(0),
-      macroCellPinGenApCnt_(0),
-      macroCellPinValidPlanarApCnt_(0),
-      macroCellPinValidViaApCnt_(0),
-      macroCellPinNoApCnt_(0)
+      unique_insts_(design_, target_insts_, logger_)
 {
 }
 
-FlexPA::~FlexPA()
-{
-  // must be out-of-line due to unique_ptr
-}
+// must be out-of-line due to the unique_ptr
+FlexPA::~FlexPA() = default;
 
 void FlexPA::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
 {
-  bool on = settings->debugPA;
+  const bool on = settings->debugPA;
   graphics_
       = on && FlexPAGraphics::guiActive()
             ? std::make_unique<FlexPAGraphics>(settings, design_, db, logger_)
@@ -83,18 +74,23 @@ void FlexPA::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
 void FlexPA::init()
 {
   ProfileTask profile("PA:init");
-  for (auto& master : design_->getMasters())
-    for (auto& term : master->getTerms())
-      for (auto& pin : term->getPins())
+  for (auto& master : design_->getMasters()) {
+    for (auto& term : master->getTerms()) {
+      for (auto& pin : term->getPins()) {
         pin->clearPinAccess();
-  for (auto& term : design_->getTopBlock()->getTerms())
-    for (auto& pin : term->getPins())
+      }
+    }
+  }
+
+  for (auto& term : design_->getTopBlock()->getTerms()) {
+    for (auto& pin : term->getPins()) {
       pin->clearPinAccess();
+    }
+  }
   initViaRawPriority();
   initTrackCoords();
 
-  initUniqueInstance();
-  initPinAccess();
+  unique_insts_.init();
 }
 
 void FlexPA::applyPatternsFile(const char* file_path)
@@ -147,11 +143,28 @@ void FlexPA::prep()
     uDesc->setPath(updates_file);
     uDesc->setType(PinAccessJobDescription::UPDATE_PA);
     msg.setJobDescription(std::move(uDesc));
-    bool ok = dist_->sendJob(msg, remote_host_.c_str(), remote_port_, result);
+    const bool ok
+        = dist_->sendJob(msg, remote_host_.c_str(), remote_port_, result);
     if (!ok)
       logger_->error(utl::DRT, 331, "Error sending UPDATE_PA Job to cloud");
   }
   prepPattern();
+}
+
+void FlexPA::setTargetInstances(const frCollection<odb::dbInst*>& insts)
+{
+  target_insts_ = insts;
+}
+
+void FlexPA::setDistributed(const std::string& rhost,
+                            const ushort rport,
+                            const std::string& shared_vol,
+                            const int cloud_sz)
+{
+  remote_host_ = rhost;
+  remote_port_ = rport;
+  shared_vol_ = shared_vol;
+  cloud_sz_ = cloud_sz;
 }
 
 int FlexPA::main()
@@ -182,8 +195,7 @@ int FlexPA::main()
   }
 
   if (VERBOSE > 0) {
-    logger_->report("#scanned instances     = {}", inst2unique_.size());
-    logger_->report("#unique  instances     = {}", uniqueInstances_.size());
+    unique_insts_.report();
     logger_->report("#stdCellGenAp          = {}", stdCellPinGenApCnt_);
     logger_->report("#stdCellValidPlanarAp  = {}", stdCellPinValidPlanarApCnt_);
     logger_->report("#stdCellValidViaAp     = {}", stdCellPinValidViaApCnt_);

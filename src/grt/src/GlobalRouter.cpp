@@ -545,6 +545,7 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
       dirty_nets.push_back(db_net_map_[db_net]);
     }
   }
+  dirty_nets_.clear();
 }
 
 bool GlobalRouter::pinAccessPointPositions(
@@ -3931,7 +3932,6 @@ void GlobalRouter::updateDirtyRoutes()
     NetRouteMap new_route
         = findRouting(dirty_nets, min_routing_layer_, max_routing_layer_);
     mergeResults(new_route);
-    dirty_nets_.clear();
 
     bool reroutingOverflow = true;
     if (fastroute_->has2Doverflow() && !allow_congestion_) {
@@ -3994,8 +3994,9 @@ void GRouteDbCbk::instItermsDirty(odb::dbInst* inst)
 {
   for (odb::dbITerm* iterm : inst->getITerms()) {
     odb::dbNet* db_net = iterm->getNet();
-    if (db_net != nullptr && !db_net->isSpecial())
-      grouter_->addDirtyNet(iterm->getNet());
+    if (db_net != nullptr && !db_net->isSpecial()) {
+      grouter_->addDirtyNet(db_net);
+    }
   }
 }
 

@@ -99,10 +99,15 @@ class ScriptWidget : public QDockWidget
   void addResultToOutput(const QString& result, bool is_ok);
   void addCommandToOutput(const QString& cmd);
 
+  void pause(int timeout);
+
+  // This can be used by other widgets to "write" commands
+  // in the Tcl command input
+  void setCommand(const QString& command);
+
  private slots:
   void outputChanged();
 
-  void pause(int timeout);
   void unpause();
 
   void pauserClicked();

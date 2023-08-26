@@ -306,18 +306,6 @@ class Hypergraph
   }
 
   // get balance constraints
-  // TODO:  RePlace the Vertex Balance with UpperVertexBalance
-  std::vector<std::vector<float>> GetVertexBalance(int num_parts,
-                                                   float ub_factor) const;
-
-  // std::vector<std::vector<float>> GetUpperVertexBalance(int num_parts,
-  //                                                      float ub_factor)
-  //                                                      const;
-
-  // std::vector<std::vector<float>> GetLowerVertexBalance(int num_parts,
-  //                                                      float ub_factor)
-  //                                                      const;
-
   std::vector<std::vector<float>> GetUpperVertexBalance(
       int num_parts,
       float ub_factor,

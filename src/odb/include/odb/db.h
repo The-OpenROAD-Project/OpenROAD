@@ -956,7 +956,7 @@ class dbBlock : public dbObject
   dbSet<dbAccessPoint> getAccessPoints();
 
   ///
-  /// Get the gloabl connects of this block.
+  /// Get the global connects of this block.
   ///
   dbSet<dbGlobalConnect> getGlobalConnects();
 
@@ -974,6 +974,16 @@ class dbBlock : public dbObject
                        bool do_connect);
   void reportGlobalConnect();
   void clearGlobalConnect();
+
+  ///
+  /// Get the component mask shift layers.
+  ///
+  std::vector<dbTechLayer*> getComponentMaskShift();
+
+  ///
+  /// Set the component mask shift layers.
+  ///
+  void setComponentMaskShift(const std::vector<dbTechLayer*>& layers);
 
   ///
   /// Find a specific instance of this block.
@@ -1082,17 +1092,6 @@ class dbBlock : public dbObject
   /// where xxx is the net oid.
   ///
   bool findSomeNet(const char* names, std::vector<dbNet*>& nets);
-
-  //
-  // Utility to save_lef
-  //
-  void saveLef(char* filename, int bloat_factor, bool bloat_occupied_layers);
-
-  //
-  // Utility to save_def
-  //
-  // void dbBlock::saveDef(char *filename, char *nets);
-  void saveDef(char* filename, char* nets);
 
   //
   // Utility to write db file

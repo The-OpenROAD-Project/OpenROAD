@@ -1237,7 +1237,7 @@ void IOPlacer::assignMirroredPin(IOPin& io_pin)
   mirrored_pin.assignToSection();
 }
 
-void IOPlacer::printConfig()
+void IOPlacer::printConfig(bool annealing)
 {
   logger_->info(PPL, 1, "Number of slots          {}", slots_.size());
   logger_->info(PPL, 2, "Number of I/O            {}", netlist_->numIOPins());
@@ -1245,9 +1245,11 @@ void IOPlacer::printConfig()
   logger_->info(
       PPL, 3, "Number of I/O w/sink     {}", netlist_io_pins_->numIOPins());
   logger_->info(PPL, 4, "Number of I/O w/o sink   {}", zero_sink_ios_.size());
-  logger_->info(PPL, 5, "Slots per section        {}", slots_per_section_);
-  logger_->info(
-      PPL, 6, "Slots increase factor    {:.1}", slots_increase_factor_);
+  if (!annealing) {
+    logger_->info(PPL, 5, "Slots per section        {}", slots_per_section_);
+    logger_->info(
+        PPL, 6, "Slots increase factor    {:.1}", slots_increase_factor_);
+  }
 }
 
 void IOPlacer::setupSections(int assigned_pins_count)
@@ -1613,6 +1615,7 @@ void IOPlacer::initConstraints(bool annealing)
 {
   std::reverse(constraints_.begin(), constraints_.end());
   int constraint_idx = 0;
+  int constraints_no_slots = 0;
   for (Constraint& constraint : constraints_) {
     getPinsFromDirectionConstraint(constraint);
     constraint.sections = createSectionsPerConstraint(constraint);
@@ -1623,9 +1626,16 @@ void IOPlacer::initConstraints(bool annealing)
     if (num_slots > 0) {
       constraint.pins_per_slots
           = static_cast<float>(constraint.pin_list.size()) / num_slots;
+      if (constraint.pins_per_slots > 1) {
+        logger_->warn(PPL,
+                      110,
+                      "Constraint has {} pins, but only {} available slots",
+                      constraint.pin_list.size(),
+                      num_slots);
+        constraints_no_slots++;
+      }
     } else {
-      logger_->error(
-          PPL, 76, "Constraint does not have available slots for its pins.");
+      logger_->error(PPL, 76, "Constraint does not have available slots.");
     }
 
     for (odb::dbBTerm* term : constraint.pin_list) {
@@ -1633,8 +1643,19 @@ void IOPlacer::initConstraints(bool annealing)
       IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
       io_pin.setConstraintIdx(constraint_idx);
       constraint.pin_indices.push_back(pin_idx);
+      if (io_pin.getGroupIdx() != -1) {
+        constraint.pin_groups.insert(io_pin.getGroupIdx());
+      }
     }
     constraint_idx++;
+  }
+
+  if (constraints_no_slots > 0) {
+    logger_->error(PPL,
+                   111,
+                   "{} constraint(s) does not have available slots "
+                   "for the pins.",
+                   constraints_no_slots);
   }
 
   if (!annealing) {
@@ -1993,6 +2014,8 @@ void IOPlacer::runAnnealing(bool random)
   if (isAnnealingDebugOn()) {
     annealing.setDebugOn(std::move(ioplacer_renderer_));
   }
+
+  printConfig(true);
 
   annealing.run(
       init_temperature_, max_iterations_, perturb_per_iter_, alpha_, random);

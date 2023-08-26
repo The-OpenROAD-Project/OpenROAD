@@ -61,6 +61,8 @@ struct DebugSettings
 
 using utl::Logger;
 
+using GroupLimits = std::pair<int, int>;
+
 struct Constraint;
 
 class SimulatedAnnealing
@@ -106,13 +108,24 @@ class SimulatedAnnealing
   int swapPins();
   int movePinToFreeSlot(bool lone_pin = false);
   int moveGroupToFreeSlots(int group_idx);
+  int shiftGroup(int group_idx);
+  void shiftGroupToPosition(const std::vector<int>& pin_indices,
+                            int free_slots_count,
+                            int min_slot,
+                            bool move_to_max);
+  int rearrangeConstrainedGroups(int constraint_idx);
+  int moveGroup(int pin_idx);
   void restorePreviousAssignment();
   double dbuToMicrons(int64_t dbu);
-  bool isFreeForGroup(int slot_idx, int group_size, int last_slot);
+  bool isFreeForGroup(int& slot_idx, int group_size, int last_slot);
   void getSlotsRange(const IOPin& io_pin, int& first_slot, int& last_slot);
   int getSlotIdxByPosition(const odb::Point& position, int layer) const;
   bool isFreeForMirrored(int slot_idx, int& mirrored_idx) const;
   int getMirroredSlotIdx(int slot_idx) const;
+  void updateSlotsFromGroup(const std::vector<int>& prev_slots_, bool block);
+  int computeGroupPrevCost(int group_idx);
+  void updateGroupSlots(const std::vector<int>& pin_indices, int& new_slot);
+  void countLonePins();
 
   // [pin] -> slot
   std::vector<int> pin_assignment_;
@@ -141,6 +154,9 @@ class SimulatedAnnealing
   // perturbation variables
   const float swap_pins_ = 0.5;
   const int move_fail_ = -1;
+  const float shift_group_ = 0.8;
+  const float group_to_free_slots_ = 0.7;
+  const float pins_per_slot_limit_ = 0.5;
 
   Logger* logger_ = nullptr;
   odb::dbDatabase* db_;
