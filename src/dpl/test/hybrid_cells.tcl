@@ -6,7 +6,7 @@ set_debug_level DPL "place" 1
 set_debug_level DPL "detailed" 1
 set_debug_level DPL "grid" 1
 detailed_placement
-check_placement
+check_placement -verbose 
 
 set def_file [make_result_file hybrid_cells.def]
 write_def $def_file

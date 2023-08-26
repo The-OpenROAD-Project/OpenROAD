@@ -580,23 +580,8 @@ pair<int, GridInfo> Opendp::getRowInfo(const Cell* cell) const
     logger_->error(DPL, 5212, "Cell is null.");
   }
   Grid_map_key key = getGridMapKey(cell);
-  logger_->info(DPL,
-                5213,
-                "getRowInfo key: {} {}",
-                key.cell_height,
-                key.is_hybrid_parent);
-
-  // print the map
-  for (auto const& x : grid_info_map_) {
-    logger_->info(DPL,
-                  5214,
-                  "getRowInfo map: {} {}",
-                  x.first.cell_height,
-                  x.first.is_hybrid_parent);
-  }
-
-  auto layer = this->grid_info_map_.find(key);  // TODO: failure here whyyyy
-  if (layer == this->grid_info_map_.end()) {
+  auto layer = grid_info_map_.find(key);
+  if (layer == grid_info_map_.end()) {
     // this means the cell is taller than any layer
     logger_->error(DPL,
                    44,
@@ -612,7 +597,7 @@ Grid_map_key Opendp::getGridMapKey(const dbSite* site) const
   Grid_map_key gmk;
   gmk.cell_height = site->getHeight();
   gmk.is_hybrid_parent = site->isHybrid() && site->hasRowPattern();
-  if (!gmk.is_hybrid_parent) {
+  if (!gmk.is_hybrid_parent && site->isHybrid()) {
     gmk.cell_height = hybrid_sites_mapper.at(site->getName())->getHeight();
   }
   return gmk;
@@ -622,11 +607,7 @@ Grid_map_key Opendp::getGridMapKey(const Cell* cell) const
 {
   if (cell == nullptr) {
     logger_->error(DPL, 5211, "getGridMapKey cell is null");
-  } else {
-    logger_->info(
-        DPL, 52111, "getGridMapKey cell is not null name {}", cell->name());
   }
-  logger_->warn(DPL, 5209, "getGridMapKey cell: {}", cell->area());
   auto site = cell->db_inst_->getMaster()->getSite();
   if (site == nullptr) {
     logger_->error(DPL, 4219, "Cell {} has no site.", cell->name());

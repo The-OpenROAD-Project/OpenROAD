@@ -125,12 +125,9 @@ void Opendp::initGridLayersMap()
     int row_height = working_site->getHeight();
     Grid_map_key gmk = getGridMapKey(working_site);
     if (grid_info_map_.find(gmk) == grid_info_map_.end()) {
-      logger_->warn(DPL, 13331, "Cell {}", db_row->getSite()->getName());
-      logger_->warn(
-          DPL, 13341, "GMK: {} {}", gmk.cell_height, gmk.is_hybrid_parent);
       grid_info_map_.emplace(
           gmk,
-          GridInfo{gmk.is_hybrid_parent
+          GridInfo{gmk.is_hybrid_parent || !working_site->isHybrid()
                        ? getRowCount(row_height)
                        : calculate_row_counts(
                            hybrid_sites_mapper[db_row->getSite()->getName()]),
@@ -162,20 +159,8 @@ void Opendp::initGrid()
   // Make pixel grid
   if (grid_.empty()) {
     grid_.resize(grid_info_map_.size());
-
     for (auto& [gmk, grid_info] : grid_info_map_) {
-      logger_->warn(DPL,
-                    13631,
-                    "Grid Map key {} {} and grid Info index: {} row count: {} "
-                    "site count: {}",
-                    gmk.is_hybrid_parent,
-                    gmk.cell_height,
-                    grid_info.grid_index,
-                    grid_info.row_count,
-                    grid_info.site_count);
-      int layer_row_count = grid_info.row_count;
-      int index = grid_info.grid_index;
-      grid_[index].resize(layer_row_count);
+      grid_[grid_info.grid_index].resize(grid_info.row_count);
     }
   }
 
@@ -213,7 +198,8 @@ void Opendp::initGrid()
     }
     int current_row_height = db_row->getSite()->getHeight();
     int current_row_site_count = db_row->getSiteCount();
-    auto entry = grid_info_map_.at(getGridMapKey(db_row->getSite()));
+    auto gmk = getGridMapKey(db_row->getSite());
+    auto entry = grid_info_map_.at(gmk);
     int current_row_count = entry.row_count;
     int current_row_grid_index = entry.grid_index;
     if (db_row->getSite()->getClass() == odb::dbSiteClass::PAD) {

@@ -118,13 +118,13 @@ struct Grid_map_key
   bool is_hybrid_parent;
   bool operator<(const Grid_map_key& other) const
   {
-    if (cell_height < other.cell_height) {
-      return true;
-    } else if (cell_height > other.cell_height) {
-      return false;
-    }
-    // If values are equal, compare based on the boolean flag
-    return is_hybrid_parent != other.is_hybrid_parent;
+    return std::tie(cell_height, is_hybrid_parent)
+           < std::tie(other.cell_height, other.is_hybrid_parent);
+  }
+  bool operator==(const Grid_map_key& other) const
+  {
+    return std::tie(cell_height, is_hybrid_parent)
+           == std::tie(other.cell_height, other.is_hybrid_parent);
   }
 };
 
