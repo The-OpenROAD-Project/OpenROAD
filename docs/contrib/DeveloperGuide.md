@@ -299,12 +299,12 @@ clang-format -i -style=file:.clang-format source_file.cpp
 
 ## Doxygen
 
-OpenROAD's Doxygen pages may be found <a href="../doxygen_output/html/index.html">here</a>.
-
-In addition, OpenROAD uses Doxygen style comments. Our preferred syntax 
-for Doxygen comments can be found in this [file](../../src/odb/include/odb/odb.h).
-Also, do refer to the official Doxygen documentation for more information on what you can include in 
-your Doxygen comments [here](https://www.doxygen.nl/manual/docblocks.html).
+OpenROAD uses Doxygen style comments to generate documentation.
+See the generated documentation <a href="../doxygen_output/html/index.html">here</a>.
+Our preferred syntax for Doxygen comments can be found in this
+[file](../../src/odb/include/odb/odb.h). Also, do refer to the official Doxygen
+documentation for more information on what you can include in your Doxygen
+comments [here](https://www.doxygen.nl/manual/docblocks.html).
 
 ```cpp
 ///

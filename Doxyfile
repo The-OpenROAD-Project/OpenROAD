@@ -1,5 +1,5 @@
-PROJECT_NAME           = "OpenROAD's Doxygen Test"	
-PROJECT_BRIEF          = "This is just a test of Doxygen"
+PROJECT_NAME           = "OpenROAD's Doxygen Pages"	
+PROJECT_BRIEF          = "Compilation of detailed documentation for OpenROAD modules"
 PROJECT_LOGO           = ""
 OUTPUT_DIRECTORY       = "./_readthedocs/html/doxygen_output"
 DISTRIBUTE_GROUP_DOC   = YES
@@ -8,7 +8,8 @@ EXTRACT_PRIVATE        = YES
 EXTRACT_PACKAGE        = YES
 EXTRACT_STATIC         = YES
 EXTRACT_ANON_NSPACES   = YES
-INPUT                  = ./src/odb/include/odb/db.h ./docs/doxymain.md
+INPUT                  = ./src 
+RECURSIVE              = YES
 EXCLUDE                = README.md
 USE_MDFILE_AS_MAINPAGE = ./docs/doxymain.md
 SOURCE_BROWSER         = YES
