@@ -2,9 +2,6 @@ source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_lef Nangate45/fake_macros.lef
 read_def hybrid_cells.def
-set_debug_level DPL "place" 1
-set_debug_level DPL "detailed" 1
-set_debug_level DPL "grid" 1
 detailed_placement
 check_placement -verbose 
 

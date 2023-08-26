@@ -994,14 +994,15 @@ bool Opendp::checkPixels(const Cell* cell,
   if (!checkRegionOverlap(cell, x, y, x_end, y_end)) {
     return false;
   }
-
+  auto cell_site = cell->db_inst_->getMaster()->getSite();
   int layer = row_info.second.grid_index;
   for (int y1 = y; y1 < y_end; y1++) {
     for (int x1 = x; x1 < x_end; x1++) {
       Pixel* pixel = gridPixel(layer, x1, y1);
       if (pixel == nullptr || pixel->cell || !pixel->is_valid
           || (cell->inGroup() && pixel->group_ != cell->group_)
-          || (!cell->inGroup() && pixel->group_)) {
+          || (!cell->inGroup() && pixel->group_)
+          || (pixel->site != nullptr && pixel->site != cell_site)) {
         return false;
       }
     }

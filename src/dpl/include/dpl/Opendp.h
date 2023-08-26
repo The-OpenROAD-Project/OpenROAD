@@ -161,6 +161,7 @@ struct Pixel
   dbOrientType orient_;
   bool is_valid;     // false for dummy cells
   bool is_hopeless;  // too far from sites for diamond search
+  dbSite* site;      // site that this pixel is
 };
 
 struct GridInfo
@@ -168,6 +169,7 @@ struct GridInfo
   int row_count;
   int site_count;
   int grid_index;
+  std::vector<std::pair<dbSite*, dbOrientType>> sites;
 };
 
 // For optimize mirroring.

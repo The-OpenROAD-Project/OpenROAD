@@ -69,28 +69,9 @@ void Opendp::initGridLayersMap()
       }
     }
   }
-  // print hybrid sites mapper
-  for (auto [site_name, site] : hybrid_sites_mapper) {
-    logger_->warn(DPL,
-                  1331,
-                  "hybrid site name {} mapped to {}",
-                  site_name,
-                  site->getName());
-  }
 
   auto calculate_row_counts = [&](dbSite* parent_hybrid_site) {
-    logger_->warn(DPL,
-                  16331,
-                  "Hybrid site is null?",
-                  parent_hybrid_site == nullptr ? "true" : "false");
-    logger_->warn(DPL,
-                  13931,
-                  "calculate fine? site name {}",
-                  parent_hybrid_site->getName());
-
     auto row_pattern = parent_hybrid_site->getRowPattern();
-    logger_->warn(DPL, 13351, "Row pattern size {}", row_pattern.size());
-
     int rows_count = getRowCount(parent_hybrid_site->getHeight());
     int remaining_core_height
         = core_.dy() - (rows_count * parent_hybrid_site->getHeight());
@@ -106,7 +87,11 @@ void Opendp::initGridLayersMap()
         break;
       }
     }
-    logger_->warn(DPL, 13321, "calculate is fine");
+    logger_->info(DPL,
+                  7251,
+                  "parent hybrid site {} has {} rows",
+                  parent_hybrid_site->getName(),
+                  rows_count);
     return rows_count;
   };
   // create a lambda to calculate the row counts for a given row height
@@ -125,14 +110,26 @@ void Opendp::initGridLayersMap()
     int row_height = working_site->getHeight();
     Grid_map_key gmk = getGridMapKey(working_site);
     if (grid_info_map_.find(gmk) == grid_info_map_.end()) {
-      grid_info_map_.emplace(
-          gmk,
-          GridInfo{gmk.is_hybrid_parent || !working_site->isHybrid()
-                       ? getRowCount(row_height)
-                       : calculate_row_counts(
-                           hybrid_sites_mapper[db_row->getSite()->getName()]),
-                   db_row->getSiteCount(),
-                   grid_index++});
+      GridInfo newGridInfo;
+
+      if (gmk.is_hybrid_parent || !working_site->isHybrid()) {
+        newGridInfo = {
+            getRowCount(row_height),
+            db_row->getSiteCount(),
+            grid_index++,
+            std::vector<std::pair<dbSite*, dbOrientType>>{
+                {working_site, db_row->getOrient()}},
+        };
+      } else {
+        auto parent_site = hybrid_sites_mapper.at(working_site->getName());
+        newGridInfo = {
+            calculate_row_counts(parent_site),
+            db_row->getSiteCount(),
+            grid_index++,
+            parent_site->getRowPattern(),
+        };
+      }
+      grid_info_map_.emplace(gmk, newGridInfo);
     } else {
       auto& grid_info = grid_info_map_.at(gmk);
       grid_info.site_count
@@ -164,7 +161,7 @@ void Opendp::initGrid()
     }
   }
 
-  for (auto& [row_height, grid_info] : grid_info_map_) {
+  for (auto& [gmk, grid_info] : grid_info_map_) {
     const int layer_row_count = grid_info.row_count;
     const int layer_row_site_count = grid_info.site_count;
     const int index = grid_info.grid_index;
@@ -178,6 +175,18 @@ void Opendp::initGrid()
         pixel.util = 0.0;
         pixel.is_valid = false;
         pixel.is_hopeless = false;
+        if (!grid_info.sites.empty()) {
+          pixel.site = grid_info.sites[j % grid_info.sites.size()].first;
+          logger_->info(DPL,
+                        7252,
+                        "pixel {} {} {} has site {}",
+                        index,
+                        j,
+                        k,
+                        pixel.site->getName());
+        } else {
+          pixel.site = nullptr;
+        }
       }
     }
   }
@@ -526,7 +535,8 @@ void Opendp::groupInitPixels2()
     for (int x = 0; x < row_site_count; x++) {
       for (int y = 0; y < row_count; y++) {
         Rect sub;
-        // TODO: Site width here is wrong if multiple site widths are supported!
+        // TODO: Site width here is wrong if multiple site widths are
+        // supported!
         sub.init(x * site_width_,
                  y * row_height,
                  (x + 1) * site_width_,
@@ -720,7 +730,7 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
     debugPrint(logger_,
                DPL,
                "detailed",
-               1,
+               176,
                "y_end {} original step {} target step {} layer_y_end {}",
                y_end,
                row_height,
@@ -768,11 +778,11 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
       for (int y = layer_y; y < layer_y_end; y++) {
         Pixel* pixel = gridPixel(layer.second.grid_index, x, y);
         if (pixel && pixel->cell) {
-          // Checks that the row heights of the found cell match the row height
-          // of this layer. If they don't, it means that this pixel is partially
-          // filled by a single-height or shorter cell, which is allowed.
-          // However, if they do match, it means that we are trying to overwrite
-          // a double-height cell placement, which is an error.
+          // Checks that the row heights of the found cell match the row
+          // height of this layer. If they don't, it means that this pixel is
+          // partially filled by a single-height or shorter cell, which is
+          // allowed. However, if they do match, it means that we are trying
+          // to overwrite a double-height cell placement, which is an error.
           pair<int, GridInfo> grid_info_candidate = getRowInfo(pixel->cell);
           if (grid_info_candidate.first == layer.first.cell_height) {
             // Occupied by a multi-height cell this should not happen.
