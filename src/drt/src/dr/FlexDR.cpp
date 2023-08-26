@@ -917,15 +917,15 @@ static std::vector<FlexDR::SearchRepairArgs> strategy()
     {7,  0,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, 0, false}, //  3
     {7, -1,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, 0, false}, //  4
     {7, -2,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, 0, false}, //  5
-    {7, -3,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, 2, false}, //  6
+    {7, -3,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, 0, false}, //  6
     {7, -4,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, 0, false}, //  7
     {7, -5,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, 0, false}, //  8
     {7, -6,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, 0, false}, //  9
-    {7,  0,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, 2, false}, // 10
+    {7,  0,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, 0, false}, // 10
     {7, -1,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, 0, false}, // 11
     {7, -2,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, 0, false}, // 12
     {7, -3,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, 0, false}, // 13
-    {7, -4,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, 2, false}, // 14
+    {7, -4,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, 0, false}, // 14
     {7, -5,  8,  2 * shapeCost,      MARKERCOST,   4 * shapeCost, 0.950, 0, false}, // 15
     {7, -6,  8,  2 * shapeCost,      MARKERCOST,   4 * shapeCost, 0.950, 0, false}, // 16
     {7, -3,  8,      shapeCost,      MARKERCOST,   4 * shapeCost, 0.950, 1, false}, // 17
