@@ -830,6 +830,21 @@ void PdnGen::checkDesign(odb::dbBlock* block) const
       }
     }
   }
+
+  bool unplaced_macros = false;
+  for (auto* inst : block->getInsts()) {
+    if (!inst->isBlock()) {
+      continue;
+    }
+    if (!inst->getPlacementStatus().isFixed()) {
+      unplaced_macros = true;
+      logger_->warn(
+          utl::PDN, 234, "{} has not been placed and fixed.", inst->getName());
+    }
+  }
+  if (unplaced_macros) {
+    logger_->error(utl::PDN, 235, "Design has unplaced macros.");
+  }
 }
 
 void PdnGen::checkSetup() const

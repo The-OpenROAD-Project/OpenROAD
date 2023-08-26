@@ -195,10 +195,8 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-congestion_report_file file_name] \
                                   [-congestion_report_iter_step steps] \
                                   [-grid_origin origin] \
-                                  [-overflow_iterations iterations] \
                                   [-critical_nets_percentage percent] \
                                   [-allow_congestion] \
-                                  [-allow_overflow] \
                                   [-verbose] \
                                   [-start_incremental] \
                                   [-end_incremental]
@@ -286,7 +284,7 @@ proc global_route { args } {
   }
 }
 
-sta::define_cmd_args "repair_antennas" { [diode_cell/diode_port] \
+sta::define_cmd_args "repair_antennas" { [diode_cell] \
                                          [-iterations iterations] \
                                          [-ratio_margin ratio_margin]}
 

@@ -64,6 +64,7 @@
 #include "gui/heatMap.h"
 #include "highlightGroupDialog.h"
 #include "inspector.h"
+#include "layoutTabs.h"
 #include "layoutViewer.h"
 #include "scriptWidget.h"
 #include "selectHighlightWindow.h"
@@ -87,7 +88,7 @@ MainWindow::MainWindow(QWidget* parent)
       controls_(new DisplayControls(this)),
       inspector_(new Inspector(selected_, highlighted_, this)),
       script_(new ScriptWidget(this)),
-      viewer_(new LayoutViewer(
+      viewers_(new LayoutTabs(
           controls_,
           script_,
           selected_,
@@ -99,17 +100,16 @@ MainWindow::MainWindow(QWidget* parent)
           this)),
       selection_browser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
-      scroll_(new LayoutScroll(viewer_, this)),
       timing_widget_(new TimingWidget(this)),
       drc_viewer_(new DRCWidget(this)),
       clock_viewer_(new ClockWidget(this)),
       hierarchy_widget_(
-          new BrowserWidget(viewer_->getModuleSettings(), controls_, this)),
+          new BrowserWidget(viewers_->getModuleSettings(), controls_, this)),
 #ifdef ENABLE_CHARTS
       charts_widget_(new ChartsWidget(this)),
 #endif
       find_dialog_(new FindObjectDialog(this)),
-      goto_dialog_(new GotoLocationDialog(this, viewer_))
+      goto_dialog_(new GotoLocationDialog(this, viewers_))
 {
   // Size and position the window
   QSize size = QDesktopWidget().availableGeometry(this).size();
@@ -120,7 +120,7 @@ MainWindow::MainWindow(QWidget* parent)
   font.setStyleHint(QFont::Monospace);
   script_->setWidgetFont(font);
 
-  setCentralWidget(scroll_);
+  setCentralWidget(viewers_);
   addDockWidget(Qt::BottomDockWidgetArea, script_);
   addDockWidget(Qt::BottomDockWidgetArea, selection_browser_);
   addDockWidget(Qt::LeftDockWidgetArea, controls_);
@@ -147,60 +147,54 @@ MainWindow::MainWindow(QWidget* parent)
   connect(script_, &ScriptWidget::exiting, this, &MainWindow::exit);
   connect(script_,
           &ScriptWidget::commandExecuted,
-          viewer_,
-          &LayoutViewer::commandFinishedExecuting);
+          viewers_,
+          &LayoutTabs::commandFinishedExecuting);
   connect(script_,
           &ScriptWidget::commandAboutToExecute,
-          viewer_,
-          &LayoutViewer::commandAboutToExecute);
+          viewers_,
+          &LayoutTabs::commandAboutToExecute);
+  connect(this, &MainWindow::blockLoaded, viewers_, &LayoutTabs::blockLoaded);
+  connect(this, &MainWindow::redraw, viewers_, &LayoutTabs::fullRepaint);
   connect(
-      this, &MainWindow::designLoaded, viewer_, &LayoutViewer::designLoaded);
-  connect(this, &MainWindow::redraw, viewer_, &LayoutViewer::fullRepaint);
-  connect(this,
-          &MainWindow::designLoaded,
-          controls_,
-          &DisplayControls::designLoaded);
+      this, &MainWindow::blockLoaded, controls_, &DisplayControls::blockLoaded);
   connect(
-      this, &MainWindow::designLoaded, timing_widget_, &TimingWidget::setBlock);
+      this, &MainWindow::blockLoaded, timing_widget_, &TimingWidget::setBlock);
 
   connect(this, &MainWindow::pause, script_, &ScriptWidget::pause);
   connect(script_,
           &ScriptWidget::executionPaused,
-          viewer_,
-          &LayoutViewer::executionPaused);
-  connect(controls_,
-          &DisplayControls::changed,
-          viewer_,
-          &LayoutViewer::fullRepaint);
+          viewers_,
+          &LayoutTabs::executionPaused);
+  connect(
+      controls_, &DisplayControls::changed, viewers_, &LayoutTabs::fullRepaint);
   connect(controls_,
           &DisplayControls::changed,
           hierarchy_widget_,
           &BrowserWidget::displayControlsUpdated);
-  connect(viewer_, &LayoutViewer::location, this, &MainWindow::setLocation);
-  connect(viewer_,
-          &LayoutViewer::selected,
+  connect(viewers_, &LayoutTabs::location, this, &MainWindow::setLocation);
+  connect(viewers_,
+          &LayoutTabs::selected,
           this,
           qOverload<const Selected&, bool>(&MainWindow::setSelected));
-  connect(viewer_,
-          qOverload<const Selected&>(&LayoutViewer::addSelected),
+  connect(viewers_,
+          qOverload<const Selected&>(&LayoutTabs::addSelected),
           this,
           qOverload<const Selected&>(&MainWindow::addSelected));
-  connect(viewer_,
-          qOverload<const SelectionSet&>(&LayoutViewer::addSelected),
+  connect(viewers_,
+          qOverload<const SelectionSet&>(&LayoutTabs::addSelected),
           this,
           qOverload<const SelectionSet&>(&MainWindow::addSelected));
 
   connect(
-      viewer_, &LayoutViewer::addRuler, [this](int x0, int y0, int x1, int y1) {
+      viewers_, &LayoutTabs::addRuler, [this](int x0, int y0, int x1, int y1) {
         addRuler(x0, y0, x1, y1, "", "", default_ruler_style_->isChecked());
       });
 
   connect(
-      this, &MainWindow::selectionChanged, viewer_, &LayoutViewer::fullRepaint);
+      this, &MainWindow::selectionChanged, viewers_, &LayoutTabs::fullRepaint);
   connect(
-      this, &MainWindow::highlightChanged, viewer_, &LayoutViewer::fullRepaint);
-  connect(
-      this, &MainWindow::rulersChanged, viewer_, &LayoutViewer::fullRepaint);
+      this, &MainWindow::highlightChanged, viewers_, &LayoutTabs::fullRepaint);
+  connect(this, &MainWindow::rulersChanged, viewers_, &LayoutTabs::fullRepaint);
 
   connect(controls_, &DisplayControls::selected, [=](const Selected& selected) {
     setSelected(selected);
@@ -225,23 +219,22 @@ MainWindow::MainWindow(QWidget* parent)
           &SelectHighlightWindow::updateModels);
   connect(inspector_,
           &Inspector::selectedItemChanged,
-          viewer_,
-          &LayoutViewer::fullRepaint);
+          viewers_,
+          &LayoutTabs::fullRepaint);
   connect(inspector_,
           &Inspector::selectedItemChanged,
           this,
           &MainWindow::updateSelectedStatus);
-  connect(inspector_, &Inspector::selection, viewer_, &LayoutViewer::selection);
+  connect(inspector_, &Inspector::selection, viewers_, &LayoutTabs::selection);
+  connect(inspector_, &Inspector::focus, viewers_, &LayoutTabs::selectionFocus);
   connect(
-      inspector_, &Inspector::focus, viewer_, &LayoutViewer::selectionFocus);
-  connect(
-      drc_viewer_, &DRCWidget::focus, viewer_, &LayoutViewer::selectionFocus);
+      drc_viewer_, &DRCWidget::focus, viewers_, &LayoutTabs::selectionFocus);
   connect(this,
           &MainWindow::highlightChanged,
           inspector_,
           &Inspector::highlightChanged);
-  connect(viewer_,
-          &LayoutViewer::focusNetsChanged,
+  connect(viewers_,
+          &LayoutTabs::focusNetsChanged,
           inspector_,
           &Inspector::focusNetsChanged);
   connect(inspector_,
@@ -269,12 +262,12 @@ MainWindow::MainWindow(QWidget* parent)
           &MainWindow::removeHighlighted);
   connect(hierarchy_widget_,
           &BrowserWidget::updateModuleVisibility,
-          viewer_,
-          &LayoutViewer::updateModuleVisibility);
+          viewers_,
+          &LayoutTabs::updateModuleVisibility);
   connect(hierarchy_widget_,
           &BrowserWidget::updateModuleColor,
-          viewer_,
-          &LayoutViewer::updateModuleColor);
+          viewers_,
+          &LayoutTabs::updateModuleColor);
 
   connect(
       timing_widget_, &TimingWidget::inspect, [this](const Selected& selected) {
@@ -328,18 +321,18 @@ MainWindow::MainWindow(QWidget* parent)
 
   connect(timing_widget_,
           &TimingWidget::highlightTimingPath,
-          viewer_,
-          qOverload<>(&LayoutViewer::update));
+          viewers_,
+          qOverload<>(&LayoutTabs::update));
 
   connect(timing_widget_,
           &TimingWidget::setCommand,
           script_,
           &ScriptWidget::setCommand);
 
-  connect(this, &MainWindow::designLoaded, this, &MainWindow::setBlock);
-  connect(this, &MainWindow::designLoaded, drc_viewer_, &DRCWidget::setBlock);
+  connect(this, &MainWindow::blockLoaded, this, &MainWindow::setBlock);
+  connect(this, &MainWindow::blockLoaded, drc_viewer_, &DRCWidget::setBlock);
   connect(
-      this, &MainWindow::designLoaded, clock_viewer_, &ClockWidget::setBlock);
+      this, &MainWindow::blockLoaded, clock_viewer_, &ClockWidget::setBlock);
   connect(drc_viewer_, &DRCWidget::selectDRC, [this](const Selected& selected) {
     setSelected(selected, false);
     odb::Rect bbox;
@@ -424,7 +417,6 @@ MainWindow::~MainWindow()
 void MainWindow::setDatabase(odb::dbDatabase* db)
 {
   db_ = db;
-  controls_->setDb(db_);
 }
 
 void MainWindow::setBlock(odb::dbBlock* block)
@@ -454,15 +446,15 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbNet*>(
       new DbNetDescriptor(db_,
                           sta,
-                          viewer_->getFocusNets(),
-                          viewer_->getRouteGuides(),
-                          viewer_->getNetTracks()));
+                          viewers_->getFocusNets(),
+                          viewers_->getRouteGuides(),
+                          viewers_->getNetTracks()));
   gui->registerDescriptor<DbNetDescriptor::NetWithSink>(
       new DbNetDescriptor(db_,
                           sta,
-                          viewer_->getFocusNets(),
-                          viewer_->getRouteGuides(),
-                          viewer_->getNetTracks()));
+                          viewers_->getFocusNets(),
+                          viewers_->getRouteGuides(),
+                          viewers_->getNetTracks()));
   gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(db_));
   gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor(db_));
   gui->registerDescriptor<odb::dbVia*>(new DbViaDescriptor(db_));
@@ -501,9 +493,9 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<BufferTree>(
       new BufferTreeDescriptor(db_,
                                sta,
-                               viewer_->getFocusNets(),
-                               viewer_->getRouteGuides(),
-                               viewer_->getNetTracks()));
+                               viewers_->getFocusNets(),
+                               viewers_->getRouteGuides(),
+                               viewers_->getNetTracks()));
 
   controls_->setDBInstDescriptor(inst_descriptor);
   hierarchy_widget_->setDBInstDescriptor(inst_descriptor);
@@ -513,6 +505,11 @@ void MainWindow::createStatusBar()
 {
   location_ = new QLabel(this);
   statusBar()->addPermanentWidget(location_);
+}
+
+LayoutViewer* MainWindow::getLayoutViewer() const
+{
+  return viewers_->getCurrent();
 }
 
 odb::dbBlock* MainWindow::getBlock() const
@@ -582,19 +579,19 @@ void MainWindow::createActions()
 
   connect(open_, &QAction::triggered, this, &MainWindow::openDesign);
   connect(
-      this, &MainWindow::designLoaded, [this]() { open_->setEnabled(false); });
+      this, &MainWindow::blockLoaded, [this]() { open_->setEnabled(false); });
   connect(hide_, &QAction::triggered, this, &MainWindow::hide);
   connect(exit_, &QAction::triggered, this, &MainWindow::exit);
-  connect(this, &MainWindow::exit, viewer_, &LayoutViewer::exit);
-  connect(fit_, &QAction::triggered, viewer_, &LayoutViewer::fit);
+  connect(this, &MainWindow::exit, viewers_, &LayoutTabs::exit);
+  connect(fit_, &QAction::triggered, viewers_, &LayoutTabs::fit);
   connect(zoom_in_,
           &QAction::triggered,
-          viewer_,
-          qOverload<>(&LayoutViewer::zoomIn));
+          viewers_,
+          qOverload<>(&LayoutTabs::zoomIn));
   connect(zoom_out_,
           &QAction::triggered,
-          viewer_,
-          qOverload<>(&LayoutViewer::zoomOut));
+          viewers_,
+          qOverload<>(&LayoutTabs::zoomOut));
   connect(find_, &QAction::triggered, this, &MainWindow::showFindDialog);
   connect(
       goto_position_, &QAction::triggered, this, &MainWindow::showGotoDialog);
@@ -605,10 +602,10 @@ void MainWindow::createActions()
 
   connect(build_ruler_,
           &QAction::triggered,
-          viewer_,
-          &LayoutViewer::startRulerBuild);
+          viewers_,
+          &LayoutTabs::startRulerBuild);
 
-  connect(show_dbu_, &QAction::toggled, viewer_, &LayoutViewer::fullRepaint);
+  connect(show_dbu_, &QAction::toggled, viewers_, &LayoutTabs::fullRepaint);
   connect(show_dbu_, &QAction::toggled, inspector_, &Inspector::reload);
   connect(show_dbu_,
           &QAction::toggled,
@@ -1155,7 +1152,7 @@ void MainWindow::removeFromHighlighted(const QList<const Selected*>& items,
 
 void MainWindow::zoomTo(const odb::Rect& rect_dbu)
 {
-  viewer_->zoomTo(rect_dbu);
+  viewers_->zoomTo(rect_dbu);
 }
 
 void MainWindow::zoomInToItems(const QList<const Selected*>& items)
@@ -1357,11 +1354,7 @@ void MainWindow::postReadLef(odb::dbTech* tech, odb::dbLib* library)
 
 void MainWindow::postReadDef(odb::dbBlock* block)
 {
-  if (!block->getParent()) {
-    emit designLoaded(block);
-  } else {
-    viewer_->fullRepaint();
-  }
+  emit blockLoaded(block);
 }
 
 void MainWindow::postReadDb(odb::dbDatabase* db)
@@ -1375,7 +1368,10 @@ void MainWindow::postReadDb(odb::dbDatabase* db)
     return;
   }
 
-  emit designLoaded(block);
+  emit blockLoaded(block);
+  for (auto child : block->getChildren()) {
+    emit blockLoaded(child);
+  }
 }
 
 void MainWindow::setLogger(utl::Logger* logger)
@@ -1383,7 +1379,7 @@ void MainWindow::setLogger(utl::Logger* logger)
   logger_ = logger;
   controls_->setLogger(logger);
   script_->setLogger(logger);
-  viewer_->setLogger(logger);
+  viewers_->setLogger(logger);
   drc_viewer_->setLogger(logger);
   clock_viewer_->setLogger(logger);
 }
@@ -1397,7 +1393,7 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
 {
   if (event->key() == Qt::Key_Escape) {
     // Esc stop building ruler
-    viewer_->cancelRulerBuild();
+    viewers_->cancelRulerBuild();
   } else if (event->key() == Qt::Key_K
              && event->modifiers() & Qt::ShiftModifier) {
     // Shift + K, remove all rulers
@@ -1471,7 +1467,7 @@ std::vector<std::string> MainWindow::getRestoreTclCommands()
   controls_->restoreTclCommands(cmds);
 
   // save layout view
-  viewer_->restoreTclCommands(cmds);
+  viewers_->restoreTclCommands(cmds);
 
   return cmds;
 }

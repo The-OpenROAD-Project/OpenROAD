@@ -34,7 +34,7 @@
 
 #include <QDialog>
 
-#include "layoutViewer.h"
+#include "layoutTabs.h"
 #include "ui_gotoDlg.h"
 
 namespace gui {
@@ -42,11 +42,10 @@ class GotoLocationDialog : public QDialog, public Ui::GotoLocDialog
 {
   Q_OBJECT
  private:
-  LayoutViewer* viewer_;
+  LayoutTabs* viewers_;
 
  public:
-  GotoLocationDialog(QWidget* parent = nullptr,
-                     LayoutViewer* viewer_ = nullptr);
+  GotoLocationDialog(QWidget* parent = nullptr, LayoutTabs* viewers_ = nullptr);
  public slots:
   void updateLocation(QLineEdit* xEdit, QLineEdit* yEdit);
   void updateUnits(int dbu_per_micron, bool useDBU);
