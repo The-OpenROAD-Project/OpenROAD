@@ -320,6 +320,17 @@ bool Opendp::checkInRows(const Cell& cell) const
   int x_ur = gridEndX(&cell, site_width);
   int y_ll = gridY(&cell);
   int y_ur = gridEndY(&cell);
+  debugPrint(logger_,
+             DPL,
+             "hybrid",
+             1,
+             "Checking cell {} with site {} and "
+             "height {} in rows. Y start {} y end {}",
+             cell.name(),
+             cell.db_inst_->getMaster()->getSite()->getName(),
+             cell.height_,
+             y_ll,
+             y_ur);
 
   for (int y = y_ll; y < y_ur; y++) {
     for (int x = x_ll; x < x_ur; x++) {

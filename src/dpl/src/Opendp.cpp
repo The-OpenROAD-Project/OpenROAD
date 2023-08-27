@@ -646,6 +646,7 @@ int Opendp::gridY(const Cell* cell) const
     int base_height = divFloor(y, sum_heights);
     int cur_height = base_height * sum_heights;
     int index = 0;
+    base_height *= grid_info.sites.size();
     while (cur_height < y && index < grid_info.sites.size()) {
       auto site = grid_info.sites.at(index);
       if (cur_height + site.first->getHeight() > y)
@@ -653,6 +654,14 @@ int Opendp::gridY(const Cell* cell) const
       cur_height += site.first->getHeight();
       index++;
     }
+    debugPrint(logger_,
+               DPL,
+               "hybrid",
+               1,
+               "Cell {} is at y {} which is in row {}",
+               cell->name(),
+               cell->y_,
+               base_height + index);
     return base_height + index;
   }
   int row_height = getRowHeight(cell);
@@ -708,6 +717,21 @@ int Opendp::gridEndY(const Cell* cell) const
     int y2 = cell->y_ + cell->height_;
     int base_height = divFloor(y2, sum_heights);
     int cur_height = base_height * sum_heights;
+    base_height *= grid_info.sites.size();
+    debugPrint(logger_,
+               DPL,
+               "hybrid",
+               1,
+               "sum heights {} Cell {} is at y {} with height {} and y2 {} "
+               "base_height {} "
+               "cur_height {}",
+               sum_heights,
+               cell->name(),
+               cell->y_,
+               cell->height_,
+               y2,
+               base_height,
+               cur_height);
     int index = 0;
     while (cur_height < y2 && index < grid_info.sites.size()) {
       auto site = grid_info.sites.at(index);
@@ -716,6 +740,14 @@ int Opendp::gridEndY(const Cell* cell) const
       cur_height += site.first->getHeight();
       index++;
     }
+    debugPrint(logger_,
+               DPL,
+               "hybrid",
+               1,
+               "Cell {} is at y {} which ends in row {}",
+               cell->name(),
+               cell->y_,
+               base_height + index);
     return base_height + index;
   }
   int row_height = getRowHeight(cell);

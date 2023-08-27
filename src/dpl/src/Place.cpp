@@ -1086,7 +1086,7 @@ bool Opendp::checkPixels(const Cell* cell,
 // Legalize cell origin
 //  inside the core
 //  row site
-
+// FIXME: this is wrong for hybrid sites
 Point Opendp::legalPt(const Cell* cell,
                       const Point& pt,
                       int row_height,
@@ -1120,6 +1120,7 @@ Point Opendp::legalPt(const Cell* cell,
              row_height);
   // Align with row site.
   int grid_x = divRound(core_x, site_width);
+  // FIXME(mina1460): this is wrong for hybrid sites
   int grid_y = divRound(core_y, row_height);
 
   int legal_x = grid_x * site_width;
@@ -1139,8 +1140,10 @@ Point Opendp::legalGridPt(const Cell* cell,
     row_height = getRowHeight(cell);
   }
   Point legal = legalPt(cell, pt, row_height, site_width);
-  return Point(gridX(legal.getX(), site_width),
-               gridY(legal.getY(), row_height));
+  return Point(
+      gridX(legal.getX(), site_width),
+      gridY(legal.getY(),
+            row_height));  // FIXME(mina1460): this is wrong for hybrid sites
 }
 
 Point Opendp::nearestBlockEdge(const Cell* cell,
@@ -1202,7 +1205,9 @@ bool Opendp::moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const
   auto [row_height, grid_info] = getRowInfo(cell);
   int grid_index = grid_info.grid_index;
   int layer_site_count = divFloor(core_.dx(), site_width);
-  int layer_row_count = divFloor(core_.dy(), row_height);
+  int layer_row_count = divFloor(
+      core_.dy(),
+      row_height);  // FIXME(mina1460): this is wrong for hybrid sites
 
   // since the site doesn't have to be empty, we don't need to check all layers.
   // They will be checked in the checkPixels in the diamondSearch method after
@@ -1228,7 +1233,9 @@ bool Opendp::moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const
   }
   for (int y = grid_y - 1; y >= 0; --y) {  // below
     if (grid_[grid_index][y][grid_x].is_valid) {
-      const int dist = (grid_y - y - 1) * row_height;
+      const int dist
+          = (grid_y - y - 1)
+            * row_height;  // FIXME(mina1460): this is wrong for hybrid sites
       if (dist < best_dist) {
         best_dist = dist;
         best_x = grid_x;

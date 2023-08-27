@@ -62,6 +62,9 @@ void Opendp::initGridLayersMap()
   grid_info_vector_.clear();
   hybrid_sites_mapper.clear();
   for (auto db_row : block_->getRows()) {
+    // TODO: this is wrong if the same cell can be used in multiple hybrid
+    // cells. For example, site B is used as part of hybrid cells CB, and AB.
+    // This mapping would be insufficient.
     if (db_row->getSite()->hasRowPattern()) {
       auto row_pattern = db_row->getSite()->getRowPattern();
       for (auto [site, site_orientation] : row_pattern) {
@@ -429,7 +432,22 @@ void Opendp::visitCellBoundaryPixels(
     int x_start = padded ? gridPaddedX(&cell) : gridX(&cell);
     int x_end = padded ? gridPaddedEndX(&cell) : gridEndX(&cell);
     int y_start = gridY(&cell);
+    debugPrint(logger_,
+               DPL,
+               "hybrid",
+               1,
+               "Checking cell {} isHybrid {}",
+               cell.name(),
+               cell.isHybrid());
     int y_end = gridEndY(&cell);
+    debugPrint(logger_,
+               DPL,
+               "hybrid",
+               1,
+               "Checking cell {} in rows. Y start {} y end {}",
+               cell.name(),
+               y_start,
+               y_end);
 
     for (int x = x_start; x < x_end; x++) {
       Pixel* pixel = gridPixel(index_in_grid, x, y_start);
@@ -649,7 +667,22 @@ void Opendp::erasePixel(Cell* cell)
     int site_width = getSiteWidth(cell);
     int x_end = gridPaddedEndX(cell, site_width);
     int y_end = gridEndY(cell);
+    debugPrint(logger_,
+               DPL,
+               "hybrid",
+               1,
+               "Checking cell {} isHybrid {}",
+               cell->name(),
+               cell->isHybrid());
     int y_start = gridY(cell);
+    debugPrint(logger_,
+               DPL,
+               "hybrid",
+               1,
+               "Checking cell {} in rows. Y start {} y end {}",
+               cell->name(),
+               y_start,
+               y_end);
 
     for (auto [grid_map_key, grid_info] : grid_info_map_) {
       int layer_y_start
