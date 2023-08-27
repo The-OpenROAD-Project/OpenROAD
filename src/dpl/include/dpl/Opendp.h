@@ -142,6 +142,15 @@ struct Cell
   bool hold_ = false;
   Group* group_ = nullptr;
   Rect* region_ = nullptr;  // group rect
+
+  bool isHybrid() const
+  {
+    if (!db_inst_ || !db_inst_->getMaster()
+        || !db_inst_->getMaster()->getSite()) {
+      return false;
+    }
+    return db_inst_->getMaster()->getSite()->isHybrid();
+  }
 };
 
 struct Group
@@ -437,7 +446,6 @@ class Opendp
   int gridPaddedX(const Cell* cell, int site_width) const;
   int gridY(int y, int row_height) const;
   int gridY(const Cell* cell) const;
-  int gridY(const Cell* cell, int row_height) const;
   int gridPaddedEndX(const Cell* cell) const;
   int gridPaddedEndX(const Cell* cell, int site_width) const;
   int gridEndX(int x, int site_width) const;
@@ -445,7 +453,6 @@ class Opendp
   int gridEndX(const Cell* cell, int site_width) const;
   int gridEndY(int y, int row_height) const;
   int gridEndY(const Cell* cell) const;
-  int gridEndY(const Cell* cell, int row_height) const;
   void setGridPaddedLoc(Cell* cell,
                         int x,
                         int y,

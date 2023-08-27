@@ -318,8 +318,8 @@ bool Opendp::checkInRows(const Cell& cell) const
   int site_width = getSiteWidth(&cell);
   int x_ll = gridX(&cell, site_width);
   int x_ur = gridEndX(&cell, site_width);
-  int y_ll = gridY(&cell, grid_info.first);
-  int y_ur = gridEndY(&cell, grid_info.first);
+  int y_ll = gridY(&cell);
+  int y_ur = gridEndY(&cell);
 
   for (int y = y_ll; y < y_ur; y++) {
     for (int x = x_ll; x < x_ur; x++) {

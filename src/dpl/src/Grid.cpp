@@ -176,6 +176,14 @@ void Opendp::initGrid()
         pixel.is_valid = false;
         pixel.is_hopeless = false;
         if (!grid_info.sites.empty()) {
+          logger_->info(
+              DPL,
+              7252,
+              "grid layer {} at row {} and column {} has site {}",
+              index,
+              j,
+              k,
+              grid_info.sites[j % grid_info.sites.size()].first->getName());
           pixel.site = grid_info.sites[j % grid_info.sites.size()].first;
         } else {
           pixel.site = nullptr;
@@ -346,8 +354,8 @@ void Opendp::visitCellPixels(
         = padded ? gridPaddedX(&cell, site_width) : gridX(&cell, site_width);
     int x_end = padded ? gridPaddedEndX(&cell, site_width)
                        : gridEndX(&cell, site_width);
-    int y_start = gridY(&cell, row_height);
-    int y_end = gridEndY(&cell, row_height);
+    int y_start = gridY(&cell);
+    int y_end = gridEndY(&cell);
     for (auto layer_it : grid_info_map_) {
       int layer_x_start = map_coordinates(x_start, site_width, site_width);
       int layer_x_end = map_coordinates(x_end, site_width, site_width);
@@ -429,8 +437,8 @@ void Opendp::visitCellBoundaryPixels(
   if (!have_obstructions) {
     int x_start = padded ? gridPaddedX(&cell) : gridX(&cell);
     int x_end = padded ? gridPaddedEndX(&cell) : gridEndX(&cell);
-    int y_start = gridY(&cell, row_height);
-    int y_end = gridEndY(&cell, row_height);
+    int y_start = gridY(&cell);
+    int y_end = gridEndY(&cell);
 
     for (int x = x_start; x < x_end; x++) {
       Pixel* pixel = gridPixel(index_in_grid, x, y_start);
@@ -649,8 +657,8 @@ void Opendp::erasePixel(Cell* cell)
     int row_height = getRowHeight(cell);
     int site_width = getSiteWidth(cell);
     int x_end = gridPaddedEndX(cell, site_width);
-    int y_end = gridEndY(cell, row_height);
-    int y_start = gridY(cell, row_height);
+    int y_end = gridEndY(cell);
+    int y_start = gridY(cell);
 
     for (auto [grid_map_key, grid_info] : grid_info_map_) {
       int layer_y_start
