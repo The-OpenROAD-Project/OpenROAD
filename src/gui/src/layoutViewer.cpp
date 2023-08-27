@@ -57,7 +57,6 @@
 #include <tuple>
 #include <vector>
 
-#include "colorGenerator.h"
 #include "db.h"
 #include "dbDescriptors.h"
 #include "dbShape.h"
@@ -113,6 +112,10 @@ LayoutViewer::LayoutViewer(
     const SelectionSet& selected,
     const HighlightSet& highlighted,
     const std::vector<std::unique_ptr<Ruler>>& rulers,
+    const std::map<odb::dbModule*, ModuleSettings>& module_settings,
+    const std::set<odb::dbNet*>& focus_nets,
+    const std::set<odb::dbNet*>& route_guides,
+    const std::set<odb::dbNet*>& net_tracks,
     Gui* gui,
     const std::function<bool(void)>& usingDBU,
     const std::function<bool(void)>& showRulerAsEuclidian,
@@ -133,12 +136,16 @@ LayoutViewer::LayoutViewer(
       gui_(gui),
       usingDBU_(usingDBU),
       showRulerAsEuclidian_(showRulerAsEuclidian),
+      modules_(module_settings),
       building_ruler_(false),
       ruler_start_(nullptr),
       snap_edge_showing_(false),
       animate_selection_(nullptr),
       logger_(nullptr),
       layout_context_menu_(new QMenu(tr("Layout Menu"), this)),
+      focus_nets_(focus_nets),
+      route_guides_(route_guides),
+      net_tracks_(net_tracks),
       viewer_thread_(this)
 {
   setMouseTracking(true);
@@ -157,39 +164,6 @@ LayoutViewer::LayoutViewer(
   connect(&search_, &Search::newBlock, this, &LayoutViewer::setBlock);
 }
 
-void LayoutViewer::updateModuleVisibility(odb::dbModule* module, bool visible)
-{
-  modules_[module].visible = visible;
-  fullRepaint();
-}
-
-void LayoutViewer::updateModuleColor(odb::dbModule* module,
-                                     const QColor& color,
-                                     bool user_selected)
-{
-  modules_[module].color = color;
-  if (user_selected) {
-    modules_[module].user_color = color;
-  }
-  fullRepaint();
-}
-
-void LayoutViewer::populateModuleColors()
-{
-  modules_.clear();
-
-  if (block_ == nullptr) {
-    return;
-  }
-
-  ColorGenerator generator;
-
-  for (auto* module : block_->getModules()) {
-    auto color = generator.getQColor();
-    modules_[module] = {color, color, color, true};
-  }
-}
-
 void LayoutViewer::setBlock(odb::dbBlock* block)
 {
   block_ = block;
@@ -197,8 +171,6 @@ void LayoutViewer::setBlock(odb::dbBlock* block)
   if (block && cut_maximum_size_.empty()) {
     generateCutLayerMaximumSizes();
   }
-
-  populateModuleColors();
 
   updateScaleAndCentering(scroller_->maximumViewportSize());
   fit();
@@ -594,7 +566,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
   const int shape_limit = shapeSizeLimit();
 
   // look for edges in metal shapes
-  dbTech* tech = block_->getDataBase()->getTech();
+  dbTech* tech = block_->getTech();
   for (auto layer : tech->getLayers()) {
     if (!options_->isVisible(layer)) {
       continue;
@@ -781,7 +753,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
 
   // Look for the selected object in reverse layer order
   auto& renderers = Gui::get()->renderers();
-  dbTech* tech = block_->getDataBase()->getTech();
+  dbTech* tech = block_->getTech();
 
   const int shape_limit = shapeSizeLimit();
 
@@ -1837,7 +1809,7 @@ void LayoutViewer::showLayoutCustomMenu(QPoint pos)
   layout_context_menu_->popup(this->mapToGlobal(pos));
 }
 
-void LayoutViewer::designLoaded(dbBlock* block)
+void LayoutViewer::blockLoaded(dbBlock* block)
 {
   search_.setTopBlock(block);
 }
@@ -2139,78 +2111,6 @@ bool LayoutViewer::hasDesign() const
   return true;
 }
 
-void LayoutViewer::addFocusNet(odb::dbNet* net)
-{
-  const auto& [itr, inserted] = focus_nets_.insert(net);
-  if (inserted) {
-    emit focusNetsChanged();
-    fullRepaint();
-  }
-}
-
-void LayoutViewer::addRouteGuides(odb::dbNet* net)
-{
-  const auto& [itr, inserted] = route_guides_.insert(net);
-  if (inserted) {
-    fullRepaint();
-  }
-}
-
-void LayoutViewer::addNetTracks(odb::dbNet* net)
-{
-  const auto& [itr, inserted] = net_tracks_.insert(net);
-  if (inserted) {
-    fullRepaint();
-  }
-}
-
-void LayoutViewer::removeFocusNet(odb::dbNet* net)
-{
-  if (focus_nets_.erase(net) > 0) {
-    emit focusNetsChanged();
-    fullRepaint();
-  }
-}
-
-void LayoutViewer::removeRouteGuides(odb::dbNet* net)
-{
-  if (route_guides_.erase(net) > 0) {
-    fullRepaint();
-  }
-}
-
-void LayoutViewer::removeNetTracks(odb::dbNet* net)
-{
-  if (net_tracks_.erase(net) > 0) {
-    fullRepaint();
-  }
-}
-
-void LayoutViewer::clearFocusNets()
-{
-  if (!focus_nets_.empty()) {
-    focus_nets_.clear();
-    emit focusNetsChanged();
-    fullRepaint();
-  }
-}
-
-void LayoutViewer::clearRouteGuides()
-{
-  if (!route_guides_.empty()) {
-    route_guides_.clear();
-    fullRepaint();
-  }
-}
-
-void LayoutViewer::clearNetTracks()
-{
-  if (!net_tracks_.empty()) {
-    net_tracks_.clear();
-    fullRepaint();
-  }
-}
-
 bool LayoutViewer::isNetVisible(odb::dbNet* net)
 {
   bool focus_visible = true;
@@ -2227,7 +2127,7 @@ void LayoutViewer::generateCutLayerMaximumSizes()
     return;
   }
 
-  dbTech* tech = block_->getDataBase()->getTech();
+  dbTech* tech = block_->getTech();
   if (tech == nullptr) {
     return;
   }
