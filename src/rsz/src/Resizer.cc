@@ -2730,13 +2730,13 @@ Resizer::journalUndoGateCloning(int &cloned_gate_count)
       }
     }
     Net* original_out_net = network_->net(original_output_pin);
-    // Net* clone_out_net = nullptr;
+    Net* clone_out_net = nullptr;
 
     for (auto& pin : clone_pins) {
       // Disconnect all pins from the new net. Also store the output net
-      // if (network_->direction(pin)->isOutput()) {
-      //  clone_out_net = network_->net(pin);
-      //}
+      if (network_->direction(pin)->isOutput()) {
+        clone_out_net = network_->net(pin);
+      }
       sta_->disconnectPin(const_cast<Pin*>(pin));
       // Connect them to the original nets if they are inputs
       if (network_->direction(pin)->isInput()) {
@@ -2746,7 +2746,9 @@ Resizer::journalUndoGateCloning(int &cloned_gate_count)
       }
     }
     // Final cleanup
-    // sta_->deleteNet(clone_out_net);
+    if (clone_out_net != nullptr) {
+      sta_->deleteNet(clone_out_net);
+    }
     sta_->deleteInstance(cloned_inst);
     sta_->graphDelayCalc()->delaysInvalid();
     --cloned_gate_count;
