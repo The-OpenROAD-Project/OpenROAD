@@ -175,18 +175,9 @@ void Opendp::initGrid()
         pixel.util = 0.0;
         pixel.is_valid = false;
         pixel.is_hopeless = false;
+        pixel.site = nullptr;
         if (!grid_info.sites.empty()) {
-          logger_->info(
-              DPL,
-              7252,
-              "grid layer {} at row {} and column {} has site {}",
-              index,
-              j,
-              k,
-              grid_info.sites[j % grid_info.sites.size()].first->getName());
           pixel.site = grid_info.sites[j % grid_info.sites.size()].first;
-        } else {
-          pixel.site = nullptr;
         }
       }
     }

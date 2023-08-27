@@ -328,6 +328,17 @@ bool Opendp::checkInRows(const Cell& cell) const
           || !pixel->is_valid) {
         return false;
       }
+      if (pixel->site->getId()
+          != cell.db_inst_->getMaster()->getSite()->getId()) {
+        // logger_->warn(
+        //     DPL,
+        //     977,
+        //     "Cell {} is not on a row with its site {}. It is placed on site
+        //     {}", cell.name(),
+        //     cell.db_inst_->getMaster()->getSite()->getName(),
+        //     pixel->site->getName());
+        return false;
+      }
     }
   }
   return true;

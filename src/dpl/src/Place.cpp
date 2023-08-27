@@ -1006,6 +1006,9 @@ bool Opendp::checkPixels(const Cell* cell,
               && pixel->site->getId() != cell_site->getId())) {
         return false;
       }
+      if (pixel->site == nullptr) {
+        logger_->error(DPL, 1599, "Pixel site is null");
+      }
     }
     if (disallow_one_site_gaps_) {
       // here we need to check for abutting first, if there is an abutting cell
