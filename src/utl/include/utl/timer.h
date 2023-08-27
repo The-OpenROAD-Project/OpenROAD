@@ -37,6 +37,7 @@
 
 #include <chrono>
 #include <iostream>
+#include <spdlog/fmt/fmt.h>
 
 namespace utl {
 
@@ -56,3 +57,8 @@ class Timer
 std::ostream& operator<<(std::ostream& os, const Timer& t);
 
 }  // namespace utl
+
+#if defined(FMT_VERSION) && FMT_VERSION >= 90000
+#include <fmt/ostream.h>
+template <> struct fmt::formatter<utl::Timer> : fmt::ostream_formatter {};
+#endif // FMT_VERSION >= 90000

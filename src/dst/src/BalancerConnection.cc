@@ -139,7 +139,7 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
                               "Exception thrown: {}. worker with ip \"{}\" and "
                               "port \"{}\" will be pushed back the queue.",
                               ex.what(),
-                              workerAddress,
+                              workerAddress.to_string(),
                               port);
                 owner_->punishWorker(workerAddress, port);
                 failed_workers_trials++;

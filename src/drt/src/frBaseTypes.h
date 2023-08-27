@@ -36,6 +36,7 @@
 #include <cstdint>
 #include <list>
 #include <map>
+#include <spdlog/fmt/fmt.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -363,3 +364,12 @@ inline bool is_loading(const Archive& ar)
 }
 
 }  // namespace fr
+
+#if defined(FMT_VERSION) && FMT_VERSION >= 90000
+#include <fmt/ostream.h>
+template <> struct fmt::formatter<fr::frBlockObjectEnum> : fmt::ostream_formatter {};
+template <> struct fmt::formatter<fr::frConstraintTypeEnum> : fmt::ostream_formatter {};
+template <> struct fmt::formatter<fr::frCornerTypeEnum> : fmt::ostream_formatter {};
+template <> struct fmt::formatter<fr::frMinimumcutConnectionEnum> : fmt::ostream_formatter {};
+template <> struct fmt::formatter<fr::frMinstepTypeEnum> : fmt::ostream_formatter {};
+#endif // FMT_VERSION >= 90000

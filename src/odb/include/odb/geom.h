@@ -34,6 +34,7 @@
 
 #include <algorithm>
 #include <iosfwd>
+#include <spdlog/fmt/fmt.h>
 #include <tuple>
 #include <vector>
 
@@ -846,3 +847,9 @@ inline std::vector<Point> Oct::getPoints() const
 }
 
 }  // namespace odb
+
+#if defined(FMT_VERSION) && FMT_VERSION >= 90000
+#include <fmt/ostream.h>
+template <> struct fmt::formatter<odb::Point> : fmt::ostream_formatter {};
+template <> struct fmt::formatter<odb::Rect> : fmt::ostream_formatter {};
+#endif // FMT_VERSION >= 90000
