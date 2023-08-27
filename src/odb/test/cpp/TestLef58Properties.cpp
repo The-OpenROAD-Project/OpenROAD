@@ -16,6 +16,129 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(test_suite)
 
+BOOST_AUTO_TEST_CASE(lef57_class)
+{
+  utl::Logger* logger = new utl::Logger();
+  dbDatabase* db1 = dbDatabase::create();
+  dbDatabase* db2 = dbDatabase::create();
+  db1->setLogger(logger);
+  db2->setLogger(logger);
+  lefin lefParser(db1, logger, false);
+  const char* libname = "lef57class_gscl45nm.lef";
+
+  std::string path
+      = std::string(std::getenv("BASE_DIR")) + "/data/lef57class_gscl45nm.lef";
+
+  lefParser.createTechAndLib("tech", libname, path.c_str());
+
+  FILE* write;
+  path = std::string(std::getenv("BASE_DIR"))
+         + "/results/TestLef58PropertiesDbRW";
+  write = fopen(path.c_str(), "w");
+  db1->write(write);
+
+  std::ifstream read;
+  read.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                  | std::ios::eofbit);
+  read.open(path.c_str(), std::ios::binary);
+
+  db2->read(read);
+
+  auto dbTech = db2->getTech();
+  double distFactor = 2000;
+  auto layer = dbTech->findLayer("metal1");
+  BOOST_TEST(layer->getLef58Type() == odb::dbTechLayer::LEF58_TYPE::MIMCAP);
+
+  auto minStepRules = layer->getTechLayerMinStepRules();
+  BOOST_TEST(minStepRules.size() == 4);
+  auto itr = minStepRules.begin();
+  odb::dbTechLayerMinStepRule* step_rule = (odb::dbTechLayerMinStepRule*) *itr;
+  BOOST_TEST(step_rule->getMinStepLength() == 0.6 * distFactor);
+  BOOST_TEST(step_rule->getMaxEdges() == 1);
+  BOOST_TEST(step_rule->isMinAdjLength1Valid() == true);
+  BOOST_TEST(step_rule->isMinAdjLength2Valid() == false);
+  BOOST_TEST(step_rule->getMinAdjLength1() == 1.0 * distFactor);
+  BOOST_TEST(step_rule->isConvexCorner());
+  itr++;
+  step_rule = (odb::dbTechLayerMinStepRule*) *itr;
+  BOOST_TEST(step_rule->isMinAdjLength2Valid());
+  BOOST_TEST(step_rule->getMinAdjLength2() == 0.15 * distFactor);
+  itr++;
+  step_rule = (odb::dbTechLayerMinStepRule*) *itr;
+  BOOST_TEST(step_rule->isMinBetweenLengthValid());
+  BOOST_TEST(step_rule->isExceptSameCorners());
+  BOOST_TEST(step_rule->getMinBetweenLength() == 0.13 * distFactor);
+  itr++;
+  step_rule = (odb::dbTechLayerMinStepRule*) *itr;
+  BOOST_TEST(step_rule->isNoBetweenEol());
+  BOOST_TEST(step_rule->getEolWidth() == 0.5 * distFactor);
+
+  auto cutLayer = dbTech->findLayer("via1");
+
+  auto cutRules = cutLayer->getTechLayerCutClassRules();
+  BOOST_TEST(cutRules.size() == 5);
+  odb::dbTechLayerCutClassRule* cut_rule
+      = (odb::dbTechLayerCutClassRule*) *cutRules.begin();
+  BOOST_TEST(std::string(cut_rule->getName()) == "VA");
+  BOOST_TEST(cut_rule->getWidth() == 0.15 * distFactor);
+  BOOST_TEST((cutLayer->findTechLayerCutClassRule("VA") == cut_rule));
+
+  auto cutSpacingRules = cutLayer->getTechLayerCutSpacingRules();
+  BOOST_TEST(cutSpacingRules.size() == 3);
+  int i = 0;
+  for (odb::dbTechLayerCutSpacingRule* subRule : cutSpacingRules) {
+    if (i == 1) {
+      BOOST_TEST(subRule->getCutSpacing() == 0.3 * distFactor);
+      BOOST_TEST(subRule->getType()
+                 == odb::dbTechLayerCutSpacingRule::CutSpacingType::LAYER);
+      BOOST_TEST(subRule->isSameMetal());
+      BOOST_TEST(subRule->isStack());
+      BOOST_TEST(std::string(subRule->getSecondLayer()->getName()) == "metal1");
+    } else if (i == 2) {
+      BOOST_TEST(subRule->getCutSpacing() == 0.2 * distFactor);
+      BOOST_TEST(
+          subRule->getType()
+          == odb::dbTechLayerCutSpacingRule::CutSpacingType::ADJACENTCUTS);
+      BOOST_TEST(subRule->getAdjacentCuts() == 3);
+      BOOST_TEST(subRule->getTwoCuts() == 1);
+    } else {
+      BOOST_TEST(subRule->getCutSpacing() == 0.12 * distFactor);
+      BOOST_TEST(subRule->getType()
+                 == odb::dbTechLayerCutSpacingRule::CutSpacingType::MAXXY);
+    }
+    i++;
+  }
+
+  auto orths = cutLayer->getTechLayerCutSpacingTableOrthRules();
+  auto defs = cutLayer->getTechLayerCutSpacingTableDefRules();
+  BOOST_TEST(orths.size() == 1);
+  BOOST_TEST(defs.size() == 1);
+  odb::dbTechLayerCutSpacingTableOrthRule* orth
+      = (odb::dbTechLayerCutSpacingTableOrthRule*) *orths.begin();
+  odb::dbTechLayerCutSpacingTableDefRule* def
+      = (odb::dbTechLayerCutSpacingTableDefRule*) *defs.begin();
+  std::vector<std::pair<int, int>> table;
+  orth->getSpacingTable(table);
+  BOOST_TEST(table[0].first == 0.2 * distFactor);
+  BOOST_TEST(table[0].second == 0.15 * distFactor);
+  BOOST_TEST(table[1].first == 0.3 * distFactor);
+  BOOST_TEST(table[1].second == 0.25 * distFactor);
+
+  BOOST_TEST(def->getDefault() == 0.12 * distFactor);
+  BOOST_TEST(def->isDefaultValid());
+  BOOST_TEST(def->isSameMask());
+  BOOST_TEST(def->isSameNet());
+  BOOST_TEST(def->isLayerValid());
+  BOOST_TEST(def->isNoStack());
+  BOOST_TEST(std::string(def->getSecondLayer()->getName()) == "metal1");
+  BOOST_TEST(!def->isSameMetal());
+  BOOST_TEST(def->isPrlForAlignedCut());
+  auto spacing1 = def->getSpacing("cls1", true, "cls3", false);
+  auto spacing2 = def->getSpacing("cls1", false, "cls4", false);
+  BOOST_TEST(spacing1 == 0.2 * distFactor);
+  BOOST_TEST(spacing2 == 0.7 * distFactor);
+}
+
 BOOST_AUTO_TEST_CASE(lef58_class)
 {
   utl::Logger* logger = new utl::Logger();
