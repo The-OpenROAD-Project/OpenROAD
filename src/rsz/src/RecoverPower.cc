@@ -87,12 +87,7 @@ RecoverPower::RecoverPower(Resizer* resizer)
       db_network_(nullptr),
       resizer_(resizer),
       corner_(nullptr),
-      drvr_port_(nullptr),
       resize_count_(0),
-      inserted_buffer_count_(0),
-      rebuffer_net_count_(0),
-      swap_pin_count_(0),
-      min_(MinMax::min()),
       max_(MinMax::max())
 {
 }
@@ -110,22 +105,17 @@ void
 RecoverPower::recoverPower(float recover_power_percent)
 {
   init();
-  float setup_slack_margin = 1e-11;
-  float setup_slack_max_margin = 1e-4; // 100us
   constexpr int digits = 3;
-  inserted_buffer_count_ = 0;
+  int failed_move_threshold = 0;
   resize_count_ = 0;
   resizer_->buffer_moved_into_core_ = false;
-
-  //logger_->setDebugLevel(RSZ, "recover_power", 5);
 
   // Sort failing endpoints by slack.
   VertexSet *endpoints = sta_->endpoints();
   VertexSeq ends_with_slack;
-
   for (Vertex *end : *endpoints) {
     Slack end_slack = sta_->vertexSlack(end, max_);
-    if (end_slack > setup_slack_margin && end_slack < setup_slack_max_margin)  {
+    if (end_slack > setup_slack_margin_ && end_slack < setup_slack_max_margin_)  {
       ends_with_slack.push_back(end);
     }
   }
@@ -141,58 +131,71 @@ RecoverPower::recoverPower(float recover_power_percent)
 
   int end_index = 0;
   int max_end_count = ends_with_slack.size() * recover_power_percent;
-
   // As long as we are here fix at least one path
   if (max_end_count == 0) {
     max_end_count = 1;
   }
 
+
+  Slack worst_slack_before;
+  Vertex *worst_vertex;
   resizer_->incrementalParasiticsBegin();
   resizer_->updateParasitics();
   sta_->findRequireds();
+  sta_->worstSlack(max_, worst_slack_before, worst_vertex);
 
   for (Vertex *end : ends_with_slack) {
-    Slack end_slack = sta_->vertexSlack(end, max_);
-    Slack worst_slack;
-    Vertex* worst_vertex;
-
-    sta_->worstSlack(max_, worst_slack, worst_vertex);
-    debugPrint(logger_, RSZ, "recover_power", 1,
-               "{} slack = {} worst_slack = {}", end->name(network_),
-               delayAsString(end_slack, sta_, digits),
-               delayAsString(worst_slack, sta_, digits));
+    Slack end_slack_before = sta_->vertexSlack(end, max_);
+    Slack worst_slack_after;
+    //=====================================================================
+    // Just a counter to know when to break out
     end_index++;
-    debugPrint(logger_, RSZ, "recover_power", 1, "Doing {} /{}", end_index,
+    debugPrint(logger_, RSZ, "recover_power", 2, "Doing {} /{}", end_index,
                max_end_count);
     if (end_index > max_end_count)
       break;
-    Slack prev_end_slack = end_slack;
-    Slack prev_worst_slack = worst_slack;
-
+    //=====================================================================
     resizer_->journalBegin();
     PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
-    bool changed = recoverPower(end_path, end_slack);
+    bool changed = recoverPower(end_path, end_slack_before);
     if (changed) {
       resizer_->updateParasitics();
       sta_->findRequireds();
-      end_slack = sta_->vertexSlack(end, max_);
-      sta_->worstSlack(max_, worst_slack, worst_vertex);
+      Slack end_slack_after = sta_->vertexSlack(end, max_);
 
-      bool better
-          = (fuzzyGreater(worst_slack, prev_worst_slack)
-             || (end_index != 1 && fuzzyEqual(worst_slack, prev_worst_slack)
-                 && fuzzyGreater(end_slack, prev_end_slack)));
+      sta_->worstSlack(max_, worst_slack_after, worst_vertex);
+      // tns_slack_after = sta_->totalNegativeSlack(max_);
+
+      float worst_slack_percent = fabs((worst_slack_before - worst_slack_after) / worst_slack_before * 100);
+      bool better = (worst_slack_percent < 0.0001 ||
+              (worst_slack_before > 0 && worst_slack_after/worst_slack_before > 0.5));
+
       debugPrint(logger_, RSZ, "recover_power", 2,
-                 "pass {} slack = {} worst_slack = {} {}",
-                 0,  // TODO pass,
-                 delayAsString(end_slack, sta_, digits),
-                 delayAsString(worst_slack, sta_, digits),
+                 "slack = {} worst_slack = {} better = {}",
+                 delayAsString(end_slack_after, sta_, digits), delayAsString(worst_slack_after, sta_, digits),
                  better ? "save" : "");
+
       if (better) {
+        failed_move_threshold = 0;
         resizer_->journalBegin();
+        debugPrint(logger_, RSZ, "recover_power", 2, "{}/{} Resize for power Slack change {} -> {}",
+                   end_index, ends_with_slack.size(), worst_slack_before, worst_slack_after);
       }
       else {
-        // TODO: Undo the changes and we probably need to update parasitics again
+	    // Undo the change here.
+        ++failed_move_threshold;
+        if (failed_move_threshold > failed_move_threshold_limit_) {
+          logger_->info(RSZ, 142, "{} successive tries yielded negative slack. Ending power recovery",
+                     failed_move_threshold_limit_);
+
+          break;
+        }
+        int resize_count = 100, inserted_buffer_count = 100, cloned_gate_count = 100;
+        resizer_->journalRestore(resize_count, inserted_buffer_count, cloned_gate_count);
+        resizer_->updateParasitics();
+        sta_->findRequireds();
+        debugPrint(logger_, RSZ, "recover_power", 2, "{}/{} Undo resize for power Slack change {} -> {}",
+                   end_index, ends_with_slack.size(), worst_slack_before, worst_slack_after);
       }
       if (resizer_->overMaxArea()) {
         break;
@@ -216,9 +219,7 @@ void
 RecoverPower::recoverPower(const Pin *end_pin)
 {
   init();
-  inserted_buffer_count_ = 0;
   resize_count_ = 0;
-  swap_pin_count_ = 0;
 
   Vertex *vertex = graph_->pinLoadVertex(end_pin);
   Slack slack = sta_->vertexSlack(vertex, max_);
@@ -410,6 +411,7 @@ RecoverPower::downsizeCell(LibertyPort *in_port,
           && (current_delay-delay)* delay_margin < path_slack // add margin
           && meetsSizeCriteria(cell, equiv, match_size)) {
         best_cell = equiv;
+        // printf("Swapping %s for %s\n", equiv->name(), cell->name());
       }
     }
     if (best_cell != nullptr) {
