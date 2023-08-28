@@ -141,6 +141,7 @@ LayoutViewer::LayoutViewer(
       ruler_start_(nullptr),
       snap_edge_showing_(false),
       animate_selection_(nullptr),
+      repaint_requested_(false),
       logger_(nullptr),
       layout_context_menu_(new QMenu(tr("Layout Menu"), this)),
       focus_nets_(focus_nets),
