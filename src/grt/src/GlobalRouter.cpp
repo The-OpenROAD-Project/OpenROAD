@@ -313,8 +313,6 @@ void GlobalRouter::globalRoute(bool save_guides,
     }
   }
 
-  estimateRC();
-  computeNetSlacks();
 }
 
 void GlobalRouter::updateDbCongestion()
@@ -759,18 +757,12 @@ void GlobalRouter::computeNetSlacks()
   if (slack_th >= 0) {
     return;
   }
-  int negative_nets = 0;
   // Add the slack values smaller than the threshold to the nets
   for (auto [net, slack] : net_slack_map) {
     if (slack <= slack_th) {
       net->setSlack(slack);
     }
-    if (slack < 0.0) {
-      negative_nets++;
-    }
   }
-
-  std::cout<<"negative nets: "<<negative_nets<<"\n";
 }
 
 void GlobalRouter::initNets(std::vector<Net*>& nets)
