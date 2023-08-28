@@ -1191,6 +1191,20 @@ bool dbTechLayerCutSpacingRule::isSideParallelOverlap() const
   return obj->flags_.side_parallel_overlap_;
 }
 
+void dbTechLayerCutSpacingRule::setParallelOverlap(bool parallel_overlap)
+{
+  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+
+  obj->flags_.parallel_overlap_ = parallel_overlap;
+}
+
+bool dbTechLayerCutSpacingRule::isParallelOverlap() const
+{
+  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+
+  return obj->flags_.parallel_overlap_;
+}
+
 void dbTechLayerCutSpacingRule::setExceptSameNet(bool except_same_net)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;

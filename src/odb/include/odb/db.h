@@ -8538,6 +8538,10 @@ class dbTechLayerCutSpacingRule : public dbObject
 
   bool isSideParallelOverlap() const;
 
+  void setParallelOverlap(bool parallel_overlap);
+
+  bool isParallelOverlap() const;
+
   void setExceptSameNet(bool except_same_net);
 
   bool isExceptSameNet() const;
