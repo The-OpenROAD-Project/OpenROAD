@@ -98,8 +98,8 @@ void io::Parser::initDefaultVias()
       }
     } else {
       logger_->error(DRT,
-                     234,
-                     "{} does not have single-cut via.",
+                     233,
+                     "{} does not have any vias.",
                      tech_->getLayer(layerNum)->getName());
     }
     // generate via if default via enclosure is not along pref dir
