@@ -151,8 +151,6 @@ _dbGroup::_dbGroup(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
   *flags__bit_field = 0;
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 _dbGroup::_dbGroup(_dbDatabase* db, const _dbGroup& r)
@@ -191,8 +189,6 @@ dbIStream& operator>>(dbIStream& stream, _dbGroup& obj)
   stream >> obj.region_next_;
   stream >> obj.region_prev_;
   stream >> obj.region_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
@@ -212,8 +208,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbGroup& obj)
   stream << obj.region_next_;
   stream << obj.region_prev_;
   stream << obj.region_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
@@ -221,12 +215,7 @@ _dbGroup::~_dbGroup()
 {
   if (_name)
     free((void*) _name);
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

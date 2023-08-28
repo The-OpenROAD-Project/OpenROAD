@@ -602,6 +602,7 @@ bool GoldenEvaluator::ConstraintAndCutEvaluator(
     const HGraphPtr& hgraph,
     const std::vector<int>& solution,
     float ub_factor,
+    std::vector<float> base_balance,
     const std::vector<std::vector<int>>& group_attr,
     bool print_flag) const
 {
@@ -609,9 +610,9 @@ bool GoldenEvaluator::ConstraintAndCutEvaluator(
   // check block balance
   bool balance_satisfied_flag = true;
   const Matrix<float> upper_block_balance
-      = hgraph->GetUpperVertexBalance(num_parts_, ub_factor);
+      = hgraph->GetUpperVertexBalance(num_parts_, ub_factor, base_balance);
   const Matrix<float> lower_block_balance
-      = hgraph->GetLowerVertexBalance(num_parts_, ub_factor);
+      = hgraph->GetLowerVertexBalance(num_parts_, ub_factor, base_balance);
   for (int i = 0; i < num_parts_; i++) {
     if (solution_token.block_balance[i] > upper_block_balance[i]
         || solution_token.block_balance[i] < lower_block_balance[i]) {

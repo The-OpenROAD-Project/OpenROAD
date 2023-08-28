@@ -113,7 +113,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
                          int max_passes,
                          bool verbose,
                          bool skip_pin_swap,
-                         bool enable_gate_cloning)
+                         bool skip_gate_cloning)
 {
   init();
   constexpr int digits = 3;
@@ -199,7 +199,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
       }
       PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
       bool changed = repairSetup(end_path, end_slack, skip_pin_swap,
-                                 enable_gate_cloning);
+                                 skip_gate_cloning);
       if (!changed) {
         debugPrint(logger_, RSZ, "repair_setup", 2,
                    "No change after {} decreasing slack passes.",
@@ -344,7 +344,7 @@ RepairSetup::repairSetup(const Pin *end_pin)
 bool
 RepairSetup::repairSetup(PathRef &path,
                          Slack path_slack,
-                         bool skip_pin_swap, bool enable_gate_cloning)
+                         bool skip_pin_swap, bool skip_gate_cloning)
 {
   PathExpanded expanded(&path, sta_);
   bool changed = false;
@@ -429,9 +429,8 @@ RepairSetup::repairSetup(PathRef &path,
       }
 
       // Gate cloning
-      if (enable_gate_cloning && fanout > split_load_min_fanout_ &&
-          !tristate_drvr &&
-          !resizer_->dontTouch(net) &&
+      if (!skip_gate_cloning && fanout > split_load_min_fanout_ &&
+          !tristate_drvr && !resizer_->dontTouch(net) &&
           resizer_->inserted_buffer_set_.find(db_network_->instance(drvr_pin)) == resizer_->inserted_buffer_set_.end() &&
           cloneDriver(drvr_path, drvr_index, path_slack, &expanded)) {
           changed = true;
@@ -740,14 +739,16 @@ RepairSetup::cloneDriver(PathRef* drvr_path, int drvr_index,
   }
 
   Point drvr_loc = computeCloneGateLocation(drvr_pin, fanout_slacks);
-  Instance *clone_inst = resizer_->makeInstance(clone_cell, buffer_name.c_str(),
-                                                parent, drvr_loc);
+  Instance *clone_inst = resizer_->journalCloneInstance(clone_cell, buffer_name.c_str(),
+                                                        network_->instance(drvr_pin), parent, drvr_loc);
+
+  cloned_gate_count_++;
+
   debugPrint(logger_, RSZ, "repair_setup", 3, "clone {} ({}) -> {} ({})",
              network_->pathName(drvr_pin), original_cell->name(),
              network_->pathName(clone_inst), clone_cell->name());
-  resizer_->cloned_gates_.push(std::tuple(network_->instance(drvr_pin), clone_inst));
-  resizer_->cloned_inst_set_.insert(clone_inst);
-  cloned_gate_count_++;
+
+
   Net *out_net = resizer_->makeUniqueNet();
   std::unique_ptr<InstancePinIterator> inst_pin_iter{network_->pinIterator(drvr_inst)};
   while (inst_pin_iter->hasNext()) {

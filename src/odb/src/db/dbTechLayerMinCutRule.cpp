@@ -39,8 +39,6 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
-// User Code Begin Includes
-// User Code End Includes
 namespace odb {
 template class dbTable<_dbTechLayerMinCutRule>;
 
@@ -88,15 +86,11 @@ bool _dbTechLayerMinCutRule::operator==(const _dbTechLayerMinCutRule& rhs) const
   if (area_within_dist_ != rhs.area_within_dist_)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
 bool _dbTechLayerMinCutRule::operator<(const _dbTechLayerMinCutRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -122,8 +116,6 @@ void _dbTechLayerMinCutRule::differences(
   DIFF_FIELD(length_within_dist_);
   DIFF_FIELD(area_);
   DIFF_FIELD(area_within_dist_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -149,8 +141,6 @@ void _dbTechLayerMinCutRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(area_);
   DIFF_OUT_FIELD(area_within_dist_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
@@ -165,8 +155,6 @@ _dbTechLayerMinCutRule::_dbTechLayerMinCutRule(_dbDatabase* db)
   length_within_dist_ = 0;
   area_ = 0;
   area_within_dist_ = 0;
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 _dbTechLayerMinCutRule::_dbTechLayerMinCutRule(_dbDatabase* db,
@@ -189,8 +177,6 @@ _dbTechLayerMinCutRule::_dbTechLayerMinCutRule(_dbDatabase* db,
   length_within_dist_ = r.length_within_dist_;
   area_ = r.area_;
   area_within_dist_ = r.area_within_dist_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinCutRule& obj)
@@ -205,8 +191,6 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinCutRule& obj)
   stream >> obj.length_within_dist_;
   stream >> obj.area_;
   stream >> obj.area_within_dist_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
@@ -222,19 +206,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinCutRule& obj)
   stream << obj.length_within_dist_;
   stream << obj.area_;
   stream << obj.area_within_dist_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
 _dbTechLayerMinCutRule::~_dbTechLayerMinCutRule()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

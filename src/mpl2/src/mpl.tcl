@@ -42,6 +42,7 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -large_net_threshold large_net_threshold \
                                           -signature_net_threshold signature_net_threshold \
                                           -halo_width halo_width \
+                                          -halo_height halo_height \
                                           -fence_lx   fence_lx \
                                           -fence_ly   fence_ly \
                                           -fence_ux   fence_ux \
@@ -66,7 +67,7 @@ proc rtl_macro_placer { args } {
     sta::parse_key_args "rtl_macro_placer" args keys { 
         -max_num_macro  -min_num_macro -max_num_inst  -min_num_inst  -tolerance   \
         -max_num_level  -coarsening_ratio  -num_bundled_ios  -large_net_threshold \
-        -signature_net_threshold -halo_width \
+        -signature_net_threshold -halo_width -halo_height \
         -fence_lx   -fence_ly  -fence_ux   -fence_uy  \
         -area_weight  -outline_weight -wirelength_weight -guidance_weight -fence_weight \
         -boundary_weight -notch_weight -macro_blockage_weight  \
@@ -94,6 +95,7 @@ proc rtl_macro_placer { args } {
     set large_net_threshold 50
     set signature_net_threshold 50
     set halo_width   0.0
+    set halo_height  0.0
     set fence_lx     0.0
     set fence_ly     0.0
     set fence_ux     100000000.0
@@ -147,9 +149,18 @@ proc rtl_macro_placer { args } {
     if { [info exists keys(-signature_net_threshold)] } {
       set signature_net_threshold  $keys(-signature_net_threshold) 
     }
-    if { [info exists keys(-halo_width)] } {
+    
+    if { [info exists keys(-halo_width)] && [info exists keys(-halo_height)] } {
       set halo_width  $keys(-halo_width) 
+      set halo_height  $keys(-halo_height) 
+    } elseif {[info exists keys(-halo_width)]} {
+      set halo_width  $keys(-halo_width) 
+      set halo_height  $keys(-halo_width) 
+    } elseif {[info exists keys(-halo_height)]} {
+      set halo_width  $keys(-halo_height) 
+      set halo_height  $keys(-halo_height) 
     }
+
     if { [info exists keys(-fence_lx)] } {
       set fence_lx    $keys(-fence_lx) 
     }
@@ -221,6 +232,7 @@ proc rtl_macro_placer { args } {
                                       $large_net_threshold \
                                       $signature_net_threshold \
                                       $halo_width \
+                                      $halo_height \
                                       $fence_lx   $fence_ly  $fence_ux  $fence_uy  \
                                       $area_weight $outline_weight $wirelength_weight \
                                       $guidance_weight $fence_weight $boundary_weight \

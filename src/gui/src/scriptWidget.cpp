@@ -79,41 +79,47 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   QWidget* container = new QWidget(this);
   container->setLayout(layout);
 
-  connect(input_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
+  connect(input_,
+          &TclCmdInputWidget::textChanged,
+          this,
+          &ScriptWidget::outputChanged);
 
-  connect(input_, SIGNAL(exiting()), this, SIGNAL(exiting()));
+  connect(input_, &TclCmdInputWidget::exiting, this, &ScriptWidget::exiting);
   connect(input_,
-          SIGNAL(commandAboutToExecute()),
+          &TclCmdInputWidget::commandAboutToExecute,
           this,
-          SIGNAL(commandAboutToExecute()));
+          &ScriptWidget::commandAboutToExecute);
   connect(input_,
-          SIGNAL(commandAboutToExecute()),
+          &TclCmdInputWidget::commandAboutToExecute,
           this,
-          SLOT(setPauserToRunning()));
+          &ScriptWidget::setPauserToRunning);
   connect(input_,
-          SIGNAL(addCommandToOutput(const QString&)),
+          &TclCmdInputWidget::addCommandToOutput,
           this,
-          SLOT(addCommandToOutput(const QString&)));
+          &ScriptWidget::addCommandToOutput);
   connect(input_,
-          SIGNAL(addResultToOutput(const QString&, bool)),
+          &TclCmdInputWidget::addResultToOutput,
           this,
-          SLOT(addResultToOutput(const QString&, bool)));
+          &ScriptWidget::addResultToOutput);
   connect(input_,
-          SIGNAL(commandFinishedExecuting(bool)),
+          &TclCmdInputWidget::commandFinishedExecuting,
           this,
-          SLOT(resetPauser()));
+          &ScriptWidget::resetPauser);
   connect(input_,
-          SIGNAL(commandFinishedExecuting(bool)),
+          &TclCmdInputWidget::commandFinishedExecuting,
           this,
-          SIGNAL(commandExecuted(bool)));
-  connect(output_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
-  connect(pauser_, SIGNAL(pressed()), this, SLOT(pauserClicked()));
-  connect(pause_timer_.get(), SIGNAL(timeout()), this, SLOT(unpause()));
+          &ScriptWidget::commandExecuted);
+  connect(output_,
+          &QPlainTextEdit::textChanged,
+          this,
+          &ScriptWidget::outputChanged);
+  connect(pauser_, &QPushButton::pressed, this, &ScriptWidget::pauserClicked);
+  connect(pause_timer_.get(), &QTimer::timeout, this, &ScriptWidget::unpause);
 
   connect(this,
-          SIGNAL(addToOutput(const QString&, const QColor&)),
+          &ScriptWidget::addToOutput,
           this,
-          SLOT(addTextToOutput(const QString&, const QColor&)),
+          &ScriptWidget::addTextToOutput,
           Qt::QueuedConnection);
 
   setWidget(container);
@@ -121,6 +127,12 @@ ScriptWidget::ScriptWidget(QWidget* parent)
 
 ScriptWidget::~ScriptWidget()
 {
+  // When _input is destroyed it can trigger this connection resulting
+  // in a crash.
+  disconnect(input_,
+             &TclCmdInputWidget::textChanged,
+             this,
+             &ScriptWidget::outputChanged);
   if (logger_ != nullptr) {
     // make sure to remove the Gui sink from logger
     logger_->removeSink(sink_);
@@ -276,6 +288,11 @@ void ScriptWidget::pause(int timeout)
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
+void ScriptWidget::setCommand(const QString& command)
+{
+  input_->setText(command);
+}
+
 void ScriptWidget::unpause()
 {
   paused_ = false;
@@ -289,7 +306,7 @@ void ScriptWidget::triggerPauseCountDown(int timeout)
 
   pause_timer_->setInterval(timeout);
   pause_timer_->start();
-  QTimer::singleShot(timeout, this, SLOT(updatePauseTimeout()));
+  QTimer::singleShot(timeout, this, &ScriptWidget::updatePauseTimeout);
   updatePauseTimeout();
 }
 
@@ -305,7 +322,7 @@ void ScriptWidget::updatePauseTimeout()
   int seconds = pause_timer_->remainingTime() / one_second;
   pauser_->setText("Continue (" + QString::number(seconds) + "s)");
 
-  QTimer::singleShot(one_second, this, SLOT(updatePauseTimeout()));
+  QTimer::singleShot(one_second, this, &ScriptWidget::updatePauseTimeout);
 }
 
 void ScriptWidget::pauserClicked()

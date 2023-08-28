@@ -219,6 +219,7 @@ void TritonPart::SetFineTuneParams(
 // attributes both follows the hMETIS format
 void TritonPart::PartitionHypergraph(unsigned int num_parts_arg,
                                      float balance_constraint_arg,
+                                     std::vector<float> base_balance_arg,
                                      unsigned int seed_arg,
                                      int vertex_dimension_arg,
                                      int hyperedge_dimension_arg,
@@ -235,6 +236,7 @@ void TritonPart::PartitionHypergraph(unsigned int num_parts_arg,
   logger_->info(PAR, 167, "Partitioning parameters**** ");
   // Parameters
   num_parts_ = num_parts_arg;
+  base_balance_ = base_balance_arg;
   ub_factor_ = balance_constraint_arg;
   seed_ = seed_arg;
   vertex_dimensions_ = vertex_dimension_arg;
@@ -313,6 +315,7 @@ void TritonPart::PartitionHypergraph(unsigned int num_parts_arg,
 // partitioning, placement information is extracted from OpenDB
 void TritonPart::PartitionDesign(unsigned int num_parts_arg,
                                  float balance_constraint_arg,
+                                 std::vector<float> base_balance_arg,
                                  unsigned int seed_arg,
                                  bool timing_aware_flag_arg,
                                  int top_n_arg,
@@ -336,6 +339,7 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
   // Parameters
   num_parts_ = num_parts_arg;
   ub_factor_ = balance_constraint_arg;
+  base_balance_ = base_balance_arg;
   seed_ = seed_arg;
   vertex_dimensions_ = 1;  // for design partitioning, vertex weight is the area
                            // of the instance
@@ -490,6 +494,7 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
 
 void TritonPart::EvaluateHypergraphSolution(unsigned int num_parts_arg,
                                             float balance_constraint_arg,
+                                            std::vector<float> base_balance_arg,
                                             int vertex_dimension_arg,
                                             int hyperedge_dimension_arg,
                                             const char* hypergraph_file_arg,
@@ -505,6 +510,7 @@ void TritonPart::EvaluateHypergraphSolution(unsigned int num_parts_arg,
   // Parameters
   num_parts_ = num_parts_arg;
   ub_factor_ = balance_constraint_arg;
+  base_balance_ = base_balance_arg;
   seed_ = 0;  // use the default random seed (no meaning in this function)
   vertex_dimensions_ = vertex_dimension_arg;
   hyperedge_dimensions_ = hyperedge_dimension_arg;
@@ -565,6 +571,14 @@ void TritonPart::EvaluateHypergraphSolution(unsigned int num_parts_arg,
   // constraints
   ReadHypergraph(
       hypergraph_file, fixed_file, community_file, group_file, placement_file);
+
+  // check the base balance constraint
+  if (static_cast<int>(base_balance_.size()) != num_parts_) {
+    logger_->warn(PAR, 350, "no base balance is specified. Use default value.");
+    base_balance_.clear();
+    base_balance_.resize(num_parts_);
+    std::fill(base_balance_.begin(), base_balance_.end(), 1.0 / num_parts_);
+  }
 
   // check the weighting scheme
   if (static_cast<int>(e_wt_factors_.size()) != hyperedge_dimensions_) {
@@ -639,8 +653,12 @@ void TritonPart::EvaluateHypergraphSolution(unsigned int num_parts_arg,
                                                      original_hypergraph_,
                                                      logger_);
 
-  evaluator->ConstraintAndCutEvaluator(
-      original_hypergraph_, solution_, ub_factor_, group_attr_, true);
+  evaluator->ConstraintAndCutEvaluator(original_hypergraph_,
+                                       solution_,
+                                       ub_factor_,
+                                       base_balance_,
+                                       group_attr_,
+                                       true);
 
   logger_->report("===============================================");
   logger_->report("Exiting Evaluating Hypergraph Solution");
@@ -656,6 +674,7 @@ void TritonPart::EvaluateHypergraphSolution(unsigned int num_parts_arg,
 void TritonPart::EvaluatePartDesignSolution(
     unsigned int num_parts_arg,
     float balance_constraint_arg,
+    std::vector<float> base_balance_arg,
     bool timing_aware_flag_arg,
     int top_n_arg,
     bool fence_flag_arg,
@@ -679,6 +698,7 @@ void TritonPart::EvaluatePartDesignSolution(
   // Parameters
   num_parts_ = num_parts_arg;
   ub_factor_ = balance_constraint_arg;
+  base_balance_ = base_balance_arg;
   seed_ = 0;               // This parameter is not used.  just a random value
   vertex_dimensions_ = 1;  // for design partitioning, vertex weight is the area
                            // of the instance
@@ -762,6 +782,14 @@ void TritonPart::EvaluatePartDesignSolution(
   // if the fence_flag_ is true, only consider the instances within the fence
   ReadNetlist(fixed_file, community_file, group_file);
   logger_->report("[STATUS] Finish reading netlist****");
+
+  // check the base balance constraint
+  if (static_cast<int>(base_balance_.size()) != num_parts_) {
+    logger_->warn(PAR, 351, "no base balance is specified. Use default value.");
+    base_balance_.clear();
+    base_balance_.resize(num_parts_);
+    std::fill(base_balance_.begin(), base_balance_.end(), 1.0 / num_parts_);
+  }
 
   // check the weighting scheme
   if (static_cast<int>(e_wt_factors_.size()) != hyperedge_dimensions_) {
@@ -854,8 +882,12 @@ void TritonPart::EvaluatePartDesignSolution(
       solution_.push_back(part_id);
     }
     solution_file_input.close();
-    evaluator->ConstraintAndCutEvaluator(
-        original_hypergraph_, solution_, ub_factor_, group_attr_, true);
+    evaluator->ConstraintAndCutEvaluator(original_hypergraph_,
+                                         solution_,
+                                         ub_factor_,
+                                         base_balance_,
+                                         group_attr_,
+                                         true);
 
     // generate the timing report
     if (timing_aware_flag_ == true) {
@@ -1683,6 +1715,14 @@ void TritonPart::MultiLevelPartition()
 {
   auto start_time_stamp_global = std::chrono::high_resolution_clock::now();
 
+  // check the base balance constraint
+  if (static_cast<int>(base_balance_.size()) != num_parts_) {
+    logger_->warn(PAR, 352, "no base balance is specified. Use default value.");
+    base_balance_.clear();
+    base_balance_.resize(num_parts_);
+    std::fill(base_balance_.begin(), base_balance_.end(), 1.0 / num_parts_);
+  }
+
   // check the weighting scheme
   if (static_cast<int>(e_wt_factors_.size()) != hyperedge_dimensions_) {
     logger_->warn(
@@ -1777,13 +1817,16 @@ void TritonPart::MultiLevelPartition()
                                           original_hypergraph_,
                                           logger_);
 
-  // create the balance constraint
   Matrix<float> upper_block_balance
-      = original_hypergraph_->GetUpperVertexBalance(num_parts_, ub_factor_);
+      = original_hypergraph_->GetUpperVertexBalance(
+          num_parts_, ub_factor_, base_balance_);
+
   Matrix<float> lower_block_balance
-      = original_hypergraph_->GetLowerVertexBalance(num_parts_, ub_factor_);
+      = original_hypergraph_->GetLowerVertexBalance(
+          num_parts_, ub_factor_, base_balance_);
 
   // Step 1 : create all the coarsening, partitionig and refinement class
+  // TODO:  This may need to modify as lower_block_balance
   const std::vector<float> thr_cluster_weight
       = DivideFactor(original_hypergraph_->GetTotalVertexWeights(),
                      min_num_vertices_each_part_ * num_parts_);
@@ -1912,8 +1955,12 @@ void TritonPart::MultiLevelPartition()
 
   // evaluate on the original hypergraph
   // tritonpart_evaluator->CutEvaluator(original_hypergraph_, solution_, true);
-  tritonpart_evaluator->ConstraintAndCutEvaluator(
-      original_hypergraph_, solution_, ub_factor_, group_attr_, true);
+  tritonpart_evaluator->ConstraintAndCutEvaluator(original_hypergraph_,
+                                                  solution_,
+                                                  ub_factor_,
+                                                  base_balance_,
+                                                  group_attr_,
+                                                  true);
 
   // generate the timing report
   if (timing_aware_flag_ == true) {
