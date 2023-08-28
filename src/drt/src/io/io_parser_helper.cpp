@@ -74,7 +74,7 @@ void io::Parser::initDefaultVias()
     std::set<frViaDef*> viaDefs = layer->getViaDefs();
     if (!viaDefs.empty()) {
       std::map<int, std::map<viaRawPriorityTuple, frViaDef*>> cuts2ViaDefs;
-      for (auto& viaDef : layer->getViaDefs()) {
+      for (auto& viaDef : viaDefs) {
         int cutNum = int(viaDef->getCutFigs().size());
         viaRawPriorityTuple priority;
         getViaRawPriority(viaDef, priority);
