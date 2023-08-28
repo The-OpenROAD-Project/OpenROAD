@@ -339,29 +339,30 @@ BOOST_AUTO_TEST_CASE(test_default)
 
   layer = dbTech->findLayer("metal2");
   // Check LEF57_MINSTEP
-  auto minStepRules = layer->getTechLayerMinStepRules();
-  BOOST_TEST(minStepRules.size() == 4);
-  auto itr = minStepRules.begin();
-  odb::dbTechLayerMinStepRule* step_rule = (odb::dbTechLayerMinStepRule*) *itr;
-  BOOST_TEST(step_rule->getMinStepLength() == 0.6 * distFactor);
-  BOOST_TEST(step_rule->getMaxEdges() == 1);
-  BOOST_TEST(step_rule->isMinAdjLength1Valid() == true);
-  BOOST_TEST(step_rule->isMinAdjLength2Valid() == false);
-  BOOST_TEST(step_rule->getMinAdjLength1() == 1.0 * distFactor);
-  BOOST_TEST(step_rule->isConvexCorner());
-  itr++;
-  step_rule = (odb::dbTechLayerMinStepRule*) *itr;
-  BOOST_TEST(step_rule->isMinAdjLength2Valid());
-  BOOST_TEST(step_rule->getMinAdjLength2() == 0.15 * distFactor);
-  itr++;
-  step_rule = (odb::dbTechLayerMinStepRule*) *itr;
-  BOOST_TEST(step_rule->isMinBetweenLengthValid());
-  BOOST_TEST(step_rule->isExceptSameCorners());
-  BOOST_TEST(step_rule->getMinBetweenLength() == 0.13 * distFactor);
-  itr++;
-  step_rule = (odb::dbTechLayerMinStepRule*) *itr;
-  BOOST_TEST(step_rule->isNoBetweenEol());
-  BOOST_TEST(step_rule->getEolWidth() == 0.5 * distFactor);
+  auto minStepRules_57 = layer->getTechLayerMinStepRules();
+  BOOST_TEST(minStepRules_57.size() == 4);
+  auto itr_57 = minStepRules_57.begin();
+  odb::dbTechLayerMinStepRule* step_rule_57
+      = (odb::dbTechLayerMinStepRule*) *itr_57;
+  BOOST_TEST(step_rule_57->getMinStepLength() == 0.6 * distFactor);
+  BOOST_TEST(step_rule_57->getMaxEdges() == 1);
+  BOOST_TEST(step_rule_57->isMinAdjLength1Valid() == true);
+  BOOST_TEST(step_rule_57->isMinAdjLength2Valid() == false);
+  BOOST_TEST(step_rule_57->getMinAdjLength1() == 1.0 * distFactor);
+  BOOST_TEST(step_rule_57->isConvexCorner());
+  itr_57++;
+  step_rule_57 = (odb::dbTechLayerMinStepRule*) *itr_57;
+  BOOST_TEST(step_rule_57->isMinAdjLength2Valid());
+  BOOST_TEST(step_rule_57->getMinAdjLength2() == 0.15 * distFactor);
+  itr_57++;
+  step_rule_57 = (odb::dbTechLayerMinStepRule*) *itr_57;
+  BOOST_TEST(step_rule_57->isMinBetweenLengthValid());
+  BOOST_TEST(step_rule_57->isExceptSameCorners());
+  BOOST_TEST(step_rule_57->getMinBetweenLength() == 0.13 * distFactor);
+  itr_57++;
+  step_rule_57 = (odb::dbTechLayerMinStepRule*) *itr_57;
+  BOOST_TEST(step_rule_57->isNoBetweenEol());
+  BOOST_TEST(step_rule_57->getEolWidth() == 0.5 * distFactor);
 
   auto areaRules = layer->getTechLayerAreaRules();
   BOOST_TEST(areaRules.size() == 6);
@@ -406,11 +407,12 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(layer->getPitchY() == 0.36 * distFactor);
   BOOST_TEST(layer->getFirstLastPitch() == 0.45 * distFactor);
 
-  auto cutLayer = dbTech->findLayer("via2");
-  auto cutSpacingRules = cutLayer->getTechLayerCutSpacingRules();
-  BOOST_TEST(cutSpacingRules.size() == 3);
+  // Check LEF57_Spacing
+  auto cutLayer_57 = dbTech->findLayer("via2");
+  auto cutSpacingRules_57 = cutLayer_57->getTechLayerCutSpacingRules();
+  BOOST_TEST(cutSpacingRules_57.size() == 3);
   int i = 0;
-  for (odb::dbTechLayerCutSpacingRule* subRule : cutSpacingRules) {
+  for (odb::dbTechLayerCutSpacingRule* subRule : cutSpacingRules_57) {
     if (i == 1) {
       BOOST_TEST(subRule->getCutSpacing() == 0.3 * distFactor);
       BOOST_TEST(subRule->getType()
