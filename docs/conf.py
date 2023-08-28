@@ -85,6 +85,14 @@ exclude_patterns = [
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
 
+# Mermaid related args
+mermaid_output_format = 'svg'
+mermaid_params = ['-p', 'puppeteer-config.json',
+                  '--theme', 'forest',
+                  '--width', '200',
+                  '--backgroundColor', 'transparent']
+mermaid_init_js = "mermaid.initialize({startOnLoad:true, flowchart:{useMaxWidth:false}})"
+mermaid_verbose = True
 
 # -- Options for HTML output -------------------------------------------------
 
