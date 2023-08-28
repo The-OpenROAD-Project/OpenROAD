@@ -127,8 +127,6 @@ _dbGCellGrid::_dbGCellGrid(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
   *flags__bit_field = 0;
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 _dbGCellGrid::_dbGCellGrid(_dbDatabase* db, const _dbGCellGrid& r)
@@ -197,8 +195,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbGCellGrid& obj)
 
 _dbGCellGrid::~_dbGCellGrid()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
 
 // User Code Begin PrivateMethods

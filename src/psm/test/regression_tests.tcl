@@ -13,8 +13,12 @@ record_tests {
   aes_asap7_vdd
   check_power_grid
   check_power_grid_disconnected
+  check_power_grid_macros
+  check_power_grid_disconnected_macro
   corners
   aes_test_bterms
   aes_test_multiple_bterms
   zerosoc_pads
+  zerosoc_pads_check_only
+  zerosoc_pads_check_only_disconnected
 }

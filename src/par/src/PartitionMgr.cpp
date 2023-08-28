@@ -101,6 +101,7 @@ void PartitionMgr::init(odb::dbDatabase* db,
 void PartitionMgr::tritonPartHypergraph(
     unsigned int num_parts,
     float balance_constraint,
+    const std::vector<float>& base_balance,
     unsigned int seed,
     int vertex_dimension,
     int hyperedge_dimension,
@@ -171,6 +172,7 @@ void PartitionMgr::tritonPartHypergraph(
 
   triton_part->PartitionHypergraph(num_parts,
                                    balance_constraint,
+                                   base_balance,
                                    seed,
                                    vertex_dimension,
                                    hyperedge_dimension,
@@ -189,6 +191,7 @@ void PartitionMgr::tritonPartHypergraph(
 void PartitionMgr::evaluateHypergraphSolution(
     unsigned int num_parts,
     float balance_constraint,
+    const std::vector<float>& base_balance,
     int vertex_dimension,
     int hyperedge_dimension,
     const char* hypergraph_file,
@@ -206,6 +209,7 @@ void PartitionMgr::evaluateHypergraphSolution(
   triton_part->SetVertexWeight(v_wt_factors);
   triton_part->EvaluateHypergraphSolution(num_parts,
                                           balance_constraint,
+                                          base_balance,
                                           vertex_dimension,
                                           hyperedge_dimension,
                                           hypergraph_file,
@@ -226,6 +230,7 @@ void PartitionMgr::evaluateHypergraphSolution(
 void PartitionMgr::tritonPartDesign(
     unsigned int num_parts_arg,
     float balance_constraint_arg,
+    const std::vector<float>& base_balance_arg,
     unsigned int seed_arg,
     bool timing_aware_flag_arg,
     int top_n_arg,
@@ -310,6 +315,7 @@ void PartitionMgr::tritonPartDesign(
 
   triton_part->PartitionDesign(num_parts_arg,
                                balance_constraint_arg,
+                               base_balance_arg,
                                seed_arg,
                                timing_aware_flag_arg,
                                top_n_arg,
@@ -336,6 +342,7 @@ void PartitionMgr::tritonPartDesign(
 void PartitionMgr::evaluatePartDesignSolution(
     unsigned int num_parts_arg,
     float balance_constraint_arg,
+    const std::vector<float>& base_balance_arg,
     bool timing_aware_flag_arg,
     int top_n_arg,
     bool fence_flag_arg,
@@ -376,6 +383,7 @@ void PartitionMgr::evaluatePartDesignSolution(
 
   triton_part->EvaluatePartDesignSolution(num_parts_arg,
                                           balance_constraint_arg,
+                                          base_balance_arg,
                                           timing_aware_flag_arg,
                                           top_n_arg,
                                           fence_flag_arg,

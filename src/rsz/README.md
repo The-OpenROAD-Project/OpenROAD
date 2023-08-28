@@ -7,27 +7,40 @@ utilization is exceeded.
 
 ## Commands
 
-### Set Wire RC
+```{note}
+- Parameters in square brackets `[-param param]` are optional.
+- Parameters without square brackets `-param2 param2` are required.
+```
 
-```
-set_wire_rc [-clock] [-signal]
-            [-layer layer_name]
-            [-resistance res]
-            [-capacitance cap]
-```
+### Set Wire RC
 
 The `set_wire_rc` command sets the resistance and capacitance used to estimate
 delay of routing wires.  Separate values can be specified for clock and data
 nets with the `-signal` and `-clock` flags. Without either `-signal` or
 `-clock` the resistance and capacitance for clocks and data nets are set.
-Use `-layer` or `-resistance` and `-capacitance`.  If `-layer` is used,
-the LEF technology resistance and area/edge capacitance values for the
-layer are used for a default width wire on the layer.  The resistance and
-capacitance values are per length of wire, not per square or per square micron.
-The units for `-resistance` and `-capacitance` are from the first Liberty
-file read, resistance_unit/distance_unit (typically kohms/micron) and
-Liberty capacitance_unit/distance_unit (typically pf/micron or ff/micron).
-If distance units are not specified in the Liberty file, microns are used.
+
+```tcl
+set_wire_rc 
+    [-clock] 
+    [-signal]
+    [-layer layer_name]
+
+or 
+set_wire_rc
+    [-resistance res]
+    [-capacitance cap]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-clock` | Enable setting of RC for clock nets. |
+| `-signal` | Enable setting of RC for signal nets. | 
+| `-layer` | Use the LEF technology resistance and area/edge capacitance values for the layer. This is used for a default width wire on the layer. |
+| `-resistance` | Resistance per unit length, units are from the first Liberty file read, usually in the form of $\frac{resistanceUnit}{distanceUnit}$. Usually kΩ/µm. |
+| `-capacitance` | Capacitance per unit length, units are from the first Liberty file read, usually in the form of $\frac{capacitanceUnit}{distanceUnit}$. Usually pF/µm. |
+
 
 ### Set Layer RC
 
@@ -35,37 +48,26 @@ The `set_layer_rc` command can be used to set the resistance and capacitance
 for a layer or via. This is useful if these values are missing from the LEF file,
 or to override the values in the LEF.
 
-```
-set_layer_rc [-layer layer]
-             [-via via_layer]
-             [-capacitance cap]
-             [-resistance res]
-             [-corner corner]
-```
-
-For layers the resistance and capacitance units are the same as `set_wire_rc`
-(per length of default width wire). `layer` must be the name of a routing
-layer.
-
-Via resistance can also be set with the `set_layer_rc` command, using the
--via keyword.  `-capacitance` is not supported for vias. `via_layer` is
-the name of a via layer.  Via resistance is per cut/via, not area based.
-
-### Remove Buffers
-
-```
-remove_buffers
+```tcl
+set_layer_rc 
+    [-layer layer]
+    [-via via_layer]
+    [-resistance res]
+    [-capacitance cap]
+    [-corner corner]
 ```
 
-Use the `remove_buffers` command to remove buffers inserted by synthesis. This
-step is recommended before using `repair_design` so that there is more flexibility
-in buffering nets.
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-layer` | Set layer name to modify. Note that the layer must be a routing layer. |
+| `-via` | Select via layer name. Note that via resistance is per cut/via, not area-based. |
+| `-resistance` | Resistance per unit length, same convention as `set_wire_rc`. |
+| `-capacitance` | Capacitance per unit length, same convention as `set_wire_rc`. |
+| `-corner` | Process corner to use. |
 
 ### Estimate Parasitics
-
-```
-estimate_parasitics -placement|-global_routing
-```
 
 Estimate RC parasitics based on placed component pin locations. If there are
 no component locations, then no parasitics are added. The resistance and capacitance
@@ -79,50 +81,72 @@ After the `global_route` command has been called, the global routing topology
 and layers can be used to estimate parasitics  with the `-global_routing`
 flag.
 
-### Set Don't Use
+```tcl
+estimate_parasitics
+    -placement|-global_routing
+```
 
-```
-set_dont_use lib_cells
-unset_dont_use lib_cells
-```
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-placement` or `-global_routing` | Either of these flags must be set. Parasitics are estimated based after placement stage versus after global routing stage. |
+
+### Set Don't Use
 
 The `set_dont_use` command removes library cells from consideration by
 the `resizer`. `lib_cells` is a list of cells returned by `get_lib_cells`
 or a list of cell names (`wildcards` allowed). For example, `DLY*` says do
 not use cells with names that begin with `DLY` in all libraries.
 
-### Set Don't Touch
+```tcl
+set_dont_use lib_cells
+unset_dont_use lib_cells
+```
 
-```
-set_dont_touch instances_nets
-unset_dont_touch instances_nets
-```
+### Set Don't Touch
 
 The `set_dont_touch` command prevents the resizer commands from
 modifying instances or nets.
 
-### Buffer Ports
+```tcl
+set_dont_touch instances_nets
+unset_dont_touch instances_nets
+```
 
-```
-buffer_ports [-inputs] [-outputs] [-max_utilization util]
-```
+### Buffer Ports
 
 The `buffer_ports -inputs` command adds a buffer between the input and its
 loads.  The `buffer_ports -outputs` adds a buffer between the port driver
-and the output port. The default behavior is `-inputs` and `-outputs`
-if neither is specified. Inserting buffers on input and output ports makes
+and the output port. Inserting buffers on input and output ports makes
 the block input capacitances and output drives independent of the block
 internals.
 
-### Repair Design
+```tcl
+buffer_ports 
+    [-inputs] 
+    [-outputs] 
+    [-max_utilization util]
+```
 
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-inputs`, `-outputs` | Insert a buffer between the input and load, output and load respectively. The default behavior is `-inputs` and `-outputs` set if neither is specified. |
+| `-max_utilization` | Defines the percentage of core area used. |
+
+### Remove Buffers
+
+Use the `remove_buffers` command to remove buffers inserted by synthesis. This
+step is recommended before using `repair_design` so that there is more flexibility
+in buffering nets. 
+
+```tcl
+remove_buffers
 ```
-repair_design [-max_wire_length max_length]
-              [-slew_margin slew_margin]
-              [-cap_margin cap_margin]
-              [-max_utilization util]
-              [-verbose]
-```
+
+### Repair Design
 
 The `repair_design` command inserts buffers on nets to repair max slew, max
 capacitance and max fanout violations, and on long wires to reduce RC delay in
@@ -130,107 +154,160 @@ the wire. It also resizes gates to normalize slews.  Use `estimate_parasitics
 -placement` before `repair_design` to estimate parasitics considered
 during repair. Placement-based parasitics cannot accurately predict
 routed parasitics, so a margin can be used to "over-repair" the design
-to compensate. Use `-slew_margin` to add a margin to the slews, and
-`-cap_margin` to add a margin to the capacitances. Use `-max_wire_length`
-to specify the maximum length of wires.  The maximum wirelength defaults to
-a value that minimizes the wire delay for the wire resistance/capacitance
-values specified by `set_wire_rc`.
-Use `-verbose` to print more information about the progress of the
-repair.
+to compensate. 
 
-### Set Max Fanout
-
-Use the `set_max_fanout` SDC command to set the maximum fanout for the design.
-
+```tcl
+repair_design 
+    [-max_wire_length max_length]
+    [-slew_margin slew_margin]
+    [-cap_margin cap_margin]
+    [-max_utilization util]
+    [-verbose]
 ```
-set_max_fanout <fanout> [current_design]
-```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-max_wire_length` | Maximum length of wires (in microns), defaults to a value that minimizes the wire delay for the wire RC values specified by `set_wire_rc`. |
+| `-slew_margin` | Add a slew margin. The default value is `0`, the allowed values are integers `[0, 100]`. |
+| `-cap_margin` | Add a capactitance margin. The default value is `0`, the allowed values are integers `[0, 100]`. |
+| `-max_utilization` | Defines the percentage of core area used. |
+| `-verbose` | Enable verbose logging on progress of the repair. |
 
 ### Repair Tie Fanout
 
-```
-repair_tie_fanout [-separation dist]
-                  [-verbose]
-                  lib_port
+The `repair_tie_fanout` command connects each tie high/low load to a copy
+of the tie high/low cell.
+
+```tcl
+repair_tie_fanout 
+    [-separation dist]
+    [-verbose]
+    lib_port
 ```
 
-The `repair_tie_fanout` command connects each tie high/low load to a copy
-of the tie high/low cell.  `lib_port` is the tie high/low port, which can
-be a library/cell/port name or object returned by `get_lib_pins`. The tie
-high/low instance is separated from the load by `dist` (in Liberty units,
-typically microns).
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-separation` | Tie high/low insts are separated from the load by this value (Liberty units, usually microns). |
+| `-verbose` | Enable verbose logging of repair progress. |
+| `lib_port` | Tie high/low port, which can be a library/cell/port name or object returned by `get_lib_pins`. |
 
 ### Repair Timing
-
-```
-repair_timing [-setup]
-              [-hold]
-              [-setup_margin setup_margin]
-              [-hold_margin hold_margin]
-              [-allow_setup_violations]
-              [-repair_tns tns_end_percent]
-              [-max_utilization util]
-              [-max_buffer_percent buffer_percent]
-              [-verbose]
-```
 
 The `repair_timing` command repairs setup and hold violations.  It
 should be run after clock tree synthesis with propagated clocks.
 Setup repair is done before hold repair so that hold repair does not
-cause setup checks to fail. While repairing hold violations buffers
-are not inserted that will cause setup violations unless
-`-allow_setup_violations` is specified.
-Use `-setup_margin/-hold_margin` to add additional slack margin.
-Use `-verbose` to print more information about the progress of the
-repair.
+cause setup checks to fail.
 
 The worst setup path is always repaired.  Next, violating paths to
-endpoints are repaired to reduced the total negative slack.  The
-percentage of violating endpoints to repair is specified with
--repair_tns is the percentage of violating endpoints to repair (0 to
-100).  When tns_end_percent is zero (the default), only the worst
-endpoint is repaired. When tns_end_percent is 100, all violating
-endpoints are repaired.
+endpoints are repaired to reduced the total negative slack. 
 
-Use`-max_buffer_percent` to specify a maximum number of buffers to insert
-to repair hold violations as a percentage of the number of instances
-in the design. The default value for `buffer_percent` is 20, for 20%.
+```tcl
+repair_timing 
+    [-setup]
+    [-hold]
+    [-setup_margin setup_margin]
+    [-hold_margin hold_margin]
+    [-allow_setup_violations]
+    [-repair_tns tns_end_percent]
+    [-max_utilization util]
+    [-max_buffer_percent buffer_percent]
+    [-verbose]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-setup` | Repair setup timing. |
+| `-hold` | Repair hold timing. |
+| `-setup_margin` | Add additional setup slack margin. |
+| `-hold_margin` | Add additional hold slack margin. |
+| `-allow_setup_violations` | While repairing hold violations, buffers are not inserted that will cause setup violations unless `-allow_setup_violations` is specified. |
+| `-repair_tns` | Percentage of violating endpoints to repair (0-100). When `tns_end_percent` is zero (the default), only the worst endpoint is repaired. When `tns_end_percent` is 100, all violating endpoints are repaired. |
+| `-max_utilization` | Defines the percentage of core area used. |
+| `-max_buffer_percent` | Specify a maximum number of buffers to insert to repair hold violations as a percentage of the number of instances in the design. The default value is `20`, and the allowed values are integers `[0, 100]`. |
+| `-verbose` | Enable verbose logging of the repair progress. |
+
+Use`-recover_power` to specify the percent of paths with positive slack which
+will be considered for gate resizing to save power. It is recommended that
+this option be used with global routing based parasitics. 
 
 ### Repair Clock Nets
 
-```
-repair_clock_nets [-max_wire_length max_wire_length]
-```
-
-The 'clock_tree_synthesis' command inserts a clock tree in the design
+The `clock_tree_synthesis` command inserts a clock tree in the design
 but may leave a long wire from the clock input pin to the clock tree
 root buffer. The `repair_clock_nets` command inserts buffers in the
 wire from the clock input pin to the clock root buffer.
 
-### Report Design Area
+```tcl
+repair_clock_nets 
+    [-max_wire_length max_wire_length]
+```
 
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-max_wire_length` | Maximum length of wires (in microns), defaults to a value that minimizes the wire delay for the wire RC values specified by `set_wire_rc`. |
+
+### Repair Clock Inverters
+
+```tcl
+repair_clock_inverters
 ```
-report_design_area
-```
+
+### Report Design Area
 
 The `report_design_area` command reports the area of the design's components
 and the utilization.
 
+```tcl
+report_design_area
+```
+
 ### Report Floating Nets
 
-```
-report_floating_nets [-verbose]
+The `report_floating_nets` command reports nets with only one pin connection.
+
+```tcl
+report_floating_nets 
+    [-verbose]
 ```
 
-The `report_floating_nets` command reports nets with only one pin connection.
-Use the `-verbose` flag to see the net names.
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-verbose` | Print the net names. |
+
+### Useful Developer Commands
+
+If you are a developer, you might find these useful. More details can be found in the [source file](./src/Resizer.cc) or the [swig file](./src/Resizer.i).
+
+| Command Name | Description |
+| ----- | ----- |
+| `repair_setup_pin` | Repair setup pin violation. |
+| `check_parasitics` | Check if the `estimate_parasitics` command has been called. |
+| `parse_time_margin_arg` | Get the raw value for timing margin (e.g. `slack_margin`, `setup_margin`, `hold_margin`) |
+| `parse_percent_margin_arg` | Get the above margin in perentage format. |
+| `parse_margin_arg` | Same as `parse_percent_margin_arg`. |
+| `parse_max_util` | Check maximum utilization. |
+| `parse_max_wire_length` | Get maximum wirelength. |
+| `check_corner_wire_caps` | Check wire capacitance for corner. |
+| `check_max_wire_length` | Check if wirelength is allowed by rsz for minimum delay. |
+| `dblayer_wire_rc` | Get layer RC values. |
+| `set_dblayer_wire_rc` | Set layer RC values. |
 
 ## Example scripts
 
 A typical `resizer` command file (after a design and Liberty libraries have
 been read) is shown below.
 
-```
+```tcl
 read_sdc gcd.sdc
 
 set_wire_rc -layer metal2
@@ -248,7 +325,7 @@ repair_timing
 Note that OpenSTA commands can be used to report timing metrics before
 or after resizing the design.
 
-```
+```tcl
 set_wire_rc -layer metal2
 report_checks
 report_tns
@@ -264,11 +341,19 @@ report_wns
 
 ## Regression tests
 
+There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests). 
+
+Simply run the following script: 
+
+```shell
+./test/regression
+```
+
 ## Limitations
 
 ## FAQs
 
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+resizer+in%3Atitle)
+Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+resizer)
 about this tool.
 
 ## License

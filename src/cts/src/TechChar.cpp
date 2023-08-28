@@ -570,7 +570,7 @@ void TechChar::initCharacterization()
         "    Check the -wire_unit parameter or the technology files.");
   }
 
-  setLengthUnit(charBuf_->getHeight() * 10 / 2 / dbUnitsPerMicron);
+  setLengthUnit(charBuf_->getHeight() * 10 / 2);
 
   // Gets the max slew and max cap if they weren't added as parameters.
   float maxSlew = 0.0;
@@ -590,7 +590,7 @@ void TechChar::initCharacterization()
       libertyCell->bufferPorts(input, output);
       sta::LibertyLibrary* lib = libertyCell->libertyLibrary();
 
-      input->slewLimit(sta::MinMax::max(), maxSlew, maxSlewExist);
+      output->slewLimit(sta::MinMax::max(), maxSlew, maxSlewExist);
       if (!maxSlewExist)
         lib->defaultMaxSlew(maxSlew, maxSlewExist);
       if (!maxSlewExist)
@@ -1180,20 +1180,12 @@ void TechChar::create()
   // Post-processing of the results.
   const std::vector<ResultData> convertedSolutions
       = characterizationPostProcess();
-  // Changes the segment units back to micron and creates the wire segments.
-  const float dbUnitsPerMicron = charBlock_->getDbUnitsPerMicron();
-  const float segmentDistance = options_->getWireSegmentUnit();
-  options_->setWireSegmentUnit(segmentDistance / dbUnitsPerMicron);
   compileLut(convertedSolutions);
   if (logger_->debugCheck(CTS, "characterization", 3)) {
     printCharacterization();
     printSolution();
   }
-  // super confused -cherry
-  if (openStaChar_ != nullptr) {
-    openStaChar_->clear();
-    openStaChar_.reset(nullptr);
-  }
+  odb::dbBlock::destroy(charBlock_);
 }
 
 }  // namespace cts

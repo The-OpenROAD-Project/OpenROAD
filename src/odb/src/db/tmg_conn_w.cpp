@@ -32,6 +32,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <unordered_set>
 
 #include "db.h"
 #include "dbMap.h"
@@ -44,70 +45,52 @@ namespace odb {
 
 void tmg_conn::checkConnOrdered()
 {
-  dbITerm* drv_iterm = nullptr;
-  dbBTerm* drv_bterm = nullptr;
-  dbITerm* itermV[1024];
-  dbBTerm* btermV[1024];
-  int itermN = 0;
-  int btermN = 0;
-  int j;
+  std::unordered_set<dbITerm*> iterms;
+  std::unordered_set<dbBTerm*> bterms;
   _connected = true;
   dbWire* wire = _net->getWire();
   dbWirePathItr pitr;
   dbWirePath path;
-  dbWirePathShape pathShape;
   pitr.begin(wire);
-  int first = 1;
+  bool first = true;
   while (pitr.getNextPath(path)) {
     if (!path.is_branch) {
       if (!path.iterm && !path.bterm) {
         _connected = false;
       }
       if (first) {
-        first = 0;
+        first = false;
         if (path.iterm) {
-          drv_iterm = path.iterm;
-          itermV[itermN++] = drv_iterm;
+          iterms.insert(path.iterm);
         }
         if (path.bterm) {
-          drv_bterm = path.bterm;
-          btermV[btermN++] = drv_bterm;
+          bterms.insert(path.bterm);
         }
       } else {
         if (path.iterm) {
-          for (j = 0; j < itermN; j++)
-            if (itermV[j] == path.iterm)
-              break;
-          if (j == itermN) {
+          if (iterms.find(path.iterm) == iterms.end()) {
             _connected = false;
-            itermV[itermN++] = path.iterm;
+            iterms.insert(path.iterm);
           }
         }
         if (path.bterm) {
-          for (j = 0; j < btermN; j++)
-            if (btermV[j] == path.bterm)
-              break;
-          if (j == btermN) {
+          if (bterms.find(path.bterm) == bterms.end()) {
             _connected = false;
-            btermV[btermN++] = path.bterm;
+            bterms.insert(path.bterm);
           }
         }
       }
     }
+    dbWirePathShape pathShape;
     while (pitr.getNextShape(pathShape)) {
       if (pathShape.iterm) {
-        for (j = 0; j < itermN; j++)
-          if (itermV[j] == pathShape.iterm)
-            break;
-        if (j == itermN) {
-          itermV[itermN++] = pathShape.iterm;
+        if (iterms.find(pathShape.iterm) == iterms.end()) {
+          iterms.insert(pathShape.iterm);
         }
       } else if (pathShape.bterm) {
-        for (j = 0; j < btermN; j++)
-          if (btermV[j] == pathShape.bterm)
-            break;
-        if (j == btermN)
-          btermV[btermN++] = pathShape.bterm;
+        if (bterms.find(pathShape.bterm) == bterms.end()) {
+          bterms.insert(pathShape.bterm);
+        }
       }
     }
   }

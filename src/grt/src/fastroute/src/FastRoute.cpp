@@ -54,6 +54,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
     : max_degree_(0),
       db_(db),
       overflow_iterations_(0),
+      congestion_report_iter_step_(0),
       layer_orientation_(0),
       x_range_(0),
       y_range_(0),
@@ -317,6 +318,7 @@ void FastRouteCore::initEdges()
       for (int k = 0; k < num_layers_; k++) {
         h_edges_3D_[k][i][j].cap = h_capacity_3D_[k];
         h_edges_3D_[k][i][j].usage = 0;
+        h_edges_3D_[k][i][j].red = 0;
       }
     }
   }
@@ -333,6 +335,7 @@ void FastRouteCore::initEdges()
       for (int k = 0; k < num_layers_; k++) {
         v_edges_3D_[k][i][j].cap = v_capacity_3D_[k];
         v_edges_3D_[k][i][j].usage = 0;
+        v_edges_3D_[k][i][j].red = 0;
       }
     }
   }
@@ -382,6 +385,8 @@ void FastRouteCore::addAdjustment(int x1,
     if (!isReduce) {
       const int increase = reducedCap - cap;
       h_edges_[y1][x1].cap += increase;
+    } else {
+      h_edges_3D_[k][y1][x1].red += reduce;
     }
 
     h_edges_[y1][x1].cap -= reduce;
@@ -410,6 +415,8 @@ void FastRouteCore::addAdjustment(int x1,
     if (!isReduce) {
       int increase = reducedCap - cap;
       v_edges_[y1][x1].cap += increase;
+    } else {
+      v_edges_3D_[k][y1][x1].red += reduce;
     }
 
     v_edges_[y1][x1].cap -= reduce;
@@ -790,9 +797,9 @@ void FastRouteCore::updateDbCongestion()
     const unsigned short capH = h_capacity_3D_[k];
     const unsigned short capV = v_capacity_3D_[k];
     for (int y = 0; y < y_grid_; y++) {
-      for (int x = 0; x < x_grid_ - 1; x++) {
-        const unsigned short blockageH = capH - h_edges_3D_[k][y][x].cap;
-        const unsigned short blockageV = capV - v_edges_3D_[k][y][x].cap;
+      for (int x = 0; x < x_grid_; x++) {
+        const unsigned short blockageH = h_edges_3D_[k][y][x].red;
+        const unsigned short blockageV = v_edges_3D_[k][y][x].red;
         const unsigned short usageH = h_edges_3D_[k][y][x].usage + blockageH;
         const unsigned short usageV = v_edges_3D_[k][y][x].usage + blockageV;
         db_gcell->setCapacity(layer, x, y, capH, capV, 0);
@@ -805,6 +812,10 @@ void FastRouteCore::updateDbCongestion()
 
 NetRouteMap FastRouteCore::run()
 {
+  if (netCount() == 0) {
+    return getRoutes();
+  }
+
   int tUsage;
   int cost_step;
   int maxOverflow = 0;
@@ -1167,6 +1178,11 @@ NetRouteMap FastRouteCore::run()
     }
 
     last_total_overflow = total_overflow_;
+
+    // generate DRC report each interval
+    if (congestion_report_iter_step_ && i % congestion_report_iter_step_ == 0) {
+      saveCongestion(i);
+    }
   }  // end overflow iterations
 
   // Debug mode Tree 2D after overflow iterations
@@ -1261,6 +1277,22 @@ void FastRouteCore::setMakeWireParasiticsBuilder(
 void FastRouteCore::setOverflowIterations(int iterations)
 {
   overflow_iterations_ = iterations;
+}
+
+void FastRouteCore::setCongestionReportIterStep(int congestion_report_iter_step)
+{
+  congestion_report_iter_step_ = congestion_report_iter_step;
+}
+
+void FastRouteCore::setCongestionReportFile(const char* congestion_file_name)
+{
+  congestion_file_name_ = congestion_file_name;
+}
+
+void FastRouteCore::setGridMax(int x_max, int y_max)
+{
+  x_grid_max_ = x_max;
+  y_grid_max_ = y_max;
 }
 
 std::vector<int> FastRouteCore::getOriginalResources()

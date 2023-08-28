@@ -122,6 +122,7 @@ class ICeWall
                      const odb::dbOrientType& rotation = odb::dbOrientType::R0,
                      const odb::Point& offset = {0, 0},
                      const std::string& prefix = "IO_BOND_");
+  void placeTerminals(const std::vector<odb::dbITerm*>& iterms);
   void routeRDL(odb::dbTechLayer* layer,
                 odb::dbTechVia* bump_via,
                 odb::dbTechVia* pad_via,
@@ -133,6 +134,10 @@ class ICeWall
   void routeRDLDebugGUI(bool enable);
 
   void connectByAbutment();
+
+  static std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>> getTouchingIterms(
+      odb::dbInst* inst0,
+      odb::dbInst* inst1);
 
  private:
   odb::dbBlock* getBlock() const;
@@ -147,10 +152,6 @@ class ICeWall
                      odb::dbInst* inst,
                      const odb::dbOrientType& base_orient,
                      bool allow_overlap = false) const;
-
-  std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>> getTouchingIterms(
-      odb::dbInst* inst0,
-      odb::dbInst* inst1) const;
 
   void makeBTerm(odb::dbNet* net,
                  odb::dbTechLayer* layer,

@@ -34,6 +34,11 @@ record_tests {
   annealing_constraint8
   annealing_large_groups1
   annealing_large_groups2
+  annealing_mirrored1
+  annealing_mirrored2
+  annealing_mirrored3
+  annealing_mirrored4
+  annealing_mirrored5
   blocked_region
   cells_not_placed
   exclude1

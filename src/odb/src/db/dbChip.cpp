@@ -183,9 +183,6 @@ dbChip* dbChip::create(dbDatabase* db_)
   if (db->_chip != 0)
     return nullptr;
 
-  if (db->_tech == 0)
-    return nullptr;
-
   _dbChip* chip = db->_chip_tbl->create();
   db->_chip = chip->getOID();
   return (dbChip*) chip;

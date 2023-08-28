@@ -40,6 +40,7 @@
 #include <boost/random/uniform_int_distribution.hpp>
 #include <random>
 
+#include "Core.h"
 #include "Netlist.h"
 #include "Slots.h"
 #include "odb/geom.h"
@@ -50,7 +51,17 @@ class Logger;
 }  // namespace utl
 
 namespace ppl {
+
+struct DebugSettings
+{
+  std::unique_ptr<AbstractIOPlacerRenderer> renderer;
+
+  bool isOn() const { return renderer != nullptr; }
+};
+
 using utl::Logger;
+
+using GroupLimits = std::pair<int, int>;
 
 struct Constraint;
 
@@ -58,6 +69,7 @@ class SimulatedAnnealing
 {
  public:
   SimulatedAnnealing(Netlist* netlist,
+                     Core* core,
                      std::vector<Slot>& slots,
                      const std::vector<Constraint>& constraints,
                      Logger* logger,
@@ -66,8 +78,19 @@ class SimulatedAnnealing
   void run(float init_temperature,
            int max_iterations,
            int perturb_per_iter,
-           float alpha);
+           float alpha,
+           bool random);
   void getAssignment(std::vector<IOPin>& assignment);
+
+  // debug functions
+  void setDebugOn(std::unique_ptr<AbstractIOPlacerRenderer> renderer);
+
+  void annealingStateVisualization(
+      const std::vector<IOPin>& assignment,
+      const std::vector<std::vector<InstancePin>>& sinks,
+      const int& current_iteration);
+
+  AbstractIOPlacerRenderer* getDebugRenderer();
 
  private:
   void init(float init_temperature,
@@ -85,15 +108,30 @@ class SimulatedAnnealing
   int swapPins();
   int movePinToFreeSlot(bool lone_pin = false);
   int moveGroupToFreeSlots(int group_idx);
+  int shiftGroup(int group_idx);
+  void shiftGroupToPosition(const std::vector<int>& pin_indices,
+                            int free_slots_count,
+                            int min_slot,
+                            bool move_to_max);
+  int rearrangeConstrainedGroups(int constraint_idx);
+  int moveGroup(int pin_idx);
   void restorePreviousAssignment();
   double dbuToMicrons(int64_t dbu);
-  bool isFreeForGroup(int slot_idx, int group_size, int last_slot);
+  bool isFreeForGroup(int& slot_idx, int group_size, int last_slot);
   void getSlotsRange(const IOPin& io_pin, int& first_slot, int& last_slot);
+  int getSlotIdxByPosition(const odb::Point& position, int layer) const;
+  bool isFreeForMirrored(int slot_idx, int& mirrored_idx) const;
+  int getMirroredSlotIdx(int slot_idx) const;
+  void updateSlotsFromGroup(const std::vector<int>& prev_slots_, bool block);
+  int computeGroupPrevCost(int group_idx);
+  void updateGroupSlots(const std::vector<int>& pin_indices, int& new_slot);
+  void countLonePins();
 
   // [pin] -> slot
   std::vector<int> pin_assignment_;
   std::vector<int> slot_indices_;
   Netlist* netlist_;
+  Core* core_;
   std::vector<Slot>& slots_;
   const std::vector<PinGroupByIndex>& pin_groups_;
   const std::vector<Constraint>& constraints_;
@@ -116,11 +154,17 @@ class SimulatedAnnealing
   // perturbation variables
   const float swap_pins_ = 0.5;
   const int move_fail_ = -1;
+  const float shift_group_ = 0.8;
+  const float group_to_free_slots_ = 0.7;
+  const float pins_per_slot_limit_ = 0.5;
 
   Logger* logger_ = nullptr;
   odb::dbDatabase* db_;
   const int fail_cost_ = std::numeric_limits<int>::max();
   const int seed_ = 42;
+
+  // debug variables
+  std::unique_ptr<DebugSettings> debug_;
 };
 
 }  // namespace ppl
