@@ -411,16 +411,16 @@ BOOST_AUTO_TEST_CASE(test_default)
   auto cutLayer_57 = dbTech->findLayer("via2");
   auto cutSpacingRules_57 = cutLayer_57->getTechLayerCutSpacingRules();
   BOOST_TEST(cutSpacingRules_57.size() == 3);
-  int i = 0;
+  int i_57 = 0;
   for (odb::dbTechLayerCutSpacingRule* subRule : cutSpacingRules_57) {
-    if (i == 1) {
+    if (i_57 == 1) {
       BOOST_TEST(subRule->getCutSpacing() == 0.3 * distFactor);
       BOOST_TEST(subRule->getType()
                  == odb::dbTechLayerCutSpacingRule::CutSpacingType::LAYER);
       BOOST_TEST(subRule->isSameMetal());
       BOOST_TEST(subRule->isStack());
       BOOST_TEST(std::string(subRule->getSecondLayer()->getName()) == "metal2");
-    } else if (i == 2) {
+    } else if (i_57 == 2) {
       BOOST_TEST(subRule->getCutSpacing() == 0.2 * distFactor);
       BOOST_TEST(
           subRule->getType()
@@ -432,7 +432,7 @@ BOOST_AUTO_TEST_CASE(test_default)
       BOOST_TEST(subRule->getType()
                  == odb::dbTechLayerCutSpacingRule::CutSpacingType::MAXXY);
     }
-    i++;
+    i_57++;
   }
 }
 
