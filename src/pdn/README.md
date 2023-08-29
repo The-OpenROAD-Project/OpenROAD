@@ -422,15 +422,12 @@ The `add_sroute_connect` command is employed for connecting pins located outside
                      [-dont_use_vias list_of_vias] \
                      [-max_rows rows] \
                      [-max_columns columns] \
-                     [-hDX hDX] \
-                     [-hDY hDY] \
-                     [-vDX vDX] \
-                     [-vDY vDY] \
                      [-stripDY stripDY] \
                      [-metalwidths metalwidths] \
                      [-metalspaces metalspaces] \
                      [-ongrid ongrid_layers] \
-                     [-split_cuts split_cuts_mapping]
+                     [-split_cuts split_cuts_mapping] \
+                     [-insts inst]
 ```
 
 #### Options
@@ -445,21 +442,17 @@ The `add_sroute_connect` command is employed for connecting pins located outside
 | `-dont_use_vias` | List or pattern of vias to not use to form the via stack |
 | `-max_rows` | Maximum number of rows when adding arrays of vias |
 | `-max_columns` | Maximum number of columns when adding arrays of vias |
-| `-hDX` | Specify the width of horizontal wire in inner power ring |
-| `-hDY` | Specify the length of horizontal wire in inner power ring |
-| `-vDX` | Specify the width of vertiical wire in inner power ring |
-| `-vDY` | Specify the length of vertical wire in inner power ring |
 | `-stripDY` | Specify the width of vertical stripe inside inner power domain |
 | `-metalwidths` | Specify the width for each metal layer |
 | `-metalspaces` | Specify the spacing of each metal layer |
 | `-ongrid` | List of intermediate layers in a via stack to snap onto a routing grid |
 | `-split_cuts` | Specifies layers to use split cuts on with an associated pitch, for example `{metal3 0.380 metal5 0.500}`. |
+| `-insts` | Specifies all the instances contains the pin that need to get connected with power ring. |
 
 #### Examples
 
 ```
-add_sroute_connect -net "VIN" -outerNet "VDD" -layers {met1 met4} -cut_pitch {200 200} -fixed_vias {M4M5_PR_M} -hDX 57220 -hDY 5000 -vDX 5000 -vDY 58200 -metalwidths {1500 1500} -metalspaces {500} -ongrid {met5 met4} -stripDY 480
-add_sroute_connect -net "VIN" -outerNet "VDD" -layers {met1 met4} -cut_pitch {200 200} -fixed_vias {M3M4_PR_M} -hDX 45280 -hDY 5000 -vDX 5000 -vDY 43920 -metalwidths {1000 1000} -metalspaces {800} -ongrid {met3 met4} -stripDY 490
+add_sroute_connect  -net "VIN" -outerNet "VDD" -layers {met1 met4} -cut_pitch {200 200} -fixed_vias {M3M4_PR_M} -metalwidths {1000 1000} -metalspaces {800} -ongrid {met3 met4} -stripDY 490 -insts "temp_analog_1.a_header_0"
 
 ```
 ## Regression tests
