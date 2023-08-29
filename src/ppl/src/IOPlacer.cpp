@@ -604,8 +604,8 @@ bool IOPlacer::checkBlocked(Edge edge, int pos, int layer)
     if (blocked_interval.getLayer() == -1
         || blocked_interval.getLayer() == layer) {
       if (blocked_interval.getEdge() == edge
-          && pos >= blocked_interval.getBegin()
-          && pos <= blocked_interval.getEnd()) {
+          && pos > blocked_interval.getBegin()
+          && pos < blocked_interval.getEnd()) {
         return true;
       }
     }
