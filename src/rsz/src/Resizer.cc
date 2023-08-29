@@ -207,6 +207,13 @@ void Resizer::init(Logger* logger,
   resized_multi_output_insts_ = InstanceSet(db_network_);
   inserted_buffer_set_ = InstanceSet(db_network_);
   steiner_renderer_ = std::move(steiner_renderer);
+  // TODO REMOVE
+  if (getenv("NEW_UNDO")!= nullptr) {
+    new_journal_ = true;
+  }
+  else {
+    new_journal_ = false;
+  }
   journal_ = new Journal(this, logger_);
   copyState(sta);
 }
@@ -2735,8 +2742,10 @@ int Resizer::undoGateCloning(Instance *original_inst, Instance *cloned_inst) {
              network_->libertyCell(cloned_inst)->name());
 
   const Pin *original_output_pin = nullptr;
-  std::vector<const Pin *> clone_pins = getPins(cloned_inst);
-  std::vector<const Pin *> original_pins = getPins(original_inst);
+  std::vector<const Pin *> clone_pins;
+  getPins(cloned_inst, clone_pins);
+  std::vector<const Pin *> original_pins;
+  getPins(original_inst, original_pins);
   for (auto &pin: original_pins) {
     if (network_->direction(pin)->isOutput()) {
       original_output_pin = pin;

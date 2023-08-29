@@ -56,8 +56,6 @@
 namespace rsz {
 
 using std::string;
-using std::vector;
-
 using sta::Instance;
 using utl::RSZ;
 

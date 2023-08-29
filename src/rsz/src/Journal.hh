@@ -147,7 +147,7 @@ public:
   Instance *cloneInstance(LibertyCell *cell, const char *name,  Instance *original_inst,
                                   Instance *parent,  const Point& loc);
  private:
-  sta::Network *network();
+  Network *network();
   dbSta *sta();
 
  private:
