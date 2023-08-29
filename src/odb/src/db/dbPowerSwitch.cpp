@@ -243,10 +243,11 @@ void dbPowerSwitch::addLibCell(const std::string& lib_cell)
   dbBlock* par = (dbBlock*) obj->getOwner();
 
   dbMaster* master = nullptr;
-  auto libs = ((dbDatabase*)obj->getImpl()->getDatabase())->getLibs();
+  auto libs = ((dbDatabase*) obj->getImpl()->getDatabase())->getLibs();
   for (auto lib : libs) {
     master = lib->findMaster(lib_cell.c_str());
-    if (master) break;
+    if (master)
+      break;
   }
 
   if (!master) {
@@ -262,18 +263,20 @@ void dbPowerSwitch::addLibCell(const std::string& lib_cell)
   obj->_lib = master->getLib()->getImpl()->getOID();
 }
 
-void dbPowerSwitch::addLibCell(dbMaster* master){
+void dbPowerSwitch::addLibCell(dbMaster* master)
+{
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
   obj->_lib_cell = master->getImpl()->getOID();
   obj->_lib = master->getLib()->getImpl()->getOID();
-
 }
 
 void dbPowerSwitch::addPortMap(const std::string& model_port,
                                const std::string& switch_port)
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  dbMaster* master = (dbMaster*) dbMaster::getMaster(dbLib::getLib((dbDatabase*)obj->getImpl()->getDatabase(), obj->_lib), obj->_lib_cell);
+  dbMaster* master = (dbMaster*) dbMaster::getMaster(
+      dbLib::getLib((dbDatabase*) obj->getImpl()->getDatabase(), obj->_lib),
+      obj->_lib_cell);
 
   if (!master) {
     obj->getImpl()->getLogger()->error(
@@ -289,12 +292,13 @@ void dbPowerSwitch::addPortMap(const std::string& model_port,
   obj->_port_map[model_port] = mterm->getImpl()->getOID();
 }
 
-void dbPowerSwitch::addPortMap(const std::string& model_port,
-                  dbMTerm* mterm){
-
+void dbPowerSwitch::addPortMap(const std::string& model_port, dbMTerm* mterm)
+{
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
 
-  dbMaster* master = (dbMaster*) dbMaster::getMaster(dbLib::getLib((dbDatabase*)obj->getImpl()->getDatabase(), obj->_lib), obj->_lib_cell);
+  dbMaster* master = (dbMaster*) dbMaster::getMaster(
+      dbLib::getLib((dbDatabase*) obj->getImpl()->getDatabase(), obj->_lib),
+      obj->_lib_cell);
 
   if (!master) {
     obj->getImpl()->getLogger()->error(
@@ -306,7 +310,7 @@ void dbPowerSwitch::addPortMap(const std::string& model_port,
     return;
   }
 
-  if(master != mterm->getMaster()){
+  if (master != mterm->getMaster()) {
     obj->getImpl()->getLogger()->error(
         utl::ODB,
         32003,
@@ -315,7 +319,7 @@ void dbPowerSwitch::addPortMap(const std::string& model_port,
         mterm->getName());
     return;
   }
-  
+
   obj->_port_map[model_port] = mterm->getImpl()->getOID();
 }
 
@@ -346,8 +350,9 @@ std::vector<std::string> dbPowerSwitch::getOnStates()
 dbMaster* dbPowerSwitch::getLibCell()
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  return (dbMaster*) dbMaster::getMaster(dbLib::getLib((dbDatabase*)obj->getImpl()->getDatabase(), obj->_lib), obj->_lib_cell);
-
+  return (dbMaster*) dbMaster::getMaster(
+      dbLib::getLib((dbDatabase*) obj->getImpl()->getDatabase(), obj->_lib),
+      obj->_lib_cell);
 }
 
 std::map<std::string, dbMTerm*> dbPowerSwitch::getPortMap()
@@ -356,7 +361,7 @@ std::map<std::string, dbMTerm*> dbPowerSwitch::getPortMap()
   std::map<std::string, dbMTerm*> port_mapping;
 
   dbMaster* cell = getLibCell();
-  if(!cell)
+  if (!cell)
     return port_mapping;
 
   for (auto const& [key, val] : obj->_port_map) {
