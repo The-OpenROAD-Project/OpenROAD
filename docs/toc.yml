@@ -38,11 +38,15 @@ entries:
     title: Chip-level Connections
   - file: main/src/mpl/README
     title: Macro Placement
+  - file: main/src/mpl2/README
+    title: Hierarchical Macro Placement
   - file: main/src/tap/README
     title: Tapcell Insertion
   - file: main/src/pdn/README
     title: PDN Generation
     entries:
+    - file: main/src/upf/README
+      title: Read UPF Utility
     - file: main/src/psm/README
       title: IR Drop Analysis
       entries:
@@ -59,9 +63,6 @@ entries:
     title: Detailed Placement
   - file: main/src/cts/README
     title: Clock Tree Synthesis
-    entries:
-    - file: main/src/cts/doc/cts_lut_characterization
-      title: CTS LUT Characterization
   - file: main/src/grt/README
     title: Global Routing
     entries:
@@ -70,7 +71,7 @@ entries:
   - file: main/src/ant/README
     title: Antenna Checker
   - file: main/src/drt/README
-    title: Detail Routing
+    title: Detailed Routing
   - file: main/src/fin/README
     title: Metal Fill
   - file: main/src/rcx/README

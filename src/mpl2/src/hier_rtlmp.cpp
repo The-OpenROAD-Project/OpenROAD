@@ -367,12 +367,27 @@ void HierRTLMP::hierRTLMacroPlacer()
   float core_util
       = metrics_->getStdCellArea() / (core_area - metrics_->getMacroArea());
 
+  // Check if placement is feasible in the core area when considering
+  // the macro halos
+  float macro_with_halo_area = 0;
+  int unplaced_macros = 0;
+  for (auto inst : block_->getInsts()) {
+    auto master = inst->getMaster();
+    if (master->isBlock()) {
+      const auto width = dbuToMicron(master->getWidth(), dbu_) + halo_width_;
+      const auto height = dbuToMicron(master->getHeight(), dbu_) + halo_width_;
+      macro_with_halo_area += width * height;
+      unplaced_macros += !inst->getPlacementStatus().isPlaced();
+    }
+  }
+
   logger_->report(
       "Traversed logical hierarchy\n"
       "\tNumber of std cell instances : {}\n"
       "\tArea of std cell instances : {:.2f}\n"
       "\tNumber of macros : {}\n"
       "\tArea of macros : {:.2f}\n"
+      "\tArea of macros with halos : {:.2f}\n"
       "\tTotal area : {:.2f}\n"
       "\tDesign Utilization : {:.2f}\n"
       "\tCore Utilization: {:.2f}\n"
@@ -381,10 +396,25 @@ void HierRTLMP::hierRTLMacroPlacer()
       metrics_->getStdCellArea(),
       metrics_->getNumMacro(),
       metrics_->getMacroArea(),
+      macro_with_halo_area,
       metrics_->getStdCellArea() + metrics_->getMacroArea(),
       util,
       core_util,
       manufacturing_grid_);
+
+  if (unplaced_macros == 0) {
+    logger_->info(
+        MPL, 17, "There are no unplaced macros so placement is skipped.");
+    return;
+  }
+
+  if (macro_with_halo_area + metrics_->getStdCellArea() > core_area) {
+    logger_->error(MPL,
+                   16,
+                   "The instance area with halos {} exceeds the core area {}",
+                   macro_with_halo_area + metrics_->getStdCellArea(),
+                   core_area);
+  }
 
   setDefaultThresholds();
   // report the default parameters

@@ -181,10 +181,12 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
     Net *net = network_->isTopLevelPort(drvr_pin)
       ? network_->net(network_->term(drvr_pin))
       : network_->net(drvr_pin);
+    dbNet *net_db = db_network_->staToDb(net);
     bool debug = (drvr_pin == resizer_->debug_pin_);
     if (debug)
       logger_->setDebugLevel(RSZ, "repair_net", 3);
-    if (net && !resizer_->dontTouch(net) && !sta_->isClock(drvr_pin)
+    if (net && !resizer_->dontTouch(net) && !net_db->isConnectedByAbutment()
+        && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells and supply nets.
         && !drvr->isConstant()) {
       repairNet(net, drvr_pin, drvr, true, true, true, max_length, true,
