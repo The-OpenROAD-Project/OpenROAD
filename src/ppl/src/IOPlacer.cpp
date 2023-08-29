@@ -693,7 +693,8 @@ void IOPlacer::writePinPlacement()
 
   std::ofstream out(file_name);
 
-  std::vector<Edge> edges_list = {Edge::bottom, Edge::right, Edge::top, Edge::left};
+  std::vector<Edge> edges_list
+      = {Edge::bottom, Edge::right, Edge::top, Edge::left};
   for (const Edge& edge : edges_list) {
     out << "#Edge: " << getEdgeString(edge) << "\n";
     for (const IOPin& io_pin : netlist_io_pins_->getIOPins()) {
