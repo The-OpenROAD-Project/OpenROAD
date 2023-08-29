@@ -202,40 +202,25 @@ void make_ring(const char* grid_name,
   }
 }
 
-void add_sroute_inst(const char* net,
-                     const char* inst,
-                     const char* iterm,
-                     int hDX,
-                     int hDY,
-                     int vDX,
-                     int vDY)
-{
-  PdnGen* pdngen = ord::getPdnGen();
-  pdngen->addSrouteInst(net, inst, iterm, hDX, hDY, vDX, vDY);
-}
-
 void createSrouteWires(
-    const char* net,
-    const char* outerNet,
-    odb::dbTechLayer* layer0,
-    odb::dbTechLayer* layer1,
-    int cut_pitch_x,
-    int cut_pitch_y,
-    const std::vector<odb::dbTechViaGenerateRule*>& vias,
-    const std::vector<odb::dbTechVia*>& techvias,
-    int max_rows,
-    int max_columns,
-    const std::vector<odb::dbTechLayer*>& ongrid,
-    const std::vector<odb::dbTechLayer*>& split_cuts_layers,
-    const std::vector<int>& split_cut_pitches,
-    const char* dont_use_vias,
-    int hDX,
-    int hDY,
-    int vDX,
-    int vDY,
-    int stripDY,
-    std::vector<int> metalwidths,
-    std::vector<int> metalspaces)
+      const char* net,
+      const char* outerNet,
+      odb::dbTechLayer* layer0,
+      odb::dbTechLayer* layer1,
+      int cut_pitch_x,
+      int cut_pitch_y,
+      const std::vector<odb::dbTechViaGenerateRule*>& vias,
+      const std::vector<odb::dbTechVia*>& techvias,
+      int max_rows,
+      int max_columns,
+      const std::vector<odb::dbTechLayer*>& ongrid,
+      const std::vector<odb::dbTechLayer*>& split_cuts_layers,
+      const std::vector<int>& split_cut_pitches,
+      const char* dont_use_vias,
+      int stripDY,
+      std::vector<int> metalwidths,
+      std::vector<int> metalspaces,
+      const std::vector<odb::dbInst*>& insts)
 {
   PdnGen* pdngen = ord::getPdnGen();
   std::map<odb::dbTechLayer*, int> split_cuts;
@@ -255,13 +240,10 @@ void createSrouteWires(
                             ongrid,
                             split_cuts,
                             dont_use_vias,
-                            hDX,
-                            hDY,
-                            vDX,
-                            vDY,
                             stripDY,
                             metalwidths,
-                            metalspaces);
+                            metalspaces,
+                            insts);
 }
 
 void make_followpin(const char* grid_name, 
