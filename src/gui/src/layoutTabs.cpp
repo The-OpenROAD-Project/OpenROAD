@@ -57,7 +57,8 @@ LayoutTabs::LayoutTabs(Options* options,
       rulers_(rulers),
       gui_(gui),
       usingDBU_(std::move(usingDBU)),
-      showRulerAsEuclidian_(std::move(showRulerAsEuclidian))
+      showRulerAsEuclidian_(std::move(showRulerAsEuclidian)),
+      logger_(nullptr)
 {
   setTabBarAutoHide(true);
   connect(this, &QTabWidget::currentChanged, this, &LayoutTabs::tabChange);
