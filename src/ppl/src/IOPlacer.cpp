@@ -2259,7 +2259,7 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
 
   logger_->info(PPL,
                 70,
-                "Pin {} placed at ({}um, {}um).",
+                "Pin {} placed at ({:.2f}um, {:.2f}um).",
                 bterm->getName(),
                 dbuToMicrons(pos.x()),
                 dbuToMicrons(pos.y()));
