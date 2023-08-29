@@ -107,6 +107,7 @@ class HungarianMatching
   int getSlotIdxByPosition(const odb::Point& position, int layer) const;
   bool groupHasMirroredPin(const std::vector<int>& group,
                            MirroredPins& mirrored_pins);
+  Edge getMirroredEdge(const Edge& edge);
 };
 
 }  // namespace ppl
