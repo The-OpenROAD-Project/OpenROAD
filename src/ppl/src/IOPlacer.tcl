@@ -415,7 +415,7 @@ proc place_pin { args } {
 
   set layer [ppl::parse_layer_name $layer]
 
-  ppl::place_pin $pin $layer $x $y $width $height [info exists flags(-force_to_die_boundary)]
+  ppl::place_pin $pin $layer $x $y $width $height [info exists flags(-force_to_die_boundary)] [info exists flags(-placed_status)]
 }
 
 sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
@@ -427,7 +427,8 @@ sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
                                   [-min_distance_in_tracks]\
                                   [-exclude region]\
                                   [-group_pins pin_list]\
-                                  [-annealing]
+                                  [-annealing] \
+                                  [-write_pin_placement file_name]
                                  }
 
 proc place_pins { args } {
@@ -435,7 +436,7 @@ proc place_pins { args } {
   set pin_groups [ppl::parse_group_pins_arg $args]
   sta::parse_key_args "place_pins" args \
   keys {-hor_layers -ver_layers -random_seed -corner_avoidance \
-        -min_distance -exclude -group_pins} \
+        -min_distance -exclude -group_pins -write_pin_placement} \
   flags {-random -min_distance_in_tracks -annealing}
 
   sta::check_argc_eq0 "place_pins" $args
@@ -600,6 +601,10 @@ proc place_pins { args } {
       ppl::add_pin_group $pin_list 0
       incr group_idx
     }
+  }
+
+  if [info exists keys(-write_pin_placement)] {
+    ppl::set_pin_placement_file $keys(-write_pin_placement)
   }
 
   if { [info exists flags(-annealing)] } {

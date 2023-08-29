@@ -680,6 +680,25 @@ int IOPlacer::micronsToDbu(double microns)
   return (int64_t) (microns * getBlock()->getDbUnitsPerMicron());
 }
 
+void IOPlacer::writePinPlacement()
+{
+  std::string file_name = parms_->getPinPlacementFile();
+  if (file_name.empty()) {
+    return;
+  }
+
+  std::ofstream out(file_name);
+  for (const IOPin& io_pin : netlist_io_pins_->getIOPins()) {
+    const int layer = io_pin.getLayer();
+    odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
+    const odb::Point& pos = io_pin.getPosition();
+    out << "place_pin -pin_name " << io_pin.getName() << " -layer "
+        << tech_layer->getName() << " -location {" << dbuToMicrons(pos.x())
+        << " " << dbuToMicrons(pos.y())
+        << "} -force_to_die_boundary -placed_status\n";
+  }
+}
+
 void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 {
   const int default_min_dist = 2;
@@ -1950,6 +1969,7 @@ void IOPlacer::run(bool random_mode)
 
   checkPinPlacement();
   commitIOPlacementToDB(assignment_);
+  writePinPlacement();
   clear();
 }
 
@@ -2030,6 +2050,7 @@ void IOPlacer::runAnnealing(bool random)
 
   checkPinPlacement();
   commitIOPlacementToDB(assignment_);
+  writePinPlacement();
   clear();
 }
 
