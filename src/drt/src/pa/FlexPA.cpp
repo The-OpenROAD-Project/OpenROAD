@@ -52,7 +52,10 @@ using namespace fr;
 BOOST_CLASS_EXPORT(PinAccessJobDescription)
 
 FlexPA::FlexPA(frDesign* in, Logger* logger, dst::Distributed* dist)
-    : design_(in), logger_(logger), dist_(dist)
+    : design_(in),
+      logger_(logger),
+      dist_(dist),
+      unique_insts_(design_, target_insts_, logger_)
 {
 }
 
@@ -87,8 +90,7 @@ void FlexPA::init()
   initViaRawPriority();
   initTrackCoords();
 
-  initUniqueInstance();
-  initPinAccess();
+  unique_insts_.init();
 }
 
 void FlexPA::applyPatternsFile(const char* file_path)
@@ -193,8 +195,7 @@ int FlexPA::main()
   }
 
   if (VERBOSE > 0) {
-    logger_->report("#scanned instances     = {}", inst2unique_.size());
-    logger_->report("#unique  instances     = {}", uniqueInstances_.size());
+    unique_insts_.report();
     logger_->report("#stdCellGenAp          = {}", stdCellPinGenApCnt_);
     logger_->report("#stdCellValidPlanarAp  = {}", stdCellPinValidPlanarApCnt_);
     logger_->report("#stdCellValidViaAp     = {}", stdCellPinValidViaApCnt_);

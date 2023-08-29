@@ -154,7 +154,8 @@ class IOPlacer
                 int y,
                 int width,
                 int height,
-                bool force_to_die_bound);
+                bool force_to_die_bound,
+                bool placed_status);
 
   static Direction getDirection(const std::string& direction);
   static Edge getEdge(const std::string& edge);
@@ -265,6 +266,8 @@ class IOPlacer
   void getBlockedRegionsFromDbObstructions();
   double dbuToMicrons(int64_t dbu);
   int micronsToDbu(double microns);
+  void writePinPlacement();
+  Edge getMirroredEdge(const Edge& edge);
 
   // db functions
   void populateIOPlacer(const std::set<int>& hor_layer_idx,

@@ -33,8 +33,8 @@
 #############################################################################
 
 sta::define_cmd_args "macro_placement" {
-  [-halo {vertical_width horizontal_width}] \
-    [-channel {vertical_width horizontal_width}]\
+  [-halo {halo_x halo_y}] \
+    [-channel {channel_x channel_y}]\
     [-fence_region {lx ly ux uy}]\
     [-snap_layer snap_layer_number]\
     [-style corner_max_wl|corner_min_wl]}

@@ -30,7 +30,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 sta::define_cmd_args "check_antennas" { [-verbose]\
-                                          [-report_file report_file]\
                                           [-net net]}
 
 proc check_antennas { args } {

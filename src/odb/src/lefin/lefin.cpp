@@ -647,7 +647,8 @@ void lefin::layer(lefiLayer* layer)
     if (type.getValue() == dbTechLayerType::ROUTING) {
       if (!strcmp(layer->propName(iii), "LEF58_SPACING"))
         lefTechLayerSpacingEolParser::parse(layer->propValue(iii), l, this);
-      else if (!strcmp(layer->propName(iii), "LEF58_MINSTEP")) {
+      else if (!strcmp(layer->propName(iii), "LEF58_MINSTEP")
+               || !strcmp(layer->propName(iii), "LEF57_MINSTEP")) {
         lefTechLayerMinStepParser minStepParser;
         valid = minStepParser.parse(layer->propValue(iii), l, this);
       } else if (!strcmp(layer->propName(iii), "LEF58_CORNERSPACING"))
@@ -694,7 +695,8 @@ void lefin::layer(lefiLayer* layer)
       } else
         supported = false;
     } else if (type.getValue() == dbTechLayerType::CUT) {
-      if (!strcmp(layer->propName(iii), "LEF58_SPACING")) {
+      if (!strcmp(layer->propName(iii), "LEF58_SPACING")
+          || !strcmp(layer->propName(iii), "LEF57_SPACING")) {
         lefTechLayerCutSpacingParser cutSpacingParser;
         valid = cutSpacingParser.parse(
             layer->propValue(iii), l, this, _incomplete_props);

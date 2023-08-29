@@ -1648,8 +1648,9 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs,
   } else if (chip != nullptr) {
     fprintf(stderr, "Error: Chip already exists\n");
     return nullptr;
-  } else
+  } else {
     chip = dbChip::create(_db);
+  }
 
   assert(chip);
   setTech(tech);

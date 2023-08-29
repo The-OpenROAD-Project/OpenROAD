@@ -283,6 +283,11 @@ set_min_distance_in_tracks(bool in_tracks)
   getIOPlacer()->getParameters()->setMinDistanceInTracks(in_tracks);
 }
 
+void set_pin_placement_file(const char* file_name)
+{
+  getIOPlacer()->getParameters()->setPinPlacementFile(file_name);
+}
+
 void
 create_pin_shape_pattern(odb::dbTechLayer* layer, int x_step, int y_step,
                          const odb::Rect& region,
@@ -301,9 +306,9 @@ get_top_layer()
 void
 place_pin(odb::dbBTerm* bterm, odb::dbTechLayer* layer,
           int x, int y, int width, int height,
-          bool force_to_die_bound)
+          bool force_to_die_bound, bool placed_status)
 {
-  getIOPlacer()->placePin(bterm, layer, x, y, width, height, force_to_die_bound);
+  getIOPlacer()->placePin(bterm, layer, x, y, width, height, force_to_die_bound, placed_status);
 }
 
 void
