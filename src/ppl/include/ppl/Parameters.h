@@ -124,7 +124,7 @@ class Parameters
   int corner_avoidance_ = -1;
   int min_dist_ = 0;
   bool distance_in_tracks_ = false;
-  std::string pin_placement_file_ = "";
+  std::string pin_placement_file_;
 };
 
 }  // namespace ppl
