@@ -293,6 +293,7 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
       }
       io_pin.setPos(slots[slot_idx].pos);
       io_pin.setPlaced();
+      io_pin.setEdge(slots[slot_idx].edge);
       slots[slot_idx].used = true;
       slots[slot_idx].blocked = true;
       io_pin.setLayer(slots[slot_idx].layer);
@@ -310,6 +311,7 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
         mirrored_pin.setPos(mirrored_pos);
         mirrored_pin.setLayer(slots_[slot_idx].layer);
         mirrored_pin.setPlaced();
+        mirrored_pin.setEdge(slots_[slot_idx].edge);
         assignment_.push_back(mirrored_pin);
         slot_idx = getSlotIdxByPosition(
             mirrored_pos, mirrored_pin.getLayer(), slots);
@@ -445,6 +447,7 @@ void IOPlacer::assignMirroredPins(IOPin& io_pin,
   mirrored_pin.setPos(mirrored_pos);
   mirrored_pin.setLayer(io_pin.getLayer());
   mirrored_pin.setPlaced();
+  mirrored_pin.setEdge(getMirroredEdge(io_pin.getEdge()));
   assignment.push_back(mirrored_pin);
   int slot_index
       = getSlotIdxByPosition(mirrored_pos, mirrored_pin.getLayer(), slots_);
@@ -555,6 +558,7 @@ void IOPlacer::placeFallbackGroup(
     Slot& slot = slots_[place_slot];
     io_pin.setPos(slot.pos);
     io_pin.setLayer(slot.layer);
+    io_pin.setEdge(slot.edge);
     assignment_.push_back(io_pin);
     slot.used = true;
     slot.blocked = true;
@@ -697,6 +701,24 @@ void IOPlacer::writePinPlacement()
         << " " << dbuToMicrons(pos.y())
         << "} -force_to_die_boundary -placed_status\n";
   }
+}
+
+Edge IOPlacer::getMirroredEdge(const Edge& edge)
+{
+  Edge mirrored_edge = Edge::invalid;
+  if (edge == Edge::bottom) {
+    mirrored_edge = Edge::top;
+  } else if (edge == Edge::top) {
+    mirrored_edge = Edge::bottom;
+  } else if (edge == Edge::left) {
+    mirrored_edge = Edge::right;
+  } else if (edge == Edge::right) {
+    mirrored_edge = Edge::left;
+  } else {
+    mirrored_edge = Edge::invalid;
+  }
+
+  return mirrored_edge;
 }
 
 void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
