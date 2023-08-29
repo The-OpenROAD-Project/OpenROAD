@@ -643,20 +643,17 @@ sta::define_cmd_args "add_sroute_connect" {[-net net] \
                                            [-dont_use_vias list_of_vias] \
                                            [-max_rows rows] \
                                            [-max_columns columns] \
-                                           [-hDX hDX] \
-                                           [-hDY hDY] \
-                                           [-vDX vDX] \
-                                           [-vDY vDY] \
                                            [-stripDY stripDY] \
                                            [-metalwidths metalwidths] \
                                            [-metalspaces metalspaces] \
                                            [-ongrid ongrid_layers] \
-                                           [-split_cuts split_cuts_mapping]
+                                           [-split_cuts split_cuts_mapping] \
+                                           [-insts inst]
 }
 
 proc add_sroute_connect {args} {
   sta::parse_key_args "add_sroute_connect" args \
-    keys {-net -outerNet -layers -cut_pitch -fixed_vias -dont_use_vias -max_rows -max_columns -hDX -hDY -vDX -vDY -stripDY -metalwidths -metalspaces -ongrid -split_cuts} \
+    keys {-net -outerNet -layers -cut_pitch -fixed_vias -dont_use_vias -max_rows -max_columns -stripDY -metalwidths -metalspaces -ongrid -split_cuts -insts} \
     flags {}
 
   set l0 [pdn::get_layer [lindex $keys(-layers) 0]]
@@ -686,25 +683,6 @@ proc add_sroute_connect {args} {
     set max_columns $keys(-max_columns)
   }
 
-  set hDX 0
-  if {[info exists keys(-hDX)]} {
-    set hDX $keys(-hDX)
-  }
-  set hDY 0
-  if {[info exists keys(-hDY)]} {
-    set hDY $keys(-hDY)
-  }
-
-  set vDX 0
-  if {[info exists keys(-vDX)]} {
-    set vDX $keys(-vDX)
-  }
-
-  set vDY 0
-  if {[info exists keys(-vDY)]} {
-    set vDY $keys(-vDY)
-  }
-
   set stripDY 0
   if {[info exists keys(-stripDY)]} {
     set stripDY $keys(-stripDY)
@@ -729,6 +707,16 @@ proc add_sroute_connect {args} {
   if {[info exists keys(-ongrid)]} {
     foreach l $keys(-ongrid) {
       lappend ongrid [pdn::get_layer $l]
+    }
+  }
+
+  set insts {}
+  if {[info exists keys(-insts)]} {
+    foreach inst $keys(-insts) {
+      set instance [[ord::get_db_block] findInst $inst]
+      if {$instance != "NULL"} {
+        lappend insts $instance
+      }
     }
   }
 
@@ -774,13 +762,10 @@ proc add_sroute_connect {args} {
                          $split_cuts_layers \
                          $split_cuts_pitches \
                          $dont_use \
-                         $hDX \
-                         $hDY \
-                         $vDX \
-                         $vDY \
                          $stripDY \
                          $metalwidths \
-                         $metalspaces
+                         $metalspaces \
+                         $insts
 }
 
 sta::define_cmd_args  "repair_pdn_vias" {[-net net_name] \
