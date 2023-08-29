@@ -483,29 +483,22 @@ Resizer::hasPins(Net *net)
   return has_pins;
 }
 
-std::vector<const Pin*>
-Resizer::getPins(Net* net) const
+void Resizer::getPins(Net* net, PinVector &pins) const
 {
-  std::vector<const Pin*> pins;
   auto pin_iter = network_->pinIterator(net);
   while (pin_iter->hasNext()) {
-    const Pin *pin = pin_iter->next();
-    pins.emplace_back(pin);
+    pins.emplace_back(pin_iter->next());
   }
   delete pin_iter;
-  return pins;
 }
 
-std::vector<const Pin*>
-Resizer::getPins(Instance *inst) const
+void Resizer::getPins(Instance *inst, PinVector &pins) const
 {
-  std::vector<const Pin*> pins;
   auto pin_iter = network_->pinIterator(inst);
   while (pin_iter->hasNext()) {
-    const Pin *pin = pin_iter->next();
-    pins.emplace_back(pin);
+    pins.emplace_back(pin_iter->next());
   }
-  return pins;
+  delete pin_iter;
 }
 
 Instance *
@@ -2798,7 +2791,6 @@ Resizer::journalUndoGateCloning(int &cloned_gate_count)
     cloned_gates_.pop();
     auto original_inst = std::get<0>(element);
     auto cloned_inst = std::get<1>(element);
-
     cloned_gate_count -= undoGateCloning(original_inst, cloned_inst);
   }
   cloned_inst_set_.clear();

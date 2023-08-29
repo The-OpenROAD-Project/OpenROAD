@@ -152,6 +152,9 @@ void RenderThread::draw(QImage& image,
                         qreal render_ratio,
                         const QColor& background)
 {
+  if (image.isNull()) {
+    return;
+  }
   // Prevent a paintEvent and a save_image call from interfering
   // (eg search RTree construction)
   std::lock_guard<std::mutex> lock(drawing_mutex_);
