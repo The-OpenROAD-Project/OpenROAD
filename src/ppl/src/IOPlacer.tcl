@@ -359,13 +359,14 @@ sta::define_cmd_args "place_pin" {[-pin_name pin_name]\
                                   [-layer layer]\
                                   [-location location]\
                                   [-pin_size pin_size]\
-                                  [-force_to_die_boundary]
+                                  [-force_to_die_boundary]\
+                                  [-placed_status]
 }
 
 proc place_pin { args } {
   sta::parse_key_args "place_pin" args \
   keys {-pin_name -layer -location -pin_size}\
-  flags {-force_to_die_boundary}
+  flags {-force_to_die_boundary -placed_status}
 
   sta::check_argc_eq0 "place_pin" $args
 
