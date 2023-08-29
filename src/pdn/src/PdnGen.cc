@@ -635,24 +635,50 @@ void PdnGen::createSrouteWires(
     const std::vector<odb::dbTechLayer*>& ongrid,
     const std::map<odb::dbTechLayer*, int>& split_cuts,
     const std::string& dont_use_vias,
-    int hDX,
-    int hDY,
-    int vDX,
-    int vDY,
     int stripDY,
     std::vector<int> metalwidths,
-    std::vector<int> metalspaces)
+    std::vector<int> metalspaces,
+    const std::vector<odb::dbInst*>& insts)
 {
   auto* block = db_->getChip()->getBlock();
+
+  for (auto* inst : insts) {
+    addSrouteInst(net, inst, net);
+  }
 
   odb::dbNet* net_ = block->findNet(net);
   odb::dbNet* outerNet_ = block->findNet(outerNet);
   // find all 4 strips for VIN
   std::vector<odb::dbSBox*> rings;
+  int64_t Hdx = 0;
+  int64_t Vdy = 0;
   for (auto* swire : net_->getSWires()) {
     for (auto* wire : swire->getWires()) {
-      if (((wire->getDY() == hDY) && (wire->getDX() == hDX))
-          || ((wire->getDX() == vDX) && (wire->getDY() == vDY))) {
+      if (wire->getDY() > Vdy) {
+        Vdy = wire->getDY();
+      }
+      if (wire->getDX() > Hdx) {
+        Hdx = wire->getDX();
+      }
+    }
+  }
+  int64_t Hdy = 0;
+  int64_t Vdx = 0;
+  for (auto* swire : net_->getSWires()) {
+    for (auto* wire : swire->getWires()) {
+      if ((wire->getDY() == Vdy) && (wire->getDX() >= Vdx)) {
+        Vdx = wire->getDX();
+      }
+      if ((wire->getDX() == Hdx) && (wire->getDY() >= Hdy)) {
+        Hdy = wire->getDY();
+      }
+    }
+  }
+
+  for (auto* swire : net_->getSWires()) {
+    for (auto* wire : swire->getWires()) {
+      if (((wire->getDY() == Hdy) && (wire->getDX() == Hdx))
+          || ((wire->getDX() == Vdx) && (wire->getDY() == Vdy))) {
         rings.push_back(wire);
       }
     }
@@ -1180,15 +1206,11 @@ void PdnGen::createSrouteWires(
 }
 
 void PdnGen::addSrouteInst(const char* net,
-                           const char* inst,
-                           const char* iterm,
-                           int hDX,
-                           int hDY,
-                           int vDX,
-                           int vDY)
+                           odb::dbInst* inst,
+                           const char* iterm)
 {
   auto* block = db_->getChip()->getBlock();
-  odb::dbInst* inst_ = block->findInst(inst);
+  odb::dbInst* inst_ = inst;
   odb::dbITerm* iterm_ = inst_->findITerm(iterm);
   iterm_->disconnect();
   if (sroute_itermss.empty()) {
@@ -1205,10 +1227,35 @@ void PdnGen::addSrouteInst(const char* net,
   iterm_->connect(net_);
   // find all 4 strips for VIN
   std::vector<odb::dbSBox*> rings;
+  int64_t Hdx = 0;
+  int64_t Vdy = 0;
   for (auto* swire : net_->getSWires()) {
     for (auto* wire : swire->getWires()) {
-      if (((wire->getDY() == hDY) && (wire->getDX() == hDX))
-          || ((wire->getDX() == vDX) && (wire->getDY() == vDY))) {
+      if (wire->getDY() > Vdy) {
+        Vdy = wire->getDY();
+      }
+      if (wire->getDX() > Hdx) {
+        Hdx = wire->getDX();
+      }
+    }
+  }
+  int64_t Hdy = 0;
+  int64_t Vdx = 0;
+  for (auto* swire : net_->getSWires()) {
+    for (auto* wire : swire->getWires()) {
+      if ((wire->getDY() == Vdy) && (wire->getDX() >= Vdx)) {
+        Vdx = wire->getDX();
+      }
+      if ((wire->getDX() == Hdx) && (wire->getDY() >= Hdy)) {
+        Hdy = wire->getDY();
+      }
+    }
+  }
+
+  for (auto* swire : net_->getSWires()) {
+    for (auto* wire : swire->getWires()) {
+      if (((wire->getDY() == Hdy) && (wire->getDX() == Hdx))
+          || ((wire->getDX() == Vdx) && (wire->getDY() == Vdy))) {
         rings.push_back(wire);
       }
     }
