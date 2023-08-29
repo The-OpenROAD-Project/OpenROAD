@@ -2231,8 +2231,8 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
                 70,
                 "Pin {} placed at ({}um, {}um).",
                 bterm->getName(),
-                pos.x() / getTech()->getLefUnits(),
-                pos.y() / getTech()->getLefUnits());
+                dbuToMicrons(pos.x()),
+                dbuToMicrons(pos.y()));
 }
 
 void IOPlacer::movePinToTrack(odb::Point& pos,
