@@ -40,6 +40,7 @@
 #include <boost/icl/interval.hpp>
 #include <boost/icl/interval_set.hpp>
 #include <boost/multi_array.hpp>
+#include <set>
 #include <unordered_map>
 #include <vector>
 
@@ -590,6 +591,9 @@ class FastRouteCore
       vertical_blocked_intervals_;
   std::unordered_map<Tile, interval_set<int>, boost::hash<Tile>>
       horizontal_blocked_intervals_;
+
+  std::set<std::pair<int, int>> h_used_ggrid_;
+  std::set<std::pair<int, int>> v_used_ggrid_;
 };
 
 }  // namespace grt
