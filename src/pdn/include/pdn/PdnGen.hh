@@ -190,33 +190,24 @@ class PdnGen
   void repairVias(const std::set<odb::dbNet*>& nets);
 
   void createSrouteWires(const char* net,
-                         const char* outerNet,
-                         odb::dbTechLayer* layer0,
-                         odb::dbTechLayer* layer1,
-                         int cut_pitch_x,
-                         int cut_pitch_y,
-                         const std::vector<odb::dbTechViaGenerateRule*>& vias,
-                         const std::vector<odb::dbTechVia*>& techvias,
-                         int max_rows,
-                         int max_columns,
-                         const std::vector<odb::dbTechLayer*>& ongrid,
-                         const std::map<odb::dbTechLayer*, int>& split_cuts,
-                         const std::string& dont_use_vias,
-                         int hDX,
-                         int hDY,
-                         int vDX,
-                         int vDY,
-                         int stripDY,
-                         std::vector<int> metalwidths,
-                         std::vector<int> metalspaces);
+                       const char* outerNet,
+                       odb::dbTechLayer* layer0,
+                       odb::dbTechLayer* layer1,
+                       int cut_pitch_x,
+                       int cut_pitch_y,
+                       const std::vector<odb::dbTechViaGenerateRule*>& vias,
+                       const std::vector<odb::dbTechVia*>& techvias,
+                       int max_rows,
+                       int max_columns,
+                       const std::vector<odb::dbTechLayer*>& ongrid,
+                       const std::map<odb::dbTechLayer*, int>& split_cuts,
+                       const std::string& dont_use_vias,
+                       int stripDY,
+                       std::vector<int> metalWidths,
+                       std::vector<int> metalspaces,
+                       const std::vector<odb::dbInst*>& insts);
 
-  void addSrouteInst(const char* net,
-                     const char* inst,
-                     const char* iterm,
-                     int hDX,
-                     int hDY,
-                     int vDX,
-                     int vDY);
+void addSrouteInst(const char* net, odb::dbInst* inst, const char* iterm);
 
  private:
   void trimShapes();
