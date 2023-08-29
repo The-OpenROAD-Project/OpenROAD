@@ -692,14 +692,21 @@ void IOPlacer::writePinPlacement()
   }
 
   std::ofstream out(file_name);
-  for (const IOPin& io_pin : netlist_io_pins_->getIOPins()) {
-    const int layer = io_pin.getLayer();
-    odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
-    const odb::Point& pos = io_pin.getPosition();
-    out << "place_pin -pin_name " << io_pin.getName() << " -layer "
-        << tech_layer->getName() << " -location {" << dbuToMicrons(pos.x())
-        << " " << dbuToMicrons(pos.y())
-        << "} -force_to_die_boundary -placed_status\n";
+
+  std::vector<Edge> edges_list = {Edge::bottom, Edge::right, Edge::top, Edge::left};
+  for (const Edge& edge : edges_list) {
+    out << "#Edge: " << getEdgeString(edge) << "\n";
+    for (const IOPin& io_pin : netlist_io_pins_->getIOPins()) {
+      if (io_pin.getEdge() == edge) {
+        const int layer = io_pin.getLayer();
+        odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
+        const odb::Point& pos = io_pin.getPosition();
+        out << "place_pin -pin_name " << io_pin.getName() << " -layer "
+            << tech_layer->getName() << " -location {" << dbuToMicrons(pos.x())
+            << " " << dbuToMicrons(pos.y())
+            << "} -force_to_die_boundary -placed_status\n";
+      }
+    }
   }
 }
 
