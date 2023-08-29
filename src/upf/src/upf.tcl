@@ -118,8 +118,8 @@ proc create_power_switch { args } {
 
     set name [lindex $args 0]
     set domain ""
-    set output_supply_port ""
-    set input_supply_port ""
+    set output_supply_port {}
+    set input_supply_port {}
     set control_port {}
     set on_state {}
 
@@ -143,7 +143,15 @@ proc create_power_switch { args } {
         set on_state $keys(-on_state)
     }
 
-    upf::create_power_switch_cmd $name $domain $output_supply_port $input_supply_port
+    upf::create_power_switch_cmd $name $domain
+
+    foreach {input} $input_supply_port {
+        upf::update_power_switch_input_cmd $name $input
+    }
+
+    foreach {output} $output_supply_port {
+        upf::update_power_switch_output_cmd $name $output
+    }
 
     foreach {control} $control_port {
         upf::update_power_switch_control_cmd $name $control
@@ -339,14 +347,15 @@ proc map_power_switch { args } {
         set port_map $keys(-port_map)
     }
 
-    foreach {switch} $switch_name_list {
 
-        foreach {cell} $lib_cells {
-            upf::set_power_switch_cell $switch $cell
-        }
-
+    for { set i 0 } { $i < [llength $switch_name_list] } { incr i } {
+        set switch [lindex $switch_name_list $i]
+        set cell [lindex $lib_cells $i]
+        upf::set_power_switch_cell $switch $cell
+    
         foreach {port} $port_map {
             upf::set_power_switch_port $switch [lindex $port 0] [lindex $port 1]
         }
     }
+
 }

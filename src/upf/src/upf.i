@@ -35,11 +35,11 @@
   }
 
   void create_power_switch_cmd(
-      char* name, char* domain, char* out_port, char* in_port)
+      char* name, char* domain)
   {
     odb::dbDatabase* db = getOpenRoad()->getDb();
     upf::create_power_switch(
-        getOpenRoad()->getLogger(), db->getChip()->getBlock(), name, domain, out_port, in_port); 
+        getOpenRoad()->getLogger(), db->getChip()->getBlock(), name, domain); 
   }
 
   void update_power_switch_control_cmd(char* name, char* port)
@@ -55,6 +55,22 @@
     upf::update_power_switch_on(
         getOpenRoad()->getLogger(), db->getChip()->getBlock(), name, port); 
   }
+
+
+  void update_power_switch_input_cmd(char* name, char* port)
+  {
+    odb::dbDatabase* db = getOpenRoad()->getDb();
+    upf::update_power_switch_input(
+        getOpenRoad()->getLogger(), db->getChip()->getBlock(), name, port); 
+  }
+
+  void update_power_switch_output_cmd(char* name, char* port)
+  {
+    odb::dbDatabase* db = getOpenRoad()->getDb();
+    upf::update_power_switch_output(
+        getOpenRoad()->getLogger(), db->getChip()->getBlock(), name, port); 
+  }
+
 
   void set_isolation_cmd(char* name,
                          char* domain,

@@ -90,9 +90,7 @@ bool create_logic_port(utl::Logger* logger,
 bool create_power_switch(utl::Logger* logger,
                          odb::dbBlock* block,
                          const char* name,
-                         const char* power_domain,
-                         const char* out_port,
-                         const char* in_port)
+                         const char* power_domain)
 {
   odb::dbPowerDomain* pd = block->findPowerDomain(power_domain);
   if (pd == nullptr) {
@@ -111,8 +109,6 @@ bool create_power_switch(utl::Logger* logger,
     return false;
   }
 
-  ps->setInSupplyPort(std::string(in_port));
-  ps->setOutSupplyPort(std::string(out_port));
   ps->setPowerDomain(pd);
   pd->addPowerSwitch(ps);
   return true;
@@ -156,6 +152,45 @@ bool update_power_switch_on(utl::Logger* logger,
   ps->addOnState(on_state);
   return true;
 }
+
+
+bool update_power_switch_input(utl::Logger* logger,
+                            odb::dbBlock* block,
+                            const char* name,
+                            const char* in_port){
+  odb::dbPowerSwitch* ps = block->findPowerSwitch(name);
+  if (ps == nullptr) {
+    logger->warn(
+        utl::UPF,
+        10030,
+        "Couldn't retrieve power switch '%s' while adding input port '%s'",
+        name,
+        in_port);
+    return false;
+  }
+  ps->addInSupplyPort(in_port);
+  return true;
+}
+
+bool update_power_switch_output(utl::Logger* logger,
+                            odb::dbBlock* block,
+                            const char* name,
+                            const char* out_port){
+  odb::dbPowerSwitch* ps = block->findPowerSwitch(name);
+  if (ps == nullptr) {
+    logger->warn(
+        utl::UPF,
+        10031,
+        "Couldn't retrieve power switch '%s' while adding output port '%s'",
+        name,
+        out_port);
+    return false;
+  }
+  ps->addOutSupplyPort(out_port);
+  return true;
+}
+
+
 
 bool update_power_switch_cell(utl::Logger* logger,
                               odb::dbBlock* block,
@@ -432,7 +467,7 @@ static bool associate_groups(
           utl::UPF, 10016, "Creation of '%s' region failed", domain->getName());
       return false;
     }
-
+    region->setRegionType(odb::dbRegionType::EXCLUSIVE);
     // Specifying region area
     int x1, x2, y1, y2;
     if (domain->getArea(x1, y1, x2, y2)) {
