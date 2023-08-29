@@ -1,7 +1,10 @@
 # Flute3
 
 Flute3 is an open-source rectilinear Steiner minimum tree heuristic with
-improvements made by UFRGS students and James Cherry. The version in this repository uses
+improvements made by UFRGS students and James Cherry. This tool is used
+for the calculation of wirelength in `grt` and `rsz`. 
+
+The version in this repository uses
 CMake and C++ namespace, and has dynamic memory allocation. Flute3 can handle nets with any degree.
 
 ## External references (Optional)

@@ -85,6 +85,14 @@ exclude_patterns = [
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
 
+# Mermaid related args
+mermaid_output_format = 'svg'
+mermaid_params = ['-p', 'puppeteer-config.json',
+                  '--theme', 'forest',
+                  '--width', '200',
+                  '--backgroundColor', 'transparent']
+mermaid_init_js = "mermaid.initialize({startOnLoad:true, flowchart:{useMaxWidth:false}})"
+mermaid_verbose = True
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -97,8 +105,6 @@ html_theme_options = {
     "repository_url": "https://github.com/The-OpenROAD-Project/OpenROAD",
     "repository_branch": "master",
     "show_navbar_depth": 2,
-    "use_edit_page_button": True,
-    "use_source_button": True,
     "use_issues_button": True,
     # "use_repository_button": True,
     "use_download_button": True,
