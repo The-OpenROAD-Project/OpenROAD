@@ -106,7 +106,10 @@ class Parameters
   }
   bool getMinDistanceInTracks() const { return distance_in_tracks_; }
 
-  void setPinPlacementFile(const char* file_name) { pin_placement_file_ = file_name; }
+  void setPinPlacementFile(const char* file_name)
+  {
+    pin_placement_file_ = file_name;
+  }
   std::string getPinPlacementFile() const { return pin_placement_file_; }
 
  private:
