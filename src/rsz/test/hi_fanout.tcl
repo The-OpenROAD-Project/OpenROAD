@@ -162,14 +162,14 @@ proc write_fanout_load_terms { stream fanout load_inst load_in } {
 
 proc write_clone_test_def { filename clone_gate fanout} {
     write_clone_test_def1 $filename $clone_gate $fanout \
-	"drvr" "DFF_X1" "CK" "Q" \
+	"drvr" "DFF_X1" "CK" "Q" "D" \
 	"load" "DFF_X1" "CK" "D" 300000\
 	"metal3" 1000
 }
 
 # drvr_inst/drvr_out -> load0/load_in rload1/load_in .... load<fanout>/load_in
 proc write_clone_test_def1 { filename clone_gate fanout
-                            drvr_inst drvr_cell drvr_clk drvr_out
+                            drvr_inst drvr_cell drvr_clk drvr_out drvr_data
                             load_inst load_cell load_clk load_in load_spacing
                             port_layer dbu } {
     global header special_nets
@@ -195,8 +195,9 @@ proc write_clone_test_def1 { filename clone_gate fanout
     puts $stream "END COMPONENTS"
 
     # Now write all the pins. We have the pins into the first 2 flops + clock
-    puts $stream "PINS 1 ;"
+    puts $stream "PINS 2 ;"
     write_fanout_port $stream "clk1" $port_layer
+    write_fanout_port $stream "data" $port_layer
     puts $stream "END PINS"
 
     # Write out the VSS/VDD nets here
@@ -207,10 +208,16 @@ proc write_clone_test_def1 { filename clone_gate fanout
     # output to the gate input
     # Lastly we have the gate output connected to all the flops.
     puts $stream "NETS 6 ;"
+    puts -nonewline $stream "- data ( PIN data )"
+    if { $drvr_data != "" } {
+	puts -nonewline $stream " ( ${drvr_inst}_1 $drvr_data )"
+	puts -nonewline $stream " ( ${drvr_inst}_2 $drvr_data )"
+    }
+    puts $stream " ;"
     puts -nonewline $stream "- clk1 ( PIN clk1 )"
     if { $drvr_clk != "" } {
 	puts -nonewline $stream " ( ${drvr_inst}_1 $drvr_clk )"
-	puts -nonewline $stream " ( ${drvr_inst}_2 $drvr_clk )"	
+	puts -nonewline $stream " ( ${drvr_inst}_2 $drvr_clk )"
     }
     write_fanout_clk_terms $stream $fanout $load_inst $load_clk
     puts $stream " ;"
