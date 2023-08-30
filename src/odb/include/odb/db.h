@@ -7584,8 +7584,7 @@ class dbPowerSwitch : public dbObject
   void addPortMap(const std::string& model_port,
                   const std::string& switch_port);
 
-  void addPortMap(const std::string& model_port,
-                  dbMTerm* mterm);
+  void addPortMap(const std::string& model_port, dbMTerm* mterm);
   std::vector<std::string> getControlPorts();
   std::vector<std::string> getInputSupplyPorts();
   std::vector<std::string> getOutputSupplyPorts();
