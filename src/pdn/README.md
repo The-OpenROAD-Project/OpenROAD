@@ -417,8 +417,6 @@ multiple power domains are present. During `sroute`, multi-cut vias will be adde
 for new connections. The use of fixed vias from the technology file should be
 specified for the connection using the `add_sroute_connect` command. The use
 of max_rows and max_columns defines the row and column limit for the via stack.
-The use of `hDX`, `hDY`, `vDX`, and `vDY` should be specified for finding the
-power ring to which the pins will connect. 
 
 ```
 "add_sroute_connect" [-net net] \
