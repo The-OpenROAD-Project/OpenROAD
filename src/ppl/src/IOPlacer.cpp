@@ -704,8 +704,7 @@ void IOPlacer::writePinPlacement()
         const odb::Point& pos = io_pin.getPosition();
         out << "place_pin -pin_name " << io_pin.getName() << " -layer "
             << tech_layer->getName() << " -location {" << dbuToMicrons(pos.x())
-            << " " << dbuToMicrons(pos.y())
-            << "} -force_to_die_boundary\n";
+            << " " << dbuToMicrons(pos.y()) << "} -force_to_die_boundary\n";
       }
     }
   }
