@@ -42,6 +42,22 @@ proc read_upf { args } {
 
 }
 
+## check if a chip/block has been created and exits with error if not
+proc check_block_exists { } {
+    set db [ord::get_db]
+    set chip [$db getChip]
+
+    if { "$chip" eq "NULL" } {
+        utl::error UPF 3 "No Chip exists"
+    }
+    
+    set block [$chip getBlock]
+
+    if { "$block" eq "NULL" } {
+        utl::error UPF 4 "No block exists"
+    }
+}
+
 # Creates a power domain
 #
 # Arguments:
@@ -50,6 +66,8 @@ proc read_upf { args } {
 # - name: domain name
 sta::define_cmd_args "create_power_domain" { [-elements elements] name }
 proc create_power_domain { args } {
+    check_block_exists
+
     sta::parse_key_args "create_power_domain" args \
         keys {-elements} flags {}
 
@@ -77,6 +95,8 @@ proc create_power_domain { args } {
 # - port_name: port name
 sta::define_cmd_args "create_logic_port" { [-direction direction] port_name }
 proc create_logic_port { args } {
+    check_block_exists
+
     sta::parse_key_args "create_logic_port" args \
         keys {-direction} flags {}
 
@@ -88,6 +108,7 @@ proc create_logic_port { args } {
     if { [info exists keys(-direction)] } {
         set direction $keys(-direction)
     }
+    
 
     upf::create_logic_port_cmd $port_name $direction
 }
@@ -111,6 +132,8 @@ sta::define_cmd_args "create_power_switch" { \
     name 
 }
 proc create_power_switch { args } {
+    check_block_exists
+
     sta::parse_key_args "create_power_switch" args \
         keys {-domain -output_supply_port -input_supply_port -control_port -on_state} flags {}
 
@@ -188,6 +211,8 @@ sta::define_cmd_args "set_isolation" { \
     name 
 }
 proc set_isolation { args } {
+    check_block_exists
+
     sta::parse_key_args "set_isolation" args \
         keys {-domain -applies_to -clamp_value -isolation_signal -isolation_sense -location} flags {-update}
 
@@ -250,6 +275,8 @@ sta::define_cmd_args "use_interface_cell" { \
     [-lib_cells lib_cells]  
 }
 proc use_interface_cell { args } {
+    check_block_exists
+
     sta::parse_key_args "use_interface_cell" args \
         keys {-domain -strategy -lib_cells} flags {}
 
@@ -288,25 +315,27 @@ proc use_interface_cell { args } {
 sta::define_cmd_args "set_domain_area" {domain_name -area {llx lly urx ury}}
 
 proc set_domain_area { args } {
-  sta::parse_key_args "set_domain_area" args keys {-area} flags {}
-  set domain_name [lindex $args 0]
-  if { [info exists keys(-area)] } {
+    check_block_exists
+
+    sta::parse_key_args "set_domain_area" args keys {-area} flags {}
+    set domain_name [lindex $args 0]
+    if { [info exists keys(-area)] } {
     set area $keys(-area)
     if { [llength $area] != 4 } {
-      utl::error UPF 1 "-area is a list of 4 coordinates"
+        utl::error UPF 1 "-area is a list of 4 coordinates"
     }
     lassign $area llx lly urx ury
     sta::check_positive_float "-area" $llx
     sta::check_positive_float "-area" $lly
     sta::check_positive_float "-area" $urx
     sta::check_positive_float "-area" $ury
-  } else {
+    } else {
     utl::error UPF 2 "please define area"
-  }
-  sta::check_argc_eq1 "set_domain_area" $args
-  set domain_name $args
-  
-  upf::set_domain_area_cmd $domain_name $llx $lly $urx $ury
+    }
+    sta::check_argc_eq1 "set_domain_area" $args
+    set domain_name $args
+
+    upf::set_domain_area_cmd $domain_name $llx $lly $urx $ury
 }
 
 # Specify which power-switch model is to be used for the implementation of the corresponding switch
@@ -329,6 +358,7 @@ sta::define_cmd_args "map_power_switch" { \
 }
 
 proc map_power_switch { args } {
+    check_block_exists
 
     sta::parse_key_args "map_power_switch" args \
         keys {switch_name_list -lib_cells -port_map} flags {}
