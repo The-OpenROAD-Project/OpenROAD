@@ -442,7 +442,7 @@ add_sroute_connect
 | ----- | ----- |
 | `-net` | The inner net where the power ring exists. |
 | `-outerNet` | The outer net where instances/pins that need to get connected exist. |
-| `-layers` |  The metal layer for vertical stripe within inner power ring. |
+| `-layers` |  The metal layers for vertical stripes within inner power ring. |
 | `-cut_pitch` | Distance between via cuts when the two layers are parallel, e.g., overlapping stdcell rails. (Default:200 200) |
 | `-fixed_vias` | List of fixed vias to be used to form the via stack. |
 | `-dont_use_vias` | List or pattern of vias to not use to form the via stack. |
