@@ -419,20 +419,21 @@ specified for the connection using the `add_sroute_connect` command. The use
 of max_rows and max_columns defines the row and column limit for the via stack.
 
 ```
-"add_sroute_connect" [-net net] \
-                     [-outerNet outerNet] \
-                     -layers list_of_2_layers \
-                     -cut_pitch pitch_value \
-                     [-fixed_vias list_of_vias] \
-                     [-dont_use_vias list_of_vias] \
-                     [-max_rows rows] \
-                     [-max_columns columns] \
-                     [-stripDY stripDY] \
-                     [-metalwidths metalwidths] \
-                     [-metalspaces metalspaces] \
-                     [-ongrid ongrid_layers] \
-                     [-split_cuts split_cuts_mapping] \
-                     [-insts inst]
+add_sroute_connect
+    -layers list_of_2_layers
+    -cut_pitch pitch_value
+    [-net net]
+    [-outerNet outerNet]
+    [-fixed_vias list_of_vias]
+    [-dont_use_vias list_of_vias]
+    [-max_rows rows]
+    [-max_columns columns]
+    [-stripDY stripDY]
+    [-metalwidths metalwidths]
+    [-metalspaces metalspaces]
+    [-ongrid ongrid_layers]
+    [-split_cuts split_cuts_mapping]
+    [-insts inst]
 ```
 
 #### Options
