@@ -865,6 +865,15 @@ void IOPlacer::defineSlots()
   findSlots(hor_layers_, Edge::left);
 
   findSlotsForTopLayer();
+
+  if (netlist_io_pins_->getIOPins().size() > slots_.size()) {
+    logger_->error(PPL,
+                   24,
+                   "Number of IO pins ({}) exceeds maximum number of available "
+                   "positions ({}).",
+                   netlist_io_pins_->getIOPins().size(),
+                   slots_.size());
+  }
 }
 
 void IOPlacer::findSections(int begin,
@@ -1906,15 +1915,6 @@ void IOPlacer::run(bool random_mode)
 
   initIOLists();
   defineSlots();
-
-  if (netlist_io_pins_->getIOPins().size() > slots_.size()) {
-    logger_->error(PPL,
-                   24,
-                   "Number of IO pins ({}) exceeds maximum number of available "
-                   "positions ({}).",
-                   netlist_io_pins_->getIOPins().size(),
-                   slots_.size());
-  }
 
   initMirroredPins();
   initConstraints();
