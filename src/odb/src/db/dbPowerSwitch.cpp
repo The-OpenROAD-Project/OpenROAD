@@ -246,8 +246,9 @@ void dbPowerSwitch::addLibCell(const std::string& lib_cell)
   auto libs = ((dbDatabase*) obj->getImpl()->getDatabase())->getLibs();
   for (auto lib : libs) {
     master = lib->findMaster(lib_cell.c_str());
-    if (master)
+    if (master) {
       break;
+    }
   }
 
   if (!master) {
@@ -361,8 +362,9 @@ std::map<std::string, dbMTerm*> dbPowerSwitch::getPortMap()
   std::map<std::string, dbMTerm*> port_mapping;
 
   dbMaster* cell = getLibCell();
-  if (!cell)
+  if (!cell) {
     return port_mapping;
+  }
 
   for (auto const& [key, val] : obj->_port_map) {
     dbMTerm* mterm = (dbMTerm*) dbMTerm::getMTerm(cell, val);
