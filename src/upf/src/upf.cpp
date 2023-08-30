@@ -153,11 +153,11 @@ bool update_power_switch_on(utl::Logger* logger,
   return true;
 }
 
-
 bool update_power_switch_input(utl::Logger* logger,
-                            odb::dbBlock* block,
-                            const char* name,
-                            const char* in_port){
+                               odb::dbBlock* block,
+                               const char* name,
+                               const char* in_port)
+{
   odb::dbPowerSwitch* ps = block->findPowerSwitch(name);
   if (ps == nullptr) {
     logger->warn(
@@ -173,9 +173,10 @@ bool update_power_switch_input(utl::Logger* logger,
 }
 
 bool update_power_switch_output(utl::Logger* logger,
-                            odb::dbBlock* block,
-                            const char* name,
-                            const char* out_port){
+                                odb::dbBlock* block,
+                                const char* name,
+                                const char* out_port)
+{
   odb::dbPowerSwitch* ps = block->findPowerSwitch(name);
   if (ps == nullptr) {
     logger->warn(
@@ -189,8 +190,6 @@ bool update_power_switch_output(utl::Logger* logger,
   ps->addOutSupplyPort(out_port);
   return true;
 }
-
-
 
 bool update_power_switch_cell(utl::Logger* logger,
                               odb::dbBlock* block,
