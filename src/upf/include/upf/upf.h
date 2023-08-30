@@ -74,15 +74,14 @@ bool update_power_switch_on(utl::Logger* logger,
                             const char* on_state);
 
 bool update_power_switch_input(utl::Logger* logger,
-                            odb::dbBlock* block,
-                            const char* name,
-                            const char* in_port);
+                               odb::dbBlock* block,
+                               const char* name,
+                               const char* in_port);
 
 bool update_power_switch_output(utl::Logger* logger,
-                            odb::dbBlock* block,
-                            const char* name,
-                            const char* out_port);
-
+                                odb::dbBlock* block,
+                                const char* name,
+                                const char* out_port);
 
 bool set_isolation(utl::Logger* logger,
                    odb::dbBlock* block,
