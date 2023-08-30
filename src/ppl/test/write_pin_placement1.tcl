@@ -7,17 +7,14 @@ set_io_pin_constraint -region bottom:* -group -order -pin_names {req_msg[0] req_
 set_io_pin_constraint -region top:* -group -order -pin_names {resp_msg[0] resp_msg[1] resp_msg[2] resp_msg[3] resp_msg[4] resp_msg[5] resp_msg[6] resp_msg[7] resp_msg[8] resp_msg[9] resp_msg[10] resp_msg[11] resp_msg[12] resp_msg[13] resp_msg[14] resp_msg[15]}
 
 set tcl_file [make_result_file write_pin_placement1.tcl]
-set def_file1 [make_result_file write_pin_placement1.def1]
-set def_file2 [make_result_file write_pin_placement1.def2]
+set def_file [make_result_file write_pin_placement1.def]
 
 place_pins -hor_layers metal3 -ver_layers metal2 -corner_avoidance 0 -min_distance 0.36 -annealing -write_pin_placement $tcl_file
 
-write_def $def_file1
-
 source $tcl_file
 
-write_def $def_file2
+write_def $def_file
 
-diff_file $def_file1 $def_file2
+diff_file write_pin_placement1.defok $def_file
 
 diff_file write_pin_placement1.tclok $tcl_file

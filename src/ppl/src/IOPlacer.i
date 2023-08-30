@@ -306,9 +306,9 @@ get_top_layer()
 void
 place_pin(odb::dbBTerm* bterm, odb::dbTechLayer* layer,
           int x, int y, int width, int height,
-          bool force_to_die_bound, bool placed_status)
+          bool force_to_die_bound)
 {
-  getIOPlacer()->placePin(bterm, layer, x, y, width, height, force_to_die_bound, placed_status);
+  getIOPlacer()->placePin(bterm, layer, x, y, width, height, force_to_die_bound);
 }
 
 void
