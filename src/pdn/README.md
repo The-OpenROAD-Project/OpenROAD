@@ -411,7 +411,14 @@ pdngen
 
 ### Sroute
 
-The `add_sroute_connect` command is employed for connecting pins located outside of a specific power domain to the power ring, especially in cases where multiple power domains are present. During sroute, multi-cut vias will be added for new connections. The use of fixed vias from the technology file should be specified for the connection using sroute command. The use of max_rows and max_columns defines the row and column limit for the via stack. The use of hDX, hDY, vDX and vDY should be specified for finding the power ring that the pins will get connected to. 
+The `add_sroute_connect` command is employed for connecting pins located
+outside of a specific power domain to the power ring, especially in cases where
+multiple power domains are present. During `sroute`, multi-cut vias will be added
+for new connections. The use of fixed vias from the technology file should be
+specified for the connection using the `add_sroute_connect` command. The use
+of max_rows and max_columns defines the row and column limit for the via stack.
+The use of `hDX`, `hDY`, `vDX`, and `vDY` should be specified for finding the
+power ring to which the pins will connect. 
 
 ```
 "add_sroute_connect" [-net net] \
