@@ -18,17 +18,14 @@ set_io_pin_constraint -group -order -pin_names $group1
 set_io_pin_constraint -group -order -pin_names $group2
 
 set tcl_file [make_result_file write_pin_placement2.tcl]
-set def_file1 [make_result_file write_pin_placement2.def1]
-set def_file2 [make_result_file write_pin_placement2.def2]
+set def_file [make_result_file write_pin_placement2.def]
 
 place_pins -hor_layers metal3 -ver_layers metal2 -corner_avoidance 0 -min_distance 0.12 -annealing -write_pin_placement $tcl_file
 
-write_def $def_file1
-
 source $tcl_file
 
-write_def $def_file2
+write_def $def_file
 
-diff_file $def_file1 $def_file2
+diff_file write_pin_placement2.defok $def_file
 
 diff_file write_pin_placement2.tclok $tcl_file
