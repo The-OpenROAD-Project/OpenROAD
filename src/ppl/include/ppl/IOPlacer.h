@@ -154,8 +154,7 @@ class IOPlacer
                 int y,
                 int width,
                 int height,
-                bool force_to_die_bound,
-                bool placed_status);
+                bool force_to_die_bound);
 
   static Direction getDirection(const std::string& direction);
   static Edge getEdge(const std::string& edge);

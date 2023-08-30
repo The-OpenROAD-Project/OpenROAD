@@ -359,8 +359,7 @@ sta::define_cmd_args "place_pin" {[-pin_name pin_name]\
                                   [-layer layer]\
                                   [-location location]\
                                   [-pin_size pin_size]\
-                                  [-force_to_die_boundary]\
-                                  [-placed_status]
+                                  [-force_to_die_boundary]
 }
 
 proc place_pin { args } {
@@ -415,7 +414,7 @@ proc place_pin { args } {
 
   set layer [ppl::parse_layer_name $layer]
 
-  ppl::place_pin $pin $layer $x $y $width $height [info exists flags(-force_to_die_boundary)] [info exists flags(-placed_status)]
+  ppl::place_pin $pin $layer $x $y $width $height [info exists flags(-force_to_die_boundary)]
 }
 
 sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
