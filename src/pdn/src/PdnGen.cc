@@ -692,7 +692,7 @@ void PdnGen::createSrouteWires(
   int64_t highy;
   int64_t lowy;
   int count;
-  for (auto sroute_iterms : sroute_itermss) {
+  for (const auto& sroute_iterms : sroute_itermss) {
     x = 0;
     y = 0;
     actualx = 0;
