@@ -865,6 +865,15 @@ void IOPlacer::defineSlots()
   findSlots(hor_layers_, Edge::left);
 
   findSlotsForTopLayer();
+
+  if (netlist_io_pins_->getIOPins().size() > slots_.size()) {
+    logger_->error(PPL,
+                   24,
+                   "Number of IO pins ({}) exceeds maximum number of available "
+                   "positions ({}).",
+                   netlist_io_pins_->getIOPins().size(),
+                   slots_.size());
+  }
 }
 
 void IOPlacer::findSections(int begin,
@@ -1290,8 +1299,10 @@ void IOPlacer::printConfig(bool annealing)
   logger_->info(PPL, 1, "Number of slots          {}", slots_.size());
   logger_->info(PPL, 2, "Number of I/O            {}", netlist_->numIOPins());
   logger_->metric("floorplan__design__io", netlist_->numIOPins());
-  logger_->info(
-      PPL, 3, "Number of I/O w/sink     {}", netlist_io_pins_->numIOPins());
+  logger_->info(PPL,
+                3,
+                "Number of I/O w/sink     {}",
+                netlist_io_pins_->numIOPins() - zero_sink_ios_.size());
   logger_->info(PPL, 4, "Number of I/O w/o sink   {}", zero_sink_ios_.size());
   if (!annealing) {
     logger_->info(PPL, 5, "Slots per section        {}", slots_per_section_);
@@ -1904,15 +1915,6 @@ void IOPlacer::run(bool random_mode)
 
   initIOLists();
   defineSlots();
-
-  if (netlist_io_pins_->getIOPins().size() > slots_.size()) {
-    logger_->error(PPL,
-                   24,
-                   "Number of IO pins ({}) exceeds maximum number of available "
-                   "positions ({}).",
-                   netlist_io_pins_->getIOPins().size(),
-                   slots_.size());
-  }
 
   initMirroredPins();
   initConstraints();
