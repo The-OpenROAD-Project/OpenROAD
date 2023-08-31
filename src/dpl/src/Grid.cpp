@@ -656,7 +656,7 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
       ++layer_y_end;
     }
 
-    if (layer_y_end >= layer.second.row_count) {
+    if (layer_y_end > layer.second.row_count) {
       logger_->error(DPL,
                      49,
                      "Cannot paint grid index: {} because it is out of bounds. "
