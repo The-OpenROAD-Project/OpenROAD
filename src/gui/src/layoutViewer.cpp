@@ -1070,7 +1070,7 @@ void LayoutViewer::mousePressEvent(QMouseEvent* event)
     }
   }
 
-  if (event->button() == Qt::MiddleButton) {
+  if (event->button() == Qt::MiddleButton && !rubber_band_showing_) {
     is_view_dragging_ = true;
     setCursor(Qt::ClosedHandCursor);
   } else {
