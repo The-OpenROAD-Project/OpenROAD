@@ -457,6 +457,12 @@ bool Opendp::isOverlapPadded(const Cell* cell1, const Cell* cell2) const
 bool Opendp::isCrWtBlClass(const Cell* cell) const
 {
   dbMasterType type = cell->db_inst_->getMaster()->getType();
+  dbInst* inst = cell->db_inst_;
+
+  if (inst->isPlacedAsFiller()) {
+    return false;
+  }
+
   // Use switch so if new types are added we get a compiler warning.
   switch (type) {
     case dbMasterType::CORE:

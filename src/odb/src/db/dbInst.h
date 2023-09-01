@@ -60,7 +60,7 @@ struct _dbInstFlags
   dbPlacementStatus::Value _status : 4;
   uint _user_flag_1 : 1;
   uint _user_flag_2 : 1;
-  uint _user_flag_3 : 1;
+  uint _placed_as_filler : 1;
   uint _physical_only : 1;
   uint _dont_touch : 1;
   dbSourceType::Value _source : 4;

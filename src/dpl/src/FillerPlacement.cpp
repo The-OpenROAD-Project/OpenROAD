@@ -129,6 +129,7 @@ void Opendp::placeRowFillers(int row,
                                         master,
                                         inst_name.c_str(),
                                         /* physical_only */ true);
+          inst->setPlacedAsFiller();
           int x = core_.xMin() + k * site_width_;
           int y = core_.yMin() + row * row_height;
           inst->setOrient(orient);
@@ -206,6 +207,11 @@ void Opendp::removeFillers()
 bool Opendp::isFiller(odb::dbInst* db_inst)
 {
   dbMaster* db_master = db_inst->getMaster();
+  
+  if (db_inst->isPlacedAsFiller()) {
+    return true;
+  }
+
   return db_master->getType() == odb::dbMasterType::CORE_SPACER
          // Filter spacer cells used as tapcells.
          && db_inst->getPlacementStatus() != odb::dbPlacementStatus::LOCKED;

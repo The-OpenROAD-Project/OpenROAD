@@ -111,7 +111,7 @@ _dbInst::_dbInst(_dbDatabase*)
   _flags._status = dbPlacementStatus::NONE;
   _flags._user_flag_1 = 0;
   _flags._user_flag_2 = 0;
-  _flags._user_flag_3 = 0;
+  _flags._placed_as_filler = 0;
   _flags._physical_only = 0;
   _flags._dont_touch = 0;
   _flags._eco_create = 0;
@@ -235,7 +235,7 @@ bool _dbInst::operator==(const _dbInst& rhs) const
   if (_flags._user_flag_2 != rhs._flags._user_flag_2)
     return false;
 
-  if (_flags._user_flag_3 != rhs._flags._user_flag_3)
+  if (_flags._placed_as_filler != rhs._flags._placed_as_filler)
     return false;
 
   if (_flags._physical_only != rhs._flags._physical_only)
@@ -323,7 +323,7 @@ void _dbInst::differences(dbDiff& diff,
   DIFF_FIELD(_flags._status);
   DIFF_FIELD(_flags._user_flag_1);
   DIFF_FIELD(_flags._user_flag_2);
-  DIFF_FIELD(_flags._user_flag_3);
+  DIFF_FIELD(_flags._placed_as_filler);
   DIFF_FIELD(_flags._physical_only);
   DIFF_FIELD(_flags._dont_touch);
   DIFF_FIELD(_flags._source);
@@ -377,7 +377,7 @@ void _dbInst::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_flags._status);
   DIFF_OUT_FIELD(_flags._user_flag_1);
   DIFF_OUT_FIELD(_flags._user_flag_2);
-  DIFF_OUT_FIELD(_flags._user_flag_3);
+  DIFF_OUT_FIELD(_flags._placed_as_filler);
   DIFF_OUT_FIELD(_flags._physical_only);
   DIFF_OUT_FIELD(_flags._dont_touch);
   DIFF_OUT_FIELD(_flags._source);
@@ -809,18 +809,18 @@ void dbInst::clearUserFlag2()
         this, _dbInst::FLAGS, prev_flags, flagsToUInt(inst));
 }
 
-bool dbInst::getUserFlag3()
+bool dbInst::isPlacedAsFiller()
 {
   _dbInst* inst = (_dbInst*) this;
-  return inst->_flags._user_flag_3 == 1;
+  return inst->_flags._placed_as_filler == 1;
 }
 
-void dbInst::setUserFlag3()
+void dbInst::setPlacedAsFiller()
 {
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
   uint prev_flags = flagsToUInt(inst);
-  inst->_flags._user_flag_3 = 1;
+  inst->_flags._placed_as_filler = 1;
 
   if (block->_journal)
     block->_journal->updateField(
@@ -832,7 +832,7 @@ void dbInst::clearUserFlag3()
   _dbInst* inst = (_dbInst*) this;
   _dbBlock* block = (_dbBlock*) inst->getOwner();
   uint prev_flags = flagsToUInt(inst);
-  inst->_flags._user_flag_3 = 0;
+  inst->_flags._placed_as_filler = 0;
 
   if (block->_journal)
     block->_journal->updateField(
@@ -884,6 +884,12 @@ bool dbInst::isPad() const
 bool dbInst::isEndCap() const
 {
   return getMaster()->isEndCap();
+}
+
+bool dbInst::isPhysicalOnly() const
+{
+  _dbInst* inst = (_dbInst*) this;
+  return static_cast<bool>(inst->_flags._physical_only);
 }
 
 dbSet<dbITerm> dbInst::getITerms()
