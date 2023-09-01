@@ -207,7 +207,7 @@ void Opendp::removeFillers()
 bool Opendp::isFiller(odb::dbInst* db_inst)
 {
   dbMaster* db_master = db_inst->getMaster();
-  
+
   if (db_inst->isPlacedAsFiller()) {
     return true;
   }
