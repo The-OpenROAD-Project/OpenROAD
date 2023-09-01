@@ -116,10 +116,10 @@ Fixing from level 2 (parent=0 + current=2) to max 5 for driver clk
 [INFO CTS-0016]     Fanout distribution for the current clock = 6:1, 7:2, 8:3, 9:4, 10:1, 11:1, 12:3, 13:1..
 [INFO CTS-0017]     Max level of the clock tree: 4.
 [INFO CTS-0098] Clock net "clk"
-[INFO CTS-0099]  Sinks 300
+[INFO CTS-0099]  Sinks 151
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 169.48 um
-[INFO CTS-0102]  Path depth 5 - 5
+[INFO CTS-0101]  Average sink wire length 126.24 um
+[INFO CTS-0102]  Path depth 2 - 5
 [INFO CTS-0098] Clock net "clk2"
 [INFO CTS-0099]  Sinks 150
 [INFO CTS-0100]  Leaf buffers 0
