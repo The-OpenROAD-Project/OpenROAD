@@ -1,6 +1,6 @@
 # PDN Analysis
 
-The power distribution netowrk (PDN) analysis module in OpenROAD (`psm`) 
+The power distribution network (PDN) analysis module in OpenROAD (`pdn`) 
 is based on the PDNGEN tool. 
 This utility aims to simplify the process of adding a power grid into a
 floorplan. The aim is to specify a small set of power grid policies to be
@@ -359,7 +359,7 @@ repair_pdn_vias
 
 #### Options
 
-| Name | Description |
+| Switch Name | Description |
 | ----- | ----- |
 | `-all` | Repair vias on all supply nets. |
 | `-net` | Repair only vias on the specified net. |
@@ -376,10 +376,29 @@ convert_pdn_config config_file
 
 #### Options
 
-| Name | Description |
+| Switch Name | Description |
 | ----- | ----- |
 | `config_file` | Path to the old configuration file. |
 
+### Useful Developer Commands
+
+If you are a developer, you might find these useful. More details can be found in the [source file](../src/PdnGen.cc) or the [swig file](PdnGen.i).
+
+| Command Name | Description |
+| ----- | ----- |
+| `name_cmp` | Compare 2 input strings `obj1` and `obj2` if they are equal. |
+| `check_design_state` | Check if design is loaded. |
+| `get_layer` | Get the layer reference of layer name. |
+| `get_voltage_domains` | Gets a Tcl list of power domains in design. |
+| `match_orientation` | Checks if a given orientation `orient` is within a list of orientations `orients`. |
+| `get_insts` | Get Tcl list of instances. |
+| `get_masters` | Get Tcl list of masters. |
+| `get_one_to_two` | If a Tcl list has one element `{x}`, Tcl list `{x x}` is returned. If a Tcl list of two elements `{y y}`, list as is returned. Otherwise, for any other list lengths, error is triggered. |
+| `get_one_to_four` | Similar logic for above function, except the logic only works for lists of length one, two and four respectively. All other list lengths triggers error. |
+| `get_obstructions` | Get Tcl list of layers. |
+| `get_starts_with` | If value starts with `POWER`, return 1; else if value starts with `GROUND` return 0; else return error. |
+| `get_mterm` | Find master terminal. |
+| `get_orientations` | Get list of valid orientations. | 
 
 ## Example scripts
 
