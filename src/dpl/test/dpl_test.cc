@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <stdexcept>
+#include <vector>
 
 #include "dpl/Opendp.h"
 #include "gtest/gtest.h"
