@@ -320,7 +320,7 @@ make_fake_io_site -name IO_VSITE -width 1 -height 200
 make_fake_io_site -name IO_CSITE -width 200 -height 204
 ```
 
-### RDL Routing
+### Redistribution Layer Routing
 
 To route the RDL for the bump arrays.
 
@@ -349,28 +349,19 @@ rdl_route
 | `-allow45` | Specifies that 45 degree routing is permitted. |
 | `nets` | Nets to route. |
 
-### Useful developer functions
+### Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/ICeWall.cpp) or the [swig file](./src/pad.i).
 
-```tcl
-# find site/master/instance/net
-find_site name
-find_master name
-find_instance name
-find_net name
-
-# assert required arg for cmd
-assert_required cmd arg
-
-# connect instance terminal to net
-connect_iterm inst_name iterm_name net_name
-
-# convert to Tcl script
-# this functions reads from the $ICeWall::library parameters
-# to generate a standalone Tcl script
-convert_tcl
-```
+| Command Name | Description |
+| ----- | ----- |
+| `find_site` | Find site given site name. |
+| `find_master` | Find master given master name. |
+| `find_instance` | Find instance given instance name. |
+| `find_net` | Find net given net name. |
+| `assert_required` | Assert argument that is required for `cmd` |
+| `connect_iterm` | Connect instance terminals. Required inputs are: `inst_name`, `iterm_name`, `net_name`. |
+| `convert_tcl` | These functions read from $ICeWall::library parameters to generate a standalone Tcl script. |
 
 ## Example scripts
 
