@@ -138,6 +138,7 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assignment,
         io_pin.setPos(slots_[slot_index].pos);
         io_pin.setLayer(slots_[slot_index].layer);
         io_pin.setPlaced();
+        io_pin.setEdge(slots_[slot_index].edge);
         assignment.push_back(io_pin);
         slots_[slot_index].used = true;
 
@@ -162,6 +163,7 @@ void HungarianMatching::assignMirroredPins(IOPin& io_pin,
   odb::Point mirrored_pos = core_->getMirroredPosition(io_pin.getPos());
   mirrored_pin.setPos(mirrored_pos);
   mirrored_pin.setLayer(io_pin.getLayer());
+  mirrored_pin.setEdge(getMirroredEdge(io_pin.getEdge()));
   mirrored_pin.setPlaced();
   assignment.push_back(mirrored_pin);
   int slot_index = getSlotIdxByPosition(mirrored_pos, mirrored_pin.getLayer());
@@ -302,6 +304,7 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assignment,
         IOPin& io_pin = netlist_->getIoPin(pin_idx);
         io_pin.setPos(slots_[slot_index + pin_cnt].pos);
         io_pin.setLayer(slots_[slot_index + pin_cnt].layer);
+        io_pin.setEdge(slots_[slot_index + pin_cnt].edge);
         assignment.push_back(io_pin);
         slots_[slot_index + pin_cnt].used = true;
         slots_[slot_index + pin_cnt].blocked = true;
@@ -354,6 +357,24 @@ bool HungarianMatching::groupHasMirroredPin(const std::vector<int>& group,
   }
 
   return false;
+}
+
+Edge HungarianMatching::getMirroredEdge(const Edge& edge)
+{
+  Edge mirrored_edge = Edge::invalid;
+  if (edge == Edge::bottom) {
+    mirrored_edge = Edge::top;
+  } else if (edge == Edge::top) {
+    mirrored_edge = Edge::bottom;
+  } else if (edge == Edge::left) {
+    mirrored_edge = Edge::right;
+  } else if (edge == Edge::right) {
+    mirrored_edge = Edge::left;
+  } else {
+    mirrored_edge = Edge::invalid;
+  }
+
+  return mirrored_edge;
 }
 
 }  // namespace ppl

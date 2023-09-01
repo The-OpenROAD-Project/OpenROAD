@@ -157,7 +157,7 @@ proc write_abstract_lef { args } {
   
   sta::check_argc_eq1 "write_abstract_lef" $args
   set filename [file nativename [lindex $args 0]]
-  [ord::get_db_block] saveLef $filename $bloat_factor $bloat_occupied_layers
+  ord::write_abstract_lef_cmd $filename $bloat_factor $bloat_occupied_layers
 }
 
 sta::define_cmd_args "write_cdl" {[-include_fillers]

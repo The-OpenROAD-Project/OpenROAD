@@ -279,13 +279,13 @@ void save_image(const char* filename, double xlo, double ylo, double xhi, double
   gui->saveImage(filename, make_rect(xlo, ylo, xhi, yhi), dbu_per_pixel, display_settings);
 }
 
-void save_clocktree_image(const char* filename, const char* clock_name)
+void save_clocktree_image(const char* filename, const char* clock_name, const char* corner = "", int width_px = 0, int height_px = 0)
 {
   if (!check_gui("save_clocktree_image")) {
     return;
   }
   auto gui = gui::Gui::get();
-  gui->saveClockTreeImage(clock_name, filename);
+  gui->saveClockTreeImage(clock_name, filename, corner, width_px, height_px);
 }
 
 void clear_rulers()
@@ -556,13 +556,19 @@ int select_previous()
   return gui->selectPrevious();
 }
 
-int select(const std::string& type, const std::string& name_filter = "", bool case_sensitive = true, int highlight_group = -1)
+int select(const std::string& type,
+           const std::string& name_filter = "",
+           const std::string& attribute = "",
+           const std::string& value = "",
+           bool case_sensitive = true,
+           int highlight_group = -1)
 {
   if (!check_gui("select")) {
     return 0;
   }
+
   auto gui = gui::Gui::get();
-  return gui->select(type, name_filter, case_sensitive, highlight_group);
+  return gui->select(type, name_filter, attribute, value, case_sensitive, highlight_group);
 }
 
 void selection_animate(int repeat = 0)

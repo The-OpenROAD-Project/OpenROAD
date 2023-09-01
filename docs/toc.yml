@@ -1,16 +1,19 @@
 root: index
 entries:
 - file: main/README
-  title: Getting Started with OpenROAD App
+  title: Getting Started with OpenROAD
   entries:
   - file: user/Build.md
-    title: How to Build OpenROAD
-
-- file: tutorials/index
-  title: Tutorials
+    title: Building OpenROAD
+  - file: user/ORFS.md
+    title: Getting Started with the OpenROAD Flow - OpenROAD-flow-scripts
+  - file: tutorials/index
+    title: Tutorials
+  - file: contrib/GitGuide
+    title: Git Quickstart
 
 - file: main/src/README
-  title: OpenROAD User Guides
+  title: OpenROAD User Guide
   entries:
   - file: main/src/odb/README
     title: Database
@@ -21,62 +24,65 @@ entries:
         title: Unit Tests (Python)
       - file: main/src/odb/doc/OpenDB-AddFieldsInDbObjects
         title: Add Fields in DB Objects
-  - file: main/src/rcx/README
-    title: Parasitics Extraction
-    entries:
-    - file: main/src/rcx/doc/calibration
-      title: Calibration
+  - file: main/src/gui/README
+    title: GUI
+  - file: main/src/par/README
+    title: Partition Management
   - file: main/src/rmp/README
     title: Restructure
   - file: main/src/ifp/README
     title: Floorplan Initialization
   - file: main/src/ppl/README
     title: Pin Placement
-  - file: main/src/gui/README
-    title: GUI
   - file: main/src/pad/README
     title: Chip-level Connections
   - file: main/src/mpl/README
     title: Macro Placement
+  - file: main/src/mpl2/README
+    title: Hierarchical Macro Placement
   - file: main/src/tap/README
     title: Tapcell Insertion
   - file: main/src/pdn/README
-    title: PDN Analysis
-  - file: main/src/psm/README
-    title: IR Drop Analysis
+    title: PDN Generation
     entries:
-    - file: main/src/psm/doc/Vsrc_description
-      title: VSRC description
+    - file: main/src/upf/README
+      title: Read UPF Utility
+    - file: main/src/psm/README
+      title: IR Drop Analysis
+      entries:
+      - file: main/src/psm/doc/Vsrc_description
+        title: VSRC Description
   - file: main/src/gpl/README
     title: Global Placement
     entries:
     - file: main/src/gpl/doc/TclCommands
-      title: Tclcommands
-  - file: main/src/sta/README
-    title: Static Timing Analyzer (external)
+      title: Tcl Commands
   - file: main/src/rsz/README
-    title: Gate Resizer
+    title: Gate Resizing
   - file: main/src/dpl/README
     title: Detailed Placement
   - file: main/src/cts/README
     title: Clock Tree Synthesis
-    entries:
-    - file: main/src/cts/doc/cts_lut_characterization
-      title: CTS LUT Characterization
   - file: main/src/grt/README
     title: Global Routing
+    entries:
+    - file: main/src/stt/src/flt/README
+      title: Flute
   - file: main/src/ant/README
     title: Antenna Checker
   - file: main/src/drt/README
-    title: Detail Routing
+    title: Detailed Routing
   - file: main/src/fin/README
     title: Metal Fill
-  - file: main/src/stt/src/flt/README
-    title: Flute
-  - file: main/src/par/README
-    title: Partition Manager
+  - file: main/src/rcx/README
+    title: Parasitics Extraction
+    entries:
+    - file: main/src/rcx/doc/calibration
+      title: Calibration
+  - file: main/src/sta/README
+    title: Static Timing Analyzer (external)
   - file: user/MessagesFinal.md
-    title: Warning and Error Messages Glossary
+    title: Messages Glossary
 
 - file: contrib/GettingInvolved
   title: Getting Involved
@@ -85,14 +91,10 @@ entries:
     title: Developer's Guide
   - file: contrib/CodingPractices
     title: Coding Practices
-  - file: contrib/DatabaseMath
-    title: Database Math
   - file: contrib/Logger
     title: Logger
   - file: contrib/CI
     title: CI
-  - file: contrib/GitGuide
-    title: Git Quickstart
 
 - file: main/CODE_OF_CONDUCT
   title: Code of Conduct   

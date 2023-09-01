@@ -217,16 +217,12 @@ bool _dbTechLayerCutSpacingRule::operator==(
   if (cut_area_ != rhs.cut_area_)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
 bool _dbTechLayerCutSpacingRule::operator<(
     const _dbTechLayerCutSpacingRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -298,8 +294,6 @@ void _dbTechLayerCutSpacingRule::differences(
   DIFF_FIELD(prl_);
   DIFF_FIELD(par_length_);
   DIFF_FIELD(cut_area_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -371,8 +365,6 @@ void _dbTechLayerCutSpacingRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(par_length_);
   DIFF_OUT_FIELD(cut_area_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
@@ -401,8 +393,6 @@ _dbTechLayerCutSpacingRule::_dbTechLayerCutSpacingRule(_dbDatabase* db)
   prl_ = 0;
   par_length_ = 0;
   cut_area_ = 0;
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 _dbTechLayerCutSpacingRule::_dbTechLayerCutSpacingRule(
@@ -472,8 +462,6 @@ _dbTechLayerCutSpacingRule::_dbTechLayerCutSpacingRule(
   prl_ = r.prl_;
   par_length_ = r.par_length_;
   cut_area_ = r.cut_area_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutSpacingRule& obj)
@@ -503,8 +491,6 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutSpacingRule& obj)
   stream >> obj.prl_;
   stream >> obj.par_length_;
   stream >> obj.cut_area_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
@@ -535,19 +521,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutSpacingRule& obj)
   stream << obj.prl_;
   stream << obj.par_length_;
   stream << obj.cut_area_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
 _dbTechLayerCutSpacingRule::~_dbTechLayerCutSpacingRule()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

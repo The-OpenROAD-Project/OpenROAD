@@ -57,4 +57,5 @@ record_tests {
   regions1
   regions2
   regions3
+  report_failures
 }

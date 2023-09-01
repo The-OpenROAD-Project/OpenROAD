@@ -207,6 +207,7 @@ class Opendp
   // max_displacment is in sites. use zero for defaults.
   void detailedPlacement(int max_displacement_x,
                          int max_displacement_y,
+                         const std::string& report_file_name = std::string(""),
                          bool disallow_one_site_gaps = false);
   void reportLegalizationStats() const;
   void setPaddingGlobal(int left, int right);
@@ -233,7 +234,8 @@ class Opendp
                        const vector<Cell*>& overlap_failures,
                        const vector<Cell*>& one_site_gap_failures,
                        const vector<Cell*>& site_align_failures,
-                       const vector<Cell*>& region_placement_failures);
+                       const vector<Cell*>& region_placement_failures,
+                       const vector<Cell*>& placement_failures);
   void fillerPlacement(dbMasterSeq* filler_masters, const char* prefix);
   void removeFillers();
   int64_t hpwl() const;
@@ -489,7 +491,7 @@ class Opendp
   int max_displacement_x_ = 0;  // sites
   int max_displacement_y_ = 0;  // sites
   bool disallow_one_site_gaps_ = false;
-  vector<dbInst*> placement_failures_;
+  vector<Cell*> placement_failures_;
 
   // 3D pixel grid
   Grid grid_;

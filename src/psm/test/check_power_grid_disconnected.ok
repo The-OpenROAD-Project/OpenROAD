@@ -17,7 +17,7 @@
 [WARNING PSM-0065] VSRC location not specified, using default checkerboard pattern with one VDD every size bumps in x-direction and one in two bumps in the y-direction
 [INFO PSM-0076] Setting metal node density to be standard cell height times 5.
 [WARNING PSM-0030] VSRC location at (100.035um, 100.100um) and size 10.000um, is not located on an existing power stripe node. Moving to closest node at (76.120um, 83.500um).
-[INFO PSM-0031] Number of PDN nodes on net VDD = 2243.
+[INFO PSM-0031] Number of PDN nodes on net VDD = 2239.
 [INFO PSM-0064] Number of voltage sources = 1.
 [WARNING PSM-0038] Unconnected PDN node on net VDD at location (58.160um, 97.000um), layer: metal5.
 [WARNING PSM-0038] Unconnected PDN node on net VDD at location (58.160um, 97.000um), layer: metal6.

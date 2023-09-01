@@ -293,6 +293,7 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
       }
       io_pin.setPos(slots[slot_idx].pos);
       io_pin.setPlaced();
+      io_pin.setEdge(slots[slot_idx].edge);
       slots[slot_idx].used = true;
       slots[slot_idx].blocked = true;
       io_pin.setLayer(slots[slot_idx].layer);
@@ -310,6 +311,7 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
         mirrored_pin.setPos(mirrored_pos);
         mirrored_pin.setLayer(slots_[slot_idx].layer);
         mirrored_pin.setPlaced();
+        mirrored_pin.setEdge(slots_[slot_idx].edge);
         assignment_.push_back(mirrored_pin);
         slot_idx = getSlotIdxByPosition(
             mirrored_pos, mirrored_pin.getLayer(), slots);
@@ -445,6 +447,7 @@ void IOPlacer::assignMirroredPins(IOPin& io_pin,
   mirrored_pin.setPos(mirrored_pos);
   mirrored_pin.setLayer(io_pin.getLayer());
   mirrored_pin.setPlaced();
+  mirrored_pin.setEdge(getMirroredEdge(io_pin.getEdge()));
   assignment.push_back(mirrored_pin);
   int slot_index
       = getSlotIdxByPosition(mirrored_pos, mirrored_pin.getLayer(), slots_);
@@ -555,6 +558,7 @@ void IOPlacer::placeFallbackGroup(
     Slot& slot = slots_[place_slot];
     io_pin.setPos(slot.pos);
     io_pin.setLayer(slot.layer);
+    io_pin.setEdge(slot.edge);
     assignment_.push_back(io_pin);
     slot.used = true;
     slot.blocked = true;
@@ -600,8 +604,8 @@ bool IOPlacer::checkBlocked(Edge edge, int pos, int layer)
     if (blocked_interval.getLayer() == -1
         || blocked_interval.getLayer() == layer) {
       if (blocked_interval.getEdge() == edge
-          && pos >= blocked_interval.getBegin()
-          && pos <= blocked_interval.getEnd()) {
+          && pos > blocked_interval.getBegin()
+          && pos < blocked_interval.getEnd()) {
         return true;
       }
     }
@@ -678,6 +682,50 @@ double IOPlacer::dbuToMicrons(int64_t dbu)
 int IOPlacer::micronsToDbu(double microns)
 {
   return (int64_t) (microns * getBlock()->getDbUnitsPerMicron());
+}
+
+void IOPlacer::writePinPlacement()
+{
+  std::string file_name = parms_->getPinPlacementFile();
+  if (file_name.empty()) {
+    return;
+  }
+
+  std::ofstream out(file_name);
+
+  std::vector<Edge> edges_list
+      = {Edge::bottom, Edge::right, Edge::top, Edge::left};
+  for (const Edge& edge : edges_list) {
+    out << "#Edge: " << getEdgeString(edge) << "\n";
+    for (const IOPin& io_pin : netlist_io_pins_->getIOPins()) {
+      if (io_pin.getEdge() == edge) {
+        const int layer = io_pin.getLayer();
+        odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
+        const odb::Point& pos = io_pin.getPosition();
+        out << "place_pin -pin_name " << io_pin.getName() << " -layer "
+            << tech_layer->getName() << " -location {" << dbuToMicrons(pos.x())
+            << " " << dbuToMicrons(pos.y()) << "} -force_to_die_boundary\n";
+      }
+    }
+  }
+}
+
+Edge IOPlacer::getMirroredEdge(const Edge& edge)
+{
+  Edge mirrored_edge = Edge::invalid;
+  if (edge == Edge::bottom) {
+    mirrored_edge = Edge::top;
+  } else if (edge == Edge::top) {
+    mirrored_edge = Edge::bottom;
+  } else if (edge == Edge::left) {
+    mirrored_edge = Edge::right;
+  } else if (edge == Edge::right) {
+    mirrored_edge = Edge::left;
+  } else {
+    mirrored_edge = Edge::invalid;
+  }
+
+  return mirrored_edge;
 }
 
 void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
@@ -817,6 +865,15 @@ void IOPlacer::defineSlots()
   findSlots(hor_layers_, Edge::left);
 
   findSlotsForTopLayer();
+
+  if (netlist_io_pins_->getIOPins().size() > slots_.size()) {
+    logger_->error(PPL,
+                   24,
+                   "Number of IO pins ({}) exceeds maximum number of available "
+                   "positions ({}).",
+                   netlist_io_pins_->getIOPins().size(),
+                   slots_.size());
+  }
 }
 
 void IOPlacer::findSections(int begin,
@@ -1237,17 +1294,21 @@ void IOPlacer::assignMirroredPin(IOPin& io_pin)
   mirrored_pin.assignToSection();
 }
 
-void IOPlacer::printConfig()
+void IOPlacer::printConfig(bool annealing)
 {
   logger_->info(PPL, 1, "Number of slots          {}", slots_.size());
   logger_->info(PPL, 2, "Number of I/O            {}", netlist_->numIOPins());
   logger_->metric("floorplan__design__io", netlist_->numIOPins());
-  logger_->info(
-      PPL, 3, "Number of I/O w/sink     {}", netlist_io_pins_->numIOPins());
+  logger_->info(PPL,
+                3,
+                "Number of I/O w/sink     {}",
+                netlist_io_pins_->numIOPins() - zero_sink_ios_.size());
   logger_->info(PPL, 4, "Number of I/O w/o sink   {}", zero_sink_ios_.size());
-  logger_->info(PPL, 5, "Slots per section        {}", slots_per_section_);
-  logger_->info(
-      PPL, 6, "Slots increase factor    {:.1}", slots_increase_factor_);
+  if (!annealing) {
+    logger_->info(PPL, 5, "Slots per section        {}", slots_per_section_);
+    logger_->info(
+        PPL, 6, "Slots increase factor    {:.1}", slots_increase_factor_);
+  }
 }
 
 void IOPlacer::setupSections(int assigned_pins_count)
@@ -1613,6 +1674,7 @@ void IOPlacer::initConstraints(bool annealing)
 {
   std::reverse(constraints_.begin(), constraints_.end());
   int constraint_idx = 0;
+  int constraints_no_slots = 0;
   for (Constraint& constraint : constraints_) {
     getPinsFromDirectionConstraint(constraint);
     constraint.sections = createSectionsPerConstraint(constraint);
@@ -1623,9 +1685,16 @@ void IOPlacer::initConstraints(bool annealing)
     if (num_slots > 0) {
       constraint.pins_per_slots
           = static_cast<float>(constraint.pin_list.size()) / num_slots;
+      if (constraint.pins_per_slots > 1) {
+        logger_->warn(PPL,
+                      110,
+                      "Constraint has {} pins, but only {} available slots",
+                      constraint.pin_list.size(),
+                      num_slots);
+        constraints_no_slots++;
+      }
     } else {
-      logger_->error(
-          PPL, 76, "Constraint does not have available slots for its pins.");
+      logger_->error(PPL, 76, "Constraint does not have available slots.");
     }
 
     for (odb::dbBTerm* term : constraint.pin_list) {
@@ -1633,8 +1702,19 @@ void IOPlacer::initConstraints(bool annealing)
       IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
       io_pin.setConstraintIdx(constraint_idx);
       constraint.pin_indices.push_back(pin_idx);
+      if (io_pin.getGroupIdx() != -1) {
+        constraint.pin_groups.insert(io_pin.getGroupIdx());
+      }
     }
     constraint_idx++;
+  }
+
+  if (constraints_no_slots > 0) {
+    logger_->error(PPL,
+                   111,
+                   "{} constraint(s) does not have available slots "
+                   "for the pins.",
+                   constraints_no_slots);
   }
 
   if (!annealing) {
@@ -1836,15 +1916,6 @@ void IOPlacer::run(bool random_mode)
   initIOLists();
   defineSlots();
 
-  if (netlist_io_pins_->getIOPins().size() > slots_.size()) {
-    logger_->error(PPL,
-                   24,
-                   "Number of IO pins ({}) exceeds maximum number of available "
-                   "positions ({}).",
-                   netlist_io_pins_->getIOPins().size(),
-                   slots_.size());
-  }
-
   initMirroredPins();
   initConstraints();
 
@@ -1929,6 +2000,7 @@ void IOPlacer::run(bool random_mode)
 
   checkPinPlacement();
   commitIOPlacementToDB(assignment_);
+  writePinPlacement();
   clear();
 }
 
@@ -1994,6 +2066,8 @@ void IOPlacer::runAnnealing(bool random)
     annealing.setDebugOn(std::move(ioplacer_renderer_));
   }
 
+  printConfig(true);
+
   annealing.run(
       init_temperature_, max_iterations_, perturb_per_iter_, alpha_, random);
   annealing.getAssignment(assignment_);
@@ -2007,6 +2081,7 @@ void IOPlacer::runAnnealing(bool random)
 
   checkPinPlacement();
   commitIOPlacementToDB(assignment_);
+  writePinPlacement();
   clear();
 }
 
@@ -2169,8 +2244,9 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
   odb::Point ll = odb::Point(pos.x() - width / 2, pos.y() - height / 2);
   odb::Point ur = odb::Point(pos.x() + width / 2, pos.y() + height / 2);
 
-  IOPin io_pin = IOPin(
-      bterm, pos, Direction::invalid, ll, ur, odb::dbPlacementStatus::FIRM);
+  odb::dbPlacementStatus placement_status = odb::dbPlacementStatus::FIRM;
+  IOPin io_pin
+      = IOPin(bterm, pos, Direction::invalid, ll, ur, placement_status);
   io_pin.setLayer(layer_level);
 
   commitIOPinToDB(io_pin);
@@ -2181,10 +2257,10 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
 
   logger_->info(PPL,
                 70,
-                "Pin {} placed at ({}um, {}um).",
+                "Pin {} placed at ({:.2f}um, {:.2f}um).",
                 bterm->getName(),
-                pos.x() / getTech()->getLefUnits(),
-                pos.y() / getTech()->getLefUnits());
+                dbuToMicrons(pos.x()),
+                dbuToMicrons(pos.y()));
 }
 
 void IOPlacer::movePinToTrack(odb::Point& pos,

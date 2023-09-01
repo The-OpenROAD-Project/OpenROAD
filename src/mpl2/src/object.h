@@ -138,19 +138,13 @@ class Metrics
           float macro_area);
 
   void addMetrics(const Metrics& metrics);
-  void inflateStdCellArea(float std_cell_util);
-  void inflateMacroArea(float inflate_macro_area);
   const std::pair<unsigned int, unsigned int> getCountStats() const;
   const std::pair<float, float> getAreaStats() const;
-  const std::pair<float, float> getInflateAreaStats() const;
   unsigned int getNumMacro() const;
   unsigned int getNumStdCell() const;
   float getStdCellArea() const;
   float getMacroArea() const;
   float getArea() const;
-  float getInflateStdCellArea() const;
-  float getInflateMacroArea() const;
-  float getInflateArea() const;
 
  private:
   // In the hierarchical autoclustering part,
@@ -163,13 +157,8 @@ class Metrics
   // we need to know the sizes of clusters.
   // std_cell_area is the sum of areas of all std cells
   // macro_area is the sum of areas of all macros
-  // inflate_std_cell_area = std_cell_area / util
-  // inflate_macro_area considers the halo width when calculate
-  // each macro area
   float std_cell_area_ = 0.0;
   float macro_area_ = 0.0;
-  float inflate_std_cell_area_ = 0.0;
-  float inflate_macro_area_ = 0.0;
 };
 
 // In this hierarchical autoclustering part,

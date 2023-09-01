@@ -39,8 +39,6 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
-// User Code Begin Includes
-// User Code End Includes
 namespace odb {
 template class dbTable<_dbTechLayerKeepOutZoneRule>;
 
@@ -83,16 +81,12 @@ bool _dbTechLayerKeepOutZoneRule::operator==(
   if (spiral_extension_ != rhs.spiral_extension_)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
 bool _dbTechLayerKeepOutZoneRule::operator<(
     const _dbTechLayerKeepOutZoneRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -117,8 +111,6 @@ void _dbTechLayerKeepOutZoneRule::differences(
   DIFF_FIELD(side_side_extension_);
   DIFF_FIELD(side_forward_extension_);
   DIFF_FIELD(spiral_extension_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -143,8 +135,6 @@ void _dbTechLayerKeepOutZoneRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(side_forward_extension_);
   DIFF_OUT_FIELD(spiral_extension_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
@@ -160,8 +150,6 @@ _dbTechLayerKeepOutZoneRule::_dbTechLayerKeepOutZoneRule(_dbDatabase* db)
   side_side_extension_ = -1;
   side_forward_extension_ = -1;
   spiral_extension_ = -1;
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 _dbTechLayerKeepOutZoneRule::_dbTechLayerKeepOutZoneRule(
@@ -184,8 +172,6 @@ _dbTechLayerKeepOutZoneRule::_dbTechLayerKeepOutZoneRule(
   side_side_extension_ = r.side_side_extension_;
   side_forward_extension_ = r.side_forward_extension_;
   spiral_extension_ = r.spiral_extension_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerKeepOutZoneRule& obj)
@@ -202,8 +188,6 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerKeepOutZoneRule& obj)
   stream >> obj.side_side_extension_;
   stream >> obj.side_forward_extension_;
   stream >> obj.spiral_extension_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
@@ -221,19 +205,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerKeepOutZoneRule& obj)
   stream << obj.side_side_extension_;
   stream << obj.side_forward_extension_;
   stream << obj.spiral_extension_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
 _dbTechLayerKeepOutZoneRule::~_dbTechLayerKeepOutZoneRule()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

@@ -739,14 +739,16 @@ RepairSetup::cloneDriver(PathRef* drvr_path, int drvr_index,
   }
 
   Point drvr_loc = computeCloneGateLocation(drvr_pin, fanout_slacks);
-  Instance *clone_inst = resizer_->makeInstance(clone_cell, buffer_name.c_str(),
-                                                parent, drvr_loc);
+  Instance *clone_inst = resizer_->journalCloneInstance(clone_cell, buffer_name.c_str(),
+                                                        network_->instance(drvr_pin), parent, drvr_loc);
+
+  cloned_gate_count_++;
+
   debugPrint(logger_, RSZ, "repair_setup", 3, "clone {} ({}) -> {} ({})",
              network_->pathName(drvr_pin), original_cell->name(),
              network_->pathName(clone_inst), clone_cell->name());
-  resizer_->cloned_gates_.push(std::tuple(network_->instance(drvr_pin), clone_inst));
-  resizer_->cloned_inst_set_.insert(clone_inst);
-  cloned_gate_count_++;
+
+
   Net *out_net = resizer_->makeUniqueNet();
   std::unique_ptr<InstancePinIterator> inst_pin_iter{network_->pinIterator(drvr_inst)};
   while (inst_pin_iter->hasNext()) {

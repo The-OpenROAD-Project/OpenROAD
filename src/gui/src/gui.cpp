@@ -430,17 +430,19 @@ void Gui::deleteRuler(const std::string& name)
 
 int Gui::select(const std::string& type,
                 const std::string& name_filter,
+                const std::string& attribute,
+                const std::any& value,
                 bool filter_case_sensitive,
                 int highlight_group)
 {
   for (auto& [object_type, descriptor] : descriptors_) {
     if (descriptor->getTypeName() == type) {
-      SelectionSet selected;
-      if (descriptor->getAllObjects(selected)) {
+      SelectionSet selected_set;
+      if (descriptor->getAllObjects(selected_set)) {
         if (!name_filter.empty()) {
           // convert to vector
-          std::vector<Selected> selected_vector(selected.begin(),
-                                                selected.end());
+          std::vector<Selected> selected_vector(selected_set.begin(),
+                                                selected_set.end());
           // remove elements
           QRegExp reg_filter(
               QString::fromStdString(name_filter),
@@ -450,30 +452,94 @@ int Gui::select(const std::string& type,
               selected_vector.begin(),
               selected_vector.end(),
               [&name_filter, &reg_filter](auto sel) -> bool {
-                const std::string name = sel.getName();
-                if (name == name_filter) {
+                const std::string sel_name = sel.getName();
+                if (sel_name == name_filter) {
                   // direct match, so don't remove
                   return false;
                 }
-                return !reg_filter.exactMatch(QString::fromStdString(name));
+                return !reg_filter.exactMatch(QString::fromStdString(sel_name));
               });
           selected_vector.erase(remove_if, selected_vector.end());
           // rebuild selectionset
-          selected.clear();
-          selected.insert(selected_vector.begin(), selected_vector.end());
+          selected_set.clear();
+          selected_set.insert(selected_vector.begin(), selected_vector.end());
         }
-        main_window->addSelected(selected);
+
+        if (!attribute.empty()) {
+          bool is_valid_attribute = false;
+          for (SelectionSet::iterator selected_iter = selected_set.begin();
+               selected_iter != selected_set.end();) {
+            Descriptor::Properties properties
+                = descriptor->getProperties(selected_iter->getObject());
+            if (filterSelectionProperties(
+                    properties, attribute, value, is_valid_attribute)) {
+              ++selected_iter;
+            } else {
+              selected_iter = selected_set.erase(selected_iter);
+            }
+          }
+
+          if (!is_valid_attribute) {
+            logger_->error(
+                utl::GUI, 59, "Entered attribute {} is not valid.", attribute);
+          } else if (selected_set.empty()) {
+            logger_->error(utl::GUI,
+                           75,
+                           "Couldn't find any object for the specified value.");
+          }
+        }
+
+        main_window->addSelected(selected_set);
         if (highlight_group != -1) {
-          main_window->addHighlighted(selected, highlight_group);
+          main_window->addHighlighted(selected_set, highlight_group);
         }
       }
 
       // already found the descriptor, so return to exit loop
-      return selected.size();
+      return selected_set.size();
     }
   }
 
   logger_->error(utl::GUI, 35, "Unable to find descriptor for: {}", type);
+}
+
+bool Gui::filterSelectionProperties(const Descriptor::Properties& properties,
+                                    const std::string& attribute,
+                                    const std::any& value,
+                                    bool& is_valid_attribute)
+{
+  for (const Descriptor::Property& property : properties) {
+    if (attribute == property.name) {
+      is_valid_attribute = true;
+      if (auto props_selected_set
+          = std::any_cast<SelectionSet>(&property.value)) {
+        if (Descriptor::Property::toString(value) == "CONNECTED"
+            && (*props_selected_set).size() != 0) {
+          return true;
+        }
+        for (const auto& selected : *props_selected_set) {
+          if (Descriptor::Property::toString(value) == selected.getName()) {
+            return true;
+          }
+        }
+      } else if (auto props_list
+                 = std::any_cast<Descriptor::PropertyList>(&property.value)) {
+        for (const auto& prop : *props_list) {
+          if (Descriptor::Property::toString(prop.first)
+                  == Descriptor::Property::toString(value)
+              || Descriptor::Property::toString(prop.second)
+                     == Descriptor::Property::toString(value)) {
+            return true;
+          }
+        }
+      } else if (Descriptor::Property::toString(value)
+                 == Descriptor::Property::toString(property.value)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 void Gui::clearSelections()
@@ -688,12 +754,24 @@ void Gui::saveImage(const std::string& filename,
 }
 
 void Gui::saveClockTreeImage(const std::string& clock_name,
-                             const std::string& filename)
+                             const std::string& filename,
+                             const std::string& corner,
+                             int width_px,
+                             int height_px)
 {
   if (!enabled()) {
     return;
   }
-  main_window->getClockViewer()->saveImage(clock_name, filename);
+  std::optional<int> width;
+  std::optional<int> height;
+  if (width_px > 0) {
+    width = width_px;
+  }
+  if (height_px > 0) {
+    height = height_px;
+  }
+  main_window->getClockViewer()->saveImage(
+      clock_name, filename, corner, width, height);
 }
 
 static QWidget* findWidget(const std::string& name)
@@ -1069,47 +1147,47 @@ void Gui::timingPathsThrough(const std::set<odbTerm>& terms)
 
 void Gui::addFocusNet(odb::dbNet* net)
 {
-  main_window->getLayoutViewer()->addFocusNet(net);
+  main_window->getLayoutTabs()->addFocusNet(net);
 }
 
 void Gui::addRouteGuides(odb::dbNet* net)
 {
-  main_window->getLayoutViewer()->addRouteGuides(net);
+  main_window->getLayoutTabs()->addRouteGuides(net);
 }
 
 void Gui::removeRouteGuides(odb::dbNet* net)
 {
-  main_window->getLayoutViewer()->removeRouteGuides(net);
+  main_window->getLayoutTabs()->removeRouteGuides(net);
 }
 
 void Gui::addNetTracks(odb::dbNet* net)
 {
-  main_window->getLayoutViewer()->addNetTracks(net);
+  main_window->getLayoutTabs()->addNetTracks(net);
 }
 
 void Gui::removeNetTracks(odb::dbNet* net)
 {
-  main_window->getLayoutViewer()->removeNetTracks(net);
+  main_window->getLayoutTabs()->removeNetTracks(net);
 }
 
 void Gui::removeFocusNet(odb::dbNet* net)
 {
-  main_window->getLayoutViewer()->removeFocusNet(net);
+  main_window->getLayoutTabs()->removeFocusNet(net);
 }
 
 void Gui::clearFocusNets()
 {
-  main_window->getLayoutViewer()->clearFocusNets();
+  main_window->getLayoutTabs()->clearFocusNets();
 }
 
 void Gui::clearRouteGuides()
 {
-  main_window->getLayoutViewer()->clearRouteGuides();
+  main_window->getLayoutTabs()->clearRouteGuides();
 }
 
 void Gui::clearNetTracks()
 {
-  main_window->getLayoutViewer()->clearNetTracks();
+  main_window->getLayoutTabs()->clearNetTracks();
 }
 
 void Gui::setLogger(utl::Logger* logger)
@@ -1213,7 +1291,7 @@ int startGui(int& argc,
       });
 
   // Exit the app if someone chooses exit from the menu in the window
-  QObject::connect(main_window, SIGNAL(exit()), &app, SLOT(quit()));
+  QObject::connect(main_window, &MainWindow::exit, &app, &QApplication::quit);
   // Track the exit in case it originated during a script
   bool exit_requested = false;
   int exit_code = EXIT_SUCCESS;
@@ -1225,7 +1303,7 @@ int startGui(int& argc,
 
   // Save the window's status into the settings when quitting.
   QObject::connect(
-      &app, SIGNAL(aboutToQuit()), main_window, SLOT(saveSettings()));
+      &app, &QApplication::aboutToQuit, main_window, &MainWindow::saveSettings);
 
   // execute commands to restore state of gui
   std::string restore_commands;

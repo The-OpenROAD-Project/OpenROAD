@@ -33,3 +33,4 @@ estimate_parasitics -placement
 report_worst_slack -max
 repair_timing -setup -repair_tns 100 -skip_gate_cloning 
 report_worst_slack -max
+

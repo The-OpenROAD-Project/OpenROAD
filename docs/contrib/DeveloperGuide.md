@@ -328,3 +328,11 @@ class dbIntProperty : public dbProperty
   static dbIntProperty* find(dbObject* object, const char* name);
 };
 ```
+
+## Guidelines
+
+1. Internally, the code should use `int` for all database units and `int64_t`
+for all area calculations. Refer to this [link](DatabaseMath.md) for a more
+detailed writeup on the reasons why this approach is preferred. The only
+place that the database distance units should appear in any program
+should be in the user interface, as microns are easier for humans than DBUs.

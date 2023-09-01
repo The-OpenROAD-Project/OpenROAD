@@ -39,8 +39,6 @@
 #include "dbTypes.h"
 #include "dbVector.h"
 #include "odb.h"
-// User Code Begin Includes
-// User Code End Includes
 
 namespace odb {
 class dbIStream;
@@ -93,15 +91,10 @@ struct dbTechLayerFlags
   uint lef58_type_ : 5;
   uint spare_bits_ : 4;
 };
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbTechLayer : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
-
   _dbTechLayer(_dbDatabase*, const _dbTechLayer& r);
   _dbTechLayer(_dbDatabase*);
   ~_dbTechLayer();
@@ -208,7 +201,5 @@ class _dbTechLayer : public _dbObject
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header

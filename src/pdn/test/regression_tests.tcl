@@ -65,6 +65,7 @@ record_tests {
   macros_grid_through_without_middle
   macros_cells_dont_touch
   macros_cells_overlapping_ports
+  macros_cells_not_fixed
 
   region_temp_sensor
   region_secondary_nets
@@ -91,6 +92,7 @@ record_tests {
   asap7_taper
   asap7_offcenter_via
   asap7_no_via_generate_v1_snapped
+  asap7_failed_macro_grid
 
   existing
 

@@ -36,8 +36,6 @@
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb.h"
-// User Code Begin Includes
-// User Code End Includes
 
 namespace odb {
 class dbIStream;
@@ -76,15 +74,10 @@ struct dbTechLayerCutSpacingTableDefRuleFlags
   bool opposite_enclosure_resize_spacing_valid_ : 1;
   uint spare_bits_ : 9;
 };
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbTechLayerCutSpacingTableDefRule : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
-
   _dbTechLayerCutSpacingTableDefRule(
       _dbDatabase*,
       const _dbTechLayerCutSpacingTableDefRule& r);
@@ -101,8 +94,6 @@ class _dbTechLayerCutSpacingTableDefRule : public _dbObject
                    const char* field,
                    const _dbTechLayerCutSpacingTableDefRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 
   dbTechLayerCutSpacingTableDefRuleFlags flags_;
   int default_;
@@ -121,15 +112,10 @@ class _dbTechLayerCutSpacingTableDefRule : public _dbObject
   dbVector<dbVector<std::pair<int, int>>> spacing_tbl_;
   std::map<std::string, uint> row_map_;
   std::map<std::string, uint> col_map_;
-
-  // User Code Begin Fields
-  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream,
                       _dbTechLayerCutSpacingTableDefRule& obj);
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCutSpacingTableDefRule& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header

@@ -8,6 +8,7 @@
 [INFO ODB-0131]     Created 624 components and 2752 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 1248 connections.
 [INFO ODB-0133]     Created 581 nets and 1504 connections.
+[INFO PSM-0022] Using 1.100V for VDD
 [WARNING PSM-0016] Voltage pad location (VSRC) file not specified, defaulting pad location to checkerboard pattern on core area.
 [WARNING PSM-0017] X direction bump pitch is not specified, defaulting to 140um.
 [WARNING PSM-0018] Y direction bump pitch is not specified, defaulting to 140um.

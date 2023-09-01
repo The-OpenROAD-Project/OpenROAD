@@ -126,7 +126,7 @@ class IOPlacer
   void run(bool random_mode);
   void runAnnealing(bool random);
   void reportHPWL();
-  void printConfig();
+  void printConfig(bool annealing = false);
   Parameters* getParameters() { return parms_.get(); }
   int64 computeIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
@@ -265,6 +265,8 @@ class IOPlacer
   void getBlockedRegionsFromDbObstructions();
   double dbuToMicrons(int64_t dbu);
   int micronsToDbu(double microns);
+  void writePinPlacement();
+  Edge getMirroredEdge(const Edge& edge);
 
   // db functions
   void populateIOPlacer(const std::set<int>& hor_layer_idx,

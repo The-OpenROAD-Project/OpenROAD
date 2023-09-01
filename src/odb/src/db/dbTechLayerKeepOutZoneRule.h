@@ -36,16 +36,11 @@
 #include "dbCore.h"
 #include "odb.h"
 
-// User Code Begin Includes
-// User Code End Includes
-
 namespace odb {
 class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-// User Code Begin Classes
-// User Code End Classes
 
 struct dbTechLayerKeepOutZoneRuleFlags
 {
@@ -56,15 +51,10 @@ struct dbTechLayerKeepOutZoneRuleFlags
   bool except_aligned_end_ : 1;
   uint spare_bits_ : 27;
 };
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbTechLayerKeepOutZoneRule : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
-
   _dbTechLayerKeepOutZoneRule(_dbDatabase*,
                               const _dbTechLayerKeepOutZoneRule& r);
   _dbTechLayerKeepOutZoneRule(_dbDatabase*);
@@ -80,8 +70,6 @@ class _dbTechLayerKeepOutZoneRule : public _dbObject
                    const char* field,
                    const _dbTechLayerKeepOutZoneRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 
   dbTechLayerKeepOutZoneRuleFlags flags_;
   std::string first_cut_class_;
@@ -94,14 +82,9 @@ class _dbTechLayerKeepOutZoneRule : public _dbObject
   int side_side_extension_;
   int side_forward_extension_;
   int spiral_extension_;
-
-  // User Code Begin Fields
-  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerKeepOutZoneRule& obj);
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerKeepOutZoneRule& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header
