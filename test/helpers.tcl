@@ -24,6 +24,24 @@ proc report_file { file } {
   close $stream
 }
 
+#===========================================================================================
+# Routines to run equivalence tests when they are enabled. 
+proc write_golden_verilog {} {
+    write_verilog before.v
+}
+proc run_equivalence_test {} {
+    write_verilog after.v 
+    exec rm -rf test    
+    exec eqy test.eqy > results/output.log
+    set count [exec grep -c "Successfully proved designs equivalent" results/output.log]
+    if { $count == 0 } {
+	puts "Repair timing output failed equivalence test"
+    } else {
+	puts "Repair timing output passed equivalence test"
+    }
+}
+#===========================================================================================
+
 proc diff_files { file1 file2 } {
   set stream1 [open $file1 r]
   set stream2 [open $file2 r]
