@@ -1,0 +1,14 @@
+[gold]
+read_verilog -sv before.v cells.v
+prep -top hi_fanout
+memory_map
+
+[gate]
+read_verilog -sv after.v cells.v
+prep -top hi_fanout
+memory_map
+
+[strategy basic]
+use sat
+depth 10
+
