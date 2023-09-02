@@ -32,5 +32,7 @@ estimate_parasitics -placement
 
 # Repair the high fanout net hopefully with gate cloning code.
 report_worst_slack -max
+write_golden_verilog
 repair_timing -setup -repair_tns 100
+run_equivalence_test 
 report_worst_slack -max
