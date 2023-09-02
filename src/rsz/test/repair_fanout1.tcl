@@ -16,5 +16,7 @@ set_wire_rc -layer metal1
 estimate_parasitics -placement
 
 report_check_types -max_fanout
+write_golden_verilog
 repair_design
+run_equivalence_test 
 report_check_types -max_fanout
