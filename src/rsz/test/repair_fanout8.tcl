@@ -31,6 +31,8 @@ set_dont_use $dont_use
 estimate_parasitics -placement
 
 report_worst_slack -max
-repair_timing -setup -repair_tns 100 -skip_gate_cloning 
+write_golden_verilog
+repair_timing -setup -repair_tns 100 -skip_gate_cloning
+run_equivalence_test 
 report_worst_slack -max
 
