@@ -6,6 +6,9 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+permissions:
+  pull-requests: write
+
 jobs:
   scan:
     runs-on: ubuntu-latest
