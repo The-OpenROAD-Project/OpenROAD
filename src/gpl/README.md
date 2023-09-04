@@ -1,7 +1,7 @@
 # Global Placement
 
 The global placement module in OpenROAD (`gpl`) is based on the open-source
-RePlAce algorithm, from the
+RePlAce tool, from the
 paper "Advancing Solution Quality and Routability Validation in
 Global Placement".
 
@@ -74,8 +74,8 @@ global_placement
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-timing_driven` | Enable timing-driven mode. |
-| `-routability_driven` | Enable routability-driven mode. |
+| `-timing_driven` | Enable timing-driven mode. See [link](#timing-driven-arguments) for timing-specific arguments. |
+| `-routability_driven` | Enable routability-driven mode. See [link](#routability-driven-arguments) for routability-specific arguments. |
 | `-skip_initial_place` | Skip the initial placement (Biconjugate gradient stabilized, or BiCGSTAB solving) before Nesterov placement. Initial placement improves HPWL by ~5% on large designs. Equivalent to `-initial_place_max_iter 0`. | 
 | `-incremental` | Enable the incremental global placement. Users would need to tune other parameters (e.g., `init_density_penalty`) with pre-placed solutions. | 
 | `-bin_grid_count` | Set bin grid's counts. The internal heuristic defines the default value. Allowed values are integers `[64,128,256,512,...]`. |
