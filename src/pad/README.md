@@ -1,9 +1,8 @@
 # Chip-level Connections
 
-The chip-level connections module in OpenROAD (`pad`) is based on 
-the open-source ICeWall algorithm.
-In this utility, either place an IO ring around the boundary of the a chip 
-and connect with either wirebond pads or a bump array.
+The chip-level connections module in OpenROAD (`pad`) is based on the
+open-source tool ICeWall. In this utility, either place an IO ring around the
+boundary of the chip and connect with either wirebond pads or a bump array.
 
 ## Commands
 
@@ -174,7 +173,7 @@ When the padring is complete, the following command can remove the IO rows to av
 remove_io_rows
 ```
 
-### Placing corners
+### Placing Corners
 
 To place the corner cells
 
@@ -363,7 +362,7 @@ If you are a developer, you might find these useful. More details can be found i
 | `connect_iterm` | Connect instance terminals. Required inputs are: `inst_name`, `iterm_name`, `net_name`. |
 | `convert_tcl` | These functions read from $ICeWall::library parameters to generate a standalone Tcl script. |
 
-## Example scripts
+## Example Scripts
 
 Example scripts for running ICeWall functions can be found in `./test`.
 
@@ -382,7 +381,7 @@ Example scripts for running ICeWall functions can be found in `./test`.
 ./test/rdl_route_assignments.tcl
 ```
 
-## Regression tests
+## Regression Tests
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
