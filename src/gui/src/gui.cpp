@@ -1209,7 +1209,9 @@ void Gui::hideGui()
 {
   // ensure continue after close is true, since we want to return to tcl
   setContinueAfterClose();
-  main_window->exit();
+  if (enabled()) {
+    main_window->hide();
+  }
 }
 
 void Gui::showGui(const std::string& cmds, bool interactive)
@@ -1299,7 +1301,7 @@ int startGui(int& argc,
       main_window, &MainWindow::exit, [&]() { exit_requested = true; });
 
   // Hide the Gui if someone chooses hide from the menu in the window
-  QObject::connect(main_window, &MainWindow::hide, [gui]() { gui->hideGui(); });
+  QObject::connect(main_window, &MainWindow::hide, &app, &QApplication::quit);
 
   // Save the window's status into the settings when quitting.
   QObject::connect(
@@ -1370,8 +1372,6 @@ int startGui(int& argc,
       gui->addRestoreStateCommand(cmd);
     }
   }
-
-  main_window->exit();
 
   // delete main window and set to nullptr
   delete main_window;
