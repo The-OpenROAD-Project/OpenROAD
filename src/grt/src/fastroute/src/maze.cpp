@@ -2140,10 +2140,6 @@ void FastRouteCore::findCongestedEdgesNets(
     bool vertical)
 {
   for (int netID = 0; netID < netCount(); netID++) {
-    if (!nets_[netID]->isRouted()) {
-      continue;
-    }
-
     const auto& treeedges = sttrees_[netID].edges;
     const int num_edges = sttrees_[netID].num_edges();
 
