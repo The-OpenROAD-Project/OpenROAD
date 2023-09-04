@@ -165,6 +165,16 @@ int makeSiteLoc(int x, double site_width, bool at_left_from_macro, int offset)
   return site_x1 * site_width + offset;
 }
 
+template <typename T>
+bool hasOverflow(T a, T b)
+{
+  if ((b > 0 && a > std::numeric_limits<T>::max() - b)
+      || (b < 0 && a < std::numeric_limits<T>::min() - b)) {
+    return true;
+  }
+  return false;
+}
+
 void cutRows(dbBlock* block,
              const int min_row_width,
              const vector<dbBox*>& blockages,
@@ -178,7 +188,13 @@ void cutRows(dbBlock* block,
   auto rows = block->getRows();
   const int initial_rows_count = rows.size();
   const int initial_sites_count
-      = std::accumulate(rows.begin(), rows.end(), 0, [](int sum, dbRow* row) {
+      = std::accumulate(rows.begin(), rows.end(), 0, [&](int sum, dbRow* row) {
+          if (hasOverflow(sum, row->getSiteCount())) {
+            logger->error(utl::ODB,
+                          219,
+                          "Overflow when calculating the total number of sites "
+                          "in the design.");
+          }
           return sum + row->getSiteCount();
         });
 
@@ -222,7 +238,13 @@ void cutRows(dbBlock* block,
   }
 
   const int final_sites_count
-      = std::accumulate(rows.begin(), rows.end(), 0, [](int sum, dbRow* row) {
+      = std::accumulate(rows.begin(), rows.end(), 0, [&](int sum, dbRow* row) {
+          if (hasOverflow(sum, row->getSiteCount())) {
+            logger->error(utl::ODB,
+                          220,
+                          "Overflow when calculating the total number of sites "
+                          "in the design.");
+          }
           return sum + row->getSiteCount();
         });
 
