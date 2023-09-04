@@ -10,5 +10,7 @@ set_wire_rc -layer metal3
 estimate_parasitics -placement
 report_checks -fields input -digits 3
 
+write_golden_verilog
 repair_timing -setup
+run_equivalence_test 
 report_checks -fields input -digits 3
