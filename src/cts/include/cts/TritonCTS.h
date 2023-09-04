@@ -39,6 +39,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <unordered_set>
 
 namespace utl {
 class Logger;
@@ -127,14 +128,15 @@ class TritonCTS
   void computeITermPosition(odb::dbITerm* term, int& x, int& y) const;
   void countSinksPostDbWrite(TreeBuilder* builder,
                              odb::dbNet* net,
-                             unsigned& sinks,
+                             unsigned& sinks_cnt,
                              unsigned& leafSinks,
                              unsigned currWireLength,
                              double& sinkWireLength,
                              int& minDepth,
                              int& maxDepth,
                              int depth,
-                             bool fullTree);
+                             bool fullTree,
+                             const std::unordered_set<odb::dbITerm*>& sinks);
   std::pair<int, int> branchBufferCount(ClockInst* inst,
                                         int bufCounter,
                                         Clock& clockNet);

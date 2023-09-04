@@ -224,6 +224,7 @@ place_pins
     [-exclude region]
     [-group_pins pin_list]
     [-annealing]
+    [-write_pin_placement file_name]
 ```
 
 #### Options
@@ -238,6 +239,7 @@ place_pins
 | `-exclude` | A region where pins cannot be placed. Either `top|bottom|left|right:edge_interval`, which is the edge interval from the selected edge; `begin:end` for begin-end of all edges. |
 | `-group_pins` | A list of pins to be placed together on the die boundary. |
 | `-annealing` | Flag to enable simulated annealing pin placement. |
+| `-write_pin_placement` | A file with the pin placement generated in the format of multiple calls for the `place_pin` command. |
 
 The `exclude` option syntax is `-exclude edge:interval`. The `edge` values are
 (top|bottom|left|right). The `interval` can be the whole edge, with the `*`
