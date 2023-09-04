@@ -2318,10 +2318,49 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_main(
   gtl::rectangle_data<frCoord> markerRect(*rect1);
   gtl::generalized_intersect(markerRect, *rect2);
 
+  auto net1 = rect1->getNet();
+  auto net2 = rect2->getNet();
+
+  auto prlX = gtl::delta(markerRect, gtl::HORIZONTAL);
+  auto prlY = gtl::delta(markerRect, gtl::VERTICAL);
+  frCoord prl = std::max(prlX, prlY);
+
   if (con->hasSecondLayer()) {
     checkLef58CutSpacing_spc_layer(rect1, rect2, markerRect, con);
   } else if (con->hasAdjacentCuts()) {
     checkLef58CutSpacing_spc_adjCut(rect1, rect2, markerRect, con);
+  } else if (con->isParallelOverlap()) {
+    // skip if no parallel overlap
+    if (prl <= 0) {
+      return;
+      // skip if parallel overlap but shares the same above/below metal
+    } else {
+      box_t queryBox;
+      myBloat(markerRect, 0, queryBox);
+      auto& workerRegionQuery = getWorkerRegionQuery();
+      vector<rq_box_value_t<gcRect*>> result;
+      auto secondLayerNum = rect1->getLayerNum() - 1;
+      if (secondLayerNum >= getTech()->getBottomLayerNum()
+          && secondLayerNum <= getTech()->getTopLayerNum()) {
+        workerRegionQuery.queryMaxRectangle(queryBox, secondLayerNum, result);
+      }
+      secondLayerNum = rect1->getLayerNum() + 1;
+      if (secondLayerNum >= getTech()->getBottomLayerNum()
+          && secondLayerNum <= getTech()->getTopLayerNum()) {
+        workerRegionQuery.queryMaxRectangle(queryBox, secondLayerNum, result);
+      }
+      for (auto& [objBox, objPtr] : result) {
+        // TODO why isn't this auto-converted from Rect to box_t?
+        Rect queryRect(queryBox.min_corner().get<0>(),
+                       queryBox.min_corner().get<1>(),
+                       queryBox.max_corner().get<0>(),
+                       queryBox.max_corner().get<1>());
+        if ((objPtr->getNet() == net1 || objPtr->getNet() == net2)
+            && objBox.contains(queryRect)) {
+          return;
+        }
+      }
+    }
   } else {
     logger_->warn(
         DRT, 44, "Unsupported LEF58_SPACING rule for cut layer, skipped.");
