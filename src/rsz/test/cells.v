@@ -113,24 +113,24 @@ module NAND2_X4 (A1, A2, ZN);
    assign ZN = !(A1 & A2);   
 endmodule // NAND2_X4
 
-module XNOR2_X1 (A1, A2, ZN);
-   input A1;
-   input A2;
+module XNOR2_X1 (A, B, ZN);
+   input A;
+   input B;
    output ZN;
-   assign ZN = ~(A1 ^ A2);
+   assign ZN = ~(A ^ B);
 endmodule // XNOR_X1
 
-module XNOR2_X2 (A1, A2, ZN);
-   input A1;
-   input A2;
+module XNOR2_X2 (A, B, ZN);
+   input A;
+   input B;
    output ZN;
-   assign ZN = ~(A1 ^ A2);
+   assign ZN = ~(A ^ B);
 endmodule // XNOR_X2
 
-module XNOR2_X4 (A1, A2, ZN);
-   input A1;
-   input A2;
+module XNOR2_X4 (A, B, ZN);
+   input A;
+   input B;
    output ZN;
-   assign ZN = ~(A1 ^ B2);
+   assign ZN = ~(A ^ B);
 endmodule // XNOR_X4
 
