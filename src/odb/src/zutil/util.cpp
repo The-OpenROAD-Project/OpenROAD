@@ -187,16 +187,16 @@ void cutRows(dbBlock* block,
   }
   auto rows = block->getRows();
   const int initial_rows_count = rows.size();
-  const int initial_sites_count
-      = std::accumulate(rows.begin(), rows.end(), 0, [&](int sum, dbRow* row) {
-          if (hasOverflow(sum, row->getSiteCount())) {
-            logger->error(utl::ODB,
-                          219,
-                          "Overflow when calculating the total number of sites "
-                          "in the design.");
-          }
-          return sum + row->getSiteCount();
-        });
+  const std::int64_t initial_sites_count = std::accumulate(
+      rows.begin(), rows.end(), 0, [&](std::int64_t sum, dbRow* row) {
+        if (hasOverflow(sum, (std::int64_t) row->getSiteCount())) {
+          logger->error(utl::ODB,
+                        219,
+                        "Overflow when calculating the total number of sites "
+                        "in the design.");
+        }
+        return sum + row->getSiteCount();
+      });
 
   std::map<dbRow*, int> placed_row_insts;
   for (dbInst* inst : block->getInsts()) {
@@ -237,16 +237,16 @@ void cutRows(dbBlock* block,
     }
   }
 
-  const int final_sites_count
-      = std::accumulate(rows.begin(), rows.end(), 0, [&](int sum, dbRow* row) {
-          if (hasOverflow(sum, row->getSiteCount())) {
-            logger->error(utl::ODB,
-                          220,
-                          "Overflow when calculating the total number of sites "
-                          "in the design.");
-          }
-          return sum + row->getSiteCount();
-        });
+  const std::int64_t final_sites_count = std::accumulate(
+      rows.begin(), rows.end(), 0, [&](std::int64_t sum, dbRow* row) {
+        if (hasOverflow(sum, (std::int64_t) row->getSiteCount())) {
+          logger->error(utl::ODB,
+                        220,
+                        "Overflow when calculating the total number of sites "
+                        "in the design.");
+        }
+        return sum + row->getSiteCount();
+      });
 
   logger->info(utl::ODB,
                303,
