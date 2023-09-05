@@ -169,7 +169,7 @@ template <typename T>
 bool hasOverflow(T a, T b)
 {
   if ((b > 0 && a > std::numeric_limits<T>::max() - b)
-      || (b < 0 && a < std::numeric_limits<T>::min() - b)) {
+      || (b < 0 && a < std::numeric_limits<T>::lowest() - b)) {
     return true;
   }
   return false;
