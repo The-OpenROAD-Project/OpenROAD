@@ -319,7 +319,7 @@ void lefout::findWireLayerObstructions(ObstructionMap& obstructions,
 
 void lefout::writeHeader(dbLib* lib)
 {
-  dbTech* tech = lib->getDb()->getTech();
+  dbTech* tech = lib->getTech();
 
   char left_bus_delimeter = 0;
   char right_bus_delimeter = 0;
@@ -1272,7 +1272,7 @@ inline void lefout::writeObjectPropertyDefinitions(
 void lefout::writePropertyDefinitions(dbLib* lib)
 {
   std::unordered_map<std::string, int16_t> propertiesMap;
-  dbTech* tech = lib->getDb()->getTech();
+  dbTech* tech = lib->getTech();
 
   fmt::print(_out, "{}", "\nPROPERTYDEFINITIONS\n");
 
@@ -1328,7 +1328,7 @@ void lefout::writeTechAndLib(dbLib* lib)
 {
   _dist_factor = 1.0 / (double) lib->getDbUnitsPerMicron();
   _area_factor = _dist_factor * _dist_factor;
-  dbTech* tech = lib->getDb()->getTech();
+  dbTech* tech = lib->getTech();
   writeHeader(lib);
   writeTechBody(tech);
   writeLibBody(lib);
