@@ -37,6 +37,8 @@
 #include <QThread>
 #include <QWaitCondition>
 #include <mutex>
+#include <QtConcurrent/QtConcurrent>
+
 
 #include "gui/gui.h"
 #include "odb/db.h"
@@ -65,6 +67,15 @@ class RenderThread : public QThread
   void exit();
 
   // Only to be used by save_image for synchronous rendering
+  void drawConcurrent(QImage& image,
+                      const QRect& draw_bounds,
+                      const SelectionSet& selected,
+                      const HighlightSet& highlighted,
+                      const Rulers& rulers,
+                      qreal render_ratio,
+                      const QColor& background);
+
+  // Only to be used by save_image for synchronous rendering
   void draw(QImage& image,
             const QRect& draw_bounds,
             const SelectionSet& selected,
@@ -79,6 +90,13 @@ class RenderThread : public QThread
  private:
   void run() override;
 
+  void drawBlockConcurrent(QImage& image,
+                           odb::dbBlock* block,
+                           QVector<QRect>& subRects,
+                           QVector<QFuture<QImage>>& futures,
+                           int threadCount,
+                           const QRect& draw_bounds,
+                           int depth);
   void drawBlock(QPainter* painter,
                  odb::dbBlock* block,
                  const odb::Rect& bounds,

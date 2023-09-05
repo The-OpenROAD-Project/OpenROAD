@@ -117,17 +117,21 @@ void RenderThread::run()
     highlighted.swap(highlighted_);
     rulers.swap(rulers_);
     mutex_.unlock();
+
+
     QImage image(draw_bounds.width(),
-                 draw_bounds.height(),
-                 QImage::Format_ARGB32_Premultiplied);
+                      draw_bounds.height(),
+                      QImage::Format_ARGB32_Premultiplied);
+    image.fill(Qt::transparent);
+
     // drawing can be interrupted by setting restart_
-    draw(image,
-         draw_bounds,
-         selected,
-         highlighted,
-         rulers,
-         1.0,
-         Qt::transparent);
+    drawConcurrent(image,
+                   draw_bounds,
+                   selected,
+                   highlighted,
+                   rulers,
+                   1.0,
+                   Qt::transparent);
     if (!restart_) {
       emit done(image, draw_bounds);
     }
@@ -142,6 +146,68 @@ void RenderThread::run()
     restart_ = false;
     mutex_.unlock();
   }
+}
+
+void RenderThread::drawConcurrent(QImage& image,
+            const QRect& draw_bounds,
+            const SelectionSet& selected,
+            const HighlightSet& highlighted,
+            const Rulers& rulers,
+            qreal render_ratio,
+            const QColor& background)
+{
+  if (image.isNull()) {
+    return;
+  }
+  // Prevent a paintEvent and a save_image call from interfering
+  // (eg search RTree construction)
+  std::lock_guard<std::mutex> lock(drawing_mutex_);
+  QPainter painter(&image);
+  painter.setRenderHints(QPainter::Antialiasing);
+
+/* TODO - delete this */
+  // Fill draw region with the background
+  image.fill(background);
+
+  int minWidth = 100;
+  int threadCount = draw_bounds.width() / minWidth;
+  // Ensure there's at least one thread and not more threads than the ideal
+  // count
+  threadCount = qMax(1, qMin(threadCount, QThread::idealThreadCount()));
+
+  QVector<QRect> subRects;
+  QVector<QFuture<QImage>> futures;
+
+  int subWidth = draw_bounds.width() / threadCount;
+  for (int i = 0; i < threadCount; ++i) {
+    subRects.append(QRect(draw_bounds.left() + i * subWidth,
+                          draw_bounds.top(),
+                          subWidth,
+                          draw_bounds.height()));
+  }
+  subRects.last().setWidth(subRects.last().width()
+                            + draw_bounds.width() % threadCount);
+
+
+  // Setup the transform to map coordinates from dbu to pixels
+  painter.translate(-draw_bounds.topLeft());
+  painter.translate(viewer_->centering_shift_);
+  painter.scale(viewer_->pixels_per_dbu_, -viewer_->pixels_per_dbu_);
+  painter.scale(render_ratio, render_ratio);
+
+  drawBlockConcurrent(image, viewer_->block_, subRects, futures, threadCount, draw_bounds, 0);
+
+  GuiPainter gui_painter(&painter,
+                         viewer_->options_,
+                         viewer_->screenToDBU(draw_bounds),
+                         viewer_->pixels_per_dbu_,
+                         viewer_->block_->getDbUnitsPerMicron());
+
+  // draw selected and over top level and fast painting events
+  drawSelected(gui_painter, selected);
+  // Always last so on top
+  drawHighlighted(gui_painter, highlighted);
+  drawRulers(gui_painter, rulers);
 }
 
 void RenderThread::draw(QImage& image,
@@ -977,6 +1043,176 @@ void RenderThread::drawLayer(QPainter* painter,
              "layer {} render {}",
              layer->getName(),
              layer_timer);
+}
+
+// Draw the region of the block.  Depth is not yet used but
+// is there for hierarchical design support.
+void RenderThread::drawBlockConcurrent(QImage& image,
+                             dbBlock* block,
+                             QVector<QRect>& subRects,
+                             QVector<QFuture<QImage>>& futures,
+                             int threadCount,
+                             const QRect& draw_bounds,
+                             int depth)
+{
+  const Rect dbu_bounds = viewer_->screenToDBU(draw_bounds);
+
+  utl::Timer timer;
+
+  utl::Timer manufacturing_grid_timer;
+  const int instance_limit = viewer_->instanceSizeLimit();
+
+  QPainter painter(&image);
+  painter.setRenderHints(QPainter::Antialiasing);
+
+  GuiPainter gui_painter(&painter,
+                         viewer_->options_,
+                         dbu_bounds,
+                         viewer_->pixels_per_dbu_,
+                         block->getDbUnitsPerMicron());
+
+  // Draw die area, if set
+  painter.setPen(QPen(Qt::gray, 0));
+  painter.setBrush(QBrush());
+  Rect bbox = block->getDieArea();
+  if (bbox.area() > 0) {
+    painter.drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
+  }
+
+  drawManufacturingGrid(&painter, dbu_bounds);
+  debugPrint(logger_,
+             GUI,
+             "draw",
+             1,
+             "manufacturing grid {}",
+             manufacturing_grid_timer);
+
+  /* Search instances */
+  utl::Timer inst_timer;
+  std::vector<dbInst*> insts;
+  std::vector<std::vector<dbInst*>> sub_insts;
+  insts.reserve(10000);
+  {
+    QVector<QFuture<std::vector<dbInst*>>> inst_futures;
+    for (const auto& subRect : subRects) {
+      const Rect dbu_subrect = viewer_->screenToDBU(subRect);
+      inst_futures.push_back(
+          QtConcurrent::run([=]() {
+            auto sub_inst_range = viewer_->search_.searchInsts(block,
+                                            dbu_subrect.xMin(),
+                                            dbu_subrect.yMin(),
+                                            dbu_subrect.xMax(),
+                                            dbu_subrect.yMax(),
+                                            instance_limit);
+            // Cache the search results as we will iterate over the instances
+            // for each layer.
+            std::vector<dbInst*> subInsts;
+            subInsts.reserve(10000);
+            for (auto& [box, inst] : sub_inst_range) {
+              if (restart_) {
+                break;
+              }
+              if (viewer_->options_->isInstanceVisible(inst)) {
+                subInsts.push_back(inst);
+              }
+            }
+            return subInsts;
+          }));
+    }
+    for (auto& future : inst_futures) {
+      future.waitForFinished();
+
+      auto subInsts = future.result();
+      // Concatenate this thread's instances to the main vector
+      std::copy(subInsts.begin(), subInsts.end(), std::back_inserter(insts));
+      sub_insts.push_back(subInsts);
+    }
+  }
+  debugPrint(logger_, GUI, "draw", 1, "inst search {}", inst_timer);
+
+  /* Draw instance outlines */
+  utl::Timer insts_outline;
+  {
+    for (const auto& sub_insts : sub_insts) {
+      futures.push_back(
+          QtConcurrent::run([=]() {
+            QImage subImage(draw_bounds.width(),
+                            draw_bounds.height(),
+                              QImage::Format_ARGB32_Premultiplied);
+            QPainter subPainter(&subImage);
+            drawInstanceOutlines(&subPainter, insts);
+            return subImage;
+          }));
+    }
+    for (int i = 0; i < threadCount; ++i) {
+      futures[i].waitForFinished();
+      auto subImage = futures[i].result();
+      painter.drawImage(QPoint(subRects[i].left() - draw_bounds.left(), 0), subImage);
+    }
+  }
+  debugPrint(logger_, GUI, "draw", 1, "inst outline render {}", insts_outline);
+
+  // draw blockages
+  utl::Timer inst_blockages;
+  drawBlockages(&painter, block, dbu_bounds);
+  debugPrint(logger_, GUI, "draw", 1, "blockages {}", inst_blockages);
+
+  dbTech* tech = block->getTech();
+  for (dbTechLayer* layer : tech->getLayers()) {
+    if (restart_) {
+      break;
+    }
+    drawLayer(&painter, block, layer, insts, dbu_bounds, gui_painter);
+  }
+
+  utl::Timer inst_names;
+  drawInstanceNames(&painter, insts);
+  debugPrint(logger_, GUI, "draw", 1, "instance names {}", inst_names);
+
+  utl::Timer inst_iterms;
+  drawITermLabels(&painter, insts);
+  debugPrint(logger_, GUI, "draw", 1, "instance iterms {}", inst_iterms);
+
+  utl::Timer inst_rows;
+  drawRows(&painter, block, dbu_bounds);
+  debugPrint(logger_, GUI, "draw", 1, "rows {}", inst_rows);
+
+  utl::Timer inst_access_points;
+  if (viewer_->options_->areAccessPointsVisible()) {
+    drawAccessPoints(gui_painter, insts);
+  }
+  debugPrint(logger_, GUI, "draw", 1, "access points {}", inst_access_points);
+
+  utl::Timer inst_module_view;
+  drawModuleView(&painter, insts);
+  debugPrint(logger_, GUI, "draw", 1, "module view {}", inst_module_view);
+
+  utl::Timer inst_regions;
+  drawRegions(&painter, block);
+  debugPrint(logger_, GUI, "draw", 1, "regions {}", inst_regions);
+
+  utl::Timer inst_pin_markers;
+  if (viewer_->options_->arePinMarkersVisible()) {
+    drawPinMarkers(gui_painter, block, dbu_bounds);
+  }
+  debugPrint(logger_, GUI, "draw", 1, "pin markers {}", inst_pin_markers);
+
+  utl::Timer inst_cell_grid;
+  drawGCellGrid(&painter, dbu_bounds);
+  debugPrint(logger_, GUI, "draw", 1, "save cell grid {}", inst_cell_grid);
+
+  utl::Timer inst_save_restore;
+  for (auto* renderer : Gui::get()->renderers()) {
+    if (restart_) {
+      break;
+    }
+    gui_painter.saveState();
+    renderer->drawObjects(gui_painter);
+    gui_painter.restoreState();
+  }
+  debugPrint(logger_, GUI, "draw", 1, "renderers {}", inst_save_restore);
+
+  debugPrint(logger_, GUI, "draw", 1, "total render {}", timer);
 }
 
 // Draw the region of the block.  Depth is not yet used but
