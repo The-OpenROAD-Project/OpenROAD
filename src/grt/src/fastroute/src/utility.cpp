@@ -33,7 +33,6 @@
 #include <algorithm>
 #include <fstream>
 #include <queue>
-#include <iostream>
 
 #include "DataType.h"
 #include "FastRoute.h"
@@ -1122,6 +1121,16 @@ void FastRouteCore::StNetOrder()
 
   std::stable_sort(
       tree_order_cong_.begin(), tree_order_cong_.end(), compareTEL);
+  int k = 0;
+  for(auto order_element : tree_order_cong_) {
+    if (nets_[order_element.treeIndex]->getSlack() == std::ceil(std::numeric_limits<float>::lowest()))
+    {
+      if(order_element.xmin == 0 && (k >= (netCount()*30/100))) {
+        nets_[order_element.treeIndex]->setSlack(std::numeric_limits<float>::max());
+      }
+    }
+    k++;
+  }
 
   auto compareSlack = [this](const OrderTree a, const OrderTree b) {
     const FrNet* net_a = nets_[a.treeIndex];
@@ -1163,7 +1172,7 @@ float FastRouteCore::CalculatePartialSlack()
 
   for (int netID = 0; netID < netCount(); netID++) {
     if(nets_[netID]->getSlack() > slack_th) {
-      nets_[netID]->setSlack((std::floor(slack_th) - 1));
+      nets_[netID]->setSlack(std::ceil(std::numeric_limits<float>::lowest()));
     }
   }
 

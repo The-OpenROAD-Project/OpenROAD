@@ -2131,6 +2131,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
     }  // loop edgeID
   }    // loop netID
 
+  
+
   h_cost_table_.clear();
   v_cost_table_.clear();
 }
