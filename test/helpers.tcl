@@ -29,8 +29,27 @@ proc report_file { file } {
 proc write_golden_verilog {} {
     write_verilog before.v
 }
+
+proc write_eqy_script { } {
+    set top_cell [current_design]
+    set outfile [open "test.eqy" w]
+    # Gold netlist
+    puts $outfile "\[gold]\nread_verilog -sv before.v cells.v\nprep -top $top_cell\nmemory_map\n\n"
+    # Modified netlist 
+    puts $outfile "\[gate]\nread_verilog -sv after.v cells.v\nprep -top $top_cell\nmemory_map\n\n"
+    # Equivalence check recipe
+    puts $outfile "\[strategy basic]\nuse sat\ndepth 10\n\n"
+
+    # Other optional recipes
+    # puts "[strategy sby]\nuse sby\ndepth 2\nengine smtbmc bitwuzla\n\n"
+    # puts "[strategy sby2]\nuse sby\nengine abc pdr\ndepth 10\n\n"
+    close $outfile
+}
+
 proc run_equivalence_test {} {
-    write_verilog after.v 
+    write_verilog after.v
+    write_eqy_script
+    
     exec rm -rf test    
     exec eqy test.eqy > results/output.log
     set count [exec grep -c "Successfully proved designs equivalent" results/output.log]
