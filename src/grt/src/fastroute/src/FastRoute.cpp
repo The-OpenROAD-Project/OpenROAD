@@ -948,7 +948,7 @@ NetRouteMap FastRouteCore::run()
 
   const int max_overflow_increases = 25;
 
-  float slack_th = std::numeric_limits<float>::min();
+  float slack_th = std::numeric_limits<float>::lowest();
 
   // set overflow_increases as -1 since the first iteration always sum 1
   int overflow_increases = -1;
