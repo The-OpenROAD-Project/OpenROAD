@@ -153,6 +153,8 @@ class IOPin
   bool isMirrored() const { return is_mirrored_; }
   bool inFallback() const { return in_fallback_; }
   void setFallback() { in_fallback_ = true; }
+  Edge getEdge() const { return edge_; }
+  void setEdge(Edge edge) { edge_ = edge; }
 
  private:
   odb::dbBTerm* bterm_;
@@ -172,6 +174,7 @@ class IOPin
   bool assigned_to_section_{false};
   bool is_mirrored_{false};
   bool in_fallback_{false};
+  Edge edge_{Edge::invalid};
 };
 
 class Netlist

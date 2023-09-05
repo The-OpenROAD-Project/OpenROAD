@@ -817,6 +817,9 @@ NetRouteMap FastRouteCore::run()
     return getRoutes();
   }
 
+  v_used_ggrid_.clear();
+  h_used_ggrid_.clear();
+
   int tUsage;
   int cost_step;
   int maxOverflow = 0;
