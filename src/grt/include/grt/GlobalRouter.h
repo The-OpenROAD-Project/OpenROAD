@@ -198,6 +198,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   NetRouteMap& getRoutes() { return routes_; }
   Net* getNet(odb::dbNet* db_net);
   int getTileSize() const;
+  bool isNonLeafClock(odb::dbNet* db_net);
 
   // repair antenna public functions
   void repairAntennas(odb::dbMTerm* diode_mterm,
@@ -380,7 +381,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   void makeBtermPins(Net* net, odb::dbNet* db_net, const odb::Rect& die_area);
   void initClockNets();
   bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
-  bool isNonLeafClock(odb::dbNet* db_net);
   int trackSpacing();
   void initGridAndNets();
 
