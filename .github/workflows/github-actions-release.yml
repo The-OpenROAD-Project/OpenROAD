@@ -22,4 +22,4 @@ jobs:
           title: Update Changelog
           body: Update changelog to reflect release changes
           branch: update-changelog
-          base: main
+          base: master
