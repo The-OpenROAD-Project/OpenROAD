@@ -1016,8 +1016,12 @@ void DbMasterDescriptor::getMasterEquivalent(sta::dbSta* sta,
   delete lib_iter;
   sta->makeEquivCells(&libs, nullptr);
 
-  sta::LibertyCell* cell = network->libertyCell(network->dbToSta(master));
-  auto equiv_cells = sta->equivCells(cell);
+  sta::Cell* cell = network->dbToSta(master);
+  if (!cell) {
+    return;
+  }
+  sta::LibertyCell* liberty_cell = network->libertyCell(cell);
+  auto equiv_cells = sta->equivCells(liberty_cell);
   if (equiv_cells != nullptr) {
     for (auto equiv : *equiv_cells) {
       auto eq_master = network->staToDb(equiv);
