@@ -68,7 +68,7 @@ clock_tree_synthesis
 | `-sink_clustering_enable` | Enables pre-clustering of sinks to create one level of sub-tree before building H-tree. Each cluster is driven by buffer which becomes end point of H-tree structure. |
 | `-sink_clustering_size` | Specifies the maximum number of sinks per cluster. The default value is `20`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-sink_clustering_max_diameter` | Specifies maximum diameter (in microns) of sink cluster. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
-| `-balance_levels` | When you have a non-register in the clock tree (e.g. clock-gate or inverter), this flag attempts to ensure that there are similar number of levels (this argument) in the tree across that object. The default value is `False`, and the allowed values are bool. |
+| `-balance_levels` | Attempt to keep a similar number of levels in the clock tree across non-register cells (e.g., clock-gate or inverter). The default value is `False`, and the allowed values are bool. |
 | `-clk_nets` | String containing the names of the clock roots. If this parameter is omitted, `cts` looks for the clock roots automatically. |
 | `-num_static_layers` | Set the number of static layers. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-sink_clustering_buffer` | Set the sink clustering buffer(s) to be used. |
