@@ -7961,7 +7961,7 @@ class dbTechLayer : public dbObject
   ///
   /// Get the technology this layer belongs too.
   ///
-  dbTech* getTech();
+  dbTech* getTech() const;
 
   ///
   /// Create a new layer. The mask order is implicit in the create order.
