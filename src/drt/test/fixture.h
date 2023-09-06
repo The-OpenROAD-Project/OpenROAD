@@ -203,6 +203,10 @@ class Fixture
       std::vector<frCoord> prlTbl,
       std::vector<std::vector<frCoord>> spacingTbl);
   void initRegionQuery();
+  frLef58CutSpacingConstraint* makeLef58CutSpacingConstraint_parallelOverlap(
+      frLayerNum layer_num,
+      frCoord spacing,
+      bool parallelOverlap);
   frLef58CutSpacingConstraint* makeLef58CutSpacingConstraint_adjacentCut(
       frLayerNum layer_num,
       frCoord spacing,

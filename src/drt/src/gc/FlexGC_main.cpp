@@ -2351,6 +2351,55 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_main(
     logger_->warn(
         DRT, 44, "Unsupported LEF58_SPACING rule for cut layer, skipped.");
   }
+
+  // no violation if spacing satisfied
+  frSquaredDistance reqSpcValSquare
+      = checkLef58CutSpacing_spc_getReqSpcVal(rect1, rect2, con);
+  reqSpcValSquare *= reqSpcValSquare;
+
+  gtl::point_data<frCoord> center1, center2;
+  gtl::center(center1, *rect1);
+  gtl::center(center2, *rect2);
+  frSquaredDistance distSquare = 0;
+  if (con->isCenterToCenter()) {
+    distSquare = gtl::distance_squared(center1, center2);
+  } else {
+    distSquare = gtl::square_euclidean_distance(*rect1, *rect2);
+  }
+  if (distSquare >= reqSpcValSquare) {
+    return;
+  }
+  // no violation if fixed shapes
+  if (rect1->isFixed() && rect2->isFixed()) {
+    return;
+  }
+
+  auto marker = make_unique<frMarker>();
+  auto layerNum = rect1->getLayerNum();
+  Rect box(gtl::xl(markerRect),
+           gtl::yl(markerRect),
+           gtl::xh(markerRect),
+           gtl::yh(markerRect));
+  marker->setBBox(box);
+  marker->setLayerNum(layerNum);
+  marker->setConstraint(con);
+  marker->addSrc(net1->getOwner());
+  marker->addVictim(net1->getOwner(),
+                    make_tuple(rect1->getLayerNum(),
+                               Rect(gtl::xl(*rect1),
+                                    gtl::yl(*rect1),
+                                    gtl::xh(*rect1),
+                                    gtl::yh(*rect1)),
+                               rect1->isFixed()));
+  marker->addSrc(net2->getOwner());
+  marker->addAggressor(net2->getOwner(),
+                       make_tuple(rect2->getLayerNum(),
+                                  Rect(gtl::xl(*rect2),
+                                       gtl::yl(*rect2),
+                                       gtl::xh(*rect2),
+                                       gtl::yh(*rect2)),
+                                  rect2->isFixed()));
+  addMarker(std::move(marker));
 }
 
 bool FlexGCWorker::Impl::checkLef58CutSpacing_spc_hasAdjCuts(
