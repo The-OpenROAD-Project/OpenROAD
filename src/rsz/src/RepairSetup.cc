@@ -412,11 +412,13 @@ RepairSetup::repairSetup(PathRef &path,
 
       // For tristate nets all we can do is resize the driver.
       bool tristate_drvr = resizer_->isTristateDriver(drvr_pin);
+      dbNet* db_net = db_network_->staToDb(net);
       if (fanout > 1
           // Rebuffer blows up on large fanout nets.
           && fanout < rebuffer_max_fanout_
           && !tristate_drvr
-          && !resizer_->dontTouch(net)) {
+          && !resizer_->dontTouch(net)
+          && !db_net->isConnectedByAbutment()) {
         int rebuffer_count = rebuffer(drvr_pin);
         if (rebuffer_count > 0) {
           debugPrint(logger_, RSZ, "repair_setup", 3, "rebuffer {} inserted {}",
@@ -440,7 +442,8 @@ RepairSetup::repairSetup(PathRef &path,
       // Don't split loads on low fanout nets.
       if (fanout > split_load_min_fanout_
           && !tristate_drvr
-          && !resizer_->dontTouch(net)) {
+          && !resizer_->dontTouch(net)
+          && !db_net->isConnectedByAbutment()) {
         int init_buffer_count = inserted_buffer_count_;
         splitLoads(drvr_path, drvr_index, path_slack, &expanded);
         split_load_buffer_count_ = inserted_buffer_count_ - init_buffer_count;
