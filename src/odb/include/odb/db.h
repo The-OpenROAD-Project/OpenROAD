@@ -3284,6 +3284,16 @@ class dbInst : public dbObject
                         bool physical_only = false);
 
   ///
+  /// Create a new instance of child_block in top_block.
+  /// This is a convenience method to create the instance, an
+  /// interface dbMaster from child_block, and bind the instance
+  /// to the child_block.
+  ///
+  static dbInst* create(dbBlock* top_block,
+                        dbBlock* child_block,
+                        const char* name);
+
+  ///
   /// Delete the instance from the block.
   ///
   static void destroy(dbInst* inst);
