@@ -99,7 +99,7 @@ GlobalRouter::GlobalRouter()
       verbose_(false),
       min_layer_for_clock_(-1),
       max_layer_for_clock_(-2),
-      critical_nets_percentage_(5),
+      critical_nets_percentage_(10),
       seed_(0),
       caps_perturbation_percentage_(0),
       perturbation_amount_(1),
