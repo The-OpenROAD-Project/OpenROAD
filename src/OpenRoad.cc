@@ -416,7 +416,12 @@ void OpenRoad::writeLef(const char* filename)
     for (auto lib : libs) {
       std::string name(filename);
       if (cnt > 0) {
-        name += "_" + std::to_string(cnt);
+        auto pos = name.rfind('.');
+        if (pos != string::npos) {
+          name.insert(pos, "_" + std::to_string(cnt));
+        } else {
+          name += "_" + std::to_string(cnt);
+        }
         std::ofstream os;
         os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
         os.open(name);
