@@ -1156,8 +1156,8 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
                      * (1 - adjustment);
         grid_->updateHorizontalEdgesCapacities(layer - 1, newCap);
 
-        for (int y = 1; y < y_grids; y++) {
-          for (int x = 1; x < x_grids; x++) {
+        for (int y = 1; y <= y_grids; y++) {
+          for (int x = 1; x <= x_grids; x++) {
             int edge_cap
                 = fastroute_->getEdgeCapacity(x - 1, y - 1, x, y - 1, layer);
             int new_h_capacity
@@ -1176,8 +1176,8 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
             = grid_->getVerticalEdgesCapacities()[layer - 1] * (1 - adjustment);
         grid_->updateVerticalEdgesCapacities(layer - 1, newCap);
 
-        for (int x = 1; x < x_grids; x++) {
-          for (int y = 1; y < y_grids; y++) {
+        for (int x = 1; x <= x_grids; x++) {
+          for (int y = 1; y <= y_grids; y++) {
             int edge_cap
                 = fastroute_->getEdgeCapacity(x - 1, y - 1, x - 1, y, layer);
             int new_v_capacity

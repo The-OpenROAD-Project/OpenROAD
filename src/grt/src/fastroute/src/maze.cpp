@@ -2192,7 +2192,7 @@ void FastRouteCore::getCongestionGrid(
   NetsPerCongestedArea nets_in_congested_edges;
 
   for (int i = 0; i < y_grid_; i++) {
-    for (int j = 0; j < x_grid_ - 1; j++) {
+    for (int j = 0; j < x_grid_; j++) {
       const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
       if (overflow > 0) {
         const int xreal = tile_size_ * (j + 0.5) + x_corner_;
@@ -2214,7 +2214,7 @@ void FastRouteCore::getCongestionGrid(
   }
   nets_in_congested_edges.clear();
 
-  for (int i = 0; i < y_grid_ - 1; i++) {
+  for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_; j++) {
       const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
       if (overflow > 0) {
@@ -2458,7 +2458,7 @@ int FastRouteCore::getOverflow3D()
 
   for (int k = 0; k < num_layers_; k++) {
     for (int i = 0; i < y_grid_; i++) {
-      for (int j = 0; j < x_grid_ - 1; j++) {
+      for (int j = 0; j < x_grid_; j++) {
         total_usage += h_edges_3D_[k][i][j].usage;
         overflow = h_edges_3D_[k][i][j].usage - h_edges_3D_[k][i][j].cap;
 
@@ -2468,7 +2468,7 @@ int FastRouteCore::getOverflow3D()
         }
       }
     }
-    for (int i = 0; i < y_grid_ - 1; i++) {
+    for (int i = 0; i < y_grid_; i++) {
       for (int j = 0; j < x_grid_; j++) {
         total_usage += v_edges_3D_[k][i][j].usage;
         overflow = v_edges_3D_[k][i][j].usage - v_edges_3D_[k][i][j].cap;
@@ -2488,12 +2488,12 @@ int FastRouteCore::getOverflow3D()
 void FastRouteCore::InitEstUsage()
 {
   for (int i = 0; i < y_grid_; i++) {
-    for (int j = 0; j < x_grid_ - 1; j++) {
+    for (int j = 0; j < x_grid_; j++) {
       h_edges_[i][j].est_usage = 0;
     }
   }
 
-  for (int i = 0; i < y_grid_ - 1; i++) {
+  for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_; j++) {
       v_edges_[i][j].est_usage = 0;
     }
@@ -2503,7 +2503,7 @@ void FastRouteCore::InitEstUsage()
 void FastRouteCore::str_accu(const int rnd)
 {
   for (int i = 0; i < y_grid_; i++) {
-    for (int j = 0; j < x_grid_ - 1; j++) {
+    for (int j = 0; j < x_grid_; j++) {
       const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
       if (overflow > 0 || h_edges_[i][j].congCNT > rnd) {
         h_edges_[i][j].last_usage += h_edges_[i][j].congCNT * overflow / 2;
@@ -2511,7 +2511,7 @@ void FastRouteCore::str_accu(const int rnd)
     }
   }
 
-  for (int i = 0; i < y_grid_ - 1; i++) {
+  for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_; j++) {
       const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
       if (overflow > 0 || v_edges_[i][j].congCNT > rnd) {
@@ -2524,12 +2524,12 @@ void FastRouteCore::str_accu(const int rnd)
 void FastRouteCore::InitLastUsage(const int upType)
 {
   for (int i = 0; i < y_grid_; i++) {
-    for (int j = 0; j < x_grid_ - 1; j++) {
+    for (int j = 0; j < x_grid_; j++) {
       h_edges_[i][j].last_usage = 0;
     }
   }
 
-  for (int i = 0; i < y_grid_ - 1; i++) {
+  for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_; j++) {
       v_edges_[i][j].last_usage = 0;
     }
@@ -2537,24 +2537,24 @@ void FastRouteCore::InitLastUsage(const int upType)
 
   if (upType == 1) {
     for (int i = 0; i < y_grid_; i++) {
-      for (int j = 0; j < x_grid_ - 1; j++) {
+      for (int j = 0; j < x_grid_; j++) {
         h_edges_[i][j].congCNT = 0;
       }
     }
 
-    for (int i = 0; i < y_grid_ - 1; i++) {
+    for (int i = 0; i < y_grid_; i++) {
       for (int j = 0; j < x_grid_; j++) {
         v_edges_[i][j].congCNT = 0;
       }
     }
   } else if (upType == 2) {
     for (int i = 0; i < y_grid_; i++) {
-      for (int j = 0; j < x_grid_ - 1; j++) {
+      for (int j = 0; j < x_grid_; j++) {
         h_edges_[i][j].last_usage = h_edges_[i][j].last_usage * 0.2;
       }
     }
 
-    for (int i = 0; i < y_grid_ - 1; i++) {
+    for (int i = 0; i < y_grid_; i++) {
       for (int j = 0; j < x_grid_; j++) {
         v_edges_[i][j].last_usage = v_edges_[i][j].last_usage * 0.2;
       }

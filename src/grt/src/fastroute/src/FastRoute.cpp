@@ -303,14 +303,14 @@ void FastRouteCore::initEdges()
 
   // allocate memory and initialize for edges
 
-  h_edges_.resize(boost::extents[y_grid_][x_grid_ - 1]);
-  v_edges_.resize(boost::extents[y_grid_ - 1][x_grid_]);
+  h_edges_.resize(boost::extents[y_grid_][x_grid_]);
+  v_edges_.resize(boost::extents[y_grid_][x_grid_]);
 
   v_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
   h_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
 
   for (int i = 0; i < y_grid_; i++) {
-    for (int j = 0; j < x_grid_ - 1; j++) {
+    for (int j = 0; j < x_grid_; j++) {
       // 2D edge initialization
       h_edges_[i][j].cap = h_capacity_;
       h_edges_[i][j].usage = 0;
@@ -326,7 +326,7 @@ void FastRouteCore::initEdges()
       }
     }
   }
-  for (int i = 0; i < y_grid_ - 1; i++) {
+  for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_; j++) {
       // 2D edge initialization
       v_edges_[i][j].cap = v_capacity_;
@@ -1335,7 +1335,7 @@ void FastRouteCore::computeCongestionInformation()
     max_v_overflow_[l] = 0;
 
     for (int i = 0; i < y_grid_; i++) {
-      for (int j = 0; j < x_grid_ - 1; j++) {
+      for (int j = 0; j < x_grid_; j++) {
         cap_per_layer_[l] += h_edges_3D_[l][i][j].cap;
         usage_per_layer_[l] += h_edges_3D_[l][i][j].usage;
 
@@ -1347,7 +1347,7 @@ void FastRouteCore::computeCongestionInformation()
         }
       }
     }
-    for (int i = 0; i < y_grid_ - 1; i++) {
+    for (int i = 0; i < y_grid_; i++) {
       for (int j = 0; j < x_grid_; j++) {
         cap_per_layer_[l] += v_edges_3D_[l][i][j].cap;
         usage_per_layer_[l] += v_edges_3D_[l][i][j].usage;
