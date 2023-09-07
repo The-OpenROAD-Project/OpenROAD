@@ -594,12 +594,51 @@ inline void getTrackLocs(bool isHorzTracks,
 
 void io::Parser::checkPins()
 {
+  int grid = tech_->getManufacturingGrid();
+  // Check BTerms on grid
+  for (const auto& bTerm : design_->getTopBlock()->getTerms()) {
+    for (auto& pin : bTerm->getPins()) {
+      for (auto& uFig : pin->getFigs()) {
+        if (uFig->typeId() == frcRect) {
+          frRect* shape = static_cast<frRect*>(uFig.get());
+          Rect box = shape->getBBox();
+          if (box.xMin() % grid || box.yMin() % grid || box.xMax() % grid
+              || box.yMax() % grid) {
+            logger_->error(
+                DRT,
+                420,
+                "BTerm {} contains offgrid pin shape. Pin shape {} is "
+                "not a multiple of the manufacturing grid {}.",
+                bTerm->getName(),
+                box,
+                grid);
+          }
+        } else if (uFig->typeId() == frcPolygon) {
+          auto polygon = static_cast<frPolygon*>(uFig.get());
+          vector<gtl::point_data<frCoord>> points;
+          for (Point pt : polygon->getPoints()) {
+            points.emplace_back(pt.x(), pt.y());
+            if (pt.getX() % grid || pt.getY() % grid) {
+              logger_->error(
+                  DRT,
+                  421,
+                  "BTerm {} contains offgrid pin shape. Polygon point "
+                  "{} is not a multiple of the manufacturing grid {}.",
+                  bTerm->getName(),
+                  pt,
+                  grid);
+            }
+          }
+        }
+      }
+    }
+  }
+
   for (const auto& inst : design_->getTopBlock()->getInsts()) {
     if (!inst->getMaster()->getMasterType().isBlock()) {
       continue;
     }
     dbTransform xform = inst->getUpdatedXform();
-    int grid = tech_->getManufacturingGrid();
     for (auto& iTerm : inst->getInstTerms()) {
       if (!iTerm->hasNet() || iTerm->getNet()->isSpecial()) {
         continue;
