@@ -182,10 +182,14 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
 
   v_capacity_3D_.resize(num_layers_);
   h_capacity_3D_.resize(num_layers_);
+  last_col_v_capacity_3D_.resize(num_layers_);
+  last_row_h_capacity_3D_.resize(num_layers_);
 
   for (int i = 0; i < num_layers_; i++) {
     v_capacity_3D_[i] = 0;
     h_capacity_3D_[i] = 0;
+    last_col_v_capacity_3D_[i] = 0;
+    last_row_h_capacity_3D_[i] = 0;
   }
 
   layer_grid_.resize(boost::extents[num_layers_][MAXLEN]);
