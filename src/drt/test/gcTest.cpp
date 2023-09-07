@@ -1146,7 +1146,7 @@ BOOST_AUTO_TEST_CASE(cut_spc_parallel_overlap)
   // // Test the results
   auto& markers = worker.getMarkers();
   BOOST_TEST(markers.size() == 1);
-  if (markers.size() > 0) {
+  if (!markers.empty()) {
     testMarker(markers[0].get(),
                3,
                frConstraintTypeEnum::frcLef58CutSpacingConstraint,
