@@ -33,43 +33,41 @@
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 metal1     Horizontal          0             0          0.00%
-metal2     Vertical        24816          3008          87.88%
-metal3     Horizontal      33840          2852          91.57%
-metal4     Vertical        15792          2726          82.74%
-metal5     Horizontal      15792          2432          84.60%
-metal6     Vertical        15792          2670          83.09%
-metal7     Horizontal       4512            92          97.96%
-metal8     Vertical         4512           188          95.83%
-metal9     Horizontal       2256            46          97.96%
-metal10    Vertical         2256            94          95.83%
+metal2     Vertical        24816          2256          90.91%
+metal3     Horizontal      33840          2256          93.33%
+metal4     Vertical        15792          2256          85.71%
+metal5     Horizontal      15792          2204          86.04%
+metal6     Vertical        15792          2200          86.07%
+metal7     Horizontal       4512             0          100.00%
+metal8     Vertical         4512             0          100.00%
+metal9     Horizontal       2256             0          100.00%
+metal10    Vertical         2256             0          100.00%
 ---------------------------------------------------------------
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
-[INFO GRT-0197] Via related to pin nodes: 3420
-[INFO GRT-0198] Via related Steiner nodes: 127
+[INFO GRT-0197] Via related to pin nodes: 3461
+[INFO GRT-0198] Via related Steiner nodes: 87
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 4620
-[INFO GRT-0112] Final usage 3D: 18138
+[INFO GRT-0111] Final number of vias: 4628
+[INFO GRT-0112] Final usage 3D: 18042
 [WARNING GRT-0115] Global routing finished with overflow.
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
-metal1               0            12            0.00%             2 /  0 / 12
-metal2            3008           919           30.55%             0 /  1 /  4
-metal3            2852          1061           37.20%             1 /  1 / 28
-metal4            2726           870           31.91%             0 /  1 / 11
-metal5            2432           875           35.98%             1 /  0 / 26
-metal6            2670           541           20.26%             0 /  1 /  7
-metal7              92             0            0.00%             0 /  0 /  0
-metal8             188             0            0.00%             0 /  0 /  0
-metal9              46             0            0.00%             0 /  0 /  0
-metal10             94             0            0.00%             0 /  0 /  0
+metal1               0             7            0.00%             1 /  0 /  7
+metal2            2256           922           40.87%             1 /  1 /  7
+metal3            2256          1025           45.43%             1 /  0 / 19
+metal4            2256           769           34.09%             1 /  2 / 12
+metal5            2204           817           37.07%             2 /  0 / 31
+metal6            2200           618           28.09%             0 /  1 / 11
+metal7               0             0            0.00%             0 /  0 /  0
+metal8               0             0            0.00%             0 /  0 /  0
+metal9               0             0            0.00%             0 /  0 /  0
+metal10              0             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            14108          4278           30.32%             4 /  4 / 88
+Total            11172          4158           37.22%             6 /  4 / 87
 
-[INFO GRT-0018] Total wirelength: 13620 um
+[INFO GRT-0018] Total wirelength: 13408 um
 [INFO GRT-0014] Routed nets: 563
-Differences found at line 4.
-54600 105000 58800 109200 metal2
-54600 105000 58800 113400 metal2
+No differences found.
