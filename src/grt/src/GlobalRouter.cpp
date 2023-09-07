@@ -1002,13 +1002,15 @@ void GlobalRouter::computeGridAdjustments(int min_routing_layer,
     fastroute_->setNumAdjustments(num_adjustments);
 
     if (!grid_->isPerfectRegularX()) {
-      for (int i = 1; i < y_grids; i++) {
+      fastroute_->setLastColVCapacity(new_v_capacity, level - 1);
+      for (int i = 1; i <= y_grids; i++) {
         fastroute_->addAdjustment(
             x_grids - 1, i - 1, x_grids - 1, i, level, new_v_capacity, false);
       }
     }
     if (!grid_->isPerfectRegularY()) {
-      for (int i = 1; i < x_grids; i++) {
+      fastroute_->setLastRowHCapacity(new_h_capacity, level - 1);
+      for (int i = 1; i <= x_grids; i++) {
         fastroute_->addAdjustment(
             i - 1, y_grids - 1, i, y_grids - 1, level, new_h_capacity, false);
       }
