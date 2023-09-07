@@ -446,6 +446,9 @@ class Opendp
   int gridPaddedX(const Cell* cell, int site_width) const;
   int gridY(int y, int row_height) const;
   int gridY(const Cell* cell) const;
+  pair<int, int> gridY(
+      int y,
+      const std::vector<std::pair<dbSite*, dbOrientType>>& grid_sites) const;
   int gridPaddedEndX(const Cell* cell) const;
   int gridPaddedEndX(const Cell* cell, int site_width) const;
   int gridEndX(int x, int site_width) const;

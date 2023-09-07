@@ -574,6 +574,9 @@ int Opendp::getRowHeight(const Cell* cell) const
   if (isStdCell(cell)) {
     row_height = getRowInfo(cell).first;
   }
+  if (cell->isHybrid()) {
+    row_height = cell->height_;
+  }
   return row_height;
 }
 
@@ -631,38 +634,37 @@ int Opendp::getSiteWidth(const Cell* cell) const
   return site_width_;
 }
 
+pair<int, int> Opendp::gridY(
+    int y,
+    const std::vector<std::pair<dbSite*, dbOrientType>>& grid_sites) const
+{
+  int sum_heights = std::accumulate(
+      grid_sites.begin(),
+      grid_sites.end(),
+      0,
+      [](int sum, const std::pair<dbSite*, dbOrientType>& entry) {
+        return sum + entry.first->getHeight();
+      });
+
+  int base_height = divFloor(y, sum_heights);
+  int cur_height = base_height * sum_heights;
+  int index = 0;
+  base_height *= grid_sites.size();
+  while (cur_height < y && index < grid_sites.size()) {
+    auto site = grid_sites.at(index);
+    if (cur_height + site.first->getHeight() > y)
+      break;
+    cur_height += site.first->getHeight();
+    index++;
+  }
+  return {base_height + index, cur_height};
+}
+
 int Opendp::gridY(const Cell* cell) const
 {
   if (cell->isHybrid()) {
     auto grid_info = getGridInfo(cell);
-    int sum_heights = std::accumulate(
-        grid_info.sites.begin(),
-        grid_info.sites.end(),
-        0,
-        [](int sum, const std::pair<dbSite*, dbOrientType>& entry) {
-          return sum + entry.first->getHeight();
-        });
-    int y = cell->y_;
-    int base_height = divFloor(y, sum_heights);
-    int cur_height = base_height * sum_heights;
-    int index = 0;
-    base_height *= grid_info.sites.size();
-    while (cur_height < y && index < grid_info.sites.size()) {
-      auto site = grid_info.sites.at(index);
-      if (cur_height + site.first->getHeight() > y)
-        break;
-      cur_height += site.first->getHeight();
-      index++;
-    }
-    debugPrint(logger_,
-               DPL,
-               "hybrid",
-               1,
-               "Cell {} is at y {} which is in row {}",
-               cell->name(),
-               cell->y_,
-               base_height + index);
-    return base_height + index;
+    return gridY(cell->y_, grid_info.sites).first;
   }
   int row_height = getRowHeight(cell);
 

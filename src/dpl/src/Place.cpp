@@ -1086,14 +1086,12 @@ bool Opendp::checkPixels(const Cell* cell,
 // Legalize cell origin
 //  inside the core
 //  row site
-// FIXME: this is wrong for hybrid sites
 Point Opendp::legalPt(const Cell* cell,
                       const Point& pt,
                       int row_height,
                       int site_width) const
 {
   // Move inside core.
-
   if (row_height == -1) {
     row_height = getRowHeight(cell);
   }
@@ -1108,23 +1106,21 @@ Point Opendp::legalPt(const Cell* cell,
   }
   int core_x = min(max(0, pt.getX()),
                    grid_info.site_count * site_width - cell->width_);
-  int core_y = min(max(0, pt.getY()),
-                   grid_info.row_count * row_height - cell->height_);
-  debugPrint(logger_,
-             DPL,
-             "place",
-             1,
-             "core_y {} {} {}",
-             core_y,
-             grid_info.row_count,
-             row_height);
   // Align with row site.
   int grid_x = divRound(core_x, site_width);
-  // FIXME(mina1460): this is wrong for hybrid sites
-  int grid_y = divRound(core_y, row_height);
-
   int legal_x = grid_x * site_width;
-  int legal_y = grid_y * row_height;
+  int legal_y = 0;
+  if (cell->isHybrid()) {
+    int index(0), height(0);
+    std::tie(index, height) = gridY(cell->y_, grid_info.sites);
+    legal_y = height;
+  } else {
+    int core_y = min(max(0, pt.getY()),
+                     grid_info.row_count * row_height - cell->height_);
+    int grid_y = divRound(core_y, row_height);
+    legal_y = grid_y * row_height;
+  }
+
   return Point(legal_x, legal_y);
 }
 
@@ -1140,10 +1136,11 @@ Point Opendp::legalGridPt(const Cell* cell,
     row_height = getRowHeight(cell);
   }
   Point legal = legalPt(cell, pt, row_height, site_width);
-  return Point(
-      gridX(legal.getX(), site_width),
-      gridY(legal.getY(),
-            row_height));  // FIXME(mina1460): this is wrong for hybrid sites
+  if (cell->isHybrid()) {
+    return Point(gridX(legal.getX(), site_width), gridY(cell));
+  }
+  return Point(gridX(legal.getX(), site_width),
+               gridY(legal.getY(), row_height));
 }
 
 Point Opendp::nearestBlockEdge(const Cell* cell,
@@ -1204,10 +1201,8 @@ bool Opendp::moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const
   int site_width = getSiteWidth(cell);
   auto [row_height, grid_info] = getRowInfo(cell);
   int grid_index = grid_info.grid_index;
-  int layer_site_count = divFloor(core_.dx(), site_width);
-  int layer_row_count = divFloor(
-      core_.dy(),
-      row_height);  // FIXME(mina1460): this is wrong for hybrid sites
+  int layer_site_count = grid_info.site_count;
+  int layer_row_count = grid_info.row_count;
 
   // since the site doesn't have to be empty, we don't need to check all layers.
   // They will be checked in the checkPixels in the diamondSearch method after
