@@ -616,7 +616,7 @@ void io::Parser::checkPins()
         } else if (uFig->typeId() == frcPolygon) {
           auto polygon = static_cast<frPolygon*>(uFig.get());
           vector<gtl::point_data<frCoord>> points;
-          for (Point pt : polygon->getPoints()) {
+          for (const Point& pt : polygon->getPoints()) {
             points.emplace_back(pt.x(), pt.y());
             if (pt.getX() % grid || pt.getY() % grid) {
               logger_->error(
