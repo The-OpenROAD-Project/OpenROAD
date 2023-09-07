@@ -2208,7 +2208,7 @@ dbTechLayer* dbTechLayer::getUpperLayer()
   return (dbTechLayer*) tech->_layer_tbl->getPtr(layer->_upper);
 }
 
-dbTech* dbTechLayer::getTech()
+dbTech* dbTechLayer::getTech() const
 {
   return (dbTech*) getImpl()->getOwner();
 }
