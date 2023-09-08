@@ -25,9 +25,9 @@ global_route
 estimate_parasitics -global_routing
 
 report_worst_slack -max
-write_golden_verilog
+write_verilog_for_eqy repair_setup6 before
 repair_timing -setup
-run_equivalence_test 
+run_equivalence_test repair_setup6 ./Nangate45/work_around_yosys/
 report_worst_slack -max
 
 # check slacks with fresh parasitics
