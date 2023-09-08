@@ -1532,7 +1532,7 @@ void defout_impl::writeWire(dbWire* wire)
 
         dbVia* via = decode.getVia();
 
-        std::string via_mask_statement = "";
+        std::string via_mask_statement;
         if ((_version >= defout::DEF_5_8) && viacolor) {
           via_mask_statement = fmt::format("MASK {}{}{} ",
                                            viacolor.value().top_color,
@@ -1564,7 +1564,7 @@ void defout_impl::writeWire(dbWire* wire)
         if ((++point_cnt & 7) == 0)
           fprintf(_out, "\n    ");
 
-        std::string via_mask_statement = "";
+        std::string via_mask_statement;
         if ((_version >= defout::DEF_5_8) && viacolor) {
           via_mask_statement = fmt::format("MASK {}{}{} ",
                                            viacolor.value().top_color,
