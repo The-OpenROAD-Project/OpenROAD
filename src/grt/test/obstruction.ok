@@ -31,11 +31,11 @@
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 li1        Vertical            0             0          0.00%
-met1       Horizontal      27436          4406          83.94%
-met2       Vertical        21660          5928          72.63%
-met3       Horizontal      12996          5966          54.09%
-met4       Vertical         8664          4484          48.25%
-met5       Horizontal       2888          1480          48.75%
+met1       Horizontal      28120          4406          84.33%
+met2       Vertical        22154          5928          73.24%
+met3       Horizontal      13338          5966          55.27%
+met4       Vertical         8968          4484          50.00%
+met5       Horizontal       2964          1480          50.07%
 ---------------------------------------------------------------
 
 [INFO GRT-0197] Via related to pin nodes: 11

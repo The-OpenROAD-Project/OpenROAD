@@ -32,11 +32,11 @@
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 li1        Vertical            0             0          0.00%
-met1       Horizontal      31939          5050          84.19%
-met2       Vertical        25215          3392          86.55%
-met3       Horizontal      15129          1731          88.56%
-met4       Vertical        10086          1722          82.93%
-met5       Horizontal       3362          1681          50.00%
+met1       Horizontal      32472          5050          84.45%
+met2       Vertical        25584          3392          86.74%
+met3       Horizontal      15416          1731          88.77%
+met4       Vertical        10332          1722          83.33%
+met5       Horizontal       3403          1681          50.60%
 ---------------------------------------------------------------
 
 [INFO GRT-0101] Running extra iterations to remove overflow.

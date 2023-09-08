@@ -31,13 +31,13 @@
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 metal1     Horizontal      33840         33840          0.00%
-metal2     Vertical        24816         25152          -1.35%
+metal2     Vertical        25163         25152          0.04%
 metal3     Horizontal      33840         33840          0.00%
-metal4     Vertical        15792         16032          -1.52%
+metal4     Vertical        16039         16032          0.04%
 metal5     Horizontal      15792         15788          0.03%
-metal6     Vertical        15792         16032          -1.52%
+metal6     Vertical        16039         16032          0.04%
 metal7     Horizontal       4512          4508          0.09%
-metal8     Vertical         4512          4608          -2.13%
+metal8     Vertical         4610          4608          0.04%
 metal9     Horizontal       2256          2252          0.18%
 ---------------------------------------------------------------
 
