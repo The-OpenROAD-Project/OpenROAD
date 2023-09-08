@@ -1339,7 +1339,7 @@ void FastRouteCore::verifyEdgeUsage()
   }
 
   for (int k = 0; k < num_layers_; k++) {
-    for (int y = 0; y < y_grid_; ++y) {
+    for (int y = 0; y < y_grid_ - 1; ++y) {
       for (int x = 0; x < x_grid_; ++x) {
         if (v_edges_3D[k][y][x] != v_edges_3D_[k][y][x].usage) {
           logger_->error(GRT,
@@ -1353,7 +1353,7 @@ void FastRouteCore::verifyEdgeUsage()
   }
   for (int k = 0; k < num_layers_; k++) {
     for (int y = 0; y < y_grid_; ++y) {
-      for (int x = 0; x < x_grid_; ++x) {
+      for (int x = 0; x < x_grid_ - 1; ++x) {
         if (h_edges_3D[k][y][x] != h_edges_3D_[k][y][x].usage) {
           logger_->error(GRT,
                          1248,
@@ -1371,8 +1371,8 @@ void FastRouteCore::verifyEdgeUsage()
 // expensive but helpful for finding usage errors.
 void FastRouteCore::verify2DEdgesUsage()
 {
-  multi_array<int, 2> v_edges(boost::extents[y_grid_][x_grid_]);
-  multi_array<int, 2> h_edges(boost::extents[y_grid_][x_grid_]);
+  multi_array<int, 2> v_edges(boost::extents[y_grid_ - 1][x_grid_]);
+  multi_array<int, 2> h_edges(boost::extents[y_grid_][x_grid_ - 1]);
 
   for (int netID = 0; netID < netCount(); netID++) {
     const auto& treenodes = sttrees_[netID].nodes;
@@ -1449,7 +1449,7 @@ void FastRouteCore::verify2DEdgesUsage()
       }
     }
   }
-  for (int y = 0; y < y_grid_; ++y) {
+  for (int y = 0; y < y_grid_ - 1; ++y) {
     for (int x = 0; x < x_grid_; ++x) {
       if (v_edges[y][x] != v_edges_[y][x].est_usage) {
         logger_->error(GRT,
@@ -1461,7 +1461,7 @@ void FastRouteCore::verify2DEdgesUsage()
     }
   }
   for (int y = 0; y < y_grid_; ++y) {
-    for (int x = 0; x < x_grid_; ++x) {
+    for (int x = 0; x < x_grid_ - 1; ++x) {
       if (h_edges[y][x] != h_edges_[y][x].est_usage) {
         logger_->error(GRT,
                        248,
@@ -1803,11 +1803,11 @@ void FastRouteCore::copyBR(void)
     }
 
     for (i = 0; i < y_grid_; i++) {
-      for (j = 0; j < x_grid_; j++) {
+      for (j = 0; j < x_grid_ - 1; j++) {
         h_edges_[i][j].usage = 0;
       }
     }
-    for (i = 0; i < y_grid_; i++) {
+    for (i = 0; i < y_grid_ - 1; i++) {
       for (j = 0; j < x_grid_; j++) {
         v_edges_[i][j].usage = 0;
       }
