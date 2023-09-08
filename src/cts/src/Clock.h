@@ -209,11 +209,6 @@ class Clock
     return subNets_.back();
   }
 
-  void addSink(const std::string& name, int x, int y)
-  {
-    sinks_.emplace_back(name, "", CLOCK_SINK, x, y);
-  }
-
   void addSink(const std::string& name,
                int x,
                int y,

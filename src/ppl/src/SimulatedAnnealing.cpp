@@ -150,6 +150,7 @@ void SimulatedAnnealing::getAssignment(std::vector<IOPin>& assignment)
     io_pin.setPos(slot.pos);
     io_pin.setLayer(slot.layer);
     io_pin.setPlaced();
+    io_pin.setEdge(slot.edge);
     assignment.push_back(io_pin);
     slot.used = true;
   }
@@ -828,7 +829,20 @@ int SimulatedAnnealing::getMirroredSlotIdx(int slot_idx) const
   const odb::Point& position = slot.pos;
   odb::Point mirrored_pos = core_->getMirroredPosition(position);
 
-  return getSlotIdxByPosition(mirrored_pos, layer);
+  int mirrored_idx = getSlotIdxByPosition(mirrored_pos, layer);
+
+  if (mirrored_idx < 0) {
+    odb::dbTechLayer* tech_layer = db_->getTech()->findRoutingLayer(layer);
+    logger_->error(utl::PPL,
+                   112,
+                   "Mirrored position ({}, {}) at layer {} is not a "
+                   "valid position.",
+                   mirrored_pos.getX(),
+                   mirrored_pos.getY(),
+                   tech_layer ? tech_layer->getName() : "NA");
+  }
+
+  return mirrored_idx;
 }
 
 void SimulatedAnnealing::updateSlotsFromGroup(
