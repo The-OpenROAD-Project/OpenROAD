@@ -5858,9 +5858,10 @@ void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip,
 
 void HierRTLMP::correctAllMacrosOrientation()
 {
-  logger_->report("\n[Hier-RTLMP::correctRealMacroOrientation] Macros:");
-
+  // Apply vertical flip if necessary
   adjustRealMacroOrientation(true, false);
+
+  // Apply horizontal flip if necessary
   adjustRealMacroOrientation(false, true);
 }
 
