@@ -369,7 +369,8 @@ class dbWireEncoder
   void setViaColor(uint8_t bottom_color, uint8_t cut_color, uint8_t top_color);
 
   ///
-  /// Clears the via mask color. Shapes following this call will have no mask color.
+  /// Clears the via mask color. Shapes following this call will have no mask
+  /// color.
   ///
   void clearViaColor();
 

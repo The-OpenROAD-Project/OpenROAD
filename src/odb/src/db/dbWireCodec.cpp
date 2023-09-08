@@ -642,25 +642,22 @@ void dbWireEncoder::clearColor()
   addOp(WOP_COLOR, 0);
 }
 
-void dbWireEncoder::setViaColor(uint8_t bottom_color, uint8_t cut_color, uint8_t top_color)
+void dbWireEncoder::setViaColor(uint8_t bottom_color,
+                                uint8_t cut_color,
+                                uint8_t top_color)
 {
   // LEF/DEF says 3 is the max number of supported masks per layer.
   // 0 is also not a valid mask.
   for (const auto color : {bottom_color, cut_color, top_color}) {
     if (color > 3) {
       utl::Logger* logger = _wire->getImpl()->getLogger();
-      logger->error(utl::ODB,
-                    1103,
-                    "Mask color: {}, but must be between 0 and 3",
-                    color);
+      logger->error(
+          utl::ODB, 1103, "Mask color: {}, but must be between 0 and 3", color);
     }
   }
 
   // encode as XX BB CC TT
-  const uint8_t mask_color = 
-    bottom_color << 4 |
-    cut_color << 2 |
-    top_color;
+  const uint8_t mask_color = bottom_color << 4 | cut_color << 2 | top_color;
 
   addOp(WOP_VIACOLOR, mask_color);
 }
