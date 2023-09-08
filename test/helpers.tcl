@@ -54,10 +54,10 @@ proc run_equivalence_test {test lib} {
     puts $outfile "\[strategy basic]\nuse sat\ndepth 10\n\n"
     close $outfile
 
-    if {[info exists ::env("EQUIVALENCE_CHECK")]} {
+    if {[info exists ::env(EQUIVALENCE_CHECK)]} {
 	exec rm -rf $run_dir
 	exec eqy -d $run_dir $test_script > /dev/null
-	set count [exec grep -c "Successfully proved designs equivalent" $run_dir/output.log]
+	set count [exec grep -c "Successfully proved designs equivalent" $run_dir/logfile.txt]
 	if { $count == 0 } {
 	    puts "Repair timing output failed equivalence test"
 	} else {
