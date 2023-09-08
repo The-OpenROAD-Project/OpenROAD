@@ -33,15 +33,15 @@
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 metal1     Horizontal          0             0          0.00%
-metal2     Vertical        24816          2256          90.91%
+metal2     Vertical        25163          2256          91.03%
 metal3     Horizontal      33840          9024          73.33%
-metal4     Vertical        15792             0          100.00%
+metal4     Vertical        16039             0          100.00%
 metal5     Horizontal      15792             0          100.00%
-metal6     Vertical        15792             0          100.00%
+metal6     Vertical        16039             0          100.00%
 metal7     Horizontal       4512             0          100.00%
-metal8     Vertical         4512             0          100.00%
+metal8     Vertical         4610             0          100.00%
 metal9     Horizontal       2256             0          100.00%
-metal10    Vertical         2256             0          100.00%
+metal10    Vertical         2305             0          100.00%
 ---------------------------------------------------------------
 
 [INFO GRT-0101] Running extra iterations to remove overflow.

@@ -128,11 +128,11 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 li1        Vertical            0             0          0.00%
-met1       Horizontal     115140         56048          51.32%
-met2       Vertical        86355         58121          32.70%
-met3       Horizontal      57570         39752          30.95%
-met4       Vertical        34542         19809          42.65%
-met5       Horizontal      11514          5757          50.00%
+met1       Horizontal     114773         56048          51.17%
+met2       Vertical        88429         58121          34.27%
+met3       Horizontal      57358         39752          30.69%
+met4       Vertical        35614         19809          44.38%
+met5       Horizontal      11426          5757          49.61%
 ---------------------------------------------------------------
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
