@@ -26,13 +26,17 @@ proc report_file { file } {
 
 #===========================================================================================
 # Routines to run equivalence tests when they are enabled. 
-proc write_verilog_for_eqy {test stage} {
+proc write_verilog_for_eqy {test stage remove_cells} {
     set netlist [make_result_file "${test}_$stage.v"]
-    write_verilog $netlist 
+    if { [string equal $remove_cells "None"] } {
+	write_verilog $netlist 
+    } else {
+	write_verilog -remove_cells $remove_cells $netlist 
+    }
 }
 
-proc run_equivalence_test {test lib} {
-    write_verilog_for_eqy $test after
+proc run_equivalence_test {test lib remove_cells} {
+    write_verilog_for_eqy $test after $remove_cells
     # eqy config file for test
     set test_script [make_result_file "${test}.eqy"]
     # golden verilog (pre repair_timing)
