@@ -10,7 +10,7 @@ set_wire_rc -layer metal3
 estimate_parasitics -placement
 report_checks -fields input -digits 3
 
-write_golden_verilog
+write_verilog_for_eqy repair_setup1 before
 repair_timing -setup
-run_equivalence_test 
+run_equivalence_test repair_setup1 ./Nangate45/work_around_yosys/
 report_checks -fields input -digits 3

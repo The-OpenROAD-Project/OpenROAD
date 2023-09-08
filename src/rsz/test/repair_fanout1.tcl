@@ -16,7 +16,7 @@ set_wire_rc -layer metal1
 estimate_parasitics -placement
 
 report_check_types -max_fanout
-write_golden_verilog
+write_verilog_for_eqy repair_fanout1 before
 repair_design
-run_equivalence_test 
+run_equivalence_test repair_fanout1 ./Nangate45/work_around_yosys/
 report_check_types -max_fanout

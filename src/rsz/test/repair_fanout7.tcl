@@ -32,7 +32,7 @@ estimate_parasitics -placement
 
 # Repair the high fanout net hopefully with gate cloning code.
 report_worst_slack -max
-write_golden_verilog
+write_verilog_for_eqy repair_fanout7 before
 repair_timing -setup -repair_tns 100
-run_equivalence_test 
+run_equivalence_test repair_fanout7 ./Nangate45/work_around_yosys/
 report_worst_slack -max
