@@ -1549,7 +1549,7 @@ void defout_impl::writeWire(dbWire* wire)
             vname = via->getBlockVia()->getName();
 
           fprintf(_out,
-                  "%s%s %s",
+                  " %s%s %s",
                   via_mask_statement.c_str(),
                   vname.c_str(),
                   defOrient(via->getOrient()));
