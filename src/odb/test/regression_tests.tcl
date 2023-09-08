@@ -1,4 +1,5 @@
 record_tests {
+  bterm_hier_create
   multi_tech
   transform
   rounding
