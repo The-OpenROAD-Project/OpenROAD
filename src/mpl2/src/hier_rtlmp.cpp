@@ -596,6 +596,8 @@ void HierRTLMP::hierRTLMacroPlacer()
     hard_macro->updateDb(pitch_x_, pitch_y_, block_);
   }
 
+  correctAllMacrosOrientation();
+
   // Clear the memory to avoid memory leakage
   // release all the pointers
   // metrics map
@@ -5785,6 +5787,81 @@ void HierRTLMP::FDPlacement(std::vector<Rect>& blocks,
                 repulsive_factor,
                 max_size / (1 + std::floor(j / 100)));
   }
+}
+
+// Here, we compute wirelength considering only signal nets between macros
+int HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
+{
+  int wirelength = 0;
+
+  for (odb::dbITerm* iterm : macro->getITerms()) {
+    if (iterm->getSigType() != odb::dbSigType::SIGNAL) {
+      continue;
+    }
+
+    odb::dbNet* net = iterm->getNet();
+    if (net != nullptr) {
+      for (odb::dbITerm* net_iterm : net->getITerms()) {
+        if (net_iterm == iterm) {
+          continue;
+        }
+
+        if (net_iterm->getInst()->isBlock()) {
+          const int x1 = iterm->getBBox().xCenter();
+          const int y1 = iterm->getBBox().yCenter();
+          const int x2 = net_iterm->getBBox().xCenter();
+          const int y2 = net_iterm->getBBox().yCenter();
+
+          wirelength += (std::abs(x2 - x1) + std::abs(y2 - y1));
+        }
+      }
+    }
+  }
+
+  return wirelength;
+}
+
+void HierRTLMP::flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip)
+{
+  if (is_vertical_flip) {
+    macro->setOrient(macro->getOrient().flipY());
+  } else {
+    macro->setOrient(macro->getOrient().flipX());
+  }
+}
+
+void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip,
+                                           const bool& should_lock_placement)
+{
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (!inst->isBlock()) {
+      continue;
+    }
+
+    int original_wirelength = calculateRealMacroWirelength(inst);
+    odb::Point macro_location = inst->getLocation();
+
+    flipRealMacro(inst, is_vertical_flip);
+    inst->setLocation(macro_location.getX(), macro_location.getY());
+    int new_wirelength = calculateRealMacroWirelength(inst);
+
+    if (new_wirelength > original_wirelength) {
+      flipRealMacro(inst, is_vertical_flip);
+      inst->setLocation(macro_location.getX(), macro_location.getY());
+    }
+
+    if (should_lock_placement) {
+      inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
+    }
+  }
+}
+
+void HierRTLMP::correctAllMacrosOrientation()
+{
+  logger_->report("\n[Hier-RTLMP::correctRealMacroOrientation] Macros:");
+
+  adjustRealMacroOrientation(true, false);
+  adjustRealMacroOrientation(false, true);
 }
 
 void HierRTLMP::setDebug(std::unique_ptr<Mpl2Observer>& graphics)

@@ -253,6 +253,12 @@ class HierRTLMP
                    float outline_height,
                    std::string file_name);
 
+  void correctAllMacrosOrientation();
+  int calculateRealMacroWirelength(odb::dbInst* macro);
+  void adjustRealMacroOrientation(const bool& is_vertical_flip,
+                                  const bool& should_lock_placement);
+  void flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip);
+
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
