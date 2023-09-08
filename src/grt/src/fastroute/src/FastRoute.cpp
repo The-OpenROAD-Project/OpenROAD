@@ -79,6 +79,8 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       mazeedge_threshold_(0),
       v_capacity_lb_(0),
       h_capacity_lb_(0),
+      regular_x_(false),
+      regular_y_(false),
       logger_(log),
       stt_builder_(stt_builder),
       debug_(new DebugSetting())
