@@ -3756,34 +3756,6 @@ class dbWire : public dbObject
   void detach();
 
   ///
-  /// Copy the src wire to the desintation wire.
-  ///
-  ///    removeITermBTerms - if true, then any iterms or bterms referenced in
-  ///    the copied wire will be removed. copyVias - if true, then any reference
-  ///    vias that do not exists in the dst-block are copied to the src-block.
-  ///
-  ///
-  static void copy(dbWire* dst,
-                   dbWire* src,
-                   bool removeITermsBTerms = true,
-                   bool copyVias = true);
-
-  ///
-  /// Copy the src wire to the desintation wire. Filter vias and segments that
-  /// do not intersect bbox.
-  ///
-  ///    removeITermBTerms - if true, then any iterms or bterms referenced in
-  ///    the copied wire will be removed. copyVias - if true, then any reference
-  ///    vias that do not exists in the dst-block are copied to the src-block.
-  ///
-  ///
-  static void copy(dbWire* dst,
-                   dbWire* src,
-                   const Rect& bbox,
-                   bool removeITermsBTerms = true,
-                   bool copyVias = true);
-
-  ///
   /// Create a wire.
   /// Returns nullptr if this net already has the specified wire dbWire.
   ///
