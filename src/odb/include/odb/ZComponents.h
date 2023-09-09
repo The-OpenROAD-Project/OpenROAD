@@ -59,7 +59,6 @@ enum ZInterfaceID
   ZIID_ZObject = 0,
 
   // Place all entries after this line
-  ZINTERFACE(ISdb),
   ZINTERFACE(IZdcr),
 };
 

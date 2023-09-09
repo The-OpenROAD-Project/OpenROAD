@@ -1525,16 +1525,6 @@ class dbBlock : public dbObject
 
  public:
   ///
-  /// Get the Container class for Nets Search DB
-  ///
-  // ZPtr<ISdb> getSearchDbNets();
-
-  ///
-  /// Get the Container class for Insts Search DB
-  ///
-  // ZPtr<ISdb> getSearchDbInsts();
-
-  ///
   /// This method copies the via-table from the src block to the destination
   /// block.
   ///
@@ -1544,16 +1534,6 @@ class dbBlock : public dbObject
   ///          be left dangling.
   ///
   static void copyViaTable(dbBlock* dst, dbBlock* src);
-
-  ///
-  /// Get the Read Only Container class for Nets Search DB
-  ///
-  // TODO ZPtr<ISdb_r> getSearchDbNets_r();
-
-  ///
-  /// Get the Read Only Container class for Insts Search DB
-  ///
-  // TODO ZPtr<ISdb_r> getSearchDbInsts_r();
 
   ///
   /// Create a chip's top-block. Returns nullptr of a top-block already
