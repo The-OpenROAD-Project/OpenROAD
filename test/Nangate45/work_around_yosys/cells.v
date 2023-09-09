@@ -78,7 +78,7 @@ module AOI211_X1 (A, B, C1, C2, ZN);
    output ZN;
    wire   C;  
    assign C = (C1 & C2);
-   assign ZN = !(A|B|C);
+   assign ZN = ~(A|B|C);
 endmodule // AOI211_X1
 
 module AOI211_X2 (A, B, C1, C2, ZN);
@@ -89,7 +89,7 @@ module AOI211_X2 (A, B, C1, C2, ZN);
    output ZN;
    wire   C;  
    assign C = (C1 & C2);
-   assign ZN = !(A|B|C);
+   assign ZN = ~(A|B|C);
 endmodule // AOI211_X2
 
 module AOI211_X4 (A, B, C1, C2, ZN);
@@ -100,7 +100,7 @@ module AOI211_X4 (A, B, C1, C2, ZN);
    output ZN;
    wire   C;  
    assign C = (C1 & C2);
-   assign ZN = !(A|B|C);
+   assign ZN = ~(A|B|C);
 endmodule // AOI211_X4
 
 module AOI21_X1 (A, B1, B2, ZN);
@@ -110,7 +110,7 @@ module AOI21_X1 (A, B1, B2, ZN);
    output ZN;
    wire   B; 
    assign B = (B1 & B2);
-   assign ZN = !(A|B);
+   assign ZN = ~(A|B);
 endmodule // AOI21_X1
 
 module AOI21_X2 (A, B1, B2, ZN);
@@ -120,7 +120,7 @@ module AOI21_X2 (A, B1, B2, ZN);
    output ZN;
    wire   B; 
    assign B = (B1 & B2);
-   assign ZN = !(A|B);
+   assign ZN = ~(A|B);
 endmodule // AOI21_X2
 
 module AOI21_X4 (A, B1, B2, ZN);
@@ -130,7 +130,7 @@ module AOI21_X4 (A, B1, B2, ZN);
    output ZN;
    wire   B; 
    assign B = (B1 & B2);
-   assign ZN = !(A|B);
+   assign ZN = ~(A|B);
 endmodule // AOI21_X4
 
 module AOI221_X1 (A, B1, B2, C1, C2, ZN);
@@ -144,7 +144,7 @@ module AOI221_X1 (A, B1, B2, C1, C2, ZN);
    wire   C;  
    assign B = (B1 & B2);
    assign C = (C1 & C2);
-   assign ZN = !(A|B|C);
+   assign ZN = ~(A|B|C);
 endmodule // AOI221_X1
 
 module AOI221_X2 (A, B1, B2, C1, C2, ZN);
@@ -158,7 +158,7 @@ module AOI221_X2 (A, B1, B2, C1, C2, ZN);
    wire   C;  
    assign B = (B1 & B2);
    assign C = (C1 & C2);
-   assign ZN = !(A|B|C);
+   assign ZN = ~(A|B|C);
 endmodule // AOI221_X2
 
 module AOI221_X4 (A, B1, B2, C1, C2, ZN);
@@ -172,7 +172,7 @@ module AOI221_X4 (A, B1, B2, C1, C2, ZN);
    wire   C;  
    assign B = (B1 & B2);
    assign C = (C1 & C2);
-   assign ZN = !(A|B|C);
+   assign ZN = ~(A|B|C);
 endmodule // AOI221_X4
 
 module AOI222_X1 (A1, A2, B1, B2, C1, C2, ZN);
@@ -189,7 +189,7 @@ module AOI222_X1 (A1, A2, B1, B2, C1, C2, ZN);
    assign A = (A1 & A2);
    assign B = (B1 & B2);
    assign C = (C1 & C2);
-   assign ZN = !(A|B|C);
+   assign ZN = ~(A|B|C);
 endmodule // AOI222_X1
 
 module AOI222_X2 (A1, A2, B1, B2, C1, C2, ZN);
@@ -206,7 +206,7 @@ module AOI222_X2 (A1, A2, B1, B2, C1, C2, ZN);
    assign A = (A1 & A2);
    assign B = (B1 & B2);
    assign C = (C1 & C2);
-   assign ZN = !(A|B|C);
+   assign ZN = ~(A|B|C);
 endmodule // AOI222_X2
 
 module AOI222_X4 (A1, A2, B1, B2, C1, C2, ZN);
@@ -223,7 +223,7 @@ module AOI222_X4 (A1, A2, B1, B2, C1, C2, ZN);
    assign A = (A1 & A2);
    assign B = (B1 & B2);
    assign C = (C1 & C2);
-   assign ZN = !(A|B|C);
+   assign ZN = ~(A|B|C);
 endmodule // AOI222_X4
 
 module AOI22_X1 (A1, A2, B1, B2, ZN);
@@ -236,7 +236,7 @@ module AOI22_X1 (A1, A2, B1, B2, ZN);
    wire   B;
    assign A = (A1 & A2);
    assign B = (B1 & B2);
-   assign ZN = !(A|B);
+   assign ZN = ~(A|B);
 endmodule // AOI22_X1
 
 module AOI22_X2 (A1, A2, B1, B2, ZN);
@@ -249,7 +249,7 @@ module AOI22_X2 (A1, A2, B1, B2, ZN);
    wire   B;
    assign A = (A1 & A2);
    assign B = (B1 & B2);
-   assign ZN = !(A|B);
+   assign ZN = ~(A|B);
 endmodule // AOI22_X2
 
 module AOI22_X4 (A1, A2, B1, B2, ZN);
@@ -262,7 +262,7 @@ module AOI22_X4 (A1, A2, B1, B2, ZN);
    wire   B;
    assign A = (A1 & A2);
    assign B = (B1 & B2);
-   assign ZN = !(A|B);
+   assign ZN = ~(A|B);
 endmodule
 
 module BUF_X1 (A, Z);
@@ -326,7 +326,7 @@ module DFF_X1 (CK, D, Q, QN);
    output QN;   
    always @(posedge CK) begin
       Q <= D;
-      QN <= !D;
+      QN <= ~D;
    end
 endmodule // DFF_X1
 
@@ -351,37 +351,37 @@ endmodule // DFF_X2
 module INV_X1 (A, ZN);
    input A;
    output ZN;
-   assign ZN = !A;
+   assign ZN = ~A;
 endmodule // INV_X1
 
 module INV_X16 (A, ZN);
    input A;
    output ZN;
-   assign ZN = !A;
+   assign ZN = ~A;
 endmodule // INV_X16
 
 module INV_X2 (A, ZN);
    input A;
    output ZN;
-   assign ZN = !A;
+   assign ZN = ~A;
 endmodule // INV_X2
 
 module INV_X32 (A, ZN);
    input A;
    output ZN;
-   assign ZN = !A;
+   assign ZN = ~A;
 endmodule // INV_X32
 
 module INV_X4 (A, ZN);
    input A;
    output ZN;
-   assign ZN = !A;
+   assign ZN = ~A;
 endmodule // INV_X4
 
 module INV_X8 (A, ZN);
    input A;
    output ZN;
-   assign ZN = !A;
+   assign ZN = ~A;
 endmodule // INV_X8
 
 module MUX2_X1 (A, B, S, Z);
@@ -395,21 +395,21 @@ module NAND2_X1 (A1, A2, ZN);
    input A1;
    input A2;
    output ZN;
-   assign ZN = !(A1 & A2);   
+   assign ZN = ~(A1 & A2);   
 endmodule // NAND2_X1
 
 module NAND2_X2 (A1, A2, ZN);
    input A1;
    input A2;
    output ZN;
-   assign ZN = !(A1 & A2);   
+   assign ZN = ~(A1 & A2);   
 endmodule // NAND2_X2
 
 module NAND2_X4 (A1, A2, ZN);
    input A1;
    input A2;
    output ZN;
-   assign ZN = !(A1 & A2);   
+   assign ZN = ~(A1 & A2);   
 endmodule // NAND2_X4
 
 module NAND3_X1 (A1, A2, A3, ZN);
@@ -417,7 +417,7 @@ module NAND3_X1 (A1, A2, A3, ZN);
    input A2;
    input A3;
    output ZN;
-   assign ZN = !(A1 & A2 & A3);
+   assign ZN = ~(A1 & A2 & A3);
 endmodule // NAND3_X1
 
 module NAND3_X2 (A1, A2, A3, ZN);
@@ -425,7 +425,7 @@ module NAND3_X2 (A1, A2, A3, ZN);
    input A2;
    input A3;
    output ZN;
-   assign ZN = !(A1 & A2 & A3);
+   assign ZN = ~(A1 & A2 & A3);
 endmodule // NAND3_X2
 
 module NAND3_X4 (A1, A2, A3, ZN);
@@ -433,7 +433,7 @@ module NAND3_X4 (A1, A2, A3, ZN);
    input A2;
    input A3;
    output ZN;
-   assign ZN = !(A1 & A2 & A3);
+   assign ZN = ~(A1 & A2 & A3);
 endmodule // NAND3_X4
 
 module NAND4_X1 (A1, A2, A3, A4, ZN);
@@ -442,7 +442,7 @@ module NAND4_X1 (A1, A2, A3, A4, ZN);
    input A3;
    input A4;
    output ZN;
-   assign ZN = !(A1 & A2 & A3 & A4);
+   assign ZN = ~(A1 & A2 & A3 & A4);
 endmodule // NAND4_X1
 
 module NAND4_X2 (A1, A2, A3, A4, ZN);
@@ -451,7 +451,7 @@ module NAND4_X2 (A1, A2, A3, A4, ZN);
    input A3;
    input A4;
    output ZN;
-   assign ZN = !(A1 & A2 & A3 & A4);
+   assign ZN = ~(A1 & A2 & A3 & A4);
 endmodule // NAND4_X2
 
 module NAND4_X4 (A1, A2, A3, A4, ZN);
@@ -460,28 +460,28 @@ module NAND4_X4 (A1, A2, A3, A4, ZN);
    input A3;
    input A4;
    output ZN;   
-   assign ZN = !(A1 & A2 & A3 & A4);
+   assign ZN = ~(A1 & A2 & A3 & A4);
 endmodule // NAND4_X4
 
 module NOR2_X1 (A1, A2, ZN);
    input A1;
    input A2;
    output ZN;
-   assign ZN = !(A1 | A2);
+   assign ZN = ~(A1 | A2);
 endmodule // NOR2_X1
 
 module NOR2_X2 (A1, A2, ZN);
    input A1;
    input A2;
    output ZN;
-   assign ZN = ! (A1 | A2);
+   assign ZN = ~ (A1 | A2);
 endmodule // NOR2_X2
 
 module NOR2_X4 (A1, A2, ZN);
    input A1;
    input A2;
    output ZN;
-   assign ZN = !(A1 | A2);
+   assign ZN = ~(A1 | A2);
 endmodule // NOR2_X4
 
 module NOR3_X1 (A1, A2, A3, ZN);
@@ -489,7 +489,7 @@ module NOR3_X1 (A1, A2, A3, ZN);
    input A2;
    input A3;
    output ZN;
-   assign ZN = !(A1 | A2 | A3);
+   assign ZN = ~(A1 | A2 | A3);
 endmodule // NOR3_X1
 
 module NOR3_X2 (A1, A2, A3, ZN);
@@ -497,7 +497,7 @@ module NOR3_X2 (A1, A2, A3, ZN);
    input A2;
    input A3;
    output ZN;
-   assign ZN = !(A1 | A2 | A3);
+   assign ZN = ~(A1 | A2 | A3);
 endmodule // NOR3_X2
 
 module NOR3_X4 (A1, A2, A3, ZN);
@@ -505,7 +505,7 @@ module NOR3_X4 (A1, A2, A3, ZN);
    input A2;
    input A3;
    output ZN;
-   assign ZN = !(A1 | A2 | A3);   
+   assign ZN = ~(A1 | A2 | A3);   
 endmodule // NOR3_X4
 
 module NOR4_X1 (A1, A2, A3, A4, ZN);
@@ -514,7 +514,7 @@ module NOR4_X1 (A1, A2, A3, A4, ZN);
    input A3;
    input A4;
    output ZN;
-   assign ZN = !(A1 | A2 | A3 | A4);
+   assign ZN = ~(A1 | A2 | A3 | A4);
 endmodule // NOR4_X1
 
 module NOR4_X2 (A1, A2, A3, A4, ZN);
@@ -523,7 +523,7 @@ module NOR4_X2 (A1, A2, A3, A4, ZN);
    input A3;
    input A4;
    output ZN;
-   assign ZN = !(A1 | A2 | A3 | A4);
+   assign ZN = ~(A1 | A2 | A3 | A4);
 endmodule // NOR4_X2
 
 module NOR4_X4 (A1, A2, A3, A4, ZN);
@@ -532,7 +532,7 @@ module NOR4_X4 (A1, A2, A3, A4, ZN);
    input A3;
    input A4;
    output ZN;
-   assign ZN = !(A1 | A2 | A3 | A4);
+   assign ZN = ~(A1 | A2 | A3 | A4);
 endmodule // NOR4_X4
 
 module OAI211_X1 (A, B, C1, C2, ZN);
@@ -543,7 +543,7 @@ module OAI211_X1 (A, B, C1, C2, ZN);
    output ZN;
    wire   C;
    assign C = (C1|C2);
-   assign ZN = !(A & B & C);
+   assign ZN = ~(A & B & C);
 endmodule // OAI211_X1
 
 module OAI211_X2 (A, B, C1, C2, ZN);
@@ -554,7 +554,7 @@ module OAI211_X2 (A, B, C1, C2, ZN);
    output ZN;
    wire   C;
    assign C = (C1|C2);
-   assign ZN = !(A & B & C);
+   assign ZN = ~(A & B & C);
 endmodule // OAI211_X2
 
 module OAI211_X4 (A, B, C1, C2, ZN);
@@ -565,7 +565,7 @@ module OAI211_X4 (A, B, C1, C2, ZN);
    output ZN;
    wire   C;
    assign C = (C1|C2);
-   assign ZN = !(A & B & C);
+   assign ZN = ~(A & B & C);
 endmodule // OAI211_X4
 
 module OAI21_X1 (A, B1, B2, ZN);
@@ -575,7 +575,7 @@ module OAI21_X1 (A, B1, B2, ZN);
    output ZN;
    wire   B;   
    assign B = (B1|B2);
-   assign ZN = !(A & B);
+   assign ZN = ~(A & B);
 endmodule // OAI21_X1
 
 (* blackbox *) module OAI21_X2 (A, B1, B2, ZN);
@@ -585,7 +585,7 @@ endmodule // OAI21_X1
    output ZN;
    wire   B;   
    assign B = (B1|B2);
-   assign ZN = !(A & B);   
+   assign ZN = ~(A & B);   
 endmodule // OAI21_X2
 
 module OAI21_X4 (A, B1, B2, ZN);
@@ -595,7 +595,7 @@ module OAI21_X4 (A, B1, B2, ZN);
    output ZN;
    wire   B;   
    assign B = (B1|B2);
-   assign ZN = !(A & B);
+   assign ZN = ~(A & B);
 endmodule // OAI21_X4
 
 module OAI221_X1 (A, B1, B2, C1, C2, ZN);
@@ -609,7 +609,7 @@ module OAI221_X1 (A, B1, B2, C1, C2, ZN);
    wire   C;
    assign B = (B1|B2);
    assign C = (C1|C2);
-   assign ZN = !(A & B & C);
+   assign ZN = ~(A & B & C);
 endmodule // OAI221_X1
 
 module OAI221_X2 (A, B1, B2, C1, C2, ZN);
@@ -623,7 +623,7 @@ module OAI221_X2 (A, B1, B2, C1, C2, ZN);
    wire   C;
    assign B = (B1|B2);
    assign C = (C1|C2);
-   assign ZN = !(A & B & C);
+   assign ZN = ~(A & B & C);
 endmodule // OAI221_X2
 
 module OAI221_X4 (A, B1, B2, C1, C2, ZN);
@@ -637,7 +637,7 @@ module OAI221_X4 (A, B1, B2, C1, C2, ZN);
    wire   C;
    assign B = (B1|B2);
    assign C = (C1|C2);
-   assign ZN = !(A & B & C);
+   assign ZN = ~(A & B & C);
 endmodule // OAI221_X4
 
 module OAI222_X1 (A1, A2, B1, B2, C1, C2, ZN);
@@ -654,7 +654,7 @@ module OAI222_X1 (A1, A2, B1, B2, C1, C2, ZN);
    assign A = (A1|A2);
    assign B = (B1|B2);
    assign C = (C1|C2);
-   assign ZN = !(A & B & C);
+   assign ZN = ~(A & B & C);
 endmodule // OAI222_X1
 
 module OAI222_X2 (A1, A2, B1, B2, C1, C2, ZN);
@@ -671,7 +671,7 @@ module OAI222_X2 (A1, A2, B1, B2, C1, C2, ZN);
    assign A = (A1|A2);
    assign B = (B1|B2);
    assign C = (C1|C2);
-   assign ZN = !(A & B & C);
+   assign ZN = ~(A & B & C);
 endmodule // OAI222_X2
 
 module OAI222_X4 (A1, A2, B1, B2, C1, C2, ZN);
@@ -688,7 +688,7 @@ module OAI222_X4 (A1, A2, B1, B2, C1, C2, ZN);
    assign A = (A1|A2);
    assign B = (B1|B2);
    assign C = (C1|C2);
-   assign ZN = !(A & B & C);
+   assign ZN = ~(A & B & C);
 endmodule // OAI222_X4
 
 module OAI22_X1 (A1, A2, B1, B2, ZN);
@@ -701,7 +701,7 @@ module OAI22_X1 (A1, A2, B1, B2, ZN);
    wire   B;
    assign A = (A1|A2);
    assign B = (B1|B2);
-   assign ZN = !(A & B);   
+   assign ZN = ~(A & B);   
 endmodule // OAI22_X1
 
 module OAI22_X2 (A1, A2, B1, B2, ZN);
@@ -714,7 +714,7 @@ module OAI22_X2 (A1, A2, B1, B2, ZN);
    wire   B;
    assign A = (A1|A2);
    assign B = (B1|B2);
-   assign ZN = !(A & B);
+   assign ZN = ~(A & B);
 endmodule // OAI22_X2
 
 module OAI22_X4 (A1, A2, B1, B2, ZN);
@@ -727,7 +727,7 @@ module OAI22_X4 (A1, A2, B1, B2, ZN);
    wire   B;
    assign A = (A1|A2);
    assign B = (B1|B2);
-   assign ZN = !(A & B);
+   assign ZN = ~(A & B);
 endmodule // OAI22_X4
 
 module OAI33_X1 (A1, A2, A3, B1, B2, B3, ZN);
@@ -742,7 +742,7 @@ module OAI33_X1 (A1, A2, A3, B1, B2, B3, ZN);
    wire   B;
    assign A = (A1|A2|A3);
    assign B = (B1|B2|B3);
-   assign ZN = !(A & B);
+   assign ZN = ~(A & B);
 endmodule // OAI33_X1
 
 module OR2_X1 (A1, A2, ZN);
