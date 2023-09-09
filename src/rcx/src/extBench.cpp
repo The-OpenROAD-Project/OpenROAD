@@ -55,7 +55,6 @@ using odb::dbTechNonDefaultRule;
 using odb::dbWire;
 using odb::dbWireShapeItr;
 using odb::Rect;
-using odb::ZPtr;
 
 extMainOptions::extMainOptions()
 {

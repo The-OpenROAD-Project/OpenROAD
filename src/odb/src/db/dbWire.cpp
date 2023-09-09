@@ -38,7 +38,6 @@
 #include "dbBlock.h"
 #include "dbBlockCallBackObj.h"
 #include "dbNet.h"
-#include "dbRtTree.h"
 #include "dbShape.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -1708,126 +1707,6 @@ void dbWire::detach()
   wire->_net = 0;
   for (auto callback : block->_callbacks)
     callback->inDbWirePostDetach(this, (dbNet*) net);
-}
-
-void dbWire::copy(dbWire* dst_,
-                  dbWire* src_,
-                  bool removeITermsBTerms,
-                  bool copyVias)
-{
-  _dbWire* dst = (_dbWire*) dst_;
-  _dbWire* src = (_dbWire*) src_;
-
-  assert(dst->getDatabase() == src->getDatabase());
-  _dbBlock* block = (_dbBlock*) dst_->getBlock();
-  for (auto callback : block->_callbacks)
-    callback->inDbWirePreCopy(src_, dst_);
-  uint n = src->_opcodes.size();
-
-  // Free the old memory
-  dst->_data.~dbVector<int>();
-  new (&dst->_data) dbVector<int>();
-  dst->_data.reserve(n);
-  dst->_data = src->_data;
-
-  // Free the old memory
-  dst->_opcodes.~dbVector<unsigned char>();
-  new (&dst->_opcodes) dbVector<unsigned char>();
-  dst->_opcodes.reserve(n);
-  dst->_opcodes = src->_opcodes;
-
-  if (removeITermsBTerms) {
-    uint i;
-
-    for (i = 0; i < n; ++i) {
-      unsigned char opcode = dst->_opcodes[i] & WOP_OPCODE_MASK;
-
-      if (opcode == WOP_ITERM || opcode == WOP_BTERM) {
-        dst->_opcodes[i] = WOP_NOP;
-        dst->_data[i] = 0;
-      }
-    }
-  }
-
-  if (copyVias) {
-    _dbBlock* src_block = (_dbBlock*) src->getOwner();
-    _dbBlock* dst_block = (_dbBlock*) dst->getOwner();
-
-    if (src_block != dst_block) {
-      uint i;
-
-      for (i = 0; i < n; ++i) {
-        unsigned char opcode = dst->_opcodes[i] & WOP_OPCODE_MASK;
-
-        if (opcode == WOP_VIA) {
-          uint vid = dst->_data[i];
-          _dbVia* src_via = src_block->_via_tbl->getPtr(vid);
-          dbVia* dst_via = ((dbBlock*) dst_block)->findVia(src_via->_name);
-
-          // duplicate src-via in dst-block if needed
-          if (dst_via == nullptr)
-            dst_via = dbVia::copy((dbBlock*) dst_block, (dbVia*) src_via);
-
-          dst->_data[i] = dst_via->getImpl()->getOID();
-        }
-      }
-    }
-  }
-  for (auto callback : block->_callbacks)
-    callback->inDbWirePostCopy(src_, dst_);
-}
-
-void dbWire::copy(dbWire* dst,
-                  dbWire* src,
-                  const Rect& bbox,
-                  bool removeITermsBTerms,
-                  bool copyVias)
-{
-  _dbBlock* block = (_dbBlock*) dst->getBlock();
-  for (auto callback : block->_callbacks)
-    callback->inDbWirePreCopy(src, dst);
-  dbRtTree tree;
-  tree.decode(src, !removeITermsBTerms);
-
-  Rect r;
-  dbRtTree::edge_iterator itr;
-
-  for (itr = tree.begin_edges(); itr != tree.end_edges();) {
-    dbRtEdge* edge = *itr;
-    edge->getBBox(r);
-
-    if (!bbox.intersects(r))
-      ++itr;
-    else
-      itr = tree.deleteEdge(itr, true);
-  }
-
-  if (copyVias) {
-    dbBlock* src_block = (dbBlock*) src->getImpl()->getOwner();
-    dbBlock* dst_block = (dbBlock*) dst->getImpl()->getOwner();
-
-    if (src_block != dst_block) {
-      for (itr = tree.begin_edges(); itr != tree.end_edges();) {
-        dbRtEdge* edge = *itr;
-
-        if (edge->getType() == dbRtEdge::VIA) {
-          dbVia* src_via = ((dbRtVia*) edge)->getVia();
-          std::string name = src_via->getName();
-          dbVia* dst_via = dst_block->findVia(name.c_str());
-
-          // duplicate src-via in dst-block if needed
-          if (dst_via == nullptr)
-            dst_via = dbVia::copy(dst_block, src_via);
-
-          ((dbRtVia*) edge)->setVia(dst_via);
-        }
-      }
-    }
-  }
-
-  tree.encode(dst, !removeITermsBTerms);
-  for (auto callback : block->_callbacks)
-    callback->inDbWirePostCopy(src, dst);
 }
 
 dbWire* dbWire::create(dbNet* net_, bool global_wire)
