@@ -276,6 +276,9 @@ int FastRouteCore::threeDVIA()
   int numVIA = 0;
 
   for (int netID = 0; netID < netCount(); netID++) {
+    if (nets_[netID]->isRouted()) {
+      continue;
+    }
     const auto& treeedges = sttrees_[netID].edges;
     int num_edges = sttrees_[netID].num_edges();
 
@@ -1221,12 +1224,14 @@ void FastRouteCore::recoverEdge(int netID, int edgeID)
       {
         ymin = std::min(gridsY[i], gridsY[i + 1]);
         v_edges_[ymin][gridsX[i]].usage += net->getEdgeCost();
+        v_used_ggrid_.insert(std::make_pair(ymin, gridsX[i]));
         v_edges_3D_[gridsL[i]][ymin][gridsX[i]].usage
             += net->getLayerEdgeCost(gridsL[i]);
       } else if (gridsY[i] == gridsY[i + 1])  // a horizontal edge
       {
         xmin = std::min(gridsX[i], gridsX[i + 1]);
         h_edges_[gridsY[i]][xmin].usage += net->getEdgeCost();
+        h_used_ggrid_.insert(std::make_pair(gridsY[i], xmin));
         h_edges_3D_[gridsL[i]][gridsY[i]][xmin].usage
             += net->getLayerEdgeCost(gridsL[i]);
       }
@@ -1475,34 +1480,30 @@ void FastRouteCore::check2DEdgesUsage()
   int max_v_edge_usage = max_usage_multiplier * v_capacity_;
 
   // check horizontal edges
-  for (int i = 0; i < y_grid_; i++) {
-    for (int j = 0; j < x_grid_ - 1; j++) {
-      if (h_edges_[i][j].usage > max_h_edge_usage) {
-        logger_->error(GRT,
-                       228,
-                       "Horizontal edge usage exceeds the maximum allowed. "
-                       "({}, {}) usage={} limit={}",
-                       i,
-                       j,
-                       h_edges_[i][j].usage,
-                       max_h_edge_usage);
-      }
+  for (const auto& [i, j] : h_used_ggrid_) {
+    if (h_edges_[i][j].usage > max_h_edge_usage) {
+      logger_->error(GRT,
+                     228,
+                     "Horizontal edge usage exceeds the maximum allowed. "
+                     "({}, {}) usage={} limit={}",
+                     i,
+                     j,
+                     h_edges_[i][j].usage,
+                     max_h_edge_usage);
     }
   }
 
   // check vertical edges
-  for (int i = 0; i < y_grid_ - 1; i++) {
-    for (int j = 0; j < x_grid_; j++) {
-      if (v_edges_[i][j].usage > max_v_edge_usage) {
-        logger_->error(GRT,
-                       229,
-                       "Vertical edge usage exceeds the maximum allowed. "
-                       "({}, {}) usage={} limit={}",
-                       i,
-                       j,
-                       v_edges_[i][j].usage,
-                       max_v_edge_usage);
-      }
+  for (const auto& [i, j] : v_used_ggrid_) {
+    if (v_edges_[i][j].usage > max_v_edge_usage) {
+      logger_->error(GRT,
+                     229,
+                     "Vertical edge usage exceeds the maximum allowed. "
+                     "({}, {}) usage={} limit={}",
+                     i,
+                     j,
+                     v_edges_[i][j].usage,
+                     max_v_edge_usage);
     }
   }
 }
@@ -1829,10 +1830,12 @@ void FastRouteCore::copyBR(void)
             {
               min_y = std::min(gridsY[i], gridsY[i + 1]);
               v_edges_[min_y][gridsX[i]].usage += edgeCost;
+              v_used_ggrid_.insert(std::make_pair(min_y, gridsX[i]));
             } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
             {
               min_x = std::min(gridsX[i], gridsX[i + 1]);
               h_edges_[gridsY[i]][min_x].usage += edgeCost;
+              h_used_ggrid_.insert(std::make_pair(gridsY[i], min_x));
             }
           }
         }

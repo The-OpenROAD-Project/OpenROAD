@@ -6,10 +6,10 @@ load DFF_X1 CK D 300000 metal3 1000
 [INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
 [INFO ODB-0128] Design: hi_fanout
-[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 153 components and 917 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 306 connections.
-[INFO ODB-0133]     Created 4 nets and 307 connections.
+[INFO ODB-0133]     Created 5 nets and 309 connections.
 worst slack -23.63
 [INFO RSZ-0094] Found 150 endpoints with setup violations.
 [INFO RSZ-0045] Inserted 37 buffers, 1 to split loads.

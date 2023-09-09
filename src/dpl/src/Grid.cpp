@@ -799,6 +799,36 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
           logger_, DPL, "detailed", 1, "added 1 go layer_end {}", layer_y_end);
     }
 
+    if (layer_y_end > layer.second.row_count) {
+      logger_->error(DPL,
+                     49,
+                     "Cannot paint grid index: {} because it is out of bounds. "
+                     "Calculated (row end {}) > (rows {}). This is a bug",
+                     layer.first,
+                     layer_y_end,
+                     layer.second.row_count);
+    }
+
+    if (layer_y_end > layer.second.row_count) {
+      logger_->error(DPL,
+                     49,
+                     "Cannot paint grid index: {} because it is out of bounds. "
+                     "Calculated (row end {}) > (rows {}). This is a bug",
+                     layer.first,
+                     layer_y_end,
+                     layer.second.row_count);
+    }
+
+    if (layer_y_end > layer.second.row_count) {
+      logger_->error(DPL,
+                     49,
+                     "Cannot paint grid index: {} because it is out of bounds. "
+                     "Calculated (row end {}) > (rows {}). This is a bug",
+                     layer.first,
+                     layer_y_end,
+                     layer.second.row_count);
+    }
+
     for (int x = layer_x; x < layer_x_end; x++) {
       for (int y = layer_y; y < layer_y_end; y++) {
         Pixel* pixel = gridPixel(layer.second.grid_index, x, y);

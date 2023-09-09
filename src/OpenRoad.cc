@@ -311,10 +311,7 @@ void OpenRoad::readDef(const char* filename,
 {
   if (!floorplan_init && !incremental && !child && db_->getChip()
       && db_->getChip()->getBlock()) {
-    logger_->error(
-        ORD,
-        48,
-        "You can't load a new DEF file as the db is already populated.");
+    logger_->info(ORD, 48, "Loading an additional DEF.");
   }
 
   odb::defin::MODE mode = odb::defin::DEFAULT;
@@ -419,7 +416,12 @@ void OpenRoad::writeLef(const char* filename)
     for (auto lib : libs) {
       std::string name(filename);
       if (cnt > 0) {
-        name += "_" + std::to_string(cnt);
+        auto pos = name.rfind('.');
+        if (pos != string::npos) {
+          name.insert(pos, "_" + std::to_string(cnt));
+        } else {
+          name += "_" + std::to_string(cnt);
+        }
         std::ofstream os;
         os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
         os.open(name);

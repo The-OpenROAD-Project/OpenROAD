@@ -478,29 +478,22 @@ Resizer::hasPins(Net *net)
   return has_pins;
 }
 
-std::vector<const Pin*>
-Resizer::getPins(Net* net) const
+void Resizer::getPins(Net* net, PinVector &pins) const
 {
-  std::vector<const Pin*> pins;
   auto pin_iter = network_->pinIterator(net);
   while (pin_iter->hasNext()) {
-    const Pin *pin = pin_iter->next();
-    pins.emplace_back(pin);
+    pins.emplace_back(pin_iter->next());
   }
   delete pin_iter;
-  return pins;
 }
 
-std::vector<const Pin*>
-Resizer::getPins(Instance *inst) const
+void Resizer::getPins(Instance *inst, PinVector &pins) const
 {
-  std::vector<const Pin*> pins;
   auto pin_iter = network_->pinIterator(inst);
   while (pin_iter->hasNext()) {
-    const Pin *pin = pin_iter->next();
-    pins.emplace_back(pin);
+    pins.emplace_back(pin_iter->next());
   }
-  return pins;
+  delete pin_iter;
 }
 
 Instance *
@@ -2705,6 +2698,16 @@ Resizer::journalMakeBuffer(Instance *buffer)
   inserted_buffer_set_.insert(buffer);
 }
 
+Instance *
+Resizer::journalCloneInstance(LibertyCell *cell, const char *name,  Instance *original_inst,
+                              Instance *parent,  const Point& loc)
+{
+  Instance *clone_inst = makeInstance(cell, name, parent, loc);
+  cloned_gates_.push(std::tuple(original_inst, clone_inst));
+  cloned_inst_set_.insert(clone_inst);
+  return clone_inst;
+}
+
 void
 Resizer::journalUndoGateCloning(int &cloned_gate_count)
 {
@@ -2721,8 +2724,8 @@ Resizer::journalUndoGateCloning(int &cloned_gate_count)
                network_->libertyCell(cloned_inst)->name());
 
     const Pin* original_output_pin = nullptr;
-    std::vector<const Pin*> clone_pins = getPins(cloned_inst);
-    std::vector<const Pin*> original_pins = getPins(original_inst);
+    PinVector original_pins;
+    getPins(original_inst, original_pins);
     for (auto& pin : original_pins) {
       if (network_->direction(pin)->isOutput()) {
         original_output_pin = pin;
@@ -2730,23 +2733,41 @@ Resizer::journalUndoGateCloning(int &cloned_gate_count)
       }
     }
     Net* original_out_net = network_->net(original_output_pin);
-    // Net* clone_out_net = nullptr;
-
+    Net* clone_out_net = nullptr;
+    //=========================================================================
+    // Go through the cloned instance, disconnect pins
+    PinVector clone_pins;
+    getPins(cloned_inst, clone_pins);
     for (auto& pin : clone_pins) {
-      // Disconnect all pins from the new net. Also store the output net
-      // if (network_->direction(pin)->isOutput()) {
-      //  clone_out_net = network_->net(pin);
-      //}
+      // Disconnect the current instance pins. Also store the output net
+      if (network_->direction(pin)->isOutput()) {
+        clone_out_net = network_->net(pin);
+      }
       sta_->disconnectPin(const_cast<Pin*>(pin));
-      // Connect them to the original nets if they are inputs
-      if (network_->direction(pin)->isInput()) {
+    }
+    //=========================================================================
+    // Go through the cloned output net, disconnect pins, connect pins to the
+    // original output net
+    clone_pins.clear();
+    getPins(clone_out_net, clone_pins);
+    for (auto& pin : clone_pins) {
+      if (network_->direction(pin)->isOutput()) {
+        // We should never get here.
+        logger_->error(RSZ, 23, "Output pin found when none was expected.");
+      }
+      else if (network_->direction(pin)->isInput()) {
+        // Connect them to the original nets if they are inputs
         Instance* inst = network_->instance(pin);
         auto term_port = network_->port(pin);
+        sta_->disconnectPin(const_cast<Pin*>(pin));
         sta_->connectPin(inst, term_port, original_out_net);
       }
     }
+    //=========================================================================
     // Final cleanup
-    // sta_->deleteNet(clone_out_net);
+    if (clone_out_net != nullptr) {
+      sta_->deleteNet(clone_out_net);
+    }
     sta_->deleteInstance(cloned_inst);
     sta_->graphDelayCalc()->delaysInvalid();
     --cloned_gate_count;
