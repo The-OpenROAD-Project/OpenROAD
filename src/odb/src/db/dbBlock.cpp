@@ -107,7 +107,6 @@
 #include "dbSBoxItr.h"
 #include "dbSWire.h"
 #include "dbSWireItr.h"
-#include "dbSearch.h"
 #include "dbShape.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
