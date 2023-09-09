@@ -10,5 +10,5 @@
 [INFO ODB-0131]     Created 258 components and 1420 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 516 connections.
 [INFO ODB-0133]     Created 294 nets and 904 connections.
-[INFO PPL-0070] Pin clk placed at (7um, 0um).
+[INFO PPL-0070] Pin clk placed at (7.59um, 0.24um).
 No differences found.

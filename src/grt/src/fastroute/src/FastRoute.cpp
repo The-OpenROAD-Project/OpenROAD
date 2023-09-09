@@ -318,6 +318,7 @@ void FastRouteCore::initEdges()
       for (int k = 0; k < num_layers_; k++) {
         h_edges_3D_[k][i][j].cap = h_capacity_3D_[k];
         h_edges_3D_[k][i][j].usage = 0;
+        h_edges_3D_[k][i][j].red = 0;
       }
     }
   }
@@ -334,6 +335,7 @@ void FastRouteCore::initEdges()
       for (int k = 0; k < num_layers_; k++) {
         v_edges_3D_[k][i][j].cap = v_capacity_3D_[k];
         v_edges_3D_[k][i][j].usage = 0;
+        v_edges_3D_[k][i][j].red = 0;
       }
     }
   }
@@ -383,6 +385,8 @@ void FastRouteCore::addAdjustment(int x1,
     if (!isReduce) {
       const int increase = reducedCap - cap;
       h_edges_[y1][x1].cap += increase;
+    } else {
+      h_edges_3D_[k][y1][x1].red += reduce;
     }
 
     h_edges_[y1][x1].cap -= reduce;
@@ -411,6 +415,8 @@ void FastRouteCore::addAdjustment(int x1,
     if (!isReduce) {
       int increase = reducedCap - cap;
       v_edges_[y1][x1].cap += increase;
+    } else {
+      v_edges_3D_[k][y1][x1].red += reduce;
     }
 
     v_edges_[y1][x1].cap -= reduce;
@@ -791,9 +797,9 @@ void FastRouteCore::updateDbCongestion()
     const unsigned short capH = h_capacity_3D_[k];
     const unsigned short capV = v_capacity_3D_[k];
     for (int y = 0; y < y_grid_; y++) {
-      for (int x = 0; x < x_grid_ - 1; x++) {
-        const unsigned short blockageH = capH - h_edges_3D_[k][y][x].cap;
-        const unsigned short blockageV = capV - v_edges_3D_[k][y][x].cap;
+      for (int x = 0; x < x_grid_; x++) {
+        const unsigned short blockageH = h_edges_3D_[k][y][x].red;
+        const unsigned short blockageV = v_edges_3D_[k][y][x].red;
         const unsigned short usageH = h_edges_3D_[k][y][x].usage + blockageH;
         const unsigned short usageV = v_edges_3D_[k][y][x].usage + blockageV;
         db_gcell->setCapacity(layer, x, y, capH, capV, 0);
@@ -809,6 +815,9 @@ NetRouteMap FastRouteCore::run()
   if (netCount() == 0) {
     return getRoutes();
   }
+
+  v_used_ggrid_.clear();
+  h_used_ggrid_.clear();
 
   int tUsage;
   int cost_step;

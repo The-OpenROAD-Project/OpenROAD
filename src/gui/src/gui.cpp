@@ -508,7 +508,7 @@ bool Gui::filterSelectionProperties(const Descriptor::Properties& properties,
                                     const std::any& value,
                                     bool& is_valid_attribute)
 {
-  for (Descriptor::Property property : properties) {
+  for (const Descriptor::Property& property : properties) {
     if (attribute == property.name) {
       is_valid_attribute = true;
       if (auto props_selected_set
@@ -517,14 +517,14 @@ bool Gui::filterSelectionProperties(const Descriptor::Properties& properties,
             && (*props_selected_set).size() != 0) {
           return true;
         }
-        for (auto selected : *props_selected_set) {
+        for (const auto& selected : *props_selected_set) {
           if (Descriptor::Property::toString(value) == selected.getName()) {
             return true;
           }
         }
       } else if (auto props_list
                  = std::any_cast<Descriptor::PropertyList>(&property.value)) {
-        for (auto prop : *props_list) {
+        for (const auto& prop : *props_list) {
           if (Descriptor::Property::toString(prop.first)
                   == Descriptor::Property::toString(value)
               || Descriptor::Property::toString(prop.second)
@@ -1147,47 +1147,47 @@ void Gui::timingPathsThrough(const std::set<odbTerm>& terms)
 
 void Gui::addFocusNet(odb::dbNet* net)
 {
-  main_window->getLayoutViewer()->addFocusNet(net);
+  main_window->getLayoutTabs()->addFocusNet(net);
 }
 
 void Gui::addRouteGuides(odb::dbNet* net)
 {
-  main_window->getLayoutViewer()->addRouteGuides(net);
+  main_window->getLayoutTabs()->addRouteGuides(net);
 }
 
 void Gui::removeRouteGuides(odb::dbNet* net)
 {
-  main_window->getLayoutViewer()->removeRouteGuides(net);
+  main_window->getLayoutTabs()->removeRouteGuides(net);
 }
 
 void Gui::addNetTracks(odb::dbNet* net)
 {
-  main_window->getLayoutViewer()->addNetTracks(net);
+  main_window->getLayoutTabs()->addNetTracks(net);
 }
 
 void Gui::removeNetTracks(odb::dbNet* net)
 {
-  main_window->getLayoutViewer()->removeNetTracks(net);
+  main_window->getLayoutTabs()->removeNetTracks(net);
 }
 
 void Gui::removeFocusNet(odb::dbNet* net)
 {
-  main_window->getLayoutViewer()->removeFocusNet(net);
+  main_window->getLayoutTabs()->removeFocusNet(net);
 }
 
 void Gui::clearFocusNets()
 {
-  main_window->getLayoutViewer()->clearFocusNets();
+  main_window->getLayoutTabs()->clearFocusNets();
 }
 
 void Gui::clearRouteGuides()
 {
-  main_window->getLayoutViewer()->clearRouteGuides();
+  main_window->getLayoutTabs()->clearRouteGuides();
 }
 
 void Gui::clearNetTracks()
 {
-  main_window->getLayoutViewer()->clearNetTracks();
+  main_window->getLayoutTabs()->clearNetTracks();
 }
 
 void Gui::setLogger(utl::Logger* logger)

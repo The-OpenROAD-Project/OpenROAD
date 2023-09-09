@@ -7,9 +7,9 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 88 connections.
-[INFO PPL-0070] Pin clk placed at (40um, 30um).
-[INFO PPL-0070] Pin resp_val placed at (12um, 50um).
-[INFO PPL-0070] Pin req_msg[0] placed at (25um, 70um).
+[INFO PPL-0070] Pin clk placed at (40.00um, 30.00um).
+[INFO PPL-0070] Pin resp_val placed at (12.00um, 50.00um).
+[INFO PPL-0070] Pin req_msg[0] placed at (25.00um, 70.00um).
 Found 0 macro blocks.
 [INFO PPL-0010] Tentative 0 to set up sections.
 [INFO PPL-0001] Number of slots          2494
