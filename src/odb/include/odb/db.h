@@ -1348,48 +1348,6 @@ class dbBlock : public dbObject
   dbBlockSearch* getSearchDb();
 
   ///
-  /// reset _netSdb
-  ///
-  // void resetNetSdb();
-
-  ///
-  /// Get search database module for fast area searches on signal nets
-  ///
-  //    ZPtr<ISdb> getSignalNetSdb();
-  ///
-  /// Get search database module for fast area searches on signal nets
-  /// Generate netSdb if it does not exist
-  ///
-  //    ZPtr<ISdb> getSignalNetSdb(ZContext & context, dbTech *tech);
-
-  ///
-  /// Get search database module for fast area searches on physical objects
-  ///
-  // ZPtr<ISdb> getNetSdb();
-  ///
-  /// Get search database module for fast area searches on physical objects
-  /// Generate netSdb if it does not exist
-  ///
-  // ZPtr<ISdb> getNetSdb(ZContext & context, dbTech *tech);
-  ///
-  /// Remove search database
-  ///
-  // void removeSdb(std::vector<dbNet *> & nets);
-  ///
-  /// Put insts/nets/tracks on Search DB
-  ///
-  // dbBlockSearch *initSearchBlock(dbTech *tech, bool nets, bool insts,
-  // ZContext & context, bool skipViaCuts=false);
-
-  ///
-  /// Get insts from Search DB given a bbox to do area search
-  ///
-  // uint getInsts(int x1, int y1, int x2, int y2, std::vector<dbInst *> &
-  // result);
-
-  void updateNetFlags(std::vector<dbNet*>& result);
-
-  ///
   /// destroy coupling caps of nets
   ///
   void destroyCCs(std::vector<dbNet*>& nets);

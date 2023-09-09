@@ -144,7 +144,6 @@ set_target_properties(db
 
 target_link_libraries(db
     PUBLIC
-        tm
         zutil
         utl_lib
         ${TCL_LIBRARY}

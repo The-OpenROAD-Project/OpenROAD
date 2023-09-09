@@ -117,102 +117,10 @@ void dbBlockSearch::setViaCutsFlag(bool skipViaCuts)
 {
   _skipCutBoxes = skipViaCuts;
 }
-void dbBlockSearch::makeSearchDB(bool nets, bool insts, ZContext& context)
-{
-  //_dbBlock * block = (_dbBlock *) this;
-  if (insts) {
-    if (adsNewComponent(context, ZCID(Sdb), _instSdb) != Z_OK) {
-      assert(0);
-    }
-    makeInstSearchDb();
-  }
-  if (nets) {
-    if (!_netSdb)
-      makeNetSdb(context);
-    if (!_netViaSdb)
-      makeNetViaSdb(context);
-#ifndef NEW_TRACKS
-    if (!_trackSdb)
-      makeTrackSdb(context);
-#endif
-  }
-}
-#ifndef NEW_TRACKS
-void dbBlockSearch::makeTrackSdb(ZContext& context)
-{
-  if (adsNewComponent(context, ZCID(Sdb), _trackSdb) != Z_OK) {
-    assert(0);
-  }
-  _trackSdb->initSearchForNets(_tech, _block);
-  Rect r = _block->getDieArea();
-  _trackSdb->setMaxArea(r.xMin(), r.yMin(), r.xMax(), r.yMax());
-  makeTrackSearchDb();
-}
-#endif
-void dbBlockSearch::makeNetSdb(ZContext& context)
-{
-  if (adsNewComponent(context, ZCID(Sdb), _netSdb) != Z_OK) {
-    assert(0);
-  }
-  _netSdb->initSearchForNets(_tech, _block);
-  Rect r = _block->getDieArea();
-  _netSdb->setMaxArea(r.xMin(), r.yMin(), r.xMax(), r.yMax());
-  _netSdb->addPowerNets(_block, _power_wire_id, true);
-  _netSdb->addSignalNets(_block, _signal_wire_id, true);
 
-  //	if ( adsNewComponent( context, ZCID(Sdb), _trackSdb )  != Z_OK )
-  //    {
-  //        assert(0);
-  //    }
-  //    _trackSdb->initSearchForNets(_tech, _block);
-  //    _trackSdb->setMaxArea(r.xMin(), r.yMin(), r.xMax(), r.yMax());
-  //
-  //	makeTrackSearchDb();
-}
-void dbBlockSearch::makeNetViaSdb(ZContext& context)
-{
-  //_dbBlock * block = (_dbBlock *) this;
-  if (adsNewComponent(context, ZCID(Sdb), _netViaSdb) != Z_OK) {
-    assert(0);
-  }
-  _netViaSdb->initSearchForNets(_tech, _block);
-  _netViaSdb->addPowerNets(_block, _power_via_id, false);
-  //    _netViaSdb->addSignalNets(_block, _signal_via_id, false);
-}
-
-void dbBlockSearch::makeSignalNetSdb(ZContext& context)
-{
-  if (adsNewComponent(context, ZCID(Sdb), _signalNetSdb) != Z_OK) {
-    assert(0);
-  }
-  _signalNetSdb->initSearchForNets(_tech, _block);
-  Rect r = _block->getDieArea();
-  _signalNetSdb->setMaxArea(r.xMin(), r.yMin(), r.xMax(), r.yMax());
-  _signalNetSdb->addSignalNets(_block, _signal_wire_id, _signal_via_id);
-}
-ZPtr<ISdb> dbBlockSearch::getSignalNetSdb(ZContext& context)
-{
-  if (!_signalNetSdb)
-    makeSignalNetSdb(context);
-  return _signalNetSdb;
-}
-ZPtr<ISdb> dbBlockSearch::getSignalNetSdb()
-{
-  return _signalNetSdb;
-}
 void dbBlockSearch::resetSignalNetSdb()
 {
   _signalNetSdb = nullptr;
-}
-ZPtr<ISdb> dbBlockSearch::getNetSdb(ZContext& context)
-{
-  if (!_netSdb)
-    makeNetSdb(context);
-  return _netSdb;
-}
-ZPtr<ISdb> dbBlockSearch::getNetSdb()
-{
-  return _netSdb;
 }
 void dbBlockSearch::resetNetSdb()
 {
