@@ -159,8 +159,6 @@ class dbTechLayerWidthTableRule;
 // Extraction Objects
 class dbExtControl;
 
-class ZContext;
-
 ///
 /// dbProperty - Property base class.
 ///
@@ -1514,14 +1512,6 @@ class dbBlock : public dbObject
   void setDrivingItermsforNets();
 
   void clearUserInstFlags();
-
- private:
-  friend class ZDB;
-
-  ///
-  /// Build search database for fast area searches
-  ///
-  void makeSearchDB(bool nets, bool insts, ZContext& context);
 
  public:
   ///
