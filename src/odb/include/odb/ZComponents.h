@@ -34,32 +34,11 @@
 
 #include "odb.h"
 
-///
-/// ZINTERFACE - Declare the interface identifier; add to adsInterfaces enum
-/// in ZComponents.h
-///
-#define ZINTERFACE(INTERFACE) ZIID_##INTERFACE
-
-///
-/// ZCOMPONENT - Declare the component identifier; add to adsComponents enum
-/// in ZComponents.h
-///
-#define ZCOMPONENT(COMPONENT) ZCID_##COMPONENT
-
 namespace odb {
-
-enum ZComponentID
-{
-  ZCOMPONENT(Sdb),
-  ZCOMPONENT(Zdcr),
-};
 
 enum ZInterfaceID
 {
-  ZIID_ZObject = 0,
 
-  // Place all entries after this line
-  ZINTERFACE(IZdcr),
 };
 
 }  // namespace odb
