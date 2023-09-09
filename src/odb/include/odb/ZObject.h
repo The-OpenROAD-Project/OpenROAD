@@ -80,42 +80,6 @@ class ZObject;
 #define ZIID(INTERFACE) (ZIID_##INTERFACE)
 
 ///
-/// adsCreateComponent - Create a new instance of this compomnent, return a
-/// pointer to the specified interface.
-///
-/// Returns: Z_OK, Z_ERROR_NO_COMPONENT, Z_ERROR_NO_INTERFACE
-///
-/// result is set to the interface pointer on success, otherwise it is set to
-/// nullptr.
-///
-int adsCreateComponent(const ZContext& context,
-                       ZComponentID cid,
-                       ZInterfaceID iid,
-                       void** result);
-
-///
-/// adsNewComponent - Creates a component specified by the component-identifier.
-/// The ZPtr is assigned the specified interface of this component. A run-time
-/// error will occur if this component does not support the specified interface.
-///
-template <class INTERFACE>
-inline int adsNewComponent(const ZContext& context,
-                           ZComponentID cid,
-                           ZPtr<INTERFACE>& ptr)
-{
-  INTERFACE* p;
-  ZInterfaceID iid = (ZInterfaceID) INTERFACE::ZIID;
-  int r = adsCreateComponent(context, cid, iid, (void**) &p);
-
-  ptr = (INTERFACE*) p;
-
-  if (r == Z_OK)
-    p->Release();
-
-  return r;
-}
-
-///
 /// ZObject - Base class of all interfaces.
 ///
 class ZObject

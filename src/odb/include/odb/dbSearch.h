@@ -90,23 +90,14 @@ class dbBlockSearch
   dbBlockSearch(dbBlock* blk, dbTech* tech, utl::Logger* logger);
   ~dbBlockSearch();
 
-  ZPtr<ISdb> getSignalNetSdb(ZContext& context);
-  ZPtr<ISdb> getSignalNetSdb();
-  void makeSignalNetSdb(ZContext& context);
   void resetSignalNetSdb();
 
   void resetNetSdb();
-  ZPtr<ISdb> getNetSdb(ZContext& context);
-  ZPtr<ISdb> getNetSdb();
 
   void initSubMenus();
   void initMenuIds();
   uint getBbox(int* x1, int* y1, int* x2, int* y2);
   void setViaCutsFlag(bool skipViaCuts);
-  void makeSearchDB(bool nets, bool insts, ZContext& context);
-  void makeTrackSdb(ZContext& context);
-  void makeNetSdb(ZContext& context);
-  void makeNetViaSdb(ZContext& context);
   uint makeInstSearchDb();
   void makeNetWireSearchDb();
 
