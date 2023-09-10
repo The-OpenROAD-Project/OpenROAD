@@ -649,10 +649,6 @@ _dbBlock::~_dbBlock()
     _cbitr = _callbacks.begin();
     (*_cbitr)->removeOwner();
   }
-#ifdef ZUI
-  if (_searchDb)
-    delete _searchDb;
-#endif
   if (_journal)
     delete _journal;
 
@@ -2838,9 +2834,6 @@ void dbBlock::destroyCornerParasitics(std::vector<dbNet*>& nets)
     dbNet* net = dbNet::getNet(this, nets[jj]->getId());
     cnets.push_back(net);
   }
-#ifdef ZUI
-  removeSdb(cnets);
-#endif
   destroyCCs(cnets);
   destroyRSegs(cnets);
   destroyCNs(cnets, true);
