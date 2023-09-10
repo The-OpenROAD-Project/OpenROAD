@@ -3628,7 +3628,6 @@ resultTable)
         return instsToMark.size();
 }
 */
-#define FAST_INST_TERMS
 int dbBlock::markBackwardsUser2(std::vector<dbInst*>& startingInsts,
                                 std::vector<dbInst*>& instsToMark,
                                 bool mark,
@@ -3650,16 +3649,9 @@ int dbBlock::markBackwardsUser2(std::vector<dbInst*>& startingInsts,
     } else if (inst->getUserFlag2())
       return -1;
 
-#ifdef FAST_INST_TERMS
     dbMaster* master = inst->getMaster();
     for (uint ii = 0; ii < (uint) master->getMTermCount(); ii++) {
       dbITerm* iterm = inst->getITerm(ii);
-#else
-    dbSet<dbITerm> iterms = inst->getITerms();
-    dbSet<dbITerm>::iterator iitr;
-    for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
-      dbITerm* iterm = *iitr;
-#endif
       if (!iterm->isInputSignal())
         continue;
       if (iterm->isClocked())
