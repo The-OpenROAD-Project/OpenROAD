@@ -2648,9 +2648,6 @@ void dbNet::preExttreeMergeRC(double max_cap, uint corner)
     if (!tgtNode->isTreeNode() && totalcap[corner] <= max_cap
         && !tgtNode->isDangling())
       continue;
-#ifdef EXT
-    prc->mergeRCs(mrsegs);
-#endif
     prc = rc;
     mrsegs.clear();
     firstRC = true;
