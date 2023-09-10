@@ -3350,15 +3350,15 @@ dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, u
 void dbBlock::writeDb(char* filename, int allNode)
 {
   _dbBlock* block = (_dbBlock*) this;
-  char dbname[max_name_length];
+  std::string dbname;
   if (allNode) {
     if (block->_journal)
-      sprintf(dbname, "%s.main.%d.db", filename, getpid());
+      dbname = fmt::format("{}.main.{}.db", filename, getpid());
     else
-      sprintf(dbname, "%s.remote.%d.db", filename, getpid());
+      dbname = fmt::format("{}.remote.{}.db", filename, getpid());
   } else
-    sprintf(dbname, "%s.db", filename);
-  FILE* file = fopen(dbname, "wb");
+    dbname = fmt::format("{}.db", filename);
+  FILE* file = fopen(dbname.c_str(), "wb");
   if (!file) {
     getImpl()->getLogger()->warn(
         utl::ODB, 19, "Can not open file {} to write!", dbname);
