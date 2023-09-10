@@ -191,6 +191,7 @@ inline const _dbObject* dbObject::getImpl() const
 inline uint _dbObject::getOID() const
 {
   dbObjectPage* page = getObjectPage();
+  uint offset = (_oid & DB_OFFSET_MASK);
   return page->_page_addr | offset / page->_table->_obj_size;
 }
 
