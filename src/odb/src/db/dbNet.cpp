@@ -1420,8 +1420,6 @@ void dbNet::setDisconnected(bool value)
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
-  // dimitri_fix : LOOK_AGAIN for FULL_ECO mode uint prev_flags =
-  // flagsToUInt(net);
 
   net->_flags._disconnected = (value == true) ? 1 : 0;
 
@@ -1444,8 +1442,6 @@ void dbNet::setWireAltered(bool value)
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
-  // dimitri_fix : LOOK_AGAIN for FULL_ECO mode uint prev_flags =
-  // flagsToUInt(net);
 
   net->_flags._wire_altered = (value == true) ? 1 : 0;
   if (value)
@@ -1476,8 +1472,6 @@ void dbNet::setExtracted(bool value)
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
-  // dimitri_fix : LOOK_AGAIN for FULL_ECO mode uint prev_flags =
-  // flagsToUInt(net);
 
   net->_flags._extracted = (value == true) ? 1 : 0;
 
@@ -1761,8 +1755,6 @@ void dbNet::setSpecial()
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
-  // dimitri_fix : LOOK_AGAIN for FULL_ECO mode uint prev_flags =
-  // flagsToUInt(net);
 
   net->_flags._special = 1;
 
@@ -1784,8 +1776,6 @@ void dbNet::clearSpecial()
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
-  // dimitri_fix : LOOK_AGAIN for FULL_ECO mode uint prev_flags =
-  // flagsToUInt(net);
 
   net->_flags._special = 0;
 
