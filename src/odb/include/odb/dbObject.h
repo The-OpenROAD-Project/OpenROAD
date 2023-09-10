@@ -43,7 +43,6 @@ namespace odb {
 /// and edit dbObject.cpp and assign an unique "character" code for its
 /// database-name. See the methods:
 ///    void getDbName( char name[max_name_length] );
-///    static dbObject * resolveDbName( dbDatabase * db, const char * name );
 /// in dbObject.cpp
 ///
 class _dbDatabase;
@@ -162,7 +161,6 @@ class dbObject
   void getDbName(char name[max_name_length]) const;
   const char* getObjName() const;
 
-  static dbObject* resolveDbName(dbDatabase* db, const char* name);
   static const char* getObjName(dbObjectType type);
   // These are not intended for client use as the returned class is
   // not exported.  They are for internal db convenience.
