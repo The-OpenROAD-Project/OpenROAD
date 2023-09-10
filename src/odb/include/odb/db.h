@@ -6866,7 +6866,6 @@ class dbTechSameNetRule : public dbObject
 };
 
 class dbViaParams : private _dbViaParams
-// class dbViaParams : public _dbViaParams
 {
   friend class dbVia;
   friend class dbTechVia;
