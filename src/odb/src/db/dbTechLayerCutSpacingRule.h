@@ -86,7 +86,7 @@ struct dbTechLayerCutSpacingRuleFlags
   bool prl_valid_ : 1;
   bool below_ : 1;
   bool par_within_enclosure_valid_ : 1;
-  uint spare_bits_ : 22;
+  uint spare_bits_ : 21;
 };
 
 class _dbTechLayerCutSpacingRule : public _dbObject
