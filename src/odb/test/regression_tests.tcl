@@ -13,6 +13,7 @@ record_tests {
   dump_vias
   read_def
   read_def58
+  write_def58
   dump_nets
   lef_mask
   write_lef_and_def
