@@ -78,8 +78,6 @@ entries:
     entries:
     - file: main/src/rcx/doc/calibration
       title: Calibration
-  - file: main/src/sta/README
-    title: Static Timing Analyzer (external)
   - file: user/MessagesFinal.md
     title: Messages Glossary
 
