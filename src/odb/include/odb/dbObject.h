@@ -41,9 +41,7 @@ namespace odb {
 ///
 /// When adding a new database object, you must add a dbObjectType enumerator
 /// and edit dbObject.cpp and assign an unique "character" code for its
-/// database-name. See the methods:
-///    void getDbName( char name[max_name_length] );
-/// in dbObject.cpp
+/// database-name. 
 ///
 class _dbDatabase;
 class dbOStream;
@@ -158,7 +156,6 @@ class dbObject
   dbDatabase* getDb() const;
   uint getId() const;
   static const int max_name_length = 256;
-  void getDbName(char name[max_name_length]) const;
   const char* getObjName() const;
 
   static const char* getObjName(dbObjectType type);
