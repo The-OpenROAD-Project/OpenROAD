@@ -361,11 +361,6 @@ class dbDatabase : public dbObject
   uint getNumberOfMasters();
 
   ///
-  /// Translate a database-name to a database object.
-  ///
-  // dbObject * resolveDbName( const char * dbname );
-
-  ///
   /// Read a database from this stream.
   /// WARNING: This function destroys the data currently in the database.
   /// Throws ZIOError..
