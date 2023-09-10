@@ -513,7 +513,8 @@ dbMTerm* dbMaster::findMTerm(dbBlock* block, const char* name)
   char blk_left_bus_del, blk_right_bus_del;
   block->getBusDelimeters(blk_left_bus_del, blk_right_bus_del);
 
-  char lib_left_bus_del, lib_right_bus_del;;
+  char lib_left_bus_del, lib_right_bus_del;
+  ;
   getLib()->getBusDelimeters(lib_left_bus_del, lib_right_bus_del);
 
   if (lib_left_bus_del == '\0' || lib_right_bus_del == '\0') {

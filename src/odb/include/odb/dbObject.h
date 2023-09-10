@@ -41,7 +41,7 @@ namespace odb {
 ///
 /// When adding a new database object, you must add a dbObjectType enumerator
 /// and edit dbObject.cpp and assign an unique "character" code for its
-/// database-name. 
+/// database-name.
 ///
 class _dbDatabase;
 class dbOStream;
