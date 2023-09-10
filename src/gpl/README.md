@@ -56,6 +56,7 @@ global_placement
     [-pad_right pad_right]
     [-verbose_level level]
     [-force_cpu]
+    [-skip_io]
     [-routability_check_overflow routability_check_overflow]
     [-routability_max_density routability_max_density]
     [-routability_max_bloat_iter routability_max_bloat_iter]
@@ -91,6 +92,7 @@ global_placement
 | `-pad_right` | Set right padding in terms of number of sites. The default value is 0, and the allowed values are integers `[1, MAX_INT]` |
 | `-verbose_level` | Set verbose level for `gpl`. The default value is 1. Allowed values are integers `[0, 5]`. |
 | `-force_cpu` | Force to use the CPU solver even if the GPU is available. |
+| `-skip_io` | Flag to ignore the IO ports when computing wirelength during placement. The default value is False, allowed values are boolean. |
 
 #### Routability-Driven Arguments
 
