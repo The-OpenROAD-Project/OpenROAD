@@ -495,6 +495,15 @@ void ICeWall::placePad(odb::dbMaster* master,
     inst = odb::dbInst::create(block, master, name.c_str());
   }
 
+  if (master != nullptr && inst->getMaster() != master) {
+    logger_->error(utl::PAD,
+                   118,
+                   "Master cell mismatch for {} ({}) is not {}",
+                   inst->getName(),
+                   inst->getMaster()->getName(),
+                   master->getName());
+  }
+
   if (row == nullptr) {
     logger_->error(utl::PAD, 19, "Row must be specified to place a pad");
   }

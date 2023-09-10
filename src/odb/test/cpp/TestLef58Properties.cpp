@@ -338,6 +338,32 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(viaMap->getViaName() == "M2_M1_via");
 
   layer = dbTech->findLayer("metal2");
+  // Check LEF57_MINSTEP
+  auto minStepRules_57 = layer->getTechLayerMinStepRules();
+  BOOST_TEST(minStepRules_57.size() == 4);
+  auto itr_57 = minStepRules_57.begin();
+  odb::dbTechLayerMinStepRule* step_rule_57
+      = (odb::dbTechLayerMinStepRule*) *itr_57;
+  BOOST_TEST(step_rule_57->getMinStepLength() == 0.6 * distFactor);
+  BOOST_TEST(step_rule_57->getMaxEdges() == 1);
+  BOOST_TEST(step_rule_57->isMinAdjLength1Valid() == true);
+  BOOST_TEST(step_rule_57->isMinAdjLength2Valid() == false);
+  BOOST_TEST(step_rule_57->getMinAdjLength1() == 1.0 * distFactor);
+  BOOST_TEST(step_rule_57->isConvexCorner());
+  itr_57++;
+  step_rule_57 = (odb::dbTechLayerMinStepRule*) *itr_57;
+  BOOST_TEST(step_rule_57->isMinAdjLength2Valid());
+  BOOST_TEST(step_rule_57->getMinAdjLength2() == 0.15 * distFactor);
+  itr_57++;
+  step_rule_57 = (odb::dbTechLayerMinStepRule*) *itr_57;
+  BOOST_TEST(step_rule_57->isMinBetweenLengthValid());
+  BOOST_TEST(step_rule_57->isExceptSameCorners());
+  BOOST_TEST(step_rule_57->getMinBetweenLength() == 0.13 * distFactor);
+  itr_57++;
+  step_rule_57 = (odb::dbTechLayerMinStepRule*) *itr_57;
+  BOOST_TEST(step_rule_57->isNoBetweenEol());
+  BOOST_TEST(step_rule_57->getEolWidth() == 0.5 * distFactor);
+
   auto areaRules = layer->getTechLayerAreaRules();
   BOOST_TEST(areaRules.size() == 6);
   int cnt = 0;
@@ -380,6 +406,34 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(layer->getPitchX() == 0.36 * distFactor);
   BOOST_TEST(layer->getPitchY() == 0.36 * distFactor);
   BOOST_TEST(layer->getFirstLastPitch() == 0.45 * distFactor);
+
+  // Check LEF57_Spacing
+  auto cutLayer_57 = dbTech->findLayer("via2");
+  auto cutSpacingRules_57 = cutLayer_57->getTechLayerCutSpacingRules();
+  BOOST_TEST(cutSpacingRules_57.size() == 3);
+  int i_57 = 0;
+  for (odb::dbTechLayerCutSpacingRule* subRule : cutSpacingRules_57) {
+    if (i_57 == 1) {
+      BOOST_TEST(subRule->getCutSpacing() == 0.3 * distFactor);
+      BOOST_TEST(subRule->getType()
+                 == odb::dbTechLayerCutSpacingRule::CutSpacingType::LAYER);
+      BOOST_TEST(subRule->isSameMetal());
+      BOOST_TEST(subRule->isStack());
+      BOOST_TEST(std::string(subRule->getSecondLayer()->getName()) == "metal2");
+    } else if (i_57 == 2) {
+      BOOST_TEST(subRule->getCutSpacing() == 0.2 * distFactor);
+      BOOST_TEST(
+          subRule->getType()
+          == odb::dbTechLayerCutSpacingRule::CutSpacingType::ADJACENTCUTS);
+      BOOST_TEST(subRule->getAdjacentCuts() == 3);
+      BOOST_TEST(subRule->getTwoCuts() == 1);
+    } else {
+      BOOST_TEST(subRule->getCutSpacing() == 0.12 * distFactor);
+      BOOST_TEST(subRule->getType()
+                 == odb::dbTechLayerCutSpacingRule::CutSpacingType::MAXXY);
+    }
+    i_57++;
+  }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
