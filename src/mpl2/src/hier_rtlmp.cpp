@@ -5789,10 +5789,11 @@ void HierRTLMP::FDPlacement(std::vector<Rect>& blocks,
   }
 }
 
-// Here, we compute wirelength considering only signal nets between macros
-int HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
+// Compute wirelength considering signal nets that connect macro to
+// other macros and IO pins
+float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
 {
-  int wirelength = 0;
+  float wirelength = 0.0;
 
   for (odb::dbITerm* iterm : macro->getITerms()) {
     if (iterm->getSigType() != odb::dbSigType::SIGNAL) {
@@ -5806,11 +5807,11 @@ int HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
           continue;
         }
 
-        if (net_iterm->getInst()->isBlock()) {
-          const int x1 = iterm->getBBox().xCenter();
-          const int y1 = iterm->getBBox().yCenter();
-          const int x2 = net_iterm->getBBox().xCenter();
-          const int y2 = net_iterm->getBBox().yCenter();
+        if (net_iterm->getInst()->isBlock() || net_iterm->getBTerm() != nullptr) {
+          const float x1 = dbuToMicron(iterm->getBBox().xCenter(), dbu_);
+          const float y1 = dbuToMicron(iterm->getBBox().yCenter(), dbu_);
+          const float x2 = dbuToMicron(net_iterm->getBBox().xCenter(), dbu_);
+          const float y2 = dbuToMicron(net_iterm->getBBox().yCenter(), dbu_);
 
           wirelength += (std::abs(x2 - x1) + std::abs(y2 - y1));
         }
@@ -5838,12 +5839,12 @@ void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip,
       continue;
     }
 
-    int original_wirelength = calculateRealMacroWirelength(inst);
+    const float original_wirelength = calculateRealMacroWirelength(inst);
     odb::Point macro_location = inst->getLocation();
 
     flipRealMacro(inst, is_vertical_flip);
     inst->setLocation(macro_location.getX(), macro_location.getY());
-    int new_wirelength = calculateRealMacroWirelength(inst);
+    const float new_wirelength = calculateRealMacroWirelength(inst);
 
     if (new_wirelength > original_wirelength) {
       flipRealMacro(inst, is_vertical_flip);

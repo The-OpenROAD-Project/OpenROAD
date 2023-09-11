@@ -254,7 +254,7 @@ class HierRTLMP
                    std::string file_name);
 
   void correctAllMacrosOrientation();
-  int calculateRealMacroWirelength(odb::dbInst* macro);
+  float calculateRealMacroWirelength(odb::dbInst* macro);
   void adjustRealMacroOrientation(const bool& is_vertical_flip,
                                   const bool& should_lock_placement);
   void flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip);
