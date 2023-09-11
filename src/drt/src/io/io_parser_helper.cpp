@@ -741,13 +741,14 @@ void io::Parser::checkPins()
     foundCenterTracks = false;
     hasPolys = false;
     dbTransform xform;
+    frString inst_name;
     for (auto& pin : bTerm->getPins()) {
       for (auto& uFig : pin->getFigs()) {
         // frRect* shape = static_cast<frRect*>(uFig.get());
         checkFig(uFig.get(),
                  bTerm->getName(),
                  false,
-                 nullptr,
+                 inst_name,
                  xform,
                  foundTracks,
                  foundCenterTracks,
