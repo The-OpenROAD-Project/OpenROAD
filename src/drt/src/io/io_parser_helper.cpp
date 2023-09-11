@@ -592,45 +592,177 @@ inline void getTrackLocs(bool isHorzTracks,
   }
 }
 
-void io::Parser::checkPins()
+void io::Parser::checkFig(std::unique_ptr<frPinFig>* uFig,
+                          const frString& term_name,
+                          bool is_iTerm,
+                          frString inst_name,
+                          dbTransform xform,
+                          bool& foundTracks,
+                          bool& foundCenterTracks,
+                          bool& hasPolys)
 {
   int grid = tech_->getManufacturingGrid();
-  // Check BTerms on grid
-  for (const auto& bTerm : design_->getTopBlock()->getTerms()) {
-    for (auto& pin : bTerm->getPins()) {
-      for (auto& uFig : pin->getFigs()) {
-        if (uFig->typeId() == frcRect) {
-          frRect* shape = static_cast<frRect*>(uFig.get());
-          Rect box = shape->getBBox();
-          if (box.xMin() % grid || box.yMin() % grid || box.xMax() % grid
-              || box.yMax() % grid) {
-            logger_->error(
-                DRT,
-                420,
-                "BTerm {} contains offgrid pin shape. Pin shape {} is "
-                "not a multiple of the manufacturing grid {}.",
-                bTerm->getName(),
-                box,
-                grid);
-          }
-        } else if (uFig->typeId() == frcPolygon) {
-          auto polygon = static_cast<frPolygon*>(uFig.get());
-          vector<gtl::point_data<frCoord>> points;
-          for (const Point& pt : polygon->getPoints()) {
-            points.emplace_back(pt.x(), pt.y());
-            if (pt.getX() % grid || pt.getY() % grid) {
-              logger_->error(
-                  DRT,
-                  421,
-                  "BTerm {} contains offgrid pin shape. Polygon point "
-                  "{} is not a multiple of the manufacturing grid {}.",
-                  bTerm->getName(),
-                  pt,
-                  grid);
-            }
-          }
+
+  if (uFig->typeId() == frcRect) {
+    frRect* shape = static_cast<frRect*>(uFig.get());
+    Rect box = shape->getBBox();
+    if (is_iTerm) {
+      xform.apply(box);
+    }
+    if (box.xMin() % grid || box.yMin() % grid || box.xMax() % grid
+        || box.yMax() % grid) {
+      logger_->error(DRT,
+                     416,
+                     "Term {} contains offgrid pin shape. Pin shape {} is "
+                     "not a multiple of the manufacturing grid {}.",
+                     term_name,
+                     box,
+                     grid);
+    }
+    if (foundTracks && foundCenterTracks) {
+      return;
+    }
+    auto layer = tech_->getLayer(shape->getLayerNum());
+    if (layer->getLayerNum() > VIAINPIN_TOPLAYERNUM
+        || layer->getLayerNum() < VIAINPIN_BOTTOMLAYERNUM) {
+      return;
+    }
+    std::set<int> horzTracks, vertTracks;
+    getTrackLocs(true,
+                 layer,
+                 design_->getTopBlock(),
+                 box.yMin(),
+                 box.yMax(),
+                 horzTracks);
+    getTrackLocs(false,
+                 layer,
+                 design_->getTopBlock(),
+                 box.xMin(),
+                 box.xMax(),
+                 vertTracks);
+    bool allowWrongWayRouting
+        = (USENONPREFTRACKS && !layer->isUnidirectional());
+    if (allowWrongWayRouting) {
+      foundTracks |= (!horzTracks.empty() || !vertTracks.empty());
+      foundCenterTracks
+          |= horzTracks.find(box.yCenter()) != horzTracks.end()
+             || vertTracks.find(box.xCenter()) != vertTracks.end();
+    } else {
+      if (layer->getDir() == odb::dbTechLayerDir::HORIZONTAL) {
+        foundTracks |= !horzTracks.empty();
+        foundCenterTracks |= horzTracks.find(box.yCenter()) != horzTracks.end();
+      } else {
+        foundTracks |= !vertTracks.empty();
+        foundCenterTracks |= vertTracks.find(box.yCenter()) != vertTracks.end();
+      }
+    }
+    if (foundTracks && box.minDXDY() > layer->getMinWidth()) {
+      foundCenterTracks = true;
+    }
+  } else if (uFig->typeId() == frcPolygon) {
+    hasPolys = true;
+    auto polygon = static_cast<frPolygon*>(uFig.get());
+    vector<gtl::point_data<frCoord>> points;
+    for (Point pt : polygon->getPoints()) {
+      if (is_iTerm) {
+        xform.apply(pt);
+      }
+      points.emplace_back(pt.x(), pt.y());
+      if (pt.getX() % grid || pt.getY() % grid) {
+        if (is_iTerm) {
+          logger_->error(
+              DRT,
+              417,
+              "Term {} of {} contains offgrid pin shape. Polygon point "
+              "{} is not a multiple of the manufacturing grid {}.",
+              term_name,
+              inst_name,
+              pt,
+              grid);
+        } else {
+          logger_->error(DRT,
+                         421,
+                         "BTerm {} contains offgrid pin shape. Polygon point "
+                         "{} is not a multiple of the manufacturing grid {}.",
+                         term_name,
+                         pt,
+                         grid);
         }
       }
+    }
+    if (foundTracks) {
+      return;
+    }
+    auto layer = tech_->getLayer(polygon->getLayerNum());
+    if (layer->getLayerNum() > VIAINPIN_TOPLAYERNUM
+        || layer->getLayerNum() < VIAINPIN_BOTTOMLAYERNUM) {
+      return;
+    }
+    vector<gtl::rectangle_data<frCoord>> rects;
+    gtl::polygon_90_data<frCoord> poly;
+    poly.set(points.begin(), points.end());
+    gtl::get_max_rectangles(rects, poly);
+    for (const auto& rect : rects) {
+      std::set<int> horzTracks, vertTracks;
+      getTrackLocs(true,
+                   layer,
+                   design_->getTopBlock(),
+                   gtl::yl(rect),
+                   gtl::yh(rect),
+                   horzTracks);
+      getTrackLocs(false,
+                   layer,
+                   design_->getTopBlock(),
+                   gtl::xl(rect),
+                   gtl::xh(rect),
+                   vertTracks);
+      bool allowWrongWayRouting
+          = (USENONPREFTRACKS && !layer->isUnidirectional());
+      if (allowWrongWayRouting) {
+        foundTracks |= (!horzTracks.empty() || !vertTracks.empty());
+      } else {
+        if (layer->getDir() == odb::dbTechLayerDir::HORIZONTAL) {
+          foundTracks |= !horzTracks.empty();
+        } else {
+          foundTracks |= !vertTracks.empty();
+        }
+      }
+    }
+  }
+}
+
+void io::Parser::checkPins()
+{
+  bool foundTracks = false;
+  bool foundCenterTracks = false;
+  bool hasPolys = false;
+  // Check BTerms on grid
+  for (const auto& bTerm : design_->getTopBlock()->getTerms()) {
+    foundTracks = false;
+    foundCenterTracks = false;
+    hasPolys = false;
+    dbTransform xform;
+    for (auto& pin : bTerm->getPins()) {
+      for (auto& uFig : pin->getFigs()) {
+        // frRect* shape = static_cast<frRect*>(uFig.get());
+        checkFig(std::move(uFig),
+                 bTerm->getName(),
+                 false,
+                 NULL,
+                 xform,
+                 foundTracks,
+                 foundCenterTracks,
+                 hasPolys);
+      }
+    }
+    if (!foundTracks) {
+      logger_->warn(
+          DRT, 418, "Term {} has no pins on routing grid", bTerm->getName());
+    } else if (!foundCenterTracks && !hasPolys) {
+      logger_->warn(DRT,
+                    419,
+                    "No routing tracks pass through the center of Term {}",
+                    bTerm->getName());
     }
   }
 
@@ -643,126 +775,29 @@ void io::Parser::checkPins()
       if (!iTerm->hasNet() || iTerm->getNet()->isSpecial()) {
         continue;
       }
+      foundTracks = false;
+      foundCenterTracks = false;
+      hasPolys = false;
       auto uTerm = iTerm->getTerm();
-      bool foundTracks = false;
-      bool foundCenterTracks = false;
-      bool hasPolys = false;
       for (auto& pin : uTerm->getPins()) {
         for (auto& uFig : pin->getFigs()) {
-          if (uFig->typeId() == frcRect) {
-            frRect* shape = static_cast<frRect*>(uFig.get());
-            Rect box = shape->getBBox();
-            xform.apply(box);
-            if (box.xMin() % grid || box.yMin() % grid || box.xMax() % grid
-                || box.yMax() % grid) {
-              logger_->error(
-                  DRT,
-                  416,
-                  "Term {} contains offgrid pin shape. Pin shape {} is "
-                  "not a multiple of the manufacturing grid {}.",
-                  iTerm->getName(),
-                  box,
-                  grid);
-            }
-            if (foundTracks && foundCenterTracks) {
-              continue;
-            }
-            auto layer = tech_->getLayer(shape->getLayerNum());
-            if (layer->getLayerNum() > VIAINPIN_TOPLAYERNUM
-                || layer->getLayerNum() < VIAINPIN_BOTTOMLAYERNUM) {
-              continue;
-            }
-            std::set<int> horzTracks, vertTracks;
-            getTrackLocs(true,
-                         layer,
-                         design_->getTopBlock(),
-                         box.yMin(),
-                         box.yMax(),
-                         horzTracks);
-            getTrackLocs(false,
-                         layer,
-                         design_->getTopBlock(),
-                         box.xMin(),
-                         box.xMax(),
-                         vertTracks);
-            bool allowWrongWayRouting
-                = (USENONPREFTRACKS && !layer->isUnidirectional());
-            if (allowWrongWayRouting) {
-              foundTracks |= (!horzTracks.empty() || !vertTracks.empty());
-              foundCenterTracks
-                  |= horzTracks.find(box.yCenter()) != horzTracks.end()
-                     || vertTracks.find(box.xCenter()) != vertTracks.end();
-            } else {
-              if (layer->getDir() == odb::dbTechLayerDir::HORIZONTAL) {
-                foundTracks |= !horzTracks.empty();
-                foundCenterTracks
-                    |= horzTracks.find(box.yCenter()) != horzTracks.end();
-              } else {
-                foundTracks |= !vertTracks.empty();
-                foundCenterTracks
-                    |= vertTracks.find(box.yCenter()) != vertTracks.end();
-              }
-            }
-            if (foundTracks && box.minDXDY() > layer->getMinWidth()) {
-              foundCenterTracks = true;
-            }
-          } else if (uFig->typeId() == frcPolygon) {
-            hasPolys = true;
-            auto polygon = static_cast<frPolygon*>(uFig.get());
-            vector<gtl::point_data<frCoord>> points;
-            for (Point pt : polygon->getPoints()) {
-              xform.apply(pt);
-              points.emplace_back(pt.x(), pt.y());
-              if (pt.getX() % grid || pt.getY() % grid) {
-                logger_->error(
-                    DRT,
-                    417,
-                    "Term {} of {} contains offgrid pin shape. Polygon point "
-                    "{} is not a multiple of the manufacturing grid {}.",
-                    uTerm->getName(),
-                    inst->getName(),
-                    pt,
-                    grid);
-              }
-            }
-            if (foundTracks) {
-              continue;
-            }
-            auto layer = tech_->getLayer(polygon->getLayerNum());
-            if (layer->getLayerNum() > VIAINPIN_TOPLAYERNUM
-                || layer->getLayerNum() < VIAINPIN_BOTTOMLAYERNUM) {
-              continue;
-            }
-            vector<gtl::rectangle_data<frCoord>> rects;
-            gtl::polygon_90_data<frCoord> poly;
-            poly.set(points.begin(), points.end());
-            gtl::get_max_rectangles(rects, poly);
-            for (const auto& rect : rects) {
-              std::set<int> horzTracks, vertTracks;
-              getTrackLocs(true,
-                           layer,
-                           design_->getTopBlock(),
-                           gtl::yl(rect),
-                           gtl::yh(rect),
-                           horzTracks);
-              getTrackLocs(false,
-                           layer,
-                           design_->getTopBlock(),
-                           gtl::xl(rect),
-                           gtl::xh(rect),
-                           vertTracks);
-              bool allowWrongWayRouting
-                  = (USENONPREFTRACKS && !layer->isUnidirectional());
-              if (allowWrongWayRouting) {
-                foundTracks |= (!horzTracks.empty() || !vertTracks.empty());
-              } else {
-                if (layer->getDir() == odb::dbTechLayerDir::HORIZONTAL) {
-                  foundTracks |= !horzTracks.empty();
-                } else {
-                  foundTracks |= !vertTracks.empty();
-                }
-              }
-            }
+          checkFig(std::move(uFig),
+                   uTerm->getName(),
+                   true,
+                   inst->getName(),
+                   xform,
+                   foundTracks,
+                   foundCenterTracks,
+                   hasPolys);
+          frRect* shape = static_cast<frRect*>(uFig.get());
+          if ((foundTracks && foundCenterTracks && uFig->typeId() == frcRect)
+              || (foundTracks && uFig->typeId() == frcPolygon)) {
+            continue;
+          }
+          auto layer = tech_->getLayer(shape->getLayerNum());
+          if (layer->getLayerNum() > VIAINPIN_TOPLAYERNUM
+              || layer->getLayerNum() < VIAINPIN_BOTTOMLAYERNUM) {
+            continue;
           }
         }
       }
