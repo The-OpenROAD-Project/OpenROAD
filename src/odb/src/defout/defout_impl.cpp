@@ -1439,6 +1439,7 @@ void defout_impl::writeWire(dbWire* wire)
   for (decode.begin(wire);;) {
     dbWireDecoder::OpCode opcode = decode.next();
     std::optional<uint8_t> color = decode.getColor();
+    std::optional<dbWireDecoder::ViaColor> viacolor = decode.getViaColor();
 
     switch (opcode) {
       case dbWireDecoder::PATH:
@@ -1531,6 +1532,14 @@ void defout_impl::writeWire(dbWire* wire)
 
         dbVia* via = decode.getVia();
 
+        std::string via_mask_statement;
+        if ((_version >= defout::DEF_5_8) && viacolor) {
+          via_mask_statement = fmt::format("MASK {}{}{} ",
+                                           viacolor.value().top_color,
+                                           viacolor.value().cut_color,
+                                           viacolor.value().bottom_color);
+        }
+
         if ((_version >= defout::DEF_5_6) && via->isViaRotated()) {
           std::string vname;
 
@@ -1539,10 +1548,14 @@ void defout_impl::writeWire(dbWire* wire)
           else
             vname = via->getBlockVia()->getName();
 
-          fprintf(_out, " %s %s", vname.c_str(), defOrient(via->getOrient()));
+          fprintf(_out,
+                  " %s%s %s",
+                  via_mask_statement.c_str(),
+                  vname.c_str(),
+                  defOrient(via->getOrient()));
         } else {
           std::string vname = via->getName();
-          fprintf(_out, " %s", vname.c_str());
+          fprintf(_out, " %s%s", via_mask_statement.c_str(), vname.c_str());
         }
         break;
       }
@@ -1551,9 +1564,17 @@ void defout_impl::writeWire(dbWire* wire)
         if ((++point_cnt & 7) == 0)
           fprintf(_out, "\n    ");
 
+        std::string via_mask_statement;
+        if ((_version >= defout::DEF_5_8) && viacolor) {
+          via_mask_statement = fmt::format("MASK {}{}{} ",
+                                           viacolor.value().top_color,
+                                           viacolor.value().cut_color,
+                                           viacolor.value().bottom_color);
+        }
+
         dbTechVia* via = decode.getTechVia();
         std::string vname = via->getName();
-        fprintf(_out, " %s", vname.c_str());
+        fprintf(_out, " %s%s", via_mask_statement.c_str(), vname.c_str());
         break;
       }
 

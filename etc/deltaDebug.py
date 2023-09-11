@@ -108,7 +108,8 @@ class deltaDebugger:
             err = None
             self.n = 2 # Initial Number of cuts
 
-            for i in range(self.persistence):
+            while self.n <= (2 ** self.persistence):
+                error_in_range = None
                 for j in range(self.n):
                     current_err = self.perform_step(cut_index = j)
                     if(current_err == "NOCUT"):
@@ -119,11 +120,15 @@ class deltaDebugger:
                         # This is a suitable level of detail to look for more errors,
                         # complete this level of detail.
                         err = current_err
+                        error_in_range = current_err
                         self.prepare_new_step()
 
-                if(err == None):
+                if(error_in_range == None):
                     # Increase the granularity of the cut in case target error not found
                     self.n *= 2
+                elif self.n >= 8:
+                    # Found errors, decrease granularity
+                    self.n = int(self.n / 2)
                 else:
                     break
 
