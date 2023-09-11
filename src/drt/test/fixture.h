@@ -205,8 +205,7 @@ class Fixture
   void initRegionQuery();
   frLef58CutSpacingConstraint* makeLef58CutSpacingConstraint_parallelOverlap(
       frLayerNum layer_num,
-      frCoord spacing,
-      bool parallelOverlap);
+      frCoord spacing);
   frLef58CutSpacingConstraint* makeLef58CutSpacingConstraint_adjacentCut(
       frLayerNum layer_num,
       frCoord spacing,

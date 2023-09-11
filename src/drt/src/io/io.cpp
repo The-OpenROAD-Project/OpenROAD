@@ -1582,7 +1582,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
         con->setSameVia(rule->isSameVia());
         con->setSameCut(rule->isSameCut());
         con->setSameMask(rule->isSameMask());
-        con->setParallelOverlap(rule->isParallelOverlap());
+        con->setParallelOverlap(true);
         tmpLayer->addLef58CutSpacingConstraint(con.get());
         tech_->addUConstraint(std::move(con));
         break;
