@@ -437,7 +437,7 @@ class FlexGCWorker::Impl
       gcRect* rect1,
       gcRect* rect2,
       frLef58CutSpacingConstraint* con,
-      gtl::rectangle_data<frCoord> markerRect);
+      const gtl::rectangle_data<frCoord>& markerRect);
   void checkLef58CutSpacing_main(gcRect* rect1,
                                  gcRect* rect2,
                                  frLef58CutSpacingConstraint* con);
