@@ -51,9 +51,10 @@ proc run_equivalence_test {test lib remove_cells} {
 
     set top_cell [current_design]
     # Gold netlist
-    puts $outfile "\[gold]\nread_verilog -sv $before_netlist $lib_files\nprep -top $top_cell\nmemory_map\n\n"
+    puts $outfile "\[gold]\nread_verilog -sv $before_netlist $lib_files\nprep -top $top_cell -flatten\nmemory_map\n\n"
     # Modified netlist 
-    puts $outfile "\[gate]\nread_verilog -sv  $after_netlist $lib_files\nprep -top $top_cell\nmemory_map\n\n"
+    puts $outfile "\[gate]\nread_verilog -sv  $after_netlist $lib_files\nprep -top $top_cell -flatten\nmemory_map\n\n"
+
     # Equivalence check recipe
     puts $outfile "\[strategy basic]\nuse sat\ndepth 10\n\n"
     close $outfile
