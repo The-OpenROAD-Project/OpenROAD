@@ -1562,6 +1562,10 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
               // TODO: Make this take and store rotation
               // snetR->pathVia(viaName,
               //                translate_orientation(path->getViaRotation()));
+            } else if (nextId == DEFIPATH_VIADATA) {
+              int numX, numY, stepX, stepY;
+              path->getViaData(&numX, &numY, &stepX, &stepY);
+              snetR->pathViaArray(viaName, numX, numY, stepX, stepY);
             } else {
               snetR->pathVia(viaName);
               path->prev();  // put back the token
