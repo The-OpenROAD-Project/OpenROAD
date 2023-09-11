@@ -853,8 +853,11 @@ int definReader::netCallback(defrCallbackType_e /* unused: type */,
           case DEFIPATH_MASK:
             netR->pathColor(path->getMask());
             break;
+
           case DEFIPATH_VIAMASK:
-            UNSUPPORTED("MASK in VIA net's routing is unsupported");
+            netR->pathViaColor(path->getViaBottomMask(),
+                               path->getViaCutMask(),
+                               path->getViaTopMask());
             break;
 
           default:
