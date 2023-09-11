@@ -32,6 +32,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <iostream>
 #include <queue>
 
 #include "DataType.h"
@@ -1121,15 +1122,18 @@ void FastRouteCore::StNetOrder()
 
   std::stable_sort(
       tree_order_cong_.begin(), tree_order_cong_.end(), compareTEL);
-  int k = 0;
-  for(auto order_element : tree_order_cong_) {
-    if (nets_[order_element.treeIndex]->getSlack() == std::ceil(std::numeric_limits<float>::lowest()))
-    {
-      if(order_element.xmin == 0 && (k >= (netCount()*30/100))) {
-        nets_[order_element.treeIndex]->setSlack(std::numeric_limits<float>::max());
+
+  /* set the critical nets priority, between the non critical nets with overflow
+    (or 30% first nets) and the rest of the non critical nets */
+  for (int id_ord_el = 0; id_ord_el < netCount(); id_ord_el++) {
+    auto order_element = tree_order_cong_[id_ord_el];
+    if (nets_[order_element.treeIndex]->getSlack()
+        == std::ceil(std::numeric_limits<float>::lowest())) {
+      if (order_element.xmin == 0 && (id_ord_el >= (netCount() * 30 / 100))) {
+        nets_[order_element.treeIndex]->setSlack(
+            std::numeric_limits<float>::max());
       }
     }
-    k++;
   }
 
   auto compareSlack = [this](const OrderTree a, const OrderTree b) {
@@ -1171,7 +1175,7 @@ float FastRouteCore::CalculatePartialSlack()
   const float slack_th = slacks[threshold_index];
 
   for (int netID = 0; netID < netCount(); netID++) {
-    if(nets_[netID]->getSlack() > slack_th) {
+    if (nets_[netID]->getSlack() > slack_th) {
       nets_[netID]->setSlack(std::ceil(std::numeric_limits<float>::lowest()));
     }
   }
