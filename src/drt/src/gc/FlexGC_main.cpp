@@ -2303,7 +2303,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_parallelOverlap(
     gcRect* rect1,
     gcRect* rect2,
     frLef58CutSpacingConstraint* con,
-    gtl::rectangle_data<frCoord> markerRect)
+    const gtl::rectangle_data<frCoord>& markerRect)
 {
   auto net1 = rect1->getNet();
   auto net2 = rect2->getNet();
