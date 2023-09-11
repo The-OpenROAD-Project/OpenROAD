@@ -313,6 +313,12 @@ module CLKBUF_X2 (A, Z);
    assign Z = (A);
 endmodule // CLKBUF_X2
 
+module CLKBUF_X3 (A, Z);
+   input A;
+   output Z;
+   assign Z = (A);
+endmodule // CLKBUF_X3
+
 module CLKBUF_X4 (A, Z);
    input A;
    output Z;
@@ -340,13 +346,25 @@ module DFFR_X1 (CK, D, RN, Q);
      else Q <= D;
 endmodule // DFF_X1
 
-module DFF_X2 (CK, D, Q);
+module DFF_X2 (CK, D, Q, QN);
    input CK;
    input D;
    output Q;
-   always @(posedge CK)
-     Q <= D;   
+   output QN;
+   always @(posedge CK) begin
+      Q <= D;
+      Q <= ~D;
+   end
 endmodule // DFF_X2
+
+module HA_X1 (A, B, CO, S);
+  input A;
+  input B;
+  output CO;
+  output S;
+   assign S = A ^ B;  // Dataflow expression for sum
+   assign CO = A & B;  // Dataflow expression for carry
+endmodule
 
 module INV_X1 (A, ZN);
    input A;
@@ -390,6 +408,13 @@ module MUX2_X1 (A, B, S, Z);
    // assign one of the inputs to the output based upon select line input
    assign Z = S ? B : A;
 endmodule // MUX2_X1
+
+module MUX2_X2 (A, B, S, Z);
+   input A, B, S;
+   output Z;
+   // assign one of the inputs to the output based upon select line input
+   assign Z = S ? B : A;
+endmodule // MUX2_X2
 
 module NAND2_X1 (A1, A2, ZN);
    input A1;
