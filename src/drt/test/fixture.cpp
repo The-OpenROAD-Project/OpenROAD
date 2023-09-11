@@ -546,19 +546,15 @@ void Fixture::makeKeepOutZoneRule(frLayerNum layer_num,
 
 frLef58CutSpacingConstraint*
 Fixture::makeLef58CutSpacingConstraint_parallelOverlap(frLayerNum layer_num,
-                                                       frCoord spacing,
-                                                       bool parallelOverlap)
+                                                       frCoord spacing)
 {
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
-  auto rule = odb::dbTechLayerCutSpacingRule::create(layer->getDbLayer());
-  rule->setCutSpacing(spacing);
-  rule->setParallelOverlap(parallelOverlap);
 
   auto uCon = make_unique<frLef58CutSpacingConstraint>();
   auto con = uCon.get();
-  con->setCutSpacing(rule->getCutSpacing());
-  con->setParallelOverlap(rule->isParallelOverlap());
+  con->setCutSpacing(spacing);
+  con->setParallelOverlap(true);
   layer->addLef58CutSpacingConstraint(con);
   design->getTech()->addUConstraint(std::move(uCon));
   return con;
