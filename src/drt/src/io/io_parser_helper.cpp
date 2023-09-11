@@ -592,7 +592,7 @@ inline void getTrackLocs(bool isHorzTracks,
   }
 }
 
-void io::Parser::checkFig(std::unique_ptr<frPinFig>* uFig,
+void io::Parser::checkFig(frPinFig* uFig,
                           const frString& term_name,
                           bool is_iTerm,
                           frString inst_name,
@@ -602,9 +602,8 @@ void io::Parser::checkFig(std::unique_ptr<frPinFig>* uFig,
                           bool& hasPolys)
 {
   int grid = tech_->getManufacturingGrid();
-
   if (uFig->typeId() == frcRect) {
-    frRect* shape = static_cast<frRect*>(uFig.get());
+    frRect* shape = static_cast<frRect*>(uFig);
     Rect box = shape->getBBox();
     if (is_iTerm) {
       xform.apply(box);
@@ -661,7 +660,7 @@ void io::Parser::checkFig(std::unique_ptr<frPinFig>* uFig,
     }
   } else if (uFig->typeId() == frcPolygon) {
     hasPolys = true;
-    auto polygon = static_cast<frPolygon*>(uFig.get());
+    auto polygon = static_cast<frPolygon*>(uFig);
     vector<gtl::point_data<frCoord>> points;
     for (Point pt : polygon->getPoints()) {
       if (is_iTerm) {
@@ -681,7 +680,7 @@ void io::Parser::checkFig(std::unique_ptr<frPinFig>* uFig,
               grid);
         } else {
           logger_->error(DRT,
-                         421,
+                         420,
                          "BTerm {} contains offgrid pin shape. Polygon point "
                          "{} is not a multiple of the manufacturing grid {}.",
                          term_name,
@@ -745,7 +744,7 @@ void io::Parser::checkPins()
     for (auto& pin : bTerm->getPins()) {
       for (auto& uFig : pin->getFigs()) {
         // frRect* shape = static_cast<frRect*>(uFig.get());
-        checkFig(std::move(uFig),
+        checkFig(uFig.get(),
                  bTerm->getName(),
                  false,
                  NULL,
@@ -757,11 +756,11 @@ void io::Parser::checkPins()
     }
     if (!foundTracks) {
       logger_->warn(
-          DRT, 418, "Term {} has no pins on routing grid", bTerm->getName());
+          DRT, 421, "BTerm {} has no pins on routing grid", bTerm->getName());
     } else if (!foundCenterTracks && !hasPolys) {
       logger_->warn(DRT,
-                    419,
-                    "No routing tracks pass through the center of Term {}",
+                    422,
+                    "No routing tracks pass through the center of BTerm {}",
                     bTerm->getName());
     }
   }
@@ -781,7 +780,7 @@ void io::Parser::checkPins()
       auto uTerm = iTerm->getTerm();
       for (auto& pin : uTerm->getPins()) {
         for (auto& uFig : pin->getFigs()) {
-          checkFig(std::move(uFig),
+          checkFig(uFig.get(),
                    uTerm->getName(),
                    true,
                    inst->getName(),
@@ -803,11 +802,11 @@ void io::Parser::checkPins()
       }
       if (!foundTracks) {
         logger_->warn(
-            DRT, 418, "Term {} has no pins on routing grid", iTerm->getName());
+            DRT, 418, "ITerm {} has no pins on routing grid", iTerm->getName());
       } else if (!foundCenterTracks && !hasPolys) {
         logger_->warn(DRT,
                       419,
-                      "No routing tracks pass through the center of Term {}",
+                      "No routing tracks pass through the center of ITerm {}",
                       iTerm->getName());
       }
     }

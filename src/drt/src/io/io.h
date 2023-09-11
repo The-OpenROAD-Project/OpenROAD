@@ -114,7 +114,7 @@ class Parser
   void convertLef58MinCutConstraints();
 
   // postProcess functions
-  void checkFig(std::unique_ptr<frPinFig>* uFig,
+  void checkFig(frPinFig* uFig,
                 const frString& term_name,
                 bool is_iTerm,
                 frString inst_name,
