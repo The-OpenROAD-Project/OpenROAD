@@ -5790,7 +5790,7 @@ void HierRTLMP::FDPlacement(std::vector<Rect>& blocks,
 }
 
 // Compute wirelength considering signal nets that connect macro to
-// other macros and IO pins
+// other macros
 float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
 {
   float wirelength = 0.0;
@@ -5807,7 +5807,7 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
           continue;
         }
 
-        if (net_iterm->getInst()->isBlock() || net_iterm->getBTerm() != nullptr) {
+        if (net_iterm->getInst()->isBlock()) {
           const float x1 = dbuToMicron(iterm->getBBox().xCenter(), dbu_);
           const float y1 = dbuToMicron(iterm->getBBox().yCenter(), dbu_);
           const float x2 = dbuToMicron(net_iterm->getBBox().xCenter(), dbu_);
