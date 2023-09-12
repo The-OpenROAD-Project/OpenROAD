@@ -32,7 +32,6 @@
 
 #include <algorithm>
 #include <fstream>
-#include <iostream>
 #include <queue>
 
 #include "DataType.h"
