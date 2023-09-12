@@ -37,7 +37,6 @@
 #include <string>
 
 #include "db.h"
-#include "iostream"
 #include "utl/Logger.h"
 
 namespace odb {
