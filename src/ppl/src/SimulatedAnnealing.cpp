@@ -581,6 +581,14 @@ int SimulatedAnnealing::shiftGroup(int group_idx)
 {
   const PinGroupByIndex& group = pin_groups_[group_idx];
   const std::vector<int>& pin_indices = group.pin_indices;
+  bool is_mirrored = false;
+  for (const int pin_idx : pin_indices) {
+    const IOPin& io_pin = netlist_->getIoPin(pin_idx);
+    if (io_pin.isMirrored()) {
+      is_mirrored = true;
+      break;
+    }
+  }
   int prev_cost = computeGroupPrevCost(group_idx);
   updateSlotsFromGroup(prev_slots_, false);
 
@@ -595,6 +603,10 @@ int SimulatedAnnealing::shiftGroup(int group_idx)
   int slot = min_slot - 1;
   while (free_slot && same_edge_slot && slot >= 0) {
     free_slot = slots_[slot].isAvailable();
+    int mirrored_slot;
+    if (is_mirrored) {
+      free_slot = free_slot && isFreeForMirrored(slot, mirrored_slot);
+    }
     same_edge_slot = slots_[slot].edge == edge;
     if (!free_slot || !same_edge_slot) {
       break;
@@ -611,6 +623,10 @@ int SimulatedAnnealing::shiftGroup(int group_idx)
   slot = min_slot + 1;
   while (free_slot && same_edge_slot && slot < slots_.size()) {
     free_slot = slots_[slot].isAvailable();
+    int mirrored_slot;
+    if (is_mirrored) {
+      free_slot = free_slot && isFreeForMirrored(slot, mirrored_slot);
+    }
     same_edge_slot = slots_[slot].edge == edge;
     if (!free_slot || !same_edge_slot) {
       break;
