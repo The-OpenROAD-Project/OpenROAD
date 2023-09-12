@@ -47,6 +47,8 @@
 #include "utl/Logger.h"
 namespace odb {
 
+static const int max_name_length = 256;
+
 template <typename T>
 static std::vector<T*> sortedSet(dbSet<T>& to_sort)
 {
@@ -1338,7 +1340,7 @@ void defout_impl::writeSNet(dbNet* net)
     fprintf(_out, " ( PIN %s )", bterm->getName().c_str());
   }
 
-  char ttname[dbObject::max_name_length];
+  char ttname[max_name_length];
   dbSet<dbITerm>::iterator iterm_itr;
   std::set<std::string> wild_names;
   for (iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
@@ -1349,7 +1351,6 @@ void defout_impl::writeSNet(dbNet* net)
 
     dbInst* inst = iterm->getInst();
     dbMTerm* mterm = iterm->getMTerm();
-    // std::string mtname = mterm->getName();
     char* mtname = mterm->getName(inst, &ttname[0]);
     if (net->isWildConnected()) {
       if (wild_names.find(mtname) == wild_names.end()) {
@@ -1863,7 +1864,7 @@ void defout_impl::writeNet(dbNet* net)
     fprintf(_out, "    - %s", nname.c_str());
   }
 
-  char ttname[dbObject::max_name_length];
+  char ttname[max_name_length];
   int i = 0;
 
   for (dbBTerm* bterm : net->getBTerms()) {
@@ -2141,7 +2142,7 @@ void defout_impl::writePinProperties(dbBlock* block)
     }
   }
 
-  char ttname[dbObject::max_name_length];
+  char ttname[max_name_length];
   for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
     dbITerm* iterm = *iitr;
 

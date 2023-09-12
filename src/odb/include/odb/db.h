@@ -361,11 +361,6 @@ class dbDatabase : public dbObject
   uint getNumberOfMasters();
 
   ///
-  /// Translate a database-name to a database object.
-  ///
-  // dbObject * resolveDbName( const char * dbname );
-
-  ///
   /// Read a database from this stream.
   /// WARNING: This function destroys the data currently in the database.
   /// Throws ZIOError..
@@ -6866,7 +6861,6 @@ class dbTechSameNetRule : public dbObject
 };
 
 class dbViaParams : private _dbViaParams
-// class dbViaParams : public _dbViaParams
 {
   friend class dbVia;
   friend class dbTechVia;
