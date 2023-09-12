@@ -40,7 +40,6 @@
 #include <set>
 #include <string>
 
-#include "ZComponents.h"
 #include "db.h"
 #include "dbAccessPoint.h"
 #include "dbArrayTable.h"
@@ -107,7 +106,6 @@
 #include "dbSBoxItr.h"
 #include "dbSWire.h"
 #include "dbSWireItr.h"
-#include "dbSearch.h"
 #include "dbShape.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -2775,113 +2773,6 @@ dbBlockSearch* dbBlock::getSearchDb()
 {
   _dbBlock* block = (_dbBlock*) this;
   return block->_searchDb;
-}
-
-#ifdef ZUI
-ZPtr<ISdb> dbBlock::getSignalNetSdb(ZContext& context, dbTech* tech)
-{
-  _dbBlock* block = (_dbBlock*) this;
-  if (block->_searchDb == nullptr)
-    block->_searchDb = new dbBlockSearch(this, tech);
-  if (block->_searchDb == nullptr)
-    return nullptr;
-  return block->_searchDb->getSignalNetSdb(context);
-}
-dbBlockSearch* dbBlock::getSearchDb()
-{
-  _dbBlock* block = (_dbBlock*) this;
-  return block->_searchDb;
-}
-ZPtr<ISdb> dbBlock::getNetSdb(ZContext& context, dbTech* tech)
-{
-  _dbBlock* block = (_dbBlock*) this;
-  if (block->_searchDb == nullptr)
-    block->_searchDb = new dbBlockSearch(this, tech);
-  if (block->_searchDb == nullptr)
-    return nullptr;
-  return block->_searchDb->getNetSdb(context);
-}
-ZPtr<ISdb> dbBlock::getNetSdb()
-{
-  _dbBlock* block = (_dbBlock*) this;
-  if (block->_searchDb == nullptr)
-    return nullptr;
-  return block->_searchDb->getNetSdb();
-}
-void dbBlock::resetNetSdb()
-{
-  _dbBlock* block = (_dbBlock*) this;
-  if (block->_searchDb == nullptr)
-    return;
-  block->_searchDb->resetNetSdb();
-}
-void dbBlock::removeSdb(std::vector<dbNet*>& nets)
-{
-  ZPtr<ISdb> netSdb = getNetSdb();
-  if (netSdb == nullptr || netSdb->getSearchPtr() == nullptr)
-    return;
-  dbNet::markNets(nets, this, true);
-  netSdb->removeMarkedNetWires();
-  dbNet::markNets(nets, this, false);
-}
-
-dbBlockSearch* dbBlock::initSearchBlock(dbTech* tech,
-                                        bool nets,
-                                        bool insts,
-                                        ZContext& context,
-                                        bool skipViaCuts)
-{
-  _dbBlock* block = (_dbBlock*) this;
-
-  /* TODO: TEMPORARY FIX
-      if (block->_searchDb!=nullptr)
-              delete block->_searchDb;
-  */
-
-  block->_searchDb = new dbBlockSearch(this, tech);
-
-  if (skipViaCuts)
-    block->_searchDb->setViaCutsFlag(skipViaCuts);
-  block->_searchDb->makeSearchDB(nets, insts, context);
-
-  return block->_searchDb;
-}
-
-uint dbBlock::getInsts(int x1,
-                       int y1,
-                       int x2,
-                       int y2,
-                       std::vector<dbInst*>& result)
-{
-  _dbBlock* block = (_dbBlock*) this;
-  return block->_searchDb->getInstBoxes(x1, y1, x2, y2, result);
-}
-#endif
-void dbBlock::updateNetFlags(std::vector<dbNet*>& result)
-{
-  _dbBlock* block = (_dbBlock*) this;
-  dbSet<dbNet> nets = getNets();
-  dbSet<dbNet>::iterator nitr;
-
-  for (nitr = nets.begin(); nitr != nets.end(); ++nitr) {
-    dbNet* net = *nitr;
-
-    _dbNet* n = (_dbNet*) *nitr;
-
-    if (n->_flags._wire_altered != 1)
-      continue;
-
-    n->_flags._reduced = 0;
-    n->_flags._extracted = 0;
-    n->_flags._rc_graph = 0;
-    n->_flags._wire_ordered = 0;
-
-    if (block->_journal) {
-      // assert(0);
-    }
-
-    result.push_back(net);
-  }
 }
 
 void dbBlock::getWireUpdatedNets(std::vector<dbNet*>& result)

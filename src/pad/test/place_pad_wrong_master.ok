@@ -1,0 +1,14 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 135 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0222] Reading LEF file: Nangate45_io/dummy_pads.lef
+[INFO ODB-0225]     Created 24 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45_io/dummy_pads.lef
+[INFO ODB-0128] Design: soc_bsg_black_parrot
+[INFO ODB-0130]     Created 135 pins.
+[INFO ODB-0131]     Created 267 components and 2277 component-terminals.
+[INFO ODB-0133]     Created 350 nets and 390 connections.
+[ERROR PAD-0118] Master cell mismatch for u_ddr_cke_o (PADCELL_SIG_V) is not PADCELL_SIG_H
+PAD-0118

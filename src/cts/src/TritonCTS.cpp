@@ -195,16 +195,18 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
   }
 }
 
-void TritonCTS::countSinksPostDbWrite(TreeBuilder* builder,
-                                      odb::dbNet* net,
-                                      unsigned& sinks,
-                                      unsigned& leafSinks,
-                                      unsigned currWireLength,
-                                      double& sinkWireLength,
-                                      int& minDepth,
-                                      int& maxDepth,
-                                      int depth,
-                                      bool fullTree)
+void TritonCTS::countSinksPostDbWrite(
+    TreeBuilder* builder,
+    odb::dbNet* net,
+    unsigned& sinks_cnt,
+    unsigned& leafSinks,
+    unsigned currWireLength,
+    double& sinkWireLength,
+    int& minDepth,
+    int& maxDepth,
+    int depth,
+    bool fullTree,
+    const std::unordered_set<odb::dbITerm*>& sinks)
 {
   odb::dbSet<odb::dbITerm> iterms = net->getITerms();
   int driverX = 0;
@@ -243,21 +245,22 @@ void TritonCTS::countSinksPostDbWrite(TreeBuilder* builder,
       unsigned dist = abs(driverX - receiverX) + abs(driverY - receiverY);
       bool terminate
           = fullTree
-                ? isSink(iterm)
+                ? (sinks.find(iterm) != sinks.end())
                 : !builder->isAnyTreeBuffer(getClockFromInst(iterm->getInst()));
       if (!terminate) {
         odb::dbITerm* outputPin = iterm->getInst()->getFirstOutput();
         if (outputPin) {
           countSinksPostDbWrite(builder,
                                 outputPin->getNet(),
-                                sinks,
+                                sinks_cnt,
                                 leafSinks,
                                 (currWireLength + dist),
                                 sinkWireLength,
                                 minDepth,
                                 maxDepth,
                                 depth + 1,
-                                fullTree);
+                                fullTree,
+                                sinks);
         } else {
           logger_->report("Hanging buffer {}", name);
         }
@@ -265,7 +268,7 @@ void TritonCTS::countSinksPostDbWrite(TreeBuilder* builder,
           leafSinks++;
         }
       } else {
-        sinks++;
+        sinks_cnt++;
         double currSinkWl
             = (dist + currWireLength) / double(options_->getDbUnits());
         sinkWireLength += currSinkWl;
@@ -302,6 +305,11 @@ void TritonCTS::writeDataToDb()
     bool reportFullTree = !builder->getParent()
                           && !builder->getChildren().empty()
                           && options_->getBalanceLevels();
+
+    std::unordered_set<odb::dbITerm*> sinks;
+    builder->getClock().forEachSink([&sinks](const ClockInst& inst) {
+      sinks.insert(inst.getDbInputPin());
+    });
     countSinksPostDbWrite(builder,
                           topClockNet,
                           sinkCount,
@@ -311,7 +319,8 @@ void TritonCTS::writeDataToDb()
                           minDepth,
                           maxDepth,
                           0,
-                          reportFullTree);
+                          reportFullTree,
+                          sinks);
     logger_->info(CTS, 98, "Clock net \"{}\"", builder->getClock().getName());
     logger_->info(CTS, 99, " Sinks {}", sinkCount);
     logger_->info(CTS, 100, " Leaf buffers {}", leafSinks);
@@ -569,12 +578,6 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* net,
                   "Net \"{}\" has {} sinks. Skipping...",
                   clockNet.getName(),
                   clockNet.getNumSinks());
-    return nullptr;
-  }
-
-  if (clockNet.getNumSinks() == 0) {
-    logger_->warn(
-        CTS, 42, "Net \"{}\" has no sinks. Skipping...", clockNet.getName());
     return nullptr;
   }
 
