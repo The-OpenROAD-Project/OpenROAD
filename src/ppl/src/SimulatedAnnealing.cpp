@@ -643,6 +643,8 @@ int SimulatedAnnealing::shiftGroup(int group_idx)
     } else {
       shiftGroupToPosition(pin_indices, max_count, min_slot, true);
     }
+  } else {
+    prev_cost = move_fail_;
   }
 
   return prev_cost;
