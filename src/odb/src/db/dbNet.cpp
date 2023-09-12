@@ -1420,8 +1420,6 @@ void dbNet::setDisconnected(bool value)
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
-  // dimitri_fix : LOOK_AGAIN for FULL_ECO mode uint prev_flags =
-  // flagsToUInt(net);
 
   net->_flags._disconnected = (value == true) ? 1 : 0;
 
@@ -1444,8 +1442,6 @@ void dbNet::setWireAltered(bool value)
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
-  // dimitri_fix : LOOK_AGAIN for FULL_ECO mode uint prev_flags =
-  // flagsToUInt(net);
 
   net->_flags._wire_altered = (value == true) ? 1 : 0;
   if (value)
@@ -1476,8 +1472,6 @@ void dbNet::setExtracted(bool value)
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
-  // dimitri_fix : LOOK_AGAIN for FULL_ECO mode uint prev_flags =
-  // flagsToUInt(net);
 
   net->_flags._extracted = (value == true) ? 1 : 0;
 
@@ -1761,8 +1755,6 @@ void dbNet::setSpecial()
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
-  // dimitri_fix : LOOK_AGAIN for FULL_ECO mode uint prev_flags =
-  // flagsToUInt(net);
 
   net->_flags._special = 1;
 
@@ -1784,8 +1776,6 @@ void dbNet::clearSpecial()
 
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint prev_flags = flagsToUInt(net);
-  // dimitri_fix : LOOK_AGAIN for FULL_ECO mode uint prev_flags =
-  // flagsToUInt(net);
 
   net->_flags._special = 0;
 
@@ -2658,9 +2648,6 @@ void dbNet::preExttreeMergeRC(double max_cap, uint corner)
     if (!tgtNode->isTreeNode() && totalcap[corner] <= max_cap
         && !tgtNode->isDangling())
       continue;
-#ifdef EXT
-    prc->mergeRCs(mrsegs);
-#endif
     prc = rc;
     mrsegs.clear();
     firstRC = true;
@@ -3151,76 +3138,4 @@ void dbNet::clearTracks()
   }
 }
 
-#if 0
-//
-// Helper fn: given a net create two terms at endpoints (x1,y1) and (x2,y2)
-// Return true iff successful.
-//
-std::pair<dbBTerm *,dbBTerm *>
-dbNet::createTerms4SingleNet(int x1, int y1, int x2, int y2, dbTechLayer *inly)
-{
-  int fwidth = std::min(x2 - x1, y2 - y1);
-  uint hwidth = fwidth/2;
-
-  std::pair<dbBTerm *,dbBTerm *> retpr;
-  retpr.first  = nullptr;
-  retpr.second = nullptr;
-
-  std::string term_str(this->getName());
-  term_str = term_str + "_BL";
-  dbBTerm *blterm = dbBTerm::create(this, term_str.c_str());
-
-  if (!blterm)
-    return retpr;
-
-  term_str = this->getName();
-  term_str = term_str + "_BU";
-  dbBTerm *buterm = dbBTerm::create(this, term_str.c_str());
-
-  if (!buterm)
-  {
-      dbBTerm::destroy(blterm);
-      return retpr;
-  }
-
-  // TWG: Added bpins
-  dbBPin * blpin = dbBPin::create(blterm);
-  dbBPin * bupin = dbBPin::create(buterm);
-
-  if ((x2 - x1) == fwidth)
-  {
-      int x = x1+hwidth;
-	  /*
-	  if ((y2-y1)==fwidth) {
-		  dbBox::create(blpin, inly, -hwidth+x, y1, hwidth+x, hwidth+y1);
-		  dbBox::create(bupin, inly, -hwidth+x, y2, hwidth+x, hwidth+y2);
-	  }
-	  else {
-		  dbBox::create(blpin, inly, -hwidth+x, -hwidth+y1, hwidth+x, hwidth+y1);
-		  dbBox::create(bupin, inly, -hwidth+x, -hwidth+y2, hwidth+x, hwidth+y2);
-	  }
-	  */
-      dbBox::create(blpin, inly, -hwidth+x, -hwidth+y1, hwidth+x, hwidth+y1);
-      dbBox::create(bupin, inly, -hwidth+x, -hwidth+y2, hwidth+x, hwidth+y2);
-  }
-  else
-  {
-      int y = y1+hwidth;
-      dbBox::create(blpin, inly, -hwidth+x1, -hwidth+y, hwidth+x1, hwidth+y);
-      dbBox::create(bupin, inly, -hwidth+x2, -hwidth+y, hwidth+x2, hwidth+y);
-  }
-
-  blterm->setSigType(dbSigType::SIGNAL);
-  buterm->setSigType(dbSigType::SIGNAL);
-  blterm->setIoType(dbIoType::INPUT);
-  buterm->setIoType(dbIoType::OUTPUT);
-  blpin->setPlacementStatus(dbPlacementStatus::PLACED);
-  bupin->setPlacementStatus(dbPlacementStatus::PLACED);
-
-  retpr.first = blterm;
-  retpr.second = buterm;
-  return retpr;
-}
-
-#endif
 }  // namespace odb

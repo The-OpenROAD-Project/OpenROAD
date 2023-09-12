@@ -393,8 +393,10 @@ RepairHold::repairEndHold(Vertex *end_vertex,
         Net *path_net = network_->isTopLevelPort(path_pin)
           ? network_->net(network_->term(path_pin))
           : network_->net(path_pin);
+        dbNet* db_path_net = db_network_->staToDb(path_net);
         if (path_vertex->isDriver(network_)
-            && !resizer_->dontTouch(path_net)) {
+            && !resizer_->dontTouch(path_net)
+            && !db_path_net->isConnectedByAbutment()) {
           PinSeq load_pins;
           Slacks slacks;
           mergeInit(slacks);

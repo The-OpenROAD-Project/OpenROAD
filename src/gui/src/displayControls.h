@@ -269,6 +269,8 @@ class DisplayControls : public QDockWidget,
   // options displayed need to match
   void blockLoaded(odb::dbBlock* block);
 
+  void setCurrentBlock(odb::dbBlock* block);
+
   // This is called by the check boxes to update the state
   void itemChanged(QStandardItem* item);
   void displayItemSelected(const QItemSelection& selection);
