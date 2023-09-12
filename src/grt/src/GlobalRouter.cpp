@@ -3280,7 +3280,8 @@ int GlobalRouter::findInstancesObstructions(
             lower_bound = odb::Point(rect.xMin(), rect.yMin());
             upper_bound = odb::Point(rect.xMax(), rect.yMax());
             pin_box = odb::Rect(lower_bound, upper_bound);
-            if (!die_area.contains(pin_box)) {
+            if (!die_area.contains(pin_box)
+                && !mterm->getSigType().isSupply()) {
               logger_->error(GRT,
                              39,
                              "Found pin {} outside die area in instance {}.",

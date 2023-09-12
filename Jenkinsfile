@@ -5,6 +5,7 @@ pipeline {
   }
   environment {
     COMMIT_AUTHOR_EMAIL = sh (returnStdout: true, script: "git --no-pager show -s --format='%ae'").trim();
+    EQUIVALENCE_CHECK = 1;
   }
   stages {
     stage('Build and test') {
