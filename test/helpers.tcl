@@ -61,8 +61,11 @@ proc run_equivalence_test {test lib remove_cells} {
 
     if {[info exists ::env(EQUIVALENCE_CHECK)]} {
 	exec rm -rf $run_dir
-	exec eqy -d $run_dir $test_script > /dev/null
-	set count [exec grep -c "Successfully proved designs equivalent" $run_dir/logfile.txt]
+	catch { exec eqy -d $run_dir $test_script > /dev/null }
+	set count 0
+	catch {
+	    set count [exec grep -c "Successfully proved designs equivalent" $run_dir/logfile.txt]
+	}
 	if { $count == 0 } {
 	    puts "Repair timing output failed equivalence test"
 	} else {
