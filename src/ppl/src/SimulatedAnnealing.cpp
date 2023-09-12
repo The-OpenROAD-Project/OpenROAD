@@ -582,10 +582,9 @@ int SimulatedAnnealing::shiftGroup(int group_idx)
   const PinGroupByIndex& group = pin_groups_[group_idx];
   const std::vector<int>& pin_indices = group.pin_indices;
   int prev_cost = computeGroupPrevCost(group_idx);
+  updateSlotsFromGroup(prev_slots_, false);
 
   const int min_slot = std::min(pin_assignment_[pin_indices.front()],
-                                pin_assignment_[pin_indices.back()]);
-  const int max_slot = std::max(pin_assignment_[pin_indices.front()],
                                 pin_assignment_[pin_indices.back()]);
 
   bool free_slot = true;
@@ -609,7 +608,7 @@ int SimulatedAnnealing::shiftGroup(int group_idx)
   same_edge_slot = true;
 
   int max_count = 0;
-  slot = max_slot + 1;
+  slot = min_slot + 1;
   while (free_slot && same_edge_slot && slot < slots_.size()) {
     free_slot = slots_[slot].isAvailable();
     same_edge_slot = slots_[slot].edge == edge;
@@ -620,6 +619,7 @@ int SimulatedAnnealing::shiftGroup(int group_idx)
     max_count++;
     slot++;
   }
+  max_count -= pin_indices.size();
 
   if (min_count + max_count > 0) {
     if (min_count > max_count) {
