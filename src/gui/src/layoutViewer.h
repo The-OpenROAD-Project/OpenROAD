@@ -143,34 +143,21 @@ class LayoutViewer : public QWidget
                const SelectionSet& selected,
                const HighlightSet& highlighted,
                const Rulers& rulers,
+               const std::map<odb::dbModule*, ModuleSettings>& module_settings,
+               const std::set<odb::dbNet*>& focus_nets,
+               const std::set<odb::dbNet*>& route_guides,
+               const std::set<odb::dbNet*>& net_tracks,
                Gui* gui,
                const std::function<bool(void)>& usingDBU,
                const std::function<bool(void)>& showRulerAsEuclidian,
                QWidget* parent = nullptr);
 
+  odb::dbBlock* getBlock() const { return block_; }
   void setLogger(utl::Logger* logger);
   qreal getPixelsPerDBU() { return pixels_per_dbu_; }
   void setScroller(LayoutScroll* scroller);
 
   void restoreTclCommands(std::vector<std::string>& cmds);
-
-  void addFocusNet(odb::dbNet* net);
-  void removeFocusNet(odb::dbNet* net);
-  void addRouteGuides(odb::dbNet* net);
-  void removeRouteGuides(odb::dbNet* net);
-  void addNetTracks(odb::dbNet* net);
-  void removeNetTracks(odb::dbNet* net);
-  void clearFocusNets();
-  void clearRouteGuides();
-  void clearNetTracks();
-  const std::set<odb::dbNet*>& getFocusNets() { return focus_nets_; }
-  const std::set<odb::dbNet*>& getRouteGuides() { return route_guides_; }
-  const std::set<odb::dbNet*>& getNetTracks() { return net_tracks_; }
-
-  const std::map<odb::dbModule*, ModuleSettings>& getModuleSettings()
-  {
-    return modules_;
-  }
 
   // conversion functions
   odb::Rect screenToDBU(const QRectF& rect) const;
@@ -233,8 +220,8 @@ class LayoutViewer : public QWidget
   // zoom to the specified rect
   void zoomTo(const odb::Rect& rect_dbu);
 
-  // indicates a design has been loaded
-  void designLoaded(odb::dbBlock* block);
+  // indicates a block has been loaded
+  void blockLoaded(odb::dbBlock* block);
 
   // fit the whole design in the window
   void fit();
@@ -279,11 +266,6 @@ class LayoutViewer : public QWidget
   {
     selectionAnimation(inspector_selection_, repeats, update_interval);
   }
-
-  void updateModuleVisibility(odb::dbModule* module, bool visible);
-  void updateModuleColor(odb::dbModule* module,
-                         const QColor& color,
-                         bool user_selected);
 
   void exit();
 
@@ -400,7 +382,7 @@ class LayoutViewer : public QWidget
   std::function<bool(void)> usingDBU_;
   std::function<bool(void)> showRulerAsEuclidian_;
 
-  std::map<odb::dbModule*, ModuleSettings> modules_;
+  const std::map<odb::dbModule*, ModuleSettings>& modules_;
 
   bool building_ruler_;
   std::unique_ptr<odb::Point> ruler_start_;
@@ -444,12 +426,9 @@ class LayoutViewer : public QWidget
   // drawn.
   std::map<odb::dbTechLayer*, int> cut_maximum_size_;
 
-  // Set of nets to focus drawing on, if empty draw everything
-  std::set<odb::dbNet*> focus_nets_;
-  // Set of nets to draw route guides for, if empty draw nothing
-  std::set<odb::dbNet*> route_guides_;
-  // Set of nets to draw assigned tracks for, if empty draw nothing
-  std::set<odb::dbNet*> net_tracks_;
+  const std::set<odb::dbNet*>& focus_nets_;
+  const std::set<odb::dbNet*>& route_guides_;
+  const std::set<odb::dbNet*>& net_tracks_;
 
   RenderThread viewer_thread_;
   QPixmap draw_pixmap_;

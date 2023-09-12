@@ -1643,6 +1643,9 @@ void IOPlacer::initConstraints(bool annealing)
       IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
       io_pin.setConstraintIdx(constraint_idx);
       constraint.pin_indices.push_back(pin_idx);
+      if (io_pin.getGroupIdx() != -1) {
+        constraint.pin_groups.insert(io_pin.getGroupIdx());
+      }
     }
     constraint_idx++;
   }
