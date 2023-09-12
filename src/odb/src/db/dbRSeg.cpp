@@ -552,15 +552,6 @@ void dbRSeg::printCcSegs()
   getCcSegs(ccsegs);
   getImpl()->getLogger()->info(
       utl::ODB, 54, "CC segs of RSeg {}-{}", getSourceNode(), getTargetNode());
-#if 0
-    uint j;
-    dbCCSeg *seg;
-    for (j=0;j<ccsegs.size();j++)
-    {
-        seg = ccsegs[j];
-        getImpl()->getLogger()->info(utl::ODB, 55, "           CC{} : {}-{}", j, seg->getSourceNode(), seg->getTargetNode()); 
-    }
-#endif
 }
 
 void dbRSeg::printCC()

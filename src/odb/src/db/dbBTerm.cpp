@@ -45,7 +45,11 @@
 #include "dbDiff.h"
 #include "dbDiff.hpp"
 #include "dbITerm.h"
+#include "dbInst.h"
+#include "dbInstHdr.h"
 #include "dbJournal.h"
+#include "dbMTerm.h"
+#include "dbMaster.h"
 #include "dbNet.h"
 #include "dbShape.h"
 #include "dbTable.h"
@@ -670,6 +674,33 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
   bterm->_name = strdup(name);
   ZALLOCATED(bterm->_name);
   block->_bterm_hash.insert(bterm);
+
+  // If there is a parentInst then we need to update the dbMaster's
+  // mterms and the parent dbInst's iterms to match
+  dbBlock* block_public = (dbBlock*) block;
+  if (dbInst* inst = block_public->getParentInst()) {
+    _dbBlock* parent_block = (_dbBlock*) inst->getBlock();
+    dbMaster* master = inst->getMaster();
+    _dbMaster* master_impl = (_dbMaster*) master;
+    _dbInstHdr* inst_hdr = parent_block->_inst_hdr_hash.find(master_impl->_id);
+    ZASSERT(inst_hdr->_inst_cnt == 1);
+
+    master_impl->_flags._frozen = 0;  // allow the mterm creation
+    auto mterm = (_dbMTerm*) dbMTerm::create(master, name, dbIoType::INOUT);
+    master_impl->_flags._frozen = 1;
+    mterm->_order_id = inst_hdr->_mterms.size();
+    inst_hdr->_mterms.push_back(mterm->getOID());
+
+    _dbInst* inst_impl = (_dbInst*) inst;
+    _dbITerm* iterm = parent_block->_iterm_tbl->create();
+    inst_impl->_iterms.push_back(iterm->getOID());
+    iterm->_flags._mterm_idx = mterm->_order_id;
+    iterm->_inst = inst_impl->getOID();
+
+    bterm->_parent_block = parent_block->getOID();
+    bterm->_parent_iterm = inst_impl->_iterms[mterm->_order_id];
+  }
+
   for (auto callback : block->_callbacks) {
     callback->inDbBTermCreate((dbBTerm*) bterm);
   }

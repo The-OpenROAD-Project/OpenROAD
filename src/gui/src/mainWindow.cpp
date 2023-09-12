@@ -144,6 +144,10 @@ MainWindow::MainWindow(QWidget* parent)
   clock_viewer_->hide();
 
   // Hook up all the signals/slots
+  connect(viewers_,
+          &LayoutTabs::setCurrentBlock,
+          controls_,
+          &DisplayControls::setCurrentBlock);
   connect(script_, &ScriptWidget::exiting, this, &MainWindow::exit);
   connect(script_,
           &ScriptWidget::commandExecuted,

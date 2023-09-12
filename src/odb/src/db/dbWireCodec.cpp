@@ -642,6 +642,32 @@ void dbWireEncoder::clearColor()
   addOp(WOP_COLOR, 0);
 }
 
+void dbWireEncoder::setViaColor(uint8_t bottom_color,
+                                uint8_t cut_color,
+                                uint8_t top_color)
+{
+  // LEF/DEF says 3 is the max number of supported masks per layer.
+  // 0 is also not a valid mask.
+  for (const auto color : {bottom_color, cut_color, top_color}) {
+    if (color > 3) {
+      utl::Logger* logger = _wire->getImpl()->getLogger();
+      logger->error(
+          utl::ODB, 1103, "Mask color: {}, but must be between 0 and 3", color);
+    }
+  }
+
+  // encode as XX BB CC TT
+  const uint8_t mask_color = bottom_color << 4 | cut_color << 2 | top_color;
+
+  addOp(WOP_VIACOLOR, mask_color);
+}
+
+void dbWireEncoder::clearViaColor()
+{
+  // 0 is a special value representing no mask color.
+  addOp(WOP_VIACOLOR, 0);
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 //
 // dbWireDecoder
@@ -1057,6 +1083,20 @@ nextOpCode:
       goto nextOpCode;
     }
 
+    case WOP_VIACOLOR: {
+      uint8_t viacolor = static_cast<uint8_t>(_operand);
+      if (viacolor == 0) {
+        _viacolor = std::nullopt;
+      } else {
+        _viacolor = ViaColor();
+        _viacolor.value().bottom_color = (viacolor & 0x30) >> 4;
+        _viacolor.value().cut_color = (viacolor & 0x0c) >> 2;
+        _viacolor.value().top_color = (viacolor & 0x03);
+      }
+
+      goto nextOpCode;
+    }
+
     default:
       ZASSERT(DB_WIRE_DECODE_INVALID_OPCODE);
       goto nextOpCode;
@@ -1117,6 +1157,11 @@ dbTechVia* dbWireDecoder::getTechVia() const
 std::optional<uint8_t> dbWireDecoder::getColor() const
 {
   return _color;
+}
+
+std::optional<dbWireDecoder::ViaColor> dbWireDecoder::getViaColor() const
+{
+  return _viacolor;
 }
 
 void dbWireDecoder::getRect(int& deltaX1,
