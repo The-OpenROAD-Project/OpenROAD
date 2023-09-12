@@ -2582,7 +2582,7 @@ void FlexDRWorker::route_queue_init_queue(queue<RouteQueueEntry>& rerouteQueue)
         if (marker.getSrcs().find(net->getFrNet()) != marker.getSrcs().end()) {
           routes.push_back({net, 0, true});
           initMazeCost_via_helper(net, true);
-          ripupNets.erase(it++);
+          it = ripupNets.erase(it);
         } else {
           ++it;
         }
