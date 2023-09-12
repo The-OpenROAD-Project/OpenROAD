@@ -672,7 +672,7 @@ void io::Parser::checkFig(frPinFig* uFig,
           logger_->error(
               DRT,
               417,
-              "Term {} of {} contains offgrid pin shape. Polygon point "
+              "ITerm {} of {} contains offgrid pin shape. Polygon point "
               "{} is not a multiple of the manufacturing grid {}.",
               term_name,
               inst_name,
