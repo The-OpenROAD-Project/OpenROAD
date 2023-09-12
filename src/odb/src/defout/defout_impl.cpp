@@ -47,6 +47,8 @@
 #include "utl/Logger.h"
 namespace odb {
 
+static const int max_name_length = 256;
+
 template <typename T>
 static std::vector<T*> sortedSet(dbSet<T>& to_sort)
 {
@@ -1338,7 +1340,7 @@ void defout_impl::writeSNet(dbNet* net)
     fprintf(_out, " ( PIN %s )", bterm->getName().c_str());
   }
 
-  char ttname[dbObject::max_name_length];
+  char ttname[max_name_length];
   dbSet<dbITerm>::iterator iterm_itr;
   std::set<std::string> wild_names;
   for (iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
@@ -1349,7 +1351,6 @@ void defout_impl::writeSNet(dbNet* net)
 
     dbInst* inst = iterm->getInst();
     dbMTerm* mterm = iterm->getMTerm();
-    // std::string mtname = mterm->getName();
     char* mtname = mterm->getName(inst, &ttname[0]);
     if (net->isWildConnected()) {
       if (wild_names.find(mtname) == wild_names.end()) {
@@ -1439,6 +1440,7 @@ void defout_impl::writeWire(dbWire* wire)
   for (decode.begin(wire);;) {
     dbWireDecoder::OpCode opcode = decode.next();
     std::optional<uint8_t> color = decode.getColor();
+    std::optional<dbWireDecoder::ViaColor> viacolor = decode.getViaColor();
 
     switch (opcode) {
       case dbWireDecoder::PATH:
@@ -1531,6 +1533,14 @@ void defout_impl::writeWire(dbWire* wire)
 
         dbVia* via = decode.getVia();
 
+        std::string via_mask_statement;
+        if ((_version >= defout::DEF_5_8) && viacolor) {
+          via_mask_statement = fmt::format("MASK {}{}{} ",
+                                           viacolor.value().top_color,
+                                           viacolor.value().cut_color,
+                                           viacolor.value().bottom_color);
+        }
+
         if ((_version >= defout::DEF_5_6) && via->isViaRotated()) {
           std::string vname;
 
@@ -1539,10 +1549,14 @@ void defout_impl::writeWire(dbWire* wire)
           else
             vname = via->getBlockVia()->getName();
 
-          fprintf(_out, " %s %s", vname.c_str(), defOrient(via->getOrient()));
+          fprintf(_out,
+                  " %s%s %s",
+                  via_mask_statement.c_str(),
+                  vname.c_str(),
+                  defOrient(via->getOrient()));
         } else {
           std::string vname = via->getName();
-          fprintf(_out, " %s", vname.c_str());
+          fprintf(_out, " %s%s", via_mask_statement.c_str(), vname.c_str());
         }
         break;
       }
@@ -1551,9 +1565,17 @@ void defout_impl::writeWire(dbWire* wire)
         if ((++point_cnt & 7) == 0)
           fprintf(_out, "\n    ");
 
+        std::string via_mask_statement;
+        if ((_version >= defout::DEF_5_8) && viacolor) {
+          via_mask_statement = fmt::format("MASK {}{}{} ",
+                                           viacolor.value().top_color,
+                                           viacolor.value().cut_color,
+                                           viacolor.value().bottom_color);
+        }
+
         dbTechVia* via = decode.getTechVia();
         std::string vname = via->getName();
-        fprintf(_out, " %s", vname.c_str());
+        fprintf(_out, " %s%s", via_mask_statement.c_str(), vname.c_str());
         break;
       }
 
@@ -1842,7 +1864,7 @@ void defout_impl::writeNet(dbNet* net)
     fprintf(_out, "    - %s", nname.c_str());
   }
 
-  char ttname[dbObject::max_name_length];
+  char ttname[max_name_length];
   int i = 0;
 
   for (dbBTerm* bterm : net->getBTerms()) {
@@ -2120,7 +2142,7 @@ void defout_impl::writePinProperties(dbBlock* block)
     }
   }
 
-  char ttname[dbObject::max_name_length];
+  char ttname[max_name_length];
   for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
     dbITerm* iterm = *iitr;
 

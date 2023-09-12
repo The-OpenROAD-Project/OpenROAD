@@ -45,14 +45,7 @@
 #include "geom.h"
 #include "odb.h"
 
-/*DELETE
-#include "ISdb.h"
-*/
 namespace odb {
-
-// class ISdb : public ZObject
-//{
-//};
 
 template <class T>
 class dbTable;

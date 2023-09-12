@@ -24,6 +24,60 @@ proc report_file { file } {
   close $stream
 }
 
+#===========================================================================================
+# Routines to run equivalence tests when they are enabled. 
+proc write_verilog_for_eqy {test stage remove_cells} {
+    set netlist [make_result_file "${test}_$stage.v"]
+    if { [string equal $remove_cells "None"] } {
+	write_verilog $netlist 
+    } else {
+	write_verilog -remove_cells $remove_cells $netlist 
+    }
+}
+
+proc run_equivalence_test {test lib remove_cells} {
+    write_verilog_for_eqy $test after $remove_cells
+    # eqy config file for test
+    set test_script [make_result_file "${test}.eqy"]
+    # golden verilog (pre repair_timing)
+    set before_netlist [make_result_file "${test}_before.v"]
+    # netlist post repair_timing    
+    set after_netlist [make_result_file "${test}_after.v"]
+    # output directory for test    
+    set run_dir [make_result_file "${test}_output"]
+    # verilog lib files to run test    
+    set lib_files [glob $lib/*]
+    set outfile [open $test_script w] 
+
+    set top_cell [current_design]
+    # Gold netlist
+    puts $outfile "\[gold]\nread_verilog -sv $before_netlist $lib_files\nprep -top $top_cell -flatten\nmemory_map\n\n"
+    # Modified netlist 
+    puts $outfile "\[gate]\nread_verilog -sv  $after_netlist $lib_files\nprep -top $top_cell -flatten\nmemory_map\n\n"
+
+    # Equivalence check recipe
+    puts $outfile "\[strategy basic]\nuse sat\ndepth 10\n\n"
+    close $outfile
+
+    if {[info exists ::env(EQUIVALENCE_CHECK)]} {
+	exec rm -rf $run_dir
+	catch { exec eqy -d $run_dir $test_script > /dev/null }
+	set count 0
+	catch {
+	    set count [exec grep -c "Successfully proved designs equivalent" $run_dir/logfile.txt]
+	}
+	if { $count == 0 } {
+	    puts "Repair timing output failed equivalence test"
+	} else {
+	    puts "Repair timing output passed/skipped equivalence test"
+	}
+    } else {
+	puts "Repair timing output passed/skipped equivalence test"
+    }
+  
+}
+#===========================================================================================
+
 proc diff_files { file1 file2 } {
   set stream1 [open $file1 r]
   set stream2 [open $file2 r]
