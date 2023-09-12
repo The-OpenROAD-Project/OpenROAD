@@ -17,4 +17,5 @@ worst slack -23.63
 [INFO RSZ-0043] Swapped pins on 6 instances.
 [INFO RSZ-0049] Cloned 7 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
+Repair timing output passed/skipped equivalence test
 worst slack -3.75
