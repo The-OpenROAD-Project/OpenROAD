@@ -165,6 +165,16 @@ int makeSiteLoc(int x, double site_width, bool at_left_from_macro, int offset)
   return site_x1 * site_width + offset;
 }
 
+template <typename T>
+bool hasOverflow(T a, T b)
+{
+  if ((b > 0 && a > std::numeric_limits<T>::max() - b)
+      || (b < 0 && a < std::numeric_limits<T>::lowest() - b)) {
+    return true;
+  }
+  return false;
+}
+
 void cutRows(dbBlock* block,
              const int min_row_width,
              const vector<dbBox*>& blockages,
@@ -177,10 +187,13 @@ void cutRows(dbBlock* block,
   }
   auto rows = block->getRows();
   const int initial_rows_count = rows.size();
-  const int initial_sites_count
-      = std::accumulate(rows.begin(), rows.end(), 0, [](int sum, dbRow* row) {
-          return sum + row->getSiteCount();
-        });
+  const std::int64_t initial_sites_count
+      = std::accumulate(rows.begin(),
+                        rows.end(),
+                        (std::int64_t) 0,
+                        [&](std::int64_t sum, dbRow* row) {
+                          return sum + (std::int64_t) row->getSiteCount();
+                        });
 
   std::map<dbRow*, int> placed_row_insts;
   for (dbInst* inst : block->getInsts()) {
@@ -221,10 +234,13 @@ void cutRows(dbBlock* block,
     }
   }
 
-  const int final_sites_count
-      = std::accumulate(rows.begin(), rows.end(), 0, [](int sum, dbRow* row) {
-          return sum + row->getSiteCount();
-        });
+  const std::int64_t final_sites_count
+      = std::accumulate(rows.begin(),
+                        rows.end(),
+                        (std::int64_t) 0,
+                        [&](std::int64_t sum, dbRow* row) {
+                          return sum + (std::int64_t) row->getSiteCount();
+                        });
 
   logger->info(utl::ODB,
                303,

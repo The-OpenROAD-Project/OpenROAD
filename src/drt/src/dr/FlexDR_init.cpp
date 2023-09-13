@@ -1784,6 +1784,23 @@ void FlexDRWorker::initNets_boundaryArea()
   }
 }
 
+void FlexDRWorker::initRipUpNetsFromMarkers()
+{
+  std::set<drNet*> ripUpNets;
+  for (auto& marker : markers_) {
+    auto bloatDist = getTech()->getLayer(marker.getLayerNum())->getWidth();
+    bloatDist *= 2;
+    getRipUpNetsFromMarker(&marker, ripUpNets, bloatDist);
+  }
+  for (const auto& net : ripUpNets) {
+    for (const auto& fig : net->getRouteConnFigs()) {
+      getWorkerRegionQuery().remove(fig.get());
+    }
+    net->clearRouteConnFigs();
+    net->setRipup();
+  }
+}
+
 void FlexDRWorker::initNets(const frDesign* design)
 {
   set<frNet*, frBlockObjectComp> nets;
@@ -1801,6 +1818,10 @@ void FlexDRWorker::initNets(const frDesign* design)
         design, nets, netRouteObjs, netExtObjs, netOrigGuides);
   }
   initNets_regionQuery();
+  if (getRipupMode() == 2) {
+    initRipUpNetsFromMarkers();
+  }
+
   initNets_numPinsIn();
   // here because region query is needed
   if (ENABLE_BOUNDARY_MAR_FIX) {
@@ -2532,7 +2553,7 @@ void FlexDRWorker::route_queue_init_queue(queue<RouteQueueEntry>& rerouteQueue)
     }
     mazeIterInit_sortRerouteQueue(0, checks);
     mazeIterInit_sortRerouteQueue(0, routes);
-  } else if (getRipupMode() == 1 || getRipupMode() == 2) {
+  } else if (getRipupMode() == 1) {
     // ripup all nets and clear objs here
     // nets are ripped up during initNets()
     vector<drNet*> ripupNets;
@@ -2540,7 +2561,6 @@ void FlexDRWorker::route_queue_init_queue(queue<RouteQueueEntry>& rerouteQueue)
     for (auto& net : nets_) {
       ripupNets.push_back(net.get());
     }
-
     // sort nets
     mazeIterInit_sortRerouteNets(0, ripupNets);
     for (auto& net : ripupNets) {
@@ -2549,6 +2569,28 @@ void FlexDRWorker::route_queue_init_queue(queue<RouteQueueEntry>& rerouteQueue)
       initMazeCost_via_helper(net, true);
       // no need to clear the net because route objs are not pushed to the net
       // (See FlexDRWorker::initNet)
+    }
+  } else if (getRipupMode() == 2) {
+    std::set<drNet*> ripupNets;
+    for (auto& net : nets_) {
+      if (net->isRipup())
+        ripupNets.insert(net.get());
+    }
+    for (auto& marker : markers_) {
+      for (auto it = ripupNets.begin(); it != ripupNets.end();) {
+        drNet* net = (drNet*) *it;
+        if (marker.getSrcs().find(net->getFrNet()) != marker.getSrcs().end()) {
+          routes.push_back({net, 0, true});
+          initMazeCost_via_helper(net, true);
+          it = ripupNets.erase(it);
+        } else {
+          ++it;
+        }
+      }
+    }
+    for (auto& net : ripupNets) {
+      routes.push_back({net, 0, true});
+      initMazeCost_via_helper(net, true);
     }
   } else {
     cout << "Error: unsupported ripup mode\n";
@@ -2757,6 +2799,40 @@ void FlexDRWorker::route_queue_update_from_marker(
   }
   for (auto& victimOwner : uniqueVictimOwners) {
     checks.push_back({victimOwner, -1, false});
+  }
+}
+
+void FlexDRWorker::getRipUpNetsFromMarker(frMarker* marker,
+                                          set<drNet*>& nets,
+                                          frCoord bloatDist)
+{
+  // if shapes don't overlap routeBox, ignore violation
+  if (!getRouteBox().intersects(marker->getBBox())) {
+    bool overlaps = false;
+    for (auto& s : marker->getAggressors()) {
+      if (std::get<1>(s.second).intersects(getRouteBox())) {
+        overlaps = true;
+        break;
+      }
+    }
+    if (!overlaps) {
+      for (auto& s : marker->getVictims()) {
+        if (std::get<1>(s.second).intersects(getRouteBox())) {
+          overlaps = true;
+          break;
+        }
+      }
+      if (!overlaps)
+        return;
+    }
+  }
+  auto bbox = marker->getBBox();
+  bbox.bloat(bloatDist, bbox);
+  std::vector<drConnFig*> figs;
+  getWorkerRegionQuery().query(bbox, marker->getLayerNum(), figs);
+  for (auto fig : figs) {
+    auto net = fig->getNet();
+    nets.insert(net);
   }
 }
 
