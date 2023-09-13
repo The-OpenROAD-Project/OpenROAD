@@ -1,0 +1,26 @@
+name: Update Changelog
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  updateChangeLog:
+    runs-on: ubuntu-latest 
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Create Changelog file
+        run: git log --pretty=format:"%h%x09%an%x09%ad%x09%s" --date=short --since="2023-08-01" > NEWS.md
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: update changelog
+          title: Update Changelog
+          body: test
+          branch: update-changelog
