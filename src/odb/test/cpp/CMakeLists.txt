@@ -3,7 +3,6 @@ include(openroad)
 set(TEST_LIBS
         odb
         zutil 
-        tm
         lef
         defin
         defout

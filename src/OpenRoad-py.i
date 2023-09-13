@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 %include <std_string.i>
+%include <std_vector.i>
 
 %{
 
@@ -65,6 +66,9 @@ odb::dbBlock *
 get_db_block();
 
 %}
+
+%template(Corners) std::vector<sta::Corner*>;
+%template(MTerms) std::vector<odb::dbMTerm*>;
 
 %include "Exception-py.i"
 %include "ord/Tech.h"

@@ -159,8 +159,6 @@ class dbTechLayerWidthTableRule;
 // Extraction Objects
 class dbExtControl;
 
-class ZContext;
-
 ///
 /// dbProperty - Property base class.
 ///
@@ -361,11 +359,6 @@ class dbDatabase : public dbObject
   /// Returns the number of masters
   ///
   uint getNumberOfMasters();
-
-  ///
-  /// Translate a database-name to a database object.
-  ///
-  // dbObject * resolveDbName( const char * dbname );
 
   ///
   /// Read a database from this stream.
@@ -1348,48 +1341,6 @@ class dbBlock : public dbObject
   dbBlockSearch* getSearchDb();
 
   ///
-  /// reset _netSdb
-  ///
-  // void resetNetSdb();
-
-  ///
-  /// Get search database module for fast area searches on signal nets
-  ///
-  //    ZPtr<ISdb> getSignalNetSdb();
-  ///
-  /// Get search database module for fast area searches on signal nets
-  /// Generate netSdb if it does not exist
-  ///
-  //    ZPtr<ISdb> getSignalNetSdb(ZContext & context, dbTech *tech);
-
-  ///
-  /// Get search database module for fast area searches on physical objects
-  ///
-  // ZPtr<ISdb> getNetSdb();
-  ///
-  /// Get search database module for fast area searches on physical objects
-  /// Generate netSdb if it does not exist
-  ///
-  // ZPtr<ISdb> getNetSdb(ZContext & context, dbTech *tech);
-  ///
-  /// Remove search database
-  ///
-  // void removeSdb(std::vector<dbNet *> & nets);
-  ///
-  /// Put insts/nets/tracks on Search DB
-  ///
-  // dbBlockSearch *initSearchBlock(dbTech *tech, bool nets, bool insts,
-  // ZContext & context, bool skipViaCuts=false);
-
-  ///
-  /// Get insts from Search DB given a bbox to do area search
-  ///
-  // uint getInsts(int x1, int y1, int x2, int y2, std::vector<dbInst *> &
-  // result);
-
-  void updateNetFlags(std::vector<dbNet*>& result);
-
-  ///
   /// destroy coupling caps of nets
   ///
   void destroyCCs(std::vector<dbNet*>& nets);
@@ -1557,25 +1508,7 @@ class dbBlock : public dbObject
 
   void clearUserInstFlags();
 
- private:
-  friend class ZDB;
-
-  ///
-  /// Build search database for fast area searches
-  ///
-  void makeSearchDB(bool nets, bool insts, ZContext& context);
-
  public:
-  ///
-  /// Get the Container class for Nets Search DB
-  ///
-  // ZPtr<ISdb> getSearchDbNets();
-
-  ///
-  /// Get the Container class for Insts Search DB
-  ///
-  // ZPtr<ISdb> getSearchDbInsts();
-
   ///
   /// This method copies the via-table from the src block to the destination
   /// block.
@@ -1586,16 +1519,6 @@ class dbBlock : public dbObject
   ///          be left dangling.
   ///
   static void copyViaTable(dbBlock* dst, dbBlock* src);
-
-  ///
-  /// Get the Read Only Container class for Nets Search DB
-  ///
-  // TODO ZPtr<ISdb_r> getSearchDbNets_r();
-
-  ///
-  /// Get the Read Only Container class for Insts Search DB
-  ///
-  // TODO ZPtr<ISdb_r> getSearchDbInsts_r();
 
   ///
   /// Create a chip's top-block. Returns nullptr of a top-block already
@@ -3826,34 +3749,6 @@ class dbWire : public dbObject
   /// Detach this wire from a net.
   ///
   void detach();
-
-  ///
-  /// Copy the src wire to the desintation wire.
-  ///
-  ///    removeITermBTerms - if true, then any iterms or bterms referenced in
-  ///    the copied wire will be removed. copyVias - if true, then any reference
-  ///    vias that do not exists in the dst-block are copied to the src-block.
-  ///
-  ///
-  static void copy(dbWire* dst,
-                   dbWire* src,
-                   bool removeITermsBTerms = true,
-                   bool copyVias = true);
-
-  ///
-  /// Copy the src wire to the desintation wire. Filter vias and segments that
-  /// do not intersect bbox.
-  ///
-  ///    removeITermBTerms - if true, then any iterms or bterms referenced in
-  ///    the copied wire will be removed. copyVias - if true, then any reference
-  ///    vias that do not exists in the dst-block are copied to the src-block.
-  ///
-  ///
-  static void copy(dbWire* dst,
-                   dbWire* src,
-                   const Rect& bbox,
-                   bool removeITermsBTerms = true,
-                   bool copyVias = true);
 
   ///
   /// Create a wire.
@@ -6966,7 +6861,6 @@ class dbTechSameNetRule : public dbObject
 };
 
 class dbViaParams : private _dbViaParams
-// class dbViaParams : public _dbViaParams
 {
   friend class dbVia;
   friend class dbTechVia;
