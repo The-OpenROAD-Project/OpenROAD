@@ -2192,7 +2192,7 @@ void FastRouteCore::getCongestionGrid(
   NetsPerCongestedArea nets_in_congested_edges;
 
   for (int i = 0; i < y_grid_; i++) {
-    for (int j = 0; j < x_grid_; j++) {
+    for (int j = 0; j < x_grid_ - 1; j++) {
       const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
       if (overflow > 0) {
         const int xreal = tile_size_ * (j + 0.5) + x_corner_;
@@ -2214,7 +2214,7 @@ void FastRouteCore::getCongestionGrid(
   }
   nets_in_congested_edges.clear();
 
-  for (int i = 0; i < y_grid_; i++) {
+  for (int i = 0; i < y_grid_ - 1; i++) {
     for (int j = 0; j < x_grid_; j++) {
       const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
       if (overflow > 0) {
