@@ -191,29 +191,6 @@ std::vector<float> Hypergraph::GetTotalVertexWeights() const
   return total_weight;
 }
 
-// Get the vertex balance constraint
-std::vector<std::vector<float>> Hypergraph::GetVertexBalance(
-    int num_parts,
-    float ub_factor) const
-{
-  std::vector<float> vertex_balance = GetTotalVertexWeights();
-  vertex_balance = MultiplyFactor(
-      vertex_balance, ub_factor * 0.01 + 1.0 / static_cast<float>(num_parts));
-  return std::vector<std::vector<float>>(num_parts, vertex_balance);
-}
-
-// Get the vertex balance constraint (upper bound)
-/*
-std::vector<std::vector<float>> Hypergraph::GetUpperVertexBalance(
-    int num_parts,
-    float ub_factor) const
-{
-  std::vector<float> vertex_balance = GetTotalVertexWeights();
-  vertex_balance = MultiplyFactor(
-      vertex_balance, ub_factor * 0.01 + 1.0 / static_cast<float>(num_parts));
-  return std::vector<std::vector<float>>(num_parts, vertex_balance);
-}
-*/
 std::vector<std::vector<float>> Hypergraph::GetUpperVertexBalance(
     int num_parts,
     float ub_factor,
@@ -231,20 +208,6 @@ std::vector<std::vector<float>> Hypergraph::GetUpperVertexBalance(
   }
   return upper_block_balance;
 }
-
-// Get the vertex balance constraint (lower bound)
-/*
-std::vector<std::vector<float>> Hypergraph::GetLowerVertexBalance(
-    int num_parts,
-    float ub_factor) const
-{
-  std::vector<float> vertex_balance = GetTotalVertexWeights();
-  ub_factor = std::max(
-      -1.0 * ub_factor * 0.01 + 1.0 / static_cast<float>(num_parts), 0.0);
-  vertex_balance = MultiplyFactor(vertex_balance, ub_factor);
-  return std::vector<std::vector<float>>(num_parts, vertex_balance);
-}
-*/
 
 std::vector<std::vector<float>> Hypergraph::GetLowerVertexBalance(
     int num_parts,

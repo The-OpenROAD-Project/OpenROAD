@@ -101,4 +101,7 @@ record_tests {
   top_layer6
   top_layer7
   top_layer_error
+  write_pin_placement1
+  write_pin_placement2
+  write_pin_placement3
 }

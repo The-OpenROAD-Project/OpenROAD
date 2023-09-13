@@ -507,8 +507,6 @@ void TritonRoute::init(Tcl_Interp* tcl_interp,
 
 bool TritonRoute::initGuide()
 {
-  if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB")
-    USENONPREFTRACKS = false;
   io::Parser parser(db_, getDesign(), logger_);
   bool guideOk = parser.readGuide();
   parser.postProcessGuide();
@@ -819,6 +817,9 @@ void TritonRoute::sendDesignUpdates(const std::string& globals_path)
 
 int TritonRoute::main()
 {
+  if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
+    USENONPREFTRACKS = false;
+  }
   asio::thread_pool pa_pool(1);
   if (!distributed_)
     pa_pool.join();

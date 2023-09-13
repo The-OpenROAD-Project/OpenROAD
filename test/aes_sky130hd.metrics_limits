@@ -10,7 +10,7 @@
  ,"RSZ::worst_slack_max" : "-0.9667107861167497"
  ,"RSZ::tns_max" : "-722.0515644370687"
  ,"RSZ::hold_buffer_count" : "588"
- ,"GRT::ANT::errors" : "365"
+ ,"GRT::ANT::errors" : "370"
  ,"DRT::drv" : "0"
  ,"DRT::worst_slack_min" : "-0.5005029228287285"
  ,"DRT::worst_slack_max" : "-1.6127087262088915"

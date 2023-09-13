@@ -32,6 +32,8 @@
 
 #include "renderThread.h"
 
+#include <QPainterPath>
+
 #include "layoutViewer.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
@@ -150,6 +152,9 @@ void RenderThread::draw(QImage& image,
                         qreal render_ratio,
                         const QColor& background)
 {
+  if (image.isNull()) {
+    return;
+  }
   // Prevent a paintEvent and a save_image call from interfering
   // (eg search RTree construction)
   std::lock_guard<std::mutex> lock(drawing_mutex_);
@@ -557,7 +562,6 @@ void RenderThread::drawInstanceNames(QPainter* painter,
     return;
   }
 
-  const QTransform initial_xfm = painter->transform();
   const QColor text_color = viewer_->options_->instanceNameColor();
   const QFont initial_font = painter->font();
   const QFont text_font = viewer_->options_->instanceNameFont();
@@ -574,8 +578,9 @@ void RenderThread::drawInstanceNames(QPainter* painter,
 
     Rect instance_box = inst->getBBox()->getBox();
     QString name = inst->getName().c_str();
-    drawTextInBBox(text_color, text_font, instance_box, name, painter);
-    painter->setTransform(initial_xfm);
+    auto master = inst->getMaster();
+    auto center = master->isBlock() || master->isPad();
+    drawTextInBBox(text_color, text_font, instance_box, name, painter, center);
   }
   painter->setFont(initial_font);
 }
@@ -584,11 +589,11 @@ void RenderThread::drawInstanceNames(QPainter* painter,
 void RenderThread::drawITermLabels(QPainter* painter,
                                    const std::vector<odb::dbInst*>& insts)
 {
-  if (!viewer_->options_->areITermsVisible()) {
+  if (!viewer_->options_->areInstancePinsVisible()
+      || !viewer_->options_->areInstancePinNamesVisible()) {
     return;
   }
 
-  const QTransform initial_xfm = painter->transform();
   const QColor text_color = viewer_->options_->itermLabelColor();
   const QFont text_font = viewer_->options_->itermLabelFont();
   const QFont initial_font = painter->font();
@@ -603,31 +608,51 @@ void RenderThread::drawITermLabels(QPainter* painter,
       continue;
     }
 
+    odb::dbTransform xform;
+    inst->getTransform(xform);
     for (auto inst_iterm : inst->getITerms()) {
-      Rect iterm_box = inst_iterm->getBBox();
-      QString name = inst_iterm->getMTerm()->getConstName();
-      drawTextInBBox(text_color, text_font, iterm_box, name, painter);
-      painter->setTransform(initial_xfm);
+      bool drawn = false;
+      for (auto* mpin : inst_iterm->getMTerm()->getMPins()) {
+        for (auto* geom : mpin->getGeometry()) {
+          const auto layer = geom->getTechLayer();
+          if (layer == nullptr) {
+            continue;
+          }
+          if (viewer_->options_->isVisible(layer)) {
+            Rect pin_rect = geom->getBox();
+            xform.apply(pin_rect);
+            const QString name = inst_iterm->getMTerm()->getConstName();
+            drawn = drawTextInBBox(
+                text_color, text_font, pin_rect, name, painter, false);
+          }
+          if (drawn) {
+            // Only draw on the first box
+            break;
+          }
+        }
+        if (drawn) {
+          break;
+        }
+      }
     }
   }
+
   painter->setFont(initial_font);
 }
 
-void RenderThread::drawTextInBBox(const QColor& text_color,
+bool RenderThread::drawTextInBBox(const QColor& text_color,
                                   const QFont& text_font,
                                   Rect bbox,
                                   QString name,
-                                  QPainter* painter)
+                                  QPainter* painter,
+                                  bool center)
 {
-  painter->setPen(QPen(text_color, 0));
-  painter->setBrush(QBrush(text_color));
-
   const QFontMetricsF font_metrics(text_font);
 
   // minimum pixel height for text (10px)
   if (font_metrics.ascent() < 10) {
     // text is too small
-    return;
+    return false;
   }
 
   // text should not fill more than 90% of the instance height or width
@@ -657,10 +682,10 @@ void RenderThread::drawTextInBBox(const QColor& text_color,
   // don't show text if it's more than "non_core_scale_limit" of cell
   // height/width this keeps text from dominating the cell size
   if (!do_rotate && text_height_check > bbox_in_px.height()) {
-    return;
+    return false;
   }
   if (do_rotate && text_height_check > bbox_in_px.width()) {
-    return;
+    return false;
   }
 
   if (do_rotate) {
@@ -670,20 +695,48 @@ void RenderThread::drawTextInBBox(const QColor& text_color,
     name = font_metrics.elidedText(
         name, Qt::ElideLeft, size_limit * bbox_in_px.width());
   }
+  text_bounding_box = font_metrics.boundingRect(name);
+
+  const QTransform initial_xfm = painter->transform();
 
   painter->translate(bbox.xMin(), bbox.yMin());
   painter->scale(scale_adjust, -scale_adjust);
   if (do_rotate) {
-    text_bounding_box = font_metrics.boundingRect(name);
     painter->rotate(90);
     painter->translate(-text_bounding_box.width(), 0);
     // account for descent of font
     painter->translate(-font_metrics.descent(), 0);
+    if (center) {
+      const auto xOffset
+          = (bbox_in_px.height() - text_bounding_box.width()) / 2;
+      const auto yOffset
+          = (bbox_in_px.width() - text_bounding_box.height()) / 2;
+      painter->translate(-xOffset, -yOffset);
+    }
   } else {
     // account for descent of font
     painter->translate(font_metrics.descent(), 0);
+    if (center) {
+      const auto xOffset = (bbox_in_px.width() - text_bounding_box.width()) / 2;
+      const auto yOffset
+          = (bbox_in_px.height() - text_bounding_box.height()) / 2;
+      painter->translate(xOffset, -yOffset);
+    }
   }
-  painter->drawText(0, 0, name);
+  if (center) {
+    QPainterPath path;
+    path.addText(0, 0, painter->font(), name);
+    painter->strokePath(path, QPen(Qt::black, 2));  // outline
+    painter->fillPath(path, QBrush(text_color));    // fill
+  } else {
+    painter->setPen(QPen(text_color, 0));
+    painter->setBrush(QBrush(text_color));
+    painter->drawText(0, 0, name);
+  }
+
+  painter->setTransform(initial_xfm);
+
+  return true;
 }
 
 void RenderThread::drawBlockages(QPainter* painter,
@@ -991,7 +1044,24 @@ void RenderThread::drawBlock(QPainter* painter,
   drawBlockages(painter, block, bounds);
   debugPrint(logger_, GUI, "draw", 1, "blockages {}", inst_blockages);
 
-  dbTech* tech = block->getDataBase()->getTech();
+  dbTech* tech = block->getTech();
+  std::set<dbTech*> child_techs;
+  for (auto child : block->getChildren()) {
+    dbTech* child_tech = child->getTech();
+    if (child_tech != tech) {
+      child_techs.insert(child_tech);
+    }
+  }
+
+  for (dbTech* child_tech : child_techs) {
+    for (dbTechLayer* layer : child_tech->getLayers()) {
+      if (restart_) {
+        break;
+      }
+      drawLayer(painter, block, layer, insts, bounds, gui_painter);
+    }
+  }
+
   for (dbTechLayer* layer : tech->getLayers()) {
     if (restart_) {
       break;
@@ -1269,7 +1339,7 @@ void RenderThread::drawModuleView(QPainter* painter,
       continue;
     }
 
-    const auto setting = viewer_->modules_[module];
+    const auto setting = viewer_->modules_.at(module);
 
     if (!setting.visible) {
       continue;
@@ -1306,13 +1376,52 @@ void RenderThread::drawPinMarkers(Painter& painter,
   QPainter* qpainter = static_cast<GuiPainter&>(painter).getPainter();
   const QFont initial_font = qpainter->font();
   QFont marker_font = viewer_->options_->pinMarkersFont();
+  const QFontMetrics font_metrics(marker_font);
+
+  QString largest_text;
+  for (auto pin : block->getBTerms()) {
+    QString current_text = QString::fromStdString(pin->getName());
+    if (font_metrics.boundingRect(current_text).width()
+        > font_metrics.boundingRect(largest_text).width()) {
+      largest_text = current_text;
+    }
+  }
+
+  const int vertical_gap
+      = (viewer_->geometry().height()
+         - viewer_->getBounds().dy() * viewer_->pixels_per_dbu_)
+        / 2;
+  const int horizontal_gap
+      = (viewer_->geometry().width()
+         - viewer_->getBounds().dx() * viewer_->pixels_per_dbu_)
+        / 2;
+
+  const int available_space
+      = std::min(vertical_gap, horizontal_gap)
+        - std::ceil(max_dim) * viewer_->pixels_per_dbu_;  // in pixels
+
+  int font_size = marker_font.pointSize();
+  int largest_text_width = font_metrics.boundingRect(largest_text).width();
+  const int drawing_font_size = 6;  // in points
+
+  // when the size is minimum the text won't be drawn
+  const int minimum_font_size = drawing_font_size - 1;
+
+  while (largest_text_width > available_space) {
+    if (font_size == minimum_font_size) {
+      break;
+    }
+    font_size -= 1;
+    marker_font.setPointSize(font_size);
+    QFontMetrics current_font_metrics(marker_font);
+    largest_text_width
+        = current_font_metrics.boundingRect(largest_text).width();
+  }
+
   qpainter->setFont(marker_font);
 
-  const QFontMetrics font_metrics(marker_font);
-  // draw names of pins when 100 pins would fit on an edge
-  const bool draw_names
-      = std::max(die_width, die_height) * viewer_->pixels_per_dbu_
-        > 100 * font_metrics.height();
+  // draw names of pins when text height is at least 6 pts
+  const bool draw_names = font_size >= drawing_font_size;
   const int text_margin = 2.0 / viewer_->pixels_per_dbu_;
 
   // templates of pin markers (block top)

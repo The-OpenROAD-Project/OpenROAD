@@ -35,18 +35,13 @@
 #include <cmath>
 
 #include "gui/gui.h"
+#include "layoutViewer.h"
 
 namespace gui {
-GotoLocationDialog::GotoLocationDialog(QWidget* parent, LayoutViewer* viewer_)
-    : QDialog(parent), viewer_(viewer_)
+GotoLocationDialog::GotoLocationDialog(QWidget* parent, LayoutTabs* viewers)
+    : QDialog(parent), viewers_(viewers)
 {
   setupUi(this);
-
-  // connect so announcements can be made about changes
-  connect(parent,
-          SIGNAL(displayUnitsChanged(int, bool)),
-          this,
-          SLOT(updateUnits(int, bool)));
 }
 
 void GotoLocationDialog::updateUnits(int dbu_per_micron, bool useDBU)
@@ -64,20 +59,22 @@ void GotoLocationDialog::updateUnits(int dbu_per_micron, bool useDBU)
 
 void GotoLocationDialog::updateLocation(QLineEdit* xEdit, QLineEdit* yEdit)
 {
+  auto viewer = viewers_->getCurrent();
   xEdit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
-      viewer_->getVisibleCenter().x(), false)));
+      viewer->getVisibleCenter().x(), false)));
   yEdit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
-      viewer_->getVisibleCenter().y(), false)));
+      viewer->getVisibleCenter().y(), false)));
 }
 
 void GotoLocationDialog::show_init()
 {
+  auto viewer = viewers_->getCurrent();
   GotoLocationDialog::updateLocation(xEdit, yEdit);
-  int box_size = sqrt(pow((viewer_->getVisibleBounds().lr().x()
-                           - viewer_->getVisibleBounds().ll().x()),
+  int box_size = sqrt(pow((viewer->getVisibleBounds().lr().x()
+                           - viewer->getVisibleBounds().ll().x()),
                           2)
-                      + pow((viewer_->getVisibleBounds().ul().y()
-                             - viewer_->getVisibleBounds().ll().y()),
+                      + pow((viewer->getVisibleBounds().ul().y()
+                             - viewer->getVisibleBounds().ll().y()),
                             2))
                  / 2;
   sEdit->setText(QString::fromStdString(

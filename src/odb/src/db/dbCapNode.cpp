@@ -326,10 +326,6 @@ void dbCapNode::accAllCcCap(double* totalcap, double MillerMult)
   for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ++ccitr) {
     double ccmult = MillerMult;
     dbCCSeg* cc = *ccitr;
-#ifdef TMG_SI
-    if (MillerMult < 0)
-      ccmult = getExtCCmult(cc->getTheOtherCapn(this, cid)->getNet());
-#endif
     cc->accAllCcCap(totalcap, ccmult);
   }
 }
@@ -810,20 +806,6 @@ void dbCapNode::setSelect(bool val)
   //_dbBlock * block = (_dbBlock *) getOwner();
   // uint prev_flags = flagsToUInt(seg);
   seg->_flags._select = val ? 1 : 0;
-
-#ifdef FULL_ECO
-  if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: setSelect to {}, id: {}",
-               val,
-               getId());
-    block->_journal->updateField(
-        this, _dbCapNode::FLAGS, prev_flags, flagsToUInt(seg));
-  }
-#endif
 }
 void dbCapNode::setNode(uint node)
 {

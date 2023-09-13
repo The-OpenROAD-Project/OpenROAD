@@ -612,6 +612,13 @@ void definNet::pathColor(int color)
   _wire_encoder.setColor(static_cast<uint8_t>(color));
 }
 
+void definNet::pathViaColor(int bottom_color, int cut_color, int top_color)
+{
+  _wire_encoder.setViaColor(static_cast<uint8_t>(bottom_color),
+                            static_cast<uint8_t>(cut_color),
+                            static_cast<uint8_t>(top_color));
+}
+
 void definNet::pathEnd()
 {
   _cur_layer = nullptr;

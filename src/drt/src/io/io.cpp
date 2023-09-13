@@ -147,47 +147,7 @@ void io::Parser::setInsts(odb::dbBlock* block)
     tmpInst->setOrient(inst->getOrient());
     int numInstTerms = 0;
     tmpInst->setPinAccessIdx(inst->getPinAccessIdx());
-    dbTransform xform = tmpInst->getUpdatedXform();
-    int grid = tech_->getManufacturingGrid();
     for (auto& uTerm : tmpInst->getMaster()->getTerms()) {
-      for (auto& pin : uTerm->getPins()) {
-        for (auto& uFig : pin->getFigs()) {
-          if (uFig->typeId() == frcRect) {
-            auto shape = uFig.get();
-            Rect box = shape->getBBox();
-            xform.apply(box);
-            if (box.xMin() % grid || box.yMin() % grid || box.xMax() % grid
-                || box.yMax() % grid) {
-              logger_->error(
-                  DRT,
-                  416,
-                  "Term {} of {} contains offgrid pin shape. Pin shape {} is "
-                  "not a multiple of the manufacturing grid {}.",
-                  uTerm->getName(),
-                  tmpInst->getName(),
-                  box,
-                  grid);
-            }
-          } else if (uFig->typeId() == frcPolygon) {
-            auto polygon = static_cast<frPolygon*>(uFig.get());
-            for (Point pt : polygon->getPoints()) {
-              xform.apply(pt);
-              if (pt.getX() % grid || pt.getY() % grid) {
-                logger_->error(
-                    DRT,
-                    417,
-                    "Term {} of {} contains offgrid pin shape. Polygon point "
-                    "{} is not a multiple of the manufacturing grid {}.",
-                    uTerm->getName(),
-                    tmpInst->getName(),
-                    pt,
-                    grid);
-              }
-            }
-          }
-        }
-      }
-
       auto term = uTerm.get();
       unique_ptr<frInstTerm> instTerm = make_unique<frInstTerm>(tmpInst, term);
       instTerm->setId(numTerms_++);
@@ -630,6 +590,7 @@ void io::Parser::setNets(odb::dbBlock* block)
     string shape = "";
     bool hasBeginPoint = false;
     bool hasEndPoint = false;
+    bool orthogonal_conn = false;
     bool beginInVia = false;
     frCoord beginX = -1;
     frCoord beginY = -1;
@@ -655,14 +616,24 @@ void io::Parser::setNets(odb::dbBlock* block)
       odb::dbWireDecoder::OpCode pathId = decoder.next();
       while (pathId != odb::dbWireDecoder::END_DECODE) {
         // for each path start
-        layerName = "";
+        // when previous connection has a different direction of the current
+        // connection, use the last end point as the new begin point. it avoids
+        // missing segments between the connections with different directions.
+        if (orthogonal_conn) {
+          hasBeginPoint = true;
+          beginX = endX;
+          beginY = endY;
+        } else {
+          layerName = "";
+          hasBeginPoint = false;
+          beginX = -1;
+          beginY = -1;
+        }
         viaName = "";
         shape = "";
-        hasBeginPoint = false;
         hasEndPoint = false;
         beginInVia = false;
-        beginX = -1;
-        beginY = -1;
+        orthogonal_conn = false;
         beginExt = -1;
         endX = -1;
         endY = -1;
@@ -686,7 +657,6 @@ void io::Parser::setNets(odb::dbBlock* block)
                 logger_->error(DRT, 107, "Unsupported layer {}.", layerName);
               break;
             case odb::dbWireDecoder::POINT:
-
               if (!hasBeginPoint) {
                 decoder.getPoint(beginX, beginY);
                 hasBeginPoint = true;
@@ -743,9 +713,18 @@ void io::Parser::setNets(odb::dbBlock* block)
               break;
           }
           pathId = decoder.next();
+
+          if (pathId == odb::dbWireDecoder::POINT && hasEndPoint) {
+            frCoord x, y;
+            decoder.getPoint(x, y);
+            bool curr_conn_vertical = beginX == endX;
+            bool next_conn_vertical = endX == x;
+            orthogonal_conn = curr_conn_vertical != next_conn_vertical;
+          }
+
           if ((int) pathId <= 3 || pathId == odb::dbWireDecoder::TECH_VIA
               || pathId == odb::dbWireDecoder::VIA
-              || pathId == odb::dbWireDecoder::END_DECODE) {
+              || pathId == odb::dbWireDecoder::END_DECODE || orthogonal_conn) {
             if (hasEndPoint) {
               nextX = endX;
               nextY = endY;
@@ -753,6 +732,8 @@ void io::Parser::setNets(odb::dbBlock* block)
               nextX = beginX;
               nextY = beginY;
             }
+            prevLayer = decoder.getLayer();
+            layerName = prevLayer->getName();
             endpath = true;
           }
         } while (!endpath);

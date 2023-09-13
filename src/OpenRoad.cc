@@ -311,10 +311,7 @@ void OpenRoad::readDef(const char* filename,
 {
   if (!floorplan_init && !incremental && !child && db_->getChip()
       && db_->getChip()->getBlock()) {
-    logger_->error(
-        ORD,
-        48,
-        "You can't load a new DEF file as the db is already populated.");
+    logger_->info(ORD, 48, "Loading an additional DEF.");
   }
 
   odb::defin::MODE mode = odb::defin::DEFAULT;
@@ -384,6 +381,27 @@ void OpenRoad::writeDef(const char* filename, const string& version)
   }
 }
 
+void OpenRoad::writeAbstractLef(const char* filename,
+                                const int bloat_factor,
+                                const bool bloat_occupied_layers)
+{
+  odb::dbBlock* block = nullptr;
+  odb::dbChip* chip = db_->getChip();
+  if (chip) {
+    block = chip->getBlock();
+  }
+  if (!block) {
+    logger_->error(ORD, 53, "No block is loaded.");
+  }
+  std::ofstream os;
+  os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
+  os.open(filename);
+  odb::lefout writer(logger_, os);
+  writer.setBloatFactor(bloat_factor);
+  writer.setBloatOccupiedLayers(bloat_occupied_layers);
+  writer.writeAbstractLef(block);
+}
+
 void OpenRoad::writeLef(const char* filename)
 {
   auto libs = db_->getLibs();
@@ -398,7 +416,12 @@ void OpenRoad::writeLef(const char* filename)
     for (auto lib : libs) {
       std::string name(filename);
       if (cnt > 0) {
-        name += "_" + std::to_string(cnt);
+        auto pos = name.rfind('.');
+        if (pos != string::npos) {
+          name.insert(pos, "_" + std::to_string(cnt));
+        } else {
+          name += "_" + std::to_string(cnt);
+        }
         std::ofstream os;
         os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
         os.open(name);

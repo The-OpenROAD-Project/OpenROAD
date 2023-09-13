@@ -137,6 +137,7 @@ struct Constraint
   odb::Rect box;
   std::vector<Section> sections;
   std::vector<int> pin_indices;
+  std::set<int> pin_groups;
   float pins_per_slots;
   int first_slot = 0;
   int last_slot = 0;

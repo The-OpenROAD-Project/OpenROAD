@@ -193,7 +193,7 @@ place_pad -master PADCELL_VSS_H -row IO_NORTH -location 750.0 u_vss_11
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 720.0 u_co_2_i
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 685.0 u_co_1_i
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 585.0 u_co_0_i
-place_pad -master PADCELL_VSSIO_V -row IO_NORTH -location 555.0 u_vzz_25
+place_pad -master PADCELL_VSSIO_H -row IO_NORTH -location 555.0 u_vzz_25
 place_pad -master PADCELL_VDDIO_H -row IO_NORTH -location 395.0 u_v18_25
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 2795.0 u_co2_8_o
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 2670.0 u_co2_7_o

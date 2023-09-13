@@ -118,15 +118,18 @@ using sta::ParasiticNode;
 using sta::PinSeq;
 using sta::Slack;
 
-typedef std::tuple<LibertyPort *, LibertyPort *> LibertyPortTuple;
-typedef std::tuple<Instance *, Instance *>  InstanceTuple;
+using LibertyPortTuple = std::tuple<LibertyPort *, LibertyPort *> ;
+using InstanceTuple = std::tuple<Instance *, Instance *>;
 
 class AbstractSteinerRenderer;
 class SteinerTree;
-typedef int SteinerPt;
+using SteinerPt =  int;
 
 class BufferedNet;
-typedef std::shared_ptr<BufferedNet> BufferedNetPtr;
+using BufferedNetPtr = std::shared_ptr<BufferedNet> ;
+
+using PinPtr = const sta::Pin *;
+using PinVector = std::vector<PinPtr>;
 
 class RecoverPower;
 class RepairDesign;
@@ -254,7 +257,7 @@ public:
   int holdBufferCount() const;
 
   ////////////////////////////////////////////////////////////////
-  void recoverPower();
+  void recoverPower(float recover_power_percent);
 
   ////////////////////////////////////////////////////////////////
   // Area of the design in meter^2.
@@ -478,8 +481,8 @@ protected:
                  PinSeq &loads);
   bool isFuncOneZero(const Pin *drvr_pin);
   bool hasPins(Net *net);
-  std::vector<const Pin*> getPins(Net* net) const;
-  std::vector<const Pin*> getPins(Instance* inst) const;
+  void getPins(Net* net, PinVector &pins) const;
+  void getPins(Instance* inst, PinVector &pins) const;
   Point tieLocation(const Pin *load,
                     int separation);
   bool hasFanout(Vertex *drvr);
@@ -538,6 +541,9 @@ protected:
                                         const Corner *corner);
   BufferedNetPtr makeBufferedNetGroute(const Pin *drvr_pin,
                                        const Corner *corner);
+  float bufferSlew(LibertyCell *buffer_cell,
+                   float load_cap,
+                   const DcalcAnalysisPt *dcalc_ap);
   float maxInputSlew(const LibertyPort *input,
                      const Corner *corner) const;
   void checkLoadSlews(const Pin *drvr_pin,
@@ -562,7 +568,8 @@ protected:
   void journalSwapPins(Instance *inst, LibertyPort *port1, LibertyPort *port2);
   void journalInstReplaceCellBefore(Instance *inst);
   void journalMakeBuffer(Instance *buffer);
-
+  Instance *journalCloneInstance(LibertyCell *cell, const char *name,  Instance *original_inst,
+                                 Instance *parent,  const Point& loc);
   ////////////////////////////////////////////////////////////////
   // API for logic resynthesis
   VertexSet findFaninFanouts(VertexSet &ends);
@@ -656,6 +663,7 @@ protected:
 
   friend class BufferedNet;
   friend class GateCloner;
+  friend class PreChecks;
   friend class RecoverPower;
   friend class RepairDesign;
   friend class RepairSetup;

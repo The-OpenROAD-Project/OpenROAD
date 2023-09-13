@@ -36,8 +36,6 @@
 
 namespace odb {
 
-//#define SINGLE_WIRE
-
 Ath__box::Ath__box()
 {
   set(0, 0, 0, 0);
@@ -1713,17 +1711,8 @@ uint Ath__grid::placeWire(Ath__searchBox* bb)
 
   uint m1 = getBucketNum(xy1);
 
-#ifdef SINGLE_WIRE
-  uint width = bb->hiXY(_dir) - bb->loXY(_dir);
-  uint trackNum1 = getMinMaxTrackNum((bb->loXY(_dir) + bb->loXY(_dir)) / 2);
-  uint trackNum2 = trackNum1;
-  if (width > _pitch)
-    trackNum2 = getMinMaxTrackNum(bb->hiXY(_dir));
-    // ** wire base is not always at track base
-#else
   uint trackNum1 = getMinMaxTrackNum(bb->loXY(_dir));
   uint trackNum2 = getMinMaxTrackNum(bb->hiXY(_dir));
-#endif
 
   uint wireType = bb->getType();
 

@@ -142,34 +142,84 @@ proc save_image { args } {
   rename $options ""
 }
 
+sta::define_cmd_args "save_clocktree_image" {
+  [-width width] \
+  [-height height] \
+  [-corner corner] \
+  -clock clock \
+  path
+}
+
+proc save_clocktree_image { args } {
+  sta::parse_key_args "save_image" args \
+    keys {-clock -width -height -corner} flags {}
+
+  sta::check_argc_eq1 "save_image" $args
+  set path [lindex $args 0]
+
+  set width 0
+  if { [info exists keys(-width)] } {
+    set width $keys(-width)
+  }
+  set height 0
+  if { [info exists keys(-height)] } {
+    set height $keys(-height)
+  }
+  set corner ""
+  if { [info exists keys(-corner)] } {
+    set corner $keys(-corner)
+  }
+
+  if { [info exists keys(-clock)] } {
+    set clock $keys(-clock)
+  } else {
+    utl:error GUI 88 "-clock is required"
+  }
+
+  gui::save_clocktree_image $path $clock $corner $width $height
+}
+
 sta::define_cmd_args "select" {-type object_type \
                                [-name name_regex] \
                                [-case_insensitive] \
-                               [-highlight group]
+                               [-highlight group] \
+                               [-filter attribute_and_value]
 }
 
 proc select { args } {
   sta::parse_key_args "select" args \
-    keys {-type -name -highlight} flags {-case_insensitive}
+    keys {-type -name -highlight -filter} flags {-case_insensitive}
   sta::check_argc_eq0 "select" $args
-  
+
   set type ""
   if { [info exists keys(-type)] } {
     set type $keys(-type)
   } else {
     utl::error GUI 38 "Must specify -type."
   }
-  
+
   set highlight -1
   if { [info exists keys(-highlight)] } {
     set highlight $keys(-highlight)
   }
-  
+
   set name ""
   if { [info exists keys(-name)] } {
     set name $keys(-name)
   }
-  
+
+  set attribute ""
+  set value ""
+  if { [info exists keys(-filter)] } {
+    set filter $keys(-filter)
+    set filter [split $filter "="]
+    if {[llength $filter] != 2} {
+      utl::error GUI 56 "Invalid syntax for -filter. Use -filter attribute=value."
+    }
+    set attribute [lindex $filter 0]
+    set value [lindex $filter 1]
+  }
+
   set case_sense 1
   if { [info exists flags(-case_insensitive)] } {
     if { $name == "" } {
@@ -178,7 +228,7 @@ proc select { args } {
     set case_sense 0
   }
   
-  return [gui::select $type $name $case_sense $highlight]
+  return [gui::select $type $name $attribute $value $case_sense $highlight]
 }
 
 sta::define_cmd_args "display_timing_cone" {pin \

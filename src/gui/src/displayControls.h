@@ -173,7 +173,7 @@ class DisplayControls : public QDockWidget,
 
   bool eventFilter(QObject* obj, QEvent* event) override;
 
-  void setDb(odb::dbDatabase* db);
+  void addTech(odb::dbTech* tech);
   void setLogger(utl::Logger* logger);
   void setSTA(sta::dbSta* sta);
   void setDBInstDescriptor(DbInstDescriptor* desciptor);
@@ -214,7 +214,8 @@ class DisplayControls : public QDockWidget,
   bool isInstanceSelectable(odb::dbInst* inst) override;
   bool areInstanceNamesVisible() override;
   bool areInstancePinsVisible() override;
-  bool areITermsVisible() override;
+  bool areInstancePinsSelectable() override;
+  bool areInstancePinNamesVisible() override;
   bool areInstanceBlockagesVisible() override;
   bool areFillsVisible() override;
   bool areBlockagesVisible() override;
@@ -266,7 +267,9 @@ class DisplayControls : public QDockWidget,
  public slots:
   // Tells this widget that a new design is loaded and the
   // options displayed need to match
-  void designLoaded(odb::dbBlock* block);
+  void blockLoaded(odb::dbBlock* block);
+
+  void setCurrentBlock(odb::dbBlock* block);
 
   // This is called by the check boxes to update the state
   void itemChanged(QStandardItem* item);
@@ -390,8 +393,8 @@ class DisplayControls : public QDockWidget,
     ModelRow blockages;
   };
 
-  void techInit();
-  void libInit();
+  void techInit(odb::dbTech* tech);
+  void libInit(odb::dbDatabase* db);
 
   void collectControls(const QStandardItem* parent,
                        Column column,
@@ -513,12 +516,10 @@ class DisplayControls : public QDockWidget,
   std::map<std::string, Renderer::Settings> custom_controls_settings_;
   std::map<QStandardItem*, Qt::CheckState> saved_state_;
 
-  odb::dbDatabase* db_;
+  std::set<odb::dbTech*> techs_;
   utl::Logger* logger_;
   sta::dbSta* sta_;
   DbInstDescriptor* inst_descriptor_;
-
-  bool tech_inited_;
 
   std::map<const odb::dbTechLayer*, QColor> layer_color_;
   std::map<const odb::dbTechLayer*, Qt::BrushStyle> layer_pattern_;

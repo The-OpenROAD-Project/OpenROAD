@@ -336,6 +336,25 @@ proc set_simulated_annealing { args } {
   ppl::set_simulated_annealing $temperature $max_iterations $perturb_per_iter $alpha
 }
 
+sta::define_cmd_args "simulated_annealing_debug" {
+  [-iters_between_paintings iters]
+  [-no_pause_mode no_pause_mode] # Print solver state every second based on iters_between_paintings
+}
+
+proc simulated_annealing_debug { args } {
+  sta::parse_key_args "simulated_annealing_debug" args \
+  keys {-iters_between_paintings} \
+  flags {-no_pause_mode}
+
+  if [info exists keys(-iters_between_paintings)] {
+    set iters $keys(-iters_between_paintings)
+    sta::check_positive_int "-iters_between_paintings" $iters
+    ppl::simulated_annealing_debug $iters [info exists flags(-no_pause_mode)]
+  } else {
+    utl::error PPL 108 "The -iters_between_paintings argument is required when using debug."
+  }
+}
+
 sta::define_cmd_args "place_pin" {[-pin_name pin_name]\
                                   [-layer layer]\
                                   [-location location]\
@@ -346,7 +365,7 @@ sta::define_cmd_args "place_pin" {[-pin_name pin_name]\
 proc place_pin { args } {
   sta::parse_key_args "place_pin" args \
   keys {-pin_name -layer -location -pin_size}\
-  flags {-force_to_die_boundary}
+  flags {-force_to_die_boundary -placed_status}
 
   sta::check_argc_eq0 "place_pin" $args
 
@@ -407,7 +426,8 @@ sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
                                   [-min_distance_in_tracks]\
                                   [-exclude region]\
                                   [-group_pins pin_list]\
-                                  [-annealing]
+                                  [-annealing] \
+                                  [-write_pin_placement file_name]
                                  }
 
 proc place_pins { args } {
@@ -415,7 +435,7 @@ proc place_pins { args } {
   set pin_groups [ppl::parse_group_pins_arg $args]
   sta::parse_key_args "place_pins" args \
   keys {-hor_layers -ver_layers -random_seed -corner_avoidance \
-        -min_distance -exclude -group_pins} \
+        -min_distance -exclude -group_pins -write_pin_placement} \
   flags {-random -min_distance_in_tracks -annealing}
 
   sta::check_argc_eq0 "place_pins" $args
@@ -468,9 +488,6 @@ proc place_pins { args } {
   set distance 1
   if [info exists keys(-corner_avoidance)] {
     set distance $keys(-corner_avoidance)
-    ppl::set_corner_avoidance [ord::microns_to_dbu $distance]
-  } else {
-    utl::report "Using ${distance}u default distance from corners."
     ppl::set_corner_avoidance [ord::microns_to_dbu $distance]
   }
 
@@ -583,6 +600,10 @@ proc place_pins { args } {
       ppl::add_pin_group $pin_list 0
       incr group_idx
     }
+  }
+
+  if [info exists keys(-write_pin_placement)] {
+    ppl::set_pin_placement_file $keys(-write_pin_placement)
   }
 
   if { [info exists flags(-annealing)] } {

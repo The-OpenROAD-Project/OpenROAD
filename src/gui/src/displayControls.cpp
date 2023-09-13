@@ -134,8 +134,14 @@ void DisplayColorDialog::buildUI()
 
   main_layout_->addWidget(color_dialog_);
 
-  connect(color_dialog_, SIGNAL(accepted()), this, SLOT(acceptDialog()));
-  connect(color_dialog_, SIGNAL(rejected()), this, SLOT(rejectDialog()));
+  connect(color_dialog_,
+          &QColorDialog::accepted,
+          this,
+          &DisplayColorDialog::acceptDialog);
+  connect(color_dialog_,
+          &QColorDialog::rejected,
+          this,
+          &DisplayColorDialog::rejectDialog);
 
   setLayout(main_layout_);
   setWindowTitle("Layer Config");
@@ -260,11 +266,9 @@ DisplayControls::DisplayControls(QWidget* parent)
       ignore_callback_(false),
       ignore_selection_(false),
       default_site_color_(QColor(0, 0xff, 0, 0x70)),
-      db_(nullptr),
       logger_(nullptr),
       sta_(nullptr),
-      inst_descriptor_(nullptr),
-      tech_inited_(false)
+      inst_descriptor_(nullptr)
 {
   setObjectName("layers");  // for settings
   view_->setModel(model_);
@@ -443,16 +447,17 @@ DisplayControls::DisplayControls(QWidget* parent)
   iterm_label_color_ = Qt::yellow;
 
   auto instance_shape
-      = makeParentItem(misc_.instances, "Instances", misc, Qt::Checked);
+      = makeParentItem(misc_.instances, "Instances", misc, Qt::Checked, true);
   makeLeafItem(instance_shapes_.names,
                "Names",
                instance_shape,
                Qt::Checked,
                false,
                instance_name_color_);
-  makeLeafItem(instance_shapes_.pins, "Pins", instance_shape, Qt::Checked);
+  makeLeafItem(
+      instance_shapes_.pins, "Pins", instance_shape, Qt::Checked, true);
   makeLeafItem(instance_shapes_.iterm_labels,
-               "Iterm Labels",
+               "Pin labels",
                instance_shape,
                Qt::Unchecked,
                false,
@@ -466,7 +471,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   });
   setNameItemDoubleClickAction(instance_shapes_.iterm_labels, [this]() {
     iterm_label_font_ = QFontDialog::getFont(
-        nullptr, iterm_label_font_, this, "Instance ITerm name font");
+        nullptr, iterm_label_font_, this, "Instance pin name font");
   });
 
   region_color_ = QColor(0x70, 0x70, 0x70, 0x70);  // semi-transparent mid-gray
@@ -488,24 +493,23 @@ DisplayControls::DisplayControls(QWidget* parent)
 
   setWidget(view_);
   connect(model_,
-          SIGNAL(itemChanged(QStandardItem*)),
+          &DisplayControlModel::itemChanged,
           this,
-          SLOT(itemChanged(QStandardItem*)));
+          &DisplayControls::itemChanged);
 
-  connect(
-      view_->selectionModel(),
-      SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
-      this,
-      SLOT(displayItemSelected(const QItemSelection&)));
-  connect(view_,
-          SIGNAL(doubleClicked(const QModelIndex&)),
+  connect(view_->selectionModel(),
+          &QItemSelectionModel::selectionChanged,
           this,
-          SLOT(displayItemDblClicked(const QModelIndex&)));
+          &DisplayControls::displayItemSelected);
+  connect(view_,
+          &QTreeView::doubleClicked,
+          this,
+          &DisplayControls::displayItemDblClicked);
 
   connect(view_,
-          SIGNAL(customContextMenuRequested(const QPoint&)),
+          &QTreeView::customContextMenuRequested,
           this,
-          SLOT(itemContextMenu(const QPoint&)));
+          &DisplayControls::itemContextMenu);
 
   // register renderers
   if (gui::Gui::get() != nullptr) {
@@ -1161,24 +1165,18 @@ void DisplayControls::restore()
   }
 }
 
-void DisplayControls::setDb(odb::dbDatabase* db)
+void DisplayControls::addTech(odb::dbTech* tech)
 {
-  db_ = db;
-  if (!db) {
-    return;
-  }
-
-  odb::dbTech* tech = db->getTech();
   if (!tech) {
     return;
   }
 
-  if (tech_inited_) {
+  if (techs_.find(tech) != techs_.end()) {
     return;
   }
 
-  techInit();
-  libInit();
+  techInit(tech);
+  libInit(tech->getDb());
 
   for (dbTechLayer* layer : tech->getLayers()) {
     dbTechLayerType type = layer->getType();
@@ -1534,7 +1532,12 @@ bool DisplayControls::areInstancePinsVisible()
   return isModelRowVisible(&instance_shapes_.pins);
 }
 
-bool DisplayControls::areITermsVisible()
+bool DisplayControls::areInstancePinsSelectable()
+{
+  return isModelRowSelectable(&instance_shapes_.pins);
+}
+
+bool DisplayControls::areInstancePinNamesVisible()
 {
   return isModelRowVisible(&instance_shapes_.iterm_labels);
 }
@@ -1784,18 +1787,14 @@ void DisplayControls::unregisterRenderer(Renderer* renderer)
   custom_controls_.erase(renderer);
 }
 
-void DisplayControls::inDbRowCreate(odb::dbRow* /* row */)
+void DisplayControls::inDbRowCreate(odb::dbRow* row)
 {
-  libInit();
+  libInit(row->getDb());
 }
 
-void DisplayControls::libInit()
+void DisplayControls::libInit(odb::dbDatabase* db)
 {
-  if (db_ == nullptr) {
-    return;
-  }
-
-  for (auto* lib : db_->getLibs()) {
+  for (auto* lib : db->getLibs()) {
     for (auto* site : lib->getSites()) {
       if (site_controls_.find(site) == site_controls_.end()) {
         makeLeafItem(site_controls_[site],
@@ -1815,17 +1814,8 @@ void DisplayControls::libInit()
   toggleParent(site_group_);
 }
 
-void DisplayControls::techInit()
+void DisplayControls::techInit(odb::dbTech* tech)
 {
-  if (tech_inited_ || !db_) {
-    return;
-  }
-
-  odb::dbTech* tech = db_->getTech();
-  if (!tech) {
-    return;
-  }
-
   // disable if grid is not present
   misc_.manufacturing_grid.name->setEnabled(tech->hasManufacturingGrid());
   misc_.manufacturing_grid.visible->setEnabled(tech->hasManufacturingGrid());
@@ -1889,14 +1879,33 @@ void DisplayControls::techInit()
     layer_color_[layer] = color;
     layer_pattern_[layer] = Qt::SolidPattern;  // Default pattern is fill solid
   }
-
-  tech_inited_ = true;
+  techs_.insert(tech);
 }
 
-void DisplayControls::designLoaded(odb::dbBlock* block)
+void DisplayControls::blockLoaded(odb::dbBlock* block)
 {
-  setDb(block->getDb());
-  addOwner(block);
+  addTech(block->getTech());
+}
+
+void DisplayControls::setCurrentBlock(odb::dbBlock* block)
+{
+  if (!block) {
+    return;
+  }
+  auto tech = block->getTech();
+  addTech(tech);
+
+  std::set<odb::dbTech*> visible_techs{tech};
+  for (auto child : block->getChildren()) {
+    visible_techs.insert(child->getTech());
+  }
+
+  for (auto& [layer, row] : layer_controls_) {
+    const bool visible
+        = visible_techs.find(layer->getTech()) != visible_techs.end();
+    QModelIndex idx = model_->indexFromItem(row.name);
+    view_->setRowHidden(idx.row(), idx.parent(), !visible);
+  }
 }
 
 void DisplayControls::restoreTclCommands(std::vector<std::string>& cmds)

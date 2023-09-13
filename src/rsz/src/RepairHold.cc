@@ -393,8 +393,10 @@ RepairHold::repairEndHold(Vertex *end_vertex,
         Net *path_net = network_->isTopLevelPort(path_pin)
           ? network_->net(network_->term(path_pin))
           : network_->net(path_pin);
+        dbNet* db_path_net = db_network_->staToDb(path_net);
         if (path_vertex->isDriver(network_)
-            && !resizer_->dontTouch(path_net)) {
+            && !resizer_->dontTouch(path_net)
+            && !db_path_net->isConnectedByAbutment()) {
           PinSeq load_pins;
           Slacks slacks;
           mergeInit(slacks);
@@ -464,14 +466,20 @@ RepairHold::repairEndHold(Vertex *end_vertex,
               // the hold buffer blows through the setup margin.
               resizer_->journalBegin();
               Slack setup_slack_before = sta_->worstSlack(max_);
+              Slew slew_before = sta_->vertexSlew(path_vertex, max_);
               makeHoldDelay(path_vertex, load_pins, loads_have_out_port,
                             buffer_cell, buffer_loc);
+              Slew slew_after = sta_->vertexSlew(path_vertex, max_);
               Slack setup_slack_after = sta_->worstSlack(max_);
-              if (!allow_setup_violations
+              float slew_factor = (slew_before> 0)?slew_after/slew_before:1.0;
+
+              if (slew_factor > 1.20 ||
+                  (!allow_setup_violations
                   && fuzzyLess(setup_slack_after, setup_slack_before)
-                  && setup_slack_after < setup_margin)
-                resizer_->journalRestore(resize_count_, inserted_buffer_count_,
-                                         cloned_gate_count_);
+                  && setup_slack_after < setup_margin)) {
+                resizer_->journalRestore(
+                    resize_count_, inserted_buffer_count_, cloned_gate_count_);
+              }
               resizer_->journalEnd();
             }
           }

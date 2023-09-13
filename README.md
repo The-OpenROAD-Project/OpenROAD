@@ -24,32 +24,55 @@ RTL-GDSII for rapid design exploration and physical design implementation.
   }
 }%%
 
-flowchart TB
-    A[Verilog\n+ libraries\n + constraints] --> FLOW
-    style A fill:#74c2b5,stroke:#000000,stroke-width:4px
-    subgraph FLOW
-    style FLOW fill:#FFFFFF00,stroke-width:4px
+flowchart LR
+    b0[                  ] --- b2[ ] --- b4[ ] --- ORFlow --- b1[ ] --- b3[ ] --- b5[                  ]
+    style b0 stroke-width:0px, fill: #FFFFFF00, color:#FFFFFF00
+    style b1 stroke-width:0px, fill: #FFFFFF00
+    style b2 stroke-width:0px, fill: #FFFFFF00
+    style b3 stroke-width:0px, fill: #FFFFFF00
+    style b4 stroke-width:0px, fill: #FFFFFF00
+    style b5 stroke-width:0px, fill: #FFFFFF00, color:#FFFFFF00
 
+    linkStyle 0 stroke-width:0px
+    linkStyle 1 stroke-width:0px
+    linkStyle 2 stroke-width:0px
+    linkStyle 3 stroke-width:0px
+    linkStyle 4 stroke-width:0px
+    linkStyle 5 stroke-width:0px
+
+
+    subgraph ORFlow
     direction TB
-        B[Synthesis]
-        B --> C[Floorplan] 
-        C --> D[Placement]
-        D --> E[Clock Tree Synthesis]
-        E --> F[Routing]
-        F --> G[Finishing]
-        style B fill:#f8cecc,stroke:#000000,stroke-width:4px
-        style C fill:#fff2cc,stroke:#000000,stroke-width:4px
-        style D fill:#cce5ff,stroke:#000000,stroke-width:4px
-        style E fill:#67ab9f,stroke:#000000,stroke-width:4px
-        style F fill:#fa6800,stroke:#000000,stroke-width:4px
-        style G fill:#ff6666,stroke:#000000,stroke-width:4px
+    style ORFlow fill:#ffffff00, stroke-width:0px
+        A[Verilog\n+ libraries\n + constraints] --> FLOW
+        style A fill:#74c2b5,stroke:#000000,stroke-width:4px
+        subgraph FLOW
+        style FLOW fill:#FFFFFF00,stroke-width:4px
+
+        direction TB
+            B[Synthesis]
+            B --> C[Floorplan]
+            C --> D[Placement]
+            D --> E[Clock Tree Synthesis]
+            E --> F[Routing]
+            F --> G[Finishing]
+            style B fill:#f8cecc,stroke:#000000,stroke-width:4px
+            style C fill:#fff2cc,stroke:#000000,stroke-width:4px
+            style D fill:#cce5ff,stroke:#000000,stroke-width:4px
+            style E fill:#67ab9f,stroke:#000000,stroke-width:4px
+            style F fill:#fa6800,stroke:#000000,stroke-width:4px
+            style G fill:#ff6666,stroke:#000000,stroke-width:4px
+        end
+
+        FLOW --> H[GDSII\n Final Layout]
+        %% H --- H1[ ]
+        %% style H1 stroke-width:0px, fill: #FFFFFF00
+        %% linkStyle 11 stroke-width:0px
+        style H fill:#ff0000,stroke:#000000,stroke-width:4px
     end
 
-    FLOW --> H[GDSII\n Final Layout]
-    style H fill:#ff0000,stroke:#000000,stroke-width:4px
 ```
 
-Documentation is also available [here](https://openroad.readthedocs.io/en/latest/main/README.html).
 
 ## OpenROAD Mission
 
@@ -257,27 +280,47 @@ from [here](docs/user/Build.md).
 
 ## Regression Tests
 
-There are a set of regression tests in `test/`.
+There are a set of executable regression test scripts in `./test/`.
 
 ``` shell
-# run all tool unit tests
-test/regression
+# run tests for all tools
+./test/regression
+
 # run all flow tests
-test/regression flow
+./test/regression flow
+
 # run <tool> tests
-test/regression <tool>
-# run <tool> tool tests
-src/<tool>/test/regression
+./test/regression <tool>
+
+# run all <tool>-specific unit tests
+cd src/<tool>
+./test/regression
+
+# run only <TEST_NAME> for <tool>
+cd src/<tool>
+./test/regression <TEST_NAME>
 ```
 
 The flow tests check results such as worst slack against reference values.
 Use `report_flow_metrics [test]...` to see all of the metrics.
-Use `save_flow_metrics [test]...` to add margins to the metrics and save them to <test>.metrics_limits.
 
 ``` text
 % report_flow_metrics gcd_nangate45
                        insts    area util slack_min slack_max  tns_max clk_skew max_slew max_cap max_fanout DPL ANT drv
 gcd_nangate45            368     564  8.8     0.112    -0.015     -0.1    0.004        0       0          0   0   0   0
+```
+
+To update a failing regression, follow the instructions below:
+
+```tcl
+# update log files (i.e. *ok)
+save_ok <TEST_NAME>
+
+# update "*.metrics" for tests that use flow test
+save_flow_metrics <TEST_NAME> 
+
+# update "*.metrics_limits" files
+save_flow_metrics_limits <TEST_NAME>
 ```
 
 ## Run

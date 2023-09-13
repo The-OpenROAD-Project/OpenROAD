@@ -45,6 +45,7 @@
 
 #include "GRoute.h"
 #include "RoutePt.h"
+#include "ant/AntennaChecker.hh"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "sta/Liberty.hh"
@@ -135,7 +136,7 @@ struct PinGridLocation
 
 typedef std::vector<std::pair<int, odb::Rect>> Guides;
 
-class GlobalRouter
+class GlobalRouter : public ant::GlobalRouteSource
 {
  public:
   GlobalRouter();
@@ -195,7 +196,6 @@ class GlobalRouter
                    bool end_incremental = false);
   void saveCongestion();
   NetRouteMap& getRoutes() { return routes_; }
-  bool haveRoutes();
   Net* getNet(odb::dbNet* db_net);
   int getTileSize() const;
 
@@ -209,8 +209,9 @@ class GlobalRouter
   void addDirtyNet(odb::dbNet* net);
   std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
   // check_antennas
-  void makeNetWires();
-  void destroyNetWires();
+  bool haveRoutes() override;
+  void makeNetWires() override;
+  void destroyNetWires() override;
 
   double dbuToMicrons(int64_t dbu);
 

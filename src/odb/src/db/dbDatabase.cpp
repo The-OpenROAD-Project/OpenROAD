@@ -65,8 +65,8 @@ namespace odb {
 //
 // Magic number is: ATHENADB
 //
-#define ADS_DB_MAGIC1 0x41544845  // ATHE
-#define ADS_DB_MAGIC2 0x4E414442  // NADB
+constexpr int DB_MAGIC1 = 0x41544845;  // ATHE
+constexpr int DB_MAGIC2 = 0x4E414442;  // NADB
 
 template class dbTable<_dbDatabase>;
 
@@ -165,12 +165,11 @@ dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
 
 _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */)
 {
-  _magic1 = ADS_DB_MAGIC1;
-  _magic2 = ADS_DB_MAGIC2;
+  _magic1 = DB_MAGIC1;
+  _magic2 = DB_MAGIC2;
   _schema_major = db_schema_major;
   _schema_minor = db_schema_minor;
   _master_id = 0;
-  _file = nullptr;
   _logger = nullptr;
   _unique_id = db_unique_id++;
 
@@ -198,12 +197,11 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */)
 //
 _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
 {
-  _magic1 = ADS_DB_MAGIC1;
-  _magic2 = ADS_DB_MAGIC2;
+  _magic1 = DB_MAGIC1;
+  _magic2 = DB_MAGIC2;
   _schema_major = db_schema_major;
   _schema_minor = db_schema_minor;
   _master_id = 0;
-  _file = nullptr;
   _logger = nullptr;
   _unique_id = id;
 
@@ -233,14 +231,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, const _dbDatabase& d)
       _master_id(d._master_id),
       _chip(d._chip),
       _unique_id(db_unique_id++),
-      _file(nullptr),
       _logger(nullptr)
 {
-  if (d._file) {
-    _file = strdup(d._file);
-    ZALLOCATED(_file);
-  }
-
   _chip_tbl = new dbTable<_dbChip>(this, this, *d._chip_tbl);
 
   _tech_tbl = new dbTable<_dbTech>(this, this, *d._tech_tbl);
@@ -263,9 +255,6 @@ _dbDatabase::~_dbDatabase()
   delete _name_cache;
   // dimitri_fix
   // delete _prop_itr;
-
-  if (_file)
-    free(_file);
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbDatabase& db)
@@ -288,12 +277,12 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& db)
 {
   stream >> db._magic1;
 
-  if (db._magic1 != ADS_DB_MAGIC1)
+  if (db._magic1 != DB_MAGIC1)
     throw ZException("database file is not an OpenDB Database");
 
   stream >> db._magic2;
 
-  if (db._magic2 != ADS_DB_MAGIC2)
+  if (db._magic2 != DB_MAGIC2)
     throw ZException("database file is not an OpenDB Database");
 
   stream >> db._schema_major;
@@ -305,6 +294,13 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& db)
 
   if (db._schema_minor < db_schema_initial)
     throw ZException("incompatible database schema revision");
+
+  if (db._schema_minor > db_schema_minor)
+    throw ZException("incompatible database schema revision %d.%d > %d.%d",
+                     db._schema_major,
+                     db._schema_minor,
+                     db_schema_major,
+                     db_schema_minor);
 
   stream >> db._master_id;
 

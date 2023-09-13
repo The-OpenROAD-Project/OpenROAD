@@ -440,7 +440,7 @@ void definSNet::pathVia(const char* via_name)
 
     if (via == nullptr) {
       _logger->warn(
-          utl::ODB, 163, "error: undefined ia ({}) referenced", via_name);
+          utl::ODB, 163, "error: undefined via ({}) referenced", via_name);
       ++_errors;
       return;
     }
@@ -497,7 +497,7 @@ void definSNet::pathViaArray(const char* via_name,
 
     if (via == nullptr) {
       _logger->warn(
-          utl::ODB, 164, "error: undefined ia ({}) referenced", via_name);
+          utl::ODB, 164, "error: undefined via ({}) referenced", via_name);
       ++_errors;
       return;
     }

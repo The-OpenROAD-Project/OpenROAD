@@ -545,6 +545,7 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
       dirty_nets.push_back(db_net_map_[db_net]);
     }
   }
+  dirty_nets_.clear();
 }
 
 bool GlobalRouter::pinAccessPointPositions(
@@ -3278,12 +3279,13 @@ int GlobalRouter::findInstancesObstructions(
             lower_bound = odb::Point(rect.xMin(), rect.yMin());
             upper_bound = odb::Point(rect.xMax(), rect.yMax());
             pin_box = odb::Rect(lower_bound, upper_bound);
-            if (!die_area.contains(pin_box)) {
-              logger_->error(GRT,
-                             39,
-                             "Found pin {} outside die area in instance {}.",
-                             mterm->getConstName(),
-                             inst->getConstName());
+            if (!die_area.contains(pin_box)
+                && !mterm->getSigType().isSupply()) {
+              logger_->warn(GRT,
+                            39,
+                            "Found pin {} outside die area in instance {}.",
+                            mterm->getConstName(),
+                            inst->getConstName());
               pin_out_of_die_count++;
             }
             applyObstructionAdjustment(pin_box, box->getTechLayer());
@@ -3295,7 +3297,7 @@ int GlobalRouter::findInstancesObstructions(
 
   if (pin_out_of_die_count > 0) {
     if (verbose_)
-      logger_->warn(
+      logger_->error(
           GRT, 28, "Found {} pins outside die area.", pin_out_of_die_count);
   }
 
@@ -3931,7 +3933,6 @@ void GlobalRouter::updateDirtyRoutes()
     NetRouteMap new_route
         = findRouting(dirty_nets, min_routing_layer_, max_routing_layer_);
     mergeResults(new_route);
-    dirty_nets_.clear();
 
     bool reroutingOverflow = true;
     if (fastroute_->has2Doverflow() && !allow_congestion_) {
@@ -3994,8 +3995,9 @@ void GRouteDbCbk::instItermsDirty(odb::dbInst* inst)
 {
   for (odb::dbITerm* iterm : inst->getITerms()) {
     odb::dbNet* db_net = iterm->getNet();
-    if (db_net != nullptr && !db_net->isSpecial())
-      grouter_->addDirtyNet(iterm->getNet());
+    if (db_net != nullptr && !db_net->isSpecial()) {
+      grouter_->addDirtyNet(db_net);
+    }
   }
 }
 

@@ -57,7 +57,6 @@
 #include <tuple>
 #include <vector>
 
-#include "colorGenerator.h"
 #include "db.h"
 #include "dbDescriptors.h"
 #include "dbShape.h"
@@ -113,6 +112,10 @@ LayoutViewer::LayoutViewer(
     const SelectionSet& selected,
     const HighlightSet& highlighted,
     const std::vector<std::unique_ptr<Ruler>>& rulers,
+    const std::map<odb::dbModule*, ModuleSettings>& module_settings,
+    const std::set<odb::dbNet*>& focus_nets,
+    const std::set<odb::dbNet*>& route_guides,
+    const std::set<odb::dbNet*>& net_tracks,
     Gui* gui,
     const std::function<bool(void)>& usingDBU,
     const std::function<bool(void)>& showRulerAsEuclidian,
@@ -133,12 +136,17 @@ LayoutViewer::LayoutViewer(
       gui_(gui),
       usingDBU_(usingDBU),
       showRulerAsEuclidian_(showRulerAsEuclidian),
+      modules_(module_settings),
       building_ruler_(false),
       ruler_start_(nullptr),
       snap_edge_showing_(false),
       animate_selection_(nullptr),
+      repaint_requested_(false),
       logger_(nullptr),
       layout_context_menu_(new QMenu(tr("Layout Menu"), this)),
+      focus_nets_(focus_nets),
+      route_guides_(route_guides),
+      net_tracks_(net_tracks),
       viewer_thread_(this)
 {
   setMouseTracking(true);
@@ -152,45 +160,9 @@ LayoutViewer::LayoutViewer(
   connect(
       &viewer_thread_, &RenderThread::done, this, &LayoutViewer::updatePixmap);
 
-  connect(&search_, SIGNAL(modified()), this, SLOT(fullRepaint()));
+  connect(&search_, &Search::modified, this, &LayoutViewer::fullRepaint);
 
-  connect(&search_,
-          SIGNAL(newBlock(odb::dbBlock*)),
-          this,
-          SLOT(setBlock(odb::dbBlock*)));
-}
-
-void LayoutViewer::updateModuleVisibility(odb::dbModule* module, bool visible)
-{
-  modules_[module].visible = visible;
-  fullRepaint();
-}
-
-void LayoutViewer::updateModuleColor(odb::dbModule* module,
-                                     const QColor& color,
-                                     bool user_selected)
-{
-  modules_[module].color = color;
-  if (user_selected) {
-    modules_[module].user_color = color;
-  }
-  fullRepaint();
-}
-
-void LayoutViewer::populateModuleColors()
-{
-  modules_.clear();
-
-  if (block_ == nullptr) {
-    return;
-  }
-
-  ColorGenerator generator;
-
-  for (auto* module : block_->getModules()) {
-    auto color = generator.getQColor();
-    modules_[module] = {color, color, color, true};
-  }
+  connect(&search_, &Search::newBlock, this, &LayoutViewer::setBlock);
 }
 
 void LayoutViewer::setBlock(odb::dbBlock* block)
@@ -200,8 +172,6 @@ void LayoutViewer::setBlock(odb::dbBlock* block)
   if (block && cut_maximum_size_.empty()) {
     generateCutLayerMaximumSizes();
   }
-
-  populateModuleColors();
 
   updateScaleAndCentering(scroller_->maximumViewportSize());
   fit();
@@ -597,7 +567,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
   const int shape_limit = shapeSizeLimit();
 
   // look for edges in metal shapes
-  dbTech* tech = block_->getDataBase()->getTech();
+  dbTech* tech = block_->getTech();
   for (auto layer : tech->getLayers()) {
     if (!options_->isVisible(layer)) {
       continue;
@@ -784,7 +754,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
 
   // Look for the selected object in reverse layer order
   auto& renderers = Gui::get()->renderers();
-  dbTech* tech = block_->getDataBase()->getTech();
+  dbTech* tech = block_->getTech();
 
   const int shape_limit = shapeSizeLimit();
 
@@ -888,13 +858,30 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                    instanceSizeLimit());
 
   for (auto& [box, inst] : insts) {
-    if (options_->isInstanceVisible(inst)
-        && options_->isInstanceSelectable(inst)) {
-      selections.push_back(gui_->makeSelected(inst));
-      for (auto iterm : inst->getITerms()) {
-        Rect iterm_bbox = iterm->getBBox();
-        if (region.intersects(iterm_bbox)) {
-          selections.push_back(gui_->makeSelected(iterm));
+    if (options_->isInstanceVisible(inst)) {
+      if (options_->isInstanceSelectable(inst)) {
+        selections.push_back(gui_->makeSelected(inst));
+      }
+      if (options_->areInstancePinsVisible()
+          && options_->areInstancePinsSelectable()) {
+        odb::dbTransform xform;
+        inst->getTransform(xform);
+        for (auto* iterm : inst->getITerms()) {
+          for (auto* mpin : iterm->getMTerm()->getMPins()) {
+            for (auto* geom : mpin->getGeometry()) {
+              const auto layer = geom->getTechLayer();
+              if (layer == nullptr) {
+                continue;
+              }
+              if (options_->isVisible(layer) && options_->isSelectable(layer)) {
+                Rect pin_rect = geom->getBox();
+                xform.apply(pin_rect);
+                if (region.intersects(pin_rect)) {
+                  selections.push_back(gui_->makeSelected(iterm));
+                }
+              }
+            }
+          }
         }
       }
     }
@@ -1726,7 +1713,8 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
 void LayoutViewer::fullRepaint()
 {
   if (command_executing_ && !paused_) {
-    QTimer::singleShot(5 /*ms*/, this, SLOT(fullRepaint()));  // retry later
+    QTimer::singleShot(
+        5 /*ms*/, this, &LayoutViewer::fullRepaint);  // retry later
     return;
   }
   update();
@@ -1822,7 +1810,7 @@ void LayoutViewer::showLayoutCustomMenu(QPoint pos)
   layout_context_menu_->popup(this->mapToGlobal(pos));
 }
 
-void LayoutViewer::designLoaded(dbBlock* block)
+void LayoutViewer::blockLoaded(dbBlock* block)
 {
   search_.setTopBlock(block);
 }
@@ -1832,13 +1820,18 @@ void LayoutViewer::setScroller(LayoutScroll* scroller)
   scroller_ = scroller;
 
   // ensure changes in the scroll area are announced to the layout viewer
-  connect(scroller_, SIGNAL(viewportChanged()), this, SLOT(viewportUpdated()));
   connect(scroller_,
-          SIGNAL(centerChanged(int, int)),
+          &LayoutScroll::viewportChanged,
           this,
-          SLOT(updateCenter(int, int)));
-  connect(
-      scroller_, SIGNAL(centerChanged(int, int)), this, SLOT(fullRepaint()));
+          &LayoutViewer::viewportUpdated);
+  connect(scroller_,
+          &LayoutScroll::centerChanged,
+          this,
+          &LayoutViewer::updateCenter);
+  connect(scroller_,
+          &LayoutScroll::centerChanged,
+          this,
+          &LayoutViewer::fullRepaint);
 }
 
 void LayoutViewer::viewportUpdated()
@@ -2006,79 +1999,63 @@ void LayoutViewer::addMenuAndActions()
   // Connect Slots to Actions...
   connect(menu_actions_[SELECT_CONNECTED_INST_ACT],
           &QAction::triggered,
-          this,
           [this]() { selectHighlightConnectedInst(true); });
-  connect(menu_actions_[SELECT_OUTPUT_NETS_ACT],
-          &QAction::triggered,
-          this,
-          [this]() { selectHighlightConnectedNets(true, true, false); });
-  connect(menu_actions_[SELECT_INPUT_NETS_ACT],
-          &QAction::triggered,
-          this,
-          [this]() { selectHighlightConnectedNets(true, false, true); });
-  connect(
-      menu_actions_[SELECT_ALL_NETS_ACT], &QAction::triggered, this, [this]() {
-        selectHighlightConnectedNets(true, true, true);
-      });
+  connect(menu_actions_[SELECT_OUTPUT_NETS_ACT], &QAction::triggered, [this]() {
+    selectHighlightConnectedNets(true, true, false);
+  });
+  connect(menu_actions_[SELECT_INPUT_NETS_ACT], &QAction::triggered, [this]() {
+    selectHighlightConnectedNets(true, false, true);
+  });
+  connect(menu_actions_[SELECT_ALL_NETS_ACT], &QAction::triggered, [this]() {
+    selectHighlightConnectedNets(true, true, true);
+  });
   connect(menu_actions_[SELECT_ALL_BUFFER_TREES_ACT],
           &QAction::triggered,
-          this,
           [this]() { selectHighlightConnectedBufferTrees(true); });
 
   connect(menu_actions_[HIGHLIGHT_CONNECTED_INST_ACT],
           &QAction::triggered,
-          this,
           [this]() { selectHighlightConnectedInst(false); });
   connect(menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT],
           &QAction::triggered,
-          this,
           [this]() { selectHighlightConnectedNets(false, true, false); });
   connect(menu_actions_[HIGHLIGHT_INPUT_NETS_ACT],
           &QAction::triggered,
-          this,
           [this]() { this->selectHighlightConnectedNets(false, false, true); });
-  connect(menu_actions_[HIGHLIGHT_ALL_NETS_ACT],
-          &QAction::triggered,
-          this,
-          [this]() { selectHighlightConnectedNets(false, true, true); });
+  connect(menu_actions_[HIGHLIGHT_ALL_NETS_ACT], &QAction::triggered, [this]() {
+    selectHighlightConnectedNets(false, true, true);
+  });
   connect(menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_0],
           &QAction::triggered,
-          this,
           [this]() { selectHighlightConnectedBufferTrees(false, 0); });
   connect(menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_1],
           &QAction::triggered,
-          this,
           [this]() { selectHighlightConnectedBufferTrees(false, 1); });
   connect(menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_2],
           &QAction::triggered,
-          this,
           [this]() { selectHighlightConnectedBufferTrees(false, 2); });
   connect(menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_3],
           &QAction::triggered,
-          this,
           [this]() { selectHighlightConnectedBufferTrees(false, 3); });
 
-  connect(menu_actions_[VIEW_ZOOMIN_ACT], &QAction::triggered, this, [this]() {
+  connect(menu_actions_[VIEW_ZOOMIN_ACT], &QAction::triggered, [this]() {
     zoomIn();
   });
-  connect(menu_actions_[VIEW_ZOOMOUT_ACT], &QAction::triggered, this, [this]() {
+  connect(menu_actions_[VIEW_ZOOMOUT_ACT], &QAction::triggered, [this]() {
     zoomOut();
   });
-  connect(menu_actions_[VIEW_ZOOMFIT_ACT], &QAction::triggered, this, [this]() {
+  connect(menu_actions_[VIEW_ZOOMFIT_ACT], &QAction::triggered, [this]() {
     fit();
   });
 
-  connect(menu_actions_[SAVE_VISIBLE_IMAGE_ACT],
-          &QAction::triggered,
-          this,
-          [this]() { saveImage(""); });
-  connect(
-      menu_actions_[SAVE_WHOLE_IMAGE_ACT], &QAction::triggered, this, [this]() {
-        const QSize whole_size = size();
-        saveImage(
-            "",
-            screenToDBU(QRectF(0, 0, whole_size.width(), whole_size.height())));
-      });
+  connect(menu_actions_[SAVE_VISIBLE_IMAGE_ACT], &QAction::triggered, [this]() {
+    saveImage("");
+  });
+  connect(menu_actions_[SAVE_WHOLE_IMAGE_ACT], &QAction::triggered, [this]() {
+    const QSize whole_size = size();
+    saveImage(
+        "", screenToDBU(QRectF(0, 0, whole_size.width(), whole_size.height())));
+  });
 
   connect(menu_actions_[CLEAR_SELECTIONS_ACT], &QAction::triggered, this, []() {
     Gui::get()->clearSelections();
@@ -2098,7 +2075,7 @@ void LayoutViewer::addMenuAndActions()
   connect(menu_actions_[CLEAR_NET_TRACKS_ACT], &QAction::triggered, this, []() {
     Gui::get()->clearNetTracks();
   });
-  connect(menu_actions_[CLEAR_ALL_ACT], &QAction::triggered, this, [this]() {
+  connect(menu_actions_[CLEAR_ALL_ACT], &QAction::triggered, [this]() {
     menu_actions_[CLEAR_SELECTIONS_ACT]->trigger();
     menu_actions_[CLEAR_HIGHLIGHTS_ACT]->trigger();
     menu_actions_[CLEAR_RULERS_ACT]->trigger();
@@ -2135,78 +2112,6 @@ bool LayoutViewer::hasDesign() const
   return true;
 }
 
-void LayoutViewer::addFocusNet(odb::dbNet* net)
-{
-  const auto& [itr, inserted] = focus_nets_.insert(net);
-  if (inserted) {
-    emit focusNetsChanged();
-    fullRepaint();
-  }
-}
-
-void LayoutViewer::addRouteGuides(odb::dbNet* net)
-{
-  const auto& [itr, inserted] = route_guides_.insert(net);
-  if (inserted) {
-    fullRepaint();
-  }
-}
-
-void LayoutViewer::addNetTracks(odb::dbNet* net)
-{
-  const auto& [itr, inserted] = net_tracks_.insert(net);
-  if (inserted) {
-    fullRepaint();
-  }
-}
-
-void LayoutViewer::removeFocusNet(odb::dbNet* net)
-{
-  if (focus_nets_.erase(net) > 0) {
-    emit focusNetsChanged();
-    fullRepaint();
-  }
-}
-
-void LayoutViewer::removeRouteGuides(odb::dbNet* net)
-{
-  if (route_guides_.erase(net) > 0) {
-    fullRepaint();
-  }
-}
-
-void LayoutViewer::removeNetTracks(odb::dbNet* net)
-{
-  if (net_tracks_.erase(net) > 0) {
-    fullRepaint();
-  }
-}
-
-void LayoutViewer::clearFocusNets()
-{
-  if (!focus_nets_.empty()) {
-    focus_nets_.clear();
-    emit focusNetsChanged();
-    fullRepaint();
-  }
-}
-
-void LayoutViewer::clearRouteGuides()
-{
-  if (!route_guides_.empty()) {
-    route_guides_.clear();
-    fullRepaint();
-  }
-}
-
-void LayoutViewer::clearNetTracks()
-{
-  if (!net_tracks_.empty()) {
-    net_tracks_.clear();
-    fullRepaint();
-  }
-}
-
 bool LayoutViewer::isNetVisible(odb::dbNet* net)
 {
   bool focus_visible = true;
@@ -2223,7 +2128,7 @@ void LayoutViewer::generateCutLayerMaximumSizes()
     return;
   }
 
-  dbTech* tech = block_->getDataBase()->getTech();
+  dbTech* tech = block_->getTech();
   if (tech == nullptr) {
     return;
   }

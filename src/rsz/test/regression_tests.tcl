@@ -6,6 +6,8 @@ record_tests {
   buffer_ports6
   buffer_ports7
   buffer_ports8
+  eqy_repair_setup2
+  eqy_repair_setup5
   fanin_fanout1
   make_parasitics1
   make_parasitics2
@@ -102,4 +104,5 @@ record_tests {
   repair_setup4_verbose
   repair_hold9_verbose
   set_dont_touch1
+  set_dont_use1
 }

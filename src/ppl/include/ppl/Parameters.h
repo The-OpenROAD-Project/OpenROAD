@@ -106,6 +106,12 @@ class Parameters
   }
   bool getMinDistanceInTracks() const { return distance_in_tracks_; }
 
+  void setPinPlacementFile(const char* file_name)
+  {
+    pin_placement_file_ = file_name;
+  }
+  std::string getPinPlacementFile() const { return pin_placement_file_; }
+
  private:
   bool report_hpwl_ = false;
   int num_slots_ = -1;
@@ -118,9 +124,10 @@ class Parameters
   int horizontal_length_ = -1;
   int vertical_length_ = -1;
   unsigned int rand_seed_ = 42;
-  int corner_avoidance_ = 0;
+  int corner_avoidance_ = -1;
   int min_dist_ = 0;
   bool distance_in_tracks_ = false;
+  std::string pin_placement_file_;
 };
 
 }  // namespace ppl
