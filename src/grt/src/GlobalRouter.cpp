@@ -1003,14 +1003,14 @@ void GlobalRouter::computeGridAdjustments(int min_routing_layer,
 
     if (!grid_->isPerfectRegularX()) {
       fastroute_->setLastColVCapacity(new_v_capacity, level - 1);
-      for (int i = 1; i <= y_grids; i++) {
+      for (int i = 1; i < y_grids; i++) {
         fastroute_->addAdjustment(
             x_grids - 1, i - 1, x_grids - 1, i, level, new_v_capacity, false);
       }
     }
     if (!grid_->isPerfectRegularY()) {
       fastroute_->setLastRowHCapacity(new_h_capacity, level - 1);
-      for (int i = 1; i <= x_grids; i++) {
+      for (int i = 1; i < x_grids; i++) {
         fastroute_->addAdjustment(
             i - 1, y_grids - 1, i, y_grids - 1, level, new_h_capacity, false);
       }
@@ -1157,7 +1157,7 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
         grid_->updateHorizontalEdgesCapacities(layer - 1, newCap);
 
         for (int y = 1; y <= y_grids; y++) {
-          for (int x = 1; x <= x_grids; x++) {
+          for (int x = 1; x < x_grids; x++) {
             int edge_cap
                 = fastroute_->getEdgeCapacity(x - 1, y - 1, x, y - 1, layer);
             int new_h_capacity
@@ -1177,7 +1177,7 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
         grid_->updateVerticalEdgesCapacities(layer - 1, newCap);
 
         for (int x = 1; x <= x_grids; x++) {
-          for (int y = 1; y <= y_grids; y++) {
+          for (int y = 1; y < y_grids; y++) {
             int edge_cap
                 = fastroute_->getEdgeCapacity(x - 1, y - 1, x - 1, y, layer);
             int new_v_capacity
