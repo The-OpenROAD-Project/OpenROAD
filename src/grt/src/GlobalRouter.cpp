@@ -3281,7 +3281,7 @@ int GlobalRouter::findInstancesObstructions(
             pin_box = odb::Rect(lower_bound, upper_bound);
             if (!die_area.contains(pin_box)
                 && !mterm->getSigType().isSupply()) {
-              logger_->error(GRT,
+              logger_->warn(GRT,
                              39,
                              "Found pin {} outside die area in instance {}.",
                              mterm->getConstName(),
@@ -3297,7 +3297,7 @@ int GlobalRouter::findInstancesObstructions(
 
   if (pin_out_of_die_count > 0) {
     if (verbose_)
-      logger_->warn(
+      logger_->error(
           GRT, 28, "Found {} pins outside die area.", pin_out_of_die_count);
   }
 
