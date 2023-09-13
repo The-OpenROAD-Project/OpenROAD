@@ -1122,13 +1122,13 @@ void FastRouteCore::StNetOrder()
   std::stable_sort(
       tree_order_cong_.begin(), tree_order_cong_.end(), compareTEL);
 
-  /* set the critical nets priority, between the non critical nets with overflow
-    (or 30% first nets) and the rest of the non critical nets */
-  for (int id_ord_el = 0; id_ord_el < netCount(); id_ord_el++) {
-    auto order_element = tree_order_cong_[id_ord_el];
+  // Set the 70% (or less) of non critical nets that doesn't have overflow
+  // with the lowest priority
+  for (int ord_elID = 0; ord_elID < netCount(); ord_elID++) {
+    auto order_element = tree_order_cong_[ord_elID];
     if (nets_[order_element.treeIndex]->getSlack()
         == std::ceil(std::numeric_limits<float>::lowest())) {
-      if (order_element.xmin == 0 && (id_ord_el >= (netCount() * 30 / 100))) {
+      if (order_element.xmin == 0 && (ord_elID >= (netCount() * 30 / 100))) {
         nets_[order_element.treeIndex]->setSlack(
             std::numeric_limits<float>::max());
       }
@@ -1173,6 +1173,8 @@ float FastRouteCore::CalculatePartialSlack()
   const int threshold_index = std::ceil(slacks.size() * update_slack_ / 100);
   const float slack_th = slacks[threshold_index];
 
+  // Set the non critical nets slack as the lowest float, so they can be
+  // ordered by overflow (and ordered first than the critical nets)
   for (int netID = 0; netID < netCount(); netID++) {
     if (nets_[netID]->getSlack() > slack_th) {
       nets_[netID]->setSlack(std::ceil(std::numeric_limits<float>::lowest()));
