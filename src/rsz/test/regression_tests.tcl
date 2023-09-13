@@ -6,6 +6,8 @@ record_tests {
   buffer_ports6
   buffer_ports7
   buffer_ports8
+  eqy_repair_setup2
+  eqy_repair_setup5
   fanin_fanout1
   make_parasitics1
   make_parasitics2

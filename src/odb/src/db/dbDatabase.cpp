@@ -65,8 +65,8 @@ namespace odb {
 //
 // Magic number is: ATHENADB
 //
-#define ADS_DB_MAGIC1 0x41544845  // ATHE
-#define ADS_DB_MAGIC2 0x4E414442  // NADB
+constexpr int DB_MAGIC1 = 0x41544845;  // ATHE
+constexpr int DB_MAGIC2 = 0x4E414442;  // NADB
 
 template class dbTable<_dbDatabase>;
 
@@ -165,8 +165,8 @@ dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
 
 _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */)
 {
-  _magic1 = ADS_DB_MAGIC1;
-  _magic2 = ADS_DB_MAGIC2;
+  _magic1 = DB_MAGIC1;
+  _magic2 = DB_MAGIC2;
   _schema_major = db_schema_major;
   _schema_minor = db_schema_minor;
   _master_id = 0;
@@ -197,8 +197,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */)
 //
 _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
 {
-  _magic1 = ADS_DB_MAGIC1;
-  _magic2 = ADS_DB_MAGIC2;
+  _magic1 = DB_MAGIC1;
+  _magic2 = DB_MAGIC2;
   _schema_major = db_schema_major;
   _schema_minor = db_schema_minor;
   _master_id = 0;
@@ -277,12 +277,12 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& db)
 {
   stream >> db._magic1;
 
-  if (db._magic1 != ADS_DB_MAGIC1)
+  if (db._magic1 != DB_MAGIC1)
     throw ZException("database file is not an OpenDB Database");
 
   stream >> db._magic2;
 
-  if (db._magic2 != ADS_DB_MAGIC2)
+  if (db._magic2 != DB_MAGIC2)
     throw ZException("database file is not an OpenDB Database");
 
   stream >> db._schema_major;

@@ -374,8 +374,10 @@ void HierRTLMP::hierRTLMacroPlacer()
   for (auto inst : block_->getInsts()) {
     auto master = inst->getMaster();
     if (master->isBlock()) {
-      const auto width = dbuToMicron(master->getWidth(), dbu_) + halo_width_;
-      const auto height = dbuToMicron(master->getHeight(), dbu_) + halo_width_;
+      const auto width
+          = dbuToMicron(master->getWidth(), dbu_) + 2 * halo_width_;
+      const auto height
+          = dbuToMicron(master->getHeight(), dbu_) + 2 * halo_width_;
       macro_with_halo_area += width * height;
       unplaced_macros += !inst->getPlacementStatus().isPlaced();
     }
