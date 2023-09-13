@@ -807,10 +807,6 @@ void FastRouteCore::updateDbCongestion()
     bool is_horizontal = ((k % 2) - layer_orientation_) == 0;
     for (int y = 0; y < y_grid_; y++) {
       for (int x = 0; x < x_grid_; x++) {
-        const unsigned short blockageH = h_edges_3D_[k][y][x].red;
-        const unsigned short blockageV = v_edges_3D_[k][y][x].red;
-        const unsigned short usageH = h_edges_3D_[k][y][x].usage + blockageH;
-        const unsigned short usageV = v_edges_3D_[k][y][x].usage + blockageV;
         if (is_horizontal) {
           if (!regular_y_ && y == y_grid_ - 1) {
             db_gcell->setCapacity(layer, x, y, last_row_capH, capV, 0);
@@ -824,8 +820,23 @@ void FastRouteCore::updateDbCongestion()
             db_gcell->setCapacity(layer, x, y, capH, capV, 0);
           }
         }
-        db_gcell->setUsage(layer, x, y, usageH, usageV, 0);
-        db_gcell->setBlockage(layer, x, y, blockageH, blockageV, 0);
+        if (x == x_grid_ - 1 && y == y_grid_ - 1) {
+          unsigned short blockageH = h_edges_3D_[k][y][x - 1].red;
+          unsigned short blockageV = v_edges_3D_[k][y - 1][x].red;
+          unsigned short usageH
+              = h_edges_3D_[k][y - 1][x - 1].usage + blockageH;
+          unsigned short usageV
+              = v_edges_3D_[k][y - 1][x - 1].usage + blockageV;
+          db_gcell->setUsage(layer, x, y, usageH, usageV, 0);
+          db_gcell->setBlockage(layer, x, y, blockageH, blockageV, 0);
+        } else {
+          unsigned short blockageH = h_edges_3D_[k][y][x].red;
+          unsigned short blockageV = v_edges_3D_[k][y][x].red;
+          unsigned short usageH = h_edges_3D_[k][y][x].usage + blockageH;
+          unsigned short usageV = v_edges_3D_[k][y][x].usage + blockageV;
+          db_gcell->setUsage(layer, x, y, usageH, usageV, 0);
+          db_gcell->setBlockage(layer, x, y, blockageH, blockageV, 0);
+        }
       }
     }
   }
