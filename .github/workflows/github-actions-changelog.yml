@@ -2,6 +2,8 @@ name: Update Changelog
 on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+  # add this once to get workflow into record
+  push: 
 
 permissions:
   pull-requests: write
