@@ -312,7 +312,6 @@ void GlobalRouter::globalRoute(bool save_guides,
       saveGuides();
     }
   }
-
 }
 
 void GlobalRouter::updateDbCongestion()
@@ -913,7 +912,9 @@ void GlobalRouter::saveSttInputFile(Net* net)
   out.close();
 }
 
-void GlobalRouter::getNetLayerRange(odb::dbNet* db_net, int& min_layer, int& max_layer)
+void GlobalRouter::getNetLayerRange(odb::dbNet* db_net,
+                                    int& min_layer,
+                                    int& max_layer)
 {
   Net* net = db_net_map_[db_net];
   int port_min_layer = std::numeric_limits<int>::max();
