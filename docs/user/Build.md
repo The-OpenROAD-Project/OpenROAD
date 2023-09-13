@@ -95,3 +95,9 @@ for using Address Sanitizer.
 
 > **Note:** Address Sanitizer adds instrumentation for detecting memory errors.
 >  Enabling this option will cause OpenROAD to run slower and consume more RAM.
+
+### Build with Prebuilt Binaries
+
+Courtesy of [Precision Innovations](https://precisioninno.com/), there are pre-built binaries
+of OpenROAD with self-contained dependencies released on a regular basis.
+Refer to this [link](https://openroad-flow-scripts.readthedocs.io/en/latest/user/BuildWithPrebuilt.html) here.
