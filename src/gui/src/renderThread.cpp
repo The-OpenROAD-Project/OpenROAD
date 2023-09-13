@@ -145,15 +145,22 @@ void RenderThread::run()
   }
 }
 
-void RenderThread::drawRenderIndication(gui::Painter& painter,
+void RenderThread::drawRenderIndication(Painter& painter,
                                         const odb::Rect& bounds)
 {
-  painter.setPen(gui::Painter::white, true);
+  QPainter* qpainter = static_cast<GuiPainter&>(painter).getPainter();
+  const QFont initial_font = qpainter->font();
+  QFont indication_render_font = qpainter->font();
+  indication_render_font.setPointSize(16);
+
+  qpainter->setFont(indication_render_font);
 
   std::string rendering_message = "Design loading...";
-
+  painter.setPen(gui::Painter::white, true);
   painter.drawString(
       bounds.xCenter(), bounds.yCenter(), Painter::CENTER, rendering_message);
+
+  qpainter->setFont(initial_font);
 }
 
 void RenderThread::draw(QImage& image,
