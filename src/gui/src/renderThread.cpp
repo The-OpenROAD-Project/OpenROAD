@@ -130,6 +130,7 @@ void RenderThread::run()
          Qt::transparent);
     if (!restart_) {
       emit done(image, draw_bounds);
+      is_first_render_done_ = true;
     }
     if (abort_) {
       return;
@@ -142,6 +143,17 @@ void RenderThread::run()
     restart_ = false;
     mutex_.unlock();
   }
+}
+
+void RenderThread::drawRenderIndication(gui::Painter& painter,
+                                        const odb::Rect& bounds)
+{
+  painter.setPen(gui::Painter::white, true);
+
+  std::string rendering_message = "Design loading...";
+
+  painter.drawString(
+      bounds.xCenter(), bounds.yCenter(), Painter::CENTER, rendering_message);
 }
 
 void RenderThread::draw(QImage& image,
@@ -171,13 +183,20 @@ void RenderThread::draw(QImage& image,
   painter.scale(render_ratio, render_ratio);
 
   const Rect dbu_bounds = viewer_->screenToDBU(draw_bounds);
-  drawBlock(&painter, viewer_->block_, dbu_bounds, 0);
 
   GuiPainter gui_painter(&painter,
                          viewer_->options_,
                          viewer_->screenToDBU(draw_bounds),
                          viewer_->pixels_per_dbu_,
                          viewer_->block_->getDbUnitsPerMicron());
+
+  if (!is_first_render_done_) {
+    drawRenderIndication(gui_painter, dbu_bounds);
+    emit done(image, draw_bounds);
+    return;
+  }
+
+  drawBlock(&painter, viewer_->block_, dbu_bounds, 0);
 
   // draw selected and over top level and fast painting events
   drawSelected(gui_painter, selected);
