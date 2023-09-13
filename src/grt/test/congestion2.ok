@@ -33,11 +33,11 @@
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 metal1     Horizontal          0             0          0.00%
-metal2     Vertical        25163          2256          91.03%
-metal3     Horizontal      33840          2256          93.33%
-metal4     Vertical        16039          2256          85.93%
-metal5     Horizontal      15792          2204          86.04%
-metal6     Vertical        16039          2200          86.28%
+metal2     Vertical        25163          2209          91.22%
+metal3     Horizontal      33840          2208          93.48%
+metal4     Vertical        16039          2209          86.23%
+metal5     Horizontal      15792          2156          86.35%
+metal6     Vertical        16039          2153          86.58%
 metal7     Horizontal       4512             0          100.00%
 metal8     Vertical         4610             0          100.00%
 metal9     Horizontal       2256             0          100.00%
@@ -56,17 +56,17 @@ metal10    Vertical         2305             0          100.00%
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 metal1               0             7            0.00%             1 /  0 /  7
-metal2            2256           922           40.87%             1 /  1 /  7
-metal3            2256          1025           45.43%             1 /  0 / 19
-metal4            2256           769           34.09%             1 /  2 / 12
-metal5            2204           817           37.07%             2 /  0 / 31
-metal6            2200           618           28.09%             0 /  1 / 11
+metal2            2209           922           41.74%             1 /  1 /  7
+metal3            2208          1025           46.42%             1 /  0 / 19
+metal4            2209           769           34.81%             1 /  2 / 12
+metal5            2156           817           37.89%             2 /  0 / 31
+metal6            2153           618           28.70%             0 /  1 / 11
 metal7               0             0            0.00%             0 /  0 /  0
 metal8               0             0            0.00%             0 /  0 /  0
 metal9               0             0            0.00%             0 /  0 /  0
 metal10              0             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            11172          4158           37.22%             6 /  4 / 87
+Total            10935          4158           38.02%             6 /  4 / 87
 
 [INFO GRT-0018] Total wirelength: 13408 um
 [INFO GRT-0014] Routed nets: 563
