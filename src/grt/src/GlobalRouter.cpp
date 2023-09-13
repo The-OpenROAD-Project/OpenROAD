@@ -3282,10 +3282,10 @@ int GlobalRouter::findInstancesObstructions(
             if (!die_area.contains(pin_box)
                 && !mterm->getSigType().isSupply()) {
               logger_->warn(GRT,
-                             39,
-                             "Found pin {} outside die area in instance {}.",
-                             mterm->getConstName(),
-                             inst->getConstName());
+                            39,
+                            "Found pin {} outside die area in instance {}.",
+                            mterm->getConstName(),
+                            inst->getConstName());
               pin_out_of_die_count++;
             }
             applyObstructionAdjustment(pin_box, box->getTechLayer());
