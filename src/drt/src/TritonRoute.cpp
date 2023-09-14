@@ -1040,6 +1040,14 @@ void TritonRoute::stackVias(odb::dbBTerm* bterm,
                             int bterm_bottom_layer_idx,
                             bool has_routing)
 {
+  // if pin access runs before the detailed route step, the nets with pins above
+  // the max routing layer will have the stacked vias inserted. added this check
+  // to avoid trying to stack new vias on the same nets.
+  odb::dbNet* net = bterm->getNet();
+  if (nets_with_stacked_vias_.count(net) == 1) {
+    return;
+  }
+
   odb::dbTech* tech = db_->getTech();
   auto fr_tech = getDesign()->getTech();
   std::map<int, odb::dbTechVia*> default_vias;
@@ -1072,7 +1080,6 @@ void TritonRoute::stackVias(odb::dbBTerm* bterm,
   odb::Point via_position = odb::Point(pin_rect.xCenter(), pin_rect.yCenter());
 
   // insert the vias from the top routing layer to the bterm bottom layer
-  odb::dbNet* net = bterm->getNet();
   odb::dbWire* wire = net->getWire();
   int bterms_above_max_layer = countNetBTermsAboveMaxLayer(net);
 
@@ -1080,6 +1087,7 @@ void TritonRoute::stackVias(odb::dbBTerm* bterm,
   if (wire == nullptr) {
     wire = odb::dbWire::create(net);
     wire_encoder.begin(wire);
+    nets_with_stacked_vias_.insert(net);
   } else if (bterms_above_max_layer > 1 || has_routing) {
     // append wire when the net has other pins above the max routing layer
     wire_encoder.append(wire);
