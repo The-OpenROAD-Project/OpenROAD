@@ -260,9 +260,13 @@ void HierRTLMP::setDefaultThresholds()
     } else {
       congestion_weight_ = 1.0 * snap_layer_ / layers.size();
     }
-    logger_->report("snap_layer : {}  congestion_weight : {}",
-                    snap_layer_,
-                    congestion_weight_);
+    debugPrint(logger_,
+                 MPL,
+                 "macro_plamcement",
+                 1,
+                 "snap_layer : {}  congestion_weight : {}",
+                  snap_layer_,
+                  congestion_weight_);
   }
 
   if (max_num_macro_base_ <= 0 || min_num_macro_base_ <= 0
@@ -282,7 +286,11 @@ void HierRTLMP::setDefaultThresholds()
       // If the number of macros is less than the threshold value, reset to
       // single level.
       max_num_level_ = 1;
-      logger_->report("Reset number of levels to 1");
+      debugPrint(logger_,
+                 MPL,
+                 "macro_plamcement",
+                 1,
+                 "Reset number of levels to 1");
     }
   }
 
@@ -290,7 +298,12 @@ void HierRTLMP::setDefaultThresholds()
   // half of the outline_weight
   if (max_num_level_ == 1) {
     macro_blockage_weight_ = outline_weight_ / 2.0;
-    logger_->report("Reset macro_blockage_weight : {}", macro_blockage_weight_);
+    debugPrint(logger_,
+                 MPL,
+                 "macro_plamcement",
+                 1,
+                 "Reset macro_blockage_weight : {}",
+                 macro_blockage_weight_);
   }
 
   //
@@ -303,13 +316,16 @@ void HierRTLMP::setDefaultThresholds()
   max_num_inst_base_ = max_num_inst_base_ * coarsening_factor;
   min_num_inst_base_ = min_num_inst_base_ * coarsening_factor;
 
-  logger_->report(
-      "num level: {}, max_macro: {}, min_macro: {}, max_inst:{}, min_inst:{}",
-      max_num_level_,
-      max_num_macro_base_,
-      min_num_macro_base_,
-      max_num_inst_base_,
-      min_num_inst_base_);
+  debugPrint(logger_,
+              MPL,
+              "macro_plamcement",
+              1,
+              "num level: {}, max_macro: {}, min_macro: {}, max_inst:{}, min_inst:{}",
+              max_num_level_,
+              max_num_macro_base_,
+              min_num_macro_base_,
+              max_num_inst_base_,
+              min_num_inst_base_);
 }
 
 ///////////////////////////////////////////////////////////////
@@ -460,7 +476,11 @@ void HierRTLMP::hierRTLMacroPlacer()
   createBundledIOs();
 
   // create data flow information
-  logger_->report("\nCreate Data Flow");
+  debugPrint(logger_,
+              MPL,
+              "macro_placement",
+              1,
+              "\nCreate Data Flow");
   createDataFlow();
 
   // Create physical hierarchy tree in a post-order DFS manner
@@ -491,7 +511,11 @@ void HierRTLMP::hierRTLMacroPlacer()
         cluster->setParent(root_cluster_);
         cluster->setClusterType(HardMacroCluster);
         root_cluster_->addChild(cluster);
-        logger_->report("model {} as a cluster.", cluster_name);
+        debugPrint(logger_,
+              MPL,
+              "clustering",
+              1,
+              "model {} as a cluster.", cluster_name);
       }
     }
     // reset parameters
@@ -521,13 +545,20 @@ void HierRTLMP::hierRTLMacroPlacer()
     //               |  |   |
     //              A1  A2  A3
     //
-    logger_->report("\nBreak mixed clusters into std cell and macro clusters.");
+    debugPrint(logger_,
+              MPL,
+              "clustering",
+              1,
+              "Break mixed clusters into std cell and macro clusters.");
     leafClusterStdCellHardMacroSep(root_cluster_);
   }
 
-  logger_->report(
-      "\nPrint Physical Hierachy Tree after splitting std cell and macros in "
-      "leaf clusters\n");
+  debugPrint(logger_,
+              MPL,
+              "macro_placement",
+              1,
+              "\nPrint Physical Hierachy Tree after splitting std cell and macros in "
+              "leaf clusters\n");
   printPhysicalHierarchyTree(root_cluster_, 0);
 
   // Map the macros in each cluster to their HardMacro objects
@@ -585,8 +616,11 @@ void HierRTLMP::hierRTLMacroPlacer()
     logger_->report("The design only has macros.\n");
     hardMacroClusterMacroPlacement(root_cluster_);
   } else {
-    logger_->report(
-        "Determine shaping function for clusters -- Macro Tilings.\n");
+    debugPrint(logger_,
+              MPL,
+              "macro_placement",
+              1,
+              "Determine shaping function for clusters -- Macro Tilings.\n");
     calClusterMacroTilings(root_cluster_);
 
     // create pin blockage for IO pins
@@ -624,7 +658,7 @@ void HierRTLMP::hierRTLMacroPlacer()
   }
   cluster_map_.clear();
 
-  logger_->report("number of updated macros : {}", num_updated_macros_);
+  logger_->report("\nnumber of updated macros : {}", num_updated_macros_);
   logger_->report("number of macros in HardMacroCluster : {}",
                   num_hard_macros_cluster_);
 }
@@ -2384,7 +2418,7 @@ void HierRTLMP::printPhysicalHierarchyTree(Cluster* parent, int level)
       parent->getNumStdCell(),
       parent->getMacroArea(),
       parent->getStdCellArea());
-  logger_->report("{}\n", line);
+  debugPrint(logger_, MPL,"macro_placement", 1, "{}\n", line);
 
   for (auto& cluster : parent->getChildren()) {
     printPhysicalHierarchyTree(cluster, level + 1);
@@ -2871,7 +2905,11 @@ void HierRTLMP::calHardMacroClusterShape(Cluster* cluster)
 //
 void HierRTLMP::createPinBlockage()
 {
-  logger_->report("Creating the pin blockage for root cluster");
+  debugPrint(logger_,
+              MPL,
+              "macro_placement",
+              1,
+              "Creating the pin blockage for root cluster");
   floorplan_lx_ = root_cluster_->getX();
   floorplan_ly_ = root_cluster_->getY();
   floorplan_ux_ = floorplan_lx_ + root_cluster_->getWidth();
@@ -3461,11 +3499,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   std::vector<SACoreSoftMacro*>
       sa_containers;  // store all the SA runs to avoid memory leakage
   float best_cost = std::numeric_limits<float>::max();
-  debugPrint(logger_,
-             MPL,
-             "macro_placement",
-             1,
-             "[MultiLevelMacroPlacement] Start Simulated Annealing Core");
+  logger_->report("[MultiLevelMacroPlacement] Start Simulated Annealing Core");
   while (remaining_runs > 0) {
     std::vector<SACoreSoftMacro*> sa_vector;
     run_thread
@@ -3575,11 +3609,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     }
     remaining_runs -= run_thread;
   }
-  debugPrint(logger_,
-             MPL,
-             "macro_placement",
-             1,
-             "[MultiLevelMacroPlacement] Finish Simulated Annealing Core");
+  logger_->report("[MultiLevelMacroPlacement] Finish Simulated Annealing Core");
   if (best_sa == nullptr) {
     //
     // Error condition, print all the results
@@ -3828,7 +3858,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
       MPL,
       "macro_placement",
       1,
-      "[MultiLevelMacroPlacement] Finish Simulated Annealing for cluster: {}",
+      "[MultiLevelMacroPlacement] Finish Simulated Annealing for cluster: {}\n",
       parent->getName());
   best_sa->printResults();
   // write the cost function. This can be used to tune the temperature schedule
@@ -3950,10 +3980,9 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
   const float ux = lx + outline_width;
   const float uy = ly + outline_height;
   logger_->report(
-      "[MultiLevelMacroPlacement] working on children of cluster {}",
-      parent->getName());
-  logger_->report(
-      "[MultiLevelMacroPlacement] lx = {}, ly = {}, ux = {}, uy = {}",
+      "[MultiLevelMacroPlacement] Working on children of cluster: {}, Outline "
+      "{}, {}  {}, {}",
+      parent->getName(),
       lx,
       ly,
       outline_width,
@@ -4064,13 +4093,16 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
                         0.0,
                         0.0,
                         nullptr));
-          logger_->report(
-              "fixed cluster : {}, lx = {}, ly = {}, width = {}, height = {}",
-              cluster->getName(),
-              cluster->getX(),
-              cluster->getY(),
-              cluster->getWidth(),
-              cluster->getHeight());
+          debugPrint(logger_,
+                 MPL,
+                 "macro_plamcement",
+                 1,
+                "fixed cluster : {}, lx = {}, ly = {}, width = {}, height = {}",
+                cluster->getName(),
+                cluster->getX(),
+                cluster->getY(),
+                cluster->getWidth(),
+                cluster->getHeight());
         }
       }
       if (frontwave->getParent()->getParent() != nullptr) {
@@ -4081,9 +4113,15 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
 
   // update the connnection
   calculateConnection();
-  logger_->report("[MultiLevelMacroPlacement] Finish calculating connection");
+  debugPrint(logger_,
+              MPL,
+              "macro_placement",
+              1,"[MultiLevelMacroPlacement] Finish calculating connection");
   updateDataFlow();
-  logger_->report("[MultiLevelMacroPlacement] Finish updating dataflow");
+  debugPrint(logger_,
+              MPL,
+              "macro_placement",
+              1,"[MultiLevelMacroPlacement] Finish updating dataflow");
 
   // add the virtual connections (the weight related to IOs and macros belong to
   // the same cluster)
@@ -4119,7 +4157,10 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
       }
     }
   }
-  logger_->report("Finish creating bundled connections");
+  debugPrint(logger_,
+                 MPL,
+                 "macro_plamcement",
+                 1,"Finish creating bundled connections");
   // merge nets to reduce runtime
   mergeNets(nets);
 
@@ -4329,7 +4370,7 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
     }
     file.close();
     logger_->report(
-        "[MultiLevelMacroPlacement] Finish Simulated Annealing for cluster {}",
+        "[MultiLevelMacroPlacement] Finish Simulated Annealing for cluster {}\n",
         parent->getName());
     best_sa->printResults();
     // write the cost function. This can be used to tune the temperature
@@ -4413,10 +4454,9 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   const float ux = lx + outline_width;
   const float uy = ly + outline_height;
   logger_->report(
-      "[MultiLevelMacroPlacement] working on children of cluster {}",
-      parent->getName());
-  logger_->report(
-      "[MultiLevelMacroPlacement] lx = {}, ly = {}, ux = {}, uy = {}",
+      "[MultiLevelMacroPlacement] Working on children of cluster: {}, Outline "
+      "{}, {}  {}, {}",
+      parent->getName(),
       lx,
       ly,
       outline_width,
@@ -4527,13 +4567,16 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
                         0.0,
                         0.0,
                         nullptr));
-          logger_->report(
-              "fixed cluster : {}, lx = {}, ly = {}, width = {}, height = {}",
-              cluster->getName(),
-              cluster->getX(),
-              cluster->getY(),
-              cluster->getWidth(),
-              cluster->getHeight());
+          debugPrint(logger_,
+                    MPL,
+                    "macro_plamcement",
+                    1,
+                    "fixed cluster : {}, lx = {}, ly = {}, width = {}, height = {}",
+                    cluster->getName(),
+                    cluster->getX(),
+                    cluster->getY(),
+                    cluster->getWidth(),
+                    cluster->getHeight());
         }
       }
       if (frontwave->getParent()->getParent() != nullptr) {
@@ -4544,9 +4587,15 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
 
   // update the connnection
   calculateConnection();
-  logger_->report("[MultiLevelMacroPlacement] Finish calculating connection");
+  debugPrint(logger_,
+              MPL,
+              "macro_placement",
+              1,"[MultiLevelMacroPlacement] Finish calculating connection");
   updateDataFlow();
-  logger_->report("[MultiLevelMacroPlacement] Finish updating dataflow");
+  debugPrint(logger_,
+              MPL,
+              "macro_placement",
+              1,"[MultiLevelMacroPlacement] Finish updating dataflow");
 
   // add the virtual connections (the weight related to IOs and macros belong to
   // the same cluster)
@@ -4582,7 +4631,10 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
       }
     }
   }
-  logger_->report("Finish creating bundled connections");
+  debugPrint(logger_,
+              MPL,
+              "macro_placement",
+              1,"Finish creating bundled connections");
   // merge nets to reduce runtime
   mergeNets(nets);
 
@@ -4783,7 +4835,7 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   file.close();
 
   logger_->report(
-      "[MultiLevelMacroPlacement] Finish Simulated Annealing for cluster {}",
+      "[MultiLevelMacroPlacement] Finish Simulated Annealing for cluster {}\n",
       parent->getName());
   best_sa->printResults();
   // write the cost function. This can be used to tune the temperature schedule
@@ -5050,7 +5102,11 @@ void HierRTLMP::callBusPlanning(std::vector<SoftMacro>& shaped_macros,
 // place macros within the HardMacroCluster
 void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
 {
-  logger_->report(
+  debugPrint(
+      logger_,
+      MPL,
+      "macro_placement",
+      1,
       "\n[Hier-RTLMP::HardMacroClusterMacroPlacement] Place macros in cluster: "
       "{}",
       cluster->getName());
@@ -5288,10 +5344,20 @@ void HierRTLMP::alignHardMacroGlobal(Cluster* parent)
   const int notch_h_th = boundary_h_th * 1.25;
   // const int notch_v_th = micronToDbu(notch_v_th_, dbu_) + boundary_v_th;
   // const int notch_h_th = micronToDbu(notch_h_th_, dbu_) + boundary_h_th;
-  logger_->report("boundary_h_th : {}, boundary_v_th : {}",
+  debugPrint(
+      logger_,
+      MPL,
+      "macro_placement",
+      1,
+      "boundary_h_th : {}, boundary_v_th : {}",
                   dbuToMicron(boundary_h_th, dbu_),
                   dbuToMicron(boundary_v_th, dbu_));
-  logger_->report("notch_h_th : {}, notch_v_th : {}",
+  debugPrint(
+      logger_,
+      MPL,
+      "macro_placement",
+      1,
+      "notch_h_th : {}, notch_v_th : {}",
                   dbuToMicron(notch_h_th, dbu_),
                   dbuToMicron(notch_v_th, dbu_));
   // define lamda function for check if the move is allowed
