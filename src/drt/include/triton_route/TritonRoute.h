@@ -37,7 +37,6 @@
 #include <optional>
 #include <queue>
 #include <string>
-#include <unordered_set>
 #include <vector>
 
 #include "odb/geom.h"
@@ -205,7 +204,6 @@ class TritonRoute
   int results_sz_;
   unsigned int cloud_sz_;
   boost::asio::thread_pool dist_pool_;
-  std::unordered_set<odb::dbNet*> nets_with_stacked_vias_;
 
   void initDesign();
   void gr();
@@ -219,6 +217,7 @@ class TritonRoute
                  int bterm_bottom_layer_idx,
                  bool has_routing);
   int countNetBTermsAboveMaxLayer(odb::dbNet* net);
+  bool netHasStackedVias(odb::dbNet* net);
   friend class fr::FlexDR;
 };
 }  // namespace triton_route

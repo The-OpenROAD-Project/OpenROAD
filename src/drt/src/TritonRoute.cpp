@@ -1040,11 +1040,8 @@ void TritonRoute::stackVias(odb::dbBTerm* bterm,
                             int bterm_bottom_layer_idx,
                             bool has_routing)
 {
-  // if pin access runs before the detailed route step, the nets with pins above
-  // the max routing layer will have the stacked vias inserted. added this check
-  // to avoid trying to stack new vias on the same nets.
   odb::dbNet* net = bterm->getNet();
-  if (nets_with_stacked_vias_.count(net) == 1) {
+  if (netHasStackedVias(net)) {
     return;
   }
 
@@ -1087,7 +1084,6 @@ void TritonRoute::stackVias(odb::dbBTerm* bterm,
   if (wire == nullptr) {
     wire = odb::dbWire::create(net);
     wire_encoder.begin(wire);
-    nets_with_stacked_vias_.insert(net);
   } else if (bterms_above_max_layer > 1 || has_routing) {
     // append wire when the net has other pins above the max routing layer
     wire_encoder.append(wire);
@@ -1125,6 +1121,35 @@ int TritonRoute::countNetBTermsAboveMaxLayer(odb::dbNet* net)
   }
 
   return bterm_count;
+}
+
+bool TritonRoute::netHasStackedVias(odb::dbNet* net)
+{
+  int bterms_above_max_layer = countNetBTermsAboveMaxLayer(net);
+  uint wire_cnt = 0, via_cnt = 0;
+  net->getWireCount(wire_cnt, via_cnt);
+
+  if (wire_cnt != 0 || via_cnt == 0) {
+    return false;
+  }
+
+  odb::dbWirePath path;
+  odb::dbWirePathShape pshape;
+  odb::dbWire* wire = net->getWire();
+
+  odb::dbWirePathItr pitr;
+  std::set<odb::Point> via_points;
+  for (pitr.begin(wire); pitr.getNextPath(path);) {
+    while (pitr.getNextShape(pshape)) {
+      via_points.insert(path.point);
+    }
+  }
+
+  if (via_points.size() != bterms_above_max_layer) {
+    return false;
+  }
+
+  return true;
 }
 
 void TritonRoute::addUserSelectedVia(const std::string& viaName)
