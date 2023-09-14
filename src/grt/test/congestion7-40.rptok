@@ -469,7 +469,7 @@ violation type: Horizontal congestion
 violation type: Horizontal congestion
 	srcs: net:_381_ net:_397_ net:net48 
 	congestion information: capacity:1 usage:3 overflow:2
-[O	bbox = ( 35.7, 2.1 ) - ( 37.8, 4.2) on Layer -
+	bbox = ( 35.7, 2.1 ) - ( 37.8, 4.2) on Layer -
 violation type: Horizontal congestion
 	srcs: net:_244_ net:_248_ net:_380_ 
 	congestion information: capacity:1 usage:3 overflow:2
@@ -2991,7 +2991,7 @@ violation type: Vertical congestion
 	congestion information: capacity:1 usage:2 overflow:1
 	bbox = ( 44.1, 8.4 ) - ( 46.2, 10.5) on Layer -
 violation type: Vertical congestion
-[I	srcs: net:_248_ net:_409_ 
+	srcs: net:_248_ net:_409_ 
 	congestion information: capacity:1 usage:2 overflow:1
 	bbox = ( 44.1, 12.6 ) - ( 46.2, 14.7) on Layer -
 violation type: Vertical congestion
