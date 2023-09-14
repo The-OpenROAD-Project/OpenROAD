@@ -631,7 +631,7 @@ void HierRTLMP::hierRTLMacroPlacer()
     //
     // Perform macro placement in a top-down manner (pre-order DFS)
     //
-    logger_->report("Perform Multilevel macro placement...");
+    logger_->report("\nPerform Multilevel macro placement...");
     if (bus_planning_flag_ == true) {
       multiLevelMacroPlacement(root_cluster_);
     } else {
