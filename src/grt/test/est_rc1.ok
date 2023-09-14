@@ -33,15 +33,15 @@
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 metal1     Horizontal          0             0          0.00%
-metal2     Vertical        24816         24628          0.76%
+metal2     Vertical        25163         24628          2.13%
 metal3     Horizontal      33840         33120          2.13%
-metal4     Vertical        15792         15698          0.60%
+metal4     Vertical        16039         15698          2.13%
 metal5     Horizontal      15792         15404          2.46%
-metal6     Vertical        15792         15642          0.95%
+metal6     Vertical        16039         15642          2.48%
 metal7     Horizontal       4512          4416          2.13%
-metal8     Vertical         4512          4512          0.00%
+metal8     Vertical         4610          4512          2.13%
 metal9     Horizontal       2256          2208          2.13%
-metal10    Vertical         2256          2256          0.00%
+metal10    Vertical         2305          2256          2.13%
 ---------------------------------------------------------------
 
 [INFO GRT-0197] Via related to pin nodes: 2134

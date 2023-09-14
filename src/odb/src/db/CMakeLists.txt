@@ -19,7 +19,6 @@ add_library(db
     dbMTerm.cpp 
     dbMaster.cpp 
     dbNet.cpp 
-    dbSearch.cpp
     dbTech.cpp  
     dbTechLayerSpacingRule.cpp 
     dbTechLayerAntennaRule.cpp 
@@ -63,7 +62,6 @@ add_library(db
     dbJournal.cpp 
     dbJournalLog.cpp 
     dbBlockCallBackObj.cpp 
-    dbRtTree.cpp 
     dbRegion.cpp 
     dbRegionInstItr.cpp 
     dbExtControl.cpp 
@@ -144,7 +142,6 @@ set_target_properties(db
 
 target_link_libraries(db
     PUBLIC
-        tm
         zutil
         utl_lib
         ${TCL_LIBRARY}

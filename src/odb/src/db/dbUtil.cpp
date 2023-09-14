@@ -1246,26 +1246,6 @@ bool dbCreateNetUtil::setFirstShapeProperty(dbNet* net, uint prop)
 
   return true;
 }
-dbNet* dbCreateNetUtil::copyNet(dbNet* net,
-                                bool copyVias,
-                                char* name,
-                                bool removeITermsBTerms)
-{
-  dbNet* newNet = nullptr;
-
-  if (name != nullptr) {
-    newNet = dbNet::create(_block, name);
-  } else {
-    char netName[128];
-    sprintf(netName, "N%d", net->getId());
-    newNet = dbNet::create(_block, netName, true);
-  }
-  dbWire* wire = dbWire::create(newNet);
-
-  dbWire::copy(wire, net->getWire(), removeITermsBTerms, copyVias);
-
-  return newNet;
-}
 
 dbNet* dbCreateNetUtil::createNetSingleWire(Rect& r,
                                             uint level,

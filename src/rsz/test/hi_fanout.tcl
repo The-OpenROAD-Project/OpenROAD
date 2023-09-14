@@ -121,6 +121,11 @@ proc row_count { fanout } {
   return [expr int(sqrt($fanout))]
 }
 
+
+proc write_output_port_unplaced { stream port_name } {
+    puts $stream "- $port_name + NET $port_name + DIRECTION OUTPUT + USE SIGNAL ;"
+}
+
 proc write_fanout_port { stream port_name port_layer } {
   puts $stream "- $port_name + NET $port_name + DIRECTION INPUT + USE SIGNAL"
   puts $stream "+ LAYER $port_layer ( 0 0 ) ( 100 100 ) + FIXED ( 1000 1000 ) N ;"
@@ -194,12 +199,19 @@ proc write_clone_test_def1 { filename clone_gate fanout
     write_fanout_loads $stream $fanout $load_inst $load_cell $load_in $load_spacing
     puts $stream "END COMPONENTS"
 
-    # Now write all the pins. We have the pins into the first 2 flops + clock
-    puts $stream "PINS 2 ;"
+    # Now write all the pins
+    set count [expr 2 + $fanout]
+    puts $stream "PINS $count ;"
     write_fanout_port $stream "clk1" $port_layer
     write_fanout_port $stream "data" $port_layer
+    set i 0
+    while {$i < $fanout} {
+	set port_name output$i
+	write_output_port_unplaced $stream $port_name
+	incr i
+    }    
     puts $stream "END PINS"
-
+    #=============================================
     # Write out the VSS/VDD nets here
     puts $stream $special_nets
 
@@ -207,7 +219,8 @@ proc write_clone_test_def1 { filename clone_gate fanout
     # We have the three input nets, then we have the two nets that connect the DFF
     # output to the gate input
     # Lastly we have the gate output connected to all the flops.
-    puts $stream "NETS 6 ;"
+    set net_count [expr 6 + $fanout]
+    puts $stream "NETS $net_count ;"
     puts -nonewline $stream "- data ( PIN data )"
     if { $drvr_data != "" } {
 	puts -nonewline $stream " ( ${drvr_inst}_1 $drvr_data )"
@@ -222,14 +235,21 @@ proc write_clone_test_def1 { filename clone_gate fanout
     write_fanout_clk_terms $stream $fanout $load_inst $load_clk
     puts $stream " ;"
 
-    # Write the connections from flops to the nand gate here
+    # flops to the nand gate connections
     puts $stream "- clk_to_nand0 ( ${drvr_inst}_1 $drvr_out ) ( nand_inst_0 A1 ) ;"
     puts $stream "- clk_to_nand1 ( ${drvr_inst}_2 $drvr_out ) ( nand_inst_0 A2 ) ;"    
-    # Now write out the NAND to output flop connections 
+    # NAND to output flop connections 
     puts $stream "- net0 ( nand_inst_0 ZN )"
     write_fanout_load_terms $stream $fanout $load_inst $load_in
     puts $stream " ;"
-    
+    # Output flop connections
+    set i 0
+    while {$i < $fanout} {
+	set net_name output$i
+	set inst_name load$i
+	puts $stream "- $net_name ( PIN $net_name ) ( $inst_name Q ) ;"
+	incr i
+    }        
     puts $stream "END NETS"    
     puts $stream "END DESIGN"
     close $stream

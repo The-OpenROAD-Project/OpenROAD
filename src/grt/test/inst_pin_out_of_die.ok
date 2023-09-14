@@ -23,5 +23,10 @@
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 2
 [WARNING GRT-0038] Found blockage outside die area in instance _546_.
-[ERROR GRT-0039] Found pin VPWR outside die area in instance _546_.
-GRT-0039
+[WARNING GRT-0038] Found blockage outside die area in instance _546_.
+[WARNING GRT-0038] Found blockage outside die area in instance _546_.
+[WARNING GRT-0039] Found pin A2 outside die area in instance _546_.
+[WARNING GRT-0039] Found pin Y outside die area in instance _546_.
+[WARNING GRT-0039] Found pin Y outside die area in instance _546_.
+[ERROR GRT-0028] Found 3 pins outside die area.
+GRT-0028
