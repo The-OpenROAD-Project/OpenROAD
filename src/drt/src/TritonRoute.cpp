@@ -1048,6 +1048,13 @@ void TritonRoute::stackVias(odb::dbBTerm* bterm,
     if (layer->getType() == odb::dbTechLayerType::CUT) {
       frLayer* fr_layer = fr_tech->getLayer(layer->getName());
       frViaDef* via_def = fr_layer->getDefaultViaDef();
+      if (via_def == nullptr) {
+        logger_->warn(utl::DRT,
+                      204,
+                      "Cut layer {} has no default via defined.",
+                      layer->getName());
+        continue;
+      }
       odb::dbTechVia* tech_via = tech->findVia(via_def->getName().c_str());
       int via_bottom_layer_idx = tech_via->getBottomLayer()->getRoutingLevel();
       default_vias[via_bottom_layer_idx] = tech_via;
