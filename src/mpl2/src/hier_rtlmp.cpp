@@ -420,17 +420,17 @@ void HierRTLMP::hierRTLMacroPlacer()
 
   setDefaultThresholds();
   // report the default parameters
-  logger_->report("area_weight_ = {}", area_weight_);
-  logger_->report("outline_weight_ = {}", outline_weight_);
-  logger_->report("wirelength_weight_ = {}", wirelength_weight_);
-  logger_->report("guidance_weight_ = {}", guidance_weight_);
-  logger_->report("fence_weight_ = {}", fence_weight_);
-  logger_->report("boundary_weight_ = {}", boundary_weight_);
-  logger_->report("notch_weight_ = {}", notch_weight_);
-  logger_->report("macro_blockage_weight_ = {}", macro_blockage_weight_);
-  logger_->report("halo_width_ = {}", halo_width_);
-  logger_->report("halo_height_ = {}", halo_height_);
-  logger_->report("bus_planning_flag_ = {}", bus_planning_flag_);
+  debugPrint(logger_, MPL,"macro_placement", 1, "area_weight_ = {}", area_weight_);
+  debugPrint(logger_, MPL,"macro_placement", 1, "outline_weight_ = {}", outline_weight_);
+  debugPrint(logger_, MPL,"macro_placement", 1,"wirelength_weight_ = {}", wirelength_weight_);
+  debugPrint(logger_, MPL,"macro_placement", 1,"guidance_weight_ = {}", guidance_weight_);
+  debugPrint(logger_, MPL,"macro_placement", 1,"fence_weight_ = {}", fence_weight_);
+  debugPrint(logger_, MPL,"macro_placement", 1,"boundary_weight_ = {}", boundary_weight_);
+  debugPrint(logger_, MPL,"macro_placement", 1,"notch_weight_ = {}", notch_weight_);
+  debugPrint(logger_, MPL,"macro_placement", 1,"macro_blockage_weight_ = {}", macro_blockage_weight_);
+  debugPrint(logger_, MPL,"macro_placement", 1,"halo_width_ = {}", halo_width_);
+  debugPrint(logger_, MPL,"macro_placement", 1,"halo_height_ = {}", halo_height_);
+  debugPrint(logger_, MPL,"macro_placement", 1,"bus_planning_flag_ = {}", bus_planning_flag_);
 
   //
   // Initialize the physcial hierarchy tree
@@ -4224,14 +4224,17 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
             target_dead_space);
         continue;
       }
-      logger_->report(
-          "[MultiLevelMacroPlacement] Finish generating shapes for "
-          "children of cluster {}\n"
-          "sa_id = {}, target_util = {}, target_dead_space = {}",
-          parent->getName(),
-          run_id,
-          target_util,
-          target_dead_space);
+      debugPrint(logger_,
+                 MPL,
+                 "macro_plamcement",
+                 1,
+                "[MultiLevelMacroPlacement] Finish generating shapes for "
+                "children of cluster {}\n"
+                "sa_id = {}, target_util = {}, target_dead_space = {}",
+                parent->getName(),
+                run_id,
+                target_util,
+                target_dead_space);
       // Note that all the probabilities are normalized to the summation of 1.0.
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
@@ -4638,7 +4641,7 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   std::vector<SACoreSoftMacro*>
       sa_containers;  // store all the SA runs to avoid memory leakage
   float best_cost = std::numeric_limits<float>::max();
-  logger_->report("[MultiLevelMacroPlacement] Start Simulated Annealing Core");
+  logger_->report("[EnhancedMacroPlacement] Start Simulated Annealing Core");
   while (remaining_runs > 0) {
     std::vector<SACoreSoftMacro*> sa_vector;
     run_thread
@@ -4672,14 +4675,17 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
             target_dead_space);
         continue;
       }
-      logger_->report(
-          "[EnhancedMacroPlacement] Finish generating shapes for "
-          "children of cluster {}\n"
-          "sa_id = {}, target_util = {}, target_dead_space = {}",
-          parent->getName(),
-          run_id,
-          target_util,
-          target_dead_space);
+      debugPrint(logger_,
+                 MPL,
+                 "macro_plamcement",
+                 1,
+                "[EnhancedMacroPlacement] Finish generating shapes for "
+                "children of cluster {}\n"
+                "sa_id = {}, target_util = {}, target_dead_space = {}",
+                parent->getName(),
+                run_id,
+                target_util,
+                target_dead_space);
       // Note that all the probabilities are normalized to the summation of 1.0.
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
