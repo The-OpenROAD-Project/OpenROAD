@@ -109,10 +109,7 @@ class HTreeBuilder : public TreeBuilder
       branchSinkLocs_[branchIdx].push_back(sinkLoc);
     }
 
-    unsigned getBranchingPointSize ()
-    {
-      return branchPointLoc_.size();
-    }
+    unsigned getBranchingPointSize() { return branchPointLoc_.size(); }
 
     Point<double>& getBranchingPoint(unsigned idx)
     {
@@ -125,8 +122,7 @@ class HTreeBuilder : public TreeBuilder
     }
 
     double getLength() const { return length_; }
-    void setLength(double x) { length_ = x; } // xxx
-
+    void setLength(double x) { length_ = x; }  // xxx
 
     void forEachBranchingPoint(
         const std::function<void(unsigned, Point<double>)>& func) const
@@ -165,7 +161,7 @@ class HTreeBuilder : public TreeBuilder
     unsigned getRemainingLength() const { return remainingLength_; }
 
    private:
-    double length_; // xxx remove const
+    double length_;  // xxx remove const
     unsigned outputSlew_ = 0;
     unsigned outputCap_ = 0;
     unsigned remainingLength_ = 0;
@@ -182,7 +178,7 @@ class HTreeBuilder : public TreeBuilder
                TreeBuilder* parent,
                utl::Logger* logger,
                odb::dbDatabase* db)
-    : TreeBuilder(options, net, parent), logger_(logger), db_(db)
+      : TreeBuilder(options, net, parent), logger_(logger), db_(db)
   {
   }
 
@@ -190,15 +186,16 @@ class HTreeBuilder : public TreeBuilder
 
   void legalize();
   void legalizeDummy();
-  Point <double> legalizeOneBuffer(Point <double> bufferLoc,
-				   const std::string bufferName);
+  Point<double> legalizeOneBuffer(Point<double> bufferLoc,
+                                  std::string bufferName);
   void plotSolution();
   void plotHTree();
-  unsigned findSibling ( LevelTopology& topology, unsigned i, unsigned par) ;
-  Point<double>&
-  findSiblingLoc(LevelTopology& topology, unsigned i, unsigned par)
+  unsigned findSibling(LevelTopology& topology, unsigned i, unsigned par);
+  Point<double>& findSiblingLoc(LevelTopology& topology,
+                                unsigned i,
+                                unsigned par)
   {
-    unsigned j = findSibling ( topology, i, par) ;
+    unsigned j = findSibling(topology, i, par);
     return topology.getBranchingPoint(j);
   }
 
@@ -300,7 +297,7 @@ class HTreeBuilder : public TreeBuilder
 
  private:
   utl::Logger* logger_;
-  odb::dbDatabase* db_; // xxx
+  odb::dbDatabase* db_;  // xxx
   Box<double> sinkRegion_;
   std::vector<LevelTopology> topologyForEachLevel_;
   std::map<Point<double>, ClockInst*> mapLocationToSink_;

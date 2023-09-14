@@ -198,7 +198,7 @@ proc clock_tree_synthesis { args } {
 
   cts::set_obstruction_aware [info exists flags(-obstruction_aware)]
 
-  if { [ord::get_db_block] == "NULL" } {
+  if { [ord::get_db_block] == "nullptr" } {
     utl::error CTS 103 "No design block found."
   }
   cts::run_triton_cts
