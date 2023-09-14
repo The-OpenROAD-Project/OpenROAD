@@ -594,7 +594,7 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* net,
 
   clockNet.setNetObj(net);
   HTreeBuilder* builder
-      = new HTreeBuilder(options_, clockNet, parentBuilder, logger_);
+    = new HTreeBuilder(options_, clockNet, parentBuilder, logger_, db_);
   addBuilder(builder);
   return builder;
 }
