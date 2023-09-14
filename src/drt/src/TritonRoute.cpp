@@ -1097,9 +1097,9 @@ void TritonRoute::stackVias(odb::dbBTerm* bterm,
 
   odb::dbTechLayer* top_tech_layer = tech->findRoutingLayer(top_layer_idx);
   wire_encoder.newPath(top_tech_layer, odb::dbWireType::ROUTED);
+  wire_encoder.addPoint(via_position.getX(), via_position.getY());
   for (int layer_idx = top_layer_idx; layer_idx < bterm_bottom_layer_idx;
        layer_idx++) {
-    wire_encoder.addPoint(via_position.getX(), via_position.getY());
     wire_encoder.addTechVia(default_vias[layer_idx]);
   }
   wire_encoder.end();
