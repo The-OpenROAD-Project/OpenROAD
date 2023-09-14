@@ -262,7 +262,7 @@ void HierRTLMP::setDefaultThresholds()
     }
     debugPrint(logger_,
                MPL,
-               "macro_plamcement",
+               "macro_placement",
                1,
                "snap_layer : {}  congestion_weight : {}",
                snap_layer_,
@@ -287,7 +287,7 @@ void HierRTLMP::setDefaultThresholds()
       // single level.
       max_num_level_ = 1;
       debugPrint(
-          logger_, MPL, "macro_plamcement", 1, "Reset number of levels to 1");
+          logger_, MPL, "macro_placement", 1, "Reset number of levels to 1");
     }
   }
 
@@ -297,7 +297,7 @@ void HierRTLMP::setDefaultThresholds()
     macro_blockage_weight_ = outline_weight_ / 2.0;
     debugPrint(logger_,
                MPL,
-               "macro_plamcement",
+               "macro_placement",
                1,
                "Reset macro_blockage_weight : {}",
                macro_blockage_weight_);
@@ -316,7 +316,7 @@ void HierRTLMP::setDefaultThresholds()
   debugPrint(
       logger_,
       MPL,
-      "macro_plamcement",
+      "macro_placement",
       1,
       "num level: {}, max_macro: {}, min_macro: {}, max_inst:{}, min_inst:{}",
       max_num_level_,
@@ -434,52 +434,20 @@ void HierRTLMP::hierRTLMacroPlacer()
 
   setDefaultThresholds();
   // report the default parameters
-  debugPrint(
-      logger_, MPL, "macro_placement", 1, "area_weight_ = {}", area_weight_);
-  debugPrint(logger_,
-             MPL,
-             "macro_placement",
-             1,
-             "outline_weight_ = {}",
-             outline_weight_);
-  debugPrint(logger_,
-             MPL,
-             "macro_placement",
-             1,
-             "wirelength_weight_ = {}",
-             wirelength_weight_);
-  debugPrint(logger_,
-             MPL,
-             "macro_placement",
-             1,
-             "guidance_weight_ = {}",
-             guidance_weight_);
-  debugPrint(
-      logger_, MPL, "macro_placement", 1, "fence_weight_ = {}", fence_weight_);
-  debugPrint(logger_,
-             MPL,
-             "macro_placement",
-             1,
-             "boundary_weight_ = {}",
-             boundary_weight_);
-  debugPrint(
-      logger_, MPL, "macro_placement", 1, "notch_weight_ = {}", notch_weight_);
-  debugPrint(logger_,
-             MPL,
-             "macro_placement",
-             1,
-             "macro_blockage_weight_ = {}",
-             macro_blockage_weight_);
-  debugPrint(
-      logger_, MPL, "macro_placement", 1, "halo_width_ = {}", halo_width_);
-  debugPrint(
-      logger_, MPL, "macro_placement", 1, "halo_height_ = {}", halo_height_);
-  debugPrint(logger_,
-             MPL,
-             "macro_placement",
-             1,
-             "bus_planning_flag_ = {}",
-             bus_planning_flag_);
+
+  if (logger_->debugCheck(MPL, "macro_placement", 1)) {
+    logger_->report("area_weight_ = {}", area_weight_);
+    logger_->report("outline_weight_ = {}", outline_weight_);
+    logger_->report("wirelength_weight_ = {}", wirelength_weight_);
+    logger_->report("guidance_weight_ = {}", guidance_weight_);
+    logger_->report("fence_weight_ = {}", fence_weight_);
+    logger_->report("boundary_weight_ = {}", boundary_weight_);
+    logger_->report("notch_weight_ = {}", notch_weight_);
+    logger_->report("macro_blockage_weight_ = {}", macro_blockage_weight_);
+    logger_->report("halo_width_ = {}", halo_width_);
+    logger_->report("halo_height_ = {}", halo_height_);
+    logger_->report("bus_planning_flag_ = {}", bus_planning_flag_);
+  }
 
   //
   // Initialize the physcial hierarchy tree
@@ -582,15 +550,11 @@ void HierRTLMP::hierRTLMacroPlacer()
                "Break mixed clusters into std cell and macro clusters.");
     leafClusterStdCellHardMacroSep(root_cluster_);
   }
-
-  debugPrint(
-      logger_,
-      MPL,
-      "macro_placement",
-      1,
-      "\nPrint Physical Hierachy Tree after splitting std cell and macros in "
-      "leaf clusters\n");
-  printPhysicalHierarchyTree(root_cluster_, 0);
+  if (logger_->debugCheck(MPL, "macro_placement", 1)) {
+    logger_->report("\nPrint Physical Hierachy Tree after splitting std cell and macros in "
+        "leaf clusters\n");
+    printPhysicalHierarchyTree(root_cluster_, 0);
+  }
 
   // Map the macros in each cluster to their HardMacro objects
   for (auto& [cluster_id, cluster] : cluster_map_) {
@@ -2449,7 +2413,7 @@ void HierRTLMP::printPhysicalHierarchyTree(Cluster* parent, int level)
       parent->getNumStdCell(),
       parent->getMacroArea(),
       parent->getStdCellArea());
-  debugPrint(logger_, MPL, "macro_placement", 1, "{}\n", line);
+  logger_->report("{}\n", line);
 
   for (auto& cluster : parent->getChildren()) {
     printPhysicalHierarchyTree(cluster, level + 1);
@@ -4127,7 +4091,7 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
           debugPrint(
               logger_,
               MPL,
-              "macro_plamcement",
+              "macro_placement",
               1,
               "fixed cluster : {}, lx = {}, ly = {}, width = {}, height = {}",
               cluster->getName(),
@@ -4193,7 +4157,7 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
   }
   debugPrint(logger_,
              MPL,
-             "macro_plamcement",
+             "macro_placement",
              1,
              "Finish creating bundled connections");
   // merge nets to reduce runtime
@@ -4276,7 +4240,7 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
       // determine the shape for each macro
       debugPrint(logger_,
                  MPL,
-                 "macro_plamcement",
+                 "macro_placement",
                  1,
                  "Start Simulated Annealing (run_id = {})",
                  run_id);
@@ -4299,7 +4263,7 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
       }
       debugPrint(logger_,
                  MPL,
-                 "macro_plamcement",
+                 "macro_placement",
                  1,
                  "[MultiLevelMacroPlacement] Finish generating shapes for "
                  "children of cluster {}\n"
@@ -4606,7 +4570,7 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
           debugPrint(
               logger_,
               MPL,
-              "macro_plamcement",
+              "macro_placement",
               1,
               "fixed cluster : {}, lx = {}, ly = {}, width = {}, height = {}",
               cluster->getName(),
@@ -4743,7 +4707,7 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
       // determine the shape for each macro
       debugPrint(logger_,
                  MPL,
-                 "macro_plamcement",
+                 "macro_placement",
                  1,
                  "Start Simulated Annealing (run_id = {})",
                  run_id);
@@ -4766,7 +4730,7 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
       }
       debugPrint(logger_,
                  MPL,
-                 "macro_plamcement",
+                 "macro_placement",
                  1,
                  "[EnhancedMacroPlacement] Finish generating shapes for "
                  "children of cluster {}\n"
