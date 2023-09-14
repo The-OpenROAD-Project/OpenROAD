@@ -554,7 +554,8 @@ void HierRTLMP::hierRTLMacroPlacer()
     }
   }
   if (logger_->debugCheck(MPL, "macro_placement", 1)) {
-    logger_->report("\nPrint Physical Hierachy Tree after splitting std cell and macros in "
+    logger_->report(
+        "\nPrint Physical Hierachy Tree after splitting std cell and macros in "
         "leaf clusters\n");
     printPhysicalHierarchyTree(root_cluster_, 0);
   }
