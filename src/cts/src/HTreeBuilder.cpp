@@ -111,17 +111,16 @@ void HTreeBuilder::preSinkClustering(
         // clock inst needs to be added to the new subnet
       }
       const unsigned pointCounter = cluster.size();
-      const float normCenterX = (xSum / (float) pointCounter);
+      const float normCenterX = (xSum / (float) pointCounter);  // geometric center of cluster
       const float normCenterY = (ySum / (float) pointCounter);
-      const int centerX
-          = normCenterX * wireSegmentUnit_;  // geometric center of cluster
-      const int centerY = normCenterY * wireSegmentUnit_;
+      Point <double> center((double) normCenterX, (double) normCenterY);
+      Point <double> legalCenter = legalizeOneBuffer(center, options_->getSinkBuffer());
       const char* baseName = secondLevel ? "clkbuf_leaf2_" : "clkbuf_leaf_";
       ClockInst& rootBuffer
-          = clock_.addClockBuffer(baseName + std::to_string(clusterCount),
-                                  options_->getSinkBuffer(),
-                                  centerX,
-                                  centerY);
+	= clock_.addClockBuffer(baseName + std::to_string(clusterCount),
+				options_->getSinkBuffer(),
+				legalCenter.getX() * wireSegmentUnit_,
+				legalCenter.getY() * wireSegmentUnit_);
 
       if (!secondLevel) {
         addFirstLevelSinkDriver(&rootBuffer);
@@ -224,6 +223,455 @@ void HTreeBuilder::initSinkRegion()
   logger_->info(CTS, 26, "    Height: {:.4f}.", sinkRegion_.getHeight());
 }
 
+// xxx: plot blockages
+void plotBlockage ( 
+  std::ofstream& file,
+	odb::dbDatabase* db_,
+	int z)
+{
+
+  unsigned i = 0;
+  for (odb::dbBlockage* blockage : db_->getChip()->getBlock()->getBlockages()) {
+    // std::string name = inst->getName();
+    std::string name = "xxx";
+    odb::dbBox* bbox = blockage->getBBox();
+    int x = bbox->xMin() / z ;
+    int y = bbox->yMin() / z ;
+    int w = bbox->xMax()/z - bbox->xMin() / z ;
+    int h = bbox->yMax()/z - bbox->yMin() / z ;
+    file << i++ <<" "<< x << " " << y << " " << w << " " << h << " block  z=" ;
+    file << z << " " << name << std::endl;
+
+  }
+}
+
+
+//  xxx distance from  legal_loc to original point and all the downstream sinks
+double weightedDistance (
+	const Point<double>& legal_loc, 
+	const Point<double>& original_loc, 
+	const std::vector<Point<double>>& sinks)
+{
+  // double dist = legal_loc.computeDist( original_loc);
+  double dist = 0;
+  for ( const Point<double>& sink: sinks ) {
+    dist += legal_loc.computeDist( sink );
+    dist += legal_loc.computeDist( original_loc);
+  }
+  return dist ;
+}
+
+Point<double> selectBestNewLocation (
+	const Point<double>& original_loc, 
+	const std::vector<Point<double>>& legal_locations, 
+	const std::vector<Point<double>>& sinks)
+{
+  Point<double> ans = legal_locations.front(); 
+  double minDist = weightedDistance (ans, original_loc, sinks );
+  for ( const Point<double>& x: legal_locations ) {
+    double d = weightedDistance (x, original_loc, sinks );
+    if ( d < minDist ) { // choose one of legal_locations that is closest to original_loc 
+      minDist = d;
+      ans = x;
+    }
+  }
+  return ans ;
+}
+
+void plotSinks ( 
+  std::ofstream& file,
+	const std::vector<Point<double>>& sinks
+) {
+	unsigned cnt = 0 ;
+  for ( const Point<double>& pt: sinks ) {
+    double x = pt.getX() ;
+    double y = pt.getY();
+    double w = 1;
+    double h = 1;
+    auto name = "sink_" ;
+    file << cnt++ << " " << x << " " << y << " " << w << " " << h ;
+    file << " " << name << " " << std::endl;
+  }
+}
+
+unsigned 
+HTreeBuilder::findSibling ( 
+	LevelTopology& topology, unsigned i, unsigned par) 
+{
+  unsigned idx = 0; 
+  for (  ; idx < topology.getBranchingPointSize(); ++idx) {
+    unsigned k = topology.getBranchingPointParentIdx(idx);
+    if ( idx!= i && k==par ) {
+      return idx;
+    }
+  }
+  return i;
+}
+
+void scalePosition (
+  Point<double>& loc,
+  const Point<double>& parLoc,
+  double leng,
+  double scale)
+{ 
+  double px = parLoc.getX ();
+  double py = parLoc.getY ();
+  double ax = loc.getX () ;
+  double ay = loc.getY () ;
+
+
+
+  double d = loc.computeDist (parLoc);
+  double x,y ;
+  if ( d > 0 ) { // yy8
+    double delta = d*scale; 
+    double dx = ax-px ;
+    double dy = ay-py ;
+    dx += (dx >0)?  delta: -delta;
+    dy += (dy >0)? -delta:  delta;
+    double scale = leng/d ;
+    x = px + dx*scale ;
+    y = py + dy*scale ;
+  } else {
+    x = px + leng/2 ;
+    y = py + leng/2 ;
+  }
+  loc.setX ( x );
+  loc.setY ( y );
+}
+
+void setSiblingPosition ( 
+	const Point<double>& a,
+	Point<double>& b,
+	const Point<double>& parLoc) 
+{
+  double px = parLoc.getX ();
+  double py = parLoc.getY ();
+  double ax = a.getX ();
+  double ay = a.getY ();
+  double bx = 2*px - ax ;
+  double by = 2*py - ay ;
+  b.setX ( bx );
+  b.setY ( by );
+}
+
+/* xxx Balance the two branches on the very top level */
+void adjustToplevelTopology ( 
+  Point<double>& a,
+  Point<double>& b,
+  const Point<double>& parLoc)
+{
+  double da = a.computeDist ( parLoc );
+  double db = b.computeDist ( parLoc );
+  if ( da < db ) {
+    setSiblingPosition ( a,b, parLoc );
+  } else if (db < da) {
+    setSiblingPosition ( b,a, parLoc );
+  }
+}
+
+bool moveOnBlockBounardy (
+  const Point<double> &pt,
+  Point<double> &qt,
+  double &x1,
+  double &y1,
+  double &x2,
+  double &y2)
+{
+  double px = pt.getX();
+  double py = pt.getY();
+  double qx = qt.getX();
+  double qy = qt.getY();
+
+  //assert ( (!px>=x1 && px <x2 && py>=y1 && py <= y2) ) ;
+  //assert ( qx>=x1 && qx <x2 && qy>=y1 && qy <= y2 ) ;
+
+  double dx = px-qx;
+  double dy = py-qy;
+
+  std::vector < Point<double> > points;
+  if ( dx==0 || dy == 0 ) { // vertical or horizontal
+    points.emplace_back ( qx,y1);
+    points.emplace_back ( qx,y2);
+    points.emplace_back ( x1,qy);
+    points.emplace_back ( x2,qy);
+  } else {
+    double m = dy/dx; 
+    points.emplace_back ( x1, m*(x1-qx) + qy  ); // y = m*(x-qx) + qy 
+    points.emplace_back ( x2, m*(x2-qx) + qy  );
+    points.emplace_back ( (y1-qy)/m + qx, y1  ); // x = (y-qy)/m + qx 
+    points.emplace_back ( (y2-qy)/m + qx, y2  );
+  }
+  double d1 = pt.computeDist(qt);
+  for ( Point<double> u: points ) {
+    double d2 = u.computeDist (pt) + u.computeDist (qt) ;
+    if ( abs(d1-d2) < d1/100000) {
+      qt.setX(u.getX()) ;
+      qt.setY(u.getY()) ;
+      return true;
+    }
+  }
+
+  return false ;
+}
+
+// xxx find the block that contains qt 
+odb::dbBlockage*  findBlock (
+			     const Point<double> &qt,
+			     double z,
+			     double &x1, // minx, (x1,y1) is the lower left corner of block
+			     double &y1, // miny, (x2,y2) is the upper right corner of block
+			     double &x2,
+			     double &y2,
+			     odb::dbDatabase* db_)
+{
+  double qx = qt.getX();
+  double qy = qt.getY();
+
+  for (odb::dbBlockage* blockage : db_->getChip()->getBlock()->getBlockages()) {
+    // std::string name = inst->getName();
+    std::string name = "xxx";
+    odb::dbBox* bbox = blockage->getBBox();
+    x1 = bbox->xMin() / z ;
+    y1 = bbox->yMin() / z ;
+    x2 = bbox->xMax() / z ;
+    y2 = bbox->yMax() / z ;
+
+    bool inside = qx> x1 && qx<x2 && qy>y1 && qy<y2 ;
+    if (inside) {
+      return blockage;
+    }
+  }
+  return NULL;
+}
+
+void findLegalPlacement (
+  const Point<double> &pt,
+  unsigned leng,
+  double x1,
+  double y1,
+  double x2,
+  double y2,
+  std::vector <Point <double> >& points	 // candidate new locations
+			 )
+{
+  double px = pt.getX();
+  double py = pt.getY();
+  std::vector <Point <double> > temp;	
+  for (int i=0;i < 2; ++i ) {
+    double x = (i==0)?x1:x2;
+    double y = (i==0)?y1:y2;
+    double dx  = leng-abs(px - x) ;
+    double dy  = leng-abs(py - y) ;
+    if ( x >= px-leng && x <= px+leng) {
+      temp.emplace_back ( x,py+dx);
+      temp.emplace_back ( x,py-dx);
+    }
+    if ( y >= py-leng && y <= py+leng) {
+      temp.emplace_back ( px+dy, y);
+      temp.emplace_back ( px-dy, y);
+    }
+  }
+  for ( Point<double>& tt: temp ) {
+    double x = tt.getX();
+    double y = tt.getY();
+    if ( x>=x1 && x<=x2 && y>=y1 && y<=y2 ) {
+      points.emplace_back (x,y) ;
+    }
+  }
+  if ( points.empty() ) {
+    points.emplace_back (px-leng,py) ;
+    points.emplace_back (px+leng,py) ;
+    points.emplace_back (px,py+leng) ;
+    points.emplace_back (px,py-leng) ;
+
+    points.emplace_back (px-leng/2,py+leng/2) ;
+    points.emplace_back (px+leng/2,py+leng/2) ;
+    points.emplace_back (px-leng/2,py-leng/2) ;
+    points.emplace_back (px+leng/2,py-leng/2) ;
+  }
+}
+
+// xxxplot
+void HTreeBuilder::legalizeDummy()
+{
+  Point<double> topLevelBufferLoc = sinkRegion_.computeCenter();
+  for (int levelIdx = 0; levelIdx < topologyForEachLevel_.size(); ++levelIdx) {
+    LevelTopology& topology = topologyForEachLevel_[levelIdx];
+
+    for (unsigned idx = 0; idx < topology.getBranchingPointSize(); ++idx) {
+
+      Point<double>& branchPoint  = topology.getBranchingPoint(idx) ;
+      unsigned parentIdx = topology.getBranchingPointParentIdx(idx);
+		
+      Point<double> parentPoint = (levelIdx==0)? topLevelBufferLoc:
+	topologyForEachLevel_[levelIdx - 1].getBranchingPoint(parentIdx);
+
+      const std::vector<Point<double>>& sinks  = topology.getBranchSinksLocations( idx );
+
+      double leng = topology.getLength();
+      Point<double>& sibLoc =  findSiblingLoc ( topology, idx, parentIdx) ;
+
+      double d1 = branchPoint.computeDist ( sibLoc ) ;
+      double d2 = branchPoint.computeDist ( parentPoint ) ;
+      bool overlap = d1 ==0 || d2 == 0 ;
+      bool dummy = sinks.empty(); // xxx dummy buffers drive no sinks
+
+      // xxx not important, can be removed
+      if ( dummy ) {
+	setSiblingPosition ( sibLoc, branchPoint,parentPoint );
+	scalePosition ( branchPoint, parentPoint, leng, 0.1 );
+      } else if ( overlap ) {
+	scalePosition ( branchPoint, parentPoint, leng, 0.1 );
+      } else {
+	continue ;
+      }
+
+      double x1,y1,x2,y2;
+      int z = wireSegmentUnit_ ;
+      odb::dbBlockage*  obs = findBlock ( branchPoint, z, x1,y1,x2,y2,db_);
+			
+      if ( obs != NULL ) { // xxx qt is inside the block obs
+	Point<double> ans (branchPoint);	
+	std::vector <Point <double> > legal_locations ;	
+	findLegalPlacement(parentPoint,leng,x1,y1,x2,y2,legal_locations);   
+	ans = selectBestNewLocation ( branchPoint, legal_locations, sinks );
+
+	double d = ans.computeDist ( parentPoint );
+	logger_->report("yy9 dummy {}:{}-->{} d={},leng={},ratio={} ",
+			levelIdx, branchPoint, ans, d,leng, d/leng);
+	branchPoint.setX( ans.getX() ); 
+	branchPoint.setY( ans.getY() );
+      }
+    }
+  }
+}
+
+void HTreeBuilder::legalize()
+{
+  Point<double> topLevelBufferLoc = sinkRegion_.computeCenter();
+  for (int levelIdx = 0; levelIdx < topologyForEachLevel_.size(); ++levelIdx) {
+    LevelTopology& topology = topologyForEachLevel_[levelIdx];
+
+    for (unsigned idx = 0; idx < topology.getBranchingPointSize(); ++idx) { 
+      // idx is the buffer id at level levelIdx
+      Point<double>& branchPoint  = topology.getBranchingPoint(idx) ;
+      unsigned parentIdx = topology.getBranchingPointParentIdx(idx);
+		
+      Point<double> parentPoint = (levelIdx==0)? topLevelBufferLoc:
+	topologyForEachLevel_[levelIdx - 1].getBranchingPoint(parentIdx);
+
+      const std::vector<Point<double>>& sinks  = topology.getBranchSinksLocations( idx );
+      // if ( sinks.empty() ) continue ;
+
+      Point<double>& qt = branchPoint;
+      double leng = topology.getLength();
+
+      // xxx may change topLevelBufferLoc even when it is not inside blockage
+      /*
+	if ( levelIdx==1 && idx==0 ) { // only for the root that is at the top-evel buffer (at 
+	LevelTopology& top = topologyForEachLevel_[0];
+	Point<double>& a  = top.getBranchingPoint(0) ; // left child
+	Point<double>& b  = top.getBranchingPoint(1) ; // right child
+	adjustToplevelTopology ( a,b, topLevelBufferLoc );
+	double da = a.computeDist ( topLevelBufferLoc );
+	double db = b.computeDist ( topLevelBufferLoc );
+	logger_->report("yy8 da,db = {},{}", da, db );
+	}
+      */
+
+      int z     = wireSegmentUnit_ ;
+      double x1,y1,x2,y2;
+      odb::dbBlockage*  obs = findBlock ( qt, z, x1,y1,x2,y2,db_);
+      if ( obs != NULL ) {
+	Point<double> ans (qt);	
+	if ( levelIdx==0) {
+	  bool moved = moveOnBlockBounardy ( parentPoint, ans, x1, y1, x2, y2 );
+	  if (moved) {
+	    // logger_->report("xxx yy8 top {}:{}-->{} ", levelIdx, qt, ans );
+	  }
+	} else {
+	  if ( levelIdx==1) {
+	    leng = qt.computeDist ( parentPoint );
+	    topology.setLength( leng );
+	  }
+	  std::vector <Point <double> > points ;
+	  // find all the possible locations off the blockage	
+	  findLegalPlacement(parentPoint,leng,x1,y1,x2,y2,points);   
+	  // std::string name = obs->getName();
+	  std::string name = "xxx" ;
+	  // choose the best new location
+	  ans = selectBestNewLocation ( qt, points, sinks );
+	  if ( levelIdx==2) {
+	    double moved = ans.computeDist (qt) ; 
+	    logger_->report("xxx y8 top {}:{}-->{}, moved={} ", 
+			    levelIdx, qt, ans, moved );
+	  }
+	}
+	// set qt to be the answer
+	qt.setX( ans.getX() ); 
+	qt.setY( ans.getY() );
+      }
+    }
+  }
+
+  // optioanl: "further" optimize the location of the "dummy" buffers that drive no sinks 
+  legalizeDummy();
+}
+
+//
+// Legalize one buffer (can be L0, L1, L2 or leaf buffer)
+// bufferLoc needs to in non-dbu units: without wireSegmentUnit_ multiplier
+// bufferName is a string that contains name of buffer master cell
+//
+// Cho Moon - Sep 1, 2023
+Point <double>
+HTreeBuilder::legalizeOneBuffer(Point <double> bufferLoc,
+				const std::string bufferName)
+{
+  if (options_->getObstructionAware()) {
+    odb::dbMaster *libCell = db_->findMaster(bufferName.c_str());
+    assert (libCell != NULL);
+    // check if current buffer sits on top of blockage
+    double x1, y1, x2, y2;
+    odb::dbBlockage* obs = findBlock(bufferLoc, wireSegmentUnit_, x1, y1, x2, y2, db_);
+    if (obs != NULL) {
+      // x1, y1 are lower left corner of blockage
+      // x2, y2 are upper right corner of blockage
+      // move buffer to the nearest legal location by snapping it to right, left, top or bottom
+      // need to consider cell height and width to avoid any overlap with blockage
+      Point<double> newLoc = bufferLoc;
+      // first, try snapping it to the left
+      double delta = bufferLoc.getX() - x1;
+      double minDist = delta;
+      newLoc.setX(x1 - ((double) libCell->getWidth() / wireSegmentUnit_));
+      // second, try snapping it to the right
+      delta = x2 - bufferLoc.getX();
+      if (delta < minDist) {
+	minDist = delta;
+	newLoc.setX(x2);
+      }
+      // third, try snapping it to the bottom
+      delta = bufferLoc.getY() - y1;
+      if (delta < minDist) {
+	minDist = delta;
+	newLoc.setX(bufferLoc.getX());
+	newLoc.setY(y1 - ((double) libCell->getHeight() / wireSegmentUnit_));
+      }
+      // fourth, try snapping it to the top
+      delta = y2 - bufferLoc.getY();
+      if (delta < minDist) {
+	minDist = delta;
+	newLoc.setX(bufferLoc.getX());
+	newLoc.setY(y2);
+      }
+
+      return newLoc;
+    }
+  }
+  return bufferLoc;
+}
+
 void HTreeBuilder::run()
 {
   logger_->info(
@@ -301,7 +749,66 @@ void HTreeBuilder::run()
     observer->initializeWithClock(this, clock_);
   }
 
+  if (options_->getObstructionAware()) {
+    legalize(); // xxx move buffers to legal location
+  }
   createClockSubNets();
+  // plotHTree(); // xxxplot
+}
+
+void HTreeBuilder::plotHTree()
+{
+  auto name = std::string("xxxy.") + clock_.getName() + ".buffer";
+  std::ofstream file(name);
+
+  plotBlockage ( file, db_, wireSegmentUnit_ );
+
+  Point<double> topLevelBufferLoc = sinkRegion_.computeCenter();
+
+  for (int levelIdx = 0; levelIdx < topologyForEachLevel_.size(); ++levelIdx) {
+    LevelTopology& topology = topologyForEachLevel_[levelIdx];
+
+    topology.forEachBranchingPoint([&](unsigned idx,Point<double> branchPoint){
+      unsigned parentIdx = topology.getBranchingPointParentIdx(idx);
+
+      Point<double> parentPoint = (levelIdx==0)? topLevelBufferLoc:
+	topologyForEachLevel_[levelIdx - 1].getBranchingPoint(parentIdx);
+
+      const std::vector<Point<double>>& sinks  
+	= topology.getBranchSinksLocations( idx );
+			
+      plotSinks (file, sinks );
+
+      double	x1 = parentPoint.getX()  ;
+      double	y1 = parentPoint.getY()  ;
+      double	x2 = branchPoint.getX()  ;
+      double	y2 = branchPoint.getY()  ;
+      std::string name = "buffer";
+      file << levelIdx << " " << x1 << " " << y1 << " " << x2 << " " << y2 ;
+      file << " " << name << std::endl;
+    });
+  }
+
+  LevelTopology& leafTopology = topologyForEachLevel_.back();
+  unsigned numSinks = 0;
+  leafTopology.forEachBranchingPoint(
+				     [&](unsigned idx, Point<double> branchPoint) {
+
+				       double px = branchPoint.getX();
+				       double py = branchPoint.getY();
+
+				       const std::vector<Point<double>>& sinkLocs = leafTopology.getBranchSinksLocations(idx);
+
+				       for (const Point<double>& loc : sinkLocs) {
+					 auto name2 = mapLocationToSink_[loc]->getName();
+
+					 file << numSinks <<" " <<  loc.getX() <<" " <<  loc.getY() ;
+					 file <<" " <<  px <<" " <<  py <<" leafbuffer " <<  name2 ;
+					 file << " z=" << wireSegmentUnit_ << std::endl;
+					 ++numSinks;
+				       }
+				     });
+  file.close();
 }
 
 unsigned HTreeBuilder::computeNumberOfSinksPerSubRegion(
@@ -713,6 +1220,7 @@ void HTreeBuilder::computeBranchSinks(
   }
 }
 
+
 void HTreeBuilder::refineBranchingPointsWithClustering(
     LevelTopology& topology,
     const unsigned level,
@@ -738,6 +1246,7 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
       = (unsigned) (sinks.size() * options_->getClusteringCapacity());
   clusteringEngine.iterKmeans(
       1, means.size(), cap, 5, options_->getClusteringPower(), means);
+
   if (((int) options_->getNumStaticLayers() - (int) level) < 0) {
     branchPt1 = Point<double>(means[0].first, means[0].second);
     branchPt2 = Point<double>(means[1].first, means[1].second);
@@ -756,12 +1265,17 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
                                           : branchPt2.computeDist(sinkLoc);
       const double distOther = clusterIdx == 0 ? branchPt2.computeDist(sinkLoc)
                                                : branchPt1.computeDist(sinkLoc);
-
       if (clusterIdx == 0) {
-        topology.addSinkToBranch(branchPtIdx1, sinkLoc);
+	topology.addSinkToBranch(branchPtIdx1, sinkLoc);
       } else {
-        topology.addSinkToBranch(branchPtIdx2, sinkLoc);
+	topology.addSinkToBranch(branchPtIdx2, sinkLoc);
       }
+      // bool ok = (clusterIdx == 0) == ( dist < distOther ); // xxx y8
+      // if ( ok ) { /// xxx y8
+      // topology.addSinkToBranch(branchPtIdx1, sinkLoc); /// xxx y8
+      // } else { /// xxx y8
+      // topology.addSinkToBranch(branchPtIdx2, sinkLoc); /// xxx y8
+      //}
 
       if (dist >= distOther * errorFactor) {
         movedSinks++;
@@ -781,8 +1295,9 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
 
 void HTreeBuilder::createClockSubNets()
 {
-  const int centerX = sinkRegion_.computeCenter().getX() * wireSegmentUnit_;
-  const int centerY = sinkRegion_.computeCenter().getY() * wireSegmentUnit_;
+  Point<double> legalCenter = legalizeOneBuffer(sinkRegion_.computeCenter(), options_->getRootBuffer());
+  const int centerX = legalCenter.getX() * wireSegmentUnit_;
+  const int centerY = legalCenter.getY() * wireSegmentUnit_;
 
   ClockInst& rootBuffer = clock_.addClockBuffer(
       "clkbuf_0", options_->getRootBuffer(), centerX, centerY);
@@ -796,10 +1311,11 @@ void HTreeBuilder::createClockSubNets()
   bool isFirstPoint = true;
   topLevelTopology.forEachBranchingPoint([&](unsigned idx,
                                              Point<double> branchPoint) {
+    Point <double> legalBranchPoint = legalizeOneBuffer(branchPoint, options_->getRootBuffer());
     SegmentBuilder builder("clkbuf_1_" + std::to_string(idx) + "_",
                            "clknet_1_" + std::to_string(idx) + "_",
-                           sinkRegion_.computeCenter(),
-                           branchPoint,
+			   legalCenter, // center may have moved, don't use sinkRegion_.computeCenter()
+                           legalBranchPoint,
                            topLevelTopology.getWireSegments(),
                            clock_,
                            rootClockSubNet,
@@ -831,12 +1347,13 @@ void HTreeBuilder::createClockSubNets()
       LevelTopology& parentTopology = topologyForEachLevel_[levelIdx - 1];
       Point<double> parentPoint = parentTopology.getBranchingPoint(parentIdx);
 
+      Point <double> legalBranchPoint = legalizeOneBuffer(branchPoint, options_->getRootBuffer());
       SegmentBuilder builder("clkbuf_" + std::to_string(levelIdx + 1) + "_"
                                  + std::to_string(idx) + "_",
                              "clknet_" + std::to_string(levelIdx + 1) + "_"
                                  + std::to_string(idx) + "_",
                              parentPoint,
-                             branchPoint,
+                             legalBranchPoint,
                              topology.getWireSegments(),
                              clock_,
                              *parentTopology.getBranchDrivingSubNet(parentIdx),
@@ -885,8 +1402,9 @@ void HTreeBuilder::createSingleBufferClockNet()
 {
   logger_->report(" Building single-buffer clock net.");
 
-  const int centerX = sinkRegion_.computeCenter().getX() * wireSegmentUnit_;
-  const int centerY = sinkRegion_.computeCenter().getY() * wireSegmentUnit_;
+  Point<double> legalCenter = legalizeOneBuffer(sinkRegion_.computeCenter(), options_->getRootBuffer());
+  const int centerX = legalCenter.getX() * wireSegmentUnit_;
+  const int centerY = legalCenter.getY() * wireSegmentUnit_;
   ClockInst& rootBuffer = clock_.addClockBuffer(
       "clkbuf_0", options_->getRootBuffer(), centerX, centerY);
   addTreeLevelBuffer(&rootBuffer);
@@ -1033,10 +1551,9 @@ void SegmentBuilder::forceBufferInSegment(const std::string& master)
     return;
   }
 
-  const unsigned x = target_.getX();
-  const unsigned y = target_.getY();
-  ClockInst& newBuffer = clock_->addClockBuffer(
-      instPrefix_ + "_f", master, x * techCharDistUnit_, y * techCharDistUnit_);
+  ClockInst& newBuffer = clock_->addClockBuffer(instPrefix_ + "_f", master,
+						target_.getX() * techCharDistUnit_,
+						target_.getY() * techCharDistUnit_);
   tree_->addTreeLevelBuffer(&newBuffer);
 
   drivingSubNet_->addInst(newBuffer);

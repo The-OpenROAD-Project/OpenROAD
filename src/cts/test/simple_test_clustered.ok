@@ -50,5 +50,5 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 300
 [INFO CTS-0100]  Leaf buffers 30
-[INFO CTS-0101]  Average sink wire length 128.29 um
+[INFO CTS-0101]  Average sink wire length 126.22 um
 [INFO CTS-0102]  Path depth 3 - 3
