@@ -939,41 +939,41 @@ Tapcell::CornerMap Tapcell::placeEndcapCorner(const Tapcell::Corner& corner,
   const int width = master->getWidth();
   const int height = master->getHeight();
 
-  odb::dbOrientType orient = row_orient;
+  // Adjust placement position
   odb::Point ll = corner.pt;
   switch (corner.type) {
     case CornerType::OuterBottomLeft:
+    case CornerType::InnerTopRight:
       break;
     case CornerType::OuterBottomRight:
+    case CornerType::InnerTopLeft:
       ll.addX(-width);
-      if (master->getSymmetryY()) {
-        orient = orient.flipY();
-      }
       break;
     case CornerType::OuterTopRight:
-      ll.addX(-width);
-      ll.addY(-height);
-      if (master->getSymmetryY()) {
-        orient = orient.flipY();
-      }
-      break;
-    case CornerType::OuterTopLeft:
-      ll.addY(-height);
-      break;
     case CornerType::InnerBottomLeft:
       ll.addX(-width);
       ll.addY(-height);
       break;
+    case CornerType::OuterTopLeft:
     case CornerType::InnerBottomRight:
       ll.addY(-height);
-      if (master->getSymmetryY()) {
-        orient = orient.flipY();
-      }
       break;
-    case CornerType::InnerTopLeft:
-      ll.addX(-width);
+    case CornerType::Unknown:
       break;
+  }
+
+  // Adjust orientation
+  odb::dbOrientType orient = row_orient;
+  switch (corner.type) {
+    case CornerType::OuterBottomLeft:
+    case CornerType::OuterTopLeft:
+    case CornerType::InnerBottomRight:
     case CornerType::InnerTopRight:
+      break;
+    case CornerType::OuterBottomRight:
+    case CornerType::OuterTopRight:
+    case CornerType::InnerBottomLeft:
+    case CornerType::InnerTopLeft:
       if (master->getSymmetryY()) {
         orient = orient.flipY();
       }
