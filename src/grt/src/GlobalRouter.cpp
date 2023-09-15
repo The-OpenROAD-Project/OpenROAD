@@ -791,7 +791,10 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
 
   for (Net* net : nets) {
     int pin_count = net->getNumPins();
-    if (pin_count > 1 && !net->isLocal() && !net->hasWires()) {
+    int min_layer, max_layer;
+    getNetLayerRange(net, min_layer, max_layer);
+    odb::dbTechLayer* max_routing_layer = db_->getTech()->findRoutingLayer(max_layer);
+    if (pin_count > 1 && !net->isLocal() && (!net->hasWires() || net->hasStackedVias(max_routing_layer))) {
       if (pin_count < min_degree) {
         min_degree = pin_count;
       }
@@ -1890,7 +1893,10 @@ void GlobalRouter::addRemainingGuides(NetRouteMap& routes,
                                       int max_routing_layer)
 {
   for (Net* net : nets) {
-    if (net->getNumPins() > 1 && !net->hasWires()) {
+    int min_layer, max_layer;
+    getNetLayerRange(net, min_layer, max_layer);
+    odb::dbTechLayer* max_tech_layer = db_->getTech()->findRoutingLayer(max_layer);
+    if (net->getNumPins() > 1 && (!net->hasWires() || net->hasStackedVias(max_tech_layer))) {
       odb::dbNet* db_net = net->getDbNet();
       GRoute& route = routes[db_net];
       if (route.empty()) {
