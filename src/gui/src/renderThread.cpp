@@ -130,7 +130,6 @@ void RenderThread::run()
          Qt::transparent);
     if (!restart_) {
       emit done(image, draw_bounds);
-      is_first_render_done_ = true;
     }
     if (abort_) {
       return;
@@ -197,10 +196,14 @@ void RenderThread::draw(QImage& image,
                          viewer_->pixels_per_dbu_,
                          viewer_->block_->getDbUnitsPerMicron());
 
-  if (!is_first_render_done_) {
+  if (!is_first_render_done_ && !restart_) {
     drawRenderIndication(gui_painter, dbu_bounds);
     emit done(image, draw_bounds);
-    return;
+    is_first_render_done_ = true;
+
+    // Erase the first render indication so it does not remain on the screen
+    // when the design is drawn for the first time
+    image.fill(background);
   }
 
   drawBlock(&painter, viewer_->block_, dbu_bounds, 0);
