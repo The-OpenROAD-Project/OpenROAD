@@ -1373,6 +1373,7 @@ EndcapCellOptions Tapcell::correctEndcapOptions(const Options& options) const
 
   // Endcaps
   bopts.left_edge = options.endcap_master;
+  bopts.right_edge = options.endcap_master;
 
   if (options.tap_nwin3_master) {
     bopts.top_edge.push_back(options.tap_nwout3_master);
