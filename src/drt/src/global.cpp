@@ -74,7 +74,7 @@ bool SAVE_GUIDE_UPDATES = false;
 
 std::string VIAINPIN_BOTTOMLAYER_NAME;
 std::string VIAINPIN_TOPLAYER_NAME;
-frLayerNum VIAINPIN_BOTTOMLAYERNUM = std::numeric_limits<frLayerNum>::max();
+frLayerNum VIAINPIN_BOTTOMLAYERNUM = 0;
 frLayerNum VIAINPIN_TOPLAYERNUM = std::numeric_limits<frLayerNum>::max();
 int MINNUMACCESSPOINT_MACROCELLPIN = 3;
 int MINNUMACCESSPOINT_STDCELLPIN = 3;
