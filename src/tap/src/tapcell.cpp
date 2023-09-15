@@ -1375,26 +1375,35 @@ EndcapCellOptions Tapcell::correctEndcapOptions(const Options& options) const
   bopts.left_edge = options.endcap_master;
 
   if (options.tap_nwin3_master) {
-    bopts.top_edge.push_back(options.tap_nwin3_master);
+    bopts.top_edge.push_back(options.tap_nwout3_master);
   }
   if (options.tap_nwin2_master) {
-    bopts.top_edge.push_back(options.tap_nwin2_master);
+    bopts.top_edge.push_back(options.tap_nwout2_master);
   }
   if (options.tap_nwintie_master) {
-    bopts.top_edge.push_back(options.tap_nwintie_master);
+    bopts.top_edge.push_back(options.tap_nwouttie_master);
   }
   if (options.tap_nwout3_master) {
-    bopts.bottom_edge.push_back(options.tap_nwout3_master);
+    bopts.bottom_edge.push_back(options.tap_nwin3_master);
   }
   if (options.tap_nwout2_master) {
-    bopts.bottom_edge.push_back(options.tap_nwout2_master);
+    bopts.bottom_edge.push_back(options.tap_nwin2_master);
   }
   if (options.tap_nwouttie_master) {
-    bopts.bottom_edge.push_back(options.tap_nwouttie_master);
+    bopts.bottom_edge.push_back(options.tap_nwintie_master);
   }
 
   bopts.left_top_corner = options.cnrcap_nwout_master;
   bopts.left_top_edge = options.incnrcap_nwout_master;
+
+  bopts.left_bottom_corner = options.cnrcap_nwin_master;
+  bopts.left_bottom_edge = options.incnrcap_nwin_master;
+
+  bopts.right_top_corner = options.cnrcap_nwout_master;
+  bopts.right_top_edge = options.incnrcap_nwout_master;
+
+  bopts.right_bottom_corner = options.cnrcap_nwin_master;
+  bopts.right_bottom_edge = options.incnrcap_nwin_master;
 
   return bopts;
 }

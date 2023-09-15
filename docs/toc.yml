@@ -5,7 +5,7 @@ entries:
   entries:
   - file: user/Build.md
     title: Building OpenROAD
-  - file: user/ORFS.md
+  - url: https://openroad-flow-scripts.readthedocs.io/
     title: Getting Started with the OpenROAD Flow - OpenROAD-flow-scripts
   - file: tutorials/index
     title: Tutorials

@@ -1002,12 +1002,14 @@ void GlobalRouter::computeGridAdjustments(int min_routing_layer,
     fastroute_->setNumAdjustments(num_adjustments);
 
     if (!grid_->isPerfectRegularX()) {
+      fastroute_->setLastColVCapacity(new_v_capacity, level - 1);
       for (int i = 1; i < y_grids; i++) {
         fastroute_->addAdjustment(
             x_grids - 1, i - 1, x_grids - 1, i, level, new_v_capacity, false);
       }
     }
     if (!grid_->isPerfectRegularY()) {
+      fastroute_->setLastRowHCapacity(new_h_capacity, level - 1);
       for (int i = 1; i < x_grids; i++) {
         fastroute_->addAdjustment(
             i - 1, y_grids - 1, i, y_grids - 1, level, new_h_capacity, false);
@@ -1154,7 +1156,7 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
                      * (1 - adjustment);
         grid_->updateHorizontalEdgesCapacities(layer - 1, newCap);
 
-        for (int y = 1; y < y_grids; y++) {
+        for (int y = 1; y <= y_grids; y++) {
           for (int x = 1; x < x_grids; x++) {
             int edge_cap
                 = fastroute_->getEdgeCapacity(x - 1, y - 1, x, y - 1, layer);
@@ -1174,7 +1176,7 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
             = grid_->getVerticalEdgesCapacities()[layer - 1] * (1 - adjustment);
         grid_->updateVerticalEdgesCapacities(layer - 1, newCap);
 
-        for (int x = 1; x < x_grids; x++) {
+        for (int x = 1; x <= x_grids; x++) {
           for (int y = 1; y < y_grids; y++) {
             int edge_cap
                 = fastroute_->getEdgeCapacity(x - 1, y - 1, x - 1, y, layer);
@@ -2407,6 +2409,9 @@ void GlobalRouter::initGrid(int max_layer)
   bool perfect_regular_x = (x_grids * tile_size) == upper_rightX;
   bool perfect_regular_y = (y_grids * tile_size) == upper_rightY;
 
+  fastroute_->setRegularX(perfect_regular_x);
+  fastroute_->setRegularY(perfect_regular_y);
+
   int num_layers = routing_layers_.size();
   if (max_layer > -1) {
     num_layers = max_layer;
@@ -3279,12 +3284,13 @@ int GlobalRouter::findInstancesObstructions(
             lower_bound = odb::Point(rect.xMin(), rect.yMin());
             upper_bound = odb::Point(rect.xMax(), rect.yMax());
             pin_box = odb::Rect(lower_bound, upper_bound);
-            if (!die_area.contains(pin_box)) {
-              logger_->error(GRT,
-                             39,
-                             "Found pin {} outside die area in instance {}.",
-                             mterm->getConstName(),
-                             inst->getConstName());
+            if (!die_area.contains(pin_box)
+                && !mterm->getSigType().isSupply()) {
+              logger_->warn(GRT,
+                            39,
+                            "Found pin {} outside die area in instance {}.",
+                            mterm->getConstName(),
+                            inst->getConstName());
               pin_out_of_die_count++;
             }
             applyObstructionAdjustment(pin_box, box->getTechLayer());
@@ -3296,7 +3302,7 @@ int GlobalRouter::findInstancesObstructions(
 
   if (pin_out_of_die_count > 0) {
     if (verbose_)
-      logger_->warn(
+      logger_->error(
           GRT, 28, "Found {} pins outside die area.", pin_out_of_die_count);
   }
 

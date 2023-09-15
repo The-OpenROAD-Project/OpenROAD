@@ -45,17 +45,11 @@ using uint = unsigned int;
 class NameTable
 {
  public:
-  ~NameTable();
   NameTable(uint n, char* zero = NULL);
-
-  void writeDB(FILE* fp, char* nameType);
-  bool readDB(FILE* fp);
-  void addData(uint poolId, uint dataId);
+  ~NameTable();
 
   uint addNewName(char* name, uint dataId);
   char* getName(uint poolId);
-  uint getDataId(int poolId);
-  uint getTagId(char* name);
   uint getDataId(char* name,
                  uint ignoreFlag = 0,
                  uint exitFlag = 0,
@@ -64,8 +58,8 @@ class NameTable
  private:
   class NameBucket;
 
-  void allocName(char* name, uint nameId, bool hash = false);
   uint addName(char* name, uint dataId);
+  uint getDataId(int poolId);
 
   odb::AthHash<int>* _hashTable;
   odb::AthPool<NameBucket>* _bucketPool;

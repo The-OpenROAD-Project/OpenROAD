@@ -23,5 +23,6 @@ worst slack -0.39
 [INFO RSZ-0040] Inserted 2 buffers.
 [INFO RSZ-0041] Resized 18 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
+Repair timing output passed/skipped equivalence test
 worst slack -0.06
 worst slack -0.06
