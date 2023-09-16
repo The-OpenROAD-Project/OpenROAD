@@ -62,7 +62,6 @@ using odb::dbWire;
 using odb::dbWirePath;
 using odb::dbWirePathItr;
 using odb::Rect;
-using odb::ZPtr;
 
 extMetRCTable* extRCModel::initCapTables(uint layerCnt, uint widthCnt)
 {

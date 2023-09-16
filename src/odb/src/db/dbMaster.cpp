@@ -507,29 +507,33 @@ dbMTerm* dbMaster::findMTerm(const char* name)
 dbMTerm* dbMaster::findMTerm(dbBlock* block, const char* name)
 {
   dbMTerm* mterm = findMTerm(name);
-  if (mterm)
+  if (mterm) {
     return mterm;
-  char blk_left_bus_del, blk_right_bus_del, lib_left_bus_del, lib_right_bus_del;
-  char ttname[max_name_length];
-  uint ii = 0;
+  }
+  char blk_left_bus_del, blk_right_bus_del;
   block->getBusDelimeters(blk_left_bus_del, blk_right_bus_del);
-  getLib()->getBusDelimeters(lib_left_bus_del, lib_right_bus_del);
-  if (lib_left_bus_del == '\0' || lib_right_bus_del == '\0')
-    return mterm;
 
+  char lib_left_bus_del, lib_right_bus_del;
+  ;
+  getLib()->getBusDelimeters(lib_left_bus_del, lib_right_bus_del);
+
+  if (lib_left_bus_del == '\0' || lib_right_bus_del == '\0') {
+    return mterm;
+  }
+
+  uint ii = 0;
+  std::string ttname(name);
   if (lib_left_bus_del != blk_left_bus_del
       || lib_right_bus_del != blk_right_bus_del) {
     while (name[ii] != '\0') {
-      if (name[ii] == blk_left_bus_del)
+      if (name[ii] == blk_left_bus_del) {
         ttname[ii] = lib_left_bus_del;
-      else if (name[ii] == blk_right_bus_del)
+      } else if (name[ii] == blk_right_bus_del) {
         ttname[ii] = lib_right_bus_del;
-      else
-        ttname[ii] = name[ii];
+      }
       ii++;
     }
-    ttname[ii] = '\0';
-    mterm = findMTerm(ttname);
+    mterm = findMTerm(ttname.c_str());
   }
   return mterm;
 }

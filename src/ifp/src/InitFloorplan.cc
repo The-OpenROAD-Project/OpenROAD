@@ -626,12 +626,12 @@ void InitFloorplan::generateContiguousHybridRows(
   // For example, This allows creating both, AB and BA, when given A,B as hybrid
   // sites.
 
-  int n = hybrid_sites.size();
+  const int n = hybrid_sites.size();
   output_patterns_list.clear();
   output_patterns_list.reserve(n);
   for (int len = 1; len <= n; len++) {
     for (int start = 0; start < n; start++) {
-      int idx = (start) % n;
+      int idx = start;
       output_patterns_list.emplace_back();
       std::vector<dbSite*>& pattern = output_patterns_list.back();
       for (int from = idx; from < idx + len; from++) {

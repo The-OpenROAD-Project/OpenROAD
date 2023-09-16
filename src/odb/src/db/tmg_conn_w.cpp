@@ -35,7 +35,6 @@
 #include <unordered_set>
 
 #include "db.h"
-#include "dbMap.h"
 #include "dbShape.h"
 #include "dbWireCodec.h"
 #include "tmg_conn.h"

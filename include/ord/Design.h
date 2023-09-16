@@ -36,9 +36,13 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace odb {
 class dbBlock;
+class dbMaster;
+class dbMTerm;
+class dbNet;
 }  // namespace odb
 
 namespace ifp {
@@ -121,6 +125,12 @@ namespace pad {
 class ICeWall;
 }
 
+namespace sta {
+class dbSta;
+class Corner;
+class MinMax;
+}  // namespace sta
+
 namespace ord {
 
 class Tech;
@@ -151,6 +161,17 @@ class Design
 
   Tech* getTech();
 
+  // Timing related methods
+  std::vector<sta::Corner*> getCorners();
+  enum MinMax
+  {
+    Min,
+    Max
+  };
+  float getNetCap(odb::dbNet* net, sta::Corner* corner, MinMax minmax);
+  bool isSequential(odb::dbMaster* master);
+  std::vector<odb::dbMTerm*> getTimingFanoutFrom(odb::dbMTerm* input);
+
   // Services
   ifp::InitFloorplan* getFloorplan();
   ant::AntennaChecker* getAntennaChecker();
@@ -173,6 +194,9 @@ class Design
   pad::ICeWall* getICeWall();
 
  private:
+  sta::dbSta* getSta();
+  sta::MinMax* getMinMax(MinMax type);
+
   Tech* tech_;
 };
 
