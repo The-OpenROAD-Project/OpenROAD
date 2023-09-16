@@ -46,35 +46,45 @@ template class dbTable<_dbSite>;
 
 bool _dbSite::operator==(const _dbSite& rhs) const
 {
-  if (_flags._x_symmetry != rhs._flags._x_symmetry)
+  if (_flags._x_symmetry != rhs._flags._x_symmetry) {
     return false;
+  }
 
-  if (_flags._y_symmetry != rhs._flags._y_symmetry)
+  if (_flags._y_symmetry != rhs._flags._y_symmetry) {
     return false;
+  }
 
-  if (_flags._R90_symmetry != rhs._flags._R90_symmetry)
+  if (_flags._R90_symmetry != rhs._flags._R90_symmetry) {
     return false;
+  }
 
-  if (_flags._class != rhs._flags._class)
+  if (_flags._class != rhs._flags._class) {
     return false;
+  }
 
-  if (_flags._is_hybrid != rhs._flags._is_hybrid)
+  if (_flags._is_hybrid != rhs._flags._is_hybrid) {
     return false;
+  }
 
   if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0)
+    if (strcmp(_name, rhs._name) != 0) {
       return false;
-  } else if (_name || rhs._name)
+    }
+  } else if (_name || rhs._name) {
     return false;
+  }
 
-  if (_height != rhs._height)
+  if (_height != rhs._height) {
     return false;
+  }
 
-  if (_width != rhs._width)
+  if (_width != rhs._width) {
     return false;
+  }
 
-  if (_next_entry != rhs._next_entry)
+  if (_next_entry != rhs._next_entry) {
     return false;
+  }
 
   return true;
 }
@@ -246,7 +256,7 @@ void dbSite::setRowPattern(
   for (auto& row : row_pattern) {
     auto child_site = (_dbSite*) row.first;
     child_site->_flags._is_hybrid = true;
-    _row_patterns.push_back(row);
+    _row_patterns.emplace_back(row);
   }
 }
 
