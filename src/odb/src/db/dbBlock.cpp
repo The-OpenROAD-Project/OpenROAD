@@ -40,7 +40,6 @@
 #include <set>
 #include <string>
 
-#include "ZComponents.h"
 #include "db.h"
 #include "dbAccessPoint.h"
 #include "dbArrayTable.h"
@@ -107,7 +106,6 @@
 #include "dbSBoxItr.h"
 #include "dbSWire.h"
 #include "dbSWireItr.h"
-#include "dbSearch.h"
 #include "dbShape.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -651,10 +649,6 @@ _dbBlock::~_dbBlock()
     _cbitr = _callbacks.begin();
     (*_cbitr)->removeOwner();
   }
-#ifdef ZUI
-  if (_searchDb)
-    delete _searchDb;
-#endif
   if (_journal)
     delete _journal;
 
@@ -2777,113 +2771,6 @@ dbBlockSearch* dbBlock::getSearchDb()
   return block->_searchDb;
 }
 
-#ifdef ZUI
-ZPtr<ISdb> dbBlock::getSignalNetSdb(ZContext& context, dbTech* tech)
-{
-  _dbBlock* block = (_dbBlock*) this;
-  if (block->_searchDb == nullptr)
-    block->_searchDb = new dbBlockSearch(this, tech);
-  if (block->_searchDb == nullptr)
-    return nullptr;
-  return block->_searchDb->getSignalNetSdb(context);
-}
-dbBlockSearch* dbBlock::getSearchDb()
-{
-  _dbBlock* block = (_dbBlock*) this;
-  return block->_searchDb;
-}
-ZPtr<ISdb> dbBlock::getNetSdb(ZContext& context, dbTech* tech)
-{
-  _dbBlock* block = (_dbBlock*) this;
-  if (block->_searchDb == nullptr)
-    block->_searchDb = new dbBlockSearch(this, tech);
-  if (block->_searchDb == nullptr)
-    return nullptr;
-  return block->_searchDb->getNetSdb(context);
-}
-ZPtr<ISdb> dbBlock::getNetSdb()
-{
-  _dbBlock* block = (_dbBlock*) this;
-  if (block->_searchDb == nullptr)
-    return nullptr;
-  return block->_searchDb->getNetSdb();
-}
-void dbBlock::resetNetSdb()
-{
-  _dbBlock* block = (_dbBlock*) this;
-  if (block->_searchDb == nullptr)
-    return;
-  block->_searchDb->resetNetSdb();
-}
-void dbBlock::removeSdb(std::vector<dbNet*>& nets)
-{
-  ZPtr<ISdb> netSdb = getNetSdb();
-  if (netSdb == nullptr || netSdb->getSearchPtr() == nullptr)
-    return;
-  dbNet::markNets(nets, this, true);
-  netSdb->removeMarkedNetWires();
-  dbNet::markNets(nets, this, false);
-}
-
-dbBlockSearch* dbBlock::initSearchBlock(dbTech* tech,
-                                        bool nets,
-                                        bool insts,
-                                        ZContext& context,
-                                        bool skipViaCuts)
-{
-  _dbBlock* block = (_dbBlock*) this;
-
-  /* TODO: TEMPORARY FIX
-      if (block->_searchDb!=nullptr)
-              delete block->_searchDb;
-  */
-
-  block->_searchDb = new dbBlockSearch(this, tech);
-
-  if (skipViaCuts)
-    block->_searchDb->setViaCutsFlag(skipViaCuts);
-  block->_searchDb->makeSearchDB(nets, insts, context);
-
-  return block->_searchDb;
-}
-
-uint dbBlock::getInsts(int x1,
-                       int y1,
-                       int x2,
-                       int y2,
-                       std::vector<dbInst*>& result)
-{
-  _dbBlock* block = (_dbBlock*) this;
-  return block->_searchDb->getInstBoxes(x1, y1, x2, y2, result);
-}
-#endif
-void dbBlock::updateNetFlags(std::vector<dbNet*>& result)
-{
-  _dbBlock* block = (_dbBlock*) this;
-  dbSet<dbNet> nets = getNets();
-  dbSet<dbNet>::iterator nitr;
-
-  for (nitr = nets.begin(); nitr != nets.end(); ++nitr) {
-    dbNet* net = *nitr;
-
-    _dbNet* n = (_dbNet*) *nitr;
-
-    if (n->_flags._wire_altered != 1)
-      continue;
-
-    n->_flags._reduced = 0;
-    n->_flags._extracted = 0;
-    n->_flags._rc_graph = 0;
-    n->_flags._wire_ordered = 0;
-
-    if (block->_journal) {
-      // assert(0);
-    }
-
-    result.push_back(net);
-  }
-}
-
 void dbBlock::getWireUpdatedNets(std::vector<dbNet*>& result)
 {
   dbSet<dbNet> nets = getNets();
@@ -2947,9 +2834,6 @@ void dbBlock::destroyCornerParasitics(std::vector<dbNet*>& nets)
     dbNet* net = dbNet::getNet(this, nets[jj]->getId());
     cnets.push_back(net);
   }
-#ifdef ZUI
-  removeSdb(cnets);
-#endif
   destroyCCs(cnets);
   destroyRSegs(cnets);
   destroyCNs(cnets, true);
@@ -3459,15 +3343,15 @@ dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, u
 void dbBlock::writeDb(char* filename, int allNode)
 {
   _dbBlock* block = (_dbBlock*) this;
-  char dbname[max_name_length];
+  std::string dbname;
   if (allNode) {
     if (block->_journal)
-      sprintf(dbname, "%s.main.%d.db", filename, getpid());
+      dbname = fmt::format("{}.main.{}.db", filename, getpid());
     else
-      sprintf(dbname, "%s.remote.%d.db", filename, getpid());
+      dbname = fmt::format("{}.remote.{}.db", filename, getpid());
   } else
-    sprintf(dbname, "%s.db", filename);
-  FILE* file = fopen(dbname, "wb");
+    dbname = fmt::format("{}.db", filename);
+  FILE* file = fopen(dbname.c_str(), "wb");
   if (!file) {
     getImpl()->getLogger()->warn(
         utl::ODB, 19, "Can not open file {} to write!", dbname);
@@ -3744,7 +3628,6 @@ resultTable)
         return instsToMark.size();
 }
 */
-#define FAST_INST_TERMS
 int dbBlock::markBackwardsUser2(std::vector<dbInst*>& startingInsts,
                                 std::vector<dbInst*>& instsToMark,
                                 bool mark,
@@ -3766,16 +3649,9 @@ int dbBlock::markBackwardsUser2(std::vector<dbInst*>& startingInsts,
     } else if (inst->getUserFlag2())
       return -1;
 
-#ifdef FAST_INST_TERMS
     dbMaster* master = inst->getMaster();
     for (uint ii = 0; ii < (uint) master->getMTermCount(); ii++) {
       dbITerm* iterm = inst->getITerm(ii);
-#else
-    dbSet<dbITerm> iterms = inst->getITerms();
-    dbSet<dbITerm>::iterator iitr;
-    for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
-      dbITerm* iterm = *iitr;
-#endif
       if (!iterm->isInputSignal())
         continue;
       if (iterm->isClocked())

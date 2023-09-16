@@ -34,7 +34,6 @@
 
 #include <map>
 
-#include "ZObject.h"
 #include "db.h"
 #include "dbExtControl.h"
 #include "dbShape.h"

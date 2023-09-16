@@ -154,6 +154,19 @@ tclListNetworkSet(Tcl_Obj *const source,
   Tcl_SetObjResult(interp, list);
 }
 
+%typemap(out) TmpPinSet* {
+  Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
+  PinSet *pins = $1;
+  PinSet::Iterator pin_iter(pins);
+  while (pin_iter.hasNext()) {
+    const Pin *pin = pin_iter.next();
+    Tcl_Obj *obj = SWIG_NewInstanceObj(const_cast<Pin*>(pin), SWIGTYPE_p_Pin, false);
+    Tcl_ListObjAppendElement(interp, list, obj);
+  }
+  delete pins;
+  Tcl_SetObjResult(interp, list);
+}
+
 %typemap(out) NetSeq* {
   Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
   NetSeq *nets = $1;
@@ -418,6 +431,14 @@ find_floating_nets()
   ensureLinked();
   Resizer *resizer = getResizer();
   return resizer->findFloatingNets();
+}
+
+TmpPinSet *
+find_floating_pins()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->findFloatingPins();
 }
 
 void
