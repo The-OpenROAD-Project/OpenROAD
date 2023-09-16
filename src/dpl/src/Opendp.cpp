@@ -604,8 +604,10 @@ Grid_map_key Opendp::getGridMapKey(const dbSite* site) const
   gmk.cell_height = site->getHeight();
   gmk.is_hybrid_parent = site->isHybrid() && site->hasRowPattern();
   if (!gmk.is_hybrid_parent && site->isHybrid()) {
-    gmk.cell_height = hybrid_sites_mapper.at(site->getName())->getHeight();
+    auto hsi = hybrid_sites_mapper.at(site->getName());
+    gmk.cell_height = hsi.getSite()->getHeight();
   }
+  gmk.row_pattern_index = getHybridSiteIndex(site);
   return gmk;
 }
 
@@ -617,7 +619,7 @@ Grid_map_key Opendp::getGridMapKey(const Cell* cell) const
   auto site = cell->db_inst_->getMaster()->getSite();
   if (site == nullptr) {
     logger_->warn(DPL, 4219, "Cell {} has no site.", cell->name());
-    return Grid_map_key{cell->height_, false};
+    return Grid_map_key{cell->height_, false, 0};
   }
   return this->getGridMapKey(site);
 }

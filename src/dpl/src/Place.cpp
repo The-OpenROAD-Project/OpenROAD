@@ -597,12 +597,13 @@ bool Opendp::mapMove(Cell* cell, const Point& grid_pt)
              DPL,
              "place",
              1,
-             "Diamond search {} ({}, {}) to ({}, {})",
+             "Diamond search {} ({}, {}) to ({}, {}) on site {}",
              cell->name(),
              cell->x_,
              cell->y_,
              pixel_pt.pt.getX(),
-             pixel_pt.pt.getY());
+             pixel_pt.pt.getY(),
+             pixel_pt.pixel->site->getName());
   if (pixel_pt.pixel) {
     paintPixel(cell, pixel_pt.pt.getX(), pixel_pt.pt.getY());
     if (debug_observer_) {
@@ -911,9 +912,19 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
       // the else case where a cell has no region will be checked using the
       // rtree in checkPixels
       if (checkPixels(cell, bin_x + i, bin_y, x_end + i, y_end)) {
-        return PixelPt(gridPixel(grid_info.grid_index, bin_x + i, bin_y),
-                       bin_x + i,
-                       bin_y);
+        Pixel* valid_grid_pixel
+            = gridPixel(grid_info.grid_index, bin_x + i, bin_y);
+        debugPrint(logger_,
+                   DPL,
+                   "hybrid",
+                   1,
+                   "Cell {} has site {} while pixel has site {}",
+                   cell->name(),
+                   cell->db_inst_->getMaster()->getSite()->getName(),
+                   valid_grid_pixel && valid_grid_pixel->site != nullptr
+                       ? valid_grid_pixel->site->getName()
+                       : "null");
+        return PixelPt(valid_grid_pixel, bin_x + i, bin_y);
       }
     }
   } else {
@@ -925,9 +936,19 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
         }
       }
       if (checkPixels(cell, bin_x + i, bin_y, x_end + i, y_end)) {
-        return PixelPt(gridPixel(grid_info.grid_index, bin_x + i, bin_y),
-                       bin_x + i,
-                       bin_y);
+        Pixel* valid_grid_pixel
+            = gridPixel(grid_info.grid_index, bin_x + i, bin_y);
+        debugPrint(logger_,
+                   DPL,
+                   "hybrid",
+                   1,
+                   "Cell {} has site {} while pixel has site {}",
+                   cell->name(),
+                   cell->db_inst_->getMaster()->getSite()->getName(),
+                   valid_grid_pixel && valid_grid_pixel->site != nullptr
+                       ? valid_grid_pixel->site->getName()
+                       : "null");
+        return PixelPt(valid_grid_pixel, bin_x + i, bin_y);
       }
     }
   }
@@ -944,7 +965,7 @@ bool Opendp::checkRegionOverlap(const Cell* cell,
   // it is called with the same cell and x,y,x_end,y_end multiple times
   debugPrint(logger_,
              DPL,
-             "detailed",
+             "region",
              1,
              "Checking region overlap for cell {} at x[{} {}] and y[{} {}]",
              cell->name(),
@@ -1370,7 +1391,6 @@ Point Opendp::legalPt(const Cell* cell,
   auto grid_info = getGridInfo(cell);
   int grid_x = gridX(legal_pt.getX(), site_width);
   int grid_y = gridY(legal_pt.getY(), row_height);
-  debugPrint(logger_, DPL, "place", 1, "grid_x {} grid_y {}", grid_x, grid_y);
   debugPrint(logger_,
              DPL,
              "place",
@@ -1423,13 +1443,6 @@ Point Opendp::legalGridPt(const Cell* cell,
   }
   if (row_height == -1) {
     row_height = getRowHeight(cell);
-    debugPrint(logger_,
-               DPL,
-               "place",
-               1,
-               "cell {} row_height {}",
-               cell->name(),
-               row_height);
   }
   Point pt = legalPt(cell, padded, row_height, site_width);
   return Point(gridX(pt.getX(), site_width), gridY(pt.getY(), row_height));

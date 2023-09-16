@@ -116,16 +116,33 @@ struct Grid_map_key
 {
   int cell_height;
   bool is_hybrid_parent;
+  int row_pattern_index;
   bool operator<(const Grid_map_key& other) const
   {
-    return std::tie(cell_height, is_hybrid_parent)
-           < std::tie(other.cell_height, other.is_hybrid_parent);
+    return std::tie(cell_height, is_hybrid_parent, row_pattern_index)
+           < std::tie(other.cell_height,
+                      other.is_hybrid_parent,
+                      other.row_pattern_index);
   }
   bool operator==(const Grid_map_key& other) const
   {
-    return std::tie(cell_height, is_hybrid_parent)
-           == std::tie(other.cell_height, other.is_hybrid_parent);
+    return std::tie(cell_height, is_hybrid_parent, row_pattern_index)
+           == std::tie(other.cell_height,
+                       other.is_hybrid_parent,
+                       other.row_pattern_index);
   }
+};
+
+class HybridSiteInfo
+{
+ public:
+  HybridSiteInfo(int index, dbSite* site) : index(index), site(site) {}
+  int getIndex() { return index; }
+  dbSite* getSite() { return site; }
+
+ private:
+  int index;
+  dbSite* site;
 };
 
 struct Cell
@@ -299,6 +316,7 @@ class Opendp
   void makeMaster(Master* master, dbMaster* db_master);
 
   void initGrid();
+  void initHybridSitesMap();
   void initGridLayersMap();
   std::string printBgBox(const boost::geometry::model::box<bgPoint>& queryBox);
   void detailedPlacement();
@@ -337,6 +355,8 @@ class Opendp
   int distChange(const Cell* cell, int x, int y) const;
   bool swapCells(Cell* cell1, Cell* cell2);
   bool refineMove(Cell* cell);
+  int getHybridSiteIndex(dbSite* site);
+  int calculateHybridSitesRowCount(dbSite* parent_hybrid_site) const;
 
   Point legalPt(const Cell* cell,
                 const Point& pt,
@@ -511,7 +531,8 @@ class Opendp
   map<const dbMaster*, Master> db_master_map_;
   map<Grid_map_key, GridInfo> grid_info_map_;
   std::vector<GridInfo*> grid_info_vector_;
-  std::map<string, dbSite*> hybrid_sites_mapper;
+  map<string, HybridSiteInfo> hybrid_sites_mapper;
+  map<int, int> siteIdToGridId;
   map<dbInst*, Cell*> db_inst_map_;
 
   Rect core_;

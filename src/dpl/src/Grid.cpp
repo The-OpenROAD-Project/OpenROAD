@@ -55,49 +55,82 @@ using utl::DPL;
 using odb::dbBox;
 using odb::dbTransform;
 
+int Opendp::getHybridSiteIndex(dbSite* site)
+{
+  if (!site->isHybrid() || !site->hasRowPattern()) {
+    return 0;
+  }
+  auto it = siteIdToGridId.find(site->getId());
+  if (it != siteIdToGridId.end()) {
+    return it->second;
+  } else {
+    int newId = siteIdToGridId.size()
+                + 1;  // Calculate the next ID based on the map size
+    siteIdToGridId[site->getId()] = newId;
+    return newId;
+  }
+}
+
+void Opendp::initHybridSitesMap()
+{
+  for (auto db_row : block_->getRows()) {
+    // TODO: this is wrong if the same cell can be used in multiple hybrid
+    // cells. For example, site B is used as part of hybrid cells CB, and AB.
+    // This mapping would be insufficient.
+    auto parent_site = db_row->getSite();
+    if (parent_site->hasRowPattern()) {
+      auto row_pattern = db_row->getSite()->getRowPattern();
+      for (auto [site, site_orientation] : row_pattern) {
+        hybrid_sites_mapper.emplace(
+            site->getName(),
+            HybridSiteInfo(getHybridSiteIndex(parent_site), parent_site));
+        debugPrint(
+            logger_,
+            DPL,
+            "hybrid",
+            1,
+            "Site {} mapped to {} {}",
+            site->getName(),
+            hybrid_sites_mapper.at(site->getName()).getIndex(),
+            hybrid_sites_mapper.at(site->getName()).getSite()->getName());
+      }
+    }
+  }
+}
+
+int Opendp::calculateHybridSitesRowCount(dbSite* parent_hybrid_site) const
+{
+  auto row_pattern = parent_hybrid_site->getRowPattern();
+  int rows_count = getRowCount(parent_hybrid_site->getHeight());
+  int remaining_core_height
+      = core_.dy() - (rows_count * parent_hybrid_site->getHeight());
+
+  rows_count *= (int) row_pattern.size();
+
+  for (auto [site, site_orientation] : row_pattern) {
+    if (remaining_core_height >= site->getHeight()) {
+      remaining_core_height -= site->getHeight();
+      rows_count++;
+    }
+    if (remaining_core_height <= 0) {
+      break;
+    }
+  }
+  logger_->info(DPL,
+                7251,
+                "parent hybrid site {} has {} rows",
+                parent_hybrid_site->getName(),
+                rows_count);
+  return rows_count;
+}
+
 void Opendp::initGridLayersMap()
 {
   int grid_index = 0;
   grid_info_map_.clear();
   grid_info_vector_.clear();
   hybrid_sites_mapper.clear();
-  for (auto db_row : block_->getRows()) {
-    // TODO: this is wrong if the same cell can be used in multiple hybrid
-    // cells. For example, site B is used as part of hybrid cells CB, and AB.
-    // This mapping would be insufficient.
-    if (db_row->getSite()->hasRowPattern()) {
-      auto row_pattern = db_row->getSite()->getRowPattern();
-      for (auto [site, site_orientation] : row_pattern) {
-        hybrid_sites_mapper[site->getName()] = db_row->getSite();
-      }
-    }
-  }
-
-  auto calculate_row_counts = [&](dbSite* parent_hybrid_site) {
-    auto row_pattern = parent_hybrid_site->getRowPattern();
-    int rows_count = getRowCount(parent_hybrid_site->getHeight());
-    int remaining_core_height
-        = core_.dy() - (rows_count * parent_hybrid_site->getHeight());
-
-    rows_count *= (int) row_pattern.size();
-
-    for (auto [site, site_orientation] : row_pattern) {
-      if (remaining_core_height >= site->getHeight()) {
-        remaining_core_height -= site->getHeight();
-        rows_count++;
-      }
-      if (remaining_core_height <= 0) {
-        break;
-      }
-    }
-    logger_->info(DPL,
-                  7251,
-                  "parent hybrid site {} has {} rows",
-                  parent_hybrid_site->getName(),
-                  rows_count);
-    return rows_count;
-  };
-  // create a lambda to calculate the row counts for a given row height
+  initHybridSitesMap();
 
   for (auto db_row : block_->getRows()) {
     if (db_row->getSite()->getClass() == odb::dbSiteClass::PAD) {
@@ -112,7 +145,14 @@ void Opendp::initGridLayersMap()
     dbSite* working_site = db_row->getSite();
     int row_height = working_site->getHeight();
     Grid_map_key gmk = getGridMapKey(working_site);
-    if (grid_info_map_.find(gmk) == grid_info_map_.end()) {
+    debugPrint(
+        logger_,
+        DPL,
+        "hybrid",
+        1,
+        "Grid map key height {} row pattern index {} is hybrid parent {} site "
+        "{}") if (grid_info_map_.find(gmk) == grid_info_map_.end())
+    {
       GridInfo newGridInfo;
 
       if (gmk.is_hybrid_parent || !working_site->isHybrid()) {
@@ -124,23 +164,43 @@ void Opendp::initGridLayersMap()
                 {working_site, db_row->getOrient()}},
         };
       } else {
-        auto parent_site = hybrid_sites_mapper.at(working_site->getName());
+        auto parent_site_info = hybrid_sites_mapper.at(working_site->getName());
         newGridInfo = {
-            calculate_row_counts(parent_site),
+            calculateHybridSitesRowCount(parent_site_info.getSite()),
             db_row->getSiteCount(),
             grid_index++,
-            parent_site->getRowPattern(),
+            parent_site_info.getSite()
+                ->getRowPattern(),  // FIXME(mina1460): this is wrong! in the
+                                    // case of HybridAB, and HybridBA. each of A
+                                    // and B maps to both, but the
+                                    // hybrid_sites_mapper only record one of
+                                    // them, resulting in the wrong RowPattern
+                                    // here.
         };
       }
       grid_info_map_.emplace(gmk, newGridInfo);
-    } else {
+    }
+    else
+    {
       auto& grid_info = grid_info_map_.at(gmk);
       grid_info.site_count
           = divFloor(core_.dx(), db_row->getSite()->getWidth());
     }
   }
   grid_info_vector_.resize(grid_info_map_.size());
-  for (auto& [_, grid_info] : grid_info_map_) {
+  for (auto& [gmk, grid_info] : grid_info_map_) {
+    debugPrint(logger_,
+               DPL,
+               "hybrid",
+               1,
+               "Grid map key - cell height {} is hybrid parent {} row pattern "
+               "index {} has value - grid index {} row count {} site count {}",
+               gmk.cell_height,
+               gmk.is_hybrid_parent,
+               gmk.row_pattern_index,
+               grid_info.grid_index,
+               grid_info.row_count,
+               grid_info.site_count);
     grid_info_vector_[grid_info.grid_index] = &grid_info;
   }
   debugPrint(logger_, DPL, "grid", 1, "grid layers map initialized");
@@ -744,7 +804,7 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
   }
 
   for (const auto& layer : grid_info_map_) {
-    if (layer.first.cell_height == row_height) {
+    if (layer.first == gmk) {
       continue;
     }
     int layer_x = map_coordinates(grid_x, site_width, site_width);
@@ -804,27 +864,7 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
                      49,
                      "Cannot paint grid index: {} because it is out of bounds. "
                      "Calculated (row end {}) > (rows {}). This is a bug",
-                     layer.first,
-                     layer_y_end,
-                     layer.second.row_count);
-    }
-
-    if (layer_y_end > layer.second.row_count) {
-      logger_->error(DPL,
-                     49,
-                     "Cannot paint grid index: {} because it is out of bounds. "
-                     "Calculated (row end {}) > (rows {}). This is a bug",
-                     layer.first,
-                     layer_y_end,
-                     layer.second.row_count);
-    }
-
-    if (layer_y_end > layer.second.row_count) {
-      logger_->error(DPL,
-                     49,
-                     "Cannot paint grid index: {} because it is out of bounds. "
-                     "Calculated (row end {}) > (rows {}). This is a bug",
-                     layer.first,
+                     layer.second.grid_index,
                      layer_y_end,
                      layer.second.row_count);
     }

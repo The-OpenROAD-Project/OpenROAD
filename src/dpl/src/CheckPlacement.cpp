@@ -65,8 +65,29 @@ void Opendp::checkPlacement(bool verbose,
   for (Cell& cell : cells_) {
     if (isStdCell(&cell)) {
       // Site alignment check
-      if (cell.x_ % site_width_ != 0 || cell.y_ % row_height_ != 0) {
-        site_align_failures.push_back(&cell);
+      if (cell.x_ % site_width_ != 0) {
+        if (!cell.isHybrid()) {
+          if (cell.y_ % row_height_ != 0) {
+            site_align_failures.push_back(&cell);
+          }
+        } else {
+          // here, the cell is hybrid, if it is a parent, then the check is
+          // quite simple
+          auto gmk = getGridMapKey(&cell);
+          if (gmk.is_hybrid_parent) {
+            if (cell.y_ % gmk.cell_height != 0) {
+              site_align_failures.push_back(&cell);
+            }
+          } else {
+            // here, the check is quite complex. We need to figure out if the
+            // base of the cell is on the right site
+            int adjusted_height = cell.y_ / gmk.cell_height;
+            if (adjusted_height % cell.height_ != 0
+                || (adjusted_height + cell.height_) % cell.height_) {
+              site_align_failures.push_back(&cell);
+            }
+          }
+        }
       }
       if (!checkInRows(cell)) {
         in_rows_failures.push_back(&cell);
