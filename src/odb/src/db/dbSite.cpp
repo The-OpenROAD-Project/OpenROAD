@@ -58,6 +58,9 @@ bool _dbSite::operator==(const _dbSite& rhs) const
   if (_flags._class != rhs._flags._class)
     return false;
 
+  if (_flags._is_hybrid != rhs._flags._is_hybrid)
+    return false;
+
   if (_name && rhs._name) {
     if (strcmp(_name, rhs._name) != 0)
       return false;
