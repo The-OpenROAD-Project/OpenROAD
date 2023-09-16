@@ -43,6 +43,7 @@
 
 #include "db.h"
 #include "dbTransform.h"
+#include "dbTypes.h"
 #include "geom.h"
 #include "lefLayerPropParser.h"
 #include "lefMacroPropParser.h"
@@ -51,7 +52,6 @@
 #include "lefrReader.hpp"
 #include "poly_decomp.h"
 #include "utl/Logger.h"
-
 namespace odb {
 
 using LefDefParser::lefrSetRelaxMode;
@@ -1689,8 +1689,19 @@ void lefin::site(lefiSite* lefsite)
     site->setClass(dbSiteClass(lefsite->siteClass()));
 
   if (lefsite->hasRowPattern()) {
-    auto rowPattern = lefsite->getRowPatterns();
-    site->setRowPattern(rowPattern);
+    auto row_pattern = lefsite->getRowPatterns();
+    std::vector<std::pair<dbSite*, dbOrientType>> converted_row_pattern;
+    converted_row_pattern.reserve(row_pattern.size());
+    for (auto& row : row_pattern) {
+      dbOrientType orient = dbOrientType::R0;
+      auto it = orientationMap.find(row.second);
+      if (it != orientationMap.end()) {
+        orient = it->second;
+      }
+      auto child_site = site->getLib()->findSite(row.first.c_str());
+      converted_row_pattern.emplace_back(child_site, orient);
+    }
+    site->setRowPattern(converted_row_pattern);
   }
 }
 

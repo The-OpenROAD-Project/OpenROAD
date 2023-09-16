@@ -5269,6 +5269,9 @@ class dbLib : public dbObject
 ///////////////////////////////////////////////////////////////////////////////
 class dbSite : public dbObject
 {
+ private:
+  std::vector<std::pair<dbSite*, dbOrientType::Value>> _row_patterns;
+
  public:
   ///
   /// Get the site name.
@@ -5344,7 +5347,7 @@ class dbSite : public dbObject
   /// set the row pattern of this site
   ///
   void setRowPattern(
-      std::vector<std::pair<std::string, std::string>>& row_pattern);
+      const std::vector<std::pair<dbSite*, dbOrientType>>& row_pattern);
 
   ///
   /// Returns true if the row pattern is not empty

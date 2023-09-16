@@ -85,6 +85,7 @@ void _dbSite::differences(dbDiff& diff,
   DIFF_FIELD(_flags._y_symmetry);
   DIFF_FIELD(_flags._R90_symmetry);
   DIFF_FIELD(_flags._class);
+  DIFF_FIELD(_flags._is_hybrid);
   DIFF_FIELD(_name);
   DIFF_FIELD(_height);
   DIFF_FIELD(_width);
@@ -233,37 +234,22 @@ void dbSite::setClass(dbSiteClass type)
 }
 
 void dbSite::setRowPattern(
-    std::vector<std::pair<std::string, std::string>>& row_pattern)
+    const std::vector<std::pair<dbSite*, dbOrientType>>& row_pattern)
 {
   _dbSite* site = (_dbSite*) this;
-  site->_row_patterns.reserve(row_pattern.size());
-  site->_flags._is_hybrid = 1;
-  std::unordered_map<std::string, dbOrientType::Value> orientationMap
-      = {{"N", dbOrientType::R0},
-         {"W", dbOrientType::R270},
-         {"S", dbOrientType::R180},
-         {"E", dbOrientType::R90},
-         {"FN", dbOrientType::MYR90},
-         {"FW", dbOrientType::MY},
-         {"FS", dbOrientType::MXR90},
-         {"FE", dbOrientType::MX}};
-
+  site->_flags._is_hybrid = true;
+  _row_patterns.clear();
+  _row_patterns.reserve(row_pattern.size());
   for (auto& row : row_pattern) {
-    dbOrientType orient = dbOrientType::R0;
-    auto _site = (_dbSite*) getLib()->findSite(row.first.c_str());
-    _site->_flags._is_hybrid = 1;
-    auto it = orientationMap.find(row.second);
-    if (it != orientationMap.end()) {
-      orient = it->second;
-    }
-    site->_row_patterns.emplace_back(row.first, orient);
+    auto child_site = (_dbSite*) row.first;
+    child_site->_flags._is_hybrid = true;
+    _row_patterns.push_back(row);
   }
 }
 
 bool dbSite::hasRowPattern()
 {
-  _dbSite* site = (_dbSite*) this;
-  return !site->_row_patterns.empty();
+  return !_row_patterns.empty();
 }
 
 bool dbSite::isHybrid()
@@ -274,17 +260,11 @@ bool dbSite::isHybrid()
 
 std::vector<std::pair<dbSite*, dbOrientType>> dbSite::getRowPattern()
 {
-  _dbSite* site = (_dbSite*) this;
   std::vector<std::pair<dbSite*, dbOrientType>> row_patterns;
-  for (auto& row : site->_row_patterns) {
-    dbSite* site = getLib()->findSite(row.first.c_str());
-    auto _site = (_dbSite*) site;
-    _site->_flags._is_hybrid = 1;
-    if (site == nullptr) {
-      continue;
-    }
-    row_patterns.emplace_back(site, row.second);
-  }
+  row_patterns.reserve(_row_patterns.size());
+  std::copy(_row_patterns.begin(),
+            _row_patterns.end(),
+            std::back_inserter(row_patterns));
   return row_patterns;
 }
 

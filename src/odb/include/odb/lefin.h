@@ -36,6 +36,8 @@
 #include <string>
 #include <vector>
 
+#include "db.h"
+#include "dbTypes.h"
 #include "odb.h"
 #include "utl/Logger.h"
 
@@ -75,6 +77,9 @@ class dbLib;
 class dbMaster;
 class dbDatabase;
 class dbTechLayer;
+class dbOrientType;
+class _dbSite;
+class dbSite;
 
 using namespace LefDefParser;
 
@@ -212,6 +217,15 @@ class lefin
     ++_errors;
   }
   void lineNumber(int lineNo);
+  const std::unordered_map<std::string, dbOrientType::Value> orientationMap
+      = {{"N", dbOrientType::R0},
+         {"W", dbOrientType::R270},
+         {"S", dbOrientType::R180},
+         {"E", dbOrientType::R90},
+         {"FN", dbOrientType::MYR90},
+         {"FW", dbOrientType::MY},
+         {"FS", dbOrientType::MXR90},
+         {"FE", dbOrientType::MX}};
 
   lefin(dbDatabase* db, utl::Logger* logger, bool ignore_non_routing_layers);
   ~lefin();
