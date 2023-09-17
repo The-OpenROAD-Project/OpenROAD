@@ -73,7 +73,6 @@ struct dbTechLayerCutSpacingRuleFlags
   bool same_mask_ : 1;
   bool except_same_pgnet_ : 1;
   bool side_parallel_overlap_ : 1;
-  bool parallel_overlap_ : 1;
   bool except_same_net_ : 1;
   bool except_same_metal_ : 1;
   bool except_same_metal_overlap_ : 1;
@@ -86,7 +85,7 @@ struct dbTechLayerCutSpacingRuleFlags
   bool prl_valid_ : 1;
   bool below_ : 1;
   bool par_within_enclosure_valid_ : 1;
-  uint spare_bits_ : 21;
+  uint spare_bits_ : 22;
 };
 
 class _dbTechLayerCutSpacingRule : public _dbObject
