@@ -5166,6 +5166,8 @@ class dbSite : public dbObject
 {
  private:
   std::vector<std::pair<dbSite*, dbOrientType::Value>> _row_patterns;
+  dbSite* parent;  // parent site (null if site is a hybridParent, for hybrid
+                   // cells it wili)
 
  public:
   ///
@@ -5245,6 +5247,20 @@ class dbSite : public dbObject
       const std::vector<std::pair<dbSite*, dbOrientType>>& row_pattern);
 
   ///
+  /// sets the parent of the site
+  ///
+  void setParent(dbSite* parent)
+  {
+    if (!this->isHybrid() || this->isHybridParent()) {
+      parent = nullptr;
+      return;
+    }
+    this->parent = parent;
+  }
+
+  dbSite* getParent() { return parent; }
+
+  ///
   /// Returns true if the row pattern is not empty
   ///
   bool hasRowPattern() const;
@@ -5253,6 +5269,11 @@ class dbSite : public dbObject
   /// Returns true if this cell is a hybrid cell
   ///
   bool isHybrid() const;
+
+  ///
+  /// Returns true if this cell is a hybrid parent
+  ///
+  bool isHybridParent() const;
 
   ///
   /// returns the row pattern if available

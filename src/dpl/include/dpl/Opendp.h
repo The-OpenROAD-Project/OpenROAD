@@ -114,22 +114,15 @@ struct Master
 
 struct Grid_map_key
 {
-  int cell_height;
-  bool is_hybrid_parent;
-  int row_pattern_index;
+  int grid_index;
+  // TODO: consider removing the two operator overloading
   bool operator<(const Grid_map_key& other) const
   {
-    return std::tie(cell_height, is_hybrid_parent, row_pattern_index)
-           < std::tie(other.cell_height,
-                      other.is_hybrid_parent,
-                      other.row_pattern_index);
+    return grid_index < other.grid_index;
   }
   bool operator==(const Grid_map_key& other) const
   {
-    return std::tie(cell_height, is_hybrid_parent, row_pattern_index)
-           == std::tie(other.cell_height,
-                       other.is_hybrid_parent,
-                       other.row_pattern_index);
+    return grid_index == other.grid_index;
   }
 };
 
@@ -168,6 +161,15 @@ struct Cell
     }
     return db_inst_->getMaster()->getSite()->isHybrid();
   }
+
+  bool isHybridParent() const
+  {
+    if (!db_inst_ || !db_inst_->getMaster()
+        || !db_inst_->getMaster()->getSite()) {
+      return false;
+    }
+    return db_inst_->getMaster()->getSite()->isHybridParent();
+  }
 };
 
 struct Group
@@ -190,12 +192,43 @@ struct Pixel
   dbSite* site;      // site that this pixel is
 };
 
-struct GridInfo
+class GridInfo
 {
-  int row_count;
-  int site_count;
-  int grid_index;
-  std::vector<std::pair<dbSite*, dbOrientType>> sites;
+ public:
+  GridInfo(int row_count,
+           int site_count,
+           int grid_index,
+           const std::vector<std::pair<dbSite*, dbOrientType>>& sites)
+      : row_count(row_count),
+        site_count(site_count),
+        grid_index(grid_index),
+        sites(sites)
+  {
+  }
+
+  int getRowCount() const { return row_count; }
+
+  int getSiteCount() const { return site_count; }
+
+  int getGridIndex() const { return grid_index; }
+
+  const std::vector<std::pair<dbSite*, dbOrientType>>& getSites() const
+  {
+    return sites;
+  }
+
+  const bool isHybrid()
+  {
+    return sites.size() > 1 || sites[0].first->isHybridParent();
+  }
+
+ private:
+  const int row_count;
+  const int site_count;
+  const int grid_index;
+  const std::vector<std::pair<dbSite*, dbOrientType>>
+      sites;  // will have one site only for non-hybrid and hybrid parent cells.
+              // For hybrid children, this will have all the sites
 };
 
 // For optimize mirroring.
@@ -316,7 +349,6 @@ class Opendp
   void makeMaster(Master* master, dbMaster* db_master);
 
   void initGrid();
-  void initHybridSitesMap();
   void initGridLayersMap();
   std::string printBgBox(const boost::geometry::model::box<bgPoint>& queryBox);
   void detailedPlacement();
@@ -530,8 +562,12 @@ class Opendp
 
   map<const dbMaster*, Master> db_master_map_;
   map<Grid_map_key, GridInfo> grid_info_map_;
+  unordered_map<int, int>
+      site_idx_to_grid_idx;  // this map is used to map each unqie site to a
+                             // grid. the key is always unique, but the value is
+                             // not unique in the case of hybrid sites
+                             // (alternating rows)
   std::vector<GridInfo*> grid_info_vector_;
-  map<string, HybridSiteInfo> hybrid_sites_mapper;
   map<int, int> siteIdToGridId;
   map<dbInst*, Cell*> db_inst_map_;
 

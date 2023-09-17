@@ -271,6 +271,12 @@ bool dbSite::isHybrid() const
   return site->_flags._is_hybrid != 0;
 }
 
+bool dbSite::isHybridParent() const
+{
+  _dbSite* site = (_dbSite*) this;
+  return this->isHybrid() && this->hasRowPattern();
+}
+
 std::vector<std::pair<dbSite*, dbOrientType>> dbSite::getRowPattern()
 {
   std::vector<std::pair<dbSite*, dbOrientType>> row_patterns;

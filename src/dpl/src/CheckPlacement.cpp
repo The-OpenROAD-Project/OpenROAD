@@ -74,19 +74,20 @@ void Opendp::checkPlacement(bool verbose,
           // here, the cell is hybrid, if it is a parent, then the check is
           // quite simple
           auto gmk = getGridMapKey(&cell);
-          if (gmk.is_hybrid_parent) {
-            if (cell.y_ % gmk.cell_height != 0) {
-              site_align_failures.push_back(&cell);
-            }
-          } else {
-            // here, the check is quite complex. We need to figure out if the
-            // base of the cell is on the right site
-            int adjusted_height = cell.y_ / gmk.cell_height;
-            if (adjusted_height % cell.height_ != 0
-                || (adjusted_height + cell.height_) % cell.height_) {
+          if (cell.isHybridParent()) {
+            if (cell.y_ % cell.height_ != 0) {
               site_align_failures.push_back(&cell);
             }
           }
+          // else {
+          // here, the check is quite complex. We need to figure out if the
+          // base of the cell is on the right site
+          // int adjusted_height = cell.y_ / gmk.cell_height;
+          // if (adjusted_height % cell.height_ != 0
+          //     || (adjusted_height + cell.height_) % cell.height_) {
+          //   site_align_failures.push_back(&cell);
+          // }
+          // }
         }
       }
       if (!checkInRows(cell)) {
@@ -355,7 +356,7 @@ bool Opendp::checkInRows(const Cell& cell) const
 
   for (int y = y_ll; y < y_ur; y++) {
     for (int x = x_ll; x < x_ur; x++) {
-      Pixel* pixel = gridPixel(grid_info.second.grid_index, x, y);
+      Pixel* pixel = gridPixel(grid_info.second.getGridIndex(), x, y);
       if (pixel == nullptr  // outside core
           || !pixel->is_valid) {
         return false;
@@ -440,7 +441,7 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
 {
   Cell* gap_cell = nullptr;
   auto row_info = getRowInfo(&cell);
-  int index_in_grid = row_info.second.grid_index;
+  int index_in_grid = row_info.second.getGridIndex();
   visitCellBoundaryPixels(
       cell, true, [&](Pixel* pixel, const Direction2D& edge, int x, int y) {
         Cell* pixel_cell = pixel->cell;

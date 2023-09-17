@@ -1699,6 +1699,7 @@ void lefin::site(lefiSite* lefsite)
         orient = it->second;
       }
       auto child_site = site->getLib()->findSite(row.first.c_str());
+      child_site->setParent(site);
       converted_row_pattern.emplace_back(child_site, orient);
     }
     site->setRowPattern(converted_row_pattern);

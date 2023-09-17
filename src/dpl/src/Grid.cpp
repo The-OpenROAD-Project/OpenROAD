@@ -55,49 +55,6 @@ using utl::DPL;
 using odb::dbBox;
 using odb::dbTransform;
 
-int Opendp::getHybridSiteIndex(dbSite* site)
-{
-  if (!site->isHybrid() || !site->hasRowPattern()) {
-    return 0;
-  }
-  auto it = siteIdToGridId.find(site->getId());
-  if (it != siteIdToGridId.end()) {
-    return it->second;
-  } else {
-    int newId = siteIdToGridId.size()
-                + 1;  // Calculate the next ID based on the map size
-    siteIdToGridId[site->getId()] = newId;
-    return newId;
-  }
-}
-
-void Opendp::initHybridSitesMap()
-{
-  for (auto db_row : block_->getRows()) {
-    // TODO: this is wrong if the same cell can be used in multiple hybrid
-    // cells. For example, site B is used as part of hybrid cells CB, and AB.
-    // This mapping would be insufficient.
-    auto parent_site = db_row->getSite();
-    if (parent_site->hasRowPattern()) {
-      auto row_pattern = db_row->getSite()->getRowPattern();
-      for (auto [site, site_orientation] : row_pattern) {
-        hybrid_sites_mapper.emplace(
-            site->getName(),
-            HybridSiteInfo(getHybridSiteIndex(parent_site), parent_site));
-        debugPrint(
-            logger_,
-            DPL,
-            "hybrid",
-            1,
-            "Site {} mapped to {} {}",
-            site->getName(),
-            hybrid_sites_mapper.at(site->getName()).getIndex(),
-            hybrid_sites_mapper.at(site->getName()).getSite()->getName());
-      }
-    }
-  }
-}
-
 int Opendp::calculateHybridSitesRowCount(dbSite* parent_hybrid_site) const
 {
   auto row_pattern = parent_hybrid_site->getRowPattern();
@@ -129,47 +86,52 @@ void Opendp::initGridLayersMap()
   int grid_index = 0;
   grid_info_map_.clear();
   grid_info_vector_.clear();
-  hybrid_sites_mapper.clear();
-  initHybridSitesMap();
+
+  for (auto db_row : block_->getRows()) {
+    auto site = db_row->getSite();
+    if (site_idx_to_grid_idx.find(site->getId())
+        != site_idx_to_grid_idx.end()) {
+      continue;
+    } else {
+      if (site->isHybrid() && site->hasRowPattern()) {
+        site_idx_to_grid_idx[site->getId()] = grid_index++;
+        for (auto [child_site, child_site_orientation] :
+             site->getRowPattern()) {
+          if (site_idx_to_grid_idx.find(child_site->getId())
+              == site_idx_to_grid_idx.end()) {
+            // FIXME(mina1460): this might need more work in the future if we
+            // want to allow the same hybrid cell to be part of multiple grids
+            // (For example, A in AB and AC). This is good enough for now.
+            site_idx_to_grid_idx[child_site->getId()] = grid_index++;
+          }
+        }
+      }
+    }
+  }
 
   for (auto db_row : block_->getRows()) {
     if (db_row->getSite()->getClass() == odb::dbSiteClass::PAD) {
       continue;
     }
-    // we check if the row is hybrid or not. if yes, we want the smaller
-    // components of the bigger hybrid cells to map to the same grid index.
-    // i.e. if A and B are hybrid sites, we want both of them to map to the same
-    // grid layer as they are alternating. However, [AB] together is still
-    // considered hybrid, but it has a row pattern, and we want it to go to a
-    // separate grid layer.
     dbSite* working_site = db_row->getSite();
     int row_height = working_site->getHeight();
     Grid_map_key gmk = getGridMapKey(working_site);
-    debugPrint(
-        logger_,
-        DPL,
-        "hybrid",
-        1,
-        "Grid map key height {} row pattern index {} is hybrid parent {} site "
-        "{}") if (grid_info_map_.find(gmk) == grid_info_map_.end())
-    {
-      GridInfo newGridInfo;
-
-      if (gmk.is_hybrid_parent || !working_site->isHybrid()) {
-        newGridInfo = {
+    if (grid_info_map_.find(gmk) == grid_info_map_.end()) {
+      if (working_site->isHybridParent() || !working_site->isHybrid()) {
+        GridInfo newGridInfo = {
             getRowCount(row_height),
             db_row->getSiteCount(),
-            grid_index++,
+            site_idx_to_grid_idx.at(working_site->getId()),
             std::vector<std::pair<dbSite*, dbOrientType>>{
                 {working_site, db_row->getOrient()}},
         };
+        grid_info_map_.emplace(gmk, newGridInfo);
       } else {
-        auto parent_site_info = hybrid_sites_mapper.at(working_site->getName());
-        newGridInfo = {
-            calculateHybridSitesRowCount(parent_site_info.getSite()),
+        GridInfo newGridInfo = {
+            calculateHybridSitesRowCount(working_site->getParent()),
             db_row->getSiteCount(),
-            grid_index++,
-            parent_site_info.getSite()
+            site_idx_to_grid_idx.at(working_site->getId()),
+            working_site->getParent()
                 ->getRowPattern(),  // FIXME(mina1460): this is wrong! in the
                                     // case of HybridAB, and HybridBA. each of A
                                     // and B maps to both, but the
@@ -177,31 +139,24 @@ void Opendp::initGridLayersMap()
                                     // them, resulting in the wrong RowPattern
                                     // here.
         };
+        grid_info_map_.emplace(gmk, newGridInfo);
       }
-      grid_info_map_.emplace(gmk, newGridInfo);
-    }
-    else
-    {
-      auto& grid_info = grid_info_map_.at(gmk);
-      grid_info.site_count
-          = divFloor(core_.dx(), db_row->getSite()->getWidth());
     }
   }
   grid_info_vector_.resize(grid_info_map_.size());
   for (auto& [gmk, grid_info] : grid_info_map_) {
-    debugPrint(logger_,
-               DPL,
-               "hybrid",
-               1,
-               "Grid map key - cell height {} is hybrid parent {} row pattern "
-               "index {} has value - grid index {} row count {} site count {}",
-               gmk.cell_height,
-               gmk.is_hybrid_parent,
-               gmk.row_pattern_index,
-               grid_info.grid_index,
-               grid_info.row_count,
-               grid_info.site_count);
-    grid_info_vector_[grid_info.grid_index] = &grid_info;
+    assert(gmk.grid_index == grid_info..getGridIndex());
+    // debugPrint(logger_,
+    //            DPL,
+    //            "hybrid",
+    //            1,
+    //            "Grid map key - cell height {} has value - grid index {} row "
+    //            "count {} site count {}",
+    //            gmk.grid_index,
+    //            grid_info.grid_index,
+    //            grid_info.row_count,
+    //            grid_info.site_count);
+    grid_info_vector_[grid_info.getGridIndex()] = &grid_info;
   }
   debugPrint(logger_, DPL, "grid", 1, "grid layers map initialized");
 }
@@ -220,14 +175,14 @@ void Opendp::initGrid()
   if (grid_.empty()) {
     grid_.resize(grid_info_map_.size());
     for (auto& [gmk, grid_info] : grid_info_map_) {
-      grid_[grid_info.grid_index].resize(grid_info.row_count);
+      grid_[grid_info.getGridIndex()].resize(grid_info.getRowCount());
     }
   }
 
   for (auto& [gmk, grid_info] : grid_info_map_) {
-    const int layer_row_count = grid_info.row_count;
-    const int layer_row_site_count = grid_info.site_count;
-    const int index = grid_info.grid_index;
+    const int layer_row_count = grid_info.getRowCount();
+    const int layer_row_site_count = grid_info.getSiteCount();
+    const int index = grid_info.getGridIndex();
     grid_[index].resize(layer_row_count);
     for (int j = 0; j < layer_row_count; j++) {
       grid_[index][j].resize(layer_row_site_count);
@@ -239,8 +194,9 @@ void Opendp::initGrid()
         pixel.is_valid = false;
         pixel.is_hopeless = false;
         pixel.site = nullptr;
-        if (!grid_info.sites.empty()) {
-          pixel.site = grid_info.sites[j % grid_info.sites.size()].first;
+        auto grid_sites = grid_info.getSites();
+        if (!grid_sites.empty()) {
+          pixel.site = grid_sites[j % grid_sites.size()].first;
         }
       }
     }
@@ -252,27 +208,25 @@ void Opendp::initGrid()
   std::vector<gtl::polygon_90_set_data<int>> hopeless;
   hopeless.resize(grid_info_map_.size());
   for (auto [row_height, grid_info] : grid_info_map_) {
-    hopeless[grid_info.grid_index] += gtl::rectangle_data<int>{
-        0, 0, grid_info.site_count, grid_info.row_count};
+    hopeless[grid_info.getGridIndex()] += gtl::rectangle_data<int>{
+        0, 0, grid_info.getSiteCount(), grid_info.getRowCount()};
   }
   // Fragmented row support; mark valid sites.
   for (auto db_row : block_->getRows()) {
-    if (db_row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+    const auto db_row_site = db_row->getSite();
+    if (db_row_site->getClass() == odb::dbSiteClass::PAD) {
       continue;
     }
-    int current_row_height = db_row->getSite()->getHeight();
+    int current_row_height = db_row_site->getHeight();
     int current_row_site_count = db_row->getSiteCount();
-    auto gmk = getGridMapKey(db_row->getSite());
+    auto gmk = getGridMapKey(db_row_site);
     auto entry = grid_info_map_.at(gmk);
-    int current_row_count = entry.row_count;
-    int current_row_grid_index = entry.grid_index;
-    if (db_row->getSite()->getClass() == odb::dbSiteClass::PAD) {
-      continue;
-    }
+    int current_row_count = entry.getRowCount();
+    int current_row_grid_index = entry.getGridIndex();
     int orig_x, orig_y;
     db_row->getOrigin(orig_x, orig_y);
 
-    const int x_start = (orig_x - core_.xMin()) / db_row->getSite()->getWidth();
+    const int x_start = (orig_x - core_.xMin()) / db_row_site->getWidth();
     const int x_end = x_start + current_row_site_count;
     const int y_row = (orig_y - core_.yMin()) / current_row_height;
     for (int x = x_start; x < x_end; x++) {
@@ -287,8 +241,7 @@ void Opendp::initGrid()
     // The safety margin is to avoid having only a very few sites
     // within the diamond search that may still lead to failures.
     const int safety = 20;
-    int max_row_site_count
-        = divFloor(core_.dx(), db_row->getSite()->getWidth());
+    int max_row_site_count = divFloor(core_.dx(), db_row_site->getWidth());
 
     const int xl = std::max(0, x_start - max_displacement_x_ + safety);
     const int xh
@@ -304,7 +257,7 @@ void Opendp::initGrid()
   std::vector<gtl::rectangle_data<int>> rects;
   for (auto& grid_layer : grid_info_map_) {
     rects.clear();
-    int h_index = grid_layer.second.grid_index;
+    int h_index = grid_layer.second.getGridIndex();
     hopeless[h_index].get_rectangles(rects);
     for (const auto& rect : rects) {
       for (int y = gtl::yl(rect); y < gtl::yh(rect); y++) {
@@ -328,8 +281,8 @@ Pixel* Opendp::gridPixel(int grid_idx, int grid_x, int grid_y) const
     return nullptr;
   }
   GridInfo* grid_info = grid_info_vector_[grid_idx];
-  if (grid_x >= 0 && grid_x < grid_info->site_count && grid_y >= 0
-      && grid_y < grid_info->row_count) {
+  if (grid_x >= 0 && grid_x < grid_info->getSiteCount() && grid_y >= 0
+      && grid_y < grid_info->getRowCount()) {
     return const_cast<Pixel*>(&grid_[grid_idx][grid_y][grid_x]);
   }
   return nullptr;
@@ -426,7 +379,7 @@ void Opendp::visitCellPixels(
 
       for (int x = layer_x_start; x < layer_x_end; x++) {
         for (int y = layer_y_start; y < layer_y_end; y++) {
-          Pixel* pixel = gridPixel(layer_it.second.grid_index, x, y);
+          Pixel* pixel = gridPixel(layer_it.second.getGridIndex(), x, y);
           if (pixel) {
             visitor(pixel);
           }
@@ -447,7 +400,7 @@ void Opendp::visitCellBoundaryPixels(
   Grid_map_key gmk = getGridMapKey(&cell);
   GridInfo grid_info = grid_info_map_.at(gmk);
   int row_height = gmk.cell_height;
-  const int index_in_grid = grid_info.grid_index;
+  const int index_in_grid = grid_info.getGridIndex();
 
   dbMaster* master = inst->getMaster();
   auto obstructions = master->getObstructions();
@@ -569,7 +522,7 @@ void Opendp::groupAssignCellRegions()
 
       for (int x = 0; x < max_row_site_count; x++) {
         for (int y = 0; y < row_count; y++) {
-          Pixel* pixel = gridPixel(grid_info.grid_index, x, y);
+          Pixel* pixel = gridPixel(grid_info.getGridIndex(), x, y);
           if (pixel->is_valid && pixel->group_ == &group) {
             site_count++;
           }
@@ -611,7 +564,7 @@ void Opendp::groupInitPixels2()
                  y * row_height,
                  (x + 1) * site_width_,
                  (y + 1) * row_height);
-        Pixel* pixel = gridPixel(grid_info.grid_index, x, y);
+        Pixel* pixel = gridPixel(grid_info.getGridIndex(), x, y);
         for (Group& group : groups_) {
           for (Rect& rect : group.regions) {
             if (!isInside(sub, rect) && checkOverlap(sub, rect)) {
@@ -643,9 +596,9 @@ void Opendp::groupInitPixels()
 {
   for (const auto& layer : grid_info_map_) {
     const GridInfo& grid_info = layer.second;
-    for (int x = 0; x < grid_info.site_count; x++) {
-      for (int y = 0; y < grid_info.row_count; y++) {
-        Pixel* pixel = gridPixel(grid_info.grid_index, x, y);
+    for (int x = 0; x < grid_info.getSiteCount(); x++) {
+      for (int y = 0; y < grid_info.getRowCount(); y++) {
+        Pixel* pixel = gridPixel(grid_info.getGridIndex(), x, y);
         pixel->util = 0.0;
       }
     }
@@ -659,7 +612,7 @@ void Opendp::groupInitPixels()
     int site_width = getSiteWidth(group.cells_[0]);
     Grid_map_key gmk = getGridMapKey(group.cells_[0]);
     GridInfo& grid_info = grid_info_map_.at(gmk);
-    int grid_index = grid_info.grid_index;
+    int grid_index = grid_info.getGridIndex();
     for (Rect& rect : group.regions) {
       debugPrint(logger_,
                  DPL,
@@ -756,7 +709,7 @@ void Opendp::erasePixel(Cell* cell)
 
       for (int x = gridPaddedX(cell, site_width); x < x_end; x++) {
         for (int y = layer_y_start; y < layer_y_end; y++) {
-          Pixel* pixel = gridPixel(grid_info.grid_index, x, y);
+          Pixel* pixel = gridPixel(grid_info.getGridIndex(), x, y);
           if (nullptr == pixel) {
             continue;
           }
@@ -786,7 +739,7 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
   int site_width = getSiteWidth(cell);
   Grid_map_key gmk = getGridMapKey(cell);
   GridInfo grid_info = grid_info_map_.at(gmk);
-  const int index_in_grid = grid_info.grid_index;
+  const int index_in_grid = grid_info.getGridIndex();
   int row_height = gmk.cell_height;
   setGridPaddedLoc(cell, grid_x, grid_y, site_width, row_height);
   cell->is_placed_ = true;
@@ -859,19 +812,19 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
           logger_, DPL, "detailed", 1, "added 1 go layer_end {}", layer_y_end);
     }
 
-    if (layer_y_end > layer.second.row_count) {
+    if (layer_y_end > layer.second.getRowCount()) {
       logger_->error(DPL,
                      49,
                      "Cannot paint grid index: {} because it is out of bounds. "
                      "Calculated (row end {}) > (rows {}). This is a bug",
-                     layer.second.grid_index,
+                     layer.second.getGridIndex(),
                      layer_y_end,
-                     layer.second.row_count);
+                     layer.second.getRowCount());
     }
 
     for (int x = layer_x; x < layer_x_end; x++) {
       for (int y = layer_y; y < layer_y_end; y++) {
-        Pixel* pixel = gridPixel(layer.second.grid_index, x, y);
+        Pixel* pixel = gridPixel(layer.second.getGridIndex(), x, y);
         if (pixel && pixel->cell) {
           // Checks that the row heights of the found cell match the row
           // height of this layer. If they don't, it means that this pixel is
