@@ -717,8 +717,8 @@ class extMeasure
   bool verticalCap(int rsegId1,
                    uint rsegId2,
                    uint len,
-                   uint diagDist,
                    uint tgtWidth,
+                   uint diagDist,
                    uint tgtMet);
   extDistRC* getVerticalUnderRC(extMetRCTable* rcModel,
                                 uint diagDist,
@@ -746,7 +746,7 @@ class extMeasure
   void printNet(odb::dbRSeg* rseg, uint netId);
   void updateBox(uint w_layout, uint s_layout, int dir = -1);
   void printBox(FILE* fp);
-  uint initWS_box(extMainOptions* opt, uint gCnt);
+  uint initWS_box(extMainOptions* opt, uint gridCnt);
   odb::dbRSeg* getFirstDbRseg(uint netId);
   uint createNetSingleWire(char* dirName,
                            uint idCnt,
@@ -755,7 +755,7 @@ class extMeasure
                            int dir = -1);
   uint createDiagNetSingleWire(char* dirName,
                                uint idCnt,
-                               int base,
+                               int begin,
                                int w_layout,
                                int s_layout,
                                int dir = -1);
@@ -767,8 +767,8 @@ class extMeasure
                                 int ur[2],
                                 int s_layout = -1);
   uint createContextNets(char* dirName,
-                         int bboxLL[2],
-                         int bboxUR[2],
+                         const int bboxLL[2],
+                         const int bboxUR[2],
                          int met,
                          double pitchMult);
   uint getPatternExtend();
@@ -807,11 +807,11 @@ class extMeasure
 
   void release(Ath__array1D<odb::SEQ*>* seqTable, odb::gs* pixelTable = NULL);
   void addSeq(Ath__array1D<odb::SEQ*>* seqTable, odb::gs* pixelTable);
-  void addSeq(int* ll,
-              int* ur,
+  void addSeq(const int* ll,
+              const int* ur,
               Ath__array1D<odb::SEQ*>* seqTable,
               odb::gs* pixelTable = NULL);
-  odb::SEQ* addSeq(int* ll, int* ur);
+  odb::SEQ* addSeq(const int* ll, const int* ur);
   void copySeq(odb::SEQ* t,
                Ath__array1D<odb::SEQ*>* seqTable,
                odb::gs* pixelTable);
@@ -867,7 +867,7 @@ class extMeasure
                    uint dir,
                    uint planeIndex,
                    uint trackn,
-                   Ath__array1D<odb::SEQ*>* diagTable);
+                   Ath__array1D<odb::SEQ*>* residueSeq);
 
   odb::dbCCSeg* makeCcap(odb::dbRSeg* rseg1, odb::dbRSeg* rseg2, double ccCap);
   void addCCcap(odb::dbCCSeg* ccap, double v, uint model);
@@ -882,7 +882,7 @@ class extMeasure
                   uint diagDist,
                   uint tgtMet);
   void calcDiagRC(int rsegid1, uint rsegid2, uint len, uint dist, uint tgtMet);
-  int calcDist(int* ll, int* ur);
+  int calcDist(const int* ll, const int* ur);
 
   void ccReportProgress();
   uint getOverUnderIndex();
@@ -932,7 +932,7 @@ class extMeasure
                              uint met1,
                              uint met2,
                              Ath__array1D<int>* tgtContext);
-  uint computeOverOrUnderSeq(Ath__array1D<int>* srcTable,
+  uint computeOverOrUnderSeq(Ath__array1D<int>* seqTable,
                              uint met,
                              Ath__array1D<int>* resTable,
                              bool over);
@@ -992,7 +992,7 @@ class extMeasure
                     uint trackMin,
                     uint trackMax,
                     uint targetMet,
-                    Ath__array1D<odb::SEQ*>* residueSeq);
+                    Ath__array1D<odb::SEQ*>* diagTable);
   void printDgContext();
   void initTargetSeq();
   void getDgOverlap(CoupleOptions& options);
@@ -1386,7 +1386,7 @@ class extMain
   void updateTotalRes(odb::dbRSeg* rseg1,
                       odb::dbRSeg* rseg2,
                       extMeasure* m,
-                      double* delta,
+                      const double* delta,
                       uint modelCnt);
   void updateTotalCap(odb::dbRSeg* rseg,
                       double frCap,
@@ -1395,20 +1395,20 @@ class extMain
                       uint modelIndex);
   void updateTotalCap(odb::dbRSeg* rseg,
                       extMeasure* m,
-                      double* deltaFr,
+                      const double* deltaFr,
                       uint modelCnt,
                       bool includeCoupling,
                       bool includeDiag = false);
   void updateCCCap(odb::dbRSeg* rseg1, odb::dbRSeg* rseg2, double ccCap);
   double measureOverUnderCap(extMeasure* m, int x1, int y1, int x2, int y2);
 
-  int setMinTypMax(bool minModel,
-                   bool typModel,
-                   bool maxModel,
+  int setMinTypMax(bool min,
+                   bool typ,
+                   bool max,
                    int setMin,
                    int setTyp,
                    int setMax,
-                   uint cornerCnt);
+                   uint extDbCnt);
 
   extRCModel* getRCmodel(uint n);
 
@@ -1487,7 +1487,9 @@ class extMain
                   odb::dbShape& s,
                   odb::Point& prevPoint,
                   odb::dbWirePathShape& pshape);
-  void setResAndCap(odb::dbRSeg* rc, double* restbl, double* captbl);
+  void setResAndCap(odb::dbRSeg* rc,
+                    const double* restbl,
+                    const double* captbl);
   odb::dbRSeg* addRSeg(odb::dbNet* net,
                        std::vector<uint>& rsegJid,
                        uint& srcId,
@@ -1542,7 +1544,7 @@ class extMain
                 bool moreToRead = false,
                 bool diff = false,
                 bool calib = false,
-                int app_ptint_limit = 0);
+                int app_print_limit = 0);
   uint readSPEFincr(char* filename);
   uint writeSPEF(bool stop);
   uint writeSPEF(uint netId,
@@ -1567,7 +1569,7 @@ class extMain
                  bool noCnum,
                  bool initOnly,
                  bool single_pi,
-                 bool no_backslash,
+                 bool noBackSlash,
                  int corner,
                  const char* corner_name,
                  bool parallel);
@@ -1607,7 +1609,7 @@ class extMain
   int getDbCornerModel(const char* name);
   bool setCorners(const char* rulesFileName);
   int getProcessCornerDbIndex(int pcidx);
-  void getScaledCornerDbIndex(int pcidx, int& sidx, int& scdbIdx);
+  void getScaledCornerDbIndex(int pcidx, int& scidx, int& scdbIdx);
   void getScaledRC(int sidx, double& res, double& cap);
   void getScaledGndC(int sidx, double& cap);
   void getScaledCC(int sidx, double& cap);

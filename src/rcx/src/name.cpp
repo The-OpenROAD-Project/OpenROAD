@@ -52,8 +52,9 @@ static void Ath__hashError(const char* msg, int exitFlag)
   fprintf(stderr, "Cannot find %s in hash table\n", msg);
   fprintf(stderr, "\nexiting ...\n");
 
-  if (exitFlag > 0)
+  if (exitFlag > 0) {
     exit(1);
+  }
 }
 
 void NameTable::NameBucket::set(char* name, uint tag)
@@ -76,8 +77,9 @@ NameTable::~NameTable()
 
 NameTable::NameTable(uint n, char* zero)
 {
-  if (zero == nullptr)
+  if (zero == nullptr) {
     zero = strdup("zeroName");
+  }
 
   _hashTable = new odb::AthHash<int>(n, 0);
   _bucketPool = new odb::AthPool<NameBucket>(false, 0);
@@ -88,7 +90,7 @@ NameTable::NameTable(uint n, char* zero)
 uint NameTable::addName(char* name, uint dataId)
 {
   uint poolIndex = 0;
-  NameBucket* b = _bucketPool->alloc(NULL, &poolIndex);
+  NameBucket* b = _bucketPool->alloc(nullptr, &poolIndex);
   b->set(name, dataId);
 
   _hashTable->add(b->_name, poolIndex);
@@ -124,13 +126,15 @@ uint NameTable::getDataId(char* name, uint ignoreFlag, uint exitFlag, int* nn)
 {
   int n;
   if (_hashTable->get(name, n)) {
-    if (nn)
+    if (nn) {
       *nn = n;
+    }
     return getDataId(n);
   }
 
-  if (ignoreFlag > 0)
+  if (ignoreFlag > 0) {
     return 0;
+  }
 
   Ath__hashError(name, exitFlag);
   return 0;

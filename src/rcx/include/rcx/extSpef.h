@@ -134,7 +134,7 @@ class extSpef
                  const char* calibrateBaseCorner,
                  int spefCorner,
                  int fixLoop,
-                 bool& resegCoord);
+                 bool& rsegCoord);
   uint readBlockIncr(uint debug);
 
   bool setOutSpef(char* filename);
