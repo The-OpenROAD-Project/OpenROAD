@@ -1030,7 +1030,6 @@ void FlexPA::prepPoint_pin_checkPoint_via(
       if (!boundaryBBox.contains(box))
         continue;
       Rect layer2BBox = via->getLayer2BBox();
-      auto layer1 = getTech()->getLayer(viaDef->getLayer1Num());
       auto layer2 = getTech()->getLayer(viaDef->getLayer2Num());
       if (!USENONPREFTRACKS || layer2->isUnidirectional()) {
         if (layer2BBox.getDir() == 0
@@ -1038,14 +1037,6 @@ void FlexPA::prepPoint_pin_checkPoint_via(
           continue;
         if (layer2BBox.getDir() == 1
             && layer2->getDir() == odb::dbTechLayerDir::VERTICAL)
-          continue;
-      }
-      if (!USENONPREFTRACKS || layer1->isUnidirectional()) {
-        if (box.getDir() == 0
-            && layer1->getDir() == odb::dbTechLayerDir::HORIZONTAL)
-          continue;
-        if (box.getDir() == 1
-            && layer1->getDir() == odb::dbTechLayerDir::VERTICAL)
           continue;
       }
       if (!boundaryBBox.contains(layer2BBox))
