@@ -19,8 +19,8 @@ tapcell -distance "20" \
   -tap_nwouttie_master "ENDCAP_X1_BOTTOMEDGE" \
   -cnrcap_nwin_master "ENDCAP_X4_LEFTBOTTOMCORNER_Y" \
   -cnrcap_nwout_master "ENDCAP_X4_LEFTTOPCORNER_Y" \
-  -incnrcap_nwin_master "ENDCAP_X4_LEFTBOTTOMEDGE_Y" \
-  -incnrcap_nwout_master "ENDCAP_X4_LEFTTOPEDGE_Y"
+  -incnrcap_nwin_master "ENDCAP_X4_LEFTTOPEDGE_Y" \
+  -incnrcap_nwout_master "ENDCAP_X4_LEFTBOTTOMEDGE_Y"
 
 check_placement -verbose
 

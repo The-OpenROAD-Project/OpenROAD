@@ -912,7 +912,7 @@ Tapcell::CornerMap Tapcell::placeEndcapCorner(const Tapcell::Corner& corner,
       if (row_orient == odb::dbOrientType::R0) {
         master = options.right_top_edge;
       } else {
-        master = options.left_bottom_edge;
+        master = options.right_bottom_edge;
       }
       break;
     case CornerType::Unknown:
@@ -1375,36 +1375,30 @@ EndcapCellOptions Tapcell::correctEndcapOptions(const Options& options) const
   bopts.left_edge = options.endcap_master;
   bopts.right_edge = options.endcap_master;
 
-  if (options.tap_nwin3_master) {
-    bopts.top_edge.push_back(options.tap_nwout3_master);
+  for (auto* master : {options.tap_nwin3_master,
+                       options.tap_nwin2_master,
+                       options.tap_nwintie_master}) {
+    if (master != nullptr) {
+      bopts.bottom_edge.push_back(master);
+    }
   }
-  if (options.tap_nwin2_master) {
-    bopts.top_edge.push_back(options.tap_nwout2_master);
-  }
-  if (options.tap_nwintie_master) {
-    bopts.top_edge.push_back(options.tap_nwouttie_master);
-  }
-  if (options.tap_nwout3_master) {
-    bopts.bottom_edge.push_back(options.tap_nwin3_master);
-  }
-  if (options.tap_nwout2_master) {
-    bopts.bottom_edge.push_back(options.tap_nwin2_master);
-  }
-  if (options.tap_nwouttie_master) {
-    bopts.bottom_edge.push_back(options.tap_nwintie_master);
+  for (auto* master : {options.tap_nwout3_master,
+                       options.tap_nwout2_master,
+                       options.tap_nwouttie_master}) {
+    if (master != nullptr) {
+      bopts.top_edge.push_back(master);
+    }
   }
 
   bopts.left_top_corner = options.cnrcap_nwout_master;
-  bopts.left_top_edge = options.incnrcap_nwout_master;
-
   bopts.left_bottom_corner = options.cnrcap_nwin_master;
-  bopts.left_bottom_edge = options.incnrcap_nwin_master;
-
   bopts.right_top_corner = options.cnrcap_nwout_master;
-  bopts.right_top_edge = options.incnrcap_nwout_master;
-
   bopts.right_bottom_corner = options.cnrcap_nwin_master;
-  bopts.right_bottom_edge = options.incnrcap_nwin_master;
+
+  bopts.left_top_edge = options.incnrcap_nwin_master;
+  bopts.left_bottom_edge = options.incnrcap_nwout_master;
+  bopts.right_top_edge = options.incnrcap_nwin_master;
+  bopts.right_bottom_edge = options.incnrcap_nwout_master;
 
   return bopts;
 }
