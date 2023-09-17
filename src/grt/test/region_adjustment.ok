@@ -33,14 +33,14 @@ Adjusting region on layer metal2
           Routing      Original      Derated      Resource
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
-metal1     Horizontal       2940          2746          6.60%
-metal2     Vertical         2156          1367          36.60%
-metal3     Horizontal       2940          2778          5.51%
-metal4     Vertical         1372          1300          5.25%
-metal5     Horizontal       1372          1300          5.25%
-metal6     Vertical         1372          1300          5.25%
-metal7     Horizontal        392           377          3.83%
-metal8     Vertical          392           377          3.83%
+metal1     Horizontal       2996          2746          8.34%
+metal2     Vertical         2198          1367          37.81%
+metal3     Horizontal       2996          2778          7.28%
+metal4     Vertical         1400          1300          7.14%
+metal5     Horizontal       1400          1300          7.14%
+metal6     Vertical         1400          1300          7.14%
+metal7     Horizontal        406           377          7.14%
+metal8     Vertical          406           377          7.14%
 metal9     Horizontal        196           182          7.14%
 metal10    Vertical          196           182          7.14%
 ---------------------------------------------------------------

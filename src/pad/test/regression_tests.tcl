@@ -7,6 +7,8 @@ record_tests {
   place_pad
   place_bondpad
   place_bondpad_stagger
+  place_pad_no_master
+  place_pad_wrong_master
   assign_bumps
 
   connect_by_abutment

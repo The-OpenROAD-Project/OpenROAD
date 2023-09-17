@@ -370,12 +370,16 @@ void HierRTLMP::hierRTLMacroPlacer()
   // Check if placement is feasible in the core area when considering
   // the macro halos
   float macro_with_halo_area = 0;
+  int unplaced_macros = 0;
   for (auto inst : block_->getInsts()) {
     auto master = inst->getMaster();
     if (master->isBlock()) {
-      const auto width = dbuToMicron(master->getWidth(), dbu_) + halo_width_;
-      const auto height = dbuToMicron(master->getHeight(), dbu_) + halo_width_;
+      const auto width
+          = dbuToMicron(master->getWidth(), dbu_) + 2 * halo_width_;
+      const auto height
+          = dbuToMicron(master->getHeight(), dbu_) + 2 * halo_width_;
       macro_with_halo_area += width * height;
+      unplaced_macros += !inst->getPlacementStatus().isPlaced();
     }
   }
 
@@ -399,6 +403,12 @@ void HierRTLMP::hierRTLMacroPlacer()
       util,
       core_util,
       manufacturing_grid_);
+
+  if (unplaced_macros == 0) {
+    logger_->info(
+        MPL, 17, "There are no unplaced macros so placement is skipped.");
+    return;
+  }
 
   if (macro_with_halo_area + metrics_->getStdCellArea() > core_area) {
     logger_->error(MPL,

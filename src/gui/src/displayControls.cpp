@@ -1887,6 +1887,27 @@ void DisplayControls::blockLoaded(odb::dbBlock* block)
   addTech(block->getTech());
 }
 
+void DisplayControls::setCurrentBlock(odb::dbBlock* block)
+{
+  if (!block) {
+    return;
+  }
+  auto tech = block->getTech();
+  addTech(tech);
+
+  std::set<odb::dbTech*> visible_techs{tech};
+  for (auto child : block->getChildren()) {
+    visible_techs.insert(child->getTech());
+  }
+
+  for (auto& [layer, row] : layer_controls_) {
+    const bool visible
+        = visible_techs.find(layer->getTech()) != visible_techs.end();
+    QModelIndex idx = model_->indexFromItem(row.name);
+    view_->setRowHidden(idx.row(), idx.parent(), !visible);
+  }
+}
+
 void DisplayControls::restoreTclCommands(std::vector<std::string>& cmds)
 {
   buildRestoreTclCommands(cmds, model_->invisibleRootItem());

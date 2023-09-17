@@ -34,10 +34,8 @@
 
 #include "dbTransform.h"
 
-#ifndef DB_TRANSFORM_TEST
 #include "dbDiff.h"
 #include "dbStream.h"
-#endif
 
 namespace odb {
 
@@ -106,7 +104,6 @@ static dbOrientType::Value orientMul[8][8] = {{dbOrientType::R0,
                                                dbOrientType::R270,
                                                dbOrientType::R0}};
 
-#ifndef DB_TRANSFORM_TEST
 dbOStream& operator<<(dbOStream& stream, const dbTransform& t)
 {
   stream << (int) t._orient;
@@ -129,7 +126,6 @@ dbDiff& operator<<(dbDiff& diff, const dbTransform& t)
   diff << t._offset;
   return diff;
 }
-#endif
 
 //
 // The transform matrix is written as:

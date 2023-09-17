@@ -152,6 +152,9 @@ void RenderThread::draw(QImage& image,
                         qreal render_ratio,
                         const QColor& background)
 {
+  if (image.isNull()) {
+    return;
+  }
   // Prevent a paintEvent and a save_image call from interfering
   // (eg search RTree construction)
   std::lock_guard<std::mutex> lock(drawing_mutex_);
@@ -1042,6 +1045,23 @@ void RenderThread::drawBlock(QPainter* painter,
   debugPrint(logger_, GUI, "draw", 1, "blockages {}", inst_blockages);
 
   dbTech* tech = block->getTech();
+  std::set<dbTech*> child_techs;
+  for (auto child : block->getChildren()) {
+    dbTech* child_tech = child->getTech();
+    if (child_tech != tech) {
+      child_techs.insert(child_tech);
+    }
+  }
+
+  for (dbTech* child_tech : child_techs) {
+    for (dbTechLayer* layer : child_tech->getLayers()) {
+      if (restart_) {
+        break;
+      }
+      drawLayer(painter, block, layer, insts, bounds, gui_painter);
+    }
+  }
+
   for (dbTechLayer* layer : tech->getLayers()) {
     if (restart_) {
       break;
