@@ -115,7 +115,7 @@ bool eval_upf(sta::dbNetwork* network,
 bool update_power_switch_cell(utl::Logger* logger,
                               odb::dbBlock* block,
                               const char* name,
-                              const char* cell);
+                              odb::dbMaster* cell);
 
 bool update_power_switch_port_map(utl::Logger* logger,
                                   odb::dbBlock* block,

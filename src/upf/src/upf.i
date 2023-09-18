@@ -126,8 +126,24 @@
   void set_power_switch_cell(char* name, char* cell)
   {
     odb::dbDatabase* db = getOpenRoad()->getDb();
+    auto libs = db->getLibs();
+    odb::dbMaster* master = nullptr;
+    for (auto lib : libs) {
+      master = lib->findMaster(cell);
+      if (master) {
+        break;
+      }
+    }
+
+    if (!master) {
+      getOpenRoad()->getLogger()->error(utl::ODB,
+                                        101,
+                                        "Cannot find master {}",
+                                        cell);
+      return;
+    }
     upf::update_power_switch_cell(
-        getOpenRoad()->getLogger(), db->getChip()->getBlock(), name, cell); 
+        getOpenRoad()->getLogger(), db->getChip()->getBlock(), name, master); 
   }
 
   void set_power_switch_port_map(char* name, char* model_port, char* switch_port)

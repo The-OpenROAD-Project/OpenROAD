@@ -121,10 +121,14 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj)
   stream >> obj._control_port;
   stream >> obj._on_state;
   stream >> obj._control_net;
-  stream >> obj._lib_cell;
-  stream >> obj._lib;
-  stream >> obj._port_map;
   stream >> obj._power_domain;
+  // User Code Begin >>
+  if (obj.getDatabase()->isSchema(db_schema_upf_power_switch_mapping)) {
+    stream >> obj._lib_cell;
+    stream >> obj._lib;
+    stream >> obj._port_map;
+  }
+  // User Code End >>
   return stream;
 }
 
@@ -137,10 +141,14 @@ dbOStream& operator<<(dbOStream& stream, const _dbPowerSwitch& obj)
   stream << obj._control_port;
   stream << obj._on_state;
   stream << obj._control_net;
-  stream << obj._lib_cell;
-  stream << obj._lib;
-  stream << obj._port_map;
   stream << obj._power_domain;
+  // User Code Begin <<
+  if (obj.getDatabase()->isSchema(db_schema_upf_power_switch_mapping)) {
+    stream << obj._lib_cell;
+    stream << obj._lib;
+    stream << obj._port_map;
+  }
+  // User Code End <<
   return stream;
 }
 
@@ -237,34 +245,7 @@ void dbPowerSwitch::addOnState(const std::string& on_state)
   obj->_on_state.push_back(on_state);
 }
 
-void dbPowerSwitch::addLibCell(const std::string& lib_cell)
-{
-  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  dbBlock* par = (dbBlock*) obj->getOwner();
-
-  dbMaster* master = nullptr;
-  auto libs = ((dbDatabase*) obj->getImpl()->getDatabase())->getLibs();
-  for (auto lib : libs) {
-    master = lib->findMaster(lib_cell.c_str());
-    if (master) {
-      break;
-    }
-  }
-
-  if (!master) {
-    obj->getImpl()->getLogger()->error(utl::ODB,
-                                       32000,
-                                       "Cannot find master {} in dbBlock {}",
-                                       lib_cell,
-                                       par->getName());
-    return;
-  }
-
-  obj->_lib_cell = master->getImpl()->getOID();
-  obj->_lib = master->getLib()->getImpl()->getOID();
-}
-
-void dbPowerSwitch::addLibCell(dbMaster* master)
+void dbPowerSwitch::setLibCell(dbMaster* master)
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
   obj->_lib_cell = master->getImpl()->getOID();

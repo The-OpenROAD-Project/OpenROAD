@@ -194,7 +194,7 @@ bool update_power_switch_output(utl::Logger* logger,
 bool update_power_switch_cell(utl::Logger* logger,
                               odb::dbBlock* block,
                               const char* name,
-                              const char* cell)
+                              odb::dbMaster* cell)
 {
   odb::dbPowerSwitch* ps = block->findPowerSwitch(name);
   if (ps == nullptr) {
@@ -202,10 +202,10 @@ bool update_power_switch_cell(utl::Logger* logger,
                  10028,
                  "Couldn't retrieve power switch '%s' while adding cell '%s'",
                  name,
-                 cell);
+                 cell->getName().c_str());
     return false;
   }
-  ps->addLibCell(cell);
+  ps->setLibCell(cell);
   return true;
 }
 

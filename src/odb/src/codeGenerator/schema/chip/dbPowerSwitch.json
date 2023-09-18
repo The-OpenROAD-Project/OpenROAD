@@ -41,17 +41,17 @@
     {
       "name": "_lib_cell",
       "type": "dbId<_dbMaster>",
-      "flags": ["no-set", "no-get"]
+      "flags": ["no-set", "no-get", "no-serial"]
     },
     {
       "name": "_lib",
       "type": "dbId<_dbLib>",
-      "flags": ["no-set", "no-get"]
+      "flags": ["no-set", "no-get", "no-serial"]
     },
     {
       "name": "_port_map",
       "type": "std::map<std::string, dbId<_dbMTerm>>",
-      "flags": ["no-set", "no-get"]
+      "flags": ["no-set", "no-get", "no-serial"]
     },
     {
       "name":"_power_domain",
