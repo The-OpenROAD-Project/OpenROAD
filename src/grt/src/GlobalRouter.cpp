@@ -2747,7 +2747,8 @@ std::vector<Net*> GlobalRouter::initNetlist()
 
   std::vector<odb::dbNet*> db_nets;
   if (nets_to_route_.empty()) {
-    db_nets.insert(db_nets.end(), block_->getNets().begin(), block_->getNets().end());
+    db_nets.insert(
+        db_nets.end(), block_->getNets().begin(), block_->getNets().end());
   } else {
     db_nets = nets_to_route_;
   }
