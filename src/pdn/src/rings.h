@@ -63,23 +63,23 @@ class Rings : public GridComponent
   void setExtendToBoundary(bool value);
 
   // generate the rings
-  virtual void makeShapes(const ShapeTreeMap& other_shapes) override;
+  void makeShapes(const ShapeTreeMap& other_shapes) override;
 
-  const std::vector<odb::dbTechLayer*> getLayers() const;
+  std::vector<odb::dbTechLayer*> getLayers() const;
 
   // returns the horizontal and vertical widths of the rings, useful when
   // estimating the ring size.
   void getTotalWidth(int& hor, int& ver) const;
 
-  virtual void report() const override;
-  virtual Type type() const override { return GridComponent::Ring; }
+  void report() const override;
+  Type type() const override { return GridComponent::Ring; }
 
-  virtual void checkLayerSpecifications() const override;
+  void checkLayerSpecifications() const override;
 
  private:
   std::array<Layer, 2> layers_;
-  std::array<int, 4> offset_;
-  bool extend_to_boundary_;
+  std::array<int, 4> offset_ = {0, 0, 0, 0};
+  bool extend_to_boundary_ = false;
 };
 
 }  // namespace pdn

@@ -19,7 +19,6 @@ add_library(db
     dbMTerm.cpp 
     dbMaster.cpp 
     dbNet.cpp 
-    dbSearch.cpp
     dbTech.cpp  
     dbTechLayerSpacingRule.cpp 
     dbTechLayerAntennaRule.cpp 
@@ -63,7 +62,6 @@ add_library(db
     dbJournal.cpp 
     dbJournalLog.cpp 
     dbBlockCallBackObj.cpp 
-    dbRtTree.cpp 
     dbRegion.cpp 
     dbRegionInstItr.cpp 
     dbExtControl.cpp 
@@ -89,34 +87,36 @@ add_library(db
     dbGroupPowerNetItr.cpp
     dbGroupGroundNetItr.cpp
     # Generator Code Begin cpp
-    dbTechLayer.cpp
-    dbTechLayerSpacingEolRule.cpp
-    dbTechLayerMinStepRule.cpp
-    dbTechLayerCornerSpacingRule.cpp
-    dbTechLayerSpacingTablePrlRule.cpp
-    dbTechLayerEolKeepOutRule.cpp
-    dbTechLayerCutClassRule.cpp
-    dbTechLayerCutSpacingRule.cpp
-    dbTechLayerCutSpacingTableOrthRule.cpp
-    dbTechLayerCutSpacingTableDefRule.cpp
-    dbTechLayerCutEnclosureRule.cpp
-    dbTechLayerEolExtensionRule.cpp
-    dbTechLayerArraySpacingRule.cpp
-    dbTechLayerWidthTableRule.cpp
-    dbTechLayerMinCutRule.cpp
-    dbGuide.cpp
-    dbMetalWidthViaMap.cpp
-    dbTechLayerAreaRule.cpp
-    dbModule.cpp
-    dbModInst.cpp
-    dbGroup.cpp
-    dbGCellGrid.cpp
     dbAccessPoint.cpp
+    dbGCellGrid.cpp
     dbGlobalConnect.cpp
-    dbPowerDomain.cpp
-    dbLogicPort.cpp
-    dbPowerSwitch.cpp
+    dbGroup.cpp
+    dbGuide.cpp
     dbIsolation.cpp
+    dbLogicPort.cpp
+    dbMetalWidthViaMap.cpp
+    dbModInst.cpp
+    dbModule.cpp
+    dbNetTrack.cpp
+    dbPowerDomain.cpp
+    dbPowerSwitch.cpp
+    dbTechLayer.cpp
+    dbTechLayerAreaRule.cpp
+    dbTechLayerArraySpacingRule.cpp
+    dbTechLayerCornerSpacingRule.cpp
+    dbTechLayerCutClassRule.cpp
+    dbTechLayerCutEnclosureRule.cpp
+    dbTechLayerCutSpacingRule.cpp
+    dbTechLayerCutSpacingTableDefRule.cpp
+    dbTechLayerCutSpacingTableOrthRule.cpp
+    dbTechLayerEolExtensionRule.cpp
+    dbTechLayerEolKeepOutRule.cpp
+    dbTechLayerKeepOutZoneRule.cpp
+    dbTechLayerMinCutRule.cpp
+    dbTechLayerMinStepRule.cpp
+    dbTechLayerSpacingEolRule.cpp
+    dbTechLayerSpacingTablePrlRule.cpp
+    dbTechLayerWidthTableRule.cpp
     dbModuleInstItr.cpp
     dbModuleModInstItr.cpp
     dbGroupModInstItr.cpp
@@ -124,6 +124,7 @@ add_library(db
     dbRegionGroupItr.cpp
     dbGroupInstItr.cpp
     dbGuideItr.cpp
+    dbNetTrackItr.cpp
     # Generator Code End cpp
 )
 
@@ -141,11 +142,8 @@ set_target_properties(db
 
 target_link_libraries(db
     PUBLIC
-        lefout
-        defout
-        tm
         zutil
-        utl
+        utl_lib
         ${TCL_LIBRARY}
 )
 

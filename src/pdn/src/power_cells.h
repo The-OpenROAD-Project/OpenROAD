@@ -68,7 +68,7 @@ class PowerCell
             odb::dbMTerm* alwayson_power,
             odb::dbMTerm* ground);
 
-  const std::string getName() const;
+  std::string getName() const;
 
   utl::Logger* getLogger() const { return logger_; }
 
@@ -126,13 +126,13 @@ class GridSwitchedPower
 
   void report() const;
 
-  static const std::string toString(NetworkType type);
+  static std::string toString(NetworkType type);
   static NetworkType fromString(const std::string& type, utl::Logger* logger);
 
   void build();
   void ripup();
 
-  const ShapeTreeMap getShapes() const;
+  ShapeTreeMap getShapes() const;
 
  private:
   Grid* grid_;
@@ -167,12 +167,12 @@ class GridSwitchedPower
   using RowTree = bgi::rtree<RowValue, bgi::quadratic<16>>;
   RowTree buildRowTree() const;
   std::set<odb::dbRow*> getInstanceRows(odb::dbInst* inst,
-                                        const RowTree& rows) const;
+                                        const RowTree& row_search) const;
 
   bool checkInstanceOverlap(odb::dbInst* inst0, odb::dbInst* inst1) const;
   void updateControlNetwork();
   void updateControlNetworkSTAR();
-  void updateControlNetworkDAISY(const bool order_by_x);
+  void updateControlNetworkDAISY(bool order_by_x);
 
   static constexpr const char* inst_prefix_ = "PSW_";
 };

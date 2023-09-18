@@ -347,6 +347,9 @@ class STAGuiInterface
   std::vector<std::unique_ptr<ClockTree>> getClockTrees() const;
 
   int getEndPointCount() const;
+  StaPins getEndPoints() const;
+
+  float getPinSlack(const sta::Pin* pin) const;
 
  private:
   sta::dbSta* sta_;

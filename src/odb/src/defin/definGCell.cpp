@@ -61,7 +61,7 @@ void definGCell::gcell(defDirection dir, int orig, int count, int step)
 
   dbGCellGrid* grid = _block->getGCellGrid();
 
-  if (grid == NULL)
+  if (grid == nullptr)
     grid = dbGCellGrid::create(_block);
 
   if (dir == DEF_X)

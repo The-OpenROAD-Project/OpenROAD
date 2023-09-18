@@ -63,8 +63,11 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
   initGrid();
   setGridCells();
 
-  for (int row = 0; row < row_count_; row++) {
-    placeRowFillers(row, prefix, filler_masters);
+  if (!grid_info_map_.empty()) {
+    const auto& layer = *grid_info_map_.begin();
+    for (int row = 0; row < layer.second.row_count; row++) {
+      placeRowFillers(row, prefix, filler_masters, layer.first, layer.second);
+    }
   }
 
   logger_->info(DPL, 1, "Placed {} filler instances.", filler_count_);
@@ -80,24 +83,30 @@ void Opendp::setGridCells()
 
 void Opendp::placeRowFillers(int row,
                              const char* prefix,
-                             dbMasterSeq* filler_masters)
+                             dbMasterSeq* filler_masters,
+                             int row_height,
+                             GridInfo grid_info)
 {
   int j = 0;
-  while (j < row_site_count_) {
-    Pixel* pixel = gridPixel(j, row);
+
+  int row_site_count = divFloor(core_.dx(), site_width_);
+  while (j < row_site_count) {
+    Pixel* pixel = gridPixel(grid_info.grid_index, j, row);
     const dbOrientType orient = pixel->orient_;
     if (pixel->cell == nullptr && pixel->is_valid) {
       int k = j;
-      while (k < row_site_count_ && gridPixel(k, row)->cell == nullptr
-             && gridPixel(k, row)->is_valid) {
+      while (k < row_site_count
+             && gridPixel(grid_info.grid_index, k, row)->cell == nullptr
+             && gridPixel(grid_info.grid_index, k, row)->is_valid) {
         k++;
       }
+
       int gap = k - j;
       // printf("filling row %d gap %d %d:%d\n", row, gap, j, k - 1);
       dbMasterSeq& fillers = gapFillers(gap, filler_masters);
       if (fillers.empty()) {
         int x = core_.xMin() + j * site_width_;
-        int y = core_.yMin() + row * row_height_;
+        int y = core_.yMin() + row * row_height;
         logger_->error(
             DPL,
             2,
@@ -105,12 +114,15 @@ void Opendp::placeRowFillers(int row,
             gap,
             x,
             y,
-            gridInstName(row, j - 1),
-            gridInstName(row, k + 1));
+            gridInstName(row, j - 1, row_height, grid_info),
+            gridInstName(row, k + 1, row_height, grid_info));
       } else {
         k = j;
+        debugPrint(
+            logger_, DPL, "filler", 2, "fillers size is {}.", fillers.size());
         for (dbMaster* master : fillers) {
-          string inst_name = prefix + to_string(row) + "_" + to_string(k);
+          string inst_name = prefix + to_string(grid_info.grid_index) + "_"
+                             + to_string(row) + "_" + to_string(k);
           // printf(" filler %s %d\n", inst_name.c_str(), master->getWidth() /
           // site_width_);
           dbInst* inst = dbInst::create(block_,
@@ -118,7 +130,7 @@ void Opendp::placeRowFillers(int row,
                                         inst_name.c_str(),
                                         /* physical_only */ true);
           int x = core_.xMin() + k * site_width_;
-          int y = core_.yMin() + row * row_height_;
+          int y = core_.yMin() + row * row_height;
           inst->setOrient(orient);
           inst->setLocation(x, y);
           inst->setPlacementStatus(dbPlacementStatus::PLACED);
@@ -134,16 +146,19 @@ void Opendp::placeRowFillers(int row,
   }
 }
 
-const char* Opendp::gridInstName(int row, int col)
+const char* Opendp::gridInstName(int row,
+                                 int col,
+                                 int row_height,
+                                 GridInfo grid_info)
 {
   if (col < 0) {
     return "core_left";
   }
-  if (col > row_site_count_) {
+  if (col > grid_info.site_count) {
     return "core_right";
   }
 
-  const Cell* cell = gridPixel(col, row)->cell;
+  const Cell* cell = gridPixel(grid_info.grid_index, col, row)->cell;
   if (cell) {
     return cell->db_inst_->getConstName();
   }
@@ -194,6 +209,13 @@ bool Opendp::isFiller(odb::dbInst* db_inst)
   return db_master->getType() == odb::dbMasterType::CORE_SPACER
          // Filter spacer cells used as tapcells.
          && db_inst->getPlacementStatus() != odb::dbPlacementStatus::LOCKED;
+}
+
+// Return true if cell is a single site Core Spacer.
+bool Opendp::isOneSiteCell(odb::dbMaster* db_master) const
+{
+  return db_master->getType() == odb::dbMasterType::CORE_SPACER
+         && db_master->getWidth() == site_width_;
 }
 
 }  // namespace dpl

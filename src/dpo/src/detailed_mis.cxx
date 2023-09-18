@@ -181,8 +181,12 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   // Do some things that only need to be done once regardless
   // of the number of passes.
   collectMovableCells();  // Movable cells.
-  colorCells();           // Color the cells.
-  buildGrid();            // Grid for searching for neigbours.
+  if (candidates_.empty()) {
+    mgrPtr_->getLogger()->info(DPO, 202, "No movable cells found");
+    return;
+  }
+  colorCells();  // Color the cells.
+  buildGrid();   // Grid for searching for neigbours.
 
   for (int p = 1; p <= passes; p++) {
     const double curr_obj = (obj_ == DetailedMis::Hpwl) ? curr_hpwl : curr_disp;
@@ -208,10 +212,17 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   }
   mgrPtr_->resortSegments();
 
-  const double hpwl_imp = (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
-  const double disp_imp = (((init_disp - curr_disp) / init_disp) * 100.);
-  const double curr_imp = (obj_ == DetailedMis::Hpwl) ? hpwl_imp : disp_imp;
-  const double curr_obj = (obj_ == DetailedMis::Hpwl) ? curr_hpwl : curr_disp;
+  double curr_imp;
+  double curr_obj;
+  if (obj_ == DetailedMis::Hpwl) {
+    const double hpwl_imp = (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
+    curr_imp = hpwl_imp;
+    curr_obj = curr_hpwl;
+  } else {
+    const double disp_imp = (((init_disp - curr_disp) / init_disp) * 100.);
+    curr_imp = disp_imp;
+    curr_obj = curr_disp;
+  }
   mgrPtr_->getLogger()->info(
       DPO,
       302,

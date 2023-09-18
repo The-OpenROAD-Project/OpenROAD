@@ -42,12 +42,22 @@ void FlexDRWorker::initNetObjs_pathSeg(
     map<frNet*, vector<unique_ptr<drConnFig>>, frBlockObjectComp>& netExtObjs)
 {
   const auto [begin, end] = pathSeg->getPoints();
+  auto net = pathSeg->getNet();
   if (begin.x() != end.x() && begin.y() != end.y()) {
-    logger_->error(DRT, 1010, "Unsupported non-orthogonal wire");
+    double dbu = getTech()->getDBUPerUU();
+    logger_->error(DRT,
+                   1010,
+                   "Unsupported non-orthogonal wire begin=({}, {}) end=({}, "
+                   "{}), layer {} on net {}",
+                   begin.x() / dbu,
+                   begin.y() / dbu,
+                   end.x() / dbu,
+                   end.y() / dbu,
+                   getTech()->getLayer(pathSeg->getLayerNum())->getName(),
+                   net->getName());
   }
 
   const auto gridBBox = getRouteBox();
-  auto net = pathSeg->getNet();
   nets.insert(net);
 
   const auto along = begin.x() == end.x() ? odb::vertical : odb::horizontal;
@@ -1090,8 +1100,8 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
           // pinRect now equals intersection of pinRect and routeRect
           auto currPrefRouteDir = getTech()->getLayer(currLayerNum)->getDir();
           bool useCenterLine = true;
-          auto xSpan = instPinRectBBox.xMax() - instPinRectBBox.xMin();
-          auto ySpan = instPinRectBBox.yMax() - instPinRectBBox.yMin();
+          auto xSpan = instPinRectBBox.dx();
+          auto ySpan = instPinRectBBox.dy();
           bool isPinRectHorz = (xSpan > ySpan);
 
           if (!useCenterLine) {
@@ -1619,16 +1629,14 @@ void FlexDRWorker::initNets_numPinsIn()
         }
         if (ap->getPinCost() == 0) {
           pt = ap->getPoint();
-          allPins.push_back(
-              make_pair(Rect(pt.x(), pt.y(), pt.x(), pt.y()), pin.get()));
+          allPins.emplace_back(Rect(pt, pt), pin.get());
           hasPrefAP = true;
           break;
         }
       }
       if (!hasPrefAP) {
         pt = firstAP->getPoint();
-        allPins.push_back(
-            make_pair(Rect(pt.x(), pt.y(), pt.x(), pt.y()), pin.get()));
+        allPins.emplace_back(Rect(pt, pt), pin.get());
       }
     }
   }
@@ -1661,7 +1669,7 @@ void FlexDRWorker::initNets_numPinsIn()
       y2 = std::max(y2, pt.getY());
     }
     if (x1 <= x2 && y1 <= y2) {
-      Rect box = Rect(Point(x1, y1), Point(x2, y2));
+      Rect box = Rect(x1, y1, x2, y2);
       allPins.clear();
       pinRegionQuery.query(bgi::intersects(box), back_inserter(allPins));
       net->setNumPinsIn(allPins.size());
@@ -1776,6 +1784,23 @@ void FlexDRWorker::initNets_boundaryArea()
   }
 }
 
+void FlexDRWorker::initRipUpNetsFromMarkers()
+{
+  std::set<drNet*> ripUpNets;
+  for (auto& marker : markers_) {
+    auto bloatDist = getTech()->getLayer(marker.getLayerNum())->getWidth();
+    bloatDist *= 2;
+    getRipUpNetsFromMarker(&marker, ripUpNets, bloatDist);
+  }
+  for (const auto& net : ripUpNets) {
+    for (const auto& fig : net->getRouteConnFigs()) {
+      getWorkerRegionQuery().remove(fig.get());
+    }
+    net->clearRouteConnFigs();
+    net->setRipup();
+  }
+}
+
 void FlexDRWorker::initNets(const frDesign* design)
 {
   set<frNet*, frBlockObjectComp> nets;
@@ -1788,11 +1813,15 @@ void FlexDRWorker::initNets(const frDesign* design)
   if (isInitDR()) {
     initNets_initDR(design, nets, netRouteObjs, netExtObjs, netOrigGuides);
   } else {
-    // find inteTerm/terms using netRouteObjs;
+    // find instTerm/terms using netRouteObjs;
     initNets_searchRepair(
         design, nets, netRouteObjs, netExtObjs, netOrigGuides);
   }
   initNets_regionQuery();
+  if (getRipupMode() == 2) {
+    initRipUpNetsFromMarkers();
+  }
+
   initNets_numPinsIn();
   // here because region query is needed
   if (ENABLE_BOUNDARY_MAR_FIX) {
@@ -2258,7 +2287,6 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, bool isAddPathCost)
 
 void FlexDRWorker::initMazeCost_ap()
 {
-  int cnt = 0;
   for (auto& net : nets_) {
     for (auto& pin : net->getPins()) {
       for (auto& ap : pin->getAccessPatterns()) {
@@ -2274,12 +2302,6 @@ void FlexDRWorker::initMazeCost_ap()
         if (ap->hasAccessViaDef(frDirEnum::U)) {
           gridGraph_.setSVia(mi.x(), mi.y(), mi.z());
           apSVia_[mi] = ap.get();
-          if (ap->getAccessViaDef()
-              != getTech()
-                     ->getLayer(ap->getBeginLayerNum() + 1)
-                     ->getDefaultViaDef()) {
-            cnt++;
-          }
         }
       }
     }
@@ -2531,7 +2553,7 @@ void FlexDRWorker::route_queue_init_queue(queue<RouteQueueEntry>& rerouteQueue)
     }
     mazeIterInit_sortRerouteQueue(0, checks);
     mazeIterInit_sortRerouteQueue(0, routes);
-  } else if (getRipupMode() == 1 || getRipupMode() == 2) {
+  } else if (getRipupMode() == 1) {
     // ripup all nets and clear objs here
     // nets are ripped up during initNets()
     vector<drNet*> ripupNets;
@@ -2539,15 +2561,36 @@ void FlexDRWorker::route_queue_init_queue(queue<RouteQueueEntry>& rerouteQueue)
     for (auto& net : nets_) {
       ripupNets.push_back(net.get());
     }
-
     // sort nets
     mazeIterInit_sortRerouteNets(0, ripupNets);
     for (auto& net : ripupNets) {
       routes.push_back({net, 0, true});
-      // reserve via because all nets are ripupped
+      // reserve via because all nets are ripped up
       initMazeCost_via_helper(net, true);
       // no need to clear the net because route objs are not pushed to the net
       // (See FlexDRWorker::initNet)
+    }
+  } else if (getRipupMode() == 2) {
+    std::set<drNet*> ripupNets;
+    for (auto& net : nets_) {
+      if (net->isRipup())
+        ripupNets.insert(net.get());
+    }
+    for (auto& marker : markers_) {
+      for (auto it = ripupNets.begin(); it != ripupNets.end();) {
+        drNet* net = (drNet*) *it;
+        if (marker.getSrcs().find(net->getFrNet()) != marker.getSrcs().end()) {
+          routes.push_back({net, 0, true});
+          initMazeCost_via_helper(net, true);
+          it = ripupNets.erase(it);
+        } else {
+          ++it;
+        }
+      }
+    }
+    for (auto& net : ripupNets) {
+      routes.push_back({net, 0, true});
+      initMazeCost_via_helper(net, true);
     }
   } else {
     cout << "Error: unsupported ripup mode\n";
@@ -2581,7 +2624,7 @@ void FlexDRWorker::route_queue_update_from_marker(
     vector<RouteQueueEntry>& checks,
     vector<RouteQueueEntry>& routes)
 {
-  // if shapes dont overlap routeBox, ignore violation
+  // if shapes don't overlap routeBox, ignore violation
   if (!getRouteBox().intersects(marker->getBBox())) {
     bool overlaps = false;
     for (auto& s : marker->getAggressors()) {
@@ -2756,6 +2799,40 @@ void FlexDRWorker::route_queue_update_from_marker(
   }
   for (auto& victimOwner : uniqueVictimOwners) {
     checks.push_back({victimOwner, -1, false});
+  }
+}
+
+void FlexDRWorker::getRipUpNetsFromMarker(frMarker* marker,
+                                          set<drNet*>& nets,
+                                          frCoord bloatDist)
+{
+  // if shapes don't overlap routeBox, ignore violation
+  if (!getRouteBox().intersects(marker->getBBox())) {
+    bool overlaps = false;
+    for (auto& s : marker->getAggressors()) {
+      if (std::get<1>(s.second).intersects(getRouteBox())) {
+        overlaps = true;
+        break;
+      }
+    }
+    if (!overlaps) {
+      for (auto& s : marker->getVictims()) {
+        if (std::get<1>(s.second).intersects(getRouteBox())) {
+          overlaps = true;
+          break;
+        }
+      }
+      if (!overlaps)
+        return;
+    }
+  }
+  auto bbox = marker->getBBox();
+  bbox.bloat(bloatDist, bbox);
+  std::vector<drConnFig*> figs;
+  getWorkerRegionQuery().query(bbox, marker->getLayerNum(), figs);
+  for (auto fig : figs) {
+    auto net = fig->getNet();
+    nets.insert(net);
   }
 }
 
@@ -3162,22 +3239,18 @@ void FlexDRWorker::initMazeCost_planarTerm(const frDesign* design)
 
 void FlexDRWorker::initMazeCost_connFig()
 {
-  int cnt = 0;
   for (auto& net : nets_) {
     for (auto& connFig : net->getExtConnFigs()) {
       addPathCost(connFig.get());
-      cnt++;
     }
     for (auto& connFig : net->getRouteConnFigs()) {
       addPathCost(connFig.get());
-      cnt++;
     }
     gcWorker_->updateDRNet(net.get());
     gcWorker_->updateGCWorker();
     modEolCosts_poly(gcWorker_->getNet(net->getFrNet()),
                      ModCostType::addRouteShape);
   }
-  // cout <<"init " <<cnt <<" connfig costs" <<endl;
 }
 
 void FlexDRWorker::initMazeCost_via_helper(drNet* net, bool isAddPathCost)
@@ -3301,6 +3374,10 @@ void FlexDRWorker::initMarkers(const frDesign* design)
 void FlexDRWorker::init(const frDesign* design)
 {
   initNets(design);
+  if (nets_.empty() && getRipupMode() == 1) {
+    skipRouting_ = true;
+    return;
+  }
   initGridGraph(design);
   initMazeIdx();
   std::unique_ptr<FlexGCWorker> gcWorker

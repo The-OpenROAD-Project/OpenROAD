@@ -128,23 +128,20 @@ void VoltageDomain::resetGrids()
   }
 }
 
-const std::vector<odb::dbRow*> VoltageDomain::getRows() const
+std::vector<odb::dbRow*> VoltageDomain::getRows() const
 {
   if (hasRegion()) {
     return getRegionRows();
-  } else {
-    return getDomainRows();
   }
+  return getDomainRows();
 }
 
-const odb::Rect VoltageDomain::getDomainArea() const
+odb::Rect VoltageDomain::getDomainArea() const
 {
   if (hasRegion()) {
     return getRegionBoundary(region_);
-  } else {
-    odb::Rect core = block_->getCoreArea();
-    return core;
   }
+  return block_->getCoreArea();
 }
 
 int VoltageDomain::getRegionRectCount(odb::dbRegion* region) const
@@ -157,7 +154,7 @@ int VoltageDomain::getRegionRectCount(odb::dbRegion* region) const
   return boundaries.size();
 }
 
-const odb::Rect VoltageDomain::getRegionBoundary(odb::dbRegion* region) const
+odb::Rect VoltageDomain::getRegionBoundary(odb::dbRegion* region) const
 {
   if (region == nullptr) {
     return {};
@@ -171,7 +168,7 @@ const odb::Rect VoltageDomain::getRegionBoundary(odb::dbRegion* region) const
   return {};
 }
 
-const std::vector<odb::dbRow*> VoltageDomain::getRegionRows() const
+std::vector<odb::dbRow*> VoltageDomain::getRegionRows() const
 {
   std::vector<odb::dbRow*> rows;
 
@@ -191,7 +188,7 @@ const std::vector<odb::dbRow*> VoltageDomain::getRegionRows() const
   return rows;
 }
 
-const std::vector<odb::dbRow*> VoltageDomain::getDomainRows() const
+std::vector<odb::dbRow*> VoltageDomain::getDomainRows() const
 {
   std::set<odb::dbRow*> claimed_rows;
   for (auto* domain : pdngen_->getDomains()) {
@@ -249,7 +246,7 @@ void VoltageDomain::report() const
   }
 }
 
-odb::dbNet* VoltageDomain::findDomainNet(odb::dbSigType type) const
+odb::dbNet* VoltageDomain::findDomainNet(const odb::dbSigType& type) const
 {
   std::set<odb::dbNet*> nets;
 
@@ -302,9 +299,10 @@ void VoltageDomain::determinePowerGroundNets()
 void VoltageDomain::removeGrid(Grid* grid)
 {
   grids_.erase(
-      std::remove_if(grids_.begin(), grids_.end(), [grid](const auto& other) {
-        return other.get() == grid;
-      }));
+      std::remove_if(grids_.begin(),
+                     grids_.end(),
+                     [grid](const auto& other) { return other.get() == grid; }),
+      grids_.end());
 }
 
 void VoltageDomain::checkSetup() const

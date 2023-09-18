@@ -36,6 +36,7 @@
 sta::define_cmd_args "analyze_power_grid" {
   [-vsrc vsrc_file ]
   [-outfile out_file]
+  [-error_file err_file]
   [-enable_em]
   [-em_outfile em_out_file]
   [-net net_name]
@@ -43,22 +44,17 @@ sta::define_cmd_args "analyze_power_grid" {
   [-dy bump_pitch_y]
   [-node_density val_node_density]
   [-node_density_factor val_node_density_factor]
+  [-corner corner]
   }
 
 proc analyze_power_grid { args } {
   sta::parse_key_args "analyze_power_grid" args \
-    keys {-vsrc -outfile -em_outfile -net -dx -dy -node_density -node_density_factor} flags {-enable_em}
+    keys {-vsrc -outfile -error_file -em_outfile -net -dx -dy -node_density -node_density_factor -corner} flags {-enable_em}
   if { [info exists keys(-vsrc)] } {
-    set vsrc_file $keys(-vsrc)
-    if { [file readable $vsrc_file] } {
-      psm::import_vsrc_cfg_cmd $vsrc_file
-    } else {
-      utl::error PSM 53 "Cannot read $vsrc_file."
-    }
+    psm::import_vsrc_cfg_cmd $keys(-vsrc)
   }
   if { [info exists keys(-net)] } {
-    set net $keys(-net)
-    psm::set_power_net $net
+    psm::set_power_net [psm::find_net $keys(-net)]
   } else {
     utl::error PSM 54 "Argument -net not specified."
   }
@@ -70,6 +66,8 @@ proc analyze_power_grid { args } {
     set bump_pitch_y $keys(-dy)
     psm::set_bump_pitch_y $bump_pitch_y
   }
+
+  psm::set_corner [sta::parse_corner_or_default keys]
 
   if { [info exists keys(-node_density)] && [info exists keys(-node_density_factor)] } {
     utl::error PSM 77 "Cannot use both node_density and node_density_factor together. Use any one argument"
@@ -83,45 +81,50 @@ proc analyze_power_grid { args } {
     set val_node_density $keys(-node_density_factor)
     psm::set_node_density_factor $val_node_density
   }
+  set voltage_file ""
   if { [info exists keys(-outfile)] } {
-    set out_file $keys(-outfile)
-    psm::import_out_file_cmd $out_file
+    set voltage_file $keys(-outfile)
+  }
+  set error_file ""
+  if { [info exists keys(-error_file)] } {
+    set error_file $keys(-error_file)
   }
   set enable_em [info exists flags(-enable_em)]
-  psm::import_em_enable $enable_em
+  set em_file ""
   if { [info exists keys(-em_outfile)]} {
-    set em_out_file $keys(-em_outfile)
-    if { $enable_em } {
-      psm::import_em_out_file_cmd $em_out_file
-    } else {
+    set em_file $keys(-em_outfile)
+    if { !$enable_em } {
       utl::error PSM 55 "EM outfile defined without EM enable flag. Add -enable_em."
     }
   }
   if { [ord::db_has_rows] } {
-    psm::analyze_power_grid_cmd
+    psm::analyze_power_grid_cmd $voltage_file $enable_em $em_file $error_file
   } else {
     utl::error PSM 56 "No rows defined in design. Floorplan not defined. Use initialize_floorplan to add rows."
   }
 }
 
 sta::define_cmd_args "check_power_grid" {
+  [-error_file error_file]
   [-net power_net]}
 
 proc check_power_grid { args } {
   sta::parse_key_args "check_power_grid" args \
-    keys {-net} flags {}
+    keys {-net -error_file} flags {}
   if { [info exists keys(-net)] } {
-     set net $keys(-net)
-     psm::set_power_net $net
+    psm::set_power_net [psm::find_net $keys(-net)]
   } else {
-     utl::error PSM 57 "Argument -net not specified."
+    utl::error PSM 57 "Argument -net not specified."
+  }
+  set error_file ""
+  if { [info exists keys(-error_file)] } {
+    set error_file $keys(-error_file)
   }
   if { [ord::db_has_rows] } {
-    set res [psm::check_connectivity_cmd]
-    if {$res == 0} {
-        utl::error PSM 69 "Check connectivity failed."
+    if { ![psm::check_connectivity_cmd $error_file] } {
+      utl::error PSM 69 "Check connectivity failed."
     }
-    return $res
+    return true
   } else {
     utl::error PSM 58 "No rows defined in design. Use initialize_floorplan to add rows."
   }
@@ -133,11 +136,12 @@ sta::define_cmd_args "write_pg_spice" {
   [-net net_name]
   [-dx bump_pitch_x]
   [-dy bump_pitch_y]
+  [-corner corner]
   }
 
 proc write_pg_spice { args } {
   sta::parse_key_args "write_pg_spice" args \
-    keys {-vsrc -outfile -net -dx -dy} flags {}
+    keys {-vsrc -outfile -net -dx -dy -corner} flags {}
   if { [info exists keys(-vsrc)] } {
     set vsrc_file $keys(-vsrc)
     if { [file readable $vsrc_file] } {
@@ -146,13 +150,11 @@ proc write_pg_spice { args } {
       utl::error PSM 59 "Cannot read $vsrc_file."
     }
   }
-  if { [info exists keys(-outfile)] } {
-    set out_file $keys(-outfile)
-     psm::import_spice_out_file_cmd $out_file
+  if { ![info exists keys(-outfile)] } {
+    utl::error PSM 85 "Argument -outfile not specified."
   }
   if { [info exists keys(-net)] } {
-    set net $keys(-net)
-    psm::set_power_net $net
+    psm::set_power_net [psm::find_net $keys(-net)]
   } else {
     utl::error PSM 60 "Argument -net not specified."
   }
@@ -165,8 +167,10 @@ proc write_pg_spice { args } {
     psm::set_bump_pitch_y $bump_pitch_y
   }
 
+  psm::set_corner [sta::parse_corner_or_default keys]
+
   if { [ord::db_has_rows] } {
-    psm::write_pg_spice_cmd
+    psm::write_pg_spice_cmd $keys(-outfile)
   } else {
     utl::error PSM 61 "No rows defined in design. Use initialize_floorplan to add rows and construct PDN."
   }
@@ -180,7 +184,7 @@ proc set_pdnsim_net_voltage { args } {
   sta::parse_key_args "set_pdnsim_net_voltage" args \
     keys {-net -voltage} flags {}
   if { [info exists keys(-net)] && [info exists keys(-voltage)] } {
-    set net $keys(-net)
+    set net [psm::find_net $keys(-net)]
     set voltage $keys(-voltage)
     psm::set_net_voltage_cmd $net $voltage
   } else {
@@ -189,11 +193,11 @@ proc set_pdnsim_net_voltage { args } {
 }
 
 namespace eval psm {
-proc debug_gui { args } {
-  sta::parse_key_args "debug" args \
-      keys {} \
-      flags {}
-
-  set_debug_gui_cmd
+proc find_net {net_name} {
+  set net [[ord::get_db_block] findNet $net_name]
+  if { $net == "NULL" } {
+    utl::error PSM 28 "Cannot find net $net_name in the design."
+  }
+  return $net
 }
 }

@@ -41,7 +41,7 @@ class frInstBlockage : public frBlockObject
  public:
   // constructors
   frInstBlockage(frInst* inst, frBlockage* blockage)
-      : inst_(inst), blockage_(blockage), index_in_owner_(0)
+      : inst_(inst), blockage_(blockage)
   {
   }
   // getters
@@ -54,8 +54,10 @@ class frInstBlockage : public frBlockObject
   int getIndexInOwner() const { return index_in_owner_; }
 
  private:
+  // Place this first so it is adjacent to "int id_" inherited from
+  // frBlockObject, saving 8 bytes.
+  int index_in_owner_{0};
   frInst* inst_;
   frBlockage* blockage_;
-  int index_in_owner_;
 };
 }  // namespace fr

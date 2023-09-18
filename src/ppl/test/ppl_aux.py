@@ -98,9 +98,6 @@ def place_pins(design, *,
     if corner_avoidance != None:
         distance = corner_avoidance
         params.setCornerAvoidance(design.micronToDBU(distance))
-    else:
-        utl.report(f"Using {distance}u default distance from corners.")
-        params.setCornerAvoidance(design.micronToDBU(distance))
 
     min_dist = 2
     if min_distance != None:
@@ -370,7 +367,7 @@ def set_io_pin_constraint(design, *,
 
     elif group:
         if pin_names != None:
-            utl.info(utl.PPL, 44, f"Pin group: [{pin_names}]")
+            utl.info(utl.PPL, 44, f"Pin group: [ {pin_names} ]")
             names = pin_names.split()
             pin_list = []
             for pin_name in names:

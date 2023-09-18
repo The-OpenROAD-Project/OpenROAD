@@ -61,7 +61,7 @@ class dbId
   unsigned int _id;
 
  public:
-  typedef T _type;
+  using _type = T;
 
   dbId() { _id = 0; }
   dbId(const dbId<T>& id) : _id(id._id) {}

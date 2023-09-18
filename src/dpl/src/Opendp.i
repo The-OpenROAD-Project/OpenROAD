@@ -35,8 +35,12 @@
 %{
 
 #include "ord/OpenRoad.hh"
+#include "Graphics.h"
+#include "DplObserver.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
+
+
 
 namespace dpl {
 
@@ -92,10 +96,11 @@ namespace dpl {
 
 void
 detailed_placement_cmd(int max_displacment_x,
-                       int max_displacment_y)
-{
+                       int max_displacment_y,
+                       bool disallow_one_site_gaps,
+                       const char* report_file_name){
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->detailedPlacement(max_displacment_x, max_displacment_y);
+  opendp->detailedPlacement(max_displacment_x, max_displacment_y, std::string(report_file_name), disallow_one_site_gaps);
 }
 
 void
@@ -106,10 +111,10 @@ report_legalization_stats()
 }
 
 void
-check_placement_cmd(bool verbose)
+check_placement_cmd(bool verbose, bool disallow_one_site_gaps, const char* report_file_name)
 {
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->checkPlacement(verbose);
+  opendp->checkPlacement(verbose, disallow_one_site_gaps, std::string(report_file_name));
 }
 
 
@@ -162,12 +167,15 @@ optimize_mirroring_cmd()
 }
 
 void
-set_debug_cmd(bool displacement,
-              float min_displacement,
+set_debug_cmd(float min_displacement,
               const odb::dbInst* debug_instance)
 {
-  dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->setDebug(displacement, min_displacement, debug_instance);
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  if (dpl::Graphics::guiActive()) {
+      std::unique_ptr<DplObserver> graphics = std::make_unique<dpl::Graphics>(
+          opendp, min_displacement, debug_instance);
+      opendp->setDebug(graphics);
+  }
 }
 
 } // namespace

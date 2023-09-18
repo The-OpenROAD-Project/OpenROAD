@@ -36,9 +36,13 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace odb {
 class dbBlock;
+class dbMaster;
+class dbMTerm;
+class dbNet;
 }  // namespace odb
 
 namespace ifp {
@@ -121,6 +125,12 @@ namespace pad {
 class ICeWall;
 }
 
+namespace sta {
+class dbSta;
+class Corner;
+class MinMax;
+}  // namespace sta
+
 namespace ord {
 
 class Tech;
@@ -128,12 +138,13 @@ class Tech;
 class Design
 {
  public:
-  Design(Tech* tech);
+  explicit Design(Tech* tech);
   void readVerilog(const std::string& file_name);
   void readDef(const std::string& file_name,
                bool continue_on_errors = false,
                bool floorplan_init = false,
-               bool incremental = false);
+               bool incremental = false,
+               bool child = false);
   void link(const std::string& design_name);
 
   void readDb(const std::string& file_name);
@@ -149,6 +160,17 @@ class Design
   const std::string evalTclString(const std::string& cmd);
 
   Tech* getTech();
+
+  // Timing related methods
+  std::vector<sta::Corner*> getCorners();
+  enum MinMax
+  {
+    Min,
+    Max
+  };
+  float getNetCap(odb::dbNet* net, sta::Corner* corner, MinMax minmax);
+  bool isSequential(odb::dbMaster* master);
+  std::vector<odb::dbMTerm*> getTimingFanoutFrom(odb::dbMTerm* input);
 
   // Services
   ifp::InitFloorplan* getFloorplan();
@@ -172,6 +194,9 @@ class Design
   pad::ICeWall* getICeWall();
 
  private:
+  sta::dbSta* getSta();
+  sta::MinMax* getMinMax(MinMax type);
+
   Tech* tech_;
 };
 

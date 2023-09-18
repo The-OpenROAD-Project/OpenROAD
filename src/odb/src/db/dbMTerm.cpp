@@ -32,6 +32,8 @@
 
 #include "dbMTerm.h"
 
+#include <spdlog/fmt/ostr.h>
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbLib.h"
@@ -153,7 +155,7 @@ void _dbMTerm::out(dbDiff& diff, char side, const char* field) const
 _dbMTerm::_dbMTerm(_dbDatabase*, const _dbMTerm& m)
     : _flags(m._flags),
       _order_id(m._order_id),
-      _name(NULL),
+      _name(nullptr),
       _next_entry(m._next_entry),
       _next_mterm(m._next_mterm),
       _pins(m._pins),
@@ -411,7 +413,7 @@ dbTechAntennaPinModel* dbMTerm::createDefaultAntennaModel()
       = (_dbTechAntennaPinModel*) getDefaultAntennaModel();
 
   // Reinitialize the object to its default state...
-  if (m != NULL) {
+  if (m != nullptr) {
     m->~_dbTechAntennaPinModel();
     new (m) _dbTechAntennaPinModel(mterm->getDatabase());
     m->_mterm = getImpl()->getOID();
@@ -431,7 +433,7 @@ dbTechAntennaPinModel* dbMTerm::createOxide2AntennaModel()
   _dbTechAntennaPinModel* m = (_dbTechAntennaPinModel*) getOxide2AntennaModel();
 
   // Reinitialize the object to its default state...
-  if (m != NULL) {
+  if (m != nullptr) {
     m->~_dbTechAntennaPinModel();
     new (m) _dbTechAntennaPinModel(mterm->getDatabase());
     m->_mterm = getImpl()->getOID();
@@ -462,7 +464,7 @@ dbTechAntennaPinModel* dbMTerm::getDefaultAntennaModel() const
   _dbMTerm* mterm = (_dbMTerm*) this;
 
   if (mterm->_oxide1 == 0)
-    return NULL;
+    return nullptr;
 
   _dbMaster* master = (_dbMaster*) mterm->getOwner();
   return (dbTechAntennaPinModel*) master->_antenna_pin_model_tbl->getPtr(
@@ -474,7 +476,7 @@ dbTechAntennaPinModel* dbMTerm::getOxide2AntennaModel() const
   _dbMTerm* mterm = (_dbMTerm*) this;
 
   if (mterm->_oxide2 == 0)
-    return NULL;
+    return nullptr;
 
   _dbMaster* master = (_dbMaster*) mterm->getOwner();
   return (dbTechAntennaPinModel*) master->_antenna_pin_model_tbl->getPtr(
@@ -521,7 +523,7 @@ void dbMTerm::writeAntennaLef(lefout& writer) const
     getDefaultAntennaModel()->writeLef(tech, writer);
 
   if (hasOxide2AntennaModel()) {
-    fprintf(writer.out(), "        ANTENNAMODEL OXIDE2 ;\n");
+    fmt::print(writer.out(), "        ANTENNAMODEL OXIDE2 ;\n");
     getOxide2AntennaModel()->writeLef(tech, writer);
   }
 }
@@ -535,13 +537,13 @@ dbMTerm* dbMTerm::create(dbMaster* master_,
   _dbMaster* master = (_dbMaster*) master_;
 
   if (master->_flags._frozen || master->_mterm_hash.hasMember(name_))
-    return NULL;
+    return nullptr;
 
   _dbMTerm* mterm = master->_mterm_tbl->create();
   mterm->_name = strdup(name_);
   ZALLOCATED(mterm->_name);
-  mterm->_flags._io_type = io_type_;
-  mterm->_flags._sig_type = sig_type_;
+  mterm->_flags._io_type = io_type_.getValue();
+  mterm->_flags._sig_type = sig_type_.getValue();
   mterm->_flags._shape_type = shape_type_;
   if (sig_type_ == dbSigType::CLOCK)
     master_->setSequential(1);

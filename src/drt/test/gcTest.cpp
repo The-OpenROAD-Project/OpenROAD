@@ -1156,4 +1156,34 @@ BOOST_DATA_TEST_CASE(cut_spc_adjacent_cuts, (bdata::make({true, false})), lef58)
   }
 }
 
+BOOST_AUTO_TEST_CASE(cut_keepoutzone)
+{
+  // Setup
+  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  frViaDef* vd_bar = makeViaDef("V2_BAR", 3, {0, 0}, {200, 150});
+  makeCutClass(3, "Vx", 150, 200);
+
+  auto db_layer = db_tech->findLayer("v2");
+  auto dbRule = odb::dbTechLayerKeepOutZoneRule::create(db_layer);
+  dbRule->setFirstCutClass("Vx");
+  dbRule->setEndSideExtension(51);
+  dbRule->setEndForwardExtension(51);
+  dbRule->setSideSideExtension(51);
+  dbRule->setSideForwardExtension(51);
+  makeKeepOutZoneRule(3, dbRule);
+
+  frNet* n1 = makeNet("n1");
+  makeVia(vd_bar, n1, {0, 0});
+  makeVia(vd_bar, n1, {150, 200});
+  runGC();
+
+  // // Test the results
+  auto& markers = worker.getMarkers();
+  BOOST_TEST(markers.size() == 1);
+  testMarker(markers[0].get(),
+             3,
+             frConstraintTypeEnum::frcLef58KeepOutZoneConstraint,
+             Rect(150, 150, 200, 200));
+}
 BOOST_AUTO_TEST_SUITE_END();

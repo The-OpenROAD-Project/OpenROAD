@@ -63,7 +63,12 @@ void initTritonCts(OpenRoad* openroad)
   // Define swig TCL commands.
   Cts_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::cts_tcl_inits);
-  openroad->getTritonCts()->init(openroad);
+  openroad->getTritonCts()->init(openroad->getLogger(),
+                                 openroad->getDb(),
+                                 openroad->getDbNetwork(),
+                                 openroad->getSta(),
+                                 openroad->getSteinerTreeBuilder(),
+                                 openroad->getResizer());
 }
 
 void deleteTritonCts(cts::TritonCTS* tritoncts)

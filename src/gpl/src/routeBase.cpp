@@ -37,6 +37,7 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include <utility>
 
 #include "grt/GlobalRouter.h"
 #include "nesterovBase.h"
@@ -296,7 +297,7 @@ RouteBase::RouteBase()
     : rbVars_(),
       db_(nullptr),
       grouter_(nullptr),
-      nb_(nullptr),
+      nbc_(nullptr),
       log_(nullptr),
       inflatedAreaDelta_(0),
       bloatIterCnt_(0),
@@ -311,16 +312,17 @@ RouteBase::RouteBase()
 RouteBase::RouteBase(RouteBaseVars rbVars,
                      odb::dbDatabase* db,
                      grt::GlobalRouter* grouter,
-                     std::shared_ptr<NesterovBase> nb,
+                     std::shared_ptr<NesterovBaseCommon> nbc,
+                     std::vector<std::shared_ptr<NesterovBase>> nbVec,
                      utl::Logger* log)
     : RouteBase()
 {
   rbVars_ = rbVars;
   db_ = db;
   grouter_ = grouter;
-  nb_ = nb;
+  nbc_ = std::move(nbc);
   log_ = log;
-
+  nbVec_ = std::move(nbVec);
   init();
 }
 
@@ -332,7 +334,7 @@ void RouteBase::reset()
 {
   rbVars_.reset();
   db_ = nullptr;
-  nb_ = nullptr;
+  nbc_ = nullptr;
   log_ = nullptr;
 
   bloatIterCnt_ = inflationIterCnt_ = 0;
@@ -363,13 +365,13 @@ void RouteBase::init()
   tg_ = std::move(tg);
 
   tg_->setLogger(log_);
-  minRcCellSize_.resize(nb_->gCells().size(), std::make_pair(0, 0));
+  minRcCellSize_.resize(nbc_->gCells().size(), std::make_pair(0, 0));
 }
 
 void RouteBase::getGlobalRouterResult()
 {
   // update gCells' location to DB for GR
-  nb_->updateDbGCells();
+  nbc_->updateDbGCells();
 
   // these two options must be on
   grouter_->setAllowCongestion(true);
@@ -431,13 +433,13 @@ static float getUsageCapacityRatio(Tile* tile,
 
   // escape tile ratio cals when capacity = 0
   if (curCap == 0) {
-    return -1 * FLT_MAX;
+    return std::numeric_limits<float>::lowest();
   }
 
   // ignore if blockage is too huge in current tile
   float blockageRatio = static_cast<float>(blockage) / curCap;
   if (blockageRatio >= ignoreEdgeRatio) {
-    return -1 * FLT_MAX;
+    return std::numeric_limits<float>::lowest();
   }
 
   // return usage (used routing track + blockage) / total capacity
@@ -579,16 +581,16 @@ std::pair<bool, bool> RouteBase::routability()
   //
   if (minRc_ > curRc) {
     minRc_ = curRc;
-    minRcTargetDensity_ = nb_->targetDensity();
+    minRcTargetDensity_ = nbVec_[0]->targetDensity();
     minRcViolatedCnt_ = 0;
 
     // save cell size info
-    for (auto& gCell : nb_->gCells()) {
+    for (auto& gCell : nbc_->gCells()) {
       if (!gCell->isStdInstance()) {
         continue;
       }
 
-      minRcCellSize_[&gCell - &nb_->gCells()[0]]
+      minRcCellSize_[&gCell - nbc_->gCells().data()]
           = std::make_pair(gCell->dx(), gCell->dy());
     }
   } else {
@@ -607,7 +609,7 @@ std::pair<bool, bool> RouteBase::routability()
   inflatedAreaDelta_ = 0;
 
   // run bloating and get inflatedAreaDelta_
-  for (auto& gCell : nb_->gCells()) {
+  for (auto& gCell : nbc_->gCells()) {
     // only care about "standard cell"
     if (!gCell->isStdInstance()) {
       continue;
@@ -650,55 +652,57 @@ std::pair<bool, bool> RouteBase::routability()
       = 1.0 / static_cast<float>(rbVars_.maxInflationIter);
 
   // TODO: will be implemented
-  if (inflatedAreaDelta_
-      > targetInflationDeltaAreaRatio
-            * (nb_->whiteSpaceArea()
-               - (nb_->nesterovInstsArea() + nb_->totalFillerArea()))) {
+  if (inflatedAreaDelta_ > targetInflationDeltaAreaRatio
+                               * (nbVec_[0]->whiteSpaceArea()
+                                  - (nbVec_[0]->nesterovInstsArea()
+                                     + nbVec_[0]->totalFillerArea()))) {
     // TODO dynamic inflation procedure?
   }
 
   log_->info(GPL, 45, "InflatedAreaDelta: {}", inflatedAreaDelta_);
-  log_->info(GPL, 46, "TargetDensity: {}", nb_->targetDensity());
+  log_->info(GPL, 46, "TargetDensity: {}", nbVec_[0]->targetDensity());
 
-  int64_t totalGCellArea
-      = inflatedAreaDelta_ + nb_->nesterovInstsArea() + nb_->totalFillerArea();
+  int64_t totalGCellArea = inflatedAreaDelta_ + nbVec_[0]->nesterovInstsArea()
+                           + nbVec_[0]->totalFillerArea();
 
   // newly set Density
-  nb_->setTargetDensity(static_cast<float>(totalGCellArea)
-                        / static_cast<float>(nb_->whiteSpaceArea()));
+  nbVec_[0]->setTargetDensity(
+      static_cast<float>(totalGCellArea)
+      / static_cast<float>(nbVec_[0]->whiteSpaceArea()));
 
   //
   // max density detection or,
   // rc not improvement detection -- (not improved the RC values 3 times in a
   // row)
   //
-  if (nb_->targetDensity() > rbVars_.maxDensity || minRcViolatedCnt_ >= 3) {
+  if (nbVec_[0]->targetDensity() > rbVars_.maxDensity
+      || minRcViolatedCnt_ >= 3) {
     log_->report("Revert Routability Procedure");
     log_->info(GPL, 47, "SavedMinRC: {}", minRc_);
     log_->info(GPL, 48, "SavedTargetDensity: {}", minRcTargetDensity_);
 
-    nb_->setTargetDensity(minRcTargetDensity_);
+    nbVec_[0]->setTargetDensity(minRcTargetDensity_);
 
     revertGCellSizeToMinRc();
 
-    nb_->updateDensitySize();
+    nbVec_[0]->updateDensitySize();
     resetRoutabilityResources();
 
     return make_pair(false, true);
   }
 
-  log_->info(GPL, 49, "WhiteSpaceArea: {}", nb_->whiteSpaceArea());
-  log_->info(GPL, 50, "NesterovInstsArea: {}", nb_->nesterovInstsArea());
-  log_->info(GPL, 51, "TotalFillerArea: {}", nb_->totalFillerArea());
+  log_->info(GPL, 49, "WhiteSpaceArea: {}", nbVec_[0]->whiteSpaceArea());
+  log_->info(GPL, 50, "NesterovInstsArea: {}", nbVec_[0]->nesterovInstsArea());
+  log_->info(GPL, 51, "TotalFillerArea: {}", nbVec_[0]->totalFillerArea());
   log_->info(GPL,
              52,
              "TotalGCellsArea: {}",
-             nb_->nesterovInstsArea() + nb_->totalFillerArea());
-  log_->info(
-      GPL,
-      53,
-      "ExpectedTotalGCellsArea: {}",
-      inflatedAreaDelta_ + nb_->nesterovInstsArea() + nb_->totalFillerArea());
+             nbVec_[0]->nesterovInstsArea() + nbVec_[0]->totalFillerArea());
+  log_->info(GPL,
+             53,
+             "ExpectedTotalGCellsArea: {}",
+             inflatedAreaDelta_ + nbVec_[0]->nesterovInstsArea()
+                 + nbVec_[0]->totalFillerArea());
 
   // cut filler cells accordingly
   //  if( nb_->totalFillerArea() > inflatedAreaDelta_ ) {
@@ -711,20 +715,21 @@ std::pair<bool, bool> RouteBase::routability()
   //  }
 
   // updateArea
-  nb_->updateAreas();
+  nbVec_[0]->updateAreas();
 
-  log_->info(GPL, 54, "NewTargetDensity: {}", nb_->targetDensity());
-  log_->info(GPL, 55, "NewWhiteSpaceArea: {}", nb_->whiteSpaceArea());
-  log_->info(GPL, 56, "MovableArea: {}", nb_->movableArea());
-  log_->info(GPL, 57, "NewNesterovInstsArea: {}", nb_->nesterovInstsArea());
-  log_->info(GPL, 58, "NewTotalFillerArea: {}", nb_->totalFillerArea());
+  log_->info(GPL, 54, "NewTargetDensity: {}", nbVec_[0]->targetDensity());
+  log_->info(GPL, 55, "NewWhiteSpaceArea: {}", nbVec_[0]->whiteSpaceArea());
+  log_->info(GPL, 56, "MovableArea: {}", nbVec_[0]->movableArea());
+  log_->info(
+      GPL, 57, "NewNesterovInstsArea: {}", nbVec_[0]->nesterovInstsArea());
+  log_->info(GPL, 58, "NewTotalFillerArea: {}", nbVec_[0]->totalFillerArea());
   log_->info(GPL,
              59,
              "NewTotalGCellsArea: {}",
-             nb_->nesterovInstsArea() + nb_->totalFillerArea());
+             nbVec_[0]->nesterovInstsArea() + nbVec_[0]->totalFillerArea());
 
   // update densitySizes for all gCell
-  nb_->updateDensitySize();
+  nbVec_[0]->updateDensitySize();
 
   // reset
   resetRoutabilityResources();
@@ -735,12 +740,12 @@ std::pair<bool, bool> RouteBase::routability()
 void RouteBase::revertGCellSizeToMinRc()
 {
   // revert back the gcell sizes
-  for (auto& gCell : nb_->gCells()) {
+  for (auto& gCell : nbc_->gCells()) {
     if (!gCell->isStdInstance()) {
       continue;
     }
 
-    int idx = &gCell - &nb_->gCells()[0];
+    int idx = &gCell - nbc_->gCells().data();
 
     gCell->setSize(minRcCellSize_[idx].first, minRcCellSize_[idx].second);
   }

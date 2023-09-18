@@ -39,10 +39,7 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
-// User Code Begin Includes
-// User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayerSpacingTablePrlRule>;
 
 bool _dbTechLayerSpacingTablePrlRule::operator==(
@@ -60,32 +57,28 @@ bool _dbTechLayerSpacingTablePrlRule::operator==(
   if (eol_width_ != rhs.eol_width_)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
+
 bool _dbTechLayerSpacingTablePrlRule::operator<(
     const _dbTechLayerSpacingTablePrlRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
+
 void _dbTechLayerSpacingTablePrlRule::differences(
     dbDiff& diff,
     const char* field,
     const _dbTechLayerSpacingTablePrlRule& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_.wrong_direction_);
   DIFF_FIELD(flags_.same_mask_);
   DIFF_FIELD(flags_.exceept_eol_);
   DIFF_FIELD(eol_width_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
+
 void _dbTechLayerSpacingTablePrlRule::out(dbDiff& diff,
                                           char side,
                                           const char* field) const
@@ -96,19 +89,17 @@ void _dbTechLayerSpacingTablePrlRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(flags_.exceept_eol_);
   DIFF_OUT_FIELD(eol_width_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
+
 _dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
     _dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
   *flags__bit_field = 0;
   eol_width_ = 0;
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
+
 _dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
     _dbDatabase* db,
     const _dbTechLayerSpacingTablePrlRule& r)
@@ -118,8 +109,6 @@ _dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
   flags_.exceept_eol_ = r.flags_.exceept_eol_;
   flags_.spare_bits_ = r.flags_.spare_bits_;
   eol_width_ = r.eol_width_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj)
@@ -136,6 +125,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerSpacingTablePrlRule& obj)
 {
@@ -154,12 +144,7 @@ dbOStream& operator<<(dbOStream& stream,
 
 _dbTechLayerSpacingTablePrlRule::~_dbTechLayerSpacingTablePrlRule()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

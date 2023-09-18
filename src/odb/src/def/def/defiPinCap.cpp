@@ -1,6 +1,6 @@
 // *****************************************************************************
 // *****************************************************************************
-// Copyright 2013 - 2015, Cadence Design Systems
+// Copyright 2013 - 2019, Cadence Design Systems
 //
 // This  file  is  part  of  the  Cadence  LEF/DEF  Open   Source
 // Distribution,  Product Version 5.8.
@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -104,63 +104,6 @@ void defiPinAntennaModel::Init()
   APinMaxCutCarAllocated_ = 0;  // 5.4
   APinMaxCutCar_ = 0;
   APinMaxCutCarLayer_ = 0;
-  oxide_ = 0;
-}
-
-DEF_COPY_CONSTRUCTOR_C(defiPinAntennaModel)
-{
-  this->Init();
-
-  DEF_MALLOC_FUNC(oxide_, char, sizeof(char) * (strlen(prev.oxide_) + 1));
-  DEF_COPY_FUNC(numAPinGateArea_);
-  DEF_COPY_FUNC(APinGateAreaAllocated_);
-  DEF_MALLOC_FUNC(APinGateArea_, int, sizeof(int) * numAPinGateArea_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinGateAreaLayer_, numAPinGateArea_);
-
-  DEF_COPY_FUNC(numAPinMaxAreaCar_);
-  DEF_COPY_FUNC(APinMaxAreaCarAllocated_);
-  DEF_MALLOC_FUNC(APinMaxAreaCar_, int, sizeof(int) * numAPinMaxAreaCar_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinMaxAreaCarLayer_, numAPinMaxAreaCar_);
-
-  DEF_COPY_FUNC(numAPinMaxSideAreaCar_);
-  DEF_COPY_FUNC(APinMaxSideAreaCarAllocated_);
-  DEF_MALLOC_FUNC(
-      APinMaxSideAreaCar_, int, sizeof(int) * numAPinMaxSideAreaCar_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinMaxSideAreaCarLayer_, numAPinMaxSideAreaCar_);
-
-  DEF_COPY_FUNC(numAPinMaxCutCar_);
-  DEF_COPY_FUNC(APinMaxCutCarAllocated_);
-  DEF_MALLOC_FUNC(APinMaxCutCar_, int, sizeof(int) * numAPinMaxCutCar_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinMaxCutCarLayer_, numAPinMaxCutCar_);
-}
-
-DEF_ASSIGN_OPERATOR_C(defiPinAntennaModel)
-{
-  CHECK_SELF_ASSIGN
-  this->Init();
-
-  DEF_MALLOC_FUNC(oxide_, char, sizeof(char) * (strlen(prev.oxide_) + 1));
-  DEF_COPY_FUNC(numAPinGateArea_);
-  DEF_COPY_FUNC(APinGateAreaAllocated_);
-  DEF_MALLOC_FUNC(APinGateArea_, int, sizeof(int) * numAPinGateArea_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinGateAreaLayer_, numAPinGateArea_);
-
-  DEF_COPY_FUNC(numAPinMaxAreaCar_);
-  DEF_COPY_FUNC(APinMaxAreaCarAllocated_);
-  DEF_MALLOC_FUNC(APinMaxAreaCar_, int, sizeof(int) * numAPinMaxAreaCar_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinMaxAreaCarLayer_, numAPinMaxAreaCar_);
-
-  DEF_COPY_FUNC(numAPinMaxSideAreaCar_);
-  DEF_COPY_FUNC(APinMaxSideAreaCarAllocated_);
-  DEF_MALLOC_FUNC(
-      APinMaxSideAreaCar_, int, sizeof(int) * numAPinMaxSideAreaCar_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinMaxSideAreaCarLayer_, numAPinMaxSideAreaCar_);
-
-  DEF_COPY_FUNC(numAPinMaxCutCar_);
-  DEF_COPY_FUNC(APinMaxCutCarAllocated_);
-  DEF_MALLOC_FUNC(APinMaxCutCar_, int, sizeof(int) * numAPinMaxCutCar_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinMaxCutCarLayer_, numAPinMaxCutCar_);
-  return *this;
 }
 
 defiPinAntennaModel::~defiPinAntennaModel()
@@ -225,20 +168,15 @@ void defiPinAntennaModel::Destroy()
 // 5.5
 void defiPinAntennaModel::setAntennaModel(int aOxide)
 {
-  switch (aOxide) {
-    case 2:
-      oxide_ = strdup("OXIDE2");
-      break;
-    case 3:
-      oxide_ = strdup("OXIDE3");
-      break;
-    case 4:
-      oxide_ = strdup("OXIDE4");
-      break;
-    default:
-      oxide_ = strdup("OXIDE1");
-      break;
+  if (oxide_) {
+    free(oxide_);
   }
+
+  if (aOxide < 1 || aOxide > defMaxOxides) {
+    aOxide = 1;
+  }
+
+  oxide_ = strdup(defrSettings::defOxides[aOxide - 1]);
 }
 
 void defiPinAntennaModel::addAPinGateArea(int value, const char* layer)
@@ -525,84 +463,6 @@ void defiPinPort::Init()
   x_ = 0;
   y_ = 0;
   orient_ = 0;
-}
-
-DEF_COPY_CONSTRUCTOR_C(defiPinPort)
-{
-  this->Init();
-
-  DEF_COPY_FUNC(layersAllocated_);
-  DEF_COPY_FUNC(numLayers_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(layers_, numLayers_);
-
-  DEF_MALLOC_FUNC(layerMinSpacing_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(layerEffectiveWidth_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(xl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(xh_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yh_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(layerMask_, int, sizeof(int) * numLayers_);
-
-  DEF_COPY_FUNC(polysAllocated_);
-  DEF_COPY_FUNC(numPolys_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(polygonNames_, numPolys_);
-
-  DEF_MALLOC_FUNC(polyMinSpacing_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC(polyMask_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC(polyEffectiveWidth_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC_FOR_2D_POINT(polygons_, numPolys_);
-
-  DEF_COPY_FUNC(viasAllocated_);
-  DEF_COPY_FUNC(numVias_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(viaNames_, numVias_);
-
-  DEF_MALLOC_FUNC(viaX_, int, sizeof(int) * numVias_);
-  DEF_MALLOC_FUNC(viaY_, int, sizeof(int) * numVias_);
-  DEF_MALLOC_FUNC(viaMask_, int, sizeof(int) * numVias_);
-  DEF_COPY_FUNC(placeType_);
-  DEF_COPY_FUNC(x_);
-  DEF_COPY_FUNC(y_);
-  DEF_COPY_FUNC(orient_);
-}
-
-DEF_ASSIGN_OPERATOR_C(defiPinPort)
-{
-  CHECK_SELF_ASSIGN
-  this->Init();
-
-  DEF_COPY_FUNC(layersAllocated_);
-  DEF_COPY_FUNC(numLayers_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(layers_, numLayers_);
-
-  DEF_MALLOC_FUNC(layerMinSpacing_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(layerEffectiveWidth_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(xl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(xh_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yh_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(layerMask_, int, sizeof(int) * numLayers_);
-
-  DEF_COPY_FUNC(polysAllocated_);
-  DEF_COPY_FUNC(numPolys_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(polygonNames_, numPolys_);
-
-  DEF_MALLOC_FUNC(polyMinSpacing_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC(polyMask_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC(polyEffectiveWidth_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC_FOR_2D_POINT(polygons_, numPolys_);
-
-  DEF_COPY_FUNC(viasAllocated_);
-  DEF_COPY_FUNC(numVias_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(viaNames_, numVias_);
-
-  DEF_MALLOC_FUNC(viaX_, int, sizeof(int) * numVias_);
-  DEF_MALLOC_FUNC(viaY_, int, sizeof(int) * numVias_);
-  DEF_MALLOC_FUNC(viaMask_, int, sizeof(int) * numVias_);
-  DEF_COPY_FUNC(placeType_);
-  DEF_COPY_FUNC(x_);
-  DEF_COPY_FUNC(y_);
-  DEF_COPY_FUNC(orient_);
-  return *this;
 }
 
 defiPinPort::~defiPinPort()
@@ -1133,210 +993,6 @@ void defiPin::Init()
   pinPort_ = 0;        // 5.7
   numAntennaModel_ = 0;
   antennaModelAllocated_ = 0;
-  polyMinSpacing_ = 0;
-  polyEffectiveWidth_ = 0;
-  polyMask_ = 0;
-  layerMinSpacing_ = 0;
-  layerEffectiveWidth_ = 0;
-  layerMask_ = 0;
-  viaMask_ = 0;
-}
-
-DEF_COPY_CONSTRUCTOR_C(defiPin)
-{
-  this->Init();
-
-  DEF_COPY_FUNC(pinNameLength_);
-  DEF_MALLOC_FUNC(pinName_, char, sizeof(char) * (strlen(prev.pinName_) + 1));
-  DEF_COPY_FUNC(netNameLength_);
-  DEF_MALLOC_FUNC(netName_, char, sizeof(char) * (strlen(prev.netName_) + 1));
-  DEF_COPY_FUNC(hasDirection_);
-  DEF_COPY_FUNC(hasUse_);
-  DEF_COPY_FUNC(placeType_);
-  DEF_COPY_FUNC(orient_);
-  DEF_COPY_FUNC(useLength_);
-  DEF_MALLOC_FUNC(use_, char, sizeof(char) * (strlen(prev.use_) + 1));
-  DEF_COPY_FUNC(directionLength_);
-  DEF_MALLOC_FUNC(
-      direction_, char, sizeof(char) * (strlen(prev.direction_) + 1));
-
-  DEF_COPY_FUNC(layersAllocated_);
-  DEF_COPY_FUNC(numLayers_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(layers_, numLayers_);
-  DEF_MALLOC_FUNC(xl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(xh_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yh_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(layerMinSpacing_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(layerEffectiveWidth_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(layerMask_, int, sizeof(int) * numLayers_);
-
-  DEF_COPY_FUNC(numPolys_);
-  DEF_COPY_FUNC(polysAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(polygonNames_, numPolys_);
-  DEF_MALLOC_FUNC(polyMinSpacing_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC(polyEffectiveWidth_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC(polyMask_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC_FOR_2D_POINT(polygons_, numPolys_);
-
-  DEF_COPY_FUNC(x_);
-  DEF_COPY_FUNC(y_);
-  DEF_COPY_FUNC(hasSpecial_);
-
-  DEF_COPY_FUNC(numVias_);
-  DEF_COPY_FUNC(viasAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(viaNames_, numVias_);
-  DEF_MALLOC_FUNC(viaX_, int, sizeof(int) * numVias_);
-  DEF_MALLOC_FUNC(viaY_, int, sizeof(int) * numVias_);
-  DEF_MALLOC_FUNC(viaMask_, int, sizeof(int) * numVias_);
-
-  DEF_COPY_FUNC(numPorts_);
-  DEF_COPY_FUNC(portsAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D_MALLOC_NEW(pinPort_, defiPinPort, numPorts_, 1);
-
-  DEF_COPY_FUNC(numAntennaModel_);
-  DEF_COPY_FUNC(antennaModelAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D(
-      antennaModel_, defiPinAntennaModel, numAntennaModel_, 1);
-
-  DEF_COPY_FUNC(numAPinPartialMetalArea_);
-  DEF_COPY_FUNC(APinPartialMetalAreaAllocated_);
-  DEF_MALLOC_FUNC(
-      APinPartialMetalArea_, int, sizeof(int) * numAPinPartialMetalArea_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinPartialMetalAreaLayer_,
-                             numAPinPartialMetalArea_);
-
-  DEF_COPY_FUNC(numAPinPartialMetalSideArea_);
-  DEF_COPY_FUNC(APinPartialMetalSideAreaAllocated_);
-  DEF_MALLOC_FUNC(APinPartialMetalSideArea_,
-                  int,
-                  sizeof(int) * numAPinPartialMetalSideArea_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinPartialMetalSideAreaLayer_,
-                             numAPinPartialMetalSideArea_);
-
-  DEF_COPY_FUNC(numAPinDiffArea_);
-  DEF_COPY_FUNC(APinDiffAreaAllocated_);
-  DEF_MALLOC_FUNC(APinDiffArea_, int, sizeof(int) * numAPinDiffArea_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinDiffAreaLayer_, numAPinDiffArea_);
-
-  DEF_COPY_FUNC(numAPinPartialCutArea_);
-  DEF_COPY_FUNC(APinPartialCutAreaAllocated_);
-  DEF_MALLOC_FUNC(
-      APinPartialCutArea_, int, sizeof(int) * numAPinPartialCutArea_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinPartialCutAreaLayer_, numAPinPartialCutArea_);
-
-  DEF_COPY_FUNC(netExprLength_);
-  DEF_COPY_FUNC(hasNetExpr_);
-  DEF_MALLOC_FUNC(netExpr_, char, sizeof(char) * (strlen(prev.netExpr_) + 1));
-
-  DEF_COPY_FUNC(supplySensLength_);
-  DEF_COPY_FUNC(hasSupplySens_);
-  DEF_MALLOC_FUNC(
-      supplySens_, char, sizeof(char) * (strlen(prev.supplySens_) + 1));
-
-  DEF_COPY_FUNC(groundSensLength_);
-  DEF_COPY_FUNC(hasGroundSens_);
-  DEF_MALLOC_FUNC(
-      groundSens_, char, sizeof(char) * (strlen(prev.groundSens_) + 1));
-}
-
-DEF_ASSIGN_OPERATOR_C(defiPin)
-{
-  CHECK_SELF_ASSIGN
-  this->Init();
-  DEF_COPY_FUNC(pinNameLength_);
-  DEF_MALLOC_FUNC(pinName_, char, sizeof(char) * (strlen(prev.pinName_) + 1));
-  DEF_COPY_FUNC(netNameLength_);
-  DEF_MALLOC_FUNC(netName_, char, sizeof(char) * (strlen(prev.netName_) + 1));
-  DEF_COPY_FUNC(hasDirection_);
-  DEF_COPY_FUNC(hasUse_);
-  DEF_COPY_FUNC(placeType_);
-  DEF_COPY_FUNC(orient_);
-  DEF_COPY_FUNC(useLength_);
-  DEF_MALLOC_FUNC(use_, char, sizeof(char) * (strlen(prev.use_) + 1));
-  DEF_COPY_FUNC(directionLength_);
-  DEF_MALLOC_FUNC(
-      direction_, char, sizeof(char) * (strlen(prev.direction_) + 1));
-
-  DEF_COPY_FUNC(layersAllocated_);
-  DEF_COPY_FUNC(numLayers_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(layers_, numLayers_);
-  DEF_MALLOC_FUNC(xl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(xh_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yh_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(layerMinSpacing_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(layerEffectiveWidth_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(layerMask_, int, sizeof(int) * numLayers_);
-
-  DEF_COPY_FUNC(numPolys_);
-  DEF_COPY_FUNC(polysAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(polygonNames_, numPolys_);
-  DEF_MALLOC_FUNC(polyMinSpacing_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC(polyEffectiveWidth_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC(polyMask_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC_FOR_2D_POINT(polygons_, numPolys_);
-
-  DEF_COPY_FUNC(x_);
-  DEF_COPY_FUNC(y_);
-  DEF_COPY_FUNC(hasSpecial_);
-
-  DEF_COPY_FUNC(numVias_);
-  DEF_COPY_FUNC(viasAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(viaNames_, numVias_);
-  DEF_MALLOC_FUNC(viaX_, int, sizeof(int) * numVias_);
-  DEF_MALLOC_FUNC(viaY_, int, sizeof(int) * numVias_);
-  DEF_MALLOC_FUNC(viaMask_, int, sizeof(int) * numVias_);
-
-  DEF_COPY_FUNC(numPorts_);
-  DEF_COPY_FUNC(portsAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D_MALLOC_NEW(pinPort_, defiPinPort, numPorts_, 1);
-
-  DEF_COPY_FUNC(numAntennaModel_);
-  DEF_COPY_FUNC(antennaModelAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D(
-      antennaModel_, defiPinAntennaModel, numAntennaModel_, 1);
-
-  DEF_COPY_FUNC(numAPinPartialMetalArea_);
-  DEF_COPY_FUNC(APinPartialMetalAreaAllocated_);
-  DEF_MALLOC_FUNC(
-      APinPartialMetalArea_, int, sizeof(int) * numAPinPartialMetalArea_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinPartialMetalAreaLayer_,
-                             numAPinPartialMetalArea_);
-
-  DEF_COPY_FUNC(numAPinPartialMetalSideArea_);
-  DEF_COPY_FUNC(APinPartialMetalSideAreaAllocated_);
-  DEF_MALLOC_FUNC(APinPartialMetalSideArea_,
-                  int,
-                  sizeof(int) * numAPinPartialMetalSideArea_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinPartialMetalSideAreaLayer_,
-                             numAPinPartialMetalSideArea_);
-
-  DEF_COPY_FUNC(numAPinDiffArea_);
-  DEF_COPY_FUNC(APinDiffAreaAllocated_);
-  DEF_MALLOC_FUNC(APinDiffArea_, int, sizeof(int) * numAPinDiffArea_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinDiffAreaLayer_, numAPinDiffArea_);
-
-  DEF_COPY_FUNC(numAPinPartialCutArea_);
-  DEF_COPY_FUNC(APinPartialCutAreaAllocated_);
-  DEF_MALLOC_FUNC(
-      APinPartialCutArea_, int, sizeof(int) * numAPinPartialCutArea_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(APinPartialCutAreaLayer_, numAPinPartialCutArea_);
-
-  DEF_COPY_FUNC(netExprLength_);
-  DEF_COPY_FUNC(hasNetExpr_);
-  DEF_MALLOC_FUNC(netExpr_, char, sizeof(char) * (strlen(prev.netExpr_) + 1));
-
-  DEF_COPY_FUNC(supplySensLength_);
-  DEF_COPY_FUNC(hasSupplySens_);
-  DEF_MALLOC_FUNC(
-      supplySens_, char, sizeof(char) * (strlen(prev.supplySens_) + 1));
-
-  DEF_COPY_FUNC(groundSensLength_);
-  DEF_COPY_FUNC(hasGroundSens_);
-  DEF_MALLOC_FUNC(
-      groundSens_, char, sizeof(char) * (strlen(prev.groundSens_) + 1));
-  return *this;
 }
 
 defiPin::~defiPin()
@@ -1422,7 +1078,6 @@ void defiPin::clear()
       if (pinPort_[i]) {
         pinPort_[i]->clear();
         delete pinPort_[i];
-        //         free(pinPort_[i]);
       }
     }
     free(pinPort_);
@@ -1857,21 +1512,21 @@ void defiPin::setSpecial()
 // 5.5
 void defiPin::addAntennaModel(int oxide)
 {
-  // For version 5.5 only OXIDE1, OXIDE2, OXIDE3, & OXIDE4
+  // For version 5.5 only OXIDE1, OXIDE2, OXIDE3, OXIDE4 ...
   // are defined within a pin
   defiPinAntennaModel* amo;
   int i;
 
   if (numAntennaModel_ == 0) {  // does not have antennaModel
     if (!antennaModel_)         // only need to malloc if it is nill
-      antennaModel_
-          = (defiPinAntennaModel**) malloc(sizeof(defiPinAntennaModel*) * 4);
-    antennaModelAllocated_ = 4;
-    for (i = 0; i < 4; i++) {
+      antennaModel_ = (defiPinAntennaModel**) malloc(
+          sizeof(defiPinAntennaModel*) * defMaxOxides);
+    antennaModelAllocated_ = defMaxOxides;
+    for (i = 0; i < defMaxOxides; i++) {
       antennaModel_[i] = new defiPinAntennaModel(defData);
     }
     numAntennaModel_++;
-    antennaModelAllocated_ = 4;
+    antennaModelAllocated_ = defMaxOxides;
     amo = antennaModel_[0];
   } else {
     amo = antennaModel_[numAntennaModel_];

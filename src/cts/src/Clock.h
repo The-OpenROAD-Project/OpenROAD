@@ -90,7 +90,7 @@ class ClockInst
 
   bool isClockBuffer() const { return type_ == CLOCK_BUFFER; }
 
- protected:
+ private:
   std::string name_;
   std::string master_;
   InstType type_;
@@ -107,7 +107,7 @@ class Clock
  public:
   class SubNet
   {
-   protected:
+   private:
     std::string name_;
     std::deque<ClockInst*> instances_;
     std::unordered_map<ClockInst*, unsigned> mapInstToIdx_;
@@ -207,11 +207,6 @@ class Clock
   {
     subNets_.emplace_back(name + "_" + getName());
     return subNets_.back();
-  }
-
-  void addSink(const std::string& name, int x, int y)
-  {
-    sinks_.emplace_back(name, "", CLOCK_SINK, x, y);
   }
 
   void addSink(const std::string& name,

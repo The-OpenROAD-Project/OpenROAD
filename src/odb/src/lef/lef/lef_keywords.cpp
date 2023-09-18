@@ -1,6 +1,6 @@
 // *****************************************************************************
 // *****************************************************************************
-// Copyright 2012 - 2016, Cadence Design Systems
+// Copyright 2012 - 2019, Cadence Design Systems
 //
 // This  file  is  part  of  the  Cadence  LEF/DEF  Open   Source
 // Distribution,  Product Version 5.8.
@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -456,7 +456,7 @@ static int GetToken(char** buffer, int* bufferSize)
 
       // 7/23/2003 - pcr 606558 - do not allow \n in a string instead
       // of ;
-      if (ch == '\n') {
+      if ((ch == '\n')) {
         print_nlines(++lefData->lef_nlines);
         // 2/2/2007 - PCR 909714, allow string to go more than 1 line
         //            continue to parse
@@ -731,7 +731,9 @@ int lefsublex()
     return 0;
   }
 
-  if (lefData->ge56almostDone && (strcmp(lefData->current_token, "END") == 0)) {
+  if (lefData->ge56almostDone
+      && (strcmp(lefData->current_token, "END") == 0
+          || strcmp(lefData->current_token, "BEGINEXT") == 0)) {
     // Library has BEGINEXT and also end with END LIBRARY
     // Use END LIBRARY to indicate the end of the library
     lefData->ge56almostDone = 0;
@@ -739,10 +741,10 @@ int lefsublex()
 
   if ((lefData->doneLib && lefData->versionNum < 5.6)
       ||  // END LIBRARY is passed for pre 5.6
-      (lefData->ge56almostDone && (strcmp(lefData->current_token, "END")))
-      ||  // after EXT, not
-      // follow by END
-      (lefData->ge56done)) {  // END LIBRARY is passed for >= 5.6
+      ((lefData->ge56almostDone && strcmp(lefData->current_token, "END")
+        && strcmp(lefData->current_token, "BEGINEXT"))
+       ||                     // after EXT, not follow by END
+       lefData->ge56done)) {  // END LIBRARY is passed for >= 5.6
     fc = EOF;
     lefInfo(3000, "There are still data after the END LIBRARY");
     return 0;
@@ -1346,7 +1348,7 @@ void* lefMalloc(size_t lef_size)
 {
   void* mallocVar;
 
-  if (lefSettings && lefSettings->MallocFunction)
+  if (lefSettings->MallocFunction)
     return (*lefSettings->MallocFunction)(lef_size);
   else {
     mallocVar = (void*) malloc(lef_size);
@@ -1369,7 +1371,7 @@ void* lefRealloc(void* name, size_t lef_size)
 
 void lefFree(void* name)
 {
-  if (lefSettings && lefSettings->FreeFunction)
+  if (lefSettings->FreeFunction)
     (*lefSettings->FreeFunction)(name);
   else
     free(name);

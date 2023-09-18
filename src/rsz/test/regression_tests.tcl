@@ -6,6 +6,9 @@ record_tests {
   buffer_ports6
   buffer_ports7
   buffer_ports8
+  buffer_varying_lengths
+  eqy_repair_setup2
+  eqy_repair_setup5
   fanin_fanout1
   make_parasitics1
   make_parasitics2
@@ -38,6 +41,8 @@ record_tests {
   repair_fanout4
   repair_fanout5
   repair_fanout6
+  repair_fanout7
+  repair_fanout8
   repair_hold1
   repair_hold2
   repair_hold3
@@ -51,6 +56,7 @@ record_tests {
   repair_hold11
   repair_hold12
   repair_hold13
+  repair_hold14
   repair_setup1
   repair_setup2
   repair_setup3
@@ -75,6 +81,8 @@ record_tests {
   repair_slew16
   repair_slew17
   report_floating_nets1
+  report_floating_nets2
+  report_floating_nets3
   repair_tie1
   repair_tie2
   repair_tie3
@@ -95,4 +103,9 @@ record_tests {
   repair_wire10
   repair_wire11
   gcd_resize
+  repair_design3_verbose
+  repair_setup4_verbose
+  repair_hold9_verbose
+  set_dont_touch1
+  set_dont_use1
 }

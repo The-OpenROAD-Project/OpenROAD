@@ -43,6 +43,7 @@ using namespace fr;
 
 string OUT_MAZE_FILE;
 string DRC_RPT_FILE;
+std::optional<int> DRC_RPT_ITER_STEP;
 string CMAP_FILE;
 string GUIDE_REPORT_FILE;
 
@@ -485,6 +486,8 @@ ostream& operator<<(ostream& os, const frMarker& m)
       return os << "frcSpacingTablePrlConstraint";
     case frConstraintTypeEnum::frcSpacingTableTwConstraint:
       return os << "frcSpacingTableTwConstraint";
+    case frConstraintTypeEnum::frcLef58KeepOutZoneConstraint:
+      return os << "frcLef58KeepOutZoneConstraint";
     default:
       return os << "unknown viol";
   }

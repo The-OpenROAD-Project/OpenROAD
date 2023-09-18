@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -41,9 +41,6 @@ class lefiUnits
  public:
   lefiUnits();
   void Init();
-
-  LEF_COPY_CONSTRUCTOR_H(lefiUnits);
-  LEF_ASSIGN_OPERATOR_H(lefiUnits);
 
   void Destroy();
   ~lefiUnits();

@@ -1,0 +1,63 @@
+{
+  "name": "dbTechLayerArraySpacingRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "type": "bool",
+      "name": "parallel_overlap_",
+      "bits": 1
+    },
+    {
+      "type": "bool",
+      "name": "long_array_",
+      "bits": 1
+    },
+    {
+      "type": "bool",
+      "name": "via_width_valid_",
+      "bits": 1
+    },
+    {
+      "type": "int",
+      "name": "via_width_",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "cut_spacing_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "within_valid_",
+      "bits": 1
+    },
+    {
+      "type": "int",
+      "name": "within_",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "array_width_",
+      "default": 0
+    },
+    {
+      "type": "std::map<int, int>",
+      "name": "array_spacing_map_",
+      "flags" : ["private", "no-template"]
+    },
+    {
+      "type": "dbId<_dbTechLayerCutClassRule>",
+      "name": "cut_class_",
+      "flags": [
+        "no-get"
+      ],
+      "parent": "dbTechLayer"
+    }
+  ],
+  "cpp_includes": [
+    "dbTechLayer.h",
+    "dbTechLayerCutClassRule.h"
+  ]
+}

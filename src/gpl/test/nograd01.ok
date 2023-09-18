@@ -1,0 +1,45 @@
+[INFO ODB-0222] Reading LEF file: asap7/asap7_tech_1x_201209.lef
+[INFO ODB-0223]     Created 24 technology layers
+[INFO ODB-0224]     Created 9 technology vias
+[INFO ODB-0226] Finished LEF file:  asap7/asap7_tech_1x_201209.lef
+[INFO ODB-0222] Reading LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef
+[INFO ODB-0225]     Created 212 library cells
+[INFO ODB-0226] Finished LEF file:  asap7/asap7sc7p5t_28_R_1x_220121a.lef
+[INFO ODB-0128] Design: calibrate_rc
+[INFO ODB-0130]     Created 12 pins.
+[INFO ODB-0131]     Created 6 components and 24 component-terminals.
+[INFO ODB-0133]     Created 12 nets and 12 connections.
+[INFO GPL-0002] DBU: 1000
+[INFO GPL-0003] SiteSize: 54 270
+[INFO GPL-0004] CoreAreaLxLy: 10044 10260
+[INFO GPL-0005] CoreAreaUxUy: 109998 109890
+[INFO GPL-0006] NumInstances: 6
+[INFO GPL-0007] NumPlaceInstances: 6
+[INFO GPL-0008] NumFixedInstances: 0
+[INFO GPL-0009] NumDummyInstances: 0
+[INFO GPL-0010] NumNets: 12
+[INFO GPL-0011] NumPins: 12
+[INFO GPL-0012] DieAreaLxLy: 0 0
+[INFO GPL-0013] DieAreaUxUy: 120000 120000
+[INFO GPL-0014] CoreAreaLxLy: 10044 10260
+[INFO GPL-0015] CoreAreaUxUy: 109998 109890
+[INFO GPL-0016] CoreArea: 9958417020
+[INFO GPL-0017] NonPlaceInstsArea: 0
+[INFO GPL-0018] PlaceInstsArea: 437400
+[INFO GPL-0019] Util(%): 0.00
+[INFO GPL-0020] StdInstsArea: 437400
+[INFO GPL-0021] MacroInstsArea: 0
+[INFO GPL-0031] FillerInit: NumGCells: 95622
+[INFO GPL-0032] FillerInit: NumGNets: 12
+[INFO GPL-0033] FillerInit: NumGPins: 12
+[INFO GPL-0023] TargetDensity: 0.70
+[INFO GPL-0024] AveragePlaceInstArea: 72900
+[INFO GPL-0025] IdealBinArea: 104143
+[INFO GPL-0026] IdealBinCnt: 95622
+[INFO GPL-0027] TotalBinArea: 9958417020
+[INFO GPL-0028] BinCnt: 256 256
+[INFO GPL-0029] BinSize: 391 390
+[INFO GPL-0030] NumBins: 65536
+[NesterovSolve] Iter: 1 overflow: 0 HPWL: 0
+[NesterovSolve] Finished with Overflow: 0.000000
+No differences found.

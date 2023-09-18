@@ -1,8 +1,4 @@
 add_library(zutil
-    misc_functions.cpp
-    files.cpp
-    name.cpp
-    mem.cpp
     parse.cpp
     poly_decomp.cpp
     util.cpp
@@ -11,7 +7,7 @@ add_library(zutil
 target_link_libraries(zutil
   PUBLIC
         db
-        utl
+        utl_lib
 )
 
 target_include_directories(zutil

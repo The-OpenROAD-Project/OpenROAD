@@ -27,6 +27,7 @@
 
 #pragma once
 
+#include "DplObserver.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 
@@ -40,15 +41,15 @@ using odb::Rect;
 class Opendp;
 struct Cell;
 
-class Graphics : public gui::Renderer
+class Graphics : public gui::Renderer, public DplObserver
 {
  public:
   Graphics(Opendp* dp, float min_displacement, const dbInst* debug_instance);
-
-  void startPlacement(dbBlock* block);
-  void placeInstance(dbInst* instance);
-  void binSearch(const Cell* cell, int xl, int yl, int xh, int yh);
-  void endPlacement();
+  ~Graphics() override = default;
+  void startPlacement(dbBlock* block) override;
+  void placeInstance(dbInst* instance) override;
+  void binSearch(const Cell* cell, int xl, int yl, int xh, int yh) override;
+  void endPlacement() override;
 
   // From Renderer API
   void drawObjects(gui::Painter& painter) override;

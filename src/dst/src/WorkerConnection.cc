@@ -96,6 +96,18 @@ void WorkerConnection::handle_read(boost::system::error_code const& err,
         }
         break;
       }
+      case JobMessage::PIN_ACCESS: {
+        for (auto& cb : dist_->getCallBacks()) {
+          cb->onPinAccessJobReceived(msg_, sock_);
+        }
+        break;
+      }
+      case JobMessage::GRDR_INIT: {
+        for (auto& cb : dist_->getCallBacks()) {
+          cb->onGRDRInitJobReceived(msg_, sock_);
+        }
+        break;
+      }
       default:
         logger_->warn(utl::DST,
                       5,

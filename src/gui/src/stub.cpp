@@ -99,6 +99,10 @@ void Gui::status(const std::string& /* message */)
 {
 }
 
+void Gui::triggerAction(const std::string& /* action */)
+{
+}
+
 void Renderer::redraw()
 {
 }
@@ -124,7 +128,7 @@ void Renderer::addDisplayControl(
 {
 }
 
-const Renderer::Settings Renderer::getSettings()
+Renderer::Settings Renderer::getSettings()
 {
   return {};
 }
@@ -133,12 +137,12 @@ void Renderer::setSettings(const Renderer::Settings& /* settings */)
 {
 }
 
-Selected Gui::makeSelected(std::any /* object */)
+Selected Gui::makeSelected(const std::any& /* object */)
 {
   return Selected();
 }
 
-void Gui::setSelected(Selected selection)
+void Gui::setSelected(const Selected& selection)
 {
 }
 

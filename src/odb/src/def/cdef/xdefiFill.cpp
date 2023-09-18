@@ -36,6 +36,12 @@
 #include "defiFill.h"
 #include "defiFill.hpp"
 
+union udefiPoints
+{
+  LefDefParser::defiPoints cpp;
+  ::defiPoints c;
+};
+
 // Wrappers definitions.
 int defiFill_hasLayer(const ::defiFill* obj)
 {
@@ -104,9 +110,9 @@ int defiFill_numPolygons(const ::defiFill* obj)
 
 ::defiPoints defiFill_getPolygon(const ::defiFill* obj, int index)
 {
-  LefDefParser::defiPoints tmp;
-  tmp = ((LefDefParser::defiFill*) obj)->getPolygon(index);
-  return *((::defiPoints*) &tmp);
+  udefiPoints tmp;
+  tmp.cpp = ((LefDefParser::defiFill*) obj)->getPolygon(index);
+  return tmp.c;
 }
 
 int defiFill_hasVia(const ::defiFill* obj)
@@ -131,9 +137,9 @@ int defiFill_numViaPts(const ::defiFill* obj)
 
 ::defiPoints defiFill_getViaPts(const ::defiFill* obj, int index)
 {
-  LefDefParser::defiPoints tmp;
-  tmp = ((LefDefParser::defiFill*) obj)->getViaPts(index);
-  return *((::defiPoints*) &tmp);
+  udefiPoints tmp;
+  tmp.cpp = ((LefDefParser::defiFill*) obj)->getViaPts(index);
+  return tmp.c;
 }
 
 void defiFill_print(const ::defiFill* obj, FILE* f)

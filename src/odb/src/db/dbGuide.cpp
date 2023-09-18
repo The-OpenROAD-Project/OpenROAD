@@ -44,47 +44,39 @@
 #include "dbBlock.h"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbGuide>;
 
 bool _dbGuide::operator==(const _dbGuide& rhs) const
 {
   if (net_ != rhs.net_)
     return false;
-
   if (box_ != rhs.box_)
     return false;
-
   if (layer_ != rhs.layer_)
     return false;
-
   if (guide_next_ != rhs.guide_next_)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
+
 bool _dbGuide::operator<(const _dbGuide& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
+
 void _dbGuide::differences(dbDiff& diff,
                            const char* field,
                            const _dbGuide& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(net_);
   DIFF_FIELD(box_);
   DIFF_FIELD(layer_);
   DIFF_FIELD(guide_next_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
+
 void _dbGuide::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -93,23 +85,19 @@ void _dbGuide::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(layer_);
   DIFF_OUT_FIELD(guide_next_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
+
 _dbGuide::_dbGuide(_dbDatabase* db)
 {
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
+
 _dbGuide::_dbGuide(_dbDatabase* db, const _dbGuide& r)
 {
   net_ = r.net_;
   box_ = r.box_;
   layer_ = r.layer_;
   guide_next_ = r.guide_next_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
@@ -118,29 +106,21 @@ dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
   stream >> obj.box_;
   stream >> obj.layer_;
   stream >> obj.guide_next_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj)
 {
   stream << obj.net_;
   stream << obj.box_;
   stream << obj.layer_;
   stream << obj.guide_next_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
 _dbGuide::~_dbGuide()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

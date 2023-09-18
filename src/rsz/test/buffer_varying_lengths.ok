@@ -1,0 +1,14 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 135 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO RSZ-0058] Using max wire length 848um.
+[INFO RSZ-0037] Found 116 long wires.
+[INFO RSZ-0038] Inserted 151 buffers in 116 nets.
+[INFO RSZ-0039] Resized 211 instances.
+[INFO RSZ-0094] Found 200 endpoints with setup violations.
+[INFO RSZ-0041] Resized 3 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+[INFO RSZ-0033] No hold violations found.
+No differences found.

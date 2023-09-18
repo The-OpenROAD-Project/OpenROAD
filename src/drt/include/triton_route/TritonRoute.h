@@ -34,6 +34,7 @@
 #include <list>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <queue>
 #include <string>
 #include <vector>
@@ -54,6 +55,8 @@ class frMarker;
 namespace odb {
 class dbDatabase;
 class dbInst;
+class dbBTerm;
+class dbNet;
 }  // namespace odb
 namespace utl {
 class Logger;
@@ -73,6 +76,7 @@ struct ParamStruct
 {
   std::string outputMazeFile;
   std::string outputDrcFile;
+  std::optional<int> drcReportIterStep;
   std::string outputCmapFile;
   std::string outputGuideCoverageFile;
   std::string dbProcessNode;
@@ -127,6 +131,7 @@ class TritonRoute
   void setDebugMaze(bool on = true);
   void setDebugPA(bool on = true);
   void setDebugTA(bool on = true);
+  void setDebugWriteNetTracks(bool on = true);
   void setDebugNetName(const char* name);  // for DR
   void setDebugPinName(const char* name);  // for PA
   void setDebugWorker(int x, int y);
@@ -148,7 +153,6 @@ class TritonRoute
   void setDebugPaCommit(bool on = true);
   void reportConstraints();
 
-  void readParams(const std::string& fileName);
   void setParams(const ParamStruct& params);
   void addUserSelectedVia(const std::string& viaName);
   void setUnidirectionalLayer(const std::string& layerName);
@@ -176,6 +180,9 @@ class TritonRoute
                  const std::list<std::unique_ptr<fr::frMarker>>& markers,
                  odb::Rect bbox = odb::Rect(0, 0, 0, 0));
   void checkDRC(const char* drc_file, int x0, int y0, int x1, int y1);
+  bool initGuide();
+  void prep();
+  void processBTermsAboveTopLayer(bool has_routing = false);
 
  private:
   std::unique_ptr<fr::frDesign> design_;
@@ -199,14 +206,18 @@ class TritonRoute
   boost::asio::thread_pool dist_pool_;
 
   void initDesign();
-  bool initGuide();
-  void prep();
   void gr();
   void ta();
   void dr();
   void applyUpdates(const std::vector<std::vector<fr::drUpdate>>& updates);
   void getDRCMarkers(std::list<std::unique_ptr<fr::frMarker>>& markers,
                      const odb::Rect& requiredDrcBox);
+  void stackVias(odb::dbBTerm* bterm,
+                 int top_layer_idx,
+                 int bterm_bottom_layer_idx,
+                 bool has_routing);
+  int countNetBTermsAboveMaxLayer(odb::dbNet* net);
+  bool netHasStackedVias(odb::dbNet* net);
   friend class fr::FlexDR;
 };
 }  // namespace triton_route

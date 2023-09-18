@@ -58,7 +58,9 @@ class Logger;
 
 namespace gpl {
 
+class PlacerBaseCommon;
 class PlacerBase;
+class NesterovBaseCommon;
 class NesterovBase;
 class RouteBase;
 class TimingBase;
@@ -147,8 +149,10 @@ class Replace
   grt::GlobalRouter* fr_;
   utl::Logger* log_;
 
-  std::shared_ptr<PlacerBase> pb_;
-  std::shared_ptr<NesterovBase> nb_;
+  std::shared_ptr<PlacerBaseCommon> pbc_;
+  std::shared_ptr<NesterovBaseCommon> nbc_;
+  std::vector<std::shared_ptr<PlacerBase>> pbVec_;
+  std::vector<std::shared_ptr<NesterovBase>> nbVec_;
   std::shared_ptr<RouteBase> rb_;
   std::shared_ptr<TimingBase> tb_;
 
@@ -161,6 +165,8 @@ class Replace
   int initialPlaceMaxFanout_;
   float initialPlaceNetWeightScale_;
   bool forceCPU_;
+
+  int total_placeable_insts_;
 
   int nesterovPlaceMaxIter_;
   int binGridCntX_;

@@ -53,8 +53,6 @@
 #include "sta/PathExpanded.hh"
 #include "sta/Fuzzy.hh"
 
-#include "gui/gui.h"
-
 namespace rsz {
 
 using std::abs;
@@ -71,29 +69,25 @@ using sta::NetIterator;
 using sta::Clock;
 using sta::INF;
 
-RepairDesign::RepairDesign(Resizer *resizer) :
-  StaState(),
-  logger_(nullptr),
-  sta_(nullptr),
-  db_network_(nullptr),
-  resizer_(resizer),
-  dbu_(0),
-  drvr_pin_(nullptr),
-  max_cap_(0),
-  max_length_(0),
-  corner_(nullptr),
-  resize_count_(0),
-  inserted_buffer_count_(0),
-  min_(MinMax::min()),
-  max_(MinMax::max()),
-  fanout_render_(new FanoutRender(this))
+RepairDesign::RepairDesign(Resizer* resizer)
+    : logger_(nullptr),
+      sta_(nullptr),
+      db_network_(nullptr),
+      resizer_(resizer),
+      dbu_(0),
+      drvr_pin_(nullptr),
+      max_cap_(0),
+      max_length_(0),
+      corner_(nullptr),
+      resize_count_(0),
+      inserted_buffer_count_(0),
+      min_(MinMax::min()),
+      max_(MinMax::max()),
+      print_interval_(0)
 {
 }
 
-RepairDesign::~RepairDesign()
-{
-  delete fanout_render_;
-}
+RepairDesign::~RepairDesign() = default;
 
 void
 RepairDesign::init()
@@ -102,7 +96,7 @@ RepairDesign::init()
   sta_ = resizer_->sta_;
   db_network_ = resizer_->db_network_;
   dbu_ = resizer_->dbu_;
-
+  pre_checks_ = new PreChecks(resizer_);
   copyState(sta_);
 }
 
@@ -112,12 +106,13 @@ RepairDesign::init()
 void
 RepairDesign::repairDesign(double max_wire_length,
                            double slew_margin,
-                           double cap_margin)
+                           double cap_margin,
+                           bool verbose)
 {
   init();
   int repaired_net_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
-  repairDesign(max_wire_length, slew_margin, cap_margin,
+  repairDesign(max_wire_length, slew_margin, cap_margin, verbose,
                repaired_net_count, slew_violations, cap_violations,
                fanout_violations, length_violations);
 
@@ -141,6 +136,7 @@ void
 RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
                            double slew_margin,
                            double cap_margin,
+                           bool verbose,
                            int &repaired_net_count,
                            int &slew_violations,
                            int &cap_violations,
@@ -165,32 +161,51 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
   sta_->checkFanoutLimitPreamble();
 
   resizer_->incrementalParasiticsBegin();
+  int print_iteration = 0;
+  if (resizer_->level_drvr_vertices_.size() > 5 * max_print_interval_) {
+    print_interval_ = max_print_interval_;
+  } else {
+    print_interval_ = min_print_interval_;
+  }
+  if (verbose) {
+    printProgress(print_iteration, false, false, repaired_net_count);
+  }
   int max_length = resizer_->metersToDbu(max_wire_length);
   for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
+    print_iteration++;
+    if (verbose) {
+      printProgress(print_iteration, false, false, repaired_net_count);
+    }
     Vertex *drvr = resizer_->level_drvr_vertices_[i];
     Pin *drvr_pin = drvr->pin();
     Net *net = network_->isTopLevelPort(drvr_pin)
       ? network_->net(network_->term(drvr_pin))
       : network_->net(drvr_pin);
+    dbNet *net_db = db_network_->staToDb(net);
     bool debug = (drvr_pin == resizer_->debug_pin_);
     if (debug)
       logger_->setDebugLevel(RSZ, "repair_net", 3);
-    if (net
-        && !resizer_->dontTouch(net)
+    if (net && !resizer_->dontTouch(net) && !net_db->isConnectedByAbutment()
         && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells and supply nets.
-        && !drvr->isConstant())
+        && !drvr->isConstant()) {
       repairNet(net, drvr_pin, drvr, true, true, true, max_length, true,
                 repaired_net_count, slew_violations, cap_violations,
                 fanout_violations, length_violations);
-    if (debug)
+    }
+    if (debug) {
       logger_->setDebugLevel(RSZ, "repair_net", 0);
+    }
   }
   resizer_->updateParasitics();
+  if (verbose) {
+    printProgress(print_iteration, true, true, repaired_net_count);
+  }
   resizer_->incrementalParasiticsEnd();
 
-  if (inserted_buffer_count_ > 0)
+  if (inserted_buffer_count_ > 0) {
     resizer_->level_drvr_vertices_valid_ = false;
+  }
 }
 
 // Repair long wires from clock input pins to clock tree root buffer
@@ -599,7 +614,7 @@ RepairDesign::repairNet(BufferedNetPtr bnet,
 }
 
 void
-RepairDesign::repairNet(BufferedNetPtr bnet,
+RepairDesign::repairNet(const BufferedNetPtr &bnet,
                         int level,
                         // Return values.
                         // Remaining parasiics after repeater insertion.
@@ -622,9 +637,9 @@ RepairDesign::repairNet(BufferedNetPtr bnet,
   }
 }
 
+
 void
-RepairDesign::repairNetWire(BufferedNetPtr bnet,
-                            int level,
+RepairDesign::repairNetWire(BufferedNetPtr bnet, int level,
                             // Return values.
                             // Remaining parasiics after repeater insertion.
                             int &wire_length, // dbu
@@ -670,6 +685,9 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
   bnet->setCapacitance(load_cap);
   bnet->setFanout(bnet->ref()->fanout());
 
+  // Check that the slew limit specified is within the bounds of reason.
+  pre_checks_->checkSlewLimit(ref_cap, max_load_slew);
+  //============================================================================
   // Back up from pt to from_pt adding repeaters as necessary for
   // length/max_cap/max_slew violations.
   while ((max_length_ > 0 && wire_length > max_length_)
@@ -704,14 +722,18 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
                  "", level,
                  units_->capacitanceUnit()->asString(load_cap, 3),
                  units_->capacitanceUnit()->asString(max_cap_, 3));
-      if (ref_cap > max_cap_)
+      if (ref_cap > max_cap_) {
         split_length = 0;
-      else
-        split_length = min(split_length,
-                           metersToDbu((max_cap_ - ref_cap) / wire_cap));
-      split_wire = true;
+        split_wire = false;
+      }
+      else {
+        split_length
+            = min(split_length, metersToDbu((max_cap_ - ref_cap) / wire_cap));
+        split_wire = true;
+      }
+
     }
-    if (load_slew > max_load_slew_margined) { 
+    if (load_slew > max_load_slew_margined) {
       debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}max load slew violation {} > {}",
                  "", level,
                  delayAsString(load_slew, this, 3),
@@ -733,16 +755,22 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
         - max_load_slew_margined / elmore_skew_factor_;
       float l = (-b + sqrt(b*b - 4 * a * c)) / (2 * a);
       if (l >= 0.0) {
-        split_length = min(split_length, metersToDbu(l));
+        if (split_length > 0.0) {
+          split_length = min(split_length, metersToDbu(l));
+	}
+        else {
+          split_length = metersToDbu(l);
+	}
         split_wire = true;
         resize = false;
       }
       else {
         split_length = 0;
-        split_wire = true;
-        resize = false;
+        split_wire = false;
+        resize = true;
       }
     }
+
     if (split_wire) {
       debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}split length={}",
                  "", level,
@@ -1024,12 +1052,12 @@ RepairDesign::makeRegionRepeaters(LoadRegion &region,
                                   int max_length,
                                   bool resize_drvr)
 {
-  // Leaf regionrants have less than max_fanout pins and are buffered
-  // by the enclosing regionrant.
+  // Leaf regions have less than max_fanout pins and are buffered
+  // by the enclosing region.
   if (!region.regions_.empty()) {
     // Buffer from the bottom up.
     for (LoadRegion &sub : region.regions_)
-      makeRegionRepeaters(sub, max_fanout, level + 1, drvr_pin, 
+      makeRegionRepeaters(sub, max_fanout, level + 1, drvr_pin,
                           check_slew, check_cap, max_length,
                           resize_drvr);
 
@@ -1051,25 +1079,25 @@ RepairDesign::makeRegionRepeaters(LoadRegion &region,
     while (!region.pins_.empty()) {
       repeater_loads.push_back(region.pins_.back());
       region.pins_.pop_back();
-      if (repeater_loads.size() == max_fanout)
-        makeFanoutRepeater(repeater_loads, repeater_inputs,
-                           region.bbox_,
+      if (repeater_loads.size() == max_fanout) {
+        makeFanoutRepeater(repeater_loads, repeater_inputs, region.bbox_,
                            findClosedPinLoc(drvr_pin, repeater_loads),
-                           check_slew, check_cap, max_length,
-                           resize_drvr);
+                           check_slew, check_cap, max_length, resize_drvr);
+      }
 
     }
-    if (repeater_loads.size() >= max_fanout / 2)
-      makeFanoutRepeater(repeater_loads, repeater_inputs,
-                         region.bbox_,
+    if (!repeater_loads.empty() && repeater_loads.size() >= max_fanout / 2) {
+      makeFanoutRepeater(repeater_loads, repeater_inputs, region.bbox_,
                          findClosedPinLoc(drvr_pin, repeater_loads),
-                         check_slew, check_cap, max_length,
-                         resize_drvr);
-    else
+                         check_slew, check_cap, max_length, resize_drvr);
+    }
+    else {
       region.pins_ = repeater_loads;
+    }
 
-    for (const Pin *pin : repeater_inputs)
+    for (const Pin *pin : repeater_inputs) {
       region.pins_.push_back(pin);
+    }
   }
 }
 
@@ -1083,14 +1111,6 @@ RepairDesign::makeFanoutRepeater(PinSeq &repeater_loads,
                                  int max_length,
                                  bool resize_drvr)
 {
-  if (false && gui::Gui::enabled()) {
-    fanout_render_->setRect(bbox);
-    fanout_render_->setPins(&repeater_loads);
-    fanout_render_->setDrvrLoc(loc);
-    gui::Gui *gui = gui::Gui::get();
-    gui->pause();
-  }
-
   float ignore2, ignore3, ignore4;
   Net *out_net;
   Pin *repeater_in_pin, *repeater_out_pin;
@@ -1249,6 +1269,11 @@ RepairDesign::makeRepeater(const char *reason,
     for (const Pin *pin : load_pins) {
       Port *port = network_->port(pin);
       Instance *inst = network_->instance(pin);
+
+      // do not disconnect/reconnect don't touch instances
+      if (resizer_->dontTouch(inst)) {
+        continue;
+      }
       sta_->disconnectPin(const_cast<Pin*>(pin));
       sta_->connectPin(inst, port, out_net);
     }
@@ -1343,8 +1368,7 @@ RepairDesign::findBufferUnderSlew(float max_slew,
     for (LibertyCell *buffer : *equiv_cells) {
       if (!resizer_->dontUse(buffer)
           && resizer_->isLinkCell(buffer)) {
-        float slew = bufferSlew(buffer, load_cap,
-                                resizer_->tgt_slew_dcalc_ap_);
+        float slew = resizer_->bufferSlew(buffer, load_cap, resizer_->tgt_slew_dcalc_ap_);
         debugPrint(logger_, RSZ, "buffer_under_slew", 1, "{:{}s}pt ({} {})",
                    buffer->name(),
                    units_->timeUnit()->asString(slew));
@@ -1360,20 +1384,6 @@ RepairDesign::findBufferUnderSlew(float max_slew,
   }
   // Could not find a buffer under max_slew but this is min slew achievable.
   return min_slew_buffer;
-}
-
-float
-RepairDesign::bufferSlew(LibertyCell *buffer_cell,
-                         float load_cap,
-                         const DcalcAnalysisPt *dcalc_ap)
-{
-  LibertyPort *input, *output;
-  buffer_cell->bufferPorts(input, output);
-  ArcDelay gate_delays[RiseFall::index_count];
-  Slew slews[RiseFall::index_count];
-  resizer_->gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
-  return max(slews[RiseFall::riseIndex()],
-             slews[RiseFall::fallIndex()]);
 }
 
 double
@@ -1394,55 +1404,35 @@ RepairDesign::metersToDbu(double dist) const
   return dist * dbu_ * 1e+6;
 }
 
-////////////////////////////////////////////////////////////////
-
-FanoutRender::FanoutRender(RepairDesign *repair) :
-  repair_(repair),
-  pins_(nullptr)
+void
+RepairDesign::printProgress(int iteration, bool force, bool end, int repaired_net_count) const
 {
-  const bool gui_enabled = gui::Gui::enabled();
-  if (gui_enabled) {
-    gui::Gui::get()->registerRenderer(this);
+  const bool start = iteration == 0;
+
+  if (start && !end) {
+    logger_->report("Iteration | Resized | Buffers | Nets repaired | Remaining");
+    logger_->report("---------------------------------------------------------");
   }
-}
 
-void
-FanoutRender::setPins(PinSeq *pins)
-{
-  pins_ = pins;
-}
+  if (iteration % print_interval_ == 0 || force || end) {
+    const int nets_left = resizer_->level_drvr_vertices_.size() - iteration;
 
-void
-FanoutRender::setRect(Rect &rect)
-{
-  rect_ = rect;
-}
-
-void
-FanoutRender::setDrvrLoc(Point loc)
-{
-  drvr_loc_ = loc;
-}
-
-void
-FanoutRender::drawObjects(gui::Painter &painter)
-{
-  if (pins_) {
-    auto color = gui::Painter::yellow;
-    painter.setPen(color, /* cosmetic */ true);
-    painter.setBrush(color, gui::Painter::SOLID);
-
-    painter.drawCircle(drvr_loc_.x(), drvr_loc_.y(), 5000);
-    painter.setBrush(color, gui::Painter::NONE);
-    painter.drawRect(rect_);
-
-    dbNetwork *network = repair_->db_network_;
-    for (const Pin *pin : *pins_) {
-      dbInst *db_inst = network->staToDb(network->instance(pin));
-      Rect rect = db_inst->getBBox()->getBox();
-      painter.drawRect(rect);
+    std::string itr_field = fmt::format("{}", iteration);
+    if (end) {
+      itr_field = "final";
     }
+
+    logger_->report("{: >9s} | {: >7d} | {: >7d} | {: >13d} | {: >9d}",
+                    itr_field,
+                    resize_count_,
+                    inserted_buffer_count_,
+                    repaired_net_count,
+                    nets_left);
+  }
+
+  if (end) {
+    logger_->report("---------------------------------------------------------");
   }
 }
 
-} // namespace
+}  // namespace rsz

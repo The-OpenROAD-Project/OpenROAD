@@ -43,7 +43,6 @@ namespace rcx {
 
 using utl::RCX;
 
-using odb::Ath__double2int;
 using odb::dbBlock;
 using odb::dbBox;
 using odb::dbBTerm;
@@ -63,7 +62,6 @@ using odb::dbWire;
 using odb::dbWirePath;
 using odb::dbWirePathItr;
 using odb::Rect;
-using odb::ZPtr;
 
 extMetRCTable* extRCModel::initCapTables(uint layerCnt, uint widthCnt)
 {
@@ -101,8 +99,8 @@ uint extMain::genExtRules(const char* rulesFileName, int pattern)
   sprintf(buff, "%s.log", rulesFileName);
   FILE* logFP = fopen(buff, "w");
 
-  Ath__parser* p = new Ath__parser();
-  Ath__parser* w = new Ath__parser();
+  Ath__parser* p = new Ath__parser(logger_);
+  Ath__parser* w = new Ath__parser(logger_);
 
   int prev_sep = 0;
   int prev_width = 0;
@@ -209,7 +207,7 @@ uint extMain::genExtRules(const char* rulesFileName, int pattern)
     double w1 = w->getDouble(0) / 1000;
 
     m._w_m = w1;
-    m._w_nm = Ath__double2int(m._w_m * 1000);
+    m._w_nm = lround(m._w_m * 1000);
 
     if (w->mkWords(p->get(3), "S") <= 0)
       continue;
@@ -218,9 +216,9 @@ uint extMain::genExtRules(const char* rulesFileName, int pattern)
     double s2 = w->getDouble(1) / 1000;
 
     m._s_m = s1;
-    m._s_nm = Ath__double2int(m._s_m * 1000);
+    m._s_nm = lround(m._s_m * 1000);
     m._s2_m = s2;
-    m._s2_nm = Ath__double2int(m._s2_m * 1000);
+    m._s2_nm = lround(m._s2_m * 1000);
 
     double wLen = GetDBcoords2(len) * 1.0;
     double totCC = net->getTotalCouplingCap();

@@ -154,6 +154,19 @@ tclListNetworkSet(Tcl_Obj *const source,
   Tcl_SetObjResult(interp, list);
 }
 
+%typemap(out) TmpPinSet* {
+  Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
+  PinSet *pins = $1;
+  PinSet::Iterator pin_iter(pins);
+  while (pin_iter.hasNext()) {
+    const Pin *pin = pin_iter.next();
+    Tcl_Obj *obj = SWIG_NewInstanceObj(const_cast<Pin*>(pin), SWIGTYPE_p_Pin, false);
+    Tcl_ListObjAppendElement(interp, list, obj);
+  }
+  delete pins;
+  Tcl_SetObjResult(interp, list);
+}
+
 %typemap(out) NetSeq* {
   Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
   NetSeq *nets = $1;
@@ -420,6 +433,14 @@ find_floating_nets()
   return resizer->findFloatingNets();
 }
 
+TmpPinSet *
+find_floating_pins()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->findFloatingPins();
+}
+
 void
 repair_tie_fanout_cmd(LibertyPort *tie_port,
                       double separation, // meters
@@ -433,11 +454,12 @@ repair_tie_fanout_cmd(LibertyPort *tie_port,
 void
 repair_design_cmd(double max_length,
                   double slew_margin,
-                  double cap_margin)
+                  double cap_margin,
+                  bool verbose)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairDesign(max_length, slew_margin, cap_margin);
+  resizer->repairDesign(max_length, slew_margin, cap_margin, verbose);
 }
 
 int
@@ -477,11 +499,15 @@ repair_net_cmd(Net *net,
 void
 repair_setup(double setup_margin,
              double repair_tns_end_percent,
-             int max_passes)
+             int max_passes,
+             bool verbose,
+             bool skip_pin_swap, bool skip_gate_cloning)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairSetup(setup_margin, repair_tns_end_percent, max_passes);
+  resizer->repairSetup(setup_margin, repair_tns_end_percent,
+                       max_passes, verbose,
+                       skip_pin_swap, skip_gate_cloning);
 }
 
 void
@@ -497,13 +523,15 @@ repair_hold(double setup_margin,
             double hold_margin,
             bool allow_setup_violations,
             float max_buffer_percent,
-            int max_passes)
+            int max_passes,
+            bool verbose)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->repairHold(setup_margin, hold_margin,
                       allow_setup_violations,
-                      max_buffer_percent, max_passes);
+                      max_buffer_percent, max_passes,
+                      verbose);
 }
 
 void
@@ -526,6 +554,15 @@ hold_buffer_count()
 {
   Resizer *resizer = getResizer();
   return resizer->holdBufferCount();
+}
+
+////////////////////////////////////////////////////////////////
+void
+recover_power(float recover_power_percent)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->recoverPower(recover_power_percent);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -577,7 +614,7 @@ float
 resize_net_slack(Net *net)
 {
   Resizer *resizer = getResizer();
-  return resizer->resizeNetSlack(net);
+  return resizer->resizeNetSlack(net).value();
 }
 
 ////////////////////////////////////////////////////////////////

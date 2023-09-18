@@ -57,11 +57,11 @@ int notice(int code, const char* msg, ...)
 
 BOOST_AUTO_TEST_CASE(parser_init_and_parse_line_with_integers)
 {
-  Ath__parser parser;
+  utl::Logger logger;
+  Ath__parser parser(&logger);
 
   BOOST_TEST(parser.getLineNum() == 0);
 
-  utl::Logger logger;
   utl::ScopedTemporaryFile scoped_temp_file(&logger);
   const std::string kContents = "1 2 3 4";
   boost::span<const uint8_t> contents(

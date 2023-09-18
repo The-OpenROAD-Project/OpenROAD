@@ -1273,10 +1273,10 @@ ROW IO_CORNER_NORTH_WEST IO_CSITE 0 4412665 FN DO 1 BY 1 STEP 200000 0 ;
 ROW IO_CORNER_NORTH_EAST IO_CSITE 5200000 4412665 N DO 1 BY 1 STEP 200000 0 ;
 ROW IO_CORNER_SOUTH_EAST IO_CSITE 5200000 0 FS DO 1 BY 1 STEP 200000 0 ;
 ROW IO_CORNER_SOUTH_WEST IO_CSITE 0 0 S DO 1 BY 1 STEP 200000 0 ;
-ROW IO_NORTH IO_VSITE 200000 4416330 FN DO 5000 BY 1 STEP 1000 0 ;
-ROW IO_EAST IO_HSITE 5200000 203665 E DO 1 BY 4209 STEP 0 1000 ;
-ROW IO_SOUTH IO_VSITE 200000 0 S DO 5000 BY 1 STEP 1000 0 ;
-ROW IO_WEST IO_HSITE 0 203665 FE DO 1 BY 4209 STEP 0 1000 ;
+ROW IO_NORTH IO_SITE 200000 4416330 FN DO 5000 BY 1 STEP 1000 0 ;
+ROW IO_EAST IO_SITE 5200000 203665 E DO 1 BY 4209 STEP 0 1000 ;
+ROW IO_SOUTH IO_SITE 200000 0 S DO 5000 BY 1 STEP 1000 0 ;
+ROW IO_WEST IO_SITE 0 203665 FE DO 1 BY 4209 STEP 0 1000 ;
 TRACKS X 480 DO 11249 STEP 480 LAYER li1 ;
 TRACKS Y 480 DO 9617 STEP 480 LAYER li1 ;
 TRACKS X 370 DO 14594 STEP 370 LAYER met1 ;
@@ -3108,163 +3108,625 @@ COMPONENTS 1816 ;
     - u_vzz_9 sky130_fd_io__top_ground_hvc_wpad + FIXED ( 5200000 3279665 ) E ;
 END COMPONENTS
 PINS 155 ;
-    - clk_i + NET clk_i + DIRECTION INPUT + USE SIGNAL ;
+    - clk_i + NET clk_i + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 317115 63757 ) N ;
     - en_i + NET en_i + DIRECTION INPUT + USE SIGNAL ;
-    - fsb_node_data_i[0] + NET fsb_node_data_i[0] + DIRECTION INPUT + USE SIGNAL ;
-    - fsb_node_data_i[1] + NET fsb_node_data_i[1] + DIRECTION INPUT + USE SIGNAL ;
-    - fsb_node_data_i[2] + NET fsb_node_data_i[2] + DIRECTION INPUT + USE SIGNAL ;
-    - fsb_node_data_i[3] + NET fsb_node_data_i[3] + DIRECTION INPUT + USE SIGNAL ;
-    - fsb_node_data_i[4] + NET fsb_node_data_i[4] + DIRECTION INPUT + USE SIGNAL ;
-    - fsb_node_data_i[5] + NET fsb_node_data_i[5] + DIRECTION INPUT + USE SIGNAL ;
-    - fsb_node_data_i[6] + NET fsb_node_data_i[6] + DIRECTION INPUT + USE SIGNAL ;
-    - fsb_node_data_i[7] + NET fsb_node_data_i[7] + DIRECTION INPUT + USE SIGNAL ;
-    - fsb_node_data_o_0 + NET fsb_node_data_o_0 + DIRECTION OUTPUT + USE SIGNAL ;
-    - fsb_node_data_o_1 + NET fsb_node_data_o_1 + DIRECTION OUTPUT + USE SIGNAL ;
-    - fsb_node_data_o_2 + NET fsb_node_data_o_2 + DIRECTION OUTPUT + USE SIGNAL ;
-    - fsb_node_data_o_3 + NET fsb_node_data_o_3 + DIRECTION OUTPUT + USE SIGNAL ;
-    - fsb_node_data_o_4 + NET fsb_node_data_o_4 + DIRECTION OUTPUT + USE SIGNAL ;
-    - fsb_node_data_o_5 + NET fsb_node_data_o_5 + DIRECTION OUTPUT + USE SIGNAL ;
-    - fsb_node_data_o_6 + NET fsb_node_data_o_6 + DIRECTION OUTPUT + USE SIGNAL ;
-    - fsb_node_data_o_7 + NET fsb_node_data_o_7 + DIRECTION OUTPUT + USE SIGNAL ;
-    - fsb_node_ready_o + NET fsb_node_ready_o + DIRECTION OUTPUT + USE SIGNAL ;
-    - fsb_node_v_i + NET fsb_node_v_i + DIRECTION INPUT + USE SIGNAL ;
-    - fsb_node_v_o + NET fsb_node_v_o + DIRECTION OUTPUT + USE SIGNAL ;
-    - fsb_node_yumi_i + NET fsb_node_yumi_i + DIRECTION INPUT + USE SIGNAL ;
-    - reset_i + NET reset_i + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_cmd_data_o_0 + NET rocc_cmd_data_o_0 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_cmd_data_o_1 + NET rocc_cmd_data_o_1 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_cmd_data_o_10 + NET rocc_cmd_data_o_10 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_cmd_data_o_11 + NET rocc_cmd_data_o_11 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_cmd_data_o_12 + NET rocc_cmd_data_o_12 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_cmd_data_o_13 + NET rocc_cmd_data_o_13 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_cmd_data_o_14 + NET rocc_cmd_data_o_14 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_cmd_data_o_15 + NET rocc_cmd_data_o_15 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_cmd_data_o_2 + NET rocc_cmd_data_o_2 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_cmd_data_o_3 + NET rocc_cmd_data_o_3 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_cmd_data_o_4 + NET rocc_cmd_data_o_4 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_cmd_data_o_5 + NET rocc_cmd_data_o_5 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_cmd_data_o_6 + NET rocc_cmd_data_o_6 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_cmd_data_o_7 + NET rocc_cmd_data_o_7 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_cmd_data_o_8 + NET rocc_cmd_data_o_8 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_cmd_data_o_9 + NET rocc_cmd_data_o_9 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_cmd_ready_i + NET rocc_cmd_ready_i + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_cmd_v_o + NET rocc_cmd_v_o + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_ctrl_i_busy_ + NET rocc_ctrl_i_busy_ + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_ctrl_i_interrupt_ + NET rocc_ctrl_i_interrupt_ + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_ctrl_o_exception_ + NET rocc_ctrl_o_exception_ + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_ctrl_o_host_id_ + NET rocc_ctrl_o_host_id_ + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_ctrl_o_s_ + NET rocc_ctrl_o_s_ + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[0] + NET rocc_mem_req_data_i[0] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[10] + NET rocc_mem_req_data_i[10] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[11] + NET rocc_mem_req_data_i[11] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[12] + NET rocc_mem_req_data_i[12] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[13] + NET rocc_mem_req_data_i[13] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[14] + NET rocc_mem_req_data_i[14] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[15] + NET rocc_mem_req_data_i[15] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[16] + NET rocc_mem_req_data_i[16] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[17] + NET rocc_mem_req_data_i[17] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[18] + NET rocc_mem_req_data_i[18] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[19] + NET rocc_mem_req_data_i[19] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[1] + NET rocc_mem_req_data_i[1] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[20] + NET rocc_mem_req_data_i[20] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[21] + NET rocc_mem_req_data_i[21] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[22] + NET rocc_mem_req_data_i[22] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[23] + NET rocc_mem_req_data_i[23] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[24] + NET rocc_mem_req_data_i[24] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[25] + NET rocc_mem_req_data_i[25] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[26] + NET rocc_mem_req_data_i[26] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[27] + NET rocc_mem_req_data_i[27] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[28] + NET rocc_mem_req_data_i[28] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[29] + NET rocc_mem_req_data_i[29] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[2] + NET rocc_mem_req_data_i[2] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[30] + NET rocc_mem_req_data_i[30] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[31] + NET rocc_mem_req_data_i[31] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[3] + NET rocc_mem_req_data_i[3] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[4] + NET rocc_mem_req_data_i[4] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[5] + NET rocc_mem_req_data_i[5] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[6] + NET rocc_mem_req_data_i[6] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[7] + NET rocc_mem_req_data_i[7] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[8] + NET rocc_mem_req_data_i[8] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_data_i[9] + NET rocc_mem_req_data_i[9] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_req_ready_o + NET rocc_mem_req_ready_o + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_req_v_i + NET rocc_mem_req_v_i + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_0 + NET rocc_mem_resp_data_o_0 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_1 + NET rocc_mem_resp_data_o_1 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_10 + NET rocc_mem_resp_data_o_10 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_11 + NET rocc_mem_resp_data_o_11 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_12 + NET rocc_mem_resp_data_o_12 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_13 + NET rocc_mem_resp_data_o_13 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_14 + NET rocc_mem_resp_data_o_14 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_15 + NET rocc_mem_resp_data_o_15 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_16 + NET rocc_mem_resp_data_o_16 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_17 + NET rocc_mem_resp_data_o_17 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_18 + NET rocc_mem_resp_data_o_18 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_19 + NET rocc_mem_resp_data_o_19 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_2 + NET rocc_mem_resp_data_o_2 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_20 + NET rocc_mem_resp_data_o_20 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_21 + NET rocc_mem_resp_data_o_21 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_22 + NET rocc_mem_resp_data_o_22 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_23 + NET rocc_mem_resp_data_o_23 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_24 + NET rocc_mem_resp_data_o_24 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_25 + NET rocc_mem_resp_data_o_25 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_26 + NET rocc_mem_resp_data_o_26 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_27 + NET rocc_mem_resp_data_o_27 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_28 + NET rocc_mem_resp_data_o_28 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_29 + NET rocc_mem_resp_data_o_29 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_3 + NET rocc_mem_resp_data_o_3 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_30 + NET rocc_mem_resp_data_o_30 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_31 + NET rocc_mem_resp_data_o_31 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_32 + NET rocc_mem_resp_data_o_32 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_33 + NET rocc_mem_resp_data_o_33 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_34 + NET rocc_mem_resp_data_o_34 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_35 + NET rocc_mem_resp_data_o_35 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_36 + NET rocc_mem_resp_data_o_36 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_37 + NET rocc_mem_resp_data_o_37 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_38 + NET rocc_mem_resp_data_o_38 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_39 + NET rocc_mem_resp_data_o_39 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_4 + NET rocc_mem_resp_data_o_4 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_40 + NET rocc_mem_resp_data_o_40 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_41 + NET rocc_mem_resp_data_o_41 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_42 + NET rocc_mem_resp_data_o_42 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_43 + NET rocc_mem_resp_data_o_43 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_44 + NET rocc_mem_resp_data_o_44 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_45 + NET rocc_mem_resp_data_o_45 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_46 + NET rocc_mem_resp_data_o_46 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_47 + NET rocc_mem_resp_data_o_47 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_48 + NET rocc_mem_resp_data_o_48 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_49 + NET rocc_mem_resp_data_o_49 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_5 + NET rocc_mem_resp_data_o_5 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_50 + NET rocc_mem_resp_data_o_50 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_51 + NET rocc_mem_resp_data_o_51 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_52 + NET rocc_mem_resp_data_o_52 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_53 + NET rocc_mem_resp_data_o_53 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_54 + NET rocc_mem_resp_data_o_54 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_55 + NET rocc_mem_resp_data_o_55 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_56 + NET rocc_mem_resp_data_o_56 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_57 + NET rocc_mem_resp_data_o_57 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_58 + NET rocc_mem_resp_data_o_58 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_59 + NET rocc_mem_resp_data_o_59 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_6 + NET rocc_mem_resp_data_o_6 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_60 + NET rocc_mem_resp_data_o_60 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_61 + NET rocc_mem_resp_data_o_61 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_62 + NET rocc_mem_resp_data_o_62 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_63 + NET rocc_mem_resp_data_o_63 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_7 + NET rocc_mem_resp_data_o_7 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_8 + NET rocc_mem_resp_data_o_8 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_data_o_9 + NET rocc_mem_resp_data_o_9 + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_mem_resp_v_o + NET rocc_mem_resp_v_o + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_resp_data_i[0] + NET rocc_resp_data_i[0] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_resp_data_i[1] + NET rocc_resp_data_i[1] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_resp_data_i[2] + NET rocc_resp_data_i[2] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_resp_data_i[3] + NET rocc_resp_data_i[3] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_resp_data_i[4] + NET rocc_resp_data_i[4] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_resp_data_i[5] + NET rocc_resp_data_i[5] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_resp_data_i[6] + NET rocc_resp_data_i[6] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_resp_data_i[7] + NET rocc_resp_data_i[7] + DIRECTION INPUT + USE SIGNAL ;
-    - rocc_resp_ready_o + NET rocc_resp_ready_o + DIRECTION OUTPUT + USE SIGNAL ;
-    - rocc_resp_v_i + NET rocc_resp_v_i + DIRECTION INPUT + USE SIGNAL ;
+    - fsb_node_data_i[0] + NET fsb_node_data_i[0] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 3756780 ) N ;
+    - fsb_node_data_i[1] + NET fsb_node_data_i[1] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 3676780 ) N ;
+    - fsb_node_data_i[2] + NET fsb_node_data_i[2] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 3596780 ) N ;
+    - fsb_node_data_i[3] + NET fsb_node_data_i[3] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 3516780 ) N ;
+    - fsb_node_data_i[4] + NET fsb_node_data_i[4] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 3436780 ) N ;
+    - fsb_node_data_i[5] + NET fsb_node_data_i[5] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 3196780 ) N ;
+    - fsb_node_data_i[6] + NET fsb_node_data_i[6] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 3116780 ) N ;
+    - fsb_node_data_i[7] + NET fsb_node_data_i[7] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 3036780 ) N ;
+    - fsb_node_data_o_0 + NET fsb_node_data_o_0 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 2796780 ) N ;
+    - fsb_node_data_o_1 + NET fsb_node_data_o_1 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 2556780 ) N ;
+    - fsb_node_data_o_2 + NET fsb_node_data_o_2 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 2476780 ) N ;
+    - fsb_node_data_o_3 + NET fsb_node_data_o_3 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 2236780 ) N ;
+    - fsb_node_data_o_4 + NET fsb_node_data_o_4 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 2156780 ) N ;
+    - fsb_node_data_o_5 + NET fsb_node_data_o_5 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 2076780 ) N ;
+    - fsb_node_data_o_6 + NET fsb_node_data_o_6 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 1996780 ) N ;
+    - fsb_node_data_o_7 + NET fsb_node_data_o_7 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 1916780 ) N ;
+    - fsb_node_ready_o + NET fsb_node_ready_o + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 2956780 ) N ;
+    - fsb_node_v_i + NET fsb_node_v_i + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 3836780 ) N ;
+    - fsb_node_v_o + NET fsb_node_v_o + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 2876780 ) N ;
+    - fsb_node_yumi_i + NET fsb_node_yumi_i + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 1836780 ) N ;
+    - reset_i + NET reset_i + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 397115 63757 ) N ;
+    - rocc_cmd_data_o_0 + NET rocc_cmd_data_o_0 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 797115 63757 ) N ;
+    - rocc_cmd_data_o_1 + NET rocc_cmd_data_o_1 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 877115 63757 ) N ;
+    - rocc_cmd_data_o_10 + NET rocc_cmd_data_o_10 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 1917115 63757 ) N ;
+    - rocc_cmd_data_o_11 + NET rocc_cmd_data_o_11 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 1997115 63757 ) N ;
+    - rocc_cmd_data_o_12 + NET rocc_cmd_data_o_12 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 2077115 63757 ) N ;
+    - rocc_cmd_data_o_13 + NET rocc_cmd_data_o_13 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 2157115 63757 ) N ;
+    - rocc_cmd_data_o_14 + NET rocc_cmd_data_o_14 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 2397115 63757 ) N ;
+    - rocc_cmd_data_o_15 + NET rocc_cmd_data_o_15 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 2477115 63757 ) N ;
+    - rocc_cmd_data_o_2 + NET rocc_cmd_data_o_2 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 957115 63757 ) N ;
+    - rocc_cmd_data_o_3 + NET rocc_cmd_data_o_3 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 1037115 63757 ) N ;
+    - rocc_cmd_data_o_4 + NET rocc_cmd_data_o_4 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 1117115 63757 ) N ;
+    - rocc_cmd_data_o_5 + NET rocc_cmd_data_o_5 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 1197115 63757 ) N ;
+    - rocc_cmd_data_o_6 + NET rocc_cmd_data_o_6 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 1437115 63757 ) N ;
+    - rocc_cmd_data_o_7 + NET rocc_cmd_data_o_7 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 1517115 63757 ) N ;
+    - rocc_cmd_data_o_8 + NET rocc_cmd_data_o_8 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 1597115 63757 ) N ;
+    - rocc_cmd_data_o_9 + NET rocc_cmd_data_o_9 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 1837115 63757 ) N ;
+    - rocc_cmd_ready_i + NET rocc_cmd_ready_i + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 2557115 63757 ) N ;
+    - rocc_cmd_v_o + NET rocc_cmd_v_o + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 717115 63757 ) N ;
+    - rocc_ctrl_i_busy_ + NET rocc_ctrl_i_busy_ + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 1756780 ) N ;
+    - rocc_ctrl_i_interrupt_ + NET rocc_ctrl_i_interrupt_ + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 1676780 ) N ;
+    - rocc_ctrl_o_exception_ + NET rocc_ctrl_o_exception_ + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 1356780 ) N ;
+    - rocc_ctrl_o_host_id_ + NET rocc_ctrl_o_host_id_ + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 1276780 ) N ;
+    - rocc_ctrl_o_s_ + NET rocc_ctrl_o_s_ + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 1436780 ) N ;
+    - rocc_mem_req_data_i[0] + NET rocc_mem_req_data_i[0] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 3837115 63757 ) N ;
+    - rocc_mem_req_data_i[10] + NET rocc_mem_req_data_i[10] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 4957115 63757 ) N ;
+    - rocc_mem_req_data_i[11] + NET rocc_mem_req_data_i[11] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 5037115 63757 ) N ;
+    - rocc_mem_req_data_i[12] + NET rocc_mem_req_data_i[12] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 276780 ) N ;
+    - rocc_mem_req_data_i[13] + NET rocc_mem_req_data_i[13] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 356780 ) N ;
+    - rocc_mem_req_data_i[14] + NET rocc_mem_req_data_i[14] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 436780 ) N ;
+    - rocc_mem_req_data_i[15] + NET rocc_mem_req_data_i[15] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 516780 ) N ;
+    - rocc_mem_req_data_i[16] + NET rocc_mem_req_data_i[16] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 916780 ) N ;
+    - rocc_mem_req_data_i[17] + NET rocc_mem_req_data_i[17] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 996780 ) N ;
+    - rocc_mem_req_data_i[18] + NET rocc_mem_req_data_i[18] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 1076780 ) N ;
+    - rocc_mem_req_data_i[19] + NET rocc_mem_req_data_i[19] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 1156780 ) N ;
+    - rocc_mem_req_data_i[1] + NET rocc_mem_req_data_i[1] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 3917115 63757 ) N ;
+    - rocc_mem_req_data_i[20] + NET rocc_mem_req_data_i[20] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 1236780 ) N ;
+    - rocc_mem_req_data_i[21] + NET rocc_mem_req_data_i[21] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 1316780 ) N ;
+    - rocc_mem_req_data_i[22] + NET rocc_mem_req_data_i[22] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 1396780 ) N ;
+    - rocc_mem_req_data_i[23] + NET rocc_mem_req_data_i[23] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 1476780 ) N ;
+    - rocc_mem_req_data_i[24] + NET rocc_mem_req_data_i[24] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 1716780 ) N ;
+    - rocc_mem_req_data_i[25] + NET rocc_mem_req_data_i[25] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 1796780 ) N ;
+    - rocc_mem_req_data_i[26] + NET rocc_mem_req_data_i[26] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 1876780 ) N ;
+    - rocc_mem_req_data_i[27] + NET rocc_mem_req_data_i[27] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 1956780 ) N ;
+    - rocc_mem_req_data_i[28] + NET rocc_mem_req_data_i[28] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 2036780 ) N ;
+    - rocc_mem_req_data_i[29] + NET rocc_mem_req_data_i[29] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 2116780 ) N ;
+    - rocc_mem_req_data_i[2] + NET rocc_mem_req_data_i[2] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 4157115 63757 ) N ;
+    - rocc_mem_req_data_i[30] + NET rocc_mem_req_data_i[30] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 2196780 ) N ;
+    - rocc_mem_req_data_i[31] + NET rocc_mem_req_data_i[31] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 2276780 ) N ;
+    - rocc_mem_req_data_i[3] + NET rocc_mem_req_data_i[3] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 4237115 63757 ) N ;
+    - rocc_mem_req_data_i[4] + NET rocc_mem_req_data_i[4] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 4317115 63757 ) N ;
+    - rocc_mem_req_data_i[5] + NET rocc_mem_req_data_i[5] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 4397115 63757 ) N ;
+    - rocc_mem_req_data_i[6] + NET rocc_mem_req_data_i[6] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 4477115 63757 ) N ;
+    - rocc_mem_req_data_i[7] + NET rocc_mem_req_data_i[7] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 4557115 63757 ) N ;
+    - rocc_mem_req_data_i[8] + NET rocc_mem_req_data_i[8] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 4637115 63757 ) N ;
+    - rocc_mem_req_data_i[9] + NET rocc_mem_req_data_i[9] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 4717115 63757 ) N ;
+    - rocc_mem_req_ready_o + NET rocc_mem_req_ready_o + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 2516780 ) N ;
+    - rocc_mem_req_v_i + NET rocc_mem_req_v_i + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 3757115 63757 ) N ;
+    - rocc_mem_resp_data_o_0 + NET rocc_mem_resp_data_o_0 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 2676780 ) N ;
+    - rocc_mem_resp_data_o_1 + NET rocc_mem_resp_data_o_1 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 2916780 ) N ;
+    - rocc_mem_resp_data_o_10 + NET rocc_mem_resp_data_o_10 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 3796780 ) N ;
+    - rocc_mem_resp_data_o_11 + NET rocc_mem_resp_data_o_11 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 3876780 ) N ;
+    - rocc_mem_resp_data_o_12 + NET rocc_mem_resp_data_o_12 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 3956780 ) N ;
+    - rocc_mem_resp_data_o_13 + NET rocc_mem_resp_data_o_13 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 4036780 ) N ;
+    - rocc_mem_resp_data_o_14 + NET rocc_mem_resp_data_o_14 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 4276780 ) N ;
+    - rocc_mem_resp_data_o_15 + NET rocc_mem_resp_data_o_15 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 4356780 ) N ;
+    - rocc_mem_resp_data_o_16 + NET rocc_mem_resp_data_o_16 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 4957115 4552572 ) N ;
+    - rocc_mem_resp_data_o_17 + NET rocc_mem_resp_data_o_17 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 4877115 4552572 ) N ;
+    - rocc_mem_resp_data_o_18 + NET rocc_mem_resp_data_o_18 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 4797115 4552572 ) N ;
+    - rocc_mem_resp_data_o_19 + NET rocc_mem_resp_data_o_19 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 4717115 4552572 ) N ;
+    - rocc_mem_resp_data_o_2 + NET rocc_mem_resp_data_o_2 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 2996780 ) N ;
+    - rocc_mem_resp_data_o_20 + NET rocc_mem_resp_data_o_20 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 4477115 4552572 ) N ;
+    - rocc_mem_resp_data_o_21 + NET rocc_mem_resp_data_o_21 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 4397115 4552572 ) N ;
+    - rocc_mem_resp_data_o_22 + NET rocc_mem_resp_data_o_22 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 4157115 4552572 ) N ;
+    - rocc_mem_resp_data_o_23 + NET rocc_mem_resp_data_o_23 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 4077115 4552572 ) N ;
+    - rocc_mem_resp_data_o_24 + NET rocc_mem_resp_data_o_24 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 3997115 4552572 ) N ;
+    - rocc_mem_resp_data_o_25 + NET rocc_mem_resp_data_o_25 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 3917115 4552572 ) N ;
+    - rocc_mem_resp_data_o_26 + NET rocc_mem_resp_data_o_26 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 3837115 4552572 ) N ;
+    - rocc_mem_resp_data_o_27 + NET rocc_mem_resp_data_o_27 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 3757115 4552572 ) N ;
+    - rocc_mem_resp_data_o_28 + NET rocc_mem_resp_data_o_28 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 3677115 4552572 ) N ;
+    - rocc_mem_resp_data_o_29 + NET rocc_mem_resp_data_o_29 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 3597115 4552572 ) N ;
+    - rocc_mem_resp_data_o_3 + NET rocc_mem_resp_data_o_3 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 3076780 ) N ;
+    - rocc_mem_resp_data_o_30 + NET rocc_mem_resp_data_o_30 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 3357115 4552572 ) N ;
+    - rocc_mem_resp_data_o_31 + NET rocc_mem_resp_data_o_31 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 3277115 4552572 ) N ;
+    - rocc_mem_resp_data_o_32 + NET rocc_mem_resp_data_o_32 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 3197115 4552572 ) N ;
+    - rocc_mem_resp_data_o_33 + NET rocc_mem_resp_data_o_33 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 3117115 4552572 ) N ;
+    - rocc_mem_resp_data_o_34 + NET rocc_mem_resp_data_o_34 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 3037115 4552572 ) N ;
+    - rocc_mem_resp_data_o_35 + NET rocc_mem_resp_data_o_35 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 2957115 4552572 ) N ;
+    - rocc_mem_resp_data_o_36 + NET rocc_mem_resp_data_o_36 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 2877115 4552572 ) N ;
+    - rocc_mem_resp_data_o_37 + NET rocc_mem_resp_data_o_37 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 2797115 4552572 ) N ;
+    - rocc_mem_resp_data_o_38 + NET rocc_mem_resp_data_o_38 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 2397115 4552572 ) N ;
+    - rocc_mem_resp_data_o_39 + NET rocc_mem_resp_data_o_39 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 2317115 4552572 ) N ;
+    - rocc_mem_resp_data_o_4 + NET rocc_mem_resp_data_o_4 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 3156780 ) N ;
+    - rocc_mem_resp_data_o_40 + NET rocc_mem_resp_data_o_40 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 2237115 4552572 ) N ;
+    - rocc_mem_resp_data_o_41 + NET rocc_mem_resp_data_o_41 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 2157115 4552572 ) N ;
+    - rocc_mem_resp_data_o_42 + NET rocc_mem_resp_data_o_42 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 2077115 4552572 ) N ;
+    - rocc_mem_resp_data_o_43 + NET rocc_mem_resp_data_o_43 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 1997115 4552572 ) N ;
+    - rocc_mem_resp_data_o_44 + NET rocc_mem_resp_data_o_44 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 1917115 4552572 ) N ;
+    - rocc_mem_resp_data_o_45 + NET rocc_mem_resp_data_o_45 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 1837115 4552572 ) N ;
+    - rocc_mem_resp_data_o_46 + NET rocc_mem_resp_data_o_46 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 1597115 4552572 ) N ;
+    - rocc_mem_resp_data_o_47 + NET rocc_mem_resp_data_o_47 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 1517115 4552572 ) N ;
+    - rocc_mem_resp_data_o_48 + NET rocc_mem_resp_data_o_48 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 1437115 4552572 ) N ;
+    - rocc_mem_resp_data_o_49 + NET rocc_mem_resp_data_o_49 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 1357115 4552572 ) N ;
+    - rocc_mem_resp_data_o_5 + NET rocc_mem_resp_data_o_5 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 3236780 ) N ;
+    - rocc_mem_resp_data_o_50 + NET rocc_mem_resp_data_o_50 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 1277115 4552572 ) N ;
+    - rocc_mem_resp_data_o_51 + NET rocc_mem_resp_data_o_51 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 1197115 4552572 ) N ;
+    - rocc_mem_resp_data_o_52 + NET rocc_mem_resp_data_o_52 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 1117115 4552572 ) N ;
+    - rocc_mem_resp_data_o_53 + NET rocc_mem_resp_data_o_53 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 1037115 4552572 ) N ;
+    - rocc_mem_resp_data_o_54 + NET rocc_mem_resp_data_o_54 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 797115 4552572 ) N ;
+    - rocc_mem_resp_data_o_55 + NET rocc_mem_resp_data_o_55 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 717115 4552572 ) N ;
+    - rocc_mem_resp_data_o_56 + NET rocc_mem_resp_data_o_56 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 477115 4552572 ) N ;
+    - rocc_mem_resp_data_o_57 + NET rocc_mem_resp_data_o_57 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 397115 4552572 ) N ;
+    - rocc_mem_resp_data_o_58 + NET rocc_mem_resp_data_o_58 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 317115 4552572 ) N ;
+    - rocc_mem_resp_data_o_59 + NET rocc_mem_resp_data_o_59 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 237115 4552572 ) N ;
+    - rocc_mem_resp_data_o_6 + NET rocc_mem_resp_data_o_6 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 3476780 ) N ;
+    - rocc_mem_resp_data_o_60 + NET rocc_mem_resp_data_o_60 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 4316780 ) N ;
+    - rocc_mem_resp_data_o_61 + NET rocc_mem_resp_data_o_61 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 4236780 ) N ;
+    - rocc_mem_resp_data_o_62 + NET rocc_mem_resp_data_o_62 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 3996780 ) N ;
+    - rocc_mem_resp_data_o_63 + NET rocc_mem_resp_data_o_63 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 63757 3916780 ) N ;
+    - rocc_mem_resp_data_o_7 + NET rocc_mem_resp_data_o_7 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 3556780 ) N ;
+    - rocc_mem_resp_data_o_8 + NET rocc_mem_resp_data_o_8 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 3636780 ) N ;
+    - rocc_mem_resp_data_o_9 + NET rocc_mem_resp_data_o_9 + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 3716780 ) N ;
+    - rocc_mem_resp_v_o + NET rocc_mem_resp_v_o + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10772 -10770 ) ( 10773 10770 )
+        + FIXED ( 5336242 2596780 ) N ;
+    - rocc_resp_data_i[0] + NET rocc_resp_data_i[0] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 2717115 63757 ) N ;
+    - rocc_resp_data_i[1] + NET rocc_resp_data_i[1] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 2797115 63757 ) N ;
+    - rocc_resp_data_i[2] + NET rocc_resp_data_i[2] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 2877115 63757 ) N ;
+    - rocc_resp_data_i[3] + NET rocc_resp_data_i[3] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 2957115 63757 ) N ;
+    - rocc_resp_data_i[4] + NET rocc_resp_data_i[4] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 3197115 63757 ) N ;
+    - rocc_resp_data_i[5] + NET rocc_resp_data_i[5] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 3277115 63757 ) N ;
+    - rocc_resp_data_i[6] + NET rocc_resp_data_i[6] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 3357115 63757 ) N ;
+    - rocc_resp_data_i[7] + NET rocc_resp_data_i[7] + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 3437115 63757 ) N ;
+    - rocc_resp_ready_o + NET rocc_resp_ready_o + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 3517115 63757 ) N ;
+    - rocc_resp_v_i + NET rocc_resp_v_i + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -10770 -10772 ) ( 10770 10773 )
+        + FIXED ( 2637115 63757 ) N ;
 END PINS
-SPECIALNETS 242 ;
+SPECIALNETS 396 ;
     - AMUXBUS_A ( u_vss_1 AMUXBUS_A ) ( u_vzz_3 AMUXBUS_A ) ( u_vzz_5 AMUXBUS_A ) ( u_vzz_4 AMUXBUS_A ) ( u_vss_0 AMUXBUS_A ) ( u_vzz_1 AMUXBUS_A ) ( u_vzz_2 AMUXBUS_A )
       ( u_vzz_0 AMUXBUS_A ) ( u_vzz_9 AMUXBUS_A ) ( u_vzz_10 AMUXBUS_A ) ( u_vss_3 AMUXBUS_A ) ( u_vzz_8 AMUXBUS_A ) ( u_vzz_7 AMUXBUS_A ) ( u_vzz_6 AMUXBUS_A ) ( IO_CORNER_NORTH_WEST_INST AMUXBUS_A )
       ( u_rocc_resp_v.u_in AMUXBUS_A ) ( u_rocc_resp_ready.u_io AMUXBUS_A ) ( u_rocc_resp_data_i.u_io\[7\].u_in AMUXBUS_A ) ( u_rocc_resp_data_i.u_io\[6\].u_in AMUXBUS_A ) ( u_rocc_resp_data_i.u_io\[5\].u_in AMUXBUS_A ) ( u_rocc_resp_data_i.u_io\[4\].u_in AMUXBUS_A ) ( u_rocc_resp_data_i.u_io\[3\].u_in AMUXBUS_A ) ( u_rocc_resp_data_i.u_io\[2\].u_in AMUXBUS_A )
@@ -3309,6 +3771,160 @@ SPECIALNETS 242 ;
       ( u_fsb_node_ready.u_io AMUXBUS_B ) ( u_fsb_node_data_o_7_.u_io AMUXBUS_B ) ( u_fsb_node_data_o_6_.u_io AMUXBUS_B ) ( u_fsb_node_data_o_5_.u_io AMUXBUS_B ) ( u_fsb_node_data_o_4_.u_io AMUXBUS_B ) ( u_fsb_node_data_o_3_.u_io AMUXBUS_B ) ( u_fsb_node_data_o_2_.u_io AMUXBUS_B ) ( u_fsb_node_data_o_1_.u_io AMUXBUS_B )
       ( u_fsb_node_data_o_0_.u_io AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[7\].u_in AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[6\].u_in AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[5\].u_in AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[4\].u_in AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[3\].u_in AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[2\].u_in AMUXBUS_B ) ( u_fsb_node_data_i.u_io\[1\].u_in AMUXBUS_B )
       ( u_fsb_node_data_i.u_io\[0\].u_in AMUXBUS_B ) ( u_clk.u_in AMUXBUS_B ) + USE SIGNAL ;
+    - clk_i ( PIN clk_i ) ( u_clk.u_in PAD ) + USE SIGNAL ;
+    - fsb_node_data_i[0] ( PIN fsb_node_data_i[0] ) ( u_fsb_node_data_i.u_io\[0\].u_in PAD ) + USE SIGNAL ;
+    - fsb_node_data_i[1] ( PIN fsb_node_data_i[1] ) ( u_fsb_node_data_i.u_io\[1\].u_in PAD ) + USE SIGNAL ;
+    - fsb_node_data_i[2] ( PIN fsb_node_data_i[2] ) ( u_fsb_node_data_i.u_io\[2\].u_in PAD ) + USE SIGNAL ;
+    - fsb_node_data_i[3] ( PIN fsb_node_data_i[3] ) ( u_fsb_node_data_i.u_io\[3\].u_in PAD ) + USE SIGNAL ;
+    - fsb_node_data_i[4] ( PIN fsb_node_data_i[4] ) ( u_fsb_node_data_i.u_io\[4\].u_in PAD ) + USE SIGNAL ;
+    - fsb_node_data_i[5] ( PIN fsb_node_data_i[5] ) ( u_fsb_node_data_i.u_io\[5\].u_in PAD ) + USE SIGNAL ;
+    - fsb_node_data_i[6] ( PIN fsb_node_data_i[6] ) ( u_fsb_node_data_i.u_io\[6\].u_in PAD ) + USE SIGNAL ;
+    - fsb_node_data_i[7] ( PIN fsb_node_data_i[7] ) ( u_fsb_node_data_i.u_io\[7\].u_in PAD ) + USE SIGNAL ;
+    - fsb_node_data_o_0 ( PIN fsb_node_data_o_0 ) ( u_fsb_node_data_o_0_.u_io PAD ) + USE SIGNAL ;
+    - fsb_node_data_o_1 ( PIN fsb_node_data_o_1 ) ( u_fsb_node_data_o_1_.u_io PAD ) + USE SIGNAL ;
+    - fsb_node_data_o_2 ( PIN fsb_node_data_o_2 ) ( u_fsb_node_data_o_2_.u_io PAD ) + USE SIGNAL ;
+    - fsb_node_data_o_3 ( PIN fsb_node_data_o_3 ) ( u_fsb_node_data_o_3_.u_io PAD ) + USE SIGNAL ;
+    - fsb_node_data_o_4 ( PIN fsb_node_data_o_4 ) ( u_fsb_node_data_o_4_.u_io PAD ) + USE SIGNAL ;
+    - fsb_node_data_o_5 ( PIN fsb_node_data_o_5 ) ( u_fsb_node_data_o_5_.u_io PAD ) + USE SIGNAL ;
+    - fsb_node_data_o_6 ( PIN fsb_node_data_o_6 ) ( u_fsb_node_data_o_6_.u_io PAD ) + USE SIGNAL ;
+    - fsb_node_data_o_7 ( PIN fsb_node_data_o_7 ) ( u_fsb_node_data_o_7_.u_io PAD ) + USE SIGNAL ;
+    - fsb_node_ready_o ( PIN fsb_node_ready_o ) ( u_fsb_node_ready.u_io PAD ) + USE SIGNAL ;
+    - fsb_node_v_i ( PIN fsb_node_v_i ) ( u_fsb_node_v_i.u_in PAD ) + USE SIGNAL ;
+    - fsb_node_v_o ( PIN fsb_node_v_o ) ( u_fsb_node_v_o.u_io PAD ) + USE SIGNAL ;
+    - fsb_node_yumi_i ( PIN fsb_node_yumi_i ) ( u_fsb_node_yumi.u_in PAD ) + USE SIGNAL ;
+    - reset_i ( PIN reset_i ) ( u_reset.u_in PAD ) + USE SIGNAL ;
+    - rocc_cmd_data_o_0 ( PIN rocc_cmd_data_o_0 ) ( u_rocc_cmd_data_o_0_.u_io PAD ) + USE SIGNAL ;
+    - rocc_cmd_data_o_1 ( PIN rocc_cmd_data_o_1 ) ( u_rocc_cmd_data_o_1_.u_io PAD ) + USE SIGNAL ;
+    - rocc_cmd_data_o_10 ( PIN rocc_cmd_data_o_10 ) ( u_rocc_cmd_data_o_10_.u_io PAD ) + USE SIGNAL ;
+    - rocc_cmd_data_o_11 ( PIN rocc_cmd_data_o_11 ) ( u_rocc_cmd_data_o_11_.u_io PAD ) + USE SIGNAL ;
+    - rocc_cmd_data_o_12 ( PIN rocc_cmd_data_o_12 ) ( u_rocc_cmd_data_o_12_.u_io PAD ) + USE SIGNAL ;
+    - rocc_cmd_data_o_13 ( PIN rocc_cmd_data_o_13 ) ( u_rocc_cmd_data_o_13_.u_io PAD ) + USE SIGNAL ;
+    - rocc_cmd_data_o_14 ( PIN rocc_cmd_data_o_14 ) ( u_rocc_cmd_data_o_14_.u_io PAD ) + USE SIGNAL ;
+    - rocc_cmd_data_o_15 ( PIN rocc_cmd_data_o_15 ) ( u_rocc_cmd_data_o_15_.u_io PAD ) + USE SIGNAL ;
+    - rocc_cmd_data_o_2 ( PIN rocc_cmd_data_o_2 ) ( u_rocc_cmd_data_o_2_.u_io PAD ) + USE SIGNAL ;
+    - rocc_cmd_data_o_3 ( PIN rocc_cmd_data_o_3 ) ( u_rocc_cmd_data_o_3_.u_io PAD ) + USE SIGNAL ;
+    - rocc_cmd_data_o_4 ( PIN rocc_cmd_data_o_4 ) ( u_rocc_cmd_data_o_4_.u_io PAD ) + USE SIGNAL ;
+    - rocc_cmd_data_o_5 ( PIN rocc_cmd_data_o_5 ) ( u_rocc_cmd_data_o_5_.u_io PAD ) + USE SIGNAL ;
+    - rocc_cmd_data_o_6 ( PIN rocc_cmd_data_o_6 ) ( u_rocc_cmd_data_o_6_.u_io PAD ) + USE SIGNAL ;
+    - rocc_cmd_data_o_7 ( PIN rocc_cmd_data_o_7 ) ( u_rocc_cmd_data_o_7_.u_io PAD ) + USE SIGNAL ;
+    - rocc_cmd_data_o_8 ( PIN rocc_cmd_data_o_8 ) ( u_rocc_cmd_data_o_8_.u_io PAD ) + USE SIGNAL ;
+    - rocc_cmd_data_o_9 ( PIN rocc_cmd_data_o_9 ) ( u_rocc_cmd_data_o_9_.u_io PAD ) + USE SIGNAL ;
+    - rocc_cmd_ready_i ( PIN rocc_cmd_ready_i ) ( u_rocc_cmd_ready.u_in PAD ) + USE SIGNAL ;
+    - rocc_cmd_v_o ( PIN rocc_cmd_v_o ) ( u_rocc_cmd_v.u_io PAD ) + USE SIGNAL ;
+    - rocc_ctrl_i_busy_ ( PIN rocc_ctrl_i_busy_ ) ( u_rocc_ctrl_i_busy.u_in PAD ) + USE SIGNAL ;
+    - rocc_ctrl_i_interrupt_ ( PIN rocc_ctrl_i_interrupt_ ) ( u_rocc_ctrl_i_interrupt.u_in PAD ) + USE SIGNAL ;
+    - rocc_ctrl_o_exception_ ( PIN rocc_ctrl_o_exception_ ) ( u_rocc_ctrl_o_exception.u_io PAD ) + USE SIGNAL ;
+    - rocc_ctrl_o_host_id_ ( PIN rocc_ctrl_o_host_id_ ) ( u_rocc_ctrl_o_host_id.u_io PAD ) + USE SIGNAL ;
+    - rocc_ctrl_o_s_ ( PIN rocc_ctrl_o_s_ ) ( u_rocc_ctrl_o_s.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[0] ( PIN rocc_mem_req_data_i[0] ) ( u_rocc_mem_req_data_i.u_io\[0\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[10] ( PIN rocc_mem_req_data_i[10] ) ( u_rocc_mem_req_data_i.u_io\[10\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[11] ( PIN rocc_mem_req_data_i[11] ) ( u_rocc_mem_req_data_i.u_io\[11\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[12] ( PIN rocc_mem_req_data_i[12] ) ( u_rocc_mem_req_data_i.u_io\[12\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[13] ( PIN rocc_mem_req_data_i[13] ) ( u_rocc_mem_req_data_i.u_io\[13\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[14] ( PIN rocc_mem_req_data_i[14] ) ( u_rocc_mem_req_data_i.u_io\[14\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[15] ( PIN rocc_mem_req_data_i[15] ) ( u_rocc_mem_req_data_i.u_io\[15\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[16] ( PIN rocc_mem_req_data_i[16] ) ( u_rocc_mem_req_data_i.u_io\[16\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[17] ( PIN rocc_mem_req_data_i[17] ) ( u_rocc_mem_req_data_i.u_io\[17\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[18] ( PIN rocc_mem_req_data_i[18] ) ( u_rocc_mem_req_data_i.u_io\[18\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[19] ( PIN rocc_mem_req_data_i[19] ) ( u_rocc_mem_req_data_i.u_io\[19\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[1] ( PIN rocc_mem_req_data_i[1] ) ( u_rocc_mem_req_data_i.u_io\[1\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[20] ( PIN rocc_mem_req_data_i[20] ) ( u_rocc_mem_req_data_i.u_io\[20\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[21] ( PIN rocc_mem_req_data_i[21] ) ( u_rocc_mem_req_data_i.u_io\[21\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[22] ( PIN rocc_mem_req_data_i[22] ) ( u_rocc_mem_req_data_i.u_io\[22\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[23] ( PIN rocc_mem_req_data_i[23] ) ( u_rocc_mem_req_data_i.u_io\[23\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[24] ( PIN rocc_mem_req_data_i[24] ) ( u_rocc_mem_req_data_i.u_io\[24\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[25] ( PIN rocc_mem_req_data_i[25] ) ( u_rocc_mem_req_data_i.u_io\[25\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[26] ( PIN rocc_mem_req_data_i[26] ) ( u_rocc_mem_req_data_i.u_io\[26\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[27] ( PIN rocc_mem_req_data_i[27] ) ( u_rocc_mem_req_data_i.u_io\[27\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[28] ( PIN rocc_mem_req_data_i[28] ) ( u_rocc_mem_req_data_i.u_io\[28\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[29] ( PIN rocc_mem_req_data_i[29] ) ( u_rocc_mem_req_data_i.u_io\[29\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[2] ( PIN rocc_mem_req_data_i[2] ) ( u_rocc_mem_req_data_i.u_io\[2\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[30] ( PIN rocc_mem_req_data_i[30] ) ( u_rocc_mem_req_data_i.u_io\[30\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[31] ( PIN rocc_mem_req_data_i[31] ) ( u_rocc_mem_req_data_i.u_io\[31\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[3] ( PIN rocc_mem_req_data_i[3] ) ( u_rocc_mem_req_data_i.u_io\[3\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[4] ( PIN rocc_mem_req_data_i[4] ) ( u_rocc_mem_req_data_i.u_io\[4\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[5] ( PIN rocc_mem_req_data_i[5] ) ( u_rocc_mem_req_data_i.u_io\[5\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[6] ( PIN rocc_mem_req_data_i[6] ) ( u_rocc_mem_req_data_i.u_io\[6\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[7] ( PIN rocc_mem_req_data_i[7] ) ( u_rocc_mem_req_data_i.u_io\[7\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[8] ( PIN rocc_mem_req_data_i[8] ) ( u_rocc_mem_req_data_i.u_io\[8\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_data_i[9] ( PIN rocc_mem_req_data_i[9] ) ( u_rocc_mem_req_data_i.u_io\[9\].u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_req_ready_o ( PIN rocc_mem_req_ready_o ) ( u_rocc_mem_req_ready.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_req_v_i ( PIN rocc_mem_req_v_i ) ( u_rocc_mem_req_v.u_in PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_0 ( PIN rocc_mem_resp_data_o_0 ) ( u_rocc_mem_resp_data_o_0_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_1 ( PIN rocc_mem_resp_data_o_1 ) ( u_rocc_mem_resp_data_o_1_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_10 ( PIN rocc_mem_resp_data_o_10 ) ( u_rocc_mem_resp_data_o_10_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_11 ( PIN rocc_mem_resp_data_o_11 ) ( u_rocc_mem_resp_data_o_11_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_12 ( PIN rocc_mem_resp_data_o_12 ) ( u_rocc_mem_resp_data_o_12_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_13 ( PIN rocc_mem_resp_data_o_13 ) ( u_rocc_mem_resp_data_o_13_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_14 ( PIN rocc_mem_resp_data_o_14 ) ( u_rocc_mem_resp_data_o_14_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_15 ( PIN rocc_mem_resp_data_o_15 ) ( u_rocc_mem_resp_data_o_15_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_16 ( PIN rocc_mem_resp_data_o_16 ) ( u_rocc_mem_resp_data_o_16_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_17 ( PIN rocc_mem_resp_data_o_17 ) ( u_rocc_mem_resp_data_o_17_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_18 ( PIN rocc_mem_resp_data_o_18 ) ( u_rocc_mem_resp_data_o_18_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_19 ( PIN rocc_mem_resp_data_o_19 ) ( u_rocc_mem_resp_data_o_19_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_2 ( PIN rocc_mem_resp_data_o_2 ) ( u_rocc_mem_resp_data_o_2_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_20 ( PIN rocc_mem_resp_data_o_20 ) ( u_rocc_mem_resp_data_o_20_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_21 ( PIN rocc_mem_resp_data_o_21 ) ( u_rocc_mem_resp_data_o_21_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_22 ( PIN rocc_mem_resp_data_o_22 ) ( u_rocc_mem_resp_data_o_22_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_23 ( PIN rocc_mem_resp_data_o_23 ) ( u_rocc_mem_resp_data_o_23_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_24 ( PIN rocc_mem_resp_data_o_24 ) ( u_rocc_mem_resp_data_o_24_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_25 ( PIN rocc_mem_resp_data_o_25 ) ( u_rocc_mem_resp_data_o_25_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_26 ( PIN rocc_mem_resp_data_o_26 ) ( u_rocc_mem_resp_data_o_26_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_27 ( PIN rocc_mem_resp_data_o_27 ) ( u_rocc_mem_resp_data_o_27_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_28 ( PIN rocc_mem_resp_data_o_28 ) ( u_rocc_mem_resp_data_o_28_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_29 ( PIN rocc_mem_resp_data_o_29 ) ( u_rocc_mem_resp_data_o_29_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_3 ( PIN rocc_mem_resp_data_o_3 ) ( u_rocc_mem_resp_data_o_3_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_30 ( PIN rocc_mem_resp_data_o_30 ) ( u_rocc_mem_resp_data_o_30_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_31 ( PIN rocc_mem_resp_data_o_31 ) ( u_rocc_mem_resp_data_o_31_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_32 ( PIN rocc_mem_resp_data_o_32 ) ( u_rocc_mem_resp_data_o_32_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_33 ( PIN rocc_mem_resp_data_o_33 ) ( u_rocc_mem_resp_data_o_33_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_34 ( PIN rocc_mem_resp_data_o_34 ) ( u_rocc_mem_resp_data_o_34_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_35 ( PIN rocc_mem_resp_data_o_35 ) ( u_rocc_mem_resp_data_o_35_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_36 ( PIN rocc_mem_resp_data_o_36 ) ( u_rocc_mem_resp_data_o_36_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_37 ( PIN rocc_mem_resp_data_o_37 ) ( u_rocc_mem_resp_data_o_37_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_38 ( PIN rocc_mem_resp_data_o_38 ) ( u_rocc_mem_resp_data_o_38_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_39 ( PIN rocc_mem_resp_data_o_39 ) ( u_rocc_mem_resp_data_o_39_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_4 ( PIN rocc_mem_resp_data_o_4 ) ( u_rocc_mem_resp_data_o_4_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_40 ( PIN rocc_mem_resp_data_o_40 ) ( u_rocc_mem_resp_data_o_40_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_41 ( PIN rocc_mem_resp_data_o_41 ) ( u_rocc_mem_resp_data_o_41_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_42 ( PIN rocc_mem_resp_data_o_42 ) ( u_rocc_mem_resp_data_o_42_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_43 ( PIN rocc_mem_resp_data_o_43 ) ( u_rocc_mem_resp_data_o_43_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_44 ( PIN rocc_mem_resp_data_o_44 ) ( u_rocc_mem_resp_data_o_44_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_45 ( PIN rocc_mem_resp_data_o_45 ) ( u_rocc_mem_resp_data_o_45_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_46 ( PIN rocc_mem_resp_data_o_46 ) ( u_rocc_mem_resp_data_o_46_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_47 ( PIN rocc_mem_resp_data_o_47 ) ( u_rocc_mem_resp_data_o_47_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_48 ( PIN rocc_mem_resp_data_o_48 ) ( u_rocc_mem_resp_data_o_48_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_49 ( PIN rocc_mem_resp_data_o_49 ) ( u_rocc_mem_resp_data_o_49_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_5 ( PIN rocc_mem_resp_data_o_5 ) ( u_rocc_mem_resp_data_o_5_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_50 ( PIN rocc_mem_resp_data_o_50 ) ( u_rocc_mem_resp_data_o_50_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_51 ( PIN rocc_mem_resp_data_o_51 ) ( u_rocc_mem_resp_data_o_51_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_52 ( PIN rocc_mem_resp_data_o_52 ) ( u_rocc_mem_resp_data_o_52_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_53 ( PIN rocc_mem_resp_data_o_53 ) ( u_rocc_mem_resp_data_o_53_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_54 ( PIN rocc_mem_resp_data_o_54 ) ( u_rocc_mem_resp_data_o_54_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_55 ( PIN rocc_mem_resp_data_o_55 ) ( u_rocc_mem_resp_data_o_55_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_56 ( PIN rocc_mem_resp_data_o_56 ) ( u_rocc_mem_resp_data_o_56_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_57 ( PIN rocc_mem_resp_data_o_57 ) ( u_rocc_mem_resp_data_o_57_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_58 ( PIN rocc_mem_resp_data_o_58 ) ( u_rocc_mem_resp_data_o_58_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_59 ( PIN rocc_mem_resp_data_o_59 ) ( u_rocc_mem_resp_data_o_59_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_6 ( PIN rocc_mem_resp_data_o_6 ) ( u_rocc_mem_resp_data_o_6_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_60 ( PIN rocc_mem_resp_data_o_60 ) ( u_rocc_mem_resp_data_o_60_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_61 ( PIN rocc_mem_resp_data_o_61 ) ( u_rocc_mem_resp_data_o_61_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_62 ( PIN rocc_mem_resp_data_o_62 ) ( u_rocc_mem_resp_data_o_62_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_63 ( PIN rocc_mem_resp_data_o_63 ) ( u_rocc_mem_resp_data_o_63_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_7 ( PIN rocc_mem_resp_data_o_7 ) ( u_rocc_mem_resp_data_o_7_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_8 ( PIN rocc_mem_resp_data_o_8 ) ( u_rocc_mem_resp_data_o_8_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_data_o_9 ( PIN rocc_mem_resp_data_o_9 ) ( u_rocc_mem_resp_data_o_9_.u_io PAD ) + USE SIGNAL ;
+    - rocc_mem_resp_v_o ( PIN rocc_mem_resp_v_o ) ( u_rocc_mem_resp_v.u_io PAD ) + USE SIGNAL ;
+    - rocc_resp_data_i[0] ( PIN rocc_resp_data_i[0] ) ( u_rocc_resp_data_i.u_io\[0\].u_in PAD ) + USE SIGNAL ;
+    - rocc_resp_data_i[1] ( PIN rocc_resp_data_i[1] ) ( u_rocc_resp_data_i.u_io\[1\].u_in PAD ) + USE SIGNAL ;
+    - rocc_resp_data_i[2] ( PIN rocc_resp_data_i[2] ) ( u_rocc_resp_data_i.u_io\[2\].u_in PAD ) + USE SIGNAL ;
+    - rocc_resp_data_i[3] ( PIN rocc_resp_data_i[3] ) ( u_rocc_resp_data_i.u_io\[3\].u_in PAD ) + USE SIGNAL ;
+    - rocc_resp_data_i[4] ( PIN rocc_resp_data_i[4] ) ( u_rocc_resp_data_i.u_io\[4\].u_in PAD ) + USE SIGNAL ;
+    - rocc_resp_data_i[5] ( PIN rocc_resp_data_i[5] ) ( u_rocc_resp_data_i.u_io\[5\].u_in PAD ) + USE SIGNAL ;
+    - rocc_resp_data_i[6] ( PIN rocc_resp_data_i[6] ) ( u_rocc_resp_data_i.u_io\[6\].u_in PAD ) + USE SIGNAL ;
+    - rocc_resp_data_i[7] ( PIN rocc_resp_data_i[7] ) ( u_rocc_resp_data_i.u_io\[7\].u_in PAD ) + USE SIGNAL ;
+    - rocc_resp_ready_o ( PIN rocc_resp_ready_o ) ( u_rocc_resp_ready.u_io PAD ) + USE SIGNAL ;
+    - rocc_resp_v_i ( PIN rocc_resp_v_i ) ( u_rocc_resp_v.u_in PAD ) + USE SIGNAL ;
     - u_clk.u_in.VCCD_RING ( u_vzz_0 VCCD ) ( u_reset.u_in VCCD ) ( u_clk.u_in VCCD ) + USE POWER ;
     - u_clk.u_in.VCCHIB_RING ( u_vzz_0 VCCHIB ) ( u_reset.u_in VCCHIB ) ( u_clk.u_in VCCHIB ) + USE POWER ;
     - u_clk.u_in.VDDA_RING ( u_vzz_0 VDDA ) ( u_reset.u_in VDDA ) ( u_clk.u_in VDDA ) + USE POWER ;
@@ -3670,7 +4286,7 @@ SPECIALNETS 242 ;
     - u_rocc_resp_data_i.u_io\[4\].u_in.VSSIO_RING ( u_vss_1 VSSIO ) ( u_rocc_resp_ready.u_io VSSIO ) ( u_rocc_resp_data_i.u_io\[7\].u_in VSSIO ) ( u_rocc_resp_data_i.u_io\[6\].u_in VSSIO ) ( u_rocc_resp_data_i.u_io\[5\].u_in VSSIO ) ( u_rocc_resp_data_i.u_io\[4\].u_in VSSIO ) + USE GROUND ;
     - u_rocc_resp_data_i.u_io\[4\].u_in.VSWITCH_RING ( u_vss_1 VSWITCH ) ( u_rocc_resp_ready.u_io VSWITCH ) ( u_rocc_resp_data_i.u_io\[7\].u_in VSWITCH ) ( u_rocc_resp_data_i.u_io\[6\].u_in VSWITCH ) ( u_rocc_resp_data_i.u_io\[5\].u_in VSWITCH ) ( u_rocc_resp_data_i.u_io\[4\].u_in VSWITCH ) + USE POWER ;
 END SPECIALNETS
-NETS 631 ;
+NETS 477 ;
     - IO_CORNER_NORTH_EAST_INST.AMUXBUS_A_RING ( IO_CORNER_NORTH_EAST_INST AMUXBUS_A ) + USE SIGNAL ;
     - IO_CORNER_NORTH_EAST_INST.AMUXBUS_B_RING ( IO_CORNER_NORTH_EAST_INST AMUXBUS_B ) + USE SIGNAL ;
     - IO_CORNER_NORTH_EAST_INST.VCCD_RING ( IO_CORNER_NORTH_EAST_INST VCCD ) + USE SIGNAL ;
@@ -4055,178 +4671,24 @@ NETS 631 ;
       ( u_clk.u_in OE_N ) ( u_clk.u_in INP_DIS ) ( u_clk.u_in IB_MODE_SEL ) ( u_clk.u_in HLD_OVR ) ( u_clk.u_in ENABLE_VSWITCH_H ) ( u_clk.u_in DM[2] ) ( u_clk.u_in DM[1] ) ( u_clk.u_in ANALOG_SEL )
       ( u_clk.u_in ANALOG_POL ) ( u_clk.u_in ANALOG_EN ) + USE SIGNAL ;
     - clk ( u_clk.u_in IN ) + USE SIGNAL ;
-    - clk_i ( PIN clk_i ) ( u_clk.u_in PAD ) + USE SIGNAL ;
     - en_i ( PIN en_i ) + USE SIGNAL ;
-    - fsb_node_data_i[0] ( PIN fsb_node_data_i[0] ) ( u_fsb_node_data_i.u_io\[0\].u_in PAD ) + USE SIGNAL ;
-    - fsb_node_data_i[1] ( PIN fsb_node_data_i[1] ) ( u_fsb_node_data_i.u_io\[1\].u_in PAD ) + USE SIGNAL ;
-    - fsb_node_data_i[2] ( PIN fsb_node_data_i[2] ) ( u_fsb_node_data_i.u_io\[2\].u_in PAD ) + USE SIGNAL ;
-    - fsb_node_data_i[3] ( PIN fsb_node_data_i[3] ) ( u_fsb_node_data_i.u_io\[3\].u_in PAD ) + USE SIGNAL ;
-    - fsb_node_data_i[4] ( PIN fsb_node_data_i[4] ) ( u_fsb_node_data_i.u_io\[4\].u_in PAD ) + USE SIGNAL ;
-    - fsb_node_data_i[5] ( PIN fsb_node_data_i[5] ) ( u_fsb_node_data_i.u_io\[5\].u_in PAD ) + USE SIGNAL ;
-    - fsb_node_data_i[6] ( PIN fsb_node_data_i[6] ) ( u_fsb_node_data_i.u_io\[6\].u_in PAD ) + USE SIGNAL ;
-    - fsb_node_data_i[7] ( PIN fsb_node_data_i[7] ) ( u_fsb_node_data_i.u_io\[7\].u_in PAD ) + USE SIGNAL ;
-    - fsb_node_data_o_0 ( PIN fsb_node_data_o_0 ) ( u_fsb_node_data_o_0_.u_io PAD ) + USE SIGNAL ;
-    - fsb_node_data_o_1 ( PIN fsb_node_data_o_1 ) ( u_fsb_node_data_o_1_.u_io PAD ) + USE SIGNAL ;
-    - fsb_node_data_o_2 ( PIN fsb_node_data_o_2 ) ( u_fsb_node_data_o_2_.u_io PAD ) + USE SIGNAL ;
-    - fsb_node_data_o_3 ( PIN fsb_node_data_o_3 ) ( u_fsb_node_data_o_3_.u_io PAD ) + USE SIGNAL ;
-    - fsb_node_data_o_4 ( PIN fsb_node_data_o_4 ) ( u_fsb_node_data_o_4_.u_io PAD ) + USE SIGNAL ;
-    - fsb_node_data_o_5 ( PIN fsb_node_data_o_5 ) ( u_fsb_node_data_o_5_.u_io PAD ) + USE SIGNAL ;
-    - fsb_node_data_o_6 ( PIN fsb_node_data_o_6 ) ( u_fsb_node_data_o_6_.u_io PAD ) + USE SIGNAL ;
-    - fsb_node_data_o_7 ( PIN fsb_node_data_o_7 ) ( u_fsb_node_data_o_7_.u_io PAD ) + USE SIGNAL ;
     - fsb_node_ready ( u_fsb_node_ready.u_io OUT ) + USE SIGNAL ;
-    - fsb_node_ready_o ( PIN fsb_node_ready_o ) ( u_fsb_node_ready.u_io PAD ) + USE SIGNAL ;
-    - fsb_node_v_i ( PIN fsb_node_v_i ) ( u_fsb_node_v_i.u_in PAD ) + USE SIGNAL ;
-    - fsb_node_v_o ( PIN fsb_node_v_o ) ( u_fsb_node_v_o.u_io PAD ) + USE SIGNAL ;
     - fsb_node_vi ( u_fsb_node_v_i.u_in IN ) + USE SIGNAL ;
     - fsb_node_vo ( u_fsb_node_v_o.u_io OUT ) + USE SIGNAL ;
     - fsb_node_yumi ( u_fsb_node_yumi.u_in IN ) + USE SIGNAL ;
-    - fsb_node_yumi_i ( PIN fsb_node_yumi_i ) ( u_fsb_node_yumi.u_in PAD ) + USE SIGNAL ;
     - reset ( u_reset.u_in IN ) + USE SIGNAL ;
-    - reset_i ( PIN reset_i ) ( u_reset.u_in PAD ) + USE SIGNAL ;
-    - rocc_cmd_data_o_0 ( PIN rocc_cmd_data_o_0 ) ( u_rocc_cmd_data_o_0_.u_io PAD ) + USE SIGNAL ;
-    - rocc_cmd_data_o_1 ( PIN rocc_cmd_data_o_1 ) ( u_rocc_cmd_data_o_1_.u_io PAD ) + USE SIGNAL ;
-    - rocc_cmd_data_o_10 ( PIN rocc_cmd_data_o_10 ) ( u_rocc_cmd_data_o_10_.u_io PAD ) + USE SIGNAL ;
-    - rocc_cmd_data_o_11 ( PIN rocc_cmd_data_o_11 ) ( u_rocc_cmd_data_o_11_.u_io PAD ) + USE SIGNAL ;
-    - rocc_cmd_data_o_12 ( PIN rocc_cmd_data_o_12 ) ( u_rocc_cmd_data_o_12_.u_io PAD ) + USE SIGNAL ;
-    - rocc_cmd_data_o_13 ( PIN rocc_cmd_data_o_13 ) ( u_rocc_cmd_data_o_13_.u_io PAD ) + USE SIGNAL ;
-    - rocc_cmd_data_o_14 ( PIN rocc_cmd_data_o_14 ) ( u_rocc_cmd_data_o_14_.u_io PAD ) + USE SIGNAL ;
-    - rocc_cmd_data_o_15 ( PIN rocc_cmd_data_o_15 ) ( u_rocc_cmd_data_o_15_.u_io PAD ) + USE SIGNAL ;
-    - rocc_cmd_data_o_2 ( PIN rocc_cmd_data_o_2 ) ( u_rocc_cmd_data_o_2_.u_io PAD ) + USE SIGNAL ;
-    - rocc_cmd_data_o_3 ( PIN rocc_cmd_data_o_3 ) ( u_rocc_cmd_data_o_3_.u_io PAD ) + USE SIGNAL ;
-    - rocc_cmd_data_o_4 ( PIN rocc_cmd_data_o_4 ) ( u_rocc_cmd_data_o_4_.u_io PAD ) + USE SIGNAL ;
-    - rocc_cmd_data_o_5 ( PIN rocc_cmd_data_o_5 ) ( u_rocc_cmd_data_o_5_.u_io PAD ) + USE SIGNAL ;
-    - rocc_cmd_data_o_6 ( PIN rocc_cmd_data_o_6 ) ( u_rocc_cmd_data_o_6_.u_io PAD ) + USE SIGNAL ;
-    - rocc_cmd_data_o_7 ( PIN rocc_cmd_data_o_7 ) ( u_rocc_cmd_data_o_7_.u_io PAD ) + USE SIGNAL ;
-    - rocc_cmd_data_o_8 ( PIN rocc_cmd_data_o_8 ) ( u_rocc_cmd_data_o_8_.u_io PAD ) + USE SIGNAL ;
-    - rocc_cmd_data_o_9 ( PIN rocc_cmd_data_o_9 ) ( u_rocc_cmd_data_o_9_.u_io PAD ) + USE SIGNAL ;
     - rocc_cmd_ready ( u_rocc_cmd_ready.u_in IN ) + USE SIGNAL ;
-    - rocc_cmd_ready_i ( PIN rocc_cmd_ready_i ) ( u_rocc_cmd_ready.u_in PAD ) + USE SIGNAL ;
     - rocc_cmd_v ( u_rocc_cmd_v.u_io OUT ) + USE SIGNAL ;
-    - rocc_cmd_v_o ( PIN rocc_cmd_v_o ) ( u_rocc_cmd_v.u_io PAD ) + USE SIGNAL ;
     - rocc_ctrl_busy ( u_rocc_ctrl_i_busy.u_in IN ) + USE SIGNAL ;
     - rocc_ctrl_exception ( u_rocc_ctrl_o_exception.u_io OUT ) + USE SIGNAL ;
-    - rocc_ctrl_i_busy_ ( PIN rocc_ctrl_i_busy_ ) ( u_rocc_ctrl_i_busy.u_in PAD ) + USE SIGNAL ;
-    - rocc_ctrl_i_interrupt_ ( PIN rocc_ctrl_i_interrupt_ ) ( u_rocc_ctrl_i_interrupt.u_in PAD ) + USE SIGNAL ;
     - rocc_ctrl_interrupt ( u_rocc_ctrl_i_interrupt.u_in IN ) + USE SIGNAL ;
-    - rocc_ctrl_o_exception_ ( PIN rocc_ctrl_o_exception_ ) ( u_rocc_ctrl_o_exception.u_io PAD ) + USE SIGNAL ;
-    - rocc_ctrl_o_host_id_ ( PIN rocc_ctrl_o_host_id_ ) ( u_rocc_ctrl_o_host_id.u_io PAD ) + USE SIGNAL ;
-    - rocc_ctrl_o_s_ ( PIN rocc_ctrl_o_s_ ) ( u_rocc_ctrl_o_s.u_io PAD ) + USE SIGNAL ;
     - rocc_ctrl_s ( u_rocc_ctrl_o_s.u_io OUT ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[0] ( PIN rocc_mem_req_data_i[0] ) ( u_rocc_mem_req_data_i.u_io\[0\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[10] ( PIN rocc_mem_req_data_i[10] ) ( u_rocc_mem_req_data_i.u_io\[10\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[11] ( PIN rocc_mem_req_data_i[11] ) ( u_rocc_mem_req_data_i.u_io\[11\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[12] ( PIN rocc_mem_req_data_i[12] ) ( u_rocc_mem_req_data_i.u_io\[12\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[13] ( PIN rocc_mem_req_data_i[13] ) ( u_rocc_mem_req_data_i.u_io\[13\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[14] ( PIN rocc_mem_req_data_i[14] ) ( u_rocc_mem_req_data_i.u_io\[14\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[15] ( PIN rocc_mem_req_data_i[15] ) ( u_rocc_mem_req_data_i.u_io\[15\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[16] ( PIN rocc_mem_req_data_i[16] ) ( u_rocc_mem_req_data_i.u_io\[16\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[17] ( PIN rocc_mem_req_data_i[17] ) ( u_rocc_mem_req_data_i.u_io\[17\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[18] ( PIN rocc_mem_req_data_i[18] ) ( u_rocc_mem_req_data_i.u_io\[18\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[19] ( PIN rocc_mem_req_data_i[19] ) ( u_rocc_mem_req_data_i.u_io\[19\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[1] ( PIN rocc_mem_req_data_i[1] ) ( u_rocc_mem_req_data_i.u_io\[1\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[20] ( PIN rocc_mem_req_data_i[20] ) ( u_rocc_mem_req_data_i.u_io\[20\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[21] ( PIN rocc_mem_req_data_i[21] ) ( u_rocc_mem_req_data_i.u_io\[21\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[22] ( PIN rocc_mem_req_data_i[22] ) ( u_rocc_mem_req_data_i.u_io\[22\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[23] ( PIN rocc_mem_req_data_i[23] ) ( u_rocc_mem_req_data_i.u_io\[23\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[24] ( PIN rocc_mem_req_data_i[24] ) ( u_rocc_mem_req_data_i.u_io\[24\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[25] ( PIN rocc_mem_req_data_i[25] ) ( u_rocc_mem_req_data_i.u_io\[25\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[26] ( PIN rocc_mem_req_data_i[26] ) ( u_rocc_mem_req_data_i.u_io\[26\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[27] ( PIN rocc_mem_req_data_i[27] ) ( u_rocc_mem_req_data_i.u_io\[27\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[28] ( PIN rocc_mem_req_data_i[28] ) ( u_rocc_mem_req_data_i.u_io\[28\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[29] ( PIN rocc_mem_req_data_i[29] ) ( u_rocc_mem_req_data_i.u_io\[29\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[2] ( PIN rocc_mem_req_data_i[2] ) ( u_rocc_mem_req_data_i.u_io\[2\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[30] ( PIN rocc_mem_req_data_i[30] ) ( u_rocc_mem_req_data_i.u_io\[30\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[31] ( PIN rocc_mem_req_data_i[31] ) ( u_rocc_mem_req_data_i.u_io\[31\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[3] ( PIN rocc_mem_req_data_i[3] ) ( u_rocc_mem_req_data_i.u_io\[3\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[4] ( PIN rocc_mem_req_data_i[4] ) ( u_rocc_mem_req_data_i.u_io\[4\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[5] ( PIN rocc_mem_req_data_i[5] ) ( u_rocc_mem_req_data_i.u_io\[5\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[6] ( PIN rocc_mem_req_data_i[6] ) ( u_rocc_mem_req_data_i.u_io\[6\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[7] ( PIN rocc_mem_req_data_i[7] ) ( u_rocc_mem_req_data_i.u_io\[7\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[8] ( PIN rocc_mem_req_data_i[8] ) ( u_rocc_mem_req_data_i.u_io\[8\].u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_req_data_i[9] ( PIN rocc_mem_req_data_i[9] ) ( u_rocc_mem_req_data_i.u_io\[9\].u_in PAD ) + USE SIGNAL ;
     - rocc_mem_req_ready ( u_rocc_mem_req_ready.u_io OUT ) + USE SIGNAL ;
-    - rocc_mem_req_ready_o ( PIN rocc_mem_req_ready_o ) ( u_rocc_mem_req_ready.u_io PAD ) + USE SIGNAL ;
     - rocc_mem_req_v ( u_rocc_mem_req_v.u_in IN ) + USE SIGNAL ;
-    - rocc_mem_req_v_i ( PIN rocc_mem_req_v_i ) ( u_rocc_mem_req_v.u_in PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_0 ( PIN rocc_mem_resp_data_o_0 ) ( u_rocc_mem_resp_data_o_0_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_1 ( PIN rocc_mem_resp_data_o_1 ) ( u_rocc_mem_resp_data_o_1_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_10 ( PIN rocc_mem_resp_data_o_10 ) ( u_rocc_mem_resp_data_o_10_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_11 ( PIN rocc_mem_resp_data_o_11 ) ( u_rocc_mem_resp_data_o_11_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_12 ( PIN rocc_mem_resp_data_o_12 ) ( u_rocc_mem_resp_data_o_12_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_13 ( PIN rocc_mem_resp_data_o_13 ) ( u_rocc_mem_resp_data_o_13_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_14 ( PIN rocc_mem_resp_data_o_14 ) ( u_rocc_mem_resp_data_o_14_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_15 ( PIN rocc_mem_resp_data_o_15 ) ( u_rocc_mem_resp_data_o_15_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_16 ( PIN rocc_mem_resp_data_o_16 ) ( u_rocc_mem_resp_data_o_16_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_17 ( PIN rocc_mem_resp_data_o_17 ) ( u_rocc_mem_resp_data_o_17_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_18 ( PIN rocc_mem_resp_data_o_18 ) ( u_rocc_mem_resp_data_o_18_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_19 ( PIN rocc_mem_resp_data_o_19 ) ( u_rocc_mem_resp_data_o_19_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_2 ( PIN rocc_mem_resp_data_o_2 ) ( u_rocc_mem_resp_data_o_2_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_20 ( PIN rocc_mem_resp_data_o_20 ) ( u_rocc_mem_resp_data_o_20_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_21 ( PIN rocc_mem_resp_data_o_21 ) ( u_rocc_mem_resp_data_o_21_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_22 ( PIN rocc_mem_resp_data_o_22 ) ( u_rocc_mem_resp_data_o_22_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_23 ( PIN rocc_mem_resp_data_o_23 ) ( u_rocc_mem_resp_data_o_23_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_24 ( PIN rocc_mem_resp_data_o_24 ) ( u_rocc_mem_resp_data_o_24_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_25 ( PIN rocc_mem_resp_data_o_25 ) ( u_rocc_mem_resp_data_o_25_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_26 ( PIN rocc_mem_resp_data_o_26 ) ( u_rocc_mem_resp_data_o_26_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_27 ( PIN rocc_mem_resp_data_o_27 ) ( u_rocc_mem_resp_data_o_27_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_28 ( PIN rocc_mem_resp_data_o_28 ) ( u_rocc_mem_resp_data_o_28_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_29 ( PIN rocc_mem_resp_data_o_29 ) ( u_rocc_mem_resp_data_o_29_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_3 ( PIN rocc_mem_resp_data_o_3 ) ( u_rocc_mem_resp_data_o_3_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_30 ( PIN rocc_mem_resp_data_o_30 ) ( u_rocc_mem_resp_data_o_30_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_31 ( PIN rocc_mem_resp_data_o_31 ) ( u_rocc_mem_resp_data_o_31_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_32 ( PIN rocc_mem_resp_data_o_32 ) ( u_rocc_mem_resp_data_o_32_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_33 ( PIN rocc_mem_resp_data_o_33 ) ( u_rocc_mem_resp_data_o_33_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_34 ( PIN rocc_mem_resp_data_o_34 ) ( u_rocc_mem_resp_data_o_34_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_35 ( PIN rocc_mem_resp_data_o_35 ) ( u_rocc_mem_resp_data_o_35_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_36 ( PIN rocc_mem_resp_data_o_36 ) ( u_rocc_mem_resp_data_o_36_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_37 ( PIN rocc_mem_resp_data_o_37 ) ( u_rocc_mem_resp_data_o_37_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_38 ( PIN rocc_mem_resp_data_o_38 ) ( u_rocc_mem_resp_data_o_38_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_39 ( PIN rocc_mem_resp_data_o_39 ) ( u_rocc_mem_resp_data_o_39_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_4 ( PIN rocc_mem_resp_data_o_4 ) ( u_rocc_mem_resp_data_o_4_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_40 ( PIN rocc_mem_resp_data_o_40 ) ( u_rocc_mem_resp_data_o_40_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_41 ( PIN rocc_mem_resp_data_o_41 ) ( u_rocc_mem_resp_data_o_41_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_42 ( PIN rocc_mem_resp_data_o_42 ) ( u_rocc_mem_resp_data_o_42_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_43 ( PIN rocc_mem_resp_data_o_43 ) ( u_rocc_mem_resp_data_o_43_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_44 ( PIN rocc_mem_resp_data_o_44 ) ( u_rocc_mem_resp_data_o_44_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_45 ( PIN rocc_mem_resp_data_o_45 ) ( u_rocc_mem_resp_data_o_45_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_46 ( PIN rocc_mem_resp_data_o_46 ) ( u_rocc_mem_resp_data_o_46_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_47 ( PIN rocc_mem_resp_data_o_47 ) ( u_rocc_mem_resp_data_o_47_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_48 ( PIN rocc_mem_resp_data_o_48 ) ( u_rocc_mem_resp_data_o_48_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_49 ( PIN rocc_mem_resp_data_o_49 ) ( u_rocc_mem_resp_data_o_49_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_5 ( PIN rocc_mem_resp_data_o_5 ) ( u_rocc_mem_resp_data_o_5_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_50 ( PIN rocc_mem_resp_data_o_50 ) ( u_rocc_mem_resp_data_o_50_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_51 ( PIN rocc_mem_resp_data_o_51 ) ( u_rocc_mem_resp_data_o_51_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_52 ( PIN rocc_mem_resp_data_o_52 ) ( u_rocc_mem_resp_data_o_52_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_53 ( PIN rocc_mem_resp_data_o_53 ) ( u_rocc_mem_resp_data_o_53_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_54 ( PIN rocc_mem_resp_data_o_54 ) ( u_rocc_mem_resp_data_o_54_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_55 ( PIN rocc_mem_resp_data_o_55 ) ( u_rocc_mem_resp_data_o_55_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_56 ( PIN rocc_mem_resp_data_o_56 ) ( u_rocc_mem_resp_data_o_56_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_57 ( PIN rocc_mem_resp_data_o_57 ) ( u_rocc_mem_resp_data_o_57_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_58 ( PIN rocc_mem_resp_data_o_58 ) ( u_rocc_mem_resp_data_o_58_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_59 ( PIN rocc_mem_resp_data_o_59 ) ( u_rocc_mem_resp_data_o_59_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_6 ( PIN rocc_mem_resp_data_o_6 ) ( u_rocc_mem_resp_data_o_6_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_60 ( PIN rocc_mem_resp_data_o_60 ) ( u_rocc_mem_resp_data_o_60_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_61 ( PIN rocc_mem_resp_data_o_61 ) ( u_rocc_mem_resp_data_o_61_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_62 ( PIN rocc_mem_resp_data_o_62 ) ( u_rocc_mem_resp_data_o_62_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_63 ( PIN rocc_mem_resp_data_o_63 ) ( u_rocc_mem_resp_data_o_63_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_7 ( PIN rocc_mem_resp_data_o_7 ) ( u_rocc_mem_resp_data_o_7_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_8 ( PIN rocc_mem_resp_data_o_8 ) ( u_rocc_mem_resp_data_o_8_.u_io PAD ) + USE SIGNAL ;
-    - rocc_mem_resp_data_o_9 ( PIN rocc_mem_resp_data_o_9 ) ( u_rocc_mem_resp_data_o_9_.u_io PAD ) + USE SIGNAL ;
     - rocc_mem_resp_v ( u_rocc_mem_resp_v.u_io OUT ) + USE SIGNAL ;
-    - rocc_mem_resp_v_o ( PIN rocc_mem_resp_v_o ) ( u_rocc_mem_resp_v.u_io PAD ) + USE SIGNAL ;
     - rocc_resp_data ( u_rocc_resp_data_i.u_io\[0\].u_in IN ) + USE SIGNAL ;
-    - rocc_resp_data_i[0] ( PIN rocc_resp_data_i[0] ) ( u_rocc_resp_data_i.u_io\[0\].u_in PAD ) + USE SIGNAL ;
-    - rocc_resp_data_i[1] ( PIN rocc_resp_data_i[1] ) ( u_rocc_resp_data_i.u_io\[1\].u_in PAD ) + USE SIGNAL ;
-    - rocc_resp_data_i[2] ( PIN rocc_resp_data_i[2] ) ( u_rocc_resp_data_i.u_io\[2\].u_in PAD ) + USE SIGNAL ;
-    - rocc_resp_data_i[3] ( PIN rocc_resp_data_i[3] ) ( u_rocc_resp_data_i.u_io\[3\].u_in PAD ) + USE SIGNAL ;
-    - rocc_resp_data_i[4] ( PIN rocc_resp_data_i[4] ) ( u_rocc_resp_data_i.u_io\[4\].u_in PAD ) + USE SIGNAL ;
-    - rocc_resp_data_i[5] ( PIN rocc_resp_data_i[5] ) ( u_rocc_resp_data_i.u_io\[5\].u_in PAD ) + USE SIGNAL ;
-    - rocc_resp_data_i[6] ( PIN rocc_resp_data_i[6] ) ( u_rocc_resp_data_i.u_io\[6\].u_in PAD ) + USE SIGNAL ;
-    - rocc_resp_data_i[7] ( PIN rocc_resp_data_i[7] ) ( u_rocc_resp_data_i.u_io\[7\].u_in PAD ) + USE SIGNAL ;
     - rocc_resp_ready ( u_rocc_resp_ready.u_io OUT ) + USE SIGNAL ;
-    - rocc_resp_ready_o ( PIN rocc_resp_ready_o ) ( u_rocc_resp_ready.u_io PAD ) + USE SIGNAL ;
     - rocc_resp_v ( u_rocc_resp_v.u_in IN ) + USE SIGNAL ;
-    - rocc_resp_v_i ( PIN rocc_resp_v_i ) ( u_rocc_resp_v.u_in PAD ) + USE SIGNAL ;
     - u_clk.tie_hi_esd ( u_clk.u_in TIE_HI_ESD ) + USE SIGNAL ;
     - u_clk.tie_lo_esd ( u_clk.u_in TIE_LO_ESD ) ( u_clk.u_in ENABLE_INP_H ) + USE SIGNAL ;
     - u_fsb_node_data_i.u_io\[0\].tie_hi_esd ( u_fsb_node_data_i.u_io\[0\].u_in TIE_HI_ESD ) + USE SIGNAL ;

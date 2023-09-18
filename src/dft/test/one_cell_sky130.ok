@@ -5,22 +5,27 @@
 [INFO ODB-0222] Reading LEF file: sky130hd/sky130_fd_sc_hd_merged.lef
 [INFO ODB-0225]     Created 437 library cells
 [INFO ODB-0226] Finished LEF file:  sky130hd/sky130_fd_sc_hd_merged.lef
-[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlrbn_1' doesn't have an scan equivalent
-[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlrbn_2' doesn't have an scan equivalent
-[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlrbp_1' doesn't have an scan equivalent
-[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlrbp_2' doesn't have an scan equivalent
-[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlrtn_1' doesn't have an scan equivalent
-[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlrtn_2' doesn't have an scan equivalent
-[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlrtn_4' doesn't have an scan equivalent
-[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlrtp_1' doesn't have an scan equivalent
-[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlrtp_2' doesn't have an scan equivalent
-[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlrtp_4' doesn't have an scan equivalent
-[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlxbn_1' doesn't have an scan equivalent
-[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlxbn_2' doesn't have an scan equivalent
-[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlxbp_1' doesn't have an scan equivalent
-[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlxtn_1' doesn't have an scan equivalent
-[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlxtn_2' doesn't have an scan equivalent
-[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlxtn_4' doesn't have an scan equivalent
-[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlxtp_1' doesn't have an scan equivalent
-[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__lpflow_inputisolatch_1' doesn't have an scan equivalent
+Instance ff1
+ Cell: sky130_fd_sc_hd__dfstp_1
+ Library: sky130_fd_sc_hd_merged
+ Path cells: sky130_fd_sc_hd__dfstp_1
+***************************
+Preview DFT Report
+Number of chains: 1
+Clock domain: No Mix
+***************************
+
+Scan chain 'chain_0' has 1 cells (1 bits)
+
+  ff1 (main_clock, rising)
+
+
+Instance ff1
+ Cell: sky130_fd_sc_hd__dfstp_1
+ Library: sky130_fd_sc_hd_merged
+ Path cells: sky130_fd_sc_hd__dfstp_1
+Instance ff1
+ Cell: sky130_fd_sc_hd__sdfsbp_1
+ Library: sky130_fd_sc_hd_merged
+ Path cells: sky130_fd_sc_hd__sdfsbp_1
 No differences found.

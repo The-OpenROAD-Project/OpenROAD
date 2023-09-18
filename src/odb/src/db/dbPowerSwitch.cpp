@@ -42,58 +42,46 @@
 #include "dbPowerDomain.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
-// User Code Begin Includes
-// User Code End Includes
 namespace odb {
-
 template class dbTable<_dbPowerSwitch>;
 
 bool _dbPowerSwitch::operator==(const _dbPowerSwitch& rhs) const
 {
   if (_name != rhs._name)
     return false;
-
   if (_next_entry != rhs._next_entry)
     return false;
-
   if (_in_supply_port != rhs._in_supply_port)
     return false;
-
   if (_out_supply_port != rhs._out_supply_port)
     return false;
-
   if (_control_net != rhs._control_net)
     return false;
-
   if (_power_domain != rhs._power_domain)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
+
 bool _dbPowerSwitch::operator<(const _dbPowerSwitch& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
+
 void _dbPowerSwitch::differences(dbDiff& diff,
                                  const char* field,
                                  const _dbPowerSwitch& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(_name);
   DIFF_FIELD(_next_entry);
   DIFF_FIELD(_in_supply_port);
   DIFF_FIELD(_out_supply_port);
   DIFF_FIELD(_control_net);
   DIFF_FIELD(_power_domain);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
+
 void _dbPowerSwitch::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -104,15 +92,13 @@ void _dbPowerSwitch::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_control_net);
   DIFF_OUT_FIELD(_power_domain);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
+
 _dbPowerSwitch::_dbPowerSwitch(_dbDatabase* db)
 {
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
+
 _dbPowerSwitch::_dbPowerSwitch(_dbDatabase* db, const _dbPowerSwitch& r)
 {
   _name = r._name;
@@ -121,8 +107,6 @@ _dbPowerSwitch::_dbPowerSwitch(_dbDatabase* db, const _dbPowerSwitch& r)
   _out_supply_port = r._out_supply_port;
   _control_net = r._control_net;
   _power_domain = r._power_domain;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj)
@@ -135,10 +119,9 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj)
   stream >> obj._on_state;
   stream >> obj._control_net;
   stream >> obj._power_domain;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbPowerSwitch& obj)
 {
   stream << obj._name;
@@ -149,8 +132,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbPowerSwitch& obj)
   stream << obj._on_state;
   stream << obj._control_net;
   stream << obj._power_domain;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
@@ -158,12 +139,7 @@ _dbPowerSwitch::~_dbPowerSwitch()
 {
   if (_name)
     free((void*) _name);
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -200,7 +176,7 @@ dbNet* dbPowerSwitch::getControlNet() const
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
   if (obj->_control_net == 0)
-    return NULL;
+    return nullptr;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbNet*) par->_net_tbl->getPtr(obj->_control_net);
 }
@@ -216,7 +192,7 @@ dbPowerDomain* dbPowerSwitch::getPowerDomain() const
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
   if (obj->_power_domain == 0)
-    return NULL;
+    return nullptr;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbPowerDomain*) par->_powerdomain_tbl->getPtr(obj->_power_domain);
 }

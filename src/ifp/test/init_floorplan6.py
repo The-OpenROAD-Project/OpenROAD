@@ -17,8 +17,7 @@ right  = design.micronToDBU(300)
 floorplan = design.getFloorplan()
 floorplan.initFloorplan(30,
                         0.5,
-                        bottom, top, left, right,
-                        "FreePDK45_38x28_10R_NP_162NW_34O")
+                        bottom, top, left, right)
 
 def_file = helpers.make_result_file("init_floorplan6.def")
 design.writeDef(def_file)

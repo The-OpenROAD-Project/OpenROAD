@@ -269,7 +269,7 @@ class FlexDRWorker
         historyMarkers_(std::vector<std::set<FlexMazeIdx>>(3)),
         nets_(),
         owner2nets_(),
-        gridGraph_(design->getTech(), this),
+        gridGraph_(design->getTech(), logger, this),
         markers_(),
         rq_(this),
         gcWorker_(nullptr),
@@ -445,7 +445,11 @@ class FlexDRWorker
   bool end(frDesign* design);
 
   Logger* getLogger() { return logger_; }
-  void setLogger(Logger* logger) { logger_ = logger; }
+  void setLogger(Logger* logger)
+  {
+    logger_ = logger;
+    gridGraph_.setLogger(logger);
+  }
 
   static std::unique_ptr<FlexDRWorker> load(const std::string& file_name,
                                             utl::Logger* logger,
@@ -544,6 +548,7 @@ class FlexDRWorker
   // init
   void init(const frDesign* design);
   void initNets(const frDesign* design);
+  void initRipUpNetsFromMarkers();
   void initNetObjs(
       const frDesign* design,
       std::set<frNet*, frBlockObjectComp>& nets,
@@ -764,6 +769,9 @@ class FlexDRWorker
       std::set<frBlockObject*>& uniqueAggressors,
       std::vector<RouteQueueEntry>& checks,
       std::vector<RouteQueueEntry>& routes);
+  void getRipUpNetsFromMarker(frMarker* marker,
+                              std::set<drNet*>& nets,
+                              frCoord bloatDist = 0);
   void route_queue_update_queue(const std::vector<RouteQueueEntry>& checks,
                                 const std::vector<RouteQueueEntry>& routes,
                                 std::queue<RouteQueueEntry>& rerouteQueue);

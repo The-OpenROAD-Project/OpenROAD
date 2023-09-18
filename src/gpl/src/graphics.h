@@ -45,8 +45,10 @@ class Logger;
 namespace gpl {
 
 class InitialPlace;
+class NesterovBaseCommon;
 class NesterovBase;
 class NesterovPlace;
+class PlacerBaseCommon;
 class PlacerBase;
 class GCell;
 
@@ -55,13 +57,17 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
 {
  public:
   // Debug InitialPlace
-  Graphics(utl::Logger* logger, std::shared_ptr<PlacerBase> pb);
+  Graphics(utl::Logger* logger,
+           std::shared_ptr<PlacerBaseCommon> pbc,
+           std::vector<std::shared_ptr<PlacerBase>>& pbVec);
 
   // Debug NesterovPlace
   Graphics(utl::Logger* logger,
            NesterovPlace* np,
-           std::shared_ptr<PlacerBase> pb,
-           std::shared_ptr<NesterovBase> nb,
+           std::shared_ptr<PlacerBaseCommon> pbc,
+           std::shared_ptr<NesterovBaseCommon> nbc,
+           std::vector<std::shared_ptr<PlacerBase>>& pbVec,
+           std::vector<std::shared_ptr<NesterovBase>>& nbVec,
            bool draw_bins,
            odb::dbInst* inst);
 
@@ -99,8 +105,10 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
     Overflow
   };
 
-  std::shared_ptr<PlacerBase> pb_;
-  std::shared_ptr<NesterovBase> nb_;
+  std::shared_ptr<PlacerBaseCommon> pbc_;
+  std::shared_ptr<NesterovBaseCommon> nbc_;
+  std::vector<std::shared_ptr<PlacerBase>> pbVec_;
+  std::vector<std::shared_ptr<NesterovBase>> nbVec_;
   NesterovPlace* np_;
   GCell* selected_;
   bool draw_bins_;

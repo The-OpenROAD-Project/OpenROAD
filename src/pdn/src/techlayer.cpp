@@ -84,8 +84,7 @@ int TechLayer::snapToGrid(int pos, int greater_than) const
 
   int delta_pos = 0;
   int delta = std::numeric_limits<int>::max();
-  for (size_t i = 0; i < grid_.size(); i++) {
-    const int grid_pos = grid_[i];
+  for (const int grid_pos : grid_) {
     if (grid_pos < greater_than) {
       // ignore since it is lower than the minimum
       continue;

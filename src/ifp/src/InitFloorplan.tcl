@@ -38,21 +38,25 @@ sta::define_cmd_args "initialize_floorplan" {[-utilization util]\
 					       [-core_space space | {bottom top left right}]\
 					       [-die_area {lx ly ux uy}]\
 					       [-core_area {lx ly ux uy}]\
-					       [-site site_name]}
+					       [-sites site_name]}
 
 proc initialize_floorplan { args } {
   sta::parse_key_args "initialize_floorplan" args \
     keys {-utilization -aspect_ratio -core_space \
-	    -die_area -core_area -site} \
+	    -die_area -core_area -sites} \
     flags {}
 
   sta::check_argc_eq0 "initialize_floorplan" $args
 
-  set site_name ""
-  if [info exists keys(-site)] {
-    set site_name $keys(-site)
-  } else {
-    utl::warn IFP 11 "use -site to add placement rows."
+  set sites {}
+  if { [info exists keys(-sites)] } {
+    foreach sitename $keys(-sites) {
+      set site [ifp::find_site $sitename]
+      if { $site == "NULL" } {
+        utl::error IFP 11 "Unable to find site: $sitename"
+      }
+      lappend sites $site
+    }
   }
 
   sta::check_argc_eq0 "initialize_floorplan" $args
@@ -92,7 +96,7 @@ proc initialize_floorplan { args } {
       [ord::microns_to_dbu $core_sp_top] \
       [ord::microns_to_dbu $core_sp_left] \
       [ord::microns_to_dbu $core_sp_right] \
-      $site_name
+      $sites
   } elseif [info exists keys(-die_area)] {
     set die_area $keys(-die_area)
     if { [llength $die_area] != 4 } {
@@ -122,7 +126,7 @@ proc initialize_floorplan { args } {
 	[ord::microns_to_dbu $die_ux] [ord::microns_to_dbu $die_uy] \
 	[ord::microns_to_dbu $core_lx] [ord::microns_to_dbu $core_ly] \
 	[ord::microns_to_dbu $core_ux] [ord::microns_to_dbu $core_uy] \
-	$site_name
+	$sites
     } else {
       utl::error IFP 17 "no -core_area specified."
     }

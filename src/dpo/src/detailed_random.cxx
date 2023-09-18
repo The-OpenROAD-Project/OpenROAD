@@ -394,6 +394,10 @@ double DetailedRandom::go()
 
   // Collect candidate cells.
   collectCandidates();
+  if (candidates_.empty()) {
+    mgrPtr_->getLogger()->info(DPO, 203, "No movable cells found");
+    return 0.0;
+  }
 
   // Try to improve.
   int maxAttempts

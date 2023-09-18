@@ -42,7 +42,7 @@ class FlexTA
 {
  public:
   // constructors
-  FlexTA(frDesign* in, Logger* logger);
+  FlexTA(frDesign* in, Logger* logger, bool save_updates_);
   ~FlexTA();
   // getters
   frTechObject* getTech() const { return tech_; }
@@ -55,6 +55,7 @@ class FlexTA
   frTechObject* tech_;
   frDesign* design_;
   Logger* logger_;
+  bool save_updates_;
   std::unique_ptr<FlexTAGraphics> graphics_;
   // others
   void main_helper(frLayerNum lNum, int maxOffsetIter, int panelWidth);
@@ -103,9 +104,10 @@ class FlexTAWorker
 {
  public:
   // constructors
-  FlexTAWorker(frDesign* designIn, Logger* logger)
+  FlexTAWorker(frDesign* designIn, Logger* logger, bool save_updates)
       : design_(designIn),
         logger_(logger),
+        save_updates_(save_updates),
         dir_(dbTechLayerDir::NONE),
         taIter_(0),
         rq_(this),
@@ -181,6 +183,7 @@ class FlexTAWorker
  private:
   frDesign* design_;
   Logger* logger_;
+  bool save_updates_;
   Rect routeBox_;
   Rect extBox_;
   dbTechLayerDir dir_;
@@ -219,14 +222,14 @@ class FlexTAWorker
                          frCoord& minEnd,
                          std::set<frCoord>& downViaCoordSet,
                          std::set<frCoord>& upViaCoordSet,
-                         int& wlen,
+                         int& nextIrouteDir,
                          frCoord& pinCoord);
   void initIroute_helper_generic(frGuide* guide,
                                  frCoord& maxBegin,
                                  frCoord& minEnd,
                                  std::set<frCoord>& downViaCoordSet,
                                  std::set<frCoord>& upViaCoordSet,
-                                 int& wlen,
+                                 int& nextIrouteDir,
                                  frCoord& pinCoord);
   void initIroute_helper_generic_helper(frGuide* guide, frCoord& pinCoord);
   bool initIroute_helper_pin(frGuide* guide,
@@ -234,7 +237,7 @@ class FlexTAWorker
                              frCoord& minEnd,
                              std::set<frCoord>& downViaCoordSet,
                              std::set<frCoord>& upViaCoordSet,
-                             int& wlen,
+                             int& nextIrouteDir,
                              frCoord& pinCoord);
   void initCosts();
   void sortIroutes();
@@ -294,7 +297,7 @@ class FlexTAWorker
   frUInt4 assignIroute_getCost(taPin* iroute,
                                frCoord trackLoc,
                                frUInt4& drcCost);
-  frUInt4 assignIroute_getWlenCost(taPin* iroute, frCoord trackLoc);
+  frUInt4 assignIroute_getNextIrouteDirCost(taPin* iroute, frCoord trackLoc);
   frUInt4 assignIroute_getPinCost(taPin* iroute, frCoord trackLoc);
   frUInt4 assignIroute_getAlignCost(taPin* iroute, frCoord trackLoc);
   frUInt4 assignIroute_getDRCCost(taPin* iroute, frCoord trackLoc);

@@ -17,10 +17,8 @@ die2  = helpers.make_rect(design, 100, 100, 1100, 1100)
 core2 = helpers.make_rect(design, 200, 200, 800, 800)
 
 floorplan = design.getFloorplan()
-floorplan.initFloorplan(die1, core1,
-                        "FreePDK45_38x28_10R_NP_162NW_34O")
-floorplan.initFloorplan(die2, core2,
-                        "FreePDK45_38x28_10R_NP_162NW_34O")
+floorplan.initFloorplan(die1, core1)
+floorplan.initFloorplan(die2, core2)
 
 def_file = helpers.make_result_file("init_floorplan7.def")
 design.writeDef(def_file)

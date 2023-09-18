@@ -38,12 +38,13 @@ void FlexTAWorker::saveToGuides()
       if (uPinFig->typeId() == tacPathSeg) {
         unique_ptr<frPathSeg> pathSeg
             = make_unique<frPathSeg>(*static_cast<taPathSeg*>(uPinFig.get()));
-        drUpdate update(drUpdate::ADD_GUIDE);
-        update.setPathSeg(*pathSeg.get());
-        update.setIndexInOwner(iroute->getGuide()->getIndexInOwner());
-        update.setNet(iroute->getGuide()->getNet());
-        design_->addUpdate(update);
-
+        if (save_updates_) {
+          drUpdate update(drUpdate::ADD_GUIDE);
+          update.setPathSeg(*pathSeg);
+          update.setIndexInOwner(iroute->getGuide()->getIndexInOwner());
+          update.setNet(iroute->getGuide()->getNet());
+          design_->addUpdate(update);
+        }
         pathSeg->addToNet(iroute->getGuide()->getNet());
         auto guide = iroute->getGuide();
         vector<unique_ptr<frConnFig>> tmp;

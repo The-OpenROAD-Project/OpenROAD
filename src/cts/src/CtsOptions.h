@@ -35,11 +35,14 @@
 
 #pragma once
 
+#include <cstdint>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
 
+#include "CtsObserver.h"
 #include "Util.h"
 #include "db.h"
 #include "utl/Logger.h"
@@ -75,8 +78,13 @@ class CtsOptions
   unsigned getWireSegmentUnit() const { return wireSegmentUnit_; }
   void setPlotSolution(bool plot) { plotSolution_ = plot; }
   bool getPlotSolution() const { return plotSolution_; }
-  void setGuiDebug() { gui_debug_ = true; }
-  bool getGuiDebug() const { return gui_debug_; }
+
+  void setObserver(std::unique_ptr<CtsObserver> observer)
+  {
+    observer_ = std::move(observer);
+  }
+  CtsObserver* getObserver() const { return observer_.get(); }
+
   void setSinkClustering(bool enable) { sinkClusteringEnable_ = enable; }
   bool getSinkClustering() const { return sinkClusteringEnable_; }
   void setSinkClusteringUseMaxCap(bool useMaxCap)
@@ -142,12 +150,40 @@ class CtsOptions
   {
     clusteringCapacity_ = capacity;
   }
-  double getBufferDistance() const { return bufDistance_; }
-  void setBufferDistance(double distance) { bufDistance_ = distance; }
-  double getVertexBufferDistance() const { return vertexBufDistance_; }
-  void setVertexBufferDistance(double distance)
+
+  // BufferDistance is in DBU
+  int32_t getBufferDistance() const
   {
-    vertexBufDistance_ = distance;
+    if (bufDistance_) {
+      return *bufDistance_;
+    }
+
+    if (dbUnits_ == -1) {
+      logger_->error(
+          utl::CTS, 542, "Must provide a dbUnit conversion though setDbUnits.");
+    }
+
+    return 100 /*um*/ * dbUnits_;
+  }
+  void setBufferDistance(int32_t distance_dbu) { bufDistance_ = distance_dbu; }
+
+  // VertexBufferDistance is in DBU
+  int32_t getVertexBufferDistance() const
+  {
+    if (vertexBufDistance_) {
+      return *vertexBufDistance_;
+    }
+
+    if (dbUnits_ == -1) {
+      logger_->error(
+          utl::CTS, 543, "Must provide a dbUnit conversion though setDbUnits.");
+    }
+
+    return 240 /*um*/ * dbUnits_;
+  }
+  void setVertexBufferDistance(int32_t distance_dbu)
+  {
+    vertexBufDistance_ = distance_dbu;
   }
   bool isVertexBuffersEnabled() const { return vertexBuffersEnable_; }
   void setVertexBuffersEnabled(bool enable) { vertexBuffersEnable_ = enable; }
@@ -178,8 +214,8 @@ class CtsOptions
   void setSinkBufferInputCap(double cap) { sinkBufferInputCap_ = cap; }
   double getSinkBufferInputCap() const { return sinkBufferInputCap_; }
   std::string getSinkBuffer() const { return sinkBuffer_; }
-  utl::Logger* getLogger() { return logger_; }
-  stt::SteinerTreeBuilder* getSttBuilder() { return sttBuilder_; }
+  utl::Logger* getLogger() const { return logger_; }
+  stt::SteinerTreeBuilder* getSttBuilder() const { return sttBuilder_; }
 
  private:
   std::string clockNets_ = "";
@@ -194,9 +230,9 @@ class CtsOptions
   bool sinkClusteringUseMaxCap_ = true;
   bool simpleSegmentsEnable_ = false;
   bool vertexBuffersEnable_ = false;
-  bool gui_debug_ = false;
-  double vertexBufDistance_ = 240;
-  double bufDistance_ = 100;
+  std::unique_ptr<CtsObserver> observer_;
+  std::optional<int> vertexBufDistance_;
+  std::optional<int> bufDistance_;
   double clusteringCapacity_ = 0.6;
   unsigned clusteringPower_ = 4;
   unsigned numMaxLeafSinks_ = 15;

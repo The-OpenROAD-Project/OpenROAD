@@ -32,9 +32,9 @@
 
 #pragma once
 
-#include <string.h>
-
 #include <array>
+#include <cstring>
+#include <fstream>
 #include <string>
 
 #include "ZException.h"
@@ -74,101 +74,113 @@ class dbOStream
   dbOStream& operator<<(char c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
   dbOStream& operator<<(unsigned char c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
-  dbOStream& operator<<(short c)
+  dbOStream& operator<<(int16_t c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
-  dbOStream& operator<<(unsigned short c)
+  dbOStream& operator<<(uint16_t c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
   dbOStream& operator<<(int c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
   dbOStream& operator<<(uint64_t c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
   dbOStream& operator<<(unsigned int c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
   dbOStream& operator<<(int8_t c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
   dbOStream& operator<<(float c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
   dbOStream& operator<<(double c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
   dbOStream& operator<<(long double c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
   dbOStream& operator<<(const char* c)
   {
-    if (c == NULL) {
+    if (c == nullptr) {
       *this << 0;
     } else {
       int l = strlen(c) + 1;
       *this << l;
       int n = fwrite(c, l, 1, _f);
-      if (n != 1)
+      if (n != 1) {
         write_error();
+      }
     }
 
     return *this;
@@ -177,8 +189,9 @@ class dbOStream
   dbOStream& operator<<(dbObjectType c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
@@ -222,20 +235,12 @@ class dbOStream
     return *this;
   }
 
-  dbOStream& operator<<(std::string s)
+  dbOStream& operator<<(const std::string& s)
   {
     char* tmp = strdup(s.c_str());
     *this << tmp;
     free((void*) tmp);
     return *this;
-  }
-
-  void markStream()
-  {
-    int marker = ftell(_f);
-    int magic = 0xCCCCCCCC;
-    *this << magic;
-    *this << marker;
   }
 
   double lefarea(int value) { return ((double) value * _lef_area_factor); }
@@ -245,23 +250,13 @@ class dbOStream
 
 class dbIStream
 {
-  FILE* _f;
+  std::ifstream& _f;
   _dbDatabase* _db;
   double _lef_area_factor;
   double _lef_dist_factor;
 
-  void read_error()
-  {
-    if (feof(_f))
-      throw ZException(
-          "read failed on database stream (unexpected end-of-file encounted).");
-    else
-      throw ZException("read failed on database stream; system io error: (%s)",
-                       strerror(ferror(_f)));
-  }
-
  public:
-  dbIStream(_dbDatabase* db, FILE* f);
+  dbIStream(_dbDatabase* db, std::ifstream& f);
 
   _dbDatabase* getDatabase() { return _db; }
 
@@ -275,89 +270,67 @@ class dbIStream
 
   dbIStream& operator>>(char& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbIStream& operator>>(unsigned char& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
-  dbIStream& operator>>(short& c)
+  dbIStream& operator>>(int16_t& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
-  dbIStream& operator>>(unsigned short& c)
+  dbIStream& operator>>(uint16_t& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbIStream& operator>>(int& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbIStream& operator>>(uint64_t& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbIStream& operator>>(unsigned int& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbIStream& operator>>(int8_t& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbIStream& operator>>(float& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbIStream& operator>>(double& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbIStream& operator>>(long double& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
@@ -366,13 +339,11 @@ class dbIStream
     int l;
     *this >> l;
 
-    if (l == 0)
-      c = NULL;
-    else {
+    if (l == 0) {
+      c = nullptr;
+    } else {
       c = (char*) malloc(l);
-      int n = fread(c, l, 1, _f);
-      if (n != 1)
-        read_error();
+      _f.read(reinterpret_cast<char*>(c), l);
     }
 
     return *this;
@@ -380,9 +351,7 @@ class dbIStream
 
   dbIStream& operator>>(dbObjectType& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
@@ -434,17 +403,6 @@ class dbIStream
     s = std::string(tmp);
     free((void*) tmp);
     return *this;
-  }
-
-  void checkStream()
-  {
-    int marker = ftell(_f);
-    int magic = 0xCCCCCCCC;
-    int smarker;
-    int smagic;
-    *this >> smagic;
-    *this >> smarker;
-    ZASSERT((magic == smagic) && (marker == smarker));
   }
 
   double lefarea(int value) { return ((double) value * _lef_area_factor); }

@@ -41,10 +41,7 @@
 namespace pdn {
 
 Rings::Rings(Grid* grid, const std::array<Layer, 2>& layers)
-    : GridComponent(grid),
-      layers_(layers),
-      offset_({0, 0, 0, 0}),
-      extend_to_boundary_(false)
+    : GridComponent(grid), layers_(layers)
 {
 }
 
@@ -212,9 +209,9 @@ void Rings::makeShapes(const ShapeTreeMap& other_shapes)
       }
       int y_start = core.yMin() - width;
       int y_end = core.yMin();
-      for (auto itr = nets.begin(); itr != nets.end(); itr++) {
+      for (auto net : nets) {
         addShape(new Shape(layer,
-                           *itr,
+                           net,
                            odb::Rect(x_start, y_start, x_end, y_end),
                            odb::dbWireShapeType::RING));
         if (!extend_to_boundary_) {
@@ -231,9 +228,9 @@ void Rings::makeShapes(const ShapeTreeMap& other_shapes)
       }
       y_start = core.yMax();
       y_end = y_start + width;
-      for (auto itr = nets.begin(); itr != nets.end(); itr++) {
+      for (auto net : nets) {
         addShape(new Shape(layer,
-                           *itr,
+                           net,
                            odb::Rect(x_start, y_start, x_end, y_end),
                            odb::dbWireShapeType::RING));
         if (!extend_to_boundary_) {
@@ -253,9 +250,9 @@ void Rings::makeShapes(const ShapeTreeMap& other_shapes)
         y_start = boundary.yMin();
         y_end = boundary.yMax();
       }
-      for (auto itr = nets.begin(); itr != nets.end(); itr++) {
+      for (auto net : nets) {
         addShape(new Shape(layer,
-                           *itr,
+                           net,
                            odb::Rect(x_start, y_start, x_end, y_end),
                            odb::dbWireShapeType::RING));
         x_start -= pitch;
@@ -272,9 +269,9 @@ void Rings::makeShapes(const ShapeTreeMap& other_shapes)
         y_start = core.yMin() - width;
         y_end = core.yMax() + width;
       }
-      for (auto itr = nets.begin(); itr != nets.end(); itr++) {
+      for (auto net : nets) {
         addShape(new Shape(layer,
-                           *itr,
+                           net,
                            odb::Rect(x_start, y_start, x_end, y_end),
                            odb::dbWireShapeType::RING));
         x_start += pitch;
@@ -288,7 +285,7 @@ void Rings::makeShapes(const ShapeTreeMap& other_shapes)
   }
 }
 
-const std::vector<odb::dbTechLayer*> Rings::getLayers() const
+std::vector<odb::dbTechLayer*> Rings::getLayers() const
 {
   std::vector<odb::dbTechLayer*> layers;
   for (const auto& layer_def : layers_) {

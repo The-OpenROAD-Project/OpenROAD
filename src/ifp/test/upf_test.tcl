@@ -50,8 +50,7 @@ foreach inst $insts {
 
 initialize_floorplan -utilization 20 \
                        -aspect_ratio 1 \
-                       -core_space 2 \
-                       -site unithd
+                       -core_space 2           
 
 
 set insts [$block getInsts]

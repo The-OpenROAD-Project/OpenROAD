@@ -7,12 +7,17 @@ record_tests {
   place_pad
   place_bondpad
   place_bondpad_stagger
+  place_pad_no_master
+  place_pad_wrong_master
   assign_bumps
 
   connect_by_abutment
 
   rdl_route
+  rdl_route_failed
+  rdl_route_assignments
   rdl_route_45
+  rdl_route_45_cost
   rdl_route_via
   rdl_route_bump_via
 

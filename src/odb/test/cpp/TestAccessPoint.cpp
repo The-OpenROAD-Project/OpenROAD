@@ -1,5 +1,6 @@
 #define BOOST_TEST_MODULE TestAccessPoint
 #include <boost/test/included/unit_test.hpp>
+#include <fstream>
 
 #include "db.h"
 #include "helper.cpp"
@@ -27,7 +28,7 @@ BOOST_AUTO_TEST_CASE(test_default)
   ap->setHighType(dbAccessType::HalfGrid);
   ap->setAccess(true, dbDirection::DOWN);
   iterm->setAccessPoint(pin, ap);
-  FILE *write, *read;
+  FILE* write;
   std::string path
       = std::string(std::getenv("BASE_DIR")) + "/results/TestAccessPointDbRW";
   write = fopen(path.c_str(), "w");
@@ -35,7 +36,10 @@ BOOST_AUTO_TEST_CASE(test_default)
   dbDatabase::destroy(db);
 
   dbDatabase* db2 = dbDatabase::create();
-  read = fopen(path.c_str(), "r");
+  std::ifstream read;
+  read.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                  | std::ios::eofbit);
+  read.open(path.c_str(), std::ios::binary);
   db2->read(read);
   auto aps = db2->getChip()
                  ->getBlock()

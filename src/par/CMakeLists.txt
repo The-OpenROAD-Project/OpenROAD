@@ -35,13 +35,65 @@
 
 include("openroad")
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS                 "${CMAKE_CXX_FLAGS} -DIL_STD -Wall -fPIC")
-set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX   "-isystem ")
-set(LINKER_OPTIONS                  "-Wl,--export-dynamic")
+option(LOAD_CPLEX "Load CPLEX" OFF)
+if (LOAD_CPLEX)
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_MODULE_PATH               "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+  set(CMAKE_CXX_FLAGS                 "${CMAKE_CXX_FLAGS} -DIL_STD -m64 -Wall -fPIC")
+  set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX   "-isystem ")
+  set(LINKER_OPTIONS                  "-Wl,--export-dynamic")
+  find_package(Cplex)
+  include_directories(SYSTEM ${CPLEX_INCLUDE_DIRS})
+endif (LOAD_CPLEX)
 
 find_package(Threads REQUIRED)
 find_package(ortools REQUIRED)
+
+add_library(par_lib
+  src/PartitionMgr.cpp
+  src/TritonPart.cpp
+  src/Hypergraph.cpp
+  src/Utilities.cpp
+  src/Coarsener.cpp
+  src/Multilevel.cpp
+  src/Refiner.cpp
+  src/Partitioner.cpp
+  src/Evaluator.cpp
+  src/GreedyRefine.cpp
+  src/ILPRefine.cpp
+  src/KWayFMRefine.cpp
+  src/KWayPMRefine.cpp
+  src/PriorityQueue.cpp
+)
+
+target_include_directories(par_lib
+  PUBLIC
+    include
+)
+
+target_link_libraries(par_lib
+  PRIVATE
+    odb
+    OpenSTA
+    utl_lib
+    dbSta_lib
+    ortools::ortools
+)
+
+if (LOAD_CPLEX)
+  target_compile_definitions(par_lib
+    PRIVATE
+      LOAD_CPLEX
+  )
+
+  target_link_libraries(par_lib
+    PRIVATE
+      ${CPLEX_LIBRARIES}
+      ${CMAKE_THREAD_LIBS_INIT}
+      dl
+  )
+endif (LOAD_CPLEX)
+
 
 swig_lib(NAME      par
          NAMESPACE par
@@ -52,19 +104,10 @@ swig_lib(NAME      par
 target_sources(par
   PRIVATE
     src/MakePartitionMgr.cpp
-    src/PartitionMgr.cpp
-    src/TritonPart.cpp
-    src/TPHypergraph.cpp
-    src/Utilities.cpp
-    src/TPCoarsener.cpp
-    src/TPMultilevel.cpp
-    src/TPRefiner.cpp
-    src/TPPartitioner.cpp
-    src/KPMRefinement.cpp
 )
 
 messages(
-  TARGET par
+  TARGET par_lib
 )
 
 target_include_directories(par
@@ -73,15 +116,26 @@ target_include_directories(par
 )
 
 target_link_libraries(par
-  PUBLIC
+  PRIVATE
     odb
     OpenSTA
-    utl
-    dbSta
-  PRIVATE
-    ortools::ortools
-    dl
+    par_lib
 )
+
+if (LOAD_CPLEX)
+  target_compile_definitions(par
+    PRIVATE
+      LOAD_CPLEX
+  )
+
+  target_link_libraries(par
+    PRIVATE
+      ${CPLEX_LIBRARIES}
+      ${CMAKE_THREAD_LIBS_INIT}
+      dl
+  )
+endif (LOAD_CPLEX)
+
 
 if (Python3_FOUND AND BUILD_PYTHON)
   swig_lib(NAME          par_py
@@ -99,7 +153,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
 
   target_link_libraries(par_py
     PUBLIC
-      par
+      par_lib
   )
 
 endif()

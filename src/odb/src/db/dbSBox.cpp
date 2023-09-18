@@ -207,22 +207,22 @@ dbSBox* dbSBox::create(dbSWire* wire_,
   switch (dir) {
     case UNDEFINED:
       if ((dx & 1) && (dy & 1))  // both odd
-        return NULL;
+        return nullptr;
 
       break;
 
     case HORIZONTAL:
       if (dy & 1)  // dy odd
-        return NULL;
+        return nullptr;
       break;
 
     case VERTICAL:
       if (dx & 1)  // dy odd
-        return NULL;
+        return nullptr;
       break;
     case OCTILINEAR:
       if (dx != dy)
-        return NULL;
+        return nullptr;
       break;
   }
 
@@ -260,7 +260,7 @@ dbSBox* dbSBox::create(dbSWire* wire_,
   _dbBlock* block = (_dbBlock*) wire->getOwner();
 
   if (via->_bbox == 0)
-    return NULL;
+    return nullptr;
 
   _dbBox* vbbox = block->_box_tbl->getPtr(via->_bbox);
   int xmin = vbbox->_shape._rect.xMin() + x;
@@ -292,7 +292,7 @@ dbSBox* dbSBox::create(dbSWire* wire_,
   _dbBlock* block = (_dbBlock*) wire->getOwner();
 
   if (via->_bbox == 0)
-    return NULL;
+    return nullptr;
 
   _dbTech* tech = (_dbTech*) via->getOwner();
   _dbBox* vbbox = tech->_box_tbl->getPtr(via->_bbox);

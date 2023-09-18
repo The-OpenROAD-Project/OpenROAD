@@ -8,22 +8,6 @@
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 88 connections.
 Found 0 macro blocks.
-Using 1u default distance from corners.
 Using 2 tracks default min distance between IO pins.
-[INFO PPL-0007] Random pin placement.
-[WARNING PPL-0075] Pin req_msg[15] is assigned to more than one constraint, using last defined constraint.
-[WARNING PPL-0075] Pin req_msg[14] is assigned to more than one constraint, using last defined constraint.
-Found 0 macro blocks.
-Using 1u default distance from corners.
-Using 2 tracks default min distance between IO pins.
-[INFO PPL-0010] Tentative 0 to set up sections.
-[INFO PPL-0001] Number of slots          1228
-[INFO PPL-0002] Number of I/O            54
-[INFO PPL-0003] Number of I/O w/sink     54
-[INFO PPL-0004] Number of I/O w/o sink   0
-[INFO PPL-0005] Slots per section        200
-[INFO PPL-0006] Slots increase factor    0.01
-[INFO PPL-0008] Successfully assigned pins to sections.
-[INFO PPL-0012] I/O nets HPWL: 816.47 um.
-No differences found.
-No differences found.
+[ERROR PPL-0098] Pins  req_msg[15] req_msg[14] are assigned to multiple constraints.
+PPL-0098

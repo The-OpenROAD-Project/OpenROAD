@@ -1,8 +1,4 @@
 [INFO ODB-0222] Reading LEF file: asap7_vias/asap7_tech_1x_offcenter_via.lef
-[INFO ODB-0388] unsupported LEF58_PITCH property for layer M2 :"
- PITCH 0.036 FIRSTLASTPITCH 0.045
-   ;
- "
 [INFO ODB-0223]     Created 25 technology layers
 [INFO ODB-0224]     Created 10 technology vias
 [INFO ODB-0226] Finished LEF file:  asap7_vias/asap7_tech_1x_offcenter_via.lef

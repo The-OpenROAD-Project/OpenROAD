@@ -1,0 +1,19 @@
+Running test: TestScanArchitectHeuristic
+**********
+1
+Running 3 test cases...
+
+[1;32;49m*** No errors detected
+[0;39;49m
+TestScanArchitectHeuristic passed
+******************
+Running test: TestScanArchitect
+**********
+1
+Running 1 test case...
+
+[1;32;49m*** No errors detected
+[0;39;49m
+TestScanArchitect passed
+******************
+pass

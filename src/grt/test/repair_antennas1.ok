@@ -10,17 +10,17 @@
 [INFO ODB-0131]     Created 1360 components and 6650 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
-Net: clk
-  Pin: clkbuf_0_clk/A (sky130_fd_sc_hs__clkbuf_1)
+Net: reset
+  Pin: _346_/A1 (sky130_fd_sc_hs__o31ai_1)
     Layer: met2
-      Partial area ratio:  451.78
+      Partial area ratio:  423.52
       Required ratio:  400.00 (Side area) (VIOLATED)
 
 
 Net: resp_msg[11]
   Pin: _648_/A (sky130_fd_sc_hs__nand2_1)
-    Layer: met1
-      Partial area ratio:  561.41
+    Layer: met2
+      Partial area ratio:  404.81
       Required ratio:  400.00 (Side area) (VIOLATED)
 
 

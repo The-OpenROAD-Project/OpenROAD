@@ -77,12 +77,12 @@ class dbDiff : public dbObject
 
   // begin comparison of object
   void begin(const char* field, const char* objname, uint oid);
-  void begin(const char side, const char* field, const char* objname, uint oid);
+  void begin(char side, const char* field, const char* objname, uint oid);
   void begin(const char* field,
              const char* objname,
              uint oid,
              const char* name);
-  void begin(const char side,
+  void begin(char side,
              const char* field,
              const char* objname,
              uint oid,
@@ -117,8 +117,8 @@ class dbDiff : public dbObject
   dbDiff& operator<<(bool c);
   dbDiff& operator<<(char c);
   dbDiff& operator<<(unsigned char c);
-  dbDiff& operator<<(short c);
-  dbDiff& operator<<(unsigned short c);
+  dbDiff& operator<<(int16_t c);
+  dbDiff& operator<<(uint16_t c);
   dbDiff& operator<<(int c);
   dbDiff& operator<<(unsigned int c);
   dbDiff& operator<<(float c);
@@ -132,8 +132,8 @@ class dbDiff : public dbObject
   void diff(const char* field, bool lhs, bool rhs);
   void diff(const char* field, char lhs, char rhs);
   void diff(const char* field, unsigned char lhs, unsigned char rhs);
-  void diff(const char* field, short lhs, short rhs);
-  void diff(const char* field, unsigned short lhs, unsigned short rhs);
+  void diff(const char* field, int16_t lhs, int16_t rhs);
+  void diff(const char* field, uint16_t lhs, uint16_t rhs);
   void diff(const char* field, int lhs, int rhs);
   void diff(const char* field, unsigned int lhs, unsigned int rhs);
   void diff(const char* field, float lhs, float rhs);
@@ -178,8 +178,8 @@ class dbDiff : public dbObject
   void out(char side, const char* field, bool value);
   void out(char side, const char* field, char value);
   void out(char side, const char* field, unsigned char value);
-  void out(char side, const char* field, short value);
-  void out(char side, const char* field, unsigned short value);
+  void out(char side, const char* field, int16_t value);
+  void out(char side, const char* field, uint16_t value);
   void out(char side, const char* field, int value);
   void out(char side, const char* field, unsigned int value);
   void out(char side, const char* field, float value);

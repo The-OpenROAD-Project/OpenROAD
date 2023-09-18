@@ -79,7 +79,6 @@ void Ath__grid::gridContextOn(int orig, int len, int base, int width)
   Ath__track *track, *btrack;
   uint jj;
   uint firstContextTrack = 1;
-  uint clength = 0;
   bool tohi = _gridtable->targetHighTracks() > 0 ? true : false;
   for (jj = lowTrack; jj <= hiTrack; jj++) {
     btrack = _trackTable[jj];
@@ -87,8 +86,7 @@ void Ath__grid::gridContextOn(int orig, int len, int base, int width)
       continue;
     track = NULL;
     while ((track = btrack->getNextSubTrack(track, tohi))) {
-      clength += track->trackContextOn(
-          orig, end, base, width, firstContextTrack, context);
+      track->trackContextOn(orig, end, base, width, firstContextTrack, context);
       firstContextTrack = 0;
     }
   }

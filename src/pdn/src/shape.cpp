@@ -45,7 +45,7 @@ namespace pdn {
 Shape::Shape(odb::dbTechLayer* layer,
              odb::dbNet* net,
              const odb::Rect& rect,
-             odb::dbWireShapeType type)
+             const odb::dbWireShapeType& type)
     : layer_(layer),
       net_(net),
       rect_(rect),
@@ -71,9 +71,7 @@ Shape::Shape(odb::dbTechLayer* layer,
 {
 }
 
-Shape::~Shape()
-{
-}
+Shape::~Shape() = default;
 
 utl::Logger* Shape::getLogger() const
 {
@@ -101,19 +99,39 @@ void Shape::merge(Shape* shape)
   generateObstruction();
 }
 
-const Box Shape::rectToBox(const odb::Rect& rect)
+Box Shape::rectToBox(const odb::Rect& rect)
 {
   return Box(Point(rect.xMin(), rect.yMin()), Point(rect.xMax(), rect.yMax()));
 }
 
-const Box Shape::getRectBox() const
+Box Shape::getRectBox() const
 {
   return rectToBox(rect_);
 }
 
-const Box Shape::getObstructionBox() const
+Box Shape::getObstructionBox() const
 {
   return rectToBox(obs_);
+}
+
+Shape::ObstructionHalo Shape::getObstructionHalo() const
+{
+  return {rect_.xMin() - obs_.xMin(),
+          obs_.yMax() - rect_.yMax(),
+          obs_.xMax() - rect_.xMax(),
+          rect_.yMin() - obs_.yMin()};
+}
+
+odb::Rect Shape::getRectWithLargestObstructionHalo(
+    const ObstructionHalo& halo) const
+{
+  const ObstructionHalo obs = getObstructionHalo();
+  odb::Rect obs_rect = rect_;
+  obs_rect.set_xlo(obs_rect.xMin() - std::max(obs.left, halo.left));
+  obs_rect.set_yhi(obs_rect.yMax() + std::max(obs.top, halo.top));
+  obs_rect.set_xhi(obs_rect.xMax() + std::max(obs.right, halo.right));
+  obs_rect.set_ylo(obs_rect.yMin() - std::max(obs.bottom, halo.bottom));
+  return obs_rect;
 }
 
 int Shape::getNumberOfConnections() const
@@ -193,7 +211,7 @@ bool Shape::hasTermConnections() const
   return !bterm_connections_.empty() || !iterm_connections_.empty();
 }
 
-const odb::Rect Shape::getMinimumRect() const
+odb::Rect Shape::getMinimumRect() const
 {
   odb::Rect intersected_rect;
   intersected_rect.mergeInit();
@@ -216,10 +234,20 @@ const odb::Rect Shape::getMinimumRect() const
 }
 
 bool Shape::cut(const ShapeTree& obstructions,
+                const Grid* ignore_grid,
                 std::vector<Shape*>& replacements) const
 {
-  return cut(
-      obstructions, replacements, [](const ShapeValue&) { return true; });
+  return cut(obstructions,
+             replacements,
+             [ignore_grid](const ShapeValue& other) -> bool {
+               const auto obs = other.second;
+               if (obs->shapeType() != GRID_OBS) {
+                 return true;
+               }
+               const GridObsShape* shape
+                   = static_cast<GridObsShape*>(obs.get());
+               return !shape->belongsTo(ignore_grid);
+             });
 }
 
 bool Shape::cut(const ShapeTree& obstructions,
@@ -234,9 +262,11 @@ bool Shape::cut(const ShapeTree& obstructions,
 
   const bool is_horizontal = isHorizontal();
 
+  const ObstructionHalo obs_halo = getObstructionHalo();
+
   std::vector<Polygon90> shape_violations;
   for (auto it
-       = obstructions.qbegin(bgi::intersects(getRectBox())
+       = obstructions.qbegin(bgi::intersects(getObstructionBox())
                              && bgi::satisfies([&](const auto& other) {
                                   const auto& other_shape = other.second;
                                   return layer_ == other_shape->getLayer()
@@ -246,15 +276,16 @@ bool Shape::cut(const ShapeTree& obstructions,
        it != obstructions.qend();
        it++) {
     auto other_shape = it->second;
-    odb::Rect vio_rect = other_shape->getObstruction();
+    odb::Rect vio_rect
+        = other_shape->getRectWithLargestObstructionHalo(obs_halo);
 
     // ensure the violation overlap fully with the shape to make cut correctly
     if (is_horizontal) {
-      vio_rect.set_ylo(std::min(rect_.yMin(), vio_rect.yMin()));
-      vio_rect.set_yhi(std::max(rect_.yMax(), vio_rect.yMax()));
+      vio_rect.set_ylo(std::min(obs_.yMin(), vio_rect.yMin()));
+      vio_rect.set_yhi(std::max(obs_.yMax(), vio_rect.yMax()));
     } else {
-      vio_rect.set_xlo(std::min(rect_.xMin(), vio_rect.xMin()));
-      vio_rect.set_xhi(std::max(rect_.xMax(), vio_rect.xMax()));
+      vio_rect.set_xlo(std::min(obs_.xMin(), vio_rect.xMin()));
+      vio_rect.set_xhi(std::max(obs_.xMax(), vio_rect.xMax()));
     }
     std::array<Pt, 4> pts = {Pt(vio_rect.xMin(), vio_rect.yMin()),
                              Pt(vio_rect.xMax(), vio_rect.yMin()),
@@ -273,10 +304,10 @@ bool Shape::cut(const ShapeTree& obstructions,
     return false;
   }
 
-  std::array<Pt, 4> pts = {Pt(rect_.xMin(), rect_.yMin()),
-                           Pt(rect_.xMax(), rect_.yMin()),
-                           Pt(rect_.xMax(), rect_.yMax()),
-                           Pt(rect_.xMin(), rect_.yMax())};
+  const std::array<Pt, 4> pts = {Pt(obs_.xMin(), obs_.yMin()),
+                                 Pt(obs_.xMax(), obs_.yMin()),
+                                 Pt(obs_.xMax(), obs_.yMax()),
+                                 Pt(obs_.xMin(), obs_.yMax())};
 
   Polygon90 poly;
   poly.set(pts.begin(), pts.end());
@@ -293,7 +324,12 @@ bool Shape::cut(const ShapeTree& obstructions,
   new_shape.get_rectangles(rects);
 
   for (auto& r : rects) {
-    const odb::Rect new_rect(xl(r), yl(r), xh(r), yh(r));
+    const odb::Rect new_obs_rect(xl(r), yl(r), xh(r), yh(r));
+    if (!new_obs_rect.overlaps(rect_)) {
+      // New shape will exceed original
+      continue;
+    }
+    const odb::Rect new_rect = new_obs_rect.intersect(rect_);
 
     // check if new shape should be accepted,
     // only shapes with the same width will be used
@@ -351,37 +387,37 @@ void Shape::addBPinToDb(const odb::Rect& rect) const
   odb::dbBTerm* bterm = nullptr;
   if (net_->getBTermCount() == 0) {
     bterm = odb::dbBTerm::create(net_, net_->getConstName());
-    bterm->setSigType(net_->getSigType());
     bterm->setIoType(odb::dbIoType::INOUT);
-    bterm->setSpecial();
   } else {
     bterm = net_->get1stBTerm();
   }
+  bterm->setSigType(net_->getSigType());
+  bterm->setSpecial();
 
+  odb::dbBPin* pin = nullptr;
   auto pins = bterm->getBPins();
-  for (auto* pin : pins) {
-    for (auto* box : pin->getBoxes()) {
+  for (auto* bpin : pins) {
+    for (auto* box : bpin->getBoxes()) {
       if (box->getTechLayer() != layer_) {
         continue;
       }
-      odb::Rect box_rect = box->getBox();
-      if (box_rect == rect) {
-        // pin already exists
-        return;
+      if (box->getBox() == rect) {
+        pin = bpin;
       }
     }
   }
 
-  odb::dbBPin* pin = nullptr;
-  if (pins.empty()) {
-    pin = odb::dbBPin::create(bterm);
-    pin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
-  } else {
-    pin = *pins.begin();
+  if (pin == nullptr) {
+    if (pins.empty()) {
+      pin = odb::dbBPin::create(bterm);
+    } else {
+      pin = *pins.begin();
+    }
+    odb::dbBox::create(
+        pin, layer_, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
   }
 
-  odb::dbBox::create(
-      pin, layer_, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
+  pin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
 }
 
 void Shape::populateMapFromDb(odb::dbNet* net, ShapeTreeMap& map)
@@ -463,7 +499,7 @@ void Shape::generateObstruction()
   obs_.merge(eol_rect);
 }
 
-const std::string Shape::getDisplayText() const
+std::string Shape::getDisplayText() const
 {
   const std::string seperator = ":";
   std::string text;
@@ -499,7 +535,7 @@ bool Shape::isModifiable() const
   return shape_type_ == SHAPE;
 }
 
-const std::string Shape::getReportText() const
+std::string Shape::getReportText() const
 {
   std::string text
       = fmt::format("{} on {}",
@@ -512,8 +548,7 @@ const std::string Shape::getReportText() const
   return text;
 }
 
-const std::string Shape::getRectText(const odb::Rect& rect,
-                                     double dbu_to_micron)
+std::string Shape::getRectText(const odb::Rect& rect, double dbu_to_micron)
 {
   return fmt::format("({:.4f}, {:.4f}) - ({:.4f}, {:.4f})",
                      rect.xMin() / dbu_to_micron,
@@ -522,8 +557,10 @@ const std::string Shape::getRectText(const odb::Rect& rect,
                      rect.yMax() / dbu_to_micron);
 }
 
-Shape* Shape::extendTo(const odb::Rect& rect,
-                       const ShapeTree& obstructions) const
+Shape* Shape::extendTo(
+    const odb::Rect& rect,
+    const ShapeTree& obstructions,
+    const std::function<bool(const ShapeValue&)>& obs_filter) const
 {
   std::unique_ptr<Shape> new_shape(copy());
 
@@ -546,7 +583,8 @@ Shape* Shape::extendTo(const odb::Rect& rect,
                           && bgi::satisfies([this](const auto& other) {
                                // ignore violations that results from itself
                                return other.second.get() != this;
-                             }))
+                             })
+                          && bgi::satisfies(obs_filter))
       != obstructions.qend()) {
     // extension not possible
     return nullptr;
@@ -603,7 +641,7 @@ void FollowPinShape::updateTermConnections()
   }
 }
 
-const odb::Rect FollowPinShape::getMinimumRect() const
+odb::Rect FollowPinShape::getMinimumRect() const
 {
   odb::Rect min_shape = Shape::getMinimumRect();
 
@@ -634,6 +672,7 @@ const odb::Rect FollowPinShape::getMinimumRect() const
 }
 
 bool FollowPinShape::cut(const ShapeTree& obstructions,
+                         const Grid* ignore_grid,
                          std::vector<Shape*>& replacements) const
 {
   return Shape::cut(
@@ -644,6 +683,16 @@ bool FollowPinShape::cut(const ShapeTree& obstructions,
         // not estimated obstructions
         return other.second->shapeType() != GRID_OBS;
       });
+}
+
+/////////////////////////////////////
+
+GridObsShape::GridObsShape(odb::dbTechLayer* layer,
+                           const odb::Rect& rect,
+                           const Grid* grid)
+    : Shape(layer, rect, Shape::GRID_OBS), grid_(grid)
+{
+  setObstruction(rect);
 }
 
 }  // namespace pdn

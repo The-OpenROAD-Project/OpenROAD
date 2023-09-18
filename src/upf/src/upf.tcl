@@ -285,7 +285,7 @@ proc set_domain_area { args } {
   if { [info exists keys(-area)] } {
     set area $keys(-area)
     if { [llength $area] != 4 } {
-      utl::error ODB 9315 "-area is a list of 4 coordinates"
+      utl::error UPF 1 "-area is a list of 4 coordinates"
     }
     lassign $area llx lly urx ury
     sta::check_positive_float "-area" $llx
@@ -293,7 +293,7 @@ proc set_domain_area { args } {
     sta::check_positive_float "-area" $urx
     sta::check_positive_float "-area" $ury
   } else {
-    utl::error ODB 9316 "please define area"
+    utl::error UPF 2 "please define area"
   }
   sta::check_argc_eq1 "set_domain_area" $args
   set domain_name $args

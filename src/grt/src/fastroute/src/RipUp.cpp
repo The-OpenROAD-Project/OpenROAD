@@ -274,6 +274,7 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
                                   const int x2,
                                   const int y2,
                                   const int ripup_threshold,
+                                  const float critical_slack,
                                   const int netID,
                                   const int edgeID)
 {
@@ -303,7 +304,15 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
         }
       }
     }
-
+    if (!needRipup && update_slack_ && treeedge->route.last_routelen
+        && critical_slack) {
+      const float delta = (float) treeedge->route.routelen
+                          / (float) treeedge->route.last_routelen;
+      if (nets_[netID]->getSlack() <= critical_slack && (delta >= 2)) {
+        nets_[netID]->setIsCritical(true);
+        needRipup = true;
+      }
+    }
     if (needRipup) {
       const int edgeCost = nets_[netID]->getEdgeCost();
 
@@ -322,7 +331,7 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
     }
   } else {
     printEdge(netID, edgeID);
-    logger_->error(GRT, 121, "Route type is not maze, netID {}.", netID);
+    logger_->error(GRT, 500, "Route type is not maze, netID {}.", netID);
   }
 }
 
@@ -471,13 +480,13 @@ void FastRouteCore::releaseNetResources(const int netID)
           edge = &v_edges_[ymin][gridsX[i]];
           edge_3D = &v_edges_3D_[gridsL[i]][ymin][gridsX[i]];
           edge->usage -= edgeCost;
-          edge_3D->usage -= edgeCost;
+          edge_3D->usage -= nets_[netID]->getLayerEdgeCost(gridsL[i]);
         } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
           const int xmin = std::min(gridsX[i], gridsX[i + 1]);
           edge = &h_edges_[gridsY[i]][xmin];
           edge_3D = &h_edges_3D_[gridsL[i]][gridsY[i]][xmin];
           edge->usage -= edgeCost;
-          edge_3D->usage -= edgeCost;
+          edge_3D->usage -= nets_[netID]->getLayerEdgeCost(gridsL[i]);
         }
       }
     }

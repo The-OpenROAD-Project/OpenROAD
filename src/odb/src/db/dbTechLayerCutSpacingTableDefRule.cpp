@@ -44,7 +44,6 @@
 #include "dbTechLayerCutClassRule.h"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayerCutSpacingTableDefRule>;
 
 bool _dbTechLayerCutSpacingTableDefRule::operator==(
@@ -124,34 +123,28 @@ bool _dbTechLayerCutSpacingTableDefRule::operator==(
 
   if (default_ != rhs.default_)
     return false;
-
   if (second_layer_ != rhs.second_layer_)
     return false;
-
   if (prl_ != rhs.prl_)
     return false;
-
   if (extension_ != rhs.extension_)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
+
 bool _dbTechLayerCutSpacingTableDefRule::operator<(
     const _dbTechLayerCutSpacingTableDefRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
+
 void _dbTechLayerCutSpacingTableDefRule::differences(
     dbDiff& diff,
     const char* field,
     const _dbTechLayerCutSpacingTableDefRule& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_.default_valid_);
   DIFF_FIELD(flags_.same_mask_);
   DIFF_FIELD(flags_.same_net_);
@@ -179,10 +172,9 @@ void _dbTechLayerCutSpacingTableDefRule::differences(
   DIFF_FIELD(second_layer_);
   DIFF_FIELD(prl_);
   DIFF_FIELD(extension_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
+
 void _dbTechLayerCutSpacingTableDefRule::out(dbDiff& diff,
                                              char side,
                                              const char* field) const
@@ -216,10 +208,9 @@ void _dbTechLayerCutSpacingTableDefRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(prl_);
   DIFF_OUT_FIELD(extension_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
+
 _dbTechLayerCutSpacingTableDefRule::_dbTechLayerCutSpacingTableDefRule(
     _dbDatabase* db)
 {
@@ -228,9 +219,8 @@ _dbTechLayerCutSpacingTableDefRule::_dbTechLayerCutSpacingTableDefRule(
   default_ = 0;
   prl_ = 0;
   extension_ = 0;
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
+
 _dbTechLayerCutSpacingTableDefRule::_dbTechLayerCutSpacingTableDefRule(
     _dbDatabase* db,
     const _dbTechLayerCutSpacingTableDefRule& r)
@@ -265,8 +255,6 @@ _dbTechLayerCutSpacingTableDefRule::_dbTechLayerCutSpacingTableDefRule(
   second_layer_ = r.second_layer_;
   prl_ = r.prl_;
   extension_ = r.extension_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream,
@@ -290,10 +278,9 @@ dbIStream& operator>>(dbIStream& stream,
   stream >> obj.spacing_tbl_;
   stream >> obj.row_map_;
   stream >> obj.col_map_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCutSpacingTableDefRule& obj)
 {
@@ -315,19 +302,12 @@ dbOStream& operator<<(dbOStream& stream,
   stream << obj.spacing_tbl_;
   stream << obj.row_map_;
   stream << obj.col_map_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
 _dbTechLayerCutSpacingTableDefRule::~_dbTechLayerCutSpacingTableDefRule()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

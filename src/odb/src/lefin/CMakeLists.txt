@@ -15,11 +15,13 @@ add_library(lefin
     lefTechLayerEolExtensionParser.cpp
     lefTechLayerEolKeepOutRuleParser.cpp
     lefTechLayerAreaRuleParser.cpp
+    lefTechLayerPitchRuleParser.cpp
     lefMacroClassParser.cpp
     ArraySpacingParser.cpp
     WidthTableParser.cpp
     MinCutParser.cpp
     MetalWidthViaMapParser.cpp
+    KeepOutZoneParser.cpp
 )
 
 target_include_directories(lefin
@@ -40,6 +42,6 @@ target_link_libraries(lefin
         zutil
         lef
         lefzlib
-        utl
+        utl_lib
         Boost::boost
 )

@@ -59,8 +59,6 @@ class Logger;
 
 namespace pad {
 
-using namespace boost;
-
 class RDLRouter;
 
 class RDLGui : public gui::Renderer
@@ -70,12 +68,12 @@ class RDLGui : public gui::Renderer
 
   void setRouter(RDLRouter* router) { router_ = router; }
 
-  virtual void drawObjects(gui::Painter& painter) override;
+  void drawObjects(gui::Painter& painter) override;
 
-  virtual const char* getDisplayControlGroupName() { return "RDL Router"; }
+  const char* getDisplayControlGroupName() override { return "RDL Router"; }
 
  private:
-  RDLRouter* router_;
+  RDLRouter* router_ = nullptr;
 
   static constexpr const char* draw_vertex_ = "Vertices";
   static constexpr const char* draw_edge_ = "Edges";
@@ -109,9 +107,11 @@ class RDLRouter
             odb::dbTechLayer* layer,
             odb::dbTechVia* bump_via,
             odb::dbTechVia* pad_via,
+            const std::map<odb::dbITerm*, odb::dbITerm*>& routing_map,
             int width,
             int spacing,
-            bool allow45);
+            bool allow45,
+            float turn_penalty);
 
   void route(const std::vector<odb::dbNet*>& nets);
 
@@ -126,15 +126,17 @@ class RDLRouter
       = boost::geometry::index::rtree<ObsValue,
                                       boost::geometry::index::quadratic<16>>;
 
-  typedef adjacency_list<listS,
-                         vecS,
-                         undirectedS,
-                         no_property,
-                         property<edge_weight_t, int64_t>>
-      GridGraph;
-  typedef property_map<GridGraph, edge_weight_t>::type GridWeightMap;
-  typedef GridGraph::vertex_descriptor grid_vertex;
-  typedef GridGraph::edge_descriptor grid_edge;
+  using GridGraph
+      = boost::adjacency_list<boost::listS,
+                              boost::vecS,
+                              boost::undirectedS,
+                              boost::no_property,
+                              boost::property<boost::edge_weight_t, int64_t>>;
+
+  using GridWeightMap
+      = boost::property_map<GridGraph, boost::edge_weight_t>::type;
+  using grid_vertex = GridGraph::vertex_descriptor;
+  using grid_edge = GridGraph::edge_descriptor;
 
   const GridGraph& getGraph() const { return graph_; };
   const std::map<grid_vertex, odb::Point>& getVertexMap() const
@@ -164,7 +166,7 @@ class RDLRouter
   std::vector<std::pair<odb::Point, odb::Point>> simplifyRoute(
       const std::vector<grid_vertex>& route) const;
   odb::Rect correctEndPoint(const odb::Rect& route,
-                            const bool is_horizontal,
+                            bool is_horizontal,
                             const odb::Rect& target) const;
 
   std::set<odb::Rect> getITermShapes(odb::dbITerm* iterm) const;
@@ -187,6 +189,9 @@ class RDLRouter
   int width_;
   int spacing_;
   bool allow45_;
+  float turn_penalty_;
+
+  const std::map<odb::dbITerm*, odb::dbITerm*>& routing_map_;
 
   GridGraph graph_;
   GridWeightMap graph_weight_;

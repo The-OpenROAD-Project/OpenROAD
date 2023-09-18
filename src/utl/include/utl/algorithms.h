@@ -37,6 +37,7 @@
 
 #include <boost/generator_iterator.hpp>
 #include <boost/random.hpp>
+#include <sstream>
 #include <tuple>
 
 namespace utl {
@@ -83,6 +84,26 @@ constexpr auto enumerate(T&& iterable)
     auto end() { return iterator{0, std::end(iterable)}; }
   };
   return iterable_wrapper{std::forward<T>(iterable)};
+}
+
+// This format a number with at most the given precision.  It will
+// remove trailing zeros (eg 10.20 -> 10.2 or 11.00 -> 11).
+inline std::string to_numeric_string(const double number, const int precision)
+{
+  std::stringstream ss;
+  ss << std::fixed << std::setprecision(precision) << number;
+
+  auto str = ss.str();
+
+  // remove trailing zeros
+  str = str.substr(0, str.find_last_not_of('0') + 1);
+
+  // Remove the decimal point if there is nothing after it anymore
+  if (str.back() == '.') {
+    str.pop_back();
+  }
+
+  return str;
 }
 
 }  // namespace utl

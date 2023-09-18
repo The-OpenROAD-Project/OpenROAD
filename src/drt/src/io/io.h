@@ -47,11 +47,15 @@ class Logger;
 }
 
 namespace fr::io {
-// not default via, upperWidth, lowerWidth, not align upper, upperArea,
-// lowerArea, not align lower, via name
-typedef std::
-    tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool, std::string>
-        viaRawPriorityTuple;
+using viaRawPriorityTuple = std::tuple<bool,          // not default via
+                                       frCoord,       // lowerWidth
+                                       frCoord,       // upperWidth
+                                       bool,          // not align upper
+                                       frCoord,       // cutArea
+                                       frCoord,       // upperArea
+                                       frCoord,       // lowerArea
+                                       bool,          // not align lower
+                                       std::string>;  // via name
 
 class Parser
 {
@@ -60,7 +64,8 @@ class Parser
   Parser(odb::dbDatabase* dbIn, frDesign* designIn, Logger* loggerIn);
 
   // others
-  void readDb();
+  void readDesign(odb::dbDatabase*);
+  void readTechAndLibs(odb::dbDatabase*);
   bool readGuide();
   void postProcess();
   void postProcessGuide();
@@ -73,9 +78,7 @@ class Parser
   }
 
  private:
-  void readDesign(odb::dbDatabase*);
-  void readTechAndLibs(odb::dbDatabase*);
-  void setMacros(odb::dbDatabase*);
+  void setMasters(odb::dbDatabase*);
   void setTechVias(odb::dbTech*);
   void setTechViaRules(odb::dbTech*);
   void setDieArea(odb::dbBlock*);
@@ -83,6 +86,11 @@ class Parser
   void setInsts(odb::dbBlock*);
   void setObstructions(odb::dbBlock*);
   void setBTerms(odb::dbBlock*);
+  odb::Rect getViaBoxForTermAboveMaxLayer(odb::dbBTerm* term,
+                                          frLayerNum& finalLayerNum);
+  void setBTerms_addPinFig_helper(frBPin* pinIn,
+                                  odb::Rect bbox,
+                                  frLayerNum finalLayerNum);
   void setVias(odb::dbBlock*);
   void setNets(odb::dbBlock*);
   void setAccessPoints(odb::dbDatabase*);
@@ -106,6 +114,7 @@ class Parser
   void convertLef58MinCutConstraints();
 
   // postProcess functions
+  void checkPins();
   void buildGCellPatterns(odb::dbDatabase* db);
   void buildGCellPatterns_helper(frCoord& GCELLGRIDX,
                                  frCoord& GCELLGRIDY,
@@ -250,7 +259,10 @@ class Writer
   frTechObject* getTech() const { return tech_; }
   frDesign* getDesign() const { return design_; }
   // others
-  void updateDb(odb::dbDatabase* db, bool pin_access = false);
+  void updateDb(odb::dbDatabase* db,
+                bool pin_access = false,
+                bool snapshot = false);
+  void updateTrackAssignment(odb::dbBlock* block);
 
  private:
   void fillViaDefs();
@@ -266,7 +278,7 @@ class Writer
       std::vector<std::vector<
           std::map<frCoord, std::vector<std::shared_ptr<frPathSeg>>>>>&
           mergedPathSegs);
-  void updateDbConn(odb::dbBlock* block, odb::dbTech* db_tech);
+  void updateDbConn(odb::dbBlock* block, odb::dbTech* db_tech, bool snapshot);
   void updateDbVias(odb::dbBlock* block, odb::dbTech* db_tech);
   void updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech);
 

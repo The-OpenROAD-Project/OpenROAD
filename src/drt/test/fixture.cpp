@@ -87,7 +87,7 @@ void Fixture::setupTech(frTechObject* tech)
   tech->setDBUPerUU(1000);
 
   auto db = odb::dbDatabase::create();
-  db_tech = odb::dbTech::create(db);
+  db_tech = odb::dbTech::create(db, "tech");
   // TR assumes that masterslice always exists
   addLayer(tech, "masterslice", dbTechLayerType::MASTERSLICE);
   addLayer(tech, "v0", dbTechLayerType::CUT);
@@ -525,12 +525,22 @@ void Fixture::makeLef58CutSpcTbl(frLayerNum layer_num,
   }
   design->getTech()->addUConstraint(std::move(con));
 }
+
 void Fixture::makeMetalWidthViaMap(frLayerNum layer_num,
                                    odb::dbMetalWidthViaMap* dbRule)
 {
   auto con = make_unique<frMetalWidthViaConstraint>(dbRule);
   auto layer = design->getTech()->getLayer(layer_num);
   layer->addMetalWidthViaConstraint(con.get());
+  design->getTech()->addUConstraint(std::move(con));
+}
+
+void Fixture::makeKeepOutZoneRule(frLayerNum layer_num,
+                                  odb::dbTechLayerKeepOutZoneRule* dbRule)
+{
+  auto con = make_unique<frLef58KeepOutZoneConstraint>(dbRule);
+  auto layer = design->getTech()->getLayer(layer_num);
+  layer->addKeepOutZoneConstraint(con.get());
   design->getTech()->addUConstraint(std::move(con));
 }
 

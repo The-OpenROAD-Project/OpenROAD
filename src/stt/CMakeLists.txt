@@ -61,24 +61,42 @@ swig_lib(NAME      stt
          SCRIPTS   src/SteinerTreeBuilder.tcl
 )
 
-target_sources(stt
-  PRIVATE
+add_library(stt_lib
     src/SteinerTreeBuilder.cpp
-    src/MakeSteinerTreeBuilder.cpp
     ${FLUTE_HOME}/flute.cpp
     ${POWV9_CPP}
     ${POST9_CPP}
     ${PDR_HOME}/src/pd.cpp
 )
 
-target_include_directories(stt
+target_sources(stt
+  PRIVATE
+    src/MakeSteinerTreeBuilder.cpp
+    src/LinesRenderer.cpp
+)
+
+target_include_directories(stt_lib
   PUBLIC
     include
   PRIVATE
     ${LEMON_INCLUDE_DIRS}
 )
 
+target_include_directories(stt
+  PUBLIC
+    include
+  PRIVATE
+    src
+)
+
+target_link_libraries(stt_lib
+    utl_lib
+    OpenSTA
+    odb
+)
+
 target_link_libraries(stt
+    stt_lib
     utl
     gui
     OpenSTA

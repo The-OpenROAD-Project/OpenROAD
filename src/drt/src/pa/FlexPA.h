@@ -30,6 +30,7 @@
 
 #include <boost/polygon/polygon.hpp>
 
+#include "FlexPA_unique.h"
 #include "frDesign.h"
 namespace gtl = boost::polygon;
 
@@ -37,11 +38,20 @@ namespace odb {
 class dbDatabase;
 }
 
+namespace dst {
+class Distributed;
+}
+
+namespace boost::serialization {
+class access;
+}
+
 namespace fr {
 // not default via, upperWidth, lowerWidth, not align upper, upperArea,
 // lowerArea, not align lower, via name
-typedef std::tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool>
-    viaRawPriorityTuple;
+using ViaRawPriorityTuple
+    = std::tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool>;
+
 class FlexPinAccessPattern;
 class FlexDPNode;
 class FlexPAGraphics;
@@ -55,78 +65,64 @@ class FlexPA
     Commit
   };
 
-  // constructor
-  FlexPA(frDesign* in, Logger* logger);
+  FlexPA(frDesign* in, Logger* logger, dst::Distributed* dist);
   ~FlexPA();
-  // getters
-  frDesign* getDesign() const { return design_; }
-  frTechObject* getTech() const { return design_->getTech(); }
-  // setters
-  int main();
+
   void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
-  void setTargetInstances(frCollection<odb::dbInst*> insts)
-  {
-    target_insts_ = insts;
-  }
+  void setTargetInstances(const frCollection<odb::dbInst*>& insts);
+  void setDistributed(const std::string& rhost,
+                      ushort rport,
+                      const std::string& shared_vol,
+                      int cloud_sz);
+
+  int main();
 
  private:
   frDesign* design_;
   Logger* logger_;
+  dst::Distributed* dist_;
+
   std::unique_ptr<FlexPAGraphics> graphics_;
   std::string debugPinName_;
 
-  int stdCellPinGenApCnt_;
-  int stdCellPinValidPlanarApCnt_;
-  int stdCellPinValidViaApCnt_;
-  int stdCellPinNoApCnt_;
+  int stdCellPinGenApCnt_ = 0;
+  int stdCellPinValidPlanarApCnt_ = 0;
+  int stdCellPinValidViaApCnt_ = 0;
+  int stdCellPinNoApCnt_ = 0;
   int instTermValidViaApCnt_ = 0;
-  int macroCellPinGenApCnt_;
-  int macroCellPinValidPlanarApCnt_;
-  int macroCellPinValidViaApCnt_;
-  int macroCellPinNoApCnt_;
-
-  std::vector<frInst*> uniqueInstances_;
-  std::map<frInst*, frInst*, frBlockObjectComp> inst2unique_;
-  std::map<frInst*, set<frInst*, frBlockObjectComp>*> inst2Class_;
-  std::map<frInst*, int, frBlockObjectComp>
-      unique2paidx_;  // unique instance to pinaccess index
-  std::map<frInst*, int, frBlockObjectComp> unique2Idx_;
+  int macroCellPinGenApCnt_ = 0;
+  int macroCellPinValidPlanarApCnt_ = 0;
+  int macroCellPinValidViaApCnt_ = 0;
+  int macroCellPinNoApCnt_ = 0;
   std::vector<std::vector<std::unique_ptr<FlexPinAccessPattern>>>
       uniqueInstPatterns_;
 
-  // helper strutures
+  UniqueInsts unique_insts_;
+
+  // helper structures
   std::vector<std::map<frCoord, frAccessPointEnum>> trackCoords_;
-  std::map<frLayerNum, std::map<int, std::map<viaRawPriorityTuple, frViaDef*>>>
+  std::map<frLayerNum, std::map<int, std::map<ViaRawPriorityTuple, frViaDef*>>>
       layerNum2ViaDefs_;
-  map<frMaster*,
-      map<dbOrientType, map<vector<frCoord>, set<frInst*, frBlockObjectComp>>>,
-      frBlockObjectComp>
-      masterOT2Insts;  // master orient track-offset to instances
   frCollection<odb::dbInst*> target_insts_;
 
+  std::string remote_host_;
+  ushort remote_port_;
+  std::string shared_vol_;
+  int cloud_sz_;
+
   // helper functions
-  void getPrefTrackPatterns(std::vector<frTrackPattern*>& prefTrackPatterns);
-  bool hasTrackPattern(frTrackPattern* tp, const Rect& box);
-  void getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority);
+  frDesign* getDesign() const { return design_; }
+  frTechObject* getTech() const { return design_->getTech(); }
+  void setDesign(frDesign* in) { design_ = in; }
+  void applyPatternsFile(const char* file_path);
+  void getViaRawPriority(frViaDef* viaDef, ViaRawPriorityTuple& priority);
   bool isSkipInstTerm(frInstTerm* in);
+  bool isDistributed() const { return !remote_host_.empty(); }
 
   // init
   void init();
-  void initUniqueInstance();
-  void initUniqueInstance_master2PinLayerRange(
-      std::map<frMaster*,
-               std::tuple<frLayerNum, frLayerNum>,
-               frBlockObjectComp>& master2PinLayerRange);
-  void initUniqueInstance_main(
-      const std::map<frMaster*,
-                     std::tuple<frLayerNum, frLayerNum>,
-                     frBlockObjectComp>& master2PinLayerRange,
-      const std::vector<frTrackPattern*>& prefTrackPatterns);
-  bool isNDRInst(frInst& inst);
-  void initPinAccess();
   void initTrackCoords();
   void initViaRawPriority();
-  void checkFigsOnGrid(const frMPin* pin);
   // prep
   void prep();
   void prepPoint();
@@ -268,6 +264,7 @@ class FlexPA
       frAccessPointEnum upperType);
 
   void prepPattern();
+  void prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows);
   int prepPattern_inst(frInst* inst,
                        const int currUniqueInstIdx,
                        const double xWeight);
@@ -302,7 +299,7 @@ class FlexPA
                   int currUniqueInstIdx,
                   int maxAccessPointSize);
   bool genPatterns_commit(
-      std::vector<FlexDPNode>& nodes,
+      const std::vector<FlexDPNode>& nodes,
       const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
       bool& isValid,
       std::set<std::vector<int>>& instAccessPatterns,
@@ -322,10 +319,11 @@ class FlexPA
   void getNestedIdx(int flatIdx, int& idx1, int& idx2, int idx2Dim);
   int getFlatEdgeIdx(int prevIdx1, int prevIdx2, int currIdx2, int idx2Dim);
 
-  bool genPatterns_gc(std::set<frBlockObject*> targetObjs,
-                      std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
-                      const PatternType patternType,
-                      std::set<frBlockObject*>* owners = nullptr);
+  bool genPatterns_gc(
+      const std::set<frBlockObject*>& targetObjs,
+      const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
+      const PatternType patternType,
+      std::set<frBlockObject*>* owners = nullptr);
 
   void getInsts(std::vector<frInst*>& insts);
   void genInstRowPattern(std::vector<frInst*>& insts);
@@ -339,7 +337,7 @@ class FlexPA
                                const std::vector<frInst*>& insts);
   int getEdgeCost(int prevNodeIdx,
                   int currNodeIdx,
-                  std::vector<FlexDPNode>& nodes,
+                  const std::vector<FlexDPNode>& nodes,
                   const std::vector<frInst*>& insts);
   void revertAccessPoints();
   void addAccessPatternObj(
@@ -348,6 +346,8 @@ class FlexPA
       std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
       std::vector<std::unique_ptr<frVia>>& vias,
       bool isPrev);
+
+  friend class RoutingCallBack;
 };
 
 class FlexPinAccessPattern
@@ -359,6 +359,13 @@ class FlexPinAccessPattern
         left_(nullptr),
         right_(nullptr),
         cost_(std::numeric_limits<int>::max())
+  {
+  }
+  FlexPinAccessPattern(const FlexPinAccessPattern& rhs)
+      : pattern_(rhs.pattern_),
+        left_(rhs.left_),
+        right_(rhs.right_),
+        cost_(rhs.cost_)
   {
   }
   // getter
@@ -392,6 +399,9 @@ class FlexPinAccessPattern
   frAccessPoint* left_;
   frAccessPoint* right_;
   int cost_;
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version);
+  friend class boost::serialization::access;
 };
 
 // dynamic programming related

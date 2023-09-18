@@ -108,7 +108,7 @@ VIAS 3 ;
     - via3_960x490 + VIARULE M3M4_PR + CUTSIZE 200 200  + LAYERS met3 via3 met4  + CUTSPACING 200 200  + ENCLOSURE 180 60 180 145  + ROWCOL 1 2  ;
 END VIAS
 COMPONENTS 1362 ;
-    - ANTENNA_1 sky130_fd_sc_hs__diode_2 + PLACED ( 124800 149850 ) FS ;
+    - ANTENNA_1 sky130_fd_sc_hs__diode_2 + PLACED ( 194880 163170 ) FS ;
     - ANTENNA_2 sky130_fd_sc_hs__diode_2 + PLACED ( 71040 149850 ) FS ;
     - PHY_0 sky130_fd_sc_hs__decap_4 + FIXED ( 9600 9990 ) FS ;
     - PHY_1 sky130_fd_sc_hs__decap_4 + FIXED ( 288000 9990 ) S ;
@@ -1317,7 +1317,7 @@ COMPONENTS 1362 ;
     - _551_ sky130_fd_sc_hs__a21oi_1 + PLACED ( 107520 56610 ) FS ;
     - _552_ sky130_fd_sc_hs__nand2_1 + PLACED ( 103680 66600 ) N ;
     - _553_ sky130_fd_sc_hs__nand2_1 + PLACED ( 107040 63270 ) FS ;
-    - _554_ sky130_fd_sc_hs__nand2_1 + PLACED ( 127680 153180 ) N ;
+    - _554_ sky130_fd_sc_hs__nand2_1 + PLACED ( 123840 149850 ) FS ;
     - _555_ sky130_fd_sc_hs__mux2_1 + PLACED ( 125760 163170 ) FS ;
     - _556_ sky130_fd_sc_hs__nand2_1 + PLACED ( 127680 159840 ) N ;
     - _557_ sky130_fd_sc_hs__nand2_1 + PLACED ( 124320 153180 ) N ;
@@ -3386,7 +3386,7 @@ NETS 411 ;
     - _322_ ( _665_ A ) ( _663_ Y ) + USE SIGNAL ;
     - _323_ ( _665_ B ) ( _664_ Y ) + USE SIGNAL ;
     - _324_ ( _666_ B ) ( _665_ X ) + USE SIGNAL ;
-    - clk ( PIN clk ) ( ANTENNA_1 DIODE ) ( clkbuf_0_clk A ) + USE CLOCK ;
+    - clk ( PIN clk ) ( clkbuf_0_clk A ) + USE CLOCK ;
     - clknet_0_clk ( clkbuf_2_3__f_clk A ) ( clkbuf_2_2__f_clk A ) ( clkbuf_2_1__f_clk A ) ( clkbuf_2_0__f_clk A ) ( clkbuf_0_clk X ) + USE CLOCK ;
     - clknet_2_0__leaf_clk ( _674_ CLK ) ( _675_ CLK ) ( _676_ CLK ) ( _677_ CLK ) ( _681_ CLK ) ( _690_ CLK ) ( _691_ CLK )
       ( _692_ CLK ) ( _694_ CLK ) ( _697_ CLK ) ( clkbuf_2_0__f_clk X ) + USE CLOCK ;
@@ -3475,7 +3475,7 @@ NETS 411 ;
     - req_rdy ( repeater4 A ) ( repeater3 A ) ( _568_ A ) ( _520_ A1 ) ( _338_ A ) ( _614_ A2 ) ( _635_ A2 )
       ( _555_ S ) ( _616_ A2 ) ( _646_ A2 ) ( _667_ Q ) ( _593_ A ) ( _340_ B ) + USE SIGNAL ;
     - req_val ( PIN req_val ) ( _344_ A1 ) ( _338_ B ) + USE SIGNAL ;
-    - reset ( PIN reset ) ( _346_ A1 ) ( _343_ B1 ) ( _339_ B1 ) ( _330_ A ) + USE SIGNAL ;
+    - reset ( PIN reset ) ( ANTENNA_1 DIODE ) ( _346_ A1 ) ( _343_ B1 ) ( _339_ B1 ) ( _330_ A ) + USE SIGNAL ;
     - resp_msg[0] ( PIN resp_msg[0] ) ( _596_ B ) ( _503_ B ) ( _328_ X ) + USE SIGNAL ;
     - resp_msg[10] ( PIN resp_msg[10] ) ( _641_ B ) ( _468_ X ) + USE SIGNAL ;
     - resp_msg[11] ( PIN resp_msg[11] ) ( ANTENNA_2 DIODE ) ( _648_ A ) ( _474_ Y ) + USE SIGNAL ;

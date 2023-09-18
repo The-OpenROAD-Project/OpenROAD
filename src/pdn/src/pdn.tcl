@@ -337,7 +337,7 @@ proc add_pdn_stripe {args} {
     foreach net_name $keys(-nets) {
       set net [[ord::get_db_block] findNet $net_name]
       if {$net == "NULL"} {
-        utl::error PAD 225 "Unable to find net $net_name."
+        utl::error PDN 225 "Unable to find net $net_name."
       }
       lappend nets $net
     }
@@ -460,7 +460,7 @@ proc add_pdn_ring {args} {
     foreach net_name $keys(-nets) {
       set net [[ord::get_db_block] findNet $net_name]
       if {$net == "NULL"} {
-        utl::error PAD 226 "Unable to find net $net_name."
+        utl::error PDN 230 "Unable to find net $net_name."
       }
       lappend nets $net
     }
@@ -829,7 +829,7 @@ namespace eval pdn {
   proc define_pdn_grid_macro { args } {
     sta::parse_key_args "define_pdn_grid" args \
       keys {-name -voltage_domains -orient -instances -cells -halo -pin_direction -starts_with -obstructions} \
-      flags {-macro -grid_over_pg_pins -grid_over_boundary -default}
+      flags {-macro -grid_over_pg_pins -grid_over_boundary -default -bump}
 
     sta::check_argc_eq0 "define_pdn_grid" $args
     pdn::check_design_state "define_pdn_grid"
@@ -901,6 +901,8 @@ namespace eval pdn {
       set orients [pdn::get_orientations $keys(-orient)]
     }
 
+    set is_bump [info exists flags(-bump)]
+
     if {[info exists keys(-instances)]} {
       set insts {}
       foreach inst_pattern $keys(-instances) {
@@ -918,7 +920,7 @@ namespace eval pdn {
         # must match orientation, if provided
         if {[match_orientation $orients [$inst getOrient]] != 0} {
           foreach domain $domains {
-            pdn::make_instance_grid $domain $keys(-name) $start_with_power $inst {*}$halo $pg_pins_to_boundary $default_grid $obstructions
+            pdn::make_instance_grid $domain $keys(-name) $start_with_power $inst {*}$halo $pg_pins_to_boundary $default_grid $obstructions $is_bump
           }
         }
       }
@@ -942,7 +944,7 @@ namespace eval pdn {
             # must match orientation, if provided
             if {[match_orientation $orients [$inst getOrient]] != 0} {
               foreach domain $domains {
-                pdn::make_instance_grid $domain $keys(-name) $start_with_power $inst {*}$halo $pg_pins_to_boundary $default_grid $obstructions
+                pdn::make_instance_grid $domain $keys(-name) $start_with_power $inst {*}$halo $pg_pins_to_boundary $default_grid $obstructions $is_bump
               }
             }
           }

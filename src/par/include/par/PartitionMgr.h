@@ -64,8 +64,6 @@ namespace utl {
 class Logger;
 }
 
-using utl::Logger;
-
 namespace par {
 
 class PartitionMgr
@@ -74,36 +72,167 @@ class PartitionMgr
   void init(odb::dbDatabase* db,
             sta::dbNetwork* db_network,
             sta::dbSta* sta,
-            Logger* logger);
+            utl::Logger* logger);
 
-  // The TritonPart Interface
-  // TritonPart is a state-of-the-art hypergraph and netlist partitioner that
-  // replaces previous engines such as hMETIS.
-  // The TritonPart is designed for VLSI CAD, thus it can understand
-  // all kinds of constraints and timing information.
-  void tritonPartHypergraph(const char* hypergraph_file,
-                            const char* fixed_file,
-                            unsigned int num_parts,
+  // The function for partitioning a hypergraph
+  // This is used for replacing hMETIS
+  // Key supports:
+  // (1) fixed vertices constraint in fixed_file
+  // (2) community attributes in community_file (This can be used to guide the
+  // partitioning process) (3) stay together attributes in group_file. (4)
+  // placement information is specified in placement file The format is that
+  // each line cooresponds to a group fixed vertices, community and placement
+  // attributes both follows the hMETIS format
+  void tritonPartHypergraph(unsigned int num_parts,
                             float balance_constraint,
-                            int vertex_dimensions,
-                            int hyperedge_dimensions,
-                            unsigned int seed);
-  // partition netlist
-  void tritonPartDesign(unsigned int num_parts,
-                        float balance_constraint,
-                        unsigned int seed,
-                        const std::string& solution_filename,
-                        const std::string& paths_filename,
-                        const std::string& hypergraph_filename);
+                            const std::vector<float>& base_balance,
+                            unsigned int seed,
+                            int vertex_dimension,
+                            int hyperedge_dimension,
+                            int placement_dimension,
+                            const char* hypergraph_file,
+                            const char* fixed_file,
+                            const char* community_file,
+                            const char* group_file,
+                            const char* placement_file,
+                            // weight parameters
+                            const std::vector<float>& e_wt_factors,
+                            const std::vector<float>& v_wt_factors,
+                            const std::vector<float>& placement_wt_factors,
+                            // coarsening related parameters
+                            int thr_coarsen_hyperedge_size_skip,
+                            int thr_coarsen_vertices,
+                            int thr_coarsen_hyperedges,
+                            float coarsening_ratio,
+                            int max_coarsen_iters,
+                            float adj_diff_ratio,
+                            int min_num_vertices_each_part,
+                            // initial partitioning related parameters
+                            int num_initial_solutions,
+                            int num_best_initial_solutions,
+                            // refinement related parameters
+                            int refiner_iters,
+                            int max_moves,
+                            float early_stop_ratio,
+                            int total_corking_passes,
+                            // vcycle related parameters
+                            bool v_cycle_flag,
+                            int max_num_vcycle,
+                            int num_coarsen_solutions,
+                            int num_vertices_threshold_ilp,
+                            int global_net_threshold);
 
-  // 2-way partition used by HierRTLMP
-  std::vector<int> TritonPart2Way(
-      int num_vertices,
-      int num_hyperedges,
+  // Evaluate a given solution of a hypergraph
+  // The fixed vertices should statisfy the fixed vertices constraint
+  // The group of vertices should stay together in the solution
+  // The vertex balance should be satisfied
+  void evaluateHypergraphSolution(unsigned int num_parts,
+                                  float balance_constraint,
+                                  const std::vector<float>& base_balance,
+                                  int vertex_dimension,
+                                  int hyperedge_dimension,
+                                  const char* hypergraph_file,
+                                  const char* fixed_file,
+                                  const char* group_file,
+                                  const char* solution_file,
+                                  // weight parameters
+                                  const std::vector<float>& e_wt_factors,
+                                  const std::vector<float>& v_wt_factors);
+
+  // Top level interface
+  // The function for partitioning a hypergraph
+  // This is the main API for TritonPart
+  // Key supports:
+  // (1) fixed vertices constraint in fixed_file
+  // (2) community attributes in community_file (This can be used to guide the
+  // partitioning process) (3) stay together attributes in group_file. (4)
+  // timing-driven partitioning (5) fence-aware partitioning (6) placement-aware
+  // partitioning, placement information is extracted from OpenDB
+  void tritonPartDesign(unsigned int num_parts_arg,
+                        float balance_constraint_arg,
+                        const std::vector<float>& base_balance_arg,
+                        unsigned int seed_arg,
+                        bool timing_aware_flag_arg,
+                        int top_n_arg,
+                        bool placement_flag_arg,
+                        bool fence_flag_arg,
+                        float fence_lx_arg,
+                        float fence_ly_arg,
+                        float fence_ux_arg,
+                        float fence_uy_arg,
+                        const char* fixed_file_arg,
+                        const char* community_file_arg,
+                        const char* group_file_arg,
+                        const char* solution_filename_arg,
+                        // timing related parameters
+                        float net_timing_factor,
+                        float path_timing_factor,
+                        float path_snaking_factor,
+                        float timing_exp_factor,
+                        float extra_delay,
+                        bool guardband_flag,
+                        // weight parameters
+                        const std::vector<float>& e_wt_factors,
+                        const std::vector<float>& v_wt_factors,
+                        const std::vector<float>& placement_wt_factors,
+                        // coarsening related parameters
+                        int thr_coarsen_hyperedge_size_skip,
+                        int thr_coarsen_vertices,
+                        int thr_coarsen_hyperedges,
+                        float coarsening_ratio,
+                        int max_coarsen_iters,
+                        float adj_diff_ratio,
+                        int min_num_vertices_each_part,
+                        // initial partitioning related parameters
+                        int num_initial_solutions,
+                        int num_best_initial_solutions,
+                        // refinement related parameters
+                        int refiner_iters,
+                        int max_moves,
+                        float early_stop_ratio,
+                        int total_corking_passes,
+                        // vcycle related parameters
+                        bool v_cycle_flag,
+                        int max_num_vcycle,
+                        int num_coarsen_solutions,
+                        int num_vertices_threshold_ilp,
+                        int global_net_threshold);
+
+  void evaluatePartDesignSolution(unsigned int num_parts_arg,
+                                  float balance_constraint_arg,
+                                  const std::vector<float>& base_balance_arg,
+                                  bool timing_aware_flag_arg,
+                                  int top_n_arg,
+                                  bool fence_flag_arg,
+                                  float fence_lx_arg,
+                                  float fence_ly_arg,
+                                  float fence_ux_arg,
+                                  float fence_uy_arg,
+                                  const char* fixed_file_arg,
+                                  const char* community_file_arg,
+                                  const char* group_file_arg,
+                                  const char* hypergraph_file_arg,
+                                  const char* hypergraph_int_weight_file_arg,
+                                  const char* solution_filename_arg,
+                                  // timing related parameters
+                                  float net_timing_factor,
+                                  float path_timing_factor,
+                                  float path_snaking_factor,
+                                  float timing_exp_factor,
+                                  float extra_delay,
+                                  bool guardband_flag,
+                                  // weight parameters
+                                  const std::vector<float>& e_wt_factors,
+                                  const std::vector<float>& v_wt_factors);
+
+  // k-way partitioning used by Hier-RTLMP
+  std::vector<int> PartitionKWaySimpleMode(
+      unsigned int num_parts_arg,
+      float balance_constraint_arg,
+      unsigned int seed_arg,
       const std::vector<std::vector<int>>& hyperedges,
       const std::vector<float>& vertex_weights,
-      float balance_constraints,
-      int seed = 0);
+      const std::vector<float>& hyperedge_weights);
 
   void readPartitioningFile(const std::string& filename,
                             const std::string& instance_map_file);
@@ -129,7 +258,7 @@ class PartitionMgr
   odb::dbDatabase* db_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;
   sta::dbSta* sta_ = nullptr;
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
 };
 
 }  // namespace par

@@ -97,15 +97,15 @@ class Connect
   std::vector<odb::dbTechLayer*> getAllLayers() const;
   std::vector<odb::dbTechLayer*> getAllRoutingLayers() const;
   bool containsIntermediateLayer(odb::dbTechLayer* layer) const;
-  bool overlaps(const Connect* connect) const;
-  bool startsBelow(const Connect* connect) const;
+  bool overlaps(const Connect* other) const;
+  bool startsBelow(const Connect* other) const;
 
   bool appliesToVia(const ViaPtr& via) const;
 
   void makeVia(odb::dbSWire* wire,
                const ShapePtr& lower,
                const ShapePtr& upper,
-               odb::dbWireShapeType type,
+               const odb::dbWireShapeType& type,
                DbVia::ViaLayerShape& via_shapes);
 
   void setGrid(Grid* grid) { grid_ = grid; }
@@ -128,11 +128,11 @@ class Connect
   odb::dbTechLayer* layer1_;
   std::vector<odb::dbTechViaGenerateRule*> fixed_generate_vias_;
   std::vector<odb::dbTechVia*> fixed_tech_vias_;
-  int cut_pitch_x_;
-  int cut_pitch_y_;
+  int cut_pitch_x_ = 0;
+  int cut_pitch_y_ = 0;
 
-  int max_rows_;
-  int max_columns_;
+  int max_rows_ = 0;
+  int max_columns_ = 0;
 
   std::set<odb::dbTechLayer*> ongrid_;
   std::map<odb::dbTechLayer*, int> split_cuts_;
@@ -166,7 +166,7 @@ class Connect
   bool generateRuleContains(odb::dbTechViaGenerateRule* rule,
                             odb::dbTechLayer* lower,
                             odb::dbTechLayer* upper) const;
-  bool techViaContains(odb::dbTechVia* rule,
+  bool techViaContains(odb::dbTechVia* via,
                        odb::dbTechLayer* lower,
                        odb::dbTechLayer* upper) const;
 

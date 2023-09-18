@@ -35,15 +35,10 @@
 
 #include "upf/upf.h"
 
-#include <tcl.h>
-
-#include <climits>
-
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
-#include "utl/Logger.h"
 
 namespace upf {
 
@@ -274,7 +269,7 @@ bool set_domain_area(utl::Logger* logger,
   return true;
 }
 
-odb::dbPowerDomain* match_module_to_domain(
+static odb::dbPowerDomain* match_module_to_domain(
     std::map<std::string, odb::dbPowerDomain*>& module_to_domain,
     std::map<std::string, odb::dbPowerDomain*>& path_to_domain,
     const std::string& current_path)
@@ -299,7 +294,7 @@ odb::dbPowerDomain* match_module_to_domain(
   return module_to_domain[current_path];
 }
 
-bool build_domain_hierarchy(
+static bool build_domain_hierarchy(
     std::map<std::string, odb::dbPowerDomain*>& module_to_domain,
     std::map<std::string, odb::dbPowerDomain*>& path_to_domain,
     odb::dbModule* current_module,
@@ -321,13 +316,13 @@ bool build_domain_hierarchy(
   return true;
 }
 
-bool check_isolation_match(sta::FuncExpr* func,
-                           sta::LibertyPort* enable,
-                           bool sense,
-                           bool clamp_val,
-                           utl::Logger* logger,
-                           bool& invert_control,
-                           bool& invert_output)
+static bool check_isolation_match(sta::FuncExpr* func,
+                                  sta::LibertyPort* enable,
+                                  bool sense,
+                                  bool clamp_val,
+                                  utl::Logger* logger,
+                                  bool& invert_control,
+                                  bool& invert_output)
 {
   bool enable_is_left = (func->left() && func->left()->hasPort(enable));
   bool enable_is_right = (func->right() && func->right()->hasPort(enable));
@@ -358,7 +353,7 @@ bool check_isolation_match(sta::FuncExpr* func,
   return true;
 }
 
-bool associate_groups(
+static bool associate_groups(
     utl::Logger* logger,
     odb::dbBlock* block,
     std::map<std::string, odb::dbPowerDomain*>& path_to_domain,
@@ -426,7 +421,7 @@ bool associate_groups(
   return true;
 }
 
-bool instantiate_logic_ports(utl::Logger* logger, odb::dbBlock* block)
+static bool instantiate_logic_ports(utl::Logger* logger, odb::dbBlock* block)
 {
   bool success = true;
   auto lps = block->getLogicPorts();
@@ -434,7 +429,7 @@ bool instantiate_logic_ports(utl::Logger* logger, odb::dbBlock* block)
     if (!odb::dbNet::create(block, port->getName())) {
       logger->warn(utl::UPF,
                    10019,
-                   "Creation of '%s' dbNet from UPF Logic Port failed",
+                   "Creation of '{}' dbNet from UPF Logic Port failed",
                    port->getName());
       success = false;
     }
@@ -443,7 +438,7 @@ bool instantiate_logic_ports(utl::Logger* logger, odb::dbBlock* block)
   return success;
 }
 
-bool add_insts_to_group(
+static bool add_insts_to_group(
     odb::dbBlock* block,
     odb::dbPowerDomain* top_domain,
     std::map<std::string, odb::dbPowerDomain*>& path_to_domain)
@@ -486,12 +481,12 @@ bool add_insts_to_group(
   return true;
 }
 
-bool find_smallest_inverter(odb::dbBlock* block,
-                            odb::dbMaster*& inverter_m,
-                            odb::dbMTerm*& input_m,
-                            odb::dbMTerm*& output_m)
+static bool find_smallest_inverter(sta::dbNetwork* network,
+                                   odb::dbBlock* block,
+                                   odb::dbMaster*& inverter_m,
+                                   odb::dbMTerm*& input_m,
+                                   odb::dbMTerm*& output_m)
 {
-  auto network_ = ord::OpenRoad::openRoad()->getDbNetwork();
   float smallest_area = std::numeric_limits<float>::max();
   sta::LibertyCell* smallest_inverter = nullptr;
   sta::LibertyPort *inverter_input = nullptr, *inverter_output = nullptr;
@@ -502,17 +497,17 @@ bool find_smallest_inverter(odb::dbBlock* block,
   for (auto&& lib : libs) {
     auto masters = lib->getMasters();
     for (auto&& master : masters) {
-      auto master_cell_ = network_->dbToSta(master);
-      auto libcell_ = network_->libertyCell(master_cell_);
+      auto master_cell_ = network->dbToSta(master);
+      auto libcell_ = network->libertyCell(master_cell_);
 
       if (libcell_ && libcell_->isInverter()
           && libcell_->area() < smallest_area) {
         smallest_area = libcell_->area();
         smallest_inverter = libcell_;
         smallest_inverter->bufferPorts(inverter_input, inverter_output);
-        inverter_m = network_->staToDb(smallest_inverter);
-        input_m = network_->staToDb(inverter_input);
-        output_m = network_->staToDb(inverter_output);
+        inverter_m = network->staToDb(smallest_inverter);
+        input_m = network->staToDb(inverter_input);
+        output_m = network->staToDb(inverter_output);
         found = true;
       }
     }
@@ -521,17 +516,17 @@ bool find_smallest_inverter(odb::dbBlock* block,
   return found;
 }
 
-bool find_smallest_isolation(utl::Logger* logger,
-                             odb::dbIsolation* iso,
-                             odb::dbMaster*& smallest_iso_m,
-                             odb::dbMTerm*& enable_term,
-                             odb::dbMTerm*& data_term,
-                             odb::dbMTerm*& output_term,
-                             bool& invert_output,
-                             bool& invert_control)
+static bool find_smallest_isolation(sta::dbNetwork* network,
+                                    utl::Logger* logger,
+                                    odb::dbIsolation* iso,
+                                    odb::dbMaster*& smallest_iso_m,
+                                    odb::dbMTerm*& enable_term,
+                                    odb::dbMTerm*& data_term,
+                                    odb::dbMTerm*& output_term,
+                                    bool& invert_output,
+                                    bool& invert_control)
 
 {
-  auto network_ = ord::OpenRoad::openRoad()->getDbNetwork();
   bool isolation_sense = (iso->getIsolationSense() == "high");
   bool isolation_clamp_val = (iso->getClampValue() == "1");
   auto iso_cells = iso->getIsolationCells();
@@ -549,8 +544,8 @@ bool find_smallest_isolation(utl::Logger* logger,
   float smallest_area = std::numeric_limits<float>::max();
 
   for (auto&& iso : iso_cells) {
-    sta::Cell* masterCell = network_->dbToSta(iso);
-    sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
+    sta::Cell* masterCell = network->dbToSta(iso);
+    sta::LibertyCell* libertyCell = network->libertyCell(masterCell);
 
     if (libertyCell->area() < smallest_area) {
       smallest_iso_l = libertyCell;
@@ -595,7 +590,7 @@ bool find_smallest_isolation(utl::Logger* logger,
     }
   }
 
-  if (!output_term || !data_term || !enable_term) {
+  if (!output_term || !data_term || !enable_term || !out_lib_port) {
     logger->warn(utl::UPF,
                  10022,
                  "Isolation %s cells defined, but can't find one of output, "
@@ -616,21 +611,21 @@ bool find_smallest_isolation(utl::Logger* logger,
                                invert_output);
 }
 
-bool insert_isolation_cell(odb::dbBlock* block,
-                           odb::dbInst* inst,
-                           odb::dbNet* input_net,
-                           odb::dbNet* control_net,
-                           odb::dbNet* output_net,
-                           odb::dbMTerm* enable_term,
-                           odb::dbMTerm* data_term,
-                           odb::dbMTerm* output_term,
-                           odb::dbMaster* smallest_iso_m,
-                           bool invert_output,
-                           bool invert_control,
-                           odb::dbMaster* inverter_m,
-                           odb::dbMTerm* input_m,
-                           odb::dbMTerm* output_m,
-                           odb::dbGroup* target_group)
+static bool insert_isolation_cell(odb::dbBlock* block,
+                                  odb::dbInst* inst,
+                                  odb::dbNet* input_net,
+                                  odb::dbNet* control_net,
+                                  odb::dbNet* output_net,
+                                  odb::dbMTerm* enable_term,
+                                  odb::dbMTerm* data_term,
+                                  odb::dbMTerm* output_term,
+                                  odb::dbMaster* smallest_iso_m,
+                                  bool invert_output,
+                                  bool invert_control,
+                                  odb::dbMaster* inverter_m,
+                                  odb::dbMTerm* input_m,
+                                  odb::dbMTerm* output_m,
+                                  odb::dbGroup* target_group)
 {
   std::string inst_name = inst->getName() + "_" + input_net->getName() + "_"
                           + output_net->getName() + "_isolation";
@@ -687,21 +682,21 @@ bool insert_isolation_cell(odb::dbBlock* block,
   return true;
 }
 
-bool isolate_port(utl::Logger* logger,
-                  odb::dbBlock* block,
-                  odb::dbInst* inst,
-                  odb::dbITerm* iterm,
-                  odb::dbPowerDomain* pd,
-                  odb::dbIsolation* iso,
-                  odb::dbMTerm* enable_term,
-                  odb::dbMTerm* data_term,
-                  odb::dbMTerm* output_term,
-                  odb::dbMaster* smallest_iso_m,
-                  bool invert_output,
-                  bool invert_control,
-                  odb::dbMaster* inverter_m,
-                  odb::dbMTerm* input_m,
-                  odb::dbMTerm* output_m)
+static bool isolate_port(utl::Logger* logger,
+                         odb::dbBlock* block,
+                         odb::dbInst* inst,
+                         odb::dbITerm* iterm,
+                         odb::dbPowerDomain* pd,
+                         odb::dbIsolation* iso,
+                         odb::dbMTerm* enable_term,
+                         odb::dbMTerm* data_term,
+                         odb::dbMTerm* output_term,
+                         odb::dbMaster* smallest_iso_m,
+                         bool invert_output,
+                         bool invert_control,
+                         odb::dbMaster* inverter_m,
+                         odb::dbMTerm* input_m,
+                         odb::dbMTerm* output_m)
 {
   auto net = iterm->getNet();
 
@@ -734,7 +729,7 @@ bool isolate_port(utl::Logger* logger,
   if (!control_net) {
     logger->warn(utl::UPF,
                  10023,
-                 "Isolation %s has nonexisting control net %s",
+                 "Isolation {} has nonexisting control net {}",
                  iso->getName(),
                  iso->getIsolationSignal());
 
@@ -817,7 +812,7 @@ bool isolate_port(utl::Logger* logger,
   return true;
 }
 
-bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
+bool eval_upf(sta::dbNetwork* network, utl::Logger* logger, odb::dbBlock* block)
 {
   // TODO: NEXT: Lock any further UPF reads
   // Remove all regions and recreate everything
@@ -855,7 +850,7 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
   odb::dbMaster* inverter_m = nullptr;
   odb::dbMTerm *input_m = nullptr, *output_m = nullptr;
   bool inverter_found
-      = find_smallest_inverter(block, inverter_m, input_m, output_m);
+      = find_smallest_inverter(network, block, inverter_m, input_m, output_m);
 
   // PowerDomains have a hierarchy and when the isolation's
   // location is parent, it should be placed in the parent's power domain
@@ -896,7 +891,8 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
     odb::dbMaster* smallest_iso_m = nullptr;
     bool invert_output, invert_control;
 
-    if (!find_smallest_isolation(logger,
+    if (!find_smallest_isolation(network,
+                                 logger,
                                  iso,
                                  smallest_iso_m,
                                  enable_term,

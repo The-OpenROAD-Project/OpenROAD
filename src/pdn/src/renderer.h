@@ -49,18 +49,14 @@ class PdnGen;
 class PDNRenderer : public gui::Renderer
 {
  public:
-  PDNRenderer(PdnGen* pdn);
+  explicit PDNRenderer(PdnGen* pdn);
 
   void update();
 
-  virtual void drawLayer(odb::dbTechLayer* layer,
-                         gui::Painter& painter) override;
-  virtual void drawObjects(gui::Painter& painter) override;
+  void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter) override;
+  void drawObjects(gui::Painter& painter) override;
 
-  virtual const char* getDisplayControlGroupName() override
-  {
-    return "Power Grid";
-  }
+  const char* getDisplayControlGroupName() override { return "Power Grid"; }
 
  private:
   PdnGen* pdn_;

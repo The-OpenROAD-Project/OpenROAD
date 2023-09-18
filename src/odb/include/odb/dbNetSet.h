@@ -55,17 +55,17 @@ class dbSetIterator<dbNet>
   }
 
  public:
-  typedef dbNet* value_type;
-  typedef std::ptrdiff_t difference_type;
-  typedef dbNet** pointer;
-  typedef dbNet*& reference;
-  typedef std::input_iterator_tag iterator_category;
+  using value_type = dbNet*;
+  using difference_type = std::ptrdiff_t;
+  using pointer = dbNet**;
+  using reference = dbNet*&;
+  using iterator_category = std::input_iterator_tag;
 
   dbSetIterator()
   {
-    _itr = NULL;
+    _itr = nullptr;
     _cur = 0;
-    _parent = NULL;
+    _parent = nullptr;
   }
 
   dbSetIterator(const dbSetIterator& it)
@@ -110,12 +110,12 @@ class dbSet<dbNet>
   dbObject* _parent;
 
  public:
-  typedef dbSetIterator<dbNet> iterator;
+  using iterator = dbSetIterator<dbNet>;
 
   dbSet()
   {
-    _itr = NULL;
-    _parent = NULL;
+    _itr = nullptr;
+    _parent = nullptr;
   }
 
   dbSet(dbObject* parent, dbIterator* itr)

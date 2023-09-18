@@ -77,7 +77,7 @@ typedef array<Required, RiseFall::index_count> Requireds;
 
 enum class BufferedNetType { load, junction, wire, buffer };
 
-// The routing tree is represented a binary tree with the sinks being the leaves
+// The routing tree is represented as a binary tree with the sinks being the leaves
 // of the tree, the junctions being the Steiner nodes and the root being the
 // source of the net.
 class BufferedNet

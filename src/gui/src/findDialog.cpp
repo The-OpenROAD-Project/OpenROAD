@@ -52,17 +52,23 @@ void FindObjectDialog::accept()
 
   if (findObjType->currentText() == "Instance") {
     Gui::get()->select("Inst",
-                       pattern_to_find.c_str(),
+                       pattern_to_find,
+                       "",
+                       0,
                        match_case,
                        addToHighlightCheckBox->isChecked() ? 0 : -1);
   } else if (findObjType->currentText() == "Net") {
     Gui::get()->select("Net",
-                       pattern_to_find.c_str(),
+                       pattern_to_find,
+                       "",
+                       0,
                        match_case,
                        addToHighlightCheckBox->isChecked() ? 0 : -1);
   } else {
     Gui::get()->select("BTerm",
-                       pattern_to_find.c_str(),
+                       pattern_to_find,
+                       "",
+                       0,
                        match_case,
                        addToHighlightCheckBox->isChecked() ? 0 : -1);
   }

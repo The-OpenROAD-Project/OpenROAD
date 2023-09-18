@@ -32,6 +32,8 @@
 
 #include "dbTechLayerAntennaRule.h"
 
+#include <spdlog/fmt/ostr.h>
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbMaster.h"
@@ -438,135 +440,135 @@ void dbTechLayerAntennaRule::writeLef(lefout& writer) const
   _dbTechLayerAntennaRule* ant_rule = (_dbTechLayerAntennaRule*) this;
 
   if (ant_rule->_area_mult._explicit) {
-    fprintf(writer.out(),
-            "    ANTENNAAREAFACTOR %g %s;\n",
-            ant_rule->_area_mult._factor,
-            ant_rule->_area_mult._diff_use_only ? "DIFFUSEONLY " : "");
+    fmt::print(writer.out(),
+               "    ANTENNAAREAFACTOR {:g} {};\n",
+               ant_rule->_area_mult._factor,
+               ant_rule->_area_mult._diff_use_only ? "DIFFUSEONLY " : "");
   }
 
   if (ant_rule->_has_antenna_cumroutingpluscut) {
-    fprintf(writer.out(), "    ANTENNACUMROUTINGPLUSCUT ;\n");
+    fmt::print(writer.out(), "    ANTENNACUMROUTINGPLUSCUT ;\n");
   }
 
   if (ant_rule->_gate_plus_diff_factor > 0.0) {
-    fprintf(writer.out(),
-            "    ANTENNAGATEPLUSDIFF %g ;\n",
-            ant_rule->_gate_plus_diff_factor);
+    fmt::print(writer.out(),
+               "    ANTENNAGATEPLUSDIFF {:g} ;\n",
+               ant_rule->_gate_plus_diff_factor);
   }
 
   if (ant_rule->_area_minus_diff_factor > 0.0) {
-    fprintf(writer.out(),
-            "    ANTENNAAREAMINUSDIFF %g ;\n",
-            ant_rule->_area_minus_diff_factor);
+    fmt::print(writer.out(),
+               "    ANTENNAAREAMINUSDIFF {:g} ;\n",
+               ant_rule->_area_minus_diff_factor);
   }
 
   if (ant_rule->_sidearea_mult._explicit) {
-    fprintf(writer.out(),
-            "    ANTENNASIDEAREAFACTOR %g %s;\n",
-            ant_rule->_sidearea_mult._factor,
-            ant_rule->_sidearea_mult._diff_use_only ? "DIFFUSEONLY" : "");
+    fmt::print(writer.out(),
+               "    ANTENNASIDEAREAFACTOR {:g} {};\n",
+               ant_rule->_sidearea_mult._factor,
+               ant_rule->_sidearea_mult._diff_use_only ? "DIFFUSEONLY" : "");
   }
 
   dbVector<double>::const_iterator diffdx_itr;
   dbVector<double>::const_iterator ratio_itr;
 
   if (ant_rule->_par_area_val._ratio > 0)
-    fprintf(writer.out(),
-            "    ANTENNAAREARATIO %g ;\n",
-            ant_rule->_par_area_val._ratio);
+    fmt::print(writer.out(),
+               "    ANTENNAAREARATIO {:g} ;\n",
+               ant_rule->_par_area_val._ratio);
 
   if ((ant_rule->_par_area_val._diff_ratio.size() == 1)
       && (ant_rule->_par_area_val._diff_ratio[0] > 0))
-    fprintf(writer.out(),
-            "    ANTENNADIFFAREARATIO %g ;\n",
-            ant_rule->_par_area_val._diff_ratio[0]);
+    fmt::print(writer.out(),
+               "    ANTENNADIFFAREARATIO {:g} ;\n",
+               ant_rule->_par_area_val._diff_ratio[0]);
 
   if (ant_rule->_par_area_val._diff_ratio.size() > 1) {
-    fprintf(writer.out(), "    ANTENNADIFFAREARATIO  PWL ( ");
+    fmt::print(writer.out(), "    ANTENNADIFFAREARATIO  PWL ( ");
     for (diffdx_itr = ant_rule->_par_area_val._diff_idx.begin(),
         ratio_itr = ant_rule->_par_area_val._diff_ratio.begin();
          diffdx_itr != ant_rule->_par_area_val._diff_idx.end()
          && ratio_itr != ant_rule->_par_area_val._diff_ratio.end();
          diffdx_itr++, ratio_itr++)
-      fprintf(writer.out(), "( %g %g ) ", *diffdx_itr, *ratio_itr);
-    fprintf(writer.out(), ") ;\n");
+      fmt::print(writer.out(), "( {:g} {:g} ) ", *diffdx_itr, *ratio_itr);
+    fmt::print(writer.out(), ") ;\n");
   }
 
   if (ant_rule->_cum_area_val._ratio > 0)
-    fprintf(writer.out(),
-            "    ANTENNACUMAREARATIO %g ;\n",
-            ant_rule->_cum_area_val._ratio);
+    fmt::print(writer.out(),
+               "    ANTENNACUMAREARATIO {:g} ;\n",
+               ant_rule->_cum_area_val._ratio);
 
   if ((ant_rule->_cum_area_val._diff_ratio.size() == 1)
       && (ant_rule->_cum_area_val._diff_ratio[0] > 0))
-    fprintf(writer.out(),
-            "    ANTENNACUMDIFFAREARATIO %g ;\n",
-            ant_rule->_cum_area_val._diff_ratio[0]);
+    fmt::print(writer.out(),
+               "    ANTENNACUMDIFFAREARATIO {:g} ;\n",
+               ant_rule->_cum_area_val._diff_ratio[0]);
 
   if (ant_rule->_cum_area_val._diff_ratio.size() > 1) {
-    fprintf(writer.out(), "    ANTENNACUMDIFFAREARATIO  PWL ( ");
+    fmt::print(writer.out(), "    ANTENNACUMDIFFAREARATIO  PWL ( ");
     for (diffdx_itr = ant_rule->_cum_area_val._diff_idx.begin(),
         ratio_itr = ant_rule->_cum_area_val._diff_ratio.begin();
          diffdx_itr != ant_rule->_cum_area_val._diff_idx.end()
          && ratio_itr != ant_rule->_cum_area_val._diff_ratio.end();
          diffdx_itr++, ratio_itr++)
-      fprintf(writer.out(), "( %g %g ) ", *diffdx_itr, *ratio_itr);
-    fprintf(writer.out(), ") ;\n");
+      fmt::print(writer.out(), "( {:g} {:g} ) ", *diffdx_itr, *ratio_itr);
+    fmt::print(writer.out(), ") ;\n");
   }
 
   if (ant_rule->_par_sidearea_val._ratio > 0)
-    fprintf(writer.out(),
-            "    ANTENNASIDEAREARATIO %g ;\n",
-            ant_rule->_par_sidearea_val._ratio);
+    fmt::print(writer.out(),
+               "    ANTENNASIDEAREARATIO {:g} ;\n",
+               ant_rule->_par_sidearea_val._ratio);
 
   if ((ant_rule->_par_sidearea_val._diff_ratio.size() == 1)
       && (ant_rule->_par_sidearea_val._diff_ratio[0] > 0))
-    fprintf(writer.out(),
-            "    ANTENNADIFFSIDEAREARATIO %g ;\n",
-            ant_rule->_par_sidearea_val._diff_ratio[0]);
+    fmt::print(writer.out(),
+               "    ANTENNADIFFSIDEAREARATIO {:g} ;\n",
+               ant_rule->_par_sidearea_val._diff_ratio[0]);
 
   if (ant_rule->_par_sidearea_val._diff_ratio.size() > 1) {
-    fprintf(writer.out(), "    ANTENNADIFFSIDEAREARATIO  PWL ( ");
+    fmt::print(writer.out(), "    ANTENNADIFFSIDEAREARATIO  PWL ( ");
     for (diffdx_itr = ant_rule->_par_sidearea_val._diff_idx.begin(),
         ratio_itr = ant_rule->_par_sidearea_val._diff_ratio.begin();
          diffdx_itr != ant_rule->_par_sidearea_val._diff_idx.end()
          && ratio_itr != ant_rule->_par_sidearea_val._diff_ratio.end();
          diffdx_itr++, ratio_itr++)
-      fprintf(writer.out(), "( %g %g ) ", *diffdx_itr, *ratio_itr);
-    fprintf(writer.out(), ") ;\n");
+      fmt::print(writer.out(), "( {:g} {:g} ) ", *diffdx_itr, *ratio_itr);
+    fmt::print(writer.out(), ") ;\n");
   }
 
   if (ant_rule->_cum_sidearea_val._ratio > 0)
-    fprintf(writer.out(),
-            "    ANTENNACUMSIDEAREARATIO %g ;\n",
-            ant_rule->_cum_sidearea_val._ratio);
+    fmt::print(writer.out(),
+               "    ANTENNACUMSIDEAREARATIO {:g} ;\n",
+               ant_rule->_cum_sidearea_val._ratio);
 
   if ((ant_rule->_cum_sidearea_val._diff_ratio.size() == 1)
       && (ant_rule->_cum_sidearea_val._diff_ratio[0] > 0))
-    fprintf(writer.out(),
-            "    ANTENNACUMDIFFSIDEAREARATIO %g ;\n",
-            ant_rule->_cum_sidearea_val._diff_ratio[0]);
+    fmt::print(writer.out(),
+               "    ANTENNACUMDIFFSIDEAREARATIO {:g} ;\n",
+               ant_rule->_cum_sidearea_val._diff_ratio[0]);
 
   if (ant_rule->_cum_sidearea_val._diff_ratio.size() > 1) {
-    fprintf(writer.out(), "    ANTENNACUMDIFFSIDEAREARATIO  PWL ( ");
+    fmt::print(writer.out(), "    ANTENNACUMDIFFSIDEAREARATIO  PWL ( ");
     for (diffdx_itr = ant_rule->_cum_sidearea_val._diff_idx.begin(),
         ratio_itr = ant_rule->_cum_sidearea_val._diff_ratio.begin();
          diffdx_itr != ant_rule->_cum_sidearea_val._diff_idx.end()
          && ratio_itr != ant_rule->_cum_sidearea_val._diff_ratio.end();
          diffdx_itr++, ratio_itr++)
-      fprintf(writer.out(), "( %g %g ) ", *diffdx_itr, *ratio_itr);
-    fprintf(writer.out(), ") ;\n");
+      fmt::print(writer.out(), "( {:g} {:g} ) ", *diffdx_itr, *ratio_itr);
+    fmt::print(writer.out(), ") ;\n");
   }
 
   if (ant_rule->_area_diff_reduce_val._diff_ratio.size() > 1) {
-    fprintf(writer.out(), "    ANTENNAAREADIFFREDUCEPWL ( ");
+    fmt::print(writer.out(), "    ANTENNAAREADIFFREDUCEPWL ( ");
     for (diffdx_itr = ant_rule->_area_diff_reduce_val._diff_idx.begin(),
         ratio_itr = ant_rule->_area_diff_reduce_val._diff_ratio.begin();
          diffdx_itr != ant_rule->_area_diff_reduce_val._diff_idx.end()
          && ratio_itr != ant_rule->_area_diff_reduce_val._diff_ratio.end();
          diffdx_itr++, ratio_itr++)
-      fprintf(writer.out(), "( %g %g ) ", *diffdx_itr, *ratio_itr);
-    fprintf(writer.out(), ") ;\n");
+      fmt::print(writer.out(), "( {:g} {:g} ) ", *diffdx_itr, *ratio_itr);
+    fmt::print(writer.out(), ") ;\n");
   }
 }
 
@@ -872,12 +874,12 @@ void _dbTechAntennaAreaElement::writeLef(const char* header,
                                          dbTech* tech,
                                          lefout& writer) const
 {
-  fprintf(writer.out(), "        %s %g ", header, _area);
+  fmt::print(writer.out(), "        {} {:g} ", header, _area);
   if (_lyidx != dbIdValidation::invalidId())
-    fprintf(writer.out(),
-            "LAYER %s ",
-            dbTechLayer::getTechLayer(tech, _lyidx)->getName().c_str());
-  fprintf(writer.out(), ";\n");
+    fmt::print(writer.out(),
+               "LAYER {} ",
+               dbTechLayer::getTechLayer(tech, _lyidx)->getName().c_str());
+  fmt::print(writer.out(), ";\n");
 }
 
 ////////////////////////////////////////////////////////////////////

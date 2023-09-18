@@ -2,6 +2,12 @@
 
 set -euo pipefail
 
+_versionCompare() {
+    local a b IFS=. ; set -f
+    printf -v a %08d $1; printf -v b %08d $3
+    test $a "$2" $b
+}
+
 _installCommonDev() {
     lastDir="$(pwd)"
     # tools versions
@@ -9,6 +15,8 @@ _installCommonDev() {
     cmakeChecksum="b8d86f8c5ee990ae03c486c3631cee05"
     cmakeVersionBig=3.24
     cmakeVersionSmall=${cmakeVersionBig}.2
+    pcreVersion=10.42
+    pcreChecksum="37d2f77cfd411a3ddf1c64e1d72e43f7"
     swigVersion=4.1.0
     swigChecksum="794433378154eb61270a3ac127d9c5f3"
     boostVersionBig=1.80
@@ -16,7 +24,6 @@ _installCommonDev() {
     boostChecksum="077f074743ea7b0cb49c6ed43953ae95"
     eigenVersion=3.4
     lemonVersion=1.3.1
-    lemonChecksum="e89f887559113b68657eca67cf3329b5"
     spdlogVersion=1.8.1
 
     # temp dir to download and compile
@@ -28,10 +35,11 @@ _installCommonDev() {
 
     # CMake
     cmakePrefix=${PREFIX:-"/usr/local"}
-    if [[ -z $(${cmakePrefix}/bin/cmake --version | grep ${cmakeVersionBig}) ]]; then
+    cmakeBin=${cmakePrefix}/bin/cmake
+    if [[ ! -f ${cmakeBin} || -z $(${cmakeBin} --version | grep ${cmakeVersionBig}) ]]; then
         cd "${baseDir}"
         wget https://cmake.org/files/v${cmakeVersionBig}/cmake-${cmakeVersionSmall}-${osName}-x86_64.sh
-        md5sum -c <(echo "${cmakeChecksum}  cmake-${cmakeVersionSmall}-${osName}-x86_64.sh") || exit 1
+        md5sum -c <(echo "${cmakeChecksum} cmake-${cmakeVersionSmall}-${osName}-x86_64.sh") || exit 1
         chmod +x cmake-${cmakeVersionSmall}-${osName}-x86_64.sh
         ./cmake-${cmakeVersionSmall}-${osName}-x86_64.sh --skip-license --prefix=${cmakePrefix}
     else
@@ -39,14 +47,23 @@ _installCommonDev() {
     fi
 
     # SWIG
-    swigPrefix=${PREFIX:-"/usr"}
-    if [[ -z $(${swigPrefix}/bin/swig -version | grep ${swigVersion}) ]]; then
+    swigPrefix=${PREFIX:-"/usr/local"}
+    swigBin=${swigPrefix}/bin/swig
+    if [[ ! -f ${swigBin} || -z $(${swigBin} -version | grep ${swigVersion}) ]]; then
         cd "${baseDir}"
         tarName="v${swigVersion}.tar.gz"
         wget https://github.com/swig/swig/archive/${tarName}
-        md5sum -c <(echo "${swigChecksum}  ${tarName}") || exit 1
+        md5sum -c <(echo "${swigChecksum} ${tarName}") || exit 1
         tar xfz ${tarName}
         cd swig-${tarName%%.tar*} || cd swig-${swigVersion}
+
+        # Check if pcre2 is installed
+        if [[ -z $(pcre2-config --version) ]]; then
+          tarName="pcre2-${pcreVersion}.tar.gz"
+          wget https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${pcreVersion}/${tarName}
+          md5sum -c <(echo "${pcreChecksum} ${tarName}") || exit 1
+          ./Tools/pcre-build.sh
+        fi
         ./autogen.sh
         ./configure --prefix=${swigPrefix}
         make -j $(nproc)
@@ -97,10 +114,8 @@ _installCommonDev() {
     lemonPrefix=${PREFIX:-"/usr/local"}
     if [[ -z $(grep "LEMON_VERSION \"${lemonVersion}\"" ${lemonPrefix}/include/lemon/config.h) ]]; then
         cd "${baseDir}"
-        wget http://lemon.cs.elte.hu/pub/sources/lemon-${lemonVersion}.tar.gz
-        md5sum -c <(echo "${lemonChecksum}  lemon-${lemonVersion}.tar.gz") || exit 1
-        tar -xf lemon-${lemonVersion}.tar.gz
-        cd lemon-${lemonVersion}
+        git clone -b ${lemonVersion} https://github.com/The-OpenROAD-Project/lemon-graph.git
+        cd lemon-graph
         ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${lemonPrefix}" -B build .
         ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
     else
@@ -121,6 +136,15 @@ _installCommonDev() {
 
     cd "${lastDir}"
     rm -rf "${baseDir}"
+
+    if [[ ! -z ${PREFIX} ]]; then
+      # Emit an environment setup script
+      cat > ${PREFIX}/env.sh <<EOF
+depRoot="\$(dirname \$(readlink -f "\${BASH_SOURCE[0]}"))"
+PATH=\${depRoot}/bin:\${PATH}
+LD_LIBRARY_PATH=\${depRoot}/lib64:\${depRoot}/lib:\${LD_LIBRARY_PATH}
+EOF
+    fi
 }
 
 _installOrTools() {
@@ -186,7 +210,7 @@ _installUbuntuPackages() {
         tcl-tclreadline \
         wget
 
-    if [[ $1 == 22.10 ]]; then
+    if _versionCompare $1 -ge 22.10; then
         apt-get install -y \
             qtbase5-dev \
             qtchooser \
@@ -263,8 +287,19 @@ _installRHELPackages() {
 
     yum install -y \
         http://repo.okay.com.mx/centos/8/x86_64/release/bison-3.0.4-10.el8.x86_64.rpm \
-        https://forensics.cert.org/centos/cert/7/x86_64/flex-2.6.1-9.el7.x86_64.rpm \
-        https://vault.centos.org/centos/8/BaseOS/x86_64/os/Packages/tcl-devel-8.6.8-2.el8.i686.rpm
+        https://forensics.cert.org/centos/cert/7/x86_64/flex-2.6.1-9.el7.x86_64.rpm
+
+    if [[ $(yum repolist | egrep -c "rhel-8-for-x86_64-appstream-rpms") -eq 0 ]]; then
+        yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-8-6.el8.noarch.rpm
+        yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-stream-repos-8-6.el8.noarch.rpm
+        rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+    fi
+
+    yum -y install \
+        qt5-qtbase-devel \
+        qt5-qtimageformats \
+        tcl-devel
+
 }
 
 _installCentosCleanUp() {
@@ -547,7 +582,7 @@ while [ "$#" -gt 0 ]; do
                 echo "WARNING: previous argument -local will be overwritten with -prefix"
                 export isLocal="false"
             fi
-            export PREFIX="$(echo $1 | sed -e 's/^[^=]*=//g')"
+            export PREFIX="$(realpath $(echo $1 | sed -e 's/^[^=]*=//g'))"
             ;;
         *)
             echo "unknown option: ${1}" >&2
@@ -568,7 +603,7 @@ case "${platform}" in
         ;;
     "Darwin" )
         if [[ $(id -u) == 0 ]]; then>&2
-            echo "ERROR: cannot install on macOS if you are root or using sudo  (not recommended for brew)." >&2
+            echo "ERROR: cannot install on macOS if you are root or using sudo (not recommended for brew)." >&2
             exit 1
         fi
         os="Darwin"
@@ -606,6 +641,9 @@ EOF
         fi
         if [[ "${option}" == "common" || "${option}" == "all" ]]; then
             _installCommonDev
+	    if _versionCompare ${version} -gt 22.10; then
+	        version=22.10
+	    fi
             _installOrTools "ubuntu" "${version}" "amd64"
         fi
         ;;
@@ -628,8 +666,6 @@ EOF
 To install or run openroad, update your path with:
     export PATH="\$(brew --prefix bison)/bin:\$(brew --prefix flex)/bin:\$(brew --prefix tcl-tk)/bin:\${PATH}"
     export CMAKE_PREFIX_PATH=\$(brew --prefix or-tools)
-
-You may wish to add these lines to your .bashrc file.
 EOF
         ;;
     "openSUSE Leap" )
@@ -665,13 +701,3 @@ EOF
         _help
         ;;
 esac
-
-if [[ ! -z "${PREFIX}" ]]; then
-            cat <<EOF
-To use cmake, set cmake as an alias:
-    alias cmake='${PREFIX}/bin/cmake'
-    or  run
-    echo export PATH=${PREFIX}/bin:\${PATH} >> ~/.bash_profile
-    source ~/.bash_profile
-EOF
-fi

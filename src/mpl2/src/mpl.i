@@ -33,11 +33,16 @@
 
 %{
 #include "mpl2/rtl_mp.h"
+#include "Mpl2Observer.h"
+#include "graphics.h"
+#include "odb/db.h"
 
 namespace ord {
 // Defined in OpenRoad.i
 mpl2::MacroPlacer2*
 getMacroPlacer2();
+utl::Logger* getLogger();
+odb::dbDatabase* getDb();
 }
 
 using ord::getMacroPlacer2;
@@ -60,6 +65,7 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                           const int large_net_threshold,
                           const int signature_net_threshold,
                           const float halo_width,
+                          const float halo_height,
                           const float fence_lx,
                           const float fence_ly,
                           const float fence_ux,
@@ -77,6 +83,7 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                           const float target_dead_space,
                           const float min_ar,
                           const int snap_layer,
+                          const bool bus_planning_flag,
                           const char* report_directory) {
 
   auto macro_placer = getMacroPlacer2();
@@ -91,6 +98,7 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              large_net_threshold,
                              signature_net_threshold,
                              halo_width,
+                             halo_height,
                              fence_lx,
                              fence_ly,
                              fence_ux,
@@ -108,6 +116,7 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              target_dead_space,
                              min_ar,
                              snap_layer,
+                             bus_planning_flag,
                              report_directory);
 }
 
@@ -115,7 +124,9 @@ void
 set_debug_cmd()
 {
   auto macro_placer = getMacroPlacer2();
-  macro_placer->setDebug();
+  int dbu = ord::getDb()->getTech()->getDbUnitsPerMicron();
+  std::unique_ptr<Mpl2Observer> graphics = std::make_unique<Graphics>(dbu, ord::getLogger());
+  macro_placer->setDebug(graphics);
 }
 
 } // namespace

@@ -124,6 +124,7 @@ class RepairAntennas
   void setInstsPlacementStatus(odb::dbPlacementStatus placement_status);
   odb::Rect getInstRect(odb::dbInst* inst, odb::dbITerm* iterm);
   bool diodeInRow(odb::Rect diode_rect);
+  odb::dbOrientType getRowOrient(const odb::Point& point);
   odb::dbWire* makeNetWire(odb::dbNet* db_net,
                            GRoute& route,
                            std::map<int, odb::dbTechVia*>& default_vias);
@@ -136,11 +137,15 @@ class RepairAntennas
                     odb::dbTechLayer* tech_layer,
                     int jct_id,
                     RoutePtPins& route_pt_pins,
-                    odb::dbWireEncoder& wire_encoder);
+                    odb::dbWireEncoder& wire_encoder,
+                    std::map<int, odb::dbTechVia*>& default_vias);
   bool pinOverlapsGSegment(const odb::Point& pin_position,
                            const int pin_layer,
                            const std::vector<odb::Rect>& pin_boxes,
                            const GRoute& route);
+  void createEncoderPath(odb::dbWireEncoder& wire_encoder,
+                         int jct_id,
+                         odb::dbTechLayer* layer);
 
   GlobalRouter* grouter_;
   ant::AntennaChecker* arc_;

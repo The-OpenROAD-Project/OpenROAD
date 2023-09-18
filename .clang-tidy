@@ -5,8 +5,6 @@ Checks: >
   -clang-analyzer-core.NonNullParamChecker,
   -clang-analyzer-cplusplus.NewDeleteLeaks,
   -clang-analyzer-optin.performance.Padding,
-  abseil-*,
-  -abseil-no-namespace,
   readability-*,
   -readability-identifier-naming
   -readability-braces-around-statements,
@@ -29,6 +27,7 @@ Checks: >
   -google-readability-casting,
   -google-readability-todo,
   -google-runtime-references,
+  -google-explicit-constructor,
   performance-*,
   bugprone-*,
   -bugprone-branch-clone,
@@ -55,6 +54,10 @@ Checks: >
   -misc-non-private-member-variables-in-classes,
   -misc-redundant-expression,
   -misc-unused-parameters,
+
+CheckOptions:
+   - key:             google-runtime-int.TypeSuffix
+     value:           _t
 
 # Not currently handling identifier naming
 # WarningsAsErrors: "*"

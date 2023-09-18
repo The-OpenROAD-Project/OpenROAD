@@ -49,7 +49,6 @@ defrCallbacks::defrCallbacks()
       ComponentStartCbk(NULL),
       ComponentEndCbk(NULL),
       ComponentCbk(NULL),
-      ComponentMaskShiftLayerCbk(NULL),
       NetStartCbk(NULL),
       NetEndCbk(NULL),
       NetCbk(NULL),
@@ -135,7 +134,8 @@ defrCallbacks::defrCallbacks()
       StylesStartCbk(NULL),
       StylesEndCbk(NULL),
       StylesCbk(NULL),
-      ExtensionCbk(NULL)
+      ExtensionCbk(NULL),
+      ComponentMaskShiftLayerCbk(NULL)
 {
 }
 

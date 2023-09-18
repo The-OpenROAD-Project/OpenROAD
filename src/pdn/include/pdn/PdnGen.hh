@@ -130,7 +130,8 @@ class PdnGen
       const std::array<int, 4>& halo,
       bool pg_pins_to_boundary,
       bool default_grid,
-      const std::vector<odb::dbTechLayer*>& generate_obstructions);
+      const std::vector<odb::dbTechLayer*>& generate_obstructions,
+      bool is_bump);
   void makeExistingGrid(
       const std::string& name,
       const std::vector<odb::dbTechLayer*>& generate_obstructions);

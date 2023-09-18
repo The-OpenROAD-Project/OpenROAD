@@ -48,6 +48,7 @@
 #include "renderer.h"
 #include "rings.h"
 #include "straps.h"
+#include "techlayer.h"
 #include "utl/Logger.h"
 #include "via_repair.h"
 
@@ -56,9 +57,7 @@ namespace pdn {
 using utl::Logger;
 
 using odb::dbBlock;
-using odb::dbBox;
 using odb::dbInst;
-using odb::dbITerm;
 using odb::dbMaster;
 using odb::dbMTerm;
 using odb::dbNet;
@@ -110,6 +109,9 @@ void PdnGen::buildGrids(bool trim)
 
   ShapeTreeMap block_obs;
   Grid::makeInitialObstructions(block, block_obs, insts_in_grids, logger_);
+  for (auto* grid : grids) {
+    grid->getGridLevelObstructions(block_obs);
+  }
 
   ShapeTreeMap all_shapes;
 
@@ -125,20 +127,14 @@ void PdnGen::buildGrids(bool trim)
   for (auto* grid : grids) {
     debugPrint(
         logger_, utl::PDN, "Make", 2, "Build start grid - {}", grid->getName());
-    ShapeTreeMap obs_local = block_obs;
-    for (auto* grid_other : grids) {
-      if (grid != grid_other) {
-        grid_other->getGridLevelObstructions(obs_local);
-        grid_other->getObstructions(obs_local);
-      }
-    }
-    grid->makeShapes(all_shapes, obs_local);
+    grid->makeShapes(all_shapes, block_obs);
     for (const auto& [layer, shapes] : grid->getShapes()) {
       auto& all_shapes_layer = all_shapes[layer];
       for (auto& shape : shapes) {
         all_shapes_layer.insert(shape);
       }
     }
+    grid->getObstructions(block_obs);
     debugPrint(
         logger_, utl::PDN, "Make", 2, "Build end grid - {}", grid->getName());
   }
@@ -147,6 +143,21 @@ void PdnGen::buildGrids(bool trim)
     trimShapes();
 
     cleanupVias();
+  }
+
+  bool failed = false;
+  for (auto* grid : grids) {
+    if (grid->hasShapes() || grid->hasVias()) {
+      continue;
+    }
+    logger_->warn(utl::PDN,
+                  232,
+                  "{} does not contain any shapes or vias.",
+                  grid->getLongName());
+    failed = true;
+  }
+  if (failed) {
+    logger_->error(utl::PDN, 233, "Failed to generate full power grid.");
   }
 
   updateRenderer();
@@ -436,7 +447,8 @@ void PdnGen::makeInstanceGrid(
     const std::array<int, 4>& halo,
     bool pg_pins_to_boundary,
     bool default_grid,
-    const std::vector<odb::dbTechLayer*>& generate_obstructions)
+    const std::vector<odb::dbTechLayer*>& generate_obstructions,
+    bool is_bump)
 {
   auto* check_grid = instanceGrid(inst);
   if (check_grid != nullptr) {
@@ -467,14 +479,23 @@ void PdnGen::makeInstanceGrid(
     }
   }
 
-  auto grid = std::make_unique<InstanceGrid>(
-      domain, name, starts_with == POWER, inst, generate_obstructions);
+  std::unique_ptr<InstanceGrid> grid = nullptr;
+  if (is_bump) {
+    grid = std::make_unique<BumpGrid>(domain, name, inst);
+  } else {
+    grid = std::make_unique<InstanceGrid>(
+        domain, name, starts_with == POWER, inst, generate_obstructions);
+  }
   if (!std::all_of(halo.begin(), halo.end(), [](int v) { return v == 0; })) {
     grid->addHalo(halo);
   }
   grid->setGridToBoundary(pg_pins_to_boundary);
 
   grid->setReplaceable(default_grid);
+
+  if (!grid->isValid()) {
+    return;
+  }
 
   domain->addGrid(std::move(grid));
 }
@@ -808,6 +829,21 @@ void PdnGen::checkDesign(odb::dbBlock* block) const
             inst->getName());
       }
     }
+  }
+
+  bool unplaced_macros = false;
+  for (auto* inst : block->getInsts()) {
+    if (!inst->isBlock()) {
+      continue;
+    }
+    if (!inst->getPlacementStatus().isFixed()) {
+      unplaced_macros = true;
+      logger_->warn(
+          utl::PDN, 234, "{} has not been placed and fixed.", inst->getName());
+    }
+  }
+  if (unplaced_macros) {
+    logger_->error(utl::PDN, 235, "Design has unplaced macros.");
   }
 }
 

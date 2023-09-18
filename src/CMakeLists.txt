@@ -56,6 +56,7 @@ endif()
 set(ODB_HOME ${PROJECT_SOURCE_DIR}/src/odb)
 set(DBSTA_HOME ${PROJECT_SOURCE_DIR}/src/dbSta)
 set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/rsz)
+set(GUI_HOME ${PROJECT_SOURCE_DIR}/src/gui)
 
 set(OPENROAD_SOURCE
   Design.cc
@@ -184,7 +185,14 @@ add_compile_options(
   $<$<CXX_COMPILER_ID:Clang>:-Wno-gnu-zero-variadic-macro-arguments>
   # Apple clang 14.0.0 deprecates sprintf, which generates 900 warnings.
   $<$<CXX_COMPILER_ID:AppleClang>:-Wno-deprecated-declarations>
+  $<$<BOOL:${ASAN}>:-fsanitize=address>
+  $<$<BOOL:${ASAN}>:-fno-omit-frame-pointer>
+  $<$<BOOL:${ASAN}>:-g>
 )
+
+if (ASAN)
+  add_link_options(-fsanitize=address)
+endif()
 
 ################################################################
 

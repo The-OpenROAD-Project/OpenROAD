@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -37,20 +37,6 @@
 #include "lex.h"
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
-
-// ****
-// lefiGeomPolygon
-// ****
-
-lefiGeomPolygon::lefiGeomPolygon() : numPoints(), x(NULL), y(NULL), colorMask(0)
-{
-}
-
-LEF_COPY_CONSTRUCTOR_C(lefiGeomPolygon){
-    LEF_COPY_FUNC(numPoints)
-        LEF_MALLOC_FUNC(x, double, sizeof(double) * numPoints)
-            LEF_MALLOC_FUNC(y, double, sizeof(double) * numPoints)
-                LEF_COPY_FUNC(colorMask)}
 
 // *****************************************************************************
 // lefiGeometries
@@ -75,29 +61,6 @@ void lefiGeometries::Init()
   yStart_ = -1;
   xStep_ = -1;
   yStep_ = -1;
-}
-
-LEF_COPY_CONSTRUCTOR_C(lefiGeometries)
-{
-  //    printf("lefiGeometries CONSTRUCTOR START\n");
-  //    fflush(stdout);
-  this->Init();
-
-  //    printf("AFTER  INIT\n");
-  //    fflush(stdout);
-  for (int i = 0; i < prev.numItems_; i++) {
-    add(prev.items_[i], prev.itemType_[i]);
-  }
-
-  LEF_COPY_FUNC(numPoints_);
-  LEF_COPY_FUNC(pointsAllocated_);
-  LEF_MALLOC_FUNC(x_, double, sizeof(double) * numPoints_);
-  LEF_MALLOC_FUNC(y_, double, sizeof(double) * numPoints_);
-
-  LEF_COPY_FUNC(xStart_);
-  LEF_COPY_FUNC(yStart_);
-  LEF_COPY_FUNC(xStep_);
-  LEF_COPY_FUNC(yStep_);
 }
 
 void lefiGeometries::Destroy()
@@ -472,8 +435,6 @@ void lefiGeometries::addToList(double x, double y)
 
 int lefiGeometries::numItems() const
 {
-  //    printf("numItems addr: %x\n", &numItems_);
-  //    fflush(stdout);
   return numItems_;
 }
 
@@ -554,8 +515,6 @@ lefiGeomPathIter* lefiGeometries::getPathIter(int index) const
 
 char* lefiGeometries::getLayer(int index) const
 {
-  //    printf("inside getLayer, items_[%d] address: %x\n", index,
-  //    &(items_[index])); fflush(stdout);
   char msg[160];
   if (index < 0 || index >= numItems_) {
     sprintf(msg,
@@ -1161,76 +1120,14 @@ void lefiMinFeature::print(FILE* f) const
 // *****************************************************************************
 
 lefiSite::lefiSite()
-    : nameSize_(16),
-      name_(0),
-      numRowPattern_(0),
-      rowPatternAllocated_(0),
-      siteNames_(0),
-      siteOrients_(0)
 {
   Init();
-}
-
-LEF_COPY_CONSTRUCTOR_C(lefiSite)
-    : nameSize_(16),
-      name_(0),
-      numRowPattern_(0),
-      rowPatternAllocated_(0),
-      siteNames_(0),
-      siteOrients_(0)
-{
-  LEF_COPY_FUNC(nameSize_);
-  LEF_MALLOC_FUNC(name_, char, sizeof(char) * (strlen(prev.name_) + 1));
-
-  LEF_COPY_FUNC(hasClass_);
-
-  for (int i = 0; i < 8; i++) {
-    siteClass_[i] = prev.siteClass_[i];
-  }
-
-  LEF_COPY_FUNC(sizeX_);
-  LEF_COPY_FUNC(sizeY_);
-  LEF_COPY_FUNC(hasSize_);
-  LEF_COPY_FUNC(symmetry_);
-  LEF_COPY_FUNC(numRowPattern_);
-  LEF_COPY_FUNC(rowPatternAllocated_);
-
-  LEF_MALLOC_FUNC_FOR_2D_STR(siteNames_, numRowPattern_);
-  LEF_MALLOC_FUNC(siteOrients_, int, sizeof(int) * numRowPattern_);
-}
-
-LEF_ASSIGN_OPERATOR_C(lefiSite)
-{
-  CHECK_SELF_ASSIGN
-  name_ = 0;
-  siteNames_ = 0;
-  siteOrients_ = 0;
-
-  LEF_COPY_FUNC(nameSize_);
-  LEF_MALLOC_FUNC(name_, char, sizeof(char) * (strlen(prev.name_) + 1));
-
-  LEF_COPY_FUNC(hasClass_);
-
-  for (int i = 0; i < 8; i++) {
-    siteClass_[i] = prev.siteClass_[i];
-  }
-
-  LEF_COPY_FUNC(sizeX_);
-  LEF_COPY_FUNC(sizeY_);
-  LEF_COPY_FUNC(hasSize_);
-  LEF_COPY_FUNC(symmetry_);
-  LEF_COPY_FUNC(numRowPattern_);
-  LEF_COPY_FUNC(rowPatternAllocated_);
-
-  LEF_MALLOC_FUNC_FOR_2D_STR(siteNames_, numRowPattern_);
-  LEF_MALLOC_FUNC(siteOrients_, int, sizeof(int) * numRowPattern_);
-  return *this;
 }
 
 void lefiSite::Init()
 {
   nameSize_ = 16;
-  name_ = (char*) lefMalloc(sizeof(char) * nameSize_);
+  name_ = (char*) lefMalloc(16);
   numRowPattern_ = 0;
   rowPatternAllocated_ = 0;
   siteNames_ = 0;
@@ -1431,20 +1328,6 @@ void lefiSite::print(FILE* f) const
 lefiSitePattern::lefiSitePattern()
 {
   Init();
-}
-
-LEF_COPY_CONSTRUCTOR_C(lefiSitePattern)
-{
-  this->Init();
-  LEF_COPY_FUNC(nameSize_);
-  LEF_MALLOC_FUNC(name_, char, sizeof(char) * nameSize_);
-  LEF_COPY_FUNC(orient_);
-  LEF_COPY_FUNC(x_);
-  LEF_COPY_FUNC(y_);
-  LEF_COPY_FUNC(xStart_);
-  LEF_COPY_FUNC(yStart_);
-  LEF_COPY_FUNC(xStep_);
-  LEF_COPY_FUNC(yStep_);
 }
 
 void lefiSitePattern::Init()

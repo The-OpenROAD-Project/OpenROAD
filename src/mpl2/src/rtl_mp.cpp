@@ -33,6 +33,7 @@
 
 #include "mpl2/rtl_mp.h"
 
+#include "Mpl2Observer.h"
 #include "hier_rtlmp.h"
 #include "object.h"
 #include "utl/Logger.h"
@@ -68,6 +69,7 @@ bool MacroPlacer2::place(const int max_num_macro,
                          const int large_net_threshold,
                          const int signature_net_threshold,
                          const float halo_width,
+                         const float halo_height,
                          const float fence_lx,
                          const float fence_ly,
                          const float fence_ux,
@@ -85,6 +87,7 @@ bool MacroPlacer2::place(const int max_num_macro,
                          const float target_dead_space,
                          const float min_ar,
                          const int snap_layer,
+                         const bool bus_planning_flag,
                          const char* report_directory)
 {
   hier_rtlmp_->setClusterSize(
@@ -96,6 +99,7 @@ bool MacroPlacer2::place(const int max_num_macro,
   hier_rtlmp_->setLargeNetThreshold(large_net_threshold);
   hier_rtlmp_->setSignatureNetThreshold(signature_net_threshold);
   hier_rtlmp_->setHaloWidth(halo_width);
+  hier_rtlmp_->setHaloHeight(halo_height);
   hier_rtlmp_->setGlobalFence(fence_lx, fence_ly, fence_ux, fence_uy);
   hier_rtlmp_->setAreaWeight(area_weight);
   hier_rtlmp_->setOutlineWeight(outline_weight);
@@ -110,16 +114,16 @@ bool MacroPlacer2::place(const int max_num_macro,
   hier_rtlmp_->setTargetDeadSpace(target_dead_space);
   hier_rtlmp_->setMinAR(min_ar);
   hier_rtlmp_->setSnapLayer(snap_layer);
+  hier_rtlmp_->setBusPlanningFlag(bus_planning_flag);
   hier_rtlmp_->setReportDirectory(report_directory);
-
   hier_rtlmp_->hierRTLMacroPlacer();
 
   return true;
 }
 
-void MacroPlacer2::setDebug()
+void MacroPlacer2::setDebug(std::unique_ptr<Mpl2Observer>& graphics)
 {
-  hier_rtlmp_->setDebug();
+  hier_rtlmp_->setDebug(graphics);
 }
 
 }  // namespace mpl2

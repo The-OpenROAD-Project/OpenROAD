@@ -37,28 +37,29 @@
 #include "dbSet.h"
 #include "dbVector.h"
 #include "odb.h"
-// User Code Begin Includes
-// User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
 class _dbNet;
 class _dbPowerDomain;
-// User Code Begin Classes
-// User Code End Classes
-
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbPowerSwitch : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
+  _dbPowerSwitch(_dbDatabase*, const _dbPowerSwitch& r);
+  _dbPowerSwitch(_dbDatabase*);
+  ~_dbPowerSwitch();
+
+  bool operator==(const _dbPowerSwitch& rhs) const;
+  bool operator!=(const _dbPowerSwitch& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbPowerSwitch& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbPowerSwitch& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
 
   char* _name;
   dbId<_dbPowerSwitch> _next_entry;
@@ -68,25 +69,8 @@ class _dbPowerSwitch : public _dbObject
   dbVector<std::string> _on_state;
   dbId<_dbNet> _control_net;
   dbId<_dbPowerDomain> _power_domain;
-
-  // User Code Begin Fields
-  // User Code End Fields
-  _dbPowerSwitch(_dbDatabase*, const _dbPowerSwitch& r);
-  _dbPowerSwitch(_dbDatabase*);
-  ~_dbPowerSwitch();
-  bool operator==(const _dbPowerSwitch& rhs) const;
-  bool operator!=(const _dbPowerSwitch& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbPowerSwitch& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbPowerSwitch& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbPowerSwitch& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header

@@ -33,6 +33,7 @@
 
 #include "SACoreSoftMacro.h"
 
+#include "Mpl2Observer.h"
 #include "utl/Logger.h"
 
 namespace mpl2 {
@@ -70,7 +71,7 @@ SACoreSoftMacro::SACoreSoftMacro(
     int k,
     int c,
     unsigned seed,
-    Graphics* graphics,
+    Mpl2Observer* graphics,
     utl::Logger* logger)
     : SimulatedAnnealingCore<SoftMacro>(outline_width,
                                         outline_height,
@@ -130,6 +131,12 @@ float SACoreSoftMacro::getNotchPenalty() const
   return notch_penalty_;
 }
 
+float SACoreSoftMacro::getAreaPenalty() const
+{
+  const float outline_area = outline_width_ * outline_height_;
+  return (width_ * height_) / outline_area;
+}
+
 float SACoreSoftMacro::getNormNotchPenalty() const
 {
   return norm_notch_penalty_;
@@ -139,9 +146,8 @@ float SACoreSoftMacro::getNormNotchPenalty() const
 float SACoreSoftMacro::calNormCost() const
 {
   float cost = 0.0;  // Initialize cost
-  const float outline_area = outline_height_ * outline_width_;
   if (norm_area_penalty_ > 0.0) {
-    cost += area_weight_ * (width_ * height_) / outline_area;
+    cost += area_weight_ * getAreaPenalty();
   }
   if (norm_outline_penalty_ > 0.0) {
     cost += outline_weight_ * outline_penalty_ / norm_outline_penalty_;
@@ -177,6 +183,10 @@ void SACoreSoftMacro::calPenalty()
   calBoundaryPenalty();
   calMacroBlockagePenalty();
   calNotchPenalty();
+  if (graphics_) {
+    graphics_->setAreaPenalty(getAreaPenalty());
+    graphics_->penaltyCalculated(calNormCost());
+  }
 }
 
 void SACoreSoftMacro::perturb()
@@ -381,6 +391,9 @@ void SACoreSoftMacro::calBoundaryPenalty()
   }
   // normalization
   boundary_penalty_ = boundary_penalty_ / tot_num_macros;
+  if (graphics_) {
+    graphics_->setBoundaryPenalty(boundary_penalty_);
+  }
 }
 
 void SACoreSoftMacro::calMacroBlockagePenalty()
@@ -426,6 +439,9 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
   }
   // normalization
   macro_blockage_penalty_ = macro_blockage_penalty_ / tot_num_macros;
+  if (graphics_) {
+    graphics_->setMacroBlockagePenalty(macro_blockage_penalty_);
+  }
 }
 
 // Align macro clusters to reduce notch
@@ -665,6 +681,9 @@ void SACoreSoftMacro::calNotchPenalty()
   macros_ = pre_macros_;
   // normalization
   notch_penalty_ = notch_penalty_ / (outline_width_ * outline_height_);
+  if (graphics_) {
+    graphics_->setNotchPenalty(notch_penalty_);
+  }
 }
 
 void SACoreSoftMacro::resize()
@@ -760,7 +779,7 @@ void SACoreSoftMacro::printResults() const
              1,
              "number of macros : {}",
              macros_.size());
-  for (auto macro : macros_)
+  for (const auto& macro : macros_)
     debugPrint(logger_,
                MPL,
                "macro_placement",

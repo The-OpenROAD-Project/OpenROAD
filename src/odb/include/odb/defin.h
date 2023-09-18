@@ -75,12 +75,15 @@ class defin
   void useBlockName(const char* name);
 
   /// Create a new chip
-  dbChip* createChip(std::vector<dbLib*>& search_libs, const char* def_file);
+  dbChip* createChip(std::vector<dbLib*>& search_libs,
+                     const char* def_file,
+                     odb::dbTech* tech);
 
   /// Create a new hierachical block
   dbBlock* createBlock(dbBlock* parent,
                        std::vector<dbLib*>& search_libs,
-                       const char* def_file);
+                       const char* def_file,
+                       odb::dbTech* tech);
 
   /// Replace the wires of this block.
   bool replaceWires(dbBlock* block, const char* def_file);

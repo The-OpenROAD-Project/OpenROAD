@@ -1,0 +1,13 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN rounding ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 4100000 1000000 ) ;
+PINS 1 ;
+    - pin + NET pin + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal4 ( -12 -12 ) ( 12 12 )
+        + PLACED ( 0 4000332 ) N ;
+END PINS
+END DESIGN

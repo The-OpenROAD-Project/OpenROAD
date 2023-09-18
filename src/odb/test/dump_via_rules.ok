@@ -1,6 +1,7 @@
 [INFO ODB-0222] Reading LEF file: data/gscl45nm.lef
 [INFO ODB-0388] unsupported contactResistance property for layer contact :"10.5"
 [INFO ODB-0388] unsupported contactResistance property for layer via1 :"5.69"
+[WARNING ODB-0423] LEF58_REGION layer via1R1 ignored
 [INFO ODB-0388] unsupported contactResistance property for layer via2 :"11.39"
 [INFO ODB-0388] unsupported contactResistance property for layer via3 :"16.73"
 [INFO ODB-0388] unsupported contactResistance property for layer via4 :"21.44"

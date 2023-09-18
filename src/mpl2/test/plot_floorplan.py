@@ -1,191 +1,128 @@
 import os
 import matplotlib.pyplot as plt
 from math import log
+import json
+import argparse
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--directory", default = "./results/mp_test1", help = "result directory")
+parser.add_argument("--net_threshold", default = -1, help = "nets with weight below net_threshold will not be displayed")
+parser.add_argument("--top_n", default = 50, help = "only show the top_n nets")
 
-file_name = "./results/mp_test1/final_floorplan.txt"
-net_file = "./results/mp_test1/mp_test1.net"
+args = parser.parse_args()
+design_dir = args.directory
+top_n = args.top_n
+net_threshold = args.net_threshold
 
-net_threshold = 0
-
-cluster_list = []
-cluster_lx_list = []
-cluster_ly_list = []
-cluster_ux_list = []
-cluster_uy_list = []
-
-macro_list = []
-macro_lx_list = []
-macro_ly_list = []
-macro_ux_list = []
-macro_uy_list = []
-
-cluster_dict = {}
-
-
+# users can set this threshold manually
+# if it's not set, it will be updated automatically
+# only highlight the top n critical edges
+#top_n = 50
+#net_threshold = -1
+highlight_list = []
+#design_dir = "./results/mp_test1"
+file_name =  design_dir + "/root.fp.txt"
+macro_map = {   }
+terminal_map = {  }
 with open(file_name) as f:
-    content = f.read().splitlines()
-f.close()
-
-
-outline_width = float(content[0].split()[-1])
-outline_height = float(content[1].split()[-1])
-
-terminal_dict = {}
-
-terminal_dict["LM"] = [0, outline_height / 2.0]
-terminal_dict["RM"] = [outline_width, outline_height / 2.0]
-terminal_dict["BM"] = [outline_width / 2.0, 0]
-terminal_dict["TM"] = [outline_width / 2.0, outline_height]
-terminal_dict["LL"] = [0, outline_height / 6.0]
-terminal_dict["RL"] = [outline_width, outline_height / 6.0]
-terminal_dict["BL"] = [outline_width / 6.0, 0.0]
-terminal_dict["TL"] = [outline_width / 6.0, outline_height]
-terminal_dict["LU"] = [0, outline_height * 5.0 / 6.0]
-terminal_dict["RU"] = [outline_width, outline_height * 5.0 / 6.0]
-terminal_dict["BU"] = [outline_width * 5.0 / 6.0, 0.0]
-terminal_dict["TU"] = [outline_width * 5.0 / 6.0, outline_height]
-
-
-
-
-i = 2
-while(i < len(content)):
-    words = content[i].split()
-    if(len(words) == 0):
-        break
-    else:
-        cluster_list.append(words[0])
-        cluster_lx_list.append(float(words[1]))
-        cluster_ly_list.append(float(words[2]))
-        cluster_ux_list.append(float(words[3]))
-        cluster_uy_list.append(float(words[4]))
-        cluster_dict[words[0]] = [(float(words[1]) + float(words[3])) / 2.0,  (float(words[2]) + float(words[4])) / 2.0]
-
-
-
-    i = i + 1
-
-
-i = i + 1
-while(i < len(content)):
-    words = content[i].split()
-    macro_list.append(words[0])
-    macro_lx_list.append(float(words[1]))
-    macro_ly_list.append(float(words[2]))
-    macro_ux_list.append(float(words[3]))
-    macro_uy_list.append(float(words[4]))
-    i = i + 1
-
-
-
-
-net_list = []
-
-with open(net_file) as f:
     content = f.read().splitlines()
 f.close()
 
 for line in content:
     items = line.split()
-    if(len(items) > 1):
-        source = items[1]
-        for j in range(2, len(items), 2):
-            target = items[j]
-            weight = float(items[j+1])
-            net_list.append([source, target, weight])
+    macro_map[items[0]] = [float(items[1]), float(items[2]), float(items[3]), float(items[4])]
+    terminal_map[items[0]] = [float(items[1]) + float(items[3]) / 2.0, float(items[2]) + float(items[4]) / 2.0]
 
+
+file_name = design_dir + "/root.net.txt"
+net_map = [  ]
+with open(file_name) as f:
+    content = f.read().splitlines()
+f.close()
+
+net_values = []
+for line in content:
+    items = line.split()
+    net_map.append([items[0], items[1], float(items[2]) + 1])
+    net_values.append(float(items[2]) + 1)
+
+if (top_n > 0 and net_threshold <= 1 and len(net_values) > top_n):
+  net_values.sort(reverse = True)
+  net_threshold = net_values[top_n]
+  print("Only highlight the top ", top_n, " edges")
+  print("Reset net_threshold to ", net_threshold)
+
+
+lx = 1e9
+ly = 1e9
+ux = 0.0
+uy = 0.0
 
 plt.figure()
-for i in range(len(cluster_list)):
-    rectangle = plt.Rectangle((cluster_lx_list[i], cluster_ly_list[i]), cluster_ux_list[i] - cluster_lx_list[i],
-                              cluster_uy_list[i] - cluster_ly_list[i], fc = "r", ec = "blue")
+for macro_name, size in macro_map.items():
+    color = "r"
+    if (macro_name in highlight_list):
+        color = "yellow"
+    rectangle = plt.Rectangle((size[0], size[1]), size[2], size[3], fc = color, ec = "blue")
+    lx = min(lx, size[0])
+    ly = min(ly, size[1])
+    ux = max(ux, size[0] + size[2])
+    uy = max(uy, size[1] + size[3])
     plt.gca().add_patch(rectangle)
 
-
-for i in range(len(macro_list)):
-    rectangle = plt.Rectangle((macro_lx_list[i], macro_ly_list[i]), macro_ux_list[i] - macro_lx_list[i],
-                              macro_uy_list[i] - macro_ly_list[i], fc = "yellow", ec = "blue")
-    plt.gca().add_patch(rectangle)
-
-
-
-for i in range(len(net_list)):
-    source = net_list[i][0]
-    target = net_list[i][1]
-    weight = net_list[i][2]
-
+for net in net_map:
+    source = net[0]
+    target = net[1]
+    weight = net[2]
     x = []
     y = []
-
-    if source in cluster_dict:
-        x.append(cluster_dict[source][0])
-        y.append(cluster_dict[source][1])
-    else:
-        x.append(terminal_dict[source][0])
-        y.append(terminal_dict[source][1])
-
-    if target in cluster_list:
-        x.append(cluster_dict[target][0])
-        y.append(cluster_dict[target][1])
-    else:
-        x.append(terminal_dict[target][0])
-        y.append(terminal_dict[target][1])
-
+    x.append(terminal_map[source][0])
+    x.append(terminal_map[target][0])
+    y.append(terminal_map[source][1])
+    y.append(terminal_map[target][1])
     if weight > net_threshold:
         plt.plot(x,y,'k', lw = log(weight))
 
 
 
-
-
 x = []
 y = []
-x.append(0)
-y.append(0)
-x.append(outline_width)
-y.append(0)
+x.append(lx)
+y.append(ly)
+x.append(ux)
+y.append(ly)
 plt.plot(x,y, '--k')
 
 x = []
 y = []
-x.append(0)
-y.append(0)
-x.append(0)
-y.append(outline_height)
+x.append(lx)
+y.append(uy)
+x.append(ux)
+y.append(uy)
 plt.plot(x,y, '--k')
 
 x = []
 y = []
-x.append(0)
-y.append(outline_height)
-x.append(outline_width)
-y.append(outline_height)
+x.append(lx)
+y.append(ly)
+x.append(lx)
+y.append(uy)
 plt.plot(x,y, '--k')
+
 
 x = []
 y = []
-x.append(outline_width)
-y.append(0)
-x.append(outline_width)
-y.append(outline_height)
+x.append(ux)
+y.append(ly)
+x.append(ux)
+y.append(uy)
 plt.plot(x,y, '--k')
 
 
-plt.xlim(0, outline_width)
-plt.ylim(0, outline_height)
+plt.xlim(lx, ux)
+plt.ylim(ly, uy)
 plt.axis("scaled")
 plt.show()
-
-
-
-
-
-
-
-
-
-
 
 
 

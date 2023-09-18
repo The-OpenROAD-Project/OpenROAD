@@ -92,6 +92,7 @@ RepairHold::RepairHold(Resizer *resizer) :
   resizer_(resizer),
   resize_count_(0),
   inserted_buffer_count_(0),
+  cloned_gate_count_(0),
   min_(MinMax::min()),
   max_(MinMax::max()),
   min_index_(MinMax::minIndex()),
@@ -117,7 +118,8 @@ RepairHold::repairHold(double setup_margin,
                        bool allow_setup_violations,
                        // Max buffer count as percent of design instance count.
                        float max_buffer_percent,
-                       int max_passes)
+                       int max_passes,
+                       bool verbose)
 {
   init();
   sta_->checkSlewLimitPreamble();
@@ -134,7 +136,8 @@ RepairHold::repairHold(double setup_margin,
   int max_buffer_count = max_buffer_percent * network_->instanceCount();
   resizer_->incrementalParasiticsBegin();
   repairHold(ends1, buffer_cell, setup_margin, hold_margin,
-             allow_setup_violations, max_buffer_count, max_passes);
+             allow_setup_violations, max_buffer_count, max_passes,
+             verbose);
 
   // Leave the parasitices up to date.
   resizer_->updateParasitics();
@@ -163,7 +166,8 @@ RepairHold::repairHold(const Pin *end_pin,
   int max_buffer_count = max_buffer_percent * network_->instanceCount();
   resizer_->incrementalParasiticsBegin();
   repairHold(ends, buffer_cell, setup_margin, hold_margin,
-             allow_setup_violations, max_buffer_count, max_passes);
+             allow_setup_violations, max_buffer_count, max_passes,
+             false);
   // Leave the parasitices up to date.
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
@@ -257,7 +261,8 @@ RepairHold::repairHold(VertexSeq &ends,
                        double hold_margin,
                        bool allow_setup_violations,
                        int max_buffer_count,
-                       int max_passes)
+                       int max_passes,
+                       bool verbose)
 {
   // Find endpoints with hold violations.
   VertexSeq hold_failures;
@@ -268,12 +273,18 @@ RepairHold::repairHold(VertexSeq &ends,
                   hold_failures.size());
     inserted_buffer_count_ = 0;
     bool progress = true;
+    if (verbose) {
+      printProgress(0, true, false);
+    }
     int pass = 1;
     while (worst_slack < hold_margin
            && progress
            && !resizer_->overMaxArea()
            && inserted_buffer_count_ <= max_buffer_count
            && pass <= max_passes) {
+      if (verbose) {
+        printProgress(pass, false, false);
+      }
       debugPrint(logger_, RSZ, "repair_hold", 1,
                  "pass {} hold slack {} setup slack {}",
                  pass,
@@ -289,6 +300,9 @@ RepairHold::repairHold(VertexSeq &ends,
       findHoldViolations(ends, hold_margin, worst_slack, hold_failures);
       pass++;
       progress = inserted_buffer_count_ > hold_buffer_count_before;
+    }
+    if (verbose) {
+      printProgress(pass, true, true);
     }
     if (hold_margin == 0.0 && fuzzyLess(worst_slack, 0.0))
       logger_->warn(RSZ, 66, "Unable to repair all hold violations.");
@@ -379,8 +393,10 @@ RepairHold::repairEndHold(Vertex *end_vertex,
         Net *path_net = network_->isTopLevelPort(path_pin)
           ? network_->net(network_->term(path_pin))
           : network_->net(path_pin);
+        dbNet* db_path_net = db_network_->staToDb(path_net);
         if (path_vertex->isDriver(network_)
-            && !resizer_->dontTouch(path_net)) {
+            && !resizer_->dontTouch(path_net)
+            && !db_path_net->isConnectedByAbutment()) {
           PinSeq load_pins;
           Slacks slacks;
           mergeInit(slacks);
@@ -450,13 +466,20 @@ RepairHold::repairEndHold(Vertex *end_vertex,
               // the hold buffer blows through the setup margin.
               resizer_->journalBegin();
               Slack setup_slack_before = sta_->worstSlack(max_);
+              Slew slew_before = sta_->vertexSlew(path_vertex, max_);
               makeHoldDelay(path_vertex, load_pins, loads_have_out_port,
                             buffer_cell, buffer_loc);
+              Slew slew_after = sta_->vertexSlew(path_vertex, max_);
               Slack setup_slack_after = sta_->worstSlack(max_);
-              if (!allow_setup_violations
+              float slew_factor = (slew_before> 0)?slew_after/slew_before:1.0;
+
+              if (slew_factor > 1.20 ||
+                  (!allow_setup_violations
                   && fuzzyLess(setup_slack_after, setup_slack_before)
-                  && setup_slack_after < setup_margin)
-                resizer_->journalRestore(resize_count_, inserted_buffer_count_);
+                  && setup_slack_after < setup_margin)) {
+                resizer_->journalRestore(
+                    resize_count_, inserted_buffer_count_, cloned_gate_count_);
+              }
               resizer_->journalEnd();
             }
           }
@@ -584,6 +607,42 @@ RepairHold::checkMaxSlewCap(const Pin *drvr_pin)
     return false;
 
   return true;
+}
+
+void
+RepairHold::printProgress(int iteration, bool force, bool end) const
+{
+  const bool start = iteration == 0;
+
+  if (start) {
+    logger_->report("Iteration | Resized | Buffers | Cloned Gates |   WNS   |   TNS   | Endpoint");
+    logger_->report("---------------------------------------------------------------------------");
+  }
+
+  if (iteration % print_interval_ == 0 || force || end) {
+    Slack wns;
+    Vertex* worst_vertex;
+    sta_->worstSlack(min_, wns, worst_vertex);
+    const Slack tns = sta_->totalNegativeSlack(min_);
+
+    std::string itr_field = fmt::format("{}", iteration);
+    if (end) {
+      itr_field = "final";
+    }
+
+    logger_->report("{: >9s} | {: >7d} | {: >7d} | {: >12d} | {: >7s} | {: >7s} | {}",
+                    itr_field,
+                    resize_count_,
+                    inserted_buffer_count_,
+                    cloned_gate_count_,
+                    delayAsString(wns, sta_, 3),
+                    delayAsString(tns, sta_, 3),
+                    worst_vertex->name(network_));
+  }
+
+  if (end) {
+    logger_->report("---------------------------------------------------------------------------");
+  }
 }
 
 } // namespace

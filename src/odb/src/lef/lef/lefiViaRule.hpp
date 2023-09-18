@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -166,7 +166,7 @@ class lefiViaRule
   const char* propName(int index) const;
   const char* propValue(int index) const;
   double propNumber(int index) const;
-  char propType(int index) const;
+  const char propType(int index) const;
   int propIsNumber(int index) const;
   int propIsString(int index) const;
 

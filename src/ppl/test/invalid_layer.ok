@@ -7,7 +7,6 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 Found 0 macro blocks.
-Using 1u default distance from corners.
 Using 2 tracks default min distance between IO pins.
 [ERROR PPL-0051] Layer metal13 not found.
 PPL-0051

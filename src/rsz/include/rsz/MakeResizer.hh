@@ -37,7 +37,6 @@
 
 namespace sta {
 class dbSta;
-class Resizer;
 }
 
 namespace rsz {

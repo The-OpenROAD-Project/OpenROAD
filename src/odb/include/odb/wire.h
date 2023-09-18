@@ -603,8 +603,8 @@ class Ath__gridTable
                  uint* width,
                  uint* pitch,
                  uint* spacing,
-                 int* X1 = NULL,
-                 int* Y1 = NULL);
+                 int* X1 = nullptr,
+                 int* Y1 = nullptr);
   ~Ath__gridTable();
   Ath__grid* getGrid(uint row, uint col);
   void init1(uint memChunk, uint rowSize, uint colSize, uint dx, uint dy);
@@ -759,7 +759,7 @@ class Ath__gridTable
                             uint couplingDist,
                             rcx::CoupleAndCompute coupleAndCompute,
                             void* compPtr,
-                            int* startXY = NULL);
+                            int* startXY = nullptr);
   int dealloc(uint dir, int hiXY);
   void dealloc();
 

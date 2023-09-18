@@ -44,15 +44,7 @@
 namespace pdn {
 
 Connect::Connect(Grid* grid, odb::dbTechLayer* layer0, odb::dbTechLayer* layer1)
-    : grid_(grid),
-      layer0_(layer0),
-      layer1_(layer1),
-      fixed_generate_vias_({}),
-      fixed_tech_vias_({}),
-      cut_pitch_x_(0),
-      cut_pitch_y_(0),
-      max_rows_(0),
-      max_columns_(0)
+    : grid_(grid), layer0_(layer0), layer1_(layer1)
 {
   if (layer0_->getRoutingLevel() > layer1_->getRoutingLevel()) {
     // ensure layer0 is below layer1
@@ -208,8 +200,7 @@ std::vector<Connect::ViaLayerRects> Connect::generateComplexStackedViaRects(
   std::vector<ViaLayerRects> stack;
   stack.push_back({lower});
   const odb::Rect intersection = lower.intersect(upper);
-  for (int i = 0; i < intermediate_routing_layers_.size(); i++) {
-    auto* layer = intermediate_routing_layers_[i];
+  for (auto* layer : intermediate_routing_layers_) {
     auto* tech = layer->getTech();
 
     odb::Rect level_intersection = intersection;
@@ -444,7 +435,7 @@ void Connect::report() const
 void Connect::makeVia(odb::dbSWire* wire,
                       const ShapePtr& lower,
                       const ShapePtr& upper,
-                      odb::dbWireShapeType type,
+                      const odb::dbWireShapeType& type,
                       DbVia::ViaLayerShape& shapes)
 {
   const odb::Rect& lower_rect = lower->getRect();
@@ -544,9 +535,8 @@ void Connect::makeVia(odb::dbSWire* wire,
         stack.push_back(
             new DbGenerateDummyVia(this, area, layer0_, layer1_, false));
         break;
-      } else {
-        stack.push_back(new_via);
       }
+      stack.push_back(new_via);
     }
 
     via = std::make_unique<DbGenerateStackedVia>(
@@ -606,14 +596,13 @@ DbVia* Connect::generateDbVia(
                  "{} was not buildable.",
                  via->getName());
       continue;
-    } else {
-      debugPrint(grid_->getLogger(),
-                 utl::PDN,
-                 "Via",
-                 2,
-                 "{} was buildable.",
-                 via->getName());
     }
+    debugPrint(grid_->getLogger(),
+               utl::PDN,
+               "Via",
+               2,
+               "{} was buildable.",
+               via->getName());
 
     vias.push_back(via);
   }

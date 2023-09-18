@@ -36,17 +36,12 @@
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb.h"
-// User Code Begin Includes
-// User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-// User Code Begin Classes
-// User Code End Classes
 
 struct dbTechLayerWidthTableRuleFlags
 {
@@ -54,23 +49,14 @@ struct dbTechLayerWidthTableRuleFlags
   bool orthogonal_ : 1;
   uint spare_bits_ : 30;
 };
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbTechLayerWidthTableRule : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
-
-  dbTechLayerWidthTableRuleFlags flags_;
-  dbVector<int> width_tbl_;
-
-  // User Code Begin Fields
-  // User Code End Fields
   _dbTechLayerWidthTableRule(_dbDatabase*, const _dbTechLayerWidthTableRule& r);
   _dbTechLayerWidthTableRule(_dbDatabase*);
   ~_dbTechLayerWidthTableRule();
+
   bool operator==(const _dbTechLayerWidthTableRule& rhs) const;
   bool operator!=(const _dbTechLayerWidthTableRule& rhs) const
   {
@@ -81,12 +67,11 @@ class _dbTechLayerWidthTableRule : public _dbObject
                    const char* field,
                    const _dbTechLayerWidthTableRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
+
+  dbTechLayerWidthTableRuleFlags flags_;
+  dbVector<int> width_tbl_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerWidthTableRule& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerWidthTableRule& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header

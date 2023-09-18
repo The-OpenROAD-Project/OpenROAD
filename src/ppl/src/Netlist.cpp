@@ -57,7 +57,8 @@ void Netlist::addIONet(const IOPin& io_pin,
 }
 
 int Netlist::createIOGroup(const std::vector<odb::dbBTerm*>& pin_list,
-                           bool order)
+                           bool order,
+                           const int group_idx)
 {
   int pin_cnt = 0;
   std::vector<int> pin_indices;
@@ -67,17 +68,18 @@ int Netlist::createIOGroup(const std::vector<odb::dbBTerm*>& pin_list,
       return pin_cnt;
     }
     io_pins_[pin_idx].setInGroup();
+    io_pins_[pin_idx].setGroupIdx(group_idx);
     pin_indices.push_back(pin_idx);
     pin_cnt++;
   }
 
-  io_groups_.push_back(std::make_pair(pin_indices, order));
+  io_groups_.push_back({pin_indices, order});
   return pin_indices.size();
 }
 
 void Netlist::addIOGroup(const std::vector<int>& pin_group, bool order)
 {
-  io_groups_.push_back(std::make_pair(pin_group, order));
+  io_groups_.push_back({pin_group, order});
 }
 
 void Netlist::getSinksOfIO(int idx, std::vector<InstancePin>& sinks)
@@ -164,6 +166,15 @@ int Netlist::computeDstIOtoPins(int idx, const Point& slot_pos)
   }
 
   return total_distance;
+}
+
+void Netlist::sortPinsFromGroup(int group_idx, Edge edge)
+{
+  PinGroupByIndex& group = io_groups_[group_idx];
+  std::vector<int>& pin_indices = group.pin_indices;
+  if (group.order && (edge == Edge::top || edge == Edge::left)) {
+    std::reverse(pin_indices.begin(), pin_indices.end());
+  }
 }
 
 void Netlist::clear()

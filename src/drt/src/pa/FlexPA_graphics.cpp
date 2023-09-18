@@ -72,7 +72,7 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
     size_t pos = settings_->pinName.rfind(':');
     if (pos == std::string::npos) {
       logger_->error(
-          DRT, 293, "pin name {} has no ':' delimeter", settings_->pinName);
+          DRT, 293, "pin name {} has no ':' delimiter", settings_->pinName);
     }
     term_name_ = settings_->pinName.substr(pos + 1);
     auto inst_name = settings_->pinName.substr(0, pos);

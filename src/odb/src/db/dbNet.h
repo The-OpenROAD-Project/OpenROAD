@@ -53,6 +53,7 @@ class _dbTechNonDefaultRule;
 class _dbDatabase;
 class _dbGroup;
 class _dbGuide;
+class _dbNetTrack;
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -93,8 +94,7 @@ class _dbNet : public _dbObject
     TERM_EXTID,
     HEAD_CAPNODE,
     HEAD_RSEG,
-    REVERSE_RSEG,
-    INVALIDATETIMING,
+    REVERSE_RSEG
   };
 
   // PERSISTANT-MEMBERS
@@ -121,6 +121,7 @@ class _dbNet : public _dbObject
   dbId<_dbRSeg> _r_segs;
   dbId<_dbTechNonDefaultRule> _non_default_rule;
   dbId<_dbGuide> guides_;
+  dbId<_dbNetTrack> tracks_;
   dbVector<dbId<_dbGroup>> _groups;
   int _weight;
   int _xtalk;

@@ -39,8 +39,6 @@
 #include <vector>
 
 #include "odb/db.h"
-#include "ord/OpenRoad.hh"
-#include "stt/LinesRenderer.h"
 #include "stt/flute.h"
 #include "stt/pd.h"
 
@@ -103,8 +101,9 @@ Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
 {
   if (alpha > 0.0) {
     Tree tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger_);
-    if (checkTree(tree))
+    if (checkTree(tree)) {
       return tree;
+    }
     // Fall back to flute if PD fails.
   }
   return flt::flute(x, y, flute_accuracy);
@@ -280,8 +279,8 @@ int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
 
 ////////////////////////////////////////////////////////////////
 
-typedef std::pair<int, int> PDedge;
-typedef std::vector<std::set<PDedge>> PDedges;
+using PDedge = std::pair<int, int>;
+using PDedges = std::vector<std::set<PDedge>>;
 
 static int findPathDepth(const Tree& tree, int drvr_index);
 static int findPathDepth(int node, int from, PDedges& edges, int length);
@@ -327,8 +326,9 @@ int findLocationIndex(const Tree& tree, int x, int y)
   for (int i = 0; i < tree.branchCount(); i++) {
     int x1 = tree.branch[i].x;
     int y1 = tree.branch[i].y;
-    if (x1 == x && y1 == y)
+    if (x1 == x && y1 == y) {
       return i;
+    }
   }
   return -1;
 }
@@ -350,8 +350,8 @@ static int findPathDepth(const Tree& tree, int drvr_index)
       }
     }
     return findPathDepth(drvr_index, drvr_index, edges, 0);
-  } else
-    return 0;
+  }
+  return 0;
 }
 
 static int findPathDepth(int node, int from, PDedges& edges, int length)
@@ -360,72 +360,32 @@ static int findPathDepth(int node, int from, PDedges& edges, int length)
   for (const PDedge& edge : edges[node]) {
     int neighbor = edge.first;
     int edge_length = edge.second;
-    if (neighbor != from)
+    if (neighbor != from) {
       max_length = std::max(
           max_length,
           findPathDepth(neighbor, node, edges, length + edge_length));
+    }
   }
   return max_length;
-}
-
-////////////////////////////////////////////////////////////////
-
-LinesRenderer* LinesRenderer::lines_renderer = nullptr;
-
-void LinesRenderer::highlight(
-    std::vector<std::pair<odb::Point, odb::Point>>& lines,
-    gui::Painter::Color color)
-{
-  lines_ = lines;
-  color_ = color;
-}
-
-void LinesRenderer::drawObjects(gui::Painter& painter)
-{
-  if (!lines_.empty()) {
-    painter.setPen(color_, true);
-    for (int i = 0; i < lines_.size(); ++i) {
-      painter.drawLine(lines_[i].first, lines_[i].second);
-    }
-  }
-}
-
-void highlightSteinerTree(const Tree& tree, gui::Gui* gui)
-{
-  if (gui::Gui::enabled()) {
-    if (LinesRenderer::lines_renderer == nullptr) {
-      LinesRenderer::lines_renderer = new LinesRenderer();
-      gui->registerRenderer(LinesRenderer::lines_renderer);
-    }
-    std::vector<std::pair<odb::Point, odb::Point>> lines;
-    for (int i = 0; i < tree.branchCount(); i++) {
-      const stt::Branch& branch = tree.branch[i];
-      int x1 = branch.x;
-      int y1 = branch.y;
-      const stt::Branch& neighbor = tree.branch[branch.n];
-      int x2 = neighbor.x;
-      int y2 = neighbor.y;
-      lines.push_back(std::pair(odb::Point(x1, y1), odb::Point(x2, y2)));
-    }
-    LinesRenderer::lines_renderer->highlight(lines, gui::Painter::red);
-  }
 }
 
 void Tree::printTree(utl::Logger* logger) const
 {
   if (deg > 1) {
-    for (int i = 0; i < deg; i++)
+    for (int i = 0; i < deg; i++) {
       logger->report(" {:2d}:  x={:4g}  y={:4g}  e={}",
                      i,
                      (float) branch[i].x,
                      (float) branch[i].y,
                      branch[i].n);
-    for (int i = deg; i < 2 * deg - 2; i++)
+    }
+    for (int i = deg; i < 2 * deg - 2; i++) {
       logger->report("s{:2d}:  x={:4g}  y={:4g}  e={}",
                      i,
                      (float) branch[i].x,
                      (float) branch[i].y,
                      branch[i].n);
+    }
   }
 }
 

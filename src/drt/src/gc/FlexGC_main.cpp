@@ -638,11 +638,11 @@ void FlexGCWorker::Impl::checkMetalSpacing_short_obs(
     std::list<gtl::rectangle_data<frCoord>> res;
     gtl::get_max_rectangles(res, bg2gtl(poly));
     for (const auto& rect : res) {
-      gcRect* rect3 = new gcRect(*rect2);
-      rect3->setRect(rect);
+      gcRect rect3 = *rect2;
+      rect3.setRect(rect);
       gtl::rectangle_data<frCoord> newMarkerRect(markerRect);
-      gtl::intersect(newMarkerRect, *rect3);
-      checkMetalSpacing_short(rect1, rect3, newMarkerRect);
+      gtl::intersect(newMarkerRect, rect3);
+      checkMetalSpacing_short(rect1, &rect3, newMarkerRect);
     }
   }
 }
@@ -797,7 +797,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1,
                                                 bool isSpcRect)
 {
   // NSMetal does not need self-intersection
-  // Minimum width rule handles outsite this function
+  // Minimum width rule handled outside this function
   if (ptr1 == ptr2) {
     return;
   }
@@ -1032,7 +1032,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
       } else if (maxXY >= reqSpcVal) {
         continue;
       }
-      // no vaiolation if fixed
+      // no violation if fixed
       // if (corner->isFixed() && rect->isFixed() && objPtr->isFixed()) {
       if (rect->isFixed() && objPtr->isFixed()) {
         // if (corner->isFixed() && rect->isFixed()) {
@@ -2144,7 +2144,7 @@ void FlexGCWorker::Impl::checkCutSpacing_spc(
     // skip if no parallel overlap
     if (prl <= 0) {
       return;
-      // skip if paralell overlap but shares the same above/below metal
+      // skip if parallel overlap but shares the same above/below metal
     } else {
       box_t queryBox;
       myBloat(markerRect, 0, queryBox);
@@ -2818,7 +2818,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
         // check curr and next form an EOL edge
         if (corner->getNextCorner()->getType() == frCornerTypeEnum::CONVEX) {
           if (con->hasMinLength()) {
-            // not EOL if minLength is not satsified
+            // not EOL if minLength is not satisfied
             if (gtl::length(*(corner->getPrevEdge())) < con->getMinLength()
                 || gtl::length(*(corner->getNextCorner()->getNextEdge()))
                        < con->getMinLength()) {
@@ -3115,6 +3115,10 @@ void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* rect)
     checkLef58CutSpacing_main(rect, con, skipDiffNet);
   }
 
+  for (auto con : layer->getKeepOutZoneConstraints()) {
+    checKeepOutZone_main(rect, con);
+  }
+
   // LEF58_SPACINGTABLE
   if (layer->hasLef58SameMetalCutSpcTblConstraint())
     checkLef58CutSpacingTbl(rect,
@@ -3135,15 +3139,6 @@ void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* rect)
   if (layer->getLayerNum() + 2 < TOP_ROUTING_LAYER
       && layer->getLayerNum() + 2 < getTech()->getLayers().size()) {
     auto aboveLayer = getTech()->getLayer(layer->getLayerNum() + 2);
-    if (aboveLayer->hasLef58SameMetalCutSpcTblConstraint())
-      checkLef58CutSpacingTbl(
-          rect, aboveLayer->getLef58SameMetalCutSpcTblConstraint());
-    if (aboveLayer->hasLef58SameNetCutSpcTblConstraint())
-      checkLef58CutSpacingTbl(rect,
-                              aboveLayer->getLef58SameNetCutSpcTblConstraint());
-    if (aboveLayer->hasLef58DiffNetCutSpcTblConstraint())
-      checkLef58CutSpacingTbl(rect,
-                              aboveLayer->getLef58DiffNetCutSpcTblConstraint());
     if (aboveLayer->hasLef58SameNetInterCutSpcTblConstraint())
       checkLef58CutSpacingTbl(
           rect, aboveLayer->getLef58SameNetInterCutSpcTblConstraint());
@@ -3486,7 +3481,7 @@ void FlexGCWorker::Impl::checkMinimumCut()
         continue;
       for (auto& pin : targetNet_->getPins(i)) {
         for (auto& maxrect : pin->getMaxRectangles()) {
-          checkCutSpacing_main(maxrect.get());
+          checkMinimumCut_main(maxrect.get());
         }
       }
     }

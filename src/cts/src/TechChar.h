@@ -49,7 +49,7 @@
 
 #include "CtsOptions.h"
 #include "db_sta/dbNetwork.hh"
-#include "ord/OpenRoad.hh"
+#include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 
 namespace utl {
@@ -133,7 +133,6 @@ class TechChar
 {
  public:
   TechChar(CtsOptions* options,
-           ord::OpenRoad* openroad,
            odb::dbDatabase* db,
            sta::dbSta* sta,
            rsz::Resizer* resizer,
@@ -173,7 +172,7 @@ class TechChar
   double getCapPerDBU() const { return capPerDBU_; }
   utl::Logger* getLogger() { return options_->getLogger(); }
 
- protected:
+ private:
   // SolutionData represents the various different structures of the
   // characterization segment. Ports, insts, nets...
   struct SolutionData
@@ -232,7 +231,7 @@ class TechChar
                                  uint8_t inputSlew);
 
   void compileLut(const std::vector<ResultData>& lutSols);
-  void setLengthUnit(unsigned length) { LENGTH_UNIT_MICRON = length; }
+  void setLengthUnit(unsigned length) { lengthUnit_ = length; }
   unsigned computeKey(uint8_t length, uint8_t load, uint8_t outputSlew) const
   {
     return length | (load << NUM_BITS_PER_FIELD)
@@ -270,10 +269,8 @@ class TechChar
 
   static constexpr unsigned NUM_BITS_PER_FIELD = 10;
   static constexpr unsigned MAX_NORMALIZED_VAL = (1 << NUM_BITS_PER_FIELD) - 1;
-  unsigned LENGTH_UNIT_MICRON = 10;
 
   unsigned lengthUnit_ = 0;
-  unsigned charLengthUnit_ = 0;
   unsigned lengthUnitRatio_ = 0;
 
   unsigned minSegmentLength_ = 0;
@@ -284,17 +281,15 @@ class TechChar
   unsigned maxSlew_ = 0;
 
   unsigned actualMinInputCap_ = 0;
-  unsigned actualMinInputSlew_ = 0;
 
   std::deque<WireSegment> wireSegments_;
   std::unordered_map<Key, std::deque<unsigned>> keyToWireSegments_;
 
   CtsOptions* options_;
-  ord::OpenRoad* openroad_;
   odb::dbDatabase* db_;
   rsz::Resizer* resizer_;
   sta::dbSta* openSta_;
-  sta::dbSta* openStaChar_;
+  std::unique_ptr<sta::dbSta> openStaChar_;
   sta::dbNetwork* db_network_;
   Logger* logger_;
   sta::PathAnalysisPt* charPathAnalysis_ = nullptr;

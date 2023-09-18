@@ -42,6 +42,7 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -large_net_threshold large_net_threshold \
                                           -signature_net_threshold signature_net_threshold \
                                           -halo_width halo_width \
+                                          -halo_height halo_height \
                                           -fence_lx   fence_lx \
                                           -fence_ly   fence_ly \
                                           -fence_ux   fence_ux \
@@ -59,18 +60,21 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -target_dead_space target_dead_space \
                                           -min_ar  min_ar \
                                           -snap_layer snap_layer \
+                                          -bus_planning_flag bus_planning_flag \
                                           -report_directory report_directory \
                                         }
 proc rtl_macro_placer { args } {
     sta::parse_key_args "rtl_macro_placer" args keys { 
         -max_num_macro  -min_num_macro -max_num_inst  -min_num_inst  -tolerance   \
         -max_num_level  -coarsening_ratio  -num_bundled_ios  -large_net_threshold \
-        -signature_net_threshold -halo_width \
+        -signature_net_threshold -halo_width -halo_height \
         -fence_lx   -fence_ly  -fence_ux   -fence_uy  \
         -area_weight  -outline_weight -wirelength_weight -guidance_weight -fence_weight \
         -boundary_weight -notch_weight -macro_blockage_weight  \
         -pin_access_th -target_util \
-        -target_dead_space -min_ar -snap_layer -report_directory \
+        -target_dead_space -min_ar -snap_layer \
+        -bus_planning_flag \
+        -report_directory \
     } flag {  }
 #
 # Check for valid design
@@ -91,6 +95,7 @@ proc rtl_macro_placer { args } {
     set large_net_threshold 50
     set signature_net_threshold 50
     set halo_width   0.0
+    set halo_height  0.0
     set fence_lx     0.0
     set fence_ly     0.0
     set fence_ux     100000000.0
@@ -101,7 +106,7 @@ proc rtl_macro_placer { args } {
     set wirelength_weight 100.0
     set guidance_weight 10.0
     set fence_weight   10.0
-    set boundary_weight 20.0
+    set boundary_weight 50.0
     set notch_weight    10.0
     set macro_blockage_weight 10.0
     set pin_access_th   0.00
@@ -109,6 +114,7 @@ proc rtl_macro_placer { args } {
     set target_dead_space 0.05
     set min_ar  0.33
     set snap_layer -1
+    set bus_planning_flag false
     set report_directory "hier_rtlmp"
       
     if { [info exists keys(-max_num_macro)] } {
@@ -143,9 +149,18 @@ proc rtl_macro_placer { args } {
     if { [info exists keys(-signature_net_threshold)] } {
       set signature_net_threshold  $keys(-signature_net_threshold) 
     }
-    if { [info exists keys(-halo_width)] } {
+    
+    if { [info exists keys(-halo_width)] && [info exists keys(-halo_height)] } {
       set halo_width  $keys(-halo_width) 
+      set halo_height  $keys(-halo_height) 
+    } elseif {[info exists keys(-halo_width)]} {
+      set halo_width  $keys(-halo_width) 
+      set halo_height  $keys(-halo_width) 
+    } elseif {[info exists keys(-halo_height)]} {
+      set halo_width  $keys(-halo_height) 
+      set halo_height  $keys(-halo_height) 
     }
+
     if { [info exists keys(-fence_lx)] } {
       set fence_lx    $keys(-fence_lx) 
     }
@@ -197,10 +212,12 @@ proc rtl_macro_placer { args } {
     if { [info exists keys(-snap_layer)] } {
       set snap_layer $keys(-snap_layer)
     }
+    if { [info exists keys(-bus_planning_flag)] } {
+      set bus_planning_flag $keys(-bus_planning_flag)
+    }
     if { [info exists keys(-report_directory)] } {
         set report_directory $keys(-report_directory)
     }
-
         
     file mkdir $report_directory
 
@@ -215,6 +232,7 @@ proc rtl_macro_placer { args } {
                                       $large_net_threshold \
                                       $signature_net_threshold \
                                       $halo_width \
+                                      $halo_height \
                                       $fence_lx   $fence_ly  $fence_ux  $fence_uy  \
                                       $area_weight $outline_weight $wirelength_weight \
                                       $guidance_weight $fence_weight $boundary_weight \
@@ -224,6 +242,7 @@ proc rtl_macro_placer { args } {
                                       $target_dead_space \
                                       $min_ar \
                                       $snap_layer \
+                                      $bus_planning_flag \
                                       $report_directory \
                                       ]} {
 

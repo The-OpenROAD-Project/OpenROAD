@@ -34,14 +34,15 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <libgen.h>
-#include <limits.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <tcl.h>
 
 #include <array>
 #include <boost/stacktrace.hpp>
+#include <climits>
+#include <clocale>
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <string>
 // We have had too many problems with this std::filesytem on various platforms
@@ -136,7 +137,11 @@ FOREACH_TOOL(X)
 #undef X
 }  // namespace sta
 
+#if PY_VERSION_HEX >= 0x03080000
+static void initPython(int argc, char* argv[])
+#else
 static void initPython()
+#endif
 {
 #define X(name)                                                             \
   if (PyImport_AppendInittab("_" #name "_py", PyInit__##name##_py) == -1) { \
@@ -145,7 +150,17 @@ static void initPython()
   }
   FOREACH_TOOL(X)
 #undef X
+#if PY_VERSION_HEX >= 0x03080000
+  bool inspect = !findCmdLineFlag(argc, argv, "-exit");
+  PyConfig config;
+  PyConfig_InitPythonConfig(&config);
+  PyConfig_SetBytesArgv(&config, argc, argv);
+  config.inspect = inspect;
+  Py_InitializeFromConfig(&config);
+  PyConfig_Clear(&config);
+#else
   Py_Initialize();
+#endif
 #define X(name)                                                       \
   {                                                                   \
     char* unencoded = sta::unencode(sta::name##_py_python_inits);     \
@@ -213,8 +228,13 @@ int main(int argc, char* argv[])
 {
   // This avoids problems with locale setting dependent
   // C functions like strtod (e.g. 0.5 vs 0,5).
-  setenv("LC_ALL", "en_US.UTF-8", /* override */ 1);
-  setenv("LANG", "en_US.UTF-8", /* override */ 1);
+  std::array locales = {"en_US.UTF-8", "C.UTF-8", "C"};
+  for (auto locale : locales) {
+    if (std::setlocale(LC_ALL, locale) != nullptr) {
+      setenv("LC_ALL", locale, /* override */ 1);
+      break;
+    }
+  }
 
   // Generate a stacktrace on crash
   signal(SIGABRT, handler);
@@ -272,6 +292,10 @@ int main(int argc, char* argv[])
           ord::OpenRoad::openRoad()->getThreadCount(), false);
     }
 
+#if PY_VERSION_HEX >= 0x03080000
+    initPython(cmd_argc, cmd_argv);
+    return Py_RunMain();
+#else
     initPython();
     bool exit = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
     std::vector<wchar_t*> args;
@@ -283,6 +307,7 @@ int main(int argc, char* argv[])
       args.push_back(Py_DecodeLocale(cmd_argv[i], nullptr));
     }
     return Py_Main(args.size(), args.data());
+#endif  // PY_VERSION_HEX >= 0x03080000
   }
 #endif  // ENABLE_PYTHON3
 
@@ -325,8 +350,9 @@ static int tclAppInit(int& argc,
   if (findCmdLineFlag(argc, argv, "-gui")) {
     // gobble up remaining -gui flags if present, since this could result in
     // second invocation of the GUI
-    while (findCmdLineFlag(argc, argv, "-gui"))
+    while (findCmdLineFlag(argc, argv, "-gui")) {
       ;
+    }
 
     gui::startGui(argc, argv, interp);
   } else {

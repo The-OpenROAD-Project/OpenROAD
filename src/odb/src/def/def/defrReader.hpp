@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -31,6 +31,8 @@
 #define DEFRREADER_H
 
 #include <stdarg.h>
+
+#include <string_view>
 
 #include "defiDefs.hpp"
 #include "defiKRDefs.hpp"
@@ -747,7 +749,9 @@ extern void defrSetLimitPerMsg(int msgId, int numMsg);
 #define PARSE_ERROR 2  // stop parsing, print an error message
 
 // Add this alias to the list for the parser
-extern void defrAddAlias(const char* key, const char* value, int marked);
+extern void defrAddAlias(std::string_view key,
+                         std::string_view value,
+                         int marked);
 
 END_LEFDEF_PARSER_NAMESPACE
 

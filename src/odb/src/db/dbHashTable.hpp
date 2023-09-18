@@ -51,7 +51,7 @@ inline unsigned int hash_string(const char* str)
 template <class T>
 dbHashTable<T>::dbHashTable()
 {
-  _obj_tbl = NULL;
+  _obj_tbl = nullptr;
   _num_entries = 0;
 }
 
@@ -209,7 +209,7 @@ T* dbHashTable<T>::find(const char* name)
     cur = entry->_next_entry;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 template <class T>

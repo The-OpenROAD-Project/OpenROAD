@@ -94,11 +94,17 @@ void detailed_route_cmd(const char* outputMazeFile,
                         bool singleStepDR,
                         int minAccessPoints,
                         bool saveGuideUpdates,
-                        const char* repairPDNLayerName)
+                        const char* repairPDNLayerName,
+                        int drcReportIterStep)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  std::optional<int> drcReportIterStepOpt;
+  if (drcReportIterStep > 0) {
+    drcReportIterStepOpt = drcReportIterStep;
+  }
   router->setParams({outputMazeFile,
                     outputDrcFile,
+                    drcReportIterStepOpt,
                     outputCmapFile,
                     outputGuideCoverageFile,
                     dbProcessNode,
@@ -118,6 +124,7 @@ void detailed_route_cmd(const char* outputMazeFile,
                     saveGuideUpdates,
                     repairPDNLayerName});
   router->main();
+  router->setDistributed(false);
 }
 
 void pin_access_cmd(const char* dbProcessNode,
@@ -135,13 +142,7 @@ void pin_access_cmd(const char* dbProcessNode,
   params.minAccessPoints = minAccessPoints;
   router->setParams(params);
   router->pinAccess();
-}
-
-void detailed_route_cmd(const char* param_file)
-{
-  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->readParams(param_file);
-  router->main();
+  router->setDistributed(false);
 }
 
 void report_constraints()
@@ -163,7 +164,8 @@ set_detailed_route_debug_cmd(const char* net_name,
                              bool pa_edge,
                              bool pa_commit,
                              const char* dumpDir,
-                             bool ta)
+                             bool ta,
+                             bool write_net_tracks)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setDebugNetName(net_name);
@@ -180,6 +182,7 @@ set_detailed_route_debug_cmd(const char* net_name,
   router->setDebugPaEdge(pa_edge);
   router->setDebugPaCommit(pa_commit);
   router->setDebugTA(ta);
+  router->setDebugWriteNetTracks(write_net_tracks);
 }
 
 void

@@ -39,10 +39,7 @@
 #include <map>
 #include <set>
 #include <string>
-
-namespace ord {
-class OpenRoad;
-}  // namespace ord
+#include <unordered_set>
 
 namespace utl {
 class Logger;
@@ -56,11 +53,19 @@ class dbNet;
 class dbITerm;
 }  // namespace odb
 
+namespace rsz {
+class Resizer;
+}
+
 namespace sta {
 class dbSta;
 class Clock;
 class dbNetwork;
 }  // namespace sta
+
+namespace stt {
+class SteinerTreeBuilder;
+}
 
 namespace cts {
 
@@ -79,7 +84,12 @@ class TritonCTS
   TritonCTS() = default;
   ~TritonCTS();
 
-  void init(ord::OpenRoad* openroad);
+  void init(utl::Logger* logger,
+            odb::dbDatabase* db,
+            sta::dbNetwork* network,
+            sta::dbSta* sta,
+            stt::SteinerTreeBuilder* st_builder,
+            rsz::Resizer* resizer);
   void runTritonCts();
   void reportCtsMetrics();
   CtsOptions* getParms() { return options_; }
@@ -118,14 +128,15 @@ class TritonCTS
   void computeITermPosition(odb::dbITerm* term, int& x, int& y) const;
   void countSinksPostDbWrite(TreeBuilder* builder,
                              odb::dbNet* net,
-                             unsigned& sinks,
+                             unsigned& sinks_cnt,
                              unsigned& leafSinks,
                              unsigned currWireLength,
                              double& sinkWireLength,
                              int& minDepth,
                              int& maxDepth,
                              int depth,
-                             bool fullTree);
+                             bool fullTree,
+                             const std::unordered_set<odb::dbITerm*>& sinks);
   std::pair<int, int> branchBufferCount(ClockInst* inst,
                                         int bufCounter,
                                         Clock& clockNet);
@@ -136,7 +147,6 @@ class TritonCTS
   bool isSink(odb::dbITerm* iterm);
   ClockInst* getClockFromInst(odb::dbInst* inst);
 
-  ord::OpenRoad* openroad_;
   sta::dbSta* openSta_;
   sta::dbNetwork* network_;
   Logger* logger_;

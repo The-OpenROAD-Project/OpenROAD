@@ -51,6 +51,7 @@
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
 #include "distributed/drUpdate.h"
+#include "distributed/paUpdate.h"
 #include "frDesign.h"
 #include "global.h"
 #include "odb/dbTypes.h"
@@ -430,6 +431,7 @@ void registerTypes(Archive& ar)
   // https://www.boost.org/doc/libs/1_76_0/libs/serialization/doc/serialization.html#derivedpointers
 
   ar.template register_type<drUpdate>();
+  ar.template register_type<paUpdate>();
   ar.template register_type<frRect>();
   ar.template register_type<frPathSeg>();
   ar.template register_type<frPatchWire>();
@@ -446,6 +448,9 @@ void registerTypes(Archive& ar)
   ar.template register_type<frMarker>();
   ar.template register_type<frVia>();
   ar.template register_type<frBox3D>();
+
+  ar.template register_type<frPinAccess>();
+  ar.template register_type<frAccessPoint>();
 }
 
 inline bool inBounds(int id, int sz)
@@ -501,6 +506,15 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         obj = design->getTopBlock()->getBlockages().at(id).get();
         break;
       }
+      case frcInst: {
+        int inst_id = -1;
+        (ar) & inst_id;
+        if (!inBounds(inst_id, design->getTopBlock()->getInsts().size())) {
+          exit(1);
+        }
+        obj = design->getTopBlock()->getInsts().at(inst_id).get();
+        break;
+      }
       case frcInstTerm: {
         int inst_id = 0;
         int id = 0;
@@ -525,6 +539,80 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         if (!inBounds(id, inst->getInstBlockages().size()))
           exit(1);
         obj = inst->getInstBlockages().at(id).get();
+        break;
+      }
+      case frcMaster: {
+        int id = 0;
+        (ar) & id;
+        id--;
+        if (!inBounds(id, design->getMasters().size()))
+          exit(1);
+        obj = design->getMasters().at(id).get();
+        break;
+      }
+      case frcMTerm: {
+        frBlockObject* blockObj;
+        serializeBlockObject(ar, blockObj);
+        frMaster* master = (frMaster*) blockObj;
+        int id = 0;
+        (ar) & id;
+        if (!inBounds(id, master->getTerms().size())) {
+          std::cout << "frcMTerm" << std::endl;
+          exit(1);
+        }
+        obj = master->getTerms().at(id).get();
+        break;
+      }
+      case frcMPin: {
+        frBlockObject* blockObj;
+        serializeBlockObject(ar, blockObj);
+        frMTerm* term = (frMTerm*) blockObj;
+        int id = 0;
+        (ar) & id;
+        if (!inBounds(id, term->getPins().size())) {
+          std::cout << "frcMPin" << std::endl;
+          exit(1);
+        }
+        obj = term->getPins().at(id).get();
+        break;
+      }
+      case frcBPin: {
+        frBlockObject* blockObj;
+        serializeBlockObject(ar, blockObj);
+        frBTerm* term = (frBTerm*) blockObj;
+        int id = 0;
+        (ar) & id;
+        if (!inBounds(id, term->getPins().size())) {
+          std::cout << "frcBPin" << std::endl;
+          exit(1);
+        }
+        obj = term->getPins().at(id).get();
+        break;
+      }
+      case frcPinAccess: {
+        frBlockObject* blockObj;
+        serializeBlockObject(ar, blockObj);
+        frPin* pin = (frPin*) blockObj;
+        int id = 0;
+        (ar) & id;
+        if (!inBounds(id, pin->getNumPinAccess())) {
+          std::cout << "frcPinAccess" << std::endl;
+          exit(1);
+        }
+        obj = pin->getPinAccess(id);
+        break;
+      }
+      case frcAccessPoint: {
+        frBlockObject* blockObj;
+        serializeBlockObject(ar, blockObj);
+        frPinAccess* pa = (frPinAccess*) blockObj;
+        int id = 0;
+        (ar) & id;
+        if (!inBounds(id, pa->getAccessPoints().size())) {
+          std::cout << "frcAccessPoint " << id << std::endl;
+          exit(1);
+        }
+        obj = pa->getAccessPoints().at(id).get();
         break;
       }
       case frcBlock:
@@ -568,6 +656,11 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         (ar) & id;
         break;
       }
+      case frcInst: {
+        int inst_id = ((frInst*) obj)->getId();
+        (ar) & inst_id;
+        break;
+      }
       case frcInstTerm: {
         int inst_id = ((frInstTerm*) obj)->getInst()->getId();
         int id = ((frInstTerm*) obj)->getIndexInOwner();
@@ -579,6 +672,46 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         int inst_id = ((frInstBlockage*) obj)->getInst()->getId();
         int id = ((frInstBlockage*) obj)->getIndexInOwner();
         (ar) & inst_id;
+        (ar) & id;
+        break;
+      }
+      case frcMaster: {
+        int id = ((frMaster*) obj)->getId();
+        (ar) & id;
+        break;
+      }
+      case frcMTerm: {
+        frBlockObject* master = ((frMTerm*) obj)->getMaster();
+        serializeBlockObject(ar, master);
+        int id = ((frMTerm*) obj)->getIndexInOwner();
+        (ar) & id;
+        break;
+      }
+      case frcMPin: {
+        frBlockObject* mterm = ((frMPin*) obj)->getTerm();
+        serializeBlockObject(ar, mterm);
+        int id = ((frMPin*) obj)->getId();
+        (ar) & id;
+        break;
+      }
+      case frcBPin: {
+        frBlockObject* bterm = ((frBPin*) obj)->getTerm();
+        serializeBlockObject(ar, bterm);
+        int id = ((frBPin*) obj)->getId();
+        (ar) & id;
+        break;
+      }
+      case frcPinAccess: {
+        frBlockObject* pin = ((frPinAccess*) obj)->getPin();
+        serializeBlockObject(ar, pin);
+        int id = ((frPinAccess*) obj)->getId();
+        (ar) & id;
+        break;
+      }
+      case frcAccessPoint: {
+        frBlockObject* pa = ((frAccessPoint*) obj)->getPinAccess();
+        serializeBlockObject(ar, pa);
+        int id = ((frAccessPoint*) obj)->getId();
         (ar) & id;
         break;
       }
