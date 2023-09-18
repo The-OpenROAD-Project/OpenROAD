@@ -123,11 +123,9 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj)
   stream >> obj._control_net;
   stream >> obj._power_domain;
   // User Code Begin >>
-  if (obj.getDatabase()->isSchema(db_schema_upf_power_switch_mapping)) {
-    stream >> obj._lib_cell;
-    stream >> obj._lib;
-    stream >> obj._port_map;
-  }
+  stream >> obj._lib_cell;
+  stream >> obj._lib;
+  stream >> obj._port_map;
   // User Code End >>
   return stream;
 }
@@ -256,21 +254,27 @@ void dbPowerSwitch::addPortMap(const std::string& model_port,
                                const std::string& switch_port)
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  dbMaster* master = (dbMaster*) dbMaster::getMaster(
-      dbLib::getLib((dbDatabase*) obj->getImpl()->getDatabase(), obj->_lib),
-      obj->_lib_cell);
+  dbMaster* master = getLibCell();
 
+  auto logger = obj->getImpl()->getLogger();
   if (!master) {
-    obj->getImpl()->getLogger()->error(
-        utl::ODB,
-        32001,
-        "Cannot map port {} to {} because no lib cell is added",
-        model_port,
-        switch_port);
+    logger->error(utl::ODB,
+                  32001,
+                  "Cannot map port {} to {} because no lib cell is added",
+                  model_port,
+                  switch_port);
     return;
   }
 
   dbMTerm* mterm = master->findMTerm(switch_port.c_str());
+  if (mterm == nullptr) {
+    logger->error(utl::ODB,
+                  33002,
+                  "Cannot map port {} to {} because the mterm is not found",
+                  model_port,
+                  switch_port);
+    return;
+  }
   obj->_port_map[model_port] = mterm->getImpl()->getOID();
 }
 
@@ -278,9 +282,7 @@ void dbPowerSwitch::addPortMap(const std::string& model_port, dbMTerm* mterm)
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
 
-  dbMaster* master = (dbMaster*) dbMaster::getMaster(
-      dbLib::getLib((dbDatabase*) obj->getImpl()->getDatabase(), obj->_lib),
-      obj->_lib_cell);
+  dbMaster* master = getLibCell();
 
   if (!master) {
     obj->getImpl()->getLogger()->error(
