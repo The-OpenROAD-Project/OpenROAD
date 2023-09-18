@@ -716,6 +716,8 @@ class Gui
   void setHeatMapSetting(const std::string& name,
                          const std::string& option,
                          const Renderer::Setting& value);
+  Renderer::Setting getHeatMapSetting(const std::string& name,
+                                      const std::string& option);
   void dumpHeatMap(const std::string& name, const std::string& file);
 
   // accessors for to add and remove commands needed to restore the state of the
