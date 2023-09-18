@@ -77,7 +77,7 @@ class extDistRC
                     int underMet,
                     int width,
                     int dist,
-                    int len,
+                    int dbUnit,
                     Logger* logger);
   void printDebugRC_sum(int len, int dbUnit, Logger* logger);
   void printDebugRC_diag(int met,
@@ -407,8 +407,6 @@ class extRCModel
   extRCModel(const char* name, Logger* logger);
   extProcess* getProcess();
   uint findBiggestDatarateIndex(double d);
-  int findVariationZero(double d);
-  int findClosestDataRate(uint n, double diff);
   ~extRCModel();
   void setExtMain(extMain* x);
   void createModelTable(uint n, uint layerCnt);
@@ -464,12 +462,12 @@ class extRCModel
   void setOptions(const char* topDir,
                   const char* pattern,
                   bool writeFiles,
-                  bool readSolver,
+                  bool readFiles,
                   bool runSolver);
   void setOptions(const char* topDir,
                   const char* pattern,
                   bool writeFiles,
-                  bool readSolver,
+                  bool readFiles,
                   bool runSolver,
                   bool keepFile);
   void runSolver(const char* solverOption);
@@ -544,7 +542,7 @@ class extRCModel
                  bool overUnder,
                  bool diag,
                  uint cornerCnt = 0,
-                 uint* cornerTable = NULL,
+                 const uint* cornerTable = NULL,
                  double dbFactor = 1.0);
   uint readMetalHeader(Ath__parser* parser,
                        uint& met,
@@ -1321,7 +1319,7 @@ class extMain
                      int* bb_ll,
                      int* bb_ur,
                      uint wtype,
-                     odb::dbCreateNetUtil* netUtil = NULL);
+                     odb::dbCreateNetUtil* createDbNet = NULL);
   uint addNets(uint dir,
                int* bb_ll,
                int* bb_ur,
@@ -1357,7 +1355,7 @@ class extMain
   uint getBucketNum(int base, int max, uint step, int xy);
   int getXY_gs(int base, int XY, uint minRes);
   uint couplingFlow(odb::Rect& extRect,
-                    uint ccDist,
+                    uint ccFlag,
                     extMeasure* m,
                     CoupleAndCompute coupleAndCompute);
   uint initPlanes(uint dir,
@@ -1366,12 +1364,15 @@ class extMain
                   uint layerCnt,
                   uint* pitchTable,
                   uint* widthTable,
-                  uint* dirTable,
+                  const uint* dirTable,
                   int* bb_ll);
 
-  bool isIncluded(odb::Rect& r, uint dir, int* ll, int* ur);
+  bool isIncluded(odb::Rect& r, uint dir, const int* ll, const int* ur);
   bool matchDir(uint dir, odb::Rect& r);
-  bool isIncludedInsearch(odb::Rect& r, uint dir, int* bb_ll, int* bb_ur);
+  bool isIncludedInsearch(odb::Rect& r,
+                          uint dir,
+                          const int* bb_ll,
+                          const int* bb_ur);
 
   uint makeTree(uint netId);
   uint runSolver(extMainOptions* opt, uint netId, int shapeId);

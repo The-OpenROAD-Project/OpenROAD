@@ -156,7 +156,7 @@ class extSpef
                   bool stopBeforeDnets,
                   bool noBackSlash,
                   bool parallel);
-  uint writeBlock(char* nodeCoord,
+  uint writeBlock(const char* nodeCoord,
                   const char* capUnit,
                   const char* resUnit,
                   bool stopAfterNameMap,
@@ -201,12 +201,12 @@ class extSpef
   void initCapTable(Ath__array1D<double*>* table);
   void deleteTableCap(Ath__array1D<double*>* table);
   void reinitCapTable(Ath__array1D<double*>* table, uint n);
-  void addCap(double* cap, double* totCap, uint n);
-  void addHalfCap(double* totCap, double* cap, uint n = 0);
+  void addCap(const double* cap, double* totCap, uint n);
+  void addHalfCap(double* totCap, const double* cap, uint n = 0);
   void getCaps(odb::dbNet* net, double* totCap);
   void resetCap(double* cap);
   void resetCap(double* cap, uint cnt);
-  void writeRCvalue(double* totCap, double units);
+  void writeRCvalue(const double* totCap, double units);
   uint writeCapPort(uint index);
   uint writeCapITerm(uint index);
   uint writeCapITerms();
@@ -275,7 +275,7 @@ class extSpef
   uint readMaxMapId(int* cornerCnt = NULL);
   void addNameMapId(uint ii, uint id);
   uint getNameMapId(uint ii);
-  void setCap(double* cap, uint n, double* totCap, uint startIndex);
+  void setCap(const double* cap, uint n, double* totCap, uint startIndex);
   void incrementCounter(double* cap, uint n);
   uint setRCCaps(odb::dbNet* net);
 
@@ -290,7 +290,7 @@ class extSpef
   uint writeCapPort(uint node, uint capIndex);
   uint writeCapITerm(uint node, uint capIndex);
   void writeNodeCap(uint netId, uint capIndex, uint ii);
-  uint writeRes(uint netId, odb::dbSet<odb::dbRSeg>& rcSet);
+  uint writeRes(uint netId, odb::dbSet<odb::dbRSeg>& rSet);
   bool writeCapNode(uint capNodeId, uint netId);
   bool writeCapNode(odb::dbCapNode* capNode, uint netId);
   uint getCapNodeId(char* nodeWord, char* capWord, uint* netId);
@@ -331,8 +331,8 @@ class extSpef
   bool isNetExcluded();
 
   uint computeCapsAdd2Target(odb::dbSet<odb::dbRSeg>& rcSet, double* totCap);
-  void copyCap(double* totCap, double* cap, uint n = 0);
-  void adjustCap(double* totCap, double* cap, uint n = 0);
+  void copyCap(double* totCap, const double* cap, uint n = 0);
+  void adjustCap(double* totCap, const double* cap, uint n = 0);
   void set_single_pi(bool v);
 
   uint getAppPrintLimit() { return _cc_app_print_limit; };
