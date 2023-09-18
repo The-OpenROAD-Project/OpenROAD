@@ -1948,6 +1948,33 @@ Resizer::findFloatingNets()
   return floating_nets;
 }
 
+PinSet *
+Resizer::findFloatingPins()
+{
+  PinSet *floating_pins = new PinSet(network_);
+
+  // Find instances with inputs without a net
+  LeafInstanceIterator *leaf_iter = network_->leafInstanceIterator();
+  while (leaf_iter->hasNext()) {
+    const Instance *inst = leaf_iter->next();
+    InstancePinIterator *pin_iter = network_->pinIterator(inst);
+    while (pin_iter->hasNext()) {
+      Pin *pin = pin_iter->next();
+      if (network_->direction(pin) != sta::PortDirection::input()) {
+        continue;
+      }
+      if (network_->net(pin) != nullptr) {
+        continue;
+      }
+      floating_pins->insert(pin);
+    }
+    delete pin_iter;
+  }
+  delete leaf_iter;
+
+  return floating_pins;
+}
+
 ////////////////////////////////////////////////////////////////
 
 string

@@ -30,12 +30,12 @@
           Routing      Original      Derated      Resource
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
-li1        Vertical        21660         21039          2.87%
-met1       Horizontal      27436         27053          1.40%
-met2       Vertical        21660         21571          0.41%
-met3       Horizontal      12996         12985          0.08%
-met4       Vertical         8664          8732          -0.78%
-met5       Horizontal       2888          2886          0.07%
+li1        Vertical        22154         21039          5.03%
+met1       Horizontal      28120         27053          3.79%
+met2       Vertical        22154         21571          2.63%
+met3       Horizontal      13338         12985          2.65%
+met4       Vertical         8968          8732          2.63%
+met5       Horizontal       2964          2886          2.63%
 ---------------------------------------------------------------
 
 [INFO GRT-0197] Via related to pin nodes: 40
