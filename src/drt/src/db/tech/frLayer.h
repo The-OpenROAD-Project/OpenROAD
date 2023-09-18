@@ -541,6 +541,14 @@ class frLayer
       return (!cutConstraints.empty());
     }
   }
+  bool haslef58CutSpacing(bool samenet = false) const
+  {
+    if (samenet) {
+      return (!lef58CutSpacingSamenetConstraints.empty());
+    } else {
+      return (!lef58CutSpacingConstraints.empty());
+    }
+  }
   bool hasInterLayerCutSpacing(frLayerNum layerNum, bool samenet = false) const
   {
     if (samenet) {
