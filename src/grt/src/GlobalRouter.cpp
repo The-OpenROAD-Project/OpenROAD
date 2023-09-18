@@ -2754,8 +2754,9 @@ std::vector<Net*> GlobalRouter::initNetlist()
       // add clock nets not connected to a leaf first
       if (net) {
         bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
-        if (is_non_leaf_clock)
+        if (is_non_leaf_clock) {
           clk_nets.push_back(net);
+        }
       }
     }
 
