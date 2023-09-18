@@ -1176,8 +1176,9 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
                 hasViol = true;
               }
             }
-            if (hasViol)
+            if (hasViol) {
               break;
+            }
           }
         }
 
