@@ -7589,10 +7589,7 @@ class dbPowerSwitch : public dbObject
   std::vector<std::string> getOutputSupplyPorts();
   std::vector<std::string> getOnStates();
 
-  // Returns all lib cells that were defined in the upf for this power switch
-  // In case of multiple cells, the first one is the cell associated with the
-  // dbMTerms defined
-  //  in the port map
+  // Returns library cell that was defined in the upf for this power switch
   dbMaster* getLibCell();
 
   // returns a map associating the model ports to actual instances of dbMTerms
