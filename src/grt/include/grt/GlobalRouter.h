@@ -216,6 +216,9 @@ class GlobalRouter : public ant::GlobalRouteSource
 
   double dbuToMicrons(int64_t dbu);
 
+  void addNetToRoute(odb::dbNet* db_net);
+  std::vector<odb::dbNet*> getNetsToRoute();
+
   // functions for random grt
   void setSeed(int seed) { seed_ = seed; }
   void setCapacitiesPerturbationPercentage(float percentage);
@@ -438,6 +441,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   odb::dbBlock* block_;
 
   std::set<odb::dbNet*> dirty_nets_;
+  std::vector<odb::dbNet*> nets_to_route_;
 
   RepairAntennas* repair_antennas_;
   std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_;

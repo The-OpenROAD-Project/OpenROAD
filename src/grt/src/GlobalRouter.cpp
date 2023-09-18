@@ -3426,6 +3426,16 @@ double GlobalRouter::dbuToMicrons(int64_t dbu)
   return (double) dbu / (block_->getDbUnitsPerMicron());
 }
 
+void GlobalRouter::addNetToRoute(odb::dbNet* db_net)
+{
+  nets_to_route_.push_back(db_net);
+}
+
+std::vector<odb::dbNet*> GlobalRouter::getNetsToRoute()
+{
+  return nets_to_route_;
+}
+
 std::map<int, odb::dbTechVia*> GlobalRouter::getDefaultVias(
     int max_routing_layer)
 {

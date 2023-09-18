@@ -210,6 +210,12 @@ repair_antennas(odb::dbMTerm* diode_mterm, int iterations, float ratio_margin)
 }
 
 void
+add_net_to_route(odb::dbNet* net)
+{
+  getGlobalRouter()->addNetToRoute(net);
+}
+
+void
 highlight_net_route(odb::dbNet *net, bool show_pin_locations)
 {
   if (!gui::Gui::enabled()) {
