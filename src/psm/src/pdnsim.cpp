@@ -127,6 +127,36 @@ void PDNSim::writeSpice(const std::string& file)
   }
 }
 
+void PDNSim::saveIRDrop(psm::IRSolver* ir_solver)
+{
+  GMat* gmat_obj = ir_solver->getGMat();
+
+  IRDropByLayer ir_drop;
+  std::vector<Node*> nodes = gmat_obj->getAllNodes();
+  int vsize;
+  vsize = nodes.size();
+  odb::dbTech* tech = db_->getTech();
+  for (int n = 0; n < vsize; n++) {
+    Node* node = nodes[n];
+    int node_layer_num = node->getLayerNum();
+    Point node_loc = node->getLoc();
+    odb::Point point = odb::Point(node_loc.getX(), node_loc.getY());
+    double voltage = node->getVoltage();
+    odb::dbTechLayer* node_layer = tech->findRoutingLayer(node_layer_num);
+    // Absolute is needed for GND nets. In case of GND net voltage is higher
+    // than supply.
+    ir_drop[node_layer][point]
+        = std::abs(ir_solver->getSupplyVoltageSrc() - voltage);
+  }
+  ir_drop_ = ir_drop;
+  min_resolution_ = ir_solver->getMinimumResolution();
+
+  heatmap_->update();
+  if (debug_gui_) {
+    debug_gui_->setSources(ir_solver->getSources());
+  }
+}
+
 void PDNSim::analyzePowerGrid(const std::string& voltage_file,
                               bool enable_em,
                               const std::string& em_file,
@@ -135,6 +165,7 @@ void PDNSim::analyzePowerGrid(const std::string& voltage_file,
   auto irsolve_h = getIRSolver(enable_em);
 
   if (!irsolve_h->build(error_file)) {
+    saveIRDrop(irsolve_h.get());
     logger_->error(
         utl::PSM, 78, "IR drop setup failed.  Analysis can't proceed.");
   }
@@ -188,30 +219,7 @@ void PDNSim::analyzePowerGrid(const std::string& voltage_file,
     }
   }
 
-  IRDropByLayer ir_drop;
-  std::vector<Node*> nodes = gmat_obj->getAllNodes();
-  int vsize;
-  vsize = nodes.size();
-  odb::dbTech* tech = db_->getTech();
-  for (int n = 0; n < vsize; n++) {
-    Node* node = nodes[n];
-    int node_layer_num = node->getLayerNum();
-    Point node_loc = node->getLoc();
-    odb::Point point = odb::Point(node_loc.getX(), node_loc.getY());
-    double voltage = node->getVoltage();
-    odb::dbTechLayer* node_layer = tech->findRoutingLayer(node_layer_num);
-    // Absolute is needed for GND nets. In case of GND net voltage is higher
-    // than supply.
-    ir_drop[node_layer][point]
-        = std::abs(irsolve_h->getSupplyVoltageSrc() - voltage);
-  }
-  ir_drop_ = ir_drop;
-  min_resolution_ = irsolve_h->getMinimumResolution();
-
-  heatmap_->update();
-  if (debug_gui_) {
-    debug_gui_->setSources(irsolve_h->getSources());
-  }
+  saveIRDrop(irsolve_h.get());
 }
 
 bool PDNSim::checkConnectivity(const std::string& error_file)
