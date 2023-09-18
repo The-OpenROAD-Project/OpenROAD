@@ -481,13 +481,13 @@ void HierRTLMP::hierRTLMacroPlacer()
   createDataFlow();
 
   // Create physical hierarchy tree in a post-order DFS manner
-  logger_->report("\nPerform Clustering..");
+  logger_->info(MPL, 24, "Perform Clustering..");
   // add two enhancements to handle corner cases
   // (1) the design only has fake macros (for academic fake testcases)
   // (2) the design has on logical hierarchy (for academic fake testcases)
   if (metrics_->getNumStdCell() == 0) {
-    logger_->report("[Warning] This design has no standard cells ..");
-    logger_->report("Each macro is treated as a single cluster");
+    logger_->warn(MPL, 25, "This design has no standard cells ..");
+    logger_->warn(MPL, 26, "Each macro is treated as a single cluster");
     auto module = block_->getTopModule();
     for (odb::dbInst* inst : module->getInsts()) {
       const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
@@ -609,7 +609,7 @@ void HierRTLMP::hierRTLMacroPlacer()
     }
   }
   if (macro_only_flag == true) {
-    logger_->report("The design only has macros.\n");
+    logger_->info(MPL, 27, "The design only has macros.\n");
     hardMacroClusterMacroPlacement(root_cluster_);
   } else {
     debugPrint(logger_,
@@ -624,7 +624,7 @@ void HierRTLMP::hierRTLMacroPlacer()
     //
     // Perform macro placement in a top-down manner (pre-order DFS)
     //
-    logger_->report("\nPerform Multilevel macro placement...");
+    logger_->info(MPL, 28, "Perform Multilevel macro placement...");
     if (bus_planning_flag_ == true) {
       multiLevelMacroPlacement(root_cluster_);
     } else {
@@ -654,7 +654,7 @@ void HierRTLMP::hierRTLMacroPlacer()
   }
   cluster_map_.clear();
 
-  logger_->report("\nnumber of updated macros : {}", num_updated_macros_);
+  logger_->report("number of updated macros : {}", num_updated_macros_);
   logger_->report("number of macros in HardMacroCluster : {}",
                   num_hard_macros_cluster_);
 }
@@ -3115,7 +3115,9 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   const float outline_height = parent->getHeight();
   const float ux = lx + outline_width;
   const float uy = ly + outline_height;
-  logger_->report(
+  logger_->info(
+      MPL,
+      30,
       "[MultiLevelMacroPlacement] Working on children of cluster: {}, Outline "
       "{}, {}  {}, {}",
       parent->getName(),
@@ -3495,7 +3497,11 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   std::vector<SACoreSoftMacro*>
       sa_containers;  // store all the SA runs to avoid memory leakage
   float best_cost = std::numeric_limits<float>::max();
-  logger_->report("[MultiLevelMacroPlacement] Start Simulated Annealing Core");
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "[MultiLevelMacroPlacement] Start Simulated Annealing Core");
   while (remaining_runs > 0) {
     std::vector<SACoreSoftMacro*> sa_vector;
     run_thread
@@ -3605,7 +3611,11 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     }
     remaining_runs -= run_thread;
   }
-  logger_->report("[MultiLevelMacroPlacement] Finish Simulated Annealing Core");
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "[MultiLevelMacroPlacement] Finish Simulated Annealing Core");
   if (best_sa == nullptr) {
     //
     // Error condition, print all the results
@@ -3713,8 +3723,11 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     best_sa = nullptr;
     sa_containers.clear();
     best_cost = std::numeric_limits<float>::max();
-    logger_->report(
-        "[MultiLevelMacroPlacement] Start Simulated Annealing Core");
+    debugPrint(logger_,
+               MPL,
+               "macro_placement",
+               1,
+               "[MultiLevelMacroPlacement] Start Simulated Annealing Core");
     while (remaining_runs > 0) {
       std::vector<SACoreSoftMacro*> sa_vector;
       run_thread
@@ -3975,7 +3988,9 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
   const float outline_height = parent->getHeight();
   const float ux = lx + outline_width;
   const float uy = ly + outline_height;
-  logger_->report(
+  logger_->info(
+      MPL,
+      31,
       "[MultiLevelMacroPlacement] Working on children of cluster: {}, Outline "
       "{}, {}  {}, {}",
       parent->getName(),
@@ -4228,7 +4243,11 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
   std::vector<SACoreSoftMacro*>
       sa_containers;  // store all the SA runs to avoid memory leakage
   float best_cost = std::numeric_limits<float>::max();
-  logger_->report("[MultiLevelMacroPlacement] Start Simulated Annealing Core");
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "[MultiLevelMacroPlacement] Start Simulated Annealing Core");
   while (remaining_runs > 0) {
     std::vector<SACoreSoftMacro*> sa_vector;
     run_thread
@@ -4338,7 +4357,11 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
     }
     remaining_runs -= run_thread;
   }
-  logger_->report("[MultiLevelMacroPlacement] Finish Simulated Annealing Core");
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "[MultiLevelMacroPlacement] Finish Simulated Annealing Core");
   if (best_sa == nullptr) {
     // print all the results
     logger_->report(
@@ -4369,7 +4392,11 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
            << std::endl;
     }
     file.close();
-    logger_->report(
+    debugPrint(
+        logger_,
+        MPL,
+        "macro_placement",
+        1,
         "[MultiLevelMacroPlacement] Finish Simulated Annealing for cluster "
         "{}\n",
         parent->getName());
@@ -4454,7 +4481,9 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   const float outline_height = parent->getHeight();
   const float ux = lx + outline_width;
   const float uy = ly + outline_height;
-  logger_->report(
+  logger_->info(
+      MPL,
+      32,
       "[MultiLevelMacroPlacement] Working on children of cluster: {}, Outline "
       "{}, {}  {}, {}",
       parent->getName(),
@@ -4695,7 +4724,11 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   std::vector<SACoreSoftMacro*>
       sa_containers;  // store all the SA runs to avoid memory leakage
   float best_cost = std::numeric_limits<float>::max();
-  logger_->report("[EnhancedMacroPlacement] Start Simulated Annealing Core");
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "[EnhancedMacroPlacement] Start Simulated Annealing Core");
   while (remaining_runs > 0) {
     std::vector<SACoreSoftMacro*> sa_vector;
     run_thread
@@ -4805,7 +4838,11 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
     }
     remaining_runs -= run_thread;
   }
-  logger_->report("[EnhancedMacroPlacement] Finish Simulated Annealing Core");
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "[EnhancedMacroPlacement] Finish Simulated Annealing Core");
   if (best_sa == nullptr) {
     // print all the results
     logger_->report(
@@ -4839,7 +4876,9 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   }
   file.close();
 
-  logger_->report(
+  logger_->info(
+      MPL,
+      23,
       "[MultiLevelMacroPlacement] Finish Simulated Annealing for cluster {}\n",
       parent->getName());
   best_sa->printResults();
