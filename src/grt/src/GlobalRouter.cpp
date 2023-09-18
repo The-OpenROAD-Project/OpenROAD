@@ -2755,8 +2755,15 @@ std::vector<Net*> GlobalRouter::initNetlist()
 {
   initClockNets();
 
+  std::vector<odb::dbNet*> db_nets;
+  if (nets_to_route_.empty()) {
+    db_nets.insert(
+        db_nets.end(), block_->getNets().begin(), block_->getNets().end());
+  } else {
+    db_nets = nets_to_route_;
+  }
   std::vector<Net*> clk_nets;
-  for (odb::dbNet* db_net : block_->getNets()) {
+  for (odb::dbNet* db_net : db_nets) {
     Net* net = addNet(db_net);
     // add clock nets not connected to a leaf first
     if (net) {
@@ -3424,6 +3431,16 @@ int GlobalRouter::computeMaxRoutingLayer()
 double GlobalRouter::dbuToMicrons(int64_t dbu)
 {
   return (double) dbu / (block_->getDbUnitsPerMicron());
+}
+
+void GlobalRouter::addNetToRoute(odb::dbNet* db_net)
+{
+  nets_to_route_.push_back(db_net);
+}
+
+std::vector<odb::dbNet*> GlobalRouter::getNetsToRoute()
+{
+  return nets_to_route_;
 }
 
 std::map<int, odb::dbTechVia*> GlobalRouter::getDefaultVias(
