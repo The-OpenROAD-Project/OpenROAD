@@ -64,6 +64,7 @@ target_sources(gpl
     src/timingBase.cpp
     src/graphics.cpp
     src/solver.cpp
+    src/mbff.cpp
 )
 
 messages(TARGET gpl)
