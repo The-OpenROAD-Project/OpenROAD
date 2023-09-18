@@ -57,6 +57,8 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   void saStep(const std::vector<HardMacro>& macros) override;
   void endSA() override;
 
+  void finishedClustering(Cluster* root) override;
+
   void setAreaPenalty(float area) override;
   void setOutlinePenalty(float outline_penalty,
                          float outline_width,
@@ -73,6 +75,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
 
  private:
   void resetPenalties();
+  void drawCluster(Cluster* cluster, gui::Painter& painter);
 
   template <typename T>
   void report(const char* name, const std::optional<T>& value);
@@ -94,6 +97,8 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   std::optional<float> outline_height_;
   float best_norm_cost_ = 0;
   int skipped_ = 0;
+
+  Cluster* root_ = nullptr;
 };
 
 }  // namespace mpl2
