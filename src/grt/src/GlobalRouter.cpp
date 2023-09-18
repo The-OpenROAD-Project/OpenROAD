@@ -2743,34 +2743,45 @@ static bool nameLess(const Net* a, const Net* b)
 
 std::vector<Net*> GlobalRouter::initNetlist()
 {
-  initClockNets();
+  std::vector<Net*> nets;
 
-  std::vector<Net*> clk_nets;
-  for (odb::dbNet* db_net : block_->getNets()) {
-    Net* net = addNet(db_net);
-    // add clock nets not connected to a leaf first
-    if (net) {
+  if (nets_to_route_.empty()) {
+    initClockNets();
+
+    std::vector<Net*> clk_nets;
+    for (odb::dbNet* db_net : block_->getNets()) {
+      Net* net = addNet(db_net);
+      // add clock nets not connected to a leaf first
+      if (net) {
+        bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
+        if (is_non_leaf_clock)
+          clk_nets.push_back(net);
+      }
+    }
+
+    std::vector<Net*> non_clk_nets;
+    for (auto [ignored, net] : db_net_map_) {
       bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
-      if (is_non_leaf_clock)
-        clk_nets.push_back(net);
+      if (!is_non_leaf_clock) {
+        non_clk_nets.push_back(net);
+      }
+    }
+
+    // Sort the nets to ensure stable results, but keep clk nets
+    // at the front.
+    std::sort(clk_nets.begin(), clk_nets.end(), nameLess);
+    std::sort(non_clk_nets.begin(), non_clk_nets.end(), nameLess);
+
+    nets = clk_nets;
+    nets.insert(nets.end(), non_clk_nets.begin(), non_clk_nets.end());
+  } else {
+    for (odb::dbNet* db_net : nets_to_route_) {
+      Net* net = addNet(db_net);
+      if (net) {
+        nets.push_back(net);
+      }
     }
   }
-
-  std::vector<Net*> non_clk_nets;
-  for (auto [ignored, net] : db_net_map_) {
-    bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
-    if (!is_non_leaf_clock) {
-      non_clk_nets.push_back(net);
-    }
-  }
-
-  // Sort the nets to ensure stable results, but keep clk nets
-  // at the front.
-  std::sort(clk_nets.begin(), clk_nets.end(), nameLess);
-  std::sort(non_clk_nets.begin(), non_clk_nets.end(), nameLess);
-
-  std::vector<Net*> nets = clk_nets;
-  nets.insert(nets.end(), non_clk_nets.begin(), non_clk_nets.end());
 
   return nets;
 }
