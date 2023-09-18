@@ -546,7 +546,7 @@ class frLayer
     if (samenet) {
       return (!lef58CutSpacingSamenetConstraints.empty());
     }
-    return (!lef58CutSpacingConstraints.empty());
+    return !lef58CutSpacingConstraints.empty();
   }
   bool hasInterLayerCutSpacing(frLayerNum layerNum, bool samenet = false) const
   {
