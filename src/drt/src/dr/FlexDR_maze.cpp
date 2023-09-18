@@ -1040,7 +1040,8 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
   auto lNum = gridGraph_.getLayerNum(z) + 1;
   auto cutLayer = getTech()->getLayer(lNum);
   if (!cutLayer->hasCutSpacing()
-      && !cutLayer->hasLef58DiffNetCutSpcTblConstraint()) {
+      && !cutLayer->hasLef58DiffNetCutSpcTblConstraint()
+      && !cutLayer->haslef58CutSpacing()) {
     return;
   }
   // obj1 = curr obj
@@ -1066,6 +1067,10 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
   if (lef58con != nullptr) {
     lef58conSpc = lef58con->getDefaultSpacing();
     bloatDist = max(bloatDist, std::max(lef58conSpc.first, lef58conSpc.second));
+  }
+
+  for (auto con : cutLayer->getLef58CutSpacingConstraints()) {
+    bloatDist = max(bloatDist, con->getCutSpacing());
   }
 
   FlexMazeIdx mIdx1;
@@ -1157,6 +1162,23 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
             currDistSquare = distSquare;
           if (currDistSquare < reqDistSquare)
             hasViol = true;
+        }
+        if (!hasViol) {
+          for (auto con : cutLayer->getLef58CutSpacingConstraints()) {
+            reqDistSquare = con->getCutSpacing();
+            reqDistSquare *= con->getCutSpacing();
+            currDistSquare = con->isCenterToCenter() ? c2cSquare : distSquare;
+            if (con->isSameNet()) {
+              continue;
+            }
+            if (con->isParallelOverlap()) {
+              if (prl > 0 && currDistSquare < reqDistSquare) {
+                hasViol = true;
+              }
+            }
+            if (hasViol)
+              break;
+          }
         }
 
         if (hasViol) {
