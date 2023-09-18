@@ -7579,8 +7579,7 @@ class dbPowerSwitch : public dbObject
   void addOutSupplyPort(const std::string& out_port);
   void addControlPort(const std::string& control_port);
   void addOnState(const std::string& on_state);
-  void addLibCell(const std::string& lib_cell);
-  void addLibCell(dbMaster* master);
+  void setLibCell(dbMaster* master);
   void addPortMap(const std::string& model_port,
                   const std::string& switch_port);
 
