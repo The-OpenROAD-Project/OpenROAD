@@ -245,7 +245,7 @@ void definNet::nonDefaultRule(const char* rule)
 
     if (def_rule == nullptr) {
       _logger->warn(utl::ODB,
-                    101,
+                    123,
                     "error: undefined NONDEFAULTRULE ({}) referenced",
                     rule);
       ++_errors;
