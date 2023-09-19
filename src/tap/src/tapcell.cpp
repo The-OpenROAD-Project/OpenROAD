@@ -912,7 +912,7 @@ Tapcell::CornerMap Tapcell::placeEndcapCorner(const Tapcell::Corner& corner,
       if (row_orient == odb::dbOrientType::R0) {
         master = options.right_top_edge;
       } else {
-        master = options.left_bottom_edge;
+        master = options.right_bottom_edge;
       }
       break;
     case CornerType::Unknown:
@@ -939,41 +939,41 @@ Tapcell::CornerMap Tapcell::placeEndcapCorner(const Tapcell::Corner& corner,
   const int width = master->getWidth();
   const int height = master->getHeight();
 
-  odb::dbOrientType orient = row_orient;
+  // Adjust placement position
   odb::Point ll = corner.pt;
   switch (corner.type) {
     case CornerType::OuterBottomLeft:
+    case CornerType::InnerTopRight:
       break;
     case CornerType::OuterBottomRight:
+    case CornerType::InnerTopLeft:
       ll.addX(-width);
-      if (master->getSymmetryY()) {
-        orient = orient.flipY();
-      }
       break;
     case CornerType::OuterTopRight:
-      ll.addX(-width);
-      ll.addY(-height);
-      if (master->getSymmetryY()) {
-        orient = orient.flipY();
-      }
-      break;
-    case CornerType::OuterTopLeft:
-      ll.addY(-height);
-      break;
     case CornerType::InnerBottomLeft:
       ll.addX(-width);
       ll.addY(-height);
       break;
+    case CornerType::OuterTopLeft:
     case CornerType::InnerBottomRight:
       ll.addY(-height);
-      if (master->getSymmetryY()) {
-        orient = orient.flipY();
-      }
       break;
-    case CornerType::InnerTopLeft:
-      ll.addX(-width);
+    case CornerType::Unknown:
       break;
+  }
+
+  // Adjust orientation
+  odb::dbOrientType orient = row_orient;
+  switch (corner.type) {
+    case CornerType::OuterBottomLeft:
+    case CornerType::OuterTopLeft:
+    case CornerType::InnerBottomRight:
     case CornerType::InnerTopRight:
+      break;
+    case CornerType::OuterBottomRight:
+    case CornerType::OuterTopRight:
+    case CornerType::InnerBottomLeft:
+    case CornerType::InnerTopLeft:
       if (master->getSymmetryY()) {
         orient = orient.flipY();
       }
@@ -1373,28 +1373,32 @@ EndcapCellOptions Tapcell::correctEndcapOptions(const Options& options) const
 
   // Endcaps
   bopts.left_edge = options.endcap_master;
+  bopts.right_edge = options.endcap_master;
 
-  if (options.tap_nwin3_master) {
-    bopts.top_edge.push_back(options.tap_nwin3_master);
+  for (auto* master : {options.tap_nwin3_master,
+                       options.tap_nwin2_master,
+                       options.tap_nwintie_master}) {
+    if (master != nullptr) {
+      bopts.bottom_edge.push_back(master);
+    }
   }
-  if (options.tap_nwin2_master) {
-    bopts.top_edge.push_back(options.tap_nwin2_master);
-  }
-  if (options.tap_nwintie_master) {
-    bopts.top_edge.push_back(options.tap_nwintie_master);
-  }
-  if (options.tap_nwout3_master) {
-    bopts.bottom_edge.push_back(options.tap_nwout3_master);
-  }
-  if (options.tap_nwout2_master) {
-    bopts.bottom_edge.push_back(options.tap_nwout2_master);
-  }
-  if (options.tap_nwouttie_master) {
-    bopts.bottom_edge.push_back(options.tap_nwouttie_master);
+  for (auto* master : {options.tap_nwout3_master,
+                       options.tap_nwout2_master,
+                       options.tap_nwouttie_master}) {
+    if (master != nullptr) {
+      bopts.top_edge.push_back(master);
+    }
   }
 
   bopts.left_top_corner = options.cnrcap_nwout_master;
-  bopts.left_top_edge = options.incnrcap_nwout_master;
+  bopts.left_bottom_corner = options.cnrcap_nwin_master;
+  bopts.right_top_corner = options.cnrcap_nwout_master;
+  bopts.right_bottom_corner = options.cnrcap_nwin_master;
+
+  bopts.left_top_edge = options.incnrcap_nwin_master;
+  bopts.left_bottom_edge = options.incnrcap_nwout_master;
+  bopts.right_top_edge = options.incnrcap_nwin_master;
+  bopts.right_bottom_edge = options.incnrcap_nwout_master;
 
   return bopts;
 }

@@ -32,7 +32,7 @@ PINS 1 ;
 END PINS
 NETS 1 ;
     - clk ( PIN clk ) ( clkbuf_0_clk A ) ( clkbuf_2_3__f_clk A ) ( clkbuf_2_2__f_clk A ) ( clkbuf_2_1__f_clk A ) + USE SIGNAL
-      + ROUTED met3 ( 1250 155030 ) M3M4_PR ( * 155030 ) M4M5_PR
+      + ROUTED met3 ( 1250 155030 ) M3M4_PR M4M5_PR
       NEW met3 ( 1440 155030 0 ) ( 6960 * )
       NEW met2 ( 6960 155030 ) ( * 155215 )
       NEW met1 ( 112080 154845 ) ( * 155215 )

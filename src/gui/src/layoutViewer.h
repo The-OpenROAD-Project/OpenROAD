@@ -377,6 +377,7 @@ class LayoutViewer : public QWidget
   QPoint mouse_press_pos_;
   QPoint mouse_move_pos_;
   bool rubber_band_showing_;
+  bool is_view_dragging_;
   Gui* gui_;
 
   std::function<bool(void)> usingDBU_;

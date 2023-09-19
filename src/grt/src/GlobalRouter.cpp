@@ -791,7 +791,12 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
 
   for (Net* net : nets) {
     int pin_count = net->getNumPins();
-    if (pin_count > 1 && !net->isLocal() && !net->hasWires()) {
+    int min_layer, max_layer;
+    getNetLayerRange(net, min_layer, max_layer);
+    odb::dbTechLayer* max_routing_layer
+        = db_->getTech()->findRoutingLayer(max_layer);
+    if (pin_count > 1 && !net->isLocal()
+        && (!net->hasWires() || net->hasStackedVias(max_routing_layer))) {
       if (pin_count < min_degree) {
         min_degree = pin_count;
       }
@@ -1002,12 +1007,14 @@ void GlobalRouter::computeGridAdjustments(int min_routing_layer,
     fastroute_->setNumAdjustments(num_adjustments);
 
     if (!grid_->isPerfectRegularX()) {
+      fastroute_->setLastColVCapacity(new_v_capacity, level - 1);
       for (int i = 1; i < y_grids; i++) {
         fastroute_->addAdjustment(
             x_grids - 1, i - 1, x_grids - 1, i, level, new_v_capacity, false);
       }
     }
     if (!grid_->isPerfectRegularY()) {
+      fastroute_->setLastRowHCapacity(new_h_capacity, level - 1);
       for (int i = 1; i < x_grids; i++) {
         fastroute_->addAdjustment(
             i - 1, y_grids - 1, i, y_grids - 1, level, new_h_capacity, false);
@@ -1154,7 +1161,7 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
                      * (1 - adjustment);
         grid_->updateHorizontalEdgesCapacities(layer - 1, newCap);
 
-        for (int y = 1; y < y_grids; y++) {
+        for (int y = 1; y <= y_grids; y++) {
           for (int x = 1; x < x_grids; x++) {
             int edge_cap
                 = fastroute_->getEdgeCapacity(x - 1, y - 1, x, y - 1, layer);
@@ -1174,7 +1181,7 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
             = grid_->getVerticalEdgesCapacities()[layer - 1] * (1 - adjustment);
         grid_->updateVerticalEdgesCapacities(layer - 1, newCap);
 
-        for (int x = 1; x < x_grids; x++) {
+        for (int x = 1; x <= x_grids; x++) {
           for (int y = 1; y < y_grids; y++) {
             int edge_cap
                 = fastroute_->getEdgeCapacity(x - 1, y - 1, x - 1, y, layer);
@@ -1890,7 +1897,12 @@ void GlobalRouter::addRemainingGuides(NetRouteMap& routes,
                                       int max_routing_layer)
 {
   for (Net* net : nets) {
-    if (net->getNumPins() > 1 && !net->hasWires()) {
+    int min_layer, max_layer;
+    getNetLayerRange(net, min_layer, max_layer);
+    odb::dbTechLayer* max_tech_layer
+        = db_->getTech()->findRoutingLayer(max_layer);
+    if (net->getNumPins() > 1
+        && (!net->hasWires() || net->hasStackedVias(max_tech_layer))) {
       odb::dbNet* db_net = net->getDbNet();
       GRoute& route = routes[db_net];
       if (route.empty()) {
@@ -2407,6 +2419,9 @@ void GlobalRouter::initGrid(int max_layer)
   bool perfect_regular_x = (x_grids * tile_size) == upper_rightX;
   bool perfect_regular_y = (y_grids * tile_size) == upper_rightY;
 
+  fastroute_->setRegularX(perfect_regular_x);
+  fastroute_->setRegularY(perfect_regular_y);
+
   int num_layers = routing_layers_.size();
   if (max_layer > -1) {
     num_layers = max_layer;
@@ -2740,8 +2755,15 @@ std::vector<Net*> GlobalRouter::initNetlist()
 {
   initClockNets();
 
+  std::vector<odb::dbNet*> db_nets;
+  if (nets_to_route_.empty()) {
+    db_nets.insert(
+        db_nets.end(), block_->getNets().begin(), block_->getNets().end());
+  } else {
+    db_nets = nets_to_route_;
+  }
   std::vector<Net*> clk_nets;
-  for (odb::dbNet* db_net : block_->getNets()) {
+  for (odb::dbNet* db_net : db_nets) {
     Net* net = addNet(db_net);
     // add clock nets not connected to a leaf first
     if (net) {
@@ -3281,11 +3303,11 @@ int GlobalRouter::findInstancesObstructions(
             pin_box = odb::Rect(lower_bound, upper_bound);
             if (!die_area.contains(pin_box)
                 && !mterm->getSigType().isSupply()) {
-              logger_->error(GRT,
-                             39,
-                             "Found pin {} outside die area in instance {}.",
-                             mterm->getConstName(),
-                             inst->getConstName());
+              logger_->warn(GRT,
+                            39,
+                            "Found pin {} outside die area in instance {}.",
+                            mterm->getConstName(),
+                            inst->getConstName());
               pin_out_of_die_count++;
             }
             applyObstructionAdjustment(pin_box, box->getTechLayer());
@@ -3297,7 +3319,7 @@ int GlobalRouter::findInstancesObstructions(
 
   if (pin_out_of_die_count > 0) {
     if (verbose_)
-      logger_->warn(
+      logger_->error(
           GRT, 28, "Found {} pins outside die area.", pin_out_of_die_count);
   }
 
@@ -3409,6 +3431,16 @@ int GlobalRouter::computeMaxRoutingLayer()
 double GlobalRouter::dbuToMicrons(int64_t dbu)
 {
   return (double) dbu / (block_->getDbUnitsPerMicron());
+}
+
+void GlobalRouter::addNetToRoute(odb::dbNet* db_net)
+{
+  nets_to_route_.push_back(db_net);
+}
+
+std::vector<odb::dbNet*> GlobalRouter::getNetsToRoute()
+{
+  return nets_to_route_;
 }
 
 std::map<int, odb::dbTechVia*> GlobalRouter::getDefaultVias(

@@ -340,6 +340,26 @@ proc repair_antennas { args } {
   }
 }
 
+sta::define_cmd_args "set_nets_to_route" { net_names }
+
+proc set_nets_to_route { args } {
+  sta::parse_key_args "set_nets_to_route" args \
+                 keys {} \
+                 flags {}
+  sta::check_argc_eq1 "set_nets_to_route" $args
+  set net_names [lindex $args 0]
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    utl::error GRT 252 "Missing dbBlock."
+  }
+
+  foreach net [get_nets $net_names] {
+    if { $net != "NULL" } {
+      grt::add_net_to_route [sta::sta_to_db_net $net]
+    }
+  }
+}
+
 sta::define_cmd_args "read_guides" { file_name }
 
 proc read_guides { args } {
