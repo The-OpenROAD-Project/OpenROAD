@@ -365,13 +365,12 @@ class GlobalRouter : public ant::GlobalRouteSource
   void computeObstructionsAdjustments();
   void findLayerExtensions(std::vector<int>& layer_extensions);
   int findObstructions(odb::Rect& die_area);
-  bool layerIsBlocked(
-      int layer,
-      odb::dbTechLayerDir& direction,
-      const std::unordered_map<int, odb::Rect>& macro_obs_per_layer,
-      odb::Rect& extended_obs);
+  bool layerIsBlocked(int layer,
+                      const std::unordered_map<int, std::vector<odb::Rect>>&
+                          macro_obs_per_layer,
+                      std::vector<odb::Rect>& extended_obs);
   void extendObstructions(
-      std::unordered_map<int, odb::Rect>& macro_obs_per_layer,
+      std::unordered_map<int, std::vector<odb::Rect>>& macro_obs_per_layer,
       int bottom_layer,
       int top_layer);
   int findInstancesObstructions(odb::Rect& die_area,
