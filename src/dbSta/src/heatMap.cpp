@@ -144,7 +144,7 @@ sta::Corner* PowerDensityDataSource::getCorner() const
   }
 
   auto corners = sta_->corners()->corners();
-  if (corners.size() > 0) {
+  if (!corners.empty()) {
     return corners[0];
   }
 
