@@ -48,13 +48,13 @@ proc check_block_exists { } {
     set chip [$db getChip]
 
     if { "$chip" eq "NULL" } {
-        utl::error UPF 3 "No Chip exists"
+        utl::error UPF 33 "No Chip exists"
     }
     
     set block [$chip getBlock]
 
     if { "$block" eq "NULL" } {
-        utl::error UPF 4 "No block exists"
+        utl::error UPF 34 "No block exists"
     }
 }
 
@@ -322,7 +322,7 @@ proc set_domain_area { args } {
     if { [info exists keys(-area)] } {
     set area $keys(-area)
     if { [llength $area] != 4 } {
-        utl::error UPF 1 "-area is a list of 4 coordinates"
+        utl::error UPF 36 "-area is a list of 4 coordinates"
     }
     lassign $area llx lly urx ury
     sta::check_positive_float "-area" $llx
@@ -330,7 +330,7 @@ proc set_domain_area { args } {
     sta::check_positive_float "-area" $urx
     sta::check_positive_float "-area" $ury
     } else {
-    utl::error UPF 2 "please define area"
+    utl::error UPF 37 "please define area"
     }
     sta::check_argc_eq1 "set_domain_area" $args
     set domain_name $args
