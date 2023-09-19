@@ -1286,8 +1286,7 @@ std::vector<odb::dbInst*> ICeWall::getPadInstsInRow(odb::dbRow* row) const
 
     const odb::Rect instbbox = inst->getBBox()->getBox();
 
-    if (row_bbox.intersects(instbbox)
-        && row_bbox.intersect(instbbox).area() > 0) {
+    if (row_bbox.overlaps(instbbox)) {
       insts.push_back(inst);
     }
   }
