@@ -37,26 +37,6 @@ using namespace fr;
 typedef bg::model::polygon<point_t> polygon_t;
 typedef bg::model::multi_polygon<polygon_t> mpolygon_t;
 
-static bool isBlockage(frBlockObject* owner)
-{
-  return owner
-         && (owner->typeId() == frcInstBlockage
-             || owner->typeId() == frcBlockage);
-}
-
-void updateBlockageWidth(frBlockObject* owner, frCoord& width)
-{
-  if (isBlockage(owner)) {
-    frBlockage* blkg;
-    if (owner->typeId() == frcInstBlockage)
-      blkg = static_cast<frInstBlockage*>(owner)->getBlockage();
-    else
-      blkg = static_cast<frBlockage*>(owner);
-    if (blkg->getDesignRuleWidth() != -1) {
-      width = blkg->getDesignRuleWidth();
-    }
-  }
-}
 bool FlexGCWorker::Impl::isCornerOverlap(gcCorner* corner, const Rect& box)
 {
   frCoord cornerX = corner->getNextEdge()->low().x();
@@ -265,19 +245,23 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_prl_getReqSpcVal(
   auto width1 = rect1->width();
   auto width2 = rect2->width();
   // override width and spacing
-  if (isBlockage(rect1->getNet()->getOwner())) {
+  if (rect1->getNet()->isBlockage()) {
     isObs = true;
     if (USEMINSPACING_OBS) {
       width1 = currLayer->getWidth();
     }
-    updateBlockageWidth(rect1->getNet()->getOwner(), width1);
+    if (rect1->getNet()->getDesignRuleWidth() != -1) {
+      width1 = rect1->getNet()->getDesignRuleWidth();
+    }
   }
-  if (isBlockage(rect2->getNet()->getOwner())) {
+  if (rect2->getNet()->isBlockage()) {
     isObs = true;
     if (USEMINSPACING_OBS) {
       width2 = currLayer->getWidth();
     }
-    updateBlockageWidth(rect2->getNet()->getOwner(), width2);
+    if (rect2->getNet()->getDesignRuleWidth() != -1) {
+      width2 = rect2->getNet()->getDesignRuleWidth();
+    }
   }
   // check if width is a result of route shape
   // if the width a shape is smaller if only using fixed shape, then it's route
@@ -602,8 +586,8 @@ void FlexGCWorker::Impl::checkMetalSpacing_short_obs(
 {
   if (rect1->isFixed() && rect2->isFixed())
     return;
-  bool isRect1Obs = isBlockage(rect1->getNet()->getOwner());
-  bool isRect2Obs = isBlockage(rect2->getNet()->getOwner());
+  bool isRect1Obs = rect1->getNet()->isBlockage();
+  bool isRect2Obs = rect2->getNet()->isBlockage();
   if (isRect1Obs && isRect2Obs) {
     return;
   }
@@ -827,11 +811,11 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1,
     if (prlY == 0) {
       gtl::bloat(markerRect, gtl::VERTICAL, 1);
     }
-    if (isBlockage(ptr1->getNet()->getOwner())
-        || isBlockage(ptr2->getNet()->getOwner()))
+    if (ptr1->getNet()->isBlockage() || ptr2->getNet()->isBlockage()) {
       checkMetalSpacing_short_obs(ptr1, ptr2, markerRect);
-    else
+    } else {
       checkMetalSpacing_short(ptr1, ptr2, markerRect);
+    }
     // prl
   } else {
     checkMetalSpacing_prl(ptr1,
@@ -2034,21 +2018,23 @@ frCoord FlexGCWorker::Impl::checkCutSpacing_spc_getReqSpcVal(
   if (con) {
     maxSpcVal = con->getCutSpacing();
     if (con->isAdjacentCuts()) {
-      auto owner = ptr1->getNet()->getOwner();
       auto ptr1LayerNum = ptr1->getLayerNum();
       auto ptr1Layer = getTech()->getLayer(ptr1LayerNum);
-      if (isBlockage(owner)) {
+      if (ptr1->getNet()->isBlockage()) {
         frCoord width1 = ptr1->width();
-        updateBlockageWidth(owner, width1);
+        if (ptr1->getNet()->getDesignRuleWidth() != -1) {
+          width1 = ptr1->getNet()->getDesignRuleWidth();
+        }
         if (width1 > int(ptr1Layer->getWidth()))
           maxSpcVal = con->getCutWithin();
       }
-      owner = ptr2->getNet()->getOwner();
       auto ptr2LayerNum = ptr2->getLayerNum();
       auto ptr2Layer = getTech()->getLayer(ptr2LayerNum);
-      if (isBlockage(owner)) {
+      if (ptr2->getNet()->isBlockage()) {
         frCoord width2 = ptr2->width();
-        updateBlockageWidth(owner, width2);
+        if (ptr2->getNet()->getDesignRuleWidth() != -1) {
+          width2 = ptr2->getNet()->getDesignRuleWidth();
+        }
         if (width2 > int(ptr2Layer->getWidth()))
           maxSpcVal = con->getCutWithin();
       }
@@ -2452,21 +2438,23 @@ frCoord FlexGCWorker::Impl::checkLef58CutSpacing_spc_getReqSpcVal(
   if (con) {
     maxSpcVal = con->getCutSpacing();
     if (con->hasAdjacentCuts()) {
-      auto owner = ptr1->getNet()->getOwner();
       auto ptr1LayerNum = ptr1->getLayerNum();
       auto ptr1Layer = getTech()->getLayer(ptr1LayerNum);
-      if (isBlockage(owner)) {
+      if (ptr1->getNet()->isBlockage()) {
         frCoord width1 = ptr1->width();
-        updateBlockageWidth(owner, width1);
+        if (ptr1->getNet()->getDesignRuleWidth() != -1) {
+          width1 = ptr1->getNet()->getDesignRuleWidth();
+        }
         if (width1 > int(ptr1Layer->getWidth()))
           maxSpcVal = con->getCutWithin();
       }
-      owner = ptr2->getNet()->getOwner();
       auto ptr2LayerNum = ptr2->getLayerNum();
       auto ptr2Layer = getTech()->getLayer(ptr2LayerNum);
-      if (isBlockage(owner)) {
+      if (ptr2->getNet()->isBlockage()) {
         frCoord width2 = ptr2->width();
-        updateBlockageWidth(owner, width2);
+        if (ptr2->getNet()->getDesignRuleWidth() != -1) {
+          width2 = ptr2->getNet()->getDesignRuleWidth();
+        }
         if (width2 > int(ptr2Layer->getWidth()))
           maxSpcVal = con->getCutWithin();
       }
@@ -2973,8 +2961,7 @@ bool FlexGCWorker::Impl::checkCutSpacing_main_hasAdjCuts(
   auto layer = getTech()->getLayer(layerNum);
 
   // rect is obs larger than min. size cut, must check against cutWithin
-  if (isBlockage(rect->getNet()->getOwner())
-      && rect->width() > int(layer->getWidth())) {
+  if (rect->getNet()->isBlockage() && rect->width() > int(layer->getWidth())) {
     return true;
   }
 
@@ -3003,8 +2990,7 @@ bool FlexGCWorker::Impl::checkCutSpacing_main_hasAdjCuts(
     }
     // if target is a cut blockage shape larger than min. size, assume it is a
     // blockage from MACRO
-    if (isBlockage(ptr->getNet()->getOwner())
-        && ptr->width() > int(layer->getWidth())) {
+    if (ptr->getNet()->isBlockage() && ptr->width() > int(layer->getWidth())) {
       cnt += reqNumCut;
     } else {
       cnt++;
