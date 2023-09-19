@@ -5,6 +5,7 @@ record_tests {
 
   make_io_sites
   place_pad
+  place_pad_outsideofrow
   place_bondpad
   place_bondpad_stagger
   place_pad_no_master
