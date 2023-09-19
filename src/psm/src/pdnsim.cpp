@@ -149,9 +149,7 @@ void PDNSim::saveIRDrop(psm::IRSolver* ir_solver)
         = std::abs(ir_solver->getSupplyVoltageSrc() - voltage);
   }
   ir_drop_ = ir_drop;
-  min_resolution_ = ir_solver->getMinimumResolution();
 
-  heatmap_->update();
   if (debug_gui_) {
     debug_gui_->setSources(ir_solver->getSources());
   }
@@ -169,7 +167,6 @@ void PDNSim::analyzePowerGrid(const std::string& voltage_file,
     logger_->error(
         utl::PSM, 78, "IR drop setup failed.  Analysis can't proceed.");
   }
-  GMat* gmat_obj = irsolve_h->getGMat();
   const std::string corner_name
       = corner_ != nullptr ? corner_->name() : "default";
   const std::string metric_suffix
@@ -220,6 +217,8 @@ void PDNSim::analyzePowerGrid(const std::string& voltage_file,
   }
 
   saveIRDrop(irsolve_h.get());
+  min_resolution_ = irsolve_h->getMinimumResolution();
+  heatmap_->update();
 }
 
 bool PDNSim::checkConnectivity(const std::string& error_file)
