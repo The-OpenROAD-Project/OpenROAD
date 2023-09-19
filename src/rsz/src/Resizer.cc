@@ -208,6 +208,7 @@ void Resizer::init(Logger* logger,
   inserted_buffer_set_ = InstanceSet(db_network_);
   steiner_renderer_ = std::move(steiner_renderer);
   // TODO REMOVE
+  new_journal_ = true;
   if (getenv("NEW_UNDO")!= nullptr) {
     new_journal_ = true;
   }
