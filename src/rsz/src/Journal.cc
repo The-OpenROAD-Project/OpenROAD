@@ -101,11 +101,7 @@ UndoBufferToInverter::UndoBufferToInverter(Instance* inv_buffer1, Instance* inv_
 
 int UndoBufferToInverter::UndoOperation(Resizer *resizer)
 {
-  // TODO
-  /*
-  resizer->logger_->Error(RSZ, 1, "journal", "journal unbuffer_to_inverter {} {} {} {}", network->pathName(inv_buffer1_),
-                network->pathName(inv_buffer2_), network->pathName(inv_inverter1_), network->pathName(inv_inverter2_));
-                */
+  // TODO: Need to implement
  return 0;
 }
 //============================================================================
@@ -155,7 +151,7 @@ void Journal::begin()
 void Journal::end()
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal end");
-  // We need to do something with cloned instances here
+  // TODO We need to do something with cloned instances here
   journal_stack_ = {};
 }
 
@@ -173,6 +169,8 @@ Instance *Journal::cloneInstance(LibertyCell *cell, const char *name,  Instance 
                                  Instance *parent,  const Point& loc)
  {
    Instance *clone_inst = resizer_->makeInstance(cell, name, parent, loc);
+   debugPrint(logger_, RSZ, "journal", 1, "journal clone {} ({})",
+              network()->pathName(original_inst), cell->name());
    std::unique_ptr<Undo> element(new UndoClone(original_inst, clone_inst));
    journal_stack_.emplace(std::move(element));
    return clone_inst;

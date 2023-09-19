@@ -2689,7 +2689,7 @@ Resizer::journalBegin()
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal begin");
   if (new_journal_) {
-
+      journal_->begin();
   }
   else {
     resized_inst_map_.clear();
@@ -2706,7 +2706,7 @@ Resizer::journalEnd()
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal end");
   if (new_journal_) {
-
+    journal_->end();
   }
   else {
     resized_inst_map_.clear();
