@@ -5807,9 +5807,13 @@ void HierRTLMP::FDPlacement(std::vector<Rect>& blocks,
 
 void HierRTLMP::generateTemporaryStdCellsPlacement(Cluster* cluster)
 {
-  std::cout << cluster->getName() << '\n';
+  std::cout << cluster->getName();
 
-  std::cout << "Number of std cells = "
+  if (cluster->isLeaf()) {
+    std::cout << " LEAF!";
+  }
+
+  std::cout << "\nNumber of std cells = "
             << cluster->getNumStdCell()
             << " Elements in leaf_std_cells_ vector:"
             << cluster->getLeafStdCells().size() << '\n';
@@ -5817,7 +5821,7 @@ void HierRTLMP::generateTemporaryStdCellsPlacement(Cluster* cluster)
   std::cout << "Number of macros = "
             << cluster->getNumMacro()
             << " Elements in leaf_macros_ vector:"
-            << cluster->getLeafMacros().size() << '\n';
+            << cluster->getLeafMacros().size() << "\n\n";
 
   for (const auto& child : cluster->getChildren()) {
     generateTemporaryStdCellsPlacement(child);
