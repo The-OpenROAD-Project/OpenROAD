@@ -1021,7 +1021,7 @@ void FlexPA::prepPoint_pin_checkPoint_via(
     }
   }
 
-  set<tuple<frCoord, int, frViaDef*>> validViaDefs;
+  set<pair<int, frViaDef*>> validViaDefs;
   for (auto& [idx, viaDef] : viaDefs) {
     auto via = make_unique<frVia>(viaDef);
     via->setOrigin(bp);
@@ -1071,7 +1071,7 @@ void FlexPA::prepPoint_pin_checkPoint_via(
     if (viainpin && maxExt)
       continue;
     if (prepPoint_pin_checkPoint_via_helper(ap, via.get(), pin, instTerm)) {
-      validViaDefs.insert(make_tuple(maxExt, idx, viaDef));
+      validViaDefs.insert({idx, viaDef});
       if (validViaDefs.size() >= maxNumViaTrial) {
         break;
       }
@@ -1080,7 +1080,7 @@ void FlexPA::prepPoint_pin_checkPoint_via(
   if (validViaDefs.empty()) {
     ap->setAccess(dir, false);
   }
-  for (auto& [area, idx, viaDef] : validViaDefs) {
+  for (auto& [idx, viaDef] : validViaDefs) {
     ap->addViaDef(viaDef);
   }
 }
