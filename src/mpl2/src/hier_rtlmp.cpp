@@ -523,6 +523,9 @@ void HierRTLMP::hierRTLMacroPlacer()
     //
     logger_->report("\nBreak mixed clusters into std cell and macro clusters.");
     leafClusterStdCellHardMacroSep(root_cluster_);
+    if (graphics_) {
+      graphics_->finishedClustering(root_cluster_);
+    }
   }
 
   logger_->report(

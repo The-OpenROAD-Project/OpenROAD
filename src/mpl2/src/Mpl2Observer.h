@@ -43,6 +43,8 @@
 
 namespace mpl2 {
 
+class Cluster;
+
 class Mpl2Observer
 {
  public:
@@ -53,6 +55,8 @@ class Mpl2Observer
   virtual void saStep(const std::vector<SoftMacro>& macros){};
   virtual void saStep(const std::vector<HardMacro>& macros){};
   virtual void endSA(){};
+
+  virtual void finishedClustering(Cluster* root){};
 
   virtual void setAreaPenalty(float area){};
   virtual void setOutlinePenalty(float outline_penalty,
