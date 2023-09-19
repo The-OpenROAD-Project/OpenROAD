@@ -134,6 +134,33 @@ _installCommonDev() {
         echo "spdlog already installed."
     fi
 
+    # yosys
+    yosysPrefix=${PREFIX:-"/usr/local"}
+    if ! command -v yosys &> /dev/null; then
+        git clone --recursive https://github.com/YosysHQ/yosys
+        cd yosys
+        make -j $(nproc) PREFIX="${yosysPrefix}"
+        make install
+    fi
+
+    # eqy
+    eqyPrefix=${PREFIX:-"/usr/local"}
+    if ! command -v eqy &> /dev/null; then
+        git clone --recursive https://github.com/YosysHQ/eqy
+        cd eqy
+        make -j $(nproc) PREFIX="${eqyPrefix}"
+        make install
+    fi
+
+    # sby
+    sbyPrefix=${PREFIX:-"/usr/local"}
+    if ! command -v sby &> /dev/null; then
+        git clone --recursive https://github.com/YosysHQ/sby
+        cd sby
+        make -j $(nproc) PREFIX="${sbyPrefix}"
+        make install
+    fi
+
     cd "${lastDir}"
     rm -rf "${baseDir}"
 
