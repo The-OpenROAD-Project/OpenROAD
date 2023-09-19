@@ -146,21 +146,22 @@ _installCommonDev() {
     # eqy
     eqyPrefix=${PREFIX:-"/usr/local"}
     if ! command -v eqy &> /dev/null; then
+        cd "${baseDir}"
         git clone --recursive https://github.com/YosysHQ/eqy
         cd eqy
-        export PATH="${yosysPrefix}:${PATH}"
+        export PATH="${yosysPrefix}/bin:${PATH}"
         make -j $(nproc) PREFIX="${eqyPrefix}"
-        make install
+        make install PREFIX="${eqyPrefix}"
     fi
 
     # sby
     sbyPrefix=${PREFIX:-"/usr/local"}
     if ! command -v sby &> /dev/null; then
+        cd "${baseDir}"
         git clone --recursive https://github.com/YosysHQ/sby
         cd sby
-        export PATH="${eqyPrefix}:${PATH}"
-        make -j $(nproc) PREFIX="${sbyPrefix}"
-        make install
+        export PATH="${eqyPrefix}/bin:${PATH}"
+        make -j $(nproc) PREFIX="${sbyPrefix}" install
     fi
 
     cd "${lastDir}"
@@ -288,7 +289,7 @@ _installRHELPackages() {
         gcc-c++ \
         gdb \
         glibc-devel \
-        libtool	\
+        libtool \
         make \
         pkgconf \
         pkgconf-m4 \
@@ -379,7 +380,10 @@ _installCentosPackages() {
 
 _installOpenSuseCleanUp() {
     zypper -n clean --all
-    zypper -n packages --unneeded | awk -F'|' 'NR==0 || NR==1 || NR==2 || NR==3 || NR==4 {next} {print $3}' | grep -v Name | xargs -r zypper -n remove --clean-deps;
+    zypper -n packages --unneeded \
+        | awk -F'|' 'NR==0 || NR==1 || NR==2 || NR==3 || NR==4 {next} {print $3}' \
+        | grep -v Name \
+        | xargs -r zypper -n remove --clean-deps;
 }
 
 _installOpenSusePackages() {
@@ -670,9 +674,9 @@ EOF
         fi
         if [[ "${option}" == "common" || "${option}" == "all" ]]; then
             _installCommonDev
-	    if _versionCompare ${version} -gt 22.10; then
-	        version=22.10
-	    fi
+            if _versionCompare ${version} -gt 22.10; then
+                version=22.10
+            fi
             _installOrTools "ubuntu" "${version}" "amd64"
         fi
         ;;
