@@ -622,10 +622,10 @@ void io::Parser::checkFig(frPinFig* uFig,
       return;
     }
     auto layer = tech_->getLayer(shape->getLayerNum());
-    if (layer->getLayerNum() > VIAINPIN_TOPLAYERNUM
+    /*if (layer->getLayerNum() > VIAINPIN_TOPLAYERNUM
         || layer->getLayerNum() < VIAINPIN_BOTTOMLAYERNUM) {
       return;
-    }
+    }*/
     std::set<int> horzTracks, vertTracks;
     getTrackLocs(true,
                  layer,
@@ -693,10 +693,10 @@ void io::Parser::checkFig(frPinFig* uFig,
       return;
     }
     auto layer = tech_->getLayer(polygon->getLayerNum());
-    if (layer->getLayerNum() > VIAINPIN_TOPLAYERNUM
+    /*if (layer->getLayerNum() > VIAINPIN_TOPLAYERNUM
         || layer->getLayerNum() < VIAINPIN_BOTTOMLAYERNUM) {
       return;
-    }
+    }*/
     vector<gtl::rectangle_data<frCoord>> rects;
     gtl::polygon_90_data<frCoord> poly;
     poly.set(points.begin(), points.end());
