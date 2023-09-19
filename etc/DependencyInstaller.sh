@@ -148,6 +148,7 @@ _installCommonDev() {
     if ! command -v eqy &> /dev/null; then
         git clone --recursive https://github.com/YosysHQ/eqy
         cd eqy
+        export PATH="${yosysPrefix}:${PATH}"
         make -j $(nproc) PREFIX="${eqyPrefix}"
         make install
     fi
@@ -157,6 +158,7 @@ _installCommonDev() {
     if ! command -v sby &> /dev/null; then
         git clone --recursive https://github.com/YosysHQ/sby
         cd sby
+        export PATH="${eqyPrefix}:${PATH}"
         make -j $(nproc) PREFIX="${sbyPrefix}"
         make install
     fi
