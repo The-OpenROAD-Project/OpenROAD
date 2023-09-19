@@ -789,16 +789,16 @@ void io::Parser::checkPins()
                    foundTracks,
                    foundCenterTracks,
                    hasPolys);
-          frRect* shape = static_cast<frRect*>(uFig.get());
+          // frRect* shape = static_cast<frRect*>(uFig.get());
           if ((foundTracks && foundCenterTracks && uFig->typeId() == frcRect)
               || (foundTracks && uFig->typeId() == frcPolygon)) {
             continue;
           }
-          auto layer = tech_->getLayer(shape->getLayerNum());
+          /*auto layer = tech_->getLayer(shape->getLayerNum());
           if (layer->getLayerNum() > VIAINPIN_TOPLAYERNUM
               || layer->getLayerNum() < VIAINPIN_BOTTOMLAYERNUM) {
             continue;
-          }
+          }*/
         }
       }
       if (!foundTracks) {
