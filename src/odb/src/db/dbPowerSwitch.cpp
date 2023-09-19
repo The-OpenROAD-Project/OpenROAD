@@ -123,9 +123,11 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj)
   stream >> obj._control_net;
   stream >> obj._power_domain;
   // User Code Begin >>
-  stream >> obj._lib_cell;
-  stream >> obj._lib;
-  stream >> obj._port_map;
+  if (obj.getDatabase()->isSchema(db_schema_upf_power_switch_mapping)) {
+    stream >> obj._lib_cell;
+    stream >> obj._lib;
+    stream >> obj._port_map;
+  }
   // User Code End >>
   return stream;
 }
@@ -141,11 +143,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbPowerSwitch& obj)
   stream << obj._control_net;
   stream << obj._power_domain;
   // User Code Begin <<
-  if (obj.getDatabase()->isSchema(db_schema_upf_power_switch_mapping)) {
-    stream << obj._lib_cell;
-    stream << obj._lib;
-    stream << obj._port_map;
-  }
+  stream << obj._lib_cell;
+  stream << obj._lib;
+  stream << obj._port_map;
   // User Code End <<
   return stream;
 }
