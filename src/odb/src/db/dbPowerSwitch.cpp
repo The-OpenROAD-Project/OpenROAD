@@ -259,7 +259,7 @@ void dbPowerSwitch::addPortMap(const std::string& model_port,
   auto logger = obj->getImpl()->getLogger();
   if (!master) {
     logger->error(utl::ODB,
-                  32001,
+                  153,
                   "Cannot map port {} to {} because no lib cell is added",
                   model_port,
                   switch_port);
@@ -269,7 +269,7 @@ void dbPowerSwitch::addPortMap(const std::string& model_port,
   dbMTerm* mterm = master->findMTerm(switch_port.c_str());
   if (mterm == nullptr) {
     logger->error(utl::ODB,
-                  33002,
+                  154,
                   "Cannot map port {} to {} because the mterm is not found",
                   model_port,
                   switch_port);
@@ -287,7 +287,7 @@ void dbPowerSwitch::addPortMap(const std::string& model_port, dbMTerm* mterm)
   if (!master) {
     obj->getImpl()->getLogger()->error(
         utl::ODB,
-        32002,
+        219,
         "Cannot map port {} to {} because no lib cell is added",
         model_port,
         mterm->getName());
@@ -297,7 +297,7 @@ void dbPowerSwitch::addPortMap(const std::string& model_port, dbMTerm* mterm)
   if (master != mterm->getMaster()) {
     obj->getImpl()->getLogger()->error(
         utl::ODB,
-        32003,
+        220,
         "Cannot map port {} to {} because the mterm is not in the same master",
         model_port,
         mterm->getName());

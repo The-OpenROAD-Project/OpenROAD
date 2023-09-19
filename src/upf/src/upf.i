@@ -137,7 +137,7 @@
 
     if (!master) {
       getOpenRoad()->getLogger()->error(utl::ODB,
-                                        101,
+                                        32,
                                         "Cannot find master {}",
                                         cell);
       return;
