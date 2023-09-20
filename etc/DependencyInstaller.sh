@@ -139,33 +139,45 @@ _installCommonDev() {
 
     # yosys
     yosysPrefix=${PREFIX:-"/usr/local"}
-    if ! command -v yosys &> /dev/null; then
+    if ! command -v yosys &> /dev/null; then (
+        if [[ -f /opt/rh/llvm-toolset-7.0/enable ]]; then
+            source /opt/rh/llvm-toolset-7.0/enable
+        fi
         cd "${baseDir}"
         git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/yosys
         cd yosys
         make -j $(nproc) PREFIX="${yosysPrefix}"
         make install
-    fi
+    ) fi
 
     # eqy
     eqyPrefix=${PREFIX:-"/usr/local"}
-    if ! command -v eqy &> /dev/null; then
+    if ! command -v eqy &> /dev/null; then (
+        if [[ -f /opt/rh/llvm-toolset-7.0/enable ]]; then
+            source /opt/rh/llvm-toolset-7.0/enable
+        fi
         cd "${baseDir}"
-        git clone --depth=1 -b ${eqyVersion} --recursive https://github.com/YosysHQ/eqy
+        git clone --recursive https://github.com/YosysHQ/eqy
         cd eqy
+        git checkout ${eqyVersion}
         export PATH="${yosysPrefix}/bin:${PATH}"
         make -j $(nproc) PREFIX="${eqyPrefix}"
         make install PREFIX="${eqyPrefix}"
+    )
     fi
 
     # sby
     sbyPrefix=${PREFIX:-"/usr/local"}
-    if ! command -v sby &> /dev/null; then
+    if ! command -v sby &> /dev/null; then (
+        if [[ -f /opt/rh/llvm-toolset-7.0/enable ]]; then
+            source /opt/rh/llvm-toolset-7.0/enable
+        fi
         cd "${baseDir}"
         git clone --depth=1 -b ${yosysVersion} --recursive https://github.com/YosysHQ/sby
         cd sby
         export PATH="${eqyPrefix}/bin:${PATH}"
         make -j $(nproc) PREFIX="${sbyPrefix}" install
+    )
     fi
 
     cd "${lastDir}"
@@ -227,6 +239,7 @@ _installUbuntuPackages() {
         gcc \
         git \
         lcov \
+        libffi-dev \
         libgomp1 \
         libomp-dev \
         libpcre2-dev \
@@ -341,6 +354,7 @@ _installCentosPackages() {
     yum install -y \
         devtoolset-8 \
         devtoolset-8-libatomic-devel \
+        libffi-devel \
         libgomp \
         libstdc++ \
         llvm-toolset-7.0 \
