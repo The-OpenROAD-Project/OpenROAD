@@ -234,7 +234,6 @@ _installUbuntuPackages() {
         tcl-dev \
         tcl-tclreadline \
         tcllib \
-        wget
         wget \
         zlib1g-dev \
 
