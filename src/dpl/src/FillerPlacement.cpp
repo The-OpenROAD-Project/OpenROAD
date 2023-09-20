@@ -64,13 +64,36 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
   setGridCells();
 
   if (!grid_info_map_.empty()) {
-    // FIXME(mina1460): this is no longer correct, we need to find the grid with
-    // the smallest height and width of sites. also preferably avoid hybrid
-    // sites.
-    const auto& layer = *grid_info_map_.begin();
-    for (int row = 0; row < layer.second.getRowCount(); row++) {
-      placeRowFillers(
-          row, prefix, filler_masters, layer.first.cell_height, layer.second);
+    int min_height = INT_MAX;
+    Grid_map_key chosen_grid_key = {0};
+    // we will first try to find the grid with min height that is non hybrid, if
+    // that doesn't exist, we will pick the first hybrid grid.
+    for (auto [grid_idx, itr_grid_info] : grid_info_map_) {
+      int site_height = itr_grid_info.getSites()[0].first->getHeight();
+      if (!itr_grid_info.isHybrid() && site_height < min_height) {
+        min_height = site_height;
+        chosen_grid_key = grid_idx;
+      }
+    }
+    auto chosen_grid_info = grid_info_map_.at(chosen_grid_key);
+    int chosen_row_count = chosen_grid_info.getRowCount();
+    if (!chosen_grid_info.isHybrid()) {
+      int site_height = min_height;
+      for (int row = 0; row < chosen_row_count; row++) {
+        placeRowFillers(
+            row, prefix, filler_masters, site_height, chosen_grid_info);
+      }
+    } else {
+      auto hybrid_sites_vec = chosen_grid_info.getSites();
+      const int hybrid_sites_num = hybrid_sites_vec.size();
+      for (int row = 0; row < chosen_row_count; row++) {
+        placeRowFillers(
+            row,
+            prefix,
+            filler_masters,
+            hybrid_sites_vec[row % hybrid_sites_num].first->getHeight(),
+            chosen_grid_info);
+      }
     }
   }
 
