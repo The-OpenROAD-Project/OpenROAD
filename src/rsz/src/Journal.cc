@@ -208,21 +208,21 @@ void Journal::reportStatistics()
 {
   // TODO:
   if (inserted_buffer_count_ > 0 && split_load_buffer_count_ == 0) {
-    logger_->info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
+    logger_->info(RSZ, 59, "Inserted {} buffers.", inserted_buffer_count_);
   }
   else if (inserted_buffer_count_ > 0 && split_load_buffer_count_ > 0) {
-    logger_->info(RSZ, 45, "Inserted {} buffers, {} to split loads.",
+    logger_->info(RSZ, 87, "Inserted {} buffers, {} to split loads.",
                   inserted_buffer_count_, split_load_buffer_count_);
   }
   logger_->metric("design__instance__count__setup_buffer", inserted_buffer_count_);
   if (resize_count_ > 0) {
-    logger_->info(RSZ, 41, "Resized {} instances.", resize_count_);
+    logger_->info(RSZ, 91, "Resized {} instances.", resize_count_);
   }
   if (swap_pin_count_ > 0) {
-    logger_->info(RSZ, 43, "Swapped pins on {} instances.", swap_pin_count_);
+    logger_->info(RSZ, 96, "Swapped pins on {} instances.", swap_pin_count_);
   }
   if (cloned_gate_count_ > 0) {
-    logger_->info(RSZ, 49, "Cloned {} instances.", cloned_gate_count_);
+    logger_->info(RSZ, 97, "Cloned {} instances.", cloned_gate_count_);
   }
   return;
 }
