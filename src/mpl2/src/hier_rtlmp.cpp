@@ -530,12 +530,6 @@ void HierRTLMP::hierRTLMacroPlacer()
       "leaf clusters\n");
   printPhysicalHierarchyTree(root_cluster_, 0);
 
-  std::cout << "\n-------------------------------------------------------\n";
-
-  generateTemporaryStdCellsPlacement(root_cluster_);
-
-  std::cout << "-------------------------------------------------------\n\n";
-
   // Map the macros in each cluster to their HardMacro objects
   for (auto& [cluster_id, cluster] : cluster_map_) {
     mapMacroInCluster2HardMacro(cluster);
@@ -607,6 +601,8 @@ void HierRTLMP::hierRTLMacroPlacer()
       multiLevelMacroPlacementWithoutBusPlanning(root_cluster_);
     }
   }
+
+  generateTemporaryStdCellsPlacement(root_cluster_);
 
   for (auto& [inst, hard_macro] : hard_macro_map_) {
     hard_macro->updateDb(pitch_x_, pitch_y_, block_);
@@ -5805,31 +5801,55 @@ void HierRTLMP::FDPlacement(std::vector<Rect>& blocks,
   }
 }
 
-void HierRTLMP::generateTemporaryStdCellsPlacement(Cluster* cluster)
+void HierRTLMP::setTemporaryStdCellLocation(Cluster* cluster,
+                                            odb::dbInst* std_cell)
 {
-  std::cout << cluster->getName();
+  const SoftMacro* soft_macro = cluster->getSoftMacro();
 
-  if (cluster->isLeaf()) {
-    std::cout << " LEAF!";
+  const int soft_macro_center_x_dbu = micronToDbu(soft_macro->getPinX(), dbu_);
+  const int soft_macro_center_y_dbu = micronToDbu(soft_macro->getPinY(), dbu_);
+
+  // Std cells are placed in the center of the cluster they belong to
+  std_cell->setLocation(
+      (soft_macro_center_x_dbu - std_cell->getBBox()->getDX() / 2),
+      (soft_macro_center_y_dbu - std_cell->getBBox()->getDY() / 2));
+}
+
+void HierRTLMP::setModuleStdCellsLocation(Cluster* cluster,
+                                          odb::dbModule* module)
+{
+  for (odb::dbInst* inst : module->getInsts()) {
+    if (!inst->isCore()) {
+      continue;
+    }
+    setTemporaryStdCellLocation(cluster, inst);
   }
 
-  std::cout << "\nNumber of std cells = "
-            << cluster->getNumStdCell()
-            << " Elements in leaf_std_cells_ vector:"
-            << cluster->getLeafStdCells().size() << '\n';
-  
-  std::cout << "Number of macros = "
-            << cluster->getNumMacro()
-            << " Elements in leaf_macros_ vector:"
-            << cluster->getLeafMacros().size() << "\n\n";
-
-  for (const auto& child : cluster->getChildren()) {
-    generateTemporaryStdCellsPlacement(child);
+  for (odb::dbModInst* mod_insts : module->getChildren()) {
+    setModuleStdCellsLocation(cluster, mod_insts->getMaster());
   }
 }
 
-// Compute wirelength considering signal nets that connect macro to
-// other macros
+void HierRTLMP::generateTemporaryStdCellsPlacement(Cluster* cluster)
+{
+  if (cluster->isLeaf() && cluster->getNumStdCell() != 0) {
+    for (odb::dbModule* module : cluster->getDbModules()) {
+      setModuleStdCellsLocation(cluster, module);
+    }
+
+    for (odb::dbInst* leaf_std_cell : cluster->getLeafStdCells()) {
+      setTemporaryStdCellLocation(cluster, leaf_std_cell);
+    }
+  } else {
+    for (const auto& child : cluster->getChildren()) {
+      generateTemporaryStdCellsPlacement(child);
+    }
+  }
+}
+
+// Compute wirelength considering signal nets that connect macro to:
+// 1. Other macros
+// 2. Std cells
 float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
 {
   float wirelength = 0.0;
@@ -5846,7 +5866,7 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
           continue;
         }
 
-        if (net_iterm->getInst()->isBlock()) {
+        if (net_iterm->getInst()->isBlock() || net_iterm->getInst()->isCore()) {
           const float x1 = dbuToMicron(iterm->getBBox().xCenter(), dbu_);
           const float y1 = dbuToMicron(iterm->getBBox().yCenter(), dbu_);
           const float x2 = dbuToMicron(net_iterm->getBBox().xCenter(), dbu_);

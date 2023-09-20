@@ -253,9 +253,11 @@ class HierRTLMP
                    float outline_height,
                    std::string file_name);
 
-  // Populate odb with the locations that HierRTLMP estimates for the
-  // leaf standard clusters
+  // Update the locations of std cells in odb using the locations that
+  // HierRTLMP estimates for the leaf standard clusters
   void generateTemporaryStdCellsPlacement(Cluster* cluster);
+  void setModuleStdCellsLocation(Cluster* cluster, odb::dbModule* module);
+  void setTemporaryStdCellLocation(Cluster* cluster, odb::dbInst* inst);
 
   void correctAllMacrosOrientation();
   float calculateRealMacroWirelength(odb::dbInst* macro);
