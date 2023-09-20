@@ -13,7 +13,7 @@
 Net: reset
   Pin: _346_/A1 (sky130_fd_sc_hs__o31ai_1)
     Layer: met2
-      Partial area ratio:  423.52
+      Partial area ratio:  423.53
       Required ratio:  400.00 (Side area) (VIOLATED)
 
 
