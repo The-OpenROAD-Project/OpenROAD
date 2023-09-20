@@ -146,7 +146,9 @@ _installCommonDev() {
         cd "${baseDir}"
         git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/yosys
         cd yosys
-        make -j $(nproc) PREFIX="${yosysPrefix}"
+        # use of no-register flag is required for some compilers,
+        # e.g., gcc and clang fron RHEL8
+        make -j $(nproc) PREFIX="${yosysPrefix}" ABC_ARCHFLAGS=-Wno-register
         make install
     ) fi
 
@@ -304,6 +306,7 @@ _installRHELPackages() {
         git \
         glibc-devel \
         libtool \
+        libffi-devel \
         llvm7.0 \
         llvm7.0-devel \
         llvm7.0-libs \
@@ -319,6 +322,7 @@ _installRHELPackages() {
         qt5-qtbase-devel \
         qt5-qtimageformats \
         readline \
+        readline-devel \
         tcl-devel \
         tcl-tclreadline \
         tcl-tclreadline-devel \
