@@ -195,12 +195,19 @@ void initGui(OpenRoad* openroad)
 {
   auto interp = openroad->tclInterp();
   // Tcl requires this to be a writable string
-  std::string cmd(
+  std::string cmd_save_imame(
       "proc save_image { args } {"
       "  utl::error GUI 4 \"Command save_image is not available as OpenROAD "
       "was not compiled with QT support.\""
       "}");
-  Tcl_Eval(interp, cmd.c_str());
+  Tcl_Eval(interp, cmd_save_imame.c_str());
+  std::string cmd_supported(
+      "namespace eval gui {"
+      "  proc supported {} {"
+      "    return 0"
+      "  }"
+      "}");
+  Tcl_Eval(interp, cmd_supported.c_str());
 }
 
 }  // namespace ord
