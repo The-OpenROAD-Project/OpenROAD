@@ -267,8 +267,14 @@ _installRHELCleanUp() {
 }
 
 _installRHELPackages() {
+    if [[ $(yum repolist | egrep -c "rhel-8-for-x86_64-appstream-rpms") -eq 0 ]]; then
+        yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-8-6.el8.noarch.rpm
+        yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-stream-repos-8-6.el8.noarch.rpm
+        rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+    fi
     yum -y update
     yum -y install tzdata
+    yum -y install redhat-rpm-config rpm-build
     yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
     yum -y install \
         autoconf \
@@ -296,8 +302,6 @@ _installRHELPackages() {
         qt5-qtbase-devel \
         qt5-qtimageformats \
         readline \
-        redhat-rpm-config \
-        rpm-build \
         tcl-devel \
         tcl-tclreadline \
         tcl-tclreadline-devel \
@@ -309,12 +313,6 @@ _installRHELPackages() {
     yum install -y \
         http://repo.okay.com.mx/centos/8/x86_64/release/bison-3.0.4-10.el8.x86_64.rpm \
         https://forensics.cert.org/centos/cert/7/x86_64/flex-2.6.1-9.el7.x86_64.rpm
-
-    if [[ $(yum repolist | egrep -c "rhel-8-for-x86_64-appstream-rpms") -eq 0 ]]; then
-        yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-8-6.el8.noarch.rpm
-        yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-stream-repos-8-6.el8.noarch.rpm
-        rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
-    fi
 }
 
 _installCentosCleanUp() {
@@ -335,8 +333,8 @@ _installCentosPackages() {
     if ! command -v yum list installed epel-release &> /dev/null; then
         yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
     fi
+    yum install -y centos-release-scl
     yum install -y \
-        centos-release-scl \
         devtoolset-8 \
         devtoolset-8-libatomic-devel \
         libgomp \
@@ -349,7 +347,7 @@ _installCentosPackages() {
         python36 \
         python36-devel \
         python36-libs \
-        python36-pip
+        python36-pip \
         qt5-qtbase-devel \
         qt5-qtimageformats \
         readline-devel \
@@ -491,7 +489,7 @@ _installDebianPackages() {
         tcl-tclreadline \
         tcllib \
         wget \
-        zlib1g-dev \
+        zlib1g-dev
 
     if [[ $1 == 10 ]]; then
         apt-get install -y \
