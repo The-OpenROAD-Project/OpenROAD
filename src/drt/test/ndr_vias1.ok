@@ -21,9 +21,9 @@
 [INFO DRT-0168] Init region query.
 [INFO DRT-0033] FR_MASTERSLICE shape region query size = 0.
 [INFO DRT-0033] FR_VIA shape region query size = 0.
-[INFO DRT-0033] li1 shape region query size = 2967.
+[INFO DRT-0033] li1 shape region query size = 2928.
 [INFO DRT-0033] mcon shape region query size = 210.
-[INFO DRT-0033] met1 shape region query size = 622.
+[INFO DRT-0033] met1 shape region query size = 412.
 [INFO DRT-0033] via shape region query size = 0.
 [INFO DRT-0033] met2 shape region query size = 1.
 [INFO DRT-0033] via2 shape region query size = 0.

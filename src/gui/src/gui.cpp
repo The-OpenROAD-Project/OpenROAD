@@ -892,6 +892,7 @@ void Gui::setHeatMapSetting(const std::string& name,
   const std::string rebuild_map_option = "rebuild";
   if (option == rebuild_map_option) {
     source->destroyMap();
+    source->ensureMap();
   } else {
     auto settings = source->getSettings();
 
@@ -952,6 +953,33 @@ void Gui::setHeatMapSetting(const std::string& name,
   }
 
   source->getRenderer()->redraw();
+}
+
+Renderer::Setting Gui::getHeatMapSetting(const std::string& name,
+                                         const std::string& option)
+{
+  HeatMapDataSource* source = getHeatMap(name);
+
+  const std::string map_has_option = "has_data";
+  if (option == map_has_option) {
+    return source->hasData();
+  }
+
+  auto settings = source->getSettings();
+
+  if (settings.count(option) == 0) {
+    QStringList options;
+    for (const auto& [key, kv] : settings) {
+      options.append(QString::fromStdString(key));
+    }
+    logger_->error(utl::GUI,
+                   95,
+                   "{} is not a valid option. Valid options are: {}",
+                   option,
+                   options.join(", ").toStdString());
+  }
+
+  return settings[option];
 }
 
 void Gui::dumpHeatMap(const std::string& name, const std::string& file)

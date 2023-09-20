@@ -38,11 +38,16 @@
 #include <tcl.h>
 
 #include "ant/AntennaChecker.hh"
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "grt/GlobalRouter.h"
 #include "ifp/InitFloorplan.hh"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "ord/Tech.h"
+#include "sta/Corner.hh"
+#include "sta/TimingArc.hh"
+#include "sta/TimingRole.hh"
 #include "utl/Logger.h"
 
 namespace ord {
@@ -155,6 +160,89 @@ const std::string Design::evalTclString(const std::string& cmd)
 Tech* Design::getTech()
 {
   return tech_;
+}
+
+sta::dbSta* Design::getSta()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getSta();
+}
+
+std::vector<sta::Corner*> Design::getCorners()
+{
+  sta::Corners* corners = getSta()->corners();
+  return {corners->begin(), corners->end()};
+}
+
+sta::MinMax* Design::getMinMax(MinMax type)
+{
+  return type == Max ? sta::MinMax::max() : sta::MinMax::min();
+}
+
+float Design::getNetCap(odb::dbNet* net, sta::Corner* corner, MinMax minmax)
+{
+  sta::dbSta* sta = getSta();
+  sta::Net* sta_net = sta->getDbNetwork()->dbToSta(net);
+
+  float pin_cap;
+  float wire_cap;
+  sta->connectedCap(sta_net, corner, getMinMax(minmax), pin_cap, wire_cap);
+  return pin_cap + wire_cap;
+}
+
+bool Design::isSequential(odb::dbMaster* master)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+
+  sta::Cell* cell = network->dbToSta(master);
+  if (!cell) {
+    return false;
+  }
+
+  sta::LibertyCell* lib_cell = network->libertyCell(cell);
+  if (!lib_cell) {
+    return false;
+  }
+
+  return lib_cell->hasSequentials();
+}
+
+// I'd like to return a std::set but swig gave me way too much grief
+// so I just copy the set to a vector.
+std::vector<odb::dbMTerm*> Design::getTimingFanoutFrom(odb::dbMTerm* input)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+
+  odb::dbMaster* master = input->getMaster();
+  sta::Cell* cell = network->dbToSta(master);
+  if (!cell) {
+    return {};
+  }
+
+  sta::LibertyCell* lib_cell = network->libertyCell(cell);
+  if (!lib_cell) {
+    return {};
+  }
+
+  sta::Port* port = network->dbToSta(input);
+  sta::LibertyPort* lib_port = network->libertyPort(port);
+
+  std::set<odb::dbMTerm*> outputs;
+  for (auto arc_set : lib_cell->timingArcSets(lib_port, /* to */ nullptr)) {
+    sta::TimingRole* role = arc_set->role();
+    if (role->isTimingCheck() || role->isAsyncTimingCheck()
+        || role->isNonSeqTimingCheck() || role->isDataCheck()) {
+      continue;
+    }
+    sta::LibertyPort* to_port = arc_set->to();
+    odb::dbMTerm* to_mterm = master->findMTerm(to_port->name());
+    if (to_mterm) {
+      outputs.insert(to_mterm);
+    }
+  }
+  return {outputs.begin(), outputs.end()};
 }
 
 grt::GlobalRouter* Design::getGlobalRouter()

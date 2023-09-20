@@ -162,6 +162,16 @@ class FastRouteCore
   int getEdgeCapacity(int x1, int y1, int x2, int y2, int layer);
   const multi_array<Edge3D, 3>& getHorizontalEdges3D() { return h_edges_3D_; }
   const multi_array<Edge3D, 3>& getVerticalEdges3D() { return v_edges_3D_; }
+  void setLastColVCapacity(short cap, int layer)
+  {
+    last_col_v_capacity_3D_[layer] = cap;
+  }
+  void setLastRowHCapacity(short cap, int layer)
+  {
+    last_row_h_capacity_3D_[layer] = cap;
+  }
+  void setRegularX(bool regular_x) { regular_x_ = regular_x; }
+  void setRegularY(bool regular_y) { regular_y_ = regular_y; }
   void incrementEdge3DUsage(int x1, int y1, int x2, int y2, int layer);
   void setMaxNetDegree(int);
   void setVerbose(bool v);
@@ -531,9 +541,13 @@ class FastRouteCore
   int mazeedge_threshold_;
   float v_capacity_lb_;
   float h_capacity_lb_;
+  bool regular_x_;
+  bool regular_y_;
 
   std::vector<short> v_capacity_3D_;
   std::vector<short> h_capacity_3D_;
+  std::vector<short> last_col_v_capacity_3D_;
+  std::vector<short> last_row_h_capacity_3D_;
   std::vector<float> cost_hvh_;       // Horizontal first Z
   std::vector<float> cost_vhv_;       // Vertical first Z
   std::vector<float> cost_h_;         // Horizontal segment cost

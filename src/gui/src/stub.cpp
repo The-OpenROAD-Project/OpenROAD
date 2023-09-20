@@ -33,9 +33,12 @@
 // This file is only used when we can't find Qt5 and are thus
 // disabling the GUI.  It is not included when Qt5 is found.
 
+#include <tcl.h>
+
 #include <cstdio>
 
 #include "gui/gui.h"
+#include "ord/OpenRoad.hh"
 
 namespace gui {
 
@@ -190,6 +193,14 @@ namespace ord {
 class OpenRoad;
 void initGui(OpenRoad* openroad)
 {
+  auto interp = openroad->tclInterp();
+  // Tcl requires this to be a writable string
+  std::string cmd(
+      "proc save_image { args } {"
+      "  utl::error GUI 4 \"Command save_image is not available as OpenROAD "
+      "was not compiled with QT support.\""
+      "}");
+  Tcl_Eval(interp, cmd.c_str());
 }
 
 }  // namespace ord
