@@ -224,8 +224,7 @@ void Journal::reportStatistics()
   if (cloned_gate_count_ > 0) {
     logger_->info(RSZ, 49, "Cloned {} instances.", cloned_gate_count_);
   }
-  return;
-}
+  }
 
 sta::Network * Journal::network()
 {
