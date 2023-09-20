@@ -93,7 +93,7 @@ _installCommonDev() {
     eigenPrefix=${PREFIX:-"/usr/local"}
     if [[ ! -d ${eigenPrefix}/include/eigen3 ]]; then
         cd "${baseDir}"
-        git clone -b ${eigenVersion} https://gitlab.com/libeigen/eigen.git
+        git clone --depth=1 -b ${eigenVersion} https://gitlab.com/libeigen/eigen.git
         cd eigen
         ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${eigenPrefix}" -B build .
         ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
@@ -105,7 +105,7 @@ _installCommonDev() {
     cuspPrefix=${PREFIX:-"/usr/local/include"}
     if [[ ! -d ${cuspPrefix}/cusp/ ]]; then
         cd "${baseDir}"
-        git clone -b cuda9 https://github.com/cusplibrary/cusplibrary.git
+        git clone --depth=1 -b cuda9 https://github.com/cusplibrary/cusplibrary.git
         cd cusplibrary
         cp -r ./cusp ${cuspPrefix}
     else
@@ -116,7 +116,7 @@ _installCommonDev() {
     lemonPrefix=${PREFIX:-"/usr/local"}
     if [[ -z $(grep "LEMON_VERSION \"${lemonVersion}\"" ${lemonPrefix}/include/lemon/config.h) ]]; then
         cd "${baseDir}"
-        git clone -b ${lemonVersion} https://github.com/The-OpenROAD-Project/lemon-graph.git
+        git clone --depth=1 -b ${lemonVersion} https://github.com/The-OpenROAD-Project/lemon-graph.git
         cd lemon-graph
         ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${lemonPrefix}" -B build .
         ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
@@ -128,7 +128,7 @@ _installCommonDev() {
     spdlogPrefix=${PREFIX:-"/usr/local"}
     if [[ ! -d ${spdlogPrefix}/include/spdlog ]]; then
         cd "${baseDir}"
-        git clone -b "v${spdlogVersion}" https://github.com/gabime/spdlog.git
+        git clone --depth=1 -b "v${spdlogVersion}" https://github.com/gabime/spdlog.git
         cd spdlog
         ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${spdlogPrefix}" -DSPDLOG_BUILD_EXAMPLE=OFF -B build .
         ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
@@ -386,6 +386,7 @@ _installOpenSusePackages() {
         git \
         gzip \
         lcov \
+        libffi-devel \
         libgomp1 \
         libomp11-devel \
         libpython3_6m1_0 \
@@ -399,7 +400,7 @@ _installOpenSusePackages() {
         python3-devel \
         python3-pip \
         qimgv \
-        readline5-devel \
+        readline-devel \
         tcl \
         tcl-devel \
         tcllib \
