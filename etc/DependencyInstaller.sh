@@ -25,6 +25,8 @@ _installCommonDev() {
     eigenVersion=3.4
     lemonVersion=1.3.1
     spdlogVersion=1.8.1
+    yosysVersion=yosys-0.33
+    eqyVersion=0cc2ff0
 
     # temp dir to download and compile
     baseDir=/tmp/installers
@@ -137,7 +139,9 @@ _installCommonDev() {
     # yosys
     yosysPrefix=${PREFIX:-"/usr/local"}
     if ! command -v yosys &> /dev/null; then
-        git clone --recursive https://github.com/YosysHQ/yosys
+        cd "${baseDir}"
+        rm -rf yosys
+        git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/yosys
         cd yosys
         make -j $(nproc) PREFIX="${yosysPrefix}"
         make install
@@ -147,7 +151,8 @@ _installCommonDev() {
     eqyPrefix=${PREFIX:-"/usr/local"}
     if ! command -v eqy &> /dev/null; then
         cd "${baseDir}"
-        git clone --recursive https://github.com/YosysHQ/eqy
+        rm -rf eqy
+        git clone --depth=1 -b ${eqyVersion} --recursive https://github.com/YosysHQ/eqy
         cd eqy
         export PATH="${yosysPrefix}/bin:${PATH}"
         make -j $(nproc) PREFIX="${eqyPrefix}"
@@ -158,7 +163,8 @@ _installCommonDev() {
     sbyPrefix=${PREFIX:-"/usr/local"}
     if ! command -v sby &> /dev/null; then
         cd "${baseDir}"
-        git clone --recursive https://github.com/YosysHQ/sby
+        rm -rf sby
+        git clone --depth=1 -b ${yosysVersion} --recursive https://github.com/YosysHQ/sby
         cd sby
         export PATH="${eqyPrefix}/bin:${PATH}"
         make -j $(nproc) PREFIX="${sbyPrefix}" install
@@ -267,12 +273,12 @@ _installRHELCleanUp() {
 }
 
 _installRHELPackages() {
+    yum -y update
     if [[ $(yum repolist | egrep -c "rhel-8-for-x86_64-appstream-rpms") -eq 0 ]]; then
         yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-8-6.el8.noarch.rpm
         yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-stream-repos-8-6.el8.noarch.rpm
         rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
     fi
-    yum -y update
     yum -y install tzdata
     yum -y install redhat-rpm-config rpm-build
     yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
