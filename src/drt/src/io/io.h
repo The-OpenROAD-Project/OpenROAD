@@ -117,7 +117,6 @@ class Parser
   void checkFig(frPinFig* uFig,
                 const frString& term_name,
                 bool is_iTerm,
-                const frString& inst_name,
                 const dbTransform& xform,
                 bool& foundTracks,
                 bool& foundCenterTracks,

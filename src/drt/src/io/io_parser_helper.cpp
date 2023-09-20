@@ -595,7 +595,6 @@ inline void getTrackLocs(bool isHorzTracks,
 void io::Parser::checkFig(frPinFig* uFig,
                           const frString& term_name,
                           bool is_iTerm,
-                          const frString& inst_name,
                           const dbTransform& xform,
                           bool& foundTracks,
                           bool& foundCenterTracks,
@@ -622,10 +621,6 @@ void io::Parser::checkFig(frPinFig* uFig,
       return;
     }
     auto layer = tech_->getLayer(shape->getLayerNum());
-    /*if (layer->getLayerNum() > VIAINPIN_TOPLAYERNUM
-        || layer->getLayerNum() < VIAINPIN_BOTTOMLAYERNUM) {
-      return;
-    }*/
     std::set<int> horzTracks, vertTracks;
     getTrackLocs(true,
                  layer,
@@ -669,19 +664,17 @@ void io::Parser::checkFig(frPinFig* uFig,
       points.emplace_back(pt.x(), pt.y());
       if (pt.getX() % grid || pt.getY() % grid) {
         if (is_iTerm) {
-          logger_->error(
-              DRT,
-              417,
-              "ITerm {} of {} contains offgrid pin shape. Polygon point "
-              "{} is not a multiple of the manufacturing grid {}.",
-              term_name,
-              inst_name,
-              pt,
-              grid);
+          logger_->error(DRT,
+                         417,
+                         "Term {} contains offgrid pin shape. Polygon point "
+                         "{} is not a multiple of the manufacturing grid {}.",
+                         term_name,
+                         pt,
+                         grid);
         } else {
           logger_->error(DRT,
                          420,
-                         "BTerm {} contains offgrid pin shape. Polygon point "
+                         "Term {} contains offgrid pin shape. Polygon point "
                          "{} is not a multiple of the manufacturing grid {}.",
                          term_name,
                          pt,
@@ -693,10 +686,6 @@ void io::Parser::checkFig(frPinFig* uFig,
       return;
     }
     auto layer = tech_->getLayer(polygon->getLayerNum());
-    /*if (layer->getLayerNum() > VIAINPIN_TOPLAYERNUM
-        || layer->getLayerNum() < VIAINPIN_BOTTOMLAYERNUM) {
-      return;
-    }*/
     vector<gtl::rectangle_data<frCoord>> rects;
     gtl::polygon_90_data<frCoord> poly;
     poly.set(points.begin(), points.end());
@@ -741,14 +730,11 @@ void io::Parser::checkPins()
     foundCenterTracks = false;
     hasPolys = false;
     dbTransform xform;
-    frString inst_name;
     for (auto& pin : bTerm->getPins()) {
       for (auto& uFig : pin->getFigs()) {
-        // frRect* shape = static_cast<frRect*>(uFig.get());
         checkFig(uFig.get(),
                  bTerm->getName(),
                  false,
-                 inst_name,
                  xform,
                  foundTracks,
                  foundCenterTracks,
@@ -757,11 +743,11 @@ void io::Parser::checkPins()
     }
     if (!foundTracks) {
       logger_->warn(
-          DRT, 421, "BTerm {} has no pins on routing grid", bTerm->getName());
+          DRT, 421, "Term {} has no pins on routing grid", bTerm->getName());
     } else if (!foundCenterTracks && !hasPolys) {
       logger_->warn(DRT,
                     422,
-                    "No routing tracks pass through the center of BTerm {}",
+                    "No routing tracks pass through the center of Term {}",
                     bTerm->getName());
     }
   }
@@ -784,30 +770,23 @@ void io::Parser::checkPins()
           checkFig(uFig.get(),
                    uTerm->getName(),
                    true,
-                   inst->getName(),
                    xform,
                    foundTracks,
                    foundCenterTracks,
                    hasPolys);
-          // frRect* shape = static_cast<frRect*>(uFig.get());
           if ((foundTracks && foundCenterTracks && uFig->typeId() == frcRect)
               || (foundTracks && uFig->typeId() == frcPolygon)) {
             continue;
           }
-          /*auto layer = tech_->getLayer(shape->getLayerNum());
-          if (layer->getLayerNum() > VIAINPIN_TOPLAYERNUM
-              || layer->getLayerNum() < VIAINPIN_BOTTOMLAYERNUM) {
-            continue;
-          }*/
         }
       }
       if (!foundTracks) {
         logger_->warn(
-            DRT, 418, "ITerm {} has no pins on routing grid", iTerm->getName());
+            DRT, 418, "Term {} has no pins on routing grid", iTerm->getName());
       } else if (!foundCenterTracks && !hasPolys) {
         logger_->warn(DRT,
                       419,
-                      "No routing tracks pass through the center of ITerm {}",
+                      "No routing tracks pass through the center of Term {}",
                       iTerm->getName());
       }
     }
