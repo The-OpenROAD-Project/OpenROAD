@@ -974,6 +974,7 @@ void FlexPA::getViasFromMetalWidthMap(
 template <typename T>
 void FlexPA::prepPoint_pin_checkPoint_via(
     frAccessPoint* ap,
+    const std::vector<gtl::polygon_90_data<frCoord>>& layerPolys,
     const gtl::polygon_90_set_data<frCoord>& polyset,
     const frDirEnum dir,
     T* pin,
@@ -1021,7 +1022,7 @@ void FlexPA::prepPoint_pin_checkPoint_via(
     }
   }
 
-  set<pair<int, frViaDef*>> validViaDefs;
+  set<tuple<frCoord, int, frViaDef*>> validViaDefs;
   for (auto& [idx, viaDef] : viaDefs) {
     auto via = make_unique<frVia>(viaDef);
     via->setOrigin(bp);
@@ -1070,8 +1071,9 @@ void FlexPA::prepPoint_pin_checkPoint_via(
     }
     if (viainpin && maxExt)
       continue;
-    if (prepPoint_pin_checkPoint_via_helper(ap, via.get(), pin, instTerm)) {
-      validViaDefs.insert({idx, viaDef});
+    if (prepPoint_pin_checkPoint_via_helper(
+            ap, via.get(), pin, instTerm, layerPolys)) {
+      validViaDefs.insert({maxExt, idx, viaDef});
       if (validViaDefs.size() >= maxNumViaTrial) {
         break;
       }
@@ -1080,25 +1082,85 @@ void FlexPA::prepPoint_pin_checkPoint_via(
   if (validViaDefs.empty()) {
     ap->setAccess(dir, false);
   }
-  for (auto& [idx, viaDef] : validViaDefs) {
+  for (auto& [ext, idx, viaDef] : validViaDefs) {
     ap->addViaDef(viaDef);
   }
 }
 
 template <typename T>
-bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
-                                                 frVia* via,
-                                                 T* pin,
-                                                 frInstTerm* instTerm)
+bool FlexPA::prepPoint_pin_checkPoint_via_helper(
+    frAccessPoint* ap,
+    frVia* via,
+    T* pin,
+    frInstTerm* instTerm,
+    const std::vector<gtl::polygon_90_data<frCoord>>& layerPolys)
 {
+  return prepPoint_pin_checkPoint_viaDir_helper(
+             ap, via, pin, instTerm, layerPolys, frDirEnum::E)
+         || prepPoint_pin_checkPoint_viaDir_helper(
+             ap, via, pin, instTerm, layerPolys, frDirEnum::W)
+         || prepPoint_pin_checkPoint_viaDir_helper(
+             ap, via, pin, instTerm, layerPolys, frDirEnum::S)
+         || prepPoint_pin_checkPoint_viaDir_helper(
+             ap, via, pin, instTerm, layerPolys, frDirEnum::N);
+}
+
+template <typename T>
+bool FlexPA::prepPoint_pin_checkPoint_viaDir_helper(
+    frAccessPoint* ap,
+    frVia* via,
+    T* pin,
+    frInstTerm* instTerm,
+    const std::vector<gtl::polygon_90_data<frCoord>>& layerPolys,
+    frDirEnum dir)
+{
+  auto upperlayer = getTech()->getLayer(via->getViaDef()->getLayer2Num());
+  if (!USENONPREFTRACKS || upperlayer->isUnidirectional()) {
+    if (upperlayer->isHorizontal()
+        && (dir == frDirEnum::S || dir == frDirEnum::N))
+      return false;
+    else if (!upperlayer->isHorizontal()
+             && (dir == frDirEnum::W || dir == frDirEnum::E))
+      return false;
+  }
   const Point bp = ap->getPoint();
+  const bool isBlock
+      = instTerm && instTerm->getInst()->getMaster()->getMasterType().isBlock();
+  Point ep;
+  prepPoint_pin_checkPoint_planar_ep(
+      ep, layerPolys, bp, via->getViaDef()->getLayer2Num(), dir, isBlock);
 
   if (instTerm && instTerm->hasNet()) {
     via->addToNet(instTerm->getNet());
   } else {
     via->addToPin(pin);
   }
-
+  // PS
+  auto ps = make_unique<frPathSeg>();
+  auto style = upperlayer->getDefaultSegStyle();
+  if (dir == frDirEnum::W || dir == frDirEnum::S) {
+    ps->setPoints(ep, bp);
+    style.setEndStyle(frcTruncateEndStyle, 0);
+  } else {
+    ps->setPoints(bp, ep);
+    style.setBeginStyle(frcTruncateEndStyle, 0);
+  }
+  if (upperlayer->getDir() == dbTechLayerDir::VERTICAL) {
+    if (dir == frDirEnum::W || dir == frDirEnum::E) {
+      style.setWidth(upperlayer->getWrongDirWidth());
+    }
+  } else {
+    if (dir == frDirEnum::S || dir == frDirEnum::N) {
+      style.setWidth(upperlayer->getWrongDirWidth());
+    }
+  }
+  ps->setLayerNum(upperlayer->getLayerNum());
+  ps->setStyle(style);
+  if (instTerm && instTerm->hasNet()) {
+    ps->addToNet(instTerm->getNet());
+  } else {
+    ps->addToPin(pin);
+  }
   // new gcWorker
   FlexGCWorker gcWorker(getTech(), logger_);
   gcWorker.setIgnoreMinArea();
@@ -1131,8 +1193,13 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
       owner = instTerm;
     }
   } else {
-    owner = pin->getTerm();
+    if (pin->getTerm()->hasNet()) {
+      owner = pin->getTerm()->getNet();
+    } else {
+      owner = pin->getTerm();
+    }
   }
+  gcWorker.addPAObj(ps.get(), owner);
   gcWorker.addPAObj(via, owner);
   for (auto& apPs : ap->getPathSegs())
     gcWorker.addPAObj(&apPs, owner);
@@ -1162,7 +1229,7 @@ void FlexPA::prepPoint_pin_checkPoint(
   prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::E, pin, instTerm);
   prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::S, pin, instTerm);
   prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::N, pin, instTerm);
-  prepPoint_pin_checkPoint_via(ap, polyset, frDirEnum::U, pin, instTerm);
+  prepPoint_pin_checkPoint_via(ap, polys, polyset, frDirEnum::U, pin, instTerm);
 }
 
 template <typename T>

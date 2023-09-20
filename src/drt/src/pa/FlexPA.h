@@ -239,15 +239,26 @@ class FlexPA
   template <typename T>
   void prepPoint_pin_checkPoint_via(
       frAccessPoint* ap,
+      const std::vector<gtl::polygon_90_data<frCoord>>& layerPolys,
       const gtl::polygon_90_set_data<frCoord>& polyset,
       frDirEnum dir,
       T* pin,
       frInstTerm* instTerm);
   template <typename T>
-  bool prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
-                                           frVia* via,
-                                           T* pin,
-                                           frInstTerm* instTerm);
+  bool prepPoint_pin_checkPoint_via_helper(
+      frAccessPoint* ap,
+      frVia* via,
+      T* pin,
+      frInstTerm* instTerm,
+      const std::vector<gtl::polygon_90_data<frCoord>>& layerPolys);
+  template <typename T>
+  bool prepPoint_pin_checkPoint_viaDir_helper(
+      frAccessPoint* ap,
+      frVia* via,
+      T* pin,
+      frInstTerm* instTerm,
+      const std::vector<gtl::polygon_90_data<frCoord>>& layerPolys,
+      frDirEnum dir);
   template <typename T>
   void prepPoint_pin_updateStat(
       const std::vector<std::unique_ptr<frAccessPoint>>& tmpAps,
