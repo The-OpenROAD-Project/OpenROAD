@@ -30,6 +30,7 @@ _installCommonDev() {
 
     # temp dir to download and compile
     baseDir=/tmp/installers
+    rm -rf "${baseDir}"
     mkdir -p "${baseDir}"
     if [[ ! -z "${PREFIX}" ]]; then
         mkdir -p "${PREFIX}"
@@ -140,7 +141,6 @@ _installCommonDev() {
     yosysPrefix=${PREFIX:-"/usr/local"}
     if ! command -v yosys &> /dev/null; then
         cd "${baseDir}"
-        rm -rf yosys
         git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/yosys
         cd yosys
         make -j $(nproc) PREFIX="${yosysPrefix}"
@@ -151,7 +151,6 @@ _installCommonDev() {
     eqyPrefix=${PREFIX:-"/usr/local"}
     if ! command -v eqy &> /dev/null; then
         cd "${baseDir}"
-        rm -rf eqy
         git clone --depth=1 -b ${eqyVersion} --recursive https://github.com/YosysHQ/eqy
         cd eqy
         export PATH="${yosysPrefix}/bin:${PATH}"
@@ -163,7 +162,6 @@ _installCommonDev() {
     sbyPrefix=${PREFIX:-"/usr/local"}
     if ! command -v sby &> /dev/null; then
         cd "${baseDir}"
-        rm -rf sby
         git clone --depth=1 -b ${yosysVersion} --recursive https://github.com/YosysHQ/sby
         cd sby
         export PATH="${eqyPrefix}/bin:${PATH}"
