@@ -171,8 +171,34 @@ void Graphics::setWirelength(float wirelength)
   wirelength_ = wirelength;
 }
 
+void Graphics::finishedClustering(Cluster* root)
+{
+  root_ = root;
+}
+
+void Graphics::drawCluster(Cluster* cluster, gui::Painter& painter)
+{
+  const int lx = dbu_ * cluster->getX();
+  const int ly = dbu_ * cluster->getY();
+  const int ux = lx + dbu_ * cluster->getWidth();
+  const int uy = ly + dbu_ * cluster->getHeight();
+  odb::Rect bbox(lx, ly, ux, uy);
+
+  painter.drawRect(bbox);
+
+  for (Cluster* child : cluster->getChildren()) {
+    drawCluster(child, painter);
+  }
+}
+
 void Graphics::drawObjects(gui::Painter& painter)
 {
+  if (root_) {
+    painter.setPen(gui::Painter::red, true);
+    painter.setBrush(gui::Painter::transparent);
+    drawCluster(root_, painter);
+  }
+
   painter.setPen(gui::Painter::yellow, true);
   painter.setBrush(gui::Painter::gray);
 

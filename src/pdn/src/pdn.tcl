@@ -398,7 +398,7 @@ sta::define_cmd_args "add_pdn_ring" {[-grid grid_name] \
 
 proc add_pdn_ring {args} {
   sta::parse_key_args "add_pdn_ring" args \
-    keys {-grid -layers -widths -spacings -core_offsets -pad_offsets -connect_to_pad_layers -power_pads -ground_pads -nets} \
+    keys {-grid -layers -widths -spacings -core_offsets -pad_offsets -connect_to_pad_layers -power_pads -ground_pads -nets -starts_with} \
     flags {-add_connect -extend_to_boundary -connect_to_pads}
 
   sta::check_argc_eq0 "add_pdn_ring" $args
