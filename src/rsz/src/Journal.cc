@@ -195,14 +195,36 @@ void Journal::makeBuffer(Instance* buffer)
   journal_stack_.emplace(std::move(element));
 }
 
-void Journal::restore(int& resize_count, int& inserted_buffer_count,
-                             int& cloned_gate_count)
+void Journal::restore()
 {
   while (!journal_stack_.empty()) {
     Undo *element = journal_stack_.top().get();
     element->UndoOperation(resizer_);
     journal_stack_.pop();
   }
+}
+
+void Journal::reportStatistics()
+{
+  // TODO:
+  if (inserted_buffer_count_ > 0 && split_load_buffer_count_ == 0) {
+    logger_->info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
+  }
+  else if (inserted_buffer_count_ > 0 && split_load_buffer_count_ > 0) {
+    logger_->info(RSZ, 45, "Inserted {} buffers, {} to split loads.",
+                  inserted_buffer_count_, split_load_buffer_count_);
+  }
+  logger_->metric("design__instance__count__setup_buffer", inserted_buffer_count_);
+  if (resize_count_ > 0) {
+    logger_->info(RSZ, 41, "Resized {} instances.", resize_count_);
+  }
+  if (swap_pin_count_ > 0) {
+    logger_->info(RSZ, 43, "Swapped pins on {} instances.", swap_pin_count_);
+  }
+  if (cloned_gate_count_ > 0) {
+    logger_->info(RSZ, 49, "Cloned {} instances.", cloned_gate_count_);
+  }
+  return;
 }
 
 sta::Network * Journal::network()

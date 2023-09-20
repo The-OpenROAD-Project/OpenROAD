@@ -207,14 +207,7 @@ void Resizer::init(Logger* logger,
   resized_multi_output_insts_ = InstanceSet(db_network_);
   inserted_buffer_set_ = InstanceSet(db_network_);
   steiner_renderer_ = std::move(steiner_renderer);
-  // TODO REMOVE
-  new_journal_ = true;
-  if (getenv("NEW_UNDO")!= nullptr) {
-    new_journal_ = true;
-  }
-  else {
-    new_journal_ = false;
-  }
+  new_journal_ = false;
   journal_ = new Journal(this, logger_);
   copyState(sta);
 }
@@ -2840,7 +2833,7 @@ Resizer::journalRestore(int &resize_count,
                         int &cloned_gate_count)
 {
   if (new_journal_) {
-    journal_->restore(resize_count, inserted_buffer_count, cloned_gate_count);
+    journal_->restore();
   }
   else {
     for (auto [inst, lib_cell] : resized_inst_map_) {

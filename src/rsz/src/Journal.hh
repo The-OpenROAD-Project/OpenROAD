@@ -140,12 +140,13 @@ public:
 
   void begin();
   void end();
-  void restore(int& resize_count, int& inserted_buffer_count, int& cloned_gate_count);
+  void restore();
   void swapPins(Instance *inst, LibertyPort *port1, LibertyPort *port2);
   void instReplaceCellBefore(Instance *inst);
   void makeBuffer(Instance *buffer);
   Instance *cloneInstance(LibertyCell *cell, const char *name,  Instance *original_inst,
                                   Instance *parent,  const Point& loc);
+  void reportStatistics();
  private:
   Network *network();
   dbSta *sta();
@@ -154,6 +155,19 @@ public:
   Resizer *resizer_;
   Logger *logger_;
   std::stack<std::unique_ptr<Undo>> journal_stack_;
+  // Keep accurate logs. These will supercede other globals etc.
+  // We log all operations here and we also undo all operations here.
+  // Todo: How do we count operations which are done on the same instance
+  // Todo: This should be handled correctly by design since we have a stack
+  // Note that if we do everything correctly then the net number of transforms
+  // should be equal to the sum of all the different types of transforms.
+  int resize_count_;
+  int inserted_buffer_count_;
+  int split_load_buffer_count_;
+  int cloned_gate_count_;
+  int swap_pin_count_;
+  int transforms_made_;
+  int transforms_undone_;
 };
 
 } // namespace rsz
