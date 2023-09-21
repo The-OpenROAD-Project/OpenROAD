@@ -203,30 +203,22 @@ void make_ring(const char* grid_name,
 }
 
 void createSrouteWires(
-      const char* net,
-      const char* outerNet,
-      odb::dbTechLayer* layer0,
-      odb::dbTechLayer* layer1,
-      int cut_pitch_x,
-      int cut_pitch_y,
-      const std::vector<odb::dbTechViaGenerateRule*>& vias,
-      const std::vector<odb::dbTechVia*>& techvias,
-      int max_rows,
-      int max_columns,
-      const std::vector<odb::dbTechLayer*>& ongrid,
-      const std::vector<odb::dbTechLayer*>& split_cuts_layers,
-      const std::vector<int>& split_cut_pitches,
-      const char* dont_use_vias,
-      int stripDY,
-      std::vector<int> metalwidths,
-      std::vector<int> metalspaces,
-      const std::vector<odb::dbInst*>& insts)
+    const char* net,
+    const char* outerNet,
+    odb::dbTechLayer* layer0,
+    odb::dbTechLayer* layer1,
+    int cut_pitch_x,
+    int cut_pitch_y,
+    const std::vector<odb::dbTechViaGenerateRule*>& vias,
+    const std::vector<odb::dbTechVia*>& techvias,
+    int max_rows,
+    int max_columns,
+    const std::vector<odb::dbTechLayer*>& ongrid,
+    std::vector<int> metalwidths,
+    std::vector<int> metalspaces,
+    const std::vector<odb::dbInst*>& insts)
 {
   PdnGen* pdngen = ord::getPdnGen();
-  std::map<odb::dbTechLayer*, int> split_cuts;
-  for (size_t i = 0; i < split_cuts_layers.size(); i++) {
-    split_cuts[split_cuts_layers[i]] = split_cut_pitches[i];
-  }
   pdngen->createSrouteWires(net,
                             outerNet,
                             layer0,
@@ -238,13 +230,11 @@ void createSrouteWires(
                             max_rows,
                             max_columns,
                             ongrid,
-                            split_cuts,
-                            dont_use_vias,
-                            stripDY,
                             metalwidths,
                             metalspaces,
                             insts);
 }
+
 
 void make_followpin(const char* grid_name, 
                     odb::dbTechLayer* layer, 
