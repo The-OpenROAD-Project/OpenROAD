@@ -5930,6 +5930,8 @@ void HierRTLMP::setTemporaryStdCellLocation(Cluster* cluster,
   std_cell->setLocation(
       (soft_macro_center_x_dbu - std_cell->getBBox()->getDX() / 2),
       (soft_macro_center_y_dbu - std_cell->getBBox()->getDY() / 2));
+
+  std_cell->setPlacementStatus(odb::dbPlacementStatus::PLACED);
 }
 
 void HierRTLMP::setModuleStdCellsLocation(Cluster* cluster,
@@ -5983,7 +5985,8 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
           continue;
         }
 
-        if (net_iterm->getInst()->isBlock() || net_iterm->getInst()->isCore()) {
+        if (net_iterm->getInst()->getPlacementStatus()
+            == odb::dbPlacementStatus::PLACED) {
           const float x1 = dbuToMicron(iterm->getBBox().xCenter(), dbu_);
           const float y1 = dbuToMicron(iterm->getBBox().yCenter(), dbu_);
           const float x2 = dbuToMicron(net_iterm->getBBox().xCenter(), dbu_);

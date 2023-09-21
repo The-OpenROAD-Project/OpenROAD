@@ -1033,6 +1033,7 @@ void HardMacro::updateDb(float pitch_x, float pitch_y, odb::dbBlock* block)
 
   inst_->setOrigin(snap_origin_x, snap_origin_y);
   inst_->setOrient(orientation_);
+  inst_->setPlacementStatus(odb::dbPlacementStatus::PLACED);
 }
 
 ///////////////////////////////////////////////////////////////////////
