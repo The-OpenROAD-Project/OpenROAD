@@ -43,6 +43,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Eigen3 REQUIRED)
 find_package(ortools REQUIRED)
 find_package(LEMON NAMES LEMON lemon REQUIRED)
+find_package(OpenMP REQUIRED)
 
 swig_lib(NAME      gpl
          NAMESPACE gpl
@@ -87,6 +88,8 @@ target_link_libraries(gpl
     rsz
     grt
     ortools::ortools
+    Threads::Threads
+    OpenMP::OpenMP_CXX
 )
 
 # Allow users to use GPU or not

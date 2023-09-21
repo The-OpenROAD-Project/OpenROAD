@@ -859,7 +859,7 @@ void MBFF::Run(int mx_sz, float ALPHA, float BETA) {
             (4) Merge pointsets from (1)
             (5) Run ILP
     */
-
+    srand(time(NULL));
     omp_set_num_threads(NUM_THREADS);
     int num_flops = static_cast<int>(FLOPS.size());
     std::vector<Flop> flops = FLOPS;
@@ -904,7 +904,7 @@ void MBFF::Run(int mx_sz, float ALPHA, float BETA) {
             res[i].resize(5);
         }
 
-#pragma omp parallel for
+        #pragma omp parallel for
         for (int i = 0; i < 25; i++) {
 
             int bit_idx = ind[i].first, tray_idx = ind[i].second;
@@ -952,7 +952,7 @@ void MBFF::Run(int mx_sz, float ALPHA, float BETA) {
 // end Silhoutte
 
 // begin capacitated k-means clustering
-#pragma omp parallel for
+        #pragma omp parallel for
         for (int i = 1; i < 6; i++) {
 
             int rows = GetRows(GetBitCnt(i)), cols = GetBitCnt(i) / rows;
