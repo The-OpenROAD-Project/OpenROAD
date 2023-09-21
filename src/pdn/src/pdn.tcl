@@ -640,20 +640,17 @@ sta::define_cmd_args "add_sroute_connect" {[-net net] \
                                            -layers list_of_2_layers \
                                            -cut_pitch pitch_value \
                                            [-fixed_vias list_of_vias] \
-                                           [-dont_use_vias list_of_vias] \
                                            [-max_rows rows] \
                                            [-max_columns columns] \
-                                           [-stripDY stripDY] \
                                            [-metalwidths metalwidths] \
                                            [-metalspaces metalspaces] \
                                            [-ongrid ongrid_layers] \
-                                           [-split_cuts split_cuts_mapping] \
                                            [-insts inst]
 }
 
 proc add_sroute_connect {args} {
   sta::parse_key_args "add_sroute_connect" args \
-    keys {-net -outerNet -layers -cut_pitch -fixed_vias -dont_use_vias -max_rows -max_columns -stripDY -metalwidths -metalspaces -ongrid -split_cuts -insts} \
+    keys {-net -outerNet -layers -cut_pitch -fixed_vias -max_rows -max_columns -metalwidths -metalspaces -ongrid -insts} \
     flags {}
 
   set l0 [pdn::get_layer [lindex $keys(-layers) 0]]
@@ -674,18 +671,13 @@ proc add_sroute_connect {args} {
     set outerNet $keys(-outerNet)
   }
 
-  set max_rows 0
+  set max_rows 10
   if {[info exists keys(-max_rows)]} {
     set max_rows $keys(-max_rows)
   }
-  set max_columns 0
+  set max_columns 10
   if {[info exists keys(-max_columns)]} {
     set max_columns $keys(-max_columns)
-  }
-
-  set stripDY 0
-  if {[info exists keys(-stripDY)]} {
-    set stripDY $keys(-stripDY)
   }
 
   set fixed_generate_vias {}
@@ -734,20 +726,6 @@ proc add_sroute_connect {args} {
     }
   }
 
-  set split_cuts_layers {}
-  set split_cuts_pitches {}
-  if {[info exists keys(-split_cuts)]} {
-    foreach {l pitch} $keys(-split_cuts) {
-      lappend split_cuts_layers [pdn::get_layer $l]
-      lappend split_cuts_pitches [ord::microns_to_dbu $pitch]
-    }
-  }
-
-  set dont_use ""
-  if {[info exists keys(-dont_use_vias)]} {
-    set dont_use $keys(-dont_use_vias)
-  }
-
   pdn::createSrouteWires $net \
                          $outerNet \
                          $l0 \
@@ -759,10 +737,6 @@ proc add_sroute_connect {args} {
                          $max_rows \
                          $max_columns \
                          $ongrid \
-                         $split_cuts_layers \
-                         $split_cuts_pitches \
-                         $dont_use \
-                         $stripDY \
                          $metalwidths \
                          $metalspaces \
                          $insts
