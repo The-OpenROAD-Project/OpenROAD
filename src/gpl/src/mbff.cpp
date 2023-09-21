@@ -94,7 +94,6 @@ namespace gpl {
 			objective->SetMinimization();
 
 
-			const MPSolver::ResultStatus result_status = solver->Solve();
 
 
 			float tot_d = 0;
@@ -428,7 +427,7 @@ namespace gpl {
 		return new_flop;
 	}
 
-	vector<Tray> MBFF::GetStartTrays(vector<Flop> &flops, int num_trays) {
+	vector<Tray> MBFF::GetStartTrays(vector<Flop> &flops, int num_trays, float AR) {
 
 		int num_flops = (int)flops.size();
 
@@ -442,7 +441,7 @@ namespace gpl {
 	
 		float tot_dist = 0;
 		for (int i = 0; i < num_flops; i++) {
-				float contr = MBFF::GetDist(flops[i].pt, tray_zero.pt);
+				float contr = MBFF::GetDist(flops[i].pt, tray_zero.pt) / AR;
 				flops[i].prob = contr, tot_dist += contr;
 		}
 
@@ -462,7 +461,7 @@ namespace gpl {
 				trays.push_back(new_tray);
 
 				for (int i = 0; i < num_flops; i++) {
-						float new_contr = MBFF::GetDist(flops[i].pt, new_tray.pt);
+						float new_contr = MBFF::GetDist(flops[i].pt, new_tray.pt) / AR;
 						flops[i].prob += new_contr, tot_dist += new_contr;
 				}
 
@@ -818,9 +817,8 @@ namespace gpl {
 			(5) Run ILP
 		*/
 
-		omp_set_num_threads(NUM_THREADS);
 
-		int num_flops = (int)FLOPS.size(), num_trays = (int)PATHS.size();
+		int num_flops = (int)FLOPS.size();
 		vector<Flop> flops = FLOPS;
 		vector<Path> paths = PATHS;
 
@@ -869,7 +867,7 @@ namespace gpl {
 				}
 
 			
-				#pragma omp parallel for
+	
 				for (int i = 0; i < 25; i++) {
 
 					int bit_idx = ind[i].first, tray_idx = ind[i].second;
@@ -879,7 +877,7 @@ namespace gpl {
 
 					int num_trays = (num_flops + (BITCNT[bit_idx] - 1)) / BITCNT[bit_idx];
 
-					start_trays[bit_idx][tray_idx] = GetStartTrays(pointsets[T], num_trays);
+					start_trays[bit_idx][tray_idx] = GetStartTrays(pointsets[T], num_trays, AR);
 					for (int j = 0; j < num_trays; j++) {
 						start_trays[bit_idx][tray_idx][j].slots = GetSlots(start_trays[bit_idx][tray_idx][j].pt, rows, cols);
 					}
@@ -906,11 +904,11 @@ namespace gpl {
 
 
 				// begin capacitated k-means clustering
-				#pragma omp parallel for
+
 				for (int i = 1; i < 6; i++) {
 
 						int rows = GetRows(BITCNT[i]), cols = BITCNT[i] / rows;
-						float AR = (cols * WIDTH * RATIOS[i]) / (rows * HEIGHT);
+						
 
 						int num_trays = (num_flops + (BITCNT[i] - 1)) / BITCNT[i];
 
