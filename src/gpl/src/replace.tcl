@@ -64,6 +64,10 @@ sta::define_cmd_args "global_placement" {\
     [-timing_driven_nets_percentage timing_driven_nets_percentage]\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
+    [-alpha alpha]\
+    [-beta beta]\
+    [-max_split_size max_split_size]\
+    [-num_threads num_threads]
 }
 
 proc global_placement { args } {
@@ -82,6 +86,7 @@ proc global_placement { args } {
       -timing_driven_net_reweight_overflow \
       -timing_driven_net_weight_max \
       -timing_driven_nets_percentage \
+      -alpha -beta -max_split_size -num_threads \
       -pad_left -pad_right} \
     flags {-skip_initial_place \
       -skip_nesterov_place \
@@ -384,4 +389,19 @@ proc get_global_placement_uniform_density { args } {
   }
   return $uniform_density
 }
+
+proc get_mbff_results { args } {
+  sta::parse_key_args "get_mbff_results" args \
+    keys { -max_split_size -alpha -beta -threads }
+
+
+  if { [info exists keys(-alpha)] } {
+    set alpha $keys(-alpha)
+    set beta $keys(-beta)
+    set num_threads $keys(-num_threads)
+    set max_split_size $keys(-max_split_size)
+    gpl::replace_run_mbff_cmd $max_split_size $alpha $beta $num_threads
+  }
+}
+
 }
