@@ -633,9 +633,6 @@ void PdnGen::createSrouteWires(
     int max_rows,
     int max_columns,
     const std::vector<odb::dbTechLayer*>& ongrid,
-    const std::map<odb::dbTechLayer*, int>& split_cuts,
-    const std::string& dont_use_vias,
-    int stripDY,
     std::vector<int> metalwidths,
     std::vector<int> metalspaces,
     const std::vector<odb::dbInst*>& insts)
@@ -734,13 +731,13 @@ void PdnGen::createSrouteWires(
             direction = wire->getDir();
             if (first) {
               if ((direction == 1) && (stripe_metal_layer == metal_layer)
-                  && (wire->getDY() == stripDY)) {
+                  && (wire->getDY() != Hdy)) {
                 first = false;
                 pdn_wire = wire;
               }
             } else {
               if ((direction == 1) && (stripe_metal_layer == metal_layer)
-                  && (wire->getDY() == stripDY)
+                  && (wire->getDY() != Hdy)
                   && (std::abs(wire->yMin() - actualy)
                       < std::abs(pdn_wire->yMin() - actualy))) {
                 pdn_wire = wire;
@@ -858,11 +855,14 @@ void PdnGen::createSrouteWires(
             odb::dbBox* box = *boxes.begin();
             int via_width = box->getDX();
 
-            int rows_ = (metalwidths[metalwidths.size() - 1] - cut_pitch_y)
-                        / (cut_pitch_y + box->getDY());
-            int cols_
-                = (rings[index]->xMax() - rings[index]->xMin() - cut_pitch_x)
-                  / (cut_pitch_x + box->getDX());
+            int rows_
+                = std::min((odb::uint) max_rows,
+                           (metalwidths[metalwidths.size() - 1] - cut_pitch_y)
+                               / (cut_pitch_y + box->getDY()));
+            int cols_ = std::min(
+                (odb::uint) max_columns,
+                (rings[index]->xMax() - rings[index]->xMin() - cut_pitch_x)
+                    / (cut_pitch_x + box->getDX()));
             int64_t centerX = cols_ / 2;
             int64_t centerY = rows_ / 2;
             int64_t row = 0;
@@ -913,10 +913,13 @@ void PdnGen::createSrouteWires(
           odb::dbSet<odb::dbBox> boxes = via_->getBoxes();
           odb::dbBox* box = *(boxes.begin());
           int via_width = box->getDX();
-          int rows_ = (metalwidths[metalwidths.size() - 1] - cut_pitch_y)
-                      / (cut_pitch_y + box->getDY());
-          int cols_
-              = (metalwidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX());
+          int rows_
+              = std::min((odb::uint) max_rows,
+                         (metalwidths[metalwidths.size() - 1] - cut_pitch_y)
+                             / (cut_pitch_y + box->getDY()));
+          int cols_ = std::min(
+              (odb::uint) max_columns,
+              (metalwidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX()));
           int64_t centerX = cols_ / 2;
           int64_t centerY = rows_ / 2;
           int64_t row = 0;
@@ -983,10 +986,12 @@ void PdnGen::createSrouteWires(
             odb::dbBox* box = *boxes.begin();
             int via_width = box->getDX();
 
-            int rows_ = (bbox.yMax() - bbox.yMin() - cut_pitch_y)
-                        / (cut_pitch_y + box->getDY());
-            int cols_
-                = (metalwidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX());
+            int rows_ = std::min((odb::uint) max_rows,
+                                 (bbox.yMax() - bbox.yMin() - cut_pitch_y)
+                                     / (cut_pitch_y + box->getDY()));
+            int cols_ = std::min(
+                (odb::uint) max_columns,
+                (metalwidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX()));
             int64_t centerX = cols_ / 2;
             int64_t centerY = rows_ / 2;
             int64_t row = 0;
@@ -1069,10 +1074,13 @@ void PdnGen::createSrouteWires(
           odb::dbBox* box = *boxes.begin();
           int via_width = box->getDX();
 
-          int rows_ = (pdn_wire->yMax() - pdn_wire->yMin() - cut_pitch_y)
-                      / (cut_pitch_y + box->getDY());
-          int cols_
-              = (metalwidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX());
+          int rows_
+              = std::min((odb::uint) max_rows,
+                         (pdn_wire->yMax() - pdn_wire->yMin() - cut_pitch_y)
+                             / (cut_pitch_y + box->getDY()));
+          int cols_ = std::min(
+              (odb::uint) max_columns,
+              (metalwidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX()));
           int64_t centerX = cols_ / 2;
           int64_t centerY = rows_ / 2;
           int64_t row = 0;
@@ -1139,10 +1147,12 @@ void PdnGen::createSrouteWires(
             odb::dbBox* box = *boxes.begin();
             int via_width = box->getDX();
 
-            int rows_ = (bbox.yMax() - bbox.yMin() - cut_pitch_y)
-                        / (cut_pitch_y + box->getDY());
-            int cols_
-                = (metalwidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX());
+            int rows_ = std::min((odb::uint) max_rows,
+                                 (bbox.yMax() - bbox.yMin() - cut_pitch_y)
+                                     / (cut_pitch_y + box->getDY()));
+            int cols_ = std::min(
+                (odb::uint) max_columns,
+                (metalwidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX()));
             int64_t centerX = cols_ / 2;
             int64_t centerY = rows_ / 2;
             int64_t row = 0;
