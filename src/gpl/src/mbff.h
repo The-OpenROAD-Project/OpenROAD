@@ -30,22 +30,9 @@ struct Path {
 
 
 
-// ORTools Usage 
-namespace operations_research {
-		
-	float RunLP(vector<Flop> flops, vector<Tray> &trays, vector<pair<int, int> > clusters, int sz);
-
-	namespace sat {
-		void RunILP(vector<Flop> flops, vector<Path> paths, vector<vector<Tray> > all_trays, float ALPHA, float BETA);
-	}
-
-}
-
-
 namespace gpl {
-	float GetDist(Point a, Point b);
-
-	class MBFF {
+	
+  class MBFF {
 
 		public:
 			MBFF(int num_flops, int num_paths, vector<float> x, vector<float> y, vector<pair<int, int> > paths, int threads); 
@@ -58,7 +45,9 @@ namespace gpl {
 			vector<Flop> FLOPS;
 			vector<Path> PATHS;
 			int NUM_THREADS;
-
+      
+      
+      float GetDist(Point a, Point b); 
 			int GetRows(int K);
 
 			vector<Point> GetSlots(Point tray, int rows, int cols);
@@ -73,6 +62,11 @@ namespace gpl {
 			float GetSilh(vector<Flop> flops, vector<Tray> trays, vector<pair<int, int> > clusters);
 			vector<vector<Flop> > KMeans(vector<Flop> flops, int K);
 			vector<vector<Flop> > KMeansDecomp(vector<Flop> flops, int MAX_SZ);
+
+      
+	    float RunLP(vector<Flop> flops, vector<Tray> &trays, vector<pair<int, int> > clusters, int sz);
+	    void RunILP(vector<Flop> flops, vector<Path> paths, vector<vector<Tray> > all_trays, float ALPHA, float BETA);
+
 	};
 
 }

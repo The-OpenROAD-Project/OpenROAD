@@ -1,0 +1,62 @@
+-- The CXX compiler identification is AppleClang 14.0.3.14030022
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /Library/Developer/CommandLineTools/usr/bin/g++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+CMake Warning at CMakeLists.txt:98 (message):
+  OpenROAD git describe failed, using sha1 instead
+
+
+-- OpenROAD version: d2c629269d956ecf63a1ded1366ee0ec05ff168d
+-- System name: Darwin
+-- Compiler: AppleClang 14.0.3.14030022
+-- Build type: RELEASE
+-- Install prefix: /usr/local
+-- C++ Standard: 17
+-- C++ Standard Required: ON
+-- C++ Extensions: OFF
+-- The C compiler identification is AppleClang 14.0.3.14030022
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /Library/Developer/CommandLineTools/usr/bin/gcc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Found Python: /Users/shreyas/opt/anaconda3/bin/python3.8 (found version "3.8.5") found components: Interpreter 
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE  
+CMake Error at third-party/CMakeLists.txt:58 (add_subdirectory):
+  The source directory
+
+    /Users/shreyas/ABK/OpenROAD/third-party/abc
+
+  does not contain a CMakeLists.txt file.
+
+
+-- TCL library: /usr/local/lib/libtcl8.6.dylib
+-- TCL header: TCL_HEADER-NOTFOUND
+-- Found SWIG: /usr/local/bin/swig (found suitable version "4.1.1", minimum required is "3.0")  
+-- Using SWIG >= 4.1.1 -flatstaticmethod flag for python
+-- Found Boost: /usr/local/lib/cmake/Boost-1.81.0/BoostConfig.cmake (found version "1.81.0")  
+-- boost: 1.81.0
+-- Found Python3: /Users/shreyas/opt/anaconda3/include/python3.8 (found version "3.8.5") found components: Development Development.Module Development.Embed 
+-- Found ZLIB: /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/lib/libz.tbd (found version "1.2.11")  
+CMake Error at src/CMakeLists.txt:230 (find_package):
+  By not providing "Findspdlog.cmake" in CMAKE_MODULE_PATH this project has
+  asked CMake to find a package configuration file provided by "spdlog", but
+  CMake did not find one.
+
+  Could not find a package configuration file provided by "spdlog" with any
+  of the following names:
+
+    spdlogConfig.cmake
+    spdlog-config.cmake
+
+  Add the installation prefix of "spdlog" to CMAKE_PREFIX_PATH or set
+  "spdlog_DIR" to a directory containing one of the above files.  If "spdlog"
+  provides a separate development package or SDK, be sure it has been
+  installed.
+
+
+-- Configuring incomplete, errors occurred!

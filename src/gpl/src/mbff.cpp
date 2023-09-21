@@ -20,6 +20,8 @@
 #include <lemon/maps.h>
 using namespace std;
 using namespace lemon;
+using namespace operations_research;
+using namespace sat;
 
 
 using Graph = ListDigraph;
@@ -33,11 +35,10 @@ std::mt19937 mt(seed);
 float WIDTH = 2.448, HEIGHT = 1.2;
 float RATIOS[6] = {1, 0.875, 0.854, 0.854, 0.844, 0.844}, POWER[6] = {1, 0.875, 0.854, 0.854, 0.844, 0.844};
 int BITCNT[6] = {1, 4, 8, 16, 32, 64};
-
-namespace operations_research {
+namespace gpl {
 	// begin or-tools usage 
 
-		float RunLP(vector<Flop> flops, vector<Tray> &trays, vector<pair<int, int> > clusters, int sz) {
+		float MBFF::RunLP(vector<Flop> flops, vector<Tray> &trays, vector<pair<int, int> > clusters, int sz) {
 			int num_flops = (int)flops.size(), num_trays = (int)trays.size();
 
 			unique_ptr<MPSolver> solver(MPSolver::CreateSolver("GLOP"));
@@ -101,14 +102,13 @@ namespace operations_research {
 				Tray new_tray;
 				new_tray.pt.x = tray_x[i]->solution_value();
 				new_tray.pt.y = tray_y[i]->solution_value();
-			    tot_d += gpl::GetDist(trays[i].pt, new_tray.pt);
+			    tot_d += MBFF::GetDist(trays[i].pt, new_tray.pt);
 		        trays[i] = new_tray;
 			 }
 
 			return tot_d;
 		}
 
-		namespace sat {
 
 		/* 
 			NOTE: CP-SAT constraints only work with INTEGERS
@@ -116,7 +116,7 @@ namespace operations_research {
 		*/
 
 
-			void RunILP(vector<Flop> flops, vector<Path> paths, vector<vector<Tray> > all_trays, float ALPHA, float BETA) {
+			void MBFF::RunILP(vector<Flop> flops, vector<Path> paths, vector<vector<Tray> > all_trays, float ALPHA, float BETA) {
 				vector<Tray> trays;
 		        for (int i = 0; i < 6; i++) {
 		            for (int j = 0; j < (int)all_trays[i].size(); j++) trays.push_back(all_trays[i][j]);
@@ -192,8 +192,8 @@ namespace operations_research {
 
 					// d_x_a represents the sum of d_x[a][j][k]
 					
-					LinearExpr d_x_a, d_y_a;
-					LinearExpr d_x_b, d_y_b;
+					sat::LinearExpr d_x_a, d_y_a;
+					sat::LinearExpr d_x_b, d_y_b;
 
 					for (int j = 0; j < num_trays; j++) {
 	                        vector<Point> slots = trays[j].slots;
@@ -228,7 +228,7 @@ namespace operations_research {
 				// BEGIN CONSTRAINTS FOR B
 				for (int i = 0; i < num_trays; i++) {
 					for (int j = 0; j < (int)trays[i].slots.size(); j++) {
-							LinearExpr b_slot;
+							sat::LinearExpr b_slot;
 							for (int k = 0; k < num_flops; k++) if (trays[i].cand[j] == k) {
 									b_slot += B[k][i][j];
 							}
@@ -239,7 +239,7 @@ namespace operations_research {
 				}
 
 				for (int i = 0; i < num_flops; i++) {
-					LinearExpr b_flop;
+					sat::LinearExpr b_flop;
 					for (int j = 0; j < num_trays; j++) {
 							for (int k = 0; k < (int)trays[j].slots.size(); k++) if (trays[j].cand[k] == i) {
 									b_flop += B[i][j][k];
@@ -258,7 +258,7 @@ namespace operations_research {
 				}
 
 				for (int i = 0; i < num_trays; i++) {
-						LinearExpr slots_used;
+						sat::LinearExpr slots_used;
 						for (int j = 0; j < (int)trays[i].slots.size(); j++) {
 								for (int k = 0; k < num_flops; k++) if (trays[i].cand[j] == k) {
 										cp_model.AddLessOrEqual(0, e[i] - B[k][i][j]);
@@ -287,7 +287,7 @@ namespace operations_research {
 					- can only be used for the objective function
 				*/
 
-				DoubleLinearExpr obj;
+				sat::DoubleLinearExpr obj;
 
 				// add B
 				for (int i = 0; i < num_flops; i++) {
@@ -312,7 +312,6 @@ namespace operations_research {
 
 				cp_model.Minimize(obj);
 
-				cout << "Added constraints\n\n";
 				const CpSolverResponse response = Solve(cp_model.Build());
 				if (response.status() == CpSolverStatus::INFEASIBLE) {
 	  				cout << "No solution found.\n";
@@ -381,14 +380,8 @@ namespace operations_research {
 
 			} // end ILP 
 
-		} // end of namespace sat 
 
-} // end of or-tools usage 
-
-
-
-namespace gpl {
-	float GetDist(Point a, Point b) {
+	float MBFF::GetDist(Point a, Point b) {
 		return (abs(a.x - b.x) + abs(a.y - b.y));
 	}
 
@@ -449,7 +442,7 @@ namespace gpl {
 	
 		float tot_dist = 0;
 		for (int i = 0; i < num_flops; i++) {
-				float contr = GetDist(flops[i].pt, tray_zero.pt);
+				float contr = MBFF::GetDist(flops[i].pt, tray_zero.pt);
 				flops[i].prob = contr, tot_dist += contr;
 		}
 
@@ -469,7 +462,7 @@ namespace gpl {
 				trays.push_back(new_tray);
 
 				for (int i = 0; i < num_flops; i++) {
-						float new_contr = GetDist(flops[i].pt, new_tray.pt);
+						float new_contr = MBFF::GetDist(flops[i].pt, new_tray.pt);
 						flops[i].prob += new_contr, tot_dist += new_contr;
 				}
 
@@ -522,7 +515,7 @@ namespace gpl {
 								Edge flop_to_slot = graph.addArc(nodes[k], slot_node);
 								edges.push_back(flop_to_slot);
 
-								int edge_cost = (100 * GetDist(flops[k].pt, tray_slots[j]));
+								int edge_cost = (100 * MBFF::GetDist(flops[k].pt, tray_slots[j]));
 								cur_costs.push_back(edge_cost), cur_caps.push_back(1);
 						}
 
@@ -578,11 +571,11 @@ namespace gpl {
 		float tot = 0;
 		for (int i = 0; i < num_flops; i++) {
 			float min_num = 2000000000;
-			float max_den = GetDist(flops[i].pt, trays[clusters[i].first].slots[clusters[i].second]);
+			float max_den = MBFF::GetDist(flops[i].pt, trays[clusters[i].first].slots[clusters[i].second]);
 			for (int j = 0; j < num_trays; j++) if (j != clusters[i].first) {
-				max_den = max(max_den, GetDist(flops[i].pt, trays[j].slots[clusters[i].second]));
+				max_den = max(max_den, MBFF::GetDist(flops[i].pt, trays[j].slots[clusters[i].second]));
 				for (int k = 0; k < (int)trays[j].slots.size(); k++) {
-					min_num = min(min_num, GetDist(flops[i].pt, trays[j].slots[k]));
+					min_num = min(min_num, MBFF::GetDist(flops[i].pt, trays[j].slots[k]));
 				}
 			}
 
@@ -606,7 +599,7 @@ namespace gpl {
 		centers.push_back(flops[seed]);
 
 		float d[num_flops];
-		for (int i = 0; i < num_flops; i++) d[i] = GetDist(flops[i].pt, flops[seed].pt);
+		for (int i = 0; i < num_flops; i++) d[i] = MBFF::GetDist(flops[i].pt, flops[seed].pt);
 
 		// choose remaining K-1 centers 
 		while ((int)chosen.size() < K) {
@@ -614,7 +607,7 @@ namespace gpl {
 			double tot_sum = 0;
 			for (int i = 0; i < num_flops; i++) if (!chosen.count(i)) {
 				for (int j: chosen) {
-					d[i] = min(d[i], GetDist(flops[i].pt, flops[j].pt));
+					d[i] = min(d[i], MBFF::GetDist(flops[i].pt, flops[j].pt));
 				}
 				tot_sum += (double(d[i]) * double(d[i]));
 			}
@@ -648,8 +641,8 @@ namespace gpl {
 
 
 				for (int j = 0; j < K; j++) {
-					if (GetDist(flops[i].pt, centers[j].pt) < min_cost) {
-						min_cost = GetDist(flops[i].pt, centers[j].pt);
+					if (MBFF::GetDist(flops[i].pt, centers[j].pt) < min_cost) {
+						min_cost = MBFF::GetDist(flops[i].pt, centers[j].pt);
 						idx = j;
 					}
 				}
@@ -680,7 +673,7 @@ namespace gpl {
 			float tot_disp = 0;
 			for (int i = 0; i < K; i++) {
 				for (Flop f: clusters[i]) {
-					tot_disp += GetDist(centers[i].pt, f.pt);
+					tot_disp += MBFF::GetDist(centers[i].pt, f.pt);
 				}
 			}
 
@@ -728,7 +721,7 @@ namespace gpl {
 			float cur_cost = 0;
 			for (int j = 0; j < 4; j++) {
 				for (int k = 0; k + 1 < (int)tmp[j].size(); k++) {
-					cur_cost += GetDist(tmp[j][k].pt, tmp[j].back().pt);
+					cur_cost += MBFF::GetDist(tmp[j][k].pt, tmp[j].back().pt);
 				}
 			}	
 
@@ -754,7 +747,7 @@ namespace gpl {
 		vector<pair<float, pair<int, int> > > cluster_pairs;
 		for (int i = 0; i < 4; i++) {
 			for (int j = i + 1; j < 4; j++) {
-				cluster_pairs.push_back(make_pair(GetDist(k_means_ret[i].back().pt, k_means_ret[j].back().pt), make_pair(i, j)));
+				cluster_pairs.push_back(make_pair(MBFF::GetDist(k_means_ret[i].back().pt, k_means_ret[j].back().pt), make_pair(i, j)));
 			}
 		}
 		sort(begin(cluster_pairs), end(cluster_pairs));
@@ -896,7 +889,7 @@ namespace gpl {
 					for (int j = 0; j < 8; j++) {
 						
 		        		tmp_cluster = MinCostFlow(pointsets[T], start_trays[bit_idx][tray_idx], BITCNT[bit_idx]);
-		         		delta = operations_research::RunLP(pointsets[T], start_trays[bit_idx][tray_idx], tmp_cluster, BITCNT[bit_idx]);
+		         		delta = MBFF::RunLP(pointsets[T], start_trays[bit_idx][tray_idx], tmp_cluster, BITCNT[bit_idx]);
 
 						for (int k = 0; k < num_trays; k++) {
 								start_trays[bit_idx][tray_idx][k].slots = GetSlots(start_trays[bit_idx][tray_idx][k].pt, rows, cols);
@@ -940,7 +933,7 @@ namespace gpl {
 						float delta = 0;
 						for (int j = 0; j < 35; j++) {
 		            		clusters[i] = MinCostFlow(pointsets[T], trays[i], BITCNT[i]);
-							delta = operations_research::RunLP(pointsets[T], trays[i], clusters[i], BITCNT[i]);
+							delta = MBFF::RunLP(pointsets[T], trays[i], clusters[i], BITCNT[i]);
 							for (int k = 0; k < num_trays; k++) {
 								trays[i][k].slots = GetSlots(trays[i][k].pt, rows, cols);
 							}
@@ -984,7 +977,7 @@ namespace gpl {
 				}
     	}
 
-    	operations_research::sat::RunILP(flops, paths, all_trays, ALPHA, BETA);
+    	MBFF::RunILP(flops, paths, all_trays, ALPHA, BETA);
 	}
 
 
