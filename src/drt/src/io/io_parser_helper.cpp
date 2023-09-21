@@ -594,7 +594,6 @@ inline void getTrackLocs(bool isHorzTracks,
 
 void io::Parser::checkFig(frPinFig* uFig,
                           const frString& term_name,
-                          bool is_iTerm,
                           const dbTransform& xform,
                           bool& foundTracks,
                           bool& foundCenterTracks,
@@ -604,9 +603,7 @@ void io::Parser::checkFig(frPinFig* uFig,
   if (uFig->typeId() == frcRect) {
     frRect* shape = static_cast<frRect*>(uFig);
     Rect box = shape->getBBox();
-    if (is_iTerm) {
-      xform.apply(box);
-    }
+    xform.apply(box);
     if (box.xMin() % grid || box.yMin() % grid || box.xMax() % grid
         || box.yMax() % grid) {
       logger_->error(DRT,
@@ -658,28 +655,16 @@ void io::Parser::checkFig(frPinFig* uFig,
     auto polygon = static_cast<frPolygon*>(uFig);
     vector<gtl::point_data<frCoord>> points;
     for (Point pt : polygon->getPoints()) {
-      if (is_iTerm) {
-        xform.apply(pt);
-      }
+      xform.apply(pt);
       points.emplace_back(pt.x(), pt.y());
       if (pt.getX() % grid || pt.getY() % grid) {
-        if (is_iTerm) {
-          logger_->error(DRT,
-                         417,
-                         "Term {} contains offgrid pin shape. Polygon point "
-                         "{} is not a multiple of the manufacturing grid {}.",
-                         term_name,
-                         pt,
-                         grid);
-        } else {
-          logger_->error(DRT,
-                         420,
-                         "Term {} contains offgrid pin shape. Polygon point "
-                         "{} is not a multiple of the manufacturing grid {}.",
-                         term_name,
-                         pt,
-                         grid);
-        }
+        logger_->error(DRT,
+                       417,
+                       "Term {} contains offgrid pin shape. Polygon point "
+                       "{} is not a multiple of the manufacturing grid {}.",
+                       term_name,
+                       pt,
+                       grid);
       }
     }
     if (foundTracks) {
@@ -734,7 +719,6 @@ void io::Parser::checkPins()
       for (auto& uFig : pin->getFigs()) {
         checkFig(uFig.get(),
                  bTerm->getName(),
-                 false,
                  xform,
                  foundTracks,
                  foundCenterTracks,
@@ -769,7 +753,6 @@ void io::Parser::checkPins()
         for (auto& uFig : pin->getFigs()) {
           checkFig(uFig.get(),
                    uTerm->getName(),
-                   true,
                    xform,
                    foundTracks,
                    foundCenterTracks,

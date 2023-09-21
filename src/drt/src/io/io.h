@@ -116,7 +116,6 @@ class Parser
   // postProcess functions
   void checkFig(frPinFig* uFig,
                 const frString& term_name,
-                bool is_iTerm,
                 const dbTransform& xform,
                 bool& foundTracks,
                 bool& foundCenterTracks,
