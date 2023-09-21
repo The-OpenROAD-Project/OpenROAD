@@ -177,8 +177,8 @@ class HTreeBuilder : public TreeBuilder
                Clock& net,
                TreeBuilder* parent,
                utl::Logger* logger,
-               odb::dbDatabase* db)
-      : TreeBuilder(options, net, parent), logger_(logger), db_(db)
+               odb::dbDatabase* db = nullptr)                        // xxx
+      : TreeBuilder(options, net, parent), logger_(logger), db_(db)  // xxx
   {
   }
 
@@ -186,8 +186,6 @@ class HTreeBuilder : public TreeBuilder
 
   void legalize();
   void legalizeDummy();
-  Point<double> legalizeOneBuffer(Point<double> bufferLoc,
-                                  std::string bufferName);
   void plotSolution();
   void plotHTree();
   unsigned findSibling(LevelTopology& topology, unsigned i, unsigned par);

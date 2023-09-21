@@ -83,8 +83,15 @@ using utl::Logger;
 class LevelBalancer
 {
  public:
-  LevelBalancer(TreeBuilder* root, const CtsOptions* options, Logger* logger)
-      : root_(root), options_(options), logger_(logger), levelBufCount_(0)
+  LevelBalancer(TreeBuilder* root,
+                const CtsOptions* options,
+                Logger* logger,
+                double scalingUnit)
+      : root_(root),
+        options_(options),
+        logger_(logger),
+        levelBufCount_(0),
+        wireSegmentUnit_(scalingUnit)
   {
   }
 
@@ -108,5 +115,7 @@ class LevelBalancer
   Logger* logger_;
   CellLevelMap cgcLevelMap_;
   unsigned levelBufCount_;
+  double wireSegmentUnit_;
 };
+
 }  // namespace cts

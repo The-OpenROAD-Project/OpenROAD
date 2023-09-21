@@ -403,38 +403,6 @@ bool moveOnBlockBounardy(const Point<double>& pt,
   return false;
 }
 
-// Find one blockage that contains qt
-// (x1, y1) is the lower left corner
-// (x2, y2) is the upper right corner
-odb::dbBlockage* findBlockage(
-    const Point<double>& qt,
-    double z,
-    double& x1,  // minx, (x1,y1) is the lower left corner of block
-    double& y1,  // miny, (x2,y2) is the upper right corner of block
-    double& x2,
-    double& y2,
-    odb::dbDatabase* db_)
-{
-  double qx = qt.getX();
-  double qy = qt.getY();
-
-  for (odb::dbBlockage* blockage : db_->getChip()->getBlock()->getBlockages()) {
-    // std::string name = inst->getName();
-    std::string name = "xxx";
-    odb::dbBox* bbox = blockage->getBBox();
-    x1 = bbox->xMin() / z;
-    y1 = bbox->yMin() / z;
-    x2 = bbox->xMax() / z;
-    y2 = bbox->yMax() / z;
-
-    bool inside = qx > x1 && qx < x2 && qy > y1 && qy < y2;
-    if (inside) {
-      return blockage;
-    }
-  }
-  return nullptr;
-}
-
 void findLegalPlacement(
     const Point<double>& pt,
     unsigned leng,
@@ -522,7 +490,7 @@ void HTreeBuilder::legalizeDummy()
 
       double x1, y1, x2, y2;
       int z = wireSegmentUnit_;
-      odb::dbBlockage* obs = findBlockage(branchPoint, z, x1, y1, x2, y2, db_);
+      odb::dbBlockage* obs = findBlockage(branchPoint, z, x1, y1, x2, y2);
 
       if (obs != nullptr) {  // xxx qt is inside the block obs
         Point<double> ans(branchPoint);
@@ -584,14 +552,11 @@ void HTreeBuilder::legalize()
 
       int z = wireSegmentUnit_;
       double x1, y1, x2, y2;
-      odb::dbBlockage* obs = findBlockage(qt, z, x1, y1, x2, y2, db_);
+      odb::dbBlockage* obs = findBlockage(qt, z, x1, y1, x2, y2);
       if (obs != nullptr) {
         Point<double> ans(qt);
         if (levelIdx == 0) {
-          bool moved = moveOnBlockBounardy(parentPoint, ans, x1, y1, x2, y2);
-          if (moved) {
-            // logger_->report("xxx yy8 top {}:{}-->{} ", levelIdx, qt, ans );
-          }
+          (void) moveOnBlockBounardy(parentPoint, ans, x1, y1, x2, y2);
         } else {
           if (levelIdx == 1) {
             leng = qt.computeDist(parentPoint);
@@ -604,11 +569,6 @@ void HTreeBuilder::legalize()
           std::string name = "xxx";
           // choose the best new location
           ans = selectBestNewLocation(qt, points, sinks);
-          if (levelIdx == 2) {
-            double moved = ans.computeDist(qt);
-            logger_->report(
-                "xxx y8 top {}:{}-->{}, moved={} ", levelIdx, qt, ans, moved);
-          }
         }
         // set qt to be the answer
         qt.setX(ans.getX());
@@ -620,59 +580,6 @@ void HTreeBuilder::legalize()
   // optioanl: "further" optimize the location of the "dummy" buffers that drive
   // no sinks
   legalizeDummy();
-}
-
-//
-// Legalize one buffer (can be L0, L1, L2 or leaf buffer)
-// bufferLoc needs to in non-dbu units: without wireSegmentUnit_ multiplier
-// bufferName is a string that contains name of buffer master cell
-//
-// Cho Moon - Sep 1, 2023
-Point<double> HTreeBuilder::legalizeOneBuffer(Point<double> bufferLoc,
-                                              std::string bufferName)
-{
-  if (options_->getObstructionAware()) {
-    odb::dbMaster* libCell = db_->findMaster(bufferName.c_str());
-    assert(libCell != nullptr);
-    // check if current buffer sits on top of blockage
-    double x1, y1, x2, y2;
-    odb::dbBlockage* obs
-        = findBlockage(bufferLoc, wireSegmentUnit_, x1, y1, x2, y2, db_);
-    if (obs != nullptr) {
-      // x1, y1 are lower left corner of blockage
-      // x2, y2 are upper right corner of blockage
-      // move buffer to the nearest legal location by snapping it to right,
-      // left, top or bottom need to consider cell height and width to avoid any
-      // overlap with blockage
-      Point<double> newLoc = bufferLoc;
-      // first, try snapping it to the left
-      double delta = bufferLoc.getX() - x1;
-      double minDist = delta;
-      newLoc.setX(x1 - ((double) libCell->getWidth() / wireSegmentUnit_));
-      // second, try snapping it to the right
-      delta = x2 - bufferLoc.getX();
-      if (delta < minDist) {
-        minDist = delta;
-        newLoc.setX(x2);
-      }
-      // third, try snapping it to the bottom
-      delta = bufferLoc.getY() - y1;
-      if (delta < minDist) {
-        minDist = delta;
-        newLoc.setX(bufferLoc.getX());
-        newLoc.setY(y1 - ((double) libCell->getHeight() / wireSegmentUnit_));
-      }
-      // fourth, try snapping it to the top
-      delta = y2 - bufferLoc.getY();
-      if (delta < minDist) {
-        newLoc.setX(bufferLoc.getX());
-        newLoc.setY(y2);
-      }
-
-      return newLoc;
-    }
-  }
-  return bufferLoc;
 }
 
 void HTreeBuilder::run()
@@ -1538,11 +1445,14 @@ void SegmentBuilder::build(const std::string& forceBuffer)
       const std::string buffMaster = !forceBuffer.empty()
                                          ? forceBuffer
                                          : wireSegment.getBufferMaster(buffer);
+      Point<double> bufferLoc(x, y);
+      Point<double> legalBufferLoc
+          = tree_->legalizeOneBuffer(bufferLoc, buffMaster);
       ClockInst& newBuffer = clock_->addClockBuffer(
           instPrefix_ + std::to_string(numBufferLevels_),
           buffMaster,
-          x * techCharDistUnit_,
-          y * techCharDistUnit_);
+          legalBufferLoc.getX() * techCharDistUnit_,
+          legalBufferLoc.getY() * techCharDistUnit_);
       tree_->addTreeLevelBuffer(&newBuffer);
 
       drivingSubNet_->addInst(newBuffer);
