@@ -785,8 +785,16 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
   }
 
   if (critical_nets_percentage_ != 0) {
-    fastroute_->setUpdateSlack(critical_nets_percentage_);
-    computeNetSlacks();
+    if (sta_->getDbNetwork()->defaultLibertyLibrary() != nullptr) {
+      fastroute_->setUpdateSlack(critical_nets_percentage_);
+      computeNetSlacks();
+    } else {
+      critical_nets_percentage_ = 0;
+      logger_->warn(
+          GRT,
+          300,
+          "Timing is not available, setting critical nets percentage to 0\n");
+    }
   }
 
   for (Net* net : nets) {
