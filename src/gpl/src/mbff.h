@@ -53,7 +53,7 @@ namespace gpl {
 			vector<Point> GetSlots(Point tray, int rows, int cols);
 			Flop GetNewFlop(vector<Flop> prob_dist, float tot_dist);
 
-			vector<Tray> GetStartTrays(vector<Flop> &flops, int num_trays);
+			vector<Tray> GetStartTrays(vector<Flop> &flops, int num_trays, float AR);
 			Tray GetOneBit(Point pt);
 
 			vector<pair<int, int> > MinCostFlow(vector<Flop> flops, vector<Tray> &trays, int sz);
