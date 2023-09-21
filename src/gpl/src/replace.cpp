@@ -44,6 +44,7 @@
 #include "rsz/Resizer.hh"
 #include "timingBase.h"
 #include "utl/Logger.h"
+#include "mbff.h"
 
 namespace gpl {
 
@@ -295,6 +296,29 @@ void Replace::doInitialPlace()
   ip_ = std::move(ip);
   ip_->doBicgstabPlace();
 }
+
+void Replace::runMBFF(int max_sz, float alpha, float beta, int threads) {
+
+  int num_flops = 0, num_paths = 0;
+  vector<float> X, Y; 
+  vector<pair<int, int> > paths;
+
+
+  auto block = db_->getChip()->getBlock();
+  for (auto inst : block->getInsts()) {
+    auto mstr = inst->getMaster();
+    if (mstr->isSequential()) {
+      int x, y; inst->getOrigin(x, y);
+      X.push_back(x), Y.push_back(y);
+      num_flops++;
+    }
+  }
+
+
+  MBFF pntset = MBFF(num_flops, num_paths, X, Y, paths, threads);
+  pntset.Run(max_sz, alpha, beta);
+}
+
 
 bool Replace::initNesterovPlace()
 {
