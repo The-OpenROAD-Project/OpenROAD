@@ -45,9 +45,10 @@ replace_nesterov_place_cmd()
 
 
 void
-replace_run_mbff_cmd(int max_sz, float ALPHA, float BETA, int threads) 
+replace_run_mbff_cmd(int max_sz, float ALPHA, float BETA) 
 {
   Replace* replace = getReplace();
+  int threads = ord::OpenRoad::openRoad()->getThreadCount();
   replace->runMBFF(max_sz, ALPHA, BETA, threads);   
 }
 
