@@ -51,8 +51,11 @@ namespace cts {
 class TreeBuilder
 {
  public:
-  TreeBuilder(CtsOptions* options, Clock& clk, TreeBuilder* parent)
-      : options_(options), clock_(clk), parent_(parent)
+  TreeBuilder(CtsOptions* options,
+              Clock& clk,
+              TreeBuilder* parent,
+              odb::dbDatabase* db = nullptr)
+      : options_(options), clock_(clk), parent_(parent), db_(db)
   {
     if (parent) {
       parent->children_.emplace_back(this);
@@ -98,6 +101,15 @@ class TreeBuilder
   {
     return tree_level_buffers_.find(inst) != tree_level_buffers_.end();
   }
+  void setDb(odb::dbDatabase* db) { db_ = db; }
+  odb::dbBlockage* findBlockage(const Point<double>& qt,
+                                double scalingUnit,
+                                double& x1,
+                                double& y1,
+                                double& x2,
+                                double& y2);
+  Point<double> legalizeOneBuffer(Point<double> bufferLoc,
+                                  std::string bufferName);
 
  protected:
   CtsOptions* options_ = nullptr;
@@ -112,6 +124,7 @@ class TreeBuilder
   std::set<ClockInst*> first_level_sink_drivers_;
   std::set<ClockInst*> second_level_sink_drivers_;
   std::set<ClockInst*> tree_level_buffers_;
+  odb::dbDatabase* db_;
 };
 
 }  // namespace cts

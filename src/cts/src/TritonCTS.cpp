@@ -151,13 +151,15 @@ void TritonCTS::buildClockTrees()
 {
   for (TreeBuilder* builder : *builders_) {
     builder->setTechChar(*techChar_);
+    builder->setDb(db_);
     builder->run();
   }
 
   if (options_->getBalanceLevels()) {
     for (TreeBuilder* builder : *builders_) {
       if (!builder->getParent() && !builder->getChildren().empty()) {
-        LevelBalancer balancer(builder, options_, logger_);
+        LevelBalancer balancer(
+            builder, options_, logger_, techChar_->getLengthUnit());
         balancer.run();
       }
     }
