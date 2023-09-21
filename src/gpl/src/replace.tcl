@@ -392,7 +392,7 @@ proc get_global_placement_uniform_density { args } {
 
 proc get_mbff_results { args } {
   sta::parse_key_args "get_mbff_results" args \
-    keys { -max_split_size -alpha -beta -threads }
+    keys { -max_split_size -alpha -beta -num_threads }
 
 
   if { [info exists keys(-alpha)] } {
