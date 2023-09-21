@@ -250,6 +250,7 @@ _installUbuntuPackages() {
         libtcl \
         python3-dev \
         qt5-image-formats-plugins \
+        tcl \
         tcl-dev \
         tcl-tclreadline \
         tcllib \
@@ -373,6 +374,10 @@ _installCentosPackages() {
         qt5-qtbase-devel \
         qt5-qtimageformats \
         readline-devel \
+        rh-python38-python \
+        rh-python38-python-libs \
+        rh-python38-python-pip \
+        rh-python38-scldevel \
         tcl \
         tcl-devel \
         tcl-tclreadline \
@@ -380,7 +385,7 @@ _installCentosPackages() {
         tcllib \
         wget \
         zlib-devel
-}
+    }
 
 _installOpenSuseCleanUp() {
     zypper -n clean --all
@@ -567,11 +572,11 @@ EOF
     exit "${1:-1}"
 }
 
-#default prefix
+# default prefix
 PREFIX=""
-#default option
+# default option
 option="all"
-#default isLocal
+# default isLocal
 isLocal="false"
 
 # default values, can be overwritten by cmdline args
@@ -659,6 +664,8 @@ case "${os}" in
             _installOrTools "centos" "7" "amd64"
         fi
         cat <<EOF
+To enable Python 3.8 (required for eqy) you need to run:
+    source /opt/rh/rh-python38/enable
 To enable GCC-8 or Clang-7 you need to run:
     source /opt/rh/devtoolset-8/enable
     source /opt/rh/llvm-toolset-7.0/enable
