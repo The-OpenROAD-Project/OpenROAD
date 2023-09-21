@@ -59,6 +59,7 @@ define_tool_script "upf" "src/upf/test/regression"
 define_tool_script "utl" "src/utl/test/regression"
 define_tool_script "fin" "src/fin/test/regression"
 define_tool_script "dft" "src/dft/test/regression"
+define_tool_script "gui" "src/gui/test/regression"
 
 proc run_openroad_tests { } {
   global tool_errors
