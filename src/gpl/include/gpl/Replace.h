@@ -69,6 +69,8 @@ class InitialPlace;
 class NesterovPlace;
 class Debug;
 
+class MBFF;
+
 class Replace
 {
  public:
@@ -83,6 +85,7 @@ class Replace
 
   void doIncrementalPlace();
   void doInitialPlace();
+  void runMBFF(int max_sz, float alpha, float beta, int threads);
 
   int doNesterovPlace(int start_iter = 0);
 
@@ -203,6 +206,7 @@ class Replace
   // temp variable; OpenDB should have these values.
   int padLeft_;
   int padRight_;
+
 
   bool gui_debug_;
   int gui_debug_pause_iterations_;
