@@ -257,7 +257,7 @@ class HierRTLMP
   // HierRTLMP estimates for the leaf standard clusters
   void generateTemporaryStdCellsPlacement(Cluster* cluster);
   void setModuleStdCellsLocation(Cluster* cluster, odb::dbModule* module);
-  void setTemporaryStdCellLocation(Cluster* cluster, odb::dbInst* inst);
+  void setTemporaryStdCellLocation(Cluster* cluster, odb::dbInst* std_cell);
 
   void correctAllMacrosOrientation();
   float calculateRealMacroWirelength(odb::dbInst* macro);
