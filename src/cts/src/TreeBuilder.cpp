@@ -51,11 +51,11 @@ using utl::CTS;
 // (x1, y1) is the lower left corner
 // (x2, y2) is the upper right corner
 odb::dbBlockage* TreeBuilder::findBlockage(const Point<double>& qt,
-					   double scalingUnit,
-					   double& x1,
-					   double& y1,
-					   double& x2,
-					   double& y2)
+                                           double scalingUnit,
+                                           double& x1,
+                                           double& y1,
+                                           double& x2,
+                                           double& y2)
 {
   double qx = qt.getX();
   double qy = qt.getY();
@@ -81,7 +81,7 @@ odb::dbBlockage* TreeBuilder::findBlockage(const Point<double>& qt,
 // bufferName is a string that contains name of buffer master cell
 //
 Point<double> TreeBuilder::legalizeOneBuffer(Point<double> bufferLoc,
-					     std::string bufferName)
+                                             std::string bufferName)
 {
   if (options_->getObstructionAware()) {
     odb::dbMaster* libCell = db_->findMaster(bufferName.c_str());
@@ -90,7 +90,7 @@ Point<double> TreeBuilder::legalizeOneBuffer(Point<double> bufferLoc,
     double x1, y1, x2, y2;
     const double wireSegmentUnit = techChar_->getLengthUnit();
     odb::dbBlockage* obs
-      = findBlockage(bufferLoc, wireSegmentUnit, x1, y1, x2, y2);
+        = findBlockage(bufferLoc, wireSegmentUnit, x1, y1, x2, y2);
     if (obs != nullptr) {
       // x1, y1 are lower left corner of blockage
       // x2, y2 are upper right corner of blockage
