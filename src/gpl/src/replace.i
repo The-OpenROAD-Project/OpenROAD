@@ -43,6 +43,15 @@ replace_nesterov_place_cmd()
   replace->doNesterovPlace();
 }
 
+
+void
+replace_run_mbff_cmd(int max_sz, float ALPHA, float BETA, int threads) 
+{
+  Replace* replace = getReplace();
+  replace->runMBFF(max_sz, ALPHA, BETA, threads);   
+}
+
+
 void
 set_density_cmd(float density)
 {
@@ -257,6 +266,8 @@ set_timing_driven_net_weight_max_cmd(float max)
   Replace* replace = getReplace();
   return replace->setTimingNetWeightMax(max);
 }
+
+
 
 void
 set_debug_cmd(int pause_iterations,
