@@ -5985,8 +5985,7 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
           continue;
         }
 
-        if (net_iterm->getInst()->getPlacementStatus()
-            == odb::dbPlacementStatus::PLACED) {
+        if (net_iterm->getInst()->getPlacementStatus().isPlaced()) {
           const float x1 = dbuToMicron(iterm->getBBox().xCenter(), dbu_);
           const float y1 = dbuToMicron(iterm->getBBox().yCenter(), dbu_);
           const float x2 = dbuToMicron(net_iterm->getBBox().xCenter(), dbu_);
