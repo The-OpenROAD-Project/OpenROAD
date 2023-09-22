@@ -13,4 +13,6 @@ record_tests {
   post_cts_opt
   balance_levels
   max_cap
+  array
+  array_no_blockages
 }

@@ -47,32 +47,65 @@ namespace cts {
 
 using utl::CTS;
 
+void TreeBuilder::initBlockages()
+{
+  for (odb::dbBlockage* blockage : db_->getChip()->getBlock()->getBlockages()) {
+    odb::dbBox* bbox = blockage->getBBox();
+    bboxList_.emplace_back(bbox);
+  }
+  logger_->info(CTS,
+                200,
+                "{} placement blockages have been identified.",
+                bboxList_.size());
+
+  if (bboxList_.size() == 0) {
+    // Some HMs may not have explicit blockages
+    // Treat them as such only if they are placed
+    for (odb::dbInst* inst : db_->getChip()->getBlock()->getInsts()) {
+      if (inst->getMaster()->getType().isBlock()
+          && inst->getPlacementStatus().isPlaced()) {
+        odb::dbBox* bbox = inst->getBBox();
+        bboxList_.emplace_back(bbox);
+      }
+    }
+    logger_->info(CTS,
+                  201,
+                  "{} placed hard macros will be treated like blockages.",
+                  bboxList_.size());
+  }
+}
+
 // Find one blockage that contains qt
 // (x1, y1) is the lower left corner
 // (x2, y2) is the upper right corner
-odb::dbBlockage* TreeBuilder::findBlockage(const Point<double>& qt,
-                                           double scalingUnit,
-                                           double& x1,
-                                           double& y1,
-                                           double& x2,
-                                           double& y2)
+bool TreeBuilder::findBlockage(const Point<double>& qt,
+                               double scalingUnit,
+                               double& x1,
+                               double& y1,
+                               double& x2,
+                               double& y2)
 {
-  double qx = qt.getX();
-  double qy = qt.getY();
+  double qx = qt.getX() * scalingUnit;
+  double qy = qt.getY() * scalingUnit;
+  odb::dbBox* bbox;
 
-  for (odb::dbBlockage* blockage : db_->getChip()->getBlock()->getBlockages()) {
-    odb::dbBox* bbox = blockage->getBBox();
-    x1 = bbox->xMin() / scalingUnit;
-    y1 = bbox->yMin() / scalingUnit;
-    x2 = bbox->xMax() / scalingUnit;
-    y2 = bbox->yMax() / scalingUnit;
+  for (size_t i = 0; i < bboxList_.size(); ++i) {
+    bbox = bboxList_[i];
+    x1 = bbox->xMin();
+    y1 = bbox->yMin();
+    x2 = bbox->xMax();
+    y2 = bbox->yMax();
 
-    bool inside = (qx > x1) && (qx < x2) && (qy > y1) && (qy < y2);
-    if (inside) {
-      return blockage;
+    if (isInsideBbox(qx, qy, x1, y1, x2, y2)) {
+      x1 = x1 / scalingUnit;
+      y1 = y1 / scalingUnit;
+      x2 = x2 / scalingUnit;
+      y2 = y2 / scalingUnit;
+      return true;
     }
   }
-  return nullptr;
+
+  return false;
 }
 
 //
@@ -89,9 +122,7 @@ Point<double> TreeBuilder::legalizeOneBuffer(Point<double> bufferLoc,
     // check if current buffer sits on top of blockage
     double x1, y1, x2, y2;
     const double wireSegmentUnit = techChar_->getLengthUnit();
-    odb::dbBlockage* obs
-        = findBlockage(bufferLoc, wireSegmentUnit, x1, y1, x2, y2);
-    if (obs != nullptr) {
+    if (findBlockage(bufferLoc, wireSegmentUnit, x1, y1, x2, y2)) {
       // x1, y1 are lower left corner of blockage
       // x2, y2 are upper right corner of blockage
       // move buffer to the nearest legal location by snapping it to right,

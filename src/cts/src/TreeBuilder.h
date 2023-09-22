@@ -46,6 +46,10 @@
 #include "TechChar.h"
 #include "Util.h"
 
+namespace utl {
+class Logger;
+}  // namespace utl
+
 namespace cts {
 
 class TreeBuilder
@@ -54,8 +58,13 @@ class TreeBuilder
   TreeBuilder(CtsOptions* options,
               Clock& clk,
               TreeBuilder* parent,
+              utl::Logger* logger,
               odb::dbDatabase* db = nullptr)
-      : options_(options), clock_(clk), parent_(parent), db_(db)
+      : options_(options),
+        clock_(clk),
+        parent_(parent),
+        logger_(logger),
+        db_(db)
   {
     if (parent) {
       parent->children_.emplace_back(this);
@@ -63,6 +72,7 @@ class TreeBuilder
   }
 
   virtual void run() = 0;
+  void initBlockages();
   void setTechChar(TechChar& techChar) { techChar_ = &techChar; }
   const Clock& getClock() const { return clock_; }
   Clock& getClock() { return clock_; }
@@ -102,12 +112,25 @@ class TreeBuilder
     return tree_level_buffers_.find(inst) != tree_level_buffers_.end();
   }
   void setDb(odb::dbDatabase* db) { db_ = db; }
-  odb::dbBlockage* findBlockage(const Point<double>& qt,
-                                double scalingUnit,
-                                double& x1,
-                                double& y1,
-                                double& x2,
-                                double& y2);
+  void setLogger(utl::Logger* logger) { logger_ = logger; }
+  bool isInsideBbox(double x,
+                    double y,
+                    double x1,
+                    double y1,
+                    double x2,
+                    double y2)
+  {
+    if ((x > x1) && (x < x2) && (y > y1) && (y < y2)) {
+      return true;
+    }
+    return false;
+  }
+  bool findBlockage(const Point<double>& qt,
+                    double scalingUnit,
+                    double& x1,
+                    double& y1,
+                    double& x2,
+                    double& y2);
   Point<double> legalizeOneBuffer(Point<double> bufferLoc,
                                   std::string bufferName);
 
@@ -124,7 +147,9 @@ class TreeBuilder
   std::set<ClockInst*> first_level_sink_drivers_;
   std::set<ClockInst*> second_level_sink_drivers_;
   std::set<ClockInst*> tree_level_buffers_;
+  utl::Logger* logger_;
   odb::dbDatabase* db_;
+  std::vector<odb::dbBox*> bboxList_;
 };
 
 }  // namespace cts

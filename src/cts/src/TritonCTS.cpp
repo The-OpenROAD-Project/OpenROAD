@@ -152,6 +152,8 @@ void TritonCTS::buildClockTrees()
   for (TreeBuilder* builder : *builders_) {
     builder->setTechChar(*techChar_);
     builder->setDb(db_);
+    builder->setLogger(logger_);
+    builder->initBlockages();
     builder->run();
   }
 
