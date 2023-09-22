@@ -58,7 +58,7 @@ rtl_macro_placer
 | `-num_bundled_ios` | Specifies the number of bundled pins for the left, right, top, and bottom boundaries. The default value is `3`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-large_net_threshold` | Ignore nets with many connections during clustering, such as global nets. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-signature_net_threshold` | Minimum number of connections between two clusters to be identified as connected. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
-| `-halo_width` | iHorizontal/vertical halo around macros (microns). The allowed values are floats, and the default value is `0.0`. |
+| `-halo_width` | Horizontal/vertical halo around macros (microns). The allowed values are floats, and the default value is `0.0`. |
 | `-fence_lx`, `-fence_ly`, `-fence_ux`, `-fence_uy` | Defines the global fence bounding box coordinates. The default values are the core area coordinates). |
 | `-target_util` | Specifies the target utilization of `MixedCluster` and has higher priority than target_dead_space. The allowed values are floats, and the default value is `0.25`. |
 | `-target_dead_space` | Specifies the target dead space percentage, which influences the utilization of `StandardCellCluster`. The allowed values are floats, and the default value is `0.05`. |

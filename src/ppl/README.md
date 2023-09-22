@@ -5,7 +5,7 @@ wirelengths. Pin placement also creates a metal shape for each pin using
 min-area rules.
 
 For designs with unplaced cells, the net wirelength is computed considering
-the center of the die area as the unplaced cells' position.
+the center of the die area as the unplaced cells position.
 
 ## Commands
 
@@ -79,7 +79,7 @@ set_io_pin_constraint
 | ----- | ----- |
 | `-direction` | Pin direction (`input`, `output`, `inout`, or `feedthrough`). |
 | `-pin_names` | List of names. Only one of (`-direction`, `-pin_names`) should be used in a single call for the `set_io_pin_constraint` command. |
-| `-region` | Syntax is `-region edge:interval`. The `edge` values are (`top|bottom|left|right`). The `interval` can be the whole edge with the wildcard `*` value or a range of values. |
+| `-region` | Syntax is `-region edge:interval`. The `edge` values are (`top\|bottom\|left\|right`). The `interval` can be the whole edge with the wildcard `*` value or a range of values. |
 | `-mirrored_pins` | List of pins that sets pairs of pins that will be symmetrically placed in the vertical or the horizontal edges. The number of pins in this list **must be even**. For example, in `set_io_pin_constraint -mirrored_pins {pin1 pin2 pin3 pin4 pin5 pin6}`, the pins `pin1` and `pin2` will be placed symmetrically to each other. Same for `pin3` and `pin4`, and for `pin5` and `pin6`. |
 | `-group` | Flag places together on the die boundary the pin list defined in `-pin_names,` similar to the `-group_pins` option on the `place_pins` command. |
 | `-order` | Flag places the pins ordered in ascending x/y position and must be used only when `-group` is also used. |
@@ -205,7 +205,7 @@ place_pin
 | `-pin_name` | The name of a pin of the design. |
 | `-layer` | The routing layer where the pin is placed. |
 | `-location` | The center of the pin (in microns). |
-| `-pin_size` | Tthe width and height of the pin (in microns). |
+| `-pin_size` | The width and height of the pin (in microns). |
 | `-force_to_die_boundary` | When this flag is enabled, the pin will be snapped to the nearest routing track, next to the die boundary. |
 
 ### Place All Pins
