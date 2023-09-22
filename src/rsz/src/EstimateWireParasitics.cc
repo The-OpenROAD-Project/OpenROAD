@@ -406,7 +406,7 @@ Resizer::estimateWireParasiticSteiner(const Pin *drvr_pin,
     for (Corner *corner : *sta_->corners()) {
       const ParasiticAnalysisPt *parasitics_ap = corner->findParasiticAnalysisPt(max_);
       Parasitic *parasitic = sta_->makeParasiticNetwork(net, false, parasitics_ap);
-      bool is_clk = sta_->isClock(net);
+      bool is_clk = global_router_->isNonLeafClock(db_network_->staToDb(net));
       double wire_cap=is_clk ? wireClkCapacitance(corner) : wireSignalCapacitance(corner);
       double wire_res=is_clk ? wireClkResistance(corner) : wireSignalResistance(corner);
       int branch_count = tree->branchCount();
