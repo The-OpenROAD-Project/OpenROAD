@@ -490,9 +490,7 @@ void HTreeBuilder::legalizeDummy()
 
       double x1, y1, x2, y2;
       int z = wireSegmentUnit_;
-      odb::dbBlockage* obs = findBlockage(branchPoint, z, x1, y1, x2, y2);
-
-      if (obs != nullptr) {  // xxx qt is inside the block obs
+      if (findBlockage(branchPoint, z, x1, y1, x2, y2)) {
         Point<double> ans(branchPoint);
         std::vector<Point<double>> legal_locations;
         findLegalPlacement(parentPoint, leng, x1, y1, x2, y2, legal_locations);
@@ -552,8 +550,7 @@ void HTreeBuilder::legalize()
 
       int z = wireSegmentUnit_;
       double x1, y1, x2, y2;
-      odb::dbBlockage* obs = findBlockage(qt, z, x1, y1, x2, y2);
-      if (obs != nullptr) {
+      if (findBlockage(qt, z, x1, y1, x2, y2)) {
         Point<double> ans(qt);
         if (levelIdx == 0) {
           (void) moveOnBlockBounardy(parentPoint, ans, x1, y1, x2, y2);
@@ -565,8 +562,6 @@ void HTreeBuilder::legalize()
           std::vector<Point<double>> points;
           // find all the possible locations off the blockage
           findLegalPlacement(parentPoint, leng, x1, y1, x2, y2, points);
-          // std::string name = obs->getName();
-          std::string name = "xxx";
           // choose the best new location
           ans = selectBestNewLocation(qt, points, sinks);
         }

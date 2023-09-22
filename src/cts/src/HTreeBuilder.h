@@ -42,10 +42,6 @@
 #include "CtsOptions.h"
 #include "TreeBuilder.h"
 
-namespace utl {
-class Logger;
-}  // namespace utl
-
 namespace cts {
 class Graphics;
 
@@ -177,12 +173,12 @@ class HTreeBuilder : public TreeBuilder
                Clock& net,
                TreeBuilder* parent,
                utl::Logger* logger,
-               odb::dbDatabase* db = nullptr)                        // xxx
-      : TreeBuilder(options, net, parent), logger_(logger), db_(db)  // xxx
+               odb::dbDatabase* db = nullptr)          // xxx
+      : TreeBuilder(options, net, parent, logger, db)  // xxx
   {
   }
 
-  void run() override;
+  void run();
 
   void legalize();
   void legalizeDummy();
@@ -294,7 +290,6 @@ class HTreeBuilder : public TreeBuilder
   }
 
  private:
-  utl::Logger* logger_;
   odb::dbDatabase* db_;  // xxx
   Box<double> sinkRegion_;
   std::vector<LevelTopology> topologyForEachLevel_;
