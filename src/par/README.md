@@ -506,7 +506,7 @@ read_partitioning
 ```tcl
 triton_part_hypergraph -hypergraph_file des90.hgr -num_parts 5 -balance_constraint 2 -seed 2
 ```
-You can also check the provided example [here](./examples/min-cut-partitioning).
+You can also check the provided example [here](./examples/min-cut-partitioning/run_openroad.tcl).
 
 ### How to perform the embedding-aware partitioning
 
@@ -527,7 +527,7 @@ triton_part_hypergraph  -hypergraph_file $hypergraph_file -num_parts $num_parts 
 
 ```
 
-You can find the provided example [here](./examples/embedding-aware-partitioning).
+You can find the provided example [here](./examples/embedding-aware-partitioning/run_placement_aware_flow.tcl).
 
 
 ### How to partition a netlist
@@ -574,7 +574,7 @@ triton_part_design -num_parts $num_parts -balance_constraint $balance_constraint
                    -solution_file $part_design_solution_file 
 ```
 
-You can find the provided example [here](./examples/timing-aware-partitioning).
+You can find the provided example [here](./examples/timing-aware-partitioning/run_timing_aware_flow.tcl).
 
 ## Regression tests
 
