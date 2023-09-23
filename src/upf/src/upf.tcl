@@ -42,6 +42,22 @@ proc read_upf { args } {
 
 }
 
+## check if a chip/block has been created and exits with error if not
+proc check_block_exists { } {
+    set db [ord::get_db]
+    set chip [$db getChip]
+
+    if { "$chip" eq "NULL" } {
+        utl::error UPF 33 "No Chip exists"
+    }
+    
+    set block [$chip getBlock]
+
+    if { "$block" eq "NULL" } {
+        utl::error UPF 34 "No block exists"
+    }
+}
+
 # Creates a power domain
 #
 # Arguments:
@@ -50,6 +66,8 @@ proc read_upf { args } {
 # - name: domain name
 sta::define_cmd_args "create_power_domain" { [-elements elements] name }
 proc create_power_domain { args } {
+    check_block_exists
+
     sta::parse_key_args "create_power_domain" args \
         keys {-elements} flags {}
 
@@ -77,6 +95,8 @@ proc create_power_domain { args } {
 # - port_name: port name
 sta::define_cmd_args "create_logic_port" { [-direction direction] port_name }
 proc create_logic_port { args } {
+    check_block_exists
+
     sta::parse_key_args "create_logic_port" args \
         keys {-direction} flags {}
 
@@ -88,6 +108,7 @@ proc create_logic_port { args } {
     if { [info exists keys(-direction)] } {
         set direction $keys(-direction)
     }
+    
 
     upf::create_logic_port_cmd $port_name $direction
 }
@@ -111,6 +132,8 @@ sta::define_cmd_args "create_power_switch" { \
     name 
 }
 proc create_power_switch { args } {
+    check_block_exists
+
     sta::parse_key_args "create_power_switch" args \
         keys {-domain -output_supply_port -input_supply_port -control_port -on_state} flags {}
 
@@ -118,8 +141,8 @@ proc create_power_switch { args } {
 
     set name [lindex $args 0]
     set domain ""
-    set output_supply_port ""
-    set input_supply_port ""
+    set output_supply_port {}
+    set input_supply_port {}
     set control_port {}
     set on_state {}
 
@@ -143,7 +166,15 @@ proc create_power_switch { args } {
         set on_state $keys(-on_state)
     }
 
-    upf::create_power_switch_cmd $name $domain $output_supply_port $input_supply_port
+    upf::create_power_switch_cmd $name $domain
+
+    foreach {input} $input_supply_port {
+        upf::update_power_switch_input_cmd $name $input
+    }
+
+    foreach {output} $output_supply_port {
+        upf::update_power_switch_output_cmd $name $output
+    }
 
     foreach {control} $control_port {
         upf::update_power_switch_control_cmd $name $control
@@ -180,6 +211,8 @@ sta::define_cmd_args "set_isolation" { \
     name 
 }
 proc set_isolation { args } {
+    check_block_exists
+
     sta::parse_key_args "set_isolation" args \
         keys {-domain -applies_to -clamp_value -isolation_signal -isolation_sense -location} flags {-update}
 
@@ -242,6 +275,8 @@ sta::define_cmd_args "use_interface_cell" { \
     [-lib_cells lib_cells]  
 }
 proc use_interface_cell { args } {
+    check_block_exists
+
     sta::parse_key_args "use_interface_cell" args \
         keys {-domain -strategy -lib_cells} flags {}
 
@@ -280,26 +315,80 @@ proc use_interface_cell { args } {
 sta::define_cmd_args "set_domain_area" {domain_name -area {llx lly urx ury}}
 
 proc set_domain_area { args } {
-  sta::parse_key_args "set_domain_area" args keys {-area} flags {}
-  set domain_name [lindex $args 0]
-  if { [info exists keys(-area)] } {
+    check_block_exists
+
+    sta::parse_key_args "set_domain_area" args keys {-area} flags {}
+    set domain_name [lindex $args 0]
+    if { [info exists keys(-area)] } {
     set area $keys(-area)
     if { [llength $area] != 4 } {
-      utl::error UPF 1 "-area is a list of 4 coordinates"
+        utl::error UPF 36 "-area is a list of 4 coordinates"
     }
     lassign $area llx lly urx ury
     sta::check_positive_float "-area" $llx
     sta::check_positive_float "-area" $lly
     sta::check_positive_float "-area" $urx
     sta::check_positive_float "-area" $ury
-  } else {
-    utl::error UPF 2 "please define area"
-  }
-  sta::check_argc_eq1 "set_domain_area" $args
-  set domain_name $args
-  
-  upf::set_domain_area_cmd $domain_name $llx $lly $urx $ury
+    } else {
+    utl::error UPF 37 "please define area"
+    }
+    sta::check_argc_eq1 "set_domain_area" $args
+    set domain_name $args
+
+    upf::set_domain_area_cmd $domain_name $llx $lly $urx $ury
 }
 
+# Specify which power-switch model is to be used for the implementation of the corresponding switch
+# instance
+#
+#
+# Argument list: 
+#  - switch_name_list []: A list of switches (as defined by create_power_switch) to map.
+#  - lib_cells [] : A list of library cells.
+#  - port_map {{mapped_model_port switch_port_or_supply_net_ref} *} : mapped_model_ port is a port on the model being mapped.
+#                                                                     switch_ port_or_supply_net_ref indicates a supply or logic port on a
+#                                                                     switch: an input supply port, output supply port, control port, or
+#                                                                     acknowledge port; or it references a supply net from a supply set
+#                                                                     associated with the switch.
+
+sta::define_cmd_args "map_power_switch" { \
+    [-switch_name_list switch_name_list] \
+    [-lib_cells lib_cells] \
+    [-port_map port_map] 
+}
+
+proc map_power_switch { args } {
+    check_block_exists
+
+    sta::parse_key_args "map_power_switch" args \
+        keys {switch_name_list -lib_cells -port_map} flags {}
+
+    sta::check_argc_eq1 "map_power_switch" $args
+
+    set switch_name_list [lindex $args 0]
+    set lib_cells {}
+    set port_map {}
+
+    if { [info exists keys(-lib_cells)] } {
+        set lib_cells $keys(-lib_cells)
+    }
+
+    if { [info exists keys(-port_map)] } {
+        set port_map $keys(-port_map)
+    }
 
 
+    for { set i 0 } { $i < [llength $switch_name_list] } { incr i } {
+        set switch [lindex $switch_name_list $i]
+        set cell [lindex $lib_cells $i]
+        upf::set_power_switch_cell $switch $cell
+    
+        foreach {port} $port_map {
+            if {[llength $port] != 2} {
+                utl::error UPF 40 "The port map should be a list of exactly 2 elements"
+            }
+            upf::set_power_switch_port $switch [lindex $port 0] [lindex $port 1]
+        }
+    }
+
+}
