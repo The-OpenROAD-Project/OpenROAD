@@ -5165,7 +5165,7 @@ class dbLib : public dbObject
 class dbSite : public dbObject
 {
  private:
-  std::vector<std::pair<dbSite*, dbOrientType::Value>> _row_patterns;
+  std::vector<std::pair<dbSite*, dbOrientType>> _row_patterns;
   dbSite* parent;  // parent site (null if site is a hybridParent, for hybrid
                    // cells it wili)
 
@@ -5244,7 +5244,7 @@ class dbSite : public dbObject
   /// set the row pattern of this site
   ///
   void setRowPattern(
-      const std::vector<std::pair<dbSite*, dbOrientType>>& row_pattern);
+      const std::vector<std::pair<dbSite*, dbOrientType>> row_pattern);
 
   ///
   /// sets the parent of the site

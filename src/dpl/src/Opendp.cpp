@@ -611,6 +611,10 @@ Grid_map_key Opendp::getGridMapKey(const Cell* cell) const
     logger_->error(DPL, 5211, "getGridMapKey cell is null");
   }
   auto site = cell->db_inst_->getMaster()->getSite();
+  if (!isStdCell(cell)) {
+    // non std cells can go to the first grid.
+    return smallest_non_hybrid_grid_key;
+  }
   if (site == nullptr) {
     logger_->error(DPL, 4219, "Cell {} has no site.", cell->name());
   }

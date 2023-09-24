@@ -247,16 +247,17 @@ void dbSite::setClass(dbSiteClass type)
 }
 
 void dbSite::setRowPattern(
-    const std::vector<std::pair<dbSite*, dbOrientType>>& row_pattern)
+    const std::vector<std::pair<dbSite*, dbOrientType>> row_pattern)
 {
   _dbSite* site = (_dbSite*) this;
   site->_flags._is_hybrid = true;
   _row_patterns.clear();
-  _row_patterns.reserve(row_pattern.size());
-  for (auto& row : row_pattern) {
+  // TODO(mina1460): this is the line that fails.
+  // FIXME(mina1460)
+  _row_patterns = row_pattern;
+  for (auto& row : _row_patterns) {
     auto child_site = (_dbSite*) row.first;
     child_site->_flags._is_hybrid = true;
-    _row_patterns.emplace_back(row);
   }
 }
 
@@ -273,8 +274,7 @@ bool dbSite::isHybrid() const
 
 bool dbSite::isHybridParent() const
 {
-  _dbSite* site = (_dbSite*) this;
-  return this->isHybrid() && this->hasRowPattern();
+  return isHybrid() && hasRowPattern();
 }
 
 std::vector<std::pair<dbSite*, dbOrientType>> dbSite::getRowPattern()
