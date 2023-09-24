@@ -157,7 +157,7 @@ float MBFF::RunLP(const std::vector<Flop> &flops, std::vector<Tray> &trays, cons
         Tray new_tray;
         float new_x = tray_x[i]->solution_value();
         float new_y = tray_y[i]->solution_value();
-        new_tray.pt(new_x, new_y);
+        new_tray.pt = ord::Point(new_x, new_y);
         tot_disp += GetDist(trays[i].pt, new_tray.pt);
         trays[i] = new_tray;
     }
@@ -609,7 +609,7 @@ Tray MBFF::GetOneBit(const odb::Point &pt) {
     float new_y = pt.y() - HEIGHT / 2.0;
 
     Tray tray;
-    tray.pt(new_x, new_y);
+    tray.pt = ord::Point(new_x, new_y);
     tray.slots.push_back(pt);
 
     return tray;
@@ -814,7 +814,7 @@ std::vector<std::vector<Flop> > MBFF::KMeans(const std::vector<Flop> &flops, int
             float new_y = cY / float(cur_sz);
             
             Flop new_flop;
-            new_flop.pt(new_x, new_y);
+            new_flop.pt = ord::Point(new_x, new_y);
 
             centers[i] = new_flop;
         }
