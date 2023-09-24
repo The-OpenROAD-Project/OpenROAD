@@ -88,7 +88,6 @@ trays' slots to their matching flops is minimized
 
 float MBFF::RunLP(const std::vector<Flop> &flops, std::vector<Tray> &trays,
                   const std::vector<std::pair<int, int> > &clusters) {
-
     int num_flops = static_cast<int>(flops.size());
     int num_trays = static_cast<int>(trays.size());
 
@@ -441,9 +440,8 @@ void MBFF::RunILP(const std::vector<Flop> &flops,
     operations_research::sat::CpSolverResponse response =
         operations_research::sat::SolveCpModel(cp_model.Build(), &model);
 
-    if (response.status() ==
-            operations_research::sat::CpSolverStatus::FEASIBLE ||
-        (int)operations_research::sat::CpSolverStatus::OPTIMAL) {
+    if (response.status() == operations_research::sat::CpSolverStatus::FEASIBLE || 
+        response.status() == operations_research::sat::CpSolverStatus::OPTIMAL) {
 
         log_->info(utl::GPL, 22, "Total = {}", (response.objective_value()));
 
@@ -760,7 +758,6 @@ std::vector<std::vector<Flop> > MBFF::KMeans(const std::vector<Flop> &flops,
 
     // choose remaining K-1 centers
     while (static_cast<int>(chosen.size()) < K) {
-
         double tot_sum = 0;
         for (int i = 0; i < num_flops; i++)
             if (!chosen.count(i)) {
@@ -1070,7 +1067,8 @@ std::vector<std::vector<Tray> > MBFF::RunSilh(const std::vector<Flop> &flops) {
         }
     }
 
-#pragma omp parallel for
+    // run multistart in parallel 
+    #pragma omp parallel for
     for (int i = 0; i < static_cast<int>(ind.size()); i++) {
 
         int bit_idx = ind[i].first;
@@ -1161,8 +1159,8 @@ void MBFF::Run(int mx_sz, float alpha, float beta) {
         // run silhouette metric
         std::vector<std::vector<Tray> > trays = RunSilh(pointsets[t]);
 
-// run capacitated k-means per tray size
-#pragma omp parallel for
+        // run capacitated k-means per tray size
+        #pragma omp parallel for
         for (int i = 1; i < NUM_SIZES; i++) {
             int rows = GetRows(GetBitCnt(i)), cols = GetBitCnt(i) / rows;
             int num_trays = (num_flops + (GetBitCnt(i) - 1)) / GetBitCnt(i);
