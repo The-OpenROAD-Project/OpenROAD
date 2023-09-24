@@ -61,9 +61,7 @@ bool create_logic_port(utl::Logger* logger,
 bool create_power_switch(utl::Logger* logger,
                          odb::dbBlock* block,
                          const char* name,
-                         const char* power_domain,
-                         const char* out_port,
-                         const char* in_port);
+                         const char* power_domain);
 
 bool update_power_switch_control(utl::Logger* logger,
                                  odb::dbBlock* block,
@@ -74,6 +72,16 @@ bool update_power_switch_on(utl::Logger* logger,
                             odb::dbBlock* block,
                             const char* name,
                             const char* on_state);
+
+bool update_power_switch_input(utl::Logger* logger,
+                               odb::dbBlock* block,
+                               const char* name,
+                               const char* in_port);
+
+bool update_power_switch_output(utl::Logger* logger,
+                                odb::dbBlock* block,
+                                const char* name,
+                                const char* out_port);
 
 bool set_isolation(utl::Logger* logger,
                    odb::dbBlock* block,
@@ -103,5 +111,16 @@ bool set_domain_area(utl::Logger* logger,
 bool eval_upf(sta::dbNetwork* network,
               utl::Logger* logger,
               odb::dbBlock* block);
+
+bool update_power_switch_cell(utl::Logger* logger,
+                              odb::dbBlock* block,
+                              const char* name,
+                              odb::dbMaster* cell);
+
+bool update_power_switch_port_map(utl::Logger* logger,
+                                  odb::dbBlock* block,
+                                  const char* name,
+                                  const char* model_port,
+                                  const char* switch_port);
 
 }  // namespace upf

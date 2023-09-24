@@ -61,10 +61,9 @@ class PowerDensityDataSource : public gui::RealValueHeatMapDataSource,
   bool include_leakage_ = true;
   bool include_switching_ = true;
 
-  sta::Corner* corner_ = nullptr;
+  std::string corner_;
 
-  void ensureCorner();
-  void setCorner(const std::string& name);
+  sta::Corner* getCorner() const;
 };
 
 }  // namespace sta

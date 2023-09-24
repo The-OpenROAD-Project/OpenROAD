@@ -580,6 +580,58 @@ void selection_animate(int repeat = 0)
   gui->animateSelection(repeat);
 }
 
+bool get_heatmap_bool(const std::string& name, const std::string& option)
+{
+  auto gui = gui::Gui::get();
+  auto value = gui->getHeatMapSetting(name, option);
+  if (std::holds_alternative<bool>(value)) {
+      return std::get<bool>(value);
+  } else {
+    auto logger = ord::OpenRoad::openRoad()->getLogger();
+    logger->error(GUI, 90, "Heatmap setting \"{}\" is not a boolean", option);
+  }
+  return false;
+}
+
+int get_heatmap_int(const std::string& name, const std::string& option)
+{
+  auto gui = gui::Gui::get();
+  auto value = gui->getHeatMapSetting(name, option);
+  if (std::holds_alternative<int>(value)) {
+      return std::get<int>(value);
+  } else {
+    auto logger = ord::OpenRoad::openRoad()->getLogger();
+    logger->error(GUI, 91, "Heatmap setting \"{}\" is not an integer", option);
+  }
+  return 0;
+}
+
+double get_heatmap_double(const std::string& name, const std::string& option)
+{
+  auto gui = gui::Gui::get();
+  auto value = gui->getHeatMapSetting(name, option);
+  if (std::holds_alternative<double>(value)) {
+      return std::get<double>(value);
+  } else {
+    auto logger = ord::OpenRoad::openRoad()->getLogger();
+    logger->error(GUI, 92, "Heatmap setting \"{}\" is not a double", option);
+  }
+  return 0.0;
+}
+
+const char* get_heatmap_string(const std::string& name, const std::string& option)
+{
+  auto gui = gui::Gui::get();
+  auto value = gui->getHeatMapSetting(name, option);
+  if (std::holds_alternative<std::string>(value)) {
+    return std::get<std::string>(value).c_str();
+  } else {
+    auto logger = ord::OpenRoad::openRoad()->getLogger();
+    logger->error(GUI, 93, "Heatmap setting \"{}\" is not a string", option);
+  }
+  return "";
+}
+
 void set_heatmap(const std::string& name, const std::string& option, double value = 0.0)
 {
   auto gui = gui::Gui::get();
@@ -652,5 +704,9 @@ void trigger_action(const std::string& name)
   gui->triggerAction(name);
 }
 
-%} // inline
+bool supported()
+{
+  return true;
+}
 
+%} // inline

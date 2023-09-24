@@ -2252,6 +2252,8 @@ void io::Parser::setMasters(odb::dbDatabase* db)
         }
       }
 
+      vector<gtl::polygon_90_set_data<frCoord>> layerPolys(
+          tech_->getLayers().size());
       for (auto obs : master->getObstructions()) {
         frLayerNum layerNum = -1;
         auto layer = obs->getTechLayer();
@@ -2306,21 +2308,56 @@ void io::Parser::setMasters(odb::dbDatabase* db)
             }
           }
         }
-        auto blkIn = make_unique<frBlockage>();
-        blkIn->setId(numBlockages_);
-        blkIn->setDesignRuleWidth(obs->getDesignRuleWidth());
-        numBlockages_++;
-        auto pinIn = make_unique<frBPin>();
-        pinIn->setId(0);
-        // pinFig
-        unique_ptr<frRect> pinFig = make_unique<frRect>();
-        pinFig->setBBox(Rect(xl, yl, xh, yh));
-        pinFig->addToPin(pinIn.get());
-        pinFig->setLayerNum(layerNum);
-        unique_ptr<frPinFig> uptr(std::move(pinFig));
-        pinIn->addPinFig(std::move(uptr));
-        blkIn->setPin(std::move(pinIn));
-        tmpMaster->addBlockage(std::move(blkIn));
+        if (obs->getDesignRuleWidth() == -1) {
+          gtl::rectangle_data<frCoord> rect(xl, yl, xh, yh);
+          using gtl::operators::operator+=;
+          layerPolys[layerNum] += rect;
+        } else {
+          auto blkIn = make_unique<frBlockage>();
+          blkIn->setId(numBlockages_++);
+          blkIn->setDesignRuleWidth(obs->getDesignRuleWidth());
+          auto pinIn = make_unique<frBPin>();
+          pinIn->setId(0);
+          // pinFig
+          unique_ptr<frRect> pinFig = make_unique<frRect>();
+          pinFig->setBBox(Rect(xl, yl, xh, yh));
+          pinFig->addToPin(pinIn.get());
+          pinFig->setLayerNum(layerNum);
+          unique_ptr<frPinFig> uptr(std::move(pinFig));
+          pinIn->addPinFig(std::move(uptr));
+          blkIn->setPin(std::move(pinIn));
+          tmpMaster->addBlockage(std::move(blkIn));
+        }
+      }
+      frLayerNum lNum = 0;
+      for (auto& polySet : layerPolys) {
+        vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
+        polySet.get(polys);
+        for (auto& poly : polys) {
+          vector<gtl::rectangle_data<frCoord>> rects;
+          gtl::get_max_rectangles(rects, poly);
+          for (auto& rect : rects) {
+            frCoord xl = gtl::xl(rect);
+            frCoord yl = gtl::yl(rect);
+            frCoord xh = gtl::xh(rect);
+            frCoord yh = gtl::yh(rect);
+            auto blkIn = make_unique<frBlockage>();
+            blkIn->setId(numBlockages_);
+            numBlockages_++;
+            auto pinIn = make_unique<frBPin>();
+            pinIn->setId(0);
+            // pinFig
+            unique_ptr<frRect> pinFig = make_unique<frRect>();
+            pinFig->setBBox(Rect(xl, yl, xh, yh));
+            pinFig->addToPin(pinIn.get());
+            pinFig->setLayerNum(lNum);
+            unique_ptr<frPinFig> uptr(std::move(pinFig));
+            pinIn->addPinFig(std::move(uptr));
+            blkIn->setPin(std::move(pinIn));
+            tmpMaster->addBlockage(std::move(blkIn));
+          }
+        }
+        lNum++;
       }
       tmpMaster->setId(numMasters_ + 1);
       design_->addMaster(std::move(tmpMaster));
