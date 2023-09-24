@@ -2305,6 +2305,11 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_parallelOverlap(
     frLef58CutSpacingConstraint* con,
     const gtl::rectangle_data<frCoord>& markerRect)
 {
+  // no violation if fixed shapes
+  if (rect1->isFixed() && rect2->isFixed()) {
+    return;
+  }
+
   auto net1 = rect1->getNet();
   auto net2 = rect2->getNet();
 
@@ -2315,7 +2320,6 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_parallelOverlap(
   // skip if no parallel overlap
   if (prl <= 0) {
     return;
-    // skip if parallel overlap but shares the same above/below metal
   }
 
   box_t queryBox;
@@ -2338,6 +2342,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_parallelOverlap(
                    queryBox.min_corner().get<1>(),
                    queryBox.max_corner().get<0>(),
                    queryBox.max_corner().get<1>());
+    // skip if parallel overlap but shares the same above/below metal
     if ((objPtr->getNet() == net1 || objPtr->getNet() == net2)
         && objBox.contains(queryRect)) {
       return;
@@ -2349,20 +2354,16 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_parallelOverlap(
       = checkLef58CutSpacing_spc_getReqSpcVal(rect1, rect2, con);
   reqSpcValSquare *= reqSpcValSquare;
 
-  gtl::point_data<frCoord> center1, center2;
-  gtl::center(center1, *rect1);
-  gtl::center(center2, *rect2);
   frSquaredDistance distSquare = 0;
   if (con->isCenterToCenter()) {
+    gtl::point_data<frCoord> center1, center2;
+    gtl::center(center1, *rect1);
+    gtl::center(center2, *rect2);
     distSquare = gtl::distance_squared(center1, center2);
   } else {
     distSquare = gtl::square_euclidean_distance(*rect1, *rect2);
   }
   if (distSquare >= reqSpcValSquare) {
-    return;
-  }
-  // no violation if fixed shapes
-  if (rect1->isFixed() && rect2->isFixed()) {
     return;
   }
 
