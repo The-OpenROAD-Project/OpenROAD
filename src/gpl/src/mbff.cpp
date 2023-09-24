@@ -466,7 +466,7 @@ void MBFF::RunILP(const std::vector<Flop> &flops,
             }
         }
 
-        log_->info(utl::GPL, 23, "Sum of displacements from flop to slot: {}",
+        log_->info(utl::GPL, 41, "Sum of displacements from flop to slot: {}",
                    sum_disp);
 
         float sum_disp_path = 0;
@@ -479,7 +479,7 @@ void MBFF::RunILP(const std::vector<Flop> &flops,
                             response, disp_path_y[i]));
         }
 
-        log_->info(utl::GPL, 24, "Sum of timing-critical path displacements: {}",
+        log_->info(utl::GPL, 412, "Sum of timing-critical path displacements: {}",
                    sum_disp_path);
 
         float sum_tray_cost = 0;
@@ -490,7 +490,7 @@ void MBFF::RunILP(const std::vector<Flop> &flops,
             }
         }
 
-        log_->info(utl::GPL, 25, "Sum of tray costs: {}", sum_tray_cost);
+        log_->info(utl::GPL, 444, "Sum of tray costs: {}", sum_tray_cost);
 
 
         std::set<int> tray_idx;
@@ -514,7 +514,7 @@ void MBFF::RunILP(const std::vector<Flop> &flops,
         }
 
         for (auto x : tray_sz) {
-            log_->error(utl::GPL, 26, "Tray size = {}: {}", x.first, x.second);
+            log_->error(utl::GPL, 512, "Tray size = {}: {}", x.first, x.second);
         }
 
     }
