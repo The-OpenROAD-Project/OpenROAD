@@ -124,22 +124,22 @@ float MBFF::RunLP(const std::vector<Flop> &flops, std::vector<Tray> &trays, cons
         float shift_y = slot.y() - tray.y();
 
         operations_research::MPConstraint *c1 =
-            solver->MakeRowConstraint(shift_x - flop.x, inf, "");
+            solver->MakeRowConstraint(shift_x - flop.x(), inf, "");
         c1->SetCoefficient(disp_x[i], 1);
         c1->SetCoefficient(tray_x[tray_idx], -1);
 
         operations_research::MPConstraint *c2 =
-            solver->MakeRowConstraint(flop.x - shift_x, inf, "");
+            solver->MakeRowConstraint(flop.x() - shift_x, inf, "");
         c2->SetCoefficient(disp_x[i], 1);
         c2->SetCoefficient(tray_x[tray_idx], 1);
 
         operations_research::MPConstraint *c3 =
-            solver->MakeRowConstraint(shift_y - flop.y, inf, "");
+            solver->MakeRowConstraint(shift_y - flop.y(), inf, "");
         c3->SetCoefficient(disp_y[i], 1);
         c3->SetCoefficient(tray_y[tray_idx], -1);
 
         operations_research::MPConstraint *c4 =
-            solver->MakeRowConstraint(flop.y - shift_y, inf, "");
+            solver->MakeRowConstraint(flop.y() - shift_y, inf, "");
         c4->SetCoefficient(disp_y[i], 1);
         c4->SetCoefficient(tray_y[tray_idx], 1);
     }
@@ -538,7 +538,7 @@ std::vector<odb::Point> MBFF::GetSlots(const odb::Point &tray, int rows, int col
         float new_y = center_y + HEIGHT * ((new_row + 0.5) - (rows / 2.0));
 
         odb::Point new_slot(new_x, new_y);
-        if (new_slot.x >= 0 && new_slot.y >= 0) {
+        if (new_slot.x() >= 0 && new_slot.y() >= 0) {
             slots.push_back(new_slot);
         }
     }
@@ -809,9 +809,12 @@ std::vector<std::vector<Flop> > MBFF::KMeans(const std::vector<Flop> &flops, int
                 cY += f.pt.y;
             }
 
+        
+            float new_x = cX / float(cur_sz);
+            float new_y = cY / float(cur_sz);
+            
             Flop new_flop;
-            new_flop.pt.x = cX / float(cur_sz);
-            new_flop.pt.y = cY / float(cur_sz);
+            new_flop.pt(new_x, new_y);
 
             centers[i] = new_flop;
         }
