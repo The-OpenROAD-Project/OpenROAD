@@ -315,7 +315,7 @@ void Replace::runMBFF(int max_sz, float alpha, float beta, int threads) {
     }
   }
 
-  MBFF pntset(num_flops, num_paths, x, y, paths, threads);
+  MBFF pntset(num_flops, num_paths, x, y, paths, threads, log_);
   pntset.Run((max_sz == -1 ? num_flops : max_sz), alpha, beta);
 }
 
