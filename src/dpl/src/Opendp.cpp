@@ -705,48 +705,7 @@ int Opendp::gridEndY(const Cell* cell) const
   if (cell->isHybrid()) {
     auto grid_info = getGridInfo(cell);
     auto grid_sites = grid_info.getSites();
-    int sum_heights = std::accumulate(
-        grid_sites.begin(),
-        grid_sites.end(),
-        0,
-        [](int sum, const std::pair<dbSite*, dbOrientType>& entry) {
-          return sum + entry.first->getHeight();
-        });
-    int y2 = cell->y_ + cell->height_;
-    int base_height = divFloor(y2, sum_heights);
-    int cur_height = base_height * sum_heights;
-    base_height *= grid_sites.size();
-    debugPrint(logger_,
-               DPL,
-               "hybrid",
-               1,
-               "sum heights {} Cell {} is at y {} with height {} and y2 {} "
-               "base_height {} "
-               "cur_height {}",
-               sum_heights,
-               cell->name(),
-               cell->y_,
-               cell->height_,
-               y2,
-               base_height,
-               cur_height);
-    int index = 0;
-    while (cur_height < y2 && index < grid_sites.size()) {
-      auto site = grid_sites.at(index);
-      if (cur_height + site.first->getHeight() > y2)
-        break;
-      cur_height += site.first->getHeight();
-      index++;
-    }
-    debugPrint(logger_,
-               DPL,
-               "hybrid",
-               1,
-               "Cell {} is at y {} which ends in row {}",
-               cell->name(),
-               cell->y_,
-               base_height + index);
-    return base_height + index;
+    return gridY(cell->y_ + cell->height_, grid_sites).first;
   }
   int row_height = getRowHeight(cell);
   return divCeil(cell->y_ + cell->height_, row_height);

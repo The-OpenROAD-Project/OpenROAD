@@ -317,12 +317,13 @@ void Opendp::visitCellPixels(
       dbTransform transform;
       inst->getTransform(transform);
       transform.apply(rect);
-      auto cell_grid_info = grid_info_map_.at(cell.getSite());
+      auto grid_key = getGridMapKey(cell.getSite());
+      auto cell_grid_info = grid_info_map_.at(grid_key);
       int x_start = gridX(rect.xMin() - core_.xMin(), site_width_);
       int x_end = gridEndX(rect.xMax() - core_.xMin(), site_width_);
       auto cell_grid_sites = cell_grid_info.getSites();
-      int y_start = gridY(rect.yMin() - core_.yMin(), cell_grid_sites);
-      int y_end = gridEndY(rect.yMax() - core_.yMin(), cell_grid_sites);
+      int y_start = gridY(rect.yMin() - core_.yMin(), cell_grid_sites).first;
+      int y_end = gridEndY(rect.yMax() - core_.yMin(), cell_grid_sites).first;
 
       // Since there is an obstruction, we need to visit all the pixels at all
       // layers (for all row heights)
