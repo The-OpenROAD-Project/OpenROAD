@@ -525,8 +525,8 @@ std::vector<odb::Point> MBFF::GetSlots(const odb::Point &tray, int rows, int col
         }
     }
 
-    float center_x = tray.x;
-    float center_y = tray.y;
+    float center_x = tray.x();
+    float center_y = tray.y();
 
     std::vector<odb::Point> slots;
     for (int i = 0; i < rows * cols; i++) {
@@ -805,8 +805,8 @@ std::vector<std::vector<Flop> > MBFF::KMeans(const std::vector<Flop> &flops, int
             float cX = 0, cY = 0;
 
             for (Flop f : clusters[i]) {
-                cX += f.pt.x;
-                cY += f.pt.y;
+                cX += f.pt.x();
+                cY += f.pt.y();
             }
 
         
