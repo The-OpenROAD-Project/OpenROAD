@@ -154,9 +154,12 @@ float MBFF::RunLP(const std::vector<Flop> &flops, std::vector<Tray> &trays,
 
     float tot_disp = 0;
     for (int i = 0; i < num_trays; i++) {
-        Tray new_tray;
         float new_x = tray_x[i]->solution_value();
         float new_y = tray_y[i]->solution_value();
+
+        Tray new_tray;
+        new_tray.pt = odb::Point(new_x, new_y);
+
         tot_disp += GetDist(trays[i].pt, new_tray.pt);
         trays[i].pt = new_tray.pt;
     }
@@ -442,7 +445,7 @@ void MBFF::RunILP(const std::vector<Flop> &flops,
             operations_research::sat::CpSolverStatus::FEASIBLE ||
         (int)operations_research::sat::CpSolverStatus::OPTIMAL) {
 
-        log_->info(GPL, 1, "Total = {}", (response.objective_value()));
+        log_->info(utl::GPL, 1, "Total = {}", (response.objective_value()));
 
         float sum_disp = 0;
         for (int i = 0; i < num_flops; i++) {
@@ -463,7 +466,7 @@ void MBFF::RunILP(const std::vector<Flop> &flops,
             }
         }
 
-        log_->info(GPL, 2, "Sum of displacements from flop to slot: {}",
+        log_->info(utl::GPL, 2, "Sum of displacements from flop to slot: {}",
                    sum_disp);
 
         float sum_disp_path = 0;
@@ -476,7 +479,7 @@ void MBFF::RunILP(const std::vector<Flop> &flops,
                             response, disp_path_y[i]));
         }
 
-        log_->info(GPL, 3, "Sum of timing-critical path displacements: {}",
+        log_->info(utl::GPL, 3, "Sum of timing-critical path displacements: {}",
                    sum_disp_path);
 
         float sum_tray_cost = 0;
@@ -487,7 +490,7 @@ void MBFF::RunILP(const std::vector<Flop> &flops,
             }
         }
 
-        log_->info(GPL, 4, "Sum of tray costs: {}", sum_tray_cost);
+        log_->info(utl::GPL, 4, "Sum of tray costs: {}", sum_tray_cost);
 
         int tot_cnt = 0;
         std::set<int> tray_idx;
@@ -512,11 +515,11 @@ void MBFF::RunILP(const std::vector<Flop> &flops,
         }
 
         for (auto x : tray_sz) {
-            log_->error(GPL, 5, "Tray size = {}: {}", x.first, x.second);
+            log_->error(utl::GPL, 5, "Tray size = {}: {}", x.first, x.second);
         }
 
         if (tot_cnt != num_flops) {
-            log_->error(GPL, 6, "ERROR -- NOT ALL FLOPS ARE MATCHED");
+            log_->error(utl::GPL, 6, "ERROR -- NOT ALL FLOPS ARE MATCHED");
         }
     }
 
@@ -1139,7 +1142,7 @@ void MBFF::Remap(const std::vector<Flop> &flops,
 
     for (int i = 0; i < NUM_SIZES; i++) {
         for (int j = 0; j < static_cast<int>(trays[i].size()); j++) {
-            for (int k = 0; k < static_cast<int>(trays[i].cand.size()); k++) {
+            for (int k = 0; k < static_cast<int>(trays[i][j].cand.size()); k++) {
                 trays[i][j].cand[k] = small_to_large[trays[i][j].cand[k]];
             }
         }
