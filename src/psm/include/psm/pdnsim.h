@@ -103,6 +103,8 @@ class PDNSim
                                      bool require_voltage) const;
   std::unique_ptr<IRSolver> getIRSolver(bool require_voltage);
 
+  void saveIRDrop(IRSolver* ir_solver);
+
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   rsz::Resizer* resizer_ = nullptr;

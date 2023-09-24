@@ -35,6 +35,8 @@
 
 #include "Net.h"
 
+#include "odb/dbShape.h"
+
 namespace grt {
 
 Net::Net(odb::dbNet* net, bool has_wires)
@@ -78,6 +80,54 @@ bool Net::isLocal()
 void Net::destroyPins()
 {
   pins_.clear();
+}
+
+int Net::getNumBTermsAboveMaxLayer(odb::dbTechLayer* max_routing_layer)
+{
+  int bterm_count = 0;
+  for (auto bterm : net_->getBTerms()) {
+    int bterm_bottom_layer_idx = std::numeric_limits<int>::max();
+    for (auto bpin : bterm->getBPins()) {
+      for (auto box : bpin->getBoxes()) {
+        bterm_bottom_layer_idx = std::min(
+            bterm_bottom_layer_idx, box->getTechLayer()->getRoutingLevel());
+      }
+    }
+    if (bterm_bottom_layer_idx > max_routing_layer->getRoutingLevel()) {
+      bterm_count++;
+    }
+  }
+
+  return bterm_count;
+}
+
+bool Net::hasStackedVias(odb::dbTechLayer* max_routing_layer)
+{
+  int bterms_above_max_layer = getNumBTermsAboveMaxLayer(max_routing_layer);
+  uint wire_cnt = 0, via_cnt = 0;
+  net_->getWireCount(wire_cnt, via_cnt);
+
+  if (wire_cnt != 0 || via_cnt == 0) {
+    return false;
+  }
+
+  odb::dbWirePath path;
+  odb::dbWirePathShape pshape;
+  odb::dbWire* wire = net_->getWire();
+
+  odb::dbWirePathItr pitr;
+  std::set<odb::Point> via_points;
+  for (pitr.begin(wire); pitr.getNextPath(path);) {
+    while (pitr.getNextShape(pshape)) {
+      via_points.insert(path.point);
+    }
+  }
+
+  if (via_points.size() != bterms_above_max_layer) {
+    return false;
+  }
+
+  return true;
 }
 
 }  // namespace grt

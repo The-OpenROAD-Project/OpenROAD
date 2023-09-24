@@ -149,6 +149,8 @@ class RenderThread : public QThread
   QColor getColor(odb::dbTechLayer* layer);
   Qt::BrushStyle getPattern(odb::dbTechLayer* layer);
 
+  void drawRenderIndication(Painter& painter, const odb::Rect& bounds);
+
   utl::Logger* logger_ = nullptr;
   LayoutViewer* viewer_;
   std::mutex drawing_mutex_;
@@ -166,6 +168,7 @@ class RenderThread : public QThread
   QWaitCondition condition_;
   bool restart_ = false;
   bool abort_ = false;
+  bool is_first_render_done_ = false;
 };
 
 }  // namespace gui
