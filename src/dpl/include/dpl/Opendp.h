@@ -219,7 +219,18 @@ class GridInfo
 
   const bool isHybrid()
   {
+    // TODO: consider removing the second part
     return sites.size() > 1 || sites[0].first->isHybridParent();
+  }
+  const int getSitesTotalHeight()
+  {
+    return std::accumulate(
+        sites.begin(),
+        sites.end(),
+        0,
+        [](int sum, const std::pair<dbSite*, dbOrientType>& entry) {
+          return sum + entry.first->getHeight();
+        });
   }
 
  private:
@@ -440,11 +451,8 @@ class Opendp
   void groupInitPixels2();
   void erasePixel(Cell* cell);
   void paintPixel(Cell* cell, int grid_x, int grid_y);
-  int map_coordinates(int original_coordinate,
-                      int original_step,
-                      int target_step) const;
-  int map_ycoordinates(int original_coordinate,
-                       Cell& original_cell,
+  int map_ycoordinates(int source_grid_coordinate,
+                       const Grid_map_key& source_grid_key,
                        const Grid_map_key& target_grid_key) const;
 
   // checkPlacement
@@ -504,6 +512,9 @@ class Opendp
   pair<int, int> gridY(
       int y,
       const std::vector<std::pair<dbSite*, dbOrientType>>& grid_sites) const;
+  pair<int, int> gridEndY(
+      int y,
+      const std::vector<std::pair<dbSite*, dbOrientType>>& grid_sites) const;
   int gridPaddedEndX(const Cell* cell) const;
   int gridPaddedEndX(const Cell* cell, int site_width) const;
   int gridEndX(int x, int site_width) const;
@@ -511,11 +522,7 @@ class Opendp
   int gridEndX(const Cell* cell, int site_width) const;
   int gridEndY(int y, int row_height) const;
   int gridEndY(const Cell* cell) const;
-  void setGridPaddedLoc(Cell* cell,
-                        int x,
-                        int y,
-                        int site_width,
-                        int row_height) const;
+  void setGridPaddedLoc(Cell* cell, int x, int y, int site_width) const;
   std::pair<int, GridInfo> getRowInfo(const Cell* cell) const;
   // Lower left corner in core coordinates.
   Point initialLocation(const Cell* cell, bool padded) const;

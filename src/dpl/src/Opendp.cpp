@@ -599,7 +599,7 @@ Grid_map_key Opendp::getGridMapKey(const dbSite* site) const
   auto grid_idx = site_idx_to_grid_idx.find(site->getId());
   if (grid_idx == site_idx_to_grid_idx.end()) {
     logger_->error(
-        DPL, 45, "Site {} is not mapped to a grid.", site->getName());
+        DPL, 46, "Site {} is not mapped to a grid.", site->getName());
   }
   gmk.grid_index = grid_idx->second;
   return gmk;
@@ -655,6 +655,30 @@ pair<int, int> Opendp::gridY(
   return {base_height_index + index, cur_height};
 }
 
+pair<int, int> Opendp::gridEndY(
+    int y,
+    const std::vector<std::pair<dbSite*, dbOrientType>>& grid_sites) const
+{
+  int sum_heights = std::accumulate(
+      grid_sites.begin(),
+      grid_sites.end(),
+      0,
+      [](int sum, const std::pair<dbSite*, dbOrientType>& entry) {
+        return sum + entry.first->getHeight();
+      });
+
+  int base_height_index = divFloor(y, sum_heights);
+  int cur_height = base_height_index * sum_heights;
+  int index = 0;
+  base_height_index *= grid_sites.size();
+  while (cur_height < y && index < grid_sites.size()) {
+    auto site = grid_sites.at(index);
+    cur_height += site.first->getHeight();
+    index++;
+  }
+  return {base_height_index + index, cur_height};
+}
+
 int Opendp::gridY(const Cell* cell) const
 {
   if (cell->isHybrid()) {
@@ -666,14 +690,22 @@ int Opendp::gridY(const Cell* cell) const
   return cell->y_ / row_height;
 }
 
-void Opendp::setGridPaddedLoc(Cell* cell,
-                              int x,
-                              int y,
-                              int site_width,
-                              int row_height) const
+void Opendp::setGridPaddedLoc(Cell* cell, int x, int y, int site_width) const
 {
   cell->x_ = (x + padLeft(cell)) * site_width;
-  cell->y_ = y * row_height;
+  if (cell->isHybrid()) {
+    auto grid_info = grid_info_map_.at(getGridMapKey(cell));
+    int total_sites_height = grid_info.getSitesTotalHeight();
+    auto sites = grid_info.getSites();
+    const int sites_size = sites.size();
+    int height = (y / sites_size) * total_sites_height;
+    for (int s = 0; s < y % sites_size; s++) {
+      height += sites[s].first->getHeight();
+    }
+    cell->y_ = height;
+    return;
+  }
+  cell->y_ = y * getRowHeight(cell);
 }
 
 int Opendp::gridPaddedEndX(const Cell* cell, int site_width) const

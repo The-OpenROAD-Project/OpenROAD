@@ -86,16 +86,17 @@ void Opendp::initGridLayersMap()
   int grid_index = 0;
   grid_info_map_.clear();
   grid_info_vector_.clear();
-
+  int min_site_height = std::numeric_limits<int>::max();
   for (auto db_row : block_->getRows()) {
     auto site = db_row->getSite();
+
     if (site_idx_to_grid_idx.find(site->getId())
         != site_idx_to_grid_idx.end()) {
       continue;
     } else {
       if (site->isHybrid() && site->hasRowPattern()) {
         site_idx_to_grid_idx[site->getId()] = grid_index++;
-        for (auto [child_site, child_site_orientation] :
+        for (auto& [child_site, child_site_orientation] :
              site->getRowPattern()) {
           if (site_idx_to_grid_idx.find(child_site->getId())
               == site_idx_to_grid_idx.end()) {
@@ -106,6 +107,16 @@ void Opendp::initGridLayersMap()
           }
         }
       }
+    }
+    if (!site->isHybrid()) {
+      if (site->getHeight() < min_site_height) {
+        min_site_height = site->getHeight();
+        smallest_non_hybrid_grid_key
+            = Grid_map_key{site_idx_to_grid_idx[site->getId()]};
+      }
+    }
+    if(min_site_height == std::numeric_limits<int>::max()){
+      logger_->error(DPL, 128, "Cannot find a non-hybrid grid to use for placement.");
     }
   }
 
@@ -315,9 +326,12 @@ void Opendp::visitCellPixels(
       // Since there is an obstruction, we need to visit all the pixels at all
       // layers (for all row heights)
       int grid_idx = 0;
-      for (const auto& [grid_map_key, grid_info] : grid_info_map_) {
-        int layer_y_start = map_ycoordinates(y_start, cell, grid_map_key);
-        int layer_y_end = map_ycoordinates(y_end, cell, grid_map_key);
+      for (const auto& [target_grid_map_key, target_grid_info] :
+           grid_info_map_) {
+        int layer_y_start = map_ycoordinates(
+            y_start, smallest_non_hybrid_grid_key, target_grid_map_key);
+        int layer_y_end = map_ycoordinates(
+            y_end, smallest_non_hybrid_grid_key, target_grid_map_key);
         if (layer_y_end == layer_y_start) {
           ++layer_y_end;
         }
@@ -340,13 +354,12 @@ void Opendp::visitCellPixels(
                        : gridEndX(&cell, site_width_);
     int y_start = gridY(&cell);
     int y_end = gridEndY(&cell);
+    auto src_gmk = getGridMapKey(&cell);
     for (auto layer_it : grid_info_map_) {
       int layer_x_start = x_start;
       int layer_x_end = x_end;
-      int layer_y_start
-          = map_coordinates(y_start, row_height, layer_it.first.cell_height);
-      int layer_y_end
-          = map_coordinates(y_end, row_height, layer_it.first.cell_height);
+      int layer_y_start = map_ycoordinates(y_start, src_gmk, layer_it.first);
+      int layer_y_end = map_ycoordinates(y_end, src_gmk, layer_it.first);
       if (layer_y_end == layer_y_start) {
         ++layer_y_end;
       }
@@ -376,9 +389,8 @@ void Opendp::visitCellBoundaryPixels(
   int site_width = getSiteWidth(&cell);
   Grid_map_key gmk = getGridMapKey(&cell);
   GridInfo grid_info = grid_info_map_.at(gmk);
-  int row_height = gmk.cell_height;
   const int index_in_grid = grid_info.getGridIndex();
-
+  auto grid_sites = grid_info.getSites();
   dbMaster* master = inst->getMaster();
   auto obstructions = master->getObstructions();
   bool have_obstructions = false;
@@ -392,10 +404,10 @@ void Opendp::visitCellBoundaryPixels(
       inst->getTransform(transform);
       transform.apply(rect);
 
-      int x_start = gridX(rect.xMin() - core_.xMin(), site_width_);
-      int x_end = gridEndX(rect.xMax() - core_.xMin(), site_width_);
-      int y_start = gridY(rect.yMin() - core_.yMin(), row_height);
-      int y_end = gridEndY(rect.yMax() - core_.yMin(), row_height);
+      int x_start = gridX(rect.xMin() - core_.xMin(), site_width);
+      int x_end = gridEndX(rect.xMax() - core_.xMin(), site_width);
+      int y_start = gridY(rect.yMin() - core_.yMin(), grid_sites).first;
+      int y_end = gridEndY(rect.yMax() - core_.yMin(), grid_sites).first;
       for (int x = x_start; x < x_end; x++) {
         Pixel* pixel = gridPixel(index_in_grid, x, y_start);
         if (pixel) {
@@ -528,12 +540,13 @@ void Opendp::groupAssignCellRegions()
 void Opendp::groupInitPixels2()
 {
   for (auto& layer : grid_info_map_) {
-    int row_height = layer.first.cell_height;
     GridInfo& grid_info = layer.second;
-    int row_count = divFloor(core_.dy(), row_height);
-    int row_site_count = divFloor(core_.dx(), site_width_);
+    int row_count = layer.second.getRowCount();
+    int row_site_count = layer.second.getSiteCount();
+    auto grid_sites = layer.second.getSites();
     for (int x = 0; x < row_site_count; x++) {
       for (int y = 0; y < row_count; y++) {
+        int row_height = grid_sites[y % grid_sites.size()].first->getHeight();
         Rect sub;
         // TODO: Site width here is wrong if multiple site widths are
         // supported!
@@ -653,7 +666,7 @@ void Opendp::groupInitPixels()
 void Opendp::erasePixel(Cell* cell)
 {
   if (!(isFixed(cell) || !cell->is_placed_)) {
-    int row_height = getRowHeight(cell);
+    auto gmk = getGridMapKey(cell);
     int site_width = getSiteWidth(cell);
     int x_end = gridPaddedEndX(cell, site_width);
     int y_end = gridEndY(cell);
@@ -674,11 +687,9 @@ void Opendp::erasePixel(Cell* cell)
                y_start,
                y_end);
 
-    for (auto [grid_map_key, grid_info] : grid_info_map_) {
-      int layer_y_start
-          = map_coordinates(y_start, row_height, grid_map_key.cell_height);
-      int layer_y_end
-          = map_coordinates(y_end, row_height, grid_map_key.cell_height);
+    for (auto [target_grid_map_key, target_grid_info] : grid_info_map_) {
+      int layer_y_start = map_ycoordinates(y_start, gmk, target_grid_map_key);
+      int layer_y_end = map_ycoordinates(y_end, gmk, target_grid_map_key);
 
       if (layer_y_end == layer_y_start) {
         ++layer_y_end;
@@ -686,7 +697,7 @@ void Opendp::erasePixel(Cell* cell)
 
       for (int x = gridPaddedX(cell, site_width); x < x_end; x++) {
         for (int y = layer_y_start; y < layer_y_end; y++) {
-          Pixel* pixel = gridPixel(grid_info.getGridIndex(), x, y);
+          Pixel* pixel = gridPixel(target_grid_info.getGridIndex(), x, y);
           if (nullptr == pixel) {
             continue;
           }
@@ -700,32 +711,44 @@ void Opendp::erasePixel(Cell* cell)
   }
 }
 
-int Opendp::map_coordinates(int original_coordinate,
-                            int original_step,
-                            int target_step) const
-{
-  return divCeil(original_step * original_coordinate, target_step);
-}
-
-int Opendp::map_ycoordinates(int original_coordinate,
-                             Cell& original_cell,
+int Opendp::map_ycoordinates(int source_grid_coordinate,
+                             const Grid_map_key& source_grid_key,
                              const Grid_map_key& target_grid_key) const
 {
-  // This function identifies the correct grid, does the row mapping from the
-  // source to the destination.
-
-  if ((original_cell.isHybridParent() || !original_cell.isHybrid())
-      && !grid_info_map_.at(target_grid_key).isHybrid()) {
-    int original_step = row_height_;
-    if (isStdCell(&original_cell)) {
-      original_step = original_cell.getSite()->getHeight();
-    }
-    return divCeil(
-        original_cell.getSite()->getHeight() * original_coordinate,
-        grid_info_map_.at(target_grid_key).getSites()[0].first->getHeight());
+  if (source_grid_key == target_grid_key) {
+    return source_grid_coordinate;
   }
-  // here one of them is hybrid
-  logger_->error(DPL, 12121, "NOT IMPLEMENTED YET");
+  auto src_grid_info = grid_info_map_.at(source_grid_key);
+  auto target_grid_info = grid_info_map_.at(target_grid_key);
+  if (!src_grid_info.isHybrid()) {
+    if (!target_grid_info.isHybrid()) {
+      int original_step = src_grid_info.getSites()[0].first->getHeight();
+      int target_step = target_grid_info.getSites()[0].first->getHeight();
+      return divCeil(original_step * source_grid_coordinate, target_step);
+    } else {
+      // count until we find it.
+      return gridY(source_grid_coordinate * source_grid_key.grid_index,
+                   target_grid_info.getSites())
+          .first;
+    }
+  } else {
+    // src is hybrid
+    int src_total_sites_height = src_grid_info.getSitesTotalHeight();
+    auto src_sites = src_grid_info.getSites();
+    const int src_sites_size = src_sites.size();
+    int src_height
+        = (source_grid_coordinate / src_sites_size) * src_total_sites_height;
+    for (int s = 0; s < source_grid_coordinate % src_sites_size; s++) {
+      src_height += src_sites[s].first->getHeight();
+    }
+    if (target_grid_info.isHybrid()) {
+      // both are hybrids.
+      return gridY(src_height, target_grid_info.getSites()).first;
+    } else {
+      int target_step = target_grid_info.getSites()[0].first->getHeight();
+      return divCeil(src_height, target_step);
+    }
+  }
 }
 
 void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
@@ -737,9 +760,8 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
   int site_width = getSiteWidth(cell);
   Grid_map_key gmk = getGridMapKey(cell);
   GridInfo grid_info = grid_info_map_.at(gmk);
-  const int index_in_grid = grid_info.getGridIndex();
-  int row_height = gmk.cell_height;
-  setGridPaddedLoc(cell, grid_x, grid_y, site_width, row_height);
+  const int index_in_grid = gmk.grid_index;
+  setGridPaddedLoc(cell, grid_x, grid_y, site_width);
   cell->is_placed_ = true;
   for (int x = grid_x; x < x_end; x++) {
     for (int y = grid_y; y < y_end; y++) {
@@ -758,19 +780,18 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
     if (layer.first == gmk) {
       continue;
     }
-    int layer_x = map_coordinates(grid_x, site_width, site_width);
-    int layer_x_end = map_coordinates(x_end, site_width, site_width);
-    int layer_y = map_coordinates(grid_y, row_height, layer.first.cell_height);
-    int layer_y_end
-        = map_coordinates(y_end, row_height, layer.first.cell_height);
+    int layer_x = grid_x;
+    int layer_x_end = x_end;
+    int layer_y = map_ycoordinates(grid_y, gmk, layer.first);
+    int layer_y_end = map_ycoordinates(y_end, gmk, layer.first);
     debugPrint(logger_,
                DPL,
                "detailed",
                176,
-               "y_end {} original step {} target step {} layer_y_end {}",
+               "y_end {} original grid {} target grid {} layer_y_end {}",
                y_end,
-               row_height,
-               layer.first.cell_height,
+               gmk.grid_index,
+               layer.first.grid_index,
                layer_y_end);
 
     debugPrint(
@@ -778,10 +799,10 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
         DPL,
         "detailed",
         1,
-        "Mapping coordinates start from layer {} to layer {}. From [x{} y{}] "
+        "Mapping coordinates start from grid idx {} to grid idx {}. From [x{} y{}] "
         "it became [x{} y{}].",
-        row_height,
-        layer.first.cell_height,
+        gmk.grid_index,
+        layer.first.grid_index,
         grid_x,
         grid_y,
         layer_x,
@@ -791,10 +812,10 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
         DPL,
         "detailed",
         1,
-        "Mapping coordinates end from layer {} to layer {}. From [x{} y{}] "
+        "Mapping coordinates end from grid idx {} to grid idx {}. From [x{} y{}] "
         "it became [x{} y{}].",
-        row_height,
-        layer.first.cell_height,
+        gmk.grid_index,
+        layer.first.grid_index,
         x_end,
         y_end,
         layer_x_end,
@@ -827,15 +848,15 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
           // partially filled by a single-height or shorter cell, which is
           // allowed. However, if they do match, it means that we are trying
           // to overwrite a double-height cell placement, which is an error.
-          pair<int, GridInfo> grid_info_candidate = getRowInfo(pixel->cell);
-          if (grid_info_candidate.first == layer.first.cell_height) {
+          auto candidate_grid_key = getGridMapKey(pixel->cell);
+          if (candidate_grid_key == layer.first) {
             // Occupied by a multi-height cell this should not happen.
             logger_->error(DPL,
                            41,
                            "Cannot paint grid with cell {} because another "
                            "layer [{}] is already occupied by cell {}.",
                            cell->name(),
-                           layer.first.cell_height,
+                           layer.first.grid_index,
                            pixel->cell->name());
           } else {
             // We might not want to overwrite the cell that's already here.

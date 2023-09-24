@@ -698,8 +698,8 @@ bool Opendp::refineMove(Cell* cell)
   PixelPt pixel_pt = diamondSearch(cell, grid_x, grid_y);
 
   if (pixel_pt.pixel) {
-    int scaled_max_displacement_y_
-        = map_coordinates(max_displacement_y_, row_height_, getRowHeight(cell));
+    int scaled_max_displacement_y_ = map_ycoordinates(
+        max_displacement_y_, smallest_non_hybrid_grid_key, getGridMapKey(cell));
     if (abs(grid_x - pixel_pt.pt.getX()) > max_displacement_x_
         || abs(grid_y - pixel_pt.pt.getY()) > scaled_max_displacement_y_) {
       return false;
@@ -742,8 +742,8 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
   //  the original code.
   //  max_displacement_y_ is in microns, and this doesn't translate directly to
   //  x and y on the grid.
-  int scaled_max_displacement_y_
-      = map_coordinates(max_displacement_y_, row_height_, getRowHeight(cell));
+  int scaled_max_displacement_y_ = map_ycoordinates(
+      max_displacement_y_, smallest_non_hybrid_grid_key, getGridMapKey(cell));
   int y_min = y - scaled_max_displacement_y_;
   int y_max = y + scaled_max_displacement_y_;
 
@@ -974,14 +974,16 @@ bool Opendp::checkRegionOverlap(const Cell* cell,
              y,
              y_end);
   auto row_info = getRowInfo(cell);
+  auto gmk = getGridMapKey(cell);
   int min_row_height = row_height_;
-  bgBox queryBox(bgPoint(x * site_width_,
-                         map_coordinates(y, row_info.first, min_row_height)
-                             * min_row_height),
-                 bgPoint(x_end * site_width_ - 1,
-                         map_coordinates(y_end, row_info.first, min_row_height)
-                                 * min_row_height
-                             - 1));
+  bgBox queryBox(
+      bgPoint(x * site_width_,
+              map_ycoordinates(y, gmk, smallest_non_hybrid_grid_key)
+                  * min_row_height),
+      bgPoint(x_end * site_width_ - 1,
+              map_ycoordinates(y_end, gmk, smallest_non_hybrid_grid_key)
+                      * min_row_height
+                  - 1));
 
   std::vector<bgBox> result;
   findOverlapInRtree(queryBox, result);
@@ -1008,6 +1010,7 @@ bool Opendp::checkPixels(const Cell* cell,
                          int x_end,
                          int y_end) const
 {
+  auto gmk = getGridMapKey(cell);
   auto row_info = getRowInfo(cell);
   if (x_end > row_info.second.getSiteCount()) {
     return false;
@@ -1079,7 +1082,7 @@ bool Opendp::checkPixels(const Cell* cell,
       // the middle that would be missed by the 4 corners check above.
       // So, we loop with steps of min_row_height and check the left and right
       int y_begin_mapped
-          = map_coordinates(y_begin, row_info.first, min_row_height);
+          = map_ycoordinates(y_begin, gmk, smallest_non_hybrid_grid_key);
 
       int offset = 0;
       for (int step = 0; step < steps; step++) {
