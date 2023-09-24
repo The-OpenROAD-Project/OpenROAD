@@ -39,6 +39,7 @@
 namespace odb {
 class dbDatabase;
 class dbInst;
+
 }  // namespace odb
 namespace sta {
 class dbSta;

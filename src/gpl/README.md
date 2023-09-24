@@ -47,12 +47,16 @@ global_placement
     [-timing_driven_nets_percentage]
     [-pad_left pad_left]
     [-pad_right pad_right]
-    [-alpha alpha]
-    [-beta beta]
-    [-max_split_size max_split_size]
     [-num_threads num_threads]
     [-verbose_level level]
     [-force_cpu]
+```
+
+```
+cluster_flops  
+    [-alpha alpha]  
+    [-beta beta]  
+    [-max_split_size max_split_size]  
 ```
 
 ### Tuning Parameters
@@ -72,13 +76,12 @@ global_placement
 - `-initial_place_max_fanout`: set net escape condition in initial place when 'fanout >= initial_place_max_fanout'. Default value is 200. Allowed values are `[1-MAX_INT, int]`.
 - `-timing_driven_net_reweight_overflow`: set overflow threshold for timing-driven net reweighting. Allowed values are `tcl list of [0-100, int]`.
 - `-timing_driven_net_weight_max`: Set the multiplier for the most timing critical nets. Default value is 1.9.
-- `-timing_driven_nets_percentage`: Set the percentage of nets that are reweighted in timing-driven mode. Default value is 10. Allowed values are `[0-100, float]`  
-- `alpha`: Set the weighting factor for tray cost in flip-flop clustering (recommended to be `[20.0, float]`).    
-- `beta`: Set the weighting factor for timing-critical paths in flip-flop clusering (recommended to be `[1.0. float]`).   
-- `max_split_size`: The maximum size of a single pointset after running the pointset decomposition algorithm for runtime improvement in flip-flop clustering (to not run pointset decomposition, set as `1000000`).  
-- `num_threads`: The number of threads to use for flip-flop clustering (recommended: `25`).   
+- `-timing_driven_nets_percentage`: Set the percentage of nets that are reweighted in timing-driven mode. Default value is 10. Allowed values are `[0-100, float]`   
 - `-verbose_level`: set verbose level for RePlAce. Default value is 1. Allowed values are `[0-5, int]`.
 - `-force_cpu`: Force to use the CPU solver even if the GPU is available.
+- `alpha`: Set the weighting factor for tray cost in flip-flop clustering (recommended to be `[20.0, float]`).    
+- `beta`: Set the weighting factor for timing-critical paths in flip-flop clusering (recommended to be `[1.0. float]`).   
+- `max_split_size`: The maximum size of a single pointset after running the pointset decomposition algorithm for runtime improvement in flop clustering (to not run pointset decomposition, set as `-1`).  
 
 
 `-timing_driven` does a virtual `repair_design` to find slacks and
