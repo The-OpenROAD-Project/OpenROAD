@@ -146,16 +146,6 @@ void Opendp::initGridLayersMap()
   grid_info_vector_.resize(grid_info_map_.size());
   for (auto& [gmk, grid_info] : grid_info_map_) {
     assert(gmk.grid_index == grid_info.getGridIndex());
-    // debugPrint(logger_,
-    //            DPL,
-    //            "hybrid",
-    //            1,
-    //            "Grid map key - cell height {} has value - grid index {} row "
-    //            "count {} site count {}",
-    //            gmk.grid_index,
-    //            grid_info.grid_index,
-    //            grid_info.row_count,
-    //            grid_info.site_count);
     grid_info_vector_[grid_info.getGridIndex()] = &grid_info;
   }
   debugPrint(logger_, DPL, "grid", 1, "grid layers map initialized");
@@ -317,13 +307,10 @@ void Opendp::visitCellPixels(
       dbTransform transform;
       inst->getTransform(transform);
       transform.apply(rect);
-      auto grid_key = getGridMapKey(cell.getSite());
-      auto cell_grid_info = grid_info_map_.at(grid_key);
       int x_start = gridX(rect.xMin() - core_.xMin(), site_width_);
       int x_end = gridEndX(rect.xMax() - core_.xMin(), site_width_);
-      auto cell_grid_sites = cell_grid_info.getSites();
-      int y_start = gridY(rect.yMin() - core_.yMin(), cell_grid_sites).first;
-      int y_end = gridEndY(rect.yMax() - core_.yMin(), cell_grid_sites).first;
+      int y_start = gridY(rect.yMin() - core_.yMin(), row_height_);
+      int y_end = gridEndY(rect.yMax() - core_.yMin(), row_height_);
 
       // Since there is an obstruction, we need to visit all the pixels at all
       // layers (for all row heights)
@@ -348,14 +335,14 @@ void Opendp::visitCellPixels(
   }
   if (!have_obstructions) {
     int x_start
-        = padded ? gridPaddedX(&cell, site_width) : gridX(&cell, site_width);
-    int x_end = padded ? gridPaddedEndX(&cell, site_width)
-                       : gridEndX(&cell, site_width);
+        = padded ? gridPaddedX(&cell, site_width_) : gridX(&cell, site_width_);
+    int x_end = padded ? gridPaddedEndX(&cell, site_width_)
+                       : gridEndX(&cell, site_width_);
     int y_start = gridY(&cell);
     int y_end = gridEndY(&cell);
     for (auto layer_it : grid_info_map_) {
-      int layer_x_start = map_coordinates(x_start, site_width, site_width);
-      int layer_x_end = map_coordinates(x_end, site_width, site_width);
+      int layer_x_start = x_start;
+      int layer_x_end = x_end;
       int layer_y_start
           = map_coordinates(y_start, row_height, layer_it.first.cell_height);
       int layer_y_end
@@ -405,8 +392,8 @@ void Opendp::visitCellBoundaryPixels(
       inst->getTransform(transform);
       transform.apply(rect);
 
-      int x_start = gridX(rect.xMin() - core_.xMin(), site_width);
-      int x_end = gridEndX(rect.xMax() - core_.xMin(), site_width);
+      int x_start = gridX(rect.xMin() - core_.xMin(), site_width_);
+      int x_end = gridEndX(rect.xMax() - core_.xMin(), site_width_);
       int y_start = gridY(rect.yMin() - core_.yMin(), row_height);
       int y_end = gridEndY(rect.yMax() - core_.yMin(), row_height);
       for (int x = x_start; x < x_end; x++) {
