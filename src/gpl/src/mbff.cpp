@@ -51,20 +51,18 @@
 #include <lemon/network_simplex.h>
 #include <lemon/maps.h>
 
-/* 
+/*
 height and width of a flip-flop
 ratios are used for:
     (1) finding all slot locations in a tray
-    (2) finding power consumption per slot 
+    (2) finding power consumption per slot
 */
-
-
 
 namespace gpl {
 
-int NUM_SIZES = 6;
-float WIDTH = 2.448, HEIGHT = 1.2;
-float RATIOS[6] = { 1, 0.875, 0.854, 0.854, 0.844, 0.844 };
+constexpr int NUM_SIZES = 6;
+constexpr float WIDTH = 2.448, HEIGHT = 1.2;
+constexpr float RATIOS[NUM_SIZES] = { 1, 0.875, 0.854, 0.854, 0.844, 0.844 };
 
 int MBFF::GetBitCnt(int bit_idx) { return (1 << bit_idx); }
 
@@ -74,24 +72,28 @@ int MBFF::GetRows(int slot_cnt) {
     }
     if (slot_cnt == 8) {
         return 2;
-    }
+    } 
     else {
         return 4;
     }
 }
 
-float MBFF::GetDist(const Point& a, const Point& b) {
+float MBFF::GetDist(const Point &a, const Point &b) {
     return (abs(a.x - b.x) + abs(a.y - b.y));
 }
 
+/*
+This LP finds new tray centers such that the sum of displacements from the new
+trays' slots to their matching flops is minimized
+*/
 
-
-float MBFF::RunLP(const std::vector<Flop>& flops, std::vector<Tray> &trays, const std::vector<std::pair<int, int> >& clusters) {
+float MBFF::RunLP(const std::vector<Flop> &flops, std::vector<Tray> &trays, const std::vector<std::pair<int, int> > &clusters) {
 
     int num_flops = static_cast<int>(flops.size());
     int num_trays = static_cast<int>(trays.size());
 
-    std::unique_ptr<operations_research::MPSolver> solver(operations_research::MPSolver::CreateSolver("GLOP"));
+    std::unique_ptr<operations_research::MPSolver> solver(
+        operations_research::MPSolver::CreateSolver("GLOP"));
     double inf = solver->infinity();
 
     std::vector<operations_research::MPVariable *> tray_x(num_trays);
@@ -101,7 +103,6 @@ float MBFF::RunLP(const std::vector<Flop>& flops, std::vector<Tray> &trays, cons
         tray_x[i] = solver->MakeNumVar(0, inf, "");
         tray_y[i] = solver->MakeNumVar(0, inf, "");
     }
-
 
     // displacement from flop to tray slot
     std::vector<operations_research::MPVariable *> disp_x(num_flops);
@@ -115,26 +116,30 @@ float MBFF::RunLP(const std::vector<Flop>& flops, std::vector<Tray> &trays, cons
         int tray_idx = clusters[i].first;
         int slot_idx = clusters[i].second;
 
-        const Point& flop = flops[i].pt;
-        const Point& tray = trays[tray_idx].pt;
-        const Point& slot = trays[tray_idx].slots[slot_idx];
+        const Point &flop = flops[i].pt;
+        const Point &tray = trays[tray_idx].pt;
+        const Point &slot = trays[tray_idx].slots[slot_idx];
 
         float shift_x = slot.x - tray.x;
         float shift_y = slot.y - tray.y;
 
-        operations_research::MPConstraint *c1 = solver->MakeRowConstraint(shift_x - flop.x, inf, "");
+        operations_research::MPConstraint *c1 =
+            solver->MakeRowConstraint(shift_x - flop.x, inf, "");
         c1->SetCoefficient(disp_x[i], 1);
         c1->SetCoefficient(tray_x[tray_idx], -1);
 
-        operations_research::MPConstraint *c2 = solver->MakeRowConstraint(flop.x - shift_x, inf, "");
+        operations_research::MPConstraint *c2 =
+            solver->MakeRowConstraint(flop.x - shift_x, inf, "");
         c2->SetCoefficient(disp_x[i], 1);
         c2->SetCoefficient(tray_x[tray_idx], 1);
 
-        operations_research::MPConstraint *c3 = solver->MakeRowConstraint(shift_y - flop.y, inf, "");
+        operations_research::MPConstraint *c3 =
+            solver->MakeRowConstraint(shift_y - flop.y, inf, "");
         c3->SetCoefficient(disp_y[i], 1);
         c3->SetCoefficient(tray_y[tray_idx], -1);
 
-        operations_research::MPConstraint *c4 = solver->MakeRowConstraint(flop.y - shift_y, inf, "");
+        operations_research::MPConstraint *c4 =
+            solver->MakeRowConstraint(flop.y - shift_y, inf, "");
         c4->SetCoefficient(disp_y[i], 1);
         c4->SetCoefficient(tray_y[tray_idx], 1);
     }
@@ -145,7 +150,7 @@ float MBFF::RunLP(const std::vector<Flop>& flops, std::vector<Tray> &trays, cons
         objective->SetCoefficient(disp_y[i], 1);
     }
     objective->SetMinimization();
-    solver->SetNumThreads(NUM_THREADS);
+    solver->SetNumThreads(num_threads);
     solver->Solve();
 
     float tot_disp = 0;
@@ -161,12 +166,16 @@ float MBFF::RunLP(const std::vector<Flop>& flops, std::vector<Tray> &trays, cons
 }
 
 /*
-    NOTE: CP-SAT constraints only work with INTEGERS
-    so, all coefficients (shift_x and shift_y) are multiplied by 100
+This ILP finds a set of trays (given all of the tray candidates from capacitated
+k-means) such that
+(1) each flop gets mapped to exactly one slot
+(2) [(a) + (b) + (c)] is minimized, where
+        (a) = sum of displacements from a flop to its slot
+        (b) = beta * (sum of displacements from the start to the end of a timing-critical path)
+        (c) = alpha * (sum of the chosen tray costs)
 */
 
-void MBFF::RunILP(const std::vector<Flop>& flops, const std::vector<Path>& paths, const std::vector<std::vector<Tray> >& all_trays, float alpha, float beta) {
-
+void MBFF::RunILP(const std::vector<Flop> &flops, const std::vector<Path> &paths, const std::vector<std::vector<Tray> > &all_trays, float alpha, float beta) {
     std::vector<Tray> trays;
     for (int i = 0; i < NUM_SIZES; i++) {
         for (int j = 0; j < static_cast<int>(all_trays[i].size()); j++) {
@@ -178,13 +187,17 @@ void MBFF::RunILP(const std::vector<Flop>& flops, const std::vector<Path>& paths
     int num_paths = static_cast<int>(paths.size());
     int num_trays = static_cast<int>(trays.size());
 
+    /*
+    NOTE: CP-SAT constraints only work with INTEGERS
+    so, all coefficients (shift_x and shift_y) are multiplied by 100
+    */
     operations_research::sat::CpModelBuilder cp_model;
     int inf = std::numeric_limits<int>::max();
 
-    // has a flop been mapped to a slot? 
+    // has a flop been mapped to a slot?
     std::vector<operations_research::sat::BoolVar> mapped[num_flops][num_trays];
 
-    // displacement from flop to slot 
+    // displacement from flop to slot
     std::vector<operations_research::sat::IntVar> disp_x[num_flops][num_trays];
     std::vector<operations_research::sat::IntVar> disp_y[num_flops][num_trays];
 
@@ -196,15 +209,16 @@ void MBFF::RunILP(const std::vector<Flop>& flops, const std::vector<Path>& paths
 
             for (int k = 0; k < static_cast<int>(trays[j].slots.size()); k++) {
                 if (trays[j].cand[k] == i) {
-                    disp_x[i][j][k] = cp_model.NewIntVar(operations_research::Domain(0, inf));
-                    disp_y[i][j][k] = cp_model.NewIntVar(operations_research::Domain(0, inf));
+                    disp_x[i][j][k] =
+                        cp_model.NewIntVar(operations_research::Domain(0, inf));
+                    disp_y[i][j][k] =
+                        cp_model.NewIntVar(operations_research::Domain(0, inf));
                     mapped[i][j][k] = cp_model.NewBoolVar();
                 }
             }
         }
     }
 
-   
     float max_dist = 0;
     for (int i = 0; i < num_flops; i++) {
         for (int j = 0; j < num_trays; j++) {
@@ -214,19 +228,28 @@ void MBFF::RunILP(const std::vector<Flop>& flops, const std::vector<Path>& paths
             for (int k = 0; k < static_cast<int>(slots.size()); k++) {
                 if (trays[j].cand[k] == i) {
 
-                    float shift_x = slots[k].x - flops[i].pt.x;
-                    float shift_y = slots[k].y - flops[i].pt.y;
+                    const float shift_x = slots[k].x - flops[i].pt.x;
+                    const float shift_y = slots[k].y - flops[i].pt.y;
 
-                    max_dist = std::max(max_dist, std::max(shift_x, -shift_x) +
-                                              std::max(shift_y, -shift_y));
+                    max_dist =
+                        std::max(max_dist, std::max(shift_x, -shift_x) +
+                                               std::max(shift_y, -shift_y));
 
                     // absolute value constraints for x
-                    cp_model.AddLessOrEqual(0, disp_x[i][j][k] - int(100 * shift_x) * mapped[i][j][k]);
-                    cp_model.AddLessOrEqual(0, disp_x[i][j][k] + int(100 * shift_x) * mapped[i][j][k]);
+                    cp_model.AddLessOrEqual(
+                        0,
+                        disp_x[i][j][k] - int(100 * shift_x) * mapped[i][j][k]);
+                    cp_model.AddLessOrEqual(
+                        0,
+                        disp_x[i][j][k] + int(100 * shift_x) * mapped[i][j][k]);
 
                     // absolute value constraints for y
-                    cp_model.AddLessOrEqual(0, disp_y[i][j][k] - int(100 * shift_y) * mapped[i][j][k]);
-                    cp_model.AddLessOrEqual(0, disp_y[i][j][k] + int(100 * shift_y) * mapped[i][j][k]);
+                    cp_model.AddLessOrEqual(
+                        0,
+                        disp_y[i][j][k] - int(100 * shift_y) * mapped[i][j][k]);
+                    cp_model.AddLessOrEqual(
+                        0,
+                        disp_y[i][j][k] + int(100 * shift_y) * mapped[i][j][k]);
                 }
             }
         }
@@ -236,7 +259,8 @@ void MBFF::RunILP(const std::vector<Flop>& flops, const std::vector<Path>& paths
         for (int j = 0; j < num_trays; j++) {
             for (int k = 0; k < static_cast<int>(trays[j].slots.size()); k++) {
                 if (trays[j].cand[k] == i) {
-                    cp_model.AddLessOrEqual(disp_x[i][j][k] + disp_y[i][j][k], int(100 * max_dist));
+                    cp_model.AddLessOrEqual(disp_x[i][j][k] + disp_y[i][j][k],
+                                            int(100 * max_dist));
                 }
             }
         }
@@ -246,18 +270,19 @@ void MBFF::RunILP(const std::vector<Flop>& flops, const std::vector<Path>& paths
     std::vector<operations_research::sat::IntVar> disp_path_x(num_paths);
     std::vector<operations_research::sat::IntVar> disp_path_y(num_paths);
     for (int i = 0; i < num_paths; i++) {
-        disp_path_x[i] = cp_model.NewIntVar(operations_research::Domain(0, inf));
-        disp_path_y[i] = cp_model.NewIntVar(operations_research::Domain(0, inf));
+        disp_path_x[i] =
+            cp_model.NewIntVar(operations_research::Domain(0, inf));
+        disp_path_y[i] =
+            cp_model.NewIntVar(operations_research::Domain(0, inf));
     }
 
     for (int i = 0; i < num_paths; i++) {
-        int flop_a_idx = paths[i].a;
-        int flop_b_idx = paths[i].b;
-
+        const int flop_a_idx = paths[i].a;
+        const int flop_b_idx = paths[i].b;
 
         operations_research::sat::LinearExpr sum_disp_x_flop_a;
         operations_research::sat::LinearExpr sum_disp_y_flop_a;
-        
+
         operations_research::sat::LinearExpr sum_disp_x_flop_b;
         operations_research::sat::LinearExpr sum_disp_y_flop_b;
 
@@ -267,34 +292,40 @@ void MBFF::RunILP(const std::vector<Flop>& flops, const std::vector<Path>& paths
                 if (trays[j].cand[k] == flop_a_idx) {
                     float shift_x = slots[k].x - flops[flop_a_idx].pt.x;
                     float shift_y = slots[k].y - flops[flop_a_idx].pt.y;
-                    sum_disp_x_flop_a += (int(100 * shift_x) * mapped[flop_a_idx][j][k]);
-                    sum_disp_y_flop_a += (int(100 * shift_y) * mapped[flop_a_idx][j][k]);
+                    sum_disp_x_flop_a +=
+                        (int(100 * shift_x) * mapped[flop_a_idx][j][k]);
+                    sum_disp_y_flop_a +=
+                        (int(100 * shift_y) * mapped[flop_a_idx][j][k]);
                 }
                 if (trays[j].cand[k] == flop_b_idx) {
                     float shift_x = slots[k].x - flops[flop_b_idx].pt.x;
                     float shift_y = slots[k].y - flops[flop_b_idx].pt.y;
-                    sum_disp_x_flop_b += (int(100 * shift_x) * mapped[flop_b_idx][j][k]);
-                    sum_disp_y_flop_b += (int(100 * shift_y) * mapped[flop_b_idx][j][k]);
+                    sum_disp_x_flop_b +=
+                        (int(100 * shift_x) * mapped[flop_b_idx][j][k]);
+                    sum_disp_y_flop_b +=
+                        (int(100 * shift_y) * mapped[flop_b_idx][j][k]);
                 }
             }
         }
 
         // absolute value constraints for x
-        cp_model.AddLessOrEqual(0, disp_path_x[i] + sum_disp_x_flop_a - sum_disp_x_flop_b);
-        cp_model.AddLessOrEqual(0, disp_path_x[i] - sum_disp_x_flop_a + sum_disp_x_flop_b);
+        cp_model.AddLessOrEqual(0, disp_path_x[i] + sum_disp_x_flop_a -
+                                       sum_disp_x_flop_b);
+        cp_model.AddLessOrEqual(0, disp_path_x[i] - sum_disp_x_flop_a +
+                                       sum_disp_x_flop_b);
 
         // absolute value constraints for y
-        cp_model.AddLessOrEqual(0, disp_path_y[i] + sum_disp_y_flop_a - sum_disp_y_flop_b);
-        cp_model.AddLessOrEqual(0, disp_path_y[i] - sum_disp_y_flop_a + sum_disp_y_flop_b);
+        cp_model.AddLessOrEqual(0, disp_path_y[i] + sum_disp_y_flop_a -
+                                       sum_disp_y_flop_b);
+        cp_model.AddLessOrEqual(0, disp_path_y[i] - sum_disp_y_flop_a +
+                                       sum_disp_y_flop_b);
     }
 
     for (int i = 0; i < num_paths; i++) {
         cp_model.AddLessOrEqual(disp_path_x[i] + disp_path_y[i], max_dist);
     }
 
-
-
-    // check that each slot is mapped to a maxmimum of one flop 
+    // check that each slot is mapped to a maxmimum of one flop
     for (int i = 0; i < num_trays; i++) {
         for (int j = 0; j < static_cast<int>(trays[i].slots.size()); j++) {
             operations_research::sat::LinearExpr mapped_slot;
@@ -322,13 +353,10 @@ void MBFF::RunILP(const std::vector<Flop>& flops, const std::vector<Path>& paths
         cp_model.AddLessOrEqual(mapped_flop, 1);
     }
 
-
-
     std::vector<operations_research::sat::BoolVar> tray_used(num_trays);
     for (int i = 0; i < num_trays; i++) {
         tray_used[i] = cp_model.NewBoolVar();
     }
-
 
     for (int i = 0; i < num_trays; i++) {
         operations_research::sat::LinearExpr slots_used;
@@ -336,18 +364,17 @@ void MBFF::RunILP(const std::vector<Flop>& flops, const std::vector<Path>& paths
             for (int k = 0; k < num_flops; k++) {
 
                 if (trays[i].cand[j] == k) {
-                    // check that if we map a flop to a slot, that slot's tray is used 
+                    // check that if we map a flop to a slot, that slot's tray
+                    // is used
                     cp_model.AddLessOrEqual(0, tray_used[i] - mapped[k][i][j]);
                     slots_used += mapped[k][i][j];
                 }
-
             }
         }
 
-        // check that we use at least one slot if a tray is used 
+        // check that we use at least one slot if a tray is used
         cp_model.AddLessOrEqual(0, slots_used - tray_used[i]);
     }
-    
 
     // calculate the cost of each tray
     std::vector<float> tray_cost(num_trays);
@@ -360,9 +387,9 @@ void MBFF::RunILP(const std::vector<Flop>& flops, const std::vector<Path>& paths
         }
         if (GetBitCnt(bit_idx) == 1) {
             tray_cost[i] = 1.00;
-        }
-        else {
-            tray_cost[i] = ((float)GetBitCnt(bit_idx)) * (RATIOS[bit_idx] - GetBitCnt(bit_idx) * 0.0015);
+        } else {
+            tray_cost[i] = ((float)GetBitCnt(bit_idx)) *
+                           (RATIOS[bit_idx] - GetBitCnt(bit_idx) * 0.0015);
         }
     }
 
@@ -373,7 +400,7 @@ void MBFF::RunILP(const std::vector<Flop>& flops, const std::vector<Path>& paths
 
     operations_research::sat::DoubleLinearExpr obj;
 
-    // add the sum of all distances 
+    // add the sum of all distances
     for (int i = 0; i < num_flops; i++) {
         for (int j = 0; j < num_trays; j++) {
             for (int k = 0; k < static_cast<int>(trays[j].slots.size()); k++) {
@@ -385,69 +412,85 @@ void MBFF::RunILP(const std::vector<Flop>& flops, const std::vector<Path>& paths
         }
     }
 
-    // add the critical-timing path constraints 
+    // add the critical-timing path constraints
     for (int i = 0; i < num_paths; i++) {
         obj.AddTerm(disp_path_x[i], beta * 0.01);
         obj.AddTerm(disp_path_y[i], beta * 0.01);
     }
 
-    // add the tray usage constraints 
+    // add the tray usage constraints
     for (int i = 0; i < num_trays; i++) {
         obj.AddTerm(tray_used[i], alpha * tray_cost[i]);
     }
-
 
     cp_model.Minimize(obj);
 
     operations_research::sat::Model model;
     operations_research::sat::SatParameters parameters;
-    parameters.set_num_workers(NUM_THREADS);
+    parameters.set_num_workers(num_threads);
     parameters.set_relative_gap_limit(0.01);
     model.Add(NewSatParameters(parameters));
 
-    operations_research::sat::CpSolverResponse response = operations_research::sat::SolveCpModel(cp_model.Build(), &model);
+    operations_research::sat::CpSolverResponse response =
+        operations_research::sat::SolveCpModel(cp_model.Build(), &model);
 
-    if (response.status() == operations_research::sat::CpSolverStatus::FEASIBLE || (int)operations_research::sat::CpSolverStatus::OPTIMAL) {
-
+    if (response.status() ==
+            operations_research::sat::CpSolverStatus::FEASIBLE ||
+        (int)operations_research::sat::CpSolverStatus::OPTIMAL) {
 
         std::cout << "Total = " << (response.objective_value()) << "\n";
 
         float sum_disp = 0;
         for (int i = 0; i < num_flops; i++) {
             for (int j = 0; j < num_trays; j++) {
-                for (int k = 0; k < static_cast<int>(trays[j].slots.size()); k++) {
+                for (int k = 0; k < static_cast<int>(trays[j].slots.size());
+                     k++) {
                     if (trays[j].cand[k] == i) {
-                        sum_disp += (0.01 * operations_research::sat::SolutionIntegerValue(response, disp_x[i][j][k]));
-                        sum_disp += (0.01 * operations_research::sat::SolutionIntegerValue(response, disp_y[i][j][k]));
+                        sum_disp +=
+                            (0.01 *
+                             operations_research::sat::SolutionIntegerValue(
+                                 response, disp_x[i][j][k]));
+                        sum_disp +=
+                            (0.01 *
+                             operations_research::sat::SolutionIntegerValue(
+                                 response, disp_y[i][j][k]));
                     }
                 }
             }
         }
-        std::cout << "Sum of displacements from flop to slot: " << sum_disp << "\n";
+        std::cout << "Sum of displacements from flop to slot: " << sum_disp
+                  << "\n";
 
         float sum_disp_path = 0;
         for (int i = 0; i < num_paths; i++) {
-            sum_disp_path += (0.01 * operations_research::sat::SolutionIntegerValue(response, disp_path_x[i]));
-            sum_disp_path += (0.01 * operations_research::sat::SolutionIntegerValue(response, disp_path_y[i]));
+            sum_disp_path +=
+                (0.01 * operations_research::sat::SolutionIntegerValue(
+                            response, disp_path_x[i]));
+            sum_disp_path +=
+                (0.01 * operations_research::sat::SolutionIntegerValue(
+                            response, disp_path_y[i]));
         }
-        std::cout << "Sum of displacements between the start and end of a timing-critical path: " << sum_disp_path << "\n";
+        std::cout << "Sum of displacements between the start and end of a "
+                     "timing-critical path: " << sum_disp_path << "\n";
 
         float sum_tray_cost = 0;
         for (int i = 0; i < num_trays; i++) {
-            if (operations_research::sat::SolutionIntegerValue(response, tray_used[i])) {
+            if (operations_research::sat::SolutionIntegerValue(response,
+                                                               tray_used[i])) {
                 sum_tray_cost += tray_cost[i];
             }
         }
         std::cout << "Sum of tray costs: " << sum_tray_cost << "\n";
 
-
         int tot_cnt = 0;
         std::set<int> tray_idx;
         for (int i = 0; i < num_flops; i++) {
             for (int j = 0; j < num_trays; j++) {
-                for (int k = 0; k < static_cast<int>(trays[j].slots.size()); k++) {
+                for (int k = 0; k < static_cast<int>(trays[j].slots.size());
+                     k++) {
                     if (trays[j].cand[k] == i) {
-                        if (operations_research::sat::SolutionIntegerValue(response, mapped[i][j][k]) == 1) {
+                        if (operations_research::sat::SolutionIntegerValue(
+                                response, mapped[i][j][k]) == 1) {
                             tray_idx.insert(j);
                             tot_cnt++;
                         }
@@ -474,9 +517,7 @@ void MBFF::RunILP(const std::vector<Flop>& flops, const std::vector<Path>& paths
 
 } // end ILP
 
-
-
-std::vector<Point> MBFF::GetSlots(const Point& tray, int rows, int cols) {
+std::vector<Point> MBFF::GetSlots(const Point &tray, int rows, int cols) {
     int bit_idx = 0;
     for (int i = 1; i < NUM_SIZES; i++) {
         if (rows * cols == GetBitCnt(i)) {
@@ -505,8 +546,7 @@ std::vector<Point> MBFF::GetSlots(const Point& tray, int rows, int cols) {
     return slots;
 }
 
-
-Flop MBFF::GetNewFlop(const std::vector<Flop>& prob_dist, float tot_dist) {
+Flop MBFF::GetNewFlop(const std::vector<Flop> &prob_dist, float tot_dist) {
     float rand_num = (float)(rand() % 101), cum_sum = 0;
     Flop new_flop;
     for (int i = 0; i < static_cast<int>(prob_dist.size()); i++) {
@@ -515,10 +555,9 @@ Flop MBFF::GetNewFlop(const std::vector<Flop>& prob_dist, float tot_dist) {
         if (cum_sum * 100.0 >= rand_num * tot_dist) {
             break;
         }
-    } 
+    }
     return new_flop;
 }
-
 
 std::vector<Tray> MBFF::GetStartTrays(std::vector<Flop> flops, int num_trays, float AR) {
     int num_flops = static_cast<int>(flops.size());
@@ -565,8 +604,7 @@ std::vector<Tray> MBFF::GetStartTrays(std::vector<Flop> flops, int num_trays, fl
     return trays;
 }
 
-
-Tray MBFF::GetOneBit(const Point& pt) {
+Tray MBFF::GetOneBit(const Point &pt) {
     Tray tray;
     tray.pt.x = pt.x - WIDTH / 2.0;
     tray.pt.y = pt.y - HEIGHT / 2.0;
@@ -574,8 +612,7 @@ Tray MBFF::GetOneBit(const Point& pt) {
     return tray;
 }
 
-std::vector<std::pair<int, int> > MBFF::MinCostFlow(const std::vector<Flop>& flops, std::vector<Tray> &trays, int sz) {
-
+std::vector<std::pair<int, int> > MBFF::MinCostFlow(const std::vector<Flop> &flops, std::vector<Tray> &trays, int sz) {
     int num_flops = static_cast<int>(flops.size());
     int num_trays = static_cast<int>(trays.size());
 
@@ -607,7 +644,8 @@ std::vector<std::pair<int, int> > MBFF::MinCostFlow(const std::vector<Flop>& flo
 
             // add edges from flop to slot
             for (int k = 0; k < num_flops; k++) {
-                lemon::ListDigraph::Arc flop_to_slot = graph.addArc(nodes[k], slot_node);
+                lemon::ListDigraph::Arc flop_to_slot =
+                    graph.addArc(nodes[k], slot_node);
                 edges.push_back(flop_to_slot);
 
                 int edge_cost = (100 * GetDist(flops[k].pt, tray_slots[j]));
@@ -615,7 +653,8 @@ std::vector<std::pair<int, int> > MBFF::MinCostFlow(const std::vector<Flop>& flo
             }
 
             // add edges from slot to sink
-            lemon::ListDigraph::Arc slot_to_sink = graph.addArc(slot_node, sink);
+            lemon::ListDigraph::Arc slot_to_sink =
+                graph.addArc(slot_node, sink);
             edges.push_back(slot_to_sink);
             cur_costs.push_back(0), cur_caps.push_back(1);
 
@@ -660,9 +699,7 @@ std::vector<std::pair<int, int> > MBFF::MinCostFlow(const std::vector<Flop>& flo
     return clusters;
 }
 
-float MBFF::GetSilh(const std::vector<Flop>& flops, const std::vector<Tray>& trays,
-                    const std::vector<std::pair<int, int> >& clusters) {
-
+float MBFF::GetSilh(const std::vector<Flop> &flops, const std::vector<Tray> &trays, const std::vector<std::pair<int, int> > &clusters) {
     int num_flops = static_cast<int>(flops.size());
     int num_trays = static_cast<int>(trays.size());
 
@@ -674,11 +711,12 @@ float MBFF::GetSilh(const std::vector<Flop>& flops, const std::vector<Tray>& tra
         for (int j = 0; j < num_trays; j++)
             if (j != clusters[i].first) {
                 max_den = std::max(
-                    max_den, GetDist(flops[i].pt,
-                                           trays[j].slots[clusters[i].second]));
-                for (int k = 0; k < static_cast<int>(trays[j].slots.size()); k++) {
-                    min_num = std::min(
-                        min_num, GetDist(flops[i].pt, trays[j].slots[k]));
+                    max_den,
+                    GetDist(flops[i].pt, trays[j].slots[clusters[i].second]));
+                for (int k = 0; k < static_cast<int>(trays[j].slots.size());
+                     k++) {
+                    min_num = std::min(min_num,
+                                       GetDist(flops[i].pt, trays[j].slots[k]));
                 }
             }
 
@@ -689,7 +727,7 @@ float MBFF::GetSilh(const std::vector<Flop>& flops, const std::vector<Tray>& tra
 }
 
 // standard K-means++ implementation
-std::vector<std::vector<Flop> > MBFF::KMeans(const std::vector<Flop>& flops, int K) {
+std::vector<std::vector<Flop> > MBFF::KMeans(const std::vector<Flop> &flops, int K) {
     int num_flops = static_cast<int>(flops.size());
 
     std::set<int> chosen;
@@ -798,11 +836,13 @@ std::vector<std::vector<Flop> > MBFF::KMeans(const std::vector<Flop>& flops, int
 
 /*
     shreyas (august 2023):
-    method to decompose a pointset into multiple "mini"-pointsets of size <= MAX_SZ.
+    method to decompose a pointset into multiple "mini"-pointsets of size <=
+   MAX_SZ.
     basic implementation of K-means++ (with K = 4) is used.
 */
 
-std::vector<std::vector<Flop> > MBFF::KMeansDecomp(const std::vector<Flop>& flops, int MAX_SZ) {
+std::vector<std::vector<Flop> >
+MBFF::KMeansDecomp(const std::vector<Flop> &flops, int MAX_SZ) {
 
     int num_flops = static_cast<int>(flops.size());
 
@@ -820,7 +860,7 @@ std::vector<std::vector<Flop> > MBFF::KMeansDecomp(const std::vector<Flop>& flop
     for (int i = 0; i < 10; i++) {
         std::vector<std::vector<Flop> > tmp = KMeans(flops, 4);
 
-        /* cur_cost = sum of distances between flops and its 
+        /* cur_cost = sum of distances between flops and its
         matching cluster's center */
         float cur_cost = 0;
         for (int j = 0; j < 4; j++) {
@@ -850,8 +890,9 @@ std::vector<std::vector<Flop> > MBFF::KMeansDecomp(const std::vector<Flop>& flop
     std::vector<std::pair<float, std::pair<int, int> > > cluster_pairs;
     for (int i = 0; i < 4; i++) {
         for (int j = i + 1; j < 4; j++) {
-            cluster_pairs.push_back(
-                std::make_pair(GetDist(k_means_ret[i].back().pt, k_means_ret[j].back().pt), std::make_pair(i, j)));
+            cluster_pairs.push_back(std::make_pair(
+                GetDist(k_means_ret[i].back().pt, k_means_ret[j].back().pt),
+                std::make_pair(i, j)));
         }
     }
     std::sort(std::begin(cluster_pairs), std::end(cluster_pairs));
@@ -939,11 +980,8 @@ std::vector<std::vector<Flop> > MBFF::KMeansDecomp(const std::vector<Flop>& flop
     return ret;
 }
 
-
-
-
-std::vector<std::pair<int, int> > MBFF::RunCapacitatedKMeans(const std::vector<Flop>& flops, std::vector<Tray>& trays, int sz, int iter) {
-
+std::vector<std::pair<int, int> >
+MBFF::RunCapacitatedKMeans(const std::vector<Flop> &flops, std::vector<Tray> &trays, int sz, int iter) {
     int num_flops = static_cast<int>(flops.size());
     int rows = GetRows(sz);
     int cols = sz / rows;
@@ -963,20 +1001,16 @@ std::vector<std::pair<int, int> > MBFF::RunCapacitatedKMeans(const std::vector<F
         if (delta < 0.5) {
             break;
         }
-
     }
 
     cluster = MinCostFlow(flops, trays, sz);
     return cluster;
 }
 
-
-
-std::vector<std::vector<Tray> > MBFF::RunSilh(const std::vector<Flop>& flops) {
+std::vector<std::vector<Tray> > MBFF::RunSilh(const std::vector<Flop> &flops) {
     int num_flops = static_cast<int>(flops.size());
 
     std::vector<std::vector<Tray> > trays(NUM_SIZES);
-
 
     for (int i = 0; i < NUM_SIZES; i++) {
         int num_trays = (num_flops + (GetBitCnt(i) - 1)) / GetBitCnt(i);
@@ -990,7 +1024,6 @@ std::vector<std::vector<Tray> > MBFF::RunSilh(const std::vector<Flop>& flops) {
         trays[0][i] = one_bit;
     }
 
-
     std::vector<std::vector<Tray> > start_trays[NUM_SIZES];
     std::vector<float> res[NUM_SIZES];
     std::vector<std::pair<int, int> > ind;
@@ -1003,7 +1036,7 @@ std::vector<std::vector<Tray> > MBFF::RunSilh(const std::vector<Flop>& flops) {
         res[i].resize(5);
     }
 
-    /* 
+    /*
     DO NOT run GetStartTrays in parallel
     runnning in parallel messes with reproducibility even with a fixed seed
     */
@@ -1027,23 +1060,26 @@ std::vector<std::vector<Tray> > MBFF::RunSilh(const std::vector<Flop>& flops) {
 
         int rows = GetRows(GetBitCnt(bit_idx));
         int cols = GetBitCnt(bit_idx) / rows;
-        float AR = (cols * WIDTH * RATIOS[bit_idx]) / (rows * HEIGHT);
 
-        int num_trays = (num_flops + (GetBitCnt(bit_idx) - 1)) / GetBitCnt(bit_idx);
+        int num_trays =
+            (num_flops + (GetBitCnt(bit_idx) - 1)) / GetBitCnt(bit_idx);
 
         for (int j = 0; j < num_trays; j++) {
-            start_trays[bit_idx][tray_idx][j].slots = GetSlots(start_trays[bit_idx][tray_idx][j].pt, rows, cols);
+            start_trays[bit_idx][tray_idx][j].slots =
+                GetSlots(start_trays[bit_idx][tray_idx][j].pt, rows, cols);
         }
 
         float delta = 0;
         std::vector<std::pair<int, int> > tmp_cluster;
         for (int j = 0; j < 8; j++) {
 
-            tmp_cluster = MinCostFlow(flops, start_trays[bit_idx][tray_idx], GetBitCnt(bit_idx));
+            tmp_cluster = MinCostFlow(flops, start_trays[bit_idx][tray_idx],
+                                      GetBitCnt(bit_idx));
             delta = RunLP(flops, start_trays[bit_idx][tray_idx], tmp_cluster);
 
             for (int k = 0; k < num_trays; k++) {
-                start_trays[bit_idx][tray_idx][k].slots = GetSlots(start_trays[bit_idx][tray_idx][k].pt, rows, cols);
+                start_trays[bit_idx][tray_idx][k].slots =
+                    GetSlots(start_trays[bit_idx][tray_idx][k].pt, rows, cols);
             }
 
             if (delta < 0.5) {
@@ -1051,9 +1087,10 @@ std::vector<std::vector<Tray> > MBFF::RunSilh(const std::vector<Flop>& flops) {
             }
         }
 
-        tmp_cluster = MinCostFlow(flops, start_trays[bit_idx][tray_idx], GetBitCnt(bit_idx));
-        res[bit_idx][tray_idx] = GetSilh(flops, start_trays[bit_idx][tray_idx], tmp_cluster);
-            
+        tmp_cluster = MinCostFlow(flops, start_trays[bit_idx][tray_idx],
+                                  GetBitCnt(bit_idx));
+        res[bit_idx][tray_idx] =
+            GetSilh(flops, start_trays[bit_idx][tray_idx], tmp_cluster);
     }
 
     for (int i = 1; i < NUM_SIZES; i++) {
@@ -1069,11 +1106,9 @@ std::vector<std::vector<Tray> > MBFF::RunSilh(const std::vector<Flop>& flops) {
     }
 
     return trays;
-    
 }
 
-
-void MBFF::Remap(const std::vector<Flop>& flops, std::vector<std::vector<Tray> >& trays) {
+void MBFF::Remap(const std::vector<Flop> &flops, std::vector<std::vector<Tray> > &trays) {
     int num_flops = static_cast<int>(flops.size());
 
     std::map<int, int> small_to_large;
@@ -1088,49 +1123,38 @@ void MBFF::Remap(const std::vector<Flop>& flops, std::vector<std::vector<Tray> >
             }
         }
     }
-
-
 }
-
 
 void MBFF::Run(int mx_sz, float alpha, float beta) {
     srand(1);
-    omp_set_num_threads(NUM_THREADS);
+    omp_set_num_threads(num_threads);
 
-
-    // run k-means++ based decomposition 
-    std::vector<std::vector<Flop> > pointsets = KMeansDecomp(FLOPS, mx_sz);
-
-
+    // run k-means++ based decomposition
+    std::vector<std::vector<Flop> > pointsets = KMeansDecomp(all_flops, mx_sz);
 
     std::vector<std::vector<Tray> > all_trays(NUM_SIZES);
 
-
-    for (int t = 0; t < static_cast<int>(pointsets.size()); t++)  {
+    for (int t = 0; t < static_cast<int>(pointsets.size()); t++) {
 
         int num_flops = static_cast<int>(pointsets[t].size());
 
-        // run silhouette metric 
+        // run silhouette metric
         std::vector<std::vector<Tray> > trays = RunSilh(pointsets[t]);
 
-
-        // run capacitated k-means per tray size 
+        // run capacitated k-means per tray size
         #pragma omp parallel for
         for (int i = 1; i < NUM_SIZES; i++) {
-                int rows = GetRows(GetBitCnt(i)), cols = GetBitCnt(i) / rows;
-                int num_trays = (num_flops + (GetBitCnt(i) - 1)) / GetBitCnt(i);
-                for (int j = 0; j < num_trays; j++) {
-                    trays[i][j].slots = GetSlots(trays[i][j].pt, rows, cols);
-                }
-                RunCapacitatedKMeans(pointsets[t], trays[i], GetBitCnt(i), 35);
-                MinCostFlow(pointsets[t], trays[i], GetBitCnt(i));
-                for (int j = 0; j < num_trays; j++) {
-                    trays[i][j].slots = GetSlots(trays[i][j].pt, rows, cols);
-                }
-
+            int rows = GetRows(GetBitCnt(i)), cols = GetBitCnt(i) / rows;
+            int num_trays = (num_flops + (GetBitCnt(i) - 1)) / GetBitCnt(i);
+            for (int j = 0; j < num_trays; j++) {
+                trays[i][j].slots = GetSlots(trays[i][j].pt, rows, cols);
+            }
+            RunCapacitatedKMeans(pointsets[t], trays[i], GetBitCnt(i), 35);
+            MinCostFlow(pointsets[t], trays[i], GetBitCnt(i));
+            for (int j = 0; j < num_trays; j++) {
+                trays[i][j].slots = GetSlots(trays[i][j].pt, rows, cols);
+            }
         }
-
-
 
         Remap(pointsets[t], trays);
 
@@ -1142,31 +1166,29 @@ void MBFF::Run(int mx_sz, float alpha, float beta) {
         }
     }
 
-    RunILP(FLOPS, PATHS, all_trays, alpha, beta);
+    RunILP(all_flops, all_paths, all_trays, alpha, beta);
 }
 
-
-
 // ctor
-MBFF::MBFF(int num_flops, int num_paths, const std::vector<float>& x, const std::vector<float>& y, const std::vector<std::pair<int, int> >& paths, int threads) {
-    FLOPS.resize(num_flops);
+MBFF::MBFF(int num_flops, int num_paths, const std::vector<float> &x, const std::vector<float> &y, const std::vector<std::pair<int, int> > &paths, int threads) {
+    all_flops.resize(num_flops);
     for (int i = 0; i < num_flops; i++) {
         Point new_pt;
         new_pt.x = x[i] + 70.0, new_pt.y = y[i] + 70.0;
 
         Flop new_flop;
         new_flop.pt = new_pt, new_flop.idx = i;
-        FLOPS[i] = new_flop;
+        all_flops[i] = new_flop;
     }
 
-    PATHS.resize(num_paths);
+    all_paths.resize(num_paths);
     for (int i = 0; i < num_paths; i++) {
         Path new_path;
         new_path.a = paths[i].first, new_path.b = paths[i].second;
-        PATHS[i] = new_path;
+        all_paths[i] = new_path;
     }
 
-    NUM_THREADS = threads;
+    num_threads = threads;
 }
 
 // dtor
