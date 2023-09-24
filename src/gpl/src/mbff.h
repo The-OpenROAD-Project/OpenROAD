@@ -32,21 +32,20 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <vector>
+#include "odb/db.h"
 
 #pragma once
 
-struct Point {
-    float x = 0, y = 0;
-};
+namespace gpl {
 
 struct Tray {
-    Point pt;
-    std::vector<Point> slots;
+    odb::Point pt;
+    std::vector<odb::Point> slots;
     int cand[70];
 };
 
 struct Flop {
-    Point pt;
+    odb::Point pt;
     int idx = 0;
     float prob = 0;
 
@@ -54,10 +53,9 @@ struct Flop {
 };
 
 struct Path {
-    int a = 0, b = 0;
+    int a = 0;
+    int b = 0;
 };
-
-namespace gpl {
 
 class MBFF {
 
@@ -70,12 +68,12 @@ class MBFF {
   private:
     int GetRows(const int slot_cnt);
     int GetBitCnt(const int bit_idx);
-    float GetDist(const Point &a, const Point &b);
+    float GetDist(const odb::Point &a, const odb::Point &b);
 
-    std::vector<Point> GetSlots(const Point &tray, const int rows, const int cols);
+    std::vector<odb::Point> GetSlots(const odb::Point &tray, const int rows, const int cols);
     Flop GetNewFlop(const std::vector<Flop> &prob_dist, const float tot_dist);
     std::vector<Tray> GetStartTrays(std::vector<Flop> flops, const int num_trays, const float AR);
-    Tray GetOneBit(const Point &pt);
+    Tray GetOneBit(const odb::Point &pt);
 
     std::vector<std::pair<int, int> > MinCostFlow(const std::vector<Flop> &flops, std::vector<Tray> &trays, int sz);
 

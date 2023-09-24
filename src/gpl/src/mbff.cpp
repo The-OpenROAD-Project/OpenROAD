@@ -78,8 +78,8 @@ int MBFF::GetRows(int slot_cnt) {
     }
 }
 
-float MBFF::GetDist(const Point &a, const Point &b) {
-    return (abs(a.x - b.x) + abs(a.y - b.y));
+float MBFF::GetDist(const odb::Point &a, const odb::Point &b) {
+    return (abs(a.x() - b.x()) + abs(a.y() - b.y()));
 }
 
 /*
@@ -116,12 +116,12 @@ float MBFF::RunLP(const std::vector<Flop> &flops, std::vector<Tray> &trays, cons
         int tray_idx = clusters[i].first;
         int slot_idx = clusters[i].second;
 
-        const Point &flop = flops[i].pt;
-        const Point &tray = trays[tray_idx].pt;
-        const Point &slot = trays[tray_idx].slots[slot_idx];
+        const odb::Point &flop = flops[i].pt;
+        const odb::Point &tray = trays[tray_idx].pt;
+        const odb::Point &slot = trays[tray_idx].slots[slot_idx];
 
-        float shift_x = slot.x - tray.x;
-        float shift_y = slot.y - tray.y;
+        float shift_x = slot.x() - tray.x();
+        float shift_y = slot.y() - tray.y();
 
         operations_research::MPConstraint *c1 =
             solver->MakeRowConstraint(shift_x - flop.x, inf, "");
@@ -155,8 +155,9 @@ float MBFF::RunLP(const std::vector<Flop> &flops, std::vector<Tray> &trays, cons
     float tot_disp = 0;
     for (int i = 0; i < num_trays; i++) {
         Tray new_tray;
-        new_tray.pt.x = tray_x[i]->solution_value();
-        new_tray.pt.y = tray_y[i]->solution_value();
+        float new_x = tray_x[i]->solution_value();
+        float new_y = tray_y[i]->solution_value();
+        new_tray.pt(new_x, new_y);
         tot_disp += GetDist(trays[i].pt, new_tray.pt);
         trays[i] = new_tray;
     }
@@ -222,13 +223,13 @@ void MBFF::RunILP(const std::vector<Flop> &flops, const std::vector<Path> &paths
     for (int i = 0; i < num_flops; i++) {
         for (int j = 0; j < num_trays; j++) {
 
-            std::vector<Point> slots = trays[j].slots;
+            std::vector<odb::Point> slots = trays[j].slots;
 
             for (int k = 0; k < static_cast<int>(slots.size()); k++) {
                 if (trays[j].cand[k] == i) {
 
-                    const float shift_x = slots[k].x - flops[i].pt.x;
-                    const float shift_y = slots[k].y - flops[i].pt.y;
+                    const float shift_x = slots[k].x() - flops[i].pt.x();
+                    const float shift_y = slots[k].y() - flops[i].pt.y();
 
                     max_dist =
                         std::max(max_dist, std::max(shift_x, -shift_x) +
@@ -286,19 +287,19 @@ void MBFF::RunILP(const std::vector<Flop> &flops, const std::vector<Path> &paths
         operations_research::sat::LinearExpr sum_disp_y_flop_b;
 
         for (int j = 0; j < num_trays; j++) {
-            std::vector<Point> slots = trays[j].slots;
+            std::vector<odb::Point> slots = trays[j].slots;
             for (int k = 0; k < static_cast<int>(slots.size()); k++) {
                 if (trays[j].cand[k] == flop_a_idx) {
-                    float shift_x = slots[k].x - flops[flop_a_idx].pt.x;
-                    float shift_y = slots[k].y - flops[flop_a_idx].pt.y;
+                    float shift_x = slots[k].x() - flops[flop_a_idx].pt.x();
+                    float shift_y = slots[k].y() - flops[flop_a_idx].pt.y();
                     sum_disp_x_flop_a +=
                         (int(100 * shift_x) * mapped[flop_a_idx][j][k]);
                     sum_disp_y_flop_a +=
                         (int(100 * shift_y) * mapped[flop_a_idx][j][k]);
                 }
                 if (trays[j].cand[k] == flop_b_idx) {
-                    float shift_x = slots[k].x - flops[flop_b_idx].pt.x;
-                    float shift_y = slots[k].y - flops[flop_b_idx].pt.y;
+                    float shift_x = slots[k].x() - flops[flop_b_idx].pt.x();
+                    float shift_y = slots[k].y() - flops[flop_b_idx].pt.y();
                     sum_disp_x_flop_b +=
                         (int(100 * shift_x) * mapped[flop_b_idx][j][k]);
                     sum_disp_y_flop_b +=
@@ -516,7 +517,7 @@ void MBFF::RunILP(const std::vector<Flop> &flops, const std::vector<Path> &paths
 
 } // end ILP
 
-std::vector<Point> MBFF::GetSlots(const Point &tray, int rows, int cols) {
+std::vector<odb::Point> MBFF::GetSlots(const odb::Point &tray, int rows, int cols) {
     int bit_idx = 0;
     for (int i = 1; i < NUM_SIZES; i++) {
         if (rows * cols == GetBitCnt(i)) {
@@ -527,16 +528,16 @@ std::vector<Point> MBFF::GetSlots(const Point &tray, int rows, int cols) {
     float center_x = tray.x;
     float center_y = tray.y;
 
-    std::vector<Point> slots;
+    std::vector<odb::Point> slots;
     for (int i = 0; i < rows * cols; i++) {
         int new_col = i % cols;
         int new_row = i / cols;
 
-        Point new_slot;
-        new_slot.x = center_x +
-                     WIDTH * RATIOS[bit_idx] * ((new_col + 0.5) - (cols / 2.0));
-        new_slot.y = center_y + HEIGHT * ((new_row + 0.5) - (rows / 2.0));
+        
+        float new_x = center_x + WIDTH * RATIOS[bit_idx] * ((new_col + 0.5) - (cols / 2.0));
+        float new_y = center_y + HEIGHT * ((new_row + 0.5) - (rows / 2.0));
 
+        odb::Point new_slot(new_x, new_y);
         if (new_slot.x >= 0 && new_slot.y >= 0) {
             slots.push_back(new_slot);
         }
@@ -603,11 +604,14 @@ std::vector<Tray> MBFF::GetStartTrays(std::vector<Flop> flops, int num_trays, fl
     return trays;
 }
 
-Tray MBFF::GetOneBit(const Point &pt) {
+Tray MBFF::GetOneBit(const odb::Point &pt) {
+    float new_x = pt.x() - WIDTH / 2.0;
+    float new_y = pt.y() - HEIGHT / 2.0;
+
     Tray tray;
-    tray.pt.x = pt.x - WIDTH / 2.0;
-    tray.pt.y = pt.y - HEIGHT / 2.0;
+    tray.pt(new_x, new_y);
     tray.slots.push_back(pt);
+
     return tray;
 }
 
@@ -634,7 +638,7 @@ std::vector<std::pair<int, int> > MBFF::MinCostFlow(const std::vector<Flop> &flo
     std::vector<std::pair<int, int> > slot_to_tray;
 
     for (int i = 0; i < num_trays; i++) {
-        std::vector<Point> tray_slots = trays[i].slots;
+        std::vector<odb::Point> tray_slots = trays[i].slots;
 
         for (int j = 0; j < static_cast<int>(tray_slots.size()); j++) {
 
@@ -1172,8 +1176,7 @@ void MBFF::Run(int mx_sz, float alpha, float beta) {
 MBFF::MBFF(int num_flops, int num_paths, const std::vector<float> &x, const std::vector<float> &y, const std::vector<std::pair<int, int> > &paths, int threads) {
     all_flops.resize(num_flops);
     for (int i = 0; i < num_flops; i++) {
-        Point new_pt;
-        new_pt.x = x[i] + 70.0, new_pt.y = y[i] + 70.0;
+        odb::Point new_pt(x[i] + 70.0, y[i] + 70.0);
 
         Flop new_flop;
         new_flop.pt = new_pt, new_flop.idx = i;
