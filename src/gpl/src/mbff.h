@@ -62,46 +62,40 @@ namespace gpl {
 class MBFF {
 
   public:
-    MBFF(const int num_flops, const int num_paths, const std::vector<float>& x,
+    MBFF(int num_flops, int num_paths, const std::vector<float>& x,
          const std::vector<float>& y, const std::vector<std::pair<int, int> >& paths,
-         const int threads);
+         int threads);
     ~MBFF();
 
-    void Run(const int mx_sz, const float alpha, const float beta);
+    void Run(int mx_sz, float alpha, float beta);
 
   private:
-
+    int GetRows(int slot_cnt);
+    int GetBitCnt(int bit_idx);
     float GetDist(const Point& a, const Point& b);
-    int GetRows(const int slot_cnt);
 
-    int GetBitCnt(const int bit_idx);
-
-    std::vector<Point> GetSlots(const Point& tray, const int rows, const int cols);
-    Flop GetNewFlop(const std::vector<Flop>& prob_dist, const float tot_dist);
-
-    std::vector<Tray> GetStartTrays(std::vector<Flop> flops, const int num_trays,
-                                    const float AR);
+    std::vector<Point> GetSlots(const Point& tray, int rows, int cols);
+    Flop GetNewFlop(const std::vector<Flop>& prob_dist, float tot_dist);
+    std::vector<Tray> GetStartTrays(std::vector<Flop> flops, int num_trays, float AR);
     Tray GetOneBit(const Point& pt);
 
-    std::vector<std::pair<int, int> > MinCostFlow(const std::vector<Flop> &flops, std::vector<Tray> &trays, const int sz);
+    std::vector<std::pair<int, int> > MinCostFlow(const std::vector<Flop> &flops, std::vector<Tray> &trays, int sz);
 
-    float GetSilh(const std::vector<Flop>& flops, const std::vector<Tray>& trays,
-                  const std::vector<std::pair<int, int> >& clusters);
-
-    std::vector<std::vector<Flop> > KMeans(const std::vector<Flop>& flops, const int K);
-    std::vector<std::vector<Flop> > KMeansDecomp(const std::vector<Flop> &flops, const int MAX_SZ);
+    float GetSilh(const std::vector<Flop>& flops, const std::vector<Tray>& trays, const std::vector<std::pair<int, int> >& clusters);
 
 
-    float RunLP(const std::vector<Flop>& flops, std::vector<Tray> &trays,
-                const std::vector<std::pair<int, int> >& clusters);
+    std::vector<std::vector<Flop> > KMeans(const std::vector<Flop>& flops, int K);
+    std::vector<std::vector<Flop> > KMeansDecomp(const std::vector<Flop> &flops, int MAX_SZ);
 
-    void RunILP(const std::vector<Flop>& flops, const std::vector<Path>& paths,
-                const std::vector<std::vector<Tray> >& all_trays, const float alpha,
-                const float beta);
 
-    void Remap(const std::vector<Flop> &flops, std::vector<std::vector<Tray> >& trays);
+    std::vector<std::pair<int, int> > RunCapacitatedKMeans(const std::vector<Flop>& flops, std::vector<Tray>& trays, int sz, int iter);
+
     std::vector<std::vector<Tray> > RunSilh(const std::vector<Flop>& pointset);
-    std::vector<std::pair<int, int> > RunCapacitatedKMeans(const std::vector<Flop>& flops, std::vector<Tray>& trays, const int sz, const int iter);
+    void Remap(const std::vector<Flop>& flops, std::vector<std::vector<Tray> >& trays);
+
+    float RunLP(const std::vector<Flop>& flops, std::vector<Tray> &trays, const std::vector<std::pair<int, int> >& clusters);
+    void RunILP(const std::vector<Flop>& flops, const std::vector<Path>& paths, const std::vector<std::vector<Tray> >& all_trays, float alpha, float beta);
+
 
     std::vector<Flop> FLOPS;
     std::vector<Path> PATHS;
