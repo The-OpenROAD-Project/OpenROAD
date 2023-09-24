@@ -641,10 +641,10 @@ pair<int, int> Opendp::gridY(
         return sum + entry.first->getHeight();
       });
 
-  int base_height = divFloor(y, sum_heights);
-  int cur_height = base_height * sum_heights;
+  int base_height_index = divFloor(y, sum_heights);
+  int cur_height = base_height_index * sum_heights;
   int index = 0;
-  base_height *= grid_sites.size();
+  base_height_index *= grid_sites.size();
   while (cur_height < y && index < grid_sites.size()) {
     auto site = grid_sites.at(index);
     if (cur_height + site.first->getHeight() > y)
@@ -652,7 +652,7 @@ pair<int, int> Opendp::gridY(
     cur_height += site.first->getHeight();
     index++;
   }
-  return {base_height + index, cur_height};
+  return {base_height_index + index, cur_height};
 }
 
 int Opendp::gridY(const Cell* cell) const

@@ -305,18 +305,8 @@ void Opendp::visitCellPixels(
     const std::function<void(Pixel* pixel)>& visitor) const
 {
   dbInst* inst = cell.db_inst_;
-  dbMaster* master = inst->getMaster();
-  auto obstructions = master->getObstructions();
+  auto obstructions = inst->getMaster()->getObstructions();
   bool have_obstructions = false;
-
-  int site_width, row_height;
-  if (isStdCell(&cell)) {
-    site_width = getSiteWidth(&cell);
-    row_height = getRowHeight(&cell);
-  } else {
-    site_width = site_width_;
-    row_height = row_height_;
-  }
 
   for (dbBox* obs : obstructions) {
     if (obs->getTechLayer()->getType()
@@ -327,20 +317,19 @@ void Opendp::visitCellPixels(
       dbTransform transform;
       inst->getTransform(transform);
       transform.apply(rect);
-
-      int x_start = gridX(rect.xMin() - core_.xMin(), site_width);
-      int x_end = gridEndX(rect.xMax() - core_.xMin(), site_width);
-      int y_start = gridY(rect.yMin() - core_.yMin(), row_height);
-      int y_end = gridEndY(rect.yMax() - core_.yMin(), row_height);
+      auto cell_grid_info = grid_info_map_.at(cell.getSite());
+      int x_start = gridX(rect.xMin() - core_.xMin(), site_width_);
+      int x_end = gridEndX(rect.xMax() - core_.xMin(), site_width_);
+      auto cell_grid_sites = cell_grid_info.getSites();
+      int y_start = gridY(rect.yMin() - core_.yMin(), cell_grid_sites);
+      int y_end = gridEndY(rect.yMax() - core_.yMin(), cell_grid_sites);
 
       // Since there is an obstruction, we need to visit all the pixels at all
       // layers (for all row heights)
       int grid_idx = 0;
       for (const auto& [grid_map_key, grid_info] : grid_info_map_) {
-        int layer_y_start
-            = map_coordinates(y_start, row_height, grid_map_key.cell_height);
-        int layer_y_end
-            = map_coordinates(y_end, row_height, grid_map_key.cell_height);
+        int layer_y_start = map_ycoordinates(y_start, cell, grid_map_key);
+        int layer_y_end = map_ycoordinates(y_end, cell, grid_map_key);
         if (layer_y_end == layer_y_start) {
           ++layer_y_end;
         }
@@ -728,6 +717,27 @@ int Opendp::map_coordinates(int original_coordinate,
                             int target_step) const
 {
   return divCeil(original_step * original_coordinate, target_step);
+}
+
+int Opendp::map_ycoordinates(int original_coordinate,
+                             Cell& original_cell,
+                             const Grid_map_key& target_grid_key) const
+{
+  // This function identifies the correct grid, does the row mapping from the
+  // source to the destination.
+
+  if ((original_cell.isHybridParent() || !original_cell.isHybrid())
+      && !grid_info_map_.at(target_grid_key).isHybrid()) {
+    int original_step = row_height_;
+    if (isStdCell(&original_cell)) {
+      original_step = original_cell.getSite()->getHeight();
+    }
+    return divCeil(
+        original_cell.getSite()->getHeight() * original_coordinate,
+        grid_info_map_.at(target_grid_key).getSites()[0].first->getHeight());
+  }
+  // here one of them is hybrid
+  logger_->error(DPL, 12121, "NOT IMPLEMENTED YET");
 }
 
 void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
