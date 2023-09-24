@@ -150,7 +150,6 @@ float MBFF::RunLP(const std::vector<Flop> &flops, std::vector<Tray> &trays, cons
         objective->SetCoefficient(disp_y[i], 1);
     }
     objective->SetMinimization();
-    solver->SetNumThreads(num_threads);
     solver->Solve();
 
     float tot_disp = 0;

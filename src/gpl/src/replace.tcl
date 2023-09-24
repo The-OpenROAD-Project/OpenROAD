@@ -64,9 +64,6 @@ sta::define_cmd_args "global_placement" {\
     [-timing_driven_nets_percentage timing_driven_nets_percentage]\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
-    [-alpha alpha]\
-    [-beta beta]\
-    [-max_split_size max_split_size]\
 }
 
 proc global_placement { args } {
@@ -85,7 +82,6 @@ proc global_placement { args } {
       -timing_driven_net_reweight_overflow \
       -timing_driven_net_weight_max \
       -timing_driven_nets_percentage \
-      -alpha -beta -max_split_size \
       -pad_left -pad_right} \
     flags {-skip_initial_place \
       -skip_nesterov_place \
@@ -325,6 +321,25 @@ proc global_placement { args } {
 }
 
 
+sta::define_cmd_args "cluster_flops" {\
+    [-alpha alpha]\
+    [-beta beta]\
+    [-max_split_size max_split_size]\
+}
+
+proc cluster_flops { args } {
+  sta::parse_key_args "cluster_flops" args \
+    keys { -alpha -beta -max_split_size }
+
+  if { [info exists keys(-alpha)] } {
+    set alpha $keys(-alpha)
+    set beta $keys(-beta)
+    set max_split_size $keys(-max_split_size)
+    gpl::replace_run_mbff_cmd $max_split_size $alpha $beta
+  }
+}
+
+
 namespace eval gpl {
 proc global_placement_debug { args } {
   sta::parse_key_args "global_placement_debug" args \
@@ -387,19 +402,6 @@ proc get_global_placement_uniform_density { args } {
     utl::error GPL 131 "No rows defined in design. Use initialize_floorplan to add rows."
   }
   return $uniform_density
-}
-
-proc get_mbff_results { args } {
-  sta::parse_key_args "get_mbff_results" args \
-    keys { -max_split_size -alpha -beta }
-
-
-  if { [info exists keys(-alpha)] } {
-    set alpha $keys(-alpha)
-    set beta $keys(-beta)
-    set max_split_size $keys(-max_split_size)
-    gpl::replace_run_mbff_cmd $max_split_size $alpha $beta
-  }
 }
 
 }
