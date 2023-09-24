@@ -145,7 +145,7 @@ void Opendp::initGridLayersMap()
   }
   grid_info_vector_.resize(grid_info_map_.size());
   for (auto& [gmk, grid_info] : grid_info_map_) {
-    assert(gmk.grid_index == grid_info..getGridIndex());
+    assert(gmk.grid_index == grid_info.getGridIndex());
     // debugPrint(logger_,
     //            DPL,
     //            "hybrid",
