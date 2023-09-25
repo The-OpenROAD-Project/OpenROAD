@@ -185,7 +185,6 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   initCoreGrid(max_routing_layer);
   setCapacities(min_routing_layer, max_routing_layer);
 
-
   if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
     critical_nets_percentage_ = 0;
     logger_->warn(
