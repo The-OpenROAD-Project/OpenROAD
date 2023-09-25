@@ -23,6 +23,7 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO GRT-0088] Layer met3    Track-Pitch = 0.6800  line-2-Via Pitch: 0.6150
 [INFO GRT-0088] Layer met4    Track-Pitch = 0.9200  line-2-Via Pitch: 1.0400
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.4000  line-2-Via Pitch: 3.1100
+[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0
 [INFO GRT-0019] Found 0 clock nets.
 [WARNING GRT-0036] Pin app_clk is outside die area.
 [WARNING GRT-0036] Pin cfg_cska_uart[0] is outside die area.
