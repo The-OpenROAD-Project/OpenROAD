@@ -799,7 +799,7 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
   for (Net* net : nets) {
     int pin_count = net->getNumPins();
     int min_layer, max_layer;
-    getNetLayerRange(net, min_layer, max_layer);
+    getNetLayerRange(net->getDbNet(), min_layer, max_layer);
     odb::dbTechLayer* max_routing_layer
         = db_->getTech()->findRoutingLayer(max_layer);
     if (pin_count > 1 && !net->isLocal()
@@ -1908,7 +1908,7 @@ void GlobalRouter::addRemainingGuides(NetRouteMap& routes,
 {
   for (Net* net : nets) {
     int min_layer, max_layer;
-    getNetLayerRange(net, min_layer, max_layer);
+    getNetLayerRange(net->getDbNet(), min_layer, max_layer);
     odb::dbTechLayer* max_tech_layer
         = db_->getTech()->findRoutingLayer(max_layer);
     if (net->getNumPins() > 1
