@@ -38,10 +38,13 @@
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbHashTable.hpp"
+#include "dbMTerm.h"
+#include "dbMaster.h"
 #include "dbNet.h"
 #include "dbPowerDomain.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "utl/Logger.h"
 namespace odb {
 template class dbTable<_dbPowerSwitch>;
 
@@ -51,11 +54,11 @@ bool _dbPowerSwitch::operator==(const _dbPowerSwitch& rhs) const
     return false;
   if (_next_entry != rhs._next_entry)
     return false;
-  if (_in_supply_port != rhs._in_supply_port)
-    return false;
-  if (_out_supply_port != rhs._out_supply_port)
-    return false;
   if (_control_net != rhs._control_net)
+    return false;
+  if (_lib_cell != rhs._lib_cell)
+    return false;
+  if (_lib != rhs._lib)
     return false;
   if (_power_domain != rhs._power_domain)
     return false;
@@ -75,9 +78,9 @@ void _dbPowerSwitch::differences(dbDiff& diff,
   DIFF_BEGIN
   DIFF_FIELD(_name);
   DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_in_supply_port);
-  DIFF_FIELD(_out_supply_port);
   DIFF_FIELD(_control_net);
+  DIFF_FIELD(_lib_cell);
+  DIFF_FIELD(_lib);
   DIFF_FIELD(_power_domain);
   DIFF_END
 }
@@ -87,9 +90,9 @@ void _dbPowerSwitch::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(_name);
   DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_in_supply_port);
-  DIFF_OUT_FIELD(_out_supply_port);
   DIFF_OUT_FIELD(_control_net);
+  DIFF_OUT_FIELD(_lib_cell);
+  DIFF_OUT_FIELD(_lib);
   DIFF_OUT_FIELD(_power_domain);
 
   DIFF_END
@@ -103,9 +106,9 @@ _dbPowerSwitch::_dbPowerSwitch(_dbDatabase* db, const _dbPowerSwitch& r)
 {
   _name = r._name;
   _next_entry = r._next_entry;
-  _in_supply_port = r._in_supply_port;
-  _out_supply_port = r._out_supply_port;
   _control_net = r._control_net;
+  _lib_cell = r._lib_cell;
+  _lib = r._lib;
   _power_domain = r._power_domain;
 }
 
@@ -119,6 +122,13 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj)
   stream >> obj._on_state;
   stream >> obj._control_net;
   stream >> obj._power_domain;
+  // User Code Begin >>
+  if (obj.getDatabase()->isSchema(db_schema_upf_power_switch_mapping)) {
+    stream >> obj._lib_cell;
+    stream >> obj._lib;
+    stream >> obj._port_map;
+  }
+  // User Code End >>
   return stream;
 }
 
@@ -132,6 +142,11 @@ dbOStream& operator<<(dbOStream& stream, const _dbPowerSwitch& obj)
   stream << obj._on_state;
   stream << obj._control_net;
   stream << obj._power_domain;
+  // User Code Begin <<
+  stream << obj._lib_cell;
+  stream << obj._lib;
+  stream << obj._port_map;
+  // User Code End <<
   return stream;
 }
 
@@ -151,18 +166,6 @@ const char* dbPowerSwitch::getName() const
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
   return obj->_name;
-}
-
-std::string dbPowerSwitch::getInSupplyPort() const
-{
-  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  return obj->_in_supply_port;
-}
-
-std::string dbPowerSwitch::getOutSupplyPort() const
-{
-  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  return obj->_out_supply_port;
 }
 
 void dbPowerSwitch::setControlNet(dbNet* control_net)
@@ -216,16 +219,16 @@ void dbPowerSwitch::destroy(dbPowerSwitch* ps)
   // TODO
 }
 
-void dbPowerSwitch::setInSupplyPort(const std::string& in_port)
+void dbPowerSwitch::addInSupplyPort(const std::string& in_port)
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  obj->_in_supply_port = in_port;
+  obj->_in_supply_port.push_back(in_port);
 }
 
-void dbPowerSwitch::setOutSupplyPort(const std::string& out_port)
+void dbPowerSwitch::addOutSupplyPort(const std::string& out_port)
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  obj->_out_supply_port = out_port;
+  obj->_out_supply_port.push_back(out_port);
 }
 
 void dbPowerSwitch::addControlPort(const std::string& control_port)
@@ -240,15 +243,118 @@ void dbPowerSwitch::addOnState(const std::string& on_state)
   obj->_on_state.push_back(on_state);
 }
 
+void dbPowerSwitch::setLibCell(dbMaster* master)
+{
+  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
+  obj->_lib_cell = master->getImpl()->getOID();
+  obj->_lib = master->getLib()->getImpl()->getOID();
+}
+
+void dbPowerSwitch::addPortMap(const std::string& model_port,
+                               const std::string& switch_port)
+{
+  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
+  dbMaster* master = getLibCell();
+
+  auto logger = obj->getImpl()->getLogger();
+  if (!master) {
+    logger->error(utl::ODB,
+                  153,
+                  "Cannot map port {} to {} because no lib cell is added",
+                  model_port,
+                  switch_port);
+    return;
+  }
+
+  dbMTerm* mterm = master->findMTerm(switch_port.c_str());
+  if (mterm == nullptr) {
+    logger->error(utl::ODB,
+                  154,
+                  "Cannot map port {} to {} because the mterm is not found",
+                  model_port,
+                  switch_port);
+    return;
+  }
+  obj->_port_map[model_port] = mterm->getImpl()->getOID();
+}
+
+void dbPowerSwitch::addPortMap(const std::string& model_port, dbMTerm* mterm)
+{
+  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
+
+  dbMaster* master = getLibCell();
+
+  if (!master) {
+    obj->getImpl()->getLogger()->error(
+        utl::ODB,
+        219,
+        "Cannot map port {} to {} because no lib cell is added",
+        model_port,
+        mterm->getName());
+    return;
+  }
+
+  if (master != mterm->getMaster()) {
+    obj->getImpl()->getLogger()->error(
+        utl::ODB,
+        220,
+        "Cannot map port {} to {} because the mterm is not in the same master",
+        model_port,
+        mterm->getName());
+    return;
+  }
+
+  obj->_port_map[model_port] = mterm->getImpl()->getOID();
+}
+
 std::vector<std::string> dbPowerSwitch::getControlPorts()
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
   return obj->_control_port;
 }
+
+std::vector<std::string> dbPowerSwitch::getInputSupplyPorts()
+{
+  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
+  return obj->_in_supply_port;
+}
+
+std::vector<std::string> dbPowerSwitch::getOutputSupplyPorts()
+{
+  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
+  return obj->_out_supply_port;
+}
+
 std::vector<std::string> dbPowerSwitch::getOnStates()
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
   return obj->_on_state;
+}
+
+dbMaster* dbPowerSwitch::getLibCell()
+{
+  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
+  return (dbMaster*) dbMaster::getMaster(
+      dbLib::getLib((dbDatabase*) obj->getImpl()->getDatabase(), obj->_lib),
+      obj->_lib_cell);
+}
+
+std::map<std::string, dbMTerm*> dbPowerSwitch::getPortMap()
+{
+  _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
+  std::map<std::string, dbMTerm*> port_mapping;
+
+  dbMaster* cell = getLibCell();
+  if (!cell) {
+    return port_mapping;
+  }
+
+  for (auto const& [key, val] : obj->_port_map) {
+    dbMTerm* mterm = (dbMTerm*) dbMTerm::getMTerm(cell, val);
+    port_mapping[key] = mterm;
+  }
+
+  return port_mapping;
 }
 // User Code End dbPowerSwitchPublicMethods
 }  // namespace odb
