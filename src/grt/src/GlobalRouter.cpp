@@ -185,6 +185,14 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   initCoreGrid(max_routing_layer);
   setCapacities(min_routing_layer, max_routing_layer);
 
+
+  if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
+    critical_nets_percentage_ = 0;
+    logger_->warn(
+        GRT,
+        300,
+        "Timing is not available, setting critical nets percentage to 0");
+  }
   std::vector<Net*> nets = initNetlist();
   initNets(nets);
 
@@ -785,16 +793,8 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
   }
 
   if (critical_nets_percentage_ != 0) {
-    if (sta_->getDbNetwork()->defaultLibertyLibrary() != nullptr) {
-      fastroute_->setUpdateSlack(critical_nets_percentage_);
-      computeNetSlacks();
-    } else {
-      critical_nets_percentage_ = 0;
-      logger_->warn(
-          GRT,
-          300,
-          "Timing is not available, setting critical nets percentage to 0\n");
-    }
+    fastroute_->setUpdateSlack(critical_nets_percentage_);
+    computeNetSlacks();
   }
 
   for (Net* net : nets) {
