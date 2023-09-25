@@ -820,7 +820,8 @@ void FastRouteCore::updateDbCongestion()
             db_gcell->setCapacity(layer, x, y, capH, capV, 0);
           }
         }
-        if (x == x_grid_ - 1 && y == y_grid_ - 1) {
+        if (x == x_grid_ - 1 && y == y_grid_ - 1 && x_grid_ > 1
+            && y_grid_ > 1) {
           unsigned short blockageH = h_edges_3D_[k][y][x - 1].red;
           unsigned short blockageV = v_edges_3D_[k][y - 1][x].red;
           unsigned short usageH
