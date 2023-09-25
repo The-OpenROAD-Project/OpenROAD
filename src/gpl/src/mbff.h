@@ -45,7 +45,7 @@ namespace gpl {
 struct Tray {
     odb::Point pt;
     std::vector<odb::Point> slots;
-    std::vector<int> cand;
+    std::vector<int> cand = std::vector<int>(1, -1);
 };
 
 struct Flop {
