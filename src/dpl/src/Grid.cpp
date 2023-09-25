@@ -657,13 +657,11 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
     }
 
     if (layer_y_end > layer.second.row_count) {
-      logger_->error(DPL,
-                     49,
-                     "Cannot paint grid index: {} because it is out of bounds. "
-                     "Calculated (row end {}) > (rows {}). This is a bug",
-                     layer.first,
-                     layer_y_end,
-                     layer.second.row_count);
+      // If there's an uneven number of single row height cells, say 21.
+      // The above layer mapping coordinates on double height rows will
+      // round up, because they don't know if there's 11 or 10 rows of
+      // double height cells. This just caps it to the right amount.
+      layer_y_end = layer.second.row_count;
     }
 
     for (int x = layer_x; x < layer_x_end; x++) {

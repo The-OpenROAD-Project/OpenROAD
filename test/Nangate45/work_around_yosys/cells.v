@@ -336,16 +336,6 @@ module DFF_X1 (CK, D, Q, QN);
    end
 endmodule // DFF_X1
 
-module DFFR_X1 (CK, D, RN, Q);
-   input CK;
-   input D;
-   input RN;
-   output Q;
-   always @(posedge CK or negedge RN)
-     if (RN) Q <= 0;
-     else Q <= D;
-endmodule // DFF_X1
-
 module DFF_X2 (CK, D, Q, QN);
    input CK;
    input D;
@@ -357,13 +347,79 @@ module DFF_X2 (CK, D, Q, QN);
    end
 endmodule // DFF_X2
 
+module DFFR_X1 (CK, D, RN, Q, QN);
+   input CK;
+   input D;
+   input RN;
+   output Q;
+   output QN;
+   always @(posedge CK or negedge RN)
+     if (RN==1'b0) 
+       Q <= 0;
+     else 
+       Q <= D;   
+   assign QN = ~Q;
+endmodule // DFF_X1
+
+module DFFR_X2 (CK, D, RN, Q, QN);
+   input CK;
+   input D;
+   input RN;
+   output Q;
+   output QN;
+   always @(posedge CK or negedge RN)
+     if (RN==1'b0) 
+       Q <= 0;
+     else 
+       Q <= D;   
+   assign QN = ~Q;
+endmodule // DFF_X2
+
+module DFFS_X1 (D, SN, CK, Q, QN);
+   input D;
+   input SN;
+   input CK;
+   output Q;
+   output QN;
+   always @(posedge CK or negedge SN)
+     if (SN==1'b0) 
+       Q <= 1;
+     else 
+       Q <= D;   
+   assign QN = ~Q;
+endmodule
+
+module DFFS_X2 (D, SN, CK, Q, QN);
+   input D;
+   input SN;
+   input CK;
+   output Q;
+   output QN;
+   always @(posedge CK or negedge SN)
+     if (SN==1'b0) 
+       Q <= 1;
+     else 
+       Q <= D;   
+   assign QN = ~Q;
+endmodule
+
 module HA_X1 (A, B, CO, S);
-  input A;
-  input B;
-  output CO;
-  output S;
+   input A;
+   input B;
+   output CO;
+   output S;
    assign S = A ^ B;  // Dataflow expression for sum
    assign CO = A & B;  // Dataflow expression for carry
+endmodule // HA_X1
+
+module FA_X1 (A, B, CI, CO, S);
+   input A;
+   input B;
+   input CI;
+   output CO;
+   output S;
+   assign S  = (A ^ B) ^ CI;
+   assign CO = (A & B) | (A & CI) | (B & CI);
 endmodule
 
 module INV_X1 (A, ZN);
@@ -401,6 +457,16 @@ module INV_X8 (A, ZN);
    output ZN;
    assign ZN = ~A;
 endmodule // INV_X8
+
+module LOGIC0_X1 (Z);
+   output Z;
+   assign Z = 0;
+endmodule // LOGIC0_X1
+
+module LOGIC1_X1 (Z);
+   output Z;
+   assign Z = 1;
+endmodule // LOGIC1_X1
 
 module MUX2_X1 (A, B, S, Z);
    input A, B, S;
@@ -603,7 +669,7 @@ module OAI21_X1 (A, B1, B2, ZN);
    assign ZN = ~(A & B);
 endmodule // OAI21_X1
 
-(* blackbox *) module OAI21_X2 (A, B1, B2, ZN);
+module OAI21_X2 (A, B1, B2, ZN);
    input A;
    input B1;
    input B2;
@@ -867,14 +933,14 @@ module XOR2_X1 (A, B, Z);
    input A;
    input B;
    output Z;
-   assign ZN = (A ^ B);
+   assign Z = (A ^ B);
 endmodule // XOR2_X1
 
 module XOR2_X2 (A, B, Z);
    input A;
    input B;
    output Z;
-   assign ZN = (A ^ B);
+   assign Z = (A ^ B);
 endmodule // XOR2_X2
 
 

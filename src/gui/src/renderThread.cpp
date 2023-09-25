@@ -144,6 +144,24 @@ void RenderThread::run()
   }
 }
 
+void RenderThread::drawRenderIndication(Painter& painter,
+                                        const odb::Rect& bounds)
+{
+  QPainter* qpainter = static_cast<GuiPainter&>(painter).getPainter();
+  const QFont initial_font = qpainter->font();
+  QFont indication_render_font = qpainter->font();
+  indication_render_font.setPointSize(16);
+
+  qpainter->setFont(indication_render_font);
+
+  std::string rendering_message = "Design loading...";
+  painter.setPen(gui::Painter::white, true);
+  painter.drawString(
+      bounds.xCenter(), bounds.yCenter(), Painter::CENTER, rendering_message);
+
+  qpainter->setFont(initial_font);
+}
+
 void RenderThread::draw(QImage& image,
                         const QRect& draw_bounds,
                         const SelectionSet& selected,
@@ -171,13 +189,24 @@ void RenderThread::draw(QImage& image,
   painter.scale(render_ratio, render_ratio);
 
   const Rect dbu_bounds = viewer_->screenToDBU(draw_bounds);
-  drawBlock(&painter, viewer_->block_, dbu_bounds, 0);
 
   GuiPainter gui_painter(&painter,
                          viewer_->options_,
                          viewer_->screenToDBU(draw_bounds),
                          viewer_->pixels_per_dbu_,
                          viewer_->block_->getDbUnitsPerMicron());
+
+  if (!is_first_render_done_ && !restart_) {
+    drawRenderIndication(gui_painter, dbu_bounds);
+    emit done(image, draw_bounds);
+    is_first_render_done_ = true;
+
+    // Erase the first render indication so it does not remain on the screen
+    // when the design is drawn for the first time
+    image.fill(background);
+  }
+
+  drawBlock(&painter, viewer_->block_, dbu_bounds, 0);
 
   // draw selected and over top level and fast painting events
   drawSelected(gui_painter, selected);

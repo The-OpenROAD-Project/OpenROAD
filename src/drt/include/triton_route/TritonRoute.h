@@ -217,6 +217,7 @@ class TritonRoute
                  int bterm_bottom_layer_idx,
                  bool has_routing);
   int countNetBTermsAboveMaxLayer(odb::dbNet* net);
+  bool netHasStackedVias(odb::dbNet* net);
   friend class fr::FlexDR;
 };
 }  // namespace triton_route

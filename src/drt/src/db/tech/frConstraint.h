@@ -1926,6 +1926,7 @@ class frLef58CutSpacingConstraint : public frConstraint
   void setToAll(bool in) { toAll = in; }
   void setNoPrl(bool in) { noPrl = in; }
   void setSideParallelOverlap(bool in) { sideParallelOverlap = in; }
+  void setParallelOverlap(bool in) { parallelOverlap = in; }
   void setExceptSameNet(bool in) { exceptSameNet = in; }
   void setExceptSameMetal(bool in) { exceptSameMetal = in; }
   void setExceptSameMetalOverlap(bool in) { exceptSameMetalOverlap = in; }

@@ -34,7 +34,6 @@
 
 #include <memory>
 
-#include "Annealer.h"
 #include "ClusterDB.h"
 #include "CommandLine.h"
 #include "FPcommon.h"
@@ -143,11 +142,11 @@ void SolveMulti::go(void)
   if (_params->FPrep == "BTree") {
     annealer = new BTreeAreaWireAnnealer(_params, _newDB);
   } else if (_params->FPrep == "SeqPair") {
-    annealer = new Annealer(_params, _newDB);
+    annealer = new BTreeAreaWireAnnealer(_params, _newDB);
   } else if (_params->FPrep == "Best") {
     if (_newDB->getNumNodes() < 100 && _params->maxWS > 10.) {
       _params->FPrep = "SeqPair";
-      annealer = new Annealer(_params, _newDB);
+      annealer = new BTreeAreaWireAnnealer(_params, _newDB);
     } else {
       _params->FPrep = "BTree";
       annealer = new BTreeAreaWireAnnealer(_params, _newDB);
@@ -358,10 +357,10 @@ void SolveMulti::placeSubBlocks(void)
     if (params->FPrep == "BTree") {
       annealer.reset(new BTreeAreaWireAnnealer(params, tempDB));
     } else if (params->FPrep == "SeqPair") {
-      annealer.reset(new Annealer(params, tempDB));
+      annealer.reset(new BTreeAreaWireAnnealer(params, tempDB));
     } else if (_params->FPrep == "Best") {
       if (tempDB->getNumNodes() < 100 && _params->maxWS > 10.) {
-        annealer.reset(new Annealer(_params, tempDB));
+        annealer.reset(new BTreeAreaWireAnnealer(_params, tempDB));
       } else {
         annealer.reset(new BTreeAreaWireAnnealer(_params, tempDB));
       }

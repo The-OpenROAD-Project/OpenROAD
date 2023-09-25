@@ -69,7 +69,10 @@ namespace odb {
 //
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
-const uint db_schema_minor = 68;  // Current revision number
+const uint db_schema_minor = 69;  // Current revision number
+
+// Revision where upf power switch mapping was added.
+const uint db_schema_upf_power_switch_mapping = 69;
 
 // Revision where _component_shift_mask is added to _dbBlock.
 const uint db_schema_block_component_mask_shift = 68;

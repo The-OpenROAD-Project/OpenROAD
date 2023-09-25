@@ -169,6 +169,8 @@ class HeatMapDataSource
   MapView getMapView(const odb::Rect& bounds);
   bool isPopulated() const { return populated_; }
 
+  bool hasData() const;
+
   std::vector<std::pair<int, double>> getLegendValues() const;
   Painter::Color getColor(double value) const;
   const SpectrumGenerator& getColorGenerator() const

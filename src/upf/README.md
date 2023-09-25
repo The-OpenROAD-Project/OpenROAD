@@ -137,6 +137,24 @@ set_domain_area
 | `domain_name` | Power domain name. |
 | `-area` | x-/y- coordinates in microns for the lower left and upper right corners of the power domain area. |
 
+
+### Map existing power switch
+
+```tcl 
+map_power_switch
+    [-switch_name_list switch_name_list]
+    [-lib_cells lib_cells]
+    [-port_map port_map]
+```
+
+#### Options
+
+| Switch Name | Description | 
+| ----- | ----- |
+| `-switch_name_list` |  A list of switches (as defined by create_power_switch) to map. |
+| `-lib_cells` | A list of library cells that could be mapped to the power switch |
+| `-port_map` | A map that associates model ports defined by create_power_switch to logical ports |
+
 ## Example scripts
 
 Example script demonstrating how to run `upf` related commands can be found here:

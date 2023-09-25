@@ -198,6 +198,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   NetRouteMap& getRoutes() { return routes_; }
   Net* getNet(odb::dbNet* db_net);
   int getTileSize() const;
+  bool isNonLeafClock(odb::dbNet* db_net);
 
   // repair antenna public functions
   void repairAntennas(odb::dbMTerm* diode_mterm,
@@ -214,6 +215,9 @@ class GlobalRouter : public ant::GlobalRouteSource
   void destroyNetWires() override;
 
   double dbuToMicrons(int64_t dbu);
+
+  void addNetToRoute(odb::dbNet* db_net);
+  std::vector<odb::dbNet*> getNetsToRoute();
 
   // functions for random grt
   void setSeed(int seed) { seed_ = seed; }
@@ -362,13 +366,12 @@ class GlobalRouter : public ant::GlobalRouteSource
   void computeObstructionsAdjustments();
   void findLayerExtensions(std::vector<int>& layer_extensions);
   int findObstructions(odb::Rect& die_area);
-  bool layerIsBlocked(
-      int layer,
-      odb::dbTechLayerDir& direction,
-      const std::unordered_map<int, odb::Rect>& macro_obs_per_layer,
-      odb::Rect& extended_obs);
+  bool layerIsBlocked(int layer,
+                      const std::unordered_map<int, std::vector<odb::Rect>>&
+                          macro_obs_per_layer,
+                      std::vector<odb::Rect>& extended_obs);
   void extendObstructions(
-      std::unordered_map<int, odb::Rect>& macro_obs_per_layer,
+      std::unordered_map<int, std::vector<odb::Rect>>& macro_obs_per_layer,
       int bottom_layer,
       int top_layer);
   int findInstancesObstructions(odb::Rect& die_area,
@@ -380,7 +383,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   void makeBtermPins(Net* net, odb::dbNet* db_net, const odb::Rect& die_area);
   void initClockNets();
   bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
-  bool isNonLeafClock(odb::dbNet* db_net);
   int trackSpacing();
   void initGridAndNets();
 
@@ -438,6 +440,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   odb::dbBlock* block_;
 
   std::set<odb::dbNet*> dirty_nets_;
+  std::vector<odb::dbNet*> nets_to_route_;
 
   RepairAntennas* repair_antennas_;
   std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_;
