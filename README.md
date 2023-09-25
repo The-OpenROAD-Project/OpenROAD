@@ -73,7 +73,6 @@ flowchart LR
 
 ```
 
-Documentation is also available [here](https://openroad.readthedocs.io/en/latest/main/README.html).
 
 ## OpenROAD Mission
 

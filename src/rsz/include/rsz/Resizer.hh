@@ -266,6 +266,7 @@ public:
   void designAreaIncr(float delta);
   // Caller owns return value.
   NetSeq *findFloatingNets();
+  PinSet *findFloatingPins();
   void repairTieFanout(LibertyPort *tie_port,
                        double separation, // meters
                        bool verbose);

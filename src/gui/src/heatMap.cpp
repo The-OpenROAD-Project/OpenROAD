@@ -441,6 +441,23 @@ void HeatMapDataSource::destroyMap()
   redraw();
 }
 
+bool HeatMapDataSource::hasData() const
+{
+  if (!populated_) {
+    return false;
+  }
+
+  for (const auto& map_col : map_) {
+    for (const auto& map_pt : map_col) {
+      if (map_pt->has_value) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 void HeatMapDataSource::ensureMap()
 {
   if (destroy_map_) {

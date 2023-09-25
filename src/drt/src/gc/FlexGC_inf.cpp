@@ -147,17 +147,8 @@ void FlexGCWorker::Impl::checkRectMetSpcTblInf(
 {
   frCoord width = rect->width();
   frLayerNum lNum = rect->getLayerNum();
-  auto owner = rect->getNet()->getOwner();
-  if (owner != nullptr
-      && (owner->typeId() == frcInstBlockage
-          || owner->typeId() == frcBlockage)) {
-    frBlockage* blkg;
-    if (owner->typeId() == frcInstBlockage)
-      blkg = static_cast<frInstBlockage*>(owner)->getBlockage();
-    else
-      blkg = static_cast<frBlockage*>(owner);
-    if (blkg->getDesignRuleWidth() != -1)
-      width = blkg->getDesignRuleWidth();
+  if (rect->getNet()->getDesignRuleWidth() != -1) {
+    width = rect->getNet()->getDesignRuleWidth();
   }
   if (width < con->getMinWidth())
     return;

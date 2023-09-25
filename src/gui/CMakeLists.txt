@@ -105,6 +105,10 @@ else()
     PUBLIC
       odb
   )
+  target_include_directories(gui
+    PRIVATE
+      ${OPENROAD_HOME}/include
+  )
 endif()
 
 target_include_directories(gui

@@ -29,7 +29,9 @@ foreach pd $pds {
     puts "PowerDomain: $pd"
 
     foreach switch $pswitches {
-        puts "PowerSwitch: [$switch getName], OutSupply: [$switch getOutSupplyPort], InSupply: [$switch getInSupplyPort], ControlPorts: {[$switch getControlPorts]}, On States {[$switch getOnStates]}" 
+        puts "PowerSwitch: [$switch getName], OutSupply: [$switch getOutputSupplyPorts], InSupply: [$switch getInputSupplyPorts], ControlPorts: {[$switch getControlPorts]}, On States {[$switch getOnStates]}" 
+        set lib_cell [$switch getLibCell]
+        puts "Lib Cell: [$lib_cell getName]"
     }
 
     foreach iso $isolations {
