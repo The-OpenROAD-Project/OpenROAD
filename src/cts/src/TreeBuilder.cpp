@@ -114,7 +114,7 @@ bool TreeBuilder::findBlockage(const Point<double>& qt,
 // bufferName is a string that contains name of buffer master cell
 //
 Point<double> TreeBuilder::legalizeOneBuffer(Point<double> bufferLoc,
-                                             std::string bufferName)
+                                             const std::string& bufferName)
 {
   if (options_->getObstructionAware()) {
     odb::dbMaster* libCell = db_->findMaster(bufferName.c_str());

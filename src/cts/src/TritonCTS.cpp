@@ -154,7 +154,7 @@ void TritonCTS::buildClockTrees()
     builder->setDb(db_);
     builder->setLogger(logger_);
     builder->initBlockages();
-    builder->run();
+    builder->run(db_);
   }
 
   if (options_->getBalanceLevels()) {

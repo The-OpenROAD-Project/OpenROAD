@@ -59,7 +59,7 @@ class TreeBuilder
               Clock& clk,
               TreeBuilder* parent,
               utl::Logger* logger,
-              odb::dbDatabase* db = nullptr)
+              odb::dbDatabase* db)
       : options_(options),
         clock_(clk),
         parent_(parent),
@@ -71,7 +71,7 @@ class TreeBuilder
     }
   }
 
-  virtual void run() = 0;
+  virtual void run(odb::dbDatabase* db) = 0;
   void initBlockages();
   void setTechChar(TechChar& techChar) { techChar_ = &techChar; }
   const Clock& getClock() const { return clock_; }
@@ -132,7 +132,7 @@ class TreeBuilder
                     double& x2,
                     double& y2);
   Point<double> legalizeOneBuffer(Point<double> bufferLoc,
-                                  std::string bufferName);
+                                  const std::string& bufferName);
 
  protected:
   CtsOptions* options_ = nullptr;
