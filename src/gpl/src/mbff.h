@@ -42,23 +42,24 @@ class Logger;
 
 namespace gpl {
 
+
 struct Tray {
     odb::Point pt;
     std::vector<odb::Point> slots;
-    std::vector<int> cand = std::vector<int>(1, -1);
+    std::vector<int> cand;
 };
 
 struct Flop {
     odb::Point pt;
-    int idx = 0;
-    float prob = 0;
+    int idx;
+    float prob;
 
     bool operator<(Flop &a) { return prob < a.prob; }
 };
 
 struct Path {
-    int a = 0;
-    int b = 0;
+    int start_point;
+    int end_point;
 };
 
 class MBFF {
@@ -66,11 +67,10 @@ class MBFF {
   public:
     MBFF(int num_flops, int num_paths, const std::vector<float> &x,
          const std::vector<float> &y,
-         const std::vector<std::pair<int, int> > &paths, int threads,
-         utl::Logger *logger);
+         const std::vector<std::pair<int, int> > &paths, int threads);
     ~MBFF();
 
-    void Run(int mx_sz, float alpha, float beta);
+    void Run(int mx_sz, float alpha, float beta, utl::Logger *logger);
 
   private:
     int GetRows(const int slot_cnt);
@@ -111,9 +111,10 @@ class MBFF {
                 const std::vector<std::vector<Tray> > &all_trays, float alpha,
                 float beta);
 
+
     utl::Logger *log_;
-    std::vector<Flop> all_flops;
-    std::vector<Path> all_paths;
-    int num_threads;
+    std::vector<Flop> flops_;
+    std::vector<Path> paths_;
+    int num_threads_;
 };
 }
