@@ -44,6 +44,9 @@ class dbOStream;
 class dbDiff;
 class _dbDatabase;
 class _dbNet;
+class _dbMaster;
+class _dbLib;
+class _dbMTerm;
 class _dbPowerDomain;
 
 class _dbPowerSwitch : public _dbObject
@@ -63,11 +66,14 @@ class _dbPowerSwitch : public _dbObject
 
   char* _name;
   dbId<_dbPowerSwitch> _next_entry;
-  std::string _in_supply_port;
-  std::string _out_supply_port;
+  dbVector<std::string> _in_supply_port;
+  dbVector<std::string> _out_supply_port;
   dbVector<std::string> _control_port;
   dbVector<std::string> _on_state;
   dbId<_dbNet> _control_net;
+  dbId<_dbMaster> _lib_cell;
+  dbId<_dbLib> _lib;
+  std::map<std::string, dbId<_dbMTerm>> _port_map;
   dbId<_dbPowerDomain> _power_domain;
 };
 dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj);

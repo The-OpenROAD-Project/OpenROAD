@@ -45,8 +45,8 @@ Instance: d4/_1_ -
  -> d4_out1 -> _4_
 Instance: d4/_2_ - 
  -> d4_out2 -> _3_
-[WARNING IFP-0028] Core area lower left (2.000, 2.000) snapped to (2.300, 2.720).
-[INFO IFP-0001] Added 8 rows of 52 site unithd with height 1.
+[WARNING IFP-0028] Core area lower left (100.000, 100.000) snapped to (100.280, 100.640).
+[INFO IFP-0001] Added 110 rows of 651 site unithd with height 1.
 Instance: _1_ - () : sky130_fd_sc_hd__xnor2_1 
 Instance: _2_ - () : sky130_fd_sc_hd__xnor2_1 
 Instance: _3_ - () : sky130_fd_sc_hd__xnor2_1 

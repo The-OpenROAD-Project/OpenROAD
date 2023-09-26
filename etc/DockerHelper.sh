@@ -20,7 +20,7 @@ usage: $0 [CMD] [OPTIONS]
   OPTIONS:
   -compiler=COMPILER_NAME       Choose between gcc (default) and clang. Valid
                                   only if the target is 'builder'.
-  -os=OS_NAME                   Choose beween centos7 (default), ubuntu20.04, ubuntu22.04, ubuntu22.10, rhel, opensuse, debian10 and debian11.
+  -os=OS_NAME                   Choose beween centos7 (default), ubuntu20.04, ubuntu22.04, rhel, opensuse, debian10 and debian11.
   -target=TARGET                Choose target fo the Docker image:
                                   'dev': os + packages to compile app
                                   'builder': os + packages to compile app +
@@ -57,9 +57,6 @@ _setup() {
             ;;
         "ubuntu22.04")
             osBaseImage="ubuntu:22.04"
-            ;;
-        "ubuntu22.10")
-            osBaseImage="ubuntu:22.10"
             ;;
         "opensuse")
             osBaseImage="opensuse/leap"

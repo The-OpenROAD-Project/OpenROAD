@@ -60,11 +60,11 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-r11/CLK                                 1.00    2.76   -1.76 (VIOLATED)
+r11/CLK                                 1.00    1.83   -0.83 (VIOLATED)
 
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-clkbuf_1_0_1_clk1/X                     0.15    0.42   -0.27 (VIOLATED)
+clkbuf_1_0_1_clk1/X                     0.15    0.28   -0.13 (VIOLATED)
 

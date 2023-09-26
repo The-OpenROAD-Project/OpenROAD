@@ -2370,9 +2370,14 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
                   break;
                 }
                 case frcInstBlockage: {
-                  frInstBlockage* instBlockage
-                      = (static_cast<frInstBlockage*>(src));
-                  cout << instBlockage->getInst()->getName() << "/OBS"
+                  frInst* inst = (static_cast<frInstBlockage*>(src))->getInst();
+                  cout << inst->getName() << "/OBS"
+                       << " ";
+                  break;
+                }
+                case frcInst: {
+                  frInst* inst = (static_cast<frInst*>(src));
+                  cout << inst->getName() << "/OBS"
                        << " ";
                   break;
                 }
@@ -2571,23 +2576,26 @@ void FlexDRWorker::route_queue_init_queue(queue<RouteQueueEntry>& rerouteQueue)
       // (See FlexDRWorker::initNet)
     }
   } else if (getRipupMode() == 2) {
-    std::set<drNet*> ripupNets;
+    std::vector<drNet*> ripupNets;
     for (auto& net : nets_) {
-      if (net->isRipup())
-        ripupNets.insert(net.get());
+      if (net->isRipup()) {
+        ripupNets.push_back(net.get());
+      }
     }
+    int currId = ripupNets.size();
+    std::set<drNet*> addedNets;
     for (auto& marker : markers_) {
-      for (auto it = ripupNets.begin(); it != ripupNets.end();) {
-        drNet* net = (drNet*) *it;
+      for (auto net : ripupNets) {
         if (marker.getSrcs().find(net->getFrNet()) != marker.getSrcs().end()) {
-          routes.push_back({net, 0, true});
-          initMazeCost_via_helper(net, true);
-          it = ripupNets.erase(it);
-        } else {
-          ++it;
+          if (addedNets.find(net) != addedNets.end())
+            continue;
+          addedNets.insert(net);
+          net->setPriority(currId--);
         }
       }
     }
+    // sort nets
+    mazeIterInit_sortRerouteNets(0, ripupNets);
     for (auto& net : ripupNets) {
       routes.push_back({net, 0, true});
       initMazeCost_via_helper(net, true);
