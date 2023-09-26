@@ -1102,7 +1102,9 @@ void MBFF::Remap(const std::vector<Flop> &flops,
     for (int i = 0; i < NUM_SIZES; i++) {
         for (int j = 0; j < static_cast<int>(trays[i].size()); j++) {
             for (int k = 0; k < static_cast<int>(trays[i][j].slots.size()); k++) {
-                trays[i][j].cand[k] = small_to_large[trays[i][j].cand[k]];
+                if (trays[i][j].cand[k] >= 0) {
+                    trays[i][j].cand[k] = small_to_large[trays[i][j].cand[k]];
+                }
             }
         }
     }
