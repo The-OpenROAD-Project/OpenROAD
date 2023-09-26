@@ -521,9 +521,7 @@ std::vector<odb::Point> MBFF::GetSlots(const odb::Point &tray, int rows,
                                      ((new_col + 0.5) - (cols / 2.0));
         float new_y = center_y + HEIGHT * ((new_row + 0.5) - (rows / 2.0));
 
-        odb::Point new_slot;
-        new_slot.x() = new_x;
-        new_slot.y() = new_y;
+        odb::Point new_slot(new_x, new_y);
 
         slots.push_back(new_slot);
     }
@@ -1069,10 +1067,6 @@ std::vector<std::vector<Tray> > MBFF::RunSilh(const std::vector<Flop> &flops) {
         int rows = GetRows(GetBitCnt(bit_idx));
         int cols = GetBitCnt(bit_idx) / rows;
 
-        int num_trays =
-            (num_flops + (GetBitCnt(bit_idx) - 1)) / GetBitCnt(bit_idx);
-
-        float delta = 0;
         std::vector<std::pair<int, int> > tmp_cluster;
 
         tmp_cluster = RunCapacitatedKMeans(flops, start_trays[bit_idx][tray_idx], rows * cols, 8);
