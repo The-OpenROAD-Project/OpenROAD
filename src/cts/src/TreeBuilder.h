@@ -125,7 +125,7 @@ class TreeBuilder
     }
     return false;
   }
-  bool findBlockage(const Point<double>& qt,
+  bool findBlockage(const Point<double>& bufferLoc,
                     double scalingUnit,
                     double& x1,
                     double& y1,
