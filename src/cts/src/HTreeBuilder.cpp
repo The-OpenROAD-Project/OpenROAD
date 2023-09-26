@@ -234,7 +234,8 @@ void plotBlockage(std::ofstream& file, odb::dbDatabase* db_, int scalingFactor)
     int y = bbox->yMin() / scalingFactor;
     int w = bbox->xMax() / scalingFactor - bbox->xMin() / scalingFactor;
     int h = bbox->yMax() / scalingFactor - bbox->yMin() / scalingFactor;
-    file << i++ << " " << x << " " << y << " " << w << " " << h << " block  scalingFactor=";
+    file << i++ << " " << x << " " << y << " " << w << " " << h
+         << " block  scalingFactor=";
     file << scalingFactor << " " << blockage->getId() << std::endl;
   }
 }
@@ -288,7 +289,7 @@ unsigned HTreeBuilder::findSibling(LevelTopology& topology,
                                    unsigned i,
                                    unsigned par)
 {
-  for (unsigned idx =0; idx < topology.getBranchingPointSize(); ++idx) {
+  for (unsigned idx = 0; idx < topology.getBranchingPointSize(); ++idx) {
     unsigned k = topology.getBranchingPointParentIdx(idx);
     if (idx != i && k == par) {
       return idx;
@@ -386,9 +387,10 @@ bool moveAlongBlockageBoundary(const Point<double>& parentPoint,
   for (Point<double> u : points) {
     double d2 = u.computeDist(parentPoint) + u.computeDist(branchPoint);
     // TODO: only 2 out of 4 points remain on blockage boundary
-    // Compute points such that they remain at the same distance to parentPoint and intersect
-    // the blockage boundary.  Magic number 100000 should be removed by making selection based
-    // on proximity to the original branchPoint
+    // Compute points such that they remain at the same distance to parentPoint
+    // and intersect the blockage boundary.  Magic number 100000 should be
+    // removed by making selection based on proximity to the original
+    // branchPoint
     if (abs(d1 - d2) < d1 / 100000) {
       branchPoint.setX(u.getX());
       branchPoint.setY(u.getY());
