@@ -67,10 +67,10 @@ class MBFF {
   public:
     MBFF(int num_flops, int num_paths, const std::vector<float> &x,
          const std::vector<float> &y,
-         const std::vector<std::pair<int, int> > &paths, int threads);
+         const std::vector<std::pair<int, int> > &paths, int threads, utl::Logger *logger);
     ~MBFF();
 
-    void Run(int mx_sz, float alpha, float beta, utl::Logger *logger);
+    void Run(int mx_sz, float alpha, float beta);
 
   private:
     int GetRows(const int slot_cnt);
