@@ -393,7 +393,7 @@ void HierRTLMP::hierRTLMacroPlacer()
       const auto height
           = dbuToMicron(master->getHeight(), dbu_) + 2 * halo_width_;
       macro_with_halo_area += width * height;
-      unplaced_macros += !inst->getPlacementStatus().isPlaced();
+      unplaced_macros += !inst->getPlacementStatus().isFixed();
     }
   }
 
