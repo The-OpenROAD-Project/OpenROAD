@@ -95,10 +95,15 @@ _setup() {
         "dev" )
             fromImage="${FROM_IMAGE_OVERRIDE:-$osBaseImage}"
             context="etc"
+            buildArgs=""
             if [[ "${isLocal}" == "yes" ]]; then
-                buildArgs="--build-arg INSTALLER_ARGS=-prefix=${LOCAL_PATH}"
-            else
-                buildArgs=""
+                buildArgs="-prefix=${LOCAL_PATH}"
+            fi
+            if [[ "${equivalenceDeps}" == "yes" ]]; then
+                buildArgs="${buildArgs} -eqy"
+            fi
+            if [[ "${buildArgs}" != "" ]]; then
+                buildArgs="--build-arg INSTALLER_ARGS=\"${buildArgs}\""
             fi
             ;;
         "binary" )
@@ -215,6 +220,7 @@ target="dev"
 compiler="gcc"
 useCommitSha="no"
 isLocal="no"
+equivalenceDeps="yes"
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   numThreads=$(nproc --all)
 elif [[ "$OSTYPE" == "darwin"* ]]; then
@@ -250,6 +256,9 @@ while [ "$#" -gt 0 ]; do
             ;;
         -local )
             isLocal=yes
+            ;;
+        -no_eqy )
+            equivalenceDeps=no
             ;;
         -compiler | -os | -target )
             echo "${1} requires an argument" >&2
