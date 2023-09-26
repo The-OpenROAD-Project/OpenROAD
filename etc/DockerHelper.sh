@@ -103,7 +103,7 @@ _setup() {
                 buildArgs="${buildArgs} -eqy"
             fi
             if [[ "${buildArgs}" != "" ]]; then
-                buildArgs="--build-arg INSTALLER_ARGS=\"${buildArgs}\""
+                buildArgs="--build-arg INSTALLER_ARGS='${buildArgs}'"
             fi
             ;;
         "binary" )
@@ -141,7 +141,7 @@ _test() {
 
 _create() {
     echo "Create docker image ${imagePath} using ${file}"
-    docker build --file "${file}" --tag "${imagePath}" ${buildArgs} "${context}"
+    eval docker build --file "${file}" --tag "${imagePath}" ${buildArgs} "${context}"
 }
 
 _push() {
