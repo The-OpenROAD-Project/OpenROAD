@@ -169,14 +169,14 @@ Placement Analysis
 total displacement       2540.4 u
 average displacement        0.9 u
 max displacement           38.4 u
-original HPWL          138835.6 u
-legalized HPWL         139190.2 u
+original HPWL          138837.0 u
+legalized HPWL         139191.9 u
 delta HPWL                    0 %
 
 Clock clk
 Latency      CRPR       Skew
 inst_8_14/clk ^
-   1.27
+   1.32
 inst_10_14/clk ^
-   1.17      0.00       0.10
+   1.18      0.00       0.14
 

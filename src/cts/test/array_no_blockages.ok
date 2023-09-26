@@ -175,8 +175,8 @@ delta HPWL                    0 %
 
 Clock clk
 Latency      CRPR       Skew
-inst_11_8/clk ^
-   1.26
-inst_12_8/clk ^
-   1.16      0.00       0.10
+inst_8_14/clk ^
+   1.32
+inst_10_14/clk ^
+   1.18      0.00       0.14
 
