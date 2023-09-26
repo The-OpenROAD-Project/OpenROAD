@@ -58,7 +58,7 @@ void TreeBuilder::initBlockages()
                 "{} placement blockages have been identified.",
                 bboxList_.size());
 
-  if (bboxList_.size() == 0) {
+  if (bboxList_.empty()) {
     // Some HMs may not have explicit blockages
     // Treat them as such only if they are placed
     for (odb::dbInst* inst : db_->getChip()->getBlock()->getInsts()) {
@@ -75,28 +75,26 @@ void TreeBuilder::initBlockages()
   }
 }
 
-// Find one blockage that contains qt
+// Find one blockage that contains bufferLoc
 // (x1, y1) is the lower left corner
 // (x2, y2) is the upper right corner
-bool TreeBuilder::findBlockage(const Point<double>& qt,
+bool TreeBuilder::findBlockage(const Point<double>& bufferLoc,
                                double scalingUnit,
                                double& x1,
                                double& y1,
                                double& x2,
                                double& y2)
 {
-  double qx = qt.getX() * scalingUnit;
-  double qy = qt.getY() * scalingUnit;
-  odb::dbBox* bbox;
+  double bx = bufferLoc.getX() * scalingUnit;
+  double by = bufferLoc.getY() * scalingUnit;
 
-  for (size_t i = 0; i < bboxList_.size(); ++i) {
-    bbox = bboxList_[i];
+  for (odb::dbBox* bbox : bboxList_) {
     x1 = bbox->xMin();
     y1 = bbox->yMin();
     x2 = bbox->xMax();
     y2 = bbox->yMax();
 
-    if (isInsideBbox(qx, qy, x1, y1, x2, y2)) {
+    if (isInsideBbox(bx, by, x1, y1, x2, y2)) {
       x1 = x1 / scalingUnit;
       y1 = y1 / scalingUnit;
       x2 = x2 / scalingUnit;

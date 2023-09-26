@@ -225,17 +225,17 @@ void HTreeBuilder::initSinkRegion()
   logger_->info(CTS, 26, "    Height: {:.4f}.", sinkRegion_.getHeight());
 }
 
-void plotBlockage(std::ofstream& file, odb::dbDatabase* db_, int z)
+void plotBlockage(std::ofstream& file, odb::dbDatabase* db_, int scalingFactor)
 {
   unsigned i = 0;
   for (odb::dbBlockage* blockage : db_->getChip()->getBlock()->getBlockages()) {
     odb::dbBox* bbox = blockage->getBBox();
-    int x = bbox->xMin() / z;
-    int y = bbox->yMin() / z;
-    int w = bbox->xMax() / z - bbox->xMin() / z;
-    int h = bbox->yMax() / z - bbox->yMin() / z;
-    file << i++ << " " << x << " " << y << " " << w << " " << h << " block  z=";
-    file << z << " " << blockage->getId() << std::endl;
+    int x = bbox->xMin() / scalingFactor;
+    int y = bbox->yMin() / scalingFactor;
+    int w = bbox->xMax() / scalingFactor - bbox->xMin() / scalingFactor;
+    int h = bbox->yMax() / scalingFactor - bbox->yMin() / scalingFactor;
+    file << i++ << " " << x << " " << y << " " << w << " " << h << " block  scalingFactor=";
+    file << scalingFactor << " " << blockage->getId() << std::endl;
   }
 }
 
@@ -244,7 +244,6 @@ double weightedDistance(const Point<double>& legal_loc,
                         const Point<double>& original_loc,
                         const std::vector<Point<double>>& sinks)
 {
-  // double dist = legal_loc.computeDist( original_loc);
   double dist = 0;
   for (const Point<double>& sink : sinks) {
     dist += legal_loc.computeDist(sink);
@@ -289,8 +288,7 @@ unsigned HTreeBuilder::findSibling(LevelTopology& topology,
                                    unsigned i,
                                    unsigned par)
 {
-  unsigned idx = 0;
-  for (; idx < topology.getBranchingPointSize(); ++idx) {
+  for (unsigned idx =0; idx < topology.getBranchingPointSize(); ++idx) {
     unsigned k = topology.getBranchingPointParentIdx(idx);
     if (idx != i && k == par) {
       return idx;
@@ -351,7 +349,7 @@ void adjustToplevelTopology(Point<double>& a,
   double db = b.computeDist(parLoc);
   if (da < db) {
     setSiblingPosition(a, b, parLoc);
-  } else if (db < da) {
+  } else {
     setSiblingPosition(b, a, parLoc);
   }
 }
@@ -387,7 +385,10 @@ bool moveAlongBlockageBoundary(const Point<double>& parentPoint,
   double d1 = parentPoint.computeDist(branchPoint);
   for (Point<double> u : points) {
     double d2 = u.computeDist(parentPoint) + u.computeDist(branchPoint);
-    // debugPrint
+    // TODO: only 2 out of 4 points remain on blockage boundary
+    // Compute points such that they remain at the same distance to parentPoint and intersect
+    // the blockage boundary.  Magic number 100000 should be removed by making selection based
+    // on proximity to the original branchPoint
     if (abs(d1 - d2) < d1 / 100000) {
       branchPoint.setX(u.getX());
       branchPoint.setY(u.getY());
@@ -657,12 +658,12 @@ void HTreeBuilder::run(odb::dbDatabase* db)
       CTS,
       "legalizer",
       3,
-      "Run 'obsAwareCts.py xxxy.clk.buffer' to produce xxxy.clk.buffer.png");
+      "Run 'obsAwareCts.py cts.clk.buffer' to produce cts.clk.buffer.png");
 }
 
 std::string HTreeBuilder::plotHTree()
 {
-  auto name = std::string("xxxy.") + clock_.getName() + ".buffer";
+  auto name = std::string("cts.") + clock_.getName() + ".buffer";
   std::ofstream file(name);
 
   plotBlockage(file, db_, wireSegmentUnit_);
