@@ -118,7 +118,7 @@ class HTreeBuilder : public TreeBuilder
     }
 
     double getLength() const { return length_; }
-    void setLength(double x) { length_ = x; }  // xxx
+    void setLength(double x) { length_ = x; }
 
     void forEachBranchingPoint(
         const std::function<void(unsigned, Point<double>)>& func) const
@@ -157,7 +157,7 @@ class HTreeBuilder : public TreeBuilder
     unsigned getRemainingLength() const { return remainingLength_; }
 
    private:
-    double length_;  // xxx remove const
+    double length_;
     unsigned outputSlew_ = 0;
     unsigned outputCap_ = 0;
     unsigned remainingLength_ = 0;
@@ -173,17 +173,17 @@ class HTreeBuilder : public TreeBuilder
                Clock& net,
                TreeBuilder* parent,
                utl::Logger* logger,
-               odb::dbDatabase* db = nullptr)          // xxx
-      : TreeBuilder(options, net, parent, logger, db)  // xxx
+               odb::dbDatabase* db = nullptr)
+      : TreeBuilder(options, net, parent, logger, db)
   {
   }
 
-  void run();
+  void run(odb::dbDatabase* db) override;
 
   void legalize();
   void legalizeDummy();
   void plotSolution();
-  void plotHTree();
+  std::string plotHTree();
   unsigned findSibling(LevelTopology& topology, unsigned i, unsigned par);
   Point<double>& findSiblingLoc(LevelTopology& topology,
                                 unsigned i,
@@ -290,7 +290,7 @@ class HTreeBuilder : public TreeBuilder
   }
 
  private:
-  odb::dbDatabase* db_;  // xxx
+  odb::dbDatabase* db_;
   Box<double> sinkRegion_;
   std::vector<LevelTopology> topologyForEachLevel_;
   std::map<Point<double>, ClockInst*> mapLocationToSink_;
