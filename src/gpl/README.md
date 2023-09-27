@@ -47,7 +47,6 @@ global_placement
     [-timing_driven_nets_percentage]
     [-pad_left pad_left]
     [-pad_right pad_right]
-    [-num_threads num_threads]
     [-verbose_level level]
     [-force_cpu]
 ```
