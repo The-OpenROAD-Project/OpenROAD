@@ -321,6 +321,18 @@ void LayoutViewer::centerAt(const odb::Point& focus)
   }
 }
 
+bool LayoutViewer::isCursorInsideViewport()
+{
+  QPoint mouse_pos = scroller_->mapFromGlobal(QCursor::pos());
+  QRect layout_boundaries = scroller_->viewport()->rect();
+
+  if (layout_boundaries.contains(mouse_pos)) {
+    return true;
+  }
+
+  return false;
+}
+
 void LayoutViewer::zoomIn()
 {
   zoomIn(getVisibleCenter(), false);

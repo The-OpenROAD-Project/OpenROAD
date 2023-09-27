@@ -21,7 +21,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu20.04", "ubuntu22.04", "centos7", "rhel", "debian10", "debian11", "opensuse"]
-        args: ["", "-local"]
+        args: ["", "-local", "-no_eqy", "-no_eqy -local"]
         compilers: ["gcc", "clang"]
         exclude:
           - os: "opensuse"
