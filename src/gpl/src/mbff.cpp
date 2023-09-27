@@ -985,7 +985,7 @@ MBFF::RunCapacitatedKMeans(const std::vector<Flop> &flops,
 
     for (int i = 0; i < iter; i++) {
         (*cluster) = MinCostFlow(flops, trays, sz);
-        delta = RunLP(flops, trays, cluster);
+        delta = RunLP(flops, trays, (*cluster));
 
         for (int j = 0; j < num_trays; j++) {
             trays[j].slots = GetSlots(trays[j].pt, rows, cols);
