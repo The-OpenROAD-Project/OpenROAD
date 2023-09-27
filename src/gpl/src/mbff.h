@@ -76,8 +76,8 @@ class MBFF {
     int GetBitCnt(const int bit_idx);
     float GetDist(const odb::Point &a, const odb::Point &b);
 
-    std::vector<odb::Point> GetSlots(const odb::Point &tray, const int rows,
-                                     const int cols);
+    void GetSlots(const odb::Point &tray, const int rows,
+                                     const int cols, std::vector<odb::Point> &slots);
     Flop GetNewFlop(const std::vector<Flop> &prob_dist, const float tot_dist);
     std::vector<Tray> GetStartTrays(std::vector<Flop> flops,
                                     const int num_trays, const float AR);
