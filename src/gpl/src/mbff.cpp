@@ -500,8 +500,8 @@ void MBFF::RunILP(const std::vector<Flop> &flops,
 } // end ILP
 
 
-std::vector<odb::Point> MBFF::GetSlots(const odb::Point &tray, int rows,
-                                       int cols) {
+void std::vector<odb::Point> MBFF::GetSlots(const odb::Point &tray, int rows,
+                                       int cols, vector<Point>, std::vector<odb::Point> &slots) {
     int bit_idx = 0;
     for (int i = 1; i < NUM_SIZES; i++) {
         if (rows * cols == GetBitCnt(i)) {
@@ -512,7 +512,7 @@ std::vector<odb::Point> MBFF::GetSlots(const odb::Point &tray, int rows,
     float center_x = tray.x();
     float center_y = tray.y();
 
-    std::vector<odb::Point> slots;
+    slots.clear();
     for (int i = 0; i < rows * cols; i++) {
         int new_col = i % cols;
         int new_row = i / cols;
@@ -525,8 +525,6 @@ std::vector<odb::Point> MBFF::GetSlots(const odb::Point &tray, int rows,
 
         slots.push_back(new_slot);
     }
-
-    return slots;
 }
 
 Flop MBFF::GetNewFlop(const std::vector<Flop> &prob_dist, float tot_dist) {
@@ -599,7 +597,7 @@ Tray MBFF::GetOneBit(const odb::Point &pt) {
     return tray;
 }
 
-MBFF::MinCostFlow(const std::vector<Flop> &flops, std::vector<Tray> &trays,
+void MBFF::MinCostFlow(const std::vector<Flop> &flops, std::vector<Tray> &trays,
                   int sz, std::vector<std::pair<int, int> > &clusters) {
     int num_flops = static_cast<int>(flops.size());
     int num_trays = static_cast<int>(trays.size());
@@ -830,8 +828,6 @@ MBFF::KMeansDecomp(const std::vector<Flop> &flops, int MAX_SZ, std::vector<std::
 
     int num_flops = static_cast<int>(flops.size());
 
-    std::vector<std::vector<Flop> > *ret = new std::vector<std::vector<Flop> >;
-
     if (num_flops <= MAX_SZ) {
         pointsets.push_back(flops);
     }
@@ -975,7 +971,7 @@ MBFF::RunCapacitatedKMeans(const std::vector<Flop> &flops,
         MinCostFlow(flops, trays, sz, cluster);
         delta = RunLP(flops, trays, cluster);
         for (int j = 0; j < num_trays; j++) {
-            trays[j].slots = GetSlots(trays[j].pt, rows, cols);
+            GetSlots(trays[j].pt, rows, cols, trays[j].slots);
             for (int k = 0; k < rows * cols; k++) {
                 trays[j].cand[k] = -1;
             }
@@ -992,11 +988,11 @@ MBFF::RunCapacitatedKMeans(const std::vector<Flop> &flops,
 void MBFF::RunSilh(const std::vector<Flop> &flops, std::vector<std::vector<Tray> >& trays) {
     int num_flops = static_cast<int>(flops.size());
 
-    std::vector<std::vector<Tray> > *trays = new std::vector<std::vector<Tray> >(NUM_SIZES);
+
 
     for (int i = 0; i < NUM_SIZES; i++) {
         int num_trays = (num_flops + (GetBitCnt(i) - 1)) / GetBitCnt(i);
-        (*trays)[i].resize(num_trays);
+        trays[i].resize(num_trays);
     }
 
     // add 1-bit trays
@@ -1004,7 +1000,7 @@ void MBFF::RunSilh(const std::vector<Flop> &flops, std::vector<std::vector<Tray>
         Tray one_bit = GetOneBit(flops[i].pt);
         one_bit.cand.reserve(1);
         one_bit.cand.emplace_back(i);
-        (*trays)[0][i] = one_bit;
+        trays[0][i] = one_bit;
     }
 
     std::vector<std::vector<Tray> > start_trays[NUM_SIZES];
@@ -1033,7 +1029,7 @@ void MBFF::RunSilh(const std::vector<Flop> &flops, std::vector<std::vector<Tray>
             int num_trays = (num_flops + (GetBitCnt(i) - 1)) / GetBitCnt(i);
             start_trays[i][j] = GetStartTrays(flops, num_trays, AR);
             for (int k = 0; k < num_trays; k++) {
-                start_trays[i][j][k].slots = GetSlots(start_trays[i][j][k].pt, rows, cols);
+                GetSlots(start_trays[i][j][k].pt, rows, cols, start_trays[i][j][k].slots);
                 start_trays[i][j][k].cand.reserve(rows * cols);
                 for (int idx = 0; idx < rows * cols; idx++) {
                     start_trays[i][j][k].cand.emplace_back(-1);
@@ -1069,10 +1065,10 @@ void MBFF::RunSilh(const std::vector<Flop> &flops, std::vector<std::vector<Tray>
                 opt_idx = j;
             }
         }
-        (*trays)[i] = start_trays[i][opt_idx];
+        trays[i] = start_trays[i][opt_idx];
     }
 
-    return *trays;
+    return trays;
 }
 
 void MBFF::Remap(const std::vector<Flop> &flops,
@@ -1110,7 +1106,7 @@ void MBFF::Run(int mx_sz, float alpha, float beta) {
         int num_flops = static_cast<int>(pointsets[t].size());
 
         // run silhouette metric
-        std::vector<std::vector<Tray> > trays;
+        std::vector<std::vector<Tray> > trays(NUM_SIZES);
         RunSilh(pointsets[t], trays);
 
         // run capacitated k-means per tray size
@@ -1119,13 +1115,13 @@ void MBFF::Run(int mx_sz, float alpha, float beta) {
             int rows = GetRows(GetBitCnt(i)), cols = GetBitCnt(i) / rows;
             int num_trays = (num_flops + (GetBitCnt(i) - 1)) / GetBitCnt(i);
             for (int j = 0; j < num_trays; j++) {
-                trays[i][j].slots = GetSlots(trays[i][j].pt, rows, cols);
+                GetSlots(trays[i][j].pt, rows, cols, trays[i][j].slots);
             }
             std::vector<std::pair<int, int> > cluster;
             RunCapacitatedKMeans(pointsets[t], trays[i], GetBitCnt(i), 35, cluster);
             MinCostFlow(pointsets[t], trays[i], GetBitCnt(i), cluster);
             for (int j = 0; j < num_trays; j++) {
-                trays[i][j].slots = GetSlots(trays[i][j].pt, rows, cols);
+                GetSlots(trays[i][j].pt, rows, cols, trays[i][j].slots);
             }
         }
 
