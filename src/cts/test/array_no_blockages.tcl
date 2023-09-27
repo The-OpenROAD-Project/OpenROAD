@@ -147,12 +147,3 @@ detailed_placement
 estimate_parasitics -placement
 report_clock_skew
 
-# Prevent grt from going over the macros to magnify the problem
-set_routing_layers -signal metal2-metal5
-global_route -allow_congestion
-estimate_parasitics -global_routing
-report_clock_skew
-
-set_thread_count 40
-detailed_route -verbose 1
-

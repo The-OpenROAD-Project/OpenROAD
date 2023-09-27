@@ -130,8 +130,6 @@ set_wire_rc -signal -layer $wire_rc_layer
 set_wire_rc -clock  -layer $wire_rc_layer_clk
 set_dont_use $dont_use
 
-set_debug_level CTS legalizer 1
-
 clock_tree_synthesis  -root_buf $cts_buffer \
     -buf_list $cts_buffer \
     -sink_clustering_enable \
@@ -148,13 +146,4 @@ detailed_placement
 
 estimate_parasitics -placement
 report_clock_skew
-
-# Prevent grt from going over the macros to magnify the problem
-#set_routing_layers -signal metal2-metal5
-#global_route -allow_congestion
-#estimate_parasitics -global_routing
-#report_clock_skew
-
-#set_thread_count 40
-#detailed_route -verbose 1
 
