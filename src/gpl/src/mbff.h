@@ -65,8 +65,7 @@ struct Path {
 class MBFF {
 
   public:
-    MBFF(int num_flops, int num_paths, const std::vector<float> &x,
-         const std::vector<float> &y,
+    MBFF(int num_flops, int num_paths, const std::vector<odb::Point> &points,
          const std::vector<std::pair<int, int> > &paths, int threads, utl::Logger *logger);
     ~MBFF();
 

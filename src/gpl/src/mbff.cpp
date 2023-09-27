@@ -1155,13 +1155,11 @@ void MBFF::Run(int mx_sz, float alpha, float beta) {
 }
 
 // ctor
-MBFF::MBFF(int num_flops, int num_paths, const std::vector<float> &x,
-           const std::vector<float> &y,
+MBFF::MBFF(int num_flops, int num_paths, const std::vector<odb::Point> &points,
            const std::vector<std::pair<int, int> > &paths, int threads, utl::Logger *logger) {
     flops_.reserve(num_flops);
     for (int i = 0; i < num_flops; i++) {
-        odb::Point new_pt(x[i], y[i]);
-        Flop new_flop{new_pt, i, 0.0};
+        Flop new_flop{points[i], i, 0.0};
         flops_.emplace_back(new_flop);
     }
 
