@@ -583,7 +583,7 @@ option="all"
 isLocal="false"
 equivalenceDeps="no"
 # temp dir to download and compile
-baseDir=/tmp/installers-$(date +%s)
+baseDir=$(mktemp -d /tmp/DependencyInstaller-XXXXXX)
 
 # default values, can be overwritten by cmdline args
 while [ "$#" -gt 0 ]; do
