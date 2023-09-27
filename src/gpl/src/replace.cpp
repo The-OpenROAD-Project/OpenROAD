@@ -307,9 +307,9 @@ void Replace::runMBFF(int max_sz, float alpha, float beta, int threads) {
   for (auto inst : block->getInsts()) {
     auto mstr = inst->getMaster();
     if (mstr->isSequential()) {
-      float x_i, y_i; 
+      int x_i, y_i; 
       inst->getOrigin(x_i, y_i);
-      odb::Point pt(x_i, y_i);
+      odb::Point pt(static_cast<float>(x_i), static_cast<float>(y_i));
       points.push_back(pt);
       num_flops++;
     }
