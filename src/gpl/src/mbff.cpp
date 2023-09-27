@@ -500,7 +500,7 @@ void MBFF::RunILP(const std::vector<Flop> &flops,
 } // end ILP
 
 
-void std::vector<odb::Point> MBFF::GetSlots(const odb::Point &tray, int rows,
+void MBFF::GetSlots(const odb::Point &tray, int rows,
                                        int cols, vector<Point>, std::vector<odb::Point> &slots) {
     int bit_idx = 0;
     for (int i = 1; i < NUM_SIZES; i++) {
@@ -551,7 +551,7 @@ void MBFF::GetStartTrays(std::vector<Flop> flops, int num_trays,
 
     std::set<int> used_flops;
     used_flops.insert(rand_idx);
-    std::vector<Tray> trays;
+ 
     trays.push_back(tray_zero);
 
     float tot_dist = 0;
