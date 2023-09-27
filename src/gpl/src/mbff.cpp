@@ -540,8 +540,8 @@ Flop MBFF::GetNewFlop(const std::vector<Flop> &prob_dist, float tot_dist) {
     return new_flop;
 }
 
-std::vector<Tray> MBFF::GetStartTrays(std::vector<Flop> flops, int num_trays,
-                                      float AR) {
+void MBFF::GetStartTrays(std::vector<Flop> flops, int num_trays,
+                                      float AR, std::vector<Tray> &trays) {
     int num_flops = static_cast<int>(flops.size());
 
     /* pick a random flop */
@@ -582,8 +582,6 @@ std::vector<Tray> MBFF::GetStartTrays(std::vector<Flop> flops, int num_trays,
             flops[i].prob += new_contr, tot_dist += new_contr;
         }
     }
-
-    return trays;
 }
 
 Tray MBFF::GetOneBit(const odb::Point &pt) {
@@ -1027,7 +1025,7 @@ void MBFF::RunSilh(const std::vector<Flop> &flops, std::vector<std::vector<Tray>
             float AR = (cols * WIDTH * RATIOS[i]) / (rows * HEIGHT);
 
             int num_trays = (num_flops + (GetBitCnt(i) - 1)) / GetBitCnt(i);
-            start_trays[i][j] = GetStartTrays(flops, num_trays, AR);
+            GetStartTrays(flops, num_trays, AR, start_trays[i][j]);
             for (int k = 0; k < num_trays; k++) {
                 GetSlots(start_trays[i][j][k].pt, rows, cols, start_trays[i][j][k].slots);
                 start_trays[i][j][k].cand.reserve(rows * cols);
@@ -1068,7 +1066,6 @@ void MBFF::RunSilh(const std::vector<Flop> &flops, std::vector<std::vector<Tray>
         trays[i] = start_trays[i][opt_idx];
     }
 
-    return trays;
 }
 
 void MBFF::Remap(const std::vector<Flop> &flops,
