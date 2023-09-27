@@ -261,8 +261,7 @@ class HierRTLMP
 
   void correctAllMacrosOrientation();
   float calculateRealMacroWirelength(odb::dbInst* macro);
-  void adjustRealMacroOrientation(const bool& is_vertical_flip,
-                                  const bool& should_lock_placement);
+  void adjustRealMacroOrientation(const bool& is_vertical_flip);
   void flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip);
 
   sta::dbNetwork* network_ = nullptr;

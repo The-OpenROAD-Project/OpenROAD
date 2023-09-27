@@ -5966,9 +5966,6 @@ void HierRTLMP::generateTemporaryStdCellsPlacement(Cluster* cluster)
   }
 }
 
-// Compute wirelength considering signal nets that connect macro to:
-// 1. Other macros
-// 2. Std cells
 float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
 {
   float wirelength = 0.0;
@@ -6009,8 +6006,7 @@ void HierRTLMP::flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip)
   }
 }
 
-void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip,
-                                           const bool& should_lock_placement)
+void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip)
 {
   for (odb::dbInst* inst : block_->getInsts()) {
     if (!inst->isBlock()) {
@@ -6028,20 +6024,31 @@ void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip,
       flipRealMacro(inst, is_vertical_flip);
       inst->setLocation(macro_location.getX(), macro_location.getY());
     }
-
-    if (should_lock_placement) {
-      inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
-    }
   }
 }
 
 void HierRTLMP::correctAllMacrosOrientation()
 {
   // Apply vertical flip if necessary
-  adjustRealMacroOrientation(true, false);
+  adjustRealMacroOrientation(true);
 
   // Apply horizontal flip if necessary
-  adjustRealMacroOrientation(false, true);
+  adjustRealMacroOrientation(false);
+
+  for (auto& [inst, hard_macro] : hard_macro_map_) {
+    const Rect inst_box(dbuToMicron(inst->getBBox()->xMin(), dbu_),
+                        dbuToMicron(inst->getBBox()->yMin(), dbu_),
+                        dbuToMicron(inst->getBBox()->xMax(), dbu_),
+                        dbuToMicron(inst->getBBox()->yMax(), dbu_));
+
+    const odb::dbOrientType inst_orientation = inst->getOrient();
+
+    const odb::Point snap_origin = hard_macro->alignOriginWithGrids(
+        inst_box, inst_orientation, pitch_x_, pitch_y_, block_);
+
+    inst->setOrigin(snap_origin.x(), snap_origin.y());
+    inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
+  }
 }
 
 void HierRTLMP::setDebug(std::unique_ptr<Mpl2Observer>& graphics)
