@@ -83,7 +83,7 @@ class MBFF {
                                     const int num_trays, const float AR);
     Tray GetOneBit(const odb::Point &pt);
 
-    std::vector<std::pair<int, int> >
+    std::vector<std::pair<int, int> >&
     MinCostFlow(const std::vector<Flop> &flops, std::vector<Tray> &trays,
                 int sz);
 
@@ -91,16 +91,16 @@ class MBFF {
                   const std::vector<Tray> &trays,
                   const std::vector<std::pair<int, int> > &clusters);
 
-    std::vector<std::vector<Flop> > KMeans(const std::vector<Flop> &flops,
+    std::vector<std::vector<Flop> >& KMeans(const std::vector<Flop> &flops,
                                            int K);
-    std::vector<std::vector<Flop> > KMeansDecomp(const std::vector<Flop> &flops,
+    std::vector<std::vector<Flop> >& KMeansDecomp(const std::vector<Flop> &flops,
                                                  int MAX_SZ);
 
-    std::vector<std::pair<int, int> >
+    std::vector<std::pair<int, int> >&
     RunCapacitatedKMeans(const std::vector<Flop> &flops,
                          std::vector<Tray> &trays, int sz, int iter);
 
-    std::vector<std::vector<Tray> > RunSilh(const std::vector<Flop> &pointset);
+    std::vector<std::vector<Tray> >& RunSilh(const std::vector<Flop> &pointset);
     void Remap(const std::vector<Flop> &flops,
                std::vector<std::vector<Tray> > &trays);
 
