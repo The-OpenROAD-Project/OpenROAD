@@ -300,22 +300,22 @@ void Replace::doInitialPlace()
 void Replace::runMBFF(int max_sz, float alpha, float beta, int threads) {
 
   int num_flops = 0, num_paths = 0;
-  vector<float> x, y; 
+  vector<odb::Point> points; 
   vector<pair<int, int> > paths;
 
   auto block = db_->getChip()->getBlock();
   for (auto inst : block->getInsts()) {
     auto mstr = inst->getMaster();
     if (mstr->isSequential()) {
-      int x_i, y_i; 
+      float x_i, y_i; 
       inst->getOrigin(x_i, y_i);
-      x.push_back(x_i);
-      y.push_back(y_i);
+      odb::Point pt(x_i, y_i);
+      points.push_back(pt);
       num_flops++;
     }
   }
 
-  MBFF pntset(num_flops, num_paths, x, y, paths, threads, log_);
+  MBFF pntset(num_flops, num_paths, points, paths, threads, log_);
   pntset.Run((max_sz == -1 ? num_flops : max_sz), alpha, beta);
 }
 
