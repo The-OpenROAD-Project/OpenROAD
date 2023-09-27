@@ -599,9 +599,8 @@ Tray MBFF::GetOneBit(const odb::Point &pt) {
     return tray;
 }
 
-std::vector<std::pair<int, int> >&
 MBFF::MinCostFlow(const std::vector<Flop> &flops, std::vector<Tray> &trays,
-                  int sz) {
+                  int sz, std::vector<std::pair<int, int> > &clusters) {
     int num_flops = static_cast<int>(flops.size());
     int num_trays = static_cast<int>(trays.size());
 
@@ -673,19 +672,16 @@ MBFF::MinCostFlow(const std::vector<Flop> &flops, std::vector<Tray> &trays,
     new_graph.flowMap(flow);
 
     // get, and save, the clustering solution
-    std::vector<std::pair<int, int> > *clusters = new std::vector<std::pair<int, int> >(num_flops);
     for (lemon::ListDigraph::ArcIt itr(graph); itr != lemon::INVALID; ++itr) {
         int u = labels[graph.source(itr)], v = labels[graph.target(itr)];
         if (flow[itr] != 0 && u < num_flops && v >= num_flops) {
             v -= num_flops;
             int tray_idx = slot_to_tray[v].first;
             int slot_idx = slot_to_tray[v].second;
-            (*clusters)[u] = std::make_pair(tray_idx, slot_idx),
+            clusters[u] = std::make_pair(tray_idx, slot_idx),
             trays[tray_idx].cand[slot_idx] = u;
         }
     }
-
-    return *clusters;
 }
 
 float MBFF::GetSilh(const std::vector<Flop> &flops,
@@ -718,8 +714,8 @@ float MBFF::GetSilh(const std::vector<Flop> &flops,
 }
 
 // standard K-means++ implementation
-std::vector<std::vector<Flop> >& MBFF::KMeans(const std::vector<Flop> &flops,
-                                             int K) {
+void MBFF::KMeans(const std::vector<Flop> &flops,
+                    int K, std::vector<std::vector<Flop> > &clusters) {
     int num_flops = static_cast<int>(flops.size());
 
     std::set<int> chosen;
@@ -761,13 +757,11 @@ std::vector<std::vector<Flop> >& MBFF::KMeans(const std::vector<Flop> &flops,
             }
     }
 
-    std::vector<std::vector<Flop> > *clusters = new std::vector<std::vector<Flop> >(K);
-
     float prev = -1;
     while (1) {
 
         for (int i = 0; i < K; i++) {
-            (*clusters)[i].clear();
+            clusters[i].clear();
         }
 
         // remap flops to clusters
@@ -783,7 +777,7 @@ std::vector<std::vector<Flop> >& MBFF::KMeans(const std::vector<Flop> &flops,
                 }
             }
 
-            (*clusters)[idx].push_back(flops[i]);
+            clusters[idx].push_back(flops[i]);
         }
 
         // find new center locations
@@ -792,7 +786,7 @@ std::vector<std::vector<Flop> >& MBFF::KMeans(const std::vector<Flop> &flops,
             int cur_sz = static_cast<int>(clusters[i].size());
             float cX = 0, cY = 0;
 
-            for (Flop f : (*clusters)[i]) {
+            for (Flop f : clusters[i]) {
                 cX += f.pt.x();
                 cY += f.pt.y();
             }
@@ -808,7 +802,7 @@ std::vector<std::vector<Flop> >& MBFF::KMeans(const std::vector<Flop> &flops,
         // get total displacement
         float tot_disp = 0;
         for (int i = 0; i < K; i++) {
-            for (Flop f : (*clusters)[i]) {
+            for (Flop f : clusters[i]) {
                 tot_disp += GetDist(centers[i].pt, f.pt);
             }
         }
@@ -820,10 +814,8 @@ std::vector<std::vector<Flop> >& MBFF::KMeans(const std::vector<Flop> &flops,
     }
 
     for (int i = 0; i < K; i++) {
-        (*clusters)[i].push_back(centers[i]);
+        clusters[i].push_back(centers[i]);
     }
-
-    return *clusters;
 }
 
 /*
@@ -833,16 +825,15 @@ std::vector<std::vector<Flop> >& MBFF::KMeans(const std::vector<Flop> &flops,
     basic implementation of K-means++ (with K = 4) is used.
 */
 
-std::vector<std::vector<Flop> >&
-MBFF::KMeansDecomp(const std::vector<Flop> &flops, int MAX_SZ) {
+void 
+MBFF::KMeansDecomp(const std::vector<Flop> &flops, int MAX_SZ, std::vector<std::vector<Flop> > &pointsets) {
 
     int num_flops = static_cast<int>(flops.size());
 
     std::vector<std::vector<Flop> > *ret = new std::vector<std::vector<Flop> >;
 
     if (num_flops <= MAX_SZ) {
-        (*ret).push_back(flops);
-        return *ret;
+        pointsets.push_back(flops);
     }
 
     std::vector<std::vector<Flop> > tmp_clusters[10];
@@ -850,7 +841,8 @@ MBFF::KMeansDecomp(const std::vector<Flop> &flops, int MAX_SZ) {
 
     // multistart K-means++
     for (int i = 0; i < 10; i++) {
-        tmp_clusters[i] = KMeans(flops, 4);
+        tmp_clusters[i].resize(4);
+        KMeans(flops, 4, tmp_clusters[i]);
 
         /* cur_cost = sum of distances between flops and its
         matching cluster's center */
@@ -944,49 +936,44 @@ MBFF::KMeansDecomp(const std::vector<Flop> &flops, int MAX_SZ) {
 
     std::vector<std::vector<Flop> > R1, R2, R3, R4;
     if (static_cast<int>(Q1.size())) {
-        R1 = KMeansDecomp(Q1, MAX_SZ);
+        KMeansDecomp(Q1, MAX_SZ, R1);
     }
     if (static_cast<int>(Q2.size())) {
-        R2 = KMeansDecomp(Q2, MAX_SZ);
+        KMeansDecomp(Q2, MAX_SZ, R2);
     }
     if (static_cast<int>(Q3.size())) {
-        R3 = KMeansDecomp(Q3, MAX_SZ);
+        KMeansDecomp(Q3, MAX_SZ, R3);
     }
     if (static_cast<int>(Q4.size())) {
-        R4 = KMeansDecomp(Q4, MAX_SZ);
+        KMeansDecomp(Q4, MAX_SZ, R4);
     }
 
     for (auto x : R1) {
-        (*ret).push_back(x);
+        pointsets.push_back(x);
     }
     for (auto x : R2) {
-        (*ret).push_back(x);
+        pointsets.push_back(x);
     }
     for (auto x : R3) {
-        (*ret).push_back(x);
+        pointsets.push_back(x);
     }
     for (auto x : R4) {
-        (*ret).push_back(x);
+        pointsets.push_back(x);
     }
-
-    return *ret;
 }
 
-std::vector<std::pair<int, int> >&
+void 
 MBFF::RunCapacitatedKMeans(const std::vector<Flop> &flops,
-                           std::vector<Tray> &trays, int sz, int iter) {
+                           std::vector<Tray> &trays, int sz, int iter, std::vector<std::pair<int, int> > &cluster) {
     int num_flops = static_cast<int>(flops.size());
     int rows = GetRows(sz);
     int cols = sz / rows;
     int num_trays = (num_flops + (sz - 1)) / sz;
 
     float delta = 0;
-    std::vector<std::pair<int, int> > *cluster = new std::vector<std::pair<int, int> >;
-
     for (int i = 0; i < iter; i++) {
-        (*cluster) = MinCostFlow(flops, trays, sz);
-        delta = RunLP(flops, trays, (*cluster));
-
+        MinCostFlow(flops, trays, sz, cluster);
+        delta = RunLP(flops, trays, cluster);
         for (int j = 0; j < num_trays; j++) {
             trays[j].slots = GetSlots(trays[j].pt, rows, cols);
             for (int k = 0; k < rows * cols; k++) {
@@ -999,11 +986,10 @@ MBFF::RunCapacitatedKMeans(const std::vector<Flop> &flops,
         }
     }
 
-    (*cluster) = MinCostFlow(flops, trays, sz);
-    return *cluster;
+    MinCostFlow(flops, trays, sz, cluster);
 }
 
-std::vector<std::vector<Tray> >& MBFF::RunSilh(const std::vector<Flop> &flops) {
+void MBFF::RunSilh(const std::vector<Flop> &flops, std::vector<std::vector<Tray> >& trays) {
     int num_flops = static_cast<int>(flops.size());
 
     std::vector<std::vector<Tray> > *trays = new std::vector<std::vector<Tray> >(NUM_SIZES);
@@ -1067,13 +1053,11 @@ std::vector<std::vector<Tray> >& MBFF::RunSilh(const std::vector<Flop> &flops) {
         int rows = GetRows(GetBitCnt(bit_idx));
         int cols = GetBitCnt(bit_idx) / rows;
 
-        std::vector<std::pair<int, int> > &tmp_cluster = 
-            RunCapacitatedKMeans(flops, start_trays[bit_idx][tray_idx], rows * cols, 8);
+        std::vector<std::pair<int, int> > tmp_cluster; 
+        RunCapacitatedKMeans(flops, start_trays[bit_idx][tray_idx], rows * cols, 8, tmp_cluster);
         
         res[bit_idx][tray_idx] =
             GetSilh(flops, start_trays[bit_idx][tray_idx], tmp_cluster);
-
-        delete &tmp_cluster;
     }
 
     for (int i = 1; i < NUM_SIZES; i++) {
@@ -1116,7 +1100,8 @@ void MBFF::Run(int mx_sz, float alpha, float beta) {
     omp_set_num_threads(num_threads_);
 
     // run k-means++ based decomposition
-    std::vector<std::vector<Flop> > pointsets = KMeansDecomp(flops_, mx_sz);
+    std::vector<std::vector<Flop> > pointsets;
+    KMeansDecomp(flops_, mx_sz, pointsets);
 
     std::vector<std::vector<Tray> > all_trays(NUM_SIZES);
 
@@ -1125,7 +1110,8 @@ void MBFF::Run(int mx_sz, float alpha, float beta) {
         int num_flops = static_cast<int>(pointsets[t].size());
 
         // run silhouette metric
-        std::vector<std::vector<Tray> > &trays = RunSilh(pointsets[t]);
+        std::vector<std::vector<Tray> > trays;
+        RunSilh(pointsets[t], trays);
 
         // run capacitated k-means per tray size
         #pragma omp parallel for
@@ -1135,10 +1121,9 @@ void MBFF::Run(int mx_sz, float alpha, float beta) {
             for (int j = 0; j < num_trays; j++) {
                 trays[i][j].slots = GetSlots(trays[i][j].pt, rows, cols);
             }
-            std::vector<std::pair<int, int> > &cluster1 = RunCapacitatedKMeans(pointsets[t], trays[i], GetBitCnt(i), 35);
-            delete &cluster1;
-            std::vector<std::pair<int, int> > &cluster2 = MinCostFlow(pointsets[t], trays[i], GetBitCnt(i));
-            delete &cluster2;
+            std::vector<std::pair<int, int> > cluster;
+            RunCapacitatedKMeans(pointsets[t], trays[i], GetBitCnt(i), 35, cluster);
+            MinCostFlow(pointsets[t], trays[i], GetBitCnt(i), cluster);
             for (int j = 0; j < num_trays; j++) {
                 trays[i][j].slots = GetSlots(trays[i][j].pt, rows, cols);
             }
