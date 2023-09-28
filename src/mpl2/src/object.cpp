@@ -980,12 +980,12 @@ odb::Point HardMacro::alignOriginWithGrids(const Rect& macro_box,
 
           if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
             computeCoordinateSpacingParameters(
-                block, layer, box, offset_x, pitch_x, pin_width_x, false);
+                block, layer, box, offset_y, pitch_y, pin_width_y, false);
           }
 
           if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
             computeCoordinateSpacingParameters(
-                block, layer, box, offset_y, pitch_y, pin_width_y, true);
+                block, layer, box, offset_x, pitch_x, pin_width_x, true);
           }
         }
       }
