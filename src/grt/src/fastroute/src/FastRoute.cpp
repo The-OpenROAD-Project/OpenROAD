@@ -727,12 +727,12 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
         // defines the layer used for horizontal edges are still 2D
         int layer_v = 0;
 
-        if (layer_orientation_ != 0) {
-          layer_h = 1;
-          layer_v = 2;
+        if (((nets_[netID]->getMinLayer() % 2) - layer_orientation_) != 0) {
+          layer_h = nets_[netID]->getMinLayer() + 1;
+          layer_v = nets_[netID]->getMinLayer();
         } else {
-          layer_h = 2;
-          layer_v = 1;
+          layer_h = nets_[netID]->getMinLayer();
+          layer_v = nets_[netID]->getMinLayer() + 1;
         }
         int second_x = tile_size_ * (gridsX[1] + 0.5) + x_corner_;
         int lastL = (lastX == second_x) ? layer_v : layer_h;
@@ -983,7 +983,7 @@ NetRouteMap FastRouteCore::run()
 
   const int max_overflow_increases = 25;
 
-  float slack_th = std::numeric_limits<float>::min();
+  float slack_th = std::numeric_limits<float>::lowest();
 
   // set overflow_increases as -1 since the first iteration always sum 1
   int overflow_increases = -1;

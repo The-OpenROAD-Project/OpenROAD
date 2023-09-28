@@ -61,7 +61,7 @@ for {set x 0} {$x < $array_size} {incr x} {
 
     set lx [expr $lx - $halo]
     set ly [expr $ly - $halo]
-    odb::dbBlockage_create $block $lx $ly $ux $uy
+#   odb::dbBlockage_create $block $lx $ly $ux $uy
 
     # connect east/west pins skipping every fifth column
     if {[expr $x > 0]} {

@@ -42,10 +42,6 @@
 #include "CtsOptions.h"
 #include "TreeBuilder.h"
 
-namespace utl {
-class Logger;
-}  // namespace utl
-
 namespace cts {
 class Graphics;
 
@@ -109,6 +105,8 @@ class HTreeBuilder : public TreeBuilder
       branchSinkLocs_[branchIdx].push_back(sinkLoc);
     }
 
+    unsigned getBranchingPointSize() { return branchPointLoc_.size(); }
+
     Point<double>& getBranchingPoint(unsigned idx)
     {
       return branchPointLoc_[idx];
@@ -120,6 +118,7 @@ class HTreeBuilder : public TreeBuilder
     }
 
     double getLength() const { return length_; }
+    void setLength(double x) { length_ = x; }
 
     void forEachBranchingPoint(
         const std::function<void(unsigned, Point<double>)>& func) const
@@ -158,7 +157,7 @@ class HTreeBuilder : public TreeBuilder
     unsigned getRemainingLength() const { return remainingLength_; }
 
    private:
-    const double length_;
+    double length_;
     unsigned outputSlew_ = 0;
     unsigned outputCap_ = 0;
     unsigned remainingLength_ = 0;
@@ -173,14 +172,26 @@ class HTreeBuilder : public TreeBuilder
   HTreeBuilder(CtsOptions* options,
                Clock& net,
                TreeBuilder* parent,
-               utl::Logger* logger)
-      : TreeBuilder(options, net, parent), logger_(logger)
+               utl::Logger* logger,
+               odb::dbDatabase* db = nullptr)
+      : TreeBuilder(options, net, parent, logger, db)
   {
   }
 
-  void run() override;
+  void run(odb::dbDatabase* db) override;
 
+  void legalize();
+  void legalizeDummy();
   void plotSolution();
+  std::string plotHTree();
+  unsigned findSibling(LevelTopology& topology, unsigned i, unsigned par);
+  Point<double>& findSiblingLoc(LevelTopology& topology,
+                                unsigned i,
+                                unsigned par)
+  {
+    unsigned j = findSibling(topology, i, par);
+    return topology.getBranchingPoint(j);
+  }
 
   std::vector<LevelTopology> getTopologyVector() const
   {
@@ -279,7 +290,7 @@ class HTreeBuilder : public TreeBuilder
   }
 
  private:
-  utl::Logger* logger_;
+  odb::dbDatabase* db_;
   Box<double> sinkRegion_;
   std::vector<LevelTopology> topologyForEachLevel_;
   std::map<Point<double>, ClockInst*> mapLocationToSink_;

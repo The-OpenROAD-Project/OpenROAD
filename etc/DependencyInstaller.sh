@@ -76,8 +76,6 @@ _installCommonDev() {
     lemonVersion=1.3.1
     spdlogVersion=1.8.1
 
-    # temp dir to download and compile
-    baseDir=/tmp/installers
     rm -rf "${baseDir}"
     mkdir -p "${baseDir}"
     if [[ ! -z "${PREFIX}" ]]; then
@@ -209,7 +207,7 @@ _installOrTools() {
     orToolsVersionBig=9.5
     orToolsVersionSmall=${orToolsVersionBig}.2237
 
-    baseDir=/tmp/installers
+    rm -rf "${baseDir}"
     mkdir -p "${baseDir}"
     if [[ ! -z "${PREFIX}" ]]; then mkdir -p "${PREFIX}"; fi
     cd "${baseDir}"
@@ -584,6 +582,8 @@ PREFIX=""
 option="all"
 isLocal="false"
 equivalenceDeps="no"
+# temp dir to download and compile
+baseDir=$(mktemp -d /tmp/DependencyInstaller-XXXXXX)
 
 # default values, can be overwritten by cmdline args
 while [ "$#" -gt 0 ]; do
