@@ -123,7 +123,7 @@ void HTreeBuilder::preSinkClustering(
                                   options_->getSinkBuffer(),
                                   legalCenter.getX() * wireSegmentUnit_,
                                   legalCenter.getY() * wireSegmentUnit_);
-      if (logger_->debugCheck(CTS, "legalizer", 2) && (center != legalCenter)) {
+      if (center != legalCenter) {
         // clang-format off
 	debugPrint(logger_, CTS, "legalizer", 2,
 		   "preSinkClustering legalizeOneBuffer {}: {} => {}",
@@ -1227,7 +1227,7 @@ void HTreeBuilder::createClockSubNets()
   ClockInst& rootBuffer = clock_.addClockBuffer(
       "clkbuf_0", options_->getRootBuffer(), centerX, centerY);
 
-  if (logger_->debugCheck(CTS, "legalizer", 2) && (center != legalCenter)) {
+  if (center != legalCenter) {
     // clang-format off
     debugPrint(logger_, CTS, "legalizer", 2,
 	       "createClockSubNets legalizeOneBuffer clkbuf_0: {} => {}",
@@ -1247,8 +1247,7 @@ void HTreeBuilder::createClockSubNets()
                                              Point<double> branchPoint) {
     Point<double> legalBranchPoint
         = legalizeOneBuffer(branchPoint, options_->getRootBuffer());
-    if (logger_->debugCheck(CTS, "legalizer", 2)
-        && (branchPoint != legalBranchPoint)) {
+    if (branchPoint != legalBranchPoint) {
       // clang-format off
       debugPrint(logger_, CTS, "legalizer", 2, 
 		 "createClockSubNets first level legalizeOneBuffer before "
@@ -1295,8 +1294,7 @@ void HTreeBuilder::createClockSubNets()
 
       Point<double> legalBranchPoint
           = legalizeOneBuffer(branchPoint, options_->getRootBuffer());
-      if (logger_->debugCheck(CTS, "legalizer", 2)
-          && (branchPoint != legalBranchPoint)) {
+      if (branchPoint != legalBranchPoint) {
         // clang-format off
 	debugPrint(logger_, CTS, "legalizer", 2,
 		   "createClockSubNets legalizeOneBuffer before "
@@ -1368,7 +1366,7 @@ void HTreeBuilder::createSingleBufferClockNet()
   const int centerY = legalCenter.getY() * wireSegmentUnit_;
   ClockInst& rootBuffer = clock_.addClockBuffer(
       "clkbuf_0", options_->getRootBuffer(), centerX, centerY);
-  if (logger_->debugCheck(CTS, "legalizer", 2) && (center != legalCenter)) {
+  if (center != legalCenter) {
     // clang-format off
     debugPrint(logger_, CTS, "legalizer", 2,
 	       "createSingleBufferClockNet legalizeOneBuffer clkbuf_0: {} => {}",
@@ -1503,8 +1501,7 @@ void SegmentBuilder::build(const std::string& forceBuffer)
           buffMaster,
           legalBufferLoc.getX() * techCharDistUnit_,
           legalBufferLoc.getY() * techCharDistUnit_);
-      if (getTree()->getLogger()->debugCheck(CTS, "legalizer", 2)
-          && (bufferLoc != legalBufferLoc)) {
+      if (bufferLoc != legalBufferLoc) {
         // clang-format off
 	debugPrint(getTree()->getLogger(), CTS, "legalizer", 2,
 		   " SegmentBuilder::build legalizeOneBuffer {}: {} => {}",
