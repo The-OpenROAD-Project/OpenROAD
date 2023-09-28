@@ -344,7 +344,10 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
 
   // spacing value needed
   frCoord bloatDist = 0;
-  for (auto con : getDesign()->getTech()->getLayer(lNum)->getCutSpacing()) {
+  for (auto con : getDesign()
+                      ->getTech()
+                      ->getLayer(lNum)
+                      ->getLef58CutSpacingConstraints()) {
     bloatDist = max(bloatDist, con->getCutSpacing());
   }
 
@@ -385,10 +388,13 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
     xform.apply(tmpBx);
     box2boxDistSquare(box, tmpBx, dx, dy);
 
-    for (auto con : getDesign()->getTech()->getLayer(lNum)->getCutSpacing()) {
+    for (auto con : getDesign()
+                        ->getTech()
+                        ->getLayer(lNum)
+                        ->getLef58CutSpacingConstraints()) {
       hasViol = false;
       reqDist = con->getCutSpacing();
-      bool isC2C = con->hasCenterToCenter();
+      bool isC2C = con->isCenterToCenter();
       if (isH) {
         c2ctrackdist = abs(boxCenter.y() - trackLoc);
       } else {
@@ -451,12 +457,12 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
 
         blockBox.init(trackLoc, blockLeft, trackLoc, blockRight);
       }
-      if (con->hasSameNet()) {
+      if (con->isSameNet()) {
         continue;
       }
-      if (con->isLayer()) {
+      if (con->hasSecondLayer()) {
         ;
-      } else if (con->isAdjacentCuts()) {
+      } else if (con->hasAdjacentCuts()) {
         hasViol = true;
         // should disable hasViol and modify this part to new grid graph
       } else if (con->isParallelOverlap()) {
@@ -480,7 +486,7 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
             && blockBox.yMin() <= blockBox.yMax()) {
           hasViol = true;
         }
-      } else if (con->isArea()) {
+      } else if (con->hasArea()) {
         auto currArea = max(box.area(), tmpBx.area());
         if (currArea >= con->getCutArea()) {
           hasViol = true;

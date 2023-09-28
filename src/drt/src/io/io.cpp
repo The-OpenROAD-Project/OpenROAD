@@ -2077,7 +2077,8 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
 
   // read spacing constraint
   for (odb::dbTechLayerSpacingRule* rule : layer->getV54SpacingRules()) {
-    std::unique_ptr<frCutSpacingConstraint> cutSpacingConstraint;
+    auto cutSpacingConstraint = make_unique<frLef58CutSpacingConstraint>();
+    // std::unique_ptr<frLef58CutSpacingConstraint> cutSpacingConstraint;
     frCoord cutArea = rule->getCutArea();
     frCoord cutSpacing = rule->getSpacing();
     bool centerToCenter = rule->getCutCenterToCenter();
@@ -2113,17 +2114,26 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
                     "layer {}, please check your rule definition.",
                     layer->getName());
     }
-    cutSpacingConstraint = make_unique<frCutSpacingConstraint>(cutSpacing,
-                                                               centerToCenter,
-                                                               sameNet,
-                                                               secondLayerName,
-                                                               stack,
-                                                               adjacentCuts,
-                                                               cutWithin,
-                                                               exceptSamePGNet,
-                                                               parallelOverlap,
-                                                               cutArea);
-    tmpLayer->addCutSpacingConstraint(cutSpacingConstraint.get());
+    /*     cutSpacingConstraint =
+       make_unique<frCutSpacingConstraint>(cutSpacing, centerToCenter, sameNet,
+                                                                   secondLayerName,
+                                                                   stack,
+                                                                   adjacentCuts,
+                                                                   cutWithin,
+                                                                   exceptSamePGNet,
+                                                                   parallelOverlap,
+                                                                   cutArea); */
+    cutSpacingConstraint->setCutSpacing(cutSpacing);
+    cutSpacingConstraint->setCenterToCenter(centerToCenter);
+    cutSpacingConstraint->setSameNet(sameNet);
+    cutSpacingConstraint->setSecondLayerName(secondLayerName);
+    cutSpacingConstraint->setStack(stack);
+    cutSpacingConstraint->setAdjacentCuts(adjacentCuts);
+    cutSpacingConstraint->setCutWithin(cutWithin);
+    cutSpacingConstraint->setExceptSamePGNet(exceptSamePGNet);
+    cutSpacingConstraint->setParallelOverlap(parallelOverlap);
+    cutSpacingConstraint->setCutArea(cutArea);
+    tmpLayer->addLef58CutSpacingConstraint(cutSpacingConstraint.get());
     tech_->addUConstraint(std::move(cutSpacingConstraint));
   }
 

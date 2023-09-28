@@ -1647,7 +1647,7 @@ class frLef58SpacingTableConstraint : public frSpacingTableConstraint
 };
 
 // ADJACENTCUTS
-class frCutSpacingConstraint : public frConstraint
+/* class frCutSpacingConstraint : public frConstraint
 {
  public:
   // constructor
@@ -1739,7 +1739,7 @@ class frCutSpacingConstraint : public frConstraint
   // LEF58 related
   int twoCuts = -1;
 };
-
+ */
 // LEF58_SPACING for cut layer (new)
 class frLef58CutSpacingConstraint : public frConstraint
 {
@@ -1807,6 +1807,10 @@ class frLef58CutSpacingConstraint : public frConstraint
   bool isMaxXY() const { return maxXY; }
   bool isCenterToCenter() const { return centerToCenter; }
   bool isSameNet() const { return sameNet; }
+  frLef58CutSpacingConstraint* getSameNetConstraint()
+  {
+    return sameNetConstraint;
+  }
   bool isSameMetal() const { return sameMetal; }
   bool isSameVia() const { return sameVia; }
   std::string getSecondLayerName() const { return secondLayerName; }
@@ -2011,6 +2015,10 @@ class frLef58CutSpacingConstraint : public frConstraint
         numCut,
         cutArea);
   }
+  void setSameNetConstraint(frLef58CutSpacingConstraint* in)
+  {
+    sameNetConstraint = in;
+  }
 
  protected:
   frCoord cutSpacing;
@@ -2018,6 +2026,7 @@ class frLef58CutSpacingConstraint : public frConstraint
   bool maxXY;
   bool centerToCenter;
   bool sameNet;
+  frLef58CutSpacingConstraint* sameNetConstraint = nullptr;
   bool sameMetal;
   bool sameVia;
   std::string secondLayerName;
