@@ -28,6 +28,7 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0030]  Number of static layers: 1.
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
 [INFO CTS-0021]  Distance between buffers: 7 units (100 um).
+[DEBUG CTS-legalizer] preSinkClustering legalizeOneBuffer clkbuf_leaf_10: [(7.220, 8.032)] => [(7.220, 7.600)]
 [INFO CTS-0019]  Total number of sinks after clustering: 29.
 [INFO CTS-0024]  Normalized sink region: [(1.26757, 0.912143), (13.4493, 11.6927)].
 [INFO CTS-0025]     Width:  12.1817.
@@ -45,6 +46,9 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0034]     Segment length (rounded): 2.
     Key: 12 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 2 delay: 1
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[DEBUG CTS-legalizer] selectBestNewLocation point [(11.358, 7.302)] is outside blockage (10.326 7.800) (12.019 8.400)
+[DEBUG CTS-legalizer]   selectBestNewLocation for level 1 buffer: [(11.178, 8.122)] => [(11.358, 7.302)]
+[DEBUG CTS-legalizer] createClockSubNets legalizeOneBuffer clkbuf_0: [(7.358, 6.302)] => [(7.358, 6.064)]
 [INFO CTS-0035]  Number of sinks covered: 29.
 [DEBUG CTS-legalizer] Htree file cts.clk.buffer has been generated
 [DEBUG CTS-legalizer] Run 'obsAwareCts.py cts.clk.buffer' to produce cts.clk.buffer.png
