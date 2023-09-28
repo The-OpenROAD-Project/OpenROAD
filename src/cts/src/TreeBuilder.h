@@ -120,7 +120,7 @@ class TreeBuilder
                     double x2,
                     double y2)
   {
-    if ((x > x1) && (x < x2) && (y > y1) && (y < y2)) {
+    if ((x >= x1) && (x <= x2) && (y >= y1) && (y <= y2)) {
       return true;
     }
     return false;
@@ -133,6 +133,7 @@ class TreeBuilder
                     double& y2);
   Point<double> legalizeOneBuffer(Point<double> bufferLoc,
                                   const std::string& bufferName);
+  utl::Logger* getLogger() { return logger_; }
 
  protected:
   CtsOptions* options_ = nullptr;

@@ -64,6 +64,7 @@ class SegmentBuilder
 
   Clock::SubNet* getDrivingSubNet() const { return drivingSubNet_; }
   unsigned getNumBufferLevels() const { return numBufferLevels_; }
+  TreeBuilder* getTree() const { return tree_; }
 
  private:
   const std::string instPrefix_;
@@ -179,7 +180,12 @@ class HTreeBuilder : public TreeBuilder
   }
 
   void run(odb::dbDatabase* db) override;
-
+  bool moveAlongBlockageBoundary(const Point<double>& parentPoint,
+                                 Point<double>& branchPoint,
+                                 double x1,
+                                 double y1,
+                                 double x2,
+                                 double y2);
   void legalize();
   void legalizeDummy();
   void plotSolution();
