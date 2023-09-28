@@ -174,12 +174,12 @@ class HTreeBuilder : public TreeBuilder
                Clock& net,
                TreeBuilder* parent,
                utl::Logger* logger,
-               odb::dbDatabase* db = nullptr)
+               odb::dbDatabase* db)
       : TreeBuilder(options, net, parent, logger, db)
   {
   }
 
-  void run(odb::dbDatabase* db) override;
+  void run() override;
   bool moveAlongBlockageBoundary(const Point<double>& parentPoint,
                                  Point<double>& branchPoint,
                                  double x1,
@@ -296,7 +296,6 @@ class HTreeBuilder : public TreeBuilder
   }
 
  private:
-  odb::dbDatabase* db_;
   Box<double> sinkRegion_;
   std::vector<LevelTopology> topologyForEachLevel_;
   std::map<Point<double>, ClockInst*> mapLocationToSink_;
