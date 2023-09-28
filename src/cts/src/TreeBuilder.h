@@ -59,7 +59,7 @@ class TreeBuilder
               Clock& clk,
               TreeBuilder* parent,
               utl::Logger* logger,
-              odb::dbDatabase* db)
+              odb::dbDatabase* db = nullptr)
       : options_(options),
         clock_(clk),
         parent_(parent),
@@ -71,7 +71,7 @@ class TreeBuilder
     }
   }
 
-  virtual void run(odb::dbDatabase* db) = 0;
+  virtual void run() = 0;
   void initBlockages();
   void setTechChar(TechChar& techChar) { techChar_ = &techChar; }
   const Clock& getClock() const { return clock_; }
