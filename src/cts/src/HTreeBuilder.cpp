@@ -591,9 +591,8 @@ void HTreeBuilder::legalize()
   legalizeDummy();
 }
 
-void HTreeBuilder::run(odb::dbDatabase* db)
+void HTreeBuilder::run()
 {
-  db_ = db;
   logger_->info(
       CTS, 27, "Generating H-Tree topology for net {}.", clock_.getName());
   logger_->info(CTS, 28, " Total number of sinks: {}.", clock_.getNumSinks());
