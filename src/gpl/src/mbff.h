@@ -42,7 +42,6 @@ class Logger;
 
 namespace gpl {
 
-
 struct Tray {
     odb::Point pt;
     std::vector<odb::Point> slots;
@@ -66,7 +65,8 @@ class MBFF {
 
   public:
     MBFF(int num_flops, int num_paths, const std::vector<odb::Point> &points,
-         const std::vector<std::pair<int, int> > &paths, int threads, utl::Logger *logger);
+         const std::vector<Path> &paths, int threads, int knn, int multistart, 
+         utl::Logger *log);
     ~MBFF();
 
     void Run(int mx_sz, float alpha, float beta);
@@ -76,43 +76,43 @@ class MBFF {
     int GetBitCnt(const int bit_idx);
     float GetDist(const odb::Point &a, const odb::Point &b);
 
-    void GetSlots(const odb::Point &tray, const int rows,
-                                     const int cols, std::vector<odb::Point> &slots);
+    void GetSlots(const odb::Point &tray, const int rows, const int cols,
+                  std::vector<odb::Point> &slots);
     Flop GetNewFlop(const std::vector<Flop> &prob_dist, const float tot_dist);
-    void GetStartTrays(std::vector<Flop> flops,
-                                    const int num_trays, const float AR, std::vector<Tray> &trays);
+    void GetStartTrays(std::vector<Flop> flops, const int num_trays,
+                       const float AR, std::vector<Tray> &trays);
     Tray GetOneBit(const odb::Point &pt);
 
-    
     void MinCostFlow(const std::vector<Flop> &flops, std::vector<Tray> &trays,
-                int sz, std::vector<std::pair<int, int> > &cluster);
+                     int sz, std::vector<std::pair<int, int> > &clusters);
 
     float GetSilh(const std::vector<Flop> &flops,
                   const std::vector<Tray> &trays,
                   const std::vector<std::pair<int, int> > &clusters);
 
-    void KMeans(const std::vector<Flop> &flops, int K, std::vector<std::vector<Flop> > &clusters);
-    void KMeansDecomp(const std::vector<Flop> &flops, int MAX_SZ, std::vector<std::vector<Flop> > &pointsets);
-
+    std::vector<std::vector<Flop> >& KMeans(const std::vector<Flop> &flops);
+    std::vector<std::vector<Flop> >& 
+    KMeansDecomp(const std::vector<Flop> &flops, int MAX_SZ);
 
     void RunCapacitatedKMeans(const std::vector<Flop> &flops,
-                         std::vector<Tray> &trays, int sz, int iter, std::vector<std::pair<int, int> > &cluster);
+                              std::vector<Tray> &trays, int sz, int iter,
+                              std::vector<std::pair<int, int> > &cluster);
 
-    void RunSilh(const std::vector<Flop> &pointset, std::vector<std::vector<Tray> > &trays);
-
-    void Remap(const std::vector<Flop> &flops,
-               std::vector<std::vector<Tray> > &trays);
+    std::vector<std::vector<Tray> >&
+    RunSilh(const std::vector<Flop> &pointset,
+            std::vector<std::vector<std::vector<Tray> > > &start_trays);
 
     float RunLP(const std::vector<Flop> &flops, std::vector<Tray> &trays,
                 const std::vector<std::pair<int, int> > &clusters);
-    void RunILP(const std::vector<Flop> &flops, const std::vector<Path> &paths,
-                const std::vector<std::vector<Tray> > &all_trays, float alpha,
-                float beta);
-
+    float RunILP(const std::vector<Flop> &flops,
+                 const std::vector<std::vector<Tray> > &all_trays, float alpha,
+                 float beta);
 
     utl::Logger *log_;
     std::vector<Flop> flops_;
-    std::vector<Path> paths_;
+    std::set<int> flops_in_path_;
     int num_threads_;
+    int knn_;
+    int multistart_;
 };
 }
