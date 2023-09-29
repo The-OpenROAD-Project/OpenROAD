@@ -23,6 +23,7 @@ jobs:
           if [ -z "$(git status --porcelain)" ]; then
             exit 0
           else
+            git status --porcelain
             printf "Your ODB generated files are out of date\n"
             printf "run ./generate in the src/odb/src/codeGenerator folder"
             exit 1
