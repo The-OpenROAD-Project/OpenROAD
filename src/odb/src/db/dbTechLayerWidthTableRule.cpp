@@ -84,8 +84,7 @@ void _dbTechLayerWidthTableRule::out(dbDiff& diff,
 
 _dbTechLayerWidthTableRule::_dbTechLayerWidthTableRule(_dbDatabase* db)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field = 0;
+  flags_ = {};
 }
 
 _dbTechLayerWidthTableRule::_dbTechLayerWidthTableRule(
