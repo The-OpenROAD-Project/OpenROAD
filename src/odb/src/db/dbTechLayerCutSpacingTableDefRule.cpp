@@ -214,8 +214,7 @@ void _dbTechLayerCutSpacingTableDefRule::out(dbDiff& diff,
 _dbTechLayerCutSpacingTableDefRule::_dbTechLayerCutSpacingTableDefRule(
     _dbDatabase* db)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field = 0;
+  flags_ = {};
   default_ = 0;
   prl_ = 0;
   extension_ = 0;

@@ -118,8 +118,7 @@ void _dbTechLayerEolKeepOutRule::out(dbDiff& diff,
 
 _dbTechLayerEolKeepOutRule::_dbTechLayerEolKeepOutRule(_dbDatabase* db)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field = 0;
+  flags_ = {};
   eol_width_ = 0;
   backward_ext_ = 0;
   forward_ext_ = 0;
