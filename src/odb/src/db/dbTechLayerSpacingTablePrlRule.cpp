@@ -95,8 +95,7 @@ void _dbTechLayerSpacingTablePrlRule::out(dbDiff& diff,
 _dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
     _dbDatabase* db)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field = 0;
+  flags_ = {};
   eol_width_ = 0;
 }
 
