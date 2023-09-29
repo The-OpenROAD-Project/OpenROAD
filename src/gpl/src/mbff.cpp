@@ -187,7 +187,7 @@ instead, we add a coefficient of 2 to (a) for each flop that is in a timing-crit
 
 float MBFF::RunILP(const std::vector<Flop> &flops,
                    const std::vector<std::vector<Tray> > &all_trays,
-                   float alpha, float beta) {
+                   float alpha) {
     std::vector<Tray> trays;
     for (int i = 0; i < NUM_SIZES; i++) {
         trays.insert(trays.end(), all_trays[i].begin(), all_trays[i].end());
@@ -243,9 +243,9 @@ float MBFF::RunILP(const std::vector<Flop> &flops,
             const int slot_idx = cand_slot[i][j];
 
             const float shift_x =
-                trays[tray_idx].slots[slot_idx].x - flops[i].pt.x();
+                trays[tray_idx].slots[slot_idx].x() - flops[i].pt.x();
             const float shift_y =
-                trays[tray_idx].slots[slot_idx].y - flops[i].pt.y();
+                trays[tray_idx].slots[slot_idx].y() - flops[i].pt.y();
 
             max_dist = std::max(max_dist, std::max(shift_x, -shift_x) +
                                               std::max(shift_y, -shift_y));
@@ -378,8 +378,26 @@ float MBFF::RunILP(const std::vector<Flop> &flops,
             operations_research::sat::CpSolverStatus::FEASIBLE ||
         response.status() ==
             operations_research::sat::CpSolverStatus::OPTIMAL) {
+
+        // update slot_disp_ vectors
+        for (int i = 0; i < num_flops; i++) {
+            for (int j = 0; j < static_cast<int>(cand_tray[i].size()); j++) {
+                if (operations_research::sat::SolutionIntegerValue(
+                        response, mapped[i][j]) == 1) {
+                    slot_disp_x_[flops[i].idx] =
+                        trays[cand_tray[i][j]].slots[cand_slot[i][j]].x() -
+                        flops[i].pt.x();
+                    slot_disp_y_[flops[i].idx] =
+                        trays[cand_tray[i][j]].slots[cand_slot[i][j]].y() -
+                        flops[i].pt.y();
+                }
+            }
+        }
+
         return static_cast<float>(response.objective_value());
     }
+
+    return 0;
 }
 
 void MBFF::GetSlots(const odb::Point &tray, int rows, int cols,
@@ -658,7 +676,6 @@ MBFF::RunSilh(const std::vector<Flop> &flops,
             int rows = GetRows(GetBitCnt(i));
             int cols = GetBitCnt(i) / rows;
             int num_trays = (num_flops + (GetBitCnt(i) - 1)) / GetBitCnt(i);
-            float AR = (cols * WIDTH * RATIOS[i]) / (rows * HEIGHT);
 
             for (int k = 0; k < num_trays; k++) {
                 GetSlots(start_trays[i][j][k].pt, rows, cols,
@@ -934,6 +951,18 @@ std::vector<std::vector<Flop> >& MBFF::KMeansDecomp(const std::vector<Flop> &flo
     return *pointsets;
 }
 
+double MBFF::GetTCPDisplacement(float beta) {
+    double ret = 0;
+    for (int i = 0; i < static_cast<int>(paths_.size()); i++) {
+        float diff_x = slot_disp_x_[paths_[i].start_point] -
+                       slot_disp_x_[paths_[i].end_point];
+        float diff_y = slot_disp_y_[paths_[i].start_point] -
+                       slot_disp_y_[paths_[i].end_point];
+        ret += (std::max(diff_x, -diff_x) + std::max(diff_y, -diff_y));
+    }
+    return (beta * ret);
+}
+
 void MBFF::Run(int mx_sz, float alpha, float beta) {
     srand(1);
     omp_set_num_threads(num_threads_);
@@ -997,7 +1026,7 @@ void MBFF::Run(int mx_sz, float alpha, float beta) {
         ans += RunILP(pointsets[t], cur_trays, 20.0, 1.0);
         delete &cur_trays;
     }
-
+    ans += GetTCPDisplacement(beta);
     log_->info(utl::GPL, 22, "Total = {}", ans);
 }
 
@@ -1011,9 +1040,18 @@ MBFF::MBFF(int num_flops, int num_paths, const std::vector<odb::Point> &points,
         flops_.emplace_back(new_flop);
     }
 
+    paths_.reserve(num_paths);
     for (int i = 0; i < num_paths; i++) {
+        paths_.emplace_back(paths[i]);
         flops_in_path_.insert(paths[i].start_point);
         flops_in_path_.insert(paths[i].end_point);
+    }
+
+    slot_disp_x_.reserve(num_flops);
+    slot_disp_y_.reserve(num_flops);
+    for (int i = 0; i < num_flops; i++) {
+        slot_disp_x_.emplace_back(0);
+        slot_disp_y_.emplace_back(0);
     }
 
     log_ = log;
