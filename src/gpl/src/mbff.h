@@ -33,6 +33,7 @@
 #pragma once
 
 #include <vector>
+#include <set>
 #include "odb/db.h"
 #include "utl/Logger.h"
 
@@ -105,14 +106,18 @@ class MBFF {
     float RunLP(const std::vector<Flop> &flops, std::vector<Tray> &trays,
                 const std::vector<std::pair<int, int> > &clusters);
     float RunILP(const std::vector<Flop> &flops,
-                 const std::vector<std::vector<Tray> > &all_trays, float alpha,
-                 float beta);
+                 const std::vector<std::vector<Tray> > &all_trays, float alpha);
 
-    utl::Logger *log_;
+    double GetTCPDisplacement(float beta);
+
     std::vector<Flop> flops_;
+    std::vector<Path> paths_;
     std::set<int> flops_in_path_;
+    std::vector<int> slot_disp_x_;
+    std::vector<int> slot_disp_y_;
     int num_threads_;
     int knn_;
     int multistart_;
+    utl::Logger *log_;
 };
 }
