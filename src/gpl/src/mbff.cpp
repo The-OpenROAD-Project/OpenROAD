@@ -1023,7 +1023,7 @@ void MBFF::Run(int mx_sz, float alpha, float beta) {
             }
         }
 
-        ans += RunILP(pointsets[t], cur_trays, 20.0, 1.0);
+        ans += RunILP(pointsets[t], cur_trays, 20.0);
         delete &cur_trays;
     }
     ans += GetTCPDisplacement(beta);
