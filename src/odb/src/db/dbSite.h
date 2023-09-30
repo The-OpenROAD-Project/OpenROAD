@@ -57,6 +57,45 @@ struct dbSiteFlags
   uint _spare_bits : 24;
 };
 
+class RowPattern
+{
+ private:
+  uint n;
+  std::vector<std::pair<std::string, dbOrientType>> pattern;
+
+ public:
+  dbOrientType getOrientation(int index) { return pattern.at(index).second; }
+  std::string getSite(int index) { return pattern.at(index).first; }
+  void reserve(int size) { pattern.reserve(size); }
+  void addRowPattern(std::string siteName, dbOrientType orientation){
+    pattern.emplace_back(siteName, orientation);
+  }
+
+  friend dbOStream& operator<<(dbOStream& stream, const RowPattern& rp)
+  {
+    stream << rp.n;
+    for (auto& p : rp.pattern) {
+      stream << p.first;
+      stream << p.second.getString();
+    }
+    return stream;
+  }
+
+  friend dbIStream& operator>>(dbIStream& stream, RowPattern& rp)
+  {
+    stream >> rp.n;
+    rp.pattern.reserve(rp.n);
+    for (int i = 0; i < rp.n; i++) {
+      std::string child_site_name;
+      std::string orient;
+      stream >> child_site_name;
+      stream >> orient;
+      rp.pattern.emplace_back(child_site_name, dbOrientType(orient.c_str()));
+    }
+    return stream;
+  }
+};
+
 class _dbSite : public _dbObject
 {
  public:
@@ -66,6 +105,7 @@ class _dbSite : public _dbObject
   uint _height;
   uint _width;
   dbId<_dbSite> _next_entry;
+  RowPattern _row_pattern;
 
   _dbSite(_dbDatabase*, const _dbSite& s);
   _dbSite(_dbDatabase*);
@@ -85,6 +125,7 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbSite& site)
   stream << site._height;
   stream << site._width;
   stream << site._next_entry;
+  stream << site._row_pattern;
   return stream;
 }
 
@@ -96,6 +137,7 @@ inline dbIStream& operator>>(dbIStream& stream, _dbSite& site)
   stream >> site._height;
   stream >> site._width;
   stream >> site._next_entry;
+  stream >> site._row_pattern;
   return stream;
 }
 

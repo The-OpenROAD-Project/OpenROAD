@@ -5164,12 +5164,11 @@ class dbLib : public dbObject
 ///////////////////////////////////////////////////////////////////////////////
 class dbSite : public dbObject
 {
- private:
-  std::vector<std::pair<dbSite*, dbOrientType>> _row_patterns;
   dbSite* parent;  // parent site (null if site is a hybridParent, for hybrid
                    // cells it wili)
 
  public:
+  std::vector<std::pair<dbSite*, dbOrientType>> _row_patterns;
   ///
   /// Get the site name.
   ///

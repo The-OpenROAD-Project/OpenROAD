@@ -106,6 +106,8 @@ void Opendp::initGridLayersMap()
             site_idx_to_grid_idx[child_site->getId()] = grid_index++;
           }
         }
+      } else {
+        site_idx_to_grid_idx[site->getId()] = grid_index++;
       }
     }
     if (!site->isHybrid()) {
@@ -115,8 +117,9 @@ void Opendp::initGridLayersMap()
             = Grid_map_key{site_idx_to_grid_idx[site->getId()]};
       }
     }
-    if(min_site_height == std::numeric_limits<int>::max()){
-      logger_->error(DPL, 128, "Cannot find a non-hybrid grid to use for placement.");
+    if (min_site_height == std::numeric_limits<int>::max()) {
+      logger_->error(
+          DPL, 128, "Cannot find a non-hybrid grid to use for placement.");
     }
   }
 
@@ -794,32 +797,32 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
                layer.first.grid_index,
                layer_y_end);
 
-    debugPrint(
-        logger_,
-        DPL,
-        "detailed",
-        1,
-        "Mapping coordinates start from grid idx {} to grid idx {}. From [x{} y{}] "
-        "it became [x{} y{}].",
-        gmk.grid_index,
-        layer.first.grid_index,
-        grid_x,
-        grid_y,
-        layer_x,
-        layer_y);
-    debugPrint(
-        logger_,
-        DPL,
-        "detailed",
-        1,
-        "Mapping coordinates end from grid idx {} to grid idx {}. From [x{} y{}] "
-        "it became [x{} y{}].",
-        gmk.grid_index,
-        layer.first.grid_index,
-        x_end,
-        y_end,
-        layer_x_end,
-        layer_y_end);
+    debugPrint(logger_,
+               DPL,
+               "detailed",
+               1,
+               "Mapping coordinates start from grid idx {} to grid idx {}. "
+               "From [x{} y{}] "
+               "it became [x{} y{}].",
+               gmk.grid_index,
+               layer.first.grid_index,
+               grid_x,
+               grid_y,
+               layer_x,
+               layer_y);
+    debugPrint(logger_,
+               DPL,
+               "detailed",
+               1,
+               "Mapping coordinates end from grid idx {} to grid idx {}. From "
+               "[x{} y{}] "
+               "it became [x{} y{}].",
+               gmk.grid_index,
+               layer.first.grid_index,
+               x_end,
+               y_end,
+               layer_x_end,
+               layer_y_end);
 
     if (layer_x_end == layer_x) {
       ++layer_x_end;
