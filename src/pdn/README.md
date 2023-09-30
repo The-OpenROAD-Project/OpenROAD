@@ -1,6 +1,6 @@
-# PDN Analysis
+# Power Distribution Network Generator
 
-The power distribution network (PDN) analysis module in OpenROAD (`pdn`) 
+The power distribution network (PDN) generator module in OpenROAD (`pdn`) 
 is based on the PDNGEN tool. 
 This utility aims to simplify the process of adding a power grid into a
 floorplan. The aim is to specify a small set of power grid policies to be
@@ -363,22 +363,6 @@ repair_pdn_vias
 | ----- | ----- |
 | `-all` | Repair vias on all supply nets. |
 | `-net` | Repair only vias on the specified net. |
-
-### Converting former PDNGEN configuration file to Tcl commands
-
-To get an initial conversion from the former PDNGEN configuration file to the current tcl commands use `convert_pdn_config`.
-This command will provide an initial set of commands based on the provided file, it is recommended that the user double-check
-the conversion to ensure nothing was missed.
-
-```tcl
-convert_pdn_config config_file
-```
-
-#### Options
-
-| Switch Name | Description |
-| ----- | ----- |
-| `config_file` | Path to the old configuration file. |
 
 ### Useful Developer Commands
 
