@@ -90,7 +90,7 @@ class RenderThread : public QThread
  private:
   void run() override;
 
-  void drawBlockConcurrent(QImage& image,
+  void drawBlockConcurrent(QPainter* painter,
                            odb::dbBlock* block,
                            QVector<QRect>& subRects,
                            QVector<QFuture<QImage>>& futures,

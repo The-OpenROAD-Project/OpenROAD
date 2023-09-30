@@ -33,7 +33,6 @@
 #include "renderThread.h"
 
 #include <QPainterPath>
-
 #include "layoutViewer.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
@@ -165,7 +164,6 @@ void RenderThread::drawConcurrent(QImage& image,
   QPainter painter(&image);
   painter.setRenderHints(QPainter::Antialiasing);
 
-/* TODO - delete this */
   // Fill draw region with the background
   image.fill(background);
 
@@ -174,7 +172,6 @@ void RenderThread::drawConcurrent(QImage& image,
   // Ensure there's at least one thread and not more threads than the ideal
   // count
   threadCount = qMax(1, qMin(threadCount, QThread::idealThreadCount()));
-
   QVector<QRect> subRects;
   QVector<QFuture<QImage>> futures;
 
@@ -195,7 +192,7 @@ void RenderThread::drawConcurrent(QImage& image,
   painter.scale(viewer_->pixels_per_dbu_, -viewer_->pixels_per_dbu_);
   painter.scale(render_ratio, render_ratio);
 
-  drawBlockConcurrent(image, viewer_->block_, subRects, futures, threadCount, draw_bounds, 0);
+  drawBlockConcurrent(&painter, viewer_->block_, subRects, futures, threadCount, draw_bounds, 0);
 
   GuiPainter gui_painter(&painter,
                          viewer_->options_,
@@ -1047,7 +1044,7 @@ void RenderThread::drawLayer(QPainter* painter,
 
 // Draw the region of the block.  Depth is not yet used but
 // is there for hierarchical design support.
-void RenderThread::drawBlockConcurrent(QImage& image,
+void RenderThread::drawBlockConcurrent(QPainter* painter,
                              dbBlock* block,
                              QVector<QRect>& subRects,
                              QVector<QFuture<QImage>>& futures,
@@ -1062,24 +1059,21 @@ void RenderThread::drawBlockConcurrent(QImage& image,
   utl::Timer manufacturing_grid_timer;
   const int instance_limit = viewer_->instanceSizeLimit();
 
-  QPainter painter(&image);
-  painter.setRenderHints(QPainter::Antialiasing);
-
-  GuiPainter gui_painter(&painter,
+  GuiPainter gui_painter(painter,
                          viewer_->options_,
                          dbu_bounds,
                          viewer_->pixels_per_dbu_,
                          block->getDbUnitsPerMicron());
 
   // Draw die area, if set
-  painter.setPen(QPen(Qt::gray, 0));
-  painter.setBrush(QBrush());
+  painter->setPen(QPen(Qt::gray, 0));
+  painter->setBrush(QBrush());
   Rect bbox = block->getDieArea();
   if (bbox.area() > 0) {
-    painter.drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
+    painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
   }
 
-  drawManufacturingGrid(&painter, dbu_bounds);
+  drawManufacturingGrid(painter, dbu_bounds);
   debugPrint(logger_,
              GUI,
              "draw",
@@ -1133,7 +1127,7 @@ void RenderThread::drawBlockConcurrent(QImage& image,
   /* Draw instance outlines */
   utl::Timer insts_outline;
   {
-    for (const auto& sub_insts : sub_insts) {
+    for (const auto& insts : sub_insts) {
       futures.push_back(
           QtConcurrent::run([=]() {
             QImage subImage(draw_bounds.width(),
@@ -1147,14 +1141,14 @@ void RenderThread::drawBlockConcurrent(QImage& image,
     for (int i = 0; i < threadCount; ++i) {
       futures[i].waitForFinished();
       auto subImage = futures[i].result();
-      painter.drawImage(QPoint(subRects[i].left() - draw_bounds.left(), 0), subImage);
+      painter->drawImage(QPoint(subRects[i].left() - draw_bounds.left(), 0), subImage);
     }
   }
   debugPrint(logger_, GUI, "draw", 1, "inst outline render {}", insts_outline);
 
   // draw blockages
   utl::Timer inst_blockages;
-  drawBlockages(&painter, block, dbu_bounds);
+  drawBlockages(painter, block, dbu_bounds);
   debugPrint(logger_, GUI, "draw", 1, "blockages {}", inst_blockages);
 
   dbTech* tech = block->getTech();
@@ -1162,19 +1156,53 @@ void RenderThread::drawBlockConcurrent(QImage& image,
     if (restart_) {
       break;
     }
-    drawLayer(&painter, block, layer, insts, dbu_bounds, gui_painter);
+    drawLayer(painter, block, layer, insts, dbu_bounds, gui_painter);
   }
 
   utl::Timer inst_names;
-  drawInstanceNames(&painter, insts);
+  {
+    for (const auto& insts : sub_insts) {
+      futures.push_back(
+          QtConcurrent::run([=]() {
+            QImage subImage(draw_bounds.width(),
+                            draw_bounds.height(),
+                              QImage::Format_ARGB32_Premultiplied);
+            QPainter subPainter(&subImage);
+            drawInstanceNames(&subPainter, insts);
+            return subImage;
+          }));
+    }
+    for (int i = 0; i < threadCount; ++i) {
+      futures[i].waitForFinished();
+      auto subImage = futures[i].result();
+      painter->drawImage(QPoint(subRects[i].left() - draw_bounds.left(), 0), subImage);
+    }
+  }
   debugPrint(logger_, GUI, "draw", 1, "instance names {}", inst_names);
 
   utl::Timer inst_iterms;
-  drawITermLabels(&painter, insts);
+  {
+    for (const auto& insts : sub_insts) {
+      futures.push_back(
+          QtConcurrent::run([=]() {
+            QImage subImage(draw_bounds.width(),
+                            draw_bounds.height(),
+                              QImage::Format_ARGB32_Premultiplied);
+            QPainter subPainter(&subImage);
+            drawITermLabels(&subPainter, insts);
+            return subImage;
+          }));
+    }
+    for (int i = 0; i < threadCount; ++i) {
+      futures[i].waitForFinished();
+      auto subImage = futures[i].result();
+      painter->drawImage(QPoint(subRects[i].left() - draw_bounds.left(), 0), subImage);
+    }
+  }
   debugPrint(logger_, GUI, "draw", 1, "instance iterms {}", inst_iterms);
 
   utl::Timer inst_rows;
-  drawRows(&painter, block, dbu_bounds);
+  drawRows(painter, block, dbu_bounds);
   debugPrint(logger_, GUI, "draw", 1, "rows {}", inst_rows);
 
   utl::Timer inst_access_points;
@@ -1184,11 +1212,28 @@ void RenderThread::drawBlockConcurrent(QImage& image,
   debugPrint(logger_, GUI, "draw", 1, "access points {}", inst_access_points);
 
   utl::Timer inst_module_view;
-  drawModuleView(&painter, insts);
+  {
+    for (const auto& insts : sub_insts) {
+      futures.push_back(
+          QtConcurrent::run([=]() {
+            QImage subImage(draw_bounds.width(),
+                            draw_bounds.height(),
+                              QImage::Format_ARGB32_Premultiplied);
+            QPainter subPainter(&subImage);
+            drawModuleView(&subPainter, insts);
+            return subImage;
+          }));
+    }
+    for (int i = 0; i < threadCount; ++i) {
+      futures[i].waitForFinished();
+      auto subImage = futures[i].result();
+      painter->drawImage(QPoint(subRects[i].left() - draw_bounds.left(), 0), subImage);
+    }
+  }
   debugPrint(logger_, GUI, "draw", 1, "module view {}", inst_module_view);
 
   utl::Timer inst_regions;
-  drawRegions(&painter, block);
+  drawRegions(painter, block);
   debugPrint(logger_, GUI, "draw", 1, "regions {}", inst_regions);
 
   utl::Timer inst_pin_markers;
@@ -1198,7 +1243,7 @@ void RenderThread::drawBlockConcurrent(QImage& image,
   debugPrint(logger_, GUI, "draw", 1, "pin markers {}", inst_pin_markers);
 
   utl::Timer inst_cell_grid;
-  drawGCellGrid(&painter, dbu_bounds);
+  drawGCellGrid(painter, dbu_bounds);
   debugPrint(logger_, GUI, "draw", 1, "save cell grid {}", inst_cell_grid);
 
   utl::Timer inst_save_restore;
