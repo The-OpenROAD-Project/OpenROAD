@@ -155,7 +155,7 @@ struct Cell
 
   bool isHybrid() const
   {
-    if (!db_inst_ || !db_inst_->getMaster() || !getSite()) {
+    if (!getSite()) {
       return false;
     }
     return getSite()->isHybrid();
@@ -163,13 +163,19 @@ struct Cell
 
   bool isHybridParent() const
   {
-    if (!db_inst_ || !db_inst_->getMaster() || !getSite()) {
+    if (!getSite()) {
       return false;
     }
     return getSite()->isHybridParent();
   }
 
-  dbSite* getSite() const { return db_inst_->getMaster()->getSite(); }
+  dbSite* getSite() const
+  {
+    if (!db_inst_ || !db_inst_->getMaster()) {
+      return nullptr;
+    }
+    return db_inst_->getMaster()->getSite();
+  }
 };
 
 struct Group

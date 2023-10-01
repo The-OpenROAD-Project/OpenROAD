@@ -920,7 +920,7 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
                    1,
                    "Cell {} has site {} while pixel has site {}",
                    cell->name(),
-                   cell->db_inst_->getMaster()->getSite()->getName(),
+                   cell->getSite()->getName(),
                    valid_grid_pixel && valid_grid_pixel->site != nullptr
                        ? valid_grid_pixel->site->getName()
                        : "null");
@@ -944,7 +944,7 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
                    1,
                    "Cell {} has site {} while pixel has site {}",
                    cell->name(),
-                   cell->db_inst_->getMaster()->getSite()->getName(),
+                   cell->getSite()->getName(),
                    valid_grid_pixel && valid_grid_pixel->site != nullptr
                        ? valid_grid_pixel->site->getName()
                        : "null");
@@ -1018,7 +1018,7 @@ bool Opendp::checkPixels(const Cell* cell,
   if (!checkRegionOverlap(cell, x, y, x_end, y_end)) {
     return false;
   }
-  auto cell_site = cell->db_inst_->getMaster()->getSite();
+  auto cell_site = cell->getSite();
   int layer = row_info.second.getGridIndex();
   for (int y1 = y; y1 < y_end; y1++) {
     for (int x1 = x; x1 < x_end; x1++) {

@@ -352,6 +352,9 @@ bool Opendp::isPaddedType(dbInst* inst) const
 
 bool Opendp::isStdCell(const Cell* cell) const
 {
+  if (cell->db_inst_ == nullptr) {
+    return false;
+  }
   dbMasterType type = cell->db_inst_->getMaster()->getType();
   // Use switch so if new types are added we get a compiler warning.
   switch (type) {
@@ -610,7 +613,7 @@ Grid_map_key Opendp::getGridMapKey(const Cell* cell) const
   if (cell == nullptr) {
     logger_->error(DPL, 5211, "getGridMapKey cell is null");
   }
-  auto site = cell->db_inst_->getMaster()->getSite();
+  auto site = cell->getSite();
   if (!isStdCell(cell)) {
     // non std cells can go to the first grid.
     return smallest_non_hybrid_grid_key;

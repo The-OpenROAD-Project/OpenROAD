@@ -349,7 +349,7 @@ bool Opendp::checkInRows(const Cell& cell) const
              "Checking cell {} with site {} and "
              "height {} in rows. Y start {} y end {}",
              cell.name(),
-             cell.db_inst_->getMaster()->getSite()->getName(),
+             cell.getSite()->getName(),
              cell.height_,
              y_ll,
              y_ur);
@@ -362,7 +362,7 @@ bool Opendp::checkInRows(const Cell& cell) const
         return false;
       }
       if (pixel->site->getId()
-          != cell.db_inst_->getMaster()->getSite()->getId()) {
+          != cell.getSite()->getId()) {
         // logger_->warn(
         //     DPL,
         //     977,
