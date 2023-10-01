@@ -1094,18 +1094,11 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
                                ->getLayer(currLayerNum)
                                ->getWidth();  // for ISPD off track pins
           if (isPinRectHorz) {
-            bool didUseCenterline = false;
             frCoord manuGrid = getTech()->getManufacturingGrid();
             auto centerY = (instPinRectBBox.yMax() + instPinRectBBox.yMin()) / 2
                            / manuGrid * manuGrid;
             if (centerY >= yl(routeRect) && centerY < yh(routeRect)) {
               yLocs.insert(centerY);
-              didUseCenterline = true;
-            }
-            if (!didUseCenterline) {
-              getTrackLocs(true, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
-            }
-            if (didUseCenterline) {
               if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
                 getTrackLocs(
                     false, currLayerNum + 2, xl(pinRect), xh(pinRect), xLocs);
@@ -1114,6 +1107,7 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
                     false, currLayerNum - 2, xl(pinRect), xh(pinRect), xLocs);
               }
             } else {
+              getTrackLocs(true, currLayerNum, yl(pinRect), yh(pinRect), yLocs);
               frCoord lowerBoundX = xl(pinRect);
               frCoord upperBoundX = xh(pinRect);
               if ((upperBoundX - lowerBoundX) >= 2 * layerWidth) {
@@ -1128,21 +1122,12 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
                     false, currLayerNum - 2, lowerBoundX, upperBoundX, xLocs);
               }
             }
-
           } else {
-            bool didUseCenterline = false;
             frCoord manuGrid = getTech()->getManufacturingGrid();
             auto centerX = (instPinRectBBox.xMin() + instPinRectBBox.xMax()) / 2
                            / manuGrid * manuGrid;
             if (centerX >= xl(routeRect) && centerX < xh(routeRect)) {
               xLocs.insert(centerX);
-              didUseCenterline = true;
-            }
-            if (!didUseCenterline) {
-              getTrackLocs(
-                  false, currLayerNum, xl(pinRect), xh(pinRect), xLocs);
-            }
-            if (didUseCenterline) {
               if (currLayerNum + 2 <= getTech()->getTopLayerNum()) {
                 getTrackLocs(
                     true, currLayerNum + 2, yl(pinRect), yh(pinRect), yLocs);
@@ -1151,6 +1136,8 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
                     true, currLayerNum - 2, yl(pinRect), yh(pinRect), yLocs);
               }
             } else {
+              getTrackLocs(
+                  false, currLayerNum, xl(pinRect), xh(pinRect), xLocs);
               frCoord lowerBoundY = yl(pinRect);
               frCoord upperBoundY = yh(pinRect);
               if ((upperBoundY - lowerBoundY) >= 2 * layerWidth) {
