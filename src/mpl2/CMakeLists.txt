@@ -33,14 +33,6 @@
 
 include("openroad")
 
-# The location used by etc/DependencyInstaller.sh
-list(APPEND CMAKE_PREFIX_PATH
-  "/opt/or-tools/lib64/cmake"
-  "/opt/or-tools/lib/cmake"
-)
-
-find_package(ortools REQUIRED)
-
 add_library(mpl2_lib
   src/rtl_mp.cpp
   src/hier_rtlmp.cpp
@@ -61,7 +53,6 @@ target_link_libraries(mpl2_lib
     dbSta_lib
     OpenSTA
     odb
-    ortools::ortools
     dl
     par_lib
 )
