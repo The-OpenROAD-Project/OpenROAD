@@ -73,15 +73,15 @@ class MBFF {
     void Run(int mx_sz, float alpha, float beta);
 
   private:
-    int GetRows(const int slot_cnt);
-    int GetBitCnt(const int bit_idx);
+    int GetRows(int slot_cnt);
+    int GetBitCnt(int bit_idx);
     float GetDist(const odb::Point &a, const odb::Point &b);
 
-    void GetSlots(const odb::Point &tray, const int rows, const int cols,
+    void GetSlots(const odb::Point &tray, int rows, int cols,
                   std::vector<odb::Point> &slots);
-    Flop GetNewFlop(const std::vector<Flop> &prob_dist, const float tot_dist);
-    void GetStartTrays(std::vector<Flop> flops, const int num_trays,
-                       const float AR, std::vector<Tray> &trays);
+    Flop GetNewFlop(const std::vector<Flop> &prob_dist, float tot_dist);
+    void GetStartTrays(std::vector<Flop> flops, int num_trays,
+                       float AR, std::vector<Tray> &trays);
     Tray GetOneBit(const odb::Point &pt);
 
     void MinCostFlow(const std::vector<Flop> &flops, std::vector<Tray> &trays,
@@ -120,4 +120,4 @@ class MBFF {
     int multistart_;
     utl::Logger *log_;
 };
-}
+} // namespace gpl
