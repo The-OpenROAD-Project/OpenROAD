@@ -1926,7 +1926,7 @@ void LayoutViewer::saveImage(const QString& filepath,
                                       screen_region.width(),
                                       screen_region.height());
 
-  const QRect bounding_rect = save_region.boundingRect();
+  QRect bounding_rect = save_region.boundingRect();
 
   // We don't use Utils::renderImage as we need to have the
   // rendering be synchronous.  We directly call the draw()
@@ -1934,7 +1934,30 @@ void LayoutViewer::saveImage(const QString& filepath,
   const int width_px = bounding_rect.width();
   const int height_px = bounding_rect.height();
 
-  const QSize img_size = Utils::adjustMaxImageSize(QSize(width_px, height_px));
+  const QSize initial_size = QSize(width_px, height_px);
+  const QSize img_size = Utils::adjustMaxImageSize(initial_size);
+
+  if (img_size != initial_size) {
+    logger_->warn(utl::GUI,
+                  94,
+                  "Can't save image with the specified size (max width/height "
+                  "is 7200 pixels). Saved image dimensions = {} x {}.",
+                  img_size.width(),
+                  img_size.height());
+
+    // Set resolution according to adjusted size
+    pixels_per_dbu_ = computePixelsPerDBU(img_size, save_area);
+
+    const QRectF adjuted_screen_region = dbuToScreen(save_area);
+    const QRegion adjusted_save_region
+        = QRegion(adjuted_screen_region.left(),
+                  adjuted_screen_region.top(),
+                  adjuted_screen_region.width(),
+                  adjuted_screen_region.height());
+
+    bounding_rect = adjusted_save_region.boundingRect();
+  }
+
   QImage img(img_size, QImage::Format_ARGB32_Premultiplied);
 
   const qreal render_ratio
