@@ -45,6 +45,12 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/src/cmake")
 
 include("openroad")
 
+# The location used by etc/DependencyInstaller.sh
+list(APPEND CMAKE_PREFIX_PATH
+  "/opt/or-tools/lib64/cmake"
+  "/opt/or-tools/lib/cmake"
+)
+
 if(USE_SYSTEM_OPENSTA)
   if(NOT OPENSTA_HOME)
     message(FATAL_ERROR "Please set external OPENSTA_HOME path.")
