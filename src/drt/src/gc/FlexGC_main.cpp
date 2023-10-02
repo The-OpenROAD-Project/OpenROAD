@@ -2041,78 +2041,6 @@ void FlexGCWorker::Impl::checkCutSpacing_short(
   addMarker(std::move(marker));
 }
 
-/*
-void FlexGCWorker::Impl::checkCutSpacing_spc_diff_layer(
-    gcRect* rect1,
-    gcRect* rect2,
-    const gtl::rectangle_data<frCoord>& markerRect,
-    frCutSpacingConstraint* con)
-{
-  // no violation if fixed shapes
-  if (rect1->isFixed() && rect2->isFixed()) {
-    return;
-  }
-
-  auto layerNum = rect1->getLayerNum();
-  auto net1 = rect1->getNet();
-  auto net2 = rect2->getNet();
-  if (con->hasStack() && con->hasSameNet() && net1 == net2) {
-    if (gtl::contains(*rect1, *rect2) || gtl::contains(*rect2, *rect1)) {
-      return;
-    }
-  }
-
-  // no violation if spacing satisfied
-  frSquaredDistance reqSpcValSquare
-      = checkLef58CutSpacing_spc_getReqSpcVal(rect1, rect2, con);
-  reqSpcValSquare *= reqSpcValSquare;
-
-  gtl::point_data<frCoord> center1, center2;
-  gtl::center(center1, *rect1);
-  gtl::center(center2, *rect2);
-  frSquaredDistance distSquare = 0;
-
-  if (con->hasCenterToCenter()) {
-    distSquare = gtl::distance_squared(center1, center2);
-  } else {
-    // if overlap, still calculate c2c
-    if (gtl::intersects(*rect1, *rect2, false)) {
-      distSquare = gtl::distance_squared(center1, center2);
-    } else {
-      distSquare = gtl::square_euclidean_distance(*rect1, *rect2);
-    }
-  }
-  if (distSquare >= reqSpcValSquare) {
-    return;
-  }
-
-  auto marker = make_unique<frMarker>();
-  Rect box(gtl::xl(markerRect),
-           gtl::yl(markerRect),
-           gtl::xh(markerRect),
-           gtl::yh(markerRect));
-  marker->setBBox(box);
-  marker->setLayerNum(layerNum);
-  marker->setConstraint(con);
-  marker->addSrc(net1->getOwner());
-  marker->addVictim(net1->getOwner(),
-                    make_tuple(rect1->getLayerNum(),
-                               Rect(gtl::xl(*rect1),
-                                    gtl::yl(*rect1),
-                                    gtl::xh(*rect1),
-                                    gtl::yh(*rect1)),
-                               rect1->isFixed()));
-  marker->addSrc(net2->getOwner());
-  marker->addAggressor(net2->getOwner(),
-                       make_tuple(rect2->getLayerNum(),
-                                  Rect(gtl::xl(*rect2),
-                                       gtl::yl(*rect2),
-                                       gtl::xh(*rect2),
-                                       gtl::yh(*rect2)),
-                                  rect2->isFixed()));
-  addMarker(std::move(marker));
-}
-*/
 void FlexGCWorker::Impl::checkLef58CutSpacing_spc_parallelOverlap(
     gcRect* rect1,
     gcRect* rect2,
@@ -2291,8 +2219,6 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_main(
                                          gtl::yh(*rect2)),
                                     rect2->isFixed()));
     addMarker(std::move(marker));
-    /* logger_->warn(
-        DRT, 44, "Unsupported LEF58_SPACING rule for cut layer, skipped."); */
   }
 }
 
@@ -2873,64 +2799,6 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
     }
   }
 }
-/*
-// check short for every spacing rule except layer
-void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* ptr1,
-                                              gcRect* ptr2,
-                                              frCutSpacingConstraint* con)
-{
-  // skip if same obj
-  if (ptr1 == ptr2) {
-    return;
-  }
-  // skip if con is not same net rule, but layer has same net rule and are same
-  // net
-  // TODO: filter the rule upfront
-  if (!con->hasSameNet() && ptr1->getNet() == ptr2->getNet()) {
-    // same layer same net
-    if (!(con->hasSecondLayer())) {
-      if (getTech()->getLayer(ptr1->getLayerNum())->hasCutSpacing(true)) {
-        return;
-      }
-      // diff layer same net
-    } else {
-      if (getTech()
-              ->getLayer(ptr1->getLayerNum())
-              ->hasInterLayerCutSpacing(con->getSecondLayerNum(), true)) {
-        return;
-      }
-    }
-  }
-
-  gtl::rectangle_data<frCoord> markerRect(*ptr1);
-  auto distX = gtl::euclidean_distance(markerRect, *ptr2, gtl::HORIZONTAL);
-  auto distY = gtl::euclidean_distance(markerRect, *ptr2, gtl::VERTICAL);
-
-  gtl::generalized_intersect(markerRect, *ptr2);
-  auto prlX = gtl::delta(markerRect, gtl::HORIZONTAL);
-  auto prlY = gtl::delta(markerRect, gtl::VERTICAL);
-
-  if (distX) {
-    prlX = -prlX;
-  }
-  if (distY) {
-    prlY = -prlY;
-  }
-
-  if (ptr1->getLayerNum() == ptr2->getLayerNum()) {
-    // CShort
-    if (distX == 0 && distY == 0) {
-      checkCutSpacing_short(ptr1, ptr2, markerRect);
-      // same-layer CutSpc
-    } else {
-      checkCutSpacing_spc(ptr1, ptr2, markerRect, con, std::max(prlX, prlY));
-    }
-  } else {
-    // diff-layer CutSpc
-    checkCutSpacing_spc_diff_layer(ptr1, ptr2, markerRect, con);
-  }
-}
-*/
 void FlexGCWorker::Impl::checkLef58CutSpacing_main(
     gcRect* rect,
     frLef58CutSpacingConstraint* con,
@@ -2958,64 +2826,11 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_main(
   }
 }
 
-/* void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* rect,
-                                              frCutSpacingConstraint* con)
-{
-  auto layerNum = rect->getLayerNum();
-  auto maxSpcVal = checkLef58CutSpacing_getMaxSpcVal(con);
-  box_t queryBox;
-  myBloat(*rect, maxSpcVal, queryBox);
-
-  // skip if adjcut not satisfied
-  if (!checkLef58CutSpacing_spc_hasAdjCuts(rect, con)) {
-    return;
-  }
-
-  auto& workerRegionQuery = getWorkerRegionQuery();
-  vector<rq_box_value_t<gcRect*>> result;
-  if (con->hasSecondLayer()) {
-    workerRegionQuery.queryMaxRectangle(
-        queryBox, con->getSecondLayerNum(), result);
-  } else {
-    workerRegionQuery.queryMaxRectangle(queryBox, layerNum, result);
-  }
-  // Short, metSpc, NSMetal here
-  for (auto& [objBox, ptr] : result) {
-    if (con->hasSecondLayer()) {
-      if (rect->getNet() != ptr->getNet()
-          || con->getSameNetConstraint() == nullptr) {
-        checkCutSpacing_main(rect, ptr, con);
-      } else {
-        if (con->getSameNetConstraint()) {
-          checkCutSpacing_main(rect, ptr, con->getSameNetConstraint());
-        }
-      }
-    } else {
-      checkCutSpacing_main(rect, ptr, con);
-    }
-  }
-} */
-
 void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* rect)
 {
   auto layerNum = rect->getLayerNum();
   auto layer = getTech()->getLayer(layerNum);
   // CShort
-  // diff net same layer
-  /*for (auto con : layer->getLef58CutSpacingConstraints(false)) {
-    checkCutSpacing_main(rect, con);
-  }
-  // same net same layer
-  for (auto con : layer->getLef58CutSpacingConstraints(true)) {
-    checkCutSpacing_main(rect, con);
-  }
-  // diff net diff layer
-   for (auto con : layer->getInterLayerCutSpacingConstraint(false)) {
-    if (con) {
-      checkCutSpacing_main(rect, con);
-    }
-  } */
-
   // LEF58_SPACING for cut layer
   bool skipDiffNet = false;
   // samenet rule

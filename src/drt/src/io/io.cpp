@@ -2114,15 +2114,6 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
                     "layer {}, please check your rule definition.",
                     layer->getName());
     }
-    /*     cutSpacingConstraint =
-       make_unique<frCutSpacingConstraint>(cutSpacing, centerToCenter, sameNet,
-                                                                   secondLayerName,
-                                                                   stack,
-                                                                   adjacentCuts,
-                                                                   cutWithin,
-                                                                   exceptSamePGNet,
-                                                                   parallelOverlap,
-                                                                   cutArea); */
     cutSpacingConstraint->setCutSpacing(cutSpacing);
     cutSpacingConstraint->setCenterToCenter(centerToCenter);
     cutSpacingConstraint->setSameNet(sameNet);
