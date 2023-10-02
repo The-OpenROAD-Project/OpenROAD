@@ -207,8 +207,6 @@ class Replace
   // temp variable; OpenDB should have these values.
   int padLeft_;
   int padRight_;
-
-
   bool gui_debug_;
   int gui_debug_pause_iterations_;
   int gui_debug_update_iterations_;
