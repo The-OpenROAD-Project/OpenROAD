@@ -41,7 +41,6 @@
 #include <chrono>
 #include <memory>
 #include <random>
-#include <chrono>
 #include <omp.h>
 #include <ortools/linear_solver/linear_solver.h>
 #include <ortools/base/logging.h>
@@ -78,9 +77,8 @@ int MBFF::GetRows(int slot_cnt) {
     }
     if (slot_cnt == 8) {
         return 2;
-    } else {
-        return 4;
     }
+    return 4;
 }
 
 float MBFF::GetDist(const odb::Point &a, const odb::Point &b) {
@@ -210,11 +208,12 @@ float MBFF::RunILP(const std::vector<Flop> &flops,
     std::vector<int> cand_slot[num_flops];
 
     for (int i = 0; i < num_trays; i++) {
-        for (int j = 0; j < static_cast<int>(trays[i].slots.size()); j++)
+        for (int j = 0; j < static_cast<int>(trays[i].slots.size()); j++) {
             if (trays[i].cand[j] >= 0) {
                 cand_tray[trays[i].cand[j]].push_back(i);
                 cand_slot[trays[i].cand[j]].push_back(j);
             }
+        }
     }
 
     // has a flop been mapped to a slot?
@@ -592,7 +591,7 @@ float MBFF::GetSilh(const std::vector<Flop> &flops,
         float min_num = std::numeric_limits<float>::max();
         float max_den = GetDist(
             flops[i].pt, trays[clusters[i].first].slots[clusters[i].second]);
-        for (int j = 0; j < num_trays; j++)
+        for (int j = 0; j < num_trays; j++) {
             if (j != clusters[i].first) {
                 max_den = std::max(
                     max_den,
@@ -603,6 +602,7 @@ float MBFF::GetSilh(const std::vector<Flop> &flops,
                                        GetDist(flops[i].pt, trays[j].slots[k]));
                 }
             }
+        }
 
         tot += (min_num / max_den);
     }
@@ -770,7 +770,7 @@ std::vector<std::vector<Flop> >& MBFF::KMeans(const std::vector<Flop> &flops) {
 
     std::vector<std::vector<Flop> > *clusters = new std::vector<std::vector<Flop> >(knn_);
     float prev = -1;
-    while (1) {
+    while (true) {
 
         for (int i = 0; i < knn_; i++) {
             (*clusters)[i].clear();
@@ -953,11 +953,11 @@ std::vector<std::vector<Flop> >& MBFF::KMeansDecomp(const std::vector<Flop> &flo
 
 double MBFF::GetTCPDisplacement(float beta) {
     double ret = 0;
-    for (int i = 0; i < static_cast<int>(paths_.size()); i++) {
-        float diff_x = slot_disp_x_[paths_[i].start_point] -
-                       slot_disp_x_[paths_[i].end_point];
-        float diff_y = slot_disp_y_[paths_[i].start_point] -
-                       slot_disp_y_[paths_[i].end_point];
+    for (auto &path : paths_) {
+        float diff_x = slot_disp_x_[path.start_point] -
+                       slot_disp_x_[path.end_point];
+        float diff_y = slot_disp_y_[path.start_point] -
+                       slot_disp_y_[path.end_point];
         ret += (std::max(diff_x, -diff_x) + std::max(diff_y, -diff_y));
     }
     return (beta * ret);
@@ -1061,6 +1061,6 @@ MBFF::MBFF(int num_flops, int num_paths, const std::vector<odb::Point> &points,
 }
 
 // dtor
-MBFF::~MBFF() {}
+MBFF::~MBFF() = default;
 
 } // end namespace gpl
