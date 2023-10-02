@@ -54,7 +54,7 @@ struct Flop {
     int idx;
     float prob;
 
-    bool operator<(Flop &a) { return prob < a.prob; }
+    bool operator<(const Flop &a) { return prob < a.prob; }
 };
 
 struct Path {
@@ -66,7 +66,7 @@ class MBFF {
 
   public:
     MBFF(int num_flops, int num_paths, const std::vector<odb::Point> &points,
-         const std::vector<Path> &paths, int threads, int knn, int multistart, 
+         const std::vector<Path> &paths, int threads, int knn, int multistart,
          utl::Logger *log);
     ~MBFF();
 
@@ -80,8 +80,8 @@ class MBFF {
     void GetSlots(const odb::Point &tray, int rows, int cols,
                   std::vector<odb::Point> &slots);
     Flop GetNewFlop(const std::vector<Flop> &prob_dist, float tot_dist);
-    void GetStartTrays(std::vector<Flop> flops, int num_trays,
-                       float AR, std::vector<Tray> &trays);
+    void GetStartTrays(std::vector<Flop> flops, int num_trays, float AR,
+                       std::vector<Tray> &trays);
     Tray GetOneBit(const odb::Point &pt);
 
     void MinCostFlow(const std::vector<Flop> &flops, std::vector<Tray> &trays,
@@ -91,15 +91,15 @@ class MBFF {
                   const std::vector<Tray> &trays,
                   const std::vector<std::pair<int, int> > &clusters);
 
-    std::vector<std::vector<Flop> >& KMeans(const std::vector<Flop> &flops);
-    std::vector<std::vector<Flop> >& 
+    std::vector<std::vector<Flop> > &KMeans(const std::vector<Flop> &flops);
+    std::vector<std::vector<Flop> > &
     KMeansDecomp(const std::vector<Flop> &flops, int MAX_SZ);
 
     void RunCapacitatedKMeans(const std::vector<Flop> &flops,
                               std::vector<Tray> &trays, int sz, int iter,
                               std::vector<std::pair<int, int> > &cluster);
 
-    std::vector<std::vector<Tray> >&
+    std::vector<std::vector<Tray> > &
     RunSilh(const std::vector<Flop> &pointset,
             std::vector<std::vector<std::vector<Tray> > > &start_trays);
 
