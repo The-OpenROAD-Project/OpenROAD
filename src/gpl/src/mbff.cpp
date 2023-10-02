@@ -60,9 +60,9 @@ ratios are used for:
 
 namespace gpl {
 
-constexpr int NUM_SIZES = 6;
+constexpr int NUM_SIZES = 7;
 constexpr float WIDTH = 2.448, HEIGHT = 1.2;
-constexpr float RATIOS[NUM_SIZES] = { 1, 0.875, 0.854, 0.854, 0.844, 0.844 };
+constexpr float RATIOS[NUM_SIZES] = { 1, 0.95, 0.875, 0.854, 0.854, 0.844, 0.844 };
 
 int MBFF::GetBitCnt(int bit_idx) {
     if (bit_idx == 0) {
@@ -1002,7 +1002,7 @@ void MBFF::Run(int mx_sz, float alpha, float beta) {
     }
 
     double ans = 0;
-#pragma omp parallel for num_threads(num_threads_)
+    #pragma omp parallel for num_threads(num_threads_)
     for (int t = 0; t < static_cast<int>(pointsets.size()); t++) {
         std::vector<std::vector<Tray> > &cur_trays =
             RunSilh(pointsets[t], all_start_trays[t]);
@@ -1028,8 +1028,7 @@ void MBFF::Run(int mx_sz, float alpha, float beta) {
                 GetSlots(cur_trays[i][j].pt, rows, cols, cur_trays[i][j].slots);
             }
         }
-
-        ans += RunILP(pointsets[t], cur_trays, 20.0);
+        ans += RunILP(pointsets[t], cur_trays, alpha);
         delete &cur_trays;
     }
     ans += GetTCPDisplacement(beta);
