@@ -322,20 +322,20 @@ proc global_placement { args } {
 
 
 sta::define_cmd_args "cluster_flops" {\
-    [-alpha alpha]\
-    [-beta beta]\
+    [-tray_weight tray_weight]\
+    [-timing_weight timing_weight]\
     [-max_split_size max_split_size]\
 }
 
 proc cluster_flops { args } {
   sta::parse_key_args "cluster_flops" args \
-    keys { -alpha -beta -max_split_size }
+    keys { -tray_weight -timing_weight -max_split_size }
 
-  if { [info exists keys(-alpha)] } {
-    set alpha $keys(-alpha)
-    set beta $keys(-beta)
+  if { [info exists keys(-tray_weight)] } {
+    set tray_weight $keys(-tray_weight)
+    set timing_weight $keys(-timing_weight)
     set max_split_size $keys(-max_split_size)
-    gpl::replace_run_mbff_cmd $max_split_size $alpha $beta
+    gpl::replace_run_mbff_cmd $max_split_size $tray_weight $timing_weight
   }
 }
 

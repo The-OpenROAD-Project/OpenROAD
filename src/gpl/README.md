@@ -53,8 +53,8 @@ global_placement
 
 ```
 cluster_flops  
-    [-alpha alpha]  
-    [-beta beta]  
+    [-tray_weight tray_weight]  
+    [-timing_weight timing_weight]  
     [-max_split_size max_split_size]  
 ```
 
@@ -78,8 +78,8 @@ cluster_flops
 - `-timing_driven_nets_percentage`: Set the percentage of nets that are reweighted in timing-driven mode. Default value is 10. Allowed values are `[0-100, float]`   
 - `-verbose_level`: set verbose level for RePlAce. Default value is 1. Allowed values are `[0-5, int]`.
 - `-force_cpu`: Force to use the CPU solver even if the GPU is available.
-- `alpha`: Set the weighting factor for tray cost in flip-flop clustering (recommended to be `[20.0, float]`).    
-- `beta`: Set the weighting factor for timing-critical paths in flip-flop clusering (recommended to be `[1.0. float]`).   
+- `tray_weight`: Set the weighting factor for tray cost in flip-flop clustering (recommended to be `[20.0, float]`).    
+- `timing_weight`: Set the weighting factor for timing-critical paths in flip-flop clusering (recommended to be `[1.0. float]`).   
 - `max_split_size`: The maximum size of a single pointset after running the pointset decomposition algorithm for runtime improvement in flop clustering (to not run pointset decomposition, set as `-1`).  
 
 
