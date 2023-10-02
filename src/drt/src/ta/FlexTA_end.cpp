@@ -47,15 +47,6 @@ void FlexTAWorker::saveToGuides()
         }
         pathSeg->addToNet(iroute->getGuide()->getNet());
         auto guide = iroute->getGuide();
-        // if (guide->getNet()->getName() == "net6295")
-        // {
-        //   logger_->report("guide {} layer {}/{} cost {} figs {}", 
-        //                   guide->getBBox(), 
-        //                   getTech()->getLayer(guide->getBeginLayerNum())->getName(), 
-        //                   getTech()->getLayer(guide->getEndLayerNum())->getName(),
-        //                   iroute->getCost(), 
-        //                   iroute->getFigs().size());
-        // }
         vector<unique_ptr<frConnFig>> tmp;
         tmp.push_back(std::move(pathSeg));
         guide->setRoutes(tmp);
