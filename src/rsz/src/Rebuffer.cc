@@ -239,14 +239,27 @@ RepairSetup::rebufferBottomUp(BufferedNetPtr bnet,
     // larger required and smaller capacitance.
     // This is fanout^2.
     // Presort options to hit better options sooner.
-    sort(Z.begin(), Z.end(),
-         [=](BufferedNetPtr option1,
-             BufferedNetPtr option2)
-         { Slack slack1 = slackPenalized(option1);
+    sort(Z.begin(),
+         Z.end(),
+         [=](BufferedNetPtr option1, BufferedNetPtr option2) {
+           Slack slack1 = slackPenalized(option1);
            Slack slack2 = slackPenalized(option2);
-           return fuzzyGreater(slack1, slack2)
-             || (fuzzyEqual(slack1, slack2)
-                 && fuzzyLess(option1->cap(), option2->cap()));
+
+           if (slack1 > slack2) {
+             return true;
+           }
+           if (slack2 > slack1) {
+             return false;
+           }
+
+           if (option1->cap() < option2->cap()) {
+             return true;
+           }
+           if (option2->cap() < option1->cap()) {
+             return false;
+           }
+
+           return false;
          });
     int si = 0;
     for (size_t pi = 0; pi < Z.size(); pi++) {
