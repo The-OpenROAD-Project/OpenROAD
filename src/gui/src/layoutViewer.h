@@ -182,8 +182,6 @@ class LayoutViewer : public QWidget
     return screenToDBU(visibleRegion().boundingRect());
   }
 
-  bool isCursorInsideViewport();
-
  signals:
   // indicates the current location of the mouse
   void location(int x, int y);

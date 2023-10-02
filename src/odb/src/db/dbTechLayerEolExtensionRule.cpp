@@ -88,7 +88,8 @@ void _dbTechLayerEolExtensionRule::out(dbDiff& diff,
 
 _dbTechLayerEolExtensionRule::_dbTechLayerEolExtensionRule(_dbDatabase* db)
 {
-  flags_ = {};
+  uint32_t* flags__bit_field = (uint32_t*) &flags_;
+  *flags__bit_field = 0;
   spacing_ = 0;
 }
 

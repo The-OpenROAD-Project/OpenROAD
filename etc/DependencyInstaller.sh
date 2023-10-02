@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 set -euo pipefail
 
@@ -6,56 +6,6 @@ _versionCompare() {
     local a b IFS=. ; set -f
     printf -v a %08d $1; printf -v b %08d $3
     test $a "$2" $b
-}
-
-_equivalenceDeps() {
-    yosysVersion=yosys-0.33
-    eqyVersion=0cc2ff0
-
-    # yosys
-    yosysPrefix=${PREFIX:-"/usr/local"}
-    if ! command -v yosys &> /dev/null; then (
-        if [[ -f /opt/rh/llvm-toolset-7.0/enable ]]; then
-            source /opt/rh/llvm-toolset-7.0/enable
-        fi
-        cd "${baseDir}"
-        git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/yosys
-        cd yosys
-        # use of no-register flag is required for some compilers,
-        # e.g., gcc and clang fron RHEL8
-        make -j $(nproc) PREFIX="${yosysPrefix}" ABC_ARCHFLAGS=-Wno-register
-        make install
-    ) fi
-
-    # eqy
-    eqyPrefix=${PREFIX:-"/usr/local"}
-    if ! command -v eqy &> /dev/null; then (
-        if [[ -f /opt/rh/llvm-toolset-7.0/enable ]]; then
-            source /opt/rh/llvm-toolset-7.0/enable
-        fi
-        cd "${baseDir}"
-        git clone --recursive https://github.com/YosysHQ/eqy
-        cd eqy
-        git checkout ${eqyVersion}
-        export PATH="${yosysPrefix}/bin:${PATH}"
-        make -j $(nproc) PREFIX="${eqyPrefix}"
-        make install PREFIX="${eqyPrefix}"
-    )
-    fi
-
-    # sby
-    sbyPrefix=${PREFIX:-"/usr/local"}
-    if ! command -v sby &> /dev/null; then (
-        if [[ -f /opt/rh/llvm-toolset-7.0/enable ]]; then
-            source /opt/rh/llvm-toolset-7.0/enable
-        fi
-        cd "${baseDir}"
-        git clone --depth=1 -b ${yosysVersion} --recursive https://github.com/YosysHQ/sby
-        cd sby
-        export PATH="${eqyPrefix}/bin:${PATH}"
-        make -j $(nproc) PREFIX="${sbyPrefix}" install
-    )
-    fi
 }
 
 _installCommonDev() {
@@ -75,7 +25,11 @@ _installCommonDev() {
     eigenVersion=3.4
     lemonVersion=1.3.1
     spdlogVersion=1.8.1
+    yosysVersion=yosys-0.33
+    eqyVersion=0cc2ff0
 
+    # temp dir to download and compile
+    baseDir=/tmp/installers
     rm -rf "${baseDir}"
     mkdir -p "${baseDir}"
     if [[ ! -z "${PREFIX}" ]]; then
@@ -183,8 +137,49 @@ _installCommonDev() {
         echo "spdlog already installed."
     fi
 
-    if [[ ${equivalenceDeps} == "yes" ]]; then
-        _equivalenceDeps
+    # yosys
+    yosysPrefix=${PREFIX:-"/usr/local"}
+    if ! command -v yosys &> /dev/null; then (
+        if [[ -f /opt/rh/llvm-toolset-7.0/enable ]]; then
+            source /opt/rh/llvm-toolset-7.0/enable
+        fi
+        cd "${baseDir}"
+        git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/yosys
+        cd yosys
+        # use of no-register flag is required for some compilers,
+        # e.g., gcc and clang fron RHEL8
+        make -j $(nproc) PREFIX="${yosysPrefix}" ABC_ARCHFLAGS=-Wno-register
+        make install
+    ) fi
+
+    # eqy
+    eqyPrefix=${PREFIX:-"/usr/local"}
+    if ! command -v eqy &> /dev/null; then (
+        if [[ -f /opt/rh/llvm-toolset-7.0/enable ]]; then
+            source /opt/rh/llvm-toolset-7.0/enable
+        fi
+        cd "${baseDir}"
+        git clone --recursive https://github.com/YosysHQ/eqy
+        cd eqy
+        git checkout ${eqyVersion}
+        export PATH="${yosysPrefix}/bin:${PATH}"
+        make -j $(nproc) PREFIX="${eqyPrefix}"
+        make install PREFIX="${eqyPrefix}"
+    )
+    fi
+
+    # sby
+    sbyPrefix=${PREFIX:-"/usr/local"}
+    if ! command -v sby &> /dev/null; then (
+        if [[ -f /opt/rh/llvm-toolset-7.0/enable ]]; then
+            source /opt/rh/llvm-toolset-7.0/enable
+        fi
+        cd "${baseDir}"
+        git clone --depth=1 -b ${yosysVersion} --recursive https://github.com/YosysHQ/sby
+        cd sby
+        export PATH="${eqyPrefix}/bin:${PATH}"
+        make -j $(nproc) PREFIX="${sbyPrefix}" install
+    )
     fi
 
     cd "${lastDir}"
@@ -207,7 +202,7 @@ _installOrTools() {
     orToolsVersionBig=9.5
     orToolsVersionSmall=${orToolsVersionBig}.2237
 
-    rm -rf "${baseDir}"
+    baseDir=/tmp/installers
     mkdir -p "${baseDir}"
     if [[ ! -z "${PREFIX}" ]]; then mkdir -p "${PREFIX}"; fi
     cd "${baseDir}"
@@ -255,7 +250,6 @@ _installUbuntuPackages() {
         libtcl \
         python3-dev \
         qt5-image-formats-plugins \
-        tcl \
         tcl-dev \
         tcl-tclreadline \
         tcllib \
@@ -379,10 +373,6 @@ _installCentosPackages() {
         qt5-qtbase-devel \
         qt5-qtimageformats \
         readline-devel \
-        rh-python38-python \
-        rh-python38-python-libs \
-        rh-python38-python-pip \
-        rh-python38-scldevel \
         tcl \
         tcl-devel \
         tcl-tclreadline \
@@ -390,7 +380,7 @@ _installCentosPackages() {
         tcllib \
         wget \
         zlib-devel
-    }
+}
 
 _installOpenSuseCleanUp() {
     zypper -n clean --all
@@ -577,13 +567,12 @@ EOF
     exit "${1:-1}"
 }
 
-# Default values
+#default prefix
 PREFIX=""
+#default option
 option="all"
+#default isLocal
 isLocal="false"
-equivalenceDeps="no"
-# temp dir to download and compile
-baseDir=$(mktemp -d /tmp/DependencyInstaller-XXXXXX)
 
 # default values, can be overwritten by cmdline args
 while [ "$#" -gt 0 ]; do
@@ -608,9 +597,6 @@ while [ "$#" -gt 0 ]; do
                 echo "WARNING: previous argument -${option} will be overwritten with -common." >&2
             fi
             option="common"
-            ;;
-        -eqy)
-            equivalenceDeps="yes"
             ;;
         -local)
             if [[ $(id -u) == 0 ]]; then
@@ -673,8 +659,6 @@ case "${os}" in
             _installOrTools "centos" "7" "amd64"
         fi
         cat <<EOF
-To enable Python 3.8 (required for eqy) you need to run:
-    source /opt/rh/rh-python38/enable
 To enable GCC-8 or Clang-7 you need to run:
     source /opt/rh/devtoolset-8/enable
     source /opt/rh/llvm-toolset-7.0/enable

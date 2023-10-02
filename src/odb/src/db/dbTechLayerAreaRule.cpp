@@ -104,7 +104,8 @@ void _dbTechLayerAreaRule::out(dbDiff& diff, char side, const char* field) const
 
 _dbTechLayerAreaRule::_dbTechLayerAreaRule(_dbDatabase* db)
 {
-  flags_ = {};
+  uint32_t* flags__bit_field = (uint32_t*) &flags_;
+  *flags__bit_field = 0;
 }
 
 _dbTechLayerAreaRule::_dbTechLayerAreaRule(_dbDatabase* db,

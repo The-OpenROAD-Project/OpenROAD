@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 if [[ $# != 10 ]]; then
         echo "you need to give X arguments:"   

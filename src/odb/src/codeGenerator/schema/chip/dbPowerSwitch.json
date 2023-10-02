@@ -14,13 +14,13 @@
     },
     {
       "name":"_in_supply_port",
-      "type":"dbVector<std::string>",
-      "flags":["no-set", "no-get"]
+      "type":"std::string",
+      "flags":["no-set"]
     },
     {
       "name":"_out_supply_port",
-      "type":"dbVector<std::string>",
-      "flags":["no-set", "no-get"]
+      "type":"std::string",
+      "flags":["no-set"]
     },
     {
       "name":"_control_port",
@@ -39,28 +39,13 @@
       "parent":"dbBlock"
     },
     {
-      "name": "_lib_cell",
-      "type": "dbId<_dbMaster>",
-      "flags": ["no-set", "no-get", "no-serial"]
-    },
-    {
-      "name": "_lib",
-      "type": "dbId<_dbLib>",
-      "flags": ["no-set", "no-get", "no-serial"]
-    },
-    {
-      "name": "_port_map",
-      "type": "std::map<std::string, dbId<_dbMTerm>>",
-      "flags": ["no-set", "no-get", "no-serial"]
-    },
-    {
       "name":"_power_domain",
       "type":"dbId<_dbPowerDomain>",
       "flags":[],
       "parent":"dbBlock"
     }
   ],
-  "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbNet.h", "dbPowerDomain.h", "dbMaster.h", "dbMTerm.h", "utl/Logger.h"],
+  "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbNet.h", "dbPowerDomain.h"],
   "h_includes": [
     "dbVector.h",
     "dbSet.h"

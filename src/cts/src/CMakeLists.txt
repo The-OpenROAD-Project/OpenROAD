@@ -40,7 +40,6 @@ find_package(LEMON NAMES LEMON lemon REQUIRED)
 
 add_library(cts_lib
     Clock.cpp
-    TreeBuilder.cpp
     HTreeBuilder.cpp
     SinkClustering.cpp
     TechChar.cpp

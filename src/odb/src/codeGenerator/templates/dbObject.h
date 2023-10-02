@@ -1,5 +1,5 @@
 //Generator Code Begin DbObjectType
-{% for klass in schema.classes|sort(attribute='name') %}
+{% for klass in schema.classes %}
   {{klass.name}}Obj,
 {% endfor %}
 //Generator Code End DbObjectType

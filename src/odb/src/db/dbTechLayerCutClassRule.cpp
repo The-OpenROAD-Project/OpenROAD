@@ -109,7 +109,8 @@ void _dbTechLayerCutClassRule::out(dbDiff& diff,
 
 _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(_dbDatabase* db)
 {
-  flags_ = {};
+  uint32_t* flags__bit_field = (uint32_t*) &flags_;
+  *flags__bit_field = 0;
   width_ = 0;
   length_ = 0;
   num_cuts_ = 0;

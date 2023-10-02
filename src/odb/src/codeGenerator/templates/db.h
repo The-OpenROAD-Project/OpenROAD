@@ -1,10 +1,10 @@
 //Generator Code Begin ClassDeclarations
-{% for klass in schema.classes|sort(attribute='name') %}
+{% for klass in schema.classes %}
 class {{klass.name}};
 {% endfor %}
 //Generator Code End ClassDeclarations
 //Generator Code Begin ClassDefinition
-{% for klass in schema.classes|sort(attribute='name') %}
+{% for klass in schema.classes %}
 
 class {{klass.name}} : public dbObject
 {

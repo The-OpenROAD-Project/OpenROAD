@@ -409,10 +409,7 @@ void MakeWireParasitics::makePartialParasiticsToPin(
   }
   // Use the route layer above the pin layer if there is a via
   // to the pin.
-  int net_max_layer;
-  int net_min_layer;
-  grouter_->getNetLayerRange(net, net_min_layer, net_max_layer);
-  int layer = net_min_layer + 1;
+  int layer = 3;
   RoutePt grid_route(grid_pt.getX(), grid_pt.getY(), layer);
   sta::ParasiticNode* grid_node = node_map[grid_route];
   float via_res = 0;

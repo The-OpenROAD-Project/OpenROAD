@@ -31,8 +31,7 @@ set_wire_rc -clock  -layer met3'''
 design.evalTclString(tcl_strg2)
 
 cts_aux.clock_tree_synthesis(design, root_buf="sky130_fd_sc_hs__clkbuf_1",
-                             buf_list="sky130_fd_sc_hs__clkbuf_1",
-                             obstruction_aware=True)
+                             buf_list="sky130_fd_sc_hs__clkbuf_1")
 
 tcl_strg3 = '''set_propagated_clock clk1
 estimate_parasitics -placement
