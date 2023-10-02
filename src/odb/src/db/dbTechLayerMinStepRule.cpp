@@ -134,7 +134,8 @@ void _dbTechLayerMinStepRule::out(dbDiff& diff,
 
 _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(_dbDatabase* db)
 {
-  flags_ = {};
+  uint32_t* flags__bit_field = (uint32_t*) &flags_;
+  *flags__bit_field = 0;
   min_step_length_ = 0;
   max_edges_ = 0;
   min_adj_length1_ = 0;

@@ -117,14 +117,14 @@ add_library(db
     dbTechLayerSpacingEolRule.cpp
     dbTechLayerSpacingTablePrlRule.cpp
     dbTechLayerWidthTableRule.cpp
-    dbGroupInstItr.cpp
-    dbGroupItr.cpp
-    dbGroupModInstItr.cpp
-    dbGuideItr.cpp
     dbModuleInstItr.cpp
     dbModuleModInstItr.cpp
-    dbNetTrackItr.cpp
+    dbGroupModInstItr.cpp
+    dbGroupItr.cpp
     dbRegionGroupItr.cpp
+    dbGroupInstItr.cpp
+    dbGuideItr.cpp
+    dbNetTrackItr.cpp
     # Generator Code End cpp
 )
 

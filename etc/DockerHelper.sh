@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 set -euo pipefail
 
@@ -95,15 +95,10 @@ _setup() {
         "dev" )
             fromImage="${FROM_IMAGE_OVERRIDE:-$osBaseImage}"
             context="etc"
-            buildArgs=""
             if [[ "${isLocal}" == "yes" ]]; then
-                buildArgs="-prefix=${LOCAL_PATH}"
-            fi
-            if [[ "${equivalenceDeps}" == "yes" ]]; then
-                buildArgs="${buildArgs} -eqy"
-            fi
-            if [[ "${buildArgs}" != "" ]]; then
-                buildArgs="--build-arg INSTALLER_ARGS='${buildArgs}'"
+                buildArgs="--build-arg INSTALLER_ARGS=-prefix=${LOCAL_PATH}"
+            else
+                buildArgs=""
             fi
             ;;
         "binary" )
@@ -141,7 +136,7 @@ _test() {
 
 _create() {
     echo "Create docker image ${imagePath} using ${file}"
-    eval docker build --file "${file}" --tag "${imagePath}" ${buildArgs} "${context}"
+    docker build --file "${file}" --tag "${imagePath}" ${buildArgs} "${context}"
 }
 
 _push() {
@@ -220,7 +215,6 @@ target="dev"
 compiler="gcc"
 useCommitSha="no"
 isLocal="no"
-equivalenceDeps="yes"
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   numThreads=$(nproc --all)
 elif [[ "$OSTYPE" == "darwin"* ]]; then
@@ -256,9 +250,6 @@ while [ "$#" -gt 0 ]; do
             ;;
         -local )
             isLocal=yes
-            ;;
-        -no_eqy )
-            equivalenceDeps=no
             ;;
         -compiler | -os | -target )
             echo "${1} requires an argument" >&2

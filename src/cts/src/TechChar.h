@@ -39,7 +39,6 @@
 #include <bitset>
 #include <cassert>
 #include <chrono>
-#include <cstdint>
 #include <deque>
 #include <functional>
 #include <iostream>

@@ -35,7 +35,6 @@
 
 #pragma once
 
-#include <iomanip>
 #include <ostream>
 
 namespace cts {
@@ -76,15 +75,6 @@ class Point
     return dy;
   }
 
-  bool equal(const Point<T>& other, double epsilon = 0.0000001f) const
-  {
-    if ((fabs(getX() - other.getX()) < epsilon)
-        && (fabs(getY() - other.getY()) < epsilon)) {
-      return true;
-    }
-    return false;
-  }
-
   bool operator<(const Point<T>& other) const
   {
     if (getX() != other.getX()) {
@@ -94,28 +84,9 @@ class Point
     return getY() < other.getY();
   }
 
-  bool operator==(const Point<T>& other) const
-  {
-    if (equal(other)) {
-      return true;
-    }
-
-    return false;
-  }
-
-  bool operator!=(const Point<T>& other) const
-  {
-    if (equal(other)) {
-      return false;
-    }
-
-    return true;
-  }
-
   friend std::ostream& operator<<(std::ostream& out, const Point<T>& point)
   {
-    out << "[(" << std::fixed << std::setprecision(3) << point.getX() << ", "
-        << std::fixed << std::setprecision(3) << point.getY() << ")]";
+    out << "[(" << point.getX() << ", " << point.getY() << ")]";
     return out;
   }
 

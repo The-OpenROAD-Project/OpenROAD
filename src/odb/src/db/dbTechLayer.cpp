@@ -459,7 +459,8 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
 
 _dbTechLayer::_dbTechLayer(_dbDatabase* db)
 {
-  flags_ = {};
+  uint32_t* flags__bit_field = (uint32_t*) &flags_;
+  *flags__bit_field = 0;
   cut_class_rules_tbl_ = new dbTable<_dbTechLayerCutClassRule>(
       db,
       this,

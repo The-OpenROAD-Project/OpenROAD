@@ -1573,20 +1573,13 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
             "Unsupported LEF58_SPACING rule for layer {} of type SAMEMASK.",
             layer->getName());
         break;
-      case odb::dbTechLayerCutSpacingRule::CutSpacingType::PARALLELOVERLAP: {
-        auto con = make_unique<frLef58CutSpacingConstraint>();
-        con->setCutSpacing(rule->getCutSpacing());
-        con->setCenterToCenter(rule->isCenterToCenter());
-        con->setSameNet(rule->isSameNet());
-        con->setSameMetal(rule->isSameMetal());
-        con->setSameVia(rule->isSameVia());
-        con->setSameCut(rule->isSameCut());
-        con->setSameMask(rule->isSameMask());
-        con->setParallelOverlap(true);
-        tmpLayer->addLef58CutSpacingConstraint(con.get());
-        tech_->addUConstraint(std::move(con));
+      case odb::dbTechLayerCutSpacingRule::CutSpacingType::PARALLELOVERLAP:
+        logger_->warn(utl::DRT,
+                      260,
+                      "Unsupported LEF58_SPACING rule for layer {} of type "
+                      "PARALLELOVERLAP.",
+                      layer->getName());
         break;
-      }
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::PARALLELWITHIN:
         logger_->warn(utl::DRT,
                       261,

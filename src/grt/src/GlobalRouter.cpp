@@ -99,7 +99,7 @@ GlobalRouter::GlobalRouter()
       verbose_(false),
       min_layer_for_clock_(-1),
       max_layer_for_clock_(-2),
-      critical_nets_percentage_(10),
+      critical_nets_percentage_(0),
       seed_(0),
       caps_perturbation_percentage_(0),
       perturbation_amount_(1),
@@ -185,13 +185,6 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   initCoreGrid(max_routing_layer);
   setCapacities(min_routing_layer, max_routing_layer);
 
-  if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
-    critical_nets_percentage_ = 0;
-    logger_->warn(
-        GRT,
-        300,
-        "Timing is not available, setting critical nets percentage to 0");
-  }
   std::vector<Net*> nets = initNetlist();
   initNets(nets);
 
@@ -749,7 +742,6 @@ void GlobalRouter::computeNetSlacks()
   // defined by the user
   int threshold_index
       = std::ceil(slacks.size() * critical_nets_percentage_ / 100);
-  threshold_index = std::min((int) slacks.size() - 1, threshold_index);
   float slack_th = slacks[threshold_index];
 
   // Ensure the slack threshold is negative
@@ -764,6 +756,7 @@ void GlobalRouter::computeNetSlacks()
   if (slack_th >= 0) {
     return;
   }
+
   // Add the slack values smaller than the threshold to the nets
   for (auto [net, slack] : net_slack_map) {
     if (slack <= slack_th) {
@@ -799,7 +792,7 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
   for (Net* net : nets) {
     int pin_count = net->getNumPins();
     int min_layer, max_layer;
-    getNetLayerRange(net->getDbNet(), min_layer, max_layer);
+    getNetLayerRange(net, min_layer, max_layer);
     odb::dbTechLayer* max_routing_layer
         = db_->getTech()->findRoutingLayer(max_layer);
     if (pin_count > 1 && !net->isLocal()
@@ -875,7 +868,7 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     // set layer restriction only to clock nets that are not connected to
     // leaf iterms
     int min_layer, max_layer;
-    getNetLayerRange(net->getDbNet(), min_layer, max_layer);
+    getNetLayerRange(net, min_layer, max_layer);
 
     FrNet* fr_net = fastroute_->addNet(net->getDbNet(),
                                        is_clock,
@@ -920,11 +913,8 @@ void GlobalRouter::saveSttInputFile(Net* net)
   out.close();
 }
 
-void GlobalRouter::getNetLayerRange(odb::dbNet* db_net,
-                                    int& min_layer,
-                                    int& max_layer)
+void GlobalRouter::getNetLayerRange(Net* net, int& min_layer, int& max_layer)
 {
-  Net* net = db_net_map_[db_net];
   int port_min_layer = std::numeric_limits<int>::max();
   for (const Pin& pin : net->getPins()) {
     if (pin.isPort() || pin.isConnectedToPadOrMacro()) {
@@ -932,7 +922,7 @@ void GlobalRouter::getNetLayerRange(odb::dbNet* db_net,
     }
   }
 
-  bool is_non_leaf_clock = isNonLeafClock(db_net);
+  bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
   min_layer = (is_non_leaf_clock && min_layer_for_clock_ > 0)
                   ? min_layer_for_clock_
                   : min_routing_layer_;
@@ -1908,7 +1898,7 @@ void GlobalRouter::addRemainingGuides(NetRouteMap& routes,
 {
   for (Net* net : nets) {
     int min_layer, max_layer;
-    getNetLayerRange(net->getDbNet(), min_layer, max_layer);
+    getNetLayerRange(net, min_layer, max_layer);
     odb::dbTechLayer* max_tech_layer
         = db_->getTech()->findRoutingLayer(max_layer);
     if (net->getNumPins() > 1

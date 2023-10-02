@@ -151,17 +151,13 @@ void TritonCTS::buildClockTrees()
 {
   for (TreeBuilder* builder : *builders_) {
     builder->setTechChar(*techChar_);
-    builder->setDb(db_);
-    builder->setLogger(logger_);
-    builder->initBlockages();
     builder->run();
   }
 
   if (options_->getBalanceLevels()) {
     for (TreeBuilder* builder : *builders_) {
       if (!builder->getParent() && !builder->getChildren().empty()) {
-        LevelBalancer balancer(
-            builder, options_, logger_, techChar_->getLengthUnit());
+        LevelBalancer balancer(builder, options_, logger_);
         balancer.run();
       }
     }
@@ -598,7 +594,7 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* net,
 
   clockNet.setNetObj(net);
   HTreeBuilder* builder
-      = new HTreeBuilder(options_, clockNet, parentBuilder, logger_, db_);
+      = new HTreeBuilder(options_, clockNet, parentBuilder, logger_);
   addBuilder(builder);
   return builder;
 }

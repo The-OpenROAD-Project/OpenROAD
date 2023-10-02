@@ -704,9 +704,4 @@ void trigger_action(const std::string& name)
   gui->triggerAction(name);
 }
 
-bool supported()
-{
-  return true;
-}
-
 %} // inline

@@ -370,7 +370,8 @@ void _dbTechLayerCutSpacingRule::out(dbDiff& diff,
 
 _dbTechLayerCutSpacingRule::_dbTechLayerCutSpacingRule(_dbDatabase* db)
 {
-  flags_ = {};
+  uint64_t* flags__bit_field = (uint64_t*) &flags_;
+  *flags__bit_field = 0;
   cut_spacing_ = 0;
   orthogonal_spacing_ = 0;
   width_ = 0;

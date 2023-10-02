@@ -216,8 +216,6 @@ class CtsOptions
   std::string getSinkBuffer() const { return sinkBuffer_; }
   utl::Logger* getLogger() const { return logger_; }
   stt::SteinerTreeBuilder* getSttBuilder() const { return sttBuilder_; }
-  void setObstructionAware(bool obs) { obsAware_ = obs; }
-  bool getObstructionAware() const { return obsAware_; }
 
  private:
   std::string clockNets_ = "";
@@ -262,7 +260,6 @@ class CtsOptions
   std::vector<odb::dbNet*> clockNetsObjs_;
   utl::Logger* logger_ = nullptr;
   stt::SteinerTreeBuilder* sttBuilder_ = nullptr;
-  bool obsAware_ = false;
 };
 
 }  // namespace cts

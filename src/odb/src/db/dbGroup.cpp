@@ -149,7 +149,8 @@ void _dbGroup::out(dbDiff& diff, char side, const char* field) const
 
 _dbGroup::_dbGroup(_dbDatabase* db)
 {
-  flags_ = {};
+  uint32_t* flags__bit_field = (uint32_t*) &flags_;
+  *flags__bit_field = 0;
 }
 
 _dbGroup::_dbGroup(_dbDatabase* db, const _dbGroup& r)

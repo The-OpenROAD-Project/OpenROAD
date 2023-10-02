@@ -219,12 +219,6 @@ set_buffer_list(const char* buffers)
 }
 
 void
-set_obstruction_aware(bool obs)
-{
-  getTritonCts()->getParms()->setObstructionAware(obs);
-}
-
-void
 run_triton_cts()
 {
   getTritonCts()->runTritonCts();

@@ -268,7 +268,8 @@ void _dbTechLayerCutEnclosureRule::out(dbDiff& diff,
 
 _dbTechLayerCutEnclosureRule::_dbTechLayerCutEnclosureRule(_dbDatabase* db)
 {
-  flags_ = {};
+  uint32_t* flags__bit_field = (uint32_t*) &flags_;
+  *flags__bit_field = 0;
   eol_width_ = 0;
   eol_min_length_ = 0;
   first_overhang_ = 0;

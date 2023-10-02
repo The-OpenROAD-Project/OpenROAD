@@ -2576,26 +2576,23 @@ void FlexDRWorker::route_queue_init_queue(queue<RouteQueueEntry>& rerouteQueue)
       // (See FlexDRWorker::initNet)
     }
   } else if (getRipupMode() == 2) {
-    std::vector<drNet*> ripupNets;
+    std::set<drNet*> ripupNets;
     for (auto& net : nets_) {
-      if (net->isRipup()) {
-        ripupNets.push_back(net.get());
-      }
+      if (net->isRipup())
+        ripupNets.insert(net.get());
     }
-    int currId = ripupNets.size();
-    std::set<drNet*> addedNets;
     for (auto& marker : markers_) {
-      for (auto net : ripupNets) {
+      for (auto it = ripupNets.begin(); it != ripupNets.end();) {
+        drNet* net = (drNet*) *it;
         if (marker.getSrcs().find(net->getFrNet()) != marker.getSrcs().end()) {
-          if (addedNets.find(net) != addedNets.end())
-            continue;
-          addedNets.insert(net);
-          net->setPriority(currId--);
+          routes.push_back({net, 0, true});
+          initMazeCost_via_helper(net, true);
+          it = ripupNets.erase(it);
+        } else {
+          ++it;
         }
       }
     }
-    // sort nets
-    mazeIterInit_sortRerouteNets(0, ripupNets);
     for (auto& net : ripupNets) {
       routes.push_back({net, 0, true});
       initMazeCost_via_helper(net, true);

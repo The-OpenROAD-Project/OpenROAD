@@ -421,7 +421,8 @@ void _dbTechLayerSpacingEolRule::out(dbDiff& diff,
 
 _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(_dbDatabase* db)
 {
-  flags_ = {};
+  uint64_t* flags__bit_field = (uint64_t*) &flags_;
+  *flags__bit_field = 0;
   eol_space_ = 0;
   eol_width_ = 0;
   wrong_dir_space_ = 0;
