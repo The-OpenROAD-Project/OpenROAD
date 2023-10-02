@@ -331,12 +331,24 @@ proc cluster_flops { args } {
   sta::parse_key_args "cluster_flops" args \
     keys { -tray_weight -timing_weight -max_split_size }
 
+
+  set tray_weight 20.0
+  set timing_weight 1.0
+  set max_split_size -1
+
   if { [info exists keys(-tray_weight)] } {
     set tray_weight $keys(-tray_weight)
-    set timing_weight $keys(-timing_weight)
-    set max_split_size $keys(-max_split_size)
-    gpl::replace_run_mbff_cmd $max_split_size $tray_weight $timing_weight
   }
+
+  if { [info exists keys(-timing_weight)] } {
+    set timing_weight $keys(-timing_weight)
+  }
+
+  if { [info exists keys(-max_split_size)] } {
+    set max_split_size $keys(-max_split_size)
+  }
+
+  gpl::replace_run_mbff_cmd $max_split_size $tray_weight $timing_weight
 }
 
 
