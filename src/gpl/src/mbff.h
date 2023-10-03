@@ -34,6 +34,7 @@
 
 #include <set>
 #include <vector>
+#include <tuple>
 
 #include "odb/db.h"
 #include "utl/Logger.h"
@@ -59,10 +60,7 @@ struct Flop
 
   bool operator<(const Flop& a) const
   {
-    if (prob == a.prob) {
-        return idx < a.idx;
-    }
-    return prob < a.prob;
+    return std::tie(prob, idx) < std::tie(a.prob, a.idx);
   }
 };
 
