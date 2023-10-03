@@ -57,7 +57,13 @@ struct Flop
   int idx;
   float prob;
 
-  bool operator<(const Flop& a) const { return prob < a.prob; }
+  bool operator<(const Flop& a) const
+  {
+    if (prob == a.prob) {
+        return idx < a.idx;
+    }
+    return prob < a.prob;
+  }
 };
 
 struct Path
