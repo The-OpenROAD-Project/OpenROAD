@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "Netlist.h"
+#include "iostream"
 
 #include <algorithm>
 
@@ -184,6 +185,7 @@ void Netlist::clear()
   io_pins_.clear();
   io_groups_.clear();
   _db_pin_idx_map.clear();
+  net_pointer_.push_back(0);
 }
 
 int IOPin::getArea() const
