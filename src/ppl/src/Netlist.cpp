@@ -178,7 +178,7 @@ void Netlist::sortPinsFromGroup(int group_idx, Edge edge)
   }
 }
 
-void Netlist::clear()
+void Netlist::reset()
 {
   inst_pins_.clear();
   net_pointer_.clear();

@@ -574,7 +574,7 @@ void IOPlacer::placeFallbackGroup(
 
 void IOPlacer::initIOLists()
 {
-  netlist_io_pins_->clear();
+  netlist_io_pins_->reset();
   int idx = 0;
   for (IOPin& io_pin : netlist_->getIOPins()) {
     std::vector<InstancePin> inst_pins_vector;
@@ -2578,7 +2578,7 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
 
 void IOPlacer::initNetlist()
 {
-  netlist_->clear();
+  netlist_->reset();
   const Rect& coreBoundary = core_->getBoundary();
   int x_center = (coreBoundary.xMin() + coreBoundary.xMax()) / 2;
   int y_center = (coreBoundary.yMin() + coreBoundary.yMax()) / 2;
