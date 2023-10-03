@@ -104,4 +104,5 @@ record_tests {
   write_pin_placement1
   write_pin_placement2
   write_pin_placement3
+  write_pin_placement4
 }
