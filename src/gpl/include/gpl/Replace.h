@@ -70,7 +70,6 @@ class InitialPlace;
 class NesterovPlace;
 class Debug;
 
-
 class Replace
 {
  public:
