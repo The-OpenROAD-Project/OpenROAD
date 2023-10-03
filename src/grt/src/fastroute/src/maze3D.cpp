@@ -141,12 +141,14 @@ void FastRouteCore::setupHeap3D(int netID,
   dest_heap_3D.clear();
 
   if (num_terminals == 2) {  // 2-pin net
-    d1_3D[0][y1][x1] = 0;
-    directions_3D[0][y1][x1] = Direction::Origin;
-    src_heap_3D.push_back(&d1_3D[0][y1][x1]);
-    d2_3D[0][y2][x2] = 0;
-    directions_3D[0][y2][x2] = Direction::Origin;
-    dest_heap_3D.push_back(&d2_3D[0][y2][x2]);
+    const int nt1 = treenodes[n1].stackAlias;
+    const int nt2 = treenodes[n2].stackAlias;
+    d1_3D[nets_[netID]->getPinL()[nt1]][y1][x1] = 0;
+    directions_3D[nets_[netID]->getPinL()[nt1]][y1][x1] = Direction::Origin;
+    src_heap_3D.push_back(&d1_3D[nets_[netID]->getPinL()[nt1]][y1][x1]);
+    d2_3D[nets_[netID]->getPinL()[nt2]][y2][x2] = 0;
+    directions_3D[nets_[netID]->getPinL()[nt2]][y2][x2] = Direction::Origin;
+    dest_heap_3D.push_back(&d2_3D[nets_[netID]->getPinL()[nt2]][y2][x2]);
   } else {  // net with more than 2 pins
     for (int i = regionY1; i <= regionY2; i++) {
       for (int j = regionX1; j <= regionX2; j++) {
@@ -1630,7 +1632,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         treenodes[d].status = 0;
 
         if (d < num_terminals) {
-          treenodes[d].botL = treenodes[d].topL = 0;
+          treenodes[d].botL = nets_[netID]->getPinL()[d];
+          treenodes[d].topL = nets_[netID]->getPinL()[d];
           // treenodes[d].l = 0;
           treenodes[d].assigned = true;
           treenodes[d].status = 1;

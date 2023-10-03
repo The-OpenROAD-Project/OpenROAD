@@ -1918,9 +1918,9 @@ void GlobalRouter::addRemainingGuides(NetRouteMap& routes,
       if (route.empty()) {
         addGuidesForLocalNets(
             db_net, route, min_routing_layer, max_routing_layer);
-      } else {
+      } /*else {
         addGuidesForPinAccess(db_net, route);
-      }
+      }*/
     }
   }
 }

@@ -781,7 +781,7 @@ void FastRouteCore::layerAssignmentV4()
       treenodes[nodeID].assigned = false;
 
       if (nodeID < num_terminals) {
-        treenodes[nodeID].botL = 0;
+        treenodes[nodeID].botL = nets_[netID]->getPinL()[nodeID];
         treenodes[nodeID].assigned = true;
         treenodes[nodeID].status = 1;
       }
@@ -861,7 +861,8 @@ void FastRouteCore::layerAssignment()
       treenodes[d].status = 0;
 
       if (d < sttrees_[netID].num_terminals) {
-        treenodes[d].botL = treenodes[d].topL = 0;
+        treenodes[d].botL = nets_[netID]->getPinL()[d];
+        treenodes[d].topL = nets_[netID]->getPinL()[d];
         // treenodes[d].l = 0;
         treenodes[d].assigned = true;
         treenodes[d].status = 1;
@@ -974,13 +975,13 @@ void FastRouteCore::checkRoute3D()
     const auto& treenodes = sttrees_[netID].nodes;
     const int num_terminals = sttrees_[netID].num_terminals;
 
-    for (nodeID = 0; nodeID < sttrees_[netID].num_nodes; nodeID++) {
+    /*for (nodeID = 0; nodeID < sttrees_[netID].num_nodes; nodeID++) {
       if (nodeID < num_terminals) {
         if (treenodes[nodeID].botL != 0) {
           logger_->error(GRT, 203, "Caused floating pin node.");
         }
       }
-    }
+    }*/
     for (edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
       if (sttrees_[netID].edges[edgeID].len == 0) {
         continue;
