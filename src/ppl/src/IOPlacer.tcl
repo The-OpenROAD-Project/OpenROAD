@@ -417,6 +417,18 @@ proc place_pin { args } {
   ppl::place_pin $pin $layer $x $y $width $height [info exists flags(-force_to_die_boundary)]
 }
 
+sta::define_cmd_args "write_pin_placement" {[-file_name file_name]}
+
+proc write_pin_placement { args } {
+  sta::parse_key_args "place_pins" args \
+  keys {-file_name}
+  if [info exists keys(-file_name)] {
+    ppl::write_pin_placement $keys(-file_name)
+  } else {
+    utl::error PPL 35 "-file_name is required"
+  }
+}
+
 sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
                                   [-ver_layers v_layers]\
                                   [-random_seed seed]\

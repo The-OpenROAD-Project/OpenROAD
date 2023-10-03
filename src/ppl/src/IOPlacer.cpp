@@ -684,14 +684,14 @@ int IOPlacer::micronsToDbu(double microns)
   return (int64_t) (microns * getBlock()->getDbUnitsPerMicron());
 }
 
-void IOPlacer::writePinPlacement()
+void IOPlacer::writePinPlacement(const char* file_name)
 {
-  std::string file_name = parms_->getPinPlacementFile();
-  if (file_name.empty()) {
+  std::string filename = file_name;
+  if (filename.empty()) {
     return;
   }
 
-  std::ofstream out(file_name);
+  std::ofstream out(filename);
 
   std::vector<Edge> edges_list
       = {Edge::bottom, Edge::right, Edge::top, Edge::left};
@@ -2000,7 +2000,7 @@ void IOPlacer::run(bool random_mode)
 
   checkPinPlacement();
   commitIOPlacementToDB(assignment_);
-  writePinPlacement();
+  writePinPlacement(parms_->getPinPlacementFile().c_str());
   clear();
 }
 
@@ -2081,7 +2081,7 @@ void IOPlacer::runAnnealing(bool random)
 
   checkPinPlacement();
   commitIOPlacementToDB(assignment_);
-  writePinPlacement();
+  writePinPlacement(parms_->getPinPlacementFile().c_str());
   clear();
 }
 

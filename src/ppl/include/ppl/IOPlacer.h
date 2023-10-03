@@ -175,6 +175,8 @@ class IOPlacer
   void setAnnealingDebugPaintInterval(int iters_between_paintings);
   void setAnnealingDebugNoPauseMode(bool no_pause_mode);
 
+  void writePinPlacement(const char* file_name);
+
  private:
   void createTopLayerPinPattern();
   void initNetlistAndCore(const std::set<int>& hor_layer_idx,
@@ -265,7 +267,6 @@ class IOPlacer
   void getBlockedRegionsFromDbObstructions();
   double dbuToMicrons(int64_t dbu);
   int micronsToDbu(double microns);
-  void writePinPlacement();
   Edge getMirroredEdge(const Edge& edge);
 
   // db functions
