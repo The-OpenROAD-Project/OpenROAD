@@ -37,8 +37,8 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "odb/db.h"
-using namespace std;
-using namespace fr;
+
+namespace fr {
 
 void FlexRP::prep()
 {
@@ -66,17 +66,20 @@ void FlexRP::prep_minStepViasCheck()
     if (layer->getType() != dbTechLayerType::ROUTING) {
       continue;
     }
-    if (lNum - 2 < bottomLayerNum || lNum + 2 > topLayerNum)
+    if (lNum - 2 < bottomLayerNum || lNum + 2 > topLayerNum) {
       continue;
+    }
     frViaDef* downVia
         = getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef();
     frViaDef* upVia
         = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
-    if (!downVia || !upVia)
+    if (!downVia || !upVia) {
       continue;
+    }
     auto minStepCons = layer->getMinStepConstraint();
-    if (!minStepCons)
+    if (!minStepCons) {
       continue;
+    }
 
     Rect upViaBox = upVia->getLayer1ShapeBox();
     Rect downViaBox = downVia->getLayer2ShapeBox();
@@ -89,13 +92,14 @@ void FlexRP::prep_minStepViasCheck()
 
     // joining the two via rects in one polygon
     gtl::polygon_90_set_data<frCoord> set;
-    using namespace boost::polygon::operators;
+    using boost::polygon::operators::operator+=;
     set += upViaRect;
     set += downViaRect;
     std::vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
     set.get_polygons(polys);
-    if (polys.size() != 1)
+    if (polys.size() != 1) {
       continue;
+    }
 
     gtl::polygon_90_with_holes_data<frCoord> poly = *polys.begin();
     unique_ptr<gcNet> uTestNet = make_unique<gcNet>(0);
@@ -107,7 +111,7 @@ void FlexRP::prep_minStepViasCheck()
     bool first = true;
     std::vector<std::unique_ptr<gcSegment>> tmpEdges;
     gtl::point_data<frCoord> prev;
-    for (gtl::point_data<frCoord> cur : poly) {
+    for (const gtl::point_data<frCoord>& cur : poly) {
       if (first) {
         prev = cur;
         first = false;
@@ -199,11 +203,7 @@ bool FlexRP::prep_viaForbiddenThrough_minStep(const frLayerNum& lNum,
     return false;
   }
 
-  if (lNum == 10 && viaDef->getName() == "CK_23_28_0_26_VH_CK") {
-    return true;
-  } else {
-    return false;
-  }
+  return lNum == 10 && viaDef->getName() == "CK_23_28_0_26_VH_CK";
 }
 
 /**
@@ -216,19 +216,25 @@ bool FlexRP::prep_viaForbiddenThrough_minStep(const frLayerNum& lNum,
 inline frCoord getMinEol(frLayer* layer, frCoord minWidth)
 {
   frCoord eol = INT_MAX;
-  if (layer->hasEolSpacing())
-    for (auto con : layer->getEolSpacing())
+  if (layer->hasEolSpacing()) {
+    for (auto con : layer->getEolSpacing()) {
       eol = std::min(eol, con->getEolWidth());
-  for (auto con : layer->getLef58SpacingEndOfLineConstraints())
+    }
+  }
+  for (auto con : layer->getLef58SpacingEndOfLineConstraints()) {
     eol = std::min(eol, con->getEolWidth());
-  for (auto con : layer->getLef58EolKeepOutConstraints())
+  }
+  for (auto con : layer->getLef58EolKeepOutConstraints()) {
     eol = std::min(eol, con->getEolWidth());
-  for (auto con : layer->getLef58EolExtConstraints())
+  }
+  for (auto con : layer->getLef58EolExtConstraints()) {
     eol = std::min(eol, con->getExtensionTable().getMinRow());
-  if (eol == INT_MAX)
+  }
+  if (eol == INT_MAX) {
     eol = minWidth;
-  else
+  } else {
     eol = std::max(eol - 1, (frCoord) minWidth);
+  }
   return eol;
 }
 
@@ -297,8 +303,9 @@ void FlexRP::prep_eolForbiddenLen()
       }
       auto z = lNum / 2 - 1;
       frCoord minWidth = ndr->getWidth(z);
-      if (minWidth == 0)
+      if (minWidth == 0) {
         continue;
+      }
       frCoord eolSpace = 0;
       frCoord eolWithin = 0;
       frCoord eolWidth = getMinEol(layer, minWidth);
@@ -318,15 +325,17 @@ void FlexRP::prep_cutSpcTbl()
     auto layer = tech_->getLayer(lNum);
     if (layer->getType() == odb::dbTechLayerType::CUT) {
       auto viaDef = layer->getDefaultViaDef();
-      if (viaDef == nullptr)
+      if (viaDef == nullptr) {
         continue;
+      }
       frVia via(viaDef);
       Rect tmpBx = via.getCutBBox();
-      frString cutClass1 = "";
+      frString cutClass1;
       auto cutClassIdx1
           = layer->getCutClassIdx(tmpBx.minDXDY(), tmpBx.maxDXDY());
-      if (cutClassIdx1 >= 0)
+      if (cutClassIdx1 >= 0) {
         cutClass1 = layer->getCutClass(cutClassIdx1)->getName();
+      }
       if (layer->hasLef58DiffNetCutSpcTblConstraint()) {
         auto con = layer->getLef58DiffNetCutSpcTblConstraint();
         auto dbRule = con->getODBRule();
@@ -352,11 +361,12 @@ void FlexRP::prep_cutSpcTbl()
         viaDef = secondLayer->getDefaultViaDef();
         if (viaDef != nullptr) {
           tmpBx = via.getCutBBox();
-          frString cutClass2 = "";
+          frString cutClass2;
           auto cutClassIdx2
               = secondLayer->getCutClassIdx(tmpBx.minDXDY(), tmpBx.maxDXDY());
-          if (cutClassIdx2 >= 0)
+          if (cutClassIdx2 >= 0) {
             cutClass2 = secondLayer->getCutClass(cutClassIdx2)->getName();
+          }
           con->setDefaultSpacing(
               {dbRule->getMaxSpacing(
                    cutClass1,
@@ -412,9 +422,9 @@ void FlexRP::prep_lineForbiddenLen_helper(const frLayerNum& lNum,
   }
 
   forbiddenRanges.clear();
-  for (auto it = forbiddenIntvSet.begin(); it != forbiddenIntvSet.end(); it++) {
-    auto beginCoord = it->lower();
-    auto endCoord = it->upper();
+  for (const auto& interval : forbiddenIntvSet) {
+    const auto beginCoord = interval.lower();
+    const auto endCoord = interval.upper();
     forbiddenRanges.push_back(make_pair(beginCoord + 1, endCoord - 1));
   }
 
@@ -503,9 +513,9 @@ void FlexRP::prep_viaForbiddenPlanarLen_helper(const frLayerNum& lNum,
   }
 
   forbiddenRanges.clear();
-  for (auto it = forbiddenIntvSet.begin(); it != forbiddenIntvSet.end(); it++) {
-    auto beginCoord = it->lower();
-    auto endCoord = it->upper();
+  for (const auto& interval : forbiddenIntvSet) {
+    const auto beginCoord = interval.lower();
+    const auto endCoord = interval.upper();
     forbiddenRanges.push_back(make_pair(beginCoord + 1, endCoord - 1));
   }
 
@@ -518,7 +528,6 @@ void FlexRP::prep_viaForbiddenPlanarLen_minStep(
     bool isCurrDirX,
     ForbiddenRanges& forbiddenRanges)
 {
-  return;
 }
 
 void FlexRP::prep_viaForbiddenTurnLen(frNonDefaultRule* ndr)
@@ -534,16 +543,18 @@ void FlexRP::prep_viaForbiddenTurnLen(frNonDefaultRule* ndr)
     }
     frViaDef* downVia = nullptr;
     frViaDef* upVia = nullptr;
-    if (ndr && bottom < lNum && ndr->getPrefVia((lNum - 2) / 2 - 1))
+    if (ndr && bottom < lNum && ndr->getPrefVia((lNum - 2) / 2 - 1)) {
       downVia = ndr->getPrefVia((lNum - 2) / 2 - 1);
-    else if (getDesign()->getTech()->getBottomLayerNum() <= lNum - 1)
+    } else if (getDesign()->getTech()->getBottomLayerNum() <= lNum - 1) {
       downVia = getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef();
+    }
 
     if (getDesign()->getTech()->getTopLayerNum() >= lNum + 1) {
-      if (ndr && ndr->getPrefVia((lNum + 2) / 2 - 1))
+      if (ndr && ndr->getPrefVia((lNum + 2) / 2 - 1)) {
         upVia = ndr->getPrefVia((lNum + 2) / 2 - 1);
-      else
+      } else {
         upVia = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
+      }
     }
     prep_viaForbiddenTurnLen_helper(lNum, i, 0, downVia, true, ndr);
     prep_viaForbiddenTurnLen_helper(lNum, i, 1, downVia, false, ndr);
@@ -580,15 +591,16 @@ void FlexRP::prep_viaForbiddenTurnLen_helper(const frLayerNum& lNum,
   }
 
   forbiddenRanges.clear();
-  for (auto it = forbiddenIntvSet.begin(); it != forbiddenIntvSet.end(); it++) {
-    auto beginCoord = it->lower();
-    auto endCoord = it->upper();
+  for (const auto& interval : forbiddenIntvSet) {
+    const auto beginCoord = interval.lower();
+    const auto endCoord = interval.upper();
     forbiddenRanges.push_back(make_pair(beginCoord + 1, endCoord - 1));
   }
-  if (ndr)
+  if (ndr) {
     ndr->viaForbiddenTurnLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
-  else
+  } else {
     tech->viaForbiddenTurnLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
+  }
 }
 
 void FlexRP::prep_viaForbiddenTurnLen_minSpc(const frLayerNum& lNum,
@@ -603,8 +615,9 @@ void FlexRP::prep_viaForbiddenTurnLen_minSpc(const frLayerNum& lNum,
 
   frCoord defaultWidth = tech_->getLayer(lNum)->getWidth();
   frCoord width = defaultWidth;
-  if (ndr)
+  if (ndr) {
     width = max(width, ndr->getWidth(lNum / 2 - 1));
+  }
 
   frVia via1(viaDef);
   Rect viaBox1;
@@ -636,8 +649,9 @@ void FlexRP::prep_viaForbiddenTurnLen_minSpc(const frLayerNum& lNum,
             width1, width, prl1);
       }
     }
-    if (ndr)
+    if (ndr) {
       minReqDist = max(minReqDist, ndr->getSpacing(lNum / 2 - 1));
+    }
     if (minReqDist != INT_MIN) {
       minReqDist += minNonOverlapDist;
     }
@@ -660,15 +674,17 @@ void FlexRP::prep_via2viaForbiddenLen(frNonDefaultRule* ndr)
     }
     frViaDef* downVia = nullptr;
     frViaDef* upVia = nullptr;
-    if (ndr && bottom < lNum && ndr->getPrefVia((lNum - 2) / 2 - 1))
+    if (ndr && bottom < lNum && ndr->getPrefVia((lNum - 2) / 2 - 1)) {
       downVia = ndr->getPrefVia((lNum - 2) / 2 - 1);
-    else if (getDesign()->getTech()->getBottomLayerNum() <= lNum - 1)
+    } else if (getDesign()->getTech()->getBottomLayerNum() <= lNum - 1) {
       downVia = getDesign()->getTech()->getLayer(lNum - 1)->getDefaultViaDef();
+    }
     if (getDesign()->getTech()->getTopLayerNum() >= lNum + 1) {
-      if (ndr && ndr->getPrefVia((lNum + 2) / 2 - 1))
+      if (ndr && ndr->getPrefVia((lNum + 2) / 2 - 1)) {
         upVia = ndr->getPrefVia((lNum + 2) / 2 - 1);
-      else
+      } else {
         upVia = getDesign()->getTech()->getLayer(lNum + 1)->getDefaultViaDef();
+      }
     }
     prep_via2viaForbiddenLen_helper(lNum, i, 0, downVia, downVia, true, ndr);
     prep_via2viaForbiddenLen_helper(lNum, i, 1, downVia, downVia, false, ndr);
@@ -719,14 +735,14 @@ void FlexRP::prep_via2viaForbiddenLen_helper(const frLayerNum& lNum,
   }
 
   forbiddenRanges.clear();
-  for (auto it = forbiddenIntvSet.begin(); it != forbiddenIntvSet.end(); it++) {
-    auto beginCoord = it->lower();
-    auto endCoord = it->upper();
+  for (const auto& interval : forbiddenIntvSet) {
+    const auto beginCoord = interval.lower();
+    const auto endCoord = interval.upper();
     forbiddenRanges.push_back(make_pair(beginCoord, endCoord));
   }
-  if (ndr)
+  if (ndr) {
     ndr->via2ViaForbiddenLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
-  else {
+  } else {
     tech->via2ViaForbiddenLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
   }
 }
@@ -740,13 +756,14 @@ bool FlexRP::hasMinStepViol(Rect& r1, Rect& r2, frLayerNum lNum)
 
   // joining the two via rects in one polygon
   gtl::polygon_90_set_data<frCoord> set;
-  using namespace boost::polygon::operators;
+  using boost::polygon::operators::operator+=;
   set += rect1;
   set += rect2;
   std::vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
   set.get_polygons(polys);
-  if (polys.size() != 1)
+  if (polys.size() != 1) {
     return false;
+  }
 
   gtl::polygon_90_with_holes_data<frCoord> poly = *polys.begin();
   unique_ptr<gcNet> uTestNet = make_unique<gcNet>(0);
@@ -806,8 +823,9 @@ void FlexRP::prep_via2viaForbiddenLen_minStep(const frLayerNum& lNum,
     return;
   }
   frMinStepConstraint* con = tech_->getLayer(lNum)->getMinStepConstraint();
-  if (!con)
+  if (!con) {
     return;
+  }
   if (viaDef1->getLayer1Num() == viaDef2->getLayer1Num()) {
     return;
   }
@@ -830,8 +848,9 @@ void FlexRP::prep_via2viaForbiddenLen_minStep(const frLayerNum& lNum,
     } else if (enclosureBox2.dx() < enclosureBox1.dx()) {
       shifting = &enclosureBox2;
       other = &enclosureBox1;
-    } else
+    } else {
       return;
+    }
   } else {
     if (enclosureBox1.dy() < enclosureBox2.dy()) {
       shifting = &enclosureBox1;
@@ -839,8 +858,9 @@ void FlexRP::prep_via2viaForbiddenLen_minStep(const frLayerNum& lNum,
     } else if (enclosureBox2.dy() < enclosureBox1.dy()) {
       shifting = &enclosureBox2;
       other = &enclosureBox1;
-    } else
+    } else {
       return;
+    }
   }
   // example where shifting is vertical and other is horizontal
   //      shiftingHigh
@@ -879,14 +899,17 @@ void FlexRP::prep_via2viaForbiddenLen_minStep(const frLayerNum& lNum,
   if (hasMinStepViol(*shifting, *other, lNum)) {
     if (shiftingEdge < con->getMinStepLength()) {
       shift = con->getMinStepLength() - shiftingEdge - 1;
-      if (shiftingLow < otherLow)
+      if (shiftingLow < otherLow) {
         shift = std::max(shift, otherLow - shiftingLow - 1);
-      if (isVertical)
+      }
+      if (isVertical) {
         shifting->moveDelta(0, shift + 1);
-      else
+      } else {
         shifting->moveDelta(shift + 1, 0);
-      if (hasMinStepViol(*shifting, *other, lNum))
+      }
+      if (hasMinStepViol(*shifting, *other, lNum)) {
         shift = otherHigh - shiftingLow;
+      }
     } else {
       assert(otherEdge < con->getMinStepLength());
       shift = otherHigh - shiftingLow;
@@ -902,45 +925,55 @@ void FlexRP::prep_via2viaForbiddenLen_minStep(const frLayerNum& lNum,
           length += topEdge_shifting + shiftingEdge;
           if (otherEdge < con->getMinStepLength()) {
             length += 2 * otherEdge;
-            if (topEdge_other < con->getMinStepLength())
+            if (topEdge_other < con->getMinStepLength()) {
               return;
+            }
           }
         } else if (otherEdge < con->getMinStepLength()) {
           length += otherEdge;
           div = 1;
-          if (topEdge_other < con->getMinStepLength())
+          if (topEdge_other < con->getMinStepLength()) {
             length += topEdge_other + otherEdge + shiftingEdge;
+          }
         }
         shift = (con->getMaxLength() - length) / div + 1;
-        if (shift < 0)
+        if (shift < 0) {
           return;
-        if (isVertical)
+        }
+        if (isVertical) {
           shifting->moveDelta(0, shift);
-        else
+        } else {
           shifting->moveDelta(shift, 0);
+        }
         if (hasMinStepViol(*shifting, *other, lNum)) {
           minRange = shift;
           shift = otherHigh - shiftingLow;
-        } else
+        } else {
           return;
-      } else
+        }
+      } else {
         return;
+      }
     } else {
       minRange = otherLow - shiftingLow - con->getMinStepLength() + 1;
-      if (isVertical)
+      if (isVertical) {
         shifting->moveDelta(0, minRange);
-      else
+      } else {
         shifting->moveDelta(minRange, 0);
+      }
       if (hasMinStepViol(*shifting, *other, lNum)) {
         shift = con->getMinStepLength() - 2;
-        if (isVertical)
+        if (isVertical) {
           shifting->moveDelta(0, shift + 1);
-        else
+        } else {
           shifting->moveDelta(shift + 1, 0);
-        if (hasMinStepViol(*shifting, *other, lNum))
+        }
+        if (hasMinStepViol(*shifting, *other, lNum)) {
           shift = otherHigh - shiftingLow;
-      } else
+        }
+      } else {
         return;
+      }
     }
   }
   forbiddenRanges.push_back(make_pair(minRange - 1, minRange + shift + 1));
@@ -1104,10 +1137,12 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
   auto cutClassIdx2
       = layer2->getCutClassIdx(cutBox2.minDXDY(), cutBox2.maxDXDY());
   frString cutClass1, cutClass2;
-  if (cutClassIdx1 != -1)
+  if (cutClassIdx1 != -1) {
     cutClass1 = layer1->getCutClass(cutClassIdx1)->getName();
-  if (cutClassIdx2 != -1)
+  }
+  if (cutClassIdx2 != -1) {
     cutClass2 = layer2->getCutClass(cutClassIdx2)->getName();
+  }
   bool isSide1;
   bool isSide2;
   if (isCurrDirY) {
@@ -1119,40 +1154,47 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
   }
   if (layer1->getLayerNum() == layer2->getLayerNum()) {
     frLef58CutSpacingTableConstraint* lef58con = nullptr;
-    if (layer1->hasLef58SameMetalCutSpcTblConstraint())
+    if (layer1->hasLef58SameMetalCutSpcTblConstraint()) {
       lef58con = layer1->getLef58SameMetalCutSpcTblConstraint();
-    else if (layer1->hasLef58SameNetCutSpcTblConstraint())
+    } else if (layer1->hasLef58SameNetCutSpcTblConstraint()) {
       lef58con = layer1->getLef58SameNetCutSpcTblConstraint();
-    else if (layer1->hasLef58DiffNetCutSpcTblConstraint())
+    } else if (layer1->hasLef58DiffNetCutSpcTblConstraint()) {
       lef58con = layer1->getLef58DiffNetCutSpcTblConstraint();
+    }
     if (lef58con != nullptr) {
       auto dbRule = lef58con->getODBRule();
       reqSpcVal = dbRule->getSpacing(cutClass1, isSide1, cutClass2, isSide2);
       if (!dbRule->isCenterToCenter(cutClass1, cutClass2)
           && !dbRule->isCenterAndEdge(cutClass1, cutClass2)) {
-        if (!swapped)
+        if (!swapped) {
           reqSpcVal += isCurrDirY ? cutBox1.dy() : cutBox1.dx();
-        else
+        } else {
           reqSpcVal += isCurrDirY ? cutBox2.dy() : cutBox2.dx();
+        }
       }
-      if (reqSpcVal != 0)
+      if (reqSpcVal != 0) {
         forbiddenRanges.push_back(make_pair(0, reqSpcVal));
+      }
     }
   } else {
     frLef58CutSpacingTableConstraint* con;
-    if (layer1->hasLef58SameMetalInterCutSpcTblConstraint())
+    if (layer1->hasLef58SameMetalInterCutSpcTblConstraint()) {
       con = layer1->getLef58SameMetalInterCutSpcTblConstraint();
-    else if (layer1->hasLef58SameNetInterCutSpcTblConstraint())
+    } else if (layer1->hasLef58SameNetInterCutSpcTblConstraint()) {
       con = layer1->getLef58SameNetInterCutSpcTblConstraint();
-    else
+    } else {
       return;
+    }
     auto dbRule = con->getODBRule();
-    if (dbRule->isSameNet() || dbRule->isSameMetal())
-      if (!dbRule->isNoStack())
+    if (dbRule->isSameNet() || dbRule->isSameMetal()) {
+      if (!dbRule->isNoStack()) {
         return;
+      }
+    }
     reqSpcVal = dbRule->getSpacing(cutClass1, isSide1, cutClass2, isSide2);
-    if (reqSpcVal == 0)
+    if (reqSpcVal == 0) {
       return;
+    }
     if (!dbRule->isCenterToCenter(cutClass1, cutClass2)
         && !dbRule->isCenterAndEdge(cutClass1, cutClass2)) {
       reqSpcVal += isCurrDirY ? ((cutBox1.dy() + cutBox2.dy()) / 2)
@@ -1579,8 +1621,9 @@ void FlexRP::prep_via2viaForbiddenLen_minSpc(frLayerNum lNum,
             width1, width2, min(prl1, prl2));
       }
     }
-    if (ndr)
+    if (ndr) {
       minReqDist = max(minReqDist, ndr->getSpacing(lNum / 2 - 1));
+    }
     if (minReqDist != INT_MIN) {
       minReqDist += minNonOverlapDist;
     }
@@ -1617,8 +1660,9 @@ void FlexRP::prep_via2viaForbiddenLen_minSpc(frLayerNum lNum,
         minReqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
             width1, width1, prl1);
       }
-      if (ndr)
+      if (ndr) {
         minReqDist = max(minReqDist, ndr->getSpacing(lNum / 2 - 1));
+      }
       if (minReqDist != INT_MIN) {
         minReqDist += minNonOverlapDist;
       }
@@ -1629,3 +1673,5 @@ void FlexRP::prep_via2viaForbiddenLen_minSpc(frLayerNum lNum,
     }
   }
 }
+
+}  // namespace fr

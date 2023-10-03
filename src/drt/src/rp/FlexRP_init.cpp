@@ -26,16 +26,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <iostream>
-#include <sstream>
-
 #include "FlexRP.h"
-#include "db/infra/frTime.h"
 #include "frProfileTask.h"
-#include "gc/FlexGC.h"
 
-using namespace std;
-using namespace fr;
+namespace fr {
 
 void FlexRP::init()
 {
@@ -59,3 +53,5 @@ void FlexRP::init()
     }
   }
 }
+
+}  // namespace fr
