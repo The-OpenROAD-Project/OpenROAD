@@ -33,8 +33,8 @@
 #pragma once
 
 #include <set>
-#include <vector>
 #include <tuple>
+#include <vector>
 
 #include "odb/db.h"
 #include "utl/Logger.h"
