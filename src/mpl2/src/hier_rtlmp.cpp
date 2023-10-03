@@ -635,9 +635,13 @@ void HierRTLMP::hierRTLMacroPlacer()
     }
   }
 
+  generateTemporaryStdCellsPlacement(root_cluster_);
+
   for (auto& [inst, hard_macro] : hard_macro_map_) {
     hard_macro->updateDb(pitch_x_, pitch_y_, block_);
   }
+
+  correctAllMacrosOrientation();
 
   // Clear the memory to avoid memory leakage
   // release all the pointers
@@ -5911,6 +5915,143 @@ void HierRTLMP::FDPlacement(std::vector<Rect>& blocks,
       MoveBlock(attract_factor,
                 repulsive_factor,
                 max_size / (1 + std::floor(j / 100)));
+  }
+}
+
+void HierRTLMP::setTemporaryStdCellLocation(Cluster* cluster,
+                                            odb::dbInst* std_cell)
+{
+  const SoftMacro* soft_macro = cluster->getSoftMacro();
+
+  const int soft_macro_center_x_dbu = micronToDbu(soft_macro->getPinX(), dbu_);
+  const int soft_macro_center_y_dbu = micronToDbu(soft_macro->getPinY(), dbu_);
+
+  // Std cells are placed in the center of the cluster they belong to
+  std_cell->setLocation(
+      (soft_macro_center_x_dbu - std_cell->getBBox()->getDX() / 2),
+      (soft_macro_center_y_dbu - std_cell->getBBox()->getDY() / 2));
+
+  std_cell->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+}
+
+void HierRTLMP::setModuleStdCellsLocation(Cluster* cluster,
+                                          odb::dbModule* module)
+{
+  for (odb::dbInst* inst : module->getInsts()) {
+    if (!inst->isCore()) {
+      continue;
+    }
+    setTemporaryStdCellLocation(cluster, inst);
+  }
+
+  for (odb::dbModInst* mod_insts : module->getChildren()) {
+    setModuleStdCellsLocation(cluster, mod_insts->getMaster());
+  }
+}
+
+void HierRTLMP::generateTemporaryStdCellsPlacement(Cluster* cluster)
+{
+  if (cluster->isLeaf() && cluster->getNumStdCell() != 0) {
+    for (odb::dbModule* module : cluster->getDbModules()) {
+      setModuleStdCellsLocation(cluster, module);
+    }
+
+    for (odb::dbInst* leaf_std_cell : cluster->getLeafStdCells()) {
+      setTemporaryStdCellLocation(cluster, leaf_std_cell);
+    }
+  } else {
+    for (const auto& child : cluster->getChildren()) {
+      generateTemporaryStdCellsPlacement(child);
+    }
+  }
+}
+
+float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
+{
+  float wirelength = 0.0;
+
+  for (odb::dbITerm* iterm : macro->getITerms()) {
+    if (iterm->getSigType() != odb::dbSigType::SIGNAL) {
+      continue;
+    }
+
+    odb::dbNet* net = iterm->getNet();
+    if (net != nullptr) {
+      const float x1 = dbuToMicron(iterm->getBBox().xCenter(), dbu_);
+      const float y1 = dbuToMicron(iterm->getBBox().yCenter(), dbu_);
+
+      for (odb::dbITerm* net_iterm : net->getITerms()) {
+        if (net_iterm == iterm) {
+          continue;
+        }
+
+        if (net_iterm->getInst()->getPlacementStatus().isPlaced()) {
+          const float x2 = dbuToMicron(net_iterm->getBBox().xCenter(), dbu_);
+          const float y2 = dbuToMicron(net_iterm->getBBox().yCenter(), dbu_);
+
+          wirelength += (std::abs(x2 - x1) + std::abs(y2 - y1));
+        }
+      }
+    }
+  }
+
+  return wirelength;
+}
+
+void HierRTLMP::flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip)
+{
+  if (is_vertical_flip) {
+    macro->setOrient(macro->getOrient().flipY());
+  } else {
+    macro->setOrient(macro->getOrient().flipX());
+  }
+}
+
+void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip)
+{
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (!inst->isBlock()) {
+      continue;
+    }
+
+    const float original_wirelength = calculateRealMacroWirelength(inst);
+    odb::Point macro_location = inst->getLocation();
+
+    // Flipping is done by mirroring the macro about the "Y" or "X" axis,
+    // so, after flipping, we must manually set the location (lower-left corner)
+    // again to move the macro back to the the position choosen by mpl2.
+    flipRealMacro(inst, is_vertical_flip);
+    inst->setLocation(macro_location.getX(), macro_location.getY());
+    const float new_wirelength = calculateRealMacroWirelength(inst);
+
+    if (new_wirelength > original_wirelength) {
+      flipRealMacro(inst, is_vertical_flip);
+      inst->setLocation(macro_location.getX(), macro_location.getY());
+    }
+  }
+}
+
+void HierRTLMP::correctAllMacrosOrientation()
+{
+  // Apply vertical flip if necessary
+  adjustRealMacroOrientation(true);
+
+  // Apply horizontal flip if necessary
+  adjustRealMacroOrientation(false);
+
+  for (auto& [inst, hard_macro] : hard_macro_map_) {
+    const Rect inst_box(dbuToMicron(inst->getBBox()->xMin(), dbu_),
+                        dbuToMicron(inst->getBBox()->yMin(), dbu_),
+                        dbuToMicron(inst->getBBox()->xMax(), dbu_),
+                        dbuToMicron(inst->getBBox()->yMax(), dbu_));
+
+    const odb::dbOrientType inst_orientation = inst->getOrient();
+
+    const odb::Point snap_origin = hard_macro->alignOriginWithGrids(
+        inst_box, inst_orientation, pitch_x_, pitch_y_, block_);
+
+    inst->setOrigin(snap_origin.x(), snap_origin.y());
+    inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
   }
 }
 
