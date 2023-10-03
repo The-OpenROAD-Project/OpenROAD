@@ -1067,7 +1067,7 @@ float HardMacro::getDirectionPitch(odb::dbTechLayer* layer,
     pitch = layer->getPitchY();
   }
 
-  return static_cast<float>(pitch);
+  return pitch;
 }
 
 float HardMacro::getDirectionOffset(odb::dbTechLayer* layer,
@@ -1081,7 +1081,7 @@ float HardMacro::getDirectionOffset(odb::dbTechLayer* layer,
     offset = layer->getOffsetY();
   }
 
-  return static_cast<float>(offset);
+  return offset;
 }
 
 float HardMacro::getDirectionPinWidth(odb::dbBox* box,
@@ -1095,7 +1095,7 @@ float HardMacro::getDirectionPinWidth(odb::dbBox* box,
     pin_width = box->getDY();
   }
 
-  return static_cast<float>(pin_width);
+  return pin_width;
 }
 
 void HardMacro::getDirectionTrackGrid(odb::dbTrackGrid* track_grid,

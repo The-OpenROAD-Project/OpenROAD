@@ -403,21 +403,21 @@ class HardMacro
                                   odb::dbBlock* block);
 
   void computeDirectionSpacingParameters(odb::dbBlock* block,
-                                          odb::dbTechLayer* layer,
-                                          odb::dbBox* box,
-                                          float& offset,
-                                          float& pitch,
-                                          float& pin_width,
-                                          const bool& is_vertical_direction);
+                                         odb::dbTechLayer* layer,
+                                         odb::dbBox* box,
+                                         float& offset,
+                                         float& pitch,
+                                         float& pin_width,
+                                         const bool& is_vertical_direction);
   void getDirectionTrackGrid(odb::dbTrackGrid* track_grid,
-                              std::vector<int>& coordinate_grid,
-                              const bool& is_vertical_direction);
+                             std::vector<int>& coordinate_grid,
+                             const bool& is_vertical_direction);
   float getDirectionPitch(odb::dbTechLayer* layer,
-                           const bool& is_vertical_direction);
+                          const bool& is_vertical_direction);
   float getDirectionOffset(odb::dbTechLayer* layer,
-                            const bool& is_vertical_direction);
+                           const bool& is_vertical_direction);
   float getDirectionPinWidth(odb::dbBox* box,
-                              const bool& is_vertical_direction);
+                             const bool& is_vertical_direction);
 
   int getXDBU() const { return micronToDbu(getX(), dbu_); }
 
