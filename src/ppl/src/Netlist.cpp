@@ -34,11 +34,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "Netlist.h"
-#include "iostream"
 
 #include <algorithm>
 
 #include "Slots.h"
+#include "iostream"
 #include "ppl/IOPlacer.h"
 
 namespace ppl {
