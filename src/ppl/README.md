@@ -255,7 +255,19 @@ microns to 60.5 microns, and the left edge from its beginning to 50 microns.
 | `-random_seed` | Specify the seed for random operations. |
 | `-random` | When this flag is enabled, the pin placement is random. |
 
+### Write Pin Placement
 
+Use the following command to write a file with the pin placement in the format of multiple calls for the `place_pin` command:
+
+```tcl
+write_pin_placement -file_name file_name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-file_name` | The name of the file with the pin placement. |
 
 ### Useful Developer Commands
 
