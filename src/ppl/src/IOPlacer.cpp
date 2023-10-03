@@ -866,13 +866,25 @@ void IOPlacer::defineSlots()
 
   findSlotsForTopLayer();
 
-  if (netlist_io_pins_->getIOPins().size() > slots_.size()) {
+  int regular_pin_count = static_cast<int>(netlist_io_pins_->getIOPins().size())
+                          - top_layer_pins_count_;
+  if (regular_pin_count > slots_.size()) {
     logger_->error(PPL,
                    24,
                    "Number of IO pins ({}) exceeds maximum number of available "
                    "positions ({}).",
-                   netlist_io_pins_->getIOPins().size(),
+                   regular_pin_count,
                    slots_.size());
+  }
+
+  if (top_layer_pins_count_ > top_layer_slots_.size()) {
+    logger_->error(PPL,
+                   11,
+                   "Number of IO pins assigned to the top layer ({}) exceeds "
+                   "maximum number of available "
+                   "top layer positions ({}).",
+                   top_layer_pins_count_,
+                   top_layer_slots_.size());
   }
 }
 
@@ -1576,6 +1588,11 @@ void IOPlacer::addTopLayerConstraint(PinSet* pins, const odb::Rect& region)
 {
   Constraint constraint(*pins, Direction::invalid, region);
   constraints_.push_back(constraint);
+  for (odb::dbBTerm* bterm : *pins) {
+    if (!bterm->getFirstPinPlacementStatus().isFixed()) {
+      top_layer_pins_count_++;
+    }
+  }
 }
 
 void IOPlacer::addMirroredPins(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2)
