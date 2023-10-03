@@ -6016,6 +6016,9 @@ void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip)
     const float original_wirelength = calculateRealMacroWirelength(inst);
     odb::Point macro_location = inst->getLocation();
 
+    // Flipping is done by mirroring the macro about the "Y" or "X" axis,
+    // so, after flipping, we must manually set the location (lower-left corner)
+    // again to move the macro back to the the position choosen by mpl2.
     flipRealMacro(inst, is_vertical_flip);
     inst->setLocation(macro_location.getX(), macro_location.getY());
     const float new_wirelength = calculateRealMacroWirelength(inst);
