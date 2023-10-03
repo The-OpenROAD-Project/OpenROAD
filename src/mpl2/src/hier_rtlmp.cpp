@@ -5977,14 +5977,15 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
 
     odb::dbNet* net = iterm->getNet();
     if (net != nullptr) {
+      const float x1 = dbuToMicron(iterm->getBBox().xCenter(), dbu_);
+      const float y1 = dbuToMicron(iterm->getBBox().yCenter(), dbu_);
+
       for (odb::dbITerm* net_iterm : net->getITerms()) {
         if (net_iterm == iterm) {
           continue;
         }
 
         if (net_iterm->getInst()->getPlacementStatus().isPlaced()) {
-          const float x1 = dbuToMicron(iterm->getBBox().xCenter(), dbu_);
-          const float y1 = dbuToMicron(iterm->getBBox().yCenter(), dbu_);
           const float x2 = dbuToMicron(net_iterm->getBBox().xCenter(), dbu_);
           const float y2 = dbuToMicron(net_iterm->getBBox().yCenter(), dbu_);
 
