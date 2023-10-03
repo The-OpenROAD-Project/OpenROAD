@@ -979,12 +979,12 @@ odb::Point HardMacro::alignOriginWithGrids(const Rect& macro_box,
           odb::dbTechLayer* layer = box->getTechLayer();
 
           if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-            computeCoordinateSpacingParameters(
+            computeDirectionSpacingParameters(
                 block, layer, box, offset_y, pitch_y, pin_width_y, false);
           }
 
           if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-            computeCoordinateSpacingParameters(
+            computeDirectionSpacingParameters(
                 block, layer, box, offset_x, pitch_x, pin_width_x, true);
           }
         }
@@ -1029,7 +1029,7 @@ odb::Point HardMacro::alignOriginWithGrids(const Rect& macro_box,
 }
 
 // Compute for each pin: layer offset, pitch and pin width
-void HardMacro::computeCoordinateSpacingParameters(
+void HardMacro::computeDirectionSpacingParameters(
     odb::dbBlock* block,
     odb::dbTechLayer* layer,
     odb::dbBox* box,
@@ -1041,24 +1041,24 @@ void HardMacro::computeCoordinateSpacingParameters(
   odb::dbTrackGrid* track_grid = block->findTrackGrid(layer);
 
   pin_width
-      = dbuToMicron(getCoordinatePinWidth(box, is_vertical_direction), dbu_);
+      = dbuToMicron(getDirectionPinWidth(box, is_vertical_direction), dbu_);
 
   if (track_grid != nullptr) {
     std::vector<int> coordinate_grid;
 
-    getCoordinateTrackGrid(track_grid, coordinate_grid, is_vertical_direction);
+    getDirectionTrackGrid(track_grid, coordinate_grid, is_vertical_direction);
 
     offset = dbuToMicron(static_cast<float>(coordinate_grid[0]), dbu_);
     pitch = dbuToMicron(
         static_cast<float>(coordinate_grid[1] - coordinate_grid[0]), dbu_);
   } else {
-    pitch = dbuToMicron(getCoordinatePitch(layer, is_vertical_direction), dbu_);
+    pitch = dbuToMicron(getDirectionPitch(layer, is_vertical_direction), dbu_);
     offset
-        = dbuToMicron(getCoordinateOffset(layer, is_vertical_direction), dbu_);
+        = dbuToMicron(getDirectionOffset(layer, is_vertical_direction), dbu_);
   }
 }
 
-float HardMacro::getCoordinatePitch(odb::dbTechLayer* layer,
+float HardMacro::getDirectionPitch(odb::dbTechLayer* layer,
                                     const bool& is_vertical_direction)
 {
   float pitch = 0.0;
@@ -1072,7 +1072,7 @@ float HardMacro::getCoordinatePitch(odb::dbTechLayer* layer,
   return static_cast<float>(pitch);
 }
 
-float HardMacro::getCoordinateOffset(odb::dbTechLayer* layer,
+float HardMacro::getDirectionOffset(odb::dbTechLayer* layer,
                                      const bool& is_vertical_direction)
 {
   float offset = 0.0;
@@ -1086,7 +1086,7 @@ float HardMacro::getCoordinateOffset(odb::dbTechLayer* layer,
   return static_cast<float>(offset);
 }
 
-float HardMacro::getCoordinatePinWidth(odb::dbBox* box,
+float HardMacro::getDirectionPinWidth(odb::dbBox* box,
                                        const bool& is_vertical_direction)
 {
   float pin_width = 0.0;
@@ -1100,7 +1100,7 @@ float HardMacro::getCoordinatePinWidth(odb::dbBox* box,
   return static_cast<float>(pin_width);
 }
 
-void HardMacro::getCoordinateTrackGrid(odb::dbTrackGrid* track_grid,
+void HardMacro::getDirectionTrackGrid(odb::dbTrackGrid* track_grid,
                                        std::vector<int>& coordinate_grid,
                                        const bool& is_vertical_direction)
 {

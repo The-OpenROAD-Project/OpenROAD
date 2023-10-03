@@ -402,21 +402,21 @@ class HardMacro
                                   float& pitch_y,
                                   odb::dbBlock* block);
 
-  void computeCoordinateSpacingParameters(odb::dbBlock* block,
+  void computeDirectionSpacingParameters(odb::dbBlock* block,
                                           odb::dbTechLayer* layer,
                                           odb::dbBox* box,
                                           float& offset,
                                           float& pitch,
                                           float& pin_width,
                                           const bool& is_vertical_direction);
-  void getCoordinateTrackGrid(odb::dbTrackGrid* track_grid,
+  void getDirectionTrackGrid(odb::dbTrackGrid* track_grid,
                               std::vector<int>& coordinate_grid,
                               const bool& is_vertical_direction);
-  float getCoordinatePitch(odb::dbTechLayer* layer,
+  float getDirectionPitch(odb::dbTechLayer* layer,
                            const bool& is_vertical_direction);
-  float getCoordinateOffset(odb::dbTechLayer* layer,
+  float getDirectionOffset(odb::dbTechLayer* layer,
                             const bool& is_vertical_direction);
-  float getCoordinatePinWidth(odb::dbBox* box,
+  float getDirectionPinWidth(odb::dbBox* box,
                               const bool& is_vertical_direction);
 
   int getXDBU() const { return micronToDbu(getX(), dbu_); }
