@@ -204,7 +204,7 @@ class Netlist
   int computeDstIOtoPins(int idx, const odb::Point& slot_pos);
   void sortPinsFromGroup(int group_idx, Edge edge);
   odb::Rect getBB(int idx, const odb::Point& slot_pos);
-  void clear();
+  void reset();
 
  private:
   std::vector<InstancePin> inst_pins_;
