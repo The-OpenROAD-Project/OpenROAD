@@ -1,5 +1,6 @@
 record_tests {
   check_buffers
+  check_buffers_blockages
   check_charBuf
   find_clock
   find_clock_pad
@@ -12,4 +13,6 @@ record_tests {
   post_cts_opt
   balance_levels
   max_cap
+  array
+  array_no_blockages
 }

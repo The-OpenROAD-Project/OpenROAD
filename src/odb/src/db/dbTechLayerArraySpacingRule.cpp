@@ -116,8 +116,7 @@ void _dbTechLayerArraySpacingRule::out(dbDiff& diff,
 
 _dbTechLayerArraySpacingRule::_dbTechLayerArraySpacingRule(_dbDatabase* db)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field = 0;
+  flags_ = {};
   via_width_ = 0;
   cut_spacing_ = 0;
   within_ = 0;

@@ -258,6 +258,7 @@ class GlobalRouter : public ant::GlobalRouteSource
       const Pin& pin,
       std::vector<std::pair<odb::Point, odb::Point>>& ap_positions);
   odb::Point findFakePinPosition(Pin& pin, odb::dbNet* db_net);
+  void getNetLayerRange(odb::dbNet* db_net, int& min_layer, int& max_layer);
 
   void setRenderer(std::unique_ptr<AbstractGrouteRenderer> groute_renderer);
   AbstractGrouteRenderer* getRenderer();
@@ -285,7 +286,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   void initNets(std::vector<Net*>& nets);
   bool makeFastrouteNet(Net* net);
   bool checkPinPositions(Net* net, std::vector<odb::Point>& last_pos);
-  void getNetLayerRange(Net* net, int& min_layer, int& max_layer);
   void computeGridAdjustments(int min_routing_layer, int max_routing_layer);
   void computeTrackAdjustments(int min_routing_layer, int max_routing_layer);
   void computeUserGlobalAdjustments(int min_routing_layer,

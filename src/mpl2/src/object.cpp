@@ -943,6 +943,28 @@ void HardMacro::updateDb(float pitch_x, float pitch_y, odb::dbBlock* block)
     return;
   }
 
+  const float lower_x = getRealX();
+  const float lower_y = getRealY();
+  const float upper_x = lower_x + getRealWidth();
+  const float upper_y = lower_y + getRealHeight();
+
+  const Rect macro_with_halo_box(lower_x, lower_y, upper_x, upper_y);
+  const odb::dbOrientType hard_macro_orientation = this->getOrientation();
+
+  const odb::Point snap_origin = alignOriginWithGrids(
+      macro_with_halo_box, hard_macro_orientation, pitch_x, pitch_y, block);
+
+  inst_->setOrigin(snap_origin.x(), snap_origin.y());
+  inst_->setOrient(orientation_);
+  inst_->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+}
+
+odb::Point HardMacro::alignOriginWithGrids(const Rect& macro_box,
+                                           const odb::dbOrientType& orientation,
+                                           float& pitch_x,
+                                           float& pitch_y,
+                                           odb::dbBlock* block)
+{
   float offset_x = 0.0;
   float offset_y = 0.0;
   float pin_width_x = 0.0;
@@ -955,66 +977,34 @@ void HardMacro::updateDb(float pitch_x, float pitch_y, odb::dbBlock* block)
       for (odb::dbMPin* mpin : mterm->getMPins()) {
         for (odb::dbBox* box : mpin->getGeometry()) {
           odb::dbTechLayer* layer = box->getTechLayer();
-          // check the routing direction
+
           if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-            // check the grid first
-            odb::dbTrackGrid* grid = block->findTrackGrid(layer);
-            if (grid != nullptr) {
-              std::vector<int> y_grid;
-              grid->getGridY(y_grid);
-              // use the origin as the offset and the step as the pitch
-              offset_y = dbuToMicron(static_cast<float>(y_grid[0]), dbu_);
-              pitch_y = dbuToMicron(static_cast<float>(y_grid[1] - y_grid[0]),
-                                    dbu_);
-            } else {
-              pitch_y
-                  = dbuToMicron(static_cast<float>(layer->getPitchY()), dbu_);
-              offset_y
-                  = dbuToMicron(static_cast<float>(layer->getOffsetY()), dbu_);
-            }
-            pin_width_y = dbuToMicron(static_cast<float>(box->getDY()), dbu_);
-          } else if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-            odb::dbTrackGrid* grid = block->findTrackGrid(layer);
-            if (grid != nullptr) {
-              std::vector<int> x_grid;
-              grid->getGridX(x_grid);
-              // use the origin as the offset and the step as the pitch
-              offset_x = dbuToMicron(static_cast<float>(x_grid[0]), dbu_);
-              pitch_x = dbuToMicron(static_cast<float>(x_grid[1] - x_grid[0]),
-                                    dbu_);
-            } else {
-              pitch_x
-                  = dbuToMicron(static_cast<float>(layer->getPitchX()), dbu_);
-              offset_x
-                  = dbuToMicron(static_cast<float>(layer->getOffsetX()), dbu_);
-            }
-            pin_width_x = dbuToMicron(static_cast<float>(box->getDX()), dbu_);
+            computeDirectionSpacingParameters(
+                block, layer, box, offset_y, pitch_y, pin_width_y, false);
+          } else {
+            computeDirectionSpacingParameters(
+                block, layer, box, offset_x, pitch_x, pin_width_x, true);
           }
         }
       }
     }
   }
 
-  const float lx = getRealX();
-  const float ly = getRealY();
-  const float ux = lx + getRealWidth();
-  const float uy = ly + getRealHeight();
-
   // Defaults for R0
-  float origin_x = lx;
-  float origin_y = ly;
+  float origin_x = macro_box.xMin();
+  float origin_y = macro_box.yMin();
   float pin_offset_x = pin_width_x / 2;
   float pin_offset_y = pin_width_y / 2;
 
-  if (orientation_ == odb::dbOrientType::MX) {
-    origin_y = uy;
+  if (orientation == odb::dbOrientType::MX) {
+    origin_y = macro_box.yMax();
     pin_offset_y = -pin_offset_y;
-  } else if (orientation_ == odb::dbOrientType::MY) {
-    origin_x = ux;
+  } else if (orientation == odb::dbOrientType::MY) {
+    origin_x = macro_box.xMax();
     pin_offset_x = -pin_offset_x;
-  } else if (orientation_ == odb::dbOrientType::R180) {
-    origin_x = ux;
-    origin_y = uy;
+  } else if (orientation == odb::dbOrientType::R180) {
+    origin_x = macro_box.xMax();
+    origin_y = macro_box.yMax();
     pin_offset_x = -pin_offset_x;
     pin_offset_y = -pin_offset_y;
   }
@@ -1031,9 +1021,92 @@ void HardMacro::updateDb(float pitch_x, float pitch_y, odb::dbBlock* block)
       = std::round(float(micronToDbu(origin_y, dbu_)) / manufacturing_grid_)
         * manufacturing_grid_;
 
-  inst_->setOrigin(snap_origin_x, snap_origin_y);
-  inst_->setOrient(orientation_);
-  inst_->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
+  const odb::Point snap_origin(snap_origin_x, snap_origin_y);
+
+  return snap_origin;
+}
+
+// Compute for each pin: layer offset, pitch and pin width
+void HardMacro::computeDirectionSpacingParameters(
+    odb::dbBlock* block,
+    odb::dbTechLayer* layer,
+    odb::dbBox* box,
+    float& offset,
+    float& pitch,
+    float& pin_width,
+    const bool& is_vertical_direction)
+{
+  odb::dbTrackGrid* track_grid = block->findTrackGrid(layer);
+
+  pin_width
+      = dbuToMicron(getDirectionPinWidth(box, is_vertical_direction), dbu_);
+
+  if (track_grid != nullptr) {
+    std::vector<int> coordinate_grid;
+
+    getDirectionTrackGrid(track_grid, coordinate_grid, is_vertical_direction);
+
+    offset = dbuToMicron(static_cast<float>(coordinate_grid[0]), dbu_);
+    pitch = dbuToMicron(
+        static_cast<float>(coordinate_grid[1] - coordinate_grid[0]), dbu_);
+  } else {
+    pitch = dbuToMicron(getDirectionPitch(layer, is_vertical_direction), dbu_);
+    offset
+        = dbuToMicron(getDirectionOffset(layer, is_vertical_direction), dbu_);
+  }
+}
+
+float HardMacro::getDirectionPitch(odb::dbTechLayer* layer,
+                                   const bool& is_vertical_direction)
+{
+  float pitch = 0.0;
+
+  if (is_vertical_direction) {
+    pitch = layer->getPitchX();
+  } else {
+    pitch = layer->getPitchY();
+  }
+
+  return pitch;
+}
+
+float HardMacro::getDirectionOffset(odb::dbTechLayer* layer,
+                                    const bool& is_vertical_direction)
+{
+  float offset = 0.0;
+
+  if (is_vertical_direction) {
+    offset = layer->getOffsetX();
+  } else {
+    offset = layer->getOffsetY();
+  }
+
+  return offset;
+}
+
+float HardMacro::getDirectionPinWidth(odb::dbBox* box,
+                                      const bool& is_vertical_direction)
+{
+  float pin_width = 0.0;
+
+  if (is_vertical_direction) {
+    pin_width = box->getDX();
+  } else {
+    pin_width = box->getDY();
+  }
+
+  return pin_width;
+}
+
+void HardMacro::getDirectionTrackGrid(odb::dbTrackGrid* track_grid,
+                                      std::vector<int>& coordinate_grid,
+                                      const bool& is_vertical_direction)
+{
+  if (is_vertical_direction) {
+    track_grid->getGridX(coordinate_grid);
+  } else {
+    track_grid->getGridY(coordinate_grid);
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////

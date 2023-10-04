@@ -101,12 +101,23 @@ void LevelBalancer::addBufferLevels(TreeBuilder* builder,
 
   for (unsigned level = 0; level < bufLevels; level++) {
     // Add buffer
+    double x
+        = (driverX
+           + (centroidX - driverX) * (double) (level + 1) / (bufLevels + 1))
+          / wireSegmentUnit_;
+    double y
+        = (driverY
+           + (centroidY - driverY) * (double) (level + 1) / (bufLevels + 1))
+          / wireSegmentUnit_;
+    Point<double> bufferLoc(x, y);
+    Point<double> legalBufferLoc
+        = builder->legalizeOneBuffer(bufferLoc, options_->getSinkBuffer());
     ClockInst& levelBuffer = builder->getClock().addClockBuffer(
         "clkbuf_level_" + std::to_string(level) + "_" + nameSuffix
             + std::to_string(levelBufCount_),
         options_->getSinkBuffer(),
-        driverX + (centroidX - driverX) * (level + 1) / (bufLevels + 1),
-        driverY + (centroidY - driverY) * (level + 1) / (bufLevels + 1));
+        legalBufferLoc.getX() * wireSegmentUnit_,
+        legalBufferLoc.getY() * wireSegmentUnit_);
     builder->addTreeLevelBuffer(&levelBuffer);
 
     // Add Net

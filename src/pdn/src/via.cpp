@@ -1015,8 +1015,8 @@ bool ViaGenerator::isPreferredOver(const ViaGenerator* other) const
              getName(),
              other->getName());
 
-  const int cut_area_diff = getCutArea() - other->getCutArea();
-  if (cut_area_diff > 0) {
+  if (getCutArea() > other->getCutArea()) {
+    const int cut_area_diff = getCutArea() - other->getCutArea();
     debugPrint(logger_,
                utl::PDN,
                "ViaPreference",
@@ -1026,74 +1026,68 @@ bool ViaGenerator::isPreferredOver(const ViaGenerator* other) const
                cut_area_diff);
     return true;
   }
+  if (other->getCutArea() > getCutArea()) {
+    return false;
+  }
 
-  if (cut_area_diff == 0) {
-    const int bottom_height_diff
-        = other->getGeneratorHeight(true) - getGeneratorHeight(true);
-    const int bottom_width_diff
-        = other->getGeneratorWidth(true) - getGeneratorWidth(true);
-    const int top_height_diff
-        = other->getGeneratorHeight(false) - getGeneratorHeight(false);
-    const int top_width_diff
-        = other->getGeneratorWidth(false) - getGeneratorWidth(false);
+  const int bottom_height_diff
+      = other->getGeneratorHeight(true) - getGeneratorHeight(true);
+  const int bottom_width_diff
+      = other->getGeneratorWidth(true) - getGeneratorWidth(true);
+  const int top_height_diff
+      = other->getGeneratorHeight(false) - getGeneratorHeight(false);
+  const int top_width_diff
+      = other->getGeneratorWidth(false) - getGeneratorWidth(false);
 
-    const bool bottom_is_hor
-        = getBottomLayer()->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
-    const bool top_is_hor
-        = getTopLayer()->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
+  const bool bottom_is_hor
+      = getBottomLayer()->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
+  const bool top_is_hor
+      = getTopLayer()->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
 
-    debugPrint(logger_,
-               utl::PDN,
-               "ViaPreference",
-               2,
-               "Bottom via diff ({}, {}, {}) and top diff ({}, {}, {})",
-               bottom_width_diff,
-               bottom_height_diff,
-               bottom_is_hor,
-               top_width_diff,
-               top_height_diff,
-               top_is_hor);
+  const int bottom_prefered
+      = bottom_is_hor ? bottom_height_diff : bottom_width_diff;
+  const int top_prefered = top_is_hor ? top_height_diff : top_width_diff;
+  const int bottom_non_prefered
+      = bottom_is_hor ? bottom_width_diff : bottom_height_diff;
+  const int top_non_prefered = top_is_hor ? top_width_diff : top_height_diff;
 
-    if (bottom_is_hor) {
-      if (bottom_height_diff < 0) {
-        return true;
-      }
-    } else {
-      if (bottom_width_diff < 0) {
-        return true;
-      }
-    }
+  debugPrint(logger_,
+             utl::PDN,
+             "ViaPreference",
+             2,
+             "Bottom via diff ({}, {}, {}) and top diff ({}, {}, {})",
+             bottom_width_diff,
+             bottom_height_diff,
+             bottom_is_hor,
+             top_width_diff,
+             top_height_diff,
+             top_is_hor);
 
-    if (top_is_hor) {
-      if (top_height_diff < 0) {
-        return true;
-      }
-    } else {
-      if (top_width_diff < 0) {
-        return true;
-      }
-    }
+  if (bottom_prefered < 0) {
+    return true;
+  }
+  if (bottom_prefered > 0) {
+    return false;
+  }
 
-    if (bottom_is_hor) {
-      if (bottom_width_diff < 0) {
-        return true;
-      }
-    } else {
-      if (bottom_height_diff < 0) {
-        return true;
-      }
-    }
+  if (top_prefered < 0) {
+    return true;
+  }
+  if (top_prefered > 0) {
+    return false;
+  }
 
-    if (top_is_hor) {
-      if (top_width_diff < 0) {
-        return true;
-      }
-    } else {
-      if (top_height_diff < 0) {
-        return true;
-      }
-    }
+  if (bottom_non_prefered < 0) {
+    return true;
+  }
+  if (bottom_non_prefered > 0) {
+    return false;
+  }
 
+  if (top_non_prefered < 0) {
+    return true;
+  }
+  if (top_non_prefered > 0) {
     return false;
   }
 
