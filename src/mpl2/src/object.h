@@ -63,7 +63,7 @@ class Logger;
 }
 
 namespace mpl2 {
-class Rect;
+struct Rect;
 class HardMacro;
 class SoftMacro;
 
