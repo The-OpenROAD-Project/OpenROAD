@@ -31,6 +31,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "mbff.h"
+
 #include <lemon/list_graph.h>
 #include <lemon/maps.h>
 #include <lemon/network_simplex.h>
@@ -50,8 +52,6 @@
 #include <random>
 #include <set>
 #include <vector>
-
-#include "mbff.h"
 
 /*
 height and width of a flip-flop
