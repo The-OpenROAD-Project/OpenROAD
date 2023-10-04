@@ -978,7 +978,8 @@ void FlexPA::prepPoint_pin_checkPoint_via(
     const gtl::polygon_90_set_data<frCoord>& polyset,
     const frDirEnum dir,
     T* pin,
-    frInstTerm* instTerm)
+    frInstTerm* instTerm,
+    bool deepSearch)
 {
   const Point bp = ap->getPoint();
   const auto layerNum = ap->getLayerNum();
@@ -1019,6 +1020,8 @@ void FlexPA::prepPoint_pin_checkPoint_via(
     // hardcode first two single vias
     for (auto& [tup, viaDef] : layerNum2ViaDefs_[layerNum + 1][1]) {
       viaDefs.push_back(make_pair(viaDefs.size(), viaDef));
+      if (viaDefs.size() >= maxNumViaTrial && !deepSearch)
+        break;
     }
   }
 
@@ -1223,13 +1226,15 @@ void FlexPA::prepPoint_pin_checkPoint(
     const gtl::polygon_90_set_data<frCoord>& polyset,
     const vector<gtl::polygon_90_data<frCoord>>& polys,
     T* pin,
-    frInstTerm* instTerm)
+    frInstTerm* instTerm,
+    bool deepSearch)
 {
   prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::W, pin, instTerm);
   prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::E, pin, instTerm);
   prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::S, pin, instTerm);
   prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::N, pin, instTerm);
-  prepPoint_pin_checkPoint_via(ap, polys, polyset, frDirEnum::U, pin, instTerm);
+  prepPoint_pin_checkPoint_via(
+      ap, polys, polyset, frDirEnum::U, pin, instTerm, deepSearch);
 }
 
 template <typename T>
@@ -1244,11 +1249,23 @@ void FlexPA::prepPoint_pin_checkPoints(
   for (int i = 0; i < (int) layerPolysets.size(); i++) {
     layerPolysets[i].get_polygons(layerPolys[i]);
   }
+  bool hasAccess = false;
   for (auto& ap : aps) {
     const auto layerNum = ap->getLayerNum();
-    const Point pt = ap->getPoint();
     prepPoint_pin_checkPoint(
         ap.get(), layerPolysets[layerNum], layerPolys[layerNum], pin, instTerm);
+    hasAccess |= ap->hasAccess();
+  }
+  if (!hasAccess) {
+    for (auto& ap : aps) {
+      const auto layerNum = ap->getLayerNum();
+      prepPoint_pin_checkPoint(ap.get(),
+                               layerPolysets[layerNum],
+                               layerPolys[layerNum],
+                               pin,
+                               instTerm,
+                               true);
+    }
   }
 }
 

@@ -221,7 +221,8 @@ class FlexPA
       const gtl::polygon_90_set_data<frCoord>& polyset,
       const std::vector<gtl::polygon_90_data<frCoord>>& polys,
       T* pin,
-      frInstTerm* instTerm);
+      frInstTerm* instTerm,
+      bool deepSearch = false);
   template <typename T>
   void prepPoint_pin_checkPoint_planar(
       frAccessPoint* ap,
@@ -243,7 +244,8 @@ class FlexPA
       const gtl::polygon_90_set_data<frCoord>& polyset,
       frDirEnum dir,
       T* pin,
-      frInstTerm* instTerm);
+      frInstTerm* instTerm,
+      bool deepSearch = false);
   template <typename T>
   bool prepPoint_pin_checkPoint_via_helper(
       frAccessPoint* ap,
