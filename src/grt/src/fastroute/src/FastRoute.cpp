@@ -240,7 +240,7 @@ void FastRouteCore::setTileSize(int size)
 }
 
 void FastRouteCore::addLayerDirection(int layer_idx,
-                                      odb::dbTechLayerDir direction)
+                                      const odb::dbTechLayerDir& direction)
 {
   layer_directions_[layer_idx] = direction;
 }
