@@ -961,8 +961,7 @@ void MBFF::KMeansDecomp(
     }
   }
 
-  return;
-}
+  }
 
 double MBFF::GetTCPDisplacement(float beta)
 {
