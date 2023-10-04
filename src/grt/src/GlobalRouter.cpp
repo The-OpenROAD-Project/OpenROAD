@@ -180,6 +180,7 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   }
 
   initRoutingLayers();
+  checkAdjacentLayersDirection(min_routing_layer, max_routing_layer);
   reportLayerSettings(min_routing_layer, max_routing_layer);
   initRoutingTracks(max_routing_layer);
   initCoreGrid(max_routing_layer);
@@ -496,6 +497,28 @@ void GlobalRouter::initRoutingLayers()
   bool vertical
       = routing_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
   fastroute_->setLayerOrientation(vertical);
+}
+
+void GlobalRouter::checkAdjacentLayersDirection(int min_routing_layer,
+                                                int max_routing_layer)
+{
+  odb::dbTech* tech = db_->getTech();
+  for (int l = min_routing_layer; l < max_routing_layer; l++) {
+    odb::dbTechLayer* layer_a = tech->findRoutingLayer(l);
+    odb::dbTechLayer* layer_b = tech->findRoutingLayer(l + 1);
+    if (layer_a->getDirection() == layer_b->getDirection()) {
+      std::string dir = layer_a->getDirection() == odb::dbTechLayerDir::VERTICAL
+                            ? "VERTICAL"
+                            : "HORIZONTAL";
+      logger_->error(
+          GRT,
+          126,
+          "Layers {} and {} have the same preferred routing direction ({}).",
+          layer_a->getName(),
+          layer_b->getName(),
+          dir);
+    }
+  }
 }
 
 void GlobalRouter::setCapacities(int min_routing_layer, int max_routing_layer)
