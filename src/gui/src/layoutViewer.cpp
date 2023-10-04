@@ -1938,10 +1938,13 @@ void LayoutViewer::saveImage(const QString& filepath,
   const QSize img_size = Utils::adjustMaxImageSize(initial_size);
 
   if (img_size != initial_size) {
+    const int max_size = std::max(img_size.width(), img_size.height());
+
     logger_->warn(utl::GUI,
                   94,
                   "Can't save image with the specified size (max width/height "
-                  "is 7200 pixels). Saved image dimensions = {} x {}.",
+                  "is {} pixels). Saved image dimensions = {} x {}.",
+                  max_size,
                   img_size.width(),
                   img_size.height());
 
