@@ -254,7 +254,8 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
 
   std::vector<InstancePin> instPins;
   if (sections_.empty()) {
-    Section s = {Point(0, 0)};
+    Section s;
+    s.pos = {0, 0};
     sections_.push_back(s);
   }
 
@@ -905,7 +906,8 @@ void IOPlacer::findSections(int begin,
       }
     }
     int half_length_pt = begin + (end_slot - begin) / 2;
-    Section n_sec = {slots_.at(half_length_pt).pos};
+    Section n_sec;
+    n_sec.pos = slots_.at(half_length_pt).pos;
     n_sec.num_slots = end_slot - begin - blocked_slots + 1;
     if (n_sec.num_slots < 0) {
       logger_->error(PPL, 40, "Negative number of slots.");
@@ -2578,7 +2580,8 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
         }
       }
       int half_length_pt = edge_begin + (end_slot - edge_begin) / 2;
-      Section n_sec = {slots.at(half_length_pt).pos};
+      Section n_sec;
+      n_sec.pos = slots.at(half_length_pt).pos;
       n_sec.num_slots = end_slot - edge_begin - blocked_slots + 1;
       n_sec.begin_slot = edge_begin;
       n_sec.end_slot = end_slot;

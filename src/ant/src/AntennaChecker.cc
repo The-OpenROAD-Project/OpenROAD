@@ -78,22 +78,22 @@ using std::unordered_set;
 
 struct PARinfo
 {
-  odb::dbWireGraph::Node* wire_root;
+  odb::dbWireGraph::Node* wire_root = nullptr;
   std::set<odb::dbITerm*> iterms;
-  double wire_area;
-  double side_wire_area;
-  double iterm_gate_area;
-  double iterm_diff_area;
-  double PAR;
-  double PSR;
-  double diff_PAR;
-  double diff_PSR;
-  double max_wire_length_PAR;
-  double max_wire_length_PSR;
-  double max_wire_length_diff_PAR;
-  double max_wire_length_diff_PSR;
-  double wire_length;
-  double side_wire_length;
+  double wire_area = 0.0;
+  double side_wire_area = 0.0;
+  double iterm_gate_area = 0.0;
+  double iterm_diff_area = 0.0;
+  double PAR = 0.0;
+  double PSR = 0.0;
+  double diff_PAR = 0.0;
+  double diff_PSR = 0.0;
+  double max_wire_length_PAR = 0.0;
+  double max_wire_length_PSR = 0.0;
+  double max_wire_length_diff_PAR = 0.0;
+  double max_wire_length_diff_PSR = 0.0;
+  double wire_length = 0.0;
+  double side_wire_length = 0.0;
 };
 
 struct ARinfo
@@ -679,16 +679,14 @@ vector<PARinfo> AntennaChecker::buildWireParTable(
                         iv,
                         nv);
 
-    PARinfo par_info = {wire_root,
-                        iv,
-                        wire_area,
-                        side_wire_area,
-                        iterm_gate_area,
-                        iterm_diff_area,
-                        0.0,
-                        0.0,
-                        0.0,
-                        0.0};
+    PARinfo par_info;
+    par_info.wire_root = wire_root;
+    par_info.iterms = iv;
+    par_info.wire_area = wire_area;
+    par_info.side_wire_area = side_wire_area;
+    par_info.iterm_gate_area = iterm_gate_area;
+    par_info.iterm_diff_area = iterm_diff_area;
+
     PARtable.push_back(par_info);
   }
 
@@ -1019,8 +1017,13 @@ vector<PARinfo> AntennaChecker::buildViaParTable(
                     - minus_diff_factor * iterm_diff_area)
                    / (iterm_gate_area + plus_diff_factor * iterm_diff_area);
       }
-      PARinfo par_info
-          = {wire_root, iv, 0.0, 0.0, 0.0, 0.0, par, 0.0, diff_par, 0.0};
+
+      PARinfo par_info;
+      par_info.wire_root = wire_root;
+      par_info.iterms = iv;
+      par_info.PAR = par;
+      par_info.diff_PAR = diff_par;
+
       VIA_PARtable.push_back(par_info);
     }
   }
