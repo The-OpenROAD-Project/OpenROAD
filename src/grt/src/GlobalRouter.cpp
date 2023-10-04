@@ -468,6 +468,12 @@ void GlobalRouter::initCoreGrid(int max_routing_layer)
       grid_->getXGrids(), grid_->getYGrids(), grid_->getNumLayers());
   fastroute_->setGridMax(grid_->getGridArea().xMax(),
                          grid_->getGridArea().yMax());
+
+  odb::dbTech* tech = db_->getTech();
+  for (int l = 1; l <= max_routing_layer; l++) {
+    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(l);
+    fastroute_->addLayerDirection(l - 1, tech_layer->getDirection());
+  }
 }
 
 void GlobalRouter::initRoutingLayers()
@@ -492,11 +498,6 @@ void GlobalRouter::initRoutingLayers()
       valid_layers++;
     }
   }
-
-  odb::dbTechLayer* routing_layer = routing_layers_[1];
-  bool vertical
-      = routing_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
-  fastroute_->setLayerOrientation(vertical);
 }
 
 void GlobalRouter::checkAdjacentLayersDirection(int min_routing_layer,
