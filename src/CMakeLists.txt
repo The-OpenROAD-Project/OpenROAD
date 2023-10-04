@@ -198,6 +198,11 @@ add_compile_options(
   $<$<BOOL:${ASAN}>:-g>
 )
 
+check_cxx_compiler_flag("-Wmismatched-tags" HAS_MISMATCHED_TAGS)
+if (HAS_MISMATCHED_TAGS)
+  add_compile_options(-Wmismatched-tags)
+endif()
+
 if (ASAN)
   add_link_options(-fsanitize=address)
 endif()
