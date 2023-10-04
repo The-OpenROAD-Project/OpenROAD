@@ -16,7 +16,4 @@ add_sroute_connect  -net "VIN" -outerNet "VDD" -layers {met1 met4} -cut_pitch {2
 set def_file [make_result_file sroute_test.def]
 write_def $def_file
 
-set db_file [make_result_file sroute_test.odb]
-write_db $db_file
-
 diff_files sroute_test.defok $def_file
