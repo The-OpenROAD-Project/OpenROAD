@@ -1,0 +1,12 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 135 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0132]     Created 2 special nets and 0 connections.
+Found 0 macro blocks.
+Using 2 tracks default min distance between IO pins.
+[ERROR PPL-0011] Number of IO pins assigned to the top layer (54) exceeds maximum number of available top layer positions (40).
+PPL-0011
