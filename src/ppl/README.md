@@ -267,7 +267,7 @@ write_pin_placement -file_name file_name
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-file_name` | The name of the file with the pin placement. |
+| `file_name` | The name of the file with the pin placement. |
 
 ### Useful Developer Commands
 
