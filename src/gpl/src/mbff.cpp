@@ -34,14 +34,10 @@
 #include "mbff.h"
 
 #include <lemon/list_graph.h>
-#include <lemon/maps.h>
 #include <lemon/network_simplex.h>
 #include <omp.h>
-#include <ortools/base/logging.h>
 #include <ortools/linear_solver/linear_solver.h>
 #include <ortools/sat/cp_model.h>
-#include <ortools/sat/cp_model.pb.h>
-#include <ortools/sat/cp_model_solver.h>
 
 #include <algorithm>
 #include <chrono>
