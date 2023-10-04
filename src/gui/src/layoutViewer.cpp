@@ -1891,6 +1891,7 @@ void LayoutViewer::viewportUpdated()
 
 void LayoutViewer::saveImage(const QString& filepath,
                              const Rect& region,
+                             int width_px,
                              double dbu_per_pixel)
 {
   if (!hasDesign()) {
@@ -1915,6 +1916,13 @@ void LayoutViewer::saveImage(const QString& filepath,
   }
 
   const qreal old_pixels_per_dbu = pixels_per_dbu_;
+
+  // TO DO: Add another check for height
+  //        Add minimum dimensions based on the max resolution
+  if (width_px != 0) {
+    pixels_per_dbu_ = width_px / static_cast<float>(save_area.dx());
+  }
+
   if (dbu_per_pixel != 0) {
     pixels_per_dbu_ = 1.0 / dbu_per_pixel;
   }
@@ -1931,10 +1939,8 @@ void LayoutViewer::saveImage(const QString& filepath,
   // We don't use Utils::renderImage as we need to have the
   // rendering be synchronous.  We directly call the draw()
   // method ourselves.
-  const int width_px = bounding_rect.width();
-  const int height_px = bounding_rect.height();
 
-  const QSize initial_size = QSize(width_px, height_px);
+  const QSize initial_size = QSize(bounding_rect.width(), bounding_rect.height());
   const QSize img_size = Utils::adjustMaxImageSize(initial_size);
 
   if (img_size != initial_size) {

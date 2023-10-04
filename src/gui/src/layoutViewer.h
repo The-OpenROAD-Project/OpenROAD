@@ -168,6 +168,7 @@ class LayoutViewer : public QWidget
   // save image of the layout
   void saveImage(const QString& filepath,
                  const odb::Rect& region = odb::Rect(),
+                 int width_px = 0,
                  double dbu_per_pixel = 0);
 
   // From QWidget

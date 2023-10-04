@@ -674,6 +674,7 @@ void Gui::setResolution(double pixels_per_dbu)
 
 void Gui::saveImage(const std::string& filename,
                     const odb::Rect& region,
+                    int width_px,
                     double dbu_per_pixel,
                     const std::map<std::string, bool>& display_settings)
 {
@@ -747,7 +748,7 @@ void Gui::saveImage(const std::string& filename,
     }
 
     main_window->getLayoutViewer()->saveImage(
-        filename.c_str(), save_region, dbu_per_pixel);
+        filename.c_str(), save_region, width_px, dbu_per_pixel);
     // restore settings
     main_window->getControls()->restore();
   }
