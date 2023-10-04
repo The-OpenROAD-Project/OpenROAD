@@ -43,6 +43,7 @@ class dbBlock;
 class dbMaster;
 class dbMTerm;
 class dbNet;
+class dbInst;
 }  // namespace odb
 
 namespace ifp {
@@ -171,7 +172,9 @@ class Design
   float getNetCap(odb::dbNet* net, sta::Corner* corner, MinMax minmax);
   bool isSequential(odb::dbMaster* master);
   std::vector<odb::dbMTerm*> getTimingFanoutFrom(odb::dbMTerm* input);
-
+  bool isInClock(odb::dbInst* inst);
+  std::uint64_t getNetRoute(odb::dbNet* net);
+  
   // Services
   ifp::InitFloorplan* getFloorplan();
   ant::AntennaChecker* getAntennaChecker();

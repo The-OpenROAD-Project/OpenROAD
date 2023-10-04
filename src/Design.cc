@@ -208,6 +208,35 @@ bool Design::isSequential(odb::dbMaster* master)
   return lib_cell->hasSequentials();
 }
 
+bool Design::isInClock(odb::dbInst* inst) {
+  for (auto* iterm : inst->getITerms()) {
+    auto* net = iterm->getNet();
+    if (net != NULL && net->getSigType() == odb::dbSigType::CLOCK){
+      return true;
+    }
+  }
+  return false;
+}
+
+std::uint64_t Design::getNetRoute(odb::dbNet* net) {
+  std::uint64_t route_length = 0;
+  if (net->getSigType().isSupply()) {
+    for (odb::dbSWire* swire : net->getSWires()) {
+      for (odb::dbSBox* wire : swire->getWires()) {
+        if (wire !=NULL && !(wire->isVia())) {
+          route_length += wire->getLength();
+        }
+      }
+    } 
+  } else {
+    auto* wire = net->getWire();
+    if (wire !=NULL) {
+      route_length += wire->getLength();
+    }
+  } 
+  return route_length;
+}
+
 // I'd like to return a std::set but swig gave me way too much grief
 // so I just copy the set to a vector.
 std::vector<odb::dbMTerm*> Design::getTimingFanoutFrom(odb::dbMTerm* input)
