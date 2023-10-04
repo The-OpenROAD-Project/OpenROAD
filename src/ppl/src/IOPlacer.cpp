@@ -693,7 +693,7 @@ void IOPlacer::writePinPlacement(const char* file_name)
 
   std::ofstream out(filename);
 
-  if (!out.is_open()) {
+  if (!out) {
     logger_->error(PPL, 35, "Cannot open file {}.", filename);
   }
 
