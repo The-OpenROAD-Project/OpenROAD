@@ -507,16 +507,13 @@ void GlobalRouter::checkAdjacentLayersDirection(int min_routing_layer,
     odb::dbTechLayer* layer_a = tech->findRoutingLayer(l);
     odb::dbTechLayer* layer_b = tech->findRoutingLayer(l + 1);
     if (layer_a->getDirection() == layer_b->getDirection()) {
-      std::string dir = layer_a->getDirection() == odb::dbTechLayerDir::VERTICAL
-                            ? "VERTICAL"
-                            : "HORIZONTAL";
       logger_->error(
           GRT,
           126,
           "Layers {} and {} have the same preferred routing direction ({}).",
           layer_a->getName(),
           layer_b->getName(),
-          dir);
+          layer_a->getDirection().getString());
     }
   }
 }
