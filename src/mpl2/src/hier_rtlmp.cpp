@@ -353,10 +353,10 @@ void HierRTLMP::hierRTLMacroPlacer()
   floorplan_uy_ = dbuToMicron(die_box.yMax(), dbu_);
 
   odb::Rect core_box = block_->getCoreArea();
-  int core_lx = dbuToMicron(core_box.xMin(), dbu_);
-  int core_ly = dbuToMicron(core_box.yMin(), dbu_);
-  int core_ux = dbuToMicron(core_box.xMax(), dbu_);
-  int core_uy = dbuToMicron(core_box.yMax(), dbu_);
+  float core_lx = dbuToMicron(core_box.xMin(), dbu_);
+  float core_ly = dbuToMicron(core_box.yMin(), dbu_);
+  float core_ux = dbuToMicron(core_box.xMax(), dbu_);
+  float core_uy = dbuToMicron(core_box.yMax(), dbu_);
 
   logger_->report(
       "Floorplan Outline: ({}, {}) ({}, {}),  Core Outline: ({}, {}) ({}, {})",
@@ -5180,6 +5180,7 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
   // calculate the fences and guides
   std::map<int, Rect> fences;
   std::map<int, Rect> guides;
+  std::set<odb::dbMaster*> masters;
   // create a cluster for each macro
   // and calculate the fences and guides
   for (auto& hard_macro : hard_macros) {
@@ -5200,6 +5201,7 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
     macros.push_back(*hard_macro);
     cluster_map_[cluster_id_++] = macro_cluster;
     macro_clusters.push_back(macro_cluster);
+    masters.insert(hard_macro->getInst()->getMaster());
   }
   // calculate the connections with other clusters
   calculateConnection();
@@ -5238,9 +5240,16 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
     }  // end connection
   }    // end macro cluster
   // set global configuration
+
+  // Use exchange more often when there are more instances of a common
+  // master.
+  const float exchange_swap_prob
+      = exchange_swap_prob_ * 5
+        * (1 - (masters.size() / (float) hard_macros.size()));
+
   // set the action probabilities (summation to 1.0)
   const float action_sum = pos_swap_prob_ * 10 + neg_swap_prob_ * 10
-                           + double_swap_prob_ + exchange_swap_prob_
+                           + double_swap_prob_ + exchange_swap_prob
                            + flip_prob_;
   // We vary the outline of cluster to generate differnt tilings
   std::vector<float> vary_factor_list{1.0};
@@ -5282,7 +5291,7 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
                                 pos_swap_prob_ * 10 / action_sum,
                                 neg_swap_prob_ * 10 / action_sum,
                                 double_swap_prob_ / action_sum,
-                                exchange_swap_prob_ / action_sum,
+                                exchange_swap_prob / action_sum,
                                 flip_prob_ / action_sum,
                                 init_prob_,
                                 max_num_step_,
