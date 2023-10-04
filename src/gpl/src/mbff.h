@@ -45,93 +45,71 @@ class Logger;
 
 namespace gpl {
 
-struct Tray
-{
+struct Tray {
   odb::Point pt;
   std::vector<odb::Point> slots;
   std::vector<int> cand;
 };
 
-struct Flop
-{
+struct Flop {
   odb::Point pt;
   int idx;
   float prob;
 
-  bool operator<(const Flop& a) const
-  {
+  bool operator<(const Flop &a) const {
     return std::tie(prob, idx) < std::tie(a.prob, a.idx);
   }
 };
 
-struct Path
-{
+struct Path {
   int start_point;
   int end_point;
 };
 
-class MBFF
-{
- public:
-  MBFF(int num_flops,
-       int num_paths,
-       const std::vector<odb::Point>& points,
-       const std::vector<Path>& paths,
-       int threads,
-       int knn,
-       int multistart,
-       utl::Logger* log);
+class MBFF {
+public:
+  MBFF(int num_flops, int num_paths, const std::vector<odb::Point> &points,
+       const std::vector<Path> &paths, int threads, int knn, int multistart,
+       utl::Logger *log);
   ~MBFF();
 
   void Run(int mx_sz, float alpha, float beta);
 
- private:
+private:
   int GetRows(int slot_cnt);
   int GetBitCnt(int bit_idx);
-  float GetDist(const odb::Point& a, const odb::Point& b);
+  float GetDist(const odb::Point &a, const odb::Point &b);
 
-  void GetSlots(const odb::Point& tray,
-                int rows,
-                int cols,
-                std::vector<odb::Point>& slots);
-  Flop GetNewFlop(const std::vector<Flop>& prob_dist, float tot_dist);
-  void GetStartTrays(std::vector<Flop> flops,
-                     int num_trays,
-                     float AR,
-                     std::vector<Tray>& trays);
-  Tray GetOneBit(const odb::Point& pt);
+  void GetSlots(const odb::Point &tray, int rows, int cols,
+                std::vector<odb::Point> &slots);
+  Flop GetNewFlop(const std::vector<Flop> &prob_dist, float tot_dist);
+  void GetStartTrays(std::vector<Flop> flops, int num_trays, float AR,
+                     std::vector<Tray> &trays);
+  Tray GetOneBit(const odb::Point &pt);
 
-  void MinCostFlow(const std::vector<Flop>& flops,
-                   std::vector<Tray>& trays,
-                   int sz,
-                   std::vector<std::pair<int, int>>& clusters);
+  void MinCostFlow(const std::vector<Flop> &flops, std::vector<Tray> &trays,
+                   int sz, std::vector<std::pair<int, int> > &clusters);
 
-  float GetSilh(const std::vector<Flop>& flops,
-                const std::vector<Tray>& trays,
-                const std::vector<std::pair<int, int>>& clusters);
+  float GetSilh(const std::vector<Flop> &flops, const std::vector<Tray> &trays,
+                const std::vector<std::pair<int, int> > &clusters);
 
-  void KMeans(const std::vector<Flop>& flops,
-              std::vector<std::vector<Flop>>& clusters);
-  void KMeansDecomp(const std::vector<Flop>& flops,
-                    int MAX_SZ, 
-                    std::vector<std::vector<Flop>>& pointsets);
+  void KMeans(const std::vector<Flop> &flops,
+              std::vector<std::vector<Flop> > &clusters);
+  void KMeansDecomp(const std::vector<Flop> &flops, int MAX_SZ,
+                    std::vector<std::vector<Flop> > &pointsets);
 
-  void RunCapacitatedKMeans(const std::vector<Flop>& flops,
-                            std::vector<Tray>& trays,
-                            int sz,
-                            int iter,
-                            std::vector<std::pair<int, int>>& cluster);
+  void RunCapacitatedKMeans(const std::vector<Flop> &flops,
+                            std::vector<Tray> &trays, int sz, int iter,
+                            std::vector<std::pair<int, int> > &cluster);
 
-  std::vector<std::vector<Tray>>& RunSilh(
-      const std::vector<Flop>& pointset,
-      std::vector<std::vector<std::vector<Tray>>>& start_trays);
+  std::vector<std::vector<Tray> > &
+  RunSilh(const std::vector<Flop> &pointset,
+          std::vector<std::vector<std::vector<Tray> > > &start_trays);
 
-  float RunLP(const std::vector<Flop>& flops,
-              std::vector<Tray>& trays,
-              const std::vector<std::pair<int, int>>& clusters);
-  float RunILP(const std::vector<Flop>& flops,
-               const std::vector<std::vector<Tray>>& all_trays,
-               float alpha);
+  float RunLP(const std::vector<Flop> &flops, std::vector<Tray> &trays,
+              const std::vector<std::pair<int, int> > &clusters);
+  float RunILP(const std::vector<Flop> &flops,
+               const std::vector<std::vector<Tray> > &all_trays, float alpha);
 
   double GetTCPDisplacement(float beta);
 
@@ -143,6 +121,6 @@ class MBFF
   int num_threads_;
   int knn_;
   int multistart_;
-  utl::Logger* log_;
+  utl::Logger *log_;
 };
-}  // namespace gpl
+} // namespace gpl
