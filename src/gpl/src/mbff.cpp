@@ -839,8 +839,7 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
   for (int i = 0; i < knn_; i++) {
     clusters[i].push_back(centers[i]);
   }
-  return;
-}
+  }
 
 /*
     shreyas (august 2023):
