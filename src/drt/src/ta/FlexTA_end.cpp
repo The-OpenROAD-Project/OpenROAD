@@ -28,8 +28,8 @@
 
 #include "distributed/drUpdate.h"
 #include "ta/FlexTA.h"
-using namespace std;
-using namespace fr;
+
+namespace fr {
 
 void FlexTAWorker::saveToGuides()
 {
@@ -61,3 +61,5 @@ void FlexTAWorker::end()
 {
   saveToGuides();
 }
+
+}  // namespace fr

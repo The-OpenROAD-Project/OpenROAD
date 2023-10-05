@@ -41,16 +41,13 @@
 #include "global.h"
 #include "utl/exception.h"
 
-using namespace std;
-using namespace fr;
-
-using utl::ThreadException;
+namespace fr {
 
 int FlexTAWorker::main_mt()
 {
   ProfileTask profile("TA:main_mt");
   using namespace std::chrono;
-  high_resolution_clock::time_point t0 = high_resolution_clock::now();
+  auto t0 = high_resolution_clock::now();
   if (VERBOSE > 1) {
     stringstream ss;
     ss << endl
@@ -80,15 +77,15 @@ int FlexTAWorker::main_mt()
     hardIroutesMode = false;
   }
   sortIroutes();
-  high_resolution_clock::time_point t1 = high_resolution_clock::now();
+  auto t1 = high_resolution_clock::now();
   assign();
-  high_resolution_clock::time_point t2 = high_resolution_clock::now();
+  auto t2 = high_resolution_clock::now();
   // end();
-  high_resolution_clock::time_point t3 = high_resolution_clock::now();
+  auto t3 = high_resolution_clock::now();
 
-  duration<double> time_span0 = duration_cast<duration<double>>(t1 - t0);
-  duration<double> time_span1 = duration_cast<duration<double>>(t2 - t1);
-  duration<double> time_span2 = duration_cast<duration<double>>(t3 - t2);
+  auto time_span0 = duration_cast<duration<double>>(t1 - t0);
+  auto time_span1 = duration_cast<duration<double>>(t2 - t1);
+  auto time_span2 = duration_cast<duration<double>>(t3 - t2);
 
   if (VERBOSE > 1) {
     stringstream ss;
@@ -139,9 +136,9 @@ int FlexTA::initTA_helper(int iter,
       worker.setDir(dbTechLayerDir::HORIZONTAL);
       worker.setTAIter(iter);
       if (workers.empty() || (int) workers.back().size() >= BATCHSIZETA) {
-        workers.push_back(vector<unique_ptr<FlexTAWorker>>());
+        workers.emplace_back(vector<unique_ptr<FlexTAWorker>>());
       }
-      workers.back().push_back(std::move(uworker));
+      workers.back().emplace_back(std::move(uworker));
     }
   } else {
     for (int i = offset; i < (int) xgp.getCount(); i += size) {
@@ -161,7 +158,7 @@ int FlexTA::initTA_helper(int iter,
       worker.setDir(dbTechLayerDir::VERTICAL);
       worker.setTAIter(iter);
       if (workers.empty() || (int) workers.back().size() >= BATCHSIZETA) {
-        workers.push_back(vector<unique_ptr<FlexTAWorker>>());
+        workers.emplace_back(vector<unique_ptr<FlexTAWorker>>());
       }
       workers.back().push_back(std::move(uworker));
     }
@@ -172,7 +169,7 @@ int FlexTA::initTA_helper(int iter,
   // multi thread
   for (auto& workerBatch : workers) {
     ProfileTask profile("TA:batch");
-    ThreadException exception;
+    utl::ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < (int) workerBatch.size(); i++) {
       try {
@@ -187,8 +184,8 @@ int FlexTA::initTA_helper(int iter,
       }
     }
     exception.rethrow();
-    for (int i = 0; i < (int) workerBatch.size(); i++) {
-      workerBatch[i]->end();
+    for (auto& worker : workerBatch) {
+      worker->end();
     }
     workerBatch.clear();
   }
@@ -351,3 +348,5 @@ int FlexTA::main()
   }
   return 0;
 }
+
+}  // namespace fr
