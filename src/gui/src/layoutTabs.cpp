@@ -66,6 +66,13 @@ LayoutTabs::LayoutTabs(Options* options,
 
 void LayoutTabs::blockLoaded(odb::dbBlock* block)
 {
+  // Check if we already have a tab for this block
+  for (LayoutViewer* viewer : viewers_) {
+    if (viewer->getBlock() == block) {
+      return;
+    }
+  }
+
   populateModuleColors(block);
   auto viewer = new LayoutViewer(options_,
                                  output_widget_,
