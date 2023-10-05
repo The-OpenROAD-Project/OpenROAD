@@ -693,6 +693,10 @@ void IOPlacer::writePinPlacement(const char* file_name)
 
   std::ofstream out(filename);
 
+  if (!out) {
+    logger_->error(PPL, 35, "Cannot open file {}.", filename);
+  }
+
   std::vector<Edge> edges_list
       = {Edge::bottom, Edge::right, Edge::top, Edge::left};
   for (const Edge& edge : edges_list) {
