@@ -110,9 +110,11 @@ class MBFF
                 const std::vector<Tray>& trays,
                 const std::vector<std::pair<int, int>>& clusters);
 
-  std::vector<std::vector<Flop>>& KMeans(const std::vector<Flop>& flops);
-  std::vector<std::vector<Flop>>& KMeansDecomp(const std::vector<Flop>& flops,
-                                               int MAX_SZ);
+  void KMeans(const std::vector<Flop>& flops,
+              std::vector<std::vector<Flop>>& clusters);
+  void KMeansDecomp(const std::vector<Flop>& flops,
+                    int MAX_SZ,
+                    std::vector<std::vector<Flop>>& pointsets);
 
   void RunCapacitatedKMeans(const std::vector<Flop>& flops,
                             std::vector<Tray>& trays,
