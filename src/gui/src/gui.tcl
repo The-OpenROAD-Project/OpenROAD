@@ -141,6 +141,9 @@ proc save_image { args } {
     }
     sta::check_positive_int "-width" $keys(-width)
     set width $keys(-width)
+    if { $width == 0 } {
+      utl::error GUI 98 "Specified -width cannot be zero."
+    }
   }
 
   sta::check_argc_eq1 "save_image" $args

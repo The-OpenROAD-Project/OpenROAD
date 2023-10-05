@@ -1917,8 +1917,6 @@ void LayoutViewer::saveImage(const QString& filepath,
 
   const qreal old_pixels_per_dbu = pixels_per_dbu_;
 
-  // TO DO: Add another check for height
-  //        Add minimum dimensions based on the max resolution
   if (width_px != 0) {
     pixels_per_dbu_ = width_px / static_cast<float>(save_area.dx());
   }
@@ -1940,19 +1938,21 @@ void LayoutViewer::saveImage(const QString& filepath,
   // rendering be synchronous.  We directly call the draw()
   // method ourselves.
 
-  const QSize initial_size = QSize(bounding_rect.width(), bounding_rect.height());
+  const QSize initial_size
+      = QSize(bounding_rect.width(), bounding_rect.height());
   const QSize img_size = Utils::adjustMaxImageSize(initial_size);
 
   if (img_size != initial_size) {
     const int max_size = std::max(img_size.width(), img_size.height());
 
-    logger_->warn(utl::GUI,
-                  94,
-                  "Can't save image with the specified size (max width/height "
-                  "is {} pixels). Saved image dimensions = {} x {}.",
-                  max_size,
-                  img_size.width(),
-                  img_size.height());
+    logger_->warn(
+        utl::GUI,
+        94,
+        "Specified resolution results in illegal size (max width/height "
+        "is {} pixels). Saving image with dimensions = {} x {}.",
+        max_size,
+        img_size.width(),
+        img_size.height());
 
     // Set resolution according to adjusted size
     pixels_per_dbu_ = computePixelsPerDBU(img_size, save_area);
