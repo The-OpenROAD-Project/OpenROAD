@@ -59,7 +59,7 @@ class Utils
                           utl::Logger* logger);
 
   // Cache of size in pixels to limit ~1.5GB in memory
-  static const int MAX_IMAGE_SIZE = 7200;
+  inline static const int MAX_IMAGE_SIZE = 7200;
 };
 
 }  // namespace gui
