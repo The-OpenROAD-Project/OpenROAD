@@ -180,24 +180,24 @@ int Grid::computeTileReduce(const odb::Rect& obs,
   int reduce = -1;
   if (direction == odb::dbTechLayerDir::VERTICAL) {
     if (obs.xMin() >= tile.xMin() && obs.xMax() <= tile.xMax()) {
-      reduce = ceil(static_cast<float>(std::abs(obs.xMax() - obs.xMin()))
+      reduce = ceil(static_cast<double>(std::abs(obs.xMax() - obs.xMin()))
                     / track_space);
     } else if (first) {
-      reduce = ceil(static_cast<float>(std::abs(tile.xMax() - obs.xMin()))
+      reduce = ceil(static_cast<double>(std::abs(tile.xMax() - obs.xMin()))
                     / track_space);
     } else {
-      reduce = ceil(static_cast<float>(std::abs(obs.xMax() - tile.xMin()))
+      reduce = ceil(static_cast<double>(std::abs(obs.xMax() - tile.xMin()))
                     / track_space);
     }
   } else {
     if (obs.yMin() >= tile.yMin() && obs.yMax() <= tile.yMax()) {
-      reduce = ceil(static_cast<float>(std::abs(obs.yMax() - obs.yMin()))
+      reduce = ceil(static_cast<double>(std::abs(obs.yMax() - obs.yMin()))
                     / track_space);
     } else if (first) {
-      reduce = ceil(static_cast<float>(std::abs(tile.yMax() - obs.yMin()))
+      reduce = ceil(static_cast<double>(std::abs(tile.yMax() - obs.yMin()))
                     / track_space);
     } else {
-      reduce = ceil(static_cast<float>(std::abs(obs.yMax() - tile.yMin()))
+      reduce = ceil(static_cast<double>(std::abs(obs.yMax() - tile.yMin()))
                     / track_space);
     }
   }

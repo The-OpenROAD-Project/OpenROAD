@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include <cmath>
 #include <map>
 #include <set>
 #include <vector>
