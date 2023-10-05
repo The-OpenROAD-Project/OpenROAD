@@ -56,7 +56,8 @@ class Logger;
 
 namespace odb {
 class dbDatabase;
-}
+class dbTechLayerDir;
+}  // namespace odb
 
 namespace stt {
 class SteinerTreeBuilder;
@@ -106,7 +107,7 @@ class FastRouteCore
   void addHCapacity(short horizontalCapacity, int layer);
   void setLowerLeft(int x, int y);
   void setTileSize(int size);
-  void setLayerOrientation(int x);
+  void addLayerDirection(int layer_idx, const odb::dbTechLayerDir& direction);
   FrNet* addNet(odb::dbNet* db_net,
                 bool is_clock,
                 int driver_idx,
@@ -319,10 +320,7 @@ class FastRouteCore
   void reInitTree(const int netID);
 
   // maze3D functions
-  void mazeRouteMSMDOrder3D(int expand,
-                            int ripupTHlb,
-                            int ripupTHub,
-                            int layerOrientation);
+  void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub);
   void setupHeap3D(int netID,
                    int edgeID,
                    std::vector<int*>& src_heap_3D,
@@ -513,7 +511,7 @@ class FastRouteCore
   int overflow_iterations_;
   int congestion_report_iter_step_;
   std::string congestion_file_name_;
-  int layer_orientation_;
+  std::vector<odb::dbTechLayerDir> layer_directions_;
   int x_range_;
   int y_range_;
 
