@@ -55,7 +55,7 @@
 
 namespace par {
 
-struct Hypergraph;
+class Hypergraph;
 using HGraphPtr = std::shared_ptr<Hypergraph>;
 
 // The data structure for critical timing path

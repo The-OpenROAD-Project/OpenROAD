@@ -82,6 +82,9 @@ void LayoutTabs::blockLoaded(odb::dbBlock* block)
                                  this);
   viewer->setLogger(logger_);
   viewers_.push_back(viewer);
+  if (command_executing_) {
+    viewer->commandAboutToExecute();
+  }
   auto scroll = new LayoutScroll(viewer, this);
   viewer->blockLoaded(block);
 
@@ -112,6 +115,10 @@ void LayoutTabs::blockLoaded(odb::dbBlock* block)
 void LayoutTabs::tabChange(int index)
 {
   current_viewer_ = viewers_[index];
+  if (command_executing_) {
+    current_viewer_->commandAboutToExecute();
+  }
+
   emit setCurrentBlock(current_viewer_->getBlock());
 }
 
@@ -125,14 +132,28 @@ void LayoutTabs::setLogger(utl::Logger* logger)
 void LayoutTabs::zoomIn()
 {
   if (current_viewer_) {
-    current_viewer_->zoomIn();
+    if (current_viewer_->isCursorInsideViewport()) {
+      const odb::Point focus = current_viewer_->screenToDBU(
+          current_viewer_->mapFromGlobal(QCursor::pos()));
+
+      current_viewer_->zoomIn(focus, true);
+    } else {
+      current_viewer_->zoomIn();
+    }
   }
 }
 
 void LayoutTabs::zoomOut()
 {
   if (current_viewer_) {
-    current_viewer_->zoomOut();
+    if (current_viewer_->isCursorInsideViewport()) {
+      const odb::Point focus = current_viewer_->screenToDBU(
+          current_viewer_->mapFromGlobal(QCursor::pos()));
+
+      current_viewer_->zoomOut(focus, true);
+    } else {
+      current_viewer_->zoomOut();
+    }
   }
 }
 
@@ -302,6 +323,7 @@ void LayoutTabs::commandAboutToExecute()
   if (current_viewer_) {
     current_viewer_->commandAboutToExecute();
   }
+  command_executing_ = true;
 }
 
 void LayoutTabs::commandFinishedExecuting()
@@ -309,6 +331,7 @@ void LayoutTabs::commandFinishedExecuting()
   if (current_viewer_) {
     current_viewer_->commandFinishedExecuting();
   }
+  command_executing_ = false;
 }
 
 void LayoutTabs::restoreTclCommands(std::vector<std::string>& cmds)

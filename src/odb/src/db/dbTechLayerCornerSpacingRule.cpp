@@ -165,8 +165,7 @@ void _dbTechLayerCornerSpacingRule::out(dbDiff& diff,
 
 _dbTechLayerCornerSpacingRule::_dbTechLayerCornerSpacingRule(_dbDatabase* db)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field = 0;
+  flags_ = {};
   within_ = 0;
   eol_width_ = 0;
   jog_length_ = 0;

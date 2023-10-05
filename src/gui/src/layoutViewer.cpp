@@ -218,9 +218,7 @@ Rect LayoutViewer::getBounds() const
 
   Rect die = block_->getDieArea();
 
-  Rect visible(0, 0, die.xMax(), die.yMax());
-
-  bbox.merge(visible);
+  bbox.merge(die);
 
   return bbox;
 }
@@ -321,6 +319,18 @@ void LayoutViewer::centerAt(const odb::Point& focus)
   if (y_val != 0) {
     center_.setY(adjusted_pt.y());
   }
+}
+
+bool LayoutViewer::isCursorInsideViewport()
+{
+  QPoint mouse_pos = scroller_->mapFromGlobal(QCursor::pos());
+  QRect layout_boundaries = scroller_->viewport()->rect();
+
+  if (layout_boundaries.contains(mouse_pos)) {
+    return true;
+  }
+
+  return false;
 }
 
 void LayoutViewer::zoomIn()
@@ -1215,19 +1225,23 @@ void LayoutViewer::resizeEvent(QResizeEvent* event)
 void LayoutViewer::updateScaleAndCentering(const QSize& new_size)
 {
   if (hasDesign()) {
-    const odb::Rect block_bounds = getBounds();
+    const odb::Rect bounds = getBounds();
 
     // compute new pixels_per_dbu_
-    pixels_per_dbu_
-        = computePixelsPerDBU(new_size, getPaddedRect(block_bounds));
+    pixels_per_dbu_ = computePixelsPerDBU(new_size, getPaddedRect(bounds));
 
-    // compute new centering shift
-    // the offset necessary to center the block in the viewport.
     // expand area to fill whole scroller window
     const QSize new_area = new_size.expandedTo(scroller_->size());
+
+    // Compute new centering shift - that is the offset necessary to center the
+    // block in the viewport. We need to take into account not only the
+    // dimensions (dx and dy) of the bounds but how far it is from the dbu
+    // origin
     centering_shift_
-        = QPoint((new_area.width() - block_bounds.dx() * pixels_per_dbu_) / 2,
-                 (new_area.height() + block_bounds.dy() * pixels_per_dbu_) / 2);
+        = QPoint(((new_area.width() - bounds.dx() * pixels_per_dbu_) / 2
+                  - bounds.xMin() * pixels_per_dbu_),
+                 ((new_area.height() + bounds.dy() * pixels_per_dbu_) / 2
+                  + bounds.yMin() * pixels_per_dbu_));
 
     fullRepaint();
   }
@@ -1912,7 +1926,7 @@ void LayoutViewer::saveImage(const QString& filepath,
                                       screen_region.width(),
                                       screen_region.height());
 
-  const QRect bounding_rect = save_region.boundingRect();
+  QRect bounding_rect = save_region.boundingRect();
 
   // We don't use Utils::renderImage as we need to have the
   // rendering be synchronous.  We directly call the draw()
@@ -1920,7 +1934,30 @@ void LayoutViewer::saveImage(const QString& filepath,
   const int width_px = bounding_rect.width();
   const int height_px = bounding_rect.height();
 
-  const QSize img_size = Utils::adjustMaxImageSize(QSize(width_px, height_px));
+  const QSize initial_size = QSize(width_px, height_px);
+  const QSize img_size = Utils::adjustMaxImageSize(initial_size);
+
+  if (img_size != initial_size) {
+    logger_->warn(utl::GUI,
+                  94,
+                  "Can't save image with the specified size (max width/height "
+                  "is 7200 pixels). Saved image dimensions = {} x {}.",
+                  img_size.width(),
+                  img_size.height());
+
+    // Set resolution according to adjusted size
+    pixels_per_dbu_ = computePixelsPerDBU(img_size, save_area);
+
+    const QRectF adjuted_screen_region = dbuToScreen(save_area);
+    const QRegion adjusted_save_region
+        = QRegion(adjuted_screen_region.left(),
+                  adjuted_screen_region.top(),
+                  adjuted_screen_region.width(),
+                  adjuted_screen_region.height());
+
+    bounding_rect = adjusted_save_region.boundingRect();
+  }
+
   QImage img(img_size, QImage::Format_ARGB32_Premultiplied);
 
   const qreal render_ratio

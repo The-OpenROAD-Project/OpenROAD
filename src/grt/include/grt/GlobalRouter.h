@@ -198,6 +198,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   NetRouteMap& getRoutes() { return routes_; }
   Net* getNet(odb::dbNet* db_net);
   int getTileSize() const;
+  bool isNonLeafClock(odb::dbNet* db_net);
 
   // repair antenna public functions
   void repairAntennas(odb::dbMTerm* diode_mterm,
@@ -257,6 +258,7 @@ class GlobalRouter : public ant::GlobalRouteSource
       const Pin& pin,
       std::vector<std::pair<odb::Point, odb::Point>>& ap_positions);
   odb::Point findFakePinPosition(Pin& pin, odb::dbNet* db_net);
+  void getNetLayerRange(odb::dbNet* db_net, int& min_layer, int& max_layer);
 
   void setRenderer(std::unique_ptr<AbstractGrouteRenderer> groute_renderer);
   AbstractGrouteRenderer* getRenderer();
@@ -273,6 +275,8 @@ class GlobalRouter : public ant::GlobalRouteSource
   // main functions
   void initCoreGrid(int max_routing_layer);
   void initRoutingLayers();
+  void checkAdjacentLayersDirection(int min_routing_layer,
+                                    int max_routing_layer);
   std::vector<std::pair<int, int>> calcLayerPitches(int max_layer);
   void initRoutingTracks(int max_routing_layer);
   void averageTrackPattern(odb::dbTrackGrid* grid,
@@ -284,7 +288,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   void initNets(std::vector<Net*>& nets);
   bool makeFastrouteNet(Net* net);
   bool checkPinPositions(Net* net, std::vector<odb::Point>& last_pos);
-  void getNetLayerRange(Net* net, int& min_layer, int& max_layer);
   void computeGridAdjustments(int min_routing_layer, int max_routing_layer);
   void computeTrackAdjustments(int min_routing_layer, int max_routing_layer);
   void computeUserGlobalAdjustments(int min_routing_layer,
@@ -365,13 +368,12 @@ class GlobalRouter : public ant::GlobalRouteSource
   void computeObstructionsAdjustments();
   void findLayerExtensions(std::vector<int>& layer_extensions);
   int findObstructions(odb::Rect& die_area);
-  bool layerIsBlocked(
-      int layer,
-      odb::dbTechLayerDir& direction,
-      const std::unordered_map<int, odb::Rect>& macro_obs_per_layer,
-      odb::Rect& extended_obs);
+  bool layerIsBlocked(int layer,
+                      const std::unordered_map<int, std::vector<odb::Rect>>&
+                          macro_obs_per_layer,
+                      std::vector<odb::Rect>& extended_obs);
   void extendObstructions(
-      std::unordered_map<int, odb::Rect>& macro_obs_per_layer,
+      std::unordered_map<int, std::vector<odb::Rect>>& macro_obs_per_layer,
       int bottom_layer,
       int top_layer);
   int findInstancesObstructions(odb::Rect& die_area,
@@ -383,7 +385,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   void makeBtermPins(Net* net, odb::dbNet* db_net, const odb::Rect& die_area);
   void initClockNets();
   bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
-  bool isNonLeafClock(odb::dbNet* db_net);
   int trackSpacing();
   void initGridAndNets();
 

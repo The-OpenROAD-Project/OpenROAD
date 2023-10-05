@@ -17,6 +17,7 @@
 [INFO GRT-0088] Layer met3    Track-Pitch = 0.6800  line-2-Via Pitch: 0.6150
 [INFO GRT-0088] Layer met4    Track-Pitch = 0.9200  line-2-Via Pitch: 1.0400
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.4000  line-2-Via Pitch: 3.1100
+[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 3
 [INFO GRT-0002] Maximum degree: 3
@@ -32,28 +33,28 @@ met1       Horizontal    4314129       1166898          72.95%
 met2       Vertical      3238275        778791          75.95%
 met3       Horizontal    2156853        583741          72.94%
 met4       Vertical      1295922        196356          84.85%
-met5       Horizontal     431286        215220          50.10%
+met5       Horizontal     431286        195760          54.61%
 ---------------------------------------------------------------
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
-[INFO GRT-0197] Via related to pin nodes: 4
+[INFO GRT-0197] Via related to pin nodes: 3
 [INFO GRT-0198] Via related Steiner nodes: 1
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 10
-[INFO GRT-0112] Final usage 3D: 359
+[INFO GRT-0111] Final number of vias: 9
+[INFO GRT-0112] Final usage 3D: 358
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
-met1           1166898           178            0.02%             0 /  0 /  0
+met1           1166898           180            0.02%             0 /  0 /  0
 met2            778791           151            0.02%             0 /  0 /  0
 met3            583741             0            0.00%             0 /  0 /  0
 met4            196356             0            0.00%             0 /  0 /  0
-met5            215220             0            0.00%             0 /  0 /  0
+met5            195760             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total          2941006           329            0.01%             0 /  0 /  0
+Total          2921546           331            0.01%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 2366 um
+[INFO GRT-0018] Total wirelength: 2380 um
 [INFO GRT-0014] Routed nets: 1
 No differences found.

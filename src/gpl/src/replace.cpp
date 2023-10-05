@@ -36,6 +36,7 @@
 #include <iostream>
 
 #include "initialPlace.h"
+#include "mbff.h"
 #include "nesterovBase.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"
@@ -294,6 +295,28 @@ void Replace::doInitialPlace()
       new InitialPlace(ipVars, pbc_, pbVec_, log_));
   ip_ = std::move(ip);
   ip_->doBicgstabPlace();
+}
+
+void Replace::runMBFF(int max_sz, float alpha, float beta, int threads)
+{
+  int num_flops = 0;
+  int num_paths = 0;
+  vector<odb::Point> points;
+  vector<Path> paths;
+
+  auto block = db_->getChip()->getBlock();
+  for (const auto& inst : block->getInsts()) {
+    if (inst->getMaster()->isSequential()) {
+      int x_i, y_i;
+      inst->getOrigin(x_i, y_i);
+      odb::Point pt(x_i, y_i);
+      points.push_back(pt);
+      num_flops++;
+    }
+  }
+
+  MBFF pntset(num_flops, num_paths, points, paths, threads, 4, 10, log_);
+  pntset.Run((max_sz == -1 ? num_flops : max_sz), alpha, beta);
 }
 
 bool Replace::initNesterovPlace()

@@ -433,6 +433,11 @@ class FlexGCWorker::Impl
   void checkLef58CutSpacing_main(gcRect* rect,
                                  frLef58CutSpacingConstraint* con,
                                  bool skipSameNet = false);
+  void checkLef58CutSpacing_spc_parallelOverlap(
+      gcRect* rect1,
+      gcRect* rect2,
+      frLef58CutSpacingConstraint* con,
+      const gtl::rectangle_data<frCoord>& markerRect);
   void checkLef58CutSpacing_main(gcRect* rect1,
                                  gcRect* rect2,
                                  frLef58CutSpacingConstraint* con);

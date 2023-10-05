@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -euo pipefail
 
@@ -6,6 +6,56 @@ _versionCompare() {
     local a b IFS=. ; set -f
     printf -v a %08d $1; printf -v b %08d $3
     test $a "$2" $b
+}
+
+_equivalenceDeps() {
+    yosysVersion=yosys-0.33
+    eqyVersion=0cc2ff0
+
+    # yosys
+    yosysPrefix=${PREFIX:-"/usr/local"}
+    if ! command -v yosys &> /dev/null; then (
+        if [[ -f /opt/rh/llvm-toolset-7.0/enable ]]; then
+            source /opt/rh/llvm-toolset-7.0/enable
+        fi
+        cd "${baseDir}"
+        git clone --depth=1 -b "${yosysVersion}" --recursive https://github.com/YosysHQ/yosys
+        cd yosys
+        # use of no-register flag is required for some compilers,
+        # e.g., gcc and clang fron RHEL8
+        make -j $(nproc) PREFIX="${yosysPrefix}" ABC_ARCHFLAGS=-Wno-register
+        make install
+    ) fi
+
+    # eqy
+    eqyPrefix=${PREFIX:-"/usr/local"}
+    if ! command -v eqy &> /dev/null; then (
+        if [[ -f /opt/rh/llvm-toolset-7.0/enable ]]; then
+            source /opt/rh/llvm-toolset-7.0/enable
+        fi
+        cd "${baseDir}"
+        git clone --recursive https://github.com/YosysHQ/eqy
+        cd eqy
+        git checkout ${eqyVersion}
+        export PATH="${yosysPrefix}/bin:${PATH}"
+        make -j $(nproc) PREFIX="${eqyPrefix}"
+        make install PREFIX="${eqyPrefix}"
+    )
+    fi
+
+    # sby
+    sbyPrefix=${PREFIX:-"/usr/local"}
+    if ! command -v sby &> /dev/null; then (
+        if [[ -f /opt/rh/llvm-toolset-7.0/enable ]]; then
+            source /opt/rh/llvm-toolset-7.0/enable
+        fi
+        cd "${baseDir}"
+        git clone --depth=1 -b ${yosysVersion} --recursive https://github.com/YosysHQ/sby
+        cd sby
+        export PATH="${eqyPrefix}/bin:${PATH}"
+        make -j $(nproc) PREFIX="${sbyPrefix}" install
+    )
+    fi
 }
 
 _installCommonDev() {
@@ -26,8 +76,7 @@ _installCommonDev() {
     lemonVersion=1.3.1
     spdlogVersion=1.8.1
 
-    # temp dir to download and compile
-    baseDir=/tmp/installers
+    rm -rf "${baseDir}"
     mkdir -p "${baseDir}"
     if [[ ! -z "${PREFIX}" ]]; then
         mkdir -p "${PREFIX}"
@@ -91,7 +140,7 @@ _installCommonDev() {
     eigenPrefix=${PREFIX:-"/usr/local"}
     if [[ ! -d ${eigenPrefix}/include/eigen3 ]]; then
         cd "${baseDir}"
-        git clone -b ${eigenVersion} https://gitlab.com/libeigen/eigen.git
+        git clone --depth=1 -b ${eigenVersion} https://gitlab.com/libeigen/eigen.git
         cd eigen
         ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${eigenPrefix}" -B build .
         ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
@@ -103,7 +152,7 @@ _installCommonDev() {
     cuspPrefix=${PREFIX:-"/usr/local/include"}
     if [[ ! -d ${cuspPrefix}/cusp/ ]]; then
         cd "${baseDir}"
-        git clone -b cuda9 https://github.com/cusplibrary/cusplibrary.git
+        git clone --depth=1 -b cuda9 https://github.com/cusplibrary/cusplibrary.git
         cd cusplibrary
         cp -r ./cusp ${cuspPrefix}
     else
@@ -114,7 +163,7 @@ _installCommonDev() {
     lemonPrefix=${PREFIX:-"/usr/local"}
     if [[ -z $(grep "LEMON_VERSION \"${lemonVersion}\"" ${lemonPrefix}/include/lemon/config.h) ]]; then
         cd "${baseDir}"
-        git clone -b ${lemonVersion} https://github.com/The-OpenROAD-Project/lemon-graph.git
+        git clone --depth=1 -b ${lemonVersion} https://github.com/The-OpenROAD-Project/lemon-graph.git
         cd lemon-graph
         ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${lemonPrefix}" -B build .
         ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
@@ -126,12 +175,16 @@ _installCommonDev() {
     spdlogPrefix=${PREFIX:-"/usr/local"}
     if [[ ! -d ${spdlogPrefix}/include/spdlog ]]; then
         cd "${baseDir}"
-        git clone -b "v${spdlogVersion}" https://github.com/gabime/spdlog.git
+        git clone --depth=1 -b "v${spdlogVersion}" https://github.com/gabime/spdlog.git
         cd spdlog
         ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${spdlogPrefix}" -DSPDLOG_BUILD_EXAMPLE=OFF -B build .
         ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
     else
         echo "spdlog already installed."
+    fi
+
+    if [[ ${equivalenceDeps} == "yes" ]]; then
+        _equivalenceDeps
     fi
 
     cd "${lastDir}"
@@ -154,7 +207,7 @@ _installOrTools() {
     orToolsVersionBig=9.5
     orToolsVersionSmall=${orToolsVersionBig}.2237
 
-    baseDir=/tmp/installers
+    rm -rf "${baseDir}"
     mkdir -p "${baseDir}"
     if [[ ! -z "${PREFIX}" ]]; then mkdir -p "${PREFIX}"; fi
     cd "${baseDir}"
@@ -182,51 +235,51 @@ _installUbuntuPackages() {
     apt-get -y install \
         automake \
         autotools-dev \
-        build-essential \
+        binutils \
         bison \
-        flex \
+        build-essential \
         clang \
+        debhelper \
+        devscripts \
+        flex \
         g++ \
         gcc \
         git \
         lcov \
+        libffi-dev \
+        libgomp1 \
+        libomp-dev \
         libpcre2-dev \
         libpcre3-dev \
-        python3-dev \
         libreadline-dev \
+        libtcl \
+        python3-dev \
+        qt5-image-formats-plugins \
+        tcl \
         tcl-dev \
+        tcl-tclreadline \
         tcllib \
         wget \
         zlib1g-dev \
-        libomp-dev \
-        devscripts \
-        debhelper
-
-    apt-get install -y \
-        binutils \
-        libgomp1 \
-        libtcl \
-        qt5-image-formats-plugins \
-        tcl-tclreadline \
-        wget
 
     if _versionCompare $1 -ge 22.10; then
         apt-get install -y \
-            qtbase5-dev \
-            qtchooser \
+            libpython3.11 \
             qt5-qmake \
+            qtbase5-dev \
             qtbase5-dev-tools \
-            libpython3.11
+            qtchooser
     elif [[ $1 == 22.04 ]]; then
         apt-get install -y \
-            qtbase5-dev \
-            qtchooser \
+            libpython3.8 \
             qt5-qmake \
+            qtbase5-dev \
             qtbase5-dev-tools \
-            libpython3.8
+            qtchooser
     else
-        apt-get install -y qt5-default \
-            libpython3.8
+        apt-get install -y \
+            libpython3.8 \
+            qt5-default
     fi
 
     # need the strip "hack" above to run on docker
@@ -239,67 +292,54 @@ _installRHELCleanUp() {
 }
 
 _installRHELPackages() {
-    yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
-
-    yum -y install \
-        tzdata \
-        binutils \
-        libgomp \
-        python3-libs \
-        tcl \
-        tcl-tclreadline \
-        qt5-srpm-macros.noarch \
-        wget
-
     yum -y update
-    yum -y install \
-        autoconf \
-        automake \
-        gcc \
-        gcc-c++ \
-        gdb \
-        glibc-devel \
-        libtool	\
-        make \
-        pkgconf \
-        pkgconf-m4 \
-        pkgconf-pkg-config \
-        redhat-rpm-config \
-        rpm-build \
-        wget \
-        git \
-        llvm7.0 \
-        llvm7.0-libs \
-        llvm7.0-devel \
-        pcre-devel \
-        pcre2-devel \
-        tcl-tclreadline-devel \
-        readline \
-        tcllib \
-        tcl-tclreadline-devel \
-        tcl-thread-devel \
-        zlib-devel \
-        python3 \
-        python3-pip \
-        python3-devel \
-        clang \
-        clang-devel
-
-    yum install -y \
-        http://repo.okay.com.mx/centos/8/x86_64/release/bison-3.0.4-10.el8.x86_64.rpm \
-        https://forensics.cert.org/centos/cert/7/x86_64/flex-2.6.1-9.el7.x86_64.rpm
-
     if [[ $(yum repolist | egrep -c "rhel-8-for-x86_64-appstream-rpms") -eq 0 ]]; then
         yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-8-6.el8.noarch.rpm
         yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-stream-repos-8-6.el8.noarch.rpm
         rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
     fi
-
+    yum -y install tzdata
+    yum -y install redhat-rpm-config rpm-build
+    yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
     yum -y install \
+        autoconf \
+        automake \
+        clang \
+        clang-devel \
+        gcc \
+        gcc-c++ \
+        gdb \
+        git \
+        glibc-devel \
+        libtool \
+        libffi-devel \
+        llvm7.0 \
+        llvm7.0-devel \
+        llvm7.0-libs \
+        make \
+        pcre-devel \
+        pcre2-devel \
+        pkgconf \
+        pkgconf-m4 \
+        pkgconf-pkg-config \
+        python3 \
+        python3-devel \
+        python3-pip \
         qt5-qtbase-devel \
         qt5-qtimageformats \
-        tcl-devel
+        readline \
+        readline-devel \
+        tcl-devel \
+        tcl-tclreadline \
+        tcl-tclreadline-devel \
+        tcl-thread-devel \
+        tcllib \
+        wget \
+        zlib-devel
 
+    yum install -y \
+        http://repo.okay.com.mx/centos/8/x86_64/release/bison-3.0.4-10.el8.x86_64.rpm \
+        https://forensics.cert.org/centos/cert/7/x86_64/flex-2.6.1-9.el7.x86_64.rpm
 }
 
 _installCentosCleanUp() {
@@ -308,85 +348,90 @@ _installCentosCleanUp() {
 }
 
 _installCentosPackages() {
-    yum remove -y lcov ius-release epel-release
-    yum install -y http://downloads.sourceforge.net/ltp/lcov-1.14-1.noarch.rpm
-    yum install -y https://repo.ius.io/ius-release-el7.rpm
-    yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-
     yum update -y
-
+    yum install -y tzdata
     yum groupinstall -y "Development Tools"
+    if ! command -v lcov &> /dev/null; then
+        yum install -y http://downloads.sourceforge.net/ltp/lcov-1.14-1.noarch.rpm
+    fi
+    if ! command -v yum list installed ius-release &> /dev/null; then
+        yum install -y https://repo.ius.io/ius-release-el7.rpm
+    fi
+    if ! command -v yum list installed epel-release &> /dev/null; then
+        yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    fi
     yum install -y centos-release-scl
     yum install -y \
         devtoolset-8 \
         devtoolset-8-libatomic-devel \
+        libffi-devel \
+        libgomp \
         libstdc++ \
         llvm-toolset-7.0 \
         llvm-toolset-7.0-libomp-devel \
         pcre-devel \
         pcre2-devel \
-        readline-devel \
-        tcl \
-        tcl-devel \
-        tcllib \
-        tcl-tclreadline-devel \
-        zlib-devel \
-        wget
-
-    yum install -y \
         python-devel \
         python36 \
         python36-devel \
-        python36-pip
-
-    yum install -y \
-        libgomp \
         python36-libs \
+        python36-pip \
         qt5-qtbase-devel \
         qt5-qtimageformats \
+        readline-devel \
+        rh-python38-python \
+        rh-python38-python-libs \
+        rh-python38-python-pip \
+        rh-python38-scldevel \
+        tcl \
+        tcl-devel \
         tcl-tclreadline \
-        wget
-}
+        tcl-tclreadline-devel \
+        tcllib \
+        wget \
+        zlib-devel
+    }
 
 _installOpenSuseCleanUp() {
     zypper -n clean --all
-    zypper -n packages --unneeded | awk -F'|' 'NR==0 || NR==1 || NR==2 || NR==3 || NR==4 {next} {print $3}' | grep -v Name | xargs -r zypper -n remove --clean-deps;
+    zypper -n packages --unneeded \
+        | awk -F'|' 'NR==0 || NR==1 || NR==2 || NR==3 || NR==4 {next} {print $3}' \
+        | grep -v Name \
+        | xargs -r zypper -n remove --clean-deps;
 }
 
 _installOpenSusePackages() {
-    zypper refresh && zypper -n update
-    zypper -n install \
-        binutils \
-        libgomp1 \
-        libpython3_6m1_0 \
-        libqt5-qtbase \
-        libqt5-creator \
-        libqt5-qtstyleplugins \
-        qimgv \
-        tcl \
-        tcllib
-
-    zypper refresh && zypper -n update
+    zypper refresh
+    zypper -n update
     zypper -n install -t pattern devel_basis
     zypper -n install \
-        lcov \
-        llvm \
+        binutils \
         clang \
         gcc \
         gcc11-c++ \
+        git \
+        gzip \
+        lcov \
+        libffi-devel \
+        libgomp1 \
+        libomp11-devel \
+        libpython3_6m1_0 \
+        libqt5-creator \
+        libqt5-qtbase \
+        libqt5-qtstyleplugins \
         libstdc++6-devel-gcc8 \
+        llvm \
         pcre-devel \
         pcre2-devel \
         python3-devel \
         python3-pip \
-        readline5-devel \
+        qimgv \
+        readline-devel \
+        tcl \
         tcl-devel \
+        tcllib \
         wget \
-        git \
-        gzip \
-        libomp11-devel \
         zlib-devel
-
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
 }
@@ -454,33 +499,30 @@ _installDebianPackages() {
     apt-get -y install \
         automake \
         autotools-dev \
-        build-essential \
+        binutils \
         bison \
-        flex \
+        build-essential \
         clang \
+        debhelper \
+        devscripts \
+        flex \
         g++ \
         gcc \
         git \
         lcov \
+        libgomp1 \
+        libomp-dev \
         libpcre2-dev \
         libpcre3-dev \
-        python3-dev \
         libreadline-dev \
+        libtcl \
+        python3-dev \
+        qt5-image-formats-plugins \
         tcl-dev \
+        tcl-tclreadline \
         tcllib \
         wget \
-        zlib1g-dev \
-        libomp-dev \
-        devscripts \
-        debhelper
-
-    apt-get install -y \
-        binutils \
-        libgomp1 \
-        libtcl \
-        qt5-image-formats-plugins \
-        tcl-tclreadline \
-        wget
+        zlib1g-dev
 
     if [[ $1 == 10 ]]; then
         apt-get install -y \
@@ -535,12 +577,13 @@ EOF
     exit "${1:-1}"
 }
 
-#default prefix
+# Default values
 PREFIX=""
-#default option
 option="all"
-#default isLocal
 isLocal="false"
+equivalenceDeps="no"
+# temp dir to download and compile
+baseDir=$(mktemp -d /tmp/DependencyInstaller-XXXXXX)
 
 # default values, can be overwritten by cmdline args
 while [ "$#" -gt 0 ]; do
@@ -565,6 +608,9 @@ while [ "$#" -gt 0 ]; do
                 echo "WARNING: previous argument -${option} will be overwritten with -common." >&2
             fi
             option="common"
+            ;;
+        -eqy)
+            equivalenceDeps="yes"
             ;;
         -local)
             if [[ $(id -u) == 0 ]]; then
@@ -627,6 +673,8 @@ case "${os}" in
             _installOrTools "centos" "7" "amd64"
         fi
         cat <<EOF
+To enable Python 3.8 (required for eqy) you need to run:
+    source /opt/rh/rh-python38/enable
 To enable GCC-8 or Clang-7 you need to run:
     source /opt/rh/devtoolset-8/enable
     source /opt/rh/llvm-toolset-7.0/enable
@@ -641,9 +689,9 @@ EOF
         fi
         if [[ "${option}" == "common" || "${option}" == "all" ]]; then
             _installCommonDev
-	    if _versionCompare ${version} -gt 22.10; then
-	        version=22.10
-	    fi
+            if _versionCompare ${version} -gt 22.10; then
+                version=22.10
+            fi
             _installOrTools "ubuntu" "${version}" "amd64"
         fi
         ;;
@@ -669,7 +717,7 @@ To install or run openroad, update your path with:
 EOF
         ;;
     "openSUSE Leap" )
-        if [[ "${option}" == "common" || "${option}" == "all" ]]; then
+        if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
             _installOpenSusePackages
             _installOpenSuseCleanUp

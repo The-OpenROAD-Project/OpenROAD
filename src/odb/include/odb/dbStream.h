@@ -33,6 +33,7 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <cstring>
 #include <fstream>
 #include <string>

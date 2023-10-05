@@ -92,9 +92,7 @@ void IOPlacer::clear()
   slots_.clear();
   top_layer_slots_.clear();
   assignment_.clear();
-  netlist_io_pins_->clear();
   excluded_intervals_.clear();
-  netlist_->clear();
   pin_groups_.clear();
   *parms_ = Parameters();
 }
@@ -256,7 +254,8 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
 
   std::vector<InstancePin> instPins;
   if (sections_.empty()) {
-    Section s = {Point(0, 0)};
+    Section s;
+    s.pos = {0, 0};
     sections_.push_back(s);
   }
 
@@ -576,6 +575,7 @@ void IOPlacer::placeFallbackGroup(
 
 void IOPlacer::initIOLists()
 {
+  netlist_io_pins_->reset();
   int idx = 0;
   for (IOPin& io_pin : netlist_->getIOPins()) {
     std::vector<InstancePin> inst_pins_vector;
@@ -684,14 +684,18 @@ int IOPlacer::micronsToDbu(double microns)
   return (int64_t) (microns * getBlock()->getDbUnitsPerMicron());
 }
 
-void IOPlacer::writePinPlacement()
+void IOPlacer::writePinPlacement(const char* file_name)
 {
-  std::string file_name = parms_->getPinPlacementFile();
-  if (file_name.empty()) {
+  std::string filename = file_name;
+  if (filename.empty()) {
     return;
   }
 
-  std::ofstream out(file_name);
+  std::ofstream out(filename);
+
+  if (!out) {
+    logger_->error(PPL, 35, "Cannot open file {}.", filename);
+  }
 
   std::vector<Edge> edges_list
       = {Edge::bottom, Edge::right, Edge::top, Edge::left};
@@ -866,13 +870,25 @@ void IOPlacer::defineSlots()
 
   findSlotsForTopLayer();
 
-  if (netlist_io_pins_->getIOPins().size() > slots_.size()) {
+  int regular_pin_count = static_cast<int>(netlist_io_pins_->getIOPins().size())
+                          - top_layer_pins_count_;
+  if (regular_pin_count > slots_.size()) {
     logger_->error(PPL,
                    24,
                    "Number of IO pins ({}) exceeds maximum number of available "
                    "positions ({}).",
-                   netlist_io_pins_->getIOPins().size(),
+                   regular_pin_count,
                    slots_.size());
+  }
+
+  if (top_layer_pins_count_ > top_layer_slots_.size()) {
+    logger_->error(PPL,
+                   11,
+                   "Number of IO pins assigned to the top layer ({}) exceeds "
+                   "maximum number of available "
+                   "top layer positions ({}).",
+                   top_layer_pins_count_,
+                   top_layer_slots_.size());
   }
 }
 
@@ -894,7 +910,8 @@ void IOPlacer::findSections(int begin,
       }
     }
     int half_length_pt = begin + (end_slot - begin) / 2;
-    Section n_sec = {slots_.at(half_length_pt).pos};
+    Section n_sec;
+    n_sec.pos = slots_.at(half_length_pt).pos;
     n_sec.num_slots = end_slot - begin - blocked_slots + 1;
     if (n_sec.num_slots < 0) {
       logger_->error(PPL, 40, "Negative number of slots.");
@@ -1576,6 +1593,11 @@ void IOPlacer::addTopLayerConstraint(PinSet* pins, const odb::Rect& region)
 {
   Constraint constraint(*pins, Direction::invalid, region);
   constraints_.push_back(constraint);
+  for (odb::dbBTerm* bterm : *pins) {
+    if (!bterm->getFirstPinPlacementStatus().isFixed()) {
+      top_layer_pins_count_++;
+    }
+  }
 }
 
 void IOPlacer::addMirroredPins(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2)
@@ -2000,7 +2022,7 @@ void IOPlacer::run(bool random_mode)
 
   checkPinPlacement();
   commitIOPlacementToDB(assignment_);
-  writePinPlacement();
+  writePinPlacement(parms_->getPinPlacementFile().c_str());
   clear();
 }
 
@@ -2081,7 +2103,7 @@ void IOPlacer::runAnnealing(bool random)
 
   checkPinPlacement();
   commitIOPlacementToDB(assignment_);
-  writePinPlacement();
+  writePinPlacement(parms_->getPinPlacementFile().c_str());
   clear();
 }
 
@@ -2562,7 +2584,8 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
         }
       }
       int half_length_pt = edge_begin + (end_slot - edge_begin) / 2;
-      Section n_sec = {slots.at(half_length_pt).pos};
+      Section n_sec;
+      n_sec.pos = slots.at(half_length_pt).pos;
       n_sec.num_slots = end_slot - edge_begin - blocked_slots + 1;
       n_sec.begin_slot = edge_begin;
       n_sec.end_slot = end_slot;
@@ -2579,6 +2602,7 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
 
 void IOPlacer::initNetlist()
 {
+  netlist_->reset();
   const Rect& coreBoundary = core_->getBoundary();
   int x_center = (coreBoundary.xMin() + coreBoundary.xMax()) / 2;
   int y_center = (coreBoundary.yMin() + coreBoundary.yMax()) / 2;

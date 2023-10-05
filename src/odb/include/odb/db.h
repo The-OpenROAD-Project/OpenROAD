@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <list>
 #include <map>
 #include <set>
@@ -7468,10 +7469,6 @@ class dbPowerSwitch : public dbObject
  public:
   const char* getName() const;
 
-  std::string getInSupplyPort() const;
-
-  std::string getOutSupplyPort() const;
-
   void setControlNet(dbNet* control_net);
 
   dbNet* getControlNet() const;
@@ -7483,12 +7480,27 @@ class dbPowerSwitch : public dbObject
   // User Code Begin dbPowerSwitch
   static dbPowerSwitch* create(dbBlock* block, const char* name);
   static void destroy(dbPowerSwitch* ps);
-  void setInSupplyPort(const std::string& in_port);
-  void setOutSupplyPort(const std::string& out_port);
+  void addInSupplyPort(const std::string& in_port);
+  void addOutSupplyPort(const std::string& out_port);
   void addControlPort(const std::string& control_port);
   void addOnState(const std::string& on_state);
+  void setLibCell(dbMaster* master);
+  void addPortMap(const std::string& model_port,
+                  const std::string& switch_port);
+
+  void addPortMap(const std::string& model_port, dbMTerm* mterm);
   std::vector<std::string> getControlPorts();
+  std::vector<std::string> getInputSupplyPorts();
+  std::vector<std::string> getOutputSupplyPorts();
   std::vector<std::string> getOnStates();
+
+  // Returns library cell that was defined in the upf for this power switch
+  dbMaster* getLibCell();
+
+  // returns a map associating the model ports to actual instances of dbMTerms
+  // belonging to the first
+  //  lib cell defined in the upf
+  std::map<std::string, dbMTerm*> getPortMap();
   // User Code End dbPowerSwitch
 };
 

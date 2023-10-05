@@ -21,6 +21,8 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0010]  Clock net "clk" has 288 sinks.
 [INFO CTS-0008] TritonCTS found 1 clock nets.
 [INFO CTS-0097] Characterization used 1 buffer(s) types.
+[INFO CTS-0200] 0 placement blockages have been identified.
+[INFO CTS-0201] 0 placed hard macros will be treated like blockages.
 [INFO CTS-0027] Generating H-Tree topology for net clk.
 [INFO CTS-0028]  Total number of sinks: 288.
 [INFO CTS-0029]  Sinks will be clustered in groups of up to 10 and with maximum cluster diameter of 60.0 um.
@@ -54,6 +56,6 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 288
 [INFO CTS-0100]  Leaf buffers 29
-[INFO CTS-0101]  Average sink wire length 131.66 um
+[INFO CTS-0101]  Average sink wire length 129.51 um
 [INFO CTS-0102]  Path depth 3 - 3
 Found 0 unconnected buffers.

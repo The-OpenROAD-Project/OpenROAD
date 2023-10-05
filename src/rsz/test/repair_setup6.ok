@@ -21,8 +21,8 @@ delta HPWL                    0 %
 worst slack -0.39
 [INFO RSZ-0094] Found 4 endpoints with setup violations.
 [INFO RSZ-0040] Inserted 2 buffers.
-[INFO RSZ-0041] Resized 18 instances.
+[INFO RSZ-0041] Resized 19 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
-worst slack -0.06
-worst slack -0.06
+worst slack -0.04
+worst slack -0.07

@@ -15,13 +15,13 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-jobs:     
+jobs:
   testInstaller:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu20.04", "ubuntu22.04", "ubuntu22.10", "centos7", "rhel", "debian10", "debian11", "opensuse"]
-        args: ["", "-local"]
+        os: ["ubuntu20.04", "ubuntu22.04", "centos7", "rhel", "debian10", "debian11", "opensuse"]
+        args: ["", "-local", "-no_eqy", "-no_eqy -local"]
         compilers: ["gcc", "clang"]
         exclude:
           - os: "opensuse"

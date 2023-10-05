@@ -24,6 +24,8 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0010]  Clock net "clk1" has 20 sinks.
 [INFO CTS-0008] TritonCTS found 1 clock nets.
 [INFO CTS-0097] Characterization used 1 buffer(s) types.
+[INFO CTS-0200] 0 placement blockages have been identified.
+[INFO CTS-0201] 0 placed hard macros will be treated like blockages.
 [INFO CTS-0027] Generating H-Tree topology for net clk1.
 [INFO CTS-0028]  Total number of sinks: 20.
 [INFO CTS-0030]  Number of static layers: 0.
@@ -58,11 +60,11 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-r11/CLK                                 1.00    2.76   -1.76 (VIOLATED)
+r11/CLK                                 1.00    1.83   -0.83 (VIOLATED)
 
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-clkbuf_1_0_1_clk1/X                     0.15    0.42   -0.27 (VIOLATED)
+clkbuf_1_0_1_clk1/X                     0.15    0.28   -0.13 (VIOLATED)
 
