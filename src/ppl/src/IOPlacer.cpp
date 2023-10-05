@@ -253,11 +253,6 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
   std::vector<int> io_pin_indices(num_i_os);
 
   std::vector<InstancePin> instPins;
-  if (sections_.empty()) {
-    Section s;
-    s.pos = {0, 0};
-    sections_.push_back(s);
-  }
 
   std::mt19937 g;
   g.seed(seed);
@@ -297,7 +292,6 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
       slots[slot_idx].blocked = true;
       io_pin.setLayer(slots[slot_idx].layer);
       assignment_.push_back(io_pin);
-      sections_[0].pin_indices.push_back(pin_idx);
       io_idx++;
 
       if (assign_mirrored
