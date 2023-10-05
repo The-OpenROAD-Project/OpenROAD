@@ -758,7 +758,7 @@ void GlobalRouter::computeNetSlacks()
   // Find the slack for all nets
   std::unordered_map<Net*, float> net_slack_map;
   std::vector<float> slacks;
-  for (auto net_itr : db_net_map_) {
+  for (const auto& net_itr : db_net_map_) {
     Net* net = net_itr.second;
     float slack = getNetSlack(net);
     net_slack_map[net] = slack;
@@ -1113,7 +1113,7 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
 void GlobalRouter::computePinOffsetAdjustments()
 {
   for (auto const& map_obj : pad_pins_connections_) {
-    for (auto segment : map_obj.second) {
+    for (const auto& segment : map_obj.second) {
       int tile_size = grid_->getTileSize();
       int die_area_min_x = grid_->getXMin();
       int die_area_min_y = grid_->getYMin();
@@ -1781,7 +1781,7 @@ void GlobalRouter::saveGuides()
 
 bool GlobalRouter::isCoveringPin(Net* net, GSegment& segment)
 {
-  for (auto pin : net->getPins()) {
+  for (const auto& pin : net->getPins()) {
     if (pin.getConnectionLayer() == segment.final_layer
         && pin.getOnGridPosition()
                == odb::Point(segment.final_x, segment.final_y)

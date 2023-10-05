@@ -541,7 +541,7 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
     int edge_cap = getEdgeCapacity(x, y, x, y + 1, layer);
     if (edge_cap > 0) {
       int reduce = 0;
-      for (auto interval_it : intervals) {
+      for (const auto& interval_it : intervals) {
         reduce += ceil(static_cast<float>(
                            std::abs(interval_it.upper() - interval_it.lower()))
                        / track_space[layer - 1]);
