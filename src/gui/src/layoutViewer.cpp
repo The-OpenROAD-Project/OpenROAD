@@ -1918,7 +1918,8 @@ void LayoutViewer::saveImage(const QString& filepath,
   const qreal old_pixels_per_dbu = pixels_per_dbu_;
 
   if (width_px != 0) {
-    pixels_per_dbu_ = width_px / static_cast<float>(save_area.dx());
+    // Adapt resolution to width entered by user
+    pixels_per_dbu_ = width_px / static_cast<double>(save_area.dx());
   }
 
   if (dbu_per_pixel != 0) {
@@ -1943,16 +1944,13 @@ void LayoutViewer::saveImage(const QString& filepath,
   const QSize img_size = Utils::adjustMaxImageSize(initial_size);
 
   if (img_size != initial_size) {
-    const int max_size = std::max(img_size.width(), img_size.height());
-
-    logger_->warn(
-        utl::GUI,
-        94,
-        "Resolution results in illegal size (max width/height "
-        "is {} pixels). Saving image with dimensions = {} x {}.",
-        max_size,
-        img_size.width(),
-        img_size.height());
+    logger_->warn(utl::GUI,
+                  94,
+                  "Resolution results in illegal size (max width/height "
+                  "is {} pixels). Saving image with dimensions = {} x {}.",
+                  Utils::MAX_IMAGE_SIZE,
+                  img_size.width(),
+                  img_size.height());
 
     // Set resolution according to adjusted size
     pixels_per_dbu_ = computePixelsPerDBU(img_size, save_area);
