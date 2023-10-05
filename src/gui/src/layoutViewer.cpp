@@ -1948,7 +1948,7 @@ void LayoutViewer::saveImage(const QString& filepath,
     logger_->warn(
         utl::GUI,
         94,
-        "Specified resolution results in illegal size (max width/height "
+        "Resolution results in illegal size (max width/height "
         "is {} pixels). Saving image with dimensions = {} x {}.",
         max_size,
         img_size.width(),
