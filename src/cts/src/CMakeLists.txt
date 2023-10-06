@@ -47,6 +47,7 @@ add_library(cts_lib
     TritonCTS.cpp
     Clustering.cpp
     LevelBalancer.cpp
+    Util.cpp
 )
 
 swig_lib(NAME      cts

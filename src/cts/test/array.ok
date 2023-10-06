@@ -25,6 +25,7 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0008] TritonCTS found 1 clock nets.
 [INFO CTS-0097] Characterization used 1 buffer(s) types.
 [INFO CTS-0200] 225 placement blockages have been identified.
+[DEBUG CTS-legalizer] buf width= 0.190 buf ht= 0.200 scalingUnit=14000
 [INFO CTS-0027] Generating H-Tree topology for net clk.
 [INFO CTS-0028]  Total number of sinks: 2475.
 [INFO CTS-0029]  Sinks will be clustered in groups of up to 20 and with maximum cluster diameter of 100.0 um.
@@ -149,7 +150,1772 @@ TritonCTS forced slew degradation on these wires.
     Key: 61 inSlew: 2 inCap: 1 outSlew: 3 load: 1 length: 4 delay: 1
  Out of 14 sinks, 1 sinks closer to other cluster.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+HTree before legalization -------
+HTree: top buf loc:[(331.439, 353.346)]
+HTree: level*0* bufId*0*: branchPt:[(357.172, 203.080)] topo len:176.000 dist to parent:176.000 weighted sink len:42145.611 parentPt:[(331.439, 353.346)]
+HTree: level*0* bufId*1*: branchPt:[(353.741, 507.043)] topo len:176.000 dist to parent:176.000 weighted sink len:44420.123 parentPt:[(331.439, 353.346)]
+-------------------------------------------------
+HTree: level*1* bufId*0*: branchPt:[(209.108, 185.145)] topo len:166.000 dist to parent:166.000 weighted sink len:12152.552 parentPt:[(357.172, 203.080)]
+HTree: level*1* bufId*1*: branchPt:[(500.793, 180.700)] topo len:166.000 dist to parent:166.000 weighted sink len:15635.184 parentPt:[(357.172, 203.080)]
+HTree: level*1* bufId*2*: branchPt:[(211.461, 530.763)] topo len:166.000 dist to parent:166.000 weighted sink len:13850.977 parentPt:[(353.741, 507.043)]
+HTree: level*1* bufId*3*: branchPt:[(496.357, 530.428)] topo len:166.000 dist to parent:166.000 weighted sink len:15808.141 parentPt:[(353.741, 507.043)]
+-------------------------------------------------
+HTree: level*2* bufId*0*: branchPt:[(185.314, 120.938)] topo len:88.000 dist to parent:88.000 weighted sink len:3886.844 parentPt:[(209.108, 185.145)]
+HTree: level*2* bufId*1*: branchPt:[(179.214, 243.251)] topo len:88.000 dist to parent:88.000 weighted sink len:4987.605 parentPt:[(209.108, 185.145)]
+HTree: level*2* bufId*2*: branchPt:[(519.973, 111.880)] topo len:88.000 dist to parent:88.000 weighted sink len:5764.903 parentPt:[(500.793, 180.700)]
+HTree: level*2* bufId*3*: branchPt:[(523.216, 246.278)] topo len:88.000 dist to parent:88.000 weighted sink len:6235.717 parentPt:[(500.793, 180.700)]
+HTree: level*2* bufId*4*: branchPt:[(182.622, 471.602)] topo len:88.000 dist to parent:88.000 weighted sink len:4999.943 parentPt:[(211.461, 530.763)]
+HTree: level*2* bufId*5*: branchPt:[(185.931, 593.233)] topo len:88.000 dist to parent:88.000 weighted sink len:5062.714 parentPt:[(211.461, 530.763)]
+HTree: level*2* bufId*6*: branchPt:[(522.500, 468.572)] topo len:88.000 dist to parent:88.000 weighted sink len:6585.225 parentPt:[(496.357, 530.428)]
+HTree: level*2* bufId*7*: branchPt:[(516.945, 597.840)] topo len:88.000 dist to parent:88.000 weighted sink len:5655.974 parentPt:[(496.357, 530.428)]
+-------------------------------------------------
+HTree: level*3* bufId*0*: branchPt:[(121.721, 102.531)] topo len:82.000 dist to parent:82.000 weighted sink len:1281.939 parentPt:[(185.314, 120.938)]
+HTree: level*3* bufId*1*: branchPt:[(231.753, 85.377)] topo len:82.000 dist to parent:82.000 weighted sink len:1834.085 parentPt:[(185.314, 120.938)]
+HTree: level*3* bufId*2*: branchPt:[(106.195, 252.232)] topo len:82.000 dist to parent:82.000 weighted sink len:1592.336 parentPt:[(179.214, 243.251)]
+HTree: level*3* bufId*3*: branchPt:[(241.973, 262.492)] topo len:82.000 dist to parent:82.000 weighted sink len:2306.216 parentPt:[(179.214, 243.251)]
+HTree: level*3* bufId*4*: branchPt:[(459.348, 90.505)] topo len:82.000 dist to parent:82.000 weighted sink len:1660.411 parentPt:[(519.973, 111.880)]
+HTree: level*3* bufId*5*: branchPt:[(585.744, 95.652)] topo len:82.000 dist to parent:82.000 weighted sink len:1916.194 parentPt:[(519.973, 111.880)]
+HTree: level*3* bufId*6*: branchPt:[(453.896, 258.958)] topo len:82.000 dist to parent:82.000 weighted sink len:2115.582 parentPt:[(523.216, 246.278)]
+HTree: level*3* bufId*7*: branchPt:[(595.229, 256.265)] topo len:82.000 dist to parent:82.000 weighted sink len:1921.490 parentPt:[(523.216, 246.278)]
+HTree: level*3* bufId*8*: branchPt:[(116.541, 455.683)] topo len:82.000 dist to parent:82.000 weighted sink len:1675.104 parentPt:[(182.622, 471.602)]
+HTree: level*3* bufId*9*: branchPt:[(241.102, 448.083)] topo len:82.000 dist to parent:82.000 weighted sink len:2298.880 parentPt:[(182.622, 471.602)]
+HTree: level*3* bufId*10*: branchPt:[(125.390, 614.692)] topo len:82.000 dist to parent:82.000 weighted sink len:1745.895 parentPt:[(185.931, 593.233)]
+HTree: level*3* bufId*11*: branchPt:[(234.709, 626.454)] topo len:82.000 dist to parent:82.000 weighted sink len:1995.344 parentPt:[(185.931, 593.233)]
+HTree: level*3* bufId*12*: branchPt:[(453.801, 455.271)] topo len:82.000 dist to parent:82.000 weighted sink len:2216.487 parentPt:[(522.500, 468.572)]
+HTree: level*3* bufId*13*: branchPt:[(594.837, 458.909)] topo len:82.000 dist to parent:82.000 weighted sink len:2058.713 parentPt:[(522.500, 468.572)]
+HTree: level*3* bufId*14*: branchPt:[(456.447, 619.342)] topo len:82.000 dist to parent:82.000 weighted sink len:1439.395 parentPt:[(516.945, 597.840)]
+HTree: level*3* bufId*15*: branchPt:[(577.568, 619.217)] topo len:82.000 dist to parent:82.000 weighted sink len:2195.962 parentPt:[(516.945, 597.840)]
+-------------------------------------------------
+HTree: level*4* bufId*0*: branchPt:[(98.366, 81.886)] topo len:44.000 dist to parent:44.000 weighted sink len:674.843 parentPt:[(121.721, 102.531)]
+HTree: level*4* bufId*1*: branchPt:[(98.082, 122.892)] topo len:44.000 dist to parent:44.000 weighted sink len:400.029 parentPt:[(121.721, 102.531)]
+HTree: level*4* bufId*2*: branchPt:[(224.112, 49.018)] topo len:44.000 dist to parent:44.000 weighted sink len:542.632 parentPt:[(231.753, 85.377)]
+HTree: level*4* bufId*3*: branchPt:[(240.127, 121.003)] topo len:44.000 dist to parent:44.000 weighted sink len:806.970 parentPt:[(231.753, 85.377)]
+HTree: level*4* bufId*4*: branchPt:[(86.742, 227.685)] topo len:44.000 dist to parent:44.000 weighted sink len:565.714 parentPt:[(106.195, 252.232)]
+HTree: level*4* bufId*5*: branchPt:[(88.650, 278.687)] topo len:44.000 dist to parent:44.000 weighted sink len:576.140 parentPt:[(106.195, 252.232)]
+HTree: level*4* bufId*6*: branchPt:[(237.869, 222.597)] topo len:44.000 dist to parent:44.000 weighted sink len:853.519 parentPt:[(241.973, 262.492)]
+HTree: level*4* bufId*7*: branchPt:[(237.620, 302.139)] topo len:44.000 dist to parent:44.000 weighted sink len:849.373 parentPt:[(241.973, 262.492)]
+HTree: level*4* bufId*8*: branchPt:[(446.293, 59.560)] topo len:44.000 dist to parent:44.000 weighted sink len:514.394 parentPt:[(459.348, 90.505)]
+HTree: level*4* bufId*9*: branchPt:[(437.458, 112.615)] topo len:44.000 dist to parent:44.000 weighted sink len:623.920 parentPt:[(459.348, 90.505)]
+HTree: level*4* bufId*10*: branchPt:[(606.896, 72.803)] topo len:44.000 dist to parent:44.000 weighted sink len:774.934 parentPt:[(585.744, 95.652)]
+HTree: level*4* bufId*11*: branchPt:[(610.945, 114.451)] topo len:44.000 dist to parent:44.000 weighted sink len:652.550 parentPt:[(585.744, 95.652)]
+HTree: level*4* bufId*12*: branchPt:[(444.215, 224.639)] topo len:44.000 dist to parent:44.000 weighted sink len:736.192 parentPt:[(453.896, 258.958)]
+HTree: level*4* bufId*13*: branchPt:[(444.936, 293.998)] topo len:44.000 dist to parent:44.000 weighted sink len:739.175 parentPt:[(453.896, 258.958)]
+HTree: level*4* bufId*14*: branchPt:[(616.064, 233.100)] topo len:44.000 dist to parent:44.000 weighted sink len:608.100 parentPt:[(595.229, 256.265)]
+HTree: level*4* bufId*15*: branchPt:[(613.646, 281.848)] topo len:44.000 dist to parent:44.000 weighted sink len:654.128 parentPt:[(595.229, 256.265)]
+HTree: level*4* bufId*16*: branchPt:[(97.435, 430.789)] topo len:44.000 dist to parent:44.000 weighted sink len:647.520 parentPt:[(116.541, 455.683)]
+HTree: level*4* bufId*17*: branchPt:[(92.380, 475.523)] topo len:44.000 dist to parent:44.000 weighted sink len:565.714 parentPt:[(116.541, 455.683)]
+HTree: level*4* bufId*18*: branchPt:[(237.434, 407.752)] topo len:44.000 dist to parent:44.000 weighted sink len:851.320 parentPt:[(241.102, 448.083)]
+HTree: level*4* bufId*19*: branchPt:[(237.663, 488.644)] topo len:44.000 dist to parent:44.000 weighted sink len:852.319 parentPt:[(241.102, 448.083)]
+HTree: level*4* bufId*20*: branchPt:[(96.652, 599.430)] topo len:44.000 dist to parent:44.000 weighted sink len:569.425 parentPt:[(125.390, 614.692)]
+HTree: level*4* bufId*21*: branchPt:[(105.747, 639.049)] topo len:44.000 dist to parent:44.000 weighted sink len:750.478 parentPt:[(125.390, 614.692)]
+HTree: level*4* bufId*22*: branchPt:[(237.340, 585.085)] topo len:44.000 dist to parent:44.000 weighted sink len:848.406 parentPt:[(234.709, 626.454)]
+HTree: level*4* bufId*23*: branchPt:[(242.771, 662.393)] topo len:44.000 dist to parent:44.000 weighted sink len:680.198 parentPt:[(234.709, 626.454)]
+HTree: level*4* bufId*24*: branchPt:[(445.357, 419.715)] topo len:44.000 dist to parent:44.000 weighted sink len:738.819 parentPt:[(453.801, 455.271)]
+HTree: level*4* bufId*25*: branchPt:[(443.288, 488.759)] topo len:44.000 dist to parent:44.000 weighted sink len:793.197 parentPt:[(453.801, 455.271)]
+HTree: level*4* bufId*26*: branchPt:[(612.653, 432.724)] topo len:44.000 dist to parent:44.000 weighted sink len:684.746 parentPt:[(594.837, 458.909)]
+HTree: level*4* bufId*27*: branchPt:[(616.787, 480.959)] topo len:44.000 dist to parent:44.000 weighted sink len:694.166 parentPt:[(594.837, 458.909)]
+HTree: level*4* bufId*28*: branchPt:[(433.130, 598.659)] topo len:44.000 dist to parent:44.000 weighted sink len:467.537 parentPt:[(456.447, 619.342)]
+HTree: level*4* bufId*29*: branchPt:[(441.341, 648.236)] topo len:44.000 dist to parent:44.000 weighted sink len:493.297 parentPt:[(456.447, 619.342)]
+HTree: level*4* bufId*30*: branchPt:[(602.268, 599.918)] topo len:44.000 dist to parent:44.000 weighted sink len:894.678 parentPt:[(577.568, 619.217)]
+HTree: level*4* bufId*31*: branchPt:[(591.398, 649.387)] topo len:44.000 dist to parent:44.000 weighted sink len:807.509 parentPt:[(577.568, 619.217)]
+-------------------------------------------------
+[DEBUG CTS-legalizer] legalize: top buf loc=[(331.439, 353.346)]
+  HTree level*0* bufId*0*, parent:[(331.439, 353.346)], branch:[(357.172, 203.080)], leng:176.000, sinks:158
+    branchPt:[(357.172, 203.080)] is not legal, parentPt:[(331.439, 353.346)] blockages:(331.286 189.857) (374.429 233.000)
+      FLL candiate [(331.286, 189.857)]
+      FLL candiate [(331.286, 233.000)]
+      FLL candiate [(374.429, 233.000)]
+      FLL candiate [(374.429, 189.857)]
+      FLL candiate [(357.172, 189.857)]
+      FLL candiate [(357.172, 233.000)]
+      FLL candiate [(331.286, 203.080)]
+      FLL candiate [(374.429, 203.080)]
+      FLL candiate [(359.437, 189.857)]
+      FLL candiate [(352.048, 233.000)]
+      Loc [(331.286, 189.857)]: curr dist=163.642 target dist=176.000 sink dist=48251.531
+      Loc [(331.286, 233.000)]: curr dist=120.499 target dist=176.000 sink dist=52185.211
+      Loc [(374.429, 233.000)]: curr dist=163.336 target dist=176.000 sink dist=50388.043
+      Loc [(374.429, 189.857)]: curr dist=206.479 target dist=176.000 sink dist=46454.363
+      Loc [(357.172, 189.857)]: curr dist=189.223 target dist=176.000 sink dist=43900.439
+      Loc [(357.172, 233.000)]: curr dist=146.080 target dist=176.000 sink dist=47834.119
+      Loc [(331.286, 203.080)]: curr dist=150.419 target dist=176.000 sink dist=46496.702
+      Loc [(374.429, 203.080)]: curr dist=193.256 target dist=176.000 sink dist=44699.534
+      Loc [(359.437, 189.857)]: curr dist=191.487 target dist=176.000 sink dist=44235.576
+      Loc [(352.048, 233.000)]: curr dist=140.956 target dist=176.000 sink dist=48694.946
+[DEBUG CTS-legalizer] [(331.286, 189.857)] currDist=163.642 != targetDist=176.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(331.286, 189.857)]=>[(331.286, 177.499)] is legal, dist=176.000, sinkDist=44048.778
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(331.286, 189.857)]=>[(331.286, 529.193)] is legal, dist=176.000, sinkDist=137366.723
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(331.286, 189.857)]=>[(318.928, 189.857)] is legal, dist=176.000, sinkDist=44321.462
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(331.286, 189.857)]=>[(343.950, 189.857)] is legal, dist=176.000, sinkDist=43944.392
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(357.172, 203.080)]=>[(343.950, 189.857)] parentPt:[(331.439, 353.346)] new branchPt is outside blockage
+  HTree level*0* bufId*1*, parent:[(331.439, 353.346)], branch:[(353.741, 507.043)], leng:176.000, sinks:164
+    branchPt:[(353.741, 507.043)] is not legal, parentPt:[(331.439, 353.346)] blockages:(331.286 472.714) (374.429 515.857)
+      FLL candiate [(331.286, 472.714)]
+      FLL candiate [(331.286, 515.857)]
+      FLL candiate [(374.429, 515.857)]
+      FLL candiate [(374.429, 472.714)]
+      FLL candiate [(353.741, 472.714)]
+      FLL candiate [(353.741, 515.857)]
+      FLL candiate [(331.286, 507.043)]
+      FLL candiate [(374.429, 507.043)]
+      FLL candiate [(348.760, 472.714)]
+      FLL candiate [(355.020, 515.857)]
+      Loc [(331.286, 472.714)]: curr dist=119.521 target dist=176.000 sink dist=55304.838
+      Loc [(331.286, 515.857)]: curr dist=162.664 target dist=176.000 sink dist=49399.162
+      Loc [(374.429, 515.857)]: curr dist=205.501 target dist=176.000 sink dist=48761.539
+      Loc [(374.429, 472.714)]: curr dist=162.358 target dist=176.000 sink dist=54667.215
+      Loc [(353.741, 472.714)]: curr dist=141.671 target dist=176.000 sink dist=51440.016
+      Loc [(353.741, 515.857)]: curr dist=184.814 target dist=176.000 sink dist=45534.339
+      Loc [(331.286, 507.043)]: curr dist=153.850 target dist=176.000 sink dist=48284.946
+      Loc [(374.429, 507.043)]: curr dist=196.687 target dist=176.000 sink dist=47647.323
+      Loc [(348.760, 472.714)]: curr dist=136.690 target dist=176.000 sink dist=52296.823
+      Loc [(355.020, 515.857)]: curr dist=186.093 target dist=176.000 sink dist=45733.858
+[DEBUG CTS-legalizer] [(353.741, 515.857)] currDist=184.814 != targetDist=176.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(353.741, 515.857)]=>[(353.741, 199.649)] is illegal or dist 176.000 != 176.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(353.741, 515.857)]=>[(353.741, 507.043)] is illegal or dist 176.000 != 176.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(353.741, 515.857)]=>[(317.950, 515.857)] is legal, dist=176.000, sinkDist=50460.864
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(353.741, 515.857)]=>[(344.928, 515.857)] is legal, dist=176.000, sinkDist=45604.854
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(353.741, 507.043)]=>[(344.928, 515.857)] parentPt:[(331.439, 353.346)] new branchPt is outside blockage
+  HTree level*1* bufId*0*, parent:[(343.950, 189.857)], branch:[(209.108, 185.145)], leng:139.555, sinks:74
+    branchPt:[(209.108, 185.145)] is not legal, parentPt:[(343.950, 189.857)] blockages:(189.857 142.714) (233.000 185.857)
+      FLL candiate [(189.857, 142.714)]
+      FLL candiate [(189.857, 185.857)]
+      FLL candiate [(233.000, 185.857)]
+      FLL candiate [(233.000, 142.714)]
+      FLL candiate [(209.108, 142.714)]
+      FLL candiate [(209.108, 185.857)]
+      FLL candiate [(189.857, 185.145)]
+      FLL candiate [(233.000, 185.145)]
+      FLL candiate [(189.857, 184.472)]
+      FLL candiate [(229.497, 185.857)]
+      Loc [(189.857, 142.714)]: curr dist=201.235 target dist=166.000 sink dist=16407.438
+      Loc [(189.857, 185.857)]: curr dist=158.093 target dist=166.000 sink dist=13011.666
+      Loc [(233.000, 185.857)]: curr dist=114.950 target dist=166.000 sink dist=14735.747
+      Loc [(233.000, 142.714)]: curr dist=158.093 target dist=166.000 sink dist=18131.519
+      Loc [(209.108, 142.714)]: curr dist=181.985 target dist=166.000 sink dist=15598.920
+      Loc [(209.108, 185.857)]: curr dist=138.842 target dist=166.000 sink dist=12203.148
+      Loc [(189.857, 185.145)]: curr dist=158.805 target dist=166.000 sink dist=12961.069
+      Loc [(233.000, 185.145)]: curr dist=115.662 target dist=166.000 sink dist=14685.151
+      Loc [(189.857, 184.472)]: curr dist=159.478 target dist=166.000 sink dist=13014.892
+      Loc [(229.497, 185.857)]: curr dist=118.452 target dist=166.000 sink dist=14364.447
+[DEBUG CTS-legalizer] [(189.857, 184.472)] currDist=159.478 != targetDist=166.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(189.857, 184.472)]=>[(189.857, 177.950)] is legal, dist=166.000, sinkDist=12062.343
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(189.857, 184.472)]=>[(189.857, 201.765)] is legal, dist=166.000, sinkDist=12983.193
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(189.857, 184.472)]=>[(183.335, 184.472)] is illegal or dist 166.000 != 166.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(189.857, 184.472)]=>[(504.564, 184.472)] is illegal or dist 166.000 != 166.000
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(209.108, 185.145)]=>[(189.857, 177.950)] parentPt:[(343.950, 189.857)] new branchPt is outside blockage
+  HTree level*1* bufId*1*, parent:[(343.950, 189.857)], branch:[(500.793, 180.700)], leng:166.000, sinks:84
+    branchPt:[(500.793, 180.700)] is not legal, parentPt:[(343.950, 189.857)] blockages:(472.714 142.714) (515.857 185.857)
+      FLL candiate [(472.714, 142.714)]
+      FLL candiate [(472.714, 185.857)]
+      FLL candiate [(515.857, 185.857)]
+      FLL candiate [(515.857, 142.714)]
+      FLL candiate [(500.793, 142.714)]
+      FLL candiate [(500.793, 185.857)]
+      FLL candiate [(472.714, 180.700)]
+      FLL candiate [(515.857, 180.700)]
+      FLL candiate [(472.714, 182.340)]
+      FLL candiate [(515.857, 179.821)]
+      Loc [(472.714, 142.714)]: curr dist=175.907 target dist=166.000 sink dist=21566.308
+      Loc [(472.714, 185.857)]: curr dist=132.765 target dist=166.000 sink dist=18578.473
+      Loc [(515.857, 185.857)]: curr dist=175.907 target dist=166.000 sink dist=17224.257
+      Loc [(515.857, 142.714)]: curr dist=219.050 target dist=166.000 sink dist=20212.092
+      Loc [(500.793, 142.714)]: curr dist=203.986 target dist=166.000 sink dist=19037.087
+      Loc [(500.793, 185.857)]: curr dist=160.843 target dist=166.000 sink dist=16049.251
+      Loc [(472.714, 180.700)]: curr dist=137.921 target dist=166.000 sink dist=18164.405
+      Loc [(515.857, 180.700)]: curr dist=181.064 target dist=166.000 sink dist=16810.189
+      Loc [(472.714, 182.340)]: curr dist=136.282 target dist=166.000 sink dist=18295.547
+      Loc [(515.857, 179.821)]: curr dist=181.944 target dist=166.000 sink dist=16887.582
+[DEBUG CTS-legalizer] [(500.793, 185.857)] currDist=160.843 != targetDist=166.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(500.793, 185.857)]=>[(500.793, 180.700)] is illegal or dist 166.000 != 166.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(500.793, 185.857)]=>[(500.793, 199.014)] is illegal or dist 166.000 != 166.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(500.793, 185.857)]=>[(181.950, 185.857)] is legal, dist=166.000, sinkDist=63307.496
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(500.793, 185.857)]=>[(505.950, 185.857)] is legal, dist=166.000, sinkDist=16018.308
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(500.793, 180.700)]=>[(505.950, 185.857)] parentPt:[(343.950, 189.857)] new branchPt is outside blockage
+  HTree level*1* bufId*2*, parent:[(344.928, 515.857)], branch:[(211.461, 530.763)], leng:148.372, sinks:78
+    branchPt:[(211.461, 530.763)] is not legal, parentPt:[(344.928, 515.857)] blockages:(189.857 519.857) (233.000 563.000)
+      FLL candiate [(189.857, 519.857)]
+      FLL candiate [(189.857, 563.000)]
+      FLL candiate [(233.000, 563.000)]
+      FLL candiate [(233.000, 519.857)]
+      FLL candiate [(211.461, 519.857)]
+      FLL candiate [(211.461, 563.000)]
+      FLL candiate [(189.857, 530.763)]
+      FLL candiate [(233.000, 530.763)]
+      FLL candiate [(189.857, 533.176)]
+      FLL candiate [(233.000, 528.357)]
+      Loc [(189.857, 519.857)]: curr dist=159.070 target dist=166.000 sink dist=15748.679
+      Loc [(189.857, 563.000)]: curr dist=202.213 target dist=166.000 sink dist=17469.377
+      Loc [(233.000, 563.000)]: curr dist=159.070 target dist=166.000 sink dist=18758.284
+      Loc [(233.000, 519.857)]: curr dist=115.928 target dist=166.000 sink dist=17037.586
+      Loc [(211.461, 519.857)]: curr dist=137.466 target dist=166.000 sink dist=14711.384
+      Loc [(211.461, 563.000)]: curr dist=180.609 target dist=166.000 sink dist=16432.082
+      Loc [(189.857, 530.763)]: curr dist=169.976 target dist=166.000 sink dist=14888.272
+      Loc [(233.000, 530.763)]: curr dist=126.833 target dist=166.000 sink dist=16177.179
+      Loc [(189.857, 533.176)]: curr dist=172.389 target dist=166.000 sink dist=15081.294
+      Loc [(233.000, 528.357)]: curr dist=124.428 target dist=166.000 sink dist=16359.998
+[DEBUG CTS-legalizer] [(189.857, 530.763)] currDist=169.976 != targetDist=166.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(189.857, 530.763)]=>[(189.857, 504.928)] is legal, dist=166.000, sinkDist=15438.676
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(189.857, 530.763)]=>[(189.857, 526.787)] is legal, dist=166.000, sinkDist=13505.555
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(189.857, 530.763)]=>[(193.833, 530.763)] is illegal or dist 166.000 != 166.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(189.857, 530.763)]=>[(496.022, 530.763)] is illegal or dist 166.000 != 166.000
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(211.461, 530.763)]=>[(189.857, 526.787)] parentPt:[(344.928, 515.857)] new branchPt is outside blockage
+  HTree level*1* bufId*3*, parent:[(344.928, 515.857)], branch:[(496.357, 530.428)], leng:166.000, sinks:86
+    branchPt:[(496.357, 530.428)] is not legal, parentPt:[(344.928, 515.857)] blockages:(472.714 519.857) (515.857 563.000)
+      FLL candiate [(472.714, 519.857)]
+      FLL candiate [(472.714, 563.000)]
+      FLL candiate [(515.857, 563.000)]
+      FLL candiate [(515.857, 519.857)]
+      FLL candiate [(496.357, 519.857)]
+      FLL candiate [(496.357, 563.000)]
+      FLL candiate [(472.714, 530.428)]
+      FLL candiate [(515.857, 530.428)]
+      FLL candiate [(472.714, 528.153)]
+      FLL candiate [(515.857, 532.304)]
+      Loc [(472.714, 519.857)]: curr dist=131.787 target dist=166.000 sink dist=18966.591
+      Loc [(472.714, 563.000)]: curr dist=174.930 target dist=166.000 sink dist=21031.116
+      Loc [(515.857, 563.000)]: curr dist=218.072 target dist=166.000 sink dist=20327.330
+      Loc [(515.857, 519.857)]: curr dist=174.930 target dist=166.000 sink dist=18262.805
+      Loc [(496.357, 519.857)]: curr dist=155.429 target dist=166.000 sink dist=16741.765
+      Loc [(496.357, 563.000)]: curr dist=198.572 target dist=166.000 sink dist=18806.290
+      Loc [(472.714, 530.428)]: curr dist=142.358 target dist=166.000 sink dist=18032.968
+      Loc [(515.857, 530.428)]: curr dist=185.501 target dist=166.000 sink dist=17329.181
+      Loc [(472.714, 528.153)]: curr dist=140.083 target dist=166.000 sink dist=18219.501
+      Loc [(515.857, 532.304)]: curr dist=187.377 target dist=166.000 sink dist=17501.809
+[DEBUG CTS-legalizer] [(472.714, 563.000)] currDist=174.930 != targetDist=166.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(472.714, 563.000)]=>[(472.714, 477.644)] is legal, dist=166.000, sinkDist=24178.585
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(472.714, 563.000)]=>[(472.714, 554.070)] is legal, dist=166.000, sinkDist=16909.529
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(472.714, 563.000)]=>[(226.070, 563.000)] is legal, dist=166.000, sinkDist=54935.182
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(472.714, 563.000)]=>[(463.785, 563.000)] is legal, dist=166.000, sinkDist=17178.946
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(496.357, 530.428)]=>[(472.714, 554.070)] parentPt:[(344.928, 515.857)] new branchPt is outside blockage
+  HTree level*2* bufId*0*, parent:[(189.857, 177.950)], branch:[(185.314, 120.938)], leng:61.555, sinks:34
+    branchPt:[(185.314, 120.938)] is not legal, parentPt:[(189.857, 177.950)] blockages:(142.714 95.571) (185.857 138.714)
+      FLL candiate [(142.714, 95.571)]
+      FLL candiate [(142.714, 138.714)]
+      FLL candiate [(185.857, 138.714)]
+      FLL candiate [(185.857, 95.571)]
+      FLL candiate [(185.314, 95.571)]
+      FLL candiate [(185.314, 138.714)]
+      FLL candiate [(142.714, 120.938)]
+      FLL candiate [(185.857, 120.938)]
+      FLL candiate [(185.857, 127.750)]
+      FLL candiate [(183.293, 95.571)]
+      Loc [(142.714, 95.571)]: curr dist=129.521 target dist=88.000 sink dist=6353.229
+      Loc [(142.714, 138.714)]: curr dist=86.378 target dist=88.000 sink dist=6582.022
+      Loc [(185.857, 138.714)]: curr dist=43.235 target dist=88.000 sink dist=4719.731
+      Loc [(185.857, 95.571)]: curr dist=86.378 target dist=88.000 sink dist=4490.938
+      Loc [(185.314, 95.571)]: curr dist=86.921 target dist=88.000 sink dist=4477.910
+      Loc [(185.314, 138.714)]: curr dist=43.778 target dist=88.000 sink dist=4706.703
+      Loc [(142.714, 120.938)]: curr dist=104.155 target dist=88.000 sink dist=5762.163
+      Loc [(185.857, 120.938)]: curr dist=61.012 target dist=88.000 sink dist=3899.872
+      Loc [(185.857, 127.750)]: curr dist=54.200 target dist=88.000 sink dist=4213.235
+      Loc [(183.293, 95.571)]: curr dist=88.942 target dist=88.000 sink dist=4566.845
+[DEBUG CTS-legalizer] [(183.293, 95.571)] currDist=88.942 != targetDist=88.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(183.293, 95.571)]=>[(183.293, 96.514)] is illegal or dist 88.000 != 88.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(183.293, 95.571)]=>[(183.293, 259.386)] is illegal or dist 88.000 != 88.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(183.293, 95.571)]=>[(184.235, 95.571)] is legal, dist=88.000, sinkDist=3658.281
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(183.293, 95.571)]=>[(195.479, 95.571)] is legal, dist=88.000, sinkDist=4080.175
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(185.314, 120.938)]=>[(184.235, 95.571)] parentPt:[(189.857, 177.950)] new branchPt is outside blockage
+  HTree level*2* bufId*1*, parent:[(189.857, 177.950)], branch:[(179.214, 243.251)], leng:75.944, sinks:40
+    branchPt:[(179.214, 243.251)] is not legal, parentPt:[(189.857, 177.950)] blockages:(142.714 237.000) (185.857 280.143)
+      FLL candiate [(142.714, 237.000)]
+      FLL candiate [(142.714, 280.143)]
+      FLL candiate [(185.857, 280.143)]
+      FLL candiate [(185.857, 237.000)]
+      FLL candiate [(179.214, 237.000)]
+      FLL candiate [(179.214, 280.143)]
+      FLL candiate [(142.714, 243.251)]
+      FLL candiate [(185.857, 243.251)]
+      FLL candiate [(180.233, 237.000)]
+      FLL candiate [(173.202, 280.143)]
+      Loc [(142.714, 237.000)]: curr dist=106.193 target dist=88.000 sink dist=7017.474
+      Loc [(142.714, 280.143)]: curr dist=149.336 target dist=88.000 sink dist=8215.994
+      Loc [(185.857, 280.143)]: curr dist=106.193 target dist=88.000 sink dist=6675.334
+      Loc [(185.857, 237.000)]: curr dist=63.050 target dist=88.000 sink dist=5476.815
+      Loc [(179.214, 237.000)]: curr dist=69.693 target dist=88.000 sink dist=5264.246
+      Loc [(179.214, 280.143)]: curr dist=112.836 target dist=88.000 sink dist=6462.766
+      Loc [(142.714, 243.251)]: curr dist=112.445 target dist=88.000 sink dist=6740.833
+      Loc [(185.857, 243.251)]: curr dist=69.302 target dist=88.000 sink dist=5200.173
+      Loc [(180.233, 237.000)]: curr dist=68.674 target dist=88.000 sink dist=5296.849
+      Loc [(173.202, 280.143)]: curr dist=118.848 target dist=88.000 sink dist=6751.367
+[DEBUG CTS-legalizer] [(142.714, 237.000)] currDist=106.193 != targetDist=88.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(142.714, 237.000)]=>[(142.714, 137.093)] is legal, dist=88.000, sinkDist=12270.463
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(142.714, 237.000)]=>[(142.714, 218.807)] is legal, dist=88.000, sinkDist=6340.867
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(142.714, 237.000)]=>[(160.907, 237.000)] is legal, dist=88.000, sinkDist=5888.375
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(142.714, 237.000)]=>[(218.807, 237.000)] is legal, dist=88.000, sinkDist=8441.329
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(179.214, 243.251)]=>[(160.907, 237.000)] parentPt:[(189.857, 177.950)] new branchPt is outside blockage
+  HTree level*2* bufId*2*, parent:[(505.950, 185.857)], branch:[(519.973, 111.880)], leng:88.000, sinks:40
+    branchPt:[(519.973, 111.880)] is not legal, parentPt:[(505.950, 185.857)] blockages:(519.857 95.571) (563.000 138.714)
+      FLL candiate [(519.857, 95.571)]
+      FLL candiate [(519.857, 138.714)]
+      FLL candiate [(563.000, 138.714)]
+      FLL candiate [(563.000, 95.571)]
+      FLL candiate [(519.973, 95.571)]
+      FLL candiate [(519.973, 138.714)]
+      FLL candiate [(519.857, 111.880)]
+      FLL candiate [(563.000, 111.880)]
+      FLL candiate [(519.857, 112.490)]
+      FLL candiate [(523.064, 95.571)]
+      Loc [(519.857, 95.571)]: curr dist=104.193 target dist=88.000 sink dist=6199.592
+      Loc [(519.857, 138.714)]: curr dist=61.050 target dist=88.000 sink dist=7327.665
+      Loc [(563.000, 138.714)]: curr dist=104.193 target dist=88.000 sink dist=9215.788
+      Loc [(563.000, 95.571)]: curr dist=147.336 target dist=88.000 sink dist=8087.715
+      Loc [(519.973, 95.571)]: curr dist=104.309 target dist=88.000 sink dist=6194.738
+      Loc [(519.973, 138.714)]: curr dist=61.166 target dist=88.000 sink dist=7322.811
+      Loc [(519.857, 111.880)]: curr dist=87.884 target dist=88.000 sink dist=5769.757
+      Loc [(563.000, 111.880)]: curr dist=131.027 target dist=88.000 sink dist=7657.879
+      Loc [(519.857, 112.490)]: curr dist=87.275 target dist=88.000 sink dist=5805.119
+      Loc [(523.064, 95.571)]: curr dist=107.400 target dist=88.000 sink dist=6330.539
+[DEBUG CTS-legalizer] [(519.857, 111.880)] currDist=87.884 != targetDist=88.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(519.857, 111.880)]=>[(519.857, 111.765)] is legal, dist=88.000, sinkDist=5767.675
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(519.857, 111.880)]=>[(519.857, 259.950)] is legal, dist=88.000, sinkDist=16914.749
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(519.857, 111.880)]=>[(491.927, 111.880)] is illegal or dist 88.000 != 88.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(519.857, 111.880)]=>[(519.973, 111.880)] is illegal or dist 88.000 != 88.000
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(519.973, 111.880)]=>[(519.857, 111.765)] parentPt:[(505.950, 185.857)] new branchPt is outside blockage
+  HTree level*2* bufId*3*, parent:[(505.950, 185.857)], branch:[(523.216, 246.278)], leng:77.687, sinks:44
+    branchPt:[(523.216, 246.278)] is not legal, parentPt:[(505.950, 185.857)] blockages:(519.857 237.000) (563.000 280.143)
+      FLL candiate [(519.857, 237.000)]
+      FLL candiate [(519.857, 280.143)]
+      FLL candiate [(563.000, 280.143)]
+      FLL candiate [(563.000, 237.000)]
+      FLL candiate [(523.216, 237.000)]
+      FLL candiate [(523.216, 280.143)]
+      FLL candiate [(519.857, 246.278)]
+      FLL candiate [(563.000, 246.278)]
+      FLL candiate [(520.565, 237.000)]
+      FLL candiate [(532.893, 280.143)]
+      Loc [(519.857, 237.000)]: curr dist=65.050 target dist=88.000 sink dist=6838.624
+      Loc [(519.857, 280.143)]: curr dist=108.193 target dist=88.000 sink dist=7862.884
+      Loc [(563.000, 280.143)]: curr dist=151.336 target dist=88.000 sink dist=9636.960
+      Loc [(563.000, 237.000)]: curr dist=108.193 target dist=88.000 sink dist=8612.700
+      Loc [(523.216, 237.000)]: curr dist=68.409 target dist=88.000 sink dist=6703.056
+      Loc [(523.216, 280.143)]: curr dist=111.552 target dist=88.000 sink dist=7727.316
+      Loc [(519.857, 246.278)]: curr dist=74.328 target dist=88.000 sink dist=6371.285
+      Loc [(563.000, 246.278)]: curr dist=117.471 target dist=88.000 sink dist=8145.361
+      Loc [(520.565, 237.000)]: curr dist=65.758 target dist=88.000 sink dist=6809.105
+      Loc [(532.893, 280.143)]: curr dist=121.229 target dist=88.000 sink dist=8191.837
+[DEBUG CTS-legalizer] [(519.857, 246.278)] currDist=74.328 != targetDist=88.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(519.857, 246.278)]=>[(519.857, 111.765)] is illegal or dist 88.000 != 88.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(519.857, 246.278)]=>[(519.857, 259.950)] is legal, dist=88.000, sinkDist=6825.076
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(519.857, 246.278)]=>[(478.370, 246.278)] is illegal or dist 88.000 != 88.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(519.857, 246.278)]=>[(533.529, 246.278)] is illegal or dist 88.000 != 88.000
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(523.216, 246.278)]=>[(519.857, 259.950)] parentPt:[(505.950, 185.857)] new branchPt is outside blockage
+  HTree level*2* bufId*4*, parent:[(189.857, 526.787)], branch:[(182.622, 471.602)], leng:62.420, sinks:40
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(182.622, 471.602)]=>[(184.522, 444.122)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(182.622, 471.602)]=>[(184.522, 609.451)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(182.622, 471.602)]=>[(180.722, 447.922)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(182.622, 471.602)]=>[(180.722, 605.651)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(182.622, 471.602)]=>[(155.042, 473.602)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(182.622, 471.602)]=>[(224.673, 473.602)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(182.622, 471.602)]=>[(159.042, 469.602)] is legal, dist=88.000, sinkDist=6183.787
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(182.622, 471.602)]=>[(220.673, 469.602)] is legal, dist=88.000, sinkDist=7014.497
+[DEBUG CTS-legalizer] adjustBranchLength applied to legal branchPt:[(182.622, 471.602)]=>[(159.042, 469.602)] parentPt:[(189.857, 526.787)] newDist=88.000
+  HTree level*2* bufId*5*, parent:[(189.857, 526.787)], branch:[(185.931, 593.233)], leng:70.372, sinks:38
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(185.931, 593.233)]=>[(187.831, 440.813)] is legal, dist=88.000, sinkDist=16157.597
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(185.931, 593.233)]=>[(187.831, 612.761)] is legal, dist=88.000, sinkDist=5552.858
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(185.931, 593.233)]=>[(184.031, 444.613)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(185.931, 593.233)]=>[(184.031, 608.961)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(185.931, 593.233)]=>[(170.303, 595.233)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(185.931, 593.233)]=>[(209.411, 595.233)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(185.931, 593.233)]=>[(166.303, 591.233)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(185.931, 593.233)]=>[(213.411, 591.233)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength applied to legal branchPt:[(185.931, 593.233)]=>[(187.831, 612.761)] parentPt:[(189.857, 526.787)] newDist=88.000
+  HTree level*2* bufId*6*, parent:[(472.714, 554.070)], branch:[(522.500, 468.572)], leng:135.285, sinks:46
+    branchPt:[(522.500, 468.572)] is not legal, parentPt:[(472.714, 554.070)] blockages:(519.857 425.571) (563.000 468.714)
+      FLL candiate [(519.857, 425.571)]
+      FLL candiate [(519.857, 468.714)]
+      FLL candiate [(563.000, 468.714)]
+      FLL candiate [(563.000, 425.571)]
+      FLL candiate [(522.500, 425.571)]
+      FLL candiate [(522.500, 468.714)]
+      FLL candiate [(519.857, 468.572)]
+      FLL candiate [(563.000, 468.572)]
+      FLL candiate [(547.540, 425.571)]
+      FLL candiate [(522.417, 468.714)]
+      Loc [(519.857, 425.571)]: curr dist=175.642 target dist=88.000 sink dist=8815.187
+      Loc [(519.857, 468.714)]: curr dist=132.499 target dist=88.000 sink dist=6705.159
+      Loc [(563.000, 468.714)]: curr dist=175.642 target dist=88.000 sink dist=8617.902
+      Loc [(563.000, 425.571)]: curr dist=218.785 target dist=88.000 sink dist=10727.930
+      Loc [(522.500, 425.571)]: curr dist=178.285 target dist=88.000 sink dist=8702.948
+      Loc [(522.500, 468.714)]: curr dist=135.142 target dist=88.000 sink dist=6592.920
+      Loc [(519.857, 468.572)]: curr dist=132.641 target dist=88.000 sink dist=6697.463
+      Loc [(563.000, 468.572)]: curr dist=175.784 target dist=88.000 sink dist=8610.207
+      Loc [(547.540, 425.571)]: curr dist=203.324 target dist=88.000 sink dist=9954.910
+      Loc [(522.417, 468.714)]: curr dist=135.059 target dist=88.000 sink dist=6596.406
+[DEBUG CTS-legalizer] [(519.857, 468.714)] currDist=132.499 != targetDist=88.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(519.857, 468.714)]=>[(519.857, 513.213)] is legal, dist=88.000, sinkDist=9413.186
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(519.857, 468.714)]=>[(519.857, 594.928)] is legal, dist=88.000, sinkDist=16713.066
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(519.857, 468.714)]=>[(470.070, 468.714)] is legal, dist=88.000, sinkDist=9088.729
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(519.857, 468.714)]=>[(475.358, 468.714)] is legal, dist=88.000, sinkDist=8801.962
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(522.500, 468.572)]=>[(475.358, 468.714)] parentPt:[(472.714, 554.070)] new branchPt is outside blockage
+  HTree level*2* bufId*7*, parent:[(472.714, 554.070)], branch:[(516.945, 597.840)], leng:88.000, sinks:40
+  HTree level*3* bufId*0*, parent:[(184.235, 95.571)], branch:[(121.721, 102.531)], leng:69.475, sinks:14
+    branchPt:[(121.721, 102.531)] is not legal, parentPt:[(184.235, 95.571)] blockages:(95.571 95.571) (138.714 138.714)
+      FLL candiate [(95.571, 95.571)]
+      FLL candiate [(95.571, 138.714)]
+      FLL candiate [(138.714, 138.714)]
+      FLL candiate [(138.714, 95.571)]
+      FLL candiate [(121.721, 95.571)]
+      FLL candiate [(121.721, 138.714)]
+      FLL candiate [(95.571, 102.531)]
+      FLL candiate [(138.714, 102.531)]
+      FLL candiate [(95.571, 105.443)]
+      FLL candiate [(138.714, 100.639)]
+      Loc [(95.571, 95.571)]: curr dist=88.664 target dist=82.000 sink dist=1625.530
+      Loc [(95.571, 138.714)]: curr dist=131.807 target dist=82.000 sink dist=2265.888
+      Loc [(138.714, 138.714)]: curr dist=88.664 target dist=82.000 sink dist=2309.362
+      Loc [(138.714, 95.571)]: curr dist=45.521 target dist=82.000 sink dist=1669.004
+      Loc [(121.721, 95.571)]: curr dist=62.515 target dist=82.000 sink dist=1363.120
+      Loc [(121.721, 138.714)]: curr dist=105.658 target dist=82.000 sink dist=2003.478
+      Loc [(95.571, 102.531)]: curr dist=95.624 target dist=82.000 sink dist=1544.349
+      Loc [(138.714, 102.531)]: curr dist=52.481 target dist=82.000 sink dist=1587.823
+      Loc [(95.571, 105.443)]: curr dist=98.535 target dist=82.000 sink dist=1599.233
+      Loc [(138.714, 100.639)]: curr dist=50.589 target dist=82.000 sink dist=1608.188
+[DEBUG CTS-legalizer] [(95.571, 95.571)] currDist=88.664 != targetDist=82.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(95.571, 95.571)]=>[(95.571, 102.235)] is illegal or dist 95.328 != 82.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(95.571, 95.571)]=>[(95.571, 88.907)] is illegal or dist 95.328 != 82.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(95.571, 95.571)]=>[(102.235, 95.571)] is legal, dist=82.000, sinkDist=1281.034
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(95.571, 95.571)]=>[(266.235, 95.571)] is legal, dist=82.000, sinkDist=5279.679
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(121.721, 102.531)]=>[(102.235, 95.571)] parentPt:[(184.235, 95.571)] new branchPt is outside blockage
+  HTree level*3* bufId*1*, parent:[(184.235, 95.571)], branch:[(231.753, 85.377)], leng:57.713, sinks:20
+    branchPt:[(231.753, 85.377)] is not legal, parentPt:[(184.235, 95.571)] blockages:(189.857 48.429) (233.000 91.571)
+      FLL candiate [(189.857, 48.429)]
+      FLL candiate [(189.857, 91.571)]
+      FLL candiate [(233.000, 91.571)]
+      FLL candiate [(233.000, 48.429)]
+      FLL candiate [(231.753, 48.429)]
+      FLL candiate [(231.753, 91.571)]
+      FLL candiate [(189.857, 85.377)]
+      FLL candiate [(233.000, 85.377)]
+      FLL candiate [(233.000, 85.109)]
+      FLL candiate [(202.880, 91.571)]
+      Loc [(189.857, 48.429)]: curr dist=52.765 target dist=82.000 sink dist=3434.444
+      Loc [(189.857, 91.571)]: curr dist=9.622 target dist=82.000 sink dist=2700.637
+      Loc [(233.000, 91.571)]: curr dist=52.765 target dist=82.000 sink dist=1973.931
+      Loc [(233.000, 48.429)]: curr dist=95.907 target dist=82.000 sink dist=2707.738
+      Loc [(231.753, 48.429)]: curr dist=94.661 target dist=82.000 sink dist=2680.312
+      Loc [(231.753, 91.571)]: curr dist=51.518 target dist=82.000 sink dist=1946.505
+      Loc [(189.857, 85.377)]: curr dist=15.816 target dist=82.000 sink dist=2588.217
+      Loc [(233.000, 85.377)]: curr dist=58.959 target dist=82.000 sink dist=1861.511
+      Loc [(233.000, 85.109)]: curr dist=59.227 target dist=82.000 sink dist=1867.395
+      Loc [(202.880, 91.571)]: curr dist=22.644 target dist=82.000 sink dist=2466.230
+[DEBUG CTS-legalizer] [(231.753, 48.429)] currDist=94.661 != targetDist=82.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(231.753, 48.429)]=>[(231.753, 61.089)] is illegal or dist 82.000 != 82.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(231.753, 48.429)]=>[(231.753, 130.053)] is illegal or dist 82.000 != 82.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(231.753, 48.429)]=>[(149.378, 48.429)] is legal, dist=82.000, sinkDist=4309.675
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(231.753, 48.429)]=>[(219.093, 48.429)] is legal, dist=82.000, sinkDist=2169.242
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(231.753, 85.377)]=>[(219.093, 48.429)] parentPt:[(184.235, 95.571)] new branchPt is outside blockage
+  HTree level*3* bufId*2*, parent:[(160.907, 237.000)], branch:[(106.195, 252.232)], leng:69.944, sinks:16
+    branchPt:[(106.195, 252.232)] is not legal, parentPt:[(160.907, 237.000)] blockages:(95.571 237.000) (138.714 280.143)
+      FLL candiate [(95.571, 237.000)]
+      FLL candiate [(95.571, 280.143)]
+      FLL candiate [(138.714, 280.143)]
+      FLL candiate [(138.714, 237.000)]
+      FLL candiate [(106.195, 237.000)]
+      FLL candiate [(106.195, 280.143)]
+      FLL candiate [(95.571, 252.232)]
+      FLL candiate [(138.714, 252.232)]
+      FLL candiate [(95.571, 255.189)]
+      FLL candiate [(138.714, 243.179)]
+      Loc [(95.571, 237.000)]: curr dist=65.336 target dist=82.000 sink dist=1922.255
+      Loc [(95.571, 280.143)]: curr dist=108.479 target dist=82.000 sink dist=2126.345
+      Loc [(138.714, 280.143)]: curr dist=65.336 target dist=82.000 sink dist=2820.602
+      Loc [(138.714, 237.000)]: curr dist=22.193 target dist=82.000 sink dist=2616.512
+      Loc [(106.195, 237.000)]: curr dist=54.713 target dist=82.000 sink dist=1836.045
+      Loc [(106.195, 280.143)]: curr dist=97.855 target dist=82.000 sink dist=2040.135
+      Loc [(95.571, 252.232)]: curr dist=80.568 target dist=82.000 sink dist=1678.546
+      Loc [(138.714, 252.232)]: curr dist=37.425 target dist=82.000 sink dist=2372.802
+      Loc [(95.571, 255.189)]: curr dist=83.525 target dist=82.000 sink dist=1725.866
+      Loc [(138.714, 243.179)]: curr dist=28.372 target dist=82.000 sink dist=2517.655
+[DEBUG CTS-legalizer] [(95.571, 252.232)] currDist=80.568 != targetDist=82.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(95.571, 252.232)]=>[(95.571, 220.336)] is legal, dist=82.000, sinkDist=2118.993
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(95.571, 252.232)]=>[(95.571, 253.664)] is legal, dist=82.000, sinkDist=1531.485
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(95.571, 252.232)]=>[(94.139, 252.232)] is legal, dist=82.000, sinkDist=1531.485
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(95.571, 252.232)]=>[(227.676, 252.232)] is illegal or dist 82.000 != 82.000
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(106.195, 252.232)]=>[(94.139, 252.232)] parentPt:[(160.907, 237.000)] new branchPt is outside blockage
+  HTree level*3* bufId*3*, parent:[(160.907, 237.000)], branch:[(241.973, 262.492)], leng:106.558, sinks:24
+    branchPt:[(241.973, 262.492)] is not legal, parentPt:[(160.907, 237.000)] blockages:(237.000 237.000) (280.143 280.143)
+      FLL candiate [(237.000, 237.000)]
+      FLL candiate [(237.000, 280.143)]
+      FLL candiate [(280.143, 280.143)]
+      FLL candiate [(280.143, 237.000)]
+      FLL candiate [(241.973, 237.000)]
+      FLL candiate [(241.973, 280.143)]
+      FLL candiate [(237.000, 262.492)]
+      FLL candiate [(280.143, 262.492)]
+      FLL candiate [(237.000, 260.929)]
+      FLL candiate [(280.143, 274.496)]
+      Loc [(237.000, 237.000)]: curr dist=76.093 target dist=82.000 sink dist=3028.057
+      Loc [(237.000, 280.143)]: curr dist=119.235 target dist=82.000 sink dist=2811.539
+      Loc [(280.143, 280.143)]: curr dist=162.378 target dist=82.000 sink dist=3952.170
+      Loc [(280.143, 237.000)]: curr dist=119.235 target dist=82.000 sink dist=4168.688
+      Loc [(241.973, 237.000)]: curr dist=81.066 target dist=82.000 sink dist=2947.261
+      Loc [(241.973, 280.143)]: curr dist=124.209 target dist=82.000 sink dist=2730.743
+      Loc [(237.000, 262.492)]: curr dist=101.585 target dist=82.000 sink dist=2387.012
+      Loc [(280.143, 262.492)]: curr dist=144.728 target dist=82.000 sink dist=3527.643
+      Loc [(237.000, 260.929)]: curr dist=100.021 target dist=82.000 sink dist=2424.546
+      Loc [(280.143, 274.496)]: curr dist=156.731 target dist=82.000 sink dist=3815.716
+[DEBUG CTS-legalizer] [(241.973, 237.000)] currDist=81.066 != targetDist=82.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(241.973, 237.000)]=>[(241.973, 236.066)] is legal, dist=82.000, sinkDist=2363.468
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(241.973, 237.000)]=>[(241.973, 237.934)] is illegal or dist 82.000 != 82.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(241.973, 237.000)]=>[(78.907, 237.000)] is legal, dist=82.000, sinkDist=8867.867
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(241.973, 237.000)]=>[(242.907, 237.000)] is legal, dist=82.000, sinkDist=2365.337
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(241.973, 262.492)]=>[(241.973, 236.066)] parentPt:[(160.907, 237.000)] new branchPt is outside blockage
+  HTree level*3* bufId*4*, parent:[(519.857, 111.765)], branch:[(459.348, 90.505)], leng:81.769, sinks:21
+    branchPt:[(459.348, 90.505)] is not legal, parentPt:[(519.857, 111.765)] blockages:(425.571 48.429) (468.714 91.571)
+      FLL candiate [(425.571, 48.429)]
+      FLL candiate [(425.571, 91.571)]
+      FLL candiate [(468.714, 91.571)]
+      FLL candiate [(468.714, 48.429)]
+      FLL candiate [(459.348, 48.429)]
+      FLL candiate [(459.348, 91.571)]
+      FLL candiate [(425.571, 90.505)]
+      FLL candiate [(468.714, 90.505)]
+      FLL candiate [(425.571, 78.638)]
+      FLL candiate [(462.384, 91.571)]
+      Loc [(425.571, 48.429)]: curr dist=157.622 target dist=82.000 sink dist=3040.130
+      Loc [(425.571, 91.571)]: curr dist=114.479 target dist=82.000 sink dist=2018.292
+      Loc [(468.714, 91.571)]: curr dist=71.336 target dist=82.000 sink dist=1980.247
+      Loc [(468.714, 48.429)]: curr dist=114.479 target dist=82.000 sink dist=3002.086
+      Loc [(459.348, 48.429)]: curr dist=123.845 target dist=82.000 sink dist=2702.364
+      Loc [(459.348, 91.571)]: curr dist=80.702 target dist=82.000 sink dist=1680.526
+      Loc [(425.571, 90.505)]: curr dist=115.545 target dist=82.000 sink dist=1998.176
+      Loc [(468.714, 90.505)]: curr dist=72.403 target dist=82.000 sink dist=1960.132
+      Loc [(425.571, 78.638)]: curr dist=127.413 target dist=82.000 sink dist=2282.992
+      Loc [(462.384, 91.571)]: curr dist=77.667 target dist=82.000 sink dist=1777.665
+[DEBUG CTS-legalizer] [(459.348, 91.571)] currDist=80.702 != targetDist=82.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(459.348, 91.571)]=>[(459.348, 90.274)] is illegal or dist 82.000 != 82.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(459.348, 91.571)]=>[(459.348, 133.255)] is illegal or dist 82.000 != 82.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(459.348, 91.571)]=>[(458.050, 91.571)] is legal, dist=82.000, sinkDist=1671.105
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(459.348, 91.571)]=>[(581.664, 91.571)] is legal, dist=82.000, sinkDist=6471.635
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(459.348, 90.505)]=>[(458.050, 91.571)] parentPt:[(519.857, 111.765)] new branchPt is outside blockage
+  HTree level*3* bufId*5*, parent:[(519.857, 111.765)], branch:[(585.744, 95.652)], leng:82.000, sinks:19
+    branchPt:[(585.744, 95.652)] is not legal, parentPt:[(519.857, 111.765)] blockages:(567.000 95.571) (610.143 138.714)
+      FLL candiate [(567.000, 95.571)]
+      FLL candiate [(567.000, 138.714)]
+      FLL candiate [(610.143, 138.714)]
+      FLL candiate [(610.143, 95.571)]
+      FLL candiate [(585.744, 95.571)]
+      FLL candiate [(585.744, 138.714)]
+      FLL candiate [(567.000, 95.652)]
+      FLL candiate [(610.143, 95.652)]
+      FLL candiate [(567.000, 100.236)]
+      FLL candiate [(586.072, 95.571)]
+      Loc [(567.000, 95.571)]: curr dist=63.336 target dist=82.000 sink dist=2480.883
+      Loc [(567.000, 138.714)]: curr dist=74.093 target dist=82.000 sink dist=3574.609
+      Loc [(610.143, 138.714)]: curr dist=117.235 target dist=82.000 sink dist=3206.553
+      Loc [(610.143, 95.571)]: curr dist=106.479 target dist=82.000 sink dist=2112.827
+      Loc [(585.744, 95.571)]: curr dist=82.080 target dist=82.000 sink dist=1917.638
+      Loc [(585.744, 138.714)]: curr dist=92.837 target dist=82.000 sink dist=3011.364
+      Loc [(567.000, 95.652)]: curr dist=63.256 target dist=82.000 sink dist=2479.439
+      Loc [(610.143, 95.652)]: curr dist=106.399 target dist=82.000 sink dist=2111.382
+      Loc [(567.000, 100.236)]: curr dist=58.672 target dist=82.000 sink dist=2580.180
+      Loc [(586.072, 95.571)]: curr dist=82.408 target dist=82.000 sink dist=1920.263
+[DEBUG CTS-legalizer] [(585.744, 95.571)] currDist=82.080 != targetDist=82.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(585.744, 95.571)]=>[(585.744, 95.652)] is illegal or dist 82.000 != 82.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(585.744, 95.571)]=>[(585.744, 127.878)] is illegal or dist 82.000 != 82.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(585.744, 95.571)]=>[(454.050, 95.571)] is legal, dist=82.000, sinkDist=6677.466
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(585.744, 95.571)]=>[(585.664, 95.571)] is legal, dist=82.000, sinkDist=1918.523
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(585.744, 95.652)]=>[(585.664, 95.571)] parentPt:[(519.857, 111.765)] new branchPt is outside blockage
+  HTree level*3* bufId*6*, parent:[(519.857, 259.950)], branch:[(453.896, 258.958)], leng:66.953, sinks:24
+    branchPt:[(453.896, 258.958)] is not legal, parentPt:[(519.857, 259.950)] blockages:(425.571 237.000) (468.714 280.143)
+      FLL candiate [(425.571, 237.000)]
+      FLL candiate [(425.571, 280.143)]
+      FLL candiate [(468.714, 280.143)]
+      FLL candiate [(468.714, 237.000)]
+      FLL candiate [(453.896, 237.000)]
+      FLL candiate [(453.896, 280.143)]
+      FLL candiate [(425.571, 258.958)]
+      FLL candiate [(468.714, 258.958)]
+      FLL candiate [(425.571, 258.532)]
+      FLL candiate [(468.714, 259.181)]
+      Loc [(425.571, 237.000)]: curr dist=117.235 target dist=82.000 sink dist=3129.072
+      Loc [(425.571, 280.143)]: curr dist=114.479 target dist=82.000 sink dist=3078.130
+      Loc [(468.714, 280.143)]: curr dist=71.336 target dist=82.000 sink dist=3099.114
+      Loc [(468.714, 237.000)]: curr dist=74.093 target dist=82.000 sink dist=3150.056
+      Loc [(453.896, 237.000)]: curr dist=88.911 target dist=82.000 sink dist=2675.876
+      Loc [(453.896, 280.143)]: curr dist=86.154 target dist=82.000 sink dist=2624.934
+      Loc [(425.571, 258.958)]: curr dist=95.277 target dist=82.000 sink dist=2568.778
+      Loc [(468.714, 258.958)]: curr dist=52.134 target dist=82.000 sink dist=2589.762
+      Loc [(425.571, 258.532)]: curr dist=95.703 target dist=82.000 sink dist=2578.998
+      Loc [(468.714, 259.181)]: curr dist=51.912 target dist=82.000 sink dist=2595.108
+[DEBUG CTS-legalizer] [(453.896, 280.143)] currDist=86.154 != targetDist=82.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(453.896, 280.143)]=>[(453.896, 243.911)] is illegal or dist 82.000 != 82.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(453.896, 280.143)]=>[(453.896, 275.989)] is illegal or dist 82.000 != 82.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(453.896, 280.143)]=>[(458.050, 280.143)] is legal, dist=82.000, sinkDist=2249.432
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(453.896, 280.143)]=>[(581.664, 280.143)] is legal, dist=82.000, sinkDist=7568.674
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(453.896, 258.958)]=>[(458.050, 280.143)] parentPt:[(519.857, 259.950)] new branchPt is outside blockage
+  HTree level*3* bufId*7*, parent:[(519.857, 259.950)], branch:[(595.229, 256.265)], leng:79.057, sinks:20
+    branchPt:[(595.229, 256.265)] is not legal, parentPt:[(519.857, 259.950)] blockages:(567.000 237.000) (610.143 280.143)
+      FLL candiate [(567.000, 237.000)]
+      FLL candiate [(567.000, 280.143)]
+      FLL candiate [(610.143, 280.143)]
+      FLL candiate [(610.143, 237.000)]
+      FLL candiate [(595.229, 237.000)]
+      FLL candiate [(595.229, 280.143)]
+      FLL candiate [(567.000, 256.265)]
+      FLL candiate [(610.143, 256.265)]
+      FLL candiate [(567.000, 257.645)]
+      FLL candiate [(610.143, 255.535)]
+      Loc [(567.000, 237.000)]: curr dist=70.093 target dist=82.000 sink dist=3237.150
+      Loc [(567.000, 280.143)]: curr dist=67.336 target dist=82.000 sink dist=3304.212
+      Loc [(610.143, 280.143)]: curr dist=110.479 target dist=82.000 sink dist=2518.979
+      Loc [(610.143, 237.000)]: curr dist=113.235 target dist=82.000 sink dist=2451.918
+      Loc [(595.229, 237.000)]: curr dist=98.321 target dist=82.000 sink dist=2332.605
+      Loc [(595.229, 280.143)]: curr dist=95.565 target dist=82.000 sink dist=2399.667
+      Loc [(567.000, 256.265)]: curr dist=50.828 target dist=82.000 sink dist=2826.035
+      Loc [(610.143, 256.265)]: curr dist=93.971 target dist=82.000 sink dist=2040.802
+      Loc [(567.000, 257.645)]: curr dist=49.448 target dist=82.000 sink dist=2853.638
+      Loc [(610.143, 255.535)]: curr dist=94.700 target dist=82.000 sink dist=2055.386
+[DEBUG CTS-legalizer] [(567.000, 237.000)] currDist=70.093 != targetDist=82.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(567.000, 237.000)]=>[(567.000, 225.093)] is legal, dist=82.000, sinkDist=2627.895
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(567.000, 237.000)]=>[(567.000, 294.807)] is legal, dist=82.000, sinkDist=3515.022
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(567.000, 237.000)]=>[(460.807, 237.000)] is legal, dist=82.000, sinkDist=6535.010
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(567.000, 237.000)]=>[(578.907, 237.000)] is legal, dist=82.000, sinkDist=2381.319
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(595.229, 256.265)]=>[(578.907, 237.000)] parentPt:[(519.857, 259.950)] new branchPt is outside blockage
+  HTree level*3* bufId*8*, parent:[(159.042, 469.602)], branch:[(116.541, 455.683)], leng:56.420, sinks:16
+    branchPt:[(116.541, 455.683)] is not legal, parentPt:[(159.042, 469.602)] blockages:(95.571 425.571) (138.714 468.714)
+      FLL candiate [(95.571, 425.571)]
+      FLL candiate [(95.571, 468.714)]
+      FLL candiate [(138.714, 468.714)]
+      FLL candiate [(138.714, 425.571)]
+      FLL candiate [(116.541, 425.571)]
+      FLL candiate [(116.541, 468.714)]
+      FLL candiate [(95.571, 455.683)]
+      FLL candiate [(138.714, 455.683)]
+      FLL candiate [(95.571, 448.816)]
+      FLL candiate [(138.714, 462.945)]
+      Loc [(95.571, 425.571)]: curr dist=107.501 target dist=82.000 sink dist=2325.870
+      Loc [(95.571, 468.714)]: curr dist=64.358 target dist=82.000 sink dist=2053.803
+      Loc [(138.714, 468.714)]: curr dist=21.215 target dist=82.000 sink dist=2416.987
+      Loc [(138.714, 425.571)]: curr dist=64.358 target dist=82.000 sink dist=2689.054
+      Loc [(116.541, 425.571)]: curr dist=86.532 target dist=82.000 sink dist=2156.892
+      Loc [(116.541, 468.714)]: curr dist=43.389 target dist=82.000 sink dist=1884.825
+      Loc [(95.571, 455.683)]: curr dist=77.389 target dist=82.000 sink dist=1844.082
+      Loc [(138.714, 455.683)]: curr dist=34.246 target dist=82.000 sink dist=2207.266
+      Loc [(95.571, 448.816)]: curr dist=84.257 target dist=82.000 sink dist=1953.963
+      Loc [(138.714, 462.945)]: curr dist=26.985 target dist=82.000 sink dist=2323.456
+[DEBUG CTS-legalizer] [(95.571, 448.816)] currDist=84.257 != targetDist=82.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(95.571, 448.816)]=>[(95.571, 451.072)] is legal, dist=82.000, sinkDist=1544.681
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(95.571, 448.816)]=>[(95.571, 488.132)] is legal, dist=82.000, sinkDist=2294.200
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(95.571, 448.816)]=>[(97.828, 448.816)] is illegal or dist 82.000 != 82.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(95.571, 448.816)]=>[(220.255, 448.816)] is illegal or dist 82.000 != 82.000
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(116.541, 455.683)]=>[(95.571, 451.072)] parentPt:[(159.042, 469.602)] new branchPt is outside blockage
+  HTree level*3* bufId*9*, parent:[(159.042, 469.602)], branch:[(241.102, 448.083)], leng:103.580, sinks:24
+    branchPt:[(241.102, 448.083)] is not legal, parentPt:[(159.042, 469.602)] blockages:(237.000 425.571) (280.143 468.714)
+      FLL candiate [(237.000, 425.571)]
+      FLL candiate [(237.000, 468.714)]
+      FLL candiate [(280.143, 468.714)]
+      FLL candiate [(280.143, 425.571)]
+      FLL candiate [(241.102, 425.571)]
+      FLL candiate [(241.102, 468.714)]
+      FLL candiate [(237.000, 448.083)]
+      FLL candiate [(280.143, 448.083)]
+      FLL candiate [(237.000, 449.159)]
+      FLL candiate [(280.143, 437.845)]
+      Loc [(237.000, 425.571)]: curr dist=121.989 target dist=82.000 sink dist=2937.596
+      Loc [(237.000, 468.714)]: curr dist=78.846 target dist=82.000 sink dist=2861.811
+      Loc [(280.143, 468.714)]: curr dist=121.989 target dist=82.000 sink dist=4044.252
+      Loc [(280.143, 425.571)]: curr dist=165.132 target dist=82.000 sink dist=4120.037
+      Loc [(241.102, 425.571)]: curr dist=126.091 target dist=82.000 sink dist=2870.737
+      Loc [(241.102, 468.714)]: curr dist=82.949 target dist=82.000 sink dist=2794.952
+      Loc [(237.000, 448.083)]: curr dist=99.478 target dist=82.000 sink dist=2365.738
+      Loc [(280.143, 448.083)]: curr dist=142.621 target dist=82.000 sink dist=3548.180
+      Loc [(237.000, 449.159)]: curr dist=98.402 target dist=82.000 sink dist=2391.557
+      Loc [(280.143, 437.845)]: curr dist=152.859 target dist=82.000 sink dist=3793.891
+[DEBUG CTS-legalizer] [(241.102, 468.714)] currDist=82.949 != targetDist=82.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(241.102, 468.714)]=>[(241.102, 469.663)] is illegal or dist 82.121 != 82.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(241.102, 468.714)]=>[(241.102, 469.542)] is illegal or dist 82.121 != 82.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(241.102, 468.714)]=>[(77.930, 468.714)] is legal, dist=82.000, sinkDist=8865.253
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(241.102, 468.714)]=>[(240.154, 468.714)] is legal, dist=82.000, sinkDist=2314.975
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(241.102, 448.083)]=>[(240.154, 468.714)] parentPt:[(159.042, 469.602)] new branchPt is outside blockage
+  HTree level*3* bufId*10*, parent:[(187.831, 612.761)], branch:[(125.390, 614.692)], leng:64.372, sinks:16
+    branchPt:[(125.390, 614.692)] is not legal, parentPt:[(187.831, 612.761)] blockages:(95.571 614.143) (138.714 657.286)
+      FLL candiate [(95.571, 614.143)]
+      FLL candiate [(95.571, 657.286)]
+      FLL candiate [(138.714, 657.286)]
+      FLL candiate [(138.714, 614.143)]
+      FLL candiate [(125.390, 614.143)]
+      FLL candiate [(125.390, 657.286)]
+      FLL candiate [(95.571, 614.692)]
+      FLL candiate [(138.714, 614.692)]
+      FLL candiate [(95.571, 615.614)]
+      FLL candiate [(138.714, 614.280)]
+      Loc [(95.571, 614.143)]: curr dist=93.642 target dist=82.000 sink dist=1994.446
+      Loc [(95.571, 657.286)]: curr dist=136.785 target dist=82.000 sink dist=2668.393
+      Loc [(138.714, 657.286)]: curr dist=93.642 target dist=82.000 sink dist=2748.411
+      Loc [(138.714, 614.143)]: curr dist=50.499 target dist=82.000 sink dist=2074.464
+      Loc [(125.390, 614.143)]: curr dist=63.823 target dist=82.000 sink dist=1754.676
+      Loc [(125.390, 657.286)]: curr dist=106.966 target dist=82.000 sink dist=2428.623
+      Loc [(95.571, 614.692)]: curr dist=94.191 target dist=82.000 sink dist=1985.665
+      Loc [(138.714, 614.692)]: curr dist=51.048 target dist=82.000 sink dist=2065.683
+      Loc [(95.571, 615.614)]: curr dist=95.113 target dist=82.000 sink dist=2000.420
+      Loc [(138.714, 614.280)]: curr dist=50.636 target dist=82.000 sink dist=2072.276
+[DEBUG CTS-legalizer] [(95.571, 614.143)] currDist=93.642 != targetDist=82.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(95.571, 614.143)]=>[(95.571, 623.020)] is illegal or dist 102.519 != 82.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(95.571, 614.143)]=>[(95.571, 602.501)] is illegal or dist 102.519 != 82.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(95.571, 614.143)]=>[(107.213, 614.143)] is legal, dist=82.000, sinkDist=1786.751
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(95.571, 614.143)]=>[(268.449, 614.143)] is legal, dist=82.000, sinkDist=6661.054
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(125.390, 614.692)]=>[(107.213, 614.143)] parentPt:[(187.831, 612.761)] new branchPt is outside blockage
+  HTree level*3* bufId*11*, parent:[(187.831, 612.761)], branch:[(234.709, 626.454)], leng:60.572, sinks:22
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(234.709, 626.454)]=>[(236.609, 579.539)] is legal, dist=82.000, sinkDist=3388.625
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(234.709, 626.454)]=>[(236.609, 645.982)] is legal, dist=82.000, sinkDist=2502.010
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(234.709, 626.454)]=>[(232.809, 575.739)] is illegal or dist 82.000 != 82.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(234.709, 626.454)]=>[(232.809, 649.782)] is illegal or dist 82.000 != 82.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(234.709, 626.454)]=>[(121.525, 628.454)] is illegal or dist 82.000 != 82.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(234.709, 626.454)]=>[(254.137, 628.454)] is illegal or dist 82.000 != 82.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(234.709, 626.454)]=>[(117.525, 624.454)] is illegal or dist 82.000 != 82.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(234.709, 626.454)]=>[(258.137, 624.454)] is illegal or dist 82.000 != 82.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength applied to legal branchPt:[(234.709, 626.454)]=>[(236.609, 645.982)] parentPt:[(187.831, 612.761)] newDist=82.000
+  HTree level*3* bufId*12*, parent:[(475.358, 468.714)], branch:[(453.801, 455.271)], leng:35.000, sinks:25
+    branchPt:[(453.801, 455.271)] is not legal, parentPt:[(475.358, 468.714)] blockages:(425.571 425.571) (468.714 468.714)
+      FLL candiate [(425.571, 425.571)]
+      FLL candiate [(425.571, 468.714)]
+      FLL candiate [(468.714, 468.714)]
+      FLL candiate [(468.714, 425.571)]
+      FLL candiate [(453.801, 425.571)]
+      FLL candiate [(453.801, 468.714)]
+      FLL candiate [(425.571, 455.271)]
+      FLL candiate [(468.714, 455.271)]
+      FLL candiate [(425.571, 437.668)]
+      FLL candiate [(468.714, 464.571)]
+      Loc [(425.571, 425.571)]: curr dist=92.930 target dist=82.000 sink dist=3468.342
+      Loc [(425.571, 468.714)]: curr dist=49.787 target dist=82.000 sink dist=2991.702
+      Loc [(468.714, 468.714)]: curr dist=6.644 target dist=82.000 sink dist=3047.095
+      Loc [(468.714, 425.571)]: curr dist=49.787 target dist=82.000 sink dist=3523.735
+      Loc [(453.801, 425.571)]: curr dist=64.700 target dist=82.000 sink dist=3016.674
+      Loc [(453.801, 468.714)]: curr dist=21.557 target dist=82.000 sink dist=2540.033
+      Loc [(425.571, 455.271)]: curr dist=63.230 target dist=82.000 sink dist=2668.156
+      Loc [(468.714, 455.271)]: curr dist=20.087 target dist=82.000 sink dist=2723.549
+      Loc [(425.571, 437.668)]: curr dist=80.833 target dist=82.000 sink dist=3125.841
+      Loc [(468.714, 464.571)]: curr dist=10.787 target dist=82.000 sink dist=2946.745
+[DEBUG CTS-legalizer] [(425.571, 437.668)] currDist=80.833 != targetDist=82.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(425.571, 437.668)]=>[(425.571, 436.501)] is legal, dist=82.000, sinkDist=2010.371
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(425.571, 437.668)]=>[(425.571, 500.928)] is legal, dist=82.000, sinkDist=3834.809
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(425.571, 437.668)]=>[(424.404, 437.668)] is legal, dist=82.000, sinkDist=2023.213
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(425.571, 437.668)]=>[(526.312, 437.668)] is illegal or dist 82.000 != 82.000
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(453.801, 455.271)]=>[(425.571, 436.501)] parentPt:[(475.358, 468.714)] new branchPt is outside blockage
+  HTree level*3* bufId*13*, parent:[(475.358, 468.714)], branch:[(594.837, 458.909)], leng:129.285, sinks:21
+    branchPt:[(594.837, 458.909)] is not legal, parentPt:[(475.358, 468.714)] blockages:(567.000 425.571) (610.143 468.714)
+      FLL candiate [(567.000, 425.571)]
+      FLL candiate [(567.000, 468.714)]
+      FLL candiate [(610.143, 468.714)]
+      FLL candiate [(610.143, 425.571)]
+      FLL candiate [(594.837, 425.571)]
+      FLL candiate [(594.837, 468.714)]
+      FLL candiate [(567.000, 458.909)]
+      FLL candiate [(610.143, 458.909)]
+      FLL candiate [(567.000, 461.193)]
+      FLL candiate [(610.143, 457.653)]
+      Loc [(567.000, 425.571)]: curr dist=134.785 target dist=82.000 sink dist=3765.647
+      Loc [(567.000, 468.714)]: curr dist=91.642 target dist=82.000 sink dist=3203.125
+      Loc [(610.143, 468.714)]: curr dist=134.785 target dist=82.000 sink dist=2377.880
+      Loc [(610.143, 425.571)]: curr dist=177.928 target dist=82.000 sink dist=2940.401
+      Loc [(594.837, 425.571)]: curr dist=162.622 target dist=82.000 sink dist=2817.957
+      Loc [(594.837, 468.714)]: curr dist=119.479 target dist=82.000 sink dist=2255.435
+      Loc [(567.000, 458.909)]: curr dist=101.447 target dist=82.000 sink dist=3006.403
+      Loc [(610.143, 458.909)]: curr dist=144.590 target dist=82.000 sink dist=2181.157
+      Loc [(567.000, 461.193)]: curr dist=99.163 target dist=82.000 sink dist=3052.094
+      Loc [(610.143, 457.653)]: curr dist=145.846 target dist=82.000 sink dist=2208.792
+[DEBUG CTS-legalizer] [(567.000, 468.714)] currDist=91.642 != targetDist=82.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(567.000, 468.714)]=>[(567.000, 478.356)] is illegal or dist 101.284 != 82.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(567.000, 468.714)]=>[(567.000, 459.072)] is illegal or dist 101.284 != 82.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(567.000, 468.714)]=>[(393.358, 468.714)] is legal, dist=82.000, sinkDist=9705.581
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(567.000, 468.714)]=>[(557.358, 468.714)] is legal, dist=82.000, sinkDist=2817.581
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(594.837, 458.909)]=>[(557.358, 468.714)] parentPt:[(475.358, 468.714)] new branchPt is outside blockage
+  HTree level*3* bufId*14*, parent:[(516.945, 597.840)], branch:[(456.447, 619.342)], leng:82.000, sinks:18
+    branchPt:[(456.447, 619.342)] is not legal, parentPt:[(516.945, 597.840)] blockages:(425.571 614.143) (468.714 657.286)
+      FLL candiate [(425.571, 614.143)]
+      FLL candiate [(425.571, 657.286)]
+      FLL candiate [(468.714, 657.286)]
+      FLL candiate [(468.714, 614.143)]
+      FLL candiate [(456.447, 614.143)]
+      FLL candiate [(456.447, 657.286)]
+      FLL candiate [(425.571, 619.342)]
+      FLL candiate [(468.714, 619.342)]
+      FLL candiate [(425.571, 630.316)]
+      FLL candiate [(468.714, 614.982)]
+      Loc [(425.571, 614.143)]: curr dist=107.676 target dist=82.000 sink dist=1791.414
+      Loc [(425.571, 657.286)]: curr dist=150.819 target dist=82.000 sink dist=2441.359
+      Loc [(468.714, 657.286)]: curr dist=107.676 target dist=82.000 sink dist=2537.546
+      Loc [(468.714, 614.143)]: curr dist=64.533 target dist=82.000 sink dist=1887.601
+      Loc [(456.447, 614.143)]: curr dist=76.801 target dist=82.000 sink dist=1544.107
+      Loc [(456.447, 657.286)]: curr dist=119.943 target dist=82.000 sink dist=2194.052
+      Loc [(425.571, 619.342)]: curr dist=112.875 target dist=82.000 sink dist=1686.702
+      Loc [(468.714, 619.342)]: curr dist=69.732 target dist=82.000 sink dist=1782.890
+      Loc [(425.571, 630.316)]: curr dist=123.849 target dist=82.000 sink dist=1901.350
+      Loc [(468.714, 614.982)]: curr dist=65.372 target dist=82.000 sink dist=1869.139
+[DEBUG CTS-legalizer] [(456.447, 614.143)] currDist=76.801 != targetDist=82.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(456.447, 614.143)]=>[(456.447, 576.338)] is illegal or dist 82.000 != 82.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(456.447, 614.143)]=>[(456.447, 619.342)] is illegal or dist 82.000 != 82.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(456.447, 614.143)]=>[(451.247, 614.143)] is legal, dist=82.000, sinkDist=1492.113
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(456.447, 614.143)]=>[(582.642, 614.143)] is legal, dist=82.000, sinkDist=5862.181
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(456.447, 619.342)]=>[(451.247, 614.143)] parentPt:[(516.945, 597.840)] new branchPt is outside blockage
+  HTree level*3* bufId*15*, parent:[(516.945, 597.840)], branch:[(577.568, 619.217)], leng:82.000, sinks:22
+    branchPt:[(577.568, 619.217)] is not legal, parentPt:[(516.945, 597.840)] blockages:(567.000 614.143) (610.143 657.286)
+      FLL candiate [(567.000, 614.143)]
+      FLL candiate [(567.000, 657.286)]
+      FLL candiate [(610.143, 657.286)]
+      FLL candiate [(610.143, 614.143)]
+      FLL candiate [(577.568, 614.143)]
+      FLL candiate [(577.568, 657.286)]
+      FLL candiate [(567.000, 619.217)]
+      FLL candiate [(610.143, 619.217)]
+      FLL candiate [(567.000, 615.491)]
+      FLL candiate [(610.143, 630.704)]
+      Loc [(567.000, 614.143)]: curr dist=66.358 target dist=82.000 sink dist=2614.757
+      Loc [(567.000, 657.286)]: curr dist=109.501 target dist=82.000 sink dist=3401.550
+      Loc [(610.143, 657.286)]: curr dist=152.644 target dist=82.000 sink dist=3625.638
+      Loc [(610.143, 614.143)]: curr dist=109.501 target dist=82.000 sink dist=2838.845
+      Loc [(577.568, 614.143)]: curr dist=76.926 target dist=82.000 sink dist=2317.641
+      Loc [(577.568, 657.286)]: curr dist=120.069 target dist=82.000 sink dist=3104.434
+      Loc [(567.000, 619.217)]: curr dist=71.432 target dist=82.000 sink dist=2493.078
+      Loc [(610.143, 619.217)]: curr dist=114.575 target dist=82.000 sink dist=2717.166
+      Loc [(567.000, 615.491)]: curr dist=67.706 target dist=82.000 sink dist=2580.845
+      Loc [(610.143, 630.704)]: curr dist=126.062 target dist=82.000 sink dist=2986.753
+[DEBUG CTS-legalizer] [(577.568, 614.143)] currDist=76.926 != targetDist=82.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(577.568, 614.143)]=>[(577.568, 576.463)] is illegal or dist 82.000 != 82.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(577.568, 614.143)]=>[(577.568, 619.217)] is illegal or dist 82.000 != 82.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(577.568, 614.143)]=>[(451.247, 614.143)] is illegal or dist 82.000 != 82.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(577.568, 614.143)]=>[(582.642, 614.143)] is legal, dist=82.000, sinkDist=2287.196
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(577.568, 619.217)]=>[(582.642, 614.143)] parentPt:[(516.945, 597.840)] new branchPt is outside blockage
+  HTree level*4* bufId*0*, parent:[(102.235, 95.571)], branch:[(98.366, 81.886)], leng:17.555, sinks:8
+    branchPt:[(98.366, 81.886)] is not legal, parentPt:[(102.235, 95.571)] blockages:(95.571 48.429) (138.714 91.571)
+      FLL candiate [(95.571, 48.429)]
+      FLL candiate [(95.571, 91.571)]
+      FLL candiate [(138.714, 91.571)]
+      FLL candiate [(138.714, 48.429)]
+      FLL candiate [(98.366, 48.429)]
+      FLL candiate [(98.366, 91.571)]
+      FLL candiate [(95.571, 81.886)]
+      FLL candiate [(138.714, 81.886)]
+      FLL candiate [(95.571, 72.002)]
+      FLL candiate [(101.104, 91.571)]
+      Loc [(95.571, 48.429)]: curr dist=53.807 target dist=44.000 sink dist=959.577
+      Loc [(95.571, 91.571)]: curr dist=10.664 target dist=44.000 sink dist=770.316
+      Loc [(138.714, 91.571)]: curr dist=40.479 target dist=44.000 sink dist=1156.726
+      Loc [(138.714, 48.429)]: curr dist=83.622 target dist=44.000 sink dist=1345.987
+      Loc [(98.366, 48.429)]: curr dist=51.012 target dist=44.000 sink dist=942.504
+      Loc [(98.366, 91.571)]: curr dist=7.869 target dist=44.000 sink dist=753.243
+      Loc [(95.571, 81.886)]: curr dist=20.349 target dist=44.000 sink dist=691.917
+      Loc [(138.714, 81.886)]: curr dist=50.164 target dist=44.000 sink dist=1078.326
+      Loc [(95.571, 72.002)]: curr dist=30.233 target dist=44.000 sink dist=770.988
+      Loc [(101.104, 91.571)]: curr dist=5.131 target dist=44.000 sink dist=780.627
+[DEBUG CTS-legalizer] [(138.714, 91.571)] currDist=40.479 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(138.714, 91.571)]=>[(138.714, 88.050)] is legal, dist=44.000, sinkDist=783.709
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(138.714, 91.571)]=>[(138.714, 103.093)] is legal, dist=44.000, sinkDist=921.213
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(138.714, 91.571)]=>[(62.235, 91.571)] is legal, dist=44.000, sinkDist=1282.308
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(138.714, 91.571)]=>[(142.235, 91.571)] is legal, dist=44.000, sinkDist=791.668
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(98.366, 81.886)]=>[(138.714, 88.050)] parentPt:[(102.235, 95.571)] new branchPt is outside blockage
+  HTree level*4* bufId*1*, parent:[(102.235, 95.571)], branch:[(98.082, 122.892)], leng:31.475, sinks:6
+    branchPt:[(98.082, 122.892)] is not legal, parentPt:[(102.235, 95.571)] blockages:(95.571 95.571) (138.714 138.714)
+      FLL candiate [(95.571, 95.571)]
+      FLL candiate [(95.571, 138.714)]
+      FLL candiate [(138.714, 138.714)]
+      FLL candiate [(138.714, 95.571)]
+      FLL candiate [(98.082, 95.571)]
+      FLL candiate [(98.082, 138.714)]
+      FLL candiate [(95.571, 122.892)]
+      FLL candiate [(138.714, 122.892)]
+      FLL candiate [(95.676, 138.714)]
+      Loc [(95.571, 95.571)]: curr dist=6.664 target dist=44.000 sink dist=646.509
+      Loc [(95.571, 138.714)]: curr dist=49.807 target dist=44.000 sink dist=475.192
+      Loc [(138.714, 138.714)]: curr dist=79.622 target dist=44.000 sink dist=789.601
+      Loc [(138.714, 95.571)]: curr dist=36.479 target dist=44.000 sink dist=960.918
+      Loc [(98.082, 95.571)]: curr dist=4.154 target dist=44.000 sink dist=635.857
+      Loc [(98.082, 138.714)]: curr dist=47.297 target dist=44.000 sink dist=464.540
+      Loc [(95.571, 122.892)]: curr dist=33.985 target dist=44.000 sink dist=410.681
+      Loc [(138.714, 122.892)]: curr dist=63.800 target dist=44.000 sink dist=725.090
+      Loc [(95.676, 138.714)]: curr dist=49.702 target dist=44.000 sink dist=474.355
+[DEBUG CTS-legalizer] [(98.082, 138.714)] currDist=47.297 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(98.082, 138.714)]=>[(98.082, 55.725)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(98.082, 138.714)]=>[(98.082, 135.418)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(98.082, 138.714)]=>[(101.378, 138.714)] is legal, dist=44.000, sinkDist=395.981
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(98.082, 138.714)]=>[(103.093, 138.714)] is legal, dist=44.000, sinkDist=409.695
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(98.082, 122.892)]=>[(101.378, 138.714)] parentPt:[(102.235, 95.571)] new branchPt is outside blockage
+  HTree level*4* bufId*2*, parent:[(219.093, 48.429)], branch:[(224.112, 49.018)], leng:5.609, sinks:9
+    branchPt:[(224.112, 49.018)] is not legal, parentPt:[(219.093, 48.429)] blockages:(189.857 48.429) (233.000 91.571)
+      FLL candiate [(189.857, 48.429)]
+      FLL candiate [(189.857, 91.571)]
+      FLL candiate [(233.000, 91.571)]
+      FLL candiate [(233.000, 48.429)]
+      FLL candiate [(224.112, 48.429)]
+      FLL candiate [(224.112, 91.571)]
+      FLL candiate [(189.857, 49.018)]
+      FLL candiate [(233.000, 49.018)]
+      FLL candiate [(233.000, 50.062)]
+      Loc [(189.857, 48.429)]: curr dist=29.235 target dist=44.000 sink dist=751.699
+      Loc [(189.857, 91.571)]: curr dist=72.378 target dist=44.000 sink dist=1484.295
+      Loc [(233.000, 91.571)]: curr dist=57.050 target dist=44.000 sink dist=1385.418
+      Loc [(233.000, 48.429)]: curr dist=13.907 target dist=44.000 sink dist=652.822
+      Loc [(224.112, 48.429)]: curr dist=5.020 target dist=44.000 sink dist=546.168
+      Loc [(224.112, 91.571)]: curr dist=48.163 target dist=44.000 sink dist=1278.765
+      Loc [(189.857, 49.018)]: curr dist=29.825 target dist=44.000 sink dist=748.162
+      Loc [(233.000, 49.018)]: curr dist=14.497 target dist=44.000 sink dist=649.286
+      Loc [(233.000, 50.062)]: curr dist=15.540 target dist=44.000 sink dist=661.809
+[DEBUG CTS-legalizer] [(224.112, 91.571)] currDist=48.163 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(224.112, 91.571)]=>[(224.112, 9.448)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(224.112, 91.571)]=>[(224.112, 87.409)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(224.112, 91.571)]=>[(218.235, 91.571)] is legal, dist=44.000, sinkDist=931.045
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(224.112, 91.571)]=>[(219.950, 91.571)] is legal, dist=44.000, sinkDist=920.759
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(224.112, 49.018)]=>[(219.950, 91.571)] parentPt:[(219.093, 48.429)] new branchPt is outside blockage
+  HTree level*4* bufId*3*, parent:[(219.093, 48.429)], branch:[(240.127, 121.003)], leng:93.609, sinks:11
+    branchPt:[(240.127, 121.003)] is not legal, parentPt:[(219.093, 48.429)] blockages:(237.000 95.571) (280.143 138.714)
+      FLL candiate [(237.000, 95.571)]
+      FLL candiate [(237.000, 138.714)]
+      FLL candiate [(280.143, 138.714)]
+      FLL candiate [(280.143, 95.571)]
+      FLL candiate [(240.127, 95.571)]
+      FLL candiate [(240.127, 138.714)]
+      FLL candiate [(237.000, 121.003)]
+      FLL candiate [(280.143, 121.003)]
+      FLL candiate [(237.000, 110.214)]
+      FLL candiate [(245.260, 138.714)]
+      Loc [(237.000, 95.571)]: curr dist=65.050 target dist=44.000 sink dist=1192.805
+      Loc [(237.000, 138.714)]: curr dist=108.193 target dist=44.000 sink dist=975.203
+      Loc [(280.143, 138.714)]: curr dist=151.336 target dist=44.000 sink dist=1509.798
+      Loc [(280.143, 95.571)]: curr dist=108.193 target dist=44.000 sink dist=1727.401
+      Loc [(240.127, 95.571)]: curr dist=68.177 target dist=44.000 sink dist=1167.178
+      Loc [(240.127, 138.714)]: curr dist=111.320 target dist=44.000 sink dist=949.576
+      Loc [(237.000, 121.003)]: curr dist=90.482 target dist=44.000 sink dist=832.597
+      Loc [(280.143, 121.003)]: curr dist=133.625 target dist=44.000 sink dist=1367.193
+      Loc [(237.000, 110.214)]: curr dist=79.693 target dist=44.000 sink dist=983.641
+      Loc [(245.260, 138.714)]: curr dist=116.453 target dist=44.000 sink dist=1021.441
+[DEBUG CTS-legalizer] [(237.000, 95.571)] currDist=65.050 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(237.000, 95.571)]=>[(237.000, 22.336)] is legal, dist=44.000, sinkDist=2464.920
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(237.000, 95.571)]=>[(237.000, 74.521)] is legal, dist=44.000, sinkDist=1316.849
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(237.000, 95.571)]=>[(222.235, 95.571)] is illegal or dist 50.286 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(237.000, 95.571)]=>[(215.950, 95.571)] is illegal or dist 50.286 != 44.000
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(240.127, 121.003)]=>[(237.000, 74.521)] parentPt:[(219.093, 48.429)] new branchPt is outside blockage
+  HTree level*4* bufId*4*, parent:[(94.139, 252.232)], branch:[(86.742, 227.685)], leng:31.944, sinks:8
+    branchPt:[(86.742, 227.685)] is not legal, parentPt:[(94.139, 252.232)] blockages:(48.429 189.857) (91.571 233.000)
+      FLL candiate [(48.429, 189.857)]
+      FLL candiate [(48.429, 233.000)]
+      FLL candiate [(91.571, 233.000)]
+      FLL candiate [(91.571, 189.857)]
+      FLL candiate [(86.742, 189.857)]
+      FLL candiate [(86.742, 233.000)]
+      FLL candiate [(48.429, 227.685)]
+      FLL candiate [(91.571, 227.685)]
+      FLL candiate [(75.342, 189.857)]
+      FLL candiate [(88.344, 233.000)]
+      Loc [(48.429, 189.857)]: curr dist=108.085 target dist=44.000 sink dist=1175.453
+      Loc [(48.429, 233.000)]: curr dist=64.943 target dist=44.000 sink dist=916.575
+      Loc [(91.571, 233.000)]: curr dist=21.800 target dist=44.000 sink dist=648.095
+      Loc [(91.571, 189.857)]: curr dist=64.943 target dist=44.000 sink dist=906.973
+      Loc [(86.742, 189.857)]: curr dist=69.772 target dist=44.000 sink dist=868.336
+      Loc [(86.742, 233.000)]: curr dist=26.629 target dist=44.000 sink dist=609.458
+      Loc [(48.429, 227.685)]: curr dist=70.258 target dist=44.000 sink dist=872.832
+      Loc [(91.571, 227.685)]: curr dist=27.115 target dist=44.000 sink dist=604.351
+      Loc [(75.342, 189.857)]: curr dist=81.172 target dist=44.000 sink dist=959.535
+      Loc [(88.344, 233.000)]: curr dist=25.028 target dist=44.000 sink dist=622.272
+[DEBUG CTS-legalizer] [(91.571, 227.685)] currDist=27.115 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(91.571, 227.685)]=>[(91.571, 210.800)] is legal, dist=44.000, sinkDist=700.796
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(91.571, 227.685)]=>[(91.571, 293.664)] is legal, dist=44.000, sinkDist=1580.081
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(91.571, 227.685)]=>[(74.686, 227.685)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(91.571, 227.685)]=>[(113.592, 227.685)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(86.742, 227.685)]=>[(91.571, 210.800)] parentPt:[(94.139, 252.232)] new branchPt is outside blockage
+  HTree level*4* bufId*5*, parent:[(94.139, 252.232)], branch:[(88.650, 278.687)], leng:31.944, sinks:8
+    branchPt:[(88.650, 278.687)] is not legal, parentPt:[(94.139, 252.232)] blockages:(48.429 237.000) (91.571 280.143)
+      FLL candiate [(48.429, 237.000)]
+      FLL candiate [(48.429, 280.143)]
+      FLL candiate [(91.571, 280.143)]
+      FLL candiate [(91.571, 237.000)]
+      FLL candiate [(88.650, 237.000)]
+      FLL candiate [(88.650, 280.143)]
+      FLL candiate [(48.429, 278.687)]
+      FLL candiate [(91.571, 278.687)]
+      FLL candiate [(91.571, 264.607)]
+      FLL candiate [(88.348, 280.143)]
+      Loc [(48.429, 237.000)]: curr dist=60.943 target dist=44.000 sink dist=1565.510
+      Loc [(48.429, 280.143)]: curr dist=73.622 target dist=44.000 sink dist=899.744
+      Loc [(91.571, 280.143)]: curr dist=30.479 target dist=44.000 sink dist=600.736
+      Loc [(91.571, 237.000)]: curr dist=17.800 target dist=44.000 sink dist=1266.501
+      Loc [(88.650, 237.000)]: curr dist=20.721 target dist=44.000 sink dist=1243.128
+      Loc [(88.650, 280.143)]: curr dist=33.401 target dist=44.000 sink dist=577.363
+      Loc [(48.429, 278.687)]: curr dist=72.166 target dist=44.000 sink dist=898.521
+      Loc [(91.571, 278.687)]: curr dist=29.023 target dist=44.000 sink dist=599.513
+      Loc [(91.571, 264.607)]: curr dist=14.943 target dist=44.000 sink dist=824.791
+      Loc [(88.348, 280.143)]: curr dist=33.703 target dist=44.000 sink dist=579.780
+[DEBUG CTS-legalizer] [(88.348, 280.143)] currDist=33.703 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(88.348, 280.143)]=>[(88.348, 214.023)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(88.348, 280.143)]=>[(88.348, 290.440)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(88.348, 280.143)]=>[(78.050, 280.143)] is legal, dist=44.000, sinkDist=648.093
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(88.348, 280.143)]=>[(110.228, 280.143)] is legal, dist=44.000, sinkDist=798.775
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(88.650, 278.687)]=>[(78.050, 280.143)] parentPt:[(94.139, 252.232)] new branchPt is outside blockage
+  HTree level*4* bufId*6*, parent:[(241.973, 236.066)], branch:[(237.869, 222.597)], leng:17.573, sinks:12
+    branchPt:[(237.869, 222.597)] is not legal, parentPt:[(241.973, 236.066)] blockages:(237.000 189.857) (280.143 233.000)
+      FLL candiate [(237.000, 189.857)]
+      FLL candiate [(237.000, 233.000)]
+      FLL candiate [(280.143, 233.000)]
+      FLL candiate [(280.143, 189.857)]
+      FLL candiate [(237.869, 189.857)]
+      FLL candiate [(237.869, 233.000)]
+      FLL candiate [(237.000, 222.597)]
+      FLL candiate [(280.143, 222.597)]
+      FLL candiate [(237.000, 219.745)]
+      FLL candiate [(241.039, 233.000)]
+      Loc [(237.000, 189.857)]: curr dist=51.182 target dist=44.000 sink dist=1283.544
+      Loc [(237.000, 233.000)]: curr dist=8.039 target dist=44.000 sink dist=986.838
+      Loc [(280.143, 233.000)]: curr dist=41.235 target dist=44.000 sink dist=1655.657
+      Loc [(280.143, 189.857)]: curr dist=84.378 target dist=44.000 sink dist=1952.362
+      Loc [(237.869, 189.857)]: curr dist=50.313 target dist=44.000 sink dist=1275.980
+      Loc [(237.869, 233.000)]: curr dist=7.170 target dist=44.000 sink dist=979.275
+      Loc [(237.000, 222.597)]: curr dist=18.442 target dist=44.000 sink dist=861.082
+      Loc [(280.143, 222.597)]: curr dist=51.639 target dist=44.000 sink dist=1529.901
+      Loc [(237.000, 219.745)]: curr dist=21.294 target dist=44.000 sink dist=895.303
+      Loc [(241.039, 233.000)]: curr dist=4.000 target dist=44.000 sink dist=1029.996
+[DEBUG CTS-legalizer] [(280.143, 233.000)] currDist=41.235 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(280.143, 233.000)]=>[(280.143, 230.235)] is legal, dist=44.000, sinkDist=1055.790
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(280.143, 233.000)]=>[(280.143, 241.896)] is legal, dist=44.000, sinkDist=1189.164
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(280.143, 233.000)]=>[(201.039, 233.000)] is legal, dist=44.000, sinkDist=1800.817
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(280.143, 233.000)]=>[(282.907, 233.000)] is legal, dist=44.000, sinkDist=1067.765
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(237.869, 222.597)]=>[(280.143, 230.235)] parentPt:[(241.973, 236.066)] new branchPt is outside blockage
+  HTree level*4* bufId*7*, parent:[(241.973, 236.066)], branch:[(237.620, 302.139)], leng:70.427, sinks:12
+    branchPt:[(237.620, 302.139)] is not legal, parentPt:[(241.973, 236.066)] blockages:(237.000 284.143) (280.143 327.286)
+      FLL candiate [(237.000, 284.143)]
+      FLL candiate [(237.000, 327.286)]
+      FLL candiate [(280.143, 327.286)]
+      FLL candiate [(280.143, 284.143)]
+      FLL candiate [(237.620, 284.143)]
+      FLL candiate [(237.620, 327.286)]
+      FLL candiate [(237.000, 302.139)]
+      FLL candiate [(280.143, 302.139)]
+      FLL candiate [(237.000, 311.549)]
+      FLL candiate [(238.806, 284.143)]
+      Loc [(237.000, 284.143)]: curr dist=53.050 target dist=44.000 sink dist=1103.905
+      Loc [(237.000, 327.286)]: curr dist=96.193 target dist=44.000 sink dist=1157.620
+      Loc [(280.143, 327.286)]: curr dist=129.389 target dist=44.000 sink dist=1832.415
+      Loc [(280.143, 284.143)]: curr dist=86.247 target dist=44.000 sink dist=1778.700
+      Loc [(237.620, 284.143)]: curr dist=52.430 target dist=44.000 sink dist=1098.334
+      Loc [(237.620, 327.286)]: curr dist=95.573 target dist=44.000 sink dist=1152.049
+      Loc [(237.000, 302.139)]: curr dist=71.047 target dist=44.000 sink dist=854.944
+      Loc [(280.143, 302.139)]: curr dist=104.243 target dist=44.000 sink dist=1529.739
+      Loc [(237.000, 311.549)]: curr dist=80.456 target dist=44.000 sink dist=967.859
+      Loc [(238.806, 284.143)]: curr dist=51.245 target dist=44.000 sink dist=1117.305
+[DEBUG CTS-legalizer] [(238.806, 284.143)] currDist=51.245 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(238.806, 284.143)]=>[(238.806, 195.233)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(238.806, 284.143)]=>[(238.806, 276.898)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(238.806, 284.143)]=>[(246.050, 284.143)] is illegal or dist 52.154 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(238.806, 284.143)]=>[(237.896, 284.143)] is illegal or dist 52.154 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.806, 284.143)]=>[(240.706, 193.333)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.806, 284.143)]=>[(240.706, 278.798)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.806, 284.143)]=>[(236.906, 197.133)] is legal, dist=44.000, sinkDist=2966.620
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.806, 284.143)]=>[(236.906, 274.998)] is legal, dist=44.000, sinkDist=1097.865
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.806, 284.143)]=>[(248.050, 286.143)] is illegal or dist 56.154 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.806, 284.143)]=>[(235.896, 286.143)] is illegal or dist 56.154 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.806, 284.143)]=>[(244.050, 282.143)] is illegal or dist 48.154 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.806, 284.143)]=>[(239.896, 282.143)] is illegal or dist 48.154 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(237.620, 302.139)]=>[(236.906, 274.998)] parentPt:[(241.973, 236.066)] new branchPt is outside blockage
+  HTree level*4* bufId*8*, parent:[(458.050, 91.571)], branch:[(446.293, 59.560)], leng:43.769, sinks:9
+    branchPt:[(446.293, 59.560)] is not legal, parentPt:[(458.050, 91.571)] blockages:(425.571 48.429) (468.714 91.571)
+      FLL candiate [(425.571, 48.429)]
+      FLL candiate [(425.571, 91.571)]
+      FLL candiate [(468.714, 91.571)]
+      FLL candiate [(468.714, 48.429)]
+      FLL candiate [(446.293, 48.429)]
+      FLL candiate [(446.293, 91.571)]
+      FLL candiate [(425.571, 59.560)]
+      FLL candiate [(468.714, 59.560)]
+      FLL candiate [(442.204, 48.429)]
+      Loc [(425.571, 48.429)]: curr dist=75.622 target dist=44.000 sink dist=629.401
+      Loc [(425.571, 91.571)]: curr dist=32.479 target dist=44.000 sink dist=1173.480
+      Loc [(468.714, 91.571)]: curr dist=10.664 target dist=44.000 sink dist=1404.499
+      Loc [(468.714, 48.429)]: curr dist=53.807 target dist=44.000 sink dist=860.419
+      Loc [(446.293, 48.429)]: curr dist=54.901 target dist=44.000 sink dist=546.516
+      Loc [(446.293, 91.571)]: curr dist=11.758 target dist=44.000 sink dist=1090.596
+      Loc [(425.571, 59.560)]: curr dist=64.490 target dist=44.000 sink dist=597.279
+      Loc [(468.714, 59.560)]: curr dist=42.675 target dist=44.000 sink dist=828.297
+      Loc [(442.204, 48.429)]: curr dist=58.989 target dist=44.000 sink dist=562.871
+[DEBUG CTS-legalizer] [(468.714, 59.560)] currDist=42.675 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(468.714, 59.560)]=>[(468.714, 58.235)] is legal, dist=44.000, sinkDist=626.502
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(468.714, 59.560)]=>[(468.714, 124.907)] is legal, dist=44.000, sinkDist=1802.753
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(468.714, 59.560)]=>[(446.062, 59.560)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(468.714, 59.560)]=>[(470.039, 59.560)] is legal, dist=44.000, sinkDist=645.050
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(446.293, 59.560)]=>[(468.714, 58.235)] parentPt:[(458.050, 91.571)] new branchPt is outside blockage
+  HTree level*4* bufId*9*, parent:[(458.050, 91.571)], branch:[(437.458, 112.615)], leng:41.636, sinks:12
+    branchPt:[(437.458, 112.615)] is not legal, parentPt:[(458.050, 91.571)] blockages:(425.571 95.571) (468.714 138.714)
+      FLL candiate [(425.571, 95.571)]
+      FLL candiate [(425.571, 138.714)]
+      FLL candiate [(468.714, 138.714)]
+      FLL candiate [(468.714, 95.571)]
+      FLL candiate [(437.458, 95.571)]
+      FLL candiate [(437.458, 138.714)]
+      FLL candiate [(425.571, 112.615)]
+      FLL candiate [(468.714, 112.615)]
+      FLL candiate [(425.571, 124.763)]
+      FLL candiate [(454.136, 95.571)]
+      Loc [(425.571, 95.571)]: curr dist=36.479 target dist=44.000 sink dist=910.869
+      Loc [(425.571, 138.714)]: curr dist=79.622 target dist=44.000 sink dist=1061.239
+      Loc [(468.714, 138.714)]: curr dist=57.807 target dist=44.000 sink dist=1552.521
+      Loc [(468.714, 95.571)]: curr dist=14.664 target dist=44.000 sink dist=1402.151
+      Loc [(437.458, 95.571)]: curr dist=24.592 target dist=44.000 sink dist=839.547
+      Loc [(437.458, 138.714)]: curr dist=67.735 target dist=44.000 sink dist=989.917
+      Loc [(425.571, 112.615)]: curr dist=53.523 target dist=44.000 sink dist=695.242
+      Loc [(468.714, 112.615)]: curr dist=31.708 target dist=44.000 sink dist=1186.525
+      Loc [(425.571, 124.763)]: curr dist=65.671 target dist=44.000 sink dist=865.314
+      Loc [(454.136, 95.571)]: curr dist=7.914 target dist=44.000 sink dist=1139.747
+[DEBUG CTS-legalizer] [(425.571, 95.571)] currDist=36.479 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(425.571, 95.571)]=>[(425.571, 80.050)] is legal, dist=44.000, sinkDist=911.287
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(425.571, 95.571)]=>[(425.571, 103.093)] is legal, dist=44.000, sinkDist=628.124
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(425.571, 95.571)]=>[(418.050, 95.571)] is legal, dist=44.000, sinkDist=710.967
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(425.571, 95.571)]=>[(498.050, 95.571)] is legal, dist=44.000, sinkDist=1969.050
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(437.458, 112.615)]=>[(425.571, 103.093)] parentPt:[(458.050, 91.571)] new branchPt is outside blockage
+  HTree level*4* bufId*10*, parent:[(585.664, 95.571)], branch:[(606.896, 72.803)], leng:44.000, sinks:10
+    branchPt:[(606.896, 72.803)] is not legal, parentPt:[(585.664, 95.571)] blockages:(567.000 48.429) (610.143 91.571)
+      FLL candiate [(567.000, 48.429)]
+      FLL candiate [(567.000, 91.571)]
+      FLL candiate [(610.143, 91.571)]
+      FLL candiate [(610.143, 48.429)]
+      FLL candiate [(606.896, 48.429)]
+      FLL candiate [(606.896, 91.571)]
+      FLL candiate [(567.000, 72.803)]
+      FLL candiate [(610.143, 72.803)]
+      FLL candiate [(610.143, 69.321)]
+      FLL candiate [(589.394, 91.571)]
+      Loc [(567.000, 48.429)]: curr dist=65.807 target dist=44.000 sink dist=1537.196
+      Loc [(567.000, 91.571)]: curr dist=22.664 target dist=44.000 sink dist=1714.781
+      Loc [(610.143, 91.571)]: curr dist=28.479 target dist=44.000 sink dist=1088.829
+      Loc [(610.143, 48.429)]: curr dist=71.622 target dist=44.000 sink dist=911.244
+      Loc [(606.896, 48.429)]: curr dist=68.374 target dist=44.000 sink dist=898.255
+      Loc [(606.896, 91.571)]: curr dist=25.232 target dist=44.000 sink dist=1075.840
+      Loc [(567.000, 72.803)]: curr dist=41.432 target dist=44.000 sink dist=1413.874
+      Loc [(610.143, 72.803)]: curr dist=47.247 target dist=44.000 sink dist=787.923
+      Loc [(610.143, 69.321)]: curr dist=50.730 target dist=44.000 sink dist=801.852
+      Loc [(589.394, 91.571)]: curr dist=7.730 target dist=44.000 sink dist=1355.866
+[DEBUG CTS-legalizer] [(567.000, 72.803)] currDist=41.432 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(567.000, 72.803)]=>[(567.000, 70.235)] is legal, dist=44.000, sinkDist=1025.189
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(567.000, 72.803)]=>[(567.000, 120.907)] is legal, dist=44.000, sinkDist=1902.546
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(567.000, 72.803)]=>[(564.432, 72.803)] is legal, dist=44.000, sinkDist=1066.271
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(567.000, 72.803)]=>[(606.896, 72.803)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(606.896, 72.803)]=>[(567.000, 70.235)] parentPt:[(585.664, 95.571)] new branchPt is outside blockage
+  HTree level*4* bufId*11*, parent:[(585.664, 95.571)], branch:[(610.945, 114.451)], leng:44.161, sinks:9
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(610.945, 114.451)]=>[(612.845, 78.753)] is legal, dist=44.000, sinkDist=1215.290
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(610.945, 114.451)]=>[(612.845, 112.390)] is legal, dist=44.000, sinkDist=684.877
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(610.945, 114.451)]=>[(609.045, 74.953)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(610.945, 114.451)]=>[(609.045, 116.190)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(610.945, 114.451)]=>[(562.543, 116.451)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(610.945, 114.451)]=>[(608.785, 116.451)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(610.945, 114.451)]=>[(558.543, 112.451)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(610.945, 114.451)]=>[(612.785, 112.451)] is legal, dist=44.000, sinkDist=683.908
+[DEBUG CTS-legalizer] adjustBranchLength applied to legal branchPt:[(610.945, 114.451)]=>[(612.785, 112.451)] parentPt:[(585.664, 95.571)] newDist=44.000
+  HTree level*4* bufId*12*, parent:[(458.050, 280.143)], branch:[(444.215, 224.639)], leng:69.339, sinks:12
+    branchPt:[(444.215, 224.639)] is not legal, parentPt:[(458.050, 280.143)] blockages:(425.571 189.857) (468.714 233.000)
+      FLL candiate [(425.571, 189.857)]
+      FLL candiate [(425.571, 233.000)]
+      FLL candiate [(468.714, 233.000)]
+      FLL candiate [(468.714, 189.857)]
+      FLL candiate [(444.215, 189.857)]
+      FLL candiate [(444.215, 233.000)]
+      FLL candiate [(425.571, 224.639)]
+      FLL candiate [(468.714, 224.639)]
+      FLL candiate [(435.545, 189.857)]
+      FLL candiate [(446.299, 233.000)]
+      Loc [(425.571, 189.857)]: curr dist=122.765 target dist=44.000 sink dist=1336.093
+      Loc [(425.571, 233.000)]: curr dist=79.622 target dist=44.000 sink dist=986.583
+      Loc [(468.714, 233.000)]: curr dist=57.807 target dist=44.000 sink dist=1229.428
+      Loc [(468.714, 189.857)]: curr dist=100.950 target dist=44.000 sink dist=1578.937
+      Loc [(444.215, 189.857)]: curr dist=104.121 target dist=44.000 sink dist=1186.946
+      Loc [(444.215, 233.000)]: curr dist=60.978 target dist=44.000 sink dist=837.436
+      Loc [(425.571, 224.639)]: curr dist=87.982 target dist=44.000 sink dist=885.339
+      Loc [(468.714, 224.639)]: curr dist=66.167 target dist=44.000 sink dist=1128.184
+      Loc [(435.545, 189.857)]: curr dist=112.792 target dist=44.000 sink dist=1256.308
+      Loc [(446.299, 233.000)]: curr dist=58.894 target dist=44.000 sink dist=870.781
+[DEBUG CTS-legalizer] [(468.714, 233.000)] currDist=57.807 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(468.714, 233.000)]=>[(468.714, 246.807)] is legal, dist=44.000, sinkDist=1109.170
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(468.714, 233.000)]=>[(468.714, 313.479)] is legal, dist=44.000, sinkDist=2709.300
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(468.714, 233.000)]=>[(461.193, 233.000)] is illegal or dist 50.286 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(468.714, 233.000)]=>[(454.907, 233.000)] is illegal or dist 50.286 != 44.000
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(444.215, 224.639)]=>[(468.714, 246.807)] parentPt:[(458.050, 280.143)] new branchPt is outside blockage
+  HTree level*4* bufId*13*, parent:[(458.050, 280.143)], branch:[(444.936, 293.998)], leng:26.969, sinks:12
+    branchPt:[(444.936, 293.998)] is not legal, parentPt:[(458.050, 280.143)] blockages:(425.571 284.143) (468.714 327.286)
+      FLL candiate [(425.571, 284.143)]
+      FLL candiate [(425.571, 327.286)]
+      FLL candiate [(468.714, 327.286)]
+      FLL candiate [(468.714, 284.143)]
+      FLL candiate [(444.936, 284.143)]
+      FLL candiate [(444.936, 327.286)]
+      FLL candiate [(425.571, 293.998)]
+      FLL candiate [(468.714, 293.998)]
+      FLL candiate [(425.571, 314.457)]
+      FLL candiate [(454.264, 284.143)]
+      Loc [(425.571, 284.143)]: curr dist=36.479 target dist=44.000 sink dist=1045.589
+      Loc [(425.571, 327.286)]: curr dist=79.622 target dist=44.000 sink dist=1294.463
+      Loc [(468.714, 327.286)]: curr dist=57.807 target dist=44.000 sink dist=1519.996
+      Loc [(468.714, 284.143)]: curr dist=14.664 target dist=44.000 sink dist=1271.123
+      Loc [(444.936, 284.143)]: curr dist=17.114 target dist=44.000 sink dist=890.672
+      Loc [(444.936, 327.286)]: curr dist=60.257 target dist=44.000 sink dist=1139.545
+      Loc [(425.571, 293.998)]: curr dist=46.334 target dist=44.000 sink dist=894.093
+      Loc [(468.714, 293.998)]: curr dist=24.519 target dist=44.000 sink dist=1119.626
+      Loc [(425.571, 314.457)]: curr dist=66.793 target dist=44.000 sink dist=1139.597
+      Loc [(454.264, 284.143)]: curr dist=7.786 target dist=44.000 sink dist=1039.922
+[DEBUG CTS-legalizer] [(425.571, 293.998)] currDist=46.334 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(425.571, 293.998)]=>[(425.571, 268.622)] is legal, dist=44.000, sinkDist=1160.802
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(425.571, 293.998)]=>[(425.571, 291.664)] is legal, dist=44.000, sinkDist=692.453
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(425.571, 293.998)]=>[(427.905, 293.998)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(425.571, 293.998)]=>[(488.195, 293.998)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(444.936, 293.998)]=>[(425.571, 291.664)] parentPt:[(458.050, 280.143)] new branchPt is outside blockage
+  HTree level*4* bufId*14*, parent:[(578.907, 237.000)], branch:[(616.064, 233.100)], leng:41.057, sinks:10
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(616.064, 233.100)]=>[(617.964, 232.057)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(616.064, 233.100)]=>[(617.964, 241.943)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(616.064, 233.100)]=>[(614.164, 228.257)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(616.064, 233.100)]=>[(614.164, 245.743)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(616.064, 233.100)]=>[(536.807, 235.100)] is legal, dist=44.000, sinkDist=2018.521
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(616.064, 233.100)]=>[(621.008, 235.100)] is legal, dist=44.000, sinkDist=675.646
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(616.064, 233.100)]=>[(540.807, 231.100)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(616.064, 233.100)]=>[(617.008, 231.100)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength applied to legal branchPt:[(616.064, 233.100)]=>[(621.008, 235.100)] parentPt:[(578.907, 237.000)] newDist=44.000
+  HTree level*4* bufId*15*, parent:[(578.907, 237.000)], branch:[(613.646, 281.848)], leng:79.586, sinks:10
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(613.646, 281.848)]=>[(615.546, 229.638)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(613.646, 281.848)]=>[(615.546, 244.362)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(613.646, 281.848)]=>[(611.746, 225.838)] is legal, dist=44.000, sinkDist=1797.294
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(613.646, 281.848)]=>[(611.746, 248.162)] is legal, dist=44.000, sinkDist=1350.815
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(613.646, 281.848)]=>[(581.755, 283.848)] is illegal or dist 49.696 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(613.646, 281.848)]=>[(576.060, 283.848)] is illegal or dist 49.696 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(613.646, 281.848)]=>[(577.755, 279.848)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(613.646, 281.848)]=>[(580.060, 279.848)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength applied to legal branchPt:[(613.646, 281.848)]=>[(611.746, 248.162)] parentPt:[(578.907, 237.000)] newDist=44.000
+  HTree level*4* bufId*16*, parent:[(95.571, 451.072)], branch:[(97.435, 430.789)], leng:22.147, sinks:8
+    branchPt:[(97.435, 430.789)] is not legal, parentPt:[(95.571, 451.072)] blockages:(95.571 425.571) (138.714 468.714)
+      FLL candiate [(95.571, 425.571)]
+      FLL candiate [(95.571, 468.714)]
+      FLL candiate [(138.714, 468.714)]
+      FLL candiate [(138.714, 425.571)]
+      FLL candiate [(97.435, 425.571)]
+      FLL candiate [(97.435, 468.714)]
+      FLL candiate [(95.571, 430.789)]
+      FLL candiate [(138.714, 430.789)]
+      FLL candiate [(97.914, 425.571)]
+      Loc [(95.571, 425.571)]: curr dist=25.501 target dist=44.000 sink dist=655.586
+      Loc [(95.571, 468.714)]: curr dist=17.642 target dist=44.000 sink dist=1262.391
+      Loc [(138.714, 468.714)]: curr dist=60.785 target dist=44.000 sink dist=1749.676
+      Loc [(138.714, 425.571)]: curr dist=68.644 target dist=44.000 sink dist=1142.871
+      Loc [(97.435, 425.571)]: curr dist=27.365 target dist=44.000 sink dist=647.520
+      Loc [(97.435, 468.714)]: curr dist=19.505 target dist=44.000 sink dist=1254.325
+      Loc [(95.571, 430.789)]: curr dist=20.284 target dist=44.000 sink dist=655.586
+      Loc [(138.714, 430.789)]: curr dist=63.426 target dist=44.000 sink dist=1142.871
+      Loc [(97.914, 425.571)]: curr dist=27.844 target dist=44.000 sink dist=653.273
+[DEBUG CTS-legalizer] [(97.914, 425.571)] currDist=27.844 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(97.914, 425.571)]=>[(97.914, 409.415)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(97.914, 425.571)]=>[(97.914, 492.730)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(97.914, 425.571)]=>[(77.072, 425.571)] is legal, dist=44.000, sinkDist=765.672
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(97.914, 425.571)]=>[(114.070, 425.571)] is legal, dist=44.000, sinkDist=801.569
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(97.435, 430.789)]=>[(77.072, 425.571)] parentPt:[(95.571, 451.072)] new branchPt is outside blockage
+  HTree level*4* bufId*17*, parent:[(95.571, 451.072)], branch:[(92.380, 475.523)], leng:27.641, sinks:8
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(92.380, 475.523)]=>[(94.280, 408.363)] is legal, dist=44.000, sinkDist=1599.772
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(92.380, 475.523)]=>[(94.280, 493.782)] is legal, dist=44.000, sinkDist=726.984
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(92.380, 475.523)]=>[(90.480, 412.163)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(92.380, 475.523)]=>[(90.480, 489.982)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(92.380, 475.523)]=>[(78.022, 477.523)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(92.380, 475.523)]=>[(113.121, 477.523)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(92.380, 475.523)]=>[(74.022, 473.523)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(92.380, 475.523)]=>[(117.121, 473.523)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength applied to legal branchPt:[(92.380, 475.523)]=>[(94.280, 493.782)] parentPt:[(95.571, 451.072)] newDist=44.000
+  HTree level*4* bufId*18*, parent:[(240.154, 468.714)], branch:[(237.434, 407.752)], leng:63.683, sinks:12
+    branchPt:[(237.434, 407.752)] is not legal, parentPt:[(240.154, 468.714)] blockages:(237.000 378.429) (280.143 421.571)
+      FLL candiate [(237.000, 378.429)]
+      FLL candiate [(237.000, 421.571)]
+      FLL candiate [(280.143, 421.571)]
+      FLL candiate [(280.143, 378.429)]
+      FLL candiate [(237.434, 378.429)]
+      FLL candiate [(237.434, 421.571)]
+      FLL candiate [(237.000, 407.752)]
+      FLL candiate [(280.143, 407.752)]
+      FLL candiate [(237.000, 398.036)]
+      FLL candiate [(238.050, 421.571)]
+      Loc [(237.000, 378.429)]: curr dist=93.439 target dist=44.000 sink dist=1240.101
+      Loc [(237.000, 421.571)]: curr dist=50.296 target dist=44.000 sink dist=1022.156
+      Loc [(280.143, 421.571)]: curr dist=87.132 target dist=44.000 sink dist=1701.425
+      Loc [(280.143, 378.429)]: curr dist=130.275 target dist=44.000 sink dist=1919.371
+      Loc [(237.434, 378.429)]: curr dist=93.006 target dist=44.000 sink dist=1236.021
+      Loc [(237.434, 421.571)]: curr dist=49.863 target dist=44.000 sink dist=1018.076
+      Loc [(237.000, 407.752)]: curr dist=64.116 target dist=44.000 sink dist=855.400
+      Loc [(280.143, 407.752)]: curr dist=100.952 target dist=44.000 sink dist=1534.670
+      Loc [(237.000, 398.036)]: curr dist=73.832 target dist=44.000 sink dist=971.991
+      Loc [(238.050, 421.571)]: curr dist=49.246 target dist=44.000 sink dist=1027.942
+[DEBUG CTS-legalizer] [(238.050, 421.571)] currDist=49.246 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(238.050, 421.571)]=>[(238.050, 426.818)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(238.050, 421.571)]=>[(238.050, 510.611)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(238.050, 421.571)]=>[(243.296, 421.571)] is illegal or dist 50.286 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(238.050, 421.571)]=>[(237.011, 421.571)] is illegal or dist 50.286 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.050, 421.571)]=>[(239.950, 424.918)] is legal, dist=44.000, sinkDist=945.338
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.050, 421.571)]=>[(239.950, 512.511)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.050, 421.571)]=>[(236.150, 428.718)] is legal, dist=44.000, sinkDist=1004.580
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.050, 421.571)]=>[(236.150, 508.711)] is legal, dist=44.000, sinkDist=2909.676
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.050, 421.571)]=>[(241.296, 423.571)] is illegal or dist 46.286 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.050, 421.571)]=>[(239.011, 423.571)] is illegal or dist 46.286 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.050, 421.571)]=>[(245.296, 419.571)] is illegal or dist 54.286 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.050, 421.571)]=>[(235.011, 419.571)] is illegal or dist 54.286 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(237.434, 407.752)]=>[(239.950, 424.918)] parentPt:[(240.154, 468.714)] new branchPt is outside blockage
+  HTree level*4* bufId*19*, parent:[(240.154, 468.714)], branch:[(237.663, 488.644)], leng:22.420, sinks:12
+    branchPt:[(237.663, 488.644)] is not legal, parentPt:[(240.154, 468.714)] blockages:(237.000 472.714) (280.143 515.857)
+      FLL candiate [(237.000, 472.714)]
+      FLL candiate [(237.000, 515.857)]
+      FLL candiate [(280.143, 515.857)]
+      FLL candiate [(280.143, 472.714)]
+      FLL candiate [(237.663, 472.714)]
+      FLL candiate [(237.663, 515.857)]
+      FLL candiate [(237.000, 488.644)]
+      FLL candiate [(280.143, 488.644)]
+      FLL candiate [(237.000, 493.950)]
+      FLL candiate [(239.654, 472.714)]
+      Loc [(237.000, 472.714)]: curr dist=7.154 target dist=44.000 sink dist=1082.067
+      Loc [(237.000, 515.857)]: curr dist=50.296 target dist=44.000 sink dist=1185.714
+      Loc [(280.143, 515.857)]: curr dist=87.132 target dist=44.000 sink dist=1859.473
+      Loc [(280.143, 472.714)]: curr dist=43.989 target dist=44.000 sink dist=1755.827
+      Loc [(237.663, 472.714)]: curr dist=6.491 target dist=44.000 sink dist=1076.151
+      Loc [(237.663, 515.857)]: curr dist=49.633 target dist=44.000 sink dist=1179.797
+      Loc [(237.000, 488.644)]: curr dist=23.083 target dist=44.000 sink dist=858.235
+      Loc [(280.143, 488.644)]: curr dist=59.919 target dist=44.000 sink dist=1531.995
+      Loc [(237.000, 493.950)]: curr dist=28.389 target dist=44.000 sink dist=921.912
+      Loc [(239.654, 472.714)]: curr dist=4.500 target dist=44.000 sink dist=1108.001
+[DEBUG CTS-legalizer] [(280.143, 472.714)] currDist=43.989 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(280.143, 472.714)]=>[(280.143, 464.704)] is legal, dist=44.000, sinkDist=1222.258
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(280.143, 472.714)]=>[(280.143, 472.725)] is legal, dist=44.000, sinkDist=1054.981
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(280.143, 472.714)]=>[(200.154, 472.714)] is legal, dist=44.000, sinkDist=1842.828
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(280.143, 472.714)]=>[(280.154, 472.714)] is legal, dist=44.000, sinkDist=1055.089
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(237.663, 488.644)]=>[(280.143, 472.725)] parentPt:[(240.154, 468.714)] new branchPt is outside blockage
+  HTree level*4* bufId*20*, parent:[(107.213, 614.143)], branch:[(96.652, 599.430)], leng:25.275, sinks:8
+    branchPt:[(96.652, 599.430)] is not legal, parentPt:[(107.213, 614.143)] blockages:(95.571 567.000) (138.714 610.143)
+      FLL candiate [(95.571, 567.000)]
+      FLL candiate [(95.571, 610.143)]
+      FLL candiate [(138.714, 610.143)]
+      FLL candiate [(138.714, 567.000)]
+      FLL candiate [(96.652, 567.000)]
+      FLL candiate [(96.652, 610.143)]
+      FLL candiate [(95.571, 599.430)]
+      FLL candiate [(138.714, 599.430)]
+      FLL candiate [(95.571, 597.924)]
+      FLL candiate [(104.342, 610.143)]
+      Loc [(95.571, 567.000)]: curr dist=58.785 target dist=44.000 sink dist=833.795
+      Loc [(95.571, 610.143)]: curr dist=15.642 target dist=44.000 sink dist=661.287
+      Loc [(138.714, 610.143)]: curr dist=35.501 target dist=44.000 sink dist=1161.102
+      Loc [(138.714, 567.000)]: curr dist=78.644 target dist=44.000 sink dist=1333.610
+      Loc [(96.652, 567.000)]: curr dist=57.704 target dist=44.000 sink dist=828.861
+      Loc [(96.652, 610.143)]: curr dist=14.561 target dist=44.000 sink dist=656.354
+      Loc [(95.571, 599.430)]: curr dist=26.355 target dist=44.000 sink dist=574.358
+      Loc [(138.714, 599.430)]: curr dist=46.214 target dist=44.000 sink dist=1074.173
+      Loc [(95.571, 597.924)]: curr dist=27.860 target dist=44.000 sink dist=586.400
+      Loc [(104.342, 610.143)]: curr dist=6.871 target dist=44.000 sink dist=748.635
+[DEBUG CTS-legalizer] [(138.714, 599.430)] currDist=46.214 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(138.714, 599.430)]=>[(138.714, 601.644)] is legal, dist=44.000, sinkDist=755.389
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(138.714, 599.430)]=>[(138.714, 626.642)] is legal, dist=44.000, sinkDist=1088.586
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(138.714, 599.430)]=>[(77.927, 599.430)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(138.714, 599.430)]=>[(136.500, 599.430)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(96.652, 599.430)]=>[(138.714, 601.644)] parentPt:[(107.213, 614.143)] new branchPt is outside blockage
+  HTree level*4* bufId*21*, parent:[(107.213, 614.143)], branch:[(105.747, 639.049)], leng:26.372, sinks:8
+    branchPt:[(105.747, 639.049)] is not legal, parentPt:[(107.213, 614.143)] blockages:(95.571 614.143) (138.714 657.286)
+      FLL candiate [(95.571, 614.143)]
+      FLL candiate [(95.571, 657.286)]
+      FLL candiate [(138.714, 657.286)]
+      FLL candiate [(138.714, 614.143)]
+      FLL candiate [(105.747, 614.143)]
+      FLL candiate [(105.747, 657.286)]
+      FLL candiate [(95.571, 639.049)]
+      FLL candiate [(138.714, 639.049)]
+      FLL candiate [(104.673, 657.286)]
+      Loc [(95.571, 614.143)]: curr dist=11.642 target dist=44.000 sink dist=1190.283
+      Loc [(95.571, 657.286)]: curr dist=54.785 target dist=44.000 sink dist=793.014
+      Loc [(138.714, 657.286)]: curr dist=74.644 target dist=44.000 sink dist=1147.312
+      Loc [(138.714, 614.143)]: curr dist=31.501 target dist=44.000 sink dist=1544.580
+      Loc [(105.747, 614.143)]: curr dist=1.466 target dist=44.000 sink dist=1148.970
+      Loc [(105.747, 657.286)]: curr dist=44.609 target dist=44.000 sink dist=751.701
+      Loc [(95.571, 639.049)]: curr dist=36.548 target dist=44.000 sink dist=791.791
+      Loc [(138.714, 639.049)]: curr dist=56.407 target dist=44.000 sink dist=1146.089
+      Loc [(104.673, 657.286)]: curr dist=45.683 target dist=44.000 sink dist=755.996
+[DEBUG CTS-legalizer] [(105.747, 657.286)] currDist=44.609 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(105.747, 657.286)]=>[(105.747, 571.609)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(105.747, 657.286)]=>[(105.747, 656.676)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(105.747, 657.286)]=>[(106.356, 657.286)] is legal, dist=44.000, sinkDist=613.116
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(105.747, 657.286)]=>[(108.070, 657.286)] is legal, dist=44.000, sinkDist=633.687
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(105.747, 639.049)]=>[(106.356, 657.286)] parentPt:[(107.213, 614.143)] new branchPt is outside blockage
+  HTree level*4* bufId*22*, parent:[(236.609, 645.982)], branch:[(237.340, 585.085)], leng:61.628, sinks:12
+    branchPt:[(237.340, 585.085)] is not legal, parentPt:[(236.609, 645.982)] blockages:(237.000 567.000) (280.143 610.143)
+      FLL candiate [(237.000, 567.000)]
+      FLL candiate [(237.000, 610.143)]
+      FLL candiate [(280.143, 610.143)]
+      FLL candiate [(280.143, 567.000)]
+      FLL candiate [(237.340, 567.000)]
+      FLL candiate [(237.340, 610.143)]
+      FLL candiate [(237.000, 585.085)]
+      FLL candiate [(280.143, 585.085)]
+      FLL candiate [(237.557, 567.000)]
+      FLL candiate [(237.039, 610.143)]
+      Loc [(237.000, 567.000)]: curr dist=79.373 target dist=44.000 sink dist=1101.734
+      Loc [(237.000, 610.143)]: curr dist=36.230 target dist=44.000 sink dist=1153.347
+      Loc [(280.143, 610.143)]: curr dist=79.373 target dist=44.000 sink dist=1834.858
+      Loc [(280.143, 567.000)]: curr dist=122.516 target dist=44.000 sink dist=1783.244
+      Loc [(237.340, 567.000)]: curr dist=79.713 target dist=44.000 sink dist=1098.401
+      Loc [(237.340, 610.143)]: curr dist=36.570 target dist=44.000 sink dist=1150.015
+      Loc [(237.000, 585.085)]: curr dist=61.288 target dist=44.000 sink dist=851.738
+      Loc [(280.143, 585.085)]: curr dist=104.430 target dist=44.000 sink dist=1533.249
+      Loc [(237.557, 567.000)]: curr dist=79.930 target dist=44.000 sink dist=1101.874
+      Loc [(237.039, 610.143)]: curr dist=36.269 target dist=44.000 sink dist=1152.874
+[DEBUG CTS-legalizer] [(237.340, 610.143)] currDist=36.570 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(237.340, 610.143)]=>[(237.340, 602.713)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(237.340, 610.143)]=>[(237.340, 689.251)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(237.340, 610.143)]=>[(228.449, 610.143)] is legal, dist=44.000, sinkDist=955.272
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(237.340, 610.143)]=>[(244.770, 610.143)] is legal, dist=44.000, sinkDist=968.200
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(237.340, 585.085)]=>[(228.449, 610.143)] parentPt:[(236.609, 645.982)] new branchPt is outside blockage
+  HTree level*4* bufId*23*, parent:[(236.609, 645.982)], branch:[(242.771, 662.393)], leng:22.572, sinks:10
+    branchPt:[(242.771, 662.393)] is not legal, parentPt:[(236.609, 645.982)] blockages:(237.000 661.286) (280.143 704.429)
+      FLL candiate [(237.000, 661.286)]
+      FLL candiate [(237.000, 704.429)]
+      FLL candiate [(280.143, 704.429)]
+      FLL candiate [(280.143, 661.286)]
+      FLL candiate [(242.771, 661.286)]
+      FLL candiate [(242.771, 704.429)]
+      FLL candiate [(237.000, 662.393)]
+      FLL candiate [(280.143, 662.393)]
+      FLL candiate [(242.355, 661.286)]
+      FLL candiate [(258.553, 704.429)]
+      Loc [(237.000, 661.286)]: curr dist=15.694 target dist=44.000 sink dist=742.477
+      Loc [(237.000, 704.429)]: curr dist=58.837 target dist=44.000 sink dist=1206.443
+      Loc [(280.143, 704.429)]: curr dist=101.980 target dist=44.000 sink dist=1608.131
+      Loc [(280.143, 661.286)]: curr dist=58.837 target dist=44.000 sink dist=1144.166
+      Loc [(242.771, 661.286)]: curr dist=21.465 target dist=44.000 sink dist=695.700
+      Loc [(242.771, 704.429)]: curr dist=64.608 target dist=44.000 sink dist=1159.666
+      Loc [(237.000, 662.393)]: curr dist=16.801 target dist=44.000 sink dist=726.975
+      Loc [(280.143, 662.393)]: curr dist=59.944 target dist=44.000 sink dist=1128.664
+      Loc [(242.355, 661.286)]: curr dist=21.049 target dist=44.000 sink dist=699.026
+      Loc [(258.553, 704.429)]: curr dist=80.390 target dist=44.000 sink dist=1349.050
+[DEBUG CTS-legalizer] [(237.000, 704.429)] currDist=58.837 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(237.000, 704.429)]=>[(237.000, 602.373)] is legal, dist=44.000, sinkDist=2258.466
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(237.000, 704.429)]=>[(237.000, 689.592)] is legal, dist=44.000, sinkDist=845.853
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(237.000, 704.429)]=>[(251.056, 704.429)] is illegal or dist 72.893 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(237.000, 704.429)]=>[(222.163, 704.429)] is illegal or dist 72.893 != 44.000
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(242.771, 662.393)]=>[(237.000, 689.592)] parentPt:[(236.609, 645.982)] new branchPt is outside blockage
+  HTree level*4* bufId*24*, parent:[(425.571, 436.501)], branch:[(445.357, 419.715)], leng:36.572, sinks:12
+    branchPt:[(445.357, 419.715)] is not legal, parentPt:[(425.571, 436.501)] blockages:(425.571 378.429) (468.714 421.571)
+      FLL candiate [(425.571, 378.429)]
+      FLL candiate [(425.571, 421.571)]
+      FLL candiate [(468.714, 421.571)]
+      FLL candiate [(468.714, 378.429)]
+      FLL candiate [(445.357, 378.429)]
+      FLL candiate [(445.357, 421.571)]
+      FLL candiate [(425.571, 419.715)]
+      FLL candiate [(468.714, 419.715)]
+      FLL candiate [(468.714, 399.899)]
+      FLL candiate [(443.169, 421.571)]
+      Loc [(425.571, 378.429)]: curr dist=58.072 target dist=44.000 sink dist=1424.467
+      Loc [(425.571, 421.571)]: curr dist=14.930 target dist=44.000 sink dist=920.304
+      Loc [(468.714, 421.571)]: curr dist=58.072 target dist=44.000 sink dist=1135.727
+      Loc [(468.714, 378.429)]: curr dist=101.215 target dist=44.000 sink dist=1639.889
+      Loc [(445.357, 378.429)]: curr dist=77.858 target dist=44.000 sink dist=1266.179
+      Loc [(445.357, 421.571)]: curr dist=34.716 target dist=44.000 sink dist=762.016
+      Loc [(425.571, 419.715)]: curr dist=16.786 target dist=44.000 sink dist=897.107
+      Loc [(468.714, 419.715)]: curr dist=59.929 target dist=44.000 sink dist=1112.529
+      Loc [(468.714, 399.899)]: curr dist=79.745 target dist=44.000 sink dist=1350.320
+      Loc [(443.169, 421.571)]: curr dist=32.527 target dist=44.000 sink dist=779.524
+[DEBUG CTS-legalizer] [(445.357, 421.571)] currDist=34.716 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(445.357, 421.571)]=>[(445.357, 412.287)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(445.357, 421.571)]=>[(445.357, 460.715)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(445.357, 421.571)]=>[(396.501, 421.571)] is legal, dist=44.000, sinkDist=1476.753
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(445.357, 421.571)]=>[(454.642, 421.571)] is legal, dist=44.000, sinkDist=888.287
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(445.357, 419.715)]=>[(454.642, 421.571)] parentPt:[(425.571, 436.501)] new branchPt is outside blockage
+  HTree level*4* bufId*25*, parent:[(425.571, 436.501)], branch:[(443.288, 488.759)], leng:69.974, sinks:13
+    branchPt:[(443.288, 488.759)] is not legal, parentPt:[(425.571, 436.501)] blockages:(425.571 472.714) (468.714 515.857)
+      FLL candiate [(425.571, 472.714)]
+      FLL candiate [(425.571, 515.857)]
+      FLL candiate [(468.714, 515.857)]
+      FLL candiate [(468.714, 472.714)]
+      FLL candiate [(443.288, 472.714)]
+      FLL candiate [(443.288, 515.857)]
+      FLL candiate [(425.571, 488.759)]
+      FLL candiate [(468.714, 488.759)]
+      FLL candiate [(437.848, 472.714)]
+      FLL candiate [(452.475, 515.857)]
+      Loc [(425.571, 472.714)]: curr dist=36.213 target dist=44.000 sink dist=1186.466
+      Loc [(425.571, 515.857)]: curr dist=79.356 target dist=44.000 sink dist=1261.029
+      Loc [(468.714, 515.857)]: curr dist=122.499 target dist=44.000 sink dist=1576.974
+      Loc [(468.714, 472.714)]: curr dist=79.356 target dist=44.000 sink dist=1502.411
+      Loc [(443.288, 472.714)]: curr dist=53.930 target dist=44.000 sink dist=1044.735
+      Loc [(443.288, 515.857)]: curr dist=97.072 target dist=44.000 sink dist=1119.298
+      Loc [(425.571, 488.759)]: curr dist=52.257 target dist=44.000 sink dist=934.928
+      Loc [(468.714, 488.759)]: curr dist=95.400 target dist=44.000 sink dist=1250.874
+      Loc [(437.848, 472.714)]: curr dist=48.490 target dist=44.000 sink dist=1088.249
+      Loc [(452.475, 515.857)]: curr dist=106.259 target dist=44.000 sink dist=1284.664
+[DEBUG CTS-legalizer] [(437.848, 472.714)] currDist=48.490 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(437.848, 472.714)]=>[(437.848, 404.778)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(437.848, 472.714)]=>[(437.848, 468.224)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(437.848, 472.714)]=>[(417.785, 472.714)] is legal, dist=44.000, sinkDist=1075.336
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(437.848, 472.714)]=>[(433.358, 472.714)] is legal, dist=44.000, sinkDist=844.885
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(443.288, 488.759)]=>[(433.358, 472.714)] parentPt:[(425.571, 436.501)] new branchPt is outside blockage
+  HTree level*4* bufId*26*, parent:[(557.358, 468.714)], branch:[(612.653, 432.724)], leng:91.285, sinks:10
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(612.653, 432.724)]=>[(614.553, 481.909)] is illegal or dist 70.389 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(612.653, 432.724)]=>[(614.553, 455.520)] is illegal or dist 70.389 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(612.653, 432.724)]=>[(610.753, 478.109)] is illegal or dist 62.789 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(612.653, 432.724)]=>[(610.753, 459.320)] is illegal or dist 62.789 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(612.653, 432.724)]=>[(547.348, 434.724)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(612.653, 432.724)]=>[(567.368, 434.724)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(612.653, 432.724)]=>[(551.348, 430.724)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(612.653, 432.724)]=>[(563.368, 430.724)] is legal, dist=44.000, sinkDist=1492.439
+[DEBUG CTS-legalizer] adjustBranchLength applied to legal branchPt:[(612.653, 432.724)]=>[(563.368, 430.724)] parentPt:[(557.358, 468.714)] newDist=44.000
+  HTree level*4* bufId*27*, parent:[(557.358, 468.714)], branch:[(616.787, 480.959)], leng:71.674, sinks:11
+    branchPt:[(616.787, 480.959)] is not legal, parentPt:[(557.358, 468.714)] blockages:(614.143 472.714) (657.286 515.857)
+      FLL candiate [(614.143, 472.714)]
+      FLL candiate [(614.143, 515.857)]
+      FLL candiate [(657.286, 515.857)]
+      FLL candiate [(657.286, 472.714)]
+      FLL candiate [(616.787, 472.714)]
+      FLL candiate [(616.787, 515.857)]
+      FLL candiate [(614.143, 480.959)]
+      FLL candiate [(657.286, 480.959)]
+      FLL candiate [(614.143, 480.414)]
+      FLL candiate [(657.286, 489.303)]
+      Loc [(614.143, 472.714)]: curr dist=60.785 target dist=44.000 sink dist=856.573
+      Loc [(614.143, 515.857)]: curr dist=103.928 target dist=44.000 sink dist=1081.393
+      Loc [(657.286, 515.857)]: curr dist=147.070 target dist=44.000 sink dist=1367.749
+      Loc [(657.286, 472.714)]: curr dist=103.928 target dist=44.000 sink dist=1142.929
+      Loc [(616.787, 472.714)]: curr dist=63.429 target dist=44.000 sink dist=818.941
+      Loc [(616.787, 515.857)]: curr dist=106.572 target dist=44.000 sink dist=1043.761
+      Loc [(614.143, 480.959)]: curr dist=69.029 target dist=44.000 sink dist=731.798
+      Loc [(657.286, 480.959)]: curr dist=112.172 target dist=44.000 sink dist=1018.155
+      Loc [(614.143, 480.414)]: curr dist=68.484 target dist=44.000 sink dist=739.198
+      Loc [(657.286, 489.303)]: curr dist=120.516 target dist=44.000 sink dist=1101.597
+[DEBUG CTS-legalizer] [(614.143, 472.714)] currDist=60.785 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(614.143, 472.714)]=>[(614.143, 481.499)] is illegal or dist 69.569 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(614.143, 472.714)]=>[(614.143, 455.930)] is illegal or dist 69.569 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(614.143, 472.714)]=>[(517.358, 472.714)] is legal, dist=44.000, sinkDist=2678.097
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(614.143, 472.714)]=>[(597.358, 472.714)] is legal, dist=44.000, sinkDist=1038.919
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(616.787, 480.959)]=>[(597.358, 472.714)] parentPt:[(557.358, 468.714)] new branchPt is outside blockage
+  HTree level*4* bufId*28*, parent:[(451.247, 614.143)], branch:[(433.130, 598.659)], leng:33.601, sinks:10
+    branchPt:[(433.130, 598.659)] is not legal, parentPt:[(451.247, 614.143)] blockages:(425.571 567.000) (468.714 610.143)
+      FLL candiate [(425.571, 567.000)]
+      FLL candiate [(425.571, 610.143)]
+      FLL candiate [(468.714, 610.143)]
+      FLL candiate [(468.714, 567.000)]
+      FLL candiate [(433.130, 567.000)]
+      FLL candiate [(433.130, 610.143)]
+      FLL candiate [(425.571, 598.659)]
+      FLL candiate [(468.714, 598.659)]
+      FLL candiate [(425.571, 592.199)]
+      FLL candiate [(446.567, 610.143)]
+      Loc [(425.571, 567.000)]: curr dist=72.819 target dist=44.000 sink dist=847.596
+      Loc [(425.571, 610.143)]: curr dist=29.676 target dist=44.000 sink dist=613.220
+      Loc [(468.714, 610.143)]: curr dist=21.467 target dist=44.000 sink dist=1152.338
+      Loc [(468.714, 567.000)]: curr dist=64.610 target dist=44.000 sink dist=1386.714
+      Loc [(433.130, 567.000)]: curr dist=65.260 target dist=44.000 sink dist=817.363
+      Loc [(433.130, 610.143)]: curr dist=22.117 target dist=44.000 sink dist=582.987
+      Loc [(425.571, 598.659)]: curr dist=41.160 target dist=44.000 sink dist=497.771
+      Loc [(468.714, 598.659)]: curr dist=32.951 target dist=44.000 sink dist=1036.889
+      Loc [(425.571, 592.199)]: curr dist=47.619 target dist=44.000 sink dist=562.367
+      Loc [(446.567, 610.143)]: curr dist=8.680 target dist=44.000 sink dist=797.980
+[DEBUG CTS-legalizer] [(425.571, 598.659)] currDist=41.160 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(425.571, 598.659)]=>[(425.571, 595.819)] is legal, dist=44.000, sinkDist=450.591
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(425.571, 598.659)]=>[(425.571, 632.467)] is legal, dist=44.000, sinkDist=933.774
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(425.571, 598.659)]=>[(422.731, 598.659)] is legal, dist=44.000, sinkDist=464.942
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(425.571, 598.659)]=>[(479.763, 598.659)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(433.130, 598.659)]=>[(425.571, 595.819)] parentPt:[(451.247, 614.143)] new branchPt is outside blockage
+  HTree level*4* bufId*29*, parent:[(451.247, 614.143)], branch:[(441.341, 648.236)], leng:44.000, sinks:8
+    branchPt:[(441.341, 648.236)] is not legal, parentPt:[(451.247, 614.143)] blockages:(425.571 614.143) (468.714 657.286)
+      FLL candiate [(425.571, 614.143)]
+      FLL candiate [(425.571, 657.286)]
+      FLL candiate [(468.714, 657.286)]
+      FLL candiate [(468.714, 614.143)]
+      FLL candiate [(441.341, 614.143)]
+      FLL candiate [(441.341, 657.286)]
+      FLL candiate [(425.571, 648.236)]
+      FLL candiate [(468.714, 648.236)]
+      FLL candiate [(438.711, 657.286)]
+      Loc [(425.571, 614.143)]: curr dist=25.676 target dist=44.000 sink dist=1102.176
+      Loc [(425.571, 657.286)]: curr dist=68.819 target dist=44.000 sink dist=557.291
+      Loc [(468.714, 657.286)]: curr dist=60.610 target dist=44.000 sink dist=822.391
+      Loc [(468.714, 614.143)]: curr dist=17.467 target dist=44.000 sink dist=1367.275
+      Loc [(441.341, 614.143)]: curr dist=9.906 target dist=44.000 sink dist=1038.793
+      Loc [(441.341, 657.286)]: curr dist=53.049 target dist=44.000 sink dist=493.909
+      Loc [(425.571, 648.236)]: curr dist=59.769 target dist=44.000 sink dist=556.680
+      Loc [(468.714, 648.236)]: curr dist=51.561 target dist=44.000 sink dist=821.780
+      Loc [(438.711, 657.286)]: curr dist=55.679 target dist=44.000 sink dist=504.426
+[DEBUG CTS-legalizer] [(468.714, 648.236)] currDist=51.561 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(468.714, 648.236)]=>[(468.714, 587.610)] is legal, dist=44.000, sinkDist=1572.814
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(468.714, 648.236)]=>[(468.714, 640.676)] is legal, dist=44.000, sinkDist=723.760
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(468.714, 648.236)]=>[(441.341, 648.236)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(468.714, 648.236)]=>[(461.154, 648.236)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(441.341, 648.236)]=>[(468.714, 640.676)] parentPt:[(451.247, 614.143)] new branchPt is outside blockage
+  HTree level*4* bufId*30*, parent:[(582.642, 614.143)], branch:[(602.268, 599.918)], leng:33.852, sinks:12
+    branchPt:[(602.268, 599.918)] is not legal, parentPt:[(582.642, 614.143)] blockages:(567.000 567.000) (610.143 610.143)
+      FLL candiate [(567.000, 567.000)]
+      FLL candiate [(567.000, 610.143)]
+      FLL candiate [(610.143, 610.143)]
+      FLL candiate [(610.143, 567.000)]
+      FLL candiate [(602.268, 567.000)]
+      FLL candiate [(602.268, 610.143)]
+      FLL candiate [(567.000, 599.918)]
+      FLL candiate [(610.143, 599.918)]
+      FLL candiate [(610.143, 594.211)]
+      FLL candiate [(588.161, 610.143)]
+      Loc [(567.000, 567.000)]: curr dist=62.785 target dist=44.000 sink dist=1880.424
+      Loc [(567.000, 610.143)]: curr dist=19.642 target dist=44.000 sink dist=1583.201
+      Loc [(610.143, 610.143)]: curr dist=31.501 target dist=44.000 sink dist=1081.289
+      Loc [(610.143, 567.000)]: curr dist=74.644 target dist=44.000 sink dist=1378.511
+      Loc [(602.268, 567.000)]: curr dist=66.770 target dist=44.000 sink dist=1315.516
+      Loc [(602.268, 610.143)]: curr dist=23.627 target dist=44.000 sink dist=1018.294
+      Loc [(567.000, 599.918)]: curr dist=29.867 target dist=44.000 sink dist=1459.585
+      Loc [(610.143, 599.918)]: curr dist=41.726 target dist=44.000 sink dist=957.673
+      Loc [(610.143, 594.211)]: curr dist=47.433 target dist=44.000 sink dist=1026.158
+      Loc [(588.161, 610.143)]: curr dist=9.519 target dist=44.000 sink dist=1244.018
+[DEBUG CTS-legalizer] [(610.143, 599.918)] currDist=41.726 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(610.143, 599.918)]=>[(610.143, 597.644)] is legal, dist=44.000, sinkDist=890.468
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(610.143, 599.918)]=>[(610.143, 630.642)] is legal, dist=44.000, sinkDist=1428.483
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(610.143, 599.918)]=>[(552.867, 599.918)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(610.143, 599.918)]=>[(612.417, 599.918)] is legal, dist=44.000, sinkDist=881.372
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(602.268, 599.918)]=>[(612.417, 599.918)] parentPt:[(582.642, 614.143)] new branchPt is outside blockage
+  HTree level*4* bufId*31*, parent:[(582.642, 614.143)], branch:[(591.398, 649.387)], leng:44.000, sinks:10
+    branchPt:[(591.398, 649.387)] is not legal, parentPt:[(582.642, 614.143)] blockages:(567.000 614.143) (610.143 657.286)
+      FLL candiate [(567.000, 614.143)]
+      FLL candiate [(567.000, 657.286)]
+      FLL candiate [(610.143, 657.286)]
+      FLL candiate [(610.143, 614.143)]
+      FLL candiate [(591.398, 614.143)]
+      FLL candiate [(591.398, 657.286)]
+      FLL candiate [(567.000, 649.387)]
+      FLL candiate [(610.143, 649.387)]
+      FLL candiate [(593.360, 657.286)]
+      Loc [(567.000, 614.143)]: curr dist=15.642 target dist=44.000 sink dist=1805.775
+      Loc [(567.000, 657.286)]: curr dist=58.785 target dist=44.000 sink dist=1101.809
+      Loc [(610.143, 657.286)]: curr dist=70.644 target dist=44.000 sink dist=958.388
+      Loc [(610.143, 614.143)]: curr dist=27.501 target dist=44.000 sink dist=1662.354
+      Loc [(591.398, 614.143)]: curr dist=8.756 target dist=44.000 sink dist=1512.392
+      Loc [(591.398, 657.286)]: curr dist=51.899 target dist=44.000 sink dist=808.426
+      Loc [(567.000, 649.387)]: curr dist=50.886 target dist=44.000 sink dist=1100.892
+      Loc [(610.143, 649.387)]: curr dist=62.745 target dist=44.000 sink dist=957.471
+      Loc [(593.360, 657.286)]: curr dist=53.861 target dist=44.000 sink dist=824.124
+[DEBUG CTS-legalizer] [(567.000, 649.387)] currDist=50.886 != targetDist=44.000, adjusting
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(567.000, 649.387)]=>[(567.000, 585.785)] is legal, dist=44.000, sinkDist=2128.963
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(567.000, 649.387)]=>[(567.000, 642.501)] is legal, dist=44.000, sinkDist=994.635
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(567.000, 649.387)]=>[(573.886, 649.387)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(567.000, 649.387)]=>[(591.398, 649.387)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(591.398, 649.387)]=>[(567.000, 642.501)] parentPt:[(582.642, 614.143)] new branchPt is outside blockage
+HTree after legalization -------
+HTree: top buf loc:[(331.439, 353.346)]
+HTree: level*0* bufId*0*: branchPt:[(343.950, 189.857)] topo len:176.000 dist to parent:176.000 weighted sink len:41943.488 parentPt:[(331.439, 353.346)]
+HTree: level*0* bufId*1*: branchPt:[(344.928, 515.857)] topo len:176.000 dist to parent:176.000 weighted sink len:44159.376 parentPt:[(331.439, 353.346)]
+-------------------------------------------------
+HTree: level*1* bufId*0*: branchPt:[(189.857, 177.950)] topo len:166.000 dist to parent:166.000 weighted sink len:11579.708 parentPt:[(343.950, 189.857)]
+HTree: level*1* bufId*1*: branchPt:[(505.950, 185.857)] topo len:166.000 dist to parent:166.000 weighted sink len:15585.145 parentPt:[(343.950, 189.857)]
+HTree: level*1* bufId*2*: branchPt:[(189.857, 526.787)] topo len:166.000 dist to parent:166.000 weighted sink len:13195.414 parentPt:[(344.928, 515.857)]
+HTree: level*1* bufId*3*: branchPt:[(472.714, 554.070)] topo len:166.000 dist to parent:166.000 weighted sink len:16141.580 parentPt:[(344.928, 515.857)]
+-------------------------------------------------
+HTree: level*2* bufId*0*: branchPt:[(184.235, 95.571)] topo len:88.000 dist to parent:88.000 weighted sink len:3626.243 parentPt:[(189.857, 177.950)]
+HTree: level*2* bufId*1*: branchPt:[(160.907, 237.000)] topo len:88.000 dist to parent:88.000 weighted sink len:5160.647 parentPt:[(189.857, 177.950)]
+HTree: level*2* bufId*2*: branchPt:[(519.857, 111.765)] topo len:88.000 dist to parent:88.000 weighted sink len:5763.054 parentPt:[(505.950, 185.857)]
+HTree: level*2* bufId*3*: branchPt:[(519.857, 259.950)] topo len:88.000 dist to parent:88.000 weighted sink len:6223.506 parentPt:[(505.950, 185.857)]
+HTree: level*2* bufId*4*: branchPt:[(159.042, 469.602)] topo len:88.000 dist to parent:88.000 weighted sink len:5160.583 parentPt:[(189.857, 526.787)]
+HTree: level*2* bufId*5*: branchPt:[(187.831, 612.761)] topo len:88.000 dist to parent:88.000 weighted sink len:4738.602 parentPt:[(189.857, 526.787)]
+HTree: level*2* bufId*6*: branchPt:[(475.358, 468.714)] topo len:88.000 dist to parent:88.000 weighted sink len:6755.011 parentPt:[(472.714, 554.070)]
+HTree: level*2* bufId*7*: branchPt:[(516.945, 597.840)] topo len:88.000 dist to parent:88.000 weighted sink len:5655.974 parentPt:[(472.714, 554.070)]
+-------------------------------------------------
+HTree: level*3* bufId*0*: branchPt:[(102.235, 95.571)] topo len:82.000 dist to parent:82.000 weighted sink len:1187.739 parentPt:[(184.235, 95.571)]
+HTree: level*3* bufId*1*: branchPt:[(219.093, 48.429)] topo len:82.000 dist to parent:82.000 weighted sink len:1916.026 parentPt:[(184.235, 95.571)]
+HTree: level*3* bufId*2*: branchPt:[(94.139, 252.232)] topo len:82.000 dist to parent:82.000 weighted sink len:1508.571 parentPt:[(160.907, 237.000)]
+HTree: level*3* bufId*3*: branchPt:[(241.973, 236.066)] topo len:82.000 dist to parent:82.000 weighted sink len:2341.048 parentPt:[(160.907, 237.000)]
+HTree: level*3* bufId*4*: branchPt:[(458.050, 91.571)] topo len:82.000 dist to parent:82.000 weighted sink len:1643.854 parentPt:[(519.857, 111.765)]
+HTree: level*3* bufId*5*: branchPt:[(585.664, 95.571)] topo len:82.000 dist to parent:82.000 weighted sink len:1916.997 parentPt:[(519.857, 111.765)]
+HTree: level*3* bufId*6*: branchPt:[(458.050, 280.143)] topo len:82.000 dist to parent:82.000 weighted sink len:2149.733 parentPt:[(519.857, 259.950)]
+HTree: level*3* bufId*7*: branchPt:[(578.907, 237.000)] topo len:82.000 dist to parent:82.000 weighted sink len:2143.170 parentPt:[(519.857, 259.950)]
+HTree: level*3* bufId*8*: branchPt:[(95.571, 451.072)] topo len:82.000 dist to parent:82.000 weighted sink len:1508.571 parentPt:[(159.042, 469.602)]
+HTree: level*3* bufId*9*: branchPt:[(240.154, 468.714)] topo len:82.000 dist to parent:82.000 weighted sink len:2292.208 parentPt:[(159.042, 469.602)]
+HTree: level*3* bufId*10*: branchPt:[(107.213, 614.143)] topo len:82.000 dist to parent:82.000 weighted sink len:1600.483 parentPt:[(187.831, 612.761)]
+HTree: level*3* bufId*11*: branchPt:[(236.609, 645.982)] topo len:82.000 dist to parent:82.000 weighted sink len:2030.599 parentPt:[(187.831, 612.761)]
+HTree: level*3* bufId*12*: branchPt:[(425.571, 436.501)] topo len:82.000 dist to parent:82.000 weighted sink len:1981.194 parentPt:[(475.358, 468.714)]
+HTree: level*3* bufId*13*: branchPt:[(557.358, 468.714)] topo len:82.000 dist to parent:82.000 weighted sink len:2615.103 parentPt:[(475.358, 468.714)]
+HTree: level*3* bufId*14*: branchPt:[(451.247, 614.143)] topo len:82.000 dist to parent:82.000 weighted sink len:1398.524 parentPt:[(516.945, 597.840)]
+HTree: level*3* bufId*15*: branchPt:[(582.642, 614.143)] topo len:82.000 dist to parent:82.000 weighted sink len:2175.564 parentPt:[(516.945, 597.840)]
+-------------------------------------------------
+HTree: level*4* bufId*0*: branchPt:[(138.714, 88.050)] topo len:44.000 dist to parent:44.000 weighted sink len:755.540 parentPt:[(102.235, 95.571)]
+HTree: level*4* bufId*1*: branchPt:[(101.378, 138.714)] topo len:44.000 dist to parent:44.000 weighted sink len:376.201 parentPt:[(102.235, 95.571)]
+HTree: level*4* bufId*2*: branchPt:[(219.950, 91.571)] topo len:44.000 dist to parent:44.000 weighted sink len:883.296 parentPt:[(219.093, 48.429)]
+HTree: level*4* bufId*3*: branchPt:[(237.000, 74.521)] topo len:44.000 dist to parent:44.000 weighted sink len:1085.295 parentPt:[(219.093, 48.429)]
+HTree: level*4* bufId*4*: branchPt:[(91.571, 210.800)] topo len:44.000 dist to parent:44.000 weighted sink len:565.714 parentPt:[(94.139, 252.232)]
+HTree: level*4* bufId*5*: branchPt:[(78.050, 280.143)] topo len:44.000 dist to parent:44.000 weighted sink len:565.714 parentPt:[(94.139, 252.232)]
+HTree: level*4* bufId*6*: branchPt:[(280.143, 230.235)] topo len:44.000 dist to parent:44.000 weighted sink len:1022.614 parentPt:[(241.973, 236.066)]
+HTree: level*4* bufId*7*: branchPt:[(236.906, 274.998)] topo len:44.000 dist to parent:44.000 weighted sink len:965.329 parentPt:[(241.973, 236.066)]
+HTree: level*4* bufId*8*: branchPt:[(468.714, 58.235)] topo len:44.000 dist to parent:44.000 weighted sink len:614.579 parentPt:[(458.050, 91.571)]
+HTree: level*4* bufId*9*: branchPt:[(425.571, 103.093)] topo len:44.000 dist to parent:44.000 weighted sink len:537.871 parentPt:[(458.050, 91.571)]
+HTree: level*4* bufId*10*: branchPt:[(567.000, 70.235)] topo len:44.000 dist to parent:44.000 weighted sink len:999.513 parentPt:[(585.664, 95.571)]
+HTree: level*4* bufId*11*: branchPt:[(612.785, 112.451)] topo len:44.000 dist to parent:44.000 weighted sink len:649.353 parentPt:[(585.664, 95.571)]
+HTree: level*4* bufId*12*: branchPt:[(468.714, 246.807)] topo len:44.000 dist to parent:44.000 weighted sink len:943.488 parentPt:[(458.050, 280.143)]
+HTree: level*4* bufId*13*: branchPt:[(425.571, 291.664)] topo len:44.000 dist to parent:44.000 weighted sink len:664.445 parentPt:[(458.050, 280.143)]
+HTree: level*4* bufId*14*: branchPt:[(621.008, 235.100)] topo len:44.000 dist to parent:44.000 weighted sink len:606.214 parentPt:[(578.907, 237.000)]
+HTree: level*4* bufId*15*: branchPt:[(611.746, 248.162)] topo len:44.000 dist to parent:44.000 weighted sink len:994.956 parentPt:[(578.907, 237.000)]
+HTree: level*4* bufId*16*: branchPt:[(77.072, 425.571)] topo len:44.000 dist to parent:44.000 weighted sink len:598.937 parentPt:[(95.571, 451.072)]
+HTree: level*4* bufId*17*: branchPt:[(94.280, 493.782)] topo len:44.000 dist to parent:44.000 weighted sink len:565.714 parentPt:[(95.571, 451.072)]
+HTree: level*4* bufId*18*: branchPt:[(239.950, 424.918)] topo len:44.000 dist to parent:44.000 weighted sink len:882.382 parentPt:[(240.154, 468.714)]
+HTree: level*4* bufId*19*: branchPt:[(280.143, 472.725)] topo len:44.000 dist to parent:44.000 weighted sink len:1054.852 parentPt:[(240.154, 468.714)]
+HTree: level*4* bufId*20*: branchPt:[(138.714, 601.644)] topo len:44.000 dist to parent:44.000 weighted sink len:737.674 parentPt:[(107.213, 614.143)]
+HTree: level*4* bufId*21*: branchPt:[(106.356, 657.286)] topo len:44.000 dist to parent:44.000 weighted sink len:608.241 parentPt:[(107.213, 614.143)]
+HTree: level*4* bufId*22*: branchPt:[(228.449, 610.143)] topo len:44.000 dist to parent:44.000 weighted sink len:848.574 parentPt:[(236.609, 645.982)]
+HTree: level*4* bufId*23*: branchPt:[(237.000, 689.592)] topo len:44.000 dist to parent:44.000 weighted sink len:697.483 parentPt:[(236.609, 645.982)]
+HTree: level*4* bufId*24*: branchPt:[(454.642, 421.571)] topo len:44.000 dist to parent:44.000 weighted sink len:776.874 parentPt:[(425.571, 436.501)]
+HTree: level*4* bufId*25*: branchPt:[(433.358, 472.714)] topo len:44.000 dist to parent:44.000 weighted sink len:786.512 parentPt:[(425.571, 436.501)]
+HTree: level*4* bufId*26*: branchPt:[(563.368, 430.724)] topo len:44.000 dist to parent:44.000 weighted sink len:979.593 parentPt:[(557.358, 468.714)]
+HTree: level*4* bufId*27*: branchPt:[(597.358, 472.714)] topo len:44.000 dist to parent:44.000 weighted sink len:854.288 parentPt:[(557.358, 468.714)]
+HTree: level*4* bufId*28*: branchPt:[(425.571, 595.819)] topo len:44.000 dist to parent:44.000 weighted sink len:422.187 parentPt:[(451.247, 614.143)]
+HTree: level*4* bufId*29*: branchPt:[(468.714, 640.676)] topo len:44.000 dist to parent:44.000 weighted sink len:663.276 parentPt:[(451.247, 614.143)]
+HTree: level*4* bufId*30*: branchPt:[(612.417, 599.918)] topo len:44.000 dist to parent:44.000 weighted sink len:854.084 parentPt:[(582.642, 614.143)]
+HTree: level*4* bufId*31*: branchPt:[(567.000, 642.501)] topo len:44.000 dist to parent:44.000 weighted sink len:925.775 parentPt:[(582.642, 614.143)]
+-------------------------------------------------
+[DEBUG CTS-legalizer] createClockSubNets legalizeOneBuffer clkbuf_0: [(331.439, 353.346)] => [(331.096, 353.346)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_1_0_0: [(343.950, 336.200)] => [(343.950, 331.086)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_1_0_1: [(343.950, 298.200)] => [(331.096, 298.200)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_1_0_2: [(343.950, 260.200)] => [(331.096, 260.200)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_1_0_3: [(343.950, 222.200)] => [(343.950, 189.657)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_1_0_4: [(343.950, 184.200)] => [(343.950, 142.514)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_1_1_0: [(344.928, 369.514)] => [(344.928, 331.086)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_1_1_1: [(344.928, 407.514)] => [(331.096, 407.514)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_1_1_2: [(344.928, 445.514)] => [(331.096, 445.514)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_1_1_3: [(344.928, 483.514)] => [(344.928, 472.514)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_1_1_4: [(344.928, 521.514)] => [(344.928, 519.657)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_3_0_0: [(184.235, 177.571)] => [(185.857, 177.571)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_3_0_2: [(184.235, 101.571)] => [(185.857, 101.571)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_3_1_0: [(183.857, 177.950)] => [(185.857, 177.950)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_3_1_1: [(160.907, 193.000)] => [(160.907, 189.657)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_3_1_2: [(160.907, 231.000)] => [(160.907, 189.657)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_3_4_0: [(183.857, 526.787)] => [(185.857, 526.787)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_3_4_1: [(159.042, 513.602)] => [(159.042, 472.514)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_3_4_2: [(159.042, 475.602)] => [(159.042, 472.514)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_3_6_0: [(475.358, 550.714)] => [(472.524, 550.714)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_3_6_1: [(475.358, 512.714)] => [(472.524, 512.714)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_3_6_2: [(475.358, 474.714)] => [(475.358, 472.514)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_3_7_0: [(478.714, 554.070)] => [(472.524, 554.070)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_0_2: [(102.235, 87.571)] => [(102.235, 48.229)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_1_1: [(219.093, 78.429)] => [(219.093, 48.229)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_1_2: [(219.093, 40.429)] => [(219.093, 1.086)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_3_2: [(241.973, 228.066)] => [(241.973, 189.657)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_4_0: [(505.857, 111.765)] => [(515.857, 111.765)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_4_1: [(467.857, 111.765)] => [(468.714, 111.765)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_4_2: [(458.050, 83.571)] => [(458.050, 48.229)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_5_0: [(533.857, 111.765)] => [(519.667, 111.765)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_5_1: [(571.857, 111.765)] => [(566.810, 111.765)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_5_2: [(585.664, 87.571)] => [(585.664, 48.229)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_6_0: [(505.857, 259.950)] => [(515.857, 259.950)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_6_1: [(467.857, 259.950)] => [(468.714, 259.950)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_6_2: [(458.050, 288.143)] => [(458.050, 283.943)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_7_0: [(533.857, 259.950)] => [(519.667, 259.950)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_7_1: [(571.857, 259.950)] => [(566.810, 259.950)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_7_2: [(578.907, 229.000)] => [(578.907, 189.657)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_9_2: [(240.154, 460.714)] => [(236.810, 460.714)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_10_2: [(107.213, 622.143)] => [(107.213, 613.943)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_13_2: [(557.358, 460.714)] => [(563.000, 460.714)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_14_0: [(502.945, 597.840)] => [(502.945, 566.800)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_14_1: [(464.945, 597.840)] => [(468.714, 597.840)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_14_2: [(451.247, 622.143)] => [(451.247, 613.943)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_15_0: [(530.945, 597.840)] => [(519.667, 597.840)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_15_1: [(568.945, 597.840)] => [(566.810, 597.840)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_4_15_2: [(582.642, 622.143)] => [(582.642, 613.943)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_5_1_0: [(101.378, 116.714)] => [(95.381, 116.714)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_5_2_0: [(219.950, 69.571)] => [(233.000, 69.571)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_5_5_0: [(78.050, 258.143)] => [(91.571, 258.143)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_5_16_0: [(77.072, 447.571)] => [(91.571, 447.571)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_5_18_0: [(239.950, 446.918)] => [(236.810, 446.918)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_5_21_0: [(106.356, 635.286)] => [(95.381, 635.286)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_5_22_0: [(228.449, 632.143)] => [(233.000, 632.143)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_5_24_0: [(447.571, 436.501)] => [(447.571, 425.371)]
+[DEBUG CTS-legalizer]  SegmentBuilder::build legalizeOneBuffer clkbuf_5_25_0: [(433.358, 450.714)] => [(425.381, 450.714)]
 [INFO CTS-0035]  Number of sinks covered: 322.
+[DEBUG CTS-legalizer] Htree file cts.clk.buffer has been generated
+[DEBUG CTS-legalizer] Run 'obsAwareCts.py cts.clk.buffer' to produce cts.clk.buffer.png
 [INFO CTS-0018]     Created 273 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 18.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 19.
@@ -159,24 +1925,24 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 2475
 [INFO CTS-0100]  Leaf buffers 138
-[INFO CTS-0101]  Average sink wire length 10075.79 um
+[INFO CTS-0101]  Average sink wire length 10197.15 um
 [INFO CTS-0102]  Path depth 18 - 19
 [INFO RSZ-0058] Using max wire length 707um.
 [INFO RSZ-0047] Found 33 long wires.
-[INFO RSZ-0048] Inserted 86 buffers in 33 nets.
+[INFO RSZ-0048] Inserted 87 buffers in 33 nets.
 Placement Analysis
 ---------------------------------
-total displacement       2481.4 u
+total displacement       2488.1 u
 average displacement        0.9 u
 max displacement           38.4 u
-original HPWL          138822.4 u
-legalized HPWL         139192.8 u
+original HPWL          142126.4 u
+legalized HPWL         142456.6 u
 delta HPWL                    0 %
 
 Clock clk
 Latency      CRPR       Skew
-inst_8_14/clk ^
-   1.32
-inst_10_14/clk ^
-   1.18      0.00       0.14
+inst_11_9/clk ^
+   1.28
+inst_12_9/clk ^
+   1.12      0.00       0.16
 

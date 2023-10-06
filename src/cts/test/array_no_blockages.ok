@@ -159,24 +159,24 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 2475
 [INFO CTS-0100]  Leaf buffers 138
-[INFO CTS-0101]  Average sink wire length 10074.23 um
+[INFO CTS-0101]  Average sink wire length 10406.74 um
 [INFO CTS-0102]  Path depth 18 - 19
 [INFO RSZ-0058] Using max wire length 707um.
 [INFO RSZ-0047] Found 32 long wires.
-[INFO RSZ-0048] Inserted 84 buffers in 32 nets.
+[INFO RSZ-0048] Inserted 85 buffers in 32 nets.
 Placement Analysis
 ---------------------------------
-total displacement       1845.5 u
-average displacement        0.7 u
+total displacement       1812.1 u
+average displacement        0.6 u
 max displacement           37.4 u
-original HPWL          138097.7 u
-legalized HPWL         138430.3 u
+original HPWL          142263.5 u
+legalized HPWL         142570.2 u
 delta HPWL                    0 %
 
 Clock clk
 Latency      CRPR       Skew
 inst_8_14/clk ^
-   1.32
+   1.37
 inst_10_14/clk ^
-   1.18      0.00       0.14
+   1.22      0.00       0.14
 

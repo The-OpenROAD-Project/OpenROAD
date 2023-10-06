@@ -180,14 +180,77 @@ class HTreeBuilder : public TreeBuilder
   }
 
   void run() override;
-  bool moveAlongBlockageBoundary(const Point<double>& parentPoint,
-                                 Point<double>& branchPoint,
-                                 double x1,
-                                 double y1,
-                                 double x2,
-                                 double y2);
+  void findLegalLocations(const Point<double> parentPoint,
+                          const Point<double> branchPoint,
+                          double x1,
+                          double y1,
+                          double x2,
+                          double y2,
+                          std::vector<Point<double>>& points);
+  void addCandidateLoc(const double x,
+                       const double y,
+                       const Point<double> parentPoint,
+                       const double x1,
+                       const double y1,
+                       const double x2,
+                       const double y2,
+                       std::vector<Point<double>>& points)
+  {
+    Point<double> candidate(x, y);
+    if ((candidate != parentPoint) && isAlongBbox(x, y, x1, y1, x2, y2)) {
+      points.emplace_back(x, y);
+    }
+  }
+  Point<double> findBestLegalLocation(
+      const double origDist,
+      const Point<double> branchPoint,
+      const Point<double> parentPoint,
+      const std::vector<Point<double>>& legalLocations,
+      const std::vector<Point<double>>& sinks,
+      double x1,
+      double y1,
+      double x2,
+      double y2,
+      int scalingFactor);
+  Point<double> adjustBestLegalLocation(const double origDist,
+                                        const Point<double> currLoc,
+                                        const Point<double> parentPoint,
+                                        const std::vector<Point<double>>& sinks,
+                                        double x1,
+                                        double y1,
+                                        double x2,
+                                        double y2,
+                                        int scalingFactor);
+  void checkLegalityAndCostSpecial(const Point<double> oldLoc,
+                                   const Point<double> newLoc,
+                                   const Point<double> parentPoint,
+                                   const double targetDist,
+                                   const std::vector<Point<double>>& sinks,
+                                   int scalingFactor,
+                                   double x1,
+                                   double y1,
+                                   double x2,
+                                   double y2,
+                                   Point<double>& bestLoc,
+                                   double& sinkDist,
+                                   double& bestSinkDist);
+  Point<double> adjustBranchLength(const Point<double> branchPoint,
+                                   const Point<double> parentPoint,
+                                   const double targetDist,
+                                   const std::vector<Point<double>>& sinks,
+                                   int scalingFactor);
+  void checkLegalityAndCost(const Point<double> oldLoc,
+                            const Point<double> newLoc,
+                            const Point<double> parentPoint,
+                            const double targetDist,
+                            const std::vector<Point<double>>& sinks,
+                            int scalingFactor,
+                            Point<double>& bestLoc,
+                            double& sinkDist,
+                            double& bestSinkDist);
   void legalize();
   void legalizeDummy();
+  void print();
   void plotSolution();
   std::string plotHTree();
   unsigned findSibling(LevelTopology& topology, unsigned i, unsigned par);

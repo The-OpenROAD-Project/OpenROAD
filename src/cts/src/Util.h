@@ -35,10 +35,23 @@
 
 #pragma once
 
+#include <cmath>
 #include <iomanip>
 #include <ostream>
 
 namespace cts {
+
+bool floatEqual(const double x1, const double x2, double epsilon = 1e-6);
+
+// x1 >= x2
+bool floatEqualOrGreater(const double x1,
+                         const double x2,
+                         double epsilon = 1e-6);
+
+// x1 <= x2
+bool floatEqualOrSmaller(const double x1,
+                         const double x2,
+                         double epsilon = 1e-6);
 
 template <class T>
 class Point
@@ -76,7 +89,7 @@ class Point
     return dy;
   }
 
-  bool equal(const Point<T>& other, double epsilon = 0.0000001f) const
+  bool equal(const Point<T>& other, double epsilon = 1e-6) const
   {
     if ((fabs(getX() - other.getX()) < epsilon)
         && (fabs(getY() - other.getY()) < epsilon)) {

@@ -130,6 +130,7 @@ set_wire_rc -signal -layer $wire_rc_layer
 set_wire_rc -clock  -layer $wire_rc_layer_clk
 set_dont_use $dont_use
 
+set_debug_level CTS legalizer 3
 clock_tree_synthesis  -root_buf $cts_buffer \
     -buf_list $cts_buffer \
     -sink_clustering_enable \
