@@ -56,6 +56,7 @@ void MacroPlacer2::init(sta::dbNetwork* network,
 {
   hier_rtlmp_
       = std::make_unique<HierRTLMP>(network, db, sta, logger, tritonpart);
+  logger_ = logger;
 }
 
 bool MacroPlacer2::place(const int max_num_macro,
@@ -119,6 +120,20 @@ bool MacroPlacer2::place(const int max_num_macro,
   hier_rtlmp_->hierRTLMacroPlacer();
 
   return true;
+}
+
+void MacroPlacer2::writeMacroPlacement(const char* file_name)
+{
+  std::string filename = file_name;
+  if (filename.empty()) {
+    return;
+  }
+
+  std::ofstream out(filename);
+
+  if (!out) {
+    logger_->error(MPL, 11, "Cannot open file {}.", filename)
+  }
 }
 
 void MacroPlacer2::setDebug(std::unique_ptr<Mpl2Observer>& graphics)

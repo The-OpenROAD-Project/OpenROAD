@@ -129,6 +129,12 @@ set_debug_cmd()
   macro_placer->setDebug(graphics);
 }
 
+void
+write_macro_placement(const char* file_name)
+{
+  getMacroPlacer2()->writeMacroPlacement(file_name);
+}
+
 } // namespace
 
 %} // inline

@@ -101,10 +101,14 @@ class MacroPlacer2
              const bool bus_planning_flag,
              const char* report_directory);
 
+  void writeMacroPlacement(const char* file_name);
+
   void setDebug(std::unique_ptr<Mpl2Observer>& graphics);
 
  private:
   std::unique_ptr<HierRTLMP> hier_rtlmp_;
+
+  Logger* logger_ = nullptr;
 };
 
 }  // namespace mpl2

@@ -252,6 +252,13 @@ proc rtl_macro_placer { args } {
     return true
 }
 
+sta::define_cmd_args "write_macro_placement" { file_name }
+
+proc write_macro_placement { args } {
+  set file_name $args
+  mpl2::write_macro_placement $file_name
+}
+
 namespace eval mpl2 {
 proc mpl_debug { args } {
   mpl2::set_debug_cmd
