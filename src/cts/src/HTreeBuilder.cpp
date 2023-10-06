@@ -345,8 +345,8 @@ void adjustToplevelTopology(Point<double>& a,
   }
 }
 
-void HTreeBuilder::findLegalLocations(const Point<double> parentPoint,
-                                      const Point<double> branchPoint,
+void HTreeBuilder::findLegalLocations(Point<double> parentPoint,
+                                      Point<double> branchPoint,
                                       double x1,
                                       double y1,
                                       double x2,
@@ -390,10 +390,10 @@ void HTreeBuilder::findLegalLocations(const Point<double> parentPoint,
 }
 
 Point<double> HTreeBuilder::findBestLegalLocation(
-    const double targetDist,
-    const Point<double> branchPoint,
-    const Point<double> parentPoint,
-    const std::vector<Point<double>>& legalLocations,
+    double targetDist,
+    Point<double> branchPoint,
+    Point<double> parentPoint,
+    std::vector<Point<double>>& legalLocations,
     const std::vector<Point<double>>& sinks,
     double x1,
     double y1,
@@ -429,9 +429,9 @@ Point<double> HTreeBuilder::findBestLegalLocation(
 // point to parent point The second priority is to lower the weighted sink
 // distance
 Point<double> HTreeBuilder::adjustBestLegalLocation(
-    const double targetDist,
-    const Point<double> currLoc,
-    const Point<double> parentPoint,
+    double targetDist,
+    Point<double> currLoc,
+    Point<double> parentPoint,
     const std::vector<Point<double>>& sinks,
     double x1,
     double y1,
@@ -508,10 +508,10 @@ Point<double> HTreeBuilder::adjustBestLegalLocation(
 }
 
 void HTreeBuilder::checkLegalityAndCostSpecial(
-    const Point<double> oldLoc,
-    const Point<double> newLoc,
-    const Point<double> parentPoint,
-    const double targetDist,
+    Point<double> oldLoc,
+    Point<double> newLoc,
+    Point<double> parentPoint,
+    double targetDist,
     const std::vector<Point<double>>& sinks,
     int scalingFactor,
     double x1,
@@ -544,9 +544,9 @@ void HTreeBuilder::checkLegalityAndCostSpecial(
 // legal branch point. In either scenario, move branch point to match target
 // distance and to minimize weighted sink distance
 Point<double> HTreeBuilder::adjustBranchLength(
-    const Point<double> branchPoint,
-    const Point<double> parentPoint,
-    const double targetDist,
+    Point<double> branchPoint,
+    Point<double> parentPoint,
+    double targetDist,
     const std::vector<Point<double>>& sinks,
     int scalingFactor)
 {
@@ -621,17 +621,16 @@ Point<double> HTreeBuilder::adjustBranchLength(
   return branchPoint;
 }
 
-void HTreeBuilder::checkLegalityAndCost(const Point<double> oldLoc,
-                                        const Point<double> newLoc,
-                                        const Point<double> parentPoint,
-                                        const double targetDist,
+void HTreeBuilder::checkLegalityAndCost(Point<double> oldLoc,
+                                        Point<double> newLoc,
+                                        Point<double> parentPoint,
+                                        double targetDist,
                                         const std::vector<Point<double>>& sinks,
                                         int scalingFactor,
                                         Point<double>& bestLoc,
                                         double& sinkDist,
                                         double& bestSinkDist)
 {
-  double x1, y1, x2, y2;
   if (floatEqual(newLoc.computeDist(parentPoint), targetDist)
       && checkLegalityLoc(newLoc, scalingFactor)) {
     sinkDist = weightedDistance(newLoc, oldLoc, sinks);
@@ -644,8 +643,7 @@ void HTreeBuilder::checkLegalityAndCost(const Point<double> oldLoc,
                "dist={:0.3f}, sinkDist={:0.3f}", oldLoc, newLoc, targetDist, sinkDist);
   } else {
     debugPrint(logger_, CTS, "legalizer", 3, "adjustBranchLength: branchPt move:{}=>{} is illegal or dist {:0.3f} "
-        "!= {:0.3f} blockage ({:0.3f} {:0.3f}) ({:0.3f} {:0.3f})",
-        oldLoc, newLoc, newLoc.computeDist(parentPoint), targetDist, x1, y1, x2, y2);
+        "!= {:0.3f}", oldLoc, newLoc, newLoc.computeDist(parentPoint), targetDist);
     // clang-format on
   }
 }

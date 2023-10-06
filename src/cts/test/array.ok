@@ -501,24 +501,24 @@ HTree: level*4* bufId*31*: branchPt:[(591.398, 649.387)] topo len:44.000 dist to
 [DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(519.857, 246.278)]=>[(533.529, 246.278)] is illegal or dist 88.000 != 88.000
 [DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(523.216, 246.278)]=>[(519.857, 259.950)] parentPt:[(505.950, 185.857)] new branchPt is outside blockage
   HTree level*2* bufId*4*, parent:[(189.857, 526.787)], branch:[(182.622, 471.602)], leng:62.420, sinks:40
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(182.622, 471.602)]=>[(184.522, 444.122)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(182.622, 471.602)]=>[(184.522, 609.451)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(182.622, 471.602)]=>[(180.722, 447.922)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(182.622, 471.602)]=>[(180.722, 605.651)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(182.622, 471.602)]=>[(155.042, 473.602)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(182.622, 471.602)]=>[(224.673, 473.602)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(182.622, 471.602)]=>[(184.522, 444.122)] is illegal or dist 88.000 != 88.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(182.622, 471.602)]=>[(184.522, 609.451)] is illegal or dist 88.000 != 88.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(182.622, 471.602)]=>[(180.722, 447.922)] is illegal or dist 88.000 != 88.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(182.622, 471.602)]=>[(180.722, 605.651)] is illegal or dist 88.000 != 88.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(182.622, 471.602)]=>[(155.042, 473.602)] is illegal or dist 88.000 != 88.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(182.622, 471.602)]=>[(224.673, 473.602)] is illegal or dist 88.000 != 88.000
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(182.622, 471.602)]=>[(159.042, 469.602)] is legal, dist=88.000, sinkDist=6183.787
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(182.622, 471.602)]=>[(220.673, 469.602)] is legal, dist=88.000, sinkDist=7014.497
 [DEBUG CTS-legalizer] adjustBranchLength applied to legal branchPt:[(182.622, 471.602)]=>[(159.042, 469.602)] parentPt:[(189.857, 526.787)] newDist=88.000
   HTree level*2* bufId*5*, parent:[(189.857, 526.787)], branch:[(185.931, 593.233)], leng:70.372, sinks:38
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(185.931, 593.233)]=>[(187.831, 440.813)] is legal, dist=88.000, sinkDist=16157.597
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(185.931, 593.233)]=>[(187.831, 612.761)] is legal, dist=88.000, sinkDist=5552.858
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(185.931, 593.233)]=>[(184.031, 444.613)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(185.931, 593.233)]=>[(184.031, 608.961)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(185.931, 593.233)]=>[(170.303, 595.233)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(185.931, 593.233)]=>[(209.411, 595.233)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(185.931, 593.233)]=>[(166.303, 591.233)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(185.931, 593.233)]=>[(213.411, 591.233)] is illegal or dist 88.000 != 88.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(185.931, 593.233)]=>[(184.031, 444.613)] is illegal or dist 88.000 != 88.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(185.931, 593.233)]=>[(184.031, 608.961)] is illegal or dist 88.000 != 88.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(185.931, 593.233)]=>[(170.303, 595.233)] is illegal or dist 88.000 != 88.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(185.931, 593.233)]=>[(209.411, 595.233)] is illegal or dist 88.000 != 88.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(185.931, 593.233)]=>[(166.303, 591.233)] is illegal or dist 88.000 != 88.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(185.931, 593.233)]=>[(213.411, 591.233)] is illegal or dist 88.000 != 88.000
 [DEBUG CTS-legalizer] adjustBranchLength applied to legal branchPt:[(185.931, 593.233)]=>[(187.831, 612.761)] parentPt:[(189.857, 526.787)] newDist=88.000
   HTree level*2* bufId*6*, parent:[(472.714, 554.070)], branch:[(522.500, 468.572)], leng:135.285, sinks:46
     branchPt:[(522.500, 468.572)] is not legal, parentPt:[(472.714, 554.070)] blockages:(519.857 425.571) (563.000 468.714)
@@ -860,12 +860,12 @@ HTree: level*4* bufId*31*: branchPt:[(591.398, 649.387)] topo len:44.000 dist to
   HTree level*3* bufId*11*, parent:[(187.831, 612.761)], branch:[(234.709, 626.454)], leng:60.572, sinks:22
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(234.709, 626.454)]=>[(236.609, 579.539)] is legal, dist=82.000, sinkDist=3388.625
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(234.709, 626.454)]=>[(236.609, 645.982)] is legal, dist=82.000, sinkDist=2502.010
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(234.709, 626.454)]=>[(232.809, 575.739)] is illegal or dist 82.000 != 82.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(234.709, 626.454)]=>[(232.809, 649.782)] is illegal or dist 82.000 != 82.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(234.709, 626.454)]=>[(121.525, 628.454)] is illegal or dist 82.000 != 82.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(234.709, 626.454)]=>[(254.137, 628.454)] is illegal or dist 82.000 != 82.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(234.709, 626.454)]=>[(117.525, 624.454)] is illegal or dist 82.000 != 82.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(234.709, 626.454)]=>[(258.137, 624.454)] is illegal or dist 82.000 != 82.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(234.709, 626.454)]=>[(232.809, 575.739)] is illegal or dist 82.000 != 82.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(234.709, 626.454)]=>[(232.809, 649.782)] is illegal or dist 82.000 != 82.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(234.709, 626.454)]=>[(121.525, 628.454)] is illegal or dist 82.000 != 82.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(234.709, 626.454)]=>[(254.137, 628.454)] is illegal or dist 82.000 != 82.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(234.709, 626.454)]=>[(117.525, 624.454)] is illegal or dist 82.000 != 82.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(234.709, 626.454)]=>[(258.137, 624.454)] is illegal or dist 82.000 != 82.000
 [DEBUG CTS-legalizer] adjustBranchLength applied to legal branchPt:[(234.709, 626.454)]=>[(236.609, 645.982)] parentPt:[(187.831, 612.761)] newDist=82.000
   HTree level*3* bufId*12*, parent:[(475.358, 468.714)], branch:[(453.801, 455.271)], leng:35.000, sinks:25
     branchPt:[(453.801, 455.271)] is not legal, parentPt:[(475.358, 468.714)] blockages:(425.571 425.571) (468.714 468.714)
@@ -1198,14 +1198,14 @@ HTree: level*4* bufId*31*: branchPt:[(591.398, 649.387)] topo len:44.000 dist to
 [DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(238.806, 284.143)]=>[(238.806, 276.898)] is illegal or dist 44.000 != 44.000
 [DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(238.806, 284.143)]=>[(246.050, 284.143)] is illegal or dist 52.154 != 44.000
 [DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(238.806, 284.143)]=>[(237.896, 284.143)] is illegal or dist 52.154 != 44.000
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.806, 284.143)]=>[(240.706, 193.333)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.806, 284.143)]=>[(240.706, 278.798)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.806, 284.143)]=>[(240.706, 193.333)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.806, 284.143)]=>[(240.706, 278.798)] is illegal or dist 44.000 != 44.000
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.806, 284.143)]=>[(236.906, 197.133)] is legal, dist=44.000, sinkDist=2966.620
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.806, 284.143)]=>[(236.906, 274.998)] is legal, dist=44.000, sinkDist=1097.865
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.806, 284.143)]=>[(248.050, 286.143)] is illegal or dist 56.154 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.806, 284.143)]=>[(235.896, 286.143)] is illegal or dist 56.154 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.806, 284.143)]=>[(244.050, 282.143)] is illegal or dist 48.154 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.806, 284.143)]=>[(239.896, 282.143)] is illegal or dist 48.154 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.806, 284.143)]=>[(248.050, 286.143)] is illegal or dist 56.154 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.806, 284.143)]=>[(235.896, 286.143)] is illegal or dist 56.154 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.806, 284.143)]=>[(244.050, 282.143)] is illegal or dist 48.154 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.806, 284.143)]=>[(239.896, 282.143)] is illegal or dist 48.154 != 44.000
 [DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(237.620, 302.139)]=>[(236.906, 274.998)] parentPt:[(241.973, 236.066)] new branchPt is outside blockage
   HTree level*4* bufId*8*, parent:[(458.050, 91.571)], branch:[(446.293, 59.560)], leng:43.769, sinks:9
     branchPt:[(446.293, 59.560)] is not legal, parentPt:[(458.050, 91.571)] blockages:(425.571 48.429) (468.714 91.571)
@@ -1292,11 +1292,11 @@ HTree: level*4* bufId*31*: branchPt:[(591.398, 649.387)] topo len:44.000 dist to
   HTree level*4* bufId*11*, parent:[(585.664, 95.571)], branch:[(610.945, 114.451)], leng:44.161, sinks:9
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(610.945, 114.451)]=>[(612.845, 78.753)] is legal, dist=44.000, sinkDist=1215.290
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(610.945, 114.451)]=>[(612.845, 112.390)] is legal, dist=44.000, sinkDist=684.877
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(610.945, 114.451)]=>[(609.045, 74.953)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(610.945, 114.451)]=>[(609.045, 116.190)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(610.945, 114.451)]=>[(562.543, 116.451)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(610.945, 114.451)]=>[(608.785, 116.451)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(610.945, 114.451)]=>[(558.543, 112.451)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(610.945, 114.451)]=>[(609.045, 74.953)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(610.945, 114.451)]=>[(609.045, 116.190)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(610.945, 114.451)]=>[(562.543, 116.451)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(610.945, 114.451)]=>[(608.785, 116.451)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(610.945, 114.451)]=>[(558.543, 112.451)] is illegal or dist 44.000 != 44.000
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(610.945, 114.451)]=>[(612.785, 112.451)] is legal, dist=44.000, sinkDist=683.908
 [DEBUG CTS-legalizer] adjustBranchLength applied to legal branchPt:[(610.945, 114.451)]=>[(612.785, 112.451)] parentPt:[(585.664, 95.571)] newDist=44.000
   HTree level*4* bufId*12*, parent:[(458.050, 280.143)], branch:[(444.215, 224.639)], leng:69.339, sinks:12
@@ -1356,24 +1356,24 @@ HTree: level*4* bufId*31*: branchPt:[(591.398, 649.387)] topo len:44.000 dist to
 [DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(425.571, 293.998)]=>[(488.195, 293.998)] is illegal or dist 44.000 != 44.000
 [DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(444.936, 293.998)]=>[(425.571, 291.664)] parentPt:[(458.050, 280.143)] new branchPt is outside blockage
   HTree level*4* bufId*14*, parent:[(578.907, 237.000)], branch:[(616.064, 233.100)], leng:41.057, sinks:10
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(616.064, 233.100)]=>[(617.964, 232.057)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(616.064, 233.100)]=>[(617.964, 241.943)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(616.064, 233.100)]=>[(614.164, 228.257)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(616.064, 233.100)]=>[(614.164, 245.743)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(616.064, 233.100)]=>[(617.964, 232.057)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(616.064, 233.100)]=>[(617.964, 241.943)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(616.064, 233.100)]=>[(614.164, 228.257)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(616.064, 233.100)]=>[(614.164, 245.743)] is illegal or dist 44.000 != 44.000
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(616.064, 233.100)]=>[(536.807, 235.100)] is legal, dist=44.000, sinkDist=2018.521
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(616.064, 233.100)]=>[(621.008, 235.100)] is legal, dist=44.000, sinkDist=675.646
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(616.064, 233.100)]=>[(540.807, 231.100)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(616.064, 233.100)]=>[(617.008, 231.100)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(616.064, 233.100)]=>[(540.807, 231.100)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(616.064, 233.100)]=>[(617.008, 231.100)] is illegal or dist 44.000 != 44.000
 [DEBUG CTS-legalizer] adjustBranchLength applied to legal branchPt:[(616.064, 233.100)]=>[(621.008, 235.100)] parentPt:[(578.907, 237.000)] newDist=44.000
   HTree level*4* bufId*15*, parent:[(578.907, 237.000)], branch:[(613.646, 281.848)], leng:79.586, sinks:10
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(613.646, 281.848)]=>[(615.546, 229.638)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(613.646, 281.848)]=>[(615.546, 244.362)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(613.646, 281.848)]=>[(615.546, 229.638)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(613.646, 281.848)]=>[(615.546, 244.362)] is illegal or dist 44.000 != 44.000
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(613.646, 281.848)]=>[(611.746, 225.838)] is legal, dist=44.000, sinkDist=1797.294
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(613.646, 281.848)]=>[(611.746, 248.162)] is legal, dist=44.000, sinkDist=1350.815
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(613.646, 281.848)]=>[(581.755, 283.848)] is illegal or dist 49.696 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(613.646, 281.848)]=>[(576.060, 283.848)] is illegal or dist 49.696 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(613.646, 281.848)]=>[(577.755, 279.848)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(613.646, 281.848)]=>[(580.060, 279.848)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(613.646, 281.848)]=>[(581.755, 283.848)] is illegal or dist 49.696 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(613.646, 281.848)]=>[(576.060, 283.848)] is illegal or dist 49.696 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(613.646, 281.848)]=>[(577.755, 279.848)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(613.646, 281.848)]=>[(580.060, 279.848)] is illegal or dist 44.000 != 44.000
 [DEBUG CTS-legalizer] adjustBranchLength applied to legal branchPt:[(613.646, 281.848)]=>[(611.746, 248.162)] parentPt:[(578.907, 237.000)] newDist=44.000
   HTree level*4* bufId*16*, parent:[(95.571, 451.072)], branch:[(97.435, 430.789)], leng:22.147, sinks:8
     branchPt:[(97.435, 430.789)] is not legal, parentPt:[(95.571, 451.072)] blockages:(95.571 425.571) (138.714 468.714)
@@ -1404,12 +1404,12 @@ HTree: level*4* bufId*31*: branchPt:[(591.398, 649.387)] topo len:44.000 dist to
   HTree level*4* bufId*17*, parent:[(95.571, 451.072)], branch:[(92.380, 475.523)], leng:27.641, sinks:8
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(92.380, 475.523)]=>[(94.280, 408.363)] is legal, dist=44.000, sinkDist=1599.772
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(92.380, 475.523)]=>[(94.280, 493.782)] is legal, dist=44.000, sinkDist=726.984
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(92.380, 475.523)]=>[(90.480, 412.163)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(92.380, 475.523)]=>[(90.480, 489.982)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(92.380, 475.523)]=>[(78.022, 477.523)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(92.380, 475.523)]=>[(113.121, 477.523)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(92.380, 475.523)]=>[(74.022, 473.523)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(92.380, 475.523)]=>[(117.121, 473.523)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(92.380, 475.523)]=>[(90.480, 412.163)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(92.380, 475.523)]=>[(90.480, 489.982)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(92.380, 475.523)]=>[(78.022, 477.523)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(92.380, 475.523)]=>[(113.121, 477.523)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(92.380, 475.523)]=>[(74.022, 473.523)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(92.380, 475.523)]=>[(117.121, 473.523)] is illegal or dist 44.000 != 44.000
 [DEBUG CTS-legalizer] adjustBranchLength applied to legal branchPt:[(92.380, 475.523)]=>[(94.280, 493.782)] parentPt:[(95.571, 451.072)] newDist=44.000
   HTree level*4* bufId*18*, parent:[(240.154, 468.714)], branch:[(237.434, 407.752)], leng:63.683, sinks:12
     branchPt:[(237.434, 407.752)] is not legal, parentPt:[(240.154, 468.714)] blockages:(237.000 378.429) (280.143 421.571)
@@ -1439,13 +1439,13 @@ HTree: level*4* bufId*31*: branchPt:[(591.398, 649.387)] topo len:44.000 dist to
 [DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(238.050, 421.571)]=>[(243.296, 421.571)] is illegal or dist 50.286 != 44.000
 [DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(238.050, 421.571)]=>[(237.011, 421.571)] is illegal or dist 50.286 != 44.000
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.050, 421.571)]=>[(239.950, 424.918)] is legal, dist=44.000, sinkDist=945.338
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.050, 421.571)]=>[(239.950, 512.511)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.050, 421.571)]=>[(239.950, 512.511)] is illegal or dist 44.000 != 44.000
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.050, 421.571)]=>[(236.150, 428.718)] is legal, dist=44.000, sinkDist=1004.580
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.050, 421.571)]=>[(236.150, 508.711)] is legal, dist=44.000, sinkDist=2909.676
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.050, 421.571)]=>[(241.296, 423.571)] is illegal or dist 46.286 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.050, 421.571)]=>[(239.011, 423.571)] is illegal or dist 46.286 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.050, 421.571)]=>[(245.296, 419.571)] is illegal or dist 54.286 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.050, 421.571)]=>[(235.011, 419.571)] is illegal or dist 54.286 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.050, 421.571)]=>[(241.296, 423.571)] is illegal or dist 46.286 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.050, 421.571)]=>[(239.011, 423.571)] is illegal or dist 46.286 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.050, 421.571)]=>[(245.296, 419.571)] is illegal or dist 54.286 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(238.050, 421.571)]=>[(235.011, 419.571)] is illegal or dist 54.286 != 44.000
 [DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(237.434, 407.752)]=>[(239.950, 424.918)] parentPt:[(240.154, 468.714)] new branchPt is outside blockage
   HTree level*4* bufId*19*, parent:[(240.154, 468.714)], branch:[(237.663, 488.644)], leng:22.420, sinks:12
     branchPt:[(237.663, 488.644)] is not legal, parentPt:[(240.154, 468.714)] blockages:(237.000 472.714) (280.143 515.857)
@@ -1642,13 +1642,13 @@ HTree: level*4* bufId*31*: branchPt:[(591.398, 649.387)] topo len:44.000 dist to
 [DEBUG CTS-legalizer] adjustBestLegalLoc: branchPt move:[(437.848, 472.714)]=>[(433.358, 472.714)] is legal, dist=44.000, sinkDist=844.885
 [DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(443.288, 488.759)]=>[(433.358, 472.714)] parentPt:[(425.571, 436.501)] new branchPt is outside blockage
   HTree level*4* bufId*26*, parent:[(557.358, 468.714)], branch:[(612.653, 432.724)], leng:91.285, sinks:10
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(612.653, 432.724)]=>[(614.553, 481.909)] is illegal or dist 70.389 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(612.653, 432.724)]=>[(614.553, 455.520)] is illegal or dist 70.389 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(612.653, 432.724)]=>[(610.753, 478.109)] is illegal or dist 62.789 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(612.653, 432.724)]=>[(610.753, 459.320)] is illegal or dist 62.789 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(612.653, 432.724)]=>[(547.348, 434.724)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(612.653, 432.724)]=>[(567.368, 434.724)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(612.653, 432.724)]=>[(551.348, 430.724)] is illegal or dist 44.000 != 44.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(612.653, 432.724)]=>[(614.553, 481.909)] is illegal or dist 70.389 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(612.653, 432.724)]=>[(614.553, 455.520)] is illegal or dist 70.389 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(612.653, 432.724)]=>[(610.753, 478.109)] is illegal or dist 62.789 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(612.653, 432.724)]=>[(610.753, 459.320)] is illegal or dist 62.789 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(612.653, 432.724)]=>[(547.348, 434.724)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(612.653, 432.724)]=>[(567.368, 434.724)] is illegal or dist 44.000 != 44.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(612.653, 432.724)]=>[(551.348, 430.724)] is illegal or dist 44.000 != 44.000
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(612.653, 432.724)]=>[(563.368, 430.724)] is legal, dist=44.000, sinkDist=1492.439
 [DEBUG CTS-legalizer] adjustBranchLength applied to legal branchPt:[(612.653, 432.724)]=>[(563.368, 430.724)] parentPt:[(557.358, 468.714)] newDist=44.000
   HTree level*4* bufId*27*, parent:[(557.358, 468.714)], branch:[(616.787, 480.959)], leng:71.674, sinks:11

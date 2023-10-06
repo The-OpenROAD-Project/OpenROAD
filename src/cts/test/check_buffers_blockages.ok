@@ -94,8 +94,8 @@ HTree: level*1* bufId*3*: branchPt:[(11.178, 8.122)] topo len:2.000 dist to pare
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(3.511, 4.455)]=>[(2.154, 6.672)] is legal, dist=2.000, sinkDist=63.297
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(3.511, 4.455)]=>[(1.937, 6.455)] is legal, dist=2.000, sinkDist=61.996
 [DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(3.511, 4.455)]=>[(5.206, 6.455)] is legal, dist=2.000, sinkDist=64.378
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(3.511, 4.455)]=>[(5.206, 2.455)] is illegal or dist 5.269 != 2.000 blockage (0.000 0.000) (0.000 0.000)
-[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(3.511, 4.455)]=>[(1.937, 2.455)] is illegal or dist 5.269 != 2.000 blockage (0.000 0.000) (0.000 0.000)
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(3.511, 4.455)]=>[(5.206, 2.455)] is illegal or dist 5.269 != 2.000
+[DEBUG CTS-legalizer] adjustBranchLength: branchPt move:[(3.511, 4.455)]=>[(1.937, 2.455)] is illegal or dist 5.269 != 2.000
 [DEBUG CTS-legalizer] adjustBranchLength applied to legal branchPt:[(3.511, 4.455)]=>[(4.868, 5.386)] parentPt:[(3.571, 6.089)] newDist=2.000
   HTree level*1* bufId*1*, parent:[(3.571, 6.089)], branch:[(3.757, 7.904)], leng:2.000, sinks:8
   HTree level*1* bufId*2*, parent:[(11.358, 6.302)], branch:[(11.156, 4.505)], leng:2.000, sinks:7
