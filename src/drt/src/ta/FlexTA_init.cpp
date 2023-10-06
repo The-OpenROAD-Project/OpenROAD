@@ -623,8 +623,7 @@ void FlexTAWorker::sortIroutes()
   } else {
     for (auto& iroute : iroutes_) {
       if (iroute->getCost()) {
-        if ((hardIroutesMode && iroute->getGuide()->getNet()->isClock())
-            || (!hardIroutesMode && !iroute->getGuide()->getNet()->isClock())) {
+        if (hardIroutesMode == iroute->getGuide()->getNet()->isClock()) {
           addToReassignIroutes(iroute.get());
         }
       }
