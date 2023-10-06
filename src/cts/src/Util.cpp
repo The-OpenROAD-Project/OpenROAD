@@ -43,7 +43,7 @@
 
 namespace cts {
 
-bool floatEqual(const double x1, const double x2, double epsilon)
+bool floatEqual(double x1, double x2, double epsilon)
 {
   if (fabs(x1 - x2) < epsilon) {
     return true;
@@ -52,7 +52,7 @@ bool floatEqual(const double x1, const double x2, double epsilon)
 }
 
 // x1 >= x2
-bool floatEqualOrGreater(const double x1, const double x2, double epsilon)
+bool floatEqualOrGreater(double x1, double x2, double epsilon)
 {
   if (fabs(x1 - x2) < epsilon) {
     return true;
@@ -61,7 +61,7 @@ bool floatEqualOrGreater(const double x1, const double x2, double epsilon)
 }
 
 // x1 <= x2
-bool floatEqualOrSmaller(const double x1, const double x2, double epsilon)
+bool floatEqualOrSmaller(double x1, double x2, double epsilon)
 {
   if (fabs(x1 - x2) < epsilon) {
     return true;

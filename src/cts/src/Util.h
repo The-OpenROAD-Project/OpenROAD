@@ -41,16 +41,16 @@
 
 namespace cts {
 
-bool floatEqual(const double x1, const double x2, double epsilon = 1e-6);
+bool floatEqual(double x1, double x2, double epsilon = 1e-6);
 
 // x1 >= x2
-bool floatEqualOrGreater(const double x1,
-                         const double x2,
+bool floatEqualOrGreater(double x1,
+                         double x2,
                          double epsilon = 1e-6);
 
 // x1 <= x2
-bool floatEqualOrSmaller(const double x1,
-                         const double x2,
+bool floatEqualOrSmaller(double x1,
+                         double x2,
                          double epsilon = 1e-6);
 
 template <class T>

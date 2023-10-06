@@ -165,7 +165,7 @@ class TreeBuilder
     }
     return false;
   }
-  bool checkLegalitySpecial(const Point<double> loc,
+  bool checkLegalitySpecial(Point<double> loc,
                             double x1,
                             double y1,
                             double x2,

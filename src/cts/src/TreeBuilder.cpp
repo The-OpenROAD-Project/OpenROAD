@@ -75,7 +75,7 @@ void TreeBuilder::initBlockages()
   }
 
   // add tree buffer width and height for legalization
-  std::string buffer("");
+  std::string buffer;
   if (!options_->getTreeBuffer().empty()) {
     buffer = options_->getTreeBuffer();
   } else {
@@ -94,7 +94,7 @@ void TreeBuilder::initBlockages()
 // Check if location (x, y) is legal by checking if
 // 1) it lies along edges of a known blockage (x1,y1) (x2,y2), or
 // 2) it is not on any other blockages (more expensive)
-bool TreeBuilder::checkLegalitySpecial(const Point<double> loc,
+bool TreeBuilder::checkLegalitySpecial(Point<double> loc,
                                        double x1,
                                        double y1,
                                        double x2,
