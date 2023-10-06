@@ -44,14 +44,10 @@ namespace cts {
 bool floatEqual(double x1, double x2, double epsilon = 1e-6);
 
 // x1 >= x2
-bool floatEqualOrGreater(double x1,
-                         double x2,
-                         double epsilon = 1e-6);
+bool floatEqualOrGreater(double x1, double x2, double epsilon = 1e-6);
 
 // x1 <= x2
-bool floatEqualOrSmaller(double x1,
-                         double x2,
-                         double epsilon = 1e-6);
+bool floatEqualOrSmaller(double x1, double x2, double epsilon = 1e-6);
 
 template <class T>
 class Point
