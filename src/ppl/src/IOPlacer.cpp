@@ -1315,7 +1315,8 @@ void IOPlacer::printConfig(bool annealing)
 {
   logger_->info(PPL, 1, "Number of slots           {}", slots_.size());
   if (!top_layer_slots_.empty()) {
-    logger_->info(PPL, 62, "Number of top layer slots {}", top_layer_slots_.size());
+    logger_->info(
+        PPL, 62, "Number of top layer slots {}", top_layer_slots_.size());
   }
   logger_->info(PPL, 2, "Number of I/O             {}", netlist_->numIOPins());
   logger_->metric("floorplan__design__io", netlist_->numIOPins());
