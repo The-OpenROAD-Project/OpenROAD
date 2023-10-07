@@ -190,6 +190,23 @@ class PdnGen
 
   void repairVias(const std::set<odb::dbNet*>& nets);
 
+  void createSrouteWires(const char* net,
+                         const char* outerNet,
+                         odb::dbTechLayer* layer0,
+                         odb::dbTechLayer* layer1,
+                         int cut_pitch_x,
+                         int cut_pitch_y,
+                         const std::vector<odb::dbTechViaGenerateRule*>& vias,
+                         const std::vector<odb::dbTechVia*>& techvias,
+                         int max_rows,
+                         int max_columns,
+                         const std::vector<odb::dbTechLayer*>& ongrid,
+                         std::vector<int> metalWidths,
+                         std::vector<int> metalspaces,
+                         const std::vector<odb::dbInst*>& insts);
+
+  void addSrouteInst(const char* net, odb::dbInst* inst, const char* iterm);
+
  private:
   void trimShapes();
   void cleanupVias();
@@ -212,6 +229,7 @@ class PdnGen
   std::unique_ptr<VoltageDomain> core_domain_;
   std::vector<std::unique_ptr<VoltageDomain>> domains_;
   std::vector<std::unique_ptr<PowerCell>> switched_power_cells_;
+  std::vector<std::vector<odb::dbITerm*>> sroute_itermss;
 };
 
 }  // namespace pdn

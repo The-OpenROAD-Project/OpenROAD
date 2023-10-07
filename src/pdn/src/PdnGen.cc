@@ -112,7 +112,6 @@ void PdnGen::buildGrids(bool trim)
   for (auto* grid : grids) {
     grid->getGridLevelObstructions(block_obs);
   }
-
   ShapeTreeMap all_shapes;
 
   // get special shapes
@@ -645,6 +644,674 @@ void PdnGen::updateRenderer() const
   if (debug_renderer_ != nullptr) {
     debug_renderer_->update();
   }
+}
+
+void PdnGen::createSrouteWires(
+    const char* net,
+    const char* outerNet,
+    odb::dbTechLayer* layer0,
+    odb::dbTechLayer* layer1,
+    int cut_pitch_x,
+    int cut_pitch_y,
+    const std::vector<odb::dbTechViaGenerateRule*>& vias,
+    const std::vector<odb::dbTechVia*>& techvias,
+    int max_rows,
+    int max_columns,
+    const std::vector<odb::dbTechLayer*>& ongrid,
+    std::vector<int> metalwidths,
+    std::vector<int> metalspaces,
+    const std::vector<odb::dbInst*>& insts)
+{
+  auto* block = db_->getChip()->getBlock();
+
+  for (auto* inst : insts) {
+    addSrouteInst(net, inst, net);
+  }
+
+  odb::dbNet* net_ = block->findNet(net);
+  odb::dbNet* outerNet_ = block->findNet(outerNet);
+  // find all 4 strips for VIN
+  std::vector<odb::dbSBox*> rings;
+  int64_t Hdx = 0;
+  int64_t Vdy = 0;
+  for (auto* swire : net_->getSWires()) {
+    for (auto* wire : swire->getWires()) {
+      if (wire->getDY() > Vdy) {
+        Vdy = wire->getDY();
+      }
+      if (wire->getDX() > Hdx) {
+        Hdx = wire->getDX();
+      }
+    }
+  }
+  int64_t Hdy = 0;
+  int64_t Vdx = 0;
+  for (auto* swire : net_->getSWires()) {
+    for (auto* wire : swire->getWires()) {
+      if ((wire->getDY() == Vdy) && (wire->getDX() >= Vdx)) {
+        Vdx = wire->getDX();
+      }
+      if ((wire->getDX() == Hdx) && (wire->getDY() >= Hdy)) {
+        Hdy = wire->getDY();
+      }
+    }
+  }
+
+  for (auto* swire : net_->getSWires()) {
+    for (auto* wire : swire->getWires()) {
+      if (((wire->getDY() == Hdy) && (wire->getDX() == Hdx))
+          || ((wire->getDX() == Vdx) && (wire->getDY() == Vdy))) {
+        rings.push_back(wire);
+      }
+    }
+  }
+
+  int index = 0;
+  int x;
+  int y;
+  int64_t actualx;
+  int64_t actualy;
+  int64_t highy;
+  int64_t lowy;
+  int count;
+  for (const auto& sroute_iterms : sroute_itermss) {
+    x = 0;
+    y = 0;
+    actualx = 0;
+    actualy = 0;
+    highy = 0;
+    lowy = INT_MAX;
+    count = 0;
+    for (auto* iterm : sroute_iterms) {
+      count += 1;
+      iterm->getAvgXY(&x, &y);
+      actualx += x;
+      actualy += y;
+      odb::Rect bbox = iterm->getBBox();
+      if (bbox.yMin() < lowy) {
+        lowy = bbox.yMin();
+      }
+      if (bbox.yMax() > highy) {
+        highy = bbox.yMax();
+      }
+    }
+    if (count != 0) {
+      actualx /= count;
+      actualy /= count;
+
+      odb::dbTechLayer* metal_layer = layer0;
+      odb::dbTechLayer* stripe_metal_layer;
+
+      odb::dbSBox* pdn_wire = new odb::dbSBox();
+      odb::dbSWire* nwsw = odb::dbSWire::create(net_, odb::dbWireType::ROUTED);
+
+      bool first = true;
+      int direction;
+      // find closest metal stripe vertical(horizon)
+      // for vertical power ring connection
+      if (rings[index]->getDir() == 0) {
+        for (auto* swire : net_->getSWires()) {
+          for (auto* wire : swire->getWires()) {
+            stripe_metal_layer = wire->getTechLayer();
+            direction = wire->getDir();
+            if (first) {
+              if ((direction == 1) && (stripe_metal_layer == metal_layer)
+                  && (wire->getDY() != Hdy)) {
+                first = false;
+                pdn_wire = wire;
+              }
+            } else {
+              if ((direction == 1) && (stripe_metal_layer == metal_layer)
+                  && (wire->getDY() != Hdy)
+                  && (std::abs(wire->yMin() - actualy)
+                      < std::abs(pdn_wire->yMin() - actualy))) {
+                pdn_wire = wire;
+              }
+            }
+          }
+        }
+        odb::dbSBox* right_pdn_wire = new odb::dbSBox();
+        first = true;
+        // find closest wire to right of the center point
+        for (auto* swire : outerNet_->getSWires()) {
+          for (auto* wire : swire->getWires()) {
+            direction = wire->getDir();
+            if (first) {
+              if ((direction == 0) && (wire->xMax() > actualx)) {
+                first = false;
+                right_pdn_wire = wire;
+              }
+            } else {
+              if ((direction == 0) && (wire->xMax() < pdn_wire->xMax())
+                  && (wire->xMax() > actualx)) {
+                right_pdn_wire = wire;
+              }
+            }
+          }
+        }
+
+        // find closest wire to left of the center point
+        odb::dbSBox* left_pdn_wire = new odb::dbSBox();
+        first = true;
+        for (auto* swire : outerNet_->getSWires()) {
+          for (auto* wire : swire->getWires()) {
+            direction = wire->getDir();
+            if (first) {
+              if ((direction == 0) && (wire->xMin() < actualx)) {
+                first = false;
+                left_pdn_wire = wire;
+              }
+            } else {
+              if ((direction == 0) && (wire->xMin() > pdn_wire->xMin())
+                  && (wire->xMin() < actualx)) {
+                left_pdn_wire = wire;
+              }
+            }
+          }
+        }
+
+        // if center point is in the middle of two wire
+        if ((left_pdn_wire->xMax() < actualx)
+            && (right_pdn_wire->xMin() > actualx)) {
+          if ((left_pdn_wire->xMax() + metalspaces[0] + metalwidths[0] / 2)
+              > actualx) {
+            actualx
+                = left_pdn_wire->xMax() + metalspaces[0] + metalwidths[0] / 2;
+          } else if ((right_pdn_wire->xMin() - metalspaces[0]
+                      - metalwidths[0] / 2)
+                     < actualx) {
+            actualx
+                = right_pdn_wire->xMin() - metalspaces[0] - metalwidths[0] / 2;
+          }
+        }
+        // if center point is on the rightwire
+        else if (right_pdn_wire->xMin() < actualx) {
+          actualx
+              = right_pdn_wire->xMin() - metalspaces[0] - metalwidths[0] / 2;
+        }
+        // if center point is on the leftwire
+        else if (left_pdn_wire->xMax() > actualx) {
+          actualx = left_pdn_wire->xMax() + metalspaces[0] + metalwidths[0] / 2;
+        }
+
+        odb::dbSBox::create(nwsw,
+                            ongrid[0],
+                            rings[index]->xMin(),
+                            (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                                - metalwidths[metalwidths.size() - 1] / 2,
+                            actualx,
+                            (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                                + metalwidths[metalwidths.size() - 1] / 2,
+                            odb::dbWireShapeType::NONE);
+
+        if ((pdn_wire->yMax() > highy) && (pdn_wire->yMax() > lowy)) {
+          odb::dbSBox::create(nwsw,
+                              ongrid[ongrid.size() - 1],
+                              actualx - metalwidths[0],
+                              lowy,
+                              actualx,
+                              (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                                  + metalwidths[metalwidths.size() - 1] / 2,
+                              odb::dbWireShapeType::NONE);
+        }
+        // middle
+        else if ((pdn_wire->yMax() < highy) && (pdn_wire->yMin() > lowy)) {
+          odb::dbSBox::create(nwsw,
+                              ongrid[ongrid.size() - 1],
+                              actualx - metalwidths[0],
+                              lowy,
+                              actualx,
+                              highy,
+                              odb::dbWireShapeType::NONE);
+        } else {
+          odb::dbSBox::create(nwsw,
+                              ongrid[ongrid.size() - 1],
+                              actualx - metalwidths[0],
+                              (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                                  - metalwidths[metalwidths.size() - 1] / 2,
+                              actualx,
+                              highy,
+                              odb::dbWireShapeType::NONE);
+        }
+
+        if (ongrid[ongrid.size() - 1] < ongrid[0]) {
+          for (auto* via_ : techvias) {
+            odb::dbSet<odb::dbBox> boxes = via_->getBoxes();
+            odb::dbBox* box = *boxes.begin();
+            int via_width = box->getDX();
+
+            int rows_
+                = std::min((odb::uint) max_rows,
+                           (metalwidths[metalwidths.size() - 1] - cut_pitch_y)
+                               / (cut_pitch_y + box->getDY()));
+            int cols_ = std::min(
+                (odb::uint) max_columns,
+                (rings[index]->xMax() - rings[index]->xMin() - cut_pitch_x)
+                    / (cut_pitch_x + box->getDX()));
+            int64_t centerX = cols_ / 2;
+            int64_t centerY = rows_ / 2;
+            int64_t row = 0;
+            int64_t col = 0;
+            if (rows_ % 2 == 1) {
+              row = (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                    - centerY * (via_width + cut_pitch_y) - via_width / 2;
+            } else {
+              row = (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                    - centerY * (via_width) -cut_pitch_y / 2;
+            }
+            for (int r = 0; r < rows_; r++) {
+              if (cols_ % 2 == 1) {
+                col = (rings[index]->xMin() + rings[index]->xMax()) / 2
+                      - centerX * (via_width + cut_pitch_x) - via_width / 2;
+              } else {
+                col = (rings[index]->xMin() + rings[index]->xMax()) / 2
+                      - centerX * (via_width) -std::max(centerX - 1, int64_t(0))
+                            * cut_pitch_x
+                      - cut_pitch_x / 2;
+              }
+              for (int c = 0; c < cols_; c++) {
+                odb::dbSBox::create(nwsw,
+                                    via_,
+                                    col + via_width / 2,
+                                    row + via_width / 2,
+                                    odb::dbWireShapeType::NONE);
+                col += cut_pitch_x + via_width;
+              }
+              row += cut_pitch_y + via_width;
+            }
+          }
+        }
+
+        for (int i = 1; i < ongrid.size() - 1; i++) {
+          odb::dbSBox::create(nwsw,
+                              ongrid[i],
+                              actualx - metalwidths[0],
+                              (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                                  - metalwidths[metalwidths.size() - 1] / 2,
+                              actualx,
+                              (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                                  + metalwidths[metalwidths.size() - 1] / 2,
+                              odb::dbWireShapeType::NONE);
+        }
+        DbVia::ViaLayerShape shapes;
+        for (auto* via_ : techvias) {
+          odb::dbSet<odb::dbBox> boxes = via_->getBoxes();
+          odb::dbBox* box = *(boxes.begin());
+          int via_width = box->getDX();
+          int rows_
+              = std::min((odb::uint) max_rows,
+                         (metalwidths[metalwidths.size() - 1] - cut_pitch_y)
+                             / (cut_pitch_y + box->getDY()));
+          int cols_ = std::min(
+              (odb::uint) max_columns,
+              (metalwidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX()));
+          int64_t centerX = cols_ / 2;
+          int64_t centerY = rows_ / 2;
+          int64_t row = 0;
+          int64_t col = 0;
+          if (rows_ % 2 == 1) {
+            row = (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                  - centerY * (via_width + cut_pitch_y) - via_width / 2;
+          } else {
+            row = (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                  - centerY * (via_width) -cut_pitch_y / 2;
+          }
+          for (int r = 0; r < rows_; r++) {
+            if (cols_ % 2 == 1) {
+              col = actualx - metalwidths[0] / 2
+                    - centerX * (via_width + cut_pitch_x) - via_width / 2;
+            } else {
+              col = actualx - metalwidths[0] / 2
+                    - centerX * (via_width) -std::max(centerX - 1, int64_t(0))
+                          * cut_pitch_x
+                    - cut_pitch_x / 2;
+            }
+            for (int c = 0; c < cols_; c++) {
+              odb::dbSBox::create(nwsw,
+                                  via_,
+                                  col + via_width / 2,
+                                  row + via_width / 2,
+                                  odb::dbWireShapeType::NONE);
+              col += cut_pitch_x + via_width;
+            }
+            row += cut_pitch_y + via_width;
+          }
+        }
+        for (auto* iterm : sroute_iterms) {
+          odb::Rect bbox = iterm->getBBox();
+          if (bbox.xMin() > actualx - metalwidths[0]) {
+            odb::dbSBox::create(nwsw,
+                                ongrid[0],
+                                actualx - metalwidths[0],
+                                bbox.yMin(),
+                                bbox.xMin(),
+                                bbox.yMax(),
+                                odb::dbWireShapeType::NONE);
+          } else if (bbox.xMax() < actualx) {
+            odb::dbSBox::create(nwsw,
+                                ongrid[0],
+                                bbox.xMax(),
+                                bbox.yMin(),
+                                actualx,
+                                bbox.yMax(),
+                                odb::dbWireShapeType::NONE);
+          } else {
+            odb::dbSBox::create(nwsw,
+                                ongrid[0],
+                                actualx - metalwidths[0],
+                                bbox.yMin(),
+                                actualx,
+                                bbox.yMax(),
+                                odb::dbWireShapeType::NONE);
+          }
+
+          ////
+          for (auto* via_ : techvias) {
+            odb::dbSet<odb::dbBox> boxes = via_->getBoxes();
+            odb::dbBox* box = *boxes.begin();
+            int via_width = box->getDX();
+
+            int rows_ = std::min((odb::uint) max_rows,
+                                 (bbox.yMax() - bbox.yMin() - cut_pitch_y)
+                                     / (cut_pitch_y + box->getDY()));
+            int cols_ = std::min(
+                (odb::uint) max_columns,
+                (metalwidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX()));
+            int64_t centerX = cols_ / 2;
+            int64_t centerY = rows_ / 2;
+            int64_t row = 0;
+            int64_t col = 0;
+            if (rows_ % 2 == 1) {
+              row = (bbox.yMax() + bbox.yMin()) / 2
+                    - centerY * (via_width + cut_pitch_y) - via_width / 2;
+            } else {
+              row = (bbox.yMax() + bbox.yMin()) / 2
+                    - centerY * (via_width) -cut_pitch_y / 2;
+            }
+            for (int r = 0; r < rows_; r++) {
+              if (cols_ % 2 == 1) {
+                col = actualx - metalwidths[0] / 2
+                      - centerX * (via_width + cut_pitch_x) - via_width / 2;
+              } else {
+                col = actualx - metalwidths[0] / 2
+                      - centerX * (via_width) -std::max(centerX - 1, int64_t(0))
+                            * cut_pitch_x
+                      - cut_pitch_x / 2;
+              }
+              for (int c = 0; c < cols_; c++) {
+                odb::dbSBox::create(nwsw,
+                                    via_,
+                                    col + via_width / 2,
+                                    row + via_width / 2,
+                                    odb::dbWireShapeType::NONE);
+                col += cut_pitch_x + via_width;
+              }
+              row += cut_pitch_y + via_width;
+            }
+          }
+        }
+
+      } else {
+        pdn_wire = rings[index];
+
+        // check to see if center point is too far
+        if ((pdn_wire->xMax() - 1000) < actualx) {
+          std::cout << "xmax is " << pdn_wire->xMax() << std::endl;
+          odb::dbSBox::create(nwsw,
+                              ongrid[ongrid.size() - 1],
+                              pdn_wire->xMax() - metalwidths[0],
+                              pdn_wire->yMin(),
+                              pdn_wire->xMax(),
+                              highy,
+                              odb::dbWireShapeType::NONE);
+          actualx = pdn_wire->xMax() - metalwidths[0];
+        } else if ((pdn_wire->xMin() + metalwidths[0]) > actualx) {
+          odb::dbSBox::create(nwsw,
+                              ongrid[ongrid.size() - 1],
+                              pdn_wire->xMin(),
+                              pdn_wire->yMin(),
+                              pdn_wire->xMin() + metalwidths[0],
+                              highy,
+                              odb::dbWireShapeType::NONE);
+          actualx = pdn_wire->xMin() + metalwidths[0];
+        } else {
+          odb::dbSBox::create(nwsw,
+                              ongrid[ongrid.size() - 1],
+                              actualx - metalwidths[0] / 2,
+                              pdn_wire->yMin(),
+                              actualx + metalwidths[0] / 2,
+                              highy,
+                              odb::dbWireShapeType::NONE);
+        }
+
+        for (int i = 1; i < ongrid.size() - 1; i++) {
+          odb::dbSBox::create(nwsw,
+                              ongrid[i],
+                              actualx - metalwidths[0] / 2,
+                              pdn_wire->yMin(),
+                              actualx + metalwidths[0] / 2,
+                              pdn_wire->yMax(),
+                              odb::dbWireShapeType::NONE);
+        }
+
+        for (auto* via_ : techvias) {
+          odb::dbSet<odb::dbBox> boxes = via_->getBoxes();
+          odb::dbBox* box = *boxes.begin();
+          int via_width = box->getDX();
+
+          int rows_
+              = std::min((odb::uint) max_rows,
+                         (pdn_wire->yMax() - pdn_wire->yMin() - cut_pitch_y)
+                             / (cut_pitch_y + box->getDY()));
+          int cols_ = std::min(
+              (odb::uint) max_columns,
+              (metalwidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX()));
+          int64_t centerX = cols_ / 2;
+          int64_t centerY = rows_ / 2;
+          int64_t row = 0;
+          int64_t col = 0;
+          if (rows_ % 2 == 1) {
+            row = (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                  - centerY * (via_width + cut_pitch_y) - via_width / 2;
+          } else {
+            row = (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                  - centerY * (via_width) -cut_pitch_y / 2;
+          }
+          for (int r = 0; r < rows_; r++) {
+            if (cols_ % 2 == 1) {
+              col = actualx - metalwidths[0] / 2
+                    - centerX * (via_width + cut_pitch_x) - via_width / 2;
+            } else {
+              col = actualx - metalwidths[0] / 2
+                    - centerX * (via_width) -std::max(centerX - 1, int64_t(0))
+                          * cut_pitch_x
+                    - cut_pitch_x / 2;
+            }
+            for (int c = 0; c < cols_; c++) {
+              odb::dbSBox::create(nwsw,
+                                  via_,
+                                  col + via_width / 2,
+                                  row + via_width / 2,
+                                  odb::dbWireShapeType::NONE);
+              col += cut_pitch_x + via_width;
+            }
+            row += cut_pitch_y + via_width;
+          }
+        }
+
+        for (auto* iterm : sroute_iterms) {
+          odb::Rect bbox = iterm->getBBox();
+          if (bbox.xMin() > actualx + metalwidths[0]) {
+            odb::dbSBox::create(nwsw,
+                                ongrid[0],
+                                actualx - metalwidths[0],
+                                bbox.yMin(),
+                                bbox.xMin(),
+                                bbox.yMax(),
+                                odb::dbWireShapeType::NONE);
+          } else if (bbox.xMax() < actualx - metalwidths[0]) {
+            odb::dbSBox::create(nwsw,
+                                ongrid[0],
+                                bbox.xMax(),
+                                bbox.yMin(),
+                                actualx + metalwidths[0],
+                                bbox.yMax(),
+                                odb::dbWireShapeType::NONE);
+          } else {
+            odb::dbSBox::create(nwsw,
+                                ongrid[0],
+                                actualx - metalwidths[0] / 2,
+                                bbox.yMin(),
+                                actualx + metalwidths[0] / 2,
+                                bbox.yMax(),
+                                odb::dbWireShapeType::NONE);
+          }
+          /////
+          for (auto* via_ : techvias) {
+            odb::dbSet<odb::dbBox> boxes = via_->getBoxes();
+            odb::dbBox* box = *boxes.begin();
+            int via_width = box->getDX();
+
+            int rows_ = std::min((odb::uint) max_rows,
+                                 (bbox.yMax() - bbox.yMin() - cut_pitch_y)
+                                     / (cut_pitch_y + box->getDY()));
+            int cols_ = std::min(
+                (odb::uint) max_columns,
+                (metalwidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX()));
+            int64_t centerX = cols_ / 2;
+            int64_t centerY = rows_ / 2;
+            int64_t row = 0;
+            int64_t col = 0;
+            if (rows_ % 2 == 1) {
+              row = (bbox.yMax() + bbox.yMin()) / 2
+                    - centerY * (via_width + cut_pitch_y) - via_width / 2;
+            } else {
+              row = (bbox.yMax() + bbox.yMin()) / 2
+                    - centerY * (via_width) -cut_pitch_y / 2;
+            }
+            for (int r = 0; r < rows_; r++) {
+              if (cols_ % 2 == 1) {
+                col = actualx - metalwidths[0] / 2
+                      - centerX * (via_width + cut_pitch_x) - via_width / 2;
+              } else {
+                col = actualx - metalwidths[0] / 2
+                      - centerX * (via_width) -std::max(centerX - 1, int64_t(0))
+                            * cut_pitch_x
+                      - cut_pitch_x / 2;
+              }
+              for (int c = 0; c < cols_; c++) {
+                odb::dbSBox::create(nwsw,
+                                    via_,
+                                    col + via_width / 2,
+                                    row + via_width / 2,
+                                    odb::dbWireShapeType::NONE);
+                col += cut_pitch_x + via_width;
+              }
+              row += cut_pitch_y + via_width;
+            }
+            /////
+          }
+        }
+      }
+      std::map<odb::dbNet*, odb::dbSWire*> net_map;
+
+      net_map[net_] = nwsw;
+      auto domains = getDomains();
+
+      // collect the the SWires from the block
+      ShapeTreeMap obstructions;
+      ShapeTreeMap net_shapes;
+      Shape::populateMapFromDb(net_, net_shapes);
+      for (const auto& [layer, net_obs_layer] : net_shapes) {
+        auto& obs_layer = obstructions[layer];
+        for (const auto& [box, shape] : net_obs_layer) {
+          obs_layer.insert({shape->getObstructionBox(), shape});
+        }
+      }
+
+      for (auto* domain : domains) {
+        for (const auto& grid : domain->getGrids()) {
+          grid->writeToDb(net_map, false, obstructions);
+          grid->makeRoutingObstructions(db_->getChip()->getBlock());
+        }
+      }
+    }
+    index++;
+  }
+}
+
+void PdnGen::addSrouteInst(const char* net,
+                           odb::dbInst* inst,
+                           const char* iterm)
+{
+  auto* block = db_->getChip()->getBlock();
+  odb::dbInst* inst_ = inst;
+  odb::dbITerm* iterm_ = inst_->findITerm(iterm);
+  iterm_->disconnect();
+  if (sroute_itermss.empty()) {
+    std::vector<odb::dbITerm*> sroute_items_1;
+    sroute_itermss.push_back(sroute_items_1);
+    std::vector<odb::dbITerm*> sroute_items_2;
+    sroute_itermss.push_back(sroute_items_2);
+    std::vector<odb::dbITerm*> sroute_items_3;
+    sroute_itermss.push_back(sroute_items_3);
+    std::vector<odb::dbITerm*> sroute_items_4;
+    sroute_itermss.push_back(sroute_items_4);
+  }
+  odb::dbNet* net_ = block->findNet(net);
+  iterm_->connect(net_);
+  // find all 4 strips for VIN
+  std::vector<odb::dbSBox*> rings;
+  int64_t Hdx = 0;
+  int64_t Vdy = 0;
+  for (auto* swire : net_->getSWires()) {
+    for (auto* wire : swire->getWires()) {
+      if (wire->getDY() > Vdy) {
+        Vdy = wire->getDY();
+      }
+      if (wire->getDX() > Hdx) {
+        Hdx = wire->getDX();
+      }
+    }
+  }
+  int64_t Hdy = 0;
+  int64_t Vdx = 0;
+  for (auto* swire : net_->getSWires()) {
+    for (auto* wire : swire->getWires()) {
+      if ((wire->getDY() == Vdy) && (wire->getDX() >= Vdx)) {
+        Vdx = wire->getDX();
+      }
+      if ((wire->getDX() == Hdx) && (wire->getDY() >= Hdy)) {
+        Hdy = wire->getDY();
+      }
+    }
+  }
+
+  for (auto* swire : net_->getSWires()) {
+    for (auto* wire : swire->getWires()) {
+      if (((wire->getDY() == Hdy) && (wire->getDX() == Hdx))
+          || ((wire->getDX() == Vdx) && (wire->getDY() == Vdy))) {
+        rings.push_back(wire);
+      }
+    }
+  }
+
+  int i = 0;
+  int actuali = 0;
+  int x = 0;
+  int y = 0;
+  iterm_->getAvgXY(&x, &y);
+  int low = INT_MAX;
+  for (auto* wire : rings) {
+    int actualx = (wire->xMin() + wire->xMax()) / 2;
+    int actualy = (wire->yMin() + wire->yMax()) / 2;
+    if ((std::abs(actualx - x) + std::abs(actualy - y)) < low) {
+      actuali = i;
+      low = (std::abs(actualx - x) + std::abs(actualy - y));
+    }
+    i++;
+  }
+  sroute_itermss[actuali].push_back(iterm_);
 }
 
 void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
