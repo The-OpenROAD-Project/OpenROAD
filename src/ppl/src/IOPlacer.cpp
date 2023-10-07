@@ -1307,18 +1307,22 @@ void IOPlacer::assignMirroredPin(IOPin& io_pin)
 
 void IOPlacer::printConfig(bool annealing)
 {
-  logger_->info(PPL, 1, "Number of slots          {}", slots_.size());
-  logger_->info(PPL, 2, "Number of I/O            {}", netlist_->numIOPins());
+  logger_->info(PPL, 1, "Number of slots           {}", slots_.size());
+  if (!top_layer_slots_.empty()) {
+    logger_->info(
+        PPL, 62, "Number of top layer slots {}", top_layer_slots_.size());
+  }
+  logger_->info(PPL, 2, "Number of I/O             {}", netlist_->numIOPins());
   logger_->metric("floorplan__design__io", netlist_->numIOPins());
   logger_->info(PPL,
                 3,
-                "Number of I/O w/sink     {}",
+                "Number of I/O w/sink      {}",
                 netlist_io_pins_->numIOPins() - zero_sink_ios_.size());
-  logger_->info(PPL, 4, "Number of I/O w/o sink   {}", zero_sink_ios_.size());
+  logger_->info(PPL, 4, "Number of I/O w/o sink    {}", zero_sink_ios_.size());
   if (!annealing) {
-    logger_->info(PPL, 5, "Slots per section        {}", slots_per_section_);
+    logger_->info(PPL, 5, "Slots per section         {}", slots_per_section_);
     logger_->info(
-        PPL, 6, "Slots increase factor    {:.1}", slots_increase_factor_);
+        PPL, 6, "Slots increase factor     {:.1}", slots_increase_factor_);
   }
 }
 
