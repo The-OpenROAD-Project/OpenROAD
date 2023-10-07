@@ -75,6 +75,7 @@ class VoltageDomain;
 class Grid;
 class PowerCell;
 class PDNRenderer;
+class SRoute;
 
 class PdnGen
 {
@@ -205,8 +206,6 @@ class PdnGen
                          std::vector<int> metalspaces,
                          const std::vector<odb::dbInst*>& insts);
 
-  void addSrouteInst(const char* net, odb::dbInst* inst, const char* iterm);
-
  private:
   void trimShapes();
   void cleanupVias();
@@ -224,12 +223,12 @@ class PdnGen
   odb::dbDatabase* db_;
   utl::Logger* logger_;
 
+  std::unique_ptr<SRoute> sroute_;
   std::unique_ptr<PDNRenderer> debug_renderer_;
 
   std::unique_ptr<VoltageDomain> core_domain_;
   std::vector<std::unique_ptr<VoltageDomain>> domains_;
   std::vector<std::unique_ptr<PowerCell>> switched_power_cells_;
-  std::vector<std::vector<odb::dbITerm*>> sroute_itermss;
 };
 
 }  // namespace pdn
