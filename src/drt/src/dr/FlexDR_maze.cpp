@@ -417,30 +417,30 @@ void FlexDRWorker::modMinSpacingCostVia_eol(const Rect& box,
   frCoord eolWithin = drCon.eolWithin;
   // eol to up and down
   if (tmpBx.dx() <= eolWidth) {
-    testBox.init(tmpBx.xMin() - eolWithin,
-                 tmpBx.yMax(),
-                 tmpBx.xMax() + eolWithin,
-                 tmpBx.yMax() + eolSpace);
+    testBox.reset(tmpBx.xMin() - eolWithin,
+                  tmpBx.yMax(),
+                  tmpBx.xMax() + eolWithin,
+                  tmpBx.yMax() + eolSpace);
     modMinSpacingCostVia_eol_helper(box, testBox, type, isUpperVia, i, j, z);
 
-    testBox.init(tmpBx.xMin() - eolWithin,
-                 tmpBx.yMin() - eolSpace,
-                 tmpBx.xMax() + eolWithin,
-                 tmpBx.yMin());
+    testBox.reset(tmpBx.xMin() - eolWithin,
+                  tmpBx.yMin() - eolSpace,
+                  tmpBx.xMax() + eolWithin,
+                  tmpBx.yMin());
     modMinSpacingCostVia_eol_helper(box, testBox, type, isUpperVia, i, j, z);
   }
   // eol to left and right
   if (tmpBx.dy() <= eolWidth) {
-    testBox.init(tmpBx.xMax(),
-                 tmpBx.yMin() - eolWithin,
-                 tmpBx.xMax() + eolSpace,
-                 tmpBx.yMax() + eolWithin);
+    testBox.reset(tmpBx.xMax(),
+                  tmpBx.yMin() - eolWithin,
+                  tmpBx.xMax() + eolSpace,
+                  tmpBx.yMax() + eolWithin);
     modMinSpacingCostVia_eol_helper(box, testBox, type, isUpperVia, i, j, z);
 
-    testBox.init(tmpBx.xMin() - eolSpace,
-                 tmpBx.yMin() - eolWithin,
-                 tmpBx.xMin(),
-                 tmpBx.yMax() + eolWithin);
+    testBox.reset(tmpBx.xMin() - eolSpace,
+                  tmpBx.yMin() - eolWithin,
+                  tmpBx.xMin(),
+                  tmpBx.yMax() + eolWithin);
     modMinSpacingCostVia_eol_helper(box, testBox, type, isUpperVia, i, j, z);
   }
 }
@@ -1001,10 +1001,10 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
       auto reqDist = con->getCutSpacing();
       auto cutWidth = getTech()->getLayer(lNum)->getWidth();
       if (con->hasCenterToCenter()) {
-        spacingBox.init(origCenter.x() - reqDist,
-                        origCenter.y() - reqDist,
-                        origCenter.x() + reqDist,
-                        origCenter.y() + reqDist);
+        spacingBox.reset(origCenter.x() - reqDist,
+                         origCenter.y() - reqDist,
+                         origCenter.x() + reqDist,
+                         origCenter.y() + reqDist);
       } else {
         origCutBox.bloat(reqDist + cutWidth / 2, spacingBox);
       }
