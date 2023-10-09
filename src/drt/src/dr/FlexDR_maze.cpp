@@ -469,6 +469,7 @@ void FlexDRWorker::modMinimumcutCostVia(const Rect& box,
   }
   frVia via(viaDef);
   Rect viaBox(0, 0, 0, 0);
+  // TODO: what is this code supposed to do?
   if (isUpperVia) {
     viaBox = via.getCutBBox();
   } else {
@@ -525,6 +526,7 @@ void FlexDRWorker::modMinimumcutCostVia(const Rect& box,
           if (gridGraph_.isSVia(i, j, zIdx)) {
             auto sViaDef = apSVia_[FlexMazeIdx(i, j, zIdx)]->getAccessViaDef();
             sVia.setViaDef(sViaDef);
+            // TODO: what is this code supposed to do?
             if (isUpperVia) {
               sViaBox = sVia.getCutBBox();
             } else {
