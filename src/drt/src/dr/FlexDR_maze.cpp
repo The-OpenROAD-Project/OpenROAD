@@ -537,9 +537,7 @@ void FlexDRWorker::modMinimumcutCostVia(const Rect& box,
           xform.apply(tmpBx);
           box2boxDistSquareNew(box, tmpBx, dx, dy);
           if (!con->hasLength()) {
-            if (dx <= 0 && dy <= 0) {
-              ;
-            } else {
+            if (dx > 0 || dy > 0) {
               continue;
             }
           } else {
@@ -613,28 +611,29 @@ void FlexDRWorker::modMinSpacingCostVia(const Rect& box,
   frCoord length2 = viaBox.maxDXDY();
 
   // via prl should check min area patch metal if not fat via
-  frCoord defaultWidth = getTech()->getLayer(lNum)->getWidth();
-  bool isH
-      = (getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL);
-  bool isFatVia
-      = (isH) ? (viaBox.dy() > defaultWidth) : (viaBox.dx() > defaultWidth);
+  auto layer = getTech()->getLayer(lNum);
+  frCoord defaultWidth = layer->getWidth();
+  bool isH = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
+  bool isFatVia = (isH ? viaBox.dy() : viaBox.dx()) > defaultWidth;
 
   frCoord length2_mar = length2;
   frCoord patchLength = 0;
   if (!isFatVia) {
-    auto minAreaConstraint = getTech()->getLayer(lNum)->getAreaConstraint();
+    auto minAreaConstraint = layer->getAreaConstraint();
     auto minArea = minAreaConstraint ? minAreaConstraint->getMinArea() : 0;
-    patchLength = frCoord(ceil(1.0 * minArea / defaultWidth
-                               / getTech()->getManufacturingGrid()))
-                  * frCoord(getTech()->getManufacturingGrid());
+    auto mfgGrid = getTech()->getManufacturingGrid();
+
+    // TODO can floats be avoided here?
+    patchLength = frCoord(ceil(1.0 * minArea / defaultWidth / mfgGrid))
+                  * frCoord(mfgGrid);
     length2_mar = max(length2_mar, patchLength);
   }
 
   // spacing value needed
   frCoord prl = isCurrPs ? (length2_mar) : min(length1, length2_mar);
   bool use_min_spacing = isBlockage && USEMINSPACING_OBS && !isFatVia;
-  frCoord bloatDist = getTech()->getLayer(lNum)->getMinSpacingValue(
-      width1, width2, prl, use_min_spacing);
+  frCoord bloatDist
+      = layer->getMinSpacingValue(width1, width2, prl, use_min_spacing);
 
   drEolSpacingConstraint drCon;
   if (ndr) {
@@ -646,7 +645,7 @@ void FlexDRWorker::modMinSpacingCostVia(const Rect& box,
   frCoord bloatDistEolX = 0;
   frCoord bloatDistEolY = 0;
   if (drCon.eolWidth == 0)
-    drCon = getTech()->getLayer(lNum)->getDrEolSpacingConstraint();
+    drCon = layer->getDrEolSpacingConstraint();
   if (viaBox.dx() <= drCon.eolWidth) {
     bloatDistEolY = max(bloatDistEolY, drCon.eolSpace);
   }
@@ -981,12 +980,10 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
         gtl::point_data<frCoord> cutCenterPt((box.xMin() + box.xMax()) / 2,
                                              (box.yMin() + box.yMax()) / 2);
 
-        frSquaredDistance distSquare = 0;
-        if (con->hasCenterToCenter()) {
-          distSquare = gtl::distance_squared(origCenter, cutCenterPt);
-        } else {
-          distSquare = gtl::square_euclidean_distance(origCutRect, cutRect);
-        }
+        frSquaredDistance distSquare
+            = (con->hasCenterToCenter())
+                  ? gtl::distance_squared(origCenter, cutCenterPt)
+                  : gtl::square_euclidean_distance(origCutRect, cutRect);
 
         if (distSquare < reqDistSquare) {
           hasFixedViol = true;
@@ -1204,10 +1201,8 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const Rect& box,
   // LEF58_SPACINGTABLE START
   frLef58CutSpacingTableConstraint* lef58con;
   std::pair<frCoord, frCoord> lef58conSpc;
-  if (!isUpperVia)
-    lef58con = layer1->getLef58DefaultInterCutSpcTblConstraint();
-  else
-    lef58con = layer2->getLef58DefaultInterCutSpcTblConstraint();
+  lef58con = (isUpperVia ? layer2 : layer1)
+                 ->getLef58DefaultInterCutSpcTblConstraint();
 
   if (lef58con != nullptr) {
     auto dbRule = lef58con->getODBRule();
@@ -2592,14 +2587,14 @@ void FlexDRWorker::processPathSeg(frMIdx startX,
 }
 bool FlexDRWorker::isInWorkerBorder(frCoord x, frCoord y) const
 {
-  return (x == getRouteBox().xMin() &&  // left
-          y <= getRouteBox().yMax() && y >= getRouteBox().yMin())
-         || (x == getRouteBox().xMax() &&  // right
-             y <= getRouteBox().yMax() && y >= getRouteBox().yMin())
-         || (y == getRouteBox().yMin() &&  // bottom
-             x <= getRouteBox().xMax() && x >= getRouteBox().xMin())
-         || (y == getRouteBox().yMax() &&  // top
-             x <= getRouteBox().xMax() && x >= getRouteBox().xMin());
+  auto xMin = getRouteBox().xMin();
+  auto yMin = getRouteBox().yMin();
+  auto xMax = getRouteBox().xMax();
+  auto yMax = getRouteBox().yMax();
+  return (x == xMin && y <= yMax && y >= yMin)      // left
+         || (x == xMax && y <= yMax && y >= yMin)   // right
+         || (y == yMin && x <= xMax && x >= xMin)   // bottom
+         || (y == yMax && x <= xMax && x >= xMin);  // top
 }
 // checks whether the path segment is connected to an access point and update
 // connectivity info (stored in frSegStyle)
@@ -2981,7 +2976,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
           = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
       // add curr via enclosure
       frMIdx z = (nextIdx.z() < currIdx.z()) ? currIdx.z() - 1 : currIdx.z();
-      bool isLayer1 = (nextIdx.z() < currIdx.z()) ? false : true;
+      bool isLayer1 = (nextIdx.z() >= currIdx.z());
       if (prev_is_wire) {
         currArea += getHalfViaEncArea(
             z, isLayer1, net->getFrNet()->getNondefaultRule());
