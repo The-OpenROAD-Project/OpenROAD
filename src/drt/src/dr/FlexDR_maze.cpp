@@ -179,15 +179,13 @@ void FlexDRWorker::modBlockedPlanar(const Rect& box, frMIdx z, bool setBlock)
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
     for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
       if (setBlock) {
-        gridGraph_.setBlocked(i, j, z, frDirEnum::E);
-        gridGraph_.setBlocked(i, j, z, frDirEnum::N);
-        gridGraph_.setBlocked(i, j, z, frDirEnum::W);
-        gridGraph_.setBlocked(i, j, z, frDirEnum::S);
+        for (const auto dir : frDirEnumPlanar) {
+          gridGraph_.setBlocked(i, j, z, dir);
+        }
       } else {
-        gridGraph_.resetBlocked(i, j, z, frDirEnum::E);
-        gridGraph_.resetBlocked(i, j, z, frDirEnum::N);
-        gridGraph_.resetBlocked(i, j, z, frDirEnum::W);
-        gridGraph_.resetBlocked(i, j, z, frDirEnum::S);
+        for (const auto dir : frDirEnumPlanar) {
+          gridGraph_.resetBlocked(i, j, z, dir);
+        }
       }
     }
   }
