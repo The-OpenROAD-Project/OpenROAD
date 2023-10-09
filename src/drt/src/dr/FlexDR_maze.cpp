@@ -295,17 +295,13 @@ void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
 
   FlexMazeIdx mIdx1, mPinLL;
   FlexMazeIdx mIdx2, mPinUR;
+  Rect bx;
   // assumes width always > 2
-  Rect bx(box.xMin() - bloatDist - halfwidth2 + 1,
-          box.yMin() - bloatDist - halfwidth2 + 1,
-          box.xMax() + bloatDist + halfwidth2 - 1,
-          box.yMax() + bloatDist + halfwidth2 - 1);
+  box.bloat(bloatDist + halfwidth2 - 1, bx);
   gridGraph_.getIdxBox(mIdx1, mIdx2, bx);
   if (isMacroPin && type == ModCostType::resetBlocked) {
-    Rect sBox(box.xMin() + width2 / 2,
-              box.yMin() + width2 / 2,
-              box.xMax() - width2 / 2,
-              box.yMax() - width2 / 2);
+    Rect sBox;
+    box.bloat(width2 / 2, sBox);
     gridGraph_.getIdxBox(mPinLL, mPinUR, sBox);
   }
   Point pt, pt1, pt2, pt3, pt4;
@@ -750,10 +746,7 @@ void FlexDRWorker::modEolSpacingCost_helper(const Rect& testbox,
     frCoord width2 = getTech()->getLayer(lNum)->getWidth();
     frCoord halfwidth2 = width2 / 2;
     // assumes width always > 2
-    bx.init(testbox.xMin() - halfwidth2 + 1,
-            testbox.yMin() - halfwidth2 + 1,
-            testbox.xMax() + halfwidth2 - 1,
-            testbox.yMax() + halfwidth2 - 1);
+    testbox.bloat(halfwidth2 - 1, bx);
   } else {
     // default via dimension
     frViaDef* viaDef = nullptr;
