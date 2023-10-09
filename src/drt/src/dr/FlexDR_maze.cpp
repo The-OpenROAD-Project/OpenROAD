@@ -1072,7 +1072,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
   dbTransform xform;
   frSquaredDistance reqDistSquare = 0;
   Point boxCenter, tmpBxCenter;
-  boxCenter = {(box.xMin() + box.xMax()) / 2, (box.yMin() + box.yMax()) / 2};
+  boxCenter = box.center();
   frSquaredDistance currDistSquare = 0;
   bool hasViol;
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
@@ -1085,8 +1085,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
         xform.setOffset(pt);
         Rect tmpBx = obj->getBBox();
         xform.apply(tmpBx);
-        tmpBxCenter = {(tmpBx.xMin() + tmpBx.xMax()) / 2,
-                       (tmpBx.yMin() + tmpBx.yMax()) / 2};
+        tmpBxCenter = tmpBx.center();
         distSquare = box2boxDistSquareNew(box, tmpBx, dx, dy);
         c2cSquare = Point::squaredDistance(boxCenter, tmpBxCenter);
         prl = max(-dx, -dy);
@@ -1244,8 +1243,6 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const Rect& box,
   frCoord prl, dx, dy;
   dbTransform xform;
   frSquaredDistance reqDistSquare = 0;
-  Point boxCenter, tmpBxCenter;
-  boxCenter = {(box.xMin() + box.xMax()) / 2, (box.yMin() + box.yMax()) / 2};
   frSquaredDistance currDistSquare = 0;
   bool hasViol = false;
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
@@ -1256,10 +1253,8 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const Rect& box,
         xform.setOffset(pt);
         Rect tmpBx = obj->getBBox();
         xform.apply(tmpBx);
-        tmpBxCenter = {(tmpBx.xMin() + tmpBx.xMax()) / 2,
-                       (tmpBx.yMin() + tmpBx.yMax()) / 2};
         distSquare = box2boxDistSquareNew(box, tmpBx, dx, dy);
-        c2cSquare = Point::squaredDistance(boxCenter, tmpBxCenter);
+        c2cSquare = Point::squaredDistance(box.center(), tmpBx.center());
         prl = max(-dx, -dy);
         hasViol = false;
         if (con != nullptr) {

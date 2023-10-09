@@ -236,6 +236,7 @@ class Rect
   int dy() const { return yhi_ - ylo_; }
   int xCenter() const { return (xlo_ + xhi_) / 2; }
   int yCenter() const { return (ylo_ + yhi_) / 2; }
+  Point center() const { return {xCenter(), yCenter()}; }
   std::vector<Point> getPoints() const;
   Point ll() const;
   Point ul() const;
