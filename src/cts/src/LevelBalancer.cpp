@@ -118,6 +118,7 @@ void LevelBalancer::addBufferLevels(TreeBuilder* builder,
         options_->getSinkBuffer(),
         legalBufferLoc.getX() * wireSegmentUnit_,
         legalBufferLoc.getY() * wireSegmentUnit_);
+    builder->commitLoc(legalBufferLoc);
     builder->addTreeLevelBuffer(&levelBuffer);
 
     // Add Net

@@ -73,6 +73,44 @@ void TreeBuilder::initBlockages()
                   "{} placed hard macros will be treated like blockages.",
                   bboxList_.size());
   }
+
+  // add tree buffer width and height for legalization
+  std::string buffer;
+  if (!options_->getTreeBuffer().empty()) {
+    buffer = options_->getTreeBuffer();
+  } else {
+    buffer = options_->getRootBuffer();
+  }
+  odb::dbMaster* libCell = db_->findMaster(buffer.c_str());
+  assert(libCell != nullptr);
+  bufferWidth_ = (double) libCell->getWidth() / techChar_->getLengthUnit();
+  bufferHeight_ = (double) libCell->getHeight() / techChar_->getLengthUnit();
+  // clang-format off
+  debugPrint(logger_, CTS, "legalizer", 3, "buf width= {:0.3f} buf ht= {:0.3f} scalingUnit={}",
+             bufferWidth_, bufferHeight_, techChar_->getLengthUnit());
+  // clang-format on
+}
+
+// Check if location (x, y) is legal by checking if
+// 1) it lies along edges of a known blockage (x1,y1) (x2,y2), or
+// 2) it is not on any other blockages (more expensive)
+bool TreeBuilder::checkLegalitySpecial(Point<double> loc,
+                                       double x1,
+                                       double y1,
+                                       double x2,
+                                       double y2,
+                                       int scalingFactor)
+{
+  if (!isOccupiedLoc(loc)
+      && isAlongBbox(loc.getX(), loc.getY(), x1, y1, x2, y2)) {
+    return true;
+  }
+
+  if (checkLegalityLoc(loc, scalingFactor)) {
+    return true;
+  }
+
+  return false;
 }
 
 // Find one blockage that contains bufferLoc
@@ -118,42 +156,115 @@ Point<double> TreeBuilder::legalizeOneBuffer(Point<double> bufferLoc,
     odb::dbMaster* libCell = db_->findMaster(bufferName.c_str());
     assert(libCell != nullptr);
     // check if current buffer sits on top of blockage
-    double x1, y1, x2, y2;
     const double wireSegmentUnit = techChar_->getLengthUnit();
+    double x1, y1, x2, y2;
     if (findBlockage(bufferLoc, wireSegmentUnit, x1, y1, x2, y2)) {
       // x1, y1 are lower left corner of blockage
       // x2, y2 are upper right corner of blockage
       // move buffer to the nearest legal location by snapping it to right,
       // left, top or bottom need to consider cell height and width to avoid any
       // overlap with blockage
+      double minDist = 1e6;
+      double bx = bufferLoc.getX();
+      double by = bufferLoc.getY();
       Point<double> newLoc = bufferLoc;
-      // first, try snapping it to the left
-      double delta = bufferLoc.getX() - x1;
-      double minDist = delta;
-      newLoc.setX(x1 - ((double) libCell->getWidth() / wireSegmentUnit));
+      Point<double> noBest(-1e6, -1e6);
+      Point<double> bestLoc = noBest;
+
+      // first, try snapping it to the left by adjusting for buffer width
+      double newX = x1 - ((double) libCell->getWidth() / wireSegmentUnit);
+      newLoc.setX(newX);
+      double delta = abs(newX - bx);
+      if (!isOccupiedLoc(newLoc) && (delta < minDist)) {
+        minDist = delta;
+        bestLoc = newLoc;
+      }
+
       // second, try snapping it to the right
-      delta = x2 - bufferLoc.getX();
-      if (delta < minDist) {
+      newX = x2;
+      newLoc.setX(x2);
+      delta = abs(newX - bx);
+      if (!isOccupiedLoc(newLoc) && (delta < minDist)) {
         minDist = delta;
-        newLoc.setX(x2);
+        bestLoc = newLoc;
       }
-      // third, try snapping it to the bottom
-      delta = bufferLoc.getY() - y1;
-      if (delta < minDist) {
+
+      // third, try snapping it to the bottom by adjusting for buffer height
+      double newY = y1 - ((double) libCell->getHeight() / wireSegmentUnit);
+      newLoc.setX(bx);
+      newLoc.setY(newY);
+      delta = abs(newY - by);
+      if (!isOccupiedLoc(newLoc) && (delta < minDist)) {
         minDist = delta;
-        newLoc.setX(bufferLoc.getX());
-        newLoc.setY(y1 - ((double) libCell->getHeight() / wireSegmentUnit));
+        bestLoc = newLoc;
       }
+
       // fourth, try snapping it to the top
-      delta = y2 - bufferLoc.getY();
-      if (delta < minDist) {
-        newLoc.setX(bufferLoc.getX());
-        newLoc.setY(y2);
+      newY = y2;
+      delta = abs(newY - by);
+      if (!isOccupiedLoc(newLoc) && (delta < minDist)) {
+        bestLoc = newLoc;
       }
-      return newLoc;
+
+      if (bestLoc != noBest) {
+        return bestLoc;
+      }
     }
   }
+
   return bufferLoc;
+}
+
+// Check if a particular location is legal by checking
+// 1) if the location is occupied by another cell
+// 2) if the location is sitting on a blockage
+bool TreeBuilder::checkLegalityLoc(const Point<double>& bufferLoc,
+                                   int scalingFactor)
+{
+  // check if location is already occupied
+  if (occupiedLocations_.find(bufferLoc) != occupiedLocations_.end()) {
+    // clang-format off
+    debugPrint(logger_, CTS, "legalizer", 4, "loc {} is already occupied", bufferLoc);
+    // clang-format on
+    return false;
+  }
+
+  double x1, y1, x2, y2;
+  if (findBlockage(bufferLoc, scalingFactor, x1, y1, x2, y2)) {
+    return false;
+  }
+
+  return true;
+}
+
+bool TreeBuilder::isOccupiedLoc(const Point<double>& bufferLoc)
+{
+  // clang-format off
+  if (occupiedLocations_.find(bufferLoc) != occupiedLocations_.end()) {
+    debugPrint(logger_, CTS, "legalizer", 4, "loc {} is already occupied", bufferLoc);
+    return true;
+  }
+  debugPrint(logger_, CTS, "legalizer", 4, "loc {} is not occupied", bufferLoc);
+  return false;
+  // clang-format on
+}
+
+void TreeBuilder::commitLoc(const Point<double>& bufferLoc)
+{
+  // clang-format off
+  occupiedLocations_[bufferLoc] = true;
+  debugPrint(logger_, CTS, "legalizer", 4, "loc {} has been committed, size={}",
+             bufferLoc, occupiedLocations_.size());
+  // clang-format on
+}
+
+void TreeBuilder::uncommitLoc(const Point<double>& bufferLoc)
+{
+  // clang-format off
+  occupiedLocations_.erase(bufferLoc);
+  debugPrint(logger_, CTS, "legalizer", 4, "loc {} has been uncommitted, size={}",
+             bufferLoc, occupiedLocations_.size());
+  // clang-format on
 }
 
 }  // namespace cts

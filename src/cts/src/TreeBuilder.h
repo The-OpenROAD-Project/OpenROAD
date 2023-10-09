@@ -50,6 +50,29 @@ namespace utl {
 class Logger;
 }  // namespace utl
 
+// Hash and compare functions for occupiedLocations_ map
+// Use this hash table to keep track of occupied locations
+namespace std {
+template <>
+struct hash<cts::Point<double>>
+{
+  std::size_t operator()(const cts::Point<double>& point) const
+  {
+    return point.getX() + (point.getY() * 11.0);
+  }
+};
+
+template <>
+struct equal_to<cts::Point<double>>
+{
+  bool operator()(const cts::Point<double>& point1,
+                  const cts::Point<double>& point2) const
+  {
+    return (point1 == point2);
+  }
+};
+}  // namespace std
+
 namespace cts {
 
 class TreeBuilder
@@ -120,11 +143,34 @@ class TreeBuilder
                     double x2,
                     double y2)
   {
-    if ((x >= x1) && (x <= x2) && (y >= y1) && (y <= y2)) {
+    if ((x > x1) && (x < x2) && (y > y1) && (y < y2)) {
       return true;
     }
     return false;
   }
+  bool isAlongBbox(double x,
+                   double y,
+                   double x1,
+                   double y1,
+                   double x2,
+                   double y2)
+  {
+    if ((floatEqual(x, x1) || (floatEqual(x, x2)))
+        && (floatEqualOrGreater(y, y1) && floatEqualOrSmaller(y, y2))) {
+      return true;
+    }
+    if ((floatEqual(y, y1) || (floatEqual(y, y2)))
+        && (floatEqualOrGreater(x, x1) && floatEqualOrSmaller(x, x2))) {
+      return true;
+    }
+    return false;
+  }
+  bool checkLegalitySpecial(Point<double> loc,
+                            double x1,
+                            double y1,
+                            double x2,
+                            double y2,
+                            int scalingFactor);
   bool findBlockage(const Point<double>& bufferLoc,
                     double scalingUnit,
                     double& x1,
@@ -134,6 +180,12 @@ class TreeBuilder
   Point<double> legalizeOneBuffer(Point<double> bufferLoc,
                                   const std::string& bufferName);
   utl::Logger* getLogger() { return logger_; }
+  double getBufferWidth() { return bufferWidth_; }
+  double getBufferHeight() { return bufferHeight_; }
+  bool checkLegalityLoc(const Point<double>& bufferLoc, int scalingFactor);
+  bool isOccupiedLoc(const Point<double>& bufferLoc);
+  void commitLoc(const Point<double>& bufferLoc);
+  void uncommitLoc(const Point<double>& bufferLoc);
 
  protected:
   CtsOptions* options_ = nullptr;
@@ -147,10 +199,16 @@ class TreeBuilder
   unsigned treeBufLevels_ = 0;
   std::set<ClockInst*> first_level_sink_drivers_;
   std::set<ClockInst*> second_level_sink_drivers_;
+
   std::set<ClockInst*> tree_level_buffers_;
   utl::Logger* logger_;
   odb::dbDatabase* db_;
   std::vector<odb::dbBox*> bboxList_;
+  double bufferWidth_;
+  double bufferHeight_;
+  // keep track of occupied cells to avoid overlap violations
+  // this only tracks cell origin
+  std::unordered_map<Point<double>, bool> occupiedLocations_;
 };
 
 }  // namespace cts
