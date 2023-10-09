@@ -1518,8 +1518,7 @@ void FlexDRWorker::route_queue()
   for (auto& pwire : gcWorker_->getPWires()) {
     auto net = pwire->getNet();
     if (!net) {
-      cout << "Error: pwire with no net\n";
-      exit(1);
+      logger_->error(DRT, 2009, "pwire with no net");
     }
     net->setModified(true);
     auto tmpPWire = make_unique<drPatchWire>();
@@ -1685,9 +1684,10 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
       if (isRouted == false) {
         if (OUT_MAZE_FILE == string("")) {
           if (VERBOSE > 0) {
-            cout << "Warning: no output maze log specified, skipped writing "
-                    "maze log"
-                 << endl;
+            logger_->warn(DRT,
+                          2010,
+                          "No output maze log specified."
+                          "Skipped writing maze log");
           }
         } else {
           gridGraph_.print();
@@ -2143,7 +2143,7 @@ void FlexDRWorker::routeNet_postAstarUpdate(
       }
     }
   } else {
-    cout << "Error: routeNet_postAstarUpdate path is empty" << endl;
+    logger_->error(DRT, 2011, "routeNet_postAstarUpdate path is empty.");
   }
   // must be before comment line ABC so that the used actual src is set in
   // gridgraph
@@ -2187,9 +2187,9 @@ void FlexDRWorker::routeNet_postAstarUpdate(
       }
       // zero length
     } else if (startX == endX && startY == endY && startZ == endZ) {
-      std::cout << "Warning: zero-length path in updateFlexPin\n";
+      logger_->warn(DRT, 2012, "Zero-length path in updateFlexPin.");
     } else {
-      std::cout << "Error: non-colinear path in updateFlexPin\n";
+      logger_->error(DRT, 2013, "Non-colinear path in updateFlexPin.");
     }
   }
   for (auto& mi : localConnComps) {
