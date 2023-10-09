@@ -1394,21 +1394,16 @@ bool FlexDRWorker::mazeIterInit_sortRerouteNets(int mazeIter,
                                                 vector<drNet*>& rerouteNets)
 {
   auto rerouteNetsComp = [](drNet* const& a, drNet* const& b) {
-    if (a->getPriority() > b->getPriority())
-      return true;
-    if (a->getPriority() < b->getPriority())
-      return false;
-    if (a->getFrNet()->getAbsPriorityLvl() > b->getFrNet()->getAbsPriorityLvl())
-      return true;
-    if (a->getFrNet()->getAbsPriorityLvl() < b->getFrNet()->getAbsPriorityLvl())
-      return false;
-    Rect boxA = a->getPinBox();
-    Rect boxB = b->getPinBox();
-    auto areaA = boxA.area();
-    auto areaB = boxB.area();
-    return (a->getNumPinsIn() == b->getNumPinsIn()
-                ? (areaA == areaB ? a->getId() < b->getId() : areaA < areaB)
-                : a->getNumPinsIn() < b->getNumPinsIn());
+    return std::make_tuple(a->getPriority(),
+                           a->getFrNet()->getAbsPriorityLvl(),
+                           a->getNumPinsIn(),
+                           a->getPinBox().area(),
+                           a->getId())
+           < std::make_tuple(b->getPriority(),
+                             b->getFrNet()->getAbsPriorityLvl(),
+                             b->getNumPinsIn(),
+                             b->getPinBox().area(),
+                             b->getId());
   };
   // sort
   if (mazeIter == 0) {
@@ -1435,10 +1430,8 @@ bool FlexDRWorker::mazeIterInit_sortRerouteQueue(
       = [](RouteQueueEntry const& a, RouteQueueEntry const& b) {
           auto block1 = a.block;
           auto block2 = b.block;
-          if (block1->typeId() == block2->typeId())
-            return block1->getId() < block2->getId();
-          else
-            return block1->typeId() < block2->typeId();
+          return std::make_tuple(block1->typeId(), block1->getId())
+                 < std::make_tuple(block2->typeId(), block2->getId());
         };
   // sort
   if (mazeIter == 0) {
