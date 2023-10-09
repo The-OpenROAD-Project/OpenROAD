@@ -457,7 +457,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(
       instance_shapes_.pins, "Pins", instance_shape, Qt::Checked, true);
   makeLeafItem(instance_shapes_.iterm_labels,
-               "Pin labels",
+               "Pin Names",
                instance_shape,
                Qt::Unchecked,
                false,
