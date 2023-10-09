@@ -945,9 +945,8 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
     }
     bool hasFixedViol = false;
 
-    gtl::point_data<frCoord> origCenter(
-        (origCutBox.xMin() + origCutBox.xMax()) / 2,
-        (origCutBox.yMin() + origCutBox.yMax()) / 2);
+    gtl::point_data<frCoord> origCenter(origCutBox.xCenter(),
+                                        origCutBox.yCenter());
     gtl::rectangle_data<frCoord> origCutRect(origCutBox.xMin(),
                                              origCutBox.yMin(),
                                              origCutBox.xMax(),
@@ -977,8 +976,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
 
         gtl::rectangle_data<frCoord> cutRect(
             box.xMin(), box.yMin(), box.xMax(), box.yMax());
-        gtl::point_data<frCoord> cutCenterPt((box.xMin() + box.xMax()) / 2,
-                                             (box.yMin() + box.yMax()) / 2);
+        gtl::point_data<frCoord> cutCenterPt(box.xCenter(), box.yCenter());
 
         frSquaredDistance distSquare
             = (con->hasCenterToCenter())
