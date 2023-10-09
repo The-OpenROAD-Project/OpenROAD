@@ -1124,11 +1124,11 @@ void RenderThread::drawBlock(QPainter* painter,
   drawRegions(painter, block);
   debugPrint(logger_, GUI, "draw", 1, "regions {}", inst_regions);
 
-  utl::Timer inst_pin_markers;
-  if (viewer_->options_->arePinMarkersVisible()) {
-    drawPinMarkers(gui_painter, block, bounds);
+  utl::Timer inst_io_pins;
+  if (viewer_->options_->areIOPinsVisible()) {
+    drawIOPins(gui_painter, block, bounds);
   }
-  debugPrint(logger_, GUI, "draw", 1, "pin markers {}", inst_pin_markers);
+  debugPrint(logger_, GUI, "draw", 1, "io pins {}", inst_io_pins);
 
   utl::Timer inst_cell_grid;
   drawGCellGrid(painter, bounds);
@@ -1387,9 +1387,9 @@ void RenderThread::drawModuleView(QPainter* painter,
   }
 }
 
-void RenderThread::drawPinMarkers(Painter& painter,
-                                  odb::dbBlock* block,
-                                  const odb::Rect& bounds)
+void RenderThread::drawIOPins(Painter& painter,
+                              odb::dbBlock* block,
+                              const odb::Rect& bounds)
 {
   auto die_area = block->getDieArea();
   auto die_width = die_area.dx();
@@ -1499,6 +1499,7 @@ void RenderThread::drawPinMarkers(Painter& painter,
         if (!box) {
           continue;
         }
+
         Point pin_center((box->xMin() + box->xMax()) / 2,
                          (box->yMin() + box->yMax()) / 2);
 
@@ -1554,7 +1555,14 @@ void RenderThread::drawPinMarkers(Painter& painter,
           marker.push_back(new_pt);
         }
 
+        // draw marker to indicate signal direction
         painter.drawPolygon(marker);
+
+        if (!viewer_->isNetVisible(term->getNet())) {
+          // draw pin's geometry only when it's not
+          // already being drawn by its Net
+          painter.drawRect(box->getBox());
+        }
 
         if (draw_names) {
           Point text_anchor_pt = xfm.getOffset();
