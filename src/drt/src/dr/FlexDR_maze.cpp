@@ -810,55 +810,32 @@ void FlexDRWorker::modEolSpacingCost_helper(const Rect& testbox,
             break;
           default:;
         }
-      } else if (eolType == 1) {
-        if (gridGraph_.isSVia(i, j, z - 1)) {
+      } else {
+        auto zTmp = (eolType == 1) ? z - 1 : z;
+
+        if (gridGraph_.isSVia(i, j, zTmp)) {
           gridGraph_.getPoint(pt, i, j);
-          auto sViaDef = apSVia_[FlexMazeIdx(i, j, z - 1)]->getAccessViaDef();
+          auto sViaDef = apSVia_[FlexMazeIdx(i, j, zTmp)]->getAccessViaDef();
           sVia.setViaDef(sViaDef);
           sVia.setOrigin(pt);
-          sViaBox = sVia.getLayer2BBox();
+          sViaBox
+              = (eolType == 1) ? sVia.getLayer2BBox() : sVia.getLayer1BBox();
           if (!sViaBox.overlaps(testbox)) {
             continue;
           }
         }
         switch (type) {
           case subRouteShape:
-            gridGraph_.subRouteShapeCostVia(i, j, z - 1);  // safe access
+            gridGraph_.subRouteShapeCostVia(i, j, zTmp);  // safe access
             break;
           case addRouteShape:
-            gridGraph_.addRouteShapeCostVia(i, j, z - 1);  // safe access
+            gridGraph_.addRouteShapeCostVia(i, j, zTmp);  // safe access
             break;
           case subFixedShape:
-            gridGraph_.subFixedShapeCostVia(i, j, z - 1);  // safe access
+            gridGraph_.subFixedShapeCostVia(i, j, zTmp);  // safe access
             break;
           case addFixedShape:
-            gridGraph_.addFixedShapeCostVia(i, j, z - 1);  // safe access
-            break;
-          default:;
-        }
-      } else if (eolType == 2) {
-        if (gridGraph_.isSVia(i, j, z)) {
-          gridGraph_.getPoint(pt, i, j);
-          auto sViaDef = apSVia_[FlexMazeIdx(i, j, z)]->getAccessViaDef();
-          sVia.setViaDef(sViaDef);
-          sVia.setOrigin(pt);
-          sViaBox = sVia.getLayer1BBox();
-          if (!sViaBox.overlaps(testbox)) {
-            continue;
-          }
-        }
-        switch (type) {
-          case subRouteShape:
-            gridGraph_.subRouteShapeCostVia(i, j, z);  // safe access
-            break;
-          case addRouteShape:
-            gridGraph_.addRouteShapeCostVia(i, j, z);  // safe access
-            break;
-          case subFixedShape:
-            gridGraph_.subFixedShapeCostVia(i, j, z);  // safe access
-            break;
-          case addFixedShape:
-            gridGraph_.addFixedShapeCostVia(i, j, z);  // safe access
+            gridGraph_.addFixedShapeCostVia(i, j, zTmp);  // safe access
             break;
           default:;
         }
