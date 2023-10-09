@@ -122,9 +122,36 @@ bool MacroPlacer2::place(const int max_num_macro,
   return true;
 }
 
-void MacroPlacer2::placeMacro(odb::dbInst* inst)
+odb::dbOrientType MacroPlacer2::stringToOrientType(const std::string& orientation_string)
+{
+  odb::dbOrientType orientation;
+
+  if (orientation_string == "R0") {
+    orientation = odb::dbOrientType::R0;
+  } else if (orientation_string == "MY") {
+    orientation = odb::dbOrientType::MY;
+  } else if (orientation_string == "MX") {
+    orientation = odb::dbOrientType::MX;
+  } else if (orientation_string == "R180") {
+    orientation = odb::dbOrientType::R180;
+  } else {
+    logger_->error(MPL, 33, "Invalid orientation {}.", orientation_string);
+  }
+
+  return orientation;
+}
+
+void MacroPlacer2::placeMacro(odb::dbInst* inst,
+                              float x_origin,
+                              float y_origin,
+                              const std::string& orientation_string)
 {
   std::cout << "Macro = " << inst->getName() << '\n';
+  std::cout << "Origin Location = " << x_origin << " " << y_origin << '\n';
+  
+  odb::dbOrientType orientation = stringToOrientType(orientation_string);
+
+  std::cout << "Orientation = " << orientation.getString() << '\n';
 }
 
 void MacroPlacer2::writeMacroPlacement(const char* file_name)

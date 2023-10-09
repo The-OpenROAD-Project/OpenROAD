@@ -130,9 +130,11 @@ set_debug_cmd()
 }
 
 void
-place_macro(odb::dbInst* macro_name)
+place_macro(odb::dbInst* macro_name, float x_origin, float y_origin, const char* orientation)
 {
-  getMacroPlacer2()->placeMacro(macro_name);
+  std::string orientation_string = orientation;
+
+  getMacroPlacer2()->placeMacro(macro_name, x_origin, y_origin, orientation_string);
 }
 
 void

@@ -40,6 +40,7 @@
 namespace odb {
 class dbDatabase;
 class dbInst;
+class dbOrientType;
 }
 
 namespace sta {
@@ -100,7 +101,11 @@ class MacroPlacer2
              const bool bus_planning_flag,
              const char* report_directory);
 
-  void placeMacro(odb::dbInst* inst);
+  void placeMacro(odb::dbInst* inst,
+                  float x_origin,
+                  float y_origin,
+                  const std::string& orientation_string);
+  odb::dbOrientType stringToOrientType(const std::string& orientation_string);
 
   void writeMacroPlacement(const char* file_name);
 

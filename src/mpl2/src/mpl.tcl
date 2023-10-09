@@ -252,11 +252,14 @@ proc rtl_macro_placer { args } {
     return true
 }
 
-sta::define_cmd_args "place_macro" {[-macro_name macro_name]}
+sta::define_cmd_args "place_macro" {[-macro_name macro_name] \
+                                    [-location location] \
+                                    [-orientation orientation] \
+}
 
 proc place_macro { args } {
   sta::parse_key_args "place_macro" args \
-  keys {-macro_name} \
+  keys {-macro_name -location -orientation} \
 
   if [info exists keys(-macro_name)] {
     set macro_name $keys(-macro_name)
@@ -266,7 +269,27 @@ proc place_macro { args } {
 
   set macro [mpl2::parse_macro_name "place_macro" $macro_name]
 
-  mpl2::place_macro $macro
+  if [info exists keys(-location)] {
+    set location $keys(-location)
+  } else {
+    utl::error MPL 22 "-location is required."
+  }
+
+  if { [llength $location] != 2 } {
+    utl::error MPL 12 "-location is not a list of 2 values."
+  }
+  lassign $location x_origin y_origin
+  set x_origin $x_origin
+  set y_origin $y_origin
+
+  set orientation R0
+  if [info exists keys(-orientation)] {
+    set orientation $keys(-orientation)
+  } else {
+    utl::warn MPL 18 "No orientation specified for [$macro getName], defaulting to R0."
+  }
+
+  mpl2::place_macro $macro $x_origin $y_origin $orientation
 }
 
 sta::define_cmd_args "write_macro_placement" { file_name }
