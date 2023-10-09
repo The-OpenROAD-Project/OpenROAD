@@ -36,7 +36,7 @@
 #include "Mpl2Observer.h"
 #include "hier_rtlmp.h"
 #include "object.h"
-#include "utl/Logger.h"
+#include "odb/db.h"
 
 namespace mpl2 {
 using odb::dbDatabase;
@@ -122,6 +122,11 @@ bool MacroPlacer2::place(const int max_num_macro,
   return true;
 }
 
+void MacroPlacer2::placeMacro(odb::dbInst* inst)
+{
+  std::cout << "Macro = " << inst->getName() << '\n';
+}
+
 void MacroPlacer2::writeMacroPlacement(const char* file_name)
 {
   std::string filename = file_name;
@@ -132,7 +137,7 @@ void MacroPlacer2::writeMacroPlacement(const char* file_name)
   std::ofstream out(filename);
 
   if (!out) {
-    logger_->error(MPL, 11, "Cannot open file {}.", filename)
+    logger_->error(MPL, 11, "Cannot open file {}.", filename);
   }
 }
 

@@ -252,6 +252,23 @@ proc rtl_macro_placer { args } {
     return true
 }
 
+sta::define_cmd_args "place_macro" {[-macro_name macro_name]}
+
+proc place_macro { args } {
+  sta::parse_key_args "place_macro" args \
+  keys {-macro_name} \
+
+  if [info exists keys(-macro_name)] {
+    set macro_name $keys(-macro_name)
+  } else {
+    utl::error MPL 19 "-macro_name is required."
+  }
+
+  set macro [mpl2::parse_macro_name "place_macro" $macro_name]
+
+  mpl2::place_macro $macro
+}
+
 sta::define_cmd_args "write_macro_placement" { file_name }
 
 proc write_macro_placement { args } {
@@ -260,7 +277,22 @@ proc write_macro_placement { args } {
 }
 
 namespace eval mpl2 {
+
+proc parse_macro_name {cmd macro_name} {
+  set block [ord::get_db_block]
+  set inst [$block findInst "$macro_name"]
+
+  if { $inst == "NULL" } {
+    utl::error MPL 20 "Couldn't find a macro named $macro_name."
+  } elseif { ![$inst isBlock] } {
+    utl::error MPL 21 "[$inst getName] is not a macro."
+  }
+
+  return $inst
+}
+
 proc mpl_debug { args } {
   mpl2::set_debug_cmd
 }
+
 }

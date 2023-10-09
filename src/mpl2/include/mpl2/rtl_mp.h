@@ -35,18 +35,17 @@
 
 #include <memory>
 
+#include "utl/Logger.h"
+
 namespace odb {
 class dbDatabase;
+class dbInst;
 }
 
 namespace sta {
 class dbNetwork;
 class dbSta;
 }  // namespace sta
-
-namespace utl {
-class Logger;
-}
 
 namespace par {
 class PartitionMgr;
@@ -101,6 +100,8 @@ class MacroPlacer2
              const bool bus_planning_flag,
              const char* report_directory);
 
+  void placeMacro(odb::dbInst* inst);
+
   void writeMacroPlacement(const char* file_name);
 
   void setDebug(std::unique_ptr<Mpl2Observer>& graphics);
@@ -108,7 +109,7 @@ class MacroPlacer2
  private:
   std::unique_ptr<HierRTLMP> hier_rtlmp_;
 
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
 };
 
 }  // namespace mpl2

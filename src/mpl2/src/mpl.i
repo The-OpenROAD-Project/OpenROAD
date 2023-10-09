@@ -130,6 +130,12 @@ set_debug_cmd()
 }
 
 void
+place_macro(odb::dbInst* macro_name)
+{
+  getMacroPlacer2()->placeMacro(macro_name);
+}
+
+void
 write_macro_placement(const char* file_name)
 {
   getMacroPlacer2()->writeMacroPlacement(file_name);
