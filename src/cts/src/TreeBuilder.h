@@ -58,7 +58,7 @@ namespace std {
 boost::hash<std::pair<double, double>> hash_fn;
 
 template <>
-struct hash<cts::Point<double>>
+inline struct hash<cts::Point<double>>
 {
   std::size_t operator()(const cts::Point<double>& point) const
   {
