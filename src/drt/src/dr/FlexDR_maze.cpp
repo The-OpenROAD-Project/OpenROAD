@@ -944,10 +944,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
     for (auto& [box, obj] : result) {
       if (obj->typeId() == frcVia) {
         auto via = static_cast<frVia*>(obj);
-        if (!via->getNet()->getType().isSupply()) {
-          continue;
-        }
-        if (origCutBox == box) {
+        if (!via->getNet()->getType().isSupply() || origCutBox == box) {
           continue;
         }
 
@@ -2584,7 +2581,7 @@ void FlexDRWorker::checkPathSegStyle(drPathSeg* ps,
 bool FlexDRWorker::hasAccessPoint(const Point& pt, frLayerNum lNum, frNet* net)
 {
   frRegionQuery::Objects<frBlockObject> result;
-  Rect bx(pt.x(), pt.y(), pt.x(), pt.y());
+  Rect bx(pt, pt);
   design_->getRegionQuery()->query(bx, lNum, result);
   for (auto& rqObj : result) {
     switch (rqObj.second->typeId()) {
@@ -3263,29 +3260,25 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal_addPWire(
   gridGraph_.getPoint(origin, bpIdx.x(), bpIdx.y());
   frLayerNum layerNum = gridGraph_.getLayerNum(bpIdx.z());
   // actual offsetbox
-  Point patchLL, patchUR;
+  Rect patchRect;
   if (isPatchHorz) {
     if (isPatchLeft) {
-      patchLL = {0 - patchLength, 0 - patchWidth / 2};
-      patchUR = {0, 0 + patchWidth / 2};
+      patchRect = {-patchLength, -patchWidth / 2, 0, patchWidth / 2};
     } else {
-      patchLL = {0, 0 - patchWidth / 2};
-      patchUR = {0 + patchLength, 0 + patchWidth / 2};
+      patchRect = {0, -patchWidth / 2, patchLength, patchWidth / 2};
     }
   } else {
     if (isPatchLeft) {
-      patchLL = {0 - patchWidth / 2, 0 - patchLength};
-      patchUR = {0 + patchWidth / 2, 0};
+      patchRect = {-patchWidth / 2, -patchLength, patchWidth / 2, 0};
     } else {
-      patchLL = {0 - patchWidth / 2, 0};
-      patchUR = {0 + patchWidth / 2, 0 + patchLength};
+      patchRect = {-patchWidth / 2, 0, patchWidth / 2, patchLength};
     }
   }
 
   auto tmpPatch = make_unique<drPatchWire>();
   tmpPatch->setLayerNum(layerNum);
   tmpPatch->setOrigin(origin);
-  tmpPatch->setOffsetBox(Rect(patchLL, patchUR));
+  tmpPatch->setOffsetBox(patchRect);
   tmpPatch->addToNet(net);
   unique_ptr<drConnFig> tmp(std::move(tmpPatch));
   auto& workerRegionQuery = getWorkerRegionQuery();
@@ -3304,16 +3297,13 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal(drNet* net,
   bool isPatchHorz;
   // bool isLeftClean = true;
   frLayerNum layerNum = gridGraph_.getLayerNum(bpIdx.z());
-  frCoord patchLength = frCoord(ceil(1.0 * gapArea / patchWidth
-                                     / getTech()->getManufacturingGrid()))
-                        * getTech()->getManufacturingGrid();
+  auto mfgGrid = getTech()->getManufacturingGrid();
+  frCoord patchLength
+      = frCoord(ceil(1.0 * gapArea / patchWidth / mfgGrid)) * mfgGrid;
 
   // always patch to pref dir
-  if (getTech()->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
-    isPatchHorz = true;
-  } else {
-    isPatchHorz = false;
-  }
+  auto layer = getTech()->getLayer(layerNum);
+  isPatchHorz = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
 
   auto costL = routeNet_postAstarAddPathMetal_isClean(
       bpIdx, isPatchHorz, bpPatchLeft, patchLength);
