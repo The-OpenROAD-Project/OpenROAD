@@ -35,7 +35,7 @@
 
 #include "TreeBuilder.h"
 
-#include <boost/functional/hash.hpp>
+#include <boost/unordered_set>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -43,17 +43,6 @@
 #include <memory>
 
 #include "utl/Logger.h"
-
-namespace std {
-
-boost::hash<std::pair<double, double>> hash_fn;
-
-inline std::size_t pointHash(const cts::Point<double>& point)
-{
-  return hash_fn(std::make_pair(point.getX(), point.getY()));
-}
-
-}  // namespace std
 
 namespace cts {
 

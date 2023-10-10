@@ -35,10 +35,10 @@
 
 #pragma once
 
+#include <boost/unordered_set>
 #include <deque>
 #include <functional>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "Clock.h"
@@ -49,33 +49,6 @@
 namespace utl {
 class Logger;
 }  // namespace utl
-
-// Hash and compare functions for occupiedLocations_ map
-// Use this hash table to keep track of occupied locations
-namespace std {
-
-std::size_t pointHash(const cts::Point<double>& point);
-
-template <>
-struct hash<cts::Point<double>>
-{
-  std::size_t operator()(const cts::Point<double>& point) const
-  {
-    return pointHash(point);
-  }
-};
-
-template <>
-struct equal_to<cts::Point<double>>
-{
-  bool operator()(const cts::Point<double>& point1,
-                  const cts::Point<double>& point2) const
-  {
-    return (point1 == point2);
-  }
-};
-
-}  // namespace std
 
 namespace cts {
 
@@ -212,7 +185,7 @@ class TreeBuilder
   double bufferHeight_;
   // keep track of occupied cells to avoid overlap violations
   // this only tracks cell origin
-  std::unordered_set<Point<double>> occupiedLocations_;
+  boost::unordered_set<Point<double>> occupiedLocations_;
 };
 
 }  // namespace cts
