@@ -115,6 +115,7 @@ class MacroPlacer2
   std::unique_ptr<HierRTLMP> hier_rtlmp_;
 
   utl::Logger* logger_ = nullptr;
+  odb::dbDatabase* db_ = nullptr;
 };
 
 }  // namespace mpl2

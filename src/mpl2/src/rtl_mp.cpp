@@ -57,6 +57,7 @@ void MacroPlacer2::init(sta::dbNetwork* network,
   hier_rtlmp_
       = std::make_unique<HierRTLMP>(network, db, sta, logger, tritonpart);
   logger_ = logger;
+  db_ = db;
 }
 
 bool MacroPlacer2::place(const int max_num_macro,
@@ -122,7 +123,8 @@ bool MacroPlacer2::place(const int max_num_macro,
   return true;
 }
 
-odb::dbOrientType MacroPlacer2::stringToOrientType(const std::string& orientation_string)
+odb::dbOrientType MacroPlacer2::stringToOrientType(
+    const std::string& orientation_string)
 {
   odb::dbOrientType orientation;
 
@@ -146,12 +148,45 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
                               float y_origin,
                               const std::string& orientation_string)
 {
-  std::cout << "Macro = " << inst->getName() << '\n';
-  std::cout << "Origin Location = " << x_origin << " " << y_origin << '\n';
+  float dbu_per_micron = db_->getTech()->getDbUnitsPerMicron();
+
+  int x1 = micronToDbu(x_origin, dbu_per_micron);
+  int y1 = micronToDbu(y_origin, dbu_per_micron);
+  int x2 = x1 + inst->getBBox()->getDX();
+  int y2 = y1 + inst->getBBox()->getDY();
+
+  odb::Rect macro_new_bbox(x1, y1, x2, y2);
+  odb::Rect core_area = inst->getBlock()->getCoreArea();
   
+  if (!core_area.contains(macro_new_bbox)) {
+    logger_->error(MPL,
+                   34,
+                   "Specified location results in illegal placement. Cannot "
+                   "place macro outside of the core.");
+  }
+
   odb::dbOrientType orientation = stringToOrientType(orientation_string);
 
-  std::cout << "Orientation = " << orientation.getString() << '\n';
+  // Orientation must be set before location so we don't end up flipping
+  // and misplacing the macro.
+  inst->setOrient(orientation);
+  inst->setLocation(x1, y1);
+
+  int manufacturing_grid = db_->getTech()->getManufacturingGrid();
+
+  HardMacro macro(inst, dbu_per_micron, manufacturing_grid, 0, 0);
+
+  mpl2::Rect macro_new_bbox_micron(x_origin,
+                                   y_origin,
+                                   dbuToMicron(macro_new_bbox.xMax(), dbu_per_micron),
+                                   dbuToMicron(macro_new_bbox.yMax(), dbu_per_micron));
+
+  float pitch_x = 0.0;
+  float pitch_y = 0.0;
+
+  macro.alignOriginWithGrids(macro_new_bbox_micron, orientation, pitch_x, pitch_y, inst->getBlock());
+
+  inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
 }
 
 void MacroPlacer2::writeMacroPlacement(const char* file_name)

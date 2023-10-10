@@ -22,12 +22,6 @@ link_design $top_module
 #
 read_def $floorplan_def -floorplan_initialize
 
-place_macro -macro_name U1 -location {20 20}
-place_macro -macro_name U2 -location {34 34} -orientation R180
-place_macro -macro_name U3 -location {34 34} -orientation MY
-place_macro -macro_name U4 -location {34 34} -orientation MX
-place_macro -macro_name U5 -location {34 34} -orientation R0
-place_macro -macro_name U5 -location {34 34} -orientation chelou
 rtl_macro_placer -report_directory results/mp_test1 -halo_width 5.0
 
 set def_file [make_result_file mp_test1.def]
