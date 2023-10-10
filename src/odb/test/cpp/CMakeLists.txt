@@ -41,7 +41,6 @@ target_link_libraries(TestNetTrack ${TEST_LIBS})
 target_link_libraries(TestMaster ${TEST_LIBS})
 
 # FAILING TARGETS
-# add_test(NAME TestLef58Properties COMMAND TestLef58Properties)
 # add_test(NAME TestJournal COMMAND TestJournal)
 # add_test(NAME TestAccessPoint COMMAND TestAccessPoint)
 
@@ -56,6 +55,7 @@ add_test(NAME odb.TestGCellGrid COMMAND TestGCellGrid)
 add_test(NAME odb.TestGuide COMMAND TestGuide)
 add_test(NAME odb.TestNetTrack COMMAND TestNetTrack)
 add_test(NAME odb.TestMaster COMMAND TestMaster)
+add_test(NAME TestLef58Properties COMMAND TestLef58Properties)
 
 add_dependencies(build_and_test 
         TestCallBacks 

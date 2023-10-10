@@ -24,13 +24,12 @@ BOOST_AUTO_TEST_CASE(lef58_class)
   lefin lefParser(db1, logger, false);
 
   const char* libname = "gscl45nm.lef";
-  std::string path
-      = std::string(std::getenv("BASE_DIR")) + "/data/gscl45nm.lef";
+  std::string path = "data/gscl45nm.lef";
   lefParser.createTechAndLib("tech", libname, path.c_str());
 
   odb::dbLib* dbLib = db1->findLib(libname);
 
-  path = std::string(std::getenv("BASE_DIR")) + "/data/lef58class_gscl45nm.lef";
+  path = "data/lef58class_gscl45nm.lef";
   lefParser.updateLib(dbLib, path.c_str());
 
   odb::dbMaster* endcap = db1->findMaster("ENDCAP_BOTTOMEDGE_NOT_A_REAL_CELL");
@@ -49,14 +48,12 @@ BOOST_AUTO_TEST_CASE(test_default)
   lefin lefParser(db1, logger, false);
   const char* libname = "gscl45nm.lef";
 
-  std::string path
-      = std::string(std::getenv("BASE_DIR")) + "/data/gscl45nm.lef";
+  std::string path = "data/gscl45nm.lef";
 
   lefParser.createTechAndLib("tech", libname, path.c_str());
 
   FILE* write;
-  path = std::string(std::getenv("BASE_DIR"))
-         + "/results/TestLef58PropertiesDbRW";
+  path = "results/TestLef58PropertiesDbRW";
   write = fopen(path.c_str(), "w");
   db1->write(write);
 
