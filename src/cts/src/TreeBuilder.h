@@ -35,6 +35,7 @@
 
 #pragma once
 
+#include <boost/functional/hash.hpp>
 #include <deque>
 #include <functional>
 #include <string>
@@ -53,12 +54,15 @@ class Logger;
 // Hash and compare functions for occupiedLocations_ map
 // Use this hash table to keep track of occupied locations
 namespace std {
+
+boost::hash<std::pair<double, double>> hash_fn;
+
 template <>
 struct hash<cts::Point<double>>
 {
   std::size_t operator()(const cts::Point<double>& point) const
   {
-    return point.getX() + (point.getY() * 11.0);
+    return hash_fn(std::make_pair(point.getX(), point.getY()));
   }
 };
 
@@ -71,6 +75,7 @@ struct equal_to<cts::Point<double>>
     return (point1 == point2);
   }
 };
+
 }  // namespace std
 
 namespace cts {
@@ -155,12 +160,12 @@ class TreeBuilder
                    double x2,
                    double y2)
   {
-    if ((floatEqual(x, x1) || (floatEqual(x, x2)))
-        && (floatEqualOrGreater(y, y1) && floatEqualOrSmaller(y, y2))) {
+    if ((fuzzyEqual(x, x1) || (fuzzyEqual(x, x2)))
+        && (fuzzyEqualOrGreater(y, y1) && fuzzyEqualOrSmaller(y, y2))) {
       return true;
     }
-    if ((floatEqual(y, y1) || (floatEqual(y, y2)))
-        && (floatEqualOrGreater(x, x1) && floatEqualOrSmaller(x, x2))) {
+    if ((fuzzyEqual(y, y1) || (fuzzyEqual(y, y2)))
+        && (fuzzyEqualOrGreater(x, x1) && fuzzyEqualOrSmaller(x, x2))) {
       return true;
     }
     return false;
@@ -208,7 +213,7 @@ class TreeBuilder
   double bufferHeight_;
   // keep track of occupied cells to avoid overlap violations
   // this only tracks cell origin
-  std::unordered_map<Point<double>, bool> occupiedLocations_;
+  std::unordered_set<Point<double>> occupiedLocations_;
 };
 
 }  // namespace cts

@@ -440,7 +440,7 @@ Point<double> HTreeBuilder::adjustBestLegalLocation(
     int scalingFactor)
 {
   double currDist = currLoc.computeDist(parentPoint);
-  if (floatEqual(currDist, targetDist)) {
+  if (fuzzyEqual(currDist, targetDist)) {
     return currLoc;
   }
 
@@ -522,7 +522,7 @@ void HTreeBuilder::checkLegalityAndCostSpecial(
     double& sinkDist,
     double& bestSinkDist)
 {
-  if (floatEqual(newLoc.computeDist(parentPoint), targetDist)
+  if (fuzzyEqual(newLoc.computeDist(parentPoint), targetDist)
       && checkLegalitySpecial(newLoc, x1, y1, x2, y2, scalingFactor)) {
     sinkDist = weightedDistance(newLoc, oldLoc, sinks);
     if (sinkDist < bestSinkDist) {
@@ -631,7 +631,7 @@ void HTreeBuilder::checkLegalityAndCost(Point<double> oldLoc,
                                         double& sinkDist,
                                         double& bestSinkDist)
 {
-  if (floatEqual(newLoc.computeDist(parentPoint), targetDist)
+  if (fuzzyEqual(newLoc.computeDist(parentPoint), targetDist)
       && checkLegalityLoc(newLoc, scalingFactor)) {
     sinkDist = weightedDistance(newLoc, oldLoc, sinks);
     if (sinkDist < bestSinkDist) {
@@ -786,7 +786,7 @@ void HTreeBuilder::legalize()
         commitLoc(legalBranchPoint);
         branchPoint = legalBranchPoint;
       } else if (isOccupiedLoc(branchPoint)
-                 || !floatEqual(leng, topology.getLength(), 0.01)) {
+                 || !fuzzyEqual(leng, topology.getLength(), 0.01)) {
         // legal branch point needs adjustment if parent point moved in previous
         // level
         Point<double> newLocation(branchPoint);

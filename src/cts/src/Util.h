@@ -41,13 +41,31 @@
 
 namespace cts {
 
-bool floatEqual(double x1, double x2, double epsilon = 1e-6);
+inline bool fuzzyEqual(double x1, double x2, double epsilon = 1e-6)
+{
+  if (fabs(x1 - x2) < epsilon) {
+    return true;
+  }
+  return false;
+}
 
 // x1 >= x2
-bool floatEqualOrGreater(double x1, double x2, double epsilon = 1e-6);
+inline bool fuzzyEqualOrGreater(double x1, double x2, double epsilon = 1e-6)
+{
+  if (fabs(x1 - x2) < epsilon) {
+    return true;
+  }
+  return (x1 > x2);
+}
 
 // x1 <= x2
-bool floatEqualOrSmaller(double x1, double x2, double epsilon = 1e-6);
+inline bool fuzzyEqualOrSmaller(double x1, double x2, double epsilon = 1e-6)
+{
+  if (fabs(x1 - x2) < epsilon) {
+    return true;
+  }
+  return (x1 < x2);
+}
 
 template <class T>
 class Point
