@@ -125,7 +125,8 @@ bool lefTechLayerForbiddenSpacingRuleParser::parseSubRule(
              >> lit(";"));
   auto first = s.begin();
   auto last = s.end();
-  bool valid = qi::phrase_parse(first, last, forbiddenSpacing, space) && first == last;
+  bool valid
+      = qi::phrase_parse(first, last, forbiddenSpacing, space) && first == last;
   if (!valid) {
     odb::dbTechLayerForbiddenSpacingRule::destroy(rule);
   }

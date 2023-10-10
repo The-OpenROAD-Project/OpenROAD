@@ -466,7 +466,6 @@ BOOST_AUTO_TEST_CASE(test_default)
     }
     c++;
   }
-
 }
 
 BOOST_AUTO_TEST_SUITE_END()
