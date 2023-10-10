@@ -3036,7 +3036,7 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
       dbTransform shiftXform = inst->getTransform();
       shiftXform.setOrient(dbOrientType(dbOrientType::R0));
       dbMasterType masterType = inst->getMaster()->getMasterType();
-      int accessDirType = 3;  // 0 None, 1 Horz Only, 2 Vert Only, 3 Horz&Vert;
+      int accessDirType = 0;  // 0 None, 1 Horz Only, 2 Vert Only, 3 Horz&Vert;
       if (masterType.isBlock()) {
         for (const auto& pin : instTerm->getTerm()->getPins()) {
           if (!pin->hasPinAccess()) {
@@ -3052,6 +3052,8 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
             }
           }
         }
+      } else {
+        accessDirType = 3;
       }
       for (auto& uPin : instTerm->getTerm()->getPins()) {
         auto pin = uPin.get();
