@@ -35,11 +35,6 @@
 
 #pragma once
 
-// not all compilers support #pragma once
-#ifndef _TREEBUILDER_H_
-#define _TREEBUILDER_H_
-
-#include <boost/functional/hash.hpp>
 #include <deque>
 #include <functional>
 #include <string>
@@ -54,33 +49,6 @@
 namespace utl {
 class Logger;
 }  // namespace utl
-
-// Hash and compare functions for occupiedLocations_ map
-// Use this hash table to keep track of occupied locations
-namespace std {
-
-boost::hash<std::pair<double, double>> hash_fn;
-
-template <>
-struct hash<cts::Point<double>>
-{
-  std::size_t operator()(const cts::Point<double>& point) const
-  {
-    return hash_fn(std::make_pair(point.getX(), point.getY()));
-  }
-};
-
-template <>
-struct equal_to<cts::Point<double>>
-{
-  bool operator()(const cts::Point<double>& point1,
-                  const cts::Point<double>& point2) const
-  {
-    return (point1 == point2);
-  }
-};
-
-}  // namespace std
 
 namespace cts {
 
@@ -221,5 +189,3 @@ class TreeBuilder
 };
 
 }  // namespace cts
-
-#endif // _TREEBUILDER_H_
