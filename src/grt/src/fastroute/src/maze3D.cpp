@@ -34,6 +34,7 @@
 
 #include "DataType.h"
 #include "FastRoute.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -850,8 +851,7 @@ void FastRouteCore::updateRouteType23D(int netID,
 
 void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                          int ripupTHlb,
-                                         int ripupTHub,
-                                         int layerOrientation)
+                                         int ripupTHub)
 {
   static multi_array<Direction, 3> directions_3D(
       boost::extents[num_layers_][y_grid_][x_grid_]);
@@ -975,7 +975,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         const int curY = remd / x_range_;
         removeMin3D(src_heap_3D);
 
-        const bool Horizontal = (((curL % 2) - layerOrientation) == 0);
+        const bool Horizontal
+            = layer_directions_[curL] == odb::dbTechLayerDir::HORIZONTAL;
 
         if (Horizontal) {
           // left

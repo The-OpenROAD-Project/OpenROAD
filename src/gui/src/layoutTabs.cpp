@@ -66,6 +66,13 @@ LayoutTabs::LayoutTabs(Options* options,
 
 void LayoutTabs::blockLoaded(odb::dbBlock* block)
 {
+  // Check if we already have a tab for this block
+  for (LayoutViewer* viewer : viewers_) {
+    if (viewer->getBlock() == block) {
+      return;
+    }
+  }
+
   populateModuleColors(block);
   auto viewer = new LayoutViewer(options_,
                                  output_widget_,
@@ -82,6 +89,9 @@ void LayoutTabs::blockLoaded(odb::dbBlock* block)
                                  this);
   viewer->setLogger(logger_);
   viewers_.push_back(viewer);
+  if (command_executing_) {
+    viewer->commandAboutToExecute();
+  }
   auto scroll = new LayoutScroll(viewer, this);
   viewer->blockLoaded(block);
 
@@ -112,6 +122,7 @@ void LayoutTabs::blockLoaded(odb::dbBlock* block)
 void LayoutTabs::tabChange(int index)
 {
   current_viewer_ = viewers_[index];
+
   emit setCurrentBlock(current_viewer_->getBlock());
 }
 
@@ -313,16 +324,18 @@ void LayoutTabs::exit()
 
 void LayoutTabs::commandAboutToExecute()
 {
-  if (current_viewer_) {
-    current_viewer_->commandAboutToExecute();
+  for (LayoutViewer* viewer : viewers_) {
+    viewer->commandAboutToExecute();
   }
+  command_executing_ = true;
 }
 
 void LayoutTabs::commandFinishedExecuting()
 {
-  if (current_viewer_) {
-    current_viewer_->commandFinishedExecuting();
+  for (LayoutViewer* viewer : viewers_) {
+    viewer->commandFinishedExecuting();
   }
+  command_executing_ = false;
 }
 
 void LayoutTabs::restoreTclCommands(std::vector<std::string>& cmds)

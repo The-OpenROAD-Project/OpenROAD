@@ -11,7 +11,7 @@ proc check_in_core {} {
 }
 
 proc check_ties { tie_cell_name } {
-  set tie_insts [get_cells -filter "ref_name == $tie_cell_name"]
+  set tie_insts [get_cells -filter "ref_name == $tie_cell_name" "*"]
   foreach tie_inst $tie_insts {
     foreach tie_pin [get_pins -of $tie_inst -filter "direction == output"] {
       set net [get_nets -of $tie_pin]
@@ -27,7 +27,7 @@ proc check_ties { tie_cell_name } {
 }
 
 proc report_ties { tie_cell_name } {
-  set tie_insts [get_cells -filter "ref_name == $tie_cell_name"]
+  set tie_insts [get_cells -filter "ref_name == $tie_cell_name" "*"]
   set tie_insts [lsort -command inst_cmp_loc $tie_insts]
   foreach tie_inst $tie_insts {
     set db_inst [sta::sta_to_db_inst $tie_inst]

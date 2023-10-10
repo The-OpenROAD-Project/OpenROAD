@@ -310,7 +310,7 @@ void FastRouteCore::fixEdgeAssignment(int& net_layer,
                                       bool vertical,
                                       int& best_cost)
 {
-  bool is_vertical = ((l % 2) - layer_orientation_) != 0;
+  bool is_vertical = layer_directions_[l] == odb::dbTechLayerDir::VERTICAL;
   // if layer direction doesn't match edge direction or
   // if already found a layer for the edge, ignores the remaining layers
   if (is_vertical != vertical || best_cost > 0) {
@@ -363,7 +363,8 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
       min_y = std::min(gridsY[k], gridsY[k + 1]);
       for (l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
         // check if the current layer is vertical to match the edge orientation
-        bool is_vertical = ((l % 2) - layer_orientation_) != 0;
+        bool is_vertical
+            = layer_directions_[l] == odb::dbTechLayerDir::VERTICAL;
         if (is_vertical) {
           layer_grid_[l][k] = v_edges_3D_[l][min_y][gridsX[k]].cap
                               - v_edges_3D_[l][min_y][gridsX[k]].usage;
@@ -403,7 +404,8 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
       for (l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
         // check if the current layer is horizontal to match the edge
         // orientation
-        bool is_horizontal = ((l % 2) - layer_orientation_) == 0;
+        bool is_horizontal
+            = layer_directions_[l] == odb::dbTechLayerDir::HORIZONTAL;
         if (is_horizontal) {
           layer_grid_[l][k] = h_edges_3D_[l][gridsY[k]][min_x].cap
                               - h_edges_3D_[l][gridsY[k]][min_x].usage;
@@ -1918,8 +1920,12 @@ int FastRouteCore::edgeShift(Tree& t, int net)
   // edges from pin to steiner
   for (i = 0; i < deg; i++) {
     n = t.branch[i].n;
-    nbr[n][nbrCnt[n]] = i;
-    nbrCnt[n]++;
+    if (n >= deg && n < t.branchCount()) {  // ensure n is inside nbrCnt range
+      nbr[n][nbrCnt[n]] = i;
+      nbrCnt[n]++;
+    } else {
+      logger_->error(GRT, 149, "Invalid access to nbrCnt vector");
+    }
   }
   // edges from steiner to steiner
   for (i = deg; i < t.branchCount(); i++) {

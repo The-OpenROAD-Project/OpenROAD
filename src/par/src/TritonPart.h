@@ -84,7 +84,7 @@ class TritonPart
   // partitioning, placement information is extracted from OpenDB
   void PartitionDesign(unsigned int num_parts_arg,
                        float balance_constraint_arg,
-                       std::vector<float> base_balance_arg,
+                       const std::vector<float>& base_balance_arg,
                        unsigned int seed_arg,
                        bool timing_aware_flag_arg,
                        int top_n_arg,
@@ -108,7 +108,7 @@ class TritonPart
   // only used for testing
   void EvaluatePartDesignSolution(unsigned int num_parts_arg,
                                   float balance_constraint_arg,
-                                  std::vector<float> base_balance_arg,
+                                  const std::vector<float>& base_balance_arg,
                                   bool timing_aware_flag_arg,
                                   int top_n_arg,
                                   bool fence_flag_arg,
@@ -134,7 +134,7 @@ class TritonPart
   // attributes both follows the hMETIS format
   void PartitionHypergraph(unsigned int num_parts,
                            float balance_constraint,
-                           std::vector<float> base_balance,
+                           const std::vector<float>& base_balance,
                            unsigned int seed,
                            int vertex_dimension,
                            int hyperedge_dimension,
@@ -151,7 +151,7 @@ class TritonPart
   // The vertex balance should be satisfied
   void EvaluateHypergraphSolution(unsigned int num_parts,
                                   float balance_constraint,
-                                  std::vector<float> base_balance,
+                                  const std::vector<float>& base_balance,
                                   int vertex_dimension,
                                   int hyperedge_dimension,
                                   const char* hypergraph_file,

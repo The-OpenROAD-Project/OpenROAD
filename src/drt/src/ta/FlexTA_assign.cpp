@@ -30,8 +30,7 @@
 
 #include "ta/FlexTA.h"
 
-using namespace std;
-using namespace fr;
+namespace fr {
 
 frSquaredDistance FlexTAWorker::box2boxDistSquare(const Rect& box1,
                                                   const Rect& box2,
@@ -60,10 +59,11 @@ void FlexTAWorker::modMinSpacingCostPlanar(const Rect& box,
   frCoord halfwidth2 = width2 / 2;
   // spacing value needed
   frCoord bloatDist = layer->getMinSpacingValue(width1, width2, length1, false);
-  if (fig->getNet()->getNondefaultRule())
+  if (fig->getNet()->getNondefaultRule()) {
     bloatDist
         = max(bloatDist,
               fig->getNet()->getNondefaultRule()->getSpacing(lNum / 2 - 1));
+  }
 
   frSquaredDistance bloatDistSquare = (frSquaredDistance) bloatDist * bloatDist;
 
@@ -191,10 +191,11 @@ void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
   auto layer = getTech()->getLayer(lNum);
   frCoord bloatDist = layer->getMinSpacingValue(
       width1, width2, isCurrPs ? length2 : min(length1, length2), false);
-  if (fig->getNet()->getNondefaultRule())
+  if (fig->getNet()->getNondefaultRule()) {
     bloatDist
         = max(bloatDist,
               fig->getNet()->getNondefaultRule()->getSpacing(lNum / 2 - 1));
+  }
   int idx1, idx2;
   if (isH) {
     getTrackIdx(box.yMin() - bloatDist - (viaBox.yMax() - 0) + 1,
@@ -260,10 +261,11 @@ void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
     }
 
     frCoord reqDist = layer->getMinSpacingValue(width1, width2, prl, false);
-    if (fig->getNet()->getNondefaultRule())
+    if (fig->getNet()->getNondefaultRule()) {
       reqDist
           = max(reqDist,
                 fig->getNet()->getNondefaultRule()->getSpacing(lNum / 2 - 1));
+    }
 
     if (isH) {
       if (dy >= reqDist) {
@@ -371,7 +373,7 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
   frCoord reqDist = 0;
   frCoord maxX, blockLeft, blockRight;
   Rect blockBox;
-  Point boxCenter, tmpBxCenter;
+  Point boxCenter;
   boxCenter = {(box.xMin() + box.xMax()) / 2, (box.yMin() + box.yMax()) / 2};
   bool hasViol = false;
   for (int i = idx1; i <= idx2; i++) {
@@ -598,10 +600,12 @@ void FlexTAWorker::assignIroute_availTracks(taPin* iroute,
       diffLow = dieBx.xMin() - (coordLow - testBox.dx() / 2);
       diffHigh = coordHigh + testBox.dx() / 2 - dieBx.xMax();
     }
-    if (diffLow > 0)
+    if (diffLow > 0) {
       coordLow += diffLow;
-    if (diffHigh > 0)
+    }
+    if (diffHigh > 0) {
       coordHigh -= diffHigh;
+    }
   }
   getTrackIdx(coordLow, coordHigh, lNum, idx1, idx2);
   if (idx2 < idx1) {
@@ -650,9 +654,8 @@ frUInt4 FlexTAWorker::assignIroute_getNextIrouteDirCost(taPin* iroute,
          << ", " << endBox.yMin() / dbu << ") (" << endBox.xMax() / dbu << ", "
          << endBox.yMax() / dbu << ")" << endl;
     return (frUInt4) 0;
-  } else {
-    return (frUInt4) nextIrouteDirCost;
   }
+  return (frUInt4) nextIrouteDirCost;
 }
 
 frUInt4 FlexTAWorker::assignIroute_getPinCost(taPin* iroute, frCoord trackLoc)
@@ -1127,8 +1130,9 @@ void FlexTAWorker::assignIroute_updateOthers(
     return;
   }
   for (auto& iroute : pinS) {
-    if (iroute->getGuide()->getNet()->isClock() && !hardIroutesMode)
+    if (iroute->getGuide()->getNet()->isClock() && !hardIroutesMode) {
       continue;
+    }
     removeFromReassignIroutes(iroute);
     // recalculate cost
     frUInt4 drcCost = 0;
@@ -1200,3 +1204,5 @@ void FlexTAWorker::assign()
     iroute = popFromReassignIroutes();
   }
 }
+
+}  // namespace fr

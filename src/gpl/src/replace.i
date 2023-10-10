@@ -43,6 +43,16 @@ replace_nesterov_place_cmd()
   replace->doNesterovPlace();
 }
 
+
+void
+replace_run_mbff_cmd(int max_sz, float alpha, float beta) 
+{
+  Replace* replace = getReplace();
+  int threads = ord::OpenRoad::openRoad()->getThreadCount();
+  replace->runMBFF(max_sz, alpha, beta, threads);   
+}
+
+
 void
 set_density_cmd(float density)
 {
@@ -257,6 +267,8 @@ set_timing_driven_net_weight_max_cmd(float max)
   Replace* replace = getReplace();
   return replace->setTimingNetWeightMax(max);
 }
+
+
 
 void
 set_debug_cmd(int pause_iterations,

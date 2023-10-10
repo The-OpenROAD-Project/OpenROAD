@@ -47,11 +47,15 @@
 #include "odb/dbTypes.h"
 
 namespace odb {
+class Point;
 class dbInst;
 class dbModule;
 class dbBlock;
 class dbDatabase;
 class dbITerm;
+class dbTechLayer;
+class dbBox;
+class dbTrackGrid;
 }  // namespace odb
 
 namespace utl {
@@ -59,6 +63,7 @@ class Logger;
 }
 
 namespace mpl2 {
+struct Rect;
 class HardMacro;
 class SoftMacro;
 
@@ -391,6 +396,29 @@ class HardMacro
   // update the location and orientation of the macro inst in OpenDB
   // The macro should be snaped to placement grids
   void updateDb(float pitch_x, float pitch_y, odb::dbBlock* block);
+  odb::Point alignOriginWithGrids(const Rect& macro_box,
+                                  const odb::dbOrientType& orientation,
+                                  float& pitch_x,
+                                  float& pitch_y,
+                                  odb::dbBlock* block);
+
+  void computeDirectionSpacingParameters(odb::dbBlock* block,
+                                         odb::dbTechLayer* layer,
+                                         odb::dbBox* box,
+                                         float& offset,
+                                         float& pitch,
+                                         float& pin_width,
+                                         const bool& is_vertical_direction);
+  void getDirectionTrackGrid(odb::dbTrackGrid* track_grid,
+                             std::vector<int>& coordinate_grid,
+                             const bool& is_vertical_direction);
+  float getDirectionPitch(odb::dbTechLayer* layer,
+                          const bool& is_vertical_direction);
+  float getDirectionOffset(odb::dbTechLayer* layer,
+                           const bool& is_vertical_direction);
+  float getDirectionPinWidth(odb::dbBox* box,
+                             const bool& is_vertical_direction);
+
   int getXDBU() const { return micronToDbu(getX(), dbu_); }
 
   int getYDBU() const { return micronToDbu(getY(), dbu_); }

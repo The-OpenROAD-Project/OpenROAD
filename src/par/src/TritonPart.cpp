@@ -219,7 +219,7 @@ void TritonPart::SetFineTuneParams(
 // attributes both follows the hMETIS format
 void TritonPart::PartitionHypergraph(unsigned int num_parts_arg,
                                      float balance_constraint_arg,
-                                     std::vector<float> base_balance_arg,
+                                     const std::vector<float>& base_balance_arg,
                                      unsigned int seed_arg,
                                      int vertex_dimension_arg,
                                      int hyperedge_dimension_arg,
@@ -315,7 +315,7 @@ void TritonPart::PartitionHypergraph(unsigned int num_parts_arg,
 // partitioning, placement information is extracted from OpenDB
 void TritonPart::PartitionDesign(unsigned int num_parts_arg,
                                  float balance_constraint_arg,
-                                 std::vector<float> base_balance_arg,
+                                 const std::vector<float>& base_balance_arg,
                                  unsigned int seed_arg,
                                  bool timing_aware_flag_arg,
                                  int top_n_arg,
@@ -492,15 +492,16 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
   logger_->report("Exiting TritonPart");
 }
 
-void TritonPart::EvaluateHypergraphSolution(unsigned int num_parts_arg,
-                                            float balance_constraint_arg,
-                                            std::vector<float> base_balance_arg,
-                                            int vertex_dimension_arg,
-                                            int hyperedge_dimension_arg,
-                                            const char* hypergraph_file_arg,
-                                            const char* fixed_file_arg,
-                                            const char* group_file_arg,
-                                            const char* solution_file_arg)
+void TritonPart::EvaluateHypergraphSolution(
+    unsigned int num_parts_arg,
+    float balance_constraint_arg,
+    const std::vector<float>& base_balance_arg,
+    int vertex_dimension_arg,
+    int hyperedge_dimension_arg,
+    const char* hypergraph_file_arg,
+    const char* fixed_file_arg,
+    const char* group_file_arg,
+    const char* solution_file_arg)
 
 {
   logger_->report("========================================");
@@ -674,7 +675,7 @@ void TritonPart::EvaluateHypergraphSolution(unsigned int num_parts_arg,
 void TritonPart::EvaluatePartDesignSolution(
     unsigned int num_parts_arg,
     float balance_constraint_arg,
-    std::vector<float> base_balance_arg,
+    const std::vector<float>& base_balance_arg,
     bool timing_aware_flag_arg,
     int top_n_arg,
     bool fence_flag_arg,
