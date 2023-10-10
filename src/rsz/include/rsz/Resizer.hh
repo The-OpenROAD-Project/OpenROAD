@@ -345,6 +345,11 @@ public:
   dbNetwork *getDbNetwork() { return db_network_; }
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
+  void removeBuffer(Instance *buffer);
+  void swapPins(Instance *inst, LibertyPort *port1,
+                LibertyPort *port2, bool journal);
+  bool replaceCell(Instance *inst, LibertyCell *cell, bool journal);
+  int undoGateCloning(Instance *original_inst, Instance *cloned_inst);
 
 protected:
   void init();
@@ -515,15 +520,6 @@ protected:
                                 SteinerPt pt,
                                 const ParasiticAnalysisPt *parasitics_ap);
   void findResizeSlacks1();
-  
-public:
-  void removeBuffer(Instance *buffer);
-  void swapPins(Instance *inst, LibertyPort *port1,
-                LibertyPort *port2, bool journal);
-  bool replaceCell(Instance *inst, LibertyCell *cell, bool journal);
-  int undoGateCloning(Instance *original_inst, Instance *cloned_inst);
-
-protected:
   Instance *makeInstance(LibertyCell *cell,
                          const char *name,
                          Instance *parent,

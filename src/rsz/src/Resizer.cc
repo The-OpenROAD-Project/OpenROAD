@@ -2792,7 +2792,6 @@ int Resizer::undoGateCloning(Instance *original_inst, Instance *cloned_inst) {
   // Final cleanup
   // sta_->deleteNet(clone_out_net);
   sta_->deleteInstance(cloned_inst);
-  sta_->graphDelayCalc()->delaysInvalid();
   return 1;
 }
 

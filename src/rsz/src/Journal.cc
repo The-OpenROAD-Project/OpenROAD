@@ -70,7 +70,7 @@ UndoBuffer::UndoBuffer(Instance* inst)
 int UndoBuffer::UndoOperation(Resizer *resizer)
 {
   // Remove the inserted buffer
-  resizer->removeBuffer(const_cast<Instance*>(buffer_inst_));
+  resizer->removeBuffer(buffer_inst_);
   return 0;
 }
 //============================================================================
@@ -143,9 +143,7 @@ Journal::Journal(Resizer *resizer, Logger* logger)
 void Journal::begin()
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal begin");
-  while (!journal_stack_.empty()) {
-    journal_stack_.pop();
-  }
+  journal_stack_ = {};
 }
 
 void Journal::end()
@@ -160,7 +158,7 @@ void Journal::swapPins(Instance* inst, LibertyPort* port1,
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal swap pins {} ({}->{})",
              network()->pathName(inst), port1->name(), port2->name());
-  std::unique_ptr<Undo> element(new UndoPinSwap(inst, port1, port2));
+  std::unique_ptr<Undo> element = std::make_unique<UndoPinSwap>(inst, port1, port2);
   journal_stack_.emplace(std::move(element));
 }
 
