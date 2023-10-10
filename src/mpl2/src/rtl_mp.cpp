@@ -157,7 +157,7 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
 
   odb::Rect macro_new_bbox(x1, y1, x2, y2);
   odb::Rect core_area = inst->getBlock()->getCoreArea();
-  
+
   if (!core_area.contains(macro_new_bbox)) {
     logger_->error(MPL,
                    34,
@@ -176,31 +176,29 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
 
   HardMacro macro(inst, dbu_per_micron, manufacturing_grid, 0, 0);
 
-  mpl2::Rect macro_new_bbox_micron(x_origin,
-                                   y_origin,
-                                   dbuToMicron(macro_new_bbox.xMax(), dbu_per_micron),
-                                   dbuToMicron(macro_new_bbox.yMax(), dbu_per_micron));
+  mpl2::Rect macro_new_bbox_micron(
+      x_origin,
+      y_origin,
+      dbuToMicron(macro_new_bbox.xMax(), dbu_per_micron),
+      dbuToMicron(macro_new_bbox.yMax(), dbu_per_micron));
 
   float pitch_x = 0.0;
   float pitch_y = 0.0;
 
-  macro.alignOriginWithGrids(macro_new_bbox_micron, orientation, pitch_x, pitch_y, inst->getBlock());
+  macro.alignOriginWithGrids(
+      macro_new_bbox_micron, orientation, pitch_x, pitch_y, inst->getBlock());
 
   inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
 }
 
+void MacroPlacer2::setMacroPlacementFile(const char* file_name)
+{
+  hier_rtlmp_->setMacroPlacementFile(file_name);
+}
+
 void MacroPlacer2::writeMacroPlacement(const char* file_name)
 {
-  std::string filename = file_name;
-  if (filename.empty()) {
-    return;
-  }
-
-  std::ofstream out(filename);
-
-  if (!out) {
-    logger_->error(MPL, 11, "Cannot open file {}.", filename);
-  }
+  hier_rtlmp_->writeMacroPlacement(file_name);
 }
 
 void MacroPlacer2::setDebug(std::unique_ptr<Mpl2Observer>& graphics)

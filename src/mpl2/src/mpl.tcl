@@ -62,6 +62,7 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -snap_layer snap_layer \
                                           -bus_planning_flag bus_planning_flag \
                                           -report_directory report_directory \
+                                          -write_macro_placement file_name \
                                         }
 proc rtl_macro_placer { args } {
     sta::parse_key_args "rtl_macro_placer" args keys { 
@@ -75,6 +76,7 @@ proc rtl_macro_placer { args } {
         -target_dead_space -min_ar -snap_layer \
         -bus_planning_flag \
         -report_directory \
+        -write_macro_placement \
     } flag {  }
 #
 # Check for valid design
@@ -216,10 +218,14 @@ proc rtl_macro_placer { args } {
       set bus_planning_flag $keys(-bus_planning_flag)
     }
     if { [info exists keys(-report_directory)] } {
-        set report_directory $keys(-report_directory)
+      set report_directory $keys(-report_directory)
     }
         
     file mkdir $report_directory
+
+    if { [info exists keys(-write_macro_placement)] } {
+      mpl2::set_macro_placement_file $keys(-write_macro_placement)
+    }
 
     if {![mpl2::rtl_macro_placer_cmd  $max_num_macro  \
                                       $min_num_macro  \

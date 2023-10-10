@@ -41,7 +41,7 @@ namespace odb {
 class dbDatabase;
 class dbInst;
 class dbOrientType;
-}
+}  // namespace odb
 
 namespace sta {
 class dbNetwork;
@@ -107,6 +107,7 @@ class MacroPlacer2
                   const std::string& orientation_string);
   odb::dbOrientType stringToOrientType(const std::string& orientation_string);
 
+  void setMacroPlacementFile(const char* file_name);
   void writeMacroPlacement(const char* file_name);
 
   void setDebug(std::unique_ptr<Mpl2Observer>& graphics);

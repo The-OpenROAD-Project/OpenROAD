@@ -138,6 +138,12 @@ place_macro(odb::dbInst* macro_name, float x_origin, float y_origin, const char*
 }
 
 void
+set_macro_placement_file(const char* file_name)
+{
+  getMacroPlacer2()->setMacroPlacementFile(file_name);
+}
+
+void
 write_macro_placement(const char* file_name)
 {
   getMacroPlacer2()->writeMacroPlacement(file_name);
