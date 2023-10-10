@@ -211,7 +211,7 @@ int dbTechLayerForbiddenSpacingRule::getTwoEdges() const
   return obj->two_edges_;
 }
 
-// User Code Begin dbTechLayerAreaRulePublicMethods
+// User Code Begin dbTechLayerForbiddenSpacingRulePublicMethods
 
 dbTechLayerForbiddenSpacingRule* dbTechLayerForbiddenSpacingRule::create(
     dbTechLayer* _layer)
@@ -231,6 +231,6 @@ void dbTechLayerForbiddenSpacingRule::destroy(
       (_dbTechLayerForbiddenSpacingRule*) rule);
 }
 
-// User Code End dbTechLayerAreaRulePublicMethods
+// User Code End dbTechLayerForbiddenSpacingRulePublicMethods
 }  // namespace odb
    // Generator Code End Cpp
