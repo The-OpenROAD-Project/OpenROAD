@@ -19,10 +19,10 @@
 [INFO PPL-0080] Mirroring pins resp_msg[9] and req_msg[9].
 [INFO PPL-0080] Mirroring pins resp_msg[10] and req_msg[10].
 Found 0 macro blocks.
-[INFO PPL-0001] Number of slots          2494
-[INFO PPL-0002] Number of I/O            54
-[INFO PPL-0003] Number of I/O w/sink     54
-[INFO PPL-0004] Number of I/O w/o sink   0
+[INFO PPL-0001] Number of slots           2494
+[INFO PPL-0002] Number of I/O             54
+[INFO PPL-0003] Number of I/O w/sink      54
+[INFO PPL-0004] Number of I/O w/o sink    0
 [INFO PPL-0012] I/O nets HPWL: 2452.71 um.
 [INFO PPL-0070] Pin clk placed at (60.33um, 0.04um).
 [INFO PPL-0070] Pin req_msg[29] placed at (44.37um, 0.04um).

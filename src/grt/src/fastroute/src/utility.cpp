@@ -1920,8 +1920,12 @@ int FastRouteCore::edgeShift(Tree& t, int net)
   // edges from pin to steiner
   for (i = 0; i < deg; i++) {
     n = t.branch[i].n;
-    nbr[n][nbrCnt[n]] = i;
-    nbrCnt[n]++;
+    if (n >= deg && n < t.branchCount()) {  // ensure n is inside nbrCnt range
+      nbr[n][nbrCnt[n]] = i;
+      nbrCnt[n]++;
+    } else {
+      logger_->error(GRT, 149, "Invalid access to nbrCnt vector");
+    }
   }
   // edges from steiner to steiner
   for (i = deg; i < t.branchCount(); i++) {
