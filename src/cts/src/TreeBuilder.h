@@ -55,10 +55,10 @@ class Logger;
 // Use this hash table to keep track of occupied locations
 namespace std {
 
-boost::hash<std::pair<double, double>> hash_fn;
+inline boost::hash<std::pair<double, double>> hash_fn;
 
 template <>
-inline struct hash<cts::Point<double>>
+struct hash<cts::Point<double>>
 {
   std::size_t operator()(const cts::Point<double>& point) const
   {
