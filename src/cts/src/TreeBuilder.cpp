@@ -252,7 +252,7 @@ bool TreeBuilder::isOccupiedLoc(const Point<double>& bufferLoc)
 void TreeBuilder::commitLoc(const Point<double>& bufferLoc)
 {
   // clang-format off
-  occupiedLocations_[bufferLoc];
+  occupiedLocations_.insert(bufferLoc);
   debugPrint(logger_, CTS, "legalizer", 4, "loc {} has been committed, size={}",
              bufferLoc, occupiedLocations_.size());
   // clang-format on
