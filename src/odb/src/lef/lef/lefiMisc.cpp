@@ -1237,9 +1237,7 @@ std::vector<std::pair<std::string, std::string>> lefiSite::getRowPatterns()
 {
   std::vector<std::pair<std::string, std::string>> patterns(numRowPattern_);
   for (int i = 0; i < numRowPattern_; i++) {
-    std::string siteName = std::string(siteNames_[i]);
-    std::string orientStr = std::string(siteOrientStr(siteOrients_[i]));
-    patterns[i] = std::make_pair(siteName, orientStr);
+    patterns[i] = {siteName(i), siteOrientStr(i)};
   }
   return patterns;
 }
