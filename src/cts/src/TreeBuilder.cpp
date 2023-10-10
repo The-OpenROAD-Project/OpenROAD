@@ -44,30 +44,14 @@
 
 #include "utl/Logger.h"
 
-// Hash and compare functions for occupiedLocations_ map
-// Use this hash table to keep track of occupied locations
 namespace std {
 
 boost::hash<std::pair<double, double>> hash_fn;
 
-template <>
-struct hash<cts::Point<double>>
+inline std::size_t pointHash(const cts::Point<double>& point)
 {
-  std::size_t operator()(const cts::Point<double>& point) const
-  {
-    return hash_fn(std::make_pair(point.getX(), point.getY()));
-  }
-};
-
-template <>
-struct equal_to<cts::Point<double>>
-{
-  bool operator()(const cts::Point<double>& point1,
-                  const cts::Point<double>& point2) const
-  {
-    return (point1 == point2);
-  }
-};
+  return hash_fn(std::make_pair(point.getX(), point.getY()));
+}
 
 }  // namespace std
 
