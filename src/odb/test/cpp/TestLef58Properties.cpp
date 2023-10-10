@@ -434,6 +434,39 @@ BOOST_AUTO_TEST_CASE(test_default)
     }
     i_57++;
   }
+
+  // check LEF58_FORBIDDENSPACING
+  layer = dbTech->findLayer("metal2");
+  auto forbiddenSpacingRules = layer->getTechLayerForbiddenSpacingRules();
+  BOOST_TEST(forbiddenSpacingRules.size() == 1);
+  int c = 0;
+  for (odb::dbTechLayerForbiddenSpacingRule* subRule : forbiddenSpacingRules) {
+    if (c == 0) {
+      BOOST_TEST(subRule->getForbiddenSpacing().first == 0.05 * distFactor);
+      BOOST_TEST(subRule->getForbiddenSpacing().second == 0.2 * distFactor);
+      BOOST_TEST(subRule->getWidth() == 0.05 * distFactor);
+      BOOST_TEST(subRule->getWithin() == 0.15 * distFactor);
+      BOOST_TEST(subRule->getPrl() == 0.015 * distFactor);
+      BOOST_TEST(subRule->getTwoEdges() == 0.06 * distFactor);
+    }
+    c++;
+  }
+
+  layer = dbTech->findLayer("metal3");
+  forbiddenSpacingRules = layer->getTechLayerForbiddenSpacingRules();
+  BOOST_TEST(forbiddenSpacingRules.size() == 1);
+  c = 0;
+  for (odb::dbTechLayerForbiddenSpacingRule* subRule : forbiddenSpacingRules) {
+    if (c == 0) {
+      BOOST_TEST(subRule->getForbiddenSpacing().first == 0.1 * distFactor);
+      BOOST_TEST(subRule->getForbiddenSpacing().second == 0.3 * distFactor);
+      BOOST_TEST(subRule->getWidth() == 0.5 * distFactor);
+      BOOST_TEST(subRule->getPrl() == 0.02 * distFactor);
+      BOOST_TEST(subRule->getTwoEdges() == 0.12 * distFactor);
+    }
+    c++;
+  }
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()
