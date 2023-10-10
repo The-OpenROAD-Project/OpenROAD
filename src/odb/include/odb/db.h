@@ -8921,6 +8921,14 @@ class dbTechLayerForbiddenSpacingRule : public dbObject
   void setTwoEdges(int two_edges);
 
   int getTwoEdges() const;
+
+  // User Code Begin dbTechLayerForbiddenSpacingRule
+
+  static dbTechLayerForbiddenSpacingRule* create(dbTechLayer* _layer);
+
+  static void destroy(dbTechLayerForbiddenSpacingRule* rule);
+
+  // User Code End dbTechLayerForbiddenSpacingRule
 };
 
 class dbTechLayerKeepOutZoneRule : public dbObject

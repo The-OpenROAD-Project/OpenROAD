@@ -211,5 +211,26 @@ int dbTechLayerForbiddenSpacingRule::getTwoEdges() const
   return obj->two_edges_;
 }
 
+// User Code Begin dbTechLayerAreaRulePublicMethods
+
+dbTechLayerForbiddenSpacingRule* dbTechLayerForbiddenSpacingRule::create(
+    dbTechLayer* _layer)
+{
+  _dbTechLayer* layer = (_dbTechLayer*) _layer;
+  _dbTechLayerForbiddenSpacingRule* newrule
+      = layer->forbidden_spacing_rules_tbl_->create();
+  return ((dbTechLayerForbiddenSpacingRule*) newrule);
+}
+
+void dbTechLayerForbiddenSpacingRule::destroy(
+    dbTechLayerForbiddenSpacingRule* rule)
+{
+  _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
+  dbProperty::destroyProperties(rule);
+  layer->forbidden_spacing_rules_tbl_->destroy(
+      (_dbTechLayerForbiddenSpacingRule*) rule);
+}
+
+// User Code End dbTechLayerAreaRulePublicMethods
 }  // namespace odb
    // Generator Code End Cpp

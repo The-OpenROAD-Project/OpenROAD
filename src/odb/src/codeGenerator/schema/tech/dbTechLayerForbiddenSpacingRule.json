@@ -26,8 +26,6 @@
       "name": "two_edges_"
     }
   ],
-  "constructors": [],
-  "enums": [],
   "cpp_includes": [
     "dbTechLayer.h"
   ]
