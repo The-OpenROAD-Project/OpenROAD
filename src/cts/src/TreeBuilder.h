@@ -35,6 +35,10 @@
 
 #pragma once
 
+// not all compilers support #pragma once
+#ifndef _TREEBUILDER_H_
+#define _TREEBUILDER_H_
+
 #include <boost/functional/hash.hpp>
 #include <deque>
 #include <functional>
@@ -55,7 +59,7 @@ class Logger;
 // Use this hash table to keep track of occupied locations
 namespace std {
 
-inline boost::hash<std::pair<double, double>> hash_fn;
+boost::hash<std::pair<double, double>> hash_fn;
 
 template <>
 struct hash<cts::Point<double>>
@@ -217,3 +221,5 @@ class TreeBuilder
 };
 
 }  // namespace cts
+
+#endif // _TREEBUILDER_H_
