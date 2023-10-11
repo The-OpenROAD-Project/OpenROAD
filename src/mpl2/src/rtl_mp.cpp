@@ -189,6 +189,17 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
       macro_new_bbox_micron, orientation, pitch_x, pitch_y, inst->getBlock());
 
   inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
+
+  logger_->info(MPL,
+                35,
+                "Macro {} placed. Bounding box ({:.3f}um, {:.3f}um), "
+                "({:.3f}um, {:.3f}um). Orientation {}",
+                inst->getName(),
+                macro_new_bbox_micron.xMin(),
+                macro_new_bbox_micron.yMin(),
+                macro_new_bbox_micron.xMax(),
+                macro_new_bbox_micron.yMax(),
+                orientation.getString());
 }
 
 void MacroPlacer2::setMacroPlacementFile(const char* file_name)
