@@ -75,6 +75,7 @@ target_include_directories(cts
     ../include
   PRIVATE
     .
+  ${Boost_INCLUDE_DIRS}
  )
 
 target_link_libraries(cts_lib

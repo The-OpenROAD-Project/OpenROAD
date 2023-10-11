@@ -35,7 +35,7 @@
 
 #pragma once
 
-#include <boost/unordered_set>
+#include <boost/unordered/unordered_set.hpp>
 #include <deque>
 #include <functional>
 #include <string>
