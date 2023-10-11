@@ -49,6 +49,7 @@ using ord::getMacroPlacer2;
 %}
 
 %include "../../Exception.i"
+%include <std_string.i>
 
 %inline %{
 
@@ -130,10 +131,8 @@ set_debug_cmd()
 }
 
 void
-place_macro(odb::dbInst* macro_name, float x_origin, float y_origin, const char* orientation)
+place_macro(odb::dbInst* macro_name, float x_origin, float y_origin, std::string orientation_string)
 {
-  std::string orientation_string = orientation;
-
   getMacroPlacer2()->placeMacro(macro_name, x_origin, y_origin, orientation_string);
 }
 

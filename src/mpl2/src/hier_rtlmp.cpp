@@ -643,7 +643,7 @@ void HierRTLMP::hierRTLMacroPlacer()
 
   correctAllMacrosOrientation();
 
-  writeMacroPlacement(macro_placement_file_.c_str());
+  writeMacroPlacement(macro_placement_file_);
 
   // Clear the memory to avoid memory leakage
   // release all the pointers
@@ -6066,23 +6066,21 @@ void HierRTLMP::correctAllMacrosOrientation()
   }
 }
 
-void HierRTLMP::setMacroPlacementFile(const char* file_name)
+void HierRTLMP::setMacroPlacementFile(const std::string& file_name)
 {
   macro_placement_file_ = file_name;
 }
 
-void HierRTLMP::writeMacroPlacement(const char* file_name)
+void HierRTLMP::writeMacroPlacement(const std::string& file_name)
 {
-  std::string filename = file_name;
-
-  if (filename.empty()) {
+  if (file_name.empty()) {
     return;
   }
 
-  std::ofstream out(filename);
+  std::ofstream out(file_name);
 
   if (!out) {
-    logger_->error(MPL, 11, "Cannot open file {}.", filename);
+    logger_->error(MPL, 11, "Cannot open file {}.", file_name);
   }
 
   // Use only insts that were placed by mpl2

@@ -145,8 +145,8 @@ class HierRTLMP
     bus_planning_flag_ = bus_planning_flag;
   }
 
-  void setMacroPlacementFile(const char* file_name);
-  void writeMacroPlacement(const char* file_name);
+  void setMacroPlacementFile(const std::string& file_name);
+  void writeMacroPlacement(const std::string& file_name);
 
  private:
   void setDefaultThresholds();
