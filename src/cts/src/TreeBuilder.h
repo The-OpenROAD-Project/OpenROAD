@@ -35,6 +35,7 @@
 
 #pragma once
 
+#include <boost/functional/hash.hpp>
 #include <boost/unordered/unordered_set.hpp>
 #include <deque>
 #include <functional>
@@ -51,6 +52,25 @@ class Logger;
 }  // namespace utl
 
 namespace cts {
+
+struct pointHash
+{
+  std::size_t operator()(const cts::Point<double>& point) const
+  {
+    std::pair<double, double> dPair
+        = std::make_pair(point.getX(), point.getY());
+    return boost::hash_value(dPair);
+  }
+};
+
+struct pointEqual
+{
+  bool operator()(const cts::Point<double>& p1,
+                  const cts::Point<double>& p2) const
+  {
+    return p1 == p2;
+  }
+};
 
 class TreeBuilder
 {
@@ -185,7 +205,7 @@ class TreeBuilder
   double bufferHeight_;
   // keep track of occupied cells to avoid overlap violations
   // this only tracks cell origin
-  boost::unordered_set<Point<double>> occupiedLocations_;
+  boost::unordered_set<Point<double>, pointHash, pointEqual> occupiedLocations_;
 };
 
 }  // namespace cts

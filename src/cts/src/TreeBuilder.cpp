@@ -35,7 +35,6 @@
 
 #include "TreeBuilder.h"
 
-#include <boost/unordered/unordered_set.hpp>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
