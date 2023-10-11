@@ -66,7 +66,8 @@ target_include_directories(cts_lib
     ../include
   PRIVATE
     .
-    ${LEMON_INCLUDE_DIRS}
+  ${LEMON_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
  )
 
 target_include_directories(cts
