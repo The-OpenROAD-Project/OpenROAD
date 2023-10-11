@@ -32,8 +32,8 @@
 
 #include <algorithm>
 #include <fstream>
-#include <queue>
 #include <iostream>
+#include <queue>
 
 #include "DataType.h"
 #include "FastRoute.h"
@@ -198,24 +198,23 @@ void FastRouteCore::fillVIA()
         int n1a = treeedge->n1a;
         int n2a = treeedge->n2a;
 
-        if(n1a < num_terminals  || n2a < num_terminals)
-          if(treenodes[n1a].hID == BIG_INT && edgeID == treenodes[n1a].lID) {
-          const int n1a_access_layer = nets_[netID]->getPinL()[n1a];
-          
-          // Concection edge to pin n1 if edge is not on the same layer
-          //as the pins access point
-          if(gridsL[0] != n1a_access_layer) {
-            int diff = gridsL[0] - n1a_access_layer;
-            for (int i = 0; i < abs(diff); i++)
-            {
-              tmpX[newCNT] = gridsX[0];
-              tmpY[newCNT] = gridsY[0];
-              tmpL[newCNT] = n1a_access_layer + i * (diff / abs(diff));
-              newCNT++;
-              numVIAT1++;
+        if (n1a < num_terminals || n2a < num_terminals)
+          if (treenodes[n1a].hID == BIG_INT && edgeID == treenodes[n1a].lID) {
+            const int n1a_access_layer = nets_[netID]->getPinL()[n1a];
+
+            // Concection edge to pin n1 if edge is not on the same layer
+            // as the pins access point
+            if (gridsL[0] != n1a_access_layer) {
+              int diff = gridsL[0] - n1a_access_layer;
+              for (int i = 0; i < abs(diff); i++) {
+                tmpX[newCNT] = gridsX[0];
+                tmpY[newCNT] = gridsY[0];
+                tmpL[newCNT] = n1a_access_layer + i * (diff / abs(diff));
+                newCNT++;
+                numVIAT1++;
+              }
             }
           }
-        }
 
         if (edgeID == treenodes[n1a].hID || edgeID == treenodes[n2a].hID) {
           if (edgeID == treenodes[n1a].hID) {
@@ -271,18 +270,18 @@ void FastRouteCore::fillVIA()
           }
         }
 
-        if (n2a < num_terminals  && treenodes[n2a].hID == BIG_INT && edgeID == treenodes[n2a].lID) {
+        if (n2a < num_terminals && treenodes[n2a].hID == BIG_INT
+            && edgeID == treenodes[n2a].lID) {
           const int n2a_access_layer = nets_[netID]->getPinL()[n2a];
-          
+
           // Concection edge to pin n2 if edge is not on the same layer
-          //as the pins access point
-          if(tmpL[newCNT-1] != n2a_access_layer) {
-            int diff = n2a_access_layer - tmpL[newCNT-1];
-            for (int i = 1; i <= abs(diff); i++)
-            {
-              tmpX[newCNT] = tmpX[newCNT-1];
-              tmpY[newCNT] = tmpY[newCNT-1];
-              tmpL[newCNT] = tmpL[newCNT-1] + (diff / abs(diff));
+          // as the pins access point
+          if (tmpL[newCNT - 1] != n2a_access_layer) {
+            int diff = n2a_access_layer - tmpL[newCNT - 1];
+            for (int i = 1; i <= abs(diff); i++) {
+              tmpX[newCNT] = tmpX[newCNT - 1];
+              tmpY[newCNT] = tmpY[newCNT - 1];
+              tmpL[newCNT] = tmpL[newCNT - 1] + (diff / abs(diff));
               newCNT++;
               numVIAT1++;
             }
