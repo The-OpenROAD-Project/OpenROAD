@@ -1818,89 +1818,6 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net,
   }
 }
 
-void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route)
-{
-  std::vector<Pin>& pins = db_net_map_[db_net]->getPins();
-  for (Pin& pin : pins) {
-    if (pin.getConnectionLayer() > 1) {
-      // for each pin placed at upper layers, get all segments that
-      // potentially covers it
-      GRoute cover_segs;
-
-      odb::Point pin_pos = findFakePinPosition(pin, db_net);
-
-      int wire_via_layer = std::numeric_limits<int>::max();
-      for (size_t i = 0; i < route.size(); i++) {
-        if (((pin_pos.x() == route[i].init_x && pin_pos.y() == route[i].init_y)
-             || (pin_pos.x() == route[i].final_x
-                 && pin_pos.y() == route[i].final_y))
-            && (!(route[i].init_x == route[i].final_x
-                  && route[i].init_y == route[i].final_y))) {
-          cover_segs.push_back(route[i]);
-          if (route[i].init_layer < wire_via_layer) {
-            wire_via_layer = route[i].init_layer;
-          }
-        }
-      }
-
-      bool bottom_layer_pin = false;
-      for (Pin& pin2 : pins) {
-        odb::Point pin2_pos = pin2.getOnGridPosition();
-        if (pin_pos.x() == pin2_pos.x() && pin_pos.y() == pin2_pos.y()
-            && pin.getConnectionLayer() > pin2.getConnectionLayer()) {
-          bottom_layer_pin = true;
-        }
-      }
-
-      if (!bottom_layer_pin) {
-        for (size_t i = 0; i < route.size(); i++) {
-          if (((pin_pos.x() == route[i].init_x
-                && pin_pos.y() == route[i].init_y)
-               || (pin_pos.x() == route[i].final_x
-                   && pin_pos.y() == route[i].final_y))
-              && (route[i].init_x == route[i].final_x
-                  && route[i].init_y == route[i].final_y
-                  && (route[i].init_layer < wire_via_layer
-                      || route[i].final_layer < wire_via_layer))) {
-            // remove all vias to this pin that doesn't connects two wires
-            route.erase(route.begin() + i);
-            i--;
-          }
-        }
-      }
-
-      int closest_layer = -1;
-      int minor_diff = std::numeric_limits<int>::max();
-
-      for (GSegment& seg : cover_segs) {
-        if (seg.init_layer != seg.final_layer) {
-          logger_->error(GRT, 77, "Segment has invalid layer assignment.");
-        }
-
-        int diff_layers = std::abs(pin.getConnectionLayer() - seg.init_layer);
-        if (diff_layers < minor_diff && seg.init_layer > closest_layer) {
-          minor_diff = seg.init_layer;
-          closest_layer = seg.init_layer;
-        }
-      }
-
-      if (closest_layer > pin.getConnectionLayer()) {
-        for (int l = closest_layer; l > pin.getConnectionLayer(); l--) {
-          GSegment segment = GSegment(
-              pin_pos.x(), pin_pos.y(), l, pin_pos.x(), pin_pos.y(), l - 1);
-          route.push_back(segment);
-        }
-      } else if (closest_layer < pin.getConnectionLayer()) {
-        for (int l = closest_layer; l < pin.getConnectionLayer(); l++) {
-          GSegment segment = GSegment(
-              pin_pos.x(), pin_pos.y(), l, pin_pos.x(), pin_pos.y(), l + 1);
-          route.push_back(segment);
-        }
-      }
-    }
-  }
-}
-
 void GlobalRouter::addRemainingGuides(NetRouteMap& routes,
                                       std::vector<Net*>& nets,
                                       int min_routing_layer,
@@ -1918,9 +1835,7 @@ void GlobalRouter::addRemainingGuides(NetRouteMap& routes,
       if (route.empty()) {
         addGuidesForLocalNets(
             db_net, route, min_routing_layer, max_routing_layer);
-      } /*else {
-        addGuidesForPinAccess(db_net, route);
-      }*/
+      }
     }
   }
 }

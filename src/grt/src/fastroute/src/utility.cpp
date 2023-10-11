@@ -33,6 +33,7 @@
 #include <algorithm>
 #include <fstream>
 #include <queue>
+#include <iostream>
 
 #include "DataType.h"
 #include "FastRoute.h"
@@ -197,6 +198,25 @@ void FastRouteCore::fillVIA()
         int n1a = treeedge->n1a;
         int n2a = treeedge->n2a;
 
+        if(n1a < num_terminals  || n2a < num_terminals)
+          if(treenodes[n1a].hID == BIG_INT && edgeID == treenodes[n1a].lID) {
+          const int n1a_access_layer = nets_[netID]->getPinL()[n1a];
+          
+          // Concection edge to pin n1 if edge is not on the same layer
+          //as the pins access point
+          if(gridsL[0] != n1a_access_layer) {
+            int diff = gridsL[0] - n1a_access_layer;
+            for (int i = 0; i < abs(diff); i++)
+            {
+              tmpX[newCNT] = gridsX[0];
+              tmpY[newCNT] = gridsY[0];
+              tmpL[newCNT] = n1a_access_layer + i * (diff / abs(diff));
+              newCNT++;
+              numVIAT1++;
+            }
+          }
+        }
+
         if (edgeID == treenodes[n1a].hID || edgeID == treenodes[n2a].hID) {
           if (edgeID == treenodes[n1a].hID) {
             for (int k = treenodes[n1a].botL; k < treenodes[n1a].topL; k++) {
@@ -242,23 +262,47 @@ void FastRouteCore::fillVIA()
               }
           }
           // last grid -> node2 finished
-
-          if (treeedges[edgeID].route.type == RouteType::MazeRoute) {
-            treeedges[edgeID].route.gridsX.clear();
-            treeedges[edgeID].route.gridsY.clear();
-            treeedges[edgeID].route.gridsL.clear();
+        } else {
+          for (int j = 0; j <= routeLen; j++) {
+            tmpX[newCNT] = gridsX[j];
+            tmpY[newCNT] = gridsY[j];
+            tmpL[newCNT] = gridsL[j];
+            newCNT++;
           }
-          treeedge->route.gridsX.resize(newCNT, 0);
-          treeedge->route.gridsY.resize(newCNT, 0);
-          treeedge->route.gridsL.resize(newCNT, 0);
-          treeedge->route.type = RouteType::MazeRoute;
-          treeedge->route.routelen = newCNT - 1;
+        }
 
-          for (int k = 0; k < newCNT; k++) {
-            treeedge->route.gridsX[k] = tmpX[k];
-            treeedge->route.gridsY[k] = tmpY[k];
-            treeedge->route.gridsL[k] = tmpL[k];
+        if (n2a < num_terminals  && treenodes[n2a].hID == BIG_INT && edgeID == treenodes[n2a].lID) {
+          const int n2a_access_layer = nets_[netID]->getPinL()[n2a];
+          
+          // Concection edge to pin n2 if edge is not on the same layer
+          //as the pins access point
+          if(tmpL[newCNT-1] != n2a_access_layer) {
+            int diff = n2a_access_layer - tmpL[newCNT-1];
+            for (int i = 1; i <= abs(diff); i++)
+            {
+              tmpX[newCNT] = tmpX[newCNT-1];
+              tmpY[newCNT] = tmpY[newCNT-1];
+              tmpL[newCNT] = tmpL[newCNT-1] + (diff / abs(diff));
+              newCNT++;
+              numVIAT1++;
+            }
           }
+        }
+        if (treeedges[edgeID].route.type == RouteType::MazeRoute) {
+          treeedges[edgeID].route.gridsX.clear();
+          treeedges[edgeID].route.gridsY.clear();
+          treeedges[edgeID].route.gridsL.clear();
+        }
+        treeedge->route.gridsX.resize(newCNT, 0);
+        treeedge->route.gridsY.resize(newCNT, 0);
+        treeedge->route.gridsL.resize(newCNT, 0);
+        treeedge->route.type = RouteType::MazeRoute;
+        treeedge->route.routelen = newCNT - 1;
+
+        for (int k = 0; k < newCNT; k++) {
+          treeedge->route.gridsX[k] = tmpX[k];
+          treeedge->route.gridsY[k] = tmpY[k];
+          treeedge->route.gridsL[k] = tmpL[k];
         }
       }
     }
@@ -782,6 +826,7 @@ void FastRouteCore::layerAssignmentV4()
 
       if (nodeID < num_terminals) {
         treenodes[nodeID].botL = nets_[netID]->getPinL()[nodeID];
+        treenodes[nodeID].topL = nets_[netID]->getPinL()[nodeID];
         treenodes[nodeID].assigned = true;
         treenodes[nodeID].status = 1;
       }
