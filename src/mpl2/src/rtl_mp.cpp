@@ -180,12 +180,12 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
                 orientation.getString());
 }
 
-void MacroPlacer2::setMacroPlacementFile(const char* file_name)
+void MacroPlacer2::setMacroPlacementFile(const std::string& file_name)
 {
   hier_rtlmp_->setMacroPlacementFile(file_name);
 }
 
-void MacroPlacer2::writeMacroPlacement(const char* file_name)
+void MacroPlacer2::writeMacroPlacement(const std::string& file_name)
 {
   hier_rtlmp_->writeMacroPlacement(file_name);
 }

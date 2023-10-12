@@ -106,8 +106,8 @@ class MacroPlacer2
                   const float& y_origin,
                   const odb::dbOrientType& orientation);
 
-  void setMacroPlacementFile(const char* file_name);
-  void writeMacroPlacement(const char* file_name);
+  void setMacroPlacementFile(const std::string& file_name);
+  void writeMacroPlacement(const std::string& file_name);
 
   void setDebug(std::unique_ptr<Mpl2Observer>& graphics);
 

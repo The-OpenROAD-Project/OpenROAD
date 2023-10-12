@@ -146,13 +146,13 @@ place_macro(odb::dbInst* inst, float x_origin, float y_origin, std::string orien
 }
 
 void
-set_macro_placement_file(const char* file_name)
+set_macro_placement_file(std::string file_name)
 {
   getMacroPlacer2()->setMacroPlacementFile(file_name);
 }
 
 void
-write_macro_placement(const char* file_name)
+write_macro_placement(std::string file_name)
 {
   getMacroPlacer2()->writeMacroPlacement(file_name);
 }
