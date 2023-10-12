@@ -45,6 +45,7 @@ utl::Logger* getLogger();
 odb::dbDatabase* getDb();
 }
 
+using utl::MPL;
 using ord::getMacroPlacer2;
 %}
 
@@ -131,9 +132,17 @@ set_debug_cmd()
 }
 
 void
-place_macro(odb::dbInst* macro_name, float x_origin, float y_origin, std::string orientation_string)
+place_macro(odb::dbInst* inst, float x_origin, float y_origin, std::string orientation_string)
 {
-  getMacroPlacer2()->placeMacro(macro_name, x_origin, y_origin, orientation_string);
+  odb::dbOrientType orientation(orientation_string.c_str());
+
+  utl::Logger* logger = ord::getLogger();
+
+  if (orientation.isRightAngleRotation()) {
+    logger->warn(MPL, 36, "Orientation {} specified for macro {} is a right angle rotation.", orientation_string, inst->getName());
+  }
+
+  getMacroPlacer2()->placeMacro(inst, x_origin, y_origin, orientation);
 }
 
 void

@@ -109,6 +109,11 @@ class dbOrientType
   ///
   dbOrientType flipY() const;
 
+  ///
+  /// Returns true if the orientation is any kind of 90 degrees rotation
+  ///
+  bool isRightAngleRotation() const;
+
  private:
   Value _value;
 };

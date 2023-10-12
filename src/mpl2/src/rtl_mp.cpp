@@ -123,30 +123,10 @@ bool MacroPlacer2::place(const int max_num_macro,
   return true;
 }
 
-odb::dbOrientType MacroPlacer2::stringToOrientType(
-    const std::string& orientation_string)
-{
-  odb::dbOrientType orientation;
-
-  if (orientation_string == "R0") {
-    orientation = odb::dbOrientType::R0;
-  } else if (orientation_string == "MY") {
-    orientation = odb::dbOrientType::MY;
-  } else if (orientation_string == "MX") {
-    orientation = odb::dbOrientType::MX;
-  } else if (orientation_string == "R180") {
-    orientation = odb::dbOrientType::R180;
-  } else {
-    logger_->error(MPL, 33, "Invalid orientation {}.", orientation_string);
-  }
-
-  return orientation;
-}
-
 void MacroPlacer2::placeMacro(odb::dbInst* inst,
                               const float& x_origin,
                               const float& y_origin,
-                              const std::string& orientation_string)
+                              const odb::dbOrientType& orientation)
 {
   float dbu_per_micron = db_->getTech()->getDbUnitsPerMicron();
 
@@ -164,8 +144,6 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
                    "Specified location results in illegal placement. Cannot "
                    "place macro outside of the core.");
   }
-
-  odb::dbOrientType orientation = stringToOrientType(orientation_string);
 
   // Orientation must be set before location so we don't end up flipping
   // and misplacing the macro.
