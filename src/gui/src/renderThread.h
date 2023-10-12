@@ -132,9 +132,9 @@ class RenderThread : public QThread
   void drawGCellGrid(QPainter* painter, const odb::Rect& bounds);
   void drawSelected(Painter& painter, const SelectionSet& selected);
   void drawHighlighted(Painter& painter, const HighlightSet& highlighted);
-  void drawPinMarkers(Painter& painter,
-                      odb::dbBlock* block,
-                      const odb::Rect& bounds);
+  void drawIOPins(Painter& painter,
+                  odb::dbBlock* block,
+                  const odb::Rect& bounds);
   void drawAccessPoints(Painter& painter,
                         const std::vector<odb::dbInst*>& insts);
   void drawRouteGuides(Painter& painter, odb::dbTechLayer* layer);

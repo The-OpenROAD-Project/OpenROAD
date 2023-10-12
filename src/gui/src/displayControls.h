@@ -239,7 +239,7 @@ class DisplayControls : public QDockWidget,
   bool areSelectedVisible() override;
 
   bool isScaleBarVisible() const override;
-  bool arePinMarkersVisible() const override;
+  bool areIOPinsVisible() const override;
   QFont pinMarkersFont() override;
   bool areAccessPointsVisible() const override;
   bool areRegionsVisible() const override;
@@ -504,7 +504,7 @@ class DisplayControls : public QDockWidget,
 
   // Object controls
   NetModels nets_;
-  ModelRow pin_markers_;
+  ModelRow io_pins_;
   ModelRow rulers_;
   BlockageModels blockages_;
   TrackModels tracks_;
