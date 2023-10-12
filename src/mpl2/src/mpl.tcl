@@ -258,8 +258,8 @@ proc rtl_macro_placer { args } {
     return true
 }
 
-sta::define_cmd_args "place_macro" {[-macro_name macro_name] \
-                                    [-location location] \
+sta::define_cmd_args "place_macro" {-macro_name macro_name \
+                                    -location location \
                                     [-orientation orientation] \
 }
 
