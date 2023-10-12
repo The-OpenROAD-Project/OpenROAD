@@ -32,7 +32,6 @@
 
 #include <algorithm>
 #include <fstream>
-#include <iostream>
 #include <queue>
 
 #include "DataType.h"
@@ -198,7 +197,7 @@ void FastRouteCore::fillVIA()
         int n1a = treeedge->n1a;
         int n2a = treeedge->n2a;
 
-        if (n1a < num_terminals || n2a < num_terminals)
+        if (n1a < num_terminals || n2a < num_terminals) {
           if (treenodes[n1a].hID == BIG_INT && edgeID == treenodes[n1a].lID) {
             const int n1a_access_layer = nets_[netID]->getPinL()[n1a];
 
@@ -215,7 +214,7 @@ void FastRouteCore::fillVIA()
               }
             }
           }
-
+        }
         if (edgeID == treenodes[n1a].hID || edgeID == treenodes[n2a].hID) {
           if (edgeID == treenodes[n1a].hID) {
             for (int k = treenodes[n1a].botL; k < treenodes[n1a].topL; k++) {
@@ -1019,13 +1018,14 @@ void FastRouteCore::checkRoute3D()
     const auto& treenodes = sttrees_[netID].nodes;
     const int num_terminals = sttrees_[netID].num_terminals;
 
-    /*for (nodeID = 0; nodeID < sttrees_[netID].num_nodes; nodeID++) {
+    for (nodeID = 0; nodeID < sttrees_[netID].num_nodes; nodeID++) {
       if (nodeID < num_terminals) {
-        if (treenodes[nodeID].botL != 0) {
+        if ((treenodes[nodeID].botL > nets_[netID]->getPinL()[nodeID])
+            || (treenodes[nodeID].topL < nets_[netID]->getPinL()[nodeID])) {
           logger_->error(GRT, 203, "Caused floating pin node.");
         }
       }
-    }*/
+    }
     for (edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
       if (sttrees_[netID].edges[edgeID].len == 0) {
         continue;
