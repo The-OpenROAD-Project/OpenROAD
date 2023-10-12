@@ -152,10 +152,6 @@ LayoutViewer::LayoutViewer(
 {
   setMouseTracking(true);
 
-  QPalette palette;
-  palette.setColor(QPalette::Window, background_);
-  setPalette(palette);
-
   addMenuAndActions();
 
   connect(
@@ -1970,7 +1966,7 @@ void LayoutViewer::saveImage(const QString& filepath,
                       highlighted_,
                       rulers_,
                       render_ratio,
-                      background_);
+                      background());
   pixels_per_dbu_ = old_pixels_per_dbu;
 
   if (!img.save(save_filepath)) {
