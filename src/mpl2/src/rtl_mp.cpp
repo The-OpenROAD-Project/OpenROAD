@@ -144,16 +144,16 @@ odb::dbOrientType MacroPlacer2::stringToOrientType(
 }
 
 void MacroPlacer2::placeMacro(odb::dbInst* inst,
-                              float x_origin,
-                              float y_origin,
+                              const float& x_origin,
+                              const float& y_origin,
                               const std::string& orientation_string)
 {
   float dbu_per_micron = db_->getTech()->getDbUnitsPerMicron();
 
-  int x1 = micronToDbu(x_origin, dbu_per_micron);
-  int y1 = micronToDbu(y_origin, dbu_per_micron);
-  int x2 = x1 + inst->getBBox()->getDX();
-  int y2 = y1 + inst->getBBox()->getDY();
+  const int x1 = micronToDbu(x_origin, dbu_per_micron);
+  const int y1 = micronToDbu(y_origin, dbu_per_micron);
+  const int x2 = x1 + inst->getBBox()->getDX();
+  const int y2 = y1 + inst->getBBox()->getDY();
 
   odb::Rect macro_new_bbox(x1, y1, x2, y2);
   odb::Rect core_area = inst->getBlock()->getCoreArea();

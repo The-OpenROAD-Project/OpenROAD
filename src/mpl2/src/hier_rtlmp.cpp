@@ -6085,8 +6085,8 @@ void HierRTLMP::writeMacroPlacement(const std::string& file_name)
 
   // Use only insts that were placed by mpl2
   for (auto& [inst, hard_macro] : hard_macro_map_) {
-    float x = dbuToMicron(inst->getLocation().x(), dbu_);
-    float y = dbuToMicron(inst->getLocation().y(), dbu_);
+    const float x = dbuToMicron(inst->getLocation().x(), dbu_);
+    const float y = dbuToMicron(inst->getLocation().y(), dbu_);
 
     out << "place_macro -macro_name " << inst->getName() << " -location {" << x
         << " " << y << "} -orientation " << inst->getOrient().getString()

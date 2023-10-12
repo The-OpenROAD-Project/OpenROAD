@@ -102,8 +102,8 @@ class MacroPlacer2
              const char* report_directory);
 
   void placeMacro(odb::dbInst* inst,
-                  float x_origin,
-                  float y_origin,
+                  const float& x_origin,
+                  const float& y_origin,
                   const std::string& orientation_string);
   odb::dbOrientType stringToOrientType(const std::string& orientation_string);
 
