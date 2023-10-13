@@ -145,7 +145,9 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
                    "place macro outside of the core.");
   }
 
-  // Orientation must be set before location so we don't end up flipping
+  // As HardMacro is created from inst, the latter must be placed before
+  // we actually snap the macro to align the pins with the grids. Also,
+  // orientation must be set before location so we don't end up flipping
   // and misplacing the macro.
   inst->setOrient(orientation);
   inst->setLocation(x1, y1);
@@ -163,9 +165,11 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
   float pitch_x = 0.0;
   float pitch_y = 0.0;
 
-  macro.alignOriginWithGrids(
+  odb::Point snap_origin = macro.computeSnapOrigin(
       macro_new_bbox_micron, orientation, pitch_x, pitch_y, inst->getBlock());
 
+  // Orientation is already set, so now we set the origin to snap macro.
+  inst->setOrigin(snap_origin.x(), snap_origin.y());
   inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
 
   logger_->info(MPL,
@@ -173,10 +177,10 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
                 "Macro {} placed. Bounding box ({:.3f}um, {:.3f}um), "
                 "({:.3f}um, {:.3f}um). Orientation {}",
                 inst->getName(),
-                macro_new_bbox_micron.xMin(),
-                macro_new_bbox_micron.yMin(),
-                macro_new_bbox_micron.xMax(),
-                macro_new_bbox_micron.yMax(),
+                dbuToMicron(inst->getBBox()->xMin(), dbu_per_micron),
+                dbuToMicron(inst->getBBox()->yMin(), dbu_per_micron),
+                dbuToMicron(inst->getBBox()->xMax(), dbu_per_micron),
+                dbuToMicron(inst->getBBox()->yMax(), dbu_per_micron),
                 orientation.getString());
 }
 

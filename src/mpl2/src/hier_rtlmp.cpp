@@ -6058,7 +6058,7 @@ void HierRTLMP::correctAllMacrosOrientation()
 
     const odb::dbOrientType inst_orientation = inst->getOrient();
 
-    const odb::Point snap_origin = hard_macro->alignOriginWithGrids(
+    const odb::Point snap_origin = hard_macro->computeSnapOrigin(
         inst_box, inst_orientation, pitch_x_, pitch_y_, block_);
 
     inst->setOrigin(snap_origin.x(), snap_origin.y());
