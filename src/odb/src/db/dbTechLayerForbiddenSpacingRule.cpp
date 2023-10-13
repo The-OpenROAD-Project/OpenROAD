@@ -213,6 +213,34 @@ int dbTechLayerForbiddenSpacingRule::getTwoEdges() const
 
 // User Code Begin dbTechLayerForbiddenSpacingRulePublicMethods
 
+bool dbTechLayerForbiddenSpacingRule::hasWidth()
+{
+  _dbTechLayerForbiddenSpacingRule* obj
+      = (_dbTechLayerForbiddenSpacingRule*) this;
+  return obj->width_ != 0;
+}
+
+bool dbTechLayerForbiddenSpacingRule::hasWithin()
+{
+  _dbTechLayerForbiddenSpacingRule* obj
+      = (_dbTechLayerForbiddenSpacingRule*) this;
+  return obj->within_ != 0;
+}
+
+bool dbTechLayerForbiddenSpacingRule::hasPrl()
+{
+  _dbTechLayerForbiddenSpacingRule* obj
+      = (_dbTechLayerForbiddenSpacingRule*) this;
+  return obj->prl_ != 0;
+}
+
+bool dbTechLayerForbiddenSpacingRule::hasTwoEdges()
+{
+  _dbTechLayerForbiddenSpacingRule* obj
+      = (_dbTechLayerForbiddenSpacingRule*) this;
+  return obj->two_edges_ != 0;
+}
+
 dbTechLayerForbiddenSpacingRule* dbTechLayerForbiddenSpacingRule::create(
     dbTechLayer* _layer)
 {

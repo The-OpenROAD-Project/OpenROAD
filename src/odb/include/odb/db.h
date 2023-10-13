@@ -8924,6 +8924,14 @@ class dbTechLayerForbiddenSpacingRule : public dbObject
 
   // User Code Begin dbTechLayerForbiddenSpacingRule
 
+  bool hasWidth();
+
+  bool hasWithin();
+
+  bool hasPrl();
+
+  bool hasTwoEdges();
+
   static dbTechLayerForbiddenSpacingRule* create(dbTechLayer* _layer);
 
   static void destroy(dbTechLayerForbiddenSpacingRule* rule);
