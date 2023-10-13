@@ -152,24 +152,34 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
   inst->setOrient(orientation);
   inst->setLocation(x1, y1);
 
-  int manufacturing_grid = db_->getTech()->getManufacturingGrid();
+  if (!orientation.isRightAngleRotation()) {
+    int manufacturing_grid = db_->getTech()->getManufacturingGrid();
 
-  HardMacro macro(inst, dbu_per_micron, manufacturing_grid, 0, 0);
+    HardMacro macro(inst, dbu_per_micron, manufacturing_grid, 0, 0);
 
-  mpl2::Rect macro_new_bbox_micron(
-      x_origin,
-      y_origin,
-      dbuToMicron(macro_new_bbox.xMax(), dbu_per_micron),
-      dbuToMicron(macro_new_bbox.yMax(), dbu_per_micron));
+    mpl2::Rect macro_new_bbox_micron(
+        x_origin,
+        y_origin,
+        dbuToMicron(macro_new_bbox.xMax(), dbu_per_micron),
+        dbuToMicron(macro_new_bbox.yMax(), dbu_per_micron));
 
-  float pitch_x = 0.0;
-  float pitch_y = 0.0;
+    float pitch_x = 0.0;
+    float pitch_y = 0.0;
 
-  odb::Point snap_origin = macro.computeSnapOrigin(
-      macro_new_bbox_micron, orientation, pitch_x, pitch_y, inst->getBlock());
+    odb::Point snap_origin = macro.computeSnapOrigin(
+        macro_new_bbox_micron, orientation, pitch_x, pitch_y, inst->getBlock());
 
-  // Orientation is already set, so now we set the origin to snap macro.
-  inst->setOrigin(snap_origin.x(), snap_origin.y());
+    // Orientation is already set, so now we set the origin to snap macro.
+    inst->setOrigin(snap_origin.x(), snap_origin.y());
+  } else {
+    logger_->warn(
+        MPL,
+        36,
+        "Orientation {} specified for macro {} is a right angle rotation.",
+        orientation.getString(),
+        inst->getName());
+  }
+
   inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
 
   logger_->info(MPL,
