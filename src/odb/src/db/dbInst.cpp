@@ -588,7 +588,7 @@ void dbInst::setOrient(dbOrientType orient)
                "DB_ECO",
                1,
                "ECO: setOrient {}",
-               orient.getValue());
+               orient.getString());
     block->_journal->updateField(
         this, _dbInst::FLAGS, prev_flags, flagsToUInt(inst));
   }
@@ -626,7 +626,7 @@ void dbInst::setPlacementStatus(dbPlacementStatus status)
                "DB_ECO",
                1,
                "ECO: setPlacementStatus {}",
-               status.getValue());
+               status.getString());
     block->_journal->updateField(
         this, _dbInst::FLAGS, prev_flags, flagsToUInt(inst));
   }

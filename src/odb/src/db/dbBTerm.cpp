@@ -334,7 +334,7 @@ void dbBTerm::setSigType(dbSigType type)
                "DB_ECO",
                1,
                "ECO: setSigType {}",
-               type.getValue());
+               type.getString());
     block->_journal->updateField(
         this, _dbBTerm::FLAGS, prev_flags, flagsToUInt(bterm));
   }
@@ -360,7 +360,7 @@ void dbBTerm::setIoType(dbIoType type)
                "DB_ECO",
                1,
                "ECO: setIoType {}",
-               type.getValue());
+               type.getString());
     block->_journal->updateField(
         this, _dbBTerm::FLAGS, prev_flags, flagsToUInt(bterm));
   }

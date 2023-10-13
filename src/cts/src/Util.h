@@ -37,6 +37,7 @@
 
 #include <iomanip>
 #include <ostream>
+#include <spdlog/fmt/fmt.h>
 
 namespace cts {
 
@@ -169,3 +170,8 @@ class Box
 };
 
 }  // namespace cts
+
+#if defined(FMT_VERSION) && FMT_VERSION >= 90000
+#include <fmt/ostream.h>
+template <typename T> struct fmt::formatter<cts::Box<T>> : fmt::ostream_formatter {};
+#endif // FMT_VERSION >= 90000

@@ -35,6 +35,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <spdlog/fmt/fmt.h>
 #include <vector>
 
 namespace odb {
@@ -250,3 +251,8 @@ struct OrderNetEdge
 };
 
 }  // namespace grt
+
+#if defined(FMT_VERSION) && FMT_VERSION >= 90000
+#include <fmt/ostream.h>
+template <> struct fmt::formatter<grt::RouteType> : fmt::ostream_formatter {};
+#endif // FMT_VERSION >= 90000
