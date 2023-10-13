@@ -426,7 +426,7 @@ Point<double> HTreeBuilder::findBestLegalLocation(
 // step1: try moving buffer to existing blockage boundary (less expensive)
 // step2: try moving buffer beyond existing blockage boundary (more expensive)
 // In both steps, the first priority is to match target distance from current
-// point to parent point The second priority is to lower the weighted sink
+// point to parent point.  The second priority is to lower the weighted sink
 // distance
 Point<double> HTreeBuilder::adjustBestLegalLocation(
     double targetDist,
@@ -439,15 +439,46 @@ Point<double> HTreeBuilder::adjustBestLegalLocation(
     double y2,
     int scalingFactor)
 {
-  double currDist = currLoc.computeDist(parentPoint);
-  if (fuzzyEqual(currDist, targetDist)) {
+  if (fuzzyEqual(targetDist, currLoc.computeDist(parentPoint))) {
     return currLoc;
   }
 
+  // try moving along blockage boundary
+  Point<double> bestLoc = currLoc;
+  if (adjustAlongBlockage(targetDist,
+                          currLoc,
+                          parentPoint,
+                          sinks,
+                          x1,
+                          y1,
+                          x2,
+                          y2,
+                          scalingFactor,
+                          bestLoc)) {
+    return bestLoc;
+  }
+
+  // try moving beyond blockage boundary
+  return adjustBeyondBlockage(
+      currLoc, parentPoint, targetDist, sinks, scalingFactor);
+}
+
+bool HTreeBuilder::adjustAlongBlockage(double targetDist,
+                                       Point<double> currLoc,
+                                       Point<double> parentPoint,
+                                       const std::vector<Point<double>>& sinks,
+                                       double x1,
+                                       double y1,
+                                       double x2,
+                                       double y2,
+                                       int scalingFactor,
+                                       Point<double>& bestLoc)
+{
   Point<double> newLoc = currLoc;
   // clang-format off
-  debugPrint(logger_, CTS, "legalizer", 3, "{} currDist={:0.3f} != targetDist={:0.3f}, adjusting",
-	     currLoc, currDist, targetDist);
+  debugPrint(logger_, CTS, "legalizer", 3, "{} currDist={:0.3f} != "
+	     "targetDist={:0.3f}, adjustAlongBlockage...", currLoc,
+	     currLoc.computeDist(parentPoint), targetDist);
   // clang-format on
   double x = currLoc.getX();
   double y = currLoc.getY();
@@ -455,7 +486,7 @@ Point<double> HTreeBuilder::adjustBestLegalLocation(
   double py = parentPoint.getY();
 
   Point<double> noBest(-1e6, -1e6);
-  Point<double> bestLoc = noBest;
+  bestLoc = noBest;
   double bestSinkDist = 1e12;
   double sinkDist = 0.0;
   std::vector<Point<double>> candidates;
@@ -465,22 +496,22 @@ Point<double> HTreeBuilder::adjustBestLegalLocation(
   double newY = py - targetDist + abs(px - newX);
   newLoc.setX(newX);
   newLoc.setY(newY);
-  candidates.emplace_back(newLoc);  // trial y1
+  candidates.emplace_back(newLoc);  // trial y#1
 
   newY = py + targetDist - abs(px - newX);
   newLoc.setY(newY);
-  candidates.emplace_back(newLoc);  // trial y2
+  candidates.emplace_back(newLoc);  // trial y#2
 
   // move along x axis within blockage
   newY = y;
   newX = px - targetDist + abs(py - newY);
   newLoc.setX(newX);
   newLoc.setY(newY);
-  candidates.emplace_back(newLoc);  // trial x1
+  candidates.emplace_back(newLoc);  // trial x#1
 
   newX = px + targetDist - abs(py - newY);
   newLoc.setX(newX);
-  candidates.emplace_back(newLoc);  // trial x2
+  candidates.emplace_back(newLoc);  // trial x#2
 
   for (const Point<double>& candidate : candidates) {
     checkLegalityAndCostSpecial(currLoc,
@@ -499,12 +530,9 @@ Point<double> HTreeBuilder::adjustBestLegalLocation(
   }
 
   if (bestLoc != noBest) {
-    return bestLoc;
+    return true;
   }
-
-  // try moving beyond blockage boundary
-  return adjustBranchLength(
-      currLoc, parentPoint, targetDist, sinks, scalingFactor);
+  return false;
 }
 
 void HTreeBuilder::checkLegalityAndCostSpecial(
@@ -532,37 +560,99 @@ void HTreeBuilder::checkLegalityAndCostSpecial(
     // clang-format off
     debugPrint(logger_, CTS, "legalizer", 3, "adjustBestLegalLoc: branchPt move:{}=>{} is legal, "
                "dist={:0.3f}, sinkDist={:0.3f}", oldLoc, newLoc, targetDist, sinkDist);
-  } else {
-    debugPrint(logger_, CTS, "legalizer", 3, "adjustBestLegalLoc: branchPt move:{}=>{} is illegal or dist "
-               "{:0.3f} != {:0.3f}", oldLoc, newLoc, newLoc.computeDist(parentPoint), targetDist);
     // clang-format on
   }
+  // clang-format off
+  debugPrint(logger_, CTS, "legalizer", 3, "adjustBestLegalLoc: branchPt move:{}=>{} is illegal or dist "
+	     "{:0.3f} != {:0.3f}", oldLoc, newLoc, newLoc.computeDist(parentPoint), targetDist);
+  // clang-format off
 }
 
-// Branch point couldn't be legalized by simply moving it along blockage
-// boundary, or parent point may have moved, so it may be necessary to move a
-// legal branch point. In either scenario, move branch point to match target
-// distance and to minimize weighted sink distance
-Point<double> HTreeBuilder::adjustBranchLength(
+// 1) Branch point couldn't be legalized by simply moving it along blockage
+//    boundary, or
+// 2) Branch point is legal but parent point has moved, so it is necessary to
+//    move it to match target topology length
+// In both cases, move branch point to match target distance and minimize
+// weighted sink distance
+Point<double> HTreeBuilder::adjustBeyondBlockage(
     Point<double> branchPoint,
     Point<double> parentPoint,
     double targetDist,
     const std::vector<Point<double>>& sinks,
     int scalingFactor)
 {
-  // get small x and y offset to find "channel" through blockages
-  double minX = 10.0 * getBufferWidth();
-  double minY = 10.0 * getBufferHeight();
-
-  double bx = branchPoint.getX();
-  double by = branchPoint.getY();
   double px = parentPoint.getX();
   double py = parentPoint.getY();
+  std::vector<Point<double>> candidates;
+  Point<double> point = branchPoint;
+
+  // try points that are on edges of "Manhattan square"
+  // with the parent point in the center
+  //              p16 p1 p9
+  //            p8         p5
+  //          p15            p10
+  //        p4        pp       p2
+  //         p14             p11
+  //           p7           p6
+  //              p13 p3 p12
+  addCandidatePoint(px, py + targetDist, point, candidates); // p1
+  addCandidatePoint(px + targetDist, py, point, candidates); // p2
+  addCandidatePoint(px, py - targetDist, point, candidates); // p3
+  addCandidatePoint(px - targetDist, py, point, candidates); // p4
+
+  double leng50 = targetDist * 0.5;
+  addCandidatePoint(px + leng50, py + leng50, point, candidates); // p5
+  addCandidatePoint(px + leng50, py - leng50, point, candidates); // p6
+  addCandidatePoint(px - leng50, py - leng50, point, candidates); // p7
+  addCandidatePoint(px - leng50, py + leng50, point, candidates); // p8
+
+  double leng25 = targetDist * 0.25;
+  double leng75 = targetDist * 0.75;
+  addCandidatePoint(px + leng25, py + leng75, point, candidates); // p9
+  addCandidatePoint(px + leng75, py + leng25, point, candidates); // p10
+  addCandidatePoint(px + leng75, py - leng25, point, candidates); // p11
+  addCandidatePoint(px + leng25, py - leng75, point, candidates); // p12
+  addCandidatePoint(px - leng25, py - leng75, point, candidates); // p13
+  addCandidatePoint(px - leng75, py - leng25, point, candidates); // p14
+  addCandidatePoint(px - leng75, py + leng25, point, candidates); // p15
+  addCandidatePoint(px - leng25, py + leng75, point, candidates); // p16
+
+  // check if any corners of Manhanttan square are inside some blockage
+  // if so add candidate points that intersect blockage and Manhattan square
+  // p1 is top corner
+  point.setX(px);
+  point.setY(py + targetDist);
+  addCandidatePointsAlongBlockage(point, parentPoint, targetDist,
+				  scalingFactor, candidates, "top");
+
+  // p2 is right corner
+  point.setX(px + targetDist);
+  point.setY(py);
+  addCandidatePointsAlongBlockage(point, parentPoint, targetDist,
+				  scalingFactor, candidates, "right");
+  
+  // p3 is bottom corner
+  point.setX(px);
+  point.setY(py - targetDist);
+  addCandidatePointsAlongBlockage(point, parentPoint, targetDist,
+				  scalingFactor, candidates, "bottom");
+
+  // p4 is left corner
+  point.setX(px - targetDist);
+  point.setY(py);
+  addCandidatePointsAlongBlockage(point, parentPoint, targetDist,
+				  scalingFactor, candidates, "left");
+
+  // try moving cell along x or y, with some offset
+  double bx = branchPoint.getX();
+  double by = branchPoint.getY();
   Point<double> noBest(-1e6, -1e6);
   Point<double> bestLoc = noBest;
   double bestSinkDist = 1e12;
   double sinkDist = 0.0;
-  std::vector<Point<double>> candidates;
+  // get small x and y offset to find "channel" through blockages
+  double minX = 10.0 * getBufferWidth();
+  double minY = 10.0 * getBufferHeight();
 
   // try small offset in x direction
   Point<double> newLoc(bx, by);
@@ -570,38 +660,38 @@ Point<double> HTreeBuilder::adjustBranchLength(
   double newY = py - targetDist + abs(px - newX);
   newLoc.setX(newX);
   newLoc.setY(newY);
-  candidates.emplace_back(newLoc);  // trial x1
+  candidates.emplace_back(newLoc);  // trial x#1
 
   newLoc.setY(py + targetDist - abs(px - newX));
-  candidates.emplace_back(newLoc);  // trial x2
+  candidates.emplace_back(newLoc);  // trial x#2
 
   newX = bx - minX;
   newY = py - targetDist + abs(px - newX);
   newLoc.setX(newX);
   newLoc.setY(newY);
-  candidates.emplace_back(newLoc);  // trial x3
+  candidates.emplace_back(newLoc);  // trial x#3
 
   newLoc.setY(py + targetDist - abs(px - newX));
-  candidates.emplace_back(newLoc);  // trial x4
+  candidates.emplace_back(newLoc);  // trial x#4
 
   // try small offset in y direction
   newY = by + minY;
   newX = px - targetDist + abs(py - newY);
   newLoc.setX(newX);
   newLoc.setY(newY);
-  candidates.emplace_back(newLoc);  // trial y1
+  candidates.emplace_back(newLoc);  // trial y#1
 
   newLoc.setX(px + targetDist - abs(py - newY));
-  candidates.emplace_back(newLoc);  // trial y2
+  candidates.emplace_back(newLoc);  // trial y#2
 
   newY = by - minY;
   newX = px - targetDist + abs(py - newY);
   newLoc.setX(newX);
   newLoc.setY(newY);
-  candidates.emplace_back(newLoc);  // trial y3
+  candidates.emplace_back(newLoc);  // trial y#3
 
   newLoc.setX(px + targetDist - abs(py - newY));
-  candidates.emplace_back(newLoc);  // trial y4
+  candidates.emplace_back(newLoc);  // trial y#4
 
   for (const Point<double>& candidate : candidates) {
     checkLegalityAndCost(branchPoint,
@@ -619,6 +709,72 @@ Point<double> HTreeBuilder::adjustBranchLength(
     return bestLoc;
   }
   return branchPoint;
+}
+
+void HTreeBuilder::addCandidatePointsAlongBlockage
+    (Point<double> point,
+     Point<double> parentPoint,
+     double targetDist,
+     int scalingFactor,
+     std::vector<Point<double>>& candidates,
+     std::string location)
+{
+  double x1, y1, x2, y2;
+  if (findBlockage(point, scalingFactor, x1, y1, x2, y2)) {
+    Point<double> point2 = point;
+    double px = parentPoint.getX();
+    double py = parentPoint.getY();
+    // clang-format off
+    debugPrint(logger_, CTS, "legalizer", 3, "  {} corner {} of Manhattan sqaure"
+	       "is inside blockage ({:0.3f} {:0.3f}) ({:0.3f} {:0.3f})", location, point, x1, y1, x2, y2);
+    // clang-format on
+    if (location == "top") {
+      //        ----------
+      //        |        |
+      //        |   top  |
+      //        |   / \  |
+      // (x1, y1)--x---x-(x2, y1)
+      //          /  .
+      //          (px, py)
+      //
+      // (px - x) + (y1 - py) = targetDist
+      // (x - px) + (y1 - py) = targetDist
+      point2.setX(-targetDist - py + px + y1);
+      point2.setY(y1);
+      candidates.emplace_back(point2);
+      point2.setY(targetDist + py + px - y1);
+      candidates.emplace_back(point2);
+    } else if (location == "right") {
+      // (x1, y2)---------
+      //       \ |        |
+      //         x        |
+      //         |\       |
+      //   .     | right  |
+      // (px,py)| /       |
+      //         x        |
+      // (x1, y1)---------
+      // (x1 - px) + (y - py) = targetDist
+      // (x1 - px) + (py - y) = targetDist
+      point2.setX(x1);
+      point2.setY(targetDist + py + px - x1);
+      candidates.emplace_back(point2);
+      point2.setY(-targetDist + py - px + x1);
+      candidates.emplace_back(point2);
+    } else if (location == "bottom") {
+      point2.setX(-targetDist + py + px - y2);
+      point2.setY(y2);
+      candidates.emplace_back(point2);
+      point2.setX(targetDist - py + px + y2);
+      candidates.emplace_back(point2);
+    } else {
+      assert(location == "left");
+      point2.setX(x2);
+      point2.setY(targetDist + py - px + x2);
+      candidates.emplace_back(point2);
+      point2.setY(-targetDist + py + px - x2);
+      candidates.emplace_back(point2);
+    }
+  }
 }
 
 void HTreeBuilder::checkLegalityAndCost(Point<double> oldLoc,
@@ -639,10 +795,10 @@ void HTreeBuilder::checkLegalityAndCost(Point<double> oldLoc,
       bestSinkDist = sinkDist;
     }
     // clang-format off
-    debugPrint(logger_, CTS, "legalizer", 3, "adjustBranchLength: branchPt move:{}=>{} is legal, "
+    debugPrint(logger_, CTS, "legalizer", 3, "adjustBeyondBlockage: branchPt move:{}=>{} is legal, "
                "dist={:0.3f}, sinkDist={:0.3f}", oldLoc, newLoc, targetDist, sinkDist);
   } else {
-    debugPrint(logger_, CTS, "legalizer", 3, "adjustBranchLength: branchPt move:{}=>{} is illegal or dist {:0.3f} "
+    debugPrint(logger_, CTS, "legalizer", 3, "adjustBeyondBlockage: branchPt move:{}=>{} is illegal or dist {:0.3f} "
         "!= {:0.3f}", oldLoc, newLoc, newLoc.computeDist(parentPoint), targetDist);
     // clang-format on
   }
@@ -790,14 +946,14 @@ void HTreeBuilder::legalize()
         // legal branch point needs adjustment if parent point moved in previous
         // level
         Point<double> newLocation(branchPoint);
-        newLocation = adjustBranchLength(branchPoint,
-                                         parentPoint,
-                                         topology.getLength(),
-                                         sinks,
-                                         scalingFactor);
+        newLocation = adjustBeyondBlockage(branchPoint,
+                                           parentPoint,
+                                           topology.getLength(),
+                                           sinks,
+                                           scalingFactor);
         // clang-format off
 	debugPrint(logger_, CTS, "legalizer", 3,
-		   "adjustBranchLength applied to legal branchPt:{}=>{} parentPt:{} newDist={:0.3f}",
+		   "adjustBeyondBlockage applied to legal branchPt:{}=>{} parentPt:{} newDist={:0.3f}",
 		   branchPoint, newLocation, parentPoint, newLocation.computeDist(parentPoint));
         // clang-format on
         uncommitLoc(branchPoint);

@@ -231,6 +231,10 @@ bool TreeBuilder::checkLegalityLoc(const Point<double>& bufferLoc,
 
   double x1, y1, x2, y2;
   if (findBlockage(bufferLoc, scalingFactor, x1, y1, x2, y2)) {
+    // clang-format off
+    debugPrint(logger_, CTS, "legalizer", 4, "loc {} is inside blockage ({:0.3f} {:0.3f}) ({:0.3f} {:0.3f})",
+	       bufferLoc, x1, y1, x2, y2);
+    // clang-format on
     return false;
   }
 
