@@ -752,7 +752,8 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> *obj.width_table_rules_tbl_;
   stream >> *obj.min_cuts_rules_tbl_;
   stream >> *obj.area_rules_tbl_;
-  stream >> *obj.forbidden_spacing_rules_tbl_;
+  if (obj.getDatabase()->isSchema(db_schema_lef58_forbidden_spacing))
+    stream >> *obj.forbidden_spacing_rules_tbl_;
   if (obj.getDatabase()->isSchema(db_schema_keepout_zone))
     stream >> *obj.keepout_zone_rules_tbl_;
   // User Code Begin >>
@@ -831,7 +832,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << *obj.width_table_rules_tbl_;
   stream << *obj.min_cuts_rules_tbl_;
   stream << *obj.area_rules_tbl_;
-  stream << *obj.forbidden_spacing_rules_tbl_;
+  if (obj.getDatabase()->isSchema(db_schema_lef58_forbidden_spacing))
+    stream << *obj.forbidden_spacing_rules_tbl_;
   if (obj.getDatabase()->isSchema(db_schema_keepout_zone))
     stream << *obj.keepout_zone_rules_tbl_;
   // User Code Begin <<
