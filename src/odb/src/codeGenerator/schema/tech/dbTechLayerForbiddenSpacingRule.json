@@ -1,0 +1,32 @@
+{
+  "name": "dbTechLayerForbiddenSpacingRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "type": "std::pair<int,int>",
+      "name": "forbidden_spacing_",
+      "flags": [
+        "no-template"
+      ]
+    },
+    {
+      "type": "int",
+      "name": "width_"
+    },
+    {
+      "type": "int",
+      "name": "within_"
+    },
+    {
+      "type": "int",
+      "name": "prl_"
+    },
+    {
+      "type": "int",
+      "name": "two_edges_"
+    }
+  ],
+  "cpp_includes": [
+    "dbTechLayer.h"
+  ]
+}
