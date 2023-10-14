@@ -611,6 +611,7 @@ class Gui
   // Save layout to an image file
   void saveImage(const std::string& filename,
                  const odb::Rect& region = odb::Rect(),
+                 int width_px = 0,
                  double dbu_per_pixel = 0,
                  const std::map<std::string, bool>& display_settings = {});
 

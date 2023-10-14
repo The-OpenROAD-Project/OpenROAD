@@ -57,6 +57,9 @@ class Utils
                           const QRect& render_rect,
                           const QColor& background,
                           utl::Logger* logger);
+
+  // Cache of size in pixels to limit ~1.5GB in memory
+  inline static const int MAX_IMAGE_SIZE = 7200;
 };
 
 }  // namespace gui
