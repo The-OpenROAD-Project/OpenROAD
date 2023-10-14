@@ -45,10 +45,12 @@ utl::Logger* getLogger();
 odb::dbDatabase* getDb();
 }
 
+using utl::MPL;
 using ord::getMacroPlacer2;
 %}
 
 %include "../../Exception.i"
+%include <std_string.i>
 
 %inline %{
 
@@ -127,6 +129,32 @@ set_debug_cmd()
   int dbu = ord::getDb()->getTech()->getDbUnitsPerMicron();
   std::unique_ptr<Mpl2Observer> graphics = std::make_unique<Graphics>(dbu, ord::getLogger());
   macro_placer->setDebug(graphics);
+}
+
+void
+place_macro(odb::dbInst* inst, float x_origin, float y_origin, std::string orientation_string)
+{
+  odb::dbOrientType orientation(orientation_string.c_str());
+
+  utl::Logger* logger = ord::getLogger();
+
+  if (orientation.isRightAngleRotation()) {
+    logger->warn(MPL, 36, "Orientation {} specified for macro {} is a right angle rotation.", orientation_string, inst->getName());
+  }
+
+  getMacroPlacer2()->placeMacro(inst, x_origin, y_origin, orientation);
+}
+
+void
+set_macro_placement_file(std::string file_name)
+{
+  getMacroPlacer2()->setMacroPlacementFile(file_name);
+}
+
+void
+write_macro_placement(std::string file_name)
+{
+  getMacroPlacer2()->writeMacroPlacement(file_name);
 }
 
 } // namespace
