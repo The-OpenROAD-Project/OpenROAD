@@ -6003,6 +6003,13 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
           wirelength += (std::abs(x2 - x1) + std::abs(y2 - y1));
         }
       }
+
+      for (odb::dbBTerm* net_bterm : net->getBTerms()) {
+        const float x2 = dbuToMicron(net_bterm->getBBox().xCenter(), dbu_);
+        const float y2 = dbuToMicron(net_bterm->getBBox().yCenter(), dbu_);
+
+        wirelength += (std::abs(x2 - x1) + std::abs(y2 - y1));
+      }
     }
   }
 
