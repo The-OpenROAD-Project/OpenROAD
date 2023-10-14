@@ -41,6 +41,7 @@ sta::define_cmd_args "triton_part_hypergraph" {
   -num_parts num_parts \
   -balance_constraint balance_constraint \
   [-base_balance base_balance] \
+  [-scale_factor scale_factor] \
   [-seed seed] \
   [-vertex_dimension vertex_dimension] \
   [-hyperedge_dimension hyperedge_dimension] \
@@ -76,6 +77,7 @@ proc triton_part_hypergraph { args } {
       keys {-num_parts \
             -balance_constraint \
             -base_balance \
+            -scale_factor \
             -seed \
             -vertex_dimension \
             -hyperedge_dimension \
@@ -115,6 +117,7 @@ proc triton_part_hypergraph { args } {
   set num_parts 2
   set balance_constraint 1.0
   set base_balance { 1.0 }
+  set scale_factor { 1.0 }
   set seed 0 
   set vertex_dimension 1
   set hyperedge_dimension 1
@@ -187,6 +190,10 @@ proc triton_part_hypergraph { args } {
 
   if { [info exists keys(-base_balance)] } {
     set base_balance $keys(-base_balance)
+  }
+
+  if { [info exists keys(-scale_factor)] } {
+    set scale_factor $keys(-scale_factor)
   }
 
   if { [info exists keys(-e_wt_factors)] } {
@@ -276,6 +283,7 @@ proc triton_part_hypergraph { args } {
   par::triton_part_hypergraph $num_parts \
             $balance_constraint \
             $base_balance \
+            $scale_factor \
             $seed \
             $vertex_dimension \
             $hyperedge_dimension \
@@ -316,6 +324,7 @@ sta::define_cmd_args "evaluate_hypergraph_solution" {
   -hypergraph_file hypergraph_file \
   -solution_file solution_file \
   [-base_balance base_balance] \
+  [-scale_factor scale_factor] \
   [-vertex_dimension vertex_dimension] \
   [-hyperedge_dimension hyperedge_dimension] \
   [-fixed_file fixed_file] \
@@ -328,6 +337,7 @@ proc evaluate_hypergraph_solution { args } {
       keys {-num_parts \
             -balance_constraint \
             -base_balance \
+            -scale_factor \
             -vertex_dimension \
             -hyperedge_dimension \
             -hypergraph_file \
@@ -345,6 +355,7 @@ proc evaluate_hypergraph_solution { args } {
   set solution_file $keys(-solution_file)
   set num_parts 2
   set base_balance { 1.0 }
+  set scale_factor { 1.0 }
   set balance_constraint 1.0
   set vertex_dimension 1
   set hyperedge_dimension 1
@@ -385,6 +396,10 @@ proc evaluate_hypergraph_solution { args } {
     set base_balance $keys(-base_balance)
   }
 
+  if { [info exists keys(-scale_factor)] } {
+    set scale_factor $keys(-scale_factor)
+  }
+
   if { [info exists keys(-e_wt_factors)] } {
     set e_wt_factors $keys(-e_wt_factors)
   }
@@ -396,6 +411,7 @@ proc evaluate_hypergraph_solution { args } {
   par::evaluate_hypergraph_solution $num_parts \
             $balance_constraint \
             $base_balance \
+            $scale_factor \
             $vertex_dimension \
             $hyperedge_dimension \
             $hypergraph_file \
@@ -410,6 +426,7 @@ proc evaluate_hypergraph_solution { args } {
 sta::define_cmd_args "triton_part_design" { [-num_parts num_parts] \
                                             [-balance_constraint balance_constraint] \
                                             [-base_balance base_balance] \
+                                            [-scale_factor scale_factor] \
                                             [-seed seed] \
                                             [-timing_aware_flag timing_aware_flag] \
                                             [-top_n top_n] \
@@ -456,6 +473,7 @@ proc triton_part_design { args } {
       keys {-num_parts \
             -balance_constraint \
             -base_balance \
+            -scale_factor \
             -seed \
             -timing_aware_flag \
             -top_n \
@@ -500,6 +518,7 @@ proc triton_part_design { args } {
   set num_parts 2
   set balance_constraint 1.0
   set base_balance { 1.0 }
+  set scale_factor { 1.0 }
   set seed 1
   set timing_aware_flag true
   set top_n 1000
@@ -549,6 +568,10 @@ proc triton_part_design { args } {
     set base_balance $keys(-base_balance)
   }
 
+  if { [info exists keys(-scale_factor)] } {
+    set scale_factor $keys(-scale_factor)
+  }
+  
   if { [info exists keys(-balance_constraint)] } {
       set balance_constraint $keys(-balance_constraint)
   }
@@ -709,6 +732,7 @@ proc triton_part_design { args } {
   par::triton_part_design $num_parts \
             $balance_constraint \
             $base_balance \
+            $scale_factor \
             $seed \
             $timing_aware_flag \
             $top_n \
@@ -756,6 +780,7 @@ sta::define_cmd_args "evaluate_part_design_solution" {
   [-num_parts num_parts] \
   [-balance_constraint balance_constraint] \
   [-base_balance base_balance] \
+  [-scale_factor scale_factor] \
   [-timing_aware_flag timing_aware_flag] \
   [-top_n top_n] \
   [-fence_flag fence_flag] \
@@ -782,6 +807,7 @@ proc evaluate_part_design_solution { args } {
       keys {-num_parts \
             -balance_constraint \
             -base_balance \
+            -scale_factor \
             -timing_aware_flag \
             -top_n \
             -fence_flag  \
@@ -807,6 +833,7 @@ proc evaluate_part_design_solution { args } {
   set num_parts 2
   set balance_constraint 1.0
   set base_balance { 1.0 }
+  set scale_factor { 1.0 }
   set timing_aware_flag true
   set top_n 1000
   set fence_flag false
@@ -840,6 +867,10 @@ proc evaluate_part_design_solution { args } {
 
   if { [info exists keys(-base_balance)] } {
     set base_balance $keys(-base_balance)
+  }
+
+  if { [info exists keys(-scale_factor)] } {
+    set scale_factor $keys(-scale_factor)
   }
 
   if { [info exists keys(-timing_aware_flag)] } {
@@ -921,6 +952,7 @@ proc evaluate_part_design_solution { args } {
   par::evaluate_part_design_solution $num_parts \
             $balance_constraint \
             $base_balance \
+            $scale_factor \
             $timing_aware_flag \
             $top_n \
             $fence_flag \

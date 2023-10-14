@@ -635,6 +635,113 @@ proc add_pdn_connect {args} {
                     $dont_use
 }
 
+sta::define_cmd_args "add_sroute_connect" {[-net net] \
+                                           [-outerNet outerNet] \
+                                           -layers list_of_2_layers \
+                                           -cut_pitch pitch_value \
+                                           [-fixed_vias list_of_vias] \
+                                           [-max_rows rows] \
+                                           [-max_columns columns] \
+                                           [-metalwidths metalwidths] \
+                                           [-metalspaces metalspaces] \
+                                           [-ongrid ongrid_layers] \
+                                           [-insts inst]
+}
+
+proc add_sroute_connect {args} {
+  sta::parse_key_args "add_sroute_connect" args \
+    keys {-net -outerNet -layers -cut_pitch -fixed_vias -max_rows -max_columns -metalwidths -metalspaces -ongrid -insts} \
+    flags {}
+
+  set l0 [pdn::get_layer [lindex $keys(-layers) 0]]
+  set l1 [pdn::get_layer [lindex $keys(-layers) 1]]
+
+  set cut_pitch_x 0
+  set cut_pitch_y 0
+  set cut_pitch_x [lindex $keys(-cut_pitch) 0]
+  set cut_pitch_y [lindex $keys(-cut_pitch) 1]
+
+  set net ""
+  if {[info exists keys(-net)]} {
+    set net $keys(-net)
+  }
+
+  set outerNet ""
+  if {[info exists keys(-outerNet)]} {
+    set outerNet $keys(-outerNet)
+  }
+
+  set max_rows 10
+  if {[info exists keys(-max_rows)]} {
+    set max_rows $keys(-max_rows)
+  }
+  set max_columns 10
+  if {[info exists keys(-max_columns)]} {
+    set max_columns $keys(-max_columns)
+  }
+
+  set fixed_generate_vias {}
+  set fixed_tech_vias {}
+  if {[info exists keys(-fixed_vias)]} {
+    foreach via $keys(-fixed_vias) {
+      set tech_via [[ord::get_db_tech] findVia $via]
+      set generate_via [[ord::get_db_tech] findViaGenerateRule $via]
+      if {$tech_via != "NULL"} {
+        lappend fixed_tech_vias $tech_via
+      }
+      if {$generate_via != "NULL"} {
+        lappend fixed_generate_vias $generate_via
+      }
+    }
+  }
+
+  set ongrid {}
+  if {[info exists keys(-ongrid)]} {
+    foreach l $keys(-ongrid) {
+      lappend ongrid [pdn::get_layer $l]
+    }
+  }
+
+  set insts {}
+  if {[info exists keys(-insts)]} {
+    foreach inst $keys(-insts) {
+      set instance [[ord::get_db_block] findInst $inst]
+      if {$instance != "NULL"} {
+        lappend insts $instance
+      }
+    }
+  }
+
+  set metalwidths {}
+  if {[info exists keys(-metalwidths)]} {
+    foreach l $keys(-metalwidths) {
+      lappend metalwidths $l
+    }
+  }
+
+  set metalspaces {}
+  if {[info exists keys(-metalspaces)]} {
+    foreach l $keys(-metalspaces) {
+      lappend metalspaces $l
+    }
+  }
+
+  pdn::createSrouteWires $net \
+                         $outerNet \
+                         $l0 \
+                         $l1 \
+                         $cut_pitch_x \
+                         $cut_pitch_y \
+                         $fixed_generate_vias \
+                         $fixed_tech_vias \
+                         $max_rows \
+                         $max_columns \
+                         $ongrid \
+                         $metalwidths \
+                         $metalspaces \
+                         $insts
+}
+
 sta::define_cmd_args  "repair_pdn_vias" {[-net net_name] \
                                          -all
 }

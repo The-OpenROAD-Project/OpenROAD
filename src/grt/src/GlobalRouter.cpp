@@ -758,7 +758,7 @@ void GlobalRouter::computeNetSlacks()
   // Find the slack for all nets
   std::unordered_map<Net*, float> net_slack_map;
   std::vector<float> slacks;
-  for (auto net_itr : db_net_map_) {
+  for (const auto& net_itr : db_net_map_) {
     Net* net = net_itr.second;
     float slack = getNetSlack(net);
     net_slack_map[net] = slack;
@@ -1113,7 +1113,7 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
 void GlobalRouter::computePinOffsetAdjustments()
 {
   for (auto const& map_obj : pad_pins_connections_) {
-    for (auto segment : map_obj.second) {
+    for (const auto& segment : map_obj.second) {
       int tile_size = grid_->getTileSize();
       int die_area_min_x = grid_->getXMin();
       int die_area_min_y = grid_->getYMin();
@@ -1528,6 +1528,7 @@ void GlobalRouter::readGuides(const char* file_name)
   }
 
   bool skip = false;
+  std::string net_name;
   while (fin.good()) {
     getline(fin, line);
     if (line == "(" || line == "" || line == ")") {
@@ -1544,6 +1545,7 @@ void GlobalRouter::readGuides(const char* file_name)
 
     if (tokens.size() == 1) {
       net = block_->findNet(tokens[0].c_str());
+      net_name = tokens[0];
       if (!net) {
         logger_->error(GRT, 234, "Cannot find net {}.", tokens[0]);
       }
@@ -1558,7 +1560,7 @@ void GlobalRouter::readGuides(const char* file_name)
                       250,
                       "Net {} has guides but is not routed by the global "
                       "router and will be skipped.",
-                      net->getName());
+                      net_name);
         skip = true;
         continue;
       }
@@ -1781,7 +1783,7 @@ void GlobalRouter::saveGuides()
 
 bool GlobalRouter::isCoveringPin(Net* net, GSegment& segment)
 {
-  for (auto pin : net->getPins()) {
+  for (const auto& pin : net->getPins()) {
     if (pin.getConnectionLayer() == segment.final_layer
         && pin.getOnGridPosition()
                == odb::Point(segment.final_x, segment.final_y)
@@ -3151,10 +3153,12 @@ bool GlobalRouter::layerIsBlocked(
     std::vector<odb::Rect>& extended_obs)
 {
   // if layer is max or min, then all obs the nearest layer are added
-  if (layer == max_routing_layer_) {
+  if (layer == max_routing_layer_
+      && macro_obs_per_layer.find(layer - 1) != macro_obs_per_layer.end()) {
     extended_obs = macro_obs_per_layer.at(layer - 1);
   }
-  if (layer == min_routing_layer_) {
+  if (layer == min_routing_layer_
+      && macro_obs_per_layer.find(layer + 1) != macro_obs_per_layer.end()) {
     extended_obs = macro_obs_per_layer.at(layer + 1);
   }
 

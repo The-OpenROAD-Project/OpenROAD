@@ -132,7 +132,7 @@ class Grid
 
   int computeTileReduce(const odb::Rect& obs,
                         const odb::Rect& tile,
-                        int track_space,
+                        double track_space,
                         bool first,
                         odb::dbTechLayerDir direction);
 

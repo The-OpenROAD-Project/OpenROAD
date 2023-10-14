@@ -36,7 +36,7 @@
 #include "Mpl2Observer.h"
 #include "hier_rtlmp.h"
 #include "object.h"
-#include "utl/Logger.h"
+#include "odb/db.h"
 
 namespace mpl2 {
 using odb::dbDatabase;
@@ -56,6 +56,8 @@ void MacroPlacer2::init(sta::dbNetwork* network,
 {
   hier_rtlmp_
       = std::make_unique<HierRTLMP>(network, db, sta, logger, tritonpart);
+  logger_ = logger;
+  db_ = db;
 }
 
 bool MacroPlacer2::place(const int max_num_macro,
@@ -119,6 +121,73 @@ bool MacroPlacer2::place(const int max_num_macro,
   hier_rtlmp_->hierRTLMacroPlacer();
 
   return true;
+}
+
+void MacroPlacer2::placeMacro(odb::dbInst* inst,
+                              const float& x_origin,
+                              const float& y_origin,
+                              const odb::dbOrientType& orientation)
+{
+  float dbu_per_micron = db_->getTech()->getDbUnitsPerMicron();
+
+  const int x1 = micronToDbu(x_origin, dbu_per_micron);
+  const int y1 = micronToDbu(y_origin, dbu_per_micron);
+  const int x2 = x1 + inst->getBBox()->getDX();
+  const int y2 = y1 + inst->getBBox()->getDY();
+
+  odb::Rect macro_new_bbox(x1, y1, x2, y2);
+  odb::Rect core_area = inst->getBlock()->getCoreArea();
+
+  if (!core_area.contains(macro_new_bbox)) {
+    logger_->error(MPL,
+                   34,
+                   "Specified location results in illegal placement. Cannot "
+                   "place macro outside of the core.");
+  }
+
+  // Orientation must be set before location so we don't end up flipping
+  // and misplacing the macro.
+  inst->setOrient(orientation);
+  inst->setLocation(x1, y1);
+
+  int manufacturing_grid = db_->getTech()->getManufacturingGrid();
+
+  HardMacro macro(inst, dbu_per_micron, manufacturing_grid, 0, 0);
+
+  mpl2::Rect macro_new_bbox_micron(
+      x_origin,
+      y_origin,
+      dbuToMicron(macro_new_bbox.xMax(), dbu_per_micron),
+      dbuToMicron(macro_new_bbox.yMax(), dbu_per_micron));
+
+  float pitch_x = 0.0;
+  float pitch_y = 0.0;
+
+  macro.alignOriginWithGrids(
+      macro_new_bbox_micron, orientation, pitch_x, pitch_y, inst->getBlock());
+
+  inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
+
+  logger_->info(MPL,
+                35,
+                "Macro {} placed. Bounding box ({:.3f}um, {:.3f}um), "
+                "({:.3f}um, {:.3f}um). Orientation {}",
+                inst->getName(),
+                macro_new_bbox_micron.xMin(),
+                macro_new_bbox_micron.yMin(),
+                macro_new_bbox_micron.xMax(),
+                macro_new_bbox_micron.yMax(),
+                orientation.getString());
+}
+
+void MacroPlacer2::setMacroPlacementFile(const std::string& file_name)
+{
+  hier_rtlmp_->setMacroPlacementFile(file_name);
+}
+
+void MacroPlacer2::writeMacroPlacement(const std::string& file_name)
+{
+  hier_rtlmp_->writeMacroPlacement(file_name);
 }
 
 void MacroPlacer2::setDebug(std::unique_ptr<Mpl2Observer>& graphics)
