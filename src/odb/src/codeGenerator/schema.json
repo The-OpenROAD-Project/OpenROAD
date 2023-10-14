@@ -166,7 +166,8 @@
       "first":"dbTechLayer",
       "second":"dbTechLayerForbiddenSpacingRule",
       "type":"1_n",
-      "tbl_name":"forbidden_spacing_rules_tbl_"
+      "tbl_name":"forbidden_spacing_rules_tbl_",
+      "schema":"db_schema_lef58_forbidden_spacing"
     },
     {
       "first":"dbTechLayer",
