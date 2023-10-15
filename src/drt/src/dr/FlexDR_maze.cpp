@@ -1366,16 +1366,17 @@ bool FlexDRWorker::mazeIterInit_sortRerouteNets(int mazeIter,
                                                 vector<drNet*>& rerouteNets)
 {
   auto rerouteNetsComp = [](drNet* const& a, drNet* const& b) {
+    // Prefer greater priority and smaller pins/nets
     return std::make_tuple(a->getPriority(),
                            a->getFrNet()->getAbsPriorityLvl(),
-                           a->getNumPinsIn(),
-                           a->getPinBox().area(),
-                           a->getId())
-           < std::make_tuple(b->getPriority(),
+                           b->getNumPinsIn(),
+                           b->getPinBox().area(),
+                           b->getId())
+           > std::make_tuple(b->getPriority(),
                              b->getFrNet()->getAbsPriorityLvl(),
-                             b->getNumPinsIn(),
-                             b->getPinBox().area(),
-                             b->getId());
+                             a->getNumPinsIn(),
+                             a->getPinBox().area(),
+                             a->getId());
   };
   // sort
   if (mazeIter == 0) {
