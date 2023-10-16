@@ -92,6 +92,11 @@ void _dbTechLayerForbiddenSpacingRule::out(dbDiff& diff,
 _dbTechLayerForbiddenSpacingRule::_dbTechLayerForbiddenSpacingRule(
     _dbDatabase* db)
 {
+  forbidden_spacing_ = {0, 0};
+  width_ = 0;
+  within_ = 0;
+  prl_ = 0;
+  two_edges_ = 0;
 }
 
 _dbTechLayerForbiddenSpacingRule::_dbTechLayerForbiddenSpacingRule(
