@@ -6003,6 +6003,13 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
           wirelength += (std::abs(x2 - x1) + std::abs(y2 - y1));
         }
       }
+
+      for (odb::dbBTerm* net_bterm : net->getBTerms()) {
+        const float x2 = dbuToMicron(net_bterm->getBBox().xCenter(), dbu_);
+        const float y2 = dbuToMicron(net_bterm->getBBox().yCenter(), dbu_);
+
+        wirelength += (std::abs(x2 - x1) + std::abs(y2 - y1));
+      }
     }
   }
 
@@ -6058,7 +6065,7 @@ void HierRTLMP::correctAllMacrosOrientation()
 
     const odb::dbOrientType inst_orientation = inst->getOrient();
 
-    const odb::Point snap_origin = hard_macro->alignOriginWithGrids(
+    const odb::Point snap_origin = hard_macro->computeSnapOrigin(
         inst_box, inst_orientation, pitch_x_, pitch_y_, block_);
 
     inst->setOrigin(snap_origin.x(), snap_origin.y());
