@@ -1,9 +1,8 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2022, The Regents of the University of California
-// All rights reserved.
-//
+///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
+//
+// Copyright (c) 2023, The Regents of the University of California
+// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -30,36 +29,46 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
 
+// Generator Code Begin Header
 #pragma once
 
-#include <QString>
-#include <QWidget>
+#include "dbCore.h"
+#include "odb.h"
 
-namespace utl {
-class Logger;
-}
+namespace odb {
+class dbIStream;
+class dbOStream;
+class dbDiff;
+class _dbDatabase;
 
-namespace gui {
-
-class Utils
+class _dbTechLayerForbiddenSpacingRule : public _dbObject
 {
  public:
-  static QString requestImageSavePath(QWidget* parent, const QString& title);
-  static QString fixImagePath(const QString& path, utl::Logger* logger);
-  static QSize adjustMaxImageSize(const QSize& size);
-  static void renderImage(const QString& path,
-                          QWidget* widget,
-                          int width_px,
-                          int height_px,
-                          const QRect& render_rect,
-                          const QColor& background,
-                          utl::Logger* logger);
+  _dbTechLayerForbiddenSpacingRule(_dbDatabase*,
+                                   const _dbTechLayerForbiddenSpacingRule& r);
+  _dbTechLayerForbiddenSpacingRule(_dbDatabase*);
+  ~_dbTechLayerForbiddenSpacingRule();
 
-  // Cache of size in pixels to limit ~1.5GB in memory
-  inline static const int MAX_IMAGE_SIZE = 7200;
+  bool operator==(const _dbTechLayerForbiddenSpacingRule& rhs) const;
+  bool operator!=(const _dbTechLayerForbiddenSpacingRule& rhs) const
+  {
+    return !operator==(rhs);
+  }
+  bool operator<(const _dbTechLayerForbiddenSpacingRule& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbTechLayerForbiddenSpacingRule& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
+
+  std::pair<int, int> forbidden_spacing_;
+  int width_;
+  int within_;
+  int prl_;
+  int two_edges_;
 };
-
-}  // namespace gui
+dbIStream& operator>>(dbIStream& stream, _dbTechLayerForbiddenSpacingRule& obj);
+dbOStream& operator<<(dbOStream& stream,
+                      const _dbTechLayerForbiddenSpacingRule& obj);
+}  // namespace odb
+   // Generator Code End Header
