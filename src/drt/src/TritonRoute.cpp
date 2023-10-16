@@ -190,7 +190,20 @@ void TritonRoute::setDebugWorkerParams(int mazeEndIter,
   debug_->markerCost = markerCost;
   debug_->fixedShapeCost = fixedShapeCost;
   debug_->markerDecay = markerDecay;
-  debug_->ripupMode = ripupMode;
+  switch (ripupMode) {
+    case -1:
+      debug_->ripupMode = fr::RipUpMode::UNKNOWN;
+      break;
+    case 0:
+      debug_->ripupMode = fr::RipUpMode::ripupDRC;
+      break;
+    case 1:
+      debug_->ripupMode = fr::RipUpMode::ripupAll;
+      break;
+    case 2:
+      debug_->ripupMode = fr::RipUpMode::ripupAroundDRC;
+      break;
+  }
   debug_->followGuide = followGuide;
 }
 
@@ -252,7 +265,7 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
     worker->setFixedShapeCost(debug_->fixedShapeCost);
   if (debug_->markerDecay != -1)
     worker->setMarkerDecay(debug_->markerDecay);
-  if (debug_->ripupMode != -1)
+  if (debug_->ripupMode != fr::RipUpMode::UNKNOWN)
     worker->setRipupMode(debug_->ripupMode);
   if (debug_->followGuide != -1)
     worker->setFollowGuide((debug_->followGuide == 1));
@@ -607,6 +620,21 @@ void TritonRoute::stepDR(int size,
                          int ripupMode,
                          bool followGuide)
 {
+  fr::RipUpMode tempMode;
+  switch (ripupMode) {
+    case -1:
+      tempMode = fr::RipUpMode::UNKNOWN;
+      break;
+    case 0:
+      tempMode = fr::RipUpMode::ripupDRC;
+      break;
+    case 1:
+      tempMode = fr::RipUpMode::ripupAll;
+      break;
+    case 2:
+      tempMode = fr::RipUpMode::ripupAroundDRC;
+      break;
+  }
   dr_->searchRepair({size,
                      offset,
                      mazeEndIter,
@@ -614,7 +642,7 @@ void TritonRoute::stepDR(int size,
                      workerMarkerCost,
                      workerFixedShapeCost,
                      workerMarkerDecay,
-                     ripupMode,
+                     tempMode,
                      followGuide});
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 }

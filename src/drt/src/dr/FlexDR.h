@@ -74,13 +74,6 @@ struct FlexDRViaData
   friend class boost::serialization::access;
 };
 
-enum RipUpMode
-{
-  ripupDRC = 0,
-  ripupAll = 1,
-  ripupAroundDRC = 2
-};
-
 class FlexDR
 {
  public:
@@ -255,7 +248,7 @@ class FlexDRWorker
         followGuide_(false),
         needRecheck_(false),
         skipRouting_(false),
-        ripupMode_(ripupAll),
+        ripupMode_(fr::RipUpMode::ripupAll),
         workerDRCCost_(ROUTESHAPECOST),
         workerMarkerCost_(MARKERCOST),
         workerFixedShapeCost_(0),
@@ -292,7 +285,7 @@ class FlexDRWorker
         followGuide_(false),
         needRecheck_(false),
         skipRouting_(false),
-        ripupMode_(ripupDRC),
+        ripupMode_(fr::RipUpMode::ripupDRC),
         workerDRCCost_(0),
         workerMarkerCost_(0),
         workerFixedShapeCost_(0),

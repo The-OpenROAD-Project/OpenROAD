@@ -35,18 +35,19 @@ void FlexGRWorker::route()
 {
   vector<grNet*> rerouteNets;
   for (int i = 0; i < mazeEndIter_; i++) {
-    if (ripupMode_ == 0) {
+    if (ripupMode_ == fr::RipUpMode::ripupDRC) {
       route_addHistCost();
     }
     route_mazeIterInit();
     route_getRerouteNets(rerouteNets);
     for (auto net : rerouteNets) {
-      if (ripupMode_ == 0 || (ripupMode_ == 1 && mazeNetHasCong(net))) {
+      if (ripupMode_ == fr::RipUpMode::ripupDRC
+          || (ripupMode_ == fr::RipUpMode::ripupAll && mazeNetHasCong(net))) {
         mazeNetInit(net);
         routeNet(net);
       }
     }
-    if (ripupMode_ == 1) {
+    if (ripupMode_ == fr::RipUpMode::ripupAll) {
       route_decayHistCost();
     }
   }
@@ -98,7 +99,7 @@ void FlexGRWorker::route_mazeIterInit()
   for (auto& net : nets_) {
     net->setRipup(false);
   }
-  if (ripupMode_ == 0) {
+  if (ripupMode_ == fr::RipUpMode::ripupDRC) {
     // set ripup based on congestion
     auto& workerRegionQuery = getWorkerRegionQuery();
 
@@ -149,7 +150,7 @@ void FlexGRWorker::route_mazeIterInit()
 void FlexGRWorker::route_getRerouteNets(vector<grNet*>& rerouteNets)
 {
   rerouteNets.clear();
-  if (ripupMode_ == 0) {
+  if (ripupMode_ == fr::RipUpMode::ripupDRC) {
     for (auto& net : nets_) {
       if (net->isRipup() && !net->isTrivial()) {
         rerouteNets.push_back(net.get());
@@ -158,7 +159,7 @@ void FlexGRWorker::route_getRerouteNets(vector<grNet*>& rerouteNets)
       } else {
       }
     }
-  } else if (ripupMode_ == 1) {
+  } else if (ripupMode_ == fr::RipUpMode::ripupAll) {
     for (auto& net : nets_) {
       if (!net->isTrivial()) {
         rerouteNets.push_back(net.get());
@@ -223,9 +224,9 @@ bool FlexGRWorker::mazeNetHasCong(grNet* net)
 void FlexGRWorker::mazeNetInit(grNet* net)
 {
   gridGraph_.resetStatus();
-  if (ripupMode_ == 0) {
+  if (ripupMode_ == fr::RipUpMode::ripupDRC) {
     mazeNetInit_decayHistCost(net);
-  } else if (ripupMode_ == 1) {
+  } else if (ripupMode_ == fr::RipUpMode::ripupAll) {
     mazeNetInit_addHistCost(net);
   }
   mazeNetInit_removeNetObjs(net);

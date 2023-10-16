@@ -116,7 +116,7 @@ class FlexGR
                          unsigned workerHistCost,
                          double congThresh,
                          bool is2DRouting,
-                         int mode);
+                         RipUpMode mode);
   void searchRepair(int iter,
                     int size,
                     int offset,
@@ -125,7 +125,7 @@ class FlexGR
                     unsigned workerHistCost,
                     double congThresh,
                     bool is2DRouting,
-                    int mode,
+                    RipUpMode mode,
                     bool TEST);
 
   void end();
@@ -148,7 +148,7 @@ class FlexGR
   bool initGR_patternRoute_route_iter(
       int iter,
       std::vector<std::pair<std::pair<frNode*, frNode*>, int>>& patternRoutes,
-      int mode);
+      RipUpMode mode);
   void initGR_initObj();
   void initGR_initObj_net(frNet* net);
 
@@ -295,7 +295,7 @@ class FlexGRWorker
         workerHistCost_(0),
         congThresh_(1.0),
         is2DRouting_(false),
-        ripupMode_(0),
+        ripupMode_(fr::RipUpMode::ripupDRC),
         nets_(),
         owner2nets_(), /*owner2extBoundPtNodes(), owner2routeBoundPtNodes(),
                           owner2pinGCellNodes(),*/
@@ -314,7 +314,7 @@ class FlexGRWorker
   void setHistCost(int in) { workerHistCost_ = in; }
   void setCongThresh(double in) { congThresh_ = in; }
   void set2D(bool in) { is2DRouting_ = in; }
-  void setRipupMode(int in) { ripupMode_ = in; }
+  void setRipupMode(fr::RipUpMode in) { ripupMode_ = in; }
 
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
@@ -369,7 +369,7 @@ class FlexGRWorker
   int workerHistCost_;
   double congThresh_;
   bool is2DRouting_;
-  int ripupMode_;
+  fr::RipUpMode ripupMode_;
 
   // local storage
   std::vector<std::unique_ptr<grNet>> nets_;

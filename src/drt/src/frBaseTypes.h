@@ -287,6 +287,14 @@ enum class frAccessPointEnum
   NearbyGrid = 4  // nearby grid or 1/2 grid
 };
 
+enum class RipUpMode
+{
+  UNKNOWN = -1,
+  ripupDRC = 0,
+  ripupAll = 1,
+  ripupAroundDRC = 2
+};
+
 namespace bg = boost::geometry;
 
 typedef bg::model::d2::point_xy<frCoord, bg::cs::cartesian> point_t;
@@ -317,7 +325,7 @@ struct frDebugSettings
         markerCost(-1),
         fixedShapeCost(-1),
         markerDecay(-1),
-        ripupMode(-1),
+        ripupMode(RipUpMode::UNKNOWN),
         followGuide(-1),
         writeNetTracks(false)
 
@@ -348,7 +356,7 @@ struct frDebugSettings
   int markerCost;
   int fixedShapeCost;
   float markerDecay;
-  int ripupMode;
+  RipUpMode ripupMode;
   int followGuide;
   bool writeNetTracks;
 };
