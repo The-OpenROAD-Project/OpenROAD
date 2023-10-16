@@ -2078,7 +2078,6 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
   // read spacing constraint
   for (odb::dbTechLayerSpacingRule* rule : layer->getV54SpacingRules()) {
     auto cutSpacingConstraint = make_unique<frLef58CutSpacingConstraint>();
-    // std::unique_ptr<frLef58CutSpacingConstraint> cutSpacingConstraint;
     frCoord cutArea = rule->getCutArea();
     frCoord cutSpacing = rule->getSpacing();
     bool centerToCenter = rule->getCutCenterToCenter();
