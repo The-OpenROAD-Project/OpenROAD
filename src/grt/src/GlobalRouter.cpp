@@ -1733,7 +1733,8 @@ void GlobalRouter::saveGuides()
             odb::dbTechLayer* layer = routing_layers_[layer_idx];
             odb::dbGuide::create(db_net, layer, box);
             if (isCoveringPin(net, segment)) {
-              odb::dbTechLayer* layer = routing_layers_[segment.final_layer];
+              int layer_idx = std::max(segment.init_layer, segment.final_layer);
+              odb::dbTechLayer* layer = routing_layers_[layer_idx];
               odb::dbGuide::create(db_net, layer, box);
             }
           }
@@ -1764,6 +1765,12 @@ bool GlobalRouter::isCoveringPin(Net* net, GSegment& segment)
     if (pin.getConnectionLayer() == segment.final_layer
         && pin.getOnGridPosition()
                == odb::Point(segment.final_x, segment.final_y)
+        && (pin.isPort() || pin.isConnectedToPadOrMacro())) {
+      return true;
+    }
+    if (pin.getConnectionLayer() == segment.init_layer
+        && pin.getOnGridPosition()
+               == odb::Point(segment.init_x, segment.init_y)
         && (pin.isPort() || pin.isConnectedToPadOrMacro())) {
       return true;
     }

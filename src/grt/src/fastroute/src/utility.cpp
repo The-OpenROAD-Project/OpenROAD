@@ -197,7 +197,7 @@ void FastRouteCore::fillVIA()
         int n1a = treeedge->n1a;
         int n2a = treeedge->n2a;
 
-        if (n1a < num_terminals || n2a < num_terminals) {
+        if (n1a < num_terminals) {
           if (treenodes[n1a].hID == BIG_INT && edgeID == treenodes[n1a].lID) {
             const int n1a_access_layer = nets_[netID]->getPinL()[n1a];
 
