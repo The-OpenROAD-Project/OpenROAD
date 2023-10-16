@@ -175,6 +175,8 @@ class IOPlacer
   void setAnnealingDebugPaintInterval(int iters_between_paintings);
   void setAnnealingDebugNoPauseMode(bool no_pause_mode);
 
+  void writePinPlacement(const char* file_name);
+
  private:
   void createTopLayerPinPattern();
   void initNetlistAndCore(const std::set<int>& hor_layer_idx,
@@ -265,7 +267,6 @@ class IOPlacer
   void getBlockedRegionsFromDbObstructions();
   double dbuToMicrons(int64_t dbu);
   int micronsToDbu(double microns);
-  void writePinPlacement();
   Edge getMirroredEdge(const Edge& edge);
 
   // db functions
@@ -287,6 +288,7 @@ class IOPlacer
 
   int slots_per_section_ = 0;
   float slots_increase_factor_ = 0;
+  int top_layer_pins_count_ = 0;
   // set the offset on tracks as 15 to approximate the size of a GCell in global
   // router
   const int num_tracks_offset_ = 15;

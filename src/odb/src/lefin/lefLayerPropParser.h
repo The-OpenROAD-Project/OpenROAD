@@ -222,6 +222,22 @@ class lefTechLayerPitchRuleParser
   lefin* lefin_;
 };
 
+class lefTechLayerForbiddenSpacingRuleParser
+{
+ public:
+  lefTechLayerForbiddenSpacingRuleParser(lefin*);
+  void parse(std::string, odb::dbTechLayer*);
+
+ private:
+  lefin* lefin_;
+  bool parseSubRule(std::string, odb::dbTechLayer* layer);
+  void setInt(double val,
+              odb::dbTechLayerForbiddenSpacingRule* rule,
+              void (odb::dbTechLayerForbiddenSpacingRule::*func)(int));
+  void setForbiddenSpacing(const boost::fusion::vector<double, double>& params,
+                           odb::dbTechLayerForbiddenSpacingRule* rule);
+};
+
 class ArraySpacingParser
 {
  public:

@@ -275,6 +275,8 @@ class GlobalRouter : public ant::GlobalRouteSource
   // main functions
   void initCoreGrid(int max_routing_layer);
   void initRoutingLayers();
+  void checkAdjacentLayersDirection(int min_routing_layer,
+                                    int max_routing_layer);
   std::vector<std::pair<int, int>> calcLayerPitches(int max_layer);
   void initRoutingTracks(int max_routing_layer);
   void averageTrackPattern(odb::dbTrackGrid* grid,

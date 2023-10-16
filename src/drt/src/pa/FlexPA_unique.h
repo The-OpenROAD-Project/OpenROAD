@@ -65,6 +65,7 @@ class UniqueInsts
   bool hasUnique(frInst* inst) const;
 
   void report() const;
+  void setDesign(frDesign* design) { design_ = design; }
 
  private:
   using LayerRange = std::tuple<frLayerNum, frLayerNum>;
