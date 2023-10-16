@@ -11,19 +11,23 @@
     },
     {
       "type": "int",
-      "name": "width_"
+      "name": "width_",
+      "default": 0
     },
     {
       "type": "int",
-      "name": "within_"
+      "name": "within_",
+      "default": 0
     },
     {
       "type": "int",
-      "name": "prl_"
+      "name": "prl_",
+      "default": 0
     },
     {
       "type": "int",
-      "name": "two_edges_"
+      "name": "two_edges_",
+      "default": 0
     }
   ],
   "cpp_includes": [

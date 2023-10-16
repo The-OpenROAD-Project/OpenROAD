@@ -51,7 +51,7 @@ void lefTechLayerForbiddenSpacingRuleParser::parse(std::string s,
 {
   std::vector<std::string> rules;
   boost::split(rules, s, boost::is_any_of(";"));
-  for (auto rule : rules) {
+  for (auto& rule : rules) {
     boost::algorithm::trim(rule);
     if (rule.empty()) {
       continue;
