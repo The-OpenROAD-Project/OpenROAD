@@ -353,8 +353,8 @@ RecoverPower::meetsSizeCriteria(LibertyCell *cell, LibertyCell *equiv,
     if (!match_size) {
       return true;
     }
-    dbMaster* lef_cell1 = db_network_->staToDb(cell);
-    dbMaster* lef_cell2 = db_network_->staToDb(equiv);
+    dbMaster* lef_cell1 = db_network_->staToDb(equiv);
+    dbMaster* lef_cell2 = db_network_->staToDb(cell);
     if (lef_cell1->getWidth() <= lef_cell2->getWidth()) {
         return true;
     }
