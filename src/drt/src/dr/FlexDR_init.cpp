@@ -3037,7 +3037,7 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
       shiftXform.setOrient(dbOrientType(dbOrientType::R0));
       dbMasterType masterType = inst->getMaster()->getMasterType();
       int accessDirType = 0;  // 0 None, 1 Horz Only, 2 Vert Only, 3 Horz&Vert;
-      if (masterType.isBlock()) {
+      if (masterType.isBlock() && !isAddPathCost) {
         for (const auto& pin : instTerm->getTerm()->getPins()) {
           if (!pin->hasPinAccess()) {
             continue;
