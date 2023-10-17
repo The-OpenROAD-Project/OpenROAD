@@ -69,8 +69,8 @@ int main(int argc, char** argv)
   char *fileName1, *fileName2;  // For the filenames to compare
   char *defOut1, *defOut2;      // For the tmp output files
 
-#ifdef WIN32
-  // Enable two-digit exponent format
+#if (defined WIN32 && _MSC_VER < 1800)
+                            // Enable two-digit exponent format
   _set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
 

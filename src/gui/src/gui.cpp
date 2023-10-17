@@ -73,7 +73,7 @@ static void message_handler(QtMsgType type,
   // suppress messages when built as a release, but preserve them in debug
   // builds
   if (application != nullptr) {
-    if (application->platformName() == "offscreen"
+    if (QApplication::platformName() == "offscreen"
         && msg.contains("This plugin does not support")) {
       suppress = true;
     }
@@ -277,7 +277,7 @@ void Gui::pause(int timeout)
   main_window->pause(timeout);
 }
 
-Selected Gui::makeSelected(std::any object)
+Selected Gui::makeSelected(const std::any& object)
 {
   if (!object.has_value()) {
     return Selected();
@@ -286,16 +286,15 @@ Selected Gui::makeSelected(std::any object)
   auto it = descriptors_.find(object.type());
   if (it != descriptors_.end()) {
     return it->second->makeSelected(object);
-  } else {
-    logger_->warn(utl::GUI,
-                  33,
-                  "No descriptor is registered for {}.",
-                  object.type().name());
-    return Selected();  // FIXME: null descriptor
   }
+  logger_->warn(utl::GUI,
+                33,
+                "No descriptor is registered for {}.",
+                object.type().name());
+  return Selected();  // FIXME: null descriptor
 }
 
-void Gui::setSelected(Selected selection)
+void Gui::setSelected(const Selected& selection)
 {
   main_window->setSelected(selection);
 }
@@ -352,6 +351,13 @@ void Gui::selectHighlightConnectedNets(bool select_flag,
 {
   return main_window->selectHighlightConnectedNets(
       select_flag, output, input, highlight_group);
+}
+
+void Gui::selectHighlightConnectedBufferTrees(bool select_flag,
+                                              int highlight_group)
+{
+  return main_window->selectHighlightConnectedBufferTrees(select_flag,
+                                                          highlight_group);
 }
 
 void Gui::addInstToHighlightSet(const char* name, int highlight_group)
@@ -424,17 +430,19 @@ void Gui::deleteRuler(const std::string& name)
 
 int Gui::select(const std::string& type,
                 const std::string& name_filter,
+                const std::string& attribute,
+                const std::any& value,
                 bool filter_case_sensitive,
                 int highlight_group)
 {
   for (auto& [object_type, descriptor] : descriptors_) {
     if (descriptor->getTypeName() == type) {
-      SelectionSet selected;
-      if (descriptor->getAllObjects(selected)) {
+      SelectionSet selected_set;
+      if (descriptor->getAllObjects(selected_set)) {
         if (!name_filter.empty()) {
           // convert to vector
-          std::vector<Selected> selected_vector(selected.begin(),
-                                                selected.end());
+          std::vector<Selected> selected_vector(selected_set.begin(),
+                                                selected_set.end());
           // remove elements
           QRegExp reg_filter(
               QString::fromStdString(name_filter),
@@ -444,30 +452,94 @@ int Gui::select(const std::string& type,
               selected_vector.begin(),
               selected_vector.end(),
               [&name_filter, &reg_filter](auto sel) -> bool {
-                const std::string name = sel.getName();
-                if (name == name_filter) {
+                const std::string sel_name = sel.getName();
+                if (sel_name == name_filter) {
                   // direct match, so don't remove
                   return false;
                 }
-                return !reg_filter.exactMatch(QString::fromStdString(name));
+                return !reg_filter.exactMatch(QString::fromStdString(sel_name));
               });
           selected_vector.erase(remove_if, selected_vector.end());
           // rebuild selectionset
-          selected.clear();
-          selected.insert(selected_vector.begin(), selected_vector.end());
+          selected_set.clear();
+          selected_set.insert(selected_vector.begin(), selected_vector.end());
         }
-        main_window->addSelected(selected);
+
+        if (!attribute.empty()) {
+          bool is_valid_attribute = false;
+          for (SelectionSet::iterator selected_iter = selected_set.begin();
+               selected_iter != selected_set.end();) {
+            Descriptor::Properties properties
+                = descriptor->getProperties(selected_iter->getObject());
+            if (filterSelectionProperties(
+                    properties, attribute, value, is_valid_attribute)) {
+              ++selected_iter;
+            } else {
+              selected_iter = selected_set.erase(selected_iter);
+            }
+          }
+
+          if (!is_valid_attribute) {
+            logger_->error(
+                utl::GUI, 59, "Entered attribute {} is not valid.", attribute);
+          } else if (selected_set.empty()) {
+            logger_->error(utl::GUI,
+                           75,
+                           "Couldn't find any object for the specified value.");
+          }
+        }
+
+        main_window->addSelected(selected_set);
         if (highlight_group != -1) {
-          main_window->addHighlighted(selected, highlight_group);
+          main_window->addHighlighted(selected_set, highlight_group);
         }
       }
 
       // already found the descriptor, so return to exit loop
-      return selected.size();
+      return selected_set.size();
     }
   }
 
   logger_->error(utl::GUI, 35, "Unable to find descriptor for: {}", type);
+}
+
+bool Gui::filterSelectionProperties(const Descriptor::Properties& properties,
+                                    const std::string& attribute,
+                                    const std::any& value,
+                                    bool& is_valid_attribute)
+{
+  for (const Descriptor::Property& property : properties) {
+    if (attribute == property.name) {
+      is_valid_attribute = true;
+      if (auto props_selected_set
+          = std::any_cast<SelectionSet>(&property.value)) {
+        if (Descriptor::Property::toString(value) == "CONNECTED"
+            && (*props_selected_set).size() != 0) {
+          return true;
+        }
+        for (const auto& selected : *props_selected_set) {
+          if (Descriptor::Property::toString(value) == selected.getName()) {
+            return true;
+          }
+        }
+      } else if (auto props_list
+                 = std::any_cast<Descriptor::PropertyList>(&property.value)) {
+        for (const auto& prop : *props_list) {
+          if (Descriptor::Property::toString(prop.first)
+                  == Descriptor::Property::toString(value)
+              || Descriptor::Property::toString(prop.second)
+                     == Descriptor::Property::toString(value)) {
+            return true;
+          }
+        }
+      } else if (Descriptor::Property::toString(value)
+                 == Descriptor::Property::toString(property.value)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 void Gui::clearSelections()
@@ -485,10 +557,10 @@ void Gui::clearRulers()
   main_window->clearRulers();
 }
 
-const std::string Gui::addToolbarButton(const std::string& name,
-                                        const std::string& text,
-                                        const std::string& script,
-                                        bool echo)
+std::string Gui::addToolbarButton(const std::string& name,
+                                  const std::string& text,
+                                  const std::string& script,
+                                  bool echo)
 {
   return main_window->addToolbarButton(
       name, QString::fromStdString(text), QString::fromStdString(script), echo);
@@ -499,12 +571,12 @@ void Gui::removeToolbarButton(const std::string& name)
   main_window->removeToolbarButton(name);
 }
 
-const std::string Gui::addMenuItem(const std::string& name,
-                                   const std::string& path,
-                                   const std::string& text,
-                                   const std::string& script,
-                                   const std::string& shortcut,
-                                   bool echo)
+std::string Gui::addMenuItem(const std::string& name,
+                             const std::string& path,
+                             const std::string& text,
+                             const std::string& script,
+                             const std::string& shortcut,
+                             bool echo)
 {
   return main_window->addMenuItem(name,
                                   QString::fromStdString(path),
@@ -519,8 +591,8 @@ void Gui::removeMenuItem(const std::string& name)
   main_window->removeMenuItem(name);
 }
 
-const std::string Gui::requestUserInput(const std::string& title,
-                                        const std::string& question)
+std::string Gui::requestUserInput(const std::string& title,
+                                  const std::string& question)
 {
   return main_window->requestUserInput(QString::fromStdString(title),
                                        QString::fromStdString(question));
@@ -602,6 +674,7 @@ void Gui::setResolution(double pixels_per_dbu)
 
 void Gui::saveImage(const std::string& filename,
                     const odb::Rect& region,
+                    int width_px,
                     double dbu_per_pixel,
                     const std::map<std::string, bool>& display_settings)
 {
@@ -611,9 +684,9 @@ void Gui::saveImage(const std::string& filename,
   odb::Rect save_region = region;
   const bool use_die_area = region.dx() == 0 || region.dy() == 0;
   const bool is_offscreen
-      = main_window->testAttribute(
-            Qt::WA_DontShowOnScreen) /* if not interactive this will be set */
-        || !enabled();
+      = main_window == nullptr
+        || main_window->testAttribute(
+            Qt::WA_DontShowOnScreen); /* if not interactive this will be set */
   if (is_offscreen
       && use_die_area) {  // if gui is active and interactive the visible are of
                           // the layout viewer will be used.
@@ -659,6 +732,7 @@ void Gui::saveImage(const std::string& filename,
     save_cmds += std::to_string(save_region.yMin() / dbu_per_micron) + " ";
     save_cmds += std::to_string(save_region.xMax() / dbu_per_micron) + " ";
     save_cmds += std::to_string(save_region.yMax() / dbu_per_micron) + " ";
+    save_cmds += std::to_string(width_px) + " ";
     save_cmds += std::to_string(dbu_per_pixel) + " ";
     save_cmds += "$::gui::display_settings\n";
     // delete display settings map
@@ -675,33 +749,90 @@ void Gui::saveImage(const std::string& filename,
     }
 
     main_window->getLayoutViewer()->saveImage(
-        filename.c_str(), save_region, dbu_per_pixel);
+        filename.c_str(), save_region, width_px, dbu_per_pixel);
     // restore settings
     main_window->getControls()->restore();
   }
 }
 
 void Gui::saveClockTreeImage(const std::string& clock_name,
-                             const std::string& filename)
+                             const std::string& filename,
+                             const std::string& corner,
+                             int width_px,
+                             int height_px)
 {
   if (!enabled()) {
     return;
   }
-  main_window->getClockViewer()->saveImage(clock_name, filename);
+  std::optional<int> width;
+  std::optional<int> height;
+  if (width_px > 0) {
+    width = width_px;
+  }
+  if (height_px > 0) {
+    height = height_px;
+  }
+  main_window->getClockViewer()->saveImage(
+      clock_name, filename, corner, width, height);
 }
 
-void Gui::showWidget(const std::string& name, bool show)
+static QWidget* findWidget(const std::string& name)
 {
+  if (name == "main_window" || name == "OpenROAD") {
+    return main_window;
+  }
+
   const QString find_name = QString::fromStdString(name);
   for (const auto& widget : main_window->findChildren<QDockWidget*>()) {
     if (widget->objectName() == find_name
         || widget->windowTitle() == find_name) {
-      if (show) {
-        widget->show();
-        widget->raise();
-      } else {
-        widget->hide();
-      }
+      return widget;
+    }
+  }
+  return nullptr;
+}
+
+void Gui::showWidget(const std::string& name, bool show)
+{
+  auto* widget = findWidget(name);
+  if (widget == nullptr) {
+    return;
+  }
+
+  if (show) {
+    widget->show();
+    widget->raise();
+  } else {
+    widget->hide();
+  }
+}
+
+void Gui::triggerAction(const std::string& name)
+{
+  const size_t dot_idx = name.find_last_of('.');
+  auto* widget = findWidget(name.substr(0, dot_idx));
+  if (widget == nullptr) {
+    return;
+  }
+
+  const QString find_name = QString::fromStdString(name.substr(dot_idx + 1));
+
+  // Find QAction
+  for (QAction* action : widget->findChildren<QAction*>()) {
+    logger_->report("{} {}",
+                    action->objectName().toStdString(),
+                    action->text().toStdString());
+    if (action->objectName() == find_name || action->text() == find_name) {
+      action->trigger();
+      return;
+    }
+  }
+
+  // Find QPushButton
+  for (QPushButton* button : widget->findChildren<QPushButton*>()) {
+    if (button->objectName() == find_name || button->text() == find_name) {
+      button->click();
+      return;
     }
   }
 }
@@ -763,6 +894,7 @@ void Gui::setHeatMapSetting(const std::string& name,
   const std::string rebuild_map_option = "rebuild";
   if (option == rebuild_map_option) {
     source->destroyMap();
+    source->ensureMap();
   } else {
     auto settings = source->getSettings();
 
@@ -825,6 +957,33 @@ void Gui::setHeatMapSetting(const std::string& name,
   source->getRenderer()->redraw();
 }
 
+Renderer::Setting Gui::getHeatMapSetting(const std::string& name,
+                                         const std::string& option)
+{
+  HeatMapDataSource* source = getHeatMap(name);
+
+  const std::string map_has_option = "has_data";
+  if (option == map_has_option) {
+    return source->hasData();
+  }
+
+  auto settings = source->getSettings();
+
+  if (settings.count(option) == 0) {
+    QStringList options;
+    for (const auto& [key, kv] : settings) {
+      options.append(QString::fromStdString(key));
+    }
+    logger_->error(utl::GUI,
+                   95,
+                   "{} is not a valid option. Valid options are: {}",
+                   option,
+                   options.join(", ").toStdString());
+  }
+
+  return settings[option];
+}
+
 void Gui::dumpHeatMap(const std::string& name, const std::string& file)
 {
   HeatMapDataSource* source = getHeatMap(name);
@@ -847,9 +1006,8 @@ bool Renderer::checkDisplayControl(const std::string& name)
 
   if (group_name.empty()) {
     return Gui::get()->checkDisplayControlsVisible(name);
-  } else {
-    return Gui::get()->checkDisplayControlsVisible(group_name + "/" + name);
   }
+  return Gui::get()->checkDisplayControlsVisible(group_name + "/" + name);
 }
 
 void Renderer::setDisplayControl(const std::string& name, bool value)
@@ -858,10 +1016,8 @@ void Renderer::setDisplayControl(const std::string& name, bool value)
 
   if (group_name.empty()) {
     return Gui::get()->setDisplayControlsVisible(name, value);
-  } else {
-    return Gui::get()->setDisplayControlsVisible(group_name + "/" + name,
-                                                 value);
   }
+  return Gui::get()->setDisplayControlsVisible(group_name + "/" + name, value);
 }
 
 void Renderer::addDisplayControl(
@@ -878,7 +1034,7 @@ void Renderer::addDisplayControl(
                                     mutual_exclusivity.end());
 }
 
-const Renderer::Settings Renderer::getSettings()
+Renderer::Settings Renderer::getSettings()
 {
   Settings settings;
   for (const auto& [key, init_value] : controls_) {
@@ -1021,47 +1177,47 @@ void Gui::timingPathsThrough(const std::set<odbTerm>& terms)
 
 void Gui::addFocusNet(odb::dbNet* net)
 {
-  main_window->getLayoutViewer()->addFocusNet(net);
+  main_window->getLayoutTabs()->addFocusNet(net);
 }
 
 void Gui::addRouteGuides(odb::dbNet* net)
 {
-  main_window->getLayoutViewer()->addRouteGuides(net);
+  main_window->getLayoutTabs()->addRouteGuides(net);
 }
 
 void Gui::removeRouteGuides(odb::dbNet* net)
 {
-  main_window->getLayoutViewer()->removeRouteGuides(net);
+  main_window->getLayoutTabs()->removeRouteGuides(net);
 }
 
 void Gui::addNetTracks(odb::dbNet* net)
 {
-  main_window->getLayoutViewer()->addNetTracks(net);
+  main_window->getLayoutTabs()->addNetTracks(net);
 }
 
 void Gui::removeNetTracks(odb::dbNet* net)
 {
-  main_window->getLayoutViewer()->removeNetTracks(net);
+  main_window->getLayoutTabs()->removeNetTracks(net);
 }
 
 void Gui::removeFocusNet(odb::dbNet* net)
 {
-  main_window->getLayoutViewer()->removeFocusNet(net);
+  main_window->getLayoutTabs()->removeFocusNet(net);
 }
 
 void Gui::clearFocusNets()
 {
-  main_window->getLayoutViewer()->clearFocusNets();
+  main_window->getLayoutTabs()->clearFocusNets();
 }
 
 void Gui::clearRouteGuides()
 {
-  main_window->getLayoutViewer()->clearRouteGuides();
+  main_window->getLayoutTabs()->clearRouteGuides();
 }
 
 void Gui::clearNetTracks()
 {
-  main_window->getLayoutViewer()->clearNetTracks();
+  main_window->getLayoutTabs()->clearNetTracks();
 }
 
 void Gui::setLogger(utl::Logger* logger)
@@ -1165,7 +1321,7 @@ int startGui(int& argc,
       });
 
   // Exit the app if someone chooses exit from the menu in the window
-  QObject::connect(main_window, SIGNAL(exit()), &app, SLOT(quit()));
+  QObject::connect(main_window, &MainWindow::exit, &app, &QApplication::quit);
   // Track the exit in case it originated during a script
   bool exit_requested = false;
   int exit_code = EXIT_SUCCESS;
@@ -1177,7 +1333,7 @@ int startGui(int& argc,
 
   // Save the window's status into the settings when quitting.
   QObject::connect(
-      &app, SIGNAL(aboutToQuit()), main_window, SLOT(saveSettings()));
+      &app, &QApplication::aboutToQuit, main_window, &MainWindow::saveSettings);
 
   // execute commands to restore state of gui
   std::string restore_commands;
@@ -1230,7 +1386,7 @@ int startGui(int& argc,
   }
 
   if (do_exec) {
-    exit_code = app.exec();
+    exit_code = QApplication::exec();
   }
 
   // cleanup
@@ -1245,6 +1401,8 @@ int startGui(int& argc,
     }
   }
 
+  main_window->exit();
+
   // delete main window and set to nullptr
   delete main_window;
   main_window = nullptr;
@@ -1255,7 +1413,7 @@ int startGui(int& argc,
   // rethow exception, if one happened after cleanup of main_window
   exception.rethrow();
 
-  if (!gui->isContinueAfterClose() || exit_requested) {
+  if (interactive && (!gui->isContinueAfterClose() || exit_requested)) {
     // if exiting, go ahead and exit with gui return code.
     exit(exit_code);
   }

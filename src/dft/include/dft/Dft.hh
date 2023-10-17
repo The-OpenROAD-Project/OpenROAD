@@ -38,6 +38,7 @@
 namespace dft {
 class ScanReplace;
 class DftConfig;
+class ScanChain;
 
 // The main DFT implementation.
 //
@@ -112,6 +113,10 @@ class Dft
 
   // Resets the internal state
   void reset();
+
+  // Common function to perform scan replace and scan architect. Shared between
+  // preview_dft and insert_dft
+  std::vector<std::unique_ptr<ScanChain>> replaceAndArchitect();
 
   // Global state
   odb::dbDatabase* db_;

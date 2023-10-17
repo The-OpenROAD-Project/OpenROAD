@@ -32,18 +32,18 @@
 
 #pragma once
 
-#include "gui/heatMap.h"
 #include "AbstractPowerDensityDataSource.h"
+#include "gui/heatMap.h"
 
 namespace sta {
 class dbSta;
 class Corner;
 
-class PowerDensityDataSource : public gui::RealValueHeatMapDataSource, public AbstractPowerDensityDataSource
+class PowerDensityDataSource : public gui::RealValueHeatMapDataSource,
+                               public AbstractPowerDensityDataSource
 {
  public:
   PowerDensityDataSource(dbSta* sta, utl::Logger* logger);
-  ~PowerDensityDataSource() {}
 
  protected:
   bool populateMap() override;
@@ -57,14 +57,13 @@ class PowerDensityDataSource : public gui::RealValueHeatMapDataSource, public Ab
  private:
   sta::dbSta* sta_;
 
-  bool include_internal_;
-  bool include_leakage_;
-  bool include_switching_;
+  bool include_internal_ = true;
+  bool include_leakage_ = true;
+  bool include_switching_ = true;
 
-  sta::Corner* corner_;
+  std::string corner_;
 
-  void ensureCorner();
-  void setCorner(const std::string& name);
+  sta::Corner* getCorner() const;
 };
 
 }  // namespace sta

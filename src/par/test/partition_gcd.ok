@@ -7,146 +7,1142 @@
 ========================================
 [STATUS] Starting TritonPart Partitioner
 ========================================
-[INFO] Partitioning parameters**** 
-[PARAM] Number of partitions = 2
-[PARAM] UBfactor = 1.0
-[PARAM] Vertex dimensions = 1
-[PARAM] Hyperedge dimensions = 1
+[INFO PAR-0168] [INFO] Partitioning parameters**** 
+[INFO PAR-0102] Number of partitions = 2
+[INFO PAR-0016] UBfactor = 1.0
+[INFO PAR-0017] Seed = 1
+[INFO PAR-0018] Vertex dimensions = 1
+[INFO PAR-0019] Hyperedge dimensions = 1
+[INFO PAR-0020] Placement dimensions = 0
+[INFO PAR-0021] Timing aware flag = true
+[INFO PAR-0103] Guardband flag = false
+[INFO PAR-0023] Global net threshold = 1000
+[INFO PAR-0024] Top 1000 critical timing paths are extracted.
+[INFO PAR-0025] Fence aware flag = false
 ========================================
 [STATUS] Reading netlist**** 
 [STATUS] Extracting timing paths**** 
-[INFO] Timing scale : 1e-09 second
-[STATUS] Building hypergraph**** 
-[STATUS] Writing hypergraph**** 
-========================================
-[INFO] Hypergraph Information**
-[INFO] Vertices = 469
-[INFO] Hyperedges = 451
-[INFO] Timing paths = 52
-[INFO] Unique endpoints extracted = 52
-[INFO] Worst negative slack = 1.4492933
+[INFO PAR-0178] maximum_clock_period : 4.85e-10 second
+[INFO PAR-0179] normalized extra delay : 2.0618558
+[INFO PAR-0180] We normalized the slack of each path based on maximum clock period
+[INFO PAR-0181] We normalized the slack of each net based on maximum clock period
+[STATUS] Finish traversing timing graph
+[WARNING PAR-0137] 1 unconstrained hyperedges !
+[WARNING PAR-0138] Reset the slack of all unconstrained hyperedges to 4.85e-10 seconds
+[INFO PAR-0174] Netlist Information**
+[INFO PAR-0175] Vertices = 469
+[INFO PAR-0176] Hyperedges = 451
+[INFO PAR-0177] Number of timing paths = 52
+[STATUS] Finish reading netlist****
+[WARNING PAR-0352] no base balance is specified. Use default value.
+[WARNING PAR-0353] no scale factor is specified. Use default value.
+[INFO PAR-0077] hyperedge weight factor : [ 1.000000  ]
+[INFO PAR-0078] vertex weight factor : [ 1.000000  ]
+[INFO PAR-0079] placement weight factor : [  ]
+[INFO PAR-0080] net_timing_factor : 1.0
+[INFO PAR-0081] path_timing_factor : 1.0
+[INFO PAR-0082] path_snaking_factor : 1.0
+[INFO PAR-0083] timing_exp_factor : 1.0
+[INFO PAR-0084] coarsen order : RANDOM
+[INFO PAR-0085] thr_coarsen_hyperedge_size_skip : 1000
+[INFO PAR-0086] thr_coarsen_vertices : 10
+[INFO PAR-0087] thr_coarsen_hyperedges : 50
+[INFO PAR-0088] coarsening_ratio : 1.5
+[INFO PAR-0089] max_coarsen_iters : 30
+[INFO PAR-0090] adj_diff_ratio : 0.0001
+[INFO PAR-0091] min_num_vertcies_each_part : 4
+[INFO PAR-0092] num_initial_solutions : 100
+[INFO PAR-0093] num_best_initial_solutions : 10
+[INFO PAR-0094] refine_iters : 10
+[INFO PAR-0095] max_moves (FM or greedy refinement) : 100
+[INFO PAR-0096] early_stop_ratio : 0.5
+[INFO PAR-0097] total_corking_passes : 25
+[INFO PAR-0098] v_cycle_flag : true
+[INFO PAR-0099] max_num_vcycle : 1
+[INFO PAR-0100] num_coarsen_solutions : 4
+[INFO PAR-0101] num_vertices_threshold_ilp : 50
 =========================================
-[STATUS] Running FC multilevel coarsening 
+[STATUS] Running FC multilevel coarsening
 =========================================
-[COARSEN] Level 0 :: 469, 451, 552 , 1065 
-[COARSEN] Level 1 :: 312, 370, 552 , 947 
-[COARSEN] Level 2 :: 207, 301, 552 , 764 
-[COARSEN] Level 3 :: 137, 251, 552 , 670 
-=============================
+[COARSEN] Level 0 :: num_vertices = 469, num_hyperedges = 451, num_timing_paths = 52
+[COARSEN] Level 1 :: num_vertices = 312, num_hyperedges = 352, num_timing_paths = 52
+[COARSEN] Level 2 :: num_vertices = 208, num_hyperedges = 282, num_timing_paths = 50
+[COARSEN] Level 3 :: num_vertices = 138, num_hyperedges = 229, num_timing_paths = 48
+[COARSEN] Level 4 :: num_vertices = 92, num_hyperedges = 181, num_timing_paths = 41
+[COARSEN] Level 5 :: num_vertices = 61, num_hyperedges = 135, num_timing_paths = 36
+[COARSEN] Level 6 :: num_vertices = 40, num_hyperedges = 104, num_timing_paths = 34
+[COARSEN] Level 7 :: num_vertices = 26, num_hyperedges = 86, num_timing_paths = 27
+[COARSEN] Level 8 :: num_vertices = 17, num_hyperedges = 63, num_timing_paths = 25
+[COARSEN] Level 9 :: num_vertices = 11, num_hyperedges = 51, num_timing_paths = 22
+[COARSEN] Level 10 :: num_vertices = 9, num_hyperedges = 46, num_timing_paths = 21
+======================================================================
 [STATUS] Initial Partitioning 
-=============================
-[INIT-PART] 0 :: Random part cutcost 282.45584
-[INIT-PART] 1 :: Random part cutcost 281.18216
-[INIT-PART] 2 :: Random part cutcost 285.08243
-[INIT-PART] 3 :: Random part cutcost 279.73456
-[INIT-PART] 4 :: Random part cutcost 283.10583
-[INIT-PART] 5 :: Random part cutcost 324.56598
-[INIT-PART] 6 :: Random part cutcost 284.6846
-[INIT-PART] 7 :: Random part cutcost 283.03522
-[INIT-PART] 8 :: Random part cutcost 287.0352
-[INIT-PART] 9 :: Random part cutcost 289.38882
-[INIT-PART] 10 :: Random part cutcost 287.03003
-[INIT-PART] 11 :: Random part cutcost 288.45795
-[INIT-PART] 12 :: Random part cutcost 289.81403
-[INIT-PART] 13 :: Random part cutcost 280.0813
-[INIT-PART] 14 :: Random part cutcost 284.10065
-[INIT-PART] 15 :: Random part cutcost 286.03003
-[INIT-PART] 16 :: Random part cutcost 283.94836
-[INIT-PART] 17 :: Random part cutcost 288.50433
-[INIT-PART] 18 :: Random part cutcost 279.0352
-[INIT-PART] 19 :: Random part cutcost 290.8899
-[INIT-PART] 20 :: Random part cutcost 279.92334
-[INIT-PART] 21 :: Random part cutcost 283.94836
-[INIT-PART] 22 :: Random part cutcost 288.98883
-[INIT-PART] 23 :: Random part cutcost 286.76285
-[INIT-PART] 24 :: Random part cutcost 309.16187
-[INIT-PART] 25 :: Random part cutcost 277.35175
-[INIT-PART] 26 :: Random part cutcost 278.94922
-[INIT-PART] 27 :: Random part cutcost 287.10065
-[INIT-PART] 28 :: Random part cutcost 282.44324
-[INIT-PART] 29 :: Random part cutcost 281.94836
-[INIT-PART] 30 :: Random part cutcost 288.9888
-[INIT-PART] 31 :: Random part cutcost 284.92337
-[INIT-PART] 32 :: Random part cutcost 279.53568
-[INIT-PART] 33 :: Random part cutcost 282.994
-[INIT-PART] 34 :: Random part cutcost 285.48447
-[INIT-PART] 35 :: Random part cutcost 280.63312
-[INIT-PART] 36 :: Random part cutcost 295.20654
-[INIT-PART] 37 :: Random part cutcost 318.42047
-[INIT-PART] 38 :: Random part cutcost 284.81927
-[INIT-PART] 39 :: Random part cutcost 283.99396
-[INIT-PART] 40 :: Random part cutcost 283.92334
-[INIT-PART] 41 :: Random part cutcost 282.62195
-[INIT-PART] 42 :: Random part cutcost 281.05505
-[INIT-PART] 43 :: Random part cutcost 281.03522
-[INIT-PART] 44 :: Random part cutcost 283.05505
-[INIT-PART] 45 :: Random part cutcost 282.0352
-[INIT-PART] 46 :: Random part cutcost 295.07062
-[INIT-PART] 47 :: Random part cutcost 281.2234
-[INIT-PART] 48 :: Random part cutcost 282.63312
-[INIT-PART] 49 :: Random part cutcost 283.994
-[INIT-PART] 50 :: Vile part cutcost 250.12708
-Optimal ILP-based Partitioning (OR-Tools) with warm-start ...
-Before Hyperedge Reduction :  num_vertices = 137, num_hyperedges = 251
-min_diff_score : 2.6639671e-05
-After Hyperedge Reduction :  num_vertices = 137, num_hyperedges = 251
-[INIT-PART] 51 :: Ilp part cutcost 154.65254
-====================================================
-[STATUS] Running V-cycle refinement on 10 partitions
-====================================================
-[INFO] 51 cutcost 154.65254 
-[INFO] 50 cutcost 194.97308 
-[INFO] 25 cutcost 189.51291 
-[INFO] 26 cutcost 211.75716 
-[INFO] 18 cutcost 190.95543 
-[INFO] 32 cutcost 208.36308 
-[INFO] 3 cutcost 259.8958 
-[INFO] 20 cutcost 191.9763 
-[INFO] 13 cutcost 205.29779 
-[INFO] 35 cutcost 191.64151 
+======================================================================
+[INFO PAR-0163] Set the max_move to 9
+[INIT-PART] 0 :: Random part cutcost = 194.02621, balance_flag = false
+[INIT-PART] 1 :: Random part cutcost = 155.85965, balance_flag = false
+[INIT-PART] 2 :: Random part cutcost = 201.96869, balance_flag = false
+[INIT-PART] 3 :: Random part cutcost = 186.4978, balance_flag = false
+[INIT-PART] 4 :: Random part cutcost = 176.5621, balance_flag = false
+[INIT-PART] 5 :: Random part cutcost = 177.52519, balance_flag = false
+[INIT-PART] 6 :: Random part cutcost = 187.92459, balance_flag = false
+[INIT-PART] 7 :: Random part cutcost = 176.69319, balance_flag = false
+[INIT-PART] 8 :: Random part cutcost = 131.76637, balance_flag = false
+[INIT-PART] 9 :: Random part cutcost = 189.02441, balance_flag = false
+[INIT-PART] 10 :: Random part cutcost = 171.49213, balance_flag = false
+[INIT-PART] 11 :: Random part cutcost = 158.86314, balance_flag = false
+[INIT-PART] 12 :: Random part cutcost = 168.46686, balance_flag = false
+[INIT-PART] 13 :: Random part cutcost = 142.01556, balance_flag = false
+[INIT-PART] 14 :: Random part cutcost = 207.87758, balance_flag = false
+[INIT-PART] 15 :: Random part cutcost = 183.31436, balance_flag = false
+[INIT-PART] 16 :: Random part cutcost = 191.56165, balance_flag = false
+[INIT-PART] 17 :: Random part cutcost = 190.94916, balance_flag = false
+[INIT-PART] 18 :: Random part cutcost = 182.34282, balance_flag = false
+[INIT-PART] 19 :: Random part cutcost = 204.84148, balance_flag = false
+[INIT-PART] 20 :: Random part cutcost = 202.43564, balance_flag = false
+[INIT-PART] 21 :: Random part cutcost = 144.10545, balance_flag = false
+[INIT-PART] 22 :: Random part cutcost = 170.07614, balance_flag = false
+[INIT-PART] 23 :: Random part cutcost = 192.19385, balance_flag = false
+[INIT-PART] 24 :: Random part cutcost = 198.11536, balance_flag = false
+[INIT-PART] 25 :: Random part cutcost = 164.33362, balance_flag = false
+[INIT-PART] 26 :: Random part cutcost = 150.71211, balance_flag = false
+[INIT-PART] 27 :: Random part cutcost = 171.49213, balance_flag = false
+[INIT-PART] 28 :: Random part cutcost = 177.24506, balance_flag = false
+[INIT-PART] 29 :: Random part cutcost = 164.01068, balance_flag = false
+[INIT-PART] 30 :: Random part cutcost = 197.90869, balance_flag = false
+[INIT-PART] 31 :: Random part cutcost = 158.86314, balance_flag = false
+[INIT-PART] 32 :: Random part cutcost = 194.6514, balance_flag = false
+[INIT-PART] 33 :: Random part cutcost = 202.43564, balance_flag = false
+[INIT-PART] 34 :: Random part cutcost = 166.93005, balance_flag = false
+[INIT-PART] 35 :: Random part cutcost = 176.05643, balance_flag = false
+[INIT-PART] 36 :: Random part cutcost = 174.96107, balance_flag = false
+[INIT-PART] 37 :: Random part cutcost = 211.60693, balance_flag = false
+[INIT-PART] 38 :: Random part cutcost = 169.06174, balance_flag = false
+[INIT-PART] 39 :: Random part cutcost = 191.50604, balance_flag = false
+[INIT-PART] 40 :: Random part cutcost = 193.25352, balance_flag = false
+[INIT-PART] 41 :: Random part cutcost = 190.23766, balance_flag = false
+[INIT-PART] 42 :: Random part cutcost = 182.34282, balance_flag = false
+[INIT-PART] 43 :: Random part cutcost = 195.70532, balance_flag = false
+[INIT-PART] 44 :: Random part cutcost = 176.69319, balance_flag = false
+[INIT-PART] 45 :: Random part cutcost = 188.03601, balance_flag = false
+[INIT-PART] 46 :: Random part cutcost = 190.23766, balance_flag = false
+[INIT-PART] 47 :: Random part cutcost = 181.13803, balance_flag = false
+[INIT-PART] 48 :: Random part cutcost = 209.84447, balance_flag = false
+[INIT-PART] 49 :: Random part cutcost = 193.8564, balance_flag = false
+[INIT-PART] 50 :: Random part cutcost = 173.19861, balance_flag = false
+[INIT-PART] 51 :: Random part cutcost = 201.96869, balance_flag = false
+[INIT-PART] 52 :: Random part cutcost = 211.60693, balance_flag = false
+[INIT-PART] 53 :: Random part cutcost = 197.98047, balance_flag = false
+[INIT-PART] 54 :: Random part cutcost = 161.32033, balance_flag = false
+[INIT-PART] 55 :: Random part cutcost = 198.04346, balance_flag = false
+[INIT-PART] 56 :: Random part cutcost = 188.21065, balance_flag = false
+[INIT-PART] 57 :: Random part cutcost = 169.06174, balance_flag = false
+[INIT-PART] 58 :: Random part cutcost = 174.96107, balance_flag = false
+[INIT-PART] 59 :: Random part cutcost = 198.11536, balance_flag = false
+[INIT-PART] 60 :: Random part cutcost = 182.34282, balance_flag = false
+[INIT-PART] 61 :: Random part cutcost = 165.87831, balance_flag = false
+[INIT-PART] 62 :: Random part cutcost = 170.91142, balance_flag = false
+[INIT-PART] 63 :: Random part cutcost = 146.32869, balance_flag = false
+[INIT-PART] 64 :: Random part cutcost = 164.01068, balance_flag = false
+[INIT-PART] 65 :: Random part cutcost = 164.33362, balance_flag = false
+[INIT-PART] 66 :: Random part cutcost = 194.02621, balance_flag = false
+[INIT-PART] 67 :: Random part cutcost = 194.40268, balance_flag = false
+[INIT-PART] 68 :: Random part cutcost = 170.07614, balance_flag = false
+[INIT-PART] 69 :: Random part cutcost = 174.77643, balance_flag = false
+[INIT-PART] 70 :: Random part cutcost = 183.89737, balance_flag = false
+[INIT-PART] 71 :: Random part cutcost = 196.96384, balance_flag = false
+[INIT-PART] 72 :: Random part cutcost = 207.98964, balance_flag = false
+[INIT-PART] 73 :: Random part cutcost = 157.38892, balance_flag = false
+[INIT-PART] 74 :: Random part cutcost = 198.11536, balance_flag = false
+[INIT-PART] 75 :: Random part cutcost = 184.07361, balance_flag = false
+[INIT-PART] 76 :: Random part cutcost = 137.60146, balance_flag = false
+[INIT-PART] 77 :: Random part cutcost = 172.32387, balance_flag = false
+[INIT-PART] 78 :: Random part cutcost = 186.4978, balance_flag = false
+[INIT-PART] 79 :: Random part cutcost = 184.07361, balance_flag = false
+[INIT-PART] 80 :: Random part cutcost = 181.13803, balance_flag = false
+[INIT-PART] 81 :: Random part cutcost = 187.6281, balance_flag = false
+[INIT-PART] 82 :: Random part cutcost = 179.22028, balance_flag = false
+[INIT-PART] 83 :: Random part cutcost = 170.07614, balance_flag = false
+[INIT-PART] 84 :: Random part cutcost = 179.3264, balance_flag = false
+[INIT-PART] 85 :: Random part cutcost = 188.21065, balance_flag = false
+[INIT-PART] 86 :: Random part cutcost = 165.87831, balance_flag = false
+[INIT-PART] 87 :: Random part cutcost = 171.4737, balance_flag = false
+[INIT-PART] 88 :: Random part cutcost = 179.22028, balance_flag = false
+[INIT-PART] 89 :: Random part cutcost = 174.6261, balance_flag = false
+[INIT-PART] 90 :: Random part cutcost = 194.6514, balance_flag = false
+[INIT-PART] 91 :: Random part cutcost = 187.07253, balance_flag = false
+[INIT-PART] 92 :: Random part cutcost = 193.25352, balance_flag = false
+[INIT-PART] 93 :: Random part cutcost = 170.91142, balance_flag = false
+[INIT-PART] 94 :: Random part cutcost = 145.91454, balance_flag = false
+[INIT-PART] 95 :: Random part cutcost = 193.25352, balance_flag = false
+[INIT-PART] 96 :: Random part cutcost = 180.22992, balance_flag = false
+[INIT-PART] 97 :: Random part cutcost = 182.34282, balance_flag = false
+[INIT-PART] 98 :: Random part cutcost = 192.19385, balance_flag = false
+[INIT-PART] 99 :: Random part cutcost = 171.49213, balance_flag = false
+[INIT-PART] 0 :: Random VILE part cutcost = 193.09958, balance_flag = false
+[INIT-PART] 1 :: Random VILE part cutcost = 140.74927, balance_flag = false
+[INIT-PART] 2 :: Random VILE part cutcost = 197.90869, balance_flag = false
+[INIT-PART] 3 :: Random VILE part cutcost = 174.77643, balance_flag = false
+[INIT-PART] 4 :: Random VILE part cutcost = 194.40268, balance_flag = false
+[INIT-PART] 5 :: Random VILE part cutcost = 201.00047, balance_flag = false
+[INIT-PART] 6 :: Random VILE part cutcost = 140.95197, balance_flag = false
+[INIT-PART] 7 :: Random VILE part cutcost = 159.27728, balance_flag = false
+[INIT-PART] 8 :: Random VILE part cutcost = 157.80304, balance_flag = false
+[INIT-PART] 9 :: Random VILE part cutcost = 187.6281, balance_flag = false
+[INIT-PART] 10 :: Random VILE part cutcost = 173.0893, balance_flag = false
+[INIT-PART] 11 :: Random VILE part cutcost = 137.53148, balance_flag = false
+[INIT-PART] 12 :: Random VILE part cutcost = 164.01068, balance_flag = false
+[INIT-PART] 13 :: Random VILE part cutcost = 184.07361, balance_flag = false
+[INIT-PART] 14 :: Random VILE part cutcost = 207.98964, balance_flag = false
+[INIT-PART] 15 :: Random VILE part cutcost = 176.05643, balance_flag = false
+[INIT-PART] 16 :: Random VILE part cutcost = 177.24506, balance_flag = false
+[INIT-PART] 17 :: Random VILE part cutcost = 164.01068, balance_flag = false
+[INIT-PART] 18 :: Random VILE part cutcost = 142.01556, balance_flag = false
+[INIT-PART] 19 :: Random VILE part cutcost = 170.07614, balance_flag = false
+[INIT-PART] 20 :: Random VILE part cutcost = 187.6281, balance_flag = false
+[INIT-PART] 21 :: Random VILE part cutcost = 201.82173, balance_flag = false
+[INIT-PART] 22 :: Random VILE part cutcost = 200.99496, balance_flag = false
+[INIT-PART] 23 :: Random VILE part cutcost = 179.22028, balance_flag = false
+[INIT-PART] 24 :: Random VILE part cutcost = 200.99496, balance_flag = false
+[INIT-PART] 25 :: Random VILE part cutcost = 187.07253, balance_flag = false
+[INIT-PART] 26 :: Random VILE part cutcost = 174.96107, balance_flag = false
+[INIT-PART] 27 :: Random VILE part cutcost = 187.92459, balance_flag = false
+[INIT-PART] 28 :: Random VILE part cutcost = 171.11566, balance_flag = false
+[INIT-PART] 29 :: Random VILE part cutcost = 171.49213, balance_flag = false
+[INIT-PART] 30 :: Random VILE part cutcost = 199.54657, balance_flag = false
+[INIT-PART] 31 :: Random VILE part cutcost = 196.8994, balance_flag = false
+[INIT-PART] 32 :: Random VILE part cutcost = 176.5621, balance_flag = false
+[INIT-PART] 33 :: Random VILE part cutcost = 207.98964, balance_flag = false
+[INIT-PART] 34 :: Random VILE part cutcost = 155.85965, balance_flag = false
+[INIT-PART] 35 :: Random VILE part cutcost = 201.82173, balance_flag = false
+[INIT-PART] 36 :: Random VILE part cutcost = 166.93005, balance_flag = false
+[INIT-PART] 37 :: Random VILE part cutcost = 183.89737, balance_flag = false
+[INIT-PART] 38 :: Random VILE part cutcost = 174.77643, balance_flag = false
+[INIT-PART] 39 :: Random VILE part cutcost = 212.1337, balance_flag = false
+[INIT-PART] 40 :: Random VILE part cutcost = 171.4737, balance_flag = false
+[INIT-PART] 41 :: Random VILE part cutcost = 159.27728, balance_flag = false
+[INIT-PART] 42 :: Random VILE part cutcost = 187.92459, balance_flag = false
+[INIT-PART] 43 :: Random VILE part cutcost = 173.0893, balance_flag = false
+[INIT-PART] 44 :: Random VILE part cutcost = 171.49213, balance_flag = false
+[INIT-PART] 45 :: Random VILE part cutcost = 186.4978, balance_flag = false
+[INIT-PART] 46 :: Random VILE part cutcost = 195.7897, balance_flag = false
+[INIT-PART] 47 :: Random VILE part cutcost = 190.23766, balance_flag = false
+[INIT-PART] 48 :: Random VILE part cutcost = 181.6533, balance_flag = false
+[INIT-PART] 49 :: Random VILE part cutcost = 207.98964, balance_flag = false
+[INIT-PART] 50 :: Random VILE part cutcost = 193.25352, balance_flag = false
+[INIT-PART] 51 :: Random VILE part cutcost = 171.11566, balance_flag = false
+[INIT-PART] 52 :: Random VILE part cutcost = 150.60875, balance_flag = false
+[INIT-PART] 53 :: Random VILE part cutcost = 137.53148, balance_flag = false
+[INIT-PART] 54 :: Random VILE part cutcost = 171.4737, balance_flag = false
+[INIT-PART] 55 :: Random VILE part cutcost = 150.60875, balance_flag = false
+[INIT-PART] 56 :: Random VILE part cutcost = 201.82173, balance_flag = false
+[INIT-PART] 57 :: Random VILE part cutcost = 193.09958, balance_flag = false
+[INIT-PART] 58 :: Random VILE part cutcost = 182.7886, balance_flag = false
+[INIT-PART] 59 :: Random VILE part cutcost = 166.79312, balance_flag = false
+[INIT-PART] 60 :: Random VILE part cutcost = 212.1337, balance_flag = false
+[INIT-PART] 61 :: Random VILE part cutcost = 179.22028, balance_flag = false
+[INIT-PART] 62 :: Random VILE part cutcost = 151.06209, balance_flag = false
+[INIT-PART] 63 :: Random VILE part cutcost = 193.49248, balance_flag = false
+[INIT-PART] 64 :: Random VILE part cutcost = 157.80304, balance_flag = false
+[INIT-PART] 65 :: Random VILE part cutcost = 188.63046, balance_flag = false
+[INIT-PART] 66 :: Random VILE part cutcost = 151.06209, balance_flag = false
+[INIT-PART] 67 :: Random VILE part cutcost = 198.04346, balance_flag = false
+[INIT-PART] 68 :: Random VILE part cutcost = 173.0893, balance_flag = false
+[INIT-PART] 69 :: Random VILE part cutcost = 171.4737, balance_flag = false
+[INIT-PART] 70 :: Random VILE part cutcost = 184.07361, balance_flag = false
+[INIT-PART] 71 :: Random VILE part cutcost = 189.64954, balance_flag = false
+[INIT-PART] 72 :: Random VILE part cutcost = 171.11566, balance_flag = false
+[INIT-PART] 73 :: Random VILE part cutcost = 158.86314, balance_flag = false
+[INIT-PART] 74 :: Random VILE part cutcost = 196.89912, balance_flag = false
+[INIT-PART] 75 :: Random VILE part cutcost = 211.60693, balance_flag = false
+[INIT-PART] 76 :: Random VILE part cutcost = 195.70532, balance_flag = false
+[INIT-PART] 77 :: Random VILE part cutcost = 193.49248, balance_flag = false
+[INIT-PART] 78 :: Random VILE part cutcost = 194.6514, balance_flag = false
+[INIT-PART] 79 :: Random VILE part cutcost = 183.89737, balance_flag = false
+[INIT-PART] 80 :: Random VILE part cutcost = 131.76637, balance_flag = false
+[INIT-PART] 81 :: Random VILE part cutcost = 196.96384, balance_flag = false
+[INIT-PART] 82 :: Random VILE part cutcost = 152.68167, balance_flag = false
+[INIT-PART] 83 :: Random VILE part cutcost = 199.50415, balance_flag = false
+[INIT-PART] 84 :: Random VILE part cutcost = 188.63046, balance_flag = false
+[INIT-PART] 85 :: Random VILE part cutcost = 187.07253, balance_flag = false
+[INIT-PART] 86 :: Random VILE part cutcost = 172.32387, balance_flag = false
+[INIT-PART] 87 :: Random VILE part cutcost = 192.19385, balance_flag = false
+[INIT-PART] 88 :: Random VILE part cutcost = 197.90869, balance_flag = false
+[INIT-PART] 89 :: Random VILE part cutcost = 211.08893, balance_flag = false
+[INIT-PART] 90 :: Random VILE part cutcost = 195.70532, balance_flag = false
+[INIT-PART] 91 :: Random VILE part cutcost = 199.50415, balance_flag = false
+[INIT-PART] 92 :: Random VILE part cutcost = 184.07361, balance_flag = false
+[INIT-PART] 93 :: Random VILE part cutcost = 157.38892, balance_flag = false
+[INIT-PART] 94 :: Random VILE part cutcost = 183.31436, balance_flag = false
+[INIT-PART] 95 :: Random VILE part cutcost = 194.02621, balance_flag = false
+[INIT-PART] 96 :: Random VILE part cutcost = 177.52519, balance_flag = false
+[INIT-PART] 97 :: Random VILE part cutcost = 202.76695, balance_flag = false
+[INIT-PART] 98 :: Random VILE part cutcost = 191.56165, balance_flag = false
+[INIT-PART] 99 :: Random VILE part cutcost = 152.68167, balance_flag = false
+[INFO PAR-0165] Reset the max_move to 100
+[INFO PAR-0166] Reset the refiner_iters to 10
+[INIT-PART] :: VILE part cutcost = 192.19385, balance_flag = false
+[STATUS] Optimal ILP-based Partitioning Starts !
+All the hyperedges will be used in the ILP-based partitioning!
+[STATUS] Optimal ILP-based Partitioning Failed!
+[STATUS] Call random partitioning !
+[INIT-PART] :: ILP part cutcost = 176.5621, balance_flag = false
+[INFO PAR-0155] Number of chosen best initial solutions = 10
+[INFO PAR-0156] Best initial cutcost 0.0
+[Refinement] Level 1 :: num_vertices = 11, num_hyperedges = 51, cutcost = 135.5041, best_solution_id = 0
+[Refinement] Level 2 :: num_vertices = 17, num_hyperedges = 63, cutcost = 145.8578, best_solution_id = 0
+[Refinement] Level 3 :: num_vertices = 26, num_hyperedges = 86, cutcost = 158.67656, best_solution_id = 0
+[Refinement] Level 4 :: num_vertices = 40, num_hyperedges = 104, cutcost = 180.52542, best_solution_id = 0
+[Refinement] Level 5 :: num_vertices = 61, num_hyperedges = 135, cutcost = 186.51414, best_solution_id = 0
+[Refinement] Level 6 :: num_vertices = 92, num_hyperedges = 181, cutcost = 200.86023, best_solution_id = 0
+[Refinement] Level 7 :: num_vertices = 138, num_hyperedges = 229, cutcost = 212.03728, best_solution_id = 0
+[Refinement] Level 8 :: num_vertices = 208, num_hyperedges = 282, cutcost = 207.70642, best_solution_id = 6
+[Refinement] Level 9 :: num_vertices = 312, num_hyperedges = 352, cutcost = 210.58376, best_solution_id = 6
+[Refinement] Level 10 :: num_vertices = 469, num_hyperedges = 451, cutcost = 207.45547, best_solution_id = 7
+[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 70, num_hyperedges = 108
 =========================================
-[STATUS] Running FC multilevel coarsening 
+[STATUS] Running FC multilevel coarsening
 =========================================
-[COARSEN] Level 0 :: 469, 451, 552 , 1065 
-[COARSEN] Level 1 :: 312, 370, 552 , 947 
-[COARSEN] Level 2 :: 207, 301, 552 , 764 
-[COARSEN] Level 3 :: 137, 251, 552 , 670 
-===================================
-[STATUS] Running V-cycle refinement
-===================================
-[V-Refine] Level 1 :: 137, 251, 154.65254
-[V-Refine] Level 2 :: 207, 301, 154.65254
-[V-Refine] Level 3 :: 312, 370, 154.65254
-[V-Refine] Level 4 :: 469, 451, 154.65254
-[INFO] V-cycle refinement 1 delta cost 0.0
+[COARSEN] Level 0 :: num_vertices = 70, num_hyperedges = 108, num_timing_paths = 35
+[COARSEN] Level 1 :: num_vertices = 46, num_hyperedges = 85, num_timing_paths = 30
+[COARSEN] Level 2 :: num_vertices = 30, num_hyperedges = 71, num_timing_paths = 24
+[COARSEN] Level 3 :: num_vertices = 20, num_hyperedges = 57, num_timing_paths = 19
+[COARSEN] Level 4 :: num_vertices = 13, num_hyperedges = 47, num_timing_paths = 16
+[STATUS] Optimal ILP-based Partitioning Starts !
+All the hyperedges will be used in the ILP-based partitioning!
+[STATUS] Optimal ILP-based Partitioning Finished !
+[Refinement] Level 1 :: num_vertices = 20, num_hyperedges = 57, cutcost = 123.465256, best_solution_id = 0
+[Refinement] Level 2 :: num_vertices = 30, num_hyperedges = 71, cutcost = 134.92365, best_solution_id = 0
+[Refinement] Level 3 :: num_vertices = 46, num_hyperedges = 85, cutcost = 150.80923, best_solution_id = 0
+[Refinement] Level 4 :: num_vertices = 70, num_hyperedges = 108, cutcost = 165.42175, best_solution_id = 0
+[INFO PAR-0158] Statistics of cut-overlay solution:
 =========================================
-[STATUS] Running FC multilevel coarsening 
+[STATUS] Running FC multilevel coarsening
 =========================================
-[COARSEN] Level 0 :: 469, 451, 552 , 1065 
-[COARSEN] Level 1 :: 312, 370, 552 , 947 
-[COARSEN] Level 2 :: 207, 301, 552 , 764 
-[COARSEN] Level 3 :: 137, 251, 552 , 670 
-===================================
-[STATUS] Running V-cycle refinement
-===================================
-[V-Refine] Level 1 :: 137, 251, 154.65254
-[V-Refine] Level 2 :: 207, 301, 154.65254
-[V-Refine] Level 3 :: 312, 370, 154.65254
-[V-Refine] Level 4 :: 469, 451, 154.65254
-[INFO] V-cycle refinement 2 delta cost 0.0
-[Cutcost of partition : 154.65254]
-[Vertex balance of block_0 : 0.59249  ( 327.17993 )    
-[Vertex balance of block_1 : 0.40751  ( 225.03609 )    
-===============================================
+[COARSEN] Level 0 :: num_vertices = 469, num_hyperedges = 451, num_timing_paths = 52
+[COARSEN] Level 1 :: num_vertices = 312, num_hyperedges = 352, num_timing_paths = 51
+[COARSEN] Level 2 :: num_vertices = 208, num_hyperedges = 277, num_timing_paths = 51
+[COARSEN] Level 3 :: num_vertices = 138, num_hyperedges = 225, num_timing_paths = 48
+[COARSEN] Level 4 :: num_vertices = 92, num_hyperedges = 178, num_timing_paths = 43
+[COARSEN] Level 5 :: num_vertices = 61, num_hyperedges = 132, num_timing_paths = 36
+[COARSEN] Level 6 :: num_vertices = 40, num_hyperedges = 102, num_timing_paths = 29
+[COARSEN] Level 7 :: num_vertices = 26, num_hyperedges = 73, num_timing_paths = 27
+[COARSEN] Level 8 :: num_vertices = 17, num_hyperedges = 64, num_timing_paths = 23
+[COARSEN] Level 9 :: num_vertices = 11, num_hyperedges = 51, num_timing_paths = 23
+[COARSEN] Level 10 :: num_vertices = 10, num_hyperedges = 50, num_timing_paths = 23
+======================================================================
+[STATUS] Initial Partitioning 
+======================================================================
+[INFO PAR-0163] Set the max_move to 10
+[INIT-PART] 0 :: Random part cutcost = 186.31003, balance_flag = false
+[INIT-PART] 1 :: Random part cutcost = 234.4143, balance_flag = false
+[INIT-PART] 2 :: Random part cutcost = 189.14851, balance_flag = false
+[INIT-PART] 3 :: Random part cutcost = 262.76532, balance_flag = false
+[INIT-PART] 4 :: Random part cutcost = 202.38371, balance_flag = false
+[INIT-PART] 5 :: Random part cutcost = 241.35062, balance_flag = false
+[INIT-PART] 6 :: Random part cutcost = 232.92142, balance_flag = false
+[INIT-PART] 7 :: Random part cutcost = 201.32396, balance_flag = false
+[INIT-PART] 8 :: Random part cutcost = 221.09988, balance_flag = false
+[INIT-PART] 9 :: Random part cutcost = 233.25636, balance_flag = false
+[INIT-PART] 10 :: Random part cutcost = 213.55261, balance_flag = false
+[INIT-PART] 11 :: Random part cutcost = 203.61172, balance_flag = false
+[INIT-PART] 12 :: Random part cutcost = 209.08594, balance_flag = false
+[INIT-PART] 13 :: Random part cutcost = 223.5572, balance_flag = false
+[INIT-PART] 14 :: Random part cutcost = 205.13864, balance_flag = false
+[INIT-PART] 15 :: Random part cutcost = 266.27264, balance_flag = false
+[INIT-PART] 16 :: Random part cutcost = 197.13364, balance_flag = false
+[INIT-PART] 17 :: Random part cutcost = 178.57707, balance_flag = false
+[INIT-PART] 18 :: Random part cutcost = 237.33282, balance_flag = false
+[INIT-PART] 19 :: Random part cutcost = 246.42194, balance_flag = false
+[INIT-PART] 20 :: Random part cutcost = 222.83263, balance_flag = false
+[INIT-PART] 21 :: Random part cutcost = 221.90877, balance_flag = false
+[INIT-PART] 22 :: Random part cutcost = 212.90208, balance_flag = false
+[INIT-PART] 23 :: Random part cutcost = 213.6289, balance_flag = false
+[INIT-PART] 24 :: Random part cutcost = 222.00693, balance_flag = false
+[INIT-PART] 25 :: Random part cutcost = 202.61739, balance_flag = false
+[INIT-PART] 26 :: Random part cutcost = 193.99733, balance_flag = false
+[INIT-PART] 27 :: Random part cutcost = 213.55261, balance_flag = false
+[INIT-PART] 28 :: Random part cutcost = 204.8418, balance_flag = false
+[INIT-PART] 29 :: Random part cutcost = 240.2977, balance_flag = false
+[INIT-PART] 30 :: Random part cutcost = 235.04666, balance_flag = false
+[INIT-PART] 31 :: Random part cutcost = 203.61172, balance_flag = false
+[INIT-PART] 32 :: Random part cutcost = 222.03131, balance_flag = false
+[INIT-PART] 33 :: Random part cutcost = 222.83263, balance_flag = false
+[INIT-PART] 34 :: Random part cutcost = 200.20575, balance_flag = false
+[INIT-PART] 35 :: Random part cutcost = 244.07881, balance_flag = false
+[INIT-PART] 36 :: Random part cutcost = 181.76265, balance_flag = false
+[INIT-PART] 37 :: Random part cutcost = 200.05476, balance_flag = false
+[INIT-PART] 38 :: Random part cutcost = 233.8176, balance_flag = false
+[INIT-PART] 39 :: Random part cutcost = 222.84177, balance_flag = false
+[INIT-PART] 40 :: Random part cutcost = 209.67229, balance_flag = false
+[INIT-PART] 41 :: Random part cutcost = 232.19324, balance_flag = false
+[INIT-PART] 42 :: Random part cutcost = 237.33282, balance_flag = false
+[INIT-PART] 43 :: Random part cutcost = 230.20494, balance_flag = false
+[INIT-PART] 44 :: Random part cutcost = 201.32396, balance_flag = false
+[INIT-PART] 45 :: Random part cutcost = 233.5469, balance_flag = false
+[INIT-PART] 46 :: Random part cutcost = 232.19324, balance_flag = false
+[INIT-PART] 47 :: Random part cutcost = 171.59467, balance_flag = false
+[INIT-PART] 48 :: Random part cutcost = 192.51248, balance_flag = false
+[INIT-PART] 49 :: Random part cutcost = 193.80591, balance_flag = false
+[INIT-PART] 50 :: Random part cutcost = 164.30156, balance_flag = false
+[INIT-PART] 51 :: Random part cutcost = 189.14851, balance_flag = false
+[INIT-PART] 52 :: Random part cutcost = 200.05476, balance_flag = false
+[INIT-PART] 53 :: Random part cutcost = 233.40428, balance_flag = true
+[INIT-PART] 54 :: Random part cutcost = 240.92969, balance_flag = false
+[INIT-PART] 55 :: Random part cutcost = 243.33325, balance_flag = false
+[INIT-PART] 56 :: Random part cutcost = 251.71146, balance_flag = false
+[INIT-PART] 57 :: Random part cutcost = 233.8176, balance_flag = false
+[INIT-PART] 58 :: Random part cutcost = 181.76265, balance_flag = false
+[INIT-PART] 59 :: Random part cutcost = 222.00693, balance_flag = false
+[INIT-PART] 60 :: Random part cutcost = 237.33282, balance_flag = false
+[INIT-PART] 61 :: Random part cutcost = 247.07262, balance_flag = false
+[INIT-PART] 62 :: Random part cutcost = 208.47977, balance_flag = false
+[INIT-PART] 63 :: Random part cutcost = 230.60376, balance_flag = false
+[INIT-PART] 64 :: Random part cutcost = 240.2977, balance_flag = false
+[INIT-PART] 65 :: Random part cutcost = 202.61739, balance_flag = false
+[INIT-PART] 66 :: Random part cutcost = 186.31003, balance_flag = false
+[INIT-PART] 67 :: Random part cutcost = 197.30765, balance_flag = false
+[INIT-PART] 68 :: Random part cutcost = 212.90208, balance_flag = false
+[INIT-PART] 69 :: Random part cutcost = 206.18936, balance_flag = false
+[INIT-PART] 70 :: Random part cutcost = 213.9987, balance_flag = false
+[INIT-PART] 71 :: Random part cutcost = 195.0656, balance_flag = false
+[INIT-PART] 72 :: Random part cutcost = 214.82143, balance_flag = false
+[INIT-PART] 73 :: Random part cutcost = 200.39098, balance_flag = false
+[INIT-PART] 74 :: Random part cutcost = 222.00693, balance_flag = false
+[INIT-PART] 75 :: Random part cutcost = 187.98622, balance_flag = false
+[INIT-PART] 76 :: Random part cutcost = 193.56961, balance_flag = false
+[INIT-PART] 77 :: Random part cutcost = 214.52756, balance_flag = false
+[INIT-PART] 78 :: Random part cutcost = 262.76532, balance_flag = false
+[INIT-PART] 79 :: Random part cutcost = 187.98622, balance_flag = false
+[INIT-PART] 80 :: Random part cutcost = 171.59467, balance_flag = false
+[INIT-PART] 81 :: Random part cutcost = 209.32146, balance_flag = false
+[INIT-PART] 82 :: Random part cutcost = 215.62271, balance_flag = false
+[INIT-PART] 83 :: Random part cutcost = 212.90208, balance_flag = false
+[INIT-PART] 84 :: Random part cutcost = 243.51343, balance_flag = false
+[INIT-PART] 85 :: Random part cutcost = 251.71146, balance_flag = false
+[INIT-PART] 86 :: Random part cutcost = 247.07262, balance_flag = false
+[INIT-PART] 87 :: Random part cutcost = 191.93253, balance_flag = false
+[INIT-PART] 88 :: Random part cutcost = 215.62271, balance_flag = false
+[INIT-PART] 89 :: Random part cutcost = 202.10315, balance_flag = false
+[INIT-PART] 90 :: Random part cutcost = 222.03131, balance_flag = false
+[INIT-PART] 91 :: Random part cutcost = 211.78712, balance_flag = false
+[INIT-PART] 92 :: Random part cutcost = 209.67229, balance_flag = false
+[INIT-PART] 93 :: Random part cutcost = 208.47977, balance_flag = false
+[INIT-PART] 94 :: Random part cutcost = 205.09302, balance_flag = false
+[INIT-PART] 95 :: Random part cutcost = 209.67229, balance_flag = false
+[INIT-PART] 96 :: Random part cutcost = 225.13518, balance_flag = false
+[INIT-PART] 97 :: Random part cutcost = 237.33282, balance_flag = false
+[INIT-PART] 98 :: Random part cutcost = 213.6289, balance_flag = false
+[INIT-PART] 99 :: Random part cutcost = 213.55261, balance_flag = false
+[INIT-PART] 0 :: Random VILE part cutcost = 220.83551, balance_flag = false
+[INIT-PART] 1 :: Random VILE part cutcost = 192.1926, balance_flag = false
+[INIT-PART] 2 :: Random VILE part cutcost = 239.0669, balance_flag = false
+[INIT-PART] 3 :: Random VILE part cutcost = 202.16913, balance_flag = false
+[INIT-PART] 4 :: Random VILE part cutcost = 197.30765, balance_flag = false
+[INIT-PART] 5 :: Random VILE part cutcost = 245.04625, balance_flag = false
+[INIT-PART] 6 :: Random VILE part cutcost = 225.5733, balance_flag = false
+[INIT-PART] 7 :: Random VILE part cutcost = 222.55568, balance_flag = false
+[INIT-PART] 8 :: Random VILE part cutcost = 225.21841, balance_flag = false
+[INIT-PART] 9 :: Random VILE part cutcost = 213.34169, balance_flag = false
+[INIT-PART] 10 :: Random VILE part cutcost = 191.36401, balance_flag = false
+[INIT-PART] 11 :: Random VILE part cutcost = 216.4159, balance_flag = false
+[INIT-PART] 12 :: Random VILE part cutcost = 240.2977, balance_flag = false
+[INIT-PART] 13 :: Random VILE part cutcost = 183.96599, balance_flag = false
+[INIT-PART] 14 :: Random VILE part cutcost = 218.84169, balance_flag = false
+[INIT-PART] 15 :: Random VILE part cutcost = 248.09908, balance_flag = false
+[INIT-PART] 16 :: Random VILE part cutcost = 204.8418, balance_flag = false
+[INIT-PART] 17 :: Random VILE part cutcost = 240.2977, balance_flag = false
+[INIT-PART] 18 :: Random VILE part cutcost = 219.53697, balance_flag = false
+[INIT-PART] 19 :: Random VILE part cutcost = 208.88182, balance_flag = false
+[INIT-PART] 20 :: Random VILE part cutcost = 213.34169, balance_flag = false
+[INIT-PART] 21 :: Random VILE part cutcost = 234.55981, balance_flag = false
+[INIT-PART] 22 :: Random VILE part cutcost = 209.21054, balance_flag = false
+[INIT-PART] 23 :: Random VILE part cutcost = 219.64296, balance_flag = false
+[INIT-PART] 24 :: Random VILE part cutcost = 209.21054, balance_flag = false
+[INIT-PART] 25 :: Random VILE part cutcost = 211.78712, balance_flag = false
+[INIT-PART] 26 :: Random VILE part cutcost = 181.76265, balance_flag = false
+[INIT-PART] 27 :: Random VILE part cutcost = 228.90118, balance_flag = false
+[INIT-PART] 28 :: Random VILE part cutcost = 196.59705, balance_flag = false
+[INIT-PART] 29 :: Random VILE part cutcost = 217.57285, balance_flag = false
+[INIT-PART] 30 :: Random VILE part cutcost = 246.98735, balance_flag = false
+[INIT-PART] 31 :: Random VILE part cutcost = 224.33914, balance_flag = false
+[INIT-PART] 32 :: Random VILE part cutcost = 202.38371, balance_flag = false
+[INIT-PART] 33 :: Random VILE part cutcost = 218.84169, balance_flag = false
+[INIT-PART] 34 :: Random VILE part cutcost = 234.4143, balance_flag = false
+[INIT-PART] 35 :: Random VILE part cutcost = 234.55981, balance_flag = false
+[INIT-PART] 36 :: Random VILE part cutcost = 196.18552, balance_flag = false
+[INIT-PART] 37 :: Random VILE part cutcost = 218.01895, balance_flag = false
+[INIT-PART] 38 :: Random VILE part cutcost = 202.16913, balance_flag = false
+[INIT-PART] 39 :: Random VILE part cutcost = 214.57558, balance_flag = false
+[INIT-PART] 40 :: Random VILE part cutcost = 187.91226, balance_flag = false
+[INIT-PART] 41 :: Random VILE part cutcost = 222.55568, balance_flag = false
+[INIT-PART] 42 :: Random VILE part cutcost = 228.90118, balance_flag = false
+[INIT-PART] 43 :: Random VILE part cutcost = 191.36401, balance_flag = false
+[INIT-PART] 44 :: Random VILE part cutcost = 217.57285, balance_flag = false
+[INIT-PART] 45 :: Random VILE part cutcost = 258.74506, balance_flag = false
+[INIT-PART] 46 :: Random VILE part cutcost = 203.08514, balance_flag = false
+[INIT-PART] 47 :: Random VILE part cutcost = 236.21347, balance_flag = false
+[INIT-PART] 48 :: Random VILE part cutcost = 179.79916, balance_flag = false
+[INIT-PART] 49 :: Random VILE part cutcost = 218.84169, balance_flag = false
+[INIT-PART] 50 :: Random VILE part cutcost = 205.65205, balance_flag = false
+[INIT-PART] 51 :: Random VILE part cutcost = 196.59705, balance_flag = false
+[INIT-PART] 52 :: Random VILE part cutcost = 230.7179, balance_flag = false
+[INIT-PART] 53 :: Random VILE part cutcost = 216.4159, balance_flag = false
+[INIT-PART] 54 :: Random VILE part cutcost = 187.91226, balance_flag = false
+[INIT-PART] 55 :: Random VILE part cutcost = 230.7179, balance_flag = false
+[INIT-PART] 56 :: Random VILE part cutcost = 234.55981, balance_flag = false
+[INIT-PART] 57 :: Random VILE part cutcost = 220.83551, balance_flag = false
+[INIT-PART] 58 :: Random VILE part cutcost = 218.06476, balance_flag = false
+[INIT-PART] 59 :: Random VILE part cutcost = 208.40413, balance_flag = false
+[INIT-PART] 60 :: Random VILE part cutcost = 214.57558, balance_flag = false
+[INIT-PART] 61 :: Random VILE part cutcost = 219.64296, balance_flag = false
+[INIT-PART] 62 :: Random VILE part cutcost = 238.5981, balance_flag = false
+[INIT-PART] 63 :: Random VILE part cutcost = 259.2586, balance_flag = false
+[INIT-PART] 64 :: Random VILE part cutcost = 225.21841, balance_flag = false
+[INIT-PART] 65 :: Random VILE part cutcost = 212.88649, balance_flag = false
+[INIT-PART] 66 :: Random VILE part cutcost = 238.5981, balance_flag = false
+[INIT-PART] 67 :: Random VILE part cutcost = 243.33325, balance_flag = false
+[INIT-PART] 68 :: Random VILE part cutcost = 191.36401, balance_flag = false
+[INIT-PART] 69 :: Random VILE part cutcost = 187.91226, balance_flag = false
+[INIT-PART] 70 :: Random VILE part cutcost = 183.96599, balance_flag = false
+[INIT-PART] 71 :: Random VILE part cutcost = 256.52847, balance_flag = false
+[INIT-PART] 72 :: Random VILE part cutcost = 196.59705, balance_flag = false
+[INIT-PART] 73 :: Random VILE part cutcost = 199.59146, balance_flag = false
+[INIT-PART] 74 :: Random VILE part cutcost = 219.37726, balance_flag = false
+[INIT-PART] 75 :: Random VILE part cutcost = 204.075, balance_flag = false
+[INIT-PART] 76 :: Random VILE part cutcost = 230.20494, balance_flag = false
+[INIT-PART] 77 :: Random VILE part cutcost = 259.2586, balance_flag = false
+[INIT-PART] 78 :: Random VILE part cutcost = 218.01108, balance_flag = false
+[INIT-PART] 79 :: Random VILE part cutcost = 218.01895, balance_flag = false
+[INIT-PART] 80 :: Random VILE part cutcost = 217.07962, balance_flag = false
+[INIT-PART] 81 :: Random VILE part cutcost = 195.0656, balance_flag = false
+[INIT-PART] 82 :: Random VILE part cutcost = 182.8436, balance_flag = false
+[INIT-PART] 83 :: Random VILE part cutcost = 202.11911, balance_flag = false
+[INIT-PART] 84 :: Random VILE part cutcost = 212.88649, balance_flag = false
+[INIT-PART] 85 :: Random VILE part cutcost = 211.78712, balance_flag = false
+[INIT-PART] 86 :: Random VILE part cutcost = 218.54779, balance_flag = false
+[INIT-PART] 87 :: Random VILE part cutcost = 217.64915, balance_flag = false
+[INIT-PART] 88 :: Random VILE part cutcost = 239.0669, balance_flag = false
+[INIT-PART] 89 :: Random VILE part cutcost = 217.85184, balance_flag = false
+[INIT-PART] 90 :: Random VILE part cutcost = 230.20494, balance_flag = false
+[INIT-PART] 91 :: Random VILE part cutcost = 202.11911, balance_flag = false
+[INIT-PART] 92 :: Random VILE part cutcost = 183.96599, balance_flag = false
+[INIT-PART] 93 :: Random VILE part cutcost = 204.41121, balance_flag = false
+[INIT-PART] 94 :: Random VILE part cutcost = 262.2524, balance_flag = false
+[INIT-PART] 95 :: Random VILE part cutcost = 182.28976, balance_flag = false
+[INIT-PART] 96 :: Random VILE part cutcost = 237.33035, balance_flag = false
+[INIT-PART] 97 :: Random VILE part cutcost = 218.77925, balance_flag = false
+[INIT-PART] 98 :: Random VILE part cutcost = 193.1134, balance_flag = false
+[INIT-PART] 99 :: Random VILE part cutcost = 182.8436, balance_flag = false
+[INFO PAR-0165] Reset the max_move to 100
+[INFO PAR-0166] Reset the refiner_iters to 10
+[INIT-PART] :: VILE part cutcost = 205.9502, balance_flag = false
+[STATUS] Optimal ILP-based Partitioning Starts !
+All the hyperedges will be used in the ILP-based partitioning!
+[STATUS] Optimal ILP-based Partitioning Finished !
+[INIT-PART] :: ILP part cutcost = 229.38405, balance_flag = true
+[INFO PAR-0155] Number of chosen best initial solutions = 10
+[INFO PAR-0156] Best initial cutcost 229.38405
+[Refinement] Level 1 :: num_vertices = 11, num_hyperedges = 51, cutcost = 170.41249, best_solution_id = 2
+[Refinement] Level 2 :: num_vertices = 17, num_hyperedges = 64, cutcost = 168.34837, best_solution_id = 3
+[Refinement] Level 3 :: num_vertices = 26, num_hyperedges = 73, cutcost = 186.0563, best_solution_id = 3
+[Refinement] Level 4 :: num_vertices = 40, num_hyperedges = 102, cutcost = 198.32373, best_solution_id = 3
+[Refinement] Level 5 :: num_vertices = 61, num_hyperedges = 132, cutcost = 222.90625, best_solution_id = 3
+[Refinement] Level 6 :: num_vertices = 92, num_hyperedges = 178, cutcost = 245.29271, best_solution_id = 2
+[Refinement] Level 7 :: num_vertices = 138, num_hyperedges = 225, cutcost = 202.87979, best_solution_id = 2
+[Refinement] Level 8 :: num_vertices = 208, num_hyperedges = 277, cutcost = 205.84605, best_solution_id = 0
+[Refinement] Level 9 :: num_vertices = 312, num_hyperedges = 352, cutcost = 205.48694, best_solution_id = 0
+[Refinement] Level 10 :: num_vertices = 469, num_hyperedges = 451, cutcost = 206.82484, best_solution_id = 8
+[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 46, num_hyperedges = 64
+[STATUS] Optimal ILP-based Partitioning Starts !
+All the hyperedges will be used in the ILP-based partitioning!
+[STATUS] Optimal ILP-based Partitioning Finished !
+[INFO PAR-0158] Statistics of cut-overlay solution:
+=========================================
+[STATUS] Running FC multilevel coarsening
+=========================================
+[COARSEN] Level 0 :: num_vertices = 469, num_hyperedges = 451, num_timing_paths = 52
+[COARSEN] Level 1 :: num_vertices = 312, num_hyperedges = 357, num_timing_paths = 52
+[COARSEN] Level 2 :: num_vertices = 208, num_hyperedges = 277, num_timing_paths = 51
+[COARSEN] Level 3 :: num_vertices = 138, num_hyperedges = 219, num_timing_paths = 46
+[COARSEN] Level 4 :: num_vertices = 92, num_hyperedges = 178, num_timing_paths = 44
+[COARSEN] Level 5 :: num_vertices = 61, num_hyperedges = 146, num_timing_paths = 39
+[COARSEN] Level 6 :: num_vertices = 40, num_hyperedges = 111, num_timing_paths = 33
+[COARSEN] Level 7 :: num_vertices = 26, num_hyperedges = 86, num_timing_paths = 29
+[COARSEN] Level 8 :: num_vertices = 17, num_hyperedges = 75, num_timing_paths = 27
+[COARSEN] Level 9 :: num_vertices = 11, num_hyperedges = 57, num_timing_paths = 23
+[COARSEN] Level 10 :: num_vertices = 9, num_hyperedges = 52, num_timing_paths = 23
+======================================================================
+[STATUS] Initial Partitioning 
+======================================================================
+[INFO PAR-0163] Set the max_move to 9
+[INIT-PART] 0 :: Random part cutcost = 216.35858, balance_flag = false
+[INIT-PART] 1 :: Random part cutcost = 220.83612, balance_flag = false
+[INIT-PART] 2 :: Random part cutcost = 225.79498, balance_flag = false
+[INIT-PART] 3 :: Random part cutcost = 242.91531, balance_flag = false
+[INIT-PART] 4 :: Random part cutcost = 275.49072, balance_flag = false
+[INIT-PART] 5 :: Random part cutcost = 289.18286, balance_flag = false
+[INIT-PART] 6 :: Random part cutcost = 227.07285, balance_flag = false
+[INIT-PART] 7 :: Random part cutcost = 252.86394, balance_flag = false
+[INIT-PART] 8 :: Random part cutcost = 220.63373, balance_flag = false
+[INIT-PART] 9 :: Random part cutcost = 285.30927, balance_flag = false
+[INIT-PART] 10 :: Random part cutcost = 262.63275, balance_flag = false
+[INIT-PART] 11 :: Random part cutcost = 197.44066, balance_flag = false
+[INIT-PART] 12 :: Random part cutcost = 225.63776, balance_flag = false
+[INIT-PART] 13 :: Random part cutcost = 238.07733, balance_flag = false
+[INIT-PART] 14 :: Random part cutcost = 242.8051, balance_flag = false
+[INIT-PART] 15 :: Random part cutcost = 264.34308, balance_flag = false
+[INIT-PART] 16 :: Random part cutcost = 206.50244, balance_flag = false
+[INIT-PART] 17 :: Random part cutcost = 258.53503, balance_flag = false
+[INIT-PART] 18 :: Random part cutcost = 297.15747, balance_flag = false
+[INIT-PART] 19 :: Random part cutcost = 229.0765, balance_flag = false
+[INIT-PART] 20 :: Random part cutcost = 296.35275, balance_flag = false
+[INIT-PART] 21 :: Random part cutcost = 200.30386, balance_flag = false
+[INIT-PART] 22 :: Random part cutcost = 295.4862, balance_flag = true
+[INIT-PART] 23 :: Random part cutcost = 244.45207, balance_flag = false
+[INIT-PART] 24 :: Random part cutcost = 246.13522, balance_flag = false
+[INIT-PART] 25 :: Random part cutcost = 247.78409, balance_flag = false
+[INIT-PART] 26 :: Random part cutcost = 232.76276, balance_flag = false
+[INIT-PART] 27 :: Random part cutcost = 262.63275, balance_flag = false
+[INIT-PART] 28 :: Random part cutcost = 284.68164, balance_flag = false
+[INIT-PART] 29 :: Random part cutcost = 195.42638, balance_flag = false
+[INIT-PART] 30 :: Random part cutcost = 304.3932, balance_flag = false
+[INIT-PART] 31 :: Random part cutcost = 197.44066, balance_flag = false
+[INIT-PART] 32 :: Random part cutcost = 298.89758, balance_flag = false
+[INIT-PART] 33 :: Random part cutcost = 296.35275, balance_flag = false
+[INIT-PART] 34 :: Random part cutcost = 224.623, balance_flag = false
+[INIT-PART] 35 :: Random part cutcost = 238.73097, balance_flag = false
+[INIT-PART] 36 :: Random part cutcost = 257.35547, balance_flag = false
+[INIT-PART] 37 :: Random part cutcost = 269.75998, balance_flag = false
+[INIT-PART] 38 :: Random part cutcost = 220.53172, balance_flag = false
+[INIT-PART] 39 :: Random part cutcost = 246.36348, balance_flag = false
+[INIT-PART] 40 :: Random part cutcost = 255.16095, balance_flag = false
+[INIT-PART] 41 :: Random part cutcost = 274.10284, balance_flag = false
+[INIT-PART] 42 :: Random part cutcost = 297.15747, balance_flag = false
+[INIT-PART] 43 :: Random part cutcost = 215.84097, balance_flag = false
+[INIT-PART] 44 :: Random part cutcost = 252.86394, balance_flag = false
+[INIT-PART] 45 :: Random part cutcost = 214.67502, balance_flag = false
+[INIT-PART] 46 :: Random part cutcost = 274.10284, balance_flag = false
+[INIT-PART] 47 :: Random part cutcost = 256.17163, balance_flag = false
+[INIT-PART] 48 :: Random part cutcost = 255.18536, balance_flag = false
+[INIT-PART] 49 :: Random part cutcost = 269.82947, balance_flag = false
+[INIT-PART] 50 :: Random part cutcost = 265.18744, balance_flag = false
+[INIT-PART] 51 :: Random part cutcost = 225.79498, balance_flag = false
+[INIT-PART] 52 :: Random part cutcost = 269.75998, balance_flag = false
+[INIT-PART] 53 :: Random part cutcost = 234.9032, balance_flag = false
+[INIT-PART] 54 :: Random part cutcost = 255.35641, balance_flag = false
+[INIT-PART] 55 :: Random part cutcost = 252.50113, balance_flag = false
+[INIT-PART] 56 :: Random part cutcost = 313.4029, balance_flag = false
+[INIT-PART] 57 :: Random part cutcost = 220.53172, balance_flag = false
+[INIT-PART] 58 :: Random part cutcost = 257.35547, balance_flag = false
+[INIT-PART] 59 :: Random part cutcost = 246.13522, balance_flag = false
+[INIT-PART] 60 :: Random part cutcost = 297.15747, balance_flag = false
+[INIT-PART] 61 :: Random part cutcost = 251.38467, balance_flag = false
+[INIT-PART] 62 :: Random part cutcost = 257.17722, balance_flag = false
+[INIT-PART] 63 :: Random part cutcost = 201.80269, balance_flag = false
+[INIT-PART] 64 :: Random part cutcost = 195.42638, balance_flag = false
+[INIT-PART] 65 :: Random part cutcost = 247.78409, balance_flag = false
+[INIT-PART] 66 :: Random part cutcost = 216.35858, balance_flag = false
+[INIT-PART] 67 :: Random part cutcost = 204.43196, balance_flag = false
+[INIT-PART] 68 :: Random part cutcost = 295.4862, balance_flag = true
+[INIT-PART] 69 :: Random part cutcost = 199.85039, balance_flag = false
+[INIT-PART] 70 :: Random part cutcost = 218.28818, balance_flag = false
+[INIT-PART] 71 :: Random part cutcost = 231.10953, balance_flag = false
+[INIT-PART] 72 :: Random part cutcost = 254.57886, balance_flag = false
+[INIT-PART] 73 :: Random part cutcost = 236.29707, balance_flag = false
+[INIT-PART] 74 :: Random part cutcost = 246.13522, balance_flag = false
+[INIT-PART] 75 :: Random part cutcost = 233.6614, balance_flag = false
+[INIT-PART] 76 :: Random part cutcost = 228.55931, balance_flag = false
+[INIT-PART] 77 :: Random part cutcost = 277.25623, balance_flag = false
+[INIT-PART] 78 :: Random part cutcost = 242.91531, balance_flag = false
+[INIT-PART] 79 :: Random part cutcost = 233.6614, balance_flag = false
+[INIT-PART] 80 :: Random part cutcost = 256.17163, balance_flag = false
+[INIT-PART] 81 :: Random part cutcost = 266.9778, balance_flag = false
+[INIT-PART] 82 :: Random part cutcost = 247.37332, balance_flag = false
+[INIT-PART] 83 :: Random part cutcost = 295.4862, balance_flag = true
+[INIT-PART] 84 :: Random part cutcost = 302.61386, balance_flag = false
+[INIT-PART] 85 :: Random part cutcost = 313.4029, balance_flag = false
+[INIT-PART] 86 :: Random part cutcost = 251.38467, balance_flag = false
+[INIT-PART] 87 :: Random part cutcost = 271.6728, balance_flag = false
+[INIT-PART] 88 :: Random part cutcost = 247.37332, balance_flag = false
+[INIT-PART] 89 :: Random part cutcost = 222.29167, balance_flag = false
+[INIT-PART] 90 :: Random part cutcost = 298.89758, balance_flag = false
+[INIT-PART] 91 :: Random part cutcost = 223.10553, balance_flag = false
+[INIT-PART] 92 :: Random part cutcost = 255.16095, balance_flag = false
+[INIT-PART] 93 :: Random part cutcost = 257.17722, balance_flag = false
+[INIT-PART] 94 :: Random part cutcost = 232.93341, balance_flag = false
+[INIT-PART] 95 :: Random part cutcost = 255.16095, balance_flag = false
+[INIT-PART] 96 :: Random part cutcost = 251.01608, balance_flag = false
+[INIT-PART] 97 :: Random part cutcost = 297.15747, balance_flag = false
+[INIT-PART] 98 :: Random part cutcost = 244.45207, balance_flag = false
+[INIT-PART] 99 :: Random part cutcost = 262.63275, balance_flag = false
+[INIT-PART] 0 :: Random VILE part cutcost = 275.25955, balance_flag = false
+[INIT-PART] 1 :: Random VILE part cutcost = 249.6781, balance_flag = false
+[INIT-PART] 2 :: Random VILE part cutcost = 304.3932, balance_flag = false
+[INIT-PART] 3 :: Random VILE part cutcost = 199.85039, balance_flag = false
+[INIT-PART] 4 :: Random VILE part cutcost = 204.43196, balance_flag = false
+[INIT-PART] 5 :: Random VILE part cutcost = 227.20192, balance_flag = false
+[INIT-PART] 6 :: Random VILE part cutcost = 187.57632, balance_flag = false
+[INIT-PART] 7 :: Random VILE part cutcost = 161.29167, balance_flag = false
+[INIT-PART] 8 :: Random VILE part cutcost = 221.20972, balance_flag = false
+[INIT-PART] 9 :: Random VILE part cutcost = 266.9778, balance_flag = false
+[INIT-PART] 10 :: Random VILE part cutcost = 235.13602, balance_flag = false
+[INIT-PART] 11 :: Random VILE part cutcost = 214.50604, balance_flag = false
+[INIT-PART] 12 :: Random VILE part cutcost = 195.42638, balance_flag = false
+[INIT-PART] 13 :: Random VILE part cutcost = 233.6614, balance_flag = false
+[INIT-PART] 14 :: Random VILE part cutcost = 254.57886, balance_flag = false
+[INIT-PART] 15 :: Random VILE part cutcost = 238.73097, balance_flag = false
+[INIT-PART] 16 :: Random VILE part cutcost = 284.68164, balance_flag = false
+[INIT-PART] 17 :: Random VILE part cutcost = 195.42638, balance_flag = false
+[INIT-PART] 18 :: Random VILE part cutcost = 238.07733, balance_flag = false
+[INIT-PART] 19 :: Random VILE part cutcost = 295.4862, balance_flag = true
+[INIT-PART] 20 :: Random VILE part cutcost = 266.9778, balance_flag = false
+[INIT-PART] 21 :: Random VILE part cutcost = 247.00577, balance_flag = false
+[INIT-PART] 22 :: Random VILE part cutcost = 241.39789, balance_flag = false
+[INIT-PART] 23 :: Random VILE part cutcost = 247.37332, balance_flag = false
+[INIT-PART] 24 :: Random VILE part cutcost = 241.39789, balance_flag = false
+[INIT-PART] 25 :: Random VILE part cutcost = 223.10553, balance_flag = false
+[INIT-PART] 26 :: Random VILE part cutcost = 257.35547, balance_flag = false
+[INIT-PART] 27 :: Random VILE part cutcost = 227.07285, balance_flag = false
+[INIT-PART] 28 :: Random VILE part cutcost = 264.647, balance_flag = false
+[INIT-PART] 29 :: Random VILE part cutcost = 262.63275, balance_flag = false
+[INIT-PART] 30 :: Random VILE part cutcost = 240.78041, balance_flag = false
+[INIT-PART] 31 :: Random VILE part cutcost = 257.95605, balance_flag = true
+[INIT-PART] 32 :: Random VILE part cutcost = 275.49072, balance_flag = false
+[INIT-PART] 33 :: Random VILE part cutcost = 254.57886, balance_flag = false
+[INIT-PART] 34 :: Random VILE part cutcost = 220.83612, balance_flag = false
+[INIT-PART] 35 :: Random VILE part cutcost = 247.00577, balance_flag = false
+[INIT-PART] 36 :: Random VILE part cutcost = 224.623, balance_flag = false
+[INIT-PART] 37 :: Random VILE part cutcost = 218.28818, balance_flag = false
+[INIT-PART] 38 :: Random VILE part cutcost = 199.85039, balance_flag = false
+[INIT-PART] 39 :: Random VILE part cutcost = 295.09152, balance_flag = false
+[INIT-PART] 40 :: Random VILE part cutcost = 271.6728, balance_flag = false
+[INIT-PART] 41 :: Random VILE part cutcost = 257.95605, balance_flag = true
+[INIT-PART] 42 :: Random VILE part cutcost = 227.07285, balance_flag = false
+[INIT-PART] 43 :: Random VILE part cutcost = 235.13602, balance_flag = false
+[INIT-PART] 44 :: Random VILE part cutcost = 262.63275, balance_flag = false
+[INIT-PART] 45 :: Random VILE part cutcost = 242.91531, balance_flag = false
+[INIT-PART] 46 :: Random VILE part cutcost = 236.96169, balance_flag = false
+[INIT-PART] 47 :: Random VILE part cutcost = 274.10284, balance_flag = false
+[INIT-PART] 48 :: Random VILE part cutcost = 213.92465, balance_flag = false
+[INIT-PART] 49 :: Random VILE part cutcost = 254.57886, balance_flag = false
+[INIT-PART] 50 :: Random VILE part cutcost = 255.16095, balance_flag = false
+[INIT-PART] 51 :: Random VILE part cutcost = 264.647, balance_flag = false
+[INIT-PART] 52 :: Random VILE part cutcost = 231.74586, balance_flag = false
+[INIT-PART] 53 :: Random VILE part cutcost = 214.50604, balance_flag = false
+[INIT-PART] 54 :: Random VILE part cutcost = 271.6728, balance_flag = false
+[INIT-PART] 55 :: Random VILE part cutcost = 231.74586, balance_flag = false
+[INIT-PART] 56 :: Random VILE part cutcost = 247.00577, balance_flag = false
+[INIT-PART] 57 :: Random VILE part cutcost = 275.25955, balance_flag = false
+[INIT-PART] 58 :: Random VILE part cutcost = 288.15466, balance_flag = false
+[INIT-PART] 59 :: Random VILE part cutcost = 241.14447, balance_flag = false
+[INIT-PART] 60 :: Random VILE part cutcost = 295.09152, balance_flag = false
+[INIT-PART] 61 :: Random VILE part cutcost = 247.37332, balance_flag = false
+[INIT-PART] 62 :: Random VILE part cutcost = 209.16902, balance_flag = false
+[INIT-PART] 63 :: Random VILE part cutcost = 237.83026, balance_flag = false
+[INIT-PART] 64 :: Random VILE part cutcost = 221.20972, balance_flag = false
+[INIT-PART] 65 :: Random VILE part cutcost = 235.57153, balance_flag = false
+[INIT-PART] 66 :: Random VILE part cutcost = 209.16902, balance_flag = false
+[INIT-PART] 67 :: Random VILE part cutcost = 252.50113, balance_flag = false
+[INIT-PART] 68 :: Random VILE part cutcost = 235.13602, balance_flag = false
+[INIT-PART] 69 :: Random VILE part cutcost = 271.6728, balance_flag = false
+[INIT-PART] 70 :: Random VILE part cutcost = 233.6614, balance_flag = false
+[INIT-PART] 71 :: Random VILE part cutcost = 237.75375, balance_flag = false
+[INIT-PART] 72 :: Random VILE part cutcost = 264.647, balance_flag = false
+[INIT-PART] 73 :: Random VILE part cutcost = 197.44066, balance_flag = false
+[INIT-PART] 74 :: Random VILE part cutcost = 304.78613, balance_flag = false
+[INIT-PART] 75 :: Random VILE part cutcost = 269.75998, balance_flag = false
+[INIT-PART] 76 :: Random VILE part cutcost = 215.84097, balance_flag = false
+[INIT-PART] 77 :: Random VILE part cutcost = 237.83026, balance_flag = false
+[INIT-PART] 78 :: Random VILE part cutcost = 298.89758, balance_flag = false
+[INIT-PART] 79 :: Random VILE part cutcost = 218.28818, balance_flag = false
+[INIT-PART] 80 :: Random VILE part cutcost = 220.63373, balance_flag = false
+[INIT-PART] 81 :: Random VILE part cutcost = 231.10953, balance_flag = false
+[INIT-PART] 82 :: Random VILE part cutcost = 257.0971, balance_flag = false
+[INIT-PART] 83 :: Random VILE part cutcost = 234.66551, balance_flag = false
+[INIT-PART] 84 :: Random VILE part cutcost = 235.57153, balance_flag = false
+[INIT-PART] 85 :: Random VILE part cutcost = 223.10553, balance_flag = false
+[INIT-PART] 86 :: Random VILE part cutcost = 277.25623, balance_flag = false
+[INIT-PART] 87 :: Random VILE part cutcost = 244.45207, balance_flag = false
+[INIT-PART] 88 :: Random VILE part cutcost = 304.3932, balance_flag = false
+[INIT-PART] 89 :: Random VILE part cutcost = 229.35483, balance_flag = false
+[INIT-PART] 90 :: Random VILE part cutcost = 215.84097, balance_flag = false
+[INIT-PART] 91 :: Random VILE part cutcost = 234.66551, balance_flag = false
+[INIT-PART] 92 :: Random VILE part cutcost = 233.6614, balance_flag = false
+[INIT-PART] 93 :: Random VILE part cutcost = 236.29707, balance_flag = false
+[INIT-PART] 94 :: Random VILE part cutcost = 264.34308, balance_flag = false
+[INIT-PART] 95 :: Random VILE part cutcost = 216.35858, balance_flag = false
+[INIT-PART] 96 :: Random VILE part cutcost = 289.18286, balance_flag = false
+[INIT-PART] 97 :: Random VILE part cutcost = 306.05334, balance_flag = false
+[INIT-PART] 98 :: Random VILE part cutcost = 206.50244, balance_flag = false
+[INIT-PART] 99 :: Random VILE part cutcost = 257.0971, balance_flag = false
+[INFO PAR-0165] Reset the max_move to 100
+[INFO PAR-0166] Reset the refiner_iters to 10
+[INIT-PART] :: VILE part cutcost = 229.35483, balance_flag = false
+[STATUS] Optimal ILP-based Partitioning Starts !
+All the hyperedges will be used in the ILP-based partitioning!
+[STATUS] Optimal ILP-based Partitioning Finished !
+[INIT-PART] :: ILP part cutcost = 257.95605, balance_flag = true
+[INFO PAR-0155] Number of chosen best initial solutions = 10
+[INFO PAR-0156] Best initial cutcost 257.95605
+[Refinement] Level 1 :: num_vertices = 11, num_hyperedges = 57, cutcost = 163.79015, best_solution_id = 7
+[Refinement] Level 2 :: num_vertices = 17, num_hyperedges = 75, cutcost = 198.05516, best_solution_id = 7
+[Refinement] Level 3 :: num_vertices = 26, num_hyperedges = 86, cutcost = 208.94669, best_solution_id = 7
+[Refinement] Level 4 :: num_vertices = 40, num_hyperedges = 111, cutcost = 228.34482, best_solution_id = 7
+[Refinement] Level 5 :: num_vertices = 61, num_hyperedges = 146, cutcost = 240.8995, best_solution_id = 8
+[Refinement] Level 6 :: num_vertices = 92, num_hyperedges = 178, cutcost = 232.26875, best_solution_id = 7
+[Refinement] Level 7 :: num_vertices = 138, num_hyperedges = 219, cutcost = 221.03667, best_solution_id = 7
+[Refinement] Level 8 :: num_vertices = 208, num_hyperedges = 277, cutcost = 211.99039, best_solution_id = 7
+[Refinement] Level 9 :: num_vertices = 312, num_hyperedges = 357, cutcost = 215.26584, best_solution_id = 7
+[Refinement] Level 10 :: num_vertices = 469, num_hyperedges = 451, cutcost = 211.01445, best_solution_id = 0
+[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 72, num_hyperedges = 108
+=========================================
+[STATUS] Running FC multilevel coarsening
+=========================================
+[COARSEN] Level 0 :: num_vertices = 72, num_hyperedges = 108, num_timing_paths = 36
+[COARSEN] Level 1 :: num_vertices = 48, num_hyperedges = 88, num_timing_paths = 33
+[COARSEN] Level 2 :: num_vertices = 32, num_hyperedges = 76, num_timing_paths = 31
+[COARSEN] Level 3 :: num_vertices = 21, num_hyperedges = 68, num_timing_paths = 26
+[COARSEN] Level 4 :: num_vertices = 14, num_hyperedges = 58, num_timing_paths = 24
+[COARSEN] Level 5 :: num_vertices = 10, num_hyperedges = 49, num_timing_paths = 23
+[STATUS] Optimal ILP-based Partitioning Starts !
+All the hyperedges will be used in the ILP-based partitioning!
+[STATUS] Optimal ILP-based Partitioning Finished !
+[Refinement] Level 1 :: num_vertices = 14, num_hyperedges = 58, cutcost = 137.34012, best_solution_id = 0
+[Refinement] Level 2 :: num_vertices = 21, num_hyperedges = 68, cutcost = 145.03775, best_solution_id = 0
+[Refinement] Level 3 :: num_vertices = 32, num_hyperedges = 76, cutcost = 160.46646, best_solution_id = 0
+[Refinement] Level 4 :: num_vertices = 48, num_hyperedges = 88, cutcost = 167.71417, best_solution_id = 0
+[Refinement] Level 5 :: num_vertices = 72, num_hyperedges = 108, cutcost = 178.09973, best_solution_id = 0
+[INFO PAR-0158] Statistics of cut-overlay solution:
+=========================================
+[STATUS] Running FC multilevel coarsening
+=========================================
+[COARSEN] Level 0 :: num_vertices = 469, num_hyperedges = 451, num_timing_paths = 52
+[COARSEN] Level 1 :: num_vertices = 312, num_hyperedges = 348, num_timing_paths = 52
+[COARSEN] Level 2 :: num_vertices = 208, num_hyperedges = 279, num_timing_paths = 52
+[COARSEN] Level 3 :: num_vertices = 138, num_hyperedges = 223, num_timing_paths = 48
+[COARSEN] Level 4 :: num_vertices = 92, num_hyperedges = 179, num_timing_paths = 43
+[COARSEN] Level 5 :: num_vertices = 61, num_hyperedges = 145, num_timing_paths = 36
+[COARSEN] Level 6 :: num_vertices = 40, num_hyperedges = 105, num_timing_paths = 30
+[COARSEN] Level 7 :: num_vertices = 26, num_hyperedges = 83, num_timing_paths = 27
+[COARSEN] Level 8 :: num_vertices = 17, num_hyperedges = 66, num_timing_paths = 24
+[COARSEN] Level 9 :: num_vertices = 11, num_hyperedges = 55, num_timing_paths = 21
+[COARSEN] Level 10 :: num_vertices = 9, num_hyperedges = 47, num_timing_paths = 20
+======================================================================
+[STATUS] Initial Partitioning 
+======================================================================
+[INFO PAR-0163] Set the max_move to 9
+[INIT-PART] 0 :: Random part cutcost = 204.69397, balance_flag = false
+[INIT-PART] 1 :: Random part cutcost = 218.98193, balance_flag = false
+[INIT-PART] 2 :: Random part cutcost = 207.52188, balance_flag = false
+[INIT-PART] 3 :: Random part cutcost = 192.94418, balance_flag = false
+[INIT-PART] 4 :: Random part cutcost = 200.55899, balance_flag = false
+[INIT-PART] 5 :: Random part cutcost = 153.93053, balance_flag = false
+[INIT-PART] 6 :: Random part cutcost = 187.44284, balance_flag = false
+[INIT-PART] 7 :: Random part cutcost = 214.71432, balance_flag = false
+[INIT-PART] 8 :: Random part cutcost = 178.02588, balance_flag = false
+[INIT-PART] 9 :: Random part cutcost = 210.76434, balance_flag = true
+[INIT-PART] 10 :: Random part cutcost = 212.00708, balance_flag = false
+[INIT-PART] 11 :: Random part cutcost = 189.7243, balance_flag = false
+[INIT-PART] 12 :: Random part cutcost = 194.4299, balance_flag = false
+[INIT-PART] 13 :: Random part cutcost = 215.91577, balance_flag = false
+[INIT-PART] 14 :: Random part cutcost = 196.25958, balance_flag = false
+[INIT-PART] 15 :: Random part cutcost = 216.96902, balance_flag = true
+[INIT-PART] 16 :: Random part cutcost = 212.16725, balance_flag = false
+[INIT-PART] 17 :: Random part cutcost = 236.9349, balance_flag = false
+[INIT-PART] 18 :: Random part cutcost = 169.16779, balance_flag = false
+[INIT-PART] 19 :: Random part cutcost = 192.55817, balance_flag = true
+[INIT-PART] 20 :: Random part cutcost = 167.7406, balance_flag = false
+[INIT-PART] 21 :: Random part cutcost = 203.92766, balance_flag = false
+[INIT-PART] 22 :: Random part cutcost = 148.93877, balance_flag = false
+[INIT-PART] 23 :: Random part cutcost = 223.63286, balance_flag = false
+[INIT-PART] 24 :: Random part cutcost = 218.45891, balance_flag = true
+[INIT-PART] 25 :: Random part cutcost = 171.50256, balance_flag = false
+[INIT-PART] 26 :: Random part cutcost = 193.10039, balance_flag = false
+[INIT-PART] 27 :: Random part cutcost = 212.00708, balance_flag = false
+[INIT-PART] 28 :: Random part cutcost = 178.99329, balance_flag = false
+[INIT-PART] 29 :: Random part cutcost = 213.47171, balance_flag = false
+[INIT-PART] 30 :: Random part cutcost = 185.91092, balance_flag = true
+[INIT-PART] 31 :: Random part cutcost = 189.7243, balance_flag = false
+[INIT-PART] 32 :: Random part cutcost = 204.36195, balance_flag = false
+[INIT-PART] 33 :: Random part cutcost = 221.12418, balance_flag = true
+[INIT-PART] 34 :: Random part cutcost = 212.19067, balance_flag = true
+[INIT-PART] 35 :: Random part cutcost = 217.91544, balance_flag = false
+[INIT-PART] 36 :: Random part cutcost = 213.86827, balance_flag = true
+[INIT-PART] 37 :: Random part cutcost = 244.2905, balance_flag = false
+[INIT-PART] 38 :: Random part cutcost = 191.18573, balance_flag = false
+[INIT-PART] 39 :: Random part cutcost = 233.69397, balance_flag = false
+[INIT-PART] 40 :: Random part cutcost = 211.44221, balance_flag = false
+[INIT-PART] 41 :: Random part cutcost = 190.71712, balance_flag = false
+[INIT-PART] 42 :: Random part cutcost = 169.16779, balance_flag = false
+[INIT-PART] 43 :: Random part cutcost = 219.6356, balance_flag = false
+[INIT-PART] 44 :: Random part cutcost = 214.71432, balance_flag = false
+[INIT-PART] 45 :: Random part cutcost = 204.33093, balance_flag = false
+[INIT-PART] 46 :: Random part cutcost = 190.71712, balance_flag = false
+[INIT-PART] 47 :: Random part cutcost = 213.86827, balance_flag = true
+[INIT-PART] 48 :: Random part cutcost = 246.24403, balance_flag = false
+[INIT-PART] 49 :: Random part cutcost = 226.26698, balance_flag = false
+[INIT-PART] 50 :: Random part cutcost = 194.26088, balance_flag = false
+[INIT-PART] 51 :: Random part cutcost = 207.52188, balance_flag = false
+[INIT-PART] 52 :: Random part cutcost = 244.2905, balance_flag = false
+[INIT-PART] 53 :: Random part cutcost = 230.74045, balance_flag = false
+[INIT-PART] 54 :: Random part cutcost = 196.46506, balance_flag = false
+[INIT-PART] 55 :: Random part cutcost = 207.3118, balance_flag = false
+[INIT-PART] 56 :: Random part cutcost = 180.45923, balance_flag = true
+[INIT-PART] 57 :: Random part cutcost = 191.18573, balance_flag = false
+[INIT-PART] 58 :: Random part cutcost = 213.86827, balance_flag = true
+[INIT-PART] 59 :: Random part cutcost = 183.9779, balance_flag = false
+[INIT-PART] 60 :: Random part cutcost = 185.91092, balance_flag = true
+[INIT-PART] 61 :: Random part cutcost = 216.48119, balance_flag = false
+[INIT-PART] 62 :: Random part cutcost = 168.04541, balance_flag = false
+[INIT-PART] 63 :: Random part cutcost = 185.10538, balance_flag = false
+[INIT-PART] 64 :: Random part cutcost = 213.47171, balance_flag = false
+[INIT-PART] 65 :: Random part cutcost = 171.50256, balance_flag = false
+[INIT-PART] 66 :: Random part cutcost = 204.69397, balance_flag = false
+[INIT-PART] 67 :: Random part cutcost = 192.55817, balance_flag = true
+[INIT-PART] 68 :: Random part cutcost = 148.93877, balance_flag = false
+[INIT-PART] 69 :: Random part cutcost = 195.1133, balance_flag = false
+[INIT-PART] 70 :: Random part cutcost = 218.32988, balance_flag = false
+[INIT-PART] 71 :: Random part cutcost = 192.55817, balance_flag = true
+[INIT-PART] 72 :: Random part cutcost = 239.30919, balance_flag = false
+[INIT-PART] 73 :: Random part cutcost = 200.1077, balance_flag = false
+[INIT-PART] 74 :: Random part cutcost = 183.9779, balance_flag = false
+[INIT-PART] 75 :: Random part cutcost = 198.64163, balance_flag = false
+[INIT-PART] 76 :: Random part cutcost = 177.24072, balance_flag = false
+[INIT-PART] 77 :: Random part cutcost = 174.61044, balance_flag = false
+[INIT-PART] 78 :: Random part cutcost = 192.94418, balance_flag = false
+[INIT-PART] 79 :: Random part cutcost = 198.64163, balance_flag = false
+[INIT-PART] 80 :: Random part cutcost = 213.86827, balance_flag = true
+[INIT-PART] 81 :: Random part cutcost = 190.26068, balance_flag = false
+[INIT-PART] 82 :: Random part cutcost = 195.23059, balance_flag = false
+[INIT-PART] 83 :: Random part cutcost = 148.93877, balance_flag = false
+[INIT-PART] 84 :: Random part cutcost = 180.45923, balance_flag = true
+[INIT-PART] 85 :: Random part cutcost = 180.45923, balance_flag = true
+[INIT-PART] 86 :: Random part cutcost = 216.48119, balance_flag = false
+[INIT-PART] 87 :: Random part cutcost = 189.50017, balance_flag = false
+[INIT-PART] 88 :: Random part cutcost = 195.23059, balance_flag = false
+[INIT-PART] 89 :: Random part cutcost = 203.7249, balance_flag = false
+[INIT-PART] 90 :: Random part cutcost = 204.36195, balance_flag = false
+[INIT-PART] 91 :: Random part cutcost = 212.51793, balance_flag = false
+[INIT-PART] 92 :: Random part cutcost = 211.44221, balance_flag = false
+[INIT-PART] 93 :: Random part cutcost = 168.04541, balance_flag = false
+[INIT-PART] 94 :: Random part cutcost = 180.45923, balance_flag = true
+[INIT-PART] 95 :: Random part cutcost = 211.44221, balance_flag = false
+[INIT-PART] 96 :: Random part cutcost = 217.45024, balance_flag = false
+[INIT-PART] 97 :: Random part cutcost = 169.16779, balance_flag = false
+[INIT-PART] 98 :: Random part cutcost = 223.63286, balance_flag = false
+[INIT-PART] 99 :: Random part cutcost = 213.86827, balance_flag = true
+[INIT-PART] 0 :: Random VILE part cutcost = 234.14159, balance_flag = false
+[INIT-PART] 1 :: Random VILE part cutcost = 210.76434, balance_flag = true
+[INIT-PART] 2 :: Random VILE part cutcost = 185.91092, balance_flag = true
+[INIT-PART] 3 :: Random VILE part cutcost = 195.1133, balance_flag = false
+[INIT-PART] 4 :: Random VILE part cutcost = 192.55817, balance_flag = true
+[INIT-PART] 5 :: Random VILE part cutcost = 208.09908, balance_flag = true
+[INIT-PART] 6 :: Random VILE part cutcost = 185.56586, balance_flag = false
+[INIT-PART] 7 :: Random VILE part cutcost = 218.45891, balance_flag = true
+[INIT-PART] 8 :: Random VILE part cutcost = 210.80737, balance_flag = false
+[INIT-PART] 9 :: Random VILE part cutcost = 190.26068, balance_flag = false
+[INIT-PART] 10 :: Random VILE part cutcost = 194.17963, balance_flag = false
+[INIT-PART] 11 :: Random VILE part cutcost = 198.75711, balance_flag = false
+[INIT-PART] 12 :: Random VILE part cutcost = 213.47171, balance_flag = false
+[INIT-PART] 13 :: Random VILE part cutcost = 198.64163, balance_flag = false
+[INIT-PART] 14 :: Random VILE part cutcost = 239.30919, balance_flag = false
+[INIT-PART] 15 :: Random VILE part cutcost = 217.91544, balance_flag = false
+[INIT-PART] 16 :: Random VILE part cutcost = 178.99329, balance_flag = false
+[INIT-PART] 17 :: Random VILE part cutcost = 213.47171, balance_flag = false
+[INIT-PART] 18 :: Random VILE part cutcost = 215.91577, balance_flag = false
+[INIT-PART] 19 :: Random VILE part cutcost = 148.93877, balance_flag = false
+[INIT-PART] 20 :: Random VILE part cutcost = 190.26068, balance_flag = false
+[INIT-PART] 21 :: Random VILE part cutcost = 231.23036, balance_flag = false
+[INIT-PART] 22 :: Random VILE part cutcost = 207.13416, balance_flag = false
+[INIT-PART] 23 :: Random VILE part cutcost = 195.23059, balance_flag = false
+[INIT-PART] 24 :: Random VILE part cutcost = 207.13416, balance_flag = false
+[INIT-PART] 25 :: Random VILE part cutcost = 212.51793, balance_flag = false
+[INIT-PART] 26 :: Random VILE part cutcost = 213.86827, balance_flag = true
+[INIT-PART] 27 :: Random VILE part cutcost = 187.44284, balance_flag = false
+[INIT-PART] 28 :: Random VILE part cutcost = 198.10641, balance_flag = false
+[INIT-PART] 29 :: Random VILE part cutcost = 212.00708, balance_flag = false
+[INIT-PART] 30 :: Random VILE part cutcost = 220.12552, balance_flag = false
+[INIT-PART] 31 :: Random VILE part cutcost = 210.31099, balance_flag = false
+[INIT-PART] 32 :: Random VILE part cutcost = 200.55899, balance_flag = false
+[INIT-PART] 33 :: Random VILE part cutcost = 239.30919, balance_flag = false
+[INIT-PART] 34 :: Random VILE part cutcost = 218.98193, balance_flag = false
+[INIT-PART] 35 :: Random VILE part cutcost = 231.23036, balance_flag = false
+[INIT-PART] 36 :: Random VILE part cutcost = 212.19067, balance_flag = true
+[INIT-PART] 37 :: Random VILE part cutcost = 218.32988, balance_flag = false
+[INIT-PART] 38 :: Random VILE part cutcost = 195.1133, balance_flag = false
+[INIT-PART] 39 :: Random VILE part cutcost = 221.12418, balance_flag = true
+[INIT-PART] 40 :: Random VILE part cutcost = 189.50017, balance_flag = false
+[INIT-PART] 41 :: Random VILE part cutcost = 197.74072, balance_flag = false
+[INIT-PART] 42 :: Random VILE part cutcost = 187.44284, balance_flag = false
+[INIT-PART] 43 :: Random VILE part cutcost = 194.17963, balance_flag = false
+[INIT-PART] 44 :: Random VILE part cutcost = 213.86827, balance_flag = true
+[INIT-PART] 45 :: Random VILE part cutcost = 212.19067, balance_flag = true
+[INIT-PART] 46 :: Random VILE part cutcost = 218.45891, balance_flag = true
+[INIT-PART] 47 :: Random VILE part cutcost = 190.71712, balance_flag = false
+[INIT-PART] 48 :: Random VILE part cutcost = 192.55817, balance_flag = true
+[INIT-PART] 49 :: Random VILE part cutcost = 239.30919, balance_flag = false
+[INIT-PART] 50 :: Random VILE part cutcost = 211.44221, balance_flag = false
+[INIT-PART] 51 :: Random VILE part cutcost = 198.10641, balance_flag = false
+[INIT-PART] 52 :: Random VILE part cutcost = 218.28047, balance_flag = false
+[INIT-PART] 53 :: Random VILE part cutcost = 198.75711, balance_flag = false
+[INIT-PART] 54 :: Random VILE part cutcost = 189.50017, balance_flag = false
+[INIT-PART] 55 :: Random VILE part cutcost = 218.28047, balance_flag = false
+[INIT-PART] 56 :: Random VILE part cutcost = 216.96902, balance_flag = true
+[INIT-PART] 57 :: Random VILE part cutcost = 234.14159, balance_flag = false
+[INIT-PART] 58 :: Random VILE part cutcost = 216.88318, balance_flag = false
+[INIT-PART] 59 :: Random VILE part cutcost = 184.3803, balance_flag = false
+[INIT-PART] 60 :: Random VILE part cutcost = 221.12418, balance_flag = true
+[INIT-PART] 61 :: Random VILE part cutcost = 195.23059, balance_flag = false
+[INIT-PART] 62 :: Random VILE part cutcost = 207.41153, balance_flag = false
+[INIT-PART] 63 :: Random VILE part cutcost = 212.19067, balance_flag = true
+[INIT-PART] 64 :: Random VILE part cutcost = 210.80737, balance_flag = false
+[INIT-PART] 65 :: Random VILE part cutcost = 218.92987, balance_flag = false
+[INIT-PART] 66 :: Random VILE part cutcost = 207.41153, balance_flag = false
+[INIT-PART] 67 :: Random VILE part cutcost = 207.3118, balance_flag = false
+[INIT-PART] 68 :: Random VILE part cutcost = 194.17963, balance_flag = false
+[INIT-PART] 69 :: Random VILE part cutcost = 189.50017, balance_flag = false
+[INIT-PART] 70 :: Random VILE part cutcost = 198.64163, balance_flag = false
+[INIT-PART] 71 :: Random VILE part cutcost = 212.19067, balance_flag = true
+[INIT-PART] 72 :: Random VILE part cutcost = 198.10641, balance_flag = false
+[INIT-PART] 73 :: Random VILE part cutcost = 189.7243, balance_flag = false
+[INIT-PART] 74 :: Random VILE part cutcost = 198.71727, balance_flag = false
+[INIT-PART] 75 :: Random VILE part cutcost = 244.2905, balance_flag = false
+[INIT-PART] 76 :: Random VILE part cutcost = 219.6356, balance_flag = false
+[INIT-PART] 77 :: Random VILE part cutcost = 216.96902, balance_flag = true
+[INIT-PART] 78 :: Random VILE part cutcost = 204.36195, balance_flag = false
+[INIT-PART] 79 :: Random VILE part cutcost = 218.32988, balance_flag = false
+[INIT-PART] 80 :: Random VILE part cutcost = 178.02588, balance_flag = false
+[INIT-PART] 81 :: Random VILE part cutcost = 192.55817, balance_flag = true
+[INIT-PART] 82 :: Random VILE part cutcost = 178.93022, balance_flag = false
+[INIT-PART] 83 :: Random VILE part cutcost = 214.81003, balance_flag = false
+[INIT-PART] 84 :: Random VILE part cutcost = 218.92987, balance_flag = false
+[INIT-PART] 85 :: Random VILE part cutcost = 212.51793, balance_flag = false
+[INIT-PART] 86 :: Random VILE part cutcost = 174.61044, balance_flag = false
+[INIT-PART] 87 :: Random VILE part cutcost = 223.63286, balance_flag = false
+[INIT-PART] 88 :: Random VILE part cutcost = 185.91092, balance_flag = true
+[INIT-PART] 89 :: Random VILE part cutcost = 218.45891, balance_flag = true
+[INIT-PART] 90 :: Random VILE part cutcost = 219.6356, balance_flag = false
+[INIT-PART] 91 :: Random VILE part cutcost = 214.81003, balance_flag = false
+[INIT-PART] 92 :: Random VILE part cutcost = 198.64163, balance_flag = false
+[INIT-PART] 93 :: Random VILE part cutcost = 200.1077, balance_flag = false
+[INIT-PART] 94 :: Random VILE part cutcost = 218.23961, balance_flag = false
+[INIT-PART] 95 :: Random VILE part cutcost = 204.69397, balance_flag = false
+[INIT-PART] 96 :: Random VILE part cutcost = 153.93053, balance_flag = false
+[INIT-PART] 97 :: Random VILE part cutcost = 187.08575, balance_flag = false
+[INIT-PART] 98 :: Random VILE part cutcost = 212.16725, balance_flag = false
+[INIT-PART] 99 :: Random VILE part cutcost = 178.93022, balance_flag = false
+[INFO PAR-0165] Reset the max_move to 100
+[INFO PAR-0166] Reset the refiner_iters to 10
+[INIT-PART] :: VILE part cutcost = 244.2905, balance_flag = false
+[STATUS] Optimal ILP-based Partitioning Starts !
+All the hyperedges will be used in the ILP-based partitioning!
+[STATUS] Optimal ILP-based Partitioning Finished !
+[INIT-PART] :: ILP part cutcost = 192.55817, balance_flag = true
+[INFO PAR-0155] Number of chosen best initial solutions = 10
+[INFO PAR-0156] Best initial cutcost 180.45923
+[Refinement] Level 1 :: num_vertices = 11, num_hyperedges = 55, cutcost = 186.07947, best_solution_id = 0
+[Refinement] Level 2 :: num_vertices = 17, num_hyperedges = 66, cutcost = 196.85571, best_solution_id = 0
+[Refinement] Level 3 :: num_vertices = 26, num_hyperedges = 83, cutcost = 206.42522, best_solution_id = 0
+[Refinement] Level 4 :: num_vertices = 40, num_hyperedges = 105, cutcost = 219.85814, best_solution_id = 0
+[Refinement] Level 5 :: num_vertices = 61, num_hyperedges = 145, cutcost = 244.26183, best_solution_id = 0
+[Refinement] Level 6 :: num_vertices = 92, num_hyperedges = 179, cutcost = 246.96985, best_solution_id = 0
+[Refinement] Level 7 :: num_vertices = 138, num_hyperedges = 223, cutcost = 249.67296, best_solution_id = 0
+[Refinement] Level 8 :: num_vertices = 208, num_hyperedges = 279, cutcost = 255.86497, best_solution_id = 0
+[Refinement] Level 9 :: num_vertices = 312, num_hyperedges = 348, cutcost = 216.99258, best_solution_id = 8
+[Refinement] Level 10 :: num_vertices = 469, num_hyperedges = 451, cutcost = 207.8421, best_solution_id = 8
+[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 44, num_hyperedges = 60
+[STATUS] Optimal ILP-based Partitioning Starts !
+All the hyperedges will be used in the ILP-based partitioning!
+[STATUS] Optimal ILP-based Partitioning Finished !
+[INFO PAR-0158] Statistics of cut-overlay solution:
+[INFO PAR-0151] Finish Candidate Solutions Generation
+[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 31, num_hyperedges = 48
+[STATUS] Optimal ILP-based Partitioning Starts !
+All the hyperedges will be used in the ILP-based partitioning!
+[STATUS] Optimal ILP-based Partitioning Finished !
+[INFO PAR-0158] Statistics of cut-overlay solution:
+[INFO PAR-0152] Finish Cut-Overlay Clustering and Optimal Partitioning
+=========================================
+[STATUS] Running FC multilevel coarsening
+=========================================
+[COARSEN] Level 0 :: num_vertices = 469, num_hyperedges = 451, num_timing_paths = 52
+[COARSEN] Level 1 :: num_vertices = 312, num_hyperedges = 348, num_timing_paths = 52
+[COARSEN] Level 2 :: num_vertices = 208, num_hyperedges = 282, num_timing_paths = 50
+[COARSEN] Level 3 :: num_vertices = 138, num_hyperedges = 218, num_timing_paths = 45
+[COARSEN] Level 4 :: num_vertices = 92, num_hyperedges = 179, num_timing_paths = 41
+[COARSEN] Level 5 :: num_vertices = 61, num_hyperedges = 141, num_timing_paths = 32
+[COARSEN] Level 6 :: num_vertices = 40, num_hyperedges = 108, num_timing_paths = 28
+[COARSEN] Level 7 :: num_vertices = 26, num_hyperedges = 78, num_timing_paths = 25
+[COARSEN] Level 8 :: num_vertices = 17, num_hyperedges = 58, num_timing_paths = 22
+[COARSEN] Level 9 :: num_vertices = 11, num_hyperedges = 46, num_timing_paths = 22
+[STATUS] Optimal ILP-based Partitioning Starts !
+All the hyperedges will be used in the ILP-based partitioning!
+[STATUS] Optimal ILP-based Partitioning Finished !
+[Refinement] Level 1 :: num_vertices = 17, num_hyperedges = 58, cutcost = 117.576965, best_solution_id = 0
+[Refinement] Level 2 :: num_vertices = 26, num_hyperedges = 78, cutcost = 126.57307, best_solution_id = 0
+[Refinement] Level 3 :: num_vertices = 40, num_hyperedges = 108, cutcost = 135.81747, best_solution_id = 0
+[Refinement] Level 4 :: num_vertices = 61, num_hyperedges = 141, cutcost = 145.35443, best_solution_id = 0
+[Refinement] Level 5 :: num_vertices = 92, num_hyperedges = 179, cutcost = 167.12, best_solution_id = 0
+[Refinement] Level 6 :: num_vertices = 138, num_hyperedges = 218, cutcost = 181.15654, best_solution_id = 0
+[Refinement] Level 7 :: num_vertices = 208, num_hyperedges = 282, cutcost = 195.80804, best_solution_id = 0
+[Refinement] Level 8 :: num_vertices = 312, num_hyperedges = 348, cutcost = 199.32104, best_solution_id = 0
+[Refinement] Level 9 :: num_vertices = 469, num_hyperedges = 451, cutcost = 199.1205, best_solution_id = 0
+[INFO PAR-0154] [V-cycle Refinement] num_cycles = 0, cutcost = 199.1205
+[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 9, num_hyperedges = 10
+[STATUS] Optimal ILP-based Partitioning Starts !
+All the hyperedges will be used in the ILP-based partitioning!
+[STATUS] Optimal ILP-based Partitioning Finished !
+[INFO PAR-0158] Statistics of cut-overlay solution:
+[INFO PAR-0153] Finish Vcycle Refinement
+=========================================
+[STATUS] Running FC multilevel coarsening
+=========================================
+[COARSEN] Level 0 :: num_vertices = 469, num_hyperedges = 451, num_timing_paths = 52
+[COARSEN] Level 1 :: num_vertices = 312, num_hyperedges = 348, num_timing_paths = 52
+[COARSEN] Level 2 :: num_vertices = 208, num_hyperedges = 279, num_timing_paths = 50
+[COARSEN] Level 3 :: num_vertices = 138, num_hyperedges = 228, num_timing_paths = 46
+[COARSEN] Level 4 :: num_vertices = 92, num_hyperedges = 180, num_timing_paths = 41
+[COARSEN] Level 5 :: num_vertices = 61, num_hyperedges = 125, num_timing_paths = 32
+[COARSEN] Level 6 :: num_vertices = 40, num_hyperedges = 96, num_timing_paths = 24
+[COARSEN] Level 7 :: num_vertices = 26, num_hyperedges = 75, num_timing_paths = 22
+[COARSEN] Level 8 :: num_vertices = 17, num_hyperedges = 61, num_timing_paths = 20
+[COARSEN] Level 9 :: num_vertices = 11, num_hyperedges = 47, num_timing_paths = 19
+[STATUS] Optimal ILP-based Partitioning Starts !
+All the hyperedges will be used in the ILP-based partitioning!
+[STATUS] Optimal ILP-based Partitioning Finished !
+[Refinement] Level 1 :: num_vertices = 17, num_hyperedges = 61, cutcost = 107.06093, best_solution_id = 0
+[Refinement] Level 2 :: num_vertices = 26, num_hyperedges = 75, cutcost = 114.29581, best_solution_id = 0
+[Refinement] Level 3 :: num_vertices = 40, num_hyperedges = 96, cutcost = 122.48199, best_solution_id = 0
+[Refinement] Level 4 :: num_vertices = 61, num_hyperedges = 125, cutcost = 150.97018, best_solution_id = 0
+[Refinement] Level 5 :: num_vertices = 92, num_hyperedges = 180, cutcost = 173.80966, best_solution_id = 0
+[Refinement] Level 6 :: num_vertices = 138, num_hyperedges = 228, cutcost = 186.03268, best_solution_id = 0
+[Refinement] Level 7 :: num_vertices = 208, num_hyperedges = 279, cutcost = 195.80804, best_solution_id = 0
+[Refinement] Level 8 :: num_vertices = 312, num_hyperedges = 348, cutcost = 199.32104, best_solution_id = 0
+[Refinement] Level 9 :: num_vertices = 469, num_hyperedges = 451, cutcost = 199.1205, best_solution_id = 0
+[INFO PAR-0154] [V-cycle Refinement] num_cycles = 0, cutcost = 199.1205
+[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 9, num_hyperedges = 10
+[STATUS] Optimal ILP-based Partitioning Starts !
+All the hyperedges will be used in the ILP-based partitioning!
+[STATUS] Optimal ILP-based Partitioning Finished !
+[INFO PAR-0158] Statistics of cut-overlay solution:
+[Cutcost of partition : 249.9081]
+[Vertex balance of block_0 : 0.50771  ( 280.36401 )    
+[Vertex balance of block_1 : 0.49229  ( 271.85199 )    
+Satisfy the balance constraint : true
+Satisfy the group constraint : true
+Satisfy the fixed vertices constraint : true
 [STATUS] Displaying timing path cuts statistics
-[INFO] Total timing critical paths = 52
-[INFO] Total paths cut = 26
-[INFO] Worst cut on a path = 1
-[INFO] Average cuts on critical paths = 0.5
+[INFO PAR-0143] Total number of timing paths = 52
+[INFO PAR-0144] Total number of timing-critical paths = 1
+[INFO PAR-0145] Total number of timing-noncritical paths = 51
+[INFO PAR-0146] The worst number of cuts on timing-critical paths = 1
+[INFO PAR-0147] The average number of cuts on timing-critical paths = 1.0
+[INFO PAR-0148] Total number of timing-noncritical to timing critical paths = 32
+[INFO PAR-0149] The worst number of cuts on timing-non2critical paths = 2
+[INFO PAR-0150] The average number of cuts on timing-non2critical paths = 1.28125
 ===============================================
 Exiting TritonPart
 Writing partition to verilog.
-No differences found.
-No differences found.
 No differences found.
 No differences found.

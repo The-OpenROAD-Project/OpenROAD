@@ -50,30 +50,24 @@
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbModule>;
 
 bool _dbModule::operator==(const _dbModule& rhs) const
 {
   if (_name != rhs._name)
     return false;
-
   if (_next_entry != rhs._next_entry)
     return false;
-
   if (_insts != rhs._insts)
     return false;
-
   if (_modinsts != rhs._modinsts)
     return false;
-
   if (_mod_inst != rhs._mod_inst)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
+
 bool _dbModule::operator<(const _dbModule& rhs) const
 {
   // User Code Begin <
@@ -82,21 +76,20 @@ bool _dbModule::operator<(const _dbModule& rhs) const
   // User Code End <
   return true;
 }
+
 void _dbModule::differences(dbDiff& diff,
                             const char* field,
                             const _dbModule& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(_name);
   DIFF_FIELD(_next_entry);
   DIFF_FIELD(_insts);
   DIFF_FIELD(_modinsts);
   DIFF_FIELD(_mod_inst);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
+
 void _dbModule::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -106,10 +99,9 @@ void _dbModule::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_modinsts);
   DIFF_OUT_FIELD(_mod_inst);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
+
 _dbModule::_dbModule(_dbDatabase* db)
 {
   // User Code Begin Constructor
@@ -119,6 +111,7 @@ _dbModule::_dbModule(_dbDatabase* db)
   _mod_inst = 0;
   // User Code End Constructor
 }
+
 _dbModule::_dbModule(_dbDatabase* db, const _dbModule& r)
 {
   _name = r._name;
@@ -126,8 +119,6 @@ _dbModule::_dbModule(_dbDatabase* db, const _dbModule& r)
   _insts = r._insts;
   _modinsts = r._modinsts;
   _mod_inst = r._mod_inst;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModule& obj)
@@ -137,10 +128,9 @@ dbIStream& operator>>(dbIStream& stream, _dbModule& obj)
   stream >> obj._insts;
   stream >> obj._modinsts;
   stream >> obj._mod_inst;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbModule& obj)
 {
   stream << obj._name;
@@ -148,8 +138,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbModule& obj)
   stream << obj._insts;
   stream << obj._modinsts;
   stream << obj._mod_inst;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
@@ -157,12 +145,7 @@ _dbModule::~_dbModule()
 {
   if (_name)
     free((void*) _name);
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -180,7 +163,7 @@ dbModInst* dbModule::getModInst() const
 {
   _dbModule* obj = (_dbModule*) this;
   if (obj->_mod_inst == 0)
-    return NULL;
+    return nullptr;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbModInst*) par->_modinst_tbl->getPtr(obj->_mod_inst);
 }

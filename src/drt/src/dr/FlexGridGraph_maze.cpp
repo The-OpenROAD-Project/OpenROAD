@@ -49,7 +49,11 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
 
   FlexMazeIdx nextIdx(gridX, gridY, gridZ);
   // get cost
-  nextEstCost = getEstCost(nextIdx, dstMazeIdx1, dstMazeIdx2, dir);
+  nextEstCost
+      = getEstCost(FlexMazeIdx(currGrid.x(), currGrid.y(), currGrid.z()),
+                   dstMazeIdx1,
+                   dstMazeIdx2,
+                   dir);
   nextPathCost = getNextPathCost(currGrid, dir);
   Point currPt;
   getPoint(currPt, gridX, gridY);
@@ -162,11 +166,16 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
                                  const FlexMazeIdx& dstMazeIdx2,
                                  const frDirEnum& dir) const
 {
+  int gridX = src.x();
+  int gridY = src.y();
+  int gridZ = src.z();
+  auto edgeLength = getEdgeLength(gridX, gridY, gridZ, dir);
+  getNextGrid(gridX, gridY, gridZ, dir);
   // bend cost
   int bendCnt = 0;
   int forbiddenPenalty = 0;
   Point srcPoint, dstPoint1, dstPoint2;
-  getPoint(srcPoint, src.x(), src.y());
+  getPoint(srcPoint, gridX, gridY);
   getPoint(dstPoint1, dstMazeIdx1.x(), dstMazeIdx1.y());
   getPoint(dstPoint2, dstMazeIdx2.x(), dstMazeIdx2.y());
   frCoord minCostX
@@ -198,14 +207,11 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
   if (src.z() == dstMazeIdx1.z() && dstMazeIdx1.z() == dstMazeIdx2.z()) {
   }
 
-  int gridX = src.x();
-  int gridY = src.y();
-  int gridZ = src.z();
-  getNextGrid(gridX, gridY, gridZ, dir);
   Point nextPoint;
   getPoint(nextPoint, gridX, gridY);
   // avoid propagating to location that will cause forbidden via spacing to
   // boundary pin
+  bool isForbidden = false;
   if (dstMazeIdx1 == dstMazeIdx2 && gridZ == dstMazeIdx1.z()) {
     auto layerNum = (gridZ + 1) * 2;
     auto layer = getTech()->getLayer(layerNum);
@@ -220,7 +226,7 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
             && (getTech()->isVia2ViaForbiddenLen(
                     gridZ, true, true, false, gap, ndr_)
                 || layerNum + 2 > getTech()->getTopLayerNum())) {
-          forbiddenPenalty = layer->getPitch() * ggDRCCost_ * 20;
+          isForbidden = true;
         }
       } else {
         auto gap = abs(nextPoint.x() - dstPoint1.x());
@@ -231,9 +237,16 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
             && (getTech()->isVia2ViaForbiddenLen(
                     gridZ, true, true, true, gap, ndr_)
                 || layerNum + 2 > getTech()->getTopLayerNum())) {
-          forbiddenPenalty = layer->getPitch() * ggDRCCost_ * 20;
+          isForbidden = true;
         }
       }
+    }
+  }
+  if (isForbidden) {
+    if (drWorker_->getDRIter() >= 3) {
+      forbiddenPenalty = 2 * ggMarkerCost_ * edgeLength;
+    } else {
+      forbiddenPenalty = 2 * ggDRCCost_ * edgeLength;
     }
   }
   return (minCostX + minCostY + minCostZ + bendCnt + forbiddenPenalty);

@@ -22,7 +22,7 @@
   try { $function }
   catch (std::bad_alloc &) {
     fprintf(stderr, "Error: out of memory.");
-    exit(0);
+    exit(1);
   }
   // This catches std::runtime_error (utl::error) and sta::Exception.
   catch (std::exception &excp) {

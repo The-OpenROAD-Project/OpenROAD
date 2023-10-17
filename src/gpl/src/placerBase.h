@@ -44,6 +44,7 @@ class dbInst;
 class dbITerm;
 class dbBTerm;
 class dbNet;
+class dbGroup;
 
 class dbPlacementStatus;
 class dbSigType;
@@ -301,36 +302,28 @@ class PlacerBaseVars
   void reset();
 };
 
-class PlacerBase
+// Class includes everything from PlacerBase that is not region specific
+class PlacerBaseCommon
 {
  public:
-  PlacerBase();
+  PlacerBaseCommon();
   // temp padLeft/Right before OpenDB supporting...
-  PlacerBase(odb::dbDatabase* db, PlacerBaseVars pbVars, utl::Logger* log);
-  ~PlacerBase();
+  PlacerBaseCommon(odb::dbDatabase* db,
+                   PlacerBaseVars pbVars,
+                   utl::Logger* log);
+  ~PlacerBaseCommon();
 
+  const std::vector<Instance*>& placeInsts() const { return placeInsts_; }
   const std::vector<Instance*>& insts() const { return insts_; }
   const std::vector<Pin*>& pins() const { return pins_; }
   const std::vector<Net*>& nets() const { return nets_; }
-
-  //
-  // placeInsts : a real instance that need to be placed
-  // fixedInsts : a real instance that is fixed (e.g. macros, tapcells)
-  // dummyInsts : a fake instance that is for unusable site handling
-  //
-  // nonPlaceInsts : fixedInsts + dummyInsts to enable fast-iterate on Bin-init
-  //
-  const std::vector<Instance*>& placeInsts() const { return placeInsts_; }
-  const std::vector<Instance*>& fixedInsts() const { return fixedInsts_; }
-  const std::vector<Instance*>& dummyInsts() const { return dummyInsts_; }
-  const std::vector<Instance*>& nonPlaceInsts() const { return nonPlaceInsts_; }
 
   Die& die() { return die_; }
 
   // Pb : PlacerBase
   Instance* dbToPb(odb::dbInst* inst) const;
-  Pin* dbToPb(odb::dbITerm* pin) const;
-  Pin* dbToPb(odb::dbBTerm* pin) const;
+  Pin* dbToPb(odb::dbITerm* term) const;
+  Pin* dbToPb(odb::dbBTerm* term) const;
   Net* dbToPb(odb::dbNet* net) const;
 
   int siteSizeX() const { return siteSizeX_; }
@@ -342,10 +335,7 @@ class PlacerBase
   int64_t hpwl() const;
   void printInfo() const;
 
-  int64_t placeInstsArea() const { return placeInstsArea_; }
-  int64_t nonPlaceInstsArea() const { return nonPlaceInstsArea_; }
   int64_t macroInstsArea() const { return macroInstsArea_; }
-  int64_t stdInstsArea() const { return stdInstsArea_; }
 
   odb::dbDatabase* db() const { return db_; }
 
@@ -367,9 +357,73 @@ class PlacerBase
   std::vector<Pin*> pins_;
   std::vector<Net*> nets_;
 
+  std::vector<Instance*> placeInsts_;
+
   std::unordered_map<odb::dbInst*, Instance*> instMap_;
   std::unordered_map<void*, Pin*> pinMap_;
   std::unordered_map<odb::dbNet*, Net*> netMap_;
+
+  int siteSizeX_;
+  int siteSizeY_;
+
+  int64_t macroInstsArea_;
+
+  void init();
+  void reset();
+};
+
+class PlacerBase
+{
+ public:
+  PlacerBase();
+  // temp padLeft/Right before OpenDB supporting...
+  PlacerBase(odb::dbDatabase* db,
+             std::shared_ptr<PlacerBaseCommon> pbCommon,
+             utl::Logger* log,
+             odb::dbGroup* group = nullptr);
+  ~PlacerBase();
+
+  const std::vector<Instance*>& insts() const { return insts_; }
+
+  //
+  // placeInsts : a real instance that need to be placed
+  // fixedInsts : a real instance that is fixed (e.g. macros, tapcells)
+  // dummyInsts : a fake instance that is for unusable site handling
+  //
+  // nonPlaceInsts : fixedInsts + dummyInsts to enable fast-iterate on Bin-init
+  //
+  const std::vector<Instance*>& placeInsts() const { return placeInsts_; }
+  const std::vector<Instance*>& fixedInsts() const { return fixedInsts_; }
+  const std::vector<Instance*>& dummyInsts() const { return dummyInsts_; }
+  const std::vector<Instance*>& nonPlaceInsts() const { return nonPlaceInsts_; }
+
+  Die& die() { return die_; }
+
+  int siteSizeX() const { return siteSizeX_; }
+  int siteSizeY() const { return siteSizeY_; }
+
+  int64_t hpwl() const;
+  void printInfo() const;
+
+  int64_t placeInstsArea() const { return placeInstsArea_; }
+  int64_t nonPlaceInstsArea() const { return nonPlaceInstsArea_; }
+  int64_t macroInstsArea() const;
+  int64_t stdInstsArea() const { return stdInstsArea_; }
+
+  odb::dbDatabase* db() const { return db_; }
+  odb::dbGroup* group() const { return group_; }
+
+  void unlockAll();
+
+ private:
+  odb::dbDatabase* db_;
+  utl::Logger* log_;
+
+  Die die_;
+
+  std::vector<Instance> instStor_;
+
+  std::vector<Instance*> insts_;
 
   std::vector<Instance*> placeInsts_;
   std::vector<Instance*> fixedInsts_;
@@ -387,6 +441,9 @@ class PlacerBase
   // because of target_density tuning
   int64_t macroInstsArea_;
   int64_t stdInstsArea_;
+
+  std::shared_ptr<PlacerBaseCommon> pbCommon_;
+  odb::dbGroup* group_;
 
   void init();
   void initInstsForUnusableSites();

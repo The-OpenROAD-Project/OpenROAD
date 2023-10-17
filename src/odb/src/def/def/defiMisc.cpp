@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -37,33 +37,6 @@
 #include "lex.h"
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
-
-////////////////////////////////////////////////////
-//
-//    defiPoints
-//    Below does not working in some examples...
-//
-////////////////////////////////////////////////////
-
-defiPoints::defiPoints() : numPoints(0), x(0), y(0)
-{
-}
-
-DEF_COPY_CONSTRUCTOR_C(defiPoints) : numPoints(0), x(0), y(0)
-{
-  DEF_COPY_FUNC(numPoints);
-  DEF_MALLOC_FUNC(x, int, sizeof(int) * numPoints);
-  DEF_MALLOC_FUNC(y, int, sizeof(int) * numPoints);
-}
-
-DEF_ASSIGN_OPERATOR_C(defiPoints)
-{
-  CHECK_SELF_ASSIGN
-  DEF_COPY_FUNC(numPoints);
-  DEF_MALLOC_FUNC(x, int, sizeof(int) * numPoints);
-  DEF_MALLOC_FUNC(y, int, sizeof(int) * numPoints);
-  return *this;
-}
 
 ////////////////////////////////////////////////////
 //

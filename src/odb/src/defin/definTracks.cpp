@@ -66,7 +66,7 @@ void definTracks::tracksLayer(const char* layer_name)
 {
   dbTechLayer* layer = _tech->findLayer(layer_name);
 
-  if (layer == NULL) {
+  if (layer == nullptr) {
     _logger->warn(
         utl::ODB, 165, "error: undefined layer ({}) referenced", layer_name);
     ++_errors;
@@ -75,7 +75,7 @@ void definTracks::tracksLayer(const char* layer_name)
 
   dbTrackGrid* grid = _block->findTrackGrid(layer);
 
-  if (grid == NULL)
+  if (grid == nullptr)
     grid = dbTrackGrid::create(_block, layer);
 
   if (_track._dir == DEF_X)

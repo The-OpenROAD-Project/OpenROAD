@@ -137,7 +137,11 @@ FOREACH_TOOL(X)
 #undef X
 }  // namespace sta
 
+#if PY_VERSION_HEX >= 0x03080000
+static void initPython(int argc, char* argv[])
+#else
 static void initPython()
+#endif
 {
 #define X(name)                                                             \
   if (PyImport_AppendInittab("_" #name "_py", PyInit__##name##_py) == -1) { \
@@ -146,7 +150,17 @@ static void initPython()
   }
   FOREACH_TOOL(X)
 #undef X
+#if PY_VERSION_HEX >= 0x03080000
+  bool inspect = !findCmdLineFlag(argc, argv, "-exit");
+  PyConfig config;
+  PyConfig_InitPythonConfig(&config);
+  PyConfig_SetBytesArgv(&config, argc, argv);
+  config.inspect = inspect;
+  Py_InitializeFromConfig(&config);
+  PyConfig_Clear(&config);
+#else
   Py_Initialize();
+#endif
 #define X(name)                                                       \
   {                                                                   \
     char* unencoded = sta::unencode(sta::name##_py_python_inits);     \
@@ -217,6 +231,7 @@ int main(int argc, char* argv[])
   std::array locales = {"en_US.UTF-8", "C.UTF-8", "C"};
   for (auto locale : locales) {
     if (std::setlocale(LC_ALL, locale) != nullptr) {
+      setenv("LC_ALL", locale, /* override */ 1);
       break;
     }
   }
@@ -277,6 +292,10 @@ int main(int argc, char* argv[])
           ord::OpenRoad::openRoad()->getThreadCount(), false);
     }
 
+#if PY_VERSION_HEX >= 0x03080000
+    initPython(cmd_argc, cmd_argv);
+    return Py_RunMain();
+#else
     initPython();
     bool exit = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
     std::vector<wchar_t*> args;
@@ -288,6 +307,7 @@ int main(int argc, char* argv[])
       args.push_back(Py_DecodeLocale(cmd_argv[i], nullptr));
     }
     return Py_Main(args.size(), args.data());
+#endif  // PY_VERSION_HEX >= 0x03080000
   }
 #endif  // ENABLE_PYTHON3
 

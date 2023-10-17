@@ -32,8 +32,7 @@
 
 #pragma once
 
-#include <string.h>
-
+#include <cstring>
 #include <new>
 
 #include "ZException.h"
@@ -109,15 +108,15 @@ void dbTable<T>::clear()
     const T* e = &t[page_size()];
 
     for (; t < e; t++) {
-      if (t->_oid & DB_ALLOC_BIT)
+      if (t->_oid & DB_ALLOC_BIT) {
         t->~T();
+      }
     }
 
     free((void*) page);
   }
 
-  if (_pages)
-    delete[] _pages;
+  delete[] _pages;
 
   _bottom_idx = 0;
   _top_idx = 0;
@@ -125,7 +124,7 @@ void dbTable<T>::clear()
   _page_tbl_size = 0;
   _alloc_cnt = 0;
   _free_list = 0;
-  _pages = NULL;
+  _pages = nullptr;
 }
 
 template <class T>
@@ -145,7 +144,7 @@ dbTable<T>::dbTable(_dbDatabase* db,
   _page_tbl_size = 0;
   _alloc_cnt = 0;
   _free_list = 0;
-  _pages = NULL;
+  _pages = nullptr;
 }
 
 template <class T>
@@ -159,7 +158,7 @@ dbTable<T>::dbTable(_dbDatabase* db, dbObject* owner, const dbTable<T>& t)
       _page_tbl_size(t._page_tbl_size),
       _alloc_cnt(t._alloc_cnt),
       _free_list(t._free_list),
-      _pages(NULL)
+      _pages(nullptr)
 {
   copy_pages(t);
 }
@@ -180,11 +179,13 @@ void dbTable<T>::resizePageTbl()
 
   _pages = new dbTablePage*[_page_tbl_size];
 
-  for (i = 0; i < old_tbl_size; ++i)
+  for (i = 0; i < old_tbl_size; ++i) {
     _pages[i] = old_tbl[i];
+  }
 
-  for (; i < _page_tbl_size; ++i)
-    _pages[i] = NULL;
+  for (; i < _page_tbl_size; ++i) {
+    _pages[i] = nullptr;
+  }
 
   delete[] old_tbl;
 }
@@ -222,8 +223,9 @@ void dbTable<T>::newPage()
       _dbFreeObject* o = (_dbFreeObject*) t;
       o->_oid = (uint) ((char*) t - (char*) b);
 
-      if (t != b)  // don't link zero-object
+      if (t != b) {  // don't link zero-object
         pushQ(_free_list, o);
+      }
     }
   } else {
     T* b = (T*) page->_objects;
@@ -242,8 +244,9 @@ T* dbTable<T>::create()
 {
   ++_alloc_cnt;
 
-  if (_free_list == 0)
+  if (_free_list == 0) {
     newPage();
+  }
 
   _dbFreeObject* o = popQ(_free_list);
   new (o) T(_db);
@@ -255,11 +258,13 @@ T* dbTable<T>::create()
 
   uint id = t->getOID();
 
-  if (id > _top_idx)
+  if (id > _top_idx) {
     _top_idx = id;
+  }
 
-  if ((_bottom_idx == 0) || (id < _bottom_idx))
+  if ((_bottom_idx == 0) || (id < _bottom_idx)) {
     _bottom_idx = id;
+  }
 
   return t;
 }
@@ -269,8 +274,9 @@ T* dbTable<T>::duplicate(T* c)
 {
   ++_alloc_cnt;
 
-  if (_free_list == 0)
+  if (_free_list == 0) {
     newPage();
+  }
 
   _dbFreeObject* o = popQ(_free_list);
   o->_oid |= DB_ALLOC_BIT;
@@ -282,11 +288,13 @@ T* dbTable<T>::duplicate(T* c)
 
   uint id = t->getOID();
 
-  if (id > _top_idx)
+  if (id > _top_idx) {
     _top_idx = id;
+  }
 
-  if ((_bottom_idx == 0) || (id < _bottom_idx))
+  if ((_bottom_idx == 0) || (id < _bottom_idx)) {
     _bottom_idx = id;
+  }
 
   return t;
 }
@@ -327,8 +335,9 @@ inline void dbTable<T>::findBottom()
     assert(page_id < _page_cnt);
     page = _pages[page_id];
 
-    if (page->valid_page())
+    if (page->valid_page()) {
       break;
+    }
   }
 
   T* b = (T*) page->_objects;
@@ -380,8 +389,9 @@ inline void dbTable<T>::findTop()
     assert(page_id >= 0);
     page = _pages[page_id];
 
-    if (page->valid_page())
+    if (page->valid_page()) {
       break;
+    }
   }
 
   T* b = (T*) page->_objects;
@@ -421,11 +431,13 @@ void dbTable<T>::destroy(T* t)
   _dbFreeObject* o = (_dbFreeObject*) t;
   pushQ(_free_list, o);
 
-  if (id == _bottom_idx)
+  if (id == _bottom_idx) {
     findBottom();
+  }
 
-  if (id == _top_idx)
+  if (id == _top_idx) {
     findTop();
+  }
 }
 
 template <class T>
@@ -475,8 +487,9 @@ uint dbTable<T>::next(uint id, ...)
   ZASSERT(id != 0);
   ++id;
 
-  if (id > _top_idx)
+  if (id > _top_idx) {
     return 0;
+  }
 
   uint page_id = id >> _page_shift;
   dbTablePage* page = _pages[page_id];
@@ -572,8 +585,9 @@ void dbTable<T>::copy_pages(const dbTable<T>& t)
 
   uint i;
 
-  for (i = 0; i < _page_tbl_size; ++i)
-    _pages[i] = NULL;
+  for (i = 0; i < _page_tbl_size; ++i) {
+    _pages[i] = nullptr;
+  }
 
   for (i = 0; i < _page_cnt; ++i) {
     dbTablePage* page = t._pages[i];
@@ -643,9 +657,9 @@ dbIStream& operator>>(dbIStream& stream, dbTable<T>& table)
   stream >> table._alloc_cnt;
   stream >> table._free_list;
 
-  if (table._page_tbl_size == 0)
-    table._pages = NULL;
-  else {
+  if (table._page_tbl_size == 0) {
+    table._pages = nullptr;
+  } else {
     table._pages = new dbTablePage*[table._page_tbl_size];
   }
 
@@ -661,8 +675,9 @@ dbIStream& operator>>(dbIStream& stream, dbTable<T>& table)
     table.readPage(stream, page);
   }
 
-  for (; i < table._page_tbl_size; ++i)
-    table._pages[i] = NULL;
+  for (; i < table._page_tbl_size; ++i) {
+    table._pages[i] = nullptr;
+  }
 
   stream >> table._prop_list;
 
@@ -685,28 +700,31 @@ bool dbTable<T>::operator==(const dbTable<T>& rhs) const
   assert(lhs._page_shift == rhs._page_shift);
 
   // empty tables
-  if ((lhs._page_cnt == 0) && (rhs._page_cnt == 0))
+  if ((lhs._page_cnt == 0) && (rhs._page_cnt == 0)) {
     return true;
+  }
 
   // Simple rejection test
-  if (lhs._page_cnt != rhs._page_cnt)
+  if (lhs._page_cnt != rhs._page_cnt) {
     return false;
+  }
 
   // Simple rejection test
-  if (lhs._bottom_idx != rhs._bottom_idx)
+  if (lhs._bottom_idx != rhs._bottom_idx) {
     return false;
+  }
 
   // Simple rejection test
-  if (lhs._top_idx != rhs._top_idx)
+  if (lhs._top_idx != rhs._top_idx) {
     return false;
+  }
 
   // Simple rejection test
-  if (lhs._alloc_cnt != rhs._alloc_cnt)
+  if (lhs._alloc_cnt != rhs._alloc_cnt) {
     return false;
+  }
 
-  uint i;
-
-  for (i = _bottom_idx; i <= _top_idx; ++i) {
+  for (uint i = _bottom_idx; i <= _top_idx; ++i) {
     bool lhs_valid_o = lhs.validId(i);
     bool rhs_valid_o = rhs.validId(i);
 
@@ -714,8 +732,9 @@ bool dbTable<T>::operator==(const dbTable<T>& rhs) const
       const T* l = lhs.getPtr(i);
       const T* r = rhs.getPtr(i);
 
-      if (*l != *r)
+      if (*l != *r) {
         return false;
+      }
     } else if (lhs_valid_o) {
       return false;
     } else if (rhs_valid_o) {
@@ -749,15 +768,15 @@ void dbTable<T>::differences(dbDiff& diff, const dbTable<T>& rhs) const
     if (lhs_valid_o && rhs_valid_o) {
       T* l = lhs.getPtr(i);
       T* r = rhs.getPtr(i);
-      l->differences(diff, NULL, *r);
+      l->differences(diff, nullptr, *r);
     } else if (lhs_valid_o) {
       T* l = lhs.getPtr(i);
-      l->out(diff, dbDiff::LEFT, NULL);
+      l->out(diff, dbDiff::LEFT, nullptr);
       diff.report("> %s [%u] FREE\n", name, i);
     } else if (rhs_valid_o) {
       T* r = rhs.getPtr(i);
       diff.report("< %s [%u] FREE\n", name, i);
-      r->out(diff, dbDiff::RIGHT, NULL);
+      r->out(diff, dbDiff::RIGHT, nullptr);
     }
   }
 
@@ -767,7 +786,7 @@ void dbTable<T>::differences(dbDiff& diff, const dbTable<T>& rhs) const
 
       if (lhs_valid_o) {
         T* l = lhs.getPtr(i);
-        l->out(diff, dbDiff::LEFT, NULL);
+        l->out(diff, dbDiff::LEFT, nullptr);
       } else {
         diff.report("< %s [%u] FREE\n", name, i);
       }
@@ -778,7 +797,7 @@ void dbTable<T>::differences(dbDiff& diff, const dbTable<T>& rhs) const
 
       if (rhs_valid_o) {
         T* r = rhs.getPtr(i);
-        r->out(diff, dbDiff::RIGHT, NULL);
+        r->out(diff, dbDiff::RIGHT, nullptr);
       } else {
         diff.report("> %s [%u] FREE\n", name, i);
       }
@@ -794,7 +813,7 @@ void dbTable<T>::out(dbDiff& diff, char side) const
   for (i = _bottom_idx; i <= _top_idx; ++i) {
     if (validId(i)) {
       T* o = getPtr(i);
-      o->out(diff, side, NULL);
+      o->out(diff, side, nullptr);
     }
   }
 }
@@ -808,8 +827,9 @@ void dbTable<T>::getObjects(std::vector<T*>& objects)
   uint i;
 
   for (i = _bottom_idx; i <= _top_idx; ++i) {
-    if (validId(i))
+    if (validId(i)) {
       objects.push_back(getPtr(i));
+    }
   }
 }
 

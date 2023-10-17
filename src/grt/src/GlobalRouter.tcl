@@ -42,7 +42,7 @@ proc set_global_routing_layer_adjustment { args } {
     if {$layer == "*"} {
       sta::check_positive_float "adjustment" $adj
       grt::set_capacity_adjustment $adj
-    } elseif [regexp -all {([a-zA-Z0-9]+)-([a-zA-Z0-9]+)} $layer] {
+    } elseif [regexp -all {([^-]+)-([^ ]+)} $layer] {
       lassign [grt::parse_layer_range "set_global_routing_layer_adjustment" $layer] first_layer last_layer
       for {set l $first_layer} {$l <= $last_layer} {incr l} {
         grt::check_routing_layer $l
@@ -193,20 +193,21 @@ proc set_global_routing_random { args } {
 sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-congestion_iterations iterations] \
                                   [-congestion_report_file file_name] \
+                                  [-congestion_report_iter_step steps] \
                                   [-grid_origin origin] \
-                                  [-overflow_iterations iterations] \
                                   [-critical_nets_percentage percent] \
                                   [-allow_congestion] \
-                                  [-allow_overflow] \
-                                  [-verbose]
+                                  [-verbose] \
+                                  [-start_incremental] \
+                                  [-end_incremental]
 }
 
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
     keys {-guide_file -congestion_iterations -congestion_report_file \
-          -overflow_iterations -grid_origin -critical_nets_percentage
+          -overflow_iterations -grid_origin -critical_nets_percentage -congestion_report_iter_step
          } \
-    flags {-allow_congestion -allow_overflow -verbose}
+    flags {-allow_congestion -allow_overflow -verbose -start_incremental -end_incremental}
 
   sta::check_argc_eq0 "global_route" $args
 
@@ -245,6 +246,13 @@ proc global_route { args } {
     grt::set_congestion_report_file $file_name
   }
 
+  if { [info exists keys(-congestion_report_iter_step) ] } {
+    set steps $keys(-congestion_report_iter_step)
+    grt::set_congestion_report_iter_step $steps
+  } else {
+    grt::set_congestion_report_iter_step 0
+  }
+
   if { [info exists keys(-overflow_iterations)] } {
     utl::war GRT 147 "Argument -overflow_iterations is deprecated. Use -congestion_iterations."
     set iterations $keys(-overflow_iterations)
@@ -265,7 +273,10 @@ proc global_route { args } {
   set allow_congestion [expr [info exists flags(-allow_congestion)] || [info exists flags(-allow_overflow)]]
   grt::set_allow_congestion $allow_congestion
 
-  grt::global_route
+  set start_incremental [info exists flags(-start_incremental)]
+  set end_incremental [info exists flags(-end_incremental)]
+
+  grt::global_route $start_incremental $end_incremental
 
   if { [info exists keys(-guide_file)] } {
     set out_file $keys(-guide_file)
@@ -273,7 +284,7 @@ proc global_route { args } {
   }
 }
 
-sta::define_cmd_args "repair_antennas" { [diode_cell/diode_port] \
+sta::define_cmd_args "repair_antennas" { [diode_cell] \
                                          [-iterations iterations] \
                                          [-ratio_margin ratio_margin]}
 
@@ -326,6 +337,26 @@ proc repair_antennas { args } {
     grt::repair_antennas $diode_mterm $iterations $ratio_margin
   } else {
     utl::error GRT 45 "Run global_route before repair_antennas."
+  }
+}
+
+sta::define_cmd_args "set_nets_to_route" { net_names }
+
+proc set_nets_to_route { args } {
+  sta::parse_key_args "set_nets_to_route" args \
+                 keys {} \
+                 flags {}
+  sta::check_argc_eq1 "set_nets_to_route" $args
+  set net_names [lindex $args 0]
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    utl::error GRT 252 "Missing dbBlock."
+  }
+
+  foreach net [get_nets $net_names] {
+    if { $net != "NULL" } {
+      grt::add_net_to_route [sta::sta_to_db_net $net]
+    }
   }
 }
 
@@ -478,7 +509,7 @@ proc parse_layer_name { layer_name } {
 }
 
 proc parse_layer_range { cmd layer_range } {
-  if [regexp -all {([a-zA-Z0-9]+)-([a-zA-Z0-9]+)} $layer_range - min_layer_name max_layer_name] {
+  if [regexp -all {([^-]+)-([^ ]+)} $layer_range - min_layer_name max_layer_name] {
     set min_layer [parse_layer_name $min_layer_name]
     set max_layer [parse_layer_name $max_layer_name]
 

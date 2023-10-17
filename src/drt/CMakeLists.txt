@@ -119,12 +119,14 @@ target_sources(drt
     src/pa/FlexPA_init.cpp
     src/pa/FlexPA.cpp
     src/pa/FlexPA_prep.cpp
+    src/pa/FlexPA_unique.cpp
     src/pa/FlexPA_graphics.cpp
     src/rp/FlexRP_init.cpp
     src/rp/FlexRP.cpp
     src/rp/FlexRP_prep.cpp
     src/distributed/frArchive.cpp
     src/distributed/drUpdate.cpp
+    src/distributed/paUpdate.cpp
     src/TritonRoute.cpp
     src/MakeTritonRoute.cpp
     src/frBaseTypes.cpp

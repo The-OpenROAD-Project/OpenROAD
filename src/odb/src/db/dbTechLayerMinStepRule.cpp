@@ -39,10 +39,7 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
-// User Code Begin Includes
-// User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayerMinStepRule>;
 
 bool _dbTechLayerMinStepRule::operator==(
@@ -71,40 +68,32 @@ bool _dbTechLayerMinStepRule::operator==(
 
   if (min_step_length_ != rhs.min_step_length_)
     return false;
-
   if (max_edges_ != rhs.max_edges_)
     return false;
-
   if (min_adj_length1_ != rhs.min_adj_length1_)
     return false;
-
   if (min_adj_length2_ != rhs.min_adj_length2_)
     return false;
-
   if (eol_width_ != rhs.eol_width_)
     return false;
-
   if (min_between_length_ != rhs.min_between_length_)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
+
 bool _dbTechLayerMinStepRule::operator<(
     const _dbTechLayerMinStepRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
+
 void _dbTechLayerMinStepRule::differences(
     dbDiff& diff,
     const char* field,
     const _dbTechLayerMinStepRule& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_.max_edges_valid_);
   DIFF_FIELD(flags_.min_adj_length1_valid_);
   DIFF_FIELD(flags_.no_between_eol_);
@@ -118,10 +107,9 @@ void _dbTechLayerMinStepRule::differences(
   DIFF_FIELD(min_adj_length2_);
   DIFF_FIELD(eol_width_);
   DIFF_FIELD(min_between_length_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
+
 void _dbTechLayerMinStepRule::out(dbDiff& diff,
                                   char side,
                                   const char* field) const
@@ -141,23 +129,20 @@ void _dbTechLayerMinStepRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(eol_width_);
   DIFF_OUT_FIELD(min_between_length_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
+
 _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(_dbDatabase* db)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field = 0;
+  flags_ = {};
   min_step_length_ = 0;
   max_edges_ = 0;
   min_adj_length1_ = 0;
   min_adj_length2_ = 0;
   eol_width_ = 0;
   min_between_length_ = 0;
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
+
 _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(
     _dbDatabase* db,
     const _dbTechLayerMinStepRule& r)
@@ -176,8 +161,6 @@ _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(
   min_adj_length2_ = r.min_adj_length2_;
   eol_width_ = r.eol_width_;
   min_between_length_ = r.min_between_length_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinStepRule& obj)
@@ -190,10 +173,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinStepRule& obj)
   stream >> obj.min_adj_length2_;
   stream >> obj.eol_width_;
   stream >> obj.min_between_length_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinStepRule& obj)
 {
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
@@ -204,19 +186,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinStepRule& obj)
   stream << obj.min_adj_length2_;
   stream << obj.eol_width_;
   stream << obj.min_between_length_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
 _dbTechLayerMinStepRule::~_dbTechLayerMinStepRule()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

@@ -3,3 +3,6 @@ git+https://github.com/executablebooks/sphinx-external-toc
 sphinx
 sphinx-autobuild
 myst-parser
+sphinxcontrib-mermaid
+sphinx-book-theme
+sphinx-copybutton

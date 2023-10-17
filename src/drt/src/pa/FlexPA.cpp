@@ -28,40 +28,43 @@
 
 #include "FlexPA.h"
 
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/io/ios_state.hpp>
+#include <boost/serialization/export.hpp>
 #include <chrono>
 #include <iostream>
 #include <sstream>
 
 #include "FlexPA_graphics.h"
 #include "db/infra/frTime.h"
+#include "distributed/PinAccessJobDescription.h"
+#include "distributed/frArchive.h"
+#include "distributed/paUpdate.h"
+#include "dst/Distributed.h"
+#include "dst/JobMessage.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "serialization.h"
 
 using namespace std;
 using namespace fr;
+BOOST_CLASS_EXPORT(PinAccessJobDescription)
 
-FlexPA::FlexPA(frDesign* in, Logger* logger)
+FlexPA::FlexPA(frDesign* in, Logger* logger, dst::Distributed* dist)
     : design_(in),
       logger_(logger),
-      stdCellPinGenApCnt_(0),
-      stdCellPinValidPlanarApCnt_(0),
-      stdCellPinValidViaApCnt_(0),
-      stdCellPinNoApCnt_(0),
-      macroCellPinGenApCnt_(0),
-      macroCellPinValidPlanarApCnt_(0),
-      macroCellPinValidViaApCnt_(0),
-      macroCellPinNoApCnt_(0)
+      dist_(dist),
+      unique_insts_(design_, target_insts_, logger_)
 {
 }
 
-FlexPA::~FlexPA()
-{
-  // must be out-of-line due to unique_ptr
-}
+// must be out-of-line due to the unique_ptr
+FlexPA::~FlexPA() = default;
 
 void FlexPA::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
 {
-  bool on = settings->debugPA;
+  const bool on = settings->debugPA;
   graphics_
       = on && FlexPAGraphics::guiActive()
             ? std::make_unique<FlexPAGraphics>(settings, design_, db, logger_)
@@ -71,18 +74,34 @@ void FlexPA::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
 void FlexPA::init()
 {
   ProfileTask profile("PA:init");
-  for (auto& master : design_->getMasters())
-    for (auto& term : master->getTerms())
-      for (auto& pin : term->getPins())
+  for (auto& master : design_->getMasters()) {
+    for (auto& term : master->getTerms()) {
+      for (auto& pin : term->getPins()) {
         pin->clearPinAccess();
-  for (auto& term : design_->getTopBlock()->getTerms())
-    for (auto& pin : term->getPins())
+      }
+    }
+  }
+
+  for (auto& term : design_->getTopBlock()->getTerms()) {
+    for (auto& pin : term->getPins()) {
       pin->clearPinAccess();
+    }
+  }
   initViaRawPriority();
   initTrackCoords();
 
-  initUniqueInstance();
-  initPinAccess();
+  unique_insts_.init();
+}
+
+void FlexPA::applyPatternsFile(const char* file_path)
+{
+  uniqueInstPatterns_.clear();
+  std::ifstream file(file_path);
+  frIArchive ar(file);
+  ar.setDesign(design_);
+  registerTypes(ar);
+  ar >> uniqueInstPatterns_;
+  file.close();
 }
 
 void FlexPA::prep()
@@ -90,7 +109,62 @@ void FlexPA::prep()
   ProfileTask profile("PA:prep");
   prepPoint();
   revertAccessPoints();
+  if (isDistributed()) {
+    std::vector<paUpdate> updates;
+    paUpdate update;
+    for (const auto& master : design_->getMasters()) {
+      for (const auto& term : master->getTerms()) {
+        for (const auto& pin : term->getPins()) {
+          std::vector<std::unique_ptr<frPinAccess>> pa;
+          for (int i = 0; i < pin->getNumPinAccess(); i++) {
+            pa.push_back(std::make_unique<frPinAccess>(*pin->getPinAccess(i)));
+          }
+          update.addPinAccess(pin.get(), std::move(pa));
+        }
+      }
+    }
+    for (const auto& term : design_->getTopBlock()->getTerms()) {
+      for (const auto& pin : term->getPins()) {
+        std::vector<std::unique_ptr<frPinAccess>> pa;
+        for (int i = 0; i < pin->getNumPinAccess(); i++) {
+          pa.push_back(std::make_unique<frPinAccess>(*pin->getPinAccess(i)));
+        }
+        update.addPinAccess(pin.get(), std::move(pa));
+      }
+    }
+
+    dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
+                        dst::JobMessage::BROADCAST),
+        result;
+    std::unique_ptr<PinAccessJobDescription> uDesc
+        = std::make_unique<PinAccessJobDescription>();
+    std::string updates_file = fmt::format("{}/updates.bin", shared_vol_);
+    paUpdate::serialize(update, updates_file);
+    uDesc->setPath(updates_file);
+    uDesc->setType(PinAccessJobDescription::UPDATE_PA);
+    msg.setJobDescription(std::move(uDesc));
+    const bool ok
+        = dist_->sendJob(msg, remote_host_.c_str(), remote_port_, result);
+    if (!ok)
+      logger_->error(utl::DRT, 331, "Error sending UPDATE_PA Job to cloud");
+  }
   prepPattern();
+}
+
+void FlexPA::setTargetInstances(const frCollection<odb::dbInst*>& insts)
+{
+  target_insts_ = insts;
+}
+
+void FlexPA::setDistributed(const std::string& rhost,
+                            const ushort rport,
+                            const std::string& shared_vol,
+                            const int cloud_sz)
+{
+  remote_host_ = rhost;
+  remote_port_ = rport;
+  shared_vol_ = shared_vol;
+  cloud_sz_ = cloud_sz;
 }
 
 int FlexPA::main()
@@ -121,8 +195,7 @@ int FlexPA::main()
   }
 
   if (VERBOSE > 0) {
-    logger_->report("#scanned instances     = {}", inst2unique_.size());
-    logger_->report("#unique  instances     = {}", uniqueInstances_.size());
+    unique_insts_.report();
     logger_->report("#stdCellGenAp          = {}", stdCellPinGenApCnt_);
     logger_->report("#stdCellValidPlanarAp  = {}", stdCellPinValidPlanarApCnt_);
     logger_->report("#stdCellValidViaAp     = {}", stdCellPinValidViaApCnt_);
@@ -142,3 +215,39 @@ int FlexPA::main()
   }
   return 0;
 }
+
+template <class Archive>
+void FlexPinAccessPattern::serialize(Archive& ar, const unsigned int version)
+{
+  if (is_loading(ar)) {
+    int sz = 0;
+    (ar) & sz;
+    while (sz--) {
+      frBlockObject* obj;
+      serializeBlockObject(ar, obj);
+      pattern_.push_back((frAccessPoint*) obj);
+    }
+  } else {
+    int sz = pattern_.size();
+    (ar) & sz;
+    for (auto ap : pattern_) {
+      frBlockObject* obj = (frBlockObject*) ap;
+      serializeBlockObject(ar, obj);
+    }
+  }
+  frBlockObject* obj = (frBlockObject*) right_;
+  serializeBlockObject(ar, obj);
+  right_ = (frAccessPoint*) obj;
+  obj = (frBlockObject*) left_;
+  serializeBlockObject(ar, obj);
+  left_ = (frAccessPoint*) obj;
+  (ar) & cost_;
+}
+
+template void FlexPinAccessPattern::serialize<frIArchive>(
+    frIArchive& ar,
+    const unsigned int file_version);
+
+template void FlexPinAccessPattern::serialize<frOArchive>(
+    frOArchive& ar,
+    const unsigned int file_version);

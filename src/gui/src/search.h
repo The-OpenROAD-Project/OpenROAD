@@ -35,6 +35,7 @@
 #include <QObject>
 #include <boost/geometry.hpp>
 #include <boost/geometry/index/rtree.hpp>
+#include <mutex>
 
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
@@ -69,10 +70,14 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   template <typename T>
   using BoxValue = std::tuple<Box, T>;
   template <typename T>
+  using SBoxValue = std::tuple<Box, odb::dbSBox*, T>;
+  template <typename T>
   using PolygonValue = std::tuple<Box, Polygon, T>;
 
   template <typename T>
   using RtreeBox = bgi::rtree<BoxValue<T>, bgi::quadratic<16>>;
+  template <typename T>
+  using RtreeSBox = bgi::rtree<SBoxValue<T>, bgi::quadratic<16>>;
   template <typename T>
   using RtreePolygon = bgi::rtree<PolygonValue<T>, bgi::quadratic<16>>;
 
@@ -97,6 +102,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   };
   using InstRange = Range<RtreeBox<odb::dbInst*>>;
   using BoxRange = Range<RtreeBox<odb::dbNet*>>;
+  using SBoxRange = Range<RtreeSBox<odb::dbNet*>>;
   using PolygonRange = Range<RtreePolygon<odb::dbNet*>>;
   using FillRange = Range<RtreeBox<odb::dbFill*>>;
   using ObstructionRange = Range<RtreeBox<odb::dbObstruction*>>;
@@ -106,20 +112,32 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   ~Search();
 
   // Build the structure for the given block.
-  void setBlock(odb::dbBlock* block);
+  void setTopBlock(odb::dbBlock* block);
 
   // Find all box shapes in the given bounds on the given layer which
   // are at least min_size in either dimension.
-  BoxRange searchBoxShapes(odb::dbTechLayer* layer,
+  BoxRange searchBoxShapes(odb::dbBlock* block,
+                           odb::dbTechLayer* layer,
                            int x_lo,
                            int y_lo,
                            int x_hi,
                            int y_hi,
                            int min_size = 0);
 
+  // Find all via sbox shapes in the given bounds on the given layer which
+  // are at least min_size in either dimension.
+  SBoxRange searchViaSBoxShapes(odb::dbBlock* block,
+                                odb::dbTechLayer* layer,
+                                int x_lo,
+                                int y_lo,
+                                int x_hi,
+                                int y_hi,
+                                int min_size = 0);
+
   // Find all polgyon shapes in the given bounds on the given layer which
   // are at least min_size in either dimension.
-  PolygonRange searchPolygonShapes(odb::dbTechLayer* layer,
+  PolygonRange searchPolygonShapes(odb::dbBlock* block,
+                                   odb::dbTechLayer* layer,
                                    int x_lo,
                                    int y_lo,
                                    int x_hi,
@@ -128,7 +146,8 @@ class Search : public QObject, public odb::dbBlockCallBackObj
 
   // Find all fills in the given bounds on the given layer which
   // are at least min_size in either dimension.
-  FillRange searchFills(odb::dbTechLayer* layer,
+  FillRange searchFills(odb::dbBlock* block,
+                        odb::dbTechLayer* layer,
                         int x_lo,
                         int y_lo,
                         int x_hi,
@@ -136,14 +155,16 @@ class Search : public QObject, public odb::dbBlockCallBackObj
                         int min_size = 0);
 
   // Find all instances in the given bounds with height of at least min_height
-  InstRange searchInsts(int x_lo,
+  InstRange searchInsts(odb::dbBlock* block,
+                        int x_lo,
                         int y_lo,
                         int x_hi,
                         int y_hi,
                         int min_height = 0);
 
   // Find all blockages in the given bounds with height of at least min_height
-  BlockageRange searchBlockages(int x_lo,
+  BlockageRange searchBlockages(odb::dbBlock* block,
+                                int x_lo,
                                 int y_lo,
                                 int x_hi,
                                 int y_hi,
@@ -151,7 +172,8 @@ class Search : public QObject, public odb::dbBlockCallBackObj
 
   // Find all obstructions in the given bounds on the given layer which
   // are at least min_size in either dimension.
-  ObstructionRange searchObstructions(odb::dbTechLayer* layer,
+  ObstructionRange searchObstructions(odb::dbBlock* block,
+                                      odb::dbTechLayer* layer,
                                       int x_lo,
                                       int y_lo,
                                       int x_hi,
@@ -159,7 +181,8 @@ class Search : public QObject, public odb::dbBlockCallBackObj
                                       int min_size = 0);
 
   // Find all rows in the given bounds with height of at least min_height.
-  RowRange searchRows(int x_lo,
+  RowRange searchRows(odb::dbBlock* block,
+                      int x_lo,
                       int y_lo,
                       int x_hi,
                       int y_hi,
@@ -203,6 +226,8 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   void newBlock(odb::dbBlock* block);
 
  private:
+  struct BlockData;
+
   void addSNet(odb::dbNet* net);
   void addNet(odb::dbNet* net);
   void addVia(odb::dbNet* net, odb::dbShape* shape, int x, int y);
@@ -211,35 +236,51 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   void addObstruction(odb::dbObstruction* obstruction);
   void addRow(odb::dbRow* row);
 
-  void updateShapes();
-  void updateFills();
-  void updateInsts();
-  void updateBlockages();
-  void updateObstructions();
-  void updateRows();
+  void updateShapes(odb::dbBlock* block);
+  void updateFills(odb::dbBlock* block);
+  void updateInsts(odb::dbBlock* block);
+  void updateBlockages(odb::dbBlock* block);
+  void updateObstructions(odb::dbBlock* block);
+  void updateRows(odb::dbBlock* block);
 
   Box convertRect(const odb::Rect& box) const;
 
   void clear();
 
-  void announceModified(bool& flag);
+  void announceModified(std::atomic_bool& flag);
+  BlockData& getData(odb::dbBlock* block);
 
-  odb::dbBlock* block_{nullptr};
+  odb::dbBlock* top_block_{nullptr};
 
-  // The net is used for filter shapes by net type
-  std::map<odb::dbTechLayer*, RtreeBox<odb::dbNet*>> box_shapes_;
-  std::map<odb::dbTechLayer*, RtreePolygon<odb::dbNet*>> polygon_shapes_;
-  bool shapes_init_{false};
-  std::map<odb::dbTechLayer*, RtreeBox<odb::dbFill*>> fills_;
-  bool fills_init_{false};
-  RtreeBox<odb::dbInst*> insts_;
-  bool insts_init_{false};
-  RtreeBox<odb::dbBlockage*> blockages_;
-  bool blockages_init_{false};
-  std::map<odb::dbTechLayer*, RtreeBox<odb::dbObstruction*>> obstructions_;
-  bool obstructions_init_{false};
-  RtreeBox<odb::dbRow*> rows_;
-  bool rows_init_{false};
+  struct BlockData
+  {
+    // The net is used for filter shapes by net type
+    std::map<odb::dbTechLayer*, RtreeBox<odb::dbNet*>> box_shapes_;
+    // Special net vias may be large multi-cut vias.  It is more efficient
+    // to store the dbSBox (ie the via) than all the cuts.  This is
+    // particularly true when you have parallel straps like m1 & m2 in asap7.
+    std::map<odb::dbTechLayer*, RtreeSBox<odb::dbNet*>> via_sbox_shapes_;
+    std::map<odb::dbTechLayer*, RtreePolygon<odb::dbNet*>> polygon_shapes_;
+    std::atomic_bool shapes_init_{false};
+    std::mutex shapes_init_mutex_;
+    std::map<odb::dbTechLayer*, RtreeBox<odb::dbFill*>> fills_;
+    std::atomic_bool fills_init_{false};
+    std::mutex fills_init_mutex_;
+    RtreeBox<odb::dbInst*> insts_;
+    std::atomic_bool insts_init_{false};
+    std::mutex insts_init_mutex_;
+    RtreeBox<odb::dbBlockage*> blockages_;
+    std::atomic_bool blockages_init_{false};
+    std::mutex blockages_init_mutex_;
+    std::map<odb::dbTechLayer*, RtreeBox<odb::dbObstruction*>> obstructions_;
+    std::atomic_bool obstructions_init_{false};
+    std::mutex obstructions_init_mutex_;
+    RtreeBox<odb::dbRow*> rows_;
+    std::atomic_bool rows_init_{false};
+    std::mutex rows_init_mutex_;
+  };
+  std::map<odb::dbBlock*, BlockData> child_block_data_;
+  BlockData top_block_data_;
 };
 
 }  // namespace gui

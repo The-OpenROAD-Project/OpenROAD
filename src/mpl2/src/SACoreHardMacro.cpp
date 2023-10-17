@@ -294,7 +294,7 @@ void SACoreHardMacro::printResults()
              1,
              "number of macros : {}",
              macros_.size());
-  for (auto macro : macros_) {
+  for (const auto& macro : macros_) {
     debugPrint(logger_,
                MPL,
                "macro_placement",

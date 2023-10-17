@@ -50,7 +50,8 @@ def clock_tree_synthesis(design, *,
                          balance_levels=False,
                          sink_clustering_levels=None,
                          num_static_layers=None,
-                         sink_clustering_buffer=None
+                         sink_clustering_buffer=None,
+                         obstruction_aware=False
                         ):
 
     cts = design.getTritonCts()
@@ -59,6 +60,7 @@ def clock_tree_synthesis(design, *,
     # Boolean
     parms.setSinkClustering(sink_clustering_enable)
     parms.setBalanceLevels(balance_levels)
+    parms.setObstructionAware(obstruction_aware)
     
     if is_pos_int(sink_clustering_size):
         parms.setSizeSinkClustering(sink_clustering_size)
@@ -74,11 +76,11 @@ def clock_tree_synthesis(design, *,
 
     if is_pos_float(distance_between_buffers):
         parms.setSimpleSegmentsEnabled(True)
-        parms.setBufferDistance(distance_between_buffers)
+        parms.setBufferDistance(design.micronToDBU(distance_between_buffers))
 
     if is_pos_float(branching_point_buffers_distance):
         parms.setVertexBuffersEnabled(True)
-        parms.setVertexBufferDistance(branching_point_buffers_distance)
+        parms.setVertexBufferDistance(design.micronToDBU(branching_point_buffers_distance))
 
     if is_pos_int(clustering_exponent):
         parms.setClusteringPower(clustering_exponent)

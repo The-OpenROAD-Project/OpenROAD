@@ -342,8 +342,10 @@ BufferedNet::wireRC(const Corner *corner,
     resizer->logger()->critical(RSZ, 82, "wireRC called for non-wire");
   if (layer_ == BufferedNet::null_layer)
     resizer->wireSignalRC(corner, res, cap);
-  else
-    resizer->layerRC(layer_, corner, res, cap);
+  else {
+    odb::dbTech* tech = resizer->db_->getTech();
+    resizer->layerRC(tech->findRoutingLayer(layer_), corner, res, cap);
+  }
 }
 
 static const char *
@@ -455,7 +457,7 @@ Resizer::makeBufferedNetSteiner(const Pin *drvr_pin,
   BufferedNetPtr bnet = nullptr;
   SteinerTree *tree = makeSteinerTree(drvr_pin);
   if (tree) {
-    SteinerPt drvr_pt = tree->drvrPt(network_);
+    SteinerPt drvr_pt = tree->drvrPt();
     if (drvr_pt != SteinerTree::null_pt) {
       int branch_count = tree->branchCount();
       SteinerPtAdjacents adjacents(branch_count);

@@ -198,7 +198,7 @@ dbTechNonDefaultRule* dbTechLayerRule::getNonDefaultRule()
   _dbTechLayerRule* rule = (_dbTechLayerRule*) this;
 
   if (rule->_non_default_rule == 0)
-    return NULL;
+    return nullptr;
 
   if (isBlockRule()) {
     _dbBlock* block = rule->getBlock();
@@ -294,7 +294,7 @@ dbTechLayerRule* dbTechLayerRule::create(dbTechNonDefaultRule* rule_,
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) rule_;
   _dbTechLayer* layer = (_dbTechLayer*) layer_;
-  dbTable<_dbTechLayerRule>* layer_rule_tbl = NULL;
+  dbTable<_dbTechLayerRule>* layer_rule_tbl = nullptr;
 
   if (rule->_flags._block_rule) {
     _dbBlock* block = rule->getBlock();
@@ -305,7 +305,7 @@ dbTechLayerRule* dbTechLayerRule::create(dbTechNonDefaultRule* rule_,
   }
 
   if (rule->_layer_rules[layer->_number] != 0)
-    return NULL;
+    return nullptr;
 
   _dbTechLayerRule* layer_rule = layer_rule_tbl->create();
   layer_rule->_non_default_rule = rule->getOID();

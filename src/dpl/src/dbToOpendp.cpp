@@ -220,6 +220,7 @@ static bool swapWidthHeight(const dbOrientType& orient)
 
 void Opendp::makeGroups()
 {
+  regions_rtree.clear();
   // preallocate groups so it does not grow when push_back is called
   // because region cells point to them.
   auto db_groups = block_->getGroups();
@@ -261,7 +262,15 @@ void Opendp::makeGroups()
           box = box.intersect(core_);
           // offset region to core origin
           box.moveDelta(-core_.xMin(), -core_.yMin());
-
+          if (height == *(unique_heights.begin())) {
+            bgBox bbox(
+                bgPoint(box.xMin(), box.yMin()),
+                bgPoint(box.xMax() - 1,
+                        box.yMax()
+                            - 1));  /// the -1 is to prevent imaginary overlaps
+                                    /// where a region ends and another starts
+            regions_rtree.insert(bbox);
+          }
           group.regions.push_back(box);
           group.boundary.merge(box);
         }

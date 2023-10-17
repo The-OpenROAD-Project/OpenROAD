@@ -107,9 +107,11 @@ class RDLRouter
             odb::dbTechLayer* layer,
             odb::dbTechVia* bump_via,
             odb::dbTechVia* pad_via,
+            const std::map<odb::dbITerm*, odb::dbITerm*>& routing_map,
             int width,
             int spacing,
-            bool allow45);
+            bool allow45,
+            float turn_penalty);
 
   void route(const std::vector<odb::dbNet*>& nets);
 
@@ -187,6 +189,9 @@ class RDLRouter
   int width_;
   int spacing_;
   bool allow45_;
+  float turn_penalty_;
+
+  const std::map<odb::dbITerm*, odb::dbITerm*>& routing_map_;
 
   GridGraph graph_;
   GridWeightMap graph_weight_;

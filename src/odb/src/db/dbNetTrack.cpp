@@ -44,47 +44,39 @@
 #include "dbBlock.h"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbNetTrack>;
 
 bool _dbNetTrack::operator==(const _dbNetTrack& rhs) const
 {
   if (net_ != rhs.net_)
     return false;
-
   if (box_ != rhs.box_)
     return false;
-
   if (layer_ != rhs.layer_)
     return false;
-
   if (track_next_ != rhs.track_next_)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
+
 bool _dbNetTrack::operator<(const _dbNetTrack& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
+
 void _dbNetTrack::differences(dbDiff& diff,
                               const char* field,
                               const _dbNetTrack& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(net_);
   DIFF_FIELD(box_);
   DIFF_FIELD(layer_);
   DIFF_FIELD(track_next_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
+
 void _dbNetTrack::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -93,23 +85,19 @@ void _dbNetTrack::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(layer_);
   DIFF_OUT_FIELD(track_next_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
+
 _dbNetTrack::_dbNetTrack(_dbDatabase* db)
 {
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
+
 _dbNetTrack::_dbNetTrack(_dbDatabase* db, const _dbNetTrack& r)
 {
   net_ = r.net_;
   box_ = r.box_;
   layer_ = r.layer_;
   track_next_ = r.track_next_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbNetTrack& obj)
@@ -118,29 +106,21 @@ dbIStream& operator>>(dbIStream& stream, _dbNetTrack& obj)
   stream >> obj.box_;
   stream >> obj.layer_;
   stream >> obj.track_next_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbNetTrack& obj)
 {
   stream << obj.net_;
   stream << obj.box_;
   stream << obj.layer_;
   stream << obj.track_next_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
 _dbNetTrack::~_dbNetTrack()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

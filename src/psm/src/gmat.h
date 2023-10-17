@@ -76,7 +76,7 @@ class GMat
 {
  public:
   //! Constructor for creating the G matrix
-  GMat(int num_layers, utl::Logger* logger);
+  GMat(int num_layers, utl::Logger* logger, odb::dbTech* tech);
   //! Destructor of the G matrix
   ~GMat();
   //! Function to return a pointer to the node with a index
@@ -84,12 +84,14 @@ class GMat
   bool findLayer(int layer);
   //! Function to return a pointer to the node with the x, y, and layer number
   Node* getNode(int x, int y, int layer, bool nearest);
-  //! Function to return a vector to all nodes in the region defined
-  std::vector<Node*> getNodes(int layer,
-                              int x_min,
-                              int x_max,
-                              int y_min,
-                              int y_max);
+  //! Call func on all nodes in the region defined
+  void foreachNode(int layer,
+                   int x_min,
+                   int x_max,
+                   int y_min,
+                   int y_max,
+                   const std::function<void(Node*)>& func);
+
   //! Function to return a vector of pointers to the nodes within an area sorted
   // by direction
   std::map<std::pair<int, int>, Node*> getNodes(
@@ -108,7 +110,7 @@ class GMat
   //! Function to add the conductance value between two nodes
   void setConductance(const Node* node1, const Node* node2, double cond);
   //! Function to initialize the sparse dok matrix
-  void initializeGmatDok(int numC4);
+  void initializeGmatDok(int num);
   //! Function that returns the number of nodes in the G matrix
   NodeIdx getNumNodes();
   //! Function to return a pointer to the G matrix
@@ -130,8 +132,8 @@ class GMat
                                  int x_max,
                                  int y_min,
                                  int y_max);
-  //! Function to add the voltage source based on C4 bump location
-  void addC4Bump(int loc, int C4Num);
+  //! Function to add the voltage source based on source location
+  void addSource(int loc, int source_number);
   //! Function which generates the compressed sparse column matrix
   bool generateCSCMatrix();
   //! Function which generates the compressed sparse column matrix for A
@@ -154,6 +156,8 @@ class GMat
 
   //! Pointer to the logger
   utl::Logger* logger_{nullptr};
+  //! Pointer to the logger
+  odb::dbTech* tech_{nullptr};
   //! Number of nodes in G matrix
   NodeIdx n_nodes_{0};
   //! Dictionary of keys for G matrix

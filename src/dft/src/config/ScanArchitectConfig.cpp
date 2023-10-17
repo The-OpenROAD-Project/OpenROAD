@@ -32,7 +32,7 @@
 
 #include "ScanArchitectConfig.hh"
 
-#include "Utils.hh"
+#include "Formatting.hh"
 
 namespace dft {
 
@@ -69,6 +69,8 @@ std::string ScanArchitectConfig::ClockMixingName(
   switch (clock_mixing) {
     case ScanArchitectConfig::ClockMixing::NoMix:
       return "No Mix";
+    case ScanArchitectConfig::ClockMixing::ClockMix:
+      return "Clock Mix";
     default:
       return "Missing case in ClockMixingName";
   }

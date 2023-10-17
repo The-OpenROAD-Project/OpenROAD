@@ -36,24 +36,23 @@
 #include "RepairSetup.hh"
 #include "rsz/Resizer.hh"
 
-#include "utl/Logger.h"
-#include "db_sta/dbNetwork.hh"
-
-#include "sta/Units.hh"
-#include "sta/Liberty.hh"
-#include "sta/TimingArc.hh"
-#include "sta/Graph.hh"
-#include "sta/DcalcAnalysisPt.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/Parasitics.hh"
-#include "sta/Sdc.hh"
-#include "sta/InputDrive.hh"
 #include "sta/Corner.hh"
-#include "sta/PathVertex.hh"
-#include "sta/PathRef.hh"
-#include "sta/PathExpanded.hh"
+#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Fuzzy.hh"
+#include "sta/Graph.hh"
+#include "sta/GraphDelayCalc.hh"
+#include "sta/InputDrive.hh"
+#include "sta/Liberty.hh"
+#include "sta/Parasitics.hh"
+#include "sta/PathExpanded.hh"
+#include "sta/PathRef.hh"
+#include "sta/PathVertex.hh"
 #include "sta/PortDirection.hh"
+#include "sta/Sdc.hh"
+#include "sta/TimingArc.hh"
+#include "sta/Units.hh"
+
+#include "utl/Logger.h"
 
 namespace rsz {
 
@@ -64,7 +63,6 @@ using std::string;
 using std::vector;
 using std::map;
 using std::pair;
-
 using utl::RSZ;
 
 using sta::VertexOutEdgeIterator;
@@ -77,6 +75,7 @@ using sta::fuzzyLess;
 using sta::fuzzyLessEqual;
 using sta::fuzzyGreater;
 using sta::fuzzyGreaterEqual;
+using sta::InstancePinIterator;
 using sta::Unit;
 using sta::Corners;
 using sta::InputDrive;
@@ -90,7 +89,9 @@ RepairSetup::RepairSetup(Resizer* resizer)
       drvr_port_(nullptr),
       resize_count_(0),
       inserted_buffer_count_(0),
+      split_load_buffer_count_(0),
       rebuffer_net_count_(0),
+      cloned_gate_count_(0),
       swap_pin_count_(0),
       min_(MinMax::min()),
       max_(MinMax::max())
@@ -103,27 +104,29 @@ RepairSetup::init()
   logger_ = resizer_->logger_;
   sta_ = resizer_->sta_;
   db_network_ = resizer_->db_network_;
-
   copyState(sta_);
 }
 
 void
 RepairSetup::repairSetup(float setup_slack_margin,
-                         // Percent of violating ends to repair to
-                         // reduce tns (0.0-1.0).
                          double repair_tns_end_percent,
-                         int max_passes)
+                         int max_passes,
+                         bool verbose,
+                         bool skip_pin_swap,
+                         bool skip_gate_cloning)
 {
   init();
   constexpr int digits = 3;
   inserted_buffer_count_ = 0;
+  split_load_buffer_count_ = 0;
   resize_count_ = 0;
+  cloned_gate_count_ = 0;
   resizer_->buffer_moved_into_core_ = false;
 
   // Sort failing endpoints by slack.
   VertexSet *endpoints = sta_->endpoints();
   VertexSeq violating_ends;
-
+  // logger_->setDebugLevel(RSZ, "repair_setup", 2);
   // Should check here whether we can figure out the clock domain for each
   // vertex. This may be the place where we can do some round robin fun to
   // individually control each clock domain instead of just fixating on fixing one.
@@ -140,11 +143,25 @@ RepairSetup::repairSetup(float setup_slack_margin,
              endpoints->size(),
              int(violating_ends.size() / double(endpoints->size()) * 100));
 
+  if (!violating_ends.empty()) {
+    logger_->info(RSZ, 94, "Found {} endpoints with setup violations.",
+                  violating_ends.size());
+  } else {
+    // nothing to repair
+    logger_->metric("design__instance__count__setup_buffer", 0);
+    return;
+  }
+
   int end_index = 0;
   int max_end_count = violating_ends.size() * repair_tns_end_percent;
   // Always repair the worst endpoint, even if tns percent is zero.
   max_end_count = max(max_end_count, 1);
+  swap_pin_inst_set_.clear(); // Make sure we do not swap the same pin twice.
   resizer_->incrementalParasiticsBegin();
+  int print_iteration = 0;
+  if (verbose) {
+    printProgress(print_iteration, false, false);
+  }
   for (Vertex *end : violating_ends) {
     resizer_->updateParasitics();
     sta_->findRequireds();
@@ -166,16 +183,23 @@ RepairSetup::repairSetup(float setup_slack_margin,
     int decreasing_slack_passes = 0;
     resizer_->journalBegin();
     while (pass <= max_passes) {
+      print_iteration++;
+      if (verbose) {
+        printProgress(print_iteration, false, false);
+      }
+
       if (end_slack > setup_slack_margin) {
         debugPrint(logger_, RSZ, "repair_setup", 2,
                    "Restoring best slack end slack {} worst slack {}",
                    delayAsString(prev_end_slack, sta_, digits),
                    delayAsString(prev_worst_slack, sta_, digits));
-        resizer_->journalRestore(resize_count_, inserted_buffer_count_);
+        resizer_->journalRestore(resize_count_, inserted_buffer_count_,
+				 cloned_gate_count_);
         break;
       }
       PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
-      bool changed = repairSetup(end_path, end_slack);
+      bool changed = repairSetup(end_path, end_slack, skip_pin_swap,
+                                 skip_gate_cloning);
       if (!changed) {
         debugPrint(logger_, RSZ, "repair_setup", 2,
                    "No change after {} decreasing slack passes.",
@@ -184,7 +208,8 @@ RepairSetup::repairSetup(float setup_slack_margin,
                    "Restoring best slack end slack {} worst slack {}",
                    delayAsString(prev_end_slack, sta_, digits),
                    delayAsString(prev_worst_slack, sta_, digits));
-        resizer_->journalRestore(resize_count_, inserted_buffer_count_);
+        resizer_->journalRestore(resize_count_, inserted_buffer_count_,
+                                 cloned_gate_count_);
         break;
       }
       resizer_->updateParasitics();
@@ -221,23 +246,36 @@ RepairSetup::repairSetup(float setup_slack_margin,
                      "Restoring best end slack {} worst slack {}",
                      delayAsString(prev_end_slack, sta_, digits),
                      delayAsString(prev_worst_slack, sta_, digits));
-          resizer_->journalRestore(resize_count_, inserted_buffer_count_);
+          resizer_->journalRestore(resize_count_,
+                                   inserted_buffer_count_,
+                                   cloned_gate_count_);
           break;
         }
       }
+
       if (resizer_->overMaxArea())
         break;
       if (end_index == 1)
         end = worst_vertex;
       pass++;
     }
+    if (verbose) {
+      printProgress(print_iteration, true, false);
+    }
+  }
+  if (verbose) {
+    printProgress(print_iteration, true, true);
   }
   // Leave the parasitics up to date.
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
 
-  if (inserted_buffer_count_ > 0) {
+  if (inserted_buffer_count_ > 0 && split_load_buffer_count_ == 0) {
     logger_->info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
+  }
+  else if (inserted_buffer_count_ > 0 && split_load_buffer_count_ > 0) {
+        logger_->info(RSZ, 45, "Inserted {} buffers, {} to split loads.",
+                          inserted_buffer_count_, split_load_buffer_count_);
   }
   logger_->metric("design__instance__count__setup_buffer", inserted_buffer_count_);
   if (resize_count_ > 0) {
@@ -245,6 +283,9 @@ RepairSetup::repairSetup(float setup_slack_margin,
   }
   if (swap_pin_count_ > 0) {
     logger_->info(RSZ, 43, "Swapped pins on {} instances.", swap_pin_count_);
+  }
+  if (cloned_gate_count_ > 0) {
+    logger_->info(RSZ, 49, "Cloned {} instances.", cloned_gate_count_);
   }
   Slack worst_slack = sta_->worstSlack(max_);
   if (fuzzyLess(worst_slack, setup_slack_margin)) {
@@ -263,12 +304,13 @@ RepairSetup::repairSetup(const Pin *end_pin)
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
   swap_pin_count_ = 0;
+  cloned_gate_count_ = 0;
 
   Vertex *vertex = graph_->pinLoadVertex(end_pin);
   Slack slack = sta_->vertexSlack(vertex, max_);
   PathRef path = sta_->vertexWorstSlackPath(vertex, max_);
   resizer_->incrementalParasiticsBegin();
-  repairSetup(path, slack);
+  repairSetup(path, slack, false, false);
   // Leave the parasitices up to date.
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
@@ -285,6 +327,7 @@ RepairSetup::repairSetup(const Pin *end_pin)
 /* This is the main routine for repairing setup violations. We have
  - upsize driver (step 1)
  - rebuffer (step 2)
+ - swap pin (step 3)
  - split loads
  And they are always done in the same order. Not clear whether
  this order is the best way at all times. Also need to worry about
@@ -300,10 +343,12 @@ RepairSetup::repairSetup(const Pin *end_pin)
  */
 bool
 RepairSetup::repairSetup(PathRef &path,
-                         Slack path_slack)
+                         Slack path_slack,
+                         bool skip_pin_swap, bool skip_gate_cloning)
 {
   PathExpanded expanded(&path, sta_);
   bool changed = false;
+
   if (expanded.size() > 1) {
     int path_length = expanded.size();
     vector<pair<int, Delay>> load_delays;
@@ -357,19 +402,23 @@ RepairSetup::repairSetup(PathRef &path,
         break;
       }
 
-      // Disabled until CI degradation can be resolved
-      // if (swapPins(drvr_path, drvr_index, &expanded)) {
-      //     changed = true;
-      //     break;
-      // }
+      // Pin swapping 
+      if (!skip_pin_swap) {
+        if (swapPins(drvr_path, drvr_index, &expanded)) {
+          changed = true;
+          break;
+        }
+      }
 
       // For tristate nets all we can do is resize the driver.
       bool tristate_drvr = resizer_->isTristateDriver(drvr_pin);
+      dbNet* db_net = db_network_->staToDb(net);
       if (fanout > 1
           // Rebuffer blows up on large fanout nets.
           && fanout < rebuffer_max_fanout_
           && !tristate_drvr
-          && !resizer_->dontTouch(net)) {
+          && !resizer_->dontTouch(net)
+          && !db_net->isConnectedByAbutment()) {
         int rebuffer_count = rebuffer(drvr_pin);
         if (rebuffer_count > 0) {
           debugPrint(logger_, RSZ, "repair_setup", 3, "rebuffer {} inserted {}",
@@ -381,11 +430,23 @@ RepairSetup::repairSetup(PathRef &path,
         }
       }
 
+      // Gate cloning
+      if (!skip_gate_cloning && fanout > split_load_min_fanout_ &&
+          !tristate_drvr && !resizer_->dontTouch(net) &&
+          resizer_->inserted_buffer_set_.find(db_network_->instance(drvr_pin)) == resizer_->inserted_buffer_set_.end() &&
+          cloneDriver(drvr_path, drvr_index, path_slack, &expanded)) {
+          changed = true;
+          break;
+      }
+      
       // Don't split loads on low fanout nets.
       if (fanout > split_load_min_fanout_
           && !tristate_drvr
-          && !resizer_->dontTouch(net)) {
+          && !resizer_->dontTouch(net)
+          && !db_net->isConnectedByAbutment()) {
+        int init_buffer_count = inserted_buffer_count_;
         splitLoads(drvr_path, drvr_index, path_slack, &expanded);
+        split_load_buffer_count_ = inserted_buffer_count_ - init_buffer_count;
         changed = true;
         break;
       }
@@ -429,8 +490,6 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
     PathRef *in_path = expanded->path(in_index);
     Pin *in_pin = in_path->pin(sta_);
 
-    // Very bad hack.
-    static std::unordered_set<const Instance *> instance_set;
 
     if (!resizer_->dontTouch(drvr)) {
         // We get the driver port and the cell for that port.
@@ -440,10 +499,24 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
         LibertyPort *swap_port = input_port;
         sta::LibertyPortSet ports;
 
-        // Check if we have already dealt with this instance. Skip if the answer
-        // is a yes.
-        if (instance_set.find(drvr) == instance_set.end()) {
-            instance_set.insert(drvr);
+        // Results for > 2 input gates are unpredictable. Only swap pins for
+        // 2 input gates for now.
+        int input_port_count = 0;
+        sta::LibertyCellPortIterator port_iter(cell);
+        while (port_iter.hasNext()) {
+            LibertyPort *port = port_iter.next();
+            if (port->direction()->isInput()) {
+                ++input_port_count;
+            }
+        }
+        if (input_port_count > 2) {
+            return false;
+        }
+
+        // Check if we have already dealt with this instance
+        // and prevent any further swaps.
+        if (swap_pin_inst_set_.find(drvr) == swap_pin_inst_set_.end()) {
+            swap_pin_inst_set_.insert(drvr);
         }
         else {
             return false;
@@ -487,7 +560,8 @@ RepairSetup::upsizeDrvr(PathRef *drvr_path,
   PathRef *in_path = expanded->path(in_index);
   Pin *in_pin = in_path->pin(sta_);
   LibertyPort *in_port = network_->libertyPort(in_pin);
-  if (!resizer_->dontTouch(drvr)) {
+  if (!resizer_->dontTouch(drvr) ||
+      resizer_->cloned_inst_set_.find(drvr) != resizer_->cloned_inst_set_.end()) {
     float prev_drive;
     if (drvr_index >= 2) {
       int prev_drvr_index = drvr_index - 2;
@@ -584,6 +658,145 @@ RepairSetup::upsizeCell(LibertyPort *in_port,
     }
   }
   return nullptr;
+}
+
+Point RepairSetup::computeCloneGateLocation(const Pin *drvr_pin,
+                              const vector<pair<Vertex*, Slack>> &fanout_slacks)
+{
+  int count(1); // driver_pin counts as one
+  int centroid_x(0), centroid_y(0); // (0, 0)
+
+  centroid_x += db_network_->location(drvr_pin).getX();
+  centroid_y += db_network_->location(drvr_pin).getY();
+
+  int split_index = fanout_slacks.size() / 2;
+  for (int i = 0; i < split_index; i++) {
+    pair<Vertex*, Slack> fanout_slack = fanout_slacks[i];
+    Vertex *load_vertex = fanout_slack.first;
+    Pin *load_pin = load_vertex->pin();
+    centroid_x += db_network_->location(load_pin).getX();
+    centroid_y += db_network_->location(load_pin).getY();
+    ++count;
+  }
+  return (Point(centroid_x/count, centroid_y/count));
+}
+
+bool
+RepairSetup::cloneDriver(PathRef* drvr_path, int drvr_index,
+                         Slack drvr_slack, PathExpanded *expanded)
+{
+  Pin *drvr_pin = drvr_path->pin(this);
+  PathRef *load_path = expanded->path(drvr_index + 1);
+  Vertex *load_vertex = load_path->vertex(sta_);
+  Pin *load_pin = load_vertex->pin();
+  // Divide and conquer.
+  debugPrint(logger_, RSZ, "repair_setup", 3, "clone driver {} -> {}",
+             network_->pathName(drvr_pin),
+             network_->pathName(load_pin));
+
+  Vertex *drvr_vertex = drvr_path->vertex(sta_);
+  const RiseFall *rf = drvr_path->transition(sta_);
+  // Sort fanouts of the drvr on the critical path by slack margin
+  // wrt the critical path slack.
+  vector<pair<Vertex*, Slack>> fanout_slacks;
+  VertexOutEdgeIterator edge_iter(drvr_vertex, graph_);
+  while (edge_iter.hasNext()) {
+    Edge *edge = edge_iter.next();
+    Vertex *fanout_vertex = edge->to(graph_);
+    Slack fanout_slack = sta_->vertexSlack(fanout_vertex, rf, max_);
+    Slack slack_margin = fanout_slack - drvr_slack;
+    debugPrint(logger_, RSZ, "repair_setup", 4, " fanin {} slack_margin = {}",
+               network_->pathName(fanout_vertex->pin()),
+               delayAsString(slack_margin, sta_, 3));
+    fanout_slacks.emplace_back(fanout_vertex, slack_margin);
+  }
+
+  sort(fanout_slacks.begin(), fanout_slacks.end(),
+       [=](pair<Vertex*, Slack> pair1,
+           pair<Vertex*, Slack> pair2) {
+         return (pair1.second > pair2.second
+                 || (pair1.second == pair2.second
+                     && network_->pathNameLess(pair1.first->pin(),
+                                               pair2.first->pin())));
+       });
+
+  Instance *drvr_inst = db_network_->instance(drvr_pin);
+
+  if (!resizer_->isSingleOutputCombinational(drvr_inst)) {
+    return false;
+  }
+
+  string buffer_name = resizer_->makeUniqueInstName("clone");
+  Instance *parent = db_network_->topInstance();
+
+  // This is the meat of the gate cloning code.
+  // We need to downsize the current driver AND we need to insert another drive
+  // that splits the load
+  // For now we will defer the downsize to a later juncture.
+
+  LibertyCell *original_cell = network_->libertyCell(drvr_inst);
+  LibertyCell *clone_cell = resizer_->halfDrivingPowerCell(original_cell);
+
+  if (clone_cell == nullptr) {
+    clone_cell = original_cell;  // no clone available use original
+  }
+
+  Point drvr_loc = computeCloneGateLocation(drvr_pin, fanout_slacks);
+  Instance *clone_inst = resizer_->journalCloneInstance(clone_cell, buffer_name.c_str(),
+                                                        network_->instance(drvr_pin), parent, drvr_loc);
+
+  cloned_gate_count_++;
+
+  debugPrint(logger_, RSZ, "repair_setup", 3, "clone {} ({}) -> {} ({})",
+             network_->pathName(drvr_pin), original_cell->name(),
+             network_->pathName(clone_inst), clone_cell->name());
+
+
+  Net *out_net = resizer_->makeUniqueNet();
+  std::unique_ptr<InstancePinIterator> inst_pin_iter{network_->pinIterator(drvr_inst)};
+  while (inst_pin_iter->hasNext()) {
+    Pin *pin = inst_pin_iter->next();
+    if (network_->direction(pin)->isInput()) {
+      // Connect to all the inputs of the original cell.
+      auto libPort = network_->libertyPort(pin); // get the liberty port of the original inst/pin
+      auto net = network_->net(pin);
+      sta_->connectPin(clone_inst, libPort, net);  // connect the same liberty port of the new instance
+      resizer_->parasiticsInvalid(net);
+    }
+  }
+
+  // Get the output pin
+  Pin* clone_output_pin = nullptr;
+  std::unique_ptr<InstancePinIterator> clone_pin_iter{network_->pinIterator(clone_inst)};
+  while (clone_pin_iter->hasNext()) {
+    Pin* pin = clone_pin_iter->next();
+    // If output pin then cache for later use.
+    if (network_->direction(pin)->isOutput()) {
+      clone_output_pin = pin;
+      break;
+    }
+  }
+  // Connect to the new output net we just created
+  auto *clone_output_port = network_->port(clone_output_pin);
+  sta_->connectPin(clone_inst, clone_output_port, out_net);
+
+  // Divide the list of pins in half and connect them to the new net we
+  // created as part of gate cloning. Skip ports connected to the original net
+  int split_index = fanout_slacks.size() / 2;
+  for (int i = 0; i < split_index; i++) {
+    pair<Vertex*, Slack> fanout_slack = fanout_slacks[i];
+    Vertex *load_vertex = fanout_slack.first;
+    Pin *load_pin = load_vertex->pin();
+    // Leave ports connected to original net so verilog port names are preserved.
+    if (!network_->isTopLevelPort(load_pin)) {
+      auto *load_port = network_->port(load_pin);
+      Instance *load = network_->instance(load_pin);
+      sta_->disconnectPin(load_pin);
+      sta_->connectPin(load, load_port, out_net);
+    }
+  }
+  resizer_->parasiticsInvalid(out_net);
+  return true;
 }
 
 void
@@ -768,4 +981,42 @@ RepairSetup::equivCellPins(const LibertyCell *cell, sta::LibertyPortSet &ports)
         }
     }
 }
+
+void
+RepairSetup::printProgress(int iteration, bool force, bool end) const
+{
+  const bool start = iteration == 0;
+
+  if (start && !end) {
+    logger_->report("Iteration | Resized | Buffers | Cloned Gates | Pin Swaps |   WNS   |   TNS   | Endpoint");
+    logger_->report("---------------------------------------------------------------------------------------");
+  }
+
+  if (iteration % print_interval_ == 0 || force || end) {
+    Slack wns;
+    Vertex* worst_vertex;
+    sta_->worstSlack(max_, wns, worst_vertex);
+    const Slack tns = sta_->totalNegativeSlack(max_);
+
+    std::string itr_field = fmt::format("{}", iteration);
+    if (end) {
+      itr_field = "final";
+    }
+
+    logger_->report("{: >9s} | {: >7d} | {: >7d} | {: >12d} | {: >9d} | {: >7s} | {: >7s} | {}",
+                    itr_field,
+                    resize_count_,
+                    inserted_buffer_count_ + split_load_buffer_count_ + rebuffer_net_count_,
+                    cloned_gate_count_,
+                    swap_pin_count_,
+                    delayAsString(wns, sta_, 3),
+                    delayAsString(tns, sta_, 3),
+                    worst_vertex != nullptr ? worst_vertex->name(network_) : "");
+  }
+
+  if (end) {
+    logger_->report("---------------------------------------------------------------------------------------");
+  }
+}
+
 }  // namespace rsz

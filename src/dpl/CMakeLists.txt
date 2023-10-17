@@ -37,7 +37,8 @@
 ###########################################################################
 
 include("openroad")
-
+find_package(TCL)
+find_package(Boost)
 
 add_library(dpl_lib
   src/Opendp.cpp
@@ -53,7 +54,6 @@ target_link_libraries(dpl_lib
   PUBLIC
     odb
     OpenSTA
-    tcl
   PRIVATE
     utl_lib
 )
@@ -80,11 +80,13 @@ target_sources(dpl
 target_include_directories(dpl
   PUBLIC
     include
+  PRIVATE
     src
 )
 
 target_link_libraries(dpl
   PRIVATE
+    ${TCL_LIBRARY}
     odb
     dpl_lib
     OpenSTA
@@ -116,6 +118,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
 
   target_link_libraries(dpl_py
     PUBLIC
+      ${Boost_LIBRARIES}
       dpl_lib
       gui
       odb

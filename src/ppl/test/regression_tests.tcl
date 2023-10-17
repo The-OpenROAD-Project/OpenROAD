@@ -1,28 +1,4 @@
 record_tests {
-  gcd
-  multi_layers
-  multiple_calls
-  invalid_layer
-  min_dist_in_tracks1
-  min_dist_in_tracks2
-  no_instance_pins
-  no_pins
-  no_tracks
-  on_grid
-  random1
-  random2
-  random3
-  random4
-  random5
-  random6
-  random7
-  random8
-  random9
-  blocked_region
-  cells_not_placed
-  exclude1
-  exclude2
-  exclude3
   add_constraint1
   add_constraint2
   add_constraint3
@@ -36,10 +12,39 @@ record_tests {
   add_constraint11
   add_constraint12
   add_constraint13
+  add_constraint14
+  add_constraint15
+  add_constraint16
   add_constraint_error1
   add_constraint_error2
   add_constraint_error3
   add_constraint_error4
+  add_constraint_error5
+  add_constraint_error6
+  annealing1
+  annealing2
+  annealing3
+  annealing_constraint1
+  annealing_constraint2
+  annealing_constraint3
+  annealing_constraint4
+  annealing_constraint5
+  annealing_constraint6
+  annealing_constraint7
+  annealing_constraint8
+  annealing_large_groups1
+  annealing_large_groups2
+  annealing_mirrored1
+  annealing_mirrored2
+  annealing_mirrored3
+  annealing_mirrored4
+  annealing_mirrored5
+  blocked_region
+  cells_not_placed
+  exclude1
+  exclude2
+  exclude3
+  gcd
   group_pins1
   group_pins2
   group_pins3
@@ -50,17 +55,21 @@ record_tests {
   group_pins8
   group_pins9
   group_pins10
+  group_pins_error1
   group_pins_warn1
+  invalid_layer
   large_groups1
   large_groups2
-  top_layer1
-  top_layer2
-  top_layer3
-  top_layer4
-  top_layer5
-  top_layer6
-  top_layer7
-  top_layer_error
+  large_groups3
+  large_groups4
+  min_dist_in_tracks1
+  min_dist_in_tracks2
+  multi_layers
+  multiple_calls
+  no_instance_pins
+  no_pins
+  no_tracks
+  on_grid
   pin_length
   pin_length_error
   pin_extension
@@ -75,4 +84,26 @@ record_tests {
   place_pin_error1
   place_pin_error2
   place_pin_error3
+  random1
+  random2
+  random3
+  random4
+  random5
+  random6
+  random7
+  random8
+  random9
+  top_layer1
+  top_layer2
+  top_layer3
+  top_layer4
+  top_layer5
+  top_layer6
+  top_layer7
+  top_layer_error
+  top_layer_error2
+  write_pin_placement1
+  write_pin_placement2
+  write_pin_placement3
+  write_pin_placement4
 }

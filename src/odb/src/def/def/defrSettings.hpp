@@ -1,6 +1,6 @@
 // *****************************************************************************
 // *****************************************************************************
-// Copyright 2013-2014, Cadence Design Systems
+// Copyright 2013-2019, Cadence Design Systems
 //
 // This  file  is  part  of  the  Cadence  LEF/DEF  Open   Source
 // Distribution,  Product Version 5.8.
@@ -37,6 +37,7 @@
 #include "defrReader.hpp"
 
 #define DEF_DEBUG_IDS 100
+#define defMaxOxides 32
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
@@ -76,7 +77,6 @@ class defrSettings
   int FillWarnings;
   int GcellGridWarnings;
   int IOTimingWarnings;
-  int LogFileAppend;
   int NetWarnings;
   int NonDefaultWarnings;
   int PinExtWarnings;
@@ -97,9 +97,6 @@ class defrSettings
   int AddPathToNet;
   int AllowComponentNets;
   char CommentChar;
-  int DisPropStrProcess;
-
-  int reader_case_sensitive_set;
 
   DEFI_READ_FUNCTION ReadFunction;
   DEFI_LOG_FUNCTION ErrorLogFunction;
@@ -117,6 +114,11 @@ class defrSettings
 
   int UnusedCallbacks[CBMAX];
   int MsgLimit[DEF_MSGS];
+  int reader_case_sensitive_set;
+  int DisPropStrProcess;
+  int LogFileAppend;
+
+  static const char* defOxides[defMaxOxides];
 };
 
 class defrSession

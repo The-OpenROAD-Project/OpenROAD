@@ -95,7 +95,6 @@ write_db $global_place_db
 
 ################################################################
 # Repair max slew/cap/fanout violations and normalize slews
-
 source $layer_rc_file
 set_wire_rc -signal -layer $wire_rc_layer
 set_wire_rc -clock  -layer $wire_rc_layer_clk
@@ -160,7 +159,7 @@ if { $repair_timing_use_grt_parasitics } {
   estimate_parasitics -placement
 }
 
-repair_timing
+repair_timing -skip_gate_cloning
 
 # Post timing repair.
 report_worst_slack -min -digits 3

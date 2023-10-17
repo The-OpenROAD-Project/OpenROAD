@@ -108,18 +108,27 @@ class deltaDebugger:
             err = None
             self.n = 2 # Initial Number of cuts
 
-            for i in range(self.persistence):
+            while self.n <= (2 ** self.persistence):
+                error_in_range = None
                 for j in range(self.n):
-                    err = self.perform_step(cut_index = j)
-                    if(err == "NOCUT"):
+                    current_err = self.perform_step(cut_index = j)
+                    if(current_err == "NOCUT"):
                         break
-                    elif(err != None): # Found the target error with the cut DB
+                    elif(current_err != None):
+                        # Found the target error with the cut DB
+                        #
+                        # This is a suitable level of detail to look for more errors,
+                        # complete this level of detail.
+                        err = current_err
+                        error_in_range = current_err
                         self.prepare_new_step()
-                        break
-                
-                if(err == None):
+
+                if(error_in_range == None):
                     # Increase the granularity of the cut in case target error not found
                     self.n *= 2
+                elif self.n >= 8:
+                    # Found errors, decrease granularity
+                    self.n = int(self.n / 2)
                 else:
                     break
 
@@ -152,7 +161,7 @@ class deltaDebugger:
        
         # read base db in memory
         print("___________________________________")
-        print("Reading base odb file")
+        print("Reading base odb file", flush=True)
         self.base_db  = odb.dbDatabase.create()
         self.base_db  = odb.read_db(self.base_db , self.temp_base_db_file)
         
@@ -166,7 +175,7 @@ class deltaDebugger:
                 return cut_result
 
         # Write DB
-        print("Writing odb file")
+        print("Writing odb file", flush=True)
         odb.write_db(self.base_db, self.base_db_file)
         if(self.dump_def != 0):
             print("Writing def file")
@@ -179,7 +188,7 @@ class deltaDebugger:
 
         if(cut_index != -1):
             self.step_count += 1
-        print(f"Step {self.step_count} is running, deltaDebug is waiting.")
+        print(f"Step {self.step_count} is running, deltaDebug is waiting.", flush=True)
          
         # Perform step, and check the error code  
         start_time = time.time()
@@ -194,7 +203,7 @@ class deltaDebugger:
             print(f"Timeout updated to approx {ceil(self.timeout/60.0)} minutes!")
 
         print(f"Error Code found: {error_string}")
-        print(f"Step {self.step_count} is done.")
+        print(f"Step {self.step_count} is done.", flush=True)
 
         return error_string
 
@@ -241,7 +250,7 @@ class deltaDebugger:
 
             curr_time = time.time()
             if((curr_time - start_time) > self.timeout):
-                print(f"Step {self.step_count} timed out!")
+                print(f"Step {self.step_count} timed out!", flush=True)
                 os.killpg(os.getpgid(process.pid), signal.SIGKILL)
                 break
             
@@ -263,6 +272,17 @@ class deltaDebugger:
         if os.path.exists(self.base_db_file):
             os.rename(self.base_db_file, self.temp_base_db_file)
 
+    def clear_dont_touch_inst(self, inst):
+        inst.setDoNotTouch(False)
+        for iterm in inst.getITerms():
+            net = iterm.getNet()
+            if net:
+                net.setDoNotTouch(False)
+
+    def clear_dont_touch_net(self, net):
+        net.setDoNotTouch(False)
+        for iterm in net.getITerms():
+            iterm.getInst().setDoNotTouch(False)
         
     # A function that cuts the block according to the given direction
     # and ratio. It also uses the class cut level  to identify
@@ -290,13 +310,17 @@ class deltaDebugger:
 
         cut_position_string = '#' * self.n
         cut_position_string = cut_position_string[:index] + 'C' + cut_position_string[index+1:]
-        print(f"Number of elements to be cut is {num_elms_to_cut}, [{cut_position_string}]")
+        print(f"Number of elements to be cut is {num_elms_to_cut}, [{cut_position_string}]", flush=True)
 
         for i in range (start, end):
             elm = elms[i]
+            if self.cut_level == cutLevel.Insts: 
+                self.clear_dont_touch_inst(elm)
+            elif self.cut_level == cutLevel.Nets:
+                self.clear_dont_touch_net(elm)
             elm.destroy(elm)
 
-        print("Done cutting design.")
+        print("Done cutting design.", flush=True)
         return 0        
 
 

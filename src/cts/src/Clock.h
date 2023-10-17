@@ -36,6 +36,7 @@
 #pragma once
 
 #include <cassert>
+#include <cstdint>
 #include <deque>
 #include <functional>
 #include <unordered_map>

@@ -40,9 +40,11 @@
 #include <boost/icl/interval.hpp>
 #include <boost/icl/interval_set.hpp>
 #include <boost/multi_array.hpp>
+#include <set>
 #include <unordered_map>
 #include <vector>
 
+#include "AbstractMakeWireParasitics.h"
 #include "DataType.h"
 #include "grt/GRoute.h"
 #include "odb/geom.h"
@@ -54,7 +56,8 @@ class Logger;
 
 namespace odb {
 class dbDatabase;
-}
+class dbTechLayerDir;
+}  // namespace odb
 
 namespace stt {
 class SteinerTreeBuilder;
@@ -70,50 +73,41 @@ using boost::icl::interval_set;
 
 namespace grt {
 
-class FastRouteRenderer;
+class AbstractFastRouteRenderer;
+class MakeWireParasitics;
 
 // Debug mode settings
 struct DebugSetting
 {
-  const odb::dbNet* net_;
-  bool steinerTree_;
-  bool rectilinearSTree_;
-  bool tree2D_;
-  bool tree3D_;
-  bool isOn_;
+  const odb::dbNet* net_ = nullptr;
+  bool steinerTree_ = false;
+  bool rectilinearSTree_ = false;
+  bool tree2D_ = false;
+  bool tree3D_ = false;
+  std::unique_ptr<AbstractFastRouteRenderer> renderer_;
   std::string sttInputFileName_;
-  DebugSetting()
-      : net_(nullptr),
-        steinerTree_(false),
-        rectilinearSTree_(false),
-        tree2D_(false),
-        tree3D_(false),
-        isOn_(false),
-        sttInputFileName_("")
-  {
-  }
+
+  bool isOn() const { return renderer_ != nullptr; }
 };
 
 using stt::Tree;
-
-typedef std::pair<int, int> TileCongestion;
 
 class FastRouteCore
 {
  public:
   FastRouteCore(odb::dbDatabase* db,
                 utl::Logger* log,
-                stt::SteinerTreeBuilder* stt_builder,
-                gui::Gui* gui);
+                stt::SteinerTreeBuilder* stt_builder);
   ~FastRouteCore();
 
   void clear();
+  void saveCongestion(int iter = -1);
   void setGridsAndLayers(int x, int y, int nLayers);
   void addVCapacity(short verticalCapacity, int layer);
   void addHCapacity(short horizontalCapacity, int layer);
   void setLowerLeft(int x, int y);
   void setTileSize(int size);
-  void setLayerOrientation(int x);
+  void addLayerDirection(int layer_idx, const odb::dbTechLayerDir& direction);
   FrNet* addNet(odb::dbNet* db_net,
                 bool is_clock,
                 int driver_idx,
@@ -159,19 +153,36 @@ class FastRouteCore
   int totalOverflow() const { return total_overflow_; }
   bool has2Doverflow() const { return has_2D_overflow_; }
   void updateDbCongestion();
-  void getCongestionGrid(
-      std::vector<std::pair<GSegment, TileCongestion>>& congestionGridV,
-      std::vector<std::pair<GSegment, TileCongestion>>& congestionGridH);
+  void findCongestedEdgesNets(NetsPerCongestedArea& nets_in_congested_edges,
+                              bool vertical);
+  void getCongestionGrid(std::vector<CongestionInformation>& congestionGridV,
+                         std::vector<CongestionInformation>& congestionGridH);
 
   const std::vector<short>& getVerticalCapacities() { return v_capacity_3D_; }
   const std::vector<short>& getHorizontalCapacities() { return h_capacity_3D_; }
   int getEdgeCapacity(int x1, int y1, int x2, int y2, int layer);
   const multi_array<Edge3D, 3>& getHorizontalEdges3D() { return h_edges_3D_; }
   const multi_array<Edge3D, 3>& getVerticalEdges3D() { return v_edges_3D_; }
+  void setLastColVCapacity(short cap, int layer)
+  {
+    last_col_v_capacity_3D_[layer] = cap;
+  }
+  void setLastRowHCapacity(short cap, int layer)
+  {
+    last_row_h_capacity_3D_[layer] = cap;
+  }
+  void setRegularX(bool regular_x) { regular_x_ = regular_x; }
+  void setRegularY(bool regular_y) { regular_y_ = regular_y; }
   void incrementEdge3DUsage(int x1, int y1, int x2, int y2, int layer);
   void setMaxNetDegree(int);
   void setVerbose(bool v);
+  void setUpdateSlack(int u);
+  void setMakeWireParasiticsBuilder(AbstractMakeWireParasitics* builder);
   void setOverflowIterations(int iterations);
+  void setCongestionReportIterStep(int congestion_report_iter_step);
+  void setCongestionReportFile(const char* congestion_file_name);
+  void setGridMax(int x_max, int y_max);
+  void getCongestionNets(std::set<odb::dbNet*>& congestion_nets);
   void computeCongestionInformation();
   std::vector<int> getOriginalResources();
   const std::vector<int>& getTotalCapacityPerLayer() { return cap_per_layer_; }
@@ -187,7 +198,7 @@ class FastRouteCore
   const std::vector<int>& getMaxVerticalOverflows() { return max_v_overflow_; }
 
   // debug mode functions
-  void setDebugOn(bool isOn);
+  void setDebugOn(std::unique_ptr<AbstractFastRouteRenderer> renderer);
   void setDebugNet(const odb::dbNet* net);
   void setDebugSteinerTree(bool steinerTree);
   void setDebugRectilinearSTree(bool rectiliniarSTree);
@@ -198,13 +209,25 @@ class FastRouteCore
   const odb::dbNet* getDebugNet();
   bool hasSaveSttInput();
 
+  int x_corner() const { return x_corner_; }
+  int y_corner() const { return y_corner_; }
+  int tile_size() const { return tile_size_; }
+
+  AbstractFastRouteRenderer* fastrouteRender()
+  {
+    return debug_->renderer_.get();
+  }
+
  private:
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
   void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
   void clearNetRoute(const int netID);
   void initNetAuxVars();
   void clearNets();
+  double dbuToMicrons(int64_t dbu);
+  odb::Rect globalRoutingToBox(const GSegment& route);
   NetRouteMap getRoutes();
+  NetRouteMap getPlanarRoutes();
 
   // maze functions
   // Maze-routing in different orders
@@ -218,15 +241,22 @@ class FastRouteCore
                      const float logis_cof,
                      const int via,
                      const int slope,
-                     const int L);
+                     const int L,
+                     float& slack_th);
   void convertToMazeroute();
   void updateCongestionHistory(const int upType, bool stopDEC, int& max_adj);
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
   int getOverflow3D();
+  void setCongestionNets(std::set<odb::dbNet*>& congestion_nets,
+                         int& posX,
+                         int& posY,
+                         int dir,
+                         int& radius);
   void str_accu(const int rnd);
   void InitLastUsage(const int upType);
   void InitEstUsage();
+  void SaveLastRouteLen();
   void fixEmbeddedTrees();
   void checkAndFixEmbeddedTree(const int net_id);
   bool areEdgesOverlapping(const int net_id,
@@ -290,10 +320,7 @@ class FastRouteCore
   void reInitTree(const int netID);
 
   // maze3D functions
-  void mazeRouteMSMDOrder3D(int expand,
-                            int ripupTHlb,
-                            int ripupTHub,
-                            int layerOrientation);
+  void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub);
   void setupHeap3D(int netID,
                    int edgeID,
                    std::vector<int*>& src_heap_3D,
@@ -402,12 +429,14 @@ class FastRouteCore
                 const int x2,
                 const int y2,
                 const int netID);
+
   bool newRipupCheck(const TreeEdge* treeedge,
                      const int x1,
                      const int y1,
                      const int x2,
                      const int y2,
                      const int ripup_threshold,
+                     const float critical_slack,
                      const int netID,
                      const int edgeID);
 
@@ -442,6 +471,7 @@ class FastRouteCore
   void netpinOrderInc();
   void checkRoute3D();
   void StNetOrder();
+  float CalculatePartialSlack();
   bool checkRoute2DTree(int netID);
   void removeLoops();
   void netedgeOrderDec(int netID);
@@ -451,6 +481,7 @@ class FastRouteCore
   void printTree3D(int netID);
   void check2DEdgesUsage();
   void verify2DEdgesUsage();
+  void verifyEdgeUsage();
   void layerAssignment();
   void copyBR(void);
   void copyRS(void);
@@ -477,9 +508,10 @@ class FastRouteCore
   std::vector<int> max_h_overflow_;
   std::vector<int> max_v_overflow_;
   odb::dbDatabase* db_;
-  gui::Gui* gui_;
   int overflow_iterations_;
-  int layer_orientation_;
+  int congestion_report_iter_step_;
+  std::string congestion_file_name_;
+  std::vector<odb::dbTechLayerDir> layer_directions_;
   int x_range_;
   int y_range_;
 
@@ -488,6 +520,8 @@ class FastRouteCore
   int h_capacity_;
   int x_grid_;
   int y_grid_;
+  int x_grid_max_;
+  int y_grid_max_;
   int x_corner_;
   int y_corner_;
   int tile_size_;
@@ -500,13 +534,18 @@ class FastRouteCore
   bool has_2D_overflow_;
   int grid_hv_;
   bool verbose_;
+  int update_slack_;
   int via_cost_;
   int mazeedge_threshold_;
   float v_capacity_lb_;
   float h_capacity_lb_;
+  bool regular_x_;
+  bool regular_y_;
 
   std::vector<short> v_capacity_3D_;
   std::vector<short> h_capacity_3D_;
+  std::vector<short> last_col_v_capacity_3D_;
+  std::vector<short> last_row_h_capacity_3D_;
   std::vector<float> cost_hvh_;       // Horizontal first Z
   std::vector<float> cost_vhv_;       // Vertical first Z
   std::vector<float> cost_h_;         // Horizontal segment cost
@@ -556,14 +595,17 @@ class FastRouteCore
 
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
+  AbstractMakeWireParasitics* parasitics_builder_;
 
-  FastRouteRenderer* fastrouteRender_;
   std::unique_ptr<DebugSetting> debug_;
 
   std::unordered_map<Tile, interval_set<int>, boost::hash<Tile>>
       vertical_blocked_intervals_;
   std::unordered_map<Tile, interval_set<int>, boost::hash<Tile>>
       horizontal_blocked_intervals_;
+
+  std::set<std::pair<int, int>> h_used_ggrid_;
+  std::set<std::pair<int, int>> v_used_ggrid_;
 };
 
 }  // namespace grt

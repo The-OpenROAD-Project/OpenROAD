@@ -37,10 +37,16 @@
 #include "dft/Dft.hh"
 #include "DftConfig.hh"
 #include "ord/OpenRoad.hh"
+#include "ScanArchitect.hh"
 
 dft::Dft * getDft()
 {
   return ord::OpenRoad::openRoad()->getDft();
+}
+
+utl::Logger* getLogger()
+{
+  return ord::OpenRoad::openRoad()->getLogger();
 }
 
 %}
@@ -61,6 +67,18 @@ void insert_dft()
 void set_dft_config_max_length(int max_length)
 {
   getDft()->getMutableDftConfig()->getMutableScanArchitectConfig()->setMaxLength(max_length);
+}
+
+void set_dft_config_clock_mixing(const char* clock_mixing_ptr)
+{
+  std::string_view clock_mixing(clock_mixing_ptr);
+  if (clock_mixing == "no_mix") {
+    getDft()->getMutableDftConfig()->getMutableScanArchitectConfig()->setClockMixing(dft::ScanArchitectConfig::ClockMixing::NoMix);
+  } else if (clock_mixing == "clock_mix") {
+    getDft()->getMutableDftConfig()->getMutableScanArchitectConfig()->setClockMixing(dft::ScanArchitectConfig::ClockMixing::ClockMix);
+  } else {
+    getLogger()->error(utl::DFT, 6, "Requested clock mixing config not valid");
+  }
 }
 
 void report_dft_config() {

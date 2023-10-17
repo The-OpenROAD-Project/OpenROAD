@@ -273,7 +273,7 @@ class extProcess
                              int overMet,
                              double X,
                              double width,
-                             double thichness,
+                             double thickness,
                              bool diag = false);
 
   extVariation* getVariation(uint met);

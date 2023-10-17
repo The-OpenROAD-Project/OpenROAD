@@ -58,7 +58,7 @@ class ScanChain
 
   // Adds a scan cell to the chain. Depending on the edge of the cell, we will
   // move the cell to rising or falling vectors.
-  void add(const std::shared_ptr<ScanCell>& scan_cell);
+  void add(std::unique_ptr<ScanCell> scan_cell);
 
   // Returns true if the scan chain is empty
   bool empty() const;
@@ -67,11 +67,16 @@ class ScanChain
   // we update every time we add a scan cell
   uint64_t getBits() const;
 
-  // Returns a reference to a vector containing only rising edge scan cells
-  const std::vector<std::shared_ptr<ScanCell>>& getRisingEdgeScanCells() const;
+  // Sorts the scan cells of this chain.  This function has 3 arguments: falling
+  // cells, rising cells and the output vector with the sorted cells
+  void sortScanCells(
+      const std::function<void(std::vector<std::unique_ptr<ScanCell>>&,
+                               std::vector<std::unique_ptr<ScanCell>>&,
+                               std::vector<std::unique_ptr<ScanCell>>&)>&
+          sort_fn);
 
-  // Returns a reference to a vector containing only falling edge scan cells
-  const std::vector<std::shared_ptr<ScanCell>>& getFallingEdgeScanCells() const;
+  // Returns a reference to a vector containing all the scan cells of the chain
+  const std::vector<std::unique_ptr<ScanCell>>& getScanCells() const;
 
   // Reports this scan chain contents. If verbose is true, the cells of the
   // chains are also going to be printed
@@ -82,8 +87,10 @@ class ScanChain
 
  private:
   std::string name_;
-  std::vector<std::shared_ptr<ScanCell>> rising_edge_scan_cells_;
-  std::vector<std::shared_ptr<ScanCell>> falling_edge_scan_cells_;
+  std::vector<std::unique_ptr<ScanCell>> rising_edge_scan_cells_;
+  std::vector<std::unique_ptr<ScanCell>> falling_edge_scan_cells_;
+  // The final container of the scan cells once sorted by Scan Architect
+  std::vector<std::unique_ptr<ScanCell>> scan_cells_;
 
   // The total bits in this scan chain. Scan cells can contain more than one
   // bit, that's why this is different from the number of cells.

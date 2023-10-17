@@ -36,7 +36,7 @@ severity type to the message.
 ## C++20 Requirements
 
 In C++20 the logger messages are checked during compile time which introduces
-restrictions around rutime format strings. See [docs](https://fmt.dev/latest/api.html#compile-time-format-string-checks)
+restrictions around rutime format strings. See [docs](https://fmt.dev/latest/api.html#compile-time-format-string-checks).
 
 OpenROAD uses `spdlog` which uses `fmt_lib` under the hood. Below is an example of
 what is no longer allowed.
@@ -423,14 +423,11 @@ The `cmake` file for the tool must also be updated to include spdlog in
 the link libraries so it can find the header files if they are not in
 the normal system directories.
 
----
-**NOTE**
-
+:::{tip}
 At UCSD, dfm.ucsd.edu is an example of this problem; it has an ancient version of
 spdlog in '/usr/include/spdlog'. Use `module` to install
 spdlog 1.8.1 on dfm.ucsd.edu and check your build there.
-
----
+:::
 
 ``` cmake
 target_link_libraries(<library_target>
@@ -439,34 +436,21 @@ target_link_libraries(<library_target>
 )
 ```
 
-| Tool                 | message/namespace |
-| -------------------- | ----------------- |
-| antenna_checker      | ant               |
-| dbSta                | sta               |
-| Design For Test      | dft               |
-| FastRoute            | grt               |
-| finale               | fin               |
-| flute3               | stt               |
-| gui                  | gui               |
-| ICeWall              | pad               |
-| init_fp              | ifp               |
-| ioPlacer             | ppl               |
-| OpenDB               | odb               |
-| opendp               | dpl               |
-| detailedPlacer       | dpo               |
-| OpenRCX              | rcx               |
-| *OpenROAD*           | ord               |
-| OpenSTA              | sta               |
-| PartMgr              | par               |
-| pdngen               | pdn               |
-| PDNSim               | psm               |
-| remapper             | rmp               |
-| replace              | gpl               |
-| resizer              | rsz               |
-| tapcell              | tap               |
-| TritonCTS            | cts               |
-| TritonMacroPlace     | mpl               |
-| TritonRoute          | drt               |
-| Distributed          | dst               |
-| Unified Power Format | upf               |
-| utility              | utl               |
+## Useful Information
+As tool developers, we can also choose to include useful information to the end user - 
+be it in the form on debugging tips, or solutions to fix the errors/warnings. We compile
+a list of such errors in this [table](../user/MessagesFinal.md). The good thing about
+this page is the ability to encode rich formatting using Markdown, enabling you
+to convey more information than what can be said from the limited messages in code.
+
+To format the information, refer to this [sample GRT information file](../main/src/grt/doc/messages/0118.md).
+In addition, make sure you create the corresponding `docs/messages` folder under the `tool` folder, 
+before creating your Markdown file with the corresponding `NUM`. 
+
+```shell
+cd src/<tool> && mkdir -p doc/messages
+cd doc/messages && touch <NUM>.md
+```
+
+### OpenROAD Tool List
+A full list of tool namespaces can be found [here](DeveloperGuide.md#tool-flow-namespace).

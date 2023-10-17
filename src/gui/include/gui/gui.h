@@ -32,10 +32,9 @@
 
 #pragma once
 
-#include <string.h>
-
 #include <any>
 #include <array>
+#include <cstring>
 #include <functional>
 #include <initializer_list>
 #include <map>
@@ -224,10 +223,10 @@ class Painter
                           const std::string& s,
                           bool rotate_90 = false)
       = 0;
-  virtual const odb::Rect stringBoundaries(int x,
-                                           int y,
-                                           Anchor anchor,
-                                           const std::string& s)
+  virtual odb::Rect stringBoundaries(int x,
+                                     int y,
+                                     Anchor anchor,
+                                     const std::string& s)
       = 0;
 
   virtual void drawRuler(int x0,
@@ -313,7 +312,7 @@ class Descriptor
     std::string name;
     std::any value;
   };
-  using EditorCallback = std::function<bool(std::any)>;
+  using EditorCallback = std::function<bool(const std::any&)>;
   struct Editor
   {
     EditorCallback callback;
@@ -481,10 +480,10 @@ class Renderer
   // Used to set the value of the display control
   void setDisplayControl(const std::string& name, bool value);
 
-  virtual const std::string getSettingsGroupName() { return ""; }
+  virtual std::string getSettingsGroupName() { return ""; }
   using Setting = std::variant<bool, int, double, std::string>;
   using Settings = std::map<std::string, Setting>;
-  virtual const Settings getSettings();
+  virtual Settings getSettings();
   virtual void setSettings(const Settings& settings);
 
   template <typename T>
@@ -542,10 +541,10 @@ class Gui
 
   // Make a Selected any object in the gui.  It should have a descriptor
   // registered for its exact type to be useful.
-  Selected makeSelected(std::any object);
+  Selected makeSelected(const std::any& object);
 
   // Set the current selected object in the gui.
-  void setSelected(Selected selection);
+  void setSelected(const Selected& selection);
 
   void removeSelectedByType(const std::string& type);
 
@@ -570,7 +569,8 @@ class Gui
                                     bool output,
                                     bool input,
                                     int highlight_group = 0);
-
+  void selectHighlightConnectedBufferTrees(bool select_flag,
+                                           int highlight_group = 0);
   void addInstToHighlightSet(const char* name, int highlight_group = 0);
   void addNetToHighlightSet(const char* name, int highlight_group = 0);
 
@@ -594,6 +594,8 @@ class Gui
 
   int select(const std::string& type,
              const std::string& name_filter = "",
+             const std::string& attribute = "",
+             const std::any& value = "",
              bool filter_case_sensitive = true,
              int highlight_group = -1);
 
@@ -609,12 +611,16 @@ class Gui
   // Save layout to an image file
   void saveImage(const std::string& filename,
                  const odb::Rect& region = odb::Rect(),
+                 int width_px = 0,
                  double dbu_per_pixel = 0,
                  const std::map<std::string, bool>& display_settings = {});
 
   // Save clock tree view
   void saveClockTreeImage(const std::string& clock_name,
-                          const std::string& filename);
+                          const std::string& filename,
+                          const std::string& corner = "",
+                          int width_px = 0,
+                          int height_px = 0);
 
   // modify display controls
   void setDisplayControlsVisible(const std::string& name, bool value);
@@ -644,25 +650,28 @@ class Gui
   // show/hide widgets
   void showWidget(const std::string& name, bool show);
 
+  // trigger actions in the GUI
+  void triggerAction(const std::string& name);
+
   // adding custom buttons to toolbar
-  const std::string addToolbarButton(const std::string& name,
-                                     const std::string& text,
-                                     const std::string& script,
-                                     bool echo);
+  std::string addToolbarButton(const std::string& name,
+                               const std::string& text,
+                               const std::string& script,
+                               bool echo);
   void removeToolbarButton(const std::string& name);
 
   // adding custom menu items to menu bar
-  const std::string addMenuItem(const std::string& name,
-                                const std::string& path,
-                                const std::string& text,
-                                const std::string& script,
-                                const std::string& shortcut,
-                                bool echo);
+  std::string addMenuItem(const std::string& name,
+                          const std::string& path,
+                          const std::string& text,
+                          const std::string& script,
+                          const std::string& shortcut,
+                          bool echo);
   void removeMenuItem(const std::string& name);
 
   // request for user input
-  const std::string requestUserInput(const std::string& title,
-                                     const std::string& question);
+  std::string requestUserInput(const std::string& title,
+                               const std::string& question);
 
   using odbTerm = std::variant<odb::dbITerm*, odb::dbBTerm*>;
   void timingCone(odbTerm term, bool fanin, bool fanout);
@@ -708,6 +717,8 @@ class Gui
   void setHeatMapSetting(const std::string& name,
                          const std::string& option,
                          const Renderer::Setting& value);
+  Renderer::Setting getHeatMapSetting(const std::string& name,
+                                      const std::string& option);
   void dumpHeatMap(const std::string& name, const std::string& file);
 
   // accessors for to add and remove commands needed to restore the state of the
@@ -761,6 +772,11 @@ class Gui
                           const Descriptor* descriptor);
   const Descriptor* getDescriptor(const std::type_info& type) const;
   void unregisterDescriptor(const std::type_info& type);
+
+  bool filterSelectionProperties(const Descriptor::Properties& properties,
+                                 const std::string& attribute,
+                                 const std::any& value,
+                                 bool& is_valid_attribute);
 
   // flag to indicate if tcl should take over after gui closes
   bool continue_after_close_;

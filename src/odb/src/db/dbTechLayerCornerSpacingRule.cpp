@@ -39,10 +39,7 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
-// User Code Begin Includes
-// User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayerCornerSpacingRule>;
 
 bool _dbTechLayerCornerSpacingRule::operator==(
@@ -90,40 +87,32 @@ bool _dbTechLayerCornerSpacingRule::operator==(
 
   if (within_ != rhs.within_)
     return false;
-
   if (eol_width_ != rhs.eol_width_)
     return false;
-
   if (jog_length_ != rhs.jog_length_)
     return false;
-
   if (edge_length_ != rhs.edge_length_)
     return false;
-
   if (min_length_ != rhs.min_length_)
     return false;
-
   if (except_notch_length_ != rhs.except_notch_length_)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
+
 bool _dbTechLayerCornerSpacingRule::operator<(
     const _dbTechLayerCornerSpacingRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
+
 void _dbTechLayerCornerSpacingRule::differences(
     dbDiff& diff,
     const char* field,
     const _dbTechLayerCornerSpacingRule& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_.corner_type_);
   DIFF_FIELD(flags_.same_mask_);
   DIFF_FIELD(flags_.corner_only_);
@@ -143,10 +132,9 @@ void _dbTechLayerCornerSpacingRule::differences(
   DIFF_FIELD(edge_length_);
   DIFF_FIELD(min_length_);
   DIFF_FIELD(except_notch_length_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
+
 void _dbTechLayerCornerSpacingRule::out(dbDiff& diff,
                                         char side,
                                         const char* field) const
@@ -172,23 +160,20 @@ void _dbTechLayerCornerSpacingRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(min_length_);
   DIFF_OUT_FIELD(except_notch_length_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
+
 _dbTechLayerCornerSpacingRule::_dbTechLayerCornerSpacingRule(_dbDatabase* db)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field = 0;
+  flags_ = {};
   within_ = 0;
   eol_width_ = 0;
   jog_length_ = 0;
   edge_length_ = 0;
   min_length_ = 0;
   except_notch_length_ = 0;
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
+
 _dbTechLayerCornerSpacingRule::_dbTechLayerCornerSpacingRule(
     _dbDatabase* db,
     const _dbTechLayerCornerSpacingRule& r)
@@ -235,6 +220,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCornerSpacingRule& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCornerSpacingRule& obj)
 {
@@ -255,12 +241,7 @@ dbOStream& operator<<(dbOStream& stream,
 
 _dbTechLayerCornerSpacingRule::~_dbTechLayerCornerSpacingRule()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

@@ -40,6 +40,7 @@
 #include "ScanCell.hh"
 #include "ScanCellFactory.hh"
 #include "ScanReplace.hh"
+#include "ScanStitch.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
@@ -83,32 +84,7 @@ void Dft::preview_dft(bool verbose)
   // All design modifications are in the child, we collect the results of the
   // Scan Architect from the parent and we let the child to exit.
 
-  // TODO: Move this to a function to be reused in insert_dft
-
-  // Scan replace
-  scan_replace_->scanReplace();
-  std::vector<std::unique_ptr<ScanCell>> scan_cells
-      = CollectScanCells(db_, sta_, logger_);
-
-  std::vector<std::shared_ptr<ScanCell>> shared_scan_cells;
-  std::move(scan_cells.begin(),
-            scan_cells.end(),
-            std::back_inserter(shared_scan_cells));
-
-  // Scan Architect
-  std::unique_ptr<ScanCellsBucket> scan_cells_bucket
-      = std::make_unique<ScanCellsBucket>(logger_);
-  scan_cells_bucket->init(dft_config_->getScanArchitectConfig(),
-                          shared_scan_cells);
-
-  std::unique_ptr<ScanArchitect> scan_architect
-      = ScanArchitect::ConstructScanScanArchitect(
-          dft_config_->getScanArchitectConfig(), std::move(scan_cells_bucket));
-  scan_architect->init();
-  scan_architect->architect();
-
-  std::vector<std::unique_ptr<ScanChain>> scan_chains
-      = scan_architect->getScanChains();
+  std::vector<std::unique_ptr<ScanChain>> scan_chains = replaceAndArchitect();
 
   logger_->report("***************************");
   logger_->report("Preview DFT Report");
@@ -132,10 +108,10 @@ void Dft::insert_dft()
     pre_dft();
   }
 
-  // Perform scan replacement
-  scan_replace_->scanReplace();
+  std::vector<std::unique_ptr<ScanChain>> scan_chains = replaceAndArchitect();
 
-  // TODO: Scan Architect and Scan Stitching
+  ScanStitch stitch(db_);
+  stitch.Stitch(scan_chains);
 }
 
 DftConfig* Dft::getMutableDftConfig()
@@ -152,6 +128,27 @@ void Dft::reportDftConfig() const
 {
   logger_->report("DFT Config:");
   dft_config_->report(logger_);
+}
+
+std::vector<std::unique_ptr<ScanChain>> Dft::replaceAndArchitect()
+{
+  // Scan replace
+  scan_replace_->scanReplace();
+  std::vector<std::unique_ptr<ScanCell>> scan_cells
+      = CollectScanCells(db_, sta_, logger_);
+
+  // Scan Architect
+  std::unique_ptr<ScanCellsBucket> scan_cells_bucket
+      = std::make_unique<ScanCellsBucket>(logger_);
+  scan_cells_bucket->init(dft_config_->getScanArchitectConfig(), scan_cells);
+
+  std::unique_ptr<ScanArchitect> scan_architect
+      = ScanArchitect::ConstructScanScanArchitect(
+          dft_config_->getScanArchitectConfig(), std::move(scan_cells_bucket));
+  scan_architect->init();
+  scan_architect->architect();
+
+  return scan_architect->getScanChains();
 }
 
 }  // namespace dft

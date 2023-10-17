@@ -39,6 +39,8 @@
 
 #include "dpl/Opendp.h"
 
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 #include <cfloat>
 #include <cmath>
 #include <limits>
@@ -90,10 +92,7 @@ Opendp::Opendp()
   dummy_cell_.is_placed_ = true;
 }
 
-Opendp::~Opendp()
-{
-  deleteGrid();
-}
+Opendp::~Opendp() = default;
 
 void Opendp::init(dbDatabase* db, Logger* logger)
 {
@@ -136,6 +135,7 @@ void Opendp::setDebug(std::unique_ptr<DplObserver>& observer)
 
 void Opendp::detailedPlacement(int max_displacement_x,
                                int max_displacement_y,
+                               const std::string& report_file_name,
                                bool disallow_one_site_gaps)
 {
   importDb();
@@ -173,8 +173,13 @@ void Opendp::detailedPlacement(int max_displacement_x,
                   34,
                   "Detailed placement failed on the following {} instances:",
                   placement_failures_.size());
-    for (auto inst : placement_failures_) {
-      logger_->info(DPL, 35, " {}", inst->getName());
+    for (auto cell : placement_failures_) {
+      logger_->info(DPL, 35, " {}", cell->name());
+    }
+
+    if (!report_file_name.empty()) {
+      writeJsonReport(
+          report_file_name, {}, {}, {}, {}, {}, {}, placement_failures_);
     }
     logger_->error(DPL, 36, "Detailed placement failed.");
   }

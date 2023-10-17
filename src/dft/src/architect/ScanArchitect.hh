@@ -32,8 +32,8 @@
 #pragma once
 
 #include <functional>
+#include <map>
 #include <memory>
-#include <unordered_map>
 #include <vector>
 
 #include "ScanArchitectConfig.hh"
@@ -53,11 +53,11 @@ class ScanCellsBucket
   ScanCellsBucket& operator=(const ScanCellsBucket&) = delete;
 
   // Gets the next scan cell of the given hash domain
-  std::shared_ptr<ScanCell> pop(size_t hash_domain);
+  std::unique_ptr<ScanCell> pop(size_t hash_domain);
 
   // Init the scan cell bucket with with the given config and scan cells
   void init(const ScanArchitectConfig& config,
-            const std::vector<std::shared_ptr<ScanCell>>& scan_cells);
+            std::vector<std::unique_ptr<ScanCell>>& scan_cells);
 
   // Returns the number of bits we need to include in each hash domain
   std::unordered_map<size_t, uint64_t> getTotalBitsPerHashDomain() const;
@@ -66,7 +66,7 @@ class ScanCellsBucket
   uint64_t numberOfCells(size_t hash_domain) const;
 
  private:
-  std::unordered_map<size_t, std::vector<std::shared_ptr<ScanCell>>> buckets_;
+  std::unordered_map<size_t, std::vector<std::unique_ptr<ScanCell>>> buckets_;
   utl::Logger* logger_;
 };
 
@@ -101,8 +101,7 @@ class ScanArchitect
 
   // Calculates the max_length per hash domain based on the given global
   // max_length
-  static std::unordered_map<size_t, HashDomainLimits>
-  inferChainCountFromMaxLength(
+  static std::map<size_t, HashDomainLimits> inferChainCountFromMaxLength(
       const std::unordered_map<size_t, uint64_t>& hash_domains_total_bit,
       uint64_t max_length);
 
@@ -116,15 +115,17 @@ class ScanArchitect
       std::unique_ptr<ScanCellsBucket> scan_cells_bucket);
 
  protected:
+  void createScanChains();
+  void inferChainCount();
+
   const ScanArchitectConfig& config_;
   std::unique_ptr<ScanCellsBucket> scan_cells_bucket_;
   std::vector<std::unique_ptr<ScanChain>> scan_chains_;
   std::unordered_map<size_t, std::vector<std::unique_ptr<ScanChain>>>
       hash_domain_scan_chains_;
-  std::unordered_map<size_t, HashDomainLimits> hash_domain_to_limits_;
-
-  void createScanChains();
-  void inferChainCount();
+  // We use a map instead of an unordered_map to keep consistency between runs
+  // regarding what scan chain is assigned to each hash domain
+  std::map<size_t, HashDomainLimits> hash_domain_to_limits_;
 };
 
 }  // namespace dft

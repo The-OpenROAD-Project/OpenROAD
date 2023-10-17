@@ -313,7 +313,7 @@ void InitFloorplan::updateVoltageDomain(int core_lx,
           int lcr_xMax = domain_xMin - power_domain_y_space * site_dy;
           // in case there is at least one valid site width on the left, create
           // left core rows
-          if (lcr_xMax > core_lx + site_dx) {
+          if (lcr_xMax > core_lx + static_cast<int>(site_dx)) {
             string lcr_name = row_name + "_1";
             // warning message since tap cells might not be inserted
             if (lcr_xMax < core_lx + 10 * site_dx) {
@@ -345,7 +345,7 @@ void InitFloorplan::updateVoltageDomain(int core_lx,
 
           // in case there is at least one valid site width on the right, create
           // right core rows
-          if (rcr_xMin + site_dx < core_ux) {
+          if (rcr_xMin + static_cast<int>(site_dx) < core_ux) {
             string rcr_name = row_name + "_2";
             if (rcr_xMin + 10 * site_dx > core_ux) {
               logger_->warn(IFP,

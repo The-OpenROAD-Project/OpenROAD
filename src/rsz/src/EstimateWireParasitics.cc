@@ -81,22 +81,12 @@ Resizer::setLayerRC(dbTechLayer *layer,
     }
   }
 
-  layer_res_[layer->getRoutingLevel()][corner->index()] = res;
-  layer_cap_[layer->getRoutingLevel()][corner->index()] = cap;
+  layer_res_[layer->getNumber()][corner->index()] = res;
+  layer_cap_[layer->getNumber()][corner->index()] = cap;
 }
 
 void
 Resizer::layerRC(dbTechLayer *layer,
-                 const Corner *corner,
-                 // Return values.
-                 double &res,
-                 double &cap) const
-{
-  layerRC(layer->getRoutingLevel(), corner, res, cap);
-}
-
-void
-Resizer::layerRC(int routing_level,
                  const Corner *corner,
                  // Return values.
                  double &res,
@@ -107,8 +97,9 @@ Resizer::layerRC(int routing_level,
     cap = 0.0;
   }
   else {
-    res = layer_res_[routing_level][corner->index()];
-    cap = layer_cap_[routing_level][corner->index()];
+    const int layer_level = layer->getNumber();
+    res = layer_res_[layer_level][corner->index()];
+    cap = layer_cap_[layer_level][corner->index()];
   }
 }
 
@@ -228,6 +219,8 @@ Resizer::incrementalParasiticsBegin()
     break;
   case ParasiticsSrc::global_routing:
     incr_groute_ = new IncrementalGRoute(global_router_, block_);
+    // Don't print verbose messages for incremental routing
+    global_router_->setVerbose(false);
     break;
   case ParasiticsSrc::none:
     break;
@@ -356,7 +349,8 @@ Resizer::estimateWireParasitic(const Pin *drvr_pin,
 {
   if (!network_->isPower(net)
       && !network_->isGround(net)
-      && !sta_->isIdealClock(drvr_pin)) {
+      && !sta_->isIdealClock(drvr_pin)
+      && !db_network_->staToDb(net)->isSpecial()) {
     if (isPadNet(net))
       // When an input port drives a pad instance with huge input
       // cap the elmore delay is gigantic. Annotate with zero
@@ -412,7 +406,7 @@ Resizer::estimateWireParasiticSteiner(const Pin *drvr_pin,
     for (Corner *corner : *sta_->corners()) {
       const ParasiticAnalysisPt *parasitics_ap = corner->findParasiticAnalysisPt(max_);
       Parasitic *parasitic = sta_->makeParasiticNetwork(net, false, parasitics_ap);
-      bool is_clk = sta_->isClock(net);
+      bool is_clk = global_router_->isNonLeafClock(db_network_->staToDb(net));
       double wire_cap=is_clk ? wireClkCapacitance(corner) : wireSignalCapacitance(corner);
       double wire_res=is_clk ? wireClkResistance(corner) : wireSignalResistance(corner);
       int branch_count = tree->branchCount();
@@ -457,6 +451,74 @@ Resizer::estimateWireParasiticSteiner(const Pin *drvr_pin,
     parasitics_->deleteParasiticNetworks(net);
     delete tree;
   }
+}
+
+float
+Resizer::pinCapacitance(const Pin *pin, const DcalcAnalysisPt *dcalc_ap) const
+{
+  LibertyPort *port = network_->libertyPort(pin);
+  if (port) {
+    int lib_ap = dcalc_ap->libertyIndex();
+    LibertyPort *corner_port = port->cornerPort(lib_ap);
+    return corner_port->capacitance();
+  }
+  return 0.0;
+}
+
+float
+Resizer::totalLoad(SteinerTree *tree) const
+{
+  if (!tree) {
+    return 0;
+}
+
+  SteinerPt top_pt = tree->top();
+  SteinerPt drvr_pt = tree->drvrPt();
+  float load = 0.0, max_load = 0.0;
+
+  if (top_pt == SteinerNull) {
+    return 0;
+  }
+
+  debugPrint(logger_, RSZ, "resizer_parasitics", 1, "Steiner totalLoad ");
+  // For now we will just look at the worst corner for totalLoad
+  for (Corner* corner : *sta_->corners()) {
+    double wire_cap = wireSignalCapacitance(corner);
+    float top_length = dbuToMeters(tree->distance(drvr_pt, top_pt));
+    float subtree_load = subtreeLoad(tree, wire_cap, top_pt);
+    load = top_length * wire_cap + subtree_load;
+    max_load = std::max(max_load, load);
+  }
+  return max_load;
+}
+
+float
+Resizer::subtreeLoad(SteinerTree *tree, float cap_per_micron, SteinerPt pt) const
+{
+  if (pt == SteinerNull) {
+    return 0;
+  }
+  SteinerPt left_pt = tree->left(pt);
+  SteinerPt right_pt = tree->right(pt);
+
+  if ((left_pt == SteinerNull) && (right_pt == SteinerNull)) {
+    return (this->pinCapacitance(tree->pin(pt), tgt_slew_dcalc_ap_));
+  }
+
+  float left_cap = 0;
+  float right_cap = 0;
+
+  if (left_pt != SteinerNull) {
+    const float left_length = dbuToMeters(tree->distance(pt, left_pt));
+    left_cap = subtreeLoad(tree, cap_per_micron, left_pt)
+      + (left_length * cap_per_micron);
+  }
+  if (right_pt != SteinerNull) {
+    const float right_length = dbuToMeters(tree->distance(pt, right_pt));
+    right_cap = subtreeLoad(tree, cap_per_micron, right_pt)
+      + (right_length * cap_per_micron);
+  }
+  return left_cap + right_cap;
 }
 
 void

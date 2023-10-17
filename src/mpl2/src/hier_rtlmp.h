@@ -113,6 +113,7 @@ class HierRTLMP
                       float fence_ux,
                       float fence_uy);
   void setHaloWidth(float halo_width);
+  void setHaloHeight(float halo_height);
   // Hierarchical Clustering Related Options
   void setNumBundledIOsPerBoundary(int num_bundled_ios);
   void setClusterSize(int max_num_macro,
@@ -139,6 +140,13 @@ class HierRTLMP
   void setSnapLayer(int snap_layer);
   void setReportDirectory(const char* report_directory);
   void setDebug(std::unique_ptr<Mpl2Observer>& graphics);
+  void setBusPlanningFlag(bool bus_planning_flag)
+  {
+    bus_planning_flag_ = bus_planning_flag;
+  }
+
+  void setMacroPlacementFile(const std::string& file_name);
+  void writeMacroPlacement(const std::string& file_name);
 
  private:
   void setDefaultThresholds();
@@ -219,6 +227,11 @@ class HierRTLMP
   // (Preorder DFS)
   void multiLevelMacroPlacement(Cluster* parent);
   // place macros within the HardMacroCluster
+  void multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent);
+  // For some testcase with very high density, it may be very difficuit to
+  // generate a tiling for clusters.  In this case, we may want to try to set
+  // the area of all standard-cell clusters to 0.0
+  void enhancedMacroPlacement(Cluster* parent);
   void hardMacroClusterMacroPlacement(Cluster* parent);
   // Merge nets to reduce runtime
   void mergeNets(std::vector<BundledNet>& nets);
@@ -243,6 +256,17 @@ class HierRTLMP
                    float outline_height,
                    std::string file_name);
 
+  // Update the locations of std cells in odb using the locations that
+  // HierRTLMP estimates for the leaf standard clusters
+  void generateTemporaryStdCellsPlacement(Cluster* cluster);
+  void setModuleStdCellsLocation(Cluster* cluster, odb::dbModule* module);
+  void setTemporaryStdCellLocation(Cluster* cluster, odb::dbInst* std_cell);
+
+  void correctAllMacrosOrientation();
+  float calculateRealMacroWirelength(odb::dbInst* macro);
+  void adjustRealMacroOrientation(const bool& is_vertical_flip);
+  void flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip);
+
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
@@ -252,16 +276,25 @@ class HierRTLMP
 
   // flag variables
   const bool dynamic_congestion_weight_flag_ = false;
-  const bool update_boundary_weight_ = false;
+  // Our experiments show that for most testcases, turn off bus planning
+  // can generate better results.
+  // We recommend that you turn on this flag for technology nodes with very
+  // limited routing layers such as SkyWater130.  But for NanGate45,
+  // ASASP7, you should turn off this option.
+  bool bus_planning_flag_ = false;
 
   // technology-related variables
   float dbu_ = 0.0;
+  int manufacturing_grid_ = 1;  // the default manufacture grid in dbu
+                                // will be over written by the tech lef value
 
   int num_updated_macros_ = 0;
   int num_hard_macros_cluster_ = 0;
 
   // Parameters related to macro placement
   std::string report_directory_;
+  std::string macro_placement_file_;
+
   // User can specify a global region for some designs
   float global_fence_lx_ = std::numeric_limits<float>::max();
   float global_fence_ly_ = std::numeric_limits<float>::max();
@@ -269,6 +302,7 @@ class HierRTLMP
   float global_fence_uy_ = 0.0;
 
   float halo_width_ = 0.0;
+  float halo_height_ = 0.0;
 
   const int num_runs_ = 10;     // number of runs for SA
   const int num_threads_ = 10;  // number of threads
@@ -325,13 +359,13 @@ class HierRTLMP
 
   // the virtual weight between std cell part and corresponding macro part
   // to force them stay together
-  const float virtual_weight_ = 10.0;
+  float virtual_weight_ = 10.0;
 
   // probability of each action
   float pos_swap_prob_ = 0.2;
   float neg_swap_prob_ = 0.2;
   float double_swap_prob_ = 0.2;
-  float exchange_swap_prob_ = 0.0;
+  float exchange_swap_prob_ = 0.2;
   float flip_prob_ = 0.4;
   float resize_prob_ = 0.4;
 
@@ -343,9 +377,9 @@ class HierRTLMP
   float floorplan_uy_ = 0.0;
 
   // dataflow parameters and store the dataflow
-  const int max_num_ff_dist_ = 3;  // maximum number of FF distances between
-  const float dataflow_factor_ = 2.0;
-  const float dataflow_weight_ = 1;
+  int max_num_ff_dist_ = 5;  // maximum number of FF distances between
+  float dataflow_factor_ = 2.0;
+  float dataflow_weight_ = 1;
   std::vector<std::pair<odb::dbITerm*, std::vector<std::set<odb::dbInst*>>>>
       macro_ffs_conn_map_;
   std::vector<std::pair<odb::dbBTerm*, std::vector<std::set<odb::dbInst*>>>>

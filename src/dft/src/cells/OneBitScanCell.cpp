@@ -39,10 +39,13 @@ namespace dft {
 OneBitScanCell::OneBitScanCell(const std::string& name,
                                std::unique_ptr<ClockDomain> clock_domain,
                                odb::dbInst* inst,
-                               sta::TestCell* test_cell)
-    : ScanCell(name, std::move(clock_domain)),
+                               sta::TestCell* test_cell,
+                               sta::dbNetwork* db_network,
+                               utl::Logger* logger)
+    : ScanCell(name, std::move(clock_domain), logger),
       inst_(inst),
-      test_cell_(test_cell)
+      test_cell_(test_cell),
+      db_network_(db_network)
 {
 }
 
@@ -51,19 +54,38 @@ uint64_t OneBitScanCell::getBits() const
   return 1;
 }
 
-void OneBitScanCell::connectScanEnable() const
+void OneBitScanCell::connectScanEnable(const ScanDriver& driver) const
 {
-  // TODO: Scan stitching
+  Connect(ScanLoad(findITerm(test_cell_->scanEnable())),
+          driver,
+          /*preserve=*/false);
 }
 
-void OneBitScanCell::connectScanIn() const
+void OneBitScanCell::connectScanIn(const ScanDriver& driver) const
 {
-  // TODO: Scan stitching
+  Connect(ScanLoad(findITerm(test_cell_->scanIn())),
+          driver,
+          /*preserve=*/false);
 }
 
-void OneBitScanCell::connectScanOut() const
+void OneBitScanCell::connectScanOut(const ScanLoad& load) const
 {
-  // TODO: Scan stitching
+  // The scan out usually will be connected to functional data paths already, we
+  // need to preserve the connections
+  Connect(load,
+          ScanDriver(findITerm(test_cell_->scanOut())),
+          /*preserve=*/true);
+}
+
+ScanDriver OneBitScanCell::getScanOut() const
+{
+  return ScanDriver(findITerm(test_cell_->scanOut()));
+}
+
+odb::dbITerm* OneBitScanCell::findITerm(sta::LibertyPort* liberty_port) const
+{
+  odb::dbMTerm* mterm = db_network_->staToDb(liberty_port);
+  return inst_->getITerm(mterm);
 }
 
 }  // namespace dft

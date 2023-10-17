@@ -35,6 +35,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <utility>
 
 #include "nesterovBase.h"
 #include "placerBase.h"
@@ -48,17 +49,17 @@ using utl::GPL;
 
 // TimingBase
 TimingBase::TimingBase()
-    : rs_(nullptr), log_(nullptr), nb_(nullptr), net_weight_max_(1.9)
+    : rs_(nullptr), log_(nullptr), nbc_(nullptr), net_weight_max_(1.9)
 {
 }
 
-TimingBase::TimingBase(std::shared_ptr<NesterovBase> nb,
+TimingBase::TimingBase(std::shared_ptr<NesterovBaseCommon> nbc,
                        rsz::Resizer* rs,
                        utl::Logger* log)
     : TimingBase()
 {
   rs_ = rs;
-  nb_ = nb;
+  nbc_ = std::move(nbc);
   log_ = log;
 }
 
@@ -157,9 +158,10 @@ bool TimingBase::updateGNetWeights(float overflow)
   }
 
   // min/max slack for worst nets
-  sta::Slack slack_min = rs_->resizeNetSlack(worst_slack_nets[0]);
-  sta::Slack slack_max
-      = rs_->resizeNetSlack(worst_slack_nets[worst_slack_nets.size() - 1]);
+  auto slack_min = rs_->resizeNetSlack(worst_slack_nets[0]).value();
+  auto slack_max
+      = rs_->resizeNetSlack(worst_slack_nets[worst_slack_nets.size() - 1])
+            .value();
 
   log_->info(GPL, 100, "worst slack {:.3g}", slack_min);
 
@@ -169,11 +171,15 @@ bool TimingBase::updateGNetWeights(float overflow)
   }
 
   int weighted_net_count = 0;
-  for (auto& gNet : nb_->gNets()) {
+  for (auto& gNet : nbc_->gNets()) {
     // default weight
     gNet->setTimingWeight(1.0);
     if (gNet->gPins().size() > 1) {
-      float net_slack = rs_->resizeNetSlack(gNet->net()->dbNet());
+      auto net_slack_opt = rs_->resizeNetSlack(gNet->net()->dbNet());
+      if (!net_slack_opt) {
+        continue;
+      }
+      auto net_slack = net_slack_opt.value();
       if (net_slack < slack_max) {
         if (slack_max == slack_min) {
           gNet->setTimingWeight(1.0);

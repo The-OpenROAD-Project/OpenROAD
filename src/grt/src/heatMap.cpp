@@ -189,7 +189,7 @@ bool RoutingCongestionDataSource::populateMap()
   }
 
   auto gcell_congestion_data = grid->getCongestionMap(layer_);
-  if (gcell_congestion_data.empty()) {
+  if (gcell_congestion_data.numElems() == 0) {
     return false;
   }
 
@@ -199,67 +199,70 @@ bool RoutingCongestionDataSource::populateMap()
   grid->getGridY(y_grid);
   const uint y_grid_sz = y_grid.size();
 
-  for (const auto& [key, cong_data] : gcell_congestion_data) {
-    const uint x_idx = key.first;
-    const uint y_idx = key.second;
+  for (uint x_idx = 0; x_idx < gcell_congestion_data.numRows(); ++x_idx) {
+    for (uint y_idx = 0; y_idx < gcell_congestion_data.numCols(); ++y_idx) {
+      const auto& cong_data = gcell_congestion_data(x_idx, y_idx);
 
-    if (x_idx + 1 >= x_grid_sz || y_idx + 1 >= y_grid_sz) {
-      continue;
+      const int next_x = (x_idx + 1) == x_grid_sz
+                             ? getBlock()->getDieArea().xMax()
+                             : x_grid[x_idx + 1];
+      const int next_y = (y_idx + 1) == y_grid_sz
+                             ? getBlock()->getDieArea().yMax()
+                             : y_grid[y_idx + 1];
+
+      const odb::Rect gcell_rect(x_grid[x_idx], y_grid[y_idx], next_x, next_y);
+
+      const auto hor_capacity = cong_data.horizontal_capacity;
+      const auto hor_usage = cong_data.horizontal_usage;
+      const auto ver_capacity = cong_data.vertical_capacity;
+      const auto ver_usage = cong_data.vertical_usage;
+
+      //-1 indicates capacity is not well defined...
+      const double hor_congestion
+          = hor_capacity != 0 ? static_cast<double>(hor_usage) / hor_capacity
+                              : -1;
+      const double ver_congestion
+          = ver_capacity != 0 ? static_cast<double>(ver_usage) / ver_capacity
+                              : -1;
+
+      double value = 0.0;
+      switch (type_) {
+        case Congestion:
+          if (direction_ == ALL) {
+            value = std::max(hor_congestion, ver_congestion);
+          } else if (direction_ == HORIZONTAL) {
+            value = hor_congestion;
+          } else {
+            value = ver_congestion;
+          }
+          value *= 100.0;
+          break;
+        case Usage:
+          if (direction_ == ALL) {
+            value = std::max(hor_usage, ver_usage);
+          } else if (direction_ == HORIZONTAL) {
+            value = hor_usage;
+          } else {
+            value = ver_usage;
+          }
+          break;
+        case Capacity:
+          if (direction_ == ALL) {
+            value = std::max(hor_capacity, ver_capacity);
+          } else if (direction_ == HORIZONTAL) {
+            value = hor_capacity;
+          } else {
+            value = ver_capacity;
+          }
+          break;
+      }
+
+      if (value < 0) {
+        continue;
+      }
+
+      addToMap(gcell_rect, value);
     }
-
-    const odb::Rect gcell_rect(
-        x_grid[x_idx], y_grid[y_idx], x_grid[x_idx + 1], y_grid[y_idx + 1]);
-
-    const auto hor_capacity = cong_data.horizontal_capacity;
-    const auto hor_usage = cong_data.horizontal_usage;
-    const auto ver_capacity = cong_data.vertical_capacity;
-    const auto ver_usage = cong_data.vertical_usage;
-
-    //-1 indicates capacity is not well defined...
-    const double hor_congestion
-        = hor_capacity != 0 ? static_cast<double>(hor_usage) / hor_capacity
-                            : -1;
-    const double ver_congestion
-        = ver_capacity != 0 ? static_cast<double>(ver_usage) / ver_capacity
-                            : -1;
-
-    double value = 0.0;
-    switch (type_) {
-      case Congestion:
-        if (direction_ == ALL) {
-          value = std::max(hor_congestion, ver_congestion);
-        } else if (direction_ == HORIZONTAL) {
-          value = hor_congestion;
-        } else {
-          value = ver_congestion;
-        }
-        value *= 100.0;
-        break;
-      case Usage:
-        if (direction_ == ALL) {
-          value = std::max(hor_usage, ver_usage);
-        } else if (direction_ == HORIZONTAL) {
-          value = hor_usage;
-        } else {
-          value = ver_usage;
-        }
-        break;
-      case Capacity:
-        if (direction_ == ALL) {
-          value = std::max(hor_capacity, ver_capacity);
-        } else if (direction_ == HORIZONTAL) {
-          value = hor_capacity;
-        } else {
-          value = ver_capacity;
-        }
-        break;
-    }
-
-    if (value < 0) {
-      continue;
-    }
-
-    addToMap(gcell_rect, value);
   }
 
   return true;
@@ -272,21 +275,25 @@ void RoutingCongestionDataSource::correctMapScale(HeatMapDataSource::Map& map)
   }
 
   max_ = 0.0;
-  for (auto& [bbox, map_pt] : map) {
-    max_ = std::max(map_pt->value, max_);
+  for (const auto& map_col : map) {
+    for (const auto& map_pt : map_col) {
+      max_ = std::max(map_pt->value, max_);
+    }
   }
 
   if (max_ == 0.0) {
     return;
   }
 
-  for (auto& [bbox, map_pt] : map) {
-    map_pt->value = map_pt->value * 100 / max_;
+  for (const auto& map_col : map) {
+    for (const auto& map_pt : map_col) {
+      map_pt->value = map_pt->value * 100 / max_;
+    }
   }
 }
 
-const std::string RoutingCongestionDataSource::formatValue(double value,
-                                                           bool legend) const
+std::string RoutingCongestionDataSource::formatValue(double value,
+                                                     bool legend) const
 {
   if (type_ == Congestion) {
     return HeatMapDataSource::formatValue(value, legend);

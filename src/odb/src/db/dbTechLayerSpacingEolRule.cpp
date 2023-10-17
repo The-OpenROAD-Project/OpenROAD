@@ -44,7 +44,6 @@
 #include "dbTechLayer.h"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayerSpacingEolRule>;
 
 bool _dbTechLayerSpacingEolRule::operator==(
@@ -180,121 +179,86 @@ bool _dbTechLayerSpacingEolRule::operator==(
 
   if (eol_space_ != rhs.eol_space_)
     return false;
-
   if (eol_width_ != rhs.eol_width_)
     return false;
-
   if (wrong_dir_space_ != rhs.wrong_dir_space_)
     return false;
-
   if (opposite_width_ != rhs.opposite_width_)
     return false;
-
   if (eol_within_ != rhs.eol_within_)
     return false;
-
   if (wrong_dir_within_ != rhs.wrong_dir_within_)
     return false;
-
   if (exact_width_ != rhs.exact_width_)
     return false;
-
   if (other_width_ != rhs.other_width_)
     return false;
-
   if (fill_triangle_ != rhs.fill_triangle_)
     return false;
-
   if (cut_class_ != rhs.cut_class_)
     return false;
-
   if (with_cut_space_ != rhs.with_cut_space_)
     return false;
-
   if (enclosure_end_width_ != rhs.enclosure_end_width_)
     return false;
-
   if (enclosure_end_within_ != rhs.enclosure_end_within_)
     return false;
-
   if (end_prl_space_ != rhs.end_prl_space_)
     return false;
-
   if (end_prl_ != rhs.end_prl_)
     return false;
-
   if (end_to_end_space_ != rhs.end_to_end_space_)
     return false;
-
   if (one_cut_space_ != rhs.one_cut_space_)
     return false;
-
   if (two_cut_space_ != rhs.two_cut_space_)
     return false;
-
   if (extension_ != rhs.extension_)
     return false;
-
   if (wrong_dir_extension_ != rhs.wrong_dir_extension_)
     return false;
-
   if (other_end_width_ != rhs.other_end_width_)
     return false;
-
   if (max_length_ != rhs.max_length_)
     return false;
-
   if (min_length_ != rhs.min_length_)
     return false;
-
   if (par_space_ != rhs.par_space_)
     return false;
-
   if (par_within_ != rhs.par_within_)
     return false;
-
   if (par_prl_ != rhs.par_prl_)
     return false;
-
   if (par_min_length_ != rhs.par_min_length_)
     return false;
-
   if (enclose_dist_ != rhs.enclose_dist_)
     return false;
-
   if (cut_to_metal_space_ != rhs.cut_to_metal_space_)
     return false;
-
   if (min_adj_length_ != rhs.min_adj_length_)
     return false;
-
   if (min_adj_length1_ != rhs.min_adj_length1_)
     return false;
-
   if (min_adj_length2_ != rhs.min_adj_length2_)
     return false;
-
   if (notch_length_ != rhs.notch_length_)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
+
 bool _dbTechLayerSpacingEolRule::operator<(
     const _dbTechLayerSpacingEolRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
+
 void _dbTechLayerSpacingEolRule::differences(
     dbDiff& diff,
     const char* field,
     const _dbTechLayerSpacingEolRule& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_.exact_width_valid_);
   DIFF_FIELD(flags_.wrong_dir_spacing_valid_);
   DIFF_FIELD(flags_.opposite_width_valid_);
@@ -369,10 +333,9 @@ void _dbTechLayerSpacingEolRule::differences(
   DIFF_FIELD(min_adj_length1_);
   DIFF_FIELD(min_adj_length2_);
   DIFF_FIELD(notch_length_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
+
 void _dbTechLayerSpacingEolRule::out(dbDiff& diff,
                                      char side,
                                      const char* field) const
@@ -453,14 +416,12 @@ void _dbTechLayerSpacingEolRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(min_adj_length2_);
   DIFF_OUT_FIELD(notch_length_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
+
 _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(_dbDatabase* db)
 {
-  uint64_t* flags__bit_field = (uint64_t*) &flags_;
-  *flags__bit_field = 0;
+  flags_ = {};
   eol_space_ = 0;
   eol_width_ = 0;
   wrong_dir_space_ = 0;
@@ -530,6 +491,7 @@ _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(_dbDatabase* db)
   notch_length_ = 0;
   // User Code End Constructor
 }
+
 _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(
     _dbDatabase* db,
     const _dbTechLayerSpacingEolRule& r)
@@ -609,8 +571,6 @@ _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(
   min_adj_length1_ = r.min_adj_length1_;
   min_adj_length2_ = r.min_adj_length2_;
   notch_length_ = r.notch_length_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj)
@@ -650,10 +610,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj)
   stream >> obj.min_adj_length1_;
   stream >> obj.min_adj_length2_;
   stream >> obj.notch_length_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerSpacingEolRule& obj)
 {
   uint64_t* flags__bit_field = (uint64_t*) &obj.flags_;
@@ -691,19 +650,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerSpacingEolRule& obj)
   stream << obj.min_adj_length1_;
   stream << obj.min_adj_length2_;
   stream << obj.notch_length_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
 _dbTechLayerSpacingEolRule::~_dbTechLayerSpacingEolRule()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

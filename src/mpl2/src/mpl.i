@@ -45,10 +45,12 @@ utl::Logger* getLogger();
 odb::dbDatabase* getDb();
 }
 
+using utl::MPL;
 using ord::getMacroPlacer2;
 %}
 
 %include "../../Exception.i"
+%include <std_string.i>
 
 %inline %{
 
@@ -65,6 +67,7 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                           const int large_net_threshold,
                           const int signature_net_threshold,
                           const float halo_width,
+                          const float halo_height,
                           const float fence_lx,
                           const float fence_ly,
                           const float fence_ux,
@@ -82,6 +85,7 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                           const float target_dead_space,
                           const float min_ar,
                           const int snap_layer,
+                          const bool bus_planning_flag,
                           const char* report_directory) {
 
   auto macro_placer = getMacroPlacer2();
@@ -96,6 +100,7 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              large_net_threshold,
                              signature_net_threshold,
                              halo_width,
+                             halo_height,
                              fence_lx,
                              fence_ly,
                              fence_ux,
@@ -113,6 +118,7 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              target_dead_space,
                              min_ar,
                              snap_layer,
+                             bus_planning_flag,
                              report_directory);
 }
 
@@ -123,6 +129,26 @@ set_debug_cmd()
   int dbu = ord::getDb()->getTech()->getDbUnitsPerMicron();
   std::unique_ptr<Mpl2Observer> graphics = std::make_unique<Graphics>(dbu, ord::getLogger());
   macro_placer->setDebug(graphics);
+}
+
+void
+place_macro(odb::dbInst* inst, float x_origin, float y_origin, std::string orientation_string)
+{
+  odb::dbOrientType orientation(orientation_string.c_str());
+
+  getMacroPlacer2()->placeMacro(inst, x_origin, y_origin, orientation);
+}
+
+void
+set_macro_placement_file(std::string file_name)
+{
+  getMacroPlacer2()->setMacroPlacementFile(file_name);
+}
+
+void
+write_macro_placement(std::string file_name)
+{
+  getMacroPlacer2()->writeMacroPlacement(file_name);
 }
 
 } // namespace

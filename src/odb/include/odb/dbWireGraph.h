@@ -133,8 +133,8 @@ class dbWireGraph
 
     Edge(Type type, dbWireType::Value wire_type, dbTechLayerRule* rule)
         : _type(type),
-          _src(NULL),
-          _tgt(NULL),
+          _src(nullptr),
+          _tgt(nullptr),
           _wire_type(wire_type),
           _non_default_rule(rule)
     {
@@ -174,15 +174,15 @@ class dbWireGraph
   class Node
   {
    public:
-    typedef DList<Edge, &Edge::outEdgeEntry>::iterator edge_iterator;
+    using edge_iterator = DList<Edge, &Edge::outEdgeEntry>::iterator;
 
     Node(int x, int y, dbTechLayer* layer)
         : _x(x),
           _y(y),
           _jct_id(-1),
           _layer(layer),
-          _in_edge(NULL),
-          _object(NULL)
+          _in_edge(nullptr),
+          _object(nullptr)
     {
     }
 
@@ -312,68 +312,68 @@ class dbWireGraph
   Node* createNode(int x, int y, dbTechLayer* l);
 
   // Create a via edge.
-  //    Returns NULL, if the "tgt" node already has an in-edge.
-  //    Returns NULL, if the src and tgt layers are not the respective upper and
-  //    lower layers of this via.
+  //    Returns nullptr, if the "tgt" node already has an in-edge.
+  //    Returns nullptr, if the src and tgt layers are not the respective upper
+  //    and lower layers of this via.
   Via* createVia(Node* src,
                  Node* tgt,
                  dbVia* via,
                  dbWireType::Value type = dbWireType::NONE,
-                 dbTechLayerRule* rule = NULL);
+                 dbTechLayerRule* rule = nullptr);
 
   // Create a tech-via edge.
-  //    Returns NULL, if the "tgt" node already has an in-edge.
-  //    Returns NULL, if the src and tgt layers are not the respective upper and
-  //    lower layers of this via.
+  //    Returns nullptr, if the "tgt" node already has an in-edge.
+  //    Returns nullptr, if the src and tgt layers are not the respective upper
+  //    and lower layers of this via.
   TechVia* createTechVia(Node* src,
                          Node* tgt,
                          dbTechVia* via,
                          dbWireType::Value type = dbWireType::NONE,
-                         dbTechLayerRule* rule = NULL);
+                         dbTechLayerRule* rule = nullptr);
 
   // Create a segment edge with the default (EXTENDED) end style.
-  //    Returns NULL, if the "tgt" node already has an in-edge.
-  //    Returns NULL, if the src and tgt layer are not the same.
-  //    Returns NULL, if the src and tgt point do not form an orthogonal
+  //    Returns nullptr, if the "tgt" node already has an in-edge.
+  //    Returns nullptr, if the src and tgt layer are not the same.
+  //    Returns nullptr, if the src and tgt point do not form an orthogonal
   //    segment.
   Segment* createSegment(Node* src,
                          Node* tgt,
                          dbWireType::Value type = dbWireType::NONE,
-                         dbTechLayerRule* rule = NULL);
+                         dbTechLayerRule* rule = nullptr);
 
   // Create a segment edge.
-  //    Returns NULL, if the "tgt" node already has an in-edge.
-  //    Returns NULL, if the src and tgt layer are not the same.
-  //    Returns NULL, if the src and tgt point do not form an orthogonal
+  //    Returns nullptr, if the "tgt" node already has an in-edge.
+  //    Returns nullptr, if the src and tgt layer are not the same.
+  //    Returns nullptr, if the src and tgt point do not form an orthogonal
   //    segment.
   Segment* createSegment(Node* src,
                          Node* tgt,
                          EndStyle src_style,
                          EndStyle tgt_style,
                          dbWireType::Value type = dbWireType::NONE,
-                         dbTechLayerRule* rule = NULL);
+                         dbTechLayerRule* rule = nullptr);
 
   // Create a short edge.
-  //    Returns NULL, if the "tgt" node already has an in-edge.
+  //    Returns nullptr, if the "tgt" node already has an in-edge.
   Short* createShort(Node* src,
                      Node* tgt,
                      dbWireType::Value type = dbWireType::NONE,
-                     dbTechLayerRule* rule = NULL);
+                     dbTechLayerRule* rule = nullptr);
 
   // Create a vwire edge.
-  //    Returns NULL, if the "tgt" node already has an in-edge.
+  //    Returns nullptr, if the "tgt" node already has an in-edge.
   VWire* createVWire(Node* src,
                      Node* tgt,
                      dbWireType::Value type = dbWireType::NONE,
-                     dbTechLayerRule* rule = NULL);
+                     dbTechLayerRule* rule = nullptr);
 
   // Edge iterator
-  typedef DList<Node, &Node::nodeEntry>::iterator node_iterator;
+  using node_iterator = DList<Node, &Node::nodeEntry>::iterator;
   node_iterator begin_nodes() { return _nodes.begin(); }
   node_iterator end_nodes() { return _nodes.end(); }
 
   // Node iterator
-  typedef DList<Edge, &Edge::edgeEntry>::iterator edge_iterator;
+  using edge_iterator = DList<Edge, &Edge::edgeEntry>::iterator;
   edge_iterator begin_edges() { return _edges.begin(); }
   edge_iterator end_edges() { return _edges.end(); }
 

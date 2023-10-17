@@ -37,12 +37,12 @@ struct Cell;
 class DplObserver
 {
  public:
-  virtual void startPlacement(odb::dbBlock* block){};
-  virtual void placeInstance(odb::dbInst* instance){};
-  virtual void binSearch(const Cell* cell, int xl, int yl, int xh, int yh){};
-  virtual void endPlacement(){};
   virtual ~DplObserver() = default;
-  DplObserver() = default;
+
+  virtual void startPlacement(odb::dbBlock* block) = 0;
+  virtual void placeInstance(odb::dbInst* instance) = 0;
+  virtual void binSearch(const Cell* cell, int xl, int yl, int xh, int yh) = 0;
+  virtual void endPlacement() = 0;
 };
 
 }  // namespace dpl

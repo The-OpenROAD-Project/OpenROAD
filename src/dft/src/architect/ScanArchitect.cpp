@@ -39,19 +39,26 @@ namespace dft {
 
 namespace {
 
-bool CompareScanCells(const std::shared_ptr<ScanCell>& lhs,
-                      const std::shared_ptr<ScanCell>& rhs)
+bool CompareScanCells(const std::unique_ptr<ScanCell>& lhs,
+                      const std::unique_ptr<ScanCell>& rhs)
 {
   // If they have the same number of bits, then we compare the names of the
   // cells so they are ordered by name
   if (lhs->getBits() == rhs->getBits()) {
-    return lhs->getName() < rhs->getName();
+    const ClockDomain& lhs_clock_domain = lhs->getClockDomain();
+    const ClockDomain& rhs_clock_domain = rhs->getClockDomain();
+
+    if (lhs_clock_domain.getClockName() == rhs_clock_domain.getClockName()) {
+      return lhs_clock_domain.getClockEdge() < rhs_clock_domain.getClockEdge();
+    }
+
+    return lhs_clock_domain.getClockName() < rhs_clock_domain.getClockName();
   }
   // Bigger elements last
   return lhs->getBits() < rhs->getBits();
 }
 
-void SortScanCells(std::vector<std::shared_ptr<ScanCell>>& scan_cells)
+void SortScanCells(std::vector<std::unique_ptr<ScanCell>>& scan_cells)
 {
   std::sort(scan_cells.begin(), scan_cells.end(), CompareScanCells);
 }
@@ -62,13 +69,13 @@ ScanCellsBucket::ScanCellsBucket(utl::Logger* logger) : logger_(logger)
 {
 }
 
-void ScanCellsBucket::init(
-    const ScanArchitectConfig& config,
-    const std::vector<std::shared_ptr<ScanCell>>& scan_cells)
+void ScanCellsBucket::init(const ScanArchitectConfig& config,
+                           std::vector<std::unique_ptr<ScanCell>>& scan_cells)
 {
   auto hash_fn = GetClockDomainHashFn(config, logger_);
-  for (const std::shared_ptr<ScanCell>& scan_cell : scan_cells) {
-    buckets_[hash_fn(scan_cell->getClockDomain())].push_back(scan_cell);
+  for (std::unique_ptr<ScanCell>& scan_cell : scan_cells) {
+    buckets_[hash_fn(scan_cell->getClockDomain())].push_back(
+        std::move(scan_cell));
   }
 
   // Sort the buckets
@@ -82,17 +89,17 @@ ScanCellsBucket::getTotalBitsPerHashDomain() const
 {
   std::unordered_map<size_t, uint64_t> total_bits;
   for (const auto& [hash_domain, scan_cells] : buckets_) {
-    for (const std::shared_ptr<ScanCell>& scan_cell : scan_cells) {
+    for (const std::unique_ptr<ScanCell>& scan_cell : scan_cells) {
       total_bits[hash_domain] += scan_cell->getBits();
     }
   }
   return total_bits;
 }
 
-std::shared_ptr<ScanCell> ScanCellsBucket::pop(size_t hash_domain)
+std::unique_ptr<ScanCell> ScanCellsBucket::pop(size_t hash_domain)
 {
   auto& bucket = buckets_.find(hash_domain)->second;
-  auto scan_cell = bucket.back();
+  std::unique_ptr<ScanCell> scan_cell = std::move(bucket.back());
   bucket.pop_back();
   return scan_cell;
 }
@@ -138,12 +145,12 @@ void ScanArchitect::inferChainCount()
   }
 }
 
-std::unordered_map<size_t, ScanArchitect::HashDomainLimits>
+std::map<size_t, ScanArchitect::HashDomainLimits>
 ScanArchitect::inferChainCountFromMaxLength(
     const std::unordered_map<size_t, uint64_t>& hash_domains_total_bit,
     uint64_t max_length)
 {
-  std::unordered_map<size_t, HashDomainLimits> hash_domain_to_limits;
+  std::map<size_t, HashDomainLimits> hash_domain_to_limits;
   for (const auto& [hash_domain, bits] : hash_domains_total_bit) {
     uint64_t domain_chain_count = 0;
     if (bits % max_length != 0) {

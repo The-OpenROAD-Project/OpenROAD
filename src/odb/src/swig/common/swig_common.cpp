@@ -85,7 +85,7 @@ bool db_def_diff(odb::dbDatabase* db1, const char* def_filename)
   std::vector<odb::dbLib*> search_libs;
   for (odb::dbLib* lib : db2->getLibs())
     search_libs.push_back(lib);
-  def_reader.createChip(search_libs, def_filename);
+  def_reader.createChip(search_libs, def_filename, db1->getTech());
   if (db2->getChip())
     return db_diff(db1, db2);
   else
@@ -94,32 +94,34 @@ bool db_def_diff(odb::dbDatabase* db1, const char* def_filename)
 
 odb::dbLib* read_lef(odb::dbDatabase* db, const char* path)
 {
-  utl::Logger* logger = new utl::Logger(NULL);
+  utl::Logger* logger = new utl::Logger(nullptr);
   odb::lefin lefParser(db, logger, false);
   const char* libname = basename(const_cast<char*>(path));
   if (!db->getTech()) {
-    return lefParser.createTechAndLib(libname, path);
+    return lefParser.createTechAndLib(libname, libname, path);
   } else {
-    return lefParser.createLib(libname, path);
+    return lefParser.createLib(db->getTech(), libname, path);
   }
 }
 
-odb::dbChip* read_def(odb::dbDatabase* db, std::string path)
+odb::dbChip* read_def(odb::dbTech* tech, std::string path)
 {
-  utl::Logger* logger = new utl::Logger(NULL);
+  utl::Logger* logger = new utl::Logger(nullptr);
   std::vector<odb::dbLib*> libs;
-  for (auto* lib : db->getLibs()) {
-    libs.push_back(lib);
+  for (auto* lib : tech->getDb()->getLibs()) {
+    if (lib->getTech() == tech) {
+      libs.push_back(lib);
+    }
   }
-  odb::defin defParser(db, logger);
-  return defParser.createChip(libs, path.c_str());
+  odb::defin defParser(tech->getDb(), logger);
+  return defParser.createChip(libs, path.c_str(), tech);
 }
 
 int write_def(odb::dbBlock* block,
               const char* path,
               odb::defout::Version version)
 {
-  utl::Logger* logger = new utl::Logger(NULL);
+  utl::Logger* logger = new utl::Logger(nullptr);
   odb::defout writer(logger);
   writer.setVersion(version);
   return writer.writeBlock(block, path);
@@ -127,27 +129,39 @@ int write_def(odb::dbBlock* block,
 
 int write_lef(odb::dbLib* lib, const char* path)
 {
-  utl::Logger* logger = new utl::Logger(NULL);
-  odb::lefout writer(logger);
-  return writer.writeTechAndLib(lib, path);
+  utl::Logger* logger = new utl::Logger(nullptr);
+  std::ofstream os;
+  os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
+  os.open(path);
+  odb::lefout writer(logger, os);
+  writer.writeTechAndLib(lib);
+  return true;
 }
 
 int write_tech_lef(odb::dbTech* tech, const char* path)
 {
-  utl::Logger* logger = new utl::Logger(NULL);
-  odb::lefout writer(logger);
-  return writer.writeTech(tech, path);
+  utl::Logger* logger = new utl::Logger(nullptr);
+  std::ofstream os;
+  os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
+  os.open(path);
+  odb::lefout writer(logger, os);
+  writer.writeTech(tech);
+  return true;
 }
 int write_macro_lef(odb::dbLib* lib, const char* path)
 {
-  utl::Logger* logger = new utl::Logger(NULL);
-  odb::lefout writer(logger);
-  return writer.writeLib(lib, path);
+  utl::Logger* logger = new utl::Logger(nullptr);
+  std::ofstream os;
+  os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
+  os.open(path);
+  odb::lefout writer(logger, os);
+  writer.writeLib(lib);
+  return true;
 }
 
 odb::dbDatabase* read_db(odb::dbDatabase* db, const char* db_path)
 {
-  if (db == NULL) {
+  if (db == nullptr) {
     db = odb::dbDatabase::create();
   }
 

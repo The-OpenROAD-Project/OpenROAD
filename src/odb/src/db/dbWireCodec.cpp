@@ -175,17 +175,17 @@ void dbWireEncoder::begin(dbWire* wire)
   clear();
   _wire = (_dbWire*) wire;
   _block = wire->getBlock();
-  _tech = _block->getDb()->getTech();
+  _tech = _block->getTech();
 }
 
 void dbWireEncoder::clear()
 {
-  _wire = NULL;
-  _block = NULL;
-  _tech = NULL;
+  _wire = nullptr;
+  _block = nullptr;
+  _tech = nullptr;
   _data.clear();
   _opcodes.clear();
-  _layer = NULL;
+  _layer = nullptr;
   _idx = 0;
   _x = 0;
   _y = 0;
@@ -203,7 +203,7 @@ void dbWireEncoder::append(dbWire* wire)
   _tech = _block->getDb()->getTech();
   _data = _wire->_data;
   _opcodes = _wire->_opcodes;
-  _layer = NULL;
+  _layer = nullptr;
   _idx = _data.size();
   _x = 0;
   _y = 0;
@@ -642,6 +642,32 @@ void dbWireEncoder::clearColor()
   addOp(WOP_COLOR, 0);
 }
 
+void dbWireEncoder::setViaColor(uint8_t bottom_color,
+                                uint8_t cut_color,
+                                uint8_t top_color)
+{
+  // LEF/DEF says 3 is the max number of supported masks per layer.
+  // 0 is also not a valid mask.
+  for (const auto color : {bottom_color, cut_color, top_color}) {
+    if (color > 3) {
+      utl::Logger* logger = _wire->getImpl()->getLogger();
+      logger->error(
+          utl::ODB, 1103, "Mask color: {}, but must be between 0 and 3", color);
+    }
+  }
+
+  // encode as XX BB CC TT
+  const uint8_t mask_color = bottom_color << 4 | cut_color << 2 | top_color;
+
+  addOp(WOP_VIACOLOR, mask_color);
+}
+
+void dbWireEncoder::clearViaColor()
+{
+  // 0 is a special value representing no mask color.
+  addOp(WOP_VIACOLOR, 0);
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 //
 // dbWireDecoder
@@ -654,9 +680,9 @@ void dbWireEncoder::clearColor()
 
 dbWireDecoder::dbWireDecoder()
 {
-  _wire = NULL;
-  _block = NULL;
-  _tech = NULL;
+  _wire = nullptr;
+  _block = nullptr;
+  _tech = nullptr;
 }
 
 dbWireDecoder::~dbWireDecoder()
@@ -671,7 +697,7 @@ void dbWireDecoder::begin(dbWire* wire)
   _x = 0;
   _y = 0;
   _default_width = true;
-  _layer = NULL;
+  _layer = nullptr;
   _idx = 0;
   _jct_id = -1;
   _opcode = END_DECODE;
@@ -1057,6 +1083,20 @@ nextOpCode:
       goto nextOpCode;
     }
 
+    case WOP_VIACOLOR: {
+      uint8_t viacolor = static_cast<uint8_t>(_operand);
+      if (viacolor == 0) {
+        _viacolor = std::nullopt;
+      } else {
+        _viacolor = ViaColor();
+        _viacolor.value().bottom_color = (viacolor & 0x30) >> 4;
+        _viacolor.value().cut_color = (viacolor & 0x0c) >> 2;
+        _viacolor.value().top_color = (viacolor & 0x03);
+      }
+
+      goto nextOpCode;
+    }
+
     default:
       ZASSERT(DB_WIRE_DECODE_INVALID_OPCODE);
       goto nextOpCode;
@@ -1117,6 +1157,11 @@ dbTechVia* dbWireDecoder::getTechVia() const
 std::optional<uint8_t> dbWireDecoder::getColor() const
 {
   return _color;
+}
+
+std::optional<dbWireDecoder::ViaColor> dbWireDecoder::getViaColor() const
+{
+  return _viacolor;
 }
 
 void dbWireDecoder::getRect(int& deltaX1,
@@ -1227,7 +1272,7 @@ void dumpDecoder4Net(dbNet* innet)
 
       case dbWireDecoder::JUNCTION: {
         uint jct = decoder.getJunctionValue();
-        lyr_rule = NULL;
+        lyr_rule = nullptr;
         opcode = decoder.peek();
         if (opcode == dbWireDecoder::RULE) {
           opcode = decoder.next();
@@ -1293,7 +1338,7 @@ void dumpDecoder4Net(dbNet* innet)
         uint jval = decoder.getJunctionValue();
         layer = decoder.getLayer();
         wtype = decoder.getWireType();
-        lyr_rule = NULL;
+        lyr_rule = nullptr;
         opcode = decoder.peek();
         if (opcode == dbWireDecoder::RULE) {
           opcode = decoder.next();
@@ -1315,7 +1360,7 @@ void dumpDecoder4Net(dbNet* innet)
         uint jval = decoder.getJunctionValue();
         layer = decoder.getLayer();
         wtype = decoder.getWireType();
-        lyr_rule = NULL;
+        lyr_rule = nullptr;
         opcode = decoder.peek();
         if (opcode == dbWireDecoder::RULE) {
           opcode = decoder.next();
@@ -1426,7 +1471,7 @@ void dumpDecoder(dbBlock* inblk, const char* net_name_or_id)
     return;
   }
 
-  dbNet* innet = NULL;
+  dbNet* innet = nullptr;
   const char* ckdigit;
   for (ckdigit = net_name_or_id; *ckdigit; ckdigit++)
     if (!isdigit(*ckdigit))

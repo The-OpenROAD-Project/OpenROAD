@@ -36,6 +36,7 @@
 #include <iostream>
 
 #include "initialPlace.h"
+#include "mbff.h"
 #include "nesterovBase.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"
@@ -55,8 +56,8 @@ Replace::Replace()
       rs_(nullptr),
       fr_(nullptr),
       log_(nullptr),
-      pb_(nullptr),
-      nb_(nullptr),
+      pbc_(nullptr),
+      nbc_(nullptr),
       rb_(nullptr),
       tb_(nullptr),
       ip_(nullptr),
@@ -122,8 +123,14 @@ void Replace::reset()
   ip_.reset();
   np_.reset();
 
-  pb_.reset();
-  nb_.reset();
+  pbc_.reset();
+  nbc_.reset();
+
+  pbVec_.clear();
+  pbVec_.shrink_to_fit();
+  nbVec_.clear();
+  nbVec_.shrink_to_fit();
+
   tb_.reset();
   rb_.reset();
 
@@ -174,12 +181,28 @@ void Replace::reset()
 
 void Replace::doIncrementalPlace()
 {
-  PlacerBaseVars pbVars;
-  pbVars.padLeft = padLeft_;
-  pbVars.padRight = padRight_;
-  pbVars.skipIoMode = skipIoMode_;
+  if (pbc_ == nullptr) {
+    PlacerBaseVars pbVars;
+    pbVars.padLeft = padLeft_;
+    pbVars.padRight = padRight_;
+    pbVars.skipIoMode = skipIoMode_;
 
-  pb_ = std::make_shared<PlacerBase>(db_, pbVars, log_);
+    pbc_ = std::make_shared<PlacerBaseCommon>(db_, pbVars, log_);
+
+    pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_));
+
+    for (auto pd : db_->getChip()->getBlock()->getPowerDomains()) {
+      if (pd->getGroup()) {
+        pbVec_.push_back(
+            std::make_shared<PlacerBase>(db_, pbc_, log_, pd->getGroup()));
+      }
+    }
+
+    total_placeable_insts_ = 0;
+    for (const auto& pb : pbVec_) {
+      total_placeable_insts_ += pb->placeInsts().size();
+    }
+  }
 
   // Lock down already placed objects
   int locked_cnt = 0;
@@ -188,7 +211,7 @@ void Replace::doIncrementalPlace()
   for (auto inst : block->getInsts()) {
     auto status = inst->getPlacementStatus();
     if (status == odb::dbPlacementStatus::PLACED) {
-      pb_->dbToPb(inst)->lock();
+      pbc_->dbToPb(inst)->lock();
       ++locked_cnt;
     } else if (!status.isPlaced()) {
       ++unplaced_cnt;
@@ -198,7 +221,10 @@ void Replace::doIncrementalPlace()
   if (unplaced_cnt == 0) {
     // Everything was already placed so we do the old incremental mode
     // which just skips initial placement and runs nesterov.
-    pb_->unlockAll();
+    for (auto& pb : pbVec_) {
+      pb->unlockAll();
+    }
+    // pbc_->unlockAll();
     doNesterovPlace();
     return;
   }
@@ -221,7 +247,9 @@ void Replace::doIncrementalPlace()
 
   // Finish the overflow resolution from the rough placement
   log_->info(GPL, 133, "Unlocked instances");
-  pb_->unlockAll();
+  for (auto& pb : pbVec_) {
+    pb->unlockAll();
+  }
 
   setTargetOverflow(previous_overflow);
   if (previous_overflow < rough_oveflow) {
@@ -231,13 +259,27 @@ void Replace::doIncrementalPlace()
 
 void Replace::doInitialPlace()
 {
-  if (pb_ == nullptr) {
+  if (pbc_ == nullptr) {
     PlacerBaseVars pbVars;
     pbVars.padLeft = padLeft_;
     pbVars.padRight = padRight_;
     pbVars.skipIoMode = skipIoMode_;
 
-    pb_ = std::make_shared<PlacerBase>(db_, pbVars, log_);
+    pbc_ = std::make_shared<PlacerBaseCommon>(db_, pbVars, log_);
+
+    pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_));
+
+    for (auto pd : db_->getChip()->getBlock()->getPowerDomains()) {
+      if (pd->getGroup()) {
+        pbVec_.push_back(
+            std::make_shared<PlacerBase>(db_, pbc_, log_, pd->getGroup()));
+      }
+    }
+
+    total_placeable_insts_ = 0;
+    for (const auto& pb : pbVec_) {
+      total_placeable_insts_ += pb->placeInsts().size();
+    }
   }
 
   InitialPlaceVars ipVars;
@@ -249,28 +291,65 @@ void Replace::doInitialPlace()
   ipVars.debug = gui_debug_initial_;
   ipVars.forceCPU = forceCPU_;
 
-  std::unique_ptr<InitialPlace> ip(new InitialPlace(ipVars, pb_, log_));
+  std::unique_ptr<InitialPlace> ip(
+      new InitialPlace(ipVars, pbc_, pbVec_, log_));
   ip_ = std::move(ip);
   ip_->doBicgstabPlace();
 }
 
+void Replace::runMBFF(int max_sz, float alpha, float beta, int threads)
+{
+  int num_flops = 0;
+  int num_paths = 0;
+  vector<odb::Point> points;
+  vector<Path> paths;
+
+  auto block = db_->getChip()->getBlock();
+  for (const auto& inst : block->getInsts()) {
+    if (inst->getMaster()->isSequential()) {
+      int x_i, y_i;
+      inst->getOrigin(x_i, y_i);
+      odb::Point pt(x_i, y_i);
+      points.push_back(pt);
+      num_flops++;
+    }
+  }
+
+  MBFF pntset(num_flops, num_paths, points, paths, threads, 4, 10, log_);
+  pntset.Run((max_sz == -1 ? num_flops : max_sz), alpha, beta);
+}
+
 bool Replace::initNesterovPlace()
 {
-  if (!pb_) {
+  if (!pbc_) {
     PlacerBaseVars pbVars;
     pbVars.padLeft = padLeft_;
     pbVars.padRight = padRight_;
     pbVars.skipIoMode = skipIoMode_;
 
-    pb_ = std::make_shared<PlacerBase>(db_, pbVars, log_);
+    pbc_ = std::make_shared<PlacerBaseCommon>(db_, pbVars, log_);
+
+    pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_));
+
+    for (auto pd : db_->getChip()->getBlock()->getPowerDomains()) {
+      if (pd->getGroup()) {
+        pbVec_.push_back(
+            std::make_shared<PlacerBase>(db_, pbc_, log_, pd->getGroup()));
+      }
+    }
+
+    total_placeable_insts_ = 0;
+    for (const auto& pb : pbVec_) {
+      total_placeable_insts_ += pb->placeInsts().size();
+    }
   }
 
-  if (pb_->placeInsts().size() == 0) {
+  if (total_placeable_insts_ == 0) {
     log_->warn(GPL, 136, "No placeable instances - skipping placement.");
     return false;
   }
 
-  if (!nb_) {
+  if (!nbc_) {
     NesterovBaseVars nbVars;
     nbVars.targetDensity = density_;
 
@@ -282,7 +361,11 @@ bool Replace::initNesterovPlace()
 
     nbVars.useUniformTargetDensity = uniformTargetDensityMode_;
 
-    nb_ = std::make_shared<NesterovBase>(nbVars, pb_, log_);
+    nbc_ = std::make_shared<NesterovBaseCommon>(nbVars, pbc_, log_);
+
+    for (const auto& pb : pbVec_) {
+      nbVec_.push_back(std::make_shared<NesterovBase>(nbVars, pb, nbc_, log_));
+    }
   }
 
   if (!rb_) {
@@ -298,11 +381,11 @@ bool Replace::initNesterovPlace()
     rbVars.rcK3 = routabilityRcK3_;
     rbVars.rcK4 = routabilityRcK4_;
 
-    rb_ = std::make_shared<RouteBase>(rbVars, db_, fr_, nb_, log_);
+    rb_ = std::make_shared<RouteBase>(rbVars, db_, fr_, nbc_, nbVec_, log_);
   }
 
   if (!tb_) {
-    tb_ = std::make_shared<TimingBase>(nb_, rs_, log_);
+    tb_ = std::make_shared<TimingBase>(nbc_, rs_, log_);
     tb_->setTimingNetWeightOverflows(timingNetWeightOverflows_);
     tb_->setTimingNetWeightMax(timingNetWeightMax_);
   }
@@ -326,8 +409,13 @@ bool Replace::initNesterovPlace()
     npVars.debug_draw_bins = gui_debug_draw_bins_;
     npVars.debug_inst = gui_debug_inst_;
 
+    for (const auto& nb : nbVec_) {
+      nb->setNpVars(&npVars);
+    }
+
     std::unique_ptr<NesterovPlace> np(
-        new NesterovPlace(npVars, pb_, nb_, rb_, tb_, log_));
+        new NesterovPlace(npVars, pbc_, nbc_, pbVec_, nbVec_, rb_, tb_, log_));
+
     np_ = std::move(np);
   }
   return true;
@@ -402,8 +490,9 @@ void Replace::setUniformTargetDensityMode(bool mode)
 
 float Replace::getUniformTargetDensity()
 {
+  // TODO: update to be compatible with multiple target densities
   initNesterovPlace();
-  return nb_->uniformTargetDensity();
+  return nbVec_[0]->uniformTargetDensity();
 }
 
 void Replace::setInitDensityPenalityFactor(float penaltyFactor)

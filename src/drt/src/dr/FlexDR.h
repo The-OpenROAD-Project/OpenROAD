@@ -65,18 +65,11 @@ struct FlexDRViaData
   // std::pair<layer1area, layer2area>
   std::vector<std::pair<frCoord, frCoord>> halfViaEncArea;
 
-  // via2turnMinLen[z][0], last via=down, min required x dist
-  // via2turnMinLen[z][1], last via=down, min required y dist
-  // via2turnMinLen[z][2], last via=up,   min required x dist
-  // via2turnMinLen[z][3], last via=up,   min required y dist
-  std::vector<std::vector<frCoord>> via2turnMinLen;
-
  private:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
     (ar) & halfViaEncArea;
-    (ar) & via2turnMinLen;
   }
   friend class boost::serialization::access;
 };
@@ -440,12 +433,17 @@ class FlexDRWorker
   // others
   int main(frDesign* design);
   void distributedMain(frDesign* design);
+  void writeUpdates(const std::string& file_name);
   void updateDesign(frDesign* design);
   std::string reloadedMain();
   bool end(frDesign* design);
 
   Logger* getLogger() { return logger_; }
-  void setLogger(Logger* logger) { logger_ = logger; }
+  void setLogger(Logger* logger)
+  {
+    logger_ = logger;
+    gridGraph_.setLogger(logger);
+  }
 
   static std::unique_ptr<FlexDRWorker> load(const std::string& file_name,
                                             utl::Logger* logger,
@@ -544,6 +542,7 @@ class FlexDRWorker
   // init
   void init(const frDesign* design);
   void initNets(const frDesign* design);
+  void initRipUpNetsFromMarkers();
   void initNetObjs(
       const frDesign* design,
       std::set<frNet*, frBlockObjectComp>& nets,
@@ -764,6 +763,9 @@ class FlexDRWorker
       std::set<frBlockObject*>& uniqueAggressors,
       std::vector<RouteQueueEntry>& checks,
       std::vector<RouteQueueEntry>& routes);
+  void getRipUpNetsFromMarker(frMarker* marker,
+                              std::set<drNet*>& nets,
+                              frCoord bloatDist = 0);
   void route_queue_update_queue(const std::vector<RouteQueueEntry>& checks,
                                 const std::vector<RouteQueueEntry>& routes,
                                 std::queue<RouteQueueEntry>& rerouteQueue);

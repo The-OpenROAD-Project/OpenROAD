@@ -25,7 +25,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-%apply std::vector<odb::dbShape> &OUTPUT { std::vector<odb::dbShape> & boxes };
+%apply std::vector<odb::dbShape> &OUTPUT { std::vector<odb::dbShape> & shapes };
 
 // (dbGCellGrid|dbTrackGrid)::getGridPattern[XY]
 %apply int& OUTPUT { int& origin_x, int& origin_y, int& line_count, int& step };

@@ -147,8 +147,8 @@ PolyDecomp::Node* PolyDecomp::new_node(Point p)
 {
   Node* n = new Node();
   n->_p = p;
-  n->_in_edge = NULL;
-  n->_out_edge = NULL;
+  n->_in_edge = nullptr;
+  n->_out_edge = nullptr;
   _nodes.push_back(n);
   return n;
 }
@@ -159,9 +159,9 @@ PolyDecomp::Edge* PolyDecomp::new_edge(Node* src, Node* tgt, Side side)
   e->_side = side;
   e->_src = src;
   e->_tgt = tgt;
-  assert(src->_out_edge == NULL);
+  assert(src->_out_edge == nullptr);
   src->_out_edge = e;
-  assert(tgt->_in_edge == NULL);
+  assert(tgt->_in_edge == nullptr);
   tgt->_in_edge = e;
   _edges.push_back(e);
   return e;
@@ -298,7 +298,7 @@ void PolyDecomp::scan_edges(int scanline, std::vector<Rect>& rects)
     {
       Node* u = left->_src;
       Node* v = new_node(Point(u->x(), scanline));
-      u->_out_edge = NULL;
+      u->_out_edge = nullptr;
       v->_out_edge = left;
       left->_src = v;
       left = new_edge(u, v, LEFT);
@@ -310,7 +310,7 @@ void PolyDecomp::scan_edges(int scanline, std::vector<Rect>& rects)
       Node* v = new_node(Point(w->x(), scanline));
       right->_tgt = v;
       v->_in_edge = right;
-      w->_in_edge = NULL;
+      w->_in_edge = nullptr;
       right = new_edge(v, w, RIGHT);
     }
 

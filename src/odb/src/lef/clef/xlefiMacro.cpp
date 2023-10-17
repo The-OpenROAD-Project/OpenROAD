@@ -26,7 +26,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -35,6 +35,12 @@
 
 #include "lefiMacro.h"
 #include "lefiMacro.hpp"
+
+union ulefiGeomRect
+{
+  LefDefParser::lefiGeomRect cpp;
+  ::lefiGeomRect c;
+};
 
 // Wrappers definitions.
 const ::lefiGeometries* lefiObstruction_geometries(const ::lefiObstruction* obj)
@@ -779,9 +785,9 @@ int lefiDensity_numRects(const ::lefiDensity* obj, int index)
                                    int index,
                                    int rectIndex)
 {
-  LefDefParser::lefiGeomRect tmp;
-  tmp = ((LefDefParser::lefiDensity*) obj)->getRect(index, rectIndex);
-  return *((::lefiGeomRect*) &tmp);
+  ulefiGeomRect tmp;
+  tmp.cpp = ((LefDefParser::lefiDensity*) obj)->getRect(index, rectIndex);
+  return tmp.c;
 }
 
 double lefiDensity_densityValue(const ::lefiDensity* obj,

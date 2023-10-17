@@ -82,32 +82,32 @@ void definNet::init()
   _net_cnt = 0;
   _update_cnt = 0;
   _net_iterm_cnt = 0;
-  _cur_net = NULL;
-  _cur_layer = NULL;
-  _wire = NULL;
+  _cur_net = nullptr;
+  _cur_layer = nullptr;
+  _wire = nullptr;
   _wire_type = dbWireType::NONE;
   _wire_shape_type = dbWireShapeType::NONE;
   _prev_x = 0;
   _prev_y = 0;
   _width = 0;
   _point_cnt = 0;
-  _taper_rule = NULL;
-  _non_default_rule = NULL;
-  _rule_for_path = NULL;
+  _taper_rule = nullptr;
+  _non_default_rule = nullptr;
+  _rule_for_path = nullptr;
   _rotated_vias.clear();
 }
 
 void definNet::begin(const char* name)
 {
-  assert(_cur_net == NULL);
+  assert(_cur_net == nullptr);
 
   if (_replace_wires == false) {
     _cur_net = _block->findNet(name);
 
-    if (_cur_net == NULL)
+    if (_cur_net == nullptr)
       _cur_net = dbNet::create(_block, name);
 
-    _non_default_rule = NULL;
+    _non_default_rule = nullptr;
   } else {
     if (_names_are_ids == false)
       _cur_net = _block->findNet(name);
@@ -118,7 +118,7 @@ void definNet::begin(const char* name)
         _cur_net = dbNet::getNet(_block, netid);
     }
 
-    if (_cur_net == NULL) {
+    if (_cur_net == nullptr) {
       _logger->warn(utl::ODB, 96, "net {} does not exist", name);
       ++_errors;
     } else {
@@ -140,8 +140,8 @@ void definNet::begin(const char* name)
   else
     _net_cnt++;
 
-  _wire = NULL;
-  _rule_for_path = NULL;
+  _wire = nullptr;
+  _rule_for_path = nullptr;
   _found_new_routing = false;
   if (_net_cnt != 0 && _net_cnt % 100000 == 0)
     _logger->info(utl::ODB, 97, "\t\tCreated {} Nets", _net_cnt);
@@ -149,7 +149,7 @@ void definNet::begin(const char* name)
 
 void definNet::beginMustjoin(const char* iname, const char* tname)
 {
-  assert(_cur_net == NULL);
+  assert(_cur_net == nullptr);
 
   if (_replace_wires == false) {
     char buf[BUFSIZ];
@@ -157,7 +157,7 @@ void definNet::beginMustjoin(const char* iname, const char* tname)
 
     _cur_net = _block->findNet(buf);
 
-    if (_cur_net == NULL) {
+    if (_cur_net == nullptr) {
       _logger->warn(utl::ODB, 98, "duplicate must-join net found ({})", buf);
       ++_errors;
     }
@@ -167,9 +167,9 @@ void definNet::beginMustjoin(const char* iname, const char* tname)
   }
 
   _net_cnt++;
-  _wire = NULL;
-  _non_default_rule = NULL;
-  _rule_for_path = NULL;
+  _wire = nullptr;
+  _non_default_rule = nullptr;
+  _rule_for_path = nullptr;
 }
 
 void definNet::connection(const char* iname, const char* tname)
@@ -177,14 +177,14 @@ void definNet::connection(const char* iname, const char* tname)
   if (_skip_signal_connections == true)
     return;
 
-  if ((_cur_net == NULL) || (_replace_wires == true))
+  if ((_cur_net == nullptr) || (_replace_wires == true))
     return;
 
   if (iname[0] == 'P' || iname[0] == 'p') {
     if (iname[1] == 'I' || iname[1] == 'i') {
       if (iname[2] == 'N' || iname[2] == 'n') {
         if (iname[3] == 0) {
-          if (_block->findBTerm(tname) == NULL) {
+          if (_block->findBTerm(tname) == nullptr) {
             dbBTerm::create(_cur_net, tname);
           }
 
@@ -196,7 +196,7 @@ void definNet::connection(const char* iname, const char* tname)
 
   dbInst* inst = _block->findInst(iname);
 
-  if (inst == NULL) {
+  if (inst == nullptr) {
     _logger->warn(
         utl::ODB, 99, "error: netlist component ({}) is not defined", iname);
     ++_errors;
@@ -206,7 +206,7 @@ void definNet::connection(const char* iname, const char* tname)
   dbMaster* master = inst->getMaster();
   dbMTerm* mterm = master->findMTerm(_block, tname);
 
-  if (mterm == NULL) {
+  if (mterm == nullptr) {
     _logger->warn(utl::ODB,
                   100,
                   "error: netlist component-pin ({}, {}) is not defined",
@@ -233,7 +233,7 @@ dbTechNonDefaultRule* definNet::findNonDefaultRule(const char* name)
 
 void definNet::nonDefaultRule(const char* rule)
 {
-  if (_cur_net == NULL)
+  if (_cur_net == nullptr)
     return;
 
   if (_replace_wires == true) {
@@ -243,9 +243,9 @@ void definNet::nonDefaultRule(const char* rule)
     dbTechNonDefaultRule* net_rule = _cur_net->getNonDefaultRule();
     dbTechNonDefaultRule* def_rule = findNonDefaultRule(rule);
 
-    if (def_rule == NULL) {
+    if (def_rule == nullptr) {
       _logger->warn(utl::ODB,
-                    101,
+                    136,
                     "error: undefined NONDEFAULTRULE ({}) referenced",
                     rule);
       ++_errors;
@@ -253,10 +253,10 @@ void definNet::nonDefaultRule(const char* rule)
 
     else if (net_rule != def_rule) {
       std::string net_name = _cur_net->getName();
-      const char* net_rule_name = "(NULL)";
+      const char* net_rule_name = "(nullptr)";
       std::string n;
 
-      if (net_rule != NULL) {
+      if (net_rule != nullptr) {
         n = net_rule->getName();
         net_rule_name = n.c_str();
       }
@@ -274,7 +274,7 @@ void definNet::nonDefaultRule(const char* rule)
   } else {
     _non_default_rule = findNonDefaultRule(rule);
 
-    if (_non_default_rule == NULL) {
+    if (_non_default_rule == nullptr) {
       _logger->warn(utl::ODB,
                     103,
                     "error: undefined NONDEFAULTRULE ({}) referenced",
@@ -287,7 +287,7 @@ void definNet::nonDefaultRule(const char* rule)
 
 void definNet::use(dbSigType type)
 {
-  if ((_cur_net == NULL) || (_replace_wires == true))
+  if ((_cur_net == nullptr) || (_replace_wires == true))
     return;
 
   _cur_net->setSigType(type);
@@ -295,7 +295,7 @@ void definNet::use(dbSigType type)
 
 void definNet::source(dbSourceType source)
 {
-  if ((_cur_net == NULL) || (_replace_wires == true))
+  if ((_cur_net == nullptr) || (_replace_wires == true))
     return;
 
   _cur_net->setSourceType(source);
@@ -303,7 +303,7 @@ void definNet::source(dbSourceType source)
 
 void definNet::weight(int weight)
 {
-  if ((_cur_net == NULL) || (_replace_wires == true))
+  if ((_cur_net == nullptr) || (_replace_wires == true))
     return;
 
   _cur_net->setWeight(weight);
@@ -311,7 +311,7 @@ void definNet::weight(int weight)
 
 void definNet::fixedbump()
 {
-  if ((_cur_net == NULL) || (_replace_wires == true))
+  if ((_cur_net == nullptr) || (_replace_wires == true))
     return;
 
   _cur_net->setFixedBump(true);
@@ -319,7 +319,7 @@ void definNet::fixedbump()
 
 void definNet::xtalk(int value)
 {
-  if ((_cur_net == NULL) || (_replace_wires == true))
+  if ((_cur_net == nullptr) || (_replace_wires == true))
     return;
 
   _cur_net->setXTalkClass(value);
@@ -330,20 +330,20 @@ void definNet::wire(dbWireType type)
   if (_skip_wires)
     return;
 
-  if (_wire == NULL) {
+  if (_wire == nullptr) {
     if (!_assembly_mode)
       _wire = dbWire::create(_cur_net);
     else {
       _wire = _cur_net->getWire();
 
-      if (_wire == NULL)
+      if (_wire == nullptr)
         _wire = dbWire::create(_cur_net);
     }
     _wire_encoder.begin(_wire);
   }
 
   _wire_type = type;
-  _taper_rule = NULL;
+  _taper_rule = nullptr;
 }
 
 void definNet::path(const char* layer_name)
@@ -354,25 +354,25 @@ void definNet::path(const char* layer_name)
 
 void definNet::pathBegin(const char* layer_name)
 {
-  if (_wire == NULL)
+  if (_wire == nullptr)
     return;
 
   _cur_layer = _tech->findLayer(layer_name);
 
-  if (_cur_layer == NULL) {
+  if (_cur_layer == nullptr) {
     _logger->warn(
         utl::ODB, 104, "error: undefined layer ({}) referenced", layer_name);
     ++_errors;
     dbWire::destroy(_wire);
-    _wire = NULL;
+    _wire = nullptr;
     return;
   }
 
-  _taper_rule = NULL;
+  _taper_rule = nullptr;
   if (_rule_for_path) {
     _taper_rule = _rule_for_path->getLayerRule(_cur_layer);
 
-    if (_taper_rule == NULL) {
+    if (_taper_rule == nullptr) {
       std::string lyr_name = _cur_layer->getName();
       std::string rule_name = _non_default_rule->getName();
       _logger->warn(utl::ODB,
@@ -392,7 +392,7 @@ void definNet::pathBegin(const char* layer_name)
 
 void definNet::pathTaper(const char* layer)
 {
-  _rule_for_path = NULL;  // turn off non-default-rule for this path
+  _rule_for_path = nullptr;  // turn off non-default-rule for this path
   pathBegin(layer);
 }
 
@@ -400,7 +400,7 @@ void definNet::pathTaperRule(const char* layer_name, const char* rule_name)
 {
   _rule_for_path = findNonDefaultRule(rule_name);
 
-  if (_rule_for_path == NULL) {
+  if (_rule_for_path == nullptr) {
     _logger->warn(utl::ODB,
                   106,
                   "error: undefined TAPER RULE ({}) referenced",
@@ -415,7 +415,7 @@ void definNet::pathTaperRule(const char* layer_name, const char* rule_name)
 
 void definNet::pathPoint(int x, int y)
 {
-  if (_wire == NULL)
+  if (_wire == nullptr)
     return;
 
   _prev_x = dbdist(x);
@@ -426,7 +426,7 @@ void definNet::pathPoint(int x, int y)
 
 void definNet::pathPoint(int x, int y, int ext)
 {
-  if (_wire == NULL)
+  if (_wire == nullptr)
     return;
 
   _prev_x = dbdist(x);
@@ -437,8 +437,8 @@ void definNet::pathPoint(int x, int y, int ext)
 
 void definNet::getUniqueViaName(std::string& viaName)
 {
-  if ((_tech->findVia(viaName.c_str()) == NULL)
-      && (_block->findVia(viaName.c_str()) == NULL))
+  if ((_tech->findVia(viaName.c_str()) == nullptr)
+      && (_block->findVia(viaName.c_str()) == nullptr))
     return;
 
   int cnt = 1;
@@ -448,8 +448,8 @@ void definNet::getUniqueViaName(std::string& viaName)
     std::string vn(viaName);
     vn += buffer;
 
-    if ((_tech->findVia(vn.c_str()) == NULL)
-        && (_block->findVia(vn.c_str()) == NULL)) {
+    if ((_tech->findVia(vn.c_str()) == nullptr)
+        && (_block->findVia(vn.c_str()) == nullptr)) {
       viaName = vn;
       return;
     }
@@ -500,7 +500,7 @@ dbVia* definNet::getRotatedVia(const char* via_name, dbOrientType orient)
 
   dbVia*& via = _rotated_vias[viaName];
 
-  if (via != NULL)
+  if (via != nullptr)
     return via;
 
   getUniqueViaName(viaName);
@@ -514,11 +514,11 @@ dbVia* definNet::getRotatedVia(const char* via_name, dbOrientType orient)
   else {
     dbVia* block_via = _block->findVia(via_name);
 
-    if (block_via == NULL) {
+    if (block_via == nullptr) {
       _logger->warn(
           utl::ODB, 107, "error: undefined via ({}) referenced", via_name);
       ++_errors;
-      return NULL;
+      return nullptr;
     }
 
     via = dbVia::create(_block, viaName.c_str(), block_via, orient);
@@ -529,12 +529,12 @@ dbVia* definNet::getRotatedVia(const char* via_name, dbOrientType orient)
 
 void definNet::pathVia(const char* via_name, dbOrientType orient)
 {
-  if (_wire == NULL)
+  if (_wire == nullptr)
     return;
 
   dbVia* via = getRotatedVia(via_name, orient);
 
-  if (via == NULL)
+  if (via == nullptr)
     return;
 
   _wire_encoder.addVia(via);
@@ -556,21 +556,21 @@ void definNet::pathVia(const char* via_name, dbOrientType orient)
 
 void definNet::pathVia(const char* via_name)
 {
-  if (_wire == NULL)
+  if (_wire == nullptr)
     return;
 
   dbTechLayer* top;
   dbTechLayer* bot;
   dbTechVia* tech_via = _tech->findVia(via_name);
 
-  if (tech_via != NULL) {
+  if (tech_via != nullptr) {
     _wire_encoder.addTechVia(tech_via);
     top = tech_via->getTopLayer();
     bot = tech_via->getBottomLayer();
   } else {
     dbVia* via = _block->findVia(via_name);
 
-    if (via == NULL) {
+    if (via == nullptr) {
       _logger->warn(
           utl::ODB, 109, "error: undefined via ({}) referenced", via_name);
       ++_errors;
@@ -612,9 +612,16 @@ void definNet::pathColor(int color)
   _wire_encoder.setColor(static_cast<uint8_t>(color));
 }
 
+void definNet::pathViaColor(int bottom_color, int cut_color, int top_color)
+{
+  _wire_encoder.setViaColor(static_cast<uint8_t>(bottom_color),
+                            static_cast<uint8_t>(cut_color),
+                            static_cast<uint8_t>(top_color));
+}
+
 void definNet::pathEnd()
 {
-  _cur_layer = NULL;
+  _cur_layer = nullptr;
 }
 
 void definNet::wireEnd()
@@ -623,7 +630,7 @@ void definNet::wireEnd()
 
 void definNet::property(const char* name, const char* value)
 {
-  if ((_cur_net == NULL) || _replace_wires)
+  if ((_cur_net == nullptr) || _replace_wires)
     return;
 
   dbProperty* p = dbProperty::find(_cur_net, name);
@@ -635,7 +642,7 @@ void definNet::property(const char* name, const char* value)
 
 void definNet::property(const char* name, int value)
 {
-  if ((_cur_net == NULL) || _replace_wires)
+  if ((_cur_net == nullptr) || _replace_wires)
     return;
 
   dbProperty* p = dbProperty::find(_cur_net, name);
@@ -647,7 +654,7 @@ void definNet::property(const char* name, int value)
 
 void definNet::property(const char* name, double value)
 {
-  if ((_cur_net == NULL) || _replace_wires)
+  if ((_cur_net == nullptr) || _replace_wires)
     return;
 
   dbProperty* p = dbProperty::find(_cur_net, name);
@@ -660,7 +667,7 @@ void definNet::property(const char* name, double value)
 
 void definNet::end()
 {
-  if (_cur_net == NULL)
+  if (_cur_net == nullptr)
     return;
 
   if (!_replace_wires) {
@@ -685,7 +692,7 @@ void definNet::end()
         _cur_net->setWireAltered(true);
     }
   }
-  _cur_net = NULL;
+  _cur_net = nullptr;
 }
 
 }  // namespace odb

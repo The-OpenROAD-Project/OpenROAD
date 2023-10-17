@@ -68,11 +68,11 @@ class dbVerilogNetwork : public ConcreteNetwork
 {
  public:
   dbVerilogNetwork();
-  virtual Cell* findAnyCell(const char* name);
+  Cell* findAnyCell(const char* name) override;
   void init(dbNetwork* db_network);
 
  private:
-  NetworkReader* db_network_;
+  NetworkReader* db_network_ = nullptr;
 };
 
 dbVerilogNetwork* makeDbVerilogNetwork();

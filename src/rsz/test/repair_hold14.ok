@@ -1,0 +1,79 @@
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd_std_cell.lef
+[INFO ODB-0225]     Created 437 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd_std_cell.lef
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 6 components and 28 component-terminals.
+[INFO ODB-0133]     Created 6 nets and 12 connections.
+worst slack -0.97
+worst slack 0.26
+[INFO RSZ-0046] Found 1 endpoints with hold violations.
+[INFO RSZ-0032] Inserted 3 hold buffers.
+Startpoint: in1 (input port clocked by clk)
+Endpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: min
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (propagated)
+  -1.00   -1.00 v input external delay
+   0.00   -1.00 v in1 (in)
+   0.41   -0.59 v hold2/X (sky130_fd_sc_hd__clkdlybuf4s50_1)
+   0.43   -0.16 v hold1/X (sky130_fd_sc_hd__clkdlybuf4s50_1)
+   0.43    0.26 v hold3/X (sky130_fd_sc_hd__clkdlybuf4s50_1)
+   0.00    0.27 v r1/D (sky130_fd_sc_hd__dfxbp_1)
+           0.27   data arrival time
+
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (propagated)
+   0.00    0.00   clock reconvergence pessimism
+           0.00 ^ r1/CLK (sky130_fd_sc_hd__dfxbp_1)
+  -0.06   -0.06   library hold time
+          -0.06   data required time
+---------------------------------------------------------
+          -0.06   data required time
+          -0.27   data arrival time
+---------------------------------------------------------
+           0.33   slack (MET)
+
+
+[INFO RSZ-0046] Found 1 endpoints with hold violations.
+[INFO RSZ-0032] Inserted 1 hold buffers.
+Startpoint: in1 (input port clocked by clk)
+Endpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: min
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (propagated)
+  -1.00   -1.00 v input external delay
+   0.00   -1.00 v in1 (in)
+   0.53   -0.47 v hold4/X (sky130_fd_sc_hd__dlygate4sd3_1)
+   0.43   -0.04 v hold2/X (sky130_fd_sc_hd__clkdlybuf4s50_1)
+   0.43    0.39 v hold1/X (sky130_fd_sc_hd__clkdlybuf4s50_1)
+   0.43    0.82 v hold3/X (sky130_fd_sc_hd__clkdlybuf4s50_1)
+   0.00    0.82 v r1/D (sky130_fd_sc_hd__dfxbp_1)
+           0.82   data arrival time
+
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (propagated)
+   0.70    0.70   clock uncertainty
+   0.00    0.70   clock reconvergence pessimism
+           0.70 ^ r1/CLK (sky130_fd_sc_hd__dfxbp_1)
+  -0.06    0.64   library hold time
+           0.64   data required time
+---------------------------------------------------------
+           0.64   data required time
+          -0.82   data arrival time
+---------------------------------------------------------
+           0.18   slack (MET)
+
+

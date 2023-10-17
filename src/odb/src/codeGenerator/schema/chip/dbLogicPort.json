@@ -1,0 +1,25 @@
+{
+  "name":"dbLogicPort",
+  "type":"dbObject",
+  "fields":[
+    {
+      "name":"_name",
+      "type":"char *",
+      "flags":["no-set"]
+    },
+    {
+      "name":"_next_entry",
+      "type":"dbId<_dbLogicPort>",
+      "flags":["no-set","no-get"]
+    },
+    {
+      "name":"direction",
+      "type":"std::string",
+      "flags":["no-set"]  
+    }
+  ],
+  "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbVector.h", "dbIsolation.h", "dbPowerSwitch.h", "dbModInst.h"],
+  "h_includes": [
+    "dbVector.h"
+  ]
+}

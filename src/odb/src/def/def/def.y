@@ -1,6 +1,6 @@
-// ******************************************************************************
-// ******************************************************************************
-// Copyright 2013-2017, Cadence Design Systems
+//******************************************************************************
+//******************************************************************************
+// Copyright 2013-2019, Cadence Design Systems
 // 
 // This  file  is  part  of  the  Cadence  LEF/DEF  Open   Source
 // Distribution,  Product Version 5.8. 
@@ -19,13 +19,13 @@
 // 
 // For updates, support, or to become part of the LEF/DEF Community,
 // check www.openeda.org for details.
-// ******************************************************************************
+//******************************************************************************
 // 
-//  $Author: icftcm $
-//  $Revision: #2 $
-//  $Date: 2017/06/07 $
+//  $Author: dell $
+//  $Revision: #1 $
+//  $Date: 2020/09/29 $
 //  $State:  $
-// ****************************************************************************
+//****************************************************************************
 
 //  Error message number:
 //  5000 - def reader, defrReader.cpp
@@ -50,7 +50,7 @@
 //  6170 - defiTimingDisable.cpp
 //  6180 - defiVia.cpp
 //  6500 - def parser, error, def.y
-%define api.pure
+%pure-parser
 %lex-param {defrData *defData}
 %parse-param {defrData *defData}
 
@@ -193,6 +193,13 @@ void yyerror(defrData *defData, const char *s)
 %token <keyword> K_FIXEDBUMP K_FENCE K_FREQUENCY K_GUIDE K_MAXBITS
 %token <keyword> K_PARTITION K_TYPE K_ANTENNAMODEL K_DRCFILL
 %token <keyword> K_OXIDE1 K_OXIDE2 K_OXIDE3 K_OXIDE4
+%token <keyword> K_OXIDE5 K_OXIDE6 K_OXIDE7 K_OXIDE8
+%token <keyword> K_OXIDE9 K_OXIDE10 K_OXIDE11 K_OXIDE12
+%token <keyword> K_OXIDE13 K_OXIDE14 K_OXIDE15 K_OXIDE16
+%token <keyword> K_OXIDE17 K_OXIDE18 K_OXIDE19 K_OXIDE20
+%token <keyword> K_OXIDE21 K_OXIDE22 K_OXIDE23 K_OXIDE24
+%token <keyword> K_OXIDE25 K_OXIDE26 K_OXIDE27 K_OXIDE28
+%token <keyword> K_OXIDE29 K_OXIDE30 K_OXIDE31 K_OXIDE32
 %token <keyword> K_CUTSIZE K_CUTSPACING K_DESIGNRULEWIDTH K_DIAGWIDTH
 %token <keyword> K_ENCLOSURE K_HALO K_GROUNDSENSITIVITY
 %token <keyword> K_HARDSPACING K_LAYERS K_MINCUTS K_NETEXPR 
@@ -465,7 +472,7 @@ property_def: K_DESIGN {defData->dumb_mode = 1; defData->no_num = 1; defData->Pr
                 defData->session->NDefProp.setPropType(defData->DEFCASE($3), defData->defPropDefType);
               }
             }
-        | error ';' { yyerrok; yyclearin;};
+        | error ';' { yyerrok; yyclearin;}
 
 property_type_and_val: K_INTEGER { defData->real_num = 0; } opt_range opt_num_val
             {
@@ -620,6 +627,7 @@ pin: '-' {defData->dumb_mode = 1; defData->no_num = 1; } T_STRING '+' K_NET
               defData->Pin.Setup($3, $7);
             }
             defData->hasPort = 0;
+            defData->hadPortOnce = 0;
           }
         pin_options ';'
           { 
@@ -728,19 +736,29 @@ pin_option: '+' K_SPECIAL
                  }
                }
             } else {
-               if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
-                 defData->Pin.addPort();
+               if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk) {
+                   defData->Pin.addPort();
+               }
+
                defData->hasPort = 1;
+               defData->hadPortOnce = 1;
             }
           }
 
         | '+' K_LAYER { defData->dumb_mode = 1; } T_STRING
           {
             if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk) {
-              if (defData->hasPort)
+              if (defData->hasPort) {
                  defData->Pin.addPortLayer($4);
-              else
+              } else if (defData->hadPortOnce) {
+                 if ((defData->pinWarnings++ < defData->settings->PinWarnings) &&
+                   (defData->pinWarnings++ < defData->settings->PinExtWarnings)) {
+                   defData->defError(7418, "syntax error");
+                   CHKERR();
+                 }
+              } else {
                  defData->Pin.addLayer($4);
+              }
             }
           }
           pin_layer_mask_opt pin_layer_spacing_opt pt pt
@@ -748,7 +766,7 @@ pin_option: '+' K_SPECIAL
             if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk) {
               if (defData->hasPort)
                  defData->Pin.addPortLayerPts($8.x, $8.y, $9.x, $9.y);
-              else
+              else if (!defData->hadPortOnce)
                  defData->Pin.addLayerPts($8.x, $8.y, $9.x, $9.y);
             }
           }
@@ -769,10 +787,17 @@ pin_option: '+' K_SPECIAL
               }
             } else {
               if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk) {
-                if (defData->hasPort)
+                if (defData->hasPort) {
                    defData->Pin.addPortPolygon($4);
-                else
+                } else if (defData->hadPortOnce) {
+                   if ((defData->pinWarnings++ < defData->settings->PinWarnings) &&
+                     (defData->pinWarnings++ < defData->settings->PinExtWarnings)) {
+                     defData->defError(7418, "syntax error");
+                     CHKERR();
+                   }
+                } else {
                    defData->Pin.addPolygon($4);
+                }
               }
             }
             
@@ -784,7 +809,7 @@ pin_option: '+' K_SPECIAL
               if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk) {
                 if (defData->hasPort)
                    defData->Pin.addPortPolygonPts(&defData->Geometries);
-                else
+                else if (!defData->hadPortOnce)
                    defData->Pin.addPolygonPts(&defData->Geometries);
               }
             }
@@ -805,12 +830,19 @@ pin_option: '+' K_SPECIAL
               }
             } else {
               if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk) {
-                if (defData->hasPort)
+                if (defData->hasPort) {
                    defData->Pin.addPortVia($4, (int)$7,
                                                (int)$8, $5);
-                else
+                } else if (defData->hadPortOnce) {
+                   if ((defData->pinWarnings++ < defData->settings->PinWarnings) &&
+                     (defData->pinWarnings++ < defData->settings->PinExtWarnings)) {
+                     defData->defError(7418, "syntax error");
+                     CHKERR();
+                   }
+                } else {
                    defData->Pin.addVia($4, (int)$7,
                                                (int)$8, $5);
+                }
               }
             }
           }
@@ -821,8 +853,16 @@ pin_option: '+' K_SPECIAL
               if (defData->hasPort) {
                  defData->Pin.setPortPlacement($1, $2.x, $2.y, $3);
                  defData->hasPort = 0;
-              } else
+                 defData->hadPortOnce = 1;
+              } else if (defData->hadPortOnce) {
+                 if ((defData->pinWarnings++ < defData->settings->PinWarnings) &&
+                   (defData->pinWarnings++ < defData->settings->PinExtWarnings)) {
+                   defData->defError(7418, "syntax error");
+                   CHKERR();
+                 }
+              } else {
                  defData->Pin.setPlacement($1, $2.x, $2.y, $3);
+              }
             }
           }
 
@@ -1142,6 +1182,147 @@ pin_oxide: K_OXIDE1
             if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
               defData->Pin.addAntennaModel(defData->aOxide);
           }
+        | K_OXIDE5 
+          { defData->aOxide = 5;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE6
+          { defData->aOxide = 6;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE7
+          { defData->aOxide = 7;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE8
+          { defData->aOxide = 8;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE9 
+          { defData->aOxide = 9;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE10
+          { defData->aOxide = 10;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE11
+          { defData->aOxide = 11;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE12
+          { defData->aOxide = 12;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE13 
+          { defData->aOxide = 13;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE14
+          { defData->aOxide = 14;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE15
+          { defData->aOxide = 15;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE16
+          { defData->aOxide = 16;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE17
+          { defData->aOxide = 17;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE18
+          { defData->aOxide = 18;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE19
+          { defData->aOxide = 19;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE20
+          { defData->aOxide = 20;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE21
+          { defData->aOxide = 21;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE22
+          { defData->aOxide = 22;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE23
+          { defData->aOxide = 23;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE24
+          { defData->aOxide = 24;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE25
+          { defData->aOxide = 25;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE26
+          { defData->aOxide = 26;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE27
+          { defData->aOxide = 27;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE28
+          { defData->aOxide = 28;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE29 
+          { defData->aOxide = 29;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE30
+          { defData->aOxide = 30;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE31
+          { defData->aOxide = 31;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+        | K_OXIDE32
+          { defData->aOxide = 32;
+            if (defData->callbacks->PinCbk || defData->callbacks->PinExtCbk)
+              defData->Pin.addAntennaModel(defData->aOxide);
+          }
+
 
 use_type: K_SIGNAL
           { $$ = (char*)"SIGNAL"; }
@@ -3090,10 +3271,8 @@ snet_other_option: '+' net_type
             { 
               // 11/12/2002 - this is obsolete in 5.5, & will be ignored 
               if (defData->VersionNum < 5.5) {
-                 if (defData->callbacks->SNetCbk) {
-                   defData->Net.setCap($3);
-                 }
-              } else  {
+                 if (defData->callbacks->SNetCbk) defData->Net.setCap($3);
+              } else {
                  defData->defWarning(7024, "The ESTCAP statement is obsolete in version 5.5 and later.\nThe DEF parser will ignore this statement.");
               }
             }
@@ -3196,9 +3375,7 @@ snet_width: '+' K_WIDTH { defData->dumb_mode = 1; } T_STRING NUMBER
             {
               // 11/12/2002 - this is obsolete in 5.5, & will be ignored 
               if (defData->VersionNum < 5.5) {
-                  if (defData->callbacks->SNetCbk) {
-                      defData->Net.setWidth($4, $5);
-                  }
+                 if (defData->callbacks->SNetCbk) defData->Net.setWidth($4, $5);
               } else {
                  defData->defWarning(7026, "The WIDTH statement is obsolete in version 5.5 and later.\nThe DEF parser will ignore this statement.");
               }
@@ -3474,32 +3651,26 @@ group_soft_option: K_MAXX NUMBER
       {
         // 11/12/2002 - this is obsolete in 5.5, & will be ignored 
         if (defData->VersionNum < 5.5) {
-            if (defData->callbacks->GroupCbk) {
-              defData->Group.setMaxX(ROUND($2));
-            }
+          if (defData->callbacks->GroupCbk) defData->Group.setMaxX(ROUND($2));
         } else {
-            defData->defWarning(7028, "The GROUP SOFT MAXX statement is obsolete in version 5.5 and later.\nThe DEF parser will ignore this statement.");
+          defData->defWarning(7028, "The GROUP SOFT MAXX statement is obsolete in version 5.5 and later.\nThe DEF parser will ignore this statement.");
         }
       }
       | K_MAXY NUMBER
       { 
         // 11/12/2002 - this is obsolete in 5.5, & will be ignored 
         if (defData->VersionNum < 5.5) {
-            if (defData->callbacks->GroupCbk) {
-              defData->Group.setMaxY(ROUND($2));
-            }
+          if (defData->callbacks->GroupCbk) defData->Group.setMaxY(ROUND($2));
         } else {
-            defData->defWarning(7029, "The GROUP SOFT MAXY statement is obsolete in version 5.5 and later.\nThe DEF parser will ignore this statement.");
+          defData->defWarning(7029, "The GROUP SOFT MAXY statement is obsolete in version 5.5 and later.\nThe DEF parser will ignore this statement.");
         }
       }
       | K_MAXHALFPERIMETER NUMBER
       { 
         // 11/12/2002 - this is obsolete in 5.5, & will be ignored 
         if (defData->VersionNum < 5.5) {
-            if (defData->callbacks->GroupCbk) {
-                defData->Group.setPerim(ROUND($2));
-            }
-        } else {
+          if (defData->callbacks->GroupCbk) defData->Group.setPerim(ROUND($2));
+        } else { 
           defData->defWarning(7030, "The GROUP SOFT MAXHALFPERIMETER statement is obsolete in version 5.5 and later.\nThe DEF parser will ignore this statement.");
         }
       }

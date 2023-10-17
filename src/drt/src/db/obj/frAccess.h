@@ -37,6 +37,7 @@
 namespace fr {
 class frViaDef;
 class frPinAccess;
+class frMTerm;
 class frAccessPoint : public frBlockObject
 {
  public:
@@ -54,6 +55,18 @@ class frAccessPoint : public frBlockObject
   {
   }
   frAccessPoint() : frAccessPoint({0, 0}, 0) {}
+  frAccessPoint(const frAccessPoint& rhs)
+      : frBlockObject(rhs),
+        point_(rhs.point_),
+        layerNum_(rhs.layerNum_),
+        accesses_(rhs.accesses_),
+        viaDefs_(rhs.viaDefs_),
+        typeL_(rhs.typeL_),
+        typeH_(rhs.typeH_),
+        aps_(nullptr),
+        pathSegs_(rhs.pathSegs_)
+  {
+  }
   // getters
   const Point& getPoint() const { return point_; }
   frLayerNum getLayerNum() const { return layerNum_; }
@@ -193,12 +206,24 @@ class frAccessPoint : public frBlockObject
   frAccessPointEnum typeH_;
   frPinAccess* aps_;
   std::vector<frPathSeg> pathSegs_;
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version);
+  friend class boost::serialization::access;
 };
 
 class frPinAccess : public frBlockObject
 {
  public:
-  frPinAccess() : frBlockObject(), aps_() {}
+  frPinAccess() : frBlockObject(), aps_(), pin_(nullptr) {}
+  frPinAccess(const frPinAccess& rhs) : frBlockObject(rhs), pin_(rhs.pin_)
+  {
+    aps_.clear();
+    for (const auto& ap : rhs.aps_) {
+      aps_.push_back(std::make_unique<frAccessPoint>(*ap));
+      aps_.back()->addToPinAccess(this);
+    }
+  }
+
   // getters
   const std::vector<std::unique_ptr<frAccessPoint>>& getAccessPoints() const
   {
@@ -206,15 +231,23 @@ class frPinAccess : public frBlockObject
   }
   frAccessPoint* getAccessPoint(int idx) const { return aps_[idx].get(); }
   int getNumAccessPoints() const { return aps_.size(); }
+  frPin* getPin() const { return pin_; }
   // setters
   void addAccessPoint(std::unique_ptr<frAccessPoint> in)
   {
+    in->setId(aps_.size());
+    in->addToPinAccess(this);
     aps_.push_back(std::move(in));
   }
+  void setPin(frPin* in) { pin_ = in; }
   // others
   frBlockObjectEnum typeId() const override { return frcPinAccess; }
 
  private:
   std::vector<std::unique_ptr<frAccessPoint>> aps_;
+  frPin* pin_;
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version);
+  friend class boost::serialization::access;
 };
 }  // namespace fr

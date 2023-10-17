@@ -44,7 +44,6 @@
 #include "dbTechLayerCutClassRule.h"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayerCutSpacingRule>;
 
 bool _dbTechLayerCutSpacingRule::operator==(
@@ -173,91 +172,66 @@ bool _dbTechLayerCutSpacingRule::operator==(
 
   if (cut_spacing_ != rhs.cut_spacing_)
     return false;
-
   if (second_layer_ != rhs.second_layer_)
     return false;
-
   if (orthogonal_spacing_ != rhs.orthogonal_spacing_)
     return false;
-
   if (width_ != rhs.width_)
     return false;
-
   if (enclosure_ != rhs.enclosure_)
     return false;
-
   if (edge_length_ != rhs.edge_length_)
     return false;
-
   if (par_within_ != rhs.par_within_)
     return false;
-
   if (par_enclosure_ != rhs.par_enclosure_)
     return false;
-
   if (edge_enclosure_ != rhs.edge_enclosure_)
     return false;
-
   if (adj_enclosure_ != rhs.adj_enclosure_)
     return false;
-
   if (above_enclosure_ != rhs.above_enclosure_)
     return false;
-
   if (above_width_ != rhs.above_width_)
     return false;
-
   if (min_length_ != rhs.min_length_)
     return false;
-
   if (extension_ != rhs.extension_)
     return false;
-
   if (eol_width_ != rhs.eol_width_)
     return false;
-
   if (num_cuts_ != rhs.num_cuts_)
     return false;
-
   if (within_ != rhs.within_)
     return false;
-
   if (second_within_ != rhs.second_within_)
     return false;
-
   if (cut_class_ != rhs.cut_class_)
     return false;
-
   if (two_cuts_ != rhs.two_cuts_)
     return false;
-
   if (prl_ != rhs.prl_)
     return false;
-
   if (par_length_ != rhs.par_length_)
     return false;
-
   if (cut_area_ != rhs.cut_area_)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
+
 bool _dbTechLayerCutSpacingRule::operator<(
     const _dbTechLayerCutSpacingRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
+
 void _dbTechLayerCutSpacingRule::differences(
     dbDiff& diff,
     const char* field,
     const _dbTechLayerCutSpacingRule& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_.center_to_center_);
   DIFF_FIELD(flags_.same_net_);
   DIFF_FIELD(flags_.same_metal_);
@@ -320,10 +294,9 @@ void _dbTechLayerCutSpacingRule::differences(
   DIFF_FIELD(prl_);
   DIFF_FIELD(par_length_);
   DIFF_FIELD(cut_area_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
+
 void _dbTechLayerCutSpacingRule::out(dbDiff& diff,
                                      char side,
                                      const char* field) const
@@ -392,14 +365,12 @@ void _dbTechLayerCutSpacingRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(par_length_);
   DIFF_OUT_FIELD(cut_area_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
+
 _dbTechLayerCutSpacingRule::_dbTechLayerCutSpacingRule(_dbDatabase* db)
 {
-  uint64_t* flags__bit_field = (uint64_t*) &flags_;
-  *flags__bit_field = 0;
+  flags_ = {};
   cut_spacing_ = 0;
   orthogonal_spacing_ = 0;
   width_ = 0;
@@ -421,9 +392,8 @@ _dbTechLayerCutSpacingRule::_dbTechLayerCutSpacingRule(_dbDatabase* db)
   prl_ = 0;
   par_length_ = 0;
   cut_area_ = 0;
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
+
 _dbTechLayerCutSpacingRule::_dbTechLayerCutSpacingRule(
     _dbDatabase* db,
     const _dbTechLayerCutSpacingRule& r)
@@ -491,8 +461,6 @@ _dbTechLayerCutSpacingRule::_dbTechLayerCutSpacingRule(
   prl_ = r.prl_;
   par_length_ = r.par_length_;
   cut_area_ = r.cut_area_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutSpacingRule& obj)
@@ -522,10 +490,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutSpacingRule& obj)
   stream >> obj.prl_;
   stream >> obj.par_length_;
   stream >> obj.cut_area_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutSpacingRule& obj)
 {
   uint64_t* flags__bit_field = (uint64_t*) &obj.flags_;
@@ -553,19 +520,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutSpacingRule& obj)
   stream << obj.prl_;
   stream << obj.par_length_;
   stream << obj.cut_area_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
 _dbTechLayerCutSpacingRule::~_dbTechLayerCutSpacingRule()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

@@ -94,7 +94,6 @@ class HungarianMatching
   int num_pin_groups_;
   int non_blocked_slots_;
   int group_slots_;
-  int group_size_;
   Edge edge_;
   const int hungarian_fail = std::numeric_limits<int>::max();
   Logger* logger_;
@@ -108,6 +107,7 @@ class HungarianMatching
   int getSlotIdxByPosition(const odb::Point& position, int layer) const;
   bool groupHasMirroredPin(const std::vector<int>& group,
                            MirroredPins& mirrored_pins);
+  Edge getMirroredEdge(const Edge& edge);
 };
 
 }  // namespace ppl

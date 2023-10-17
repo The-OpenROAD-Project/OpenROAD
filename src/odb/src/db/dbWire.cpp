@@ -38,7 +38,6 @@
 #include "dbBlock.h"
 #include "dbBlockCallBackObj.h"
 #include "dbNet.h"
-#include "dbRtTree.h"
 #include "dbShape.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -260,7 +259,7 @@ dbNet* dbWire::getNet()
   _dbWire* wire = (_dbWire*) this;
 
   if (wire->_net == 0)
-    return NULL;
+    return nullptr;
 
   _dbBlock* block = (_dbBlock*) wire->getOwner();
   return (dbNet*) block->_net_tbl->getPtr(wire->_net);
@@ -429,7 +428,7 @@ void dbWire::shuffleWireSeg(dbNet** newNets, dbRSeg** new_rsegs)
   int* destid = (int*) calloc(wlen, sizeof(int));
   // dbTechLayer *llayer;
   // dimitri_fix
-  dbTechLayer* llayer = NULL;
+  dbTechLayer* llayer = nullptr;
   dbTechLayer** jlayer = (dbTechLayer**) calloc(wlen, sizeof(dbTechLayer*));
   // int xx, yy;
   // dimitri_fix
@@ -455,10 +454,10 @@ void dbWire::shuffleWireSeg(dbNet** newNets, dbRSeg** new_rsegs)
   // int njid;
   dbNet* leadNewNet = newNets[0];
   dbWire* twire = leadNewNet->getWire();
-  if (twire == NULL)
+  if (twire == nullptr)
     twire = dbWire::create(leadNewNet);
-  dbWire* rwire = NULL;
-  dbWire* fwire = NULL;
+  dbWire* rwire = nullptr;
+  dbWire* fwire = nullptr;
   bool newWire = false;
 
   if (twire == this) {
@@ -520,7 +519,7 @@ void dbWire::shuffleWireSeg(dbNet** newNets, dbRSeg** new_rsegs)
         rrule = jrule[j1];
         data = destid[j1];
         j2 = j1;
-        while (newNets[j2] == NULL)
+        while (newNets[j2] == nullptr)
           j2--;
         newNets[j1] = newNets[j2];
         newNets[jj - 1] = newNets[j2];  // not jj; avoid inducing WOP_PATH
@@ -537,10 +536,10 @@ void dbWire::shuffleWireSeg(dbNet** newNets, dbRSeg** new_rsegs)
         j2 = jj + 3;
       if (j2) {
         newNets[jj] = newNets[j2];
-        newNets[j2] = NULL;
+        newNets[j2] = nullptr;
       } else {
         j2 = j1;
-        while (newNets[j2] == NULL)
+        while (newNets[j2] == nullptr)
           j2--;
         newNets[j1] = newNets[j2];
         newNets[jj] = newNets[j2];
@@ -550,18 +549,18 @@ void dbWire::shuffleWireSeg(dbNet** newNets, dbRSeg** new_rsegs)
       fwire->addOneSeg(WOP_PATH | wwtype, data, jj, destid, new_rsegs);
       continue;
     } else if (opcd == WOP_PATH
-               && (newNets[jj + 2] != NULL || newNets[jj + 3] != NULL)) {
-      j2 = newNets[jj + 2] != NULL ? jj + 2 : jj + 3;
+               && (newNets[jj + 2] != nullptr || newNets[jj + 3] != nullptr)) {
+      j2 = newNets[jj + 2] != nullptr ? jj + 2 : jj + 3;
       newNets[jj] = newNets[j2];
-      newNets[j2] = NULL;
+      newNets[j2] = nullptr;
       twire = newNets[jj]->getWire();
-      if (twire == NULL)
+      if (twire == nullptr)
         twire = dbWire::create(newNets[jj]);
       fwire = twire == this ? rwire : twire;
       fwire->addOneSeg(opcode, data, jj, destid, new_rsegs);
       continue;
     }
-    if (jj != 0 && newNets[jj] != NULL) {
+    if (jj != 0 && newNets[jj] != nullptr) {
       fwire = twire == this ? rwire : twire;
       fwire->addOneSeg(opcode, data, jj, destid, new_rsegs);
       j1 = jj + 1;
@@ -577,7 +576,7 @@ void dbWire::shuffleWireSeg(dbNet** newNets, dbRSeg** new_rsegs)
       }
       // new PATH for twire
       twire = newNets[jj]->getWire();
-      if (twire == NULL)
+      if (twire == nullptr)
         twire = dbWire::create(newNets[jj]);
       fwire = twire == this ? rwire : twire;
       fwire->addOneSeg(WOP_PATH | wwtype, llayer->getImpl()->getOID());
@@ -663,7 +662,7 @@ void dbWire::getShape(int shape_id, dbShape& shape)
       dbVia* via = dbVia::getVia(block, operand);
       dbBox* box = via->getBBox();
 
-      if (box == NULL)
+      if (box == nullptr)
         return;
 
       WirePoint pnt;
@@ -689,7 +688,7 @@ void dbWire::getShape(int shape_id, dbShape& shape)
       dbTechVia* via = dbTechVia::getTechVia(tech, operand);
       dbBox* box = via->getBBox();
 
-      if (box == NULL)
+      if (box == nullptr)
         return;
 
       // dimitri_fix LOOK_AGAIN WirePoint pnt;
@@ -792,7 +791,7 @@ void dbWire::printWire()
 {
   _dbWire* wire = (_dbWire*) this;
   int tid = (int) wire->length() - 1;
-  printWire(NULL, 0, tid);
+  printWire(nullptr, 0, tid);
 }
 
 void dbWire::printWire(FILE* fp, int fid, int tid)
@@ -1028,7 +1027,7 @@ static Coord prevCoord[13][3] = {
 void dbWire::getSegment(int shape_id, dbShape& shape)
 {
   _dbWire* wire = (_dbWire*) this;
-  dbTechLayer* layer = NULL;
+  dbTechLayer* layer = nullptr;
 
   int width = 0;
   bool found_width = false;
@@ -1089,7 +1088,7 @@ decode_loop : {
       goto state_machine_update;
 
     case WOP_VIA:
-      if (layer == NULL) {
+      if (layer == nullptr) {
         dbBlock* block = (dbBlock*) wire->getOwner();
         dbVia* via = dbVia::getVia(block, wire->_data[idx]);
 
@@ -1102,7 +1101,7 @@ decode_loop : {
       break;
 
     case WOP_TECH_VIA:
-      if (layer == NULL) {
+      if (layer == nullptr) {
         dbTech* tech = getDb()->getTech();
         dbTechVia* via = dbTechVia::getTechVia(tech, wire->_data[idx]);
 
@@ -1147,7 +1146,7 @@ state_machine_update : {
 }
 }
 
-  while ((layer == NULL) || (found_width == false)) {
+  while ((layer == nullptr) || (found_width == false)) {
     ZASSERT(idx >= 0);
     opcode = wire->_opcodes[idx];
 
@@ -1155,7 +1154,7 @@ state_machine_update : {
       case WOP_PATH:
       case WOP_SHORT:
       case WOP_VWIRE: {
-        if (layer == NULL) {
+        if (layer == nullptr) {
           dbTech* tech = getDb()->getTech();
           layer = dbTechLayer::getTechLayer(tech, wire->_data[idx]);
         }
@@ -1187,7 +1186,7 @@ state_machine_update : {
       }
 
       case WOP_VIA: {
-        if (layer == NULL) {
+        if (layer == nullptr) {
           dbBlock* block = (dbBlock*) wire->getOwner();
           dbVia* via = dbVia::getVia(block, wire->_data[idx]);
 
@@ -1201,7 +1200,7 @@ state_machine_update : {
       }
 
       case WOP_TECH_VIA: {
-        if (layer == NULL) {
+        if (layer == nullptr) {
           dbTech* tech = getDb()->getTech();
           dbTechVia* via = dbTechVia::getTechVia(tech, wire->_data[idx]);
 
@@ -1457,7 +1456,7 @@ inline bool createVia(_dbWire* wire, int idx, dbShape& shape)
   dbVia* via = dbVia::getVia(block, operand);
   dbBox* box = via->getBBox();
 
-  if (box == NULL)
+  if (box == nullptr)
     return false;
 
   WirePoint pnt;
@@ -1483,7 +1482,7 @@ inline bool createTechVia(_dbWire* wire, int idx, dbShape& shape)
   dbTechVia* via = dbTechVia::getTechVia(tech, operand);
   dbBox* box = via->getBBox();
 
-  if (box == NULL)
+  if (box == nullptr)
     return false;
 
   WirePoint pnt;
@@ -1646,7 +1645,7 @@ void dbWire::append(dbWire* src_, bool singleSegmentWire)
         dbVia* dst_via = ((dbBlock*) dst_block)->findVia(src_via->_name);
 
         // duplicate src-via in dst-block if needed
-        if (dst_via == NULL)
+        if (dst_via == nullptr)
           dst_via = dbVia::copy((dbBlock*) dst_block, (dbVia*) src_via);
 
         dst->_data[i] = dst_via->getImpl()->getOID();
@@ -1710,136 +1709,16 @@ void dbWire::detach()
     callback->inDbWirePostDetach(this, (dbNet*) net);
 }
 
-void dbWire::copy(dbWire* dst_,
-                  dbWire* src_,
-                  bool removeITermsBTerms,
-                  bool copyVias)
-{
-  _dbWire* dst = (_dbWire*) dst_;
-  _dbWire* src = (_dbWire*) src_;
-
-  assert(dst->getDatabase() == src->getDatabase());
-  _dbBlock* block = (_dbBlock*) dst_->getBlock();
-  for (auto callback : block->_callbacks)
-    callback->inDbWirePreCopy(src_, dst_);
-  uint n = src->_opcodes.size();
-
-  // Free the old memory
-  dst->_data.~dbVector<int>();
-  new (&dst->_data) dbVector<int>();
-  dst->_data.reserve(n);
-  dst->_data = src->_data;
-
-  // Free the old memory
-  dst->_opcodes.~dbVector<unsigned char>();
-  new (&dst->_opcodes) dbVector<unsigned char>();
-  dst->_opcodes.reserve(n);
-  dst->_opcodes = src->_opcodes;
-
-  if (removeITermsBTerms) {
-    uint i;
-
-    for (i = 0; i < n; ++i) {
-      unsigned char opcode = dst->_opcodes[i] & WOP_OPCODE_MASK;
-
-      if (opcode == WOP_ITERM || opcode == WOP_BTERM) {
-        dst->_opcodes[i] = WOP_NOP;
-        dst->_data[i] = 0;
-      }
-    }
-  }
-
-  if (copyVias) {
-    _dbBlock* src_block = (_dbBlock*) src->getOwner();
-    _dbBlock* dst_block = (_dbBlock*) dst->getOwner();
-
-    if (src_block != dst_block) {
-      uint i;
-
-      for (i = 0; i < n; ++i) {
-        unsigned char opcode = dst->_opcodes[i] & WOP_OPCODE_MASK;
-
-        if (opcode == WOP_VIA) {
-          uint vid = dst->_data[i];
-          _dbVia* src_via = src_block->_via_tbl->getPtr(vid);
-          dbVia* dst_via = ((dbBlock*) dst_block)->findVia(src_via->_name);
-
-          // duplicate src-via in dst-block if needed
-          if (dst_via == NULL)
-            dst_via = dbVia::copy((dbBlock*) dst_block, (dbVia*) src_via);
-
-          dst->_data[i] = dst_via->getImpl()->getOID();
-        }
-      }
-    }
-  }
-  for (auto callback : block->_callbacks)
-    callback->inDbWirePostCopy(src_, dst_);
-}
-
-void dbWire::copy(dbWire* dst,
-                  dbWire* src,
-                  const Rect& bbox,
-                  bool removeITermsBTerms,
-                  bool copyVias)
-{
-  _dbBlock* block = (_dbBlock*) dst->getBlock();
-  for (auto callback : block->_callbacks)
-    callback->inDbWirePreCopy(src, dst);
-  dbRtTree tree;
-  tree.decode(src, !removeITermsBTerms);
-
-  Rect r;
-  dbRtTree::edge_iterator itr;
-
-  for (itr = tree.begin_edges(); itr != tree.end_edges();) {
-    dbRtEdge* edge = *itr;
-    edge->getBBox(r);
-
-    if (!bbox.intersects(r))
-      ++itr;
-    else
-      itr = tree.deleteEdge(itr, true);
-  }
-
-  if (copyVias) {
-    dbBlock* src_block = (dbBlock*) src->getImpl()->getOwner();
-    dbBlock* dst_block = (dbBlock*) dst->getImpl()->getOwner();
-
-    if (src_block != dst_block) {
-      for (itr = tree.begin_edges(); itr != tree.end_edges();) {
-        dbRtEdge* edge = *itr;
-
-        if (edge->getType() == dbRtEdge::VIA) {
-          dbVia* src_via = ((dbRtVia*) edge)->getVia();
-          std::string name = src_via->getName();
-          dbVia* dst_via = dst_block->findVia(name.c_str());
-
-          // duplicate src-via in dst-block if needed
-          if (dst_via == NULL)
-            dst_via = dbVia::copy(dst_block, src_via);
-
-          ((dbRtVia*) edge)->setVia(dst_via);
-        }
-      }
-    }
-  }
-
-  tree.encode(dst, !removeITermsBTerms);
-  for (auto callback : block->_callbacks)
-    callback->inDbWirePostCopy(src, dst);
-}
-
 dbWire* dbWire::create(dbNet* net_, bool global_wire)
 {
   _dbNet* net = (_dbNet*) net_;
 
   if (global_wire) {
     if (net->_global_wire != 0)
-      return NULL;
+      return nullptr;
   } else {
     if (net->_wire != 0)
-      return NULL;
+      return nullptr;
   }
 
   _dbBlock* block = (_dbBlock*) net->getOwner();

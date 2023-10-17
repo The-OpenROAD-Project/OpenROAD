@@ -70,6 +70,8 @@ target_link_libraries(dft
     dft_config_lib
     dft_replace_lib
     dft_clock_domain_lib
+    dft_utils_lib
+    dft_stitch_lib
 )
 
 
@@ -103,5 +105,12 @@ add_subdirectory(src/cells)
 add_subdirectory(src/clock_domain)
 add_subdirectory(src/config)
 add_subdirectory(src/replace)
+add_subdirectory(src/stitch)
 add_subdirectory(src/utils)
-add_subdirectory(test/cpp)
+if(ENABLE_TESTS)
+  add_subdirectory(test/cpp)
+endif()
+
+messages(
+  TARGET dft
+)

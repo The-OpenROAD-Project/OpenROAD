@@ -45,4 +45,9 @@ using namespace grt;
 
 %include <std_string.i>
 
+%ignore grt::GlobalRouter::init;
+%ignore grt::GlobalRouter::initDebugFastRoute;
+%ignore grt::GlobalRouter::getDebugFastRoute;
+%ignore grt::GlobalRouter::setRenderer;
+
 %include "grt/GlobalRouter.h"

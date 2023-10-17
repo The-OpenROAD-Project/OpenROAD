@@ -1413,6 +1413,10 @@ bool FlexDRWorker::mazeIterInit_sortRerouteNets(int mazeIter,
                                                 vector<drNet*>& rerouteNets)
 {
   auto rerouteNetsComp = [](drNet* const& a, drNet* const& b) {
+    if (a->getPriority() > b->getPriority())
+      return true;
+    if (a->getPriority() < b->getPriority())
+      return false;
     if (a->getFrNet()->getAbsPriorityLvl() > b->getFrNet()->getAbsPriorityLvl())
       return true;
     if (a->getFrNet()->getAbsPriorityLvl() < b->getFrNet()->getAbsPriorityLvl())
@@ -2786,10 +2790,8 @@ bool FlexDRWorker::isInsideTaperBox(
 
 void FlexDRWorker::routeNet_postRouteAddPathCost(drNet* net)
 {
-  int cnt = 0;
   for (auto& connFig : net->getRouteConnFigs()) {
     addPathCost(connFig.get());
-    cnt++;
   }
 }
 

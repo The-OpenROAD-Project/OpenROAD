@@ -6,6 +6,10 @@ applied to the design, such as layers to use, stripe width and spacing,
 then have the utility generate the actual metal straps. Grid policies can
 be defined over the stdcell area, and over areas occupied by macros.
 
+```{seealso}
+To work with UPF files, refer to [Read UPF Utility](../upf/README.md).
+```
+
 ## Commands
 
 ### Define Power Switch Cell
@@ -56,7 +60,7 @@ set_voltage_domain [-name name] \
                    [-switched_power <switched_power_net>]
 ```
 
-##### Options
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -67,7 +71,7 @@ set_voltage_domain [-name name] \
 | `-secondary_power` | Specifies the name of the secondary power net for this voltage domain |
 | `-switched_power` | Specifies the name of the switched power net for switched power domains, |
 
-##### Examples
+#### Examples
 ```
 set_voltage_domain -power VDD -ground VSS
 set_voltage_domain -name TEMP_ANALOG -region TEMP_ANALOG -power VIN -ground VSS
@@ -87,7 +91,7 @@ define_pdn_grid [-name <name>] \
                 [-obstructions <list_of_layers>]
 ```
 
-##### Options
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -98,14 +102,14 @@ define_pdn_grid [-name <name>] \
 | `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations |
 
 
-##### Examples
+#### Examples
 
 ```
 define_pdn_grid -name main_grid -pins {metal7} -voltage_domain {CORE TEMP_ANALOG}
 ```
 
 
-#### Define a macro power grid
+### Define a macro power grid
 
 ```
 define_pdn_grid -macro \
@@ -118,10 +122,11 @@ define_pdn_grid -macro \
                 [-halo <list_of_halo_values>] \
                 [-voltage_domain <list_of_domain_names>] \
                 [-starts_with (POWER|GROUND)] \
-                [-obstructions <list_of_layers>]  
+                [-obstructions <list_of_layers>] \
+                [-bump]
 ```
 
-##### Options
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -137,15 +142,16 @@ define_pdn_grid -macro \
 | `-orient` | For a macro, defines a set of valid orientations. LEF orientations (N, FN, S, FS, E, FE, W and FW) can be used as well as standard geometry orientations (R0, R90, R180, R270, MX, MY, MXR90 and MYR90). Macros with one of the valid orientations will use this grid specification. |
 | `-halo` | Specifies the default minimum separation of selected macros from other cells in the design. This is only used if the macro does not define halo values in the LEF description. If 1 value is specified it will be used on all 4 sides, if two values are specified, the first will be applied to left/right sides and the second will be applied to top/bottom sides, if 4 values are specified, then they are applied to left, bottom, right and top sides respectively. (Default: 0) |
 | `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations |
+| `-bump` | Flag to indicate this is a grid for a cover cell |
 
-##### Examples
+#### Examples
 
 ```
 define_pdn_grid -macro -name ram          -orient {R0 R180 MX MY} -grid_over_pg_pins  -starts_with POWER -pin_direction vertical
 define_pdn_grid -macro -name rotated_rams -orient {E FE W FW}     -grid_over_boundary -starts_with POWER -pin_direction horizontal
 ```
 
-#### Define a grid for an existing routing
+### Define a grid for an existing routing
 
 ```
 define_pdn_grid [-name <name>] \
@@ -153,20 +159,20 @@ define_pdn_grid [-name <name>] \
                 [-obstructions <list_of_layers>]
 ```
 
-##### Options
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
 | `-name` | Defines a name to use when referring to this grid definition. Defaults to `existing_grid` |
 | `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations |
 
-##### Examples
+#### Examples
 
 ```
 define_pdn_grid -name main_grid -existing
 ```
 
-#### Power switch insertion
+### Power switch insertion
 
 ```
 define_pdn_grid [-name <name>] \
@@ -175,7 +181,7 @@ define_pdn_grid [-name <name>] \
                 [-power_control_network (STAR|DAISY)]
 ```
 
-##### Options
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -190,7 +196,7 @@ The `-power_control` argument specifies the name of the power control signal tha
 
 The `-power_control_network` argument specifies how the power control signal is to be connected to the power switches. If STAR is specified, then the network is wired as a high-fanout net with the power control signal driving the power control pin on every power switch. If DAISY is specified then the power switches are connected in a daisy-chain configuration - note, this requires that the power swich defined by the `define_power_switch_cell`  command defines an acknowledge pin for the switch.
 
-#### Add straps / stripes
+### Add straps / stripes
 
 Defines a pattern of power and ground stripes in a single layer to be added to a power grid.
 
@@ -210,7 +216,7 @@ add_pdn_stripe [-grid grid_name] \
                 [-nets list_of_nets]
 ```
 
-##### Options
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -227,14 +233,14 @@ add_pdn_stripe [-grid grid_name] \
 | `-number_of_straps` | Number of power/ground pairs to add |
 | `-nets` | Limit straps to just this list of nets |
 
-##### Examples
+#### Examples
 ```
 add_pdn_stripe -grid main_grid -layer metal1 -followpins
 add_pdn_stripe -grid main_grid -layer metal2 -width 0.17 -followpins
 add pdn_stripe -grid main_grid -layer metal4 -width 0.48 -pitch 56.0 -offset 2 -starts_with GROUND
 ```
 
-#### Add rings
+### Add rings
 
 The `add_pnd_ring` command is used to define power/ground rings around a grid region. The ring structure is built using two layers that are orthogonal to each other. A power/ground pair will be added above and below the grid using the horizontal layer, with another power/ground pair to the left and right using the vertical layer. Together these 4 pairs of power/ground stripes form a ring around the specified grid. Power straps on these layers that are inside the enclosed region are extend to connect to the ring.
 
@@ -253,7 +259,7 @@ add_pdn_ring [-grid grid_name] \
              [-nets list_of_nets]
 ```
 
-##### Options
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -270,12 +276,12 @@ add_pdn_ring [-grid grid_name] \
 | `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: grid setting) |
 | `-nets` | Limit straps to just this list of nets |
 
-##### Examples
+#### Examples
 ```
 add_pdn_ring -grid main_grid -layer {metal6 metal7} -widths 5.0 -spacings  3.0 -core_offset 5
 ```
 
-#### Add connections
+### Add connections
 
 The `add_pdn_connect` command is used to define which layers in the power grid are to be connected together. During power grid generation, vias will be added for overlapping power nets and overlapping ground nets. The use of fixed vias from the technology file can be specified or else via stacks will be constructed using VIARULEs. If VIARULEs are not available in the technology, then fixed vias must be used.
 
@@ -291,7 +297,7 @@ add_pdn_connect [-grid grid_name] \
                 [-split_cuts split_cuts_mapping]
 ```
 
-##### Options
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -305,7 +311,7 @@ add_pdn_connect [-grid grid_name] \
 | `-ongrid` | List of intermediate layers in a via stack to snap onto a routing grid |
 | `-split_cuts` | Specifies layers to use split cuts on with an associated pitch, for example `{metal3 0.380 metal5 0.500}`. |
 
-##### Examples
+#### Examples
 
 ```
 add_pdn_connect -grid main_grid -layers {metal1 metal2} -cut_pitch 0.16
@@ -333,7 +339,7 @@ pdngen [-skip_trim] \
        [-failed_via_report file]
 ```
 
-##### Options
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -353,7 +359,7 @@ repair_pdn_vias [-all] \
                 [-net net_name]
 ```
 
-##### Options
+#### Options
 
 | Name | Description |
 | ----- | ----- |
@@ -370,7 +376,7 @@ the conversion to ensure nothing was missed.
 convert_pdn_config config_file
 ```
 
-##### Options
+#### Options
 
 | Name | Description |
 | ----- | ----- |
@@ -409,6 +415,52 @@ add_pdn_connect -layers {metal9 metal10}
 pdngen
 ```
 
+### Sroute
+
+The `add_sroute_connect` command is employed for connecting pins located
+outside of a specific power domain to the power ring, especially in cases where
+multiple power domains are present. During `sroute`, multi-cut vias will be added
+for new connections. The use of fixed vias from the technology file should be
+specified for the connection using the `add_sroute_connect` command. The use
+of max_rows and max_columns defines the row and column limit for the via stack.
+
+```
+add_sroute_connect
+    -layers list_of_2_layers
+    -cut_pitch pitch_value
+    [-net net]
+    [-outerNet outerNet]
+    [-fixed_vias list_of_vias]
+    [-max_rows rows]
+    [-max_columns columns]
+    [-metalwidths metalwidths]
+    [-metalspaces metalspaces]
+    [-ongrid ongrid_layers]
+    [-insts inst]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-net` | The inner net where the power ring exists. |
+| `-outerNet` | The outer net where instances/pins that need to get connected exist. |
+| `-layers` |  The metal layers for vertical stripes within inner power ring. |
+| `-cut_pitch` | Distance between via cuts when the two layers are parallel, e.g., overlapping stdcell rails. (Default:200 200) |
+| `-fixed_vias` | List of fixed vias to be used to form the via stack. |
+| `-max_rows` | Maximum number of rows when adding arrays of vias. (Default:10) |
+| `-max_columns` | Maximum number of columns when adding arrays of vias. (Default:10) |
+| `-metalwidths` | Width for each metal layer. |
+| `-metalspaces` | Spacing of each metal layer. |
+| `-ongrid` | List of intermediate layers in a via stack to snap onto a routing grid. |
+| `-insts` | List of all the instances that contain the pin that needs to get connected with power ring. (Default:nothing) |
+
+#### Examples
+
+```
+add_sroute_connect  -net "VIN" -outerNet "VDD" -layers {met1 met4} -cut_pitch {200 200} -fixed_vias {M3M4_PR_M} -metalwidths {1000 1000} -metalspaces {800} -ongrid {met3 met4} -insts "temp_analog_1.a_header_0"
+
+```
 ## Regression tests
 
 ## Limitations

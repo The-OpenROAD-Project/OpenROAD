@@ -1,6 +1,6 @@
 // *****************************************************************************
 // *****************************************************************************
-// Copyright 2012 - 2017, Cadence Design Systems
+// Copyright 2012 - 2019, Cadence Design Systems
 //
 // This  file  is  part  of  the  Cadence  LEF/DEF  Open   Source
 // Distribution,  Product Version 5.8.
@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -42,9 +42,6 @@ class lefiObstruction
  public:
   lefiObstruction();
   void Init();
-
-  LEF_COPY_CONSTRUCTOR_H(lefiObstruction);
-  LEF_ASSIGN_OPERATOR_H(lefiObstruction);
 
   void Destroy();
   ~lefiObstruction();
@@ -68,12 +65,7 @@ class lefiPinAntennaModel
   ~lefiPinAntennaModel();
 
   void Init();
-
-  LEF_COPY_CONSTRUCTOR_H(lefiPinAntennaModel);
-  LEF_ASSIGN_OPERATOR_H(lefiPinAntennaModel);
-
   void clear();
-  void Destroy();
 
   void setAntennaModel(int oxide);
   void addAntennaGateArea(double value, const char* layer);
@@ -138,7 +130,6 @@ class lefiPin
   lefiPin();
   void Init();
 
-  LEF_COPY_CONSTRUCTOR_H(lefiPin);
   void Destroy();
   ~lefiPin();
 
@@ -328,7 +319,7 @@ class lefiPin
   const char* propName(int index) const;
   const char* propValue(int index) const;
   double propNum(int index) const;
-  char propType(int index) const;
+  const char propType(int index) const;
   int propIsNumber(int index) const;
   int propIsString(int index) const;
 
@@ -414,7 +405,7 @@ class lefiPin
   int numAntennaModel_;
   int antennaModelAllocated_;
   int curAntennaModelIndex_;  // save the current index of the antenna
-  lefiPinAntennaModel** antennaModel_;
+  lefiPinAntennaModel** pinAntennaModel_;
 
   int numAntennaSize_;
   int antennaSizeAllocated_;
@@ -481,8 +472,6 @@ class lefiDensity
   lefiDensity();
   void Init();
 
-  LEF_COPY_CONSTRUCTOR_H(lefiDensity);
-
   void Destroy();
   ~lefiDensity();
 
@@ -514,7 +503,6 @@ class lefiMacro
   lefiMacro();
   void Init();
 
-  LEF_COPY_CONSTRUCTOR_H(lefiMacro);
   void Destroy();
   ~lefiMacro();
 
@@ -578,7 +566,7 @@ class lefiMacro
   const char* propName(int index) const;
   const char* propValue(int index) const;
   double propNum(int index) const;
-  char propType(int index) const;
+  const char propType(int index) const;
   int propIsNumber(int index) const;
   int propIsString(int index) const;
 
@@ -929,7 +917,7 @@ class lefiMacroSite
 {
  public:
   lefiMacroSite(const char* name, const lefiSitePattern* pattern);
-  LEF_COPY_CONSTRUCTOR_H(lefiMacroSite);
+
   const char* siteName() const;
   const lefiSitePattern* sitePattern() const;
 

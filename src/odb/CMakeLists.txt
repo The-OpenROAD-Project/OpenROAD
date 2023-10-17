@@ -26,7 +26,6 @@ add_subdirectory(src/lefin)
 add_subdirectory(src/lefout)
 add_subdirectory(src/def)
 add_subdirectory(src/zutil)
-add_subdirectory(src/tm)
 add_subdirectory(src/cdl)
 
 if(ENABLE_TESTS)
@@ -42,7 +41,6 @@ target_link_libraries(odb
     defout
     lefin
     lefout
-    tm
     zutil
     utl_lib
     ${TCL_LIBRARY}

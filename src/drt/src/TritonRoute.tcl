@@ -38,6 +38,7 @@ sta::define_cmd_args "detailed_route" {
     [-output_drc filename]
     [-output_cmap filename]
     [-output_guide_coverage filename]
+    [-drc_report_iter_step step]
     [-db_process_node name]
     [-disable_via_gen]
     [-droute_end_iter iter]
@@ -48,7 +49,6 @@ sta::define_cmd_args "detailed_route" {
     [-bottom_routing_layer layer]
     [-top_routing_layer layer]
     [-verbose level]
-    [-param filename]
     [-distributed]
     [-remote_host rhost]
     [-remote_port rport]
@@ -63,11 +63,11 @@ sta::define_cmd_args "detailed_route" {
 
 proc detailed_route { args } {
   sta::parse_key_args "detailed_route" args \
-    keys {-param -output_maze -output_drc -output_cmap -output_guide_coverage \
+    keys {-output_maze -output_drc -output_cmap -output_guide_coverage \
       -db_process_node -droute_end_iter -via_in_pin_bottom_layer \
       -via_in_pin_top_layer -or_seed -or_k -bottom_routing_layer \
       -top_routing_layer -verbose -remote_host -remote_port -shared_volume \
-      -cloud_size -min_access_points -repair_pdn_vias} \
+      -cloud_size -min_access_points -repair_pdn_vias -drc_report_iter_step} \
     flags {-disable_via_gen -distributed -clean_patches -no_pin_access -single_step_dr -save_guide_updates}
   sta::check_argc_eq0 "detailed_route" $args
 
@@ -78,125 +78,124 @@ proc detailed_route { args } {
   # development.  It is not listed in the help string intentionally.
   set single_step_dr  [expr [info exists flags(-single_step_dr)]]
   set save_guide_updates  [expr [info exists flags(-save_guide_updates)]]
-  if { [info exists keys(-param)] } {
-    if { [array size keys] > 1 } {
-      utl::error DRT 251 "-param cannot be used with other arguments"
+
+  if { [info exists keys(-repair_pdn_vias)] } {
+    set repair_pdn_vias $keys(-repair_pdn_vias)
+  } else {
+    set repair_pdn_vias ""
+  }
+  if { [info exists keys(-output_maze)] } {
+    set output_maze $keys(-output_maze)
+  } else {
+    set output_maze ""
+  }
+  if { [info exists keys(-output_drc)] } {
+    set output_drc $keys(-output_drc)
+  } else {
+    set output_drc ""
+  }
+  if { [info exists keys(-drc_report_iter_step)] } {
+    set drc_report_iter_step $keys(-drc_report_iter_step)
+  } else {
+    set drc_report_iter_step 0
+  }
+  if { [info exists keys(-output_cmap)] } {
+    set output_cmap $keys(-output_cmap)
+  } else {
+    set output_cmap ""
+  }
+  if { [info exists keys(-output_guide_coverage)] } {
+    set output_guide_coverage $keys(-output_guide_coverage)
+  } else {
+    set output_guide_coverage ""
+  }
+  if { [info exists keys(-db_process_node)] } {
+    set db_process_node $keys(-db_process_node)
+  } else {
+    set db_process_node ""
+  }
+  if { [info exists keys(-droute_end_iter)] } {
+    sta::check_positive_integer "-droute_end_iter" $keys(-droute_end_iter)
+    if {$keys(-droute_end_iter) > 64} {
+      utl::warn "-droute_end_iter cannot be greater than 64. Setting -droute_end_iter to 64."
+      set droute_end_iter 64
     } else {
-      drt::detailed_route_cmd $keys(-param)
+      set droute_end_iter $keys(-droute_end_iter)
     }
   } else {
-    if { [info exists keys(-repair_pdn_vias)] } {
-      set repair_pdn_vias $keys(-repair_pdn_vias)
-    } else {
-      set repair_pdn_vias ""
-    }
-    if { [info exists keys(-output_maze)] } {
-      set output_maze $keys(-output_maze)
-    } else {
-      set output_maze ""
-    }
-    if { [info exists keys(-output_drc)] } {
-      set output_drc $keys(-output_drc)
-    } else {
-      set output_drc ""
-    }
-    if { [info exists keys(-output_cmap)] } {
-      set output_cmap $keys(-output_cmap)
-    } else {
-      set output_cmap ""
-    }
-    if { [info exists keys(-output_guide_coverage)] } {
-      set output_guide_coverage $keys(-output_guide_coverage)
-    } else {
-      set output_guide_coverage ""
-    }
-    if { [info exists keys(-db_process_node)] } {
-      set db_process_node $keys(-db_process_node)
-    } else {
-      set db_process_node ""
-    }
-    if { [info exists keys(-droute_end_iter)] } {
-      sta::check_positive_integer "-droute_end_iter" $keys(-droute_end_iter)
-      if {$keys(-droute_end_iter) > 64} {
-        utl::warn "-droute_end_iter cannot be greater than 64. Setting -droute_end_iter to 64."
-        set droute_end_iter 64
-      } else {
-        set droute_end_iter $keys(-droute_end_iter)
-      }
-    } else {
-      set droute_end_iter -1
-    }
-    if { [info exists keys(-via_in_pin_bottom_layer)] } {
-      set via_in_pin_bottom_layer $keys(-via_in_pin_bottom_layer)
-    } else {
-      set via_in_pin_bottom_layer ""
-    }
-    if { [info exists keys(-via_in_pin_top_layer)] } {
-      set via_in_pin_top_layer $keys(-via_in_pin_top_layer)
-    } else {
-      set via_in_pin_top_layer ""
-    }
-    if { [info exists keys(-or_seed)] } {
-      set or_seed $keys(-or_seed)
-    } else {
-      set or_seed -1
-    }
-    if { [info exists keys(-or_k)] } {
-      set or_k $keys(-or_k)
-    } else {
-      set or_k 0
-    }
-    if { [info exists keys(-bottom_routing_layer)] } {
-      set bottom_routing_layer $keys(-bottom_routing_layer)
-    } else {
-      set bottom_routing_layer ""
-    }
-    if { [info exists keys(-top_routing_layer)] } {
-      set top_routing_layer $keys(-top_routing_layer)
-    } else {
-      set top_routing_layer ""
-    }
-    if { [info exists keys(-verbose)] } {
-      sta::check_positive_integer "-verbose" $keys(-verbose)
-      set verbose $keys(-verbose)
-    } else {
-      set verbose 1
-    }
-    if { [info exists flags(-distributed)] } {
-      if { [info exists keys(-remote_host)] } {
-        set rhost $keys(-remote_host)
-      } else {
-        utl::error DRT 506 "-remote_host is required for distributed routing."
-      }
-      if { [info exists keys(-remote_port)] } {
-        set rport $keys(-remote_port)
-      } else {
-        utl::error DRT 507 "-remote_port is required for distributed routing."
-      }
-      if { [info exists keys(-shared_volume)] } {
-        set vol $keys(-shared_volume)
-      } else {
-        utl::error DRT 508 "-shared_volume is required for distributed routing."
-      }
-      if { [info exists keys(-cloud_size)] } {
-        set cloudsz $keys(-cloud_size)
-      } else {
-        utl::error DRT 516 "-cloud_size is required for distributed routing."
-      }
-      drt::detailed_route_distributed $rhost $rport $vol $cloudsz
-    }
-    if { [info exists keys(-min_access_points)] } {
-      sta::check_cardinal "-min_access_points" $keys(-min_access_points)
-      set min_access_points $keys(-min_access_points)
-    } else {
-      set min_access_points -1
-    }
-    drt::detailed_route_cmd $output_maze $output_drc $output_cmap \
-      $output_guide_coverage $db_process_node $enable_via_gen $droute_end_iter \
-      $via_in_pin_bottom_layer $via_in_pin_top_layer \
-      $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose \
-      $clean_patches $no_pin_access $single_step_dr $min_access_points $save_guide_updates $repair_pdn_vias
+    set droute_end_iter -1
   }
+  if { [info exists keys(-via_in_pin_bottom_layer)] } {
+    set via_in_pin_bottom_layer $keys(-via_in_pin_bottom_layer)
+  } else {
+    set via_in_pin_bottom_layer ""
+  }
+  if { [info exists keys(-via_in_pin_top_layer)] } {
+    set via_in_pin_top_layer $keys(-via_in_pin_top_layer)
+  } else {
+    set via_in_pin_top_layer ""
+  }
+  if { [info exists keys(-or_seed)] } {
+    set or_seed $keys(-or_seed)
+  } else {
+    set or_seed -1
+  }
+  if { [info exists keys(-or_k)] } {
+    set or_k $keys(-or_k)
+  } else {
+    set or_k 0
+  }
+  if { [info exists keys(-bottom_routing_layer)] } {
+    set bottom_routing_layer $keys(-bottom_routing_layer)
+  } else {
+    set bottom_routing_layer ""
+  }
+  if { [info exists keys(-top_routing_layer)] } {
+    set top_routing_layer $keys(-top_routing_layer)
+  } else {
+    set top_routing_layer ""
+  }
+  if { [info exists keys(-verbose)] } {
+    sta::check_positive_integer "-verbose" $keys(-verbose)
+    set verbose $keys(-verbose)
+  } else {
+    set verbose 1
+  }
+  if { [info exists flags(-distributed)] } {
+    if { [info exists keys(-remote_host)] } {
+      set rhost $keys(-remote_host)
+    } else {
+      utl::error DRT 506 "-remote_host is required for distributed routing."
+    }
+    if { [info exists keys(-remote_port)] } {
+      set rport $keys(-remote_port)
+    } else {
+      utl::error DRT 507 "-remote_port is required for distributed routing."
+    }
+    if { [info exists keys(-shared_volume)] } {
+      set vol $keys(-shared_volume)
+    } else {
+      utl::error DRT 508 "-shared_volume is required for distributed routing."
+    }
+    if { [info exists keys(-cloud_size)] } {
+      set cloudsz $keys(-cloud_size)
+    } else {
+      utl::error DRT 516 "-cloud_size is required for distributed routing."
+    }
+    drt::detailed_route_distributed $rhost $rport $vol $cloudsz
+  }
+  if { [info exists keys(-min_access_points)] } {
+    sta::check_cardinal "-min_access_points" $keys(-min_access_points)
+    set min_access_points $keys(-min_access_points)
+  } else {
+    set min_access_points -1
+  }
+  drt::detailed_route_cmd $output_maze $output_drc $output_cmap \
+    $output_guide_coverage $db_process_node $enable_via_gen $droute_end_iter \
+    $via_in_pin_bottom_layer $via_in_pin_top_layer \
+    $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose \
+    $clean_patches $no_pin_access $single_step_dr $min_access_points \
+    $save_guide_updates $repair_pdn_vias $drc_report_iter_step
 }
 
 proc detailed_route_num_drvs { args } {
@@ -286,12 +285,17 @@ sta::define_cmd_args "pin_access" {
     [-top_routing_layer layer]
     [-min_access_points count]
     [-verbose level]
+    [-distributed]
+    [-remote_host rhost]
+    [-remote_port rport]
+    [-shared_volume vol]
+    [-cloud_size sz]
 }
 proc pin_access { args } {
   sta::parse_key_args "pin_access" args \
       keys {-db_process_node -bottom_routing_layer -top_routing_layer -verbose \
-            -min_access_points } \
-      flags {}
+            -min_access_points -remote_host -remote_port -shared_volume -cloud_size } \
+      flags {-distributed}
   sta::check_argc_eq0 "detailed_route_debug" $args
   if [info exists keys(-db_process_node)] {
     set db_process_node $keys(-db_process_node)
@@ -319,6 +323,29 @@ proc pin_access { args } {
     set min_access_points $keys(-min_access_points)
   } else {
     set min_access_points -1
+  }
+  if { [info exists flags(-distributed)] } {
+    if { [info exists keys(-remote_host)] } {
+      set rhost $keys(-remote_host)
+    } else {
+      utl::error DRT 552 "-remote_host is required for distributed routing."
+    }
+    if { [info exists keys(-remote_port)] } {
+      set rport $keys(-remote_port)
+    } else {
+      utl::error DRT 553 "-remote_port is required for distributed routing."
+    }
+    if { [info exists keys(-shared_volume)] } {
+      set vol $keys(-shared_volume)
+    } else {
+      utl::error DRT 554 "-shared_volume is required for distributed routing."
+    }
+    if { [info exists keys(-cloud_size)] } {
+      set cloudsz $keys(-cloud_size)
+    } else {
+      utl::error DRT 555 "-cloud_size is required for distributed routing."
+    }
+    drt::detailed_route_distributed $rhost $rport $vol $cloudsz
   }
   drt::pin_access_cmd $db_process_node $bottom_routing_layer $top_routing_layer $verbose $min_access_points
 }

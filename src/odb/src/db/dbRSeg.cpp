@@ -470,7 +470,7 @@ dbCapNode* dbRSeg::getTargetCapNode()
   uint target = getTargetNode();
 
   if (target == 0)
-    return NULL;
+    return nullptr;
 
   _dbCapNode* n = block->_cap_node_tbl->getPtr(target);
   return (dbCapNode*) n;
@@ -482,7 +482,7 @@ dbCapNode* dbRSeg::getSourceCapNode()
   uint source = getSourceNode();
 
   if (source == 0)
-    return NULL;
+    return nullptr;
 
   _dbCapNode* n = block->_cap_node_tbl->getPtr(source);
   return (dbCapNode*) n;
@@ -495,7 +495,7 @@ double dbRSeg::getCapacitance(int corner, double MillerMult)
 
   dbCapNode* targetCapNode = getTargetCapNode();
 
-  if (targetCapNode == NULL)
+  if (targetCapNode == nullptr)
     return cap;
 
   dbSet<dbCCSeg> ccSegs = targetCapNode->getCCSegs();
@@ -552,15 +552,6 @@ void dbRSeg::printCcSegs()
   getCcSegs(ccsegs);
   getImpl()->getLogger()->info(
       utl::ODB, 54, "CC segs of RSeg {}-{}", getSourceNode(), getTargetNode());
-#if 0
-    uint j;
-    dbCCSeg *seg;
-    for (j=0;j<ccsegs.size();j++)
-    {
-        seg = ccsegs[j];
-        getImpl()->getLogger()->info(utl::ODB, 55, "           CC{} : {}-{}", j, seg->getSourceNode(), seg->getTargetNode()); 
-    }
-#endif
 }
 
 void dbRSeg::printCC()
@@ -817,7 +808,7 @@ dbRSeg* dbRSeg::create(dbNet* net_,
   //        seg->_res[i] = 0.0;
   //    }
   //
-  //    seg->_cap= NULL;
+  //    seg->_cap= nullptr;
   //    if (allocate_cap)
   //    {
   //        seg->_flags._allocated_cap= 1;
@@ -839,9 +830,9 @@ dbRSeg* dbRSeg::create(dbNet* net_,
 bool dbRSeg::addToNet()
 {
   dbCapNode* cap_node = getTargetCapNode();
-  if (cap_node == NULL) {
+  if (cap_node == nullptr) {
     cap_node = getSourceCapNode();
-    if (cap_node == NULL) {
+    if (cap_node == nullptr) {
       getImpl()->getLogger()->warn(
           utl::ODB, 57, "Cannot find cap nodes for Rseg {}", this->getId());
       return false;
@@ -892,13 +883,13 @@ void dbRSeg::destroy(dbRSeg* seg_, dbNet* net_)
   }
 
   dbId<_dbRSeg> c = net->_r_segs;
-  _dbRSeg* p = NULL;
+  _dbRSeg* p = nullptr;
 
   while (c != 0) {
     _dbRSeg* s = block->_r_seg_tbl->getPtr(c);
 
     if (s == seg) {
-      if (p == NULL)
+      if (p == nullptr)
         net->_r_segs = s->_next;
       else
         p->_next = s->_next;
@@ -965,8 +956,8 @@ void dbRSeg::mergeRCs(std::vector<dbRSeg*>& mrsegs)
   }
   std::vector<dbCCSeg*> mCcSegs;
   std::vector<dbCapNode*> otherCapns;
-  mCcSegs.push_back(NULL);
-  otherCapns.push_back(NULL);
+  mCcSegs.push_back(nullptr);
+  otherCapns.push_back(nullptr);
   dbRSeg* rseg;
   dbCapNode* tgtCapNode;
   dbCapNode* ccCapNode;

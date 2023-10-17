@@ -1,0 +1,41 @@
+set_layer_rc -corner min -layer metal1 -resistance 5.432e-03 -capacitance 8.494e-02
+set_layer_rc -corner min -layer metal2 -resistance 3.574e-03 -capacitance 8.081e-02
+set_layer_rc -corner min -layer metal3 -resistance 3.574e-03 -capacitance 7.516e-02
+set_layer_rc -corner min -layer metal4 -resistance 1.502e-03 -capacitance 9.663e-02
+set_layer_rc -corner min -layer metal5 -resistance 1.502e-03 -capacitance 8.394e-02
+set_layer_rc -corner min -layer metal6 -resistance 1.502e-03 -capacitance 7.298e-02
+set_layer_rc -corner min -layer metal7 -resistance 1.883e-04 -capacitance 1.112e-01
+set_layer_rc -corner min -layer metal8 -resistance 1.883e-04 -capacitance 8.528e-02
+set_layer_rc -corner min -layer metal9 -resistance 3.780e-05 -capacitance 9.063e-02
+set_layer_rc -corner min -layer metal10 -resistance 3.780e-05 -capacitance 6.635e-02
+
+set_layer_rc -corner min -via via1 -resistance 10
+set_layer_rc -corner min -via via2 -resistance 10
+set_layer_rc -corner min -via via3 -resistance 10
+set_layer_rc -corner min -via via4 -resistance 10
+set_layer_rc -corner min -via via5 -resistance 10
+set_layer_rc -corner min -via via6 -resistance 10
+set_layer_rc -corner min -via via7 -resistance 10
+set_layer_rc -corner min -via via8 -resistance 10
+set_layer_rc -corner min -via via9 -resistance 10
+
+set_layer_rc -corner max -layer metal1 -resistance 10.432e-03 -capacitance 8.494e-02
+set_layer_rc -corner max -layer metal2 -resistance 6.574e-03 -capacitance 8.081e-02
+set_layer_rc -corner max -layer metal3 -resistance 6.574e-03 -capacitance 7.516e-02
+set_layer_rc -corner max -layer metal4 -resistance 2.502e-03 -capacitance 9.663e-02
+set_layer_rc -corner max -layer metal5 -resistance 2.502e-03 -capacitance 8.394e-02
+set_layer_rc -corner max -layer metal6 -resistance 2.502e-03 -capacitance 7.298e-02
+set_layer_rc -corner max -layer metal7 -resistance 2.883e-04 -capacitance 1.112e-01
+set_layer_rc -corner max -layer metal8 -resistance 2.883e-04 -capacitance 8.528e-02
+set_layer_rc -corner max -layer metal9 -resistance 6.780e-05 -capacitance 9.063e-02
+set_layer_rc -corner max -layer metal10 -resistance 6.780e-05 -capacitance 6.635e-02
+
+set_layer_rc -corner max -via via1 -resistance 20
+set_layer_rc -corner max -via via2 -resistance 20
+set_layer_rc -corner max -via via3 -resistance 20
+set_layer_rc -corner max -via via4 -resistance 20
+set_layer_rc -corner max -via via5 -resistance 20
+set_layer_rc -corner max -via via6 -resistance 20
+set_layer_rc -corner max -via via7 -resistance 20
+set_layer_rc -corner max -via via8 -resistance 20
+set_layer_rc -corner max -via via9 -resistance 20

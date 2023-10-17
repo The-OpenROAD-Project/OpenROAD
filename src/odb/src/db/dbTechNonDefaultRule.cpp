@@ -50,7 +50,7 @@ template class dbTable<_dbTechNonDefaultRule>;
 _dbTechNonDefaultRule::_dbTechNonDefaultRule(_dbDatabase*,
                                              const _dbTechNonDefaultRule& r)
     : _flags(r._flags),
-      _name(NULL),
+      _name(nullptr),
       _layer_rules(r._layer_rules),
       _vias(r._vias),
       _samenet_rules(r._samenet_rules),
@@ -71,7 +71,7 @@ _dbTechNonDefaultRule::_dbTechNonDefaultRule(_dbDatabase*)
   _flags._spare_bits = 0;
   _flags._hard_spacing = 0;
   _flags._block_rule = 0;
-  _name = NULL;
+  _name = nullptr;
 }
 
 _dbTechNonDefaultRule::~_dbTechNonDefaultRule()
@@ -244,7 +244,7 @@ dbTechLayerRule* dbTechNonDefaultRule::getLayerRule(dbTechLayer* layer_)
   dbId<_dbTechLayerRule> id = rule->_layer_rules[layer->_number];
 
   if (id == 0)
-    return NULL;
+    return nullptr;
 
   if (rule->_flags._block_rule == 0) {
     return (dbTechLayerRule*) rule->getTech()->_layer_rule_tbl->getPtr(id);
@@ -257,7 +257,7 @@ void dbTechNonDefaultRule::getLayerRules(
     std::vector<dbTechLayerRule*>& layer_rules)
 {
   _dbTechNonDefaultRule* rule = (_dbTechNonDefaultRule*) this;
-  dbTable<_dbTechLayerRule>* layer_rule_tbl = NULL;
+  dbTable<_dbTechLayerRule>* layer_rule_tbl = nullptr;
 
   if (rule->_flags._block_rule == 0) {
     _dbTech* tech = rule->getTech();
@@ -304,7 +304,7 @@ dbTechSameNetRule* dbTechNonDefaultRule::findSameNetRule(dbTechLayer* l1_,
   _dbTechNonDefaultRule* ndrule = (_dbTechNonDefaultRule*) this;
 
   if (ndrule->_flags._block_rule == 1)  // not supported on block rules
-    return NULL;
+    return nullptr;
 
   _dbTech* tech = ndrule->getTech();
   _dbTechLayer* l1 = (_dbTechLayer*) l1_;
@@ -313,7 +313,7 @@ dbTechSameNetRule* dbTechNonDefaultRule::findSameNetRule(dbTechLayer* l1_,
       = ndrule->_samenet_matrix(l1->_number, l2->_number);
 
   if (rule == 0)
-    return NULL;
+    return nullptr;
 
   return (dbTechSameNetRule*) tech->_samenet_rule_tbl->getPtr(rule);
 }
@@ -439,7 +439,7 @@ dbTechNonDefaultRule* dbTechNonDefaultRule::create(dbTech* tech_,
                                                    const char* name_)
 {
   if (tech_->findNonDefaultRule(name_))
-    return NULL;
+    return nullptr;
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechNonDefaultRule* rule = tech->_non_default_rule_tbl->create();
@@ -458,7 +458,7 @@ dbTechNonDefaultRule* dbTechNonDefaultRule::create(dbBlock* block_,
                                                    const char* name_)
 {
   if (block_->findNonDefaultRule(name_))
-    return NULL;
+    return nullptr;
 
   _dbBlock* block = (_dbBlock*) block_;
   _dbTech* tech = (_dbTech*) block->getDb()->getTech();

@@ -34,9 +34,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 %{
+#include <cstdint>
+
 #include "cts/TritonCTS.h"
 #include "CtsOptions.h"
 #include "TechChar.h"
+#include "CtsGraphics.h"
 #include "ord/OpenRoad.hh"
 
 namespace ord {
@@ -50,6 +53,10 @@ using ord::getTritonCts;
 %}
 
 %include "../../Exception.i"
+%include "stdint.i"
+
+%ignore cts::CtsOptions::setObserver;
+%ignore cts::CtsOptions::getObserver;
 
 %inline %{
 
@@ -116,7 +123,7 @@ set_metric_output(const char* file)
 void
 set_debug_cmd()
 {
-  getTritonCts()->getParms()->setGuiDebug();
+  getTritonCts()->getParms()->setObserver(std::make_unique<CtsGraphics>());
 }
 
 void
@@ -132,14 +139,14 @@ set_tree_buf(const char* buffer)
 }
 
 void
-set_distance_between_buffers(double distance)
+set_distance_between_buffers(int distance)
 {
   getTritonCts()->getParms()->setSimpleSegmentsEnabled(true);
   getTritonCts()->getParms()->setBufferDistance(distance);
 }
 
 void
-set_branching_point_buffers_distance(double distance)
+set_branching_point_buffers_distance(int distance)
 {
   getTritonCts()->getParms()->setVertexBuffersEnabled(true);
   getTritonCts()->getParms()->setVertexBufferDistance(distance);
@@ -209,6 +216,12 @@ void
 set_buffer_list(const char* buffers)
 {
 	getTritonCts()->setBufferList(buffers);
+}
+
+void
+set_obstruction_aware(bool obs)
+{
+  getTritonCts()->getParms()->setObstructionAware(obs);
 }
 
 void

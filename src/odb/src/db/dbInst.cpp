@@ -131,7 +131,7 @@ _dbInst::_dbInst(_dbDatabase*)
 
 _dbInst::_dbInst(_dbDatabase*, const _dbInst& i)
     : _flags(i._flags),
-      _name(NULL),
+      _name(nullptr),
       _x(i._x),
       _y(i._y),
       _weight(i._weight),
@@ -651,7 +651,7 @@ static void getParentTransform(dbInst* inst, dbTransform& t)
 {
   dbInst* parent = inst->getParent();
 
-  if (parent == NULL)
+  if (parent == nullptr)
     t = dbTransform();
   else {
     getParentTransform(parent, t);
@@ -900,8 +900,8 @@ dbITerm* dbInst::findITerm(const char* name)
   dbMaster* master = getMaster();
   _dbMTerm* mterm = (_dbMTerm*) master->findMTerm((dbBlock*) block, name);
 
-  if (mterm == NULL)
-    return NULL;
+  if (mterm == nullptr)
+    return nullptr;
 
   return (dbITerm*) block->_iterm_tbl->getPtr(inst->_iterms[mterm->_order_id]);
 }
@@ -911,7 +911,7 @@ dbRegion* dbInst::getRegion()
   _dbInst* inst = (_dbInst*) this;
 
   if (inst->_region == 0)
-    return NULL;
+    return nullptr;
 
   _dbBlock* block = (_dbBlock*) inst->getOwner();
   _dbRegion* r = block->_region_tbl->getPtr(inst->_region);
@@ -923,7 +923,7 @@ dbModule* dbInst::getModule()
   _dbInst* inst = (_dbInst*) this;
 
   if (inst->_module == 0)
-    return NULL;
+    return nullptr;
 
   _dbBlock* block = (_dbBlock*) inst->getOwner();
   _dbModule* module = block->_module_tbl->getPtr(inst->_module);
@@ -935,7 +935,7 @@ dbGroup* dbInst::getGroup()
   _dbInst* inst = (_dbInst*) this;
 
   if (inst->_group == 0)
-    return NULL;
+    return nullptr;
 
   _dbBlock* block = (_dbBlock*) inst->getOwner();
   _dbGroup* group = block->_group_tbl->getPtr(inst->_group);
@@ -947,7 +947,7 @@ dbBox* dbInst::getHalo()
   _dbInst* inst = (_dbInst*) this;
 
   if (inst->_halo == 0)
-    return NULL;
+    return nullptr;
 
   _dbBlock* block = (_dbBlock*) inst->getOwner();
   _dbBox* b = block->_box_tbl->getPtr(inst->_halo);
@@ -964,10 +964,10 @@ void dbInst::getConnectivity(std::vector<dbInst*>& result,
     dbITerm* iterm = *iterm_itr;
     dbNet* net = iterm->getNet();
 
-    if (net == NULL)
+    if (net == nullptr)
       continue;
 
-    if ((net != NULL) && (((_dbNet*) net)->_flags._sig_type != type))
+    if ((net != nullptr) && (((_dbNet*) net)->_flags._sig_type != type))
       continue;
 
     dbSet<dbITerm> net_iterms = net->getITerms();
@@ -1052,7 +1052,7 @@ bool dbInst::bindBlock(dbBlock* block_, bool force)
   _dbHier* hier = _dbHier::create(this, block_);
 
   // _dbHier::create fails if bterms cannot be mapped (1-to-1) to mterms
-  if (hier == NULL) {
+  if (hier == nullptr) {
     getImpl()->getLogger()->warn(utl::ODB, 43, "_dbHier::create fails");
     return false;
   }
@@ -1075,7 +1075,7 @@ dbBlock* dbInst::getChild()
   _dbInst* inst = (_dbInst*) this;
 
   if (inst->_hierarchy == 0)
-    return NULL;
+    return nullptr;
 
   _dbBlock* block = (_dbBlock*) inst->getOwner();
   _dbChip* chip = (_dbChip*) block->getOwner();
@@ -1100,7 +1100,7 @@ dbSet<dbInst> dbInst::getChildren()
 {
   dbBlock* child = getChild();
 
-  if (child == NULL)
+  if (child == nullptr)
     return dbSet<dbInst>(child, &dbNullIterator::null_iterator);
 
   return child->getInsts();
@@ -1262,7 +1262,7 @@ bool dbInst::swapMaster(dbMaster* new_master_)
       = block->_inst_hdr_hash.find(((_dbMaster*) new_master_)->_id);
 
   // create a new inst-hdr if needed
-  if (new_inst_hdr == NULL) {
+  if (new_inst_hdr == nullptr) {
     new_inst_hdr = (_dbInstHdr*) dbInstHdr::create((dbBlock*) block,
                                                    (dbMaster*) new_master_);
     ZASSERT(new_inst_hdr);
@@ -1315,7 +1315,7 @@ dbInst* dbInst::create(dbBlock* block_,
                        const char* name_,
                        bool physical_only)
 {
-  return create(block_, master_, name_, NULL, physical_only);
+  return create(block_, master_, name_, nullptr, physical_only);
 }
 
 dbInst* dbInst::create(dbBlock* block_,
@@ -1327,7 +1327,7 @@ dbInst* dbInst::create(dbBlock* block_,
   _dbBlock* block = (_dbBlock*) block_;
   _dbMaster* master = (_dbMaster*) master_;
   _dbInstHdr* inst_hdr = block->_inst_hdr_hash.find(master->_id);
-  if (inst_hdr == NULL) {
+  if (inst_hdr == nullptr) {
     inst_hdr
         = (_dbInstHdr*) dbInstHdr::create((dbBlock*) block, (dbMaster*) master);
     ZASSERT(inst_hdr);
@@ -1413,6 +1413,47 @@ dbInst* dbInst::create(dbBlock* block_,
   }
 
   return (dbInst*) inst;
+}
+
+dbInst* dbInst::create(dbBlock* top_block,
+                       dbBlock* child_block,
+                       const char* name)
+{
+  if (top_block->findInst(name)) {
+    top_block->getImpl()->getLogger()->error(
+        utl::ODB,
+        436,
+        "Attempt to create instance with duplicate name: {}",
+        name);
+  }
+  // Find or create a dbLib to put the new dbMaster in.
+  dbDatabase* db = top_block->getDataBase();
+  dbTech* tech = child_block->getTech();
+  dbLib* lib = nullptr;
+  for (auto l : db->getLibs()) {
+    if (l->getTech() == tech) {
+      lib = l;
+      break;
+    }
+  }
+  if (!lib) {
+    std::string lib_name = child_block->getName() + tech->getName();
+    lib = dbLib::create(db, lib_name.c_str(), child_block->getTech());
+  }
+  auto master = dbMaster::create(lib, child_block->getName().c_str());
+  master->setType(dbMasterType::BLOCK);
+  auto bbox = child_block->getBBox();
+  master->setWidth(bbox->getDX());
+  master->setHeight(bbox->getDY());
+  for (auto term : child_block->getBTerms()) {
+    dbMTerm::create(
+        master, term->getName().c_str(), term->getIoType(), term->getSigType());
+  }
+  master->setFrozen();
+  auto inst = dbInst::create(top_block, master, name);
+  inst->bindBlock(child_block);
+
+  return inst;
 }
 
 void dbInst::destroy(dbInst* inst_)
@@ -1529,7 +1570,7 @@ dbInst* dbInst::getValidInst(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   if (!block->_inst_tbl->validId(dbid_))
-    return NULL;
+    return nullptr;
   return (dbInst*) block->_inst_tbl->getPtr(dbid_);
 }
 dbITerm* dbInst::getFirstOutput()
@@ -1551,7 +1592,7 @@ dbITerm* dbInst::getFirstOutput()
   }
   getImpl()->getLogger()->warn(
       utl::ODB, 47, "instance {} has no output pin", getConstName());
-  return NULL;
+  return nullptr;
 }
 
 }  // namespace odb

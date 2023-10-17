@@ -91,13 +91,17 @@ extract(const char* ext_model_file,
 void
 write_spef(const char* file,
            const char* nets,
-           int net_id)
+           int net_id,
+           bool write_coordinates)
 {
   Ext* ext = getOpenRCX();
   Ext::SpefOptions opts;
   opts.file = file;
   opts.nets = nets;
   opts.net_id = net_id;
+  if (write_coordinates) {
+    opts.N = "Y";
+  }
   
   ext->write_spef(opts);
 }

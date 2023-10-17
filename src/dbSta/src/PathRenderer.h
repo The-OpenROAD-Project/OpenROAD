@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include "gui/gui.h"
-#include "db_sta/dbSta.hh"
 #include "AbstractPathRenderer.h"
+#include "db_sta/dbSta.hh"
+#include "gui/gui.h"
 
 namespace sta {
 
@@ -16,7 +16,7 @@ class PathExpanded;
 
 class PathRenderer : public gui::Renderer, public AbstractPathRenderer
 {
-public:
+ public:
   explicit PathRenderer(dbSta* sta);
   ~PathRenderer() override;
 
@@ -24,7 +24,7 @@ public:
 
   void drawObjects(gui::Painter& /* painter */) override;
 
-private:
+ private:
   void highlightInst(const Pin* pin, gui::Painter& painter);
 
   dbSta* sta_;

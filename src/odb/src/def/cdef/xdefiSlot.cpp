@@ -36,6 +36,12 @@
 #include "defiSlot.h"
 #include "defiSlot.hpp"
 
+union udefiPoints
+{
+  LefDefParser::defiPoints cpp;
+  ::defiPoints c;
+};
+
 // Wrappers definitions.
 int defiSlot_hasLayer(const ::defiSlot* obj)
 {
@@ -79,9 +85,9 @@ int defiSlot_numPolygons(const ::defiSlot* obj)
 
 ::defiPoints defiSlot_getPolygon(const ::defiSlot* obj, int index)
 {
-  LefDefParser::defiPoints tmp;
-  tmp = ((LefDefParser::defiSlot*) obj)->getPolygon(index);
-  return *((::defiPoints*) &tmp);
+  udefiPoints tmp;
+  tmp.cpp = ((LefDefParser::defiSlot*) obj)->getPolygon(index);
+  return tmp.c;
 }
 
 void defiSlot_print(const ::defiSlot* obj, FILE* f)

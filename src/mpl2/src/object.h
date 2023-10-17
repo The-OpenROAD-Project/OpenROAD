@@ -43,11 +43,19 @@
 #include <string>
 #include <vector>
 
+#include "odb.h"
 #include "odb/dbTypes.h"
 
 namespace odb {
+class Point;
 class dbInst;
 class dbModule;
+class dbBlock;
+class dbDatabase;
+class dbITerm;
+class dbTechLayer;
+class dbBox;
+class dbTrackGrid;
 }  // namespace odb
 
 namespace utl {
@@ -55,6 +63,7 @@ class Logger;
 }
 
 namespace mpl2 {
+struct Rect;
 class HardMacro;
 class SoftMacro;
 
@@ -134,19 +143,13 @@ class Metrics
           float macro_area);
 
   void addMetrics(const Metrics& metrics);
-  void inflateStdCellArea(float std_cell_util);
-  void inflateMacroArea(float inflate_macro_area);
   const std::pair<unsigned int, unsigned int> getCountStats() const;
   const std::pair<float, float> getAreaStats() const;
-  const std::pair<float, float> getInflateAreaStats() const;
   unsigned int getNumMacro() const;
   unsigned int getNumStdCell() const;
   float getStdCellArea() const;
   float getMacroArea() const;
   float getArea() const;
-  float getInflateStdCellArea() const;
-  float getInflateMacroArea() const;
-  float getInflateArea() const;
 
  private:
   // In the hierarchical autoclustering part,
@@ -159,13 +162,8 @@ class Metrics
   // we need to know the sizes of clusters.
   // std_cell_area is the sum of areas of all std cells
   // macro_area is the sum of areas of all macros
-  // inflate_std_cell_area = std_cell_area / util
-  // inflate_macro_area considers the halo width when calculate
-  // each macro area
   float std_cell_area_ = 0.0;
   float macro_area_ = 0.0;
-  float inflate_std_cell_area_ = 0.0;
-  float inflate_macro_area_ = 0.0;
 };
 
 // In this hierarchical autoclustering part,
@@ -345,7 +343,11 @@ class HardMacro
   HardMacro(float width, float height, const std::string& name);
   // create a macro from dbInst
   // dbu is needed to convert the database unit to real size
-  HardMacro(odb::dbInst* inst, float dbu, float halo_width = 0.0);
+  HardMacro(odb::dbInst* inst,
+            float dbu,
+            int manufacturing_grid,
+            float halo_width = 0.0,
+            float halo_height = 0.0);
 
   // overload the comparison operators
   // based on area, width, height order
@@ -393,7 +395,30 @@ class HardMacro
   const std::string getMasterName() const;
   // update the location and orientation of the macro inst in OpenDB
   // The macro should be snaped to placement grids
-  void updateDb(float pitch_x, float pitch_y);
+  void updateDb(float pitch_x, float pitch_y, odb::dbBlock* block);
+  odb::Point computeSnapOrigin(const Rect& macro_box,
+                               const odb::dbOrientType& orientation,
+                               float& pitch_x,
+                               float& pitch_y,
+                               odb::dbBlock* block);
+
+  void computeDirectionSpacingParameters(odb::dbBlock* block,
+                                         odb::dbTechLayer* layer,
+                                         odb::dbBox* box,
+                                         float& offset,
+                                         float& pitch,
+                                         float& pin_width,
+                                         const bool& is_vertical_direction);
+  void getDirectionTrackGrid(odb::dbTrackGrid* track_grid,
+                             std::vector<int>& coordinate_grid,
+                             const bool& is_vertical_direction);
+  float getDirectionPitch(odb::dbTechLayer* layer,
+                          const bool& is_vertical_direction);
+  float getDirectionOffset(odb::dbTechLayer* layer,
+                           const bool& is_vertical_direction);
+  float getDirectionPinWidth(odb::dbBox* box,
+                             const bool& is_vertical_direction);
+
   int getXDBU() const { return micronToDbu(getX(), dbu_); }
 
   int getYDBU() const { return micronToDbu(getY(), dbu_); }
@@ -426,12 +451,13 @@ class HardMacro
   // We define x_, y_ and orientation_ here
   // to avoid keep updating OpenDB during simulated annealing
   // Also enable the multi-threading
-  float x_ = 0.0;           // lower left corner
-  float y_ = 0.0;           // lower left corner
-  float halo_width_ = 0.0;  // halo width
-  float width_ = 0.0;       // width_ = macro_width + 2 * halo_width
-  float height_ = 0.0;      // height_ = macro_height + 2 * halo_width
-  std::string name_ = "";   // macro name
+  float x_ = 0.0;            // lower left corner
+  float y_ = 0.0;            // lower left corner
+  float halo_width_ = 0.0;   // halo width
+  float halo_height_ = 0.0;  // halo height
+  float width_ = 0.0;        // width_ = macro_width + 2 * halo_width
+  float height_ = 0.0;       // height_ = macro_height + 2 * halo_width
+  std::string name_ = "";    // macro name
   odb::dbOrientType orientation_ = odb::dbOrientType::R0;
 
   // we assume all the pins locate at the center of all pins
@@ -444,6 +470,7 @@ class HardMacro
   // each HardMacro cooresponds to one macro
   odb::dbInst* inst_ = nullptr;
   float dbu_ = 0.0;  // DbuPerMicro
+  int manufacturing_grid_ = 10;
 };
 
 // We have three types of SoftMacros

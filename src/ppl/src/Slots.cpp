@@ -58,4 +58,10 @@ int Section::getMaxContiguousSlots(const std::vector<Slot>& slots)
   return max_contiguous_slots;
 }
 
+bool Interval::operator==(const Interval& interval) const
+{
+  return edge_ == interval.getEdge() && begin_ == interval.getBegin()
+         && end_ == interval.getEnd() && layer_ == interval.getLayer();
+}
+
 }  // namespace ppl

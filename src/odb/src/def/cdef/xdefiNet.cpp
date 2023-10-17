@@ -36,6 +36,12 @@
 #include "defiNet.h"
 #include "defiNet.hpp"
 
+union udefiPoints
+{
+  LefDefParser::defiPoints cpp;
+  ::defiPoints c;
+};
+
 // Wrappers definitions.
 const char* defiWire_wireType(const ::defiWire* obj)
 {
@@ -240,7 +246,7 @@ double defiNet_propNumber(const ::defiNet* obj, int index)
   return ((LefDefParser::defiNet*) obj)->propNumber(index);
 }
 
-char defiNet_propType(const ::defiNet* obj, int index)
+const char defiNet_propType(const ::defiNet* obj, int index)
 {
   return ((const LefDefParser::defiNet*) obj)->propType(index);
 }
@@ -538,9 +544,9 @@ const char* defiNet_polygonName(const ::defiNet* obj, int index)
 
 ::defiPoints defiNet_getPolygon(const ::defiNet* obj, int index)
 {
-  LefDefParser::defiPoints tmp;
-  tmp = ((LefDefParser::defiNet*) obj)->getPolygon(index);
-  return *((::defiPoints*) &tmp);
+  udefiPoints tmp;
+  tmp.cpp = ((LefDefParser::defiNet*) obj)->getPolygon(index);
+  return tmp.c;
 }
 
 int defiNet_polyMask(const ::defiNet* obj, int index)
@@ -620,9 +626,9 @@ int defiNet_numViaSpecs(const ::defiNet* obj)
 
 ::defiPoints defiNet_getViaPts(const ::defiNet* obj, int index)
 {
-  LefDefParser::defiPoints tmp;
-  tmp = ((LefDefParser::defiNet*) obj)->getViaPts(index);
-  return *((::defiPoints*) &tmp);
+  udefiPoints tmp;
+  tmp.cpp = ((LefDefParser::defiNet*) obj)->getViaPts(index);
+  return tmp.c;
 }
 
 const char* defiNet_viaName(const ::defiNet* obj, int index)
@@ -630,7 +636,7 @@ const char* defiNet_viaName(const ::defiNet* obj, int index)
   return ((const LefDefParser::defiNet*) obj)->viaName(index);
 }
 
-int defiNet_viaOrient(const ::defiNet* obj, int index)
+const int defiNet_viaOrient(const ::defiNet* obj, int index)
 {
   return ((const LefDefParser::defiNet*) obj)->viaOrient(index);
 }
@@ -640,17 +646,17 @@ const char* defiNet_viaOrientStr(const ::defiNet* obj, int index)
   return ((const LefDefParser::defiNet*) obj)->viaOrientStr(index);
 }
 
-int defiNet_topMaskNum(const ::defiNet* obj, int index)
+const int defiNet_topMaskNum(const ::defiNet* obj, int index)
 {
   return ((const LefDefParser::defiNet*) obj)->topMaskNum(index);
 }
 
-int defiNet_cutMaskNum(const ::defiNet* obj, int index)
+const int defiNet_cutMaskNum(const ::defiNet* obj, int index)
 {
   return ((const LefDefParser::defiNet*) obj)->cutMaskNum(index);
 }
 
-int defiNet_bottomMaskNum(const ::defiNet* obj, int index)
+const int defiNet_bottomMaskNum(const ::defiNet* obj, int index)
 {
   return ((const LefDefParser::defiNet*) obj)->bottomMaskNum(index);
 }

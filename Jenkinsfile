@@ -1,10 +1,11 @@
 pipeline {
   agent any;
   options {
-    timeout(time: 1, unit: 'HOURS')
+    timeout(time: 75, unit: 'MINUTES')
   }
   environment {
     COMMIT_AUTHOR_EMAIL = sh (returnStdout: true, script: "git --no-pager show -s --format='%ae'").trim();
+    EQUIVALENCE_CHECK = 1;
   }
   stages {
     stage('Build and test') {
@@ -15,6 +16,11 @@ pipeline {
             stage('Build centos7 gcc8') {
               steps {
                 sh './etc/Build.sh -no-warnings';
+              }
+            }
+            stage('Check message IDs') {
+              steps {
+                sh 'cd src && ../etc/find_messages.py > messages.txt';
               }
             }
             stage('Test centos7 gcc8') {

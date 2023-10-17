@@ -1,0 +1,39 @@
+{
+    "name": "dbGlobalConnect",
+    "fields": [
+      {
+        "name": "region_",
+        "type": "dbId<_dbRegion>",
+        "flags":["cmpgt", "no-set"],
+        "parent": "dbBlock"
+      },
+      {
+        "name": "net_",
+        "type": "dbId<_dbNet>",
+        "flags":["cmpgt", "no-set"],
+        "parent": "dbBlock"
+      },
+      {
+        "name": "inst_pattern_",
+        "type": "std::string",
+        "flags":["cmpgt", "no-set"]
+      },
+      {
+        "name": "pin_pattern_",
+        "type": "std::string",
+        "flags":["cmpgt", "no-set"]
+      },
+      {
+        "name": "inst_regex_",
+        "type": "std::regex",
+        "flags" : ["private","no-serial"]
+      }
+    ],
+    "h_includes": [
+      "dbBlock.h",
+      "dbNet.h",
+      "dbRegion.h",
+      "dbVector.h",
+      "dbMTerm.h"
+    ]
+  }

@@ -114,10 +114,6 @@ bool BufferTree::isAggregate(odb::dbInst* inst)
   }
 
   auto* network = sta_->getDbNetwork();
-  if (inst->getSourceType() != odb::dbSourceType::TIMING) {
-    return false;
-  }
-
   auto* master = inst->getMaster();
   auto* cell = network->dbToSta(master);
   if (cell == nullptr) {

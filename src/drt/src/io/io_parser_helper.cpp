@@ -31,6 +31,7 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <set>
 #include <sstream>
 
 #include "frBaseTypes.h"
@@ -43,6 +44,7 @@ using namespace fr;
 using namespace boost::polygon::operators;
 
 using Rectangle = boost::polygon::rectangle_data<int>;
+namespace gtl = boost::polygon;
 
 void io::Parser::initDefaultVias()
 {
@@ -58,8 +60,6 @@ void io::Parser::initDefaultVias()
     auto viaDef = tech_->getVia(userDefinedVia);
     tech_->getLayer(viaDef->getCutLayerNum())->setDefaultViaDef(viaDef);
   }
-  std::map<frLayerNum, std::map<int, std::map<viaRawPriorityTuple, frViaDef*>>>
-      layerNum2ViaDefs;
   for (auto layerNum = design_->getTech()->getBottomLayerNum();
        layerNum <= design_->getTech()->getTopLayerNum();
        ++layerNum) {
@@ -70,26 +70,43 @@ void io::Parser::initDefaultVias()
     if (layer->getDefaultViaDef() != nullptr) {
       continue;
     }
-    for (auto& viaDef : layer->getViaDefs()) {
-      int cutNum = int(viaDef->getCutFigs().size());
-      viaRawPriorityTuple priority;
-      getViaRawPriority(viaDef, priority);
-      layerNum2ViaDefs[layerNum][cutNum][priority] = viaDef;
-    }
-    if (!layerNum2ViaDefs[layerNum][1].empty()) {
-      auto defaultSingleCutVia
-          = (layerNum2ViaDefs[layerNum][1].begin())->second;
-      tech_->getLayer(layerNum)->setDefaultViaDef(defaultSingleCutVia);
-    } else {
-      if (layerNum >= BOTTOM_ROUTING_LAYER) {
+    // Check whether viaDefs set is empty
+    std::set<frViaDef*> viaDefs = layer->getViaDefs();
+    if (!viaDefs.empty()) {
+      std::map<int, std::map<viaRawPriorityTuple, frViaDef*>> cuts2ViaDefs;
+      for (auto& viaDef : viaDefs) {
+        int cutNum = int(viaDef->getCutFigs().size());
+        viaRawPriorityTuple priority;
+        getViaRawPriority(viaDef, priority);
+        cuts2ViaDefs[cutNum][priority] = viaDef;
+      }
+      auto iter_1cut = cuts2ViaDefs.find(1);
+      if (iter_1cut != cuts2ViaDefs.end() && !iter_1cut->second.empty()) {
+        auto defaultSingleCutVia = iter_1cut->second.begin()->second;
+        tech_->getLayer(layerNum)->setDefaultViaDef(defaultSingleCutVia);
+      } else if (layerNum > TOP_ROUTING_LAYER) {
+        // We may need vias here to stack up to bumps.  However there
+        // may not be a single cut via.  Since we aren't routing, but
+        // just stacking, we'll use the best via we can find.
+        auto via_map = cuts2ViaDefs.begin()->second;
+        tech_->getLayer(layerNum)->setDefaultViaDef(via_map.begin()->second);
+      } else if (layerNum >= BOTTOM_ROUTING_LAYER) {
         logger_->error(DRT,
                        234,
                        "{} does not have single-cut via.",
                        tech_->getLayer(layerNum)->getName());
       }
+    } else {
+      if (layerNum >= BOTTOM_ROUTING_LAYER) {
+        logger_->error(DRT,
+                       233,
+                       "{} does not have any vias.",
+                       tech_->getLayer(layerNum)->getName());
+      }
     }
     // generate via if default via enclosure is not along pref dir
-    if (ENABLE_VIA_GEN && layerNum >= BOTTOM_ROUTING_LAYER) {
+    if (ENABLE_VIA_GEN && layerNum >= BOTTOM_ROUTING_LAYER
+        && layerNum <= TOP_ROUTING_LAYER) {
       auto techDefautlViaDef = tech_->getLayer(layerNum)->getDefaultViaDef();
       frVia via(techDefautlViaDef);
       Rect layer1Box = via.getLayer1BBox();
@@ -547,8 +564,221 @@ void io::Parser::convertLef58MinCutConstraints()
   }
 }
 
+inline void getTrackLocs(bool isHorzTracks,
+                         frLayer* layer,
+                         frBlock* block,
+                         frCoord low,
+                         frCoord high,
+                         std::set<frCoord>& trackLocs)
+{
+  for (auto& tp : block->getTrackPatterns(layer->getLayerNum())) {
+    if (tp->isHorizontal() != isHorzTracks) {
+      int trackNum = (low - tp->getStartCoord()) / (int) tp->getTrackSpacing();
+      if (trackNum < 0) {
+        trackNum = 0;
+      }
+      if (trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord() < low) {
+        ++trackNum;
+      }
+      for (; trackNum < (int) tp->getNumTracks()
+             && trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord()
+                    <= high;
+           ++trackNum) {
+        frCoord trackLoc
+            = trackNum * tp->getTrackSpacing() + tp->getStartCoord();
+        trackLocs.insert(trackLoc);
+      }
+    }
+  }
+}
+
+void io::Parser::checkFig(frPinFig* uFig,
+                          const frString& term_name,
+                          const dbTransform& xform,
+                          bool& foundTracks,
+                          bool& foundCenterTracks,
+                          bool& hasPolys)
+{
+  int grid = tech_->getManufacturingGrid();
+  if (uFig->typeId() == frcRect) {
+    frRect* shape = static_cast<frRect*>(uFig);
+    Rect box = shape->getBBox();
+    xform.apply(box);
+    if (box.xMin() % grid || box.yMin() % grid || box.xMax() % grid
+        || box.yMax() % grid) {
+      logger_->error(DRT,
+                     416,
+                     "Term {} contains offgrid pin shape. Pin shape {} is "
+                     "not a multiple of the manufacturing grid {}.",
+                     term_name,
+                     box,
+                     grid);
+    }
+    if (foundTracks && foundCenterTracks) {
+      return;
+    }
+    auto layer = tech_->getLayer(shape->getLayerNum());
+    std::set<int> horzTracks, vertTracks;
+    getTrackLocs(true,
+                 layer,
+                 design_->getTopBlock(),
+                 box.yMin(),
+                 box.yMax(),
+                 horzTracks);
+    getTrackLocs(false,
+                 layer,
+                 design_->getTopBlock(),
+                 box.xMin(),
+                 box.xMax(),
+                 vertTracks);
+    bool allowWrongWayRouting
+        = (USENONPREFTRACKS && !layer->isUnidirectional());
+    if (allowWrongWayRouting) {
+      foundTracks |= (!horzTracks.empty() || !vertTracks.empty());
+      foundCenterTracks
+          |= horzTracks.find(box.yCenter()) != horzTracks.end()
+             || vertTracks.find(box.xCenter()) != vertTracks.end();
+    } else {
+      if (layer->getDir() == odb::dbTechLayerDir::HORIZONTAL) {
+        foundTracks |= !horzTracks.empty();
+        foundCenterTracks |= horzTracks.find(box.yCenter()) != horzTracks.end();
+      } else {
+        foundTracks |= !vertTracks.empty();
+        foundCenterTracks |= vertTracks.find(box.yCenter()) != vertTracks.end();
+      }
+    }
+    if (foundTracks && box.minDXDY() > layer->getMinWidth()) {
+      foundCenterTracks = true;
+    }
+  } else if (uFig->typeId() == frcPolygon) {
+    hasPolys = true;
+    auto polygon = static_cast<frPolygon*>(uFig);
+    vector<gtl::point_data<frCoord>> points;
+    for (Point pt : polygon->getPoints()) {
+      xform.apply(pt);
+      points.emplace_back(pt.x(), pt.y());
+      if (pt.getX() % grid || pt.getY() % grid) {
+        logger_->error(DRT,
+                       417,
+                       "Term {} contains offgrid pin shape. Polygon point "
+                       "{} is not a multiple of the manufacturing grid {}.",
+                       term_name,
+                       pt,
+                       grid);
+      }
+    }
+    if (foundTracks) {
+      return;
+    }
+    auto layer = tech_->getLayer(polygon->getLayerNum());
+    vector<gtl::rectangle_data<frCoord>> rects;
+    gtl::polygon_90_data<frCoord> poly;
+    poly.set(points.begin(), points.end());
+    gtl::get_max_rectangles(rects, poly);
+    for (const auto& rect : rects) {
+      std::set<int> horzTracks, vertTracks;
+      getTrackLocs(true,
+                   layer,
+                   design_->getTopBlock(),
+                   gtl::yl(rect),
+                   gtl::yh(rect),
+                   horzTracks);
+      getTrackLocs(false,
+                   layer,
+                   design_->getTopBlock(),
+                   gtl::xl(rect),
+                   gtl::xh(rect),
+                   vertTracks);
+      bool allowWrongWayRouting
+          = (USENONPREFTRACKS && !layer->isUnidirectional());
+      if (allowWrongWayRouting) {
+        foundTracks |= (!horzTracks.empty() || !vertTracks.empty());
+      } else {
+        if (layer->getDir() == odb::dbTechLayerDir::HORIZONTAL) {
+          foundTracks |= !horzTracks.empty();
+        } else {
+          foundTracks |= !vertTracks.empty();
+        }
+      }
+    }
+  }
+}
+
+void io::Parser::checkPins()
+{
+  bool foundTracks = false;
+  bool foundCenterTracks = false;
+  bool hasPolys = false;
+  // Check BTerms on grid
+  for (const auto& bTerm : design_->getTopBlock()->getTerms()) {
+    foundTracks = false;
+    foundCenterTracks = false;
+    hasPolys = false;
+    dbTransform xform;
+    for (auto& pin : bTerm->getPins()) {
+      for (auto& uFig : pin->getFigs()) {
+        checkFig(uFig.get(),
+                 bTerm->getName(),
+                 xform,
+                 foundTracks,
+                 foundCenterTracks,
+                 hasPolys);
+      }
+    }
+    if (!foundTracks) {
+      logger_->warn(
+          DRT, 421, "Term {} has no pins on routing grid", bTerm->getName());
+    } else if (!foundCenterTracks && !hasPolys) {
+      logger_->warn(DRT,
+                    422,
+                    "No routing tracks pass through the center of Term {}",
+                    bTerm->getName());
+    }
+  }
+
+  for (const auto& inst : design_->getTopBlock()->getInsts()) {
+    if (!inst->getMaster()->getMasterType().isBlock()) {
+      continue;
+    }
+    dbTransform xform = inst->getUpdatedXform();
+    for (auto& iTerm : inst->getInstTerms()) {
+      if (!iTerm->hasNet() || iTerm->getNet()->isSpecial()) {
+        continue;
+      }
+      foundTracks = false;
+      foundCenterTracks = false;
+      hasPolys = false;
+      auto uTerm = iTerm->getTerm();
+      for (auto& pin : uTerm->getPins()) {
+        for (auto& uFig : pin->getFigs()) {
+          checkFig(uFig.get(),
+                   uTerm->getName(),
+                   xform,
+                   foundTracks,
+                   foundCenterTracks,
+                   hasPolys);
+          if ((foundTracks && foundCenterTracks && uFig->typeId() == frcRect)
+              || (foundTracks && uFig->typeId() == frcPolygon)) {
+            continue;
+          }
+        }
+      }
+      if (!foundTracks) {
+        logger_->warn(
+            DRT, 418, "Term {} has no pins on routing grid", iTerm->getName());
+      } else if (!foundCenterTracks && !hasPolys) {
+        logger_->warn(DRT,
+                      419,
+                      "No routing tracks pass through the center of Term {}",
+                      iTerm->getName());
+      }
+    }
+  }
+}
+
 void io::Parser::postProcess()
 {
+  checkPins();
   initDefaultVias();
   if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     initDefaultVias_GF14(DBPROCESSNODE);
@@ -898,7 +1128,7 @@ void io::Parser::buildGCellPatterns(odb::dbDatabase* db)
 
   design_->getTopBlock()->setGCellPatterns({xgp, ygp});
 
-  for (int layerNum = 0; layerNum <= (int) tech_->getLayers().size();
+  for (int layerNum = 0; layerNum < (int) tech_->getLayers().size();
        layerNum += 2) {
     for (int i = 0; i < (int) xgp.getCount(); i++) {
       for (int j = 0; j < (int) ygp.getCount(); j++) {

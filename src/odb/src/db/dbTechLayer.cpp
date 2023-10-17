@@ -49,6 +49,7 @@
 #include "dbTechLayerCutSpacingTableOrthRule.h"
 #include "dbTechLayerEolExtensionRule.h"
 #include "dbTechLayerEolKeepOutRule.h"
+#include "dbTechLayerForbiddenSpacingRule.h"
 #include "dbTechLayerKeepOutZoneRule.h"
 #include "dbTechLayerMinCutRule.h"
 #include "dbTechLayerMinStepRule.h"
@@ -56,6 +57,8 @@
 #include "dbTechLayerSpacingTablePrlRule.h"
 #include "dbTechLayerWidthTableRule.h"
 // User Code Begin Includes
+#include <spdlog/fmt/ostr.h>
+
 #include "dbHashTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayerAntennaRule.h"
@@ -65,7 +68,6 @@
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayer>;
 
 bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
@@ -113,55 +115,40 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
 
   if (wrong_way_width_ != rhs.wrong_way_width_)
     return false;
-
   if (*cut_class_rules_tbl_ != *rhs.cut_class_rules_tbl_)
     return false;
-
   if (cut_class_rules_hash_ != rhs.cut_class_rules_hash_)
     return false;
-
   if (*spacing_eol_rules_tbl_ != *rhs.spacing_eol_rules_tbl_)
     return false;
-
   if (*cut_spacing_rules_tbl_ != *rhs.cut_spacing_rules_tbl_)
     return false;
-
   if (*minstep_rules_tbl_ != *rhs.minstep_rules_tbl_)
     return false;
-
   if (*corner_spacing_rules_tbl_ != *rhs.corner_spacing_rules_tbl_)
     return false;
-
   if (*spacing_table_prl_rules_tbl_ != *rhs.spacing_table_prl_rules_tbl_)
     return false;
-
   if (*cut_spacing_table_orth_tbl_ != *rhs.cut_spacing_table_orth_tbl_)
     return false;
-
   if (*cut_spacing_table_def_tbl_ != *rhs.cut_spacing_table_def_tbl_)
     return false;
-
   if (*cut_enc_rules_tbl_ != *rhs.cut_enc_rules_tbl_)
     return false;
-
   if (*eol_ext_rules_tbl_ != *rhs.eol_ext_rules_tbl_)
     return false;
-
   if (*array_spacing_rules_tbl_ != *rhs.array_spacing_rules_tbl_)
     return false;
-
   if (*eol_keep_out_rules_tbl_ != *rhs.eol_keep_out_rules_tbl_)
     return false;
-
   if (*width_table_rules_tbl_ != *rhs.width_table_rules_tbl_)
     return false;
-
   if (*min_cuts_rules_tbl_ != *rhs.min_cuts_rules_tbl_)
     return false;
-
   if (*area_rules_tbl_ != *rhs.area_rules_tbl_)
     return false;
-
+  if (*forbidden_spacing_rules_tbl_ != *rhs.forbidden_spacing_rules_tbl_)
+    return false;
   if (*keepout_zone_rules_tbl_ != *rhs.keepout_zone_rules_tbl_)
     return false;
 
@@ -300,6 +287,7 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
   // User Code End ==
   return true;
 }
+
 bool _dbTechLayer::operator<(const _dbTechLayer& rhs) const
 {
   // User Code Begin <
@@ -308,12 +296,12 @@ bool _dbTechLayer::operator<(const _dbTechLayer& rhs) const
   // User Code End <
   return true;
 }
+
 void _dbTechLayer::differences(dbDiff& diff,
                                const char* field,
                                const _dbTechLayer& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_.num_masks_);
   DIFF_FIELD(flags_.has_max_width_);
   DIFF_FIELD(flags_.has_thickness_);
@@ -344,6 +332,7 @@ void _dbTechLayer::differences(dbDiff& diff,
   DIFF_TABLE(width_table_rules_tbl_);
   DIFF_TABLE(min_cuts_rules_tbl_);
   DIFF_TABLE(area_rules_tbl_);
+  DIFF_TABLE(forbidden_spacing_rules_tbl_);
   DIFF_TABLE(keepout_zone_rules_tbl_);
   // User Code Begin Differences
   DIFF_FIELD(flags_.type_);
@@ -390,6 +379,7 @@ void _dbTechLayer::differences(dbDiff& diff,
   // User Code End Differences
   DIFF_END
 }
+
 void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -423,6 +413,7 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE(width_table_rules_tbl_);
   DIFF_OUT_TABLE(min_cuts_rules_tbl_);
   DIFF_OUT_TABLE(area_rules_tbl_);
+  DIFF_OUT_TABLE(forbidden_spacing_rules_tbl_);
   DIFF_OUT_TABLE(keepout_zone_rules_tbl_);
 
   // User Code Begin Out
@@ -470,10 +461,10 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   // User Code End Out
   DIFF_END
 }
+
 _dbTechLayer::_dbTechLayer(_dbDatabase* db)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field = 0;
+  flags_ = {};
   cut_class_rules_tbl_ = new dbTable<_dbTechLayerCutClassRule>(
       db,
       this,
@@ -551,6 +542,11 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerAreaRuleObj);
+  forbidden_spacing_rules_tbl_ = new dbTable<_dbTechLayerForbiddenSpacingRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerForbiddenSpacingRuleObj);
   keepout_zone_rules_tbl_ = new dbTable<_dbTechLayerKeepOutZoneRule>(
       db,
       this,
@@ -621,6 +617,7 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       3);
   // User Code End Constructor
 }
+
 _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
 {
   flags_.num_masks_ = r.flags_.num_masks_;
@@ -672,6 +669,8 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
       = new dbTable<_dbTechLayerMinCutRule>(db, this, *r.min_cuts_rules_tbl_);
   area_rules_tbl_
       = new dbTable<_dbTechLayerAreaRule>(db, this, *r.area_rules_tbl_);
+  forbidden_spacing_rules_tbl_ = new dbTable<_dbTechLayerForbiddenSpacingRule>(
+      db, this, *r.forbidden_spacing_rules_tbl_);
   keepout_zone_rules_tbl_ = new dbTable<_dbTechLayerKeepOutZoneRule>(
       db, this, *r.keepout_zone_rules_tbl_);
   // User Code Begin CopyConstructor
@@ -697,8 +696,8 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
   _min_step_max_edges = r._min_step_max_edges;
   _first_last_pitch = r._first_last_pitch;
   _pt = r._pt;
-  _name = NULL;
-  _alias = NULL;
+  _name = nullptr;
+  _alias = nullptr;
   _upper = r._upper;
   _lower = r._lower;
   _v55sp_length_idx = r._v55sp_length_idx;
@@ -753,6 +752,8 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> *obj.width_table_rules_tbl_;
   stream >> *obj.min_cuts_rules_tbl_;
   stream >> *obj.area_rules_tbl_;
+  if (obj.getDatabase()->isSchema(db_schema_lef58_forbidden_spacing))
+    stream >> *obj.forbidden_spacing_rules_tbl_;
   if (obj.getDatabase()->isSchema(db_schema_keepout_zone))
     stream >> *obj.keepout_zone_rules_tbl_;
   // User Code Begin >>
@@ -810,6 +811,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
 {
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
@@ -830,6 +832,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << *obj.width_table_rules_tbl_;
   stream << *obj.min_cuts_rules_tbl_;
   stream << *obj.area_rules_tbl_;
+  if (obj.getDatabase()->isSchema(db_schema_lef58_forbidden_spacing))
+    stream << *obj.forbidden_spacing_rules_tbl_;
   if (obj.getDatabase()->isSchema(db_schema_keepout_zone))
     stream << *obj.keepout_zone_rules_tbl_;
   // User Code Begin <<
@@ -913,6 +917,8 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
       return min_cuts_rules_tbl_;
     case dbTechLayerAreaRuleObj:
       return area_rules_tbl_;
+    case dbTechLayerForbiddenSpacingRuleObj:
+      return forbidden_spacing_rules_tbl_;
     case dbTechLayerKeepOutZoneRuleObj:
       return keepout_zone_rules_tbl_;
       // User Code Begin getObjectTable
@@ -933,6 +939,7 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
   }
   return getTable()->getObjectTable(type);
 }
+
 _dbTechLayer::~_dbTechLayer()
 {
   delete cut_class_rules_tbl_;
@@ -950,6 +957,7 @@ _dbTechLayer::~_dbTechLayer()
   delete width_table_rules_tbl_;
   delete min_cuts_rules_tbl_;
   delete area_rules_tbl_;
+  delete forbidden_spacing_rules_tbl_;
   delete keepout_zone_rules_tbl_;
   // User Code Begin Destructor
   if (_name)
@@ -1128,6 +1136,14 @@ dbSet<dbTechLayerAreaRule> dbTechLayer::getTechLayerAreaRules() const
   return dbSet<dbTechLayerAreaRule>(obj, obj->area_rules_tbl_);
 }
 
+dbSet<dbTechLayerForbiddenSpacingRule>
+dbTechLayer::getTechLayerForbiddenSpacingRules() const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerForbiddenSpacingRule>(
+      obj, obj->forbidden_spacing_rules_tbl_);
+}
+
 dbSet<dbTechLayerKeepOutZoneRule> dbTechLayer::getTechLayerKeepOutZoneRules()
     const
 {
@@ -1285,7 +1301,7 @@ std::string dbTechLayer::getAlias()
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
 
-  if (layer->_alias == NULL) {
+  if (layer->_alias == nullptr) {
     return "";
   }
 
@@ -1488,28 +1504,28 @@ void dbTechLayer::printV55SpacingRules(lefout& writer) const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
 
-  fprintf(writer.out(), "SPACINGTABLE\n");
-  fprintf(writer.out(), "  PARALLELRUNLENGTH");
+  fmt::print(writer.out(), "SPACINGTABLE\n");
+  fmt::print(writer.out(), "  PARALLELRUNLENGTH");
   dbVector<uint>::const_iterator v55_itr;
   uint wddx, lndx;
 
   for (v55_itr = layer->_v55sp_length_idx.begin();
        v55_itr != layer->_v55sp_length_idx.end();
        v55_itr++)
-    fprintf(writer.out(), " %.3f", writer.lefdist(*v55_itr));
+    fmt::print(writer.out(), " {:.3f}", writer.lefdist(*v55_itr));
 
   for (wddx = 0, v55_itr = layer->_v55sp_width_idx.begin();
        v55_itr != layer->_v55sp_width_idx.end();
        wddx++, v55_itr++) {
-    fprintf(writer.out(), "\n");
-    fprintf(writer.out(), "  WIDTH %.3f\t", writer.lefdist(*v55_itr));
+    fmt::print(writer.out(), "\n");
+    fmt::print(writer.out(), "  WIDTH {:.3f}\t", writer.lefdist(*v55_itr));
     for (lndx = 0; lndx < layer->_v55sp_spacing.numCols(); lndx++)
-      fprintf(writer.out(),
-              " %.3f",
-              writer.lefdist(layer->_v55sp_spacing(wddx, lndx)));
+      fmt::print(writer.out(),
+                 " {:.3f}",
+                 writer.lefdist(layer->_v55sp_spacing(wddx, lndx)));
   }
 
-  fprintf(writer.out(), " ;\n");
+  fmt::print(writer.out(), " ;\n");
 }
 
 bool dbTechLayer::getV55SpacingTable(
@@ -1592,21 +1608,21 @@ void dbTechLayer::printTwoWidthsSpacingRules(lefout& writer) const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
 
-  fprintf(writer.out(), "SPACINGTABLE TWOWIDTHS");
+  fmt::print(writer.out(), "SPACINGTABLE TWOWIDTHS");
   dbVector<uint>::const_iterator itr;
   uint wddx, lndx;
 
   for (wddx = 0, itr = layer->_two_widths_sp_idx.begin();
        itr != layer->_two_widths_sp_idx.end();
        wddx++, itr++) {
-    fprintf(writer.out(), "\n  WIDTH %.3f\t", writer.lefdist(*itr));
+    fmt::print(writer.out(), "\n  WIDTH {:.3f}\t", writer.lefdist(*itr));
     for (lndx = 0; lndx < layer->_two_widths_sp_spacing.numCols(); lndx++)
-      fprintf(writer.out(),
-              " %.3f",
-              writer.lefdist(layer->_two_widths_sp_spacing(wddx, lndx)));
+      fmt::print(writer.out(),
+                 " {:.3f}",
+                 writer.lefdist(layer->_two_widths_sp_spacing(wddx, lndx)));
   }
 
-  fprintf(writer.out(), " ;\n");
+  fmt::print(writer.out(), " ;\n");
 }
 
 uint dbTechLayer::getTwoWidthsSpacingTableEntry(uint row, uint col) const
@@ -1760,7 +1776,7 @@ dbTechLayerAntennaRule* dbTechLayer::createDefaultAntennaRule()
       = (_dbTechLayerAntennaRule*) getDefaultAntennaRule();
 
   // Reinitialize the object to its default state...
-  if (r != NULL) {
+  if (r != nullptr) {
     r->~_dbTechLayerAntennaRule();
     new (r) _dbTechLayerAntennaRule(layer->getDatabase());
     r->_layer = getImpl()->getOID();
@@ -1781,7 +1797,7 @@ dbTechLayerAntennaRule* dbTechLayer::createOxide2AntennaRule()
       = (_dbTechLayerAntennaRule*) getOxide2AntennaRule();
 
   // Reinitialize the object to its default state...
-  if (r != NULL) {
+  if (r != nullptr) {
     r->~_dbTechLayerAntennaRule();
     new (r) _dbTechLayerAntennaRule(layer->getDatabase());
     r->_layer = getImpl()->getOID();
@@ -1813,7 +1829,7 @@ dbTechLayerAntennaRule* dbTechLayer::getDefaultAntennaRule() const
   _dbTech* tech = (_dbTech*) layer->getOwner();
 
   if (layer->_oxide1 == 0)
-    return NULL;
+    return nullptr;
 
   return (dbTechLayerAntennaRule*) tech->_antenna_rule_tbl->getPtr(
       layer->_oxide1);
@@ -1825,7 +1841,7 @@ dbTechLayerAntennaRule* dbTechLayer::getOxide2AntennaRule() const
   _dbTech* tech = (_dbTech*) layer->getOwner();
 
   if (layer->_oxide2 == 0)
-    return NULL;
+    return nullptr;
 
   return (dbTechLayerAntennaRule*) tech->_antenna_rule_tbl->getPtr(
       layer->_oxide2);
@@ -1836,12 +1852,12 @@ void dbTechLayer::writeAntennaRulesLef(lefout& writer) const
   bool prt_model = (hasDefaultAntennaRule() && hasOxide2AntennaRule());
 
   if (prt_model)
-    fprintf(writer.out(), "    ANTENNAMODEL OXIDE1 ;\n");
+    fmt::print(writer.out(), "    ANTENNAMODEL OXIDE1 ;\n");
   if (hasDefaultAntennaRule())
     getDefaultAntennaRule()->writeLef(writer);
 
   if (prt_model)
-    fprintf(writer.out(), "    ANTENNAMODEL OXIDE2 ;\n");
+    fmt::print(writer.out(), "    ANTENNAMODEL OXIDE2 ;\n");
   if (hasOxide2AntennaRule())
     getOxide2AntennaRule()->writeLef(writer);
 }
@@ -2202,7 +2218,7 @@ dbTechLayer* dbTechLayer::getLowerLayer()
   _dbTech* tech = (_dbTech*) layer->getOwner();
 
   if (layer->_lower == 0)
-    return NULL;
+    return nullptr;
 
   return (dbTechLayer*) tech->_layer_tbl->getPtr(layer->_lower);
 }
@@ -2213,12 +2229,12 @@ dbTechLayer* dbTechLayer::getUpperLayer()
   _dbTech* tech = (_dbTech*) layer->getOwner();
 
   if (layer->_upper == 0)
-    return NULL;
+    return nullptr;
 
   return (dbTechLayer*) tech->_layer_tbl->getPtr(layer->_upper);
 }
 
-dbTech* dbTechLayer::getTech()
+dbTech* dbTechLayer::getTech() const
 {
   return (dbTech*) getImpl()->getOwner();
 }
@@ -2228,10 +2244,10 @@ dbTechLayer* dbTechLayer::create(dbTech* tech_,
                                  dbTechLayerType type)
 {
   if (type.getValue() == dbTechLayerType::NONE)
-    return NULL;
+    return nullptr;
 
   if (tech_->findLayer(name_))
-    return NULL;
+    return nullptr;
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechLayer* layer = tech->_layer_tbl->create();

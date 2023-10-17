@@ -9,4 +9,5 @@ set_wire_rc -clock -layer metal3
 
 clock_tree_synthesis -root_buf CLKBUF_X3 \
                      -buf_list  "CLKBUF_X3 CLKBUF_X2 BUF_X4 CLKBUF_X1" \
-                     -wire_unit 20 
+                     -wire_unit 20 \
+                     -obstruction_aware    

@@ -209,7 +209,7 @@ END VIAS
 
 ###############################################################################
 # [STYLES numStyles ;
-#     {- STYLE styleNum pt pt pt ;} ...
+#     {- STYLE styleNum pt pt pt … ;} ...
 # END STYLES]
 ###############################################################################
 STYLES 10 ;
@@ -229,7 +229,7 @@ END STYLES
 
 ###############################################################################
 # [NONDEFAULTRULES numNDRs ;
-#     {- STYLE styleNum pt pt pt ;} ...
+#     {- STYLE styleNum pt pt pt … ;} ...
 # END NONDEFAULTRULES]
 ###############################################################################
 NONDEFAULTRULES 1 ;

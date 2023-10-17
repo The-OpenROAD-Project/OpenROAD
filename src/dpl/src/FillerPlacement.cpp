@@ -63,11 +63,11 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
   initGrid();
   setGridCells();
 
-  for (auto layer : grid_info_map_) {
+  if (!grid_info_map_.empty()) {
+    const auto& layer = *grid_info_map_.begin();
     for (int row = 0; row < layer.second.row_count; row++) {
       placeRowFillers(row, prefix, filler_masters, layer.first, layer.second);
     }
-    break;
   }
 
   logger_->info(DPL, 1, "Placed {} filler instances.", filler_count_);

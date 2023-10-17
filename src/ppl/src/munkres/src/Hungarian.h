@@ -12,10 +12,12 @@
 
 #pragma once
 
+#include <cstdint>
 #include <iostream>
 #include <vector>
 
 using namespace std;
+using int64 = std::int64_t;
 
 class HungarianAlgorithm
 {
@@ -24,7 +26,7 @@ class HungarianAlgorithm
 
  private:
   void assignmentoptimal(int* assignment,
-                         int* cost,
+                         int64* cost,
                          int* dist_matrix,
                          int n_of_rows,
                          int n_of_columns);
@@ -33,7 +35,7 @@ class HungarianAlgorithm
                              int n_of_rows,
                              int n_of_columns);
   void computeassignmentcost(const int* assignment,
-                             int* cost,
+                             int64* cost,
                              const int* dist_matrix,
                              int n_of_rows);
   void step2a(int* assignment,

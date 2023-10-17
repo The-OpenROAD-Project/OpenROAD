@@ -81,7 +81,7 @@ void definComponent::init()
   _inst_cnt = 0;
   _update_cnt = 0;
   _iterm_cnt = 0;
-  _cur_inst = NULL;
+  _cur_inst = nullptr;
 }
 
 dbMaster* definComponent::getMaster(const char* name)
@@ -110,7 +110,7 @@ dbMaster* definComponent::getMaster(const char* name)
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 dbSite* definComponent::getSite(const char* name)
@@ -139,15 +139,15 @@ dbSite* definComponent::getSite(const char* name)
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 void definComponent::begin(const char* iname, const char* mname)
 {
-  assert(_cur_inst == NULL);
+  assert(_cur_inst == nullptr);
   dbMaster* master = getMaster(mname);
 
-  if (master == NULL) {
+  if (master == nullptr) {
     _logger->warn(
         utl::ODB,
         92,
@@ -182,7 +182,7 @@ void definComponent::begin(const char* iname, const char* mname)
 
 void definComponent::placement(int status, int x, int y, int orient)
 {
-  if (_cur_inst == NULL)
+  if (_cur_inst == nullptr)
     return;
 
   dbPlacementStatus placement_status;
@@ -247,12 +247,12 @@ void definComponent::halo(int left, int bottom, int right, int top)
 
 void definComponent::region(const char* name)
 {
-  if (_cur_inst == NULL)
+  if (_cur_inst == nullptr)
     return;
 
   dbRegion* region = _block->findRegion(name);
 
-  if (region == NULL)
+  if (region == nullptr)
     region = dbRegion::create(_block, name);
   else if (_mode != defin::DEFAULT && _cur_inst->getRegion() == region)
     return;
@@ -262,7 +262,7 @@ void definComponent::region(const char* name)
 
 void definComponent::source(dbSourceType source)
 {
-  if (_cur_inst == NULL)
+  if (_cur_inst == nullptr)
     return;
 
   _cur_inst->setSourceType(source);
@@ -270,7 +270,7 @@ void definComponent::source(dbSourceType source)
 
 void definComponent::weight(int weight)
 {
-  if (_cur_inst == NULL)
+  if (_cur_inst == nullptr)
     return;
 
   _cur_inst->setWeight(weight);
@@ -278,7 +278,7 @@ void definComponent::weight(int weight)
 
 void definComponent::property(const char* name, const char* value)
 {
-  if (_cur_inst == NULL)
+  if (_cur_inst == nullptr)
     return;
 
   dbProperty* p = dbProperty::find(_cur_inst, name);
@@ -290,7 +290,7 @@ void definComponent::property(const char* name, const char* value)
 
 void definComponent::property(const char* name, int value)
 {
-  if (_cur_inst == NULL)
+  if (_cur_inst == nullptr)
     return;
 
   dbProperty* p = dbProperty::find(_cur_inst, name);
@@ -302,7 +302,7 @@ void definComponent::property(const char* name, int value)
 
 void definComponent::property(const char* name, double value)
 {
-  if (_cur_inst == NULL)
+  if (_cur_inst == nullptr)
     return;
 
   dbProperty* p = dbProperty::find(_cur_inst, name);
@@ -315,7 +315,7 @@ void definComponent::property(const char* name, double value)
 
 void definComponent::end()
 {
-  if (_cur_inst == NULL)
+  if (_cur_inst == nullptr)
     return;
 
   dbSet<dbProperty> props = dbProperty::getProperties(_cur_inst);
@@ -323,7 +323,7 @@ void definComponent::end()
   if (!props.empty() && props.orderReversed())
     props.reverse();
 
-  _cur_inst = NULL;
+  _cur_inst = nullptr;
 }
 
 }  // namespace odb
