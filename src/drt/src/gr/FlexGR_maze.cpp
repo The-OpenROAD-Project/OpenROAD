@@ -35,19 +35,19 @@ void FlexGRWorker::route()
 {
   vector<grNet*> rerouteNets;
   for (int i = 0; i < mazeEndIter_; i++) {
-    if (ripupMode_ == fr::RipUpMode::ripupDRC) {
+    if (ripupMode_ == RipUpMode::DRC) {
       route_addHistCost();
     }
     route_mazeIterInit();
     route_getRerouteNets(rerouteNets);
     for (auto net : rerouteNets) {
-      if (ripupMode_ == fr::RipUpMode::ripupDRC
-          || (ripupMode_ == fr::RipUpMode::ripupAll && mazeNetHasCong(net))) {
+      if (ripupMode_ == RipUpMode::DRC
+          || (ripupMode_ == RipUpMode::ALL && mazeNetHasCong(net))) {
         mazeNetInit(net);
         routeNet(net);
       }
     }
-    if (ripupMode_ == fr::RipUpMode::ripupAll) {
+    if (ripupMode_ == RipUpMode::ALL) {
       route_decayHistCost();
     }
   }
@@ -99,7 +99,7 @@ void FlexGRWorker::route_mazeIterInit()
   for (auto& net : nets_) {
     net->setRipup(false);
   }
-  if (ripupMode_ == fr::RipUpMode::ripupDRC) {
+  if (ripupMode_ == RipUpMode::DRC) {
     // set ripup based on congestion
     auto& workerRegionQuery = getWorkerRegionQuery();
 
@@ -150,7 +150,7 @@ void FlexGRWorker::route_mazeIterInit()
 void FlexGRWorker::route_getRerouteNets(vector<grNet*>& rerouteNets)
 {
   rerouteNets.clear();
-  if (ripupMode_ == fr::RipUpMode::ripupDRC) {
+  if (ripupMode_ == RipUpMode::DRC) {
     for (auto& net : nets_) {
       if (net->isRipup() && !net->isTrivial()) {
         rerouteNets.push_back(net.get());
@@ -159,7 +159,7 @@ void FlexGRWorker::route_getRerouteNets(vector<grNet*>& rerouteNets)
       } else {
       }
     }
-  } else if (ripupMode_ == fr::RipUpMode::ripupAll) {
+  } else if (ripupMode_ == RipUpMode::ALL) {
     for (auto& net : nets_) {
       if (!net->isTrivial()) {
         rerouteNets.push_back(net.get());
@@ -224,9 +224,9 @@ bool FlexGRWorker::mazeNetHasCong(grNet* net)
 void FlexGRWorker::mazeNetInit(grNet* net)
 {
   gridGraph_.resetStatus();
-  if (ripupMode_ == fr::RipUpMode::ripupDRC) {
+  if (ripupMode_ == RipUpMode::DRC) {
     mazeNetInit_decayHistCost(net);
-  } else if (ripupMode_ == fr::RipUpMode::ripupAll) {
+  } else if (ripupMode_ == RipUpMode::ALL) {
     mazeNetInit_addHistCost(net);
   }
   mazeNetInit_removeNetObjs(net);

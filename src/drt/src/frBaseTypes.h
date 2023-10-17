@@ -290,9 +290,9 @@ enum class frAccessPointEnum
 enum class RipUpMode
 {
   UNKNOWN = -1,
-  ripupDRC = 0,
-  ripupAll = 1,
-  ripupAroundDRC = 2
+  DRC = 0,
+  ALL = 1,
+  NEARDRC = 2
 };
 
 namespace bg = boost::geometry;
@@ -325,7 +325,6 @@ struct frDebugSettings
         markerCost(-1),
         fixedShapeCost(-1),
         markerDecay(-1),
-        ripupMode(RipUpMode::UNKNOWN),
         followGuide(-1),
         writeNetTracks(false)
 
@@ -356,7 +355,7 @@ struct frDebugSettings
   int markerCost;
   int fixedShapeCost;
   float markerDecay;
-  RipUpMode ripupMode;
+  RipUpMode ripupMode{RipUpMode::UNKNOWN};
   int followGuide;
   bool writeNetTracks;
 };

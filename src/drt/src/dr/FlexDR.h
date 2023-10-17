@@ -248,7 +248,7 @@ class FlexDRWorker
         followGuide_(false),
         needRecheck_(false),
         skipRouting_(false),
-        ripupMode_(fr::RipUpMode::ripupAll),
+        ripupMode_(RipUpMode::ALL),
         workerDRCCost_(ROUTESHAPECOST),
         workerMarkerCost_(MARKERCOST),
         workerFixedShapeCost_(0),
@@ -285,7 +285,7 @@ class FlexDRWorker
         followGuide_(false),
         needRecheck_(false),
         skipRouting_(false),
-        ripupMode_(fr::RipUpMode::ripupDRC),
+        ripupMode_(RipUpMode::DRC),
         workerDRCCost_(0),
         workerMarkerCost_(0),
         workerFixedShapeCost_(0),
@@ -447,7 +447,7 @@ class FlexDRWorker
 
   static std::unique_ptr<FlexDRWorker> load(const std::string& file_name,
                                             utl::Logger* logger,
-                                            fr::frDesign* design,
+                                            frDesign* design,
                                             FlexDRGraphics* graphics);
 
   // distributed

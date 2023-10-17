@@ -295,7 +295,6 @@ class FlexGRWorker
         workerHistCost_(0),
         congThresh_(1.0),
         is2DRouting_(false),
-        ripupMode_(fr::RipUpMode::ripupDRC),
         nets_(),
         owner2nets_(), /*owner2extBoundPtNodes(), owner2routeBoundPtNodes(),
                           owner2pinGCellNodes(),*/
@@ -314,7 +313,7 @@ class FlexGRWorker
   void setHistCost(int in) { workerHistCost_ = in; }
   void setCongThresh(double in) { congThresh_ = in; }
   void set2D(bool in) { is2DRouting_ = in; }
-  void setRipupMode(fr::RipUpMode in) { ripupMode_ = in; }
+  void setRipupMode(RipUpMode in) { ripupMode_ = in; }
 
   // getters
   frTechObject* getTech() const { return design_->getTech(); }
@@ -369,7 +368,7 @@ class FlexGRWorker
   int workerHistCost_;
   double congThresh_;
   bool is2DRouting_;
-  fr::RipUpMode ripupMode_;
+  RipUpMode ripupMode_{fr::RipUpMode::DRC};
 
   // local storage
   std::vector<std::unique_ptr<grNet>> nets_;

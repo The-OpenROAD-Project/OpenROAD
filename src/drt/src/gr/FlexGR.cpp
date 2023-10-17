@@ -73,7 +73,7 @@ void FlexGR::main(odb::dbDatabase* db)
                     0.5 * HISTCOST,
                     1.0,
                     true,
-                    /*mode*/ fr::RipUpMode::ripupAll);
+                    /*mode*/ RipUpMode::ALL);
   // reportCong2D();
   searchRepairMacro(1,
                     30,
@@ -82,19 +82,13 @@ void FlexGR::main(odb::dbDatabase* db)
                     1 * HISTCOST,
                     0.9,
                     true,
-                    /*mode*/ fr::RipUpMode::ripupAll);
-  // reportCong2D();
-  searchRepairMacro(2,
-                    50,
-                    2,
-                    1 * CONGCOST,
-                    1.5 * HISTCOST,
-                    0.9,
-                    true,
-                    fr::RipUpMode::ripupAll);
+                    /*mode*/ RipUpMode::ALL);
   // reportCong2D();
   searchRepairMacro(
-      3, 80, 2, 2 * CONGCOST, 2 * HISTCOST, 0.9, true, fr::RipUpMode::ripupAll);
+      2, 50, 2, 1 * CONGCOST, 1.5 * HISTCOST, 0.9, true, RipUpMode::ALL);
+  // reportCong2D();
+  searchRepairMacro(
+      3, 80, 2, 2 * CONGCOST, 2 * HISTCOST, 0.9, true, RipUpMode::ALL);
   // reportCong2D();
 
   //  reportCong2D();
@@ -106,7 +100,7 @@ void FlexGR::main(odb::dbDatabase* db)
                /*workerHistCost*/ 0.5 * HISTCOST,
                /*congThresh*/ 0.9,
                /*is2DRouting*/ true,
-               /*mode*/ fr::RipUpMode::ripupAll,
+               /*mode*/ RipUpMode::ALL,
                /*TEST*/ false);
   // reportCong2D();
   searchRepair(/*iter*/ 1,
@@ -117,7 +111,7 @@ void FlexGR::main(odb::dbDatabase* db)
                /*workerHistCost*/ 1 * HISTCOST,
                /*congThresh*/ 0.9,
                /*is2DRouting*/ true,
-               /*mode*/ fr::RipUpMode::ripupAll,
+               /*mode*/ RipUpMode::ALL,
                /*TEST*/ false);
   // reportCong2D();
   searchRepair(/*iter*/ 2,
@@ -128,7 +122,7 @@ void FlexGR::main(odb::dbDatabase* db)
                /*workerHistCost*/ 2 * HISTCOST,
                /*congThresh*/ 0.8,
                /*is2DRouting*/ true,
-               /*mode*/ fr::RipUpMode::ripupAll,
+               /*mode*/ RipUpMode::ALL,
                /*TEST*/ false);
   // reportCong2D();
 
@@ -149,7 +143,7 @@ void FlexGR::main(odb::dbDatabase* db)
                /*workerHistCost*/ 0.25 * HISTCOST,
                /*congThresh*/ 1.0,
                /*is2DRouting*/ false,
-               fr::RipUpMode::ripupAll,
+               RipUpMode::ALL,
                /*TEST*/ false);
   reportCong3D();
   if (db != nullptr)
@@ -1131,7 +1125,7 @@ void FlexGR::initGR_patternRoute_route(
   int maxIter = 2;
   for (int iter = 0; iter < maxIter; iter++) {
     initGR_patternRoute_route_iter(
-        iter, patternRoutes, /*mode*/ fr::RipUpMode::ripupDRC);
+        iter, patternRoutes, /*mode*/ RipUpMode::DRC);
   }
 }
 
@@ -1139,7 +1133,7 @@ void FlexGR::initGR_patternRoute_route(
 bool FlexGR::initGR_patternRoute_route_iter(
     int iter,
     vector<pair<pair<frNode*, frNode*>, int>>& patternRoutes,
-    fr::RipUpMode mode)
+    RipUpMode mode)
 {
   bool hasOverflow = false;
   for (auto& patternRoutePair : patternRoutes) {
@@ -1186,10 +1180,10 @@ bool FlexGR::initGR_patternRoute_route_iter(
       }
       // find current best route based on mode and update congestion map
       switch (mode) {
-        case fr::RipUpMode::ripupDRC:
+        case RipUpMode::DRC:
           patternRoute_LShape(startNode, endNode);
           break;
-        case fr::RipUpMode::ripupAll:
+        case RipUpMode::ALL:
           break;
         default:;
       }

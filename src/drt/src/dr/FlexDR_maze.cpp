@@ -1699,8 +1699,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
       // (i.e., not routed) see route_queue_init_queue this
       // is unreserve via via is reserved only when drWorker starts from nothing
       // and via is reserved
-      if (net->getNumReroutes() == 0
-          && getRipupMode() == fr::RipUpMode::ripupAll) {
+      if (net->getNumReroutes() == 0 && getRipupMode() == RipUpMode::ALL) {
         initMazeCost_via_helper(net, false);
       }
       net->clear();
