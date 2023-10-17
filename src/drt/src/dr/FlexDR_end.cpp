@@ -624,7 +624,7 @@ bool FlexDRWorker::end(frDesign* design)
              && getBestNumMarkers() > 5 * getInitNumMarkers()) {
     return false;
   }
-  save_updates_ = dist_on_ || debugSettings_->debugDumpDR;
+  save_updates_ = dist_on_;
   set<frNet*, frBlockObjectComp> modNets;
   endGetModNets(modNets);
   // get lock

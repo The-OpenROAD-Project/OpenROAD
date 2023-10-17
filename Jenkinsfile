@@ -1,7 +1,7 @@
 pipeline {
   agent any;
   options {
-    timeout(time: 1, unit: 'HOURS')
+    timeout(time: 75, unit: 'MINUTES')
   }
   environment {
     COMMIT_AUTHOR_EMAIL = sh (returnStdout: true, script: "git --no-pager show -s --format='%ae'").trim();

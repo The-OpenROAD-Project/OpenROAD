@@ -99,6 +99,13 @@ void LayoutTabs::blockLoaded(odb::dbBlock* block)
   const auto name = fmt::format("{} ({})", block->getName(), tech->getName());
   addTab(scroll, name.c_str());
 
+  // This has to be done after addTab.  For unexplained reasons it
+  // doesn't work for all users if done in LayoutViewer::LayoutViewer.
+  QPalette palette;
+  palette.setColor(QPalette::Window, LayoutViewer::background());
+  viewer->setPalette(palette);
+  viewer->setAutoFillBackground(true);
+
   // forward signals from the viewer upward
   connect(viewer, &LayoutViewer::location, this, &LayoutTabs::location);
   connect(viewer, &LayoutViewer::selected, this, &LayoutTabs::selected);

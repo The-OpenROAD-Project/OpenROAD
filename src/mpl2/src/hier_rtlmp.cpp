@@ -643,6 +643,8 @@ void HierRTLMP::hierRTLMacroPlacer()
 
   correctAllMacrosOrientation();
 
+  writeMacroPlacement(macro_placement_file_);
+
   // Clear the memory to avoid memory leakage
   // release all the pointers
   // metrics map
@@ -6001,6 +6003,13 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
           wirelength += (std::abs(x2 - x1) + std::abs(y2 - y1));
         }
       }
+
+      for (odb::dbBTerm* net_bterm : net->getBTerms()) {
+        const float x2 = dbuToMicron(net_bterm->getBBox().xCenter(), dbu_);
+        const float y2 = dbuToMicron(net_bterm->getBBox().yCenter(), dbu_);
+
+        wirelength += (std::abs(x2 - x1) + std::abs(y2 - y1));
+      }
     }
   }
 
@@ -6056,11 +6065,39 @@ void HierRTLMP::correctAllMacrosOrientation()
 
     const odb::dbOrientType inst_orientation = inst->getOrient();
 
-    const odb::Point snap_origin = hard_macro->alignOriginWithGrids(
+    const odb::Point snap_origin = hard_macro->computeSnapOrigin(
         inst_box, inst_orientation, pitch_x_, pitch_y_, block_);
 
     inst->setOrigin(snap_origin.x(), snap_origin.y());
     inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
+  }
+}
+
+void HierRTLMP::setMacroPlacementFile(const std::string& file_name)
+{
+  macro_placement_file_ = file_name;
+}
+
+void HierRTLMP::writeMacroPlacement(const std::string& file_name)
+{
+  if (file_name.empty()) {
+    return;
+  }
+
+  std::ofstream out(file_name);
+
+  if (!out) {
+    logger_->error(MPL, 11, "Cannot open file {}.", file_name);
+  }
+
+  // Use only insts that were placed by mpl2
+  for (auto& [inst, hard_macro] : hard_macro_map_) {
+    const float x = dbuToMicron(inst->getLocation().x(), dbu_);
+    const float y = dbuToMicron(inst->getLocation().y(), dbu_);
+
+    out << "place_macro -macro_name " << inst->getName() << " -location {" << x
+        << " " << y << "} -orientation " << inst->getOrient().getString()
+        << '\n';
   }
 }
 

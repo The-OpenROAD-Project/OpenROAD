@@ -151,9 +151,51 @@ std::string FlexDRWorker::reloadedMain()
   return workerStr;
 }
 
-void serializeUpdates(const std::vector<std::vector<drUpdate>>& updates,
-                      const std::string& file_name)
+void FlexDRWorker::writeUpdates(const std::string& file_name)
 {
+  std::vector<std::vector<drUpdate>> updates(1);
+  for (const auto& net : getDesign()->getTopBlock()->getNets()) {
+    for (const auto& guide : net->getGuides()) {
+      for (const auto& connFig : guide->getRoutes()) {
+        drUpdate update(drUpdate::ADD_GUIDE);
+        frPathSeg* pathSeg = static_cast<frPathSeg*>(connFig.get());
+        update.setPathSeg(*pathSeg);
+        update.setIndexInOwner(guide->getIndexInOwner());
+        update.setNet(net.get());
+        design_->addUpdate(update);
+      }
+    }
+    for (const auto& shape : net->getShapes()) {
+      drUpdate update;
+      auto pathSeg = static_cast<frPathSeg*>(shape.get());
+      update.setPathSeg(*pathSeg);
+      update.setNet(net.get());
+      update.setUpdateType(drUpdate::ADD_SHAPE);
+      updates.back().push_back(update);
+    }
+    for (const auto& shape : net->getVias()) {
+      drUpdate update;
+      auto via = static_cast<frVia*>(shape.get());
+      update.setVia(*via);
+      update.setNet(net.get());
+      update.setUpdateType(drUpdate::ADD_SHAPE);
+      updates.back().push_back(update);
+    }
+    for (const auto& shape : net->getPatchWires()) {
+      drUpdate update;
+      auto patch = static_cast<frPatchWire*>(shape.get());
+      update.setPatchWire(*patch);
+      update.setNet(net.get());
+      update.setUpdateType(drUpdate::ADD_SHAPE);
+      updates.back().push_back(update);
+    }
+  }
+  for (const auto& marker : getDesign()->getTopBlock()->getMarkers()) {
+    drUpdate update;
+    update.setMarker(*(marker.get()));
+    update.setUpdateType(drUpdate::ADD_SHAPE);
+    updates.back().push_back(update);
+  }
   std::ofstream file(file_name.c_str());
   frOArchive ar(file);
   registerTypes(ar);
@@ -187,23 +229,30 @@ int FlexDRWorker::main(frDesign* design)
                                          routeBox_.xMin(),
                                          routeBox_.yMin());
     mkdir(workerPath.c_str(), 0777);
-    serializeUpdates(design_->getUpdates(),
-                     fmt::format("{}/updates.bin", workerPath));
-    std::string viaDataStr;
-    serializeViaData(*via_data_, viaDataStr);
-    ofstream viaDataFile(fmt::format("{}/viadata.bin", workerPath).c_str());
-    viaDataFile << viaDataStr;
-    std::string workerStr;
-    serializeWorker(this, workerStr);
-    ofstream workerFile(fmt::format("{}/worker.bin", workerPath).c_str());
-    workerFile << workerStr;
-    workerFile.close();
-    std::ofstream file(
-        fmt::format("{}/worker_globals.bin", workerPath).c_str());
-    frOArchive ar(file);
-    registerTypes(ar);
-    serializeGlobals(ar);
-    file.close();
+
+    writeUpdates(fmt::format("{}/updates.bin", workerPath));
+    {
+      std::string viaDataStr;
+      serializeViaData(*via_data_, viaDataStr);
+      ofstream viaDataFile(fmt::format("{}/viadata.bin", workerPath).c_str());
+      viaDataFile << viaDataStr;
+      viaDataFile.close();
+    }
+    {
+      std::string workerStr;
+      serializeWorker(this, workerStr);
+      ofstream workerFile(fmt::format("{}/worker.bin", workerPath).c_str());
+      workerFile << workerStr;
+      workerFile.close();
+    }
+    {
+      std::ofstream globalsFile(
+          fmt::format("{}/worker_globals.bin", workerPath).c_str());
+      frOArchive ar(globalsFile);
+      registerTypes(ar);
+      serializeGlobals(ar);
+      globalsFile.close();
+    }
   }
   if (!skipRouting_) {
     init(design);

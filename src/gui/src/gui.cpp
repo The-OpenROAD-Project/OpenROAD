@@ -674,6 +674,7 @@ void Gui::setResolution(double pixels_per_dbu)
 
 void Gui::saveImage(const std::string& filename,
                     const odb::Rect& region,
+                    int width_px,
                     double dbu_per_pixel,
                     const std::map<std::string, bool>& display_settings)
 {
@@ -731,6 +732,7 @@ void Gui::saveImage(const std::string& filename,
     save_cmds += std::to_string(save_region.yMin() / dbu_per_micron) + " ";
     save_cmds += std::to_string(save_region.xMax() / dbu_per_micron) + " ";
     save_cmds += std::to_string(save_region.yMax() / dbu_per_micron) + " ";
+    save_cmds += std::to_string(width_px) + " ";
     save_cmds += std::to_string(dbu_per_pixel) + " ";
     save_cmds += "$::gui::display_settings\n";
     // delete display settings map
@@ -747,7 +749,7 @@ void Gui::saveImage(const std::string& filename,
     }
 
     main_window->getLayoutViewer()->saveImage(
-        filename.c_str(), save_region, dbu_per_pixel);
+        filename.c_str(), save_region, width_px, dbu_per_pixel);
     // restore settings
     main_window->getControls()->restore();
   }

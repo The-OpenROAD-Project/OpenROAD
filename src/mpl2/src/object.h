@@ -396,11 +396,11 @@ class HardMacro
   // update the location and orientation of the macro inst in OpenDB
   // The macro should be snaped to placement grids
   void updateDb(float pitch_x, float pitch_y, odb::dbBlock* block);
-  odb::Point alignOriginWithGrids(const Rect& macro_box,
-                                  const odb::dbOrientType& orientation,
-                                  float& pitch_x,
-                                  float& pitch_y,
-                                  odb::dbBlock* block);
+  odb::Point computeSnapOrigin(const Rect& macro_box,
+                               const odb::dbOrientType& orientation,
+                               float& pitch_x,
+                               float& pitch_y,
+                               odb::dbBlock* block);
 
   void computeDirectionSpacingParameters(odb::dbBlock* block,
                                          odb::dbTechLayer* layer,
