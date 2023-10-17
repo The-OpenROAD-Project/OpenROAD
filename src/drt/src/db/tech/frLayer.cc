@@ -59,12 +59,12 @@ void frLayer::printAllConstraints(utl::Logger* logger)
       constraint->report(logger);
     }
   }
-  for (auto& constraint : cutConstraints) {
+  for (auto& constraint : lef58CutSpacingConstraints) {
     if (constraint) {
       constraint->report(logger);
     }
   }
-  for (auto& constraint : cutSpacingSamenetConstraints) {
+  for (auto& constraint : lef58CutSpacingSamenetConstraints) {
     if (constraint) {
       constraint->report(logger);
     }
