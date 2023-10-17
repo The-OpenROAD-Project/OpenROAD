@@ -184,7 +184,7 @@ RipUpMode getMode(int ripupMode)
       return RipUpMode::DRC;
     case 1:
       return RipUpMode::ALL;
-    case 2:
+    default:
       return RipUpMode::NEARDRC;
   }
 }
