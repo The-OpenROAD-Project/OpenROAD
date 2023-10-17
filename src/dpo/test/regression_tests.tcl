@@ -6,4 +6,6 @@ record_tests {
     gcd_no_one_site_gaps
     regions1
     regions2
+    upf_test
+    upf_aes
 }

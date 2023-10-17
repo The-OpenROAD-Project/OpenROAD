@@ -1020,3 +1020,13 @@
 [NesterovSolve] Iter: 470 overflow: 0.103683 HPWL: 1697506371
 [NesterovSolve] Finished with Overflow: 0.099071
 [NesterovSolve] PowerDomain PD_AES_2 finished with Overflow: 0.099110
+Placement Analysis
+---------------------------------
+total displacement     136783.5 u
+average displacement        2.7 u
+max displacement           69.1 u
+original HPWL         1564122.1 u
+legalized HPWL        1677441.0 u
+delta HPWL                    7 %
+
+No differences found.

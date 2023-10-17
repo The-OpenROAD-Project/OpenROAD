@@ -191,3 +191,13 @@
 [NesterovSolve] Iter: 820 overflow: 0.245752 HPWL: 932163
 [NesterovSolve] Iter: 830 overflow: 0.239168 HPWL: 951898
 [NesterovSolve] PowerDomain PD_D1 finished with Overflow: 0.085483
+Placement Analysis
+---------------------------------
+total displacement         67.6 u
+average displacement        2.7 u
+max displacement           34.1 u
+original HPWL             561.0 u
+legalized HPWL            620.8 u
+delta HPWL                   11 %
+
+No differences found.
