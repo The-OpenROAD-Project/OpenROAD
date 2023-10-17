@@ -535,7 +535,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_getQueryBox_TN(
       }
     } break;
     default:
-      logger_->error(DRT, 329, "Unsupported endofline spacing rule.");
+      logger_->error(DRT, 333, "Unsupported endofline spacing rule.");
       break;
   }
 
