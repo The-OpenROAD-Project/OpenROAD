@@ -180,6 +180,7 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   }
 
   initRoutingLayers();
+  checkAdjacentLayersDirection(min_routing_layer, max_routing_layer);
   reportLayerSettings(min_routing_layer, max_routing_layer);
   initRoutingTracks(max_routing_layer);
   initCoreGrid(max_routing_layer);
@@ -467,6 +468,12 @@ void GlobalRouter::initCoreGrid(int max_routing_layer)
       grid_->getXGrids(), grid_->getYGrids(), grid_->getNumLayers());
   fastroute_->setGridMax(grid_->getGridArea().xMax(),
                          grid_->getGridArea().yMax());
+
+  odb::dbTech* tech = db_->getTech();
+  for (int l = 1; l <= max_routing_layer; l++) {
+    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(l);
+    fastroute_->addLayerDirection(l - 1, tech_layer->getDirection());
+  }
 }
 
 void GlobalRouter::initRoutingLayers()
@@ -491,11 +498,25 @@ void GlobalRouter::initRoutingLayers()
       valid_layers++;
     }
   }
+}
 
-  odb::dbTechLayer* routing_layer = routing_layers_[1];
-  bool vertical
-      = routing_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
-  fastroute_->setLayerOrientation(vertical);
+void GlobalRouter::checkAdjacentLayersDirection(int min_routing_layer,
+                                                int max_routing_layer)
+{
+  odb::dbTech* tech = db_->getTech();
+  for (int l = min_routing_layer; l < max_routing_layer; l++) {
+    odb::dbTechLayer* layer_a = tech->findRoutingLayer(l);
+    odb::dbTechLayer* layer_b = tech->findRoutingLayer(l + 1);
+    if (layer_a->getDirection() == layer_b->getDirection()) {
+      logger_->error(
+          GRT,
+          126,
+          "Layers {} and {} have the same preferred routing direction ({}).",
+          layer_a->getName(),
+          layer_b->getName(),
+          layer_a->getDirection().getString());
+    }
+  }
 }
 
 void GlobalRouter::setCapacities(int min_routing_layer, int max_routing_layer)
@@ -737,7 +758,7 @@ void GlobalRouter::computeNetSlacks()
   // Find the slack for all nets
   std::unordered_map<Net*, float> net_slack_map;
   std::vector<float> slacks;
-  for (auto net_itr : db_net_map_) {
+  for (const auto& net_itr : db_net_map_) {
     Net* net = net_itr.second;
     float slack = getNetSlack(net);
     net_slack_map[net] = slack;
@@ -1092,7 +1113,7 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
 void GlobalRouter::computePinOffsetAdjustments()
 {
   for (auto const& map_obj : pad_pins_connections_) {
-    for (auto segment : map_obj.second) {
+    for (const auto& segment : map_obj.second) {
       int tile_size = grid_->getTileSize();
       int die_area_min_x = grid_->getXMin();
       int die_area_min_y = grid_->getYMin();
@@ -1507,6 +1528,7 @@ void GlobalRouter::readGuides(const char* file_name)
   }
 
   bool skip = false;
+  std::string net_name;
   while (fin.good()) {
     getline(fin, line);
     if (line == "(" || line == "" || line == ")") {
@@ -1523,6 +1545,7 @@ void GlobalRouter::readGuides(const char* file_name)
 
     if (tokens.size() == 1) {
       net = block_->findNet(tokens[0].c_str());
+      net_name = tokens[0];
       if (!net) {
         logger_->error(GRT, 234, "Cannot find net {}.", tokens[0]);
       }
@@ -1537,7 +1560,7 @@ void GlobalRouter::readGuides(const char* file_name)
                       250,
                       "Net {} has guides but is not routed by the global "
                       "router and will be skipped.",
-                      net->getName());
+                      net_name);
         skip = true;
         continue;
       }
@@ -1760,7 +1783,7 @@ void GlobalRouter::saveGuides()
 
 bool GlobalRouter::isCoveringPin(Net* net, GSegment& segment)
 {
-  for (auto pin : net->getPins()) {
+  for (const auto& pin : net->getPins()) {
     if (pin.getConnectionLayer() == segment.final_layer
         && pin.getOnGridPosition()
                == odb::Point(segment.final_x, segment.final_y)
@@ -3130,10 +3153,12 @@ bool GlobalRouter::layerIsBlocked(
     std::vector<odb::Rect>& extended_obs)
 {
   // if layer is max or min, then all obs the nearest layer are added
-  if (layer == max_routing_layer_) {
+  if (layer == max_routing_layer_
+      && macro_obs_per_layer.find(layer - 1) != macro_obs_per_layer.end()) {
     extended_obs = macro_obs_per_layer.at(layer - 1);
   }
-  if (layer == min_routing_layer_) {
+  if (layer == min_routing_layer_
+      && macro_obs_per_layer.find(layer + 1) != macro_obs_per_layer.end()) {
     extended_obs = macro_obs_per_layer.at(layer + 1);
   }
 

@@ -9,7 +9,7 @@ set tcl_file [make_result_file write_pin_placement4.tcl]
 set def_file [make_result_file write_pin_placement4.def]
 
 place_pins -hor_layers metal3 -ver_layers metal2 -corner_avoidance 0 -min_distance 0.12 -annealing
-write_pin_placement -file_name $tcl_file
+write_pin_placement $tcl_file
 
 source $tcl_file
 

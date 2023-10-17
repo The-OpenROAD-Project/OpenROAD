@@ -253,10 +253,6 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
   std::vector<int> io_pin_indices(num_i_os);
 
   std::vector<InstancePin> instPins;
-  if (sections_.empty()) {
-    Section s = {Point(0, 0)};
-    sections_.push_back(s);
-  }
 
   std::mt19937 g;
   g.seed(seed);
@@ -296,7 +292,6 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
       slots[slot_idx].blocked = true;
       io_pin.setLayer(slots[slot_idx].layer);
       assignment_.push_back(io_pin);
-      sections_[0].pin_indices.push_back(pin_idx);
       io_idx++;
 
       if (assign_mirrored
@@ -692,6 +687,10 @@ void IOPlacer::writePinPlacement(const char* file_name)
 
   std::ofstream out(filename);
 
+  if (!out) {
+    logger_->error(PPL, 35, "Cannot open file {}.", filename);
+  }
+
   std::vector<Edge> edges_list
       = {Edge::bottom, Edge::right, Edge::top, Edge::left};
   for (const Edge& edge : edges_list) {
@@ -905,7 +904,8 @@ void IOPlacer::findSections(int begin,
       }
     }
     int half_length_pt = begin + (end_slot - begin) / 2;
-    Section n_sec = {slots_.at(half_length_pt).pos};
+    Section n_sec;
+    n_sec.pos = slots_.at(half_length_pt).pos;
     n_sec.num_slots = end_slot - begin - blocked_slots + 1;
     if (n_sec.num_slots < 0) {
       logger_->error(PPL, 40, "Negative number of slots.");
@@ -1307,18 +1307,22 @@ void IOPlacer::assignMirroredPin(IOPin& io_pin)
 
 void IOPlacer::printConfig(bool annealing)
 {
-  logger_->info(PPL, 1, "Number of slots          {}", slots_.size());
-  logger_->info(PPL, 2, "Number of I/O            {}", netlist_->numIOPins());
+  logger_->info(PPL, 1, "Number of slots           {}", slots_.size());
+  if (!top_layer_slots_.empty()) {
+    logger_->info(
+        PPL, 62, "Number of top layer slots {}", top_layer_slots_.size());
+  }
+  logger_->info(PPL, 2, "Number of I/O             {}", netlist_->numIOPins());
   logger_->metric("floorplan__design__io", netlist_->numIOPins());
   logger_->info(PPL,
                 3,
-                "Number of I/O w/sink     {}",
+                "Number of I/O w/sink      {}",
                 netlist_io_pins_->numIOPins() - zero_sink_ios_.size());
-  logger_->info(PPL, 4, "Number of I/O w/o sink   {}", zero_sink_ios_.size());
+  logger_->info(PPL, 4, "Number of I/O w/o sink    {}", zero_sink_ios_.size());
   if (!annealing) {
-    logger_->info(PPL, 5, "Slots per section        {}", slots_per_section_);
+    logger_->info(PPL, 5, "Slots per section         {}", slots_per_section_);
     logger_->info(
-        PPL, 6, "Slots increase factor    {:.1}", slots_increase_factor_);
+        PPL, 6, "Slots increase factor     {:.1}", slots_increase_factor_);
   }
 }
 
@@ -2578,7 +2582,8 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
         }
       }
       int half_length_pt = edge_begin + (end_slot - edge_begin) / 2;
-      Section n_sec = {slots.at(half_length_pt).pos};
+      Section n_sec;
+      n_sec.pos = slots.at(half_length_pt).pos;
       n_sec.num_slots = end_slot - edge_begin - blocked_slots + 1;
       n_sec.begin_slot = edge_begin;
       n_sec.end_slot = end_slot;

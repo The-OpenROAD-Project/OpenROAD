@@ -69,7 +69,10 @@ namespace odb {
 //
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
-const uint db_schema_minor = 69;  // Current revision number
+const uint db_schema_minor = 70;  // Current revision number
+
+// Revision where _dbTechLayer::forbidden_spacing_rules_tbl_ was added
+const uint db_schema_lef58_forbidden_spacing = 70;
 
 // Revision where upf power switch mapping was added.
 const uint db_schema_upf_power_switch_mapping = 69;

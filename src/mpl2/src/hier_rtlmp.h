@@ -145,6 +145,9 @@ class HierRTLMP
     bus_planning_flag_ = bus_planning_flag;
   }
 
+  void setMacroPlacementFile(const std::string& file_name);
+  void writeMacroPlacement(const std::string& file_name);
+
  private:
   void setDefaultThresholds();
   void createDataFlow();
@@ -290,6 +293,8 @@ class HierRTLMP
 
   // Parameters related to macro placement
   std::string report_directory_;
+  std::string macro_placement_file_;
+
   // User can specify a global region for some designs
   float global_fence_lx_ = std::numeric_limits<float>::max();
   float global_fence_ly_ = std::numeric_limits<float>::max();
@@ -360,7 +365,7 @@ class HierRTLMP
   float pos_swap_prob_ = 0.2;
   float neg_swap_prob_ = 0.2;
   float double_swap_prob_ = 0.2;
-  float exchange_swap_prob_ = 0.0;
+  float exchange_swap_prob_ = 0.2;
   float flip_prob_ = 0.4;
   float resize_prob_ = 0.4;
 

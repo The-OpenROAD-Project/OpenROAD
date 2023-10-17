@@ -219,7 +219,8 @@ void TritonPart::SetFineTuneParams(
 // attributes both follows the hMETIS format
 void TritonPart::PartitionHypergraph(unsigned int num_parts_arg,
                                      float balance_constraint_arg,
-                                     std::vector<float> base_balance_arg,
+                                     const std::vector<float>& base_balance_arg,
+                                     const std::vector<float>& scale_factor_arg,
                                      unsigned int seed_arg,
                                      int vertex_dimension_arg,
                                      int hyperedge_dimension_arg,
@@ -237,6 +238,7 @@ void TritonPart::PartitionHypergraph(unsigned int num_parts_arg,
   // Parameters
   num_parts_ = num_parts_arg;
   base_balance_ = base_balance_arg;
+  scale_factor_ = scale_factor_arg;
   ub_factor_ = balance_constraint_arg;
   seed_ = seed_arg;
   vertex_dimensions_ = vertex_dimension_arg;
@@ -315,7 +317,8 @@ void TritonPart::PartitionHypergraph(unsigned int num_parts_arg,
 // partitioning, placement information is extracted from OpenDB
 void TritonPart::PartitionDesign(unsigned int num_parts_arg,
                                  float balance_constraint_arg,
-                                 std::vector<float> base_balance_arg,
+                                 const std::vector<float>& base_balance_arg,
+                                 const std::vector<float>& scale_factor_arg,
                                  unsigned int seed_arg,
                                  bool timing_aware_flag_arg,
                                  int top_n_arg,
@@ -340,6 +343,7 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
   num_parts_ = num_parts_arg;
   ub_factor_ = balance_constraint_arg;
   base_balance_ = base_balance_arg;
+  scale_factor_ = scale_factor_arg;
   seed_ = seed_arg;
   vertex_dimensions_ = 1;  // for design partitioning, vertex weight is the area
                            // of the instance
@@ -492,16 +496,17 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
   logger_->report("Exiting TritonPart");
 }
 
-void TritonPart::EvaluateHypergraphSolution(unsigned int num_parts_arg,
-                                            float balance_constraint_arg,
-                                            std::vector<float> base_balance_arg,
-                                            int vertex_dimension_arg,
-                                            int hyperedge_dimension_arg,
-                                            const char* hypergraph_file_arg,
-                                            const char* fixed_file_arg,
-                                            const char* group_file_arg,
-                                            const char* solution_file_arg)
-
+void TritonPart::EvaluateHypergraphSolution(
+    unsigned int num_parts_arg,
+    float balance_constraint_arg,
+    const std::vector<float>& base_balance_arg,
+    const std::vector<float>& scale_factor_arg,
+    int vertex_dimension_arg,
+    int hyperedge_dimension_arg,
+    const char* hypergraph_file_arg,
+    const char* fixed_file_arg,
+    const char* group_file_arg,
+    const char* solution_file_arg)
 {
   logger_->report("========================================");
   logger_->report("[STATUS] Starting Evaluating Hypergraph Solution");
@@ -511,6 +516,7 @@ void TritonPart::EvaluateHypergraphSolution(unsigned int num_parts_arg,
   num_parts_ = num_parts_arg;
   ub_factor_ = balance_constraint_arg;
   base_balance_ = base_balance_arg;
+  scale_factor_ = scale_factor_arg;
   seed_ = 0;  // use the default random seed (no meaning in this function)
   vertex_dimensions_ = vertex_dimension_arg;
   hyperedge_dimensions_ = hyperedge_dimension_arg;
@@ -578,6 +584,18 @@ void TritonPart::EvaluateHypergraphSolution(unsigned int num_parts_arg,
     base_balance_.clear();
     base_balance_.resize(num_parts_);
     std::fill(base_balance_.begin(), base_balance_.end(), 1.0 / num_parts_);
+  }
+
+  if (static_cast<int>(scale_factor_.size()) != num_parts_) {
+    logger_->warn(PAR, 354, "no scale factor is specified. Use default value.");
+    scale_factor_.clear();
+    scale_factor_.resize(num_parts_);
+    std::fill(scale_factor_.begin(), scale_factor_.end(), 1.0);
+  }
+
+  // adjust the size of vertices based on scale factor
+  for (int i = 0; i < num_parts_; ++i) {
+    base_balance_[i] = base_balance_[i] / scale_factor_[i];
   }
 
   // check the weighting scheme
@@ -674,7 +692,8 @@ void TritonPart::EvaluateHypergraphSolution(unsigned int num_parts_arg,
 void TritonPart::EvaluatePartDesignSolution(
     unsigned int num_parts_arg,
     float balance_constraint_arg,
-    std::vector<float> base_balance_arg,
+    const std::vector<float>& base_balance_arg,
+    const std::vector<float>& scale_factor_arg,
     bool timing_aware_flag_arg,
     int top_n_arg,
     bool fence_flag_arg,
@@ -699,6 +718,7 @@ void TritonPart::EvaluatePartDesignSolution(
   num_parts_ = num_parts_arg;
   ub_factor_ = balance_constraint_arg;
   base_balance_ = base_balance_arg;
+  scale_factor_ = scale_factor_arg;
   seed_ = 0;               // This parameter is not used.  just a random value
   vertex_dimensions_ = 1;  // for design partitioning, vertex weight is the area
                            // of the instance
@@ -789,6 +809,18 @@ void TritonPart::EvaluatePartDesignSolution(
     base_balance_.clear();
     base_balance_.resize(num_parts_);
     std::fill(base_balance_.begin(), base_balance_.end(), 1.0 / num_parts_);
+  }
+
+  if (static_cast<int>(scale_factor_.size()) != num_parts_) {
+    logger_->warn(PAR, 355, "no scale factor is specified. Use default value.");
+    scale_factor_.clear();
+    scale_factor_.resize(num_parts_);
+    std::fill(scale_factor_.begin(), scale_factor_.end(), 1.0);
+  }
+
+  // adjust the size of vertices based on scale factor
+  for (int i = 0; i < num_parts_; ++i) {
+    base_balance_[i] = base_balance_[i] / scale_factor_[i];
   }
 
   // check the weighting scheme
@@ -1721,6 +1753,18 @@ void TritonPart::MultiLevelPartition()
     base_balance_.clear();
     base_balance_.resize(num_parts_);
     std::fill(base_balance_.begin(), base_balance_.end(), 1.0 / num_parts_);
+  }
+
+  if (static_cast<int>(scale_factor_.size()) != num_parts_) {
+    logger_->warn(PAR, 353, "no scale factor is specified. Use default value.");
+    scale_factor_.clear();
+    scale_factor_.resize(num_parts_);
+    std::fill(scale_factor_.begin(), scale_factor_.end(), 1.0);
+  }
+
+  // rescale the base balance based on scale_factor
+  for (int i = 0; i < num_parts_; i++) {
+    base_balance_[i] = base_balance_[i] / scale_factor_[i];
   }
 
   // check the weighting scheme
