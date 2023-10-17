@@ -58,4 +58,6 @@ record_tests {
   regions2
   regions3
   report_failures
+  upf_test
+  upf_aes
 }
