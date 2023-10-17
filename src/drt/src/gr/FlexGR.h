@@ -148,7 +148,7 @@ class FlexGR
   bool initGR_patternRoute_route_iter(
       int iter,
       std::vector<std::pair<std::pair<frNode*, frNode*>, int>>& patternRoutes,
-      RipUpMode mode);
+      int mode);
   void initGR_initObj();
   void initGR_initObj_net(frNet* net);
 

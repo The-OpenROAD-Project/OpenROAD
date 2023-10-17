@@ -1124,8 +1124,7 @@ void FlexGR::initGR_patternRoute_route(
 {
   int maxIter = 2;
   for (int iter = 0; iter < maxIter; iter++) {
-    initGR_patternRoute_route_iter(
-        iter, patternRoutes, /*mode*/ RipUpMode::DRC);
+    initGR_patternRoute_route_iter(iter, patternRoutes, /*mode*/ 0);
   }
 }
 
@@ -1133,7 +1132,7 @@ void FlexGR::initGR_patternRoute_route(
 bool FlexGR::initGR_patternRoute_route_iter(
     int iter,
     vector<pair<pair<frNode*, frNode*>, int>>& patternRoutes,
-    RipUpMode mode)
+    int mode)
 {
   bool hasOverflow = false;
   for (auto& patternRoutePair : patternRoutes) {
@@ -1180,10 +1179,10 @@ bool FlexGR::initGR_patternRoute_route_iter(
       }
       // find current best route based on mode and update congestion map
       switch (mode) {
-        case RipUpMode::DRC:
+        case 0:
           patternRoute_LShape(startNode, endNode);
           break;
-        case RipUpMode::ALL:
+        case 1:
           break;
         default:;
       }
