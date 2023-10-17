@@ -297,8 +297,8 @@ void reportSteinerTree(const stt::Tree& tree,
   int drvr_index = findLocationIndex(tree, drvr_x, drvr_y);
   if (drvr_index >= 0) {
     logger->report("Wire length = {} Path depth = {}",
-                  tree.length,
-                  findPathDepth(tree, drvr_index));
+                   tree.length,
+                   findPathDepth(tree, drvr_index));
     reportSteinerBranches(tree, logger);
   } else {
     logger->error(utl::STT, 7, "Invalid driver index {}.", drvr_index);
