@@ -345,7 +345,7 @@ static void steinerize(ListGraph& graph, ListGraph::NodeMap<Point>& node_point)
     handles[best.node]
         = heap.push(best_steiner_for_node(graph, best.node, node_point));
 
-    for (auto node : {opp1, opp2}) {
+    for (const auto& node : {opp1, opp2}) {
       *handles[node] = best_steiner_for_node(graph, node, node_point);
       heap.update(handles[node]);
     }
