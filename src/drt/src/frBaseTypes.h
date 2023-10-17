@@ -287,6 +287,13 @@ enum class frAccessPointEnum
   NearbyGrid = 4  // nearby grid or 1/2 grid
 };
 
+enum class RipUpMode
+{
+  DRC = 0,
+  ALL = 1,
+  NEARDRC = 2
+};
+
 namespace bg = boost::geometry;
 
 typedef bg::model::d2::point_xy<frCoord, bg::cs::cartesian> point_t;
