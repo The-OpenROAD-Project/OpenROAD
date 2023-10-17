@@ -615,7 +615,7 @@ void DetailedMis::solveMatch()
       if (obj_ == DetailedMis::Hpwl) {
         icost = getHpwl(ndi,
                         pos[j].first + 0.5 * ndi->getWidth(),
-                        pos[j].second + 0.5 * ndi->getHeight()) ;
+                        pos[j].second + 0.5 * ndi->getHeight());
       } else {
         icost = getDisp(ndi,
                         pos[j].first + 0.5 * ndi->getWidth(),
@@ -626,8 +626,9 @@ void DetailedMis::solveMatch()
       lemon::ListDigraph::Arc arc_vu = g.addArc(nodeForCell[i], nodeForSpot[j]);
       l_i[arc_vu] = 0;
       u_i[arc_vu] = 1;
-      c_i[arc_vu] = icost > std::numeric_limits<int>::max() ? std::numeric_limits<int>::max() : static_cast<int>(icost);
-                       
+      c_i[arc_vu] = icost > std::numeric_limits<int>::max()
+                        ? std::numeric_limits<int>::max()
+                        : static_cast<int>(icost);
 
       reverseMap[arc_vu] = std::make_pair(i, j);
     }
