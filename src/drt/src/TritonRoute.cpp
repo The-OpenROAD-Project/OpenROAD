@@ -186,8 +186,6 @@ RipUpMode getMode(int ripupMode)
       return RipUpMode::ALL;
     case 2:
       return RipUpMode::NEARDRC;
-    default:
-      return RipUpMode::UNKNOWN;
   }
 }
 
@@ -204,7 +202,7 @@ void TritonRoute::setDebugWorkerParams(int mazeEndIter,
   debug_->markerCost = markerCost;
   debug_->fixedShapeCost = fixedShapeCost;
   debug_->markerDecay = markerDecay;
-  debug_->ripupMode = getMode(ripupMode);
+  debug_->ripupMode = ripupMode;
   debug_->followGuide = followGuide;
 }
 
@@ -266,8 +264,8 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
     worker->setFixedShapeCost(debug_->fixedShapeCost);
   if (debug_->markerDecay != -1)
     worker->setMarkerDecay(debug_->markerDecay);
-  if (debug_->ripupMode != RipUpMode::UNKNOWN) {
-    worker->setRipupMode(debug_->ripupMode);
+  if (debug_->ripupMode != -1) {
+    worker->setRipupMode(getMode(debug_->ripupMode));
   }
   if (debug_->followGuide != -1)
     worker->setFollowGuide((debug_->followGuide == 1));

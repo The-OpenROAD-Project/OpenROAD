@@ -289,7 +289,6 @@ enum class frAccessPointEnum
 
 enum class RipUpMode
 {
-  UNKNOWN = -1,
   DRC = 0,
   ALL = 1,
   NEARDRC = 2
@@ -325,6 +324,7 @@ struct frDebugSettings
         markerCost(-1),
         fixedShapeCost(-1),
         markerDecay(-1),
+        ripupMode(-1),
         followGuide(-1),
         writeNetTracks(false)
 
@@ -355,7 +355,7 @@ struct frDebugSettings
   int markerCost;
   int fixedShapeCost;
   float markerDecay;
-  RipUpMode ripupMode{RipUpMode::UNKNOWN};
+  int ripupMode;
   int followGuide;
   bool writeNetTracks;
 };
