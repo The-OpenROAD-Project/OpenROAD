@@ -12,740 +12,1474 @@
 [INFO ODB-0132]     Created 2 special nets and 1468 connections.
 [INFO ODB-0133]     Created 497 nets and 1294 connections.
 [INFO ODB-0134] Finished DEF file: gcd_nangate45.def
-FILLER_0_0_1 FILLCELL_X16 False False
-FILLER_0_0_108 FILLCELL_X2 False False
-FILLER_0_0_120 FILLCELL_X8 False False
-FILLER_0_0_128 FILLCELL_X2 False False
-FILLER_0_0_133 FILLCELL_X16 False False
-FILLER_0_0_149 FILLCELL_X8 False False
-FILLER_0_0_157 FILLCELL_X2 False False
-FILLER_0_0_159 FILLCELL_X1 False False
-FILLER_0_0_17 FILLCELL_X4 False False
-FILLER_0_0_21 FILLCELL_X2 False False
-FILLER_0_10_104 FILLCELL_X16 False False
-FILLER_0_10_120 FILLCELL_X4 False False
-FILLER_0_10_124 FILLCELL_X1 False False
-FILLER_0_10_4 FILLCELL_X1 False False
-FILLER_0_10_61 FILLCELL_X2 False False
-FILLER_0_10_70 FILLCELL_X8 False False
-FILLER_0_10_78 FILLCELL_X2 False False
-FILLER_0_10_87 FILLCELL_X8 False False
-FILLER_0_10_95 FILLCELL_X1 False False
-FILLER_0_11_123 FILLCELL_X2 False False
-FILLER_0_11_145 FILLCELL_X1 False False
-FILLER_0_11_150 FILLCELL_X2 False False
-FILLER_0_11_152 FILLCELL_X1 False False
-FILLER_0_11_156 FILLCELL_X1 False False
-FILLER_0_11_21 FILLCELL_X1 False False
-FILLER_0_11_29 FILLCELL_X1 False False
-FILLER_0_11_35 FILLCELL_X1 False False
-FILLER_0_11_55 FILLCELL_X4 False False
-FILLER_0_11_59 FILLCELL_X2 False False
-FILLER_0_11_61 FILLCELL_X1 False False
-FILLER_0_11_98 FILLCELL_X2 False False
-FILLER_0_12_1 FILLCELL_X8 False False
-FILLER_0_12_11 FILLCELL_X1 False False
-FILLER_0_12_122 FILLCELL_X8 False False
-FILLER_0_12_149 FILLCELL_X8 False False
-FILLER_0_12_15 FILLCELL_X4 False False
-FILLER_0_12_157 FILLCELL_X2 False False
-FILLER_0_12_159 FILLCELL_X1 False False
-FILLER_0_12_19 FILLCELL_X2 False False
-FILLER_0_12_23 FILLCELL_X4 False False
-FILLER_0_12_32 FILLCELL_X1 False False
-FILLER_0_12_44 FILLCELL_X1 False False
-FILLER_0_12_59 FILLCELL_X16 False False
-FILLER_0_12_75 FILLCELL_X2 False False
-FILLER_0_12_77 FILLCELL_X1 False False
-FILLER_0_12_9 FILLCELL_X2 False False
-FILLER_0_13_1 FILLCELL_X2 False False
-FILLER_0_13_105 FILLCELL_X2 False False
-FILLER_0_13_114 FILLCELL_X2 False False
-FILLER_0_13_116 FILLCELL_X1 False False
-FILLER_0_13_13 FILLCELL_X2 False False
-FILLER_0_13_135 FILLCELL_X16 False False
-FILLER_0_13_151 FILLCELL_X8 False False
-FILLER_0_13_159 FILLCELL_X1 False False
-FILLER_0_13_17 FILLCELL_X2 False False
-FILLER_0_13_22 FILLCELL_X1 False False
-FILLER_0_13_28 FILLCELL_X1 False False
-FILLER_0_13_65 FILLCELL_X8 False False
-FILLER_0_13_73 FILLCELL_X4 False False
-FILLER_0_13_77 FILLCELL_X2 False False
-FILLER_0_14_122 FILLCELL_X1 False False
-FILLER_0_14_139 FILLCELL_X16 False False
-FILLER_0_14_155 FILLCELL_X4 False False
-FILLER_0_14_159 FILLCELL_X1 False False
-FILLER_0_14_20 FILLCELL_X2 False False
-FILLER_0_14_55 FILLCELL_X1 False False
-FILLER_0_14_73 FILLCELL_X4 False False
-FILLER_0_14_87 FILLCELL_X2 False False
-FILLER_0_14_89 FILLCELL_X1 False False
-FILLER_0_15_134 FILLCELL_X16 False False
-FILLER_0_15_150 FILLCELL_X8 False False
-FILLER_0_15_158 FILLCELL_X2 False False
-FILLER_0_15_26 FILLCELL_X1 False False
-FILLER_0_15_49 FILLCELL_X16 False False
-FILLER_0_15_87 FILLCELL_X4 False False
-FILLER_0_15_91 FILLCELL_X1 False False
-FILLER_0_16_102 FILLCELL_X8 False False
-FILLER_0_16_110 FILLCELL_X1 False False
-FILLER_0_16_125 FILLCELL_X32 False False
-FILLER_0_16_157 FILLCELL_X2 False False
-FILLER_0_16_159 FILLCELL_X1 False False
-FILLER_0_16_27 FILLCELL_X4 False False
-FILLER_0_16_31 FILLCELL_X1 False False
-FILLER_0_16_51 FILLCELL_X1 False False
-FILLER_0_16_57 FILLCELL_X2 False False
-FILLER_0_16_63 FILLCELL_X1 False False
-FILLER_0_16_83 FILLCELL_X4 False False
-FILLER_0_16_87 FILLCELL_X2 False False
-FILLER_0_16_89 FILLCELL_X1 False False
-FILLER_0_16_94 FILLCELL_X4 False False
-FILLER_0_17_1 FILLCELL_X1 False False
-FILLER_0_17_104 FILLCELL_X8 False False
-FILLER_0_17_112 FILLCELL_X1 False False
-FILLER_0_17_13 FILLCELL_X2 False False
-FILLER_0_17_132 FILLCELL_X1 False False
-FILLER_0_17_135 FILLCELL_X16 False False
-FILLER_0_17_151 FILLCELL_X8 False False
-FILLER_0_17_159 FILLCELL_X1 False False
-FILLER_0_17_19 FILLCELL_X1 False False
-FILLER_0_17_47 FILLCELL_X4 False False
-FILLER_0_17_5 FILLCELL_X4 False False
-FILLER_0_17_55 FILLCELL_X1 False False
-FILLER_0_17_59 FILLCELL_X1 False False
-FILLER_0_17_79 FILLCELL_X1 False False
-FILLER_0_17_83 FILLCELL_X8 False False
-FILLER_0_17_9 FILLCELL_X1 False False
-FILLER_0_17_91 FILLCELL_X1 False False
-FILLER_0_17_95 FILLCELL_X4 False False
-FILLER_0_17_99 FILLCELL_X2 False False
-FILLER_0_18_1 FILLCELL_X8 False False
-FILLER_0_18_106 FILLCELL_X4 False False
-FILLER_0_18_110 FILLCELL_X2 False False
-FILLER_0_18_116 FILLCELL_X2 False False
-FILLER_0_18_118 FILLCELL_X1 False False
-FILLER_0_18_127 FILLCELL_X4 False False
-FILLER_0_18_131 FILLCELL_X2 False False
-FILLER_0_18_137 FILLCELL_X16 False False
-FILLER_0_18_153 FILLCELL_X4 False False
-FILLER_0_18_157 FILLCELL_X2 False False
-FILLER_0_18_159 FILLCELL_X1 False False
-FILLER_0_18_27 FILLCELL_X4 False False
-FILLER_0_18_31 FILLCELL_X2 False False
-FILLER_0_18_43 FILLCELL_X8 False False
-FILLER_0_18_51 FILLCELL_X2 False False
-FILLER_0_18_56 FILLCELL_X2 False False
-FILLER_0_18_58 FILLCELL_X1 False False
-FILLER_0_18_66 FILLCELL_X8 False False
-FILLER_0_18_74 FILLCELL_X4 False False
-FILLER_0_18_78 FILLCELL_X2 False False
-FILLER_0_18_80 FILLCELL_X1 False False
-FILLER_0_18_85 FILLCELL_X4 False False
-FILLER_0_18_89 FILLCELL_X2 False False
-FILLER_0_18_9 FILLCELL_X1 False False
-FILLER_0_18_94 FILLCELL_X1 False False
-FILLER_0_19_1 FILLCELL_X32 False False
-FILLER_0_19_125 FILLCELL_X2 False False
-FILLER_0_19_146 FILLCELL_X8 False False
-FILLER_0_19_154 FILLCELL_X4 False False
-FILLER_0_19_158 FILLCELL_X2 False False
-FILLER_0_19_33 FILLCELL_X8 False False
-FILLER_0_19_41 FILLCELL_X4 False False
-FILLER_0_19_45 FILLCELL_X2 False False
-FILLER_0_1_1 FILLCELL_X16 False False
-FILLER_0_1_134 FILLCELL_X16 False False
-FILLER_0_1_150 FILLCELL_X8 False False
-FILLER_0_1_158 FILLCELL_X2 False False
-FILLER_0_1_17 FILLCELL_X4 False False
-FILLER_0_1_32 FILLCELL_X4 False False
-FILLER_0_1_36 FILLCELL_X2 False False
-FILLER_0_1_38 FILLCELL_X1 False False
-FILLER_0_20_1 FILLCELL_X32 False False
-FILLER_0_20_103 FILLCELL_X1 False False
-FILLER_0_20_107 FILLCELL_X4 False False
-FILLER_0_20_134 FILLCELL_X2 False False
-FILLER_0_20_139 FILLCELL_X16 False False
-FILLER_0_20_155 FILLCELL_X4 False False
-FILLER_0_20_159 FILLCELL_X1 False False
-FILLER_0_20_33 FILLCELL_X4 False False
-FILLER_0_20_40 FILLCELL_X8 False False
-FILLER_0_20_48 FILLCELL_X4 False False
-FILLER_0_20_52 FILLCELL_X1 False False
-FILLER_0_20_91 FILLCELL_X1 False False
-FILLER_0_20_96 FILLCELL_X1 False False
-FILLER_0_2_1 FILLCELL_X8 False False
-FILLER_0_2_100 FILLCELL_X4 False False
-FILLER_0_2_104 FILLCELL_X2 False False
-FILLER_0_2_109 FILLCELL_X4 False False
-FILLER_0_2_11 FILLCELL_X1 False False
-FILLER_0_2_120 FILLCELL_X4 False False
-FILLER_0_2_124 FILLCELL_X2 False False
-FILLER_0_2_126 FILLCELL_X1 False False
-FILLER_0_2_134 FILLCELL_X16 False False
-FILLER_0_2_150 FILLCELL_X8 False False
-FILLER_0_2_158 FILLCELL_X2 False False
-FILLER_0_2_69 FILLCELL_X8 False False
-FILLER_0_2_77 FILLCELL_X4 False False
-FILLER_0_2_81 FILLCELL_X1 False False
-FILLER_0_2_85 FILLCELL_X2 False False
-FILLER_0_2_9 FILLCELL_X2 False False
-FILLER_0_3_1 FILLCELL_X16 False False
-FILLER_0_3_144 FILLCELL_X16 False False
-FILLER_0_3_17 FILLCELL_X2 False False
-FILLER_0_3_58 FILLCELL_X1 False False
-FILLER_0_3_61 FILLCELL_X4 False False
-FILLER_0_3_65 FILLCELL_X1 False False
-FILLER_0_3_76 FILLCELL_X2 False False
-FILLER_0_3_97 FILLCELL_X2 False False
-FILLER_0_4_1 FILLCELL_X2 False False
-FILLER_0_4_141 FILLCELL_X2 False False
-FILLER_0_4_143 FILLCELL_X1 False False
-FILLER_0_4_154 FILLCELL_X4 False False
-FILLER_0_4_158 FILLCELL_X2 False False
-FILLER_0_4_60 FILLCELL_X4 False False
-FILLER_0_4_64 FILLCELL_X1 False False
-FILLER_0_4_81 FILLCELL_X2 False False
-FILLER_0_4_83 FILLCELL_X1 False False
-FILLER_0_5_103 FILLCELL_X4 False False
-FILLER_0_5_107 FILLCELL_X2 False False
-FILLER_0_5_109 FILLCELL_X1 False False
-FILLER_0_5_11 FILLCELL_X1 False False
-FILLER_0_5_135 FILLCELL_X1 False False
-FILLER_0_5_155 FILLCELL_X4 False False
-FILLER_0_5_159 FILLCELL_X1 False False
-FILLER_0_5_25 FILLCELL_X2 False False
-FILLER_0_5_32 FILLCELL_X1 False False
-FILLER_0_5_69 FILLCELL_X1 False False
-FILLER_0_5_74 FILLCELL_X4 False False
-FILLER_0_5_78 FILLCELL_X2 False False
-FILLER_0_5_82 FILLCELL_X4 False False
-FILLER_0_5_86 FILLCELL_X2 False False
-FILLER_0_5_95 FILLCELL_X8 False False
-FILLER_0_6_109 FILLCELL_X2 False False
-FILLER_0_6_11 FILLCELL_X1 False False
-FILLER_0_6_111 FILLCELL_X1 False False
-FILLER_0_6_117 FILLCELL_X1 False False
-FILLER_0_6_134 FILLCELL_X1 False False
-FILLER_0_6_139 FILLCELL_X1 False False
-FILLER_0_6_150 FILLCELL_X4 False False
-FILLER_0_6_157 FILLCELL_X2 False False
-FILLER_0_6_159 FILLCELL_X1 False False
-FILLER_0_6_16 FILLCELL_X1 False False
-FILLER_0_6_20 FILLCELL_X1 False False
-FILLER_0_6_24 FILLCELL_X2 False False
-FILLER_0_6_31 FILLCELL_X2 False False
-FILLER_0_6_33 FILLCELL_X1 False False
-FILLER_0_6_4 FILLCELL_X1 False False
-FILLER_0_6_43 FILLCELL_X1 False False
-FILLER_0_6_55 FILLCELL_X2 False False
-FILLER_0_6_60 FILLCELL_X4 False False
-FILLER_0_6_64 FILLCELL_X1 False False
-FILLER_0_6_82 FILLCELL_X2 False False
-FILLER_0_7_1 FILLCELL_X1 False False
-FILLER_0_7_102 FILLCELL_X2 False False
-FILLER_0_7_104 FILLCELL_X1 False False
-FILLER_0_7_108 FILLCELL_X8 False False
-FILLER_0_7_116 FILLCELL_X2 False False
-FILLER_0_7_135 FILLCELL_X16 False False
-FILLER_0_7_151 FILLCELL_X8 False False
-FILLER_0_7_159 FILLCELL_X1 False False
-FILLER_0_7_31 FILLCELL_X1 False False
-FILLER_0_7_51 FILLCELL_X1 False False
-FILLER_0_7_61 FILLCELL_X16 False False
-FILLER_0_7_77 FILLCELL_X8 False False
-FILLER_0_7_85 FILLCELL_X4 False False
-FILLER_0_7_89 FILLCELL_X2 False False
-FILLER_0_7_98 FILLCELL_X4 False False
-FILLER_0_8_113 FILLCELL_X2 False False
-FILLER_0_8_147 FILLCELL_X8 False False
-FILLER_0_8_155 FILLCELL_X4 False False
-FILLER_0_8_159 FILLCELL_X1 False False
-FILLER_0_8_17 FILLCELL_X2 False False
-FILLER_0_8_19 FILLCELL_X1 False False
-FILLER_0_8_28 FILLCELL_X1 False False
-FILLER_0_8_34 FILLCELL_X2 False False
-FILLER_0_8_62 FILLCELL_X1 False False
-FILLER_0_8_83 FILLCELL_X4 False False
-FILLER_0_8_87 FILLCELL_X2 False False
-FILLER_0_8_89 FILLCELL_X1 False False
-FILLER_0_8_98 FILLCELL_X2 False False
-FILLER_0_9_155 FILLCELL_X2 False False
-FILLER_0_9_34 FILLCELL_X1 False False
-FILLER_0_9_5 FILLCELL_X2 False False
-FILLER_0_9_53 FILLCELL_X1 False False
-FILLER_0_9_57 FILLCELL_X1 False False
-FILLER_0_9_65 FILLCELL_X1 False False
-FILLER_0_9_7 FILLCELL_X1 False False
-PHY_EDGE_ROW_0_Left_21 TAPCELL_X1 False False
-PHY_EDGE_ROW_0_Right_0 TAPCELL_X1 False False
-PHY_EDGE_ROW_10_Left_31 TAPCELL_X1 False False
-PHY_EDGE_ROW_10_Right_10 TAPCELL_X1 False False
-PHY_EDGE_ROW_11_Left_32 TAPCELL_X1 False False
-PHY_EDGE_ROW_11_Right_11 TAPCELL_X1 False False
-PHY_EDGE_ROW_12_Left_33 TAPCELL_X1 False False
-PHY_EDGE_ROW_12_Right_12 TAPCELL_X1 False False
-PHY_EDGE_ROW_13_Left_34 TAPCELL_X1 False False
-PHY_EDGE_ROW_13_Right_13 TAPCELL_X1 False False
-PHY_EDGE_ROW_14_Left_35 TAPCELL_X1 False False
-PHY_EDGE_ROW_14_Right_14 TAPCELL_X1 False False
-PHY_EDGE_ROW_15_Left_36 TAPCELL_X1 False False
-PHY_EDGE_ROW_15_Right_15 TAPCELL_X1 False False
-PHY_EDGE_ROW_16_Left_37 TAPCELL_X1 False False
-PHY_EDGE_ROW_16_Right_16 TAPCELL_X1 False False
-PHY_EDGE_ROW_17_Left_38 TAPCELL_X1 False False
-PHY_EDGE_ROW_17_Right_17 TAPCELL_X1 False False
-PHY_EDGE_ROW_18_Left_39 TAPCELL_X1 False False
-PHY_EDGE_ROW_18_Right_18 TAPCELL_X1 False False
-PHY_EDGE_ROW_19_Left_40 TAPCELL_X1 False False
-PHY_EDGE_ROW_19_Right_19 TAPCELL_X1 False False
-PHY_EDGE_ROW_1_Left_22 TAPCELL_X1 False False
-PHY_EDGE_ROW_1_Right_1 TAPCELL_X1 False False
-PHY_EDGE_ROW_20_Left_41 TAPCELL_X1 False False
-PHY_EDGE_ROW_20_Right_20 TAPCELL_X1 False False
-PHY_EDGE_ROW_2_Left_23 TAPCELL_X1 False False
-PHY_EDGE_ROW_2_Right_2 TAPCELL_X1 False False
-PHY_EDGE_ROW_3_Left_24 TAPCELL_X1 False False
-PHY_EDGE_ROW_3_Right_3 TAPCELL_X1 False False
-PHY_EDGE_ROW_4_Left_25 TAPCELL_X1 False False
-PHY_EDGE_ROW_4_Right_4 TAPCELL_X1 False False
-PHY_EDGE_ROW_5_Left_26 TAPCELL_X1 False False
-PHY_EDGE_ROW_5_Right_5 TAPCELL_X1 False False
-PHY_EDGE_ROW_6_Left_27 TAPCELL_X1 False False
-PHY_EDGE_ROW_6_Right_6 TAPCELL_X1 False False
-PHY_EDGE_ROW_7_Left_28 TAPCELL_X1 False False
-PHY_EDGE_ROW_7_Right_7 TAPCELL_X1 False False
-PHY_EDGE_ROW_8_Left_29 TAPCELL_X1 False False
-PHY_EDGE_ROW_8_Right_8 TAPCELL_X1 False False
-PHY_EDGE_ROW_9_Left_30 TAPCELL_X1 False False
-PHY_EDGE_ROW_9_Right_9 TAPCELL_X1 False False
-_345_ INV_X2 False False
-_347_ NAND2_X1 False False
-_348_ INV_X1 False False
-_349_ NOR2_X2 False False
-_350_ NOR2_X1 False False
-_351_ OAI21_X2 False False
-_352_ INV_X2 False False
-_353_ NAND2_X2 False False
-_354_ INV_X2 False False
-_355_ NAND2_X4 False False
-_356_ NAND2_X4 False False
-_357_ INV_X2 False False
-_358_ NAND2_X4 False False
-_359_ INV_X1 False False
-_360_ NAND2_X2 False False
-_361_ NAND2_X2 False False
-_362_ NOR2_X4 False False
-_363_ NAND2_X2 False False
-_364_ INV_X1 False False
-_365_ OAI21_X1 False False
-_366_ INV_X1 False False
-_367_ NAND2_X4 False False
-_369_ XNOR2_X1 False False
-_370_ XNOR2_X2 False False
-_371_ NAND2_X2 False False
-_372_ XNOR2_X2 False False
-_373_ XNOR2_X2 False False
-_374_ NAND2_X4 False False
-_375_ NOR2_X4 False False
-_376_ NAND2_X4 False False
-_377_ INV_X1 False False
-_378_ NAND2_X2 False False
-_379_ INV_X1 False False
-_380_ OAI21_X2 False False
-_381_ INV_X1 False False
-_382_ NOR2_X2 False False
-_383_ INV_X1 False False
-_384_ NAND2_X2 False False
-_385_ NOR2_X4 False False
-_386_ INV_X1 False False
-_387_ NAND2_X1 False False
-_388_ INV_X2 False False
-_389_ INV_X1 False False
-_390_ NAND2_X1 False False
-_391_ OAI21_X1 False False
-_392_ NOR2_X2 False False
-_393_ NAND2_X4 False False
-_394_ INV_X2 False False
-_395_ XNOR2_X2 False False
-_396_ INV_X2 False False
-_397_ XNOR2_X1 False False
-_398_ NOR2_X1 False False
-_399_ XNOR2_X2 False False
-_400_ XNOR2_X2 False False
-_401_ NAND2_X1 False False
-_402_ INV_X1 False False
-_403_ AND2_X2 False False
-_404_ NAND2_X4 False False
-_405_ NAND2_X1 False False
-_406_ NAND2_X1 False False
-_407_ OAI21_X1 False False
-_408_ INV_X1 False False
-_409_ NOR2_X1 False False
-_410_ INV_X1 False False
-_411_ AND2_X1 False False
-_412_ AOI21_X1 False False
-_413_ INV_X1 False False
-_414_ AOI21_X2 False False
-_415_ NAND2_X4 False False
-_416_ XNOR2_X2 False False
-_417_ INV_X1 False False
-_418_ INV_X2 False False
-_419_ XNOR2_X2 False False
-_420_ NOR2_X2 False False
-_421_ NAND2_X4 False False
-_422_ NAND2_X1 False False
-_423_ INV_X1 False False
-_424_ NAND2_X1 False False
-_425_ OAI21_X1 False False
-_426_ INV_X1 False False
-_427_ NAND2_X4 False False
-_428_ INV_X1 False False
-_429_ XNOR2_X1 False False
-_430_ INV_X1 False False
-_431_ NAND2_X4 False False
-_432_ NAND2_X1 False False
-_433_ NAND2_X4 False False
-_434_ INV_X2 False False
-_435_ XNOR2_X2 False False
-_436_ INV_X1 False False
-_437_ NAND2_X4 False False
-_438_ NAND3_X1 False False
-_439_ AND2_X2 False False
-_440_ XNOR2_X1 False False
-_441_ INV_X1 False False
-_442_ XNOR2_X1 False False
-_443_ INV_X1 False False
-_444_ INV_X1 False False
-_445_ XNOR2_X1 False False
-_446_ INV_X1 False False
-_447_ NAND2_X1 False False
-_448_ NAND2_X1 False False
-_449_ XNOR2_X1 False False
-_450_ XNOR2_X1 False False
-_451_ INV_X1 False False
-_452_ NAND2_X2 False False
-_453_ NAND2_X1 False False
-_454_ XOR2_X1 False False
-_455_ INV_X1 False False
-_456_ AOI21_X2 False False
-_457_ XNOR2_X2 False False
-_458_ INV_X1 False False
-_459_ NAND2_X1 False False
-_460_ NAND2_X1 False False
-_461_ XNOR2_X1 False False
-_462_ XNOR2_X1 False False
-_463_ INV_X1 False False
-_464_ AOI21_X2 False False
-_465_ XNOR2_X1 False False
-_466_ NAND2_X1 False False
-_467_ NAND2_X2 False False
-_468_ INV_X1 False False
-_469_ XNOR2_X2 False False
-_470_ INV_X1 False False
-_471_ NAND2_X1 False False
-_472_ NAND2_X2 False False
-_473_ XNOR2_X2 False False
-_474_ XNOR2_X1 False False
-_475_ INV_X1 False False
-_476_ NAND2_X1 False False
-_477_ NAND2_X2 False False
-_478_ XNOR2_X2 False False
-_479_ XNOR2_X1 False False
-_480_ INV_X1 False False
-_481_ XNOR2_X1 False False
-_482_ NAND4_X1 False False
-_483_ NAND3_X1 False False
-_484_ NOR3_X1 False False
-_485_ INV_X1 False False
-_486_ NAND4_X1 False False
-_487_ NAND4_X1 False False
-_488_ NOR2_X1 False False
-_489_ NAND2_X1 False False
-_490_ INV_X1 False False
-_492_ INV_X1 False False
-_493_ OR2_X1 False False
-_497_ NAND2_X1 False False
-_498_ OAI22_X1 False False
-_500_ AND3_X1 False False
-_501_ AOI21_X1 False False
-_503_ INV_X1 False False
-_504_ OAI21_X1 False False
-_505_ NAND2_X1 False False
-_506_ OAI21_X1 False False
-_507_ NAND2_X1 False False
-_508_ OAI21_X1 False False
-_509_ NOR2_X1 False False
-_510_ AOI21_X1 False False
-_511_ NAND2_X1 False False
-_512_ OAI21_X1 False False
-_513_ INV_X2 False False
-_514_ INV_X1 False False
-_515_ NAND3_X2 False False
-_516_ NAND3_X2 False False
-_517_ NAND2_X4 False False
-_519_ MUX2_X1 False False
-_520_ NAND2_X1 False False
-_522_ OAI21_X1 False False
-_523_ MUX2_X1 False False
-_524_ NAND2_X1 False False
-_525_ OAI21_X1 False False
-_526_ NAND2_X1 False False
-_527_ OAI21_X1 False False
-_528_ NAND2_X1 False False
-_529_ OAI21_X1 False False
-_530_ NAND2_X1 False False
-_531_ OAI21_X1 False False
-_532_ NAND2_X1 False False
-_533_ OAI21_X1 False False
-_536_ MUX2_X1 False False
-_537_ NAND2_X1 False False
-_538_ OAI21_X1 False False
-_539_ NAND2_X1 False False
-_540_ OAI21_X1 False False
-_541_ NAND2_X1 False False
-_542_ OAI21_X1 False False
-_543_ MUX2_X1 False False
-_544_ NAND2_X1 False False
-_545_ OAI21_X1 False False
-_546_ MUX2_X1 False False
-_547_ NAND2_X1 False False
-_548_ OAI21_X1 False False
-_549_ MUX2_X1 False False
-_550_ NAND2_X1 False False
-_551_ OAI21_X1 False False
-_552_ NAND2_X1 False False
-_553_ OAI21_X1 False False
-_554_ NAND2_X1 False False
-_555_ OAI21_X1 False False
-_556_ MUX2_X1 False False
-_557_ NAND2_X1 False False
-_558_ OAI21_X1 False False
-_559_ MUX2_X1 False False
-_560_ NAND2_X1 False False
-_561_ OAI21_X1 False False
-_562_ MUX2_X1 False False
-_563_ NAND2_X1 False False
-_564_ OAI21_X1 False False
-_565_ MUX2_X1 False False
-_566_ NAND2_X1 False False
-_567_ OAI21_X1 False False
-_568_ MUX2_X1 False False
-_569_ NAND2_X1 False False
-_570_ OAI21_X1 False False
-_571_ MUX2_X1 False False
-_572_ NAND2_X1 False False
-_573_ OAI21_X1 False False
-_574_ NAND2_X2 False False
-_575_ NAND3_X4 False False
-_576_ INV_X8 False False
-_577_ NAND2_X1 False False
-_578_ NAND4_X4 False False
-_580_ OAI21_X1 False False
-_581_ NOR2_X4 False False
-_583_ NAND2_X1 False False
-_584_ NAND2_X1 False False
-_585_ NOR2_X4 False False
-_587_ NAND2_X1 False False
-_588_ NAND3_X1 False False
-_589_ OAI22_X1 False False
-_590_ NAND2_X1 False False
-_591_ NAND2_X1 False False
-_592_ NAND2_X1 False False
-_593_ NAND3_X1 False False
-_594_ OAI22_X1 False False
-_595_ NAND2_X1 False False
-_596_ NAND2_X1 False False
-_597_ NAND2_X1 False False
-_598_ NAND3_X1 False False
-_599_ NAND2_X1 False False
-_600_ OAI21_X1 False False
-_601_ NAND2_X1 False False
-_602_ NAND2_X1 False False
-_603_ NAND2_X1 False False
-_604_ NAND3_X1 False False
-_605_ OAI22_X1 False False
-_606_ NAND2_X1 False False
-_607_ NAND2_X1 False False
-_608_ NAND2_X1 False False
-_609_ NAND3_X1 False False
-_610_ NAND2_X1 False False
-_611_ OAI21_X1 False False
-_612_ NAND2_X1 False False
-_613_ NAND2_X1 False False
-_614_ NAND2_X1 False False
-_615_ NAND3_X1 False False
-_616_ OAI22_X1 False False
-_617_ NAND2_X1 False False
-_618_ NAND2_X1 False False
-_619_ NAND2_X1 False False
-_620_ NAND3_X1 False False
-_621_ NAND2_X1 False False
-_622_ OAI21_X1 False False
-_623_ NAND2_X1 False False
-_624_ NAND2_X1 False False
-_625_ NAND2_X1 False False
-_626_ NAND3_X1 False False
-_627_ OAI22_X1 False False
-_628_ NAND2_X1 False False
-_629_ NAND2_X1 False False
-_630_ NAND2_X1 False False
-_631_ NAND3_X1 False False
-_632_ NAND2_X1 False False
-_633_ OAI21_X1 False False
-_634_ NAND2_X1 False False
-_635_ NAND2_X1 False False
-_636_ NAND2_X1 False False
-_637_ NAND3_X1 False False
-_638_ OAI22_X1 False False
-_639_ NAND2_X1 False False
-_640_ NAND2_X1 False False
-_641_ NAND2_X1 False False
-_642_ NAND3_X1 False False
-_643_ NAND2_X1 False False
-_644_ OAI21_X1 False False
-_645_ NAND2_X1 False False
-_646_ AND2_X1 False False
-_647_ AOI21_X1 False False
-_648_ NAND2_X1 False False
-_649_ OAI22_X1 False False
-_650_ NAND2_X1 False False
-_651_ NAND2_X1 False False
-_652_ NAND2_X1 False False
-_653_ NAND3_X1 False False
-_654_ NAND2_X1 False False
-_655_ OAI21_X1 False False
-_656_ NAND2_X1 False False
-_657_ AND2_X1 False False
-_658_ AOI21_X1 False False
-_659_ NAND2_X1 False False
-_660_ OAI22_X1 False False
-_661_ NAND2_X1 False False
-_662_ AND2_X1 False False
-_663_ AOI21_X1 False False
-_664_ NAND2_X1 False False
-_665_ NAND3_X1 False False
-_666_ OR2_X1 False False
-_667_ NAND2_X1 False False
-_668_ NAND2_X1 False False
-_669_ AND2_X1 False False
-_670_ AOI21_X1 False False
-_671_ NAND2_X1 False False
-_672_ DFF_X2 True True
-_673_ DFF_X1 True True
-_674_ DFF_X2 True True
-_675_ DFF_X1 True True
-_676_ DFF_X1 True True
-_677_ DFF_X1 True True
-_678_ DFF_X1 True True
-_679_ DFF_X1 True True
-_680_ DFF_X1 True True
-_681_ DFF_X1 True True
-_682_ DFF_X1 True True
-_683_ DFF_X1 True True
-_684_ DFF_X1 True True
-_685_ DFF_X1 True True
-_686_ DFF_X1 True True
-_687_ DFF_X1 True True
-_688_ DFF_X1 True True
-_689_ DFF_X1 True True
-_690_ DFF_X1 True True
-_691_ DFF_X1 True True
-_692_ DFF_X2 True True
-_693_ DFF_X1 True True
-_694_ DFF_X1 True True
-_695_ DFF_X2 True True
-_696_ DFF_X1 True True
-_697_ DFF_X2 True True
-_698_ DFF_X1 True True
-_699_ DFF_X2 True True
-_700_ DFF_X2 True True
-_701_ DFF_X1 True True
-_702_ DFF_X2 True True
-_703_ DFF_X2 True True
-_704_ DFF_X2 True True
-_705_ DFF_X1 True True
-_706_ DFF_X2 True True
-clkbuf_0_clk BUF_X4 False True
-clkbuf_2_0__f_clk BUF_X4 False True
-clkbuf_2_1__f_clk BUF_X4 False True
-clkbuf_2_2__f_clk BUF_X4 False True
-clkbuf_2_3__f_clk BUF_X4 False True
-clone35 NAND3_X2 False False
-clone39 NAND2_X4 False False
-input1 BUF_X1 False False
-input10 BUF_X1 False False
-input11 BUF_X1 False False
-input12 BUF_X1 False False
-input13 BUF_X1 False False
-input14 BUF_X1 False False
-input15 BUF_X1 False False
-input16 BUF_X1 False False
-input17 BUF_X1 False False
-input18 BUF_X1 False False
-input19 BUF_X1 False False
-input2 BUF_X1 False False
-input20 BUF_X1 False False
-input21 BUF_X1 False False
-input22 BUF_X1 False False
-input23 BUF_X1 False False
-input24 BUF_X1 False False
-input25 BUF_X1 False False
-input26 BUF_X1 False False
-input27 BUF_X1 False False
-input28 BUF_X1 False False
-input29 BUF_X1 False False
-input3 BUF_X1 False False
-input30 BUF_X1 False False
-input31 BUF_X1 False False
-input32 BUF_X1 False False
-input33 BUF_X1 False False
-input34 BUF_X1 False False
-input35 BUF_X1 False False
-input4 BUF_X1 False False
-input5 BUF_X1 False False
-input6 BUF_X1 False False
-input7 BUF_X1 False False
-input8 BUF_X1 False False
-input9 BUF_X1 False False
-output36 BUF_X1 False False
-output37 BUF_X1 False False
-output38 BUF_X1 False False
-output39 BUF_X1 False False
-output40 BUF_X1 False False
-output41 BUF_X1 False False
-output42 BUF_X1 False False
-output43 BUF_X1 False False
-output44 BUF_X1 False False
-output45 BUF_X1 False False
-output46 BUF_X1 False False
-output47 BUF_X1 False False
-output48 BUF_X1 False False
-output49 BUF_X1 False False
-output50 BUF_X1 False False
-output51 BUF_X1 False False
-output52 BUF_X1 False False
-output53 BUF_X1 False False
-rebuffer1 CLKBUF_X1 False False
-rebuffer10 CLKBUF_X1 False False
-rebuffer2 CLKBUF_X1 False False
-rebuffer20 BUF_X4 False False
-rebuffer21 BUF_X2 False False
-rebuffer28 CLKBUF_X1 False False
-rebuffer29 BUF_X4 False False
-rebuffer3 CLKBUF_X1 False False
-rebuffer30 CLKBUF_X1 False False
-rebuffer33 BUF_X4 False False
-rebuffer34 BUF_X4 False False
-rebuffer37 CLKBUF_X1 False False
-rebuffer38 CLKBUF_X1 False False
-rebuffer4 CLKBUF_X1 False False
-rebuffer5 BUF_X1 False False
-rebuffer6 CLKBUF_X1 False False
-rebuffer7 CLKBUF_X1 False False
-rebuffer8 CLKBUF_X1 False False
-rebuffer9 BUF_X4 False False
+FILLER_0_0_1 FILLCELL_X16 False False False False
+0.0 0.0
+FILLER_0_0_108 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_0_120 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_0_128 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_0_133 FILLCELL_X16 False False False False
+0.0 0.0
+FILLER_0_0_149 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_0_157 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_0_159 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_0_17 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_0_21 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_10_104 FILLCELL_X16 False False False False
+0.0 0.0
+FILLER_0_10_120 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_10_124 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_10_4 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_10_61 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_10_70 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_10_78 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_10_87 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_10_95 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_11_123 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_11_145 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_11_150 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_11_152 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_11_156 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_11_21 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_11_29 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_11_35 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_11_55 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_11_59 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_11_61 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_11_98 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_12_1 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_12_11 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_12_122 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_12_149 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_12_15 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_12_157 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_12_159 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_12_19 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_12_23 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_12_32 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_12_44 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_12_59 FILLCELL_X16 False False False False
+0.0 0.0
+FILLER_0_12_75 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_12_77 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_12_9 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_13_1 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_13_105 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_13_114 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_13_116 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_13_13 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_13_135 FILLCELL_X16 False False False False
+0.0 0.0
+FILLER_0_13_151 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_13_159 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_13_17 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_13_22 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_13_28 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_13_65 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_13_73 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_13_77 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_14_122 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_14_139 FILLCELL_X16 False False False False
+0.0 0.0
+FILLER_0_14_155 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_14_159 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_14_20 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_14_55 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_14_73 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_14_87 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_14_89 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_15_134 FILLCELL_X16 False False False False
+0.0 0.0
+FILLER_0_15_150 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_15_158 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_15_26 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_15_49 FILLCELL_X16 False False False False
+0.0 0.0
+FILLER_0_15_87 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_15_91 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_16_102 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_16_110 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_16_125 FILLCELL_X32 False False False False
+0.0 0.0
+FILLER_0_16_157 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_16_159 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_16_27 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_16_31 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_16_51 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_16_57 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_16_63 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_16_83 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_16_87 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_16_89 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_16_94 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_17_1 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_17_104 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_17_112 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_17_13 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_17_132 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_17_135 FILLCELL_X16 False False False False
+0.0 0.0
+FILLER_0_17_151 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_17_159 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_17_19 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_17_47 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_17_5 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_17_55 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_17_59 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_17_79 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_17_83 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_17_9 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_17_91 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_17_95 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_17_99 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_18_1 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_18_106 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_18_110 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_18_116 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_18_118 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_18_127 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_18_131 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_18_137 FILLCELL_X16 False False False False
+0.0 0.0
+FILLER_0_18_153 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_18_157 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_18_159 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_18_27 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_18_31 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_18_43 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_18_51 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_18_56 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_18_58 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_18_66 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_18_74 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_18_78 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_18_80 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_18_85 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_18_89 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_18_9 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_18_94 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_19_1 FILLCELL_X32 False False False False
+0.0 0.0
+FILLER_0_19_125 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_19_146 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_19_154 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_19_158 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_19_33 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_19_41 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_19_45 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_1_1 FILLCELL_X16 False False False False
+0.0 0.0
+FILLER_0_1_134 FILLCELL_X16 False False False False
+0.0 0.0
+FILLER_0_1_150 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_1_158 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_1_17 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_1_32 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_1_36 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_1_38 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_20_1 FILLCELL_X32 False False False False
+0.0 0.0
+FILLER_0_20_103 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_20_107 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_20_134 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_20_139 FILLCELL_X16 False False False False
+0.0 0.0
+FILLER_0_20_155 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_20_159 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_20_33 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_20_40 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_20_48 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_20_52 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_20_91 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_20_96 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_2_1 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_2_100 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_2_104 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_2_109 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_2_11 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_2_120 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_2_124 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_2_126 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_2_134 FILLCELL_X16 False False False False
+0.0 0.0
+FILLER_0_2_150 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_2_158 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_2_69 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_2_77 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_2_81 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_2_85 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_2_9 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_3_1 FILLCELL_X16 False False False False
+0.0 0.0
+FILLER_0_3_144 FILLCELL_X16 False False False False
+0.0 0.0
+FILLER_0_3_17 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_3_58 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_3_61 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_3_65 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_3_76 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_3_97 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_4_1 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_4_141 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_4_143 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_4_154 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_4_158 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_4_60 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_4_64 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_4_81 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_4_83 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_5_103 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_5_107 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_5_109 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_5_11 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_5_135 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_5_155 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_5_159 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_5_25 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_5_32 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_5_69 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_5_74 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_5_78 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_5_82 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_5_86 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_5_95 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_6_109 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_6_11 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_6_111 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_6_117 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_6_134 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_6_139 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_6_150 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_6_157 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_6_159 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_6_16 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_6_20 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_6_24 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_6_31 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_6_33 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_6_4 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_6_43 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_6_55 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_6_60 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_6_64 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_6_82 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_7_1 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_7_102 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_7_104 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_7_108 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_7_116 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_7_135 FILLCELL_X16 False False False False
+0.0 0.0
+FILLER_0_7_151 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_7_159 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_7_31 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_7_51 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_7_61 FILLCELL_X16 False False False False
+0.0 0.0
+FILLER_0_7_77 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_7_85 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_7_89 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_7_98 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_8_113 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_8_147 FILLCELL_X8 False False False False
+0.0 0.0
+FILLER_0_8_155 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_8_159 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_8_17 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_8_19 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_8_28 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_8_34 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_8_62 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_8_83 FILLCELL_X4 False False False False
+0.0 0.0
+FILLER_0_8_87 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_8_89 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_8_98 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_9_155 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_9_34 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_9_5 FILLCELL_X2 False False False False
+0.0 0.0
+FILLER_0_9_53 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_9_57 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_9_65 FILLCELL_X1 False False False False
+0.0 0.0
+FILLER_0_9_7 FILLCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_0_Left_21 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_0_Right_0 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_10_Left_31 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_10_Right_10 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_11_Left_32 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_11_Right_11 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_12_Left_33 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_12_Right_12 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_13_Left_34 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_13_Right_13 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_14_Left_35 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_14_Right_14 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_15_Left_36 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_15_Right_15 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_16_Left_37 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_16_Right_16 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_17_Left_38 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_17_Right_17 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_18_Left_39 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_18_Right_18 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_19_Left_40 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_19_Right_19 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_1_Left_22 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_1_Right_1 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_20_Left_41 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_20_Right_20 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_2_Left_23 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_2_Right_2 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_3_Left_24 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_3_Right_3 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_4_Left_25 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_4_Right_4 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_5_Left_26 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_5_Right_5 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_6_Left_27 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_6_Right_6 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_7_Left_28 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_7_Right_7 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_8_Left_29 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_8_Right_8 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_9_Left_30 TAPCELL_X1 False False False False
+0.0 0.0
+PHY_EDGE_ROW_9_Right_9 TAPCELL_X1 False False False False
+0.0 0.0
+_345_ INV_X2 False False False True
+2.8706374166631576e-08 4.739057203551056e-06
+_347_ NAND2_X1 False False False False
+1.7393359641459938e-08 1.8062687558995094e-06
+_348_ INV_X1 False False False True
+1.435318353060211e-08 5.025029622629518e-06
+_349_ NOR2_X2 False False False False
+4.2399072697207885e-08 3.1231243156071287e-06
+_350_ NOR2_X1 False False False False
+2.119954523038814e-08 1.886797235783888e-06
+_351_ OAI21_X2 False False False False
+4.523868923911323e-08 5.874816451978404e-06
+_352_ INV_X2 False False False True
+2.8706374166631576e-08 4.7633388930989895e-06
+_353_ NAND2_X2 False False False False
+3.4786630465077906e-08 4.171372438577237e-06
+_354_ INV_X2 False False False True
+2.8706374166631576e-08 2.967040018120315e-06
+_355_ NAND2_X4 False False False False
+6.957323961387374e-08 5.4593592722085305e-06
+_356_ NAND2_X4 False False False False
+6.957323961387374e-08 8.258802154159639e-06
+_357_ INV_X2 False False False True
+2.8706374166631576e-08 5.791156581835821e-06
+_358_ NAND2_X4 False False False False
+6.957323961387374e-08 4.952535618940601e-06
+_359_ INV_X1 False False False True
+1.435318353060211e-08 1.6834520693009836e-06
+_360_ NAND2_X2 False False False False
+3.4786630465077906e-08 2.81991697193007e-06
+_361_ NAND2_X2 False False False False
+3.4786630465077906e-08 6.738703632436227e-06
+_362_ NOR2_X4 False False False False
+8.479813828898841e-08 7.172741788963322e-06
+_363_ NAND2_X2 False False False False
+3.4786630465077906e-08 6.422824753826717e-06
+_364_ INV_X1 False False False True
+1.435318353060211e-08 1.106003878703632e-06
+_365_ OAI21_X1 False False False False
+2.2619392581191278e-08 2.663868599483976e-06
+_366_ INV_X1 False False False True
+1.435318353060211e-08 3.965802534366958e-06
+_367_ NAND2_X4 False False False False
+6.957323961387374e-08 1.414266625943128e-05
+_369_ XNOR2_X1 False False False False
+3.644100843303022e-08 7.193643796199467e-06
+_370_ XNOR2_X2 False False False False
+7.310297434059976e-08 9.719324225443415e-06
+_371_ NAND2_X2 False False False False
+3.4786630465077906e-08 7.94171864981763e-06
+_372_ XNOR2_X2 False False False False
+7.310297434059976e-08 1.2920972039864864e-05
+_373_ XNOR2_X2 False False False False
+7.310297434059976e-08 1.2252201486262493e-05
+_374_ NAND2_X4 False False False False
+6.957323961387374e-08 1.580170646775514e-05
+_375_ NOR2_X4 False False False False
+8.479813828898841e-08 5.4773472584201954e-06
+_376_ NAND2_X4 False False False False
+6.957323961387374e-08 3.482428837742191e-06
+_377_ INV_X1 False False False True
+1.435318353060211e-08 3.994729922851548e-06
+_378_ NAND2_X2 False False False False
+3.4786630465077906e-08 3.1275724268198246e-06
+_379_ INV_X1 False False False True
+1.435318353060211e-08 1.7657021089689806e-06
+_380_ OAI21_X2 False False False False
+4.523868923911323e-08 5.675939064531121e-06
+_381_ INV_X1 False False False True
+1.435318353060211e-08 4.0995773815666325e-06
+_382_ NOR2_X2 False False False False
+4.2399072697207885e-08 3.123250735370675e-06
+_383_ INV_X1 False False False True
+1.435318353060211e-08 1.7360723632009467e-06
+_384_ NAND2_X2 False False False False
+3.4786630465077906e-08 5.911974767514039e-06
+_385_ NOR2_X4 False False False False
+8.479813828898841e-08 4.386349246487953e-06
+_386_ INV_X1 False False False True
+1.435318353060211e-08 3.396662577870302e-06
+_387_ NAND2_X1 False False False False
+1.7393359641459938e-08 1.2973280263395282e-06
+_388_ INV_X2 False False False True
+2.8706374166631576e-08 4.956727025273722e-06
+_389_ INV_X1 False False False True
+1.435318353060211e-08 3.3332398743368685e-06
+_390_ NAND2_X1 False False False False
+1.7393359641459938e-08 1.8087901025864994e-06
+_391_ OAI21_X1 False False False False
+2.2619392581191278e-08 3.6453254779189592e-06
+_392_ NOR2_X2 False False False False
+4.2399072697207885e-08 8.220893505495042e-06
+_393_ NAND2_X4 False False False False
+6.957323961387374e-08 1.8022437870968133e-05
+_394_ INV_X2 False False False True
+2.8706374166631576e-08 5.7117940741591156e-06
+_395_ XNOR2_X2 False False False False
+7.310297434059976e-08 1.208438516187016e-05
+_396_ INV_X2 False False False True
+2.8706374166631576e-08 4.936661753163207e-06
+_397_ XNOR2_X1 False False False False
+3.644100843303022e-08 5.597905783361057e-06
+_398_ NOR2_X1 False False False False
+2.119954523038814e-08 5.2329505706438795e-06
+_399_ XNOR2_X2 False False False False
+7.310297434059976e-08 1.0196366929449141e-05
+_400_ XNOR2_X2 False False False False
+7.310297434059976e-08 1.1507871022331528e-05
+_401_ NAND2_X1 False False False False
+1.7393359641459938e-08 2.781733201118186e-06
+_402_ INV_X1 False False False True
+1.435318353060211e-08 3.474188815744128e-06
+_403_ AND2_X2 False False False False
+5.0353158087546035e-08 6.72877376928227e-06
+_404_ NAND2_X4 False False False False
+6.957323961387374e-08 3.3723272281349637e-06
+_405_ NAND2_X1 False False False False
+1.7393359641459938e-08 1.2916186733491486e-06
+_406_ NAND2_X1 False False False False
+1.7393359641459938e-08 2.432136625429848e-06
+_407_ OAI21_X1 False False False False
+2.2619392581191278e-08 3.5315495097165694e-06
+_408_ INV_X1 False False False True
+1.435318353060211e-08 1.3183986311560147e-06
+_409_ NOR2_X1 False False False False
+2.119954523038814e-08 1.301683482779481e-06
+_410_ INV_X1 False False False True
+1.435318353060211e-08 3.094360181421507e-06
+_411_ AND2_X1 False False False False
+2.506606300300973e-08 3.0645273909613024e-06
+_412_ AOI21_X1 False False False False
+2.785839470220708e-08 4.754072961077327e-06
+_413_ INV_X1 False False False True
+1.435318353060211e-08 2.6090419851243496e-06
+_414_ AOI21_X2 False False False False
+5.571671835014058e-08 1.1095889931311831e-05
+_415_ NAND2_X4 False False False False
+6.957323961387374e-08 1.5775214706081897e-05
+_416_ XNOR2_X2 False False False False
+7.310297434059976e-08 1.0275036402163096e-05
+_417_ INV_X1 False False False True
+1.435318353060211e-08 3.3176208944496466e-06
+_418_ INV_X2 False False False True
+2.8706374166631576e-08 5.03473165736068e-06
+_419_ XNOR2_X2 False False False False
+7.310297434059976e-08 1.3201541150920093e-05
+_420_ NOR2_X2 False False False False
+4.2399072697207885e-08 8.688994967087638e-06
+_421_ NAND2_X4 False False False False
+6.957323961387374e-08 7.792918950144667e-06
+_422_ NAND2_X1 False False False False
+1.7393359641459938e-08 1.2918527545480174e-06
+_423_ INV_X1 False False False True
+1.435318353060211e-08 3.400452669666265e-06
+_424_ NAND2_X1 False False False False
+1.7393359641459938e-08 2.4325420326931635e-06
+_425_ OAI21_X1 False False False False
+2.2619392581191278e-08 3.6505703064904083e-06
+_426_ INV_X1 False False False True
+1.435318353060211e-08 4.272709702490829e-06
+_427_ NAND2_X4 False False False False
+6.957323961387374e-08 1.4364353773999028e-05
+_428_ INV_X1 False False False True
+1.435318353060211e-08 4.283772796043195e-06
+_429_ XNOR2_X1 False False False False
+3.644100843303022e-08 5.639862138195895e-06
+_430_ INV_X1 False False False True
+1.435318353060211e-08 6.828781806689221e-06
+_431_ NAND2_X4 False False False False
+6.957323961387374e-08 1.137589970312547e-05
+_432_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.9115120671340264e-06
+_433_ NAND2_X4 False False False False
+6.957323961387374e-08 1.1317524695186876e-05
+_434_ INV_X2 False False False True
+2.8706374166631576e-08 5.398928351496579e-06
+_435_ XNOR2_X2 False False False False
+7.310297434059976e-08 1.102560963772703e-05
+_436_ INV_X1 False False False True
+1.435318353060211e-08 5.302922090777429e-06
+_437_ NAND2_X4 False False False False
+6.957323961387374e-08 8.001098649401683e-06
+_438_ NAND3_X1 False False False False
+1.8104767463000826e-08 4.993843958800426e-06
+_439_ AND2_X2 False False False False
+5.0353158087546035e-08 9.502908142167144e-06
+_440_ XNOR2_X1 False False False False
+3.644100843303022e-08 4.810844075109344e-06
+_441_ INV_X1 False False False True
+1.435318353060211e-08 1.4295851542556193e-06
+_442_ XNOR2_X1 False False False False
+3.644100843303022e-08 8.377664926229045e-06
+_443_ INV_X1 False False False True
+1.435318353060211e-08 2.66326014752849e-06
+_444_ INV_X1 False False False True
+1.435318353060211e-08 2.989950189657975e-06
+_445_ XNOR2_X1 False False False False
+3.644100843303022e-08 8.646209607832134e-06
+_446_ INV_X1 False False False True
+1.435318353060211e-08 2.725604872466647e-06
+_447_ NAND2_X1 False False False False
+1.7393359641459938e-08 2.533948190830415e-06
+_448_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.0314231480588205e-06
+_449_ XNOR2_X1 False False False False
+3.644100843303022e-08 9.108234735322185e-06
+_450_ XNOR2_X1 False False False False
+3.644100843303022e-08 1.183600124932127e-05
+_451_ INV_X1 False False False True
+1.435318353060211e-08 3.7396825973701198e-06
+_452_ NAND2_X2 False False False False
+3.4786630465077906e-08 6.9687430368503556e-06
+_453_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.6572673707269132e-06
+_454_ XOR2_X1 False False False False
+3.616371913039984e-08 9.98458835965721e-06
+_455_ INV_X1 False False False True
+1.435318353060211e-08 2.530019173718756e-06
+_456_ AOI21_X2 False False False False
+5.571671835014058e-08 9.698949725134298e-06
+_457_ XNOR2_X2 False False False False
+7.310297434059976e-08 1.9073590010521002e-05
+_458_ INV_X1 False False False True
+1.435318353060211e-08 3.757837021112209e-06
+_459_ NAND2_X1 False False False False
+1.7393359641459938e-08 2.8969284358026925e-06
+_460_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.928626028937288e-06
+_461_ XNOR2_X1 False False False False
+3.644100843303022e-08 1.1054851711378433e-05
+_462_ XNOR2_X1 False False False False
+3.644100843303022e-08 1.2718997822958045e-05
+_463_ INV_X1 False False False True
+1.435318353060211e-08 4.02980413127807e-06
+_464_ AOI21_X2 False False False False
+5.571671835014058e-08 7.257942343130708e-06
+_465_ XNOR2_X1 False False False False
+3.644100843303022e-08 1.1274049029452726e-05
+_466_ NAND2_X1 False False False False
+1.7393359641459938e-08 2.8334534363239072e-06
+_467_ NAND2_X2 False False False False
+3.4786630465077906e-08 8.580950634495821e-06
+_468_ INV_X1 False False False True
+1.435318353060211e-08 5.508677531906869e-06
+_469_ XNOR2_X2 False False False False
+7.310297434059976e-08 1.939873254741542e-05
+_470_ INV_X1 False False False True
+1.435318353060211e-08 3.809795089182444e-06
+_471_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.7458614770002896e-06
+_472_ NAND2_X2 False False False False
+3.4786630465077906e-08 6.624956768064294e-06
+_473_ XNOR2_X2 False False False False
+7.310297434059976e-08 1.7865473637357354e-05
+_474_ XNOR2_X1 False False False False
+3.644100843303022e-08 1.2752172551699914e-05
+_475_ INV_X1 False False False True
+1.435318353060211e-08 4.000414264737628e-06
+_476_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.8396683521568775e-06
+_477_ NAND2_X2 False False False False
+3.4786630465077906e-08 6.720534656778909e-06
+_478_ XNOR2_X2 False False False False
+7.310297434059976e-08 1.8016045942204073e-05
+_479_ XNOR2_X1 False False False False
+3.644100843303022e-08 1.2524835256044753e-05
+_480_ INV_X1 False False False True
+1.435318353060211e-08 3.921371899195947e-06
+_481_ XNOR2_X1 False False False False
+3.644100843303022e-08 5.103207058709813e-06
+_482_ NAND4_X1 False False False False
+1.8126844025800892e-08 2.170270363421878e-06
+_483_ NAND3_X1 False False False False
+1.8104767463000826e-08 2.1572577679762617e-06
+_484_ NOR3_X1 False False False False
+2.683166755446109e-08 4.726755378214875e-07
+_485_ INV_X1 False False False True
+1.435318353060211e-08 2.712862624321133e-06
+_486_ NAND4_X1 False False False False
+1.8126844025800892e-08 2.1489227037818637e-06
+_487_ NAND4_X1 False False False False
+1.8126844025800892e-08 2.1224593638180522e-06
+_488_ NOR2_X1 False False False False
+2.119954523038814e-08 4.2475261352592497e-07
+_489_ NAND2_X1 False False False False
+1.7393359641459938e-08 6.497985260978112e-09
+_490_ INV_X1 False False False True
+1.435318353060211e-08 4.241154556439142e-07
+_492_ INV_X1 False False False True
+1.435318353060211e-08 1.936239641509019e-06
+_493_ OR2_X1 False False False False
+2.269497301199408e-08 8.36653043734259e-07
+_497_ NAND2_X1 False False False False
+1.7393359641459938e-08 8.097530326267588e-07
+_498_ OAI22_X1 False False False False
+3.4026122364139155e-08 9.401908869222098e-07
+_500_ AND3_X1 False False False False
+2.6481458803573332e-08 4.6389725838480445e-08
+_501_ AOI21_X1 False False False False
+2.785839470220708e-08 1.0006898492065375e-06
+_503_ INV_X1 False False False True
+1.435318353060211e-08 8.10826179531432e-07
+_504_ OAI21_X1 False False False False
+2.2619392581191278e-08 8.040843226808647e-07
+_505_ NAND2_X1 False False False False
+1.7393359641459938e-08 7.388365474980674e-08
+_506_ OAI21_X1 False False False False
+2.2619392581191278e-08 8.558825470572629e-08
+_507_ NAND2_X1 False False False False
+1.7393359641459938e-08 1.2917416825075634e-06
+_508_ OAI21_X1 False False False False
+2.2619392581191278e-08 2.685593244677875e-06
+_509_ NOR2_X1 False False False False
+2.119954523038814e-08 3.966406438848935e-06
+_510_ AOI21_X1 False False False False
+2.785839470220708e-08 3.952493443648564e-06
+_511_ NAND2_X1 False False False False
+1.7393359641459938e-08 2.0667052922362927e-06
+_512_ OAI21_X1 False False False False
+2.2619392581191278e-08 5.68863470107317e-06
+_513_ INV_X2 False False False True
+2.8706374166631576e-08 1.2589671314344741e-05
+_514_ INV_X1 False False False True
+1.435318353060211e-08 1.91297613127972e-06
+_515_ NAND3_X2 False False False False
+3.6209556242283725e-08 3.9898543491290184e-07
+_516_ NAND3_X2 False False False False
+3.6209556242283725e-08 5.617595434159739e-06
+_517_ NAND2_X4 False False False False
+6.957323961387374e-08 8.931120646593627e-06
+_519_ MUX2_X1 False False False False
+3.5928387376316095e-08 1.913658479679725e-06
+_520_ NAND2_X1 False False False False
+1.7393359641459938e-08 1.2014947969873901e-06
+_522_ OAI21_X1 False False False False
+2.2619392581191278e-08 1.868246954472852e-06
+_523_ MUX2_X1 False False False False
+3.5928387376316095e-08 1.9138935840601334e-06
+_524_ NAND2_X1 False False False False
+1.7393359641459938e-08 1.2015681249977206e-06
+_525_ OAI21_X1 False False False False
+2.2619392581191278e-08 1.8630894373927731e-06
+_526_ NAND2_X1 False False False False
+1.7393359641459938e-08 8.205788617487997e-07
+_527_ OAI21_X1 False False False False
+2.2619392581191278e-08 1.3757546639681095e-06
+_528_ NAND2_X1 False False False False
+1.7393359641459938e-08 1.2179393706901465e-06
+_529_ OAI21_X1 False False False False
+2.2619392581191278e-08 1.8603918761073146e-06
+_530_ NAND2_X1 False False False False
+1.7393359641459938e-08 8.205788617487997e-07
+_531_ OAI21_X1 False False False False
+2.2619392581191278e-08 1.376150180476543e-06
+_532_ NAND2_X1 False False False False
+1.7393359641459938e-08 1.218117631651694e-06
+_533_ OAI21_X1 False False False False
+2.2619392581191278e-08 1.860837642198021e-06
+_536_ MUX2_X1 False False False False
+3.5928387376316095e-08 1.9141141365253134e-06
+_537_ NAND2_X1 False False False False
+1.7393359641459938e-08 1.2017430890409742e-06
+_538_ OAI21_X1 False False False False
+2.2619392581191278e-08 1.8649950561666628e-06
+_539_ NAND2_X1 False False False False
+1.7393359641459938e-08 8.205788617487997e-07
+_540_ OAI21_X1 False False False False
+2.2619392581191278e-08 1.3758022987531149e-06
+_541_ NAND2_X1 False False False False
+1.7393359641459938e-08 1.2183106719021453e-06
+_542_ OAI21_X1 False False False False
+2.2619392581191278e-08 1.8631287730386248e-06
+_543_ MUX2_X1 False False False False
+3.5928387376316095e-08 1.915709844979574e-06
+_544_ NAND2_X1 False False False False
+1.7393359641459938e-08 1.2017735571134835e-06
+_545_ OAI21_X1 False False False False
+2.2619392581191278e-08 1.8629198166308925e-06
+_546_ MUX2_X1 False False False False
+3.5928387376316095e-08 1.914369931910187e-06
+_547_ NAND2_X1 False False False False
+1.7393359641459938e-08 1.2017789003948565e-06
+_548_ OAI21_X1 False False False False
+2.2619392581191278e-08 1.8630814793141326e-06
+_549_ MUX2_X1 False False False False
+3.5928387376316095e-08 1.914446329465136e-06
+_550_ NAND2_X1 False False False False
+1.7393359641459938e-08 1.2018368806820945e-06
+_551_ OAI21_X1 False False False False
+2.2619392581191278e-08 1.8631084230946726e-06
+_552_ NAND2_X1 False False False False
+1.7393359641459938e-08 8.205788617487997e-07
+_553_ OAI21_X1 False False False False
+2.2619392581191278e-08 1.377342641717405e-06
+_554_ NAND2_X1 False False False False
+1.7393359641459938e-08 1.218323859575321e-06
+_555_ OAI21_X1 False False False False
+2.2619392581191278e-08 1.8608905065775616e-06
+_556_ MUX2_X1 False False False False
+3.5928387376316095e-08 1.913988171509118e-06
+_557_ NAND2_X1 False False False False
+1.7393359641459938e-08 1.2018128927593352e-06
+_558_ OAI21_X1 False False False False
+2.2619392581191278e-08 1.863372062871349e-06
+_559_ MUX2_X1 False False False False
+3.5928387376316095e-08 1.9159010662406217e-06
+_560_ NAND2_X1 False False False False
+1.7393359641459938e-08 1.201779127768532e-06
+_561_ OAI21_X1 False False False False
+2.2619392581191278e-08 1.8631733382790117e-06
+_562_ MUX2_X1 False False False False
+3.5928387376316095e-08 1.9143133158650016e-06
+_563_ NAND2_X1 False False False False
+1.7393359641459938e-08 1.2018300594718312e-06
+_564_ OAI21_X1 False False False False
+2.2619392581191278e-08 1.8631495777299278e-06
+_565_ MUX2_X1 False False False False
+3.5928387376316095e-08 1.9159090243192622e-06
+_566_ NAND2_X1 False False False False
+1.7393359641459938e-08 1.2017834478683653e-06
+_567_ OAI21_X1 False False False False
+2.2619392581191278e-08 1.8632866840562201e-06
+_568_ MUX2_X1 False False False False
+3.5928387376316095e-08 1.9154281289957e-06
+_569_ NAND2_X1 False False False False
+1.7393359641459938e-08 1.201811755890958e-06
+_570_ OAI21_X1 False False False False
+2.2619392581191278e-08 1.8660871319298167e-06
+_571_ MUX2_X1 False False False False
+3.5928387376316095e-08 1.915927896334324e-06
+_572_ NAND2_X1 False False False False
+1.7393359641459938e-08 1.2018088000331772e-06
+_573_ OAI21_X1 False False False False
+2.2619392581191278e-08 1.8632588307809783e-06
+_574_ NAND2_X2 False False False False
+3.4786630465077906e-08 1.1436915883678012e-05
+_575_ NAND3_X4 False False False False
+7.241911958999481e-08 2.9765974431938957e-06
+_576_ INV_X8 False False False True
+1.1482629957981771e-07 2.5484828256594483e-06
+_577_ NAND2_X1 False False False False
+1.7393359641459938e-08 2.3623601919098292e-07
+_578_ NAND4_X4 False False False False
+7.250687872328854e-08 3.251603857279406e-06
+_580_ OAI21_X1 False False False False
+2.2619392581191278e-08 6.095755793467106e-07
+_581_ NOR2_X4 False False False False
+8.479813828898841e-08 3.746783477254212e-06
+_583_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.371849288669182e-08
+_584_ NAND2_X1 False False False False
+1.7393359641459938e-08 8.116915637401689e-07
+_585_ NOR2_X4 False False False False
+8.479813828898841e-08 6.964201929804403e-06
+_587_ NAND2_X1 False False False False
+1.7393359641459938e-08 5.975987278361572e-07
+_588_ NAND3_X1 False False False False
+1.8104767463000826e-08 1.1670333606161876e-06
+_589_ OAI22_X1 False False False False
+3.4026122364139155e-08 7.426523325193557e-07
+_590_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.477532573015196e-08
+_591_ NAND2_X1 False False False False
+1.7393359641459938e-08 8.116915637401689e-07
+_592_ NAND2_X1 False False False False
+1.7393359641459938e-08 5.95874212194758e-07
+_593_ NAND3_X1 False False False False
+1.8104767463000826e-08 1.1639262993412558e-06
+_594_ OAI22_X1 False False False False
+3.4026122364139155e-08 7.338763907682733e-07
+_595_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.334295683998789e-08
+_596_ NAND2_X1 False False False False
+1.7393359641459938e-08 7.842529612389626e-07
+_597_ NAND2_X1 False False False False
+1.7393359641459938e-08 5.956711106591683e-07
+_598_ NAND3_X1 False False False False
+1.8104767463000826e-08 1.160842089120706e-06
+_599_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.1610784390068147e-07
+_600_ OAI21_X1 False False False False
+2.2619392581191278e-08 7.144269602576969e-07
+_601_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.412444016248628e-08
+_602_ NAND2_X1 False False False False
+1.7393359641459938e-08 7.842529612389626e-07
+_603_ NAND2_X1 False False False False
+1.7393359641459938e-08 5.974586088086653e-07
+_604_ NAND3_X1 False False False False
+1.8104767463000826e-08 1.161927229986759e-06
+_605_ OAI22_X1 False False False False
+3.4026122364139155e-08 8.215477009798633e-07
+_606_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.639053147708182e-08
+_607_ NAND2_X1 False False False False
+1.7393359641459938e-08 7.842529612389626e-07
+_608_ NAND2_X1 False False False False
+1.7393359641459938e-08 5.977999535389245e-07
+_609_ NAND3_X1 False False False False
+1.8104767463000826e-08 1.1592164810281247e-06
+_610_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.5129494335706113e-07
+_611_ OAI21_X1 False False False False
+2.2619392581191278e-08 7.587811978737591e-07
+_612_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.579909702011719e-08
+_613_ NAND2_X1 False False False False
+1.7393359641459938e-08 7.842529612389626e-07
+_614_ NAND2_X1 False False False False
+1.7393359641459938e-08 5.987997155898483e-07
+_615_ NAND3_X1 False False False False
+1.8104767463000826e-08 1.16302692276804e-06
+_616_ OAI22_X1 False False False False
+3.4026122364139155e-08 8.2893177477672e-07
+_617_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.665005010589084e-08
+_618_ NAND2_X1 False False False False
+1.7393359641459938e-08 7.842529612389626e-07
+_619_ NAND2_X1 False False False False
+1.7393359641459938e-08 5.964187721474445e-07
+_620_ NAND3_X1 False False False False
+1.8104767463000826e-08 1.159405883299769e-06
+_621_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.548529718955251e-07
+_622_ OAI21_X1 False False False False
+2.2619392581191278e-08 7.649084636796033e-07
+_623_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.583164343012868e-08
+_624_ NAND2_X1 False False False False
+1.7393359641459938e-08 7.842529612389626e-07
+_625_ NAND2_X1 False False False False
+1.7393359641459938e-08 5.986139512970112e-07
+_626_ NAND3_X1 False False False False
+1.8104767463000826e-08 1.1630651215455146e-06
+_627_ OAI22_X1 False False False False
+3.4026122364139155e-08 8.420909125561593e-07
+_628_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.728291275706397e-08
+_629_ NAND2_X1 False False False False
+1.7393359641459938e-08 7.842529612389626e-07
+_630_ NAND2_X1 False False False False
+1.7393359641459938e-08 5.963159992461442e-07
+_631_ NAND3_X1 False False False False
+1.8104767463000826e-08 1.1598402807067032e-06
+_632_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.524590965753305e-07
+_633_ OAI21_X1 False False False False
+2.2619392581191278e-08 7.597394642289146e-07
+_634_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.590481867377093e-08
+_635_ NAND2_X1 False False False False
+1.7393359641459938e-08 7.842529612389626e-07
+_636_ NAND2_X1 False False False False
+1.7393359641459938e-08 5.962730256214854e-07
+_637_ NAND3_X1 False False False False
+1.8104767463000826e-08 1.1595383284657146e-06
+_638_ OAI22_X1 False False False False
+3.4026122364139155e-08 7.520014264628117e-07
+_639_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.708115414724489e-08
+_640_ NAND2_X1 False False False False
+1.7393359641459938e-08 7.842529612389626e-07
+_641_ NAND2_X1 False False False False
+1.7393359641459938e-08 5.964342335573747e-07
+_642_ NAND3_X1 False False False False
+1.8104767463000826e-08 1.1632824907792383e-06
+_643_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.52726772234746e-07
+_644_ OAI21_X1 False False False False
+2.2619392581191278e-08 7.650954216842365e-07
+_645_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.592620601011731e-08
+_646_ AND2_X1 False False False False
+2.506606300300973e-08 8.650831659906544e-07
+_647_ AOI21_X1 False False False False
+2.785839470220708e-08 1.376939962938195e-06
+_648_ NAND2_X1 False False False False
+1.7393359641459938e-08 9.696124152469565e-07
+_649_ OAI22_X1 False False False False
+3.4026122364139155e-08 7.579063776574912e-07
+_650_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.724508701452578e-08
+_651_ NAND2_X1 False False False False
+1.7393359641459938e-08 7.842529612389626e-07
+_652_ NAND2_X1 False False False False
+1.7393359641459938e-08 5.961618967376126e-07
+_653_ NAND3_X1 False False False False
+1.8104767463000826e-08 1.1598036735449568e-06
+_654_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.53918437667744e-07
+_655_ OAI21_X1 False False False False
+2.2619392581191278e-08 7.656031471015012e-07
+_656_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.602951892389683e-08
+_657_ AND2_X1 False False False False
+2.506606300300973e-08 8.650932841192116e-07
+_658_ AOI21_X1 False False False False
+2.785839470220708e-08 1.3769467841484584e-06
+_659_ NAND2_X1 False False False False
+1.7393359641459938e-08 9.696356073618517e-07
+_660_ OAI22_X1 False False False False
+3.4026122364139155e-08 7.549865017608681e-07
+_661_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.7163147226237925e-08
+_662_ AND2_X1 False False False False
+2.506606300300973e-08 8.64822368384921e-07
+_663_ AOI21_X1 False False False False
+2.785839470220708e-08 1.3769907809546567e-06
+_664_ NAND2_X1 False False False False
+1.7393359641459938e-08 9.732033277032315e-07
+_665_ NAND3_X1 False False False False
+1.8104767463000826e-08 4.330837555244216e-07
+_666_ OR2_X1 False False False False
+2.269497301199408e-08 3.5632885442282713e-07
+_667_ NAND2_X1 False False False False
+1.7393359641459938e-08 5.680100798599597e-07
+_668_ NAND2_X1 False False False False
+1.7393359641459938e-08 3.6081303278479027e-08
+_669_ AND2_X1 False False False False
+2.506606300300973e-08 8.651799134895555e-07
+_670_ AOI21_X1 False False False False
+2.785839470220708e-08 1.3769831639365293e-06
+_671_ NAND2_X1 False False False False
+1.7393359641459938e-08 9.695465905679157e-07
+_672_ DFF_X2 True True False False
+1.1510365993672167e-07 3.337871748954058e-05
+_673_ DFF_X1 True True False False
+7.911229715773516e-08 1.5095123671926558e-05
+_674_ DFF_X2 True True False False
+1.1510365993672167e-07 2.0130013581365347e-05
+_675_ DFF_X1 True True False False
+7.911229715773516e-08 1.5364528735517524e-05
+_676_ DFF_X1 True True False False
+7.911229715773516e-08 1.7009719158522785e-05
+_677_ DFF_X1 True True False False
+7.911229715773516e-08 1.7544378351885825e-05
+_678_ DFF_X1 True True False False
+7.911229715773516e-08 1.6809950466267765e-05
+_679_ DFF_X1 True True False False
+7.911229715773516e-08 1.6842383047332987e-05
+_680_ DFF_X1 True True False False
+7.911229715773516e-08 1.6671296179993078e-05
+_681_ DFF_X1 True True False False
+7.911229715773516e-08 1.7473887055530213e-05
+_682_ DFF_X1 True True False False
+7.911229715773516e-08 1.710740616545081e-05
+_683_ DFF_X1 True True False False
+7.911229715773516e-08 1.710771357466001e-05
+_684_ DFF_X1 True True False False
+7.911229715773516e-08 1.783395418897271e-05
+_685_ DFF_X1 True True False False
+7.911229715773516e-08 1.6033633073675446e-05
+_686_ DFF_X1 True True False False
+7.911229715773516e-08 1.6034407963161357e-05
+_687_ DFF_X1 True True False False
+7.911229715773516e-08 1.710826654743869e-05
+_688_ DFF_X1 True True False False
+7.911229715773516e-08 1.6760704966145568e-05
+_689_ DFF_X1 True True False False
+7.911229715773516e-08 1.53664659592323e-05
+_690_ DFF_X1 True True False False
+7.911229715773516e-08 1.6034106010920368e-05
+_691_ DFF_X1 True True False False
+7.911229715773516e-08 1.4575130990124308e-05
+_692_ DFF_X2 True True False False
+1.1510365993672167e-07 1.7098835087381303e-05
+_693_ DFF_X1 True True False False
+7.911229715773516e-08 1.4080005712457933e-05
+_694_ DFF_X1 True True False False
+7.911229715773516e-08 1.4521676348522305e-05
+_695_ DFF_X2 True True False False
+1.1510365993672167e-07 1.7298014427069575e-05
+_696_ DFF_X1 True True False False
+7.911229715773516e-08 1.4795257811783813e-05
+_697_ DFF_X2 True True False False
+1.1510365993672167e-07 1.6815487470012158e-05
+_698_ DFF_X1 True True False False
+7.911229715773516e-08 1.4747836758033372e-05
+_699_ DFF_X2 True True False False
+1.1510365993672167e-07 1.7093901988118887e-05
+_700_ DFF_X2 True True False False
+1.1510365993672167e-07 1.7030146409524605e-05
+_701_ DFF_X1 True True False False
+7.911229715773516e-08 1.4118327271717135e-05
+_702_ DFF_X2 True True False False
+1.1510365993672167e-07 1.6981803128146566e-05
+_703_ DFF_X2 True True False False
+1.1510365993672167e-07 1.7284039131482132e-05
+_704_ DFF_X2 True True False False
+1.1510365993672167e-07 1.6982170564006083e-05
+_705_ DFF_X1 True True False False
+7.911229715773516e-08 1.3877682249585632e-05
+_706_ DFF_X2 True True False False
+1.1510365993672167e-07 1.6980795408017002e-05
+clkbuf_0_clk BUF_X4 False True True False
+8.612180124600854e-08 7.456819002982229e-05
+clkbuf_2_0__f_clk BUF_X4 False True True False
+8.612180124600854e-08 6.208423292264342e-05
+clkbuf_2_1__f_clk BUF_X4 False True True False
+8.612180124600854e-08 6.197704351507127e-05
+clkbuf_2_2__f_clk BUF_X4 False True True False
+8.612180124600854e-08 5.665710341418162e-05
+clkbuf_2_3__f_clk BUF_X4 False True True False
+8.612180124600854e-08 5.373996827984229e-05
+clone35 NAND3_X2 False False False False
+3.6209556242283725e-08 1.2149864687671652e-06
+clone39 NAND2_X4 False False False False
+6.957323961387374e-08 8.820768925943412e-06
+input1 BUF_X1 False False True False
+2.1438246733396227e-08 6.0470506468846e-07
+input10 BUF_X1 False False True False
+2.1438246733396227e-08 7.06303012520948e-07
+input11 BUF_X1 False False True False
+2.1438246733396227e-08 7.06303012520948e-07
+input12 BUF_X1 False False True False
+2.1438246733396227e-08 6.0470506468846e-07
+input13 BUF_X1 False False True False
+2.1438246733396227e-08 7.06303012520948e-07
+input14 BUF_X1 False False True False
+2.1438246733396227e-08 7.06303012520948e-07
+input15 BUF_X1 False False True False
+2.1438246733396227e-08 7.06303012520948e-07
+input16 BUF_X1 False False True False
+2.1438246733396227e-08 7.06303012520948e-07
+input17 BUF_X1 False False True False
+2.1438246733396227e-08 7.06303012520948e-07
+input18 BUF_X1 False False True False
+2.1438246733396227e-08 7.06303012520948e-07
+input19 BUF_X1 False False True False
+2.1438246733396227e-08 7.06303012520948e-07
+input2 BUF_X1 False False True False
+2.1438246733396227e-08 6.0470506468846e-07
+input20 BUF_X1 False False True False
+2.1438246733396227e-08 7.137523425626568e-07
+input21 BUF_X1 False False True False
+2.1438246733396227e-08 7.06303012520948e-07
+input22 BUF_X1 False False True False
+2.1438246733396227e-08 7.137523425626568e-07
+input23 BUF_X1 False False True False
+2.1438246733396227e-08 7.164226190070622e-07
+input24 BUF_X1 False False True False
+2.1438246733396227e-08 7.137523425626568e-07
+input25 BUF_X1 False False True False
+2.1438246733396227e-08 7.137523425626568e-07
+input26 BUF_X1 False False True False
+2.1438246733396227e-08 7.164226190070622e-07
+input27 BUF_X1 False False True False
+2.1438246733396227e-08 6.0470506468846e-07
+input28 BUF_X1 False False True False
+2.1438246733396227e-08 7.164226190070622e-07
+input29 BUF_X1 False False True False
+2.1438246733396227e-08 6.0470506468846e-07
+input3 BUF_X1 False False True False
+2.1438246733396227e-08 6.0470506468846e-07
+input30 BUF_X1 False False True False
+2.1438246733396227e-08 6.0470506468846e-07
+input31 BUF_X1 False False True False
+2.1438246733396227e-08 6.0470506468846e-07
+input32 BUF_X1 False False True False
+2.1438246733396227e-08 7.164226190070622e-07
+input33 BUF_X1 False False True False
+2.1438246733396227e-08 9.447915658711281e-07
+input34 BUF_X1 False False True False
+2.1438246733396227e-08 1.0849652198885451e-06
+input35 BUF_X1 False False True False
+2.1438246733396227e-08 7.183876391536614e-07
+input4 BUF_X1 False False True False
+2.1438246733396227e-08 6.0470506468846e-07
+input5 BUF_X1 False False True False
+2.1438246733396227e-08 6.0470506468846e-07
+input6 BUF_X1 False False True False
+2.1438246733396227e-08 6.0470506468846e-07
+input7 BUF_X1 False False True False
+2.1438246733396227e-08 6.0470506468846e-07
+input8 BUF_X1 False False True False
+2.1438246733396227e-08 7.164226190070622e-07
+input9 BUF_X1 False False True False
+2.1438246733396227e-08 7.164226190070622e-07
+output36 BUF_X1 False False True False
+2.1438246733396227e-08 7.8135451531125e-07
+output37 BUF_X1 False False True False
+2.1438246733396227e-08 2.41201814787928e-06
+output38 BUF_X1 False False True False
+2.1438246733396227e-08 5.238907306193141e-06
+output39 BUF_X1 False False True False
+2.1438246733396227e-08 5.179641448194161e-06
+output40 BUF_X1 False False True False
+2.1438246733396227e-08 5.341454198060092e-06
+output41 BUF_X1 False False True False
+2.1438246733396227e-08 5.225073437031824e-06
+output42 BUF_X1 False False True False
+2.1438246733396227e-08 5.238218363956548e-06
+output43 BUF_X1 False False True False
+2.1438246733396227e-08 3.855434897559462e-06
+output44 BUF_X1 False False True False
+2.1438246733396227e-08 3.558943944881321e-06
+output45 BUF_X1 False False True False
+2.1438246733396227e-08 3.6422666198632214e-06
+output46 BUF_X1 False False True False
+2.1438246733396227e-08 4.299943157093367e-06
+output47 BUF_X1 False False True False
+2.1438246733396227e-08 4.997400537831709e-06
+output48 BUF_X1 False False True False
+2.1438246733396227e-08 5.269262146612164e-06
+output49 BUF_X1 False False True False
+2.1438246733396227e-08 5.15685405844124e-06
+output50 BUF_X1 False False True False
+2.1438246733396227e-08 5.242104180069873e-06
+output51 BUF_X1 False False True False
+2.1438246733396227e-08 5.369841801439179e-06
+output52 BUF_X1 False False True False
+2.1438246733396227e-08 5.298217729432508e-06
+output53 BUF_X1 False False True False
+2.1438246733396227e-08 2.173418778284031e-08
+rebuffer1 CLKBUF_X1 False False True False
+1.1214092765499117e-08 5.5797067943785805e-06
+rebuffer10 CLKBUF_X1 False False True False
+1.1214092765499117e-08 1.3169981230021222e-06
+rebuffer2 CLKBUF_X1 False False True False
+1.1214092765499117e-08 2.9259026632644236e-06
+rebuffer20 BUF_X4 False False True False
+8.612180124600854e-08 4.5415727072395384e-06
+rebuffer21 BUF_X2 False False True False
+4.306081891058966e-08 5.6514381867600605e-06
+rebuffer28 CLKBUF_X1 False False True False
+1.1214092765499117e-08 2.672360096767079e-06
+rebuffer29 BUF_X4 False False True False
+8.612180124600854e-08 7.773454854032025e-06
+rebuffer3 CLKBUF_X1 False False True False
+1.1214092765499117e-08 2.554391357989516e-06
+rebuffer30 CLKBUF_X1 False False True False
+1.1214092765499117e-08 7.860887308197562e-06
+rebuffer33 BUF_X4 False False True False
+8.612180124600854e-08 2.719439635257004e-06
+rebuffer34 BUF_X4 False False True False
+8.612180124600854e-08 2.544395783843356e-06
+rebuffer37 CLKBUF_X1 False False True False
+1.1214092765499117e-08 3.0020150916243438e-06
+rebuffer38 CLKBUF_X1 False False True False
+1.1214092765499117e-08 7.214689503598493e-06
+rebuffer4 CLKBUF_X1 False False True False
+1.1214092765499117e-08 4.154185717197834e-06
+rebuffer5 BUF_X1 False False True False
+2.1438246733396227e-08 1.4699282928631874e-06
+rebuffer6 CLKBUF_X1 False False True False
+1.1214092765499117e-08 1.0918568023043917e-06
+rebuffer7 CLKBUF_X1 False False True False
+1.1214092765499117e-08 4.592806817527162e-06
+rebuffer8 CLKBUF_X1 False False True False
+1.1214092765499117e-08 3.96549057768425e-06
+rebuffer9 BUF_X4 False False True False
+8.612180124600854e-08 5.474557838169858e-06
 clk 54170
 req_msg[0] 7000
 req_msg[10] 12480

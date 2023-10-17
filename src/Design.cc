@@ -190,50 +190,101 @@ float Design::getNetCap(odb::dbNet* net, sta::Corner* corner, MinMax minmax)
   return pin_cap + wire_cap;
 }
 
-bool Design::isSequential(odb::dbMaster* master)
+sta::LibertyCell* Design::getLibertyCell(odb::dbMaster* master)
 {
   sta::dbSta* sta = getSta();
   sta::dbNetwork* network = sta->getDbNetwork();
 
   sta::Cell* cell = network->dbToSta(master);
   if (!cell) {
-    return false;
+    return nullptr;
   }
+  return network->libertyCell(cell);
+}
 
-  sta::LibertyCell* lib_cell = network->libertyCell(cell);
+bool Design::isBuffer(odb::dbMaster* master)
+{
+  auto lib_cell = getLibertyCell(master);
   if (!lib_cell) {
     return false;
   }
+  return lib_cell->isBuffer();
+}
 
+bool Design::isInverter(odb::dbMaster* master)
+{
+  auto lib_cell = getLibertyCell(master);
+  if (!lib_cell) {
+    return false;
+  }
+  return lib_cell->isInverter();
+}
+
+bool Design::isSequential(odb::dbMaster* master)
+{
+  auto lib_cell = getLibertyCell(master);
+  if (!lib_cell) {
+    return false;
+  }
   return lib_cell->hasSequentials();
 }
 
-bool Design::isInClock(odb::dbInst* inst) {
+float Design::staticPower(odb::dbInst* inst, sta::Corner* corner)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+
+  sta::Instance* sta_inst = network->dbToSta(inst);
+  if (!sta_inst) {
+    return 0.0;
+  }
+  // sta::LibertyCell* lib_cell = network->libertyCell(sta_inst);
+  sta::PowerResult power = sta->power(sta_inst, corner);
+  return power.leakage();
+}
+
+float Design::dynamicPower(odb::dbInst* inst, sta::Corner* corner)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+
+  sta::Instance* sta_inst = network->dbToSta(inst);
+  if (!sta_inst) {
+    return 0.0;
+  }
+  // sta::LibertyCell* lib_cell = network->libertyCell(sta_inst);
+  sta::PowerResult power = sta->power(sta_inst, corner);
+  return (power.internal() + power.switching());
+}
+
+bool Design::isInClock(odb::dbInst* inst)
+{
   for (auto* iterm : inst->getITerms()) {
     auto* net = iterm->getNet();
-    if (net != NULL && net->getSigType() == odb::dbSigType::CLOCK){
+    if (net != nullptr && net->getSigType() == odb::dbSigType::CLOCK) {
       return true;
     }
   }
   return false;
 }
 
-std::uint64_t Design::getNetRoute(odb::dbNet* net) {
+std::uint64_t Design::getNetRoutedLength(odb::dbNet* net)
+{
   std::uint64_t route_length = 0;
   if (net->getSigType().isSupply()) {
     for (odb::dbSWire* swire : net->getSWires()) {
       for (odb::dbSBox* wire : swire->getWires()) {
-        if (wire !=NULL && !(wire->isVia())) {
+        if (wire != nullptr && !(wire->isVia())) {
           route_length += wire->getLength();
         }
       }
-    } 
+    }
   } else {
     auto* wire = net->getWire();
-    if (wire !=NULL) {
+    if (wire != nullptr) {
       route_length += wire->getLength();
     }
-  } 
+  }
   return route_length;
 }
 
