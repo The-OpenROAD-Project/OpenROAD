@@ -1171,7 +1171,8 @@ void HierRTLMP::breakCluster(Cluster* parent)
           if (liberty_cell == nullptr)
             continue;
           odb::dbMaster* master = inst->getMaster();
-          // check if the instance is a Pad, Cover or empty block (such as marker)
+          // check if the instance is a Pad, Cover or empty block (such as
+          // marker)
           if (master->isPad() || master->isCover()) {
             continue;
           } else if (master->isBlock()) {
@@ -1198,7 +1199,8 @@ void HierRTLMP::breakCluster(Cluster* parent)
           if (liberty_cell == nullptr)
             continue;
           odb::dbMaster* master = inst->getMaster();
-          // check if the instance is a Pad, Cover or empty block (such as marker)
+          // check if the instance is a Pad, Cover or empty block (such as
+          // marker)
           if (master->isPad() || master->isCover()) {
             continue;
           } else if (master->isBlock()) {
