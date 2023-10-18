@@ -495,7 +495,7 @@ protected:
   void incrementalParasiticsBegin();
   void incrementalParasiticsEnd();
   void ensureParasitics();
-  void updateParasitics();
+  void updateParasitics(bool save_guides = false);
   void ensureWireParasitic(const Pin *drvr_pin);
   void ensureWireParasitic(const Pin *drvr_pin,
                            const Net *net);
