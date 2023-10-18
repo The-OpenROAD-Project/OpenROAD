@@ -947,7 +947,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
     return;
   }
   auto lNum = origVia->getViaDef()->getCutLayerNum();
-  for (auto con : getTech()->getLayer(lNum)->getLef58CutSpacingConstraints()) {
+  for (auto con : getTech()->getLayer(lNum)->getCutSpacing()) {
     if (con->getAdjacentCuts() == -1) {
       continue;
     }
@@ -989,7 +989,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
                                              (box.yMin() + box.yMax()) / 2);
 
         frSquaredDistance distSquare = 0;
-        if (con->isCenterToCenter()) {
+        if (con->hasCenterToCenter()) {
           distSquare = gtl::distance_squared(origCenter, cutCenterPt);
         } else {
           distSquare = gtl::square_euclidean_distance(origCutRect, cutRect);
@@ -1009,7 +1009,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
       Rect spacingBox;
       auto reqDist = con->getCutSpacing();
       auto cutWidth = getTech()->getLayer(lNum)->getWidth();
-      if (con->isCenterToCenter()) {
+      if (con->hasCenterToCenter()) {
         spacingBox.init(origCenter.x() - reqDist,
                         origCenter.y() - reqDist,
                         origCenter.x() + reqDist,
@@ -1052,7 +1052,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
 
   // spacing value needed
   frCoord bloatDist = 0;
-  for (auto con : cutLayer->getLef58CutSpacingConstraints()) {
+  for (auto con : cutLayer->getCutSpacing()) {
     bloatDist = max(bloatDist, con->getCutSpacing());
     if (con->getAdjacentCuts() != -1 && isBlockage) {
       bloatDist = max(bloatDist, con->getCutWithin());
@@ -1103,16 +1103,16 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
         c2cSquare = Point::squaredDistance(boxCenter, tmpBxCenter);
         prl = max(-dx, -dy);
         hasViol = false;
-        for (auto con : cutLayer->getLef58CutSpacingConstraints()) {
+        for (auto con : cutLayer->getCutSpacing()) {
           reqDistSquare = con->getCutSpacing();
           reqDistSquare *= con->getCutSpacing();
-          currDistSquare = con->isCenterToCenter() ? c2cSquare : distSquare;
-          if (con->isSameNet()) {
+          currDistSquare = con->hasCenterToCenter() ? c2cSquare : distSquare;
+          if (con->hasSameNet()) {
             continue;
           }
-          if (con->hasSecondLayer()) {
+          if (con->isLayer()) {
             ;
-          } else if (con->hasAdjacentCuts()) {
+          } else if (con->isAdjacentCuts()) {
             // OBS always count as within distance instead of cut spacing
             if (isBlockage) {
               reqDistSquare = con->getCutWithin();
@@ -1126,7 +1126,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
             if (prl > 0 && currDistSquare < reqDistSquare) {
               hasViol = true;
             }
-          } else if (con->hasArea()) {
+          } else if (con->isArea()) {
             auto currArea = max(box.area(), tmpBx.area());
             if (currArea >= con->getCutArea()
                 && currDistSquare < reqDistSquare) {
@@ -1203,7 +1203,7 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const Rect& box,
   if (viaDef == nullptr) {
     return;
   }
-  frLef58CutSpacingConstraint* con
+  frCutSpacingConstraint* con
       = layer1->getInterLayerCutSpacing(cutLayerNum2, false);
   if (con == nullptr) {
     con = layer2->getInterLayerCutSpacing(cutLayerNum1, false);
@@ -1279,7 +1279,7 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const Rect& box,
         if (con != nullptr) {
           reqDistSquare = con->getCutSpacing();
           reqDistSquare *= reqDistSquare;
-          currDistSquare = con->isCenterToCenter() ? c2cSquare : distSquare;
+          currDistSquare = con->hasCenterToCenter() ? c2cSquare : distSquare;
           if (currDistSquare < reqDistSquare)
             hasViol = true;
         }
