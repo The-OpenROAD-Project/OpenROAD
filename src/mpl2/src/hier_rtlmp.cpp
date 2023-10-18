@@ -1168,22 +1168,24 @@ void HierRTLMP::breakCluster(Cluster* parent)
         Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
         for (odb::dbInst* inst : module->getInsts()) {
           const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-          if (liberty_cell == nullptr)
+          if (liberty_cell == nullptr) {
             continue;
+          }
           odb::dbMaster* master = inst->getMaster();
           // check if the instance is a Pad, Cover or empty block (such as
           // marker)
           if (master->isPad() || master->isCover()) {
             continue;
-          } else if (master->isBlock()) {
+          }
+          if (master->isBlock()) {
             cluster->addLeafMacro(inst);
           } else {
             cluster->addLeafStdCell(inst);
           }
         }
         // if the module has no meaningful glue instances
-        if (cluster->getLeafStdCells().size() == 0
-            && cluster->getLeafMacros().size() == 0) {
+        if (cluster->getLeafStdCells().empty()
+            && cluster->getLeafMacros().empty()) {
           delete cluster;
         } else {
           setInstProperty(cluster);
@@ -1196,14 +1198,16 @@ void HierRTLMP::breakCluster(Cluster* parent)
       } else {
         for (odb::dbInst* inst : module->getInsts()) {
           const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-          if (liberty_cell == nullptr)
+          if (liberty_cell == nullptr) {
             continue;
+          }
           odb::dbMaster* master = inst->getMaster();
           // check if the instance is a Pad, Cover or empty block (such as
           // marker)
           if (master->isPad() || master->isCover()) {
             continue;
-          } else if (master->isBlock()) {
+          }
+          if (master->isBlock()) {
             parent->addLeafMacro(inst);
           } else {
             parent->addLeafStdCell(inst);
