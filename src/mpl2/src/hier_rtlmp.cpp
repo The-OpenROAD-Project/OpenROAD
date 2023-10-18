@@ -611,8 +611,12 @@ void HierRTLMP::hierRTLMacroPlacer()
       break;
     }
   }
+
   if (macro_only_flag == true) {
     logger_->info(MPL, 27, "The design only has macros.\n");
+    if (graphics_) {
+      graphics_->startFine();
+    }
     hardMacroClusterMacroPlacement(root_cluster_);
   } else {
     debugPrint(logger_,
@@ -620,6 +624,9 @@ void HierRTLMP::hierRTLMacroPlacer()
                "macro_placement",
                1,
                "Determine shaping function for clusters -- Macro Tilings.\n");
+    if (graphics_) {
+      graphics_->startCoarse();
+    }
     calClusterMacroTilings(root_cluster_);
 
     // create pin blockage for IO pins
@@ -628,6 +635,9 @@ void HierRTLMP::hierRTLMacroPlacer()
     // Perform macro placement in a top-down manner (pre-order DFS)
     //
     logger_->info(MPL, 28, "Perform Multilevel macro placement...");
+    if (graphics_) {
+      graphics_->startFine();
+    }
     if (bus_planning_flag_ == true) {
       multiLevelMacroPlacement(root_cluster_);
     } else {
