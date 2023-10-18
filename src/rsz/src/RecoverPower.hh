@@ -69,7 +69,6 @@ using sta::TimingArc;
 using sta::DcalcAnalysisPt;
 using sta::Vertex;
 using sta::Corner;
-using sta::Instance;
 
 class BufferedNet;
 enum class BufferedNetType;
@@ -88,7 +87,6 @@ private:
   void init();
   bool recoverPower(PathRef &path,
                    Slack path_slack);
-  void updateRoutes(Instance* inst);
   bool meetsSizeCriteria(LibertyCell *cell, LibertyCell *equiv,                           bool match_size);
   bool downsizeDrvr(PathRef *drvr_path, int drvr_index,
                     PathExpanded *expanded, bool only_same_size_swap,
