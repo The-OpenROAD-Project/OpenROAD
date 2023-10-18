@@ -3984,6 +3984,10 @@ void GlobalRouter::updateDirtyRoutes()
       return;
     }
 
+    const float old_critical_nets_percentage = critical_nets_percentage_;
+    critical_nets_percentage_ = 0;
+    fastroute_->setUpdateSlack(critical_nets_percentage_);
+
     initFastRouteIncr(dirty_nets);
 
     NetRouteMap new_route
@@ -4024,6 +4028,8 @@ void GlobalRouter::updateDirtyRoutes()
                        "heatmap in the GUI.");
       }
     }
+    critical_nets_percentage_ = old_critical_nets_percentage;
+    fastroute_->setUpdateSlack(critical_nets_percentage_);
   }
 }
 
