@@ -2668,7 +2668,6 @@ Resizer::recoverPower(float recover_power_percent)
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
     opendp_->initMacrosAndGrid();
-    recover_power_->setGlobalRouter(global_router_);
   }
   recover_power_->recoverPower(recover_power_percent);
 }
