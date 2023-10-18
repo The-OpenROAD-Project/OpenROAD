@@ -1452,11 +1452,11 @@ void FlexRP::prep_via2viaForbiddenLen_cutSpc(const frLayerNum& lNum,
     auto samenetCons = getDesign()
                            ->getTech()
                            ->getLayer(viaDef1->getCutLayerNum())
-                           ->getCutSpacing(true);
+                           ->getLef58CutSpacingConstraints(true);
     auto diffnetCons = getDesign()
                            ->getTech()
                            ->getLayer(viaDef1->getCutLayerNum())
-                           ->getCutSpacing(false);
+                           ->getLef58CutSpacingConstraints(false);
     if (!samenetCons.empty()) {
       // check samenet spacing rule if exists
       for (auto con : samenetCons) {
@@ -1464,13 +1464,13 @@ void FlexRP::prep_via2viaForbiddenLen_cutSpc(const frLayerNum& lNum,
           continue;
         }
         // filter rule, assuming default via will never trigger cutArea
-        if (con->hasSecondLayer() || con->isAdjacentCuts()
-            || con->isParallelOverlap() || con->isArea()
-            || !con->hasSameNet()) {
+        if (con->hasSecondLayer() || con->hasAdjacentCuts()
+            || con->isParallelOverlap() || con->hasArea()
+            || !con->isSameNet()) {
           continue;
         }
         auto reqSpcVal = con->getCutSpacing();
-        if (!con->hasCenterToCenter()) {
+        if (!con->isCenterToCenter()) {
           reqSpcVal += isCurrDirY ? cutBox1.dy() : cutBox1.dx();
         }
         forbiddenRanges.push_back(make_pair(0, reqSpcVal));
@@ -1482,12 +1482,12 @@ void FlexRP::prep_via2viaForbiddenLen_cutSpc(const frLayerNum& lNum,
         if (con == nullptr) {
           continue;
         }
-        if (con->hasSecondLayer() || con->isAdjacentCuts()
-            || con->isParallelOverlap() || con->isArea() || con->hasSameNet()) {
+        if (con->hasSecondLayer() || con->hasAdjacentCuts()
+            || con->isParallelOverlap() || con->hasArea() || con->isSameNet()) {
           continue;
         }
         auto reqSpcVal = con->getCutSpacing();
-        if (!con->hasCenterToCenter()) {
+        if (!con->isCenterToCenter()) {
           reqSpcVal += isCurrDirY ? cutBox1.dy() : cutBox1.dx();
         }
         forbiddenRanges.push_back(make_pair(0, reqSpcVal));
@@ -1496,7 +1496,7 @@ void FlexRP::prep_via2viaForbiddenLen_cutSpc(const frLayerNum& lNum,
   } else {
     auto layerNum1 = viaDef1->getCutLayerNum();
     auto layerNum2 = viaDef2->getCutLayerNum();
-    frCutSpacingConstraint* samenetCon = nullptr;
+    frLef58CutSpacingConstraint* samenetCon = nullptr;
     if (getDesign()->getTech()->getLayer(layerNum1)->hasInterLayerCutSpacing(
             layerNum2, true)) {
       samenetCon = getDesign()
@@ -1551,12 +1551,12 @@ void FlexRP::prep_via2viaForbiddenLen_cutSpc(const frLayerNum& lNum,
       if (reqSpcVal == 0) {
         ;
       } else {
-        if (!samenetCon->hasCenterToCenter()) {
+        if (!samenetCon->isCenterToCenter()) {
           reqSpcVal += isCurrDirY ? ((cutBox1.dy() + cutBox2.dy()) / 2)
                                   : ((cutBox1.dx() + cutBox2.dx()) / 2);
         }
       }
-      if (reqSpcVal != 0 && !samenetCon->hasStack()) {
+      if (reqSpcVal != 0 && !samenetCon->isStack()) {
         forbiddenRanges.push_back(make_pair(0, reqSpcVal));
       }
     }

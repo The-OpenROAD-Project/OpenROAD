@@ -951,7 +951,7 @@ void HardMacro::updateDb(float pitch_x, float pitch_y, odb::dbBlock* block)
   const Rect macro_with_halo_box(lower_x, lower_y, upper_x, upper_y);
   const odb::dbOrientType hard_macro_orientation = this->getOrientation();
 
-  const odb::Point snap_origin = alignOriginWithGrids(
+  const odb::Point snap_origin = computeSnapOrigin(
       macro_with_halo_box, hard_macro_orientation, pitch_x, pitch_y, block);
 
   inst_->setOrigin(snap_origin.x(), snap_origin.y());
@@ -959,11 +959,11 @@ void HardMacro::updateDb(float pitch_x, float pitch_y, odb::dbBlock* block)
   inst_->setPlacementStatus(odb::dbPlacementStatus::PLACED);
 }
 
-odb::Point HardMacro::alignOriginWithGrids(const Rect& macro_box,
-                                           const odb::dbOrientType& orientation,
-                                           float& pitch_x,
-                                           float& pitch_y,
-                                           odb::dbBlock* block)
+odb::Point HardMacro::computeSnapOrigin(const Rect& macro_box,
+                                        const odb::dbOrientType& orientation,
+                                        float& pitch_x,
+                                        float& pitch_y,
+                                        odb::dbBlock* block)
 {
   float offset_x = 0.0;
   float offset_y = 0.0;
@@ -1009,10 +1009,16 @@ odb::Point HardMacro::alignOriginWithGrids(const Rect& macro_box,
     pin_offset_y = -pin_offset_y;
   }
 
-  origin_x = std::round((origin_x - offset_x) / pitch_x) * pitch_x + offset_x
-             - pin_offset_x;
-  origin_y = std::round((origin_y - offset_y) / pitch_y) * pitch_y + offset_y
-             - pin_offset_y;
+  // Compute trackgrid alignment only if there are pins in the grid's direction.
+  if (pin_width_x != 0) {
+    origin_x = std::round((origin_x - offset_x) / pitch_x) * pitch_x + offset_x
+               - pin_offset_x;
+  }
+
+  if (pin_width_y != 0) {
+    origin_y = std::round((origin_y - offset_y) / pitch_y) * pitch_y + offset_y
+               - pin_offset_y;
+  }
 
   const int snap_origin_x
       = std::round(float(micronToDbu(origin_x, dbu_)) / manufacturing_grid_)

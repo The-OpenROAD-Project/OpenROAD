@@ -136,12 +136,6 @@ place_macro(odb::dbInst* inst, float x_origin, float y_origin, std::string orien
 {
   odb::dbOrientType orientation(orientation_string.c_str());
 
-  utl::Logger* logger = ord::getLogger();
-
-  if (orientation.isRightAngleRotation()) {
-    logger->warn(MPL, 36, "Orientation {} specified for macro {} is a right angle rotation.", orientation_string, inst->getName());
-  }
-
   getMacroPlacer2()->placeMacro(inst, x_origin, y_origin, orientation);
 }
 

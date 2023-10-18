@@ -1513,7 +1513,7 @@ void FlexDRWorker::initNet(const frDesign* design,
   for (auto& obj : extObjs) {
     dNet->addRoute(std::move(obj), true);
   }
-  if (getRipupMode() != 1) {
+  if (getRipupMode() != RipUpMode::ALL) {
     for (auto& obj : routeObjs) {
       dNet->addRoute(std::move(obj), false);
     }
@@ -1732,7 +1732,7 @@ void FlexDRWorker::initNets(const frDesign* design)
         design, nets, netRouteObjs, netExtObjs, netOrigGuides);
   }
   initNets_regionQuery();
-  if (getRipupMode() == 2) {
+  if (getRipupMode() == RipUpMode::NEARDRC) {
     initRipUpNetsFromMarkers();
   }
 
@@ -2465,14 +2465,14 @@ void FlexDRWorker::route_queue_init_queue(queue<RouteQueueEntry>& rerouteQueue)
   vector<RouteQueueEntry> checks;
   vector<RouteQueueEntry> routes;
 
-  if (getRipupMode() == 0) {
+  if (getRipupMode() == RipUpMode::DRC) {
     for (auto& marker : markers_) {
       route_queue_update_from_marker(
           &marker, uniqueVictims, uniqueAggressors, checks, routes);
     }
     mazeIterInit_sortRerouteQueue(0, checks);
     mazeIterInit_sortRerouteQueue(0, routes);
-  } else if (getRipupMode() == 1) {
+  } else if (getRipupMode() == RipUpMode::ALL) {
     // ripup all nets and clear objs here
     // nets are ripped up during initNets()
     vector<drNet*> ripupNets;
@@ -2489,7 +2489,7 @@ void FlexDRWorker::route_queue_init_queue(queue<RouteQueueEntry>& rerouteQueue)
       // no need to clear the net because route objs are not pushed to the net
       // (See FlexDRWorker::initNet)
     }
-  } else if (getRipupMode() == 2) {
+  } else if (getRipupMode() == RipUpMode::NEARDRC) {
     std::vector<drNet*> ripupNets;
     for (auto& net : nets_) {
       if (net->isRipup()) {
@@ -3296,7 +3296,7 @@ void FlexDRWorker::initMarkers(const frDesign* design)
 void FlexDRWorker::init(const frDesign* design)
 {
   initNets(design);
-  if (nets_.empty() && getRipupMode() == 1) {
+  if (nets_.empty() && getRipupMode() == RipUpMode::ALL) {
     skipRouting_ = true;
     return;
   }
