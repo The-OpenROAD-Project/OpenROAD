@@ -375,7 +375,7 @@ RecoverPower::downsizeCell(LibertyPort *in_port,
   int lib_ap = dcalc_ap->libertyIndex();
   LibertyCell *cell = drvr_port->libertyCell();
   LibertyCellSeq *equiv_cells = sta_->equivCells(cell);
-  constexpr double delay_margin = 1.3; // Prevent overly aggressive downsizing
+  constexpr double delay_margin = 1.5; // Prevent overly aggressive downsizing
 
   if (equiv_cells) {
     const char *in_port_name = in_port->name();
