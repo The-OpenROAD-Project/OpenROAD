@@ -351,12 +351,30 @@ RecoverPower::downsizeDrvr(PathRef *drvr_path,
                  drvr_port->libertyCell()->name(),
                  downsize->name());
       if (resizer_->replaceCell(drvr, downsize, true)) {
+        updateRoutes(drvr);
         resize_count_++;
         return true;
       }
     }
   }
   return false;
+}
+
+void
+RecoverPower::updateRoutes(Instance* inst)
+{
+  dbInst* db_inst = db_network_->staToDb(inst);
+  if (global_router_ != nullptr && resizer_->getParasiticsSrc() == ParasiticsSrc::global_routing) {
+    grt::IncrementalGRoute incr_groute(global_router_, resizer_->getDbBlock());
+    for (dbITerm* iterm : db_inst->getITerms()) {
+      dbNet* net = iterm->getNet();
+      if (net != nullptr && !net->isSpecial()) {
+        global_router_->addDirtyNet(net);
+      }
+    }
+
+    incr_groute.updateRoutes();
+  }
 }
 
 bool

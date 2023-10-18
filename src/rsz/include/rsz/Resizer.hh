@@ -342,6 +342,8 @@ public:
   void highlightSteiner(const Pin *drvr);
 
   dbNetwork *getDbNetwork() { return db_network_; }
+  ParasiticsSrc getParasiticsSrc() { return parasitics_src_; }
+  dbBlock* getDbBlock() { return block_; };
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
 
