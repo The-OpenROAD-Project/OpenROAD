@@ -373,7 +373,7 @@ RecoverPower::updateRoutes(Instance* inst)
       }
     }
 
-    incr_groute.updateRoutes();
+    incr_groute.updateRoutes(true);
   }
 }
 
