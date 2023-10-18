@@ -46,6 +46,11 @@ namespace sta {
 class PathExpanded;
 }
 
+namespace grt {
+class GlobalRouter;
+class IncrementalGRoute;
+}
+
 namespace rsz {
 
 class Resizer;
@@ -79,6 +84,7 @@ class RecoverPower : StaState
 {
 public:
   RecoverPower(Resizer *resizer);
+  void setGlobalRouter(grt::GlobalRouter* global_router);
   void recoverPower(float recover_power_percent);
   // For testing.
   void recoverPower(const Pin *end_pin);
@@ -115,6 +121,7 @@ private:
   dbSta *sta_;
   dbNetwork *db_network_;
   Resizer *resizer_;
+  grt::GlobalRouter *global_router_;
   const Corner *corner_;
   int resize_count_;
   const MinMax *max_;

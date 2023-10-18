@@ -39,6 +39,7 @@
 #include "utl/Logger.h"
 #include "db_sta/dbNetwork.hh"
 
+#include "grt/GlobalRouter.h"
 #include "sta/Units.hh"
 #include "sta/Liberty.hh"
 #include "sta/TimingArc.hh"
@@ -54,6 +55,11 @@
 #include "sta/PathExpanded.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/PortDirection.hh"
+
+namespace grt {
+class GlobalRouter;
+class IncrementalGRoute;
+}
 
 namespace rsz {
 
@@ -86,6 +92,7 @@ RecoverPower::RecoverPower(Resizer* resizer)
       sta_(nullptr),
       db_network_(nullptr),
       resizer_(resizer),
+      global_router_(nullptr),
       corner_(nullptr),
       resize_count_(0),
       max_(MinMax::max())
@@ -99,6 +106,12 @@ RecoverPower::init()
   sta_ = resizer_->sta_;
   db_network_ = resizer_->db_network_;
   copyState(sta_);
+}
+
+void
+RecoverPower::setGlobalRouter(grt::GlobalRouter* global_router)
+{
+  global_router_ = global_router;
 }
 
 void
