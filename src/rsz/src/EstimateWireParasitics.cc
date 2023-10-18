@@ -296,7 +296,6 @@ Resizer::ensureWireParasitic(const Pin *drvr_pin,
       parasitics_invalid_.erase(net);
       break;
     case ParasiticsSrc::global_routing: {
-      global_router_->addDirtyNet(db_network_->staToDb(net));
       incr_groute_->updateRoutes();
       global_router_->estimateRC(db_network_->staToDb(net));
       parasitics_invalid_.erase(net);
