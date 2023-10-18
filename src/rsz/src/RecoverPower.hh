@@ -71,8 +71,6 @@ using sta::Vertex;
 using sta::Corner;
 using sta::Instance;
 
-using odb::dbITerm;
-
 class BufferedNet;
 enum class BufferedNetType;
 typedef std::shared_ptr<BufferedNet> BufferedNetPtr;
