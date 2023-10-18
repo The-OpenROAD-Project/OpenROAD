@@ -177,6 +177,18 @@ void TritonRoute::setDebugPaCommit(bool on)
   debug_->paCommit = on;
 }
 
+RipUpMode getMode(int ripupMode)
+{
+  switch (ripupMode) {
+    case 0:
+      return RipUpMode::DRC;
+    case 1:
+      return RipUpMode::ALL;
+    default:
+      return RipUpMode::NEARDRC;
+  }
+}
+
 void TritonRoute::setDebugWorkerParams(int mazeEndIter,
                                        int drcCost,
                                        int markerCost,
@@ -252,8 +264,9 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
     worker->setFixedShapeCost(debug_->fixedShapeCost);
   if (debug_->markerDecay != -1)
     worker->setMarkerDecay(debug_->markerDecay);
-  if (debug_->ripupMode != -1)
-    worker->setRipupMode(debug_->ripupMode);
+  if (debug_->ripupMode != -1) {
+    worker->setRipupMode(getMode(debug_->ripupMode));
+  }
   if (debug_->followGuide != -1)
     worker->setFollowGuide((debug_->followGuide == 1));
   worker->setSharedVolume(shared_volume_);
@@ -498,7 +511,7 @@ void TritonRoute::init(Tcl_Interp* tcl_interp,
   dist_ = dist;
   stt_builder_ = stt_builder;
   design_ = std::make_unique<frDesign>(logger_);
-  dist->addCallBack(new fr::RoutingCallBack(this, dist, logger));
+  dist->addCallBack(new RoutingCallBack(this, dist, logger));
   // Define swig TCL commands.
   Drt_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::drt_tcl_inits);
@@ -614,7 +627,7 @@ void TritonRoute::stepDR(int size,
                      workerMarkerCost,
                      workerFixedShapeCost,
                      workerMarkerDecay,
-                     ripupMode,
+                     getMode(ripupMode),
                      followGuide});
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 }

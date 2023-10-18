@@ -507,13 +507,14 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   const frUInt4 workerMarkerCost = args.workerMarkerCost;
   const frUInt4 workerFixedShapeCost = args.workerFixedShapeCost;
   const float workerMarkerDecay = args.workerMarkerDecay;
-  const int ripupMode = args.ripupMode;
+  const RipUpMode ripupMode = args.ripupMode;
   const bool followGuide = args.followGuide;
 
   std::string profile_name("DR:searchRepair");
   profile_name += std::to_string(iter);
   ProfileTask profile(profile_name.c_str());
-  if (ripupMode != 1 && getDesign()->getTopBlock()->getMarkers().empty()) {
+  if (ripupMode != RipUpMode::ALL
+      && getDesign()->getTopBlock()->getMarkers().empty()) {
     return;
   }
   if (dist_on_) {
@@ -956,75 +957,75 @@ void FlexDR::end(bool done)
 
 static std::vector<FlexDR::SearchRepairArgs> strategy()
 {
-  const fr::frUInt4 shapeCost = ROUTESHAPECOST;
+  const frUInt4 shapeCost = ROUTESHAPECOST;
 
   // clang-format off
   return {
-    {7,  0,  3,      shapeCost,               0,       shapeCost, 0.950, 1,  true}, //  0
-    {7, -2,  3,      shapeCost,       shapeCost,       shapeCost, 0.950, 1,  true}, //  1
-    {7, -5,  3,      shapeCost,       shapeCost,       shapeCost, 0.950, 1,  true}, //  2
-    {7,  0,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, 0, false}, //  3
-    {7, -1,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, 0, false}, //  4
-    {7, -2,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, 0, false}, //  5
-    {7, -3,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, 0, false}, //  6
-    {7, -4,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, 0, false}, //  7
-    {7, -5,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, 0, false}, //  8
-    {7, -6,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, 0, false}, //  9
-    {7,  0,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, 0, false}, // 10
-    {7, -1,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, 0, false}, // 11
-    {7, -2,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, 0, false}, // 12
-    {7, -3,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, 0, false}, // 13
-    {7, -4,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, 0, false}, // 14
-    {7, -5,  8,  2 * shapeCost,      MARKERCOST,   4 * shapeCost, 0.950, 0, false}, // 15
-    {7, -6,  8,  2 * shapeCost,      MARKERCOST,   4 * shapeCost, 0.950, 0, false}, // 16
-    {7, -3,  8,      shapeCost,      MARKERCOST,   4 * shapeCost, 0.950, 1, false}, // 17
-    {7,  0,  8,  4 * shapeCost,      MARKERCOST,   4 * shapeCost, 0.950, 0, false}, // 18
-    {7, -1,  8,  4 * shapeCost,      MARKERCOST,   4 * shapeCost, 0.950, 0, false}, // 19
-    {7, -2,  8,  4 * shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 20
-    {7, -3,  8,  4 * shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 21
-    {7, -4,  8,  4 * shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 22
-    {7, -5,  8,      shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, 2, false}, // 23
-    {7, -6,  8,  4 * shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 24
-    {5, -2,  8,      shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, 1, false}, // 25
-    {7,  0,  8,  8 * shapeCost,  2 * MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 26
-    {7, -1,  8,  8 * shapeCost,  2 * MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 27
-    {7, -2,  8,  8 * shapeCost,  2 * MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 28
-    {7, -3,  8,  8 * shapeCost,  2 * MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 29
-    {7, -4,  8,      shapeCost,      MARKERCOST,  50 * shapeCost, 0.950, 2, false}, // 30
-    {7, -5,  8,  8 * shapeCost,  2 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 31
-    {7, -6,  8,  8 * shapeCost,  2 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 32
-    {3, -1,  8,      shapeCost,      MARKERCOST,  50 * shapeCost, 0.950, 1, false}, // 33
-    {7,  0,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 34
-    {7, -1,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 35
-    {7, -2,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 36
-    {7, -3,  8,      shapeCost,      MARKERCOST,  50 * shapeCost, 0.950, 2, false}, // 37
-    {7, -4,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 38
-    {7, -5,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 39
-    {7, -6,  8, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 0, false}, // 40
-    {3, -2,  8,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.990, 1, false}, // 41
-    {7,  0, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 0, false}, // 42
-    {7, -1, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 0, false}, // 43
-    {7, -2, 16,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.990, 2, false}, // 44
-    {7, -3, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 0, false}, // 45
-    {7, -4, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 0, false}, // 46
-    {7, -5, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 0, false}, // 47
-    {7, -6, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 0, false}, // 48
-    {3, -0,  8,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.990, 1, false}, // 49
-    {7,  0, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 50
-    {7, -1, 32,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.999, 2, false}, // 51
-    {7, -2, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 52
-    {7, -3, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 53
-    {7, -4, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 54
-    {7, -5, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 55
-    {7, -6, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 56
-    {3, -1,  8,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.999, 1, false}, // 57
-    {7,  0, 64,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.999, 2, false}, // 58
-    {7, -1, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 59
-    {7, -2, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 60
-    {7, -3, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 61
-    {7, -4, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 62
-    {7, -5, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 63
-    {7, -6, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}  // 64
+    {7,  0,  3,      shapeCost,               0,       shapeCost, 0.950, RipUpMode::ALL    ,  true}, //  0
+    {7, -2,  3,      shapeCost,       shapeCost,       shapeCost, 0.950, RipUpMode::ALL    ,  true}, //  1
+    {7, -5,  3,      shapeCost,       shapeCost,       shapeCost, 0.950, RipUpMode::ALL    ,  true}, //  2
+    {7,  0,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, RipUpMode::DRC    , false}, //  3
+    {7, -1,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, RipUpMode::DRC    , false}, //  4
+    {7, -2,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, RipUpMode::DRC    , false}, //  5
+    {7, -3,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, RipUpMode::DRC    , false}, //  6
+    {7, -4,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, RipUpMode::DRC    , false}, //  7
+    {7, -5,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, RipUpMode::DRC    , false}, //  8
+    {7, -6,  8,      shapeCost,      MARKERCOST,   2 * shapeCost, 0.950, RipUpMode::DRC    , false}, //  9
+    {7,  0,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 10
+    {7, -1,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 11
+    {7, -2,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 12
+    {7, -3,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 13
+    {7, -4,  8,  2 * shapeCost,      MARKERCOST,   3 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 14
+    {7, -5,  8,  2 * shapeCost,      MARKERCOST,   4 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 15
+    {7, -6,  8,  2 * shapeCost,      MARKERCOST,   4 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 16
+    {7, -3,  8,      shapeCost,      MARKERCOST,   4 * shapeCost, 0.950, RipUpMode::ALL    , false}, // 17
+    {7,  0,  8,  4 * shapeCost,      MARKERCOST,   4 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 18
+    {7, -1,  8,  4 * shapeCost,      MARKERCOST,   4 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 19
+    {7, -2,  8,  4 * shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 20
+    {7, -3,  8,  4 * shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 21
+    {7, -4,  8,  4 * shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 22
+    {7, -5,  8,      shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, RipUpMode::NEARDRC, false}, // 23
+    {7, -6,  8,  4 * shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 24
+    {5, -2,  8,      shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, RipUpMode::ALL    , false}, // 25
+    {7,  0,  8,  8 * shapeCost,  2 * MARKERCOST,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 26
+    {7, -1,  8,  8 * shapeCost,  2 * MARKERCOST,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 27
+    {7, -2,  8,  8 * shapeCost,  2 * MARKERCOST,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 28
+    {7, -3,  8,  8 * shapeCost,  2 * MARKERCOST,  10 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 29
+    {7, -4,  8,      shapeCost,      MARKERCOST,  50 * shapeCost, 0.950, RipUpMode::NEARDRC, false}, // 30
+    {7, -5,  8,  8 * shapeCost,  2 * MARKERCOST,  50 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 31
+    {7, -6,  8,  8 * shapeCost,  2 * MARKERCOST,  50 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 32
+    {3, -1,  8,      shapeCost,      MARKERCOST,  50 * shapeCost, 0.950, RipUpMode::ALL    , false}, // 33
+    {7,  0,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 34
+    {7, -1,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 35
+    {7, -2,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 36
+    {7, -3,  8,      shapeCost,      MARKERCOST,  50 * shapeCost, 0.950, RipUpMode::NEARDRC, false}, // 37
+    {7, -4,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 38
+    {7, -5,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, RipUpMode::DRC    , false}, // 39
+    {7, -6,  8, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, RipUpMode::DRC    , false}, // 40
+    {3, -2,  8,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.990, RipUpMode::ALL    , false}, // 41
+    {7,  0, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, RipUpMode::DRC    , false}, // 42
+    {7, -1, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, RipUpMode::DRC    , false}, // 43
+    {7, -2, 16,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.990, RipUpMode::NEARDRC, false}, // 44
+    {7, -3, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, RipUpMode::DRC    , false}, // 45
+    {7, -4, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, RipUpMode::DRC    , false}, // 46
+    {7, -5, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, RipUpMode::DRC    , false}, // 47
+    {7, -6, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, RipUpMode::DRC    , false}, // 48
+    {3, -0,  8,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.990, RipUpMode::ALL    , false}, // 49
+    {7,  0, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 50
+    {7, -1, 32,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::NEARDRC, false}, // 51
+    {7, -2, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 52
+    {7, -3, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 53
+    {7, -4, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 54
+    {7, -5, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 55
+    {7, -6, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 56
+    {3, -1,  8,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::ALL    , false}, // 57
+    {7,  0, 64,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::NEARDRC, false}, // 58
+    {7, -1, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 59
+    {7, -2, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 60
+    {7, -3, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 61
+    {7, -4, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 62
+    {7, -5, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 63
+    {7, -6, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}  // 64
   };
   // clang-format on
 }
@@ -1163,7 +1164,7 @@ int FlexDR::main()
 
   for (auto& args : strategy()) {
     int clipSize = args.size;
-    if (args.ripupMode != 1) {
+    if (args.ripupMode != RipUpMode::ALL) {
       if (increaseClipsize_) {
         clipSizeInc_ += 2;
       } else
@@ -1325,7 +1326,7 @@ void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
 
 std::unique_ptr<FlexDRWorker> FlexDRWorker::load(const std::string& workerStr,
                                                  utl::Logger* logger,
-                                                 fr::frDesign* design,
+                                                 frDesign* design,
                                                  FlexDRGraphics* graphics)
 {
   auto worker = std::make_unique<FlexDRWorker>();

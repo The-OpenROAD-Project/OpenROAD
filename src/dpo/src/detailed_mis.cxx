@@ -577,7 +577,7 @@ void DetailedMis::solveMatch()
 
   std::map<lemon::ListDigraph::Arc, std::pair<int, int>> reverseMap;
 
-  int icost;
+  double icost;
   for (int i = 0; i < nNodes; i++) {
     // Supply to node.
     lemon::ListDigraph::Arc arc_sv = g.addArc(supplyNode, nodeForCell[i]);
@@ -613,20 +613,22 @@ void DetailedMis::solveMatch()
 
       // Okay to assign the cell to this location.
       if (obj_ == DetailedMis::Hpwl) {
-        icost = (int) getHpwl(ndi,
-                              pos[j].first + 0.5 * ndi->getWidth(),
-                              pos[j].second + 0.5 * ndi->getHeight());
+        icost = getHpwl(ndi,
+                        pos[j].first + 0.5 * ndi->getWidth(),
+                        pos[j].second + 0.5 * ndi->getHeight());
       } else {
-        icost = (int) getDisp(ndi,
-                              pos[j].first + 0.5 * ndi->getWidth(),
-                              pos[j].second + 0.5 * ndi->getHeight());
+        icost = getDisp(ndi,
+                        pos[j].first + 0.5 * ndi->getWidth(),
+                        pos[j].second + 0.5 * ndi->getHeight());
       }
 
       // Node to spot.
       lemon::ListDigraph::Arc arc_vu = g.addArc(nodeForCell[i], nodeForSpot[j]);
       l_i[arc_vu] = 0;
       u_i[arc_vu] = 1;
-      c_i[arc_vu] = icost;
+      c_i[arc_vu] = icost > std::numeric_limits<int>::max()
+                        ? std::numeric_limits<int>::max()
+                        : static_cast<int>(icost);
 
       reverseMap[arc_vu] = std::make_pair(i, j);
     }

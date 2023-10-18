@@ -1646,100 +1646,6 @@ class frLef58SpacingTableConstraint : public frSpacingTableConstraint
   frUInt4 eolWidth;
 };
 
-// ADJACENTCUTS
-class frCutSpacingConstraint : public frConstraint
-{
- public:
-  // constructor
-  frCutSpacingConstraint() {}
-  frCutSpacingConstraint(frCoord cutSpacingIn,
-                         bool centerToCenterIn,
-                         bool sameNetIn,
-                         frString secondLayerNameIn,
-                         bool stackIn,
-                         int adjacentCutsIn,
-                         frCoord cutWithinIn,
-                         bool isExceptSamePGNetIn,
-                         bool isParallelOverlapIn,
-                         frCoord cutAreaIn,
-                         int twoCutsIn = -1)
-  {
-    cutSpacing = cutSpacingIn;
-    centerToCenter = centerToCenterIn;
-    sameNet = sameNetIn;
-    secondLayerName = secondLayerNameIn;
-    stack = stackIn;
-    adjacentCuts = adjacentCutsIn;
-    cutWithin = cutWithinIn;
-    exceptSamePGNet = isExceptSamePGNetIn;
-    parallelOverlap = isParallelOverlapIn;
-    cutArea = cutAreaIn;
-    twoCuts = twoCutsIn;
-  }
-  // getter
-  bool hasCenterToCenter() const { return centerToCenter; }
-  bool getCenterToCenter() const { return centerToCenter; }
-  bool getSameNet() const { return sameNet; }
-  bool hasSameNet() const { return sameNet; }
-  frCutSpacingConstraint* getSameNetConstraint() { return sameNetConstraint; }
-  bool getStack() const { return stack; }
-  bool hasStack() const { return stack; }
-  bool isLayer() const { return !(secondLayerName.empty()); }
-  const frString& getSecondLayerName() const { return secondLayerName; }
-  bool hasSecondLayer() const { return (secondLayerNum != -1); }
-  frLayerNum getSecondLayerNum() const { return secondLayerNum; }
-  bool isAdjacentCuts() const { return (adjacentCuts != -1); }
-  int getAdjacentCuts() const { return adjacentCuts; }
-  frCoord getCutWithin() const { return cutWithin; }
-  bool hasExceptSamePGNet() const { return exceptSamePGNet; }
-  bool getExceptSamePGNet() const { return exceptSamePGNet; }
-  bool isParallelOverlap() const { return parallelOverlap; }
-  bool getParallelOverlap() const { return parallelOverlap; }
-  bool isArea() const { return !(cutArea == -1); }
-  bool getCutArea() const { return cutArea; }
-  frCoord getCutSpacing() const { return cutSpacing; }
-  frConstraintTypeEnum typeId() const override
-  {
-    return frConstraintTypeEnum::frcCutSpacingConstraint;
-  }
-  // LEF58 related
-  bool isTwoCuts() const { return (twoCuts == -1); }
-  int getTwoCuts() const { return twoCuts; }
-
-  void report(utl::Logger* logger) const override
-  {
-    logger->report("Cut Spacing");
-  }
-
-  // setter
-
-  void setSecondLayerNum(int secondLayerNumIn)
-  {
-    secondLayerNum = secondLayerNumIn;
-  }
-
-  void setSameNetConstraint(frCutSpacingConstraint* in)
-  {
-    sameNetConstraint = in;
-  }
-
- protected:
-  frCoord cutSpacing = -1;
-  bool centerToCenter = false;
-  bool sameNet = false;
-  frCutSpacingConstraint* sameNetConstraint = nullptr;
-  bool stack = false;
-  bool exceptSamePGNet = false;
-  bool parallelOverlap = false;
-  frString secondLayerName;
-  frLayerNum secondLayerNum = -1;
-  int adjacentCuts = -1;
-  frCoord cutWithin = -1;
-  frCoord cutArea = -1;
-  // LEF58 related
-  int twoCuts = -1;
-};
-
 // LEF58_SPACING for cut layer (new)
 class frLef58CutSpacingConstraint : public frConstraint
 {
@@ -1807,6 +1713,10 @@ class frLef58CutSpacingConstraint : public frConstraint
   bool isMaxXY() const { return maxXY; }
   bool isCenterToCenter() const { return centerToCenter; }
   bool isSameNet() const { return sameNet; }
+  frLef58CutSpacingConstraint* getSameNetConstraint()
+  {
+    return sameNetConstraint;
+  }
   bool isSameMetal() const { return sameMetal; }
   bool isSameVia() const { return sameVia; }
   std::string getSecondLayerName() const { return secondLayerName; }
@@ -2011,6 +1921,10 @@ class frLef58CutSpacingConstraint : public frConstraint
         numCut,
         cutArea);
   }
+  void setSameNetConstraint(frLef58CutSpacingConstraint* in)
+  {
+    sameNetConstraint = in;
+  }
 
  protected:
   frCoord cutSpacing;
@@ -2018,6 +1932,7 @@ class frLef58CutSpacingConstraint : public frConstraint
   bool maxXY;
   bool centerToCenter;
   bool sameNet;
+  frLef58CutSpacingConstraint* sameNetConstraint = nullptr;
   bool sameMetal;
   bool sameVia;
   std::string secondLayerName;

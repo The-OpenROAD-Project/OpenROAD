@@ -295,10 +295,14 @@ void reportSteinerTree(const stt::Tree& tree,
   // flute mangles the x/y locations and pdrevII moves the driver to 0
   // so we have to find the driver location index.
   int drvr_index = findLocationIndex(tree, drvr_x, drvr_y);
-  logger->report("Wire length = {} Path depth = {}",
-                 tree.length,
-                 findPathDepth(tree, drvr_index));
-  reportSteinerBranches(tree, logger);
+  if (drvr_index >= 0) {
+    logger->report("Wire length = {} Path depth = {}",
+                   tree.length,
+                   findPathDepth(tree, drvr_index));
+    reportSteinerBranches(tree, logger);
+  } else {
+    logger->error(utl::STT, 7, "Invalid driver index {}.", drvr_index);
+  }
 }
 
 void reportSteinerTree(const stt::Tree& tree, Logger* logger)
