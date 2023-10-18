@@ -997,7 +997,8 @@ void HierRTLMP::multiLevelCluster(Cluster* parent)
     // check if root cluster is below the max size of a leaf cluster
     // Force create child clusters in this case
     const int leaf_cluster_size
-        = max_num_inst_base_ / std::pow(coarsening_ratio_, max_num_level_ - 1);
+        = max_num_inst_base_ / std::pow(coarsening_ratio_, max_num_level_ - 1)
+          * (1 + tolerance_);
     if (parent->getNumStdCell() < leaf_cluster_size)
       force_split = true;
     debugPrint(logger_,
@@ -1160,22 +1161,55 @@ void HierRTLMP::breakCluster(Cluster* parent)
     // we will use the TritonPart to partition this large flat cluster
     // in the follow-up UpdateSubTree function
     if (module->getChildren().size() == 0) {
-      for (odb::dbInst* inst : module->getInsts()) {
-        const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-        if (liberty_cell == nullptr)
-          continue;
-        odb::dbMaster* master = inst->getMaster();
-        // check if the instance is a Pad, Cover or empty block (such as marker)
-        if (master->isPad() || master->isCover()) {
-          continue;
-        } else if (master->isBlock()) {
-          parent->addLeafMacro(inst);
-        } else {
-          parent->addLeafStdCell(inst);
+      if (parent == root_cluster_) {
+        // Check the glue logics
+        std::string cluster_name
+            = std::string("(") + parent->getName() + ")_glue_logic";
+        Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
+        for (odb::dbInst* inst : module->getInsts()) {
+          const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
+          if (liberty_cell == nullptr)
+            continue;
+          odb::dbMaster* master = inst->getMaster();
+          // check if the instance is a Pad, Cover or empty block (such as marker)
+          if (master->isPad() || master->isCover()) {
+            continue;
+          } else if (master->isBlock()) {
+            cluster->addLeafMacro(inst);
+          } else {
+            cluster->addLeafStdCell(inst);
+          }
         }
+        // if the module has no meaningful glue instances
+        if (cluster->getLeafStdCells().size() == 0
+            && cluster->getLeafMacros().size() == 0) {
+          delete cluster;
+        } else {
+          setInstProperty(cluster);
+          setClusterMetrics(cluster);
+          cluster_map_[cluster_id_++] = cluster;
+          // modify the physical hierarchy tree
+          cluster->setParent(parent);
+          parent->addChild(cluster);
+        }
+      } else {
+        for (odb::dbInst* inst : module->getInsts()) {
+          const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
+          if (liberty_cell == nullptr)
+            continue;
+          odb::dbMaster* master = inst->getMaster();
+          // check if the instance is a Pad, Cover or empty block (such as marker)
+          if (master->isPad() || master->isCover()) {
+            continue;
+          } else if (master->isBlock()) {
+            parent->addLeafMacro(inst);
+          } else {
+            parent->addLeafStdCell(inst);
+          }
+        }
+        parent->clearDbModules();  // remove module from the parent cluster
+        setInstProperty(parent);
       }
-      parent->clearDbModules();  // remove module from the parent cluster
-      setInstProperty(parent);
       return;
     }
     // (b.2) if the logical module has child logical modules,
