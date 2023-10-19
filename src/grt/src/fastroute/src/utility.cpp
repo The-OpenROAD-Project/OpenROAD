@@ -998,7 +998,7 @@ void FastRouteCore::printTree3D(int netID)
     if (nodeID < sttrees_[netID].num_terminals) {
       l = nets_[netID]->getPinL()[nodeID];
     }
-    
+
     logger_->report("nodeID {},  [{}, {}, {}], status: {}",
                     nodeID,
                     x,

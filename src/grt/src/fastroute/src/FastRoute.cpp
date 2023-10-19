@@ -694,7 +694,7 @@ NetRouteMap FastRouteCore::getRoutes()
             route.push_back(segment);
           }
         }
-      }  else if (treeedge->n1 < num_terminals && treeedge->n2 < num_terminals) {
+      } else if (treeedge->n1 < num_terminals && treeedge->n2 < num_terminals) {
         const auto& nodes = sttrees_[netID].nodes;
         int x1 = tile_size_ * (nodes[treeedge->n1].x + 0.5) + x_corner_;
         int y1 = tile_size_ * (nodes[treeedge->n1].y + 0.5) + y_corner_;
