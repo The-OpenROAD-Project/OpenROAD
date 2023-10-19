@@ -101,6 +101,7 @@ proc create_menu_item { args } {
 }
 
 sta::define_cmd_args "save_image" {[-area {x0 y0 x1 y1}] \
+                                   [-width width] \
                                    [-resolution microns_per_pixel] \
                                    [-display_option option] \
                                    path
@@ -109,7 +110,7 @@ sta::define_cmd_args "save_image" {[-area {x0 y0 x1 y1}] \
 proc save_image { args } {
   set options [gui::parse_options $args]
   sta::parse_key_args "save_image" args \
-    keys {-area -resolution -display_option} flags {}
+    keys {-area -width -resolution -display_option} flags {}
 
   set resolution 0
   if { [info exists keys(-resolution)] } {
@@ -133,10 +134,22 @@ proc save_image { args } {
     }
   }
 
+  set width 0
+  if { [info exists keys(-width)] } {
+    if {$resolution != 0} {
+      utl::error GUI 96 "Cannot set -width if -resolution has already been specified."
+    }
+    sta::check_positive_int "-width" $keys(-width)
+    set width $keys(-width)
+    if { $width == 0 } {
+      utl::error GUI 98 "Specified -width cannot be zero."
+    }
+  }
+
   sta::check_argc_eq1 "save_image" $args
   set path [lindex $args 0]
 
-  gui::save_image $path {*}$area $resolution $options
+  gui::save_image $path {*}$area $width $resolution $options
 
   # delete map
   rename $options ""

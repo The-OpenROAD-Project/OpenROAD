@@ -122,12 +122,12 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              report_directory);
 }
 
-void
-set_debug_cmd()
+void set_debug_cmd(bool coarse, bool fine)
 {
   auto macro_placer = getMacroPlacer2();
   int dbu = ord::getDb()->getTech()->getDbUnitsPerMicron();
-  std::unique_ptr<Mpl2Observer> graphics = std::make_unique<Graphics>(dbu, ord::getLogger());
+  std::unique_ptr<Mpl2Observer> graphics
+    = std::make_unique<Graphics>(coarse, fine, dbu, ord::getLogger());
   macro_placer->setDebug(graphics);
 }
 
@@ -135,12 +135,6 @@ void
 place_macro(odb::dbInst* inst, float x_origin, float y_origin, std::string orientation_string)
 {
   odb::dbOrientType orientation(orientation_string.c_str());
-
-  utl::Logger* logger = ord::getLogger();
-
-  if (orientation.isRightAngleRotation()) {
-    logger->warn(MPL, 36, "Orientation {} specified for macro {} is a right angle rotation.", orientation_string, inst->getName());
-  }
 
   getMacroPlacer2()->placeMacro(inst, x_origin, y_origin, orientation);
 }

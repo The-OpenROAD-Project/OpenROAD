@@ -203,6 +203,7 @@ int Architecture::postProcess(Network* network)
       const int lx = intervals.front().first;
       const int rx = intervals.back().second;
       subrows[0]->setNumSites((int) ((rx - lx) / subrows[0]->getSiteSpacing()));
+      subrows[0]->setSubRowOrigin(lx);
 
       // Delete un-needed rows.
       while (subrows.size() > 1) {

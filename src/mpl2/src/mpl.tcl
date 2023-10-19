@@ -321,7 +321,18 @@ proc parse_macro_name {cmd macro_name} {
 }
 
 proc mpl_debug { args } {
-  mpl2::set_debug_cmd
+  sta::parse_key_args "mpl_debug" args \
+      keys {} \
+      flags {-coarse -fine}
+
+  set coarse [info exists flags(-coarse)]
+  set fine [info exists flags(-fine)]
+  if { [expr !$coarse && !$fine] } {
+    set coarse true
+    set fine true
+  }
+
+  mpl2::set_debug_cmd $coarse $fine
 }
 
 }
