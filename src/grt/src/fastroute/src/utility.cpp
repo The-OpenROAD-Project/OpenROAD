@@ -994,10 +994,12 @@ void FastRouteCore::printTree3D(int netID)
   for (int nodeID = 0; nodeID < sttrees_[netID].num_nodes; nodeID++) {
     int x = tile_size_ * (sttrees_[netID].nodes[nodeID].x + 0.5) + x_corner_;
     int y = tile_size_ * (sttrees_[netID].nodes[nodeID].y + 0.5) + y_corner_;
-    logger_->report("nodeID {},  [{}, {}], status: {}",
+    int l = nets_[netID]->getPinL()[nodeID];
+    logger_->report("nodeID {},  [{}, {}, {}], status: {}",
                     nodeID,
                     x,
                     y,
+                    l,
                     sttrees_[netID].nodes[nodeID].status);
   }
 
