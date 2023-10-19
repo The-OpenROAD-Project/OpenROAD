@@ -236,10 +236,10 @@ void io::Parser::setVias(odb::dbBlock* block)
                         params.getBottomLayer()->getName(),
                         via->getName());
           continue;
-        } else
-          botLayerNum
-              = tech_->name2layer.find(params.getBottomLayer()->getName())
-                    ->second->getLayerNum();
+        }
+        botLayerNum
+            = tech_->name2layer.find(params.getBottomLayer()->getName())
+                  ->second->getLayerNum();
       }
 
       if (tech_->name2layer.find(params.getTopLayer()->getName())
@@ -256,9 +256,9 @@ void io::Parser::setVias(odb::dbBlock* block)
                         params.getTopLayer()->getName(),
                         via->getName());
           continue;
-        } else
-          topLayerNum = tech_->name2layer.find(params.getTopLayer()->getName())
-                            ->second->getLayerNum();
+        }
+        topLayerNum = tech_->name2layer.find(params.getTopLayer()->getName())
+                          ->second->getLayerNum();
       }
       int xSize = params.getXCutSize();
       int ySize = params.getYCutSize();
@@ -2522,8 +2522,8 @@ void io::Parser::setTechVias(odb::dbTech* db_tech)
                       via->getName());
         has_unknown_layer = true;
         continue;
-      } else if (box->getTechLayer()->getType()
-                 == dbTechLayerType::MASTERSLICE) {
+      }
+      if (box->getTechLayer()->getType() == dbTechLayerType::MASTERSLICE) {
         logger_->warn(DRT,
                       192,
                       "Via {} with MASTERSLICE layer {} will be ignored.",
