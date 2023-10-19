@@ -1283,6 +1283,10 @@ void Opendp::legalCellPos(dbInst* db_inst)
   Point legal_pt = pointOffMacro(cell);      // return real position
   Point new_pos = legalPt(&cell, legal_pt);  // return real position
 
+  if (legal_pt == new_pos) {
+    return;
+  }
+
   int row_height = row_height_;
   int site_width = site_width_;
   // transform to grid Pos for align
