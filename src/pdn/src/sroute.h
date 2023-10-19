@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include <iostream>
 #include <vector>
 
 #include "odb/db.h"

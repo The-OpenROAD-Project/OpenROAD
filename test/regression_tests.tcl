@@ -3,6 +3,8 @@ record_tests {
   get_core_die_areas
   timing_api
   timing_api_2
+  upf_test
+  upf_aes
 }
 
 define_test_group "non_flow" {

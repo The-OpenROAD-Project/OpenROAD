@@ -245,7 +245,7 @@ Resizer::incrementalParasiticsEnd()
 }
 
 void
-Resizer::updateParasitics()
+Resizer::updateParasitics(bool save_guides)
 {
   switch (parasitics_src_) {
   case ParasiticsSrc::placement:
@@ -254,7 +254,7 @@ Resizer::updateParasitics()
     parasitics_invalid_.clear();
     break;
   case ParasiticsSrc::global_routing: {
-    incr_groute_->updateRoutes();
+    incr_groute_->updateRoutes(save_guides);
     for (const Net *net : parasitics_invalid_)
       global_router_->estimateRC(db_network_->staToDb(net));
     parasitics_invalid_.clear();
@@ -296,9 +296,7 @@ Resizer::ensureWireParasitic(const Pin *drvr_pin,
       parasitics_invalid_.erase(net);
       break;
     case ParasiticsSrc::global_routing: {
-      grt::IncrementalGRoute incr_groute(global_router_, block_);
-      global_router_->addDirtyNet(db_network_->staToDb(net));
-      incr_groute.updateRoutes();
+      incr_groute_->updateRoutes();
       global_router_->estimateRC(db_network_->staToDb(net));
       parasitics_invalid_.erase(net);
       break;
