@@ -3937,9 +3937,9 @@ IncrementalGRoute::IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block)
   db_cbk_.addOwner(block);
 }
 
-void IncrementalGRoute::updateRoutes()
+void IncrementalGRoute::updateRoutes(bool save_guides)
 {
-  groute_->updateDirtyRoutes();
+  groute_->updateDirtyRoutes(save_guides);
 }
 
 IncrementalGRoute::~IncrementalGRoute()
@@ -3965,7 +3965,7 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
   dirty_nets_.insert(net);
 }
 
-void GlobalRouter::updateDirtyRoutes()
+void GlobalRouter::updateDirtyRoutes(bool save_guides)
 {
   if (!dirty_nets_.empty()) {
     fastroute_->setVerbose(false);
@@ -4030,6 +4030,9 @@ void GlobalRouter::updateDirtyRoutes()
     }
     critical_nets_percentage_ = old_critical_nets_percentage;
     fastroute_->setUpdateSlack(critical_nets_percentage_);
+    if (save_guides) {
+      saveGuides();
+    }
   }
 }
 
