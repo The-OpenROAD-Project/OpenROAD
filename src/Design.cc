@@ -238,7 +238,6 @@ float Design::staticPower(odb::dbInst* inst, sta::Corner* corner)
   if (!sta_inst) {
     return 0.0;
   }
-  // sta::LibertyCell* lib_cell = network->libertyCell(sta_inst);
   sta::PowerResult power = sta->power(sta_inst, corner);
   return power.leakage();
 }
@@ -252,7 +251,6 @@ float Design::dynamicPower(odb::dbInst* inst, sta::Corner* corner)
   if (!sta_inst) {
     return 0.0;
   }
-  // sta::LibertyCell* lib_cell = network->libertyCell(sta_inst);
   sta::PowerResult power = sta->power(sta_inst, corner);
   return (power.internal() + power.switching());
 }
