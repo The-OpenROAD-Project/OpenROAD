@@ -122,12 +122,12 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              report_directory);
 }
 
-void
-set_debug_cmd()
+void set_debug_cmd(bool coarse, bool fine)
 {
   auto macro_placer = getMacroPlacer2();
   int dbu = ord::getDb()->getTech()->getDbUnitsPerMicron();
-  std::unique_ptr<Mpl2Observer> graphics = std::make_unique<Graphics>(dbu, ord::getLogger());
+  std::unique_ptr<Mpl2Observer> graphics
+    = std::make_unique<Graphics>(coarse, fine, dbu, ord::getLogger());
   macro_placer->setDebug(graphics);
 }
 
