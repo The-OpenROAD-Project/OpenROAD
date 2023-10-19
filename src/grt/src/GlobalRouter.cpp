@@ -3859,9 +3859,9 @@ IncrementalGRoute::IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block)
   db_cbk_.addOwner(block);
 }
 
-void IncrementalGRoute::updateRoutes()
+void IncrementalGRoute::updateRoutes(bool save_guides)
 {
-  groute_->updateDirtyRoutes();
+  groute_->updateDirtyRoutes(save_guides);
 }
 
 IncrementalGRoute::~IncrementalGRoute()
@@ -3887,7 +3887,7 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
   dirty_nets_.insert(net);
 }
 
-void GlobalRouter::updateDirtyRoutes()
+void GlobalRouter::updateDirtyRoutes(bool save_guides)
 {
   if (!dirty_nets_.empty()) {
     fastroute_->setVerbose(false);
@@ -3905,6 +3905,10 @@ void GlobalRouter::updateDirtyRoutes()
     if (dirty_nets.empty()) {
       return;
     }
+
+    const float old_critical_nets_percentage = critical_nets_percentage_;
+    critical_nets_percentage_ = 0;
+    fastroute_->setUpdateSlack(critical_nets_percentage_);
 
     initFastRouteIncr(dirty_nets);
 
@@ -3945,6 +3949,11 @@ void GlobalRouter::updateDirtyRoutes()
                        "Routing congestion too high. Check the congestion "
                        "heatmap in the GUI.");
       }
+    }
+    critical_nets_percentage_ = old_critical_nets_percentage;
+    fastroute_->setUpdateSlack(critical_nets_percentage_);
+    if (save_guides) {
+      saveGuides();
     }
   }
 }
