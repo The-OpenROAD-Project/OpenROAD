@@ -262,7 +262,7 @@ void HierRTLMP::setDefaultThresholds()
     }
     debugPrint(logger_,
                MPL,
-               "macro_placement",
+               "multilevel_autoclustering",
                1,
                "snap_layer : {}  congestion_weight : {}",
                snap_layer_,
@@ -286,8 +286,11 @@ void HierRTLMP::setDefaultThresholds()
       // If the number of macros is less than the threshold value, reset to
       // single level.
       max_num_level_ = 1;
-      debugPrint(
-          logger_, MPL, "macro_placement", 1, "Reset number of levels to 1");
+      debugPrint(logger_,
+                 MPL,
+                 "multilevel_autoclustering",
+                 1,
+                 "Reset number of levels to 1");
     }
   }
 
@@ -297,7 +300,7 @@ void HierRTLMP::setDefaultThresholds()
     macro_blockage_weight_ = outline_weight_ / 2.0;
     debugPrint(logger_,
                MPL,
-               "macro_placement",
+               "multilevel_autoclustering",
                1,
                "Reset macro_blockage_weight : {}",
                macro_blockage_weight_);
@@ -316,7 +319,7 @@ void HierRTLMP::setDefaultThresholds()
   debugPrint(
       logger_,
       MPL,
-      "macro_placement",
+      "multilevel_autoclustering",
       1,
       "num level: {}, max_macro: {}, min_macro: {}, max_inst:{}, min_inst:{}",
       max_num_level_,
@@ -432,10 +435,15 @@ void HierRTLMP::hierRTLMacroPlacer()
                    core_area);
   }
 
+  debugPrint(logger_,
+             MPL,
+             "multilevel_autoclustering",
+             1,
+             "Setting default threholds...");
   setDefaultThresholds();
-  // report the default parameters
 
-  if (logger_->debugCheck(MPL, "macro_placement", 1)) {
+  if (logger_->debugCheck(MPL, "multilevel_autoclustering", 1)) {
+    logger_->report("\nPrint Default Parameters\n");
     logger_->report("area_weight_ = {}", area_weight_);
     logger_->report("outline_weight_ = {}", outline_weight_);
     logger_->report("wirelength_weight_ = {}", wirelength_weight_);
@@ -446,11 +454,11 @@ void HierRTLMP::hierRTLMacroPlacer()
     logger_->report("macro_blockage_weight_ = {}", macro_blockage_weight_);
     logger_->report("halo_width_ = {}", halo_width_);
     logger_->report("halo_height_ = {}", halo_height_);
-    logger_->report("bus_planning_flag_ = {}", bus_planning_flag_);
+    logger_->report("bus_planning_flag_ = {}\n", bus_planning_flag_);
   }
 
   //
-  // Initialize the physcial hierarchy tree
+  // Initialize the physical hierarchy tree
   // create root cluster
   //
   cluster_id_ = 0;
@@ -465,19 +473,20 @@ void HierRTLMP::hierRTLMacroPlacer()
     odb::dbIntProperty::create(inst, "cluster_id", cluster_id_);
   }
 
-  //
-  // model each bundled IO as a cluster under the root node
-  // cluster_id:  0 to num_bundled_IOs x 4 are reserved for bundled IOs
-  // following the sequence:  Left -> Top -> Right -> Bottom
-  // starting at (floorplan_lx_, floorplan_ly_)
-  // Map IOs to Pads if the design has pads
-  //
-
+  // Map IOs to Pads only if the design has pads.
   mapIOPads();
+
+  // Model IO pins as bundled IO clusters under the root node.
+  debugPrint(logger_,
+             MPL,
+             "multilevel_autoclustering",
+             1,
+             "Creating bundledIO clusters...");
   createBundledIOs();
 
-  // create data flow information
-  debugPrint(logger_, MPL, "macro_placement", 1, "\nCreate Data Flow");
+  // Dataflow is used to improve quality of macro placement.
+  debugPrint(
+      logger_, MPL, "multilevel_autoclustering", 1, "Creating dataflow...");
   createDataFlow();
 
   // Create physical hierarchy tree in a post-order DFS manner
@@ -510,7 +519,7 @@ void HierRTLMP::hierRTLMacroPlacer()
         root_cluster_->addChild(cluster);
         debugPrint(logger_,
                    MPL,
-                   "clustering",
+                   "multilevel_autoclustering",
                    1,
                    "model {} as a cluster.",
                    cluster_name);
@@ -545,18 +554,16 @@ void HierRTLMP::hierRTLMacroPlacer()
     //
     debugPrint(logger_,
                MPL,
-               "clustering",
+               "multilevel_autoclustering",
                1,
-               "Break mixed clusters into std cell and macro clusters.");
+               "Breaking mixed clusters...");
     leafClusterStdCellHardMacroSep(root_cluster_);
     if (graphics_) {
       graphics_->finishedClustering(root_cluster_);
     }
   }
-  if (logger_->debugCheck(MPL, "macro_placement", 1)) {
-    logger_->report(
-        "\nPrint Physical Hierachy Tree after splitting std cell and macros in "
-        "leaf clusters\n");
+  if (logger_->debugCheck(MPL, "multilevel_autoclustering", 1)) {
+    logger_->report("\nPrint Physical Hierarchy\n");
     printPhysicalHierarchyTree(root_cluster_, 0);
   }
 
@@ -566,7 +573,7 @@ void HierRTLMP::hierRTLMacroPlacer()
   }
 
   //
-  // Place macros in a hierarchical mode based on the phhyscial hierarchical
+  // Place macros in a hierarchical mode based on the physical hierarchical
   // tree
   //
   //  -- Shape Engine --
@@ -769,15 +776,10 @@ void HierRTLMP::setClusterMetrics(Cluster* cluster)
 
   debugPrint(logger_,
              MPL,
-             "clustering",
-             1,
-             "Set Cluster Metrics for cluster: {}",
-             cluster->getName());
-  debugPrint(logger_,
-             MPL,
-             "clustering",
-             1,
-             "Num Macros: {} Num Std Cells: {}",
+             "multilevel_autoclustering",
+             2,
+             "Setting Cluster Metrics for {}: Num Macros: {} Num Std Cells: {}",
+             cluster->getName(),
              metrics.getNumMacro(),
              metrics.getNumStdCell());
 
@@ -985,7 +987,7 @@ void HierRTLMP::createBundledIOs()
     if (!flag) {
       debugPrint(logger_,
                  MPL,
-                 "clustering",
+                 "multilevel_autoclustering",
                  1,
                  "Remove IO Cluster with no pins: {}, id: {}",
                  cluster_map_[cluster_id]->getName(),
@@ -1013,7 +1015,7 @@ void HierRTLMP::multiLevelCluster(Cluster* parent)
       force_split = true;
     debugPrint(logger_,
                MPL,
-               "clustering",
+               "multilevel_autoclustering",
                1,
                "Force Split: root cluster size: {}, leaf cluster size: {}",
                parent->getNumStdCell(),
@@ -1026,7 +1028,7 @@ void HierRTLMP::multiLevelCluster(Cluster* parent)
   level_++;
   debugPrint(logger_,
              MPL,
-             "clustering",
+             "multilevel_autoclustering",
              1,
              "Parent: {}, level: {}, num macros: {}, num std cells: {}",
              parent->getName(),
@@ -1068,7 +1070,7 @@ void HierRTLMP::multiLevelCluster(Cluster* parent)
     for (auto& child : parent->getChildren()) {
       debugPrint(logger_,
                  MPL,
-                 "clustering",
+                 "multilevel_autoclustering",
                  1,
                  "\tChild Cluster: {}",
                  child->getName());
@@ -1146,8 +1148,12 @@ void HierRTLMP::setInstProperty(odb::dbModule* module,
 // we merge small clusters in the same logical hierarchy
 void HierRTLMP::breakCluster(Cluster* parent)
 {
-  debugPrint(
-      logger_, MPL, "clustering", 1, "Dissolve Cluster: {}", parent->getName());
+  debugPrint(logger_,
+             MPL,
+             "multilevel_autoclustering",
+             1,
+             "Dissolve Cluster: {}",
+             parent->getName());
   //
   // Consider three different cases:
   // (a) parent is an empty cluster
@@ -1359,12 +1365,16 @@ void HierRTLMP::mergeClusters(std::vector<Cluster*>& candidate_clusters)
     return;
 
   int merge_iter = 0;
-  debugPrint(
-      logger_, MPL, "clustering", 1, "Merge Cluster Iter: {}", merge_iter++);
+  debugPrint(logger_,
+             MPL,
+             "multilevel_autoclustering",
+             1,
+             "Merge Cluster Iter: {}",
+             merge_iter++);
   for (auto& cluster : candidate_clusters) {
     debugPrint(logger_,
                MPL,
-               "clustering",
+               "multilevel_autoclustering",
                1,
                "Cluster: {}, num std cell: {}, num macros: {}",
                cluster->getName(),
@@ -1388,7 +1398,7 @@ void HierRTLMP::mergeClusters(std::vector<Cluster*>& candidate_clusters)
       debugPrint(
           logger_,
           MPL,
-          "clustering",
+          "multilevel_autoclustering",
           1,
           "Candidate cluster: {} - {}",
           candidate_clusters[i]->getName(),
@@ -1483,18 +1493,27 @@ void HierRTLMP::mergeClusters(std::vector<Cluster*>& candidate_clusters)
 
     num_candidate_clusters = candidate_clusters.size();
 
-    debugPrint(
-        logger_, MPL, "clustering", 1, "Merge Cluster Iter: {}", merge_iter++);
+    debugPrint(logger_,
+               MPL,
+               "multilevel_autoclustering",
+               1,
+               "Merge Cluster Iter: {}",
+               merge_iter++);
     for (auto& cluster : candidate_clusters) {
-      debugPrint(
-          logger_, MPL, "clustering", 1, "Cluster: {}", cluster->getName());
+      debugPrint(logger_,
+                 MPL,
+                 "multilevel_autoclustering",
+                 1,
+                 "Cluster: {}",
+                 cluster->getName());
     }
     // merge small clusters
     if (candidate_clusters.size() == 0) {
       break;
     }
   }
-  debugPrint(logger_, MPL, "clustering", 1, "Finish merging clusters");
+  debugPrint(
+      logger_, MPL, "multilevel_autoclustering", 1, "Finish merging clusters");
 }
 
 // Calculate Connections between clusters
@@ -1626,7 +1645,7 @@ void HierRTLMP::createDataFlow()
   //
   debugPrint(logger_,
              MPL,
-             "dataflow",
+             "multilevel_autoclustering",
              1,
              "Number of vertices: {}",
              stop_flag_vec.size());
@@ -1706,7 +1725,8 @@ void HierRTLMP::createDataFlow()
     hyperedges.push_back(hyperedge);
   }  // end net traversal
 
-  debugPrint(logger_, MPL, "dataflow", 1, "Created hypergraph");
+  debugPrint(
+      logger_, MPL, "multilevel_autoclustering", 1, "Created hypergraph");
 
   // traverse hypergraph to build dataflow
   for (auto [src, src_pin] : io_pin_vertex) {
@@ -2311,23 +2331,17 @@ void HierRTLMP::leafClusterStdCellHardMacroSep(Cluster* root_cluster)
     }
 
     // print the connnection signature
-    for (auto& cluster : macro_clusters) {
-      debugPrint(logger_,
-                 MPL,
-                 "clustering",
-                 1,
-                 "\nMacro Signature: {}",
-                 cluster->getName());
-      for (auto& [cluster_id, weight] : cluster->getConnection()) {
-        debugPrint(logger_,
-                   MPL,
-                   "clustering",
-                   1,
-                   " {} {} ",
-                   cluster_map_[cluster_id]->getName(),
-                   weight);
+    if (logger_->debugCheck(MPL, "multilevel_autoclustering", 2)) {
+      logger_->report("\nPrint Connection Signature\n");
+      for (auto& cluster : macro_clusters) {
+        logger_->report("Macro Signature: {}", cluster->getName());
+        for (auto& [cluster_id, weight] : cluster->getConnection()) {
+          logger_->report(
+              " {} {} ", cluster_map_[cluster_id]->getName(), weight);
+        }
       }
     }
+
     // macros with the same size and the same connection signature
     // belong to the same class
     std::vector<int> macro_class(hard_macros.size(), -1);
@@ -2340,7 +2354,7 @@ void HierRTLMP::leafClusterStdCellHardMacroSep(Cluster* root_cluster)
             macro_class[j] = i;
             debugPrint(logger_,
                        MPL,
-                       "clustering",
+                       "multilevel_autoclustering",
                        1,
                        "merge {} with {}",
                        macro_clusters[i]->getName(),
@@ -2473,7 +2487,7 @@ void HierRTLMP::printPhysicalHierarchyTree(Cluster* parent, int level)
       parent->getNumStdCell(),
       parent->getMacroArea(),
       parent->getStdCellArea());
-  logger_->report("{}\n", line);
+  logger_->report("{}", line);
 
   for (auto& cluster : parent->getChildren()) {
     printPhysicalHierarchyTree(cluster, level + 1);
