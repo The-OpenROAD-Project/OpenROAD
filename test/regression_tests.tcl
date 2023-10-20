@@ -2,6 +2,7 @@ record_tests {
   error1
   get_core_die_areas
   timing_api
+  timing_api_2
   upf_test
   upf_aes
 }
