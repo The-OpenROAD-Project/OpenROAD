@@ -1789,8 +1789,7 @@ bool GlobalRouter::isCoveringPin(Net* net, GSegment& segment)
     int seg_x = segment.final_x;
     int seg_y = segment.final_y;
     if (pin.getConnectionLayer() == seg_top_layer
-        && pin.getOnGridPosition()
-               == odb::Point(seg_x, seg_y)
+        && pin.getOnGridPosition() == odb::Point(seg_x, seg_y)
         && (pin.isPort() || pin.isConnectedToPadOrMacro())) {
       return true;
     }
