@@ -162,48 +162,53 @@ Point<double> TreeBuilder::legalizeOneBuffer(Point<double> bufferLoc,
       // x1, y1 are lower left corner of blockage
       // x2, y2 are upper right corner of blockage
       // move buffer to the nearest legal location by snapping it to right,
-      // left, top or bottom need to consider cell height and width to avoid any
-      // overlap with blockage
-      double minDist = 1e6;
+      // left, top or bottom while considering cell height and width to avoid
+      // any overlap with blockage
       double bx = bufferLoc.getX();
       double by = bufferLoc.getY();
       Point<double> newLoc = bufferLoc;
+      std::vector<Point<double>> candidates;
+
+      // first, try snapping around the left edge
+      // need to adjust for buffer width
+      double bufWidth = (double) libCell->getWidth() / wireSegmentUnit;
+      double bufHeight = (double) libCell->getHeight() / wireSegmentUnit;
+      double newX = x1 - bufWidth;
+      addCandidatePoint(newX, by, newLoc, candidates);
+      addCandidatePoint(newX, by + bufHeight, newLoc, candidates);
+      addCandidatePoint(newX, by - bufHeight, newLoc, candidates);
+
+      // second, try snapping around the right edge
+      addCandidatePoint(x2, by, newLoc, candidates);
+      addCandidatePoint(x2, by + bufHeight, newLoc, candidates);
+      addCandidatePoint(x2, by - bufHeight, newLoc, candidates);
+
+      // third, try snapping around the bottom edge
+      // need to adjust for buffer height
+      double newY = y1 - bufHeight;
+      addCandidatePoint(bx, newY, newLoc, candidates);
+      addCandidatePoint(bx + bufWidth, newY, newLoc, candidates);
+      addCandidatePoint(bx - bufWidth, newY, newLoc, candidates);
+
+      // fourth, try snapping around the top edge
+      addCandidatePoint(bx, y2, newLoc, candidates);
+      addCandidatePoint(bx + bufWidth, y2, newLoc, candidates);
+      addCandidatePoint(bx - bufWidth, y2, newLoc, candidates);
+
+      // pick the best one
+      double minDist = std::numeric_limits<double>::max();
+      double dist = 0.0;
       Point<double> noBest(-1e6, -1e6);
       Point<double> bestLoc = noBest;
 
-      // first, try snapping it to the left by adjusting for buffer width
-      double newX = x1 - ((double) libCell->getWidth() / wireSegmentUnit);
-      newLoc.setX(newX);
-      double delta = abs(newX - bx);
-      if (!isOccupiedLoc(newLoc) && (delta < minDist)) {
-        minDist = delta;
-        bestLoc = newLoc;
-      }
-
-      // second, try snapping it to the right
-      newX = x2;
-      newLoc.setX(x2);
-      delta = abs(newX - bx);
-      if (!isOccupiedLoc(newLoc) && (delta < minDist)) {
-        minDist = delta;
-        bestLoc = newLoc;
-      }
-
-      // third, try snapping it to the bottom by adjusting for buffer height
-      double newY = y1 - ((double) libCell->getHeight() / wireSegmentUnit);
-      newLoc.setX(bx);
-      newLoc.setY(newY);
-      delta = abs(newY - by);
-      if (!isOccupiedLoc(newLoc) && (delta < minDist)) {
-        minDist = delta;
-        bestLoc = newLoc;
-      }
-
-      // fourth, try snapping it to the top
-      newY = y2;
-      delta = abs(newY - by);
-      if (!isOccupiedLoc(newLoc) && (delta < minDist)) {
-        bestLoc = newLoc;
+      for (const Point<double>& candidate : candidates) {
+        if (!isOccupiedLoc(candidate)) {
+          dist = candidate.computeDist(bufferLoc);
+          if (dist < minDist) {
+            minDist = dist;
+            bestLoc = candidate;
+          }
+        }
       }
 
       if (bestLoc != noBest) {

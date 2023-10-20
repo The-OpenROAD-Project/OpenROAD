@@ -162,9 +162,18 @@ class Box
   T getWidth() const { return width_; }
   T getHeight() const { return height_; }
 
-  Point<T> computeCenter() const
+  Point<T> computeCenter()
   {
-    return Point<T>(xMin_ + width_ / 2, yMin_ + height_ / 2);
+    if (centerSet_) {
+      Point<T> center(centerX_, centerY_);
+      return center;
+    }
+
+    centerX_ = xMin_ + width_ / 2;
+    centerY_ = yMin_ + height_ / 2;
+    Point<T> center(centerX_, centerY_);
+    centerSet_ = true;
+    return center;
   }
 
   Box<double> normalize(double factor)
@@ -188,11 +197,21 @@ class Box
     return out;
   }
 
+  void setCenter(Point<T> point)
+  {
+    centerX_ = point.getX();
+    centerY_ = point.getY();
+    centerSet_ = true;
+  }
+
  private:
   T xMin_;
   T yMin_;
   T width_;
   T height_;
+  T centerX_ = 0;
+  T centerY_ = 0;
+  bool centerSet_ = false;
 };
 
 }  // namespace cts

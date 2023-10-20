@@ -176,6 +176,15 @@ class TreeBuilder
                     double& y2);
   Point<double> legalizeOneBuffer(Point<double> bufferLoc,
                                   const std::string& bufferName);
+  inline void addCandidatePoint(double x,
+                                double y,
+                                Point<double>& point,
+                                std::vector<Point<double>>& candidates)
+  {
+    point.setX(x);
+    point.setY(y);
+    candidates.emplace_back(point);
+  }
   utl::Logger* getLogger() { return logger_; }
   double getBufferWidth() { return bufferWidth_; }
   double getBufferHeight() { return bufferHeight_; }

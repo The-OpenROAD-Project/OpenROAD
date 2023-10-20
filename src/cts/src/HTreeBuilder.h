@@ -201,15 +201,6 @@ class HTreeBuilder : public TreeBuilder
       points.emplace_back(x, y);
     }
   }
-  inline void addCandidatePoint(double x,
-                                double y,
-                                Point<double>& point,
-                                std::vector<Point<double>>& candidates)
-  {
-    point.setX(x);
-    point.setY(y);
-    candidates.emplace_back(point);
-  }
   void addCandidatePointsAlongBlockage(Point<double> point,
                                        Point<double> parentPoint,
                                        double targetDist,
@@ -275,7 +266,7 @@ class HTreeBuilder : public TreeBuilder
                             double& bestSinkDist);
   void legalize();
   void legalizeDummy();
-  void print();
+  void printHTree();
   void plotSolution();
   std::string plotHTree();
   unsigned findSibling(LevelTopology& topology, unsigned i, unsigned par);
