@@ -1785,15 +1785,12 @@ void GlobalRouter::saveGuides()
 bool GlobalRouter::isCoveringPin(Net* net, GSegment& segment)
 {
   for (const auto& pin : net->getPins()) {
-    if (pin.getConnectionLayer() == segment.final_layer
+    int seg_top_layer = std::max(segment.final_layer, segment.init_layer);
+    int seg_x = segment.final_x;
+    int seg_y = segment.final_y;
+    if (pin.getConnectionLayer() == seg_top_layer
         && pin.getOnGridPosition()
-               == odb::Point(segment.final_x, segment.final_y)
-        && (pin.isPort() || pin.isConnectedToPadOrMacro())) {
-      return true;
-    }
-    if (pin.getConnectionLayer() == segment.init_layer
-        && pin.getOnGridPosition()
-               == odb::Point(segment.init_x, segment.init_y)
+               == odb::Point(seg_x, seg_y)
         && (pin.isPort() || pin.isConnectedToPadOrMacro())) {
       return true;
     }
