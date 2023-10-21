@@ -249,20 +249,37 @@ void dbSite::setClass(dbSiteClass type)
 void dbSite::setRowPattern(
     const std::vector<std::pair<dbSite*, dbOrientType>> row_pattern)
 {
-  this->_row_patterns = row_pattern;
   _dbSite* site = (_dbSite*) this;
   site->_flags._is_hybrid = true;
   site->_row_pattern.reserve(row_pattern.size());
-  for (auto& row : this->_row_patterns) {
+  for (auto& row : row_pattern) {
     auto child_site = (_dbSite*) row.first;
     child_site->_flags._is_hybrid = true;
     site->_row_pattern.addRowPattern(row.first->getName(), row.second);
   }
 }
 
+void dbSite::setParent(std::string parent_name)
+{
+  _dbSite* site = (_dbSite*) this;
+  if (!this->isHybrid() || this->isHybridParent()) {
+    site->parent.clear();
+    return;
+  }
+  site->parent = parent_name;
+}
+
+dbSite* dbSite::getParent()
+{
+  _dbSite* site = (_dbSite*) this;
+  auto parent_name = site->parent;
+  return getLib()->findSite(parent_name.c_str());
+}
+
 bool dbSite::hasRowPattern() const
 {
-  return !_row_patterns.empty();
+  _dbSite* site = (_dbSite*) this;
+  return !site->_row_pattern.empty();
 }
 
 bool dbSite::isHybrid() const
@@ -278,8 +295,17 @@ bool dbSite::isHybridParent() const
 
 std::vector<std::pair<dbSite*, dbOrientType>> dbSite::getRowPattern()
 {
-  return std::vector<std::pair<dbSite*, dbOrientType>>(_row_patterns.begin(),
-                                                       _row_patterns.end());
+  std::vector<std::pair<dbSite*, dbOrientType>> row_pattern;
+  _dbSite* site = (_dbSite*) this;
+  auto& rp = site->_row_pattern;
+  const int sz = rp.size();
+  row_pattern.reserve(sz);
+  for (int i = 0; i < sz; ++i) {
+    auto r = rp.getSite(i);
+    auto o = rp.getOrientation(i);
+    row_pattern.emplace_back(getLib()->findSite(r.c_str()), o);
+  }
+  return row_pattern;
 }
 
 dbLib* dbSite::getLib()

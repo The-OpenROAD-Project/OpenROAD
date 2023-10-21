@@ -5164,11 +5164,7 @@ class dbLib : public dbObject
 ///////////////////////////////////////////////////////////////////////////////
 class dbSite : public dbObject
 {
-  dbSite* parent;  // parent site (null if site is a hybridParent, for hybrid
-                   // cells it wili)
-
  public:
-  std::vector<std::pair<dbSite*, dbOrientType>> _row_patterns;
   ///
   /// Get the site name.
   ///
@@ -5248,16 +5244,9 @@ class dbSite : public dbObject
   ///
   /// sets the parent of the site
   ///
-  void setParent(dbSite* parent)
-  {
-    if (!this->isHybrid() || this->isHybridParent()) {
-      parent = nullptr;
-      return;
-    }
-    this->parent = parent;
-  }
+  void setParent(std::string parent_name);
 
-  dbSite* getParent() { return parent; }
+  dbSite* getParent();
 
   ///
   /// Returns true if the row pattern is not empty

@@ -67,9 +67,12 @@ class RowPattern
   dbOrientType getOrientation(int index) { return pattern.at(index).second; }
   std::string getSite(int index) { return pattern.at(index).first; }
   void reserve(int size) { pattern.reserve(size); }
-  void addRowPattern(std::string siteName, dbOrientType orientation){
+  void addRowPattern(std::string siteName, dbOrientType orientation)
+  {
     pattern.emplace_back(siteName, orientation);
   }
+  int size() { return pattern.size(); }
+  bool empty() { return pattern.empty(); }
 
   friend dbOStream& operator<<(dbOStream& stream, const RowPattern& rp)
   {
@@ -106,6 +109,7 @@ class _dbSite : public _dbObject
   uint _width;
   dbId<_dbSite> _next_entry;
   RowPattern _row_pattern;
+  std::string parent;
 
   _dbSite(_dbDatabase*, const _dbSite& s);
   _dbSite(_dbDatabase*);
