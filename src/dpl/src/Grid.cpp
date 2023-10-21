@@ -117,10 +117,10 @@ void Opendp::initGridLayersMap()
             = Grid_map_key{site_idx_to_grid_idx[site->getId()]};
       }
     }
-    if (min_site_height == std::numeric_limits<int>::max()) {
-      logger_->error(
-          DPL, 128, "Cannot find a non-hybrid grid to use for placement.");
-    }
+  }
+  if (min_site_height == std::numeric_limits<int>::max()) {
+    logger_->error(
+        DPL, 128, "Cannot find a non-hybrid grid to use for placement.");
   }
 
   for (auto db_row : block_->getRows()) {
