@@ -39,13 +39,27 @@
 
 namespace mpl2 {
 
-Graphics::Graphics(int dbu, utl::Logger* logger) : dbu_(dbu), logger_(logger)
+Graphics::Graphics(bool coarse, bool fine, int dbu, utl::Logger* logger)
+    : coarse_(coarse), fine_(fine), dbu_(dbu), logger_(logger)
 {
   gui::Gui::get()->registerRenderer(this);
 }
 
+void Graphics::startCoarse()
+{
+  active_ = coarse_;
+}
+
+void Graphics::startFine()
+{
+  active_ = fine_;
+}
+
 void Graphics::startSA()
 {
+  if (!active_) {
+    return;
+  }
   logger_->report("------ Start ------");
   best_norm_cost_ = std::numeric_limits<float>::max();
   skipped_ = 0;
@@ -53,6 +67,9 @@ void Graphics::startSA()
 
 void Graphics::endSA()
 {
+  if (!active_) {
+    return;
+  }
   if (skipped_ > 0) {
     logger_->report("Skipped to end: {}", skipped_);
   }
@@ -84,6 +101,9 @@ void Graphics::report(const char* name, const std::optional<T>& value)
 
 void Graphics::penaltyCalculated(float norm_cost)
 {
+  if (!active_) {
+    return;
+  }
   if (norm_cost < best_norm_cost_) {
     logger_->report("------ Penalty ------");
 
