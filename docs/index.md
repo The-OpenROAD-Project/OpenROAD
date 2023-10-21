@@ -44,6 +44,33 @@ The OpenROAD Project has two releases:
 - Application ([github](https://github.com/The-OpenROAD-Project/OpenROAD)) ([docs](main/README.md)): The application is a standalone binary for digital place and route that can be used by any other RTL-GDSII flow controller.
 - Flow ([github](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)) ([docs](https://openroad-flow-scripts.readthedocs.io/en/latest/)): This is the native OpenROAD flow that consists of a set of integrated scripts for an autonomous RTL-GDSII flow using OpenROAD and other open-source tools.
 
+## Supported Operating Systems
+
+Note that depending on the installation method, we have varying levels of 
+support for various operating systems. 
+
+Legend:
+- `Y` for supported.
+- `-` for unsupported.
+
+| Operating System | Local Installation | Prebuilt Binaries | Docker Installation | Windows Subsystem for Linux | 
+| --- | --- | --- | --- | --- |
+| Ubuntu 20.04 | `Y` | `Y` | `Y` | `-` |  
+| Ubuntu 22.04 | `Y` | `Y` | `Y` | `-` |
+| CentOS 7     | `Y` | `-` | `Y` | `-` |
+| CentOS 8     | `Y` | `-` | `Y` | `-` |
+| Debian 10    | `Y` | `Y` | `Y` | `-` |
+| Debian 11    | `Y` | `Y` | `Y` | `-` |
+| RHEL         | `Y` | `-` | `Y` | `-` |
+| Windows 10 and above | `-` | `-` | `Y` | `Y` |
+| macOS        | `Y*` | `-` | `Y` | `-` |
+
+```{warning}
+For macOS, local compilation for the modules `par` and `mpl2` are not
+fully supported due to an upstream issue with `or-tools`. We recommend
+Docker installation wherever possible.
+```
+
 ## Code of conduct
 
 Please read our code of conduct [here](main/CODE_OF_CONDUCT.md).

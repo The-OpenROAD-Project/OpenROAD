@@ -1,6 +1,6 @@
 # Build OpenROAD
 
-## Build
+## Clone repository
 
 The first step, independent of the build method, is to download the repository:
 
@@ -9,9 +9,47 @@ git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git
 cd OpenROAD
 ```
 
-OpenROAD git submodules (cloned by the `--recursive` flag) are located in `src/`.
+OpenROAD git submodules (cloned by the `--recursive` flag) are located in `src/`. 
 
-The default build type is RELEASE to compile optimized code.
+```{note}
+There are 3 methods for building OpenROAD (in order of recommendation): prebuilt binaries, docker images, and finally local build.  
+```
+
+## Build with Prebuilt Binaries
+
+Courtesy of [Precision Innovations](https://precisioninno.com/), there are pre-built binaries
+of OpenROAD with self-contained dependencies released on a regular basis.
+Refer to this [link](https://openroad-flow-scripts.readthedocs.io/en/latest/user/BuildWithPrebuilt.html) for instructions.
+
+## Build with Docker
+
+### Prerequisites
+
+- For this method you only need to install
+[Docker](https://docs.docker.com/engine/install) on your machine.
+- Ensure that you have sufficient memory allocated to the Virtual Machine (VM)
+as per our system [requirements](../index.md#system-requirements). Refer to
+this [Docker guide](https://docs.docker.com/config/containers/resource_constraints/) for setting CPU cores and memory limits.
+
+### Installation
+
+We recommend to use a Docker image of a supported OS
+and install OpenROAD using the prebuilt binaries from
+Precision Innovations. 
+You can start the container in an interactive mode using 
+the command below. 
+
+```shell
+docker run -it ubuntu:22.04
+```
+
+Now you are ready to install the prebuilt binaries. 
+Please refer to the instructions for installing prebuilt binaries 
+[above](#build-with-prebuilt-binaries).
+
+## Build Locally
+
+The default build type is `RELEASE` to compile optimized code.
 The resulting executable is in `build/src/openroad`.
 
 Optional CMake variables passed as `-D<var>=<value>` arguments to CMake are show below.
@@ -25,27 +63,29 @@ Optional CMake variables passed as `-D<var>=<value>` arguments to CMake are show
 | `ZLIB_ROOT`            | Path to `zlib`            |
 | `CMAKE_INSTALL_PREFIX` | Path to install binary    |
 
-> **Note:** There is a `openroad_build.log` file that is generated
+```{note}
+There is a `openroad_build.log` file that is generated
 with every build in the build directory. In case of filing issues,
 it can be uploaded in the "Relevant log output" section of OpenROAD
 [issue forms](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/issues/new/choose).
+```
 
-## Install dependencies
+### Install dependencies
 
 You may follow our helper script to install dependencies as follows:
 ``` shell
 sudo ./etc/DependencyInstaller.sh
 ```
 
-> **WARNING**
->
-> `etc/DependencyInstaller.sh` defaults to installing system 
-> packages and requires sudo access. These packages can affect
-> your environment. We recommend users install dependencies
-> locally using [setup.sh](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/blob/master/setup.sh)
-> from OpenROAD-flow-scripts.
+```{warning}
+`etc/DependencyInstaller.sh` defaults to installing system 
+packages and requires sudo access. These packages can affect
+your environment. We recommend users install dependencies
+locally using [setup.sh](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/blob/master/setup.sh)
+from OpenROAD-flow-scripts.
+```
 
-### Build Manually
+### Compiling OpenROAD Manually
 
 ``` shell
 mkdir build && cd build
@@ -93,11 +133,7 @@ To enable building with Address Sanitizer, use the argument `-DASAN=ON`.
 Setting the `ASAN` variable to `ON` adds necessary compile and link options
 for using Address Sanitizer.
 
-> **Note:** Address Sanitizer adds instrumentation for detecting memory errors.
->  Enabling this option will cause OpenROAD to run slower and consume more RAM.
-
-### Build with Prebuilt Binaries
-
-Courtesy of [Precision Innovations](https://precisioninno.com/), there are pre-built binaries
-of OpenROAD with self-contained dependencies released on a regular basis.
-Refer to this [link](https://openroad-flow-scripts.readthedocs.io/en/latest/user/BuildWithPrebuilt.html) here.
+```{note}
+Address Sanitizer adds instrumentation for detecting memory errors.
+Enabling this option will cause OpenROAD to run slower and consume more RAM.
+```
