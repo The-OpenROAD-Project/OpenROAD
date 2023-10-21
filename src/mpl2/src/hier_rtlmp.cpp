@@ -628,9 +628,9 @@ void HierRTLMP::hierRTLMacroPlacer()
   } else {
     debugPrint(logger_,
                MPL,
-               "macro_placement",
+               "coarse_shaping",
                1,
-               "Determine shaping function for clusters -- Macro Tilings.\n");
+               "Computing macro tilings ignoring std-cells clusters...");
     if (graphics_) {
       graphics_->startCoarse();
     }
@@ -2516,17 +2516,47 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
   if (parent->getNumMacro() == 0) {
     return;
   }
+
+  debugPrint(logger_,
+             MPL,
+             "coarse_shaping",
+             1,
+             "Determine shapes for {}",
+             parent->getName());
+
   // Current cluster is a hard macro cluster
   if (parent->getClusterType() == HardMacroCluster) {
+    debugPrint(logger_,
+               MPL,
+               "coarse_shaping",
+               1,
+               "{} is a Macro cluster",
+               parent->getName());
     calHardMacroClusterShape(parent);
     return;
   }
-  // Mixed size cluster
-  // recursively visit the children
-  for (auto& cluster : parent->getChildren()) {
-    if (cluster->getNumMacro() > 0) {
-      calClusterMacroTilings(cluster);
+
+  if (!parent->getChildren().empty()) {
+    debugPrint(logger_,
+               MPL,
+               "coarse_shaping",
+               1,
+               "Started visiting children of {}",
+               parent->getName());
+
+    // Recursively visit the children of Mixed Cluster
+    for (auto& cluster : parent->getChildren()) {
+      if (cluster->getNumMacro() > 0) {
+        calClusterMacroTilings(cluster);
+      }
     }
+
+    debugPrint(logger_,
+               MPL,
+               "coarse_shaping",
+               1,
+               "Done visiting children of {}",
+               parent->getName());
   }
   // if the current cluster is the root cluster,
   // the shape is fixed, i.e., the fixed die.
@@ -2553,6 +2583,10 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
       }
     }
   }
+
+  debugPrint(
+      logger_, MPL, "coarse_shaping", 1, "Running SA to calculate tiling...");
+
   // call simulated annealing to determine tilings
   std::set<std::pair<float, float>> macro_tilings;  // <width, height>
   // the probability of all actions should be summed to 1.0.
@@ -2706,7 +2740,7 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
   for (auto& shape : tilings) {
     debugPrint(logger_,
                MPL,
-               "shaping",
+               "coarse_shaping",
                1,
                "width: {}, height: {}, aspect_ratio: {}, min_ar: {}",
                shape.first,
@@ -2714,7 +2748,7 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
                shape.second / shape.first,
                min_ar_);
   }
-  // we do not want very strange tilngs if we have choices
+  // we do not want very strange tilings if we have choices
   std::vector<std::pair<float, float>> new_tilings;
   for (auto& tiling : tilings) {
     if (tiling.second / tiling.first >= min_ar_
@@ -2722,7 +2756,7 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
       new_tilings.push_back(tiling);
     }
   }
-  // if there are vaild tilings
+  // if there are valid tilings
   if (new_tilings.size() > 0)
     tilings = new_tilings;
   // update parent
@@ -2734,14 +2768,13 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
                    parent->getName());
   } else {
     std::string line
-        = "[CalClusterMacroTilings] The macro tiling for mixed cluster "
-          + parent->getName() + "  ";
+        = "The macro tiling for mixed cluster " + parent->getName() + "  ";
     for (auto& shape : tilings) {
       line += " < " + std::to_string(shape.first) + " , ";
       line += std::to_string(shape.second) + " >  ";
     }
     line += "\n";
-    debugPrint(logger_, MPL, "shaping", 1, "{}", line);
+    debugPrint(logger_, MPL, "coarse_shaping", 1, "{}", line);
   }
 }
 
@@ -2756,22 +2789,25 @@ void HierRTLMP::calHardMacroClusterShape(Cluster* cluster)
     return;
   }
 
-  debugPrint(logger_,
-             MPL,
-             "shaping",
-             1,
-             "Calculate the possible shapes for hard macro cluster : {}",
-             cluster->getName());
   std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
   // macro tilings
   std::set<std::pair<float, float>> macro_tilings;  // <width, height>
-  // if the cluster only has one macro
+
   if (hard_macros.size() == 1) {
     float width = hard_macros[0]->getWidth();
     float height = hard_macros[0]->getHeight();
+
     std::vector<std::pair<float, float>> tilings;
+
     tilings.push_back(std::pair<float, float>(width, height));
     cluster->setMacroTilings(tilings);
+
+    debugPrint(logger_,
+               MPL,
+               "coarse_shaping",
+               1,
+               "{} has only one macro, set tiling according to macro with halo",
+               cluster->getName());
     return;
   }
   // otherwise call simulated annealing to determine tilings
@@ -2928,7 +2964,7 @@ void HierRTLMP::calHardMacroClusterShape(Cluster* cluster)
   for (auto& shape : tilings) {
     debugPrint(logger_,
                MPL,
-               "shaping",
+               "coarse_shaping",
                1,
                "width: {}, height: {}",
                shape.first,
@@ -2947,25 +2983,19 @@ void HierRTLMP::calHardMacroClusterShape(Cluster* cluster)
   // update parent
   cluster->setMacroTilings(tilings);
   if (tilings.size() == 0) {
-    std::string line
-        = "[CalHardMacroClusterShape] This is no valid tilings for "
-          "hard macro cluster ";
-    line += cluster->getName();
     logger_->error(MPL,
                    4,
-                   "This no valid tilings for hard macro cluser: {}",
+                   "No valid tilings for hard macro cluster: {}",
                    cluster->getName());
   }
 
-  std::string line
-      = "[CalClusterMacroTilings] The macro tiling for hard cluster "
-        + cluster->getName() + "  ";
+  std::string line = "Tiling for hard cluster " + cluster->getName() + "  ";
   for (auto& shape : tilings) {
     line += " < " + std::to_string(shape.first) + " , ";
     line += std::to_string(shape.second) + " >  ";
   }
   line += "\n";
-  debugPrint(logger_, MPL, "shaping", 1, "{}", line);
+  debugPrint(logger_, MPL, "coarse_shaping", 1, "{}", line);
 }
 
 //
