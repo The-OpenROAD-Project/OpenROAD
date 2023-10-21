@@ -611,18 +611,18 @@ class FlexGridGraph
           = addToByte(node.fixedShapeCostPlanarVert, 1);
     }
   }
-  void setFixedShapeCostPlanar(frMIdx x,
-                               frMIdx y,
-                               frMIdx z,
-                               fr::frUInt4 c,
-                               ushort accessDirType = 3)
+  void setFixedShapeCostPlanarVert(frMIdx x, frMIdx y, frMIdx z, fr::frUInt4 c)
   {
     if (isValid(x, y, z)) {
       auto& node = nodes_[getIdx(x, y, z)];
-      if (accessDirType & 1)
-        node.fixedShapeCostPlanarHorz = c;
-      if (accessDirType & 2)
-        node.fixedShapeCostPlanarVert = c;
+      node.fixedShapeCostPlanarVert = c;
+    }
+  }
+  void setFixedShapeCostPlanarHorz(frMIdx x, frMIdx y, frMIdx z, fr::frUInt4 c)
+  {
+    if (isValid(x, y, z)) {
+      auto& node = nodes_[getIdx(x, y, z)];
+      node.fixedShapeCostPlanarHorz = c;
     }
   }
   void addFixedShapeCostVia(frMIdx x, frMIdx y, frMIdx z)

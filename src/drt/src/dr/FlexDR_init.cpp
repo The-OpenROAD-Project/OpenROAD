@@ -3036,7 +3036,8 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
       dbTransform shiftXform = inst->getTransform();
       shiftXform.setOrient(dbOrientType(dbOrientType::R0));
       dbMasterType masterType = inst->getMaster()->getMasterType();
-      int accessDirType = 0;  // 0 None, 1 Horz Only, 2 Vert Only, 3 Horz&Vert;
+      bool accessHorz = false;
+      bool accessVert = false;
       if (masterType.isBlock() && !isAddPathCost) {
         for (const auto& pin : instTerm->getTerm()->getPins()) {
           if (!pin->hasPinAccess()) {
@@ -3045,15 +3046,15 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
           for (auto& ap :
                pin->getPinAccess(inst->getPinAccessIdx())->getAccessPoints()) {
             if (ap->hasAccess(frDirEnum::E) || ap->hasAccess(frDirEnum::W)) {
-              accessDirType |= 1;
+              accessHorz = true;
             }
             if (ap->hasAccess(frDirEnum::N) || ap->hasAccess(frDirEnum::S)) {
-              accessDirType |= 2;
+              accessVert = true;
             }
           }
         }
       } else {
-        accessDirType = 3;
+        accessHorz = accessVert = true;
       }
       for (auto& uPin : instTerm->getTerm()->getPins()) {
         auto pin = uPin.get();
@@ -3109,14 +3110,15 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
                   type = ModCostType::resetFixedShape;
               }
               modEolSpacingRulesCost(
-                  box, zIdx, type, false, nullptr, accessDirType);
+                  box, zIdx, type, false, nullptr, accessHorz, accessVert);
               modMinSpacingCostPlanar(box,
                                       zIdx,
                                       type,
                                       false,
                                       nullptr,
                                       masterType.isBlock(),
-                                      accessDirType);
+                                      accessHorz,
+                                      accessVert);
             } else {
               modCutSpacingCost(box, zIdx, type);
               modInterLayerCutSpacingCost(box, zIdx, type, true);
