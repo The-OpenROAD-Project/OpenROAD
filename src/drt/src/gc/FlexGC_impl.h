@@ -428,9 +428,30 @@ class FlexGCWorker::Impl
       bool prlValid,
       frCoord prl,
       odb::dbTechLayerCutSpacingTableDefRule* dbRule);
+  void checkCutSpacing_main(gcRect* rect, frCutSpacingConstraint* con);
+  bool checkCutSpacing_main_hasAdjCuts(gcRect* rect,
+                                       frCutSpacingConstraint* con);
+  frCoord checkCutSpacing_getMaxSpcVal(frCutSpacingConstraint* con);
+  void checkCutSpacing_main(gcRect* ptr1,
+                            gcRect* ptr2,
+                            frCutSpacingConstraint* con);
   void checkCutSpacing_short(gcRect* rect1,
                              gcRect* rect2,
                              const gtl::rectangle_data<frCoord>& markerRect);
+  void checkCutSpacing_spc(gcRect* rect1,
+                           gcRect* rect2,
+                           const gtl::rectangle_data<frCoord>& markerRect,
+                           frCutSpacingConstraint* con,
+                           frCoord prl);
+  void checkCutSpacing_spc_diff_layer(
+      gcRect* rect1,
+      gcRect* rect2,
+      const gtl::rectangle_data<frCoord>& markerRect,
+      frCutSpacingConstraint* con);
+  frCoord checkCutSpacing_spc_getReqSpcVal(gcRect* ptr1,
+                                           gcRect* ptr2,
+                                           frCutSpacingConstraint* con);
+
   // LEF58
   void checkLef58CutSpacing_main(gcRect* rect);
   void checkLef58CutSpacing_main(gcRect* rect,

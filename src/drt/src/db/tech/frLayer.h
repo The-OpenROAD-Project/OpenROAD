@@ -62,6 +62,8 @@ class frLayer
         spacingSamenet(nullptr),
         spacingInfluence(nullptr),
         eols(),
+        cutConstraints(),
+        cutSpacingSamenetConstraints(),
         interLayerCutSpacingConstraints(),
         interLayerCutSpacingSamenetConstraints(),
         interLayerCutSpacingConstraintsMap(),
@@ -103,6 +105,8 @@ class frLayer
         spacingSamenet(nullptr),
         spacingInfluence(nullptr),
         eols(),
+        cutConstraints(),
+        cutSpacingSamenetConstraints(),
         interLayerCutSpacingConstraints(),
         interLayerCutSpacingSamenetConstraints(),
         interLayerCutSpacingConstraintsMap(),
@@ -398,6 +402,15 @@ class frLayer
   {
     return eols;
   }
+  // lef58
+  void addLef58CutSpacingConstraint(frLef58CutSpacingConstraint* in)
+  {
+    if (in->isSameNet()) {
+      lef58CutSpacingSamenetConstraints.push_back(in);
+    } else {
+      lef58CutSpacingConstraints.push_back(in);
+    }
+  }
   const std::vector<frLef58CutSpacingConstraint*>&
   getLef58CutSpacingConstraints(bool samenet = false) const
   {
@@ -427,16 +440,16 @@ class frLayer
     return lef58EolExtConstraints;
   }
 
-  void addLef58CutSpacingConstraint(frLef58CutSpacingConstraint* in)
+  void addCutSpacingConstraint(frCutSpacingConstraint* in)
   {
-    if (!(in->hasSecondLayer())) {
-      if (in->isSameNet()) {
-        lef58CutSpacingSamenetConstraints.push_back(in);
+    if (!(in->isLayer())) {
+      if (in->hasSameNet()) {
+        cutSpacingSamenetConstraints.push_back(in);
       } else {
-        lef58CutSpacingConstraints.push_back(in);
+        cutConstraints.push_back(in);
       }
     } else {
-      if (!(in->isSameNet())) {
+      if (!(in->hasSameNet())) {
         if (interLayerCutSpacingConstraintsMap.find(in->getSecondLayerName())
             != interLayerCutSpacingConstraintsMap.end()) {
           std::cout << "Error: Up to one diff-net inter-layer cut spacing rule "
@@ -457,9 +470,8 @@ class frLayer
       }
     }
   }
-  frLef58CutSpacingConstraint* getInterLayerCutSpacing(frLayerNum layerNum,
-                                                       bool samenet
-                                                       = false) const
+  frCutSpacingConstraint* getInterLayerCutSpacing(frLayerNum layerNum,
+                                                  bool samenet = false) const
   {
     if (!samenet) {
       return interLayerCutSpacingConstraints[layerNum];
@@ -467,8 +479,8 @@ class frLayer
       return interLayerCutSpacingSamenetConstraints[layerNum];
     }
   }
-  const std::vector<frLef58CutSpacingConstraint*>&
-  getInterLayerCutSpacingConstraint(bool samenet = false) const
+  const std::vector<frCutSpacingConstraint*>& getInterLayerCutSpacingConstraint(
+      bool samenet = false) const
   {
     if (!samenet) {
       return interLayerCutSpacingConstraints;
@@ -477,8 +489,8 @@ class frLayer
     }
   }
   // do not use this after initialization
-  std::vector<frLef58CutSpacingConstraint*>&
-  getInterLayerCutSpacingConstraintRef(bool samenet = false)
+  std::vector<frCutSpacingConstraint*>& getInterLayerCutSpacingConstraintRef(
+      bool samenet = false)
   {
     if (!samenet) {
       return interLayerCutSpacingConstraints;
@@ -486,7 +498,7 @@ class frLayer
       return interLayerCutSpacingSamenetConstraints;
     }
   }
-  const std::map<std::string, frLef58CutSpacingConstraint*>&
+  const std::map<std::string, frCutSpacingConstraint*>&
   getInterLayerCutSpacingConstraintMap(bool samenet = false) const
   {
     if (!samenet) {
@@ -495,11 +507,28 @@ class frLayer
       return interLayerCutSpacingSamenetConstraintsMap;
     }
   }
-
+  const std::vector<frCutSpacingConstraint*>& getCutConstraint(bool samenet
+                                                               = false) const
+  {
+    if (samenet) {
+      return cutSpacingSamenetConstraints;
+    } else {
+      return cutConstraints;
+    }
+  }
+  const std::vector<frCutSpacingConstraint*>& getCutSpacing(bool samenet
+                                                            = false) const
+  {
+    if (samenet) {
+      return cutSpacingSamenetConstraints;
+    } else {
+      return cutConstraints;
+    }
+  }
   frCoord getCutSpacingValue() const
   {
     frCoord s = 0;
-    for (auto con : getLef58CutSpacingConstraints()) {
+    for (auto con : getCutSpacing()) {
       s = max(s, con->getCutSpacing());
     }
     return s;
@@ -507,9 +536,9 @@ class frLayer
   bool hasCutSpacing(bool samenet = false) const
   {
     if (samenet) {
-      return (!lef58CutSpacingSamenetConstraints.empty());
+      return (!cutSpacingSamenetConstraints.empty());
     } else {
-      return (!lef58CutSpacingConstraints.empty());
+      return (!cutConstraints.empty());
     }
   }
   bool haslef58CutSpacing(bool samenet = false) const
@@ -771,16 +800,17 @@ class frLayer
   frSpacingSamenetConstraint* spacingSamenet;
   frSpacingTableInfluenceConstraint* spacingInfluence;
   std::vector<frSpacingEndOfLineConstraint*> eols;
+  std::vector<frCutSpacingConstraint*> cutConstraints;
+  std::vector<frCutSpacingConstraint*> cutSpacingSamenetConstraints;
   // limited one per layer, vector.size() == layers.size()
-  std::vector<frLef58CutSpacingConstraint*> interLayerCutSpacingConstraints;
+  std::vector<frCutSpacingConstraint*> interLayerCutSpacingConstraints;
   // limited one per layer and only effective when diff-net version exists,
   // vector.size() == layers.size()
-  std::vector<frLef58CutSpacingConstraint*>
-      interLayerCutSpacingSamenetConstraints;
+  std::vector<frCutSpacingConstraint*> interLayerCutSpacingSamenetConstraints;
   // temp storage for inter-layer cut spacing before postProcess
-  std::map<std::string, frLef58CutSpacingConstraint*>
+  std::map<std::string, frCutSpacingConstraint*>
       interLayerCutSpacingConstraintsMap;
-  std::map<std::string, frLef58CutSpacingConstraint*>
+  std::map<std::string, frCutSpacingConstraint*>
       interLayerCutSpacingSamenetConstraintsMap;
 
   std::vector<frLef58CutSpacingConstraint*> lef58CutSpacingConstraints;

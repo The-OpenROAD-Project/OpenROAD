@@ -355,7 +355,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   void checkPinPlacement();
 
   // incremental funcions
-  void updateDirtyRoutes();
+  void updateDirtyRoutes(bool save_guides = false);
   void mergeResults(NetRouteMap& routes);
   void updateDirtyNets(std::vector<Net*>& dirty_nets);
   void updateDbCongestion();
@@ -491,7 +491,7 @@ class IncrementalGRoute
   // Saves global router state and enables db callbacks.
   IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block);
   // Update global routes for dirty nets.
-  void updateRoutes();
+  void updateRoutes(bool save_guides = false);
   // Disables db callbacks.
   ~IncrementalGRoute();
 

@@ -342,6 +342,8 @@ public:
   void highlightSteiner(const Pin *drvr);
 
   dbNetwork *getDbNetwork() { return db_network_; }
+  ParasiticsSrc getParasiticsSrc() { return parasitics_src_; }
+  dbBlock* getDbBlock() { return block_; };
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
 
@@ -493,7 +495,7 @@ protected:
   void incrementalParasiticsBegin();
   void incrementalParasiticsEnd();
   void ensureParasitics();
-  void updateParasitics();
+  void updateParasitics(bool save_guides = false);
   void ensureWireParasitic(const Pin *drvr_pin);
   void ensureWireParasitic(const Pin *drvr_pin,
                            const Net *net);
