@@ -1,5 +1,6 @@
 record_tests {
   hybrid_rows
+  hybrid_rows2 
   init_floorplan1
   init_floorplan2
   init_floorplan3

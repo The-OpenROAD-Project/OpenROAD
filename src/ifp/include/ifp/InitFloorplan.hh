@@ -114,13 +114,13 @@ class InitFloorplan
                int core_uy,
                int factor,
                int row_index);
-  int makeHybridRows(
-      const std::vector<std::pair<dbSite*, odb::dbOrientType>>& hybrid_sites,
-      const odb::Point& core_l,
-      const odb::Point& core_u,
-      int row_index);
+  int makeHybridRows(dbSite* parent_hybrid_site,
+                     const odb::Point& core_l,
+                     const odb::Point& core_u,
+                     int row_index);
   void generateContiguousHybridRows(
-      const std::vector<std::pair<dbSite*, odb::dbOrientType>>& hybrid_sites,
+      dbSite* parent_hybrid_site,
+      const std::vector<std::pair<dbSite*, odb::dbOrientType>>& row_pattern,
       std::vector<std::vector<dbSite*>>& output_patterns_list);
   void makeTracks(const char* tracks_file, odb::Rect& die_area);
   void autoPlacePins(odb::dbTechLayer* pin_layer, odb::Rect& core);
@@ -133,8 +133,8 @@ class InitFloorplan
   sta::dbNetwork* network_;
 
  private:
-  // this is a map of the ROWPATTERN to their corresponding dbSite.
-  std::map<std::vector<std::string>, dbSite*> _hybrid_sites_map;
+  // this is a set of sets of all constructed site ids.
+  std::set<std::set<int>> constructed_patterns;
 };
 
 }  // namespace ifp
