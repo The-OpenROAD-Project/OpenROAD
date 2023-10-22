@@ -790,7 +790,9 @@ class FlexDRWorker
                                ModCostType type,
                                bool isBlockage = false,
                                frNonDefaultRule* ndr = nullptr,
-                               bool isMacroPin = false);
+                               bool isMacroPin = false,
+                               bool resetHorz = true,
+                               bool resetVert = true);
   void modCornerToCornerSpacing(const Rect& box, frMIdx z, ModCostType type);
   void modMinSpacingCostVia(const Rect& box,
                             frMIdx z,
@@ -823,12 +825,16 @@ class FlexDRWorker
   void modEolSpacingCost_helper(const Rect& testbox,
                                 frMIdx z,
                                 ModCostType type,
-                                int eolType);
+                                int eolType,
+                                bool resetHorz = true,
+                                bool resetVert = true);
   void modEolSpacingRulesCost(const Rect& box,
                               frMIdx z,
                               ModCostType type,
                               bool isSkipVia = false,
-                              frNonDefaultRule* ndr = nullptr);
+                              frNonDefaultRule* ndr = nullptr,
+                              bool resetHorz = true,
+                              bool resetVert = true);
   // cutSpc
   void modCutSpacingCost(const Rect& box,
                          frMIdx z,

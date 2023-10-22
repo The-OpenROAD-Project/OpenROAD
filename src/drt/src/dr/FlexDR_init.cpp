@@ -3035,6 +3035,27 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
       dbTransform xform = inst->getUpdatedXform();
       dbTransform shiftXform = inst->getTransform();
       shiftXform.setOrient(dbOrientType(dbOrientType::R0));
+      dbMasterType masterType = inst->getMaster()->getMasterType();
+      bool accessHorz = false;
+      bool accessVert = false;
+      if (masterType.isBlock() && !isAddPathCost) {
+        for (const auto& pin : instTerm->getTerm()->getPins()) {
+          if (!pin->hasPinAccess()) {
+            continue;
+          }
+          for (auto& ap :
+               pin->getPinAccess(inst->getPinAccessIdx())->getAccessPoints()) {
+            if (ap->hasAccess(frDirEnum::E) || ap->hasAccess(frDirEnum::W)) {
+              accessHorz = true;
+            }
+            if (ap->hasAccess(frDirEnum::N) || ap->hasAccess(frDirEnum::S)) {
+              accessVert = true;
+            }
+          }
+        }
+      } else {
+        accessHorz = accessVert = true;
+      }
       for (auto& uPin : instTerm->getTerm()->getPins()) {
         auto pin = uPin.get();
         for (auto& uPinFig : pin->getFigs()) {
@@ -3074,7 +3095,6 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
             ModCostType type = isAddPathCost ? ModCostType::addFixedShape
                                              : ModCostType::subFixedShape;
 
-            dbMasterType masterType = inst->getMaster()->getMasterType();
             if (isRoutingLayer) {
               if (!isSkipVia) {
                 modMinSpacingCostVia(box, zIdx, type, true, false);
@@ -3089,9 +3109,16 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
                 else
                   type = ModCostType::resetFixedShape;
               }
-              modEolSpacingRulesCost(box, zIdx, type);
-              modMinSpacingCostPlanar(
-                  box, zIdx, type, false, nullptr, masterType.isBlock());
+              modEolSpacingRulesCost(
+                  box, zIdx, type, false, nullptr, accessHorz, accessVert);
+              modMinSpacingCostPlanar(box,
+                                      zIdx,
+                                      type,
+                                      false,
+                                      nullptr,
+                                      masterType.isBlock(),
+                                      accessHorz,
+                                      accessVert);
             } else {
               modCutSpacingCost(box, zIdx, type);
               modInterLayerCutSpacingCost(box, zIdx, type, true);
