@@ -884,17 +884,34 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
              x > bin_x ? "-" : "+",
              x > bin_x ? bin_x : bin_x + bin_search_width_ - 1,
              bin_y);
-
   int x_end = bin_x + gridPaddedWidth(cell);
   int row_height = getRowHeight(cell);
-  int height = gridHeight(cell, row_height);
-  int y_end = bin_y + height;
   auto grid_mapped_entry = grid_info_map_.find(getGridMapKey(cell));
   if (grid_mapped_entry == grid_info_map_.end()) {
     logger_->error(
         DPL, 14, "Cannot find grid info for row height {}.", row_height);
   }
   auto grid_info = grid_mapped_entry->second;
+  if (bin_y >= grid_info.getRowCount()) {
+    return PixelPt();
+  }
+  if (cell->isHybrid()
+      && gridPixel(grid_info.getGridIndex(), 0, bin_y)->site->getId()
+             != cell->getSite()->getId()) {
+    debugPrint(logger_,
+               DPL,
+               "hybrid",
+               1,
+               "Bin_y {} didn't have site {}, so we look below it.",
+               bin_y,
+               cell->getSite()->getName());
+    bin_y = max(0, bin_y - 1);  // we know this row doesn't have the site, so we
+                                // save time by looking at the one below it.
+  }
+
+  int height = gridHeight(cell, row_height);
+  int y_end = bin_y + height;
+
   if (debug_observer_) {
     debug_observer_->binSearch(cell, bin_x, bin_y, x_end, y_end);
   }
@@ -951,6 +968,11 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
         return PixelPt(valid_grid_pixel, bin_x + i, bin_y);
       }
     }
+  }
+  if (cell->isHybrid()) {
+    debugPrint(
+        logger_, DPL, "hybrid", 1, "Trying recursive search with bin_y + 1");
+    return binSearch(x, cell, bin_x, bin_y + 1);
   }
   return PixelPt();
 }
@@ -1136,7 +1158,15 @@ Point Opendp::legalPt(const Cell* cell,
   int legal_y = 0;
   if (cell->isHybrid()) {
     int index(0), height(0);
-    std::tie(index, height) = gridY(cell->y_, grid_info.getSites());
+    int last_row_height = INT_MAX;
+    if (cell->isHybridParent()) {
+      last_row_height = grid_info.getRowCount() * row_height - cell->height_;
+    } else {
+      auto parent = cell->getSite()->getParent();
+      last_row_height = (grid_info.getRowCount() - 1) * parent->getHeight();
+    }
+    std::tie(index, height)
+        = gridY(min(max(0, pt.getY()), last_row_height), grid_info.getSites());
     legal_y = height;
   } else {
     int core_y = min(max(0, pt.getY()),
@@ -1393,15 +1423,18 @@ Point Opendp::legalPt(const Cell* cell,
   Point legal_pt = legalPt(cell, init, row_height, site_width);
   auto grid_info = getGridInfo(cell);
   int grid_x = gridX(legal_pt.getX(), site_width);
-  int grid_y = gridY(legal_pt.getY(), row_height);
+  int grid_y, height;
+  std::tie(grid_y, height) = gridY(legal_pt.getY(), grid_info.getSites());
   debugPrint(logger_,
              DPL,
              "place",
              1,
-             "legalPt {} {} {} {}",
+             "legalPt cell {} lx {} gx {} ly {} gy {} gi {}",
              cell->name(),
              legal_pt.getX(),
+             grid_x,
              legal_pt.getY(),
+             grid_y,
              grid_info.getGridIndex());
 
   Pixel* pixel = gridPixel(grid_info.getGridIndex(), grid_x, grid_y);
