@@ -99,7 +99,7 @@ GlobalRouter::GlobalRouter()
       verbose_(false),
       min_layer_for_clock_(-1),
       max_layer_for_clock_(-2),
-      critical_nets_percentage_(0),
+      critical_nets_percentage_(10),
       seed_(0),
       caps_perturbation_percentage_(0),
       perturbation_amount_(1),
@@ -180,11 +180,19 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   }
 
   initRoutingLayers();
+  checkAdjacentLayersDirection(min_routing_layer, max_routing_layer);
   reportLayerSettings(min_routing_layer, max_routing_layer);
   initRoutingTracks(max_routing_layer);
   initCoreGrid(max_routing_layer);
   setCapacities(min_routing_layer, max_routing_layer);
 
+  if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
+    critical_nets_percentage_ = 0;
+    logger_->warn(
+        GRT,
+        300,
+        "Timing is not available, setting critical nets percentage to 0");
+  }
   std::vector<Net*> nets = initNetlist();
   initNets(nets);
 
@@ -460,6 +468,12 @@ void GlobalRouter::initCoreGrid(int max_routing_layer)
       grid_->getXGrids(), grid_->getYGrids(), grid_->getNumLayers());
   fastroute_->setGridMax(grid_->getGridArea().xMax(),
                          grid_->getGridArea().yMax());
+
+  odb::dbTech* tech = db_->getTech();
+  for (int l = 1; l <= max_routing_layer; l++) {
+    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(l);
+    fastroute_->addLayerDirection(l - 1, tech_layer->getDirection());
+  }
 }
 
 void GlobalRouter::initRoutingLayers()
@@ -484,11 +498,25 @@ void GlobalRouter::initRoutingLayers()
       valid_layers++;
     }
   }
+}
 
-  odb::dbTechLayer* routing_layer = routing_layers_[1];
-  bool vertical
-      = routing_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
-  fastroute_->setLayerOrientation(vertical);
+void GlobalRouter::checkAdjacentLayersDirection(int min_routing_layer,
+                                                int max_routing_layer)
+{
+  odb::dbTech* tech = db_->getTech();
+  for (int l = min_routing_layer; l < max_routing_layer; l++) {
+    odb::dbTechLayer* layer_a = tech->findRoutingLayer(l);
+    odb::dbTechLayer* layer_b = tech->findRoutingLayer(l + 1);
+    if (layer_a->getDirection() == layer_b->getDirection()) {
+      logger_->error(
+          GRT,
+          126,
+          "Layers {} and {} have the same preferred routing direction ({}).",
+          layer_a->getName(),
+          layer_b->getName(),
+          layer_a->getDirection().getString());
+    }
+  }
 }
 
 void GlobalRouter::setCapacities(int min_routing_layer, int max_routing_layer)
@@ -730,7 +758,7 @@ void GlobalRouter::computeNetSlacks()
   // Find the slack for all nets
   std::unordered_map<Net*, float> net_slack_map;
   std::vector<float> slacks;
-  for (auto net_itr : db_net_map_) {
+  for (const auto& net_itr : db_net_map_) {
     Net* net = net_itr.second;
     float slack = getNetSlack(net);
     net_slack_map[net] = slack;
@@ -742,6 +770,7 @@ void GlobalRouter::computeNetSlacks()
   // defined by the user
   int threshold_index
       = std::ceil(slacks.size() * critical_nets_percentage_ / 100);
+  threshold_index = std::min((int) slacks.size() - 1, threshold_index);
   float slack_th = slacks[threshold_index];
 
   // Ensure the slack threshold is negative
@@ -756,7 +785,6 @@ void GlobalRouter::computeNetSlacks()
   if (slack_th >= 0) {
     return;
   }
-
   // Add the slack values smaller than the threshold to the nets
   for (auto [net, slack] : net_slack_map) {
     if (slack <= slack_th) {
@@ -792,7 +820,7 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
   for (Net* net : nets) {
     int pin_count = net->getNumPins();
     int min_layer, max_layer;
-    getNetLayerRange(net, min_layer, max_layer);
+    getNetLayerRange(net->getDbNet(), min_layer, max_layer);
     odb::dbTechLayer* max_routing_layer
         = db_->getTech()->findRoutingLayer(max_layer);
     if (pin_count > 1 && !net->isLocal()
@@ -868,7 +896,7 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     // set layer restriction only to clock nets that are not connected to
     // leaf iterms
     int min_layer, max_layer;
-    getNetLayerRange(net, min_layer, max_layer);
+    getNetLayerRange(net->getDbNet(), min_layer, max_layer);
 
     FrNet* fr_net = fastroute_->addNet(net->getDbNet(),
                                        is_clock,
@@ -913,8 +941,11 @@ void GlobalRouter::saveSttInputFile(Net* net)
   out.close();
 }
 
-void GlobalRouter::getNetLayerRange(Net* net, int& min_layer, int& max_layer)
+void GlobalRouter::getNetLayerRange(odb::dbNet* db_net,
+                                    int& min_layer,
+                                    int& max_layer)
 {
+  Net* net = db_net_map_[db_net];
   int port_min_layer = std::numeric_limits<int>::max();
   for (const Pin& pin : net->getPins()) {
     if (pin.isPort() || pin.isConnectedToPadOrMacro()) {
@@ -922,7 +953,7 @@ void GlobalRouter::getNetLayerRange(Net* net, int& min_layer, int& max_layer)
     }
   }
 
-  bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
+  bool is_non_leaf_clock = isNonLeafClock(db_net);
   min_layer = (is_non_leaf_clock && min_layer_for_clock_ > 0)
                   ? min_layer_for_clock_
                   : min_routing_layer_;
@@ -1082,7 +1113,7 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
 void GlobalRouter::computePinOffsetAdjustments()
 {
   for (auto const& map_obj : pad_pins_connections_) {
-    for (auto segment : map_obj.second) {
+    for (const auto& segment : map_obj.second) {
       int tile_size = grid_->getTileSize();
       int die_area_min_x = grid_->getXMin();
       int die_area_min_y = grid_->getYMin();
@@ -1497,6 +1528,7 @@ void GlobalRouter::readGuides(const char* file_name)
   }
 
   bool skip = false;
+  std::string net_name;
   while (fin.good()) {
     getline(fin, line);
     if (line == "(" || line == "" || line == ")") {
@@ -1513,6 +1545,7 @@ void GlobalRouter::readGuides(const char* file_name)
 
     if (tokens.size() == 1) {
       net = block_->findNet(tokens[0].c_str());
+      net_name = tokens[0];
       if (!net) {
         logger_->error(GRT, 234, "Cannot find net {}.", tokens[0]);
       }
@@ -1527,7 +1560,7 @@ void GlobalRouter::readGuides(const char* file_name)
                       250,
                       "Net {} has guides but is not routed by the global "
                       "router and will be skipped.",
-                      net->getName());
+                      net_name);
         skip = true;
         continue;
       }
@@ -1750,7 +1783,7 @@ void GlobalRouter::saveGuides()
 
 bool GlobalRouter::isCoveringPin(Net* net, GSegment& segment)
 {
-  for (auto pin : net->getPins()) {
+  for (const auto& pin : net->getPins()) {
     if (pin.getConnectionLayer() == segment.final_layer
         && pin.getOnGridPosition()
                == odb::Point(segment.final_x, segment.final_y)
@@ -1898,7 +1931,7 @@ void GlobalRouter::addRemainingGuides(NetRouteMap& routes,
 {
   for (Net* net : nets) {
     int min_layer, max_layer;
-    getNetLayerRange(net, min_layer, max_layer);
+    getNetLayerRange(net->getDbNet(), min_layer, max_layer);
     odb::dbTechLayer* max_tech_layer
         = db_->getTech()->findRoutingLayer(max_layer);
     if (net->getNumPins() > 1
@@ -3120,10 +3153,12 @@ bool GlobalRouter::layerIsBlocked(
     std::vector<odb::Rect>& extended_obs)
 {
   // if layer is max or min, then all obs the nearest layer are added
-  if (layer == max_routing_layer_) {
+  if (layer == max_routing_layer_
+      && macro_obs_per_layer.find(layer - 1) != macro_obs_per_layer.end()) {
     extended_obs = macro_obs_per_layer.at(layer - 1);
   }
-  if (layer == min_routing_layer_) {
+  if (layer == min_routing_layer_
+      && macro_obs_per_layer.find(layer + 1) != macro_obs_per_layer.end()) {
     extended_obs = macro_obs_per_layer.at(layer + 1);
   }
 
@@ -3902,9 +3937,9 @@ IncrementalGRoute::IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block)
   db_cbk_.addOwner(block);
 }
 
-void IncrementalGRoute::updateRoutes()
+void IncrementalGRoute::updateRoutes(bool save_guides)
 {
-  groute_->updateDirtyRoutes();
+  groute_->updateDirtyRoutes(save_guides);
 }
 
 IncrementalGRoute::~IncrementalGRoute()
@@ -3930,7 +3965,7 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
   dirty_nets_.insert(net);
 }
 
-void GlobalRouter::updateDirtyRoutes()
+void GlobalRouter::updateDirtyRoutes(bool save_guides)
 {
   if (!dirty_nets_.empty()) {
     fastroute_->setVerbose(false);
@@ -3948,6 +3983,10 @@ void GlobalRouter::updateDirtyRoutes()
     if (dirty_nets.empty()) {
       return;
     }
+
+    const float old_critical_nets_percentage = critical_nets_percentage_;
+    critical_nets_percentage_ = 0;
+    fastroute_->setUpdateSlack(critical_nets_percentage_);
 
     initFastRouteIncr(dirty_nets);
 
@@ -3988,6 +4027,11 @@ void GlobalRouter::updateDirtyRoutes()
                        "Routing congestion too high. Check the congestion "
                        "heatmap in the GUI.");
       }
+    }
+    critical_nets_percentage_ = old_critical_nets_percentage;
+    fastroute_->setUpdateSlack(critical_nets_percentage_);
+    if (save_guides) {
+      saveGuides();
     }
   }
 }

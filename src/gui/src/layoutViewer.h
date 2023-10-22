@@ -168,6 +168,7 @@ class LayoutViewer : public QWidget
   // save image of the layout
   void saveImage(const QString& filepath,
                  const odb::Rect& region = odb::Rect(),
+                 int width_px = 0,
                  double dbu_per_pixel = 0);
 
   // From QWidget
@@ -181,6 +182,8 @@ class LayoutViewer : public QWidget
   {
     return screenToDBU(visibleRegion().boundingRect());
   }
+
+  bool isCursorInsideViewport();
 
  signals:
   // indicates the current location of the mouse
@@ -272,6 +275,8 @@ class LayoutViewer : public QWidget
   void commandAboutToExecute();
   void commandFinishedExecuting();
   void executionPaused();
+
+  static QColor background() { return Qt::black; }
 
  private slots:
   void setBlock(odb::dbBlock* block);
@@ -440,8 +445,6 @@ class LayoutViewer : public QWidget
   // parameters used to animate the selection of objects
   static constexpr int animation_repeats_ = 6;
   static constexpr int animation_interval_ = 300;
-
-  const QColor background_ = Qt::black;
 
   friend class RenderThread;
 };

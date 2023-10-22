@@ -146,8 +146,7 @@ void _dbTechLayerMinCutRule::out(dbDiff& diff,
 
 _dbTechLayerMinCutRule::_dbTechLayerMinCutRule(_dbDatabase* db)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field = 0;
+  flags_ = {};
   num_cuts_ = 0;
   width_ = 0;
   within_cut_dist = 0;

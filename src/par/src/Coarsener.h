@@ -74,22 +74,21 @@ class Coarsener
 {
  public:
   Coarsener(
-      const int num_parts,
-      const int thr_coarsen_hyperedge_size_skip,  // ignore large hyperedge
-      const int thr_coarsen_vertices,    // the number of vertices of coarsest
-                                         // hypergraph
-      const int thr_coarsen_hyperedges,  // the number of vertices of coarsest
-                                         // hypergraph
-      const float
-          coarsening_ratio,  // coarsening ratio of two adjacent hypergraphs
-      const int max_coarsen_iters,  // the number of iterations
-      const float
+      int num_parts,
+      int thr_coarsen_hyperedge_size_skip,  // ignore large hyperedge
+      int thr_coarsen_vertices,    // the number of vertices of coarsest
+                                   // hypergraph
+      int thr_coarsen_hyperedges,  // the number of vertices of coarsest
+                                   // hypergraph
+      float coarsening_ratio,  // coarsening ratio of two adjacent hypergraphs
+      int max_coarsen_iters,   // the number of iterations
+      float
           adj_diff_ratio,  // the minimum difference of two adjacent hypergraphs
       const std::vector<float>&
           thr_cluster_weight,  // the weight of largest cluster in a hypergraph
-      const int random_seed,
-      const CoarsenOrder vertex_order_choice,  // vertex order
-      EvaluatorPtr evaluator,                  // evaluator to calculate score
+      int random_seed,
+      CoarsenOrder vertex_order_choice,  // vertex order
+      EvaluatorPtr evaluator,            // evaluator to calculate score
       utl::Logger* logger);
 
   // the function of coarsen a hypergraph

@@ -114,6 +114,12 @@ class Parser
   void convertLef58MinCutConstraints();
 
   // postProcess functions
+  void checkFig(frPinFig* uFig,
+                const frString& term_name,
+                const dbTransform& xform,
+                bool& foundTracks,
+                bool& foundCenterTracks,
+                bool& hasPolys);
   void checkPins();
   void buildGCellPatterns(odb::dbDatabase* db);
   void buildGCellPatterns_helper(frCoord& GCELLGRIDX,

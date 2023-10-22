@@ -199,7 +199,7 @@ class GoldenEvaluator
       const HGraphPtr& hgraph,
       const std::vector<int>& solution,
       float ub_factor,
-      std::vector<float> base_balance,
+      const std::vector<float>& base_balance,
       const std::vector<std::vector<int>>& group_attr,
       bool print_flag = false) const;
 

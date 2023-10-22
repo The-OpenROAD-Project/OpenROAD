@@ -431,7 +431,7 @@ int SteinerTree::distance(SteinerPt& from, SteinerPt& to) const
 
   find_right = distance(right_from, to);
   if (find_right >= 0) {
-    return find_left + abs(from_pt.x() - to_pt.x())
+    return find_right + abs(from_pt.x() - to_pt.x())
            + abs(from_pt.y() - to_pt.y());
   }
   return -1;

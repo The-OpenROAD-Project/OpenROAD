@@ -173,7 +173,7 @@ interval<int>::type Grid::computeTileReduceInterval(
 
 int Grid::computeTileReduce(const odb::Rect& obs,
                             const odb::Rect& tile,
-                            int track_space,
+                            double track_space,
                             bool first,
                             odb::dbTechLayerDir direction)
 {

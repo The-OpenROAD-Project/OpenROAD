@@ -176,12 +176,7 @@ namespace odb {
   {
     {% for field in klass.fields %}
       {% if field.bitFields %}
-        {% if field.numBits == 32 %}
-          uint32_t* {{field.name}}_bit_field = (uint32_t*) &{{field.name}};
-        {% else %}
-          uint64_t* {{field.name}}_bit_field = (uint64_t*) &{{field.name}};
-        {% endif %}
-        *{{field.name}}_bit_field = 0;
+        {{field.name}} = {};
       {% elif field.table %}
         {{field.name}} = new dbTable<_{{field.type}}>(db, this, (GetObjTbl_t) &_{{klass.name}}::getObjectTable, {{field.type}}Obj);
       {% elif field.isHashTable %}

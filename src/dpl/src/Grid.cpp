@@ -384,7 +384,7 @@ void Opendp::visitCellPixels(
     int y_start = gridY(&cell);
     int y_end = gridEndY(&cell);
     auto src_gmk = getGridMapKey(&cell);
-    for (auto layer_it : grid_info_map_) {
+    for (const auto& layer_it : grid_info_map_) {
       int layer_x_start = x_start;
       int layer_x_end = x_end;
       int layer_y_start = map_ycoordinates(y_start, src_gmk, layer_it.first);

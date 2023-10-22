@@ -1649,18 +1649,20 @@ Resizer::findBufferTargetSlews(LibertyCell *buffer,
   for (TimingArcSet *arc_set : buffer->timingArcSets(input, output)) {
     for (TimingArc *arc : arc_set->arcs()) {
       GateTimingModel *model = dynamic_cast<GateTimingModel*>(arc->model());
-      RiseFall *in_rf = arc->fromEdge()->asRiseFall();
-      RiseFall *out_rf = arc->toEdge()->asRiseFall();
-      float in_cap = input->capacitance(in_rf, max_);
-      float load_cap = in_cap * tgt_slew_load_cap_factor;
-      ArcDelay arc_delay;
-      Slew arc_slew;
-      model->gateDelay(buffer, pvt, 0.0, load_cap, 0.0, false,
-                       arc_delay, arc_slew);
-      model->gateDelay(buffer, pvt, arc_slew, load_cap, 0.0, false,
-                       arc_delay, arc_slew);
-      slews[out_rf->index()] += arc_slew;
-      counts[out_rf->index()]++;
+      if (model != nullptr) {
+        RiseFall *in_rf = arc->fromEdge()->asRiseFall();
+        RiseFall *out_rf = arc->toEdge()->asRiseFall();
+        float in_cap = input->capacitance(in_rf, max_);
+        float load_cap = in_cap * tgt_slew_load_cap_factor;
+        ArcDelay arc_delay;
+        Slew arc_slew;
+        model->gateDelay(buffer, pvt, 0.0, load_cap, 0.0, false,
+                        arc_delay, arc_slew);
+        model->gateDelay(buffer, pvt, arc_slew, load_cap, 0.0, false,
+                        arc_delay, arc_slew);
+        slews[out_rf->index()] += arc_slew;
+        counts[out_rf->index()]++;
+      }
     }
   }
 }

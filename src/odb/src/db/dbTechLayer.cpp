@@ -49,6 +49,7 @@
 #include "dbTechLayerCutSpacingTableOrthRule.h"
 #include "dbTechLayerEolExtensionRule.h"
 #include "dbTechLayerEolKeepOutRule.h"
+#include "dbTechLayerForbiddenSpacingRule.h"
 #include "dbTechLayerKeepOutZoneRule.h"
 #include "dbTechLayerMinCutRule.h"
 #include "dbTechLayerMinStepRule.h"
@@ -145,6 +146,8 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
   if (*min_cuts_rules_tbl_ != *rhs.min_cuts_rules_tbl_)
     return false;
   if (*area_rules_tbl_ != *rhs.area_rules_tbl_)
+    return false;
+  if (*forbidden_spacing_rules_tbl_ != *rhs.forbidden_spacing_rules_tbl_)
     return false;
   if (*keepout_zone_rules_tbl_ != *rhs.keepout_zone_rules_tbl_)
     return false;
@@ -329,6 +332,7 @@ void _dbTechLayer::differences(dbDiff& diff,
   DIFF_TABLE(width_table_rules_tbl_);
   DIFF_TABLE(min_cuts_rules_tbl_);
   DIFF_TABLE(area_rules_tbl_);
+  DIFF_TABLE(forbidden_spacing_rules_tbl_);
   DIFF_TABLE(keepout_zone_rules_tbl_);
   // User Code Begin Differences
   DIFF_FIELD(flags_.type_);
@@ -409,6 +413,7 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE(width_table_rules_tbl_);
   DIFF_OUT_TABLE(min_cuts_rules_tbl_);
   DIFF_OUT_TABLE(area_rules_tbl_);
+  DIFF_OUT_TABLE(forbidden_spacing_rules_tbl_);
   DIFF_OUT_TABLE(keepout_zone_rules_tbl_);
 
   // User Code Begin Out
@@ -459,8 +464,7 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
 
 _dbTechLayer::_dbTechLayer(_dbDatabase* db)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field = 0;
+  flags_ = {};
   cut_class_rules_tbl_ = new dbTable<_dbTechLayerCutClassRule>(
       db,
       this,
@@ -538,6 +542,11 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerAreaRuleObj);
+  forbidden_spacing_rules_tbl_ = new dbTable<_dbTechLayerForbiddenSpacingRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerForbiddenSpacingRuleObj);
   keepout_zone_rules_tbl_ = new dbTable<_dbTechLayerKeepOutZoneRule>(
       db,
       this,
@@ -660,6 +669,8 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
       = new dbTable<_dbTechLayerMinCutRule>(db, this, *r.min_cuts_rules_tbl_);
   area_rules_tbl_
       = new dbTable<_dbTechLayerAreaRule>(db, this, *r.area_rules_tbl_);
+  forbidden_spacing_rules_tbl_ = new dbTable<_dbTechLayerForbiddenSpacingRule>(
+      db, this, *r.forbidden_spacing_rules_tbl_);
   keepout_zone_rules_tbl_ = new dbTable<_dbTechLayerKeepOutZoneRule>(
       db, this, *r.keepout_zone_rules_tbl_);
   // User Code Begin CopyConstructor
@@ -741,6 +752,8 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> *obj.width_table_rules_tbl_;
   stream >> *obj.min_cuts_rules_tbl_;
   stream >> *obj.area_rules_tbl_;
+  if (obj.getDatabase()->isSchema(db_schema_lef58_forbidden_spacing))
+    stream >> *obj.forbidden_spacing_rules_tbl_;
   if (obj.getDatabase()->isSchema(db_schema_keepout_zone))
     stream >> *obj.keepout_zone_rules_tbl_;
   // User Code Begin >>
@@ -819,6 +832,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << *obj.width_table_rules_tbl_;
   stream << *obj.min_cuts_rules_tbl_;
   stream << *obj.area_rules_tbl_;
+  if (obj.getDatabase()->isSchema(db_schema_lef58_forbidden_spacing))
+    stream << *obj.forbidden_spacing_rules_tbl_;
   if (obj.getDatabase()->isSchema(db_schema_keepout_zone))
     stream << *obj.keepout_zone_rules_tbl_;
   // User Code Begin <<
@@ -902,6 +917,8 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
       return min_cuts_rules_tbl_;
     case dbTechLayerAreaRuleObj:
       return area_rules_tbl_;
+    case dbTechLayerForbiddenSpacingRuleObj:
+      return forbidden_spacing_rules_tbl_;
     case dbTechLayerKeepOutZoneRuleObj:
       return keepout_zone_rules_tbl_;
       // User Code Begin getObjectTable
@@ -940,6 +957,7 @@ _dbTechLayer::~_dbTechLayer()
   delete width_table_rules_tbl_;
   delete min_cuts_rules_tbl_;
   delete area_rules_tbl_;
+  delete forbidden_spacing_rules_tbl_;
   delete keepout_zone_rules_tbl_;
   // User Code Begin Destructor
   if (_name)
@@ -1116,6 +1134,14 @@ dbSet<dbTechLayerAreaRule> dbTechLayer::getTechLayerAreaRules() const
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
   return dbSet<dbTechLayerAreaRule>(obj, obj->area_rules_tbl_);
+}
+
+dbSet<dbTechLayerForbiddenSpacingRule>
+dbTechLayer::getTechLayerForbiddenSpacingRules() const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerForbiddenSpacingRule>(
+      obj, obj->forbidden_spacing_rules_tbl_);
 }
 
 dbSet<dbTechLayerKeepOutZoneRule> dbTechLayer::getTechLayerKeepOutZoneRules()

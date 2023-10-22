@@ -1020,3 +1020,68 @@
 [NesterovSolve] Iter: 470 overflow: 0.103683 HPWL: 1697506371
 [NesterovSolve] Finished with Overflow: 0.099071
 [NesterovSolve] PowerDomain PD_AES_2 finished with Overflow: 0.099110
+Placement Analysis
+---------------------------------
+total displacement     136783.5 u
+average displacement        2.7 u
+max displacement           69.1 u
+original HPWL         1564122.1 u
+legalized HPWL        1677441.0 u
+delta HPWL                    7 %
+
+Detailed placement improvement.
+Importing netlist into detailed improver.
+[INFO DPO-0100] Creating network with 51385 cells, 391 terminals, 51670 edges and 199030 pins.
+[INFO DPO-0109] Network stats: inst 51776, edges 51670, pins 199030
+[INFO DPO-0110] Number of regions is 3
+[INFO DPO-0401] Setting random seed to 1.
+[INFO DPO-0402] Setting maximum displacement 0 0 to 2708480 2708480 units.
+[INFO DPO-0320] Collected 609 fixed cells (excluded terminal_NI).
+[INFO DPO-0318] Collected 51385 single height cells.
+[INFO DPO-0321] Collected 0 wide cells.
+[INFO DPO-0322] Image (2300, 2720) - (1356540, 1354560)
+[INFO DPO-0310] Assigned 51385 cells into segments.  Movement in X-direction is 0.000000, movement in Y-direction is 0.000000.
+[INFO DPO-0313] Found 0 cells in wrong regions.
+[INFO DPO-0315] Found 0 row alignment problems.
+[INFO DPO-0314] Found 0 site alignment problems.
+[INFO DPO-0311] Found 0 overlaps between adjacent cells.
+[INFO DPO-0312] Found 0 edge spacing violations and 0 padding violations.
+[INFO DPO-0303] Running algorithm for independent set matching.
+[INFO DPO-0300] Set matching objective is wirelength.
+[INFO DPO-0301] Pass   1 of matching; objective is 1.672158e+12.
+[INFO DPO-0302] End of matching; objective is 1.672152e+12, improvement is 0.00 percent.
+[INFO DPO-0303] Running algorithm for global swaps.
+[INFO DPO-0306] Pass   1 of global swaps; hpwl is 1.672129e+12.
+[INFO DPO-0307] End of global swaps; objective is 1.672129e+12, improvement is 0.00 percent.
+[INFO DPO-0303] Running algorithm for vertical swaps.
+[INFO DPO-0308] Pass   1 of vertical swaps; hpwl is 1.672122e+12.
+[INFO DPO-0309] End of vertical swaps; objective is 1.672122e+12, improvement is 0.00 percent.
+[INFO DPO-0303] Running algorithm for reordering.
+[INFO DPO-0304] Pass   1 of reordering; objective is 1.672107e+12.
+[INFO DPO-0305] End of reordering; objective is 1.672107e+12, improvement is 0.00 percent.
+[INFO DPO-0303] Running algorithm for random improvement.
+[INFO DPO-0324] Random improver is using displacement generator.
+[INFO DPO-0325] Random improver is using hpwl objective.
+[INFO DPO-0326] Random improver cost string is (a).
+[INFO DPO-0332] End of pass, Generator displacement called 1027700 times.
+[INFO DPO-0335] Generator displacement, Cumulative attempts 1027700, swaps 728513, moves 236521 since last reset.
+[INFO DPO-0333] End of pass, Objective hpwl, Initial cost 1.667811e+12, Scratch cost 1.667798e+12, Incremental cost 1.667798e+12, Mismatch? N
+[INFO DPO-0338] End of pass, Total cost is 1.667798e+12.
+[INFO DPO-0327] Pass   1 of random improver; improvement in cost is 0.00 percent.
+[INFO DPO-0328] End of random improver; improvement is 0.000766 percent.
+[INFO DPO-0380] Cell flipping.
+[INFO DPO-0382] Changed 25676 cell orientations for row compatibility.
+[INFO DPO-0383] Performed 15493 cell flips.
+[INFO DPO-0384] End of flipping; objective is 1.672081e+12, improvement is 0.00 percent.
+[INFO DPO-0313] Found 0 cells in wrong regions.
+[INFO DPO-0315] Found 0 row alignment problems.
+[INFO DPO-0314] Found 0 site alignment problems.
+[INFO DPO-0311] Found 0 overlaps between adjacent cells.
+[INFO DPO-0312] Found 0 edge spacing violations and 0 padding violations.
+Detailed Improvement Results
+------------------------------------------
+Original HPWL          1677441.0 u
+Final HPWL             1597100.8 u
+Delta HPWL                  -4.8 %
+
+No differences found.

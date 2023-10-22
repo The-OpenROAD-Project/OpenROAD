@@ -55,7 +55,6 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       db_(db),
       overflow_iterations_(0),
       congestion_report_iter_step_(0),
-      layer_orientation_(0),
       x_range_(0),
       y_range_(0),
       num_adjust_(0),
@@ -63,6 +62,8 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       h_capacity_(0),
       x_grid_(0),
       y_grid_(0),
+      x_grid_max_(0),
+      y_grid_max_(0),
       x_corner_(0),
       y_corner_(0),
       tile_size_(0),
@@ -174,6 +175,7 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   x_grid_ = x;
   y_grid_ = y;
   num_layers_ = nLayers;
+  layer_directions_.resize(num_layers_);
   if (std::max(x_grid_, y_grid_) >= 1000) {
     x_range_ = std::max(x_grid_, y_grid_);
     y_range_ = std::max(x_grid_, y_grid_);
@@ -239,9 +241,10 @@ void FastRouteCore::setTileSize(int size)
   tile_size_ = size;
 }
 
-void FastRouteCore::setLayerOrientation(int x)
+void FastRouteCore::addLayerDirection(int layer_idx,
+                                      const odb::dbTechLayerDir& direction)
 {
-  layer_orientation_ = x;
+  layer_directions_[layer_idx] = direction;
 }
 
 FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
@@ -540,7 +543,7 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
     int edge_cap = getEdgeCapacity(x, y, x, y + 1, layer);
     if (edge_cap > 0) {
       int reduce = 0;
-      for (auto interval_it : intervals) {
+      for (const auto& interval_it : intervals) {
         reduce += ceil(static_cast<float>(
                            std::abs(interval_it.upper() - interval_it.lower()))
                        / track_space[layer - 1]);
@@ -727,12 +730,13 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
         // defines the layer used for horizontal edges are still 2D
         int layer_v = 0;
 
-        if (layer_orientation_ != 0) {
-          layer_h = 1;
-          layer_v = 2;
+        if (layer_directions_[nets_[netID]->getMinLayer()]
+            == odb::dbTechLayerDir::VERTICAL) {
+          layer_h = nets_[netID]->getMinLayer() + 1;
+          layer_v = nets_[netID]->getMinLayer();
         } else {
-          layer_h = 2;
-          layer_v = 1;
+          layer_h = nets_[netID]->getMinLayer();
+          layer_v = nets_[netID]->getMinLayer() + 1;
         }
         int second_x = tile_size_ * (gridsX[1] + 0.5) + x_corner_;
         int lastL = (lastX == second_x) ? layer_v : layer_h;
@@ -804,7 +808,8 @@ void FastRouteCore::updateDbCongestion()
     const unsigned short capV = v_capacity_3D_[k];
     const unsigned short last_row_capH = last_row_h_capacity_3D_[k];
     const unsigned short last_col_capV = last_col_v_capacity_3D_[k];
-    bool is_horizontal = ((k % 2) - layer_orientation_) == 0;
+    bool is_horizontal
+        = layer_directions_[k] == odb::dbTechLayerDir::HORIZONTAL;
     for (int y = 0; y < y_grid_; y++) {
       for (int x = 0; x < x_grid_; x++) {
         if (is_horizontal) {
@@ -820,7 +825,8 @@ void FastRouteCore::updateDbCongestion()
             db_gcell->setCapacity(layer, x, y, capH, capV, 0);
           }
         }
-        if (x == x_grid_ - 1 && y == y_grid_ - 1) {
+        if (x == x_grid_ - 1 && y == y_grid_ - 1 && x_grid_ > 1
+            && y_grid_ > 1) {
           unsigned short blockageH = h_edges_3D_[k][y][x - 1].red;
           unsigned short blockageV = v_edges_3D_[k][y - 1][x].red;
           unsigned short usageH
@@ -982,7 +988,7 @@ NetRouteMap FastRouteCore::run()
 
   const int max_overflow_increases = 25;
 
-  float slack_th = std::numeric_limits<float>::min();
+  float slack_th = std::numeric_limits<float>::lowest();
 
   // set overflow_increases as -1 since the first iteration always sum 1
   int overflow_increases = -1;
@@ -1264,8 +1270,8 @@ NetRouteMap FastRouteCore::run()
   via_cost_ = 1;
 
   if (goingLV && past_cong == 0) {
-    mazeRouteMSMDOrder3D(enlarge_, 0, 20, layer_orientation_);
-    mazeRouteMSMDOrder3D(enlarge_, 0, 12, layer_orientation_);
+    mazeRouteMSMDOrder3D(enlarge_, 0, 20);
+    mazeRouteMSMDOrder3D(enlarge_, 0, 12);
   }
 
   fillVIA();
@@ -1334,7 +1340,8 @@ std::vector<int> FastRouteCore::getOriginalResources()
 {
   std::vector<int> original_resources(num_layers_);
   for (int l = 0; l < num_layers_; l++) {
-    bool is_horizontal = ((l % 2) - layer_orientation_) == 0;
+    bool is_horizontal
+        = layer_directions_[l] == odb::dbTechLayerDir::HORIZONTAL;
     if (is_horizontal) {
       if (!regular_y_) {
         original_resources[l] += (v_capacity_3D_[l] + h_capacity_3D_[l])

@@ -140,8 +140,7 @@ void _dbTechLayerKeepOutZoneRule::out(dbDiff& diff,
 
 _dbTechLayerKeepOutZoneRule::_dbTechLayerKeepOutZoneRule(_dbDatabase* db)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field = 0;
+  flags_ = {};
   aligned_spacing_ = -1;
   side_extension_ = -1;
   forward_extension_ = -1;

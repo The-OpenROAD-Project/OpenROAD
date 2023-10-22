@@ -36,6 +36,7 @@
 #pragma once
 
 #include <cassert>
+#include <cstdint>
 #include <deque>
 #include <functional>
 #include <unordered_map>
@@ -207,6 +208,11 @@ class Clock
   {
     subNets_.emplace_back(name + "_" + getName());
     return subNets_.back();
+  }
+
+  void addSink(const std::string& name, int x, int y)
+  {
+    sinks_.emplace_back(name, "", CLOCK_SINK, x, y);
   }
 
   void addSink(const std::string& name,

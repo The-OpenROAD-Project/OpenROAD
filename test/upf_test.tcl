@@ -18,13 +18,12 @@ initialize_floorplan -utilization 1 \
                        -core_space 2 \
                        -site unithd
 
-set def_file [make_result_file upf_ifp.def]
-write_def $def_file
-
 global_placement -skip_initial_place
-set def_file [make_result_file upf_gpl.def]
+detailed_placement
+improve_placement
+check_placement
+
+
+set def_file [make_result_file upf_test.def]
 write_def $def_file
-
-
-
-
+diff_file $def_file upf_test.defok

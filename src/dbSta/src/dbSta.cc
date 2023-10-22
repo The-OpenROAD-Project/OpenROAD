@@ -176,6 +176,8 @@ std::unique_ptr<dbSta> dbSta::makeBlockSta(odb::dbBlock* block)
   clone->makeComponents();
   clone->initVars(tclInterp(), db_, logger_);
   clone->getDbNetwork()->setBlock(block);
+  clone->getDbNetwork()->setDefaultLibertyLibrary(
+      network_->defaultLibertyLibrary());
   clone->copyUnits(units());
   return clone;
 }

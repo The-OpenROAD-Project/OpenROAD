@@ -353,10 +353,10 @@ void HierRTLMP::hierRTLMacroPlacer()
   floorplan_uy_ = dbuToMicron(die_box.yMax(), dbu_);
 
   odb::Rect core_box = block_->getCoreArea();
-  int core_lx = dbuToMicron(core_box.xMin(), dbu_);
-  int core_ly = dbuToMicron(core_box.yMin(), dbu_);
-  int core_ux = dbuToMicron(core_box.xMax(), dbu_);
-  int core_uy = dbuToMicron(core_box.yMax(), dbu_);
+  float core_lx = dbuToMicron(core_box.xMin(), dbu_);
+  float core_ly = dbuToMicron(core_box.yMin(), dbu_);
+  float core_ux = dbuToMicron(core_box.xMax(), dbu_);
+  float core_uy = dbuToMicron(core_box.yMax(), dbu_);
 
   logger_->report(
       "Floorplan Outline: ({}, {}) ({}, {}),  Core Outline: ({}, {}) ({}, {})",
@@ -384,7 +384,7 @@ void HierRTLMP::hierRTLMacroPlacer()
   // Check if placement is feasible in the core area when considering
   // the macro halos
   float macro_with_halo_area = 0;
-  int unplaced_macros = 0;
+  int unfixed_macros = 0;
   for (auto inst : block_->getInsts()) {
     auto master = inst->getMaster();
     if (master->isBlock()) {
@@ -393,7 +393,7 @@ void HierRTLMP::hierRTLMacroPlacer()
       const auto height
           = dbuToMicron(master->getHeight(), dbu_) + 2 * halo_width_;
       macro_with_halo_area += width * height;
-      unplaced_macros += !inst->getPlacementStatus().isPlaced();
+      unfixed_macros += !inst->getPlacementStatus().isFixed();
     }
   }
 
@@ -418,9 +418,9 @@ void HierRTLMP::hierRTLMacroPlacer()
       core_util,
       manufacturing_grid_);
 
-  if (unplaced_macros == 0) {
+  if (unfixed_macros == 0) {
     logger_->info(
-        MPL, 17, "There are no unplaced macros so placement is skipped.");
+        MPL, 17, "There are no unfixed macros so placement is skipped.");
     return;
   }
 
@@ -611,8 +611,12 @@ void HierRTLMP::hierRTLMacroPlacer()
       break;
     }
   }
+
   if (macro_only_flag == true) {
     logger_->info(MPL, 27, "The design only has macros.\n");
+    if (graphics_) {
+      graphics_->startFine();
+    }
     hardMacroClusterMacroPlacement(root_cluster_);
   } else {
     debugPrint(logger_,
@@ -620,6 +624,9 @@ void HierRTLMP::hierRTLMacroPlacer()
                "macro_placement",
                1,
                "Determine shaping function for clusters -- Macro Tilings.\n");
+    if (graphics_) {
+      graphics_->startCoarse();
+    }
     calClusterMacroTilings(root_cluster_);
 
     // create pin blockage for IO pins
@@ -628,6 +635,9 @@ void HierRTLMP::hierRTLMacroPlacer()
     // Perform macro placement in a top-down manner (pre-order DFS)
     //
     logger_->info(MPL, 28, "Perform Multilevel macro placement...");
+    if (graphics_) {
+      graphics_->startFine();
+    }
     if (bus_planning_flag_ == true) {
       multiLevelMacroPlacement(root_cluster_);
     } else {
@@ -635,9 +645,15 @@ void HierRTLMP::hierRTLMacroPlacer()
     }
   }
 
+  generateTemporaryStdCellsPlacement(root_cluster_);
+
   for (auto& [inst, hard_macro] : hard_macro_map_) {
     hard_macro->updateDb(pitch_x_, pitch_y_, block_);
   }
+
+  correctAllMacrosOrientation();
+
+  writeMacroPlacement(macro_placement_file_);
 
   // Clear the memory to avoid memory leakage
   // release all the pointers
@@ -991,7 +1007,8 @@ void HierRTLMP::multiLevelCluster(Cluster* parent)
     // check if root cluster is below the max size of a leaf cluster
     // Force create child clusters in this case
     const int leaf_cluster_size
-        = max_num_inst_base_ / std::pow(coarsening_ratio_, max_num_level_ - 1);
+        = max_num_inst_base_ / std::pow(coarsening_ratio_, max_num_level_ - 1)
+          * (1 + tolerance_);
     if (parent->getNumStdCell() < leaf_cluster_size)
       force_split = true;
     debugPrint(logger_,
@@ -1154,22 +1171,61 @@ void HierRTLMP::breakCluster(Cluster* parent)
     // we will use the TritonPart to partition this large flat cluster
     // in the follow-up UpdateSubTree function
     if (module->getChildren().size() == 0) {
-      for (odb::dbInst* inst : module->getInsts()) {
-        const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-        if (liberty_cell == nullptr)
-          continue;
-        odb::dbMaster* master = inst->getMaster();
-        // check if the instance is a Pad, Cover or empty block (such as marker)
-        if (master->isPad() || master->isCover()) {
-          continue;
-        } else if (master->isBlock()) {
-          parent->addLeafMacro(inst);
-        } else {
-          parent->addLeafStdCell(inst);
+      if (parent == root_cluster_) {
+        // Check the glue logics
+        std::string cluster_name
+            = std::string("(") + parent->getName() + ")_glue_logic";
+        Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
+        for (odb::dbInst* inst : module->getInsts()) {
+          const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
+          if (liberty_cell == nullptr) {
+            continue;
+          }
+          odb::dbMaster* master = inst->getMaster();
+          // check if the instance is a Pad, Cover or empty block (such as
+          // marker)
+          if (master->isPad() || master->isCover()) {
+            continue;
+          }
+          if (master->isBlock()) {
+            cluster->addLeafMacro(inst);
+          } else {
+            cluster->addLeafStdCell(inst);
+          }
         }
+        // if the module has no meaningful glue instances
+        if (cluster->getLeafStdCells().empty()
+            && cluster->getLeafMacros().empty()) {
+          delete cluster;
+        } else {
+          setInstProperty(cluster);
+          setClusterMetrics(cluster);
+          cluster_map_[cluster_id_++] = cluster;
+          // modify the physical hierarchy tree
+          cluster->setParent(parent);
+          parent->addChild(cluster);
+        }
+      } else {
+        for (odb::dbInst* inst : module->getInsts()) {
+          const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
+          if (liberty_cell == nullptr) {
+            continue;
+          }
+          odb::dbMaster* master = inst->getMaster();
+          // check if the instance is a Pad, Cover or empty block (such as
+          // marker)
+          if (master->isPad() || master->isCover()) {
+            continue;
+          }
+          if (master->isBlock()) {
+            parent->addLeafMacro(inst);
+          } else {
+            parent->addLeafStdCell(inst);
+          }
+        }
+        parent->clearDbModules();  // remove module from the parent cluster
+        setInstProperty(parent);
       }
-      parent->clearDbModules();  // remove module from the parent cluster
-      setInstProperty(parent);
       return;
     }
     // (b.2) if the logical module has child logical modules,
@@ -5176,6 +5232,7 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
   // calculate the fences and guides
   std::map<int, Rect> fences;
   std::map<int, Rect> guides;
+  std::set<odb::dbMaster*> masters;
   // create a cluster for each macro
   // and calculate the fences and guides
   for (auto& hard_macro : hard_macros) {
@@ -5196,6 +5253,7 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
     macros.push_back(*hard_macro);
     cluster_map_[cluster_id_++] = macro_cluster;
     macro_clusters.push_back(macro_cluster);
+    masters.insert(hard_macro->getInst()->getMaster());
   }
   // calculate the connections with other clusters
   calculateConnection();
@@ -5234,9 +5292,16 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
     }  // end connection
   }    // end macro cluster
   // set global configuration
+
+  // Use exchange more often when there are more instances of a common
+  // master.
+  const float exchange_swap_prob
+      = exchange_swap_prob_ * 5
+        * (1 - (masters.size() / (float) hard_macros.size()));
+
   // set the action probabilities (summation to 1.0)
   const float action_sum = pos_swap_prob_ * 10 + neg_swap_prob_ * 10
-                           + double_swap_prob_ + exchange_swap_prob_
+                           + double_swap_prob_ + exchange_swap_prob
                            + flip_prob_;
   // We vary the outline of cluster to generate differnt tilings
   std::vector<float> vary_factor_list{1.0};
@@ -5278,7 +5343,7 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
                                 pos_swap_prob_ * 10 / action_sum,
                                 neg_swap_prob_ * 10 / action_sum,
                                 double_swap_prob_ / action_sum,
-                                exchange_swap_prob_ / action_sum,
+                                exchange_swap_prob / action_sum,
                                 flip_prob_ / action_sum,
                                 init_prob_,
                                 max_num_step_,
@@ -5911,6 +5976,178 @@ void HierRTLMP::FDPlacement(std::vector<Rect>& blocks,
       MoveBlock(attract_factor,
                 repulsive_factor,
                 max_size / (1 + std::floor(j / 100)));
+  }
+}
+
+void HierRTLMP::setTemporaryStdCellLocation(Cluster* cluster,
+                                            odb::dbInst* std_cell)
+{
+  const SoftMacro* soft_macro = cluster->getSoftMacro();
+
+  const int soft_macro_center_x_dbu = micronToDbu(soft_macro->getPinX(), dbu_);
+  const int soft_macro_center_y_dbu = micronToDbu(soft_macro->getPinY(), dbu_);
+
+  // Std cells are placed in the center of the cluster they belong to
+  std_cell->setLocation(
+      (soft_macro_center_x_dbu - std_cell->getBBox()->getDX() / 2),
+      (soft_macro_center_y_dbu - std_cell->getBBox()->getDY() / 2));
+
+  std_cell->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+}
+
+void HierRTLMP::setModuleStdCellsLocation(Cluster* cluster,
+                                          odb::dbModule* module)
+{
+  for (odb::dbInst* inst : module->getInsts()) {
+    if (!inst->isCore()) {
+      continue;
+    }
+    setTemporaryStdCellLocation(cluster, inst);
+  }
+
+  for (odb::dbModInst* mod_insts : module->getChildren()) {
+    setModuleStdCellsLocation(cluster, mod_insts->getMaster());
+  }
+}
+
+void HierRTLMP::generateTemporaryStdCellsPlacement(Cluster* cluster)
+{
+  if (cluster->isLeaf() && cluster->getNumStdCell() != 0) {
+    for (odb::dbModule* module : cluster->getDbModules()) {
+      setModuleStdCellsLocation(cluster, module);
+    }
+
+    for (odb::dbInst* leaf_std_cell : cluster->getLeafStdCells()) {
+      setTemporaryStdCellLocation(cluster, leaf_std_cell);
+    }
+  } else {
+    for (const auto& child : cluster->getChildren()) {
+      generateTemporaryStdCellsPlacement(child);
+    }
+  }
+}
+
+float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
+{
+  float wirelength = 0.0;
+
+  for (odb::dbITerm* iterm : macro->getITerms()) {
+    if (iterm->getSigType() != odb::dbSigType::SIGNAL) {
+      continue;
+    }
+
+    odb::dbNet* net = iterm->getNet();
+    if (net != nullptr) {
+      const float x1 = dbuToMicron(iterm->getBBox().xCenter(), dbu_);
+      const float y1 = dbuToMicron(iterm->getBBox().yCenter(), dbu_);
+
+      for (odb::dbITerm* net_iterm : net->getITerms()) {
+        if (net_iterm == iterm) {
+          continue;
+        }
+
+        if (net_iterm->getInst()->getPlacementStatus().isPlaced()) {
+          const float x2 = dbuToMicron(net_iterm->getBBox().xCenter(), dbu_);
+          const float y2 = dbuToMicron(net_iterm->getBBox().yCenter(), dbu_);
+
+          wirelength += (std::abs(x2 - x1) + std::abs(y2 - y1));
+        }
+      }
+
+      for (odb::dbBTerm* net_bterm : net->getBTerms()) {
+        const float x2 = dbuToMicron(net_bterm->getBBox().xCenter(), dbu_);
+        const float y2 = dbuToMicron(net_bterm->getBBox().yCenter(), dbu_);
+
+        wirelength += (std::abs(x2 - x1) + std::abs(y2 - y1));
+      }
+    }
+  }
+
+  return wirelength;
+}
+
+void HierRTLMP::flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip)
+{
+  if (is_vertical_flip) {
+    macro->setOrient(macro->getOrient().flipY());
+  } else {
+    macro->setOrient(macro->getOrient().flipX());
+  }
+}
+
+void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip)
+{
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (!inst->isBlock()) {
+      continue;
+    }
+
+    const float original_wirelength = calculateRealMacroWirelength(inst);
+    odb::Point macro_location = inst->getLocation();
+
+    // Flipping is done by mirroring the macro about the "Y" or "X" axis,
+    // so, after flipping, we must manually set the location (lower-left corner)
+    // again to move the macro back to the the position choosen by mpl2.
+    flipRealMacro(inst, is_vertical_flip);
+    inst->setLocation(macro_location.getX(), macro_location.getY());
+    const float new_wirelength = calculateRealMacroWirelength(inst);
+
+    if (new_wirelength > original_wirelength) {
+      flipRealMacro(inst, is_vertical_flip);
+      inst->setLocation(macro_location.getX(), macro_location.getY());
+    }
+  }
+}
+
+void HierRTLMP::correctAllMacrosOrientation()
+{
+  // Apply vertical flip if necessary
+  adjustRealMacroOrientation(true);
+
+  // Apply horizontal flip if necessary
+  adjustRealMacroOrientation(false);
+
+  for (auto& [inst, hard_macro] : hard_macro_map_) {
+    const Rect inst_box(dbuToMicron(inst->getBBox()->xMin(), dbu_),
+                        dbuToMicron(inst->getBBox()->yMin(), dbu_),
+                        dbuToMicron(inst->getBBox()->xMax(), dbu_),
+                        dbuToMicron(inst->getBBox()->yMax(), dbu_));
+
+    const odb::dbOrientType inst_orientation = inst->getOrient();
+
+    const odb::Point snap_origin = hard_macro->computeSnapOrigin(
+        inst_box, inst_orientation, pitch_x_, pitch_y_, block_);
+
+    inst->setOrigin(snap_origin.x(), snap_origin.y());
+    inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
+  }
+}
+
+void HierRTLMP::setMacroPlacementFile(const std::string& file_name)
+{
+  macro_placement_file_ = file_name;
+}
+
+void HierRTLMP::writeMacroPlacement(const std::string& file_name)
+{
+  if (file_name.empty()) {
+    return;
+  }
+
+  std::ofstream out(file_name);
+
+  if (!out) {
+    logger_->error(MPL, 11, "Cannot open file {}.", file_name);
+  }
+
+  // Use only insts that were placed by mpl2
+  for (auto& [inst, hard_macro] : hard_macro_map_) {
+    const float x = dbuToMicron(inst->getLocation().x(), dbu_);
+    const float y = dbuToMicron(inst->getLocation().y(), dbu_);
+
+    out << "place_macro -macro_name " << inst->getName() << " -location {" << x
+        << " " << y << "} -orientation " << inst->getOrient().getString()
+        << '\n';
   }
 }
 
