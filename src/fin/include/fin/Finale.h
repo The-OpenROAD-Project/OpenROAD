@@ -48,8 +48,6 @@ using utl::Logger;
 class Finale
 {
  public:
-  Finale();
-
   void init(odb::dbDatabase* db, Logger* logger);
 
   void densityFill(const char* rules_filename, const odb::Rect& fill_area);
@@ -57,9 +55,9 @@ class Finale
   void setDebug();
 
  private:
-  odb::dbDatabase* db_;
-  Logger* logger_;
-  bool debug_;
+  odb::dbDatabase* db_ = nullptr;
+  Logger* logger_ = nullptr;
+  bool debug_ = false;
 };
 
 }  // namespace fin
