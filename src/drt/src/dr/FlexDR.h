@@ -86,7 +86,7 @@ class FlexDR
     frUInt4 workerMarkerCost;
     frUInt4 workerFixedShapeCost;
     float workerMarkerDecay;
-    int ripupMode;
+    RipUpMode ripupMode;
     bool followGuide;
   };
 
@@ -248,7 +248,7 @@ class FlexDRWorker
         followGuide_(false),
         needRecheck_(false),
         skipRouting_(false),
-        ripupMode_(1),
+        ripupMode_(RipUpMode::ALL),
         workerDRCCost_(ROUTESHAPECOST),
         workerMarkerCost_(MARKERCOST),
         workerFixedShapeCost_(0),
@@ -285,7 +285,7 @@ class FlexDRWorker
         followGuide_(false),
         needRecheck_(false),
         skipRouting_(false),
-        ripupMode_(0),
+        ripupMode_(RipUpMode::DRC),
         workerDRCCost_(0),
         workerMarkerCost_(0),
         workerFixedShapeCost_(0),
@@ -328,7 +328,7 @@ class FlexDRWorker
     boundaryPin_ = std::move(bp);
   }
   void setMazeEndIter(int in) { mazeEndIter_ = in; }
-  void setRipupMode(int in) { ripupMode_ = in; }
+  void setRipupMode(RipUpMode in) { ripupMode_ = in; }
   void setFollowGuide(bool in) { followGuide_ = in; }
   void setCost(frUInt4 drcCostIn,
                frUInt4 markerCostIn,
@@ -404,7 +404,7 @@ class FlexDRWorker
   int getDRIter() const { return drIter_; }
   int getMazeEndIter() const { return mazeEndIter_; }
   bool isFollowGuide() const { return followGuide_; }
-  int getRipupMode() const { return ripupMode_; }
+  RipUpMode getRipupMode() const { return ripupMode_; }
   const std::vector<std::unique_ptr<drNet>>& getNets() const { return nets_; }
   std::vector<std::unique_ptr<drNet>>& getNets() { return nets_; }
   const std::vector<drNet*>* getDRNets(frNet* net) const
@@ -447,7 +447,7 @@ class FlexDRWorker
 
   static std::unique_ptr<FlexDRWorker> load(const std::string& file_name,
                                             utl::Logger* logger,
-                                            fr::frDesign* design,
+                                            frDesign* design,
                                             FlexDRGraphics* graphics);
 
   // distributed
@@ -502,7 +502,7 @@ class FlexDRWorker
   bool followGuide_;
   bool needRecheck_;
   bool skipRouting_;
-  int ripupMode_;
+  RipUpMode ripupMode_;
   // drNetOrderingEnum netOrderingMode;
   frUInt4 workerDRCCost_, workerMarkerCost_, workerFixedShapeCost_;
   float workerMarkerDecay_;
@@ -793,7 +793,9 @@ class FlexDRWorker
                                ModCostType type,
                                bool isBlockage = false,
                                frNonDefaultRule* ndr = nullptr,
-                               bool isMacroPin = false);
+                               bool isMacroPin = false,
+                               bool resetHorz = true,
+                               bool resetVert = true);
   void modCornerToCornerSpacing(const Rect& box, frMIdx z, ModCostType type);
   void modMinSpacingCostVia(const Rect& box,
                             frMIdx z,
@@ -826,12 +828,16 @@ class FlexDRWorker
   void modEolSpacingCost_helper(const Rect& testbox,
                                 frMIdx z,
                                 ModCostType type,
-                                int eolType);
+                                int eolType,
+                                bool resetHorz = true,
+                                bool resetVert = true);
   void modEolSpacingRulesCost(const Rect& box,
                               frMIdx z,
                               ModCostType type,
                               bool isSkipVia = false,
-                              frNonDefaultRule* ndr = nullptr);
+                              frNonDefaultRule* ndr = nullptr,
+                              bool resetHorz = true,
+                              bool resetVert = true);
   // cutSpc
   void modCutSpacingCost(const Rect& box,
                          frMIdx z,

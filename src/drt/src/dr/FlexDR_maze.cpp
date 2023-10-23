@@ -277,7 +277,9 @@ void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
                                            ModCostType type,
                                            bool isBlockage,
                                            frNonDefaultRule* ndr,
-                                           bool isMacroPin)
+                                           bool isMacroPin,
+                                           bool resetHorz,
+                                           bool resetVert)
 {
   auto lNum = gridGraph_.getLayerNum(z);
   frCoord width1 = box.minDXDY();
@@ -337,10 +339,18 @@ void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
             gridGraph_.addFixedShapeCostPlanar(i, j, z);  // safe access
             break;
           case resetFixedShape:
-            gridGraph_.setFixedShapeCostPlanar(i, j, z, 0);  // safe access
+            if (resetHorz) {
+              gridGraph_.setFixedShapeCostPlanarHorz(
+                  i, j, z, 0);  // safe access
+            }
+            if (resetVert) {
+              gridGraph_.setFixedShapeCostPlanarVert(
+                  i, j, z, 0);  // safe access
+            }
             break;
           case setFixedShape:
-            gridGraph_.setFixedShapeCostPlanar(i, j, z, 1);  // safe access
+            gridGraph_.setFixedShapeCostPlanarHorz(i, j, z, 1);  // safe access
+            gridGraph_.setFixedShapeCostPlanarVert(i, j, z, 1);  // safe access
             break;
           case resetBlocked:
             if (isMacroPin) {
@@ -743,7 +753,9 @@ void FlexDRWorker::modMinSpacingCostVia(const Rect& box,
 void FlexDRWorker::modEolSpacingCost_helper(const Rect& testbox,
                                             frMIdx z,
                                             ModCostType type,
-                                            int eolType)
+                                            int eolType,
+                                            bool resetHorz,
+                                            bool resetVert)
 {
   auto lNum = gridGraph_.getLayerNum(z);
   Rect bx;
@@ -811,10 +823,18 @@ void FlexDRWorker::modEolSpacingCost_helper(const Rect& testbox,
             gridGraph_.addFixedShapeCostPlanar(i, j, z);  // safe access
             break;
           case resetFixedShape:
-            gridGraph_.setFixedShapeCostPlanar(i, j, z, 0);  // safe access
+            if (resetHorz) {
+              gridGraph_.setFixedShapeCostPlanarHorz(
+                  i, j, z, 0);  // safe access
+            }
+            if (resetVert) {
+              gridGraph_.setFixedShapeCostPlanarVert(
+                  i, j, z, 0);  // safe access
+            }
             break;
           case setFixedShape:
-            gridGraph_.setFixedShapeCostPlanar(i, j, z, 1);  // safe access
+            gridGraph_.setFixedShapeCostPlanarHorz(i, j, z, 1);  // safe access
+            gridGraph_.setFixedShapeCostPlanarVert(i, j, z, 1);  // safe access
             break;
           default:;
         }
@@ -879,7 +899,9 @@ void FlexDRWorker::modEolSpacingRulesCost(const Rect& box,
                                           frMIdx z,
                                           ModCostType type,
                                           bool isSkipVia,
-                                          frNonDefaultRule* ndr)
+                                          frNonDefaultRule* ndr,
+                                          bool resetHorz,
+                                          bool resetVert)
 {
   auto layer = getTech()->getLayer(gridGraph_.getLayerNum(z));
   drEolSpacingConstraint drCon;
@@ -900,19 +922,19 @@ void FlexDRWorker::modEolSpacingRulesCost(const Rect& box,
                  box.xMax() + eolWithin,
                  box.yMax() + eolSpace);
     // if (!isInitDR()) {
-    modEolSpacingCost_helper(testBox, z, type, 0);
+    modEolSpacingCost_helper(testBox, z, type, 0, resetHorz, resetVert);
     if (!isSkipVia) {
-      modEolSpacingCost_helper(testBox, z, type, 1);
-      modEolSpacingCost_helper(testBox, z, type, 2);
+      modEolSpacingCost_helper(testBox, z, type, 1, resetHorz, resetVert);
+      modEolSpacingCost_helper(testBox, z, type, 2, resetHorz, resetVert);
     }
     testBox.init(box.xMin() - eolWithin,
                  box.yMin() - eolSpace,
                  box.xMax() + eolWithin,
                  box.yMin());
-    modEolSpacingCost_helper(testBox, z, type, 0);
+    modEolSpacingCost_helper(testBox, z, type, 0, resetHorz, resetVert);
     if (!isSkipVia) {
-      modEolSpacingCost_helper(testBox, z, type, 1);
-      modEolSpacingCost_helper(testBox, z, type, 2);
+      modEolSpacingCost_helper(testBox, z, type, 1, resetHorz, resetVert);
+      modEolSpacingCost_helper(testBox, z, type, 2, resetHorz, resetVert);
     }
   }
   // eol to left and right
@@ -921,19 +943,19 @@ void FlexDRWorker::modEolSpacingRulesCost(const Rect& box,
                  box.yMin() - eolWithin,
                  box.xMax() + eolSpace,
                  box.yMax() + eolWithin);
-    modEolSpacingCost_helper(testBox, z, type, 0);
+    modEolSpacingCost_helper(testBox, z, type, 0, resetHorz, resetVert);
     if (!isSkipVia) {
-      modEolSpacingCost_helper(testBox, z, type, 1);
-      modEolSpacingCost_helper(testBox, z, type, 2);
+      modEolSpacingCost_helper(testBox, z, type, 1, resetHorz, resetVert);
+      modEolSpacingCost_helper(testBox, z, type, 2, resetHorz, resetVert);
     }
     testBox.init(box.xMin() - eolSpace,
                  box.yMin() - eolWithin,
                  box.xMin(),
                  box.yMax() + eolWithin);
-    modEolSpacingCost_helper(testBox, z, type, 0);
+    modEolSpacingCost_helper(testBox, z, type, 0, resetHorz, resetVert);
     if (!isSkipVia) {
-      modEolSpacingCost_helper(testBox, z, type, 1);
-      modEolSpacingCost_helper(testBox, z, type, 2);
+      modEolSpacingCost_helper(testBox, z, type, 1, resetHorz, resetVert);
+      modEolSpacingCost_helper(testBox, z, type, 2, resetHorz, resetVert);
     }
   }
 }
@@ -1699,7 +1721,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
       // (i.e., not routed) see route_queue_init_queue this
       // is unreserve via via is reserved only when drWorker starts from nothing
       // and via is reserved
-      if (net->getNumReroutes() == 0 && getRipupMode() == 1) {
+      if (net->getNumReroutes() == 0 && getRipupMode() == RipUpMode::ALL) {
         initMazeCost_via_helper(net, false);
       }
       net->clear();

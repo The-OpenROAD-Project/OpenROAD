@@ -599,12 +599,15 @@ bool FlexDRWorker::end(frDesign* design)
   if (getDRIter() && getInitNumMarkers() == 0 && !needRecheck_) {
     return false;
     // do not write back if current clip is worse than input
-  } else if (getRipupMode() != 1 && getBestNumMarkers() > getInitNumMarkers()) {
+  }
+  if (getRipupMode() != RipUpMode::ALL
+      && getBestNumMarkers() > getInitNumMarkers()) {
     // cout <<"skip clip with #init/final = " <<getInitNumMarkers() <<"/"
     // <<getNumMarkers() <<endl;
     return false;
-  } else if (getDRIter() && getRipupMode() == 1
-             && getBestNumMarkers() > 5 * getInitNumMarkers()) {
+  }
+  if (getDRIter() && getRipupMode() == RipUpMode::ALL
+      && getBestNumMarkers() > 5 * getInitNumMarkers()) {
     return false;
   }
   save_updates_ = dist_on_;

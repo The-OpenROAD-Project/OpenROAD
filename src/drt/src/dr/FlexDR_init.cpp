@@ -1528,7 +1528,7 @@ void FlexDRWorker::initNet(const frDesign* design,
   for (auto& obj : extObjs) {
     dNet->addRoute(std::move(obj), true);
   }
-  if (getRipupMode() != 1) {
+  if (getRipupMode() != RipUpMode::ALL) {
     for (auto& obj : routeObjs) {
       dNet->addRoute(std::move(obj), false);
     }
@@ -1747,7 +1747,7 @@ void FlexDRWorker::initNets(const frDesign* design)
         design, nets, netRouteObjs, netExtObjs, netOrigGuides);
   }
   initNets_regionQuery();
-  if (getRipupMode() == 2) {
+  if (getRipupMode() == RipUpMode::NEARDRC) {
     initRipUpNetsFromMarkers();
   }
 
@@ -2480,14 +2480,14 @@ void FlexDRWorker::route_queue_init_queue(queue<RouteQueueEntry>& rerouteQueue)
   vector<RouteQueueEntry> checks;
   vector<RouteQueueEntry> routes;
 
-  if (getRipupMode() == 0) {
+  if (getRipupMode() == RipUpMode::DRC) {
     for (auto& marker : markers_) {
       route_queue_update_from_marker(
           &marker, uniqueVictims, uniqueAggressors, checks, routes);
     }
     mazeIterInit_sortRerouteQueue(0, checks);
     mazeIterInit_sortRerouteQueue(0, routes);
-  } else if (getRipupMode() == 1) {
+  } else if (getRipupMode() == RipUpMode::ALL) {
     // ripup all nets and clear objs here
     // nets are ripped up during initNets()
     vector<drNet*> ripupNets;
@@ -2504,7 +2504,7 @@ void FlexDRWorker::route_queue_init_queue(queue<RouteQueueEntry>& rerouteQueue)
       // no need to clear the net because route objs are not pushed to the net
       // (See FlexDRWorker::initNet)
     }
-  } else if (getRipupMode() == 2) {
+  } else if (getRipupMode() == RipUpMode::NEARDRC) {
     std::vector<drNet*> ripupNets;
     for (auto& net : nets_) {
       if (net->isRipup()) {
@@ -3050,6 +3050,27 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
       dbTransform xform = inst->getUpdatedXform();
       dbTransform shiftXform = inst->getTransform();
       shiftXform.setOrient(dbOrientType(dbOrientType::R0));
+      dbMasterType masterType = inst->getMaster()->getMasterType();
+      bool accessHorz = false;
+      bool accessVert = false;
+      if (masterType.isBlock() && !isAddPathCost) {
+        for (const auto& pin : instTerm->getTerm()->getPins()) {
+          if (!pin->hasPinAccess()) {
+            continue;
+          }
+          for (auto& ap :
+               pin->getPinAccess(inst->getPinAccessIdx())->getAccessPoints()) {
+            if (ap->hasAccess(frDirEnum::E) || ap->hasAccess(frDirEnum::W)) {
+              accessHorz = true;
+            }
+            if (ap->hasAccess(frDirEnum::N) || ap->hasAccess(frDirEnum::S)) {
+              accessVert = true;
+            }
+          }
+        }
+      } else {
+        accessHorz = accessVert = true;
+      }
       for (auto& uPin : instTerm->getTerm()->getPins()) {
         auto pin = uPin.get();
         for (auto& uPinFig : pin->getFigs()) {
@@ -3089,7 +3110,6 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
             ModCostType type = isAddPathCost ? ModCostType::addFixedShape
                                              : ModCostType::subFixedShape;
 
-            dbMasterType masterType = inst->getMaster()->getMasterType();
             if (isRoutingLayer) {
               if (!isSkipVia) {
                 modMinSpacingCostVia(box, zIdx, type, true, false);
@@ -3104,9 +3124,16 @@ void FlexDRWorker::initMazeCost_terms(const set<frBlockObject*>& objs,
                 else
                   type = ModCostType::resetFixedShape;
               }
-              modEolSpacingRulesCost(box, zIdx, type);
-              modMinSpacingCostPlanar(
-                  box, zIdx, type, false, nullptr, masterType.isBlock());
+              modEolSpacingRulesCost(
+                  box, zIdx, type, false, nullptr, accessHorz, accessVert);
+              modMinSpacingCostPlanar(box,
+                                      zIdx,
+                                      type,
+                                      false,
+                                      nullptr,
+                                      masterType.isBlock(),
+                                      accessHorz,
+                                      accessVert);
             } else {
               modCutSpacingCost(box, zIdx, type);
               modInterLayerCutSpacingCost(box, zIdx, type, true);
@@ -3311,7 +3338,7 @@ void FlexDRWorker::initMarkers(const frDesign* design)
 void FlexDRWorker::init(const frDesign* design)
 {
   initNets(design);
-  if (nets_.empty() && getRipupMode() == 1) {
+  if (nets_.empty() && getRipupMode() == RipUpMode::ALL) {
     skipRouting_ = true;
     return;
   }

@@ -1,0 +1,258 @@
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0225]     Created 437 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130_fd_sc_hd_merged.lef
+[WARNING IFP-0028] Core area lower left (2.000, 2.000) snapped to (2.300, 2.720).
+[INFO IFP-0001] Added 39 rows of 235 site unithd with height 1.
+[INFO GPL-0002] DBU: 1000
+[INFO GPL-0003] SiteSize: 460 2720
+[INFO GPL-0004] CoreAreaLxLy: 2300 2720
+[INFO GPL-0005] CoreAreaUxUy: 110400 108800
+[WARNING GPL-0001] in1 toplevel port is not placed!
+       Replace will regard in1 is placed in (0, 0)
+[WARNING GPL-0001] in2 toplevel port is not placed!
+       Replace will regard in2 is placed in (0, 0)
+[WARNING GPL-0001] out1 toplevel port is not placed!
+       Replace will regard out1 is placed in (0, 0)
+[WARNING GPL-0001] out2 toplevel port is not placed!
+       Replace will regard out2 is placed in (0, 0)
+[WARNING GPL-0001] out3 toplevel port is not placed!
+       Replace will regard out3 is placed in (0, 0)
+[INFO GPL-0006] NumInstances: 40
+[INFO GPL-0007] NumPlaceInstances: 16
+[INFO GPL-0008] NumFixedInstances: 0
+[INFO GPL-0009] NumDummyInstances: 24
+[INFO GPL-0010] NumNets: 29
+[INFO GPL-0011] NumPins: 69
+[INFO GPL-0012] DieAreaLxLy: 0 0
+[INFO GPL-0013] DieAreaUxUy: 112450 112450
+[INFO GPL-0014] CoreAreaLxLy: 2300 2720
+[INFO GPL-0015] CoreAreaUxUy: 110400 108800
+[INFO GPL-0016] CoreArea: 11467248000
+[INFO GPL-0017] NonPlaceInstsArea: 4654464000
+[INFO GPL-0018] PlaceInstsArea: 105100800
+[INFO GPL-0019] Util(%): 1.54
+[INFO GPL-0020] StdInstsArea: 105100800
+[INFO GPL-0021] MacroInstsArea: 0
+[INFO GPL-0006] NumInstances: 42
+[INFO GPL-0007] NumPlaceInstances: 3
+[INFO GPL-0008] NumFixedInstances: 0
+[INFO GPL-0009] NumDummyInstances: 39
+[INFO GPL-0010] NumNets: 29
+[INFO GPL-0011] NumPins: 69
+[INFO GPL-0012] DieAreaLxLy: 0 0
+[INFO GPL-0013] DieAreaUxUy: 112450 112450
+[INFO GPL-0014] CoreAreaLxLy: 2300 2720
+[INFO GPL-0015] CoreAreaUxUy: 110400 108800
+[INFO GPL-0016] CoreArea: 11467248000
+[INFO GPL-0017] NonPlaceInstsArea: 10566384000
+[INFO GPL-0018] PlaceInstsArea: 21270400
+[INFO GPL-0019] Util(%): 2.36
+[INFO GPL-0020] StdInstsArea: 21270400
+[INFO GPL-0021] MacroInstsArea: 0
+[INFO GPL-0006] NumInstances: 45
+[INFO GPL-0007] NumPlaceInstances: 6
+[INFO GPL-0008] NumFixedInstances: 0
+[INFO GPL-0009] NumDummyInstances: 39
+[INFO GPL-0010] NumNets: 29
+[INFO GPL-0011] NumPins: 69
+[INFO GPL-0012] DieAreaLxLy: 0 0
+[INFO GPL-0013] DieAreaUxUy: 112450 112450
+[INFO GPL-0014] CoreAreaLxLy: 2300 2720
+[INFO GPL-0015] CoreAreaUxUy: 110400 108800
+[INFO GPL-0016] CoreArea: 11467248000
+[INFO GPL-0017] NonPlaceInstsArea: 10566384000
+[INFO GPL-0018] PlaceInstsArea: 40038400
+[INFO GPL-0019] Util(%): 4.44
+[INFO GPL-0020] StdInstsArea: 40038400
+[INFO GPL-0021] MacroInstsArea: 0
+[INFO GPL-0031] FillerInit: NumGCells: 742
+[INFO GPL-0032] FillerInit: NumGNets: 29
+[INFO GPL-0033] FillerInit: NumGPins: 69
+[INFO GPL-0023] TargetDensity: 0.70
+[INFO GPL-0024] AveragePlaceInstArea: 6568800
+[INFO GPL-0025] IdealBinArea: 9384000
+[INFO GPL-0026] IdealBinCnt: 1222
+[INFO GPL-0027] TotalBinArea: 11467248000
+[INFO GPL-0028] BinCnt: 32 32
+[INFO GPL-0029] BinSize: 3379 3315
+[INFO GPL-0030] NumBins: 1024
+[INFO GPL-0031] FillerInit: NumGCells: 91
+[INFO GPL-0032] FillerInit: NumGNets: 29
+[INFO GPL-0033] FillerInit: NumGPins: 69
+[INFO GPL-0023] TargetDensity: 0.70
+[INFO GPL-0024] AveragePlaceInstArea: 7090133
+[INFO GPL-0025] IdealBinArea: 10128762
+[INFO GPL-0026] IdealBinCnt: 1132
+[INFO GPL-0027] TotalBinArea: 11467248000
+[INFO GPL-0028] BinCnt: 32 32
+[INFO GPL-0029] BinSize: 3379 3315
+[INFO GPL-0030] NumBins: 1024
+[INFO GPL-0031] FillerInit: NumGCells: 96
+[INFO GPL-0032] FillerInit: NumGNets: 29
+[INFO GPL-0033] FillerInit: NumGPins: 69
+[INFO GPL-0023] TargetDensity: 0.70
+[INFO GPL-0024] AveragePlaceInstArea: 6673066
+[INFO GPL-0025] IdealBinArea: 9532952
+[INFO GPL-0026] IdealBinCnt: 1202
+[INFO GPL-0027] TotalBinArea: 11467248000
+[INFO GPL-0028] BinCnt: 32 32
+[INFO GPL-0029] BinSize: 3379 3315
+[INFO GPL-0030] NumBins: 1024
+[NesterovSolve] Iter: 1 overflow: 0.149281 HPWL: 1097395
+[NesterovSolve] Iter: 1 overflow: 0.551384 HPWL: 1097395
+[NesterovSolve] Iter: 1 overflow: 0.0652659 HPWL: 1097395
+[NesterovSolve] PowerDomain PD_D2 finished with Overflow: 0.065266
+[NesterovSolve] Finished with Overflow: 0.093089
+[NesterovSolve] Iter: 10 overflow: 0.999843 HPWL: 925301
+[NesterovSolve] Iter: 20 overflow: 0.999843 HPWL: 927399
+[NesterovSolve] Iter: 30 overflow: 0.999843 HPWL: 927374
+[NesterovSolve] Iter: 40 overflow: 0.999843 HPWL: 927375
+[NesterovSolve] Iter: 50 overflow: 0.999843 HPWL: 927377
+[NesterovSolve] Iter: 60 overflow: 0.999843 HPWL: 927371
+[NesterovSolve] Iter: 70 overflow: 0.999843 HPWL: 927370
+[NesterovSolve] Iter: 80 overflow: 0.999843 HPWL: 927370
+[NesterovSolve] Iter: 90 overflow: 0.999843 HPWL: 927367
+[NesterovSolve] Iter: 100 overflow: 0.999843 HPWL: 927365
+[NesterovSolve] Iter: 110 overflow: 0.999843 HPWL: 927359
+[NesterovSolve] Iter: 120 overflow: 0.999843 HPWL: 927358
+[NesterovSolve] Iter: 130 overflow: 0.999843 HPWL: 927353
+[NesterovSolve] Iter: 140 overflow: 0.999843 HPWL: 927349
+[NesterovSolve] Iter: 150 overflow: 0.999843 HPWL: 927345
+[NesterovSolve] Iter: 160 overflow: 0.999843 HPWL: 927336
+[NesterovSolve] Iter: 170 overflow: 0.999843 HPWL: 927331
+[NesterovSolve] Iter: 180 overflow: 0.999843 HPWL: 927322
+[NesterovSolve] Iter: 190 overflow: 0.999843 HPWL: 927311
+[NesterovSolve] Iter: 200 overflow: 0.999843 HPWL: 927302
+[NesterovSolve] Iter: 210 overflow: 0.963019 HPWL: 926986
+[NesterovSolve] Iter: 220 overflow: 0.919045 HPWL: 926595
+[NesterovSolve] Iter: 230 overflow: 0.878912 HPWL: 926264
+[NesterovSolve] Iter: 240 overflow: 0.842138 HPWL: 926005
+[NesterovSolve] Iter: 250 overflow: 0.808317 HPWL: 925762
+[NesterovSolve] Iter: 260 overflow: 0.777108 HPWL: 925551
+[NesterovSolve] Iter: 270 overflow: 0.748219 HPWL: 925381
+[NesterovSolve] Iter: 280 overflow: 0.721401 HPWL: 925242
+[NesterovSolve] Iter: 290 overflow: 0.696439 HPWL: 925131
+[NesterovSolve] Iter: 300 overflow: 0.673147 HPWL: 925043
+[NesterovSolve] Iter: 310 overflow: 0.651362 HPWL: 924983
+[NesterovSolve] Iter: 320 overflow: 0.630943 HPWL: 924947
+[NesterovSolve] Iter: 330 overflow: 0.611766 HPWL: 924946
+[NesterovSolve] Iter: 340 overflow: 0.593719 HPWL: 924980
+[NesterovSolve] Iter: 350 overflow: 0.576707 HPWL: 925005
+[NesterovSolve] Iter: 360 overflow: 0.560643 HPWL: 925099
+[NesterovSolve] Iter: 370 overflow: 0.54545 HPWL: 925191
+[NesterovSolve] Iter: 380 overflow: 0.531058 HPWL: 925351
+[NesterovSolve] Iter: 390 overflow: 0.517406 HPWL: 925734
+[NesterovSolve] Iter: 400 overflow: 0.504438 HPWL: 926305
+[NesterovSolve] Iter: 410 overflow: 0.492105 HPWL: 926316
+[NesterovSolve] Iter: 420 overflow: 0.48036 HPWL: 926399
+[NesterovSolve] Iter: 430 overflow: 0.469163 HPWL: 926555
+[NesterovSolve] Iter: 440 overflow: 0.458476 HPWL: 927206
+[NesterovSolve] Iter: 450 overflow: 0.448265 HPWL: 927213
+[NesterovSolve] Iter: 460 overflow: 0.438499 HPWL: 927717
+[NesterovSolve] Iter: 470 overflow: 0.429149 HPWL: 927878
+[NesterovSolve] Iter: 480 overflow: 0.42019 HPWL: 928156
+[NesterovSolve] Iter: 490 overflow: 0.411597 HPWL: 927538
+[NesterovSolve] Iter: 500 overflow: 0.403348 HPWL: 928580
+[NesterovSolve] Iter: 510 overflow: 0.395424 HPWL: 928515
+[NesterovSolve] Iter: 520 overflow: 0.387805 HPWL: 928479
+[NesterovSolve] Iter: 530 overflow: 0.380474 HPWL: 928386
+[NesterovSolve] Iter: 540 overflow: 0.373415 HPWL: 926540
+[NesterovSolve] Iter: 550 overflow: 0.366614 HPWL: 926796
+[NesterovSolve] Iter: 560 overflow: 0.360055 HPWL: 925901
+[NesterovSolve] Iter: 570 overflow: 0.353727 HPWL: 926529
+[NesterovSolve] Iter: 580 overflow: 0.347618 HPWL: 925988
+[NesterovSolve] Iter: 590 overflow: 0.341716 HPWL: 925697
+[NesterovSolve] Iter: 600 overflow: 0.336012 HPWL: 925085
+[NesterovSolve] Iter: 610 overflow: 0.330494 HPWL: 924520
+[NesterovSolve] Iter: 620 overflow: 0.325155 HPWL: 924475
+[NesterovSolve] Iter: 630 overflow: 0.319986 HPWL: 924611
+[NesterovSolve] Iter: 640 overflow: 0.314978 HPWL: 924734
+[NesterovSolve] Iter: 650 overflow: 0.310125 HPWL: 925653
+[NesterovSolve] Iter: 660 overflow: 0.305419 HPWL: 924076
+[NesterovSolve] Iter: 670 overflow: 0.300853 HPWL: 923864
+[NesterovSolve] Iter: 680 overflow: 0.296423 HPWL: 923849
+[NesterovSolve] Iter: 690 overflow: 0.29212 HPWL: 924009
+[NesterovSolve] Iter: 700 overflow: 0.287941 HPWL: 924048
+[NesterovSolve] Iter: 710 overflow: 0.28388 HPWL: 923999
+[NesterovSolve] Iter: 720 overflow: 0.279932 HPWL: 924295
+[NesterovSolve] Iter: 730 overflow: 0.276092 HPWL: 924369
+[NesterovSolve] Iter: 740 overflow: 0.272356 HPWL: 924320
+[NesterovSolve] Iter: 750 overflow: 0.26872 HPWL: 923498
+[NesterovSolve] Iter: 760 overflow: 0.265179 HPWL: 923569
+[NesterovSolve] Iter: 770 overflow: 0.261731 HPWL: 923830
+[NesterovSolve] Iter: 780 overflow: 0.258371 HPWL: 924178
+[NesterovSolve] Iter: 790 overflow: 0.255096 HPWL: 924659
+[NesterovSolve] Iter: 800 overflow: 0.251904 HPWL: 925393
+[NesterovSolve] Iter: 810 overflow: 0.24879 HPWL: 926755
+[NesterovSolve] Iter: 820 overflow: 0.245752 HPWL: 932163
+[NesterovSolve] Iter: 830 overflow: 0.239168 HPWL: 951898
+[NesterovSolve] PowerDomain PD_D1 finished with Overflow: 0.085483
+Placement Analysis
+---------------------------------
+total displacement         67.6 u
+average displacement        2.7 u
+max displacement           34.1 u
+original HPWL             561.0 u
+legalized HPWL            620.8 u
+delta HPWL                   11 %
+
+Detailed placement improvement.
+Importing netlist into detailed improver.
+[INFO DPO-0100] Creating network with 25 cells, 5 terminals, 29 edges and 69 pins.
+[INFO DPO-0109] Network stats: inst 30, edges 29, pins 69
+[INFO DPO-0110] Number of regions is 3
+[INFO DPO-0401] Setting random seed to 1.
+[INFO DPO-0402] Setting maximum displacement 0 0 to 216200 216200 units.
+[INFO DPO-0320] Collected 29 fixed cells (excluded terminal_NI).
+[INFO DPO-0318] Collected 25 single height cells.
+[INFO DPO-0321] Collected 0 wide cells.
+[INFO DPO-0322] Image (2300, 2720) - (110400, 108800)
+[INFO DPO-0310] Assigned 25 cells into segments.  Movement in X-direction is 0.000000, movement in Y-direction is 0.000000.
+[INFO DPO-0313] Found 0 cells in wrong regions.
+[INFO DPO-0315] Found 0 row alignment problems.
+[INFO DPO-0314] Found 0 site alignment problems.
+[INFO DPO-0311] Found 0 overlaps between adjacent cells.
+[INFO DPO-0312] Found 0 edge spacing violations and 0 padding violations.
+[INFO DPO-0303] Running algorithm for independent set matching.
+[INFO DPO-0300] Set matching objective is wirelength.
+[INFO DPO-0301] Pass   1 of matching; objective is 2.147496e+10.
+[INFO DPO-0302] End of matching; objective is 2.147495e+10, improvement is 0.00 percent.
+[INFO DPO-0303] Running algorithm for global swaps.
+[INFO DPO-0306] Pass   1 of global swaps; hpwl is 2.147489e+10.
+[INFO DPO-0307] End of global swaps; objective is 2.147489e+10, improvement is 0.00 percent.
+[INFO DPO-0303] Running algorithm for vertical swaps.
+[INFO DPO-0308] Pass   1 of vertical swaps; hpwl is 2.147486e+10.
+[INFO DPO-0309] End of vertical swaps; objective is 2.147486e+10, improvement is 0.00 percent.
+[INFO DPO-0303] Running algorithm for reordering.
+[INFO DPO-0304] Pass   1 of reordering; objective is 2.147486e+10.
+[INFO DPO-0305] End of reordering; objective is 2.147486e+10, improvement is 0.00 percent.
+[INFO DPO-0303] Running algorithm for random improvement.
+[INFO DPO-0324] Random improver is using displacement generator.
+[INFO DPO-0325] Random improver is using hpwl objective.
+[INFO DPO-0326] Random improver cost string is (a).
+[INFO DPO-0332] End of pass, Generator displacement called 500 times.
+[INFO DPO-0335] Generator displacement, Cumulative attempts 500, swaps 20, moves   476 since last reset.
+[INFO DPO-0333] End of pass, Objective hpwl, Initial cost 2.147486e+10, Scratch cost 2.147481e+10, Incremental cost 2.147481e+10, Mismatch? N
+[INFO DPO-0338] End of pass, Total cost is 2.147481e+10.
+[INFO DPO-0327] Pass   1 of random improver; improvement in cost is 0.00 percent.
+[INFO DPO-0328] End of random improver; improvement is 0.000226 percent.
+[INFO DPO-0380] Cell flipping.
+[INFO DPO-0382] Changed 14 cell orientations for row compatibility.
+[INFO DPO-0383] Performed 6 cell flips.
+[INFO DPO-0384] End of flipping; objective is 2.147482e+10, improvement is -0.00 percent.
+[INFO DPO-0313] Found 0 cells in wrong regions.
+[INFO DPO-0315] Found 0 row alignment problems.
+[INFO DPO-0314] Found 0 site alignment problems.
+[INFO DPO-0311] Found 0 overlaps between adjacent cells.
+[INFO DPO-0312] Found 0 edge spacing violations and 0 padding violations.
+Detailed Improvement Results
+------------------------------------------
+Original HPWL              620.8 u
+Final HPWL                 513.0 u
+Delta HPWL                 -17.4 %
+
+No differences found.

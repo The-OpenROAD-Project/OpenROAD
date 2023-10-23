@@ -55,6 +55,7 @@
 #include "sta/Fuzzy.hh"
 #include "sta/PortDirection.hh"
 
+
 namespace rsz {
 
 using std::abs;
@@ -159,7 +160,7 @@ RecoverPower::recoverPower(float recover_power_percent)
     PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
     bool changed = recoverPower(end_path, end_slack_before);
     if (changed) {
-      resizer_->updateParasitics();
+      resizer_->updateParasitics(true);
       sta_->findRequireds();
       Slack end_slack_after = sta_->vertexSlack(end, max_);
 
@@ -374,7 +375,7 @@ RecoverPower::downsizeCell(LibertyPort *in_port,
   int lib_ap = dcalc_ap->libertyIndex();
   LibertyCell *cell = drvr_port->libertyCell();
   LibertyCellSeq *equiv_cells = sta_->equivCells(cell);
-  constexpr double delay_margin = 1.3; // Prevent overly aggressive downsizing
+  constexpr double delay_margin = 1.5; // Prevent overly aggressive downsizing
 
   if (equiv_cells) {
     const char *in_port_name = in_port->name();

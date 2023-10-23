@@ -48,9 +48,12 @@ class HardMacro;
 class Graphics : public gui::Renderer, public Mpl2Observer
 {
  public:
-  Graphics(int dbu, utl::Logger* logger);
+  Graphics(bool coarse, bool fine, int dbu, utl::Logger* logger);
 
   ~Graphics() override = default;
+
+  void startCoarse() override;
+  void startFine() override;
 
   void startSA() override;
   void saStep(const std::vector<SoftMacro>& macros) override;
@@ -82,6 +85,9 @@ class Graphics : public gui::Renderer, public Mpl2Observer
 
   std::vector<SoftMacro> soft_macros_;
   std::vector<HardMacro> hard_macros_;
+  bool active_ = true;
+  bool coarse_;
+  bool fine_;
   int dbu_ = 0;
   utl::Logger* logger_;
   std::optional<float> outline_penalty_;
