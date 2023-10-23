@@ -39,10 +39,6 @@ namespace fin {
 
 ////////////////////////////////////////////////////////////////
 
-Finale::Finale() : db_(nullptr), logger_(nullptr), debug_(false)
-{
-}
-
 void Finale::init(odb::dbDatabase* db, Logger* logger)
 {
   db_ = db;
