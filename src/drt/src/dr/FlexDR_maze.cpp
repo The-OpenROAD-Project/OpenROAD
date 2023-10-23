@@ -803,7 +803,6 @@ void FlexDRWorker::modEolSpacingCost_helper(const Rect& testbox,
 
   frVia sVia;
   Rect sViaBox;
-  dbTransform xform;
   Point pt;
 
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
@@ -3330,7 +3329,7 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal_addPWire(
     frCoord patchLength,
     frCoord patchWidth)
 {
-  Point origin, patchEnd;
+  Point origin;
   gridGraph_.getPoint(origin, bpIdx.x(), bpIdx.y());
   frLayerNum layerNum = gridGraph_.getLayerNum(bpIdx.z());
   // actual offsetbox
