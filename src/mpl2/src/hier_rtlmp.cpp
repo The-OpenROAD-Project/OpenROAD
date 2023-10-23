@@ -5035,9 +5035,9 @@ bool HierRTLMP::shapeChildrenCluster(
 {
   debugPrint(logger_,
              MPL,
-             "macro_placement",
+             "fine_shaping",
              1,
-             "Starting ShapeChildrenCluster for cluster :  {}",
+             "Starting fine shaping for cluster:  {}",
              parent->getName());
   // check the valid values
   const float outline_width = parent->getWidth();
@@ -5163,14 +5163,14 @@ bool HierRTLMP::shapeChildrenCluster(
           cluster->getMacroTilings());
       debugPrint(logger_,
                  MPL,
-                 "macro_placement",
+                 "fine_shaping",
                  1,
-                 "  [ShapeChildrenCluster] hard_macro_cluster : {}",
+                 "hard_macro_cluster : {}",
                  cluster->getName());
       for (auto& shape : cluster->getMacroTilings()) {
         debugPrint(logger_,
                    MPL,
-                   "macro_placement",
+                   "fine_shaping",
                    1,
                    "    ( {} , {} ) ",
                    shape.first,
@@ -5193,16 +5193,16 @@ bool HierRTLMP::shapeChildrenCluster(
 
       debugPrint(logger_,
                  MPL,
-                 "macro_placement",
+                 "fine_shaping",
                  1,
-                 "[ShapeChildrenCluster] name:  {} area: {}",
+                 "name:  {} area: {}",
                  cluster->getName(),
                  area);
-      debugPrint(logger_, MPL, "macro_placement", 1, "width_list :  ");
+      debugPrint(logger_, MPL, "fine_shaping", 1, "width_list :  ");
       for (auto& width : width_list) {
         debugPrint(logger_,
                    MPL,
-                   "macro_placement",
+                   "fine_shaping",
                    1,
                    " [  {} {}  ] ",
                    width.first,
@@ -5213,9 +5213,9 @@ bool HierRTLMP::shapeChildrenCluster(
   }
   debugPrint(logger_,
              MPL,
-             "macro_placement",
+             "fine_shaping",
              1,
-             "Finish ShapeChildrenCluster for cluster :  {}",
+             "Finish fine shaping for cluster:  {}",
              parent->getName());
   return true;
 }
