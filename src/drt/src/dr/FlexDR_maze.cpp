@@ -1731,6 +1731,9 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
                        net->getFrNet()->getName(),
                        routeBoxStringStream.str());
       }
+      if (graphics_) {
+        graphics_->midNet(net);
+      }
       mazeNetEnd(net);
       net->addNumReroutes();
       didRoute = true;
@@ -1760,6 +1763,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
           workerRegionQuery.add(tmp.get());
           net->addRoute(std::move(tmp));
         }
+        gcWorker_->clearPWires();
         if (getDRIter() >= beginDebugIter
             && !getGCWorker()->getMarkers().empty()) {
           logger_->info(DRT,

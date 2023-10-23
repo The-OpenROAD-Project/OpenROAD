@@ -35,6 +35,34 @@ using namespace std;
 using namespace fr;
 namespace bgi = boost::geometry::index;
 
+bool FlexDRWorker::isRoutePatchWire(frPatchWire* pwire) const
+{
+  auto gridBBox = getRouteBox();
+  Point origin = pwire->getOrigin();
+  if (isInitDR()
+      && (origin.x() == gridBBox.xMin() || origin.x() == gridBBox.xMax()
+          || origin.y() == gridBBox.yMin()
+          || origin.y() == gridBBox.yMax())) {
+    return false;
+  }
+  return origin.x() >= gridBBox.xMin() && origin.y() >= gridBBox.yMin()
+      && origin.x() <= gridBBox.xMax() && origin.y() <= gridBBox.yMax();
+}
+
+bool FlexDRWorker::isRouteVia(frVia* via) const
+{
+  auto gridBBox = getRouteBox();
+  Point origin = via->getOrigin();
+  if (isInitDR()
+      && (origin.x() == gridBBox.xMin() || origin.x() == gridBBox.xMax()
+          || origin.y() == gridBBox.yMin()
+          || origin.y() == gridBBox.yMax())) {
+    return false;
+  }
+  return origin.x() >= gridBBox.xMin() && origin.y() >= gridBBox.yMin()
+      && origin.x() <= gridBBox.xMax() && origin.y() <= gridBBox.yMax();
+}
+
 void FlexDRWorker::initNetObjs_pathSeg(
     frPathSeg* pathSeg,
     set<frNet*, frBlockObjectComp>& nets,
@@ -149,9 +177,7 @@ void FlexDRWorker::initNetObjs_via(
   auto gridBBox = getRouteBox();
   auto net = via->getNet();
   nets.insert(net);
-  Point viaPoint = via->getOrigin();
-  if (viaPoint.x() >= gridBBox.xMin() && viaPoint.y() >= gridBBox.yMin()
-      && viaPoint.x() <= gridBBox.xMax() && viaPoint.y() <= gridBBox.yMax()) {
+  if (isRouteVia(via)) {
     auto uVia = make_unique<drVia>(*via);
     unique_ptr<drConnFig> uDRObj(std::move(uVia));
     netRouteObjs[net].push_back(std::move(uDRObj));
@@ -171,9 +197,7 @@ void FlexDRWorker::initNetObjs_patchWire(
   auto gridBBox = getRouteBox();
   auto net = pwire->getNet();
   nets.insert(net);
-  Point origin = pwire->getOrigin();
-  if (origin.x() >= gridBBox.xMin() && origin.y() >= gridBBox.yMin()
-      && origin.x() <= gridBBox.xMax() && origin.y() <= gridBBox.yMax()) {
+  if (isRoutePatchWire(pwire)) {
     auto uPWire = make_unique<drPatchWire>(*pwire);
     unique_ptr<drConnFig> uDRObj(std::move(uPWire));
     netRouteObjs[net].push_back(std::move(uDRObj));
@@ -364,12 +388,7 @@ void FlexDRWorker::initNets_initDR(
           vExtObjs.push_back(std::move(netRouteObjs[net][i]));
         }
       } else if (obj->typeId() == drcVia) {
-        auto via = static_cast<drVia*>(obj.get());
-        if (viaInInterior(getRouteBox(), via->getOrigin())) {
-          vRouteObjs.push_back(std::move(netRouteObjs[net][i]));
-        } else {
-          vExtObjs.push_back(std::move(netRouteObjs[net][i]));
-        }
+        vRouteObjs.push_back(std::move(netRouteObjs[net][i]));
       } else if (obj->typeId() == drcPatchWire) {
         vRouteObjs.push_back(std::move(netRouteObjs[net][i]));
       }
@@ -1426,10 +1445,6 @@ void FlexDRWorker::initNet_term_new_helper(const frDesign* design,
 void FlexDRWorker::initNet_boundary(drNet* dNet,
                                     vector<unique_ptr<drConnFig>>& extObjs)
 {
-  // if (!isInitDR() && dNet->getFrNet()->getName() == string("net14488")) {
-  // if (!isInitDR() && dNet->getFrNet()->getName() == string("net100629")) {
-  //   cout <<"here" <<endl;
-  // }
   auto gridBBox = getRouteBox();
   // location to area
   map<pair<Point, frLayerNum>, frCoord> extBounds;

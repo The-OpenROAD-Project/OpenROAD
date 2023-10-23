@@ -538,7 +538,10 @@ class FlexDRWorker
   bool dist_on_;
   bool isCongested_;
   bool save_updates_;
-
+  
+  // hellpers
+  bool isRoutePatchWire(frPatchWire* pwire) const;
+  bool isRouteVia(frVia* via) const;
   // init
   void init(const frDesign* design);
   void initNets(const frDesign* design);

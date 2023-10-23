@@ -1872,6 +1872,8 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
 
   Rect shiftedPatch = patchBx;
   shiftedPatch.moveTo(offset.x(), offset.y());
+  logger_->warn(DRT, 6481, "GC PWIRE {} {} net {} worker {}", shiftedPatch, getTech()->getLayer(patch->getLayerNum())->getName(), patch->getNet()->getFrNet()->getName(), getDRWorker()->getRouteBox());
+
   pwires_.push_back(std::move(patch));
 }
 
@@ -3595,14 +3597,12 @@ void FlexGCWorker::Impl::checkMinimumCut()
 int FlexGCWorker::Impl::main()
 {
   // incremental updates
-  if (!modifiedDRNets_.empty() || !pwires_.empty()) {
+  pwires_.clear();
+  clearMarkers();
+  if (!modifiedDRNets_.empty()) {
     updateGCWorker();
   }
-
-  clearMarkers();
-
   if (surgicalFixEnabled_ && getDRWorker()) {
-    pwires_.clear();
     checkMetalShape(true);
     //  minStep patching for GF14
     if (tech_->hasVia2ViaMinStep() || tech_->hasCornerSpacingConstraint())
