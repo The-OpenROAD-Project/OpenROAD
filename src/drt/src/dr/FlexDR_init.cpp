@@ -289,13 +289,6 @@ static bool segOnBorder(Rect routeBox, Point begin, Point end)
   }
 }
 
-// The origin is strictly inside the routeBox and not on an edge
-static bool viaInInterior(Rect routeBox, Point origin)
-{
-  return routeBox.xMin() < origin.x() && origin.x() < routeBox.xMax()
-         && routeBox.yMin() < origin.y() && origin.y() < routeBox.yMax();
-}
-
 void FlexDRWorker::initNets_segmentTerms(
     Point bp,
     frLayerNum lNum,
