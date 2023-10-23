@@ -65,9 +65,34 @@ void Opendp::checkPlacement(bool verbose,
   for (Cell& cell : cells_) {
     if (isStdCell(&cell)) {
       // Site alignment check
-      if (cell.x_ % site_width_ != 0 || cell.y_ % row_height_ != 0) {
-        site_align_failures.push_back(&cell);
+      if (!cell.isHybrid()) {
+        if (cell.x_ % site_width_ != 0 || cell.y_ % row_height_ != 0) {
+          site_align_failures.push_back(&cell);
+        }
+      } else {
+        // here, the cell is hybrid, if it is a parent, then the check is
+        // quite simple
+        if (cell.x_ % site_width_ != 0) {
+          site_align_failures.push_back(&cell);
+          continue;
+        }
+        auto gmk = getGridMapKey(&cell);
+        if (cell.isHybridParent()) {
+          if (cell.y_ % cell.height_ != 0) {
+            site_align_failures.push_back(&cell);
+          }
+        }
+        // else {
+        // here, the check is quite complex. We need to figure out if the
+        // base of the cell is on the right site
+        // int adjusted_height = cell.y_ / gmk.cell_height;
+        // if (adjusted_height % cell.height_ != 0
+        //     || (adjusted_height + cell.height_) % cell.height_) {
+        //   site_align_failures.push_back(&cell);
+        // }
+        // }
       }
+
       if (!checkInRows(cell)) {
         in_rows_failures.push_back(&cell);
       }
@@ -318,14 +343,35 @@ bool Opendp::checkInRows(const Cell& cell) const
   int site_width = getSiteWidth(&cell);
   int x_ll = gridX(&cell, site_width);
   int x_ur = gridEndX(&cell, site_width);
-  int y_ll = gridY(&cell, grid_info.first);
-  int y_ur = gridEndY(&cell, grid_info.first);
+  int y_ll = gridY(&cell);
+  int y_ur = gridEndY(&cell);
+  debugPrint(logger_,
+             DPL,
+             "hybrid",
+             1,
+             "Checking cell {} with site {} and "
+             "height {} in rows. Y start {} y end {}",
+             cell.name(),
+             cell.getSite()->getName(),
+             cell.height_,
+             y_ll,
+             y_ur);
 
   for (int y = y_ll; y < y_ur; y++) {
     for (int x = x_ll; x < x_ur; x++) {
-      Pixel* pixel = gridPixel(grid_info.second.grid_index, x, y);
+      Pixel* pixel = gridPixel(grid_info.second.getGridIndex(), x, y);
       if (pixel == nullptr  // outside core
           || !pixel->is_valid) {
+        return false;
+      }
+      if (pixel->site->getId() != cell.getSite()->getId()) {
+        // logger_->warn(
+        //     DPL,
+        //     977,
+        //     "Cell {} is not on a row with its site {}. It is placed on site
+        //     {}", cell.name(),
+        //     cell.db_inst_->getMaster()->getSite()->getName(),
+        //     pixel->site->getName());
         return false;
       }
     }
@@ -397,7 +443,7 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
 {
   Cell* gap_cell = nullptr;
   auto row_info = getRowInfo(&cell);
-  int index_in_grid = row_info.second.grid_index;
+  int index_in_grid = row_info.second.getGridIndex();
   visitCellBoundaryPixels(
       cell, true, [&](Pixel* pixel, const Direction2D& edge, int x, int y) {
         Cell* pixel_cell = pixel->cell;

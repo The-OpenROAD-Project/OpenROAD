@@ -35,6 +35,7 @@
 
 #pragma once
 
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -50,6 +51,8 @@ class dbMTerm;
 class dbSite;
 class dbTechLayer;
 class Rect;
+class Point;
+class dbOrientType;
 }  // namespace odb
 
 namespace sta {
@@ -111,6 +114,14 @@ class InitFloorplan
                int core_uy,
                int factor,
                int row_index);
+  int makeHybridRows(dbSite* parent_hybrid_site,
+                     const odb::Point& core_l,
+                     const odb::Point& core_u,
+                     int row_index);
+  void generateContiguousHybridRows(
+      dbSite* parent_hybrid_site,
+      const std::vector<std::pair<dbSite*, odb::dbOrientType>>& row_pattern,
+      std::vector<std::vector<dbSite*>>& output_patterns_list);
   void makeTracks(const char* tracks_file, odb::Rect& die_area);
   void autoPlacePins(odb::dbTechLayer* pin_layer, odb::Rect& core);
   int snapToMfgGrid(int coord) const;
@@ -120,6 +131,10 @@ class InitFloorplan
   dbBlock* block_;
   Logger* logger_;
   sta::dbNetwork* network_;
+
+ private:
+  // this is a set of sets of all constructed site ids.
+  std::set<std::set<int>> constructed_patterns;
 };
 
 }  // namespace ifp

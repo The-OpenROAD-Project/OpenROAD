@@ -136,10 +136,22 @@ void Opendp::examineRows()
 
   for (dbRow* db_row : rows) {
     dbSite* site = db_row->getSite();
+    if (site->isHybrid()) {
+      continue;
+    }
     min_row_height_
         = std::min(min_row_height_, static_cast<int>(site->getHeight()));
     min_site_width_
         = std::min(min_site_width_, static_cast<int>(site->getWidth()));
+  }
+  if (min_row_height_ == std::numeric_limits<int>::max()) {
+    // this means only hybrid sites exist, which breaks most of DPL mapping
+    // logic. We still need this empty one-site grid to operate smoothly.
+    // TODO(mina1460): create this grid even if no cells exist, just to be safe.
+    logger_->error(
+        DPL,
+        129,
+        "Only hybrid sites exist. Please add at least one non-hybrid site.");
   }
   row_height_ = min_row_height_;
   site_width_ = min_site_width_;

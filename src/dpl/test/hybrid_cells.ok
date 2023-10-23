@@ -6,13 +6,15 @@
 [INFO ODB-0222] Reading LEF file: Nangate45/fake_macros.lef
 [INFO ODB-0225]     Created 9 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/fake_macros.lef
-[INFO ODB-0128] Design: regions3
-[INFO ODB-0131]     Created 2 components and 10 component-terminals.
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 6 pins.
+[INFO ODB-0131]     Created 6 components and 30 component-terminals.
+[INFO DPL-7251] parent hybrid site HybridGA has 9 rows
 Placement Analysis
 ---------------------------------
-total displacement          6.3 u
-average displacement        3.2 u
-max displacement            3.8 u
+total displacement          5.6 u
+average displacement        0.9 u
+max displacement            1.4 u
 original HPWL               0.0 u
 legalized HPWL              0.0 u
 delta HPWL                    0 %

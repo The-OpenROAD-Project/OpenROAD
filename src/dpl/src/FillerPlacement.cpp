@@ -64,9 +64,36 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
   setGridCells();
 
   if (!grid_info_map_.empty()) {
-    const auto& layer = *grid_info_map_.begin();
-    for (int row = 0; row < layer.second.row_count; row++) {
-      placeRowFillers(row, prefix, filler_masters, layer.first, layer.second);
+    int min_height = INT_MAX;
+    Grid_map_key chosen_grid_key = {0};
+    // we will first try to find the grid with min height that is non hybrid, if
+    // that doesn't exist, we will pick the first hybrid grid.
+    for (auto [grid_idx, itr_grid_info] : grid_info_map_) {
+      int site_height = itr_grid_info.getSites()[0].first->getHeight();
+      if (!itr_grid_info.isHybrid() && site_height < min_height) {
+        min_height = site_height;
+        chosen_grid_key = grid_idx;
+      }
+    }
+    auto chosen_grid_info = grid_info_map_.at(chosen_grid_key);
+    int chosen_row_count = chosen_grid_info.getRowCount();
+    if (!chosen_grid_info.isHybrid()) {
+      int site_height = min_height;
+      for (int row = 0; row < chosen_row_count; row++) {
+        placeRowFillers(
+            row, prefix, filler_masters, site_height, chosen_grid_info);
+      }
+    } else {
+      auto hybrid_sites_vec = chosen_grid_info.getSites();
+      const int hybrid_sites_num = hybrid_sites_vec.size();
+      for (int row = 0; row < chosen_row_count; row++) {
+        placeRowFillers(
+            row,
+            prefix,
+            filler_masters,
+            hybrid_sites_vec[row % hybrid_sites_num].first->getHeight(),
+            chosen_grid_info);
+      }
     }
   }
 
@@ -91,13 +118,13 @@ void Opendp::placeRowFillers(int row,
 
   int row_site_count = divFloor(core_.dx(), site_width_);
   while (j < row_site_count) {
-    Pixel* pixel = gridPixel(grid_info.grid_index, j, row);
+    Pixel* pixel = gridPixel(grid_info.getGridIndex(), j, row);
     const dbOrientType orient = pixel->orient_;
     if (pixel->cell == nullptr && pixel->is_valid) {
       int k = j;
       while (k < row_site_count
-             && gridPixel(grid_info.grid_index, k, row)->cell == nullptr
-             && gridPixel(grid_info.grid_index, k, row)->is_valid) {
+             && gridPixel(grid_info.getGridIndex(), k, row)->cell == nullptr
+             && gridPixel(grid_info.getGridIndex(), k, row)->is_valid) {
         k++;
       }
 
@@ -121,7 +148,7 @@ void Opendp::placeRowFillers(int row,
         debugPrint(
             logger_, DPL, "filler", 2, "fillers size is {}.", fillers.size());
         for (dbMaster* master : fillers) {
-          string inst_name = prefix + to_string(grid_info.grid_index) + "_"
+          string inst_name = prefix + to_string(grid_info.getGridIndex()) + "_"
                              + to_string(row) + "_" + to_string(k);
           // printf(" filler %s %d\n", inst_name.c_str(), master->getWidth() /
           // site_width_);
@@ -154,11 +181,11 @@ const char* Opendp::gridInstName(int row,
   if (col < 0) {
     return "core_left";
   }
-  if (col > grid_info.site_count) {
+  if (col > grid_info.getSiteCount()) {
     return "core_right";
   }
 
-  const Cell* cell = gridPixel(grid_info.grid_index, col, row)->cell;
+  const Cell* cell = gridPixel(grid_info.getGridIndex(), col, row)->cell;
   if (cell) {
     return cell->db_inst_->getConstName();
   }

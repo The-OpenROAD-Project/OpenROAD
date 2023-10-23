@@ -32,6 +32,8 @@
 
 #include "dbSite.h"
 
+#include <unordered_map>
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbLib.h"
@@ -44,32 +46,45 @@ template class dbTable<_dbSite>;
 
 bool _dbSite::operator==(const _dbSite& rhs) const
 {
-  if (_flags._x_symmetry != rhs._flags._x_symmetry)
+  if (_flags._x_symmetry != rhs._flags._x_symmetry) {
     return false;
+  }
 
-  if (_flags._y_symmetry != rhs._flags._y_symmetry)
+  if (_flags._y_symmetry != rhs._flags._y_symmetry) {
     return false;
+  }
 
-  if (_flags._R90_symmetry != rhs._flags._R90_symmetry)
+  if (_flags._R90_symmetry != rhs._flags._R90_symmetry) {
     return false;
+  }
 
-  if (_flags._class != rhs._flags._class)
+  if (_flags._class != rhs._flags._class) {
     return false;
+  }
+
+  if (_flags._is_hybrid != rhs._flags._is_hybrid) {
+    return false;
+  }
 
   if (_name && rhs._name) {
-    if (strcmp(_name, rhs._name) != 0)
+    if (strcmp(_name, rhs._name) != 0) {
       return false;
-  } else if (_name || rhs._name)
+    }
+  } else if (_name || rhs._name) {
     return false;
+  }
 
-  if (_height != rhs._height)
+  if (_height != rhs._height) {
     return false;
+  }
 
-  if (_width != rhs._width)
+  if (_width != rhs._width) {
     return false;
+  }
 
-  if (_next_entry != rhs._next_entry)
+  if (_next_entry != rhs._next_entry) {
     return false;
+  }
 
   return true;
 }
@@ -83,6 +98,7 @@ void _dbSite::differences(dbDiff& diff,
   DIFF_FIELD(_flags._y_symmetry);
   DIFF_FIELD(_flags._R90_symmetry);
   DIFF_FIELD(_flags._class);
+  DIFF_FIELD(_flags._is_hybrid);
   DIFF_FIELD(_name);
   DIFF_FIELD(_height);
   DIFF_FIELD(_width);
@@ -146,7 +162,7 @@ _dbSite::~_dbSite()
 //
 ////////////////////////////////////////////////////////////////////
 
-std::string dbSite::getName()
+std::string dbSite::getName() const
 {
   _dbSite* site = (_dbSite*) this;
   return site->_name;
@@ -170,7 +186,7 @@ void dbSite::setWidth(uint w)
   site->_width = w;
 }
 
-uint dbSite::getHeight()
+uint dbSite::getHeight() const
 {
   _dbSite* site = (_dbSite*) this;
   return site->_height;
@@ -228,6 +244,68 @@ void dbSite::setClass(dbSiteClass type)
 {
   _dbSite* site = (_dbSite*) this;
   site->_flags._class = type.getValue();
+}
+
+void dbSite::setRowPattern(
+    const std::vector<std::pair<dbSite*, dbOrientType>> row_pattern)
+{
+  _dbSite* site = (_dbSite*) this;
+  site->_flags._is_hybrid = true;
+  site->_row_pattern.reserve(row_pattern.size());
+  for (auto& row : row_pattern) {
+    auto child_site = (_dbSite*) row.first;
+    child_site->_flags._is_hybrid = true;
+    site->_row_pattern.addRowPattern(row.first->getName(), row.second);
+  }
+}
+
+void dbSite::setParent(std::string parent_name)
+{
+  _dbSite* site = (_dbSite*) this;
+  if (!this->isHybrid() || this->isHybridParent()) {
+    site->parent.clear();
+    return;
+  }
+  site->parent = parent_name;
+}
+
+dbSite* dbSite::getParent()
+{
+  _dbSite* site = (_dbSite*) this;
+  auto parent_name = site->parent;
+  return getLib()->findSite(parent_name.c_str());
+}
+
+bool dbSite::hasRowPattern() const
+{
+  _dbSite* site = (_dbSite*) this;
+  return !site->_row_pattern.empty();
+}
+
+bool dbSite::isHybrid() const
+{
+  _dbSite* site = (_dbSite*) this;
+  return site->_flags._is_hybrid != 0;
+}
+
+bool dbSite::isHybridParent() const
+{
+  return isHybrid() && hasRowPattern();
+}
+
+std::vector<std::pair<dbSite*, dbOrientType>> dbSite::getRowPattern()
+{
+  std::vector<std::pair<dbSite*, dbOrientType>> row_pattern;
+  _dbSite* site = (_dbSite*) this;
+  auto& rp = site->_row_pattern;
+  const int sz = rp.size();
+  row_pattern.reserve(sz);
+  for (int i = 0; i < sz; ++i) {
+    auto r = rp.getSite(i);
+    auto o = rp.getOrientation(i);
+    row_pattern.emplace_back(getLib()->findSite(r.c_str()), o);
+  }
+  return row_pattern;
 }
 
 dbLib* dbSite::getLib()

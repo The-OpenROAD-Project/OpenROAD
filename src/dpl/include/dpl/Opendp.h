@@ -112,6 +112,32 @@ struct Master
   bool is_multi_row = false;
 };
 
+struct Grid_map_key
+{
+  int grid_index;
+  // TODO: consider removing the two operator overloading
+  bool operator<(const Grid_map_key& other) const
+  {
+    return grid_index < other.grid_index;
+  }
+  bool operator==(const Grid_map_key& other) const
+  {
+    return grid_index == other.grid_index;
+  }
+};
+
+class HybridSiteInfo
+{
+ public:
+  HybridSiteInfo(int index, dbSite* site) : index(index), site(site) {}
+  int getIndex() { return index; }
+  dbSite* getSite() { return site; }
+
+ private:
+  int index;
+  dbSite* site;
+};
+
 struct Cell
 {
   const char* name() const;
@@ -126,6 +152,30 @@ struct Cell
   bool hold_ = false;
   Group* group_ = nullptr;
   Rect* region_ = nullptr;  // group rect
+
+  bool isHybrid() const
+  {
+    if (!getSite()) {
+      return false;
+    }
+    return getSite()->isHybrid();
+  }
+
+  bool isHybridParent() const
+  {
+    if (!getSite()) {
+      return false;
+    }
+    return getSite()->isHybridParent();
+  }
+
+  dbSite* getSite() const
+  {
+    if (!db_inst_ || !db_inst_->getMaster()) {
+      return nullptr;
+    }
+    return db_inst_->getMaster()->getSite();
+  }
 };
 
 struct Group
@@ -145,13 +195,57 @@ struct Pixel
   dbOrientType orient_;
   bool is_valid;     // false for dummy cells
   bool is_hopeless;  // too far from sites for diamond search
+  dbSite* site;      // site that this pixel is
 };
 
-struct GridInfo
+class GridInfo
 {
-  int row_count;
-  int site_count;
-  int grid_index;
+ public:
+  GridInfo(int row_count,
+           int site_count,
+           int grid_index,
+           const std::vector<std::pair<dbSite*, dbOrientType>>& sites)
+      : row_count(row_count),
+        site_count(site_count),
+        grid_index(grid_index),
+        sites(sites)
+  {
+  }
+
+  int getRowCount() const { return row_count; }
+
+  int getSiteCount() const { return site_count; }
+
+  int getGridIndex() const { return grid_index; }
+
+  const std::vector<std::pair<dbSite*, dbOrientType>>& getSites() const
+  {
+    return sites;
+  }
+
+  const bool isHybrid()
+  {
+    // TODO: consider removing the second part
+    return sites.size() > 1 || sites[0].first->isHybridParent();
+  }
+  const int getSitesTotalHeight()
+  {
+    return std::accumulate(
+        sites.begin(),
+        sites.end(),
+        0,
+        [](int sum, const std::pair<dbSite*, dbOrientType>& entry) {
+          return sum + entry.first->getHeight();
+        });
+  }
+
+ private:
+  const int row_count;
+  const int site_count;
+  const int grid_index;
+  const std::vector<std::pair<dbSite*, dbOrientType>>
+      sites;  // will have one site only for non-hybrid and hybrid parent cells.
+              // For hybrid children, this will have all the sites
 };
 
 // For optimize mirroring.
@@ -227,7 +321,7 @@ class Opendp
                               const std::string& violation_type = "") const;
   void checkPlacement(bool verbose,
                       bool disallow_one_site_gaps = false,
-                      string report_file_name = "report.json");
+                      string report_file_name = "");
   void writeJsonReport(const string& filename,
                        const vector<Cell*>& placed_failures,
                        const vector<Cell*>& in_rows_failures,
@@ -246,6 +340,7 @@ class Opendp
   const vector<Cell>& getCells() const { return cells_; }
   Rect getCore() const { return core_; }
   int getRowHeight() const { return row_height_; }
+  int getRowHeight(const Cell* cell) const;
   int getSiteWidth() const { return site_width_; }
   int getRowCount() const { return row_count_; }
   int getRowSiteCount() const { return row_site_count_; }
@@ -265,6 +360,8 @@ class Opendp
   bool isFixed(const Cell* cell) const;  // fixed cell or not
   bool isMultiRow(const Cell* cell) const;
   void updateDbInstLocations();
+  Grid_map_key getGridMapKey(const Cell* cell) const;
+  Grid_map_key getGridMapKey(const dbSite* site) const;
 
   void makeMaster(Master* master, dbMaster* db_master);
 
@@ -307,6 +404,8 @@ class Opendp
   int distChange(const Cell* cell, int x, int y) const;
   bool swapCells(Cell* cell1, Cell* cell2);
   bool refineMove(Cell* cell);
+  int getHybridSiteIndex(dbSite* site);
+  int calculateHybridSitesRowCount(dbSite* parent_hybrid_site) const;
 
   Point legalPt(const Cell* cell,
                 const Point& pt,
@@ -358,9 +457,9 @@ class Opendp
   void groupInitPixels2();
   void erasePixel(Cell* cell);
   void paintPixel(Cell* cell, int grid_x, int grid_y);
-  int map_coordinates(int original_coordinate,
-                      int original_step,
-                      int target_step) const;
+  int map_ycoordinates(int source_grid_coordinate,
+                       const Grid_map_key& source_grid_key,
+                       const Grid_map_key& target_grid_key) const;
 
   // checkPlacement
   static bool isPlaced(const Cell* cell);
@@ -395,7 +494,7 @@ class Opendp
   void deleteGrid();
   Pixel* gridPixel(int grid_idx, int x, int y) const;
   // Cell initial location wrt core origin.
-  int getRowHeight(const Cell* cell) const;
+
   int getSiteWidth(const Cell* cell) const;
   int getRowCount(const Cell* cell) const;
   int getRowCount(int row_height) const;
@@ -416,7 +515,12 @@ class Opendp
   int gridPaddedX(const Cell* cell, int site_width) const;
   int gridY(int y, int row_height) const;
   int gridY(const Cell* cell) const;
-  int gridY(const Cell* cell, int row_height) const;
+  pair<int, int> gridY(
+      int y,
+      const std::vector<std::pair<dbSite*, dbOrientType>>& grid_sites) const;
+  pair<int, int> gridEndY(
+      int y,
+      const std::vector<std::pair<dbSite*, dbOrientType>>& grid_sites) const;
   int gridPaddedEndX(const Cell* cell) const;
   int gridPaddedEndX(const Cell* cell, int site_width) const;
   int gridEndX(int x, int site_width) const;
@@ -424,12 +528,7 @@ class Opendp
   int gridEndX(const Cell* cell, int site_width) const;
   int gridEndY(int y, int row_height) const;
   int gridEndY(const Cell* cell) const;
-  int gridEndY(const Cell* cell, int row_height) const;
-  void setGridPaddedLoc(Cell* cell,
-                        int x,
-                        int y,
-                        int site_width,
-                        int row_height) const;
+  void setGridPaddedLoc(Cell* cell, int x, int y, int site_width) const;
   std::pair<int, GridInfo> getRowInfo(const Cell* cell) const;
   // Lower left corner in core coordinates.
   Point initialLocation(const Cell* cell, bool padded) const;
@@ -478,8 +577,15 @@ class Opendp
   vector<Group> groups_;
 
   map<const dbMaster*, Master> db_master_map_;
-  map<int, GridInfo> grid_info_map_;
+  map<Grid_map_key, GridInfo> grid_info_map_;
+  unordered_map<int, int>
+      site_idx_to_grid_idx;  // this map is used to map each unqie site to a
+                             // grid. the key is always unique, but the value is
+                             // not unique in the case of hybrid sites
+                             // (alternating rows)
+  Grid_map_key smallest_non_hybrid_grid_key;
   std::vector<GridInfo*> grid_info_vector_;
+  map<int, int> siteIdToGridId;
   map<dbInst*, Cell*> db_inst_map_;
 
   Rect core_;
