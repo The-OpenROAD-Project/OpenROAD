@@ -194,15 +194,15 @@ void FastRouteCore::fillVIA()
         const std::vector<short>& gridsY = treeedge->route.gridsY;
         const std::vector<short>& gridsL = treeedge->route.gridsL;
 
-        int n1a = treeedge->n1a;
-        int n2a = treeedge->n2a;
+        int node1_alias = treeedge->n1a;
+        int node2_alias = treeedge->n2a;
 
-        if (n1a < num_terminals) {
-          if (treenodes[n1a].hID == BIG_INT && edgeID == treenodes[n1a].lID) {
-            const int n1a_access_layer = nets_[netID]->getPinL()[n1a];
+        if (node1_alias < num_terminals) {
+          if (treenodes[node1_alias].hID == BIG_INT
+              && edgeID == treenodes[node1_alias].lID) {
+            const int n1a_access_layer = nets_[netID]->getPinL()[node1_alias];
 
-            // Concection edge to pin n1 if edge is not on the same layer
-            // as the pins access point
+            // Connect edge to pin n1 if not on the same layer
             if (gridsL[0] != n1a_access_layer) {
               int diff = gridsL[0] - n1a_access_layer;
               for (int i = 0; i < abs(diff); i++) {
@@ -215,14 +215,17 @@ void FastRouteCore::fillVIA()
             }
           }
         }
-        if (edgeID == treenodes[n1a].hID || edgeID == treenodes[n2a].hID) {
-          if (edgeID == treenodes[n1a].hID) {
-            for (int k = treenodes[n1a].botL; k < treenodes[n1a].topL; k++) {
+        if (edgeID == treenodes[node1_alias].hID
+            || edgeID == treenodes[node2_alias].hID) {
+          if (edgeID == treenodes[node1_alias].hID) {
+            for (int k = treenodes[node1_alias].botL;
+                 k < treenodes[node1_alias].topL;
+                 k++) {
               tmpX[newCNT] = gridsX[0];
               tmpY[newCNT] = gridsY[0];
               tmpL[newCNT] = k;
               newCNT++;
-              if (n1a < num_terminals) {
+              if (node1_alias < num_terminals) {
                 numVIAT1++;
               } else {
                 numVIAT2++;
@@ -244,15 +247,16 @@ void FastRouteCore::fillVIA()
           tmpL[newCNT] = gridsL[j];
           newCNT++;
 
-          if (edgeID == treenodes[n2a].hID) {
-            if (treenodes[n2a].topL != treenodes[n2a].botL)
-              for (int k = treenodes[n2a].topL - 1; k >= treenodes[n2a].botL;
+          if (edgeID == treenodes[node2_alias].hID) {
+            if (treenodes[node2_alias].topL != treenodes[node2_alias].botL)
+              for (int k = treenodes[node2_alias].topL - 1;
+                   k >= treenodes[node2_alias].botL;
                    k--) {
                 tmpX[newCNT] = gridsX[routeLen];
                 tmpY[newCNT] = gridsY[routeLen];
                 tmpL[newCNT] = k;
                 newCNT++;
-                if (n2a < num_terminals) {
+                if (node2_alias < num_terminals) {
                   numVIAT1++;
                 } else {
                   numVIAT2++;
@@ -269,12 +273,11 @@ void FastRouteCore::fillVIA()
           }
         }
 
-        if (n2a < num_terminals && treenodes[n2a].hID == BIG_INT
-            && edgeID == treenodes[n2a].lID) {
-          const int n2a_access_layer = nets_[netID]->getPinL()[n2a];
+        if (node2_alias < num_terminals && treenodes[node2_alias].hID == BIG_INT
+            && edgeID == treenodes[node2_alias].lID) {
+          const int n2a_access_layer = nets_[netID]->getPinL()[node2_alias];
 
-          // Concection edge to pin n2 if edge is not on the same layer
-          // as the pins access point
+          // Connect edge to pin n2 if not on the same layer
           if (tmpL[newCNT - 1] != n2a_access_layer) {
             int diff = n2a_access_layer - tmpL[newCNT - 1];
             for (int i = 1; i <= abs(diff); i++) {
