@@ -160,7 +160,7 @@ void Opendp::initGridLayersMap()
       if (working_site->isHybridParent() || !working_site->isHybrid()) {
         GridInfo newGridInfo = {
             getRowCount(row_height),
-            db_row->getSiteCount(),
+            divFloor(core_.dx(), db_row->getSite()->getWidth()),
             site_idx_to_grid_idx.at(working_site->getId()),
             std::vector<std::pair<dbSite*, dbOrientType>>{
                 {working_site, db_row->getOrient()}},
@@ -169,7 +169,7 @@ void Opendp::initGridLayersMap()
       } else {
         GridInfo newGridInfo = {
             calculateHybridSitesRowCount(working_site->getParent()),
-            db_row->getSiteCount(),
+            divFloor(core_.dx(), db_row->getSite()->getWidth()),
             site_idx_to_grid_idx.at(working_site->getId()),
             working_site->getParent()
                 ->getRowPattern(),  // FIXME(mina1460): this is wrong! in the
