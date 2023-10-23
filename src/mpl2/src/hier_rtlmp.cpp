@@ -626,11 +626,6 @@ void HierRTLMP::hierRTLMacroPlacer()
     }
     hardMacroClusterMacroPlacement(root_cluster_);
   } else {
-    debugPrint(logger_,
-               MPL,
-               "coarse_shaping",
-               1,
-               "Computing macro tilings ignoring std-cells clusters...");
     if (graphics_) {
       graphics_->startCoarse();
     }
@@ -2744,7 +2739,7 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
     debugPrint(logger_,
                MPL,
                "coarse_shaping",
-               1,
+               2,
                "width: {}, height: {}, aspect_ratio: {}, min_ar: {}",
                shape.first,
                shape.second,
@@ -2777,7 +2772,7 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
       line += std::to_string(shape.second) + " >  ";
     }
     line += "\n";
-    debugPrint(logger_, MPL, "coarse_shaping", 1, "{}", line);
+    debugPrint(logger_, MPL, "coarse_shaping", 2, "{}", line);
   }
 }
 
@@ -2968,7 +2963,7 @@ void HierRTLMP::calHardMacroClusterShape(Cluster* cluster)
     debugPrint(logger_,
                MPL,
                "coarse_shaping",
-               1,
+               2,
                "width: {}, height: {}",
                shape.first,
                shape.second);
@@ -2998,7 +2993,7 @@ void HierRTLMP::calHardMacroClusterShape(Cluster* cluster)
     line += std::to_string(shape.second) + " >  ";
   }
   line += "\n";
-  debugPrint(logger_, MPL, "coarse_shaping", 1, "{}", line);
+  debugPrint(logger_, MPL, "coarse_shaping", 2, "{}", line);
 }
 
 //
