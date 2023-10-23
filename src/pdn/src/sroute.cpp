@@ -32,12 +32,13 @@
 
 #include "sroute.h"
 
+#include <iostream>
+
 #include "domain.h"
 #include "grid.h"
 #include "pdn/PdnGen.hh"
 #include "shape.h"
 #include "via.h"
-
 namespace pdn {
 
 using utl::PDN;
