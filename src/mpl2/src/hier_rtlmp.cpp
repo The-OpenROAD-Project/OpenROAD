@@ -5176,14 +5176,14 @@ bool HierRTLMP::shapeChildrenCluster(
       debugPrint(logger_,
                  MPL,
                  "fine_shaping",
-                 1,
+                 2,
                  "hard_macro_cluster : {}",
                  cluster->getName());
       for (auto& shape : cluster->getMacroTilings()) {
         debugPrint(logger_,
                    MPL,
                    "fine_shaping",
-                   1,
+                   2,
                    "    ( {} , {} ) ",
                    shape.first,
                    shape.second);
@@ -5206,16 +5206,16 @@ bool HierRTLMP::shapeChildrenCluster(
       debugPrint(logger_,
                  MPL,
                  "fine_shaping",
-                 1,
+                 2,
                  "name:  {} area: {}",
                  cluster->getName(),
                  area);
-      debugPrint(logger_, MPL, "fine_shaping", 1, "width_list :  ");
+      debugPrint(logger_, MPL, "fine_shaping", 2, "width_list :  ");
       for (auto& width : width_list) {
         debugPrint(logger_,
                    MPL,
                    "fine_shaping",
-                   1,
+                   2,
                    " [  {} {}  ] ",
                    width.first,
                    width.second);
