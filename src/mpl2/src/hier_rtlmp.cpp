@@ -772,7 +772,7 @@ void HierRTLMP::setClusterMetrics(Cluster* cluster)
   debugPrint(logger_,
              MPL,
              "multilevel_autoclustering",
-             2,
+             1,
              "Setting Cluster Metrics for {}: Num Macros: {} Num Std Cells: {}",
              cluster->getName(),
              metrics.getNumMacro(),
