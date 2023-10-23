@@ -1512,8 +1512,11 @@ void HierRTLMP::mergeClusters(std::vector<Cluster*>& candidate_clusters)
       break;
     }
   }
-  debugPrint(
-      logger_, MPL, "multilevel_autoclustering", 1, "Finish merging clusters");
+  debugPrint(logger_,
+             MPL,
+             "multilevel_autoclustering",
+             1,
+             "Finished merging clusters");
 }
 
 // Calculate Connections between clusters
@@ -3006,7 +3009,7 @@ void HierRTLMP::createPinBlockage()
 {
   debugPrint(logger_,
              MPL,
-             "macro_placement",
+             "hierarchical_macro_placement",
              1,
              "Creating the pin blockage for root cluster");
   floorplan_lx_ = root_cluster_->getX();
@@ -3105,7 +3108,11 @@ void HierRTLMP::createPinBlockage()
   max_width = num_hor_access > 0 ? max_width / num_hor_access : max_width;
   max_height = num_ver_access > 0 ? max_height / num_ver_access : max_height;
   const float depth = std_cell_area / sum_length;
-  debugPrint(logger_, MPL, "macro_placement", 1, "Pin access for root cluster");
+  debugPrint(logger_,
+             MPL,
+             "hierarchical_macro_placement",
+             1,
+             "Pin access for root cluster");
   // add the blockages into the macro_blockages_
   if (pin_ranges[L].second > pin_ranges[L].first) {
     macro_blockages_.push_back(Rect(floorplan_lx_,
@@ -3114,7 +3121,7 @@ void HierRTLMP::createPinBlockage()
                                     pin_ranges[L].second));
     debugPrint(logger_,
                MPL,
-               "macro_placement",
+               "hierarchical_macro_placement",
                1,
                "Pin access for L : length : {}, depth :  {}",
                pin_ranges[L].second - pin_ranges[L].first,
@@ -3127,7 +3134,7 @@ void HierRTLMP::createPinBlockage()
                                     floorplan_uy_));
     debugPrint(logger_,
                MPL,
-               "macro_placement",
+               "hierarchical_macro_placement",
                1,
                "Pin access for T : length : {}, depth : {}",
                pin_ranges[T].second - pin_ranges[T].first,
@@ -3140,7 +3147,7 @@ void HierRTLMP::createPinBlockage()
                                     pin_ranges[R].second));
     debugPrint(logger_,
                MPL,
-               "macro_placement",
+               "hierarchical_macro_placement",
                1,
                "Pin access for R : length : {}, depth : {}",
                pin_ranges[R].second - pin_ranges[R].first,
@@ -3154,7 +3161,7 @@ void HierRTLMP::createPinBlockage()
              floorplan_ly_ + std::min(max_height, depth)));
     debugPrint(logger_,
                MPL,
-               "macro_placement",
+               "hierarchical_macro_placement",
                1,
                "Pin access for B : length : {}, depth : {}",
                pin_ranges[B].second - pin_ranges[B].first,
@@ -3319,14 +3326,14 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   calculateConnection();
   debugPrint(logger_,
              MPL,
-             "macro_placement",
+             "hierarchical_macro_placement",
              1,
-             "[MultiLevelMacroPlacement] Finish calculating connection");
+             "Finished calculating connection");
   debugPrint(logger_,
              MPL,
-             "macro_placement",
+             "hierarchical_macro_placement",
              1,
-             "[MultiLevelMacroPlacement] Finish updating dataflow");
+             "Finished updating dataflow");
   // Handle the pin access
   // Get the connections between pin accesses
   if (parent->getParent() != nullptr) {
@@ -3367,8 +3374,8 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     for (auto& [cluster_id, weight] : cluster->getConnection()) {
       debugPrint(logger_,
                  MPL,
-                 "macro_placement",
-                 1,
+                 "hierarchical_macro_placement",
+                 2,
                  " Cluster connection: {} {} {} ",
                  cluster->getName(),
                  cluster_map_[cluster_id]->getName(),
@@ -3450,9 +3457,9 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     max_height = std::min(max_height, outline_height);
     debugPrint(logger_,
                MPL,
-               "macro_placement",
+               "hierarchical_macro_placement",
                1,
-               "[MultiLevelMacroPlacement] Pin access calculation "
+               "Pin access calculation "
                "max_width: {}, max_height : {}",
                max_width,
                max_height);
@@ -3602,9 +3609,9 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   float best_cost = std::numeric_limits<float>::max();
   debugPrint(logger_,
              MPL,
-             "macro_placement",
+             "hierarchical_macro_placement",
              1,
-             "[MultiLevelMacroPlacement] Start Simulated Annealing Core");
+             "Start Simulated Annealing Core");
   while (remaining_runs > 0) {
     std::vector<SACoreSoftMacro*> sa_vector;
     run_thread
@@ -3617,12 +3624,21 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
       // determine the shape for each macro
       debugPrint(logger_,
                  MPL,
-                 "macro_placement",
+                 "hierarchical_macro_placement",
                  1,
                  "Start Simulated Annealing (run_id = {})",
                  run_id);
       const float target_util = target_util_list[run_id];
       const float target_dead_space = target_dead_space_list[run_id++];
+      debugPrint(logger_,
+                 MPL,
+                 "fine_shaping",
+                 1,
+                 "Starting adjusting shapes for children of {}. target_util = "
+                 "{}, target_dead_space = {}",
+                 parent->getName(),
+                 target_util,
+                 target_dead_space);
       if (!shapeChildrenCluster(parent,
                                 shaped_macros,
                                 soft_macro_id_map,
@@ -3640,15 +3656,10 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
       }
       debugPrint(logger_,
                  MPL,
-                 "macro_placement",
+                 "fine_shaping",
                  1,
-                 "[MultiLevelMacroPlacement] Finish generating shapes for "
-                 "children of cluster {}\n"
-                 "sa_id = {}, target_util = {}, target_dead_space = {}",
-                 parent->getName(),
-                 run_id,
-                 target_util,
-                 target_dead_space);
+                 "Finished adjusting shapes for children of cluster {}",
+                 parent->getName());
       // Note that all the probabilities are normalized to the summation of 1.0.
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
@@ -3716,9 +3727,9 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   }
   debugPrint(logger_,
              MPL,
-             "macro_placement",
+             "hierarchical_macro_placement",
              1,
-             "[MultiLevelMacroPlacement] Finish Simulated Annealing Core");
+             "Finished Simulated Annealing Core");
   if (best_sa == nullptr) {
     //
     // Error condition, print all the results
@@ -3828,9 +3839,9 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     best_cost = std::numeric_limits<float>::max();
     debugPrint(logger_,
                MPL,
-               "macro_placement",
+               "hierarchical_macro_placement",
                1,
-               "[MultiLevelMacroPlacement] Start Simulated Annealing Core");
+               "Start Simulated Annealing Core");
     while (remaining_runs > 0) {
       std::vector<SACoreSoftMacro*> sa_vector;
       run_thread
@@ -3843,13 +3854,21 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
         // determine the shape for each macro
         debugPrint(logger_,
                    MPL,
-                   "macro_placement",
+                   "hierarchical_macro_placement",
                    1,
-                   "[MultiLevelMacroPlacement] Start "
-                   "Simulated Annealing (run_id = {})",
+                   "Start Simulated Annealing (run_id = {})",
                    run_id);
         const float target_util = target_util_list[run_id];
         const float target_dead_space = target_dead_space_list[run_id++];
+        debugPrint(logger_,
+                   MPL,
+                   "fine_shaping",
+                   1,
+                   "Starting adjusting shapes for children of {}. target_util "
+                   "= {}, target_dead_space = {}",
+                   parent->getName(),
+                   target_util,
+                   target_dead_space);
         if (!shapeChildrenCluster(parent,
                                   shaped_macros,
                                   soft_macro_id_map,
@@ -3867,15 +3886,10 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
         }
         debugPrint(logger_,
                    MPL,
-                   "macro_placement",
+                   "fine_shaping",
                    1,
-                   "[MultiLevelMacroPlacement] "
-                   "Finish generating shapes for children of cluster: {}\n"
-                   "sa_id = {}, target_util = {}, target_dead_space = {}",
-                   parent->getName(),
-                   run_id,
-                   target_util,
-                   target_dead_space);
+                   "Finished adjusting shapes for children of cluster {}",
+                   parent->getName());
         // Note that all the probabilities are normalized to the summation
         // of 1.0. Note that the weight are not necessaries summarized to 1.0,
         // i.e., not normalized.
@@ -3943,9 +3957,9 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     }
     debugPrint(logger_,
                MPL,
-               "macro_placement",
+               "hierarchical_macro_placement",
                1,
-               "[MultiLevelMacroPlacement] Finish Simulated Annealing Core");
+               "Finished Simulated Annealing Core");
     if (best_sa == nullptr) {
       // print all the results
       logger_->report("Simulated Annealing Summary for cluster {}",
@@ -3965,13 +3979,12 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     best_sa->getMacros(shaped_macros);
   }
 
-  debugPrint(
-      logger_,
-      MPL,
-      "macro_placement",
-      1,
-      "[MultiLevelMacroPlacement] Finish Simulated Annealing for cluster: {}\n",
-      parent->getName());
+  debugPrint(logger_,
+             MPL,
+             "hierarchical_macro_placement",
+             1,
+             "Finished Simulated Annealing for cluster: {}\n",
+             parent->getName());
   best_sa->printResults();
   // write the cost function. This can be used to tune the temperature schedule
   // and cost weight
@@ -4210,7 +4223,7 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
           debugPrint(
               logger_,
               MPL,
-              "macro_placement",
+              "hierarchical_macro_placement",
               1,
               "fixed cluster : {}, lx = {}, ly = {}, width = {}, height = {}",
               cluster->getName(),
@@ -4230,15 +4243,15 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
   calculateConnection();
   debugPrint(logger_,
              MPL,
-             "macro_placement",
+             "hierarchical_macro_placement",
              1,
-             "[MultiLevelMacroPlacement] Finish calculating connection");
+             "Finished calculating connection");
   updateDataFlow();
   debugPrint(logger_,
              MPL,
-             "macro_placement",
+             "hierarchical_macro_placement",
              1,
-             "[MultiLevelMacroPlacement] Finish updating dataflow");
+             "Finished updating dataflow");
 
   // add the virtual connections (the weight related to IOs and macros belong to
   // the same cluster)
@@ -4258,8 +4271,8 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
     for (auto& [cluster_id, weight] : cluster->getConnection()) {
       debugPrint(logger_,
                  MPL,
-                 "macro_placement",
-                 1,
+                 "hierarchical_macro_placement",
+                 2,
                  " Cluster connection: {} {} {} ",
                  cluster->getName(),
                  cluster_map_[cluster_id]->getName(),
@@ -4276,9 +4289,9 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
   }
   debugPrint(logger_,
              MPL,
-             "macro_placement",
+             "hierarchical_macro_placement",
              1,
-             "Finish creating bundled connections");
+             "Finished creating bundled connections");
   // merge nets to reduce runtime
   mergeNets(nets);
 
@@ -4348,9 +4361,9 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
   float best_cost = std::numeric_limits<float>::max();
   debugPrint(logger_,
              MPL,
-             "macro_placement",
+             "hierarchical_macro_placement",
              1,
-             "[MultiLevelMacroPlacement] Start Simulated Annealing Core");
+             "Start Simulated Annealing Core");
   while (remaining_runs > 0) {
     std::vector<SACoreSoftMacro*> sa_vector;
     run_thread
@@ -4363,12 +4376,21 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
       // determine the shape for each macro
       debugPrint(logger_,
                  MPL,
-                 "macro_placement",
+                 "hierarchical_macro_placement",
                  1,
                  "Start Simulated Annealing (run_id = {})",
                  run_id);
       const float target_util = target_util_list[run_id];
       const float target_dead_space = target_dead_space_list[run_id++];
+      debugPrint(logger_,
+                 MPL,
+                 "fine_shaping",
+                 1,
+                 "Starting adjusting shapes for children of {}. target_util = "
+                 "{}, target_dead_space = {}",
+                 parent->getName(),
+                 target_util,
+                 target_dead_space);
       if (!shapeChildrenCluster(parent,
                                 shaped_macros,
                                 soft_macro_id_map,
@@ -4386,15 +4408,10 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
       }
       debugPrint(logger_,
                  MPL,
-                 "macro_placement",
+                 "fine_shaping",
                  1,
-                 "[MultiLevelMacroPlacement] Finish generating shapes for "
-                 "children of cluster {}\n"
-                 "sa_id = {}, target_util = {}, target_dead_space = {}",
-                 parent->getName(),
-                 run_id,
-                 target_util,
-                 target_dead_space);
+                 "Finished generating shapes for children of cluster {}",
+                 parent->getName());
       // Note that all the probabilities are normalized to the summation of 1.0.
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
@@ -4462,9 +4479,9 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
   }
   debugPrint(logger_,
              MPL,
-             "macro_placement",
+             "hierarchical_macro_placement",
              1,
-             "[MultiLevelMacroPlacement] Finish Simulated Annealing Core");
+             "Finished Simulated Annealing Core");
   if (best_sa == nullptr) {
     // print all the results
     logger_->report(
@@ -4495,14 +4512,12 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
            << std::endl;
     }
     file.close();
-    debugPrint(
-        logger_,
-        MPL,
-        "macro_placement",
-        1,
-        "[MultiLevelMacroPlacement] Finish Simulated Annealing for cluster "
-        "{}\n",
-        parent->getName());
+    debugPrint(logger_,
+               MPL,
+               "hierarchical_macro_placement",
+               1,
+               "Finished Simulated Annealing for cluster {}",
+               parent->getName());
     best_sa->printResults();
     // write the cost function. This can be used to tune the temperature
     // schedule and cost weight
@@ -4703,7 +4718,7 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
           debugPrint(
               logger_,
               MPL,
-              "macro_placement",
+              "hierarchical_macro_placement",
               1,
               "fixed cluster : {}, lx = {}, ly = {}, width = {}, height = {}",
               cluster->getName(),
@@ -4723,15 +4738,15 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   calculateConnection();
   debugPrint(logger_,
              MPL,
-             "macro_placement",
+             "hierarchical_macro_placement",
              1,
-             "[MultiLevelMacroPlacement] Finish calculating connection");
+             "Finished calculating connection");
   updateDataFlow();
   debugPrint(logger_,
              MPL,
-             "macro_placement",
+             "hierarchical_macro_placement",
              1,
-             "[MultiLevelMacroPlacement] Finish updating dataflow");
+             "Finished updating dataflow");
 
   // add the virtual connections (the weight related to IOs and macros belong to
   // the same cluster)
@@ -4751,8 +4766,8 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
     for (auto& [cluster_id, weight] : cluster->getConnection()) {
       debugPrint(logger_,
                  MPL,
-                 "macro_placement",
-                 1,
+                 "hierarchical_macro_placement",
+                 2,
                  " Cluster connection: {} {} {} ",
                  cluster->getName(),
                  cluster_map_[cluster_id]->getName(),
@@ -4769,9 +4784,9 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   }
   debugPrint(logger_,
              MPL,
-             "macro_placement",
+             "hierarchical_macro_placement",
              1,
-             "Finish creating bundled connections");
+             "Finished creating bundled connections");
   // merge nets to reduce runtime
   mergeNets(nets);
 
@@ -4829,9 +4844,9 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   float best_cost = std::numeric_limits<float>::max();
   debugPrint(logger_,
              MPL,
-             "macro_placement",
+             "hierarchical_macro_placement",
              1,
-             "[EnhancedMacroPlacement] Start Simulated Annealing Core");
+             "Start Simulated Annealing Core");
   while (remaining_runs > 0) {
     std::vector<SACoreSoftMacro*> sa_vector;
     run_thread
@@ -4844,12 +4859,21 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
       // determine the shape for each macro
       debugPrint(logger_,
                  MPL,
-                 "macro_placement",
+                 "hierarchical_macro_placement",
                  1,
                  "Start Simulated Annealing (run_id = {})",
                  run_id);
       const float target_util = target_util_list[run_id];
       const float target_dead_space = target_dead_space_list[run_id++];
+      debugPrint(logger_,
+                 MPL,
+                 "fine_shaping",
+                 1,
+                 "Starting adjusting shapes for children of {}. target_util = "
+                 "{}, target_dead_space = {}",
+                 parent->getName(),
+                 target_util,
+                 target_dead_space);
       if (!shapeChildrenCluster(parent,
                                 shaped_macros,
                                 soft_macro_id_map,
@@ -4867,15 +4891,10 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
       }
       debugPrint(logger_,
                  MPL,
-                 "macro_placement",
+                 "fine_shaping",
                  1,
-                 "[EnhancedMacroPlacement] Finish generating shapes for "
-                 "children of cluster {}\n"
-                 "sa_id = {}, target_util = {}, target_dead_space = {}",
-                 parent->getName(),
-                 run_id,
-                 target_util,
-                 target_dead_space);
+                 "Finished generating shapes for children of cluster {}",
+                 parent->getName());
       // Note that all the probabilities are normalized to the summation of 1.0.
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
@@ -4943,9 +4962,9 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   }
   debugPrint(logger_,
              MPL,
-             "macro_placement",
+             "hierarchical_macro_placement",
              1,
-             "[EnhancedMacroPlacement] Finish Simulated Annealing Core");
+             "Finished Simulated Annealing Core");
   if (best_sa == nullptr) {
     // print all the results
     logger_->report(
@@ -5033,13 +5052,6 @@ bool HierRTLMP::shapeChildrenCluster(
     float target_util,
     float target_dead_space)
 {
-  debugPrint(logger_,
-             MPL,
-             "fine_shaping",
-             1,
-             "Starting fine shaping for cluster:  {}",
-             parent->getName());
-  // check the valid values
   const float outline_width = parent->getWidth();
   const float outline_height = parent->getHeight();
   float pin_access_area = 0.0;
@@ -5211,12 +5223,7 @@ bool HierRTLMP::shapeChildrenCluster(
       macros[soft_macro_id_map[cluster->getName()]].setShapes(width_list, area);
     }
   }
-  debugPrint(logger_,
-             MPL,
-             "fine_shaping",
-             1,
-             "Finish fine shaping for cluster:  {}",
-             parent->getName());
+
   return true;
 }
 
@@ -5249,14 +5256,12 @@ void HierRTLMP::callBusPlanning(std::vector<SoftMacro>& shaped_macros,
 // place macros within the HardMacroCluster
 void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
 {
-  debugPrint(
-      logger_,
-      MPL,
-      "macro_placement",
-      1,
-      "\n[Hier-RTLMP::HardMacroClusterMacroPlacement] Place macros in cluster: "
-      "{}",
-      cluster->getName());
+  debugPrint(logger_,
+             MPL,
+             "hierarchical_macro_placement",
+             1,
+             "Place macros in cluster: {}",
+             cluster->getName());
   // get outline constraint
   const float lx = cluster->getX();
   const float ly = cluster->getY();
@@ -5426,14 +5431,12 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
     sa_vector.clear();
     remaining_runs -= run_thread;
   }
-  debugPrint(
-      logger_,
-      MPL,
-      "macro_placement",
-      1,
-      "[HierRTLMP:HardMacroClusterMacroPlacement] Summary of macro placement "
-      "for cluster {}",
-      cluster->getName());
+  debugPrint(logger_,
+             MPL,
+             "hierarchical_macro_placement",
+             1,
+             "Summary of macro placement for cluster {}",
+             cluster->getName());
   // update the hard macro
   if (best_sa == nullptr) {
     for (auto& sa : sa_containers) {
@@ -5502,14 +5505,14 @@ void HierRTLMP::alignHardMacroGlobal(Cluster* parent)
   // const int notch_h_th = micronToDbu(notch_h_th_, dbu_) + boundary_h_th;
   debugPrint(logger_,
              MPL,
-             "macro_placement",
+             "hierarchical_macro_placement",
              1,
              "boundary_h_th : {}, boundary_v_th : {}",
              dbuToMicron(boundary_h_th, dbu_),
              dbuToMicron(boundary_v_th, dbu_));
   debugPrint(logger_,
              MPL,
-             "macro_placement",
+             "hierarchical_macro_placement",
              1,
              "notch_h_th : {}, notch_v_th : {}",
              dbuToMicron(notch_h_th, dbu_),
