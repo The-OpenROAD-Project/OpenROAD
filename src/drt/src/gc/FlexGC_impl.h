@@ -170,6 +170,7 @@ class FlexGCWorker::Impl
 
   FlexGCWorkerRegionQuery& getWorkerRegionQuery() { return rq_; }
 
+  void modifyMarkers();
   // init
   gcNet* getNet(frBlockObject* obj);
   gcNet* getNet(frNet* net);

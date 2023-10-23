@@ -3377,6 +3377,8 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
       }
     }
 
+    if (!net)
+      continue;
     markerBBox.moveDelta(-origin.x(), -origin.y());
     auto patch = make_unique<drPatchWire>();
     patch->setLayerNum(lNum);
@@ -3594,6 +3596,40 @@ void FlexGCWorker::Impl::checkMinimumCut()
   }
 }
 
+void FlexGCWorker::Impl::modifyMarkers()
+{
+  if (!surgicalFixEnabled_ || pwires_.empty())
+    return;
+  for (auto& pwire : pwires_) {
+    if (!pwire->hasNet())
+      continue;
+    Point origin = pwire->getOrigin();
+    auto net = pwire->getNet()->getFrNet();
+    for(auto& marker : markers_)
+    {
+      if (marker->getLayerNum() != pwire->getLayerNum())
+      {
+        continue;
+      }
+      if (!marker->getBBox().intersects(pwire->getBBox()))
+      {
+        continue;
+      }
+      if (marker->getSrcs().find(net) == marker->getSrcs().end())
+      {
+        continue;
+      }
+      if (marker->getBBox().intersects(origin))
+      {
+        continue;
+      }
+      auto bbox = marker->getBBox();
+      bbox.merge(Rect(origin, origin));
+      marker->setBBox(bbox);
+    }
+  }
+}
+
 int FlexGCWorker::Impl::main()
 {
   // incremental updates
@@ -3628,5 +3664,7 @@ int FlexGCWorker::Impl::main()
   checkMinimumCut();
   // check LEF58_METALWIDTHVIATABLE
   checkMetalWidthViaTable();
+  // modify markers for pwires
+  modifyMarkers();
   return 0;
 }
