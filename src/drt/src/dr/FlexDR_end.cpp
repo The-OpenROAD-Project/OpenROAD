@@ -257,7 +257,7 @@ void FlexDRWorker::endRemoveNets_patchWire(frDesign* design, frPatchWire* pwire)
       update.setIndexInOwner(pwire->getIndexInOwner());
       design_->addUpdate(update);
     }
-    auto regionQuery = design->getRegionQuery();  
+    auto regionQuery = design->getRegionQuery();
     regionQuery->removeDRObj(pwire);  // delete rq
     net->removePatchWire(pwire);
   }

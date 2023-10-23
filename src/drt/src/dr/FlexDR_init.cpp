@@ -41,12 +41,11 @@ bool FlexDRWorker::isRoutePatchWire(frPatchWire* pwire) const
   Point origin = pwire->getOrigin();
   if (isInitDR()
       && (origin.x() == gridBBox.xMin() || origin.x() == gridBBox.xMax()
-          || origin.y() == gridBBox.yMin()
-          || origin.y() == gridBBox.yMax())) {
+          || origin.y() == gridBBox.yMin() || origin.y() == gridBBox.yMax())) {
     return false;
   }
   return origin.x() >= gridBBox.xMin() && origin.y() >= gridBBox.yMin()
-      && origin.x() <= gridBBox.xMax() && origin.y() <= gridBBox.yMax();
+         && origin.x() <= gridBBox.xMax() && origin.y() <= gridBBox.yMax();
 }
 
 bool FlexDRWorker::isRouteVia(frVia* via) const
@@ -55,12 +54,11 @@ bool FlexDRWorker::isRouteVia(frVia* via) const
   Point origin = via->getOrigin();
   if (isInitDR()
       && (origin.x() == gridBBox.xMin() || origin.x() == gridBBox.xMax()
-          || origin.y() == gridBBox.yMin()
-          || origin.y() == gridBBox.yMax())) {
+          || origin.y() == gridBBox.yMin() || origin.y() == gridBBox.yMax())) {
     return false;
   }
   return origin.x() >= gridBBox.xMin() && origin.y() >= gridBBox.yMin()
-      && origin.x() <= gridBBox.xMax() && origin.y() <= gridBBox.yMax();
+         && origin.x() <= gridBBox.xMax() && origin.y() <= gridBBox.yMax();
 }
 
 void FlexDRWorker::initNetObjs_pathSeg(
@@ -174,7 +172,6 @@ void FlexDRWorker::initNetObjs_via(
     map<frNet*, vector<unique_ptr<drConnFig>>, frBlockObjectComp>& netRouteObjs,
     map<frNet*, vector<unique_ptr<drConnFig>>, frBlockObjectComp>& netExtObjs)
 {
-  auto gridBBox = getRouteBox();
   auto net = via->getNet();
   nets.insert(net);
   if (isRouteVia(via)) {
@@ -194,7 +191,6 @@ void FlexDRWorker::initNetObjs_patchWire(
     map<frNet*, vector<unique_ptr<drConnFig>>, frBlockObjectComp>& netRouteObjs,
     map<frNet*, vector<unique_ptr<drConnFig>>, frBlockObjectComp>& netExtObjs)
 {
-  auto gridBBox = getRouteBox();
   auto net = pwire->getNet();
   nets.insert(net);
   if (isRoutePatchWire(pwire)) {

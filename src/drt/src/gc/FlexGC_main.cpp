@@ -1872,7 +1872,13 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
 
   Rect shiftedPatch = patchBx;
   shiftedPatch.moveTo(offset.x(), offset.y());
-  logger_->warn(DRT, 6481, "GC PWIRE {} {} net {} worker {}", shiftedPatch, getTech()->getLayer(patch->getLayerNum())->getName(), patch->getNet()->getFrNet()->getName(), getDRWorker()->getRouteBox());
+  logger_->warn(DRT,
+                6481,
+                "GC PWIRE {} {} net {} worker {}",
+                shiftedPatch,
+                getTech()->getLayer(patch->getLayerNum())->getName(),
+                patch->getNet()->getFrNet()->getName(),
+                getDRWorker()->getRouteBox());
 
   pwires_.push_back(std::move(patch));
 }
@@ -3605,22 +3611,17 @@ void FlexGCWorker::Impl::modifyMarkers()
       continue;
     Point origin = pwire->getOrigin();
     auto net = pwire->getNet()->getFrNet();
-    for(auto& marker : markers_)
-    {
-      if (marker->getLayerNum() != pwire->getLayerNum())
-      {
+    for (auto& marker : markers_) {
+      if (marker->getLayerNum() != pwire->getLayerNum()) {
         continue;
       }
-      if (!marker->getBBox().intersects(pwire->getBBox()))
-      {
+      if (!marker->getBBox().intersects(pwire->getBBox())) {
         continue;
       }
-      if (marker->getSrcs().find(net) == marker->getSrcs().end())
-      {
+      if (marker->getSrcs().find(net) == marker->getSrcs().end()) {
         continue;
       }
-      if (marker->getBBox().intersects(origin))
-      {
+      if (marker->getBBox().intersects(origin)) {
         continue;
       }
       auto bbox = marker->getBBox();
