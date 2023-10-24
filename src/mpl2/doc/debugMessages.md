@@ -32,7 +32,7 @@ MPL2 debug messages are divided in:
 1. Overall steps of the stage.
 2. Include in logs:
     * Clusters' connections;
-    * Simulated Anneling results for both SoftMacro and HardMacro.
+    * Simulated annealing results for both SoftMacro and HardMacro.
 
 ### Bus Planning
 Special case for bus planning with a single level.
