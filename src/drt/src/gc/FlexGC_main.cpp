@@ -414,11 +414,11 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(
   if (checkNDRs) {
     frCoord ndrSpc1 = 0, ndrSpc2 = 0;
     if (!rect1->isFixed() && net1->isNondefault() && !rect1->isTapered())
-      ndrSpc1
-          = net1->getFrNet()->getNondefaultRule()->getSpacing(layerNum / 2 - 1);
+      ndrSpc1 = net1->getDrNet()->getFrNet()->getNondefaultRule()->getSpacing(
+          layerNum / 2 - 1);
     if (!rect2->isFixed() && net2->isNondefault() && !rect2->isTapered())
-      ndrSpc2
-          = net2->getFrNet()->getNondefaultRule()->getSpacing(layerNum / 2 - 1);
+      ndrSpc2 = net2->getDrNet()->getFrNet()->getNondefaultRule()->getSpacing(
+          layerNum / 2 - 1);
 
     reqSpcVal = max(reqSpcVal, max(ndrSpc1, ndrSpc2));
   }
@@ -1851,22 +1851,12 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
 
   // get drNet for patch
   gcNet* gc_net = pin->getNet();
-  frNet* fr_net = gc_net->getFrNet();
-  if (fr_net == nullptr) {
-    logger_->error(DRT, 410, "frNet not found.");
+  drNet* dr_net = gc_net->getDrNet();
+  if (dr_net == nullptr) {
+    logger_->error(DRT, 410, "drNet not found.");
   }
 
-  const std::vector<drNet*>* dr_nets = drWorker_->getDRNets(fr_net);
-  if (dr_nets == nullptr) {
-    logger_->error(
-        DRT, 411, "frNet {} does not have drNets.", fr_net->getName());
-  }
-  if (dr_nets->size() == 1) {
-    patch->addToNet((*dr_nets)[0]);
-  } else {
-    // detect what drNet has objects overlapping with the patch
-    checkMetalShape_patchOwner_helper(patch.get(), dr_nets);
-  }
+  patch->addToNet(dr_net);
 
   Rect shiftedPatch = patchBx;
   shiftedPatch.moveTo(offset.x(), offset.y());

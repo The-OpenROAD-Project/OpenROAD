@@ -216,7 +216,7 @@ std::vector<std::unique_ptr<gcNet>>& FlexGCWorker::getNets()
   return impl_->getNets();
 }
 
-gcNet* FlexGCWorker::getNet(frNet* net)
+gcNet* FlexGCWorker::getNet(drNet* net)
 {
   return impl_->getNet(net);
 }

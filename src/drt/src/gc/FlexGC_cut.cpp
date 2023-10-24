@@ -355,8 +355,8 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
 inline bool isSkipVia(gcRect* rect)
 {
   return rect->getLayerNum() == GC_IGNORE_PDN_LAYER && rect->isFixed()
-         && rect->hasNet() && rect->getNet()->getFrNet()
-         && rect->getNet()->getFrNet()->getType().isSupply();
+         && rect->hasNet() && rect->getNet()->getDrNet()
+         && rect->getNet()->getDrNet()->getFrNet()->getType().isSupply();
 }
 
 void FlexGCWorker::Impl::checkLef58CutSpacingTbl(

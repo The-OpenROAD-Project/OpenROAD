@@ -172,7 +172,7 @@ class FlexGCWorker::Impl
 
   // init
   gcNet* getNet(frBlockObject* obj);
-  gcNet* getNet(frNet* net);
+  gcNet* getNet(drNet* net);
   void initObj(const Rect& box,
                frLayerNum layerNum,
                frBlockObject* obj,

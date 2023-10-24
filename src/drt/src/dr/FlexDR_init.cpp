@@ -3170,8 +3170,7 @@ void FlexDRWorker::initMazeCost_connFig()
     }
     gcWorker_->updateDRNet(net.get());
     gcWorker_->updateGCWorker();
-    modEolCosts_poly(gcWorker_->getNet(net->getFrNet()),
-                     ModCostType::addRouteShape);
+    modEolCosts_poly(gcWorker_->getNet(net.get()), ModCostType::addRouteShape);
   }
 }
 

@@ -63,7 +63,7 @@ class FlexGCWorker
   void addPAObj(frConnFig* obj, frBlockObject* owner);
   // getters
   std::vector<std::unique_ptr<gcNet>>& getNets();
-  gcNet* getNet(frNet* net);
+  gcNet* getNet(drNet* net);
   frDesign* getDesign() const;
   const std::vector<std::unique_ptr<frMarker>>& getMarkers() const;
   const std::vector<std::unique_ptr<drPatchWire>>& getPWires() const;
