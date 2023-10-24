@@ -287,18 +287,19 @@ void SACoreHardMacro::initialize()
 
 void SACoreHardMacro::printResults()
 {
-  debugPrint(logger_, MPL, "macro_placement", 1, "SACoreHardMacro");
+  debugPrint(
+      logger_, MPL, "hierarchical_macro_placement", 2, "SACoreHardMacro");
   debugPrint(logger_,
              MPL,
-             "macro_placement",
-             1,
+             "hierarchical_macro_placement",
+             2,
              "number of macros : {}",
              macros_.size());
   for (const auto& macro : macros_) {
     debugPrint(logger_,
                MPL,
-               "macro_placement",
-               1,
+               "hierarchical_macro_placement",
+               2,
                "lx = {}, ly = {}, width = {}, height = {}",
                macro.getX(),
                macro.getY(),
@@ -307,48 +308,52 @@ void SACoreHardMacro::printResults()
   }
   debugPrint(logger_,
              MPL,
-             "macro_placement",
-             1,
+             "hierarchical_macro_placement",
+             2,
              "width = {}, outline_width = {}",
              width_,
              outline_width_);
   debugPrint(logger_,
              MPL,
-             "macro_placement",
-             1,
+             "hierarchical_macro_placement",
+             2,
              "height = {}, outline_height = {}",
              height_,
              outline_height_);
   debugPrint(logger_,
              MPL,
-             "macro_placement",
-             1,
+             "hierarchical_macro_placement",
+             2,
              "outline_penalty  = {}, norm_outline_penalty = {}",
              outline_penalty_,
              norm_outline_penalty_);
   debugPrint(logger_,
              MPL,
-             "macro_placement",
-             1,
+             "hierarchical_macro_placement",
+             2,
              "wirelength  = {}, norm_wirelength = {}",
              wirelength_,
              norm_wirelength_);
   debugPrint(logger_,
              MPL,
-             "macro_placement",
-             1,
+             "hierarchical_macro_placement",
+             2,
              "guidance_penalty  = {}, norm_guidance_penalty = {}",
              guidance_penalty_,
              norm_guidance_penalty_);
   debugPrint(logger_,
              MPL,
-             "macro_placement",
-             1,
+             "hierarchical_macro_placement",
+             2,
              "fence_penalty  = {}, norm_fence_penalty = {}",
              fence_penalty_,
              norm_fence_penalty_);
-  debugPrint(
-      logger_, MPL, "macro_placement", 1, "final cost = {}", getNormCost());
+  debugPrint(logger_,
+             MPL,
+             "hierarchical_macro_placement",
+             2,
+             "final cost = {}",
+             getNormCost());
 }
 
 }  // namespace mpl2
