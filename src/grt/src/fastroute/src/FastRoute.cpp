@@ -668,7 +668,6 @@ NetRouteMap FastRouteCore::getRoutes()
 
     const auto& treeedges = sttrees_[netID].edges;
     const int num_edges = sttrees_[netID].num_edges();
-    int num_terminals = sttrees_[netID].num_terminals;
 
     for (int edgeID = 0; edgeID < num_edges; edgeID++) {
       const TreeEdge* treeedge = &(treeedges[edgeID]);
@@ -704,7 +703,7 @@ NetRouteMap FastRouteCore::getRoutes()
         int l2 = nodes[treeedge->n2].botL;
         GSegment segment(x1, y1, l1 + 1, x2, y2, l2 + 1);
         // It is possible to have nodes that are not in adjacent layers so
-        // this check only adds the segmente if the node ate in adjacent layer
+        // this check only adds the segment if the node ate in adjacent layer
         if (net_segs.find(segment) == net_segs.end()
             && std::abs(l1 - l2) == 1) {
           net_segs.insert(segment);
