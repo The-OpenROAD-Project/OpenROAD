@@ -702,8 +702,9 @@ NetRouteMap FastRouteCore::getRoutes()
         int y2 = tile_size_ * (nodes[treeedge->n2].y + 0.5) + y_corner_;
         int l2 = nodes[treeedge->n2].botL;
         GSegment segment(x1, y1, l1 + 1, x2, y2, l2 + 1);
-        // It is possible to have nodes that are not in adjacent layers so
-        // this check only adds the segment if the node ate in adjacent layer
+        // It is possible to have nodes that are not in adjacent layers if one
+        // of the nodes is steiner node, this check only adds the segment 
+        // if the nodes are in adjacent layer
         if (net_segs.find(segment) == net_segs.end()
             && std::abs(l1 - l2) == 1) {
           net_segs.insert(segment);
