@@ -76,7 +76,7 @@ void Opendp::checkPlacement(bool verbose,
           site_align_failures.push_back(&cell);
           continue;
         }
-        auto gmk = getGridMapKey(&cell);
+        // auto gmk = getGridMapKey(&cell);
         if (cell.isHybridParent()) {
           if (cell.y_ % cell.height_ != 0) {
             site_align_failures.push_back(&cell);

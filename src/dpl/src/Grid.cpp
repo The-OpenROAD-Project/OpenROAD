@@ -73,11 +73,6 @@ int Opendp::calculateHybridSitesRowCount(dbSite* parent_hybrid_site) const
       break;
     }
   }
-  logger_->info(DPL,
-                7251,
-                "parent hybrid site {} has {} rows",
-                parent_hybrid_site->getName(),
-                rows_count);
   return rows_count;
 }
 
