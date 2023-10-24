@@ -176,13 +176,13 @@ class frLayer
       return dbTechLayerDir::NONE;
     return db_layer_->getDirection();
   }
-  bool isVertical()
+  bool isVertical() const
   {
     return (fakeCut || fakeMasterslice)
                ? false
                : db_layer_->getDirection() == dbTechLayerDir::VERTICAL;
   }
-  bool isHorizontal()
+  bool isHorizontal() const
   {
     return (fakeCut || fakeMasterslice)
                ? false

@@ -262,7 +262,11 @@ class FlexGridGraph
     frUInt4 sol = 0;
     if (dir != frDirEnum::D && dir != frDirEnum::U) {
       reverse(x, y, z, dir);
-      sol = nodes_[getIdx(x, y, z)].fixedShapeCostPlanar;
+      if (dir == frDirEnum::W || dir == frDirEnum::E) {
+        sol = nodes_[getIdx(x, y, z)].fixedShapeCostPlanarHorz;
+      } else {
+        sol = nodes_[getIdx(x, y, z)].fixedShapeCostPlanarVert;
+      }
     } else {
       correctU(x, y, z, dir);
       const Node& node = nodes_[getIdx(x, y, z)];
@@ -601,14 +605,24 @@ class FlexGridGraph
   {
     if (isValid(x, y, z)) {
       auto& node = nodes_[getIdx(x, y, z)];
-      node.fixedShapeCostPlanar = addToByte(node.fixedShapeCostPlanar, 1);
+      node.fixedShapeCostPlanarHorz
+          = addToByte(node.fixedShapeCostPlanarHorz, 1);
+      node.fixedShapeCostPlanarVert
+          = addToByte(node.fixedShapeCostPlanarVert, 1);
     }
   }
-  void setFixedShapeCostPlanar(frMIdx x, frMIdx y, frMIdx z, fr::frUInt4 c)
+  void setFixedShapeCostPlanarVert(frMIdx x, frMIdx y, frMIdx z, fr::frUInt4 c)
   {
     if (isValid(x, y, z)) {
       auto& node = nodes_[getIdx(x, y, z)];
-      node.fixedShapeCostPlanar = c;
+      node.fixedShapeCostPlanarVert = c;
+    }
+  }
+  void setFixedShapeCostPlanarHorz(frMIdx x, frMIdx y, frMIdx z, fr::frUInt4 c)
+  {
+    if (isValid(x, y, z)) {
+      auto& node = nodes_[getIdx(x, y, z)];
+      node.fixedShapeCostPlanarHorz = c;
     }
   }
   void addFixedShapeCostVia(frMIdx x, frMIdx y, frMIdx z)
@@ -629,7 +643,10 @@ class FlexGridGraph
   {
     if (isValid(x, y, z)) {
       auto& node = nodes_[getIdx(x, y, z)];
-      node.fixedShapeCostPlanar = subFromByte(node.fixedShapeCostPlanar, 1);
+      node.fixedShapeCostPlanarHorz
+          = subFromByte(node.fixedShapeCostPlanarHorz, 1);
+      node.fixedShapeCostPlanarVert
+          = subFromByte(node.fixedShapeCostPlanarVert, 1);
     }
   }
   void subFixedShapeCostVia(frMIdx x, frMIdx y, frMIdx z)
@@ -892,7 +909,8 @@ class FlexGridGraph
     cout << "markerCostPlanar " << n.markerCostPlanar << "\n";
     cout << "markerCostVia " << n.markerCostVia << "\n";
     cout << "fixedShapeCostVia " << n.fixedShapeCostVia << "\n";
-    cout << "fixedShapeCostPlanar " << n.fixedShapeCostPlanar << "\n";
+    cout << "fixedShapeCostPlanarHorz " << n.fixedShapeCostPlanarHorz << "\n";
+    cout << "fixedShapeCostPlanarVert " << n.fixedShapeCostPlanarVert << "\n";
   }
 
  private:
@@ -939,18 +957,12 @@ class FlexGridGraph
     // Byte6
     frUInt4 fixedShapeCostVia : cost_bits;
     // Byte7
-    frUInt4 fixedShapeCostPlanar : cost_bits;
-
-    template <class Archive>
-    void serialize(Archive& ar, const unsigned int version)
-    {
-      uint64_t* val = reinterpret_cast<uint64_t*>(this);
-      (ar) & *val;
-    }
-    friend class boost::serialization::access;
+    frUInt4 fixedShapeCostPlanarHorz : cost_bits;
+    // Byte8
+    frUInt4 fixedShapeCostPlanarVert : cost_bits;
   };
 #ifndef DEBUG_DRT_UNDERFLOW
-  static_assert(sizeof(Node) == 8);
+  static_assert(sizeof(Node) == 12);
 #endif
   frVector<Node> nodes_;
   std::vector<bool> prevDirs_;

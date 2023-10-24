@@ -772,18 +772,19 @@ void SACoreSoftMacro::shrink()
 
 void SACoreSoftMacro::printResults() const
 {
-  debugPrint(logger_, MPL, "macro_placement", 1, "SACoreSoftMacro");
+  debugPrint(
+      logger_, MPL, "hierarchical_macro_placement", 2, "SACoreSoftMacro");
   debugPrint(logger_,
              MPL,
-             "macro_placement",
-             1,
+             "hierarchical_macro_placement",
+             2,
              "number of macros : {}",
              macros_.size());
   for (const auto& macro : macros_)
     debugPrint(logger_,
                MPL,
-               "macro_placement",
-               1,
+               "hierarchical_macro_placement",
+               2,
                "lx = {}, ly = {}, width = {}, height = {}, name = {}",
                macro.getX(),
                macro.getY(),
@@ -792,39 +793,39 @@ void SACoreSoftMacro::printResults() const
                macro.getName());
   debugPrint(logger_,
              MPL,
-             "macro_placement",
-             1,
+             "hierarchical_macro_placement",
+             2,
              "width = {}, outline_width = {}",
              width_,
              outline_width_);
   debugPrint(logger_,
              MPL,
-             "macro_placement",
-             1,
+             "hierarchical_macro_placement",
+             2,
              "height = {}, outline_height = {}",
              height_,
              outline_height_);
   debugPrint(
       logger_,
       MPL,
-      "macro_placement",
-      1,
+      "hierarchical_macro_placement",
+      2,
       "outline_weight = {}, outline_penalty  = {}, norm_outline_penalty = {}",
       outline_weight_,
       outline_penalty_,
       norm_outline_penalty_);
   debugPrint(logger_,
              MPL,
-             "macro_placement",
-             1,
+             "hierarchical_macro_placement",
+             2,
              "wirelength_weight = {}, wirelength  = {}, norm_wirelength = {}",
              wirelength_weight_,
              wirelength_,
              norm_wirelength_);
   debugPrint(logger_,
              MPL,
-             "macro_placement",
-             1,
+             "hierarchical_macro_placement",
+             2,
              "guidance_weight = {}, guidance_penalty  = {}, "
              "norm_guidance_penalty = {}",
              guidance_weight_,
@@ -832,16 +833,16 @@ void SACoreSoftMacro::printResults() const
              norm_guidance_penalty_);
   debugPrint(logger_,
              MPL,
-             "macro_placement",
-             1,
+             "hierarchical_macro_placement",
+             2,
              "fence_weight = {}, fence_penalty  = {}, norm_fence_penalty = {}",
              fence_weight_,
              fence_penalty_,
              norm_fence_penalty_);
   debugPrint(logger_,
              MPL,
-             "macro_placement",
-             1,
+             "hierarchical_macro_placement",
+             2,
              "macro_blockage_weight = {}, macro_blockage_penalty  = {}, "
              "norm_macro_blockage_penalty = {}",
              macro_blockage_weight_,
@@ -849,14 +850,18 @@ void SACoreSoftMacro::printResults() const
              norm_macro_blockage_penalty_);
   debugPrint(logger_,
              MPL,
-             "macro_placement",
-             1,
+             "hierarchical_macro_placement",
+             2,
              "notch_weight = {}, notch_penalty  = {}, norm_notch_penalty = {}",
              notch_weight_,
              notch_penalty_,
              norm_notch_penalty_);
-  debugPrint(
-      logger_, MPL, "macro_placement", 1, "final cost = {}", getNormCost());
+  debugPrint(logger_,
+             MPL,
+             "hierarchical_macro_placement",
+             2,
+             "final cost = {}",
+             getNormCost());
 }
 
 // fill the dead space by adjust the size of MixedCluster

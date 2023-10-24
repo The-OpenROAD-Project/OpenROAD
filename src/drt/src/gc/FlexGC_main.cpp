@@ -1324,7 +1324,6 @@ void FlexGCWorker::Impl::checkMetalShape_lef58MinStep_noBetweenEol(
   frCoord lly = 0;
   frCoord urx = 0;
   frCoord ury = 0;
-  Rect markerBox;
   auto minStepLength = con->getMinStepLength();
   auto eolWidth = con->getEolWidth();
   for (auto& edges : pin->getPolygonEdges()) {
