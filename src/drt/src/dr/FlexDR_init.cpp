@@ -35,30 +35,18 @@ using namespace std;
 using namespace fr;
 namespace bgi = boost::geometry::index;
 
-bool FlexDRWorker::isRoutePatchWire(frPatchWire* pwire) const
+bool FlexDRWorker::isRoutePatchWire(const frPatchWire* pwire) const
 {
-  auto gridBBox = getRouteBox();
+  const auto& gridBBox = getRouteBox();
   Point origin = pwire->getOrigin();
-  if (isInitDR()
-      && (origin.x() == gridBBox.xMin() || origin.x() == gridBBox.xMax()
-          || origin.y() == gridBBox.yMin() || origin.y() == gridBBox.yMax())) {
-    return false;
-  }
-  return origin.x() >= gridBBox.xMin() && origin.y() >= gridBBox.yMin()
-         && origin.x() <= gridBBox.xMax() && origin.y() <= gridBBox.yMax();
+  return isInitDR() ? gridBBox.overlaps(origin) : gridBBox.intersects(origin);
 }
 
-bool FlexDRWorker::isRouteVia(frVia* via) const
+bool FlexDRWorker::isRouteVia(const frVia* via) const
 {
-  auto gridBBox = getRouteBox();
+  const auto& gridBBox = getRouteBox();
   Point origin = via->getOrigin();
-  if (isInitDR()
-      && (origin.x() == gridBBox.xMin() || origin.x() == gridBBox.xMax()
-          || origin.y() == gridBBox.yMin() || origin.y() == gridBBox.yMax())) {
-    return false;
-  }
-  return origin.x() >= gridBBox.xMin() && origin.y() >= gridBBox.yMin()
-         && origin.x() <= gridBBox.xMax() && origin.y() <= gridBBox.yMax();
+  return isInitDR() ? gridBBox.overlaps(origin) : gridBBox.intersects(origin);
 }
 
 void FlexDRWorker::initNetObjs_pathSeg(
