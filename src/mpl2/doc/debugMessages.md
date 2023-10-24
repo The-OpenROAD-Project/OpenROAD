@@ -35,5 +35,5 @@ MPL2 debug messages are divided in:
     * Simulated Anneling results for both SoftMacro and HardMacro.
 
 ### Bus Planning
-Special case for bus planning.
+Special case for bus planning with a single level.
 - Group Name: `bus_planning`
