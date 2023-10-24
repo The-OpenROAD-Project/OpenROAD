@@ -435,7 +435,8 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_getQueryBox(
     gtl::rectangle_data<frCoord>& queryRect,
     frCoord& eolNonPrlSpacing,
     frCoord& endPrlSpacing,
-    frCoord& endPrl)
+    frCoord& endPrl,
+    bool isEolEdge)
 {
   endPrlSpacing = 0;
   endPrl = 0;
@@ -452,8 +453,15 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_getQueryBox(
       auto withinCon = con->getWithinConstraint();
       eolWithin = withinCon->getEolWithin();
       eolSpace = con->getEolSpace();
-      if (isWrongDir(edge) && con->hasWrongDirSpacing())
-        eolSpace = con->getWrongDirSpace();
+      if (con->hasWrongDirSpacing()) {
+        if (isEolEdge && isWrongDir(edge)) {
+          eolSpace = con->getWrongDirSpace();
+        } else if (!isEolEdge) {
+          eolSpace = std::max(
+              eolSpace,
+              con->getWrongDirSpace());  // Querying possibly wrongdir EOL edges
+        }
+      }
       eolNonPrlSpacing = eolSpace;
       if (withinCon->hasEndPrlSpacing()) {
         endPrlSpacing = withinCon->getEndPrlSpacing();
@@ -467,75 +475,6 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_getQueryBox(
     } break;
     default:
       logger_->error(DRT, 226, "Unsupported endofline spacing rule.");
-      break;
-  }
-
-  if (edge->getDir() == frDirEnum::E) {
-    bg::set<bg::min_corner, 0>(queryBox, edge->low().x() - eolWithin);
-    bg::set<bg::min_corner, 1>(queryBox, edge->low().y() - eolSpace);
-    bg::set<bg::max_corner, 0>(queryBox, edge->high().x() + eolWithin);
-    bg::set<bg::max_corner, 1>(queryBox, edge->high().y());
-  } else if (edge->getDir() == frDirEnum::W) {
-    bg::set<bg::min_corner, 0>(queryBox, edge->high().x() - eolWithin);
-    bg::set<bg::min_corner, 1>(queryBox, edge->high().y());
-    bg::set<bg::max_corner, 0>(queryBox, edge->low().x() + eolWithin);
-    bg::set<bg::max_corner, 1>(queryBox, edge->low().y() + eolSpace);
-  } else if (edge->getDir() == frDirEnum::N) {
-    bg::set<bg::min_corner, 0>(queryBox, edge->low().x());
-    bg::set<bg::min_corner, 1>(queryBox, edge->low().y() - eolWithin);
-    bg::set<bg::max_corner, 0>(queryBox, edge->high().x() + eolSpace);
-    bg::set<bg::max_corner, 1>(queryBox, edge->high().y() + eolWithin);
-  } else {  // S
-    bg::set<bg::min_corner, 0>(queryBox, edge->high().x() - eolSpace);
-    bg::set<bg::min_corner, 1>(queryBox, edge->high().y() - eolWithin);
-    bg::set<bg::max_corner, 0>(queryBox, edge->low().x());
-    bg::set<bg::max_corner, 1>(queryBox, edge->low().y() + eolWithin);
-  }
-  gtl::xl(queryRect, queryBox.min_corner().x());
-  gtl::yl(queryRect, queryBox.min_corner().y());
-  gtl::xh(queryRect, queryBox.max_corner().x());
-  gtl::yh(queryRect, queryBox.max_corner().y());
-}
-
-void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_getQueryBox_TN(
-    gcSegment* edge,
-    frConstraint* constraint,
-    box_t& queryBox,
-    gtl::rectangle_data<frCoord>& queryRect,
-    frCoord& eolNonPrlSpacing,
-    frCoord& endPrlSpacing,
-    frCoord& endPrl)
-{
-  endPrlSpacing = 0;
-  endPrl = 0;
-  eolNonPrlSpacing = 0;
-  frCoord eolWithin, eolSpace;
-  switch (constraint->typeId()) {
-    case frConstraintTypeEnum::frcSpacingEndOfLineConstraint: {
-      auto con = (frSpacingEndOfLineConstraint*) constraint;
-      eolWithin = con->getEolWithin();
-      eolSpace = con->getMinSpacing();
-    } break;
-    case frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint: {
-      auto con = (frLef58SpacingEndOfLineConstraint*) constraint;
-      auto withinCon = con->getWithinConstraint();
-      eolWithin = withinCon->getEolWithin();
-      eolSpace = con->getEolSpace();
-      if (con->hasWrongDirSpacing())
-        eolSpace = std::max(eolSpace, con->getWrongDirSpace());
-      eolNonPrlSpacing = eolSpace;
-      if (withinCon->hasEndPrlSpacing()) {
-        endPrlSpacing = withinCon->getEndPrlSpacing();
-        endPrl = withinCon->getEndPrl();
-        eolSpace = std::max(eolSpace, endPrlSpacing);
-      }
-      if (withinCon->hasEndToEndConstraint()) {
-        auto endToEndCon = withinCon->getEndToEndConstraint();
-        eolSpace = std::max(eolSpace, endToEndCon->getEndToEndSpace());
-      }
-    } break;
-    default:
-      logger_->error(DRT, 333, "Unsupported endofline spacing rule.");
       break;
   }
 
@@ -822,19 +761,21 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_TN(gcSegment* edge,
   frCoord eolNonPrlSpacing;
   frCoord endPrlSpacing;
   frCoord endPrl;
-  checkMetalEndOfLine_eol_hasEol_getQueryBox_TN(edge,
-                                                constraint,
-                                                queryBox,
-                                                queryRect,
-                                                eolNonPrlSpacing,
-                                                endPrlSpacing,
-                                                endPrl);
+  checkMetalEndOfLine_eol_hasEol_getQueryBox(edge,
+                                             constraint,
+                                             queryBox,
+                                             queryRect,
+                                             eolNonPrlSpacing,
+                                             endPrlSpacing,
+                                             endPrl,
+                                             false);
   vector<pair<segment_t, gcSegment*>> results;
   auto& workerRegionQuery = getWorkerRegionQuery();
   workerRegionQuery.queryPolygonEdge(queryBox, edge->getLayerNum(), results);
   for (auto& [boostSeg, ptr] : results) {
     bool hasRoute = false;
     if (qualifiesAsEol(ptr, constraint, hasRoute)) {
+      // ptr is the EOL segment
       checkMetalEndOfLine_eol_hasEol_getQueryBox(ptr,
                                                  constraint,
                                                  queryBox,

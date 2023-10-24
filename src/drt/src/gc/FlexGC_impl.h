@@ -372,16 +372,8 @@ class FlexGCWorker::Impl
       gtl::rectangle_data<frCoord>& queryRect,
       frCoord& eolNonPrlSpacing,
       frCoord& endPrlSpacing,
-      frCoord& endPrl);
-
-  void checkMetalEndOfLine_eol_hasEol_getQueryBox_TN(
-      gcSegment* edge,
-      frConstraint* constraint,
-      box_t& queryBox,
-      gtl::rectangle_data<frCoord>& queryRect,
-      frCoord& eolNonPrlSpacing,
-      frCoord& endPrlSpacing,
-      frCoord& endPrl);
+      frCoord& endPrl,
+      bool isEolEdge = true);
 
   void checkMetalEndOfLine_eol_hasEol_check(
       gcSegment* edge,
