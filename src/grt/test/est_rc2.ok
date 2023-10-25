@@ -44,11 +44,11 @@ metal9     Horizontal        196           182          7.14%
 metal10    Vertical          196           182          7.14%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 34
+[INFO GRT-0197] Via related to pin nodes: 28
 [INFO GRT-0198] Via related Steiner nodes: 0
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 44
-[INFO GRT-0112] Final usage 3D: 176
+[INFO GRT-0111] Final number of vias: 38
+[INFO GRT-0112] Final usage 3D: 158
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
@@ -66,12 +66,12 @@ metal10            182             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
 Total             9833            44            0.45%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 189 um
+[INFO GRT-0018] Total wirelength: 161 um
 [INFO GRT-0014] Routed nets: 10
 Net clk
  Pin capacitance: 3.004-3.402
- Wire capacitance: 1.033
- Total capacitance: 4.037-4.435
+ Wire capacitance: 0.810
+ Total capacitance: 3.813-4.211
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
