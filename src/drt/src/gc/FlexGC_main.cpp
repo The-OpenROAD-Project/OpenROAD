@@ -1871,13 +1871,13 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
 
   Rect shiftedPatch = patchBx;
   shiftedPatch.moveTo(offset.x(), offset.y());
-  logger_->warn(DRT,
-                6481,
-                "GC PWIRE {} {} net {} worker {}",
-                shiftedPatch,
-                getTech()->getLayer(patch->getLayerNum())->getName(),
-                patch->getNet()->getFrNet()->getName(),
-                getDRWorker()->getRouteBox());
+  logger_->error(DRT,
+                 6481,
+                 "GC PWIRE {} {} net {} worker {}",
+                 shiftedPatch,
+                 getTech()->getLayer(patch->getLayerNum())->getName(),
+                 patch->getNet()->getFrNet()->getName(),
+                 getDRWorker()->getRouteBox());
 
   pwires_.push_back(std::move(patch));
 }
