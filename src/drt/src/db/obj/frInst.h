@@ -34,6 +34,7 @@
 #include "db/obj/frInstBlockage.h"
 #include "db/obj/frRef.h"
 #include "frBaseTypes.h"
+#include "odb/db.h"
 
 namespace fr {
 class frBlock;
@@ -44,12 +45,12 @@ class frInst : public frRef
 {
  public:
   // constructors
-  frInst(const frString& name, frMaster* master)
-      : name_(name), master_(master), pinAccessIdx_(0), toBeDeleted_(false)
+  frInst(odb::dbInst* db_inst, frMaster* master)
+      : db_inst_(db_inst), master_(master)
   {
   }
   // getters
-  const frString& getName() const { return name_; }
+  frString getName() const { return db_inst_->getName(); }
   frMaster* getMaster() const { return master_; }
   const std::vector<std::unique_ptr<frInstTerm>>& getInstTerms() const
   {
@@ -78,22 +79,18 @@ class frInst : public frRef
 
   /* from frRef
    * getOrient
-   * setOrient
    * getOrigin
-   * setOrigin
    * getTransform
-   * setTransform
    */
 
-  dbOrientType getOrient() const override { return xform_.getOrient(); }
-  void setOrient(const dbOrientType& tmpOrient) override
+  dbOrientType getOrient() const override { return getTransform().getOrient(); }
+  Point getOrigin() const override { return getTransform().getOffset(); }
+  dbTransform getTransform() const override
   {
-    xform_.setOrient(tmpOrient);
+    dbTransform xform;
+    db_inst_->getTransform(xform);
+    return xform;
   }
-  Point getOrigin() const override { return xform_.getOffset(); }
-  void setOrigin(const Point& tmpPoint) override { xform_.setOffset(tmpPoint); }
-  dbTransform getTransform() const override { return xform_; }
-  void setTransform(const dbTransform& xformIn) override { xform_ = xformIn; }
 
   /* from frPinFig
    * hasPin
@@ -132,19 +129,17 @@ class frInst : public frRef
   bool intersects(const Rect& box) const override { return false; }
   // others
   dbTransform getUpdatedXform(bool noOrient = false) const;
-  static void updateXform(dbTransform& xform, Point& size);
   Rect getBoundaryBBox() const;
 
   frInstTerm* getInstTerm(const std::string& name);
 
  private:
-  frString name_;
+  odb::dbInst* db_inst_;
   fr::frMaster* master_;
   std::vector<std::unique_ptr<frInstTerm>> instTerms_;
   std::vector<std::unique_ptr<frInstBlockage>> instBlockages_;
-  dbTransform xform_;
-  int pinAccessIdx_;
-  bool toBeDeleted_;
+  int pinAccessIdx_ = 0;
+  bool toBeDeleted_ = false;
 };
 
 }  // namespace fr

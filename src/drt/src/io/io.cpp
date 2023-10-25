@@ -136,15 +136,11 @@ void io::Parser::setInsts(odb::dbBlock* block)
         != tmpBlock_->name2inst_.end())
       logger_->error(DRT, 96, "Same cell name: {}.", inst->getName());
     frMaster* master = design_->name2master_.at(inst->getMaster()->getName());
-    auto uInst = make_unique<frInst>(inst->getName(), master);
+    auto uInst = make_unique<frInst>(inst, master);
     auto tmpInst = uInst.get();
     tmpInst->setId(numInsts_);
     numInsts_++;
 
-    int x, y;
-    inst->getLocation(x, y);
-    tmpInst->setOrigin(Point(x, y));
-    tmpInst->setOrient(inst->getOrient());
     int numInstTerms = 0;
     tmpInst->setPinAccessIdx(inst->getPinAccessIdx());
     for (auto& uTerm : tmpInst->getMaster()->getTerms()) {

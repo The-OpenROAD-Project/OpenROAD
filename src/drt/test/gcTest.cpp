@@ -49,16 +49,18 @@ using namespace fr;
 namespace bdata = boost::unit_test::data;
 
 // Fixture for GC tests
-struct GCFixture : public Fixture
+class GCFixture : public Fixture
 {
-  GCFixture() : worker(design->getTech(), logger.get()) {}
+ public:
+  GCFixture() : worker_(design_->getTech(), logger_.get()) {}
 
+ protected:
   void testMarker(frMarker* marker,
                   frLayerNum layer_num,
                   frConstraintTypeEnum type,
                   const Rect& expected_bbox)
   {
-    Rect bbox = marker->getBBox();
+    const Rect bbox = marker->getBBox();
 
     BOOST_TEST(marker->getLayerNum() == layer_num);
     BOOST_TEST(marker->getConstraint());
@@ -74,15 +76,15 @@ struct GCFixture : public Fixture
 
     // Run the GC engine
     const Rect work(0, 0, 2000, 2000);
-    worker.setExtBox(work);
-    worker.setDrcBox(work);
+    worker_.setExtBox(work);
+    worker_.setDrcBox(work);
 
-    worker.init(design.get());
-    worker.main();
-    worker.end();
+    worker_.init(design_.get());
+    worker_.main();
+    worker_.end();
   }
 
-  FlexGCWorker worker;
+  FlexGCWorker worker_;
 };
 
 BOOST_FIXTURE_TEST_SUITE(gc, GCFixture);
@@ -100,7 +102,7 @@ BOOST_AUTO_TEST_CASE(metal_short)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  const auto& markers = worker_.getMarkers();
 
   BOOST_TEST(markers.size() == 1);
   testMarker(markers[0].get(),
@@ -147,7 +149,7 @@ BOOST_AUTO_TEST_CASE(metal_short_obs)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  const auto& markers = worker_.getMarkers();
 
   BOOST_TEST(markers.size() == 3);
   // short of pin+net (450,-50), (550,90)
@@ -183,7 +185,7 @@ BOOST_AUTO_TEST_CASE(metal_non_sufficient)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
 
   BOOST_TEST(markers.size() == 1);
   testMarker(markers[0].get(),
@@ -199,8 +201,8 @@ BOOST_DATA_TEST_CASE(min_cut,
                      legal)
 {
   // Setup
-  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
-  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  addLayer(design_->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design_->getTech(), "m2", dbTechLayerType::ROUTING);
   makeMinimumCut(2, 200, 200, spacing);
   frNet* n1 = makeNet("n1");
   frViaDef* vd1 = makeViaDef("v1", 3, {0, 0}, {200, 200});
@@ -212,7 +214,7 @@ BOOST_DATA_TEST_CASE(min_cut,
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
   if (legal)
     BOOST_TEST(markers.size() == 0);
   else {
@@ -235,7 +237,7 @@ BOOST_AUTO_TEST_CASE(min_width)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
 
   BOOST_TEST(markers.size() == 1);
   testMarker(markers[0].get(),
@@ -257,7 +259,7 @@ BOOST_AUTO_TEST_CASE(min_width_combines_shapes)
   runGC();
 
   // Test the results
-  BOOST_TEST(worker.getMarkers().size() == 0);
+  BOOST_TEST(worker_.getMarkers().size() == 0);
 }
 
 // Check violation for off-grid points
@@ -271,9 +273,9 @@ BOOST_AUTO_TEST_CASE(off_grid)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
 
-  BOOST_TEST(worker.getMarkers().size() == 1);
+  BOOST_TEST(worker_.getMarkers().size() == 1);
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcOffGridConstraint,
@@ -294,9 +296,9 @@ BOOST_AUTO_TEST_CASE(corner_basic)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
 
-  BOOST_TEST(worker.getMarkers().size() == 1);
+  BOOST_TEST(worker_.getMarkers().size() == 1);
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58CornerSpacingConstraint,
@@ -318,7 +320,7 @@ BOOST_AUTO_TEST_CASE(corner_eol_no_violation)
   runGC();
 
   // Test the results
-  BOOST_TEST(worker.getMarkers().size() == 0);
+  BOOST_TEST(worker_.getMarkers().size() == 0);
 }
 
 // Check no violation for corner spacing with PRL > 0
@@ -336,7 +338,7 @@ BOOST_AUTO_TEST_CASE(corner_prl_no_violation)
   runGC();
 
   // Test the results
-  BOOST_TEST(worker.getMarkers().size() == 0);
+  BOOST_TEST(worker_.getMarkers().size() == 0);
 }
 
 BOOST_DATA_TEST_CASE(corner_to_corner, bdata::make({true, false}), legal)
@@ -352,7 +354,7 @@ BOOST_DATA_TEST_CASE(corner_to_corner, bdata::make({true, false}), legal)
   runGC();
 
   // Test the results
-  BOOST_TEST(worker.getMarkers().size() == (legal ? 0 : 1));
+  BOOST_TEST(worker_.getMarkers().size() == (legal ? 0 : 1));
 }
 
 // Check violation for corner spacing on a concave corner
@@ -370,9 +372,9 @@ BOOST_AUTO_TEST_CASE(corner_concave, *boost::unit_test::disabled())
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
 
-  BOOST_TEST(worker.getMarkers().size() == 1);
+  BOOST_TEST(worker_.getMarkers().size() == 1);
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58CornerSpacingConstraint,
@@ -408,12 +410,12 @@ BOOST_DATA_TEST_CASE(spacing_prl,
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
 
   if (legal) {
-    BOOST_TEST(worker.getMarkers().size() == 0);
+    BOOST_TEST(worker_.getMarkers().size() == 0);
   } else {
-    BOOST_TEST(worker.getMarkers().size() == 1);
+    BOOST_TEST(worker_.getMarkers().size() == 1);
     testMarker(markers[0].get(),
                2,
                frConstraintTypeEnum::frcSpacingTablePrlConstraint,
@@ -426,7 +428,7 @@ BOOST_DATA_TEST_CASE(spacing_prl,
 BOOST_DATA_TEST_CASE(design_rule_width, bdata::make({true, false}), legal)
 {
   // Setup
-  auto dbLayer = db_tech->findLayer("m1");
+  auto dbLayer = db_tech_->findLayer("m1");
   dbLayer->initTwoWidths(2);
   dbLayer->addTwoWidthsIndexEntry(90);
   dbLayer->addTwoWidthsIndexEntry(190);
@@ -457,7 +459,7 @@ BOOST_DATA_TEST_CASE(design_rule_width, bdata::make({true, false}), legal)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
   if (legal)
     BOOST_TEST(markers.size() == 0);
   else {
@@ -483,7 +485,7 @@ BOOST_AUTO_TEST_CASE(min_step)
   runGC();
 
   // Test the results
-  BOOST_TEST(worker.getMarkers().size() == 1);
+  BOOST_TEST(worker_.getMarkers().size() == 1);
 }
 
 // Check for a lef58 style min step violation.  The checker is very
@@ -501,7 +503,7 @@ BOOST_AUTO_TEST_CASE(min_step58)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
   BOOST_TEST(markers.size() == 1);
   testMarker(markers[0].get(),
              2,
@@ -525,7 +527,7 @@ BOOST_AUTO_TEST_CASE(rect_only)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
   BOOST_TEST(markers.size() == 3);
   testMarker(markers[0].get(),
              2,
@@ -557,7 +559,7 @@ BOOST_AUTO_TEST_CASE(min_enclosed_area)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
   BOOST_TEST(markers.size() == 1);
   testMarker(markers[0].get(),
              2,
@@ -580,7 +582,7 @@ BOOST_AUTO_TEST_CASE(spacing_table_infl_vertical)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
 
   BOOST_TEST(markers.size() == 1);
   testMarker(markers[0].get(),
@@ -602,7 +604,7 @@ BOOST_AUTO_TEST_CASE(spacing_table_infl_horizontal)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
 
   BOOST_TEST(markers.size() == 1);
   testMarker(markers[0].get(),
@@ -615,7 +617,7 @@ BOOST_AUTO_TEST_CASE(spacing_table_infl_horizontal)
 BOOST_AUTO_TEST_CASE(spacing_table_twowidth)
 {
   // Setup
-  auto dbLayer = db_tech->findLayer("m1");
+  auto dbLayer = db_tech_->findLayer("m1");
   dbLayer->initTwoWidths(2);
   dbLayer->addTwoWidthsIndexEntry(90);
   dbLayer->addTwoWidthsIndexEntry(190);
@@ -633,7 +635,7 @@ BOOST_AUTO_TEST_CASE(spacing_table_twowidth)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
 
   BOOST_TEST(markers.size() == 1);
   testMarker(markers[0].get(),
@@ -659,7 +661,7 @@ BOOST_DATA_TEST_CASE(eol_basic, (bdata::make({true, false})), lef58)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
   BOOST_TEST(markers.size() == 1);
   testMarker(markers[0].get(),
              2,
@@ -687,7 +689,7 @@ BOOST_AUTO_TEST_CASE(eol_endtoend)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
   BOOST_TEST(markers.size() == 1);
   testMarker(markers[0].get(),
              2,
@@ -700,7 +702,7 @@ BOOST_AUTO_TEST_CASE(eol_wrongdirspc)
   // Setup
   auto con = makeLef58SpacingEolConstraint(2);
   con->setWrongDirSpace(100);
-  db_tech->findLayer("m1")->setDirection(odb::dbTechLayerDir::VERTICAL);
+  db_tech_->findLayer("m1")->setDirection(odb::dbTechLayerDir::VERTICAL);
   frNet* n1 = makeNet("n1");
 
   makePathseg(n1, 2, {0, 50}, {100, 50});
@@ -709,7 +711,7 @@ BOOST_AUTO_TEST_CASE(eol_wrongdirspc)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
   BOOST_TEST(markers.size() == 0);
 }
 
@@ -729,7 +731,7 @@ BOOST_DATA_TEST_CASE(eol_ext_basic,
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
   if (legal)
     BOOST_TEST(markers.size() == 0);
   else {
@@ -770,7 +772,7 @@ BOOST_AUTO_TEST_CASE(eol_prlend)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
   BOOST_TEST(markers.size() == 2);
   testMarker(markers[0].get(),
              2,
@@ -794,7 +796,7 @@ BOOST_DATA_TEST_CASE(eol_ext_paronly, (bdata::make({true, false})), parOnly)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
   if (parOnly)
     BOOST_TEST(markers.size() == 0);
   else {
@@ -822,7 +824,7 @@ BOOST_DATA_TEST_CASE(eol_keepout, (bdata::make({true, false})), legal)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
   if (legal)
     BOOST_TEST(markers.size() == 0);
   else {
@@ -846,7 +848,7 @@ BOOST_AUTO_TEST_CASE(eol_keepout_except_within)
 
   runGC();
 
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
   BOOST_TEST(markers.size() == 0);
 }
 
@@ -872,7 +874,7 @@ BOOST_DATA_TEST_CASE(eol_keepout_corner,
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
   if (legal)
     BOOST_TEST(markers.size() == 0);
   else {
@@ -905,7 +907,7 @@ BOOST_DATA_TEST_CASE(eol_parallel_edge, (bdata::make({true, false})), lef58)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
   BOOST_TEST(markers.size() == 1);
   testMarker(markers[0].get(),
              2,
@@ -938,7 +940,7 @@ BOOST_DATA_TEST_CASE(eol_parallel_two_edge, (bdata::make({true, false})), lef58)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
   BOOST_TEST(markers.size() == 1);
   testMarker(markers[0].get(),
              2,
@@ -982,7 +984,7 @@ BOOST_DATA_TEST_CASE(eol_min_max,
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
   if (legal)
     BOOST_TEST(markers.size() == 0);
   else {
@@ -999,8 +1001,8 @@ BOOST_DATA_TEST_CASE(eol_enclose_cut,
                      y,
                      legal)
 {
-  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
-  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  addLayer(design_->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design_->getTech(), "m2", dbTechLayerType::ROUTING);
   makeLef58SpacingEolCutEncloseConstraint(makeLef58SpacingEolConstraint(4));
   frNet* n1 = makeNet("n1");
   frViaDef* vd = makeViaDef("v", 3, {0, 0}, {100, 100});
@@ -1009,7 +1011,7 @@ BOOST_DATA_TEST_CASE(eol_enclose_cut,
   makePathseg(n1, 4, {0, 700}, {1000, 700});
   makeVia(vd, n1, {400, y});
   runGC();
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
   if (legal)
     BOOST_TEST(markers.size() == 0);
   else {
@@ -1025,10 +1027,10 @@ BOOST_DATA_TEST_CASE(eol_enclose_cut,
 BOOST_DATA_TEST_CASE(cut_spc_tbl, (bdata::make({true, false})), viol)
 {
   // Setup
-  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
-  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  addLayer(design_->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design_->getTech(), "m2", dbTechLayerType::ROUTING);
   makeCutClass(3, "Vx", 100, 200);
-  auto layer = db_tech->findLayer("v2");
+  auto layer = db_tech_->findLayer("v2");
   auto dbRule = odb::dbTechLayerCutSpacingTableDefRule::create(layer);
   dbRule->setDefault(100);
   dbRule->setVertical(true);
@@ -1058,7 +1060,7 @@ BOOST_DATA_TEST_CASE(cut_spc_tbl, (bdata::make({true, false})), viol)
 
   runGC();
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
 
   BOOST_TEST(markers.size() == (viol ? 1 : 0));
 }
@@ -1069,10 +1071,10 @@ BOOST_DATA_TEST_CASE(cut_spc_tbl_ex_aligned,
                      viol)
 {
   // Setup
-  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
-  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  addLayer(design_->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design_->getTech(), "m2", dbTechLayerType::ROUTING);
   makeCutClass(3, "Vx", 100, 100);
-  auto layer = db_tech->findLayer("v2");
+  auto layer = db_tech_->findLayer("v2");
   auto dbRule = odb::dbTechLayerCutSpacingTableDefRule::create(layer);
   dbRule->setDefault(200);
   dbRule->addExactElignedEntry("Vx", 250);
@@ -1087,7 +1089,7 @@ BOOST_DATA_TEST_CASE(cut_spc_tbl_ex_aligned,
 
   runGC();
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
 
   BOOST_TEST(markers.size() == viol);
 }
@@ -1095,13 +1097,13 @@ BOOST_DATA_TEST_CASE(cut_spc_tbl_ex_aligned,
 BOOST_AUTO_TEST_CASE(metal_width_via_map)
 {
   // Setup
-  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
-  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  addLayer(design_->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design_->getTech(), "m2", dbTechLayerType::ROUTING);
   frViaDef* vd_bar = makeViaDef("V2_BAR", 3, {0, 0}, {100, 100});
   frViaDef* vd_large = makeViaDef("V2_LARGE", 3, {0, 0}, {200, 200});
 
-  auto db_layer = db_tech->findLayer("v2");
-  auto dbRule = odb::dbMetalWidthViaMap::create(db_tech);
+  auto db_layer = db_tech_->findLayer("v2");
+  auto dbRule = odb::dbMetalWidthViaMap::create(db_tech_);
   dbRule->setAboveLayerWidthLow(300);
   dbRule->setAboveLayerWidthHigh(300);
   dbRule->setBelowLayerWidthLow(300);
@@ -1119,7 +1121,7 @@ BOOST_AUTO_TEST_CASE(metal_width_via_map)
   runGC();
 
   // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
 
   BOOST_TEST(markers.size() == 1);
   testMarker(markers[0].get(),
@@ -1134,8 +1136,8 @@ BOOST_DATA_TEST_CASE(cut_spc_parallel_overlap,
                      legal)
 {
   // Setup
-  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
-  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  addLayer(design_->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design_->getTech(), "m2", dbTechLayerType::ROUTING);
   frViaDef* vd_bar = makeViaDef("V2_BAR", 3, {0, 0}, {100, 100});
 
   makeLef58CutSpacingConstraint_parallelOverlap(3, spacing);
@@ -1147,7 +1149,7 @@ BOOST_DATA_TEST_CASE(cut_spc_parallel_overlap,
   runGC();
 
   // // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
   if (legal) {
     BOOST_TEST(markers.size() == 0);
   } else {
@@ -1164,8 +1166,8 @@ BOOST_DATA_TEST_CASE(cut_spc_parallel_overlap,
 BOOST_DATA_TEST_CASE(cut_spc_adjacent_cuts, (bdata::make({true, false})), lef58)
 {
   // Setup
-  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
-  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  addLayer(design_->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design_->getTech(), "m2", dbTechLayerType::ROUTING);
   makeCutClass(3, "VA", 110, 110);
   if (lef58) {
     makeLef58CutSpacingConstraint_adjacentCut(3, 190, 3, 1, 200);
@@ -1183,7 +1185,7 @@ BOOST_DATA_TEST_CASE(cut_spc_adjacent_cuts, (bdata::make({true, false})), lef58)
     runGC();
 
     // Test the results
-    auto& markers = worker.getMarkers();
+    auto& markers = worker_.getMarkers();
 
     BOOST_TEST(markers.size() == 3);
   }
@@ -1192,12 +1194,12 @@ BOOST_DATA_TEST_CASE(cut_spc_adjacent_cuts, (bdata::make({true, false})), lef58)
 BOOST_AUTO_TEST_CASE(cut_keepoutzone)
 {
   // Setup
-  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
-  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  addLayer(design_->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design_->getTech(), "m2", dbTechLayerType::ROUTING);
   frViaDef* vd_bar = makeViaDef("V2_BAR", 3, {0, 0}, {200, 150});
   makeCutClass(3, "Vx", 150, 200);
 
-  auto db_layer = db_tech->findLayer("v2");
+  auto db_layer = db_tech_->findLayer("v2");
   auto dbRule = odb::dbTechLayerKeepOutZoneRule::create(db_layer);
   dbRule->setFirstCutClass("Vx");
   dbRule->setEndSideExtension(51);
@@ -1212,7 +1214,7 @@ BOOST_AUTO_TEST_CASE(cut_keepoutzone)
   runGC();
 
   // // Test the results
-  auto& markers = worker.getMarkers();
+  auto& markers = worker_.getMarkers();
   BOOST_TEST(markers.size() == 1);
   testMarker(markers[0].get(),
              3,

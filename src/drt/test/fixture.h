@@ -40,6 +40,7 @@ class Fixture
   Fixture();
   virtual ~Fixture() = default;
 
+ protected:
   void addLayer(frTechObject* tech,
                 const char* name,
                 dbTechLayerType type,
@@ -213,11 +214,18 @@ class Fixture
       int two_cuts,
       frCoord within);
 
-  // Public data members are accessible from inside the test function
-  std::unique_ptr<fr::Logger> logger;
-  std::unique_ptr<frDesign> design;
-  frUInt4 numBlockages, numTerms, numMasters, numInsts;
-  odb::dbTech* db_tech;
+  odb::dbMaster* makeDbMaster(const frString& name);
+
+  // Protected data members are accessible from inside the test function
+  std::unique_ptr<fr::Logger> logger_;
+  std::unique_ptr<frDesign> design_;
+  frUInt4 numBlockages_ = 0;
+  frUInt4 numTerms_ = 0;
+  frUInt4 numMasters_ = 0;
+  frUInt4 numInsts_ = 0;
+  odb::dbTech* db_tech_ = nullptr;
+  odb::dbBlock* db_block_ = nullptr;
+  odb::dbDatabase* db_ = nullptr;
 };
 
 // BOOST_TEST wants an operator<< for any type it compares.  We

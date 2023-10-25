@@ -73,7 +73,6 @@ class grVia : public grRef
    * getOrigin
    * setOrigin
    * getTransform
-   * setTransform
    */
 
   dbOrientType getOrient() const override { return dbOrientType(); }
@@ -82,7 +81,6 @@ class grVia : public grRef
   void setOrigin(const Point& in) override { origin = in; }
 
   dbTransform getTransform() const override { return dbTransform(origin); }
-  void setTransform(const dbTransform& in) override { ; }
 
   /* from gfrPinFig
    * hasPin

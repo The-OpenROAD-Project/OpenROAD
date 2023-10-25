@@ -117,7 +117,6 @@ class drVia : public drRef
    * getOrigin
    * setOrigin
    * getTransform
-   * setTransform
    */
 
   dbOrientType getOrient() const override { return dbOrientType(); }
@@ -125,7 +124,6 @@ class drVia : public drRef
   Point getOrigin() const override { return origin_; }
   void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
   dbTransform getTransform() const override { return origin_; }
-  void setTransform(const dbTransform& xformIn) override {}
 
   /* from frPinFig
    * hasPin

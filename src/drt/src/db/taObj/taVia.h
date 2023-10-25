@@ -49,7 +49,6 @@ class taRef : public taPinFig
   // setters
   virtual void setOrient(const dbOrientType& tmpOrient) = 0;
   virtual void setOrigin(const Point& tmpPoint) = 0;
-  virtual void setTransform(const dbTransform& xform) = 0;
 
  protected:
 };
@@ -102,7 +101,6 @@ class taVia : public taRef
    * getOrigin
    * setOrigin
    * getTransform
-   * setTransform
    */
 
   dbOrientType getOrient() const override { return dbOrientType(); }
@@ -110,7 +108,6 @@ class taVia : public taRef
   Point getOrigin() const override { return origin_; }
   void setOrigin(const Point& tmpPoint) override { origin_ = tmpPoint; }
   dbTransform getTransform() const override { return dbTransform(origin_); }
-  void setTransform(const dbTransform& xformIn) override {}
 
   /* from frPinFig
    * hasPin

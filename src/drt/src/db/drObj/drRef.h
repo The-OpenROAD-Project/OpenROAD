@@ -42,7 +42,6 @@ class drRef : public drPinFig
   // setters
   virtual void setOrient(const dbOrientType& tmpOrient) = 0;
   virtual void setOrigin(const Point& tmpPoint) = 0;
-  virtual void setTransform(const dbTransform& xform) = 0;
 
  protected:
   // constructors
