@@ -3147,7 +3147,10 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
     layerNum = gridGraph_.getLayerNum(currIdx.z());
     minAreaConstraint = getTech()->getLayer(layerNum)->getAreaConstraint();
     frArea reqArea = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
-    if (areaMap.find(currIdx) != areaMap.end()) {
+    if (currArea < reqArea && areaMap.find(currIdx) != areaMap.end()) {
+      if (!prev_is_wire) {
+        currArea /= 2;
+      }
       currArea += areaMap.find(currIdx)->second;
     }
     endViaHalfEncArea = 0;
