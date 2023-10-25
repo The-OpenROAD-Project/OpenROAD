@@ -1246,7 +1246,6 @@ NetRouteMap FastRouteCore::run()
     }
   }  // end overflow iterations
 
-
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn() && debug_->tree2D_) {
     for (int netID = 0; netID < netCount(); netID++) {
