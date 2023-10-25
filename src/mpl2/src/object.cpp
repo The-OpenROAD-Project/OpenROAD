@@ -564,7 +564,7 @@ int Cluster::getCloseCluster(const std::vector<int>& candidate_clusters,
   for (auto& [cluster_id, num_nets] : connection_map_) {
     debugPrint(logger_,
                MPL,
-               "clustering",
+               "multilevel_autoclustering",
                2,
                "cluster_id: {}, nets: {}",
                cluster_id,

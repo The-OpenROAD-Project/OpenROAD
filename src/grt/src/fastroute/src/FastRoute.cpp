@@ -693,6 +693,23 @@ NetRouteMap FastRouteCore::getRoutes()
             route.push_back(segment);
           }
         }
+      } else {
+        const auto& nodes = sttrees_[netID].nodes;
+        int x1 = tile_size_ * (nodes[treeedge->n1].x + 0.5) + x_corner_;
+        int y1 = tile_size_ * (nodes[treeedge->n1].y + 0.5) + y_corner_;
+        int l1 = nodes[treeedge->n1].botL;
+        int x2 = tile_size_ * (nodes[treeedge->n2].x + 0.5) + x_corner_;
+        int y2 = tile_size_ * (nodes[treeedge->n2].y + 0.5) + y_corner_;
+        int l2 = nodes[treeedge->n2].botL;
+        GSegment segment(x1, y1, l1 + 1, x2, y2, l2 + 1);
+        // It is possible to have nodes that are not in adjacent layers if one
+        // of the nodes is steiner node, this check only adds the segment
+        // if the nodes are in adjacent layer
+        if (net_segs.find(segment) == net_segs.end()
+            && std::abs(l1 - l2) == 1) {
+          net_segs.insert(segment);
+          route.push_back(segment);
+        }
       }
     }
   }
