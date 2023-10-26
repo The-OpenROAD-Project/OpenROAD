@@ -176,7 +176,8 @@ class FastRouteCore
   void incrementEdge3DUsage(int x1, int y1, int x2, int y2, int layer);
   void setMaxNetDegree(int);
   void setVerbose(bool v);
-  void setCriticalNetsPercentage(int u);
+  void setCriticalNetsPercentage(float u);
+  float getCriticalNetsPercentage() { return critical_nets_percentage_; };
   void setMakeWireParasiticsBuilder(AbstractMakeWireParasitics* builder);
   void setOverflowIterations(int iterations);
   void setCongestionReportIterStep(int congestion_report_iter_step);
@@ -534,7 +535,7 @@ class FastRouteCore
   bool has_2D_overflow_;
   int grid_hv_;
   bool verbose_;
-  int critical_nets_percentage_;
+  float critical_nets_percentage_;
   int via_cost_;
   int mazeedge_threshold_;
   float v_capacity_lb_;

@@ -426,7 +426,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   bool verbose_;
   int min_layer_for_clock_;
   int max_layer_for_clock_;
-  float critical_nets_percentage_;
 
   // variables for random grt
   int seed_;

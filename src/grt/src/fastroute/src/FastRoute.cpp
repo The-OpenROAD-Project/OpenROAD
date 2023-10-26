@@ -1304,7 +1304,7 @@ void FastRouteCore::setVerbose(bool v)
   verbose_ = v;
 }
 
-void FastRouteCore::setCriticalNetsPercentage(int u)
+void FastRouteCore::setCriticalNetsPercentage(float u)
 {
   critical_nets_percentage_ = u;
 }
