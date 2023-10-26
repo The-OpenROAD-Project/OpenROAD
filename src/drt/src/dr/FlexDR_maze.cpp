@@ -1752,6 +1752,9 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
                        net->getFrNet()->getName(),
                        routeBoxStringStream.str());
       }
+      if (graphics_) {
+        graphics_->midNet(net);
+      }
       mazeNetEnd(net);
       net->addNumReroutes();
       didRoute = true;
@@ -1781,6 +1784,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
           workerRegionQuery.add(tmp.get());
           net->addRoute(std::move(tmp));
         }
+        gcWorker_->clearPWires();
         if (getDRIter() >= beginDebugIter
             && !getGCWorker()->getMarkers().empty()) {
           logger_->info(DRT,
@@ -3143,7 +3147,10 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
     layerNum = gridGraph_.getLayerNum(currIdx.z());
     minAreaConstraint = getTech()->getLayer(layerNum)->getAreaConstraint();
     frArea reqArea = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
-    if (areaMap.find(currIdx) != areaMap.end()) {
+    if (currArea < reqArea && areaMap.find(currIdx) != areaMap.end()) {
+      if (!prev_is_wire) {
+        currArea /= 2;
+      }
       currArea += areaMap.find(currIdx)->second;
     }
     endViaHalfEncArea = 0;

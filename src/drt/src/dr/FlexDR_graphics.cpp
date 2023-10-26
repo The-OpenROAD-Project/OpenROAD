@@ -692,7 +692,7 @@ void FlexDRGraphics::startNet(drNet* net)
   }
 }
 
-void FlexDRGraphics::endNet(drNet* net)
+void FlexDRGraphics::midNet(drNet* net)
 {
   if (!net_) {
     return;
@@ -704,7 +704,7 @@ void FlexDRGraphics::endNet(drNet* net)
     point_cnt += pts.size();
   }
 
-  status("End net: " + net->getFrNet()->getName() + " searched "
+  status("Mid net: " + net->getFrNet()->getName() + " searched "
          + std::to_string(point_cnt) + " points");
 
   if (settings_->draw) {
@@ -717,6 +717,25 @@ void FlexDRGraphics::endNet(drNet* net)
 
   for (auto& points : points_by_layer_) {
     points.clear();
+  }
+}
+
+void FlexDRGraphics::endNet(drNet* net)
+{
+  if (!net_) {
+    return;
+  }
+  gui_->removeSelected<GridGraphDescriptor::Data>();
+  assert(net == net_);
+
+  status("End net: " + net->getFrNet()->getName() + " After GC");
+
+  if (settings_->draw) {
+    gui_->redraw();
+  }
+
+  if (settings_->allowPause) {
+    gui_->pause();
   }
   net_ = nullptr;
 }
