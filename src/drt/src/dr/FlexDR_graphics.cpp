@@ -756,6 +756,22 @@ void FlexDRGraphics::startIter(int iter)
   }
 }
 
+void FlexDRGraphics::endWorker(int iter)
+{
+  if (worker_ == nullptr)
+    return;
+  if (iter >= settings_->iter) {
+    gui_->removeSelected<GridGraphDescriptor::Data>();
+    status("End Worker: " + std::to_string(iter));
+    if (settings_->draw) {
+      gui_->redraw();
+    }
+    if (settings_->allowPause) {
+      gui_->pause();
+    }
+  }
+}
+
 void FlexDRGraphics::status(const std::string& message)
 {
   gui_->status(message);

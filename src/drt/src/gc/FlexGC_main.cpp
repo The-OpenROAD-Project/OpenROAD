@@ -3323,10 +3323,13 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
       if (sourceNets.find(net->getFrNet()) == sourceNets.end()) {
         continue;
       }
+      if (targetNet_ && net->getFrNet() != targetNet_->getFrNet()) {
+        continue;
+      }
       if (connFig->typeId() == drcVia) {
         auto via = static_cast<drVia*>(connFig);
-        origin = via->getOrigin();
-        if (routeBox.intersects(origin)) {
+        if (routeBox.intersects(via->getOrigin())) {
+          origin = via->getOrigin();
           if (via->getViaDef()->getLayer1Num() == lNum) {
             fig_bbox = via->getLayer1BBox();
           } else {
@@ -3343,16 +3346,17 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
             = Point::manhattanDistance(markerBBox.closestPtInside(bp), bp);
         auto dist_ep
             = Point::manhattanDistance(markerBBox.closestPtInside(ep), ep);
-        origin = (dist_bp < dist_ep) ? bp : ep;
-        if (routeBox.intersects(origin)) {
+        auto tmpOrigin = (dist_bp < dist_ep) ? bp : ep;
+        if (routeBox.intersects(tmpOrigin)) {
+          origin = tmpOrigin;
           fig_bbox = seg->getBBox();
           obj = connFig;
           break;
         }
       } else if (connFig->typeId() == drcPatchWire) {
         auto patch = static_cast<drPatchWire*>(connFig);
-        origin = patch->getOrigin();
-        if (routeBox.intersects(origin)) {
+        if (routeBox.intersects(patch->getOrigin())) {
+          origin = patch->getOrigin();
           fig_bbox = patch->getBBox();
           obj = connFig;
         }
@@ -3381,9 +3385,7 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
         markerBBox.set_yhi(markerBBox.yMax() + mgrid);
       }
     }
-
-    if (!net)
-      continue;
+    net = obj->getNet();
     markerBBox.moveDelta(-origin.x(), -origin.y());
     auto patch = make_unique<drPatchWire>();
     patch->setLayerNum(lNum);
@@ -3426,6 +3428,9 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
       }
       auto obj = static_cast<drVia*>(connFig);
       if (obj->getNet()->getFrNet() != *(marker->getSrcs().begin())) {
+        continue;
+      }
+      if (targetNet_ && obj->getNet()->getFrNet() != targetNet_->getFrNet()) {
         continue;
       }
       Point tmpOrigin = obj->getOrigin();

@@ -1591,6 +1591,7 @@ void FlexDRWorker::route_queue()
   }
   setBestMarkers();
   if (graphics_) {
+    graphics_->endWorker(drIter_);
     graphics_->show(true);
   }
 
