@@ -972,12 +972,13 @@ void dbNetwork::makeTopCell()
                 [=](const char* port_name) { return portMsbFirst(port_name); });
 }
 
-void dbNetwork::makeTopPort(dbBTerm* bterm)
+Port* dbNetwork::makeTopPort(dbBTerm* bterm)
 {
   const char* port_name = bterm->getConstName();
   Port* port = makePort(top_cell_, port_name);
   PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
   setDirection(port, dir);
+  return port;
 }
 
 void dbNetwork::setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type)
@@ -1219,6 +1220,29 @@ void dbNetwork::deletePin(Pin* pin)
   if (bterm) {
     dbBTerm::destroy(bterm);
   }
+}
+
+Port* dbNetwork::makePort(Cell* cell, const char* name)
+{
+  if (cell == top_cell_ && !block_->findBTerm(name)) {
+    odb::dbNet* net = block_->findNet(name);
+    if (!net) {
+      // a bterm must have a net
+      net = odb::dbNet::create(block_, name);
+    }
+    // Making the bterm creates the port in the db callback
+    odb::dbBTerm::create(net, name);
+    return findPort(cell, name);
+  }
+  return ConcreteNetwork::makePort(cell, name);
+}
+
+Pin* dbNetwork::makePin(Instance* inst, Port* port, Net* net)
+{
+  if (inst != top_instance_) {
+    return ConcreteNetwork::makePin(inst, port, net);
+  }
+  return nullptr;
 }
 
 Net* dbNetwork::makeNet(const char* name, Instance* parent)

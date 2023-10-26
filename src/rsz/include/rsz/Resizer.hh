@@ -662,7 +662,7 @@ protected:
   // "factor debatable"
   static constexpr float tgt_slew_load_cap_factor = 10.0;
   // Prim/Dijkstra gets out of hand with bigger nets.
-  static constexpr int max_steiner_pin_count_ = 100000;
+  static constexpr int max_steiner_pin_count_ = 200000;
 
   friend class BufferedNet;
   friend class GateCloner;

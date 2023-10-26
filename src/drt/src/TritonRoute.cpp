@@ -1190,9 +1190,14 @@ void TritonRoute::setUnidirectionalLayer(const std::string& layerName)
   auto dbLayer = tech->findLayer(layerName.c_str());
   if (dbLayer == nullptr) {
     logger_->error(utl::DRT, 616, "Layer {} not found", layerName);
-  } else {
-    design_->getTech()->setUnidirectionalLayer(dbLayer);
   }
+  if (dbLayer->getType() != dbTechLayerType::ROUTING) {
+    logger_->error(utl::DRT,
+                   618,
+                   "Non-routing layer {} can't be set unidirectional",
+                   layerName);
+  }
+  design_->getTech()->setUnidirectionalLayer(dbLayer);
 }
 
 void TritonRoute::setParams(const ParamStruct& params)
