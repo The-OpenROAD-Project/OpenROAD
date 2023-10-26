@@ -147,7 +147,7 @@ class dbNetwork : public ConcreteNetwork
   PortDirection* dbToSta(const dbSigType& sig_type,
                          const dbIoType& io_type) const;
   // dbStaCbk::inDbBTermCreate
-  void makeTopPort(dbBTerm* bterm);
+  Port* makeTopPort(dbBTerm* bterm);
   void setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type);
   ObjectId id(const Port* port) const override;
 
@@ -231,6 +231,8 @@ class dbNetwork : public ConcreteNetwork
   void disconnectPinBefore(const Pin* pin);
   void deletePin(Pin* pin) override;
   Net* makeNet(const char* name, Instance* parent) override;
+  Pin* makePin(Instance* inst, Port* port, Net* net) override;
+  Port* makePort(Cell* cell, const char* name) override;
   void deleteNet(Net* net) override;
   void deleteNetBefore(const Net* net);
   void mergeInto(Net* net, Net* into_net) override;

@@ -1,0 +1,14 @@
+module testcase (clk,
+    din,
+    dout,
+    dummy_port);
+ input clk;
+ input din;
+ output dout;
+ input dummy_port;
+
+
+ DFF_X1 _0_ (.D(din),
+    .CK(clk),
+    .Q(dout));
+endmodule
