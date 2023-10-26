@@ -1,24 +1,39 @@
-# OpenROAD
+# OpenROAD API
 
-OpenROAD is run using Tcl scripts. The following commands are used to read
-and write design data.
+OpenROAD can be run using Tcl, and Python (limited support).
+The following commands are used to read and write design data.
 
-``` shell
-read_lef [-tech] [-library] filename
-read_def filename
-write_def [-version 5.8|5.7|5.6|5.5|5.4|5.3] filename
-read_verilog filename
-write_verilog filename
-read_db filename
-write_db filename
-write_abstract_lef filename
-```
+````{eval-rst}
+.. tabs::
+
+   .. tab:: Tcl
+
+      read_lef [-tech] [-library] filename
+      read_def filename
+      write_def [-version 5.8|5.7|5.6|5.5|5.4|5.3] filename
+      read_verilog filename
+      write_verilog filename
+      read_db filename
+      write_db filename
+      write_abstract_lef filename
+
+   .. tab:: Python
+      WIP
+
+````
+
 
 Use the Tcl `source` command to read commands from a file.
 
-``` shell
-source [-echo] file
-```
+````{eval-rst}
+.. tabs::
+
+   .. tab:: Tcl
+      source [-echo] file
+
+   .. tab:: Python
+      WIP
+````
 
 If an error is encountered in a command while reading the command file,
 then the error is printed and no more commands are read from the file. If
@@ -39,24 +54,39 @@ If neither of the `-tech` and `-library` flags are specified they default
 to `-tech -library` if no technology has been read and `-library` if a
 technology exists in the database.
 
-``` shell
-read_lef liberty1.lef
-read_def reg1.def
-# Write the db for future runs.
-write_db reg1.db
-```
+````{eval-rst}
+.. tabs::
+
+   .. tab:: Tcl
+      read_lef liberty1.lef
+      read_def reg1.def
+      # Write the db for future runs.
+      write_db reg1.db
+
+
+   .. tab:: Python
+      WIP
+````
 
 The `read_verilog` command is used to build an OpenDB database as shown
 below. Multiple Verilog files for a hierarchical design can be read.
 The `link_design` command is used to flatten the design and make a database.
 
-``` shell
-read_lef liberty1.lef
-read_verilog reg1.v
-link_design top
-# Write the db for future runs.
-write_db reg1.db
-```
+
+````{eval-rst}
+.. tabs::
+
+   .. tab:: Tcl
+      read_lef liberty1.lef
+      read_verilog reg1.v
+      link_design top
+      # Write the db for future runs.
+      write_db reg1.db
+
+
+   .. tab:: Python
+      WIP
+````
 
 ## Example scripts
 
