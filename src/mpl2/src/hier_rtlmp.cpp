@@ -2478,13 +2478,15 @@ void HierRTLMP::printPhysicalHierarchyTree(Cluster* parent, int level)
   }
   line += fmt::format(
       "{}  ({})  num_macro :  {}   num_std_cell :  {}"
-      "  macro_area :  {}  std_cell_area : {}",
+      "  macro_area :  {}  std_cell_area : {}  cluster type: {} {}",
       parent->getName(),
       parent->getId(),
       parent->getNumMacro(),
       parent->getNumStdCell(),
       parent->getMacroArea(),
-      parent->getStdCellArea());
+      parent->getStdCellArea(),
+      parent->getIsLeafString(),
+      parent->getClusterTypeString());
   logger_->report("{}", line);
 
   for (auto& cluster : parent->getChildren()) {

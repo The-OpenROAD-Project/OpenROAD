@@ -258,6 +258,36 @@ void Cluster::clearHardMacros()
   hard_macros_.clear();
 }
 
+std::string Cluster::getClusterTypeString() const
+{
+  std::string cluster_type = "";
+
+  switch (type_) {
+    case StdCellCluster:
+      cluster_type = "StdCell";
+      break;
+    case MixedCluster:
+      cluster_type = "Mixed";
+      break;
+    case HardMacroCluster:
+      cluster_type = "Macro";
+      break;
+  }
+
+  return cluster_type;
+}
+
+std::string Cluster::getIsLeafString() const
+{
+  std::string is_leaf_string = "";
+
+  if (children_.size() == 0) {
+    is_leaf_string = "Leaf";
+  }
+
+  return is_leaf_string;
+}
+
 // copy instances based on cluster Type
 void Cluster::copyInstances(const Cluster& cluster)
 {

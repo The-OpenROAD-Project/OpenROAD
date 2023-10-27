@@ -183,6 +183,7 @@ class Cluster
   // cluster type (default type = MixedCluster)
   void setClusterType(const ClusterType& cluster_type);
   const ClusterType getClusterType() const;
+  std::string getClusterTypeString() const;
 
   // Instances (Here we store dbModule to reduce memory)
   void addDbModule(odb::dbModule* db_module);
@@ -235,6 +236,7 @@ class Cluster
   std::vector<Cluster*> getChildren() const;
 
   bool isLeaf() const;  // if the cluster is a leaf cluster
+  std::string getIsLeafString() const;
   bool mergeCluster(Cluster& cluster,
                     bool& delete_flag);  // return true if succeed
 
