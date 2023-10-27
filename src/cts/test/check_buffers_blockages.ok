@@ -169,7 +169,7 @@ HTree: level*1* bufId*3*: branchPt:[(11.178, 8.122)] topo len:2.000 dist to pare
 [DEBUG CTS-legalizer] adjustBeyondBlockage: branchPt move:[(3.757, 7.904)]=>[(5.199, 5.904)] is legal, dist=2.000, sinkDist=70.512
 [DEBUG CTS-legalizer] adjustBeyondBlockage applied to legal branchPt:[(3.757, 7.904)]=>[(3.584, 8.290)] parentPt:[(3.584, 6.290)] newDist=2.000
   HTree level*1* bufId*2*, parent:[(11.358, 6.064)], branch:[(11.156, 4.505)], leng:1.761, sinks:7
-[DEBUG CTS-legalizer]   top corner [(11.358, 8.064)] of Manhattan sqaure is inside blockage (10.326 7.800) (12.019 8.400)
+[DEBUG CTS-legalizer]   3 corner [(11.358, 8.064)] of Manhattan sqaure is inside blockage (10.326 7.800) (12.019 8.400)
 [DEBUG CTS-legalizer] adjustBeyondBlockage: branchPt move:[(11.156, 4.505)]=>[(11.358, 8.064)] is illegal or dist 2.000 != 2.000
 [DEBUG CTS-legalizer] adjustBeyondBlockage: branchPt move:[(11.156, 4.505)]=>[(13.358, 6.064)] is legal, dist=2.000, sinkDist=62.568
 [DEBUG CTS-legalizer] adjustBeyondBlockage: branchPt move:[(11.156, 4.505)]=>[(11.358, 4.064)] is legal, dist=2.000, sinkDist=27.589

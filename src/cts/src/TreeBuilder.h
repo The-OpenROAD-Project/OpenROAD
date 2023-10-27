@@ -192,6 +192,7 @@ class TreeBuilder
   bool isOccupiedLoc(const Point<double>& bufferLoc);
   void commitLoc(const Point<double>& bufferLoc);
   void uncommitLoc(const Point<double>& bufferLoc);
+  void commitMoveLoc(const Point<double>& oldLoc, const Point<double>& newLoc);
 
  protected:
   CtsOptions* options_ = nullptr;

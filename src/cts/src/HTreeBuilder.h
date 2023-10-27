@@ -180,8 +180,8 @@ class HTreeBuilder : public TreeBuilder
   }
 
   void run() override;
-  void findLegalLocations(Point<double> parentPoint,
-                          Point<double> branchPoint,
+  void findLegalLocations(const Point<double>& parentPoint,
+                          const Point<double>& branchPoint,
                           double x1,
                           double y1,
                           double x2,
@@ -189,7 +189,7 @@ class HTreeBuilder : public TreeBuilder
                           std::vector<Point<double>>& points);
   void addCandidateLoc(double x,
                        double y,
-                       Point<double> parentPoint,
+                       const Point<double>& parentPoint,
                        double x1,
                        double y1,
                        double x2,
@@ -201,17 +201,17 @@ class HTreeBuilder : public TreeBuilder
       points.emplace_back(x, y);
     }
   }
-  void addCandidatePointsAlongBlockage(Point<double> point,
-                                       Point<double> parentPoint,
+  void addCandidatePointsAlongBlockage(const Point<double>& point,
+                                       const Point<double>& parentPoint,
                                        double targetDist,
                                        int scalingFactor,
                                        std::vector<Point<double>>& candidates,
-                                       std::string location);
+                                       odb::Direction2D direction);
   Point<double> findBestLegalLocation(
       double targetDist,
-      Point<double> branchPoint,
-      Point<double> parentPoint,
-      std::vector<Point<double>>& legalLocations,
+      const Point<double>& branchPoint,
+      const Point<double>& parentPoint,
+      const std::vector<Point<double>>& legalLocations,
       const std::vector<Point<double>>& sinks,
       double x1,
       double y1,
@@ -219,17 +219,17 @@ class HTreeBuilder : public TreeBuilder
       double y2,
       int scalingFactor);
   Point<double> adjustBestLegalLocation(double targetDist,
-                                        Point<double> currLoc,
-                                        Point<double> parentPoint,
+                                        const Point<double>& currLoc,
+                                        const Point<double>& parentPoint,
                                         const std::vector<Point<double>>& sinks,
                                         double x1,
                                         double y1,
                                         double x2,
                                         double y2,
                                         int scalingFactor);
-  void checkLegalityAndCostSpecial(Point<double> oldLoc,
-                                   Point<double> newLoc,
-                                   Point<double> parentPoint,
+  void checkLegalityAndCostSpecial(const Point<double>& oldLoc,
+                                   const Point<double>& newLoc,
+                                   const Point<double>& parentPoint,
                                    double targetDist,
                                    const std::vector<Point<double>>& sinks,
                                    int scalingFactor,
@@ -241,8 +241,8 @@ class HTreeBuilder : public TreeBuilder
                                    double& sinkDist,
                                    double& bestSinkDist);
   bool adjustAlongBlockage(double targetDist,
-                           Point<double> currLoc,
-                           Point<double> parentPoint,
+                           const Point<double>& currLoc,
+                           const Point<double>& parentPoint,
                            const std::vector<Point<double>>& sinks,
                            double x1,
                            double y1,
@@ -250,14 +250,14 @@ class HTreeBuilder : public TreeBuilder
                            double y2,
                            int scalingFactor,
                            Point<double>& bestLoc);
-  Point<double> adjustBeyondBlockage(Point<double> branchPoint,
-                                     Point<double> parentPoint,
+  Point<double> adjustBeyondBlockage(const Point<double>& branchPoint,
+                                     const Point<double>& parentPoint,
                                      double targetDist,
                                      const std::vector<Point<double>>& sinks,
                                      int scalingFactor);
-  void checkLegalityAndCost(Point<double> oldLoc,
-                            Point<double> newLoc,
-                            Point<double> parentPoint,
+  void checkLegalityAndCost(const Point<double>& oldLoc,
+                            const Point<double>& newLoc,
+                            const Point<double>& parentPoint,
                             double targetDist,
                             const std::vector<Point<double>>& sinks,
                             int scalingFactor,

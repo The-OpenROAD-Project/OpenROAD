@@ -237,9 +237,10 @@ bool TreeBuilder::checkLegalityLoc(const Point<double>& bufferLoc,
   double x1, y1, x2, y2;
   if (findBlockage(bufferLoc, scalingFactor, x1, y1, x2, y2)) {
     // clang-format off
-    debugPrint(logger_, CTS, "legalizer", 4, "loc {} is inside blockage ({:0.3f} {:0.3f}) ({:0.3f} {:0.3f})",
-	       bufferLoc, x1, y1, x2, y2);
+    debugPrint(logger_, CTS, "legalizer", 4, "loc {} is in blockage ({:0.3f}"
+	       "{:0.3f}) ({:0.3f} {:0.3f})", bufferLoc, x1, y1, x2, y2);
     // clang-format on
+
     return false;
   }
 
@@ -273,6 +274,17 @@ void TreeBuilder::uncommitLoc(const Point<double>& bufferLoc)
   occupiedLocations_.erase(bufferLoc);
   debugPrint(logger_, CTS, "legalizer", 4, "loc {} has been uncommitted, size={}",
              bufferLoc, occupiedLocations_.size());
+  // clang-format on
+}
+
+void TreeBuilder::commitMoveLoc(const Point<double>& oldLoc,
+                                const Point<double>& newLoc)
+{
+  // clang-format off
+  occupiedLocations_.erase(oldLoc);
+  occupiedLocations_.insert(newLoc);
+  debugPrint(logger_, CTS, "legalizer", 4, "move:{} -> {} has been committed, size={}",
+             oldLoc, newLoc, occupiedLocations_.size());
   // clang-format on
 }
 

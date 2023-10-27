@@ -112,6 +112,7 @@ class TritonCTS
   bool masterExists(const std::string& master) const;
   void populateTritonCTS();
   void writeClockNetsToDb(Clock& clockNet);
+  void writeClockNDRsToDb();
   void incrementNumClocks() { ++numberOfClocks_; }
   void clearNumClocks() { numberOfClocks_ = 0; }
   unsigned getNumClocks() const { return numberOfClocks_; }

@@ -297,6 +297,7 @@ void TritonCTS::writeDataToDb()
 {
   for (TreeBuilder* builder : *builders_) {
     writeClockNetsToDb(builder->getClock());
+    // writeClockNDRsToDb();
   }
 
   for (TreeBuilder* builder : *builders_) {
@@ -573,6 +574,21 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* net,
       int x, y;
       computeITermPosition(iterm, x, y);
       clockNet.addSink(name, x, y, iterm, getInputPinCap(iterm));
+      // clang-format off
+      debugPrint(logger_, CTS, "Triton", 1, "sink {} added", name);
+      sta::LibertyCell* libCell = network_->libertyCell(network_->dbToSta(inst));
+      sta::LibertyPort* libPort = libCell->findLibertyPort(mterm->getConstName());
+      sta::RiseFallMinMax insDelays = libPort->clockTreePathDelays();
+      if (insDelays.hasValue()) {
+	for (const sta::MinMax *el : sta::MinMax::range()) {
+	  for (const sta::RiseFall *rf : sta::RiseFall::range()) {
+	    float delay = insDelays.value(rf, el);
+	    debugPrint(logger_, CTS, "Triton", 1, " insertion delay {} {} {:.3e}",
+		       el->asString(), rf->asString(), delay);
+	  }
+	}
+      }
+      // clang-format on
     }
   }
 
@@ -756,6 +772,64 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet)
                 fanout.substr(0, fanout.size() - 2) + ".");
   logger_->info(
       CTS, 17, "    Max level of the clock tree: {}.", clockNet.getMaxLevel());
+}
+
+void TritonCTS::writeClockNDRsToDb()
+{
+  char ruleName[64];
+  int ruleIndex = 0;
+  odb::dbTechNonDefaultRule* clockNDR;
+
+  // create a new non-default rule in *block* not tech
+  while (ruleIndex >= 0) {
+    snprintf(ruleName, 64, "CTS_NDR_%d", ruleIndex++);
+    clockNDR = odb::dbTechNonDefaultRule::create(block_, ruleName);
+    if (clockNDR) {
+      break;
+    }
+  }
+  assert(clockNDR != nullptr);
+
+  // define NDR for all routing layers
+  odb::dbTech* tech = db_->getTech();
+  for (int i = 1; i <= tech->getRoutingLayerCount(); i++) {
+    odb::dbTechLayer* layer = tech->findRoutingLayer(i);
+    odb::dbTechLayerRule* layerRule = clockNDR->getLayerRule(layer);
+    if (!layerRule) {
+      layerRule = odb::dbTechLayerRule::create(clockNDR, layer);
+    }
+    assert(layerRule != nullptr);
+    int defaultSpace = layer->getSpacing();
+    int defaultWidth = layer->getWidth();
+    layerRule->setSpacing(defaultSpace * 2);
+    layerRule->setWidth(defaultWidth);
+    // clang-format off
+    debugPrint(logger_, CTS, "Triton", 1, "  NDR rule set to layer {} {} as "
+	       "space={} width={} vs. default space={} width={}",
+	       i, layer->getName(),
+	       layerRule->getSpacing(), layerRule->getWidth(),
+	       defaultSpace, defaultWidth);
+    // clang-format on
+  }
+
+  // apply NDR to all clock nets
+  int clkNets = 0;
+  odb::dbSet<odb::dbNet> nets = block_->getNets();
+  odb::dbSet<odb::dbNet>::iterator netItr;
+  for (netItr = nets.begin(); netItr != nets.end(); ++netItr) {
+    odb::dbNet* net = *netItr;
+    if (net->getSigType() == odb::dbSigType::CLOCK) {
+      net->setNonDefaultRule(clockNDR);
+      clkNets++;
+    }
+  }
+
+  logger_->info(CTS,
+                202,
+                "Non-default rule {} for double spacing has been applied to {} "
+                "clock nets",
+                ruleName,
+                clkNets);
 }
 
 std::pair<int, int> TritonCTS::branchBufferCount(ClockInst* inst,
