@@ -162,7 +162,7 @@ class Box
   T getWidth() const { return width_; }
   T getHeight() const { return height_; }
 
-  Point<T> computeCenter()
+  Point<T> getCenter()
   {
     if (centerSet_) {
       Point<T> center(centerX_, centerY_);
@@ -174,6 +174,13 @@ class Box
     Point<T> center(centerX_, centerY_);
     centerSet_ = true;
     return center;
+  }
+
+  void setCenter(Point<T> point)
+  {
+    centerX_ = point.getX();
+    centerY_ = point.getY();
+    centerSet_ = true;
   }
 
   Box<double> normalize(double factor)
@@ -195,13 +202,6 @@ class Box
     out << "[(" << box.getMinX() << ", " << box.getMinY() << "), ("
         << box.getMaxX() << ", " << box.getMaxY() << ")]";
     return out;
-  }
-
-  void setCenter(Point<T> point)
-  {
-    centerX_ = point.getX();
-    centerY_ = point.getY();
-    centerSet_ = true;
   }
 
  private:

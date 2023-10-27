@@ -828,7 +828,7 @@ void HTreeBuilder::checkLegalityAndCost(const Point<double>& oldLoc,
 
 void HTreeBuilder::legalizeDummy()
 {
-  Point<double> topLevelBufferLoc = sinkRegion_.computeCenter();
+  Point<double> topLevelBufferLoc = sinkRegion_.getCenter();
   for (int levelIdx = 0; levelIdx < topologyForEachLevel_.size(); ++levelIdx) {
     LevelTopology& topology = topologyForEachLevel_[levelIdx];
 
@@ -902,7 +902,7 @@ void HTreeBuilder::legalize()
     printHTree();
   }
   // make sure top level buffer is legal
-  Point<double> oldTopBufferLoc = sinkRegion_.computeCenter();
+  Point<double> oldTopBufferLoc = sinkRegion_.getCenter();
   Point<double> newTopBufferLoc
       = legalizeOneBuffer(oldTopBufferLoc, options_->getRootBuffer());
   sinkRegion_.setCenter(newTopBufferLoc);
@@ -1095,7 +1095,7 @@ std::string HTreeBuilder::plotHTree()
 
   plotBlockage(file, db_, wireSegmentUnit_);
 
-  Point<double> topLevelBufferLoc = sinkRegion_.computeCenter();
+  Point<double> topLevelBufferLoc = sinkRegion_.getCenter();
 
   for (int levelIdx = 0; levelIdx < topologyForEachLevel_.size(); ++levelIdx) {
     LevelTopology& topology = topologyForEachLevel_[levelIdx];
@@ -1475,7 +1475,7 @@ void HTreeBuilder::computeBranchingPoints(const unsigned level,
                                           LevelTopology& topology)
 {
   if (level == 1) {
-    const Point<double> clockRoot(sinkRegion_.computeCenter());
+    const Point<double> clockRoot(sinkRegion_.getCenter());
     Point<double> low(clockRoot);
     Point<double> high(clockRoot);
     if (isHorizontal(level)) {
@@ -1625,7 +1625,7 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
 
 void HTreeBuilder::createClockSubNets()
 {
-  Point<double> center = sinkRegion_.computeCenter();
+  Point<double> center = sinkRegion_.getCenter();
   Point<double> legalCenter
       = legalizeOneBuffer(center, options_->getRootBuffer());
   sinkRegion_.setCenter(legalCenter);
@@ -1669,7 +1669,7 @@ void HTreeBuilder::createClockSubNets()
     SegmentBuilder builder("clkbuf_1_" + std::to_string(idx) + "_",
                            "clknet_1_" + std::to_string(idx) + "_",
                            legalCenter,  // center may have moved, don't use
-                                         // sinkRegion_.computeCenter()
+                                         // sinkRegion_.getCenter()
                            legalBranchPoint,
                            topLevelTopology.getWireSegments(),
                            clock_,
@@ -1772,7 +1772,7 @@ void HTreeBuilder::createSingleBufferClockNet()
 {
   logger_->report(" Building single-buffer clock net.");
 
-  Point<double> center = sinkRegion_.computeCenter();
+  Point<double> center = sinkRegion_.getCenter();
   Point<double> legalCenter
       = legalizeOneBuffer(center, options_->getRootBuffer());
   sinkRegion_.setCenter(legalCenter);
@@ -1814,7 +1814,7 @@ void HTreeBuilder::plotSolution()
   });
 
   LevelTopology& topLevelTopology = topologyForEachLevel_.front();
-  Point<double> topLevelBufferLoc = sinkRegion_.computeCenter();
+  Point<double> topLevelBufferLoc = sinkRegion_.getCenter();
   topLevelTopology.forEachBranchingPoint(
       [&](unsigned idx, Point<double> branchPoint) {
         if (topLevelBufferLoc.getX() < branchPoint.getX()) {
@@ -1860,7 +1860,7 @@ void HTreeBuilder::plotSolution()
 // incluiding branch point locations, topology length and weighted sink lengths
 void HTreeBuilder::printHTree()
 {
-  Point<double> topLevelBufferLoc = sinkRegion_.computeCenter();
+  Point<double> topLevelBufferLoc = sinkRegion_.getCenter();
   logger_->report("HTree: top buf loc:{}", topLevelBufferLoc);
   for (int levelIdx = 0; levelIdx < topologyForEachLevel_.size(); ++levelIdx) {
     LevelTopology& topology = topologyForEachLevel_[levelIdx];
