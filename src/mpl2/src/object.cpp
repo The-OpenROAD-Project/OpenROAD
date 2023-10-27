@@ -262,6 +262,11 @@ std::string Cluster::getClusterTypeString() const
 {
   std::string cluster_type = "";
 
+  if (is_io_cluster_) {
+    cluster_type = "BundledIO";
+    return cluster_type;
+  }
+
   switch (type_) {
     case StdCellCluster:
       cluster_type = "StdCell";
@@ -281,7 +286,7 @@ std::string Cluster::getIsLeafString() const
 {
   std::string is_leaf_string = "";
 
-  if (children_.size() == 0) {
+  if (!is_io_cluster_ && children_.size() == 0) {
     is_leaf_string = "Leaf";
   }
 
