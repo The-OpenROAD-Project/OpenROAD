@@ -6,7 +6,6 @@ Checks: >
   -clang-analyzer-cplusplus.NewDeleteLeaks,
   -clang-analyzer-optin.performance.Padding,
   readability-*,
-  -readability-identifier-naming
   -readability-braces-around-statements,
   -readability-convert-member-functions-to-static,
   -readability-function-cognitive-complexity,
@@ -58,14 +57,14 @@ Checks: >
 CheckOptions:
    - key:             google-runtime-int.TypeSuffix
      value:           _t
+   - key:             readability-identifier-naming.ClassCase
+     value:           CamelCase
 
 # Not currently handling identifier naming
 # WarningsAsErrors: "*"
 
 # Google Style Guide Identifier naming
 # CheckOptions:
-#   - key:             readability-identifier-naming.ClassCase
-#     value:           CamelCase
 #   - key:             readability-identifier-naming.ClassMemberCase
 #     value:           lower_case
 #   - key:             readability-identifier-naming.ConstexprVariableCase
