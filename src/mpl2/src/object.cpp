@@ -260,11 +260,10 @@ void Cluster::clearHardMacros()
 
 std::string Cluster::getClusterTypeString() const
 {
-  std::string cluster_type = "";
+  std::string cluster_type;
 
   if (is_io_cluster_) {
-    cluster_type = "BundledIO";
-    return cluster_type;
+    return "BundledIO";
   }
 
   switch (type_) {
@@ -284,9 +283,9 @@ std::string Cluster::getClusterTypeString() const
 
 std::string Cluster::getIsLeafString() const
 {
-  std::string is_leaf_string = "";
+  std::string is_leaf_string;
 
-  if (!is_io_cluster_ && children_.size() == 0) {
+  if (!is_io_cluster_ && children_.empty()) {
     is_leaf_string = "Leaf";
   }
 
