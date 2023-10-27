@@ -297,8 +297,9 @@ void TritonCTS::writeDataToDb()
 {
   for (TreeBuilder* builder : *builders_) {
     writeClockNetsToDb(builder->getClock());
-    // TODO: enable this under command line option
-    // writeClockNDRsToDb();
+    if (options_->applyNDR()) {
+      writeClockNDRsToDb();
+    }
   }
 
   for (TreeBuilder* builder : *builders_) {

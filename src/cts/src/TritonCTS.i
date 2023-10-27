@@ -225,6 +225,12 @@ set_obstruction_aware(bool obs)
 }
 
 void
+set_apply_ndr(bool ndr)
+{
+  getTritonCts()->getParms()->setApplyNDR(ndr);
+}
+
+void
 run_triton_cts()
 {
   getTritonCts()->runTritonCts();

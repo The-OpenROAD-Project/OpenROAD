@@ -218,6 +218,8 @@ class CtsOptions
   stt::SteinerTreeBuilder* getSttBuilder() const { return sttBuilder_; }
   void setObstructionAware(bool obs) { obsAware_ = obs; }
   bool getObstructionAware() const { return obsAware_; }
+  void setApplyNDR(bool ndr) { applyNDR_ = ndr; }
+  bool applyNDR() const { return applyNDR_; }
 
  private:
   std::string clockNets_ = "";
@@ -263,6 +265,7 @@ class CtsOptions
   utl::Logger* logger_ = nullptr;
   stt::SteinerTreeBuilder* sttBuilder_ = nullptr;
   bool obsAware_ = false;
+  bool applyNDR_ = false;
 };
 
 }  // namespace cts
