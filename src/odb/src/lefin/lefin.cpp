@@ -1702,7 +1702,14 @@ void lefin::site(lefiSite* lefsite)
         orient = it->second;
       }
       auto child_site = _lib->findSite(row.first.c_str());
-      child_site->setParent(site->getName());
+      if (_mapped_hybrid_sites.count(child_site->getId()) == 0) {
+        child_site->setParent(site->getName());
+        _mapped_hybrid_sites[child_site->getId()] = site;
+      } else {
+        child_site->setParent(
+            _mapped_hybrid_sites[child_site->getId()]->getName());
+      }
+
       converted_row_pattern.emplace_back(child_site, orient);
     }
     site->setRowPattern(converted_row_pattern);

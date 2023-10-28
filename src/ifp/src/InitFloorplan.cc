@@ -499,6 +499,54 @@ int InitFloorplan::makeRows(dbSite* site,
   return rows_y;
 }
 
+int InitFloorplan::getOffset(const std::vector<dbSite*>& pattern) const
+{
+  if (pattern.size() != 1) {
+    return 0;
+  }
+  if (!pattern[0]->isHybridParent()) {
+    return 0;
+  }
+  const auto& searchPattern = pattern[0]->getRowPattern();
+  std::vector<dbSite*> searchPattern_dbSite(searchPattern.size(), nullptr);
+  for (int i = 0; i < searchPattern.size(); i++) {
+    searchPattern_dbSite[i] = searchPattern[i].first;
+  }
+  int min_offset = std::numeric_limits<int>::max();
+  bool found_solution = false;
+  for (int i = 0; i < repeating_row_patterns_.size(); ++i) {
+    const auto& p_it = repeating_row_patterns_[i];
+    if (p_it.size() < searchPattern_dbSite.size()) {
+      continue;
+    }
+
+    for (int j = 0; j <= p_it.size() - searchPattern_dbSite.size(); ++j) {
+      if (std::equal(searchPattern_dbSite.begin(),
+                     searchPattern_dbSite.end(),
+                     p_it.begin() + j)) {
+        debugPrint(logger_,
+                   IFP,
+                   "hybrid",
+                   1,
+                   "Found a match for parent-hybrid cell {} at offset {} of a "
+                   "previously constucted pattern",
+                   pattern[0]->getName(),
+                   j);
+        int offset = 0;
+        for (int k = 0; k < j; ++k) {
+          offset += p_it[k]->getHeight();
+        }
+        if (offset < min_offset) {
+          min_offset = offset;
+          found_solution = true;
+        }
+      }
+    }
+  }
+
+  return (found_solution) ? min_offset : 0;
+}
+
 int InitFloorplan::makeHybridRows(dbSite* parent_hybrid_site,
                                   const odb::Point& core_l,
                                   const odb::Point& core_u,
@@ -554,6 +602,19 @@ int InitFloorplan::makeHybridRows(dbSite* parent_hybrid_site,
                pattern.size());
     int y = core_l.y(), pattern_iterator = 0;
 
+    int offset = getOffset(pattern);
+    y += offset;
+    if (offset == 0 && pattern.size() == 1 && pattern[0]->isHybridParent()) {
+      auto rp = pattern[0]->getRowPattern();
+      const int rp_sz = rp.size();
+      std::vector<dbSite*> rp_dbsite;
+      rp_dbsite.resize(rp_sz * 2, nullptr);
+      for (int i = 0; i < rp_sz; ++i) {
+        rp_dbsite[i] = rp[i].first;
+        rp_dbsite[i + rp_sz] = rp[i].first;
+      }
+      repeating_row_patterns_.push_back(rp_dbsite);
+    }
     while (y < core_height) {
       // TODO: should I get orient from hybrid_sites.second?
       dbOrientType orient = (pattern_iterator % 2 == 0)

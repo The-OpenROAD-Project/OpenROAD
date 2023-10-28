@@ -114,6 +114,7 @@ class InitFloorplan
                int core_uy,
                int factor,
                int row_index);
+  int getOffset(const std::vector<dbSite*>& pattern) const;
   int makeHybridRows(dbSite* parent_hybrid_site,
                      const odb::Point& core_l,
                      const odb::Point& core_u,
@@ -135,6 +136,7 @@ class InitFloorplan
  private:
   // this is a set of sets of all constructed site ids.
   std::set<std::set<int>> constructed_patterns;
+  std::vector<std::vector<dbSite*>> repeating_row_patterns_;
 };
 
 }  // namespace ifp

@@ -25,4 +25,5 @@
 [DEBUG IFP-hybrid] Site HybridA with width 380 and height 3600
 [DEBUG IFP-hybrid] Pattern [] with 0 sites
 [DEBUG IFP-hybrid] Pattern [HybridGA] with 1 sites
+[DEBUG IFP-hybrid] Found a match for parent-hybrid cell HybridGA at offset 1 of a previously constucted pattern
 No differences found.
