@@ -111,7 +111,7 @@ void Opendp::initGridLayersMap()
                        "hybrid",
                        1,
                        "Mapping child site {} to grid_index: {}",
-                       site->getName(),
+                       child_site->getName(),
                        grid_index);
             site_idx_to_grid_idx[child_site->getId()] = grid_index;
             updated = true;
@@ -174,6 +174,10 @@ void Opendp::initGridLayersMap()
                                     // them, resulting in the wrong RowPattern
                                     // here.
         };
+        std::cout << "Creating a hybrid grid for working site: "
+                  << working_site->getName()
+                  << " and its parent: " << working_site->getParent()->getName()
+                  << "\n";
         grid_info_map_.emplace(gmk, newGridInfo);
       }
     }
@@ -211,6 +215,12 @@ void Opendp::initGrid()
     grid_[index].resize(layer_row_count);
     for (int j = 0; j < layer_row_count; j++) {
       grid_[index][j].resize(layer_row_site_count);
+      auto grid_sites = grid_info.getSites();
+      dbSite* row_site = nullptr;
+      if (!grid_sites.empty()) {
+        row_site = grid_sites[j % grid_sites.size()].first;
+      }
+
       for (int k = 0; k < layer_row_site_count; k++) {
         Pixel& pixel = grid_[index][j][k];
         pixel.cell = nullptr;
@@ -219,10 +229,7 @@ void Opendp::initGrid()
         pixel.is_valid = false;
         pixel.is_hopeless = false;
         pixel.site = nullptr;
-        auto grid_sites = grid_info.getSites();
-        if (!grid_sites.empty()) {
-          pixel.site = grid_sites[j % grid_sites.size()].first;
-        }
+        pixel.site = row_site;
       }
     }
   }

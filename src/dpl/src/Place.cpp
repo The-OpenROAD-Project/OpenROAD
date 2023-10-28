@@ -895,6 +895,15 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
   if (bin_y >= grid_info.getRowCount()) {
     return PixelPt();
   }
+  if (cell->isHybrid()) {
+    for (int i = 0; i < 3; i++) {
+      std::cout
+          << "Row: " << bin_y << " site " << i << " have: "
+          << gridPixel(grid_info.getGridIndex(), 0, bin_y)->site->getName()
+          << " ";
+    }
+    std::cout << std::endl;
+  }
   if (cell->isHybrid()
       && gridPixel(grid_info.getGridIndex(), 0, bin_y)->site->getId()
              != cell->getSite()->getId()) {
@@ -905,8 +914,8 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
                "Bin_y {} didn't have site {}, so we look below it.",
                bin_y,
                cell->getSite()->getName());
-    bin_y = max(0, bin_y - 1);  // we know this row doesn't have the site, so we
-                                // save time by looking at the one below it.
+    int c_bin_y = bin_y;
+    bin_y = (bin_y + 1) % grid_info.getRowCount();
   }
 
   int height = gridHeight(cell, row_height);
@@ -970,8 +979,13 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
     }
   }
   if (cell->isHybrid()) {
-    debugPrint(
-        logger_, DPL, "hybrid", 1, "Trying recursive search with bin_y + 1");
+    debugPrint(logger_,
+               DPL,
+               "hybrid",
+               1,
+               "Trying recursive {} search with bin_y + 1 = {}",
+               cell->name(),
+               bin_y + 1);
     return binSearch(x, cell, bin_x, bin_y + 1);
   }
   return PixelPt();
