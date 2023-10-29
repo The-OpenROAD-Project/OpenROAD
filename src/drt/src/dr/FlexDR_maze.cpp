@@ -3056,7 +3056,10 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
             } else {
               if (points[prev_i].x() < points[i - 1].x()) {
                 bpPatchStyle = true;
+              } else if (points[prev_i].x() > points[i - 1].x()) {
+                bpPatchStyle = false;
               } else {
+                // if fully vertical, bpPatch left and epPatch right
                 bpPatchStyle = false;
               }
             }
@@ -3067,8 +3070,11 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
             } else {
               if (points[i - 1].x() < points[prev_i].x()) {
                 epPatchStyle = true;
-              } else {
+              } else if (points[i - 1].x() > points[prev_i].x()) {
                 epPatchStyle = false;
+              } else {
+                // if fully vertical, bpPatch left and epPatch right
+                epPatchStyle = true;
               }
             }
           } else {
@@ -3079,7 +3085,10 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
             } else {
               if (points[prev_i].y() < points[i - 1].y()) {
                 bpPatchStyle = true;
+              } else if (points[prev_i].y() > points[i - 1].y()) {
+                bpPatchStyle = false;
               } else {
+                // if fully horizontal, bpPatch left and epPatch right
                 bpPatchStyle = false;
               }
             }
@@ -3090,8 +3099,11 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
             } else {
               if (points[i - 1].y() < points[prev_i].y()) {
                 epPatchStyle = true;
-              } else {
+              } else if (points[i - 1].y() < points[prev_i].y()) {
                 epPatchStyle = false;
+              } else {
+                // if fully horizontal, bpPatch left and epPatch right
+                epPatchStyle = true;
               }
             }
           }
