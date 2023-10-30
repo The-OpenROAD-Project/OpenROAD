@@ -3099,7 +3099,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
             } else {
               if (points[i - 1].y() < points[prev_i].y()) {
                 epPatchStyle = true;
-              } else if (points[i - 1].y() < points[prev_i].y()) {
+              } else if (points[i - 1].y() > points[prev_i].y()) {
                 epPatchStyle = false;
               } else {
                 // if fully horizontal, bpPatch left and epPatch right
