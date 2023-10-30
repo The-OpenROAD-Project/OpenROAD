@@ -63,6 +63,8 @@ class FlexDRGraphics : public gui::Renderer
 
   void startNet(drNet* net);
 
+  void midNet(drNet* net);
+
   void endNet(drNet* net);
 
   void searchNode(const FlexGridGraph* grid_graph,

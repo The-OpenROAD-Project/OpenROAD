@@ -258,6 +258,40 @@ void Cluster::clearHardMacros()
   hard_macros_.clear();
 }
 
+std::string Cluster::getClusterTypeString() const
+{
+  std::string cluster_type;
+
+  if (is_io_cluster_) {
+    return "BundledIO";
+  }
+
+  switch (type_) {
+    case StdCellCluster:
+      cluster_type = "StdCell";
+      break;
+    case MixedCluster:
+      cluster_type = "Mixed";
+      break;
+    case HardMacroCluster:
+      cluster_type = "Macro";
+      break;
+  }
+
+  return cluster_type;
+}
+
+std::string Cluster::getIsLeafString() const
+{
+  std::string is_leaf_string;
+
+  if (!is_io_cluster_ && children_.empty()) {
+    is_leaf_string = "Leaf";
+  }
+
+  return is_leaf_string;
+}
+
 // copy instances based on cluster Type
 void Cluster::copyInstances(const Cluster& cluster)
 {
@@ -293,18 +327,18 @@ void Cluster::copyInstances(const Cluster& cluster)
 
 // Bundled IO (Pads) cluster support
 // The position is the center of IO pads in the cluster
-void Cluster::setIOClusterFlag(const std::pair<float, float> pos,
-                               const float width,
-                               const float height)
+void Cluster::setAsIOCluster(const std::pair<float, float> pos,
+                             const float width,
+                             const float height)
 {
-  io_cluster_flag_ = true;
+  is_io_cluster_ = true;
   // Create a SoftMacro representing the IO cluster
   soft_macro_ = std::make_unique<SoftMacro>(pos, name_, width, height, this);
 }
 
-bool Cluster::getIOClusterFlag() const
+bool Cluster::isIOCluster() const
 {
-  return io_cluster_flag_;
+  return is_io_cluster_;
 }
 
 // Metrics Support and Statistics
@@ -1248,7 +1282,7 @@ void SoftMacro::setWidth(float width)
   if (width <= 0.0 || area_ == 0.0 || width_list_.size() != height_list_.size()
       || width_list_.size() == 0 || cluster_ == nullptr
       || cluster_->getClusterType() == HardMacroCluster
-      || cluster_->getIOClusterFlag()) {
+      || cluster_->isIOCluster()) {
     return;
   }
 
@@ -1274,7 +1308,7 @@ void SoftMacro::setHeight(float height)
   if (height <= 0.0 || area_ == 0.0 || width_list_.size() != height_list_.size()
       || width_list_.size() == 0 || cluster_ == nullptr
       || cluster_->getClusterType() == HardMacroCluster
-      || cluster_->getIOClusterFlag()) {
+      || cluster_->isIOCluster()) {
     return;
   }
 
@@ -1308,7 +1342,7 @@ void SoftMacro::shrinkArea(float percent)
   if (area_ == 0.0 || width_list_.size() != height_list_.size()
       || width_list_.size() == 0 || cluster_ == nullptr
       || cluster_->getClusterType() != StdCellCluster
-      || cluster_->getIOClusterFlag()) {
+      || cluster_->isIOCluster()) {
     return;
   }
 
@@ -1322,7 +1356,7 @@ void SoftMacro::setArea(float area)
   if (area_ == 0.0 || width_list_.size() != height_list_.size()
       || width_list_.size() == 0 || cluster_ == nullptr
       || cluster_->getClusterType() == HardMacroCluster
-      || cluster_->getIOClusterFlag()
+      || cluster_->isIOCluster()
       || area <= width_list_[0].first * height_list_[0].first) {
     return;
   }
@@ -1379,7 +1413,7 @@ void SoftMacro::setShapes(
     float area)
 {
   if (width_list.size() == 0 || area <= 0.0 || cluster_ == nullptr
-      || cluster_->getIOClusterFlag()
+      || cluster_->isIOCluster()
       || cluster_->getClusterType() == HardMacroCluster) {
     return;
   }

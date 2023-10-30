@@ -170,6 +170,7 @@ class FlexGCWorker::Impl
 
   FlexGCWorkerRegionQuery& getWorkerRegionQuery() { return rq_; }
 
+  void modifyMarkers();
   // init
   gcNet* getNet(frBlockObject* obj);
   gcNet* getNet(frNet* net);
@@ -277,8 +278,8 @@ class FlexGCWorker::Impl
                                     gcRect* rect,
                                     frLef58CornerSpacingConstraint* con);
 
-  void checkMetalShape();
-  void checkMetalShape_main(gcPin* pin);
+  void checkMetalShape(bool allow_patching = false);
+  void checkMetalShape_main(gcPin* pin, bool allow_patching);
   void checkMetalShape_minWidth(const gtl::rectangle_data<frCoord>& rect,
                                 frLayerNum layerNum,
                                 gcNet* net,

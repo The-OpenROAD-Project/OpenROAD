@@ -1215,6 +1215,9 @@ float FastRouteCore::CalculatePartialSlack()
     }
   }
   for (int netID = 0; netID < netCount(); netID++) {
+    if (nets_[netID]->isRouted()) {
+      continue;
+    }
     auto fr_net = nets_[netID];
     odb::dbNet* db_net = fr_net->getDbNet();
     float slack = parasitics_builder_->getNetSlack(db_net);
@@ -1232,6 +1235,9 @@ float FastRouteCore::CalculatePartialSlack()
   // Set the non critical nets slack as the lowest float, so they can be
   // ordered by overflow (and ordered first than the critical nets)
   for (int netID = 0; netID < netCount(); netID++) {
+    if (nets_[netID]->isRouted()) {
+      continue;
+    }
     if (nets_[netID]->getSlack() > slack_th) {
       nets_[netID]->setSlack(std::ceil(std::numeric_limits<float>::lowest()));
     }

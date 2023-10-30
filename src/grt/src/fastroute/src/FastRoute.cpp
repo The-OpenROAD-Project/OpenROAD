@@ -724,6 +724,9 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
   // Get routes before layer assignment
 
   for (int netID = 0; netID < netCount(); netID++) {
+    if (nets_[netID]->isRouted()) {
+      continue;
+    }
     auto fr_net = nets_[netID];
     odb::dbNet* db_net = fr_net->getDbNet();
     GRoute& route = routes[db_net];

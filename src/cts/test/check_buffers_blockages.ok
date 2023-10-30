@@ -239,8 +239,6 @@ HTree: level*1* bufId*2*: branchPt:[(10.858, 4.564)] topo len:2.000 dist to pare
 HTree: level*1* bufId*3*: branchPt:[(11.095, 7.800)] topo len:2.000 dist to parent:2.000 weighted sink len:26.072 parentPt:[(11.358, 6.064)]
 -------------------------------------------------
 [INFO CTS-0035]  Number of sinks covered: 29.
-[DEBUG CTS-legalizer] Htree file cts.clk.buffer has been generated
-[DEBUG CTS-legalizer] Run 'obsAwareCts.py cts.clk.buffer' to produce cts.clk.buffer.png
 [INFO CTS-0018]     Created 34 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 3.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 3.

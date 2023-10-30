@@ -35,6 +35,20 @@ using namespace std;
 using namespace fr;
 namespace bgi = boost::geometry::index;
 
+bool FlexDRWorker::isRoutePatchWire(const frPatchWire* pwire) const
+{
+  const auto& gridBBox = getRouteBox();
+  Point origin = pwire->getOrigin();
+  return isInitDR() ? gridBBox.overlaps(origin) : gridBBox.intersects(origin);
+}
+
+bool FlexDRWorker::isRouteVia(const frVia* via) const
+{
+  const auto& gridBBox = getRouteBox();
+  Point origin = via->getOrigin();
+  return isInitDR() ? gridBBox.overlaps(origin) : gridBBox.intersects(origin);
+}
+
 void FlexDRWorker::initNetObjs_pathSeg(
     frPathSeg* pathSeg,
     set<frNet*, frBlockObjectComp>& nets,
@@ -147,8 +161,10 @@ void FlexDRWorker::initNetObjs_via(
 {
   auto net = via->getNet();
   nets.insert(net);
-  if (getRouteBox().intersects(via->getOrigin())) {
-    netRouteObjs[net].push_back(make_unique<drVia>(*via));
+  if (isRouteVia(via)) {
+    auto uVia = make_unique<drVia>(*via);
+    unique_ptr<drConnFig> uDRObj(std::move(uVia));
+    netRouteObjs[net].push_back(std::move(uDRObj));
   } else {
     netExtObjs[net].push_back(make_unique<drVia>(*via));
   }
@@ -162,8 +178,10 @@ void FlexDRWorker::initNetObjs_patchWire(
 {
   auto net = pwire->getNet();
   nets.insert(net);
-  if (getRouteBox().intersects(pwire->getOrigin())) {
-    netRouteObjs[net].push_back(make_unique<drPatchWire>(*pwire));
+  if (isRoutePatchWire(pwire)) {
+    auto uPWire = make_unique<drPatchWire>(*pwire);
+    unique_ptr<drConnFig> uDRObj(std::move(uPWire));
+    netRouteObjs[net].push_back(std::move(uDRObj));
   } else {
     netExtObjs[net].push_back(make_unique<drPatchWire>(*pwire));
   }
@@ -255,13 +273,6 @@ static bool segOnBorder(const Rect& routeBox,
   }
 }
 
-// The origin is strictly inside the routeBox and not on an edge
-static bool viaInInterior(const Rect& routeBox, const Point& origin)
-{
-  return routeBox.xMin() < origin.x() && origin.x() < routeBox.xMax()
-         && routeBox.yMin() < origin.y() && origin.y() < routeBox.yMax();
-}
-
 void FlexDRWorker::initNets_segmentTerms(
     const Point& bp,
     const frLayerNum lNum,
@@ -349,12 +360,7 @@ void FlexDRWorker::initNets_initDR(
           vExtObjs.push_back(std::move(netRouteObjs[net][i]));
         }
       } else if (obj->typeId() == drcVia) {
-        auto via = static_cast<drVia*>(obj.get());
-        if (viaInInterior(getRouteBox(), via->getOrigin())) {
-          vRouteObjs.push_back(std::move(netRouteObjs[net][i]));
-        } else {
-          vExtObjs.push_back(std::move(netRouteObjs[net][i]));
-        }
+        vRouteObjs.push_back(std::move(netRouteObjs[net][i]));
       } else if (obj->typeId() == drcPatchWire) {
         vRouteObjs.push_back(std::move(netRouteObjs[net][i]));
       }

@@ -180,12 +180,7 @@ class Clock
         const std::string& clockPin,
         const std::string& sdcClockName,
         int clockPinX,
-        int clockPinY)
-      : netName_(netName),
-        clockPin_(clockPin),
-        sdcClockName_(sdcClockName),
-        clockPinX_(clockPinX),
-        clockPinY_(clockPinY){};
+        int clockPinY);
 
   ClockInst& addClockBuffer(const std::string& name,
                             const std::string& master,
