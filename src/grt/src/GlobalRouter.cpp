@@ -971,6 +971,10 @@ void GlobalRouter::computeTrackConsumption(
   edge_costs_per_layer = nullptr;
   track_consumption = 1;
   odb::dbNet* db_net = net->getDbNet();
+  int net_min_layer;
+  int net_max_layer;
+  getNetLayerRange(db_net, net_min_layer, net_max_layer);
+
   odb::dbTechNonDefaultRule* ndr = db_net->getNonDefaultRule();
   if (ndr) {
     int num_layers = grid_->getNumLayers();
@@ -980,6 +984,9 @@ void GlobalRouter::computeTrackConsumption(
 
     for (odb::dbTechLayerRule* layer_rule : layer_rules) {
       int layerIdx = layer_rule->getLayer()->getRoutingLevel();
+      if (layerIdx > net_max_layer) {
+        continue;
+      }
       RoutingTracks routing_tracks = getRoutingTracksByIndex(layerIdx);
       int default_width = layer_rule->getLayer()->getWidth();
       int default_pitch = routing_tracks.getTrackPitch();
