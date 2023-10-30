@@ -1280,9 +1280,13 @@ void Opendp::legalCellPos(dbInst* db_inst)
 {
   Cell cell;
   convertDbToCell(db_inst, cell);
-  Point init_pos = initialLocation(&cell, false); // returns the initial position of the cell
-  Point legal_pt = pointOffMacro(cell);      // returns the modified position if the cell is in a macro
-  Point new_pos = legalPt(&cell, legal_pt);  // return the modified position if the cell is outside the die
+  Point init_pos = initialLocation(
+      &cell, false);  // returns the initial position of the cell
+  Point legal_pt = pointOffMacro(
+      cell);  // returns the modified position if the cell is in a macro
+  Point new_pos = legalPt(
+      &cell,
+      legal_pt);  // return the modified position if the cell is outside the die
 
   if (init_pos == new_pos) {
     return;
