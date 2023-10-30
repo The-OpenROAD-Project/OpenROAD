@@ -189,7 +189,7 @@ class gcNet : public gcBlockObject
 
   drNet* getDrNet() const
   {
-    if (owner_->typeId() == frcNet) {
+    if (owner_->typeId() == drcNet) {
       return static_cast<drNet*>(owner_);
     }
     return nullptr;
