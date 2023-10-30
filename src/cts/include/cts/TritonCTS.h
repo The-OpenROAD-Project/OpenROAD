@@ -51,6 +51,7 @@ class dbBlock;
 class dbInst;
 class dbNet;
 class dbITerm;
+class dbMTerm;
 }  // namespace odb
 
 namespace rsz {
@@ -61,6 +62,7 @@ namespace sta {
 class dbSta;
 class Clock;
 class dbNetwork;
+class Unit;
 }  // namespace sta
 
 namespace stt {
@@ -147,12 +149,16 @@ class TritonCTS
   float getInputPinCap(odb::dbITerm* iterm);
   bool isSink(odb::dbITerm* iterm);
   ClockInst* getClockFromInst(odb::dbInst* inst);
+  float computeInsertionDelay(const std::string& name,
+                              odb::dbInst* inst,
+                              odb::dbMTerm* mterm);
 
   sta::dbSta* openSta_;
   sta::dbNetwork* network_;
   Logger* logger_;
   CtsOptions* options_;
   TechChar* techChar_;
+  rsz::Resizer* resizer_;
   std::vector<TreeBuilder*>* builders_;
   std::set<odb::dbNet*> staClockNets_;
   std::set<odb::dbNet*> visitedClockNets_;

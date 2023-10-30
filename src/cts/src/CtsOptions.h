@@ -220,6 +220,8 @@ class CtsOptions
   bool getObstructionAware() const { return obsAware_; }
   void setApplyNDR(bool ndr) { applyNDR_ = ndr; }
   bool applyNDR() const { return applyNDR_; }
+  void enableInsertionDelay(bool insDelay) { insertionDelay_ = insDelay; }
+  bool insertionDelayEnabled() const { return insertionDelay_; }
 
  private:
   std::string clockNets_ = "";
@@ -266,6 +268,7 @@ class CtsOptions
   stt::SteinerTreeBuilder* sttBuilder_ = nullptr;
   bool obsAware_ = false;
   bool applyNDR_ = false;
+  bool insertionDelay_ = false;
 };
 
 }  // namespace cts

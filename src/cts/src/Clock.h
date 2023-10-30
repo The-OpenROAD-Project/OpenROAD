@@ -66,13 +66,15 @@ class ClockInst
             int x,
             int y,
             odb::dbITerm* pinObj = nullptr,
-            float inputCap = 0.0)
+            float inputCap = 0.0,
+            float insertionDelay = 0.0)
       : name_(name),
         master_(master),
         type_(type),
         location_(x, y),
         inputPinObj_(pinObj),
-        inputCap_(inputCap)
+        inputCap_(inputCap),
+        insertionDelay_(insertionDelay)
   {
   }
 
@@ -99,6 +101,7 @@ class ClockInst
   odb::dbInst* instObj_ = nullptr;
   odb::dbITerm* inputPinObj_ = nullptr;
   float inputCap_;
+  float insertionDelay_;  // insertion delay in terms of length, not time
 };
 
 //-----------------------------------------------------------------------------
@@ -222,6 +225,16 @@ class Clock
                float inputCap)
   {
     sinks_.emplace_back(name, "", CLOCK_SINK, x, y, pinObj, inputCap);
+  }
+
+  void addSink(const std::string& name,
+               int x,
+               int y,
+               odb::dbITerm* pinObj,
+               float inputCap,
+               float insDelay)
+  {
+    sinks_.emplace_back(name, "", CLOCK_SINK, x, y, pinObj, inputCap, insDelay);
   }
 
   std::string getName() const { return netName_; }

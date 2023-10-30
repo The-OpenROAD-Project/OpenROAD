@@ -231,6 +231,12 @@ set_apply_ndr(bool ndr)
 }
 
 void
+set_insertion_delay(bool insDelay)
+{
+  getTritonCts()->getParms()->enableInsertionDelay(insDelay);
+}
+
+void
 run_triton_cts()
 {
   getTritonCts()->runTritonCts();

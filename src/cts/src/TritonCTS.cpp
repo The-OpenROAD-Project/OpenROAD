@@ -52,6 +52,7 @@
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "ord/OpenRoad.hh"
+#include "rsz/Resizer.hh"
 #include "sta/Liberty.hh"
 #include "sta/Sdc.hh"
 #include "utl/Logger.h"
@@ -71,6 +72,7 @@ void TritonCTS::init(utl::Logger* logger,
   db_ = db;
   network_ = network;
   openSta_ = sta;
+  resizer_ = resizer;
 
   options_ = new CtsOptions(logger_, st_builder);
   techChar_ = new TechChar(options_, db_, openSta_, resizer, network_, logger_);
@@ -575,22 +577,8 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* net,
                          + std::string(mterm->getConstName());
       int x, y;
       computeITermPosition(iterm, x, y);
-      clockNet.addSink(name, x, y, iterm, getInputPinCap(iterm));
-      // clang-format off
-      debugPrint(logger_, CTS, "Triton", 1, "sink {} added", name);
-      sta::LibertyCell* libCell = network_->libertyCell(network_->dbToSta(inst));
-      sta::LibertyPort* libPort = libCell->findLibertyPort(mterm->getConstName());
-      sta::RiseFallMinMax insDelays = libPort->clockTreePathDelays();
-      if (insDelays.hasValue()) {
-	for (const sta::MinMax *el : sta::MinMax::range()) {
-	  for (const sta::RiseFall *rf : sta::RiseFall::range()) {
-	    float delay = insDelays.value(rf, el);
-	    debugPrint(logger_, CTS, "Triton", 1, " insertion delay {} {} {:.3e}",
-		       el->asString(), rf->asString(), delay);
-	  }
-	}
-      }
-      // clang-format on
+      float insDelay = computeInsertionDelay(name, inst, mterm);
+      clockNet.addSink(name, x, y, iterm, getInputPinCap(iterm), insDelay);
     }
   }
 
@@ -1014,6 +1002,42 @@ bool TritonCTS::isSink(odb::dbITerm* iterm)
   }
 
   return false;
+}
+
+float TritonCTS::computeInsertionDelay(const std::string& name,
+                                       odb::dbInst* inst,
+                                       odb::dbMTerm* mterm)
+{
+  float insDelayPerMicron = 0.0;
+
+  if (options_->insertionDelayEnabled()) {
+    sta::LibertyCell* libCell = network_->libertyCell(network_->dbToSta(inst));
+    sta::LibertyPort* libPort = libCell->findLibertyPort(mterm->getConstName());
+    sta::RiseFallMinMax insDelays = libPort->clockTreePathDelays();
+    if (insDelays.hasValue()) {
+      // use average of max rise and max fall
+      float delayPerSec
+          = (insDelays.value(sta::RiseFall::rise(), sta::MinMax::max())
+             + insDelays.value(sta::RiseFall::fall(), sta::MinMax::max()))
+            / 2.0;
+      // convert delay to length because HTree uses lengths
+      sta::Corner* corner = openSta_->cmdCorner();
+      float capPerMicron = resizer_->wireSignalCapacitance(corner) * 1e-6;
+      float resPerMicron = resizer_->wireSignalResistance(corner) * 1e-6;
+      insDelayPerMicron = delayPerSec / (capPerMicron * resPerMicron);
+      // clang-format off
+      debugPrint(logger_, CTS, "Triton", 1, "sink {} has ins delay={:.3e} and micron leng={} dbUnits/um={}",
+		 name, delayPerSec, insDelayPerMicron, block_->getDbUnitsPerMicron());
+      std::cout << "capPerMicron=" << capPerMicron << " resPerMicron=" << resPerMicron << std::endl;
+      /*
+	debugPrint(logger_, CTS, "Triton", 1, "time unit is {}, 1.0={}",
+	openSta_->units()->timeUnit()->asString(), openSta_->units()->timeUnit()->staToUser(1.0));
+      */
+      // clang-format on
+    }
+  }
+
+  return insDelayPerMicron;
 }
 
 }  // namespace cts
