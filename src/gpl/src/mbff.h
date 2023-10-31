@@ -74,8 +74,8 @@ namespace gpl {
 
 struct Point
 {
-  float x;
-  float y;
+  double x;
+  double y;
 };
 
 struct Tray
@@ -89,7 +89,7 @@ struct Flop
 {
   Point pt;
   int idx;
-  float prob;
+  double prob;
 
   bool operator<(const Flop& a) const
   {
@@ -113,13 +113,13 @@ class MBFF
        int knn,
        int multistart);
   ~MBFF();
-  void Run(int mx_sz, float alpha, float beta);
+  void Run(int mx_sz, double alpha, double beta);
 
  private:
   int GetRows(int slot_cnt);
   int GetBitCnt(int bit_idx);
   int GetBitIdx(int bit_cnt);
-  float GetDist(const Point& a, const Point& b);
+  double GetDist(const Point& a, const Point& b);
 
   std::map<std::string, std::string> GetPinMapping(odb::dbInst* tray);
 
@@ -130,12 +130,13 @@ class MBFF
   bool IsClockPin(odb::dbITerm* iterm);
   bool IsDPin(odb::dbITerm* iterm);
   bool IsQPin(odb::dbITerm* iterm);
+  bool IsValidTray(odb::dbInst* tray);
   int GetNumSlots(odb::dbInst* inst);
 
-  Flop GetNewFlop(const std::vector<Flop>& prob_dist, float tot_dist);
+  Flop GetNewFlop(const std::vector<Flop>& prob_dist, double tot_dist);
   void GetStartTrays(std::vector<Flop> flops,
                      int num_trays,
-                     float AR,
+                     double AR,
                      std::vector<Tray>& trays);
   Tray GetOneBit(const Point& pt);
   void GetSlots(const Point& tray,
@@ -143,11 +144,11 @@ class MBFF
                 int cols,
                 std::vector<Point>& slots);
 
-  double doit(const std::vector<Flop>& flops,
-              std::vector<odb::dbInst*> block,
+  double doit(std::vector<odb::dbInst*> block,
+              const std::vector<Flop>& flops,
               int mx_sz,
-              float alpha,
-              float beta);
+              double alpha,
+              double beta);
 
   void KMeans(const std::vector<Flop>& flops,
               std::vector<std::vector<Flop>>& clusters);
@@ -155,9 +156,9 @@ class MBFF
                     int MAX_SZ,
                     std::vector<std::vector<Flop>>& pointsets);
 
-  float GetSilh(const std::vector<Flop>& flops,
-                const std::vector<Tray>& trays,
-                const std::vector<std::pair<int, int>>& clusters);
+  double GetSilh(const std::vector<Flop>& flops,
+                 const std::vector<Tray>& trays,
+                 const std::vector<std::pair<int, int>>& clusters);
   void MinCostFlow(const std::vector<Flop>& flops,
                    std::vector<Tray>& trays,
                    int sz,
@@ -171,49 +172,52 @@ class MBFF
       const std::vector<Flop>& pointset,
       std::vector<std::vector<std::vector<Tray>>>& start_trays);
 
+  int GCD(int a, int b);
+
   void ReadLibs();
   void ReadFFs();
   void ReadPaths();
   void SetVars(std::vector<odb::dbInst*> block);
   void SetRatios();
 
-  float RunLP(const std::vector<Flop>& flops,
-              std::vector<Tray>& trays,
-              const std::vector<std::pair<int, int>>& clusters);
-  float RunILP(std::vector<odb::dbInst*> block,
-               const std::vector<Flop>& flops,
-               const std::vector<std::vector<Tray>>& all_trays,
-               float alpha);
+  double RunLP(const std::vector<Flop>& flops,
+               std::vector<Tray>& trays,
+               const std::vector<std::pair<int, int>>& clusters);
+  double RunILP(std::vector<odb::dbInst*> block,
+                const std::vector<Flop>& flops,
+                const std::vector<std::vector<Tray>>& all_trays,
+                double alpha);
   void ModifyPinConnections(std::vector<odb::dbInst*> block,
                             const std::vector<Flop>& flops,
                             const std::vector<Tray>& trays,
                             std::vector<std::pair<int, int>>& mapping);
-  double GetTCPDisplacement(float beta);
+  double GetTCPDisplacement();
 
   odb::dbDatabase* db_;
   odb::dbBlock* block_;
   sta::dbSta* sta_;
+  sta::dbNetwork* network_;
   utl::Logger* log_;
 
   std::vector<Flop> flops_;
   std::vector<int> slot_disp_x_;
   std::vector<int> slot_disp_y_;
-  float height_;
-  float width_;
+  double height_;
+  double width_;
 
   std::vector<Path> paths_;
   std::set<int> flops_in_path_;
 
   std::vector<odb::dbMaster*> best_master_;
   std::vector<std::map<std::string, std::string>> pin_mappings_;
-  std::vector<float> tray_area_;
-  std::vector<float> tray_width_;
-  std::vector<float> ratios_;
+  std::vector<double> tray_area_;
+  std::vector<double> tray_width_;
+  std::vector<double> ratios_;
 
   int num_threads_;
   int multistart_;
   int knn_;
-  float multiplier_;
+  double multiplier_;
   int num_sizes_;
 };
 }  // namespace gpl
