@@ -1,4 +1,4 @@
-git+https://github.com/executablebooks/sphinx-external-toc@releases/tag/v0.3.1
+git+https://github.com/executablebooks/sphinx-external-toc.git@v0.3.1
 sphinx
 sphinx-autobuild
 myst-parser
