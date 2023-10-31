@@ -69,7 +69,8 @@ class MacroPlacer2
             utl::Logger* logger,
             par::PartitionMgr* tritonpart);
 
-  bool place(const int max_num_macro,
+  bool place(const int num_threads,
+             const int max_num_macro,
              const int min_num_macro,
              const int max_num_inst,
              const int min_num_inst,
