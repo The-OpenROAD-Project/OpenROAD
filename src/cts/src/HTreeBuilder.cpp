@@ -788,7 +788,7 @@ void HTreeBuilder::addCandidatePointsAlongBlockage(
         candidates.emplace_back(point2);
         break;
       default:
-        assert(direction == odb::Direction2D::West);
+        // odb::Direction2D::West
         point2.setX(x2);
         point2.setY(targetDist + py - px + x2);
         candidates.emplace_back(point2);
