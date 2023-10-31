@@ -151,10 +151,9 @@ void TritonRoute::setDebugPinName(const char* name)
   debug_->pinName = name;
 }
 
-void TritonRoute::setDebugWorker(int x, int y)
+void TritonRoute::setDebugBox(int x1, int y1, int x2, int y2)
 {
-  debug_->x = x;
-  debug_->y = y;
+  debug_->box.init(x1, y1, x2, y2);
 }
 
 void TritonRoute::setDebugIter(int iter)

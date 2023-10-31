@@ -523,8 +523,8 @@ void FlexDRGraphics::show(bool checkStopConditions)
       return;
     }
     const Rect& rBox = worker_->getRouteBox();
-    if (settings_->x >= 0
-        && !rBox.intersects(Point(settings_->x, settings_->y))) {
+    if (settings_->box != odb::Rect(-1, -1, -1, -1)
+        && !rBox.intersects(settings_->box)) {
       return;
     }
   }
@@ -595,8 +595,8 @@ void FlexDRGraphics::startWorker(FlexDRWorker* in)
     return;
   }
   const Rect& rBox = in->getRouteBox();
-  if (settings_->x >= 0
-      && !rBox.intersects(Point(settings_->x, settings_->y))) {
+  if (settings_->box != odb::Rect(-1, -1, -1, -1)
+      && !rBox.intersects(settings_->box)) {
     return;
   }
   status("Start worker: origin " + workerOrigin(in) + " "
