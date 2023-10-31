@@ -286,7 +286,9 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_prl_getReqSpcVal(
     if (con->typeId() == frConstraintTypeEnum::frcSpacingTablePrlConstraint
         || con->typeId() == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
       // same-net override
-      if (!isObs && rect1->getNet() == rect2->getNet()) {
+      if (!isObs
+          && ((((drNet*) (rect1->getNet()->getOwner()))->getFrNet())
+              == (((drNet*) (rect2->getNet()->getOwner()))->getFrNet()))) {
         if (currLayer->hasSpacingSamenet()) {
           auto conSamenet = currLayer->getSpacingSamenet();
           if (!conSamenet->hasPGonly())
@@ -665,7 +667,8 @@ bool FlexGCWorker::Impl::checkMetalSpacing_short_skipSameNet(
   auto layerNum = rect1->getLayerNum();
   auto net1 = rect1->getNet();
   auto net2 = rect2->getNet();
-  if (net1 == net2) {
+  if ((((drNet*) (net1->getOwner()))->getFrNet())
+      == (((drNet*) (net2->getOwner()))->getFrNet())) {
     // skip if good
     int64_t minWidth = getTech()->getLayer(layerNum)->getMinWidth();
     auto xLen = gtl::delta(markerRect, gtl::HORIZONTAL);
@@ -750,7 +753,8 @@ void FlexGCWorker::Impl::checkMetalSpacing_short(
            gtl::yh(markerRect));
   marker->setBBox(box);
   marker->setLayerNum(layerNum);
-  if (net1 == net2) {
+  if ((((drNet*) (net1->getOwner()))->getFrNet())
+      == (((drNet*) (net2->getOwner()))->getFrNet())) {
     marker->setConstraint(
         getTech()->getLayer(layerNum)->getNonSufficientMetalConstraint());
   } else {
@@ -2229,7 +2233,9 @@ void FlexGCWorker::Impl::checkCutSpacing_spc_diff_layer(
   auto layerNum = rect1->getLayerNum();
   auto net1 = rect1->getNet();
   auto net2 = rect2->getNet();
-  if (con->hasStack() && con->hasSameNet() && net1 == net2) {
+  if (con->hasStack() && con->hasSameNet()
+      && ((((drNet*) (net1->getOwner()))->getFrNet())
+          == (((drNet*) (net2->getOwner()))->getFrNet()))) {
     if (gtl::contains(*rect1, *rect2) || gtl::contains(*rect2, *rect1)) {
       return;
     }
@@ -2394,7 +2400,9 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_main(
     return;
   }
   // skip if con is same net rule but the two objs are diff net
-  if (con->isSameNet() && rect1->getNet() != rect2->getNet()) {
+  if (con->isSameNet()
+      && ((((drNet*) (rect1->getNet()->getOwner()))->getFrNet())
+          != (((drNet*) (rect2->getNet()->getOwner()))->getFrNet()))) {
     return;
   }
 
@@ -3003,7 +3011,10 @@ void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* ptr1,
   // skip if con is not same net rule, but layer has same net rule and are same
   // net
   // TODO: filter the rule upfront
-  if (!con->hasSameNet() && ptr1->getNet() == ptr2->getNet()) {
+
+  if (!con->hasSameNet()
+      && (((drNet*) (ptr1->getNet()->getOwner()))->getFrNet())
+             == (((drNet*) (ptr2->getNet()->getOwner()))->getFrNet())) {
     // same layer same net
     if (!(con->hasSecondLayer())) {
       if (getTech()->getLayer(ptr1->getLayerNum())->hasCutSpacing(true)) {
@@ -3153,7 +3164,8 @@ void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* rect,
   // Short, metSpc, NSMetal here
   for (auto& [objBox, ptr] : result) {
     if (con->hasSecondLayer()) {
-      if (rect->getNet() != ptr->getNet()
+      if (((((drNet*) (rect->getNet()->getOwner()))->getFrNet())
+           != (((drNet*) (ptr->getNet()->getOwner()))->getFrNet()))
           || con->getSameNetConstraint() == nullptr) {
         checkCutSpacing_main(rect, ptr, con);
       } else {
