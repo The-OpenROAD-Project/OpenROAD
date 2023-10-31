@@ -542,22 +542,22 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_helper(
   marker->setBBox(box);
   marker->setLayerNum(layerNum);
   marker->setConstraint(constraint);
-  marker->addSrc(net1->getOwner());
+  marker->addSrc(((drNet*) (net1->getOwner()))->getFrNet());
   frCoord llx = min(edge1->getLowCorner()->x(), edge1->getHighCorner()->x());
   frCoord lly = min(edge1->getLowCorner()->y(), edge1->getHighCorner()->y());
   frCoord urx = max(edge1->getLowCorner()->x(), edge1->getHighCorner()->x());
   frCoord ury = max(edge1->getLowCorner()->y(), edge1->getHighCorner()->y());
   marker->addVictim(
-      net1->getOwner(),
+      ((drNet*) (net1->getOwner()))->getFrNet(),
       make_tuple(
           edge1->getLayerNum(), Rect(llx, lly, urx, ury), edge1->isFixed()));
-  marker->addSrc(net2->getOwner());
+  marker->addSrc(((drNet*) (net2->getOwner()))->getFrNet());
   llx = min(edge2->getLowCorner()->x(), edge2->getHighCorner()->x());
   lly = min(edge2->getLowCorner()->y(), edge2->getHighCorner()->y());
   urx = max(edge2->getLowCorner()->x(), edge2->getHighCorner()->x());
   ury = max(edge2->getLowCorner()->y(), edge2->getHighCorner()->y());
   marker->addAggressor(
-      net2->getOwner(),
+      ((drNet*) (net2->getOwner()))->getFrNet(),
       make_tuple(
           edge2->getLayerNum(), Rect(llx, lly, urx, ury), edge2->isFixed()));
   addMarker(std::move(marker));
@@ -899,15 +899,15 @@ void FlexGCWorker::Impl::checkMetalEOLkeepout_helper(
   marker->setBBox(box);
   marker->setLayerNum(edge->getLayerNum());
   marker->setConstraint(constraint);
-  marker->addSrc(net1->getOwner());
+  marker->addSrc(((drNet*) (net1->getOwner()))->getFrNet());
 
   marker->addVictim(
-      net1->getOwner(),
+      ((drNet*) (net1->getOwner()))->getFrNet(),
       make_tuple(
           edge->getLayerNum(), Rect(llx, lly, urx, ury), edge->isFixed()));
-  marker->addSrc(net2->getOwner());
+  marker->addSrc(((drNet*) (net2->getOwner()))->getFrNet());
   marker->addAggressor(
-      net2->getOwner(),
+      ((drNet*) (net2->getOwner()))->getFrNet(),
       make_tuple(
           rect->getLayerNum(), Rect(llx2, lly2, urx2, ury2), rect->isFixed()));
   addMarker(std::move(marker));
@@ -1089,22 +1089,22 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_ext_helper(
   marker->setBBox(box);
   marker->setLayerNum(edge1->getLayerNum());
   marker->setConstraint(constraint);
-  marker->addSrc(edge1->getNet()->getOwner());
+  marker->addSrc(((drNet*) (edge1->getNet()->getOwner()))->getFrNet());
   frCoord llx = min(edge1->getLowCorner()->x(), edge1->getHighCorner()->x());
   frCoord lly = min(edge1->getLowCorner()->y(), edge1->getHighCorner()->y());
   frCoord urx = max(edge1->getLowCorner()->x(), edge1->getHighCorner()->x());
   frCoord ury = max(edge1->getLowCorner()->y(), edge1->getHighCorner()->y());
   marker->addVictim(
-      edge1->getNet()->getOwner(),
+      ((drNet*) (edge1->getNet()->getOwner()))->getFrNet(),
       make_tuple(
           edge1->getLayerNum(), Rect(llx, lly, urx, ury), edge1->isFixed()));
-  marker->addSrc(edge2->getNet()->getOwner());
+  marker->addSrc(((drNet*) (edge2->getNet()->getOwner()))->getFrNet());
   llx = min(edge2->getLowCorner()->x(), edge2->getHighCorner()->x());
   lly = min(edge2->getLowCorner()->y(), edge2->getHighCorner()->y());
   urx = max(edge2->getLowCorner()->x(), edge2->getHighCorner()->x());
   ury = max(edge2->getLowCorner()->y(), edge2->getHighCorner()->y());
   marker->addAggressor(
-      edge2->getNet()->getOwner(),
+      ((drNet*) (edge2->getNet()->getOwner()))->getFrNet(),
       make_tuple(
           edge2->getLayerNum(), Rect(llx, lly, urx, ury), edge2->isFixed()));
   addMarker(std::move(marker));
