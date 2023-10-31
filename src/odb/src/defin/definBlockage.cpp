@@ -62,6 +62,7 @@ void definBlockage::blockageRoutingBegin(const char* layer)
   _inst = nullptr;
   _slots = false;
   _fills = false;
+  _except_pg_nets = false;
   _pushdown = false;
   _has_min_spacing = false;
   _has_effective_width = false;
@@ -94,6 +95,11 @@ void definBlockage::blockageRoutingSlots()
 void definBlockage::blockageRoutingFills()
 {
   _fills = true;
+}
+
+void definBlockage::blockageRoutingExceptPGNets()
+{
+  _except_pg_nets = true;
 }
 
 void definBlockage::blockageRoutingPushdown()
@@ -163,6 +169,9 @@ void definBlockage::blockageRoutingPolygon(const std::vector<Point>& points)
     if (_fills)
       o->setFillObstruction();
 
+    if (_except_pg_nets)
+      o->setExceptPGNetsObstruction();
+
     if (_slots)
       o->setSlotObstruction();
     if (_has_min_spacing)
@@ -183,6 +192,7 @@ void definBlockage::blockagePlacementBegin()
   _inst = nullptr;
   _slots = false;
   _fills = false;
+  _except_pg_nets = false;
   _pushdown = false;
   _soft = false;
   _max_density = 0.0;

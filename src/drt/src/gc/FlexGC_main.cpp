@@ -1871,7 +1871,6 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
 
   Rect shiftedPatch = patchBx;
   shiftedPatch.moveTo(offset.x(), offset.y());
-
   pwires_.push_back(std::move(patch));
 }
 

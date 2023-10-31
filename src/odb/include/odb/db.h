@@ -3961,6 +3961,16 @@ class dbObstruction : public dbObject
   bool isFillObstruction();
 
   ///
+  /// Declare this obstruction to be non "power/ground" obstruction.
+  ///
+  void setExceptPGNetsObstruction();
+
+  ///
+  /// Returns true if this obstruction is a non "power/ground" obstruction.
+  ///
+  bool isExceptPGNetsObstruction();
+
+  ///
   /// Declare this obstruction to have been pushed into this block.
   ///
   void setPushedDown();

@@ -613,7 +613,7 @@ void HierRTLMP::hierRTLMacroPlacer()
   // Check if the root cluster has other children clusters
   bool macro_only_flag = true;
   for (auto& cluster : root_cluster_->getChildren()) {
-    if (cluster->getIOClusterFlag() == false) {
+    if (cluster->isIOCluster()) {
       macro_only_flag = false;
       break;
     }
@@ -891,7 +891,7 @@ void HierRTLMP::createBundledIOs()
       }
 
       // set the cluster to a IO cluster
-      cluster->setIOClusterFlag(
+      cluster->setAsIOCluster(
           std::pair<float, float>(dbuToMicron(x, dbu_), dbuToMicron(y, dbu_)),
           dbuToMicron(width, dbu_),
           dbuToMicron(height, dbu_));
@@ -1322,7 +1322,7 @@ void HierRTLMP::breakCluster(Cluster* parent)
   // Merge small clusters
   std::vector<Cluster*> candidate_clusters;
   for (auto& cluster : parent->getChildren()) {
-    if (!cluster->getIOClusterFlag() && cluster->getNumStdCell() < min_num_inst_
+    if (!cluster->isIOCluster() && cluster->getNumStdCell() < min_num_inst_
         && cluster->getNumMacro() < min_num_macro_) {
       candidate_clusters.push_back(cluster);
     }
@@ -1398,7 +1398,7 @@ void HierRTLMP::mergeClusters(std::vector<Cluster*>& candidate_clusters)
           "Candidate cluster: {} - {}",
           candidate_clusters[i]->getName(),
           (cluster_id != -1 ? cluster_map_[cluster_id]->getName() : "   "));
-      if (cluster_id != -1 && !cluster_map_[cluster_id]->getIOClusterFlag()) {
+      if (cluster_id != -1 && !cluster_map_[cluster_id]->isIOCluster()) {
         Cluster*& cluster = cluster_map_[cluster_id];
         bool delete_flag = false;
         if (cluster->mergeCluster(*candidate_clusters[i], delete_flag)) {
@@ -2478,13 +2478,15 @@ void HierRTLMP::printPhysicalHierarchyTree(Cluster* parent, int level)
   }
   line += fmt::format(
       "{}  ({})  num_macro :  {}   num_std_cell :  {}"
-      "  macro_area :  {}  std_cell_area : {}",
+      "  macro_area :  {}  std_cell_area : {}  cluster type: {} {}",
       parent->getName(),
       parent->getId(),
       parent->getNumMacro(),
       parent->getNumStdCell(),
       parent->getMacroArea(),
-      parent->getStdCellArea());
+      parent->getStdCellArea(),
+      parent->getIsLeafString(),
+      parent->getClusterTypeString());
   logger_->report("{}", line);
 
   for (auto& cluster : parent->getChildren()) {
@@ -3205,7 +3207,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   // Place children clusters
   // map children cluster to soft macro
   for (auto& cluster : parent->getChildren()) {
-    if (cluster->getIOClusterFlag())  // ignore all the io clusters
+    if (cluster->isIOCluster())  // ignore all the io clusters
       continue;
     SoftMacro* macro = new SoftMacro(cluster);
     // no memory leakage, beacuse we set the soft macro, the old one
@@ -3273,7 +3275,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   // the fences and guides for hard macros in each cluster
   for (auto& cluster : parent->getChildren()) {
     // for IO cluster
-    if (cluster->getIOClusterFlag()) {
+    if (cluster->isIOCluster()) {
       soft_macro_id_map[cluster->getName()] = macros.size();
       macros.push_back(SoftMacro(
           std::pair<float, float>(cluster->getX() - lx, cluster->getY() - ly),
@@ -4084,7 +4086,7 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
   // Place children clusters
   // map children cluster to soft macro
   for (auto& cluster : parent->getChildren()) {
-    if (cluster->getIOClusterFlag())  // ignore all the io clusters
+    if (cluster->isIOCluster())  // ignore all the io clusters
       continue;
     SoftMacro* macro = new SoftMacro(cluster);
     // no memory leakage, beacuse we set the soft macro, the old one
@@ -4153,7 +4155,7 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
   // the fences and guides for hard macros in each cluster
   for (auto& cluster : parent->getChildren()) {
     // for IO cluster
-    if (cluster->getIOClusterFlag()) {
+    if (cluster->isIOCluster()) {
       soft_macro_id_map[cluster->getName()] = macros.size();
       macros.push_back(SoftMacro(
           std::pair<float, float>(cluster->getX() - lx, cluster->getY() - ly),
@@ -4579,7 +4581,7 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   // Place children clusters
   // map children cluster to soft macro
   for (auto& cluster : parent->getChildren()) {
-    if (cluster->getIOClusterFlag())  // ignore all the io clusters
+    if (cluster->isIOCluster())  // ignore all the io clusters
       continue;
     SoftMacro* macro = new SoftMacro(cluster);
     // no memory leakage, beacuse we set the soft macro, the old one
@@ -4648,7 +4650,7 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   // the fences and guides for hard macros in each cluster
   for (auto& cluster : parent->getChildren()) {
     // for IO cluster
-    if (cluster->getIOClusterFlag()) {
+    if (cluster->isIOCluster()) {
       soft_macro_id_map[cluster->getName()] = macros.size();
       macros.push_back(SoftMacro(
           std::pair<float, float>(cluster->getX() - lx, cluster->getY() - ly),
@@ -5062,7 +5064,7 @@ bool HierRTLMP::shapeChildrenCluster(
   }
 
   for (auto& cluster : parent->getChildren()) {
-    if (cluster->getIOClusterFlag()) {
+    if (cluster->isIOCluster()) {
       continue;  // IO clusters have no area
     }
     if (cluster->getClusterType() == StdCellCluster) {
@@ -5142,7 +5144,7 @@ bool HierRTLMP::shapeChildrenCluster(
 
   // set the shape for each macro
   for (auto& cluster : parent->getChildren()) {
-    if (cluster->getIOClusterFlag()) {
+    if (cluster->isIOCluster()) {
       continue;  // the area of IO cluster is 0.0
     }
     if (cluster->getClusterType() == StdCellCluster) {

@@ -183,6 +183,7 @@ class Cluster
   // cluster type (default type = MixedCluster)
   void setClusterType(const ClusterType& cluster_type);
   const ClusterType getClusterType() const;
+  std::string getClusterTypeString() const;
 
   // Instances (Here we store dbModule to reduce memory)
   void addDbModule(odb::dbModule* db_module);
@@ -200,12 +201,11 @@ class Cluster
   void copyInstances(const Cluster& cluster);  // only based on cluster type
 
   // IO cluster
-  // When you specify the io cluster, you must specify the postion
-  // of this IO cluster
-  void setIOClusterFlag(const std::pair<float, float> pos,
-                        const float width,
-                        const float height);
-  bool getIOClusterFlag() const;
+  // Position must be specified when setting an IO cluster
+  void setAsIOCluster(const std::pair<float, float> pos,
+                      const float width,
+                      const float height);
+  bool isIOCluster() const;
 
   // Metrics Support
   void setMetrics(const Metrics& metrics);
@@ -235,6 +235,7 @@ class Cluster
   std::vector<Cluster*> getChildren() const;
 
   bool isLeaf() const;  // if the cluster is a leaf cluster
+  std::string getIsLeafString() const;
   bool mergeCluster(Cluster& cluster,
                     bool& delete_flag);  // return true if succeed
 
@@ -295,7 +296,7 @@ class Cluster
 
   // We model bundled IOS (Pads) as a cluster with no area
   // The position be the center of IOs
-  bool io_cluster_flag_ = false;
+  bool is_io_cluster_ = false;
 
   // Each cluster uses metrics to store its statistics
   Metrics metrics_;
