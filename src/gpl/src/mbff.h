@@ -123,8 +123,7 @@ class MBFF
 
   std::map<std::string, std::string> GetPinMapping(odb::dbInst* tray);
 
-  void SeparateFlops(std::vector<std::vector<odb::dbInst*>>& blocks,
-                     std::vector<std::vector<Flop>>& ffs);
+  void SeparateFlops(std::vector<std::vector<Flop>>& ffs);
 
   bool IsGroundPin(odb::dbITerm* iterm);
   bool IsClockPin(odb::dbITerm* iterm);
@@ -144,8 +143,7 @@ class MBFF
                 int cols,
                 std::vector<Point>& slots);
 
-  double doit(std::vector<odb::dbInst*> block,
-              const std::vector<Flop>& flops,
+  double doit(const std::vector<Flop>& flops,
               int mx_sz,
               double alpha,
               double beta);
@@ -168,27 +166,27 @@ class MBFF
                             int sz,
                             int iter,
                             std::vector<std::pair<int, int>>& cluster);
-  std::vector<std::vector<Tray>>& RunSilh(
-      const std::vector<Flop>& pointset,
-      std::vector<std::vector<std::vector<Tray>>>& start_trays);
+  void RunSilh(std::vector<std::vector<Tray>>& trays,
+               const std::vector<Flop>& pointset,
+               std::vector<std::vector<std::vector<Tray>>>& start_trays);
 
   int GCD(int a, int b);
 
   void ReadLibs();
   void ReadFFs();
   void ReadPaths();
-  void SetVars(std::vector<odb::dbInst*> block);
+  void SetVars(const std::vector<Flop>& flops);
   void SetRatios();
+  void SetTrayNames();
 
   double RunLP(const std::vector<Flop>& flops,
                std::vector<Tray>& trays,
                const std::vector<std::pair<int, int>>& clusters);
-  double RunILP(std::vector<odb::dbInst*> block,
-                const std::vector<Flop>& flops,
+  double RunILP(const std::vector<Flop>& flops,
                 const std::vector<std::vector<Tray>>& all_trays,
+                std::vector<std::pair<int, int>>& final_flop_to_slot,
                 double alpha);
-  void ModifyPinConnections(std::vector<odb::dbInst*> block,
-                            const std::vector<Flop>& flops,
+  void ModifyPinConnections(const std::vector<Flop>& flops,
                             const std::vector<Tray>& trays,
                             std::vector<std::pair<int, int>>& mapping);
   double GetTCPDisplacement();
@@ -200,8 +198,9 @@ class MBFF
   utl::Logger* log_;
 
   std::vector<Flop> flops_;
-  std::vector<int> slot_disp_x_;
-  std::vector<int> slot_disp_y_;
+  std::vector<odb::dbInst*> insts_;
+  std::vector<double> slot_disp_x_;
+  std::vector<double> slot_disp_y_;
   double height_;
   double width_;
 
@@ -213,7 +212,10 @@ class MBFF
   std::vector<double> tray_area_;
   std::vector<double> tray_width_;
   std::vector<double> ratios_;
-
+  std::vector<std::vector<double> > slot_to_tray_x_;
+  std::vector<std::vector<double> > slot_to_tray_y_;
+  std::vector<int> unused_;
+  
   int num_threads_;
   int multistart_;
   int knn_;
