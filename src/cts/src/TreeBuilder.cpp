@@ -86,8 +86,9 @@ void TreeBuilder::initBlockages()
   bufferWidth_ = (double) libCell->getWidth() / techChar_->getLengthUnit();
   bufferHeight_ = (double) libCell->getHeight() / techChar_->getLengthUnit();
   // clang-format off
-  debugPrint(logger_, CTS, "legalizer", 3, "buf width= {:0.3f} buf ht= {:0.3f} scalingUnit={}",
-             bufferWidth_, bufferHeight_, techChar_->getLengthUnit());
+  debugPrint(logger_, CTS, "legalizer", 3, "buf width= {:0.3f} buf ht= {:0.3f} "
+	     "scalingUnit={}", bufferWidth_, bufferHeight_,
+	     techChar_->getLengthUnit());
   // clang-format on
 }
 
@@ -229,7 +230,8 @@ bool TreeBuilder::checkLegalityLoc(const Point<double>& bufferLoc,
   // check if location is already occupied
   if (occupiedLocations_.find(bufferLoc) != occupiedLocations_.end()) {
     // clang-format off
-    debugPrint(logger_, CTS, "legalizer", 4, "loc {} is already occupied", bufferLoc);
+    debugPrint(logger_, CTS, "legalizer", 4, "loc {} is already occupied",
+	       bufferLoc);
     // clang-format on
     return false;
   }
@@ -251,7 +253,8 @@ bool TreeBuilder::isOccupiedLoc(const Point<double>& bufferLoc)
 {
   // clang-format off
   if (occupiedLocations_.find(bufferLoc) != occupiedLocations_.end()) {
-    debugPrint(logger_, CTS, "legalizer", 4, "loc {} is already occupied", bufferLoc);
+    debugPrint(logger_, CTS, "legalizer", 4, "loc {} is already occupied",
+	       bufferLoc);
     return true;
   }
   debugPrint(logger_, CTS, "legalizer", 4, "loc {} is not occupied", bufferLoc);
@@ -272,8 +275,8 @@ void TreeBuilder::uncommitLoc(const Point<double>& bufferLoc)
 {
   // clang-format off
   occupiedLocations_.erase(bufferLoc);
-  debugPrint(logger_, CTS, "legalizer", 4, "loc {} has been uncommitted, size={}",
-             bufferLoc, occupiedLocations_.size());
+  debugPrint(logger_, CTS, "legalizer", 4, "loc {} has been uncommitted, "
+	     "size={}", bufferLoc, occupiedLocations_.size());
   // clang-format on
 }
 
@@ -283,8 +286,8 @@ void TreeBuilder::commitMoveLoc(const Point<double>& oldLoc,
   // clang-format off
   occupiedLocations_.erase(oldLoc);
   occupiedLocations_.insert(newLoc);
-  debugPrint(logger_, CTS, "legalizer", 4, "move:{} -> {} has been committed, size={}",
-             oldLoc, newLoc, occupiedLocations_.size());
+  debugPrint(logger_, CTS, "legalizer", 4, "move:{} -> {} has been committed, "
+	     "size={}", oldLoc, newLoc, occupiedLocations_.size());
   // clang-format on
 }
 
