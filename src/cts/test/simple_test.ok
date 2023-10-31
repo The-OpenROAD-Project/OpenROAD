@@ -46,7 +46,7 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0015]     Created 3 clock nets.
 [INFO CTS-0016]     Fanout distribution for the current clock = 8:2..
 [INFO CTS-0017]     Max level of the clock tree: 1.
-[INFO CTS-0202] Non-default rule CTS_NDR_0 for double spacing has been applied to 4 clock nets
+[INFO CTS-0202] Non-default rule CTS_NDR_0 for double spacing has been applied to 2 clock nets
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 16
 [INFO CTS-0100]  Leaf buffers 0
@@ -103,9 +103,9 @@ NETS 4 ;
     - clk ( PIN clk ) ( clkbuf_0_clk A ) + USE CLOCK + NONDEFAULTRULE CTS_NDR_0 ;
     - clknet_0_clk ( clkbuf_1_1__f_clk A ) ( clkbuf_1_0__f_clk A ) ( clkbuf_0_clk Z ) + USE CLOCK + NONDEFAULTRULE CTS_NDR_0 ;
     - clknet_1_0__leaf_clk ( ff15 CK ) ( ff13 CK ) ( ff6 CK ) ( ff5 CK ) ( ff4 CK ) ( ff3 CK ) ( ff2 CK )
-      ( ff1 CK ) ( clkbuf_1_0__f_clk Z ) + USE CLOCK + NONDEFAULTRULE CTS_NDR_0 ;
+      ( ff1 CK ) ( clkbuf_1_0__f_clk Z ) + USE CLOCK ;
     - clknet_1_1__leaf_clk ( ff16 CK ) ( ff14 CK ) ( ff12 CK ) ( ff11 CK ) ( ff10 CK ) ( ff9 CK ) ( ff8 CK )
-      ( ff7 CK ) ( clkbuf_1_1__f_clk Z ) + USE CLOCK + NONDEFAULTRULE CTS_NDR_0 ;
+      ( ff7 CK ) ( clkbuf_1_1__f_clk Z ) + USE CLOCK ;
 END NETS
 END DESIGN
 

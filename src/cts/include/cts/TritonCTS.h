@@ -113,8 +113,8 @@ class TritonCTS
   // db functions
   bool masterExists(const std::string& master) const;
   void populateTritonCTS();
-  void writeClockNetsToDb(Clock& clockNet);
-  void writeClockNDRsToDb();
+  void writeClockNetsToDb(Clock& clockNet, std::set<odb::dbNet*>& clkLeafNets);
+  void writeClockNDRsToDb(const std::set<odb::dbNet*>& clkLeafNets);
   void incrementNumClocks() { ++numberOfClocks_; }
   void clearNumClocks() { numberOfClocks_ = 0; }
   unsigned getNumClocks() const { return numberOfClocks_; }

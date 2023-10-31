@@ -297,10 +297,11 @@ ClockInst* TritonCTS::getClockFromInst(odb::dbInst* inst)
 
 void TritonCTS::writeDataToDb()
 {
+  std::set<odb::dbNet*> clkLeafNets;
   for (TreeBuilder* builder : *builders_) {
-    writeClockNetsToDb(builder->getClock());
+    writeClockNetsToDb(builder->getClock(), clkLeafNets);
     if (options_->applyNDR()) {
-      writeClockNDRsToDb();
+      writeClockNDRsToDb(clkLeafNets);
     }
   }
 
@@ -630,7 +631,8 @@ void TritonCTS::computeITermPosition(odb::dbITerm* term, int& x, int& y) const
   }
 };
 
-void TritonCTS::writeClockNetsToDb(Clock& clockNet)
+void TritonCTS::writeClockNetsToDb(Clock& clockNet,
+                                   std::set<odb::dbNet*>& clkLeafNets)
 {
   odb::dbNet* topClockNet = clockNet.getNetObj();
 
@@ -704,6 +706,7 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet)
         fanoutcount[subNet.getNumSinks()] = 0;
       }
       fanoutcount[subNet.getNumSinks()] = fanoutcount[subNet.getNumSinks()] + 1;
+      clkLeafNets.insert(clkSubNet);
     }
 
     if (!inputPinFound || !outputPinFound) {
@@ -764,7 +767,7 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet)
       CTS, 17, "    Max level of the clock tree: {}.", clockNet.getMaxLevel());
 }
 
-void TritonCTS::writeClockNDRsToDb()
+void TritonCTS::writeClockNDRsToDb(const std::set<odb::dbNet*>& clkLeafNets)
 {
   char ruleName[64];
   int ruleIndex = 0;
@@ -802,13 +805,14 @@ void TritonCTS::writeClockNDRsToDb()
     // clang-format on
   }
 
-  // apply NDR to all clock nets
+  // apply NDR to all non-leaf clock nets
   int clkNets = 0;
   odb::dbSet<odb::dbNet> nets = block_->getNets();
   odb::dbSet<odb::dbNet>::iterator netItr;
   for (netItr = nets.begin(); netItr != nets.end(); ++netItr) {
     odb::dbNet* net = *netItr;
-    if (net->getSigType() == odb::dbSigType::CLOCK) {
+    if (net->getSigType() == odb::dbSigType::CLOCK
+        && (clkLeafNets.find(net) == clkLeafNets.end())) {
       net->setNonDefaultRule(clockNDR);
       clkNets++;
     }
