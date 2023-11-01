@@ -177,7 +177,7 @@ std::map<std::string, std::string> MBFF::GetPinMapping(odb::dbInst* tray)
   }
 
   std::map<std::string, std::string> ret;
-  for (int i = 0; i < static_cast<int>(d_pins.size()); i++) {
+  for (size_t i = 0; i < d_pins.size(); i++) {
     ret[d_pins[i]] = q_pins[i];
   }
   return ret;
@@ -425,7 +425,7 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
   std::vector<operations_research::sat::IntVar> disp_y[num_flops];
 
   for (int i = 0; i < num_flops; i++) {
-    for (int j = 0; j < static_cast<int>(cand_tray[i].size()); j++) {
+    for (size_t j = 0; j < cand_tray[i].size(); j++) {
       disp_x[i].push_back(
           cp_model.NewIntVar(operations_research::Domain(0, inf)));
       disp_y[i].push_back(
@@ -437,7 +437,7 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
   // add constraints for displacements
   double max_dist = 0;
   for (int i = 0; i < num_flops; i++) {
-    for (int j = 0; j < static_cast<int>(cand_tray[i].size()); j++) {
+    for (size_t j = 0; j < cand_tray[i].size(); j++) {
       const int tray_idx = cand_tray[i][j];
       const int slot_idx = cand_slot[i][j];
 
@@ -462,7 +462,7 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
   }
 
   for (int i = 0; i < num_flops; i++) {
-    for (int j = 0; j < static_cast<int>(cand_tray[i].size()); j++) {
+    for (size_t j = 0; j < cand_tray[i].size(); j++) {
       cp_model.AddLessOrEqual(disp_x[i][j] + disp_y[i][j],
                               int(multiplier_ * max_dist));
     }
@@ -484,7 +484,7 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
   // check that each flop is matched to a single slot
   for (int i = 0; i < num_flops; i++) {
     operations_research::sat::LinearExpr mapped_flop;
-    for (int j = 0; j < static_cast<int>(cand_tray[i].size()); j++) {
+    for (size_t j = 0; j < cand_tray[i].size(); j++) {
       mapped_flop += mapped[i][j];
     }
     cp_model.AddLessOrEqual(1, mapped_flop);
@@ -500,17 +500,16 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
     operations_research::sat::LinearExpr slots_used;
 
     std::vector<int> flop_ind;
-    for (int j = 0; j < static_cast<int>(trays[i].slots.size()); j++) {
+    for (size_t j = 0; j < trays[i].slots.size(); j++) {
       if (trays[i].cand[j] >= 0) {
         flop_ind.push_back(trays[i].cand[j]);
       }
     }
 
-    for (int j = 0; j < static_cast<int>(flop_ind.size()); j++) {
+    for (size_t j = 0; j < flop_ind.size(); j++) {
       // TODO: SWITCH TO BINARY SEARCH
       int tray_idx = 0;
-      for (int k = 0; k < static_cast<int>(cand_tray[flop_ind[j]].size());
-           k++) {
+      for (size_t k = 0; k < cand_tray[flop_ind[j]].size(); k++) {
         if (cand_tray[flop_ind[j]][k] == i) {
           tray_idx = k;
         }
@@ -550,7 +549,7 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
 
   // add the sum of all distances
   for (int i = 0; i < num_flops; i++) {
-    for (int j = 0; j < static_cast<int>(cand_tray[i].size()); j++) {
+    for (size_t j = 0; j < cand_tray[i].size(); j++) {
       obj.AddTerm(disp_x[i][j], coeff[i] * (1 / multiplier_));
       obj.AddTerm(disp_y[i][j], coeff[i] * (1 / multiplier_));
     }
@@ -574,7 +573,7 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
              == operations_research::sat::CpSolverStatus::OPTIMAL) {
     // update slot_disp_ vectors
     for (int i = 0; i < num_flops; i++) {
-      for (int j = 0; j < static_cast<int>(cand_tray[i].size()); j++) {
+      for (size_t j = 0; j < cand_tray[i].size(); j++) {
         if (operations_research::sat::SolutionIntegerValue(response,
                                                            mapped[i][j])
             == 1) {
@@ -610,7 +609,7 @@ Flop MBFF::GetNewFlop(const std::vector<Flop>& prob_dist, double tot_dist)
 {
   double rand_num = (double) (rand() % 101), cum_sum = 0;
   Flop new_flop;
-  for (int i = 0; i < static_cast<int>(prob_dist.size()); i++) {
+  for (size_t i = 0; i < prob_dist.size(); i++) {
     cum_sum += prob_dist[i].prob;
     new_flop = prob_dist[i];
     if (cum_sum * 100.0 >= rand_num * tot_dist) {
@@ -707,7 +706,7 @@ void MBFF::MinCostFlow(const std::vector<Flop>& flops,
   for (int i = 0; i < num_trays; i++) {
     std::vector<Point> tray_slots = trays[i].slots;
 
-    for (int j = 0; j < static_cast<int>(tray_slots.size()); j++) {
+    for (size_t j = 0; j < tray_slots.size(); j++) {
       lemon::ListDigraph::Node slot_node = graph.addNode();
       nodes.push_back(slot_node);
 
@@ -735,12 +734,12 @@ void MBFF::MinCostFlow(const std::vector<Flop>& flops,
   lemon::ListDigraph::NodeMap<int> labels(graph);
   lemon::NetworkSimplex<lemon::ListDigraph, int, int> new_graph(graph);
 
-  for (int i = 0; i < static_cast<int>(edges.size()); i++) {
+  for (size_t i = 0; i < edges.size(); i++) {
     costs[edges[i]] = cur_costs[i], caps[edges[i]] = cur_caps[i];
   }
 
   labels[src] = -1;
-  for (int i = 0; i < static_cast<int>(nodes.size()); i++) {
+  for (size_t i = 0; i < nodes.size(); i++) {
     labels[nodes[i]] = i;
   }
   labels[sink] = static_cast<int>(nodes.size());
@@ -782,7 +781,7 @@ double MBFF::GetSilh(const std::vector<Flop>& flops,
       if (j != clusters[i].first) {
         max_den = std::max(
             max_den, GetDist(flops[i].pt, trays[j].slots[clusters[i].second]));
-        for (int k = 0; k < static_cast<int>(trays[j].slots.size()); k++) {
+        for (size_t k = 0; k < trays[j].slots.size(); k++) {
           min_num = std::min(min_num, GetDist(flops[i].pt, trays[j].slots[k]));
         }
       }
@@ -877,7 +876,7 @@ void MBFF::RunSilh(std::vector<std::vector<Tray>>& trays,
   }
 
   // run multistart_ in parallel
-  for (int i = 0; i < static_cast<int>(ind.size()); i++) {
+  for (size_t i = 0; i < ind.size(); i++) {
     int bit_idx = ind[i].first;
     int tray_idx = ind[i].second;
 
@@ -984,7 +983,7 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
       double cX = 0;
       double cY = 0;
 
-      for (int j = 0; j < static_cast<int>(clusters[i].size()); j++) {
+      for (size_t j = 0; j < clusters[i].size(); j++) {
         cX += clusters[i][j].pt.x;
         cY += clusters[i][j].pt.y;
       }
@@ -997,7 +996,7 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
     // get total displacement
     double tot_disp = 0;
     for (int i = 0; i < knn_; i++) {
-      for (int j = 0; j < static_cast<int>(clusters[i].size()); j++) {
+      for (size_t j = 0; j < clusters[i].size(); j++) {
         tot_disp += GetDist(centers[i].pt, clusters[i][j].pt);
       }
     }
@@ -1041,8 +1040,7 @@ void MBFF::KMeansDecomp(const std::vector<Flop>& flops,
     matching cluster's center */
     double cur_cost = 0;
     for (int j = 0; j < knn_; j++) {
-      for (int k = 0; k + 1 < static_cast<int>(tmp_clusters[i][j].size());
-           k++) {
+      for (size_t k = 0; k + 1 < tmp_clusters[i][j].size(); k++) {
         cur_cost
             += GetDist(tmp_clusters[i][j][k].pt, tmp_clusters[i][j].back().pt);
       }
@@ -1092,7 +1090,7 @@ void MBFF::KMeansDecomp(const std::vector<Flop>& flops,
     sz[i] = static_cast<int>(k_means_ret[i].size());
   }
 
-  for (int i = 0; i < static_cast<int>(cluster_pairs.size()); i++) {
+  for (size_t i = 0; i < cluster_pairs.size(); i++) {
     int idx1 = cluster_pairs[i].second.first;
     int idx2 = cluster_pairs[i].second.second;
 
@@ -1185,8 +1183,9 @@ double MBFF::doit(const std::vector<Flop>& flops,
       all_mappings[static_cast<int>(pointsets.size())];
   std::vector<Tray> all_final_trays[static_cast<int>(pointsets.size())];
 
+  int num_pointsets = static_cast<int>(pointsets.size());
 #pragma omp parallel for num_threads(num_threads_)
-  for (int t = 0; t < static_cast<int>(pointsets.size()); t++) {
+  for (int t = 0; t < num_pointsets; t++) {
     std::vector<std::vector<Tray>> cur_trays;
     RunSilh(cur_trays, pointsets[t], all_start_trays[t]);
 
@@ -1223,7 +1222,7 @@ double MBFF::doit(const std::vector<Flop>& flops,
     ans += cur_ans;
   }
 
-  for (int t = 0; t < static_cast<int>(pointsets.size()); t++) {
+  for (int t = 0; t < num_pointsets; t++) {
     ModifyPinConnections(pointsets[t], all_final_trays[t], all_mappings[t]);
   }
 
@@ -1235,7 +1234,7 @@ void MBFF::SetVars(const std::vector<Flop>& flops)
   // get min height and width
   height_ = std::numeric_limits<double>::max();
   width_ = std::numeric_limits<double>::max();
-  for (int i = 0; i < static_cast<int>(flops.size()); i++) {
+  for (size_t i = 0; i < flops.size(); i++) {
     height_ = std::min(
         height_, insts_[flops_[i].idx]->getMaster()->getHeight() / multiplier_);
     width_ = std::min(
@@ -1266,7 +1265,7 @@ void MBFF::SeparateFlops(std::vector<std::vector<Flop>>& ffs)
 {
   // group by block clock name
   std::map<std::string, std::vector<int>> clk_terms;
-  for (int i = 0; i < static_cast<int>(flops_.size()); i++) {
+  for (size_t i = 0; i < flops_.size(); i++) {
     if (insts_[i]->isDoNotTouch()) {
       continue;
     }
@@ -1293,7 +1292,7 @@ void MBFF::SeparateFlops(std::vector<std::vector<Flop>>& ffs)
 
 void MBFF::SetTrayNames()
 {
-  for (int i = 0; i < 2 * (static_cast<int>(flops_.size())); i++) {
+  for (size_t i = 0; i < 2 * (flops_.size()); i++) {
     unused_.push_back(i);
   }
 }
@@ -1401,7 +1400,7 @@ void MBFF::ReadLibs()
                  "Name of master with minimum area for size = {}: {}",
                  GetBitCnt(i),
                  best_master_[i]->getName());
-      for (int j = 0; j < static_cast<int>(slot_to_tray_x_[i].size()); j++) {
+      for (size_t j = 0; j < slot_to_tray_x_[i].size(); j++) {
         log_->info(utl::GPL,
                    1010,
                    "delta x: {}, delta y: {}",
