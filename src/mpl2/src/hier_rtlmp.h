@@ -144,7 +144,7 @@ class HierRTLMP
   {
     bus_planning_flag_ = bus_planning_flag;
   }
-
+  void setNumThreads(int threads) { num_threads_ = threads; }
   void setMacroPlacementFile(const std::string& file_name);
   void writeMacroPlacement(const std::string& file_name);
 
@@ -304,9 +304,9 @@ class HierRTLMP
   float halo_width_ = 0.0;
   float halo_height_ = 0.0;
 
-  const int num_runs_ = 10;     // number of runs for SA
-  const int num_threads_ = 10;  // number of threads
-  const int random_seed_ = 0;   // random seed for deterministic
+  const int num_runs_ = 10;    // number of runs for SA
+  int num_threads_ = 10;       // number of threads
+  const int random_seed_ = 0;  // random seed for deterministic
 
   float target_dead_space_ = 0.2;  // dead space for the cluster
   float target_util_ = 0.25;       // target utilization of the design
