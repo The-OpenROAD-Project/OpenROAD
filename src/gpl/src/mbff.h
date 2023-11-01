@@ -183,7 +183,7 @@ class MBFF
                std::vector<Tray>& trays,
                const std::vector<std::pair<int, int>>& clusters);
   double RunILP(const std::vector<Flop>& flops,
-                const std::vector<std::vector<Tray>>& all_trays,
+                const std::vector<Tray>& trays,
                 std::vector<std::pair<int, int>>& final_flop_to_slot,
                 double alpha);
   void ModifyPinConnections(const std::vector<Flop>& flops,
@@ -212,10 +212,10 @@ class MBFF
   std::vector<double> tray_area_;
   std::vector<double> tray_width_;
   std::vector<double> ratios_;
-  std::vector<std::vector<double> > slot_to_tray_x_;
-  std::vector<std::vector<double> > slot_to_tray_y_;
+  std::vector<std::vector<double>> slot_to_tray_x_;
+  std::vector<std::vector<double>> slot_to_tray_y_;
   std::vector<int> unused_;
-  
+
   int num_threads_;
   int multistart_;
   int knn_;
