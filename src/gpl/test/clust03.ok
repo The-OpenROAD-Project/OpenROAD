@@ -12,8 +12,6 @@
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  ./clust01.lef
 [INFO ODB-0128] Design: tray_test
-[INFO ODB-0094] 		Created 100000 Insts
-[INFO ODB-0094] 		Created 200000 Insts
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 200000 components and 600000 component-terminals.
 [INFO ODB-0133]     Created 2 nets and 200000 connections.
