@@ -125,7 +125,7 @@ class MBFF
 
   void SeparateFlops(std::vector<std::vector<Flop>>& ffs);
 
-  bool IsGroundPin(odb::dbITerm* iterm);
+  bool IsSupplyPin(odb::dbITerm* iterm);
   bool IsClockPin(odb::dbITerm* iterm);
   bool IsDPin(odb::dbITerm* iterm);
   bool IsQPin(odb::dbITerm* iterm);
@@ -169,8 +169,6 @@ class MBFF
   void RunSilh(std::vector<std::vector<Tray>>& trays,
                const std::vector<Flop>& pointset,
                std::vector<std::vector<std::vector<Tray>>>& start_trays);
-
-  int GCD(int a, int b);
 
   void ReadLibs();
   void ReadFFs();

@@ -50,31 +50,28 @@ namespace gpl {
 
 bool MBFF::IsClockPin(odb::dbITerm* iterm)
 {
-  bool yes = ((iterm->getSigType() == odb::dbSigType::CLOCK));
+  const bool yes = (iterm->getSigType() == odb::dbSigType::CLOCK);
   sta::Pin* pin = network_->dbToSta(iterm);
-  yes |= (sta_->isClock(pin));
-  return yes;
+  return yes || sta_->isClock(pin);
 }
 
-bool MBFF::IsGroundPin(odb::dbITerm* iterm)
+bool MBFF::IsSupplyPin(odb::dbITerm* iterm)
 {
-  bool power = (iterm->getSigType() == odb::dbSigType::POWER);
-  bool ground = (iterm->getSigType() == odb::dbSigType::GROUND);
-  return (power | ground);
+  return iterm->getSigType().isSupply();
 }
 
 bool MBFF::IsDPin(odb::dbITerm* iterm)
 {
-  bool bad = (IsClockPin(iterm) || IsGroundPin(iterm));
-  bool yes = (iterm->getIoType() == odb::dbIoType::INPUT);
-  return (yes & !bad);
+  const bool exclude = (IsClockPin(iterm) || IsSupplyPin(iterm));
+  const bool yes = (iterm->getIoType() == odb::dbIoType::INPUT);
+  return (yes & !exclude);
 }
 
 bool MBFF::IsQPin(odb::dbITerm* iterm)
 {
-  bool bad = (IsClockPin(iterm) || IsGroundPin(iterm));
-  bool yes = (iterm->getIoType() == odb::dbIoType::OUTPUT);
-  return (yes & !bad);
+  const bool exclude = (IsClockPin(iterm) || IsSupplyPin(iterm));
+  const bool yes = (iterm->getIoType() == odb::dbIoType::OUTPUT);
+  return (yes & !exclude);
 }
 
 int MBFF::GetNumSlots(odb::dbInst* inst)
@@ -93,7 +90,7 @@ int MBFF::GetBitIdx(int bit_cnt)
       return i;
     }
   }
-  return -1;
+  log_->error(utl::GPL, 122, "{} is not in 2^[0,{}]", bit_cnt, num_sizes_);
 }
 
 int MBFF::GetBitCnt(int bit_idx)
@@ -101,29 +98,12 @@ int MBFF::GetBitCnt(int bit_idx)
   return (1 << bit_idx);
 }
 
-int MBFF::GCD(int a, int b)
-{
-  if (!a) {
-    return b;
-  }
-  if (!b) {
-    return a;
-  }
-  if (a == b) {
-    return a;
-  }
-  if (a < b) {
-    return GCD(a, b - a);
-  }
-  return GCD(a - b, b);
-}
-
 int MBFF::GetRows(int slot_cnt)
 {
   int idx = GetBitIdx(slot_cnt);
   int width = int(multiplier_ * tray_width_[idx]);
   int height = int(multiplier_ * (tray_area_[idx] / tray_width_[idx]));
-  return (height / GCD(width, height));
+  return (height / std::gcd(width, height));
 }
 
 double MBFF::GetDist(const Point& a, const Point& b)
@@ -245,7 +225,7 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
 
     // disconnect / reconnect iterms
     for (auto iterm : insts_[flops[i].idx]->getITerms()) {
-      if (IsGroundPin(iterm)) {
+      if (IsSupplyPin(iterm)) {
         continue;
       }
       auto net = iterm->getNet();
