@@ -139,7 +139,7 @@ void SACoreHardMacro::flipMacro()
 
 void SACoreHardMacro::perturb()
 {
-  if (macros_.size() == 0) {
+  if (macros_.empty()) {
     return;
   }
 
@@ -193,7 +193,7 @@ void SACoreHardMacro::perturb()
 
 void SACoreHardMacro::restore()
 {
-  if (macros_.size() == 0) {
+  if (macros_.empty()) {
     return;
   }
 
@@ -247,20 +247,25 @@ void SACoreHardMacro::initialize()
   norm_guidance_penalty_ = calAverage(guidance_penalty_list);
   norm_fence_penalty_ = calAverage(fence_penalty_list);
 
-  if (norm_area_penalty_ <= 1e-4)
+  if (norm_area_penalty_ <= 1e-4) {
     norm_area_penalty_ = 1.0;
+  }
 
-  if (norm_outline_penalty_ <= 1e-4)
+  if (norm_outline_penalty_ <= 1e-4) {
     norm_outline_penalty_ = 1.0;
+  }
 
-  if (norm_wirelength_ <= 1e-4)
+  if (norm_wirelength_ <= 1e-4) {
     norm_wirelength_ = 1.0;
+  }
 
-  if (norm_guidance_penalty_ <= 1e-4)
+  if (norm_guidance_penalty_ <= 1e-4) {
     norm_guidance_penalty_ = 1.0;
+  }
 
-  if (norm_fence_penalty_ <= 1e-4)
+  if (norm_fence_penalty_ <= 1e-4) {
     norm_fence_penalty_ = 1.0;
+  }
 
   // Calculate initial temperature
   std::vector<float> cost_list;
@@ -279,7 +284,7 @@ void SACoreHardMacro::initialize()
   }
   if (cost_list.size() > 1 && delta_cost > 0.0) {
     init_temperature_
-        = (-1.0) * (delta_cost / (cost_list.size() - 1)) / log(init_prob_);
+        = (-1.0) * (delta_cost / (cost_list.size() - 1)) / std::log(init_prob_);
   } else {
     init_temperature_ = 1.0;
   }

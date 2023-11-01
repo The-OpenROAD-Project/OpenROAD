@@ -41,7 +41,6 @@
 namespace mpl2 {
 using odb::dbDatabase;
 using std::string;
-using std::unordered_map;
 using utl::Logger;
 using utl::MPL;
 

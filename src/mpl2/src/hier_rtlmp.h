@@ -199,7 +199,7 @@ class HierRTLMP
   void updateSubTree(Cluster* parent);
   // Break large flat clusters with TritonPart
   // A flat cluster does not have a logical module
-  void breakLargeFlatCluster(Cluster* cluster);
+  void breakLargeFlatCluster(Cluster* parent);
 
   // Traverse the physical hierarchy tree in a DFS manner
   // Split macros and std cells in the leaf clusters
@@ -216,7 +216,7 @@ class HierRTLMP
   void printPhysicalHierarchyTree(Cluster* parent, int level);
   // Determine the macro tilings within each cluster in a bottom-up manner
   // (Post-Order DFS manner)
-  void calClusterMacroTilings(Cluster* root_cluster);
+  void calClusterMacroTilings(Cluster* parent);
   // calculate the pin blockage for IO pins
   void createPinBlockage();
   // Determine the macro tilings for each HardMacroCluster
@@ -232,7 +232,7 @@ class HierRTLMP
   // generate a tiling for clusters.  In this case, we may want to try to set
   // the area of all standard-cell clusters to 0.0
   void enhancedMacroPlacement(Cluster* parent);
-  void hardMacroClusterMacroPlacement(Cluster* parent);
+  void hardMacroClusterMacroPlacement(Cluster* cluster);
   // Merge nets to reduce runtime
   void mergeNets(std::vector<BundledNet>& nets);
   // determine the shape for children cluster
@@ -254,7 +254,7 @@ class HierRTLMP
                    const std::vector<BundledNet>& nets,
                    float outline_width,
                    float outline_height,
-                   std::string file_name);
+                   const std::string& file_name);
 
   // Update the locations of std cells in odb using the locations that
   // HierRTLMP estimates for the leaf standard clusters
