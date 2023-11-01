@@ -16,9 +16,11 @@
 [INFO ODB-0131]     Created 20000 components and 60000 component-terminals.
 [INFO ODB-0133]     Created 2 nets and 20000 connections.
 [INFO GPL-1001] Name of master with minimum area for size = 2: DFFHQNV2Xx1_ASAP7_75t_L
+[INFO GPL-1010] delta x: 0.6495, delta y: 0.135
+[INFO GPL-1010] delta x: 0.6495, delta y: 0.405
 [INFO GPL-1002] Ratio for tray size 2: 0.54
 [INFO GPL-1002] Ratio for tray size 2: 0.54
 Alpha = 20.0, Beta = 1.0, max size = 250
-Total ILP Cost: 399995.252
+Total ILP Cost: 331122.294
 Total Timing Critical Path Displacement: 0.0
-Final Objective Value: 399995.252
+Final Objective Value: 331122.294

@@ -134,18 +134,22 @@ double MBFF::GetDist(const Point& a, const Point& b)
 bool MBFF::IsValidTray(odb::dbInst* tray)
 {
   sta::Cell* cell = network_->dbToSta(tray->getMaster());
-  if (cell == nullptr)
-    return 0;
+  if (cell == nullptr) {
+    return false;
+  }
   sta::LibertyCell* lib_cell = network_->libertyCell(cell);
-  if (lib_cell == nullptr)
-    return 0;
+  if (lib_cell == nullptr) {
+    return false;
+  }
   sta::LibertyCellPortIterator port_itr(lib_cell);
-  if (port_itr.hasNext() == false)
-    return 0;
+  if (port_itr.hasNext() == false) {
+    return false;
+  }
   int slot_cnt = GetNumSlots(tray);
-  if (slot_cnt <= 1)
-    return 0;
-  return 1;
+  if (slot_cnt <= 1) {
+    return false;
+  }
+  return true;
 }
 
 std::map<std::string, std::string> MBFF::GetPinMapping(odb::dbInst* tray)
@@ -861,7 +865,7 @@ void MBFF::RunSilh(
     }
   }
 
-  for (int i = 1; i < num_sizes_; i++)
+  for (int i = 1; i < num_sizes_; i++) {
     if (best_master_[i] != nullptr) {
       for (int j = 0; j < 5; j++) {
         int rows = GetRows(GetBitCnt(i));
@@ -878,6 +882,7 @@ void MBFF::RunSilh(
         }
       }
     }
+  }
 
   // run multistart_ in parallel
   for (int i = 0; i < static_cast<int>(ind.size()); i++) {
@@ -1166,7 +1171,7 @@ double MBFF::doit(const std::vector<Flop>& flops,
       all_start_trays[static_cast<int>(pointsets.size())];
   for (int t = 0; t < static_cast<int>(pointsets.size()); t++) {
     all_start_trays[t].resize(num_sizes_);
-    for (int i = 1; i < num_sizes_; i++)
+    for (int i = 1; i < num_sizes_; i++) {
       if (best_master_[i] != nullptr) {
         int rows = GetRows(GetBitCnt(i));
         int cols = GetBitCnt(i) / rows;
@@ -1180,6 +1185,7 @@ double MBFF::doit(const std::vector<Flop>& flops,
           GetStartTrays(pointsets[t], num_trays, AR, all_start_trays[t][i][j]);
         }
       }
+    }
   }
 
 
@@ -1389,7 +1395,7 @@ void MBFF::ReadLibs()
     }
   }
 
-  for (int i = 1; i < num_sizes_; i++)
+  for (int i = 1; i < num_sizes_; i++) {
     if (best_master_[i] != nullptr) {
       log_->info(utl::GPL,
                  1001,
@@ -1400,6 +1406,7 @@ void MBFF::ReadLibs()
         log_->info(utl::GPL, 1010, "delta x: {}, delta y: {}", slot_to_tray_x_[i][j], slot_to_tray_y_[i][j]);
       }
     }
+  }
 }
 
 void MBFF::ReadFFs()
