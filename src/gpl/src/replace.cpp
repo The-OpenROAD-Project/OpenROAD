@@ -31,12 +31,13 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "gpl/Replace.h"
+
 #include <iostream>
 
 #include "db.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "gpl/Replace.h"
 #include "initialPlace.h"
 #include "mbff.h"
 #include "nesterovBase.h"
