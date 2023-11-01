@@ -76,15 +76,19 @@ class Graphics : public gui::Renderer, public Mpl2Observer
 
   void drawObjects(gui::Painter& painter) override;
 
+  void setMacroBlockages(const std::vector<mpl2::Rect>& macro_blockages);
+
  private:
   void resetPenalties();
   void drawCluster(Cluster* cluster, gui::Painter& painter);
+  void drawBlockages(gui::Painter& painter);
 
   template <typename T>
   void report(const char* name, const std::optional<T>& value);
 
   std::vector<SoftMacro> soft_macros_;
   std::vector<HardMacro> hard_macros_;
+  std::vector<mpl2::Rect> macro_blockages_;
   bool active_ = true;
   bool coarse_;
   bool fine_;
