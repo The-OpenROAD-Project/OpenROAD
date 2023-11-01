@@ -396,6 +396,8 @@ void SACoreSoftMacro::calBoundaryPenalty()
   }
 }
 
+// Penalty for overlapping between clusters with macros and
+// macro blockages.
 void SACoreSoftMacro::calMacroBlockagePenalty()
 {
   macro_blockage_penalty_ = 0.0;
@@ -404,36 +406,44 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
   }
 
   int tot_num_macros = 0;
-  for (const auto& macro : macros_) {
-    tot_num_macros += macro.getNumMacro();
+  for (const auto& cluster : macros_) {
+    tot_num_macros += cluster.getNumMacro();
   }
   if (tot_num_macros <= 0) {
     return;
   }
 
-  for (auto& bbox : blockages_) {
-    for (const auto& macro : macros_) {
-      if (macro.getNumMacro() > 0) {
-        const float lx = macro.getX();
-        const float ly = macro.getY();
-        const float ux = lx + macro.getWidth();
-        const float uy = ly + macro.getHeight();
-        const float region_lx = bbox.xMin();
-        const float region_ly = bbox.yMin();
-        const float region_ux = bbox.xMax();
-        const float region_uy = bbox.yMax();
-        // check each dimension seperately
-        // center to center distance
-        const float width = ((ux - lx) + (region_ux - region_lx)) / 2.0;
-        const float height = ((uy - ly) + (region_uy - region_ly)) / 2.0;
-        float x_dist
-            = std::abs((region_ux + region_lx) / 2.0 - (ux + lx) / 2.0);
-        float y_dist
-            = std::abs((region_uy + region_ly) / 2.0 - (uy + ly) / 2.0);
-        x_dist = std::max(width - x_dist, 0.0f) / width;
-        y_dist = std::max(height - y_dist, 0.0f) / height;
-        macro_blockage_penalty_
-            += (x_dist * x_dist + y_dist * y_dist) * macro.getNumMacro();
+  for (auto& blockage : blockages_) {
+    for (const auto& cluster : macros_) {
+      if (cluster.getNumMacro() > 0) {
+        const float cluster_x_min = cluster.getX();
+        const float cluster_x_max = cluster_x_min + cluster.getWidth();
+        const float cluster_y_min = cluster.getY();
+        const float cluster_y_max = cluster_y_min + cluster.getHeight();
+
+        const float center_dist_x
+            = std::abs((blockage.xMax() + blockage.xMin()) / 2.0
+                       - (cluster_x_max + cluster_x_min) / 2.0);
+        const float center_dist_y
+            = std::abs((blockage.yMax() + blockage.yMin()) / 2.0
+                       - (cluster_y_max + cluster_y_min) / 2.0);
+
+        const float max_center_dist_x
+            = (blockage.getWidth() + cluster.getWidth()) / 2;
+        const float max_center_dist_y
+            = (blockage.getHeight() + cluster.getHeight()) / 2;
+
+        // If there's no overlap the ratio is zero.
+        const float overlap_ratio_x
+            = std::max(max_center_dist_x - center_dist_x, 0.0f)
+              / max_center_dist_x;
+        const float overlap_ratio_y
+            = std::max(max_center_dist_y - center_dist_y, 0.0f)
+              / max_center_dist_y;
+
+        macro_blockage_penalty_ += (overlap_ratio_x * overlap_ratio_x
+                                    + overlap_ratio_y * overlap_ratio_y)
+                                   * cluster.getNumMacro();
       }
     }
   }
