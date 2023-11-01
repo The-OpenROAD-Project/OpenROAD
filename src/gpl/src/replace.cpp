@@ -113,11 +113,13 @@ Replace::~Replace()
 }
 
 void Replace::init(odb::dbDatabase* odb,
+                   sta::dbSta* sta,
                    rsz::Resizer* resizer,
                    grt::GlobalRouter* router,
                    utl::Logger* logger)
 {
   db_ = odb;
+  sta_ = sta;
   rs_ = resizer;
   fr_ = router;
   log_ = logger;
@@ -304,8 +306,6 @@ void Replace::doInitialPlace()
 
 void Replace::runMBFF(int max_sz, float alpha, float beta, int threads)
 {
-  auto openroad = ord::OpenRoad::openRoad();
-  auto sta_ = openroad->getSta();
   MBFF pntset(db_, sta_, log_, threads, 4, 10);
   pntset.Run(max_sz, alpha, beta);
 }
