@@ -527,12 +527,13 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
   std::vector<double> tray_cost(num_trays);
   for (int i = 0; i < num_trays; i++) {
     int bit_idx = 0;
-    for (int j = 0; j < num_sizes_; j++)
+    for (int j = 0; j < num_sizes_; j++) {
       if (best_master_[j] != nullptr) {
         if (GetBitCnt(j) == static_cast<int>(trays[i].slots.size())) {
           bit_idx = j;
         }
       }
+    }
     if (GetBitCnt(bit_idx) == 1) {
       tray_cost[i] = 1.00;
     } else {
@@ -1251,7 +1252,9 @@ void MBFF::SetRatios()
     if (best_master_[i] != nullptr) {
       int slot_cnt = GetBitCnt(i);
       int height = GetRows(i);
-      ratios_[i] = (tray_width_[i] / (width_ * (slot_cnt / height)));
+      int slot_width = slot_cnt / height;
+      ratios_[i]
+          = (tray_width_[i] / (width_ * (static_cast<float>(slot_width))));
       log_->info(utl::GPL,
                  1002,
                  "Ratio for tray size {}: {}",
