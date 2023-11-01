@@ -497,6 +497,9 @@ void lefout::writeTechBody(dbTech* tech)
     writeLayer(layer);
   }
 
+  writeViaMap(tech, false);
+  writeViaMap(tech, true);
+
   // VIA's not using generate rule and not default
   dbSet<dbTechVia> vias = tech->getVias();
   dbSet<dbTechVia>::iterator vitr;
@@ -557,6 +560,56 @@ void lefout::writeTechBody(dbTech* tech)
     dbTechNonDefaultRule* rule = *ritr;
     writeNonDefaultRule(tech, rule);
   }
+}
+
+void lefout::writeViaMap(dbTech* tech, const bool use_via_cut_class)
+{
+  auto via_map_set = tech->getMetalWidthViaMap();
+  bool found = false;
+  for (auto via_map : via_map_set) {
+    if (via_map->isViaCutClass() == use_via_cut_class) {
+      found = true;
+      break;
+    }
+  }
+  if (!found) {
+    return;
+  }
+  fmt::print(_out, "PROPERTYDEFINITIONS\n");
+  fmt::print(_out, " LIBRARY LEF58_METALWIDTHVIAMAP STRING\n");
+  fmt::print(_out, "  \"METALWIDTHVIAMAP\n");
+  if (use_via_cut_class) {
+    fmt::print(_out, "   USEVIACUTCLASS\n");
+  }
+  for (auto via_map : via_map_set) {
+    if (via_map->isViaCutClass() != use_via_cut_class) {
+      continue;
+    }
+    if (via_map->getBelowLayerWidthLow() == via_map->getBelowLayerWidthHigh()
+        && via_map->getAboveLayerWidthLow()
+               == via_map->getAboveLayerWidthHigh()) {
+      fmt::print(_out,
+                 "   VIA {} {} {} {} {}\n",
+                 via_map->getCutLayer()->getName(),
+                 lefdist(via_map->getBelowLayerWidthLow()),
+                 lefdist(via_map->getAboveLayerWidthLow()),
+                 via_map->getViaName(),
+                 via_map->isPgVia() ? "PGVIA" : "");
+    } else {
+      fmt::print(_out,
+                 "   VIA {} {} {} {} {} {} {}\n",
+                 via_map->getCutLayer()->getName(),
+                 lefdist(via_map->getBelowLayerWidthLow()),
+                 lefdist(via_map->getBelowLayerWidthHigh()),
+                 lefdist(via_map->getAboveLayerWidthLow()),
+                 lefdist(via_map->getAboveLayerWidthHigh()),
+                 via_map->getViaName(),
+                 via_map->isPgVia() ? "PGVIA" : "");
+    }
+  }
+  fmt::print(_out, "   ;\n");
+  fmt::print(_out, " \" ;\n");
+  fmt::print(_out, "END PROPERTYDEFINITIONS\n");
 }
 
 void lefout::writeNonDefaultRule(dbTech* tech, dbTechNonDefaultRule* rule)
