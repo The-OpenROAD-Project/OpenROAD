@@ -434,12 +434,15 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
             = (blockage.getHeight() + cluster.getHeight()) / 2;
 
         // If there's no overlap the ratio is zero.
+        if ((max_center_dist_x - center_dist_x) < 0
+            || (max_center_dist_y - center_dist_y) < 0) {
+          continue;
+        }
+
         const float overlap_ratio_x
-            = std::max(max_center_dist_x - center_dist_x, 0.0f)
-              / max_center_dist_x;
+            = (max_center_dist_x - center_dist_x) / max_center_dist_x;
         const float overlap_ratio_y
-            = std::max(max_center_dist_y - center_dist_y, 0.0f)
-              / max_center_dist_y;
+            = (max_center_dist_y - center_dist_y) / max_center_dist_y;
 
         macro_blockage_penalty_ += (overlap_ratio_x * overlap_ratio_x
                                     + overlap_ratio_y * overlap_ratio_y)
