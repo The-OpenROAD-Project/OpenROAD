@@ -9,8 +9,8 @@ read_lib ./TwoBitTray/asap7sc7p5t_DFFHQNV2X_LVT_TT_nldm_FAKE.lib
 read_lib ./TwoBitTray/asap7sc7p5t_DFFHQNV2X_SLVT_TT_nldm_FAKE.lib
 
 
-read_lib ./clust01.lib
-read_lef ./clust01.lef
+read_lib ./clust.lib
+read_lef ./clust.lef
 read_def ./$test_name.def
 
 cluster_flops -tray_weight 20.0 \
