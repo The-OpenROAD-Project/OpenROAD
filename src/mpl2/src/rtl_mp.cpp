@@ -60,7 +60,8 @@ void MacroPlacer2::init(sta::dbNetwork* network,
   db_ = db;
 }
 
-bool MacroPlacer2::place(const int max_num_macro,
+bool MacroPlacer2::place(const int num_threads,
+                         const int max_num_macro,
                          const int min_num_macro,
                          const int max_num_inst,
                          const int min_num_inst,
@@ -118,6 +119,7 @@ bool MacroPlacer2::place(const int max_num_macro,
   hier_rtlmp_->setSnapLayer(snap_layer);
   hier_rtlmp_->setBusPlanningFlag(bus_planning_flag);
   hier_rtlmp_->setReportDirectory(report_directory);
+  hier_rtlmp_->setNumThreads(num_threads);
   hier_rtlmp_->hierRTLMacroPlacer();
 
   return true;
