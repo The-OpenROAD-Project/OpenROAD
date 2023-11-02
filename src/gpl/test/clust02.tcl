@@ -17,3 +17,6 @@ cluster_flops -tray_weight 20.0 \
 				-timing_weight 1.0 \
 				-max_split_size 250
 
+set def_file [make_result_file clust_sol02.def]
+write_def $def_file
+diff_file $def_file clust02.defok

@@ -255,9 +255,9 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
       // the chance that two trays with the same size get the same number is
       // rare (long long max is 10^18)
       std::string new_name
-          = "_tray_"
+          = "_tray_size"
             + std::to_string(static_cast<int>(trays[tray_idx].slots.size()))
-            + " " + std::to_string(unused_.back());
+            + "_" + std::to_string(unused_.back());
       unused_.pop_back();
       int bit_idx = GetBitIdx(static_cast<int>(trays[tray_idx].slots.size()));
       auto new_tray = odb::dbInst::create(
@@ -271,7 +271,7 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
     mapping[i].first = old_to_new_idx[tray_idx];
   }
 
-  odb::dbBTerm* clk_term = nullptr;
+  odb::dbNet* clk_net = nullptr;
   for (int i = 0; i < num_flops; i++) {
     // single bit flop?
     if (mapping[i].first == std::numeric_limits<int>::max()) {
@@ -324,12 +324,8 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
         }
       }
       if (IsClockPin(iterm)) {
-        for (auto bterm : net->getBTerms()) {
-          bterm->disconnect();
-          clk_term = bterm;
-        }
         iterm->disconnect();
-        odb::dbNet::destroy(net);
+        clk_net = net;
       }
     }
   }
@@ -338,13 +334,10 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
   std::vector<bool> isConnected(static_cast<int>(tray_inst.size()));
   for (int i = 0; i < num_flops; i++) {
     if (mapping[i].first != std::numeric_limits<int>::max()) {
-      if (!isConnected[mapping[i].first] && clk_term != nullptr) {
-        std::string name = "_net_" + std::to_string(flops[i].idx) + "_to_clk";
-        odb::dbNet* net = odb::dbNet::create(block_, name.c_str());
-        clk_term->connect(net);
+      if (!isConnected[mapping[i].first] && clk_net != nullptr) {
         for (auto iterm : tray_inst[mapping[i].first]->getITerms()) {
           if (IsClockPin(iterm)) {
-            iterm->connect(net);
+            iterm->connect(clk_net);
           }
         }
         isConnected[mapping[i].first] = 1;

@@ -9,11 +9,14 @@ read_lib ./TwoBitTray/asap7sc7p5t_DFFHQNV2X_LVT_TT_nldm_FAKE.lib
 read_lib ./TwoBitTray/asap7sc7p5t_DFFHQNV2X_SLVT_TT_nldm_FAKE.lib
 
 
-read_lib ./clust01.lib
-read_lef ./clust01.lef
+read_lib ./clust.lib
+read_lef ./clust.lef
 read_def ./$test_name.def
 
 cluster_flops -tray_weight 20.0 \
 				-timing_weight 1.0 \
 				-max_split_size 500
 
+set def_file [make_result_file clust_sol03.def]
+write_def $def_file
+diff_file $def_file clust03.def
