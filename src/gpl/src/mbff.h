@@ -136,7 +136,6 @@ class MBFF
   bool IsValidFlop(odb::dbInst* inst);
   bool IsValidTray(odb::dbInst* tray);
 
-
   Flop GetNewFlop(const std::vector<Flop>& prob_dist, double tot_dist);
   void GetStartTrays(std::vector<Flop> flops,
                      int num_trays,
