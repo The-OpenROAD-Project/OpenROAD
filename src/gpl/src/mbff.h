@@ -121,8 +121,8 @@ class MBFF
   int GetBitIdx(int bit_cnt);
   double GetDist(const Point& a, const Point& b);
 
-  std::map<sta::LibertyPort*, std::pair<sta::LibertyPort*, 
-           sta::LibertyPort*>> GetPinMapping(odb::dbInst* tray);
+  std::map<sta::LibertyPort*, std::pair<sta::LibertyPort*, sta::LibertyPort*>>
+  GetPinMapping(odb::dbInst* tray);
 
   void SeparateFlops(std::vector<std::vector<Flop>>& ffs);
 
@@ -214,8 +214,9 @@ class MBFF
   std::set<int> flops_in_path_;
 
   std::vector<odb::dbMaster*> best_master_[2];
-  std::vector<std::map<sta::LibertyPort*, 
-              std::pair<sta::LibertyPort*, sta::LibertyPort*>>> pin_mappings_[2];
+  std::vector<std::map<sta::LibertyPort*,
+                       std::pair<sta::LibertyPort*, sta::LibertyPort*>>>
+      pin_mappings_[2];
   std::vector<double> tray_area_[2];
   std::vector<double> tray_width_[2];
   std::vector<std::vector<double>> slot_to_tray_x_[2];
