@@ -406,32 +406,33 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
   }
 
   int tot_num_macros = 0;
-  for (const auto& cluster : macros_) {
-    tot_num_macros += cluster.getNumMacro();
+  for (const auto& soft_macro : macros_) {
+    tot_num_macros += soft_macro.getNumMacro();
   }
   if (tot_num_macros <= 0) {
     return;
   }
 
   for (auto& blockage : blockages_) {
-    for (const auto& cluster : macros_) {
-      if (cluster.getNumMacro() > 0) {
-        const float cluster_x_min = cluster.getX();
-        const float cluster_x_max = cluster_x_min + cluster.getWidth();
-        const float cluster_y_min = cluster.getY();
-        const float cluster_y_max = cluster_y_min + cluster.getHeight();
+    for (const auto& soft_macro : macros_) {
+      if (soft_macro.getNumMacro() > 0) {
+        const float soft_macro_x_min = soft_macro.getX();
+        const float soft_macro_x_max = soft_macro_x_min + soft_macro.getWidth();
+        const float soft_macro_y_min = soft_macro.getY();
+        const float soft_macro_y_max
+            = soft_macro_y_min + soft_macro.getHeight();
 
         const float center_dist_x
             = std::abs((blockage.xMax() + blockage.xMin()) / 2.0
-                       - (cluster_x_max + cluster_x_min) / 2.0);
+                       - (soft_macro_x_max + soft_macro_x_min) / 2.0);
         const float center_dist_y
             = std::abs((blockage.yMax() + blockage.yMin()) / 2.0
-                       - (cluster_y_max + cluster_y_min) / 2.0);
+                       - (soft_macro_y_max + soft_macro_y_min) / 2.0);
 
         const float max_center_dist_x
-            = (blockage.getWidth() + cluster.getWidth()) / 2;
+            = (blockage.getWidth() + soft_macro.getWidth()) / 2;
         const float max_center_dist_y
-            = (blockage.getHeight() + cluster.getHeight()) / 2;
+            = (blockage.getHeight() + soft_macro.getHeight()) / 2;
 
         // If there's no overlap the ratio is zero.
         if ((max_center_dist_x - center_dist_x) < 0
@@ -446,7 +447,7 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
 
         macro_blockage_penalty_ += (overlap_ratio_x * overlap_ratio_x
                                     + overlap_ratio_y * overlap_ratio_y)
-                                   * cluster.getNumMacro();
+                                   * soft_macro.getNumMacro();
       }
     }
   }
