@@ -19,4 +19,4 @@ cluster_flops -tray_weight 20.0 \
 
 set def_file [make_result_file clust_sol03.def]
 write_def $def_file
-diff_file $def_file clust03.def
+diff_file $def_file clust_sol03.defok

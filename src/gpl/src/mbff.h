@@ -136,6 +136,10 @@ class MBFF
   bool IsValidFlop(odb::dbInst* inst);
   bool IsValidTray(odb::dbInst* tray);
 
+  int GetBitMask(odb::dbInst* inst);
+  bool HasSet(odb::dbInst* inst);
+  bool HasReset(odb::dbInst* inst);
+
   Flop GetNewFlop(const std::vector<Flop>& prob_dist, double tot_dist);
   void GetStartTrays(std::vector<Flop> flops,
                      int num_trays,
@@ -215,14 +219,21 @@ class MBFF
   std::vector<Path> paths_;
   std::set<int> flops_in_path_;
 
-  std::vector<odb::dbMaster*> best_master_[2];
+  /* 
+  Let B = a bitmask representing an instance
+  The 1st bit of B is on if #Q - #D pins > 0 
+  The 2nd bit of B is on if the SET pin exists
+  The 3rd bit of B is on if the RESET pin exists
+  max(B) = 2^2 + 2^1 + 2^0 = 7
+  */
+  std::vector<odb::dbMaster*> best_master_[8];
   std::vector<std::map<sta::LibertyPort*,
                        std::pair<sta::LibertyPort*, sta::LibertyPort*>>>
-      pin_mappings_[2];
-  std::vector<double> tray_area_[2];
-  std::vector<double> tray_width_[2];
-  std::vector<std::vector<double>> slot_to_tray_x_[2];
-  std::vector<std::vector<double>> slot_to_tray_y_[2];
+      pin_mappings_[8];
+  std::vector<double> tray_area_[8];
+  std::vector<double> tray_width_[8];
+  std::vector<std::vector<double>> slot_to_tray_x_[8];
+  std::vector<std::vector<double>> slot_to_tray_y_[8];
   std::vector<double> ratios_;
   std::vector<int> unused_;
 
