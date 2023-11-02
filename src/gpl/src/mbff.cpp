@@ -78,11 +78,13 @@ int MBFF::GetNumD(odb::dbInst* inst)
 {
   int cnt_d = 0;
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  if (cell == nullptr)
+  if (cell == nullptr) {
     return 0;
+  }
   sta::LibertyCell* lib_cell = network_->libertyCell(cell);
-  if (lib_cell == nullptr)
+  if (lib_cell == nullptr) {
     return 0;
+  }
   for (auto seq : lib_cell->sequentials()) {
     auto data = seq->data();
     sta::FuncExprPortIterator port_itr(data);
@@ -140,11 +142,13 @@ double MBFF::GetDist(const Point& a, const Point& b)
 bool MBFF::IsValidFlop(odb::dbInst* inst)
 {
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  if (cell == nullptr)
+  if (cell == nullptr) {
     return false;
+  }
   sta::LibertyCell* lib_cell = network_->libertyCell(cell);
-  if (lib_cell == nullptr)
+  if (lib_cell == nullptr) {
     return false;
+  }
 
   int cnt_terms = 0;
   int cnt_supply = 0;

@@ -116,7 +116,7 @@ class MBFF
   void Run(int mx_sz, double alpha, double beta);
 
  private:
-  int GetRows(int slot_cnt, int setting);
+  int GetRows(int slot_cnt, int has_dual_outputs);
   int GetBitCnt(int bit_idx);
   int GetBitIdx(int bit_cnt);
   double GetDist(const Point& a, const Point& b);
@@ -146,13 +146,13 @@ class MBFF
                 int rows,
                 int cols,
                 std::vector<Point>& slots,
-                int setting);
+                int has_dual_outputs);
 
   double doit(const std::vector<Flop>& flops,
               int mx_sz,
               double alpha,
               double beta,
-              int setting);
+              int has_dual_outputs);
 
   void KMeans(const std::vector<Flop>& flops,
               std::vector<std::vector<Flop>>& clusters);
@@ -172,17 +172,17 @@ class MBFF
                             int sz,
                             int iter,
                             std::vector<std::pair<int, int>>& cluster,
-                            int setting);
+                            int has_dual_outputs);
   void RunSilh(std::vector<std::vector<Tray>>& trays,
                const std::vector<Flop>& pointset,
                std::vector<std::vector<std::vector<Tray>>>& start_trays,
-               int setting);
+               int has_dual_outputs);
 
   void ReadLibs();
   void ReadFFs();
   void ReadPaths();
   void SetVars(const std::vector<Flop>& flops);
-  void SetRatios(int setting);
+  void SetRatios(int has_dual_outputs);
   void SetTrayNames();
 
   double RunLP(const std::vector<Flop>& flops,
@@ -192,11 +192,11 @@ class MBFF
                 const std::vector<Tray>& trays,
                 std::vector<std::pair<int, int>>& final_flop_to_slot,
                 double alpha,
-                int setting);
+                int has_dual_outputs);
   void ModifyPinConnections(const std::vector<Flop>& flops,
                             const std::vector<Tray>& trays,
                             std::vector<std::pair<int, int>>& mapping,
-                            int setting);
+                            int has_dual_outputs);
   double GetTCPDisplacement();
 
   odb::dbDatabase* db_;
