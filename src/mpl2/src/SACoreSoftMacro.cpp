@@ -422,32 +422,20 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
         const float soft_macro_y_max
             = soft_macro_y_min + soft_macro.getHeight();
 
-        const float center_dist_x
-            = std::abs((blockage.xMax() + blockage.xMin()) / 2.0
-                       - (soft_macro_x_max + soft_macro_x_min) / 2.0);
-        const float center_dist_y
-            = std::abs((blockage.yMax() + blockage.yMin()) / 2.0
-                       - (soft_macro_y_max + soft_macro_y_min) / 2.0);
+        const float overlap_width
+            = std::min(blockage.xMax(), soft_macro_x_max)
+              - std::max(blockage.xMin(), soft_macro_x_min);
+        const float overlap_height
+            = std::min(blockage.yMax(), soft_macro_y_max)
+              - std::max(blockage.yMin(), soft_macro_y_min);
 
-        const float max_center_dist_x
-            = (blockage.getWidth() + soft_macro.getWidth()) / 2;
-        const float max_center_dist_y
-            = (blockage.getHeight() + soft_macro.getHeight()) / 2;
-
-        // If there's no overlap the ratio is zero.
-        if ((max_center_dist_x - center_dist_x) < 0
-            || (max_center_dist_y - center_dist_y) < 0) {
+        // If any of the dimensions is negative, then there's no overlap.
+        if (overlap_width < 0 || overlap_height < 0) {
           continue;
         }
 
-        const float overlap_ratio_x
-            = (max_center_dist_x - center_dist_x) / max_center_dist_x;
-        const float overlap_ratio_y
-            = (max_center_dist_y - center_dist_y) / max_center_dist_y;
-
-        macro_blockage_penalty_ += (overlap_ratio_x * overlap_ratio_x
-                                    + overlap_ratio_y * overlap_ratio_y)
-                                   * soft_macro.getNumMacro();
+        macro_blockage_penalty_
+            += overlap_width * overlap_height * soft_macro.getNumMacro();
       }
     }
   }
