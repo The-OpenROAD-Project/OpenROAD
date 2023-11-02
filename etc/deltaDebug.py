@@ -111,17 +111,19 @@ class deltaDebugger:
             while self.n <= (2 ** self.persistence):
                 error_in_range = None
                 for j in range(self.n):
-                    current_err = self.perform_step(cut_index = j)
-                    if(current_err == "NOCUT"):
-                        break
-                    elif(current_err != None):
-                        # Found the target error with the cut DB
-                        #
-                        # This is a suitable level of detail to look for more errors,
-                        # complete this level of detail.
-                        err = current_err
-                        error_in_range = current_err
-                        self.prepare_new_step()
+                    for cut_level in (cutLevel.Insts, cutLevel.Nets):
+                        self.cut_level= cut_level
+                        current_err = self.perform_step(cut_index = j)
+                        if(current_err == "NOCUT"):
+                            break
+                        elif(current_err != None):
+                            # Found the target error with the cut DB
+                            #
+                            # This is a suitable level of detail to look for more errors,
+                            # complete this level of detail.
+                            err = current_err
+                            error_in_range = current_err
+                            self.prepare_new_step()
 
                 if(error_in_range == None):
                     # Increase the granularity of the cut in case target error not found
@@ -133,14 +135,9 @@ class deltaDebugger:
                     break
 
             if(err == None or err == "NOCUT"):
-                if(self.cut_level == cutLevel.Insts):
-                    # Reduce cut level from inst to nets
-                    self.cut_level = cutLevel.Nets
-                else:
-                    # We are done and we found the smallest input file that
-                    # produces the target error.
-                    break
-
+                # We are done and we found the smallest input file that
+                # produces the target error.
+                break
 
         # Change deltaDebug resultant base_db file name to a representative name
         if os.path.exists(self.temp_base_db_file):
