@@ -53,6 +53,7 @@
 #include "odb/dbShape.h"
 #include "ord/OpenRoad.hh"
 #include "rsz/Resizer.hh"
+#include "sta/Fuzzy.hh"
 #include "sta/Liberty.hh"
 #include "sta/Sdc.hh"
 #include "utl/Logger.h"
@@ -1008,11 +1009,11 @@ bool TritonCTS::isSink(odb::dbITerm* iterm)
   return false;
 }
 
-float TritonCTS::computeInsertionDelay(const std::string& name,
-                                       odb::dbInst* inst,
-                                       odb::dbMTerm* mterm)
+double TritonCTS::computeInsertionDelay(const std::string& name,
+                                        odb::dbInst* inst,
+                                        odb::dbMTerm* mterm)
 {
-  float insDelayPerMicron = 0.0;
+  double insDelayPerMicron = 0.0;
 
   if (options_->insertionDelayEnabled()) {
     sta::LibertyCell* libCell = network_->libertyCell(network_->dbToSta(inst));
@@ -1020,23 +1021,30 @@ float TritonCTS::computeInsertionDelay(const std::string& name,
     sta::RiseFallMinMax insDelays = libPort->clockTreePathDelays();
     if (insDelays.hasValue()) {
       // use average of max rise and max fall
-      float delayPerSec
+      double delayPerSec
           = (insDelays.value(sta::RiseFall::rise(), sta::MinMax::max())
              + insDelays.value(sta::RiseFall::fall(), sta::MinMax::max()))
             / 2.0;
       // convert delay to length because HTree uses lengths
       sta::Corner* corner = openSta_->cmdCorner();
-      float capPerMicron = resizer_->wireSignalCapacitance(corner) * 1e-6;
-      float resPerMicron = resizer_->wireSignalResistance(corner) * 1e-6;
+      double capPerMicron = resizer_->wireSignalCapacitance(corner) * 1e-6;
+      double resPerMicron = resizer_->wireSignalResistance(corner) * 1e-6;
+      if (sta::fuzzyEqual(capPerMicron, 1e-18)
+          || sta::fuzzyEqual(resPerMicron, 1e-18)) {
+        logger_->warn(CTS,
+                      203,
+                      "Insertion delay cannot be used because unit "
+                      "capacitance or unit resistance is zero.  Check "
+                      "layer RC settings.");
+        return 0.0;
+      }
       insDelayPerMicron = delayPerSec / (capPerMicron * resPerMicron);
       // clang-format off
-      debugPrint(logger_, CTS, "Triton", 1, "sink {} has ins delay={:.3e} and micron leng={} dbUnits/um={}",
-		 name, delayPerSec, insDelayPerMicron, block_->getDbUnitsPerMicron());
-      std::cout << "capPerMicron=" << capPerMicron << " resPerMicron=" << resPerMicron << std::endl;
-      /*
-	debugPrint(logger_, CTS, "Triton", 1, "time unit is {}, 1.0={}",
-	openSta_->units()->timeUnit()->asString(), openSta_->units()->timeUnit()->staToUser(1.0));
-      */
+      debugPrint(logger_, CTS, "Triton", 1, "sink {} has ins delay={:.2e} and "
+		 "micron leng={:0.1f} dbUnits/um={}", name, delayPerSec,
+		 insDelayPerMicron, block_->getDbUnitsPerMicron());
+      debugPrint(logger_, CTS, "Triton", 1, "capPerMicron={:.2e} resPerMicron={:.2e}",
+		 capPerMicron, resPerMicron);
       // clang-format on
     }
   }

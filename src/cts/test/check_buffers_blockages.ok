@@ -48,6 +48,17 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(3.358, 6.302)]=>[(3.584, 6.290)] parentPt:[(7.358, 6.064)] new branchPt is outside blockage
 [DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(11.178, 8.122)]=>[(11.095, 7.800)] parentPt:[(11.358, 6.064)] new branchPt is outside blockage
+[DEBUG CTS-legalizer] createClockSubNets: root clkbuf_0: [(7.358, 6.064)]
+[DEBUG CTS-legalizer] createClockSubNets level 1 clk_buf_1_0_ : [(3.584, 6.290)]
+[DEBUG CTS-legalizer] createClockSubNets level 1 clk_buf_1_1_ : [(11.358, 6.064)]
+[DEBUG CTS-legalizer] createClockSubNets level 2 clkbuf_2_0_ : [(3.584, 4.290)]
+[DEBUG CTS-legalizer]   forceBufferInSegment clkbuf_2_0__f: [(3.584, 4.290)]
+[DEBUG CTS-legalizer] createClockSubNets level 2 clkbuf_2_1_ : [(3.584, 8.290)]
+[DEBUG CTS-legalizer]   forceBufferInSegment clkbuf_2_1__f: [(3.584, 8.290)]
+[DEBUG CTS-legalizer] createClockSubNets level 2 clkbuf_2_2_ : [(10.858, 4.564)]
+[DEBUG CTS-legalizer]   forceBufferInSegment clkbuf_2_2__f: [(10.858, 4.564)]
+[DEBUG CTS-legalizer] createClockSubNets level 2 clkbuf_2_3_ : [(11.095, 7.800)]
+[DEBUG CTS-legalizer]   forceBufferInSegment clkbuf_2_3__f: [(11.095, 7.800)]
 [INFO CTS-0035]  Number of sinks covered: 29.
 [INFO CTS-0018]     Created 34 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 3.

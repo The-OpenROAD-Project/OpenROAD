@@ -557,13 +557,15 @@ void HTreeBuilder::checkLegalityAndCostSpecial(
       bestSinkDist = sinkDist;
     }
     // clang-format off
-    debugPrint(logger_, CTS, "legalizer", 3, "adjustBestLegalLoc: branchPt move:{}=>{} is legal, "
-               "dist={:0.3f}, sinkDist={:0.3f}", oldLoc, newLoc, targetDist, sinkDist);
+    debugPrint(logger_, CTS, "legalizer", 3, "adjustBestLegalLoc: branchPt "
+	       "move:{}=>{} is legal, dist={:0.3f}, sinkDist={:0.3f}",
+	       oldLoc, newLoc, targetDist, sinkDist);
     // clang-format on
   }
   // clang-format off
-  debugPrint(logger_, CTS, "legalizer", 3, "adjustBestLegalLoc: branchPt move:{}=>{} is illegal or dist "
-	     "{:0.3f} != {:0.3f}", oldLoc, newLoc, newLoc.computeDist(parentPoint), targetDist);
+  debugPrint(logger_, CTS, "legalizer", 3, "adjustBestLegalLoc: branchPt "
+	     "move:{}=>{} is illegal or dist {:0.3f} != {:0.3f}",
+	     oldLoc, newLoc, newLoc.computeDist(parentPoint), targetDist);
   // clang-format on
 }
 
@@ -817,11 +819,13 @@ void HTreeBuilder::checkLegalityAndCost(const Point<double>& oldLoc,
       bestSinkDist = sinkDist;
     }
     // clang-format off
-    debugPrint(logger_, CTS, "legalizer", 3, "adjustBeyondBlockage: branchPt move:{}=>{} is legal, "
-               "dist={:0.3f}, sinkDist={:0.3f}", oldLoc, newLoc, targetDist, sinkDist);
+    debugPrint(logger_, CTS, "legalizer", 3, "adjustBeyondBlockage: branchPt "
+	       "move:{}=>{} is legal, dist={:0.3f}, sinkDist={:0.3f}",
+	       oldLoc, newLoc, targetDist, sinkDist);
   } else {
-    debugPrint(logger_, CTS, "legalizer", 3, "adjustBeyondBlockage: branchPt move:{}=>{} is illegal or dist {:0.3f} "
-        "!= {:0.3f}", oldLoc, newLoc, newLoc.computeDist(parentPoint), targetDist);
+    debugPrint(logger_, CTS, "legalizer", 3, "adjustBeyondBlockage: branchPt "
+	       "move:{}=>{} is illegal or dist {:0.3f} != {:0.3f}",
+	       oldLoc, newLoc, newLoc.computeDist(parentPoint), targetDist);
     // clang-format on
   }
 }
@@ -884,8 +888,9 @@ void HTreeBuilder::legalizeDummy()
         double d = legalBranchPoint.computeDist(parentPoint);
         // clang-format off
         debugPrint(logger_, CTS, "legalizer", 1,
-            "legalizeDummy level index {}: {}->{} d={:0.3f}, leng={:0.3f}, ratio={:0.3f}",
-            levelIdx, branchPoint, legalBranchPoint, d, leng, d / leng);
+            "legalizeDummy level index {}: {}->{} d={:0.3f}, leng={:0.3f},"
+		   "ratio={:0.3f}", levelIdx, branchPoint, legalBranchPoint,
+		   d, leng, d / leng);
         // clang-format on
         commitMoveLoc(branchPoint, legalBranchPoint);
         branchPoint.setX(legalBranchPoint.getX());
@@ -932,8 +937,9 @@ void HTreeBuilder::legalize()
       double leng = branchPoint.computeDist(parentPoint);
       // clang-format off
       if (logger_->debugCheck(utl::CTS, "legalizer", 3)) {
-        logger_->report("  HTree level*{}* bufId*{}*, parent:{}, branch:{}, leng:{:0.3f}, "
-            "sinks:{}", levelIdx, bufferIdx, parentPoint, branchPoint, leng, sinks.size());
+        logger_->report("  HTree level*{}* bufId*{}*, parent:{}, branch:{}, "
+			"leng:{:0.3f}, sinks:{}", levelIdx, bufferIdx,
+			parentPoint, branchPoint, leng, sinks.size());
       }
       // clang-format on
       int scalingFactor = wireSegmentUnit_;
@@ -958,8 +964,9 @@ void HTreeBuilder::legalize()
                                                  scalingFactor);
         // clang-format off
 	debugPrint(logger_, CTS, "legalizer", 1,
-		   "findBestLegalLocation branchPt:{}=>{} parentPt:{} new branchPt is {} blockage",
-		   branchPoint, legalBranchPoint, parentPoint, 
+		   "findBestLegalLocation branchPt:{}=>{} parentPt:{} new "
+		   "branchPt is {} blockage", branchPoint, legalBranchPoint,
+		   parentPoint,
 		   isInsideBbox(legalBranchPoint.getX(), legalBranchPoint.getY(),
 				x1, y1, x2, y2)? "inside" : "outside");
         // clang-format on
@@ -978,8 +985,9 @@ void HTreeBuilder::legalize()
                                            scalingFactor);
         // clang-format off
 	debugPrint(logger_, CTS, "legalizer", 3,
-		   "adjustBeyondBlockage applied to legal branchPt:{}=>{} parentPt:{} newDist={:0.3f}",
-		   branchPoint, newLocation, parentPoint, newLocation.computeDist(parentPoint));
+		   "adjustBeyondBlockage applied to legal branchPt:{}=>{} "
+		   "parentPt:{} newDist={:0.3f}", branchPoint, newLocation,
+		   parentPoint, newLocation.computeDist(parentPoint));
         // clang-format on
         commitMoveLoc(branchPoint, newLocation);
         branchPoint = newLocation;
@@ -1083,8 +1091,8 @@ void HTreeBuilder::run()
   // clang-format off
   debugPrint(logger_, CTS, "legalizer", 3, "Htree file {} has been generated",
              plotHTree());
-  debugPrint(logger_, CTS, "legalizer", 3,
-	     "Run 'obsAwareCts.py cts.clk.buffer' to produce cts.clk.buffer.png");
+  debugPrint(logger_, CTS, "legalizer", 3, "Run 'obsAwareCts.py cts.clk.buffer'"
+	     "to produce cts.clk.buffer.png");
   // clang-format on
 }
 
@@ -1638,8 +1646,11 @@ void HTreeBuilder::createClockSubNets()
 
   // clang-format off
   if (center != legalCenter) {
-    debugPrint(logger_, CTS, "legalizer", 2, "createClockSubNets "
-	       "legalizeOneBuffer clkbuf_0: {} => {}", center, legalCenter);
+    debugPrint(logger_, CTS, "legalizer", 2, "createClockSubNets: "
+	       "root clkbuf_0: {} => {}", center, legalCenter);
+  } else {
+    debugPrint(logger_, CTS, "legalizer", 2, "createClockSubNets: "
+	       "root clkbuf_0: {}", center);
   }
   // clang-format on
 
@@ -1660,9 +1671,12 @@ void HTreeBuilder::createClockSubNets()
     // clang-format off
     if (branchPoint != legalBranchPoint) {
       debugPrint(logger_, CTS, "legalizer", 2, 
-		 "createClockSubNets first level legalizeOneBuffer before "
-		 "SegmentBuilder::builder clk_buf_1_{}_ : {} => {}",
+		 "createClockSubNets level 1 clk_buf_1_{}_ : {} => {}",
 		 std::to_string(idx), branchPoint, legalBranchPoint);
+    } else {
+      debugPrint(logger_, CTS, "legalizer", 2, 
+		 "createClockSubNets level 1 clk_buf_1_{}_ : {}",
+		 std::to_string(idx), branchPoint);
     }
     // clang-format on
 
@@ -1708,12 +1722,15 @@ void HTreeBuilder::createClockSubNets()
 
       // clang-format off
       if (branchPoint != legalBranchPoint) {
-	debugPrint(logger_, CTS, "legalizer", 2,
-		   "createClockSubNets legalizeOneBuffer before "
-		   "SegmentBuilder::builder {}: {} => {}"
-		   "clkbuf_"
-		   + std::to_string(levelIdx + 1) + "_" + std::to_string(idx)
-		   + "_", branchPoint, legalBranchPoint);
+	debugPrint(logger_, CTS, "legalizer", 2, "createClockSubNets level {} "
+		   "{} : {} => {}", levelIdx+1, "clkbuf_" +
+		   std::to_string(levelIdx+1) + "_" + std::to_string(idx) + "_",
+		   branchPoint, legalBranchPoint);
+      } else {
+	debugPrint(logger_, CTS, "legalizer", 2, "createClockSubNets level {} "
+		   "{} : {}", levelIdx+1, "clkbuf_" +
+		   std::to_string(levelIdx+1) + "_" + std::to_string(idx) + "_",
+		   branchPoint);
       }
       // clang-format on
 
@@ -1955,10 +1972,18 @@ void SegmentBuilder::build(const std::string& forceBuffer)
 
       // clang-format off
       if (bufferLoc != legalBufferLoc) {
+	// adjust for cell movement
+	connectionLength -= bufferLoc.computeDist(legalBufferLoc);
 	debugPrint(getTree()->getLogger(), CTS, "legalizer", 2,
-		   " SegmentBuilder::build legalizeOneBuffer {}: {} => {}",
-		   instPrefix_ + std::to_string(numBufferLevels_),
+		   " SegmentBuilder::build {} TCId:{} bufId:{} connLen:{:0.1f}: "
+		   "{} => {}", instPrefix_  + std::to_string(numBufferLevels_),
+		   techCharWireIdx, buffer, connectionLength,
 		   bufferLoc, legalBufferLoc);
+      } else {
+	debugPrint(getTree()->getLogger(), CTS, "legalizer", 2,
+		   " SegmentBuilder::build {} TCId:{} bufId:{} connLen:{:0.1f}: "
+		   "{}", instPrefix_  + std::to_string(numBufferLevels_),
+		   techCharWireIdx, buffer, connectionLength, bufferLoc);
       }
       // clang-format on
 
@@ -1987,6 +2012,10 @@ void SegmentBuilder::forceBufferInSegment(const std::string& master)
                                target_.getX() * techCharDistUnit_,
                                target_.getY() * techCharDistUnit_);
   tree_->addTreeLevelBuffer(&newBuffer);
+  // clang-format off
+  debugPrint(getTree()->getLogger(), CTS, "legalizer", 2,
+	     "  forceBufferInSegment {}: {}", instPrefix_ + "_f", target_);
+  // clang-format on
 
   drivingSubNet_->addInst(newBuffer);
   drivingSubNet_ = &clock_->addSubNet(netPrefix_ + "_leaf");

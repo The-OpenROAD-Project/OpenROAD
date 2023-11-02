@@ -149,9 +149,9 @@ class TritonCTS
   float getInputPinCap(odb::dbITerm* iterm);
   bool isSink(odb::dbITerm* iterm);
   ClockInst* getClockFromInst(odb::dbInst* inst);
-  float computeInsertionDelay(const std::string& name,
-                              odb::dbInst* inst,
-                              odb::dbMTerm* mterm);
+  double computeInsertionDelay(const std::string& name,
+			       odb::dbInst* inst,
+			       odb::dbMTerm* mterm);
 
   sta::dbSta* openSta_;
   sta::dbNetwork* network_;
