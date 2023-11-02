@@ -223,11 +223,19 @@ int FlexDRWorker::main(frDesign* design)
   if (debugSettings_->debugDumpDR
       && (debugSettings_->x == -1
           || routeBox_.intersects({debugSettings_->x, debugSettings_->y}))
-      && !skipRouting_ && debugSettings_->iter == getDRIter()) {
+      && !skipRouting_
+      && (debugSettings_->iter == getDRIter()
+          || debugSettings_->dumpLastWorker)) {
     std::string workerPath = fmt::format("{}/workerx{}_y{}",
                                          debugSettings_->dumpDir,
                                          routeBox_.xMin(),
                                          routeBox_.yMin());
+    if (debugSettings_->dumpLastWorker) {
+      workerPath = fmt::format("{}/workerx{}_y{}",
+                               debugSettings_->dumpDir,
+                               debugSettings_->x,
+                               debugSettings_->y);
+    }
     mkdir(workerPath.c_str(), 0777);
 
     writeUpdates(fmt::format("{}/updates.bin", workerPath));

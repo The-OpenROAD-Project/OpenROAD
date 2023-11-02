@@ -211,6 +211,7 @@ sta::define_cmd_args "detailed_route_debug" {
     [-net name]
     [-pin name]
     [-worker x y]
+    [-dump_last_worker]
     [-iter iter]
     [-pa_markers]
     [-dump_dr]
@@ -223,7 +224,7 @@ sta::define_cmd_args "detailed_route_debug" {
 proc detailed_route_debug { args } {
   sta::parse_key_args "detailed_route_debug" args \
       keys {-net -worker -iter -pin -dump_dir} \
-      flags {-dr -maze -pa -pa_markers -pa_edge -pa_commit -dump_dr -ta -write_net_tracks}
+      flags {-dr -maze -pa -pa_markers -pa_edge -pa_commit -dump_dr -ta -write_net_tracks -dump_last_worker}
 
   sta::check_argc_eq0 "detailed_route_debug" $args
 
@@ -236,6 +237,7 @@ proc detailed_route_debug { args } {
   set pa_commit [info exists flags(-pa_commit)]
   set ta [info exists flags(-ta)]
   set write_net_tracks [info exists flags(-write_net_tracks)]
+  set dump_last_worker [info exists flags(-dump_last_worker)]
 
   if { [info exists keys(-net)] } {
     set net_name $keys(-net)
@@ -276,7 +278,7 @@ proc detailed_route_debug { args } {
   }
 
   drt::set_detailed_route_debug_cmd $net_name $pin_name $dr $dump_dr $pa $maze \
-      $worker_x $worker_y $iter $pa_markers $pa_edge $pa_commit $dump_dir $ta $write_net_tracks
+      $worker_x $worker_y $iter $pa_markers $pa_edge $pa_commit $dump_dir $ta $write_net_tracks $dump_last_worker
 }
 
 sta::define_cmd_args "pin_access" {

@@ -165,7 +165,8 @@ set_detailed_route_debug_cmd(const char* net_name,
                              bool pa_commit,
                              const char* dumpDir,
                              bool ta,
-                             bool write_net_tracks)
+                             bool write_net_tracks,
+                             bool dump_last_worker)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setDebugNetName(net_name);
@@ -183,6 +184,7 @@ set_detailed_route_debug_cmd(const char* net_name,
   router->setDebugPaCommit(pa_commit);
   router->setDebugTA(ta);
   router->setDebugWriteNetTracks(write_net_tracks);
+  router->setDumpLastWorker(dump_last_worker);
 }
 
 void
