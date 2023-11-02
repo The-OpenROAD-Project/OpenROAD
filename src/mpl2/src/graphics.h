@@ -76,7 +76,8 @@ class Graphics : public gui::Renderer, public Mpl2Observer
 
   void drawObjects(gui::Painter& painter) override;
 
-  void setMacroBlockages(const std::vector<mpl2::Rect>& macro_blockages);
+  void setMacroBlockages(
+      const std::vector<mpl2::Rect>& macro_blockages) override;
 
  private:
   void resetPenalties();
