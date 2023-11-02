@@ -74,13 +74,22 @@ bool MBFF::IsQPin(odb::dbITerm* iterm)
   return (yes & !exclude);
 }
 
-int MBFF::GetNumSlots(odb::dbInst* inst)
+int MBFF::GetNumD(odb::dbInst* inst)
 {
   int num_d = 0;
   for (auto iterm : inst->getITerms()) {
     num_d += IsDPin(iterm);
   }
   return num_d;
+}
+
+int MBFF::GetNumQ(odb::dbInst* inst)
+{
+  int num_q = 0;
+  for (auto iterm : inst->getITerms()) {
+    num_q += IsQPin(iterm);
+  }
+  return num_q;
 }
 
 int MBFF::GetBitIdx(int bit_cnt)
@@ -98,11 +107,11 @@ int MBFF::GetBitCnt(int bit_idx)
   return (1 << bit_idx);
 }
 
-int MBFF::GetRows(int slot_cnt)
+int MBFF::GetRows(int slot_cnt, int setting)
 {
   int idx = GetBitIdx(slot_cnt);
-  int width = int(multiplier_ * tray_width_[idx]);
-  int height = int(multiplier_ * (tray_area_[idx] / tray_width_[idx]));
+  int width = int(multiplier_ * tray_width_[setting][idx]);
+  int height = int(multiplier_ * (tray_area_[setting][idx] / tray_width_[setting][idx]));
   return (height / std::gcd(width, height));
 }
 
@@ -125,21 +134,25 @@ bool MBFF::IsValidTray(odb::dbInst* tray)
   if (port_itr.hasNext() == false) {
     return false;
   }
-  int slot_cnt = GetNumSlots(tray);
+  int slot_cnt = GetNumD(tray);
   if (slot_cnt <= 1) {
     return false;
   }
   return true;
 }
 
-std::map<std::string, std::string> MBFF::GetPinMapping(odb::dbInst* tray)
+
+std::map<sta::LibertyPort*, std::pair<sta::LibertyPort*, sta::LibertyPort*>> 
+MBFF::GetPinMapping(odb::dbInst* tray)
 {
   sta::Cell* cell = network_->dbToSta(tray->getMaster());
   sta::LibertyCell* lib_cell = network_->libertyCell(cell);
   sta::LibertyCellPortIterator port_itr(lib_cell);
 
-  std::vector<std::string> d_pins;
-  std::vector<std::string> q_pins;
+  std::vector<sta::LibertyPort*> d_pins;
+  std::vector<sta::LibertyPort*> q_pins;
+  std::vector<sta::LibertyPort*> qn_pins;
+
   while (port_itr.hasNext()) {
     sta::LibertyPort* port = port_itr.next();
     if (network_->staToDb(port) == nullptr) {
@@ -149,23 +162,36 @@ std::map<std::string, std::string> MBFF::GetPinMapping(odb::dbInst* tray)
       continue;
     }
     if (port->direction()->isInput()) {
-      d_pins.push_back(port->name());
+      d_pins.push_back(port);
     }
     if (port->direction()->isOutput()) {
-      q_pins.push_back(port->name());
+      if (q_pins.size()) {
+        if (sta::FuncExpr::equiv(q_pins.back()->function(), port->function())) {
+          q_pins.push_back(port);
+        }
+        else {
+          qn_pins.push_back(port);
+        }
+      }
+      else {
+        q_pins.push_back(port);
+      }
     }
   }
 
-  std::map<std::string, std::string> ret;
+
+  std::map<sta::LibertyPort*, std::pair<sta::LibertyPort*, 
+           sta::LibertyPort*>> ret;
   for (size_t i = 0; i < d_pins.size(); i++) {
-    ret[d_pins[i]] = q_pins[i];
+    ret[d_pins[i]] = std::make_pair(q_pins[i], (qn_pins.size() ? qn_pins[i] : nullptr));
   }
   return ret;
 }
 
 void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
                                 const std::vector<Tray>& trays,
-                                std::vector<std::pair<int, int>>& mapping)
+                                std::vector<std::pair<int, int>>& mapping,
+                                int setting)
 {
   const int num_flops = static_cast<int>(flops.size());
 
@@ -189,7 +215,7 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
       unused_.pop_back();
       int bit_idx = GetBitIdx(static_cast<int>(trays[tray_idx].slots.size()));
       auto new_tray = odb::dbInst::create(
-          block_, best_master_[bit_idx], new_name.c_str());
+          block_, best_master_[setting][bit_idx], new_name.c_str());
       new_tray->setLocation(
           static_cast<int>(multiplier_ * trays[tray_idx].pt.x),
           static_cast<int>(multiplier_ * trays[tray_idx].pt.y));
@@ -207,17 +233,19 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
     }
 
     int tray_idx = mapping[i].first;
-    int tray_sz_idx = GetBitIdx(GetNumSlots(tray_inst[tray_idx]));
+    int tray_sz_idx = GetBitIdx(GetNumD(tray_inst[tray_idx]));
     int slot_idx = mapping[i].second;
 
     // find the new port names
-    std::string d_pin;
-    std::string q_pin;
+    sta::LibertyPort* d_pin = nullptr;
+    sta::LibertyPort* q_pin = nullptr;
+    sta::LibertyPort* qn_pin = nullptr;
     int idx = 0;
-    for (auto pins : pin_mappings_[tray_sz_idx]) {
+    for (auto pins : pin_mappings_[setting][tray_sz_idx]) {
       if (idx == slot_idx) {
         d_pin = pins.first;
-        q_pin = pins.second;
+        q_pin = pins.second.first;
+        qn_pin = pins.second.second;
         break;
       }
       idx++;
@@ -234,10 +262,22 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
       }
       iterm->disconnect();
       if (IsDPin(iterm)) {
-        tray_inst[tray_idx]->findITerm(d_pin.c_str())->connect(net);
+        tray_inst[tray_idx]->findITerm(d_pin->name())->connect(net);
       }
       if (IsQPin(iterm)) {
-        tray_inst[tray_idx]->findITerm(q_pin.c_str())->connect(net);
+        if (setting) {
+          sta::Pin* pin = network_->dbToSta(iterm);
+          sta::LibertyPort* iterm_port = network_->libertyPort(pin);
+          if (sta::FuncExpr::equiv(q_pin->function(), iterm_port->function())) {
+            tray_inst[tray_idx]->findITerm(q_pin->name())->connect(net);
+          }
+          else {
+            tray_inst[tray_idx]->findITerm(qn_pin->name())->connect(net);
+          }
+        }
+        else {
+          tray_inst[tray_idx]->findITerm(q_pin->name())->connect(net);
+        }
       }
       if (IsClockPin(iterm)) {
         for (auto bterm : net->getBTerms()) {
@@ -250,6 +290,7 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
     }
   }
 
+  // all FFs in flops have the same block clock
   std::vector<bool> isConnected(static_cast<int>(tray_inst.size()));
   for (int i = 0; i < num_flops; i++) {
     if (mapping[i].first != std::numeric_limits<int>::max()) {
@@ -370,7 +411,8 @@ objectives so that the algorithm is scalable
 double MBFF::RunILP(const std::vector<Flop>& flops,
                     const std::vector<Tray>& trays,
                     std::vector<std::pair<int, int>>& final_flop_to_slot,
-                    double alpha)
+                    double alpha,
+                    int setting)
 {
   int num_flops = static_cast<int>(flops.size());
   int num_trays = static_cast<int>(trays.size());
@@ -508,7 +550,7 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
   for (int i = 0; i < num_trays; i++) {
     int bit_idx = 0;
     for (int j = 0; j < num_sizes_; j++) {
-      if (best_master_[j] != nullptr) {
+      if (best_master_[setting][j] != nullptr) {
         if (GetBitCnt(j) == static_cast<int>(trays[i].slots.size())) {
           bit_idx = j;
         }
@@ -575,13 +617,14 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
 void MBFF::GetSlots(const Point& tray,
                     int rows,
                     int cols,
-                    std::vector<Point>& slots)
+                    std::vector<Point>& slots,
+                    int setting)
 {
   slots.clear();
   int idx = GetBitIdx(rows * cols);
   for (int i = 0; i < rows * cols; i++) {
-    Point pt = Point{tray.x + slot_to_tray_x_[idx][i],
-                     tray.y + slot_to_tray_y_[idx][i]};
+    Point pt = Point{tray.x + slot_to_tray_x_[setting][idx][i],
+                     tray.y + slot_to_tray_y_[setting][idx][i]};
     slots.push_back(pt);
   }
 }
@@ -778,11 +821,12 @@ void MBFF::RunCapacitatedKMeans(const std::vector<Flop>& flops,
                                 std::vector<Tray>& trays,
                                 int sz,
                                 int iter,
-                                std::vector<std::pair<int, int>>& cluster)
+                                std::vector<std::pair<int, int>>& cluster,
+                                int setting)
 {
   cluster.clear();
   int num_flops = static_cast<int>(flops.size());
-  int rows = GetRows(sz);
+  int rows = GetRows(sz, setting);
   int cols = sz / rows;
   int num_trays = (num_flops + (sz - 1)) / sz;
 
@@ -792,7 +836,7 @@ void MBFF::RunCapacitatedKMeans(const std::vector<Flop>& flops,
     delta = RunLP(flops, trays, cluster);
 
     for (int j = 0; j < num_trays; j++) {
-      GetSlots(trays[j].pt, rows, cols, trays[j].slots);
+      GetSlots(trays[j].pt, rows, cols, trays[j].slots, setting);
       for (int k = 0; k < rows * cols; k++) {
         trays[j].cand[k] = -1;
       }
@@ -808,7 +852,8 @@ void MBFF::RunCapacitatedKMeans(const std::vector<Flop>& flops,
 
 void MBFF::RunSilh(std::vector<std::vector<Tray>>& trays,
                    const std::vector<Flop>& flops,
-                   std::vector<std::vector<std::vector<Tray>>>& start_trays)
+                   std::vector<std::vector<std::vector<Tray>>>& start_trays,
+                   int setting)
 {
   int num_flops = static_cast<int>(flops.size());
   trays.resize(num_sizes_);
@@ -829,7 +874,7 @@ void MBFF::RunSilh(std::vector<std::vector<Tray>>& trays,
   std::vector<std::pair<int, int>> ind;
 
   for (int i = 1; i < num_sizes_; i++) {
-    if (best_master_[i] != nullptr) {
+    if (best_master_[setting][i] != nullptr) {
       for (int j = 0; j < 5; j++) {
         ind.push_back(std::make_pair(i, j));
       }
@@ -838,15 +883,15 @@ void MBFF::RunSilh(std::vector<std::vector<Tray>>& trays,
   }
 
   for (int i = 1; i < num_sizes_; i++) {
-    if (best_master_[i] != nullptr) {
+    if (best_master_[setting][i] != nullptr) {
       for (int j = 0; j < 5; j++) {
-        int rows = GetRows(GetBitCnt(i));
+        int rows = GetRows(GetBitCnt(i), setting);
         int cols = GetBitCnt(i) / rows;
         int num_trays = (num_flops + (GetBitCnt(i) - 1)) / GetBitCnt(i);
 
         for (int k = 0; k < num_trays; k++) {
           GetSlots(
-              start_trays[i][j][k].pt, rows, cols, start_trays[i][j][k].slots);
+              start_trays[i][j][k].pt, rows, cols, start_trays[i][j][k].slots, setting);
           start_trays[i][j][k].cand.reserve(rows * cols);
           for (int idx = 0; idx < rows * cols; idx++) {
             start_trays[i][j][k].cand.emplace_back(-1);
@@ -861,20 +906,20 @@ void MBFF::RunSilh(std::vector<std::vector<Tray>>& trays,
     int bit_idx = ind[i].first;
     int tray_idx = ind[i].second;
 
-    int rows = GetRows(GetBitCnt(bit_idx));
+    int rows = GetRows(GetBitCnt(bit_idx), setting);
     int cols = GetBitCnt(bit_idx) / rows;
 
     std::vector<std::pair<int, int>> tmp_cluster;
 
     RunCapacitatedKMeans(
-        flops, start_trays[bit_idx][tray_idx], rows * cols, 8, tmp_cluster);
+        flops, start_trays[bit_idx][tray_idx], rows * cols, 8, tmp_cluster, setting);
 
     res[bit_idx][tray_idx]
         = GetSilh(flops, start_trays[bit_idx][tray_idx], tmp_cluster);
   }
 
   for (int i = 1; i < num_sizes_; i++) {
-    if (best_master_[i] != nullptr) {
+    if (best_master_[setting][i] != nullptr) {
       int opt_idx = 0;
       double opt_val = -1;
       for (int j = 0; j < 5; j++) {
@@ -1130,21 +1175,21 @@ double MBFF::GetTCPDisplacement()
 double MBFF::doit(const std::vector<Flop>& flops,
                   int mx_sz,
                   double alpha,
-                  double beta)
+                  double beta,
+                  int setting)
 {
-  // run k-means++ based decomposition
   std::vector<std::vector<Flop>> pointsets;
   KMeansDecomp(flops, mx_sz, pointsets);
 
   // all_start_trays[t][i][j]: start trays of size 2^i, multistart = j for
   // pointset[t]
-  std::vector<std::vector<std::vector<Tray>>>
-      all_start_trays[static_cast<int>(pointsets.size())];
-  for (int t = 0; t < static_cast<int>(pointsets.size()); t++) {
+  int num_pointsets = static_cast<int>(pointsets.size());
+  std::vector<std::vector<std::vector<Tray>>> all_start_trays[num_pointsets];
+  for (int t = 0; t < num_pointsets; t++) {
     all_start_trays[t].resize(num_sizes_);
     for (int i = 1; i < num_sizes_; i++) {
-      if (best_master_[i] != nullptr) {
-        int rows = GetRows(GetBitCnt(i));
+      if (best_master_[setting][i] != nullptr) {
+        int rows = GetRows(GetBitCnt(i), setting);
         int cols = GetBitCnt(i) / rows;
         double AR = (cols * width_ * ratios_[i]) / (rows * height_);
         int num_trays
@@ -1160,51 +1205,48 @@ double MBFF::doit(const std::vector<Flop>& flops,
   }
 
   double ans = 0;
-  std::vector<std::pair<int, int>>
-      all_mappings[static_cast<int>(pointsets.size())];
-  std::vector<Tray> all_final_trays[static_cast<int>(pointsets.size())];
+  std::vector<std::pair<int, int>> all_mappings[num_pointsets];
+  std::vector<Tray> all_final_trays[num_pointsets];
 
-  int num_pointsets = static_cast<int>(pointsets.size());
 #pragma omp parallel for num_threads(num_threads_)
   for (int t = 0; t < num_pointsets; t++) {
     std::vector<std::vector<Tray>> cur_trays;
-    RunSilh(cur_trays, pointsets[t], all_start_trays[t]);
+    RunSilh(cur_trays, pointsets[t], all_start_trays[t], setting);
 
     // run capacitated k-means per tray size
     int num_flops = static_cast<int>(pointsets[t].size());
     for (int i = 1; i < num_sizes_; i++) {
-      if (best_master_[i] != nullptr) {
-        int rows = GetRows(GetBitCnt(i)), cols = GetBitCnt(i) / rows;
+      if (best_master_[setting][i] != nullptr) {
+        int rows = GetRows(GetBitCnt(i), setting), cols = GetBitCnt(i) / rows;
         int num_trays = (num_flops + (GetBitCnt(i) - 1)) / GetBitCnt(i);
 
         for (int j = 0; j < num_trays; j++) {
-          GetSlots(cur_trays[i][j].pt, rows, cols, cur_trays[i][j].slots);
+          GetSlots(cur_trays[i][j].pt, rows, cols, cur_trays[i][j].slots, setting);
         }
 
         std::vector<std::pair<int, int>> cluster;
         RunCapacitatedKMeans(
-            pointsets[t], cur_trays[i], GetBitCnt(i), 35, cluster);
+            pointsets[t], cur_trays[i], GetBitCnt(i), 35, cluster, setting);
         MinCostFlow(pointsets[t], cur_trays[i], GetBitCnt(i), cluster);
         for (int j = 0; j < num_trays; j++) {
-          GetSlots(cur_trays[i][j].pt, rows, cols, cur_trays[i][j].slots);
+          GetSlots(cur_trays[i][j].pt, rows, cols, cur_trays[i][j].slots, setting);
         }
       }
     }
     for (int i = 0; i < num_sizes_; i++) {
-      if (!i || best_master_[i] != nullptr) {
+      if (!i || best_master_[setting][i] != nullptr) {
         all_final_trays[t].insert(
             all_final_trays[t].end(), cur_trays[i].begin(), cur_trays[i].end());
       }
     }
-    std::vector<std::pair<int, int>> mapping(
-        static_cast<int>(pointsets[t].size()));
-    double cur_ans = RunILP(pointsets[t], all_final_trays[t], mapping, alpha);
+    std::vector<std::pair<int, int>> mapping(num_flops);
+    double cur_ans = RunILP(pointsets[t], all_final_trays[t], mapping, alpha, setting);
     all_mappings[t] = mapping;
     ans += cur_ans;
   }
 
   for (int t = 0; t < num_pointsets; t++) {
-    ModifyPinConnections(pointsets[t], all_final_trays[t], all_mappings[t]);
+    ModifyPinConnections(pointsets[t], all_final_trays[t], all_mappings[t], setting);
   }
 
   return ans;
@@ -1223,22 +1265,22 @@ void MBFF::SetVars(const std::vector<Flop>& flops)
   }
 }
 
-void MBFF::SetRatios()
+void MBFF::SetRatios(int setting)
 {
   ratios_.clear();
   ratios_.push_back(1.00);
   for (int i = 1; i < num_sizes_; i++) {
     ratios_.push_back(std::numeric_limits<float>::max());
-    if (best_master_[i] != nullptr) {
+    if (best_master_[setting][i] != nullptr) {
       int slot_cnt = GetBitCnt(i);
-      int height = GetRows(i);
-      int slot_width = slot_cnt / height;
+      int rows = GetRows(i, setting);
+      int cols = slot_cnt / rows;
       ratios_[i]
-          = (tray_width_[i] / (width_ * (static_cast<float>(slot_width))));
+          = (tray_width_[setting][i] / (width_ * (static_cast<float>(cols))));
       log_->info(utl::GPL,
                  1002,
                  "Ratio for tray size {}: {}",
-                 GetBitCnt(i),
+                 slot_cnt,
                  ratios_[i]);
     }
   }
@@ -1265,11 +1307,23 @@ void MBFF::SeparateFlops(std::vector<std::vector<Flop>>& ffs)
   }
 
   for (auto clks : clk_terms) {
-    std::vector<Flop> flops;
+    std::vector<Flop> flops_0;
+    std::vector<Flop> flops_1;
     for (int idx : clks.second) {
-      flops.push_back(flops_[idx]);
+      int setting = GetNumQ(insts_[idx]) - GetNumD(insts_[idx]);
+      if (!setting) {
+        flops_0.push_back(flops_[idx]);
+      }
+      else {
+        flops_1.push_back(flops_[idx]);
+      }
     }
-    ffs.push_back(flops);
+    if (flops_0.size()) {
+      ffs.push_back(flops_0);
+    }
+    if (flops_1.size()) {
+      ffs.push_back(flops_1);
+    }
   }
 }
 
@@ -1296,8 +1350,9 @@ void MBFF::Run(int mx_sz, double alpha, double beta)
   double tot_ilp = 0;
   for (int i = 0; i < num_chunks; i++) {
     SetVars(FFs[i]);
-    SetRatios();
-    tot_ilp += doit(FFs[i], mx_sz, alpha, beta);
+    int setting = GetNumQ(insts_[FFs[i].back().idx]) - GetNumD(insts_[FFs[i].back().idx]);
+    SetRatios(setting);
+    tot_ilp += doit(FFs[i], mx_sz, alpha, beta, setting);
   }
   double tcp_disp = (beta * GetTCPDisplacement());
 
@@ -1316,45 +1371,58 @@ void MBFF::Run(int mx_sz, double alpha, double beta)
 
 void MBFF::ReadLibs()
 {
-  best_master_.resize(num_sizes_, nullptr);
-  tray_area_.resize(num_sizes_, std::numeric_limits<double>::max());
-  tray_width_.resize(num_sizes_);
-  pin_mappings_.resize(num_sizes_);
+  for (int i = 0; i < 2; i++) {
+    best_master_[i].resize(num_sizes_, nullptr);
+    tray_area_[i].resize(num_sizes_, std::numeric_limits<double>::max());
+    tray_width_[i].resize(num_sizes_);
+    pin_mappings_[i].resize(num_sizes_);
 
-  slot_to_tray_x_.resize(num_sizes_);
-  slot_to_tray_y_.resize(num_sizes_);
+    slot_to_tray_x_[i].resize(num_sizes_);
+    slot_to_tray_y_[i].resize(num_sizes_);
+  }
 
   for (auto lib : db_->getLibs()) {
     for (auto master : lib->getMasters()) {
+
       odb::dbInst* tmp_tray = odb::dbInst::create(block_, master, "test_tray");
       if (!IsValidTray(tmp_tray)) {
         odb::dbInst::destroy(tmp_tray);
         continue;
       }
-      int num_slots = GetNumSlots(tmp_tray);
+
+      int num_slots = GetNumD(tmp_tray);
       int idx = GetBitIdx(num_slots);
+      int setting = GetNumQ(tmp_tray) - num_slots;
       double cur_area = (master->getHeight() / multiplier_)
                         * (master->getWidth() / multiplier_);
-      if (tray_area_[idx] > cur_area) {
-        tray_area_[idx] = cur_area;
-        best_master_[idx] = master;
-        pin_mappings_[idx] = GetPinMapping(tmp_tray);
-        tray_width_[idx]
+
+      if (tray_area_[setting][idx] > cur_area) {
+        tray_area_[setting][idx] = cur_area;
+        best_master_[setting][idx] = master;
+        pin_mappings_[setting][idx] = GetPinMapping(tmp_tray);
+        tray_width_[setting][idx]
             = static_cast<double>(master->getWidth()) / multiplier_;
 
         // save slot info
         tmp_tray->setLocation(0, 0);
         tmp_tray->setPlacementStatus(odb::dbPlacementStatus::PLACED);
 
-        slot_to_tray_x_[idx].clear();
-        slot_to_tray_y_[idx].clear();
+        slot_to_tray_x_[setting][idx].clear();
+        slot_to_tray_y_[setting][idx].clear();
+
         std::vector<Point> d(num_slots);
         std::vector<Point> q(num_slots);
+        std::vector<Point> qn(num_slots);
 
         int itr = 0;
-        for (auto p : pin_mappings_[idx]) {
-          auto d_pin = tmp_tray->findITerm(p.first.c_str());
-          auto q_pin = tmp_tray->findITerm(p.second.c_str());
+        for (auto p : pin_mappings_[setting][idx]) {
+          odb::dbITerm* d_pin = tmp_tray->findITerm(p.first->name());
+          odb::dbITerm* q_pin = tmp_tray->findITerm(p.second.first->name());
+          odb::dbITerm* qn_pin = nullptr;
+          if (setting == 1) {
+            qn_pin = tmp_tray->findITerm(p.second.second->name());
+          }
+
           d[itr] = Point{
               d_pin->getBBox().xCenter() / multiplier_,
               d_pin->getBBox().yCenter() / multiplier_,
@@ -1363,32 +1431,50 @@ void MBFF::ReadLibs()
               q_pin->getBBox().xCenter() / multiplier_,
               q_pin->getBBox().yCenter() / multiplier_,
           };
+
+          if (setting == 1) {
+            qn[itr] = Point{
+              qn_pin->getBBox().xCenter() / multiplier_,
+              qn_pin->getBBox().yCenter() / multiplier_,
+            };
+          }
+
           itr++;
         }
         for (int i = 0; i < num_slots; i++) {
-          slot_to_tray_x_[idx].push_back(
-              (std::max(d[i].x, q[i].x) + std::min(d[i].x, q[i].x)) / 2.0);
-          slot_to_tray_y_[idx].push_back(
-              (std::max(d[i].y, q[i].y) + std::min(d[i].y, q[i].y)) / 2.0);
+          if (!setting) {
+            slot_to_tray_x_[setting][idx].push_back(
+                (std::max(d[i].x, q[i].x) + std::min(d[i].x, q[i].x)) / 2.0);
+            slot_to_tray_y_[setting][idx].push_back(
+                (std::max(d[i].y, q[i].y) + std::min(d[i].y, q[i].y)) / 2.0);
+          }
+          else {
+            slot_to_tray_x_[setting][idx].push_back(
+                (std::max(d[i].x, std::max(q[i].x, qn[i].x)) + std::min(d[i].x, std::min(q[i].x, qn[i].x))) / 2.0);
+            slot_to_tray_y_[setting][idx].push_back(
+                (std::max(d[i].y, std::max(q[i].y, qn[i].y)) + std::min(d[i].y, std::min(q[i].y, qn[i].y))) / 2.0);
+          }
         }
       }
       odb::dbInst::destroy(tmp_tray);
     }
   }
 
-  for (int i = 1; i < num_sizes_; i++) {
-    if (best_master_[i] != nullptr) {
-      log_->info(utl::GPL,
-                 1001,
-                 "Name of master with minimum area for size = {}: {}",
-                 GetBitCnt(i),
-                 best_master_[i]->getName());
-      for (size_t j = 0; j < slot_to_tray_x_[i].size(); j++) {
+  for (int k = 0; k < 2; k++) {
+    for (int i = 1; i < num_sizes_; i++) {
+      if (best_master_[k][i] != nullptr) {
         log_->info(utl::GPL,
-                   1010,
-                   "delta x: {}, delta y: {}",
-                   slot_to_tray_x_[i][j],
-                   slot_to_tray_y_[i][j]);
+                   1001,
+                   "Name of master with minimum area for size = {}: {}",
+                   GetBitCnt(i),
+                   best_master_[k][i]->getName());
+        for (size_t j = 0; j < slot_to_tray_x_[k][i].size(); j++) {
+          log_->info(utl::GPL,
+                     1010,
+                     "delta x: {}, delta y: {}",
+                     slot_to_tray_x_[k][i][j],
+                     slot_to_tray_y_[k][i][j]);
+        }
       }
     }
   }

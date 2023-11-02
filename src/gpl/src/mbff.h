@@ -116,12 +116,13 @@ class MBFF
   void Run(int mx_sz, double alpha, double beta);
 
  private:
-  int GetRows(int slot_cnt);
+  int GetRows(int slot_cnt, int setting);
   int GetBitCnt(int bit_idx);
   int GetBitIdx(int bit_cnt);
   double GetDist(const Point& a, const Point& b);
 
-  std::map<std::string, std::string> GetPinMapping(odb::dbInst* tray);
+  std::map<sta::LibertyPort*, std::pair<sta::LibertyPort*, 
+           sta::LibertyPort*>> GetPinMapping(odb::dbInst* tray);
 
   void SeparateFlops(std::vector<std::vector<Flop>>& ffs);
 
@@ -130,7 +131,8 @@ class MBFF
   bool IsDPin(odb::dbITerm* iterm);
   bool IsQPin(odb::dbITerm* iterm);
   bool IsValidTray(odb::dbInst* tray);
-  int GetNumSlots(odb::dbInst* inst);
+  int GetNumD(odb::dbInst* inst);
+  int GetNumQ(odb::dbInst* inst);
 
   Flop GetNewFlop(const std::vector<Flop>& prob_dist, double tot_dist);
   void GetStartTrays(std::vector<Flop> flops,
@@ -141,12 +143,14 @@ class MBFF
   void GetSlots(const Point& tray,
                 int rows,
                 int cols,
-                std::vector<Point>& slots);
+                std::vector<Point>& slots,
+                int setting);
 
   double doit(const std::vector<Flop>& flops,
               int mx_sz,
               double alpha,
-              double beta);
+              double beta,
+              int setting);
 
   void KMeans(const std::vector<Flop>& flops,
               std::vector<std::vector<Flop>>& clusters);
@@ -165,16 +169,18 @@ class MBFF
                             std::vector<Tray>& trays,
                             int sz,
                             int iter,
-                            std::vector<std::pair<int, int>>& cluster);
+                            std::vector<std::pair<int, int>>& cluster,
+                            int setting);
   void RunSilh(std::vector<std::vector<Tray>>& trays,
                const std::vector<Flop>& pointset,
-               std::vector<std::vector<std::vector<Tray>>>& start_trays);
+               std::vector<std::vector<std::vector<Tray>>>& start_trays,
+               int setting);
 
   void ReadLibs();
   void ReadFFs();
   void ReadPaths();
   void SetVars(const std::vector<Flop>& flops);
-  void SetRatios();
+  void SetRatios(int setting);
   void SetTrayNames();
 
   double RunLP(const std::vector<Flop>& flops,
@@ -183,10 +189,12 @@ class MBFF
   double RunILP(const std::vector<Flop>& flops,
                 const std::vector<Tray>& trays,
                 std::vector<std::pair<int, int>>& final_flop_to_slot,
-                double alpha);
+                double alpha,
+                int setting);
   void ModifyPinConnections(const std::vector<Flop>& flops,
                             const std::vector<Tray>& trays,
-                            std::vector<std::pair<int, int>>& mapping);
+                            std::vector<std::pair<int, int>>& mapping,
+                            int setting);
   double GetTCPDisplacement();
 
   odb::dbDatabase* db_;
@@ -205,13 +213,14 @@ class MBFF
   std::vector<Path> paths_;
   std::set<int> flops_in_path_;
 
-  std::vector<odb::dbMaster*> best_master_;
-  std::vector<std::map<std::string, std::string>> pin_mappings_;
-  std::vector<double> tray_area_;
-  std::vector<double> tray_width_;
+  std::vector<odb::dbMaster*> best_master_[2];
+  std::vector<std::map<sta::LibertyPort*, 
+              std::pair<sta::LibertyPort*, sta::LibertyPort*>>> pin_mappings_[2];
+  std::vector<double> tray_area_[2];
+  std::vector<double> tray_width_[2];
+  std::vector<std::vector<double>> slot_to_tray_x_[2];
+  std::vector<std::vector<double>> slot_to_tray_y_[2];
   std::vector<double> ratios_;
-  std::vector<std::vector<double>> slot_to_tray_x_;
-  std::vector<std::vector<double>> slot_to_tray_y_;
   std::vector<int> unused_;
 
   int num_threads_;
