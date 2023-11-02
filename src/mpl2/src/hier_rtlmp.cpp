@@ -3270,6 +3270,11 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
           Rect(b_lx - lx, b_ly - ly, b_ux - lx, b_uy - ly));
     }
   }
+
+  if (graphics_) {
+    graphics_->setMacroBlockages(macro_blockages);
+  }
+
   // Each cluster is modeled as Soft Macro
   // The fences or guides for each cluster is created by merging
   // the fences and guides for hard macros in each cluster
@@ -4150,6 +4155,10 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
     }
   }
 
+  if (graphics_) {
+    graphics_->setMacroBlockages(macro_blockages);
+  }
+
   // Each cluster is modeled as Soft Macro
   // The fences or guides for each cluster is created by merging
   // the fences and guides for hard macros in each cluster
@@ -4643,6 +4652,10 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
       macro_blockages.push_back(
           Rect(b_lx - lx, b_ly - ly, b_ux - lx, b_uy - ly));
     }
+  }
+
+  if (graphics_) {
+    graphics_->setMacroBlockages(macro_blockages);
   }
 
   // Each cluster is modeled as Soft Macro
