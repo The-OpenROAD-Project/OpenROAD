@@ -1395,7 +1395,7 @@ void MBFF::ReadLibs()
 
       int num_slots = GetNumD(tmp_tray);
       int idx = GetBitIdx(num_slots);
-      int setting = GetNumQ(tmp_tray) - num_slots;
+      int setting = (GetNumQ(tmp_tray) - num_slots == 0 ? 0 : 1);
       double cur_area = (master->getHeight() / multiplier_)
                         * (master->getWidth() / multiplier_);
 
