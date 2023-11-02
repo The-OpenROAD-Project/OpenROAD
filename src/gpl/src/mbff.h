@@ -130,9 +130,12 @@ class MBFF
   bool IsClockPin(odb::dbITerm* iterm);
   bool IsDPin(odb::dbITerm* iterm);
   bool IsQPin(odb::dbITerm* iterm);
-  bool IsValidTray(odb::dbInst* tray);
   int GetNumD(odb::dbInst* inst);
   int GetNumQ(odb::dbInst* inst);
+
+  bool IsValidFlop(odb::dbInst* inst);
+  bool IsValidTray(odb::dbInst* tray);
+
 
   Flop GetNewFlop(const std::vector<Flop>& prob_dist, double tot_dist);
   void GetStartTrays(std::vector<Flop> flops,
