@@ -219,9 +219,9 @@ class MBFF
   std::vector<Path> paths_;
   std::set<int> flops_in_path_;
 
-  /* 
+  /*
   Let B = a bitmask representing an instance
-  The 1st bit of B is on if #Q - #D pins > 0 
+  The 1st bit of B is on if #Q - #D pins > 0
   The 2nd bit of B is on if the SET pin exists
   The 3rd bit of B is on if the RESET pin exists
   max(B) = 2^2 + 2^1 + 2^0 = 7

@@ -48,15 +48,18 @@
 
 namespace gpl {
 
-bool MBFF::HasSet(odb::dbInst* inst) {
+bool MBFF::HasSet(odb::dbInst* inst)
+{
   return false;
 }
 
-bool MBFF::HasReset(odb::dbInst* inst) {
+bool MBFF::HasReset(odb::dbInst* inst)
+{
   return false;
 }
 
-int MBFF::GetBitMask(odb::dbInst* inst) {
+int MBFF::GetBitMask(odb::dbInst* inst)
+{
   int ret = 0;
   int cnt_d = GetNumD(inst);
   int cnt_q = GetNumQ(inst);
@@ -100,7 +103,6 @@ bool MBFF::IsQPin(odb::dbITerm* iterm)
   const bool yes = (iterm->getIoType() == odb::dbIoType::OUTPUT);
   return (yes & !exclude);
 }
-
 
 int MBFF::GetNumD(odb::dbInst* inst)
 {
@@ -157,8 +159,7 @@ int MBFF::GetRows(int slot_cnt, int bitmask)
   int idx = GetBitIdx(slot_cnt);
   int width = int(multiplier_ * tray_width_[bitmask][idx]);
   int height = int(multiplier_
-                   * (tray_area_[bitmask][idx]
-                      / tray_width_[bitmask][idx]));
+                   * (tray_area_[bitmask][idx] / tray_width_[bitmask][idx]));
   return (height / std::gcd(width, height));
 }
 
@@ -1289,32 +1290,21 @@ double MBFF::doit(const std::vector<Flop>& flops,
     int num_flops = static_cast<int>(pointsets[t].size());
     for (int i = 1; i < num_sizes_; i++) {
       if (best_master_[bitmask][i] != nullptr) {
-        int rows = GetRows(GetBitCnt(i), bitmask),
-            cols = GetBitCnt(i) / rows;
+        int rows = GetRows(GetBitCnt(i), bitmask), cols = GetBitCnt(i) / rows;
         int num_trays = (num_flops + (GetBitCnt(i) - 1)) / GetBitCnt(i);
 
         for (int j = 0; j < num_trays; j++) {
-          GetSlots(cur_trays[i][j].pt,
-                   rows,
-                   cols,
-                   cur_trays[i][j].slots,
-                   bitmask);
+          GetSlots(
+              cur_trays[i][j].pt, rows, cols, cur_trays[i][j].slots, bitmask);
         }
 
         std::vector<std::pair<int, int>> cluster;
-        RunCapacitatedKMeans(pointsets[t],
-                             cur_trays[i],
-                             GetBitCnt(i),
-                             35,
-                             cluster,
-                             bitmask);
+        RunCapacitatedKMeans(
+            pointsets[t], cur_trays[i], GetBitCnt(i), 35, cluster, bitmask);
         MinCostFlow(pointsets[t], cur_trays[i], GetBitCnt(i), cluster);
         for (int j = 0; j < num_trays; j++) {
-          GetSlots(cur_trays[i][j].pt,
-                   rows,
-                   cols,
-                   cur_trays[i][j].slots,
-                   bitmask);
+          GetSlots(
+              cur_trays[i][j].pt, rows, cols, cur_trays[i][j].slots, bitmask);
         }
       }
     }
@@ -1325,8 +1315,8 @@ double MBFF::doit(const std::vector<Flop>& flops,
       }
     }
     std::vector<std::pair<int, int>> mapping(num_flops);
-    double cur_ans = RunILP(
-        pointsets[t], all_final_trays[t], mapping, alpha, bitmask);
+    double cur_ans
+        = RunILP(pointsets[t], all_final_trays[t], mapping, alpha, bitmask);
     all_mappings[t] = mapping;
     ans += cur_ans;
   }
@@ -1362,8 +1352,8 @@ void MBFF::SetRatios(int bitmask)
       int slot_cnt = GetBitCnt(i);
       int rows = GetRows(i, bitmask);
       int cols = slot_cnt / rows;
-      ratios_[i] = (tray_width_[bitmask][i]
-                    / (width_ * (static_cast<float>(cols))));
+      ratios_[i]
+          = (tray_width_[bitmask][i] / (width_ * (static_cast<float>(cols))));
       log_->info(
           utl::GPL, 1002, "Ratio for tray size {}: {}", slot_cnt, ratios_[i]);
     }
