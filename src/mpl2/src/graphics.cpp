@@ -213,7 +213,7 @@ void Graphics::drawCluster(Cluster* cluster, gui::Painter& painter)
 
 void Graphics::drawBlockages(gui::Painter& painter)
 {
-  for (auto blockage : macro_blockages_) {
+  for (const auto& blockage : macro_blockages_) {
     const int lx = dbu_ * blockage.xMin();
     const int ly = dbu_ * blockage.yMin();
     const int ux = dbu_ * blockage.xMax();
