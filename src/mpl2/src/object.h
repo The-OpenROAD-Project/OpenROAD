@@ -202,9 +202,9 @@ class Cluster
 
   // IO cluster
   // Position must be specified when setting an IO cluster
-  void setAsIOCluster(const std::pair<float, float> pos,
-                      const float width,
-                      const float height);
+  void setAsIOCluster(const std::pair<float, float>& pos,
+                      float width,
+                      float height);
   bool isIOCluster() const;
 
   // Metrics Support
@@ -648,7 +648,7 @@ struct BundledNet
 // Rect class use float type for Micron unit
 struct Rect
 {
-  Rect() {}
+  Rect() = default;
   Rect(const float lx,
        const float ly,
        const float ux,
@@ -678,8 +678,9 @@ struct Rect
               float core_ux,
               float core_uy)
   {
-    if (fixed_flag == true)
+    if (fixed_flag == true) {
       return;
+    }
 
     const float width = ux - lx;
     const float height = uy - ly;
@@ -727,8 +728,9 @@ struct Rect
                    float core_ux,
                    float core_uy)
   {
-    if (fixed_flag == true)
+    if (fixed_flag == true) {
       return;
+    }
     moveHor(x_dist);
     moveVer(y_dist);
     const float width = getWidth();
@@ -754,12 +756,13 @@ struct Rect
     }
 
     if (lx < core_lx - 1.0 || ly < core_ly - 1.0 || ux > core_ux + 1.0
-        || uy > core_uy + 1.0)
+        || uy > core_uy + 1.0) {
       std::cout << "Error !!!\n"
                 << "core_lx =  " << core_lx << "  "
                 << "core_ly =  " << core_ly << "  "
                 << "core_ux =  " << core_ux << "  "
                 << "core_uy =  " << core_uy << std::endl;
+    }
   }
 
   inline void resetForce()
@@ -774,8 +777,9 @@ struct Rect
 
   inline void makeSquare(float ar = 1.0)
   {
-    if (fixed_flag == true)
+    if (fixed_flag == true) {
       return;
+    }
     const float x = getX();
     const float y = getY();
     const float height = std::sqrt(getWidth() * getHeight() * ar);
@@ -811,8 +815,9 @@ struct Rect
 
   void merge(const Rect& rect)
   {
-    if (!isValid())
+    if (!isValid()) {
       return;
+    }
 
     lx = std::min(lx, rect.lx);
     ly = std::min(ly, rect.ly);
@@ -825,8 +830,9 @@ struct Rect
                 float outline_ux,
                 float outline_uy)
   {
-    if (!isValid())
+    if (!isValid()) {
       return;
+    }
 
     lx = std::max(lx, outline_lx);
     ly = std::max(ly, outline_ly);
