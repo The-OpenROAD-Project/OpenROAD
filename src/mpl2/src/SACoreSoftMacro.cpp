@@ -434,6 +434,9 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
           continue;
         }
 
+        // As there can be situations in which we cannot guarantee that there
+        // will be no overlap, we consider the number of macros in the cluster
+        // to prioritize clusters with more macros.
         macro_blockage_penalty_
             += overlap_width * overlap_height * soft_macro.getNumMacro();
       }
