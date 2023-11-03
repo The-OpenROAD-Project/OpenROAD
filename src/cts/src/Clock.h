@@ -90,8 +90,8 @@ class ClockInst
   odb::dbITerm* getDbInputPin() const { return inputPinObj_; }
   void setInputCap(float cap) { inputCap_ = cap; }
   float getInputCap() const { return inputCap_; }
-
   bool isClockBuffer() const { return type_ == CLOCK_BUFFER; }
+  double getInsertionDelay() const { return insertionDelay_; }
 
  private:
   std::string name_;
@@ -101,7 +101,7 @@ class ClockInst
   odb::dbInst* instObj_ = nullptr;
   odb::dbITerm* inputPinObj_ = nullptr;
   float inputCap_;
-  float insertionDelay_;  // insertion delay in terms of length, not time
+  double insertionDelay_;  // insertion delay in terms of length, not time
 };
 
 //-----------------------------------------------------------------------------

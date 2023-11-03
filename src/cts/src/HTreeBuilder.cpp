@@ -62,6 +62,15 @@ void HTreeBuilder::preSinkClustering(
       const Point<double> normLocation((float) inst.getX() / wireSegmentUnit_,
                                        (float) inst.getY() / wireSegmentUnit_);
       mapLocationToSink_[normLocation] = &inst;
+      if (!fuzzyEqual(inst.getInsertionDelay(), 0.0, 1e-6)) {
+        setSinkInsertionDelay(
+            normLocation, (double) inst.getInsertionDelay() / wireSegmentUnit_);
+        // clang-format off
+	debugPrint(logger_, CTS, "Triton", 1, "sink {} has insDelay {} at {}",
+		   inst.getName(), getSinkInsertionDelay(normLocation),
+		   normLocation);
+        // clang-format on
+      }
     });
   }
 
@@ -71,7 +80,7 @@ void HTreeBuilder::preSinkClustering(
     return;
   }
 
-  SinkClustering matching(options_, techChar_);
+  SinkClustering matching(options_, techChar_, this);
   const unsigned numPoints = points.size();
 
   for (int pointIdx = 0; pointIdx < numPoints; ++pointIdx) {
@@ -99,14 +108,28 @@ void HTreeBuilder::preSinkClustering(
       std::vector<ClockInst*> clusterClockInsts;  // sink clock insts
       float xSum = 0;
       float ySum = 0;
+      double insDelay = 0.0;
       for (auto point_idx : cluster) {
         const std::pair<double, double>& point = points[point_idx];
         const Point<double> mapPoint(point.first, point.second);
-        xSum += point.first;
-        ySum += point.second;
         if (mapLocationToSink_.find(mapPoint) == mapLocationToSink_.end()) {
           logger_->error(CTS, 79, "Sink not found.");
         }
+        // add 4 points to account for insertion delay
+        if (sinkHasInsertionDelay(mapPoint)) {
+          insDelay = getSinkInsertionDelay(mapPoint);
+          xSum += point.first + insDelay;
+          xSum += point.first - insDelay;
+          ySum += point.second + insDelay;
+          ySum += point.second - insDelay;
+          // clang-format off
+          debugPrint(logger_, CTS, "Triton", 1, "added extra ins delay weights "
+                     "at sink {}: {:0.3f}", mapPoint, insDelay);
+          // clang-format on
+        } else {
+	  xSum += point.first;
+	  ySum += point.second;
+	}
         clusterClockInsts.push_back(mapLocationToSink_[mapPoint]);
         // clock inst needs to be added to the new subnet
       }
@@ -249,14 +272,14 @@ void plotBlockage(std::ofstream& file, odb::dbDatabase* db_, int scalingFactor)
 }
 
 // distance to move sinks from old loc to new loc
-double weightedDistance(const Point<double>& newLoc,
-                        const Point<double>& oldLoc,
-                        const std::vector<Point<double>>& sinks)
+double HTreeBuilder::weightedDistance(const Point<double>& newLoc,
+				      const Point<double>& oldLoc,
+				      const std::vector<Point<double>>& sinks)
 {
   double dist = 0;
   for (const Point<double>& sink : sinks) {
-    dist += newLoc.computeDist(sink);
-    dist += newLoc.computeDist(oldLoc);
+    dist += computeDist(newLoc, sink);
+    dist += computeDist(newLoc, oldLoc);
   }
   return dist;
 }
@@ -288,17 +311,17 @@ unsigned HTreeBuilder::findSibling(LevelTopology& topology,
   return i;
 }
 
-void scalePosition(Point<double>& loc,
-                   const Point<double>& parLoc,
-                   double leng,
-                   double scale)
+void HTreeBuilder::scalePosition(Point<double>& loc,
+				 const Point<double>& parLoc,
+				 double leng,
+				 double scale)
 {
   double px = parLoc.getX();
   double py = parLoc.getY();
   double ax = loc.getX();
   double ay = loc.getY();
 
-  double d = loc.computeDist(parLoc);
+  double d = computeDist(loc, parLoc);
   double x, y;
   if (d > 0) {  // yy8
     double delta = d * scale;
@@ -332,12 +355,12 @@ void setSiblingPosition(const Point<double>& a,
 }
 
 // Balance the two branches on the very top level
-void adjustToplevelTopology(Point<double>& a,
-                            Point<double>& b,
-                            const Point<double>& parLoc)
+void HTreeBuilder::adjustToplevelTopology(Point<double>& a,
+					  Point<double>& b,
+					  const Point<double>& parLoc)
 {
-  double da = a.computeDist(parLoc);
-  double db = b.computeDist(parLoc);
+  double da = computeDist(a, parLoc);
+  double db = computeDist(b, parLoc);
   if (da < db) {
     setSiblingPosition(a, b, parLoc);
   } else {
@@ -404,7 +427,7 @@ Point<double> HTreeBuilder::findBestLegalLocation(
   Point<double> best(0.0, 0.0);
   double minDiff = std::numeric_limits<double>::max();
   for (const Point<double>& loc : legalLocations) {
-    double dist = loc.computeDist(parentPoint);
+    double dist = computeDist(loc, parentPoint);
     double diff = abs(dist - targetDist);
     // clang-format off
     if (logger_->debugCheck(utl::CTS, "legalizer", 3)) {
@@ -440,7 +463,7 @@ Point<double> HTreeBuilder::adjustBestLegalLocation(
     double y2,
     int scalingFactor)
 {
-  if (fuzzyEqual(targetDist, currLoc.computeDist(parentPoint))) {
+  if (fuzzyEqual(targetDist, computeDist(currLoc, parentPoint))) {
     return currLoc;
   }
 
@@ -479,7 +502,7 @@ bool HTreeBuilder::adjustAlongBlockage(double targetDist,
   // clang-format off
   debugPrint(logger_, CTS, "legalizer", 3, "{} currDist={:0.3f} != "
 	     "targetDist={:0.3f}, adjustAlongBlockage...", currLoc,
-	     currLoc.computeDist(parentPoint), targetDist);
+	     computeDist(currLoc, parentPoint), targetDist);
   // clang-format on
   double x = currLoc.getX();
   double y = currLoc.getY();
@@ -549,7 +572,7 @@ void HTreeBuilder::checkLegalityAndCostSpecial(
     double& sinkDist,
     double& bestSinkDist)
 {
-  if (fuzzyEqual(newLoc.computeDist(parentPoint), targetDist)
+  if (fuzzyEqual(computeDist(newLoc, parentPoint), targetDist)
       && checkLegalitySpecial(newLoc, x1, y1, x2, y2, scalingFactor)) {
     sinkDist = weightedDistance(newLoc, oldLoc, sinks);
     if (sinkDist < bestSinkDist) {
@@ -565,7 +588,7 @@ void HTreeBuilder::checkLegalityAndCostSpecial(
   // clang-format off
   debugPrint(logger_, CTS, "legalizer", 3, "adjustBestLegalLoc: branchPt "
 	     "move:{}=>{} is illegal or dist {:0.3f} != {:0.3f}",
-	     oldLoc, newLoc, newLoc.computeDist(parentPoint), targetDist);
+	     oldLoc, newLoc, computeDist(newLoc, parentPoint), targetDist);
   // clang-format on
 }
 
@@ -811,7 +834,7 @@ void HTreeBuilder::checkLegalityAndCost(const Point<double>& oldLoc,
                                         double& sinkDist,
                                         double& bestSinkDist)
 {
-  if (fuzzyEqual(newLoc.computeDist(parentPoint), targetDist)
+  if (fuzzyEqual(computeDist(newLoc, parentPoint), targetDist)
       && checkLegalityLoc(newLoc, scalingFactor)) {
     sinkDist = weightedDistance(newLoc, oldLoc, sinks);
     if (sinkDist < bestSinkDist) {
@@ -825,7 +848,7 @@ void HTreeBuilder::checkLegalityAndCost(const Point<double>& oldLoc,
   } else {
     debugPrint(logger_, CTS, "legalizer", 3, "adjustBeyondBlockage: branchPt "
 	       "move:{}=>{} is illegal or dist {:0.3f} != {:0.3f}",
-	       oldLoc, newLoc, newLoc.computeDist(parentPoint), targetDist);
+	       oldLoc, newLoc, computeDist(newLoc, parentPoint), targetDist);
     // clang-format on
   }
 }
@@ -852,8 +875,8 @@ void HTreeBuilder::legalizeDummy()
       double leng = topology.getLength();
       Point<double>& sibLoc = findSiblingLoc(topology, idx, parentIdx);
 
-      double d1 = branchPoint.computeDist(sibLoc);
-      double d2 = branchPoint.computeDist(parentPoint);
+      double d1 = computeDist(branchPoint, sibLoc);
+      double d2 = computeDist(branchPoint, parentPoint);
       bool overlap = d1 == 0 || d2 == 0;
       bool dummy = sinks.empty();  // dummy buffers drive no sinks
 
@@ -885,7 +908,7 @@ void HTreeBuilder::legalizeDummy()
                                                  x2,
                                                  y2,
                                                  scalingFactor);
-        double d = legalBranchPoint.computeDist(parentPoint);
+        double d = computeDist(legalBranchPoint, parentPoint);
         // clang-format off
         debugPrint(logger_, CTS, "legalizer", 1,
             "legalizeDummy level index {}: {}->{} d={:0.3f}, leng={:0.3f},"
@@ -934,7 +957,7 @@ void HTreeBuilder::legalize()
       const std::vector<Point<double>>& sinks
           = topology.getBranchSinksLocations(bufferIdx);
 
-      double leng = branchPoint.computeDist(parentPoint);
+      double leng = computeDist(branchPoint, parentPoint);
       // clang-format off
       if (logger_->debugCheck(utl::CTS, "legalizer", 3)) {
         logger_->report("  HTree level*{}* bufId*{}*, parent:{}, branch:{}, "
@@ -987,7 +1010,7 @@ void HTreeBuilder::legalize()
 	debugPrint(logger_, CTS, "legalizer", 3,
 		   "adjustBeyondBlockage applied to legal branchPt:{}=>{} "
 		   "parentPt:{} newDist={:0.3f}", branchPoint, newLocation,
-		   parentPoint, newLocation.computeDist(parentPoint));
+		   parentPoint, computeDist(newLocation, parentPoint));
         // clang-format on
         commitMoveLoc(branchPoint, newLocation);
         branchPoint = newLocation;
@@ -1579,7 +1602,7 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
   Point<double>& branchPt1 = topology.getBranchingPoint(branchPtIdx1);
   Point<double>& branchPt2 = topology.getBranchingPoint(branchPtIdx2);
 #ifndef NDEBUG
-  const double targetDist = branchPt2.computeDist(rootLocation);
+  const double targetDist = computeDist(branchPt2, rootLocation);
 #endif
 
   std::vector<std::pair<float, float>> means;
@@ -1605,10 +1628,11 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
          ++elementIdx) {
       const unsigned sinkIdx = clusters[clusterIdx][elementIdx];
       const Point<double> sinkLoc(sinks[sinkIdx].first, sinks[sinkIdx].second);
-      const double dist = clusterIdx == 0 ? branchPt1.computeDist(sinkLoc)
-                                          : branchPt2.computeDist(sinkLoc);
-      const double distOther = clusterIdx == 0 ? branchPt2.computeDist(sinkLoc)
-                                               : branchPt1.computeDist(sinkLoc);
+      const double dist = clusterIdx == 0 ? computeDist(branchPt1, sinkLoc)
+                                          : computeDist(branchPt2, sinkLoc);
+      const double distOther = clusterIdx == 0
+                                   ? computeDist(branchPt2, sinkLoc)
+                                   : computeDist(branchPt1, sinkLoc);
       if (clusterIdx == 0) {
         topology.addSinkToBranch(branchPtIdx1, sinkLoc);
       } else {
@@ -1627,8 +1651,9 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
                     movedSinks);
   }
 
-  assert(std::abs(branchPt1.computeDist(rootLocation) - targetDist) < 0.001
-         && std::abs(branchPt2.computeDist(rootLocation) - targetDist) < 0.001);
+  assert(std::abs(computeDist(branchPt1, rootLocation) - targetDist) < 0.001
+         && std::abs(computeDist(branchPt2, rootLocation) - targetDist)
+                < 0.001);
 }
 
 void HTreeBuilder::createClockSubNets()
@@ -1897,10 +1922,12 @@ void HTreeBuilder::printHTree()
 
       double leng = topology.getLength();
       // clang-format off
-      logger_->report("HTree: level*{}* bufId*{}*: branchPt:{} topo len:{:0.3f} dist to "
-		      "parent:{:0.3f} weighted sink len:{:0.3f} parentPt:{}",
-		      levelIdx, idx, branchPoint, leng, branchPoint.computeDist(parentPoint),
-		      weightedDistance(branchPoint, branchPoint, sinks), parentPoint);
+      logger_->report("HTree: level*{}* bufId*{}*: branchPt:{} topo len:{:0.3f}"
+		      " dist to parent:{:0.3f} weighted sink len:{:0.3f} "
+		      "parentPt:{}", levelIdx, idx, branchPoint, leng,
+		      computeDist(branchPoint, parentPoint),
+		      weightedDistance(branchPoint, branchPoint, sinks),
+		      parentPoint);
       // clang-format on
     }
     logger_->report("-------------------------------------------------");
@@ -1973,7 +2000,7 @@ void SegmentBuilder::build(const std::string& forceBuffer)
       // clang-format off
       if (bufferLoc != legalBufferLoc) {
 	// adjust for cell movement
-	connectionLength -= bufferLoc.computeDist(legalBufferLoc);
+	connectionLength -= tree_->computeDist(bufferLoc, legalBufferLoc);
 	debugPrint(getTree()->getLogger(), CTS, "legalizer", 2,
 		   " SegmentBuilder::build {} TCId:{} bufId:{} connLen:{:0.1f}: "
 		   "{} => {}", instPrefix_  + std::to_string(numBufferLevels_),

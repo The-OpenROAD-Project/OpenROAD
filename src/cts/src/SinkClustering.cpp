@@ -51,14 +51,17 @@ namespace cts {
 using std::vector;
 using utl::CTS;
 
-SinkClustering::SinkClustering(const CtsOptions* options, TechChar* techChar)
+SinkClustering::SinkClustering(const CtsOptions* options,
+                               TechChar* techChar,
+                               HTreeBuilder* HTree)
     : options_(options),
       logger_(options->getLogger()),
       techChar_(techChar),
       maxInternalDiameter_(10),
       capPerUnit_(0.0),
       useMaxCapLimit_(options->getSinkClusteringUseMaxCap()),
-      scaleFactor_(1)
+      scaleFactor_(1),
+      HTree_(HTree)
 {
 }
 
@@ -225,7 +228,7 @@ void SinkClustering::findBestMatching(const unsigned groupSize)
         // Check the distance from the current point to others in the cluster,
         // if there are any.
         for (Point<double> comparisonPoint : solutionPoints[j][clusters[j]]) {
-          const double cost = p.computeDist(comparisonPoint);
+          const double cost = HTree_->computeDist(p, comparisonPoint);
           if (useMaxCapLimit_) {
             capCost
                 += cost * capPerUnit_
@@ -302,7 +305,7 @@ void SinkClustering::findBestMatching(const unsigned groupSize)
       double distanceCost = 0;
       double capCost = pointsCap_[idx];
       for (Point<double> comparisonPoint : solutionPoints[j][clusters[j]]) {
-        const double cost = p.computeDist(comparisonPoint);
+        const double cost = HTree_->computeDist(p, comparisonPoint);
         if (useMaxCapLimit_) {
           capCost += cost * capPerUnit_
                      + pointsCap_[solutionPointsIdx[j][clusters[j]][pointIdx]];

@@ -41,6 +41,7 @@
 #include <vector>
 
 #include "CtsOptions.h"
+#include "HTreeBuilder.h"
 #include "TechChar.h"
 #include "Util.h"
 
@@ -68,7 +69,9 @@ class Matching
 class SinkClustering
 {
  public:
-  SinkClustering(const CtsOptions* options, TechChar* techChar);
+  SinkClustering(const CtsOptions* options,
+                 TechChar* techChar,
+                 HTreeBuilder* HTree);
 
   void addPoint(double x, double y) { points_.emplace_back(x, y); }
   void addCap(float cap) { pointsCap_.emplace_back(cap); }
@@ -117,6 +120,7 @@ class SinkClustering
   bool useMaxCapLimit_;
   int scaleFactor_;
   static constexpr double max_cap__factor_ = 10;
+  HTreeBuilder* HTree_;
 };
 
 }  // namespace cts

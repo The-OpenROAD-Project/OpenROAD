@@ -374,6 +374,17 @@ class HTreeBuilder : public TreeBuilder
     return numSinksPerSubRegion < numMaxLeafSinks_;
   }
 
+  double weightedDistance(const Point<double>& newLoc,
+			  const Point<double>& oldLoc,
+			  const std::vector<Point<double>>& sinks);
+  void scalePosition(Point<double>& loc,
+		     const Point<double>& parLoc,
+		     double leng,
+		     double scale);
+  void adjustToplevelTopology(Point<double>& a,
+			      Point<double>& b,
+			      const Point<double>& parLoc);
+
  private:
   Box<double> sinkRegion_;
   std::vector<LevelTopology> topologyForEachLevel_;

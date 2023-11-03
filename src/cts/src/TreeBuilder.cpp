@@ -204,7 +204,7 @@ Point<double> TreeBuilder::legalizeOneBuffer(Point<double> bufferLoc,
 
       for (const Point<double>& candidate : candidates) {
         if (!isOccupiedLoc(candidate)) {
-          dist = candidate.computeDist(bufferLoc);
+          dist = computeDist(candidate, bufferLoc);
           if (dist < minDist) {
             minDist = dist;
             bestLoc = candidate;

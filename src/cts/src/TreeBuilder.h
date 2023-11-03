@@ -36,6 +36,7 @@
 #pragma once
 
 #include <boost/functional/hash.hpp>
+#include <boost/unordered/unordered_map.hpp>
 #include <boost/unordered/unordered_set.hpp>
 #include <deque>
 #include <functional>
@@ -193,6 +194,31 @@ class TreeBuilder
   void commitLoc(const Point<double>& bufferLoc);
   void uncommitLoc(const Point<double>& bufferLoc);
   void commitMoveLoc(const Point<double>& oldLoc, const Point<double>& newLoc);
+  inline bool sinkHasInsertionDelay(const Point<double>& sink)
+  {
+    return (insertionDelays_.find(sink) != insertionDelays_.end());
+  }
+  inline void setSinkInsertionDelay(const Point<double>& sink, double insDelay)
+  {
+    insertionDelays_[sink] = insDelay;
+  }
+  inline double getSinkInsertionDelay(const Point<double>& sink)
+  {
+    auto it = insertionDelays_.find(sink);
+    if (it != insertionDelays_.end()) {
+      // clang-format off
+      debugPrint(logger_, utl::CTS, "Triton", 4, "sink {} has insertion "
+		 "delay {:0.3f}", sink, it->second);
+      // clang-format on
+      return it->second;
+    }
+    return 0.0;
+  }
+  inline double computeDist(const Point<double>& x, const Point<double>& y)
+  {
+    return x.computeDist(y) + getSinkInsertionDelay(x)
+           + getSinkInsertionDelay(y);
+  }
 
  protected:
   CtsOptions* options_ = nullptr;
@@ -216,6 +242,9 @@ class TreeBuilder
   // keep track of occupied cells to avoid overlap violations
   // this only tracks cell origin
   boost::unordered_set<Point<double>, pointHash, pointEqual> occupiedLocations_;
+  // keep track of insertion delays at sink pins
+  boost::unordered_map<Point<double>, double, pointHash, pointEqual>
+      insertionDelays_;
 };
 
 }  // namespace cts

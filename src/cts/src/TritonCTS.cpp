@@ -1021,6 +1021,7 @@ double TritonCTS::computeInsertionDelay(const std::string& name,
     sta::RiseFallMinMax insDelays = libPort->clockTreePathDelays();
     if (insDelays.hasValue()) {
       // use average of max rise and max fall
+      // TODO: do we need to look at min insertion delays?
       double delayPerSec
           = (insDelays.value(sta::RiseFall::rise(), sta::MinMax::max())
              + insDelays.value(sta::RiseFall::fall(), sta::MinMax::max()))
