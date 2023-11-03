@@ -1577,7 +1577,15 @@ void IOPlacer::addNamesConstraint(PinSet* pins, Edge edge, int begin, int end)
   }
 
   if (logger_->debugCheck(utl::PPL, "report_pin_names", 1)) {
-    debugPrint(logger_, utl::PPL, "report_pin_names", 1, " {}", pin_names);
+    debugPrint(logger_,
+               utl::PPL,
+               "report_pin_names",
+               1,
+               "Restrict pins [ {}] to region {}u-{}u at the {} edge.",
+               pin_names,
+               dbuToMicrons(begin),
+               dbuToMicrons(end),
+               getEdgeString(edge));
   } else {
     logger_->info(utl::PPL,
                   48,
@@ -1898,7 +1906,12 @@ void IOPlacer::addPinGroup(PinList* group, bool order)
   }
 
   if (logger_->debugCheck(utl::PPL, "report_pin_names", 1)) {
-    debugPrint(logger_, utl::PPL, "report_pin_names", 1, " {}", pin_names);
+    debugPrint(logger_,
+               utl::PPL,
+               "report_pin_names",
+               1,
+               "Pin group: [ {}]",
+               pin_names);
   } else {
     logger_->info(utl::PPL, 44, "Pin group: [ {}]", pin_names);
   }
