@@ -331,7 +331,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
     marker->setBBox(box);
     marker->setLayerNum(layerNum1);
     marker->setConstraint(con);
-    marker->addSrc(((drNet*) (net1->getOwner()))->getFrNet());
+    marker->addSrc(net1->getOwner());
     frCoord llx = gtl::xl(*viaRect1);
     frCoord lly = gtl::yl(*viaRect1);
     frCoord urx = gtl::xh(*viaRect1);

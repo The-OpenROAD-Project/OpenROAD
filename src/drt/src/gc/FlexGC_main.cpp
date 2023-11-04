@@ -763,8 +763,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_short(
            gtl::yh(markerRect));
   marker->setBBox(box);
   marker->setLayerNum(layerNum);
-  if ((((drNet*) (net1->getOwner()))->getFrNet())
-      == (((drNet*) (net2->getOwner()))->getFrNet())) {
+  if (checkSameFrNet(net1, net2)) {
     marker->setConstraint(
         getTech()->getLayer(layerNum)->getNonSufficientMetalConstraint());
   } else {
@@ -2232,9 +2231,7 @@ void FlexGCWorker::Impl::checkCutSpacing_spc_diff_layer(
   auto layerNum = rect1->getLayerNum();
   auto net1 = rect1->getNet();
   auto net2 = rect2->getNet();
-  if (con->hasStack() && con->hasSameNet()
-      && ((((drNet*) (net1->getOwner()))->getFrNet())
-          == (((drNet*) (net2->getOwner()))->getFrNet()))) {
+  if (con->hasStack() && con->hasSameNet() && checkSameFrNet(net1, net2)) {
     if (gtl::contains(*rect1, *rect2) || gtl::contains(*rect2, *rect1)) {
       return;
     }
@@ -2399,9 +2396,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_main(
     return;
   }
   // skip if con is same net rule but the two objs are diff net
-  if (con->isSameNet()
-      && ((((drNet*) (rect1->getNet()->getOwner()))->getFrNet())
-          != (((drNet*) (rect2->getNet()->getOwner()))->getFrNet()))) {
+  if (con->isSameNet() && !checkSameFrNet(rect1->getNet(), rect2->getNet())) {
     return;
   }
 
@@ -3011,9 +3006,7 @@ void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* ptr1,
   // net
   // TODO: filter the rule upfront
 
-  if (!con->hasSameNet()
-      && (((drNet*) (ptr1->getNet()->getOwner()))->getFrNet())
-             == (((drNet*) (ptr2->getNet()->getOwner()))->getFrNet())) {
+  if (!con->hasSameNet() && checkSameFrNet(ptr1->getNet(), ptr2->getNet())) {
     // same layer same net
     if (!(con->hasSecondLayer())) {
       if (getTech()->getLayer(ptr1->getLayerNum())->hasCutSpacing(true)) {
@@ -3163,8 +3156,7 @@ void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* rect,
   // Short, metSpc, NSMetal here
   for (auto& [objBox, ptr] : result) {
     if (con->hasSecondLayer()) {
-      if (((((drNet*) (rect->getNet()->getOwner()))->getFrNet())
-           != (((drNet*) (ptr->getNet()->getOwner()))->getFrNet()))
+      if (!checkSameFrNet(rect->getNet(), ptr->getNet())
           || con->getSameNetConstraint() == nullptr) {
         checkCutSpacing_main(rect, ptr, con);
       } else {
