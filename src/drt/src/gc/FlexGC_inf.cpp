@@ -108,24 +108,22 @@ void FlexGCWorker::Impl::checkOrthRectsMetSpcTblInf(
         marker->setLayerNum(lNum);
         marker->setConstraint(
             getTech()->getLayer(lNum)->getSpacingTableInfluence());
-        marker->addSrc(((drNet*) (rects[i]->getNet()->getOwner()))->getFrNet());
-        marker->addVictim(
-            ((drNet*) (rects[i]->getNet()->getOwner()))->getFrNet(),
-            make_tuple(lNum,
-                       Rect(gtl::xl(rect1),
-                            gtl::yl(rect1),
-                            gtl::xh(rect1),
-                            gtl::yh(rect1)),
-                       rects[i]->isFixed()));
-        marker->addSrc(((drNet*) (rects[j]->getNet()->getOwner()))->getFrNet());
-        marker->addAggressor(
-            ((drNet*) (rects[j]->getNet()->getOwner()))->getFrNet(),
-            make_tuple(lNum,
-                       Rect(gtl::xl(rect2),
-                            gtl::yl(rect2),
-                            gtl::xh(rect2),
-                            gtl::yh(rect2)),
-                       rects[j]->isFixed()));
+        marker->addSrc(rects[i]->getNet()->getOwner());
+        marker->addVictim(rects[i]->getNet()->getOwner(),
+                          make_tuple(lNum,
+                                     Rect(gtl::xl(rect1),
+                                          gtl::yl(rect1),
+                                          gtl::xh(rect1),
+                                          gtl::yh(rect1)),
+                                     rects[i]->isFixed()));
+        marker->addSrc(rects[j]->getNet()->getOwner());
+        marker->addAggressor(rects[j]->getNet()->getOwner(),
+                             make_tuple(lNum,
+                                        Rect(gtl::xl(rect2),
+                                             gtl::yl(rect2),
+                                             gtl::xh(rect2),
+                                             gtl::yh(rect2)),
+                                        rects[j]->isFixed()));
         addMarker(std::move(marker));
       } else
         break;  // spacing is larger than required, no need to check other

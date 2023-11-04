@@ -81,10 +81,55 @@ void FlexGCWorker::Impl::addMarker(std::unique_ptr<frMarker> in)
   auto con = in->getConstraint();
   std::vector<frBlockObject*> srcs(2, nullptr);
   int i = 0;
+  std::set<frBlockObject*> srcs_;
+  std::vector<std::pair<frBlockObject*, std::tuple<frLayerNum, Rect, bool>>>
+      victims_;
+  std::vector<std::pair<frBlockObject*, std::tuple<frLayerNum, Rect, bool>>>
+      aggressors_;
+  bool modified = false;
   for (auto& src : in->getSrcs()) {
-    srcs.at(i) = src;
+    if (src->typeId() == drcNet) {
+      srcs.at(i) = ((drNet*) (src))->getFrNet();
+      srcs_.insert(srcs.at(i));
+      modified = true;
+    } else {
+      srcs.at(i) = src;
+      srcs_.insert(src);
+    }
     i++;
   }
+  if (modified) {
+    in->setSrcs(srcs_);
+  }
+
+  modified = false;
+  for (auto& aggressor : in->getAggressors()) {
+    if (aggressor.first->typeId() == drcNet) {
+      frNet* temp = ((drNet*) (aggressor.first))->getFrNet();
+      aggressors_.push_back(std::make_pair(temp, aggressor.second));
+      modified = true;
+    } else {
+      aggressors_.push_back(aggressor);
+    }
+  }
+  if (modified) {
+    in->setAggressors(aggressors_);
+  }
+
+  modified = false;
+  for (auto& victim : in->getVictims()) {
+    if (victim.first->typeId() == drcNet) {
+      frNet* temp = ((drNet*) (victim.first))->getFrNet();
+      victims_.push_back(std::make_pair(temp, victim.second));
+      modified = true;
+    } else {
+      victims_.push_back(victim);
+    }
+  }
+  if (modified) {
+    in->setVictims(victims_);
+  }
+
   if (mapMarkers_.find({bbox, layerNum, con, srcs[0], srcs[1]})
       != mapMarkers_.end()) {
     return;

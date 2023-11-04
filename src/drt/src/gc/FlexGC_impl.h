@@ -238,6 +238,8 @@ class FlexGCWorker::Impl
       gcRect* rect2,
       const gtl::rectangle_data<frCoord>& markerRect);
 
+  bool checkSameFrNet(gcNet* net1, gcNet* net2);
+
   bool checkMetalSpacing_short_skipSameNet(
       gcRect* rect1,
       gcRect* rect2,

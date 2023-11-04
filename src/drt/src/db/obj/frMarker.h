@@ -105,10 +105,25 @@ class frMarker : public frFig
     return aggressors_;
   }
 
+  void setAggressors(
+      const std::vector<
+          std::pair<frBlockObject*, std::tuple<frLayerNum, Rect, bool>>>&
+          aggressors)
+  {
+    aggressors_ = aggressors;
+  }
+
   std::vector<std::pair<frBlockObject*, std::tuple<frLayerNum, Rect, bool>>>&
   getVictims()
   {
     return victims_;
+  }
+
+  void setVictims(
+      const std::vector<std::pair<frBlockObject*,
+                                  std::tuple<frLayerNum, Rect, bool>>>& victims)
+  {
+    victims_ = victims;
   }
 
   frConstraint* getConstraint() const { return constraint_; }

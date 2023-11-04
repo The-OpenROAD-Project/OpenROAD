@@ -286,9 +286,7 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_prl_getReqSpcVal(
     if (con->typeId() == frConstraintTypeEnum::frcSpacingTablePrlConstraint
         || con->typeId() == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
       // same-net override
-      if (!isObs
-          && ((((drNet*) (rect1->getNet()->getOwner()))->getFrNet())
-              == (((drNet*) (rect2->getNet()->getOwner()))->getFrNet()))) {
+      if (!isObs && rect1->getNet() == rect2->getNet()) {
         if (currLayer->hasSpacingSamenet()) {
           auto conSamenet = currLayer->getSpacingSamenet();
           if (!conSamenet->hasPGonly())
@@ -538,16 +536,16 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(
   marker->setBBox(box);
   marker->setLayerNum(layerNum);
   marker->setConstraint(getTech()->getLayer(layerNum)->getMinSpacing());
-  marker->addSrc(((drNet*) (net1->getOwner()))->getFrNet());
-  marker->addVictim(((drNet*) (net1->getOwner()))->getFrNet(),
+  marker->addSrc(net1->getOwner());
+  marker->addVictim(net1->getOwner(),
                     make_tuple(rect1->getLayerNum(),
                                Rect(gtl::xl(*rect1),
                                     gtl::yl(*rect1),
                                     gtl::xh(*rect1),
                                     gtl::yh(*rect1)),
                                rect1->isFixed()));
-  marker->addSrc(((drNet*) (net2->getOwner()))->getFrNet());
-  marker->addAggressor(((drNet*) (net2->getOwner()))->getFrNet(),
+  marker->addSrc(net2->getOwner());
+  marker->addAggressor(net2->getOwner(),
                        make_tuple(rect2->getLayerNum(),
                                   Rect(gtl::xl(*rect2),
                                        gtl::yl(*rect2),
@@ -659,6 +657,19 @@ bool FlexGCWorker::Impl::checkMetalSpacing_short_skipFixed(
   return false;
 }
 
+bool FlexGCWorker::Impl::checkSameFrNet(gcNet* net1, gcNet* net2)
+{
+  frBlockObject* owner1 = net1->getOwner();
+  frBlockObject* owner2 = net2->getOwner();
+  if (owner1->typeId() == drcNet) {
+    owner1 = ((drNet*) owner1)->getFrNet();
+  }
+  if (owner2->typeId() == drcNet) {
+    owner2 = ((drNet*) owner2)->getFrNet();
+  }
+  return owner1 == owner2;
+}
+
 bool FlexGCWorker::Impl::checkMetalSpacing_short_skipSameNet(
     gcRect* rect1,
     gcRect* rect2,
@@ -667,8 +678,7 @@ bool FlexGCWorker::Impl::checkMetalSpacing_short_skipSameNet(
   auto layerNum = rect1->getLayerNum();
   auto net1 = rect1->getNet();
   auto net2 = rect2->getNet();
-  if ((((drNet*) (net1->getOwner()))->getFrNet())
-      == (((drNet*) (net2->getOwner()))->getFrNet())) {
+  if (checkSameFrNet(net1, net2)) {
     // skip if good
     int64_t minWidth = getTech()->getLayer(layerNum)->getMinWidth();
     auto xLen = gtl::delta(markerRect, gtl::HORIZONTAL);
@@ -760,16 +770,16 @@ void FlexGCWorker::Impl::checkMetalSpacing_short(
   } else {
     marker->setConstraint(getTech()->getLayer(layerNum)->getShortConstraint());
   }
-  marker->addSrc(((drNet*) (net1->getOwner()))->getFrNet());
-  marker->addVictim(((drNet*) (net1->getOwner()))->getFrNet(),
+  marker->addSrc(net1->getOwner());
+  marker->addVictim(net1->getOwner(),
                     make_tuple(rect1->getLayerNum(),
                                Rect(gtl::xl(*rect1),
                                     gtl::yl(*rect1),
                                     gtl::xh(*rect1),
                                     gtl::yh(*rect1)),
                                rect1->isFixed()));
-  marker->addSrc(((drNet*) (net2->getOwner()))->getFrNet());
-  marker->addAggressor(((drNet*) (net2->getOwner()))->getFrNet(),
+  marker->addSrc(net2->getOwner());
+  marker->addAggressor(net2->getOwner(),
                        make_tuple(rect2->getLayerNum(),
                                   Rect(gtl::xl(*rect2),
                                        gtl::yl(*rect2),
@@ -1077,14 +1087,14 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
       marker->setBBox(box);
       marker->setLayerNum(layerNum);
       marker->setConstraint(con);
-      marker->addSrc(((drNet*) (net->getOwner()))->getFrNet());
+      marker->addSrc(net->getOwner());
       marker->addVictim(
-          ((drNet*) (net->getOwner()))->getFrNet(),
+          net->getOwner(),
           make_tuple(layerNum,
                      Rect(corner->x(), corner->y(), corner->x(), corner->y()),
                      corner->isFixed()));
-      marker->addSrc(((drNet*) (rect->getNet()->getOwner()))->getFrNet());
-      marker->addAggressor(((drNet*) (rect->getNet()->getOwner()))->getFrNet(),
+      marker->addSrc(rect->getNet()->getOwner());
+      marker->addAggressor(rect->getNet()->getOwner(),
                            make_tuple(rect->getLayerNum(),
                                       Rect(gtl::xl(*rect),
                                            gtl::yl(*rect),
@@ -1203,11 +1213,9 @@ void FlexGCWorker::Impl::checkMetalShape_minWidth(
   marker->setBBox(box);
   marker->setLayerNum(layerNum);
   marker->setConstraint(getTech()->getLayer(layerNum)->getMinWidthConstraint());
-  marker->addSrc(((drNet*) (net->getOwner()))->getFrNet());
-  marker->addVictim(((drNet*) (net->getOwner()))->getFrNet(),
-                    make_tuple(layerNum, box, false));
-  marker->addAggressor(((drNet*) (net->getOwner()))->getFrNet(),
-                       make_tuple(layerNum, box, false));
+  marker->addSrc(net->getOwner());
+  marker->addVictim(net->getOwner(), make_tuple(layerNum, box, false));
+  marker->addAggressor(net->getOwner(), make_tuple(layerNum, box, false));
   addMarker(std::move(marker));
 }
 
@@ -1262,11 +1270,9 @@ void FlexGCWorker::Impl::checkMetalShape_minStep_helper(
   marker->setBBox(markerBox);
   marker->setLayerNum(layerNum);
   marker->setConstraint(con);
-  marker->addSrc(((drNet*) (net->getOwner()))->getFrNet());
-  marker->addVictim(((drNet*) (net->getOwner()))->getFrNet(),
-                    make_tuple(layerNum, markerBox, false));
-  marker->addAggressor(((drNet*) (net->getOwner()))->getFrNet(),
-                       make_tuple(layerNum, markerBox, false));
+  marker->addSrc(net->getOwner());
+  marker->addVictim(net->getOwner(), make_tuple(layerNum, markerBox, false));
+  marker->addAggressor(net->getOwner(), make_tuple(layerNum, markerBox, false));
   addMarker(std::move(marker));
 }
 bool isConvex(gcSegment* s)
@@ -1392,11 +1398,9 @@ void FlexGCWorker::Impl::checkMetalShape_lef58MinStep_noBetweenEol(
     marker->setBBox(box);
     marker->setLayerNum(layerNum);
     marker->setConstraint(con);
-    marker->addSrc(((drNet*) (net->getOwner()))->getFrNet());
-    marker->addVictim(((drNet*) (net->getOwner()))->getFrNet(),
-                      make_tuple(layerNum, box, false));
-    marker->addAggressor(((drNet*) (net->getOwner()))->getFrNet(),
-                         make_tuple(layerNum, box, false));
+    marker->addSrc(net->getOwner());
+    marker->addVictim(net->getOwner(), make_tuple(layerNum, box, false));
+    marker->addAggressor(net->getOwner(), make_tuple(layerNum, box, false));
     addMarker(std::move(marker));
   }
 }
@@ -1576,11 +1580,9 @@ void FlexGCWorker::Impl::checkMetalShape_rectOnly(gcPin* pin)
         marker->setBBox(box);
         marker->setLayerNum(layerNum);
         marker->setConstraint(con);
-        marker->addSrc(((drNet*) (net->getOwner()))->getFrNet());
-        marker->addVictim(((drNet*) (net->getOwner()))->getFrNet(),
-                          make_tuple(layerNum, box, false));
-        marker->addAggressor(((drNet*) (net->getOwner()))->getFrNet(),
-                             make_tuple(layerNum, box, false));
+        marker->addSrc(net->getOwner());
+        marker->addVictim(net->getOwner(), make_tuple(layerNum, box, false));
+        marker->addAggressor(net->getOwner(), make_tuple(layerNum, box, false));
         addMarker(std::move(marker));
       }
     }
@@ -1616,11 +1618,9 @@ void FlexGCWorker::Impl::checkMetalShape_offGrid(gcPin* pin)
       marker->setLayerNum(layerNum);
       marker->setConstraint(
           getTech()->getLayer(layerNum)->getOffGridConstraint());
-      marker->addSrc(((drNet*) (net->getOwner()))->getFrNet());
-      marker->addVictim(((drNet*) (net->getOwner()))->getFrNet(),
-                        make_tuple(layerNum, box, false));
-      marker->addAggressor(((drNet*) (net->getOwner()))->getFrNet(),
-                           make_tuple(layerNum, box, false));
+      marker->addSrc(net->getOwner());
+      marker->addVictim(net->getOwner(), make_tuple(layerNum, box, false));
+      marker->addAggressor(net->getOwner(), make_tuple(layerNum, box, false));
       addMarker(std::move(marker));
     }
   }
@@ -1657,10 +1657,9 @@ void FlexGCWorker::Impl::checkMetalShape_minEnclosedArea(gcPin* pin)
           marker->setBBox(box);
           marker->setLayerNum(layerNum);
           marker->setConstraint(con);
-          marker->addSrc(((drNet*) (net->getOwner()))->getFrNet());
-          marker->addVictim(((drNet*) (net->getOwner()))->getFrNet(),
-                            make_tuple(layerNum, box, false));
-          marker->addAggressor(((drNet*) (net->getOwner()))->getFrNet(),
+          marker->addSrc(net->getOwner());
+          marker->addVictim(net->getOwner(), make_tuple(layerNum, box, false));
+          marker->addAggressor(net->getOwner(),
                                make_tuple(layerNum, box, false));
           addMarker(std::move(marker));
         }
@@ -2073,16 +2072,16 @@ void FlexGCWorker::Impl::checkCutSpacing_short(
   marker->setBBox(box);
   marker->setLayerNum(layerNum);
   marker->setConstraint(getTech()->getLayer(layerNum)->getShortConstraint());
-  marker->addSrc(((drNet*) (net1->getOwner()))->getFrNet());
-  marker->addVictim(((drNet*) (net1->getOwner()))->getFrNet(),
+  marker->addSrc(net1->getOwner());
+  marker->addVictim(net1->getOwner(),
                     make_tuple(rect1->getLayerNum(),
                                Rect(gtl::xl(*rect1),
                                     gtl::yl(*rect1),
                                     gtl::xh(*rect1),
                                     gtl::yh(*rect1)),
                                rect1->isFixed()));
-  marker->addSrc(((drNet*) (net2->getOwner()))->getFrNet());
-  marker->addAggressor(((drNet*) (net2->getOwner()))->getFrNet(),
+  marker->addSrc(net2->getOwner());
+  marker->addAggressor(net2->getOwner(),
                        make_tuple(rect2->getLayerNum(),
                                   Rect(gtl::xl(*rect2),
                                        gtl::yl(*rect2),
@@ -2200,16 +2199,16 @@ void FlexGCWorker::Impl::checkCutSpacing_spc(
   marker->setBBox(box);
   marker->setLayerNum(layerNum);
   marker->setConstraint(con);
-  marker->addSrc(((drNet*) (net1->getOwner()))->getFrNet());
-  marker->addVictim(((drNet*) (net1->getOwner()))->getFrNet(),
+  marker->addSrc(net1->getOwner());
+  marker->addVictim(net1->getOwner(),
                     make_tuple(rect1->getLayerNum(),
                                Rect(gtl::xl(*rect1),
                                     gtl::yl(*rect1),
                                     gtl::xh(*rect1),
                                     gtl::yh(*rect1)),
                                rect1->isFixed()));
-  marker->addSrc(((drNet*) (net2->getOwner()))->getFrNet());
-  marker->addAggressor(((drNet*) (net2->getOwner()))->getFrNet(),
+  marker->addSrc(net2->getOwner());
+  marker->addAggressor(net2->getOwner(),
                        make_tuple(rect2->getLayerNum(),
                                   Rect(gtl::xl(*rect2),
                                        gtl::yl(*rect2),
@@ -2273,16 +2272,16 @@ void FlexGCWorker::Impl::checkCutSpacing_spc_diff_layer(
   marker->setBBox(box);
   marker->setLayerNum(layerNum);
   marker->setConstraint(con);
-  marker->addSrc(((drNet*) (net1->getOwner()))->getFrNet());
-  marker->addVictim(((drNet*) (net1->getOwner()))->getFrNet(),
+  marker->addSrc(net1->getOwner());
+  marker->addVictim(net1->getOwner(),
                     make_tuple(rect1->getLayerNum(),
                                Rect(gtl::xl(*rect1),
                                     gtl::yl(*rect1),
                                     gtl::xh(*rect1),
                                     gtl::yh(*rect1)),
                                rect1->isFixed()));
-  marker->addSrc(((drNet*) (net2->getOwner()))->getFrNet());
-  marker->addAggressor(((drNet*) (net2->getOwner()))->getFrNet(),
+  marker->addSrc(net2->getOwner());
+  marker->addAggressor(net2->getOwner(),
                        make_tuple(rect2->getLayerNum(),
                                   Rect(gtl::xl(*rect2),
                                        gtl::yl(*rect2),
@@ -2369,16 +2368,16 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_parallelOverlap(
   marker->setBBox(box);
   marker->setLayerNum(layerNum);
   marker->setConstraint(con);
-  marker->addSrc(((drNet*) (net1->getOwner()))->getFrNet());
-  marker->addVictim(((drNet*) (net1->getOwner()))->getFrNet(),
+  marker->addSrc(net1->getOwner());
+  marker->addVictim(net1->getOwner(),
                     make_tuple(rect1->getLayerNum(),
                                Rect(gtl::xl(*rect1),
                                     gtl::yl(*rect1),
                                     gtl::xh(*rect1),
                                     gtl::yh(*rect1)),
                                rect1->isFixed()));
-  marker->addSrc(((drNet*) (net2->getOwner()))->getFrNet());
-  marker->addAggressor(((drNet*) (net2->getOwner()))->getFrNet(),
+  marker->addSrc(net2->getOwner());
+  marker->addAggressor(net2->getOwner(),
                        make_tuple(rect2->getLayerNum(),
                                   Rect(gtl::xl(*rect2),
                                        gtl::yl(*rect2),
@@ -2693,16 +2692,16 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_adjCut(
   marker->setBBox(box);
   marker->setLayerNum(layerNum);
   marker->setConstraint(con);
-  marker->addSrc(((drNet*) (net1->getOwner()))->getFrNet());
-  marker->addVictim(((drNet*) (net1->getOwner()))->getFrNet(),
+  marker->addSrc(net1->getOwner());
+  marker->addVictim(net1->getOwner(),
                     make_tuple(rect1->getLayerNum(),
                                Rect(gtl::xl(*rect1),
                                     gtl::yl(*rect1),
                                     gtl::xh(*rect1),
                                     gtl::yh(*rect1)),
                                rect1->isFixed()));
-  marker->addSrc(((drNet*) (net2->getOwner()))->getFrNet());
-  marker->addAggressor(((drNet*) (net2->getOwner()))->getFrNet(),
+  marker->addSrc(net2->getOwner());
+  marker->addAggressor(net2->getOwner(),
                        make_tuple(rect2->getLayerNum(),
                                   Rect(gtl::xl(*rect2),
                                        gtl::yl(*rect2),
@@ -2854,17 +2853,17 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
         marker->setBBox(box);
         marker->setLayerNum(layerNum);
         marker->setConstraint(con);
-        marker->addSrc(((drNet*) (net1->getOwner()))->getFrNet());
-        marker->addVictim(((drNet*) (net1->getOwner()))->getFrNet(),
+        marker->addSrc(net1->getOwner());
+        marker->addVictim(net1->getOwner(),
                           make_tuple(layerNum,
                                      Rect(gtl::xl(*rect1),
                                           gtl::yl(*rect1),
                                           gtl::xh(*rect1),
                                           gtl::yh(*rect1)),
                                      rect1->isFixed()));
-        marker->addSrc(((drNet*) (net2->getOwner()))->getFrNet());
+        marker->addSrc(net2->getOwner());
         marker->addAggressor(
-            ((drNet*) (net2->getOwner()))->getFrNet(),
+            net2->getOwner(),
             make_tuple(secondLayerNum,
                        Rect(corner->x(), corner->y(), corner->x(), corner->y()),
                        corner->isFixed()));
@@ -2973,17 +2972,17 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
         marker->setBBox(box);
         marker->setLayerNum(layerNum);
         marker->setConstraint(con);
-        marker->addSrc(((drNet*) (net1->getOwner()))->getFrNet());
-        marker->addVictim(((drNet*) (net1->getOwner()))->getFrNet(),
+        marker->addSrc(net1->getOwner());
+        marker->addVictim(net1->getOwner(),
                           make_tuple(layerNum,
                                      Rect(gtl::xl(*rect1),
                                           gtl::yl(*rect1),
                                           gtl::xh(*rect1),
                                           gtl::yh(*rect1)),
                                      rect1->isFixed()));
-        marker->addSrc(((drNet*) (net2->getOwner()))->getFrNet());
+        marker->addSrc(net2->getOwner());
         marker->addAggressor(
-            ((drNet*) (net2->getOwner()))->getFrNet(),
+            net2->getOwner(),
             make_tuple(secondLayerNum,
                        Rect(corner->x(), corner->y(), corner->x(), corner->y()),
                        corner->isFixed()));
@@ -3482,16 +3481,16 @@ void FlexGCWorker::Impl::checkMinimumCut_marker(gcRect* wideRect,
   marker->setBBox(box);
   marker->setLayerNum(wideRect->getLayerNum());
   marker->setConstraint(con);
-  marker->addSrc(((drNet*) (net->getOwner()))->getFrNet());
-  marker->addVictim(((drNet*) (net->getOwner()))->getFrNet(),
+  marker->addSrc(net->getOwner());
+  marker->addVictim(net->getOwner(),
                     make_tuple(wideRect->getLayerNum(),
                                Rect(gtl::xl(*wideRect),
                                     gtl::yl(*wideRect),
                                     gtl::xh(*wideRect),
                                     gtl::yh(*wideRect)),
                                wideRect->isFixed()));
-  marker->addSrc(((drNet*) (net->getOwner()))->getFrNet());
-  marker->addAggressor(((drNet*) (net->getOwner()))->getFrNet(),
+  marker->addSrc(net->getOwner());
+  marker->addAggressor(net->getOwner(),
                        make_tuple(viaRect->getLayerNum(),
                                   Rect(gtl::xl(*viaRect),
                                        gtl::yl(*viaRect),
