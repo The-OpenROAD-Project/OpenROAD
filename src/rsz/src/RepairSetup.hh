@@ -96,10 +96,10 @@ public:
 
 private:
   void init();
-  bool repairSetup(PathRef &path,
-                   Slack path_slack,
-                   bool skip_pin_swap,
-                   bool skip_gate_cloning);
+  bool repairPath(PathRef &path,
+                  Slack path_slack,
+                  bool skip_pin_swap,
+                  bool skip_gate_cloning);
   void debugCheckMultipleBuffers(PathRef &path,
                                  PathExpanded *expanded);
 
