@@ -86,6 +86,7 @@ class lefout
   void writeMaster(dbMaster* master);
   void writeMTerm(dbMTerm* mterm);
   void writeSite(dbSite* site);
+  void writeViaMap(dbTech* tech, bool use_via_cut_class);
   void writeNonDefaultRule(dbTech* tech, dbTechNonDefaultRule* rule);
   void writeLayerRule(dbTechLayerRule* rule);
   void writeSameNetRule(dbTechSameNetRule* rule);

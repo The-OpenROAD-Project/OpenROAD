@@ -137,6 +137,7 @@ class TritonRoute
   void setDebugBox(int x1, int y1, int x2, int y2);
   void setDebugIter(int iter);
   void setDebugPaMarkers(bool on = true);
+  void setDumpLastWorker(bool on = true);
   void setDebugWorkerParams(int mazeEndIter,
                             int drcCost,
                             int markerCost,

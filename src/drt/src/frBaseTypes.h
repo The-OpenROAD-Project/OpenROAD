@@ -353,6 +353,7 @@ struct frDebugSettings
   int ripupMode;
   int followGuide;
   bool writeNetTracks;
+  bool dumpLastWorker;
 };
 
 // Avoids the need to split the whole serializer like

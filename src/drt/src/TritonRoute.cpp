@@ -127,6 +127,11 @@ void TritonRoute::setDebugWriteNetTracks(bool on)
   debug_->writeNetTracks = on;
 }
 
+void TritonRoute::setDumpLastWorker(bool on)
+{
+  debug_->dumpLastWorker = on;
+}
+
 void TritonRoute::setWorkerIpPort(const char* ip, unsigned short port)
 {
   dist_ip_ = ip;
