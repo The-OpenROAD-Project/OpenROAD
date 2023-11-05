@@ -162,7 +162,7 @@ void FlexDRWorker::writeUpdates(const std::string& file_name)
         update.setPathSeg(*pathSeg);
         update.setIndexInOwner(guide->getIndexInOwner());
         update.setNet(net.get());
-        design_->addUpdate(update);
+        updates.back().push_back(update);
       }
     }
     for (const auto& shape : net->getShapes()) {
@@ -221,8 +221,8 @@ int FlexDRWorker::main(frDesign* design)
     skipRouting_ = true;
   }
   if (debugSettings_->debugDumpDR
-      && (debugSettings_->x == -1
-          || routeBox_.intersects({debugSettings_->x, debugSettings_->y}))
+      && (debugSettings_->box == Rect(-1, -1, -1, -1)
+          || routeBox_.intersects(debugSettings_->box))
       && !skipRouting_
       && (debugSettings_->iter == getDRIter()
           || debugSettings_->dumpLastWorker)) {
@@ -233,8 +233,8 @@ int FlexDRWorker::main(frDesign* design)
     if (debugSettings_->dumpLastWorker) {
       workerPath = fmt::format("{}/workerx{}_y{}",
                                debugSettings_->dumpDir,
-                               debugSettings_->x,
-                               debugSettings_->y);
+                               debugSettings_->box.xMin(),
+                               debugSettings_->box.yMin());
     }
     mkdir(workerPath.c_str(), 0777);
 
@@ -745,11 +745,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
     }
   }
   FlexDRConnectivityChecker checker(
-      getDesign(),
-      logger_,
-      db_,
-      graphics_.get(),
-      dist_on_ || router_->getDebugSettings()->debugDumpDR);
+      getDesign(), logger_, db_, graphics_.get(), dist_on_);
   checker.check(iter);
   numViols_.push_back(getDesign()->getTopBlock()->getNumMarkers());
   debugPrint(logger_,

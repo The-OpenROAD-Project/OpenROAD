@@ -90,7 +90,7 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
                                          frCoord& pinCoord)
 {
   auto [bp, ep] = guide->getPoints();
-  if (!(bp == ep)) {
+  if (bp != ep) {
     return false;
   }
 
