@@ -399,7 +399,7 @@ RepairSetup::repairPath(PathRef &path,
                  drvr_cell ? drvr_cell->name() : "none",
                  fanout);
 
-      if (upsizeDrvr(drvr_path, drvr_index, &expanded, false)) {
+      if (upsizeDrvr(drvr_path, drvr_index, &expanded)) {
         changed = true;
         break;
       }
@@ -551,8 +551,7 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
 bool
 RepairSetup::upsizeDrvr(PathRef *drvr_path,
                         const int drvr_index,
-                        PathExpanded *expanded,
-                        const bool only_same_size_swap)
+                        PathExpanded *expanded)
 {
   Pin *drvr_pin = drvr_path->pin(this);
   Instance *drvr = network_->instance(drvr_pin);
@@ -579,7 +578,7 @@ RepairSetup::upsizeDrvr(PathRef *drvr_path,
       prev_drive = 0.0;
     LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
     LibertyCell *upsize = upsizeCell(in_port, drvr_port, load_cap,
-                                     prev_drive, dcalc_ap, only_same_size_swap);
+                                     prev_drive, dcalc_ap);
     if (upsize) {
       debugPrint(logger_, RSZ, "repair_setup", 3, "resize {} {} -> {}",
                  network_->pathName(drvr_pin),
@@ -595,29 +594,12 @@ RepairSetup::upsizeDrvr(PathRef *drvr_path,
   return false;
 }
 
-bool
-RepairSetup::meetsSizeCriteria(LibertyCell *cell,
-                               LibertyCell *equiv,
-                               bool match_size)
-{
-    if (!match_size) {
-      return true;
-    }
-    dbMaster* lef_cell1 = db_network_->staToDb(cell);
-    dbMaster* lef_cell2 = db_network_->staToDb(equiv);
-    if (lef_cell1->getWidth() == lef_cell2->getWidth()) {
-        return true;
-    }
-    return false;
-}
-
 LibertyCell *
 RepairSetup::upsizeCell(LibertyPort *in_port,
                         LibertyPort *drvr_port,
                         const float load_cap,
                         const float prev_drive,
-                        const DcalcAnalysisPt *dcalc_ap,
-                        const bool match_size)
+                        const DcalcAnalysisPt *dcalc_ap)
 {
   const int lib_ap = dcalc_ap->libertyIndex();
   LibertyCell *cell = drvr_port->libertyCell();
@@ -656,8 +638,7 @@ RepairSetup::upsizeCell(LibertyPort *in_port,
         + prev_drive * equiv_input->capacitance();
       if (!resizer_->dontUse(equiv)
           && equiv_drive < drive
-          && equiv_delay < delay
-          && meetsSizeCriteria(cell, equiv, match_size)) {
+          && equiv_delay < delay) {
         return equiv;
       }
     }
