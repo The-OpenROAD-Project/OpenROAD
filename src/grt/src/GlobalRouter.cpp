@@ -753,46 +753,6 @@ float GlobalRouter::getNetSlack(Net* net)
   return slack;
 }
 
-void GlobalRouter::computeNetSlacks()
-{
-  // Find the slack for all nets
-  std::unordered_map<Net*, float> net_slack_map;
-  std::vector<float> slacks;
-  for (const auto& net_itr : db_net_map_) {
-    Net* net = net_itr.second;
-    float slack = getNetSlack(net);
-    net_slack_map[net] = slack;
-    slacks.push_back(slack);
-  }
-  std::stable_sort(slacks.begin(), slacks.end());
-
-  // Find the slack threshold based on the percentage of critical nets
-  // defined by the user
-  //int threshold_index
-  //    = std::ceil(slacks.size() * critical_nets_percentage_ / 100);
-  //threshold_index = std::min((int) slacks.size() - 1, threshold_index);
-  /*float slack_th = slacks[threshold_index];
-
-  // Ensure the slack threshold is negative
-  if (slack_th >= 0) {
-    for (float slack : slacks) {
-      if (slack >= 0)
-        break;
-      slack_th = slack;
-    }
-  }
-
-  if (slack_th >= 0) {
-    return;
-  }
-  // Add the slack values smaller than the threshold to the nets
-  for (auto [net, slack] : net_slack_map) {
-    if (slack <= slack_th) {
-      net->setSlack(slack);
-    }
-  }*/
-}
-
 void GlobalRouter::initNets(std::vector<Net*>& nets)
 {
   checkPinPlacement();
@@ -811,11 +771,6 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
 
     utl::shuffle(nets.begin(), nets.end(), g);
   }
-
-  /*if (critical_nets_percentage_ != 0) {
-    fastroute_->setUpdateSlack(critical_nets_percentage_);
-    computeNetSlacks();
-  }*/
 
   for (Net* net : nets) {
     int pin_count = net->getNumPins();
@@ -3916,7 +3871,8 @@ void GlobalRouter::updateDirtyRoutes(bool save_guides)
       return;
     }
 
-    const float old_critical_nets_percentage = fastroute_->getCriticalNetsPercentage();
+    const float old_critical_nets_percentage
+        = fastroute_->getCriticalNetsPercentage();
     fastroute_->setCriticalNetsPercentage(0);
 
     initFastRouteIncr(dirty_nets);
