@@ -49,7 +49,8 @@
 namespace gpl {
 
 // check if flops with 1 Q pin are inverting
-bool MBFF::IsInverting(odb::dbInst* inst) {
+bool MBFF::IsInverting(odb::dbInst* inst)
+{
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
   if (cell == nullptr) {
     return false;
@@ -58,7 +59,7 @@ bool MBFF::IsInverting(odb::dbInst* inst) {
   if (lib_cell == nullptr) {
     return false;
   }
-  return lib_cell->isInverter(); 
+  return lib_cell->isInverter();
 }
 
 bool MBFF::HasSet(odb::dbInst* inst)
@@ -115,8 +116,8 @@ int MBFF::GetBitMask(odb::dbInst* inst)
     ret |= (1 << 2);
   }
   if (IsInverting(inst)) {
-      ret |= (1 << 3);
-    }
+    ret |= (1 << 3);
+  }
   return ret;
 }
 
@@ -417,7 +418,6 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
     }
   }
 }
-
 
 double MBFF::RunLP(const std::vector<Flop>& flops,
                    std::vector<Tray>& trays,
@@ -1137,7 +1137,6 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
   }
 }
 
-
 void MBFF::KMeansDecomp(const std::vector<Flop>& flops,
                         int MAX_SZ,
                         std::vector<std::vector<Flop>>& pointsets)
@@ -1595,7 +1594,7 @@ void MBFF::ReadFFs()
   slot_disp_y_.resize(num_flops, 0.0);
 }
 
-// how are timing critical paths determined? 
+// how are timing critical paths determined?
 void MBFF::ReadPaths()
 {
   return;

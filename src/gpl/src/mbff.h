@@ -137,7 +137,6 @@ class MBFF
   bool IsValidFlop(odb::dbInst* inst);
   bool IsValidTray(odb::dbInst* tray);
 
-
   int GetBitMask(odb::dbInst* inst);
   bool HasSet(odb::dbInst* inst);
   bool HasReset(odb::dbInst* inst);
@@ -160,7 +159,6 @@ class MBFF
               double beta,
               int bitmask);
 
-  
   /*
     shreyas (august 2023):
     method to decompose a pointset into multiple "mini"-pointsets of size <=
@@ -207,12 +205,11 @@ class MBFF
                const std::vector<std::pair<int, int>>& clusters);
 
   /*
-  this ILP finds a set of trays (given all of the tray candidates from capacitated
-  k-means) such that
-  (1) each flop gets mapped to exactly one slot (or, stays a single bit flop)
-  (2) [(a) + (b)] is minimized, where
-          (a) = sum of all displacements from a flop to its slot
-          (b) = alpha * (sum of the chosen tray costs)
+  this ILP finds a set of trays (given all of the tray candidates from
+  capacitated k-means) such that (1) each flop gets mapped to exactly one slot
+  (or, stays a single bit flop) (2) [(a) + (b)] is minimized, where (a) = sum of
+  all displacements from a flop to its slot (b) = alpha * (sum of the chosen
+  tray costs)
 
   we ignore timing-critical path constraints /
   objectives so that the algorithm is scalable
