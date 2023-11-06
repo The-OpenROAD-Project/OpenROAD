@@ -1,0 +1,152 @@
+library (tray_test) {
+  comment : "";
+  date : "$Date: Mon Nov 30 16:05:21 2020 $";
+  revision : "1.0";
+  delay_model : table_lookup;
+  capacitive_load_unit (1,ff);
+  current_unit : "1mA";
+  leakage_power_unit : "1pW";
+  pulling_resistance_unit : "1kohm";
+  time_unit : "1ps";
+  voltage_unit : "1V";
+  voltage_map (VDD, 0.7);
+  voltage_map (VSS, 0);
+  voltage_map (GND, 0);
+  default_cell_leakage_power : 0;
+  default_fanout_load : 1;
+  default_max_transition : 320;
+  default_output_pin_cap : 0;
+  in_place_swap_mode : match_footprint;
+  input_threshold_pct_fall : 50;
+  input_threshold_pct_rise : 50;
+  nom_process : 1;
+  nom_temperature : 25;
+  nom_voltage : 0.7;
+  output_threshold_pct_fall : 50;
+  output_threshold_pct_rise : 50;
+  slew_derate_from_library : 1;
+  slew_lower_threshold_pct_fall : 10;
+  slew_lower_threshold_pct_rise : 10;
+  slew_upper_threshold_pct_fall : 90;
+  slew_upper_threshold_pct_rise : 90;
+  operating_conditions (PVT_0P7V_25C) {
+    process : 1;
+    temperature : 25;
+    voltage : 0.7;
+  }
+  default_operating_conditions : PVT_0P7V_25C;
+  lu_table_template (constraint_template_7x7) {
+    variable_1 : constrained_pin_transition;
+    variable_2 : related_pin_transition;
+    index_1 ("5, 10, 20, 40, 80, 160, 320");
+    index_2 ("5, 10, 20, 40, 80, 160, 320");
+  }
+  lu_table_template (delay_template_7x7) {
+    variable_1 : input_net_transition;
+    variable_2 : total_output_net_capacitance;
+    index_1 ("5, 10, 20, 40, 80, 160, 320");
+    index_2 ("0.72, 1.44, 2.88, 5.76, 11.52, 23.04, 46.08");
+  }
+  lu_table_template (mpw_constraint_template_7x7) {
+    variable_1 : constrained_pin_transition;
+    index_1 ("5, 10, 20, 40, 80, 160, 320");
+  }
+  power_lut_template (passive_power_template_7x1) {
+    variable_1 : input_transition_time;
+    index_1 ("5, 10, 20, 40, 80, 160, 320");
+  }
+  power_lut_template (power_template_7x7) {
+    variable_1 : input_transition_time;
+    variable_2 : total_output_net_capacitance;
+    index_1 ("5, 10, 20, 40, 80, 160, 320");
+    index_2 ("0.72, 1.44, 2.88, 5.76, 11.52, 23.04, 46.08");
+  }
+  lu_table_template (waveform_template_name) {
+    variable_1 : input_net_transition;
+    variable_2 : normalized_voltage;
+    index_1 ("0, 1000, 2000, 3000, 4000, 5000, 6000");
+    index_2 ("0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16");
+  }
+  input_voltage (default_VDD_VSS_input) {
+    vil : 0;
+    vih : 0.7;
+    vimin : 0;
+    vimax : 0.7;
+  }
+  output_voltage (default_VDD_VSS_output) {
+    vol : 0;
+    voh : 0.7;
+    vomin : 0;
+    vomax : 0.7;
+  }
+  normalized_driver_waveform (waveform_template_name) {
+    driver_waveform_name : "PreDriver20.5:rise";
+    index_1 ("5, 10, 20, 40, 80, 160, 320");
+    index_2 ("0, 0.03, 0.1, 0.158744, 0.221271, 0.279374, 0.333513, 0.3841, 0.437223, 0.533203, 0.58153, 0.626864, 0.717883, 0.806555, 0.9, 0.958983, 1");
+    values ( \
+      "0, 0.375, 0.625, 0.84375, 1.09375, 1.34375, 1.59375, 1.84375, 2.125, 2.6875, 3, 3.3125, 4, 4.75, 5.625, 6.21875, 6.65625", \
+      "0, 0.75, 1.25, 1.6875, 2.1875, 2.6875, 3.1875, 3.6875, 4.25, 5.375, 6, 6.625, 8, 9.5, 11.25, 12.4375, 13.3125", \
+      "0, 1.5, 2.5, 3.375, 4.375, 5.375, 6.375, 7.375, 8.5, 10.75, 12, 13.25, 16, 19, 22.5, 24.875, 26.625", \
+      "0, 3, 5, 6.75, 8.75, 10.75, 12.75, 14.75, 17, 21.5, 24, 26.5, 32, 38, 45, 49.75, 53.25", \
+      "0, 6, 10, 13.5, 17.5, 21.5, 25.5, 29.5, 34, 43, 48, 53, 64, 76, 90, 99.5, 106.5", \
+      "0, 12, 20, 27, 35, 43, 51, 59, 68, 86, 96, 106, 128, 152, 180, 199, 213", \
+      "0, 24, 40, 54, 70, 86, 102, 118, 136, 172, 192, 212, 256, 304, 360, 398, 426" \
+    );
+  }
+  normalized_driver_waveform (waveform_template_name) {
+    driver_waveform_name : "PreDriver20.5:fall";
+    index_1 ("5, 10, 20, 40, 80, 160, 320");
+    index_2 ("0, 0.03, 0.1, 0.158744, 0.221271, 0.279374, 0.333513, 0.3841, 0.437223, 0.533203, 0.58153, 0.626864, 0.717883, 0.806555, 0.9, 0.958983, 1");
+    values ( \
+      "0, 0.375, 0.625, 0.84375, 1.09375, 1.34375, 1.59375, 1.84375, 2.125, 2.6875, 3, 3.3125, 4, 4.75, 5.625, 6.21875, 6.65625", \
+      "0, 0.75, 1.25, 1.6875, 2.1875, 2.6875, 3.1875, 3.6875, 4.25, 5.375, 6, 6.625, 8, 9.5, 11.25, 12.4375, 13.3125", \
+      "0, 1.5, 2.5, 3.375, 4.375, 5.375, 6.375, 7.375, 8.5, 10.75, 12, 13.25, 16, 19, 22.5, 24.875, 26.625", \
+      "0, 3, 5, 6.75, 8.75, 10.75, 12.75, 14.75, 17, 21.5, 24, 26.5, 32, 38, 45, 49.75, 53.25", \
+      "0, 6, 10, 13.5, 17.5, 21.5, 25.5, 29.5, 34, 43, 48, 53, 64, 76, 90, 99.5, 106.5", \
+      "0, 12, 20, 27, 35, 43, 51, 59, 68, 86, 96, 106, 128, 152, 180, 199, 213", \
+      "0, 24, 40, 54, 70, 86, 102, 118, 136, 172, 192, 212, 256, 304, 360, 398, 426" \
+    );
+  }
+  normalized_driver_waveform (waveform_template_name) {
+    index_1 ("5, 10, 20, 40, 80, 160, 320");
+    index_2 ("0, 0.03, 0.1, 0.158744, 0.221271, 0.279374, 0.333513, 0.3841, 0.437223, 0.533203, 0.58153, 0.626864, 0.717883, 0.806555, 0.9, 0.958983, 1");
+    values ( \
+      "0, 0.375, 0.625, 0.84375, 1.09375, 1.34375, 1.59375, 1.84375, 2.125, 2.6875, 3, 3.3125, 4, 4.75, 5.625, 6.21875, 6.65625", \
+      "0, 0.75, 1.25, 1.6875, 2.1875, 2.6875, 3.1875, 3.6875, 4.25, 5.375, 6, 6.625, 8, 9.5, 11.25, 12.4375, 13.3125", \
+      "0, 1.5, 2.5, 3.375, 4.375, 5.375, 6.375, 7.375, 8.5, 10.75, 12, 13.25, 16, 19, 22.5, 24.875, 26.625", \
+      "0, 3, 5, 6.75, 8.75, 10.75, 12.75, 14.75, 17, 21.5, 24, 26.5, 32, 38, 45, 49.75, 53.25", \
+      "0, 6, 10, 13.5, 17.5, 21.5, 25.5, 29.5, 34, 43, 48, 53, 64, 76, 90, 99.5, 106.5", \
+      "0, 12, 20, 27, 35, 43, 51, 59, 68, 86, 96, 106, 128, 152, 180, 199, 213", \
+      "0, 24, 40, 54, 70, 86, 102, 118, 136, 172, 192, 212, 256, 304, 360, 398, 426" \
+    );
+  }
+
+  cell (FF) {
+    area : 1.0 ;
+    pg_pin(VDD) {
+      voltage_name : VDD ;
+      pg_type : primary_power ;
+    }
+    pg_pin(VSS) {
+      voltage_name : VSS ;
+      pg_type : primary_ground ;
+    }
+    pin (CLK) {
+      direction : input ;
+      clock : true ;
+    }
+    pin (D) {
+      direction : input ;
+    }
+    ff (IQ, IQN) {
+      next_state : "D" ;
+      clocked_on : "CLK" ; 
+      power_down_function : "!VDD + VSS" ;
+    }
+    pin (Q) {
+      function : " IQ " ;
+      direction : output ;
+      power_down_function : "!VDD + VSS" ; 
+    }
+  }
+}
