@@ -1597,7 +1597,6 @@ void MBFF::ReadFFs()
 // how are timing critical paths determined?
 void MBFF::ReadPaths()
 {
-  return;
 }
 
 // ctor
