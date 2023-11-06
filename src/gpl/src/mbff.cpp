@@ -1400,7 +1400,7 @@ void MBFF::SeparateFlops(std::vector<std::vector<Flop>>& ffs)
   }
 
   for (auto clks : clk_terms) {
-    std::vector<Flop> flops_by_mask[15];
+    std::vector<Flop> flops_by_mask[16];
     for (int idx : clks.second) {
       int bitmask = GetBitMask(insts_[idx]);
       flops_by_mask[bitmask].push_back(flops_[idx]);
@@ -1411,7 +1411,7 @@ void MBFF::SeparateFlops(std::vector<std::vector<Flop>>& ffs)
       }
     }
 
-    for (int i = 0; i < 15; i++) {
+    for (int i = 0; i < 16; i++) {
       if (flops_by_mask[i].size()) {
         ffs.push_back(flops_by_mask[i]);
       }
