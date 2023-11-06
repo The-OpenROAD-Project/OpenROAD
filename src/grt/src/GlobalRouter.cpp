@@ -1711,13 +1711,10 @@ void GlobalRouter::getGCellGridPatternFromGuides(
   int width = x_max - x_min;
   int height = y_max - y_min;
 
-  odb::Rect min_guide(std::numeric_limits<int>::min(),
-                      std::numeric_limits<int>::min(),
-                      std::numeric_limits<int>::max(),
-                      std::numeric_limits<int>::max());
+  odb::Rect min_guide(0, 0, 0, 0);
   for (const auto& [net, guides] : net_guides) {
     for (const auto& guide : guides) {
-      if (guide.second.area() < min_guide.area()) {
+      if (guide.second.area() < min_guide.area() || min_guide.area() == 0) {
         min_guide = guide.second;
       }
     }
@@ -1739,10 +1736,8 @@ void GlobalRouter::getGCellGridPatternFromGuides(
     db_gcell = odb::dbGCellGrid::create(block_);
   }
 
-  db_gcell->addGridPatternX(
-      origin_x, x_grids, grid_->getTileSize());
-  db_gcell->addGridPatternY(
-      origin_y, y_grids, grid_->getTileSize());
+  db_gcell->addGridPatternX(origin_x, x_grids, grid_->getTileSize());
+  db_gcell->addGridPatternY(origin_y, y_grids, grid_->getTileSize());
 }
 
 void GlobalRouter::saveGuidesFromFile(
