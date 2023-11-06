@@ -69,15 +69,20 @@ bool MBFF::IsInverting(odb::dbInst* inst)
       }
     }
     return false;
-  } else {
-    for (auto seq : lib_cell->sequentials()) {
-      if (sta::FuncExpr::equiv(seq->function(),
-                               non_invert_func)) {
+  }
+  
+
+  for (auto iterm : inst->getITerms()) {
+    if (IsQPin(iterm)) {
+      auto pin = network_->dbToSta(iterm);
+      auto port = network_->libertyPort(pin);
+      if (sta::FuncExpr::equiv(non_invert_func[0], port->function())) {
         return false;
       }
-      return true;
     }
   }
+
+  return true;
 }
 
 bool MBFF::HasSet(odb::dbInst* inst)
