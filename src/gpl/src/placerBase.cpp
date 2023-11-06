@@ -34,6 +34,7 @@
 #include "placerBase.h"
 
 #include <odb/db.h>
+#include <dpl/Opendp.h>
 
 #include <iostream>
 #include <utility>
@@ -794,11 +795,13 @@ PlacerBaseCommon::PlacerBaseCommon()
 }
 
 PlacerBaseCommon::PlacerBaseCommon(odb::dbDatabase* db,
+                                   dpl::Opendp* dp,
                                    PlacerBaseVars pbVars,
                                    utl::Logger* log)
     : PlacerBaseCommon()
 {
   db_ = db;
+  dp_ = dp;
   log_ = log;
   pbVars_ = pbVars;
   init();
@@ -853,9 +856,18 @@ void PlacerBaseCommon::init()
     if (!type.isCore() && !type.isBlock()) {
       continue;
     }
+    // Get Padding from Detailed Placer
+    int padLeft = dp_->padLeft(inst);
+    int padRight = dp_->padRight(inst);
+    if (padLeft == 0) {
+      padLeft = pbVars_.padLeft;
+    }
+    if (padRight == 0) {
+      padRight = pbVars_.padRight;
+    }
     Instance myInst(inst,
-                    pbVars_.padLeft * siteSizeX_,
-                    pbVars_.padRight * siteSizeX_,
+                    padLeft * siteSizeX_,
+                    padRight * siteSizeX_,
                     siteSizeY_,
                     log_);
 
