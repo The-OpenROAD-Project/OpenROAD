@@ -127,9 +127,9 @@ void HTreeBuilder::preSinkClustering(
                      "at sink {}: {:0.3f}", mapPoint, insDelay);
           // clang-format on
         } else {
-	  xSum += point.first;
-	  ySum += point.second;
-	}
+          xSum += point.first;
+          ySum += point.second;
+        }
         clusterClockInsts.push_back(mapLocationToSink_[mapPoint]);
         // clock inst needs to be added to the new subnet
       }
