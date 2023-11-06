@@ -51,7 +51,6 @@ namespace gpl {
 // check if a flop or single-bit in tray is inverting
 bool MBFF::IsInverting(odb::dbInst* inst)
 {
-  bool has_two_q_pins = (GetNumQ(inst) - GetNumD(inst) ? 1 : 0);
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
   if (cell == nullptr) {
     return false;
@@ -61,15 +60,19 @@ bool MBFF::IsInverting(odb::dbInst* inst)
     return false;
   }
 
-  if (non_invert_func[has_two_q_pins] == nullptr) {
-    for (auto seq : lib_cell->sequentials()) {
-      non_invert_func[has_two_q_pins] = seq->function();
+  if (non_invert_func == nullptr) {
+    for (auto iterm : inst->getITerms()) {
+      if (IsQPin(iterm)) {
+        auto pin = network_->dbToSta(iterm);
+        auto port = network_->libertyPort(pin);
+        non_invert_func[0] = port->function();
+      }
     }
     return false;
   } else {
     for (auto seq : lib_cell->sequentials()) {
       if (sta::FuncExpr::equiv(seq->function(),
-                               non_invert_func[has_two_q_pins])) {
+                               non_invert_func)) {
         return false;
       }
       return true;
@@ -121,6 +124,10 @@ int MBFF::GetBitMask(odb::dbInst* inst)
   // turn 1st bit on
   if (cnt_q - cnt_d > 0) {
     ret |= (1 << 0);
+    // check if the instance is inverting
+    if (IsInverting(inst)) {
+      ret |= (1 << 3);
+    }
   }
   // turn 2nd bit on
   if (HasSet(inst)) {
@@ -129,9 +136,6 @@ int MBFF::GetBitMask(odb::dbInst* inst)
   // turn 3rd bit on
   if (HasReset(inst)) {
     ret |= (1 << 2);
-  }
-  if (IsInverting(inst)) {
-    ret |= (1 << 3);
   }
   return ret;
 }
@@ -159,11 +163,11 @@ bool MBFF::IsDPin(odb::dbITerm* iterm)
   auto port = network_->libertyPort(pin);
   for (auto seq : lib_cell->sequentials()) {
     if (seq->clear()
-        && sta::FuncExpr::equiv(seq->clear()->function(), port->function())) {
+        && sta::FuncExpr::equiv(seq->clear(), port->function())) {
       return false;
     }
     if (seq->preset()
-        && sta::FuncExpr::equiv(seq->preset()->function(), port->function())) {
+        && sta::FuncExpr::equiv(seq->preset(), port->function())) {
       return false;
     }
   }
@@ -1611,6 +1615,7 @@ MBFF::MBFF(odb::dbDatabase* db,
            int knn,
            int multistart)
 {
+  non_invert_func.resize(1, nullptr);
   num_sizes_ = 7;
   db_ = db;
   block_ = db_->getChip()->getBlock();

@@ -260,7 +260,7 @@ class MBFF
   std::vector<double> ratios_;
   std::vector<int> unused_;
 
-  std::vector<sta::FuncExpr*> non_invert_func(2, nullptr);
+  std::vector<sta::FuncExpr*> non_invert_func;
   int num_threads_;
   int multistart_;
   int knn_;
