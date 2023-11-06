@@ -134,7 +134,6 @@ class MBFF
   int GetNumD(odb::dbInst* inst);
   int GetNumQ(odb::dbInst* inst);
 
-  bool IsValidFlop(odb::dbInst* inst);
   bool IsValidTray(odb::dbInst* tray);
 
   int GetBitMask(odb::dbInst* inst);
@@ -261,6 +260,7 @@ class MBFF
   std::vector<double> ratios_;
   std::vector<int> unused_;
 
+  std::vector<sta::FuncExpr*> non_invert_func(2, nullptr);
   int num_threads_;
   int multistart_;
   int knn_;

@@ -48,9 +48,10 @@
 
 namespace gpl {
 
-// check if flops with 1 Q pin are inverting
+// check if a flop or single-bit in tray is inverting
 bool MBFF::IsInverting(odb::dbInst* inst)
 {
+  bool has_two_q_pins = (GetNumQ(inst) - GetNumD(inst) ? 1 : 0);
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
   if (cell == nullptr) {
     return false;
@@ -59,7 +60,21 @@ bool MBFF::IsInverting(odb::dbInst* inst)
   if (lib_cell == nullptr) {
     return false;
   }
-  return lib_cell->isInverter();
+
+  if (non_invert_func[has_two_q_pins] == nullptr) {
+    for (auto seq : lib_cell->sequentials()) {
+      non_invert_func[has_two_q_pins] = seq->function();
+    }
+    return false;
+  }
+  else {
+    for (auto seq : lib_cell->sequentials()) {
+      if (sta::FuncExpr::equiv(seq->function(), non_invert_func[has_two_q_pins])) {
+        return false;
+      }
+      return true;
+    }
+  }
 }
 
 bool MBFF::HasSet(odb::dbInst* inst)
@@ -73,7 +88,7 @@ bool MBFF::HasSet(odb::dbInst* inst)
     return false;
   }
   for (auto seq : lib_cell->sequentials()) {
-    if (seq->clear()) {
+    if (seq->preset()) {
       return true;
     }
   }
@@ -91,7 +106,7 @@ bool MBFF::HasReset(odb::dbInst* inst)
     return false;
   }
   for (auto seq : lib_cell->sequentials()) {
-    if (seq->preset()) {
+    if (seq->clear()) {
       return true;
     }
   }
@@ -135,6 +150,23 @@ bool MBFF::IsSupplyPin(odb::dbITerm* iterm)
 
 bool MBFF::IsDPin(odb::dbITerm* iterm)
 {
+
+  odb::dbInst* inst = iterm->getInst();
+  sta::Cell* cell = network_->dbToSta(inst->getMaster());
+  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+
+  // check that the iterm isn't a (re)set pin 
+  auto pin = network_->dbToSta(iterm);
+  auto port = network_->libertyPort(pin);
+  for (auto seq : lib_cell->sequentials()) {
+    if (seq->clear() && sta::FuncExpr::equiv(seq->clear()->function(), port->function())) {
+      return false;
+    }
+    if (seq->preset() && sta::FuncExpr::equiv(seq->preset()->function(), port->function())) {
+      return false;
+    }
+  }
+
   const bool exclude = (IsClockPin(iterm) || IsSupplyPin(iterm));
   const bool yes = (iterm->getIoType() == odb::dbIoType::INPUT);
   return (yes & !exclude);
@@ -211,29 +243,6 @@ double MBFF::GetDist(const Point& a, const Point& b)
   return (abs(a.x - b.x) + abs(a.y - b.y));
 }
 
-bool MBFF::IsValidFlop(odb::dbInst* inst)
-{
-  sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  if (cell == nullptr) {
-    return false;
-  }
-  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
-  if (lib_cell == nullptr) {
-    return false;
-  }
-
-  int cnt_terms = 0;
-  int cnt_supply = 0;
-  for (auto iterm : inst->getITerms()) {
-    cnt_supply += (IsSupplyPin(iterm));
-    cnt_terms++;
-  }
-
-  int cnt_d = GetNumD(inst);
-  int cnt_q = GetNumQ(inst);
-  // do we have extra pins? +1 for clock pin
-  return (cnt_terms == cnt_d + cnt_q + cnt_supply + 1);
-}
 
 bool MBFF::IsValidTray(odb::dbInst* tray)
 {
