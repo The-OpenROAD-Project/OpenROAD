@@ -237,6 +237,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
   } else {
     ap->setAccess(frDirEnum::U, false);
   }
+  ap->setAllowVia(allowVia);
   ap->setType((frAccessPointEnum) lowCost, true);
   ap->setType((frAccessPointEnum) highCost, false);
   if ((lowCost == frAccessPointEnum::NearbyGrid
@@ -984,7 +985,7 @@ void FlexPA::prepPoint_pin_checkPoint_via(
   const Point bp = ap->getPoint();
   const auto layerNum = ap->getLayerNum();
   // skip planar only access
-  if (!ap->hasAccess(dir) && !deepSearch) {
+  if (!ap->isViaAllowed()) {
     return;
   }
 
@@ -1075,6 +1076,8 @@ void FlexPA::prepPoint_pin_checkPoint_via(
   }
   if (validViaDefs.empty()) {
     ap->setAccess(dir, false);
+  } else {
+    ap->setAccess(dir, true);
   }
   for (auto& [ext, idx, viaDef] : validViaDefs) {
     ap->addViaDef(viaDef);
