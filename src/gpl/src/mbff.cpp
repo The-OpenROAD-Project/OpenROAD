@@ -66,10 +66,10 @@ bool MBFF::IsInverting(odb::dbInst* inst)
       non_invert_func[has_two_q_pins] = seq->function();
     }
     return false;
-  }
-  else {
+  } else {
     for (auto seq : lib_cell->sequentials()) {
-      if (sta::FuncExpr::equiv(seq->function(), non_invert_func[has_two_q_pins])) {
+      if (sta::FuncExpr::equiv(seq->function(),
+                               non_invert_func[has_two_q_pins])) {
         return false;
       }
       return true;
@@ -150,19 +150,20 @@ bool MBFF::IsSupplyPin(odb::dbITerm* iterm)
 
 bool MBFF::IsDPin(odb::dbITerm* iterm)
 {
-
   odb::dbInst* inst = iterm->getInst();
   sta::Cell* cell = network_->dbToSta(inst->getMaster());
   sta::LibertyCell* lib_cell = network_->libertyCell(cell);
 
-  // check that the iterm isn't a (re)set pin 
+  // check that the iterm isn't a (re)set pin
   auto pin = network_->dbToSta(iterm);
   auto port = network_->libertyPort(pin);
   for (auto seq : lib_cell->sequentials()) {
-    if (seq->clear() && sta::FuncExpr::equiv(seq->clear()->function(), port->function())) {
+    if (seq->clear()
+        && sta::FuncExpr::equiv(seq->clear()->function(), port->function())) {
       return false;
     }
-    if (seq->preset() && sta::FuncExpr::equiv(seq->preset()->function(), port->function())) {
+    if (seq->preset()
+        && sta::FuncExpr::equiv(seq->preset()->function(), port->function())) {
       return false;
     }
   }
@@ -242,7 +243,6 @@ double MBFF::GetDist(const Point& a, const Point& b)
 {
   return (abs(a.x - b.x) + abs(a.y - b.y));
 }
-
 
 bool MBFF::IsValidTray(odb::dbInst* tray)
 {
