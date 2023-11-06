@@ -1220,10 +1220,12 @@ void FlexPA::prepPoint_pin_checkPoint(
     frInstTerm* instTerm,
     bool deepSearch)
 {
-  prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::W, pin, instTerm);
-  prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::E, pin, instTerm);
-  prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::S, pin, instTerm);
-  prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::N, pin, instTerm);
+  if (!deepSearch) {
+    prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::W, pin, instTerm);
+    prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::E, pin, instTerm);
+    prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::S, pin, instTerm);
+    prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::N, pin, instTerm);
+  }
   prepPoint_pin_checkPoint_via(
       ap, polys, polyset, frDirEnum::U, pin, instTerm, deepSearch);
 }
