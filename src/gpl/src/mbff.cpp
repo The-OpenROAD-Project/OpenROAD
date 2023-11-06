@@ -164,7 +164,14 @@ bool MBFF::IsDPin(odb::dbITerm* iterm)
 
   // check that the iterm isn't a (re)set pin
   auto pin = network_->dbToSta(iterm);
+  if (pin == nullptr) {
+    return false;
+  }
   auto port = network_->libertyPort(pin);
+  if (port == nullptr) {
+    return false;
+  }
+
   for (auto seq : lib_cell->sequentials()) {
     if (seq->clear() && sta::FuncExpr::equiv(seq->clear(), port->function())) {
       return false;
