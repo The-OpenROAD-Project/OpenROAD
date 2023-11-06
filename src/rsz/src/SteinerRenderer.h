@@ -20,7 +20,7 @@ class SteinerRenderer : public gui::Renderer, public AbstractSteinerRenderer
   void drawObjects(gui::Painter& /* painter */) override;
 
  private:
-  SteinerTree* tree_;
+  SteinerTree* tree_ = nullptr;
 };
 
 }  // namespace rsz

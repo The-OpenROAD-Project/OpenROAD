@@ -73,8 +73,8 @@ using sta::Corner;
 
 class BufferedNet;
 enum class BufferedNetType;
-typedef std::shared_ptr<BufferedNet> BufferedNetPtr;
-typedef vector<BufferedNetPtr> BufferedNetSeq;
+using BufferedNetPtr = std::shared_ptr<BufferedNet>;
+using BufferedNetSeq = vector<BufferedNetPtr>;
 
 class RepairSetup : StaState
 {
@@ -96,10 +96,10 @@ public:
 
 private:
   void init();
-  bool repairSetup(PathRef &path,
-                   Slack path_slack,
-                   bool skip_pin_swap,
-                   bool skip_gate_cloning);
+  bool repairPath(PathRef &path,
+                  Slack path_slack,
+                  bool skip_pin_swap,
+                  bool skip_gate_cloning);
   void debugCheckMultipleBuffers(PathRef &path,
                                  PathExpanded *expanded);
 
@@ -108,11 +108,9 @@ private:
   void getEquivPortList(sta::FuncExpr *expr, sta::LibertyPortSet &ports);
   void equivCellPins(const LibertyCell *cell, sta::LibertyPortSet &ports);
   bool swapPins(PathRef *drvr_path, int drvr_index, PathExpanded *expanded);
-  bool meetsSizeCriteria(LibertyCell *cell, LibertyCell *equiv, bool match_size);
   bool upsizeDrvr(PathRef *drvr_path,
                   int drvr_index,
-                  PathExpanded *expanded,
-                  bool only_same_size_swap);
+                  PathExpanded *expanded);
   Point computeCloneGateLocation(const Pin *drvr_pin,
                                  const vector<pair<Vertex*, Slack>> &fanout_slacks);
   bool cloneDriver(PathRef* drvr_path, int drvr_index,
@@ -125,25 +123,24 @@ private:
                           LibertyPort *drvr_port,
                           float load_cap,
                           float prev_drive,
-                          const DcalcAnalysisPt *dcalc_ap,
-                          bool match_size);
+                          const DcalcAnalysisPt *dcalc_ap);
   int fanout(Vertex *vertex);
   bool hasTopLevelOutputPort(Net *net);
 
   int rebuffer(const Pin *drvr_pin);
-  BufferedNetSeq rebufferBottomUp(BufferedNetPtr bnet,
+  BufferedNetSeq rebufferBottomUp(const BufferedNetPtr& bnet,
                                   int level);
-  int rebufferTopDown(BufferedNetPtr choice,
+  int rebufferTopDown(const BufferedNetPtr& choice,
                       Net *net,
                       int level);
   BufferedNetSeq
-  addWireAndBuffer(BufferedNetSeq Z,
-                   BufferedNetPtr bnet_wire,
+  addWireAndBuffer(const BufferedNetSeq& Z,
+                   const BufferedNetPtr& bnet_wire,
                    int level);
   float bufferInputCapacitance(LibertyCell *buffer_cell,
                                const DcalcAnalysisPt *dcalc_ap);
-  Slack slackPenalized(BufferedNetPtr bnet);
-  Slack slackPenalized(BufferedNetPtr bnet,
+  Slack slackPenalized(const BufferedNetPtr& bnet);
+  Slack slackPenalized(const BufferedNetPtr& bnet,
                        int index);
 
   void printProgress(int iteration, bool force, bool end) const;
@@ -177,4 +174,4 @@ private:
   static constexpr int print_interval_ = 10;
 };
 
-} // namespace
+} // namespace rsz
