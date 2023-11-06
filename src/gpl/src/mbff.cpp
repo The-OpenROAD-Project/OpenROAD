@@ -48,13 +48,52 @@
 
 namespace gpl {
 
+// check if flops with 1 Q pin are inverting
+bool MBFF::IsInverting(odb::dbInst* inst) {
+  sta::Cell* cell = network_->dbToSta(inst->getMaster());
+  if (cell == nullptr) {
+    return false;
+  }
+  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  if (lib_cell == nullptr) {
+    return false;
+  }
+  return lib_cell->isInverter(); 
+}
+
 bool MBFF::HasSet(odb::dbInst* inst)
 {
+  sta::Cell* cell = network_->dbToSta(inst->getMaster());
+  if (cell == nullptr) {
+    return false;
+  }
+  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  if (lib_cell == nullptr) {
+    return false;
+  }
+  for (auto seq : lib_cell->sequentials()) {
+    if (seq->clear()) {
+      return true;
+    }
+  }
   return false;
 }
 
 bool MBFF::HasReset(odb::dbInst* inst)
 {
+  sta::Cell* cell = network_->dbToSta(inst->getMaster());
+  if (cell == nullptr) {
+    return false;
+  }
+  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  if (lib_cell == nullptr) {
+    return false;
+  }
+  for (auto seq : lib_cell->sequentials()) {
+    if (seq->preset()) {
+      return true;
+    }
+  }
   return false;
 }
 
@@ -75,6 +114,9 @@ int MBFF::GetBitMask(odb::dbInst* inst)
   if (HasReset(inst)) {
     ret |= (1 << 2);
   }
+  if (IsInverting(inst)) {
+      ret |= (1 << 3);
+    }
   return ret;
 }
 
@@ -376,10 +418,6 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
   }
 }
 
-/*
-This LP finds new tray centers such that the sum of displacements from the new
-trays' slots to their matching flops is minimized
-*/
 
 double MBFF::RunLP(const std::vector<Flop>& flops,
                    std::vector<Tray>& trays,
@@ -461,18 +499,6 @@ double MBFF::RunLP(const std::vector<Flop>& flops,
 
   return tot_disp;
 }
-
-/*
-this ILP finds a set of trays (given all of the tray candidates from capacitated
-k-means) such that
-(1) each flop gets mapped to exactly one slot (or, stays a single bit flop)
-(2) [(a) + (b)] is minimized, where
-        (a) = sum of all displacements from a flop to its slot
-        (b) = alpha * (sum of the chosen tray costs)
-
-we ignore timing-critical path constraints /
-objectives so that the algorithm is scalable
-*/
 
 double MBFF::RunILP(const std::vector<Flop>& flops,
                     const std::vector<Tray>& trays,
@@ -1111,12 +1137,6 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
   }
 }
 
-/*
-    shreyas (august 2023):
-    method to decompose a pointset into multiple "mini"-pointsets of size <=
-   MAX_SZ.
-    basic implementation of K-means++ (with K = 4) is used.
-*/
 
 void MBFF::KMeansDecomp(const std::vector<Flop>& flops,
                         int MAX_SZ,
@@ -1365,7 +1385,7 @@ void MBFF::SeparateFlops(std::vector<std::vector<Flop>>& ffs)
   // group by block clock name
   std::map<std::string, std::vector<int>> clk_terms;
   for (size_t i = 0; i < flops_.size(); i++) {
-    if (insts_[i]->isDoNotTouch() || !IsValidFlop(insts_[i])) {
+    if (insts_[i]->isDoNotTouch()) {
       continue;
     }
     for (auto iterm : insts_[i]->getITerms()) {
@@ -1444,7 +1464,7 @@ void MBFF::Run(int mx_sz, double alpha, double beta)
 
 void MBFF::ReadLibs()
 {
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < 16; i++) {
     best_master_[i].resize(num_sizes_, nullptr);
     tray_area_[i].resize(num_sizes_, std::numeric_limits<double>::max());
     tray_width_[i].resize(num_sizes_);
@@ -1535,7 +1555,7 @@ void MBFF::ReadLibs()
     }
   }
 
-  for (int k = 0; k < 8; k++) {
+  for (int k = 0; k < 16; k++) {
     for (int i = 1; i < num_sizes_; i++) {
       if (best_master_[k][i] != nullptr) {
         log_->info(utl::GPL,
@@ -1575,7 +1595,7 @@ void MBFF::ReadFFs()
   slot_disp_y_.resize(num_flops, 0.0);
 }
 
-// COMPLETE
+// how are timing critical paths determined? 
 void MBFF::ReadPaths()
 {
   return;
@@ -1589,7 +1609,6 @@ MBFF::MBFF(odb::dbDatabase* db,
            int knn,
            int multistart)
 {
-  // max tray size: 1 << (num_sizes_ - 1)
   num_sizes_ = 7;
   db_ = db;
   block_ = db_->getChip()->getBlock();

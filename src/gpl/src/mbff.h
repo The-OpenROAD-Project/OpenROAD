@@ -116,7 +116,7 @@ class MBFF
   void Run(int mx_sz, double alpha, double beta);
 
  private:
-  int GetRows(int slot_cnt, int has_dual_outputs);
+  int GetRows(int slot_cnt, int bitmask);
   int GetBitCnt(int bit_idx);
   int GetBitIdx(int bit_cnt);
   double GetDist(const Point& a, const Point& b);
@@ -130,11 +130,13 @@ class MBFF
   bool IsClockPin(odb::dbITerm* iterm);
   bool IsDPin(odb::dbITerm* iterm);
   bool IsQPin(odb::dbITerm* iterm);
+  bool IsInverting(odb::dbInst* inst);
   int GetNumD(odb::dbInst* inst);
   int GetNumQ(odb::dbInst* inst);
 
   bool IsValidFlop(odb::dbInst* inst);
   bool IsValidTray(odb::dbInst* tray);
+
 
   int GetBitMask(odb::dbInst* inst);
   bool HasSet(odb::dbInst* inst);
@@ -150,14 +152,21 @@ class MBFF
                 int rows,
                 int cols,
                 std::vector<Point>& slots,
-                int has_dual_outputs);
+                int bitmask);
 
   double doit(const std::vector<Flop>& flops,
               int mx_sz,
               double alpha,
               double beta,
-              int has_dual_outputs);
+              int bitmask);
 
+  
+  /*
+    shreyas (august 2023):
+    method to decompose a pointset into multiple "mini"-pointsets of size <=
+  MAX_SZ.
+    basic implementation of K-means++ (with K = 4) is used.
+  */
   void KMeans(const std::vector<Flop>& flops,
               std::vector<std::vector<Flop>>& clusters);
   void KMeansDecomp(const std::vector<Flop>& flops,
@@ -176,31 +185,47 @@ class MBFF
                             int sz,
                             int iter,
                             std::vector<std::pair<int, int>>& cluster,
-                            int has_dual_outputs);
+                            int bitmask);
   void RunSilh(std::vector<std::vector<Tray>>& trays,
                const std::vector<Flop>& pointset,
                std::vector<std::vector<std::vector<Tray>>>& start_trays,
-               int has_dual_outputs);
+               int bitmask);
 
   void ReadLibs();
   void ReadFFs();
   void ReadPaths();
   void SetVars(const std::vector<Flop>& flops);
-  void SetRatios(int has_dual_outputs);
+  void SetRatios(int bitmask);
   void SetTrayNames();
 
+  /*
+  This LP finds new tray centers such that the sum of displacements from the new
+  trays' slots to their matching flops is minimized
+  */
   double RunLP(const std::vector<Flop>& flops,
                std::vector<Tray>& trays,
                const std::vector<std::pair<int, int>>& clusters);
+
+  /*
+  this ILP finds a set of trays (given all of the tray candidates from capacitated
+  k-means) such that
+  (1) each flop gets mapped to exactly one slot (or, stays a single bit flop)
+  (2) [(a) + (b)] is minimized, where
+          (a) = sum of all displacements from a flop to its slot
+          (b) = alpha * (sum of the chosen tray costs)
+
+  we ignore timing-critical path constraints /
+  objectives so that the algorithm is scalable
+  */
   double RunILP(const std::vector<Flop>& flops,
                 const std::vector<Tray>& trays,
                 std::vector<std::pair<int, int>>& final_flop_to_slot,
                 double alpha,
-                int has_dual_outputs);
+                int bitmask);
   void ModifyPinConnections(const std::vector<Flop>& flops,
                             const std::vector<Tray>& trays,
                             std::vector<std::pair<int, int>>& mapping,
-                            int has_dual_outputs);
+                            int bitmask);
   double GetTCPDisplacement();
 
   odb::dbDatabase* db_;
@@ -224,16 +249,18 @@ class MBFF
   The 1st bit of B is on if #Q - #D pins > 0
   The 2nd bit of B is on if the SET pin exists
   The 3rd bit of B is on if the RESET pin exists
-  max(B) = 2^2 + 2^1 + 2^0 = 7
+  The 4th bit of B is on if the instance is inverting
+  max(B) = 2^3 + 2^2 + 2^1 + 2^0 = 15
   */
-  std::vector<odb::dbMaster*> best_master_[8];
+
+  std::vector<odb::dbMaster*> best_master_[16];
   std::vector<std::map<sta::LibertyPort*,
                        std::pair<sta::LibertyPort*, sta::LibertyPort*>>>
-      pin_mappings_[8];
-  std::vector<double> tray_area_[8];
-  std::vector<double> tray_width_[8];
-  std::vector<std::vector<double>> slot_to_tray_x_[8];
-  std::vector<std::vector<double>> slot_to_tray_y_[8];
+      pin_mappings_[16];
+  std::vector<double> tray_area_[16];
+  std::vector<double> tray_width_[16];
+  std::vector<std::vector<double>> slot_to_tray_x_[16];
+  std::vector<std::vector<double>> slot_to_tray_y_[16];
   std::vector<double> ratios_;
   std::vector<int> unused_;
 
@@ -241,6 +268,7 @@ class MBFF
   int multistart_;
   int knn_;
   double multiplier_;
+  // max tray size: 1 << (7 - 1) = 64 bits
   int num_sizes_;
 };
 }  // namespace gpl

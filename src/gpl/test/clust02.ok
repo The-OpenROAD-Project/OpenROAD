@@ -8,9 +8,9 @@
 [INFO ODB-0222] Reading LEF file: ./TwoBitTray/asap7sc7p5t_DFFHQNV2X.lef
 [INFO ODB-0225]     Created 9 library cells
 [INFO ODB-0226] Finished LEF file:  ./TwoBitTray/asap7sc7p5t_DFFHQNV2X.lef
-[INFO ODB-0222] Reading LEF file: ./clust.lef
+[INFO ODB-0222] Reading LEF file: ./clust01.lef
 [INFO ODB-0225]     Created 1 library cells
-[INFO ODB-0226] Finished LEF file:  ./clust.lef
+[INFO ODB-0226] Finished LEF file:  ./clust01.lef
 [INFO ODB-0128] Design: tray_test
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 20000 components and 60000 component-terminals.
