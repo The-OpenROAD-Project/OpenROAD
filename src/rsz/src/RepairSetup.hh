@@ -73,8 +73,8 @@ using sta::Corner;
 
 class BufferedNet;
 enum class BufferedNetType;
-typedef std::shared_ptr<BufferedNet> BufferedNetPtr;
-typedef vector<BufferedNetPtr> BufferedNetSeq;
+using BufferedNetPtr = std::shared_ptr<BufferedNet>;
+using BufferedNetSeq = vector<BufferedNetPtr>;
 
 class RepairSetup : StaState
 {
@@ -128,19 +128,19 @@ private:
   bool hasTopLevelOutputPort(Net *net);
 
   int rebuffer(const Pin *drvr_pin);
-  BufferedNetSeq rebufferBottomUp(BufferedNetPtr bnet,
+  BufferedNetSeq rebufferBottomUp(const BufferedNetPtr& bnet,
                                   int level);
-  int rebufferTopDown(BufferedNetPtr choice,
+  int rebufferTopDown(const BufferedNetPtr& choice,
                       Net *net,
                       int level);
   BufferedNetSeq
-  addWireAndBuffer(BufferedNetSeq Z,
-                   BufferedNetPtr bnet_wire,
+  addWireAndBuffer(const BufferedNetSeq& Z,
+                   const BufferedNetPtr& bnet_wire,
                    int level);
   float bufferInputCapacitance(LibertyCell *buffer_cell,
                                const DcalcAnalysisPt *dcalc_ap);
-  Slack slackPenalized(BufferedNetPtr bnet);
-  Slack slackPenalized(BufferedNetPtr bnet,
+  Slack slackPenalized(const BufferedNetPtr& bnet);
+  Slack slackPenalized(const BufferedNetPtr& bnet,
                        int index);
 
   void printProgress(int iteration, bool force, bool end) const;
@@ -174,4 +174,4 @@ private:
   static constexpr int print_interval_ = 10;
 };
 
-} // namespace
+} // namespace rsz

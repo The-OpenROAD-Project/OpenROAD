@@ -56,29 +56,19 @@
 
 namespace rsz {
 
-using std::abs;
-using std::min;
 using std::max;
 using std::string;
 using std::vector;
-using std::map;
 using std::pair;
 using utl::RSZ;
 
 using sta::VertexOutEdgeIterator;
 using sta::Edge;
-using sta::Clock;
 using sta::PathExpanded;
-using sta::INF;
 using sta::fuzzyEqual;
 using sta::fuzzyLess;
-using sta::fuzzyLessEqual;
 using sta::fuzzyGreater;
-using sta::fuzzyGreaterEqual;
 using sta::InstancePinIterator;
-using sta::Unit;
-using sta::Corners;
-using sta::InputDrive;
 
 RepairSetup::RepairSetup(Resizer* resizer)
     : logger_(nullptr),
@@ -132,8 +122,9 @@ RepairSetup::repairSetup(const float setup_slack_margin,
   // individually control each clock domain instead of just fixating on fixing one.
   for (Vertex *end : *endpoints) {
     const Slack end_slack = sta_->vertexSlack(end, max_);
-    if (end_slack < setup_slack_margin)
+    if (end_slack < setup_slack_margin) {
       violating_ends.push_back(end);
+    }
   }
   sort(violating_ends, [=](Vertex *end1, Vertex *end2) {
     return sta_->vertexSlack(end1, max_) < sta_->vertexSlack(end2, max_);
@@ -175,8 +166,9 @@ RepairSetup::repairSetup(const float setup_slack_margin,
                delayAsString(worst_slack, sta_, digits));
     end_index++;
     debugPrint(logger_, RSZ, "repair_setup", 1, "Doing {} /{}", end_index, max_end_count);
-    if (end_index > max_end_count)
+    if (end_index > max_end_count) {
       break;
+    }
     Slack prev_end_slack = end_slack;
     Slack prev_worst_slack = worst_slack;
     int pass = 1;
@@ -253,10 +245,12 @@ RepairSetup::repairSetup(const float setup_slack_margin,
         }
       }
 
-      if (resizer_->overMaxArea())
+      if (resizer_->overMaxArea()) {
         break;
-      if (end_index == 1)
+      }
+      if (end_index == 1) {
         end = worst_vertex;
+      }
       pass++;
     }
     if (verbose) {
@@ -315,13 +309,15 @@ RepairSetup::repairSetup(const Pin *end_pin)
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
 
-  if (inserted_buffer_count_ > 0)
+  if (inserted_buffer_count_ > 0) {
     logger_->info(RSZ, 30, "Inserted {} buffers.", inserted_buffer_count_);
-  if (resize_count_ > 0)
+  }
+  if (resize_count_ > 0) {
     logger_->info(RSZ, 31, "Resized {} instances.", resize_count_);
-  if (swap_pin_count_ > 0) {
+  }
+  if (swap_pin_count_ > 0) { 
     logger_->info(RSZ, 44, "Swapped pins on {} instances.", swap_pin_count_);
-}
+  }
 }
 
 /* This is the main routine for repairing setup violations. We have
@@ -371,7 +367,7 @@ RepairSetup::repairPath(PathRef &path,
                                                   dcalc_ap->index())
           // Remove intrinsic delay to find load dependent delay.
           - corner_arc->intrinsicDelay();
-        load_delays.push_back(pair(i, load_delay));
+        load_delays.emplace_back(i, load_delay);
         debugPrint(logger_, RSZ, "repair_setup", 3, "{} load_delay = {}",
                    path_vertex->name(network_),
                    delayAsString(load_delay, sta_, 3));
@@ -574,8 +570,9 @@ RepairSetup::upsizeDrvr(PathRef *drvr_path,
         prev_drive = prev_drvr_port->driveResistance();
       }
     }
-    else
+    else {
       prev_drive = 0.0;
+    }
     LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
     LibertyCell *upsize = upsizeCell(in_port, drvr_port, load_cap,
                                      prev_drive, dcalc_ap);
@@ -815,7 +812,7 @@ RepairSetup::splitLoads(PathRef *drvr_path,
     debugPrint(logger_, RSZ, "repair_setup", 4, " fanin {} slack_margin = {}",
                network_->pathName(fanout_vertex->pin()),
                delayAsString(slack_margin, sta_, 3));
-    fanout_slacks.push_back(pair<Vertex*, Slack>(fanout_vertex, slack_margin));
+    fanout_slacks.emplace_back(fanout_vertex, slack_margin);
   }
 
   sort(fanout_slacks.begin(), fanout_slacks.end(),
