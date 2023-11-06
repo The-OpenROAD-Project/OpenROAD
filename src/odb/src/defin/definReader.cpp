@@ -372,10 +372,6 @@ int definReader::blockageCallback(defrCallbackType_e /* unused: type */,
   CHECKBLOCK
   definBlockage* blockageR = reader->_blockageR;
 
-  if (blockage->hasExceptpgnet()) {
-    UNSUPPORTED("EXCEPTPGNET on blockage is unsupported");
-  }
-
   if (blockage->hasMask()) {
     UNSUPPORTED("MASK on blockage is unsupported");
   }
@@ -390,6 +386,10 @@ int definReader::blockageCallback(defrCallbackType_e /* unused: type */,
 
     if (blockage->hasFills()) {
       blockageR->blockageRoutingFills();
+    }
+
+    if (blockage->hasExceptpgnet()) {
+      blockageR->blockageRoutingExceptPGNets();
     }
 
     if (blockage->hasPushdown()) {

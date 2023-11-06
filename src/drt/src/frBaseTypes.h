@@ -41,11 +41,9 @@
 #include <vector>
 
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
-namespace odb {
-class Rect;
-}
 namespace boost::serialization {
 class access;
 }
@@ -313,8 +311,6 @@ struct frDebugSettings
         debugTA(false),
         draw(true),
         allowPause(true),
-        x(-1),
-        y(-1),
         iter(0),
         paMarkers(false),
         paEdge(false),
@@ -342,8 +338,7 @@ struct frDebugSettings
   bool allowPause;
   std::string netName;
   std::string pinName;
-  int x;
-  int y;
+  odb::Rect box{-1, -1, -1, -1};
   int iter;
   bool paMarkers;
   bool paEdge;
@@ -358,6 +353,7 @@ struct frDebugSettings
   int ripupMode;
   int followGuide;
   bool writeNetTracks;
+  bool dumpLastWorker;
 };
 
 // Avoids the need to split the whole serializer like

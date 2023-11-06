@@ -38,11 +38,11 @@ met4       Vertical         8968          4366          51.32%
 met5       Horizontal       2964          1443          51.32%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 127
+[INFO GRT-0197] Via related to pin nodes: 118
 [INFO GRT-0198] Via related Steiner nodes: 14
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 147
-[INFO GRT-0112] Final usage 3D: 600
+[INFO GRT-0111] Final number of vias: 138
+[INFO GRT-0112] Final usage 3D: 573
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
@@ -56,6 +56,6 @@ met5              1443             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
 Total            21703           159            0.73%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 1742 um
+[INFO GRT-0018] Total wirelength: 1720 um
 [INFO GRT-0014] Routed nets: 15
 No differences found.

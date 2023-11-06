@@ -951,6 +951,8 @@ int FastRouteCore::copyGrids(const TreeNode* treenodes,
   if (treeedges[edge_n1n2].n1 == n1)  // n1 is the first node of (n1, n2)
   {
     if (treeedges[edge_n1n2].route.type == RouteType::MazeRoute) {
+      gridsX_n1n2.resize(treeedges[edge_n1n2].route.routelen + 1);
+      gridsY_n1n2.resize(treeedges[edge_n1n2].route.routelen + 1);
       for (int i = 0; i <= treeedges[edge_n1n2].route.routelen; i++) {
         gridsX_n1n2[cnt] = treeedges[edge_n1n2].route.gridsX[i];
         gridsY_n1n2[cnt] = treeedges[edge_n1n2].route.gridsY[i];
@@ -959,6 +961,8 @@ int FastRouteCore::copyGrids(const TreeNode* treenodes,
     }     // MazeRoute
     else  // NoRoute
     {
+      gridsX_n1n2.resize(1);
+      gridsY_n1n2.resize(1);
       gridsX_n1n2[cnt] = n1x;
       gridsY_n1n2[cnt] = n1y;
       cnt++;
@@ -967,6 +971,8 @@ int FastRouteCore::copyGrids(const TreeNode* treenodes,
   else  // n2 is the first node of (n1, n2)
   {
     if (treeedges[edge_n1n2].route.type == RouteType::MazeRoute) {
+      gridsX_n1n2.resize(treeedges[edge_n1n2].route.routelen + 1);
+      gridsY_n1n2.resize(treeedges[edge_n1n2].route.routelen + 1);
       for (int i = treeedges[edge_n1n2].route.routelen; i >= 0; i--) {
         gridsX_n1n2[cnt] = treeedges[edge_n1n2].route.gridsX[i];
         gridsY_n1n2[cnt] = treeedges[edge_n1n2].route.gridsY[i];
@@ -975,6 +981,8 @@ int FastRouteCore::copyGrids(const TreeNode* treenodes,
     }     // MazeRoute
     else  // NoRoute
     {
+      gridsX_n1n2.resize(1);
+      gridsY_n1n2.resize(1);
       gridsX_n1n2[cnt] = n1x;
       gridsY_n1n2[cnt] = n1y;
       cnt++;
@@ -995,10 +1003,10 @@ bool FastRouteCore::updateRouteType1(const int net_id,
                                      const int edge_n1A1,
                                      const int edge_n1A2)
 {
-  std::vector<int> gridsX_n1A1(x_range_ + y_range_);
-  std::vector<int> gridsY_n1A1(x_range_ + y_range_);
-  std::vector<int> gridsX_n1A2(x_range_ + y_range_);
-  std::vector<int> gridsY_n1A2(x_range_ + y_range_);
+  std::vector<int> gridsX_n1A1;
+  std::vector<int> gridsY_n1A1;
+  std::vector<int> gridsX_n1A2;
+  std::vector<int> gridsY_n1A2;
 
   const int A1x = treenodes[A1].x;
   const int A1y = treenodes[A1].y;
@@ -1135,12 +1143,12 @@ bool FastRouteCore::updateRouteType2(const int net_id,
                                      const int edge_n1A2,
                                      const int edge_C1C2)
 {
-  std::vector<int> gridsX_n1A1(x_range_ + y_range_);
-  std::vector<int> gridsY_n1A1(x_range_ + y_range_);
-  std::vector<int> gridsX_n1A2(x_range_ + y_range_);
-  std::vector<int> gridsY_n1A2(x_range_ + y_range_);
-  std::vector<int> gridsX_C1C2(x_range_ + y_range_);
-  std::vector<int> gridsY_C1C2(x_range_ + y_range_);
+  std::vector<int> gridsX_n1A1;
+  std::vector<int> gridsY_n1A1;
+  std::vector<int> gridsX_n1A2;
+  std::vector<int> gridsY_n1A2;
+  std::vector<int> gridsX_C1C2;
+  std::vector<int> gridsY_C1C2;
 
   const int A1x = treenodes[A1].x;
   const int A1y = treenodes[A1].y;

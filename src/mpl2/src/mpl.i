@@ -32,6 +32,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 %{
+#include "ord/OpenRoad.hh"
 #include "mpl2/rtl_mp.h"
 #include "Mpl2Observer.h"
 #include "graphics.h"
@@ -89,7 +90,9 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                           const char* report_directory) {
 
   auto macro_placer = getMacroPlacer2();
-  return macro_placer->place(max_num_macro,
+  const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
+  return macro_placer->place(num_threads,
+                             max_num_macro,
                              min_num_macro,
                              max_num_inst,
                              min_num_inst,
