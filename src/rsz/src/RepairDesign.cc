@@ -1150,8 +1150,8 @@ RepairDesign::makeFanoutRepeater(PinSeq &repeater_loads,
                repeater_loads, ignore2, ignore3, ignore4,
                out_net, repeater_in_pin, repeater_out_pin);
   Vertex *repeater_out_vertex = graph_->pinDrvrVertex(repeater_out_pin);
-  int repaired_net_count, slew_violations, cap_violations;
-  int fanout_violations, length_violations;
+  int repaired_net_count, slew_violations, cap_violations = 0;
+  int fanout_violations, length_violations = 0;
   repairNet(out_net, repeater_out_pin, repeater_out_vertex,
             check_slew, check_cap, false /* check_fanout */,
             max_length, resize_drvr, repaired_net_count, slew_violations,
