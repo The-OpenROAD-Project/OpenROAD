@@ -60,12 +60,12 @@ bool MBFF::IsInverting(odb::dbInst* inst)
     return false;
   }
 
-  if (non_invert_func[0] == nullptr) {
+  if (non_invert_func_[0] == nullptr) {
     for (auto iterm : inst->getITerms()) {
       if (IsQPin(iterm)) {
         auto pin = network_->dbToSta(iterm);
         auto port = network_->libertyPort(pin);
-        non_invert_func[0] = port->function();
+        non_invert_func_[0] = port->function();
       }
     }
     return false;
@@ -75,7 +75,7 @@ bool MBFF::IsInverting(odb::dbInst* inst)
     if (IsQPin(iterm)) {
       auto pin = network_->dbToSta(iterm);
       auto port = network_->libertyPort(pin);
-      if (sta::FuncExpr::equiv(non_invert_func[0], port->function())) {
+      if (sta::FuncExpr::equiv(non_invert_func_[0], port->function())) {
         return false;
       }
     }
@@ -1618,7 +1618,7 @@ MBFF::MBFF(odb::dbDatabase* db,
            int knn,
            int multistart)
 {
-  non_invert_func.resize(1, nullptr);
+  non_invert_func_.resize(1, nullptr);
   num_sizes_ = 7;
   db_ = db;
   block_ = db_->getChip()->getBlock();
