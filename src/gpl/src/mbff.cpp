@@ -70,7 +70,6 @@ bool MBFF::IsInverting(odb::dbInst* inst)
     }
     return false;
   }
-  
 
   for (auto iterm : inst->getITerms()) {
     if (IsQPin(iterm)) {
@@ -167,8 +166,7 @@ bool MBFF::IsDPin(odb::dbITerm* iterm)
   auto pin = network_->dbToSta(iterm);
   auto port = network_->libertyPort(pin);
   for (auto seq : lib_cell->sequentials()) {
-    if (seq->clear()
-        && sta::FuncExpr::equiv(seq->clear(), port->function())) {
+    if (seq->clear() && sta::FuncExpr::equiv(seq->clear(), port->function())) {
       return false;
     }
     if (seq->preset()
