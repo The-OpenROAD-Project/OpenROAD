@@ -349,6 +349,8 @@ class GlobalRouter : public ant::GlobalRouteSource
   void reportCongestion();
   void updateEdgesUsage();
   void updateDbCongestionFromGuides();
+  void getGCellGridPatternFromGuides(
+      std::unordered_map<odb::dbNet*, Guides>& guides);
 
   // check functions
   void checkPinPlacement();
