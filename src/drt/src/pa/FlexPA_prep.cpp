@@ -1034,15 +1034,6 @@ void FlexPA::prepPoint_pin_checkPoint_via(
       if (!boundaryBBox.contains(box))
         continue;
       Rect layer2BBox = via->getLayer2BBox();
-      auto layer2 = getTech()->getLayer(viaDef->getLayer2Num());
-      if (!USENONPREFTRACKS || layer2->isUnidirectional()) {
-        if (layer2BBox.getDir() == 0
-            && layer2->getDir() == odb::dbTechLayerDir::HORIZONTAL)
-          continue;
-        if (layer2BBox.getDir() == 1
-            && layer2->getDir() == odb::dbTechLayerDir::VERTICAL)
-          continue;
-      }
       if (!boundaryBBox.contains(layer2BBox))
         continue;
     }
@@ -1242,7 +1233,8 @@ void FlexPA::prepPoint_pin_checkPoints(
     vector<unique_ptr<frAccessPoint>>& aps,
     const vector<gtl::polygon_90_set_data<frCoord>>& layerPolysets,
     T* pin,
-    frInstTerm* instTerm)
+    frInstTerm* instTerm,
+    const bool& isStdCellPin)
 {
   vector<vector<gtl::polygon_90_data<frCoord>>> layerPolys(
       layerPolysets.size());
@@ -1254,7 +1246,13 @@ void FlexPA::prepPoint_pin_checkPoints(
     const auto layerNum = ap->getLayerNum();
     prepPoint_pin_checkPoint(
         ap.get(), layerPolysets[layerNum], layerPolys[layerNum], pin, instTerm);
-    hasAccess |= ap->hasAccess();
+    if (isStdCellPin) {
+      hasAccess
+          |= ((layerNum == VIA_ACCESS_LAYERNUM && ap->hasAccess(frDirEnum::U))
+              || (layerNum != VIA_ACCESS_LAYERNUM && ap->hasAccess()));
+    } else {
+      hasAccess |= ap->hasAccess();
+    }
   }
   if (!hasAccess) {
     for (auto& ap : aps) {
@@ -1342,7 +1340,7 @@ bool FlexPA::prepPoint_pin_helper(
   vector<unique_ptr<frAccessPoint>> tmpAps;
   prepPoint_pin_genPoints(
       tmpAps, apset, pin, instTerm, pinShapes, lowerType, upperType);
-  prepPoint_pin_checkPoints(tmpAps, pinShapes, pin, instTerm);
+  prepPoint_pin_checkPoints(tmpAps, pinShapes, pin, instTerm, isStdCellPin);
   if (isStdCellPin) {
 #pragma omp atomic
     stdCellPinGenApCnt_ += tmpAps.size();

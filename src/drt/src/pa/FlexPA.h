@@ -218,7 +218,8 @@ class FlexPA
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
       T* pin,
-      frInstTerm* instTerm);
+      frInstTerm* instTerm,
+      const bool& isStdCellPin);
   template <typename T>
   void prepPoint_pin_checkPoint(
       frAccessPoint* ap,
