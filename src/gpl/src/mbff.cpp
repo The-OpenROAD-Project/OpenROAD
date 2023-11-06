@@ -60,7 +60,7 @@ bool MBFF::IsInverting(odb::dbInst* inst)
     return false;
   }
 
-  if (non_invert_func == nullptr) {
+  if (non_invert_func[0] == nullptr) {
     for (auto iterm : inst->getITerms()) {
       if (IsQPin(iterm)) {
         auto pin = network_->dbToSta(iterm);
