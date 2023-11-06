@@ -984,7 +984,7 @@ void FlexPA::prepPoint_pin_checkPoint_via(
   const Point bp = ap->getPoint();
   const auto layerNum = ap->getLayerNum();
   // skip planar only access
-  if (!ap->hasAccess(dir)) {
+  if (!ap->hasAccess(dir) && !deepSearch) {
     return;
   }
 
