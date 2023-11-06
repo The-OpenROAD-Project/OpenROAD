@@ -150,7 +150,7 @@ class frAccessPoint : public frBlockObject
       return typeH_;
     }
   }
-  const bool isViaAllowed() const { return allow_via_; }
+  bool isViaAllowed() const { return allow_via_; }
   // setters
   void setPoint(const Point& in) { point_ = in; }
   void setLayer(const frLayerNum& layerNum) { layerNum_ = layerNum; }

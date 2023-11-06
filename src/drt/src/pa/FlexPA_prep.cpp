@@ -1114,11 +1114,12 @@ bool FlexPA::prepPoint_pin_checkPoint_viaDir_helper(
   auto upperlayer = getTech()->getLayer(via->getViaDef()->getLayer2Num());
   if (!USENONPREFTRACKS || upperlayer->isUnidirectional()) {
     if (upperlayer->isHorizontal()
-        && (dir == frDirEnum::S || dir == frDirEnum::N))
+        && (dir == frDirEnum::S || dir == frDirEnum::N)) {
       return false;
-    else if (!upperlayer->isHorizontal()
-             && (dir == frDirEnum::W || dir == frDirEnum::E))
+    } else if (!upperlayer->isHorizontal()
+               && (dir == frDirEnum::W || dir == frDirEnum::E)) {
       return false;
+    }
   }
   const Point bp = ap->getPoint();
   const bool isBlock
