@@ -16,7 +16,7 @@
 ########## IR report #################
 Corner: default
 Worstcase voltage: 1.10e+00 V
-Average IR drop  : 7.59e-05 V
+Average IR drop  : 7.60e-05 V
 Worstcase IR drop: 3.97e-03 V
 ######################################
 [INFO PSM-0022] Using 0.000V for VSS

@@ -821,7 +821,6 @@ void FlexGCWorker::Impl::initNet_pins_maxRectangles_getFixedMaxRectangles(
 {
   int numLayers = getTech()->getLayers().size();
   vector<gtl::rectangle_data<frCoord>> rects;
-  Point bp, ep;
   for (int i = 0; i < numLayers; i++) {
     rects.clear();
     gtl::get_max_rectangles(rects, net->getPolygons(i, true));

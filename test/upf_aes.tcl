@@ -18,14 +18,15 @@ initialize_floorplan -utilization 20 \
                        -core_space 2 \
                        -site unithd
 
-set def_file [make_result_file upf_aes_ifp.def]
-write_def $def_file
 
 global_placement -skip_initial_place -density 0.82
-set def_file [make_result_file upf_aes_gpl.def]
+detailed_placement
+improve_placement
+check_placement
+
+set def_file [make_result_file upf_aes.def]
 write_def $def_file
-
-
+diff_file $def_file upf_aes.defok
 
 
 

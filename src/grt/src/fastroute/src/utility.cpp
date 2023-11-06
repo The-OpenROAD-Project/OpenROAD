@@ -194,17 +194,38 @@ void FastRouteCore::fillVIA()
         const std::vector<short>& gridsY = treeedge->route.gridsY;
         const std::vector<short>& gridsL = treeedge->route.gridsL;
 
-        int n1a = treeedge->n1a;
-        int n2a = treeedge->n2a;
+        int node1_alias = treeedge->n1a;
+        int node2_alias = treeedge->n2a;
 
-        if (edgeID == treenodes[n1a].hID || edgeID == treenodes[n2a].hID) {
-          if (edgeID == treenodes[n1a].hID) {
-            for (int k = treenodes[n1a].botL; k < treenodes[n1a].topL; k++) {
+        if (node1_alias < num_terminals) {
+          if (treenodes[node1_alias].hID == BIG_INT
+              && edgeID == treenodes[node1_alias].lID) {
+            const int n1a_access_layer = nets_[netID]->getPinL()[node1_alias];
+
+            // Connect edge to pin n1 if not on the same layer
+            if (gridsL[0] != n1a_access_layer) {
+              int diff = gridsL[0] - n1a_access_layer;
+              for (int i = 0; i < abs(diff); i++) {
+                tmpX[newCNT] = gridsX[0];
+                tmpY[newCNT] = gridsY[0];
+                tmpL[newCNT] = n1a_access_layer + i * (diff / abs(diff));
+                newCNT++;
+                numVIAT1++;
+              }
+            }
+          }
+        }
+        if (edgeID == treenodes[node1_alias].hID
+            || edgeID == treenodes[node2_alias].hID) {
+          if (edgeID == treenodes[node1_alias].hID) {
+            for (int k = treenodes[node1_alias].botL;
+                 k < treenodes[node1_alias].topL;
+                 k++) {
               tmpX[newCNT] = gridsX[0];
               tmpY[newCNT] = gridsY[0];
               tmpL[newCNT] = k;
               newCNT++;
-              if (n1a < num_terminals) {
+              if (node1_alias < num_terminals) {
                 numVIAT1++;
               } else {
                 numVIAT2++;
@@ -226,15 +247,16 @@ void FastRouteCore::fillVIA()
           tmpL[newCNT] = gridsL[j];
           newCNT++;
 
-          if (edgeID == treenodes[n2a].hID) {
-            if (treenodes[n2a].topL != treenodes[n2a].botL)
-              for (int k = treenodes[n2a].topL - 1; k >= treenodes[n2a].botL;
+          if (edgeID == treenodes[node2_alias].hID) {
+            if (treenodes[node2_alias].topL != treenodes[node2_alias].botL)
+              for (int k = treenodes[node2_alias].topL - 1;
+                   k >= treenodes[node2_alias].botL;
                    k--) {
                 tmpX[newCNT] = gridsX[routeLen];
                 tmpY[newCNT] = gridsY[routeLen];
                 tmpL[newCNT] = k;
                 newCNT++;
-                if (n2a < num_terminals) {
+                if (node2_alias < num_terminals) {
                   numVIAT1++;
                 } else {
                   numVIAT2++;
@@ -242,23 +264,46 @@ void FastRouteCore::fillVIA()
               }
           }
           // last grid -> node2 finished
-
-          if (treeedges[edgeID].route.type == RouteType::MazeRoute) {
-            treeedges[edgeID].route.gridsX.clear();
-            treeedges[edgeID].route.gridsY.clear();
-            treeedges[edgeID].route.gridsL.clear();
+        } else {
+          for (int j = 0; j <= routeLen; j++) {
+            tmpX[newCNT] = gridsX[j];
+            tmpY[newCNT] = gridsY[j];
+            tmpL[newCNT] = gridsL[j];
+            newCNT++;
           }
-          treeedge->route.gridsX.resize(newCNT, 0);
-          treeedge->route.gridsY.resize(newCNT, 0);
-          treeedge->route.gridsL.resize(newCNT, 0);
-          treeedge->route.type = RouteType::MazeRoute;
-          treeedge->route.routelen = newCNT - 1;
+        }
 
-          for (int k = 0; k < newCNT; k++) {
-            treeedge->route.gridsX[k] = tmpX[k];
-            treeedge->route.gridsY[k] = tmpY[k];
-            treeedge->route.gridsL[k] = tmpL[k];
+        if (node2_alias < num_terminals && treenodes[node2_alias].hID == BIG_INT
+            && edgeID == treenodes[node2_alias].lID) {
+          const int n2a_access_layer = nets_[netID]->getPinL()[node2_alias];
+
+          // Connect edge to pin n2 if not on the same layer
+          if (tmpL[newCNT - 1] != n2a_access_layer) {
+            int diff = n2a_access_layer - tmpL[newCNT - 1];
+            for (int i = 1; i <= abs(diff); i++) {
+              tmpX[newCNT] = tmpX[newCNT - 1];
+              tmpY[newCNT] = tmpY[newCNT - 1];
+              tmpL[newCNT] = tmpL[newCNT - 1] + (diff / abs(diff));
+              newCNT++;
+              numVIAT1++;
+            }
           }
+        }
+        if (treeedges[edgeID].route.type == RouteType::MazeRoute) {
+          treeedges[edgeID].route.gridsX.clear();
+          treeedges[edgeID].route.gridsY.clear();
+          treeedges[edgeID].route.gridsL.clear();
+        }
+        treeedge->route.gridsX.resize(newCNT, 0);
+        treeedge->route.gridsY.resize(newCNT, 0);
+        treeedge->route.gridsL.resize(newCNT, 0);
+        treeedge->route.type = RouteType::MazeRoute;
+        treeedge->route.routelen = newCNT - 1;
+
+        for (int k = 0; k < newCNT; k++) {
+          treeedge->route.gridsX[k] = tmpX[k];
+          treeedge->route.gridsY[k] = tmpY[k];
+          treeedge->route.gridsL[k] = tmpL[k];
         }
       }
     }
@@ -310,7 +355,7 @@ void FastRouteCore::fixEdgeAssignment(int& net_layer,
                                       bool vertical,
                                       int& best_cost)
 {
-  bool is_vertical = ((l % 2) - layer_orientation_) != 0;
+  bool is_vertical = layer_directions_[l] == odb::dbTechLayerDir::VERTICAL;
   // if layer direction doesn't match edge direction or
   // if already found a layer for the edge, ignores the remaining layers
   if (is_vertical != vertical || best_cost > 0) {
@@ -363,7 +408,8 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
       min_y = std::min(gridsY[k], gridsY[k + 1]);
       for (l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
         // check if the current layer is vertical to match the edge orientation
-        bool is_vertical = ((l % 2) - layer_orientation_) != 0;
+        bool is_vertical
+            = layer_directions_[l] == odb::dbTechLayerDir::VERTICAL;
         if (is_vertical) {
           layer_grid_[l][k] = v_edges_3D_[l][min_y][gridsX[k]].cap
                               - v_edges_3D_[l][min_y][gridsX[k]].usage;
@@ -403,7 +449,8 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
       for (l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
         // check if the current layer is horizontal to match the edge
         // orientation
-        bool is_horizontal = ((l % 2) - layer_orientation_) == 0;
+        bool is_horizontal
+            = layer_directions_[l] == odb::dbTechLayerDir::HORIZONTAL;
         if (is_horizontal) {
           layer_grid_[l][k] = h_edges_3D_[l][gridsY[k]][min_x].cap
                               - h_edges_3D_[l][gridsY[k]][min_x].usage;
@@ -781,7 +828,8 @@ void FastRouteCore::layerAssignmentV4()
       treenodes[nodeID].assigned = false;
 
       if (nodeID < num_terminals) {
-        treenodes[nodeID].botL = 0;
+        treenodes[nodeID].botL = nets_[netID]->getPinL()[nodeID];
+        treenodes[nodeID].topL = nets_[netID]->getPinL()[nodeID];
         treenodes[nodeID].assigned = true;
         treenodes[nodeID].status = 1;
       }
@@ -861,7 +909,8 @@ void FastRouteCore::layerAssignment()
       treenodes[d].status = 0;
 
       if (d < sttrees_[netID].num_terminals) {
-        treenodes[d].botL = treenodes[d].topL = 0;
+        treenodes[d].botL = nets_[netID]->getPinL()[d];
+        treenodes[d].topL = nets_[netID]->getPinL()[d];
         // treenodes[d].l = 0;
         treenodes[d].assigned = true;
         treenodes[d].status = 1;
@@ -948,10 +997,16 @@ void FastRouteCore::printTree3D(int netID)
   for (int nodeID = 0; nodeID < sttrees_[netID].num_nodes; nodeID++) {
     int x = tile_size_ * (sttrees_[netID].nodes[nodeID].x + 0.5) + x_corner_;
     int y = tile_size_ * (sttrees_[netID].nodes[nodeID].y + 0.5) + y_corner_;
-    logger_->report("nodeID {},  [{}, {}], status: {}",
+    int l = num_layers_;
+    if (nodeID < sttrees_[netID].num_terminals) {
+      l = nets_[netID]->getPinL()[nodeID];
+    }
+
+    logger_->report("nodeID {},  [{}, {}, {}], status: {}",
                     nodeID,
                     x,
                     y,
+                    l,
                     sttrees_[netID].nodes[nodeID].status);
   }
 
@@ -976,7 +1031,8 @@ void FastRouteCore::checkRoute3D()
 
     for (nodeID = 0; nodeID < sttrees_[netID].num_nodes; nodeID++) {
       if (nodeID < num_terminals) {
-        if (treenodes[nodeID].botL != 0) {
+        if ((treenodes[nodeID].botL > nets_[netID]->getPinL()[nodeID])
+            || (treenodes[nodeID].topL < nets_[netID]->getPinL()[nodeID])) {
           logger_->error(GRT, 203, "Caused floating pin node.");
         }
       }
@@ -1159,6 +1215,9 @@ float FastRouteCore::CalculatePartialSlack()
     }
   }
   for (int netID = 0; netID < netCount(); netID++) {
+    if (nets_[netID]->isRouted()) {
+      continue;
+    }
     auto fr_net = nets_[netID];
     odb::dbNet* db_net = fr_net->getDbNet();
     float slack = parasitics_builder_->getNetSlack(db_net);
@@ -1176,6 +1235,9 @@ float FastRouteCore::CalculatePartialSlack()
   // Set the non critical nets slack as the lowest float, so they can be
   // ordered by overflow (and ordered first than the critical nets)
   for (int netID = 0; netID < netCount(); netID++) {
+    if (nets_[netID]->isRouted()) {
+      continue;
+    }
     if (nets_[netID]->getSlack() > slack_th) {
       nets_[netID]->setSlack(std::ceil(std::numeric_limits<float>::lowest()));
     }
@@ -1918,8 +1980,12 @@ int FastRouteCore::edgeShift(Tree& t, int net)
   // edges from pin to steiner
   for (i = 0; i < deg; i++) {
     n = t.branch[i].n;
-    nbr[n][nbrCnt[n]] = i;
-    nbrCnt[n]++;
+    if (n >= deg && n < t.branchCount()) {  // ensure n is inside nbrCnt range
+      nbr[n][nbrCnt[n]] = i;
+      nbrCnt[n]++;
+    } else {
+      logger_->error(GRT, 149, "Invalid access to nbrCnt vector");
+    }
   }
   // edges from steiner to steiner
   for (i = deg; i < t.branchCount(); i++) {

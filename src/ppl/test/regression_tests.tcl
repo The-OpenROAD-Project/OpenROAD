@@ -1,4 +1,5 @@
 record_tests {
+  add_constraint_debug
   add_constraint1
   add_constraint2
   add_constraint3
@@ -101,6 +102,7 @@ record_tests {
   top_layer6
   top_layer7
   top_layer_error
+  top_layer_error2
   write_pin_placement1
   write_pin_placement2
   write_pin_placement3

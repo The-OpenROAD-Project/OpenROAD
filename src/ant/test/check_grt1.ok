@@ -10,6 +10,13 @@
 [INFO ODB-0131]     Created 1360 components and 6650 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
+Net: req_msg[28]
+  Pin: _652_/A1 (sky130_fd_sc_hs__a22oi_1)
+    Layer: met3
+      Partial area ratio:  937.12
+      Required ratio:  400.00 (Side area) (VIOLATED)
+
+
 Net: reset
   Pin: _346_/A1 (sky130_fd_sc_hs__o31ai_1)
     Layer: met2
@@ -24,5 +31,5 @@ Net: resp_msg[11]
       Required ratio:  400.00 (Side area) (VIOLATED)
 
 
-[INFO ANT-0002] Found 2 net violations.
-[INFO ANT-0001] Found 2 pin violations.
+[INFO ANT-0002] Found 3 net violations.
+[INFO ANT-0001] Found 3 pin violations.

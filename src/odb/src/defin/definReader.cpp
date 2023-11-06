@@ -372,10 +372,6 @@ int definReader::blockageCallback(defrCallbackType_e /* unused: type */,
   CHECKBLOCK
   definBlockage* blockageR = reader->_blockageR;
 
-  if (blockage->hasExceptpgnet()) {
-    UNSUPPORTED("EXCEPTPGNET on blockage is unsupported");
-  }
-
   if (blockage->hasMask()) {
     UNSUPPORTED("MASK on blockage is unsupported");
   }
@@ -390,6 +386,10 @@ int definReader::blockageCallback(defrCallbackType_e /* unused: type */,
 
     if (blockage->hasFills()) {
       blockageR->blockageRoutingFills();
+    }
+
+    if (blockage->hasExceptpgnet()) {
+      blockageR->blockageRoutingExceptPGNets();
     }
 
     if (blockage->hasPushdown()) {
@@ -979,7 +979,14 @@ int definReader::pinCallback(defrCallbackType_e /* unused: type */,
   }
 
   if (pin->hasDirection()) {
-    pinR->pinDirection(pin->direction());
+    if (reader->_mode == defin::FLOORPLAN) {
+      reader->_logger->warn(
+          utl::ODB,
+          437,
+          "Pin directions are ignored from floorplan DEF files.");
+    } else {
+      pinR->pinDirection(pin->direction());
+    }
   }
 
   if (pin->hasSupplySensitivity()) {

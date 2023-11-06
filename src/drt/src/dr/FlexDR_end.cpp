@@ -233,24 +233,15 @@ void FlexDRWorker::endRemoveNets_pathSeg(frDesign* design,
 
 void FlexDRWorker::endRemoveNets_via(frDesign* design, frVia* via)
 {
-  auto gridBBox = getRouteBox();
-  auto regionQuery = design->getRegionQuery();
-  auto net = via->getNet();
-  Point viaPoint = via->getOrigin();
-  if (isInitDR()
-      && (viaPoint.x() == gridBBox.xMin() || viaPoint.x() == gridBBox.xMax()
-          || viaPoint.y() == gridBBox.yMin()
-          || viaPoint.y() == gridBBox.yMax())) {
-    return;
-  }
-  if (viaPoint.x() >= gridBBox.xMin() && viaPoint.y() >= gridBBox.yMin()
-      && viaPoint.x() <= gridBBox.xMax() && viaPoint.y() <= gridBBox.yMax()) {
+  if (isRouteVia(via)) {
+    auto net = via->getNet();
     if (save_updates_) {
       drUpdate update(drUpdate::REMOVE_FROM_NET);
       update.setNet(net);
       update.setIndexInOwner(via->getIndexInOwner());
       design_->addUpdate(update);
     }
+    auto regionQuery = design->getRegionQuery();
     regionQuery->removeDRObj(via);  // delete rq
     net->removeVia(via);
   }
@@ -258,23 +249,15 @@ void FlexDRWorker::endRemoveNets_via(frDesign* design, frVia* via)
 
 void FlexDRWorker::endRemoveNets_patchWire(frDesign* design, frPatchWire* pwire)
 {
-  auto gridBBox = getRouteBox();
-  auto regionQuery = design->getRegionQuery();
-  auto net = pwire->getNet();
-  Point origin = pwire->getOrigin();
-  if (isInitDR()
-      && (origin.x() == gridBBox.xMin() || origin.x() == gridBBox.xMax()
-          || origin.y() == gridBBox.yMin() || origin.y() == gridBBox.yMax())) {
-    return;
-  }
-  if (origin.x() >= gridBBox.xMin() && origin.y() >= gridBBox.yMin()
-      && origin.x() <= gridBBox.xMax() && origin.y() <= gridBBox.yMax()) {
+  if (isRoutePatchWire(pwire)) {
+    auto net = pwire->getNet();
     if (save_updates_) {
       drUpdate update(drUpdate::REMOVE_FROM_NET);
       update.setNet(net);
       update.setIndexInOwner(pwire->getIndexInOwner());
       design_->addUpdate(update);
     }
+    auto regionQuery = design->getRegionQuery();
     regionQuery->removeDRObj(pwire);  // delete rq
     net->removePatchWire(pwire);
   }
@@ -286,7 +269,7 @@ void FlexDRWorker::endRemoveNets(
     map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp>& boundPts)
 {
   vector<frBlockObject*> result;
-  design->getRegionQuery()->queryDRObj(getRouteBox(), result);
+  design->getRegionQuery()->queryDRObj(getExtBox(), result);
   for (auto rptr : result) {
     if (rptr->typeId() == frcPathSeg) {
       auto cptr = static_cast<frPathSeg*>(rptr);
@@ -616,15 +599,18 @@ bool FlexDRWorker::end(frDesign* design)
   if (getDRIter() && getInitNumMarkers() == 0 && !needRecheck_) {
     return false;
     // do not write back if current clip is worse than input
-  } else if (getRipupMode() != 1 && getBestNumMarkers() > getInitNumMarkers()) {
+  }
+  if (getRipupMode() != RipUpMode::ALL
+      && getBestNumMarkers() > getInitNumMarkers()) {
     // cout <<"skip clip with #init/final = " <<getInitNumMarkers() <<"/"
     // <<getNumMarkers() <<endl;
     return false;
-  } else if (getDRIter() && getRipupMode() == 1
-             && getBestNumMarkers() > 5 * getInitNumMarkers()) {
+  }
+  if (getDRIter() && getRipupMode() == RipUpMode::ALL
+      && getBestNumMarkers() > 5 * getInitNumMarkers()) {
     return false;
   }
-  save_updates_ = dist_on_ || debugSettings_->debugDumpDR;
+  save_updates_ = dist_on_;
   set<frNet*, frBlockObjectComp> modNets;
   endGetModNets(modNets);
   // get lock

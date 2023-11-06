@@ -273,10 +273,10 @@ void fit()
   gui->fit();
 }
 
-void save_image(const char* filename, double xlo, double ylo, double xhi, double yhi, double dbu_per_pixel = 0, const std::map<std::string, bool>& display_settings = {})
+void save_image(const char* filename, double xlo, double ylo, double xhi, double yhi, int width_px = 0, double dbu_per_pixel = 0, const std::map<std::string, bool>& display_settings = {})
 {
   auto gui = gui::Gui::get();
-  gui->saveImage(filename, make_rect(xlo, ylo, xhi, yhi), dbu_per_pixel, display_settings);
+  gui->saveImage(filename, make_rect(xlo, ylo, xhi, yhi), width_px, dbu_per_pixel, display_settings);
 }
 
 void save_clocktree_image(const char* filename, const char* clock_name, const char* corner = "", int width_px = 0, int height_px = 0)

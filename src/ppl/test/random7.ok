@@ -9,5 +9,6 @@
 [INFO ODB-0133]     Created 54 nets and 88 connections.
 Found 0 macro blocks.
 Using 2 tracks default min distance between IO pins.
+[INFO PPL-0044] Pin group: [ req_msg[14] req_msg[15] req_msg[16] req_msg[17] ]
 [INFO PPL-0007] Random pin placement.
 No differences found.

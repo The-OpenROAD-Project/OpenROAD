@@ -1,5 +1,6 @@
 record_tests {
   constant1
+  make_port
   network_edit1
   sdc_names1
   sdc_names2

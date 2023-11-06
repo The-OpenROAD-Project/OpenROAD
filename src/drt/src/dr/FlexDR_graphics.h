@@ -61,7 +61,11 @@ class FlexDRGraphics : public gui::Renderer
 
   void startIter(int iter);
 
+  void endWorker(int iter);
+
   void startNet(drNet* net);
+
+  void midNet(drNet* net);
 
   void endNet(drNet* net);
 

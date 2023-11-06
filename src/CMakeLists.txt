@@ -185,6 +185,7 @@ endif()
 
 add_compile_options(
   -Wall
+  -Wmissing-field-initializers
   -Wredundant-decls
   -Wformat-security
   -Wno-sign-compare

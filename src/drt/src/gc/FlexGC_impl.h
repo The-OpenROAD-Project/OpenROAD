@@ -170,6 +170,7 @@ class FlexGCWorker::Impl
 
   FlexGCWorkerRegionQuery& getWorkerRegionQuery() { return rq_; }
 
+  void modifyMarkers();
   // init
   gcNet* getNet(frBlockObject* obj);
   gcNet* getNet(frNet* net);
@@ -277,8 +278,8 @@ class FlexGCWorker::Impl
                                     gcRect* rect,
                                     frLef58CornerSpacingConstraint* con);
 
-  void checkMetalShape();
-  void checkMetalShape_main(gcPin* pin);
+  void checkMetalShape(bool allow_patching = false);
+  void checkMetalShape_main(gcPin* pin, bool allow_patching);
   void checkMetalShape_minWidth(const gtl::rectangle_data<frCoord>& rect,
                                 frLayerNum layerNum,
                                 gcNet* net,
@@ -301,6 +302,10 @@ class FlexGCWorker::Impl
   void checkMetalEndOfLine();
   void checkMetalEndOfLine_main(gcPin* pin);
   void checkMetalEndOfLine_eol(gcSegment* edge, frConstraint* constraint);
+  void checkMetalEndOfLine_eol_TN(gcSegment* edge, frConstraint* constraint);
+  bool qualifiesAsEol(gcSegment* edge,
+                      frConstraint* constraint,
+                      bool& hasRoute);
   void getMetalEolExtQueryRegion(gcSegment* edge,
                                  const gtl::rectangle_data<frCoord>& extRect,
                                  frCoord spacing,
@@ -368,7 +373,19 @@ class FlexGCWorker::Impl
       gtl::rectangle_data<frCoord>& queryRect,
       frCoord& eolNonPrlSpacing,
       frCoord& endPrlSpacing,
-      frCoord& endPrl);
+      frCoord& endPrl,
+      bool isEolEdge = true);
+
+  void checkMetalEndOfLine_eol_hasEol_check(
+      gcSegment* edge,
+      gcSegment* ptr,
+      const gtl::rectangle_data<frCoord>& queryRect,
+      frConstraint* constraint,
+      frCoord endPrlSpacing,
+      frCoord eolNonPrlSpacing,
+      frCoord endPrl,
+      bool hasRoute);
+
   void checkMetalEndOfLine_eol_hasEol_helper(gcSegment* edge1,
                                              gcSegment* edge2,
                                              frConstraint* constraint);

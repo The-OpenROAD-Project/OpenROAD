@@ -113,7 +113,11 @@ class FlexPA
   // helper functions
   frDesign* getDesign() const { return design_; }
   frTechObject* getTech() const { return design_->getTech(); }
-  void setDesign(frDesign* in) { design_ = in; }
+  void setDesign(frDesign* in)
+  {
+    design_ = in;
+    unique_insts_.setDesign(in);
+  }
   void applyPatternsFile(const char* file_path);
   void getViaRawPriority(frViaDef* viaDef, ViaRawPriorityTuple& priority);
   bool isSkipInstTerm(frInstTerm* in);

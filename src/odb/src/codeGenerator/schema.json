@@ -164,6 +164,13 @@
     },
     {
       "first":"dbTechLayer",
+      "second":"dbTechLayerForbiddenSpacingRule",
+      "type":"1_n",
+      "tbl_name":"forbidden_spacing_rules_tbl_",
+      "schema":"db_schema_lef58_forbidden_spacing"
+    },
+    {
+      "first":"dbTechLayer",
       "second":"dbTechLayerKeepOutZoneRule",
       "type":"1_n",
       "tbl_name":"keepout_zone_rules_tbl_",

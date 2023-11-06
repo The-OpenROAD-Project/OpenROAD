@@ -50,8 +50,6 @@ TritonCTS forced slew degradation on these wires.
 [DEBUG CTS-legalizer]   selectBestNewLocation for level 1 buffer: [(11.178, 8.122)] => [(11.358, 7.302)]
 [DEBUG CTS-legalizer] createClockSubNets legalizeOneBuffer clkbuf_0: [(7.358, 6.302)] => [(7.358, 6.064)]
 [INFO CTS-0035]  Number of sinks covered: 29.
-[DEBUG CTS-legalizer] Htree file cts.clk.buffer has been generated
-[DEBUG CTS-legalizer] Run 'obsAwareCts.py cts.clk.buffer' to produce cts.clk.buffer.png
 [INFO CTS-0018]     Created 34 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 3.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 3.

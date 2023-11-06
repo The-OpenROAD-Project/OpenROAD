@@ -28,8 +28,7 @@
 
 #include "ta/FlexTA.h"
 
-using namespace std;
-using namespace fr;
+namespace fr {
 
 void FlexTAWorker::initTracks()
 {
@@ -91,7 +90,7 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
                                          frCoord& pinCoord)
 {
   auto [bp, ep] = guide->getPoints();
-  if (!(bp == ep)) {
+  if (bp != ep) {
     return false;
   }
 
@@ -483,21 +482,23 @@ void FlexTAWorker::initIroute(frGuide* guide)
     style.setWidth(
         max((int) style.getWidth(), ndr->getWidth(layerNum / 2 - 1)));
     rptr->setStyle(style);
-  } else
+  } else {
     rptr->setStyle(
         getDesign()->getTech()->getLayer(layerNum)->getDefaultSegStyle());
+  }
   // owner set when add to taPin
   iroute->addPinFig(std::move(ps));
   frViaDef* viaDef;
   for (auto coord : upViaCoordSet) {
     if (guide->getNet()->getNondefaultRule()
         && guide->getNet()->getNondefaultRule()->getPrefVia((layerNum + 2) / 2
-                                                            - 1))
+                                                            - 1)) {
       viaDef = guide->getNet()->getNondefaultRule()->getPrefVia(
           (layerNum + 2) / 2 - 1);
-    else
+    } else {
       viaDef
           = getDesign()->getTech()->getLayer(layerNum + 1)->getDefaultViaDef();
+    }
     unique_ptr<taPinFig> via = make_unique<taVia>(viaDef);
     via->setNet(guide->getNet());
     auto rViaPtr = static_cast<taVia*>(via.get());
@@ -506,12 +507,13 @@ void FlexTAWorker::initIroute(frGuide* guide)
   }
   for (auto coord : downViaCoordSet) {
     if (guide->getNet()->getNondefaultRule()
-        && guide->getNet()->getNondefaultRule()->getPrefVia(layerNum / 2 - 1))
+        && guide->getNet()->getNondefaultRule()->getPrefVia(layerNum / 2 - 1)) {
       viaDef
           = guide->getNet()->getNondefaultRule()->getPrefVia(layerNum / 2 - 1);
-    else
+    } else {
       viaDef
           = getDesign()->getTech()->getLayer(layerNum - 1)->getDefaultViaDef();
+    }
     unique_ptr<taPinFig> via = make_unique<taVia>(viaDef);
     via->setNet(guide->getNet());
     auto rViaPtr = static_cast<taVia*>(via.get());
@@ -613,16 +615,16 @@ void FlexTAWorker::sortIroutes()
   // init cost
   if (isInitTA()) {
     for (auto& iroute : iroutes_) {
-      if ((hardIroutesMode && iroute->getGuide()->getNet()->isClock())
-          || (!hardIroutesMode && !iroute->getGuide()->getNet()->isClock()))
+      if (hardIroutesMode == iroute->getGuide()->getNet()->isClock()) {
         addToReassignIroutes(iroute.get());
+      }
     }
   } else {
     for (auto& iroute : iroutes_) {
       if (iroute->getCost()) {
-        if ((hardIroutesMode && iroute->getGuide()->getNet()->isClock())
-            || (!hardIroutesMode && !iroute->getGuide()->getNet()->isClock()))
+        if (hardIroutesMode == iroute->getGuide()->getNet()->isClock()) {
           addToReassignIroutes(iroute.get());
+        }
       }
     }
   }
@@ -758,10 +760,12 @@ void FlexTAWorker::initFixedObjs()
             auto inst = instBlkg->getInst();
             dbMasterType masterType = inst->getMaster()->getMasterType();
             if (!masterType.isBlock() && !masterType.isPad()
-                && masterType != dbMasterType::RING)
+                && masterType != dbMasterType::RING) {
               continue;
-            if (bounds.minDXDY() <= 2 * width)
+            }
+            if (bounds.minDXDY() <= 2 * width) {
               continue;
+            }
             auto cutLayer
                 = getTech()->getLayer(upper ? layerNum + 1 : layerNum - 1);
             auto bloatDist = initFixedObjs_calcOBSBloatDistVia(
@@ -792,14 +796,16 @@ void FlexTAWorker::initFixedObjs()
     result.clear();
     if (layerNum - 2 >= getDesign()->getTech()->getBottomLayerNum()
         && getTech()->getLayer(layerNum - 2)->getType()
-               == dbTechLayerType::ROUTING)
+               == dbTechLayerType::ROUTING) {
       getRegionQuery()->query(getExtBox(), layerNum - 2, result);
+    }
     costResults(false, result);
     result.clear();
     if (layerNum + 2 < getDesign()->getTech()->getLayers().size()
         && getTech()->getLayer(layerNum + 2)->getType()
-               == dbTechLayerType::ROUTING)
+               == dbTechLayerType::ROUTING) {
       getRegionQuery()->query(getExtBox(), layerNum + 2, result);
+    }
     costResults(true, result);
   }
 }
@@ -828,8 +834,9 @@ frCoord FlexTAWorker::initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
   frCoord bloatDist
       = layer->getMinSpacingValue(obsWidth, viaWidth, viaWidth, false);
   auto& eol = layer->getDrEolSpacingConstraint();
-  if (viaBox.minDXDY() < eol.eolWidth)
+  if (viaBox.minDXDY() < eol.eolWidth) {
     bloatDist = std::max(bloatDist, eol.eolSpace);
+  }
   // at least via enclosure should not short with obs (OBS has issue with
   // wrongway and PG has issue with prefDir)
   // TODO: generalize the following
@@ -874,3 +881,5 @@ void FlexTAWorker::init()
   initIroutes();
   initCosts();
 }
+
+}  // namespace fr

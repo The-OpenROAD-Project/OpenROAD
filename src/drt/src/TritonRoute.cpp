@@ -127,6 +127,11 @@ void TritonRoute::setDebugWriteNetTracks(bool on)
   debug_->writeNetTracks = on;
 }
 
+void TritonRoute::setDumpLastWorker(bool on)
+{
+  debug_->dumpLastWorker = on;
+}
+
 void TritonRoute::setWorkerIpPort(const char* ip, unsigned short port)
 {
   dist_ip_ = ip;
@@ -151,10 +156,9 @@ void TritonRoute::setDebugPinName(const char* name)
   debug_->pinName = name;
 }
 
-void TritonRoute::setDebugWorker(int x, int y)
+void TritonRoute::setDebugBox(int x1, int y1, int x2, int y2)
 {
-  debug_->x = x;
-  debug_->y = y;
+  debug_->box.init(x1, y1, x2, y2);
 }
 
 void TritonRoute::setDebugIter(int iter)
@@ -175,6 +179,18 @@ void TritonRoute::setDebugPaEdge(bool on)
 void TritonRoute::setDebugPaCommit(bool on)
 {
   debug_->paCommit = on;
+}
+
+RipUpMode getMode(int ripupMode)
+{
+  switch (ripupMode) {
+    case 0:
+      return RipUpMode::DRC;
+    case 1:
+      return RipUpMode::ALL;
+    default:
+      return RipUpMode::NEARDRC;
+  }
 }
 
 void TritonRoute::setDebugWorkerParams(int mazeEndIter,
@@ -252,8 +268,9 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
     worker->setFixedShapeCost(debug_->fixedShapeCost);
   if (debug_->markerDecay != -1)
     worker->setMarkerDecay(debug_->markerDecay);
-  if (debug_->ripupMode != -1)
-    worker->setRipupMode(debug_->ripupMode);
+  if (debug_->ripupMode != -1) {
+    worker->setRipupMode(getMode(debug_->ripupMode));
+  }
   if (debug_->followGuide != -1)
     worker->setFollowGuide((debug_->followGuide == 1));
   worker->setSharedVolume(shared_volume_);
@@ -498,7 +515,7 @@ void TritonRoute::init(Tcl_Interp* tcl_interp,
   dist_ = dist;
   stt_builder_ = stt_builder;
   design_ = std::make_unique<frDesign>(logger_);
-  dist->addCallBack(new fr::RoutingCallBack(this, dist, logger));
+  dist->addCallBack(new RoutingCallBack(this, dist, logger));
   // Define swig TCL commands.
   Drt_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::drt_tcl_inits);
@@ -614,7 +631,7 @@ void TritonRoute::stepDR(int size,
                      workerMarkerCost,
                      workerFixedShapeCost,
                      workerMarkerDecay,
-                     ripupMode,
+                     getMode(ripupMode),
                      followGuide});
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 }
@@ -1177,9 +1194,14 @@ void TritonRoute::setUnidirectionalLayer(const std::string& layerName)
   auto dbLayer = tech->findLayer(layerName.c_str());
   if (dbLayer == nullptr) {
     logger_->error(utl::DRT, 616, "Layer {} not found", layerName);
-  } else {
-    design_->getTech()->setUnidirectionalLayer(dbLayer);
   }
+  if (dbLayer->getType() != dbTechLayerType::ROUTING) {
+    logger_->error(utl::DRT,
+                   618,
+                   "Non-routing layer {} can't be set unidirectional",
+                   layerName);
+  }
+  design_->getTech()->setUnidirectionalLayer(dbLayer);
 }
 
 void TritonRoute::setParams(const ParamStruct& params)

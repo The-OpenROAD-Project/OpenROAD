@@ -275,6 +275,8 @@ class GlobalRouter : public ant::GlobalRouteSource
   // main functions
   void initCoreGrid(int max_routing_layer);
   void initRoutingLayers();
+  void checkAdjacentLayersDirection(int min_routing_layer,
+                                    int max_routing_layer);
   std::vector<std::pair<int, int>> calcLayerPitches(int max_layer);
   void initRoutingTracks(int max_routing_layer);
   void averageTrackPattern(odb::dbTrackGrid* grid,
@@ -319,7 +321,6 @@ class GlobalRouter : public ant::GlobalRouteSource
                              GRoute& route,
                              int min_routing_layer,
                              int max_routing_layer);
-  void addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route);
   void addRemainingGuides(NetRouteMap& routes,
                           std::vector<Net*>& nets,
                           int min_routing_layer,
@@ -353,7 +354,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   void checkPinPlacement();
 
   // incremental funcions
-  void updateDirtyRoutes();
+  void updateDirtyRoutes(bool save_guides = false);
   void mergeResults(NetRouteMap& routes);
   void updateDirtyNets(std::vector<Net*>& dirty_nets);
   void updateDbCongestion();
@@ -489,7 +490,7 @@ class IncrementalGRoute
   // Saves global router state and enables db callbacks.
   IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block);
   // Update global routes for dirty nets.
-  void updateRoutes();
+  void updateRoutes(bool save_guides = false);
   // Disables db callbacks.
   ~IncrementalGRoute();
 

@@ -49,7 +49,7 @@ class Graphics : public gui::Renderer
   void drawPolygon90Set(const Polygon90Set& set);
 
   // From Renderer API
-  virtual void drawObjects(gui::Painter& painter) override;
+  void drawObjects(gui::Painter& painter) override;
 
   // Show a message in the status bar
   void status(const std::string& message);

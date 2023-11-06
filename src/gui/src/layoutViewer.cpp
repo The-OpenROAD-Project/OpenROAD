@@ -152,10 +152,6 @@ LayoutViewer::LayoutViewer(
 {
   setMouseTracking(true);
 
-  QPalette palette;
-  palette.setColor(QPalette::Window, background_);
-  setPalette(palette);
-
   addMenuAndActions();
 
   connect(
@@ -1891,6 +1887,7 @@ void LayoutViewer::viewportUpdated()
 
 void LayoutViewer::saveImage(const QString& filepath,
                              const Rect& region,
+                             int width_px,
                              double dbu_per_pixel)
 {
   if (!hasDesign()) {
@@ -1915,6 +1912,12 @@ void LayoutViewer::saveImage(const QString& filepath,
   }
 
   const qreal old_pixels_per_dbu = pixels_per_dbu_;
+
+  if (width_px != 0) {
+    // Adapt resolution to width entered by user
+    pixels_per_dbu_ = width_px / static_cast<double>(save_area.dx());
+  }
+
   if (dbu_per_pixel != 0) {
     pixels_per_dbu_ = 1.0 / dbu_per_pixel;
   }
@@ -1931,17 +1934,17 @@ void LayoutViewer::saveImage(const QString& filepath,
   // We don't use Utils::renderImage as we need to have the
   // rendering be synchronous.  We directly call the draw()
   // method ourselves.
-  const int width_px = bounding_rect.width();
-  const int height_px = bounding_rect.height();
 
-  const QSize initial_size = QSize(width_px, height_px);
+  const QSize initial_size
+      = QSize(bounding_rect.width(), bounding_rect.height());
   const QSize img_size = Utils::adjustMaxImageSize(initial_size);
 
   if (img_size != initial_size) {
     logger_->warn(utl::GUI,
                   94,
-                  "Can't save image with the specified size (max width/height "
-                  "is 7200 pixels). Saved image dimensions = {} x {}.",
+                  "Resolution results in illegal size (max width/height "
+                  "is {} pixels). Saving image with dimensions = {} x {}.",
+                  Utils::MAX_IMAGE_SIZE,
                   img_size.width(),
                   img_size.height());
 
@@ -1970,7 +1973,7 @@ void LayoutViewer::saveImage(const QString& filepath,
                       highlighted_,
                       rulers_,
                       render_ratio,
-                      background_);
+                      background());
   pixels_per_dbu_ = old_pixels_per_dbu;
 
   if (!img.save(save_filepath)) {

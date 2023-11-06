@@ -39,13 +39,27 @@
 
 namespace mpl2 {
 
-Graphics::Graphics(int dbu, utl::Logger* logger) : dbu_(dbu), logger_(logger)
+Graphics::Graphics(bool coarse, bool fine, int dbu, utl::Logger* logger)
+    : coarse_(coarse), fine_(fine), dbu_(dbu), logger_(logger)
 {
   gui::Gui::get()->registerRenderer(this);
 }
 
+void Graphics::startCoarse()
+{
+  active_ = coarse_;
+}
+
+void Graphics::startFine()
+{
+  active_ = fine_;
+}
+
 void Graphics::startSA()
 {
+  if (!active_) {
+    return;
+  }
   logger_->report("------ Start ------");
   best_norm_cost_ = std::numeric_limits<float>::max();
   skipped_ = 0;
@@ -53,6 +67,9 @@ void Graphics::startSA()
 
 void Graphics::endSA()
 {
+  if (!active_) {
+    return;
+  }
   if (skipped_ > 0) {
     logger_->report("Skipped to end: {}", skipped_);
   }
@@ -84,6 +101,9 @@ void Graphics::report(const char* name, const std::optional<T>& value)
 
 void Graphics::penaltyCalculated(float norm_cost)
 {
+  if (!active_) {
+    return;
+  }
   if (norm_cost < best_norm_cost_) {
     logger_->report("------ Penalty ------");
 
@@ -191,12 +211,32 @@ void Graphics::drawCluster(Cluster* cluster, gui::Painter& painter)
   }
 }
 
+void Graphics::drawBlockages(gui::Painter& painter)
+{
+  for (const auto& blockage : macro_blockages_) {
+    const int lx = dbu_ * blockage.xMin();
+    const int ly = dbu_ * blockage.yMin();
+    const int ux = dbu_ * blockage.xMax();
+    const int uy = dbu_ * blockage.yMax();
+
+    odb::Rect blockage_bbox(lx, ly, ux, uy);
+
+    painter.drawRect(blockage_bbox);
+  }
+}
+
 void Graphics::drawObjects(gui::Painter& painter)
 {
   if (root_) {
     painter.setPen(gui::Painter::red, true);
     painter.setBrush(gui::Painter::transparent);
     drawCluster(root_, painter);
+  }
+
+  if (!macro_blockages_.empty()) {
+    painter.setPen(gui::Painter::gray, true);
+    painter.setBrush(gui::Painter::gray, gui::Painter::DIAGONAL);
+    drawBlockages(painter);
   }
 
   painter.setPen(gui::Painter::yellow, true);
@@ -266,6 +306,11 @@ void Graphics::drawObjects(gui::Painter& painter)
     painter.setBrush(gui::Painter::transparent);
     painter.drawRect(bbox);
   }
+}
+
+void Graphics::setMacroBlockages(const std::vector<mpl2::Rect>& macro_blockages)
+{
+  macro_blockages_ = macro_blockages;
 }
 
 }  // namespace mpl2

@@ -101,9 +101,8 @@ DensityFill::DensityFill(dbDatabase* db, utl::Logger* logger, bool debug)
   }
 }
 
-DensityFill::~DensityFill()  // must be in the .cpp due to forward decl
-{
-}
+// must be in the .cpp due to forward decl
+DensityFill::~DensityFill() = default;
 
 // Converts the user's JSON configuration file in per layer
 // DensityFillLayerConfig objects.

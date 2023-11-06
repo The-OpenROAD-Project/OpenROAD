@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include <cmath>
 #include <map>
 #include <set>
 #include <vector>
@@ -56,7 +57,7 @@ struct GSegment
   int final_layer;
   GSegment() = default;
   GSegment(int x0, int y0, int l0, int x1, int y1, int l1);
-  bool isVia() { return (init_x == final_x && init_y == final_y); }
+  bool isVia() const { return (init_x == final_x && init_y == final_y); }
   int length()
   {
     return std::abs(init_x - final_x) + std::abs(init_y - final_y);

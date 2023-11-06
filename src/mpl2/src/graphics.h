@@ -48,9 +48,12 @@ class HardMacro;
 class Graphics : public gui::Renderer, public Mpl2Observer
 {
  public:
-  Graphics(int dbu, utl::Logger* logger);
+  Graphics(bool coarse, bool fine, int dbu, utl::Logger* logger);
 
   ~Graphics() override = default;
+
+  void startCoarse() override;
+  void startFine() override;
 
   void startSA() override;
   void saStep(const std::vector<SoftMacro>& macros) override;
@@ -73,15 +76,23 @@ class Graphics : public gui::Renderer, public Mpl2Observer
 
   void drawObjects(gui::Painter& painter) override;
 
+  void setMacroBlockages(
+      const std::vector<mpl2::Rect>& macro_blockages) override;
+
  private:
   void resetPenalties();
   void drawCluster(Cluster* cluster, gui::Painter& painter);
+  void drawBlockages(gui::Painter& painter);
 
   template <typename T>
   void report(const char* name, const std::optional<T>& value);
 
   std::vector<SoftMacro> soft_macros_;
   std::vector<HardMacro> hard_macros_;
+  std::vector<mpl2::Rect> macro_blockages_;
+  bool active_ = true;
+  bool coarse_;
+  bool fine_;
   int dbu_ = 0;
   utl::Logger* logger_;
   std::optional<float> outline_penalty_;

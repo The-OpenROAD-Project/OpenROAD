@@ -119,19 +119,19 @@ Resizer::setWireSignalRC(const Corner *corner,
 double
 Resizer::wireSignalResistance(const Corner *corner) const
 {
-  if (wire_signal_res_.empty())
+  if (wire_signal_res_.empty()) {
     return 0.0;
-  else
-    return wire_signal_res_[corner->index()];
+  }
+  return wire_signal_res_[corner->index()];
 }
 
 double
 Resizer::wireSignalCapacitance(const Corner *corner) const
 {
-  if (wire_signal_cap_.empty())
+  if (wire_signal_cap_.empty()) {
     return 0.0;
-  else
-    return wire_signal_cap_[corner->index()];
+  }
+  return wire_signal_cap_[corner->index()];
 }
 
 void
@@ -140,14 +140,16 @@ Resizer::wireSignalRC(const Corner *corner,
                       double &res,
                       double &cap) const
 {
-  if (wire_signal_res_.empty())
+  if (wire_signal_res_.empty()) {
     res = 0.0;
-  else
+  } else {
     res = wire_signal_res_[corner->index()];
-  if (wire_signal_cap_.empty())
+  }
+  if (wire_signal_cap_.empty()) {
     cap = 0.0;
-  else
+  } else {
     cap = wire_signal_cap_[corner->index()];
+  }
 }
 
 void
@@ -164,19 +166,19 @@ Resizer::setWireClkRC(const Corner *corner,
 double
 Resizer::wireClkResistance(const Corner *corner) const
 {
-  if (wire_clk_res_.empty())
+  if (wire_clk_res_.empty()) {
     return 0.0;
-  else
-    return wire_clk_res_[corner->index()];
+  }
+  return wire_clk_res_[corner->index()];
 }
 
 double
 Resizer::wireClkCapacitance(const Corner *corner) const
 {
-  if (wire_clk_cap_.empty())
+  if (wire_clk_cap_.empty()) {
     return 0.0;
-  else
-    return wire_clk_cap_[corner->index()];
+  }
+  return wire_clk_cap_[corner->index()];
 }
 
 ////////////////////////////////////////////////////////////////
@@ -245,18 +247,20 @@ Resizer::incrementalParasiticsEnd()
 }
 
 void
-Resizer::updateParasitics()
+Resizer::updateParasitics(bool save_guides)
 {
   switch (parasitics_src_) {
   case ParasiticsSrc::placement:
-    for (const Net *net : parasitics_invalid_)
+    for (const Net *net : parasitics_invalid_) {
       estimateWireParasitic(net);
+    }
     parasitics_invalid_.clear();
     break;
   case ParasiticsSrc::global_routing: {
-    incr_groute_->updateRoutes();
-    for (const Net *net : parasitics_invalid_)
+    incr_groute_->updateRoutes(save_guides);
+    for (const Net *net : parasitics_invalid_) {
       global_router_->estimateRC(db_network_->staToDb(net));
+    }
     parasitics_invalid_.clear();
     break;
   }
@@ -275,8 +279,9 @@ void
 Resizer::ensureWireParasitic(const Pin *drvr_pin)
 {
   const Net *net = network_->net(drvr_pin);
-  if (net)
+  if (net) {
     ensureWireParasitic(drvr_pin, net);
+  }
 }
 
 void
@@ -296,9 +301,7 @@ Resizer::ensureWireParasitic(const Pin *drvr_pin,
       parasitics_invalid_.erase(net);
       break;
     case ParasiticsSrc::global_routing: {
-      grt::IncrementalGRoute incr_groute(global_router_, block_);
-      global_router_->addDirtyNet(db_network_->staToDb(net));
-      incr_groute.updateRoutes();
+      incr_groute_->updateRoutes();
       global_router_->estimateRC(db_network_->staToDb(net));
       parasitics_invalid_.erase(net);
       break;
@@ -351,13 +354,14 @@ Resizer::estimateWireParasitic(const Pin *drvr_pin,
       && !network_->isGround(net)
       && !sta_->isIdealClock(drvr_pin)
       && !db_network_->staToDb(net)->isSpecial()) {
-    if (isPadNet(net))
+    if (isPadNet(net)) {
       // When an input port drives a pad instance with huge input
       // cap the elmore delay is gigantic. Annotate with zero
       // wire capacitance to prevent wireload model parasitics from being used.
       makePadParasitic(net);
-    else
+    } else {
       estimateWireParasiticSteiner(drvr_pin, net);
+    }
   }
 }
 
@@ -420,10 +424,10 @@ Resizer::estimateWireParasiticSteiner(const Pin *drvr_pin,
                      wire_length_dbu);
         ParasiticNode *n1 = parasitics_->ensureParasiticNode(parasitic, net, steiner_pt1);
         ParasiticNode *n2 = parasitics_->ensureParasiticNode(parasitic, net, steiner_pt2);
-        if (wire_length_dbu == 0)
+        if (wire_length_dbu == 0) {
           // Use a small resistor to keep the connectivity intact.
           parasitics_->makeResistor(nullptr, n1, n2, 1.0e-3, parasitics_ap);
-        else {
+        } else {
           double length = dbuToMeters(wire_length_dbu);
           double cap = length * wire_cap;
           double res = length * wire_res;
@@ -546,10 +550,12 @@ Resizer::net2Pins(const Net *net,
   pin1 = nullptr;
   pin2 = nullptr;
   NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
-  if (pin_iter->hasNext())
+  if (pin_iter->hasNext()) {
     pin1 = pin_iter->next();
-  if (pin_iter->hasNext())
+  }
+  if (pin_iter->hasNext()) {
     pin2 = pin_iter->next();
+  }
   delete pin_iter;
 }
 
@@ -632,4 +638,4 @@ Resizer::parasiticsInvalid(const dbNet *net)
   parasiticsInvalid(db_network_->dbToSta(net));
 }
 
-} // namespace
+} // namespace rsz
