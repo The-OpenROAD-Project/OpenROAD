@@ -34,41 +34,20 @@
 
 #include <map>
 #include <set>
-#include <string>
-#include <tuple>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "ord/OpenRoad.hh"
-#include "sta/ArcDelayCalc.hh"
-#include "sta/Bfs.hh"
-#include "sta/Clock.hh"
-#include "sta/Corner.hh"
-#include "sta/FuncExpr.hh"
-#include "sta/Fuzzy.hh"
-#include "sta/Graph.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/InputDrive.hh"
-#include "sta/Liberty.hh"
-#include "sta/Network.hh"
-#include "sta/Parasitics.hh"
-#include "sta/PortDirection.hh"
-#include "sta/Sdc.hh"
-#include "sta/Search.hh"
-#include "sta/SearchPred.hh"
-#include "sta/Sequential.hh"
-#include "sta/Sta.hh"
-#include "sta/StaMain.hh"
-#include "sta/TimingArc.hh"
-#include "sta/TimingModel.hh"
-#include "sta/Units.hh"
-#include "utl/Logger.h"
 
 namespace utl {
 class Logger;
 }
+
+namespace sta {
+class dbNetwork;
+class dbSta;
+class FuncExpr;
+class LibertyPort;
+}  // namespace sta
 
 namespace gpl {
 

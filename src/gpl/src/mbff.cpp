@@ -40,11 +40,15 @@
 #include <ortools/sat/cp_model.h>
 
 #include <algorithm>
-#include <chrono>
-#include <ctime>
-#include <iostream>
-#include <memory>
 #include <random>
+
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
+#include "sta/FuncExpr.hh"
+#include "sta/Liberty.hh"
+#include "sta/PortDirection.hh"
+#include "sta/Sequential.hh"
+#include "utl/Logger.h"
 
 namespace gpl {
 
