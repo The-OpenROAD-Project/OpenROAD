@@ -415,7 +415,7 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
     sta::LibertyPort* q_pin = nullptr;
     sta::LibertyPort* qn_pin = nullptr;
     int idx = 0;
-    for (auto pins : pin_mappings_[bitmask][tray_sz_idx]) {
+    for (const auto& pins : pin_mappings_[bitmask][tray_sz_idx]) {
       if (idx == slot_idx) {
         d_pin = pins.first;
         q_pin = pins.second.q;
@@ -1550,7 +1550,7 @@ void MBFF::ReadLibs()
         std::vector<Point> qn(num_slots);
 
         int itr = 0;
-        for (auto p : pin_mappings_[bitmask][idx]) {
+        for (const auto& p : pin_mappings_[bitmask][idx]) {
           odb::dbITerm* d_pin = tmp_tray->findITerm(p.first->name());
           odb::dbITerm* q_pin = tmp_tray->findITerm(p.second.q->name());
           odb::dbITerm* qn_pin = nullptr;
