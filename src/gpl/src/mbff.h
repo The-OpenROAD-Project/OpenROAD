@@ -34,74 +34,27 @@
 
 #include <map>
 #include <set>
-#include <string>
-#include <tuple>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "ord/OpenRoad.hh"
-#include "sta/ArcDelayCalc.hh"
-#include "sta/Bfs.hh"
-#include "sta/Clock.hh"
-#include "sta/Corner.hh"
-#include "sta/FuncExpr.hh"
-#include "sta/Fuzzy.hh"
-#include "sta/Graph.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/InputDrive.hh"
-#include "sta/Liberty.hh"
-#include "sta/Network.hh"
-#include "sta/Parasitics.hh"
-#include "sta/PortDirection.hh"
-#include "sta/Sdc.hh"
-#include "sta/Search.hh"
-#include "sta/SearchPred.hh"
-#include "sta/Sequential.hh"
-#include "sta/Sta.hh"
-#include "sta/StaMain.hh"
-#include "sta/TimingArc.hh"
-#include "sta/TimingModel.hh"
-#include "sta/Units.hh"
-#include "utl/Logger.h"
 
 namespace utl {
 class Logger;
 }
 
+namespace sta {
+class dbNetwork;
+class dbSta;
+class FuncExpr;
+class LibertyPort;
+}  // namespace sta
+
 namespace gpl {
 
-struct Point
-{
-  double x;
-  double y;
-};
-
-struct Tray
-{
-  Point pt;
-  std::vector<Point> slots;
-  std::vector<int> cand;
-};
-
-struct Flop
-{
-  Point pt;
-  int idx;
-  double prob;
-
-  bool operator<(const Flop& a) const
-  {
-    return std::tie(prob, idx) < std::tie(a.prob, a.idx);
-  }
-};
-
-struct Path
-{
-  int start_point;
-  int end_point;
-};
+struct Point;
+struct Tray;
+struct Flop;
+struct Path;
 
 class MBFF
 {
@@ -116,13 +69,19 @@ class MBFF
   void Run(int mx_sz, double alpha, double beta);
 
  private:
+  struct FlopOutputs
+  {
+    sta::LibertyPort* q;
+    sta::LibertyPort* qn;
+  };
+  using DataToOutputsMap = std::map<sta::LibertyPort*, FlopOutputs>;
+
   int GetRows(int slot_cnt, int bitmask);
   int GetBitCnt(int bit_idx);
   int GetBitIdx(int bit_cnt);
   double GetDist(const Point& a, const Point& b);
 
-  std::map<sta::LibertyPort*, std::pair<sta::LibertyPort*, sta::LibertyPort*>>
-  GetPinMapping(odb::dbInst* tray);
+  DataToOutputsMap GetPinMapping(odb::dbInst* tray);
 
   void SeparateFlops(std::vector<std::vector<Flop>>& ffs);
 
@@ -167,7 +126,7 @@ class MBFF
   void KMeans(const std::vector<Flop>& flops,
               std::vector<std::vector<Flop>>& clusters);
   void KMeansDecomp(const std::vector<Flop>& flops,
-                    int MAX_SZ,
+                    int max_sz,
                     std::vector<std::vector<Flop>>& pointsets);
 
   double GetSilh(const std::vector<Flop>& flops,
@@ -184,7 +143,7 @@ class MBFF
                             std::vector<std::pair<int, int>>& cluster,
                             int bitmask);
   void RunSilh(std::vector<std::vector<Tray>>& trays,
-               const std::vector<Flop>& pointset,
+               const std::vector<Flop>& flops,
                std::vector<std::vector<std::vector<Tray>>>& start_trays,
                int bitmask);
 
@@ -248,15 +207,19 @@ class MBFF
   The 4th bit of B is on if the instance is inverting
   max(B) = 2^3 + 2^2 + 2^1 + 2^0 = 15
   */
+  static constexpr int num_bits_in_bitmask = 4;
+  static constexpr int max_bitmask = 1 << num_bits_in_bitmask;
 
-  std::vector<odb::dbMaster*> best_master_[16];
-  std::vector<std::map<sta::LibertyPort*,
-                       std::pair<sta::LibertyPort*, sta::LibertyPort*>>>
-      pin_mappings_[16];
-  std::vector<double> tray_area_[16];
-  std::vector<double> tray_width_[16];
-  std::vector<std::vector<double>> slot_to_tray_x_[16];
-  std::vector<std::vector<double>> slot_to_tray_y_[16];
+  template <typename T>
+  using BitMaskVector = std::array<std::vector<T>, max_bitmask>;
+
+  BitMaskVector<odb::dbMaster*> best_master_;
+  BitMaskVector<DataToOutputsMap> pin_mappings_;
+  BitMaskVector<double> tray_area_;
+  BitMaskVector<double> tray_width_;
+  BitMaskVector<std::vector<double>> slot_to_tray_x_;
+  BitMaskVector<std::vector<double>> slot_to_tray_y_;
+
   std::vector<double> ratios_;
   std::vector<int> unused_;
 
