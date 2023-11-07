@@ -189,7 +189,7 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
     logger_->warn(
         GRT,
         300,
-        "Timing is not available, setting critical nets percentage to 0");
+        "Timing is not available, setting critical nets percentage to 0.");
     fastroute_->setCriticalNetsPercentage(0);
   }
 
@@ -1325,7 +1325,7 @@ void GlobalRouter::setCriticalNetsPercentage(float critical_nets_percentage)
     logger_->warn(
         GRT,
         301,
-        "Timing is not available, setting critical nets percentage to 0");
+        "Timing is not available, setting critical nets percentage to 0.");
   }
   fastroute_->setCriticalNetsPercentage(critical_nets_percentage);
 }
