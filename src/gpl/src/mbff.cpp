@@ -1598,7 +1598,7 @@ void MBFF::ReadFFs()
   for (auto inst : block_->getInsts()) {
     sta::Cell* cell = network_->dbToSta(inst->getMaster());
     sta::LibertyCell* lib_cell = network_->libertyCell(cell);
-    if (lib_cell->hasSequentials()) {
+    if (lib_cell && lib_cell->hasSequentials()) {
       int x_i;
       int y_i;
       inst->getOrigin(x_i, y_i);
