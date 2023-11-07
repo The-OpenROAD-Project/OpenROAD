@@ -306,7 +306,7 @@ bool MBFF::IsValidTray(odb::dbInst* tray)
   if (!lib_cell->hasSequentials()) {
     return false;
   }
-  return GetNumD(tray) > 1;
+  return GetNumD(tray) > 1 && GetNumQ(tray) > 1;
 }
 
 MBFF::DataToOutputsMap MBFF::GetPinMapping(odb::dbInst* tray)
