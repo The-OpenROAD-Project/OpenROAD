@@ -1704,30 +1704,32 @@ void GlobalRouter::updateDbCongestionFromGuides()
 void GlobalRouter::getGCellGridPatternFromGuides(
     std::unordered_map<odb::dbNet*, Guides>& net_guides)
 {
-  int x_min = grid_->getXMin();
-  int y_min = grid_->getYMin();
-  int x_max = grid_->getXMax();
-  int y_max = grid_->getYMax();
-  int width = x_max - x_min;
-  int height = y_max - y_min;
+  int width = grid_->getXMax() - grid_->getXMin();
+  int height = grid_->getYMax() - grid_->getYMin();
 
+  int tile_size_x = std::numeric_limits<int>::max();
+  int tile_size_y = std::numeric_limits<int>::max();
   odb::Rect min_guide(0, 0, 0, 0);
   for (const auto& [net, guides] : net_guides) {
     for (const auto& guide : guides) {
+      tile_size_x = std::min(guide.second.dx(), tile_size_x);
+      tile_size_y = std::min(guide.second.dy(), tile_size_y);
       if (guide.second.area() < min_guide.area() || min_guide.area() == 0) {
         min_guide = guide.second;
       }
     }
   }
 
-  int x_grids = std::floor(width / min_guide.dx());
-  int y_grids = std::floor(height / min_guide.dy());
+  int x_grids = width / tile_size_x;
+  int y_grids = height / tile_size_y;
 
-  int guide_x_idx = std::floor(min_guide.xMin() / min_guide.dx());
-  int origin_x = min_guide.xMin() - guide_x_idx * min_guide.dx();
+  int guide_x_idx
+      = std::floor((min_guide.xMin() - grid_->getXMin()) / tile_size_x);
+  int origin_x = min_guide.xMin() - guide_x_idx * tile_size_x;
 
-  int guide_y_idx = std::floor(min_guide.yMin() / min_guide.dy());
-  int origin_y = min_guide.yMin() - guide_y_idx * min_guide.dy();
+  int guide_y_idx
+      = std::floor((min_guide.yMin() - grid_->getYMin()) / tile_size_y);
+  int origin_y = min_guide.yMin() - guide_y_idx * tile_size_y;
 
   auto db_gcell = block_->getGCellGrid();
   if (db_gcell) {
@@ -1736,8 +1738,8 @@ void GlobalRouter::getGCellGridPatternFromGuides(
     db_gcell = odb::dbGCellGrid::create(block_);
   }
 
-  db_gcell->addGridPatternX(origin_x, x_grids, grid_->getTileSize());
-  db_gcell->addGridPatternY(origin_y, y_grids, grid_->getTileSize());
+  db_gcell->addGridPatternX(origin_x, x_grids, tile_size_x);
+  db_gcell->addGridPatternY(origin_y, y_grids, tile_size_y);
 }
 
 void GlobalRouter::saveGuidesFromFile(
