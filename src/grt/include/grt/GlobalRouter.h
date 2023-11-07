@@ -314,7 +314,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   void findPins(Net* net);
   void findPins(Net* net, std::vector<RoutePt>& pins_on_grid, int& root_idx);
   float getNetSlack(Net* net);
-  void computeNetSlacks();
   odb::dbTechLayer* getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);
   void addGuidesForLocalNets(odb::dbNet* db_net,
@@ -425,7 +424,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   bool verbose_;
   int min_layer_for_clock_;
   int max_layer_for_clock_;
-  float critical_nets_percentage_;
 
   // variables for random grt
   int seed_;
