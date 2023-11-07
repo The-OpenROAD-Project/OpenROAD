@@ -1731,7 +1731,7 @@ void GlobalRouter::getGCellGridPatternFromGuides(
     }
   }
 
-  int tile_size_x;
+  int tile_size_x = 0;
   int cnt_x = 0;
   for (const auto& [size_x, count] : tile_size_x_map) {
     if (count > cnt_x) {
@@ -1739,13 +1739,21 @@ void GlobalRouter::getGCellGridPatternFromGuides(
       cnt_x = count;
     }
   }
-  int tile_size_y;
+  int tile_size_y = 0;
   int cnt_y = 0;
   for (const auto& [size_y, count] : tile_size_y_map) {
     if (count > cnt_y) {
       tile_size_y = size_y;
       cnt_y = count;
     }
+  }
+
+  if (tile_size_x == 0 || tile_size_y == 0) {
+    logger_->error(utl::GRT,
+                   253,
+                   "Detected invalid guide dimensions: ({}, {}).",
+                   tile_size_x,
+                   tile_size_y);
   }
 
   int x_grids = width / tile_size_x;
