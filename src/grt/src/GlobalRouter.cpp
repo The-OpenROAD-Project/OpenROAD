@@ -1707,29 +1707,55 @@ void GlobalRouter::getGCellGridPatternFromGuides(
   int width = grid_->getXMax() - grid_->getXMin();
   int height = grid_->getYMax() - grid_->getYMin();
 
-  int tile_size_x = std::numeric_limits<int>::max();
-  int tile_size_y = std::numeric_limits<int>::max();
-  odb::Rect min_guide(0, 0, 0, 0);
+  // use the maps to detect the most used tile size. some designs may have
+  // guides larger than others, but also smaller than others.
+  std::map<int, int> tile_size_x_map;
+  std::map<int, int> tile_size_y_map;
+  int min_loc_x = std::numeric_limits<int>::max();
+  int min_loc_y = std::numeric_limits<int>::max();
   for (const auto& [net, guides] : net_guides) {
     for (const auto& guide : guides) {
-      tile_size_x = std::min(guide.second.dx(), tile_size_x);
-      tile_size_y = std::min(guide.second.dy(), tile_size_y);
-      if (guide.second.area() < min_guide.area() || min_guide.area() == 0) {
-        min_guide = guide.second;
+      if (tile_size_x_map.find(guide.second.dx()) == tile_size_x_map.end()) {
+        tile_size_x_map[guide.second.dx()] = 1;
+      } else {
+        tile_size_x_map[guide.second.dx()]++;
       }
+      if (tile_size_y_map.find(guide.second.dy()) == tile_size_y_map.end()) {
+        tile_size_y_map[guide.second.dy()] = 1;
+      } else {
+        tile_size_y_map[guide.second.dy()]++;
+      }
+
+      min_loc_x = std::min(guide.second.xMin(), min_loc_x);
+      min_loc_y = std::min(guide.second.yMin(), min_loc_y);
+    }
+  }
+
+  int tile_size_x;
+  int cnt_x = 0;
+  for (const auto& [size_x, count] : tile_size_x_map) {
+    if (count > cnt_x) {
+      tile_size_x = size_x;
+      cnt_x = count;
+    }
+  }
+  int tile_size_y;
+  int cnt_y = 0;
+  for (const auto& [size_y, count] : tile_size_y_map) {
+    if (count > cnt_y) {
+      tile_size_y = size_y;
+      cnt_y = count;
     }
   }
 
   int x_grids = width / tile_size_x;
   int y_grids = height / tile_size_y;
 
-  int guide_x_idx
-      = std::floor((min_guide.xMin() - grid_->getXMin()) / tile_size_x);
-  int origin_x = min_guide.xMin() - guide_x_idx * tile_size_x;
+  int guide_x_idx = std::floor((min_loc_x - grid_->getXMin()) / tile_size_x);
+  int origin_x = min_loc_x - guide_x_idx * tile_size_x;
 
-  int guide_y_idx
-      = std::floor((min_guide.yMin() - grid_->getYMin()) / tile_size_y);
-  int origin_y = min_guide.yMin() - guide_y_idx * tile_size_y;
+  int guide_y_idx = std::floor((min_loc_y - grid_->getYMin()) / tile_size_y);
+  int origin_y = min_loc_y - guide_y_idx * tile_size_y;
 
   auto db_gcell = block_->getGCellGrid();
   if (db_gcell) {
