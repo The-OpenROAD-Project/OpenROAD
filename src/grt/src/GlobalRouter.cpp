@@ -1688,7 +1688,7 @@ void GlobalRouter::updateDbCongestionFromGuides()
     const unsigned short capH = fastroute_->getHorizontalCapacities()[k];
     const unsigned short capV = fastroute_->getVerticalCapacities()[k];
     for (int y = 0; y < grid_->getYGrids(); y++) {
-      for (int x = 0; x < grid_->getXGrids() - 1; x++) {
+      for (int x = 0; x < grid_->getXGrids(); x++) {
         const unsigned short blockageH = capH - h_edges_3D[k][y][x].cap;
         const unsigned short blockageV = capV - v_edges_3D[k][y][x].cap;
         const unsigned short usageH = h_edges_3D[k][y][x].usage + blockageH;
