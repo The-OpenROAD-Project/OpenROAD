@@ -639,7 +639,7 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet)
   topClockInstInputPin->connect(topClockNet);
   topClockNet->setSigType(odb::dbSigType::CLOCK);
 
-  std::map<int, uint> fanoutcount;
+  std::map<int, odb::uint> fanoutcount;
 
   // create subNets
   numClkNets_ = 0;

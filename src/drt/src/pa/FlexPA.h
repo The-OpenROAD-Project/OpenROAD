@@ -71,7 +71,7 @@ class FlexPA
   void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
   void setTargetInstances(const frCollection<odb::dbInst*>& insts);
   void setDistributed(const std::string& rhost,
-                      ushort rport,
+                      unsigned short rport,
                       const std::string& shared_vol,
                       int cloud_sz);
 
@@ -106,7 +106,7 @@ class FlexPA
   frCollection<odb::dbInst*> target_insts_;
 
   std::string remote_host_;
-  ushort remote_port_;
+  unsigned short remote_port_;
   std::string shared_vol_;
   int cloud_sz_;
 

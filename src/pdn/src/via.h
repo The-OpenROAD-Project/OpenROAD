@@ -82,6 +82,7 @@ using ViaValue = std::pair<Box, ViaPtr>;
 using ShapeTree = bgi::rtree<ShapeValue, bgi::quadratic<16>>;
 using ViaTree = bgi::rtree<ViaValue, bgi::quadratic<16>>;
 using ShapeTreeMap = std::map<odb::dbTechLayer*, ShapeTree>;
+using uint = odb::uint;
 
 using ViaReport = std::map<std::string, int>;
 

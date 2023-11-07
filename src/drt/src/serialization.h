@@ -56,6 +56,9 @@
 #include "global.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+
+using uint = odb::uint;
+
 namespace gtl = boost::polygon;
 namespace bg = boost::geometry;
 

@@ -271,11 +271,11 @@ void setCutClass(
   auto colsNamesAndFirstRowName = at_c<0>(params);
   auto firstRowWithOutName = at_c<1>(params);
   auto allRows = at_c<2>(params);
-  std::map<std::string, uint> cols;
-  std::map<std::string, uint> rows;
+  std::map<std::string, odb::uint> cols;
+  std::map<std::string, odb::uint> rows;
   std::vector<std::vector<std::pair<int, int>>> table;
-  uint colSz = colsNamesAndFirstRowName.size() - 1;
-  for (uint i = 0; i < colSz; i++) {
+  odb::uint colSz = colsNamesAndFirstRowName.size() - 1;
+  for (odb::uint i = 0; i < colSz; i++) {
     std::string name = at_c<0>(colsNamesAndFirstRowName[i]);
     auto OPTION = at_c<1>(colsNamesAndFirstRowName[i]);
     if (OPTION.is_initialized()) {
@@ -293,8 +293,8 @@ void setCutClass(
                at_c<1>(colsNamesAndFirstRowName[colSz]),
                firstRowWithOutName);
   allRows.insert(allRows.begin(), firstRow);
-  uint rowSz = allRows.size();
-  for (uint i = 0; i < rowSz; i++) {
+  odb::uint rowSz = allRows.size();
+  for (odb::uint i = 0; i < rowSz; i++) {
     std::string name = at_c<0>(allRows[i]);
     auto OPTION = at_c<1>(allRows[i]);
     auto items = at_c<2>(allRows[i]);
@@ -303,7 +303,7 @@ void setCutClass(
     }
     rows[name] = i;
     table.push_back(std::vector<std::pair<int, int>>(colSz));
-    for (uint j = 0; j < items.size(); j++) {
+    for (odb::uint j = 0; j < items.size(); j++) {
       auto item = items[j];
       auto spacing1 = at_c<0>(item);
       auto spacing2 = at_c<1>(item);

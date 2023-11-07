@@ -63,6 +63,7 @@ using odb::dbVia;
 using odb::dbWire;
 using odb::dbWireGraph;
 using odb::dbWireType;
+using odb::uint;
 
 using utl::ANT;
 

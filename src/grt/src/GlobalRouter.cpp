@@ -3028,11 +3028,11 @@ void GlobalRouter::findLayerExtensions(std::vector<int>& layer_extensions)
       // one found, use them as the macro extension instead of PARALLELRUNLENGTH
 
       if (obstruct_layer->hasTwoWidthsSpacingRules()) {
-        std::vector<std::vector<uint>> spacing_table;
+        std::vector<std::vector<odb::uint>> spacing_table;
         obstruct_layer->getTwoWidthsSpacingTable(spacing_table);
         if (!spacing_table.empty()) {
-          std::vector<uint> last_row = spacing_table.back();
-          uint last_value = last_row.back();
+          std::vector<odb::uint> last_row = spacing_table.back();
+          odb::uint last_value = last_row.back();
           if (last_value > spacing_extension) {
             spacing_extension = last_value;
           }
@@ -3286,7 +3286,7 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
   }
 
   for (odb::dbNet* db_net : nets) {
-    uint wire_cnt = 0, via_cnt = 0;
+    odb::uint wire_cnt = 0, via_cnt = 0;
     db_net->getWireCount(wire_cnt, via_cnt);
     if (wire_cnt == 0)
       continue;

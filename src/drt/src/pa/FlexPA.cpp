@@ -157,7 +157,7 @@ void FlexPA::setTargetInstances(const frCollection<odb::dbInst*>& insts)
 }
 
 void FlexPA::setDistributed(const std::string& rhost,
-                            const ushort rport,
+                            const unsigned short rport,
                             const std::string& shared_vol,
                             const int cloud_sz)
 {
