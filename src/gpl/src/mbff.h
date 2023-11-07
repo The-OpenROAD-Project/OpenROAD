@@ -90,13 +90,19 @@ class MBFF
   void Run(int mx_sz, double alpha, double beta);
 
  private:
+  struct FlopOutputs
+  {
+    sta::LibertyPort* q;
+    sta::LibertyPort* qn;
+  };
+  using DataToOutputsMap = std::map<sta::LibertyPort*, FlopOutputs>;
+
   int GetRows(int slot_cnt, int bitmask);
   int GetBitCnt(int bit_idx);
   int GetBitIdx(int bit_cnt);
   double GetDist(const Point& a, const Point& b);
 
-  std::map<sta::LibertyPort*, std::pair<sta::LibertyPort*, sta::LibertyPort*>>
-  GetPinMapping(odb::dbInst* tray);
+  DataToOutputsMap GetPinMapping(odb::dbInst* tray);
 
   void SeparateFlops(std::vector<std::vector<Flop>>& ffs);
 
@@ -222,15 +228,19 @@ class MBFF
   The 4th bit of B is on if the instance is inverting
   max(B) = 2^3 + 2^2 + 2^1 + 2^0 = 15
   */
+  static constexpr int num_bits_in_bitmask = 4;
+  static constexpr int max_bitmask = 1 << num_bits_in_bitmask;
 
-  std::vector<odb::dbMaster*> best_master_[16];
-  std::vector<std::map<sta::LibertyPort*,
-                       std::pair<sta::LibertyPort*, sta::LibertyPort*>>>
-      pin_mappings_[16];
-  std::vector<double> tray_area_[16];
-  std::vector<double> tray_width_[16];
-  std::vector<std::vector<double>> slot_to_tray_x_[16];
-  std::vector<std::vector<double>> slot_to_tray_y_[16];
+  template <typename T>
+  using BitMaskVector = std::array<std::vector<T>, max_bitmask>;
+
+  BitMaskVector<odb::dbMaster*> best_master_;
+  BitMaskVector<DataToOutputsMap> pin_mappings_;
+  BitMaskVector<double> tray_area_;
+  BitMaskVector<double> tray_width_;
+  BitMaskVector<std::vector<double>> slot_to_tray_x_;
+  BitMaskVector<std::vector<double>> slot_to_tray_y_;
+
   std::vector<double> ratios_;
   std::vector<int> unused_;
 

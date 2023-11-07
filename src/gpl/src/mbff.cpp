@@ -305,8 +305,7 @@ bool MBFF::IsValidTray(odb::dbInst* tray)
   return GetNumD(tray) > 1;
 }
 
-std::map<sta::LibertyPort*, std::pair<sta::LibertyPort*, sta::LibertyPort*>>
-MBFF::GetPinMapping(odb::dbInst* tray)
+MBFF::DataToOutputsMap MBFF::GetPinMapping(odb::dbInst* tray)
 {
   sta::Cell* cell = network_->dbToSta(tray->getMaster());
   sta::LibertyCell* lib_cell = network_->libertyCell(cell);
@@ -351,8 +350,7 @@ MBFF::GetPinMapping(odb::dbInst* tray)
     }
   }
 
-  std::map<sta::LibertyPort*, std::pair<sta::LibertyPort*, sta::LibertyPort*>>
-      ret;
+  DataToOutputsMap ret;
   for (size_t i = 0; i < d_pins.size(); i++) {
     ret[d_pins[i]] = {q_pins[i], (!qn_pins.empty() ? qn_pins[i] : nullptr)};
   }
@@ -416,8 +414,8 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
     for (auto pins : pin_mappings_[bitmask][tray_sz_idx]) {
       if (idx == slot_idx) {
         d_pin = pins.first;
-        q_pin = pins.second.first;
-        qn_pin = pins.second.second;
+        q_pin = pins.second.q;
+        qn_pin = pins.second.qn;
         break;
       }
       idx++;
@@ -1448,7 +1446,7 @@ void MBFF::SeparateFlops(std::vector<std::vector<Flop>>& ffs)
   }
 
   for (const auto& clks : clk_terms) {
-    std::array<std::vector<Flop>, 16> flops_by_mask;
+    BitMaskVector<Flop> flops_by_mask;
     for (int idx : clks.second) {
       const int bitmask = GetBitMask(insts_[idx]);
       flops_by_mask[bitmask].push_back(flops_[idx]);
@@ -1506,7 +1504,7 @@ void MBFF::Run(const int mx_sz, const double alpha, const double beta)
 
 void MBFF::ReadLibs()
 {
-  for (int i = 0; i < 16; i++) {
+  for (int i = 0; i < max_bitmask; i++) {
     best_master_[i].resize(num_sizes_, nullptr);
     tray_area_[i].resize(num_sizes_, std::numeric_limits<double>::max());
     tray_width_[i].resize(num_sizes_);
@@ -1551,10 +1549,10 @@ void MBFF::ReadLibs()
         int itr = 0;
         for (auto p : pin_mappings_[bitmask][idx]) {
           odb::dbITerm* d_pin = tmp_tray->findITerm(p.first->name());
-          odb::dbITerm* q_pin = tmp_tray->findITerm(p.second.first->name());
+          odb::dbITerm* q_pin = tmp_tray->findITerm(p.second.q->name());
           odb::dbITerm* qn_pin = nullptr;
           if (bitmask & (1 << 0)) {
-            qn_pin = tmp_tray->findITerm(p.second.second->name());
+            qn_pin = tmp_tray->findITerm(p.second.qn->name());
           }
 
           d[itr] = Point{
@@ -1597,7 +1595,7 @@ void MBFF::ReadLibs()
     }
   }
 
-  for (int k = 0; k < 16; k++) {
+  for (int k = 0; k < max_bitmask; k++) {
     for (int i = 1; i < num_sizes_; i++) {
       if (best_master_[k][i] != nullptr) {
         log_->info(utl::GPL,
