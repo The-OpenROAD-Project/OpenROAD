@@ -1740,7 +1740,7 @@ void GlobalRouter::getGCellGridPatternFromGuides(
 
   db_gcell->addGridPatternX(origin_x, x_grids, tile_size_x);
   db_gcell->addGridPatternY(origin_y, y_grids, tile_size_y);
-  
+
   grid_->setXGrids(x_grids);
   grid_->setYGrids(y_grids);
 }
