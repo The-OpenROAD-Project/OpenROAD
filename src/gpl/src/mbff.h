@@ -72,36 +72,10 @@ class Logger;
 
 namespace gpl {
 
-struct Point
-{
-  double x;
-  double y;
-};
-
-struct Tray
-{
-  Point pt;
-  std::vector<Point> slots;
-  std::vector<int> cand;
-};
-
-struct Flop
-{
-  Point pt;
-  int idx;
-  double prob;
-
-  bool operator<(const Flop& a) const
-  {
-    return std::tie(prob, idx) < std::tie(a.prob, a.idx);
-  }
-};
-
-struct Path
-{
-  int start_point;
-  int end_point;
-};
+struct Point;
+struct Tray;
+struct Flop;
+struct Path;
 
 class MBFF
 {
@@ -167,7 +141,7 @@ class MBFF
   void KMeans(const std::vector<Flop>& flops,
               std::vector<std::vector<Flop>>& clusters);
   void KMeansDecomp(const std::vector<Flop>& flops,
-                    int MAX_SZ,
+                    int max_sz,
                     std::vector<std::vector<Flop>>& pointsets);
 
   double GetSilh(const std::vector<Flop>& flops,
@@ -184,7 +158,7 @@ class MBFF
                             std::vector<std::pair<int, int>>& cluster,
                             int bitmask);
   void RunSilh(std::vector<std::vector<Tray>>& trays,
-               const std::vector<Flop>& pointset,
+               const std::vector<Flop>& flops,
                std::vector<std::vector<std::vector<Tray>>>& start_trays,
                int bitmask);
 
