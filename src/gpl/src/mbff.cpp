@@ -306,7 +306,7 @@ bool MBFF::IsValidTray(odb::dbInst* tray)
   if (!lib_cell->hasSequentials()) {
     return false;
   }
-  return GetNumD(tray) > 1;
+  return GetNumD(tray) > 1 && GetNumQ(tray) > 1;
 }
 
 MBFF::DataToOutputsMap MBFF::GetPinMapping(odb::dbInst* tray)
@@ -1432,7 +1432,7 @@ void MBFF::SetRatios(int bitmask)
 void MBFF::SeparateFlops(std::vector<std::vector<Flop>>& ffs)
 {
   // group by block clock name
-  std::map<std::string, std::vector<int>> clk_terms;
+  std::map<odb::dbNet*, std::vector<int>> clk_terms;
   for (size_t i = 0; i < flops_.size(); i++) {
     if (insts_[i]->isDoNotTouch()) {
       continue;
@@ -1443,8 +1443,7 @@ void MBFF::SeparateFlops(std::vector<std::vector<Flop>>& ffs)
         if (!net) {
           continue;
         }
-        const std::string name = (*(net->getBTerms().begin()))->getName();
-        clk_terms[name].push_back(i);
+        clk_terms[net].push_back(i);
       }
     }
   }
