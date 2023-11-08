@@ -28,11 +28,11 @@
 
 #pragma once
 
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <optional>
 #include <string>
-#include <cstdint>
 
 #include "db/obj/frMarker.h"
 #include "frBaseTypes.h"

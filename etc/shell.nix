@@ -14,7 +14,7 @@ with pkgs; let
       cmakeFlags = builtins.filter (flag: (!lib.strings.hasPrefix "-DSPDLOG_FMT_EXTERNAL" flag)) old.cmakeFlags;
       doCheck = false;
   }));
-in (mkShell.override { stdenv = clangStdenv; }) {
+in (mkShell.override { stdenv = clang_14.stdenv; }) {
   # Runtime Dependencies
   buildInputs = [
     boost
@@ -45,6 +45,7 @@ in (mkShell.override { stdenv = clangStdenv; }) {
     gnumake
     flex
     bison
+    clang-tools_14
   ];
   
   # Environment variable in resulting shell
