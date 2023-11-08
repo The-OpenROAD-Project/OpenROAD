@@ -6,7 +6,7 @@ UNITS DISTANCE MICRONS 2000 ;
 
 DIEAREA ( 0 0 ) ( 200000 200000 ) ;
 
-COMPONENTS 288 ;
+COMPONENTS 279 ;
 - ff287 DFF_X1 + PLACED ( 193420 170800 ) N
  ;
 - ff286 DFF_X1 + PLACED ( 183160 170800 ) N
@@ -325,12 +325,6 @@ COMPONENTS 288 ;
  ;
 - ff129 DFF_X1 + PLACED ( 38760 84000 ) FS
  ;
-- ff128 DFF_X1 + PLACED ( 27740 84000 ) FS
- ;
-- ff127 DFF_X1 + PLACED ( 16720 84000 ) FS
- ;
-- ff126 DFF_X1 + PLACED ( 5700 84000 ) FS
- ;
 - ff125 DFF_X1 + PLACED ( 193420 72800 ) FS
  ;
 - ff124 DFF_X1 + PLACED ( 183160 72800 ) FS
@@ -360,12 +354,6 @@ COMPONENTS 288 ;
 - ff112 DFF_X1 + PLACED ( 50160 72800 ) FS
  ;
 - ff111 DFF_X1 + PLACED ( 38760 72800 ) FS
- ;
-- ff110 DFF_X1 + PLACED ( 27740 72800 ) FS
- ;
-- ff109 DFF_X1 + PLACED ( 16720 72800 ) FS
- ;
-- ff108 DFF_X1 + PLACED ( 5700 72800 ) FS
  ;
 - ff107 DFF_X1 + PLACED ( 193420 61600 ) FS
  ;
@@ -399,10 +387,6 @@ COMPONENTS 288 ;
  ;
 - ff92 DFF_X1 + PLACED ( 27740 61600 ) FS
  ;
-- ff91 DFF_X1 + PLACED ( 16720 61600 ) FS
- ;
-- ff90 DFF_X1 + PLACED ( 5700 61600 ) FS
- ;
 - ff89 DFF_X1 + PLACED ( 193420 50400 ) FS
  ;
 - ff88 DFF_X1 + PLACED ( 183160 50400 ) FS
@@ -434,10 +418,6 @@ COMPONENTS 288 ;
 - ff75 DFF_X1 + PLACED ( 38760 50400 ) FS
  ;
 - ff74 DFF_X1 + PLACED ( 27740 50400 ) FS
- ;
-- ff73 DFF_X1 + PLACED ( 16720 50400 ) FS
- ;
-- ff72 DFF_X1 + PLACED ( 5700 50400 ) FS
  ;
 - ff71 DFF_X1 + PLACED ( 193420 39200 ) FS
  ;
@@ -583,6 +563,8 @@ COMPONENTS 288 ;
  ;
 - ff0 DFF_X1 + PLACED ( 5700 5600 ) FS
  ;
+- inst_0 array_tile + FIXED ( 5700 50400 ) FS
+;
 END COMPONENTS
 
 PINS 1 ;
@@ -605,16 +587,16 @@ NETS 1 ;
   ( ff54 CK ) ( ff55 CK ) ( ff56 CK ) ( ff57 CK ) ( ff58 CK ) ( ff59 CK )
   ( ff60 CK ) ( ff61 CK ) ( ff62 CK ) ( ff63 CK ) ( ff64 CK ) ( ff65 CK )
   ( ff66 CK ) ( ff67 CK ) ( ff68 CK ) ( ff69 CK ) ( ff70 CK ) ( ff71 CK )
-  ( ff72 CK ) ( ff73 CK ) ( ff74 CK ) ( ff75 CK ) ( ff76 CK ) ( ff77 CK )
+  ( ff74 CK ) ( ff75 CK ) ( ff76 CK ) ( ff77 CK )
   ( ff78 CK ) ( ff79 CK ) ( ff80 CK ) ( ff81 CK ) ( ff82 CK ) ( ff83 CK )
   ( ff84 CK ) ( ff85 CK ) ( ff86 CK ) ( ff87 CK ) ( ff88 CK ) ( ff89 CK )
-  ( ff90 CK ) ( ff91 CK ) ( ff92 CK ) ( ff93 CK ) ( ff94 CK ) ( ff95 CK )
+  ( ff92 CK ) ( ff93 CK ) ( ff94 CK ) ( ff95 CK )
   ( ff96 CK ) ( ff97 CK ) ( ff98 CK ) ( ff99 CK ) ( ff100 CK ) ( ff101 CK )
   ( ff102 CK ) ( ff103 CK ) ( ff104 CK ) ( ff105 CK ) ( ff106 CK ) ( ff107 CK )
-  ( ff108 CK ) ( ff109 CK ) ( ff110 CK ) ( ff111 CK ) ( ff112 CK ) ( ff113 CK )
+  ( ff111 CK ) ( ff112 CK ) ( ff113 CK )
   ( ff114 CK ) ( ff115 CK ) ( ff116 CK ) ( ff117 CK ) ( ff118 CK ) ( ff119 CK )
   ( ff120 CK ) ( ff121 CK ) ( ff122 CK ) ( ff123 CK ) ( ff124 CK ) ( ff125 CK )
-  ( ff126 CK ) ( ff127 CK ) ( ff128 CK ) ( ff129 CK ) ( ff130 CK ) ( ff131 CK )
+  ( ff129 CK ) ( ff130 CK ) ( ff131 CK )
   ( ff132 CK ) ( ff133 CK ) ( ff134 CK ) ( ff135 CK ) ( ff136 CK ) ( ff137 CK )
   ( ff138 CK ) ( ff139 CK ) ( ff140 CK ) ( ff141 CK ) ( ff142 CK ) ( ff143 CK )
   ( ff144 CK ) ( ff145 CK ) ( ff146 CK ) ( ff147 CK ) ( ff148 CK ) ( ff149 CK )
@@ -641,15 +623,8 @@ NETS 1 ;
   ( ff270 CK ) ( ff271 CK ) ( ff272 CK ) ( ff273 CK ) ( ff274 CK ) ( ff275 CK )
   ( ff276 CK ) ( ff277 CK ) ( ff278 CK ) ( ff279 CK ) ( ff280 CK ) ( ff281 CK )
   ( ff282 CK ) ( ff283 CK ) ( ff284 CK ) ( ff285 CK ) ( ff286 CK ) ( ff287 CK )
+  ( inst_0 clk )
  ;
 END NETS
-
-BLOCKAGES 5 ;
-- PLACEMENT RECT ( 89680 109200 ) ( 116660 117600 ) ;
-- PLACEMENT RECT ( 90666 87692 ) ( 115282 92102 ) ;
-- PLACEMENT RECT ( 144570 109200 ) ( 168263 117600 ) ;
-- PLACEMENT RECT ( 149947 98061 ) ( 156934 101342 ) ;
-- PLACEMENT RECT ( 46000 86000 ) ( 50000 90000 ) ;
-END BLOCKAGES
 
 END DESIGN
