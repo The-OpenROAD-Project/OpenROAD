@@ -914,7 +914,6 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
                "Bin_y {} didn't have site {}, so we look below it.",
                bin_y,
                cell->getSite()->getName());
-    int c_bin_y = bin_y;
     bin_y = (bin_y + 1) % grid_info.getRowCount();
   }
 
