@@ -272,6 +272,11 @@ void LayoutViewer::updateCenter(int dx, int dy)
   // modify the center according to the dx and dy
   center_.setX(center_.x() - dx / pixels_per_dbu_);
   center_.setY(center_.y() + dy / pixels_per_dbu_);
+
+  Point mouse = screenToDBU(mapFromGlobal(QCursor::pos()));
+
+  // update the status bar
+  emit location(mouse.x(), mouse.y());
 }
 
 void LayoutViewer::centerAt(const odb::Point& focus)
