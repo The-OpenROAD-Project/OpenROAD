@@ -435,7 +435,7 @@ void TritonCTS::setBufferList(const char* buffers)
   std::istream_iterator<std::string> begin(ss);
   std::istream_iterator<std::string> end;
   std::vector<std::string> bufferVector(begin, end);
-  if (bufferVector.size() < 1) {
+  if (bufferVector.empty()) {
     inferBufferList(bufferVector);
   }
   options_->setBufferList(bufferVector);
@@ -461,7 +461,7 @@ void TritonCTS::inferBufferList(std::vector<std::string>& bufferVector)
   }
 
   // second, look for all buffers with name BUF or buf
-  if (bufferVector.size() < 1) {
+  if (bufferVector.empty()) {
     sta::PatternMatch patternBuf("*BUF*",
                                  /* is_regexp */ true,
                                  /* nocase */ true,
@@ -480,7 +480,7 @@ void TritonCTS::inferBufferList(std::vector<std::string>& bufferVector)
   }
 
   // abandon name patterns, just look for all buffers
-  if (bufferVector.size() < 1) {
+  if (bufferVector.empty()) {
     lib_iter = network_->libertyLibraryIterator();
     while (lib_iter->hasNext()) {
       sta::LibertyLibrary* lib = lib_iter->next();
@@ -494,7 +494,7 @@ void TritonCTS::inferBufferList(std::vector<std::string>& bufferVector)
   }
 
   if (logger_->debugCheck(utl::CTS, "Triton", 1)) {
-    for (std::string bufName : bufferVector) {
+    for (const std::string& bufName : bufferVector) {
       logger_->report("{} has been inferred as clock buffer", bufName);
     }
   }
@@ -513,14 +513,14 @@ void TritonCTS::setRootBuffer(const char* buffers)
 std::string TritonCTS::selectRootBuffer(std::vector<std::string>& bufferVector)
 {
   // if -root_buf is not specified, choose from the buffer list
-  if (bufferVector.size() < 1) {
+  if (bufferVector.empty()) {
     bufferVector = options_->getBufferList();
   }
 
   // pick the lowest driver resistance as root
   float bestRes = std::numeric_limits<float>::max();
-  std::string rootBuf = "";
-  for (std::string name : bufferVector) {
+  std::string rootBuf;
+  for (const std::string& name : bufferVector) {
     odb::dbMaster* master = db_->findMaster(name.c_str());
     sta::Cell* masterCell = network_->dbToSta(master);
     sta::LibertyCell* libCell = network_->libertyCell(masterCell);
@@ -533,7 +533,7 @@ std::string TritonCTS::selectRootBuffer(std::vector<std::string>& bufferVector)
   }
 
   // clang-format off
-  debugPrint(logger_, CTS, "Triton", 4, "{} has been selected as root buffer",
+  debugPrint(logger_, CTS, "buffering", 4, "{} has been selected as root buffer",
              rootBuf);
   // clang-format on
   return rootBuf;
@@ -900,7 +900,7 @@ void TritonCTS::writeClockNDRsToDb(const std::set<odb::dbNet*>& clkLeafNets)
     layerRule->setSpacing(defaultSpace * 2);
     layerRule->setWidth(defaultWidth);
     // clang-format off
-    debugPrint(logger_, CTS, "Triton", 1, "  NDR rule set to layer {} {} as "
+    debugPrint(logger_, CTS, "clustering", 1, "  NDR rule set to layer {} {} as "
 	       "space={} width={} vs. default space={} width={}",
 	       i, layer->getName(),
 	       layerRule->getSpacing(), layerRule->getWidth(),
@@ -1140,10 +1140,10 @@ double TritonCTS::computeInsertionDelay(const std::string& name,
       }
       insDelayPerMicron = delayPerSec / (capPerMicron * resPerMicron);
       // clang-format off
-      debugPrint(logger_, CTS, "Triton", 1, "sink {} has ins delay={:.2e} and "
+      debugPrint(logger_, CTS, "clustering", 1, "sink {} has ins delay={:.2e} and "
 		 "micron leng={:0.1f} dbUnits/um={}", name, delayPerSec,
 		 insDelayPerMicron, block_->getDbUnitsPerMicron());
-      debugPrint(logger_, CTS, "Triton", 1, "capPerMicron={:.2e} resPerMicron={:.2e}",
+      debugPrint(logger_, CTS, "clustering", 1, "capPerMicron={:.2e} resPerMicron={:.2e}",
 		 capPerMicron, resPerMicron);
       // clang-format on
     }

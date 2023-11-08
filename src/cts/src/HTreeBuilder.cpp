@@ -66,7 +66,7 @@ void HTreeBuilder::preSinkClustering(
         setSinkInsertionDelay(
             normLocation, (double) inst.getInsertionDelay() / wireSegmentUnit_);
         // clang-format off
-	debugPrint(logger_, CTS, "Triton", 1, "sink {} has insDelay {} at {}",
+	debugPrint(logger_, CTS, "clustering", 1, "sink {} has insDelay {} at {}",
 		   inst.getName(), getSinkInsertionDelay(normLocation),
 		   normLocation);
         // clang-format on
@@ -123,7 +123,7 @@ void HTreeBuilder::preSinkClustering(
           ySum += point.second + insDelay;
           ySum += point.second - insDelay;
           // clang-format off
-          debugPrint(logger_, CTS, "Triton", 1, "added extra ins delay weights "
+          debugPrint(logger_, CTS, "clustering", 1, "added extra ins delay weights "
                      "at sink {}: {:0.3f}", mapPoint, insDelay);
           // clang-format on
         } else {

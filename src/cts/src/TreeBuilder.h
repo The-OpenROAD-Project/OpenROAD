@@ -207,7 +207,7 @@ class TreeBuilder
     auto it = insertionDelays_.find(sink);
     if (it != insertionDelays_.end()) {
       // clang-format off
-      debugPrint(logger_, utl::CTS, "Triton", 4, "sink {} has insertion "
+      debugPrint(logger_, utl::CTS, "clustering", 4, "sink {} has insertion "
 		 "delay {:0.3f}", sink, it->second);
       // clang-format on
       return it->second;

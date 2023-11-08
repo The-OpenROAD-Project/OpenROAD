@@ -14,7 +14,7 @@ set_wire_rc -clock  -layer $wire_rc_layer_clk
 
 create_clock -period 5 clk
 
-set_debug_level CTS Triton 3
+#set_debug_level CTS clustering 3
 #set_debug_level CTS legalizer 3
 #set_debug_level CTS Stree 4
 
