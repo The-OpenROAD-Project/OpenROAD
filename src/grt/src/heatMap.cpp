@@ -200,7 +200,8 @@ bool RoutingCongestionDataSource::populateMap()
   const odb::uint y_grid_sz = y_grid.size();
 
   for (odb::uint x_idx = 0; x_idx < gcell_congestion_data.numRows(); ++x_idx) {
-    for (odb::uint y_idx = 0; y_idx < gcell_congestion_data.numCols(); ++y_idx) {
+    for (odb::uint y_idx = 0; y_idx < gcell_congestion_data.numCols();
+         ++y_idx) {
       const auto& cong_data = gcell_congestion_data(x_idx, y_idx);
 
       const int next_x = (x_idx + 1) == x_grid_sz

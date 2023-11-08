@@ -651,7 +651,7 @@ class GenerateViaGenerator : public ViaGenerator
  private:
   odb::dbTechViaGenerateRule* rule_;
 
-  std::array<uint, 3> layers_;
+  std::array<odb::uint, 3> layers_;
 
   bool isLayerValidForWidth(odb::dbTechViaLayerRule*, int width) const;
   bool getLayerEnclosureRule(odb::dbTechViaLayerRule* rule,

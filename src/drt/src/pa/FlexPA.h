@@ -29,6 +29,7 @@
 #pragma once
 
 #include <boost/polygon/polygon.hpp>
+#include <cstdint>
 
 #include "FlexPA_unique.h"
 #include "frDesign.h"
@@ -71,7 +72,7 @@ class FlexPA
   void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
   void setTargetInstances(const frCollection<odb::dbInst*>& insts);
   void setDistributed(const std::string& rhost,
-                      unsigned short rport,
+                      uint16_t rport,
                       const std::string& shared_vol,
                       int cloud_sz);
 
@@ -106,7 +107,7 @@ class FlexPA
   frCollection<odb::dbInst*> target_insts_;
 
   std::string remote_host_;
-  unsigned short remote_port_;
+  uint16_t remote_port_;
   std::string shared_vol_;
   int cloud_sz_;
 
