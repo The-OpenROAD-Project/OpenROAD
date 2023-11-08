@@ -99,7 +99,6 @@ GlobalRouter::GlobalRouter()
       verbose_(false),
       min_layer_for_clock_(-1),
       max_layer_for_clock_(-2),
-      critical_nets_percentage_(10),
       seed_(0),
       caps_perturbation_percentage_(0),
       perturbation_amount_(1),
@@ -187,12 +186,13 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   setCapacities(min_routing_layer, max_routing_layer);
 
   if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
-    critical_nets_percentage_ = 0;
     logger_->warn(
         GRT,
         300,
-        "Timing is not available, setting critical nets percentage to 0");
+        "Timing is not available, setting critical nets percentage to 0.");
+    fastroute_->setCriticalNetsPercentage(0);
   }
+
   std::vector<Net*> nets = initNetlist();
   initNets(nets);
 
@@ -753,46 +753,6 @@ float GlobalRouter::getNetSlack(Net* net)
   return slack;
 }
 
-void GlobalRouter::computeNetSlacks()
-{
-  // Find the slack for all nets
-  std::unordered_map<Net*, float> net_slack_map;
-  std::vector<float> slacks;
-  for (const auto& net_itr : db_net_map_) {
-    Net* net = net_itr.second;
-    float slack = getNetSlack(net);
-    net_slack_map[net] = slack;
-    slacks.push_back(slack);
-  }
-  std::stable_sort(slacks.begin(), slacks.end());
-
-  // Find the slack threshold based on the percentage of critical nets
-  // defined by the user
-  int threshold_index
-      = std::ceil(slacks.size() * critical_nets_percentage_ / 100);
-  threshold_index = std::min((int) slacks.size() - 1, threshold_index);
-  float slack_th = slacks[threshold_index];
-
-  // Ensure the slack threshold is negative
-  if (slack_th >= 0) {
-    for (float slack : slacks) {
-      if (slack >= 0)
-        break;
-      slack_th = slack;
-    }
-  }
-
-  if (slack_th >= 0) {
-    return;
-  }
-  // Add the slack values smaller than the threshold to the nets
-  for (auto [net, slack] : net_slack_map) {
-    if (slack <= slack_th) {
-      net->setSlack(slack);
-    }
-  }
-}
-
 void GlobalRouter::initNets(std::vector<Net*>& nets)
 {
   checkPinPlacement();
@@ -810,11 +770,6 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
     g.seed(seed_);
 
     utl::shuffle(nets.begin(), nets.end(), g);
-  }
-
-  if (critical_nets_percentage_ != 0) {
-    fastroute_->setUpdateSlack(critical_nets_percentage_);
-    computeNetSlacks();
   }
 
   for (Net* net : nets) {
@@ -971,6 +926,10 @@ void GlobalRouter::computeTrackConsumption(
   edge_costs_per_layer = nullptr;
   track_consumption = 1;
   odb::dbNet* db_net = net->getDbNet();
+  int net_min_layer;
+  int net_max_layer;
+  getNetLayerRange(db_net, net_min_layer, net_max_layer);
+
   odb::dbTechNonDefaultRule* ndr = db_net->getNonDefaultRule();
   if (ndr) {
     int num_layers = grid_->getNumLayers();
@@ -980,6 +939,9 @@ void GlobalRouter::computeTrackConsumption(
 
     for (odb::dbTechLayerRule* layer_rule : layer_rules) {
       int layerIdx = layer_rule->getLayer()->getRoutingLevel();
+      if (layerIdx > net_max_layer) {
+        continue;
+      }
       RoutingTracks routing_tracks = getRoutingTracksByIndex(layerIdx);
       int default_width = layer_rule->getLayer()->getWidth();
       int default_pitch = routing_tracks.getTrackPitch();
@@ -1358,7 +1320,14 @@ void GlobalRouter::setMaxLayerForClock(const int max_layer)
 
 void GlobalRouter::setCriticalNetsPercentage(float critical_nets_percentage)
 {
-  critical_nets_percentage_ = critical_nets_percentage;
+  if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
+    critical_nets_percentage = 0;
+    logger_->warn(
+        GRT,
+        301,
+        "Timing is not available, setting critical nets percentage to 0.");
+  }
+  fastroute_->setCriticalNetsPercentage(critical_nets_percentage);
 }
 
 void GlobalRouter::addLayerAdjustment(int layer, float reduction_percentage)
@@ -1756,7 +1725,8 @@ void GlobalRouter::saveGuides()
             odb::dbTechLayer* layer = routing_layers_[layer_idx];
             odb::dbGuide::create(db_net, layer, box);
             if (isCoveringPin(net, segment)) {
-              odb::dbTechLayer* layer = routing_layers_[segment.final_layer];
+              int layer_idx = std::max(segment.init_layer, segment.final_layer);
+              odb::dbTechLayer* layer = routing_layers_[layer_idx];
               odb::dbGuide::create(db_net, layer, box);
             }
           }
@@ -1784,9 +1754,11 @@ void GlobalRouter::saveGuides()
 bool GlobalRouter::isCoveringPin(Net* net, GSegment& segment)
 {
   for (const auto& pin : net->getPins()) {
-    if (pin.getConnectionLayer() == segment.final_layer
-        && pin.getOnGridPosition()
-               == odb::Point(segment.final_x, segment.final_y)
+    int seg_top_layer = std::max(segment.final_layer, segment.init_layer);
+    int seg_x = segment.final_x;
+    int seg_y = segment.final_y;
+    if (pin.getConnectionLayer() == seg_top_layer
+        && pin.getOnGridPosition() == odb::Point(seg_x, seg_y)
         && (pin.isPort() || pin.isConnectedToPadOrMacro())) {
       return true;
     }
@@ -1841,89 +1813,6 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net,
   }
 }
 
-void GlobalRouter::addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route)
-{
-  std::vector<Pin>& pins = db_net_map_[db_net]->getPins();
-  for (Pin& pin : pins) {
-    if (pin.getConnectionLayer() > 1) {
-      // for each pin placed at upper layers, get all segments that
-      // potentially covers it
-      GRoute cover_segs;
-
-      odb::Point pin_pos = findFakePinPosition(pin, db_net);
-
-      int wire_via_layer = std::numeric_limits<int>::max();
-      for (size_t i = 0; i < route.size(); i++) {
-        if (((pin_pos.x() == route[i].init_x && pin_pos.y() == route[i].init_y)
-             || (pin_pos.x() == route[i].final_x
-                 && pin_pos.y() == route[i].final_y))
-            && (!(route[i].init_x == route[i].final_x
-                  && route[i].init_y == route[i].final_y))) {
-          cover_segs.push_back(route[i]);
-          if (route[i].init_layer < wire_via_layer) {
-            wire_via_layer = route[i].init_layer;
-          }
-        }
-      }
-
-      bool bottom_layer_pin = false;
-      for (Pin& pin2 : pins) {
-        odb::Point pin2_pos = pin2.getOnGridPosition();
-        if (pin_pos.x() == pin2_pos.x() && pin_pos.y() == pin2_pos.y()
-            && pin.getConnectionLayer() > pin2.getConnectionLayer()) {
-          bottom_layer_pin = true;
-        }
-      }
-
-      if (!bottom_layer_pin) {
-        for (size_t i = 0; i < route.size(); i++) {
-          if (((pin_pos.x() == route[i].init_x
-                && pin_pos.y() == route[i].init_y)
-               || (pin_pos.x() == route[i].final_x
-                   && pin_pos.y() == route[i].final_y))
-              && (route[i].init_x == route[i].final_x
-                  && route[i].init_y == route[i].final_y
-                  && (route[i].init_layer < wire_via_layer
-                      || route[i].final_layer < wire_via_layer))) {
-            // remove all vias to this pin that doesn't connects two wires
-            route.erase(route.begin() + i);
-            i--;
-          }
-        }
-      }
-
-      int closest_layer = -1;
-      int minor_diff = std::numeric_limits<int>::max();
-
-      for (GSegment& seg : cover_segs) {
-        if (seg.init_layer != seg.final_layer) {
-          logger_->error(GRT, 77, "Segment has invalid layer assignment.");
-        }
-
-        int diff_layers = std::abs(pin.getConnectionLayer() - seg.init_layer);
-        if (diff_layers < minor_diff && seg.init_layer > closest_layer) {
-          minor_diff = seg.init_layer;
-          closest_layer = seg.init_layer;
-        }
-      }
-
-      if (closest_layer > pin.getConnectionLayer()) {
-        for (int l = closest_layer; l > pin.getConnectionLayer(); l--) {
-          GSegment segment = GSegment(
-              pin_pos.x(), pin_pos.y(), l, pin_pos.x(), pin_pos.y(), l - 1);
-          route.push_back(segment);
-        }
-      } else if (closest_layer < pin.getConnectionLayer()) {
-        for (int l = closest_layer; l < pin.getConnectionLayer(); l++) {
-          GSegment segment = GSegment(
-              pin_pos.x(), pin_pos.y(), l, pin_pos.x(), pin_pos.y(), l + 1);
-          route.push_back(segment);
-        }
-      }
-    }
-  }
-}
-
 void GlobalRouter::addRemainingGuides(NetRouteMap& routes,
                                       std::vector<Net*>& nets,
                                       int min_routing_layer,
@@ -1941,8 +1830,6 @@ void GlobalRouter::addRemainingGuides(NetRouteMap& routes,
       if (route.empty()) {
         addGuidesForLocalNets(
             db_net, route, min_routing_layer, max_routing_layer);
-      } else {
-        addGuidesForPinAccess(db_net, route);
       }
     }
   }
@@ -3984,9 +3871,9 @@ void GlobalRouter::updateDirtyRoutes(bool save_guides)
       return;
     }
 
-    const float old_critical_nets_percentage = critical_nets_percentage_;
-    critical_nets_percentage_ = 0;
-    fastroute_->setUpdateSlack(critical_nets_percentage_);
+    const float old_critical_nets_percentage
+        = fastroute_->getCriticalNetsPercentage();
+    fastroute_->setCriticalNetsPercentage(0);
 
     initFastRouteIncr(dirty_nets);
 
@@ -4028,8 +3915,7 @@ void GlobalRouter::updateDirtyRoutes(bool save_guides)
                        "heatmap in the GUI.");
       }
     }
-    critical_nets_percentage_ = old_critical_nets_percentage;
-    fastroute_->setUpdateSlack(critical_nets_percentage_);
+    fastroute_->setCriticalNetsPercentage(old_critical_nets_percentage);
     if (save_guides) {
       saveGuides();
     }

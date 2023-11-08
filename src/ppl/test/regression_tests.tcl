@@ -1,4 +1,5 @@
 record_tests {
+  add_constraint_debug
   add_constraint1
   add_constraint2
   add_constraint3

@@ -803,7 +803,6 @@ void FlexDRWorker::modEolSpacingCost_helper(const Rect& testbox,
 
   frVia sVia;
   Rect sViaBox;
-  dbTransform xform;
   Point pt;
 
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
@@ -1592,6 +1591,7 @@ void FlexDRWorker::route_queue()
   }
   setBestMarkers();
   if (graphics_) {
+    graphics_->endWorker(drIter_);
     graphics_->show(true);
   }
 
@@ -1753,6 +1753,9 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
                        net->getFrNet()->getName(),
                        routeBoxStringStream.str());
       }
+      if (graphics_) {
+        graphics_->midNet(net);
+      }
       mazeNetEnd(net);
       net->addNumReroutes();
       didRoute = true;
@@ -1782,6 +1785,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
           workerRegionQuery.add(tmp.get());
           net->addRoute(std::move(tmp));
         }
+        gcWorker_->clearPWires();
         if (getDRIter() >= beginDebugIter
             && !getGCWorker()->getMarkers().empty()) {
           logger_->info(DRT,
@@ -3052,7 +3056,10 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
             } else {
               if (points[prev_i].x() < points[i - 1].x()) {
                 bpPatchStyle = true;
+              } else if (points[prev_i].x() > points[i - 1].x()) {
+                bpPatchStyle = false;
               } else {
+                // if fully vertical, bpPatch left and epPatch right
                 bpPatchStyle = false;
               }
             }
@@ -3063,8 +3070,11 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
             } else {
               if (points[i - 1].x() < points[prev_i].x()) {
                 epPatchStyle = true;
-              } else {
+              } else if (points[i - 1].x() > points[prev_i].x()) {
                 epPatchStyle = false;
+              } else {
+                // if fully vertical, bpPatch left and epPatch right
+                epPatchStyle = true;
               }
             }
           } else {
@@ -3075,7 +3085,10 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
             } else {
               if (points[prev_i].y() < points[i - 1].y()) {
                 bpPatchStyle = true;
+              } else if (points[prev_i].y() > points[i - 1].y()) {
+                bpPatchStyle = false;
               } else {
+                // if fully horizontal, bpPatch left and epPatch right
                 bpPatchStyle = false;
               }
             }
@@ -3086,8 +3099,11 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
             } else {
               if (points[i - 1].y() < points[prev_i].y()) {
                 epPatchStyle = true;
-              } else {
+              } else if (points[i - 1].y() > points[prev_i].y()) {
                 epPatchStyle = false;
+              } else {
+                // if fully horizontal, bpPatch left and epPatch right
+                epPatchStyle = true;
               }
             }
           }
@@ -3144,7 +3160,10 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
     layerNum = gridGraph_.getLayerNum(currIdx.z());
     minAreaConstraint = getTech()->getLayer(layerNum)->getAreaConstraint();
     frArea reqArea = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
-    if (areaMap.find(currIdx) != areaMap.end()) {
+    if (currArea < reqArea && areaMap.find(currIdx) != areaMap.end()) {
+      if (!prev_is_wire) {
+        currArea /= 2;
+      }
       currArea += areaMap.find(currIdx)->second;
     }
     endViaHalfEncArea = 0;
@@ -3175,6 +3194,8 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
           } else {
             if (points[prev_i].x() < points[i - 1].x()) {
               bpPatchStyle = true;
+            } else if (points[prev_i].x() > points[i - 1].x()) {
+              bpPatchStyle = false;
             } else {
               bpPatchStyle = false;
             }
@@ -3186,8 +3207,10 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
           } else {
             if (points[i - 1].x() < points[prev_i].x()) {
               epPatchStyle = true;
-            } else {
+            } else if (points[i - 1].x() > points[prev_i].x()) {
               epPatchStyle = false;
+            } else {
+              epPatchStyle = true;
             }
           }
         } else {
@@ -3198,6 +3221,8 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
           } else {
             if (points[prev_i].y() < points[i - 1].y()) {
               bpPatchStyle = true;
+            } else if (points[prev_i].y() > points[i - 1].y()) {
+              bpPatchStyle = false;
             } else {
               bpPatchStyle = false;
             }
@@ -3209,8 +3234,10 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
           } else {
             if (points[i - 1].y() < points[prev_i].y()) {
               epPatchStyle = true;
-            } else {
+            } else if (points[i - 1].y() > points[prev_i].y()) {
               epPatchStyle = false;
+            } else {
+              epPatchStyle = true;
             }
           }
         }
@@ -3330,7 +3357,7 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal_addPWire(
     frCoord patchLength,
     frCoord patchWidth)
 {
-  Point origin, patchEnd;
+  Point origin;
   gridGraph_.getPoint(origin, bpIdx.x(), bpIdx.y());
   frLayerNum layerNum = gridGraph_.getLayerNum(bpIdx.z());
   // actual offsetbox

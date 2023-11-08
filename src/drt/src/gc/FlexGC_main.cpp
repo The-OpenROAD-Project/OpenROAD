@@ -1324,7 +1324,6 @@ void FlexGCWorker::Impl::checkMetalShape_lef58MinStep_noBetweenEol(
   frCoord lly = 0;
   frCoord urx = 0;
   frCoord ury = 0;
-  Rect markerBox;
   auto minStepLength = con->getMinStepLength();
   auto eolWidth = con->getEolWidth();
   for (auto& edges : pin->getPolygonEdges()) {
@@ -1867,6 +1866,8 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
     // detect what drNet has objects overlapping with the patch
     checkMetalShape_patchOwner_helper(patch.get(), dr_nets);
   }
+  if (!patch->hasNet())
+    return;
 
   Rect shiftedPatch = patchBx;
   shiftedPatch.moveTo(offset.x(), offset.y());
@@ -1901,7 +1902,7 @@ void FlexGCWorker::Impl::checkMetalShape_patchOwner_helper(
   }
 }
 
-void FlexGCWorker::Impl::checkMetalShape_main(gcPin* pin)
+void FlexGCWorker::Impl::checkMetalShape_main(gcPin* pin, bool allow_patching)
 {
   auto poly = pin->getPolygon();
   auto layerNum = poly->getLayerNum();
@@ -1925,7 +1926,8 @@ void FlexGCWorker::Impl::checkMetalShape_main(gcPin* pin)
   }
 
   // min area
-  checkMetalShape_minArea(pin);
+  if (allow_patching)
+    checkMetalShape_minArea(pin);
 
   // min step
   checkMetalShape_minStep(pin);
@@ -1943,10 +1945,11 @@ void FlexGCWorker::Impl::checkMetalShape_main(gcPin* pin)
   checkMetalShape_minEnclosedArea(pin);
 
   // lef58 area
-  checkMetalShape_lef58Area(pin);
+  if (allow_patching)
+    checkMetalShape_lef58Area(pin);
 }
 
-void FlexGCWorker::Impl::checkMetalShape()
+void FlexGCWorker::Impl::checkMetalShape(bool allow_patching)
 {
   if (targetNet_) {
     // layer --> net --> polygon
@@ -1960,7 +1963,7 @@ void FlexGCWorker::Impl::checkMetalShape()
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
-        checkMetalShape_main(pin.get());
+        checkMetalShape_main(pin.get(), allow_patching);
       }
     }
   } else {
@@ -1976,7 +1979,7 @@ void FlexGCWorker::Impl::checkMetalShape()
       }
       for (auto& net : getNets()) {
         for (auto& pin : net->getPins(i)) {
-          checkMetalShape_main(pin.get());
+          checkMetalShape_main(pin.get(), allow_patching);
         }
       }
     }
@@ -3278,10 +3281,6 @@ void FlexGCWorker::Impl::checkCutSpacing()
 
 void FlexGCWorker::Impl::patchMetalShape()
 {
-  pwires_.clear();
-  clearMarkers();
-
-  checkMetalShape();
   patchMetalShape_minStep();
 
   checkMetalCornerSpacing();
@@ -3316,10 +3315,13 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
       if (sourceNets.find(net->getFrNet()) == sourceNets.end()) {
         continue;
       }
+      if (targetNet_ && net->getFrNet() != targetNet_->getFrNet()) {
+        continue;
+      }
       if (connFig->typeId() == drcVia) {
         auto via = static_cast<drVia*>(connFig);
-        origin = via->getOrigin();
-        if (routeBox.intersects(origin)) {
+        if (routeBox.intersects(via->getOrigin())) {
+          origin = via->getOrigin();
           if (via->getViaDef()->getLayer1Num() == lNum) {
             fig_bbox = via->getLayer1BBox();
           } else {
@@ -3336,16 +3338,17 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
             = Point::manhattanDistance(markerBBox.closestPtInside(bp), bp);
         auto dist_ep
             = Point::manhattanDistance(markerBBox.closestPtInside(ep), ep);
-        origin = (dist_bp < dist_ep) ? bp : ep;
-        if (routeBox.intersects(origin)) {
+        auto tmpOrigin = (dist_bp < dist_ep) ? bp : ep;
+        if (routeBox.intersects(tmpOrigin)) {
+          origin = tmpOrigin;
           fig_bbox = seg->getBBox();
           obj = connFig;
           break;
         }
       } else if (connFig->typeId() == drcPatchWire) {
         auto patch = static_cast<drPatchWire*>(connFig);
-        origin = patch->getOrigin();
-        if (routeBox.intersects(origin)) {
+        if (routeBox.intersects(patch->getOrigin())) {
+          origin = patch->getOrigin();
           fig_bbox = patch->getBBox();
           obj = connFig;
         }
@@ -3374,7 +3377,7 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
         markerBBox.set_yhi(markerBBox.yMax() + mgrid);
       }
     }
-
+    net = obj->getNet();
     markerBBox.moveDelta(-origin.x(), -origin.y());
     auto patch = make_unique<drPatchWire>();
     patch->setLayerNum(lNum);
@@ -3417,6 +3420,9 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
       }
       auto obj = static_cast<drVia*>(connFig);
       if (obj->getNet()->getFrNet() != *(marker->getSrcs().begin())) {
+        continue;
+      }
+      if (targetNet_ && obj->getNet()->getFrNet() != targetNet_->getFrNet()) {
         continue;
       }
       Point tmpOrigin = obj->getOrigin();
@@ -3592,18 +3598,50 @@ void FlexGCWorker::Impl::checkMinimumCut()
   }
 }
 
+void FlexGCWorker::Impl::modifyMarkers()
+{
+  if (!surgicalFixEnabled_ || pwires_.empty())
+    return;
+  for (auto& pwire : pwires_) {
+    if (!pwire->hasNet())
+      continue;
+    Point origin = pwire->getOrigin();
+    auto net = pwire->getNet()->getFrNet();
+    for (auto& marker : markers_) {
+      if (marker->getLayerNum() != pwire->getLayerNum()) {
+        continue;
+      }
+      if (!marker->getBBox().intersects(pwire->getBBox())) {
+        continue;
+      }
+      if (marker->getSrcs().find(net) == marker->getSrcs().end()) {
+        continue;
+      }
+      if (marker->getBBox().intersects(origin)) {
+        continue;
+      }
+      auto bbox = marker->getBBox();
+      bbox.merge(Rect(origin, origin));
+      marker->setBBox(bbox);
+    }
+  }
+}
+
 int FlexGCWorker::Impl::main()
 {
-  // ProfileTask profile("GC:main");
-  // printMarker = true;
-  //  minStep patching for GF14
-  if (surgicalFixEnabled_ && getDRWorker()
-      && (tech_->hasVia2ViaMinStep() || tech_->hasCornerSpacingConstraint())) {
-    patchMetalShape();
-  }
   // incremental updates
-  if (!modifiedDRNets_.empty() || !pwires_.empty()) {
+  pwires_.clear();
+  clearMarkers();
+  if (!modifiedDRNets_.empty()) {
     updateGCWorker();
+  }
+  if (surgicalFixEnabled_ && getDRWorker()) {
+    checkMetalShape(true);
+    //  minStep patching for GF14
+    if (tech_->hasVia2ViaMinStep() || tech_->hasCornerSpacingConstraint())
+      patchMetalShape();
+    if (!pwires_.empty())
+      updateGCWorker();
   }
   // clear existing markers
   clearMarkers();
@@ -3612,7 +3650,7 @@ int FlexGCWorker::Impl::main()
   // check Short, NSMet, MetSpc based on max rectangles
   checkMetalSpacing();
   // check MinWid, MinStp, RectOnly based on polygon
-  checkMetalShape();
+  checkMetalShape(false);
   // check eolSpc based on polygon
   checkMetalEndOfLine();
   // check CShort, cutSpc
@@ -3623,5 +3661,7 @@ int FlexGCWorker::Impl::main()
   checkMinimumCut();
   // check LEF58_METALWIDTHVIATABLE
   checkMetalWidthViaTable();
+  // modify markers for pwires
+  modifyMarkers();
   return 0;
 }

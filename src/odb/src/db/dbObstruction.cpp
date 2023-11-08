@@ -61,6 +61,7 @@ _dbObstruction::_dbObstruction(_dbDatabase*)
 {
   _flags._slot_obs = 0;
   _flags._fill_obs = 0;
+  _flags._except_pg_nets = 0;
   _flags._pushed_down = 0;
   _flags._has_min_spacing = 0;
   _flags._has_effective_width = 0;
@@ -93,6 +94,12 @@ dbIStream& operator>>(dbIStream& stream, _dbObstruction& obs)
   stream >> obs._min_spacing;
   stream >> obs._effective_width;
 
+  _dbDatabase* db = obs.getImpl()->getDatabase();
+  if (!db->isSchema(db_schema_except_pg_nets_obstruction)) {
+    // assume false for older databases
+    obs._flags._except_pg_nets = false;
+  }
+
   return stream;
 }
 
@@ -102,6 +109,9 @@ bool _dbObstruction::operator==(const _dbObstruction& rhs) const
     return false;
 
   if (_flags._fill_obs != rhs._flags._fill_obs)
+    return false;
+
+  if (_flags._except_pg_nets != rhs._flags._except_pg_nets)
     return false;
 
   if (_flags._pushed_down != rhs._flags._pushed_down)
@@ -132,6 +142,7 @@ void _dbObstruction::differences(dbDiff& diff,
   DIFF_BEGIN
   DIFF_FIELD(_flags._slot_obs);
   DIFF_FIELD(_flags._fill_obs);
+  DIFF_FIELD(_flags._except_pg_nets);
   DIFF_FIELD(_flags._pushed_down);
   DIFF_FIELD(_flags._has_min_spacing);
   DIFF_FIELD(_flags._has_effective_width);
@@ -169,6 +180,7 @@ void _dbObstruction::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(_flags._slot_obs);
   DIFF_OUT_FIELD(_flags._fill_obs);
+  DIFF_OUT_FIELD(_flags._except_pg_nets);
   DIFF_OUT_FIELD(_flags._pushed_down);
   DIFF_OUT_FIELD(_flags._has_min_spacing);
   DIFF_OUT_FIELD(_flags._has_effective_width);
@@ -230,6 +242,12 @@ bool _dbObstruction::operator<(const _dbObstruction& rhs) const
       return true;
 
     if (_flags._fill_obs > rhs._flags._fill_obs)
+      return false;
+
+    if (_flags._except_pg_nets < rhs._flags._except_pg_nets)
+      return true;
+
+    if (_flags._except_pg_nets > rhs._flags._except_pg_nets)
       return false;
 
     if (_flags._pushed_down < rhs._flags._pushed_down)
@@ -312,6 +330,18 @@ bool dbObstruction::isFillObstruction()
 {
   _dbObstruction* obs = (_dbObstruction*) this;
   return obs->_flags._fill_obs == 1;
+}
+
+void dbObstruction::setExceptPGNetsObstruction()
+{
+  _dbObstruction* obs = (_dbObstruction*) this;
+  obs->_flags._except_pg_nets = 1;
+}
+
+bool dbObstruction::isExceptPGNetsObstruction()
+{
+  _dbObstruction* obs = (_dbObstruction*) this;
+  return obs->_flags._except_pg_nets == 1;
 }
 
 void dbObstruction::setPushedDown()

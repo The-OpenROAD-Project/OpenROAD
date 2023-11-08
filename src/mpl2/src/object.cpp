@@ -258,6 +258,40 @@ void Cluster::clearHardMacros()
   hard_macros_.clear();
 }
 
+std::string Cluster::getClusterTypeString() const
+{
+  std::string cluster_type;
+
+  if (is_io_cluster_) {
+    return "BundledIO";
+  }
+
+  switch (type_) {
+    case StdCellCluster:
+      cluster_type = "StdCell";
+      break;
+    case MixedCluster:
+      cluster_type = "Mixed";
+      break;
+    case HardMacroCluster:
+      cluster_type = "Macro";
+      break;
+  }
+
+  return cluster_type;
+}
+
+std::string Cluster::getIsLeafString() const
+{
+  std::string is_leaf_string;
+
+  if (!is_io_cluster_ && children_.empty()) {
+    is_leaf_string = "Leaf";
+  }
+
+  return is_leaf_string;
+}
+
 // copy instances based on cluster Type
 void Cluster::copyInstances(const Cluster& cluster)
 {
@@ -293,18 +327,18 @@ void Cluster::copyInstances(const Cluster& cluster)
 
 // Bundled IO (Pads) cluster support
 // The position is the center of IO pads in the cluster
-void Cluster::setIOClusterFlag(const std::pair<float, float> pos,
-                               const float width,
-                               const float height)
+void Cluster::setAsIOCluster(const std::pair<float, float>& pos,
+                             const float width,
+                             const float height)
 {
-  io_cluster_flag_ = true;
+  is_io_cluster_ = true;
   // Create a SoftMacro representing the IO cluster
   soft_macro_ = std::make_unique<SoftMacro>(pos, name_, width, height, this);
 }
 
-bool Cluster::getIOClusterFlag() const
+bool Cluster::isIOCluster() const
 {
-  return io_cluster_flag_;
+  return is_io_cluster_;
 }
 
 // Metrics Support and Statistics
@@ -455,7 +489,7 @@ std::vector<Cluster*> Cluster::getChildren() const
 
 bool Cluster::isLeaf() const
 {
-  return (children_.size() == 0);
+  return children_.empty();
 }
 
 // We only merge clusters with the same parent cluster
@@ -482,7 +516,7 @@ bool Cluster::mergeCluster(Cluster& cluster, bool& delete_flag)
                      cluster.db_modules_.end());
   delete_flag = true;
   // if current cluster is not a leaf cluster
-  if (children_.size() > 0) {
+  if (!children_.empty()) {
     children_.push_back(&cluster);
     cluster.setParent(this);
     delete_flag = false;
@@ -534,13 +568,12 @@ bool Cluster::isSameConnSignature(const Cluster& cluster, float net_threshold)
 
   if (neighbors.size() != cluster_neighbors.size()) {
     return false;
-  } else {
-    std::sort(neighbors.begin(), neighbors.end());
-    std::sort(cluster_neighbors.begin(), cluster_neighbors.end());
-    for (int i = 0; i < neighbors.size(); i++) {
-      if (neighbors[i] != cluster_neighbors[i]) {
-        return false;
-      }
+  }
+  std::sort(neighbors.begin(), neighbors.end());
+  std::sort(cluster_neighbors.begin(), cluster_neighbors.end());
+  for (int i = 0; i < neighbors.size(); i++) {
+    if (neighbors[i] != cluster_neighbors[i]) {
+      return false;
     }
   }
 
@@ -564,7 +597,7 @@ int Cluster::getCloseCluster(const std::vector<int>& candidate_clusters,
   for (auto& [cluster_id, num_nets] : connection_map_) {
     debugPrint(logger_,
                MPL,
-               "clustering",
+               "multilevel_autoclustering",
                2,
                "cluster_id: {}, nets: {}",
                cluster_id,
@@ -580,9 +613,8 @@ int Cluster::getCloseCluster(const std::vector<int>& candidate_clusters,
 
   if (num_closely_clusters == 1) {
     return closely_cluster;
-  } else {
-    return -1;
   }
+  return -1;
 }
 
 // Pin Access Support
@@ -688,7 +720,7 @@ const std::vector<std::pair<int, int>> Cluster::getVirtualConnections() const
 
 void Cluster::addVirtualConnection(int src, int target)
 {
-  virtual_connections_.push_back(std::pair<int, int>(src, target));
+  virtual_connections_.emplace_back(src, target);
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -756,11 +788,11 @@ bool HardMacro::operator<(const HardMacro& macro) const
 {
   if (width_ * height_ != macro.width_ * macro.height_) {
     return width_ * height_ < macro.width_ * macro.height_;
-  } else if (width_ != macro.width_) {
-    return width_ < macro.width_;
-  } else {
-    return height_ < macro.height_;
   }
+  if (width_ != macro.width_) {
+    return width_ < macro.width_;
+  }
+  return height_ < macro.height_;
 }
 
 bool HardMacro::operator==(const HardMacro& macro) const
@@ -931,9 +963,8 @@ const std::string HardMacro::getMasterName() const
 {
   if (inst_ == nullptr) {
     return name_;
-  } else {
-    return inst_->getMaster()->getName();
   }
+  return inst_->getMaster()->getName();
 }
 
 // update the location and orientation of the macro inst in OpenDB
@@ -1246,9 +1277,9 @@ int SoftMacro::findPos(std::vector<std::pair<float, float>>& list,
 void SoftMacro::setWidth(float width)
 {
   if (width <= 0.0 || area_ == 0.0 || width_list_.size() != height_list_.size()
-      || width_list_.size() == 0 || cluster_ == nullptr
+      || width_list_.empty() || cluster_ == nullptr
       || cluster_->getClusterType() == HardMacroCluster
-      || cluster_->getIOClusterFlag()) {
+      || cluster_->isIOCluster()) {
     return;
   }
 
@@ -1272,9 +1303,9 @@ void SoftMacro::setWidth(float width)
 void SoftMacro::setHeight(float height)
 {
   if (height <= 0.0 || area_ == 0.0 || width_list_.size() != height_list_.size()
-      || width_list_.size() == 0 || cluster_ == nullptr
+      || width_list_.empty() || cluster_ == nullptr
       || cluster_->getClusterType() == HardMacroCluster
-      || cluster_->getIOClusterFlag()) {
+      || cluster_->isIOCluster()) {
     return;
   }
 
@@ -1306,9 +1337,9 @@ void SoftMacro::shrinkArea(float percent)
   }
 
   if (area_ == 0.0 || width_list_.size() != height_list_.size()
-      || width_list_.size() == 0 || cluster_ == nullptr
+      || width_list_.empty() || cluster_ == nullptr
       || cluster_->getClusterType() != StdCellCluster
-      || cluster_->getIOClusterFlag()) {
+      || cluster_->isIOCluster()) {
     return;
   }
 
@@ -1320,9 +1351,9 @@ void SoftMacro::shrinkArea(float percent)
 void SoftMacro::setArea(float area)
 {
   if (area_ == 0.0 || width_list_.size() != height_list_.size()
-      || width_list_.size() == 0 || cluster_ == nullptr
+      || width_list_.empty() || cluster_ == nullptr
       || cluster_->getClusterType() == HardMacroCluster
-      || cluster_->getIOClusterFlag()
+      || cluster_->isIOCluster()
       || area <= width_list_[0].first * height_list_[0].first) {
     return;
   }
@@ -1335,10 +1366,10 @@ void SoftMacro::setArea(float area)
     const float min_height = height_list_[i].second;
     const float max_width = area / min_height;
     const float max_height = area / min_width;
-    if (width_list.size() == 0
+    if (width_list.empty()
         || min_width > width_list[width_list.size() - 1].second) {
-      width_list.push_back(std::pair<float, float>(min_width, max_width));
-      height_list.push_back(std::pair<float, float>(max_height, min_height));
+      width_list.emplace_back(min_width, max_width);
+      height_list.emplace_back(max_height, min_height);
     } else {
       width_list[width_list.size() - 1].second = max_width;
       height_list[height_list.size() - 1].second = min_height;
@@ -1357,15 +1388,15 @@ void SoftMacro::setShapes(const std::vector<std::pair<float, float>>& shapes,
                           bool force_flag)
 {
   if (!force_flag
-      && (shapes.size() == 0 || cluster_ == nullptr
+      && (shapes.empty() || cluster_ == nullptr
           || cluster_->getClusterType() != HardMacroCluster)) {
     return;
   }
 
   // Here we do not need to sort width_list_, height_list_
   for (auto& shape : shapes) {
-    width_list_.push_back(std::pair<float, float>(shape.first, shape.first));
-    height_list_.push_back(std::pair<float, float>(shape.second, shape.second));
+    width_list_.emplace_back(shape.first, shape.first);
+    height_list_.emplace_back(shape.second, shape.second);
   }
   width_ = shapes[0].first;
   height_ = shapes[0].second;
@@ -1378,8 +1409,8 @@ void SoftMacro::setShapes(
     const std::vector<std::pair<float, float>>& width_list,
     float area)
 {
-  if (width_list.size() == 0 || area <= 0.0 || cluster_ == nullptr
-      || cluster_->getIOClusterFlag()
+  if (width_list.empty() || area <= 0.0 || cluster_ == nullptr
+      || cluster_->isIOCluster()
       || cluster_->getClusterType() == HardMacroCluster) {
     return;
   }
@@ -1390,7 +1421,7 @@ void SoftMacro::setShapes(
   height_list_ = width_list;
   std::sort(height_list_.begin(), height_list_.end(), comparePairFirst);
   for (auto& shape : height_list_) {
-    if (width_list_.size() == 0
+    if (width_list_.empty()
         || shape.first > width_list_[width_list_.size() - 1].second) {
       width_list_.push_back(shape);
     } else if (shape.second > width_list_[width_list_.size() - 1].second) {
@@ -1399,8 +1430,7 @@ void SoftMacro::setShapes(
   }
   height_list_.clear();
   for (auto& shape : width_list_) {
-    height_list_.push_back(
-        std::pair<float, float>(area / shape.first, area / shape.second));
+    height_list_.emplace_back(area / shape.first, area / shape.second);
   }
   width_ = width_list_[0].first;
   height_ = height_list_[0].first;
@@ -1477,7 +1507,7 @@ void SoftMacro::resizeRandomly(
     std::uniform_real_distribution<float>& distribution,
     std::mt19937& generator)
 {
-  if (width_list_.size() == 0) {
+  if (width_list_.empty()) {
     return;
   }
   const int idx = static_cast<int>(

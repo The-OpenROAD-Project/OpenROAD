@@ -7,5 +7,5 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 676 components and 2850 component-terminals.
 [INFO ODB-0133]     Created 579 nets and 1498 connections.
-[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0
+[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 No differences found.

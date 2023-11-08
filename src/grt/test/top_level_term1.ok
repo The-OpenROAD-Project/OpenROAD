@@ -19,7 +19,7 @@
 [INFO GRT-0088] Layer met2    Track-Pitch = 0.4800  line-2-Via Pitch: 0.3500
 [INFO GRT-0088] Layer met3    Track-Pitch = 0.7400  line-2-Via Pitch: 0.6150
 [INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 0.6150
-[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0
+[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 5
 [INFO GRT-0002] Maximum degree: 5
@@ -37,19 +37,19 @@ met3       Horizontal      13338          5809          56.45%
 met4       Vertical        10374          4366          57.91%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 7
+[INFO GRT-0197] Via related to pin nodes: 9
 [INFO GRT-0198] Via related Steiner nodes: 0
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 7
-[INFO GRT-0112] Final usage 3D: 42
+[INFO GRT-0111] Final number of vias: 9
+[INFO GRT-0112] Final usage 3D: 48
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
-met1              4366            20            0.46%             0 /  0 /  0
+met1              4366             5            0.11%             0 /  0 /  0
 met2              5772             1            0.02%             0 /  0 /  0
-met3              5809             0            0.00%             0 /  0 /  0
+met3              5809            15            0.26%             0 /  0 /  0
 met4              4366             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
 Total            20313            21            0.10%             0 /  0 /  0

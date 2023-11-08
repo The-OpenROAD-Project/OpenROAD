@@ -80,7 +80,7 @@ public:
                   const Point &pt2) const;
 };
 
-typedef std::unordered_map<Point, PinSeq, PointHash, PointEqual> LocPinMap;
+using LocPinMap = std::unordered_map<Point, PinSeq, PointHash, PointEqual>;
 
 class SteinerTree;
 
@@ -119,13 +119,14 @@ public:
   void validatePoint(SteinerPt pt) const;
 
   void populateSides();
-  void populateSides(const SteinerPt from,
-		     const SteinerPt to,
+  void populateSides(SteinerPt from,
+		     SteinerPt to,
                      const std::vector<SteinerPt>& adj1,
                      const std::vector<SteinerPt>& adj2,
                      const std::vector<SteinerPt>& adj3);
-  void populateSides(const SteinerPt from, const SteinerPt to,
-		     const SteinerPt adj,
+  void populateSides(SteinerPt from,
+                     SteinerPt to,
+		     SteinerPt adj,
                      const std::vector<SteinerPt>& adj1,
                      const std::vector<SteinerPt>& adj2,
                      const std::vector<SteinerPt>& adj3);
@@ -164,4 +165,4 @@ protected:
   friend class GateCloner;
 };
 
-} // namespace
+} // namespace rsz
