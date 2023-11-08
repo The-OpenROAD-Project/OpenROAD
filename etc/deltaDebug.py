@@ -257,13 +257,13 @@ class deltaDebugger:
         return error_string
 
     # A function to rename a smaller db file that produces the target error
-    # to the temporary name used to load a base db to perfrom further
+    # to the temporary name used to load a base db to perform further
     # cutting on it.
     def prepare_new_step(self):
         # Delete the old temporary db file
         if (os.path.exists(self.temp_base_db_file)):
             os.remove(self.temp_base_db_file)
-        # Rename the new base db file to the temp name to keep it from overwrtting across the two steps cut
+        # Rename the new base db file to the temp name to keep it from overwriting across the two steps cut
         if os.path.exists(self.base_db_file):
             os.rename(self.base_db_file, self.temp_base_db_file)
 
