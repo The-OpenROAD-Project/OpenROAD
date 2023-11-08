@@ -82,6 +82,7 @@ using ViaValue = std::pair<Box, ViaPtr>;
 using ShapeTree = bgi::rtree<ShapeValue, bgi::quadratic<16>>;
 using ViaTree = bgi::rtree<ViaValue, bgi::quadratic<16>>;
 using ShapeTreeMap = std::map<odb::dbTechLayer*, ShapeTree>;
+using uint = odb::uint;
 
 using ViaReport = std::map<std::string, int>;
 
@@ -650,7 +651,7 @@ class GenerateViaGenerator : public ViaGenerator
  private:
   odb::dbTechViaGenerateRule* rule_;
 
-  std::array<uint, 3> layers_;
+  std::array<odb::uint, 3> layers_;
 
   bool isLayerValidForWidth(odb::dbTechViaLayerRule*, int width) const;
   bool getLayerEnclosureRule(odb::dbTechViaLayerRule* rule,

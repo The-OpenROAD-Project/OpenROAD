@@ -167,8 +167,8 @@ std::vector<TechLayer::MinCutRule> TechLayer::getMinCutRules() const
 
   // get all the LEF55 rules
   for (auto* min_cut_rule : layer_->getMinCutRules()) {
-    uint numcuts;
-    uint rule_width;
+    odb::uint numcuts;
+    odb::uint rule_width;
     min_cut_rule->getMinimumCuts(numcuts, rule_width);
 
     rules.push_back(MinCutRule{nullptr,
