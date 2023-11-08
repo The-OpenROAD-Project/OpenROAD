@@ -35,10 +35,37 @@
 
 #pragma once
 
+#include <cmath>
 #include <iomanip>
 #include <ostream>
 
 namespace cts {
+
+inline bool fuzzyEqual(double x1, double x2, double epsilon = 1e-6)
+{
+  if (fabs(x1 - x2) < epsilon) {
+    return true;
+  }
+  return false;
+}
+
+// x1 >= x2
+inline bool fuzzyEqualOrGreater(double x1, double x2, double epsilon = 1e-6)
+{
+  if (fabs(x1 - x2) < epsilon) {
+    return true;
+  }
+  return (x1 > x2);
+}
+
+// x1 <= x2
+inline bool fuzzyEqualOrSmaller(double x1, double x2, double epsilon = 1e-6)
+{
+  if (fabs(x1 - x2) < epsilon) {
+    return true;
+  }
+  return (x1 < x2);
+}
 
 template <class T>
 class Point
@@ -76,7 +103,7 @@ class Point
     return dy;
   }
 
-  bool equal(const Point<T>& other, double epsilon = 0.0000001f) const
+  bool equal(const Point<T>& other, double epsilon = 1e-6) const
   {
     if ((fabs(getX() - other.getX()) < epsilon)
         && (fabs(getY() - other.getY()) < epsilon)) {
@@ -135,9 +162,25 @@ class Box
   T getWidth() const { return width_; }
   T getHeight() const { return height_; }
 
-  Point<T> computeCenter() const
+  Point<T> getCenter()
   {
-    return Point<T>(xMin_ + width_ / 2, yMin_ + height_ / 2);
+    if (centerSet_) {
+      Point<T> center(centerX_, centerY_);
+      return center;
+    }
+
+    centerX_ = xMin_ + width_ / 2;
+    centerY_ = yMin_ + height_ / 2;
+    Point<T> center(centerX_, centerY_);
+    centerSet_ = true;
+    return center;
+  }
+
+  void setCenter(Point<T> point)
+  {
+    centerX_ = point.getX();
+    centerY_ = point.getY();
+    centerSet_ = true;
   }
 
   Box<double> normalize(double factor)
@@ -166,6 +209,9 @@ class Box
   T yMin_;
   T width_;
   T height_;
+  T centerX_ = 0;
+  T centerY_ = 0;
+  bool centerSet_ = false;
 };
 
 }  // namespace cts

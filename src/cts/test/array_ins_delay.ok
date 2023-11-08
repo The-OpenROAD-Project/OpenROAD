@@ -1,0 +1,1096 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45_tech.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45_tech.lef
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45_stdcell.lef
+[INFO ODB-0225]     Created 135 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45_stdcell.lef
+[INFO ODB-0222] Reading LEF file: array_tile.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  array_tile.lef
+[INFO IFP-0001] Added 3528 rows of 26000 site FreePDK45_38x28_10R_NP_162NW_34O with height 1.
+[INFO ODB-0303] The initial 3528 rows (91728000 sites) were cut with 225 shapes for a total of 52263 rows (14219856 sites).
+[INFO CTS-0049] Characterization buffer is: BUF_X4.
+[INFO CTS-0039] Number of created patterns = 12240.
+[INFO CTS-0084] Compiling LUT.
+Min. len    Max. len    Min. cap    Max. cap    Min. slew   Max. slew
+2           8           1           35          1           12          
+[WARNING CTS-0043] 1632 wires are pure wire and no slew degradation.
+TritonCTS forced slew degradation on these wires.
+[INFO CTS-0046]     Number of wire segments: 12240.
+[INFO CTS-0047]     Number of keys in characterization LUT: 1660.
+[INFO CTS-0048]     Actual min input cap: 1.
+[INFO CTS-0007] Net "clk" found for clock "clk".
+[DEBUG CTS-Triton] sink inst_14_14/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_14_13/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_14_12/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_14_11/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_14_10/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_14_9/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_14_8/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_14_7/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_14_6/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_14_5/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_14_4/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_14_3/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_14_2/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_14_1/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_14_0/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_13_14/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_13_13/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_13_12/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_13_11/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_13_10/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_13_9/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_13_8/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_13_7/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_13_6/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_13_5/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_13_4/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_13_3/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_13_2/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_13_1/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_13_0/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_12_14/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_12_13/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_12_12/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_12_11/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_12_10/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_12_9/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_12_8/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_12_7/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_12_6/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_12_5/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_12_4/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_12_3/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_12_2/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_12_1/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_12_0/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_11_14/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_11_13/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_11_12/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_11_11/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_11_10/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_11_9/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_11_8/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_11_7/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_11_6/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_11_5/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_11_4/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_11_3/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_11_2/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_11_1/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_11_0/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_10_14/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_10_13/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_10_12/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_10_11/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_10_10/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_10_9/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_10_8/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_10_7/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_10_6/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_10_5/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_10_4/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_10_3/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_10_2/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_10_1/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_10_0/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_9_14/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_9_13/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_9_12/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_9_11/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_9_10/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_9_9/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_9_8/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_9_7/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_9_6/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_9_5/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_9_4/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_9_3/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_9_2/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_9_1/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_9_0/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_8_14/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_8_13/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_8_12/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_8_11/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_8_10/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_8_9/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_8_8/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_8_7/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_8_6/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_8_5/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_8_4/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_8_3/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_8_2/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_8_1/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_8_0/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_7_14/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_7_13/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_7_12/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_7_11/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_7_10/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_7_9/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_7_8/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_7_7/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_7_6/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_7_5/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_7_4/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_7_3/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_7_2/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_7_1/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_7_0/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_6_14/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_6_13/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_6_12/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_6_11/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_6_10/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_6_9/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_6_8/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_6_7/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_6_6/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_6_5/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_6_4/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_6_3/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_6_2/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_6_1/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_6_0/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_5_14/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_5_13/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_5_12/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_5_11/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_5_10/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_5_9/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_5_8/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_5_7/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_5_6/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_5_5/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_5_4/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_5_3/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_5_2/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_5_1/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_5_0/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_4_14/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_4_13/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_4_12/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_4_11/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_4_10/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_4_9/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_4_8/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_4_7/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_4_6/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_4_5/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_4_4/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_4_3/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_4_2/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_4_1/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_4_0/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_3_14/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_3_13/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_3_12/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_3_11/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_3_10/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_3_9/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_3_8/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_3_7/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_3_6/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_3_5/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_3_4/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_3_3/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_3_2/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_3_1/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_3_0/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_2_14/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_2_13/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_2_12/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_2_11/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_2_10/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_2_9/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_2_8/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_2_7/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_2_6/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_2_5/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_2_4/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_2_3/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_2_2/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_2_1/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_2_0/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_1_14/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_1_13/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_1_12/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_1_11/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_1_10/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_1_9/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_1_8/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_1_7/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_1_6/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_1_5/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_1_4/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_1_3/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_1_2/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_1_1/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_1_0/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_0_14/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_0_13/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_0_12/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_0_11/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_0_10/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_0_9/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_0_8/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_0_7/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_0_6/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_0_5/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_0_4/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_0_3/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_0_2/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_0_1/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[DEBUG CTS-Triton] sink inst_0_0/clk has ins delay=3.50e-12 and micron leng=13029.5 dbUnits/um=2000
+[DEBUG CTS-Triton] capPerMicron=7.52e-17 resPerMicron=3.57e+00
+[INFO CTS-0010]  Clock net "clk" has 2475 sinks.
+[INFO CTS-0008] TritonCTS found 1 clock nets.
+[INFO CTS-0097] Characterization used 1 buffer(s) types.
+[INFO CTS-0200] 225 placement blockages have been identified.
+[INFO CTS-0027] Generating H-Tree topology for net clk.
+[INFO CTS-0028]  Total number of sinks: 2475.
+[INFO CTS-0029]  Sinks will be clustered in groups of up to 20 and with maximum cluster diameter of 100.0 um.
+[INFO CTS-0030]  Number of static layers: 0.
+[INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
+[DEBUG CTS-Triton] sink inst_14_14/clk has insDelay 0.9306763392857142 at [(661.439, 704.276)]
+[DEBUG CTS-Triton] sink inst_14_13/clk has insDelay 0.9306763392857142 at [(661.439, 657.133)]
+[DEBUG CTS-Triton] sink inst_14_12/clk has insDelay 0.9306763392857142 at [(661.439, 609.990)]
+[DEBUG CTS-Triton] sink inst_14_11/clk has insDelay 0.9306763392857142 at [(661.439, 562.847)]
+[DEBUG CTS-Triton] sink inst_14_10/clk has insDelay 0.9306763392857142 at [(661.439, 515.704)]
+[DEBUG CTS-Triton] sink inst_14_9/clk has insDelay 0.9306763392857142 at [(661.439, 468.561)]
+[DEBUG CTS-Triton] sink inst_14_8/clk has insDelay 0.9306763392857142 at [(661.439, 421.419)]
+[DEBUG CTS-Triton] sink inst_14_7/clk has insDelay 0.9306763392857142 at [(661.439, 374.276)]
+[DEBUG CTS-Triton] sink inst_14_6/clk has insDelay 0.9306763392857142 at [(661.439, 327.133)]
+[DEBUG CTS-Triton] sink inst_14_5/clk has insDelay 0.9306763392857142 at [(661.439, 279.990)]
+[DEBUG CTS-Triton] sink inst_14_4/clk has insDelay 0.9306763392857142 at [(661.439, 232.847)]
+[DEBUG CTS-Triton] sink inst_14_3/clk has insDelay 0.9306763392857142 at [(661.439, 185.704)]
+[DEBUG CTS-Triton] sink inst_14_2/clk has insDelay 0.9306763392857142 at [(661.439, 138.561)]
+[DEBUG CTS-Triton] sink inst_14_1/clk has insDelay 0.9306763392857142 at [(661.439, 91.419)]
+[DEBUG CTS-Triton] sink inst_14_0/clk has insDelay 0.9306763392857142 at [(661.439, 44.276)]
+[DEBUG CTS-Triton] sink inst_13_14/clk has insDelay 0.9306763392857142 at [(614.296, 704.276)]
+[DEBUG CTS-Triton] sink inst_13_13/clk has insDelay 0.9306763392857142 at [(614.296, 657.133)]
+[DEBUG CTS-Triton] sink inst_13_12/clk has insDelay 0.9306763392857142 at [(614.296, 609.990)]
+[DEBUG CTS-Triton] sink inst_13_11/clk has insDelay 0.9306763392857142 at [(614.296, 562.847)]
+[DEBUG CTS-Triton] sink inst_13_10/clk has insDelay 0.9306763392857142 at [(614.296, 515.704)]
+[DEBUG CTS-Triton] sink inst_13_9/clk has insDelay 0.9306763392857142 at [(614.296, 468.561)]
+[DEBUG CTS-Triton] sink inst_13_8/clk has insDelay 0.9306763392857142 at [(614.296, 421.419)]
+[DEBUG CTS-Triton] sink inst_13_7/clk has insDelay 0.9306763392857142 at [(614.296, 374.276)]
+[DEBUG CTS-Triton] sink inst_13_6/clk has insDelay 0.9306763392857142 at [(614.296, 327.133)]
+[DEBUG CTS-Triton] sink inst_13_5/clk has insDelay 0.9306763392857142 at [(614.296, 279.990)]
+[DEBUG CTS-Triton] sink inst_13_4/clk has insDelay 0.9306763392857142 at [(614.296, 232.847)]
+[DEBUG CTS-Triton] sink inst_13_3/clk has insDelay 0.9306763392857142 at [(614.296, 185.704)]
+[DEBUG CTS-Triton] sink inst_13_2/clk has insDelay 0.9306763392857142 at [(614.296, 138.561)]
+[DEBUG CTS-Triton] sink inst_13_1/clk has insDelay 0.9306763392857142 at [(614.296, 91.419)]
+[DEBUG CTS-Triton] sink inst_13_0/clk has insDelay 0.9306763392857142 at [(614.296, 44.276)]
+[DEBUG CTS-Triton] sink inst_12_14/clk has insDelay 0.9306763392857142 at [(567.153, 704.276)]
+[DEBUG CTS-Triton] sink inst_12_13/clk has insDelay 0.9306763392857142 at [(567.153, 657.133)]
+[DEBUG CTS-Triton] sink inst_12_12/clk has insDelay 0.9306763392857142 at [(567.153, 609.990)]
+[DEBUG CTS-Triton] sink inst_12_11/clk has insDelay 0.9306763392857142 at [(567.153, 562.847)]
+[DEBUG CTS-Triton] sink inst_12_10/clk has insDelay 0.9306763392857142 at [(567.153, 515.704)]
+[DEBUG CTS-Triton] sink inst_12_9/clk has insDelay 0.9306763392857142 at [(567.153, 468.561)]
+[DEBUG CTS-Triton] sink inst_12_8/clk has insDelay 0.9306763392857142 at [(567.153, 421.419)]
+[DEBUG CTS-Triton] sink inst_12_7/clk has insDelay 0.9306763392857142 at [(567.153, 374.276)]
+[DEBUG CTS-Triton] sink inst_12_6/clk has insDelay 0.9306763392857142 at [(567.153, 327.133)]
+[DEBUG CTS-Triton] sink inst_12_5/clk has insDelay 0.9306763392857142 at [(567.153, 279.990)]
+[DEBUG CTS-Triton] sink inst_12_4/clk has insDelay 0.9306763392857142 at [(567.153, 232.847)]
+[DEBUG CTS-Triton] sink inst_12_3/clk has insDelay 0.9306763392857142 at [(567.153, 185.704)]
+[DEBUG CTS-Triton] sink inst_12_2/clk has insDelay 0.9306763392857142 at [(567.153, 138.561)]
+[DEBUG CTS-Triton] sink inst_12_1/clk has insDelay 0.9306763392857142 at [(567.153, 91.419)]
+[DEBUG CTS-Triton] sink inst_12_0/clk has insDelay 0.9306763392857142 at [(567.153, 44.276)]
+[DEBUG CTS-Triton] sink inst_11_14/clk has insDelay 0.9306763392857142 at [(520.010, 704.276)]
+[DEBUG CTS-Triton] sink inst_11_13/clk has insDelay 0.9306763392857142 at [(520.010, 657.133)]
+[DEBUG CTS-Triton] sink inst_11_12/clk has insDelay 0.9306763392857142 at [(520.010, 609.990)]
+[DEBUG CTS-Triton] sink inst_11_11/clk has insDelay 0.9306763392857142 at [(520.010, 562.847)]
+[DEBUG CTS-Triton] sink inst_11_10/clk has insDelay 0.9306763392857142 at [(520.010, 515.704)]
+[DEBUG CTS-Triton] sink inst_11_9/clk has insDelay 0.9306763392857142 at [(520.010, 468.561)]
+[DEBUG CTS-Triton] sink inst_11_8/clk has insDelay 0.9306763392857142 at [(520.010, 421.419)]
+[DEBUG CTS-Triton] sink inst_11_7/clk has insDelay 0.9306763392857142 at [(520.010, 374.276)]
+[DEBUG CTS-Triton] sink inst_11_6/clk has insDelay 0.9306763392857142 at [(520.010, 327.133)]
+[DEBUG CTS-Triton] sink inst_11_5/clk has insDelay 0.9306763392857142 at [(520.010, 279.990)]
+[DEBUG CTS-Triton] sink inst_11_4/clk has insDelay 0.9306763392857142 at [(520.010, 232.847)]
+[DEBUG CTS-Triton] sink inst_11_3/clk has insDelay 0.9306763392857142 at [(520.010, 185.704)]
+[DEBUG CTS-Triton] sink inst_11_2/clk has insDelay 0.9306763392857142 at [(520.010, 138.561)]
+[DEBUG CTS-Triton] sink inst_11_1/clk has insDelay 0.9306763392857142 at [(520.010, 91.419)]
+[DEBUG CTS-Triton] sink inst_11_0/clk has insDelay 0.9306763392857142 at [(520.010, 44.276)]
+[DEBUG CTS-Triton] sink inst_10_14/clk has insDelay 0.9306763392857142 at [(472.867, 704.276)]
+[DEBUG CTS-Triton] sink inst_10_13/clk has insDelay 0.9306763392857142 at [(472.867, 657.133)]
+[DEBUG CTS-Triton] sink inst_10_12/clk has insDelay 0.9306763392857142 at [(472.867, 609.990)]
+[DEBUG CTS-Triton] sink inst_10_11/clk has insDelay 0.9306763392857142 at [(472.867, 562.847)]
+[DEBUG CTS-Triton] sink inst_10_10/clk has insDelay 0.9306763392857142 at [(472.867, 515.704)]
+[DEBUG CTS-Triton] sink inst_10_9/clk has insDelay 0.9306763392857142 at [(472.867, 468.561)]
+[DEBUG CTS-Triton] sink inst_10_8/clk has insDelay 0.9306763392857142 at [(472.867, 421.419)]
+[DEBUG CTS-Triton] sink inst_10_7/clk has insDelay 0.9306763392857142 at [(472.867, 374.276)]
+[DEBUG CTS-Triton] sink inst_10_6/clk has insDelay 0.9306763392857142 at [(472.867, 327.133)]
+[DEBUG CTS-Triton] sink inst_10_5/clk has insDelay 0.9306763392857142 at [(472.867, 279.990)]
+[DEBUG CTS-Triton] sink inst_10_4/clk has insDelay 0.9306763392857142 at [(472.867, 232.847)]
+[DEBUG CTS-Triton] sink inst_10_3/clk has insDelay 0.9306763392857142 at [(472.867, 185.704)]
+[DEBUG CTS-Triton] sink inst_10_2/clk has insDelay 0.9306763392857142 at [(472.867, 138.561)]
+[DEBUG CTS-Triton] sink inst_10_1/clk has insDelay 0.9306763392857142 at [(472.867, 91.419)]
+[DEBUG CTS-Triton] sink inst_10_0/clk has insDelay 0.9306763392857142 at [(472.867, 44.276)]
+[DEBUG CTS-Triton] sink inst_9_14/clk has insDelay 0.9306763392857142 at [(425.724, 704.276)]
+[DEBUG CTS-Triton] sink inst_9_13/clk has insDelay 0.9306763392857142 at [(425.724, 657.133)]
+[DEBUG CTS-Triton] sink inst_9_12/clk has insDelay 0.9306763392857142 at [(425.724, 609.990)]
+[DEBUG CTS-Triton] sink inst_9_11/clk has insDelay 0.9306763392857142 at [(425.724, 562.847)]
+[DEBUG CTS-Triton] sink inst_9_10/clk has insDelay 0.9306763392857142 at [(425.724, 515.704)]
+[DEBUG CTS-Triton] sink inst_9_9/clk has insDelay 0.9306763392857142 at [(425.724, 468.561)]
+[DEBUG CTS-Triton] sink inst_9_8/clk has insDelay 0.9306763392857142 at [(425.724, 421.419)]
+[DEBUG CTS-Triton] sink inst_9_7/clk has insDelay 0.9306763392857142 at [(425.724, 374.276)]
+[DEBUG CTS-Triton] sink inst_9_6/clk has insDelay 0.9306763392857142 at [(425.724, 327.133)]
+[DEBUG CTS-Triton] sink inst_9_5/clk has insDelay 0.9306763392857142 at [(425.724, 279.990)]
+[DEBUG CTS-Triton] sink inst_9_4/clk has insDelay 0.9306763392857142 at [(425.724, 232.847)]
+[DEBUG CTS-Triton] sink inst_9_3/clk has insDelay 0.9306763392857142 at [(425.724, 185.704)]
+[DEBUG CTS-Triton] sink inst_9_2/clk has insDelay 0.9306763392857142 at [(425.724, 138.561)]
+[DEBUG CTS-Triton] sink inst_9_1/clk has insDelay 0.9306763392857142 at [(425.724, 91.419)]
+[DEBUG CTS-Triton] sink inst_9_0/clk has insDelay 0.9306763392857142 at [(425.724, 44.276)]
+[DEBUG CTS-Triton] sink inst_8_14/clk has insDelay 0.9306763392857142 at [(378.581, 704.276)]
+[DEBUG CTS-Triton] sink inst_8_13/clk has insDelay 0.9306763392857142 at [(378.581, 657.133)]
+[DEBUG CTS-Triton] sink inst_8_12/clk has insDelay 0.9306763392857142 at [(378.581, 609.990)]
+[DEBUG CTS-Triton] sink inst_8_11/clk has insDelay 0.9306763392857142 at [(378.581, 562.847)]
+[DEBUG CTS-Triton] sink inst_8_10/clk has insDelay 0.9306763392857142 at [(378.581, 515.704)]
+[DEBUG CTS-Triton] sink inst_8_9/clk has insDelay 0.9306763392857142 at [(378.581, 468.561)]
+[DEBUG CTS-Triton] sink inst_8_8/clk has insDelay 0.9306763392857142 at [(378.581, 421.419)]
+[DEBUG CTS-Triton] sink inst_8_7/clk has insDelay 0.9306763392857142 at [(378.581, 374.276)]
+[DEBUG CTS-Triton] sink inst_8_6/clk has insDelay 0.9306763392857142 at [(378.581, 327.133)]
+[DEBUG CTS-Triton] sink inst_8_5/clk has insDelay 0.9306763392857142 at [(378.581, 279.990)]
+[DEBUG CTS-Triton] sink inst_8_4/clk has insDelay 0.9306763392857142 at [(378.581, 232.847)]
+[DEBUG CTS-Triton] sink inst_8_3/clk has insDelay 0.9306763392857142 at [(378.581, 185.704)]
+[DEBUG CTS-Triton] sink inst_8_2/clk has insDelay 0.9306763392857142 at [(378.581, 138.561)]
+[DEBUG CTS-Triton] sink inst_8_1/clk has insDelay 0.9306763392857142 at [(378.581, 91.419)]
+[DEBUG CTS-Triton] sink inst_8_0/clk has insDelay 0.9306763392857142 at [(378.581, 44.276)]
+[DEBUG CTS-Triton] sink inst_7_14/clk has insDelay 0.9306763392857142 at [(331.439, 704.276)]
+[DEBUG CTS-Triton] sink inst_7_13/clk has insDelay 0.9306763392857142 at [(331.439, 657.133)]
+[DEBUG CTS-Triton] sink inst_7_12/clk has insDelay 0.9306763392857142 at [(331.439, 609.990)]
+[DEBUG CTS-Triton] sink inst_7_11/clk has insDelay 0.9306763392857142 at [(331.439, 562.847)]
+[DEBUG CTS-Triton] sink inst_7_10/clk has insDelay 0.9306763392857142 at [(331.439, 515.704)]
+[DEBUG CTS-Triton] sink inst_7_9/clk has insDelay 0.9306763392857142 at [(331.439, 468.561)]
+[DEBUG CTS-Triton] sink inst_7_8/clk has insDelay 0.9306763392857142 at [(331.439, 421.419)]
+[DEBUG CTS-Triton] sink inst_7_7/clk has insDelay 0.9306763392857142 at [(331.439, 374.276)]
+[DEBUG CTS-Triton] sink inst_7_6/clk has insDelay 0.9306763392857142 at [(331.439, 327.133)]
+[DEBUG CTS-Triton] sink inst_7_5/clk has insDelay 0.9306763392857142 at [(331.439, 279.990)]
+[DEBUG CTS-Triton] sink inst_7_4/clk has insDelay 0.9306763392857142 at [(331.439, 232.847)]
+[DEBUG CTS-Triton] sink inst_7_3/clk has insDelay 0.9306763392857142 at [(331.439, 185.704)]
+[DEBUG CTS-Triton] sink inst_7_2/clk has insDelay 0.9306763392857142 at [(331.439, 138.561)]
+[DEBUG CTS-Triton] sink inst_7_1/clk has insDelay 0.9306763392857142 at [(331.439, 91.419)]
+[DEBUG CTS-Triton] sink inst_7_0/clk has insDelay 0.9306763392857142 at [(331.439, 44.276)]
+[DEBUG CTS-Triton] sink inst_6_14/clk has insDelay 0.9306763392857142 at [(284.296, 704.276)]
+[DEBUG CTS-Triton] sink inst_6_13/clk has insDelay 0.9306763392857142 at [(284.296, 657.133)]
+[DEBUG CTS-Triton] sink inst_6_12/clk has insDelay 0.9306763392857142 at [(284.296, 609.990)]
+[DEBUG CTS-Triton] sink inst_6_11/clk has insDelay 0.9306763392857142 at [(284.296, 562.847)]
+[DEBUG CTS-Triton] sink inst_6_10/clk has insDelay 0.9306763392857142 at [(284.296, 515.704)]
+[DEBUG CTS-Triton] sink inst_6_9/clk has insDelay 0.9306763392857142 at [(284.296, 468.561)]
+[DEBUG CTS-Triton] sink inst_6_8/clk has insDelay 0.9306763392857142 at [(284.296, 421.419)]
+[DEBUG CTS-Triton] sink inst_6_7/clk has insDelay 0.9306763392857142 at [(284.296, 374.276)]
+[DEBUG CTS-Triton] sink inst_6_6/clk has insDelay 0.9306763392857142 at [(284.296, 327.133)]
+[DEBUG CTS-Triton] sink inst_6_5/clk has insDelay 0.9306763392857142 at [(284.296, 279.990)]
+[DEBUG CTS-Triton] sink inst_6_4/clk has insDelay 0.9306763392857142 at [(284.296, 232.847)]
+[DEBUG CTS-Triton] sink inst_6_3/clk has insDelay 0.9306763392857142 at [(284.296, 185.704)]
+[DEBUG CTS-Triton] sink inst_6_2/clk has insDelay 0.9306763392857142 at [(284.296, 138.561)]
+[DEBUG CTS-Triton] sink inst_6_1/clk has insDelay 0.9306763392857142 at [(284.296, 91.419)]
+[DEBUG CTS-Triton] sink inst_6_0/clk has insDelay 0.9306763392857142 at [(284.296, 44.276)]
+[DEBUG CTS-Triton] sink inst_5_14/clk has insDelay 0.9306763392857142 at [(237.153, 704.276)]
+[DEBUG CTS-Triton] sink inst_5_13/clk has insDelay 0.9306763392857142 at [(237.153, 657.133)]
+[DEBUG CTS-Triton] sink inst_5_12/clk has insDelay 0.9306763392857142 at [(237.153, 609.990)]
+[DEBUG CTS-Triton] sink inst_5_11/clk has insDelay 0.9306763392857142 at [(237.153, 562.847)]
+[DEBUG CTS-Triton] sink inst_5_10/clk has insDelay 0.9306763392857142 at [(237.153, 515.704)]
+[DEBUG CTS-Triton] sink inst_5_9/clk has insDelay 0.9306763392857142 at [(237.153, 468.561)]
+[DEBUG CTS-Triton] sink inst_5_8/clk has insDelay 0.9306763392857142 at [(237.153, 421.419)]
+[DEBUG CTS-Triton] sink inst_5_7/clk has insDelay 0.9306763392857142 at [(237.153, 374.276)]
+[DEBUG CTS-Triton] sink inst_5_6/clk has insDelay 0.9306763392857142 at [(237.153, 327.133)]
+[DEBUG CTS-Triton] sink inst_5_5/clk has insDelay 0.9306763392857142 at [(237.153, 279.990)]
+[DEBUG CTS-Triton] sink inst_5_4/clk has insDelay 0.9306763392857142 at [(237.153, 232.847)]
+[DEBUG CTS-Triton] sink inst_5_3/clk has insDelay 0.9306763392857142 at [(237.153, 185.704)]
+[DEBUG CTS-Triton] sink inst_5_2/clk has insDelay 0.9306763392857142 at [(237.153, 138.561)]
+[DEBUG CTS-Triton] sink inst_5_1/clk has insDelay 0.9306763392857142 at [(237.153, 91.419)]
+[DEBUG CTS-Triton] sink inst_5_0/clk has insDelay 0.9306763392857142 at [(237.153, 44.276)]
+[DEBUG CTS-Triton] sink inst_4_14/clk has insDelay 0.9306763392857142 at [(190.010, 704.276)]
+[DEBUG CTS-Triton] sink inst_4_13/clk has insDelay 0.9306763392857142 at [(190.010, 657.133)]
+[DEBUG CTS-Triton] sink inst_4_12/clk has insDelay 0.9306763392857142 at [(190.010, 609.990)]
+[DEBUG CTS-Triton] sink inst_4_11/clk has insDelay 0.9306763392857142 at [(190.010, 562.847)]
+[DEBUG CTS-Triton] sink inst_4_10/clk has insDelay 0.9306763392857142 at [(190.010, 515.704)]
+[DEBUG CTS-Triton] sink inst_4_9/clk has insDelay 0.9306763392857142 at [(190.010, 468.561)]
+[DEBUG CTS-Triton] sink inst_4_8/clk has insDelay 0.9306763392857142 at [(190.010, 421.419)]
+[DEBUG CTS-Triton] sink inst_4_7/clk has insDelay 0.9306763392857142 at [(190.010, 374.276)]
+[DEBUG CTS-Triton] sink inst_4_6/clk has insDelay 0.9306763392857142 at [(190.010, 327.133)]
+[DEBUG CTS-Triton] sink inst_4_5/clk has insDelay 0.9306763392857142 at [(190.010, 279.990)]
+[DEBUG CTS-Triton] sink inst_4_4/clk has insDelay 0.9306763392857142 at [(190.010, 232.847)]
+[DEBUG CTS-Triton] sink inst_4_3/clk has insDelay 0.9306763392857142 at [(190.010, 185.704)]
+[DEBUG CTS-Triton] sink inst_4_2/clk has insDelay 0.9306763392857142 at [(190.010, 138.561)]
+[DEBUG CTS-Triton] sink inst_4_1/clk has insDelay 0.9306763392857142 at [(190.010, 91.419)]
+[DEBUG CTS-Triton] sink inst_4_0/clk has insDelay 0.9306763392857142 at [(190.010, 44.276)]
+[DEBUG CTS-Triton] sink inst_3_14/clk has insDelay 0.9306763392857142 at [(142.867, 704.276)]
+[DEBUG CTS-Triton] sink inst_3_13/clk has insDelay 0.9306763392857142 at [(142.867, 657.133)]
+[DEBUG CTS-Triton] sink inst_3_12/clk has insDelay 0.9306763392857142 at [(142.867, 609.990)]
+[DEBUG CTS-Triton] sink inst_3_11/clk has insDelay 0.9306763392857142 at [(142.867, 562.847)]
+[DEBUG CTS-Triton] sink inst_3_10/clk has insDelay 0.9306763392857142 at [(142.867, 515.704)]
+[DEBUG CTS-Triton] sink inst_3_9/clk has insDelay 0.9306763392857142 at [(142.867, 468.561)]
+[DEBUG CTS-Triton] sink inst_3_8/clk has insDelay 0.9306763392857142 at [(142.867, 421.419)]
+[DEBUG CTS-Triton] sink inst_3_7/clk has insDelay 0.9306763392857142 at [(142.867, 374.276)]
+[DEBUG CTS-Triton] sink inst_3_6/clk has insDelay 0.9306763392857142 at [(142.867, 327.133)]
+[DEBUG CTS-Triton] sink inst_3_5/clk has insDelay 0.9306763392857142 at [(142.867, 279.990)]
+[DEBUG CTS-Triton] sink inst_3_4/clk has insDelay 0.9306763392857142 at [(142.867, 232.847)]
+[DEBUG CTS-Triton] sink inst_3_3/clk has insDelay 0.9306763392857142 at [(142.867, 185.704)]
+[DEBUG CTS-Triton] sink inst_3_2/clk has insDelay 0.9306763392857142 at [(142.867, 138.561)]
+[DEBUG CTS-Triton] sink inst_3_1/clk has insDelay 0.9306763392857142 at [(142.867, 91.419)]
+[DEBUG CTS-Triton] sink inst_3_0/clk has insDelay 0.9306763392857142 at [(142.867, 44.276)]
+[DEBUG CTS-Triton] sink inst_2_14/clk has insDelay 0.9306763392857142 at [(95.724, 704.276)]
+[DEBUG CTS-Triton] sink inst_2_13/clk has insDelay 0.9306763392857142 at [(95.724, 657.133)]
+[DEBUG CTS-Triton] sink inst_2_12/clk has insDelay 0.9306763392857142 at [(95.724, 609.990)]
+[DEBUG CTS-Triton] sink inst_2_11/clk has insDelay 0.9306763392857142 at [(95.724, 562.847)]
+[DEBUG CTS-Triton] sink inst_2_10/clk has insDelay 0.9306763392857142 at [(95.724, 515.704)]
+[DEBUG CTS-Triton] sink inst_2_9/clk has insDelay 0.9306763392857142 at [(95.724, 468.561)]
+[DEBUG CTS-Triton] sink inst_2_8/clk has insDelay 0.9306763392857142 at [(95.724, 421.419)]
+[DEBUG CTS-Triton] sink inst_2_7/clk has insDelay 0.9306763392857142 at [(95.724, 374.276)]
+[DEBUG CTS-Triton] sink inst_2_6/clk has insDelay 0.9306763392857142 at [(95.724, 327.133)]
+[DEBUG CTS-Triton] sink inst_2_5/clk has insDelay 0.9306763392857142 at [(95.724, 279.990)]
+[DEBUG CTS-Triton] sink inst_2_4/clk has insDelay 0.9306763392857142 at [(95.724, 232.847)]
+[DEBUG CTS-Triton] sink inst_2_3/clk has insDelay 0.9306763392857142 at [(95.724, 185.704)]
+[DEBUG CTS-Triton] sink inst_2_2/clk has insDelay 0.9306763392857142 at [(95.724, 138.561)]
+[DEBUG CTS-Triton] sink inst_2_1/clk has insDelay 0.9306763392857142 at [(95.724, 91.419)]
+[DEBUG CTS-Triton] sink inst_2_0/clk has insDelay 0.9306763392857142 at [(95.724, 44.276)]
+[DEBUG CTS-Triton] sink inst_1_14/clk has insDelay 0.9306763392857142 at [(48.581, 704.276)]
+[DEBUG CTS-Triton] sink inst_1_13/clk has insDelay 0.9306763392857142 at [(48.581, 657.133)]
+[DEBUG CTS-Triton] sink inst_1_12/clk has insDelay 0.9306763392857142 at [(48.581, 609.990)]
+[DEBUG CTS-Triton] sink inst_1_11/clk has insDelay 0.9306763392857142 at [(48.581, 562.847)]
+[DEBUG CTS-Triton] sink inst_1_10/clk has insDelay 0.9306763392857142 at [(48.581, 515.704)]
+[DEBUG CTS-Triton] sink inst_1_9/clk has insDelay 0.9306763392857142 at [(48.581, 468.561)]
+[DEBUG CTS-Triton] sink inst_1_8/clk has insDelay 0.9306763392857142 at [(48.581, 421.419)]
+[DEBUG CTS-Triton] sink inst_1_7/clk has insDelay 0.9306763392857142 at [(48.581, 374.276)]
+[DEBUG CTS-Triton] sink inst_1_6/clk has insDelay 0.9306763392857142 at [(48.581, 327.133)]
+[DEBUG CTS-Triton] sink inst_1_5/clk has insDelay 0.9306763392857142 at [(48.581, 279.990)]
+[DEBUG CTS-Triton] sink inst_1_4/clk has insDelay 0.9306763392857142 at [(48.581, 232.847)]
+[DEBUG CTS-Triton] sink inst_1_3/clk has insDelay 0.9306763392857142 at [(48.581, 185.704)]
+[DEBUG CTS-Triton] sink inst_1_2/clk has insDelay 0.9306763392857142 at [(48.581, 138.561)]
+[DEBUG CTS-Triton] sink inst_1_1/clk has insDelay 0.9306763392857142 at [(48.581, 91.419)]
+[DEBUG CTS-Triton] sink inst_1_0/clk has insDelay 0.9306763392857142 at [(48.581, 44.276)]
+[DEBUG CTS-Triton] sink inst_0_14/clk has insDelay 0.9306763392857142 at [(1.439, 704.276)]
+[DEBUG CTS-Triton] sink inst_0_13/clk has insDelay 0.9306763392857142 at [(1.439, 657.133)]
+[DEBUG CTS-Triton] sink inst_0_12/clk has insDelay 0.9306763392857142 at [(1.439, 609.990)]
+[DEBUG CTS-Triton] sink inst_0_11/clk has insDelay 0.9306763392857142 at [(1.439, 562.847)]
+[DEBUG CTS-Triton] sink inst_0_10/clk has insDelay 0.9306763392857142 at [(1.439, 515.704)]
+[DEBUG CTS-Triton] sink inst_0_9/clk has insDelay 0.9306763392857142 at [(1.439, 468.561)]
+[DEBUG CTS-Triton] sink inst_0_8/clk has insDelay 0.9306763392857142 at [(1.439, 421.419)]
+[DEBUG CTS-Triton] sink inst_0_7/clk has insDelay 0.9306763392857142 at [(1.439, 374.276)]
+[DEBUG CTS-Triton] sink inst_0_6/clk has insDelay 0.9306763392857142 at [(1.439, 327.133)]
+[DEBUG CTS-Triton] sink inst_0_5/clk has insDelay 0.9306763392857142 at [(1.439, 279.990)]
+[DEBUG CTS-Triton] sink inst_0_4/clk has insDelay 0.9306763392857142 at [(1.439, 232.847)]
+[DEBUG CTS-Triton] sink inst_0_3/clk has insDelay 0.9306763392857142 at [(1.439, 185.704)]
+[DEBUG CTS-Triton] sink inst_0_2/clk has insDelay 0.9306763392857142 at [(1.439, 138.561)]
+[DEBUG CTS-Triton] sink inst_0_1/clk has insDelay 0.9306763392857142 at [(1.439, 91.419)]
+[DEBUG CTS-Triton] sink inst_0_0/clk has insDelay 0.9306763392857142 at [(1.439, 44.276)]
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(190.010, 232.847)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(190.010, 279.990)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(190.010, 327.133)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(190.010, 374.276)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(190.010, 421.419)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(190.010, 468.561)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(190.010, 562.847)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(190.010, 609.990)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(190.010, 657.133)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(190.010, 515.704)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(425.724, 468.561)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(425.724, 515.704)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(425.724, 562.847)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(425.724, 657.133)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(425.724, 609.990)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(661.439, 657.133)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(661.439, 609.990)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(661.439, 562.847)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(661.439, 515.704)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(661.439, 468.561)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(661.439, 421.419)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(661.439, 374.276)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(425.724, 374.276)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(425.724, 421.419)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(425.724, 279.990)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(425.724, 327.133)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(661.439, 327.133)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(661.439, 279.990)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(661.439, 232.847)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(661.439, 185.704)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(661.439, 138.561)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(661.439, 91.419)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(661.439, 44.276)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(425.724, 91.419)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(425.724, 44.276)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(425.724, 138.561)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(425.724, 185.704)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(425.724, 232.847)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(190.010, 185.704)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(190.010, 44.276)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(190.010, 91.419)]: 0.931
+[DEBUG CTS-Triton] added extra ins delay weights at sink [(190.010, 138.561)]: 0.931
+[INFO CTS-0019]  Total number of sinks after clustering: 322.
+[INFO CTS-0024]  Normalized sink region: [(1.43857, 2.41643), (826.511, 721.675)].
+[INFO CTS-0025]     Width:  825.0720.
+[INFO CTS-0026]     Height: 719.2590.
+ Level 1
+    Direction: Horizontal
+    Sinks per sub-region: 161
+    Sub-region size: 412.5360 X 719.2590
+[INFO CTS-0034]     Segment length (rounded): 206.
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
+    Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
+      location: 0.75 buffer: BUF_X4
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
+    Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
+      location: 0.75 buffer: BUF_X4
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
+    Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
+      location: 0.75 buffer: BUF_X4
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
+    Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
+      location: 0.75 buffer: BUF_X4
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
+    Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
+      location: 0.75 buffer: BUF_X4
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
+    Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
+      location: 0.75 buffer: BUF_X4
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 128 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 6 delay: 1
+ Level 2
+    Direction: Vertical
+    Sinks per sub-region: 81
+    Sub-region size: 412.5360 X 359.6295
+[INFO CTS-0034]     Segment length (rounded): 180.
+    Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
+    Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
+      location: 0.75 buffer: BUF_X4
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
+    Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
+      location: 0.75 buffer: BUF_X4
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
+    Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
+      location: 0.75 buffer: BUF_X4
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
+    Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
+      location: 0.75 buffer: BUF_X4
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
+    Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
+      location: 0.75 buffer: BUF_X4
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
+    Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
+      location: 0.75 buffer: BUF_X4
+    Key: 42 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 4 delay: 1
+ Level 3
+    Direction: Horizontal
+    Sinks per sub-region: 41
+    Sub-region size: 206.2680 X 359.6295
+[INFO CTS-0034]     Segment length (rounded): 104.
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
+    Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
+      location: 0.75 buffer: BUF_X4
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
+    Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
+      location: 0.75 buffer: BUF_X4
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
+    Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
+      location: 0.75 buffer: BUF_X4
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+ Level 4
+    Direction: Vertical
+    Sinks per sub-region: 21
+    Sub-region size: 206.2680 X 179.8148
+[INFO CTS-0034]     Segment length (rounded): 90.
+    Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
+    Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
+      location: 0.75 buffer: BUF_X4
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
+    Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
+      location: 0.75 buffer: BUF_X4
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
+    Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
+      location: 0.75 buffer: BUF_X4
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 3 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 2 delay: 1
+ Level 5
+    Direction: Horizontal
+    Sinks per sub-region: 11
+    Sub-region size: 103.1340 X 179.8148
+[INFO CTS-0034]     Segment length (rounded): 52.
+    Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
+    Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
+      location: 0.75 buffer: BUF_X4
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
+    Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
+    Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
+      location: 0.75 buffer: BUF_X4
+    Key: 42 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 4 delay: 1
+ Out of 25 sinks, 1 sinks closer to other cluster.
+ Out of 24 sinks, 2 sinks closer to other cluster.
+ Out of 18 sinks, 1 sinks closer to other cluster.
+ Out of 18 sinks, 2 sinks closer to other cluster.
+ Out of 23 sinks, 1 sinks closer to other cluster.
+[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0035]  Number of sinks covered: 322.
+[INFO CTS-0018]     Created 311 clock buffers.
+[INFO CTS-0012]     Minimum number of buffers in the clock path: 21.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 22.
+[INFO CTS-0015]     Created 311 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 2:1, 4:2, 7:5, 8:8, 9:5, 10:9, 11:37, 12:8, 14:3, 15:2, 16:1, 19:2, 20:87..
+[INFO CTS-0017]     Max level of the clock tree: 5.
+[INFO CTS-0098] Clock net "clk"
+[INFO CTS-0099]  Sinks 2475
+[INFO CTS-0100]  Leaf buffers 138
+[INFO CTS-0101]  Average sink wire length 11088.51 um
+[INFO CTS-0102]  Path depth 21 - 22
+[INFO RSZ-0058] Using max wire length 707um.
+[INFO RSZ-0047] Found 35 long wires.
+[INFO RSZ-0048] Inserted 102 buffers in 35 nets.
+Placement Analysis
+---------------------------------
+total displacement       4750.5 u
+average displacement        1.6 u
+max displacement          847.9 u
+original HPWL          169665.6 u
+legalized HPWL         165792.6 u
+delta HPWL                   -2 %
+
+Clock clk
+Latency      CRPR       Skew
+inst_8_1/clk ^
+   1.46
+inst_10_1/clk ^
+   1.30      0.00       0.16
+
+Startpoint: inst_1_1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: inst_2_1 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock source latency
+   0.00    0.00 ^ clk (in)
+   0.03    0.03 ^ wire8/Z (BUF_X8)
+   0.06    0.09 ^ wire7/Z (BUF_X16)
+   0.07    0.16 ^ wire6/Z (BUF_X32)
+   0.07    0.22 ^ wire5/Z (BUF_X32)
+   0.07    0.29 ^ wire4/Z (BUF_X32)
+   0.07    0.35 ^ wire3/Z (BUF_X32)
+   0.07    0.42 ^ wire2/Z (BUF_X32)
+   0.06    0.48 ^ wire1/Z (BUF_X32)
+   0.06    0.54 ^ clkbuf_0_clk/Z (BUF_X4)
+   0.04    0.58 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
+   0.04    0.62 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
+   0.04    0.66 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
+   0.04    0.69 ^ clkbuf_1_0_3_clk/Z (BUF_X4)
+   0.04    0.73 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
+   0.04    0.77 ^ clkbuf_1_0_5_clk/Z (BUF_X4)
+   0.04    0.81 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
+   0.04    0.84 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
+   0.04    0.88 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.04    0.92 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
+   0.04    0.95 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
+   0.04    1.00 ^ clkbuf_2_0_5_clk/Z (BUF_X4)
+   0.04    1.04 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
+   0.04    1.08 ^ clkbuf_3_0_1_clk/Z (BUF_X4)
+   0.04    1.12 ^ clkbuf_3_0_2_clk/Z (BUF_X4)
+   0.03    1.15 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
+   0.03    1.18 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
+   0.04    1.22 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
+   0.03    1.26 ^ clkbuf_5_0_0_clk/Z (BUF_X4)
+   0.04    1.30 ^ clkbuf_5_0_1_clk/Z (BUF_X4)
+   0.03    1.33 ^ wire19/Z (BUF_X8)
+   0.07    1.40 ^ wire18/Z (BUF_X8)
+   0.10    1.49 ^ inst_1_1/clk (array_tile)
+   0.21    1.70 ^ inst_1_1/e_out (array_tile)
+   0.00    1.70 ^ inst_2_1/w_in (array_tile)
+           1.70   data arrival time
+
+   5.00    5.00   clock clk (rise edge)
+   0.00    5.00   clock source latency
+   0.00    5.00 ^ clk (in)
+   0.03    5.03 ^ wire8/Z (BUF_X8)
+   0.06    5.09 ^ wire7/Z (BUF_X16)
+   0.07    5.16 ^ wire6/Z (BUF_X32)
+   0.07    5.22 ^ wire5/Z (BUF_X32)
+   0.07    5.29 ^ wire4/Z (BUF_X32)
+   0.07    5.35 ^ wire3/Z (BUF_X32)
+   0.07    5.42 ^ wire2/Z (BUF_X32)
+   0.06    5.48 ^ wire1/Z (BUF_X32)
+   0.06    5.54 ^ clkbuf_0_clk/Z (BUF_X4)
+   0.04    5.58 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
+   0.04    5.62 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
+   0.04    5.66 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
+   0.04    5.69 ^ clkbuf_1_0_3_clk/Z (BUF_X4)
+   0.04    5.73 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
+   0.04    5.77 ^ clkbuf_1_0_5_clk/Z (BUF_X4)
+   0.04    5.81 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
+   0.04    5.84 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
+   0.04    5.88 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.04    5.92 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
+   0.04    5.95 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
+   0.04    6.00 ^ clkbuf_2_0_5_clk/Z (BUF_X4)
+   0.04    6.04 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
+   0.04    6.08 ^ clkbuf_3_0_1_clk/Z (BUF_X4)
+   0.04    6.12 ^ clkbuf_3_0_2_clk/Z (BUF_X4)
+   0.03    6.15 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
+   0.03    6.18 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
+   0.04    6.22 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
+   0.03    6.26 ^ clkbuf_5_0_0_clk/Z (BUF_X4)
+   0.04    6.30 ^ clkbuf_5_0_1_clk/Z (BUF_X4)
+   0.03    6.33 ^ wire19/Z (BUF_X8)
+   0.07    6.40 ^ wire18/Z (BUF_X8)
+   0.06    6.46 ^ inst_2_1/clk (array_tile)
+   0.00    6.46   clock reconvergence pessimism
+  -0.05    6.41   library setup time
+           6.41   data required time
+---------------------------------------------------------
+           6.41   data required time
+          -1.70   data arrival time
+---------------------------------------------------------
+           4.70   slack (MET)
+
+
+Startpoint: inst_2_1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: inst_3_1 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock source latency
+   0.00    0.00 ^ clk (in)
+   0.03    0.03 ^ wire8/Z (BUF_X8)
+   0.06    0.09 ^ wire7/Z (BUF_X16)
+   0.07    0.16 ^ wire6/Z (BUF_X32)
+   0.07    0.22 ^ wire5/Z (BUF_X32)
+   0.07    0.29 ^ wire4/Z (BUF_X32)
+   0.07    0.35 ^ wire3/Z (BUF_X32)
+   0.07    0.42 ^ wire2/Z (BUF_X32)
+   0.06    0.48 ^ wire1/Z (BUF_X32)
+   0.06    0.54 ^ clkbuf_0_clk/Z (BUF_X4)
+   0.04    0.58 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
+   0.04    0.62 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
+   0.04    0.66 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
+   0.04    0.69 ^ clkbuf_1_0_3_clk/Z (BUF_X4)
+   0.04    0.73 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
+   0.04    0.77 ^ clkbuf_1_0_5_clk/Z (BUF_X4)
+   0.04    0.81 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
+   0.04    0.84 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
+   0.04    0.88 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.04    0.92 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
+   0.04    0.95 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
+   0.04    1.00 ^ clkbuf_2_0_5_clk/Z (BUF_X4)
+   0.04    1.04 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
+   0.04    1.08 ^ clkbuf_3_0_1_clk/Z (BUF_X4)
+   0.04    1.12 ^ clkbuf_3_0_2_clk/Z (BUF_X4)
+   0.03    1.15 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
+   0.03    1.18 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
+   0.04    1.22 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
+   0.03    1.26 ^ clkbuf_5_0_0_clk/Z (BUF_X4)
+   0.04    1.30 ^ clkbuf_5_0_1_clk/Z (BUF_X4)
+   0.03    1.33 ^ wire19/Z (BUF_X8)
+   0.07    1.40 ^ wire18/Z (BUF_X8)
+   0.06    1.46 ^ inst_2_1/clk (array_tile)
+   0.21    1.67 ^ inst_2_1/e_out (array_tile)
+   0.00    1.67 ^ inst_3_1/w_in (array_tile)
+           1.67   data arrival time
+
+   5.00    5.00   clock clk (rise edge)
+   0.00    5.00   clock source latency
+   0.00    5.00 ^ clk (in)
+   0.03    5.03 ^ wire8/Z (BUF_X8)
+   0.06    5.09 ^ wire7/Z (BUF_X16)
+   0.07    5.16 ^ wire6/Z (BUF_X32)
+   0.07    5.22 ^ wire5/Z (BUF_X32)
+   0.07    5.29 ^ wire4/Z (BUF_X32)
+   0.07    5.35 ^ wire3/Z (BUF_X32)
+   0.07    5.42 ^ wire2/Z (BUF_X32)
+   0.06    5.48 ^ wire1/Z (BUF_X32)
+   0.06    5.54 ^ clkbuf_0_clk/Z (BUF_X4)
+   0.04    5.58 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
+   0.04    5.62 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
+   0.04    5.66 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
+   0.04    5.69 ^ clkbuf_1_0_3_clk/Z (BUF_X4)
+   0.04    5.73 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
+   0.04    5.77 ^ clkbuf_1_0_5_clk/Z (BUF_X4)
+   0.04    5.81 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
+   0.04    5.84 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
+   0.04    5.88 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.04    5.92 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
+   0.04    5.95 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
+   0.04    6.00 ^ clkbuf_2_0_5_clk/Z (BUF_X4)
+   0.04    6.04 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
+   0.04    6.08 ^ clkbuf_3_0_1_clk/Z (BUF_X4)
+   0.04    6.12 ^ clkbuf_3_0_2_clk/Z (BUF_X4)
+   0.03    6.15 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
+   0.03    6.18 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
+   0.04    6.22 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
+   0.03    6.26 ^ clkbuf_5_0_0_clk/Z (BUF_X4)
+   0.04    6.30 ^ clkbuf_5_0_1_clk/Z (BUF_X4)
+   0.03    6.33 ^ inst_3_1/clk (array_tile)
+   0.00    6.33   clock reconvergence pessimism
+  -0.05    6.28   library setup time
+           6.28   data required time
+---------------------------------------------------------
+           6.28   data required time
+          -1.67   data arrival time
+---------------------------------------------------------
+           4.60   slack (MET)
+
+
