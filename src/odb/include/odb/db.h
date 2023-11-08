@@ -5251,7 +5251,7 @@ class dbSite : public dbObject
   /// set the row pattern of this site
   ///
   void setRowPattern(
-      const std::vector<std::pair<dbSite*, dbOrientType>> row_pattern);
+      const std::vector<std::pair<dbSite*, dbOrientType>>& row_pattern);
 
   ///
   /// sets the parent of the site

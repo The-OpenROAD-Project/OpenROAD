@@ -247,7 +247,7 @@ void dbSite::setClass(dbSiteClass type)
 }
 
 void dbSite::setRowPattern(
-    const std::vector<std::pair<dbSite*, dbOrientType>> row_pattern)
+    const std::vector<std::pair<dbSite*, dbOrientType>>& row_pattern)
 {
   _dbSite* site = (_dbSite*) this;
   site->_flags._is_hybrid = true;
