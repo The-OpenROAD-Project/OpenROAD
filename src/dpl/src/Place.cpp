@@ -699,7 +699,7 @@ bool Opendp::refineMove(Cell* cell)
 
   if (pixel_pt.pixel) {
     int scaled_max_displacement_y_ = map_ycoordinates(
-        max_displacement_y_, smallest_non_hybrid_grid_key, getGridMapKey(cell));
+        max_displacement_y_, smallest_non_hybrid_grid_key_, getGridMapKey(cell));
     if (abs(grid_x - pixel_pt.pt.getX()) > max_displacement_x_
         || abs(grid_y - pixel_pt.pt.getY()) > scaled_max_displacement_y_) {
       return false;
@@ -743,7 +743,7 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
   //  max_displacement_y_ is in microns, and this doesn't translate directly to
   //  x and y on the grid.
   int scaled_max_displacement_y_ = map_ycoordinates(
-      max_displacement_y_, smallest_non_hybrid_grid_key, getGridMapKey(cell));
+      max_displacement_y_, smallest_non_hybrid_grid_key_, getGridMapKey(cell));
   int y_min = y - scaled_max_displacement_y_;
   int y_max = y + scaled_max_displacement_y_;
 
@@ -1013,10 +1013,10 @@ bool Opendp::checkRegionOverlap(const Cell* cell,
   int min_row_height = row_height_;
   bgBox queryBox(
       bgPoint(x * site_width_,
-              map_ycoordinates(y, gmk, smallest_non_hybrid_grid_key)
+              map_ycoordinates(y, gmk, smallest_non_hybrid_grid_key_)
                   * min_row_height),
       bgPoint(x_end * site_width_ - 1,
-              map_ycoordinates(y_end, gmk, smallest_non_hybrid_grid_key)
+              map_ycoordinates(y_end, gmk, smallest_non_hybrid_grid_key_)
                       * min_row_height
                   - 1));
 
@@ -1117,7 +1117,7 @@ bool Opendp::checkPixels(const Cell* cell,
       // the middle that would be missed by the 4 corners check above.
       // So, we loop with steps of min_row_height and check the left and right
       int y_begin_mapped
-          = map_ycoordinates(y_begin, gmk, smallest_non_hybrid_grid_key);
+          = map_ycoordinates(y_begin, gmk, smallest_non_hybrid_grid_key_);
 
       int offset = 0;
       for (int step = 0; step < steps; step++) {

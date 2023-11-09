@@ -599,8 +599,8 @@ pair<int, GridInfo> Opendp::getRowInfo(const Cell* cell) const
 Grid_map_key Opendp::getGridMapKey(const dbSite* site) const
 {
   Grid_map_key gmk;
-  auto grid_idx = site_idx_to_grid_idx.find(site->getId());
-  if (grid_idx == site_idx_to_grid_idx.end()) {
+  auto grid_idx = site_idx_to_grid_idx_.find(site->getId());
+  if (grid_idx == site_idx_to_grid_idx_.end()) {
     logger_->error(
         DPL, 46, "Site {} is not mapped to a grid.", site->getName());
   }
@@ -616,7 +616,7 @@ Grid_map_key Opendp::getGridMapKey(const Cell* cell) const
   auto site = cell->getSite();
   if (!isStdCell(cell)) {
     // non std cells can go to the first grid.
-    return smallest_non_hybrid_grid_key;
+    return smallest_non_hybrid_grid_key_;
   }
   if (site == nullptr) {
     logger_->error(DPL, 4219, "Cell {} has no site.", cell->name());
