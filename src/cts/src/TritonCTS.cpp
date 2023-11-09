@@ -453,8 +453,7 @@ void TritonCTS::inferBufferList(std::vector<std::string>& bufferVector)
     sta::LibertyLibrary* lib = lib_iter->next();
     for (sta::LibertyCell* buffer :
          lib->findLibertyCellsMatching(&patternClkBuf)) {
-      if (buffer->isBuffer() && !buffer->dontUse() && !buffer->alwaysOn()
-          && !buffer->isIsolationCell() && !buffer->isLevelShifter()) {
+      if (isClockBufferCandidate(buffer)) {
         bufferVector.emplace_back(buffer->name());
       }
     }
@@ -471,8 +470,7 @@ void TritonCTS::inferBufferList(std::vector<std::string>& bufferVector)
       sta::LibertyLibrary* lib = lib_iter->next();
       for (sta::LibertyCell* buffer :
            lib->findLibertyCellsMatching(&patternBuf)) {
-        if (buffer->isBuffer() && !buffer->dontUse() && !buffer->alwaysOn()
-            && !buffer->isIsolationCell() && !buffer->isLevelShifter()) {
+        if (isClockBufferCandidate(buffer)) {
           bufferVector.emplace_back(buffer->name());
         }
       }
@@ -485,19 +483,27 @@ void TritonCTS::inferBufferList(std::vector<std::string>& bufferVector)
     while (lib_iter->hasNext()) {
       sta::LibertyLibrary* lib = lib_iter->next();
       for (sta::LibertyCell* buffer : *lib->buffers()) {
-        if (!buffer->dontUse() && !buffer->alwaysOn()
-            && !buffer->isIsolationCell() && !buffer->isLevelShifter()) {
+        if (isClockBufferCandidate(buffer)) {
           bufferVector.emplace_back(buffer->name());
         }
       }
     }
   }
 
-  if (logger_->debugCheck(utl::CTS, "Triton", 1)) {
+  options_->setBufferListInferred(true);
+
+  if (logger_->debugCheck(utl::CTS, "buffering", 1)) {
     for (const std::string& bufName : bufferVector) {
       logger_->report("{} has been inferred as clock buffer", bufName);
     }
   }
+}
+
+bool TritonCTS::isClockBufferCandidate(sta::LibertyCell* buffer)
+{
+  return (buffer->isBuffer() && !buffer->dontUse() && !resizer_->dontUse(buffer)
+          && !buffer->alwaysOn() && !buffer->isIsolationCell()
+          && !buffer->isLevelShifter());
 }
 
 void TritonCTS::setRootBuffer(const char* buffers)
@@ -517,26 +523,148 @@ std::string TritonCTS::selectRootBuffer(std::vector<std::string>& bufferVector)
     bufferVector = options_->getBufferList();
   }
 
-  // pick the lowest driver resistance as root
-  float bestRes = std::numeric_limits<float>::max();
-  std::string rootBuf;
+  if (bufferVector.size() == 1) {
+    return bufferVector.front();
+  }
+
+  // estimate wire cap for root buffer
+  // assume root buffer needs to drive clk buffers at two far ends of chip
+  //
+  //  --------------
+  //  |      .     |
+  //  |      .     |
+  //  |===== x ====|
+  //  |      .     |
+  //  |      .     |
+  //  --------------
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  odb::Rect coreArea = block->getCoreArea();
+  int width = coreArea.xMax() - coreArea.xMin();
+  int height = coreArea.yMax() - coreArea.yMin();
+  float rootWireLength = std::max(width, height) / block->getDbUnitsPerMicron();
+  sta::Corner* corner = openSta_->cmdCorner();
+  float rootWireCap
+      = resizer_->wireClkCapacitance(corner) * 1e-6 * rootWireLength;
+  // clang-format off
+  debugPrint(logger_, CTS, "buffering", 2, "core width:{}, core height:{}, "
+             "rootWL:{:0.2e}, rootWireCap:{:0.2e}, clock cap/micron:{:0.2e}", width, height,
+             rootWireLength, rootWireCap,
+             resizer_->wireClkCapacitance(corner) * 1e-6);
+  // clang-format on
+
+  // pick the smallest buffer that can drive root wire cap
+  // if no such buffer exists, pick one that has the largest max cap
+  float bestArea = std::numeric_limits<float>::max();
+  float bestCap = 0.0;
+  std::string rootBuf, nextBestBuf;
   for (const std::string& name : bufferVector) {
     odb::dbMaster* master = db_->findMaster(name.c_str());
     sta::Cell* masterCell = network_->dbToSta(master);
     sta::LibertyCell* libCell = network_->libertyCell(masterCell);
     sta::LibertyPort *in, *out;
     libCell->bufferPorts(in, out);
-    if (out->driveResistance() < bestRes) {
-      bestRes = out->driveResistance();
+    float area = libCell->area();
+    float maxCap = 0.0;
+    bool maxCapExists = false;
+    out->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExists);
+    if (maxCapExists && maxCap > rootWireCap && area < bestArea) {
       rootBuf = name;
+      bestArea = area;
+    }
+    if (maxCap > bestCap) {
+      nextBestBuf = name;
+      bestCap = maxCap;
+    }
+    // clang-format off
+    if (maxCapExists) {
+      debugPrint(logger_, CTS, "buffering", 2, "{} has max cap:{:0.2e}", name, maxCap);
     }
   }
 
+  if (rootBuf.empty()) {
+    rootBuf = nextBestBuf;
+  }
   // clang-format off
-  debugPrint(logger_, CTS, "buffering", 4, "{} has been selected as root buffer",
-             rootBuf);
+  debugPrint(logger_, CTS, "buffering", 1, "{} has been selected as root "
+             "buffer to drive root wire cap of {:0.2e}", rootBuf, rootWireCap);
   // clang-format on
   return rootBuf;
+}
+
+void TritonCTS::setSinkBuffer(const char* buffers)
+{
+  std::stringstream ss(buffers);
+  std::istream_iterator<std::string> begin(ss);
+  std::istream_iterator<std::string> end;
+  std::vector<std::string> bufferVector(begin, end);
+  std::string sinkBuffer = selectSinkBuffer(bufferVector);
+  options_->setSinkBuffer(sinkBuffer);
+}
+
+std::string TritonCTS::selectSinkBuffer(std::vector<std::string>& bufferVector)
+{
+  // if -sink_clustering_buf is not specified, choose from the buffer list
+  if (bufferVector.empty()) {
+    bufferVector = options_->getBufferList();
+  }
+
+  if (bufferVector.size() == 1) {
+    return bufferVector.front();
+  }
+
+  // estimate wire cap for sink buffer
+  // assume sink buffer needs to drive clk buffers at two far ends of chip
+  // at midpoint (pin caps can't be estimated because sinks have not been
+  // collected yet)
+
+  //  --------------
+  //  |   ===x===  |
+  //  |      .     |
+  //  |----- .-----|
+  //  |      .     |
+  //  --------------
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  odb::Rect coreArea = block->getCoreArea();
+  int width = coreArea.xMax() - coreArea.xMin();
+  int height = coreArea.yMax() - coreArea.yMin();
+  float sinkWireLength = std::max(width, height) / block->getDbUnitsPerMicron();
+  sta::Corner* corner = openSta_->cmdCorner();
+  float sinkWireCap
+      = resizer_->wireClkCapacitance(corner) * 1e-6 * sinkWireLength / 2.0;
+
+  // pick the smallest buffer that can drive sink wire cap
+  // if no such buffer exists, pick one that has the largest max cap
+  float bestArea = std::numeric_limits<float>::max();
+  float bestCap = 0.0;
+  std::string sinkBuf, nextBestBuf;
+  for (const std::string& name : bufferVector) {
+    odb::dbMaster* master = db_->findMaster(name.c_str());
+    sta::Cell* masterCell = network_->dbToSta(master);
+    sta::LibertyCell* libCell = network_->libertyCell(masterCell);
+    sta::LibertyPort *in, *out;
+    libCell->bufferPorts(in, out);
+    float area = libCell->area();
+    float maxCap = 0.0;
+    bool maxCapExists = false;
+    out->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExists);
+    if (maxCapExists && maxCap > sinkWireCap && area < bestArea) {
+      sinkBuf = name;
+      bestArea = area;
+    }
+    if (maxCap > bestCap) {
+      nextBestBuf = name;
+      bestCap = maxCap;
+    }
+  }
+
+  if (sinkBuf.empty()) {
+    sinkBuf = nextBestBuf;
+  }
+  // clang-format off
+  debugPrint(logger_, CTS, "buffering", 1, "{} has been selected as sink "
+             "buffer to drive sink wire cap of {:0.2e}", sinkBuf, sinkWireCap);
+  // clang-format on
+  return sinkBuf;
 }
 
 // db functions

@@ -251,6 +251,8 @@ class TechChar
   // Characterization attributes
 
   void initCharacterization();
+  void trimBufferList(std::vector<std::string>& bufferVector);
+  float getMaxCapLimit(const std::string& buf);
   std::vector<SolutionData> createPatterns(unsigned setupWirelength);
   void createStaInstance();
   void setParasitics(const std::vector<SolutionData>& topologiesVector,

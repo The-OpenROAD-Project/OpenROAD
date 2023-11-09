@@ -52,6 +52,7 @@ class dbInst;
 class dbNet;
 class dbITerm;
 class dbMTerm;
+class Rect;
 }  // namespace odb
 
 namespace rsz {
@@ -62,7 +63,7 @@ namespace sta {
 class dbSta;
 class Clock;
 class dbNetwork;
-class Unit;
+class LibertyCell;
 }  // namespace sta
 
 namespace stt {
@@ -99,8 +100,11 @@ class TritonCTS
   int setClockNets(const char* names);
   void setBufferList(const char* buffers);
   void inferBufferList(std::vector<std::string>& bufferVector);
+  bool isClockBufferCandidate(sta::LibertyCell* buffer);
   void setRootBuffer(const char* buffers);
   std::string selectRootBuffer(std::vector<std::string>& bufferVector);
+  void setSinkBuffer(const char* buffers);
+  std::string selectSinkBuffer(std::vector<std::string>& bufferVector);
 
  private:
   void addBuilder(TreeBuilder* builder);
