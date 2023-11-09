@@ -698,8 +698,10 @@ bool Opendp::refineMove(Cell* cell)
   PixelPt pixel_pt = diamondSearch(cell, grid_x, grid_y);
 
   if (pixel_pt.pixel) {
-    int scaled_max_displacement_y_ = map_ycoordinates(
-        max_displacement_y_, smallest_non_hybrid_grid_key_, getGridMapKey(cell));
+    int scaled_max_displacement_y_
+        = map_ycoordinates(max_displacement_y_,
+                           smallest_non_hybrid_grid_key_,
+                           getGridMapKey(cell));
     if (abs(grid_x - pixel_pt.pt.getX()) > max_displacement_x_
         || abs(grid_y - pixel_pt.pt.getY()) > scaled_max_displacement_y_) {
       return false;

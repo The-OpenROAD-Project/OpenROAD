@@ -88,49 +88,50 @@ void Opendp::initGridLayersMap()
     if (site_idx_to_grid_idx_.find(site->getId())
         != site_idx_to_grid_idx_.end()) {
       continue;
-    } else {
-      if (site->isHybrid() && site->hasRowPattern()) {
-        debugPrint(logger_,
-                   DPL,
-                   "hybrid",
-                   1,
-                   "Mapping {} to grid_index: {}",
-                   site->getName(),
-                   grid_index);
-        site_idx_to_grid_idx_[site->getId()] = grid_index++;
-        auto rp = site->getRowPattern();
-        bool updated = false;
-        for (auto& [child_site, child_site_orientation] : rp) {
-          if (site_idx_to_grid_idx_.find(child_site->getId())
-              == site_idx_to_grid_idx_.end()) {
-            // FIXME(mina1460): this might need more work in the future if we
-            // want to allow the same hybrid cell to be part of multiple grids
-            // (For example, A in AB and AC). This is good enough for now.
-            debugPrint(logger_,
-                       DPL,
-                       "hybrid",
-                       1,
-                       "Mapping child site {} to grid_index: {}",
-                       child_site->getName(),
-                       grid_index);
-            site_idx_to_grid_idx_[child_site->getId()] = grid_index;
-            updated = true;
-          }
-        }
-        if (updated) {
-          ++grid_index;
-        }
-      } else if (!site->isHybrid()) {
-        debugPrint(logger_,
-                   DPL,
-                   "hybrid",
-                   1,
-                   "Mapping non-hybrid {} to grid_index: {}",
-                   site->getName(),
-                   grid_index);
-        site_idx_to_grid_idx_[site->getId()] = grid_index++;
-      }
     }
+
+    if (site->isHybrid() && site->hasRowPattern()) {
+      debugPrint(logger_,
+                 DPL,
+                 "hybrid",
+                 1,
+                 "Mapping {} to grid_index: {}",
+                 site->getName(),
+                 grid_index);
+      site_idx_to_grid_idx_[site->getId()] = grid_index++;
+      auto rp = site->getRowPattern();
+      bool updated = false;
+      for (auto& [child_site, child_site_orientation] : rp) {
+        if (site_idx_to_grid_idx_.find(child_site->getId())
+            == site_idx_to_grid_idx_.end()) {
+          // FIXME(mina1460): this might need more work in the future if we
+          // want to allow the same hybrid cell to be part of multiple grids
+          // (For example, A in AB and AC). This is good enough for now.
+          debugPrint(logger_,
+                     DPL,
+                     "hybrid",
+                     1,
+                     "Mapping child site {} to grid_index: {}",
+                     child_site->getName(),
+                     grid_index);
+          site_idx_to_grid_idx_[child_site->getId()] = grid_index;
+          updated = true;
+        }
+      }
+      if (updated) {
+        ++grid_index;
+      }
+    } else if (!site->isHybrid()) {
+      debugPrint(logger_,
+                 DPL,
+                 "hybrid",
+                 1,
+                 "Mapping non-hybrid {} to grid_index: {}",
+                 site->getName(),
+                 grid_index);
+      site_idx_to_grid_idx_[site->getId()] = grid_index++;
+    }
+
     if (!site->isHybrid()) {
       if (site->getHeight() < min_site_height) {
         min_site_height = site->getHeight();
