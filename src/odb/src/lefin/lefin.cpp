@@ -43,7 +43,6 @@
 
 #include "db.h"
 #include "dbTransform.h"
-#include "dbTypes.h"
 #include "geom.h"
 #include "lefLayerPropParser.h"
 #include "lefMacroPropParser.h"
@@ -1696,11 +1695,7 @@ void lefin::site(lefiSite* lefsite)
     std::vector<dbSite::OrientedSite> converted_row_pattern;
     converted_row_pattern.reserve(row_pattern.size());
     for (auto& row : row_pattern) {
-      dbOrientType orient = dbOrientType::R0;
-      auto it = orientationMap.find(row.second);
-      if (it != orientationMap.end()) {
-        orient = it->second;
-      }
+      dbOrientType orient(row.second.c_str());
       auto child_site = _lib->findSite(row.first.c_str());
       if (_mapped_hybrid_sites.count(child_site->getId()) == 0) {
         child_site->setParent(site);
