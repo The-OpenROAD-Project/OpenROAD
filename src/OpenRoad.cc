@@ -471,7 +471,11 @@ void OpenRoad::readDb(const char* filename)
                     | std::ios::eofbit);
   stream.open(filename, std::ios::binary);
 
-  db_->read(stream);
+  try {
+    db_->read(stream);
+  } catch (const std::ios_base::failure& f) {
+    logger_->error(ORD, 54, "odb file {} is invalid: {}", filename, f.what());
+  }
 
   for (OpenRoadObserver* observer : observers_) {
     observer->postReadDb(db_);

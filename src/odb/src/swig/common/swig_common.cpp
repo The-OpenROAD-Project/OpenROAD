@@ -170,7 +170,12 @@ odb::dbDatabase* read_db(odb::dbDatabase* db, const char* db_path)
                   | std::ios::eofbit);
   file.open(db_path, std::ios::binary);
 
-  db->read(file);
+  try {
+    db->read(file);
+  } catch (const std::ios_base::failure& f) {
+    auto msg = fmt::format("odb file {} is invalid: {}", db_path, f.what());
+    throw std::ios_base::failure(msg);
+  }
 
   return db;
 }
