@@ -290,8 +290,8 @@ void dbSite::setParent(dbSite* parent)
 {
   _dbSite* site = (_dbSite*) this;
   if (!this->isHybrid() || this->isHybridParent()) {
-    site->_parent_lib = dbId<_dbLib>();
-    site->_parent_site = dbId<_dbSite>();
+    site->_parent_lib.clear();
+    site->_parent_site.clear();
     return;
   }
   site->_parent_lib = parent->getLib()->getId();
