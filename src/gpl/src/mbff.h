@@ -95,11 +95,9 @@ class MBFF
 
   bool IsValidTray(odb::dbInst* tray);
 
-  std::array<int, 6> GetMask(odb::dbInst* inst);
+  int GetBitMask(odb::dbInst* inst);
   bool HasSet(odb::dbInst* inst);
   bool HasReset(odb::dbInst* inst);
-  bool ClockOn(odb::dbInst* inst);
-  int GetNext(odb::dbInst* inst);
 
   Flop GetNewFlop(const std::vector<Flop>& prob_dist, double tot_dist);
   void GetStartTrays(std::vector<Flop> flops,
@@ -207,18 +205,13 @@ class MBFF
   The 2nd bit of B is on if the SET pin exists
   The 3rd bit of B is on if the RESET pin exists
   The 4th bit of B is on if the instance is inverting
-  The 5th bit represents clock on
-  The 6th bit represents next_state
-  max(B) = 2^5 + 2^4 + 2^3 + 2^2 + 2^1 + 2^0 = 63
+  max(B) = 2^3 + 2^2 + 2^1 + 2^0 = 15
   */
-
-  static constexpr int max_num_bits_ = 6;
-  std::map<std::array<int, max_num_bits_>, int> mask_to_idx_;
-  std::set<std::array<int, max_num_bits_>> encountered_masks_;
-  int num_masks_ = 0;
+  static constexpr int num_bits_in_bitmask = 4;
+  static constexpr int max_bitmask = 1 << num_bits_in_bitmask;
 
   template <typename T>
-  using BitMaskVector = std::vector<std::vector<T>>;
+  using BitMaskVector = std::array<std::vector<T>, max_bitmask>;
 
   BitMaskVector<odb::dbMaster*> best_master_;
   BitMaskVector<DataToOutputsMap> pin_mappings_;
@@ -226,7 +219,6 @@ class MBFF
   BitMaskVector<double> tray_width_;
   BitMaskVector<std::vector<double>> slot_to_tray_x_;
   BitMaskVector<std::vector<double>> slot_to_tray_y_;
-  std::vector<sta::FuncExpr*> next_states_;
 
   std::vector<double> ratios_;
   std::vector<int> unused_;

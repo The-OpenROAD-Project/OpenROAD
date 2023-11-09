@@ -155,53 +155,28 @@ bool MBFF::HasReset(odb::dbInst* inst)
   return false;
 }
 
-bool MBFF::ClockOn(odb::dbInst* inst)
-{
-  sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
-  for (auto seq : lib_cell->sequentials()) {
-    sta::FuncExpr* left = seq->clock()->left();
-    sta::FuncExpr* right = seq->clock()->right();
-    // !CLK
-    if (left && !right) {
-      return 0;
-    }
-    return 1;
-  }
-}
-
-int MBFF::GetNext(odb::dbInst* inst)
-{
-  return 0;
-}
-
-std::array<int, 6> MBFF::GetMask(odb::dbInst* inst)
+int MBFF::GetBitMask(odb::dbInst* inst)
 {
   const int cnt_d = GetNumD(inst);
   const int cnt_q = GetNumQ(inst);
-  std::array<int, 6> mask;
+  int ret = 0;
   // turn 1st bit on
   if (cnt_q - cnt_d > 0) {
-    mask[0] = 1;
+    ret |= (1 << 0);
     // check if the instance is inverting
     if (IsInverting(inst)) {
-      mask[3] = 1;
+      ret |= (1 << 3);
     }
   }
   // turn 2nd bit on
   if (HasSet(inst)) {
-    mask[1] = 1;
+    ret |= (1 << 1);
   }
   // turn 3rd bit on
   if (HasReset(inst)) {
-    mask[2] = 1;
+    ret |= (1 << 2);
   }
-  // turn 4th bit on
-  if (ClockOn(inst)) {
-    mask[3] = 1;
-  }
-  mask[4] = GetNext(inst);
-  return mask;
+  return ret;
 }
 
 bool MBFF::IsClockPin(odb::dbITerm* iterm)
@@ -329,9 +304,6 @@ bool MBFF::IsValidTray(odb::dbInst* tray)
     return false;
   }
   if (!lib_cell->hasSequentials()) {
-    return false;
-  }
-  if (!encountered_masks_.count(GetMask(tray))) {
     return false;
   }
   return GetNumD(tray) > 1 && GetNumQ(tray) > 1;
@@ -1478,10 +1450,8 @@ void MBFF::SeparateFlops(std::vector<std::vector<Flop>>& ffs)
 
   for (const auto& clks : clk_terms) {
     BitMaskVector<Flop> flops_by_mask;
-    flops_by_mask.resize(num_masks_);
     for (int idx : clks.second) {
-      const std::array<int, 6> mask = GetMask(insts_[idx]);
-      const int bitmask = mask_to_idx_[mask];
+      const int bitmask = GetBitMask(insts_[idx]);
       flops_by_mask[bitmask].push_back(flops_[idx]);
     }
 
@@ -1516,8 +1486,7 @@ void MBFF::Run(const int mx_sz, const double alpha, const double beta)
   double tot_ilp = 0;
   for (int i = 0; i < num_chunks; i++) {
     SetVars(FFs[i]);
-    const std::array<int, 6> mask = GetMask(insts_[FFs[i].back().idx]);
-    const int bitmask = mask_to_idx_[mask];
+    const int bitmask = GetBitMask(insts_[FFs[i].back().idx]);
     SetRatios(bitmask);
     tot_ilp += doit(FFs[i], mx_sz, alpha, beta, bitmask);
   }
@@ -1538,14 +1507,7 @@ void MBFF::Run(const int mx_sz, const double alpha, const double beta)
 
 void MBFF::ReadLibs()
 {
-  best_master_.resize(num_masks_);
-  tray_area_.resize(num_masks_);
-  tray_width_.resize(num_masks_);
-  pin_mappings_.resize(num_masks_);
-  slot_to_tray_x_.resize(num_masks_);
-  slot_to_tray_y_.resize(num_masks_);
-
-  for (int i = 0; i < num_masks_; i++) {
+  for (int i = 0; i < max_bitmask; i++) {
     best_master_[i].resize(num_sizes_, nullptr);
     tray_area_[i].resize(num_sizes_, std::numeric_limits<double>::max());
     tray_width_[i].resize(num_sizes_);
@@ -1565,11 +1527,9 @@ void MBFF::ReadLibs()
 
       const int num_slots = GetNumD(tmp_tray);
       const int idx = GetBitIdx(num_slots);
-      const std::array<int, 6> mask = GetMask(tmp_tray);
+      const int bitmask = GetBitMask(tmp_tray);
       const double cur_area = (master->getHeight() / multiplier_)
                               * (master->getWidth() / multiplier_);
-
-      const int bitmask = mask_to_idx_[mask];
 
       if (tray_area_[bitmask][idx] > cur_area) {
         tray_area_[bitmask][idx] = cur_area;
@@ -1638,7 +1598,7 @@ void MBFF::ReadLibs()
     }
   }
 
-  for (int k = 0; k < num_masks_; k++) {
+  for (int k = 0; k < max_bitmask; k++) {
     for (int i = 1; i < num_sizes_; i++) {
       if (best_master_[k][i] != nullptr) {
         log_->info(utl::GPL,
@@ -1672,13 +1632,6 @@ void MBFF::ReadFFs()
       flops_.push_back({pt, num_flops, 0.0});
       insts_.push_back(inst);
       num_flops++;
-      std::array<int, 6> mask = GetMask(inst);
-      if (!encountered_masks_.count(mask)) {
-        int new_idx = static_cast<int>(encountered_masks_.size());
-        mask_to_idx_[mask] = new_idx;
-        encountered_masks_.insert(mask);
-        num_masks_++;
-      }
     }
   }
   slot_disp_x_.resize(num_flops, 0.0);
