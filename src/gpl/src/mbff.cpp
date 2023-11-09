@@ -155,6 +155,32 @@ bool MBFF::HasReset(odb::dbInst* inst)
   return false;
 }
 
+bool MBFF::ClockOn(odb::dbInst* inst)
+{
+  for (auto seq : inst->sequentials()) {
+    sta::FuncExpr* left = seq->clock()->left();
+    sta::FuncExpr* right = seq->clock()->right();
+    // !CLK
+    if (left && !right) {
+      return 0;
+    }
+    return 1;
+  }
+}
+
+bool MBFF::HasNext(odb::dbInst* inst)
+{
+  for (auto seq : inst->sequentials()) {
+    sta::FuncExpr* left = seq->data()->left();
+    sta::FuncExpr* right = seq->data()->right();
+    // !D
+    if (left && !right) {
+      return 0;
+    }
+    return 1;
+  }
+}
+
 int MBFF::GetBitMask(odb::dbInst* inst)
 {
   const int cnt_d = GetNumD(inst);
@@ -175,6 +201,13 @@ int MBFF::GetBitMask(odb::dbInst* inst)
   // turn 3rd bit on
   if (HasReset(inst)) {
     ret |= (1 << 2);
+  }
+  // turn 4th bit on
+  if (ClockOn(inst)) {
+    ret |= (1 << 3);
+  }
+  if (HasNext(inst)) {
+    ret |= (1 << 4);
   }
   return ret;
 }
