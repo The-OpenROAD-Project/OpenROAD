@@ -95,7 +95,7 @@ class MBFF
 
   bool IsValidTray(odb::dbInst* tray);
 
-  std::array<int> GetMask(odb::dbInst* inst);
+  std::array<int, 6> GetMask(odb::dbInst* inst);
   bool HasSet(odb::dbInst* inst);
   bool HasReset(odb::dbInst* inst);
   bool ClockOn(odb::dbInst* inst);
@@ -218,7 +218,7 @@ class MBFF
   int num_masks_ = 0;
 
   template <typename T>
-  using BitMaskVector = std::vector<std::vector<T>, num_masks_>;
+  using BitMaskVector = std::vector<std::vector<T>>;
 
   BitMaskVector<odb::dbMaster*> best_master_;
   BitMaskVector<DataToOutputsMap> pin_mappings_;

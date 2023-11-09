@@ -182,7 +182,7 @@ int MBFF::GetNext(odb::dbInst* inst)
   }
 }
 
-std::array<int> MBFF::GetMask(odb::dbInst* inst)
+std::array<int, 6> MBFF::GetMask(odb::dbInst* inst)
 {
   const int cnt_d = GetNumD(inst);
   const int cnt_q = GetNumQ(inst);
@@ -1483,7 +1483,7 @@ void MBFF::SeparateFlops(std::vector<std::vector<Flop>>& ffs)
   for (const auto& clks : clk_terms) {
     BitMaskVector<Flop> flops_by_mask;
     for (int idx : clks.second) {
-      const std::array<int> mask = GetMask(insts_[idx]);
+      const std::array<int, 6> mask = GetMask(insts_[idx]);
       const int bitmask = mask_to_idx_[mask];
       flops_by_mask[bitmask].push_back(flops_[idx]);
     }
@@ -1519,7 +1519,7 @@ void MBFF::Run(const int mx_sz, const double alpha, const double beta)
   double tot_ilp = 0;
   for (int i = 0; i < num_chunks; i++) {
     SetVars(FFs[i]);
-    const std::array<int> mask = GetMask(insts_[FFs[i].back().idx]);
+    const std::array<int, 6> mask = GetMask(insts_[FFs[i].back().idx]);
     const int bitmask = mask_to_idx_[mask];
     SetRatios(bitmask);
     tot_ilp += doit(FFs[i], mx_sz, alpha, beta, bitmask);
@@ -1541,6 +1541,13 @@ void MBFF::Run(const int mx_sz, const double alpha, const double beta)
 
 void MBFF::ReadLibs()
 {
+  best_master_.resize(num_masks_);
+  tray_area_.resize(num_masks_);
+  tray_width_.resize(num_masks_);
+  pin_mappings_.resize(num_masks_);
+  slot_to_tray_x_.resize(num_masks_);
+  slot_to_tray_y_.resize(num_masks_);
+
   for (int i = 0; i < num_masks_; i++) {
     best_master_[i].resize(num_sizes_, nullptr);
     tray_area_[i].resize(num_sizes_, std::numeric_limits<double>::max());
@@ -1561,7 +1568,7 @@ void MBFF::ReadLibs()
 
       const int num_slots = GetNumD(tmp_tray);
       const int idx = GetBitIdx(num_slots);
-      const std::array<int> mask = GetMask(tmp_tray);
+      const std::array<int, 6> mask = GetMask(tmp_tray);
       const double cur_area = (master->getHeight() / multiplier_)
                               * (master->getWidth() / multiplier_);
 
@@ -1673,7 +1680,7 @@ void MBFF::ReadFFs()
       flops_.push_back({pt, num_flops, 0.0});
       insts_.push_back(inst);
       num_flops++;
-      std::array<int> mask = GetMask(inst);
+      std::array<int, 6> mask = GetMask(inst);
       if (!encountered_masks_.count(mask)) {
         int new_idx = static_cast<int>(encountered_masks_.size());
         mask_to_idx_[mask] = new_idx;
