@@ -5177,6 +5177,13 @@ class dbLib : public dbObject
 class dbSite : public dbObject
 {
  public:
+  struct OrientedSite
+  {
+    dbSite* site;
+    dbOrientType orientation;
+  };
+  using RowPattern = std::vector<OrientedSite>;
+
   ///
   /// Get the site name.
   ///
@@ -5250,13 +5257,12 @@ class dbSite : public dbObject
   ///
   /// set the row pattern of this site
   ///
-  void setRowPattern(
-      const std::vector<std::pair<dbSite*, dbOrientType>>& row_pattern);
+  void setRowPattern(const RowPattern& row_pattern);
 
   ///
   /// sets the parent of the site
   ///
-  void setParent(std::string parent_name);
+  void setParent(dbSite* parent);
 
   dbSite* getParent();
 
@@ -5278,7 +5284,7 @@ class dbSite : public dbObject
   ///
   /// returns the row pattern if available
   ///
-  std::vector<std::pair<dbSite*, dbOrientType>> getRowPattern();
+  RowPattern getRowPattern();
 
   ///
   /// Get the library of this site.

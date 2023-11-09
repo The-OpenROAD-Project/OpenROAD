@@ -204,7 +204,7 @@ class GridInfo
   GridInfo(int row_count,
            int site_count,
            int grid_index,
-           const std::vector<std::pair<dbSite*, dbOrientType>>& sites)
+           const dbSite::RowPattern& sites)
       : row_count(row_count),
         site_count(site_count),
         grid_index(grid_index),
@@ -218,34 +218,30 @@ class GridInfo
 
   int getGridIndex() const { return grid_index; }
 
-  const std::vector<std::pair<dbSite*, dbOrientType>>& getSites() const
-  {
-    return sites;
-  }
+  const dbSite::RowPattern& getSites() const { return sites; }
 
   const bool isHybrid()
   {
     // TODO: consider removing the second part
-    return sites.size() > 1 || sites[0].first->isHybridParent();
+    return sites.size() > 1 || sites[0].site->isHybridParent();
   }
   const int getSitesTotalHeight()
   {
-    return std::accumulate(
-        sites.begin(),
-        sites.end(),
-        0,
-        [](int sum, const std::pair<dbSite*, dbOrientType>& entry) {
-          return sum + entry.first->getHeight();
-        });
+    return std::accumulate(sites.begin(),
+                           sites.end(),
+                           0,
+                           [](int sum, const dbSite::OrientedSite& entry) {
+                             return sum + entry.site->getHeight();
+                           });
   }
 
  private:
   const int row_count;
   const int site_count;
   const int grid_index;
-  const std::vector<std::pair<dbSite*, dbOrientType>>
-      sites;  // will have one site only for non-hybrid and hybrid parent cells.
-              // For hybrid children, this will have all the sites
+  // will have one site only for non-hybrid and hybrid parent cells.
+  // For hybrid children, this will have all the sites
+  const dbSite::RowPattern sites;
 };
 
 // For optimize mirroring.
@@ -515,12 +511,8 @@ class Opendp
   int gridPaddedX(const Cell* cell, int site_width) const;
   int gridY(int y, int row_height) const;
   int gridY(const Cell* cell) const;
-  pair<int, int> gridY(
-      int y,
-      const std::vector<std::pair<dbSite*, dbOrientType>>& grid_sites) const;
-  pair<int, int> gridEndY(
-      int y,
-      const std::vector<std::pair<dbSite*, dbOrientType>>& grid_sites) const;
+  pair<int, int> gridY(int y, const dbSite::RowPattern& grid_sites) const;
+  pair<int, int> gridEndY(int y, const dbSite::RowPattern& grid_sites) const;
   int gridPaddedEndX(const Cell* cell) const;
   int gridPaddedEndX(const Cell* cell, int site_width) const;
   int gridEndX(int x, int site_width) const;

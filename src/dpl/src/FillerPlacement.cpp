@@ -69,7 +69,7 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
     // we will first try to find the grid with min height that is non hybrid, if
     // that doesn't exist, we will pick the first hybrid grid.
     for (auto [grid_idx, itr_grid_info] : grid_info_map_) {
-      int site_height = itr_grid_info.getSites()[0].first->getHeight();
+      int site_height = itr_grid_info.getSites()[0].site->getHeight();
       if (!itr_grid_info.isHybrid() && site_height < min_height) {
         min_height = site_height;
         chosen_grid_key = grid_idx;
@@ -91,7 +91,7 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
             row,
             prefix,
             filler_masters,
-            hybrid_sites_vec[row % hybrid_sites_num].first->getHeight(),
+            hybrid_sites_vec[row % hybrid_sites_num].site->getHeight(),
             chosen_grid_info);
       }
     }

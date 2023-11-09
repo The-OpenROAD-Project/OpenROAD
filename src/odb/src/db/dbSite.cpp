@@ -32,8 +32,6 @@
 
 #include "dbSite.h"
 
-#include <unordered_map>
-
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbLib.h"
@@ -43,6 +41,30 @@
 namespace odb {
 
 template class dbTable<_dbSite>;
+
+bool OrientedSiteInternal::operator==(const OrientedSiteInternal& rhs) const
+{
+  return std::tie(lib, site, orientation)
+         == std::tie(rhs.lib, rhs.site, rhs.orientation);
+}
+
+dbOStream& operator<<(dbOStream& stream, const OrientedSiteInternal& s)
+{
+  stream << s.lib;
+  stream << s.site;
+  stream << int(s.orientation.getValue());
+  return stream;
+}
+
+dbIStream& operator>>(dbIStream& stream, OrientedSiteInternal& s)
+{
+  stream >> s.lib;
+  stream >> s.site;
+  int value;
+  stream >> value;
+  s.orientation = dbOrientType::Value(value);
+  return stream;
+}
 
 bool _dbSite::operator==(const _dbSite& rhs) const
 {
@@ -83,6 +105,10 @@ bool _dbSite::operator==(const _dbSite& rhs) const
   }
 
   if (_next_entry != rhs._next_entry) {
+    return false;
+  }
+
+  if (_row_pattern != rhs._row_pattern) {
     return false;
   }
 
@@ -246,34 +272,41 @@ void dbSite::setClass(dbSiteClass type)
   site->_flags._class = type.getValue();
 }
 
-void dbSite::setRowPattern(
-    const std::vector<std::pair<dbSite*, dbOrientType>>& row_pattern)
+void dbSite::setRowPattern(const RowPattern& row_pattern)
 {
   _dbSite* site = (_dbSite*) this;
   site->_flags._is_hybrid = true;
   site->_row_pattern.reserve(row_pattern.size());
   for (auto& row : row_pattern) {
-    auto child_site = (_dbSite*) row.first;
+    auto child_site = (_dbSite*) row.site;
     child_site->_flags._is_hybrid = true;
-    site->_row_pattern.addRowPattern(row.first->getName(), row.second);
+    site->_row_pattern.push_back({child_site->getOwner()->getId(),
+                                  child_site->getId(),
+                                  row.orientation});
   }
 }
 
-void dbSite::setParent(std::string parent_name)
+void dbSite::setParent(dbSite* parent)
 {
   _dbSite* site = (_dbSite*) this;
   if (!this->isHybrid() || this->isHybridParent()) {
-    site->parent.clear();
+    site->_parent_lib = dbId<_dbLib>();
+    site->_parent_site = dbId<_dbSite>();
     return;
   }
-  site->parent = parent_name;
+  site->_parent_lib = parent->getLib()->getId();
+  site->_parent_site = parent->getId();
 }
 
 dbSite* dbSite::getParent()
 {
   _dbSite* site = (_dbSite*) this;
-  auto parent_name = site->parent;
-  return getLib()->findSite(parent_name.c_str());
+  if (!site->_parent_lib.isValid()) {
+    return nullptr;
+  }
+  dbDatabase* db = (dbDatabase*) site->getDatabase();
+  dbLib* lib = dbLib::getLib(db, site->_parent_lib);
+  return dbSite::getSite(lib, site->_parent_site);
 }
 
 bool dbSite::hasRowPattern() const
@@ -293,17 +326,19 @@ bool dbSite::isHybridParent() const
   return isHybrid() && hasRowPattern();
 }
 
-std::vector<std::pair<dbSite*, dbOrientType>> dbSite::getRowPattern()
+dbSite::RowPattern dbSite::getRowPattern()
 {
-  std::vector<std::pair<dbSite*, dbOrientType>> row_pattern;
   _dbSite* site = (_dbSite*) this;
+  dbDatabase* db = (dbDatabase*) site->getDatabase();
   auto& rp = site->_row_pattern;
-  const int sz = rp.size();
-  row_pattern.reserve(sz);
-  for (int i = 0; i < sz; ++i) {
-    auto r = rp.getSite(i);
-    auto o = rp.getOrientation(i);
-    row_pattern.emplace_back(getLib()->findSite(r.c_str()), o);
+
+  std::vector<OrientedSite> row_pattern;
+  row_pattern.reserve(rp.size());
+  for (const auto& oriented_site : rp) {
+    dbLib* lib = dbLib::getLib(db, oriented_site.lib);
+    dbSite* site = dbSite::getSite(lib, oriented_site.site);
+    auto orientation = oriented_site.orientation;
+    row_pattern.push_back({site, orientation});
   }
   return row_pattern;
 }
@@ -330,6 +365,37 @@ dbSite* dbSite::getSite(dbLib* lib_, uint dbid_)
 {
   _dbLib* lib = (_dbLib*) lib_;
   return (dbSite*) lib->_site_tbl->getPtr(dbid_);
+}
+
+dbOStream& operator<<(dbOStream& stream, const _dbSite& site)
+{
+  uint* bit_field = (uint*) &site._flags;
+  stream << *bit_field;
+  stream << site._name;
+  stream << site._height;
+  stream << site._width;
+  stream << site._next_entry;
+  stream << site._row_pattern;
+  stream << site._parent_lib;
+  stream << site._parent_site;
+  return stream;
+}
+
+dbIStream& operator>>(dbIStream& stream, _dbSite& site)
+{
+  uint* bit_field = (uint*) &site._flags;
+  stream >> *bit_field;
+  stream >> site._name;
+  stream >> site._height;
+  stream >> site._width;
+  stream >> site._next_entry;
+  _dbDatabase* db = site.getImpl()->getDatabase();
+  if (db->isSchema(db_schema_site_row_pattern)) {
+    stream >> site._row_pattern;
+    stream >> site._parent_lib;
+    stream >> site._parent_site;
+  }
+  return stream;
 }
 
 }  // namespace odb

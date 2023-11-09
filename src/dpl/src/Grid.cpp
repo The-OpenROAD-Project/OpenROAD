@@ -157,8 +157,7 @@ void Opendp::initGridLayersMap()
             getRowCount(row_height),
             divFloor(core_.dx(), db_row->getSite()->getWidth()),
             site_idx_to_grid_idx.at(working_site->getId()),
-            std::vector<std::pair<dbSite*, dbOrientType>>{
-                {working_site, db_row->getOrient()}},
+            dbSite::RowPattern{{working_site, db_row->getOrient()}},
         };
         grid_info_map_.emplace(gmk, newGridInfo);
       } else {
@@ -218,7 +217,7 @@ void Opendp::initGrid()
       auto grid_sites = grid_info.getSites();
       dbSite* row_site = nullptr;
       if (!grid_sites.empty()) {
-        row_site = grid_sites[j % grid_sites.size()].first;
+        row_site = grid_sites[j % grid_sites.size()].site;
       }
 
       for (int k = 0; k < layer_row_site_count; k++) {
@@ -577,7 +576,7 @@ void Opendp::groupInitPixels2()
     auto grid_sites = layer.second.getSites();
     for (int x = 0; x < row_site_count; x++) {
       for (int y = 0; y < row_count; y++) {
-        int row_height = grid_sites[y % grid_sites.size()].first->getHeight();
+        int row_height = grid_sites[y % grid_sites.size()].site->getHeight();
         Rect sub;
         // TODO: Site width here is wrong if multiple site widths are
         // supported!
@@ -753,8 +752,8 @@ int Opendp::map_ycoordinates(int source_grid_coordinate,
   auto target_grid_info = grid_info_map_.at(target_grid_key);
   if (!src_grid_info.isHybrid()) {
     if (!target_grid_info.isHybrid()) {
-      int original_step = src_grid_info.getSites()[0].first->getHeight();
-      int target_step = target_grid_info.getSites()[0].first->getHeight();
+      int original_step = src_grid_info.getSites()[0].site->getHeight();
+      int target_step = target_grid_info.getSites()[0].site->getHeight();
       return divCeil(original_step * source_grid_coordinate, target_step);
     } else {
       // count until we find it.
@@ -770,13 +769,13 @@ int Opendp::map_ycoordinates(int source_grid_coordinate,
     int src_height
         = (source_grid_coordinate / src_sites_size) * src_total_sites_height;
     for (int s = 0; s < source_grid_coordinate % src_sites_size; s++) {
-      src_height += src_sites[s].first->getHeight();
+      src_height += src_sites[s].site->getHeight();
     }
     if (target_grid_info.isHybrid()) {
       // both are hybrids.
       return gridY(src_height, target_grid_info.getSites()).first;
     } else {
-      int target_step = target_grid_info.getSites()[0].first->getHeight();
+      int target_step = target_grid_info.getSites()[0].site->getHeight();
       return divCeil(src_height, target_step);
     }
   }

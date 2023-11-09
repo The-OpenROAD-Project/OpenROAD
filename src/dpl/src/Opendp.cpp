@@ -636,17 +636,15 @@ int Opendp::getSiteWidth(const Cell* cell) const
   return site_width_;
 }
 
-pair<int, int> Opendp::gridY(
-    int y,
-    const std::vector<std::pair<dbSite*, dbOrientType>>& grid_sites) const
+pair<int, int> Opendp::gridY(int y, const dbSite::RowPattern& grid_sites) const
 {
-  int sum_heights = std::accumulate(
-      grid_sites.begin(),
-      grid_sites.end(),
-      0,
-      [](int sum, const std::pair<dbSite*, dbOrientType>& entry) {
-        return sum + entry.first->getHeight();
-      });
+  int sum_heights
+      = std::accumulate(grid_sites.begin(),
+                        grid_sites.end(),
+                        0,
+                        [](int sum, const dbSite::OrientedSite& entry) {
+                          return sum + entry.site->getHeight();
+                        });
 
   int base_height_index = divFloor(y, sum_heights);
   int cur_height = base_height_index * sum_heights;
@@ -654,25 +652,24 @@ pair<int, int> Opendp::gridY(
   base_height_index *= grid_sites.size();
   while (cur_height < y && index < grid_sites.size()) {
     auto site = grid_sites.at(index);
-    if (cur_height + site.first->getHeight() > y)
+    if (cur_height + site.site->getHeight() > y)
       break;
-    cur_height += site.first->getHeight();
+    cur_height += site.site->getHeight();
     index++;
   }
   return {base_height_index + index, cur_height};
 }
 
-pair<int, int> Opendp::gridEndY(
-    int y,
-    const std::vector<std::pair<dbSite*, dbOrientType>>& grid_sites) const
+pair<int, int> Opendp::gridEndY(int y,
+                                const dbSite::RowPattern& grid_sites) const
 {
-  int sum_heights = std::accumulate(
-      grid_sites.begin(),
-      grid_sites.end(),
-      0,
-      [](int sum, const std::pair<dbSite*, dbOrientType>& entry) {
-        return sum + entry.first->getHeight();
-      });
+  int sum_heights
+      = std::accumulate(grid_sites.begin(),
+                        grid_sites.end(),
+                        0,
+                        [](int sum, const dbSite::OrientedSite& entry) {
+                          return sum + entry.site->getHeight();
+                        });
 
   int base_height_index = divFloor(y, sum_heights);
   int cur_height = base_height_index * sum_heights;
@@ -680,7 +677,7 @@ pair<int, int> Opendp::gridEndY(
   base_height_index *= grid_sites.size();
   while (cur_height < y && index < grid_sites.size()) {
     auto site = grid_sites.at(index);
-    cur_height += site.first->getHeight();
+    cur_height += site.site->getHeight();
     index++;
   }
   return {base_height_index + index, cur_height};
@@ -707,7 +704,7 @@ void Opendp::setGridPaddedLoc(Cell* cell, int x, int y, int site_width) const
     const int sites_size = sites.size();
     int height = (y / sites_size) * total_sites_height;
     for (int s = 0; s < y % sites_size; s++) {
-      height += sites[s].first->getHeight();
+      height += sites[s].site->getHeight();
     }
     cell->y_ = height;
     return;

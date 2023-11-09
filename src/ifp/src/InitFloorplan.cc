@@ -510,7 +510,7 @@ int InitFloorplan::getOffset(const std::vector<dbSite*>& pattern) const
   const auto& searchPattern = pattern[0]->getRowPattern();
   std::vector<dbSite*> searchPattern_dbSite(searchPattern.size(), nullptr);
   for (int i = 0; i < searchPattern.size(); i++) {
-    searchPattern_dbSite[i] = searchPattern[i].first;
+    searchPattern_dbSite[i] = searchPattern[i].site;
   }
   int min_offset = std::numeric_limits<int>::max();
   bool found_solution = false;
@@ -553,7 +553,7 @@ int InitFloorplan::makeHybridRows(dbSite* parent_hybrid_site,
                                   int row_index)
 {
   auto row_pattern = parent_hybrid_site->getRowPattern();
-  auto hybrid_site = row_pattern[0].first;
+  auto hybrid_site = row_pattern[0].site;
   int site_width = hybrid_site->getWidth();
   for (const auto& [site, orient] : row_pattern) {
     debugPrint(logger_,
@@ -610,8 +610,8 @@ int InitFloorplan::makeHybridRows(dbSite* parent_hybrid_site,
       std::vector<dbSite*> rp_dbsite;
       rp_dbsite.resize(rp_sz * 2, nullptr);
       for (int i = 0; i < rp_sz; ++i) {
-        rp_dbsite[i] = rp[i].first;
-        rp_dbsite[i + rp_sz] = rp[i].first;
+        rp_dbsite[i] = rp[i].site;
+        rp_dbsite[i + rp_sz] = rp[i].site;
       }
       repeating_row_patterns_.push_back(rp_dbsite);
     }
@@ -648,7 +648,7 @@ int InitFloorplan::makeHybridRows(dbSite* parent_hybrid_site,
 
 void InitFloorplan::generateContiguousHybridRows(
     dbSite* parent_hybrid_site,
-    const std::vector<std::pair<dbSite*, dbOrientType>>& row_pattern,
+    const dbSite::RowPattern& row_pattern,
     std::vector<std::vector<dbSite*>>& output_patterns_list)
 {
   output_patterns_list.clear();

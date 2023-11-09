@@ -1693,7 +1693,7 @@ void lefin::site(lefiSite* lefsite)
 
   if (lefsite->hasRowPattern()) {
     auto row_pattern = lefsite->getRowPatterns();
-    std::vector<std::pair<dbSite*, dbOrientType>> converted_row_pattern;
+    std::vector<dbSite::OrientedSite> converted_row_pattern;
     converted_row_pattern.reserve(row_pattern.size());
     for (auto& row : row_pattern) {
       dbOrientType orient = dbOrientType::R0;
@@ -1703,14 +1703,13 @@ void lefin::site(lefiSite* lefsite)
       }
       auto child_site = _lib->findSite(row.first.c_str());
       if (_mapped_hybrid_sites.count(child_site->getId()) == 0) {
-        child_site->setParent(site->getName());
+        child_site->setParent(site);
         _mapped_hybrid_sites[child_site->getId()] = site;
       } else {
-        child_site->setParent(
-            _mapped_hybrid_sites[child_site->getId()]->getName());
+        child_site->setParent(_mapped_hybrid_sites[child_site->getId()]);
       }
 
-      converted_row_pattern.emplace_back(child_site, orient);
+      converted_row_pattern.push_back({child_site, orient});
     }
     site->setRowPattern(converted_row_pattern);
   }

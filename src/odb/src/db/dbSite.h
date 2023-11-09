@@ -32,11 +32,11 @@
 
 #pragma once
 
-#include "db.h"
 #include "dbCore.h"
 #include "dbHashTable.h"
 #include "dbId.h"
 #include "dbTypes.h"
+#include "dbVector.h"
 #include "odb.h"
 
 namespace odb {
@@ -46,6 +46,8 @@ class dbTable;
 class dbIStream;
 class dbOStream;
 class dbDiff;
+class _dbLib;
+class _dbSite;
 
 struct dbSiteFlags
 {
@@ -57,47 +59,16 @@ struct dbSiteFlags
   uint _spare_bits : 24;
 };
 
-class RowPattern
+struct OrientedSiteInternal
 {
- private:
-  uint n;
-  std::vector<std::pair<std::string, dbOrientType>> pattern;
-
- public:
-  dbOrientType getOrientation(int index) { return pattern.at(index).second; }
-  std::string getSite(int index) { return pattern.at(index).first; }
-  void reserve(int size) { pattern.reserve(size); }
-  void addRowPattern(std::string siteName, dbOrientType orientation)
-  {
-    pattern.emplace_back(siteName, orientation);
-  }
-  int size() { return pattern.size(); }
-  bool empty() { return pattern.empty(); }
-
-  friend dbOStream& operator<<(dbOStream& stream, const RowPattern& rp)
-  {
-    stream << rp.n;
-    for (auto& p : rp.pattern) {
-      stream << p.first;
-      stream << p.second.getString();
-    }
-    return stream;
-  }
-
-  friend dbIStream& operator>>(dbIStream& stream, RowPattern& rp)
-  {
-    stream >> rp.n;
-    rp.pattern.reserve(rp.n);
-    for (int i = 0; i < rp.n; i++) {
-      std::string child_site_name;
-      std::string orient;
-      stream >> child_site_name;
-      stream >> orient;
-      rp.pattern.emplace_back(child_site_name, dbOrientType(orient.c_str()));
-    }
-    return stream;
-  }
+  dbId<_dbLib> lib;
+  dbId<_dbSite> site;
+  dbOrientType orientation;
+  bool operator==(const OrientedSiteInternal& rhs) const;
 };
+
+dbOStream& operator<<(dbOStream& stream, const OrientedSiteInternal& s);
+dbIStream& operator>>(dbIStream& stream, OrientedSiteInternal& s);
 
 class _dbSite : public _dbObject
 {
@@ -108,8 +79,9 @@ class _dbSite : public _dbObject
   uint _height;
   uint _width;
   dbId<_dbSite> _next_entry;
-  RowPattern _row_pattern;
-  std::string parent;
+  dbVector<OrientedSiteInternal> _row_pattern;
+  dbId<_dbLib> _parent_lib;
+  dbId<_dbSite> _parent_site;
 
   _dbSite(_dbDatabase*, const _dbSite& s);
   _dbSite(_dbDatabase*);
@@ -121,28 +93,6 @@ class _dbSite : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
 };
 
-inline dbOStream& operator<<(dbOStream& stream, const _dbSite& site)
-{
-  uint* bit_field = (uint*) &site._flags;
-  stream << *bit_field;
-  stream << site._name;
-  stream << site._height;
-  stream << site._width;
-  stream << site._next_entry;
-  stream << site._row_pattern;
-  return stream;
-}
-
-inline dbIStream& operator>>(dbIStream& stream, _dbSite& site)
-{
-  uint* bit_field = (uint*) &site._flags;
-  stream >> *bit_field;
-  stream >> site._name;
-  stream >> site._height;
-  stream >> site._width;
-  stream >> site._next_entry;
-  stream >> site._row_pattern;
-  return stream;
-}
-
+dbOStream& operator<<(dbOStream& stream, const _dbSite& site);
+dbIStream& operator>>(dbIStream& stream, _dbSite& site);
 }  // namespace odb
