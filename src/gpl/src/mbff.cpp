@@ -342,6 +342,9 @@ bool MBFF::IsValidTray(odb::dbInst* tray)
   if (!lib_cell->hasSequentials()) {
     return false;
   }
+  if (!encountered_masks_.count(GetMask(tray))) {
+    return false;
+  }
   return GetNumD(tray) > 1 && GetNumQ(tray) > 1;
 }
 
@@ -1575,11 +1578,6 @@ void MBFF::ReadLibs()
       const std::array<int, 6> mask = GetMask(tmp_tray);
       const double cur_area = (master->getHeight() / multiplier_)
                               * (master->getWidth() / multiplier_);
-
-      // the tray doesn't match any flop we've seen == no use in looking at
-      if (!encountered_masks_.count(mask)) {
-        continue;
-      }
 
       const int bitmask = mask_to_idx_[mask];
 
