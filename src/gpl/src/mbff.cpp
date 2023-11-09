@@ -1489,6 +1489,7 @@ void MBFF::SeparateFlops(std::vector<std::vector<Flop>>& ffs)
 
   for (const auto& clks : clk_terms) {
     BitMaskVector<Flop> flops_by_mask;
+    BitMaskVector.resize(num_masks_);
     for (int idx : clks.second) {
       const std::array<int, 6> mask = GetMask(insts_[idx]);
       const int bitmask = mask_to_idx_[mask];
