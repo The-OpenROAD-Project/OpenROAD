@@ -1557,7 +1557,7 @@ void GlobalRouter::readGuides(const char* file_name)
   }
 
   updateEdgesUsage();
-  getGCellGridPatternFromGuides(guides);
+  computeGCellGridPatternFromGuides(guides);
   updateDbCongestionFromGuides();
   heatmap_->update();
   saveGuidesFromFile(guides);
@@ -1663,7 +1663,7 @@ void GlobalRouter::updateDbCongestionFromGuides()
   }
 }
 
-void GlobalRouter::getGCellGridPatternFromGuides(
+void GlobalRouter::computeGCellGridPatternFromGuides(
     std::unordered_map<odb::dbNet*, Guides>& net_guides)
 {
   int width = grid_->getXMax() - grid_->getXMin();
