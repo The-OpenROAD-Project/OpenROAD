@@ -155,8 +155,9 @@ bool MBFF::HasReset(odb::dbInst* inst)
   return false;
 }
 
-bool MBFF::ClockOn(odb::dbInst* inst) {
-   sta::Cell* cell = network_->dbToSta(inst->getMaster());
+bool MBFF::ClockOn(odb::dbInst* inst)
+{
+  sta::Cell* cell = network_->dbToSta(inst->getMaster());
   if (cell == nullptr) {
     return false;
   }
@@ -171,8 +172,8 @@ bool MBFF::ClockOn(odb::dbInst* inst) {
     if (left && !right) {
       return false;
     }
-    return true;
   }
+  return true;
 }
 
 int MBFF::GetBitMask(odb::dbInst* inst)
