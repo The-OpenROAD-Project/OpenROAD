@@ -155,6 +155,26 @@ bool MBFF::HasReset(odb::dbInst* inst)
   return false;
 }
 
+bool MBFF::ClockOn(odb::dbInst* inst) {
+   sta::Cell* cell = network_->dbToSta(inst->getMaster());
+  if (cell == nullptr) {
+    return false;
+  }
+  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  if (lib_cell == nullptr) {
+    return false;
+  }
+  for (auto seq : lib_cell->sequentials()) {
+    sta::FuncExpr* left = seq->clock()->left();
+    sta::FuncExpr* right = seq->clock()->right();
+    // !CLK
+    if (left && !right) {
+      return false;
+    }
+    return true;
+  }
+}
+
 int MBFF::GetBitMask(odb::dbInst* inst)
 {
   const int cnt_d = GetNumD(inst);
@@ -175,6 +195,10 @@ int MBFF::GetBitMask(odb::dbInst* inst)
   // turn 3rd bit on
   if (HasReset(inst)) {
     ret |= (1 << 2);
+  }
+  // turn 4th bit on
+  if (ClockOn(inst)) {
+    ret |= (1 << 3);
   }
   return ret;
 }
