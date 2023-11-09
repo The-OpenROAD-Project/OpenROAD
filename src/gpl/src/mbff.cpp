@@ -176,7 +176,7 @@ int MBFF::GetNext(odb::dbInst* inst)
   sta::LibertyCell* lib_cell = network_->libertyCell(cell);
   for (auto seq : lib_cell->sequentials()) {
     sta::FuncExpr* data = seq->data();
-    for (size_t i = 0; i < next_states.size(); i++) {
+    for (size_t i = 0; i < next_states_.size(); i++) {
       if (sta::FuncExpr::equiv(next_states_[i], data)) {
         return i;
       }
@@ -1650,7 +1650,7 @@ void MBFF::ReadLibs()
     }
   }
 
-  for (int k = 0; k < max_bitmask; k++) {
+  for (int k = 0; k < num_masks_; k++) {
     for (int i = 1; i < num_sizes_; i++) {
       if (best_master_[k][i] != nullptr) {
         log_->info(utl::GPL,
