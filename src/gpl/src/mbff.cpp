@@ -168,48 +168,47 @@ bool MBFF::ClockOn(odb::dbInst* inst)
   }
 }
 
-bool MBFF::HasNext(odb::dbInst* inst)
+int MBFF::GetNext(odb::dbInst* inst)
 {
   for (auto seq : inst->sequentials()) {
-    sta::FuncExpr* left = seq->data()->left();
-    sta::FuncExpr* right = seq->data()->right();
-    // !D
-    if (left && !right) {
-      return 0;
-    }
-    return 1;
+    sta::FuncExpr* data = seq->data();
+    for (size_t i = 0; i < next_states.size(); i++) {
+      if (sta::FuncExpr::equiv(next_states_[i], data)) {
+        return i;
+      }
+    } 
+    next_states_.push_back(data);
+    return (static_cast<int>(next_states_.size()) - 1);
   }
 }
 
-int MBFF::GetBitMask(odb::dbInst* inst)
+std::array<int> MBFF::GetMask(odb::dbInst* inst)
 {
   const int cnt_d = GetNumD(inst);
   const int cnt_q = GetNumQ(inst);
-  int ret = 0;
+  std::array<int, 6> mask;
   // turn 1st bit on
   if (cnt_q - cnt_d > 0) {
-    ret |= (1 << 0);
+    mask[0] = 1;
     // check if the instance is inverting
     if (IsInverting(inst)) {
-      ret |= (1 << 3);
+      mask[3] = 1;
     }
   }
   // turn 2nd bit on
   if (HasSet(inst)) {
-    ret |= (1 << 1);
+    mask[1] = 1;
   }
   // turn 3rd bit on
   if (HasReset(inst)) {
-    ret |= (1 << 2);
+    mask[2] = 1;
   }
   // turn 4th bit on
   if (ClockOn(inst)) {
-    ret |= (1 << 3);
+    mask[3] = 1;
   }
-  if (HasNext(inst)) {
-    ret |= (1 << 4);
-  }
-  return ret;
+  mask[4] = HasNext(inst);
+  return mask;
 }
 
 bool MBFF::IsClockPin(odb::dbITerm* iterm)
@@ -1484,7 +1483,8 @@ void MBFF::SeparateFlops(std::vector<std::vector<Flop>>& ffs)
   for (const auto& clks : clk_terms) {
     BitMaskVector<Flop> flops_by_mask;
     for (int idx : clks.second) {
-      const int bitmask = GetBitMask(insts_[idx]);
+      const std::array<int> mask = GetMask(insts_[idx]);
+      const int bitmask = mask_to_idx_[mask];
       flops_by_mask[bitmask].push_back(flops_[idx]);
     }
 
@@ -1519,7 +1519,8 @@ void MBFF::Run(const int mx_sz, const double alpha, const double beta)
   double tot_ilp = 0;
   for (int i = 0; i < num_chunks; i++) {
     SetVars(FFs[i]);
-    const int bitmask = GetBitMask(insts_[FFs[i].back().idx]);
+    const std::array<int> mask = GetMask(insts_[FFs[i].back().idx]);
+    const int bitmask = mask_to_idx_[mask];
     SetRatios(bitmask);
     tot_ilp += doit(FFs[i], mx_sz, alpha, beta, bitmask);
   }
@@ -1540,7 +1541,7 @@ void MBFF::Run(const int mx_sz, const double alpha, const double beta)
 
 void MBFF::ReadLibs()
 {
-  for (int i = 0; i < max_bitmask; i++) {
+  for (int i = 0; i < num_masks_; i++) {
     best_master_[i].resize(num_sizes_, nullptr);
     tray_area_[i].resize(num_sizes_, std::numeric_limits<double>::max());
     tray_width_[i].resize(num_sizes_);
@@ -1560,9 +1561,16 @@ void MBFF::ReadLibs()
 
       const int num_slots = GetNumD(tmp_tray);
       const int idx = GetBitIdx(num_slots);
-      const int bitmask = GetBitMask(tmp_tray);
+      const std::array<int> mask = GetMask(tmp_tray);
       const double cur_area = (master->getHeight() / multiplier_)
                               * (master->getWidth() / multiplier_);
+
+      // the tray doesn't match any flop we've seen == no use in looking at
+      if (!encountered_masks_.count(mask)) {
+        continue;
+      }
+
+      const int bitmask = mask_to_idx_[mask];
 
       if (tray_area_[bitmask][idx] > cur_area) {
         tray_area_[bitmask][idx] = cur_area;
@@ -1665,6 +1673,13 @@ void MBFF::ReadFFs()
       flops_.push_back({pt, num_flops, 0.0});
       insts_.push_back(inst);
       num_flops++;
+      std::array<int> mask = GetMask(inst);
+      if (!encountered_masks_.count(mask)) {
+        int new_idx = static_cast<int>(encountered_masks_.size());
+        mask_to_idx_[mask] = new_idx;
+        encountered_masks_.insert(mask);
+        num_masks_++;
+      }
     }
   }
   slot_disp_x_.resize(num_flops, 0.0);
