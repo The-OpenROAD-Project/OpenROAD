@@ -541,7 +541,8 @@ std::string TritonCTS::selectRootBuffer(std::vector<std::string>& bufferVector)
   odb::Rect coreArea = block->getCoreArea();
   int width = coreArea.xMax() - coreArea.xMin();
   int height = coreArea.yMax() - coreArea.yMin();
-  float rootWireLength = std::max(width, height) / block->getDbUnitsPerMicron();
+  float rootWireLength = static_cast<float>(std::max(width, height))
+                         / block->getDbUnitsPerMicron();
   sta::Corner* corner = openSta_->cmdCorner();
   float rootWireCap
       = resizer_->wireClkCapacitance(corner) * 1e-6 * rootWireLength;
@@ -627,7 +628,8 @@ std::string TritonCTS::selectSinkBuffer(std::vector<std::string>& bufferVector)
   odb::Rect coreArea = block->getCoreArea();
   int width = coreArea.xMax() - coreArea.xMin();
   int height = coreArea.yMax() - coreArea.yMin();
-  float sinkWireLength = std::max(width, height) / block->getDbUnitsPerMicron();
+  float sinkWireLength = static_cast<float>(std::max(width, height))
+                         / block->getDbUnitsPerMicron();
   sta::Corner* corner = openSta_->cmdCorner();
   float sinkWireCap
       = resizer_->wireClkCapacitance(corner) * 1e-6 * sinkWireLength / 2.0;
