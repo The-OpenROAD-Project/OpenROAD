@@ -322,7 +322,8 @@ struct frDebugSettings
         markerDecay(-1),
         ripupMode(-1),
         followGuide(-1),
-        writeNetTracks(false)
+        writeNetTracks(false),
+        dumpLastWorker(false)
 
   {
   }

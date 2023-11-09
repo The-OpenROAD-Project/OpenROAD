@@ -15,4 +15,6 @@ record_tests {
   max_cap
   array
   array_no_blockages
+  array_ins_delay
+  insertion_delay    
 }

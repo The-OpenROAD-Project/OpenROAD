@@ -99,7 +99,6 @@ GlobalRouter::GlobalRouter()
       verbose_(false),
       min_layer_for_clock_(-1),
       max_layer_for_clock_(-2),
-      critical_nets_percentage_(10),
       seed_(0),
       caps_perturbation_percentage_(0),
       perturbation_amount_(1),
@@ -187,12 +186,13 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   setCapacities(min_routing_layer, max_routing_layer);
 
   if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
-    critical_nets_percentage_ = 0;
     logger_->warn(
         GRT,
         300,
-        "Timing is not available, setting critical nets percentage to 0");
+        "Timing is not available, setting critical nets percentage to 0.");
+    fastroute_->setCriticalNetsPercentage(0);
   }
+
   std::vector<Net*> nets = initNetlist();
   initNets(nets);
 
@@ -753,46 +753,6 @@ float GlobalRouter::getNetSlack(Net* net)
   return slack;
 }
 
-void GlobalRouter::computeNetSlacks()
-{
-  // Find the slack for all nets
-  std::unordered_map<Net*, float> net_slack_map;
-  std::vector<float> slacks;
-  for (const auto& net_itr : db_net_map_) {
-    Net* net = net_itr.second;
-    float slack = getNetSlack(net);
-    net_slack_map[net] = slack;
-    slacks.push_back(slack);
-  }
-  std::stable_sort(slacks.begin(), slacks.end());
-
-  // Find the slack threshold based on the percentage of critical nets
-  // defined by the user
-  int threshold_index
-      = std::ceil(slacks.size() * critical_nets_percentage_ / 100);
-  threshold_index = std::min((int) slacks.size() - 1, threshold_index);
-  float slack_th = slacks[threshold_index];
-
-  // Ensure the slack threshold is negative
-  if (slack_th >= 0) {
-    for (float slack : slacks) {
-      if (slack >= 0)
-        break;
-      slack_th = slack;
-    }
-  }
-
-  if (slack_th >= 0) {
-    return;
-  }
-  // Add the slack values smaller than the threshold to the nets
-  for (auto [net, slack] : net_slack_map) {
-    if (slack <= slack_th) {
-      net->setSlack(slack);
-    }
-  }
-}
-
 void GlobalRouter::initNets(std::vector<Net*>& nets)
 {
   checkPinPlacement();
@@ -810,11 +770,6 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
     g.seed(seed_);
 
     utl::shuffle(nets.begin(), nets.end(), g);
-  }
-
-  if (critical_nets_percentage_ != 0) {
-    fastroute_->setUpdateSlack(critical_nets_percentage_);
-    computeNetSlacks();
   }
 
   for (Net* net : nets) {
@@ -1365,7 +1320,14 @@ void GlobalRouter::setMaxLayerForClock(const int max_layer)
 
 void GlobalRouter::setCriticalNetsPercentage(float critical_nets_percentage)
 {
-  critical_nets_percentage_ = critical_nets_percentage;
+  if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
+    critical_nets_percentage = 0;
+    logger_->warn(
+        GRT,
+        301,
+        "Timing is not available, setting critical nets percentage to 0.");
+  }
+  fastroute_->setCriticalNetsPercentage(critical_nets_percentage);
 }
 
 void GlobalRouter::addLayerAdjustment(int layer, float reduction_percentage)
@@ -3100,11 +3062,11 @@ void GlobalRouter::findLayerExtensions(std::vector<int>& layer_extensions)
       // one found, use them as the macro extension instead of PARALLELRUNLENGTH
 
       if (obstruct_layer->hasTwoWidthsSpacingRules()) {
-        std::vector<std::vector<uint>> spacing_table;
+        std::vector<std::vector<odb::uint>> spacing_table;
         obstruct_layer->getTwoWidthsSpacingTable(spacing_table);
         if (!spacing_table.empty()) {
-          std::vector<uint> last_row = spacing_table.back();
-          uint last_value = last_row.back();
+          std::vector<odb::uint> last_row = spacing_table.back();
+          odb::uint last_value = last_row.back();
           if (last_value > spacing_extension) {
             spacing_extension = last_value;
           }
@@ -3358,7 +3320,7 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
   }
 
   for (odb::dbNet* db_net : nets) {
-    uint wire_cnt = 0, via_cnt = 0;
+    odb::uint wire_cnt = 0, via_cnt = 0;
     db_net->getWireCount(wire_cnt, via_cnt);
     if (wire_cnt == 0)
       continue;
@@ -3981,9 +3943,9 @@ void GlobalRouter::updateDirtyRoutes(bool save_guides)
       return;
     }
 
-    const float old_critical_nets_percentage = critical_nets_percentage_;
-    critical_nets_percentage_ = 0;
-    fastroute_->setUpdateSlack(critical_nets_percentage_);
+    const float old_critical_nets_percentage
+        = fastroute_->getCriticalNetsPercentage();
+    fastroute_->setCriticalNetsPercentage(0);
 
     initFastRouteIncr(dirty_nets);
 
@@ -4025,8 +3987,7 @@ void GlobalRouter::updateDirtyRoutes(bool save_guides)
                        "heatmap in the GUI.");
       }
     }
-    critical_nets_percentage_ = old_critical_nets_percentage;
-    fastroute_->setUpdateSlack(critical_nets_percentage_);
+    fastroute_->setCriticalNetsPercentage(old_critical_nets_percentage);
     if (save_guides) {
       saveGuides();
     }

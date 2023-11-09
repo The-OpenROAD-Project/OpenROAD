@@ -24,4 +24,6 @@ record_tests {
   density01
   convergence01
   nograd01
+  clust01
+  clust02
 }
