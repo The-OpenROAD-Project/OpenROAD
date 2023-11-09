@@ -157,7 +157,9 @@ bool MBFF::HasReset(odb::dbInst* inst)
 
 bool MBFF::ClockOn(odb::dbInst* inst)
 {
-  for (auto seq : inst->sequentials()) {
+  sta::Cell* cell = network_->dbToSta(inst->getMaster());
+  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  for (auto seq : lib_cell->sequentials()) {
     sta::FuncExpr* left = seq->clock()->left();
     sta::FuncExpr* right = seq->clock()->right();
     // !CLK
@@ -170,7 +172,9 @@ bool MBFF::ClockOn(odb::dbInst* inst)
 
 int MBFF::GetNext(odb::dbInst* inst)
 {
-  for (auto seq : inst->sequentials()) {
+  sta::Cell* cell = network_->dbToSta(inst->getMaster());
+  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  for (auto seq : lib_cell->sequentials()) {
     sta::FuncExpr* data = seq->data();
     for (size_t i = 0; i < next_states.size(); i++) {
       if (sta::FuncExpr::equiv(next_states_[i], data)) {
@@ -207,7 +211,7 @@ std::array<int, 6> MBFF::GetMask(odb::dbInst* inst)
   if (ClockOn(inst)) {
     mask[3] = 1;
   }
-  mask[4] = HasNext(inst);
+  mask[4] = GetNext(inst);
   return mask;
 }
 

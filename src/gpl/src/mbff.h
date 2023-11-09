@@ -213,7 +213,7 @@ class MBFF
   */
 
   static constexpr int max_num_bits_ = 6;
-  map<std::array<int, max_num_bits_>, int> mask_to_idx_;
+  std::map<std::array<int, max_num_bits_>, int> mask_to_idx_;
   std::set<std::array<int, max_num_bits_>> encountered_masks_;
   int num_masks_ = 0;
 
