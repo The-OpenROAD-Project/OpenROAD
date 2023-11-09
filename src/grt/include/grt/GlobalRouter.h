@@ -350,6 +350,15 @@ class GlobalRouter : public ant::GlobalRouteSource
   void updateDbCongestionFromGuides();
   void getGCellGridPatternFromGuides(
       std::unordered_map<odb::dbNet*, Guides>& guides);
+  void fillTileSizeMaps(std::unordered_map<odb::dbNet*, Guides>& net_guides,
+                        std::map<int, int>& tile_size_x_map,
+                        std::map<int, int>& tile_size_y_map,
+                        int& min_loc_x,
+                        int& min_loc_y);
+  void findTileSize(const std::map<int, int>& tile_size_x_map,
+                    const std::map<int, int>& tile_size_y_map,
+                    int& tile_size_x,
+                    int& tile_size_y);
 
   // check functions
   void checkPinPlacement();

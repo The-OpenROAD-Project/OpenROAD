@@ -1675,6 +1675,49 @@ void GlobalRouter::getGCellGridPatternFromGuides(
   std::map<int, int> tile_size_y_map;
   int min_loc_x = std::numeric_limits<int>::max();
   int min_loc_y = std::numeric_limits<int>::max();
+  fillTileSizeMaps(
+      net_guides, tile_size_x_map, tile_size_y_map, min_loc_x, min_loc_y);
+
+  int tile_size_x = 0;
+  int tile_size_y = 0;
+  findTileSize(tile_size_x_map, tile_size_y_map, tile_size_x, tile_size_y);
+
+  if (tile_size_x == 0 || tile_size_y == 0) {
+    logger_->error(utl::GRT,
+                   253,
+                   "Detected invalid guide dimensions: ({}, {}).",
+                   tile_size_x,
+                   tile_size_y);
+  }
+
+  int x_grids = width / tile_size_x;
+  int guide_x_idx = std::floor((min_loc_x - grid_->getXMin()) / tile_size_x);
+  int origin_x = min_loc_x - guide_x_idx * tile_size_x;
+
+  int y_grids = height / tile_size_y;
+  int guide_y_idx = std::floor((min_loc_y - grid_->getYMin()) / tile_size_y);
+  int origin_y = min_loc_y - guide_y_idx * tile_size_y;
+
+  auto db_gcell = block_->getGCellGrid();
+  if (db_gcell) {
+    db_gcell->resetGrid();
+  } else {
+    db_gcell = odb::dbGCellGrid::create(block_);
+  }
+  db_gcell->addGridPatternX(origin_x, x_grids, tile_size_x);
+  db_gcell->addGridPatternY(origin_y, y_grids, tile_size_y);
+
+  grid_->setXGrids(x_grids);
+  grid_->setYGrids(y_grids);
+}
+
+void GlobalRouter::fillTileSizeMaps(
+    std::unordered_map<odb::dbNet*, Guides>& net_guides,
+    std::map<int, int>& tile_size_x_map,
+    std::map<int, int>& tile_size_y_map,
+    int& min_loc_x,
+    int& min_loc_y)
+{
   for (const auto& [net, guides] : net_guides) {
     for (const auto& guide : guides) {
       if (tile_size_x_map.find(guide.second.dx()) == tile_size_x_map.end()) {
@@ -1692,8 +1735,13 @@ void GlobalRouter::getGCellGridPatternFromGuides(
       min_loc_y = std::min(guide.second.yMin(), min_loc_y);
     }
   }
+}
 
-  int tile_size_x = 0;
+void GlobalRouter::findTileSize(const std::map<int, int>& tile_size_x_map,
+                                const std::map<int, int>& tile_size_y_map,
+                                int& tile_size_x,
+                                int& tile_size_y)
+{
   int cnt_x = 0;
   for (const auto& [size_x, count] : tile_size_x_map) {
     if (count > cnt_x) {
@@ -1701,7 +1749,7 @@ void GlobalRouter::getGCellGridPatternFromGuides(
       cnt_x = count;
     }
   }
-  int tile_size_y = 0;
+
   int cnt_y = 0;
   for (const auto& [size_y, count] : tile_size_y_map) {
     if (count > cnt_y) {
@@ -1709,36 +1757,6 @@ void GlobalRouter::getGCellGridPatternFromGuides(
       cnt_y = count;
     }
   }
-
-  if (tile_size_x == 0 || tile_size_y == 0) {
-    logger_->error(utl::GRT,
-                   253,
-                   "Detected invalid guide dimensions: ({}, {}).",
-                   tile_size_x,
-                   tile_size_y);
-  }
-
-  int x_grids = width / tile_size_x;
-  int y_grids = height / tile_size_y;
-
-  int guide_x_idx = std::floor((min_loc_x - grid_->getXMin()) / tile_size_x);
-  int origin_x = min_loc_x - guide_x_idx * tile_size_x;
-
-  int guide_y_idx = std::floor((min_loc_y - grid_->getYMin()) / tile_size_y);
-  int origin_y = min_loc_y - guide_y_idx * tile_size_y;
-
-  auto db_gcell = block_->getGCellGrid();
-  if (db_gcell) {
-    db_gcell->resetGrid();
-  } else {
-    db_gcell = odb::dbGCellGrid::create(block_);
-  }
-
-  db_gcell->addGridPatternX(origin_x, x_grids, tile_size_x);
-  db_gcell->addGridPatternY(origin_y, y_grids, tile_size_y);
-
-  grid_->setXGrids(x_grids);
-  grid_->setYGrids(y_grids);
 }
 
 void GlobalRouter::saveGuidesFromFile(
