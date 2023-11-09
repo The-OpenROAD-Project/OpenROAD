@@ -64,7 +64,7 @@ class dbId
  public:
   using _type = T;
 
-  dbId() { _id = invalid ; }
+  dbId() { _id = invalid; }
   dbId(const dbId<T>& id) : _id(id._id) {}
   dbId(unsigned int id) { _id = id; }
 
