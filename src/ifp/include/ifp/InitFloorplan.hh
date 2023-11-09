@@ -35,7 +35,6 @@
 
 #pragma once
 
-#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -93,7 +92,7 @@ class InitFloorplan
 
   odb::dbSite* findSite(const char* site_name);
 
- protected:
+ private:
   double designArea();
   int makeRows(odb::dbSite* site,
                int core_lx,
@@ -104,8 +103,8 @@ class InitFloorplan
                int row_index);
   int getOffset(const std::vector<odb::dbSite*>& pattern) const;
   int makeHybridRows(odb::dbSite* parent_hybrid_site,
-                     const odb::Point& core_l,
-                     const odb::Point& core_u,
+                     const odb::Point& core_ll,
+                     const odb::Point& core_ur,
                      int row_index);
   void generateContiguousHybridRows(
       odb::dbSite* parent_hybrid_site,
@@ -121,9 +120,8 @@ class InitFloorplan
   Logger* logger_;
   sta::dbNetwork* network_;
 
- private:
   // this is a set of sets of all constructed site ids.
-  std::set<std::set<int>> constructed_patterns;
+  std::set<std::set<int>> constructed_patterns_;
   std::vector<std::vector<odb::dbSite*>> repeating_row_patterns_;
 };
 
