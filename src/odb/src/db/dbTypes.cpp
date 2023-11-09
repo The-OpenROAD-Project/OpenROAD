@@ -82,6 +82,31 @@ dbOrientType::dbOrientType(const char* orient)
   else if (strcasecmp(orient, "MXR90") == 0)
     _value = MXR90;
 
+  // LEF/DEF style names
+  else if (strcasecmp(orient, "N") == 0)
+    _value = R0;
+
+  else if (strcasecmp(orient, "W") == 0)
+    _value = R90;
+
+  else if (strcasecmp(orient, "S") == 0)
+    _value = R180;
+
+  else if (strcasecmp(orient, "E") == 0)
+    _value = R270;
+
+  else if (strcasecmp(orient, "FN") == 0)
+    _value = MY;
+
+  else if (strcasecmp(orient, "FE") == 0)
+    _value = MYR90;
+
+  else if (strcasecmp(orient, "FS") == 0)
+    _value = MX;
+
+  else if (strcasecmp(orient, "FW") == 0)
+    _value = MXR90;
+
   else
     _value = R0;
 }
