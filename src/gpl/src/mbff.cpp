@@ -172,18 +172,7 @@ bool MBFF::ClockOn(odb::dbInst* inst)
 
 int MBFF::GetNext(odb::dbInst* inst)
 {
-  sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
-  for (auto seq : lib_cell->sequentials()) {
-    sta::FuncExpr* data = seq->data();
-    for (size_t i = 0; i < next_states_.size(); i++) {
-      if (sta::FuncExpr::equiv(next_states_[i], data)) {
-        return i;
-      }
-    } 
-    next_states_.push_back(data);
-    return (static_cast<int>(next_states_.size()) - 1);
-  }
+  return 0;
 }
 
 std::array<int, 6> MBFF::GetMask(odb::dbInst* inst)
