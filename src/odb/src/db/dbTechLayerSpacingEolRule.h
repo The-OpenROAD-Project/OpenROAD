@@ -33,6 +33,8 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb.h"
 
@@ -89,6 +91,12 @@ struct dbTechLayerSpacingEolRuleFlags
   bool two_min_adj_length_valid_ : 1;
   bool to_notch_length_valid_ : 1;
   uint spare_bits_ : 23;
+};
+
+union dbTechLayerSpacingEolRuleFlagsUnion
+{
+  dbTechLayerSpacingEolRuleFlags struct_view;
+  uint64_t packed_bytes_view;
 };
 
 class _dbTechLayerSpacingEolRule : public _dbObject

@@ -131,8 +131,9 @@ _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  dbTechLayerCutClassRuleFlagsUnion union_view;
+  stream >> union_view.packed_bytes_view;
+  obj.flags_ = union_view.struct_view;
   stream >> obj._name;
   stream >> obj.width_;
   stream >> obj.length_;
@@ -143,8 +144,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  dbTechLayerCutClassRuleFlagsUnion union_view;
+  union_view.struct_view = obj.flags_;
+  stream << union_view.packed_bytes_view;
   stream << obj._name;
   stream << obj.width_;
   stream << obj.length_;

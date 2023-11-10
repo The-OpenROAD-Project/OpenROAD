@@ -33,6 +33,8 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbSet.h"
 #include "dbVector.h"

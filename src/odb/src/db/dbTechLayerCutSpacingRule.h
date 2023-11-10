@@ -33,6 +33,8 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb.h"
 
@@ -86,6 +88,12 @@ struct dbTechLayerCutSpacingRuleFlags
   bool below_ : 1;
   bool par_within_enclosure_valid_ : 1;
   uint spare_bits_ : 22;
+};
+
+union dbTechLayerCutSpacingRuleFlagsUnion
+{
+  dbTechLayerCutSpacingRuleFlags struct_view;
+  uint64_t packed_bytes_view;
 };
 
 class _dbTechLayerCutSpacingRule : public _dbObject

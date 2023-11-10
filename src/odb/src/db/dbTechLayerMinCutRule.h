@@ -33,6 +33,8 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb.h"
 
@@ -54,6 +56,12 @@ struct dbTechLayerMinCutRuleFlags
   bool same_metal_overlap : 1;
   bool fully_enclosed_ : 1;
   uint spare_bits_ : 23;
+};
+
+union dbTechLayerMinCutRuleFlagsUnion
+{
+  dbTechLayerMinCutRuleFlags struct_view;
+  uint32_t packed_bytes_view;
 };
 
 class _dbTechLayerMinCutRule : public _dbObject

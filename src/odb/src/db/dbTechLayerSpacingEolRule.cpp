@@ -575,8 +575,9 @@ _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj)
 {
-  uint64_t* flags__bit_field = (uint64_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  dbTechLayerSpacingEolRuleFlagsUnion union_view;
+  stream >> union_view.packed_bytes_view;
+  obj.flags_ = union_view.struct_view;
   stream >> obj.eol_space_;
   stream >> obj.eol_width_;
   stream >> obj.wrong_dir_space_;
@@ -615,8 +616,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerSpacingEolRule& obj)
 {
-  uint64_t* flags__bit_field = (uint64_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  dbTechLayerSpacingEolRuleFlagsUnion union_view;
+  union_view.struct_view = obj.flags_;
+  stream << union_view.packed_bytes_view;
   stream << obj.eol_space_;
   stream << obj.eol_width_;
   stream << obj.wrong_dir_space_;

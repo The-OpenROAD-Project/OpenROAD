@@ -175,8 +175,9 @@ _dbTechLayerKeepOutZoneRule::_dbTechLayerKeepOutZoneRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerKeepOutZoneRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  dbTechLayerKeepOutZoneRuleFlagsUnion union_view;
+  stream >> union_view.packed_bytes_view;
+  obj.flags_ = union_view.struct_view;
   stream >> obj.first_cut_class_;
   stream >> obj.second_cut_class_;
   stream >> obj.aligned_spacing_;
@@ -192,8 +193,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerKeepOutZoneRule& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerKeepOutZoneRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  dbTechLayerKeepOutZoneRuleFlagsUnion union_view;
+  union_view.struct_view = obj.flags_;
+  stream << union_view.packed_bytes_view;
   stream << obj.first_cut_class_;
   stream << obj.second_cut_class_;
   stream << obj.aligned_spacing_;

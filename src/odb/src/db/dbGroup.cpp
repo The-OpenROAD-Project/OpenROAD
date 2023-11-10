@@ -174,8 +174,9 @@ _dbGroup::_dbGroup(_dbDatabase* db, const _dbGroup& r)
 
 dbIStream& operator>>(dbIStream& stream, _dbGroup& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  dbGroupFlagsUnion union_view;
+  stream >> union_view.packed_bytes_view;
+  obj.flags_ = union_view.struct_view;
   stream >> obj._name;
   stream >> obj._next_entry;
   stream >> obj._group_next;
@@ -193,8 +194,9 @@ dbIStream& operator>>(dbIStream& stream, _dbGroup& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbGroup& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  dbGroupFlagsUnion union_view;
+  union_view.struct_view = obj.flags_;
+  stream << union_view.packed_bytes_view;
   stream << obj._name;
   stream << obj._next_entry;
   stream << obj._group_next;

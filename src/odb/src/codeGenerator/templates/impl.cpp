@@ -210,12 +210,9 @@ namespace odb {
   {
     {% for field in klass.fields %}
       {% if field.bitFields %}
-        {% if field.numBits == 32 %}
-          uint32_t* {{field.name}}_bit_field = (uint32_t*) &obj.{{field.name}};
-        {% else %}
-          uint64_t* {{field.name}}_bit_field = (uint64_t*) &obj.{{field.name}};
-        {% endif %}
-        stream >> *{{field.name}}_bit_field;
+        {{field.type}}Union union_view;
+        stream >> union_view.packed_bytes_view;
+        obj.{{field.name}} = union_view.struct_view;
       {% else %}
         {% if 'no-serial' not in field.flags %}
           {% if 'schema' in field %}
@@ -234,12 +231,9 @@ namespace odb {
   {
     {% for field in klass.fields %}
       {% if field.bitFields %}
-        {% if field.numBits == 32 %}
-          uint32_t* {{field.name}}_bit_field = (uint32_t*) &obj.{{field.name}};
-        {% else %}
-          uint64_t* {{field.name}}_bit_field = (uint64_t*) &obj.{{field.name}};
-        {% endif %}
-        stream << *{{field.name}}_bit_field;
+        {{field.type}}Union union_view;
+        union_view.struct_view = obj.{{field.name}};
+        stream << union_view.packed_bytes_view;
       {% else %}
         {% if 'no-serial' not in field.flags %}
           {% if 'schema' in field %}

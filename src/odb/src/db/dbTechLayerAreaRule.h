@@ -33,6 +33,8 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb.h"
 
@@ -48,6 +50,12 @@ struct dbTechLayerAreaRuleFlags
   bool except_rectangle_ : 1;
   uint overlap_ : 2;
   uint spare_bits_ : 29;
+};
+
+union dbTechLayerAreaRuleFlagsUnion
+{
+  dbTechLayerAreaRuleFlags struct_view;
+  uint32_t packed_bytes_view;
 };
 
 class _dbTechLayerAreaRule : public _dbObject

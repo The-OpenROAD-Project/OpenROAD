@@ -141,8 +141,9 @@ _dbTechLayerArraySpacingRule::_dbTechLayerArraySpacingRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerArraySpacingRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  dbTechLayerArraySpacingRuleFlagsUnion union_view;
+  stream >> union_view.packed_bytes_view;
+  obj.flags_ = union_view.struct_view;
   stream >> obj.via_width_;
   stream >> obj.cut_spacing_;
   stream >> obj.within_;
@@ -155,8 +156,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerArraySpacingRule& obj)
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerArraySpacingRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  dbTechLayerArraySpacingRuleFlagsUnion union_view;
+  union_view.struct_view = obj.flags_;
+  stream << union_view.packed_bytes_view;
   stream << obj.via_width_;
   stream << obj.cut_spacing_;
   stream << obj.within_;

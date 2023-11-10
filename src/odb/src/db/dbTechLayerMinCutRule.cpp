@@ -180,8 +180,9 @@ _dbTechLayerMinCutRule::_dbTechLayerMinCutRule(_dbDatabase* db,
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinCutRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  dbTechLayerMinCutRuleFlagsUnion union_view;
+  stream >> union_view.packed_bytes_view;
+  obj.flags_ = union_view.struct_view;
   stream >> obj.num_cuts_;
   stream >> obj.cut_class_cuts_map_;
   stream >> obj.width_;
@@ -195,8 +196,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinCutRule& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinCutRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  dbTechLayerMinCutRuleFlagsUnion union_view;
+  union_view.struct_view = obj.flags_;
+  stream << union_view.packed_bytes_view;
   stream << obj.num_cuts_;
   stream << obj.cut_class_cuts_map_;
   stream << obj.width_;

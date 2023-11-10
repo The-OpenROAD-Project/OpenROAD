@@ -147,8 +147,9 @@ _dbTechLayerEolKeepOutRule::_dbTechLayerEolKeepOutRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerEolKeepOutRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  dbTechLayerEolKeepOutRuleFlagsUnion union_view;
+  stream >> union_view.packed_bytes_view;
+  obj.flags_ = union_view.struct_view;
   stream >> obj.eol_width_;
   stream >> obj.backward_ext_;
   stream >> obj.forward_ext_;
@@ -161,8 +162,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerEolKeepOutRule& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerEolKeepOutRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  dbTechLayerEolKeepOutRuleFlagsUnion union_view;
+  union_view.struct_view = obj.flags_;
+  stream << union_view.packed_bytes_view;
   stream << obj.eol_width_;
   stream << obj.backward_ext_;
   stream << obj.forward_ext_;

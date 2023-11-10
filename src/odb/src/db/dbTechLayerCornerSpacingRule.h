@@ -33,6 +33,8 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb.h"
 
@@ -62,6 +64,12 @@ struct dbTechLayerCornerSpacingRuleFlags
   bool except_same_metal_ : 1;
   bool corner_to_corner_ : 1;
   uint spare_bits_ : 19;
+};
+
+union dbTechLayerCornerSpacingRuleFlagsUnion
+{
+  dbTechLayerCornerSpacingRuleFlags struct_view;
+  uint32_t packed_bytes_view;
 };
 
 class _dbTechLayerCornerSpacingRule : public _dbObject

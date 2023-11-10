@@ -33,6 +33,8 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb.h"
 
@@ -47,6 +49,12 @@ struct dbTechLayerCutClassRuleFlags
   bool length_valid_ : 1;
   bool cuts_valid_ : 1;
   uint spare_bits_ : 30;
+};
+
+union dbTechLayerCutClassRuleFlagsUnion
+{
+  dbTechLayerCutClassRuleFlags struct_view;
+  uint32_t packed_bytes_view;
 };
 
 class _dbTechLayerCutClassRule : public _dbObject

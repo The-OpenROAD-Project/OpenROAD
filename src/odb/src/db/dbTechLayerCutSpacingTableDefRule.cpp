@@ -259,8 +259,9 @@ _dbTechLayerCutSpacingTableDefRule::_dbTechLayerCutSpacingTableDefRule(
 dbIStream& operator>>(dbIStream& stream,
                       _dbTechLayerCutSpacingTableDefRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  dbTechLayerCutSpacingTableDefRuleFlagsUnion union_view;
+  stream >> union_view.packed_bytes_view;
+  obj.flags_ = union_view.struct_view;
   stream >> obj.default_;
   stream >> obj.second_layer_;
   stream >> obj.prl_for_aligned_cut_tbl_;
@@ -283,8 +284,9 @@ dbIStream& operator>>(dbIStream& stream,
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCutSpacingTableDefRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  dbTechLayerCutSpacingTableDefRuleFlagsUnion union_view;
+  union_view.struct_view = obj.flags_;
+  stream << union_view.packed_bytes_view;
   stream << obj.default_;
   stream << obj.second_layer_;
   stream << obj.prl_for_aligned_cut_tbl_;

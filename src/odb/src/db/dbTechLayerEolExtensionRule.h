@@ -33,6 +33,8 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb.h"
@@ -47,6 +49,12 @@ struct dbTechLayerEolExtensionRuleFlags
 {
   bool parallel_only_ : 1;
   uint spare_bits_ : 31;
+};
+
+union dbTechLayerEolExtensionRuleFlagsUnion
+{
+  dbTechLayerEolExtensionRuleFlags struct_view;
+  uint32_t packed_bytes_view;
 };
 
 class _dbTechLayerEolExtensionRule : public _dbObject

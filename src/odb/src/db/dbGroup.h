@@ -33,6 +33,8 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb.h"
 
@@ -54,6 +56,12 @@ struct dbGroupFlags
 {
   uint _type : 2;
   uint spare_bits_ : 30;
+};
+
+union dbGroupFlagsUnion
+{
+  dbGroupFlags struct_view;
+  uint32_t packed_bytes_view;
 };
 
 class _dbGroup : public _dbObject

@@ -206,8 +206,9 @@ _dbTechLayerCornerSpacingRule::_dbTechLayerCornerSpacingRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCornerSpacingRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  dbTechLayerCornerSpacingRuleFlagsUnion union_view;
+  stream >> union_view.packed_bytes_view;
+  obj.flags_ = union_view.struct_view;
   stream >> obj.within_;
   stream >> obj.eol_width_;
   stream >> obj.jog_length_;
@@ -224,8 +225,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCornerSpacingRule& obj)
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCornerSpacingRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  dbTechLayerCornerSpacingRuleFlagsUnion union_view;
+  union_view.struct_view = obj.flags_;
+  stream << union_view.packed_bytes_view;
   stream << obj.within_;
   stream << obj.eol_width_;
   stream << obj.jog_length_;
