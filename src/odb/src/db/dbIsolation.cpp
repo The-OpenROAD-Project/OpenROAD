@@ -33,9 +33,6 @@
 // Generator Code Begin Cpp
 #include "dbIsolation.h"
 
-#include <cstdint>
-#include <cstring>
-
 #include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"

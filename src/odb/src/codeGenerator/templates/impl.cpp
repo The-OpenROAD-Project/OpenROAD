@@ -38,8 +38,10 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 
-#include <cstring>
-#include <cstdint>
+{% if klass.hasBitFields %}
+  #include <cstring>
+  #include <cstdint>
+{% endif %}
 
 {% for include in klass.cpp_includes %}
   #include "{{include}}"
