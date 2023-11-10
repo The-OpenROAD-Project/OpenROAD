@@ -257,7 +257,7 @@ void RepairAntennas::addWireTerms(Net* net,
       }
 
       if (conn_layer >= grouter_->getMinRoutingLayer()) {
-        createEncoderPath(wire_encoder, jct_id, tech_layer);
+        wire_encoder.newPath(tech_layer, odb::dbWireType::ROUTED);
         wire_encoder.addPoint(grid_pt.x(), grid_pt.y());
         wire_encoder.addPoint(pin_pt.x(), grid_pt.y());
         wire_encoder.addPoint(pin_pt.x(), pin_pt.y());
@@ -275,14 +275,14 @@ void RepairAntennas::addWireTerms(Net* net,
             = layer1->getDirection() == odb::dbTechLayerDir::VERTICAL ? layer1
                                                                       : layer2;
         // create horizontal wire to connect to the pin
-        createEncoderPath(wire_encoder, jct_id, h_layer);
+        wire_encoder.newPath(h_layer, odb::dbWireType::ROUTED);
         wire_encoder.addPoint(grid_pt.x(), grid_pt.y());
         wire_encoder.addPoint(pin_pt.x(), grid_pt.y());
         jct_id = wire_encoder.addTechVia(
             default_vias[grouter_->getMinRoutingLayer()]);
 
         // create vertical wire to connect to the pin
-        createEncoderPath(wire_encoder, jct_id, v_layer);
+        wire_encoder.newPath(v_layer, odb::dbWireType::ROUTED);
         wire_encoder.addPoint(pin_pt.x(), grid_pt.y());
         wire_encoder.addPoint(pin_pt.x(), pin_pt.y());
 
@@ -626,17 +626,6 @@ double RepairAntennas::diffArea(odb::dbMTerm* mterm)
     max_diff_area = std::max(max_diff_area, diff_area);
   }
   return max_diff_area;
-}
-
-void RepairAntennas::createEncoderPath(odb::dbWireEncoder& wire_encoder,
-                                       int jct_id,
-                                       odb::dbTechLayer* layer)
-{
-  if (jct_id != -1) {
-    wire_encoder.newPathVirtualWire(jct_id, layer, odb::dbWireType::ROUTED);
-  } else {
-    wire_encoder.newPath(layer, odb::dbWireType::ROUTED);
-  }
 }
 
 }  // namespace grt
