@@ -133,14 +133,22 @@ odb::dbWire* RepairAntennas::makeNetWire(
         int jct_id = -1;
         if (seg.isVia()) {
           int bottom_layer = std::min(l1, l2);
+          int top_layer = std::max(l1, l2);
           odb::dbTechLayer* bottom_tech_layer
               = tech->findRoutingLayer(bottom_layer);
+          odb::dbTechLayer* top_tech_layer
+              = tech->findRoutingLayer(top_layer);
           if (bottom_layer >= grouter_->getMinRoutingLayer()) {
             if (bottom_layer == prev_conn_layer) {
               wire_encoder.newPath(bottom_tech_layer, odb::dbWireType::ROUTED);
               wire_encoder.addPoint(x1, y1);
               jct_id = wire_encoder.addTechVia(default_vias[bottom_layer]);
               prev_conn_layer = std::max(l1, l2);
+            } else if (top_layer == prev_conn_layer) {
+              wire_encoder.newPath(top_tech_layer, odb::dbWireType::ROUTED);
+              wire_encoder.addPoint(x1, y1);
+              jct_id = wire_encoder.addTechVia(default_vias[bottom_layer]);
+              prev_conn_layer = std::min(l1, l2);
             }
             addWireTerms(net,
                          route,
