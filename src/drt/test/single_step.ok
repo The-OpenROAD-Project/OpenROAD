@@ -60,9 +60,9 @@
 [INFO DRT-0036] FR_VIA guide region query size = 0.
 [INFO DRT-0036] Metal1 guide region query size = 22.
 [INFO DRT-0036] Via1 guide region query size = 0.
-[INFO DRT-0036] Metal2 guide region query size = 21.
+[INFO DRT-0036] Metal2 guide region query size = 22.
 [INFO DRT-0036] Via2 guide region query size = 0.
-[INFO DRT-0036] Metal3 guide region query size = 15.
+[INFO DRT-0036] Metal3 guide region query size = 10.
 [INFO DRT-0036] Via3 guide region query size = 0.
 [INFO DRT-0036] Metal4 guide region query size = 0.
 [INFO DRT-0036] Via4 guide region query size = 0.
