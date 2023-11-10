@@ -219,6 +219,7 @@ namespace odb {
           uint64_t {{field.name}}_bit_field;
         {% endif %}
         stream >> {{field.name}}_bit_field;
+        static_assert(sizeof(obj.{{field.name}}) == sizeof({{field.name}}_bit_field));
         std::memcpy(&obj.{{field.name}}, &{{field.name}}_bit_field, sizeof({{field.name}}_bit_field));
       {% else %}
         {% if 'no-serial' not in field.flags %}
@@ -243,6 +244,7 @@ namespace odb {
         {% else %}
           uint64_t {{field.name}}_bit_field;
         {% endif %}
+        static_assert(sizeof(obj.{{field.name}}) == sizeof({{field.name}}_bit_field));
         std::memcpy(&{{field.name}}_bit_field, &obj.{{field.name}}, sizeof(obj.{{field.name}}));
         stream << {{field.name}}_bit_field;
       {% else %}

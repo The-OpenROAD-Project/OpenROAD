@@ -470,6 +470,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutSpacingRule& obj)
 {
   uint64_t flags__bit_field;
   stream >> flags__bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags__bit_field));
   std::memcpy(&obj.flags_, &flags__bit_field, sizeof(flags__bit_field));
   stream >> obj.cut_spacing_;
   stream >> obj.second_layer_;
@@ -500,6 +501,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutSpacingRule& obj)
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutSpacingRule& obj)
 {
   uint64_t flags__bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags__bit_field));
   std::memcpy(&flags__bit_field, &obj.flags_, sizeof(obj.flags_));
   stream << flags__bit_field;
   stream << obj.cut_spacing_;

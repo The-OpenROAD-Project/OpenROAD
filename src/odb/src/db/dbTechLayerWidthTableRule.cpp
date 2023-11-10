@@ -103,6 +103,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerWidthTableRule& obj)
 {
   uint32_t flags__bit_field;
   stream >> flags__bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags__bit_field));
   std::memcpy(&obj.flags_, &flags__bit_field, sizeof(flags__bit_field));
   stream >> obj.width_tbl_;
   return stream;
@@ -111,6 +112,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerWidthTableRule& obj)
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerWidthTableRule& obj)
 {
   uint32_t flags__bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags__bit_field));
   std::memcpy(&flags__bit_field, &obj.flags_, sizeof(obj.flags_));
   stream << flags__bit_field;
   stream << obj.width_tbl_;
