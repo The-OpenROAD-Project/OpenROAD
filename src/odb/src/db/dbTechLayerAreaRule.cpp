@@ -126,10 +126,10 @@ _dbTechLayerAreaRule::_dbTechLayerAreaRule(_dbDatabase* db,
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerAreaRule& obj)
 {
-  uint32_t flags__bit_field;
-  stream >> flags__bit_field;
-  static_assert(sizeof(obj.flags_) == sizeof(flags__bit_field));
-  std::memcpy(&obj.flags_, &flags__bit_field, sizeof(flags__bit_field));
+  uint32_t flags_bit_field;
+  stream >> flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> obj.area_;
   stream >> obj.except_min_width_;
   stream >> obj.except_edge_length_;
@@ -144,10 +144,10 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerAreaRule& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerAreaRule& obj)
 {
-  uint32_t flags__bit_field;
-  static_assert(sizeof(obj.flags_) == sizeof(flags__bit_field));
-  std::memcpy(&flags__bit_field, &obj.flags_, sizeof(obj.flags_));
-  stream << flags__bit_field;
+  uint32_t flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags_bit_field;
   stream << obj.area_;
   stream << obj.except_min_width_;
   stream << obj.except_edge_length_;
