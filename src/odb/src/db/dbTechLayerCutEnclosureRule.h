@@ -33,8 +33,6 @@
 // Generator Code Begin Header
 #pragma once
 
-#include <cstdint>
-
 #include "dbCore.h"
 #include "odb.h"
 
@@ -72,12 +70,6 @@ struct dbTechLayerCutEnclosureRuleFlags
   bool below_enclosure_valid_ : 1;
   bool concave_corners_valid_ : 1;
   uint spare_bits_ : 7;
-};
-
-union dbTechLayerCutEnclosureRuleFlagsUnion
-{
-  dbTechLayerCutEnclosureRuleFlags struct_view;
-  uint32_t packed_bytes_view;
 };
 
 class _dbTechLayerCutEnclosureRule : public _dbObject

@@ -33,8 +33,6 @@
 //Generator Code Begin Header
 #pragma once
 
-#include <cstdint>
-
 #include "odb.h"
 #include "dbCore.h"
 
@@ -68,13 +66,6 @@ namespace odb {
           {% if "default" in field %} = {{field.default}}{% endif %};
           {% if "comment" in field %} {{field.comment}}{% endif %}
       {% endfor %}
-    };
-
-    union {{ _struct.name }}Union
-    {
-        {{ _struct.name }} struct_view;
-        {% if _struct.num_bits <= 32 %}uint32_t packed_bytes_view;{% endif %}
-        {% if _struct.num_bits > 32 %}uint64_t packed_bytes_view;{% endif %}
     };
     {% endif %}
   {% endfor %}

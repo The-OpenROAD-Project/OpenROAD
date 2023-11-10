@@ -266,7 +266,6 @@ for klass in schema["classes"]:
 
     klass["fields"] = [field for field in klass["fields"] if "bits" not in field]
     total_num_bits = flag_num_bits
-    struct["num_bits"] = total_num_bits
     if flag_num_bits > 0 and flag_num_bits % 32 != 0:
         spare_bits_field = {
             "name": "spare_bits_",

@@ -33,6 +33,9 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerSpacingTablePrlRule.h"
 
+#include <cstdint>
+#include <cstring>
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -112,9 +115,9 @@ _dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj)
 {
-  dbTechLayerSpacingTablePrlRuleFlagsUnion union_view;
-  stream >> union_view.packed_bytes_view;
-  obj.flags_ = union_view.struct_view;
+  uint32_t flags__bit_field;
+  stream >> flags__bit_field;
+  std::memcpy(&obj.flags_, &flags__bit_field, sizeof(flags__bit_field));
   stream >> obj.eol_width_;
   stream >> obj.length_tbl_;
   stream >> obj.width_tbl_;
@@ -129,9 +132,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj)
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerSpacingTablePrlRule& obj)
 {
-  dbTechLayerSpacingTablePrlRuleFlagsUnion union_view;
-  union_view.struct_view = obj.flags_;
-  stream << union_view.packed_bytes_view;
+  uint32_t flags__bit_field;
+  std::memcpy(&flags__bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags__bit_field;
   stream << obj.eol_width_;
   stream << obj.length_tbl_;
   stream << obj.width_tbl_;

@@ -33,8 +33,6 @@
 // Generator Code Begin Header
 #pragma once
 
-#include <cstdint>
-
 #include "dbCore.h"
 #include "odb.h"
 
@@ -54,12 +52,6 @@ struct dbTechLayerMinStepRuleFlags
   bool min_between_length_valid_ : 1;
   bool except_same_corners_ : 1;
   uint spare_bits_ : 25;
-};
-
-union dbTechLayerMinStepRuleFlagsUnion
-{
-  dbTechLayerMinStepRuleFlags struct_view;
-  uint32_t packed_bytes_view;
 };
 
 class _dbTechLayerMinStepRule : public _dbObject

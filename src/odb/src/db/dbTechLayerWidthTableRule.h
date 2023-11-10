@@ -33,8 +33,6 @@
 // Generator Code Begin Header
 #pragma once
 
-#include <cstdint>
-
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb.h"
@@ -50,12 +48,6 @@ struct dbTechLayerWidthTableRuleFlags
   bool wrong_direction_ : 1;
   bool orthogonal_ : 1;
   uint spare_bits_ : 30;
-};
-
-union dbTechLayerWidthTableRuleFlagsUnion
-{
-  dbTechLayerWidthTableRuleFlags struct_view;
-  uint32_t packed_bytes_view;
 };
 
 class _dbTechLayerWidthTableRule : public _dbObject

@@ -33,8 +33,6 @@
 // Generator Code Begin Header
 #pragma once
 
-#include <cstdint>
-
 #include "dbCore.h"
 #include "odb.h"
 
@@ -52,12 +50,6 @@ struct dbTechLayerKeepOutZoneRuleFlags
   bool except_aligned_side_ : 1;
   bool except_aligned_end_ : 1;
   uint spare_bits_ : 27;
-};
-
-union dbTechLayerKeepOutZoneRuleFlagsUnion
-{
-  dbTechLayerKeepOutZoneRuleFlags struct_view;
-  uint32_t packed_bytes_view;
 };
 
 class _dbTechLayerKeepOutZoneRule : public _dbObject

@@ -33,6 +33,9 @@
 // Generator Code Begin Cpp
 #include "dbLogicPort.h"
 
+#include <cstdint>
+#include <cstring>
+
 #include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"

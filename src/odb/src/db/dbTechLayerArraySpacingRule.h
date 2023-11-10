@@ -33,8 +33,6 @@
 // Generator Code Begin Header
 #pragma once
 
-#include <cstdint>
-
 #include "dbCore.h"
 #include "odb.h"
 
@@ -52,12 +50,6 @@ struct dbTechLayerArraySpacingRuleFlags
   bool via_width_valid_ : 1;
   bool within_valid_ : 1;
   uint spare_bits_ : 28;
-};
-
-union dbTechLayerArraySpacingRuleFlagsUnion
-{
-  dbTechLayerArraySpacingRuleFlags struct_view;
-  uint32_t packed_bytes_view;
 };
 
 class _dbTechLayerArraySpacingRule : public _dbObject

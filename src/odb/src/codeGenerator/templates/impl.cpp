@@ -38,6 +38,9 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 
+#include <cstring>
+#include <cstdint>
+
 {% for include in klass.cpp_includes %}
   #include "{{include}}"
 {% endfor %}
@@ -210,9 +213,13 @@ namespace odb {
   {
     {% for field in klass.fields %}
       {% if field.bitFields %}
-        {{field.type}}Union union_view;
-        stream >> union_view.packed_bytes_view;
-        obj.{{field.name}} = union_view.struct_view;
+        {% if field.numBits == 32 %}
+          uint32_t {{field.name}}_bit_field;
+        {% else %}
+          uint64_t {{field.name}}_bit_field;
+        {% endif %}
+        stream >> {{field.name}}_bit_field;
+        std::memcpy(&obj.{{field.name}}, &{{field.name}}_bit_field, sizeof({{field.name}}_bit_field));
       {% else %}
         {% if 'no-serial' not in field.flags %}
           {% if 'schema' in field %}
@@ -231,9 +238,13 @@ namespace odb {
   {
     {% for field in klass.fields %}
       {% if field.bitFields %}
-        {{field.type}}Union union_view;
-        union_view.struct_view = obj.{{field.name}};
-        stream << union_view.packed_bytes_view;
+        {% if field.numBits == 32 %}
+          uint32_t {{field.name}}_bit_field;
+        {% else %}
+          uint64_t {{field.name}}_bit_field;
+        {% endif %}
+        std::memcpy(&{{field.name}}_bit_field, &obj.{{field.name}}, sizeof(obj.{{field.name}}));
+        stream << {{field.name}}_bit_field;
       {% else %}
         {% if 'no-serial' not in field.flags %}
           {% if 'schema' in field %}

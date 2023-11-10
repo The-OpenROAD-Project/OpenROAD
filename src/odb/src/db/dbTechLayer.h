@@ -33,8 +33,6 @@
 // Generator Code Begin Header
 #pragma once
 
-#include <cstdint>
-
 #include "dbCore.h"
 #include "dbHashTable.h"
 #include "dbMatrix.h"
@@ -93,12 +91,6 @@ struct dbTechLayerFlags
   bool rect_only_except_non_core_pins_ : 1;
   uint lef58_type_ : 5;
   uint spare_bits_ : 4;
-};
-
-union dbTechLayerFlagsUnion
-{
-  dbTechLayerFlags struct_view;
-  uint32_t packed_bytes_view;
 };
 
 class _dbTechLayer : public _dbObject

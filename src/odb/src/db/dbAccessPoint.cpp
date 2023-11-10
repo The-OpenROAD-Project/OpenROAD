@@ -33,6 +33,9 @@
 // Generator Code Begin Cpp
 #include "dbAccessPoint.h"
 
+#include <cstdint>
+#include <cstring>
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"

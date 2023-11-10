@@ -33,6 +33,9 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerSpacingEolRule.h"
 
+#include <cstdint>
+#include <cstring>
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -575,9 +578,9 @@ _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj)
 {
-  dbTechLayerSpacingEolRuleFlagsUnion union_view;
-  stream >> union_view.packed_bytes_view;
-  obj.flags_ = union_view.struct_view;
+  uint64_t flags__bit_field;
+  stream >> flags__bit_field;
+  std::memcpy(&obj.flags_, &flags__bit_field, sizeof(flags__bit_field));
   stream >> obj.eol_space_;
   stream >> obj.eol_width_;
   stream >> obj.wrong_dir_space_;
@@ -616,9 +619,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerSpacingEolRule& obj)
 {
-  dbTechLayerSpacingEolRuleFlagsUnion union_view;
-  union_view.struct_view = obj.flags_;
-  stream << union_view.packed_bytes_view;
+  uint64_t flags__bit_field;
+  std::memcpy(&flags__bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags__bit_field;
   stream << obj.eol_space_;
   stream << obj.eol_width_;
   stream << obj.wrong_dir_space_;

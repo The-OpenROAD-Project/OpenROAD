@@ -33,6 +33,9 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerMinStepRule.h"
 
+#include <cstdint>
+#include <cstring>
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -165,9 +168,9 @@ _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinStepRule& obj)
 {
-  dbTechLayerMinStepRuleFlagsUnion union_view;
-  stream >> union_view.packed_bytes_view;
-  obj.flags_ = union_view.struct_view;
+  uint32_t flags__bit_field;
+  stream >> flags__bit_field;
+  std::memcpy(&obj.flags_, &flags__bit_field, sizeof(flags__bit_field));
   stream >> obj.min_step_length_;
   stream >> obj.max_edges_;
   stream >> obj.min_adj_length1_;
@@ -179,9 +182,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinStepRule& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinStepRule& obj)
 {
-  dbTechLayerMinStepRuleFlagsUnion union_view;
-  union_view.struct_view = obj.flags_;
-  stream << union_view.packed_bytes_view;
+  uint32_t flags__bit_field;
+  std::memcpy(&flags__bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags__bit_field;
   stream << obj.min_step_length_;
   stream << obj.max_edges_;
   stream << obj.min_adj_length1_;

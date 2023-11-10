@@ -33,8 +33,6 @@
 // Generator Code Begin Header
 #pragma once
 
-#include <cstdint>
-
 #include "dbCore.h"
 #include "odb.h"
 
@@ -54,12 +52,6 @@ struct dbTechLayerEolKeepOutRuleFlags
   bool corner_only_ : 1;
   bool except_within_ : 1;
   uint spare_bits_ : 29;
-};
-
-union dbTechLayerEolKeepOutRuleFlagsUnion
-{
-  dbTechLayerEolKeepOutRuleFlags struct_view;
-  uint32_t packed_bytes_view;
 };
 
 class _dbTechLayerEolKeepOutRule : public _dbObject

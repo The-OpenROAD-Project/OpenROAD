@@ -33,6 +33,9 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerKeepOutZoneRule.h"
 
+#include <cstdint>
+#include <cstring>
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -175,9 +178,9 @@ _dbTechLayerKeepOutZoneRule::_dbTechLayerKeepOutZoneRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerKeepOutZoneRule& obj)
 {
-  dbTechLayerKeepOutZoneRuleFlagsUnion union_view;
-  stream >> union_view.packed_bytes_view;
-  obj.flags_ = union_view.struct_view;
+  uint32_t flags__bit_field;
+  stream >> flags__bit_field;
+  std::memcpy(&obj.flags_, &flags__bit_field, sizeof(flags__bit_field));
   stream >> obj.first_cut_class_;
   stream >> obj.second_cut_class_;
   stream >> obj.aligned_spacing_;
@@ -193,9 +196,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerKeepOutZoneRule& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerKeepOutZoneRule& obj)
 {
-  dbTechLayerKeepOutZoneRuleFlagsUnion union_view;
-  union_view.struct_view = obj.flags_;
-  stream << union_view.packed_bytes_view;
+  uint32_t flags__bit_field;
+  std::memcpy(&flags__bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags__bit_field;
   stream << obj.first_cut_class_;
   stream << obj.second_cut_class_;
   stream << obj.aligned_spacing_;

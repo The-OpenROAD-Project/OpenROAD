@@ -33,6 +33,9 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerEolExtensionRule.h"
 
+#include <cstdint>
+#include <cstring>
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -103,9 +106,9 @@ _dbTechLayerEolExtensionRule::_dbTechLayerEolExtensionRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerEolExtensionRule& obj)
 {
-  dbTechLayerEolExtensionRuleFlagsUnion union_view;
-  stream >> union_view.packed_bytes_view;
-  obj.flags_ = union_view.struct_view;
+  uint32_t flags__bit_field;
+  stream >> flags__bit_field;
+  std::memcpy(&obj.flags_, &flags__bit_field, sizeof(flags__bit_field));
   stream >> obj.spacing_;
   stream >> obj.extension_tbl_;
   return stream;
@@ -114,9 +117,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerEolExtensionRule& obj)
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerEolExtensionRule& obj)
 {
-  dbTechLayerEolExtensionRuleFlagsUnion union_view;
-  union_view.struct_view = obj.flags_;
-  stream << union_view.packed_bytes_view;
+  uint32_t flags__bit_field;
+  std::memcpy(&flags__bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags__bit_field;
   stream << obj.spacing_;
   stream << obj.extension_tbl_;
   return stream;
