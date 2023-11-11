@@ -446,14 +446,14 @@ dbTech* dbDatabase::getTech()
       utl::ODB, 432, "getTech() is obsolete in a multi-tech db");
 }
 
-void dbDatabase::read(std::ifstream& file)
+void dbDatabase::read(std::istream& file)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   dbIStream stream(db, file);
   stream >> *db;
 }
 
-void dbDatabase::readTech(std::ifstream& file)
+void dbDatabase::readTech(std::istream& file)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   _dbTech* tech = (_dbTech*) getTech();
@@ -469,7 +469,7 @@ void dbDatabase::readTech(std::ifstream& file)
   stream >> *tech;
 }
 
-void dbDatabase::readLib(std::ifstream& file, dbLib* lib)
+void dbDatabase::readLib(std::istream& file, dbLib* lib)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   _dbLib* l = (_dbLib*) lib;
@@ -481,14 +481,14 @@ void dbDatabase::readLib(std::ifstream& file, dbLib* lib)
   stream >> *l;
 }
 
-void dbDatabase::readLibs(std::ifstream& file)
+void dbDatabase::readLibs(std::istream& file)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   dbIStream stream(db, file);
   stream >> *db->_lib_tbl;
 }
 
-void dbDatabase::readBlock(std::ifstream& file, dbBlock* block)
+void dbDatabase::readBlock(std::istream& file, dbBlock* block)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   _dbBlock* b = (_dbBlock*) block;
@@ -498,7 +498,7 @@ void dbDatabase::readBlock(std::ifstream& file, dbBlock* block)
   stream >> *b;
 }
 
-void dbDatabase::readNets(std::ifstream& file, dbBlock* block)
+void dbDatabase::readNets(std::istream& file, dbBlock* block)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   dbIStream stream(db, file);
@@ -512,14 +512,14 @@ void dbDatabase::readNets(std::ifstream& file, dbBlock* block)
   stream >> *((_dbBlock*) block)->_net_tbl;
 }
 
-void dbDatabase::readWires(std::ifstream& file, dbBlock* block)
+void dbDatabase::readWires(std::istream& file, dbBlock* block)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   dbIStream stream(db, file);
   stream >> *((_dbBlock*) block)->_wire_tbl;
 }
 
-void dbDatabase::readParasitics(std::ifstream& file, dbBlock* block)
+void dbDatabase::readParasitics(std::istream& file, dbBlock* block)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   dbIStream stream(db, file);
@@ -537,7 +537,7 @@ void dbDatabase::readParasitics(std::ifstream& file, dbBlock* block)
       = ((_dbBlock*) block)->_num_ext_corners;
 }
 
-void dbDatabase::readChip(std::ifstream& file)
+void dbDatabase::readChip(std::istream& file)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   _dbChip* chip = (_dbChip*) getChip();

@@ -228,13 +228,13 @@ class dbOStream
 
 class dbIStream
 {
-  std::ifstream& _f;
+  std::istream& _f;
   _dbDatabase* _db;
   double _lef_area_factor;
   double _lef_dist_factor;
 
  public:
-  dbIStream(_dbDatabase* db, std::ifstream& f);
+  dbIStream(_dbDatabase* db, std::istream& f);
 
   _dbDatabase* getDatabase() { return _db; }
 

@@ -100,7 +100,7 @@ dbOStream::dbOStream(_dbDatabase* db, std::ostream& f) : _f(f)
   }
 }
 
-dbIStream::dbIStream(_dbDatabase* db, std::ifstream& f) : _f(f)
+dbIStream::dbIStream(_dbDatabase* db, std::istream& f) : _f(f)
 {
   _db = db;
 
