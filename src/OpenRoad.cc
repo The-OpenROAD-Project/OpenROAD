@@ -486,12 +486,11 @@ void OpenRoad::writeDb(const char* filename)
 {
   std::ofstream stream;
   stream.exceptions(std::ifstream::failbit | std::ifstream::badbit
-                     | std::ios::eofbit);
+                    | std::ios::eofbit);
   stream.open(filename, std::ios::binary);
-  
+
   db_->write(stream);
   stream.close();
-  
 }
 
 void OpenRoad::diffDbs(const char* filename1,
