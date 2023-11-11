@@ -36,6 +36,8 @@
 #include <cstdint>
 #include <cstring>
 #include <fstream>
+#include <istream>
+#include <ostream>
 #include <string>
 
 #include "ZException.h"
@@ -51,18 +53,12 @@ class _dbDatabase;
 class dbOStream
 {
   _dbDatabase* _db;
-  FILE* _f;
+  std::ostream& _f;
   double _lef_area_factor;
   double _lef_dist_factor;
 
-  void write_error()
-  {
-    throw ZException("write failed on database stream; system io error: (%s)",
-                     strerror(ferror(_f)));
-  }
-
  public:
-  dbOStream(_dbDatabase* db, FILE* f);
+  dbOStream(_dbDatabase* db, std::ostream& f);
 
   _dbDatabase* getDatabase() { return _db; }
 
@@ -74,100 +70,85 @@ class dbOStream
 
   dbOStream& operator<<(char c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1) {
-      write_error();
-    }
+    _f.put(c);
     return *this;
   }
 
   dbOStream& operator<<(unsigned char c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1) {
-      write_error();
-    }
+    _f.put(c);
     return *this;
   }
 
   dbOStream& operator<<(int16_t c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1) {
-      write_error();
-    }
+    char dst[sizeof(c)];
+    std::memcpy(dst, &c, sizeof(c));
+    _f.write(dst, sizeof(c));
     return *this;
   }
 
   dbOStream& operator<<(uint16_t c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1) {
-      write_error();
-    }
+    char dst[sizeof(c)];
+    std::memcpy(dst, &c, sizeof(c));
+    _f.write(dst, sizeof(c));
     return *this;
   }
 
   dbOStream& operator<<(int c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1) {
-      write_error();
-    }
+    char dst[sizeof(c)];
+    std::memcpy(dst, &c, sizeof(c));
+    _f.write(dst, sizeof(c));
     return *this;
   }
 
   dbOStream& operator<<(uint64_t c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1) {
-      write_error();
-    }
+    char dst[sizeof(c)];
+    std::memcpy(dst, &c, sizeof(c));
+    _f.write(dst, sizeof(c));
     return *this;
   }
 
   dbOStream& operator<<(unsigned int c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1) {
-      write_error();
-    }
+    char dst[sizeof(c)];
+    std::memcpy(dst, &c, sizeof(c));
+    _f.write(dst, sizeof(c));
     return *this;
   }
 
   dbOStream& operator<<(int8_t c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1) {
-      write_error();
-    }
+    char dst[sizeof(c)];
+    std::memcpy(dst, &c, sizeof(c));
+    _f.write(dst, sizeof(c));
     return *this;
   }
 
   dbOStream& operator<<(float c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1) {
-      write_error();
-    }
+    char dst[sizeof(c)];
+    std::memcpy(dst, &c, sizeof(c));
+    _f.write(dst, sizeof(c));
     return *this;
   }
 
   dbOStream& operator<<(double c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1) {
-      write_error();
-    }
+    char dst[sizeof(c)];
+    std::memcpy(dst, &c, sizeof(c));
+    _f.write(dst, sizeof(c));
     return *this;
   }
 
   dbOStream& operator<<(long double c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1) {
-      write_error();
-    }
+    char dst[sizeof(c)];
+    std::memcpy(dst, &c, sizeof(c));
+    _f.write(dst, sizeof(c));
     return *this;
   }
 
@@ -178,10 +159,7 @@ class dbOStream
     } else {
       int l = strlen(c) + 1;
       *this << l;
-      int n = fwrite(c, l, 1, _f);
-      if (n != 1) {
-        write_error();
-      }
+      _f.write(c, l);
     }
 
     return *this;
@@ -189,10 +167,9 @@ class dbOStream
 
   dbOStream& operator<<(dbObjectType c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1) {
-      write_error();
-    }
+    char dst[sizeof(c)];
+    std::memcpy(dst, &c, sizeof(c));
+    _f.write(dst, sizeof(c));
     return *this;
   }
 
