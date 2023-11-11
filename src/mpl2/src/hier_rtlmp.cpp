@@ -409,6 +409,7 @@ void HierRTLMP::hierRTLMacroPlacer()
       "\tNumber of macros: {}\n"
       "\tArea of macros: {:.2f}\n"
       "\tArea of macros with halos: {:.2f}\n"
+      "\tArea of std cell instances + Area of macros: {:.2f}\n"
       "\tCore area: {:.2f}\n"
       "\tDesign Utilization: {:.2f}\n"
       "\tCore Utilization: {:.2f}\n"
@@ -418,6 +419,7 @@ void HierRTLMP::hierRTLMacroPlacer()
       metrics_->getNumMacro(),
       metrics_->getMacroArea(),
       macro_with_halo_area,
+      metrics_->getStdCellArea() + metrics_->getMacroArea(),
       core_area,
       util,
       core_util,
