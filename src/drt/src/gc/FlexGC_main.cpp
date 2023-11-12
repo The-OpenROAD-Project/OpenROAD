@@ -1870,7 +1870,7 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
 
   patch->addToNet(dr_net);
 
-if (!patch->hasNet())
+  if (!patch->hasNet())
     return;
 
   Rect shiftedPatch = patchBx;
@@ -3320,7 +3320,7 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
       if (sourceNets.find(net->getFrNet()) == sourceNets.end()) {
         continue;
       }
-      if (targetNet_ && net->getFrNet() != targetNet_->getFrNet()) {
+      if (targetNet_ && net->getFrNet() != targetNet_->getDrNet()->getFrNet()) {
         continue;
       }
       if (connFig->typeId() == drcVia) {
@@ -3427,7 +3427,8 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
       if (obj->getNet()->getFrNet() != *(marker->getSrcs().begin())) {
         continue;
       }
-      if (targetNet_ && obj->getNet()->getFrNet() != targetNet_->getFrNet()) {
+      if (targetNet_
+          && obj->getNet()->getFrNet() != targetNet_->getDrNet()->getFrNet()) {
         continue;
       }
       Point tmpOrigin = obj->getOrigin();

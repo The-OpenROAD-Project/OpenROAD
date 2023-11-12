@@ -619,10 +619,14 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable()
       }
       for (auto& net : getNets()) {
         // There is no need to check vias in nets we don't route
-        auto fr_net = net->getFrNet();
-        if (fr_net && (fr_net->isSpecial() || fr_net->getType().isSupply())) {
-          continue;
+        auto dr_net = net->getDrNet();
+        if (dr_net) {
+          auto fr_net = dr_net->getFrNet();
+          if (fr_net && (fr_net->isSpecial() || fr_net->getType().isSupply())) {
+            continue;
+          }
         }
+
         for (auto& pin : net->getPins(i)) {
           for (auto& maxrect : pin->getMaxRectangles()) {
             checkMetalWidthViaTable_main(maxrect.get());
