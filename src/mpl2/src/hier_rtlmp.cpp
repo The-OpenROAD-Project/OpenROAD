@@ -404,13 +404,14 @@ void HierRTLMP::hierRTLMacroPlacer()
 
   logger_->report(
       "Traversed logical hierarchy\n"
-      "\tNumber of std cell instances : {}\n"
-      "\tArea of std cell instances : {:.2f}\n"
-      "\tNumber of macros : {}\n"
-      "\tArea of macros : {:.2f}\n"
-      "\tArea of macros with halos : {:.2f}\n"
-      "\tTotal area : {:.2f}\n"
-      "\tDesign Utilization : {:.2f}\n"
+      "\tNumber of std cell instances: {}\n"
+      "\tArea of std cell instances: {:.2f}\n"
+      "\tNumber of macros: {}\n"
+      "\tArea of macros: {:.2f}\n"
+      "\tArea of macros with halos: {:.2f}\n"
+      "\tArea of std cell instances + Area of macros: {:.2f}\n"
+      "\tCore area: {:.2f}\n"
+      "\tDesign Utilization: {:.2f}\n"
       "\tCore Utilization: {:.2f}\n"
       "\tManufacturing Grid: {}\n",
       metrics_->getNumStdCell(),
@@ -419,6 +420,7 @@ void HierRTLMP::hierRTLMacroPlacer()
       metrics_->getMacroArea(),
       macro_with_halo_area,
       metrics_->getStdCellArea() + metrics_->getMacroArea(),
+      core_area,
       util,
       core_util,
       manufacturing_grid_);
@@ -6079,6 +6081,10 @@ void HierRTLMP::setTemporaryStdCellLocation(Cluster* cluster,
                                             odb::dbInst* std_cell)
 {
   const SoftMacro* soft_macro = cluster->getSoftMacro();
+
+  if (!soft_macro) {
+    return;
+  }
 
   const int soft_macro_center_x_dbu = micronToDbu(soft_macro->getPinX(), dbu_);
   const int soft_macro_center_y_dbu = micronToDbu(soft_macro->getPinY(), dbu_);

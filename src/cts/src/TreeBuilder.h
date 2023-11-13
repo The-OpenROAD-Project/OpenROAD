@@ -232,12 +232,13 @@ class TreeBuilder
   unsigned treeBufLevels_ = 0;
   std::set<ClockInst*> first_level_sink_drivers_;
   std::set<ClockInst*> second_level_sink_drivers_;
+
   std::set<ClockInst*> tree_level_buffers_;
   utl::Logger* logger_;
   odb::dbDatabase* db_;
   std::vector<odb::dbBox*> bboxList_;
-  double bufferWidth_ = 0.0;
-  double bufferHeight_ = 0.0;
+  double bufferWidth_;
+  double bufferHeight_;
   // keep track of occupied cells to avoid overlap violations
   // this only tracks cell origin
   boost::unordered_set<Point<double>, pointHash, pointEqual> occupiedLocations_;
