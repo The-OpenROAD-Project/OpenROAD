@@ -56,6 +56,15 @@ class dbOStream
   double _lef_area_factor;
   double _lef_dist_factor;
 
+  // By default values are written as their string ("255" vs 0xFF)
+  // representations when using the << stream method. In dbOstream we are
+  // primarly writing the byte representation which the below accomplishes.
+  template <typename T>
+  void writeValueAsBytes(T type)
+  {
+    _f.write(reinterpret_cast<char*>(&type), sizeof(T));
+  }
+
  public:
   dbOStream(_dbDatabase* db, std::ostream& f);
 
@@ -69,67 +78,67 @@ class dbOStream
 
   dbOStream& operator<<(char c)
   {
-    _f << c;
+    _f.put(c);
     return *this;
   }
 
   dbOStream& operator<<(unsigned char c)
   {
-    _f << c;
+    _f.put(c);
     return *this;
   }
 
   dbOStream& operator<<(int16_t c)
   {
-    _f.write(reinterpret_cast<char*>(&c), sizeof(c));
+    writeValueAsBytes(c);
     return *this;
   }
 
   dbOStream& operator<<(uint16_t c)
   {
-    _f.write(reinterpret_cast<char*>(&c), sizeof(c));
+    writeValueAsBytes(c);
     return *this;
   }
 
   dbOStream& operator<<(int c)
   {
-    _f.write(reinterpret_cast<char*>(&c), sizeof(c));
+    writeValueAsBytes(c);
     return *this;
   }
 
   dbOStream& operator<<(uint64_t c)
   {
-    _f.write(reinterpret_cast<char*>(&c), sizeof(c));
+    writeValueAsBytes(c);
     return *this;
   }
 
   dbOStream& operator<<(unsigned int c)
   {
-    _f.write(reinterpret_cast<char*>(&c), sizeof(c));
+    writeValueAsBytes(c);
     return *this;
   }
 
   dbOStream& operator<<(int8_t c)
   {
-    _f.write(reinterpret_cast<char*>(&c), sizeof(c));
+    writeValueAsBytes(c);
     return *this;
   }
 
   dbOStream& operator<<(float c)
   {
-    _f.write(reinterpret_cast<char*>(&c), sizeof(c));
+    writeValueAsBytes(c);
     return *this;
   }
 
   dbOStream& operator<<(double c)
   {
-    _f.write(reinterpret_cast<char*>(&c), sizeof(c));
+    writeValueAsBytes(c);
     return *this;
   }
 
   dbOStream& operator<<(long double c)
   {
-    _f.write(reinterpret_cast<char*>(&c), sizeof(c));
+    writeValueAsBytes(c);
     return *this;
   }
 
@@ -148,7 +157,7 @@ class dbOStream
 
   dbOStream& operator<<(dbObjectType c)
   {
-    _f.write(reinterpret_cast<char*>(&c), sizeof(c));
+    writeValueAsBytes(c);
     return *this;
   }
 
