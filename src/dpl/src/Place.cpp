@@ -897,15 +897,6 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
   if (bin_y >= grid_info.getRowCount()) {
     return PixelPt();
   }
-  if (cell->isHybrid()) {
-    for (int i = 0; i < 3; i++) {
-      std::cout
-          << "Row: " << bin_y << " site " << i << " have: "
-          << gridPixel(grid_info.getGridIndex(), 0, bin_y)->site->getName()
-          << " ";
-    }
-    std::cout << std::endl;
-  }
   if (cell->isHybrid()
       && gridPixel(grid_info.getGridIndex(), 0, bin_y)->site->getId()
              != cell->getSite()->getId()) {

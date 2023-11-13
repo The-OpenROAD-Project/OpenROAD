@@ -174,10 +174,6 @@ void Opendp::initGridLayersMap()
                                     // them, resulting in the wrong RowPattern
                                     // here.
         };
-        std::cout << "Creating a hybrid grid for working site: "
-                  << working_site->getName()
-                  << " and its parent: " << working_site->getParent()->getName()
-                  << "\n";
         grid_info_map_.emplace(gmk, newGridInfo);
       }
     }
