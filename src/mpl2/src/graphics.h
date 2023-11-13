@@ -110,6 +110,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   int skipped_ = 0;
 
   Cluster* root_ = nullptr;
+  std::unordered_map<const SoftMacro*,odb::Point> parent_locations_;
 };
 
 }  // namespace mpl2

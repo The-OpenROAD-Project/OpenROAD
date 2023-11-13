@@ -81,6 +81,18 @@ void Graphics::saStep(const std::vector<SoftMacro>& macros)
 {
   resetPenalties();
   soft_macros_ = macros;
+
+  // for the SoftMacros to be drawn in their correct location, we must
+  // link them with their parent cluster
+  if (parent_locations_.empty()) {
+    for (const auto& soft_macro : soft_macros_) {
+      Cluster* parent = soft_macro.getCluster()->getParent();
+      odb::Point parent_location(dbu_ * parent->getX(), dbu_ * parent->getY());
+
+      parent_locations_[&soft_macro] = parent_location;
+    }
+  }
+
   hard_macros_.clear();
 }
 
@@ -221,6 +233,9 @@ void Graphics::drawBlockages(gui::Painter& painter)
 
     odb::Rect blockage_bbox(lx, ly, ux, uy);
 
+    // TO DO
+    // draw using the root origin as ref
+
     painter.drawRect(blockage_bbox);
   }
 }
@@ -250,6 +265,10 @@ void Graphics::drawObjects(gui::Painter& painter)
     const int uy = ly + dbu_ * macro.getHeight();
     odb::Rect bbox(lx, ly, ux, uy);
 
+    // draw based on the parent's origin
+    bbox.moveDelta(parent_locations_[&macro].getX(),
+                   parent_locations_[&macro].getY());
+
     painter.drawRect(bbox);
     painter.drawString(bbox.xCenter(),
                        bbox.yCenter(),
@@ -266,6 +285,12 @@ void Graphics::drawObjects(gui::Painter& painter)
     const int ux = lx + width;
     const int uy = ly + height;
     odb::Rect bbox(lx, ly, ux, uy);
+
+    // TO DO
+    // draw using the location of the cluster
+    // as ref, but use a different color (yellow?)
+    // to draw the changing outline, so we can
+    // distinguish between the cluster and the latter.
 
     painter.drawRect(bbox);
     painter.drawString(bbox.xCenter(),
@@ -302,6 +327,8 @@ void Graphics::drawObjects(gui::Painter& painter)
     odb::Rect bbox(
         0, 0, dbu_ * outline_width_.value(), dbu_ * outline_height_.value());
 
+    // TO DO
+    // Perhaps this needs to be yellow so it gets easier to see.
     painter.setPen(gui::Painter::red, true);
     painter.setBrush(gui::Painter::transparent);
     painter.drawRect(bbox);
