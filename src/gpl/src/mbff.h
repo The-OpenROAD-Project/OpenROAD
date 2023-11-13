@@ -55,6 +55,7 @@ struct Point;
 struct Tray;
 struct Flop;
 struct Path;
+struct InstData;
 
 class MBFF
 {
@@ -95,7 +96,7 @@ class MBFF
 
   bool IsValidTray(odb::dbInst* tray);
 
-  int GetBitMask(odb::dbInst* inst);
+  InstData GetInstData(odb::dbInst* inst);
   bool HasSet(odb::dbInst* inst);
   bool HasReset(odb::dbInst* inst);
   bool ClockOn(odb::dbInst* inst);
@@ -206,6 +207,7 @@ class MBFF
   The 2nd bit of B is on if the SET pin exists
   The 3rd bit of B is on if the RESET pin exists
   The 4th bit of B is on if the instance is inverting
+  The 5th bit represents clock_on
   max(B) = 2^4 + 2^3 + 2^2 + 2^1 + 2^0 = 31
   */
   static constexpr int num_bits_in_bitmask = 5;
@@ -213,6 +215,9 @@ class MBFF
 
   template <typename T>
   using BitMaskVector = std::array<std::vector<T>, max_bitmask>;
+
+  // map InstData to an index
+  std::map<InstData, int> data_to_idx_;
 
   BitMaskVector<odb::dbMaster*> best_master_;
   BitMaskVector<DataToOutputsMap> pin_mappings_;
