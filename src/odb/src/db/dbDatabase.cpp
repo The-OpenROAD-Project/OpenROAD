@@ -37,6 +37,9 @@
 #include <map>
 #include <string>
 
+
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/filter/zstd.hpp>
 #include "db.h"
 #include "dbArrayTable.h"
 #include "dbBTerm.h"
@@ -447,11 +450,31 @@ dbTech* dbDatabase::getTech()
       utl::ODB, 432, "getTech() is obsolete in a multi-tech db");
 }
 
+bool dbDatabase::isZstdCompressed(std::istream& file) {
+  // https://github.com/facebook/zstd/blob/dev/doc/zstd_compression_format.md#zstandard-frames
+  uint32_t zstd_magic_header = 0xFD2FB528;
+  uint32_t first_four_bytes = 0;
+  file.read(reinterpret_cast<char*>(&first_four_bytes), 4);
+  file.clear();
+  file.seekg (0, std::ios::beg);
+  return zstd_magic_header == first_four_bytes;
+}
+
 void dbDatabase::read(std::istream& file)
 {
-  _dbDatabase* db = (_dbDatabase*) this;
-  dbIStream stream(db, file);
-  stream >> *db;
+  if (isZstdCompressed(file)) {
+    boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
+    inbuf.push(boost::iostreams::zstd_decompressor());
+    inbuf.push(file);
+    std::istream zstd_uncompressed(&inbuf);
+    _dbDatabase* db = (_dbDatabase*) this;
+    dbIStream stream(db, zstd_uncompressed);
+    stream >> *db;
+  } else {
+    _dbDatabase* db = (_dbDatabase*) this;
+    dbIStream stream(db, file);
+    stream >> *db;
+  }
 }
 
 void dbDatabase::readTech(std::istream& file)
@@ -551,7 +574,11 @@ void dbDatabase::readChip(std::istream& file)
 void dbDatabase::write(std::ostream& file)
 {
   _dbDatabase* db = (_dbDatabase*) this;
-  dbOStream stream(db, file);
+  boost::iostreams::filtering_ostreambuf obuf;
+  obuf.push(boost::iostreams::zstd_compressor());
+  obuf.push(file);
+  std::ostream compressing_stream(&obuf);
+  dbOStream stream(db, compressing_stream);
   stream << *db;
   file.flush();
 }

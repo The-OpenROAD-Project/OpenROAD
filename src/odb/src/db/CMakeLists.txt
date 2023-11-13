@@ -1,3 +1,5 @@
+find_package(Boost REQUIRED COMPONENTS iostreams)
+
 add_library(db
     dbBTerm.cpp 
     dbStream.cpp 
@@ -145,6 +147,7 @@ target_link_libraries(db
     PUBLIC
         zutil
         utl_lib
+        ${Boost_LIBRARIES}
         ${TCL_LIBRARY}
 )
 

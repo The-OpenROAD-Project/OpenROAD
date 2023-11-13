@@ -480,6 +480,8 @@ class dbDatabase : public dbObject
   /// Translate a database-id back to a pointer.
   ///
   static dbDatabase* getDatabase(uint oid);
+ private:
+  bool isZstdCompressed(std::istream& stream);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
