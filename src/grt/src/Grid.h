@@ -78,6 +78,9 @@ class Grid
   int getXGrids() const { return x_grids_; }
   int getYGrids() const { return y_grids_; }
 
+  void setXGrids(int x_grids) { x_grids_ = x_grids; }
+  void setYGrids(int y_grids) { y_grids_ = y_grids; }
+
   bool isPerfectRegularX() const { return perfect_regular_x_; }
   bool isPerfectRegularY() const { return perfect_regular_y_; }
 

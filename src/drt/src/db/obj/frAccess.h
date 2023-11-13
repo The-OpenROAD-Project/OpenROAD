@@ -150,6 +150,7 @@ class frAccessPoint : public frBlockObject
       return typeH_;
     }
   }
+  bool isViaAllowed() const { return allow_via_; }
   // setters
   void setPoint(const Point& in) { point_ = in; }
   void setLayer(const frLayerNum& layerNum) { layerNum_ = layerNum; }
@@ -188,6 +189,7 @@ class frAccessPoint : public frBlockObject
       typeH_ = in;
     }
   }
+  void setAllowVia(bool in) { allow_via_ = in; }
   // others
   frBlockObjectEnum typeId() const override { return frcAccessPoint; }
   frCoord x() const { return point_.x(); }
@@ -206,6 +208,7 @@ class frAccessPoint : public frBlockObject
   frAccessPointEnum typeH_;
   frPinAccess* aps_;
   std::vector<frPathSeg> pathSegs_;
+  bool allow_via_{false};
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version);
   friend class boost::serialization::access;

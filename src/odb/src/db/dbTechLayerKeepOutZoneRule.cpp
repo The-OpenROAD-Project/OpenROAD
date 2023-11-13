@@ -33,6 +33,9 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerKeepOutZoneRule.h"
 
+#include <cstdint>
+#include <cstring>
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -175,8 +178,10 @@ _dbTechLayerKeepOutZoneRule::_dbTechLayerKeepOutZoneRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerKeepOutZoneRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  uint32_t flags_bit_field;
+  stream >> flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> obj.first_cut_class_;
   stream >> obj.second_cut_class_;
   stream >> obj.aligned_spacing_;
@@ -192,8 +197,10 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerKeepOutZoneRule& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerKeepOutZoneRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  uint32_t flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags_bit_field;
   stream << obj.first_cut_class_;
   stream << obj.second_cut_class_;
   stream << obj.aligned_spacing_;
