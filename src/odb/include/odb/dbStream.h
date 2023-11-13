@@ -78,13 +78,13 @@ class dbOStream
 
   dbOStream& operator<<(char c)
   {
-    _f.put(c);
+    writeValueAsBytes(c);
     return *this;
   }
 
   dbOStream& operator<<(unsigned char c)
   {
-    _f.put(c);
+    writeValueAsBytes(c);
     return *this;
   }
 
