@@ -155,8 +155,6 @@ void Graphics::resetPenalties()
   boundary_penalty_.reset();
   macro_blockage_penalty_.reset();
   notch_penalty_.reset();
-  outline_width_.reset();
-  outline_height_.reset();
 }
 
 void Graphics::setNotchPenalty(float notch_penalty)
@@ -189,13 +187,9 @@ void Graphics::setAreaPenalty(float area_penalty)
   area_penalty_ = area_penalty;
 }
 
-void Graphics::setOutlinePenalty(float outline_penalty,
-                                 float outline_width,
-                                 float outline_height)
+void Graphics::setOutlinePenalty(float outline_penalty)
 {
   outline_penalty_ = outline_penalty;
-  outline_width_ = outline_width;
-  outline_height_ = outline_height;
 }
 
 void Graphics::setWirelength(float wirelength)
@@ -246,6 +240,11 @@ void Graphics::drawObjects(gui::Painter& painter)
     painter.setPen(gui::Painter::red, true);
     painter.setBrush(gui::Painter::transparent);
     drawCluster(root_, painter);
+
+    // Draw outline so we see where SA is working
+    painter.setPen(gui::Painter::cyan, true);
+    painter.setBrush(gui::Painter::transparent);
+    painter.drawRect(outline_);
   }
 
   if (!macro_blockages_.empty()) {
@@ -332,17 +331,6 @@ void Graphics::drawObjects(gui::Painter& painter)
       }
     }
   }
-
-  if (outline_width_.has_value()) {
-    odb::Rect bbox(
-        0, 0, dbu_ * outline_width_.value(), dbu_ * outline_height_.value());
-
-    // TO DO
-    // Perhaps this needs to be yellow so it gets easier to see.
-    painter.setPen(gui::Painter::red, true);
-    painter.setBrush(gui::Painter::transparent);
-    painter.drawRect(bbox);
-  }
 }
 
 void Graphics::setMacroBlockages(const std::vector<mpl2::Rect>& macro_blockages)
@@ -356,7 +344,12 @@ void Graphics::setHardMacroClusterLocation(
   hard_macro_cluster_pos_ = hard_macro_cluster_pos;
 }
 
-void Graphics::clearObserver()
+void Graphics::setOutline(const odb::Rect& outline)
+{
+  outline_ = outline;
+}
+
+void Graphics::eraseDrawing()
 {
   root_ = nullptr;
 
@@ -364,9 +357,6 @@ void Graphics::clearObserver()
   hard_macros_.clear();
   macro_blockages_.clear();
   parent_locations_.clear();
-
-  outline_height_.reset();
-  outline_width_.reset();
 }
 
 }  // namespace mpl2

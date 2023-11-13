@@ -680,7 +680,7 @@ void HierRTLMP::hierRTLMacroPlacer()
   cluster_map_.clear();
 
   if (graphics_) {
-    graphics_->clearObserver();
+    graphics_->eraseDrawing();
   }
 
   logger_->report("number of updated macros : {}", num_updated_macros_);
@@ -3288,6 +3288,9 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   }
 
   if (graphics_) {
+    odb::Rect outline(dbu_ * lx, dbu_ * ly, dbu_ * ux, dbu_ * uy);
+
+    graphics_->setOutline(outline);
     graphics_->setMacroBlockages(macro_blockages);
   }
 
@@ -4172,6 +4175,9 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
   }
 
   if (graphics_) {
+    odb::Rect outline(dbu_ * lx, dbu_ * ly, dbu_ * ux, dbu_ * uy);
+
+    graphics_->setOutline(outline);
     graphics_->setMacroBlockages(macro_blockages);
   }
 
@@ -4671,6 +4677,9 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   }
 
   if (graphics_) {
+    odb::Rect outline(dbu_ * lx, dbu_ * ly, dbu_ * ux, dbu_ * uy);
+
+    graphics_->setOutline(outline);
     graphics_->setMacroBlockages(macro_blockages);
   }
 
@@ -5400,15 +5409,20 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
     if (graphics_) {
       run_thread = 1;
 
-      odb::Point hard_macro_cluster_pos(dbu_ * cluster->getX(),
-                                        dbu_ * cluster->getY());
-
+      odb::Point hard_macro_cluster_pos(dbu_ * lx, dbu_ * ly);
       graphics_->setHardMacroClusterLocation(hard_macro_cluster_pos);
     }
     for (int i = 0; i < run_thread; i++) {
       // change the aspect ratio
       const float width = outline_width * vary_factor_list[run_id++];
       const float height = outline_width * outline_height / width;
+
+      if (graphics_) {
+        odb::Rect outline(
+            dbu_ * lx, dbu_ * ly, dbu_ * (lx + width), dbu_ * (ly + height));
+        graphics_->setOutline(outline);
+      }
+
       SACoreHardMacro* sa
           = new SACoreHardMacro(width,
                                 height,
