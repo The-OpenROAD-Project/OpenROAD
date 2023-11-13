@@ -414,11 +414,11 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(
   if (checkNDRs) {
     frCoord ndrSpc1 = 0, ndrSpc2 = 0;
     if (!rect1->isFixed() && net1->isNondefault() && !rect1->isTapered())
-      ndrSpc1 = net1->getDrNet()->getFrNet()->getNondefaultRule()->getSpacing(
-          layerNum / 2 - 1);
+      ndrSpc1
+          = net1->getFrNet()->getNondefaultRule()->getSpacing(layerNum / 2 - 1);
     if (!rect2->isFixed() && net2->isNondefault() && !rect2->isTapered())
-      ndrSpc2 = net2->getDrNet()->getFrNet()->getNondefaultRule()->getSpacing(
-          layerNum / 2 - 1);
+      ndrSpc2
+          = net2->getFrNet()->getNondefaultRule()->getSpacing(layerNum / 2 - 1);
 
     reqSpcVal = max(reqSpcVal, max(ndrSpc1, ndrSpc2));
   }
@@ -662,10 +662,10 @@ bool FlexGCWorker::Impl::checkSameFrNet(gcNet* net1, gcNet* net2)
   frBlockObject* owner1 = net1->getOwner();
   frBlockObject* owner2 = net2->getOwner();
   if (owner1->typeId() == drcNet) {
-    owner1 = ((drNet*) owner1)->getFrNet();
+    owner1 = net1->getFrNet();
   }
   if (owner2->typeId() == drcNet) {
-    owner2 = ((drNet*) owner2)->getFrNet();
+    owner2 = net2->getFrNet();
   }
   return owner1 == owner2;
 }
@@ -3320,7 +3320,7 @@ void FlexGCWorker::Impl::patchMetalShape_cornerSpacing()
       if (sourceNets.find(net->getFrNet()) == sourceNets.end()) {
         continue;
       }
-      if (targetNet_ && net->getFrNet() != targetNet_->getDrNet()->getFrNet()) {
+      if (targetNet_ && net->getFrNet() != targetNet_->getFrNet()) {
         continue;
       }
       if (connFig->typeId() == drcVia) {
@@ -3427,8 +3427,7 @@ void FlexGCWorker::Impl::patchMetalShape_minStep()
       if (obj->getNet()->getFrNet() != *(marker->getSrcs().begin())) {
         continue;
       }
-      if (targetNet_
-          && obj->getNet()->getFrNet() != targetNet_->getDrNet()->getFrNet()) {
+      if (targetNet_ && obj->getNet()->getFrNet() != targetNet_->getFrNet()) {
         continue;
       }
       Point tmpOrigin = obj->getOrigin();

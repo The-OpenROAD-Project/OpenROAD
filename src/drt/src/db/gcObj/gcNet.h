@@ -35,9 +35,11 @@
 #include "db/gcObj/gcPin.h"
 #include "db/obj/frBlockage.h"
 #include "db/obj/frInstBlockage.h"
+#include "db/obj/frNet.h"
 
 namespace fr {
 class drNet;
+class frNet;
 using namespace std;
 class gcNet : public gcBlockObject
 {
@@ -186,7 +188,16 @@ class gcNet : public gcBlockObject
   }
   // others
   frBlockObjectEnum typeId() const override { return gccNet; }
-
+  frNet* getFrNet() const
+  {
+    if (owner_->typeId() == frcNet) {
+      return static_cast<frNet*>(owner_);
+    }
+    if (owner_->typeId() == drcNet) {
+      return (static_cast<drNet*>(owner_))->getFrNet();
+    }
+    return nullptr;
+  }
   drNet* getDrNet() const
   {
     if (owner_->typeId() == drcNet) {
@@ -196,7 +207,7 @@ class gcNet : public gcBlockObject
   }
   bool isNondefault() const
   {
-    return getDrNet() && getDrNet()->getFrNet()->getNondefaultRule();
+    return getFrNet() && getFrNet()->getNondefaultRule();
   }
   void addTaperedRect(const Rect& bx, int zIdx)
   {

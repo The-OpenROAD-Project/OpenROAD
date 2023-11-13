@@ -355,8 +355,8 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
 inline bool isSkipVia(gcRect* rect)
 {
   return rect->getLayerNum() == GC_IGNORE_PDN_LAYER && rect->isFixed()
-         && rect->hasNet() && rect->getNet()->getDrNet()->getFrNet()
-         && rect->getNet()->getDrNet()->getFrNet()->getType().isSupply();
+         && rect->hasNet() && rect->getNet()->getFrNet()
+         && rect->getNet()->getFrNet()->getType().isSupply();
 }
 
 void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
@@ -619,14 +619,10 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable()
       }
       for (auto& net : getNets()) {
         // There is no need to check vias in nets we don't route
-        auto dr_net = net->getDrNet();
-        if (dr_net) {
-          auto fr_net = dr_net->getFrNet();
-          if (fr_net && (fr_net->isSpecial() || fr_net->getType().isSupply())) {
-            continue;
-          }
+        auto fr_net = net->getFrNet();
+        if (fr_net && (fr_net->isSpecial() || fr_net->getType().isSupply())) {
+          continue;
         }
-
         for (auto& pin : net->getPins(i)) {
           for (auto& maxrect : pin->getMaxRectangles()) {
             checkMetalWidthViaTable_main(maxrect.get());
