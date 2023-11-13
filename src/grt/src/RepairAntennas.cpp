@@ -136,8 +136,7 @@ odb::dbWire* RepairAntennas::makeNetWire(
           int top_layer = std::max(l1, l2);
           odb::dbTechLayer* bottom_tech_layer
               = tech->findRoutingLayer(bottom_layer);
-          odb::dbTechLayer* top_tech_layer
-              = tech->findRoutingLayer(top_layer);
+          odb::dbTechLayer* top_tech_layer = tech->findRoutingLayer(top_layer);
           if (bottom_layer >= grouter_->getMinRoutingLayer()) {
             if (bottom_layer == prev_conn_layer) {
               wire_encoder.newPath(bottom_tech_layer, odb::dbWireType::ROUTED);
