@@ -76,8 +76,6 @@ class Graphics : public gui::Renderer, public Mpl2Observer
 
   void setMacroBlockages(
       const std::vector<mpl2::Rect>& macro_blockages) override;
-  void setHardMacroClusterLocation(
-      const odb::Point& hard_macro_cluster_pos) override;
   void setOutline(const odb::Rect& outline) override;
 
   void eraseDrawing() override;
@@ -94,7 +92,6 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   std::vector<HardMacro> hard_macros_;
   std::vector<mpl2::Rect> macro_blockages_;
   odb::Rect outline_;
-  odb::Point hard_macro_cluster_pos_;
 
   bool active_ = true;
   bool coarse_;
@@ -114,8 +111,6 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   int skipped_ = 0;
 
   Cluster* root_ = nullptr;
-
-  std::unordered_map<const SoftMacro*, odb::Point> parent_locations_;
 };
 
 }  // namespace mpl2

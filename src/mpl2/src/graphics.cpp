@@ -81,18 +81,6 @@ void Graphics::saStep(const std::vector<SoftMacro>& macros)
 {
   resetPenalties();
   soft_macros_ = macros;
-
-  // for the SoftMacros to be drawn in their correct location, we must
-  // link them with their parent cluster
-  if (parent_locations_.empty()) {
-    for (const auto& soft_macro : soft_macros_) {
-      Cluster* parent = soft_macro.getCluster()->getParent();
-      odb::Point parent_location(dbu_ * parent->getX(), dbu_ * parent->getY());
-
-      parent_locations_[&soft_macro] = parent_location;
-    }
-  }
-
   hard_macros_.clear();
 }
 
@@ -227,13 +215,16 @@ void Graphics::drawBlockages(gui::Painter& painter)
 
     odb::Rect blockage_bbox(lx, ly, ux, uy);
 
-    // draw based on root's location
     blockage_bbox.moveDelta(dbu_ * root_->getX(), dbu_ * root_->getY());
 
     painter.drawRect(blockage_bbox);
   }
 }
 
+// When drawing SoftMacros or HardMacros we move them based on the outline's
+// origin so they don't get drawn using the die area's origin as reference.
+//
+// For macro blockages we use the same logic, but using the root's origin.
 void Graphics::drawObjects(gui::Painter& painter)
 {
   if (root_) {
@@ -241,7 +232,7 @@ void Graphics::drawObjects(gui::Painter& painter)
     painter.setBrush(gui::Painter::transparent);
     drawCluster(root_, painter);
 
-    // Draw outline so we see where SA is working
+    // Hightlight outline so we see where SA is working
     painter.setPen(gui::Painter::cyan, true);
     painter.setBrush(gui::Painter::transparent);
     painter.drawRect(outline_);
@@ -264,9 +255,7 @@ void Graphics::drawObjects(gui::Painter& painter)
     const int uy = ly + dbu_ * macro.getHeight();
     odb::Rect bbox(lx, ly, ux, uy);
 
-    // draw based on the parent's origin
-    bbox.moveDelta(parent_locations_[&macro].getX(),
-                   parent_locations_[&macro].getY());
+    bbox.moveDelta(outline_.xMin(), outline_.yMin());
 
     painter.drawRect(bbox);
     painter.drawString(bbox.xCenter(),
@@ -285,9 +274,7 @@ void Graphics::drawObjects(gui::Painter& painter)
     const int uy = ly + height;
     odb::Rect bbox(lx, ly, ux, uy);
 
-    // draw based on the cluster position
-    bbox.moveDelta(hard_macro_cluster_pos_.getX(),
-                   hard_macro_cluster_pos_.getY());
+    bbox.moveDelta(outline_.xMin(), outline_.yMin());
 
     painter.drawRect(bbox);
     painter.drawString(bbox.xCenter(),
@@ -338,12 +325,6 @@ void Graphics::setMacroBlockages(const std::vector<mpl2::Rect>& macro_blockages)
   macro_blockages_ = macro_blockages;
 }
 
-void Graphics::setHardMacroClusterLocation(
-    const odb::Point& hard_macro_cluster_pos)
-{
-  hard_macro_cluster_pos_ = hard_macro_cluster_pos;
-}
-
 void Graphics::setOutline(const odb::Rect& outline)
 {
   outline_ = outline;
@@ -351,12 +332,12 @@ void Graphics::setOutline(const odb::Rect& outline)
 
 void Graphics::eraseDrawing()
 {
+  // Ensure we don't try to access the clusters after they were deleted
   root_ = nullptr;
 
   soft_macros_.clear();
   hard_macros_.clear();
   macro_blockages_.clear();
-  parent_locations_.clear();
 }
 
 }  // namespace mpl2

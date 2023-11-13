@@ -5408,9 +5408,6 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
         = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
     if (graphics_) {
       run_thread = 1;
-
-      odb::Point hard_macro_cluster_pos(dbu_ * lx, dbu_ * ly);
-      graphics_->setHardMacroClusterLocation(hard_macro_cluster_pos);
     }
     for (int i = 0; i < run_thread; i++) {
       // change the aspect ratio
