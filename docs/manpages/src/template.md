@@ -1,0 +1,122 @@
+---
+title: openroad(0)
+author: Jack Luar (TODO@TODO.com)
+date: 2023/11/13
+---
+
+# NAME
+
+openroad - OpenROAD command-line-interface.
+
+# SYNOPSIS
+
+openroad  [-help]  [-version] [-no_init] [-exit] [-gui]
+       [-threads   count|max]   [-log   file_name]   [-metrics
+       file_name] cmd_file
+
+openroad [-python] cmd_file
+
+# DESCRIPTION
+
+The **openroad** command is the command-line interface for
+OpenROAD, an open-source initiative for chip design and
+optimization.   It  provides a range of options to con‐
+trol its behavior and execute commands specified in the
+cmd_file.
+
+# OPTIONS
+
+`-help`: Display help information.
+
+`-version`: Display version information.
+
+`-no_init`: Skip initialization steps.
+
+`-exit`: Exit after executing commands in cmd_file.
+
+`-gui`: Launch the graphical user interface (GUI).
+
+`-threads  count|max`:  Specify  the number of threads to
+use (or use max available).
+
+`-log file_name`: Log output to the specified file.
+
+`-metrics file_name`: Save  performance  metrics  to  the
+specified file.
+
+`-python`: Execute the cmd_file as a Python script.
+
+# ARGUMENTS
+
+`cmd_file`: The command file containing OpenROAD commands to be executed.
+
+# EXAMPLES
+
+**openroad -help**: Prints the help information
+
+**openroad -version -exit**: Prints  the  version  information, and exits the program thereafter.
+
+**openroad  -threads max -log test.log -metrics test.metrics**: Prints the log and metric 
+respectively to `test.log` and `test.metrics`. Also runs the script with maximum
+ available number of threads.
+
+**openroad -gui**: Launches OpenROAD GUI, which further interactive Tcl commands can be run.
+
+# TCL COMMANDS
+
+These  Tcl-based  commands are callable from within the
+OpenROAD binary.
+
+- read_lef [-tech] [-library] filename
+
+  - Read Library Exchange Format (.lef) files.
+
+  - tech: Technology-specific information
+
+  - library: .lib files
+
+- read_def filename
+
+  - Read Design Exchange Format (.def) files.
+
+- write_def [-version 5.8|5.7|5.6|5.5|5.4|5.3] filename
+  - Write Design Exchange Format (.def) files.
+
+  - version 5.8|5.7|5.6|5.5|5.4|5.3: Corresponding  DEF
+    version to use.
+
+- read_verilog filename
+
+  - Read Verilog (.v) input file.
+
+- write_verilog filename
+
+  - Write Verilog (.v) file based on current database.
+- read_db filename
+
+  - Read OpenDB (.odb) database files.
+
+- write_db filename
+
+  - Write OpenDB (.odb) database files.
+
+- write_abstract_lef filename
+
+  - Write abstract Library Exchange Format (.lef) files
+    based on current database.
+
+# ENVIRONMENT
+
+# FILES
+
+# SEE ALSO
+
+# HISTORY
+
+# BUGS
+
+# COPYRIGHT
+
+Copyright (c) 2023, The Regents of the University of California.
+       
+All rights reserved.
