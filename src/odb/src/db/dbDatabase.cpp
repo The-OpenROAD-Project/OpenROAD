@@ -703,7 +703,7 @@ void dbDatabase::writeEco(dbBlock* block_, const char* filename)
   _dbBlock* block = (_dbBlock*) block_;
 
   std::ofstream file(filename, std::ios::binary);
-  if (file) {
+  if (!file) {
     int errnum = errno;
     block->getImpl()->getLogger()->error(
         utl::ODB, 2, "Error opening file {}", strerror(errnum));
