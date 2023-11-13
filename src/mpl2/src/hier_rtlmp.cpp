@@ -6082,6 +6082,10 @@ void HierRTLMP::setTemporaryStdCellLocation(Cluster* cluster,
 {
   const SoftMacro* soft_macro = cluster->getSoftMacro();
 
+  if (!soft_macro) {
+    return;
+  }
+
   const int soft_macro_center_x_dbu = micronToDbu(soft_macro->getPinX(), dbu_);
   const int soft_macro_center_y_dbu = micronToDbu(soft_macro->getPinY(), dbu_);
 
