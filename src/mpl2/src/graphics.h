@@ -81,6 +81,8 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   void setHardMacroClusterLocation(
       const odb::Point& hard_macro_cluster_pos) override;
 
+	void clearObserver() override;
+
  private:
   void resetPenalties();
   void drawCluster(Cluster* cluster, gui::Painter& painter);

@@ -81,6 +81,8 @@ class Mpl2Observer
   virtual void setMacroBlockagePenalty(float macro_blockage_penalty) {}
   virtual void setNotchPenalty(float notch_penalty) {}
   virtual void penaltyCalculated(float norm_cost) {}
+
+  virtual void clearObserver() {}
 };
 
 }  // namespace mpl2

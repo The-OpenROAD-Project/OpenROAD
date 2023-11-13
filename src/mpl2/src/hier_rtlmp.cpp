@@ -679,6 +679,10 @@ void HierRTLMP::hierRTLMacroPlacer()
   }
   cluster_map_.clear();
 
+  if (graphics_) {
+    graphics_->clearObserver();
+  }
+
   logger_->report("number of updated macros : {}", num_updated_macros_);
   logger_->report("number of macros in HardMacroCluster : {}",
                   num_hard_macros_cluster_);

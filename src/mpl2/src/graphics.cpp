@@ -246,12 +246,12 @@ void Graphics::drawObjects(gui::Painter& painter)
     painter.setPen(gui::Painter::red, true);
     painter.setBrush(gui::Painter::transparent);
     drawCluster(root_, painter);
+  }
 
-    if (!macro_blockages_.empty()) {
-      painter.setPen(gui::Painter::gray, true);
-      painter.setBrush(gui::Painter::gray, gui::Painter::DIAGONAL);
-      drawBlockages(painter);
-    }
+  if (!macro_blockages_.empty()) {
+    painter.setPen(gui::Painter::gray, true);
+    painter.setBrush(gui::Painter::gray, gui::Painter::DIAGONAL);
+    drawBlockages(painter);
   }
 
   painter.setPen(gui::Painter::yellow, true);
@@ -354,6 +354,19 @@ void Graphics::setHardMacroClusterLocation(
     const odb::Point& hard_macro_cluster_pos)
 {
   hard_macro_cluster_pos_ = hard_macro_cluster_pos;
+}
+
+void Graphics::clearObserver()
+{
+  root_ = nullptr;
+
+  soft_macros_.clear();
+  hard_macros_.clear();
+  macro_blockages_.clear();
+  parent_locations_.clear();
+
+  outline_height_.reset();
+  outline_width_.reset();
 }
 
 }  // namespace mpl2
