@@ -58,9 +58,9 @@ BOOST_AUTO_TEST_CASE(test_default)
          + "/results/TestLef58PropertiesDbRW";
   std::ofstream write;
   write.exceptions(std::ifstream::failbit | std::ifstream::badbit
-                  | std::ios::eofbit);
+                   | std::ios::eofbit);
   write.open(path, std::ios::binary);
-  
+
   db1->write(write);
 
   std::ifstream read;
