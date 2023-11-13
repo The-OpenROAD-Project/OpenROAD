@@ -174,16 +174,29 @@ proc clock_tree_synthesis { args } {
 
   if { [info exists keys(-root_buf)] } {
     set root_buf $keys(-root_buf)
+    if { [llength $root_buf] > 1} {
+      set root_buf [lindex $root_buf 0]
+    }
     cts::set_root_buffer $root_buf
   } else {
-    cts::set_root_buffer ""
+    # TODO: remove dependency on -buf_list
+    if { [info exists keys(-buf_list)] } {
+      #If using -buf_list, the first buffer can become the root buffer.
+      set root_buf [lindex $buf_list 0]
+      cts::set_root_buffer $root_buf
+    } else {
+      cts::set_root_buffer ""        
+    }
   }
 
   if { [info exists keys(-sink_clustering_buffer)] } {
     set sink_buf $keys(-sink_clustering_buffer)
+    if { [llength $sink_buf] > 1} {
+      set sink_buf [lindex $sink_buf 0]
+    }
     cts::set_sink_buffer $sink_buf
   } else {
-    cts::set_sink_buffer ""
+    cts::set_sink_buffer $root_buf
   }
 
   cts::set_obstruction_aware [info exists flags(-obstruction_aware)]

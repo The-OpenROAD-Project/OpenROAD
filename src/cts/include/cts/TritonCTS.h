@@ -52,7 +52,6 @@ class dbInst;
 class dbNet;
 class dbITerm;
 class dbMTerm;
-class Rect;
 }  // namespace odb
 
 namespace rsz {
@@ -63,7 +62,7 @@ namespace sta {
 class dbSta;
 class Clock;
 class dbNetwork;
-class LibertyCell;
+class Unit;
 }  // namespace sta
 
 namespace stt {
@@ -99,14 +98,9 @@ class TritonCTS
   TechChar* getCharacterization() { return techChar_; }
   int setClockNets(const char* names);
   void setBufferList(const char* buffers);
-  void inferBufferList(std::vector<std::string>& buffers);
-  bool isClockBufferCandidate(sta::LibertyCell* buffer);
+  void inferBufferList(std::vector<std::string>& bufferVector);
   void setRootBuffer(const char* buffers);
-  std::string selectRootBuffer(std::vector<std::string>& buffers);
-  void setSinkBuffer(const char* buffers);
-  std::string selectSinkBuffer(std::vector<std::string>& buffers);
-  std::string selectBestMaxCapBuffer(const std::vector<std::string>& buffers,
-                                     float totalCap);
+  std::string selectRootBuffer(std::vector<std::string>& bufferVector);
 
  private:
   void addBuilder(TreeBuilder* builder);
