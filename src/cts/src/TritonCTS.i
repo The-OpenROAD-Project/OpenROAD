@@ -185,7 +185,7 @@ set_num_static_layers(unsigned num)
 void
 set_sink_buffer(const char* buffer)
 {
-  getTritonCts()->setSinkBuffer(buffer);
+  getTritonCts()->getParms()->setSinkBuffer(buffer);
 }
 
 void
