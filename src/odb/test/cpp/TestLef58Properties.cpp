@@ -56,13 +56,17 @@ BOOST_AUTO_TEST_CASE(test_default)
 
   path = std::string(std::getenv("BASE_DIR"))
          + "/results/TestLef58PropertiesDbRW";
-  std::ofstream write(path, std::ios::binary);
+  std::ofstream write;
+  write.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                  | std::ios::eofbit);
+  write.open(path, std::ios::binary);
+  
   db1->write(write);
 
   std::ifstream read;
   read.exceptions(std::ifstream::failbit | std::ifstream::badbit
                   | std::ios::eofbit);
-  read.open(path.c_str(), std::ios::binary);
+  read.open(path, std::ios::binary);
 
   db2->read(read);
 

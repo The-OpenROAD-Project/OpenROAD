@@ -710,6 +710,9 @@ void dbDatabase::writeEco(dbBlock* block_, const char* filename)
     return;
   }
 
+  file.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                  | std::ios::eofbit);
+
   if (block->_journal_pending) {
     dbOStream stream(block->getDatabase(), file);
     stream << *block->_journal_pending;
