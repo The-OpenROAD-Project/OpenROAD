@@ -35,7 +35,6 @@
 #include <array>
 #include <cstdint>
 #include <cstring>
-#include <fstream>
 #include <istream>
 #include <ostream>
 #include <string>
@@ -70,85 +69,67 @@ class dbOStream
 
   dbOStream& operator<<(char c)
   {
-    _f.put(c);
+    _f << c;
     return *this;
   }
 
   dbOStream& operator<<(unsigned char c)
   {
-    _f.put(c);
+    _f << c;
     return *this;
   }
 
   dbOStream& operator<<(int16_t c)
   {
-    char dst[sizeof(c)];
-    std::memcpy(dst, &c, sizeof(c));
-    _f.write(dst, sizeof(c));
+    _f.write(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbOStream& operator<<(uint16_t c)
   {
-    char dst[sizeof(c)];
-    std::memcpy(dst, &c, sizeof(c));
-    _f.write(dst, sizeof(c));
+    _f.write(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbOStream& operator<<(int c)
   {
-    char dst[sizeof(c)];
-    std::memcpy(dst, &c, sizeof(c));
-    _f.write(dst, sizeof(c));
+    _f.write(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbOStream& operator<<(uint64_t c)
   {
-    char dst[sizeof(c)];
-    std::memcpy(dst, &c, sizeof(c));
-    _f.write(dst, sizeof(c));
+    _f.write(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbOStream& operator<<(unsigned int c)
   {
-    char dst[sizeof(c)];
-    std::memcpy(dst, &c, sizeof(c));
-    _f.write(dst, sizeof(c));
+    _f.write(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbOStream& operator<<(int8_t c)
   {
-    char dst[sizeof(c)];
-    std::memcpy(dst, &c, sizeof(c));
-    _f.write(dst, sizeof(c));
+    _f.write(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbOStream& operator<<(float c)
   {
-    char dst[sizeof(c)];
-    std::memcpy(dst, &c, sizeof(c));
-    _f.write(dst, sizeof(c));
+    _f.write(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbOStream& operator<<(double c)
   {
-    char dst[sizeof(c)];
-    std::memcpy(dst, &c, sizeof(c));
-    _f.write(dst, sizeof(c));
+    _f.write(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbOStream& operator<<(long double c)
   {
-    char dst[sizeof(c)];
-    std::memcpy(dst, &c, sizeof(c));
-    _f.write(dst, sizeof(c));
+    _f.write(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
@@ -167,9 +148,7 @@ class dbOStream
 
   dbOStream& operator<<(dbObjectType c)
   {
-    char dst[sizeof(c)];
-    std::memcpy(dst, &c, sizeof(c));
-    _f.write(dst, sizeof(c));
+    _f.write(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 

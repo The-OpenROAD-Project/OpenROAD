@@ -30,7 +30,10 @@ BOOST_AUTO_TEST_CASE(test_default)
   iterm->setAccessPoint(pin, ap);
   std::string path
       = std::string(std::getenv("BASE_DIR")) + "/results/TestAccessPointDbRW";
-  std::ofstream write(path, std::ios::binary);
+  std::ofstream write;
+  write.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                  | std::ios::eofbit);
+  write.open(path, std::ios::binary);
   db->write(write);
   dbDatabase::destroy(db);
 

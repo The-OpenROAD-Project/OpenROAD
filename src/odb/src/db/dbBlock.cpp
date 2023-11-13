@@ -3352,13 +3352,12 @@ void dbBlock::writeDb(char* filename, int allNode)
   } else
     dbname = fmt::format("{}.db", filename);
   std::ofstream file(dbname, std::ios::binary);
-  if (!file.is_open()) {
+  if (!file) {
     getImpl()->getLogger()->warn(
         utl::ODB, 19, "Can not open file {} to write!", dbname);
     return;
   }
   getDataBase()->write(file);
-  file.close();
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
                utl::ODB,

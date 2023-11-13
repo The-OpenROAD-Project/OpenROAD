@@ -32,6 +32,7 @@
 
 #include "dbDatabase.h"
 
+#include <fstream>
 #include <algorithm>
 #include <map>
 #include <string>
@@ -702,7 +703,7 @@ void dbDatabase::writeEco(dbBlock* block_, const char* filename)
   _dbBlock* block = (_dbBlock*) block_;
 
   std::ofstream file(filename, std::ios::binary);
-  if (!file.is_open()) {
+  if (file) {
     int errnum = errno;
     block->getImpl()->getLogger()->error(
         utl::ODB, 2, "Error opening file {}", strerror(errnum));
@@ -713,8 +714,6 @@ void dbDatabase::writeEco(dbBlock* block_, const char* filename)
     dbOStream stream(block->getDatabase(), file);
     stream << *block->_journal_pending;
   }
-
-  file.close();
 }
 
 void dbDatabase::commitEco(dbBlock* block_)
