@@ -233,8 +233,8 @@ void Graphics::drawBlockages(gui::Painter& painter)
 
     odb::Rect blockage_bbox(lx, ly, ux, uy);
 
-    // TO DO
-    // draw using the root origin as ref
+    // draw based on root's location
+    blockage_bbox.moveDelta(dbu_ * root_->getX(), dbu_ * root_->getY());
 
     painter.drawRect(blockage_bbox);
   }
@@ -246,12 +246,12 @@ void Graphics::drawObjects(gui::Painter& painter)
     painter.setPen(gui::Painter::red, true);
     painter.setBrush(gui::Painter::transparent);
     drawCluster(root_, painter);
-  }
 
-  if (!macro_blockages_.empty()) {
-    painter.setPen(gui::Painter::gray, true);
-    painter.setBrush(gui::Painter::gray, gui::Painter::DIAGONAL);
-    drawBlockages(painter);
+    if (!macro_blockages_.empty()) {
+      painter.setPen(gui::Painter::gray, true);
+      painter.setBrush(gui::Painter::gray, gui::Painter::DIAGONAL);
+      drawBlockages(painter);
+    }
   }
 
   painter.setPen(gui::Painter::yellow, true);
