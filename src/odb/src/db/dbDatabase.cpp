@@ -32,8 +32,8 @@
 
 #include "dbDatabase.h"
 
-#include <fstream>
 #include <algorithm>
+#include <fstream>
 #include <map>
 #include <string>
 

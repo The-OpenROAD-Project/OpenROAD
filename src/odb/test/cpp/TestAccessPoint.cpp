@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE(test_default)
       = std::string(std::getenv("BASE_DIR")) + "/results/TestAccessPointDbRW";
   std::ofstream write;
   write.exceptions(std::ifstream::failbit | std::ifstream::badbit
-                  | std::ios::eofbit);
+                   | std::ios::eofbit);
   write.open(path, std::ios::binary);
   db->write(write);
   dbDatabase::destroy(db);
