@@ -286,11 +286,9 @@ void Graphics::drawObjects(gui::Painter& painter)
     const int uy = ly + height;
     odb::Rect bbox(lx, ly, ux, uy);
 
-    // TO DO
-    // draw using the location of the cluster
-    // as ref, but use a different color (yellow?)
-    // to draw the changing outline, so we can
-    // distinguish between the cluster and the latter.
+    // draw based on the cluster position
+    bbox.moveDelta(hard_macro_cluster_pos_.getX(),
+                   hard_macro_cluster_pos_.getY());
 
     painter.drawRect(bbox);
     painter.drawString(bbox.xCenter(),
@@ -299,19 +297,31 @@ void Graphics::drawObjects(gui::Painter& painter)
                        std::to_string(i++));
     switch (macro.getOrientation()) {
       case odb::dbOrientType::R0: {
-        painter.drawLine(lx, ly + 0.1 * height, lx + 0.1 * width, ly);
+        painter.drawLine(bbox.xMin(),
+                         bbox.yMin() + 0.1 * height,
+                         bbox.xMin() + 0.1 * width,
+                         bbox.yMin());
         break;
       }
       case odb::dbOrientType::MX: {
-        painter.drawLine(lx, uy - 0.1 * height, lx + 0.1 * width, uy);
+        painter.drawLine(bbox.xMin(),
+                         bbox.yMax() - 0.1 * height,
+                         bbox.xMin() + 0.1 * width,
+                         bbox.yMax());
         break;
       }
       case odb::dbOrientType::MY: {
-        painter.drawLine(ux, ly + 0.1 * height, ux - 0.1 * width, ly);
+        painter.drawLine(bbox.xMax(),
+                         bbox.yMin() + 0.1 * height,
+                         bbox.xMax() - 0.1 * width,
+                         bbox.yMin());
         break;
       }
       case odb::dbOrientType::R180: {
-        painter.drawLine(ux, uy - 0.1 * height, ux - 0.1 * width, uy);
+        painter.drawLine(bbox.xMax(),
+                         bbox.yMax() - 0.1 * height,
+                         bbox.xMax() - 0.1 * width,
+                         bbox.yMax());
         break;
       }
       case odb::dbOrientType::R90:
@@ -338,6 +348,12 @@ void Graphics::drawObjects(gui::Painter& painter)
 void Graphics::setMacroBlockages(const std::vector<mpl2::Rect>& macro_blockages)
 {
   macro_blockages_ = macro_blockages;
+}
+
+void Graphics::setHardMacroClusterLocation(
+    const odb::Point& hard_macro_cluster_pos)
+{
+  hard_macro_cluster_pos_ = hard_macro_cluster_pos;
 }
 
 }  // namespace mpl2
