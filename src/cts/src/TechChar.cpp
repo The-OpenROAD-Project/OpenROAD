@@ -452,9 +452,13 @@ void TechChar::initCharacterization()
 
   // Gets the buffer masters and its in/out pins.
   std::vector<std::string> masterVector = options_->getBufferList();
-  if (masterVector.size() < 1) {
+  if (masterVector.empty()) {
     logger_->error(CTS, 73, "Buffer not found. Check your -buf_list input.");
   }
+
+  // Trim buffer list if it was generated automatically
+  trimBufferList(masterVector);
+
   for (const std::string& masterString : masterVector) {
     odb::dbMaster* testBuf = db_->findMaster(masterString.c_str());
     if (testBuf == nullptr) {
@@ -641,6 +645,62 @@ void TechChar::initCharacterization()
         "    Check the parameters -max_cap/-max_slew/-cap_inter/-slew_inter\n"
         "          or the technology files.");
   }
+}
+
+void TechChar::trimBufferList(std::vector<std::string>& bufferVector)
+{
+  if (options_->bufferListInferred()) {
+    // trim buffer list to keep only buffers needed between sink and root
+    std::string sinkBuf = options_->getSinkBuffer();
+    std::string rootBuf = options_->getRootBuffer();
+    // clang-format off
+    debugPrint(logger_, CTS, "buffering", 1, "sinkBuf:{} rootBuf:{}",
+               sinkBuf, rootBuf);
+    // clang-format on
+    float sinkCap = getMaxCapLimit(sinkBuf);
+    float rootCap = getMaxCapLimit(rootBuf);
+    float lowCap = sinkCap;
+    float highCap = rootCap;
+    if (sinkCap > rootCap) {
+      lowCap = rootCap;
+      highCap = sinkCap;
+    }
+
+    std::vector<std::string>::iterator it = bufferVector.begin();
+    while (it != bufferVector.end()) {
+      std::string buf = *it;
+      float cap = getMaxCapLimit(buf);
+      if (cap < lowCap || cap > highCap) {
+        it = bufferVector.erase(it);
+        // clang-format off
+        debugPrint(logger_, CTS, "buffering", 1, "  removing {}",
+                   buf);
+        // clang-format on
+      } else {
+        ++it;
+      }
+    }
+  }
+
+  if (logger_->debugCheck(utl::CTS, "buffering", 1)) {
+    logger_->report("-----  after trimBufferList -----");
+    for (const std::string& bufName : bufferVector) {
+      logger_->report("{} has been inferred as clock buffer", bufName);
+    }
+  }
+}
+
+float TechChar::getMaxCapLimit(const std::string& buf)
+{
+  odb::dbMaster* master = db_->findMaster(buf.c_str());
+  sta::Cell* masterCell = db_network_->dbToSta(master);
+  sta::LibertyCell* libCell = db_network_->libertyCell(masterCell);
+  sta::LibertyPort *in, *out;
+  libCell->bufferPorts(in, out);
+  float maxCap = 0.0;
+  bool maxCapExists = false;
+  out->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExists);
+  return maxCap;
 }
 
 std::vector<TechChar::SolutionData> TechChar::createPatterns(
