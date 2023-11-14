@@ -231,11 +231,6 @@ void Graphics::drawObjects(gui::Painter& painter)
     painter.setPen(gui::Painter::red, true);
     painter.setBrush(gui::Painter::transparent);
     drawCluster(root_, painter);
-
-    // Hightlight outline so we see where SA is working
-    painter.setPen(gui::Painter::cyan, true);
-    painter.setBrush(gui::Painter::transparent);
-    painter.drawRect(outline_);
   }
 
   if (!macro_blockages_.empty()) {
@@ -318,6 +313,11 @@ void Graphics::drawObjects(gui::Painter& painter)
       }
     }
   }
+
+  // Hightlight outline so we see where SA is working
+  painter.setPen(gui::Painter::cyan, true);
+  painter.setBrush(gui::Painter::transparent);
+  painter.drawRect(outline_);
 }
 
 void Graphics::setMacroBlockages(const std::vector<mpl2::Rect>& macro_blockages)
