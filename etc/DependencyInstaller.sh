@@ -279,7 +279,7 @@ _installUbuntuPackages() {
         tcllib \
         wget \
         zlib1g-dev \
-        libzstd-dev \
+        libzstd-dev
 
     if _versionCompare $1 -ge 22.10; then
         apt-get install -y \
@@ -355,7 +355,7 @@ _installRHELPackages() {
         tcllib \
         wget \
         zlib-devel \
-        libzstd-devel \
+        libzstd-devel
 
     yum install -y \
         http://repo.okay.com.mx/centos/8/x86_64/release/bison-3.0.4-10.el8.x86_64.rpm \
@@ -410,7 +410,7 @@ _installCentosPackages() {
         tcllib \
         wget \
         zlib-devel \
-        libzstd-devel \
+        libzstd-devel
     }
 
 _installOpenSuseCleanUp() {
@@ -454,6 +454,7 @@ _installOpenSusePackages() {
         wget \
         zlib-devel \
         libzstd-devel
+
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
 }
@@ -545,7 +546,7 @@ _installDebianPackages() {
         tcllib \
         wget \
         zlib1g-dev \
-        libzstd-dev \
+        libzstd-dev
 
     if [[ $1 == 10 ]]; then
         apt-get install -y \
