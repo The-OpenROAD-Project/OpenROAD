@@ -123,4 +123,42 @@ bool update_power_switch_port_map(utl::Logger* logger,
                                   const char* model_port,
                                   const char* switch_port);
 
+bool create_or_update_level_shifter(utl::Logger* logger,
+                                    odb::dbBlock* block,
+                                    char* name,
+                                    char* domain,
+                                    char* source,
+                                    char* sink,
+                                    char* use_functional_equivalence,
+                                    char* applies_to,
+                                    char* applies_to_boundary,
+                                    char* rule,
+                                    char* threshold,
+                                    char* no_shift,
+                                    char* force_shift,
+                                    char* location,
+                                    char* input_supply,
+                                    char* output_supply,
+                                    char* internal_supply,
+                                    char* name_prefix,
+                                    char* name_suffix,
+                                    bool update,
+                                    char* use_equivalence);
+
+bool add_level_shifter_element(utl::Logger* logger,
+                               odb::dbBlock* block,
+                               char* level_shifter_name,
+                               char* element);
+
+bool exclude_level_shifter_element(utl::Logger* logger,
+                                   odb::dbBlock* block,
+                                   char* level_shifter_name,
+                                   char* exclude_element);
+
+bool handle_level_shifter_instance(utl::Logger* logger,
+                                   odb::dbBlock* block,
+                                   char* level_shifter_name,
+                                   char* instance_name,
+                                   char* port_name);
+
 }  // namespace upf

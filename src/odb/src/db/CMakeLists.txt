@@ -93,6 +93,7 @@ add_library(db
     dbGroup.cpp
     dbGuide.cpp
     dbIsolation.cpp
+    dbLevelShifter.cpp
     dbLogicPort.cpp
     dbMetalWidthViaMap.cpp
     dbModInst.cpp

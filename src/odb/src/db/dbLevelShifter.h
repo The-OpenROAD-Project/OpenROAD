@@ -42,41 +42,47 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-class _dbPowerSwitch;
-class _dbIsolation;
-class _dbGroup;
-class _dbLevelShifter;
+class _dbPowerDomain;
 
-class _dbPowerDomain : public _dbObject
+class _dbLevelShifter : public _dbObject
 {
  public:
-  _dbPowerDomain(_dbDatabase*, const _dbPowerDomain& r);
-  _dbPowerDomain(_dbDatabase*);
-  ~_dbPowerDomain();
+  _dbLevelShifter(_dbDatabase*, const _dbLevelShifter& r);
+  _dbLevelShifter(_dbDatabase*);
+  ~_dbLevelShifter();
 
-  bool operator==(const _dbPowerDomain& rhs) const;
-  bool operator!=(const _dbPowerDomain& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbPowerDomain& rhs) const;
+  bool operator==(const _dbLevelShifter& rhs) const;
+  bool operator!=(const _dbLevelShifter& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbLevelShifter& rhs) const;
   void differences(dbDiff& diff,
                    const char* field,
-                   const _dbPowerDomain& rhs) const;
+                   const _dbLevelShifter& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 
   char* _name;
-  dbId<_dbPowerDomain> _next_entry;
+  dbId<_dbLevelShifter> _next_entry;
+  dbId<_dbPowerDomain> _domain;
   dbVector<std::string> _elements;
-  dbVector<dbId<_dbPowerSwitch>> _power_switch;
-  dbVector<dbId<_dbIsolation>> _isolation;
-  dbId<_dbGroup> _group;
-  bool _top;
-  dbId<_dbPowerDomain> _parent;
-  int _x1;
-  int _x2;
-  int _y1;
-  int _y2;
-  dbVector<dbId<_dbLevelShifter>> _levelshifters;
+  dbVector<std::string> _exclude_elements;
+  std::string _source;
+  std::string _sink;
+  bool _use_functional_equivalence;
+  std::string _applies_to;
+  std::string _applies_to_boundary;
+  std::string _rule;
+  float _threshold;
+  bool _no_shift;
+  bool _force_shift;
+  std::string _location;
+  std::string _input_supply;
+  std::string _output_supply;
+  std::string _internal_supply;
+  std::string _name_prefix;
+  std::string _name_suffix;
+  dbVector<std::pair<std::string, std::string>> _instances;
+  bool _use_equivalence;
 };
-dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbPowerDomain& obj);
+dbIStream& operator>>(dbIStream& stream, _dbLevelShifter& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbLevelShifter& obj);
 }  // namespace odb
    // Generator Code End Header
