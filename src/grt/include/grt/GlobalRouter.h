@@ -157,7 +157,10 @@ class GlobalRouter : public ant::GlobalRouteSource
   void setAdjustment(const float adjustment);
   void setMinRoutingLayer(const int min_layer);
   void setMaxRoutingLayer(const int max_layer);
-  int getMaxRoutingLayer() const { return max_routing_layer_; }
+  int getMaxRoutingLayer() const
+  {
+    return std::max(max_routing_layer_, max_layer_for_clock_);
+  }
   void setMinLayerForClock(const int min_layer);
   void setMaxLayerForClock(const int max_layer);
   void setCriticalNetsPercentage(float critical_nets_percentage);
@@ -176,7 +179,10 @@ class GlobalRouter : public ant::GlobalRouteSource
   void setAllowCongestion(bool allow_congestion);
   void setMacroExtension(int macro_extension);
   void setPinOffset(int pin_offset);
-  int getMinRoutingLayer() const { return min_routing_layer_; }
+  int getMinRoutingLayer() const
+  {
+    return std::min(min_routing_layer_, min_layer_for_clock_);
+  }
 
   // flow functions
   void readGuides(const char* file_name);

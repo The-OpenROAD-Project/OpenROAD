@@ -475,7 +475,9 @@ void RouteBase::updateRoute()
   tg_->setTileCnt(gridX.size(), gridY.size());
   tg_->initTiles();
 
-  for (int i = 1; i <= numLayers; i++) {
+  for (int i = grouter_->getMinRoutingLayer();
+       i <= grouter_->getMaxRoutingLayer();
+       i++) {
     odb::dbTechLayer* layer = tech->findRoutingLayer(i);
     bool isHorizontalLayer
         = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);
@@ -766,7 +768,9 @@ float RouteBase::getRC() const
 
   odb::dbGCellGrid* gGrid = db_->getChip()->getBlock()->getGCellGrid();
   for (auto& tile : tg_->tiles()) {
-    for (int i = 1; i <= tg_->numRoutingLayers(); i++) {
+    for (int i = grouter_->getMinRoutingLayer();
+         i <= grouter_->getMaxRoutingLayer();
+         i++) {
       odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(i);
       bool isHorizontalLayer
           = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);
