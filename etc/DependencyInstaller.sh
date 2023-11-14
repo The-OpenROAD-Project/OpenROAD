@@ -409,8 +409,7 @@ _installCentosPackages() {
         tcl-tclreadline-devel \
         tcllib \
         wget \
-        zlib-devel \
-        libzstd-static
+        zlib-devel
     }
 
 _installOpenSuseCleanUp() {
