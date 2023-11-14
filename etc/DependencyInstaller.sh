@@ -75,7 +75,7 @@ _installCommonDev() {
     eigenVersion=3.4
     lemonVersion=1.3.1
     spdlogVersion=1.8.1
-    zstdVersion="1.5.5"
+    zstdVersion=1.5.5
     zstdChecksum="63251602329a106220e0a5ad26ba656f"
 
     rm -rf "${baseDir}"
@@ -124,21 +124,23 @@ _installCommonDev() {
     fi
 
     # zstd
+    zstd_installed=false
     if [[ ! -f "/usr/include/zstd.h" ]]; then
         cd "${baseDir}"
         wget https://github.com/facebook/zstd/releases/download/v${zstdVersion}/zstd-${zstdVersion}.tar.gz
-        md5sum -c <(echo "${zstdCheckSum}  zstd-${zstdVersion}.tar.gz") || exit 1
+        md5sum -c <(echo "${zstdChecksum} zstd-${zstdVersion}.tar.gz") || exit 1
         tar -xf zstd-${zstdVersion}.tar.gz
         cd zstd-${zstdVersion}
         make -j $(nproc)
         make -j $(nproc) install
+        zstd_installed=true
     else
         echo "zstd already installed."
     fi
 
     # boost
     boostPrefix=${PREFIX:-"/usr/local"}
-    if [[ -z $(grep "BOOST_LIB_VERSION \"${boostVersionBig//./_}\"" ${boostPrefix}/include/boost/version.hpp) ]]; then
+    if [[ -z $(grep "BOOST_LIB_VERSION \"${boostVersionBig//./_}\"" ${boostPrefix}/include/boost/version.hpp) ]] || [$zstd_installed]; then
         cd "${baseDir}"
         boostVersionUnderscore=${boostVersionSmall//./_}
         wget https://boostorg.jfrog.io/artifactory/main/release/${boostVersionSmall}/source/boost_${boostVersionUnderscore}.tar.gz
