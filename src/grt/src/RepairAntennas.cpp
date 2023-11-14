@@ -102,7 +102,9 @@ void RepairAntennas::makeNetWires(NetRouteMap& routing, int max_routing_layer)
       = grouter_->getDefaultVias(max_routing_layer);
 
   for (auto& [db_net, route] : routing) {
-    makeNetWire(db_net, route, default_vias);
+    if (!grouter_->getNet(db_net)->isLocal()) {
+      makeNetWire(db_net, route, default_vias);
+    }
   }
 }
 
