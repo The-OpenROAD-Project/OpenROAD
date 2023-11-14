@@ -135,7 +135,6 @@ class RepairAntennas
                     int grid_y,
                     int layer,
                     odb::dbTechLayer* tech_layer,
-                    int jct_id,
                     RoutePtPins& route_pt_pins,
                     odb::dbWireEncoder& wire_encoder,
                     std::map<int, odb::dbTechVia*>& default_vias);

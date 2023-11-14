@@ -130,7 +130,6 @@ odb::dbWire* RepairAntennas::makeNetWire(
         int l1 = seg.init_layer;
         int l2 = seg.final_layer;
 
-        int jct_id = -1;
         if (seg.isVia()) {
           int bottom_layer = std::min(l1, l2);
           int top_layer = std::max(l1, l2);
@@ -141,12 +140,12 @@ odb::dbWire* RepairAntennas::makeNetWire(
             if (bottom_layer == prev_conn_layer) {
               wire_encoder.newPath(bottom_tech_layer, odb::dbWireType::ROUTED);
               wire_encoder.addPoint(x1, y1);
-              jct_id = wire_encoder.addTechVia(default_vias[bottom_layer]);
+              wire_encoder.addTechVia(default_vias[bottom_layer]);
               prev_conn_layer = std::max(l1, l2);
             } else if (top_layer == prev_conn_layer) {
               wire_encoder.newPath(top_tech_layer, odb::dbWireType::ROUTED);
               wire_encoder.addPoint(x1, y1);
-              jct_id = wire_encoder.addTechVia(default_vias[bottom_layer]);
+              wire_encoder.addTechVia(default_vias[bottom_layer]);
               prev_conn_layer = std::min(l1, l2);
             }
             addWireTerms(net,
@@ -155,7 +154,6 @@ odb::dbWire* RepairAntennas::makeNetWire(
                          y1,
                          bottom_layer,
                          bottom_tech_layer,
-                         jct_id,
                          route_pt_pins,
                          wire_encoder,
                          default_vias);
@@ -168,15 +166,14 @@ odb::dbWire* RepairAntennas::makeNetWire(
           if (x1 != x2 || y1 != y2) {
             odb::dbTechLayer* tech_layer = tech->findRoutingLayer(l1);
             wire_encoder.newPath(tech_layer, odb::dbWireType::ROUTED);
-            int jct_id1 = wire_encoder.addPoint(x1, y1);
-            int jct_id2 = wire_encoder.addPoint(x2, y2);
+            wire_encoder.addPoint(x1, y1);
+            wire_encoder.addPoint(x2, y2);
             addWireTerms(net,
                          route,
                          x1,
                          y1,
                          l1,
                          tech_layer,
-                         jct_id1,
                          route_pt_pins,
                          wire_encoder,
                          default_vias);
@@ -186,7 +183,6 @@ odb::dbWire* RepairAntennas::makeNetWire(
                          y2,
                          l1,
                          tech_layer,
-                         jct_id2,
                          route_pt_pins,
                          wire_encoder,
                          default_vias);
@@ -226,7 +222,6 @@ void RepairAntennas::addWireTerms(Net* net,
                                   int grid_y,
                                   int layer,
                                   odb::dbTechLayer* tech_layer,
-                                  int jct_id,
                                   RoutePtPins& route_pt_pins,
                                   odb::dbWireEncoder& wire_encoder,
                                   std::map<int, odb::dbTechVia*>& default_vias)
@@ -277,7 +272,7 @@ void RepairAntennas::addWireTerms(Net* net,
         wire_encoder.newPath(h_layer, odb::dbWireType::ROUTED);
         wire_encoder.addPoint(grid_pt.x(), grid_pt.y());
         wire_encoder.addPoint(pin_pt.x(), grid_pt.y());
-        jct_id = wire_encoder.addTechVia(
+        wire_encoder.addTechVia(
             default_vias[grouter_->getMinRoutingLayer()]);
 
         // create vertical wire to connect to the pin
