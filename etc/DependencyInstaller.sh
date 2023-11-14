@@ -279,6 +279,7 @@ _installUbuntuPackages() {
         tcllib \
         wget \
         zlib1g-dev \
+        libzstd-dev \
 
     if _versionCompare $1 -ge 22.10; then
         apt-get install -y \
@@ -353,7 +354,8 @@ _installRHELPackages() {
         tcl-thread-devel \
         tcllib \
         wget \
-        zlib-devel
+        zlib-devel \
+        libzstd-devel \
 
     yum install -y \
         http://repo.okay.com.mx/centos/8/x86_64/release/bison-3.0.4-10.el8.x86_64.rpm \
@@ -407,7 +409,8 @@ _installCentosPackages() {
         tcl-tclreadline-devel \
         tcllib \
         wget \
-        zlib-devel
+        zlib-devel \
+        libzstd-devel \
     }
 
 _installOpenSuseCleanUp() {
@@ -449,7 +452,8 @@ _installOpenSusePackages() {
         tcl-devel \
         tcllib \
         wget \
-        zlib-devel
+        zlib-devel \
+        libzstd-devel
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
 }
@@ -491,7 +495,7 @@ Then, rerun this script.
 EOF
       exit 1
     fi
-    brew install bison boost cmake eigen flex libomp pyqt5 python swig tcl-tk zlib
+    brew install bison boost cmake eigen flex libomp pyqt5 python swig tcl-tk zlib zstd
 
     # Some systems neeed this to correclty find OpenMP package during build
     brew link --force libomp
@@ -540,7 +544,8 @@ _installDebianPackages() {
         tcl-tclreadline \
         tcllib \
         wget \
-        zlib1g-dev
+        zlib1g-dev \
+        libzstd-dev \
 
     if [[ $1 == 10 ]]; then
         apt-get install -y \
