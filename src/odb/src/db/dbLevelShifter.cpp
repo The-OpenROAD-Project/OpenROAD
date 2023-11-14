@@ -33,6 +33,8 @@
 // Generator Code Begin Cpp
 #include "dbLevelShifter.h"
 
+#include <utility>
+
 #include "db.h"
 #include "dbBlock.h"
 #include "dbDatabase.h"
@@ -48,44 +50,63 @@ template class dbTable<_dbLevelShifter>;
 
 bool _dbLevelShifter::operator==(const _dbLevelShifter& rhs) const
 {
-  if (_name != rhs._name)
+  if (_name != rhs._name) {
     return false;
-  if (_next_entry != rhs._next_entry)
+  }
+  if (_next_entry != rhs._next_entry) {
     return false;
-  if (_domain != rhs._domain)
+  }
+  if (_domain != rhs._domain) {
     return false;
-  if (_source != rhs._source)
+  }
+  if (_source != rhs._source) {
     return false;
-  if (_sink != rhs._sink)
+  }
+  if (_sink != rhs._sink) {
     return false;
-  if (_use_functional_equivalence != rhs._use_functional_equivalence)
+  }
+  if (_use_functional_equivalence != rhs._use_functional_equivalence) {
     return false;
-  if (_applies_to != rhs._applies_to)
+  }
+  if (_applies_to != rhs._applies_to) {
     return false;
-  if (_applies_to_boundary != rhs._applies_to_boundary)
+  }
+  if (_applies_to_boundary != rhs._applies_to_boundary) {
     return false;
-  if (_rule != rhs._rule)
+  }
+  if (_rule != rhs._rule) {
     return false;
-  if (_threshold != rhs._threshold)
+  }
+  if (_threshold != rhs._threshold) {
     return false;
-  if (_no_shift != rhs._no_shift)
+  }
+  if (_no_shift != rhs._no_shift) {
     return false;
-  if (_force_shift != rhs._force_shift)
+  }
+  if (_force_shift != rhs._force_shift) {
     return false;
-  if (_location != rhs._location)
+  }
+  if (_location != rhs._location) {
     return false;
-  if (_input_supply != rhs._input_supply)
+  }
+  if (_input_supply != rhs._input_supply) {
     return false;
-  if (_output_supply != rhs._output_supply)
+  }
+  if (_output_supply != rhs._output_supply) {
     return false;
-  if (_internal_supply != rhs._internal_supply)
+  }
+  if (_internal_supply != rhs._internal_supply) {
     return false;
-  if (_name_prefix != rhs._name_prefix)
+  }
+  if (_name_prefix != rhs._name_prefix) {
     return false;
-  if (_name_suffix != rhs._name_suffix)
+  }
+  if (_name_suffix != rhs._name_suffix) {
     return false;
-  if (_use_equivalence != rhs._use_equivalence)
+  }
+  if (_use_equivalence != rhs._use_equivalence) {
     return false;
+  }
 
   return true;
 }
@@ -231,8 +252,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbLevelShifter& obj)
 
 _dbLevelShifter::~_dbLevelShifter()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -250,8 +272,9 @@ const char* dbLevelShifter::getName() const
 dbPowerDomain* dbLevelShifter::getDomain() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  if (obj->_domain == 0)
+  if (obj->_domain == 0) {
     return nullptr;
+  }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbPowerDomain*) par->_powerdomain_tbl->getPtr(obj->_domain);
 }
@@ -260,7 +283,7 @@ void dbLevelShifter::setSource(std::string source)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_source = source;
+  obj->_source = std::move(source);
 }
 
 std::string dbLevelShifter::getSource() const
@@ -273,7 +296,7 @@ void dbLevelShifter::setSink(std::string sink)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_sink = sink;
+  obj->_sink = std::move(sink);
 }
 
 std::string dbLevelShifter::getSink() const
@@ -300,7 +323,7 @@ void dbLevelShifter::setAppliesTo(std::string applies_to)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_applies_to = applies_to;
+  obj->_applies_to = std::move(applies_to);
 }
 
 std::string dbLevelShifter::getAppliesTo() const
@@ -313,7 +336,7 @@ void dbLevelShifter::setAppliesToBoundary(std::string applies_to_boundary)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_applies_to_boundary = applies_to_boundary;
+  obj->_applies_to_boundary = std::move(applies_to_boundary);
 }
 
 std::string dbLevelShifter::getAppliesToBoundary() const
@@ -326,7 +349,7 @@ void dbLevelShifter::setRule(std::string rule)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_rule = rule;
+  obj->_rule = std::move(rule);
 }
 
 std::string dbLevelShifter::getRule() const
@@ -378,7 +401,7 @@ void dbLevelShifter::setLocation(std::string location)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_location = location;
+  obj->_location = std::move(location);
 }
 
 std::string dbLevelShifter::getLocation() const
@@ -391,7 +414,7 @@ void dbLevelShifter::setInputSupply(std::string input_supply)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_input_supply = input_supply;
+  obj->_input_supply = std::move(input_supply);
 }
 
 std::string dbLevelShifter::getInputSupply() const
@@ -404,7 +427,7 @@ void dbLevelShifter::setOutputSupply(std::string output_supply)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_output_supply = output_supply;
+  obj->_output_supply = std::move(output_supply);
 }
 
 std::string dbLevelShifter::getOutputSupply() const
@@ -417,7 +440,7 @@ void dbLevelShifter::setInternalSupply(std::string internal_supply)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_internal_supply = internal_supply;
+  obj->_internal_supply = std::move(internal_supply);
 }
 
 std::string dbLevelShifter::getInternalSupply() const
@@ -430,7 +453,7 @@ void dbLevelShifter::setNamePrefix(std::string name_prefix)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_name_prefix = name_prefix;
+  obj->_name_prefix = std::move(name_prefix);
 }
 
 std::string dbLevelShifter::getNamePrefix() const
@@ -443,7 +466,7 @@ void dbLevelShifter::setNameSuffix(std::string name_suffix)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_name_suffix = name_suffix;
+  obj->_name_suffix = std::move(name_suffix);
 }
 
 std::string dbLevelShifter::getNameSuffix() const
@@ -469,24 +492,26 @@ bool dbLevelShifter::isUseEquivalence() const
 
 dbLevelShifter* dbLevelShifter::create(dbBlock* block,
                                        const char* name,
-                                       dbPowerDomain* pd)
+                                       dbPowerDomain* domain)
 {
   _dbBlock* _block = (_dbBlock*) block;
-  if (_block->_levelshifter_hash.hasMember(name))
+  if (_block->_levelshifter_hash.hasMember(name)) {
     return nullptr;
+  }
 
-  if (pd == nullptr)
+  if (domain == nullptr) {
     return nullptr;
+  }
 
   _dbLevelShifter* shifter = _block->_levelshifter_tbl->create();
   shifter->_name = strdup(name);
   ZALLOCATED(shifter->_name);
 
-  shifter->_domain = pd->getImpl()->getOID();
+  shifter->_domain = domain->getImpl()->getOID();
 
   _block->_levelshifter_hash.insert(shifter);
 
-  pd->addLevelShifter((dbLevelShifter*) shifter);
+  domain->addLevelShifter((dbLevelShifter*) shifter);
 
   return (dbLevelShifter*) shifter;
 }

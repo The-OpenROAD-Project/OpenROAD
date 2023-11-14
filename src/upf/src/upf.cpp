@@ -1124,9 +1124,9 @@ bool create_or_update_level_shifter(utl::Logger* logger,
     ls->setForceShift(std::stoi(force_shift));
   }
 
-  ls->setUseEquivalence(strcmp(use_equivalence, "FALSE") ? 1 : 0);
+  ls->setUseEquivalence(strcmp(use_equivalence, "FALSE") ? true : false);
   ls->setUseFunctionalEquivalence(
-      strcmp(use_functional_equivalence, "FALSE") ? 1 : 0);
+      strcmp(use_functional_equivalence, "FALSE") ? true : false);
 
   return true;
 }

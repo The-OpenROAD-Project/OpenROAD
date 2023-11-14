@@ -1206,8 +1206,9 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
   if (_isolation_hash != rhs._isolation_hash)
     return false;
 
-  if (_levelshifter_hash != rhs._levelshifter_hash)
+  if (_levelshifter_hash != rhs._levelshifter_hash) {
     return false;
+  }
 
   if (_group_hash != rhs._group_hash)
     return false;
@@ -1269,8 +1270,11 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
   if (*_isolation_tbl != *rhs._isolation_tbl)
     return false;
 
-  if (*_levelshifter_tbl != *rhs._levelshifter_tbl)
-    return false;
+  if (*_levelshifter_tbl != *rhs._levelshifter_tbl) {
+    {
+      return false;
+    }
+  }
 
   if (*_group_tbl != *rhs._group_tbl)
     return false;
