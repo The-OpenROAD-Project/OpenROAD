@@ -1801,7 +1801,7 @@ void GlobalRouter::saveGuides()
                            db_net->getConstName());
           }
 
-          if (net->isLocal()) {
+          if (net->isLocal() || (isCoveringPin(net, segment))) {
             int layer_idx1 = segment.init_layer;
             int layer_idx2 = segment.final_layer;
             odb::dbTechLayer* layer1 = routing_layers_[layer_idx1];
@@ -1810,13 +1810,8 @@ void GlobalRouter::saveGuides()
             odb::dbGuide::create(db_net, layer2, box);
           } else {
             int layer_idx = std::min(segment.init_layer, segment.final_layer);
-            odb::dbTechLayer* layer = routing_layers_[layer_idx];
-            odb::dbGuide::create(db_net, layer, box);
-            if (isCoveringPin(net, segment)) {
-              int layer_idx = std::max(segment.init_layer, segment.final_layer);
-              odb::dbTechLayer* layer = routing_layers_[layer_idx];
-              odb::dbGuide::create(db_net, layer, box);
-            }
+            odb::dbTechLayer* layer1 = routing_layers_[layer_idx];
+            odb::dbGuide::create(db_net, layer1, box);
           }
         } else if (segment.init_layer == segment.final_layer) {
           if (segment.init_layer < min_routing_layer_
