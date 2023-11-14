@@ -124,7 +124,8 @@ _installCommonDev() {
     fi
 
     # zstd
-    zstd_installed=false
+    zstdInstalled=false
+    zstdPrefix=${PREFIX:-"/usr/local"}
     if [[ ! -f "/usr/include/zstd.h" ]]; then
         cd "${baseDir}"
         wget https://github.com/facebook/zstd/releases/download/v${zstdVersion}/zstd-${zstdVersion}.tar.gz
@@ -132,15 +133,15 @@ _installCommonDev() {
         tar -xf zstd-${zstdVersion}.tar.gz
         cd zstd-${zstdVersion}
         make -j $(nproc)
-        make -j $(nproc) install
-        zstd_installed=true
+        make -j $(nproc) install PREFIX=${zstdPrefix}
+        zstdInstalled=true
     else
         echo "zstd already installed."
     fi
 
     # boost
     boostPrefix=${PREFIX:-"/usr/local"}
-    if [[ -z $(grep "BOOST_LIB_VERSION \"${boostVersionBig//./_}\"" ${boostPrefix}/include/boost/version.hpp) ]] || [$zstd_installed]; then
+    if [[ -z $(grep "BOOST_LIB_VERSION \"${boostVersionBig//./_}\"" ${boostPrefix}/include/boost/version.hpp) ]] || [$zstdInstalled]; then
         cd "${baseDir}"
         boostVersionUnderscore=${boostVersionSmall//./_}
         wget https://boostorg.jfrog.io/artifactory/main/release/${boostVersionSmall}/source/boost_${boostVersionUnderscore}.tar.gz
