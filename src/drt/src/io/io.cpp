@@ -750,8 +750,6 @@ void io::Parser::setNets(odb::dbBlock* block)
               nextX = beginX;
               nextY = beginY;
             }
-            prevLayer = decoder.getLayer();
-            layerName = prevLayer->getName();
             endpath = true;
           }
         } while (!endpath);

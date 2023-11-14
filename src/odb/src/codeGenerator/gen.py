@@ -265,6 +265,11 @@ for klass in schema["classes"]:
             field["setterArgumentType"] = field["getterReturnType"] = field["type"]
 
     klass["fields"] = [field for field in klass["fields"] if "bits" not in field]
+
+    klass["hasBitFields"] = False
+    if flag_num_bits > 0:
+        klass["hasBitFields"] = True
+
     total_num_bits = flag_num_bits
     if flag_num_bits > 0 and flag_num_bits % 32 != 0:
         spare_bits_field = {
