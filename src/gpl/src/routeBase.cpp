@@ -501,7 +501,7 @@ void RouteBase::updateRoute()
               = tg_->tiles()[tile->y() * tg_->tileCntX() + tile->x() - 1];
           float leftRatio = getUsageCapacityRatio(
               leftTile, layer, gGrid, rbVars_.ignoreEdgeRatio);
-          ratio = fmax(leftRatio, ratio);
+          ratio = std::fmax(leftRatio, ratio);
         }
 
         // if vertical layer (i.e., horizontal edges)
@@ -512,10 +512,10 @@ void RouteBase::updateRoute()
               = tg_->tiles()[(tile->y() - 1) * tg_->tileCntX() + tile->x()];
           float downRatio = getUsageCapacityRatio(
               downTile, layer, gGrid, rbVars_.ignoreEdgeRatio);
-          ratio = fmax(downRatio, ratio);
+          ratio = std::fmax(downRatio, ratio);
         }
 
-        ratio = fmax(ratio, 0.0f);
+        ratio = std::fmax(ratio, 0.0f);
       } else {
         ratio = 0.0;
       }
