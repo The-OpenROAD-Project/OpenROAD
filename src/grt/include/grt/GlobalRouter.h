@@ -181,7 +181,10 @@ class GlobalRouter : public ant::GlobalRouteSource
   void setPinOffset(int pin_offset);
   int getMinRoutingLayer() const
   {
-    return std::min(min_routing_layer_, min_layer_for_clock_);
+    int min_layer = min_layer_for_clock_ > 0
+                        ? std::min(min_routing_layer_, min_layer_for_clock_)
+                        : min_routing_layer_;
+    return min_layer;
   }
 
   // flow functions
