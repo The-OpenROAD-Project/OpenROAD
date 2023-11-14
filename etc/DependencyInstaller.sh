@@ -149,7 +149,7 @@ _installCommonDev() {
         tar -xf boost_${boostVersionUnderscore}.tar.gz
         cd boost_${boostVersionUnderscore}
         ./bootstrap.sh --prefix="${boostPrefix}"
-        ./b2 install --with-iostreams --with-test --with-serialization --with-system --with-thread -j $(nproc)
+        ./b2 link=static install --with-iostreams --with-test --with-serialization --with-system --with-thread -j $(nproc)
     else
         echo "Boost already installed."
     fi
@@ -496,7 +496,7 @@ Then, rerun this script.
 EOF
       exit 1
     fi
-    brew install bison boost cmake eigen flex libomp pyqt5 python swig tcl-tk zlib zstd
+    brew install bison boost cmake eigen flex libomp pyqt5 python swig tcl-tk zlib
 
     # Some systems neeed this to correclty find OpenMP package during build
     brew link --force libomp
