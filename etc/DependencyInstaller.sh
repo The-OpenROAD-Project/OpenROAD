@@ -410,7 +410,7 @@ _installCentosPackages() {
         tcllib \
         wget \
         zlib-devel \
-        libzstd-devel
+        libzstd-static
     }
 
 _installOpenSuseCleanUp() {
@@ -496,7 +496,7 @@ Then, rerun this script.
 EOF
       exit 1
     fi
-    brew install bison boost cmake eigen flex libomp pyqt5 python swig tcl-tk zlib zstd
+    brew install bison boost cmake eigen flex libomp pyqt5 python swig tcl-tk zlib
 
     # Some systems neeed this to correclty find OpenMP package during build
     brew link --force libomp
