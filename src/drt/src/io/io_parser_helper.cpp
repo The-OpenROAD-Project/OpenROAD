@@ -97,7 +97,8 @@ void io::Parser::initDefaultVias()
                        tech_->getLayer(layerNum)->getName());
       }
     } else {
-      if (layerNum >= BOTTOM_ROUTING_LAYER) {
+      if (layerNum >= BOTTOM_ROUTING_LAYER
+          && (layerNum <= TOP_ROUTING_LAYER)) {  //  || pins above top layer
         logger_->error(DRT,
                        233,
                        "{} does not have any vias.",
