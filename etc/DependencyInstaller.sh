@@ -75,6 +75,8 @@ _installCommonDev() {
     eigenVersion=3.4
     lemonVersion=1.3.1
     spdlogVersion=1.8.1
+    zstdVersion="1.5.5"
+    zstdChecksum="63251602329a106220e0a5ad26ba656f"
 
     rm -rf "${baseDir}"
     mkdir -p "${baseDir}"
@@ -119,6 +121,19 @@ _installCommonDev() {
         make -j $(nproc) install
     else
         echo "Swig already installed."
+    fi
+
+    # zstd
+    if [[ ! -f "/usr/include/zstd.h" ]]; then
+        cd "${baseDir}"
+        wget https://github.com/facebook/zstd/releases/download/v${zstdVersion}/zstd-${zstdVersion}.tar.gz
+        md5sum -c <(echo "${zstdCheckSum}  zstd-${zstdVersion}.tar.gz") || exit 1
+        tar -xf zstd-${zstdVersion}.tar.gz
+        cd zstd-${zstdVersion}
+        make -j $(nproc)
+        make -j $(nproc) install
+    else
+        echo "zstd already installed."
     fi
 
     # boost

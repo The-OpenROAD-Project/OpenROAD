@@ -449,14 +449,14 @@ dbTech* dbDatabase::getTech()
       utl::ODB, 432, "getTech() is obsolete in a multi-tech db");
 }
 
-bool dbDatabase::isZstdCompressed(std::istream& file)
+bool dbDatabase::isZstdCompressed(std::istream& stream)
 {
   // https://github.com/facebook/zstd/blob/dev/doc/zstd_compression_format.md#zstandard-frames
   uint32_t zstd_magic_header = 0xFD2FB528;
   uint32_t first_four_bytes = 0;
-  file.read(reinterpret_cast<char*>(&first_four_bytes), 4);
-  file.clear();
-  file.seekg(0, std::ios::beg);
+  stream.read(reinterpret_cast<char*>(&first_four_bytes), 4);
+  stream.clear();
+  stream.seekg(0, std::ios::beg);
   return zstd_magic_header == first_four_bytes;
 }
 
