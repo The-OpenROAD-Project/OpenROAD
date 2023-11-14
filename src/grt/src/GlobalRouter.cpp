@@ -871,7 +871,7 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
       fr_net->addPin(pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
       min_pin_layer = std::min(min_pin_layer, pin_pos.layer());
     }
-    fr_net->setMinLayer(std::max(min_pin_layer - 1, min_layer - 1));
+    fr_net->setMinLayer(min_layer - 1);
     // Save stt input on debug file
     if (fastroute_->hasSaveSttInput()
         && net->getDbNet() == fastroute_->getDebugNet()) {
@@ -901,18 +901,16 @@ void GlobalRouter::getNetLayerRange(odb::dbNet* db_net,
                                     int& max_layer)
 {
   Net* net = db_net_map_[db_net];
-  int port_min_layer = std::numeric_limits<int>::max();
+  int pin_min_layer = std::numeric_limits<int>::max();
   for (const Pin& pin : net->getPins()) {
-    if (pin.isPort() || pin.isConnectedToPadOrMacro()) {
-      port_min_layer = std::min(port_min_layer, pin.getConnectionLayer());
-    }
+    pin_min_layer = std::min(pin_min_layer, pin.getConnectionLayer());
   }
 
   bool is_non_leaf_clock = isNonLeafClock(db_net);
   min_layer = (is_non_leaf_clock && min_layer_for_clock_ > 0)
                   ? min_layer_for_clock_
                   : min_routing_layer_;
-  min_layer = std::min(min_layer, port_min_layer);
+  min_layer = std::max(min_layer, pin_min_layer);
   max_layer = (is_non_leaf_clock && max_layer_for_clock_ > 0)
                   ? max_layer_for_clock_
                   : max_routing_layer_;
