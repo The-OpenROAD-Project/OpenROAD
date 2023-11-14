@@ -274,8 +274,7 @@ void RepairAntennas::addWireTerms(Net* net,
         wire_encoder.newPath(h_layer, odb::dbWireType::ROUTED);
         wire_encoder.addPoint(grid_pt.x(), grid_pt.y());
         wire_encoder.addPoint(pin_pt.x(), grid_pt.y());
-        wire_encoder.addTechVia(
-            default_vias[grouter_->getMinRoutingLayer()]);
+        wire_encoder.addTechVia(default_vias[grouter_->getMinRoutingLayer()]);
 
         // create vertical wire to connect to the pin
         wire_encoder.newPath(v_layer, odb::dbWireType::ROUTED);
