@@ -83,17 +83,6 @@ struct Path
   int end_point;
 };
 
-struct InstData
-{
-  bool double_output;
-  bool set;
-  bool reset;
-  bool inverting;
-  bool clock_on;
-};
-
-
-
 // check if a flop or single-bit in tray is inverting
 bool MBFF::IsInverting(odb::dbInst* inst)
 {
@@ -187,22 +176,31 @@ bool MBFF::ClockOn(odb::dbInst* inst)
   return true;
 }
 
-InstData MBFF::GetInstData(odb::dbInst* inst)
+int MBFF::GetBitMask(odb::dbInst* inst)
 {
-  InstData ret;
   const int cnt_d = GetNumD(inst);
   const int cnt_q = GetNumQ(inst);
-  if (cnt_q > cnt_d) {
-    ret.dual_output = true;
-    ret.inverting = IsInverting(inst);
+  int ret = 0;
+  // turn 1st bit on
+  if (cnt_q - cnt_d > 0) {
+    ret |= (1 << 0);
+    // check if the instance is inverting
+    if (IsInverting(inst)) {
+      ret |= (1 << 3);
+    }
   }
-  else {
-    ret.dual_output = false;
-    ret.inverting = false;
+  // turn 2nd bit on
+  if (HasSet(inst)) {
+    ret |= (1 << 1);
   }
-  ret.set = HasSet(inst);
-  ret.reset = HasReset(inst);
-  ret.clock_on = ClockOn(inst);
+  // turn 3rd bit on
+  if (HasReset(inst)) {
+    ret |= (1 << 2);
+  }
+  // turn 4th bit on
+  if (ClockOn(inst)) {
+    ret |= (1 << 3);
+  }
   return ret;
 }
 
@@ -359,10 +357,10 @@ MBFF::DataToOutputsMap MBFF::GetPinMapping(odb::dbInst* tray)
   // all output pins are Q pins
   while (port_itr.hasNext()) {
     sta::LibertyPort* port = port_itr.next();
-    if (port->isBus() || port->isBundle()) {
-      log_->info(utl::GPL, 11000, "Found bus/bundle port");
-    }
     if (network_->staToDb(port) == nullptr) {
+      if (network_->isBus(port) || network_->isBundle(port)) {
+        log_->info(utl::GPL, 9999, "Found bus/bundle");
+      }
       continue;
     }
     if (port->isClock()) {
