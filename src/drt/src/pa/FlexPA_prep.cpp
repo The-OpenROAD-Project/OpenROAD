@@ -29,6 +29,7 @@
 #include <omp.h>
 
 #include <chrono>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 
@@ -237,6 +238,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
   } else {
     ap->setAccess(frDirEnum::U, false);
   }
+  ap->setAllowVia(allowVia);
   ap->setType((frAccessPointEnum) lowCost, true);
   ap->setType((frAccessPointEnum) highCost, false);
   if ((lowCost == frAccessPointEnum::NearbyGrid
@@ -974,15 +976,17 @@ void FlexPA::getViasFromMetalWidthMap(
 template <typename T>
 void FlexPA::prepPoint_pin_checkPoint_via(
     frAccessPoint* ap,
+    const std::vector<gtl::polygon_90_data<frCoord>>& layerPolys,
     const gtl::polygon_90_set_data<frCoord>& polyset,
     const frDirEnum dir,
     T* pin,
-    frInstTerm* instTerm)
+    frInstTerm* instTerm,
+    bool deepSearch)
 {
   const Point bp = ap->getPoint();
   const auto layerNum = ap->getLayerNum();
   // skip planar only access
-  if (!ap->hasAccess(dir)) {
+  if (!ap->isViaAllowed()) {
     return;
   }
 
@@ -998,23 +1002,6 @@ void FlexPA::prepPoint_pin_checkPoint_via(
     viainpin = true;
   }
 
-  const int maxNumViaTrial = 2;
-  // use std:pair to ensure deterministic behavior
-  vector<pair<int, frViaDef*>> viaDefs;
-  getViasFromMetalWidthMap(bp, layerNum, polyset, viaDefs);
-
-  if (viaDefs.empty()) {  // no via map entry
-    // hardcode first two single vias
-    int cnt = 0;
-    for (auto& [tup, viaDef] : layerNum2ViaDefs_[layerNum + 1][1]) {
-      viaDefs.push_back(make_pair(viaDefs.size(), viaDef));
-      cnt++;
-      if (cnt >= maxNumViaTrial) {
-        break;
-      }
-    }
-  }
-
   // check if ap is on the left/right boundary of the cell
   Rect boundaryBBox;
   bool isLRBound = false;
@@ -1026,6 +1013,19 @@ void FlexPA::prepPoint_pin_checkPoint_via(
       isLRBound = true;
     }
   }
+  const int maxNumViaTrial = 2;
+  // use std:pair to ensure deterministic behavior
+  vector<pair<int, frViaDef*>> viaDefs;
+  getViasFromMetalWidthMap(bp, layerNum, polyset, viaDefs);
+
+  if (viaDefs.empty()) {  // no via map entry
+    // hardcode first two single vias
+    for (auto& [tup, viaDef] : layerNum2ViaDefs_[layerNum + 1][1]) {
+      viaDefs.push_back(make_pair(viaDefs.size(), viaDef));
+      if (viaDefs.size() >= maxNumViaTrial && !deepSearch)
+        break;
+    }
+  }
 
   set<tuple<frCoord, int, frViaDef*>> validViaDefs;
   for (auto& [idx, viaDef] : viaDefs) {
@@ -1035,7 +1035,7 @@ void FlexPA::prepPoint_pin_checkPoint_via(
     if (instTerm) {
       if (!boundaryBBox.contains(box))
         continue;
-      const Rect layer2BBox = via->getLayer2BBox();
+      Rect layer2BBox = via->getLayer2BBox();
       if (!boundaryBBox.contains(layer2BBox))
         continue;
     }
@@ -1067,32 +1067,99 @@ void FlexPA::prepPoint_pin_checkPoint_via(
     }
     if (viainpin && maxExt)
       continue;
-    if (prepPoint_pin_checkPoint_via_helper(ap, via.get(), pin, instTerm)) {
-      validViaDefs.insert(make_tuple(maxExt, idx, viaDef));
+    if (prepPoint_pin_checkPoint_via_helper(
+            ap, via.get(), pin, instTerm, layerPolys)) {
+      validViaDefs.insert({maxExt, idx, viaDef});
+      if (validViaDefs.size() >= maxNumViaTrial) {
+        break;
+      }
     }
   }
   if (validViaDefs.empty()) {
     ap->setAccess(dir, false);
+  } else {
+    ap->setAccess(dir, true);
   }
-  for (auto& [area, idx, viaDef] : validViaDefs) {
+  for (auto& [ext, idx, viaDef] : validViaDefs) {
     ap->addViaDef(viaDef);
   }
 }
 
 template <typename T>
-bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
-                                                 frVia* via,
-                                                 T* pin,
-                                                 frInstTerm* instTerm)
+bool FlexPA::prepPoint_pin_checkPoint_via_helper(
+    frAccessPoint* ap,
+    frVia* via,
+    T* pin,
+    frInstTerm* instTerm,
+    const std::vector<gtl::polygon_90_data<frCoord>>& layerPolys)
 {
+  return prepPoint_pin_checkPoint_viaDir_helper(
+             ap, via, pin, instTerm, layerPolys, frDirEnum::E)
+         || prepPoint_pin_checkPoint_viaDir_helper(
+             ap, via, pin, instTerm, layerPolys, frDirEnum::W)
+         || prepPoint_pin_checkPoint_viaDir_helper(
+             ap, via, pin, instTerm, layerPolys, frDirEnum::S)
+         || prepPoint_pin_checkPoint_viaDir_helper(
+             ap, via, pin, instTerm, layerPolys, frDirEnum::N);
+}
+
+template <typename T>
+bool FlexPA::prepPoint_pin_checkPoint_viaDir_helper(
+    frAccessPoint* ap,
+    frVia* via,
+    T* pin,
+    frInstTerm* instTerm,
+    const std::vector<gtl::polygon_90_data<frCoord>>& layerPolys,
+    frDirEnum dir)
+{
+  auto upperlayer = getTech()->getLayer(via->getViaDef()->getLayer2Num());
+  if (!USENONPREFTRACKS || upperlayer->isUnidirectional()) {
+    if (upperlayer->isHorizontal()
+        && (dir == frDirEnum::S || dir == frDirEnum::N)) {
+      return false;
+    } else if (!upperlayer->isHorizontal()
+               && (dir == frDirEnum::W || dir == frDirEnum::E)) {
+      return false;
+    }
+  }
   const Point bp = ap->getPoint();
+  const bool isBlock
+      = instTerm && instTerm->getInst()->getMaster()->getMasterType().isBlock();
+  Point ep;
+  prepPoint_pin_checkPoint_planar_ep(
+      ep, layerPolys, bp, via->getViaDef()->getLayer2Num(), dir, isBlock);
 
   if (instTerm && instTerm->hasNet()) {
     via->addToNet(instTerm->getNet());
   } else {
     via->addToPin(pin);
   }
-
+  // PS
+  auto ps = make_unique<frPathSeg>();
+  auto style = upperlayer->getDefaultSegStyle();
+  if (dir == frDirEnum::W || dir == frDirEnum::S) {
+    ps->setPoints(ep, bp);
+    style.setEndStyle(frcTruncateEndStyle, 0);
+  } else {
+    ps->setPoints(bp, ep);
+    style.setBeginStyle(frcTruncateEndStyle, 0);
+  }
+  if (upperlayer->getDir() == dbTechLayerDir::VERTICAL) {
+    if (dir == frDirEnum::W || dir == frDirEnum::E) {
+      style.setWidth(upperlayer->getWrongDirWidth());
+    }
+  } else {
+    if (dir == frDirEnum::S || dir == frDirEnum::N) {
+      style.setWidth(upperlayer->getWrongDirWidth());
+    }
+  }
+  ps->setLayerNum(upperlayer->getLayerNum());
+  ps->setStyle(style);
+  if (instTerm && instTerm->hasNet()) {
+    ps->addToNet(instTerm->getNet());
+  } else {
+    ps->addToPin(pin);
+  }
   // new gcWorker
   FlexGCWorker gcWorker(getTech(), logger_);
   gcWorker.setIgnoreMinArea();
@@ -1125,8 +1192,13 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
       owner = instTerm;
     }
   } else {
-    owner = pin->getTerm();
+    if (pin->getTerm()->hasNet()) {
+      owner = pin->getTerm()->getNet();
+    } else {
+      owner = pin->getTerm();
+    }
   }
+  gcWorker.addPAObj(ps.get(), owner);
   gcWorker.addPAObj(via, owner);
   for (auto& apPs : ap->getPathSegs())
     gcWorker.addPAObj(&apPs, owner);
@@ -1150,13 +1222,17 @@ void FlexPA::prepPoint_pin_checkPoint(
     const gtl::polygon_90_set_data<frCoord>& polyset,
     const vector<gtl::polygon_90_data<frCoord>>& polys,
     T* pin,
-    frInstTerm* instTerm)
+    frInstTerm* instTerm,
+    bool deepSearch)
 {
-  prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::W, pin, instTerm);
-  prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::E, pin, instTerm);
-  prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::S, pin, instTerm);
-  prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::N, pin, instTerm);
-  prepPoint_pin_checkPoint_via(ap, polyset, frDirEnum::U, pin, instTerm);
+  if (!deepSearch) {
+    prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::W, pin, instTerm);
+    prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::E, pin, instTerm);
+    prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::S, pin, instTerm);
+    prepPoint_pin_checkPoint_planar(ap, polys, frDirEnum::N, pin, instTerm);
+  }
+  prepPoint_pin_checkPoint_via(
+      ap, polys, polyset, frDirEnum::U, pin, instTerm, deepSearch);
 }
 
 template <typename T>
@@ -1164,18 +1240,37 @@ void FlexPA::prepPoint_pin_checkPoints(
     vector<unique_ptr<frAccessPoint>>& aps,
     const vector<gtl::polygon_90_set_data<frCoord>>& layerPolysets,
     T* pin,
-    frInstTerm* instTerm)
+    frInstTerm* instTerm,
+    const bool& isStdCellPin)
 {
   vector<vector<gtl::polygon_90_data<frCoord>>> layerPolys(
       layerPolysets.size());
   for (int i = 0; i < (int) layerPolysets.size(); i++) {
     layerPolysets[i].get_polygons(layerPolys[i]);
   }
+  bool hasAccess = false;
   for (auto& ap : aps) {
     const auto layerNum = ap->getLayerNum();
-    const Point pt = ap->getPoint();
     prepPoint_pin_checkPoint(
         ap.get(), layerPolysets[layerNum], layerPolys[layerNum], pin, instTerm);
+    if (isStdCellPin) {
+      hasAccess
+          |= ((layerNum == VIA_ACCESS_LAYERNUM && ap->hasAccess(frDirEnum::U))
+              || (layerNum != VIA_ACCESS_LAYERNUM && ap->hasAccess()));
+    } else {
+      hasAccess |= ap->hasAccess();
+    }
+  }
+  if (!hasAccess) {
+    for (auto& ap : aps) {
+      const auto layerNum = ap->getLayerNum();
+      prepPoint_pin_checkPoint(ap.get(),
+                               layerPolysets[layerNum],
+                               layerPolys[layerNum],
+                               pin,
+                               instTerm,
+                               true);
+    }
   }
 }
 
@@ -1252,7 +1347,7 @@ bool FlexPA::prepPoint_pin_helper(
   vector<unique_ptr<frAccessPoint>> tmpAps;
   prepPoint_pin_genPoints(
       tmpAps, apset, pin, instTerm, pinShapes, lowerType, upperType);
-  prepPoint_pin_checkPoints(tmpAps, pinShapes, pin, instTerm);
+  prepPoint_pin_checkPoints(tmpAps, pinShapes, pin, instTerm, isStdCellPin);
   if (isStdCellPin) {
 #pragma omp atomic
     stdCellPinGenApCnt_ += tmpAps.size();

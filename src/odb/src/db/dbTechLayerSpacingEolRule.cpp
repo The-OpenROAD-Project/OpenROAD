@@ -33,6 +33,9 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerSpacingEolRule.h"
 
+#include <cstdint>
+#include <cstring>
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -575,8 +578,10 @@ _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj)
 {
-  uint64_t* flags__bit_field = (uint64_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  uint64_t flags_bit_field;
+  stream >> flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> obj.eol_space_;
   stream >> obj.eol_width_;
   stream >> obj.wrong_dir_space_;
@@ -615,8 +620,10 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerSpacingEolRule& obj)
 {
-  uint64_t* flags__bit_field = (uint64_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  uint64_t flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags_bit_field;
   stream << obj.eol_space_;
   stream << obj.eol_width_;
   stream << obj.wrong_dir_space_;
