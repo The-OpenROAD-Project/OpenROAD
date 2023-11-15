@@ -270,7 +270,9 @@ void GlobalRouter::globalRoute(bool save_guides,
         max_routing_layer_ = computeMaxRoutingLayer();
       }
 
-      int min_layer = getMinRoutingLayer();
+      int min_layer = min_layer_for_clock_ > 0
+                          ? std::min(min_routing_layer_, min_layer_for_clock_)
+                          : min_routing_layer_;
       int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
 
       std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
@@ -322,9 +324,7 @@ void GlobalRouter::globalRoute(bool save_guides,
 
 void GlobalRouter::updateDbCongestion()
 {
-  int min_layer = getMinRoutingLayer();
-  int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
-  fastroute_->updateDbCongestion(min_layer, max_layer);
+  fastroute_->updateDbCongestion();
   heatmap_->update();
 }
 
@@ -1457,7 +1457,9 @@ void GlobalRouter::initGridAndNets()
   routes_.clear();
   if (max_routing_layer_ == -1 || routing_layers_.empty()) {
     max_routing_layer_ = computeMaxRoutingLayer();
-    int min_layer = getMinRoutingLayer();
+    int min_layer = min_layer_for_clock_ > 0
+                        ? std::min(min_routing_layer_, min_layer_for_clock_)
+                        : min_routing_layer_;
     int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
 
     initRoutingLayers();
@@ -3041,7 +3043,9 @@ void GlobalRouter::findLayerExtensions(std::vector<int>& layer_extensions)
 {
   layer_extensions.resize(routing_layers_.size() + 1, 0);
 
-  int min_layer = getMinRoutingLayer();
+  int min_layer = min_layer_for_clock_ > 0
+                      ? std::min(min_routing_layer_, min_layer_for_clock_)
+                      : min_routing_layer_;
   int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
 
   for (auto const& [level, obstruct_layer] : routing_layers_) {
