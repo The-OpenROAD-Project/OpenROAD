@@ -138,6 +138,10 @@ class dbModule;
 class dbNetTrack;
 class dbPowerDomain;
 class dbPowerSwitch;
+class dbScanChain;
+class dbScanInst;
+class dbScanPartition;
+class dbScanPin;
 class dbTechLayer;
 class dbTechLayerAreaRule;
 class dbTechLayerArraySpacingRule;
@@ -7522,6 +7526,38 @@ class dbPowerSwitch : public dbObject
   //  lib cell defined in the upf
   std::map<std::string, dbMTerm*> getPortMap();
   // User Code End dbPowerSwitch
+};
+
+class dbScanChain : public dbObject
+{
+ public:
+  void setLength(uint length);
+
+  uint getLength() const;
+};
+
+class dbScanInst : public dbObject
+{
+ public:
+  enum SCAN_INST_TYPE
+  {
+    OneBit,
+    ShiftRegister,
+    BlackBox
+  };
+  void setBits(uint bits);
+
+  uint getBits() const;
+};
+
+class dbScanPartition : public dbObject
+{
+ public:
+};
+
+class dbScanPin : public dbObject
+{
+ public:
 };
 
 class dbTechLayer : public dbObject

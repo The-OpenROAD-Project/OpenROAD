@@ -1,0 +1,16 @@
+{
+  "name": "dbScanPin",
+  "type": "dbObject",
+  "fields": [
+    {
+      "name": "bterm",
+      "type": "dbId<dbBTerm>",
+      "flags": ["private"]
+    },
+    {
+      "name": "iterm",
+      "type": "dbId<dbITerm>",
+      "flags": ["private"]
+    }
+  ]
+}

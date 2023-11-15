@@ -1,0 +1,62 @@
+{
+  "name": "dbScanChain",
+  "type": "dbObject",
+  "fields": [
+    {
+      "name": "name",
+      "type": "std::string",
+      "flags": ["private"]
+    },
+    {
+      "name": "length",
+      "type": "uint"
+    },
+    {
+      "name": "cells",
+      "type": "dbVector<dbId<dbInst>>",
+      "flags": ["private"]
+    },
+    {
+      "name": "scanIn",
+      "type": "dbId<dbScanPin>",
+      "flags": ["private"]
+    },
+    {
+      "name": "scanOut",
+      "type": "dbId<dbScanPin>",
+      "flags": ["private"]
+    },
+    {
+      "name": "scanClock",
+      "type": "dbId<dbScanPin>",
+      "flags": ["private"]
+    },
+    {
+      "name": "scanEnable",
+      "type": "dbId<dbScanPin>",
+      "flags": ["private"]
+    },
+    {
+      "name": "testMode",
+      "type": "std::string",
+      "flags": ["private"]
+    },
+    {
+      "name": "partitions",
+      "type": "dbVector<dbId<dbScanPartition>>",
+      "flags": ["private"]
+    },
+    {
+      "name": "scanInsts",
+      "type": "dbVector<dbId<dbScanInst>>",
+      "flags": ["private"]
+    }
+  ],
+  "h_includes": [
+    "dbVector.h",
+    "dbScanPin.h"
+  ],
+  "cpp_includes": [
+    "dbScanPin.h"
+  ]
+}
