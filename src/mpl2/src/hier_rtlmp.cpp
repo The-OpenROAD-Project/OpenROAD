@@ -681,9 +681,14 @@ void HierRTLMP::hierRTLMacroPlacer()
   }
   cluster_map_.clear();
 
-  logger_->report("number of updated macros : {}", num_updated_macros_);
-  logger_->report("number of macros in HardMacroCluster : {}",
-                  num_hard_macros_cluster_);
+  logger_->info(MPL, 37, "Updated location of {} macros", num_updated_macros_);
+
+  debugPrint(logger_,
+             MPL,
+             "hierarchical_macro_placement",
+             1,
+             "number of macros in HardMacroCluster : {}",
+             num_hard_macros_cluster_);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -3440,11 +3445,14 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
       }
     }
 
+    debugPrint(logger_,
+               MPL,
+               "hierarchical_macro_placement",
+               1,
+               "Total tracks per micron:  {}",
+               1.0 / pin_access_net_width_ratio_);
+
     // determine the width of each pin access
-    logger_->report(
-        "[MultiLevelMacroPlacement] number of tracks per micro in "
-        "total :  {}",
-        1.0 / pin_access_net_width_ratio_);
     float l_size
         = net_map[soft_macro_id_map[toString(L)]] * pin_access_net_width_ratio_;
     float r_size
@@ -3523,9 +3531,14 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
           = SoftMacro(temp_width, l_size, toString(L));
       fences[soft_macro_id_map[toString(L)]]
           = Rect(0.0, 0.0, temp_width, outline_height);
-      logger_->report("[MultiLevelMacroPlacement] L width : {}, height : {}",
-                      l_size,
-                      temp_width);
+
+      debugPrint(logger_,
+                 MPL,
+                 "hierarchical_macro_placement",
+                 1,
+                 "Left - width : {}, height : {}",
+                 l_size,
+                 temp_width);
     }
     if (r_size > 0) {
       const float temp_width = std::min(max_width, depth);
@@ -3533,9 +3546,14 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
           = SoftMacro(temp_width, r_size, toString(R));
       fences[soft_macro_id_map[toString(R)]] = Rect(
           outline_width - temp_width, 0.0, outline_width, outline_height);
-      logger_->report("[MultiLevelMacroPlacement] R width : {}, height : {}",
-                      r_size,
-                      temp_width);
+
+      debugPrint(logger_,
+                 MPL,
+                 "hierarchical_macro_placement",
+                 1,
+                 "Right - width : {}, height : {}",
+                 r_size,
+                 temp_width);
     }
     if (t_size > 0) {
       const float temp_height = std::min(max_height, depth);
@@ -3543,9 +3561,14 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
           = SoftMacro(t_size, temp_height, toString(T));
       fences[soft_macro_id_map[toString(T)]] = Rect(
           0.0, outline_height - temp_height, outline_width, outline_height);
-      logger_->report("[MultiLevelMacroPlacement] T width : {}, height : {}",
-                      t_size,
-                      temp_height);
+
+      debugPrint(logger_,
+                 MPL,
+                 "hierarchical_macro_placement",
+                 1,
+                 "Top - width : {}, height : {}",
+                 t_size,
+                 temp_height);
     }
     if (b_size > 0) {
       const float temp_height = std::min(max_height, depth);
@@ -3553,9 +3576,14 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
           = SoftMacro(b_size, temp_height, toString(B));
       fences[soft_macro_id_map[toString(B)]]
           = Rect(0.0, 0.0, outline_width, temp_height);
-      logger_->report("[MultiLevelMacroPlacement] B width : {}, height : {}",
-                      b_size,
-                      temp_height);
+
+      debugPrint(logger_,
+                 MPL,
+                 "hierarchical_macro_placement",
+                 1,
+                 "Bottom - width : {}, height : {}",
+                 b_size,
+                 temp_height);
     }
   }
 
@@ -3635,16 +3663,18 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
       run_thread = 1;
     }
     for (int i = 0; i < run_thread; i++) {
-      std::vector<SoftMacro> shaped_macros = macros;  // copy for multithread
-      // determine the shape for each macro
       debugPrint(logger_,
                  MPL,
                  "hierarchical_macro_placement",
                  1,
                  "Start Simulated Annealing (run_id = {})",
                  run_id);
+
+      std::vector<SoftMacro> shaped_macros = macros;  // copy for multithread
+
       const float target_util = target_util_list[run_id];
       const float target_dead_space = target_dead_space_list[run_id++];
+
       debugPrint(logger_,
                  MPL,
                  "fine_shaping",
@@ -3654,19 +3684,22 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
                  parent->getName(),
                  target_util,
                  target_dead_space);
+
       if (!shapeChildrenCluster(parent,
                                 shaped_macros,
                                 soft_macro_id_map,
                                 target_util,
                                 target_dead_space)) {
-        logger_->report(
-            "[MultiLevelMacroPlacement] Cannot generate feasible "
-            "shapes for children of cluster {}\n"
-            "sa_id = {}, target_util = {}, target_dead_space = {}",
-            parent->getName(),
-            run_id,
-            target_util,
-            target_dead_space);
+        debugPrint(logger_,
+                   MPL,
+                   "fine_shaping",
+                   1,
+                   "Cannot generate feasible shapes for children of {}, sa_id: "
+                   "{}, target_util: {}, target_dead_space: {}",
+                   parent->getName(),
+                   run_id,
+                   target_util,
+                   target_dead_space);
         continue;
       }
       debugPrint(logger_,
@@ -3746,23 +3779,28 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
              "hierarchical_macro_placement",
              1,
              "Finished Simulated Annealing Core");
+
   if (best_sa == nullptr) {
-    //
-    // Error condition, print all the results
-    //
-    logger_->report(
-        "[MultiLevelMacroPlacement] Simulated Annealing Summary for "
-        "cluster {}",
-        parent->getName());
+    debugPrint(logger_,
+               MPL,
+               "hierarchical_macro_placement",
+               1,
+               "SA Summary for cluster {}",
+               parent->getName());
+
     for (auto i = 0; i < sa_containers.size(); i++) {
-      logger_->report(
-          "[MultiLevelMacroPlacement] sa_id = {}, target_util = {}, "
-          " target_dead_space = {}",
-          i,
-          target_util_list[i],
-          target_dead_space_list[i]);
+      debugPrint(logger_,
+                 MPL,
+                 "hierarchical_macro_placement",
+                 1,
+                 "sa_id: {}, target_util: {}, target_dead_space: {}",
+                 i,
+                 target_util_list[i],
+                 target_dead_space_list[i]);
+
       sa_containers[i]->printResults();
     }
+
     logger_->error(MPL,
                    5,
                    "[MultiLevelMacroPlacement] Failed on cluster: {}",
@@ -3865,16 +3903,18 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
         run_thread = 1;
       }
       for (int i = 0; i < run_thread; i++) {
-        std::vector<SoftMacro> shaped_macros = macros;  // copy for multithread
-        // determine the shape for each macro
         debugPrint(logger_,
                    MPL,
                    "hierarchical_macro_placement",
                    1,
                    "Start Simulated Annealing (run_id = {})",
                    run_id);
+        
+        std::vector<SoftMacro> shaped_macros = macros;  // copy for multithread
+        
         const float target_util = target_util_list[run_id];
         const float target_dead_space = target_dead_space_list[run_id++];
+        
         debugPrint(logger_,
                    MPL,
                    "fine_shaping",
@@ -3884,19 +3924,22 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
                    parent->getName(),
                    target_util,
                    target_dead_space);
+
         if (!shapeChildrenCluster(parent,
                                   shaped_macros,
                                   soft_macro_id_map,
                                   target_util,
                                   target_dead_space)) {
-          logger_->report(
-              "[MultiLevelMacroPlacement] "
-              "Cannot generate feasible shapes for children of cluster {}\n"
-              "sa_id = {}, target_util = {}, target_dead_space = {}",
-              parent->getName(),
-              run_id,
-              target_util,
-              target_dead_space);
+          debugPrint(logger_,
+                    MPL,
+                    "fine_shaping",
+                    1,
+                    "Cannot generate feasible shapes for children of {}, sa_id: "
+                    "{}, target_util: {}, target_dead_space: {}",
+                    parent->getName(),
+                    run_id,
+                    target_util,
+                    target_dead_space);
           continue;
         }
         debugPrint(logger_,
@@ -3977,16 +4020,26 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
                1,
                "Finished Simulated Annealing Core");
     if (best_sa == nullptr) {
-      // print all the results
-      logger_->report("Simulated Annealing Summary for cluster {}",
-                      parent->getName());
+      debugPrint(logger_,
+                 MPL,
+                 "hierarchical_macro_placement",
+                 1,
+                 "SA Summary for cluster {}",
+                 parent->getName());
+
       for (auto i = 0; i < sa_containers.size(); i++) {
-        logger_->report("sa_id = {}, target_util = {}, target_dead_space = {}",
-                        i,
-                        target_util_list[i],
-                        target_dead_space_list[i]);
+        debugPrint(logger_,
+                  MPL,
+                  "hierarchical_macro_placement",
+                  1,
+                  "sa_id: {}, target_util: {}, target_dead_space: {}",
+                  i,
+                  target_util_list[i],
+                  target_dead_space_list[i]);
+
         sa_containers[i]->printResults();
       }
+
       logger_->error(MPL, 6, "SA failed on cluster: {}", parent->getName());
     }
     best_sa->alignMacroClusters();
@@ -4023,9 +4076,12 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   // check if the parent cluster still need bus planning
   for (auto& child : parent->getChildren()) {
     if (child->getClusterType() == MixedCluster) {
-      logger_->report("\nCall Bus Planning for cluster: {}\n",
-                      parent->getName());
-      // Call Path Synthesis to route buses
+      debugPrint(logger_,
+                 MPL,
+                 "bus_planning",
+                 1,
+                 "Calling bus planning for cluster {}",
+                 parent->getName());
       callBusPlanning(shaped_macros, nets);
       break;
     }
@@ -4391,16 +4447,18 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
       run_thread = 1;
     }
     for (int i = 0; i < run_thread; i++) {
-      std::vector<SoftMacro> shaped_macros = macros;  // copy for multithread
-      // determine the shape for each macro
       debugPrint(logger_,
-                 MPL,
-                 "hierarchical_macro_placement",
-                 1,
-                 "Start Simulated Annealing (run_id = {})",
-                 run_id);
+            MPL,
+            "hierarchical_macro_placement",
+            1,
+            "Start Simulated Annealing (run_id = {})",
+            run_id);
+
+      std::vector<SoftMacro> shaped_macros = macros;  // copy for multithread
+
       const float target_util = target_util_list[run_id];
       const float target_dead_space = target_dead_space_list[run_id++];
+
       debugPrint(logger_,
                  MPL,
                  "fine_shaping",
@@ -4410,19 +4468,22 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
                  parent->getName(),
                  target_util,
                  target_dead_space);
+
       if (!shapeChildrenCluster(parent,
                                 shaped_macros,
                                 soft_macro_id_map,
                                 target_util,
                                 target_dead_space)) {
-        logger_->report(
-            "[MultiLevelMacroPlacement] Cannot generate feasible "
-            "shapes for children of cluster {}\n"
-            "sa_id = {}, target_util = {}, target_dead_space = {}",
-            parent->getName(),
-            run_id,
-            target_util,
-            target_dead_space);
+        debugPrint(logger_,
+                   MPL,
+                   "fine_shaping",
+                   1,
+                   "Cannot generate feasible shapes for children of {}, sa_id: "
+                   "{}, target_util: {}, target_dead_space: {}",
+                   parent->getName(),
+                   run_id,
+                   target_util,
+                   target_dead_space);
         continue;
       }
       debugPrint(logger_,
@@ -4503,21 +4564,26 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
              1,
              "Finished Simulated Annealing Core");
   if (best_sa == nullptr) {
-    // print all the results
-    logger_->report(
-        "[MultiLevelMacroPlacement] Simulated Annealing Summary for "
-        "cluster {}",
-        parent->getName());
+    debugPrint(logger_,
+               MPL,
+               "hierarchical_macro_placement",
+               1,
+               "SA Summary for cluster {}",
+               parent->getName());
+
     for (auto i = 0; i < sa_containers.size(); i++) {
-      logger_->report(
-          "[MultiLevelMacroPlacement] sa_id = {}, target_util = {}, "
-          " target_dead_space = {}",
-          i,
-          target_util_list[i],
-          target_dead_space_list[i]);
+      debugPrint(logger_,
+                 MPL,
+                 "hierarchical_macro_placement",
+                 1,
+                 "sa_id: {}, target_util: {}, target_dead_space: {}",
+                 i,
+                 target_util_list[i],
+                 target_dead_space_list[i]);
+
       sa_containers[i]->printResults();
     }
-    // failed with current setting
+
     enhancedMacroPlacement(parent);
   } else {
     best_sa->alignMacroClusters();
@@ -4902,14 +4968,16 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
                                 soft_macro_id_map,
                                 target_util,
                                 target_dead_space)) {
-        logger_->report(
-            "[EnhancedMacroPlacement] Cannot generate feasible "
-            "shapes for children of cluster {}\n"
-            "sa_id = {}, target_util = {}, target_dead_space = {}",
-            parent->getName(),
-            run_id,
-            target_util,
-            target_dead_space);
+        debugPrint(logger_,
+                   MPL,
+                   "fine_shaping",
+                   1,
+                   "Cannot generate feasible shapes for children of {}, sa_id: "
+                   "{}, target_util: {}, target_dead_space: {}",
+                   parent->getName(),
+                   run_id,
+                   target_util,
+                   target_dead_space);
         continue;
       }
       debugPrint(logger_,
@@ -4990,18 +5058,23 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
              1,
              "Finished Simulated Annealing Core");
   if (best_sa == nullptr) {
-    // print all the results
-    logger_->report(
-        "[EnhancedMacroPlacement] Simulated Annealing Summary for "
-        "cluster {}",
-        parent->getName());
+    debugPrint(logger_,
+               MPL,
+               "hierarchical_macro_placement",
+               1,
+               "SA Summary for cluster {}",
+               parent->getName());
+
     for (auto i = 0; i < sa_containers.size(); i++) {
-      logger_->report(
-          "[EnhancedMacroPlacement] sa_id = {}, target_util = {}, "
-          " target_dead_space = {}",
-          i,
-          target_util_list[i],
-          target_dead_space_list[i]);
+      debugPrint(logger_,
+                 MPL,
+                 "hierarchical_macro_placement",
+                 1,
+                 "sa_id: {}, target_util: {}, target_dead_space: {}",
+                 i,
+                 target_util_list[i],
+                 target_dead_space_list[i]);
+
       sa_containers[i]->printResults();
     }
     logger_->error(MPL,
@@ -5124,10 +5197,6 @@ bool HierRTLMP::shapeChildrenCluster(
         }
       }
       if (shapes.empty()) {
-        std::string line
-            = "[ShapeChildrenCluster] There is not enough space in cluster ";
-        line += parent->getName() + " ";
-        line += "for child mixed cluster: " + cluster->getName();
         logger_->error(
             MPL,
             8,
@@ -5159,13 +5228,16 @@ bool HierRTLMP::shapeChildrenCluster(
   // shape clusters
   if ((std_cell_cluster_area > 0.0 && avail_space < 0.0)
       || (std_cell_mixed_cluster_area > 0.0 && min_target_util <= 0.0)) {
-    logger_->report(
-        "This is no valid shaping solution for children clusters of cluster "
-        "{}, "
-        "avail_space = {}, min_target_util = {}",
-        parent->getName(),
-        avail_space,
-        min_target_util);
+    debugPrint(logger_,
+               MPL,
+               "fine_shaping",
+               1,
+               "No valid solution for children of {}"
+               "avail_space = {}, min_target_util = {}",
+               parent->getName(),
+               avail_space,
+               min_target_util);
+
     return false;
   }
 
@@ -5495,7 +5567,13 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
 // Align all the macros globally to reduce the waste of standard cell space
 void HierRTLMP::alignHardMacroGlobal(Cluster* parent)
 {
-  logger_->report("Align macros within the cluster {}", parent->getName());
+  debugPrint(logger_,
+             MPL,
+             "hierarchical_macro_placement",
+             1,
+             "Aligning macros within the cluster {}",
+             parent->getName());
+             
   // get the floorplan information
   const odb::Rect core_box = block_->getCoreArea();
   int core_lx = core_box.xMin();
