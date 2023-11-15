@@ -374,10 +374,10 @@ _installCentosPackages() {
     if ! command -v lcov &> /dev/null; then
         yum install -y http://downloads.sourceforge.net/ltp/lcov-1.14-1.noarch.rpm
     fi
-    if ! command -v yum list installed ius-release &> /dev/null; then
+    if ! rpm -qa | grep -q installed ius-release; then
         yum install -y https://repo.ius.io/ius-release-el7.rpm
     fi
-    if ! command -v yum list installed epel-release &> /dev/null; then
+    if ! rpm -qa | grep -q epel-release; then
         yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
     fi
     yum install -y centos-release-scl
