@@ -35,6 +35,7 @@
 
 #include "ord/OpenRoad.hh"
 
+#include <fstream>
 #include <iostream>
 #include <thread>
 #ifdef ENABLE_PYTHON3
@@ -484,11 +485,12 @@ void OpenRoad::readDb(const char* filename)
 
 void OpenRoad::writeDb(const char* filename)
 {
-  FILE* stream = fopen(filename, "w");
-  if (stream) {
-    db_->write(stream);
-    fclose(stream);
-  }
+  std::ofstream stream;
+  stream.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                    | std::ios::eofbit);
+  stream.open(filename, std::ios::binary);
+
+  db_->write(stream);
 }
 
 void OpenRoad::diffDbs(const char* filename1,

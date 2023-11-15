@@ -475,43 +475,50 @@ void RouteBase::updateRoute()
   tg_->setTileCnt(gridX.size(), gridY.size());
   tg_->initTiles();
 
+  int min_routing_layer = grouter_->getMinRoutingLayer();
+  int max_routing_layer = grouter_->getMaxRoutingLayer();
   for (int i = 1; i <= numLayers; i++) {
     odb::dbTechLayer* layer = tech->findRoutingLayer(i);
     bool isHorizontalLayer
         = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);
 
     for (auto& tile : tg_->tiles()) {
-      // Check left and down tile
-      // and set the minimum usage/cap vals for
-      // TileGrid setup.
+      float ratio;
+      if (i >= min_routing_layer && i <= max_routing_layer) {
+        // Check left and down tile
+        // and set the minimum usage/cap vals for
+        // TileGrid setup.
 
-      // first extract current tiles' usage
-      float ratio
-          = getUsageCapacityRatio(tile, layer, gGrid, rbVars_.ignoreEdgeRatio);
+        // first extract current tiles' usage
+        ratio = getUsageCapacityRatio(
+            tile, layer, gGrid, rbVars_.ignoreEdgeRatio);
 
-      // if horizontal layer (i.e., vertical edges)
-      // should consider LEFT tile's RIGHT edge == current 'tile's LEFT edge
-      // (current 'ratio' points to RIGHT edges usage)
-      if (isHorizontalLayer && tile->x() >= 1) {
-        Tile* leftTile
-            = tg_->tiles()[tile->y() * tg_->tileCntX() + tile->x() - 1];
-        float leftRatio = getUsageCapacityRatio(
-            leftTile, layer, gGrid, rbVars_.ignoreEdgeRatio);
-        ratio = fmax(leftRatio, ratio);
+        // if horizontal layer (i.e., vertical edges)
+        // should consider LEFT tile's RIGHT edge == current 'tile's LEFT edge
+        // (current 'ratio' points to RIGHT edges usage)
+        if (isHorizontalLayer && tile->x() >= 1) {
+          Tile* leftTile
+              = tg_->tiles()[tile->y() * tg_->tileCntX() + tile->x() - 1];
+          float leftRatio = getUsageCapacityRatio(
+              leftTile, layer, gGrid, rbVars_.ignoreEdgeRatio);
+          ratio = std::fmax(leftRatio, ratio);
+        }
+
+        // if vertical layer (i.e., horizontal edges)
+        // should consider DOWN tile's UP edge == current 'tile's DOWN edge
+        // (current 'ratio' points to UP edges usage)
+        if (!isHorizontalLayer && tile->y() >= 1) {
+          Tile* downTile
+              = tg_->tiles()[(tile->y() - 1) * tg_->tileCntX() + tile->x()];
+          float downRatio = getUsageCapacityRatio(
+              downTile, layer, gGrid, rbVars_.ignoreEdgeRatio);
+          ratio = std::fmax(downRatio, ratio);
+        }
+
+        ratio = std::fmax(ratio, 0.0f);
+      } else {
+        ratio = 0.0;
       }
-
-      // if vertical layer (i.e., horizontal edges)
-      // should consider DOWN tile's UP edge == current 'tile's DOWN edge
-      // (current 'ratio' points to UP edges usage)
-      if (!isHorizontalLayer && tile->y() >= 1) {
-        Tile* downTile
-            = tg_->tiles()[(tile->y() - 1) * tg_->tileCntX() + tile->x()];
-        float downRatio = getUsageCapacityRatio(
-            downTile, layer, gGrid, rbVars_.ignoreEdgeRatio);
-        ratio = fmax(downRatio, ratio);
-      }
-
-      ratio = fmax(ratio, 0.0f);
 
       // update inflation Ratio
       if (ratio >= rbVars_.minInflationRatio) {
@@ -766,6 +773,8 @@ float RouteBase::getRC() const
 
   odb::dbGCellGrid* gGrid = db_->getChip()->getBlock()->getGCellGrid();
   for (auto& tile : tg_->tiles()) {
+    int min_routing_layer = grouter_->getMinRoutingLayer();
+    int max_routing_layer = grouter_->getMaxRoutingLayer();
     for (int i = 1; i <= tg_->numRoutingLayers(); i++) {
       odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(i);
       bool isHorizontalLayer
@@ -774,6 +783,9 @@ float RouteBase::getRC() const
       // extract the ratio in the same way as inflation ratio cals
       float ratio
           = getUsageCapacityRatio(tile, layer, gGrid, rbVars_.ignoreEdgeRatio);
+      if (i < min_routing_layer || i > max_routing_layer) {
+        ratio = 0.0;
+      }
 
       // escape the case when blockageRatio is too huge
       if (ratio >= 0.0f) {
