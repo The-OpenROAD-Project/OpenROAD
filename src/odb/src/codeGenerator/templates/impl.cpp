@@ -38,6 +38,11 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 
+{% if klass.hasBitFields %}
+  #include <cstring>
+  #include <cstdint>
+{% endif %}
+
 {% for include in klass.cpp_includes %}
   #include "{{include}}"
 {% endfor %}
@@ -211,11 +216,13 @@ namespace odb {
     {% for field in klass.fields %}
       {% if field.bitFields %}
         {% if field.numBits == 32 %}
-          uint32_t* {{field.name}}_bit_field = (uint32_t*) &obj.{{field.name}};
+          uint32_t {{field.name}}bit_field;
         {% else %}
-          uint64_t* {{field.name}}_bit_field = (uint64_t*) &obj.{{field.name}};
+          uint64_t {{field.name}}bit_field;
         {% endif %}
-        stream >> *{{field.name}}_bit_field;
+        stream >> {{field.name}}bit_field;
+        static_assert(sizeof(obj.{{field.name}}) == sizeof({{field.name}}bit_field));
+        std::memcpy(&obj.{{field.name}}, &{{field.name}}bit_field, sizeof({{field.name}}bit_field));
       {% else %}
         {% if 'no-serial' not in field.flags %}
           {% if 'schema' in field %}
@@ -235,11 +242,13 @@ namespace odb {
     {% for field in klass.fields %}
       {% if field.bitFields %}
         {% if field.numBits == 32 %}
-          uint32_t* {{field.name}}_bit_field = (uint32_t*) &obj.{{field.name}};
+          uint32_t {{field.name}}bit_field;
         {% else %}
-          uint64_t* {{field.name}}_bit_field = (uint64_t*) &obj.{{field.name}};
+          uint64_t {{field.name}}bit_field;
         {% endif %}
-        stream << *{{field.name}}_bit_field;
+        static_assert(sizeof(obj.{{field.name}}) == sizeof({{field.name}}bit_field));
+        std::memcpy(&{{field.name}}bit_field, &obj.{{field.name}}, sizeof(obj.{{field.name}}));
+        stream << {{field.name}}bit_field;
       {% else %}
         {% if 'no-serial' not in field.flags %}
           {% if 'schema' in field %}

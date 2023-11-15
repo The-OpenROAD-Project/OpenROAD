@@ -674,13 +674,13 @@ void FlexGR::updateDbCongestion(odb::dbDatabase* db, FlexGRCMap* cmap)
     }
     for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++)
       for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
-        uint horizontal_capacity
+        auto horizontal_capacity
             = cmap->getRawSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
-        uint horizontal_usage
+        auto horizontal_usage
             = cmap->getRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
-        uint vertical_capacity
+        auto vertical_capacity
             = cmap->getRawSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::N);
-        uint vertical_usage
+        auto vertical_usage
             = cmap->getRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::N);
         gcell->setCapacity(
             layer, xIdx, yIdx, horizontal_capacity, vertical_capacity, 0);

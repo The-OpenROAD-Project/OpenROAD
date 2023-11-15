@@ -157,7 +157,10 @@ class GlobalRouter : public ant::GlobalRouteSource
   void setAdjustment(const float adjustment);
   void setMinRoutingLayer(const int min_layer);
   void setMaxRoutingLayer(const int max_layer);
-  int getMaxRoutingLayer() const { return max_routing_layer_; }
+  int getMaxRoutingLayer() const
+  {
+    return std::max(max_routing_layer_, max_layer_for_clock_);
+  }
   void setMinLayerForClock(const int min_layer);
   void setMaxLayerForClock(const int max_layer);
   void setCriticalNetsPercentage(float critical_nets_percentage);
@@ -176,7 +179,13 @@ class GlobalRouter : public ant::GlobalRouteSource
   void setAllowCongestion(bool allow_congestion);
   void setMacroExtension(int macro_extension);
   void setPinOffset(int pin_offset);
-  int getMinRoutingLayer() const { return min_routing_layer_; }
+  int getMinRoutingLayer() const
+  {
+    int min_layer = min_layer_for_clock_ > 0
+                        ? std::min(min_routing_layer_, min_layer_for_clock_)
+                        : min_routing_layer_;
+    return min_layer;
+  }
 
   // flow functions
   void readGuides(const char* file_name);
@@ -348,6 +357,17 @@ class GlobalRouter : public ant::GlobalRouteSource
   void reportCongestion();
   void updateEdgesUsage();
   void updateDbCongestionFromGuides();
+  void computeGCellGridPatternFromGuides(
+      std::unordered_map<odb::dbNet*, Guides>& guides);
+  void fillTileSizeMaps(std::unordered_map<odb::dbNet*, Guides>& net_guides,
+                        std::map<int, int>& tile_size_x_map,
+                        std::map<int, int>& tile_size_y_map,
+                        int& min_loc_x,
+                        int& min_loc_y);
+  void findTileSize(const std::map<int, int>& tile_size_x_map,
+                    const std::map<int, int>& tile_size_y_map,
+                    int& tile_size_x,
+                    int& tile_size_y);
 
   // check functions
   void checkPinPlacement();

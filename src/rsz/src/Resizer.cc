@@ -319,19 +319,21 @@ Resizer::removeBuffer(Instance *buffer)
     sta_->disconnectPin(out_pin);
     sta_->deleteInstance(buffer);
 
-    NetPinIterator *pin_iter = db_network_->pinIterator(removed);
-    while (pin_iter->hasNext()) {
-      const Pin *pin = pin_iter->next();
-      Instance *pin_inst = db_network_->instance(pin);
-      if (pin_inst != buffer) {
-        Port *pin_port = db_network_->port(pin);
-        sta_->disconnectPin(const_cast<Pin*>(pin));
-        sta_->connectPin(pin_inst, pin_port, survivor);
+    if (removed) {
+      NetPinIterator *pin_iter = db_network_->pinIterator(removed);
+      while (pin_iter->hasNext()) {
+        const Pin *pin = pin_iter->next();
+        Instance *pin_inst = db_network_->instance(pin);
+        if (pin_inst != buffer) {
+          Port *pin_port = db_network_->port(pin);
+          sta_->disconnectPin(const_cast<Pin*>(pin));
+          sta_->connectPin(pin_inst, pin_port, survivor);
+        }
       }
+      delete pin_iter;
+      sta_->deleteNet(removed);
+      parasitics_invalid_.erase(removed);
     }
-    delete pin_iter;
-    sta_->deleteNet(removed);
-    parasitics_invalid_.erase(removed);
     parasiticsInvalid(survivor);
   }
 }
@@ -623,6 +625,9 @@ Resizer::bufferOutput(const Pin *top_pin,
 bool
 Resizer::hasPort(const Net *net)
 {
+  if (!net) {
+    return false;
+  }
   bool has_top_level_port = false;
   NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
   while (pin_iter->hasNext()) {

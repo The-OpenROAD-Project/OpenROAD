@@ -33,6 +33,7 @@
 #include "dbDatabase.h"
 
 #include <algorithm>
+#include <fstream>
 #include <map>
 #include <string>
 
@@ -446,14 +447,14 @@ dbTech* dbDatabase::getTech()
       utl::ODB, 432, "getTech() is obsolete in a multi-tech db");
 }
 
-void dbDatabase::read(std::ifstream& file)
+void dbDatabase::read(std::istream& file)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   dbIStream stream(db, file);
   stream >> *db;
 }
 
-void dbDatabase::readTech(std::ifstream& file)
+void dbDatabase::readTech(std::istream& file)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   _dbTech* tech = (_dbTech*) getTech();
@@ -469,7 +470,7 @@ void dbDatabase::readTech(std::ifstream& file)
   stream >> *tech;
 }
 
-void dbDatabase::readLib(std::ifstream& file, dbLib* lib)
+void dbDatabase::readLib(std::istream& file, dbLib* lib)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   _dbLib* l = (_dbLib*) lib;
@@ -481,14 +482,14 @@ void dbDatabase::readLib(std::ifstream& file, dbLib* lib)
   stream >> *l;
 }
 
-void dbDatabase::readLibs(std::ifstream& file)
+void dbDatabase::readLibs(std::istream& file)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   dbIStream stream(db, file);
   stream >> *db->_lib_tbl;
 }
 
-void dbDatabase::readBlock(std::ifstream& file, dbBlock* block)
+void dbDatabase::readBlock(std::istream& file, dbBlock* block)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   _dbBlock* b = (_dbBlock*) block;
@@ -498,7 +499,7 @@ void dbDatabase::readBlock(std::ifstream& file, dbBlock* block)
   stream >> *b;
 }
 
-void dbDatabase::readNets(std::ifstream& file, dbBlock* block)
+void dbDatabase::readNets(std::istream& file, dbBlock* block)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   dbIStream stream(db, file);
@@ -512,14 +513,14 @@ void dbDatabase::readNets(std::ifstream& file, dbBlock* block)
   stream >> *((_dbBlock*) block)->_net_tbl;
 }
 
-void dbDatabase::readWires(std::ifstream& file, dbBlock* block)
+void dbDatabase::readWires(std::istream& file, dbBlock* block)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   dbIStream stream(db, file);
   stream >> *((_dbBlock*) block)->_wire_tbl;
 }
 
-void dbDatabase::readParasitics(std::ifstream& file, dbBlock* block)
+void dbDatabase::readParasitics(std::istream& file, dbBlock* block)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   dbIStream stream(db, file);
@@ -537,7 +538,7 @@ void dbDatabase::readParasitics(std::ifstream& file, dbBlock* block)
       = ((_dbBlock*) block)->_num_ext_corners;
 }
 
-void dbDatabase::readChip(std::ifstream& file)
+void dbDatabase::readChip(std::istream& file)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   _dbChip* chip = (_dbChip*) getChip();
@@ -547,15 +548,15 @@ void dbDatabase::readChip(std::ifstream& file)
   stream >> *chip;
 }
 
-void dbDatabase::write(FILE* file)
+void dbDatabase::write(std::ostream& file)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   dbOStream stream(db, file);
   stream << *db;
-  fflush(file);
+  file.flush();
 }
 
-void dbDatabase::writeTech(FILE* file)
+void dbDatabase::writeTech(std::ostream& file)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   _dbTech* tech = (_dbTech*) getTech();
@@ -565,50 +566,50 @@ void dbDatabase::writeTech(FILE* file)
 
   dbOStream stream(db, file);
   stream << *tech;
-  fflush(file);
+  file.flush();
 }
 
-void dbDatabase::writeLib(FILE* file, dbLib* lib)
+void dbDatabase::writeLib(std::ostream& file, dbLib* lib)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   dbOStream stream(db, file);
   stream << *(_dbLib*) lib;
-  fflush(file);
+  file.flush();
 }
 
-void dbDatabase::writeLibs(FILE* file)
+void dbDatabase::writeLibs(std::ostream& file)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   dbOStream stream(db, file);
   stream << *db->_lib_tbl;
-  fflush(file);
+  file.flush();
 }
 
-void dbDatabase::writeBlock(FILE* file, dbBlock* block)
+void dbDatabase::writeBlock(std::ostream& file, dbBlock* block)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   dbOStream stream(db, file);
   stream << *(_dbBlock*) block;
-  fflush(file);
+  file.flush();
 }
 
-void dbDatabase::writeNets(FILE* file, dbBlock* block)
+void dbDatabase::writeNets(std::ostream& file, dbBlock* block)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   dbOStream stream(db, file);
   stream << *((_dbBlock*) block)->_net_tbl;
-  fflush(file);
+  file.flush();
 }
 
-void dbDatabase::writeWires(FILE* file, dbBlock* block)
+void dbDatabase::writeWires(std::ostream& file, dbBlock* block)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   dbOStream stream(db, file);
   stream << *((_dbBlock*) block)->_wire_tbl;
-  fflush(file);
+  file.flush();
 }
 
-void dbDatabase::writeParasitics(FILE* file, dbBlock* block)
+void dbDatabase::writeParasitics(std::ostream& file, dbBlock* block)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   dbOStream stream(db, file);
@@ -621,16 +622,16 @@ void dbDatabase::writeParasitics(FILE* file, dbBlock* block)
   stream << *((_dbBlock*) block)->_r_seg_tbl;
   stream << *((_dbBlock*) block)->_cc_seg_tbl;
   stream << *((_dbBlock*) block)->_extControl;
-  fflush(file);
+  file.flush();
 }
 
-void dbDatabase::writeChip(FILE* file)
+void dbDatabase::writeChip(std::ostream& file)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   _dbChip* chip = (_dbChip*) getChip();
   dbOStream stream(db, file);
   stream << *chip;
-  fflush(file);
+  file.flush();
 }
 
 void dbDatabase::beginEco(dbBlock* block_)
@@ -701,7 +702,7 @@ void dbDatabase::writeEco(dbBlock* block_, const char* filename)
 {
   _dbBlock* block = (_dbBlock*) block_;
 
-  FILE* file = fopen(filename, "w");
+  std::ofstream file(filename, std::ios::binary);
   if (!file) {
     int errnum = errno;
     block->getImpl()->getLogger()->error(
@@ -709,12 +710,13 @@ void dbDatabase::writeEco(dbBlock* block_, const char* filename)
     return;
   }
 
+  file.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                  | std::ios::eofbit);
+
   if (block->_journal_pending) {
     dbOStream stream(block->getDatabase(), file);
     stream << *block->_journal_pending;
   }
-
-  fclose(file);
 }
 
 void dbDatabase::commitEco(dbBlock* block_)
