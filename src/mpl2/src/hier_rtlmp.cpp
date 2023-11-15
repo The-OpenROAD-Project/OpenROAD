@@ -3810,10 +3810,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
       sa_containers[i]->printResults();
     }
 
-    logger_->error(MPL,
-                   5,
-                   "[MultiLevelMacroPlacement] Failed on cluster: {}",
-                   parent->getName());
+    logger_->error(MPL, 5, "Failed on cluster {}", parent->getName());
   }
   best_sa->alignMacroClusters();
   best_sa->fillDeadSpace();
@@ -4050,7 +4047,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
         sa_containers[i]->printResults();
       }
 
-      logger_->error(MPL, 6, "SA failed on cluster: {}", parent->getName());
+      logger_->error(MPL, 6, "Failed on cluster {}", parent->getName());
     }
     best_sa->alignMacroClusters();
     best_sa->fillDeadSpace();
@@ -5091,10 +5088,7 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
 
       sa_containers[i]->printResults();
     }
-    logger_->error(MPL,
-                   40,
-                   "[Hierarchical Macro Placement] Failed on cluster {}",
-                   parent->getName());
+    logger_->error(MPL, 40, "Failed on cluster {}", parent->getName());
   }
   best_sa->alignMacroClusters();
   best_sa->fillDeadSpace();
@@ -5194,12 +5188,12 @@ bool HierRTLMP::shapeChildrenCluster(
         }
       }
       if (shapes.empty()) {
-        logger_->error(
-            MPL,
-            7,
-            "Not enough space in cluster: {} for child hard macro cluster: {}",
-            parent->getName(),
-            cluster->getName());
+        logger_->error(MPL,
+                       7,
+                       "[Fine Shaping] Not enough space in cluster: {} for "
+                       "child hard macro cluster: {}",
+                       parent->getName(),
+                       cluster->getName());
       }
       macro_cluster_area += shapes[0].first * shapes[0].second;
       cluster->setMacroTilings(shapes);
@@ -5213,12 +5207,12 @@ bool HierRTLMP::shapeChildrenCluster(
         }
       }
       if (shapes.empty()) {
-        logger_->error(
-            MPL,
-            8,
-            "Not enough space in cluster: {} for child mixed cluster: {}",
-            parent->getName(),
-            cluster->getName());
+        logger_->error(MPL,
+                       8,
+                       "[Fine Shaping] Not enough space in cluster: {} for "
+                       "child mixed cluster: {}",
+                       parent->getName(),
+                       cluster->getName());
       }
       macro_mixed_cluster_area += shapes[0].first * shapes[0].second;
       cluster->setMacroTilings(shapes);
@@ -5360,7 +5354,7 @@ void HierRTLMP::callBusPlanning(std::vector<SoftMacro>& shaped_macros,
                    nets,
                    congestion_weight_,
                    logger_)) {
-    logger_->error(MPL, 9, "Fail !!! Bus planning error !!!");
+    logger_->error(MPL, 9, "Bus planning has failed!");
   }
 }
 
@@ -5555,11 +5549,10 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
       // need
     }
     sa_containers.clear();
-    logger_->error(
-        MPL,
-        10,
-        "Cannot find valid macro placement for hard macro cluster: {}",
-        cluster->getName());
+    logger_->error(MPL,
+                   10,
+                   "Macro placement failed for macro cluster: {}",
+                   cluster->getName());
   } else {
     std::vector<HardMacro> best_macros;
     best_sa->getMacros(best_macros);
