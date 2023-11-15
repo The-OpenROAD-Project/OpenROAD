@@ -215,16 +215,14 @@ void Graphics::drawBlockages(gui::Painter& painter)
 
     odb::Rect blockage_bbox(lx, ly, ux, uy);
 
-    blockage_bbox.moveDelta(dbu_ * root_->getX(), dbu_ * root_->getY());
+    blockage_bbox.moveDelta(outline_.xMin(), outline_.yMin());
 
     painter.drawRect(blockage_bbox);
   }
 }
 
-// When drawing SoftMacros or HardMacros we move them based on the outline's
-// origin so they don't get drawn using the die area's origin as reference.
-//
-// For macro blockages we use the same logic, but using the root's origin.
+// We draw the shapes of SoftMacros, HardMacros and macro blockages based
+// on the outline's origin.
 void Graphics::drawObjects(gui::Painter& painter)
 {
   if (root_) {
@@ -233,7 +231,8 @@ void Graphics::drawObjects(gui::Painter& painter)
     drawCluster(root_, painter);
   }
 
-  if (!macro_blockages_.empty()) {
+  // Draw macro blockages only during SA for SoftMacros
+  if (!macro_blockages_.empty() && !soft_macros_.empty()) {
     painter.setPen(gui::Painter::gray, true);
     painter.setBrush(gui::Painter::gray, gui::Painter::DIAGONAL);
     drawBlockages(painter);
