@@ -55,7 +55,6 @@ struct Point;
 struct Tray;
 struct Flop;
 struct Path;
-struct InstData;
 
 class MBFF
 {
@@ -96,7 +95,7 @@ class MBFF
 
   bool IsValidTray(odb::dbInst* tray);
 
-  InstData GetInstData(odb::dbInst* inst);
+  int GetBitMask(odb::dbInst* inst);
   bool HasSet(odb::dbInst* inst);
   bool HasReset(odb::dbInst* inst);
   bool ClockOn(odb::dbInst* inst);
@@ -215,9 +214,6 @@ class MBFF
 
   template <typename T>
   using BitMaskVector = std::array<std::vector<T>, max_bitmask>;
-
-  // map InstData to an index
-  std::map<InstData, int> data_to_idx_;
 
   BitMaskVector<odb::dbMaster*> best_master_;
   BitMaskVector<DataToOutputsMap> pin_mappings_;
