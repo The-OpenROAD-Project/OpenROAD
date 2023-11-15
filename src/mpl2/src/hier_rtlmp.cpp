@@ -426,8 +426,7 @@ void HierRTLMP::hierRTLMacroPlacer()
       manufacturing_grid_);
 
   if (unfixed_macros == 0) {
-    logger_->info(
-        MPL, 17, "There are no unfixed macros so placement is skipped.");
+    logger_->info(MPL, 17, "No unfixed macros. Skipping placement.");
     return;
   }
 
@@ -494,7 +493,8 @@ void HierRTLMP::hierRTLMacroPlacer()
   createDataFlow();
 
   // Create physical hierarchy tree in a post-order DFS manner
-  logger_->info(MPL, 24, "Perform Clustering..");
+  logger_->info(
+      MPL, 24, "[Multilevel Autoclustering] Creating clustered netlist.");
   // add two enhancements to handle corner cases
   // (1) the design only has fake macros (for academic fake testcases)
   // (2) the design has on logical hierarchy (for academic fake testcases)
@@ -626,26 +626,33 @@ void HierRTLMP::hierRTLMacroPlacer()
   }
 
   if (macro_only_flag == true) {
-    logger_->info(MPL, 27, "The design only has macros.\n");
+    logger_->info(MPL,
+                  27,
+                  "[Hierarchical Macro Placement] The design only has macros. "
+                  "Starting placement.\n");
     if (graphics_) {
       graphics_->startFine();
     }
     hardMacroClusterMacroPlacement(root_cluster_);
   } else {
+    logger_->info(
+        MPL, 39, "[Coarse Shaping] Determining shape functions for clusters.");
+
     if (graphics_) {
       graphics_->startCoarse();
     }
+
     calClusterMacroTilings(root_cluster_);
 
-    // create pin blockage for IO pins
     createPinBlockage();
-    //
-    // Perform macro placement in a top-down manner (pre-order DFS)
-    //
-    logger_->info(MPL, 28, "Perform Multilevel macro placement...");
+
+    logger_->info(
+        MPL, 28, "[Hierarchical Macro Placement] Placing clusters and macros.");
+
     if (graphics_) {
       graphics_->startFine();
     }
+
     if (bus_planning_flag_ == true) {
       multiLevelMacroPlacement(root_cluster_);
     } else {
@@ -3242,16 +3249,18 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   const float outline_height = parent->getHeight();
   const float ux = lx + outline_width;
   const float uy = ly + outline_height;
-  logger_->info(
-      MPL,
-      30,
-      "[MultiLevelMacroPlacement] Working on children of cluster: {}, Outline "
-      "{}, {}  {}, {}",
-      parent->getName(),
-      lx,
-      ly,
-      outline_width,
-      outline_height);
+
+  debugPrint(logger_,
+             MPL,
+             "hierarchical_macro_placement",
+             1,
+             "Working on children of cluster: {}, Outline "
+             "{}, {}  {}, {}",
+             parent->getName(),
+             lx,
+             ly,
+             outline_width,
+             outline_height);
 
   // Suppose the region, fence, guide has been mapped to cooresponding macros
   // This step is done when we enter the Hier-RTLMP program
@@ -4178,16 +4187,18 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
   const float outline_height = parent->getHeight();
   const float ux = lx + outline_width;
   const float uy = ly + outline_height;
-  logger_->info(
-      MPL,
-      31,
-      "[MultiLevelMacroPlacement] Working on children of cluster: {}, Outline "
-      "{}, {}  {}, {}",
-      parent->getName(),
-      lx,
-      ly,
-      outline_width,
-      outline_height);
+
+  debugPrint(logger_,
+             MPL,
+             "hierarchical_macro_placement",
+             1,
+             "Working on children of cluster: {}, Outline "
+             "{}, {}  {}, {}",
+             parent->getName(),
+             lx,
+             ly,
+             outline_width,
+             outline_height);
 
   // Suppose the region, fence, guide has been mapped to cooresponding macros
   // This step is done when we enter the Hier-RTLMP program
@@ -4687,16 +4698,18 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   const float outline_height = parent->getHeight();
   const float ux = lx + outline_width;
   const float uy = ly + outline_height;
-  logger_->info(
-      MPL,
-      32,
-      "[MultiLevelMacroPlacement] Working on children of cluster: {}, Outline "
-      "{}, {}  {}, {}",
-      parent->getName(),
-      lx,
-      ly,
-      outline_width,
-      outline_height);
+
+  debugPrint(logger_,
+             MPL,
+             "hierarchical_macro_placement",
+             1,
+             "Working on children of cluster: {}, Outline "
+             "{}, {}  {}, {}",
+             parent->getName(),
+             lx,
+             ly,
+             outline_width,
+             outline_height);
 
   // Suppose the region, fence, guide has been mapped to cooresponding macros
   // This step is done when we enter the Hier-RTLMP program
@@ -5079,8 +5092,8 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
       sa_containers[i]->printResults();
     }
     logger_->error(MPL,
-                   2067,
-                   "[MultiLevelMacroPlacement] Failed on cluster {}",
+                   40,
+                   "[Hierarchical Macro Placement] Failed on cluster {}",
                    parent->getName());
   }
   best_sa->alignMacroClusters();
@@ -5096,11 +5109,13 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   }
   file.close();
 
-  logger_->info(
-      MPL,
-      23,
-      "[MultiLevelMacroPlacement] Finish Simulated Annealing for cluster {}\n",
-      parent->getName());
+  debugPrint(logger_,
+             MPL,
+             "hierarchical_macro_placement",
+             1,
+             "Finish Simulated Annealing for cluster {}",
+             parent->getName());
+
   best_sa->printResults();
   // write the cost function. This can be used to tune the temperature schedule
   // and cost weight
