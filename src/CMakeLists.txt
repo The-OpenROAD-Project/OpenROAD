@@ -235,6 +235,11 @@ else()
   set(ZLIB 0)
 endif()
 
+# Needed for zstd
+if(APPLE)
+  link_directories("/usr/local/opt/zstd/lib")
+endif()
+
 find_package(spdlog REQUIRED)
 message(STATUS "spdlog: ${spdlog_VERSION}")
 if (${SPDLOG_FMT_EXTERNAL})
@@ -293,7 +298,6 @@ target_compile_options(openroad
 # Needed for boost stacktrace
 if(APPLE)
   target_compile_definitions(openroad PUBLIC "-D_GNU_SOURCE")
-  link_directories("/opt/homebrew/opt/zstd/lib")
 endif()
 
 
