@@ -866,12 +866,11 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     // See https://github.com/The-OpenROAD-Project/OpenROAD/pull/2893 and
     // https://github.com/The-OpenROAD-Project/OpenROAD/discussions/2870
     // for a detailed discussion
-    int min_pin_layer = std::numeric_limits<int>::max();
+
     for (RoutePt& pin_pos : pins_on_grid) {
       fr_net->addPin(pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
-      min_pin_layer = std::min(min_pin_layer, pin_pos.layer());
     }
-    fr_net->setMinLayer(std::max(min_pin_layer - 1, min_layer - 1));
+
     // Save stt input on debug file
     if (fastroute_->hasSaveSttInput()
         && net->getDbNet() == fastroute_->getDebugNet()) {
@@ -901,18 +900,16 @@ void GlobalRouter::getNetLayerRange(odb::dbNet* db_net,
                                     int& max_layer)
 {
   Net* net = db_net_map_[db_net];
-  int port_min_layer = std::numeric_limits<int>::max();
+  int pin_min_layer = std::numeric_limits<int>::max();
   for (const Pin& pin : net->getPins()) {
-    if (pin.isPort() || pin.isConnectedToPadOrMacro()) {
-      port_min_layer = std::min(port_min_layer, pin.getConnectionLayer());
-    }
+    pin_min_layer = std::min(pin_min_layer, pin.getConnectionLayer());
   }
 
   bool is_non_leaf_clock = isNonLeafClock(db_net);
   min_layer = (is_non_leaf_clock && min_layer_for_clock_ > 0)
                   ? min_layer_for_clock_
                   : min_routing_layer_;
-  min_layer = std::min(min_layer, port_min_layer);
+  min_layer = std::max(min_layer, pin_min_layer);
   max_layer = (is_non_leaf_clock && max_layer_for_clock_ > 0)
                   ? max_layer_for_clock_
                   : max_routing_layer_;
@@ -1801,7 +1798,7 @@ void GlobalRouter::saveGuides()
                            db_net->getConstName());
           }
 
-          if (net->isLocal()) {
+          if (net->isLocal() || (isCoveringPin(net, segment))) {
             int layer_idx1 = segment.init_layer;
             int layer_idx2 = segment.final_layer;
             odb::dbTechLayer* layer1 = routing_layers_[layer_idx1];
@@ -1810,13 +1807,8 @@ void GlobalRouter::saveGuides()
             odb::dbGuide::create(db_net, layer2, box);
           } else {
             int layer_idx = std::min(segment.init_layer, segment.final_layer);
-            odb::dbTechLayer* layer = routing_layers_[layer_idx];
-            odb::dbGuide::create(db_net, layer, box);
-            if (isCoveringPin(net, segment)) {
-              int layer_idx = std::max(segment.init_layer, segment.final_layer);
-              odb::dbTechLayer* layer = routing_layers_[layer_idx];
-              odb::dbGuide::create(db_net, layer, box);
-            }
+            odb::dbTechLayer* layer1 = routing_layers_[layer_idx];
+            odb::dbGuide::create(db_net, layer1, box);
           }
         } else if (segment.init_layer == segment.final_layer) {
           if (segment.init_layer < min_routing_layer_
