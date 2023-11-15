@@ -357,12 +357,9 @@ MBFF::DataToOutputsMap MBFF::GetPinMapping(odb::dbInst* tray)
   // all output pins are Q pins
   while (port_itr.hasNext()) {
     sta::LibertyPort* port = port_itr.next();
-    // if (network_->staToDb(port) == nullptr) {
-    //   if (network_->isBus(port) || network_->isBundle(port)) {
-    //     log_->info(utl::GPL, 9999, "Found bus/bundle");
-    //   }
-    //   continue;
-    // }
+    if (port->isBus() || port->isBundle()) {
+      continue;
+    }
     if (port->isClock()) {
       continue;
     }
