@@ -3909,12 +3909,12 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
                    1,
                    "Start Simulated Annealing (run_id = {})",
                    run_id);
-        
+
         std::vector<SoftMacro> shaped_macros = macros;  // copy for multithread
-        
+
         const float target_util = target_util_list[run_id];
         const float target_dead_space = target_dead_space_list[run_id++];
-        
+
         debugPrint(logger_,
                    MPL,
                    "fine_shaping",
@@ -3930,16 +3930,17 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
                                   soft_macro_id_map,
                                   target_util,
                                   target_dead_space)) {
-          debugPrint(logger_,
-                    MPL,
-                    "fine_shaping",
-                    1,
-                    "Cannot generate feasible shapes for children of {}, sa_id: "
-                    "{}, target_util: {}, target_dead_space: {}",
-                    parent->getName(),
-                    run_id,
-                    target_util,
-                    target_dead_space);
+          debugPrint(
+              logger_,
+              MPL,
+              "fine_shaping",
+              1,
+              "Cannot generate feasible shapes for children of {}, sa_id: "
+              "{}, target_util: {}, target_dead_space: {}",
+              parent->getName(),
+              run_id,
+              target_util,
+              target_dead_space);
           continue;
         }
         debugPrint(logger_,
@@ -4029,13 +4030,13 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
 
       for (auto i = 0; i < sa_containers.size(); i++) {
         debugPrint(logger_,
-                  MPL,
-                  "hierarchical_macro_placement",
-                  1,
-                  "sa_id: {}, target_util: {}, target_dead_space: {}",
-                  i,
-                  target_util_list[i],
-                  target_dead_space_list[i]);
+                   MPL,
+                   "hierarchical_macro_placement",
+                   1,
+                   "sa_id: {}, target_util: {}, target_dead_space: {}",
+                   i,
+                   target_util_list[i],
+                   target_dead_space_list[i]);
 
         sa_containers[i]->printResults();
       }
@@ -4448,11 +4449,11 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
     }
     for (int i = 0; i < run_thread; i++) {
       debugPrint(logger_,
-            MPL,
-            "hierarchical_macro_placement",
-            1,
-            "Start Simulated Annealing (run_id = {})",
-            run_id);
+                 MPL,
+                 "hierarchical_macro_placement",
+                 1,
+                 "Start Simulated Annealing (run_id = {})",
+                 run_id);
 
       std::vector<SoftMacro> shaped_macros = macros;  // copy for multithread
 
@@ -5573,7 +5574,7 @@ void HierRTLMP::alignHardMacroGlobal(Cluster* parent)
              1,
              "Aligning macros within the cluster {}",
              parent->getName());
-             
+
   // get the floorplan information
   const odb::Rect core_box = block_->getCoreArea();
   int core_lx = core_box.xMin();

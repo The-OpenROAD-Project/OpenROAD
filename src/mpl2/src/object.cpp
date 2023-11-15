@@ -623,7 +623,9 @@ void Cluster::setPinAccess(int cluster_id,
                            float net_weight)
 {
   if (cluster_id < 0) {
-    logger_->error(MPL, 38, "Cannot set pin access for {} boundary.",
+    logger_->error(MPL,
+                   38,
+                   "Cannot set pin access for {} boundary.",
                    toString(pin_access));
   }
   pin_access_map_[cluster_id]
