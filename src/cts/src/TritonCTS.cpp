@@ -527,6 +527,7 @@ std::string TritonCTS::selectRootBuffer(std::vector<std::string>& buffers)
     return buffers.front();
   }
 
+  options_->setRootBufferInferred(true);
   // estimate wire cap for root buffer
   // assume root buffer needs to drive clk buffers at two far ends of chip
   //
@@ -544,12 +545,12 @@ std::string TritonCTS::selectRootBuffer(std::vector<std::string>& buffers)
         / block->getDbUnitsPerMicron();
   sta::Corner* corner = openSta_->cmdCorner();
   float rootWireCap
-      = resizer_->wireClkCapacitance(corner) * 1e-6 * rootWireLength;
+      = resizer_->wireSignalCapacitance(corner) * 1e-6 * rootWireLength;
   // clang-format off
   debugPrint(logger_, CTS, "buffering", 2, "core width:{}, core height:{}, "
              "rootWL:{:0.2e}, rootWireCap:{:0.2e}, clock cap/micron:{:0.2e}",
              coreArea.dx(), coreArea.dy(), rootWireLength, rootWireCap,
-             resizer_->wireClkCapacitance(corner) * 1e-6);
+             resizer_->wireSignalCapacitance(corner) * 1e-6);
   // clang-format on
 
   std::string rootBuf = selectBestMaxCapBuffer(buffers, rootWireCap);
@@ -581,6 +582,7 @@ std::string TritonCTS::selectSinkBuffer(std::vector<std::string>& buffers)
     return buffers.front();
   }
 
+  options_->setSinkBufferInferred(true);
   // estimate wire cap for sink buffer
   // assume sink buffer needs to drive clk buffers at two far ends of chip
   // at midpoint (pin caps can't be estimated because sinks have not been
@@ -599,7 +601,7 @@ std::string TritonCTS::selectSinkBuffer(std::vector<std::string>& buffers)
         / block->getDbUnitsPerMicron();
   sta::Corner* corner = openSta_->cmdCorner();
   float sinkWireCap
-      = resizer_->wireClkCapacitance(corner) * 1e-6 * sinkWireLength / 2.0;
+      = resizer_->wireSignalCapacitance(corner) * 1e-6 * sinkWireLength / 2.0;
 
   std::string sinkBuf = selectBestMaxCapBuffer(buffers, sinkWireCap);
   // clang-format off
