@@ -30,6 +30,7 @@ docs/main
 messages.txt
 Messages.md
 MessagesFinal.md
+!docs/manpages
 
 .idea/
 cmake-build-debug/
