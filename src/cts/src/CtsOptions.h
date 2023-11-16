@@ -223,7 +223,11 @@ class CtsOptions
   void enableInsertionDelay(bool insDelay) { insertionDelay_ = insDelay; }
   bool insertionDelayEnabled() const { return insertionDelay_; }
   void setBufferListInferred(bool inferred) { bufferListInferred_ = inferred; }
-  bool bufferListInferred() const { return bufferListInferred_; }
+  bool isBufferListInferred() const { return bufferListInferred_; }
+  void setSinkBufferInferred(bool inferred) { sinkBufferInferred_ = inferred; }
+  bool isSinkBufferInferred() const { return sinkBufferInferred_; }
+  void setRootBufferInferred(bool inferred) { rootBufferInferred_ = inferred; }
+  bool isRootBufferInferred() const { return rootBufferInferred_; }
 
  private:
   std::string clockNets_ = "";
@@ -248,8 +252,8 @@ class CtsOptions
   double maxCharSlew_ = 0;
   double maxCharCap_ = 0;
   double sinkBufferInputCap_ = 0;
-  int capSteps_ = 34;
-  int slewSteps_ = 12;
+  int capSteps_ = 20;
+  int slewSteps_ = 7;
   unsigned charWirelengthIterations_ = 4;
   unsigned clockTreeMaxDepth_ = 100;
   bool enableFakeLutEntries_ = true;
@@ -272,6 +276,8 @@ class CtsOptions
   bool applyNDR_ = false;
   bool insertionDelay_ = false;
   bool bufferListInferred_ = false;
+  bool sinkBufferInferred_ = false;
+  bool rootBufferInferred_ = false;
 };
 
 }  // namespace cts
