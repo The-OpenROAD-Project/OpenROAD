@@ -116,6 +116,9 @@ void Replace::init(odb::dbDatabase* odb,
   rs_ = resizer;
   fr_ = router;
   log_ = logger;
+
+  std::unique_ptr<RUDYDataSource> rudyDataSource(new RUDYDataSource(log_, db_));
+  rudyDataSource_ = std::move(rudyDataSource);
 }
 
 void Replace::reset()
@@ -428,7 +431,12 @@ int Replace::doNesterovPlace(int start_iter)
   }
   if (timingDrivenMode_)
     rs_->resizeSlackPreamble();
-  return np_->doNesterovPlace(start_iter);
+  int iter = np_->doNesterovPlace(start_iter);
+
+  rudyDataSource_->init();
+  rudyDataSource_->calculate();
+  rudyDataSource_->update();
+  return iter;
 }
 
 void Replace::setInitialPlaceMaxIter(int iter)

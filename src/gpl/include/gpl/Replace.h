@@ -70,6 +70,8 @@ class InitialPlace;
 class NesterovPlace;
 class Debug;
 
+class RUDYDataSource;
+
 class Replace
 {
  public:
@@ -211,5 +213,7 @@ class Replace
   int gui_debug_draw_bins_;
   int gui_debug_initial_;
   odb::dbInst* gui_debug_inst_;
+
+  std::unique_ptr<RUDYDataSource> rudyDataSource_;
 };
 }  // namespace gpl

@@ -327,7 +327,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   }
 
   if (graphics_) {
-    graphics_->cellPlot(true);
+    graphics_->cellPlot(false);
   }
 
   // snapshot saving detection
@@ -433,7 +433,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       if (update) {
         bool pause
             = (iter == 0 || (iter + 1) % npVars_.debug_pause_iterations == 0);
-        graphics_->cellPlot(pause);
+        graphics_->cellPlot(false);
       }
     }
 
@@ -566,7 +566,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
   if (graphics_) {
     graphics_->status("End placement");
-    graphics_->cellPlot(true);
+    graphics_->cellPlot(false );
   }
 
   return iter;

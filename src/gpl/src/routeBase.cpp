@@ -38,6 +38,8 @@
 #include <iostream>
 #include <string>
 #include <utility>
+#include <boost/geometry.hpp>
+#include <boost/geometry/index/rtree.hpp>
 
 #include "grt/GlobalRouter.h"
 #include "nesterovBase.h"
@@ -50,6 +52,13 @@ using std::pair;
 using std::sort;
 using std::string;
 using std::vector;
+namespace bg = boost::geometry;
+namespace bgi = boost::geometry::index;
+
+typedef bg::model::point<int, 2, bg::cs::cartesian> point;
+typedef bg::model::box<point> box;
+typedef std::pair<box, gpl::Tile*> GridValue;
+
 
 using utl::GPL;
 
@@ -75,6 +84,7 @@ Tile::Tile(int x, int y, int lx, int ly, int ux, int uy, int layers) : Tile()
   ly_ = ly;
   ux_ = ux;
   uy_ = uy;
+  rect_ = odb::Rect(lx_, ly_, ux_, uy_);
 }
 
 Tile::~Tile()
@@ -571,7 +581,7 @@ std::pair<bool, bool> RouteBase::routability()
   getGlobalRouterResult();
 
   // no need routing if RC is lower than targetRC val
-  float curRc = getRC();
+  double curRc = getRC();
 
   if (curRc < rbVars_.targetRC) {
     resetRoutabilityResources();
@@ -884,6 +894,178 @@ void RouteBase::increaseCounter()
              numCall_,
              inflationIterCnt_,
              bloatIterCnt_);
+}
+RUDYDataSource::RUDYDataSource(utl::Logger* logger, odb::dbDatabase* db)
+    : gui::HeatMapDataSource(logger, "RUDY", "RUDY", "RUDY"), db_(db)
+{
+  tileGrid_.setLogger(logger);
+}
+
+void RUDYDataSource::init()
+{
+  setBlock(db_->getChip()->getBlock());
+  registerHeatMap();
+
+  // init tile grid
+  auto block = db_->getChip()->getBlock();
+  odb::dbGCellGrid* grid = block->getGCellGrid();
+  /*  if (grid == nullptr) {
+      grid = odb::dbGCellGrid::create(db_->getChip()->getBlock());
+
+      auto dieX = block->getDieArea().xMax() - block->getDieArea().xMin();
+      auto gridX = dieX
+      grid->addGridPatternX(default_grid_);
+    }*/
+  std::vector<int> gridX, gridY;
+  grid->getGridX(gridX);
+  grid->getGridX(gridY);
+
+  int gridWidth = gridX[1] - gridX[0];
+  int gridHeight = gridY[1] - gridY[0];
+  int gridCntX = static_cast<int>(gridX.size());
+  int gridCntY = static_cast<int>(gridY.size());
+
+  tileGrid_.setLx(gridX[0]);
+  tileGrid_.setLy(gridY[0]);
+  tileGrid_.setTileSize(gridWidth, gridHeight);
+  tileGrid_.setTileCnt(gridCntX, gridCntY);
+  tileGrid_.initTiles();
+}
+
+void RUDYDataSource::calculate()
+{
+  // refer: https://ieeexplore.ieee.org/document/4211973
+  // Construct R-ree
+  bgi::rtree<GridValue, bgi::quadratic<16>> rtree;
+  for (auto grid : tileGrid_.tiles()) {
+    odb::Rect rect = grid->getRect();
+    box b(point(rect.xMin(), rect.yMin()), point(rect.xMax(), rect.yMax()));
+    rtree.insert(std::make_pair(b, grid));
+  }
+
+  auto layer = db_->getChip()->getBlock()->getTech()->findLayer("metal1");
+  int64_t wireWidth = 100;
+  if (layer != nullptr) {
+    wireWidth = layer->getWidth();
+  }
+
+  for (auto net : db_->getChip()->getBlock()->getNets()) {
+    auto netBox = net->getTermBBox();
+    auto netArea = netBox.area();
+    if (netArea == 0) {
+      continue;
+    }
+    auto hpwl = static_cast<int64_t>(netBox.dx() + netBox.dy());
+    auto wireArea = hpwl * wireWidth;
+    double_t netCongestion
+        = static_cast<double_t>(wireArea) / static_cast<double_t>(netArea);
+
+    // Search R-tree
+    std::vector<GridValue> queryResults;
+    rtree.query(bgi::intersects(box(point(netBox.xMin(), netBox.yMin()), point(netBox.xMax(), netBox.yMax()))), std::back_inserter(queryResults));
+
+    for(const auto& value:queryResults){
+      auto grid = value.second;
+      auto gridBox = grid->getRect();
+      if (netBox.intersects(gridBox)) {
+      auto s_k = netBox.intersect(gridBox).area();
+      if (s_k == 0) {
+          continue;
+      }
+      auto s_ij = gridBox.area();
+      auto gridNetBoxRatio
+          = static_cast<double_t>(s_k) / static_cast<double_t>(s_ij);
+      double_t rudy_ijk = netCongestion *gridNetBoxRatio;
+      grid->addRudy(rudy_ijk);
+      }
+    }
+/*
+    for (auto grid : tileGrid_.tiles()) {
+      auto gridBox = grid->getRect();
+      if (netBox.intersects(gridBox)) {
+        auto s_k = netBox.intersect(gridBox).area();
+        if (s_k == 0) {
+          continue;
+        }
+        auto s_ij = gridBox.area();
+        auto gridNetBoxRatio
+            = static_cast<double_t>(s_k) / static_cast<double_t>(s_ij);
+        double_t rudy_ijk = netCongestion *gridNetBoxRatio;
+        grid->addRudy(rudy_ijk);
+      }
+    }
+*/
+  }
+}
+
+bool RUDYDataSource::populateMap()
+{
+  for (auto grid : tileGrid_.tiles()) {
+    odb::Rect box(grid->lx(), grid->ly(), grid->ux(), grid->uy());
+    auto gcell_rect = box;
+    const double value = grid->getRudy();
+    addToMap(box, value);
+  }
+  return true;
+}
+void RUDYDataSource::combineMapData(bool base_has_value,
+                                    double& base,
+                                    const double new_data,
+                                    const double data_area,
+                                    const double intersection_area,
+                                    const double rect_area)
+{
+  base += new_data * intersection_area / rect_area;
+
+  /*
+    if (!base_has_value) {
+      base = new_data;
+    } else {
+      base = std::max(base, new_data);
+    }
+  */
+}
+double RUDYDataSource::getGridXSize() const
+{
+  if (getBlock() == nullptr) {
+    return default_grid_;
+  }
+
+  auto* gCellGrid = getBlock()->getGCellGrid();
+  if (gCellGrid == nullptr) {
+    return default_grid_;
+  }
+
+  std::vector<int> grid;
+  gCellGrid->getGridX(grid);
+
+  if (grid.size() < 2) {
+    return default_grid_;
+  } else {
+    const double delta = grid[1] - grid[0];
+    return delta / getBlock()->getDbUnitsPerMicron();
+  }
+}
+double RUDYDataSource::getGridYSize() const
+{
+  if (getBlock() == nullptr) {
+    return default_grid_;
+  }
+
+  auto* gCellGrid = getBlock()->getGCellGrid();
+  if (gCellGrid == nullptr) {
+    return default_grid_;
+  }
+
+  std::vector<int> grid;
+  gCellGrid->getGridY(grid);
+
+  if (grid.size() < 2) {
+    return default_grid_;
+  } else {
+    const double delta = grid[1] - grid[0];
+    return delta / getBlock()->getDbUnitsPerMicron();
+  }
 }
 
 }  // namespace gpl
