@@ -87,12 +87,8 @@ class Tile
   void setInflatedRatio(float ratio);
 
   odb::Rect getRect() { return rect_; }
-  float getRudy() { return RUDY_; }
-  void addRudy(float rudy_ijk)
-  {
-    assert(rudy_ijk >= 0);  // overflow occurs
-    RUDY_ += rudy_ijk;
-  }
+  float getRudy() { return RUDY_ * 100; }
+  void addRudy(float rudy_ijk) { RUDY_ += rudy_ijk; }
 
  private:
   // the followings will store
@@ -325,6 +321,6 @@ class RUDYDataSource : public gui::HeatMapDataSource
   odb::dbDatabase* db_;
   TileGrid tileGrid_;
 
-  static constexpr double default_grid_ = 10.0;
+  static constexpr int default_grid_ = 20;
 };
 }  // namespace gpl
