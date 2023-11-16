@@ -2378,15 +2378,13 @@ bool LayoutScroll::eventFilter(QObject* object, QEvent* event)
   if (event->type() == QEvent::MouseButtonRelease) {
     QMouseEvent* release_event = static_cast<QMouseEvent*>(event);
 
-    if (release_event->button() == Qt::LeftButton) {
-      if (scrolling_with_cursor_) {
-        scrolling_with_cursor_ = false;
+    if (release_event->button() == Qt::LeftButton && scrolling_with_cursor_) {
+      scrolling_with_cursor_ = false;
 
-        // handle the case in which a user might click on one of the
-        // scrollbars, hold the button and move the cursor away
-        if (viewer_->isCursorInsideViewport()) {
-          viewer_->updateCursorCoordinates();
-        }
+      // handle the case in which a user might click on one of the
+      // scrollbars, hold the button and move the cursor away
+      if (viewer_->isCursorInsideViewport()) {
+        viewer_->updateCursorCoordinates();
       }
     }
   }
