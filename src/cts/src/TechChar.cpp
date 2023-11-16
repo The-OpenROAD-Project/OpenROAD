@@ -512,7 +512,7 @@ void TechChar::initCharacterization()
         "Characterization buffer is not defined.\n"
         "    Check that -buf_list has supported buffers from platform.");
   } else {
-    logger_->info(CTS, 49, "Characterization buffer is: {}.", bufMasterName);
+    logger_->info(CTS, 49, "Characterization buffer is {}.", bufMasterName);
   }
 
   odb::dbMaster* sinkMaster
@@ -674,8 +674,8 @@ void TechChar::initCharacterization()
 void TechChar::finalizeRootSinkBuffers()
 {
   // Sink info is not available yet, so defer adjustment till later
-  logger_->info(CTS, 204, "Root buffer is {}", options_->getRootBuffer());
-  logger_->info(CTS, 205, "Sink buffer is {}", options_->getSinkBuffer());
+  logger_->info(CTS, 50, "Root buffer is {}.", options_->getRootBuffer());
+  logger_->info(CTS, 51, "Sink buffer is {}.", options_->getSinkBuffer());
 }
 
 void TechChar::trimSortBufferList(std::vector<std::string>& buffers)
