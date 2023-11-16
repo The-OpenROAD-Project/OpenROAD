@@ -98,6 +98,7 @@ class MBFF
   int GetBitMask(odb::dbInst* inst);
   bool HasSet(odb::dbInst* inst);
   bool HasReset(odb::dbInst* inst);
+  bool ClockOn(odb::dbInst* inst);
 
   Flop GetNewFlop(const std::vector<Flop>& prob_dist, double tot_dist);
   void GetStartTrays(std::vector<Flop> flops,
@@ -205,9 +206,10 @@ class MBFF
   The 2nd bit of B is on if the SET pin exists
   The 3rd bit of B is on if the RESET pin exists
   The 4th bit of B is on if the instance is inverting
-  max(B) = 2^3 + 2^2 + 2^1 + 2^0 = 15
+  The 5th bit represents clock_on
+  max(B) = 2^4 + 2^3 + 2^2 + 2^1 + 2^0 = 31
   */
-  static constexpr int num_bits_in_bitmask = 4;
+  static constexpr int num_bits_in_bitmask = 5;
   static constexpr int max_bitmask = 1 << num_bits_in_bitmask;
 
   template <typename T>

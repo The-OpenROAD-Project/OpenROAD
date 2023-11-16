@@ -83,6 +83,40 @@ struct Path
   int end_point;
 };
 
+// Get the function for a port.  If the port has no function then check
+// the parent bus/bundle, if any.  This covers:
+//    bundle (QN) {
+//      members (QN0, QN1, QN2, QN3);
+//      function : "IQN";
+static sta::FuncExpr* getFunction(sta::LibertyPort* port)
+{
+  sta::FuncExpr* function = port->function();
+  if (function) {
+    return function;
+  }
+
+  // There is no way to go from a bit to the containing bus/bundle
+  // so we have to walk all the ports of the cell.
+  sta::LibertyCellPortIterator port_iter(port->libertyCell());
+  while (port_iter.hasNext()) {
+    sta::LibertyPort* next_port = port_iter.next();
+    function = next_port->function();
+    if (!function) {
+      continue;
+    }
+    if (next_port->hasMembers()) {
+      std::unique_ptr<sta::ConcretePortMemberIterator> mem_iter(
+          next_port->memberIterator());
+      while (mem_iter->hasNext()) {
+        sta::ConcretePort* mem_port = mem_iter->next();
+        if (mem_port == port) {
+          return function;
+        }
+      }
+    }
+  }
+  return nullptr;
+}
 // check if a flop or single-bit in tray is inverting
 bool MBFF::IsInverting(odb::dbInst* inst)
 {
@@ -100,7 +134,7 @@ bool MBFF::IsInverting(odb::dbInst* inst)
       if (IsQPin(iterm)) {
         auto pin = network_->dbToSta(iterm);
         auto port = network_->libertyPort(pin);
-        non_invert_func_ = port->function();
+        non_invert_func_ = getFunction(port);
       }
     }
     return false;
@@ -110,7 +144,7 @@ bool MBFF::IsInverting(odb::dbInst* inst)
     if (IsQPin(iterm)) {
       auto pin = network_->dbToSta(iterm);
       auto port = network_->libertyPort(pin);
-      if (sta::FuncExpr::equiv(non_invert_func_, port->function())) {
+      if (sta::FuncExpr::equiv(non_invert_func_, getFunction(port))) {
         return false;
       }
     }
@@ -155,6 +189,27 @@ bool MBFF::HasReset(odb::dbInst* inst)
   return false;
 }
 
+bool MBFF::ClockOn(odb::dbInst* inst)
+{
+  sta::Cell* cell = network_->dbToSta(inst->getMaster());
+  if (cell == nullptr) {
+    return false;
+  }
+  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  if (lib_cell == nullptr) {
+    return false;
+  }
+  for (auto seq : lib_cell->sequentials()) {
+    sta::FuncExpr* left = seq->clock()->left();
+    sta::FuncExpr* right = seq->clock()->right();
+    // !CLK
+    if (left && !right) {
+      return false;
+    }
+  }
+  return true;
+}
+
 int MBFF::GetBitMask(odb::dbInst* inst)
 {
   const int cnt_d = GetNumD(inst);
@@ -175,6 +230,10 @@ int MBFF::GetBitMask(odb::dbInst* inst)
   // turn 3rd bit on
   if (HasReset(inst)) {
     ret |= (1 << 2);
+  }
+  // turn 4th bit on
+  if (ClockOn(inst)) {
+    ret |= (1 << 3);
   }
   return ret;
 }
@@ -208,11 +267,11 @@ bool MBFF::IsDPin(odb::dbITerm* iterm)
   }
 
   for (auto seq : lib_cell->sequentials()) {
-    if (seq->clear() && sta::FuncExpr::equiv(seq->clear(), port->function())) {
+    if (seq->clear() && sta::FuncExpr::equiv(seq->clear(), getFunction(port))) {
       return false;
     }
     if (seq->preset()
-        && sta::FuncExpr::equiv(seq->preset(), port->function())) {
+        && sta::FuncExpr::equiv(seq->preset(), getFunction(port))) {
       return false;
     }
   }
@@ -332,7 +391,7 @@ MBFF::DataToOutputsMap MBFF::GetPinMapping(odb::dbInst* tray)
   // all output pins are Q pins
   while (port_itr.hasNext()) {
     sta::LibertyPort* port = port_itr.next();
-    if (network_->staToDb(port) == nullptr) {
+    if (port->isBus() || port->isBundle()) {
       continue;
     }
     if (port->isClock()) {
@@ -343,7 +402,8 @@ MBFF::DataToOutputsMap MBFF::GetPinMapping(odb::dbInst* tray)
     }
     if (port->direction()->isOutput()) {
       if (!q_pins.empty()) {
-        if (sta::FuncExpr::equiv(q_pins.back()->function(), port->function())) {
+        if (sta::FuncExpr::equiv(getFunction(q_pins.back()),
+                                 getFunction(port))) {
           q_pins.push_back(port);
         } else {
           qn_pins.push_back(port);
@@ -442,7 +502,8 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
         if (bitmask) {
           sta::Pin* pin = network_->dbToSta(iterm);
           sta::LibertyPort* iterm_port = network_->libertyPort(pin);
-          if (sta::FuncExpr::equiv(q_pin->function(), iterm_port->function())) {
+          if (sta::FuncExpr::equiv(getFunction(q_pin),
+                                   getFunction(iterm_port))) {
             tray_inst[tray_idx]->findITerm(q_pin->name())->connect(net);
           } else {
             tray_inst[tray_idx]->findITerm(qn_pin->name())->connect(net);
