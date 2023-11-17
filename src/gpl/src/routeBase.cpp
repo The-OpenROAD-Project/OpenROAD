@@ -34,12 +34,12 @@
 #include "routeBase.h"
 
 #include <algorithm>
-#include <boost/geometry.hpp>
-#include <boost/geometry/index/rtree.hpp>
 #include <cmath>
 #include <iostream>
 #include <string>
 #include <utility>
+#include <boost/geometry.hpp>
+#include <boost/geometry/index/rtree.hpp>
 
 #include "grt/GlobalRouter.h"
 #include "nesterovBase.h"
@@ -58,6 +58,7 @@ namespace bgi = boost::geometry::index;
 typedef bg::model::point<int, 2, bg::cs::cartesian> point;
 typedef bg::model::box<point> box;
 typedef std::pair<box, gpl::Tile*> GridValue;
+
 
 using utl::GPL;
 
@@ -907,34 +908,25 @@ void RUDYDataSource::init()
 
   // init tile grid
   auto block = db_->getChip()->getBlock();
-  std::vector<int> gridX, gridY;
-  int gridWidth, gridHeight;
-  int gridCntX, gridCntY;
-  int gridLx, gridLy;
-
   odb::dbGCellGrid* grid = block->getGCellGrid();
-  if (grid != nullptr) {
-    grid->getGridX(gridX);
-    grid->getGridX(gridY);
-    gridLx = gridX[0];
-    gridLy = gridY[0];
-    gridWidth = gridX[1] - gridX[0];
-    gridHeight = gridY[1] - gridY[0];
-    gridCntX = static_cast<int>(gridX.size());
-    gridCntY = static_cast<int>(gridY.size());
-  } else {
-    gridLx = block->getCoreArea().xMin();
-    gridLy = block->getCoreArea().yMin();
-    auto coreWidth = block->getCoreArea().xMax() - block->getCoreArea().xMin();
-    auto coreHeight = block->getCoreArea().yMax() - block->getCoreArea().yMin();
-    gridCntX = default_grid_;
-    gridCntY = default_grid_;
-    gridWidth = static_cast<int>(coreWidth / gridCntX);
-    gridHeight = static_cast<int>(coreHeight / gridCntY);
-  }
+  /*  if (grid == nullptr) {
+      grid = odb::dbGCellGrid::create(db_->getChip()->getBlock());
 
-  tileGrid_.setLx(gridLx);
-  tileGrid_.setLy(gridLy);
+      auto dieX = block->getDieArea().xMax() - block->getDieArea().xMin();
+      auto gridX = dieX
+      grid->addGridPatternX(default_grid_);
+    }*/
+  std::vector<int> gridX, gridY;
+  grid->getGridX(gridX);
+  grid->getGridX(gridY);
+
+  int gridWidth = gridX[1] - gridX[0];
+  int gridHeight = gridY[1] - gridY[0];
+  int gridCntX = static_cast<int>(gridX.size());
+  int gridCntY = static_cast<int>(gridY.size());
+
+  tileGrid_.setLx(gridX[0]);
+  tileGrid_.setLy(gridY[0]);
   tileGrid_.setTileSize(gridWidth, gridHeight);
   tileGrid_.setTileCnt(gridCntX, gridCntY);
   tileGrid_.initTiles();
@@ -970,12 +962,25 @@ void RUDYDataSource::calculate()
 
     // Search R-tree
     std::vector<GridValue> queryResults;
-    rtree.query(bgi::intersects(box(point(netBox.xMin(), netBox.yMin()),
-                                    point(netBox.xMax(), netBox.yMax()))),
-                std::back_inserter(queryResults));
+    rtree.query(bgi::intersects(box(point(netBox.xMin(), netBox.yMin()), point(netBox.xMax(), netBox.yMax()))), std::back_inserter(queryResults));
 
-    for (const auto& value : queryResults) {
+    for(const auto& value:queryResults){
       auto grid = value.second;
+      auto gridBox = grid->getRect();
+      if (netBox.intersects(gridBox)) {
+      auto s_k = netBox.intersect(gridBox).area();
+      if (s_k == 0) {
+          continue;
+      }
+      auto s_ij = gridBox.area();
+      auto gridNetBoxRatio
+          = static_cast<double_t>(s_k) / static_cast<double_t>(s_ij);
+      double_t rudy_ijk = netCongestion *gridNetBoxRatio;
+      grid->addRudy(rudy_ijk);
+      }
+    }
+/*
+    for (auto grid : tileGrid_.tiles()) {
       auto gridBox = grid->getRect();
       if (netBox.intersects(gridBox)) {
         auto s_k = netBox.intersect(gridBox).area();
@@ -985,10 +990,11 @@ void RUDYDataSource::calculate()
         auto s_ij = gridBox.area();
         auto gridNetBoxRatio
             = static_cast<double_t>(s_k) / static_cast<double_t>(s_ij);
-        double_t rudy_ijk = netCongestion * gridNetBoxRatio;
+        double_t rudy_ijk = netCongestion *gridNetBoxRatio;
         grid->addRudy(rudy_ijk);
       }
     }
+*/
   }
 }
 
