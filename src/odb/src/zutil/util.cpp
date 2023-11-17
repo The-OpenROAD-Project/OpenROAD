@@ -32,6 +32,8 @@
 
 #include "util.h"
 
+#include <boost/geometry.hpp>
+#include <boost/geometry/index/rtree.hpp>
 #include <map>
 #include <numeric>
 #include <string>
@@ -43,6 +45,131 @@ namespace odb {
 
 using std::string;
 using std::vector;
+namespace bg = boost::geometry;
+namespace bgi = boost::geometry::index;
+
+typedef bg::model::point<int, 2, bg::cs::cartesian> point;
+typedef bg::model::box<point> box;
+typedef std::pair<box, RUDYCalculator::Tile*> GridValue;
+
+RUDYCalculator::RUDYCalculator(dbBlock* block) : block_(block)
+{
+  gridBlock_ = block_->getDieArea();
+  makeGrid();
+}
+
+void RUDYCalculator::setGridConfig(odb::Rect block,
+                                   int tileCntX,
+                                   int tileCntY)
+{
+  gridBlock_ = block;
+  tileCntX_ = tileCntX;
+  tileCntY_ = tileCntY;
+  makeGrid();
+}
+
+void RUDYCalculator::makeGrid()
+{
+  int blockWidth = gridBlock_.xMax() - gridBlock_.xMin();
+  int blockHeight = gridBlock_.yMax() - gridBlock_.yMin();
+  int gridLx = gridBlock_.xMin();
+  int gridLy = gridBlock_.yMin();
+  int tileWidth = blockWidth / tileCntX_;
+  int tileHeight = blockHeight / tileCntY_;
+
+  grid_.resize(tileCntX_);
+  int curX = gridLx;
+  int curY = gridLy;
+  int coordinateX = 0;
+  int coordinateY = 0;
+  for (auto& gridColumn : grid_) {
+    gridColumn.resize(tileCntY_);
+    for (auto& grid : gridColumn) {
+      grid.setRect(curX, curY, curX + tileWidth, curY + tileHeight);
+      grid.setCoordinate(coordinateX, coordinateY);
+      curX += tileWidth;
+      coordinateX += 1;
+    }
+    curX = gridLx;
+    curY += tileHeight;
+    coordinateX = 0;
+    coordinateY += 1;
+  }
+}
+
+void RUDYCalculator::calculateRUDY()
+{
+  // refer: https://ieeexplore.ieee.org/document/4211973
+  // Construct R-tree
+  bgi::rtree<GridValue, bgi::quadratic<16>> rtree;
+  for (auto& tileColumn : grid_) {
+    for (auto& tile : tileColumn) {
+      odb::Rect rect = tile.getRect();
+      box b(point(rect.xMin(), rect.yMin()), point(rect.xMax(), rect.yMax()));
+      rtree.insert(std::make_pair(b, &tile));
+    }
+  }
+
+  auto layer = block_->getTech()->findLayer("metal1");
+  int64_t wireWidth = 100;
+  if (layer != nullptr) {
+    wireWidth = layer->getWidth();
+  }
+
+  for (auto net : block_->getNets()) {
+    auto netBox = net->getTermBBox();
+    auto netArea = netBox.area();
+    if (netArea == 0) {
+      continue;
+    }
+    auto hpwl = static_cast<int64_t>(netBox.dx() + netBox.dy());
+    auto wireArea = hpwl * wireWidth;
+    auto netCongestion = wireArea * 1e4 / netArea;
+
+    // Search R-tree
+    std::vector<GridValue> queryResults;
+    rtree.query(bgi::intersects(box(point(netBox.xMin(), netBox.yMin()),
+                                    point(netBox.xMax(), netBox.yMax()))),
+                std::back_inserter(queryResults));
+
+    for (const auto& value : queryResults) {
+      auto grid = value.second;
+      auto gridBox = grid->getRect();
+      if (netBox.intersects(gridBox)) {
+        auto s_k = netBox.intersect(gridBox).area();
+        if (s_k == 0) {
+          continue;
+        }
+        auto s_ij = gridBox.area();
+        auto gridNetBoxRatio
+            = static_cast<double_t>(s_k) / static_cast<double_t>(s_ij);
+        double_t rudy_ijk = netCongestion * gridNetBoxRatio * 1e-2;
+        grid->addRUDY(rudy_ijk);
+      }
+    }
+  }
+}
+std::pair<int, int> RUDYCalculator::getGridSize()
+{
+  if (grid_.empty()) {
+    return {0, 0};
+  }
+  return {grid_.size(), grid_.at(0).size()};
+}
+
+void RUDYCalculator::Tile::setRect(int lx, int ly, int ux, int uy)
+{
+  rect_ = odb::Rect(lx, ly, ux, uy);
+}
+
+void RUDYCalculator::Tile::setCoordinate(int x, int y)
+{
+  coordinate_ = {x, y};
+}
+void RUDYCalculator::Tile::addRUDY(double_t rudy)
+{
+  rudy_ += rudy;
+}
 
 static void buildRow(dbBlock* block,
                      const string& name,
