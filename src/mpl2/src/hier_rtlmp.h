@@ -249,6 +249,11 @@ class HierRTLMP
   void alignHardMacroGlobal(Cluster* parent);  // call this function after
                                                // multilevel macro placement
 
+  void updateChildrenShapesAndLocations(
+      Cluster* parent,
+      const std::vector<SoftMacro>& shaped_macros,
+      const std::map<std::string, int>& soft_macro_id_map);
+
   // force-directed placement to generate guides for macros
   void FDPlacement(std::vector<Rect>& blocks,
                    const std::vector<BundledNet>& nets,
