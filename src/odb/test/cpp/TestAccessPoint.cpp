@@ -28,10 +28,12 @@ BOOST_AUTO_TEST_CASE(test_default)
   ap->setHighType(dbAccessType::HalfGrid);
   ap->setAccess(true, dbDirection::DOWN);
   iterm->setAccessPoint(pin, ap);
-  FILE* write;
   std::string path
       = std::string(std::getenv("BASE_DIR")) + "/results/TestAccessPointDbRW";
-  write = fopen(path.c_str(), "w");
+  std::ofstream write;
+  write.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                   | std::ios::eofbit);
+  write.open(path, std::ios::binary);
   db->write(write);
   dbDatabase::destroy(db);
 

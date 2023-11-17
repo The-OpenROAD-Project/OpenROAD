@@ -33,6 +33,9 @@
 // Generator Code Begin Cpp
 #include "dbGCellGrid.h"
 
+#include <cstdint>
+#include <cstring>
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -145,8 +148,10 @@ _dbGCellGrid::_dbGCellGrid(_dbDatabase* db, const _dbGCellGrid& r)
 
 dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  uint32_t flags_bit_field;
+  stream >> flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> obj.x_origin_;
   stream >> obj.x_count_;
   stream >> obj.x_step_;
@@ -176,8 +181,10 @@ dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbGCellGrid& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  uint32_t flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags_bit_field;
   stream << obj.x_origin_;
   stream << obj.x_count_;
   stream << obj.x_step_;

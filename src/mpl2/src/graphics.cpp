@@ -211,12 +211,32 @@ void Graphics::drawCluster(Cluster* cluster, gui::Painter& painter)
   }
 }
 
+void Graphics::drawBlockages(gui::Painter& painter)
+{
+  for (const auto& blockage : macro_blockages_) {
+    const int lx = dbu_ * blockage.xMin();
+    const int ly = dbu_ * blockage.yMin();
+    const int ux = dbu_ * blockage.xMax();
+    const int uy = dbu_ * blockage.yMax();
+
+    odb::Rect blockage_bbox(lx, ly, ux, uy);
+
+    painter.drawRect(blockage_bbox);
+  }
+}
+
 void Graphics::drawObjects(gui::Painter& painter)
 {
   if (root_) {
     painter.setPen(gui::Painter::red, true);
     painter.setBrush(gui::Painter::transparent);
     drawCluster(root_, painter);
+  }
+
+  if (!macro_blockages_.empty()) {
+    painter.setPen(gui::Painter::gray, true);
+    painter.setBrush(gui::Painter::gray, gui::Painter::DIAGONAL);
+    drawBlockages(painter);
   }
 
   painter.setPen(gui::Painter::yellow, true);
@@ -286,6 +306,11 @@ void Graphics::drawObjects(gui::Painter& painter)
     painter.setBrush(gui::Painter::transparent);
     painter.drawRect(bbox);
   }
+}
+
+void Graphics::setMacroBlockages(const std::vector<mpl2::Rect>& macro_blockages)
+{
+  macro_blockages_ = macro_blockages;
 }
 
 }  // namespace mpl2

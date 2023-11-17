@@ -8,6 +8,7 @@ record_tests {
   ta_pin_aligned
   top_level_term
   top_level_term2
+  drc_test
 }
 record_pass_fail_tests {
   gc_test

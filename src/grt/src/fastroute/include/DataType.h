@@ -205,7 +205,7 @@ struct Route
   // valid for MazeRoute: the number of edges in the route
   int routelen;
 
-  int last_routelen;  // the last routelen before overflow itter
+  int last_routelen = 0;  // the last routelen before overflow itter
 };
 
 struct TreeEdge

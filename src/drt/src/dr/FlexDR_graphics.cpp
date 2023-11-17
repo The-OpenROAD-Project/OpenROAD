@@ -523,8 +523,8 @@ void FlexDRGraphics::show(bool checkStopConditions)
       return;
     }
     const Rect& rBox = worker_->getRouteBox();
-    if (settings_->x >= 0
-        && !rBox.intersects(Point(settings_->x, settings_->y))) {
+    if (settings_->box != odb::Rect(-1, -1, -1, -1)
+        && !rBox.intersects(settings_->box)) {
       return;
     }
   }
@@ -595,8 +595,8 @@ void FlexDRGraphics::startWorker(FlexDRWorker* in)
     return;
   }
   const Rect& rBox = in->getRouteBox();
-  if (settings_->x >= 0
-      && !rBox.intersects(Point(settings_->x, settings_->y))) {
+  if (settings_->box != odb::Rect(-1, -1, -1, -1)
+      && !rBox.intersects(settings_->box)) {
     return;
   }
   status("Start worker: origin " + workerOrigin(in) + " "
@@ -750,6 +750,22 @@ void FlexDRGraphics::startIter(int iter)
     }
 
     status("Start iter: " + std::to_string(iter));
+    if (settings_->allowPause) {
+      gui_->pause();
+    }
+  }
+}
+
+void FlexDRGraphics::endWorker(int iter)
+{
+  if (worker_ == nullptr)
+    return;
+  if (iter >= settings_->iter) {
+    gui_->removeSelected<GridGraphDescriptor::Data>();
+    status("End Worker: " + std::to_string(iter));
+    if (settings_->draw) {
+      gui_->redraw();
+    }
     if (settings_->allowPause) {
       gui_->pause();
     }

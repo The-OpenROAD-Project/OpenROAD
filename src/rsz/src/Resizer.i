@@ -62,8 +62,8 @@ PinSet *
 tclListSetPin(Tcl_Obj *source,
               Tcl_Interp *interp);
 
-typedef NetSeq TmpNetSeq;
-typedef PinSet TmpPinSet;
+using TmpNetSeq = NetSeq ;
+using TmpPinSet = PinSet;
 
 } // namespace
 

@@ -28,6 +28,8 @@
 
 #include "distributed/paUpdate.h"
 
+#include <fstream>
+
 #include "distributed/frArchive.h"
 #include "serialization.h"
 using namespace fr;

@@ -99,7 +99,7 @@ set_wire_segment_distance_unit(unsigned unit)
 void
 set_root_buffer(const char* buffer)
 {
-  getTritonCts()->getParms()->setRootBuffer(buffer);
+  getTritonCts()->setRootBuffer(buffer);
 }
 
 void
@@ -215,13 +215,25 @@ set_clock_nets(const char* names)
 void
 set_buffer_list(const char* buffers)
 {
-	getTritonCts()->setBufferList(buffers);
+  getTritonCts()->setBufferList(buffers);
 }
 
 void
 set_obstruction_aware(bool obs)
 {
   getTritonCts()->getParms()->setObstructionAware(obs);
+}
+
+void
+set_apply_ndr(bool ndr)
+{
+  getTritonCts()->getParms()->setApplyNDR(ndr);
+}
+
+void
+set_insertion_delay(bool insDelay)
+{
+  getTritonCts()->getParms()->enableInsertionDelay(insDelay);
 }
 
 void

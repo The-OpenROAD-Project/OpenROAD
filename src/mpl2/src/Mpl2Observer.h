@@ -60,6 +60,9 @@ class Mpl2Observer
   virtual void endSA() {}
 
   virtual void finishedClustering(Cluster* root) {}
+  virtual void setMacroBlockages(const std::vector<mpl2::Rect>& macro_blockages)
+  {
+  }
 
   virtual void setAreaPenalty(float area) {}
   virtual void setOutlinePenalty(float outline_penalty,

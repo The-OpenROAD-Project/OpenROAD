@@ -75,7 +75,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       has_2D_overflow_(false),
       grid_hv_(0),
       verbose_(false),
-      update_slack_(0),
+      critical_nets_percentage_(10),
       via_cost_(0),
       mazeedge_threshold_(0),
       v_capacity_lb_(0),
@@ -1324,9 +1324,9 @@ void FastRouteCore::setVerbose(bool v)
   verbose_ = v;
 }
 
-void FastRouteCore::setUpdateSlack(int u)
+void FastRouteCore::setCriticalNetsPercentage(float u)
 {
-  update_slack_ = u;
+  critical_nets_percentage_ = u;
 }
 
 void FastRouteCore::setMakeWireParasiticsBuilder(
