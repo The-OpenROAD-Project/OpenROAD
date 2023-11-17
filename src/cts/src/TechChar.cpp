@@ -121,7 +121,8 @@ void TechChar::compileLut(const std::vector<TechChar::ResultData>& lutSols)
         const std::string topologyS = lutLine.topology[topologyIndex];
         // Each buffered topology always has a wire segment followed by a
         // buffer.
-        if (masterNames_.find(topologyS) == masterNames_.end()) {
+        if (std::find(masterNames_.begin(), masterNames_.end(), topologyS)
+            == masterNames_.end()) {
           // Is a number (i.e. a wire segment).
           segment.addBuffer(std::stod(topologyS));
         } else {
@@ -474,7 +475,7 @@ void TechChar::initCharacterization()
     if (libertyCell == nullptr) {
       logger_->error(CTS, 106, "No Liberty found for buffer {}.", masterString);
     }
-    masterNames_.insert(masterString);
+    masterNames_.emplace_back(masterString);
   }
 
   float maxBuffCap = 0.0;
@@ -716,7 +717,7 @@ void TechChar::trimSortBufferList(std::vector<std::string>& buffers)
               return (this->getMaxCapLimit(buf1) < this->getMaxCapLimit(buf2));
             });
 
-  if (logger_->debugCheck(utl::CTS, "buffering", 1)) {
+  if (logger_->debugCheck(utl::CTS, "tech char", 1)) {
     logger_->report("-----  after trimSortBufferList -----");
     for (const std::string& bufName : buffers) {
       logger_->report("{}", bufName);
@@ -1180,22 +1181,41 @@ void TechChar::updateBufferTopologies(TechChar::SolutionData& solution)
   // the next one (works like a carry mechanism). Ex for 4 different buffers:
   // 103-> 110 -> 111 -> 112 -> 113 -> 120 ...
   bool done = false;
+
+  // Get the first (the smallest) lib cell and the last (the largest) one.
+  // These are purely static and need to be pulled out of the loop.
+  std::vector<std::string>::iterator firstMasterItr = masterNames_.begin();
+  odb::dbMaster* firstMaster = db_->findMaster((*firstMasterItr).c_str());
+  std::vector<std::string>::iterator lastMasterItr = masterNames_.end();
+  --lastMasterItr;
+  odb::dbMaster* lastMaster = db_->findMaster((*lastMasterItr).c_str());
+
+  if (logger_->debugCheck(CTS, "tech char", 1)) {
+    std::cout << "masterNames_: ";
+    for (std::string cell : masterNames_) {
+      std::cout << cell << " ";
+    }
+    std::cout << std::endl;
+    std::cout << "firstMaster = " << firstMaster->getName() << std::endl;
+    std::cout << "lastMaster = " << lastMaster->getName() << std::endl;
+  }
+
   while (!done) {
     // Gets the iterator to the beggining of the masterNames_ set.
-    std::set<std::string>::iterator masterItr
-        = masterNames_.find(solution.instVector[index]->getMaster()->getName());
-    // Gets the iterator to the end of the masterNames_ set.
-    std::set<std::string>::iterator masterFinalItr = masterNames_.end();
-    masterFinalItr--;
-    if (masterItr == masterFinalItr) {
+    std::vector<std::string>::iterator masterItr
+        = std::find(masterNames_.begin(),
+                    masterNames_.end(),
+                    solution.instVector[index]->getMaster()->getName());
+    if (masterItr == lastMasterItr) {
       // If the iterator can't increment past the final iterator...
-      // change the current buf master to the charBuf_ and try to go to next
-      // instance.
+      // change the current buf master to the first lib cell and try to go to
+      // next instance.
       odb::dbInst* inst = solution.instVector[index];
-      inst->swapMaster(charBuf_);
+      inst->swapMaster(firstMaster);
       // clang-format off
       debugPrint(logger_, CTS, "tech char", 1, "updateBufferTopologies swap "
-                 "to {}, index:{}", charBuf_->getName(), index);
+                 "from {} to {}, index:{}",
+                 lastMaster->getName(), firstMaster->getName(), index);
       // clang-format on
       unsigned topologyCounter = 0;
       for (unsigned topologyIndex = 0;
@@ -1208,13 +1228,13 @@ void TechChar::updateBufferTopologies(TechChar::SolutionData& solution)
         debugPrint(logger_, CTS, "tech char", 1, "  topo:{} topoIdx:{}",
                    topologyS, topologyIndex);
         // clang-format on
-        if (!(masterNames_.find(topologyS) == masterNames_.end())) {
+        if (!(std::find(masterNames_.begin(), masterNames_.end(), topologyS)
+              == masterNames_.end())) {
           if (topologyCounter == index) {
-            std::set<std::string>::iterator firstMaster = masterNames_.begin();
-            solution.topologyDescriptor[topologyIndex] = *firstMaster;
+            solution.topologyDescriptor[topologyIndex] = *firstMasterItr;
             // clang-format off
             debugPrint(logger_, CTS, "tech char", 1, "  soln topo descript at {} "
-                       "set to {}", topologyIndex, *firstMaster);
+                       "set to {}", topologyIndex, *firstMasterItr);
             // clang-format on
             break;
           }
@@ -1230,8 +1250,11 @@ void TechChar::updateBufferTopologies(TechChar::SolutionData& solution)
       odb::dbInst* inst = solution.instVector[index];
       inst->swapMaster(newBufMaster);
       // clang-format off
+      --masterItr; 
       debugPrint(logger_, CTS, "tech char", 1, "updateBufferTopologies swap "
-                 "to {}, index:{}", newBufMaster->getName(), index);
+                 "from {} to {}, index:{}",
+                 *(masterItr), newBufMaster->getName(), index);
+      masterItr++;
       // clang-format on 
       unsigned topologyCounter = 0;
       for (unsigned topologyIndex = 0;
@@ -1239,16 +1262,12 @@ void TechChar::updateBufferTopologies(TechChar::SolutionData& solution)
            topologyIndex++) {
         const std::string topologyS
             = solution.topologyDescriptor[topologyIndex];
-        // clang-format on
-        debugPrint(logger_,
-                   CTS,
-                   "tech char",
-                   1,
-                   "  topo:{} topoIdx:{}",
-                   topologyS,
-                   topologyIndex);
         // clang-format off
-        if (!(masterNames_.find(topologyS) == masterNames_.end())) {
+        debugPrint(logger_, CTS, "tech char", 1, "  topo:{} topoIdx:{}",
+                   topologyS, topologyIndex);
+        // clang-format on
+        if (!(std::find(masterNames_.begin(), masterNames_.end(), topologyS)
+              == masterNames_.end())) {
           if (topologyCounter == index) {
             solution.topologyDescriptor[topologyIndex] = masterString;
             // clang-format off
@@ -1328,7 +1347,8 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess()
            topologyIndex++) {
         std::string topologyS = solution.topology[topologyIndex];
         // Normalizes the strings that represents the topology too.
-        if (masterNames_.find(topologyS) == masterNames_.end()) {
+        if (std::find(masterNames_.begin(), masterNames_.end(), topologyS)
+            == masterNames_.end()) {
           // Is a number (i.e. a wire segment).
           topologyResult.push_back(std::to_string(
               std::stod(topologyS) / static_cast<float>(solution.wirelength)));
