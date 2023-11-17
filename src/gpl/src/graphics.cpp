@@ -46,19 +46,20 @@
 
 namespace gpl {
 
+Graphics::Graphics(utl::Logger* logger)
+    : HeatMapDataSource(logger, "gpl", "gpl"), logger_(logger), mode_(Mbff)
+{
+  gui::Gui::get()->registerRenderer(this);
+}
+
 Graphics::Graphics(utl::Logger* logger,
                    std::shared_ptr<PlacerBaseCommon> pbc,
                    std::vector<std::shared_ptr<PlacerBase>>& pbVec)
     : HeatMapDataSource(logger, "gpl", "gpl"),
       pbc_(std::move(pbc)),
-
       pbVec_(pbVec),
-
-      np_(nullptr),
-      selected_(nullptr),
-      draw_bins_(false),
       logger_(logger),
-      heatmap_type_(Density)
+      mode_(Initial)
 {
   gui::Gui::get()->registerRenderer(this);
 }
@@ -77,10 +78,9 @@ Graphics::Graphics(utl::Logger* logger,
       pbVec_(pbVec),
       nbVec_(nbVec),
       np_(np),
-      selected_(nullptr),
       draw_bins_(draw_bins),
       logger_(logger),
-      heatmap_type_(Density)
+      mode_(Nesterov)
 {
   gui::Gui::get()->registerRenderer(this);
   initHeatmap();
@@ -252,12 +252,26 @@ void Graphics::drawNesterov(gui::Painter& painter)
   }
 }
 
+void Graphics::drawMBFF(gui::Painter& painter)
+{
+  painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
+  for (auto [start, end] : mbff_edges_) {
+    painter.drawLine(start, end);
+  }
+}
+
 void Graphics::drawObjects(gui::Painter& painter)
 {
-  if (nbc_) {
-    drawNesterov(painter);
-  } else {
-    drawInitial(painter);
+  switch (mode_) {
+    case Mbff:
+      drawMBFF(painter);
+      break;
+    case Nesterov:
+      drawNesterov(painter);
+      break;
+    case Initial:
+      drawInitial(painter);
+      break;
   }
 }
 
@@ -308,6 +322,13 @@ void Graphics::cellPlot(bool pause)
     reportSelected();
     gui::Gui::get()->pause();
   }
+}
+
+void Graphics::mbff_mapping(const LineSegs& segs)
+{
+  mbff_edges_ = segs;
+  gui::Gui::get()->redraw();
+  gui::Gui::get()->pause();
 }
 
 gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,

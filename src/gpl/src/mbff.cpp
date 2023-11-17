@@ -44,6 +44,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "graphics.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
@@ -423,17 +424,18 @@ MBFF::DataToOutputsMap MBFF::GetPinMapping(odb::dbInst* tray)
 
 void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
                                 const std::vector<Tray>& trays,
-                                std::vector<std::pair<int, int>>& mapping,
-                                int bitmask)
+                                const std::vector<std::pair<int, int>>& mapping,
+                                const int bitmask)
 {
   const int num_flops = static_cast<int>(flops.size());
+  std::vector<std::pair<int, int>> new_mapping(mapping);
 
   std::map<int, int> old_to_new_idx;
   std::vector<odb::dbInst*> tray_inst;
   for (int i = 0; i < num_flops; i++) {
-    const int tray_idx = mapping[i].first;
+    const int tray_idx = new_mapping[i].first;
     if (static_cast<int>(trays[tray_idx].slots.size()) == 1) {
-      mapping[i].first = std::numeric_limits<int>::max();
+      new_mapping[i].first = std::numeric_limits<int>::max();
       continue;
     }
     if (!old_to_new_idx.count(tray_idx)) {
@@ -456,19 +458,19 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
       new_tray->setPlacementStatus(odb::dbPlacementStatus::PLACED);
       tray_inst.push_back(new_tray);
     }
-    mapping[i].first = old_to_new_idx[tray_idx];
+    new_mapping[i].first = old_to_new_idx[tray_idx];
   }
 
   odb::dbNet* clk_net = nullptr;
   for (int i = 0; i < num_flops; i++) {
     // single bit flop?
-    if (mapping[i].first == std::numeric_limits<int>::max()) {
+    if (new_mapping[i].first == std::numeric_limits<int>::max()) {
       continue;
     }
 
-    const int tray_idx = mapping[i].first;
+    const int tray_idx = new_mapping[i].first;
     const int tray_sz_idx = GetBitIdx(GetNumD(tray_inst[tray_idx]));
-    const int slot_idx = mapping[i].second;
+    const int slot_idx = new_mapping[i].second;
 
     // find the new port names
     sta::LibertyPort* d_pin = nullptr;
@@ -522,14 +524,14 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
   // all FFs in flops have the same block clock
   std::vector<bool> isConnected(static_cast<int>(tray_inst.size()));
   for (int i = 0; i < num_flops; i++) {
-    if (mapping[i].first != std::numeric_limits<int>::max()) {
-      if (!isConnected[mapping[i].first] && clk_net != nullptr) {
-        for (auto iterm : tray_inst[mapping[i].first]->getITerms()) {
+    if (new_mapping[i].first != std::numeric_limits<int>::max()) {
+      if (!isConnected[new_mapping[i].first] && clk_net != nullptr) {
+        for (auto iterm : tray_inst[new_mapping[i].first]->getITerms()) {
           if (IsClockPin(iterm)) {
             iterm->connect(clk_net);
           }
         }
-        isConnected[mapping[i].first] = true;
+        isConnected[new_mapping[i].first] = true;
       }
       odb::dbInst::destroy(insts_[flops[i].idx]);
     }
@@ -1457,6 +1459,28 @@ double MBFF::doit(const std::vector<Flop>& flops,
         pointsets[t], all_final_trays[t], all_mappings[t], bitmask);
   }
 
+  if (graphics_) {
+    Graphics::LineSegs segs;
+    for (int t = 0; t < num_pointsets; t++) {
+      const int num_flops = pointsets[t].size();
+      for (int i = 0; i < num_flops; i++) {
+        const int tray_idx = all_mappings[t][i].first;
+        if (tray_idx == std::numeric_limits<int>::max()) {
+          continue;
+        }
+        const Point tray_pt = all_final_trays[t][tray_idx].pt;
+        const odb::Point tray_pt_dbu(multiplier_ * tray_pt.x,
+                                     multiplier_ * tray_pt.y);
+        const Point flop_pt = pointsets[t][i].pt;
+        const odb::Point flop_pt_dbu(multiplier_ * flop_pt.x,
+                                     multiplier_ * flop_pt.y);
+        segs.emplace_back(flop_pt_dbu, tray_pt_dbu);
+      }
+    }
+
+    graphics_->mbff_mapping(segs);
+  }
+
   return ans;
 }
 
@@ -1709,7 +1733,8 @@ MBFF::MBFF(odb::dbDatabase* db,
            utl::Logger* log,
            int threads,
            int knn,
-           int multistart)
+           int multistart,
+           bool debug_graphics)
 {
   non_invert_func_ = nullptr;
   num_sizes_ = 7;
@@ -1722,6 +1747,9 @@ MBFF::MBFF(odb::dbDatabase* db,
   num_threads_ = threads;
   knn_ = knn;
   multistart_ = multistart;
+  if (debug_graphics && Graphics::guiActive()) {
+    graphics_ = std::make_unique<Graphics>(log_);
+  }
 }
 
 MBFF::~MBFF() = default;

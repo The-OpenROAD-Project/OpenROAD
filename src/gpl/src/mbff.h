@@ -33,6 +33,7 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <set>
 #include <vector>
 
@@ -55,6 +56,7 @@ struct Point;
 struct Tray;
 struct Flop;
 struct Path;
+class Graphics;
 
 class MBFF
 {
@@ -64,7 +66,8 @@ class MBFF
        utl::Logger* log,
        int threads,
        int knn,
-       int multistart);
+       int multistart,
+       bool debug_graphics = false);
   ~MBFF();
   void Run(int mx_sz, double alpha, double beta);
 
@@ -180,7 +183,7 @@ class MBFF
                 int bitmask);
   void ModifyPinConnections(const std::vector<Flop>& flops,
                             const std::vector<Tray>& trays,
-                            std::vector<std::pair<int, int>>& mapping,
+                            const std::vector<std::pair<int, int>>& mapping,
                             int bitmask);
   double GetTCPDisplacement();
 
@@ -189,6 +192,7 @@ class MBFF
   sta::dbSta* sta_;
   sta::dbNetwork* network_;
   utl::Logger* log_;
+  std::unique_ptr<Graphics> graphics_;
 
   std::vector<Flop> flops_;
   std::vector<odb::dbInst*> insts_;
