@@ -4089,13 +4089,10 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
       break;
     }
   }
-  // update the location of children cluster to their real location
-  for (auto& cluster : parent->getChildren()) {
-    cluster->setX(cluster->getX() + lx);
-    cluster->setY(cluster->getY() + ly);
-  }
 
-  // Traverse the physical hierarchy tree in a DFS manner
+  updateChildrenRealLocation(parent, lx, ly);
+
+  // Continue cluster placement on children
   for (auto& cluster : parent->getChildren()) {
     if (cluster->getClusterType() == MixedCluster
         || cluster->getClusterType() == HardMacroCluster) {
@@ -4103,10 +4100,10 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     }
   }
 
-  // align macros
   alignHardMacroGlobal(parent);
-  // delete SA containers to avoid memory leakage
+
   sa_containers.clear();
+
   // done this branch and update the cluster_id property back
   setInstProperty(parent);
 }
@@ -4593,7 +4590,7 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
   } else {
     best_sa->alignMacroClusters();
     best_sa->fillDeadSpace();
-    // update the clusters and do bus planning
+
     std::vector<SoftMacro> shaped_macros;
     best_sa->getMacros(shaped_macros);
     file.open(file_name + ".fp.txt.temp");
@@ -4624,13 +4621,10 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
 
     updateChildrenShapesAndLocations(parent, shaped_macros, soft_macro_id_map);
 
-    // update the location of children cluster to their real location
-    for (auto& cluster : parent->getChildren()) {
-      cluster->setX(cluster->getX() + lx);
-      cluster->setY(cluster->getY() + ly);
-    }
+    updateChildrenRealLocation(parent, lx, ly);
   }
-  // Traverse the physical hierarchy tree in a DFS manner
+
+  // Continue cluster placement on children
   for (auto& cluster : parent->getChildren()) {
     if (cluster->getClusterType() == MixedCluster
         || cluster->getClusterType() == HardMacroCluster) {
@@ -4638,10 +4632,10 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
     }
   }
 
-  // align macros
   alignHardMacroGlobal(parent);
-  // delete SA containers to avoid memory leakage
+
   sa_containers.clear();
+
   // done this branch and update the cluster_id property back
   setInstProperty(parent);
 }
@@ -5116,13 +5110,8 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
 
   updateChildrenShapesAndLocations(parent, shaped_macros, soft_macro_id_map);
 
-  // update the location of children cluster to their real location
-  for (auto& cluster : parent->getChildren()) {
-    cluster->setX(cluster->getX() + lx);
-    cluster->setY(cluster->getY() + ly);
-  }
+  updateChildrenRealLocation(parent, lx, ly);
 
-  // delete SA containers to avoid memory leakage
   sa_containers.clear();
 }
 
@@ -5967,7 +5956,7 @@ void HierRTLMP::alignHardMacroGlobal(Cluster* parent)
   }
 }
 
-// Update the location from the perspective of the SA outline
+// Update the location based on the parent's perspective.
 void HierRTLMP::updateChildrenShapesAndLocations(
     Cluster* parent,
     const std::vector<SoftMacro>& shaped_macros,
@@ -5980,6 +5969,18 @@ void HierRTLMP::updateChildrenShapesAndLocations(
       *(child->getSoftMacro())
           = shaped_macros[soft_macro_id_map.at(child->getName())];
     }
+  }
+}
+
+// Move children to their real location in the die area. The offset is the
+// parent's origin.
+void HierRTLMP::updateChildrenRealLocation(Cluster* parent,
+                                           float offset_x,
+                                           float offset_y)
+{
+  for (auto& child : parent->getChildren()) {
+    child->setX(child->getX() + offset_x);
+    child->setY(child->getY() + offset_y);
   }
 }
 
