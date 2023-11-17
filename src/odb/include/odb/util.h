@@ -33,7 +33,7 @@
 // Header file for the Athena Utilities
 
 #include <assert.h>
-//#define _CRTDBG_MAP_ALLOC
+// #define _CRTDBG_MAP_ALLOC
 
 #pragma once
 
@@ -42,6 +42,7 @@
 #include <vector>
 
 #include "array1.h"
+#include "geom.h"
 
 namespace utl {
 class Logger;
@@ -484,6 +485,48 @@ unsigned int prime)
     tmp_iter.m_ptr_to_hash = this;
     return tmp_iter;
   }
+};
+
+class RUDYCalculator
+{
+ public:
+  class Tile
+  {
+   public:
+    odb::Rect getRect() { return rect_; }
+    void setRect(int lx, int ly, int ux, int uy);
+    void setCoordinate(int x, int y);
+    void addRUDY(double_t rudy);
+    double_t getRUDY() { return rudy_; }
+
+   private:
+    odb::Rect rect_;
+    std::pair<int, int> coordinate_;
+    double_t rudy_ = 0;  // This value is real RUDY value * 1e2
+                         // for reducing floating point calculation
+  };
+
+  explicit RUDYCalculator(dbBlock* block);
+  void setGridConfig(odb::Rect block, int tileCntX, int tileCntY);
+  /**
+   * \pre we need to call this function after `setGridConfig`.
+   * */
+  void calculateRUDY();
+  Tile& getTile(int x, int y) { return grid_.at(x).at(y); }
+  std::pair<int, int> getGridSize();
+
+ private:
+  /**
+   * \pre This function should be called after setGridConfig
+   * */
+  void makeGrid();
+
+  dbBlock* block_;
+  odb::Rect gridBlock_;
+  int tileCntX_ = 40;
+  int tileCntY_ = 40;
+
+  std::vector<std::vector<Tile>> grid_;
 };
 
 int makeSiteLoc(int x, double site_width, bool at_left_from_macro, int offset);
