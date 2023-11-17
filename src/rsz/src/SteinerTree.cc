@@ -88,11 +88,11 @@ Resizer::makeSteinerTree(const Pin *drvr_pin)
   int pin_count = pins.size();
   bool is_placed = true;
   // Warn if there are too many pins (>10000)
-  if (pin_count > max_steiner_pin_count_)
+  if (pin_count > max_steiner_pin_count_) {
     logger_->warn(RSZ, 69, "skipping net {} with {} pins.",
                   sdc_network->pathName(net),
                   pin_count);
-  else if (pin_count >= 2) {
+  } else if (pin_count >= 2) {
     vector<int> x, y;  // Two separate vectors of coordinates needed by flute.
     int drvr_idx = 0; // The "driver_pin" or the root of the Steiner tree.
     for (int i = 0; i < pin_count; i++) {
@@ -243,24 +243,23 @@ const char *
 SteinerTree::name(SteinerPt pt,
                   const Network *network)
 {
-  if (pt == null_pt)
+  if (pt == null_pt) {
     return "NULL";
-  else {
-    const PinSeq *pt_pins = pins(pt);
-    if (pt_pins) {
-      string pin_names;
-      bool first = true;
-      for (const Pin *pin : *pt_pins) {
-        if (!first)
-          pin_names += " ";
-        pin_names += network->pathName(pin);
-        first = false;
+  } 
+  const PinSeq *pt_pins = pins(pt);
+  if (pt_pins) {
+    string pin_names;
+    bool first = true;
+    for (const Pin *pin : *pt_pins) {
+      if (!first) {
+        pin_names += " ";
       }
-      return stringPrintTmp("%s", pin_names.c_str());
+      pin_names += network->pathName(pin);
+      first = false;
     }
-    else
-      return stringPrintTmp("S%d", pt);
+    return stringPrintTmp("%s", pin_names.c_str());
   }
+  return stringPrintTmp("S%d", pt);
 }
 
 const PinSeq *
@@ -268,8 +267,9 @@ SteinerTree::pins(SteinerPt pt) const
 {
   if (pt < tree_.deg) {
     auto loc_pins = loc_pin_map_.find(location(pt));
-    if (loc_pins != loc_pin_map_.end())
+    if (loc_pins != loc_pin_map_.end()) {
       return &loc_pins->second;
+    }
   }
   return nullptr;
 }
@@ -479,4 +479,4 @@ PointEqual::operator()(const Point &pt1,
     && pt1.y() == pt2.y();
 }
 
-}
+} // namespace rsz

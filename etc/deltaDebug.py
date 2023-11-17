@@ -21,7 +21,7 @@
 import odb
 import os
 import signal
-import subprocess 
+import subprocess
 import argparse
 import shutil
 import select
@@ -31,12 +31,11 @@ import errno
 import enum
 
 
-
 parser = argparse.ArgumentParser('Arguments for delta debugging')
 parser.add_argument('--base_db_path', type=str, help='Path to the db file to perform the step on')
 parser.add_argument('--error_string', type=str, help='The output that indicates target error has occured')
 parser.add_argument('--step', type=str, help='Command used to perform step on the input odb file')
-parser.add_argument('--persistence', type=int, default=1, choices=[1,2,3,4,5,6], help= 'Indicates maximum input fragmentation; fragments = 2^persistence; value in [1,6]')
+parser.add_argument('--persistence', type=int, default=1, choices=[1, 2, 3, 4, 5, 6], help='Indicates maximum input fragmentation; fragments = 2^persistence; value in [1,6]')
 parser.add_argument('--use_stdout', action='store_true', help='Enables reading the error string from standard output')
 parser.add_argument('--exit_early_on_error', action='store_true', help='Exit early on unrelated errors to speed things up, but risks exiting on false negatives.')
 parser.add_argument('--dump_def', action='store_true', help='Determines whether to dumb def at each step in addition to the odb')
@@ -46,10 +45,12 @@ class cutLevel(enum.Enum):
     Nets = 0
     Insts = 1
 
+
 class deltaDebugger:
     def __init__(self, opt):
         if not os.path.exists(opt.base_db_path):
-            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), opt.base_db_path)
+            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT),
+                                    opt.base_db_path)
 
         base_db_directory = os.path.dirname(opt.base_db_path)
         base_db_name = os.path.basename(opt.base_db_path)
@@ -63,11 +64,11 @@ class deltaDebugger:
         # timeout used to measure the time the original input takes
         # to reach an error to use as standard timeout for different 
         # cuts.
-        self.timeout = 1e6 # Timeout in seconds
-        
+        self.timeout = 1e6  # Timeout in seconds
+
         # Setting persistence for the run
         self.persistence = opt.persistence
-        
+
         # Temporary file names to hold the original base_db file across the run
         self.original_base_db_file = os.path.join(base_db_directory, f"deltaDebug_base_original_{base_db_name}")
 
@@ -76,15 +77,15 @@ class deltaDebugger:
 
         # The name of the result file after running deltaDebug 
         self.deltaDebug_result_base_file = os.path.join(base_db_directory, f"deltaDebug_base_result_{base_db_name}")
-        
+
         # This determines whether design def shall be dumped or not
-        self.dump_def = opt.dump_def 
-        if(self.dump_def != 0):
+        self.dump_def = opt.dump_def
+        if (self.dump_def != 0):
             self.base_def_file = self.base_db_file[:-3] + "def"
 
-        # A variable to hold the base_db 
-        self.base_db  = None   
-        
+        # A variable to hold the base_db
+        self.base_db = None
+
         # Debugging level 
         # cutLevel.Insts starts with inst then nets, cutLevel.Nets cuts nets only.
         self.cut_level = cutLevel.Insts
@@ -96,25 +97,25 @@ class deltaDebugger:
         # copy original base db file to avoid overwritting it
         print("Backing up original base file.")
         shutil.copy(self.base_db_file, self.original_base_db_file)
-        
+
         # Rename the base db file to a temp name to keep it from overwritting across the two steps cut
         os.rename(self.base_db_file, self.temp_base_db_file)
-        
+
         # Perform a step with no cuts to measure timeout
         print("Performing a step with the original input file to calculate timeout.")
         self.perform_step()
 
-        while(True):
+        while (True):
             err = None
-            self.n = 2 # Initial Number of cuts
+            self.n = 2  # Initial Number of cuts
 
             while self.n <= (2 ** self.persistence):
                 error_in_range = None
                 for j in range(self.n):
-                    current_err = self.perform_step(cut_index = j)
-                    if(current_err == "NOCUT"):
+                    current_err = self.perform_step(cut_index=j)
+                    if (current_err == "NOCUT"):
                         break
-                    elif(current_err != None):
+                    elif (current_err is not None):
                         # Found the target error with the cut DB
                         #
                         # This is a suitable level of detail to look for more errors,
@@ -123,7 +124,7 @@ class deltaDebugger:
                         error_in_range = current_err
                         self.prepare_new_step()
 
-                if(error_in_range == None):
+                if (error_in_range is None):
                     # Increase the granularity of the cut in case target error not found
                     self.n *= 2
                 elif self.n >= 8:
@@ -132,15 +133,14 @@ class deltaDebugger:
                 else:
                     break
 
-            if(err == None or err == "NOCUT"):
-                if(self.cut_level == cutLevel.Insts):
+            if (err is None or err == "NOCUT"):
+                if (self.cut_level == cutLevel.Insts):
                     # Reduce cut level from inst to nets
                     self.cut_level = cutLevel.Nets
                 else:
                     # We are done and we found the smallest input file that
                     # produces the target error.
                     break
-
 
         # Change deltaDebug resultant base_db file name to a representative name
         if os.path.exists(self.temp_base_db_file):
@@ -154,51 +154,49 @@ class deltaDebugger:
         print(f"Resultant file is {self.deltaDebug_result_base_file}")
         print("Delta Debugging Done!")
 
-    
     # A function that do a cut in the db, writes the base db to disk
     # and calls the step funtion, then returns the stderr of the step.
-    def perform_step(self, cut_index = -1):
-       
+    def perform_step(self, cut_index=-1):
         # read base db in memory
         print("___________________________________")
         print("Reading base odb file", flush=True)
-        self.base_db  = odb.dbDatabase.create()
-        self.base_db  = odb.read_db(self.base_db , self.temp_base_db_file)
-        
+        self.base_db = odb.dbDatabase.create()
+        self.base_db = odb.read_db(self.base_db, self.temp_base_db_file)
+
         # Cut the block with the given step index. 
         # if cut index of -1 is provided it means
         # that no cut will be made.
-        if(cut_index != -1):
-            cut_result = self.cut_block(index = cut_index)
-            if(cut_result == "NOCUT"):
+        if (cut_index != -1):
+            cut_result = self.cut_block(index=cut_index)
+            if (cut_result == "NOCUT"):
                 # No more cuts are possible
                 return cut_result
 
         # Write DB
         print("Writing odb file", flush=True)
         odb.write_db(self.base_db, self.base_db_file)
-        if(self.dump_def != 0):
+        if (self.dump_def != 0):
             print("Writing def file")
             odb.write_def(self.base_db.getChip().getBlock(), self.base_def_file)
 
         # Destroy the DB in memory to avoid being out-of-memory when
         # the step code is running
-        if(self.base_db != None):
+        if (self.base_db is not None):
             self.base_db.destroy(self.base_db)
 
-        if(cut_index != -1):
+        if (cut_index != -1):
             self.step_count += 1
         print(f"Step {self.step_count} is running, deltaDebug is waiting.", flush=True)
-         
+
         # Perform step, and check the error code  
         start_time = time.time()
         error_string = self.run_command(self.step)
         end_time = time.time()
-        
+
         # Handling timeout so as not to run the code for time
         # that is more than the original buggy code or a 
         # buggy cut.
-        if(error_string != None):
+        if (error_string is not None):
             self.timeout = max(120, 1.2 * (end_time - start_time))
             print(f"Timeout updated to approx {ceil(self.timeout/60.0)} minutes!")
 
@@ -207,68 +205,65 @@ class deltaDebugger:
 
         return error_string
 
-
     def run_command(self, command):
         output = ''
-        error_string = None # None for any error code other than self.error_string
+        error_string = None  # None for any error code other than self.error_string
         poll_obj = select.poll()
-        if(self.use_stdout == 0):
-            process = subprocess.Popen( command, 
-                                        shell = True, 
-                                        stdout=subprocess.DEVNULL, 
-                                        stderr=subprocess.PIPE,
-                                        encoding= 'utf-8', 
-                                        preexec_fn=os.setsid)
+        if (self.use_stdout == 0):
+            process = subprocess.Popen(command,
+                                       shell=True,
+                                       stdout=subprocess.DEVNULL,
+                                       stderr=subprocess.PIPE,
+                                       encoding='utf-8',
+                                       preexec_fn=os.setsid)
             poll_obj.register(process.stderr, select.POLLIN)
         else:
-            process = subprocess.Popen( command,
-                                        shell = True,
-                                        stdout=subprocess.PIPE, 
-                                        stderr=subprocess.STDOUT,
-                                        encoding= 'utf-8',
-                                        preexec_fn=os.setsid)
+            process = subprocess.Popen(command,
+                                       shell=True,
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.STDOUT,
+                                       encoding='utf-8',
+                                       preexec_fn=os.setsid)
             poll_obj.register(process.stdout, select.POLLIN)
-        
+
         start_time = time.time()
-        while(True):
-            if(poll_obj.poll(0)): # polling on the output of the process
-                if(self.use_stdout == 0):
+        while (True):
+            if (poll_obj.poll(0)):  # polling on the output of the process
+                if (self.use_stdout == 0):
                     output = process.stderr.readline()  
                 else:
                     output = process.stdout.readline()
-            
-                if(output.find(self.error_string) != -1):
+
+                if (output.find(self.error_string) != -1):
                     # found the error code that we are searching for.
                     os.killpg(os.getpgid(process.pid), signal.SIGKILL)
                     error_string = self.error_string
                     break
-                elif(self.exit_early_on_error and output.find("ERROR") != -1):
+                elif (self.exit_early_on_error and output.find("ERROR") != -1):
                     # Found different error (bad cut) so we can just
                     # terminate early and ignore this cut.
                     os.killpg(os.getpgid(process.pid), signal.SIGKILL)
                     break
 
             curr_time = time.time()
-            if((curr_time - start_time) > self.timeout):
+            if ((curr_time - start_time) > self.timeout):
                 print(f"Step {self.step_count} timed out!", flush=True)
                 os.killpg(os.getpgid(process.pid), signal.SIGKILL)
                 break
-            
-            if(process.poll() is not None):
+
+            if (process.poll() is not None):
                 break
-            
-                
+
         return error_string
 
-
     # A function to rename a smaller db file that produces the target error
-    # to the temporary name used to load a base db to perfrom further 
+    # to the temporary name used to load a base db to perform further
     # cutting on it.
     def prepare_new_step(self):
         # Delete the old temporary db file
-        if(os.path.exists(self.temp_base_db_file)):
+        if (os.path.exists(self.temp_base_db_file)):
             os.remove(self.temp_base_db_file)
-        # Rename the new base db file to the temp name to keep it from overwrtting across the two steps cut
+        # Rename the new base db file to the temp name to keep it from overwriting across the two steps cut
         if os.path.exists(self.base_db_file):
             os.rename(self.base_db_file, self.temp_base_db_file)
 
@@ -283,28 +278,28 @@ class deltaDebugger:
         net.setDoNotTouch(False)
         for iterm in net.getITerms():
             iterm.getInst().setDoNotTouch(False)
-        
+
     # A function that cuts the block according to the given direction
     # and ratio. It also uses the class cut level  to identify
     # whehter to cut Insts or Nets.
-    def cut_block(self, index = 0):  
+    def cut_block(self, index=0):  
         block = self.base_db.getChip().getBlock()
-        if(self.cut_level == cutLevel.Insts): # Insts cut level
+        if (self.cut_level == cutLevel.Insts):  # Insts cut level
             elms = block.getInsts()
             print("Insts level debugging")
 
-        elif(self.cut_level == cutLevel.Nets): # Nets cut level 
+        elif (self.cut_level == cutLevel.Nets):  # Nets cut level
             elms = block.getNets()
             print("Nets level debugging")
-                    
+
         print(f"Number of Insts {len(block.getInsts())}\nNumber of Nets {len(block.getNets())}")
-        
+
         num_elms = len(elms)
         num_elms_to_cut = int(num_elms * 1.0 / self.n)
-        if(num_elms == 1 or num_elms_to_cut == 0):
+        if (num_elms == 1 or num_elms_to_cut == 0):
             # No further cuts could be done on the current odb
             return "NOCUT"
-        
+
         start = index * num_elms_to_cut
         end = start + num_elms_to_cut
 
@@ -312,17 +307,16 @@ class deltaDebugger:
         cut_position_string = cut_position_string[:index] + 'C' + cut_position_string[index+1:]
         print(f"Number of elements to be cut is {num_elms_to_cut}, [{cut_position_string}]", flush=True)
 
-        for i in range (start, end):
+        for i in range(start, end):
             elm = elms[i]
-            if self.cut_level == cutLevel.Insts: 
+            if self.cut_level == cutLevel.Insts:
                 self.clear_dont_touch_inst(elm)
             elif self.cut_level == cutLevel.Nets:
                 self.clear_dont_touch_net(elm)
             elm.destroy(elm)
 
         print("Done cutting design.", flush=True)
-        return 0        
-
+        return 0
 
 
 if __name__ == '__main__':
