@@ -316,7 +316,7 @@ class TechChar
   double capPerDBU_;  // farads/dbu
   float charSlewStepSize_ = 0.0;
   float charCapStepSize_ = 0.0;
-  std::set<std::string> masterNames_;
+  std::vector<std::string> masterNames_;
   std::vector<float> wirelengthsToTest_;
   std::vector<float> loadsToTest_;
   std::vector<float> slewsToTest_;
