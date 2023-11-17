@@ -36,8 +36,6 @@
 #include <memory>
 #include <vector>
 
-#include "gui/heatMap.h"
-
 namespace odb {
 class dbDatabase;
 }
@@ -86,14 +84,6 @@ class Tile
   // accumulated Ratio as iteration goes on
   void setInflatedRatio(float ratio);
 
-  odb::Rect getRect() { return rect_; }
-  float getRudy() { return RUDY_; }
-  void addRudy(float rudy_ijk)
-  {
-    assert(rudy_ijk >= 0);  // overflow occurs
-    RUDY_ += rudy_ijk;
-  }
-
  private:
   // the followings will store
   // blockage / capacity / route-ability
@@ -110,10 +100,6 @@ class Tile
   // to bloat cells in tile
   float inflationRatio_;
   float inflatedRatio_;
-
-  odb::Rect rect_;
-  // only for RUDY
-  double_t RUDY_ = 0;
 
   void reset();
 };
@@ -296,35 +282,5 @@ class RouteBase
 
   // routability funcs
   void initGCells();
-};
-
-/**
- * \brief
- * This is alternative to RouteBase.
- * */
-class RUDYDataSource : public gui::HeatMapDataSource
-{
- public:
-  RUDYDataSource(utl::Logger* logger, odb::dbDatabase* db);
-  void init();
-  void calculate();
-  bool canAdjustGrid() const override { return false; }
-  double getGridXSize() const override;
-  double getGridYSize() const override;
-
- protected:
-  bool populateMap() override;
-  void combineMapData(bool base_has_value,
-                      double& base,
-                      const double new_data,
-                      const double data_area,
-                      const double intersection_area,
-                      const double rect_area) override;
-
- private:
-  odb::dbDatabase* db_;
-  TileGrid tileGrid_;
-
-  static constexpr double default_grid_ = 10.0;
 };
 }  // namespace gpl
