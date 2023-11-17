@@ -43,6 +43,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <cfloat>
 #include <cmath>
+#include <iostream>
 #include <limits>
 #include <map>
 
@@ -707,6 +708,19 @@ void Opendp::setGridPaddedLoc(Cell* cell, int x, int y, int site_width) const
       height += sites[s].site->getHeight();
     }
     cell->y_ = height;
+    if (cell->isHybridParent()) {
+      debugPrint(
+          logger_,
+          DPL,
+          "hybrid",
+          1,
+          "Offsetting cell {} to start at {} instead of {} -> offset: {}",
+          cell->name(),
+          cell->y_ + grid_info.getOffset(),
+          cell->y_,
+          grid_info.getOffset());
+      cell->y_ += grid_info.getOffset();
+    }
     return;
   }
   cell->y_ = y * getRowHeight(cell);

@@ -28,6 +28,7 @@ record_tests {
   fragmented_row04
   gcd
   hybrid_cells
+  hybrid_cells2
   ibex
   max_disp1
   mirror1

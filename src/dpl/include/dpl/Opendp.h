@@ -210,6 +210,7 @@ class GridInfo
         grid_index(grid_index),
         sites(sites)
   {
+    offset = 0;
   }
 
   int getRowCount() const { return row_count; }
@@ -217,6 +218,10 @@ class GridInfo
   int getSiteCount() const { return site_count; }
 
   int getGridIndex() const { return grid_index; }
+
+  int getOffset() const { return offset; }
+
+  void setOffset(int p_offset) { offset = p_offset; }
 
   const dbSite::RowPattern& getSites() const { return sites; }
 
@@ -239,6 +244,7 @@ class GridInfo
   const int row_count;
   const int site_count;
   const int grid_index;
+  int offset;
   // will have one site only for non-hybrid and hybrid parent cells.
   // For hybrid children, this will have all the sites
   const dbSite::RowPattern sites;

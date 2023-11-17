@@ -82,8 +82,14 @@ void Opendp::initGridLayersMap()
   grid_info_map_.clear();
   grid_info_vector_.clear();
   int min_site_height = std::numeric_limits<int>::max();
+  int min_row_y_coordinate = std::numeric_limits<int>::max();
   for (auto db_row : block_->getRows()) {
     auto site = db_row->getSite();
+    if (site->getClass() != odb::dbSiteClass::PAD) {
+      int row_base_x, row_base_y;
+      db_row->getOrigin(row_base_x, row_base_y);
+      min_row_y_coordinate = min(min_row_y_coordinate, row_base_y);
+    }
 
     if (site_idx_to_grid_idx_.find(site->getId())
         != site_idx_to_grid_idx_.end()) {
@@ -160,6 +166,17 @@ void Opendp::initGridLayersMap()
             site_idx_to_grid_idx_.at(working_site->getId()),
             dbSite::RowPattern{{working_site, db_row->getOrient()}},
         };
+        if (working_site->isHybrid()) {
+          int row_offset = db_row->getBBox().ll().getY() - min_row_y_coordinate;
+          newGridInfo.setOffset(row_offset);
+          debugPrint(logger_,
+                     DPL,
+                     "hybrid",
+                     1,
+                     "Offset for site: {} is {}",
+                     working_site->getName(),
+                     row_offset);
+        }
         grid_info_map_.emplace(gmk, newGridInfo);
       } else {
         GridInfo newGridInfo = {
@@ -174,7 +191,25 @@ void Opendp::initGridLayersMap()
                                     // them, resulting in the wrong RowPattern
                                     // here.
         };
+        if (working_site->isHybrid()) {
+          int row_offset = db_row->getBBox().ll().getY() - min_row_y_coordinate;
+          newGridInfo.setOffset(row_offset);
+          debugPrint(logger_,
+                     DPL,
+                     "hybrid",
+                     1,
+                     "Offset for grid index: {} is {}",
+                     newGridInfo.getGridIndex(),
+                     newGridInfo.getOffset());
+        }
         grid_info_map_.emplace(gmk, newGridInfo);
+      }
+    } else {
+      int row_offset = db_row->getBBox().ll().getY() - min_row_y_coordinate;
+      auto grid_info = grid_info_map_.at(gmk);
+      if (grid_info.isHybrid()) {
+        grid_info.setOffset(min(grid_info.getOffset(), row_offset));
+        grid_info_map_.insert(std::make_pair(gmk, grid_info));
       }
     }
   }

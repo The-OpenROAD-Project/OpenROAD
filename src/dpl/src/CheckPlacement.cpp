@@ -76,11 +76,10 @@ void Opendp::checkPlacement(bool verbose,
           site_align_failures.push_back(&cell);
           continue;
         }
-        // auto gmk = getGridMapKey(&cell);
-        if (cell.isHybridParent()) {
-          if (cell.y_ % cell.height_ != 0) {
-            site_align_failures.push_back(&cell);
-          }
+        auto grid_info = getGridInfo(&cell);
+        auto [cell_index, cell_height] = gridY(cell.y_, grid_info.getSites());
+        if (cell.y_ != cell_height && cell_height % cell.y_ != 0) {
+          site_align_failures.push_back(&cell);
         }
         // else {
         // here, the check is quite complex. We need to figure out if the

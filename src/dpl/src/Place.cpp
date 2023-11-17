@@ -932,16 +932,6 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
       if (checkPixels(cell, bin_x + i, bin_y, x_end + i, y_end)) {
         Pixel* valid_grid_pixel
             = gridPixel(grid_info.getGridIndex(), bin_x + i, bin_y);
-        debugPrint(logger_,
-                   DPL,
-                   "hybrid",
-                   1,
-                   "Cell {} has site {} while pixel has site {}",
-                   cell->name(),
-                   cell->getSite()->getName(),
-                   valid_grid_pixel && valid_grid_pixel->site != nullptr
-                       ? valid_grid_pixel->site->getName()
-                       : "null");
         return PixelPt(valid_grid_pixel, bin_x + i, bin_y);
       }
     }
@@ -956,16 +946,6 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
       if (checkPixels(cell, bin_x + i, bin_y, x_end + i, y_end)) {
         Pixel* valid_grid_pixel
             = gridPixel(grid_info.getGridIndex(), bin_x + i, bin_y);
-        debugPrint(logger_,
-                   DPL,
-                   "hybrid",
-                   1,
-                   "Cell {} has site {} while pixel has site {}",
-                   cell->name(),
-                   cell->getSite()->getName(),
-                   valid_grid_pixel && valid_grid_pixel->site != nullptr
-                       ? valid_grid_pixel->site->getName()
-                       : "null");
         return PixelPt(valid_grid_pixel, bin_x + i, bin_y);
       }
     }
@@ -1444,7 +1424,8 @@ Point Opendp::legalPt(const Cell* cell,
   auto grid_info = getGridInfo(cell);
   int grid_x = gridX(legal_pt.getX(), site_width);
   int grid_y, height;
-  std::tie(grid_y, height) = gridY(legal_pt.getY(), grid_info.getSites());
+  int y = legal_pt.getY() + grid_info.getOffset();
+  std::tie(grid_y, height) = gridY(y, grid_info.getSites());
   debugPrint(logger_,
              DPL,
              "place",
