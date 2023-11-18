@@ -52,7 +52,7 @@ class RUDYDataSource : public gui::HeatMapDataSource
                       const double data_area,
                       const double intersection_area,
                       const double rect_area) override;
-  void setBlock(odb::dbBlock* block);
+  void setBlock(odb::dbBlock* block) override;
 
  private:
   static constexpr int default_grid_ = 10;

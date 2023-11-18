@@ -61,8 +61,8 @@ class PlacementDensityDataSource
 class RUDYDataSource
 {
  public:
-  RUDYDataSource() {}
-  ~RUDYDataSource() {}
+  RUDYDataSource() = default;
+  ~RUDYDataSource() = default;
 };
 
 ////

@@ -495,29 +495,41 @@ class RUDYCalculator
    public:
     odb::Rect getRect() { return rect_; }
     void setRect(int lx, int ly, int ux, int uy);
-    void setCoordinate(int x, int y);
     void addRUDY(double_t rudy);
     double_t getRUDY() { return rudy_; }
 
    private:
     odb::Rect rect_;
-    std::pair<int, int> coordinate_;
-    double_t rudy_ = 0;  // This value is real RUDY value * 1e2
-                         // for reducing floating point calculation
+    double_t rudy_ = 0;
   };
 
   explicit RUDYCalculator(dbBlock* block);
-  void setGridConfig(odb::Rect block, int tileCntX, int tileCntY);
+
   /**
-   * \pre we need to call this function after `setGridConfig`.
+   * \pre we need to call this function after `setGridConfig` and
+   * `setWireWidth`.
    * */
   void calculateRUDY();
+
+  /**
+   * Set the grid area and grid numbers.
+   * Default value will be the die area of block and (40, 40), respectively.
+   * */
+  void setGridConfig(odb::Rect block, int tileCntX, int tileCntY);
+
+  /**
+   * Set the wire length for calculate RUDY.
+   * If the layer which name is metal1 and it has getWidth value, then this
+   * function will not applied, but it will apply that information.
+   * */
+  void setWireWidth(int wireWidth) { wireWidth_ = wireWidth; }
+
   Tile& getTile(int x, int y) { return grid_.at(x).at(y); }
   std::pair<int, int> getGridSize();
 
  private:
   /**
-   * \pre This function should be called after setGridConfig
+   * \pre This function should be called after `setGridConfig`
    * */
   void makeGrid();
 
@@ -525,6 +537,7 @@ class RUDYCalculator
   odb::Rect gridBlock_;
   int tileCntX_ = 40;
   int tileCntY_ = 40;
+  int wireWidth_ = 100;
 
   std::vector<std::vector<Tile>> grid_;
 };

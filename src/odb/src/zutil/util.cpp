@@ -78,20 +78,14 @@ void RUDYCalculator::makeGrid()
   grid_.resize(tileCntX_);
   int curX = gridLx;
   int curY = gridLy;
-  int coordinateX = 0;
-  int coordinateY = 0;
   for (auto& gridColumn : grid_) {
     gridColumn.resize(tileCntY_);
     for (auto& grid : gridColumn) {
       grid.setRect(curX, curY, curX + tileWidth, curY + tileHeight);
-      grid.setCoordinate(coordinateX, coordinateY);
       curX += tileWidth;
-      coordinateX += 1;
     }
     curX = gridLx;
     curY += tileHeight;
-    coordinateX = 0;
-    coordinateY += 1;
   }
 }
 
@@ -109,7 +103,7 @@ void RUDYCalculator::calculateRUDY()
   }
 
   auto layer = block_->getTech()->findLayer("metal1");
-  int64_t wireWidth = 100;
+  int64_t wireWidth = wireWidth_;
   if (layer != nullptr) {
     wireWidth = layer->getWidth();
   }
@@ -134,15 +128,15 @@ void RUDYCalculator::calculateRUDY()
       auto grid = value.second;
       auto gridBox = grid->getRect();
       if (netBox.intersects(gridBox)) {
-        auto s_k = netBox.intersect(gridBox).area();
-        if (s_k == 0) {
+        auto intersectionArea = netBox.intersect(gridBox).area();
+        if (intersectionArea == 0) {
           continue;
         }
-        auto s_ij = gridBox.area();
-        auto gridNetBoxRatio
-            = static_cast<double_t>(s_k) / static_cast<double_t>(s_ij);
-        double_t rudy_ijk = netCongestion * gridNetBoxRatio * 1e-2;
-        grid->addRUDY(rudy_ijk);
+        auto gridArea = gridBox.area();
+        auto gridNetBoxRatio = static_cast<double_t>(intersectionArea)
+                               / static_cast<double_t>(gridArea);
+        double_t rudy = netCongestion * gridNetBoxRatio * 1e-2;
+        grid->addRUDY(rudy);
       }
     }
   }
@@ -160,10 +154,6 @@ void RUDYCalculator::Tile::setRect(int lx, int ly, int ux, int uy)
   rect_ = odb::Rect(lx, ly, ux, uy);
 }
 
-void RUDYCalculator::Tile::setCoordinate(int x, int y)
-{
-  coordinate_ = {x, y};
-}
 void RUDYCalculator::Tile::addRUDY(double_t rudy)
 {
   rudy_ += rudy;

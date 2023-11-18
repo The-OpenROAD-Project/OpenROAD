@@ -59,10 +59,9 @@ double RUDYDataSource::getGridXSize() const
 
   if (grid.size() < 2) {
     return default_grid_;
-  } else {
-    const double delta = grid[1] - grid[0];
-    return delta / getBlock()->getDbUnitsPerMicron();
   }
+  const double delta = grid[1] - grid[0];
+  return delta / getBlock()->getDbUnitsPerMicron();
 }
 
 double RUDYDataSource::getGridYSize() const
