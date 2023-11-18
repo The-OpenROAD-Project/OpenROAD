@@ -1735,18 +1735,16 @@ MBFF::MBFF(odb::dbDatabase* db,
            int knn,
            int multistart,
            bool debug_graphics)
+    : db_(db),
+      block_(db_->getChip()->getBlock()),
+      sta_(sta),
+      network_(sta_->getDbNetwork()),
+      log_(log),
+      num_threads_(threads),
+      multistart_(multistart),
+      knn_(knn),
+      multiplier_(block_->getDbUnitsPerMicron())
 {
-  non_invert_func_ = nullptr;
-  num_sizes_ = 7;
-  db_ = db;
-  block_ = db_->getChip()->getBlock();
-  sta_ = sta;
-  network_ = sta_->getDbNetwork();
-  log_ = log;
-  multiplier_ = static_cast<double>(block_->getDbUnitsPerMicron());
-  num_threads_ = threads;
-  knn_ = knn;
-  multistart_ = multistart;
   if (debug_graphics && Graphics::guiActive()) {
     graphics_ = std::make_unique<Graphics>(log_);
   }
