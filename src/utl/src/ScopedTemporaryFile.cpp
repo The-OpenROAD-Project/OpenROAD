@@ -24,11 +24,11 @@ ScopedTemporaryFile::~ScopedTemporaryFile()
 {
   if (fd_ >= 0) {
     if (unlink(path_) < 0) {
-      logger_->error(UTL, 8, "could not unlink temp file at {}", path_);
+      logger_->warn(UTL, 8, "could not unlink temp file at {}", path_);
     }
     if (fclose(file_) < 0) {
       std::string error = strerror(errno);
-      logger_->error(UTL, 9, "could not close temp file: {}", error);
+      logger_->warn(UTL, 9, "could not close temp file: {}", error);
     }
   }
 }
