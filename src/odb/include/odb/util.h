@@ -495,12 +495,12 @@ class RUDYCalculator
    public:
     odb::Rect getRect() { return rect_; }
     void setRect(int lx, int ly, int ux, int uy);
-    void addRUDY(double_t rudy);
-    double_t getRUDY() { return rudy_; }
+    void addRUDY(float rudy);
+    float getRUDY() { return rudy_; }
 
    private:
     odb::Rect rect_;
-    double_t rudy_ = 0;
+    float rudy_ = 0;
   };
 
   explicit RUDYCalculator(dbBlock* block);

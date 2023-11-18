@@ -102,7 +102,7 @@ void RUDYCalculator::calculateRUDY()
     if (netArea == 0) {
       continue;
     }
-    auto hpwl = static_cast<double_t>(netBox.dx() + netBox.dy());
+    auto hpwl = static_cast<float>(netBox.dx() + netBox.dy());
     auto wireArea = hpwl * wireWidth;
     auto netCongestion = wireArea / netArea;
 
@@ -127,8 +127,8 @@ void RUDYCalculator::calculateRUDY()
             continue;
           }
           auto gridArea = gridBox.area();
-          auto gridNetBoxRatio = static_cast<double_t>(intersectArea)
-                                 / static_cast<double_t>(gridArea);
+          auto gridNetBoxRatio = static_cast<float>(intersectArea)
+                                 / static_cast<float>(gridArea);
           auto rudy = netCongestion * gridNetBoxRatio * 100;
           grid.addRUDY(rudy);
         }
@@ -149,7 +149,7 @@ void RUDYCalculator::Tile::setRect(int lx, int ly, int ux, int uy)
   rect_ = odb::Rect(lx, ly, ux, uy);
 }
 
-void RUDYCalculator::Tile::addRUDY(double_t rudy)
+void RUDYCalculator::Tile::addRUDY(float rudy)
 {
   rudy_ += rudy;
 }
