@@ -713,7 +713,7 @@ void TechChar::trimSortBufferList(std::vector<std::string>& buffers)
   // Sort buffers in ascending order of max cap limit
   std::sort(buffers.begin(),
             buffers.end(),
-            [this](std::string buf1, std::string buf2) {
+            [this](const std::string& buf1, const std::string& buf2) {
               return (this->getMaxCapLimit(buf1) < this->getMaxCapLimit(buf2));
             });
 
@@ -803,7 +803,8 @@ void TechChar::collectSlewsLoadsFromTableAxis(sta::LibertyCell* libCell,
   }
 }
 
-void TechChar::sortAndUniquify(std::vector<float>& values, std::string name)
+void TechChar::sortAndUniquify(std::vector<float>& values,
+                               const std::string& name)
 {
   // sort
   std::sort(values.begin(), values.end());
@@ -1173,7 +1174,7 @@ TechChar::ResultData TechChar::computeTopologyResults(
   return results;
 }
 
-void TechChar::updateBufferTopologies(TechChar::SolutionData& solution)
+void TechChar::updateBufferTopologiesOld(TechChar::SolutionData& solution)
 {
   unsigned index = 0;
   // Change the buffer topology by increasing the size of the buffers.
@@ -1189,16 +1190,6 @@ void TechChar::updateBufferTopologies(TechChar::SolutionData& solution)
   std::vector<std::string>::iterator lastMasterItr = masterNames_.end();
   --lastMasterItr;
   odb::dbMaster* lastMaster = db_->findMaster((*lastMasterItr).c_str());
-
-  if (logger_->debugCheck(CTS, "tech char", 1)) {
-    std::cout << "masterNames_: ";
-    for (std::string cell : masterNames_) {
-      std::cout << cell << " ";
-    }
-    std::cout << std::endl;
-    std::cout << "firstMaster = " << firstMaster->getName() << std::endl;
-    std::cout << "lastMaster = " << lastMaster->getName() << std::endl;
-  }
 
   while (!done) {
     // Gets the iterator to the beggining of the masterNames_ set.
@@ -1261,7 +1252,7 @@ void TechChar::updateBufferTopologies(TechChar::SolutionData& solution)
            topologyIndex < solution.topologyDescriptor.size();
            topologyIndex++) {
         const std::string topologyS
-            = solution.topologyDescriptor[topologyIndex];
+          = solution.topologyDescriptor[topologyIndex];
         // clang-format off
         debugPrint(logger_, CTS, "tech char", 1, "  topo:{} topoIdx:{}",
                    topologyS, topologyIndex);
@@ -1285,6 +1276,137 @@ void TechChar::updateBufferTopologies(TechChar::SolutionData& solution)
       // If the next instance doesn't exist, all the topologies were tested ->
       // exit the function.
       done = true;
+    }
+  }
+}
+
+// Change the buffer topology by upsizing the buffers.
+// After testing all the sizes for the current buffer, increment the size of
+// the next one (works like a carry mechanism). For example, for 2 different
+// buffers: 33 -> 00 -> 10 -> 20 -> 30 -> 01 -> 11 -> 21 -> 31 -> 02 -> 12 -> 22
+// -> 32 -> 03 -> 13 -> 23 -> 33.
+// Avoid high drive strength buffer driving low drive strength buffer.
+void TechChar::updateBufferTopologies(TechChar::SolutionData& solution)
+{
+  // Config refers to buffer topology config
+  // For two back-to-back buffers, it's a vector of two numbers, one for
+  // each lib cell. If a buf list has 4 lib cells, first is 0, last is 3.
+  std::vector<size_t> currConfig = getCurrConfig(solution);
+  std::vector<size_t> nextConfig = getNextConfig(currConfig);
+  for (unsigned nodeIndex = 0; nodeIndex < solution.instVector.size();
+       ++nodeIndex) {
+    odb::dbMaster* oldMaster = solution.instVector[nodeIndex]->getMaster();
+    odb::dbMaster* newMaster = getMasterFromConfig(nextConfig, nodeIndex);
+    if (newMaster != oldMaster) {
+      odb::dbInst* inst = solution.instVector[nodeIndex];
+      inst->swapMaster(newMaster);
+      // clang-format off
+      debugPrint(logger_, CTS, "tech char", 1, "**updateBufferTopologies swap "
+                 "from {} to {}, index:{}", oldMaster->getName(),
+                 newMaster->getName(), nodeIndex);
+      // clang-format on
+      swapTopologyBuffer(solution, nodeIndex, newMaster->getName());
+    }
+  }
+}
+
+std::vector<size_t> TechChar::getCurrConfig(const SolutionData& solution)
+{
+  std::vector<size_t> config;
+  for (unsigned i = 0; i < solution.instVector.size(); i++) {
+    size_t masterID
+        = cellNameToID(solution.instVector[i]->getMaster()->getName());
+    config.emplace_back(masterID);
+  }
+
+  if (logger_->debugCheck(CTS, "tech char", 1)) {
+    std::cout << "currConfig: ";
+    for (unsigned i : config) {
+      std::cout << i << " ";
+    }
+    std::cout << std::endl;
+  }
+  return config;
+}
+
+size_t TechChar::cellNameToID(std::string masterName)
+{
+  std::vector<std::string>::iterator masterIter
+      = std::find(masterNames_.begin(), masterNames_.end(), masterName);
+  return std::distance(masterNames_.begin(), masterIter);
+}
+
+// Find a buffer config that is monotonic from current buffer config
+std::vector<size_t> TechChar::getNextConfig(
+    const std::vector<size_t>& currConfig)
+{
+  size_t currNumber = 0;
+  size_t numBuffers = masterNames_.size();
+  for (size_t i = 0; i < currConfig.size(); ++i) {
+    currNumber += currConfig[i] * std::pow(numBuffers, i);
+  }
+
+  std::vector<size_t> nextConfig;
+  do {
+    nextConfig.clear();
+    currNumber++;
+    size_t nextNumber = currNumber;
+    for (size_t i = 0; i < currConfig.size(); ++i) {
+      size_t digit = nextNumber % numBuffers;
+      nextConfig.emplace_back(digit);
+      nextNumber /= numBuffers;
+    }
+  } while (!isTopologyMonotonic(nextConfig));
+
+  if (logger_->debugCheck(CTS, "tech char", 1)) {
+    std::cout << "nextConfig: ";
+    for (unsigned i : nextConfig) {
+      std::cout << i << " ";
+    }
+    std::cout << std::endl;
+  }
+
+  return nextConfig;
+}
+
+odb::dbMaster* TechChar::getMasterFromConfig(std::vector<size_t> nextConfig,
+                                             unsigned nodeIndex)
+{
+  for (size_t i = 0; i < masterNames_.size(); ++i) {
+    if (nextConfig[nodeIndex] == i) {
+      const std::string masterString = masterNames_[i];
+      odb::dbMaster* newMaster = db_->findMaster(masterString.c_str());
+      return newMaster;
+    }
+  }
+
+  return nullptr;
+}
+
+void TechChar::swapTopologyBuffer(SolutionData& solution,
+                                  unsigned nodeIndex,
+                                  std::string newMasterName)
+{
+  unsigned topologyCounter = 0;
+  for (unsigned topologyIndex = 0;
+       topologyIndex < solution.topologyDescriptor.size();
+       topologyIndex++) {
+    const std::string topologyS = solution.topologyDescriptor[topologyIndex];
+    // clang-format off
+    debugPrint(logger_, CTS, "tech char", 1, "**topo:{} topoIdx:{}",
+               topologyS, topologyIndex);
+    // clang-format on
+    if (!(std::find(masterNames_.begin(), masterNames_.end(), topologyS)
+          == masterNames_.end())) {
+      if (topologyCounter == nodeIndex) {
+        solution.topologyDescriptor[topologyIndex] = newMasterName;
+        // clang-format off
+        debugPrint(logger_, CTS, "tech char", 1, "**soln topo descript at "
+                   "{} set to {}", topologyIndex, newMasterName);
+        // clang-format on
+        break;
+      }
+      topologyCounter++;
     }
   }
 }
@@ -1528,23 +1650,6 @@ void TechChar::create()
   odb::dbBlock::destroy(charBlock_);
 }
 
-// Check if buffers in topology are monotonic in that
-// a larger driver does not drive a smaller one.
-// For example, X4 can drive X4 or X8 but not X2 or X1.
-// This doesn't preclude X1 driving X32 though.
-bool isTopologyMonotonic(const std::vector<size_t>& row)
-{
-  bool monotonic = true;
-
-  for (size_t i = 1; i < row.size(); ++i) {
-    if (row[i] < row[i - 1]) {
-      monotonic = false;
-    }
-  }
-
-  return monotonic;
-}
-
 // Compute possible buffering solution combinations given #buffers and
 // #nodes.  This is much less than #buffers ^ #nodes because we assume
 // buffers drive buffers of equal or higher drive strength. If #buffers is 4 and
@@ -1571,7 +1676,17 @@ bool isTopologyMonotonic(const std::vector<size_t>& row)
 // 3 3 monotonic
 unsigned TechChar::getBufferingCombo(size_t numBuffers, size_t numNodes)
 {
-  size_t totalRows = std::pow(numBuffers, numNodes);
+  // check if this has been computed already
+  std::pair iPair(numBuffers, numNodes);
+  auto iter = bufferingComboTable_.find(iPair);
+  if (iter != bufferingComboTable_.end()) {
+    if (logger_->debugCheck(CTS, "tech char", 1)) {
+      std::cout << "Monotonic entries (hashed): " << iter->second << std::endl;
+    }
+    return iter->second;
+  }
+
+  unsigned totalRows = std::pow(numBuffers, numNodes);
   std::vector<std::vector<size_t>> matrix(totalRows,
                                           std::vector<size_t>(numNodes));
 
@@ -1583,7 +1698,7 @@ unsigned TechChar::getBufferingCombo(size_t numBuffers, size_t numNodes)
     }
   }
 
-  int numMonotonic = 0;
+  unsigned numMonotonic = 0;
   for (const auto& row : matrix) {
     for (size_t val : row) {
       if (logger_->debugCheck(CTS, "tech char", 1)) {
@@ -1604,7 +1719,26 @@ unsigned TechChar::getBufferingCombo(size_t numBuffers, size_t numNodes)
     std::cout << "Monotonic entries: " << numMonotonic << std::endl;
   }
 
-  return totalRows;
+  // insert new result into hash table
+  bufferingComboTable_[iPair] = numMonotonic;
+  return numMonotonic;
+}
+
+// Check if buffers in topology are monotonic in that
+// a larger driver does not drive a smaller one.
+// For example, X4 can drive X4 or X8 but not X2 or X1.
+// This doesn't preclude X1 driving X32 though.
+bool TechChar::isTopologyMonotonic(const std::vector<size_t>& row)
+{
+  bool monotonic = true;
+
+  for (size_t i = 1; i < row.size(); ++i) {
+    if (row[i] < row[i - 1]) {
+      monotonic = false;
+    }
+  }
+
+  return monotonic;
 }
 
 }  // namespace cts
