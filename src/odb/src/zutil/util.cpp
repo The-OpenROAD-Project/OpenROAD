@@ -32,8 +32,6 @@
 
 #include "util.h"
 
-#include <boost/geometry.hpp>
-#include <boost/geometry/index/rtree.hpp>
 #include <map>
 #include <numeric>
 #include <string>
@@ -45,12 +43,6 @@ namespace odb {
 
 using std::string;
 using std::vector;
-namespace bg = boost::geometry;
-namespace bgi = boost::geometry::index;
-
-using point = bg::model::point<int, 2, bg::cs::cartesian>;
-using box = bg::model::box<point>;
-using GridValue = std::pair<box, RUDYCalculator::Tile*>;
 
 RUDYCalculator::RUDYCalculator(dbBlock* block) : block_(block)
 {
@@ -82,25 +74,16 @@ void RUDYCalculator::makeGrid()
     gridColumn.resize(tileCntY_);
     for (auto& grid : gridColumn) {
       grid.setRect(curX, curY, curX + tileWidth, curY + tileHeight);
-      curX += tileWidth;
+      curY += tileHeight;
     }
-    curX = gridLx;
-    curY += tileHeight;
+    curY = gridLy;
+    curX += tileWidth;
   }
 }
 
 void RUDYCalculator::calculateRUDY()
 {
   // refer: https://ieeexplore.ieee.org/document/4211973
-  // Construct R-tree
-  bgi::rtree<GridValue, bgi::quadratic<16>> rtree;
-  for (auto& tileColumn : grid_) {
-    for (auto& tile : tileColumn) {
-      odb::Rect rect = tile.getRect();
-      box b(point(rect.xMin(), rect.yMin()), point(rect.xMax(), rect.yMax()));
-      rtree.insert(std::make_pair(b, &tile));
-    }
-  }
 
   auto layer = block_->getTech()->findLayer("metal1");
   int64_t wireWidth = wireWidth_;
@@ -108,35 +91,47 @@ void RUDYCalculator::calculateRUDY()
     wireWidth = layer->getWidth();
   }
 
+  auto blockWidth = gridBlock_.xMax() - gridBlock_.xMin();
+  auto blockHeight = gridBlock_.yMax() - gridBlock_.yMin();
+  auto tileWidth = blockWidth / tileCntX_;
+  auto tileHeight = blockHeight / tileCntY_;
+
   for (auto net : block_->getNets()) {
     auto netBox = net->getTermBBox();
     auto netArea = netBox.area();
     if (netArea == 0) {
       continue;
     }
-    auto hpwl = static_cast<int64_t>(netBox.dx() + netBox.dy());
+    auto hpwl = static_cast<double_t>(netBox.dx() + netBox.dy());
     auto wireArea = hpwl * wireWidth;
-    auto netCongestion = wireArea * 1e4 / netArea;
+    auto netCongestion = wireArea / netArea;
 
-    // Search R-tree
-    std::vector<GridValue> queryResults;
-    rtree.query(bgi::intersects(box(point(netBox.xMin(), netBox.yMin()),
-                                    point(netBox.xMax(), netBox.yMax()))),
-                std::back_inserter(queryResults));
+    // Calculate the intersection range
+    int minXIndex
+        = std::max(0, (netBox.xMin() - gridBlock_.xMin()) / tileWidth);
+    int maxXIndex = std::min(tileCntX_ - 1,
+                             (netBox.xMax() - gridBlock_.xMin()) / tileWidth);
+    int minYIndex
+        = std::max(0, (netBox.yMin() - gridBlock_.yMin()) / tileHeight);
+    int maxYIndex = std::min(tileCntY_ - 1,
+                             (netBox.yMax() - gridBlock_.yMin()) / tileHeight);
 
-    for (const auto& value : queryResults) {
-      auto grid = value.second;
-      auto gridBox = grid->getRect();
-      if (netBox.intersects(gridBox)) {
-        auto intersectionArea = netBox.intersect(gridBox).area();
-        if (intersectionArea == 0) {
-          continue;
+    // Iterate over the tiles in the calculated range
+    for (int x = minXIndex; x <= maxXIndex; ++x) {
+      for (int y = minYIndex; y <= maxYIndex; ++y) {
+        Tile& grid = getTile(x, y);
+        auto gridBox = grid.getRect();
+        if (netBox.intersects(gridBox)) {
+          auto intersectArea = netBox.intersect(gridBox).area();
+          if (intersectArea == 0) {
+            continue;
+          }
+          auto gridArea = gridBox.area();
+          auto gridNetBoxRatio = static_cast<double_t>(intersectArea)
+                                 / static_cast<double_t>(gridArea);
+          auto rudy = netCongestion * gridNetBoxRatio * 100;
+          grid.addRUDY(rudy);
         }
-        auto gridArea = gridBox.area();
-        auto gridNetBoxRatio = static_cast<double_t>(intersectionArea)
-                               / static_cast<double_t>(gridArea);
-        double_t rudy = netCongestion * gridNetBoxRatio * 1e-2;
-        grid->addRUDY(rudy);
       }
     }
   }
