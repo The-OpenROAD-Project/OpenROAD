@@ -107,11 +107,6 @@
       "name": "_instances", 
       "type": "dbVector<std::pair<std::string, std::string>>",
       "flags": ["no-set", "no-get","no-template"]
-    },
-    {
-      "name": "_use_equivalence",
-      "type": "bool",
-      "flags": []
     }
   ],
   "cpp_includes": [

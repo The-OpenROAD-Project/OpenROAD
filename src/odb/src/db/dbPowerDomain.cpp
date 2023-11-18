@@ -146,7 +146,9 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj)
   stream >> obj._x2;
   stream >> obj._y1;
   stream >> obj._y2;
-  stream >> obj._levelshifters;
+  if (stream.getDatabase()->isSchema(db_schema_level_shifter)) {
+    stream >> obj._levelshifters;
+  }
   return stream;
 }
 

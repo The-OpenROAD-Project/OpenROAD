@@ -84,8 +84,6 @@ bool _dbLevelShifter::operator==(const _dbLevelShifter& rhs) const
     return false;
   if (_name_suffix != rhs._name_suffix)
     return false;
-  if (_use_equivalence != rhs._use_equivalence)
-    return false;
 
   return true;
 }
@@ -118,7 +116,6 @@ void _dbLevelShifter::differences(dbDiff& diff,
   DIFF_FIELD(_internal_supply);
   DIFF_FIELD(_name_prefix);
   DIFF_FIELD(_name_suffix);
-  DIFF_FIELD(_use_equivalence);
   DIFF_END
 }
 
@@ -143,7 +140,6 @@ void _dbLevelShifter::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_internal_supply);
   DIFF_OUT_FIELD(_name_prefix);
   DIFF_OUT_FIELD(_name_suffix);
-  DIFF_OUT_FIELD(_use_equivalence);
 
   DIFF_END
 }
@@ -172,7 +168,6 @@ _dbLevelShifter::_dbLevelShifter(_dbDatabase* db, const _dbLevelShifter& r)
   _internal_supply = r._internal_supply;
   _name_prefix = r._name_prefix;
   _name_suffix = r._name_suffix;
-  _use_equivalence = r._use_equivalence;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbLevelShifter& obj)
@@ -198,7 +193,6 @@ dbIStream& operator>>(dbIStream& stream, _dbLevelShifter& obj)
   stream >> obj._name_prefix;
   stream >> obj._name_suffix;
   stream >> obj._instances;
-  stream >> obj._use_equivalence;
   return stream;
 }
 
@@ -225,7 +219,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbLevelShifter& obj)
   stream << obj._name_prefix;
   stream << obj._name_suffix;
   stream << obj._instances;
-  stream << obj._use_equivalence;
   return stream;
 }
 
@@ -452,19 +445,6 @@ std::string dbLevelShifter::getNameSuffix() const
   return obj->_name_suffix;
 }
 
-void dbLevelShifter::setUseEquivalence(bool use_equivalence)
-{
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
-
-  obj->_use_equivalence = use_equivalence;
-}
-
-bool dbLevelShifter::isUseEquivalence() const
-{
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  return obj->_use_equivalence;
-}
-
 // User Code Begin dbLevelShifterPublicMethods
 
 dbLevelShifter* dbLevelShifter::create(dbBlock* block,
@@ -495,7 +475,14 @@ dbLevelShifter* dbLevelShifter::create(dbBlock* block,
 
 void dbLevelShifter::destroy(dbLevelShifter* shifter)
 {
-  // TODO
+  _dbLevelShifter* _shifter = (_dbLevelShifter*) shifter;
+  _dbBlock* block = (_dbBlock*) _shifter->getOwner();
+
+  if (block->_levelshifter_hash.hasMember(_shifter->_name)) {
+    block->_levelshifter_hash.remove(_shifter);
+  }
+
+  block->_levelshifter_tbl->destroy(_shifter);
 }
 
 void dbLevelShifter::addElement(const std::string& element)

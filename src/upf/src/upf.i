@@ -170,12 +170,11 @@
                                     char* internal_supply,
                                     char* name_prefix,
                                     char* name_suffix,
-                                    bool update,
-                                    char* use_equivalence)
+                                    bool update)
   {
     odb::dbDatabase* db = getOpenRoad()->getDb();
     upf::create_or_update_level_shifter(
-        getOpenRoad()->getLogger(), db->getChip()->getBlock(), name, domain, source, sink, use_functional_equivalence, applies_to, applies_to_boundary, rule, threshold, no_shift, force_shift, location, input_supply, output_supply, internal_supply, name_prefix, name_suffix, update, use_equivalence); 
+        getOpenRoad()->getLogger(), db->getChip()->getBlock(), name, domain, source, sink, use_functional_equivalence, applies_to, applies_to_boundary, rule, threshold, no_shift, force_shift, location, input_supply, output_supply, internal_supply, name_prefix, name_suffix, update); 
   }
 
   void add_level_shifter_element_cmd(char* level_shifter_name, char* element)

@@ -1019,25 +1019,24 @@ bool eval_upf(sta::dbNetwork* network, utl::Logger* logger, odb::dbBlock* block)
 
 bool create_or_update_level_shifter(utl::Logger* logger,
                                     odb::dbBlock* block,
-                                    char* name,
-                                    char* domain,
-                                    char* source,
-                                    char* sink,
-                                    char* use_functional_equivalence,
-                                    char* applies_to,
-                                    char* applies_to_boundary,
-                                    char* rule,
-                                    char* threshold,
-                                    char* no_shift,
-                                    char* force_shift,
-                                    char* location,
-                                    char* input_supply,
-                                    char* output_supply,
-                                    char* internal_supply,
-                                    char* name_prefix,
-                                    char* name_suffix,
-                                    bool update,
-                                    char* use_equivalence)
+                                    const char* name,
+                                    const char* domain,
+                                    const char* source,
+                                    const char* sink,
+                                    const char* use_functional_equivalence,
+                                    const char* applies_to,
+                                    const char* applies_to_boundary,
+                                    const char* rule,
+                                    const char* threshold,
+                                    const char* no_shift,
+                                    const char* force_shift,
+                                    const char* location,
+                                    const char* input_supply,
+                                    const char* output_supply,
+                                    const char* internal_supply,
+                                    const char* name_prefix,
+                                    const char* name_suffix,
+                                    bool update)
 {
   odb::dbLevelShifter* ls = nullptr;
   odb::dbPowerDomain* pd = block->findPowerDomain(domain);
@@ -1060,8 +1059,7 @@ bool create_or_update_level_shifter(utl::Logger* logger,
                    name);
       return false;
     }
-    ls = static_cast<odb::dbLevelShifter*>(
-        odb::dbLevelShifter::create(block, name, pd));
+    ls = odb::dbLevelShifter::create(block, name, pd);
     if (ls == nullptr) {
       logger->warn(utl::UPF, 44, "Couldn't create level shifter {}", name);
       return false;
@@ -1124,17 +1122,16 @@ bool create_or_update_level_shifter(utl::Logger* logger,
     ls->setForceShift(std::stoi(force_shift));
   }
 
-  ls->setUseEquivalence(strcmp(use_equivalence, "FALSE") ? true : false);
   ls->setUseFunctionalEquivalence(
-      strcmp(use_functional_equivalence, "FALSE") ? true : false);
+      strcasecmp(use_functional_equivalence, "FALSE") ? true : false);
 
   return true;
 }
 
 bool add_level_shifter_element(utl::Logger* logger,
                                odb::dbBlock* block,
-                               char* level_shifter_name,
-                               char* element)
+                               const char* level_shifter_name,
+                               const char* element)
 {
   odb::dbLevelShifter* ls = block->findLevelShifter(level_shifter_name);
   if (ls == nullptr) {
@@ -1154,8 +1151,8 @@ bool add_level_shifter_element(utl::Logger* logger,
 
 bool exclude_level_shifter_element(utl::Logger* logger,
                                    odb::dbBlock* block,
-                                   char* level_shifter_name,
-                                   char* exclude_element)
+                                   const char* level_shifter_name,
+                                   const char* exclude_element)
 {
   odb::dbLevelShifter* ls = block->findLevelShifter(level_shifter_name);
   if (ls == nullptr) {
@@ -1167,17 +1164,16 @@ bool exclude_level_shifter_element(utl::Logger* logger,
     return false;
   }
 
-  std::string _exclude_element(exclude_element);
-  ls->addExcludeElement(_exclude_element);
+  ls->addExcludeElement(exclude_element);
 
   return true;
 }
 
 bool handle_level_shifter_instance(utl::Logger* logger,
                                    odb::dbBlock* block,
-                                   char* level_shifter_name,
-                                   char* instance_name,
-                                   char* port_name)
+                                   const char* level_shifter_name,
+                                   const char* instance_name,
+                                   const char* port_name)
 {
   odb::dbLevelShifter* ls = block->findLevelShifter(level_shifter_name);
   if (ls == nullptr) {

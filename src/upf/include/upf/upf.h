@@ -125,40 +125,39 @@ bool update_power_switch_port_map(utl::Logger* logger,
 
 bool create_or_update_level_shifter(utl::Logger* logger,
                                     odb::dbBlock* block,
-                                    char* name,
-                                    char* domain,
-                                    char* source,
-                                    char* sink,
-                                    char* use_functional_equivalence,
-                                    char* applies_to,
-                                    char* applies_to_boundary,
-                                    char* rule,
-                                    char* threshold,
-                                    char* no_shift,
-                                    char* force_shift,
-                                    char* location,
-                                    char* input_supply,
-                                    char* output_supply,
-                                    char* internal_supply,
-                                    char* name_prefix,
-                                    char* name_suffix,
-                                    bool update,
-                                    char* use_equivalence);
+                                    const char* name,
+                                    const char* domain,
+                                    const char* source,
+                                    const char* sink,
+                                    const char* use_functional_equivalence,
+                                    const char* applies_to,
+                                    const char* applies_to_boundary,
+                                    const char* rule,
+                                    const char* threshold,
+                                    const char* no_shift,
+                                    const char* force_shift,
+                                    const char* location,
+                                    const char* input_supply,
+                                    const char* output_supply,
+                                    const char* internal_supply,
+                                    const char* name_prefix,
+                                    const char* name_suffix,
+                                    bool update);
 
 bool add_level_shifter_element(utl::Logger* logger,
                                odb::dbBlock* block,
-                               char* level_shifter_name,
-                               char* element);
+                               const char* level_shifter_name,
+                               const char* element);
 
 bool exclude_level_shifter_element(utl::Logger* logger,
                                    odb::dbBlock* block,
-                                   char* level_shifter_name,
-                                   char* exclude_element);
+                                   const char* level_shifter_name,
+                                   const char* exclude_element);
 
 bool handle_level_shifter_instance(utl::Logger* logger,
                                    odb::dbBlock* block,
-                                   char* level_shifter_name,
-                                   char* instance_name,
-                                   char* port_name);
+                                   const char* level_shifter_name,
+                                   const char* instance_name,
+                                   const char* port_name);
 
 }  // namespace upf

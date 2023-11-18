@@ -450,7 +450,6 @@ proc set_level_shifter { args } {
     set name_suffix ""
     set instance {}
     set update 0
-    set use_equivalence "TRUE"
 
     if { [info exists keys(-domain)] } {
         set domain $keys(-domain)
@@ -521,7 +520,7 @@ proc set_level_shifter { args } {
     }
 
     if { [info exists keys(-use_equivalence)] } {
-        set use_equivalence $keys(-use_equivalence)
+        utl::warn UPF 57 "-use_equivalence is deprecated in UPF and not supported in OpenROAD"
     }
 
     if { [info exists flags(-update)] } {
@@ -536,7 +535,7 @@ proc set_level_shifter { args } {
         set force_shift "1"
     }
 
-    set ok [upf::create_or_update_level_shifter_cmd $name $domain $source $sink $use_functional_equivalence $applies_to $applies_to_boundary $rule $threshold $no_shift $force_shift $location $input_supply $output_supply $internal_supply $name_prefix $name_suffix $update $use_equivalence]
+    set ok [upf::create_or_update_level_shifter_cmd $name $domain $source $sink $use_functional_equivalence $applies_to $applies_to_boundary $rule $threshold $no_shift $force_shift $location $input_supply $output_supply $internal_supply $name_prefix $name_suffix $update]
 
     if { $ok == 0 } {
         return

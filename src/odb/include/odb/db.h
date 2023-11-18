@@ -7381,10 +7381,6 @@ class dbLevelShifter : public dbObject
 
   std::string getNameSuffix() const;
 
-  void setUseEquivalence(bool use_equivalence);
-
-  bool isUseEquivalence() const;
-
   // User Code Begin dbLevelShifter
 
   static dbLevelShifter* create(dbBlock* block,

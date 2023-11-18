@@ -6,12 +6,13 @@
 [INFO ODB-0225]     Created 437 library cells
 [INFO ODB-0226] Finished LEF file:  data/sky130hd/sky130_fd_sc_hd_merged.lef
 [WARNING UPF-0032] Couldn't find level shifter ls_2 to update
+[WARNING UPF-0057] -use_equivalence is deprecated in UPF and not supported in OpenROAD
 PowerDomain: PD_AES_1
 LevelShifter: ls_1, Source: SourceDomain
 Sink: SinkDomain, Functional: 1, AppliesTo: inputs, AppliesToBoundary: lower
 Rule: low_to_high, Threshold: 2.0999999046325684, NoShift: 1, ForceShift: 0, Location: self
 InputSupply: VDD, OutputSupply: VDD2, InternalSupply: VDD_internal
-NamePrefix: LS_, NameSuffix: _01,  UseEquivalence: 1
-Icluded Element: Element1
-Icluded Element: Element2
+NamePrefix: LS_, NameSuffix: _01
+Included Element: Element1
+Included Element: Element2
 Excluded Element: ExcludeElement1
