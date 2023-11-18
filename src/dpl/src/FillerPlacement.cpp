@@ -64,8 +64,8 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
   setGridCells();
 
   if (!grid_info_map_.empty()) {
-    int min_height = INT_MAX;
-    Grid_map_key chosen_grid_key = {0};
+    int min_height = std::numeric_limits<int>::max();
+    GridMapKey chosen_grid_key = {0};
     // we will first try to find the grid with min height that is non hybrid, if
     // that doesn't exist, we will pick the first hybrid grid.
     for (auto [grid_idx, itr_grid_info] : grid_info_map_) {

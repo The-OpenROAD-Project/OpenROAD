@@ -81,15 +81,6 @@ void Opendp::checkPlacement(bool verbose,
         if (cell.y_ != cell_height && cell_height % cell.y_ != 0) {
           site_align_failures.push_back(&cell);
         }
-        // else {
-        // here, the check is quite complex. We need to figure out if the
-        // base of the cell is on the right site
-        // int adjusted_height = cell.y_ / gmk.cell_height;
-        // if (adjusted_height % cell.height_ != 0
-        //     || (adjusted_height + cell.height_) % cell.height_) {
-        //   site_align_failures.push_back(&cell);
-        // }
-        // }
       }
 
       if (!checkInRows(cell)) {
@@ -364,13 +355,6 @@ bool Opendp::checkInRows(const Cell& cell) const
         return false;
       }
       if (pixel->site->getId() != cell.getSite()->getId()) {
-        // logger_->warn(
-        //     DPL,
-        //     977,
-        //     "Cell {} is not on a row with its site {}. It is placed on site
-        //     {}", cell.name(),
-        //     cell.db_inst_->getMaster()->getSite()->getName(),
-        //     pixel->site->getName());
         return false;
       }
     }

@@ -142,7 +142,7 @@ void Opendp::initGridLayersMap()
       if (site->getHeight() < min_site_height) {
         min_site_height = site->getHeight();
         smallest_non_hybrid_grid_key_
-            = Grid_map_key{site_idx_to_grid_idx_[site->getId()]};
+            = GridMapKey{site_idx_to_grid_idx_[site->getId()]};
       }
     }
   }
@@ -157,7 +157,7 @@ void Opendp::initGridLayersMap()
     }
     dbSite* working_site = db_row->getSite();
     int row_height = working_site->getHeight();
-    Grid_map_key gmk = getGridMapKey(working_site);
+    GridMapKey gmk = getGridMapKey(working_site);
     if (grid_info_map_.find(gmk) == grid_info_map_.end()) {
       if (working_site->isHybridParent() || !working_site->isHybrid()) {
         GridInfo newGridInfo = {
@@ -388,12 +388,11 @@ void Opendp::visitCellPixels(
       // Since there is an obstruction, we need to visit all the pixels at all
       // layers (for all row heights)
       int grid_idx = 0;
-      for (const auto& [target_grid_map_key, target_grid_info] :
-           grid_info_map_) {
+      for (const auto& [target_GridMapKey, target_grid_info] : grid_info_map_) {
         int layer_y_start = map_ycoordinates(
-            y_start, smallest_non_hybrid_grid_key_, target_grid_map_key);
+            y_start, smallest_non_hybrid_grid_key_, target_GridMapKey);
         int layer_y_end = map_ycoordinates(
-            y_end, smallest_non_hybrid_grid_key_, target_grid_map_key);
+            y_end, smallest_non_hybrid_grid_key_, target_GridMapKey);
         if (layer_y_end == layer_y_start) {
           ++layer_y_end;
         }
@@ -449,10 +448,10 @@ void Opendp::visitCellBoundaryPixels(
 {
   dbInst* inst = cell.db_inst_;
   int site_width = getSiteWidth(&cell);
-  Grid_map_key gmk = getGridMapKey(&cell);
+  GridMapKey gmk = getGridMapKey(&cell);
   GridInfo grid_info = grid_info_map_.at(gmk);
   const int index_in_grid = grid_info.getGridIndex();
-  auto grid_sites = grid_info.getSites();
+  const auto grid_sites = grid_info.getSites();
   dbMaster* master = inst->getMaster();
   auto obstructions = master->getObstructions();
   bool have_obstructions = false;
@@ -662,7 +661,7 @@ void Opendp::groupInitPixels()
     }
     int row_height = group.cells_[0]->height_;
     int site_width = getSiteWidth(group.cells_[0]);
-    Grid_map_key gmk = getGridMapKey(group.cells_[0]);
+    GridMapKey gmk = getGridMapKey(group.cells_[0]);
     GridInfo& grid_info = grid_info_map_.at(gmk);
     int grid_index = grid_info.getGridIndex();
     for (Rect& rect : group.regions) {
@@ -749,9 +748,9 @@ void Opendp::erasePixel(Cell* cell)
                y_start,
                y_end);
 
-    for (auto [target_grid_map_key, target_grid_info] : grid_info_map_) {
-      int layer_y_start = map_ycoordinates(y_start, gmk, target_grid_map_key);
-      int layer_y_end = map_ycoordinates(y_end, gmk, target_grid_map_key);
+    for (auto [target_GridMapKey, target_grid_info] : grid_info_map_) {
+      int layer_y_start = map_ycoordinates(y_start, gmk, target_GridMapKey);
+      int layer_y_end = map_ycoordinates(y_end, gmk, target_GridMapKey);
 
       if (layer_y_end == layer_y_start) {
         ++layer_y_end;
@@ -774,8 +773,8 @@ void Opendp::erasePixel(Cell* cell)
 }
 
 int Opendp::map_ycoordinates(int source_grid_coordinate,
-                             const Grid_map_key& source_grid_key,
-                             const Grid_map_key& target_grid_key) const
+                             const GridMapKey& source_grid_key,
+                             const GridMapKey& target_grid_key) const
 {
   if (source_grid_key == target_grid_key) {
     return source_grid_coordinate;
@@ -787,12 +786,12 @@ int Opendp::map_ycoordinates(int source_grid_coordinate,
       int original_step = src_grid_info.getSites()[0].site->getHeight();
       int target_step = target_grid_info.getSites()[0].site->getHeight();
       return divCeil(original_step * source_grid_coordinate, target_step);
-    } else {
-      // count until we find it.
-      return gridY(source_grid_coordinate * source_grid_key.grid_index,
-                   target_grid_info.getSites())
-          .first;
     }
+    // count until we find it.
+    return gridY(source_grid_coordinate * source_grid_key.grid_index,
+                 target_grid_info.getSites())
+        .first;
+
   } else {
     // src is hybrid
     int src_total_sites_height = src_grid_info.getSitesTotalHeight();
@@ -806,10 +805,9 @@ int Opendp::map_ycoordinates(int source_grid_coordinate,
     if (target_grid_info.isHybrid()) {
       // both are hybrids.
       return gridY(src_height, target_grid_info.getSites()).first;
-    } else {
-      int target_step = target_grid_info.getSites()[0].site->getHeight();
-      return divCeil(src_height, target_step);
     }
+    int target_step = target_grid_info.getSites()[0].site->getHeight();
+    return divCeil(src_height, target_step);
   }
 }
 
@@ -820,7 +818,7 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
   int grid_height = gridHeight(cell);
   int y_end = grid_y + grid_height;
   int site_width = getSiteWidth(cell);
-  Grid_map_key gmk = getGridMapKey(cell);
+  GridMapKey gmk = getGridMapKey(cell);
   GridInfo grid_info = grid_info_map_.at(gmk);
   const int index_in_grid = gmk.grid_index;
   setGridPaddedLoc(cell, grid_x, grid_y, site_width);
@@ -846,43 +844,6 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
     int layer_x_end = x_end;
     int layer_y = map_ycoordinates(grid_y, gmk, layer.first);
     int layer_y_end = map_ycoordinates(y_end, gmk, layer.first);
-    debugPrint(logger_,
-               DPL,
-               "detailed",
-               176,
-               "y_end {} original grid {} target grid {} layer_y_end {}",
-               y_end,
-               gmk.grid_index,
-               layer.first.grid_index,
-               layer_y_end);
-
-    debugPrint(logger_,
-               DPL,
-               "detailed",
-               1,
-               "Mapping coordinates start from grid idx {} to grid idx {}. "
-               "From [x{} y{}] "
-               "it became [x{} y{}].",
-               gmk.grid_index,
-               layer.first.grid_index,
-               grid_x,
-               grid_y,
-               layer_x,
-               layer_y);
-    debugPrint(logger_,
-               DPL,
-               "detailed",
-               1,
-               "Mapping coordinates end from grid idx {} to grid idx {}. From "
-               "[x{} y{}] "
-               "it became [x{} y{}].",
-               gmk.grid_index,
-               layer.first.grid_index,
-               x_end,
-               y_end,
-               layer_x_end,
-               layer_y_end);
-
     if (layer_x_end == layer_x) {
       ++layer_x_end;
     }

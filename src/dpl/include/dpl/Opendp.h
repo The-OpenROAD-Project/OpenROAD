@@ -112,15 +112,15 @@ struct Master
   bool is_multi_row = false;
 };
 
-struct Grid_map_key
+struct GridMapKey
 {
   int grid_index;
   // TODO: consider removing the two operator overloading
-  bool operator<(const Grid_map_key& other) const
+  bool operator<(const GridMapKey& other) const
   {
     return grid_index < other.grid_index;
   }
-  bool operator==(const Grid_map_key& other) const
+  bool operator==(const GridMapKey& other) const
   {
     return grid_index == other.grid_index;
   }
@@ -129,13 +129,13 @@ struct Grid_map_key
 class HybridSiteInfo
 {
  public:
-  HybridSiteInfo(int index, dbSite* site) : index(index), site(site) {}
-  int getIndex() { return index; }
-  dbSite* getSite() { return site; }
+  HybridSiteInfo(int index, dbSite* site) : index_(index), site_(site) {}
+  const int getIndex() { return index_; }
+  const dbSite* getSite() { return site_; }
 
  private:
-  int index;
-  dbSite* site;
+  int index_;
+  dbSite* site_;
 };
 
 struct Cell
@@ -362,8 +362,8 @@ class Opendp
   bool isFixed(const Cell* cell) const;  // fixed cell or not
   bool isMultiRow(const Cell* cell) const;
   void updateDbInstLocations();
-  Grid_map_key getGridMapKey(const Cell* cell) const;
-  Grid_map_key getGridMapKey(const dbSite* site) const;
+  GridMapKey getGridMapKey(const Cell* cell) const;
+  GridMapKey getGridMapKey(const dbSite* site) const;
 
   void makeMaster(Master* master, dbMaster* db_master);
 
@@ -460,8 +460,8 @@ class Opendp
   void erasePixel(Cell* cell);
   void paintPixel(Cell* cell, int grid_x, int grid_y);
   int map_ycoordinates(int source_grid_coordinate,
-                       const Grid_map_key& source_grid_key,
-                       const Grid_map_key& target_grid_key) const;
+                       const GridMapKey& source_grid_key,
+                       const GridMapKey& target_grid_key) const;
 
   // checkPlacement
   static bool isPlaced(const Cell* cell);
@@ -575,12 +575,12 @@ class Opendp
   vector<Group> groups_;
 
   map<const dbMaster*, Master> db_master_map_;
-  map<Grid_map_key, GridInfo> grid_info_map_;
+  map<GridMapKey, GridInfo> grid_info_map_;
   // This map is used to map each unqie site to a grid. The key is always
   // unique, but the value is not unique in the case of hybrid sites
   // (alternating rows)
   unordered_map<int, int> site_idx_to_grid_idx_;
-  Grid_map_key smallest_non_hybrid_grid_key_;
+  GridMapKey smallest_non_hybrid_grid_key_;
   std::vector<GridInfo*> grid_info_vector_;
   map<int, int> siteIdToGridId_;
   map<dbInst*, Cell*> db_inst_map_;

@@ -621,7 +621,7 @@ void Opendp::shiftMove(Cell* cell)
   int grid_y = grid_pt.getY();
   int row_height = getRowHeight(cell);
   int site_width = getSiteWidth(cell);
-  Grid_map_key grid_key = getGridMapKey(cell);
+  GridMapKey grid_key = getGridMapKey(cell);
   auto grid_mapped_entry = grid_info_map_.find(grid_key);
   if (grid_mapped_entry == grid_info_map_.end()) {
     logger_->error(
@@ -1426,18 +1426,6 @@ Point Opendp::legalPt(const Cell* cell,
   int grid_y, height;
   int y = legal_pt.getY() + grid_info.getOffset();
   std::tie(grid_y, height) = gridY(y, grid_info.getSites());
-  debugPrint(logger_,
-             DPL,
-             "place",
-             1,
-             "legalPt cell {} lx {} gx {} ly {} gy {} gi {}",
-             cell->name(),
-             legal_pt.getX(),
-             grid_x,
-             legal_pt.getY(),
-             grid_y,
-             grid_info.getGridIndex());
-
   Pixel* pixel = gridPixel(grid_info.getGridIndex(), grid_x, grid_y);
   if (pixel) {
     // Move std cells off of macros.  First try the is_hopeless strategy
