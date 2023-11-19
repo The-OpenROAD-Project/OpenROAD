@@ -293,14 +293,14 @@ class TechChar
                                     unsigned setupWirelength);
   void updateBufferTopologies(SolutionData& solution);
   void updateBufferTopologiesOld(TechChar::SolutionData& solution);
-  size_t cellNameToID(std::string masterName);
+  size_t cellNameToID(const std::string& masterName);
   std::vector<size_t> getCurrConfig(const SolutionData& solution);
   std::vector<size_t> getNextConfig(const std::vector<size_t>& currConfig);
   odb::dbMaster* getMasterFromConfig(std::vector<size_t> nextConfig,
                                      unsigned nodeIndex);
   void swapTopologyBuffer(SolutionData& solution,
                           unsigned nodeIndex,
-                          std::string newMasterName);
+                          const std::string& newMasterName);
   std::vector<ResultData> characterizationPostProcess();
   unsigned normalizeCharResults(float value,
                                 float iter,

@@ -1313,9 +1313,9 @@ void TechChar::updateBufferTopologies(TechChar::SolutionData& solution)
 std::vector<size_t> TechChar::getCurrConfig(const SolutionData& solution)
 {
   std::vector<size_t> config;
-  for (unsigned i = 0; i < solution.instVector.size(); i++) {
+  for (auto inst : solution.instVector) {
     size_t masterID
-        = cellNameToID(solution.instVector[i]->getMaster()->getName());
+        = cellNameToID(inst->getMaster()->getName());
     config.emplace_back(masterID);
   }
 
@@ -1329,7 +1329,7 @@ std::vector<size_t> TechChar::getCurrConfig(const SolutionData& solution)
   return config;
 }
 
-size_t TechChar::cellNameToID(std::string masterName)
+size_t TechChar::cellNameToID(const std::string& masterName)
 {
   std::vector<std::string>::iterator masterIter
       = std::find(masterNames_.begin(), masterNames_.end(), masterName);
@@ -1385,7 +1385,7 @@ odb::dbMaster* TechChar::getMasterFromConfig(std::vector<size_t> nextConfig,
 
 void TechChar::swapTopologyBuffer(SolutionData& solution,
                                   unsigned nodeIndex,
-                                  std::string newMasterName)
+                                  const std::string& newMasterName)
 {
   unsigned topologyCounter = 0;
   for (unsigned topologyIndex = 0;
