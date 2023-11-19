@@ -1314,8 +1314,7 @@ std::vector<size_t> TechChar::getCurrConfig(const SolutionData& solution)
 {
   std::vector<size_t> config;
   for (auto inst : solution.instVector) {
-    size_t masterID
-        = cellNameToID(inst->getMaster()->getName());
+    size_t masterID = cellNameToID(inst->getMaster()->getName());
     config.emplace_back(masterID);
   }
 
