@@ -1016,8 +1016,13 @@ void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
 {
   GC_IGNORE_PDN_LAYER = -1;
   initDesign();
-  if (design_->getTopBlock()->getGCellPatterns().empty()) {
-    initGuide();
+  auto gcellGrid = db_->getChip()->getBlock()->getGCellGrid();
+  if (gcellGrid != nullptr && gcellGrid->getNumGridPatternsX() == 1
+      && gcellGrid->getNumGridPatternsY() == 1) {
+    io::Parser parser(db_, getDesign(), logger_);
+    parser.buildGCellPatterns(db_);
+  } else if (!initGuide()) {
+    logger_->error(DRT, 1, "GCELLGRID is undefined");
   }
   Rect requiredDrcBox(x1, y1, x2, y2);
   if (requiredDrcBox.area() == 0) {
