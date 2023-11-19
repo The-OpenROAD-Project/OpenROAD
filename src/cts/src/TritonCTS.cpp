@@ -531,7 +531,8 @@ std::string TritonCTS::selectRootBuffer(std::vector<std::string>& buffers)
   // Choose the largest one because there is significant slew degradation
   // from clock port to root buffer.  Small buffers can't recover from such
   // large input slew.
-  std::string rootBuf = selectBestMaxCapBuffer(buffers, std::numeric_limits<float>::max());
+  std::string rootBuf
+      = selectBestMaxCapBuffer(buffers, std::numeric_limits<float>::max());
   return rootBuf;
 }
 
