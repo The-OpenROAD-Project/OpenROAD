@@ -528,36 +528,10 @@ std::string TritonCTS::selectRootBuffer(std::vector<std::string>& buffers)
   }
 
   options_->setRootBufferInferred(true);
-  // estimate wire cap for root buffer
-  // assume root buffer needs to drive clk buffers at two far ends of chip
-  //
-  //  --------------
-  //  |      .     |
-  //  |      .     |
-  //  |===== x ====|
-  //  |      .     |
-  //  |      .     |
-  //  --------------
-  odb::dbBlock* block = db_->getChip()->getBlock();
-  odb::Rect coreArea = block->getCoreArea();
-  float rootWireLength
-      = static_cast<float>(std::max(coreArea.dx(), coreArea.dy()))
-        / block->getDbUnitsPerMicron();
-  sta::Corner* corner = openSta_->cmdCorner();
-  float rootWireCap
-      = resizer_->wireSignalCapacitance(corner) * 1e-6 * rootWireLength;
-  // clang-format off
-  debugPrint(logger_, CTS, "buffering", 2, "core width:{}, core height:{}, "
-             "rootWL:{:0.2e}, rootWireCap:{:0.2e}, clock cap/micron:{:0.2e}",
-             coreArea.dx(), coreArea.dy(), rootWireLength, rootWireCap,
-             resizer_->wireSignalCapacitance(corner) * 1e-6);
-  // clang-format on
-
-  std::string rootBuf = selectBestMaxCapBuffer(buffers, rootWireCap);
-  // clang-format off
-  debugPrint(logger_, CTS, "buffering", 1, "{} has been selected as root "
-             "buffer to drive root wire cap of {:0.2e}", rootBuf, rootWireCap);
-  // clang-format on
+  // Choose the largest one because there is significant slew degradation
+  // from clock port to root buffer.  Small buffers can't recover from such
+  // large input slew.
+  std::string rootBuf = selectBestMaxCapBuffer(buffers, std::numeric_limits<float>::max());
   return rootBuf;
 }
 
