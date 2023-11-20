@@ -3673,11 +3673,8 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
              "Start Simulated Annealing Core");
   while (remaining_runs > 0) {
     std::vector<SACoreSoftMacro*> sa_vector;
-    int run_thread
-        = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
-    if (graphics_) {
-      run_thread = 1;
-    }
+    const int run_thread
+        = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
       debugPrint(logger_,
                  MPL,
@@ -3910,11 +3907,8 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
                "Start Simulated Annealing Core");
     while (remaining_runs > 0) {
       std::vector<SACoreSoftMacro*> sa_vector;
-      int run_thread
-          = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
-      if (graphics_) {
-        run_thread = 1;
-      }
+      const int run_thread
+          = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
       for (int i = 0; i < run_thread; i++) {
         debugPrint(logger_,
                    MPL,
@@ -4460,11 +4454,8 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
              "Start Simulated Annealing Core");
   while (remaining_runs > 0) {
     std::vector<SACoreSoftMacro*> sa_vector;
-    int run_thread
-        = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
-    if (graphics_) {
-      run_thread = 1;
-    }
+    const int run_thread
+        = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
       debugPrint(logger_,
                  MPL,
@@ -4962,11 +4953,8 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
              "Start Simulated Annealing Core");
   while (remaining_runs > 0) {
     std::vector<SACoreSoftMacro*> sa_vector;
-    int run_thread
-        = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
-    if (graphics_) {
-      run_thread = 1;
-    }
+    const int run_thread
+        = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
       std::vector<SoftMacro> shaped_macros = macros;  // copy for multithread
       // determine the shape for each macro
@@ -5488,11 +5476,8 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
   float best_cost = std::numeric_limits<float>::max();
   while (remaining_runs > 0) {
     std::vector<SACoreHardMacro*> sa_vector;
-    int run_thread
-        = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
-    if (graphics_) {
-      run_thread = 1;
-    }
+    const int run_thread
+        = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
       // change the aspect ratio
       const float width = outline_width * vary_factor_list[run_id++];
