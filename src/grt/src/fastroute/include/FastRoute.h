@@ -152,7 +152,7 @@ class FastRouteCore
   NetRouteMap run();
   int totalOverflow() const { return total_overflow_; }
   bool has2Doverflow() const { return has_2D_overflow_; }
-  void updateDbCongestion(int min_routing_layer, int max_routing_layer);
+  void updateDbCongestion();
   void findCongestedEdgesNets(NetsPerCongestedArea& nets_in_congested_edges,
                               bool vertical);
   void getCongestionGrid(std::vector<CongestionInformation>& congestionGridV,

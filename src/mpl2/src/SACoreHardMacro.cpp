@@ -182,13 +182,6 @@ void SACoreHardMacro::perturb()
   packFloorplan();
   // Update all the penalties
   calPenalty();
-  if (action_id_ == 105) {
-    logger_->report(
-        "wirelength_weight_ = {} pre_wirelength = {} wirelength = {}",
-        wirelength_weight_,
-        pre_wirelength_,
-        wirelength_);
-  }
 }
 
 void SACoreHardMacro::restore()

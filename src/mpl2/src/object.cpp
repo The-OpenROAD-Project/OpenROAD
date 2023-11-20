@@ -623,7 +623,10 @@ void Cluster::setPinAccess(int cluster_id,
                            float net_weight)
 {
   if (cluster_id < 0) {
-    logger_->report("Error !!! Cluster id is less than 0 in SetPinAccess");
+    logger_->error(MPL,
+                   38,
+                   "Cannot set pin access for {} boundary.",
+                   toString(pin_access));
   }
   pin_access_map_[cluster_id]
       = std::pair<PinAccess, float>(pin_access, net_weight);
