@@ -64,7 +64,7 @@ int Opendp::calculateHybridSitesRowCount(dbSite* parent_hybrid_site) const
 
   rows_count *= (int) row_pattern.size();
 
-  for (auto [site, site_orientation] : row_pattern) {
+  for (const auto& [site, site_orientation] : row_pattern) {
     if (remaining_core_height >= site->getHeight()) {
       remaining_core_height -= site->getHeight();
       rows_count++;
@@ -270,7 +270,7 @@ void Opendp::initGrid()
 
   std::vector<gtl::polygon_90_set_data<int>> hopeless;
   hopeless.resize(grid_info_map_.size());
-  for (auto [row_height, grid_info] : grid_info_map_) {
+  for (const auto& [row_height, grid_info] : grid_info_map_) {
     hopeless[grid_info.getGridIndex()] += gtl::rectangle_data<int>{
         0, 0, grid_info.getSiteCount(), grid_info.getRowCount()};
   }
@@ -748,7 +748,7 @@ void Opendp::erasePixel(Cell* cell)
                y_start,
                y_end);
 
-    for (auto [target_GridMapKey, target_grid_info] : grid_info_map_) {
+    for (cosnt auto& [target_GridMapKey, target_grid_info] : grid_info_map_) {
       int layer_y_start = map_ycoordinates(y_start, gmk, target_GridMapKey);
       int layer_y_end = map_ycoordinates(y_end, gmk, target_GridMapKey);
 
