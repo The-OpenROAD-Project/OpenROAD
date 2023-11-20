@@ -748,7 +748,7 @@ void Opendp::erasePixel(Cell* cell)
                y_start,
                y_end);
 
-    for (cosnt auto& [target_GridMapKey, target_grid_info] : grid_info_map_) {
+    for (const auto& [target_GridMapKey, target_grid_info] : grid_info_map_) {
       int layer_y_start = map_ycoordinates(y_start, gmk, target_GridMapKey);
       int layer_y_end = map_ycoordinates(y_end, gmk, target_GridMapKey);
 
