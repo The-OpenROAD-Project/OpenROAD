@@ -158,7 +158,8 @@ odb::dbWire* RepairAntennas::makeNetWire(
                          bottom_tech_layer,
                          route_pt_pins,
                          wire_encoder,
-                         default_vias);
+                         default_vias,
+                         false);
             wire_segments.insert(seg);
           }
         } else {
@@ -178,7 +179,8 @@ odb::dbWire* RepairAntennas::makeNetWire(
                          tech_layer,
                          route_pt_pins,
                          wire_encoder,
-                         default_vias);
+                         default_vias,
+                         true);
             addWireTerms(net,
                          route,
                          x2,
@@ -187,7 +189,8 @@ odb::dbWire* RepairAntennas::makeNetWire(
                          tech_layer,
                          route_pt_pins,
                          wire_encoder,
-                         default_vias);
+                         default_vias,
+                         true);
             wire_segments.insert(seg);
             prev_conn_layer = l1;
           }
@@ -226,7 +229,8 @@ void RepairAntennas::addWireTerms(Net* net,
                                   odb::dbTechLayer* tech_layer,
                                   RoutePtPins& route_pt_pins,
                                   odb::dbWireEncoder& wire_encoder,
-                                  std::map<int, odb::dbTechVia*>& default_vias)
+                                  std::map<int, odb::dbTechVia*>& default_vias,
+                                  bool connect_to_segment)
 {
   if (layer == grouter_->getMinRoutingLayer()) {
     layer--;
@@ -271,6 +275,13 @@ void RepairAntennas::addWireTerms(Net* net,
             = layer1->getDirection() == odb::dbTechLayerDir::VERTICAL ? layer1
                                                                       : layer2;
         // create horizontal wire to connect to the pin
+        if (connect_to_segment && tech_layer != h_layer) {
+          // if wire to pin connects to a segment in a different layer, create a
+          // via to connect both wires
+          wire_encoder.newPath(tech_layer, odb::dbWireType::ROUTED);
+          wire_encoder.addPoint(grid_pt.x(), grid_pt.y());
+          wire_encoder.addTechVia(default_vias[grouter_->getMinRoutingLayer()]);
+        }
         wire_encoder.newPath(h_layer, odb::dbWireType::ROUTED);
         wire_encoder.addPoint(grid_pt.x(), grid_pt.y());
         wire_encoder.addPoint(pin_pt.x(), grid_pt.y());
