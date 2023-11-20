@@ -88,6 +88,7 @@ using odb::dbTechLayerDir;
 using odb::dbTechLayerType;
 using odb::dbTrackGrid;
 using odb::Rect;
+using odb::uint;
 
 using upf::eval_upf;
 

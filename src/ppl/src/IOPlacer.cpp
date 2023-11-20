@@ -36,6 +36,7 @@
 #include "ppl/IOPlacer.h"
 
 #include <algorithm>
+#include <fstream>
 #include <random>
 #include <sstream>
 

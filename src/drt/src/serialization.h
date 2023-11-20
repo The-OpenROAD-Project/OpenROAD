@@ -56,6 +56,7 @@
 #include "global.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+
 namespace gtl = boost::polygon;
 namespace bg = boost::geometry;
 
@@ -63,7 +64,7 @@ namespace boost::serialization {
 
 // Enable serialization of a std::tuple using recursive templates.
 // For some reason boost serialize seems to leave out this std class.
-template <uint N>
+template <unsigned int N>
 struct TupleSerializer
 {
   template <class Archive, typename... Types>

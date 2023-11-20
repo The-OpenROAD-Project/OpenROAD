@@ -263,7 +263,7 @@ class DetailedMgr
   // For help aligning cells to sites.
   bool alignPos(Node* ndi, int& xi, int xl, int xr);
   int getMoveLimit() { return moveLimit_; }
-  void setMoveLimit(uint newMoveLimit) { moveLimit_ = newMoveLimit; }
+  void setMoveLimit(unsigned int newMoveLimit) { moveLimit_ = newMoveLimit; }
 
   struct compareNodesX
   {

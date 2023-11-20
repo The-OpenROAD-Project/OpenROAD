@@ -33,6 +33,7 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <set>
 #include <vector>
 
@@ -55,6 +56,7 @@ struct Point;
 struct Tray;
 struct Flop;
 struct Path;
+class Graphics;
 
 class MBFF
 {
@@ -64,7 +66,8 @@ class MBFF
        utl::Logger* log,
        int threads,
        int knn,
-       int multistart);
+       int multistart,
+       bool debug_graphics = false);
   ~MBFF();
   void Run(int mx_sz, double alpha, double beta);
 
@@ -98,6 +101,7 @@ class MBFF
   int GetBitMask(odb::dbInst* inst);
   bool HasSet(odb::dbInst* inst);
   bool HasReset(odb::dbInst* inst);
+  bool ClockOn(odb::dbInst* inst);
 
   Flop GetNewFlop(const std::vector<Flop>& prob_dist, double tot_dist);
   void GetStartTrays(std::vector<Flop> flops,
@@ -179,7 +183,7 @@ class MBFF
                 int bitmask);
   void ModifyPinConnections(const std::vector<Flop>& flops,
                             const std::vector<Tray>& trays,
-                            std::vector<std::pair<int, int>>& mapping,
+                            const std::vector<std::pair<int, int>>& mapping,
                             int bitmask);
   double GetTCPDisplacement();
 
@@ -188,13 +192,14 @@ class MBFF
   sta::dbSta* sta_;
   sta::dbNetwork* network_;
   utl::Logger* log_;
+  std::unique_ptr<Graphics> graphics_;
 
   std::vector<Flop> flops_;
   std::vector<odb::dbInst*> insts_;
   std::vector<double> slot_disp_x_;
   std::vector<double> slot_disp_y_;
-  double height_;
-  double width_;
+  double height_ = 0.0;
+  double width_ = 0.0;
 
   std::vector<Path> paths_;
   std::set<int> flops_in_path_;
@@ -205,9 +210,10 @@ class MBFF
   The 2nd bit of B is on if the SET pin exists
   The 3rd bit of B is on if the RESET pin exists
   The 4th bit of B is on if the instance is inverting
-  max(B) = 2^3 + 2^2 + 2^1 + 2^0 = 15
+  The 5th bit represents clock_on
+  max(B) = 2^4 + 2^3 + 2^2 + 2^1 + 2^0 = 31
   */
-  static constexpr int num_bits_in_bitmask = 4;
+  static constexpr int num_bits_in_bitmask = 5;
   static constexpr int max_bitmask = 1 << num_bits_in_bitmask;
 
   template <typename T>
@@ -223,12 +229,12 @@ class MBFF
   std::vector<double> ratios_;
   std::vector<int> unused_;
 
-  sta::FuncExpr* non_invert_func_;
+  sta::FuncExpr* non_invert_func_ = nullptr;
   int num_threads_;
   int multistart_;
   int knn_;
   double multiplier_;
   // max tray size: 1 << (7 - 1) = 64 bits
-  int num_sizes_;
+  int num_sizes_ = 7;
 };
 }  // namespace gpl
