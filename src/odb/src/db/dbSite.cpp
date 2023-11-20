@@ -361,10 +361,10 @@ dbSite* dbSite::create(dbLib* lib_, const char* name_)
   return (dbSite*) site;
 }
 
-dbSite* dbSite::getSite(dbLib* lib_, uint dbid_)
+dbSite* dbSite::getSite(dbLib* lib, uint oid)
 {
-  _dbLib* lib = (_dbLib*) lib_;
-  return (dbSite*) lib->_site_tbl->getPtr(dbid_);
+  _dbLib* lib_impl = (_dbLib*) lib;
+  return (dbSite*) lib_impl->_site_tbl->getPtr(oid);
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbSite& site)

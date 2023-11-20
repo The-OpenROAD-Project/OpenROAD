@@ -448,7 +448,7 @@ void Opendp::visitCellBoundaryPixels(
 {
   dbInst* inst = cell.db_inst_;
   int site_width = getSiteWidth(&cell);
-  GridMapKey gmk = getGridMapKey(&cell);
+  const GridMapKey& gmk = getGridMapKey(&cell);
   GridInfo grid_info = grid_info_map_.at(gmk);
   const int index_in_grid = grid_info.getGridIndex();
   const auto grid_sites = grid_info.getSites();
@@ -791,24 +791,22 @@ int Opendp::map_ycoordinates(int source_grid_coordinate,
     return gridY(source_grid_coordinate * source_grid_key.grid_index,
                  target_grid_info.getSites())
         .first;
-
-  } else {
-    // src is hybrid
-    int src_total_sites_height = src_grid_info.getSitesTotalHeight();
-    auto src_sites = src_grid_info.getSites();
-    const int src_sites_size = src_sites.size();
-    int src_height
-        = (source_grid_coordinate / src_sites_size) * src_total_sites_height;
-    for (int s = 0; s < source_grid_coordinate % src_sites_size; s++) {
-      src_height += src_sites[s].site->getHeight();
-    }
-    if (target_grid_info.isHybrid()) {
-      // both are hybrids.
-      return gridY(src_height, target_grid_info.getSites()).first;
-    }
-    int target_step = target_grid_info.getSites()[0].site->getHeight();
-    return divCeil(src_height, target_step);
   }
+  // src is hybrid
+  int src_total_sites_height = src_grid_info.getSitesTotalHeight();
+  auto src_sites = src_grid_info.getSites();
+  const int src_sites_size = src_sites.size();
+  int src_height
+      = (source_grid_coordinate / src_sites_size) * src_total_sites_height;
+  for (int s = 0; s < source_grid_coordinate % src_sites_size; s++) {
+    src_height += src_sites[s].site->getHeight();
+  }
+  if (target_grid_info.isHybrid()) {
+    // both are hybrids.
+    return gridY(src_height, target_grid_info.getSites()).first;
+  }
+  int target_step = target_grid_info.getSites()[0].site->getHeight();
+  return divCeil(src_height, target_step);
 }
 
 void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)

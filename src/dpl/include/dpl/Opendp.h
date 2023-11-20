@@ -130,8 +130,8 @@ class HybridSiteInfo
 {
  public:
   HybridSiteInfo(int index, dbSite* site) : index_(index), site_(site) {}
-  const int getIndex() { return index_; }
-  const dbSite* getSite() { return site_; }
+  int getIndex() const { return index_; }
+  const dbSite* getSite() const { return site_; }
 
  private:
   int index_;
@@ -145,9 +145,11 @@ struct Cell
   int64_t area() const;
 
   dbInst* db_inst_ = nullptr;
-  int x_ = 0, y_ = 0;  // lower left wrt core DBU
+  int x_ = 0;  // lower left wrt core DBU
+  int y_ = 0;
   dbOrientType orient_;
-  int width_ = 0, height_ = 0;  // DBU
+  int width_ = 0;  // DBU
+  int height_ = 0;
   bool is_placed_ = false;
   bool hold_ = false;
   Group* group_ = nullptr;
@@ -155,18 +157,14 @@ struct Cell
 
   bool isHybrid() const
   {
-    if (!getSite()) {
-      return false;
-    }
-    return getSite()->isHybrid();
+    dbSite* site = getSite();
+    return site ? site->isHybrid() : false;
   }
 
   bool isHybridParent() const
   {
-    if (!getSite()) {
-      return false;
-    }
-    return getSite()->isHybridParent();
+    dbSite* site = getSite();
+    return site ? site->isHybridParent() : false;
   }
 
   dbSite* getSite() const
@@ -201,39 +199,38 @@ struct Pixel
 class GridInfo
 {
  public:
-  GridInfo(int row_count,
-           int site_count,
-           int grid_index,
+  GridInfo(const int row_count,
+           const int site_count,
+           const int grid_index,
            const dbSite::RowPattern& sites)
-      : row_count(row_count),
-        site_count(site_count),
-        grid_index(grid_index),
-        sites(sites)
+      : row_count_(row_count),
+        site_count_(site_count),
+        grid_index_(grid_index),
+        sites_(sites)
   {
-    offset = 0;
   }
 
-  int getRowCount() const { return row_count; }
+  int getRowCount() const { return row_count_; }
 
-  int getSiteCount() const { return site_count; }
+  int getSiteCount() const { return site_count_; }
 
-  int getGridIndex() const { return grid_index; }
+  int getGridIndex() const { return grid_index_; }
 
-  int getOffset() const { return offset; }
+  int getOffset() const { return offset_; }
 
-  void setOffset(int p_offset) { offset = p_offset; }
+  void setOffset(int offset) { offset_ = offset; }
 
-  const dbSite::RowPattern& getSites() const { return sites; }
+  const dbSite::RowPattern& getSites() const { return sites_; }
 
-  const bool isHybrid()
+  bool isHybrid() const
   {
     // TODO: consider removing the second part
-    return sites.size() > 1 || sites[0].site->isHybridParent();
+    return sites_.size() > 1 || sites_[0].site->isHybridParent();
   }
-  const int getSitesTotalHeight()
+  int getSitesTotalHeight() const
   {
-    return std::accumulate(sites.begin(),
-                           sites.end(),
+    return std::accumulate(sites_.begin(),
+                           sites_.end(),
                            0,
                            [](int sum, const dbSite::OrientedSite& entry) {
                              return sum + entry.site->getHeight();
@@ -241,13 +238,13 @@ class GridInfo
   }
 
  private:
-  const int row_count;
-  const int site_count;
-  const int grid_index;
-  int offset;
+  const int row_count_;
+  const int site_count_;
+  const int grid_index_;
+  int offset_ = 0;
   // will have one site only for non-hybrid and hybrid parent cells.
   // For hybrid children, this will have all the sites
-  const dbSite::RowPattern sites;
+  const dbSite::RowPattern sites_;
 };
 
 // For optimize mirroring.
