@@ -84,7 +84,7 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
             row, prefix, filler_masters, site_height, chosen_grid_info);
       }
     } else {
-      auto hybrid_sites_vec = chosen_grid_info.getSites();
+      const auto& hybrid_sites_vec = chosen_grid_info.getSites();
       const int hybrid_sites_num = hybrid_sites_vec.size();
       for (int row = 0; row < chosen_row_count; row++) {
         placeRowFillers(

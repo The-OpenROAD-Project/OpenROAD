@@ -622,7 +622,7 @@ GridMapKey Opendp::getGridMapKey(const Cell* cell) const
   if (site == nullptr) {
     logger_->error(DPL, 4219, "Cell {} has no site.", cell->name());
   }
-  return this->getGridMapKey(site);
+  return getGridMapKey(site);
 }
 
 GridInfo Opendp::getGridInfo(const Cell* cell) const
@@ -702,7 +702,7 @@ void Opendp::setGridPaddedLoc(Cell* cell, int x, int y, int site_width) const
   if (cell->isHybrid()) {
     auto grid_info = grid_info_map_.at(getGridMapKey(cell));
     int total_sites_height = grid_info.getSitesTotalHeight();
-    auto sites = grid_info.getSites();
+    const auto& sites = grid_info.getSites();
     const int sites_size = sites.size();
     int height = (y / sites_size) * total_sites_height;
     for (int s = 0; s < y % sites_size; s++) {

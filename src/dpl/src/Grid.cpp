@@ -246,7 +246,7 @@ void Opendp::initGrid()
     grid_[index].resize(layer_row_count);
     for (int j = 0; j < layer_row_count; j++) {
       grid_[index][j].resize(layer_row_site_count);
-      auto grid_sites = grid_info.getSites();
+      const auto& grid_sites = grid_info.getSites();
       dbSite* row_site = nullptr;
       if (!grid_sites.empty()) {
         row_site = grid_sites[j % grid_sites.size()].site;
@@ -451,7 +451,7 @@ void Opendp::visitCellBoundaryPixels(
   const GridMapKey& gmk = getGridMapKey(&cell);
   GridInfo grid_info = grid_info_map_.at(gmk);
   const int index_in_grid = grid_info.getGridIndex();
-  const auto grid_sites = grid_info.getSites();
+  const auto& grid_sites = grid_info.getSites();
   dbMaster* master = inst->getMaster();
   auto obstructions = master->getObstructions();
   bool have_obstructions = false;
@@ -794,7 +794,7 @@ int Opendp::map_ycoordinates(int source_grid_coordinate,
   }
   // src is hybrid
   int src_total_sites_height = src_grid_info.getSitesTotalHeight();
-  auto src_sites = src_grid_info.getSites();
+  const auto& src_sites = src_grid_info.getSites();
   const int src_sites_size = src_sites.size();
   int src_height
       = (source_grid_coordinate / src_sites_size) * src_total_sites_height;
