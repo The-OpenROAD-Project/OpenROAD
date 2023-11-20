@@ -748,7 +748,7 @@ void FlexRP::prep_via2viaForbiddenLen_helper(const frLayerNum& lNum,
 
   if (!ndr) {
     frCoord prl = 0;
-    prep_via2viaPRL(lNum, viaDef1, viaDef2, !isHorizontal, prl);
+    prep_via2viaPRL(lNum, viaDef1, viaDef2, isHorizontal, prl);
     tech->via2ViaPrlLen[tableLayerIdx][tableEntryIdx] = prl;
   }
 }
