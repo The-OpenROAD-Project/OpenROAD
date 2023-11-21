@@ -48,11 +48,12 @@ template class dbTable<_dbTechLayerWidthTableRule>;
 bool _dbTechLayerWidthTableRule::operator==(
     const _dbTechLayerWidthTableRule& rhs) const
 {
-  if (flags_.wrong_direction_ != rhs.flags_.wrong_direction_)
+  if (flags_.wrong_direction_ != rhs.flags_.wrong_direction_) {
     return false;
-
-  if (flags_.orthogonal_ != rhs.flags_.orthogonal_)
+  }
+  if (flags_.orthogonal_ != rhs.flags_.orthogonal_) {
     return false;
+  }
 
   return true;
 }

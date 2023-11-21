@@ -47,47 +47,54 @@ template class dbTable<_dbTechLayerMinCutRule>;
 
 bool _dbTechLayerMinCutRule::operator==(const _dbTechLayerMinCutRule& rhs) const
 {
-  if (flags_.per_cut_class_ != rhs.flags_.per_cut_class_)
+  if (flags_.per_cut_class_ != rhs.flags_.per_cut_class_) {
     return false;
-
-  if (flags_.within_cut_dist_valid != rhs.flags_.within_cut_dist_valid)
+  }
+  if (flags_.within_cut_dist_valid != rhs.flags_.within_cut_dist_valid) {
     return false;
-
-  if (flags_.from_above_ != rhs.flags_.from_above_)
+  }
+  if (flags_.from_above_ != rhs.flags_.from_above_) {
     return false;
-
-  if (flags_.from_below_ != rhs.flags_.from_below_)
+  }
+  if (flags_.from_below_ != rhs.flags_.from_below_) {
     return false;
-
-  if (flags_.length_valid_ != rhs.flags_.length_valid_)
+  }
+  if (flags_.length_valid_ != rhs.flags_.length_valid_) {
     return false;
-
-  if (flags_.area_valid_ != rhs.flags_.area_valid_)
+  }
+  if (flags_.area_valid_ != rhs.flags_.area_valid_) {
     return false;
-
-  if (flags_.area_within_dist_valid_ != rhs.flags_.area_within_dist_valid_)
+  }
+  if (flags_.area_within_dist_valid_ != rhs.flags_.area_within_dist_valid_) {
     return false;
-
-  if (flags_.same_metal_overlap != rhs.flags_.same_metal_overlap)
+  }
+  if (flags_.same_metal_overlap != rhs.flags_.same_metal_overlap) {
     return false;
-
-  if (flags_.fully_enclosed_ != rhs.flags_.fully_enclosed_)
+  }
+  if (flags_.fully_enclosed_ != rhs.flags_.fully_enclosed_) {
     return false;
-
-  if (num_cuts_ != rhs.num_cuts_)
+  }
+  if (num_cuts_ != rhs.num_cuts_) {
     return false;
-  if (width_ != rhs.width_)
+  }
+  if (width_ != rhs.width_) {
     return false;
-  if (within_cut_dist != rhs.within_cut_dist)
+  }
+  if (within_cut_dist != rhs.within_cut_dist) {
     return false;
-  if (length_ != rhs.length_)
+  }
+  if (length_ != rhs.length_) {
     return false;
-  if (length_within_dist_ != rhs.length_within_dist_)
+  }
+  if (length_within_dist_ != rhs.length_within_dist_) {
     return false;
-  if (area_ != rhs.area_)
+  }
+  if (area_ != rhs.area_) {
     return false;
-  if (area_within_dist_ != rhs.area_within_dist_)
+  }
+  if (area_within_dist_ != rhs.area_within_dist_) {
     return false;
+  }
 
   return true;
 }

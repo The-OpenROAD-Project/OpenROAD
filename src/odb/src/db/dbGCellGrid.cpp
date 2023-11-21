@@ -54,11 +54,12 @@ template class dbTable<_dbGCellGrid>;
 
 bool _dbGCellGrid::operator==(const _dbGCellGrid& rhs) const
 {
-  if (flags_.x_grid_valid_ != rhs.flags_.x_grid_valid_)
+  if (flags_.x_grid_valid_ != rhs.flags_.x_grid_valid_) {
     return false;
-
-  if (flags_.y_grid_valid_ != rhs.flags_.y_grid_valid_)
+  }
+  if (flags_.y_grid_valid_ != rhs.flags_.y_grid_valid_) {
     return false;
+  }
 
   // User Code Begin ==
   if (x_origin_ != rhs.x_origin_)

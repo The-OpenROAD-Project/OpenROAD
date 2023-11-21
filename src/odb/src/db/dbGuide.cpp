@@ -48,14 +48,18 @@ template class dbTable<_dbGuide>;
 
 bool _dbGuide::operator==(const _dbGuide& rhs) const
 {
-  if (net_ != rhs.net_)
+  if (net_ != rhs.net_) {
     return false;
-  if (box_ != rhs.box_)
+  }
+  if (box_ != rhs.box_) {
     return false;
-  if (layer_ != rhs.layer_)
+  }
+  if (layer_ != rhs.layer_) {
     return false;
-  if (guide_next_ != rhs.guide_next_)
+  }
+  if (guide_next_ != rhs.guide_next_) {
     return false;
+  }
 
   return true;
 }
