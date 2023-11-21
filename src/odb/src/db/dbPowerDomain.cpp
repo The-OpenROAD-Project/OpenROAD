@@ -155,9 +155,11 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj)
   stream >> obj._x2;
   stream >> obj._y1;
   stream >> obj._y2;
+  // User Code Begin >>
   if (stream.getDatabase()->isSchema(db_schema_level_shifter)) {
     stream >> obj._levelshifters;
   }
+  // User Code End >>
   return stream;
 }
 
@@ -175,7 +177,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbPowerDomain& obj)
   stream << obj._x2;
   stream << obj._y1;
   stream << obj._y2;
+  // User Code Begin <<
   stream << obj._levelshifters;
+  // User Code End <<
   return stream;
 }
 

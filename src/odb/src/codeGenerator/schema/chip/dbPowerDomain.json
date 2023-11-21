@@ -68,7 +68,7 @@
     {
       "name":"_levelshifters",
       "type":"dbVector<dbId<_dbLevelShifter>>",
-      "flags":["no-set","no-get"],
+      "flags":["no-set","no-get", "no-serial"],
       "parent":"dbBlock"
     } 
   ],

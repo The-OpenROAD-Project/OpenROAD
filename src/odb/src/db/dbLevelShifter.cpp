@@ -48,42 +48,60 @@ template class dbTable<_dbLevelShifter>;
 
 bool _dbLevelShifter::operator==(const _dbLevelShifter& rhs) const
 {
-  if (_name != rhs._name)
+  if (_name != rhs._name) {
     return false;
-  if (_next_entry != rhs._next_entry)
+  }
+  if (_next_entry != rhs._next_entry) {
     return false;
-  if (_domain != rhs._domain)
+  }
+  if (_domain != rhs._domain) {
     return false;
-  if (_source != rhs._source)
+  }
+  if (_source != rhs._source) {
     return false;
-  if (_sink != rhs._sink)
+  }
+  if (_sink != rhs._sink) {
     return false;
-  if (_use_functional_equivalence != rhs._use_functional_equivalence)
+  }
+  if (_use_functional_equivalence != rhs._use_functional_equivalence) {
     return false;
-  if (_applies_to != rhs._applies_to)
+  }
+  if (_applies_to != rhs._applies_to) {
     return false;
-  if (_applies_to_boundary != rhs._applies_to_boundary)
+  }
+  if (_applies_to_boundary != rhs._applies_to_boundary) {
     return false;
-  if (_rule != rhs._rule)
+  }
+  if (_rule != rhs._rule) {
     return false;
-  if (_threshold != rhs._threshold)
+  }
+  if (_threshold != rhs._threshold) {
     return false;
-  if (_no_shift != rhs._no_shift)
+  }
+  if (_no_shift != rhs._no_shift) {
     return false;
-  if (_force_shift != rhs._force_shift)
+  }
+  if (_force_shift != rhs._force_shift) {
     return false;
-  if (_location != rhs._location)
+  }
+  if (_location != rhs._location) {
     return false;
-  if (_input_supply != rhs._input_supply)
+  }
+  if (_input_supply != rhs._input_supply) {
     return false;
-  if (_output_supply != rhs._output_supply)
+  }
+  if (_output_supply != rhs._output_supply) {
     return false;
-  if (_internal_supply != rhs._internal_supply)
+  }
+  if (_internal_supply != rhs._internal_supply) {
     return false;
-  if (_name_prefix != rhs._name_prefix)
+  }
+  if (_name_prefix != rhs._name_prefix) {
     return false;
-  if (_name_suffix != rhs._name_suffix)
+  }
+  if (_name_suffix != rhs._name_suffix) {
     return false;
+  }
 
   return true;
 }
@@ -224,8 +242,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbLevelShifter& obj)
 
 _dbLevelShifter::~_dbLevelShifter()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -243,8 +262,9 @@ const char* dbLevelShifter::getName() const
 dbPowerDomain* dbLevelShifter::getDomain() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
-  if (obj->_domain == 0)
+  if (obj->_domain == 0) {
     return nullptr;
+  }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbPowerDomain*) par->_powerdomain_tbl->getPtr(obj->_domain);
 }
