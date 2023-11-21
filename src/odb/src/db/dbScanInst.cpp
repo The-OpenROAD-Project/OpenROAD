@@ -44,12 +44,15 @@ template class dbTable<_dbScanInst>;
 
 bool _dbScanInst::operator==(const _dbScanInst& rhs) const
 {
-  if (bits != rhs.bits)
+  if (bits != rhs.bits) {
     return false;
-  if (scanIn != rhs.scanIn)
+  }
+  if (scanIn != rhs.scanIn) {
     return false;
-  if (scanOut != rhs.scanOut)
+  }
+  if (scanOut != rhs.scanOut) {
     return false;
+  }
 
   return true;
 }

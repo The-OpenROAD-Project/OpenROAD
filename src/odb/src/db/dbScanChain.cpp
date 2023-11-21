@@ -44,20 +44,27 @@ template class dbTable<_dbScanChain>;
 
 bool _dbScanChain::operator==(const _dbScanChain& rhs) const
 {
-  if (name != rhs.name)
+  if (name != rhs.name) {
     return false;
-  if (length != rhs.length)
+  }
+  if (length != rhs.length) {
     return false;
-  if (scanIn != rhs.scanIn)
+  }
+  if (scanIn != rhs.scanIn) {
     return false;
-  if (scanOut != rhs.scanOut)
+  }
+  if (scanOut != rhs.scanOut) {
     return false;
-  if (scanClock != rhs.scanClock)
+  }
+  if (scanClock != rhs.scanClock) {
     return false;
-  if (scanEnable != rhs.scanEnable)
+  }
+  if (scanEnable != rhs.scanEnable) {
     return false;
-  if (testMode != rhs.testMode)
+  }
+  if (testMode != rhs.testMode) {
     return false;
+  }
 
   return true;
 }

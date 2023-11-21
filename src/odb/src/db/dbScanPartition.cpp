@@ -44,12 +44,15 @@ template class dbTable<_dbScanPartition>;
 
 bool _dbScanPartition::operator==(const _dbScanPartition& rhs) const
 {
-  if (start_ != rhs.start_)
+  if (start_ != rhs.start_) {
     return false;
-  if (stop_ != rhs.stop_)
+  }
+  if (stop_ != rhs.stop_) {
     return false;
-  if (name != rhs.name)
+  }
+  if (name != rhs.name) {
     return false;
+  }
 
   return true;
 }

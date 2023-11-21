@@ -44,10 +44,12 @@ template class dbTable<_dbScanPin>;
 
 bool _dbScanPin::operator==(const _dbScanPin& rhs) const
 {
-  if (bterm != rhs.bterm)
+  if (bterm != rhs.bterm) {
     return false;
-  if (iterm != rhs.iterm)
+  }
+  if (iterm != rhs.iterm) {
     return false;
+  }
 
   return true;
 }
