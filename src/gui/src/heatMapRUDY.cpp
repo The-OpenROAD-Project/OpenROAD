@@ -1,8 +1,8 @@
 //////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019-2023, The Regents of the University of California, Google
-// LLC All rights reserved.
+// Copyright (c) 2023, The Regents of the University of California
+// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
