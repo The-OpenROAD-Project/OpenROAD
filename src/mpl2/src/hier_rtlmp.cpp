@@ -5093,6 +5093,7 @@ void HierRTLMP::findOverlappingBlockages(std::vector<Rect>& macro_blockages,
 
     graphics_->setOutline(dbu_outline);
     graphics_->setMacroBlockages(macro_blockages);
+    graphics_->setPlacementBlockages(placement_blockages);
   }
 }
 

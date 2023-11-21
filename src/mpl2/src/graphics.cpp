@@ -205,23 +205,41 @@ void Graphics::drawCluster(Cluster* cluster, gui::Painter& painter)
   }
 }
 
-void Graphics::drawBlockages(gui::Painter& painter)
+void Graphics::drawAllBlockages(gui::Painter& painter)
 {
-  for (const auto& blockage : macro_blockages_) {
-    const int lx = dbu_ * blockage.xMin();
-    const int ly = dbu_ * blockage.yMin();
-    const int ux = dbu_ * blockage.xMax();
-    const int uy = dbu_ * blockage.yMax();
+  if (!macro_blockages_.empty()) {
+    painter.setPen(gui::Painter::gray, true);
+    painter.setBrush(gui::Painter::gray, gui::Painter::DIAGONAL);
 
-    odb::Rect blockage_bbox(lx, ly, ux, uy);
+    for (const auto& blockage : macro_blockages_) {
+      drawBlockage(blockage, painter);
+    }
+  }
 
-    blockage_bbox.moveDelta(outline_.xMin(), outline_.yMin());
+  if (!placement_blockages_.empty()) {
+    painter.setPen(gui::Painter::green, true);
+    painter.setBrush(gui::Painter::green, gui::Painter::DIAGONAL);
 
-    painter.drawRect(blockage_bbox);
+    for (const auto& blockage : placement_blockages_) {
+      drawBlockage(blockage, painter);
+    }
   }
 }
 
-// We draw the shapes of SoftMacros, HardMacros and macro blockages based
+void Graphics::drawBlockage(const Rect& blockage, gui::Painter& painter)
+{
+  const int lx = dbu_ * blockage.xMin();
+  const int ly = dbu_ * blockage.yMin();
+  const int ux = dbu_ * blockage.xMax();
+  const int uy = dbu_ * blockage.yMax();
+
+  odb::Rect blockage_bbox(lx, ly, ux, uy);
+  blockage_bbox.moveDelta(outline_.xMin(), outline_.yMin());
+
+  painter.drawRect(blockage_bbox);
+}
+
+// We draw the shapes of SoftMacros, HardMacros and blockages based
 // on the outline's origin.
 void Graphics::drawObjects(gui::Painter& painter)
 {
@@ -231,11 +249,9 @@ void Graphics::drawObjects(gui::Painter& painter)
     drawCluster(root_, painter);
   }
 
-  // Draw macro blockages only during SA for SoftMacros
-  if (!macro_blockages_.empty() && !soft_macros_.empty()) {
-    painter.setPen(gui::Painter::gray, true);
-    painter.setBrush(gui::Painter::gray, gui::Painter::DIAGONAL);
-    drawBlockages(painter);
+  // Draw blockages only during SA for SoftMacros
+  if (!soft_macros_.empty()) {
+    drawAllBlockages(painter);
   }
 
   painter.setPen(gui::Painter::yellow, true);
