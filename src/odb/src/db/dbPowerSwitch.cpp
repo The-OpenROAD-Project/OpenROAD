@@ -50,18 +50,24 @@ template class dbTable<_dbPowerSwitch>;
 
 bool _dbPowerSwitch::operator==(const _dbPowerSwitch& rhs) const
 {
-  if (_name != rhs._name)
+  if (_name != rhs._name) {
     return false;
-  if (_next_entry != rhs._next_entry)
+  }
+  if (_next_entry != rhs._next_entry) {
     return false;
-  if (_control_net != rhs._control_net)
+  }
+  if (_control_net != rhs._control_net) {
     return false;
-  if (_lib_cell != rhs._lib_cell)
+  }
+  if (_lib_cell != rhs._lib_cell) {
     return false;
-  if (_lib != rhs._lib)
+  }
+  if (_lib != rhs._lib) {
     return false;
-  if (_power_domain != rhs._power_domain)
+  }
+  if (_power_domain != rhs._power_domain) {
     return false;
+  }
 
   return true;
 }
@@ -152,8 +158,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbPowerSwitch& obj)
 
 _dbPowerSwitch::~_dbPowerSwitch()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -178,8 +185,9 @@ void dbPowerSwitch::setControlNet(dbNet* control_net)
 dbNet* dbPowerSwitch::getControlNet() const
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  if (obj->_control_net == 0)
+  if (obj->_control_net == 0) {
     return nullptr;
+  }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbNet*) par->_net_tbl->getPtr(obj->_control_net);
 }
@@ -194,8 +202,9 @@ void dbPowerSwitch::setPowerDomain(dbPowerDomain* power_domain)
 dbPowerDomain* dbPowerSwitch::getPowerDomain() const
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
-  if (obj->_power_domain == 0)
+  if (obj->_power_domain == 0) {
     return nullptr;
+  }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbPowerDomain*) par->_powerdomain_tbl->getPtr(obj->_power_domain);
 }

@@ -48,17 +48,18 @@ template class dbTable<_dbTechLayerSpacingTablePrlRule>;
 bool _dbTechLayerSpacingTablePrlRule::operator==(
     const _dbTechLayerSpacingTablePrlRule& rhs) const
 {
-  if (flags_.wrong_direction_ != rhs.flags_.wrong_direction_)
+  if (flags_.wrong_direction_ != rhs.flags_.wrong_direction_) {
     return false;
-
-  if (flags_.same_mask_ != rhs.flags_.same_mask_)
+  }
+  if (flags_.same_mask_ != rhs.flags_.same_mask_) {
     return false;
-
-  if (flags_.exceept_eol_ != rhs.flags_.exceept_eol_)
+  }
+  if (flags_.exceept_eol_ != rhs.flags_.exceept_eol_) {
     return false;
-
-  if (eol_width_ != rhs.eol_width_)
+  }
+  if (eol_width_ != rhs.eol_width_) {
     return false;
+  }
 
   return true;
 }
