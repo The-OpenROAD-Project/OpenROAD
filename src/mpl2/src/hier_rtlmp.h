@@ -223,16 +223,28 @@ class HierRTLMP
   // multi thread enabled
   // random seed deterministic enabled
   void calHardMacroClusterShape(Cluster* cluster);
-  // The cluster placement is done in a top-down manner
-  // (Preorder DFS)
+
+  ///////////////////////////////////////////////////////////////////////////
+  // Hierarchical Macro Placement is done in two steps:
+  //
+  // 1)Cluster Placement:
+  //   Place and shape - fine shaping - the physical clusters.
+  //
+  // 2)Macro Placement:
+  //   Determine location and orientation of macros in each macro
+  // 	 cluster.
+  //
+  // Methods for cluster placement: Top-down -> Pre-Order Depth-First Traversal
   void multiLevelMacroPlacement(Cluster* parent);
-  // place macros within the HardMacroCluster
   void multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent);
-  // For some testcase with very high density, it may be very difficuit to
-  // generate a tiling for clusters.  In this case, we may want to try to set
-  // the area of all standard-cell clusters to 0.0
   void enhancedMacroPlacement(Cluster* parent);
+  void computeBlockageOverlap(std::vector<Rect>& blockages,
+                              std::vector<Rect>& placement_blockages,
+                              const Rect& outline);
+
+  // Methods for macro placement in each macro cluster
   void hardMacroClusterMacroPlacement(Cluster* cluster);
+
   // Merge nets to reduce runtime
   void mergeNets(std::vector<BundledNet>& nets);
   // determine the shape for children cluster
