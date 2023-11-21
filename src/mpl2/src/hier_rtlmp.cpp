@@ -3245,14 +3245,12 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     // will be deleted
     cluster->setSoftMacro(macro);
   }
-  // detemine the settings for simulated annealing engine
-  // Set outline information
-  const float lx = parent->getX();
-  const float ly = parent->getY();
-  const float outline_width = parent->getWidth();
-  const float outline_height = parent->getHeight();
-  const float ux = lx + outline_width;
-  const float uy = ly + outline_height;
+
+  // The simulated annealing outline is determined by the parent's shape
+  const Rect outline(parent->getX(),
+                     parent->getY(),
+                     parent->getX() + parent->getWidth(),
+                     parent->getY() + parent->getHeight());
 
   debugPrint(logger_,
              MPL,
@@ -3261,10 +3259,10 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
              "Working on children of cluster: {}, Outline "
              "{}, {}  {}, {}",
              parent->getName(),
-             lx,
-             ly,
-             outline_width,
-             outline_height);
+             outline.xMin(),
+             outline.yMin(),
+             outline.getWidth(),
+             outline.getHeight());
 
   // Suppose the region, fence, guide has been mapped to cooresponding macros
   // This step is done when we enter the Hier-RTLMP program
@@ -3273,42 +3271,11 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   std::map<int, Rect> guides;
   std::vector<SoftMacro> macros;
   std::vector<BundledNet> nets;
-  std::vector<Rect> blockages;        // general placement blockage
-  std::vector<Rect> macro_blockages;  // placement blockage for macros
-  //
-  // Calculate the parts of blockages that have overlapped with current parent
-  // cluster.  All the blockages are converted to hard macros with fences. Here
-  // the blockage is the placement blockage. The placement blockage prevents
-  // both macros and standard-cells to overlap the placement blockage
-  //
-  for (auto& blockage : blockages_) {
-    // calculate the overlap between blockage and parent cluster
-    const float b_lx = std::max(lx, blockage.xMin());
-    const float b_ly = std::max(ly, blockage.yMin());
-    const float b_ux = std::min(ux, blockage.xMax());
-    const float b_uy = std::min(uy, blockage.yMax());
-    if ((b_ux - b_lx > 0.0) && (b_uy - b_ly > 0.0)) {  // blockage exists
-      blockages.emplace_back(b_lx - lx, b_ly - ly, b_ux - lx, b_uy - ly);
-    }
-  }
-  // macro blockage
-  for (auto& blockage : macro_blockages_) {
-    // calculate the overlap between blockage and parent cluster
-    const float b_lx = std::max(lx, blockage.xMin());
-    const float b_ly = std::max(ly, blockage.yMin());
-    const float b_ux = std::min(ux, blockage.xMax());
-    const float b_uy = std::min(uy, blockage.yMax());
-    if ((b_ux - b_lx > 0.0) && (b_uy - b_ly > 0.0)) {  // blockage exists
-      macro_blockages.emplace_back(b_lx - lx, b_ly - ly, b_ux - lx, b_uy - ly);
-    }
-  }
 
-  if (graphics_) {
-    odb::Rect outline(dbu_ * lx, dbu_ * ly, dbu_ * ux, dbu_ * uy);
+  std::vector<Rect> placement_blockages;
+  std::vector<Rect> macro_blockages;
 
-    graphics_->setOutline(outline);
-    graphics_->setMacroBlockages(macro_blockages);
-  }
+  computeBlockageOverlap(macro_blockages, placement_blockages, outline);
 
   // Each cluster is modeled as Soft Macro
   // The fences or guides for each cluster is created by merging
@@ -3318,7 +3285,8 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     if (cluster->isIOCluster()) {
       soft_macro_id_map[cluster->getName()] = macros.size();
       macros.emplace_back(
-          std::pair<float, float>(cluster->getX() - lx, cluster->getY() - ly),
+          std::pair<float, float>(cluster->getX() - outline.xMin(),
+                                  cluster->getY() - outline.yMin()),
           cluster->getName(),
           cluster->getWidth(),
           cluster->getHeight(),
@@ -3346,8 +3314,12 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
         guide.merge(guides_[hard_macro->getName()]);
       }
     }
-    fence.relocate(lx, ly, ux, uy);  // calculate the overlap with outline
-    guide.relocate(lx, ly, ux, uy);  // calculate the overlap with outline
+
+    // Calculate overlap with outline
+    fence.relocate(
+        outline.xMin(), outline.yMin(), outline.xMax(), outline.yMax());
+    guide.relocate(
+        outline.xMin(), outline.yMin(), outline.xMax(), outline.yMax());
     if (fence.isValid()) {
       // current macro id is macros.size() - 1
       fences[macros.size() - 1] = fence;
@@ -3488,13 +3460,14 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     float max_height = 0.0;
     float max_width = 0.0;
     for (auto& tiling : tilings) {
-      if (tiling.first <= outline_width && tiling.second <= outline_height) {
+      if (tiling.first <= outline.getWidth()
+          && tiling.second <= outline.getHeight()) {
         max_width = std::max(max_width, tiling.first);
         max_height = std::max(max_height, tiling.second);
       }
     }
-    max_width = std::min(max_width, outline_width);
-    max_height = std::min(max_height, outline_height);
+    max_width = std::min(max_width, outline.getWidth());
+    max_height = std::min(max_height, outline.getHeight());
     debugPrint(logger_,
                MPL,
                "hierarchical_macro_placement",
@@ -3508,8 +3481,8 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     t_size = std::min(t_size, max_width);
     b_size = std::min(b_size, max_width);
     // determine the height of each pin access
-    max_width = outline_width - max_width;
-    max_height = outline_height - max_height;
+    max_width = outline.getWidth() - max_width;
+    max_height = outline.getHeight() - max_height;
     // the area of standard-cell clusters
     float std_cell_area = 0.0;
     for (auto& cluster : parent->getChildren()) {
@@ -3546,7 +3519,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
       macros[soft_macro_id_map[toString(L)]]
           = SoftMacro(temp_width, l_size, toString(L));
       fences[soft_macro_id_map[toString(L)]]
-          = Rect(0.0, 0.0, temp_width, outline_height);
+          = Rect(0.0, 0.0, temp_width, outline.getWidth());
 
       debugPrint(logger_,
                  MPL,
@@ -3560,8 +3533,11 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
       const float temp_width = std::min(max_width, depth);
       macros[soft_macro_id_map[toString(R)]]
           = SoftMacro(temp_width, r_size, toString(R));
-      fences[soft_macro_id_map[toString(R)]] = Rect(
-          outline_width - temp_width, 0.0, outline_width, outline_height);
+      fences[soft_macro_id_map[toString(R)]]
+          = Rect(outline.getWidth() - temp_width,
+                 0.0,
+                 outline.getWidth(),
+                 outline.getHeight());
 
       debugPrint(logger_,
                  MPL,
@@ -3575,8 +3551,11 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
       const float temp_height = std::min(max_height, depth);
       macros[soft_macro_id_map[toString(T)]]
           = SoftMacro(t_size, temp_height, toString(T));
-      fences[soft_macro_id_map[toString(T)]] = Rect(
-          0.0, outline_height - temp_height, outline_width, outline_height);
+      fences[soft_macro_id_map[toString(T)]]
+          = Rect(0.0,
+                 outline.getHeight() - temp_height,
+                 outline.getWidth(),
+                 outline.getHeight());
 
       debugPrint(logger_,
                  MPL,
@@ -3591,7 +3570,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
       macros[soft_macro_id_map[toString(B)]]
           = SoftMacro(b_size, temp_height, toString(B));
       fences[soft_macro_id_map[toString(B)]]
-          = Rect(0.0, 0.0, outline_width, temp_height);
+          = Rect(0.0, 0.0, outline.getWidth(), temp_height);
 
       debugPrint(logger_,
                  MPL,
@@ -3728,8 +3707,8 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
       SACoreSoftMacro* sa = new SACoreSoftMacro(
-          outline_width,
-          outline_height,
+          outline.getWidth(),
+          outline.getHeight(),
           shaped_macros,
           area_weight_,
           outline_weight_,
@@ -3758,7 +3737,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
-      sa->setBlockages(blockages);
+      sa->setBlockages(placement_blockages);
       sa->setBlockages(macro_blockages);
       sa_vector.push_back(sa);
     }
@@ -3859,10 +3838,12 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
           = shaped_macros[soft_macro_id_map[toString(R)]].getWidth();
       const float r_height
           = shaped_macros[soft_macro_id_map[toString(R)]].getHeight();
-      macro_blockages.emplace_back(
-          outline_width - r_width, r_ly, outline_width, r_ly + r_height);
+      macro_blockages.emplace_back(outline.getWidth() - r_width,
+                                   r_ly,
+                                   outline.getWidth(),
+                                   r_ly + r_height);
       shaped_macros[soft_macro_id_map[toString(R)]]
-          = SoftMacro(std::pair<float, float>(outline_width, r_ly),
+          = SoftMacro(std::pair<float, float>(outline.getWidth(), r_ly),
                       toString(R),
                       0.0,
                       r_height,
@@ -3874,10 +3855,12 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
           = shaped_macros[soft_macro_id_map[toString(T)]].getWidth();
       const float t_height
           = shaped_macros[soft_macro_id_map[toString(T)]].getHeight();
-      macro_blockages.emplace_back(
-          t_lx, outline_height - t_height, t_lx + t_width, outline_height);
+      macro_blockages.emplace_back(t_lx,
+                                   outline.getHeight() - t_height,
+                                   t_lx + t_width,
+                                   outline.getHeight());
       shaped_macros[soft_macro_id_map[toString(T)]]
-          = SoftMacro(std::pair<float, float>(t_lx, outline_height),
+          = SoftMacro(std::pair<float, float>(t_lx, outline.getHeight()),
                       toString(T),
                       t_width,
                       0.0,
@@ -3966,8 +3949,8 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
         // of 1.0. Note that the weight are not necessaries summarized to 1.0,
         // i.e., not normalized.
         SACoreSoftMacro* sa = new SACoreSoftMacro(
-            outline_width,
-            outline_height,
+            outline.getWidth(),
+            outline.getHeight(),
             shaped_macros,
             area_weight_,
             outline_weight_,
@@ -3996,7 +3979,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
         sa->setFences(fences);
         sa->setGuides(guides);
         sa->setNets(nets);
-        sa->setBlockages(blockages);
+        sa->setBlockages(placement_blockages);
         sa->setBlockages(macro_blockages);
         sa_vector.push_back(sa);
       }
@@ -4097,7 +4080,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     }
   }
 
-  updateChildrenRealLocation(parent, lx, ly);
+  updateChildrenRealLocation(parent, outline.xMin(), outline.yMin());
 
   // Continue cluster placement on children
   for (auto& cluster : parent->getChildren()) {
