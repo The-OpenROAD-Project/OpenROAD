@@ -645,6 +645,7 @@ void HierRTLMP::hierRTLMacroPlacer()
     calClusterMacroTilings(root_cluster_);
 
     createPinBlockage();
+    setPlacementBlockages();
 
     logger_->info(
         MPL, 28, "[Hierarchical Macro Placement] Placing clusters and macros.");
@@ -3192,6 +3193,20 @@ void HierRTLMP::createPinBlockage()
   }
 }
 
+void HierRTLMP::setPlacementBlockages()
+{
+  for (odb::dbBlockage* blockage : block_->getBlockages()) {
+    odb::Rect bbox = blockage->getBBox()->getBox();
+
+    Rect bbox_micron(bbox.xMin() / dbu_,
+                     bbox.yMin() / dbu_,
+                     bbox.xMax() / dbu_,
+                     bbox.yMax() / dbu_);
+
+    placement_blockages_.push_back(bbox_micron);
+  }
+}
+
 //
 // Cluster Placement Engine Starts ...........................................
 // The cluster placement is done in a top-down manner
@@ -5062,8 +5077,7 @@ void HierRTLMP::findOverlappingBlockages(std::vector<Rect>& macro_blockages,
                                          std::vector<Rect>& placement_blockages,
                                          const Rect& outline)
 {
-  // Placement blockages
-  for (auto& blockage : blockages_) {
+  for (auto& blockage : placement_blockages_) {
     computeBlockageOverlap(placement_blockages, blockage, outline);
   }
 

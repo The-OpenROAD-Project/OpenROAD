@@ -183,6 +183,7 @@ class HierRTLMP
   void createBundledIOs();
   void calculateConnection();
   void createPinBlockage();
+  void setPlacementBlockages();
   void getHardMacros(odb::dbModule* module,
                      std::vector<HardMacro*>& hard_macros);
   void printPhysicalHierarchyTree(Cluster* parent, int level);
@@ -331,12 +332,11 @@ class HierRTLMP
   float notch_weight_ = 1.0;
   float macro_blockage_weight_ = 1.0;
 
-  // gudiances, fences, constraints
+  // guidances, fences, constraints
   std::map<std::string, Rect> fences_;  // macro_name, fence
   std::map<std::string, Rect> guides_;  // macro_name, guide
-  std::vector<Rect> blockages_;  // placement blockages (for both standard cells
-                                 // and hard macros)
-  std::vector<Rect> macro_blockages_;  // the blockages for macros
+  std::vector<Rect> placement_blockages_;
+  std::vector<Rect> macro_blockages_;
 
   // Fast SA hyperparameter
   float init_prob_ = 0.9;
