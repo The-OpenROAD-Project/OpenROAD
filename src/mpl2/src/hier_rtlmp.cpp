@@ -4641,14 +4641,12 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
     // will be deleted
     cluster->setSoftMacro(macro);
   }
-  // detemine the settings for simulated annealing engine
-  // Set outline information
-  const float lx = parent->getX();
-  const float ly = parent->getY();
-  const float outline_width = parent->getWidth();
-  const float outline_height = parent->getHeight();
-  const float ux = lx + outline_width;
-  const float uy = ly + outline_height;
+
+  // The simulated annealing outline is determined by the parent's shape
+  const Rect outline(parent->getX(),
+                     parent->getY(),
+                     parent->getX() + parent->getWidth(),
+                     parent->getY() + parent->getHeight());
 
   debugPrint(logger_,
              MPL,
@@ -4657,10 +4655,10 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
              "Working on children of cluster: {}, Outline "
              "{}, {}  {}, {}",
              parent->getName(),
-             lx,
-             ly,
-             outline_width,
-             outline_height);
+             outline.xMin(),
+             outline.yMin(),
+             outline.getWidth(),
+             outline.getHeight());
 
   // Suppose the region, fence, guide has been mapped to cooresponding macros
   // This step is done when we enter the Hier-RTLMP program
@@ -4669,42 +4667,11 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   std::map<int, Rect> guides;
   std::vector<SoftMacro> macros;
   std::vector<BundledNet> nets;
-  std::vector<Rect> blockages;        // general placement blockage
-  std::vector<Rect> macro_blockages;  // placement blockage for macros
-  //
-  // Calculate the parts of blockages that have overlapped with current parent
-  // cluster.  All the blockages are converted to hard macros with fences. Here
-  // the blockage is the placement blockage. The placement blockage prevents
-  // both macros and standard-cells to overlap the placement blockage
-  //
-  for (auto& blockage : blockages_) {
-    // calculate the overlap between blockage and parent cluster
-    const float b_lx = std::max(lx, blockage.xMin());
-    const float b_ly = std::max(ly, blockage.yMin());
-    const float b_ux = std::min(ux, blockage.xMax());
-    const float b_uy = std::min(uy, blockage.yMax());
-    if ((b_ux - b_lx > 0.0) && (b_uy - b_ly > 0.0)) {  // blockage exists
-      blockages.emplace_back(b_lx - lx, b_ly - ly, b_ux - lx, b_uy - ly);
-    }
-  }
-  // macro blockage
-  for (auto& blockage : macro_blockages_) {
-    // calculate the overlap between blockage and parent cluster
-    const float b_lx = std::max(lx, blockage.xMin());
-    const float b_ly = std::max(ly, blockage.yMin());
-    const float b_ux = std::min(ux, blockage.xMax());
-    const float b_uy = std::min(uy, blockage.yMax());
-    if ((b_ux - b_lx > 0.0) && (b_uy - b_ly > 0.0)) {  // blockage exists
-      macro_blockages.emplace_back(b_lx - lx, b_ly - ly, b_ux - lx, b_uy - ly);
-    }
-  }
 
-  if (graphics_) {
-    odb::Rect outline(dbu_ * lx, dbu_ * ly, dbu_ * ux, dbu_ * uy);
+  std::vector<Rect> placement_blockages;
+  std::vector<Rect> macro_blockages;
 
-    graphics_->setOutline(outline);
-    graphics_->setMacroBlockages(macro_blockages);
-  }
+  computeBlockageOverlap(macro_blockages, placement_blockages, outline);
 
   // Each cluster is modeled as Soft Macro
   // The fences or guides for each cluster is created by merging
@@ -4714,7 +4681,8 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
     if (cluster->isIOCluster()) {
       soft_macro_id_map[cluster->getName()] = macros.size();
       macros.emplace_back(
-          std::pair<float, float>(cluster->getX() - lx, cluster->getY() - ly),
+          std::pair<float, float>(cluster->getX() - outline.xMin(),
+                                  cluster->getY() - outline.yMin()),
           cluster->getName(),
           cluster->getWidth(),
           cluster->getHeight(),
@@ -4742,8 +4710,12 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
         guide.merge(guides_[hard_macro->getName()]);
       }
     }
-    fence.relocate(lx, ly, ux, uy);  // calculate the overlap with outline
-    guide.relocate(lx, ly, ux, uy);  // calculate the overlap with outline
+
+    // Calculate overlap with outline
+    fence.relocate(
+        outline.xMin(), outline.yMin(), outline.xMax(), outline.yMax());
+    guide.relocate(
+        outline.xMin(), outline.yMin(), outline.xMax(), outline.yMax());
     if (fence.isValid()) {
       // current macro id is macros.size() - 1
       fences[macros.size() - 1] = fence;
@@ -4767,8 +4739,9 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
           soft_macro_id_map[cluster->getName()] = macros.size();
           macros.emplace_back(
               std::pair<float, float>(
-                  cluster->getX() + cluster->getWidth() / 2.0 - lx,
-                  cluster->getY() + cluster->getHeight() / 2.0 - ly),
+                  cluster->getX() + cluster->getWidth() / 2.0 - outline.xMin(),
+                  cluster->getY() + cluster->getHeight() / 2.0
+                      - outline.yMin()),
               cluster->getName(),
               0.0,
               0.0,
@@ -4958,8 +4931,8 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
       SACoreSoftMacro* sa = new SACoreSoftMacro(
-          outline_width,
-          outline_height,
+          outline.getWidth(),
+          outline.getHeight(),
           shaped_macros,
           area_weight_,
           outline_weight_,
@@ -4988,7 +4961,7 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
-      sa->setBlockages(blockages);
+      sa->setBlockages(placement_blockages);
       sa->setBlockages(macro_blockages);
       sa_vector.push_back(sa);
     }
@@ -5082,7 +5055,7 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
 
   updateChildrenShapesAndLocations(parent, shaped_macros, soft_macro_id_map);
 
-  updateChildrenRealLocation(parent, lx, ly);
+  updateChildrenRealLocation(parent, outline.xMin(), outline.yMin());
 
   sa_containers.clear();
 }
