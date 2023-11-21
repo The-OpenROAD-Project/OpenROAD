@@ -166,10 +166,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerAreaRule& obj)
   return stream;
 }
 
-_dbTechLayerAreaRule::~_dbTechLayerAreaRule()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerAreaRule - Methods
@@ -351,4 +347,4 @@ void dbTechLayerAreaRule::destroy(dbTechLayerAreaRule* rule)
 
 // User Code End dbTechLayerAreaRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

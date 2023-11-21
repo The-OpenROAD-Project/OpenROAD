@@ -282,4 +282,4 @@ void dbTechLayerCutClassRule::destroy(dbTechLayerCutClassRule* rule)
 }
 // User Code End dbTechLayerCutClassRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

@@ -224,10 +224,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerKeepOutZoneRule& obj)
   return stream;
 }
 
-_dbTechLayerKeepOutZoneRule::~_dbTechLayerKeepOutZoneRule()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerKeepOutZoneRule - Methods

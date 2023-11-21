@@ -61,7 +61,8 @@ class _dbTechLayerMinCutRule : public _dbObject
  public:
   _dbTechLayerMinCutRule(_dbDatabase*, const _dbTechLayerMinCutRule& r);
   _dbTechLayerMinCutRule(_dbDatabase*);
-  ~_dbTechLayerMinCutRule();
+
+  ~_dbTechLayerMinCutRule() = default;
 
   bool operator==(const _dbTechLayerMinCutRule& rhs) const;
   bool operator!=(const _dbTechLayerMinCutRule& rhs) const

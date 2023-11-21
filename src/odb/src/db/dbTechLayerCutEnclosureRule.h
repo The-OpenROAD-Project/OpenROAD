@@ -78,7 +78,8 @@ class _dbTechLayerCutEnclosureRule : public _dbObject
   _dbTechLayerCutEnclosureRule(_dbDatabase*,
                                const _dbTechLayerCutEnclosureRule& r);
   _dbTechLayerCutEnclosureRule(_dbDatabase*);
-  ~_dbTechLayerCutEnclosureRule();
+
+  ~_dbTechLayerCutEnclosureRule() = default;
 
   bool operator==(const _dbTechLayerCutEnclosureRule& rhs) const;
   bool operator!=(const _dbTechLayerCutEnclosureRule& rhs) const

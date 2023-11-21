@@ -252,10 +252,6 @@ dbOStream& operator<<(dbOStream& stream,
   return stream;
 }
 
-_dbTechLayerCornerSpacingRule::~_dbTechLayerCornerSpacingRule()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerCornerSpacingRule - Methods
@@ -573,4 +569,4 @@ void dbTechLayerCornerSpacingRule::destroy(dbTechLayerCornerSpacingRule* rule)
 }
 // User Code End dbTechLayerCornerSpacingRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

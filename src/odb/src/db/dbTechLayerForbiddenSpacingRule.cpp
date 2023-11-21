@@ -133,10 +133,6 @@ dbOStream& operator<<(dbOStream& stream,
   return stream;
 }
 
-_dbTechLayerForbiddenSpacingRule::~_dbTechLayerForbiddenSpacingRule()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerForbiddenSpacingRule - Methods
@@ -269,4 +265,4 @@ void dbTechLayerForbiddenSpacingRule::destroy(
 
 // User Code End dbTechLayerForbiddenSpacingRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

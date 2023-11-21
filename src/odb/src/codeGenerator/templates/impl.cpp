@@ -291,21 +291,23 @@ namespace odb {
   }
   {% endif %}
 
-  _{{klass.name}}::~_{{klass.name}}()
-  {
-    {% for field in klass.fields %}
-      {% if field.name == '_name' and 'no-destruct' not in field.flags %}
-        if (_name) {
-          free((void*) _name);
-        }
-      {% endif %}
-      {% if field.table %}
-        delete {{field.name}};
-      {% endif %}
-    {% endfor %}
-    //User Code Begin Destructor
-    //User Code End Destructor
-  }
+  {% if klass.has_destructible_fields %}
+    _{{klass.name}}::~_{{klass.name}}()
+    {
+      {% for field in klass.fields %}
+        {% if field.name == '_name' and 'no-destruct' not in field.flags %}
+          if (_name) {
+            free((void*) _name);
+          }
+        {% endif %}
+        {% if field.table %}
+          delete {{field.name}};
+        {% endif %}
+      {% endfor %}
+      //User Code Begin Destructor
+      //User Code End Destructor
+    }
+  {% endif %}
 
   //User Code Begin PrivateMethods
   //User Code End PrivateMethods
@@ -404,5 +406,5 @@ namespace odb {
 
   //User Code Begin {{klass.name}}PublicMethods
   //User Code End {{klass.name}}PublicMethods
-}
+} // namespace odb
 // Generator Code End Cpp
