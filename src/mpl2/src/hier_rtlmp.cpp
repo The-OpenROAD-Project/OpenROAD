@@ -2492,9 +2492,7 @@ void HierRTLMP::getHardMacros(odb::dbModule* module,
   }
 }
 
-//
-// Print Physical Hierarchy tree
-//
+// Print Physical Hierarchy tree in a DFS manner
 void HierRTLMP::printPhysicalHierarchyTree(Cluster* parent, int level)
 {
   std::string line;
@@ -3029,10 +3027,8 @@ void HierRTLMP::calHardMacroClusterShape(Cluster* cluster)
   debugPrint(logger_, MPL, "coarse_shaping", 2, "{}", line);
 }
 
-//
 // Create pin blockage for Bundled IOs
 // Each pin blockage is a macro only blockage
-//
 void HierRTLMP::createPinBlockage()
 {
   debugPrint(logger_,
@@ -6197,6 +6193,8 @@ void HierRTLMP::setModuleStdCellsLocation(Cluster* cluster,
   }
 }
 
+// Update the locations of std cells in odb using the locations that
+// HierRTLMP estimates for the leaf standard clusters
 void HierRTLMP::generateTemporaryStdCellsPlacement(Cluster* cluster)
 {
   if (cluster->isLeaf() && cluster->getNumStdCell() != 0) {

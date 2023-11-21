@@ -114,6 +114,7 @@ class HierRTLMP
                       float fence_uy);
   void setHaloWidth(float halo_width);
   void setHaloHeight(float halo_height);
+
   // Hierarchical Clustering Related Options
   void setNumBundledIOsPerBoundary(int num_bundled_ios);
   void setClusterSize(int max_num_macro,
@@ -149,6 +150,7 @@ class HierRTLMP
   void writeMacroPlacement(const std::string& file_name);
 
  private:
+ 	// General Hier-RTLMP flow functions
   void setDefaultThresholds();
   void createDataFlow();
   void updateDataFlow();
@@ -175,17 +177,25 @@ class HierRTLMP
                            std::vector<std::vector<int>>& vertices,
                            std::vector<std::vector<int>>& hyperedges,
                            bool backward_flag);
-  // DFS-manner function to traverse the logical hierarchy
   Metrics* computeMetrics(odb::dbModule* module);
-  // Calculate metrics for cluster based its type
   void setClusterMetrics(Cluster* cluster);
-  // Map IOs to Pads (for designs with IO pads)
   void mapIOPads();
-  // create bundled IOs as clusters (for designs with IO pins or Pads)
   void createBundledIOs();
+	void calculateConnection();
+  void createPinBlockage();
+  void getHardMacros(odb::dbModule* module,
+                     std::vector<HardMacro*>& hard_macros);
+  void printPhysicalHierarchyTree(Cluster* parent, int level);
 
-  // update the cluster_id property of insts in the cluster
-  // Create physical hierarchy tree in a post-order DFS manner
+  void printConnection();
+  void printClusters();
+	void FDPlacement(std::vector<Rect>& blocks,
+                   const std::vector<BundledNet>& nets,
+                   float outline_width,
+                   float outline_height,
+                   const std::string& file_name);
+
+	// Multilevel Autoclustering
   void multiLevelCluster(Cluster* parent);
   void setInstProperty(Cluster* cluster);
   void setInstProperty(odb::dbModule* module,
@@ -193,80 +203,33 @@ class HierRTLMP
                        bool include_macro);
   void breakCluster(Cluster* parent);
   void mergeClusters(std::vector<Cluster*>& candidate_clusters);
-  void calculateConnection();
-  void printConnection();
-  void printClusters();
   void updateSubTree(Cluster* parent);
-  // Break large flat clusters with TritonPart
-  // A flat cluster does not have a logical module
   void breakLargeFlatCluster(Cluster* parent);
-
-  // Traverse the physical hierarchy tree in a DFS manner
-  // Split macros and std cells in the leaf clusters
-  // In the normal operation, we call this function after
-  // creating the physical hierarchy tree
   void leafClusterStdCellHardMacroSep(Cluster* root_cluster);
-  // Map all the macros into their HardMacro objects for all the clusters
   void mapMacroInCluster2HardMacro(Cluster* cluster);
-  // Get all the hard macros in a logical module
-  void getHardMacros(odb::dbModule* module,
-                     std::vector<HardMacro*>& hard_macros);
 
-  // Print the physical hierachical tree in a DFS manner
-  void printPhysicalHierarchyTree(Cluster* parent, int level);
-  // Determine the macro tilings within each cluster in a bottom-up manner
-  // (Post-Order DFS manner)
-  void calClusterMacroTilings(Cluster* parent);
-  // calculate the pin blockage for IO pins
-  void createPinBlockage();
-  // Determine the macro tilings for each HardMacroCluster
-  // multi thread enabled
-  // random seed deterministic enabled
+	// Coarse Shaping
+	void calClusterMacroTilings(Cluster* parent);
   void calHardMacroClusterShape(Cluster* cluster);
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Hierarchical Macro Placement is done in two steps:
-  //
-  // 1)Cluster Placement:
-  //   Place and shape - fine shaping - the physical clusters.
-  //
-  // 2)Macro Placement:
-  //   Determine location and orientation of macros in each macro
-  // 	 cluster.
-  //
-  // Methods for cluster placement: Top-down -> Pre-Order Depth-First Traversal
+  // Fine Shaping
+  bool shapeChildrenCluster(Cluster* parent,
+                            std::vector<SoftMacro>& macros,
+                            std::map<std::string, int>& soft_macro_id_map,
+                            float target_util,
+                            float target_dead_space);
+
+  // Hierarchical Macro Placement 1st stage: Cluster Placement
   void multiLevelMacroPlacement(Cluster* parent);
   void multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent);
   void enhancedMacroPlacement(Cluster* parent);
 
-  // Cluster Placement Support
   void findOverlappingBlockages(std::vector<Rect>& blockages,
                                 std::vector<Rect>& placement_blockages,
                                 const Rect& outline);
   void computeBlockageOverlap(std::vector<Rect>& overlapping_blockages,
                               const Rect& blockage,
                               const Rect& outline);
-
-  // Methods for macro placement in each macro cluster
-  void hardMacroClusterMacroPlacement(Cluster* cluster);
-
-  // Merge nets to reduce runtime
-  void mergeNets(std::vector<BundledNet>& nets);
-  // determine the shape for children cluster
-  bool shapeChildrenCluster(Cluster* parent,
-                            std::vector<SoftMacro>& macros,
-                            std::map<std::string, int>& soft_macro_id_map,
-                            float target_util,
-                            float target_dead_space);
-  // Call Path Synthesis to route buses
-  void callBusPlanning(std::vector<SoftMacro>& shaped_macros,
-                       std::vector<BundledNet>& nets_old);
-
-  // Align all the macros globally to reduce the waste of empty space
-  void alignHardMacroGlobal(Cluster* parent);  // call this function after
-                                               // multilevel macro placement
-
-  // Functions used to incorporate SA results in the children of a cluster
   void updateChildrenShapesAndLocations(
       Cluster* parent,
       const std::vector<SoftMacro>& shaped_macros,
@@ -274,16 +237,13 @@ class HierRTLMP
   void updateChildrenRealLocation(Cluster* parent,
                                   float offset_x,
                                   float offset_y);
+	void mergeNets(std::vector<BundledNet>& nets);
+	void alignHardMacroGlobal(Cluster* parent);
 
-  // force-directed placement to generate guides for macros
-  void FDPlacement(std::vector<Rect>& blocks,
-                   const std::vector<BundledNet>& nets,
-                   float outline_width,
-                   float outline_height,
-                   const std::string& file_name);
+  // Hierarchical Macro Placement 2nd stage: Macro Placement
+  void hardMacroClusterMacroPlacement(Cluster* cluster);
 
-  // Update the locations of std cells in odb using the locations that
-  // HierRTLMP estimates for the leaf standard clusters
+	// Orientation Improvement
   void generateTemporaryStdCellsPlacement(Cluster* cluster);
   void setModuleStdCellsLocation(Cluster* cluster, odb::dbModule* module);
   void setTemporaryStdCellLocation(Cluster* cluster, odb::dbInst* std_cell);
@@ -292,6 +252,10 @@ class HierRTLMP
   float calculateRealMacroWirelength(odb::dbInst* macro);
   void adjustRealMacroOrientation(const bool& is_vertical_flip);
   void flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip);
+
+  // Bus Planning
+  void callBusPlanning(std::vector<SoftMacro>& shaped_macros,
+                       std::vector<BundledNet>& nets_old);
 
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
