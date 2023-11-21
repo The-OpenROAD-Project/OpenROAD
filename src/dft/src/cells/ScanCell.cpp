@@ -43,7 +43,7 @@ ScanCell::ScanCell(const std::string& name,
 {
 }
 
-const std::string& ScanCell::getName() const
+std::string_view ScanCell::getName() const
 {
   return name_;
 }

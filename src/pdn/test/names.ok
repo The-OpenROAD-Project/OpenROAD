@@ -29,5 +29,6 @@
 PDN-0184
 [ERROR PDN-1043] Grid named "Core" already defined.
 PDN-1043
-[ERROR PDN-1044] Grid named "Inst" already defined.
+[WARNING PDN-0231] cmp1 is not connected to any power/ground nets.
+[WARNING PDN-0231] cmp1 is not connected to any power/ground nets.
 PDN-1043

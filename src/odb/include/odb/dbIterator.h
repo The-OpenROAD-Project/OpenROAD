@@ -53,7 +53,7 @@ class dbIterator
   virtual uint end(dbObject* parent) = 0;
   virtual uint next(uint id, ...) = 0;
   virtual dbObject* getObject(uint id, ...) = 0;
-  virtual ~dbIterator() {}
+  virtual ~dbIterator() = default;
 };
 
 }  // namespace odb

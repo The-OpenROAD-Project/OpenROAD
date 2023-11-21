@@ -10,6 +10,7 @@ record_tests {
   congestion4
   congestion5
   congestion6
+  congestion7
   critical_nets_percentage
   est_rc1
   est_rc2
@@ -25,6 +26,7 @@ record_tests {
   ndr_1w_3s
   ndr_2w_3s
   no_tracks
+  obstruction
   obs_out_of_die
   overlapping_edges
   pd1
@@ -49,6 +51,7 @@ record_tests {
   report_wire_length4
   report_wire_length5
   report_wire_length6
+  set_nets_to_route1
   silence
   top_level_term1
   top_level_term2
@@ -56,4 +59,5 @@ record_tests {
   tracks2
   tracks3
   upper_layer_net
+  modeling_instance_obs
 }

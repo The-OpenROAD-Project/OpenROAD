@@ -32,10 +32,11 @@
 
 #pragma once
 
-#include <string.h>
-
 #include <array>
-#include <fstream>
+#include <cstdint>
+#include <cstring>
+#include <istream>
+#include <ostream>
 #include <string>
 
 #include "ZException.h"
@@ -51,18 +52,21 @@ class _dbDatabase;
 class dbOStream
 {
   _dbDatabase* _db;
-  FILE* _f;
+  std::ostream& _f;
   double _lef_area_factor;
   double _lef_dist_factor;
 
-  void write_error()
+  // By default values are written as their string ("255" vs 0xFF)
+  // representations when using the << stream method. In dbOstream we are
+  // primarly writing the byte representation which the below accomplishes.
+  template <typename T>
+  void writeValueAsBytes(T type)
   {
-    throw ZException("write failed on database stream; system io error: (%s)",
-                     strerror(ferror(_f)));
+    _f.write(reinterpret_cast<char*>(&type), sizeof(T));
   }
 
  public:
-  dbOStream(_dbDatabase* db, FILE* f);
+  dbOStream(_dbDatabase* db, std::ostream& f);
 
   _dbDatabase* getDatabase() { return _db; }
 
@@ -74,102 +78,78 @@ class dbOStream
 
   dbOStream& operator<<(char c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      write_error();
+    writeValueAsBytes(c);
     return *this;
   }
 
   dbOStream& operator<<(unsigned char c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      write_error();
+    writeValueAsBytes(c);
     return *this;
   }
 
-  dbOStream& operator<<(short c)
+  dbOStream& operator<<(int16_t c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      write_error();
+    writeValueAsBytes(c);
     return *this;
   }
 
-  dbOStream& operator<<(unsigned short c)
+  dbOStream& operator<<(uint16_t c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      write_error();
+    writeValueAsBytes(c);
     return *this;
   }
 
   dbOStream& operator<<(int c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      write_error();
+    writeValueAsBytes(c);
     return *this;
   }
 
   dbOStream& operator<<(uint64_t c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      write_error();
+    writeValueAsBytes(c);
     return *this;
   }
 
   dbOStream& operator<<(unsigned int c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      write_error();
+    writeValueAsBytes(c);
     return *this;
   }
 
   dbOStream& operator<<(int8_t c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      write_error();
+    writeValueAsBytes(c);
     return *this;
   }
 
   dbOStream& operator<<(float c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      write_error();
+    writeValueAsBytes(c);
     return *this;
   }
 
   dbOStream& operator<<(double c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      write_error();
+    writeValueAsBytes(c);
     return *this;
   }
 
   dbOStream& operator<<(long double c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      write_error();
+    writeValueAsBytes(c);
     return *this;
   }
 
   dbOStream& operator<<(const char* c)
   {
-    if (c == NULL) {
+    if (c == nullptr) {
       *this << 0;
     } else {
       int l = strlen(c) + 1;
       *this << l;
-      int n = fwrite(c, l, 1, _f);
-      if (n != 1)
-        write_error();
+      _f.write(c, l);
     }
 
     return *this;
@@ -177,9 +157,7 @@ class dbOStream
 
   dbOStream& operator<<(dbObjectType c)
   {
-    int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      write_error();
+    writeValueAsBytes(c);
     return *this;
   }
 
@@ -223,7 +201,7 @@ class dbOStream
     return *this;
   }
 
-  dbOStream& operator<<(std::string s)
+  dbOStream& operator<<(const std::string& s)
   {
     char* tmp = strdup(s.c_str());
     *this << tmp;
@@ -238,13 +216,13 @@ class dbOStream
 
 class dbIStream
 {
-  std::ifstream& _f;
+  std::istream& _f;
   _dbDatabase* _db;
   double _lef_area_factor;
   double _lef_dist_factor;
 
  public:
-  dbIStream(_dbDatabase* db, std::ifstream& f);
+  dbIStream(_dbDatabase* db, std::istream& f);
 
   _dbDatabase* getDatabase() { return _db; }
 
@@ -268,13 +246,13 @@ class dbIStream
     return *this;
   }
 
-  dbIStream& operator>>(short& c)
+  dbIStream& operator>>(int16_t& c)
   {
     _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
-  dbIStream& operator>>(unsigned short& c)
+  dbIStream& operator>>(uint16_t& c)
   {
     _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
@@ -327,9 +305,9 @@ class dbIStream
     int l;
     *this >> l;
 
-    if (l == 0)
-      c = NULL;
-    else {
+    if (l == 0) {
+      c = nullptr;
+    } else {
       c = (char*) malloc(l);
       _f.read(reinterpret_cast<char*>(c), l);
     }

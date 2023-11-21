@@ -1,4 +1,5 @@
 record_tests {
+  add_constraint_debug
   add_constraint1
   add_constraint2
   add_constraint3
@@ -21,6 +22,24 @@ record_tests {
   add_constraint_error4
   add_constraint_error5
   add_constraint_error6
+  annealing1
+  annealing2
+  annealing3
+  annealing_constraint1
+  annealing_constraint2
+  annealing_constraint3
+  annealing_constraint4
+  annealing_constraint5
+  annealing_constraint6
+  annealing_constraint7
+  annealing_constraint8
+  annealing_large_groups1
+  annealing_large_groups2
+  annealing_mirrored1
+  annealing_mirrored2
+  annealing_mirrored3
+  annealing_mirrored4
+  annealing_mirrored5
   blocked_region
   cells_not_placed
   exclude1
@@ -37,6 +56,7 @@ record_tests {
   group_pins8
   group_pins9
   group_pins10
+  group_pins_error1
   group_pins_warn1
   invalid_layer
   large_groups1
@@ -82,4 +102,9 @@ record_tests {
   top_layer6
   top_layer7
   top_layer_error
+  top_layer_error2
+  write_pin_placement1
+  write_pin_placement2
+  write_pin_placement3
+  write_pin_placement4
 }

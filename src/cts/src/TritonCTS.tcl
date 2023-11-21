@@ -84,6 +84,9 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-sink_clustering_levels levels] \
                                              [-num_static_layers] \
                                              [-sink_clustering_buffer] \
+                                             [-obstruction_aware] \
+					     [-apply_ndr] \
+                                             [-insertion_delay]
                                             }
 
 proc clock_tree_synthesis { args } {
@@ -91,12 +94,13 @@ proc clock_tree_synthesis { args } {
     keys {-root_buf -buf_list -wire_unit -clk_nets -sink_clustering_size -num_static_layers\
           -sink_clustering_buffer -distance_between_buffers -branching_point_buffers_distance -clustering_exponent\
           -clustering_unbalance_ratio -sink_clustering_max_diameter -sink_clustering_levels -tree_buf}\
-    flags {-post_cts_disable -sink_clustering_enable -balance_levels}
+      flags {-post_cts_disable -sink_clustering_enable -balance_levels \
+	     -obstruction_aware -apply_ndr -insertion_delay}
 
   sta::check_argc_eq0 "clock_tree_synthesis" $args
 
   if { [info exists flags(-post_cts_disable)] } {
-    utl::warn GRT 115 "-post_cts_disable is obsolete."
+    utl::warn CTS 115 "-post_cts_disable is obsolete."
   }
   
   cts::set_sink_clustering [info exists flags(-sink_clustering_enable)]
@@ -125,12 +129,12 @@ proc clock_tree_synthesis { args } {
 
   if { [info exists keys(-distance_between_buffers)] } {
     set distance $keys(-distance_between_buffers)
-    cts::set_distance_between_buffers $distance
+    cts::set_distance_between_buffers [ord::microns_to_dbu $distance]
   }
 
   if { [info exists keys(-branching_point_buffers_distance)] } {
     set distance $keys(-branching_point_buffers_distance)
-    cts::set_branching_point_buffers_distance $distance
+    cts::set_branching_point_buffers_distance [ord::microns_to_dbu $distance]
   }
 
   if { [info exists keys(-clustering_exponent)] } {
@@ -147,8 +151,7 @@ proc clock_tree_synthesis { args } {
     set buf_list $keys(-buf_list)
     cts::set_buffer_list $buf_list
   } else {
-    #User must input the buffer list.
-    utl::error CTS 55 "Missing argument -buf_list"
+    cts::set_buffer_list ""
   }
 
   if { [info exists keys(-wire_unit)] } {
@@ -176,12 +179,13 @@ proc clock_tree_synthesis { args } {
     }
     cts::set_root_buffer $root_buf
   } else {
+    # TODO: remove dependency on -buf_list
     if { [info exists keys(-buf_list)] } {
       #If using -buf_list, the first buffer can become the root buffer.
       set root_buf [lindex $buf_list 0]
       cts::set_root_buffer $root_buf
     } else {
-      utl::error CTS 57 "Missing argument, user must enter at least one of -root_buf or -buf_list."
+      cts::set_root_buffer ""        
     }
   }
 
@@ -195,6 +199,12 @@ proc clock_tree_synthesis { args } {
     cts::set_sink_buffer $root_buf
   }
 
+  cts::set_obstruction_aware [info exists flags(-obstruction_aware)]
+
+  cts::set_apply_ndr [info exists flags(-apply_ndr)]
+
+  cts::set_insertion_delay [info exists flags(-insertion_delay)]
+    
   if { [ord::get_db_block] == "NULL" } {
     utl::error CTS 103 "No design block found."
   }

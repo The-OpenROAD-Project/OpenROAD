@@ -60,7 +60,7 @@ class dbObjectTable;
 #define DB_ALLOC_BIT 0x80000000
 #define DB_OFFSET_MASK (~DB_ALLOC_BIT)
 
-typedef dbObjectTable* (dbObject::*GetObjTbl_t)(dbObjectType);
+using GetObjTbl_t = dbObjectTable* (dbObject::*) (dbObjectType);
 
 ///////////////////////////////////////////////////////////////
 /// _dbObject definition
@@ -101,7 +101,7 @@ class dbObjectTable
   // PERSISTANT DATA
   dbAttrTable<dbId<_dbProperty>> _prop_list;
 
-  virtual ~dbObjectTable(){};
+  virtual ~dbObjectTable() = default;
   dbObjectTable();
   dbObjectTable(_dbDatabase* db,
                 dbObject* owner,
@@ -111,7 +111,7 @@ class dbObjectTable
 
   dbId<_dbProperty> getPropList(uint oid) { return _prop_list.getAttr(oid); }
 
-  void setPropList(uint oid, dbId<_dbProperty> propList)
+  void setPropList(uint oid, const dbId<_dbProperty>& propList)
   {
     _prop_list.setAttr(oid, propList);
   }
@@ -154,8 +154,8 @@ class dbObjectPage
 ///////////////////////////////////////////////////////////////
 inline dbObjectTable::dbObjectTable()
 {
-  _db = NULL;
-  _owner = NULL;
+  _db = nullptr;
+  _owner = nullptr;
 }
 
 inline dbObjectTable::dbObjectTable(_dbDatabase* db,
@@ -190,41 +190,32 @@ inline const _dbObject* dbObject::getImpl() const
 
 inline uint _dbObject::getOID() const
 {
+  dbObjectPage* page = getObjectPage();
   uint offset = (_oid & DB_OFFSET_MASK);
-  char* base = (char*) this - offset;
-  dbObjectPage* page = (dbObjectPage*) (base - sizeof(dbObjectPage));
   return page->_page_addr | offset / page->_table->_obj_size;
 }
 
 inline dbObjectTable* _dbObject::getTable() const
 {
-  uint offset = (_oid & DB_OFFSET_MASK);
-  char* base = (char*) this - offset;
-  dbObjectPage* page = (dbObjectPage*) (base - sizeof(dbObjectPage));
+  dbObjectPage* page = getObjectPage();
   return page->_table;
 }
 
 inline _dbDatabase* _dbObject::getDatabase() const
 {
-  uint offset = (_oid & DB_OFFSET_MASK);
-  char* base = (char*) this - offset;
-  dbObjectPage* page = (dbObjectPage*) (base - sizeof(dbObjectPage));
+  dbObjectPage* page = getObjectPage();
   return page->_table->_db;
 }
 
 inline dbObject* _dbObject::getOwner() const
 {
-  uint offset = (_oid & DB_OFFSET_MASK);
-  char* base = (char*) this - offset;
-  dbObjectPage* page = (dbObjectPage*) (base - sizeof(dbObjectPage));
+  dbObjectPage* page = getObjectPage();
   return page->_table->_owner;
 }
 
 inline dbObjectType _dbObject::getType() const
 {
-  uint offset = (_oid & DB_OFFSET_MASK);
-  char* base = (char*) this - offset;
-  dbObjectPage* page = (dbObjectPage*) (base - sizeof(dbObjectPage));
+  dbObjectPage* page = getObjectPage();
   return page->_table->_type;
 }
 

@@ -68,7 +68,8 @@ class ScanStitch
   Port CreateNewPort(odb::dbBlock* block, std::string_view name_pattern)
   {
     for (int port_number = 1;; ++port_number) {
-      std::string port_name = fmt::format(name_pattern, port_number);
+      std::string port_name
+          = fmt::format(FMT_RUNTIME(name_pattern), port_number);
       odb::dbBTerm* port = block->findBTerm(port_name.c_str());
       if (!port) {
         odb::dbNet* net = odb::dbNet::create(block, port_name.c_str());

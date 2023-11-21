@@ -916,7 +916,7 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
         lib_port->setExtPort(mterm);
       } else if (!dir->isPowerGround() && !lib_cell->findPgPort(port_name)) {
         logger_->warn(ORD,
-                      1001,
+                      2001,
                       "LEF macro {} pin {} missing from liberty cell.",
                       cell_name,
                       port_name);
@@ -972,12 +972,13 @@ void dbNetwork::makeTopCell()
                 [=](const char* port_name) { return portMsbFirst(port_name); });
 }
 
-void dbNetwork::makeTopPort(dbBTerm* bterm)
+Port* dbNetwork::makeTopPort(dbBTerm* bterm)
 {
   const char* port_name = bterm->getConstName();
   Port* port = makePort(top_cell_, port_name);
   PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
   setDirection(port, dir);
+  return port;
 }
 
 void dbNetwork::setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type)
@@ -1038,7 +1039,7 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
               } else if (!cport->direction()->isPowerGround()
                          && !lcell->findPgPort(port_name)) {
                 logger_->warn(ORD,
-                              1002,
+                              2002,
                               "Liberty cell {} pin {} missing from LEF macro.",
                               lcell->name(),
                               port_name);
@@ -1214,11 +1215,34 @@ void dbNetwork::deletePin(Pin* pin)
   dbBTerm* bterm;
   staToDb(pin, iterm, bterm);
   if (iterm) {
-    logger_->critical(ORD, 1003, "deletePin not implemented for dbITerm");
+    logger_->critical(ORD, 2003, "deletePin not implemented for dbITerm");
   }
   if (bterm) {
     dbBTerm::destroy(bterm);
   }
+}
+
+Port* dbNetwork::makePort(Cell* cell, const char* name)
+{
+  if (cell == top_cell_ && !block_->findBTerm(name)) {
+    odb::dbNet* net = block_->findNet(name);
+    if (!net) {
+      // a bterm must have a net
+      net = odb::dbNet::create(block_, name);
+    }
+    // Making the bterm creates the port in the db callback
+    odb::dbBTerm::create(net, name);
+    return findPort(cell, name);
+  }
+  return ConcreteNetwork::makePort(cell, name);
+}
+
+Pin* dbNetwork::makePin(Instance* inst, Port* port, Net* net)
+{
+  if (inst != top_instance_) {
+    return ConcreteNetwork::makePin(inst, port, net);
+  }
+  return nullptr;
 }
 
 Net* dbNetwork::makeNet(const char* name, Instance* parent)
@@ -1246,12 +1270,12 @@ void dbNetwork::deleteNetBefore(const Net* net)
 
 void dbNetwork::mergeInto(Net*, Net*)
 {
-  logger_->critical(ORD, 1004, "unimplemented network function mergeInto");
+  logger_->critical(ORD, 2004, "unimplemented network function mergeInto");
 }
 
 Net* dbNetwork::mergedInto(Net*)
 {
-  logger_->critical(ORD, 1005, "unimplemented network function mergeInto");
+  logger_->critical(ORD, 2005, "unimplemented network function mergeInto");
   return nullptr;
 }
 
@@ -1287,7 +1311,7 @@ void dbNetwork::staToDb(const Instance* instance,
       db_inst = nullptr;
       mod_inst = static_cast<dbModInst*>(obj);
     } else {
-      logger_->critical(ORD, 1016, "instance is not Inst or ModInst");
+      logger_->critical(ORD, 2016, "instance is not Inst or ModInst");
     }
   } else {
     db_inst = nullptr;
@@ -1315,7 +1339,7 @@ void dbNetwork::staToDb(const Pin* pin,
       iterm = nullptr;
       bterm = static_cast<dbBTerm*>(obj);
     } else {
-      logger_->critical(ORD, 1006, "pin is not ITerm or BTerm");
+      logger_->critical(ORD, 2006, "pin is not ITerm or BTerm");
     }
   } else {
     iterm = nullptr;
@@ -1372,7 +1396,7 @@ void dbNetwork::staToDb(PortDirection* dir,
     sig_type = dbSigType::GROUND;
     io_type = dbIoType::INOUT;
   } else {
-    logger_->critical(ORD, 1007, "unhandled port direction");
+    logger_->critical(ORD, 2007, "unhandled port direction");
   }
 }
 
@@ -1444,7 +1468,7 @@ PortDirection* dbNetwork::dbToSta(const dbSigType& sig_type,
   if (io_type == dbIoType::FEEDTHRU) {
     return PortDirection::bidirect();
   }
-  logger_->critical(ORD, 1008, "unknown master term type");
+  logger_->critical(ORD, 2008, "unknown master term type");
   return PortDirection::bidirect();
 }
 

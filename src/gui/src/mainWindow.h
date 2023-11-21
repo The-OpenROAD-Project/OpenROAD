@@ -56,6 +56,7 @@ class Logger;
 namespace gui {
 
 class LayoutViewer;
+class LayoutTabs;
 class SelectHighlightWindow;
 class LayoutScroll;
 class ScriptWidget;
@@ -96,7 +97,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   void fit();
 
   DisplayControls* getControls() const { return controls_; }
-  LayoutViewer* getLayoutViewer() const { return viewer_; }
+  LayoutViewer* getLayoutViewer() const;
+  LayoutTabs* getLayoutTabs() const { return viewers_; }
   DRCWidget* getDRCViewer() const { return drc_viewer_; }
   ClockWidget* getClockViewer() const { return clock_viewer_; }
   ScriptWidget* getScriptWidget() const { return script_; }
@@ -107,7 +109,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets
   // to update
-  void designLoaded(odb::dbBlock* block);
+  void blockLoaded(odb::dbBlock* block);
 
   // The user chose the exit action; notify the app
   void exit();
@@ -240,6 +242,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
                                     bool output,
                                     bool input,
                                     int highlight_group = 0);
+  void selectHighlightConnectedBufferTrees(bool select_flag,
+                                           int highlight_group = 0);
 
   void timingCone(Gui::odbTerm term, bool fanin, bool fanout);
   void timingPathsThrough(const std::set<Gui::odbTerm>& terms);
@@ -282,16 +286,15 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   utl::Logger* logger_;
   SelectionSet selected_;
   HighlightSet highlighted_;
-  std::vector<std::unique_ptr<Ruler>> rulers_;
+  Rulers rulers_;
 
   // All but viewer_ are owned by this widget.  Qt will
   // handle destroying the children.
   DisplayControls* controls_;
   Inspector* inspector_;
   ScriptWidget* script_;
-  LayoutViewer* viewer_;  // owned by scroll_
+  LayoutTabs* viewers_;
   SelectHighlightWindow* selection_browser_;
-  LayoutScroll* scroll_;
   TimingWidget* timing_widget_;
   DRCWidget* drc_viewer_;
   ClockWidget* clock_viewer_;

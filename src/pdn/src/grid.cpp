@@ -37,6 +37,7 @@
 #include "connect.h"
 #include "domain.h"
 #include "odb/db.h"
+#include "odb/dbShape.h"
 #include "odb/dbTransform.h"
 #include "power_cells.h"
 #include "rings.h"
@@ -157,6 +158,9 @@ void Grid::makeShapes(const ShapeTreeMap& global_shapes,
       layer_shapes.insert(cell_shapes.begin(), cell_shapes.end());
     }
   }
+
+  // Remove any poorly formed shapes
+  cleanupShapes();
 
   // make vias
   makeVias(all_shapes, obstructions, local_obstructions);
@@ -1076,6 +1080,21 @@ void Grid::removeStrap(Straps* strap)
                              }));
 }
 
+bool Grid::hasShapes() const
+{
+  for (const auto& [layer, shapes] : getShapes()) {
+    if (!shapes.empty()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool Grid::hasVias() const
+{
+  return !vias_.empty();
+}
+
 ///////////////
 
 CoreGrid::CoreGrid(VoltageDomain* domain,
@@ -1158,6 +1177,46 @@ void CoreGrid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
   if (getDomain()->hasRegion()) {
     // core grids only have grid level obstructions if they have a region
     Grid::getGridLevelObstructions(obstructions);
+  }
+}
+
+void CoreGrid::cleanupShapes()
+{
+  // remove shapes that are wholly contained inside a macro
+  ShapeTreeMap macros;
+  for (auto* inst : getBlock()->getInsts()) {
+    if (!inst->isFixed()) {
+      continue;
+    }
+
+    const odb::Rect outline = inst->getBBox()->getBox();
+
+    for (auto* obs : inst->getMaster()->getObstructions()) {
+      macros[obs->getTechLayer()].insert({Shape::rectToBox(outline), nullptr});
+    }
+    for (auto* term : inst->getMaster()->getMTerms()) {
+      for (auto* pin : term->getMPins()) {
+        for (auto* geom : pin->getGeometry()) {
+          macros[geom->getTechLayer()].insert(
+              {Shape::rectToBox(outline), nullptr});
+        }
+      }
+    }
+  }
+
+  std::set<Shape*> remove;
+  for (const auto& [layer, shapes] : getShapes()) {
+    const auto& layer_avoid = macros[layer];
+    for (const auto& [shape_box, shape] : shapes) {
+      if (layer_avoid.qbegin(bgi::contains(shape_box)) != layer_avoid.qend()) {
+        remove.insert(shape.get());
+      }
+    }
+  }
+
+  for (auto* shape : remove) {
+    auto* grid_comp = shape->getGridComponent();
+    grid_comp->removeShape(shape);
   }
 }
 
@@ -1288,14 +1347,16 @@ ShapeTreeMap InstanceGrid::getInstanceObstructions(
   for (auto* ob : master->getObstructions()) {
     odb::Rect obs_rect = ob->getBox();
 
-    // add min spacing
+    // add max of min spacing and the halo
     auto* layer = ob->getTechLayer();
-    obs_rect.bloat(layer->getSpacing(), obs_rect);
+    odb::Rect spacing_rect;
+    obs_rect.bloat(layer->getSpacing(), spacing_rect);
+    obs_rect = applyHalo(obs_rect, halo, true, true, true);
+    obs_rect.merge(spacing_rect);
 
     transform.apply(obs_rect);
     auto shape = std::make_shared<Shape>(layer, obs_rect, Shape::BLOCK_OBS);
 
-    shape->setObstruction(applyHalo(obs_rect, halo, true, true, true));
     obs[layer].insert({shape->getObstructionBox(), shape});
   }
 
@@ -1308,8 +1369,9 @@ ShapeTreeMap InstanceGrid::getInstanceObstructions(
     for (const auto& [box, pin_shape] : pin_shapes) {
       pin_shape->setShapeType(Shape::BLOCK_OBS);
       pin_shape->generateObstruction();
-      pin_shape->setObstruction(applyHalo(
+      pin_shape->setRect(applyHalo(
           pin_shape->getObstruction(), halo, true, is_horizontal, is_vertical));
+      pin_shape->setObstruction(pin_shape->getRect());
       obs[layer].insert({pin_shape->getObstructionBox(), pin_shape});
     }
   }
@@ -1443,6 +1505,94 @@ void InstanceGrid::report() const
   logger->report("  Bottom: {:.4f}", halos_[1] / units);
   logger->report("  Right: {:.4f}", halos_[2] / units);
   logger->report("  Top: {:.4f}", halos_[3] / units);
+}
+
+bool InstanceGrid::isValid() const
+{
+  if (getNets(startsWithPower()).empty()) {
+    getLogger()->warn(utl::PDN,
+                      231,
+                      "{} is not connected to any power/ground nets.",
+                      inst_->getName());
+    return false;
+  }
+  return true;
+}
+
+////////
+
+BumpGrid::BumpGrid(VoltageDomain* domain,
+                   const std::string& name,
+                   odb::dbInst* inst)
+    : InstanceGrid(domain, name, true, inst, {})
+{
+}
+
+bool BumpGrid::isValid() const
+{
+  if (!InstanceGrid::isValid()) {
+    return false;
+  }
+
+  const auto nets = getNets(startsWithPower());
+  const int net_count = nets.size();
+  if (net_count > 1) {
+    getLogger()->warn(utl::PAD,
+                      232,
+                      "Bump grid for {} is connected to {} power nets",
+                      getInstance()->getName(),
+                      net_count);
+    return false;
+  }
+
+  return !isRouted();
+}
+
+bool BumpGrid::isRouted() const
+{
+  odb::dbNet* net = *getNets(startsWithPower()).begin();
+
+  const auto pins = InstanceGrid::getInstancePins(getInstance());
+
+  for (auto* swire : net->getSWires()) {
+    for (auto* sbox : swire->getWires()) {
+      if (sbox->isVia()) {
+        std::vector<odb::dbShape> shapes;
+        sbox->getViaBoxes(shapes);
+        for (const auto& shape : shapes) {
+          auto* layer = shape.getTechLayer();
+
+          auto find_layer = pins.find(layer);
+          if (find_layer == pins.end()) {
+            continue;
+          }
+
+          const odb::Rect rect = shape.getBox();
+          const auto& layer_pins = find_layer->second;
+          if (layer_pins.qbegin(bgi::intersects(Shape::rectToBox(rect)))
+              != layer_pins.qend()) {
+            return true;
+          }
+        }
+      } else {
+        auto* layer = sbox->getTechLayer();
+
+        auto find_layer = pins.find(layer);
+        if (find_layer == pins.end()) {
+          continue;
+        }
+
+        const odb::Rect rect = sbox->getBox();
+        const auto& layer_pins = find_layer->second;
+        if (layer_pins.qbegin(bgi::intersects(Shape::rectToBox(rect)))
+            != layer_pins.qend()) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
 }
 
 ////////

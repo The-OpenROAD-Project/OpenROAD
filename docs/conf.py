@@ -10,9 +10,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import docutils
 import os
-import re
 
 # -- Project information -----------------------------------------------------
 
@@ -33,7 +31,9 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.todo',
     'sphinx_external_toc',
+    'sphinx_copybutton',
     'myst_parser',
+    'sphinxcontrib.mermaid'
 ]
 
 myst_enable_extensions = [
@@ -85,59 +85,59 @@ exclude_patterns = [
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
 
+# Mermaid related args
+mermaid_output_format = 'svg'
+mermaid_params = ['-p', 'puppeteer-config.json',
+                  '--theme', 'forest',
+                  '--width', '200',
+                  '--backgroundColor', 'transparent']
+mermaid_init_js = "mermaid.initialize({startOnLoad:true, flowchart:{useMaxWidth:false}})"
+mermaid_verbose = True
 
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_symbiflow_theme"
+html_theme = "sphinx_book_theme"
 
 html_theme_options = {
-    # Repository integration
-    # Set the repo url for the link to appear
-    'github_url': 'https://github.com/The-OpenROAD-Project/OpenROAD',
-    # The name of the repo. If must be set if github_url is set
-    'repo_name': 'OpenROAD',
-    # Must be one of github, gitlab or bitbucket
-    'repo_type': 'github',
+    "repository_url": "https://github.com/The-OpenROAD-Project/OpenROAD",
+    "repository_branch": "master",
+    "show_navbar_depth": 2,
+    "use_issues_button": True,
+    # "use_repository_button": True,
+    "use_download_button": True,
 
-    # Set the name to appear in the left sidebar/header. If not provided, uses
-    # html_short_title if defined, or html_title
-    'nav_title': "OpenROAD",
-
-    # A list of dictionaries where each has three keys:
-    #   href: The URL or pagename (str)
-    #   title: The title to appear (str)
-    #   internal: Flag indicating to use pathto (bool)
-    'nav_links': [
-        {"title": "Home", "href": "index", "internal": True},
-        {"title": "The OpenROAD Project", "href": "https://theopenroadproject.org", "internal": False},
-    ],
-
-    # Customize css colors.
-    # For details see link.
-    # https://getmdl.io/customize/index.html
-    #
-    # Primary colors:
-    # red, pink, purple, deep-purple, indigo, blue, light-blue, cyan,
-    # teal, green, light-green, lime, yellow, amber, orange, deep-orange,
-    # brown, grey, blue-grey, white
-    # (Default: deep-purple)
-    'color_primary': 'indigo',
-    # Values: Same as color_primary. 
-    #(Default: indigo)
-    'color_accent': 'blue',
-
-    # Hide the symbiflow links
-    'hide_symbiflow_links': True,
-    
-    "html_minify": False,
-    "html_prettify": True,
-    "css_minify": True,
-    "globaltoc_depth": 2,
-    "table_classes": ["plain"],
-    "master_doc": False,
+    # list for more fine-grained ordering of icons
+    "icon_links": [
+        {
+            "name": "The OpenROAD Project",
+            "url": "https://theopenroadproject.org/",
+            "icon": "fa-solid fa-globe",
+        },
+        {
+            "name": "Twitter",
+            "url": "https://twitter.com/OpenROAD_EDA",
+            "icon": "fa-brands fa-twitter",
+        },
+        {
+            "name": "Email",
+            "url": "mailto:openroad@eng.ucsd.edu",
+            "icon": "fa-solid fa-envelope",
+        },
+        {
+            "name": "GitHub",
+            "url": "https://github.com/The-OpenROAD-Project/OpenROAD",
+            "icon": "fa-brands fa-github",
+        },
+        {
+            "name": "Stars",
+            "url": "https://github.com/The-OpenROAD-Project/OpenROAD/stargazers",
+            "icon": "https://img.shields.io/github/stars/The-OpenROAD-Project/OpenROAD",
+            "type": "url",
+        },
+   ],
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -145,14 +145,24 @@ html_theme_options = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 # html_static_path = ['_static']
 
+
+def swap_prefix(file, old, new):
+    with open(file, 'r') as f:
+        lines = f.read()
+    lines = lines.replace(old, new)
+    with open(file, 'wt') as f:
+        f.write(lines)
+
+
 def setup(app):
     import os
-    if not os.path.exists('main'):
-        os.symlink('..', 'main')
-    prefix = '(../'
-    newPath = '(./main/'
-    with open('index.md', 'r') as f:
-        lines = f.read()
-    lines = lines.replace(prefix, newPath)
-    with open('index.md', 'wt') as f:
-        f.write(lines)
+
+    if not os.path.exists('./main'):
+        os.symlink('..', './main')
+    # these prefix swaps will be reverted and is needed for sphinx compilation.
+    swap_prefix('../README.md', '(docs/', '(../')
+    swap_prefix('../README.md', '```mermaid', '```{mermaid}\n:align: center\n')
+
+    # for populating OR Messages page.
+    command = "python getMessages.py"
+    _ = os.popen(command).read()

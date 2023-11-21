@@ -43,51 +43,48 @@
 #include "dbTech.h"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbMetalWidthViaMap>;
 
 bool _dbMetalWidthViaMap::operator==(const _dbMetalWidthViaMap& rhs) const
 {
-  if (via_cut_class_ != rhs.via_cut_class_)
+  if (via_cut_class_ != rhs.via_cut_class_) {
     return false;
-
-  if (cut_layer_ != rhs.cut_layer_)
+  }
+  if (cut_layer_ != rhs.cut_layer_) {
     return false;
-
-  if (below_layer_width_low_ != rhs.below_layer_width_low_)
+  }
+  if (below_layer_width_low_ != rhs.below_layer_width_low_) {
     return false;
-
-  if (below_layer_width_high_ != rhs.below_layer_width_high_)
+  }
+  if (below_layer_width_high_ != rhs.below_layer_width_high_) {
     return false;
-
-  if (above_layer_width_low_ != rhs.above_layer_width_low_)
+  }
+  if (above_layer_width_low_ != rhs.above_layer_width_low_) {
     return false;
-
-  if (above_layer_width_high_ != rhs.above_layer_width_high_)
+  }
+  if (above_layer_width_high_ != rhs.above_layer_width_high_) {
     return false;
-
-  if (via_name_ != rhs.via_name_)
+  }
+  if (via_name_ != rhs.via_name_) {
     return false;
-
-  if (pg_via_ != rhs.pg_via_)
+  }
+  if (pg_via_ != rhs.pg_via_) {
     return false;
+  }
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
+
 bool _dbMetalWidthViaMap::operator<(const _dbMetalWidthViaMap& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
+
 void _dbMetalWidthViaMap::differences(dbDiff& diff,
                                       const char* field,
                                       const _dbMetalWidthViaMap& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(via_cut_class_);
   DIFF_FIELD(cut_layer_);
   DIFF_FIELD(below_layer_width_low_);
@@ -96,10 +93,9 @@ void _dbMetalWidthViaMap::differences(dbDiff& diff,
   DIFF_FIELD(above_layer_width_high_);
   DIFF_FIELD(via_name_);
   DIFF_FIELD(pg_via_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
+
 void _dbMetalWidthViaMap::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -112,10 +108,9 @@ void _dbMetalWidthViaMap::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(via_name_);
   DIFF_OUT_FIELD(pg_via_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
+
 _dbMetalWidthViaMap::_dbMetalWidthViaMap(_dbDatabase* db)
 {
   below_layer_width_low_ = 0;
@@ -123,9 +118,8 @@ _dbMetalWidthViaMap::_dbMetalWidthViaMap(_dbDatabase* db)
   above_layer_width_low_ = 0;
   above_layer_width_high_ = 0;
   pg_via_ = false;
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
+
 _dbMetalWidthViaMap::_dbMetalWidthViaMap(_dbDatabase* db,
                                          const _dbMetalWidthViaMap& r)
 {
@@ -137,8 +131,6 @@ _dbMetalWidthViaMap::_dbMetalWidthViaMap(_dbDatabase* db,
   above_layer_width_high_ = r.above_layer_width_high_;
   via_name_ = r.via_name_;
   pg_via_ = r.pg_via_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbMetalWidthViaMap& obj)
@@ -151,10 +143,9 @@ dbIStream& operator>>(dbIStream& stream, _dbMetalWidthViaMap& obj)
   stream >> obj.above_layer_width_high_;
   stream >> obj.via_name_;
   stream >> obj.pg_via_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbMetalWidthViaMap& obj)
 {
   stream << obj.via_cut_class_;
@@ -165,19 +156,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbMetalWidthViaMap& obj)
   stream << obj.above_layer_width_high_;
   stream << obj.via_name_;
   stream << obj.pg_via_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
 _dbMetalWidthViaMap::~_dbMetalWidthViaMap()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

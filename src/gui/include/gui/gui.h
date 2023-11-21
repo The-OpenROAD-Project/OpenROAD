@@ -569,7 +569,8 @@ class Gui
                                     bool output,
                                     bool input,
                                     int highlight_group = 0);
-
+  void selectHighlightConnectedBufferTrees(bool select_flag,
+                                           int highlight_group = 0);
   void addInstToHighlightSet(const char* name, int highlight_group = 0);
   void addNetToHighlightSet(const char* name, int highlight_group = 0);
 
@@ -593,6 +594,8 @@ class Gui
 
   int select(const std::string& type,
              const std::string& name_filter = "",
+             const std::string& attribute = "",
+             const std::any& value = "",
              bool filter_case_sensitive = true,
              int highlight_group = -1);
 
@@ -608,12 +611,16 @@ class Gui
   // Save layout to an image file
   void saveImage(const std::string& filename,
                  const odb::Rect& region = odb::Rect(),
+                 int width_px = 0,
                  double dbu_per_pixel = 0,
                  const std::map<std::string, bool>& display_settings = {});
 
   // Save clock tree view
   void saveClockTreeImage(const std::string& clock_name,
-                          const std::string& filename);
+                          const std::string& filename,
+                          const std::string& corner = "",
+                          int width_px = 0,
+                          int height_px = 0);
 
   // modify display controls
   void setDisplayControlsVisible(const std::string& name, bool value);
@@ -642,6 +649,9 @@ class Gui
 
   // show/hide widgets
   void showWidget(const std::string& name, bool show);
+
+  // trigger actions in the GUI
+  void triggerAction(const std::string& name);
 
   // adding custom buttons to toolbar
   std::string addToolbarButton(const std::string& name,
@@ -707,6 +717,8 @@ class Gui
   void setHeatMapSetting(const std::string& name,
                          const std::string& option,
                          const Renderer::Setting& value);
+  Renderer::Setting getHeatMapSetting(const std::string& name,
+                                      const std::string& option);
   void dumpHeatMap(const std::string& name, const std::string& file);
 
   // accessors for to add and remove commands needed to restore the state of the
@@ -760,6 +772,11 @@ class Gui
                           const Descriptor* descriptor);
   const Descriptor* getDescriptor(const std::type_info& type) const;
   void unregisterDescriptor(const std::type_info& type);
+
+  bool filterSelectionProperties(const Descriptor::Properties& properties,
+                                 const std::string& attribute,
+                                 const std::any& value,
+                                 bool& is_valid_attribute);
 
   // flag to indicate if tcl should take over after gui closes
   bool continue_after_close_;

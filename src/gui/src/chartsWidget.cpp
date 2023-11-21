@@ -88,8 +88,10 @@ ChartsWidget::ChartsWidget(QWidget* parent)
   chart_->addAxis(axis_y_, Qt::AlignLeft);
   chart_->addAxis(axis_x_, Qt::AlignBottom);
 
-  connect(
-      mode_menu_, SIGNAL(currentIndexChanged(int)), this, SLOT(changeMode()));
+  connect(mode_menu_,
+          qOverload<int>(&QComboBox::currentIndexChanged),
+          this,
+          &ChartsWidget::changeMode);
 }
 
 void ChartsWidget::changeMode()
@@ -209,7 +211,7 @@ void ChartsWidget::setSlackMode()
 
   const QString start_title = "Slack [";
   const QString time_suffix = time_units->suffix();
-  const QString time_scale_abreviation = time_units->scaleAbreviation();
+  const QString time_scale_abreviation = time_units->scaleAbbreviation();
   const QString end_title = "]";
   const QString axis_x_title
       = start_title + time_scale_abreviation + time_suffix + end_title;

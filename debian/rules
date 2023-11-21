@@ -1,9 +1,18 @@
 #!/usr/bin/make -f
 
+include /usr/share/dpkg/default.mk
+
+export DH_VERBOSE = 1
+
+export DEB_BUILD_MAINT_OPTIONS=optimize=-lto
+
 %:
 	dh $@
 
 override_dh_shlibdeps:
 	dh_shlibdeps -- -l/opt/or-tools/lib
+
+override_dh_install:
+	dh_install --sourcedir=/opt
 
 override_dh_dwz:

@@ -119,6 +119,12 @@ set_overflow_iterations(int iterations)
   getGlobalRouter()->setOverflowIterations(iterations);
 }
 
+void
+set_congestion_report_iter_step(int congestion_report_iter_step)
+{
+  getGlobalRouter()->setCongestionReportIterStep(congestion_report_iter_step);
+}
+
 void set_congestion_report_file (const char * file_name)
 {
   getGlobalRouter()->setCongestionReportFile(file_name);
@@ -204,6 +210,12 @@ repair_antennas(odb::dbMTerm* diode_mterm, int iterations, float ratio_margin)
 }
 
 void
+add_net_to_route(odb::dbNet* net)
+{
+  getGlobalRouter()->addNetToRoute(net);
+}
+
+void
 highlight_net_route(odb::dbNet *net, bool show_pin_locations)
 {
   if (!gui::Gui::enabled()) {
@@ -236,11 +248,8 @@ void set_global_route_debug_cmd(const odb::dbNet *net,
 
   GlobalRouter* global_router = getGlobalRouter();
   if (global_router->getDebugFastRoute() == nullptr) {
-    FastRouteCore* fast_route_core = global_router->fastroute();
     global_router->initDebugFastRoute(std::make_unique<FastRouteRenderer>(
-      global_router->db()->getTech(),
-      fast_route_core->tile_size(),
-      fast_route_core->x_corner(), fast_route_core->y_corner()));
+      global_router->db()->getTech()));
   }
   getGlobalRouter()->setDebugNet(net);
   getGlobalRouter()->setDebugSteinerTree(steinerTree);

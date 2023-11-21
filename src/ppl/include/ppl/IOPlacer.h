@@ -56,10 +56,12 @@ class dbTechLayer;
 }  // namespace odb
 
 namespace ppl {
+class AbstractIOPlacerRenderer;
 class Core;
 class Interval;
 class IOPin;
 class Netlist;
+class SimulatedAnnealing;
 struct Constraint;
 struct Section;
 struct Slot;
@@ -122,7 +124,9 @@ class IOPlacer
   void clear();
   void clearConstraints();
   void run(bool random_mode);
-  void printConfig();
+  void runAnnealing(bool random);
+  void reportHPWL();
+  void printConfig(bool annealing = false);
   Parameters* getParameters() { return parms_.get(); }
   int64 computeIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
@@ -154,6 +158,24 @@ class IOPlacer
 
   static Direction getDirection(const std::string& direction);
   static Edge getEdge(const std::string& edge);
+
+  void setAnnealingConfig(float temperature,
+                          int max_iterations,
+                          int perturb_per_iter,
+                          float alpha);
+  void checkPinPlacement();
+
+  void setRenderer(std::unique_ptr<AbstractIOPlacerRenderer> ioplacer_renderer);
+  AbstractIOPlacerRenderer* getRenderer();
+
+  // annealing debug functions
+  void setAnnealingDebugOn();
+  bool isAnnealingDebugOn() const;
+
+  void setAnnealingDebugPaintInterval(int iters_between_paintings);
+  void setAnnealingDebugNoPauseMode(bool no_pause_mode);
+
+  void writePinPlacement(const char* file_name);
 
  private:
   void createTopLayerPinPattern();
@@ -192,10 +214,11 @@ class IOPlacer
                     std::vector<Section>& sections);
   std::vector<Section> createSectionsPerConstraint(Constraint& constraint);
   void getPinsFromDirectionConstraint(Constraint& constraint);
-  void initMirroredPins();
-  void initConstraints();
+  void initMirroredPins(bool annealing = false);
+  void initConstraints(bool annealing = false);
   void sortConstraints();
   void checkPinsInMultipleConstraints();
+  void checkPinsInMultipleGroups();
   bool overlappingConstraints(const Constraint& c1, const Constraint& c2);
   void createSectionsPerEdge(Edge edge, const std::set<int>& layers);
   void createSections();
@@ -213,7 +236,7 @@ class IOPlacer
                                          std::vector<Section>& sections,
                                          int& mirrored_pins_cnt,
                                          bool mirrored_only);
-  bool groupHasMirroredPin(std::vector<int>& group);
+  bool groupHasMirroredPin(const std::vector<int>& group);
   int assignGroupToSection(const std::vector<int>& io_group,
                            std::vector<Section>& sections,
                            bool order);
@@ -243,6 +266,8 @@ class IOPlacer
   void getBlockedRegionsFromMacros();
   void getBlockedRegionsFromDbObstructions();
   double dbuToMicrons(int64_t dbu);
+  int micronsToDbu(double microns);
+  Edge getMirroredEdge(const Edge& edge);
 
   // db functions
   void populateIOPlacer(const std::set<int>& hor_layer_idx,
@@ -263,6 +288,11 @@ class IOPlacer
 
   int slots_per_section_ = 0;
   float slots_increase_factor_ = 0;
+  int top_layer_pins_count_ = 0;
+  // set the offset on tracks as 15 to approximate the size of a GCell in global
+  // router
+  const int num_tracks_offset_ = 15;
+  const int pins_per_report_ = 5;
 
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
@@ -280,6 +310,17 @@ class IOPlacer
   std::set<int> hor_layers_;
   std::set<int> ver_layers_;
   std::unique_ptr<TopLayerGrid> top_grid_;
+
+  std::unique_ptr<AbstractIOPlacerRenderer> ioplacer_renderer_;
+
+  // simulated annealing variables
+  float init_temperature_ = 0;
+  int max_iterations_ = 0;
+  int perturb_per_iter_ = 0;
+  float alpha_ = 0;
+
+  // simulated annealing debugger variables
+  bool annealing_debug_mode_ = false;
 
   // db variables
   odb::dbDatabase* db_ = nullptr;

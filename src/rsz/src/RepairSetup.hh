@@ -34,13 +34,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-
-#include "utl/Logger.h"
+#include <unordered_set>
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-
-#include "sta/StaState.hh"
-#include "sta/MinMax.hh"
 #include "sta/FuncExpr.hh"
+#include "sta/MinMax.hh"
+#include "sta/StaState.hh"
+#include "utl/Logger.h"
 
 namespace sta {
 class PathExpanded;
@@ -51,7 +51,8 @@ namespace rsz {
 class Resizer;
 
 using std::vector;
-
+using std::pair;
+using odb::Point;
 using utl::Logger;
 
 using sta::StaState;
@@ -72,8 +73,8 @@ using sta::Corner;
 
 class BufferedNet;
 enum class BufferedNetType;
-typedef std::shared_ptr<BufferedNet> BufferedNetPtr;
-typedef vector<BufferedNetPtr> BufferedNetSeq;
+using BufferedNetPtr = std::shared_ptr<BufferedNet>;
+using BufferedNetSeq = vector<BufferedNetPtr>;
 
 class RepairSetup : StaState
 {
@@ -84,7 +85,9 @@ public:
                    // reduce tns (0.0-1.0).
                    double repair_tns_end_percent,
                    int max_passes,
-                   bool skip_pin_swap);
+                   bool verbose,
+                   bool skip_pin_swap,
+                   bool skip_gate_cloning);
   // For testing.
   void repairSetup(const Pin *end_pin);
   // Rebuffer one net (for testing).
@@ -93,9 +96,10 @@ public:
 
 private:
   void init();
-  bool repairSetup(PathRef &path,
-                   Slack path_slack,
-                   bool skip_pin_swap);
+  bool repairPath(PathRef &path,
+                  Slack path_slack,
+                  bool skip_pin_swap,
+                  bool skip_gate_cloning);
   void debugCheckMultipleBuffers(PathRef &path,
                                  PathExpanded *expanded);
 
@@ -104,11 +108,13 @@ private:
   void getEquivPortList(sta::FuncExpr *expr, sta::LibertyPortSet &ports);
   void equivCellPins(const LibertyCell *cell, sta::LibertyPortSet &ports);
   bool swapPins(PathRef *drvr_path, int drvr_index, PathExpanded *expanded);
-  bool meetsSizeCriteria(LibertyCell *cell, LibertyCell *equiv,                           bool match_size);
   bool upsizeDrvr(PathRef *drvr_path,
                   int drvr_index,
-                  PathExpanded *expanded,
-                  bool only_same_size_swap);
+                  PathExpanded *expanded);
+  Point computeCloneGateLocation(const Pin *drvr_pin,
+                                 const vector<pair<Vertex*, Slack>> &fanout_slacks);
+  bool cloneDriver(PathRef* drvr_path, int drvr_index,
+                   Slack drvr_slack, PathExpanded *expanded);
   void splitLoads(PathRef *drvr_path,
                   int drvr_index,
                   Slack drvr_slack,
@@ -117,28 +123,27 @@ private:
                           LibertyPort *drvr_port,
                           float load_cap,
                           float prev_drive,
-                          const DcalcAnalysisPt *dcalc_ap,
-                          bool match_size);
+                          const DcalcAnalysisPt *dcalc_ap);
   int fanout(Vertex *vertex);
   bool hasTopLevelOutputPort(Net *net);
 
   int rebuffer(const Pin *drvr_pin);
-  BufferedNetSeq rebufferBottomUp(BufferedNetPtr bnet,
+  BufferedNetSeq rebufferBottomUp(const BufferedNetPtr& bnet,
                                   int level);
-  int rebufferTopDown(BufferedNetPtr choice,
+  int rebufferTopDown(const BufferedNetPtr& choice,
                       Net *net,
                       int level);
   BufferedNetSeq
-  addWireAndBuffer(BufferedNetSeq Z,
-                   BufferedNetPtr bnet_wire,
+  addWireAndBuffer(const BufferedNetSeq& Z,
+                   const BufferedNetPtr& bnet_wire,
                    int level);
-  float pinCapacitance(const Pin *pin,
-                       const DcalcAnalysisPt *dcalc_ap);
   float bufferInputCapacitance(LibertyCell *buffer_cell,
                                const DcalcAnalysisPt *dcalc_ap);
-  Slack slackPenalized(BufferedNetPtr bnet);
-  Slack slackPenalized(BufferedNetPtr bnet,
+  Slack slackPenalized(const BufferedNetPtr& bnet);
+  Slack slackPenalized(const BufferedNetPtr& bnet,
                        int index);
+
+  void printProgress(int iteration, bool force, bool end) const;
 
   Logger *logger_;
   dbSta *sta_;
@@ -149,8 +154,14 @@ private:
 
   int resize_count_;
   int inserted_buffer_count_;
+  int split_load_buffer_count_;
   int rebuffer_net_count_;
+  int cloned_gate_count_;  
   int swap_pin_count_;
+  // Map to block pins from being swapped more than twice for the
+  // same instance. 
+  std::unordered_set<const sta::Instance *> swap_pin_inst_set_;
+  
   const MinMax *min_;
   const MinMax *max_;
 
@@ -160,6 +171,7 @@ private:
   static constexpr int rebuffer_max_fanout_ = 20;
   static constexpr int split_load_min_fanout_ = 8;
   static constexpr double rebuffer_buffer_penalty_ = .01;
+  static constexpr int print_interval_ = 10;
 };
 
-} // namespace
+} // namespace rsz

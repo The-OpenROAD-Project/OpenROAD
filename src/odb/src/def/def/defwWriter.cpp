@@ -20,9 +20,9 @@
 // For updates, support, or to become part of the LEF/DEF Community,
 // check www.openeda.org for details.
 //
-//  $Author: dell $
-//  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Author: icftcm $
+//  $Revision: #2 $
+//  $Date: 2020/12/02 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -621,8 +621,12 @@ int defwUnits(int units)
     switch (units) {
       case 100:
       case 200:
+      case 400:
+      case 800:
       case 1000:
       case 2000:
+      case 4000:
+      case 8000:
       case 10000:
       case 20000:
         fprintf(defwFile, "UNITS DISTANCE MICRONS %d ;\n", units);
@@ -1041,7 +1045,7 @@ int defwTracks(const char* master,
 
     if (sameMask) {
       fprintf(defwFile,
-              "TRACKS %s %d DO %d STEP %d MASK %d SAMEMASK",
+              "TRACKS %s %d DO %d STEP %d MASK %d SAMEMASK LAYER",
               master,
               do_start,
               do_cnt,
@@ -1049,7 +1053,7 @@ int defwTracks(const char* master,
               mask);
     } else {
       fprintf(defwFile,
-              "TRACKS %s %d DO %d STEP %d MASK %d",
+              "TRACKS %s %d DO %d STEP %d MASK %d LAYER",
               master,
               do_start,
               do_cnt,
@@ -1058,18 +1062,15 @@ int defwTracks(const char* master,
     }
   } else {
     fprintf(defwFile,
-            "TRACKS %s %d DO %d STEP %d",
+            "TRACKS %s %d DO %d STEP %d LAYER",
             master,
             do_start,
             do_cnt,
             do_step);
   }
 
-  if (num_layers > 0) {
-    fprintf(defwFile, " LAYER");
-    for (i = 0; i < num_layers; i++) {
-      fprintf(defwFile, " %s", layers[i]);
-    }
+  for (i = 0; i < num_layers; i++) {
+    fprintf(defwFile, " %s", layers[i]);
   }
   fprintf(defwFile, " ;\n");
   defwLines++;
@@ -3238,6 +3239,22 @@ int defwSpecialNetPolygon(const char* layerName,
       defwLines++;
     }
   }
+  defwLines++;
+  return DEFW_OK;
+}
+
+int defwSpecialNetMask(int colorMask)
+{
+  defwFunc = DEFW_SNET_OPTIONS;  // Current function of writer
+  if (!defwSpecialNetOptions()
+      && (defwState != DEFW_PATH))  // not inside a path
+    return DEFW_BAD_ORDER;
+
+  if (defVersionNum < 5.8)
+    return DEFW_WRONG_VERSION;
+
+  fprintf(defwFile, "\n      + MASK %d ", colorMask);
+
   defwLines++;
   return DEFW_OK;
 }

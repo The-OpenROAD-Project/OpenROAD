@@ -35,6 +35,7 @@
 
 #include "ord/OpenRoad.hh"
 
+#include <fstream>
 #include <iostream>
 #include <thread>
 #ifdef ENABLE_PYTHON3
@@ -270,6 +271,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
 
 void OpenRoad::readLef(const char* filename,
                        const char* lib_name,
+                       const char* tech_name,
                        bool make_tech,
                        bool make_library)
 {
@@ -277,12 +279,20 @@ void OpenRoad::readLef(const char* filename,
   dbLib* lib = nullptr;
   dbTech* tech = nullptr;
   if (make_tech && make_library) {
-    lib = lef_reader.createTechAndLib(lib_name, filename);
-    tech = db_->getTech();
+    lib = lef_reader.createTechAndLib(tech_name, lib_name, filename);
+    tech = db_->findTech(tech_name);
   } else if (make_tech) {
-    tech = lef_reader.createTech(filename);
+    tech = lef_reader.createTech(tech_name, filename);
   } else if (make_library) {
-    lib = lef_reader.createLib(lib_name, filename);
+    if (tech_name[0] != '\0') {
+      tech = db_->findTech(tech_name);
+    } else {
+      tech = db_->getTech();
+    }
+    if (!tech) {
+      logger_->error(ORD, 51, "Technology {} not found", tech_name);
+    }
+    lib = lef_reader.createLib(tech, lib_name, filename);
   }
 
   // both are null on parser failure
@@ -294,6 +304,7 @@ void OpenRoad::readLef(const char* filename,
 }
 
 void OpenRoad::readDef(const char* filename,
+                       dbTech* tech,
                        bool continue_on_errors,
                        bool floorplan_init,
                        bool incremental,
@@ -301,10 +312,7 @@ void OpenRoad::readDef(const char* filename,
 {
   if (!floorplan_init && !incremental && !child && db_->getChip()
       && db_->getChip()->getBlock()) {
-    logger_->error(
-        ORD,
-        48,
-        "You can't load a new DEF file as the db is already populated.");
+    logger_->info(ORD, 48, "Loading an additional DEF.");
   }
 
   odb::defin::MODE mode = odb::defin::DEFAULT;
@@ -324,9 +332,9 @@ void OpenRoad::readDef(const char* filename,
   dbBlock* block = nullptr;
   if (child) {
     auto parent = db_->getChip()->getBlock();
-    block = def_reader.createBlock(parent, search_libs, filename);
+    block = def_reader.createBlock(parent, search_libs, filename, tech);
   } else {
-    dbChip* chip = def_reader.createChip(search_libs, filename);
+    dbChip* chip = def_reader.createChip(search_libs, filename, tech);
     if (chip) {
       block = chip->getBlock();
     }
@@ -374,11 +382,31 @@ void OpenRoad::writeDef(const char* filename, const string& version)
   }
 }
 
+void OpenRoad::writeAbstractLef(const char* filename,
+                                const int bloat_factor,
+                                const bool bloat_occupied_layers)
+{
+  odb::dbBlock* block = nullptr;
+  odb::dbChip* chip = db_->getChip();
+  if (chip) {
+    block = chip->getBlock();
+  }
+  if (!block) {
+    logger_->error(ORD, 53, "No block is loaded.");
+  }
+  std::ofstream os;
+  os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
+  os.open(filename);
+  odb::lefout writer(logger_, os);
+  writer.setBloatFactor(bloat_factor);
+  writer.setBloatOccupiedLayers(bloat_occupied_layers);
+  writer.writeAbstractLef(block);
+}
+
 void OpenRoad::writeLef(const char* filename)
 {
   auto libs = db_->getLibs();
   int num_libs = libs.size();
-  odb::lefout lef_writer(logger_);
   if (num_libs > 0) {
     if (num_libs > 1) {
       logger_->info(
@@ -389,15 +417,32 @@ void OpenRoad::writeLef(const char* filename)
     for (auto lib : libs) {
       std::string name(filename);
       if (cnt > 0) {
-        name += "_" + std::to_string(cnt);
-        lef_writer.writeLib(lib, name.c_str());
+        auto pos = name.rfind('.');
+        if (pos != string::npos) {
+          name.insert(pos, "_" + std::to_string(cnt));
+        } else {
+          name += "_" + std::to_string(cnt);
+        }
+        std::ofstream os;
+        os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
+        os.open(name);
+        odb::lefout lef_writer(logger_, os);
+        lef_writer.writeLib(lib);
       } else {
-        lef_writer.writeTechAndLib(lib, name.c_str());
+        std::ofstream os;
+        os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
+        os.open(name);
+        odb::lefout lef_writer(logger_, os);
+        lef_writer.writeTechAndLib(lib);
       }
       ++cnt;
     }
   } else if (db_->getTech()) {
-    lef_writer.writeTech(db_->getTech(), filename);
+    std::ofstream os;
+    os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
+    os.open(filename);
+    odb::lefout lef_writer(logger_, os);
+    lef_writer.writeTech(db_->getTech());
   }
 }
 
@@ -427,7 +472,11 @@ void OpenRoad::readDb(const char* filename)
                     | std::ios::eofbit);
   stream.open(filename, std::ios::binary);
 
-  db_->read(stream);
+  try {
+    db_->read(stream);
+  } catch (const std::ios_base::failure& f) {
+    logger_->error(ORD, 54, "odb file {} is invalid: {}", filename, f.what());
+  }
 
   for (OpenRoadObserver* observer : observers_) {
     observer->postReadDb(db_);
@@ -436,11 +485,12 @@ void OpenRoad::readDb(const char* filename)
 
 void OpenRoad::writeDb(const char* filename)
 {
-  FILE* stream = fopen(filename, "w");
-  if (stream) {
-    db_->write(stream);
-    fclose(stream);
-  }
+  std::ofstream stream;
+  stream.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                    | std::ios::eofbit);
+  stream.open(filename, std::ios::binary);
+
+  db_->write(stream);
 }
 
 void OpenRoad::diffDbs(const char* filename1,

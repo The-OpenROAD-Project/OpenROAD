@@ -50,8 +50,10 @@ target_sources(ppl
     src/Core.cpp
     src/HungarianMatching.cpp
     src/IOPlacer.cpp
+    src/IOPlacerRenderer.cpp
     src/MakeIoplacer.cpp
     src/Netlist.cpp
+    src/SimulatedAnnealing.cpp
     src/Slots.cpp
 )
 
@@ -69,6 +71,8 @@ target_link_libraries(ppl
     OpenSTA
     odb
     utl
+    gui
+    Boost::boost
 )
                       
 messages(
@@ -91,6 +95,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
       ppl
       OpenSTA
       odb
+      Boost::boost
   )
 
 endif()

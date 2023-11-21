@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -85,6 +86,7 @@ struct FrNet  // A Net is a set of connected MazePoints
 {
   bool isClock() const { return is_clock_; }
   bool isRouted() const { return is_routed_; }
+  bool isCritical() { return is_critical_; }
   float getSlack() const { return slack_; }
   odb::dbNet* getDbNet() const { return db_net_; }
   int getDriverIdx() const { return driver_idx_; }
@@ -113,6 +115,8 @@ struct FrNet  // A Net is a set of connected MazePoints
   void setIsRouted(bool is_routed) { is_routed_ = is_routed; }
   void setMaxLayer(int max_layer) { max_layer_ = max_layer; }
   void setMinLayer(int min_layer) { min_layer_ = min_layer; }
+  void setSlack(float slack) { slack_ = slack; }
+  void setIsCritical(bool is_critical) { is_critical_ = is_critical; }
 
  private:
   odb::dbNet* db_net_;
@@ -120,6 +124,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   std::vector<int> pin_y_;  // y coordinates of pins
   std::vector<int> pin_l_;  // l coordinates of pins
   bool is_clock_;           // flag that indicates if net is a clock net
+  bool is_critical_;
   int driver_idx_;
   int edge_cost_;
   int min_layer_;
@@ -148,6 +153,7 @@ struct Edge3D
 {
   unsigned short cap;    // the capacity of the edge
   unsigned short usage;  // the usage of the edge
+  unsigned short red;    // the reduction of capacity of the edge
 };
 
 struct TreeNode
@@ -198,6 +204,8 @@ struct Route
 
   // valid for MazeRoute: the number of edges in the route
   int routelen;
+
+  int last_routelen = 0;  // the last routelen before overflow itter
 };
 
 struct TreeEdge

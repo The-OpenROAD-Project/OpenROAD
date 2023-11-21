@@ -48,7 +48,6 @@
 #include "Hypergraph.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
-
 using utl::PAR;
 
 namespace par {
@@ -89,12 +88,12 @@ Coarsener::Coarsener(const int num_parts,
 CoarseGraphPtrs Coarsener::LazyFirstChoice(const HGraphPtr& hgraph) const
 {
   const auto start_timestamp = std::chrono::high_resolution_clock::now();
-  const bool timing_flag = hgraph->timing_flag_;
+  const bool timing_flag = hgraph->HasTiming();
   std::vector<HGraphPtr> hierarchy;  // a sequence of coarser hypergraphs
   // start the FC multilevel coarsening by pushing the original hgraph to
   // hierarchy update the timing cost of hgraph if it has been not.
-  if (hgraph->timing_flag_ == true && hgraph->path_timing_cost_.empty() == true
-      && hgraph->hyperedge_timing_cost_.empty() == true) {
+  if (hgraph->HasTiming() && hgraph->GetTimingPathCostSize() == 0
+      && !hgraph->HasHyperedgeTimingCost()) {
     evaluator_->InitializeTiming(hgraph);
   }
   hierarchy.push_back(hgraph);  // push original hgraph to hierarchy
@@ -105,21 +104,21 @@ CoarseGraphPtrs Coarsener::LazyFirstChoice(const HGraphPtr& hgraph) const
     logger_->report(
         "[COARSEN] Level 0 :: num_vertices = {}, num_hyperedges = {}, "
         "num_timing_paths = {}",
-        hierarchy.back()->num_vertices_,
-        hierarchy.back()->num_hyperedges_,
-        hierarchy.back()->num_timing_paths_);
+        hierarchy.back()->GetNumVertices(),
+        hierarchy.back()->GetNumHyperedges(),
+        hierarchy.back()->GetNumTimingPaths());
   } else {
     logger_->report(
         "[COARSEN] Level 0 :: num_vertices = {}, num_hyperedges = {}",
-        hierarchy.back()->num_vertices_,
-        hierarchy.back()->num_hyperedges_);
+        hierarchy.back()->GetNumVertices(),
+        hierarchy.back()->GetNumHyperedges());
   }
 
   for (int num_iter = 0; num_iter < max_coarsen_iters_; ++num_iter) {
     // do coarsening step
     auto hg = Aggregate(hierarchy.back());
-    const int num_vertices_pre_iter = hierarchy.back()->num_vertices_;
-    const int num_vertices_cur_iter = hg->num_vertices_;
+    const int num_vertices_pre_iter = hierarchy.back()->GetNumVertices();
+    const int num_vertices_cur_iter = hg->GetNumVertices();
     if (num_vertices_pre_iter == num_vertices_cur_iter) {
       break;  // the current hypergraph hg is the same as the hypergraph in
               // previous iteration
@@ -130,19 +129,19 @@ CoarseGraphPtrs Coarsener::LazyFirstChoice(const HGraphPtr& hgraph) const
           "[COARSEN] Level {} :: num_vertices = {}, num_hyperedges = {}, "
           "num_timing_paths = {}",
           num_iter + 1,
-          hierarchy.back()->num_vertices_,
-          hierarchy.back()->num_hyperedges_,
-          hierarchy.back()->num_timing_paths_);
+          hierarchy.back()->GetNumVertices(),
+          hierarchy.back()->GetNumHyperedges(),
+          hierarchy.back()->GetNumTimingPaths());
     } else {
       logger_->report(
           "[COARSEN] Level {} :: num_vertices = {}, num_hyperedges = {}",
           num_iter + 1,
-          hierarchy.back()->num_vertices_,
-          hierarchy.back()->num_hyperedges_);
+          hierarchy.back()->GetNumVertices(),
+          hierarchy.back()->GetNumHyperedges());
     }
     // check the early-stop condition
-    if (hierarchy.back()->num_vertices_ <= thr_coarsen_vertices_
-        || hierarchy.back()->num_hyperedges_ <= thr_coarsen_hyperedges_
+    if (hierarchy.back()->GetNumVertices() <= thr_coarsen_vertices_
+        || hierarchy.back()->GetNumHyperedges() <= thr_coarsen_hyperedges_
         || (num_vertices_pre_iter - num_vertices_cur_iter)
                <= num_vertices_pre_iter * adj_diff_ratio_) {
       break;
@@ -201,7 +200,7 @@ HGraphPtr Coarsener::GroupVertices(
   // Basically we will transform the path_timing_attr_ to path_timing_cost_,
   // and transform hyperedge_timing_attr_ to hyperedge_timing_cost_.
   // Then overlay the path weighgts onto corresponding weights
-  if (hgraph->timing_flag_ == true) {
+  if (hgraph->HasTiming()) {
     evaluator_->InitializeTiming(clustered_hgraph);
   }
 
@@ -246,7 +245,7 @@ HGraphPtr Coarsener::Aggregate(const HGraphPtr& hgraph) const
   // Basically we will transform the path_timing_attr_ to path_timing_cost_,
   // and transform hyperedge_timing_attr_ to hyperedge_timing_cost_.
   // Then overlay the path weighgts onto corresponding weights
-  if (hgraph->timing_flag_ == true) {
+  if (hgraph->HasTiming()) {
     evaluator_->InitializeTiming(clustered_hgraph);
   }
 
@@ -270,7 +269,7 @@ void Coarsener::VertexMatching(
 {
   // vertex_cluster_map_vec has the size of the number of vertices of hgraph
   vertex_cluster_id_vec.clear();
-  vertex_cluster_id_vec.resize(hgraph->num_vertices_);
+  vertex_cluster_id_vec.resize(hgraph->GetNumVertices());
   std::fill(vertex_cluster_id_vec.begin(), vertex_cluster_id_vec.end(), -1);
   // reset the attributes of clusters
   vertex_weights_c.clear();  // cluster weight
@@ -280,24 +279,24 @@ void Coarsener::VertexMatching(
   // check all the vertices to be clustered
   int cluster_id = 0;  // the id of cluster
   std::vector<int> unvisited;
-  unvisited.reserve(hgraph->num_vertices_);
+  unvisited.reserve(hgraph->GetNumVertices());
   // Ensure that fixed vertices in the hypergraph are not touched
-  if (hgraph->fixed_vertex_flag_ == false) {
+  if (!hgraph->HasFixedVertices()) {
     // no fixed vertices
-    unvisited.resize(hgraph->num_vertices_);
+    unvisited.resize(hgraph->GetNumVertices());
     std::iota(unvisited.begin(), unvisited.end(), 0);
   } else {
-    for (int v = 0; v < hgraph->num_vertices_; ++v) {
+    for (int v = 0; v < hgraph->GetNumVertices(); ++v) {
       // mark fixed vertices as single-vertex clusters
-      if (hgraph->fixed_attr_[v] > -1) {
+      if (hgraph->GetFixedAttr(v) > -1) {
         vertex_cluster_id_vec[v] = cluster_id++;
-        vertex_weights_c.push_back(hgraph->vertex_weights_[v]);
-        fixed_attr_c.push_back(hgraph->fixed_attr_[v]);
-        if (hgraph->community_flag_ == true) {
-          community_attr_c.push_back(hgraph->community_attr_[v]);
+        vertex_weights_c.push_back(hgraph->GetVertexWeights(v));
+        fixed_attr_c.push_back(hgraph->GetFixedAttr(v));
+        if (hgraph->HasCommunity()) {
+          community_attr_c.push_back(hgraph->GetCommunity(v));
         }
-        if (hgraph->placement_flag_ == true) {
-          placement_attr_c.push_back(hgraph->placement_attr_[v]);
+        if (hgraph->HasPlacement()) {
+          placement_attr_c.push_back(hgraph->GetPlacement(v));
         }
       } else {
         unvisited.push_back(v);  // this vertex is not fixed
@@ -318,24 +317,20 @@ void Coarsener::VertexMatching(
     if (vertex_cluster_id_vec[v] > -1) {
       continue;  // this vertex has been mapped
     }
+
     // initialize the score for neighbors
     std::map<int, float> score_map;
     // traverse all its neighbors
-    const int first_valid_entry_v = hgraph->vptr_[v];
-    const int first_invalid_entry_v = hgraph->vptr_[v + 1];
-    for (int i = first_valid_entry_v; i < first_invalid_entry_v; ++i) {
-      const int he = hgraph->vind_[i];  // hyperedge size
-      const int first_valid_entry_he = hgraph->eptr_[he];
-      const int first_invalid_entry_he = hgraph->eptr_[he + 1];
-      const int he_size = first_invalid_entry_he - first_valid_entry_he;
+    for (const int he : hgraph->Edges(v)) {
+      const auto edge_range = hgraph->Vertices(he);
+      const int he_size = edge_range.size();
       if (he_size <= 1 || he_size > thr_coarsen_hyperedge_size_skip_) {
         continue;
       }
       // get the normalized score
       const float he_score = evaluator_->GetNormEdgeScore(he, hgraph);
       // check the vertices in this hyperedge
-      for (int j = first_valid_entry_he; j < first_invalid_entry_he; ++j) {
-        const int nbr_v = hgraph->eind_[j];
+      for (const int nbr_v : edge_range) {
         if (nbr_v == v) {
           continue;  // ignore the vertex v itself
         }
@@ -350,38 +345,37 @@ void Coarsener::VertexMatching(
         // we do not allow the weight of cluster exceed the weight threshold
         // we do not allow the merging of non-fixed vertices with fixed-vertices
         // we do not allow the merging between vertices in different communities
-        if ((hgraph->fixed_vertex_flag_ == true
-             && hgraph->fixed_attr_[nbr_v] > -1)
-            || (hgraph->community_flag_ == true
-                && hgraph->community_attr_[v]
-                       != hgraph->community_attr_[nbr_v])) {
+        if ((hgraph->HasFixedVertices() && hgraph->GetFixedAttr(nbr_v) > -1)
+            || (hgraph->HasCommunity()
+                && hgraph->GetCommunity(v) != hgraph->GetCommunity(nbr_v))) {
           continue;
         }
         // check the vertex weight constraint
         const std::vector<float>& nbr_v_weight
             = vertex_cluster_id_vec[nbr_v] > -1
                   ? vertex_weights_c[vertex_cluster_id_vec[nbr_v]]
-                  : hgraph->vertex_weights_[nbr_v];
+                  : hgraph->GetVertexWeights(nbr_v);
         // This line needs to be updated
-        if (hgraph->vertex_weights_[v] + nbr_v_weight > thr_cluster_weight_) {
+        if (hgraph->GetVertexWeights(v) + nbr_v_weight > thr_cluster_weight_) {
           continue;  // cannot satisfy the vertex weight constraint
         }
         score_map[nbr_v] = he_score;
       }
     }  // finish traversing all the neighbors
+
     // if there is no neighbor, map current vertex as a single-vertex cluster
     if (score_map.empty()) {
       num_visited_vertices++;
       vertex_cluster_id_vec[v] = cluster_id++;
-      vertex_weights_c.push_back(hgraph->vertex_weights_[v]);
-      if (hgraph->placement_flag_ == true) {
-        placement_attr_c.push_back(hgraph->placement_attr_[v]);
+      vertex_weights_c.push_back(hgraph->GetVertexWeights(v));
+      if (hgraph->HasPlacement()) {
+        placement_attr_c.push_back(hgraph->GetPlacement(v));
       }
-      if (hgraph->community_flag_ == true) {
-        community_attr_c.push_back(hgraph->community_attr_[v]);
+      if (hgraph->HasCommunity()) {
+        community_attr_c.push_back(hgraph->GetCommunity(v));
       }
-      if (hgraph->fixed_vertex_flag_ == true) {
-        fixed_attr_c.push_back(hgraph->fixed_attr_[v]);
+      if (hgraph->HasFixedVertices()) {
+        fixed_attr_c.push_back(hgraph->GetFixedAttr(v));
       }
       continue;
     }
@@ -396,28 +390,23 @@ void Coarsener::VertexMatching(
     // Exploration that if we can further improve the results by considering
     // more neighbors on timing-critical paths
     // No idea yet.
-    if (hgraph->timing_flag_ == true && hgraph->num_timing_paths_ > 0) {
-      const int first_valid_entry_pv = hgraph->pptr_v_[v];
-      const int first_invalid_entry_pv = hgraph->pptr_v_[v + 1];
-      for (int j = first_valid_entry_pv; j < first_invalid_entry_pv; ++j) {
-        const int p = hgraph->pind_v_[j];  // path_id
-        const int first_valid_entry_p = hgraph->vptr_p_[p];
-        const int first_invalid_entry_p = hgraph->vptr_p_[p + 1];
+    if (hgraph->HasTiming() && hgraph->GetNumTimingPaths() > 0) {
+      for (const int p : hgraph->TimingPathsThrough(v)) {
         const float path_timing_score
             = evaluator_->GetPathTimingScore(p, hgraph);
         // traverse the current path
-        for (int idx = first_valid_entry_p; idx < first_invalid_entry_p;
-             idx++) {
-          const int vertex_id = hgraph->vind_p_[idx];
+        auto path_range = hgraph->PathVertices(p);
+        for (auto iter = path_range.begin(); iter != path_range.end(); ++iter) {
+          const int vertex_id = *iter;
           if (vertex_id != v) {
             continue;  // we need to find the neighbors of v, so continue here
           }
           std::vector<int> neighbors;
-          if (idx > first_invalid_entry_p) {
-            neighbors.push_back(hgraph->vind_p_[idx - 1]);  // left neighbor
+          if (iter != path_range.begin()) {
+            neighbors.push_back(*(iter - 1));  // left neighbor
           }
-          if (idx < first_invalid_entry_p - 1) {
-            neighbors.push_back(hgraph->vind_p_[idx + 1]);  // right neighbor
+          if (iter + 1 != path_range.end()) {
+            neighbors.push_back(*(iter + 1));  // right neighbor
           }
           // add the score.
           // If the neighbor not found by connectivity, which means the balance
@@ -431,7 +420,7 @@ void Coarsener::VertexMatching(
       }    // finish current nbr_v
     }
     // update the score based on physical location information
-    if (hgraph->placement_flag_ == true) {
+    if (hgraph->HasPlacement()) {
       for (auto& [u, score] : score_map) {  // the score will be updated
         score += evaluator_->GetPlacementScore(v, u, hgraph);
       }
@@ -448,6 +437,23 @@ void Coarsener::VertexMatching(
       }
     }
 
+    if (best_vertex == -1) {
+      num_visited_vertices += 1;
+      vertex_cluster_id_vec[v] = cluster_id;
+      cluster_id++;
+      vertex_weights_c.push_back(hgraph->GetVertexWeights(v));
+      if (hgraph->HasPlacement()) {
+        placement_attr_c.push_back(hgraph->GetPlacement(v));
+      }
+      if (hgraph->HasCommunity()) {
+        community_attr_c.push_back(hgraph->GetCommunity(v));
+      }
+      if (hgraph->HasFixedVertices()) {
+        fixed_attr_c.push_back(hgraph->GetFixedAttr(v));
+      }
+      continue;
+    }
+
     // cluster best_vertex and v
     // Case 1 : best_vertex has been clustered with other vertices, add v to
     // that cluster Case 2 : best_vertex and v both are not clustered
@@ -457,36 +463,36 @@ void Coarsener::VertexMatching(
       vertex_cluster_id_vec[v] = best_cluster_id;
       // you cannot change the order here
       // update the placement location
-      if (hgraph->placement_flag_ == true) {
+      if (hgraph->HasPlacement()) {
         placement_attr_c[best_cluster_id]
             = evaluator_->GetAvgPlacementLoc(vertex_weights_c[best_cluster_id],
-                                             hgraph->vertex_weights_[v],
+                                             hgraph->GetVertexWeights(v),
                                              placement_attr_c[best_cluster_id],
-                                             hgraph->placement_attr_[v]);
+                                             hgraph->GetPlacement(v));
       }
       // update the weight of cluster
       vertex_weights_c[best_cluster_id]
-          = vertex_weights_c[best_cluster_id] + hgraph->vertex_weights_[v];
+          = vertex_weights_c[best_cluster_id] + hgraph->GetVertexWeights(v);
     } else {
       num_visited_vertices += 2;
       vertex_cluster_id_vec[best_vertex] = cluster_id;
       vertex_cluster_id_vec[v] = cluster_id;
       cluster_id++;
-      vertex_weights_c.push_back(hgraph->vertex_weights_[best_vertex]
-                                 + hgraph->vertex_weights_[v]);
-      if (hgraph->placement_flag_ == true) {
+      vertex_weights_c.push_back(hgraph->GetVertexWeights(best_vertex)
+                                 + hgraph->GetVertexWeights(v));
+      if (hgraph->HasPlacement()) {
         placement_attr_c.push_back(
             evaluator_->GetAvgPlacementLoc(v, best_vertex, hgraph));
       }
-      if (hgraph->community_flag_ == true) {
-        community_attr_c.push_back(hgraph->community_attr_[v]);
+      if (hgraph->HasCommunity()) {
+        community_attr_c.push_back(hgraph->GetCommunity(v));
       }
-      if (hgraph->fixed_vertex_flag_ == true) {
-        fixed_attr_c.push_back(hgraph->fixed_attr_[v]);
+      if (hgraph->HasFixedVertices()) {
+        fixed_attr_c.push_back(hgraph->GetFixedAttr(v));
       }
     }
     const int remaining_vertices
-        = hgraph->num_vertices_ + cluster_id - num_visited_vertices;
+        = hgraph->GetNumVertices() + cluster_id - num_visited_vertices;
     // check the early-stop condition
     if (remaining_vertices <= num_early_stop_visited_vertices) {
       int num_visited_vertices_new = 0;
@@ -504,15 +510,15 @@ void Coarsener::VertexMatching(
           continue;  // this vertex has been visited
         }
         vertex_cluster_id_vec[cur_vertex] = cluster_id++;
-        vertex_weights_c.push_back(hgraph->vertex_weights_[cur_vertex]);
-        if (hgraph->placement_flag_ == true) {
-          placement_attr_c.push_back(hgraph->placement_attr_[cur_vertex]);
+        vertex_weights_c.push_back(hgraph->GetVertexWeights(cur_vertex));
+        if (hgraph->HasPlacement()) {
+          placement_attr_c.push_back(hgraph->GetPlacement(cur_vertex));
         }
-        if (hgraph->community_flag_ == true) {
-          community_attr_c.push_back(hgraph->community_attr_[cur_vertex]);
+        if (hgraph->HasCommunity()) {
+          community_attr_c.push_back(hgraph->GetCommunity(cur_vertex));
         }
-        if (hgraph->fixed_vertex_flag_ == true) {
-          fixed_attr_c.push_back(hgraph->fixed_attr_[cur_vertex]);
+        if (hgraph->HasFixedVertices()) {
+          fixed_attr_c.push_back(hgraph->GetFixedAttr(cur_vertex));
         }
       }
       return;  // exit the coarsening process
@@ -540,15 +546,15 @@ void Coarsener::ClusterBasedGroupInfo(
     Matrix<float>& placement_attr_c) const
 {
   // convert group_attr to vertex_cluster_id_vec
-  if (group_attr.empty() == true && hgraph->fixed_attr_.empty() == true) {
+  if (group_attr.empty() == true && hgraph->GetFixedAttrSize() == 0) {
     // no need to any group based on group_attr and hgraph->fixed_attr_
     vertex_cluster_id_vec.clear();
-    vertex_cluster_id_vec.resize(hgraph->num_vertices_);
+    vertex_cluster_id_vec.resize(hgraph->GetNumVertices());
     std::iota(vertex_cluster_id_vec.begin(), vertex_cluster_id_vec.end(), 0);
-    vertex_weights_c = hgraph->vertex_weights_;
-    community_attr_c = hgraph->community_attr_;
-    fixed_attr_c = hgraph->fixed_attr_;
-    placement_attr_c = hgraph->placement_attr_;
+    vertex_weights_c = hgraph->GetVertexWeights();
+    hgraph->CopyCommunity(community_attr_c);
+    hgraph->CopyFixedAttr(fixed_attr_c);
+    hgraph->CopyPlacement(placement_attr_c);
     return;
   }
 
@@ -558,10 +564,10 @@ void Coarsener::ClusterBasedGroupInfo(
   std::vector<std::vector<int>> temp_fixed_group;
   temp_fixed_group.resize(num_parts_);
   // check fixed vertices
-  if (hgraph->fixed_attr_.empty() == false) {
-    for (int v = 0; v < hgraph->num_vertices_; v++) {
-      if (hgraph->fixed_attr_[v] > -1) {
-        temp_fixed_group[hgraph->fixed_attr_[v]].push_back(v);
+  if (hgraph->GetFixedAttrSize() > 0) {
+    for (int v = 0; v < hgraph->GetNumVertices(); v++) {
+      if (hgraph->GetFixedAttr(v) > -1) {
+        temp_fixed_group[hgraph->GetFixedAttr(v)].push_back(v);
       }
     }
   }
@@ -578,7 +584,7 @@ void Coarsener::ClusterBasedGroupInfo(
   // We need to merge groups if two groups share at least one common vertex
   // first initialize the vertex_cluster_id_vec
   vertex_cluster_id_vec.clear();
-  vertex_cluster_id_vec.resize(hgraph->num_vertices_);
+  vertex_cluster_id_vec.resize(hgraph->GetNumVertices());
   std::fill(vertex_cluster_id_vec.begin(), vertex_cluster_id_vec.end(), -1);
   int cluster_id = 0;  // start cluster id
   for (const auto& group : fixed_group) {
@@ -596,7 +602,7 @@ void Coarsener::ClusterBasedGroupInfo(
     }
   }
   // map remaining vertex into a single-vertex cluster
-  for (int v = 0; v < hgraph->num_vertices_; v++) {
+  for (int v = 0; v < hgraph->GetNumVertices(); v++) {
     if (vertex_cluster_id_vec[v] == -1) {
       vertex_cluster_id_vec[v] = cluster_id++;
     }
@@ -610,47 +616,47 @@ void Coarsener::ClusterBasedGroupInfo(
   // update vertex weights
   vertex_weights_c.clear();
   for (int v = 0; v < num_clusters; v++) {
-    std::vector<float> v_wt(hgraph->vertex_dimensions_, 0.0);
+    std::vector<float> v_wt(hgraph->GetVertexDimensions(), 0.0);
     vertex_weights_c.push_back(v_wt);
   }
-  if (hgraph->community_flag_ == true) {
+  if (hgraph->HasCommunity()) {
     community_attr_c.clear();
     community_attr_c.resize(num_clusters);
     std::fill(community_attr_c.begin(), community_attr_c.end(), -1);
   }
-  if (hgraph->fixed_vertex_flag_ == true) {
+  if (hgraph->HasFixedVertices()) {
     fixed_attr_c.clear();
     fixed_attr_c.resize(num_clusters);
     std::fill(fixed_attr_c.begin(), fixed_attr_c.end(), -1);
   }
-  if (hgraph->placement_flag_ == true) {
+  if (hgraph->HasPlacement()) {
     placement_attr_c.clear();
     for (int v = 0; v < num_clusters; v++) {
-      std::vector<float> v_placement(hgraph->placement_dimensions_, 0.0);
+      std::vector<float> v_placement(hgraph->GetPlacementDimensions(), 0.0);
       placement_attr_c.push_back(v_placement);
     }
   }
 
   // Update the attributes of clusters
-  for (int v = 0; v < hgraph->num_vertices_; v++) {
+  for (int v = 0; v < hgraph->GetNumVertices(); v++) {
     const int cluster_id = vertex_cluster_id_vec[v];
-    if (hgraph->community_flag_ == true) {
+    if (hgraph->HasCommunity()) {
       community_attr_c[cluster_id]
-          = std::max(community_attr_c[cluster_id], hgraph->community_attr_[v]);
+          = std::max(community_attr_c[cluster_id], hgraph->GetCommunity(v));
     }
-    if (hgraph->fixed_vertex_flag_ == true) {
+    if (hgraph->HasFixedVertices()) {
       fixed_attr_c[cluster_id]
-          = std::max(fixed_attr_c[cluster_id], hgraph->fixed_attr_[v]);
+          = std::max(fixed_attr_c[cluster_id], hgraph->GetFixedAttr(v));
     }
-    if (hgraph->placement_flag_ == true) {
+    if (hgraph->HasPlacement()) {
       placement_attr_c[cluster_id]
           = evaluator_->GetAvgPlacementLoc(vertex_weights_c[cluster_id],
-                                           hgraph->vertex_weights_[v],
+                                           hgraph->GetVertexWeights(v),
                                            placement_attr_c[cluster_id],
-                                           hgraph->placement_attr_[v]);
+                                           hgraph->GetPlacement(v));
     }
     vertex_weights_c[cluster_id]
-        = vertex_weights_c[cluster_id] + hgraph->vertex_weights_[v];
+        = vertex_weights_c[cluster_id] + hgraph->GetVertexWeights(v);
   }
 }
 
@@ -671,7 +677,7 @@ void Coarsener::OrderVertices(const HGraphPtr& hgraph,
     case CoarsenOrder::SIZE: {
       // sort the vertices based on vertex weight
       // calculate the weight for all the vertices
-      std::vector<float> average_sizes(hgraph->num_vertices_, 0.0);
+      std::vector<float> average_sizes(hgraph->GetNumVertices(), 0.0);
       for (const auto& v : vertices) {
         average_sizes[v] = evaluator_->GetVertexWeightNorm(v, hgraph);
       }
@@ -686,17 +692,11 @@ void Coarsener::OrderVertices(const HGraphPtr& hgraph,
     case CoarsenOrder::DEGREE: {
       // sort the vertices based on degree of each vertex in non-decreasing
       // order i.e., number of neighboring vertices
-      std::vector<int> degrees(hgraph->num_vertices_, 0);
+      std::vector<int> degrees(hgraph->GetNumVertices(), 0);
       for (const auto& v : vertices) {
         std::set<int> nbr_vertices;
-        const int first_valid_entry_h = hgraph->vptr_[v];
-        const int first_invalid_entry_h = hgraph->vptr_[v + 1];
-        for (int j = first_valid_entry_h; j < first_invalid_entry_h; ++j) {
-          const int he = hgraph->vind_[j];
-          const int first_valid_entry_v = hgraph->eptr_[he];
-          const int first_invalid_entry_k = hgraph->eptr_[he + 1];
-          for (int k = first_valid_entry_v; k < first_invalid_entry_k; ++k) {
-            const int nbr = hgraph->eind_[k];
+        for (const int he : hgraph->Edges(v)) {
+          for (const int nbr : hgraph->Vertices(he)) {
             if (nbr != v) {
               nbr_vertices.insert(nbr);
             }
@@ -730,7 +730,7 @@ HGraphPtr Coarsener::Contraction(
   // Step 1:  identify the contracted hyperedges
   std::vector<int> hyperedge_cluster_id_vec;  // map the hyperedge to hyperedge
                                               // in clustered hypergraph
-  hyperedge_cluster_id_vec.resize(hgraph->num_hyperedges_);
+  hyperedge_cluster_id_vec.resize(hgraph->GetNumHyperedges());
   // -1 means the hyperedge is fully within one cluster
   std::fill(
       hyperedge_cluster_id_vec.begin(), hyperedge_cluster_id_vec.end(), -1);
@@ -746,23 +746,15 @@ HGraphPtr Coarsener::Contraction(
   std::map<size_t, std::vector<int>>
       parallel_hash_map;  // store the hyperedges_c with the same hash_value
                           // (candidate)
-  for (int e = 0; e < hgraph->num_hyperedges_; e++) {
-    const int first_valid_entry = hgraph->eptr_[e];
-    const int first_invalid_entry = hgraph->eptr_[e + 1];
-    const int he_size = first_invalid_entry - first_valid_entry;
-    // if (he_size <= 1 || he_size > global_net_threshold_) {
-    //  continue;  // ignore the single-vertex hyperedge and large hyperedge
-    //}
+  for (int e = 0; e < hgraph->GetNumHyperedges(); e++) {
+    const auto range = hgraph->Vertices(e);
+    const int he_size = range.size();
     if (he_size <= 1 || he_size > thr_coarsen_hyperedge_size_skip_) {
       continue;  // ignore the single-vertex hyperedge and large hyperedge
     }
-    // if (he_size <= 1) {
-    //  continue; // ignore the single-vertex hyperedge and large hyperedge
-    //}
     std::set<int> hyperedge_c;
-    for (int j = first_valid_entry; j < first_invalid_entry; ++j) {
-      hyperedge_c.insert(
-          vertex_cluster_id_vec[hgraph->eind_[j]]);  // get cluster id
+    for (const int vertex_id : range) {
+      hyperedge_c.insert(vertex_cluster_id_vec[vertex_id]);  // get cluster id
     }
     if (hyperedge_c.size() <= 1) {
       continue;  // ignore the single-vertex hyperedge
@@ -780,12 +772,12 @@ HGraphPtr Coarsener::Contraction(
       hash_map[hash_value] = hyperedge_c_id;
       hyperedges_c.push_back(
           std::vector<int>(hyperedge_c.begin(), hyperedge_c.end()));
-      hyperedges_weights_c.push_back(hgraph->hyperedge_weights_[e]);
-      if (hgraph->timing_flag_ == true) {
+      hyperedges_weights_c.push_back(hgraph->GetHyperedgeWeights(e));
+      if (hgraph->HasTiming()) {
         hyperedge_slack_c.push_back(
-            hgraph->hyperedge_timing_attr_[e]);  // the slack of hyperedge
+            hgraph->GetHyperedgeTimingAttr(e));  // the slack of hyperedge
         hyperedge_arc_set_c.push_back(
-            hgraph->hyperedge_arc_set_[e]);  // map the hyperedge to timing arcs
+            hgraph->GetHyperedgeArcSet(e));  // map the hyperedge to timing arcs
       }
       continue;
     }
@@ -817,26 +809,26 @@ HGraphPtr Coarsener::Contraction(
       hyperedge_cluster_id_vec[e] = hyperedge_c_id;
       parallel_hash_map[hash_value].push_back(hyperedge_c_id);
       hyperedges_c.push_back(hyperedge_vec);
-      hyperedges_weights_c.push_back(hgraph->hyperedge_weights_[e]);
-      if (hgraph->timing_flag_ == true) {
+      hyperedges_weights_c.push_back(hgraph->GetHyperedgeWeights(e));
+      if (hgraph->HasTiming()) {
         hyperedge_slack_c.push_back(
-            hgraph->hyperedge_timing_attr_[e]);  // the slack of hyperedge
+            hgraph->GetHyperedgeTimingAttr(e));  // the slack of hyperedge
         hyperedge_arc_set_c.push_back(
-            hgraph->hyperedge_arc_set_[e]);  // map the hyperedge to timing arcs
+            hgraph->GetHyperedgeArcSet(e));  // map the hyperedge to timing arcs
       }
     } else {
       // existed
       hyperedges_weights_c[parallel_hyperedge_c_id]
           = hyperedges_weights_c[parallel_hyperedge_c_id]
-            + hgraph->hyperedge_weights_[e];
+            + hgraph->GetHyperedgeWeights(e);
       hyperedge_cluster_id_vec[e] = parallel_hyperedge_c_id;
-      if (hgraph->timing_flag_ == true) {
+      if (hgraph->HasTiming()) {
         hyperedge_slack_c[parallel_hyperedge_c_id]
             = std::min(hyperedge_slack_c[parallel_hyperedge_c_id],
-                       hgraph->hyperedge_timing_attr_[e]);
+                       hgraph->GetHyperedgeTimingAttr(e));
         hyperedge_arc_set_c[parallel_hyperedge_c_id].insert(
-            hgraph->hyperedge_arc_set_[e].begin(),
-            hgraph->hyperedge_arc_set_[e].end());
+            hgraph->GetHyperedgeArcSet(e).begin(),
+            hgraph->GetHyperedgeArcSet(e).end());
       }
     }
   }
@@ -845,19 +837,18 @@ HGraphPtr Coarsener::Contraction(
   std::vector<TimingPath> timing_paths_c;
   hash_map.clear();           // used to detect parallel timing path
   parallel_hash_map.clear();  // used to detect parallel timing path
-  if (hgraph->timing_flag_ == true && hgraph->num_timing_paths_ > 0) {
-    for (int p = 0; p < hgraph->num_timing_paths_; ++p) {
+  if (hgraph->HasTiming() && hgraph->GetNumTimingPaths() > 0) {
+    for (int p = 0; p < hgraph->GetNumTimingPaths(); ++p) {
       // check vertex representation
-      const int first_valid_entry_p = hgraph->vptr_p_[p];
-      const int first_invalid_entry_p = hgraph->vptr_p_[p + 1];
-      const int path_size_original
-          = first_invalid_entry_p - first_valid_entry_p;
+      auto path_range = hgraph->PathVertices(p);
+      const int path_size_original = path_range.size();
+
       if (path_size_original <= 1) {
         continue;  // ignore single-vertex path
       }
       std::vector<int> path_c;  // create path_c
-      for (int idx = first_valid_entry_p; idx < first_invalid_entry_p; idx++) {
-        const int cluster_id = vertex_cluster_id_vec[hgraph->vind_p_[idx]];
+      for (const int vertex_id : path_range) {
+        const int cluster_id = vertex_cluster_id_vec[vertex_id];
         if (path_c.empty() == true || path_c.back() != cluster_id) {
           path_c.push_back(cluster_id);
         }
@@ -871,10 +862,8 @@ HGraphPtr Coarsener::Contraction(
         // the path does not exists
         // check hyperedge representation
         std::vector<int> arcs_c;
-        for (int idx = hgraph->eptr_p_[p]; idx < hgraph->eptr_p_[p + 1];
-             idx++) {
-          const int hyperedge_c_id
-              = hyperedge_cluster_id_vec[hgraph->eind_p_[idx]];
+        for (const int edge : hgraph->PathEdges(p)) {
+          const int hyperedge_c_id = hyperedge_cluster_id_vec[edge];
           // if hyperedge_c_id is -1, that means that hyperedge has been merged
           // during coarsening
           if ((hyperedge_c_id > -1)
@@ -883,7 +872,7 @@ HGraphPtr Coarsener::Contraction(
           }
         }
         hash_map[hash_value] = static_cast<int>(timing_paths_c.size());
-        TimingPath timing_path_c(path_c, arcs_c, hgraph->path_timing_attr_[p]);
+        TimingPath timing_path_c(path_c, arcs_c, hgraph->PathTimingSlack(p));
         timing_paths_c.push_back(timing_path_c);
       } else {
         const int timing_path_c_id = hash_map[hash_value];
@@ -905,10 +894,8 @@ HGraphPtr Coarsener::Contraction(
         if (parallel_timing_path_c_id == -1) {
           // not existed
           std::vector<int> arcs_c;
-          for (int idx = hgraph->eptr_p_[p]; idx < hgraph->eptr_p_[p + 1];
-               idx++) {
-            const int hyperedge_c_id
-                = hyperedge_cluster_id_vec[hgraph->eind_p_[idx]];
+          for (const int edge : hgraph->PathEdges(p)) {
+            const int hyperedge_c_id = hyperedge_cluster_id_vec[edge];
             if ((hyperedge_c_id > -1)
                 && (arcs_c.empty() == true
                     || arcs_c.back() != hyperedge_c_id)) {
@@ -918,12 +905,12 @@ HGraphPtr Coarsener::Contraction(
           parallel_hash_map[hash_value].push_back(
               static_cast<int>(timing_paths_c.size()));
           timing_paths_c.emplace_back(
-              path_c, arcs_c, hgraph->path_timing_attr_[p]);
+              path_c, arcs_c, hgraph->PathTimingSlack(p));
         } else {
           // existed
           timing_paths_c[parallel_timing_path_c_id].slack
               = std::min(timing_paths_c[parallel_timing_path_c_id].slack,
-                         hgraph->path_timing_attr_[p]);
+                         hgraph->PathTimingSlack(p));
         }
       }
     }
@@ -937,9 +924,9 @@ HGraphPtr Coarsener::Contraction(
 
   // Step 3: create the contracted hypergraph
   auto clustered_hgraph
-      = std::make_shared<Hypergraph>(hgraph->vertex_dimensions_,
-                                     hgraph->hyperedge_dimensions_,
-                                     hgraph->placement_dimensions_,
+      = std::make_shared<Hypergraph>(hgraph->GetVertexDimensions(),
+                                     hgraph->GetHyperedgeDimensions(),
+                                     hgraph->GetPlacementDimensions(),
                                      hyperedges_c,
                                      vertex_weights_c,
                                      hyperedges_weights_c,
@@ -954,14 +941,12 @@ HGraphPtr Coarsener::Contraction(
                                      timing_paths_c,
                                      logger_);
 
-  // fill ertex_c_attr which maps the vertex to its corresponding cluster
+  // fill vertex_c_attr which maps the vertex to its corresponding cluster
   // To simpify the implementation, the vertex_c_attr maps the original larger
   // hypergraph
-  auto& vertex_c_attr = clustered_hgraph->vertex_c_attr_;
-  vertex_c_attr.clear();
-  vertex_c_attr.resize(clustered_hgraph->num_vertices_);
-  for (int v = 0; v < hgraph->num_vertices_; v++) {
-    vertex_c_attr[vertex_cluster_id_vec[v]].push_back(v);
+  clustered_hgraph->ResetVertexCAttr();
+  for (int v = 0; v < hgraph->GetNumVertices(); v++) {
+    clustered_hgraph->AddVertexCAttr(vertex_cluster_id_vec[v], v);
   }
 
   return clustered_hgraph;

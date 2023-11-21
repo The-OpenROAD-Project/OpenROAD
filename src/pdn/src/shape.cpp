@@ -387,37 +387,37 @@ void Shape::addBPinToDb(const odb::Rect& rect) const
   odb::dbBTerm* bterm = nullptr;
   if (net_->getBTermCount() == 0) {
     bterm = odb::dbBTerm::create(net_, net_->getConstName());
-    bterm->setSigType(net_->getSigType());
     bterm->setIoType(odb::dbIoType::INOUT);
-    bterm->setSpecial();
   } else {
     bterm = net_->get1stBTerm();
   }
+  bterm->setSigType(net_->getSigType());
+  bterm->setSpecial();
 
+  odb::dbBPin* pin = nullptr;
   auto pins = bterm->getBPins();
-  for (auto* pin : pins) {
-    for (auto* box : pin->getBoxes()) {
+  for (auto* bpin : pins) {
+    for (auto* box : bpin->getBoxes()) {
       if (box->getTechLayer() != layer_) {
         continue;
       }
-      odb::Rect box_rect = box->getBox();
-      if (box_rect == rect) {
-        // pin already exists
-        return;
+      if (box->getBox() == rect) {
+        pin = bpin;
       }
     }
   }
 
-  odb::dbBPin* pin = nullptr;
-  if (pins.empty()) {
-    pin = odb::dbBPin::create(bterm);
-    pin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
-  } else {
-    pin = *pins.begin();
+  if (pin == nullptr) {
+    if (pins.empty()) {
+      pin = odb::dbBPin::create(bterm);
+    } else {
+      pin = *pins.begin();
+    }
+    odb::dbBox::create(
+        pin, layer_, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
   }
 
-  odb::dbBox::create(
-      pin, layer_, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
+  pin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
 }
 
 void Shape::populateMapFromDb(odb::dbNet* net, ShapeTreeMap& map)

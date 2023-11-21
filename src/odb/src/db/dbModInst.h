@@ -36,28 +36,28 @@
 #include "dbCore.h"
 #include "odb.h"
 
-// User Code Begin Includes
-// User Code End Includes
-
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
 class _dbModule;
 class _dbGroup;
-// User Code Begin Classes
-// User Code End Classes
-
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbModInst : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
+  _dbModInst(_dbDatabase*, const _dbModInst& r);
+  _dbModInst(_dbDatabase*);
+  ~_dbModInst();
+
+  bool operator==(const _dbModInst& rhs) const;
+  bool operator!=(const _dbModInst& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbModInst& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbModInst& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
 
   char* _name;
   dbId<_dbModInst> _next_entry;
@@ -66,25 +66,8 @@ class _dbModInst : public _dbObject
   dbId<_dbModule> _master;
   dbId<_dbModInst> _group_next;
   dbId<_dbGroup> _group;
-
-  // User Code Begin Fields
-  // User Code End Fields
-  _dbModInst(_dbDatabase*, const _dbModInst& r);
-  _dbModInst(_dbDatabase*);
-  ~_dbModInst();
-  bool operator==(const _dbModInst& rhs) const;
-  bool operator!=(const _dbModInst& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbModInst& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbModInst& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbModInst& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbModInst& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header

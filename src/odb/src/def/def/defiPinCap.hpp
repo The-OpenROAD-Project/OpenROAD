@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -61,9 +61,6 @@ class defiPinAntennaModel
  public:
   defiPinAntennaModel(defrData* data);
   void Init();
-
-  DEF_COPY_CONSTRUCTOR_H(defiPinAntennaModel);
-  DEF_ASSIGN_OPERATOR_H(defiPinAntennaModel);
 
   ~defiPinAntennaModel();
   void clear();
@@ -133,8 +130,6 @@ class defiPinPort
   defiPinPort(defrData* data);
   void Init();
 
-  DEF_COPY_CONSTRUCTOR_H(defiPinPort);
-  DEF_ASSIGN_OPERATOR_H(defiPinPort);
   ~defiPinPort();
 
   void clear();
@@ -217,9 +212,6 @@ class defiPin
  public:
   defiPin(defrData* data);
   void Init();
-
-  DEF_COPY_CONSTRUCTOR_H(defiPin);
-  DEF_ASSIGN_OPERATOR_H(defiPin);
 
   ~defiPin();
   void Destroy();

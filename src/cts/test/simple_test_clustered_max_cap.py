@@ -21,5 +21,6 @@ cts_aux.clock_tree_synthesis(design,
                              wire_unit=20,
                              sink_clustering_enable=True,
                              distance_between_buffers=100.0,
-                             num_static_layers=1
+                             num_static_layers=1,
+                             obstruction_aware=True
                             )

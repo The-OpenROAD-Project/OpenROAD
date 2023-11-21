@@ -337,7 +337,7 @@ proc add_pdn_stripe {args} {
     foreach net_name $keys(-nets) {
       set net [[ord::get_db_block] findNet $net_name]
       if {$net == "NULL"} {
-        utl::error PAD 225 "Unable to find net $net_name."
+        utl::error PDN 225 "Unable to find net $net_name."
       }
       lappend nets $net
     }
@@ -398,7 +398,7 @@ sta::define_cmd_args "add_pdn_ring" {[-grid grid_name] \
 
 proc add_pdn_ring {args} {
   sta::parse_key_args "add_pdn_ring" args \
-    keys {-grid -layers -widths -spacings -core_offsets -pad_offsets -connect_to_pad_layers -power_pads -ground_pads -nets} \
+    keys {-grid -layers -widths -spacings -core_offsets -pad_offsets -connect_to_pad_layers -power_pads -ground_pads -nets -starts_with} \
     flags {-add_connect -extend_to_boundary -connect_to_pads}
 
   sta::check_argc_eq0 "add_pdn_ring" $args
@@ -460,7 +460,7 @@ proc add_pdn_ring {args} {
     foreach net_name $keys(-nets) {
       set net [[ord::get_db_block] findNet $net_name]
       if {$net == "NULL"} {
-        utl::error PAD 226 "Unable to find net $net_name."
+        utl::error PDN 230 "Unable to find net $net_name."
       }
       lappend nets $net
     }
@@ -633,6 +633,113 @@ proc add_pdn_connect {args} {
                     $split_cuts_layers \
                     $split_cuts_pitches \
                     $dont_use
+}
+
+sta::define_cmd_args "add_sroute_connect" {[-net net] \
+                                           [-outerNet outerNet] \
+                                           -layers list_of_2_layers \
+                                           -cut_pitch pitch_value \
+                                           [-fixed_vias list_of_vias] \
+                                           [-max_rows rows] \
+                                           [-max_columns columns] \
+                                           [-metalwidths metalwidths] \
+                                           [-metalspaces metalspaces] \
+                                           [-ongrid ongrid_layers] \
+                                           [-insts inst]
+}
+
+proc add_sroute_connect {args} {
+  sta::parse_key_args "add_sroute_connect" args \
+    keys {-net -outerNet -layers -cut_pitch -fixed_vias -max_rows -max_columns -metalwidths -metalspaces -ongrid -insts} \
+    flags {}
+
+  set l0 [pdn::get_layer [lindex $keys(-layers) 0]]
+  set l1 [pdn::get_layer [lindex $keys(-layers) 1]]
+
+  set cut_pitch_x 0
+  set cut_pitch_y 0
+  set cut_pitch_x [lindex $keys(-cut_pitch) 0]
+  set cut_pitch_y [lindex $keys(-cut_pitch) 1]
+
+  set net ""
+  if {[info exists keys(-net)]} {
+    set net $keys(-net)
+  }
+
+  set outerNet ""
+  if {[info exists keys(-outerNet)]} {
+    set outerNet $keys(-outerNet)
+  }
+
+  set max_rows 10
+  if {[info exists keys(-max_rows)]} {
+    set max_rows $keys(-max_rows)
+  }
+  set max_columns 10
+  if {[info exists keys(-max_columns)]} {
+    set max_columns $keys(-max_columns)
+  }
+
+  set fixed_generate_vias {}
+  set fixed_tech_vias {}
+  if {[info exists keys(-fixed_vias)]} {
+    foreach via $keys(-fixed_vias) {
+      set tech_via [[ord::get_db_tech] findVia $via]
+      set generate_via [[ord::get_db_tech] findViaGenerateRule $via]
+      if {$tech_via != "NULL"} {
+        lappend fixed_tech_vias $tech_via
+      }
+      if {$generate_via != "NULL"} {
+        lappend fixed_generate_vias $generate_via
+      }
+    }
+  }
+
+  set ongrid {}
+  if {[info exists keys(-ongrid)]} {
+    foreach l $keys(-ongrid) {
+      lappend ongrid [pdn::get_layer $l]
+    }
+  }
+
+  set insts {}
+  if {[info exists keys(-insts)]} {
+    foreach inst $keys(-insts) {
+      set instance [[ord::get_db_block] findInst $inst]
+      if {$instance != "NULL"} {
+        lappend insts $instance
+      }
+    }
+  }
+
+  set metalwidths {}
+  if {[info exists keys(-metalwidths)]} {
+    foreach l $keys(-metalwidths) {
+      lappend metalwidths $l
+    }
+  }
+
+  set metalspaces {}
+  if {[info exists keys(-metalspaces)]} {
+    foreach l $keys(-metalspaces) {
+      lappend metalspaces $l
+    }
+  }
+
+  pdn::createSrouteWires $net \
+                         $outerNet \
+                         $l0 \
+                         $l1 \
+                         $cut_pitch_x \
+                         $cut_pitch_y \
+                         $fixed_generate_vias \
+                         $fixed_tech_vias \
+                         $max_rows \
+                         $max_columns \
+                         $ongrid \
+                         $metalwidths \
+                         $metalspaces \
+                         $insts
 }
 
 sta::define_cmd_args  "repair_pdn_vias" {[-net net_name] \
@@ -829,7 +936,7 @@ namespace eval pdn {
   proc define_pdn_grid_macro { args } {
     sta::parse_key_args "define_pdn_grid" args \
       keys {-name -voltage_domains -orient -instances -cells -halo -pin_direction -starts_with -obstructions} \
-      flags {-macro -grid_over_pg_pins -grid_over_boundary -default}
+      flags {-macro -grid_over_pg_pins -grid_over_boundary -default -bump}
 
     sta::check_argc_eq0 "define_pdn_grid" $args
     pdn::check_design_state "define_pdn_grid"
@@ -901,6 +1008,8 @@ namespace eval pdn {
       set orients [pdn::get_orientations $keys(-orient)]
     }
 
+    set is_bump [info exists flags(-bump)]
+
     if {[info exists keys(-instances)]} {
       set insts {}
       foreach inst_pattern $keys(-instances) {
@@ -918,7 +1027,7 @@ namespace eval pdn {
         # must match orientation, if provided
         if {[match_orientation $orients [$inst getOrient]] != 0} {
           foreach domain $domains {
-            pdn::make_instance_grid $domain $keys(-name) $start_with_power $inst {*}$halo $pg_pins_to_boundary $default_grid $obstructions
+            pdn::make_instance_grid $domain $keys(-name) $start_with_power $inst {*}$halo $pg_pins_to_boundary $default_grid $obstructions $is_bump
           }
         }
       }
@@ -942,7 +1051,7 @@ namespace eval pdn {
             # must match orientation, if provided
             if {[match_orientation $orients [$inst getOrient]] != 0} {
               foreach domain $domains {
-                pdn::make_instance_grid $domain $keys(-name) $start_with_power $inst {*}$halo $pg_pins_to_boundary $default_grid $obstructions
+                pdn::make_instance_grid $domain $keys(-name) $start_with_power $inst {*}$halo $pg_pins_to_boundary $default_grid $obstructions $is_bump
               }
             }
           }

@@ -258,7 +258,7 @@ dbTechLayer* dbTechViaLayerRule::getLayer()
   _dbTechViaLayerRule* rule = (_dbTechViaLayerRule*) this;
 
   if (rule->_layer == 0)
-    return NULL;
+    return nullptr;
 
   _dbTech* tech = (_dbTech*) rule->getOwner();
   return (dbTechLayer*) tech->_layer_tbl->getPtr(rule->_layer);

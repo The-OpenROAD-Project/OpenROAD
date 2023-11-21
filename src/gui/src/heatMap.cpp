@@ -349,7 +349,7 @@ HeatMapDataSource::MapView HeatMapDataSource::getMapView(
   const int x_high = std::min(
       static_cast<int>(
           std::ceil(bounds.xMax() / (getGridXSize() * dbu_per_micron))),
-      static_cast<int>(map_.shape()[0]) - 1);
+      static_cast<int>(map_.shape()[0]));
   const int y_low = std::max(
       static_cast<int>(
           std::floor(bounds.yMin() / (getGridYSize() * dbu_per_micron))),
@@ -357,7 +357,7 @@ HeatMapDataSource::MapView HeatMapDataSource::getMapView(
   const int y_high = std::min(
       static_cast<int>(
           std::ceil(bounds.yMax() / (getGridYSize() * dbu_per_micron))),
-      static_cast<int>(map_.shape()[1]) - 1);
+      static_cast<int>(map_.shape()[1]));
 
   return map_[boost::indices[Map::index_range(x_low, x_high)]
                             [Map::index_range(y_low, y_high)]];
@@ -439,6 +439,23 @@ void HeatMapDataSource::destroyMap()
   destroy_map_ = true;
 
   redraw();
+}
+
+bool HeatMapDataSource::hasData() const
+{
+  if (!populated_) {
+    return false;
+  }
+
+  for (const auto& map_col : map_) {
+    for (const auto& map_pt : map_col) {
+      if (map_pt->has_value) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 void HeatMapDataSource::ensureMap()

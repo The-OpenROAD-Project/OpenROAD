@@ -36,27 +36,28 @@
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb.h"
-// User Code Begin Includes
-// User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
 class _dbPowerDomain;
-// User Code Begin Classes
-// User Code End Classes
-
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbIsolation : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
+  _dbIsolation(_dbDatabase*, const _dbIsolation& r);
+  _dbIsolation(_dbDatabase*);
+  ~_dbIsolation();
+
+  bool operator==(const _dbIsolation& rhs) const;
+  bool operator!=(const _dbIsolation& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbIsolation& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbIsolation& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
 
   char* _name;
   dbId<_dbIsolation> _next_entry;
@@ -67,25 +68,8 @@ class _dbIsolation : public _dbObject
   std::string _location;
   dbVector<std::string> _isolation_cells;
   dbId<_dbPowerDomain> _power_domain;
-
-  // User Code Begin Fields
-  // User Code End Fields
-  _dbIsolation(_dbDatabase*, const _dbIsolation& r);
-  _dbIsolation(_dbDatabase*);
-  ~_dbIsolation();
-  bool operator==(const _dbIsolation& rhs) const;
-  bool operator!=(const _dbIsolation& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbIsolation& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbIsolation& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbIsolation& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbIsolation& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header

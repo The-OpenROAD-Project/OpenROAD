@@ -295,7 +295,9 @@ void Restructure::runABC()
 
   for (const auto& file_to_remove : files_to_remove) {
     if (!logger_->debugCheck(RMP, "remap", 1))
-      std::remove(file_to_remove.c_str());
+      if (std::remove(file_to_remove.c_str()) != 0) {
+        logger_->error(RMP, 37, "Fail to remove file {}", file_to_remove);
+      }
   }
 }
 

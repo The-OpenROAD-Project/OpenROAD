@@ -84,6 +84,8 @@ class TritonPart
   // partitioning, placement information is extracted from OpenDB
   void PartitionDesign(unsigned int num_parts_arg,
                        float balance_constraint_arg,
+                       const std::vector<float>& base_balance_arg,
+                       const std::vector<float>& scale_factor_arg,
                        unsigned int seed_arg,
                        bool timing_aware_flag_arg,
                        int top_n_arg,
@@ -107,6 +109,8 @@ class TritonPart
   // only used for testing
   void EvaluatePartDesignSolution(unsigned int num_parts_arg,
                                   float balance_constraint_arg,
+                                  const std::vector<float>& base_balance_arg,
+                                  const std::vector<float>& scale_factor_arg,
                                   bool timing_aware_flag_arg,
                                   int top_n_arg,
                                   bool fence_flag_arg,
@@ -132,6 +136,8 @@ class TritonPart
   // attributes both follows the hMETIS format
   void PartitionHypergraph(unsigned int num_parts,
                            float balance_constraint,
+                           const std::vector<float>& base_balance,
+                           const std::vector<float>& scale_factor,
                            unsigned int seed,
                            int vertex_dimension,
                            int hyperedge_dimension,
@@ -148,6 +154,8 @@ class TritonPart
   // The vertex balance should be satisfied
   void EvaluateHypergraphSolution(unsigned int num_parts,
                                   float balance_constraint,
+                                  const std::vector<float>& base_balance,
+                                  const std::vector<float>& scale_factor,
                                   int vertex_dimension,
                                   int hyperedge_dimension,
                                   const char* hypergraph_file,
@@ -257,8 +265,11 @@ class TritonPart
   // user-specified parameters
 
   // constraints information
-  float ub_factor_ = 1.0;  // balance constraint
-  int num_parts_ = 2;      // number of partitions
+  float ub_factor_ = 1.0;            // balance constraint
+  int num_parts_ = 2;                // number of partitions
+  std::vector<float> base_balance_;  // the target balance for each block
+  std::vector<float> scale_factor_;  // the scale factor for each block
+                                     // (multi-technology-nodes)
 
   // random seed
   int seed_ = 0;

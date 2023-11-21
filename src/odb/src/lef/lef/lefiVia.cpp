@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -73,68 +73,6 @@ void lefiViaLayer::Init()
   polysAllocated_ = 2;
   numPolys_ = 0;
   polygons_ = ((lefiGeomPolygon**) lefMalloc(sizeof(lefiGeomPolygon*) * 2));
-}
-
-LEF_COPY_CONSTRUCTOR_C(lefiViaLayer)
-    : name_(NULL),
-      rectColorMask_(NULL),
-      polyColorMask_(NULL),
-      numRects_(0),
-      rectsAllocated_(0),
-      xl_(NULL),
-      yl_(NULL),
-      xh_(NULL),
-      yh_(NULL),
-      numPolys_(0),
-      polysAllocated_(0),
-      polygons_(NULL)
-{
-  //    printf("lefiViaLayer COPY CONSTRUCTOR!\n");
-  //    fflush(stdout);
-  this->Init();
-
-  LEF_MALLOC_FUNC(name_, char, sizeof(char) * (strlen(prev.name_) + 1));
-  LEF_COPY_FUNC(rectsAllocated_);
-  LEF_MALLOC_FUNC(rectColorMask_, int, sizeof(int) * rectsAllocated_);
-
-  LEF_COPY_FUNC(polysAllocated_);
-  LEF_MALLOC_FUNC(polyColorMask_, int, sizeof(int) * polysAllocated_);
-
-  LEF_COPY_FUNC(numRects_);
-  LEF_MALLOC_FUNC(xl_, double, sizeof(double) * numRects_);
-  LEF_MALLOC_FUNC(yl_, double, sizeof(double) * numRects_);
-  LEF_MALLOC_FUNC(xh_, double, sizeof(double) * numRects_);
-  LEF_MALLOC_FUNC(yh_, double, sizeof(double) * numRects_);
-
-  LEF_COPY_FUNC(numPolys_);
-  LEF_MALLOC_FUNC_FOR_2D(polygons_, lefiGeomPolygon, numPolys_, 1);
-}
-
-LEF_ASSIGN_OPERATOR_C(lefiViaLayer)
-{
-  CHECK_SELF_ASSIGN
-  //    printf("lefiViaLayer ASSIGN OPERATOR!\n");
-  //    fflush(stdout);
-  this->Init();
-
-  LEF_MALLOC_FUNC(name_, char, sizeof(char) * (strlen(prev.name_) + 1));
-
-  LEF_COPY_FUNC(rectsAllocated_);
-  LEF_MALLOC_FUNC(rectColorMask_, int, sizeof(int) * rectsAllocated_);
-
-  LEF_COPY_FUNC(polysAllocated_);
-  LEF_MALLOC_FUNC(polyColorMask_, int, sizeof(int) * polysAllocated_);
-
-  LEF_COPY_FUNC(numRects_);
-  LEF_MALLOC_FUNC(xl_, double, sizeof(double) * numRects_);
-  LEF_MALLOC_FUNC(yl_, double, sizeof(double) * numRects_);
-  LEF_MALLOC_FUNC(xh_, double, sizeof(double) * numRects_);
-  LEF_MALLOC_FUNC(yh_, double, sizeof(double) * numRects_);
-
-  LEF_COPY_FUNC(numPolys_);
-  LEF_MALLOC_FUNC_FOR_2D(polygons_, lefiGeomPolygon, numPolys_, 1);
-
-  return *this;
 }
 
 void lefiViaLayer::Destroy()
@@ -502,98 +440,6 @@ void lefiVia::Init()
   numLayers_ = 0;
   clear();
   viaRuleName_ = 0;
-}
-
-LEF_COPY_CONSTRUCTOR_C(lefiVia)
-    : name_(NULL),
-      nameSize_(0),
-      hasDefault_(0),
-      hasGenerated_(0),
-      hasResistance_(0),
-      hasForeignPnt_(0),
-      hasTopOfStack_(0),
-      numProps_(0),
-      propsAllocated_(0),
-      propName_(NULL),
-      propValue_(NULL),
-      propDValue_(NULL),
-      propType_(NULL),
-      numLayers_(0),
-      layersAllocated_(0),
-      layers_(NULL),
-      resistance_(0.0),
-      foreign_(NULL),
-      foreignX_(0.0),
-      foreignY_(0.0),
-      foreignOrient_(0),
-      viaRuleName_(NULL),
-      xSize_(0.0),
-      ySize_(0.0),
-      botLayer_(NULL),
-      cutLayer_(NULL),
-      topLayer_(NULL),
-      xSpacing_(0.0),
-      ySpacing_(0.0),
-      xBotEnc_(0.0),
-      yBotEnc_(0.0),
-      xTopEnc_(0.0),
-      yTopEnc_(0.0),
-      numRows_(0),
-      numCols_(0),
-      xOffset_(0.0),
-      yOffset_(0.0),
-      xBotOs_(0.0),
-      yBotOs_(0.0),
-      xTopOs_(0.0),
-      yTopOs_(0.0),
-      cutPattern_(NULL)
-{
-  this->Init();
-  LEF_COPY_FUNC(nameSize_);
-  LEF_MALLOC_FUNC(name_, char, sizeof(char) * nameSize_);
-  LEF_COPY_FUNC(hasDefault_);
-  LEF_COPY_FUNC(hasGenerated_);
-  LEF_COPY_FUNC(hasResistance_);
-  LEF_COPY_FUNC(hasForeignPnt_);
-  LEF_COPY_FUNC(hasTopOfStack_);
-  LEF_COPY_FUNC(numProps_);
-  LEF_COPY_FUNC(propsAllocated_);
-  LEF_MALLOC_FUNC_FOR_2D_STR(propName_, numProps_);
-  LEF_MALLOC_FUNC_FOR_2D_STR(propValue_, numProps_);
-  LEF_MALLOC_FUNC(propDValue_, double, sizeof(double) * propsAllocated_);
-  LEF_MALLOC_FUNC(propType_, char, sizeof(char) * propsAllocated_);
-  LEF_COPY_FUNC(numLayers_);
-  LEF_COPY_FUNC(layersAllocated_);
-
-  LEF_MALLOC_FUNC_FOR_2D(layers_, lefiViaLayer, numLayers_, 1);
-  LEF_COPY_FUNC(resistance_);
-  LEF_MALLOC_FUNC(foreign_, char, sizeof(char) * (strlen(prev.foreign_) + 1));
-  LEF_COPY_FUNC(foreignX_);
-  LEF_COPY_FUNC(foreignY_);
-  LEF_COPY_FUNC(foreignOrient_);
-  LEF_MALLOC_FUNC(
-      viaRuleName_, char, sizeof(char) * (strlen(prev.viaRuleName_) + 1));
-  LEF_COPY_FUNC(xSize_);
-  LEF_COPY_FUNC(ySize_);
-  LEF_MALLOC_FUNC(botLayer_, char, sizeof(char) * (strlen(prev.botLayer_) + 1));
-  LEF_MALLOC_FUNC(cutLayer_, char, sizeof(char) * (strlen(prev.cutLayer_) + 1));
-  LEF_MALLOC_FUNC(topLayer_, char, sizeof(char) * (strlen(prev.topLayer_) + 1));
-  LEF_COPY_FUNC(xSpacing_);
-  LEF_COPY_FUNC(ySpacing_);
-  LEF_COPY_FUNC(xBotEnc_);
-  LEF_COPY_FUNC(yBotEnc_);
-  LEF_COPY_FUNC(xTopEnc_);
-  LEF_COPY_FUNC(yTopEnc_);
-  LEF_COPY_FUNC(numRows_);
-  LEF_COPY_FUNC(numCols_);
-  LEF_COPY_FUNC(xOffset_);
-  LEF_COPY_FUNC(yOffset_);
-  LEF_COPY_FUNC(xBotOs_);
-  LEF_COPY_FUNC(yBotOs_);
-  LEF_COPY_FUNC(xTopOs_);
-  LEF_COPY_FUNC(yTopOs_);
-  LEF_MALLOC_FUNC(
-      cutPattern_, char, sizeof(char) * (strlen(prev.cutPattern_) + 1));
 }
 
 void lefiVia::Destroy()

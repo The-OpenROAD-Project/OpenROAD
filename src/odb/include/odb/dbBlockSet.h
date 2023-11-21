@@ -55,17 +55,17 @@ class dbSetIterator<dbBlock>
   }
 
  public:
-  typedef dbBlock* value_type;
-  typedef std::ptrdiff_t difference_type;
-  typedef dbBlock** pointer;
-  typedef dbBlock*& reference;
-  typedef std::input_iterator_tag iterator_category;
+  using value_type = dbBlock*;
+  using difference_type = std::ptrdiff_t;
+  using pointer = dbBlock**;
+  using reference = dbBlock*&;
+  using iterator_category = std::input_iterator_tag;
 
   dbSetIterator()
   {
-    _itr = NULL;
+    _itr = nullptr;
     _cur = 0;
-    _parent = NULL;
+    _parent = nullptr;
   }
 
   dbSetIterator(const dbSetIterator& it)
@@ -110,12 +110,12 @@ class dbSet<dbBlock>
   dbObject* _parent;
 
  public:
-  typedef dbSetIterator<dbBlock> iterator;
+  using iterator = dbSetIterator<dbBlock>;
 
   dbSet()
   {
-    _itr = NULL;
-    _parent = NULL;
+    _itr = nullptr;
+    _parent = nullptr;
   }
 
   dbSet(dbObject* parent, dbIterator* itr)

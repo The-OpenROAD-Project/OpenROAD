@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -46,11 +46,11 @@ extern int defiDebug(int num);
 extern void defiError(int check,
                       int msgNum,
                       const char* message,
-                      defrData* defData = NULL);
+                      defrData* defData = nullptr);
 
 /* for auto upshifting names in case insensitive files */
-extern const char* upperCase(const char* c, defrData* defData = NULL);
-extern const char* DEFCASE(const char* ch, defrData* defData = NULL);
+extern const char* upperCase(const char* c, defrData* defData = nullptr);
+extern const char* DEFCASE(const char* ch, defrData* defData = nullptr);
 
 END_LEFDEF_PARSER_NAMESPACE
 

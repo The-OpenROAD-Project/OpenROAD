@@ -39,8 +39,6 @@ namespace rcx {
 
 using namespace odb;
 
-using utl::RCX;
-
 void extSpef::initNodeCoordTables(uint memChunk)
 {
   _capNodeTable = new Ath__array1D<uint>(memChunk);
@@ -68,33 +66,24 @@ void extSpef::resetNodeCoordTables()
 
 void extSpef::deleteNodeCoordTables()
 {
-  if (_capNodeTable)
-    delete _capNodeTable;
-  _capNodeTable = NULL;
-  if (_xCoordTable)
-    delete _xCoordTable;
-  _xCoordTable = NULL;
-  if (_yCoordTable)
-    delete _yCoordTable;
-  _yCoordTable = NULL;
-  if (_x1CoordTable)
-    delete _x1CoordTable;
-  _x1CoordTable = NULL;
-  if (_y1CoordTable)
-    delete _y1CoordTable;
-  _y1CoordTable = NULL;
-  if (_x2CoordTable)
-    delete _x2CoordTable;
-  _x2CoordTable = NULL;
-  if (_y2CoordTable)
-    delete _y2CoordTable;
-  _y2CoordTable = NULL;
-  if (_levelTable)
-    delete _levelTable;
-  _levelTable = NULL;
-  if (_idTable)
-    delete _idTable;
-  _idTable = NULL;
+  delete _capNodeTable;
+  _capNodeTable = nullptr;
+  delete _xCoordTable;
+  _xCoordTable = nullptr;
+  delete _yCoordTable;
+  _yCoordTable = nullptr;
+  delete _x1CoordTable;
+  _x1CoordTable = nullptr;
+  delete _y1CoordTable;
+  _y1CoordTable = nullptr;
+  delete _x2CoordTable;
+  _x2CoordTable = nullptr;
+  delete _y2CoordTable;
+  _y2CoordTable = nullptr;
+  delete _levelTable;
+  _levelTable = nullptr;
+  delete _idTable;
+  _idTable = nullptr;
 }
 
 bool extSpef::readNodeCoords(uint cpos)
@@ -108,18 +97,20 @@ bool extSpef::readNodeCoords(uint cpos)
   //*N *2:5 *C 3.07000 120.190 M1
 
   uint wCnt = _parser->getWordCnt();
-  if (cpos + 3 > wCnt)
+  if (cpos + 3 > wCnt) {
     return false;
+  }
 
   uint id1;
   uint tokenCnt = _nodeParser->mkWords(_parser->get(1));
   if (tokenCnt == 2 && _nodeParser->isDigit(1, 0)) {  // internal node
     id1 = _nodeParser->getInt(0, 1);
-    if (id1 != _tmpNetSpefId)
+    if (id1 != _tmpNetSpefId) {
       return false;
+    }
   }
   uint netId = 0;
-  uint nodeId = getCapNodeId(_parser->get(1), NULL, &netId);
+  uint nodeId = getCapNodeId(_parser->get(1), nullptr, &netId);
   double x = _parser->getDouble(cpos + 1);
   double y = _parser->getDouble(cpos + 2);
 
@@ -136,11 +127,13 @@ int extSpef::findNodeIndexFromNodeCoords(uint targetCapNodeId)  // TO OPTIMIZE
   uint ii;
   for (ii = 0; ii < _capNodeTable->getCnt(); ii++) {
     uint capId = _capNodeTable->get(ii);
-    if (capId == targetCapNodeId)
+    if (capId == targetCapNodeId) {
       break;
+    }
   }
-  if (ii == _capNodeTable->getCnt())
+  if (ii == _capNodeTable->getCnt()) {
     return -1;
+  }
 
   return ii;
 }
@@ -153,16 +146,17 @@ void Ath__grid::dealloc()
 {
   for (uint ii = 0; ii <= _searchHiTrack; ii++) {
     Ath__track* btrack = _trackTable[ii];
-    if (btrack == NULL)
+    if (btrack == nullptr) {
       continue;
+    }
 
-    Ath__track* track = NULL;
+    Ath__track* track = nullptr;
     bool tohi = true;
     while ((track = btrack->getNextSubTrack(track, tohi))) {
       track->dealloc(_wirePoolPtr);
       _trackPoolPtr->free(track);
     }
-    _trackTable[ii] = NULL;
+    _trackTable[ii] = nullptr;
   }
 }
 
@@ -171,8 +165,9 @@ void Ath__gridTable::dealloc()
   for (uint dir = 0; dir < _rowCnt; dir++) {
     for (uint jj = 1; jj < _colCnt; jj++) {
       Ath__grid* netGrid = _gridTable[dir][jj];
-      if (netGrid == NULL)
+      if (netGrid == nullptr) {
         continue;
+      }
 
       netGrid->dealloc();
     }

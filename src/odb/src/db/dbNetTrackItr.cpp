@@ -117,7 +117,5 @@ dbObject* dbNetTrackItr::getObject(uint id, ...)
 {
   return _net_tracks_tbl->getPtr(id);
 }
-// User Code Begin Methods
-// User Code End Methods
 }  // namespace odb
    // Generator Code End Cpp

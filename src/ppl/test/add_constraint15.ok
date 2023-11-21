@@ -7,16 +7,16 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 88 connections.
-[INFO PPL-0044] Pin group: [ req_msg[0] req_msg[1] req_msg[2] req_msg[3] req_msg[4] req_msg[5] req_msg[6] req_msg[7] req_msg[8] req_msg[9] req_msg[10] req_msg[11] req_msg[12] req_msg[13] req_msg[14] req_msg[15] req_msg[16] req_msg[17] req_msg[18] req_msg[19] req_msg[20] req_msg[21] req_msg[22] req_msg[23] req_msg[24] req_msg[25] req_msg[26] req_msg[27] req_msg[28] req_msg[29] req_msg[30] req_msg[31] ]
+[INFO PPL-0044] Pin group: [ req_msg[0] req_msg[1] req_msg[2] req_msg[3] req_msg[4] ... ]
 [INFO PPL-0080] Mirroring pins req_msg[0] and req_val.
 Found 0 macro blocks.
 [INFO PPL-0010] Tentative 0 to set up sections.
-[INFO PPL-0001] Number of slots          1008
-[INFO PPL-0002] Number of I/O            54
-[INFO PPL-0003] Number of I/O w/sink     54
-[INFO PPL-0004] Number of I/O w/o sink   0
-[INFO PPL-0005] Slots per section        50
-[INFO PPL-0006] Slots increase factor    0.01
+[INFO PPL-0001] Number of slots           1008
+[INFO PPL-0002] Number of I/O             54
+[INFO PPL-0003] Number of I/O w/sink      54
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0005] Slots per section         50
+[INFO PPL-0006] Slots increase factor     0.01
 [INFO PPL-0008] Successfully assigned pins to sections.
 [INFO PPL-0012] I/O nets HPWL: 3142.75 um.
 No differences found.

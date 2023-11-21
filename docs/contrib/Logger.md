@@ -36,7 +36,7 @@ severity type to the message.
 ## C++20 Requirements
 
 In C++20 the logger messages are checked during compile time which introduces
-restrictions around rutime format strings. See [docs](https://fmt.dev/latest/api.html#compile-time-format-string-checks)
+restrictions around rutime format strings. See [docs](https://fmt.dev/latest/api.html#compile-time-format-string-checks).
 
 OpenROAD uses `spdlog` which uses `fmt_lib` under the hood. Below is an example of
 what is no longer allowed.
@@ -423,14 +423,11 @@ The `cmake` file for the tool must also be updated to include spdlog in
 the link libraries so it can find the header files if they are not in
 the normal system directories.
 
----
-**NOTE**
-
+:::{tip}
 At UCSD, dfm.ucsd.edu is an example of this problem; it has an ancient version of
 spdlog in '/usr/include/spdlog'. Use `module` to install
 spdlog 1.8.1 on dfm.ucsd.edu and check your build there.
-
----
+:::
 
 ``` cmake
 target_link_libraries(<library_target>
@@ -439,37 +436,21 @@ target_link_libraries(<library_target>
 )
 ```
 
-### OpenROAD Tool List
+## Useful Information
+As tool developers, we can also choose to include useful information to the end user - 
+be it in the form on debugging tips, or solutions to fix the errors/warnings. We compile
+a list of such errors in this [table](../user/MessagesFinal.md). The good thing about
+this page is the ability to encode rich formatting using Markdown, enabling you
+to convey more information than what can be said from the limited messages in code.
 
-| Tool                 | message/namespace | Description                               |
-| -------------------- | ----------------- | ----------------------------------------- |
-| antenna_checker      | ant               | Diode Insertion                           |
-| dbSta                | sta               | Interface between odb & sta               |
-| Design For Test      | dft               | Design For Test                           |
-| FastRoute            | grt               | Gloabl Routing                            |
-| finale               | fin               | Metal Fill                                |
-| flute3               | stt               | Steiner tree generation                   |
-| gui                  | gui               | Graphical User Interface                  |
-| ICeWall              | pad               | Chip-Level Connections                    |
-| init_fp              | ifp               | Initialize Floorplan                      |
-| ioPlacer             | ppl               | Pin Placement                             |
-| OpenDB               | odb               | Open Data Base                            |
-| opendp               | dpl               | Detail Placement                          |
-| detailedPlacer       | dpo               | Detailed Placer                           |
-| OpenRCX              | rcx               | Parasitic Extraction                      |
-| *OpenROAD*           | ord               | OpenROAD(Global commands)                 |
-| OpenSTA              | sta               | Timing Analysis                           |
-| PartMgr              | par               | Timing-aware Advanced Partitioner         |
-| pdngen               | pdn               | PDN Analysis                              |
-| PDNSim               | psm               | IR Drop Analysis                          |
-| remapper             | rmp               | Synthesis Restructure                     |
-| replace              | gpl               | Global Placement                          |
-| resizer              | rsz               | Gate ReSizer                              |
-| tapcell              | tap               | Tapcell Insertion                         |
-| TritonCTS            | cts               | Clock Tree Synthesis                      |
-| TritonMacroPlace     | mpl               | Macro Placement                           |
-| Hier RTL-MP          | mpl2              | Hierarchy Macro Placement                 |
-| TritonRoute          | drt               | Detail Routing                            |
-| Distributed          | dst               | Infrastructure for distributed processing | 
-| Unified Power Format | upf               | Unified Power Format                      |
-| utility              | utl               | Utility                                   |
+To format the information, refer to this [sample GRT information file](../main/src/grt/doc/messages/0118.md).
+In addition, make sure you create the corresponding `docs/messages` folder under the `tool` folder, 
+before creating your Markdown file with the corresponding `NUM`. 
+
+```shell
+cd src/<tool> && mkdir -p doc/messages
+cd doc/messages && touch <NUM>.md
+```
+
+### OpenROAD Tool List
+A full list of tool namespaces can be found [here](DeveloperGuide.md#tool-flow-namespace).

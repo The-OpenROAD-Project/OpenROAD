@@ -72,8 +72,8 @@ using sta::Corner;
 class Resizer;
 
 class BufferedNet;
-typedef std::shared_ptr<BufferedNet> BufferedNetPtr;
-typedef array<Required, RiseFall::index_count> Requireds;
+using BufferedNetPtr = std::shared_ptr<BufferedNet> ;
+using Requireds = array<Required, RiseFall::index_count>;
 
 enum class BufferedNetType { load, junction, wire, buffer };
 
@@ -84,34 +84,34 @@ class BufferedNet
 {
 public:
   // load
-  BufferedNet(const BufferedNetType type,
-              const Point location,
+  BufferedNet(BufferedNetType type,
+              const Point& location,
               const Pin *load_pin,
               const Corner *corner,
               const Resizer *resizer);
   // wire
-  BufferedNet(const BufferedNetType type,
-              const Point location,
-              const int layer,
-              const BufferedNetPtr ref,
+  BufferedNet(BufferedNetType type,
+              const Point& location,
+              int layer,
+              const BufferedNetPtr& ref,
               const Corner *corner,
               const Resizer *resizer);
   // junc
-  BufferedNet(const BufferedNetType type,
+  BufferedNet(BufferedNetType type,
               const Point& location,
-              const BufferedNetPtr ref,
-              const BufferedNetPtr ref2,
+              const BufferedNetPtr& ref,
+              const BufferedNetPtr& ref2,
               const Resizer *resizer);
   // buffer
-  BufferedNet(const BufferedNetType type,
+  BufferedNet(BufferedNetType type,
               const Point& location,
               LibertyCell *buffer_cell,
-              const BufferedNetPtr ref,
+              const BufferedNetPtr& ref,
               const Corner *corner,
               const Resizer *resizer);
   string to_string(const Resizer *resizer) const;
   void reportTree(const Resizer *resizer) const;
-  void reportTree(const int level,
+  void reportTree(int level,
                   const Resizer *resizer) const;
   BufferedNetType type() const { return type_; }
   // junction steiner point location connecting ref/ref2
@@ -134,8 +134,8 @@ public:
   void wireRC(const Corner *corner,
               const Resizer *resizer,
               // Return values.
-              double &cap,
-              double &res);
+              double &res,
+              double &cap);
   // buffer
   LibertyCell *bufferCell() const { return buffer_cell_; }
   // junction  left
@@ -185,4 +185,4 @@ private:
   Delay required_delay_;
 };
 
-} // namespace
+} // namespace rsz

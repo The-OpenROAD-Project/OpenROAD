@@ -35,13 +35,19 @@
 
 #include <iostream>
 
+#include "db.h"
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "initialPlace.h"
+#include "mbff.h"
 #include "nesterovBase.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"
+#include "ord/OpenRoad.hh"
 #include "placerBase.h"
 #include "routeBase.h"
 #include "rsz/Resizer.hh"
+#include "sta/StaMain.hh"
 #include "timingBase.h"
 #include "utl/Logger.h"
 
@@ -107,11 +113,13 @@ Replace::~Replace()
 }
 
 void Replace::init(odb::dbDatabase* odb,
+                   sta::dbSta* sta,
                    rsz::Resizer* resizer,
                    grt::GlobalRouter* router,
                    utl::Logger* logger)
 {
   db_ = odb;
+  sta_ = sta;
   rs_ = resizer;
   fr_ = router;
   log_ = logger;
@@ -294,6 +302,12 @@ void Replace::doInitialPlace()
       new InitialPlace(ipVars, pbc_, pbVec_, log_));
   ip_ = std::move(ip);
   ip_->doBicgstabPlace();
+}
+
+void Replace::runMBFF(int max_sz, float alpha, float beta, int threads)
+{
+  MBFF pntset(db_, sta_, log_, threads, 4, 10, gui_debug_);
+  pntset.Run(max_sz, alpha, beta);
 }
 
 bool Replace::initNesterovPlace()

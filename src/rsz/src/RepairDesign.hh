@@ -36,6 +36,7 @@
 #pragma once
 
 #include "BufferedNet.hh"
+#include "PreChecks.hh"
 #include "db_sta/dbSta.hh"
 #include "sta/Corner.hh"
 #include "sta/Delay.hh"
@@ -85,10 +86,12 @@ public:
  ~RepairDesign() override;
  void repairDesign(double max_wire_length,
                    double slew_margin,
-                   double cap_margin);
+                   double cap_margin,
+                   bool verbose);
  void repairDesign(double max_wire_length,  // zero for none (meters)
                    double slew_margin,
                    double cap_margin,
+                   bool verbose,
                    int& repaired_net_count,
                    int& slew_violations,
                    int& cap_violations,
@@ -112,7 +115,7 @@ protected:
                  bool check_fanout,
                  int max_length, // dbu
                  bool resize_drvr,
-                 int &repair_count,
+                 int &repaired_net_count,
                  int &slew_violations,
                  int &cap_violations,
                  int &fanout_violations,
@@ -129,27 +132,28 @@ protected:
                  const Corner *&corner);
   float bufferInputMaxSlew(LibertyCell *buffer,
                            const Corner *corner) const;
-  void repairNet(BufferedNetPtr bnet,
+  void repairNet(const BufferedNetPtr& bnet,
                  const Pin *drvr_pin,
                  float max_cap,
                  int max_length, // dbu
                  const Corner *corner);
-  void repairNet(BufferedNetPtr bnet,
+  void repairNet(const BufferedNetPtr &bnet,
                  int level,
                  // Return values.
                  int &wire_length,
                  PinSeq &load_pins);
-  void repairNetWire(BufferedNetPtr bnet,
+  void checkSlewLimit(float ref_cap, float max_load_slew);
+  void repairNetWire(const BufferedNetPtr& bnet,
                      int level,
                      // Return values.
                      int &wire_length,
                      PinSeq &load_pins);
-  void repairNetJunc(BufferedNetPtr bnet,
+  void repairNetJunc(const BufferedNetPtr& bnet,
                      int level,
                      // Return values.
                      int &wire_length,
                      PinSeq &load_pins);
-  void repairNetLoad(BufferedNetPtr bnet,
+  void repairNetLoad(const BufferedNetPtr& bnet,
                      int level,
                      // Return values.
                      int &wire_length,
@@ -176,8 +180,8 @@ protected:
                            bool resize_drvr);
   void makeFanoutRepeater(PinSeq &repeater_loads,
                           PinSeq &repeater_inputs,
-                          Rect bbox,
-                          Point loc,
+                          const Rect& bbox,
+                          const Point& loc,
                           bool check_slew,
                           bool check_cap,
                           int max_length,
@@ -188,7 +192,7 @@ protected:
                          PinSeq &pins);
   bool isRepeater(const Pin *load_pin);
   void makeRepeater(const char *reason,
-                    Point loc,
+                    const Point& loc,
                     LibertyCell *buffer_cell,
                     bool resize,
                     int level,
@@ -213,17 +217,17 @@ protected:
                     Pin *&repeater_out_pin);
   LibertyCell *findBufferUnderSlew(float max_slew,
                                    float load_cap);
-  float bufferSlew(LibertyCell *buffer_cell,
-                   float load_cap,
-                   const DcalcAnalysisPt *dcalc_ap);
   bool hasInputPort(const Net *net);
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
   double dbuToMicrons(int dist) const;
 
+  void printProgress(int iteration, bool force, bool end, int repaired_net_count) const;
+
   Logger *logger_;
   dbSta *sta_;
   dbNetwork *db_network_;
+  PreChecks *pre_checks_;
   Resizer *resizer_;
   int dbu_;
 
@@ -240,8 +244,12 @@ protected:
   const MinMax *min_;
   const MinMax *max_;
 
+  int print_interval_;
+
   // Elmore factor for 20-80% slew thresholds.
   static constexpr float elmore_skew_factor_ = 1.39;
+  static constexpr int min_print_interval_ = 10;
+  static constexpr int max_print_interval_ = 100;
 };
 
 }  // namespace rsz

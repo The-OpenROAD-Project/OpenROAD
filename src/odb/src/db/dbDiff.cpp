@@ -32,7 +32,7 @@
 
 #include "dbDiff.h"
 
-#include <stdarg.h>
+#include <cstdarg>
 
 namespace odb {
 
@@ -192,7 +192,7 @@ dbDiff& dbDiff::operator<<(unsigned char c)
   return *this;
 }
 
-dbDiff& dbDiff::operator<<(short c)
+dbDiff& dbDiff::operator<<(int16_t c)
 {
   int v = c;
 
@@ -203,7 +203,7 @@ dbDiff& dbDiff::operator<<(short c)
   return *this;
 }
 
-dbDiff& dbDiff::operator<<(unsigned short c)
+dbDiff& dbDiff::operator<<(uint16_t c)
 {
   unsigned int v = c;
 
@@ -263,7 +263,7 @@ dbDiff& dbDiff::operator<<(long double c)
 
 dbDiff& dbDiff::operator<<(const char* s)
 {
-  if (s == NULL) {
+  if (s == nullptr) {
     if (_f)
       fprintf(_f, "\"\"");
   } else {
@@ -349,7 +349,7 @@ void dbDiff::diff(const char* field, unsigned char lhs, unsigned char rhs)
   }
 }
 
-void dbDiff::diff(const char* field, short lhs, short rhs)
+void dbDiff::diff(const char* field, int16_t lhs, int16_t rhs)
 {
   if (lhs != rhs) {
     report("< %s: ", field);
@@ -361,7 +361,7 @@ void dbDiff::diff(const char* field, short lhs, short rhs)
   }
 }
 
-void dbDiff::diff(const char* field, unsigned short lhs, unsigned short rhs)
+void dbDiff::diff(const char* field, uint16_t lhs, uint16_t rhs)
 {
   if (lhs != rhs) {
     report("< %s: ", field);
@@ -720,14 +720,14 @@ void dbDiff::out(char side, const char* field, unsigned char value)
   (*this) << "\n";
 }
 
-void dbDiff::out(char side, const char* field, short value)
+void dbDiff::out(char side, const char* field, int16_t value)
 {
   report("%c %s: ", side, field);
   (*this) << (value);
   (*this) << "\n";
 }
 
-void dbDiff::out(char side, const char* field, unsigned short value)
+void dbDiff::out(char side, const char* field, uint16_t value)
 {
   report("%c %s: ", side, field);
   (*this) << (value);

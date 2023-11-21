@@ -48,9 +48,7 @@ foreach inst $insts {
 }
 
 
-initialize_floorplan -utilization 20 \
-                       -aspect_ratio 1 \
-                       -core_space 2           
+initialize_floorplan -die_area { 0 0 500 500 } -core_area { 100 100 400 400 }
 
 
 set insts [$block getInsts]

@@ -175,6 +175,14 @@ void Search::setTopBlock(odb::dbBlock* block)
     }
 
     addOwner(block);  // register as a callback object
+
+    // Pre-populate children so we don't have to lock access to
+    // child_block_data_ later
+    if (block) {
+      for (auto child : block->getChildren()) {
+        child_block_data_[child];
+      }
+    }
   }
 
   top_block_ = block;
@@ -182,13 +190,11 @@ void Search::setTopBlock(odb::dbBlock* block)
   emit newBlock(block);
 }
 
-void Search::announceModified(bool& flag)
+void Search::announceModified(std::atomic_bool& flag)
 {
-  const bool current_flag = flag;
+  const bool prev_flag = flag.exchange(false);
 
-  flag = false;
-
-  if (flag != current_flag) {
+  if (prev_flag) {
     emit modified();
   }
 }
@@ -242,6 +248,10 @@ Search::BlockData& Search::getData(odb::dbBlock* block)
 void Search::updateShapes(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
+  std::lock_guard<std::mutex> lock(data.shapes_init_mutex_);
+  if (data.shapes_init_) {
+    return;  // already done by another thread
+  }
 
   data.box_shapes_.clear();
   data.via_sbox_shapes_.clear();
@@ -277,6 +287,11 @@ void Search::updateShapes(odb::dbBlock* block)
 void Search::updateFills(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
+  std::lock_guard<std::mutex> lock(data.fills_init_mutex_);
+  if (data.fills_init_) {
+    return;  // already done by another thread
+  }
+
   data.fills_.clear();
 
   for (odb::dbFill* fill : block->getFills()) {
@@ -292,6 +307,11 @@ void Search::updateFills(odb::dbBlock* block)
 void Search::updateInsts(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
+  std::lock_guard<std::mutex> lock(data.insts_init_mutex_);
+  if (data.insts_init_) {
+    return;  // already done by another thread
+  }
+
   data.insts_.clear();
 
   for (odb::dbInst* inst : block->getInsts()) {
@@ -306,6 +326,11 @@ void Search::updateInsts(odb::dbBlock* block)
 void Search::updateBlockages(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
+  std::lock_guard<std::mutex> lock(data.blockages_init_mutex_);
+  if (data.blockages_init_) {
+    return;  // already done by another thread
+  }
+
   data.blockages_.clear();
 
   for (odb::dbBlockage* blockage : block->getBlockages()) {
@@ -318,6 +343,11 @@ void Search::updateBlockages(odb::dbBlock* block)
 void Search::updateObstructions(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
+  std::lock_guard<std::mutex> lock(data.obstructions_init_mutex_);
+  if (data.obstructions_init_) {
+    return;  // already done by another thread
+  }
+
   data.obstructions_.clear();
 
   for (odb::dbObstruction* obs : block->getObstructions()) {
@@ -330,6 +360,11 @@ void Search::updateObstructions(odb::dbBlock* block)
 void Search::updateRows(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
+  std::lock_guard<std::mutex> lock(data.rows_init_mutex_);
+  if (data.rows_init_) {
+    return;  // already done by another thread
+  }
+
   data.rows_.clear();
 
   for (odb::dbRow* row : block->getRows()) {

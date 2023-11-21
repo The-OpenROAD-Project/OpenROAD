@@ -59,7 +59,6 @@ HungarianMatching::HungarianMatching(const Section& section,
   num_slots_ = end_slot_ - begin_slot_;
   non_blocked_slots_ = section.num_slots;
   group_slots_ = 0;
-  group_size_ = -1;
   edge_ = section.edge;
   logger_ = logger;
 }
@@ -139,6 +138,7 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assignment,
         io_pin.setPos(slots_[slot_index].pos);
         io_pin.setLayer(slots_[slot_index].layer);
         io_pin.setPlaced();
+        io_pin.setEdge(slots_[slot_index].edge);
         assignment.push_back(io_pin);
         slots_[slot_index].used = true;
 
@@ -163,6 +163,7 @@ void HungarianMatching::assignMirroredPins(IOPin& io_pin,
   odb::Point mirrored_pos = core_->getMirroredPosition(io_pin.getPos());
   mirrored_pin.setPos(mirrored_pos);
   mirrored_pin.setLayer(io_pin.getLayer());
+  mirrored_pin.setEdge(getMirroredEdge(io_pin.getEdge()));
   mirrored_pin.setPlaced();
   assignment.push_back(mirrored_pin);
   int slot_index = getSlotIdxByPosition(mirrored_pos, mirrored_pin.getLayer());
@@ -192,35 +193,45 @@ void HungarianMatching::findAssignmentForGroups()
 
 void HungarianMatching::createMatrixForGroups()
 {
+  std::vector<int> group_sizes;
+  std::vector<int> group_slot_capacity;
   for (const auto& [pins, order] : pin_groups_) {
-    group_size_ = std::max(static_cast<int>(pins.size()), group_size_);
+    group_sizes.push_back(pins.size());
   }
 
-  if (group_size_ > 0) {
+  std::sort(group_sizes.begin(), group_sizes.end(), std::greater<int>());
+
+  if (!group_sizes.empty()) {
     valid_starting_slots_.clear();
     int i = begin_slot_;
-    // end the loop to avoid access invalid positions of slots_.
-    const int end_i = (end_slot_ - group_size_ + 1);
-    while (i <= end_i) {
-      bool blocked = false;
-      for (int pin_cnt = 0; pin_cnt < group_size_; pin_cnt++) {
-        if (slots_[i + pin_cnt].blocked) {
-          blocked = true;
-          // Find the next unblocked slot, if any, to try again
-          while (++i <= end_i) {
-            if (!slots_[i + pin_cnt].blocked) {
-              break;
+    int new_begin = i;
+    for (const int group_size : group_sizes) {
+      i = new_begin;
+      // end the loop to avoid access invalid positions of slots_.
+      const int end_i = (end_slot_ - group_size + 1);
+      while (i <= end_i) {
+        bool blocked = false;
+        for (int pin_cnt = 0; pin_cnt < group_size; pin_cnt++) {
+          if (slots_[i + pin_cnt].blocked) {
+            blocked = true;
+            // Find the next unblocked slot, if any, to try again
+            while (++i <= end_i) {
+              if (!slots_[i + pin_cnt].blocked) {
+                break;
+              }
             }
+            break;
           }
-          break;
         }
-      }
-      if (!blocked) {
-        group_slots_++;
-        valid_starting_slots_.push_back(i);
-        // We have a legal position so jump ahead to limit the
-        // number of times we run the hungarian code.
-        i += group_size_;
+        if (!blocked) {
+          group_slots_++;
+          valid_starting_slots_.push_back(i);
+          group_slot_capacity.push_back(group_size);
+          // We have a legal position so jump ahead to limit the
+          // number of times we run the hungarian code.
+          i += group_size;
+          new_begin = i;
+        }
       }
     }
 
@@ -241,6 +252,9 @@ void HungarianMatching::createMatrixForGroups()
             break;
           }
           group_hpwl += pin_hpwl;
+        }
+        if (pins.size() > group_slot_capacity[slot_index]) {
+          group_hpwl = std::numeric_limits<int>::max();
         }
         hungarian_matrix_[slot_index][groupIndex] = group_hpwl;
         groupIndex++;
@@ -269,6 +283,7 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assignment,
   size_t col = 0;
   int slot_index = 0;
   for (const auto& [pins, order] : pin_groups_) {
+    bool assigned = false;
     if ((only_mirrored && !groupHasMirroredPin(pins, mirrored_pins))
         || (!only_mirrored && groupHasMirroredPin(pins, mirrored_pins))) {
       continue;
@@ -289,6 +304,7 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assignment,
         IOPin& io_pin = netlist_->getIoPin(pin_idx);
         io_pin.setPos(slots_[slot_index + pin_cnt].pos);
         io_pin.setLayer(slots_[slot_index + pin_cnt].layer);
+        io_pin.setEdge(slots_[slot_index + pin_cnt].edge);
         assignment.push_back(io_pin);
         slots_[slot_index + pin_cnt].used = true;
         slots_[slot_index + pin_cnt].blocked = true;
@@ -302,9 +318,14 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assignment,
           assignMirroredPins(io_pin, mirrored_pins, assignment);
         }
       }
+      assigned = true;
       break;
     }
     col++;
+    if (!assigned) {
+      logger_->error(
+          utl::PPL, 86, "Pin group of size {} was not assigned.", pins.size());
+    }
   }
 
   hungarian_matrix_.clear();
@@ -336,6 +357,24 @@ bool HungarianMatching::groupHasMirroredPin(const std::vector<int>& group,
   }
 
   return false;
+}
+
+Edge HungarianMatching::getMirroredEdge(const Edge& edge)
+{
+  Edge mirrored_edge = Edge::invalid;
+  if (edge == Edge::bottom) {
+    mirrored_edge = Edge::top;
+  } else if (edge == Edge::top) {
+    mirrored_edge = Edge::bottom;
+  } else if (edge == Edge::left) {
+    mirrored_edge = Edge::right;
+  } else if (edge == Edge::right) {
+    mirrored_edge = Edge::left;
+  } else {
+    mirrored_edge = Edge::invalid;
+  }
+
+  return mirrored_edge;
 }
 
 }  // namespace ppl

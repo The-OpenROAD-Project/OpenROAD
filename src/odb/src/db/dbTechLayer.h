@@ -39,11 +39,8 @@
 #include "dbTypes.h"
 #include "dbVector.h"
 #include "odb.h"
-// User Code Begin Includes
-// User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -65,6 +62,7 @@ class _dbTechLayerEolKeepOutRule;
 class _dbTechLayerWidthTableRule;
 class _dbTechLayerMinCutRule;
 class _dbTechLayerAreaRule;
+class _dbTechLayerForbiddenSpacingRule;
 class _dbTechLayerKeepOutZoneRule;
 // User Code Begin Classes
 class _dbTechLayerSpacingRule;
@@ -94,14 +92,27 @@ struct dbTechLayerFlags
   uint lef58_type_ : 5;
   uint spare_bits_ : 4;
 };
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbTechLayer : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
+  _dbTechLayer(_dbDatabase*, const _dbTechLayer& r);
+  _dbTechLayer(_dbDatabase*);
+  ~_dbTechLayer();
+
+  bool operator==(const _dbTechLayer& rhs) const;
+  bool operator!=(const _dbTechLayer& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbTechLayer& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbTechLayer& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
+  dbObjectTable* getObjectTable(dbObjectType type);
+  // User Code Begin Methods
+  uint getV55RowIdx(const int& rowVal) const;
+  uint getV55ColIdx(const int& colVal) const;
+  uint getTwIdx(const int width, const int prl) const;
+  // User Code End Methods
 
   dbTechLayerFlags flags_;
   uint wrong_way_width_;
@@ -136,6 +147,8 @@ class _dbTechLayer : public _dbObject
   dbTable<_dbTechLayerMinCutRule>* min_cuts_rules_tbl_;
 
   dbTable<_dbTechLayerAreaRule>* area_rules_tbl_;
+
+  dbTable<_dbTechLayerForbiddenSpacingRule>* forbidden_spacing_rules_tbl_;
 
   dbTable<_dbTechLayerKeepOutZoneRule>* keepout_zone_rules_tbl_;
 
@@ -188,26 +201,8 @@ class _dbTechLayer : public _dbObject
   dbId<_dbTechLayerAntennaRule> _oxide1;
   dbId<_dbTechLayerAntennaRule> _oxide2;
   // User Code End Fields
-  _dbTechLayer(_dbDatabase*, const _dbTechLayer& r);
-  _dbTechLayer(_dbDatabase*);
-  ~_dbTechLayer();
-  bool operator==(const _dbTechLayer& rhs) const;
-  bool operator!=(const _dbTechLayer& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbTechLayer& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayer& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  dbObjectTable* getObjectTable(dbObjectType type);
-  // User Code Begin Methods
-  uint getV55RowIdx(const int& rowVal) const;
-  uint getV55ColIdx(const int& colVal) const;
-  uint getTwIdx(const int width, const int prl) const;
-  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header

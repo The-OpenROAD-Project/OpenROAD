@@ -119,25 +119,6 @@ class defrData
 
   inline static const char* defkywd(int num);
 
-  FILE* defrLog;
-  char defPropDefType;  // save the current type of the property
-  char* ch;
-  char* defMsg;
-  char* deftoken;
-  char* uc_token;
-  char* last;
-  char* magic;
-  char* next;
-  char* pv_deftoken;
-  char* rowName;     // to hold the rowName for message
-  char* shieldName;  // to hold the shieldNetName
-  char* shiftBuf;
-  char* warningMsg;
-  double save_x;
-  double save_y;
-  double lVal;
-  double rVal;
-  int aOxide;  // keep track for oxide
   int assertionWarnings;
   int bit_is_keyword;
   int bitsNum;  // Scanchain Bits value
@@ -147,14 +128,10 @@ class defrData
   int componentWarnings;
   int constraintWarnings;
   int cover_is_keyword;
-  int defIgnoreVersion;  // ignore checking version number
-  int defInvalidChar;
   int defMsgCnt;
   int defMsgPrinted;  // number of msgs output so far
-  int defPrintTokens;
   int defRetVal;
   int def_warnings;
-  int defaultCapWarnings;
   int do_is_keyword;
   int dumb_mode;
   int errors;
@@ -174,18 +151,15 @@ class defrData
   int hasNameCase;  // keep track NAMESCASESENSITIVE is in the file
   int hasOpenedDefLogFile;
   int hasPort;        // keep track is port defined in a Pin
+  int hadPortOnce;    // to restrict implicit ports if the Pin already has any
+                      // port
   int hasVer;         // keep track VERSION is in the file
   int hasFatalError;  // don't report errors after the file end.
-  int iOTimingWarnings;
-  int input_level;
   int mask_is_keyword;
   int mustjoin_is_keyword;
   int names_case_sensitive;  // always true in 5.6
   int needNPCbk;             // if cbk for net path is needed
   int needSNPCbk;            // if cbk for snet path is needed
-  int netOsnet;              // net = 1 & snet = 2
-  int netWarnings;
-  int new_is_keyword;
   int nl_token;
   int no_num;
   int nonDefaultWarnings;
@@ -200,11 +174,7 @@ class defrData
   int regionWarnings;
   int ringPlace;
   int routed_is_keyword;
-  int rowWarnings;
-  int sNetWarnings;
   int scanchainWarnings;
-  int shield;  // To identify if the path is shield for 5.3
-  int shiftBufLength;
   int specialWire_mask;
   int step_is_keyword;
   int stylesWarnings;
@@ -213,9 +183,6 @@ class defrData
   int versionWarnings;
   int viaRule;  // keep track the viarule has called first
   int viaWarnings;
-  int virtual_is_keyword;
-  int deftokenLength;
-  long long nlines;
 
   std::vector<char> History_text;
   defAliasMap def_alias_set;
@@ -225,8 +192,6 @@ class defrData
   char* specialWire_routeStatusName;
   char* specialWire_shapeType;
   double VersionNum;
-  double xStep;
-  double yStep;
 
   // defrParser vars.
   defiPath PathObj;
@@ -259,12 +224,7 @@ class defrData
   defiNonDefault NonDefault;
   defiStyles Styles;
   defiGeometries Geometries;
-  int doneDesign;  // keep track if the Design is done parsing
 
-  // Flags to control what happens
-  int NeedPathData;
-
-  defiSubnet* Subnet;
   int msgLimit[DEF_MSGS];
   char buffer[IN_BUF_SIZE];
   char* ring[RING_SIZE];
@@ -272,12 +232,52 @@ class defrData
   std::string stack[20]; /* the stack itself */
 
   YYSTYPE yylval;
-  const defrCallbacks* callbacks;
-  const defrSettings* settings;
-  defrSession* session;
   char lineBuffer[MSG_SIZE];
 
   FILE* File;
+  defrSession* session;
+  defiSubnet* Subnet;
+  const defrSettings* settings;
+  int aOxide;  // keep track for oxide
+  int defInvalidChar;
+  int defIgnoreVersion;  // ignore checking version number
+  char* defMsg;
+  int defPrintTokens;
+  char defPropDefType;  // save the current type of the property
+  int defaultCapWarnings;
+  FILE* defrLog;
+  int input_level;
+  char* last;
+  int new_is_keyword;
+  long long nlines;
+  char* rowName;  // to hold the rowName for message
+  int iOTimingWarnings;
+  char* magic;
+  int netWarnings;
+  double save_x;
+  double save_y;
+  int sNetWarnings;
+  int netOsnet;  // net = 1 & snet = 2
+  char* next;
+  int rowWarnings;
+  char* shieldName;  // to hold the shieldNetName
+  int deftokenLength;
+  double xStep;
+  double yStep;
+  // Flags to control what happens
+  int NeedPathData;
+  int shield;  // To identify if the path is shield for 5.3
+  char* shiftBuf;
+  int shiftBufLength;
+  int virtual_is_keyword;
+  char* warningMsg;
+  double lVal;
+  double rVal;
+  char* deftoken;
+  int doneDesign;  // keep track if the Design is done parsing
+  char* uc_token;
+  char* pv_deftoken;
+  const defrCallbacks* callbacks;
 };
 
 class defrContext
@@ -286,11 +286,11 @@ class defrContext
   defrContext(int ownConf = 0);
 
   defrSettings* settings;
-  defrCallbacks* callbacks;
   defrSession* session;
   defrData* data;
   int ownConfig;
   const char* init_call_func;
+  defrCallbacks* callbacks;
 };
 
 int defrData::checkErrors()

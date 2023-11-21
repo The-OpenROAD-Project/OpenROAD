@@ -35,7 +35,9 @@
 
 #pragma once
 
+#include <cstdint>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -148,12 +150,40 @@ class CtsOptions
   {
     clusteringCapacity_ = capacity;
   }
-  double getBufferDistance() const { return bufDistance_; }
-  void setBufferDistance(double distance) { bufDistance_ = distance; }
-  double getVertexBufferDistance() const { return vertexBufDistance_; }
-  void setVertexBufferDistance(double distance)
+
+  // BufferDistance is in DBU
+  int32_t getBufferDistance() const
   {
-    vertexBufDistance_ = distance;
+    if (bufDistance_) {
+      return *bufDistance_;
+    }
+
+    if (dbUnits_ == -1) {
+      logger_->error(
+          utl::CTS, 542, "Must provide a dbUnit conversion though setDbUnits.");
+    }
+
+    return 100 /*um*/ * dbUnits_;
+  }
+  void setBufferDistance(int32_t distance_dbu) { bufDistance_ = distance_dbu; }
+
+  // VertexBufferDistance is in DBU
+  int32_t getVertexBufferDistance() const
+  {
+    if (vertexBufDistance_) {
+      return *vertexBufDistance_;
+    }
+
+    if (dbUnits_ == -1) {
+      logger_->error(
+          utl::CTS, 543, "Must provide a dbUnit conversion though setDbUnits.");
+    }
+
+    return 240 /*um*/ * dbUnits_;
+  }
+  void setVertexBufferDistance(int32_t distance_dbu)
+  {
+    vertexBufDistance_ = distance_dbu;
   }
   bool isVertexBuffersEnabled() const { return vertexBuffersEnable_; }
   void setVertexBuffersEnabled(bool enable) { vertexBuffersEnable_ = enable; }
@@ -186,6 +216,12 @@ class CtsOptions
   std::string getSinkBuffer() const { return sinkBuffer_; }
   utl::Logger* getLogger() const { return logger_; }
   stt::SteinerTreeBuilder* getSttBuilder() const { return sttBuilder_; }
+  void setObstructionAware(bool obs) { obsAware_ = obs; }
+  bool getObstructionAware() const { return obsAware_; }
+  void setApplyNDR(bool ndr) { applyNDR_ = ndr; }
+  bool applyNDR() const { return applyNDR_; }
+  void enableInsertionDelay(bool insDelay) { insertionDelay_ = insDelay; }
+  bool insertionDelayEnabled() const { return insertionDelay_; }
 
  private:
   std::string clockNets_ = "";
@@ -201,8 +237,8 @@ class CtsOptions
   bool simpleSegmentsEnable_ = false;
   bool vertexBuffersEnable_ = false;
   std::unique_ptr<CtsObserver> observer_;
-  double vertexBufDistance_ = 240;
-  double bufDistance_ = 100;
+  std::optional<int> vertexBufDistance_;
+  std::optional<int> bufDistance_;
   double clusteringCapacity_ = 0.6;
   unsigned clusteringPower_ = 4;
   unsigned numMaxLeafSinks_ = 15;
@@ -230,6 +266,9 @@ class CtsOptions
   std::vector<odb::dbNet*> clockNetsObjs_;
   utl::Logger* logger_ = nullptr;
   stt::SteinerTreeBuilder* sttBuilder_ = nullptr;
+  bool obsAware_ = false;
+  bool applyNDR_ = false;
+  bool insertionDelay_ = false;
 };
 
 }  // namespace cts

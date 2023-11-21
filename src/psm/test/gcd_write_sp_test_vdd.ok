@@ -1,8 +1,8 @@
-[INFO ODB-0222] Reading LEF file: Nangate45.lef
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
 [INFO ODB-0223]     Created 22 technology layers
 [INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 134 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45.lef
+[INFO ODB-0225]     Created 135 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 624 components and 2752 component-terminals.
@@ -15,6 +15,4 @@
 [INFO PSM-0031] Number of PDN nodes on net VDD = 604.
 [INFO PSM-0064] Number of voltage sources = 1.
 [INFO PSM-0040] All PDN stripes on net VDD are connected.
-Differences found at line 18.
-I0 VDD_136140_179200_1 0 3.0845e-07
-I0 VDD_136140_179200_1 0 1.74544e-07
+No differences found.

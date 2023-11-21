@@ -39,6 +39,7 @@
 namespace odb {
 class dbDatabase;
 class dbInst;
+
 }  // namespace odb
 namespace sta {
 class dbSta;
@@ -76,6 +77,7 @@ class Replace
   ~Replace();
 
   void init(odb::dbDatabase* odb,
+            sta::dbSta* sta,
             rsz::Resizer* resizer,
             grt::GlobalRouter* router,
             utl::Logger* logger);
@@ -83,6 +85,7 @@ class Replace
 
   void doIncrementalPlace();
   void doInitialPlace();
+  void runMBFF(int max_sz, float alpha, float beta, int threads);
 
   int doNesterovPlace(int start_iter = 0);
 
@@ -145,6 +148,7 @@ class Replace
   bool initNesterovPlace();
 
   odb::dbDatabase* db_;
+  sta::dbSta* sta_;
   rsz::Resizer* rs_;
   grt::GlobalRouter* fr_;
   utl::Logger* log_;
@@ -203,7 +207,6 @@ class Replace
   // temp variable; OpenDB should have these values.
   int padLeft_;
   int padRight_;
-
   bool gui_debug_;
   int gui_debug_pause_iterations_;
   int gui_debug_update_iterations_;

@@ -39,8 +39,8 @@ namespace dft {
 
 namespace {
 
-bool CompareScanCells(const std::shared_ptr<ScanCell>& lhs,
-                      const std::shared_ptr<ScanCell>& rhs)
+bool CompareScanCells(const std::unique_ptr<ScanCell>& lhs,
+                      const std::unique_ptr<ScanCell>& rhs)
 {
   // If they have the same number of bits, then we compare the names of the
   // cells so they are ordered by name
@@ -58,7 +58,7 @@ bool CompareScanCells(const std::shared_ptr<ScanCell>& lhs,
   return lhs->getBits() < rhs->getBits();
 }
 
-void SortScanCells(std::vector<std::shared_ptr<ScanCell>>& scan_cells)
+void SortScanCells(std::vector<std::unique_ptr<ScanCell>>& scan_cells)
 {
   std::sort(scan_cells.begin(), scan_cells.end(), CompareScanCells);
 }
@@ -69,13 +69,13 @@ ScanCellsBucket::ScanCellsBucket(utl::Logger* logger) : logger_(logger)
 {
 }
 
-void ScanCellsBucket::init(
-    const ScanArchitectConfig& config,
-    const std::vector<std::shared_ptr<ScanCell>>& scan_cells)
+void ScanCellsBucket::init(const ScanArchitectConfig& config,
+                           std::vector<std::unique_ptr<ScanCell>>& scan_cells)
 {
   auto hash_fn = GetClockDomainHashFn(config, logger_);
-  for (const std::shared_ptr<ScanCell>& scan_cell : scan_cells) {
-    buckets_[hash_fn(scan_cell->getClockDomain())].push_back(scan_cell);
+  for (std::unique_ptr<ScanCell>& scan_cell : scan_cells) {
+    buckets_[hash_fn(scan_cell->getClockDomain())].push_back(
+        std::move(scan_cell));
   }
 
   // Sort the buckets
@@ -89,17 +89,17 @@ ScanCellsBucket::getTotalBitsPerHashDomain() const
 {
   std::unordered_map<size_t, uint64_t> total_bits;
   for (const auto& [hash_domain, scan_cells] : buckets_) {
-    for (const std::shared_ptr<ScanCell>& scan_cell : scan_cells) {
+    for (const std::unique_ptr<ScanCell>& scan_cell : scan_cells) {
       total_bits[hash_domain] += scan_cell->getBits();
     }
   }
   return total_bits;
 }
 
-std::shared_ptr<ScanCell> ScanCellsBucket::pop(size_t hash_domain)
+std::unique_ptr<ScanCell> ScanCellsBucket::pop(size_t hash_domain)
 {
   auto& bucket = buckets_.find(hash_domain)->second;
-  auto scan_cell = bucket.back();
+  std::unique_ptr<ScanCell> scan_cell = std::move(bucket.back());
   bucket.pop_back();
   return scan_cell;
 }

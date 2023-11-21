@@ -38,6 +38,7 @@
 
 include("openroad")
 find_package(TCL)
+find_package(Boost)
 
 add_library(dpl_lib
   src/Opendp.cpp
@@ -79,6 +80,7 @@ target_sources(dpl
 target_include_directories(dpl
   PUBLIC
     include
+  PRIVATE
     src
 )
 
@@ -116,6 +118,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
 
   target_link_libraries(dpl_py
     PUBLIC
+      ${Boost_LIBRARIES}
       dpl_lib
       gui
       odb

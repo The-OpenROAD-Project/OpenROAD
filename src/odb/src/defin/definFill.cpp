@@ -43,7 +43,7 @@ namespace odb {
 
 definFill::definFill()
 {
-  _cur_layer = NULL;
+  _cur_layer = nullptr;
 }
 
 definFill::~definFill()
@@ -53,14 +53,14 @@ definFill::~definFill()
 void definFill::init()
 {
   definBase::init();
-  _cur_layer = NULL;
+  _cur_layer = nullptr;
 }
 
 void definFill::fillBegin(const char* layer, bool needs_opc, int mask_number)
 {
   _cur_layer = _tech->findLayer(layer);
 
-  if (_cur_layer == NULL) {
+  if (_cur_layer == nullptr) {
     _logger->warn(
         utl::ODB, 95, "error: undefined layer ({}) referenced", layer);
     ++_errors;

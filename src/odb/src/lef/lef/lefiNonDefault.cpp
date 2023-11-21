@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -1102,7 +1102,7 @@ double lefiNonDefault::propNumber(int index) const
   return dvalues_[index];
 }
 
-char lefiNonDefault::propType(int index) const
+const char lefiNonDefault::propType(int index) const
 {
   char msg[160];
   if (index < 0 || index >= numProps_) {

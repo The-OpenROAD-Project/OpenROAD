@@ -43,7 +43,14 @@ list(APPEND CMAKE_INSTALL_RPATH
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/src/cmake")
 
+# The location used by etc/DependencyInstaller.sh
+list(APPEND CMAKE_PREFIX_PATH
+  "/opt/or-tools/lib64/cmake"
+  "/opt/or-tools/lib/cmake"
+)
+
 include("openroad")
+
 
 if(USE_SYSTEM_OPENSTA)
   if(NOT OPENSTA_HOME)
@@ -178,6 +185,7 @@ endif()
 
 add_compile_options(
   -Wall
+  -Wmissing-field-initializers
   -Wredundant-decls
   -Wformat-security
   -Wno-sign-compare
@@ -185,7 +193,14 @@ add_compile_options(
   $<$<CXX_COMPILER_ID:Clang>:-Wno-gnu-zero-variadic-macro-arguments>
   # Apple clang 14.0.0 deprecates sprintf, which generates 900 warnings.
   $<$<CXX_COMPILER_ID:AppleClang>:-Wno-deprecated-declarations>
+  $<$<BOOL:${ASAN}>:-fsanitize=address>
+  $<$<BOOL:${ASAN}>:-fno-omit-frame-pointer>
+  $<$<BOOL:${ASAN}>:-g>
 )
+
+if (ASAN)
+  add_link_options(-fsanitize=address)
+endif()
 
 ################################################################
 

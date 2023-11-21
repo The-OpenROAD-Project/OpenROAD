@@ -32,11 +32,11 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 #############################################################################
 
-sta::define_cmd_args "detailed_placement" {[-max_displacement disp|{disp_x disp_y}] [-disallow_one_site_gaps]}
+sta::define_cmd_args "detailed_placement" {[-max_displacement disp|{disp_x disp_y}] [-disallow_one_site_gaps] [-report_file_name file_name]}
 
 proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
-    keys {-max_displacement} flags {-disallow_one_site_gaps}
+    keys {-max_displacement -report_file_name} flags {-disallow_one_site_gaps}
 
 set disallow_one_site_gaps [info exists flags(-disallow_one_site_gaps)]
   if { [info exists keys(-max_displacement)] } {
@@ -57,6 +57,10 @@ set disallow_one_site_gaps [info exists flags(-disallow_one_site_gaps)]
     set max_displacement_x 0
     set max_displacement_y 0
   }
+  set file_name ""
+  if { [info exists keys(-report_file_name) ] } {
+    set file_name $keys(-report_file_name)
+  }
 
   sta::check_argc_eq0 "detailed_placement" $args
   if { [ord::db_has_rows] } {
@@ -67,7 +71,7 @@ set disallow_one_site_gaps [info exists flags(-disallow_one_site_gaps)]
     set max_displacement_y [expr [ord::microns_to_dbu $max_displacement_y] \
                               / [$site getHeight]]
     dpl::detailed_placement_cmd $max_displacement_x $max_displacement_y \
-                                $disallow_one_site_gaps
+                                $disallow_one_site_gaps $file_name 
     dpl::report_legalization_stats
   } else {
     utl::error "DPL" 27 "no rows defined in design. Use initialize_floorplan to add rows."
@@ -136,15 +140,19 @@ proc remove_fillers { args } {
   dpl::remove_fillers_cmd
 }
 
-sta::define_cmd_args "check_placement" {[-verbose]}
+sta::define_cmd_args "check_placement" {[-verbose] [-disallow_one_site_gaps] [-report_file_name file_name]}
 
 proc check_placement { args } {
   sta::parse_key_args "check_placement" args \
-    keys {} flags {-verbose}
-
+    keys {-report_file_name} flags {-verbose -disallow_one_site_gaps}
   set verbose [info exists flags(-verbose)]
-  sta::check_argc_eq0 "check_placement" $args
-  dpl::check_placement_cmd $verbose
+  set disallow_one_site_gaps [info exists flags(-disallow_one_site_gaps)]
+  sta::check_argc_eq0 "check_placement" $args 
+  set file_name ""
+  if { [info exists keys(-report_file_name) ] } {
+    set file_name $keys(-report_file_name)
+  }
+  dpl::check_placement_cmd $verbose $disallow_one_site_gaps $file_name
 }
 
 sta::define_cmd_args "optimize_mirroring" {}

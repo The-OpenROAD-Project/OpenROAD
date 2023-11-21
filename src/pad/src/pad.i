@@ -77,9 +77,9 @@ void remove_bump(odb::dbInst* inst)
   ord::getICeWall()->removeBump(inst);
 }
 
-void assign_net_to_bump(odb::dbInst* inst, odb::dbNet* net)
+void assign_net_to_bump(odb::dbInst* inst, odb::dbNet* net, odb::dbITerm* terminal, bool dont_route)
 {
-  ord::getICeWall()->assignBump(inst, net);
+  ord::getICeWall()->assignBump(inst, net, terminal, dont_route);
 }
 
 void make_fake_site(const char* name, int width, int height)
@@ -87,9 +87,15 @@ void make_fake_site(const char* name, int width, int height)
   ord::getICeWall()->makeFakeSite(name, width, height);
 }
 
-void make_io_row(odb::dbSite* hsite, odb::dbSite* vsite, odb::dbSite* csite, int west_offset, int north_offset, int east_offset, int south_offset, odb::dbOrientType rotation, int ring_index)
+void make_io_row(odb::dbSite* hsite, odb::dbSite* vsite, odb::dbSite* csite,
+                 int west_offset, int north_offset, int east_offset, int south_offset,
+                 odb::dbOrientType rotation_hor, odb::dbOrientType rotation_ver, odb::dbOrientType rotation_cor,
+                 int ring_index)
 {
-  ord::getICeWall()->makeIORow(hsite, vsite, csite, west_offset, north_offset, east_offset, south_offset, rotation, ring_index);
+  ord::getICeWall()->makeIORow(hsite, vsite, csite,
+                               west_offset, north_offset, east_offset, south_offset,
+                               rotation_hor, rotation_ver, rotation_cor,
+                               ring_index);
 }
 
 void remove_io_rows()
@@ -122,14 +128,24 @@ void place_bondpads(odb::dbMaster* master, const std::vector<odb::dbInst*>& pads
   ord::getICeWall()->placeBondPads(master, pads, rotation, {x_offset, y_offset}, prefix);
 }
 
+void place_terminals(const std::vector<odb::dbITerm*>& iterms)
+{
+  ord::getICeWall()->placeTerminals(iterms);
+}
+
 void connect_by_abutment()
 {
   ord::getICeWall()->connectByAbutment();
 }
 
-void route_rdl(odb::dbTechLayer* layer, odb::dbTechVia* bump_via, odb::dbTechVia* pad_via, const std::vector<odb::dbNet*>& nets, int width = 0, int spacing = 0, bool allow45 = false)
+void route_rdl(odb::dbTechLayer* layer, 
+               odb::dbTechVia* bump_via,
+               odb::dbTechVia* pad_via,
+               const std::vector<odb::dbNet*>& nets,
+               int width = 0, int spacing = 0, bool allow45 = false,
+               float penalty = 2.0)
 {
-  ord::getICeWall()->routeRDL(layer, bump_via, pad_via, nets, width, spacing, allow45);
+  ord::getICeWall()->routeRDL(layer, bump_via, pad_via, nets, width, spacing, allow45, penalty);
 }
 
 void route_rdl_gui(bool enable)

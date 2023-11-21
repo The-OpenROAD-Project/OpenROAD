@@ -1,18 +1,5 @@
 # Build OpenROAD
 
-## Install dependencies
-
-To install dependencies to develop or build and run OpenROAD locally,
-follow [this procedure](https://openroad-flow-scripts.readthedocs.io/en/latest/user/BuildLocally.html).
-
-> :warning: warning :warning:
->
-> `etc/DependencyInstaller.sh` defaults to installing system 
-> packages and requires sudo access. These packages can affect
-> your environment. We recommend users install dependencies
-> locally using [setup.sh](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/blob/master/setup.sh)
-> from OpenROAD-flow-scripts.
-
 ## Build
 
 The first step, independent of the build method, is to download the repository:
@@ -43,13 +30,28 @@ with every build in the build directory. In case of filing issues,
 it can be uploaded in the "Relevant log output" section of OpenROAD
 [issue forms](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/issues/new/choose).
 
+## Install dependencies
+
+You may follow our helper script to install dependencies as follows:
+``` shell
+sudo ./etc/DependencyInstaller.sh
+```
+
+> **WARNING**
+>
+> `etc/DependencyInstaller.sh` defaults to installing system 
+> packages and requires sudo access. These packages can affect
+> your environment. We recommend users install dependencies
+> locally using [setup.sh](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/blob/master/setup.sh)
+> from OpenROAD-flow-scripts.
+
 ### Build Manually
 
 ``` shell
-mkdir build
-cd build
+mkdir build && cd build
 cmake ..
 make
+make install 
 ```
 
 The default install directory is `/usr/local`.
@@ -85,3 +87,17 @@ By default, OpenROAD is built with link time optimizations enabled.
 This adds about 1 minute to compile times and improves the runtime
 by about 11%. If you would like to disable LTO pass 
 `-DLINK_TIME_OPTIMIZATION=OFF` when generating a build.
+
+### Build with Address Sanitizer
+To enable building with Address Sanitizer, use the argument `-DASAN=ON`.
+Setting the `ASAN` variable to `ON` adds necessary compile and link options
+for using Address Sanitizer.
+
+> **Note:** Address Sanitizer adds instrumentation for detecting memory errors.
+>  Enabling this option will cause OpenROAD to run slower and consume more RAM.
+
+### Build with Prebuilt Binaries
+
+Courtesy of [Precision Innovations](https://precisioninno.com/), there are pre-built binaries
+of OpenROAD with self-contained dependencies released on a regular basis.
+Refer to this [link](https://openroad-flow-scripts.readthedocs.io/en/latest/user/BuildWithPrebuilt.html) here.

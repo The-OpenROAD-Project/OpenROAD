@@ -28,6 +28,8 @@
 
 #include "distributed/paUpdate.h"
 
+#include <fstream>
+
 #include "distributed/frArchive.h"
 #include "serialization.h"
 using namespace fr;
@@ -56,7 +58,7 @@ template <class Archive>
 void paUpdate::serialize(Archive& ar, const unsigned int version)
 {
   if (is_loading(ar)) {
-    int sz;
+    int sz = 0;
     // pin_access_;
     (ar) & sz;
     while (sz--) {
@@ -72,7 +74,7 @@ void paUpdate::serialize(Archive& ar, const unsigned int version)
     (ar) & sz;
     while (sz--) {
       inst_rows_.push_back({});
-      int innerSz;
+      int innerSz = 0;
       (ar) & innerSz;
       while (innerSz--) {
         frBlockObject* obj;
@@ -86,7 +88,7 @@ void paUpdate::serialize(Archive& ar, const unsigned int version)
       frBlockObject* obj;
       serializeBlockObject(ar, obj);
       frInstTerm* term = (frInstTerm*) obj;
-      int innerSz;
+      int innerSz = 0;
       (ar) & innerSz;
       std::vector<frAccessPoint*> aps;
       while (innerSz--) {

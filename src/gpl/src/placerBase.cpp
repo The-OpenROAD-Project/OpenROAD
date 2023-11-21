@@ -1172,7 +1172,6 @@ void PlacerBase::initInstsForUnusableSites()
     }
   } else {
     // fill in rows' bbox
-    int c = 0;
     for (dbRow* row : rows) {
       Rect rect = row->getBBox();
 
@@ -1185,7 +1184,6 @@ void PlacerBase::initInstsForUnusableSites()
       for (int i = pairX.first; i < pairX.second; i++) {
         for (int j = pairY.first; j < pairY.second; j++) {
           siteGrid[j * siteCountX + i] = Row;
-          ++c;
         }
       }
     }

@@ -16,59 +16,66 @@ module gcd (clk,
  output [15:0] resp_msg;
 
  wire partition__136_;
- wire partition__148_;
- wire partition__150_;
+ wire partition__149_;
  wire partition__151_;
  wire partition__153_;
  wire partition__154_;
- wire partition__159_;
  wire partition__160_;
- wire partition__163_;
  wire partition__164_;
  wire partition__166_;
  wire partition__172_;
  wire partition__181_;
  wire partition__222_;
  wire partition__233_;
+ wire partition__237_;
+ wire partition__296_;
  wire partition__302_;
  wire partition__303_;
  wire partition__307_;
  wire partition__317_;
  wire partition__324_;
+ wire partition__347_;
+ wire partition__348_;
+ wire partition__349_;
+ wire partition__350_;
  wire partition__351_;
- wire partition__354_;
- wire partition__355_;
+ wire partition__352_;
+ wire partition__353_;
+ wire \partition_dpath.a_lt_b$in1[15] ;
+ wire \partition_dpath.a_lt_b$in1[8] ;
 
  gcd_partition0 gcd_partition0_inst (.clk(clk),
     .req_rdy(req_rdy),
-    .req_val(req_val),
-    .reset(reset),
-    .resp_rdy(resp_rdy),
-    .resp_val(resp_val),
     .partition__136_(partition__136_),
-    .partition__148_(partition__148_),
-    .partition__150_(partition__150_),
-    .partition__151_(partition__151_),
-    .partition__153_(partition__153_),
-    .partition__159_(partition__159_),
+    .partition__149_(partition__149_),
     .partition__154_(partition__154_),
     .partition__160_(partition__160_),
     .partition__164_(partition__164_),
     .partition__166_(partition__166_),
+    .partition__153_(partition__153_),
+    .partition__151_(partition__151_),
     .partition__172_(partition__172_),
-    .partition__163_(partition__163_),
     .partition__181_(partition__181_),
     .partition__222_(partition__222_),
     .partition__233_(partition__233_),
-    .partition__303_(partition__303_),
+    .\partition_dpath.a_lt_b$in1[8] (\partition_dpath.a_lt_b$in1[8] ),
+    .partition__237_(partition__237_),
+    .\partition_dpath.a_lt_b$in1[15] (\partition_dpath.a_lt_b$in1[15] ),
+    .partition__296_(partition__296_),
     .partition__302_(partition__302_),
+    .partition__303_(partition__303_),
     .partition__307_(partition__307_),
     .partition__317_(partition__317_),
     .partition__324_(partition__324_),
-    .partition__354_(partition__354_),
-    .partition__355_(partition__355_),
+    .partition__347_(partition__347_),
+    .partition__348_(partition__348_),
+    .partition__349_(partition__349_),
+    .partition__350_(partition__350_),
     .partition__351_(partition__351_),
-    .req_msg({req_msg[23],
+    .partition__352_(partition__352_),
+    .partition__353_(partition__353_),
+    .req_msg({req_msg[24],
+    req_msg[23],
     req_msg[22],
     req_msg[21],
     req_msg[20],
@@ -92,7 +99,8 @@ module gcd (clk,
     req_msg[2],
     req_msg[1],
     req_msg[0]}),
-    .resp_msg({resp_msg[7],
+    .resp_msg({resp_msg[8],
+    resp_msg[7],
     resp_msg[6],
     resp_msg[5],
     resp_msg[4],
@@ -101,29 +109,38 @@ module gcd (clk,
     resp_msg[1],
     resp_msg[0]}));
  gcd_partition1 gcd_partition1_inst (.clk(clk),
+    .req_val(req_val),
+    .reset(reset),
+    .resp_rdy(resp_rdy),
+    .resp_val(resp_val),
+    .\partition_dpath.a_lt_b$in1[8] (\partition_dpath.a_lt_b$in1[8] ),
+    .\partition_dpath.a_lt_b$in1[15] (\partition_dpath.a_lt_b$in1[15] ),
     .partition__136_(partition__136_),
-    .partition__148_(partition__148_),
+    .partition__149_(partition__149_),
     .partition__151_(partition__151_),
     .partition__153_(partition__153_),
     .partition__154_(partition__154_),
-    .partition__150_(partition__150_),
-    .partition__159_(partition__159_),
-    .partition__163_(partition__163_),
-    .partition__164_(partition__164_),
     .partition__166_(partition__166_),
     .partition__172_(partition__172_),
     .partition__181_(partition__181_),
     .partition__222_(partition__222_),
     .partition__233_(partition__233_),
+    .partition__237_(partition__237_),
     .partition__160_(partition__160_),
-    .partition__302_(partition__302_),
-    .partition__307_(partition__307_),
-    .partition__317_(partition__317_),
+    .partition__164_(partition__164_),
+    .partition__296_(partition__296_),
     .partition__324_(partition__324_),
     .partition__303_(partition__303_),
+    .partition__317_(partition__317_),
+    .partition__307_(partition__307_),
+    .partition__302_(partition__302_),
+    .partition__347_(partition__347_),
+    .partition__348_(partition__348_),
+    .partition__349_(partition__349_),
+    .partition__350_(partition__350_),
+    .partition__352_(partition__352_),
+    .partition__353_(partition__353_),
     .partition__351_(partition__351_),
-    .partition__354_(partition__354_),
-    .partition__355_(partition__355_),
     .req_msg({req_msg[31],
     req_msg[30],
     req_msg[29],
@@ -131,7 +148,6 @@ module gcd (clk,
     req_msg[27],
     req_msg[26],
     req_msg[25],
-    req_msg[24],
     _NC9,
     _NC10,
     _NC11,
@@ -140,6 +156,7 @@ module gcd (clk,
     _NC14,
     _NC15,
     _NC16,
+    _NC17,
     req_msg[15],
     req_msg[14],
     req_msg[13],
@@ -159,69 +176,69 @@ module gcd (clk,
 endmodule
 module gcd_partition0 (clk,
     req_rdy,
-    req_val,
-    reset,
-    resp_rdy,
-    resp_val,
     partition__136_,
-    partition__148_,
-    partition__150_,
-    partition__151_,
-    partition__153_,
-    partition__159_,
+    partition__149_,
     partition__154_,
     partition__160_,
     partition__164_,
     partition__166_,
+    partition__153_,
+    partition__151_,
     partition__172_,
-    partition__163_,
     partition__181_,
     partition__222_,
     partition__233_,
-    partition__303_,
+    \partition_dpath.a_lt_b$in1[8] ,
+    partition__237_,
+    \partition_dpath.a_lt_b$in1[15] ,
+    partition__296_,
     partition__302_,
+    partition__303_,
     partition__307_,
     partition__317_,
     partition__324_,
-    partition__354_,
-    partition__355_,
+    partition__347_,
+    partition__348_,
+    partition__349_,
+    partition__350_,
     partition__351_,
+    partition__352_,
+    partition__353_,
     req_msg,
     resp_msg);
  input clk;
  output req_rdy;
- input req_val;
- input reset;
- input resp_rdy;
- output resp_val;
  input partition__136_;
- input partition__148_;
- output partition__150_;
- output partition__151_;
- output partition__153_;
- output partition__159_;
+ input partition__149_;
  input partition__154_;
  output partition__160_;
- input partition__164_;
+ output partition__164_;
  input partition__166_;
+ input partition__153_;
+ input partition__151_;
  input partition__172_;
- input partition__163_;
  input partition__181_;
  input partition__222_;
  output partition__233_;
+ input \partition_dpath.a_lt_b$in1[8] ;
+ output partition__237_;
+ input \partition_dpath.a_lt_b$in1[15] ;
+ output partition__296_;
+ output partition__302_;
  output partition__303_;
- input partition__302_;
- input partition__307_;
- input partition__317_;
+ output partition__307_;
+ output partition__317_;
  output partition__324_;
- input partition__354_;
- input partition__355_;
- input partition__351_;
- input [23:0] req_msg;
- output [7:0] resp_msg;
+ input partition__347_;
+ output partition__348_;
+ input partition__349_;
+ output partition__350_;
+ output partition__351_;
+ output partition__352_;
+ output partition__353_;
+ input [24:0] req_msg;
+ inout [8:0] resp_msg;
 
- wire _000_;
- wire _001_;
  wire _002_;
  wire _003_;
  wire _004_;
@@ -293,12 +310,15 @@ module gcd_partition0 (clk,
  wire _086_;
  wire _087_;
  wire _137_;
- wire _149_;
+ wire _150_;
  wire _155_;
  wire _156_;
  wire _157_;
  wire _158_;
+ wire _159_;
  wire _161_;
+ wire _162_;
+ wire _163_;
  wire _165_;
  wire _167_;
  wire _168_;
@@ -363,6 +383,11 @@ module gcd_partition0 (clk,
  wire _230_;
  wire _231_;
  wire _232_;
+ wire _234_;
+ wire _235_;
+ wire _236_;
+ wire _300_;
+ wire _301_;
  wire _304_;
  wire _305_;
  wire _306_;
@@ -387,17 +412,6 @@ module gcd_partition0 (clk,
  wire _328_;
  wire _329_;
  wire _330_;
- wire _352_;
- wire _353_;
- wire _356_;
- wire _357_;
- wire _358_;
- wire _359_;
- wire _360_;
- wire _361_;
- wire _362_;
- wire _363_;
- wire _364_;
  wire _365_;
  wire _366_;
  wire _367_;
@@ -414,8 +428,6 @@ module gcd_partition0 (clk,
  wire _386_;
  wire _387_;
  wire _388_;
- wire \ctrl.curr_state__0[0] ;
- wire \ctrl.curr_state__0[1] ;
  wire \dpath.a_lt_b$in0[0] ;
  wire \dpath.a_lt_b$in0[1] ;
  wire \dpath.a_lt_b$in0[2] ;
@@ -584,15 +596,9 @@ module gcd_partition0 (clk,
  NAND2_X2 _500_ (.A1(_087_),
     .A2(partition__136_),
     .ZN(_137_));
- INV_X1 _512_ (.A(partition__148_),
-    .ZN(_149_));
  NAND2_X4 _513_ (.A1(_137_),
-    .A2(_149_),
-    .ZN(partition__150_));
- BUF_X2 _514_ (.A(\ctrl.curr_state__0[0] ),
-    .Z(partition__151_));
- BUF_X2 _516_ (.A(\ctrl.curr_state__0[1] ),
-    .Z(partition__153_));
+    .A2(partition__149_),
+    .ZN(_150_));
  INV_X1 _518_ (.A(\dpath.a_lt_b$in1[0] ),
     .ZN(_155_));
  NOR2_X2 _519_ (.A1(_155_),
@@ -611,14 +617,22 @@ module gcd_partition0 (clk,
     .A2(_044_),
     .A3(_078_),
     .A4(_158_),
-    .ZN(partition__159_));
- NAND3_X2 _524_ (.A1(partition__150_),
+    .ZN(_159_));
+ NAND3_X2 _524_ (.A1(_150_),
     .A2(partition__154_),
-    .A3(partition__159_),
+    .A3(_159_),
     .ZN(partition__160_));
  OR2_X1 _525_ (.A1(partition__160_),
     .A2(_155_),
     .ZN(_161_));
+ INV_X1 _526_ (.A(partition__154_),
+    .ZN(_162_));
+ AOI21_X4 _527_ (.A(_162_),
+    .B1(_150_),
+    .B2(_159_),
+    .ZN(_163_));
+ BUF_X8 _528_ (.A(_163_),
+    .Z(partition__164_));
  NAND2_X1 _529_ (.A1(partition__164_),
     .A2(resp_msg[0]),
     .ZN(_165_));
@@ -644,10 +658,10 @@ module gcd_partition0 (clk,
  NAND2_X2 _537_ (.A1(partition__164_),
     .A2(resp_msg[1]),
     .ZN(_170_));
- NAND4_X1 _538_ (.A1(partition__150_),
+ NAND4_X1 _538_ (.A1(_150_),
     .A2(\dpath.a_lt_b$in1[1] ),
     .A3(partition__154_),
-    .A4(partition__159_),
+    .A4(_159_),
     .ZN(_171_));
  AOI21_X1 _540_ (.A(partition__166_),
     .B1(partition__172_),
@@ -677,7 +691,7 @@ module gcd_partition0 (clk,
  XNOR2_X1 _548_ (.A(_179_),
     .B(_038_),
     .ZN(resp_msg[2]));
- NAND2_X1 _549_ (.A1(partition__163_),
+ NAND2_X1 _549_ (.A1(_163_),
     .A2(resp_msg[2]),
     .ZN(_180_));
  AOI21_X1 _551_ (.A(partition__181_),
@@ -706,13 +720,13 @@ module gcd_partition0 (clk,
  XNOR2_X1 _558_ (.A(_187_),
     .B(_043_),
     .ZN(resp_msg[3]));
- NAND2_X1 _559_ (.A1(partition__163_),
+ NAND2_X1 _559_ (.A1(_163_),
     .A2(resp_msg[3]),
     .ZN(_188_));
- NAND4_X1 _560_ (.A1(partition__150_),
+ NAND4_X1 _560_ (.A1(_150_),
     .A2(\dpath.a_lt_b$in1[3] ),
     .A3(partition__154_),
-    .A4(partition__159_),
+    .A4(_159_),
     .ZN(_189_));
  AOI21_X1 _561_ (.A(partition__181_),
     .B1(partition__172_),
@@ -747,13 +761,13 @@ module gcd_partition0 (clk,
  XOR2_X1 _571_ (.A(_198_),
     .B(_071_),
     .Z(resp_msg[4]));
- NAND2_X1 _572_ (.A1(partition__163_),
+ NAND2_X1 _572_ (.A1(_163_),
     .A2(resp_msg[4]),
     .ZN(_199_));
- NAND4_X1 _573_ (.A1(partition__150_),
+ NAND4_X1 _573_ (.A1(_150_),
     .A2(\dpath.a_lt_b$in1[4] ),
     .A3(partition__154_),
-    .A4(partition__159_),
+    .A4(_159_),
     .ZN(_200_));
  AOI21_X1 _574_ (.A(partition__181_),
     .B1(partition__172_),
@@ -778,13 +792,13 @@ module gcd_partition0 (clk,
  XNOR2_X1 _580_ (.A(_205_),
     .B(_076_),
     .ZN(resp_msg[5]));
- NAND2_X1 _581_ (.A1(partition__163_),
+ NAND2_X1 _581_ (.A1(_163_),
     .A2(resp_msg[5]),
     .ZN(_206_));
- NAND4_X1 _582_ (.A1(partition__150_),
+ NAND4_X1 _582_ (.A1(_150_),
     .A2(\dpath.a_lt_b$in1[5] ),
     .A3(partition__154_),
-    .A4(partition__159_),
+    .A4(_159_),
     .ZN(_207_));
  AOI21_X1 _583_ (.A(partition__181_),
     .B1(partition__172_),
@@ -818,13 +832,13 @@ module gcd_partition0 (clk,
  XOR2_X1 _592_ (.A(_215_),
     .B(_064_),
     .Z(resp_msg[6]));
- NAND2_X1 _593_ (.A1(partition__163_),
+ NAND2_X1 _593_ (.A1(_163_),
     .A2(resp_msg[6]),
     .ZN(_216_));
- NAND4_X1 _594_ (.A1(partition__150_),
+ NAND4_X1 _594_ (.A1(_150_),
     .A2(\dpath.a_lt_b$in1[6] ),
     .A3(partition__154_),
-    .A4(partition__159_),
+    .A4(_159_),
     .ZN(_217_));
  AOI21_X1 _595_ (.A(partition__181_),
     .B1(partition__172_),
@@ -885,6 +899,36 @@ module gcd_partition0 (clk,
  NAND2_X2 _613_ (.A1(_229_),
     .A2(_232_),
     .ZN(partition__233_));
+ NAND2_X1 _615_ (.A1(_163_),
+    .A2(resp_msg[8]),
+    .ZN(_234_));
+ NAND4_X1 _616_ (.A1(_150_),
+    .A2(\partition_dpath.a_lt_b$in1[8] ),
+    .A3(partition__154_),
+    .A4(_159_),
+    .ZN(_235_));
+ AOI21_X1 _617_ (.A(partition__181_),
+    .B1(partition__172_),
+    .B2(req_msg[24]),
+    .ZN(_236_));
+ NAND3_X1 _618_ (.A1(_234_),
+    .A2(_235_),
+    .A3(_236_),
+    .ZN(partition__237_));
+ NAND4_X1 _690_ (.A1(_150_),
+    .A2(\partition_dpath.a_lt_b$in1[15] ),
+    .A3(partition__154_),
+    .A4(_159_),
+    .ZN(partition__296_));
+ NAND2_X4 _695_ (.A1(_150_),
+    .A2(_159_),
+    .ZN(_300_));
+ AOI21_X4 _696_ (.A(partition__153_),
+    .B1(_300_),
+    .B2(partition__151_),
+    .ZN(_301_));
+ BUF_X8 _697_ (.A(_301_),
+    .Z(partition__302_));
  BUF_X1 _698_ (.A(_168_),
     .Z(partition__303_));
  NAND2_X1 _699_ (.A1(partition__303_),
@@ -897,6 +941,8 @@ module gcd_partition0 (clk,
  NAND2_X1 _701_ (.A1(partition__302_),
     .A2(_305_),
     .ZN(_306_));
+ BUF_X4 _702_ (.A(_301_),
+    .Z(partition__307_));
  OAI21_X1 _703_ (.A(_306_),
     .B1(_155_),
     .B2(partition__307_),
@@ -943,6 +989,8 @@ module gcd_partition0 (clk,
     .B1(_041_),
     .B2(partition__307_),
     .ZN(_021_));
+ BUF_X8 _716_ (.A(_301_),
+    .Z(partition__317_));
  NAND2_X1 _717_ (.A1(partition__303_),
     .A2(req_msg[4]),
     .ZN(_318_));
@@ -1001,57 +1049,25 @@ module gcd_partition0 (clk,
     .B1(_057_),
     .B2(partition__307_),
     .ZN(_025_));
+ NAND2_X1 _757_ (.A1(_301_),
+    .A2(partition__347_),
+    .ZN(partition__348_));
+ NAND2_X1 _760_ (.A1(_301_),
+    .A2(partition__349_),
+    .ZN(partition__350_));
+ NAND2_X1 _762_ (.A1(_300_),
+    .A2(partition__154_),
+    .ZN(partition__351_));
  NOR4_X1 _763_ (.A1(\dpath.a_lt_b$in1[4] ),
     .A2(\dpath.a_lt_b$in1[5] ),
     .A3(\dpath.a_lt_b$in1[6] ),
     .A4(\dpath.a_lt_b$in1[7] ),
-    .ZN(_352_));
+    .ZN(partition__352_));
  NOR4_X1 _764_ (.A1(\dpath.a_lt_b$in1[0] ),
     .A2(\dpath.a_lt_b$in1[1] ),
     .A3(\dpath.a_lt_b$in1[2] ),
     .A4(\dpath.a_lt_b$in1[3] ),
-    .ZN(_353_));
- NAND4_X1 _767_ (.A1(_352_),
-    .A2(_353_),
-    .A3(partition__354_),
-    .A4(partition__355_),
-    .ZN(_356_));
- OR2_X1 _768_ (.A1(partition__351_),
-    .A2(_356_),
-    .ZN(_357_));
- NOR2_X1 _769_ (.A1(partition__222_),
-    .A2(partition__151_),
-    .ZN(resp_val));
- NOR2_X1 _770_ (.A1(partition__151_),
-    .A2(req_val),
-    .ZN(_358_));
- NOR3_X1 _771_ (.A1(resp_val),
-    .A2(_358_),
-    .A3(reset),
-    .ZN(_359_));
- AND2_X1 _772_ (.A1(_357_),
-    .A2(_359_),
-    .ZN(_000_));
- AOI21_X1 _773_ (.A(reset),
-    .B1(resp_val),
-    .B2(resp_rdy),
-    .ZN(_360_));
- INV_X1 _774_ (.A(_357_),
-    .ZN(_361_));
- OAI21_X1 _775_ (.A(_360_),
-    .B1(_361_),
-    .B2(partition__166_),
-    .ZN(_362_));
- INV_X1 _776_ (.A(_362_),
-    .ZN(_001_));
- DFF_X1 _778_ (.D(_000_),
-    .CK(clk),
-    .Q(\ctrl.curr_state__0[0] ),
-    .QN(_363_));
- DFF_X1 _779_ (.D(_001_),
-    .CK(clk),
-    .Q(\ctrl.curr_state__0[1] ),
-    .QN(_364_));
+    .ZN(partition__353_));
  DFF_X1 _780_ (.D(_002_),
     .CK(clk),
     .Q(\dpath.a_lt_b$in0[0] ),
@@ -1118,58 +1134,78 @@ module gcd_partition0 (clk,
     .QN(_388_));
 endmodule
 module gcd_partition1 (clk,
+    req_val,
+    reset,
+    resp_rdy,
+    resp_val,
+    \partition_dpath.a_lt_b$in1[8] ,
+    \partition_dpath.a_lt_b$in1[15] ,
     partition__136_,
-    partition__148_,
+    partition__149_,
     partition__151_,
     partition__153_,
     partition__154_,
-    partition__150_,
-    partition__159_,
-    partition__163_,
-    partition__164_,
     partition__166_,
     partition__172_,
     partition__181_,
     partition__222_,
     partition__233_,
+    partition__237_,
     partition__160_,
-    partition__302_,
-    partition__307_,
-    partition__317_,
+    partition__164_,
+    partition__296_,
     partition__324_,
     partition__303_,
+    partition__317_,
+    partition__307_,
+    partition__302_,
+    partition__347_,
+    partition__348_,
+    partition__349_,
+    partition__350_,
+    partition__352_,
+    partition__353_,
     partition__351_,
-    partition__354_,
-    partition__355_,
     req_msg,
     resp_msg);
  input clk;
+ input req_val;
+ input reset;
+ input resp_rdy;
+ output resp_val;
+ output \partition_dpath.a_lt_b$in1[8] ;
+ output \partition_dpath.a_lt_b$in1[15] ;
  output partition__136_;
- output partition__148_;
- input partition__151_;
- input partition__153_;
+ output partition__149_;
+ output partition__151_;
+ output partition__153_;
  output partition__154_;
- input partition__150_;
- input partition__159_;
- output partition__163_;
- output partition__164_;
  output partition__166_;
  output partition__172_;
  output partition__181_;
  output partition__222_;
  input partition__233_;
+ input partition__237_;
  input partition__160_;
- output partition__302_;
- output partition__307_;
- output partition__317_;
+ input partition__164_;
+ input partition__296_;
  input partition__324_;
  input partition__303_;
- output partition__351_;
- output partition__354_;
- output partition__355_;
+ input partition__317_;
+ input partition__307_;
+ input partition__302_;
+ output partition__347_;
+ input partition__348_;
+ output partition__349_;
+ input partition__350_;
+ input partition__352_;
+ input partition__353_;
+ input partition__351_;
  input [31:8] req_msg;
  output [15:8] resp_msg;
 
+ wire _000_;
+ wire _001_;
  wire _010_;
  wire _011_;
  wire _012_;
@@ -1244,12 +1280,8 @@ module gcd_partition1 (clk,
  wire _145_;
  wire _146_;
  wire _147_;
+ wire _148_;
  wire _152_;
- wire _162_;
- wire _234_;
- wire _235_;
- wire _236_;
- wire _237_;
  wire _238_;
  wire _239_;
  wire _240_;
@@ -1308,12 +1340,9 @@ module gcd_partition1 (clk,
  wire _293_;
  wire _294_;
  wire _295_;
- wire _296_;
  wire _297_;
  wire _298_;
  wire _299_;
- wire _300_;
- wire _301_;
  wire _331_;
  wire _332_;
  wire _333_;
@@ -1330,10 +1359,17 @@ module gcd_partition1 (clk,
  wire _344_;
  wire _345_;
  wire _346_;
- wire _347_;
- wire _348_;
- wire _349_;
- wire _350_;
+ wire _354_;
+ wire _355_;
+ wire _356_;
+ wire _357_;
+ wire _358_;
+ wire _359_;
+ wire _360_;
+ wire _361_;
+ wire _362_;
+ wire _363_;
+ wire _364_;
  wire _373_;
  wire _374_;
  wire _375_;
@@ -1350,6 +1386,8 @@ module gcd_partition1 (clk,
  wire _394_;
  wire _395_;
  wire _396_;
+ wire \ctrl.curr_state__0[0] ;
+ wire \ctrl.curr_state__0[1] ;
  wire \dpath.a_lt_b$in0[10] ;
  wire \dpath.a_lt_b$in0[11] ;
  wire \dpath.a_lt_b$in0[12] ;
@@ -1363,8 +1401,6 @@ module gcd_partition1 (clk,
  wire \dpath.a_lt_b$in1[12] ;
  wire \dpath.a_lt_b$in1[13] ;
  wire \dpath.a_lt_b$in1[14] ;
- wire \dpath.a_lt_b$in1[15] ;
- wire \dpath.a_lt_b$in1[8] ;
  wire \dpath.a_lt_b$in1[9] ;
 
  INV_X2 _451_ (.A(\dpath.a_lt_b$in0[10] ),
@@ -1396,7 +1432,7 @@ module gcd_partition1 (clk,
  NAND2_X2 _461_ (.A1(_092_),
     .A2(_097_),
     .ZN(_098_));
- INV_X1 _462_ (.A(\dpath.a_lt_b$in1[8] ),
+ INV_X1 _462_ (.A(\partition_dpath.a_lt_b$in1[8] ),
     .ZN(_099_));
  NOR2_X2 _463_ (.A1(_099_),
     .A2(\dpath.a_lt_b$in0[8] ),
@@ -1404,7 +1440,7 @@ module gcd_partition1 (clk,
  INV_X2 _464_ (.A(\dpath.a_lt_b$in0[8] ),
     .ZN(_101_));
  NOR2_X2 _465_ (.A1(_101_),
-    .A2(\dpath.a_lt_b$in1[8] ),
+    .A2(\partition_dpath.a_lt_b$in1[8] ),
     .ZN(_102_));
  NOR2_X4 _466_ (.A1(_100_),
     .A2(_102_),
@@ -1443,7 +1479,7 @@ module gcd_partition1 (clk,
  NAND2_X1 _479_ (.A1(_114_),
     .A2(_115_),
     .ZN(_116_));
- INV_X2 _480_ (.A(\dpath.a_lt_b$in1[15] ),
+ INV_X2 _480_ (.A(\partition_dpath.a_lt_b$in1[15] ),
     .ZN(_117_));
  NOR2_X1 _481_ (.A1(_117_),
     .A2(\dpath.a_lt_b$in0[15] ),
@@ -1532,20 +1568,18 @@ module gcd_partition1 (clk,
  NAND3_X1 _511_ (.A1(_143_),
     .A2(_145_),
     .A3(_147_),
-    .ZN(partition__148_));
+    .ZN(_148_));
+ INV_X1 _512_ (.A(_148_),
+    .ZN(partition__149_));
+ BUF_X2 _514_ (.A(\ctrl.curr_state__0[0] ),
+    .Z(partition__151_));
  INV_X2 _515_ (.A(partition__151_),
     .ZN(_152_));
+ BUF_X2 _516_ (.A(\ctrl.curr_state__0[1] ),
+    .Z(partition__153_));
  NOR2_X1 _517_ (.A1(_152_),
     .A2(partition__153_),
     .ZN(partition__154_));
- INV_X1 _526_ (.A(partition__154_),
-    .ZN(_162_));
- AOI21_X4 _527_ (.A(_162_),
-    .B1(partition__150_),
-    .B2(partition__159_),
-    .ZN(partition__163_));
- BUF_X8 _528_ (.A(partition__163_),
-    .Z(partition__164_));
  BUF_X1 _530_ (.A(partition__153_),
     .Z(partition__166_));
  CLKBUF_X1 _539_ (.A(_152_),
@@ -1557,26 +1591,10 @@ module gcd_partition1 (clk,
  XNOR2_X1 _614_ (.A(partition__233_),
     .B(_104_),
     .ZN(resp_msg[8]));
- NAND2_X1 _615_ (.A1(partition__163_),
-    .A2(resp_msg[8]),
-    .ZN(_234_));
- NAND4_X1 _616_ (.A1(partition__150_),
-    .A2(\dpath.a_lt_b$in1[8] ),
-    .A3(partition__154_),
-    .A4(partition__159_),
-    .ZN(_235_));
- AOI21_X1 _617_ (.A(partition__181_),
-    .B1(partition__172_),
-    .B2(req_msg[24]),
-    .ZN(_236_));
- NAND3_X1 _618_ (.A1(_234_),
-    .A2(_235_),
-    .A3(_236_),
-    .ZN(_237_));
  NAND2_X1 _619_ (.A1(_101_),
     .A2(partition__166_),
     .ZN(_238_));
- NAND2_X1 _620_ (.A1(_237_),
+ NAND2_X1 _620_ (.A1(partition__237_),
     .A2(_238_),
     .ZN(_239_));
  INV_X1 _621_ (.A(_239_),
@@ -1801,16 +1819,11 @@ module gcd_partition1 (clk,
     .A2(_294_),
     .A3(partition__164_),
     .ZN(_295_));
- NAND4_X1 _690_ (.A1(partition__150_),
-    .A2(\dpath.a_lt_b$in1[15] ),
-    .A3(partition__154_),
-    .A4(partition__159_),
-    .ZN(_296_));
  AOI21_X1 _691_ (.A(partition__181_),
     .B1(partition__172_),
     .B2(req_msg[31]),
     .ZN(_297_));
- NAND2_X1 _692_ (.A1(_296_),
+ NAND2_X1 _692_ (.A1(partition__296_),
     .A2(_297_),
     .ZN(_298_));
  INV_X1 _693_ (.A(_298_),
@@ -1819,19 +1832,6 @@ module gcd_partition1 (clk,
     .B1(_295_),
     .B2(_299_),
     .ZN(_017_));
- NAND2_X4 _695_ (.A1(partition__150_),
-    .A2(partition__159_),
-    .ZN(_300_));
- AOI21_X4 _696_ (.A(partition__153_),
-    .B1(_300_),
-    .B2(partition__151_),
-    .ZN(_301_));
- BUF_X8 _697_ (.A(_301_),
-    .Z(partition__302_));
- BUF_X4 _702_ (.A(_301_),
-    .Z(partition__307_));
- BUF_X8 _716_ (.A(_301_),
-    .Z(partition__317_));
  NAND2_X1 _734_ (.A1(partition__324_),
     .A2(req_msg[8]),
     .ZN(_331_));
@@ -1913,41 +1913,73 @@ module gcd_partition1 (clk,
  MUX2_X1 _756_ (.A(\dpath.a_lt_b$in0[14] ),
     .B(req_msg[14]),
     .S(partition__324_),
-    .Z(_347_));
- NAND2_X1 _757_ (.A1(_301_),
-    .A2(_347_),
-    .ZN(_348_));
- OAI21_X1 _758_ (.A(_348_),
+    .Z(partition__347_));
+ OAI21_X1 _758_ (.A(partition__348_),
     .B1(_112_),
     .B2(partition__302_),
     .ZN(_032_));
  MUX2_X1 _759_ (.A(\dpath.a_lt_b$in0[15] ),
     .B(req_msg[15]),
     .S(partition__324_),
-    .Z(_349_));
- NAND2_X1 _760_ (.A1(_301_),
-    .A2(_349_),
-    .ZN(_350_));
- OAI21_X1 _761_ (.A(_350_),
+    .Z(partition__349_));
+ OAI21_X1 _761_ (.A(partition__350_),
     .B1(_117_),
     .B2(partition__302_),
     .ZN(_033_));
- NAND2_X1 _762_ (.A1(_300_),
-    .A2(partition__154_),
-    .ZN(partition__351_));
  NOR4_X1 _765_ (.A1(\dpath.a_lt_b$in1[12] ),
     .A2(\dpath.a_lt_b$in1[13] ),
     .A3(\dpath.a_lt_b$in1[14] ),
-    .A4(\dpath.a_lt_b$in1[15] ),
-    .ZN(partition__354_));
- NOR4_X1 _766_ (.A1(\dpath.a_lt_b$in1[8] ),
+    .A4(\partition_dpath.a_lt_b$in1[15] ),
+    .ZN(_354_));
+ NOR4_X1 _766_ (.A1(\partition_dpath.a_lt_b$in1[8] ),
     .A2(\dpath.a_lt_b$in1[9] ),
     .A3(\dpath.a_lt_b$in1[10] ),
     .A4(\dpath.a_lt_b$in1[11] ),
-    .ZN(partition__355_));
+    .ZN(_355_));
+ NAND4_X1 _767_ (.A1(partition__352_),
+    .A2(partition__353_),
+    .A3(_354_),
+    .A4(_355_),
+    .ZN(_356_));
+ OR2_X1 _768_ (.A1(partition__351_),
+    .A2(_356_),
+    .ZN(_357_));
+ NOR2_X1 _769_ (.A1(partition__222_),
+    .A2(partition__151_),
+    .ZN(resp_val));
+ NOR2_X1 _770_ (.A1(partition__151_),
+    .A2(req_val),
+    .ZN(_358_));
+ NOR3_X1 _771_ (.A1(resp_val),
+    .A2(_358_),
+    .A3(reset),
+    .ZN(_359_));
+ AND2_X1 _772_ (.A1(_357_),
+    .A2(_359_),
+    .ZN(_000_));
+ AOI21_X1 _773_ (.A(reset),
+    .B1(resp_val),
+    .B2(resp_rdy),
+    .ZN(_360_));
+ INV_X1 _774_ (.A(_357_),
+    .ZN(_361_));
+ OAI21_X1 _775_ (.A(_360_),
+    .B1(_361_),
+    .B2(partition__166_),
+    .ZN(_362_));
+ INV_X1 _776_ (.A(_362_),
+    .ZN(_001_));
  AND2_X1 _777_ (.A1(_293_),
     .A2(_294_),
     .ZN(resp_msg[15]));
+ DFF_X1 _778_ (.D(_000_),
+    .CK(clk),
+    .Q(\ctrl.curr_state__0[0] ),
+    .QN(_363_));
+ DFF_X1 _779_ (.D(_001_),
+    .CK(clk),
+    .Q(\ctrl.curr_state__0[1] ),
+    .QN(_364_));
  DFF_X1 _788_ (.D(_010_),
     .CK(clk),
     .Q(\dpath.a_lt_b$in0[8] ),
@@ -1982,7 +2014,7 @@ module gcd_partition1 (clk,
     .QN(_380_));
  DFF_X1 _804_ (.D(_026_),
     .CK(clk),
-    .Q(\dpath.a_lt_b$in1[8] ),
+    .Q(\partition_dpath.a_lt_b$in1[8] ),
     .QN(_389_));
  DFF_X1 _805_ (.D(_027_),
     .CK(clk),
@@ -2010,6 +2042,6 @@ module gcd_partition1 (clk,
     .QN(_395_));
  DFF_X1 _811_ (.D(_033_),
     .CK(clk),
-    .Q(\dpath.a_lt_b$in1[15] ),
+    .Q(\partition_dpath.a_lt_b$in1[15] ),
     .QN(_396_));
 endmodule

@@ -107,8 +107,10 @@ VIAS 3 ;
     - via2_960x490 + VIARULE M2M3_PR + CUTSIZE 200 200  + LAYERS met2 via2 met3  + CUTSPACING 200 200  + ENCLOSURE 40 145 180 65  + ROWCOL 1 2  ;
     - via3_960x490 + VIARULE M3M4_PR + CUTSIZE 200 200  + LAYERS met3 via3 met4  + CUTSPACING 200 200  + ENCLOSURE 180 60 180 145  + ROWCOL 1 2  ;
 END VIAS
-COMPONENTS 1361 ;
-    - ANTENNA_1 sky130_fd_sc_hs__diode_2 + PLACED ( 124800 149850 ) FS ;
+COMPONENTS 1363 ;
+    - ANTENNA_1 sky130_fd_sc_hs__diode_2 + PLACED ( 143520 206460 ) N ;
+    - ANTENNA_2 sky130_fd_sc_hs__diode_2 + PLACED ( 194880 163170 ) FS ;
+    - ANTENNA_3 sky130_fd_sc_hs__diode_2 + PLACED ( 71040 149850 ) FS ;
     - PHY_0 sky130_fd_sc_hs__decap_4 + FIXED ( 9600 9990 ) FS ;
     - PHY_1 sky130_fd_sc_hs__decap_4 + FIXED ( 288000 9990 ) S ;
     - PHY_10 sky130_fd_sc_hs__decap_4 + FIXED ( 9600 26640 ) N ;
@@ -1316,7 +1318,7 @@ COMPONENTS 1361 ;
     - _551_ sky130_fd_sc_hs__a21oi_1 + PLACED ( 107520 56610 ) FS ;
     - _552_ sky130_fd_sc_hs__nand2_1 + PLACED ( 103680 66600 ) N ;
     - _553_ sky130_fd_sc_hs__nand2_1 + PLACED ( 107040 63270 ) FS ;
-    - _554_ sky130_fd_sc_hs__nand2_1 + PLACED ( 127680 153180 ) N ;
+    - _554_ sky130_fd_sc_hs__nand2_1 + PLACED ( 123840 149850 ) FS ;
     - _555_ sky130_fd_sc_hs__mux2_1 + PLACED ( 125760 163170 ) FS ;
     - _556_ sky130_fd_sc_hs__nand2_1 + PLACED ( 127680 159840 ) N ;
     - _557_ sky130_fd_sc_hs__nand2_1 + PLACED ( 124320 153180 ) N ;
@@ -1473,16 +1475,16 @@ END COMPONENTS
 PINS 54 ;
     - clk + NET clk + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 100080 299888 ) N ;
+        + LAYER met2 ( -70 -242 ) ( 70 243 )
+        + PLACED ( 100080 299887 ) N ;
     - req_msg[0] + NET req_msg[0] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -400 -150 ) ( 400 150 )
         + PLACED ( 400 59570 ) N ;
     - req_msg[10] + NET req_msg[10] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 243120 299888 ) N ;
+        + LAYER met2 ( -70 -242 ) ( 70 243 )
+        + PLACED ( 243120 299887 ) N ;
     - req_msg[11] + NET req_msg[11] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -400 -150 ) ( 400 150 )
@@ -1493,8 +1495,8 @@ PINS 54 ;
         + PLACED ( 400 225330 ) N ;
     - req_msg[13] + NET req_msg[13] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 218160 241 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 218160 240 ) N ;
     - req_msg[14] + NET req_msg[14] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -400 -150 ) ( 400 150 )
@@ -1505,12 +1507,12 @@ PINS 54 ;
         + PLACED ( 400 251970 ) N ;
     - req_msg[16] + NET req_msg[16] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 110640 241 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 110640 240 ) N ;
     - req_msg[17] + NET req_msg[17] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 225840 299888 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 225840 299890 ) N ;
     - req_msg[18] + NET req_msg[18] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -400 -150 ) ( 400 150 )
@@ -1521,8 +1523,8 @@ PINS 54 ;
         + PLACED ( 299560 130610 ) N ;
     - req_msg[1] + NET req_msg[1] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 153840 299888 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 153840 299890 ) N ;
     - req_msg[20] + NET req_msg[20] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -400 -150 ) ( 400 150 )
@@ -1533,24 +1535,24 @@ PINS 54 ;
         + PLACED ( 400 31450 ) N ;
     - req_msg[22] + NET req_msg[22] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 3120 241 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 3120 240 ) N ;
     - req_msg[23] + NET req_msg[23] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -400 -150 ) ( 400 150 )
         + PLACED ( 299560 47730 ) N ;
     - req_msg[24] + NET req_msg[24] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 271920 241 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 271920 240 ) N ;
     - req_msg[25] + NET req_msg[25] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -400 -150 ) ( 400 150 )
         + PLACED ( 299560 74370 ) N ;
     - req_msg[26] + NET req_msg[26] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 28080 299888 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 28080 299890 ) N ;
     - req_msg[27] + NET req_msg[27] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -400 -150 ) ( 400 150 )
@@ -1561,8 +1563,8 @@ PINS 54 ;
         + PLACED ( 299560 157250 ) N ;
     - req_msg[29] + NET req_msg[29] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 253680 241 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 253680 240 ) N ;
     - req_msg[2] + NET req_msg[2] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -400 -150 ) ( 400 150 )
@@ -1577,116 +1579,116 @@ PINS 54 ;
         + PLACED ( 299560 240130 ) N ;
     - req_msg[3] + NET req_msg[3] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 118320 299888 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 118320 299890 ) N ;
     - req_msg[4] + NET req_msg[4] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 20400 241 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 20400 240 ) N ;
     - req_msg[5] + NET req_msg[5] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 181680 241 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 181680 240 ) N ;
     - req_msg[6] + NET req_msg[6] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 64560 299888 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 64560 299890 ) N ;
     - req_msg[7] + NET req_msg[7] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 74160 241 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 74160 240 ) N ;
     - req_msg[8] + NET req_msg[8] + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 261360 299888 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 261360 299890 ) N ;
     - req_msg[9] + NET req_msg[9] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -400 -150 ) ( 400 150 )
         + PLACED ( 400 197210 ) N ;
     - req_rdy + NET net3 + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 207600 299888 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 207600 299890 ) N ;
     - req_val + NET req_val + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 235440 241 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 235440 240 ) N ;
     - reset + NET reset + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 199920 241 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 199920 240 ) N ;
     - resp_msg[0] + NET resp_msg[0] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 189360 299888 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 189360 299890 ) N ;
     - resp_msg[10] + NET resp_msg[10] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 81840 299888 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 81840 299890 ) N ;
     - resp_msg[11] + NET resp_msg[11] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 289200 241 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 289200 240 ) N ;
     - resp_msg[12] + NET resp_msg[12] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 46320 299888 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 46320 299890 ) N ;
     - resp_msg[13] + NET resp_msg[13] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 38640 241 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 38640 240 ) N ;
     - resp_msg[14] + NET resp_msg[14] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 127920 241 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 127920 240 ) N ;
     - resp_msg[15] + NET resp_msg[15] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -400 -150 ) ( 400 150 )
         + PLACED ( 299560 185370 ) N ;
     - resp_msg[1] + NET resp_msg[1] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 279600 299888 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 279600 299890 ) N ;
     - resp_msg[2] + NET resp_msg[2] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 146160 241 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 146160 240 ) N ;
     - resp_msg[3] + NET resp_msg[3] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 172080 299888 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 172080 299890 ) N ;
     - resp_msg[4] + NET resp_msg[4] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 164400 241 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 164400 240 ) N ;
     - resp_msg[5] + NET resp_msg[5] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 56880 241 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 56880 240 ) N ;
     - resp_msg[6] + NET resp_msg[6] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 92400 241 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 92400 240 ) N ;
     - resp_msg[7] + NET resp_msg[7] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 135600 299888 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 135600 299890 ) N ;
     - resp_msg[8] + NET resp_msg[8] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -400 -150 ) ( 400 150 )
         + PLACED ( 400 86210 ) N ;
     - resp_msg[9] + NET resp_msg[9] + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 10800 299888 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 10800 299890 ) N ;
     - resp_rdy + NET resp_rdy + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -400 -150 ) ( 400 150 )
         + PLACED ( 299560 213490 ) N ;
     - resp_val + NET resp_val + DIRECTION OUTPUT + USE SIGNAL
       + PORT
-        + LAYER met2 ( -70 -241 ) ( 70 242 )
-        + PLACED ( 296880 299888 ) N ;
+        + LAYER met2 ( -70 -240 ) ( 70 240 )
+        + PLACED ( 296880 299890 ) N ;
 END PINS
 SPECIALNETS 2 ;
     - VDD + USE POWER
@@ -3385,7 +3387,7 @@ NETS 411 ;
     - _322_ ( _665_ A ) ( _663_ Y ) + USE SIGNAL ;
     - _323_ ( _665_ B ) ( _664_ Y ) + USE SIGNAL ;
     - _324_ ( _666_ B ) ( _665_ X ) + USE SIGNAL ;
-    - clk ( PIN clk ) ( ANTENNA_1 DIODE ) ( clkbuf_0_clk A ) + USE CLOCK ;
+    - clk ( PIN clk ) ( clkbuf_0_clk A ) + USE CLOCK ;
     - clknet_0_clk ( clkbuf_2_3__f_clk A ) ( clkbuf_2_2__f_clk A ) ( clkbuf_2_1__f_clk A ) ( clkbuf_2_0__f_clk A ) ( clkbuf_0_clk X ) + USE CLOCK ;
     - clknet_2_0__leaf_clk ( _674_ CLK ) ( _675_ CLK ) ( _676_ CLK ) ( _677_ CLK ) ( _681_ CLK ) ( _690_ CLK ) ( _691_ CLK )
       ( _692_ CLK ) ( _694_ CLK ) ( _697_ CLK ) ( clkbuf_2_0__f_clk X ) + USE CLOCK ;
@@ -3459,7 +3461,7 @@ NETS 411 ;
     - req_msg[25] ( PIN req_msg[25] ) ( _639_ A1 ) + USE SIGNAL ;
     - req_msg[26] ( PIN req_msg[26] ) ( _643_ A1 ) + USE SIGNAL ;
     - req_msg[27] ( PIN req_msg[27] ) ( _646_ A1 ) + USE SIGNAL ;
-    - req_msg[28] ( PIN req_msg[28] ) ( _652_ A1 ) + USE SIGNAL ;
+    - req_msg[28] ( PIN req_msg[28] ) ( ANTENNA_1 DIODE ) ( _652_ A1 ) + USE SIGNAL ;
     - req_msg[29] ( PIN req_msg[29] ) ( _656_ A1 ) + USE SIGNAL ;
     - req_msg[2] ( PIN req_msg[2] ) ( _524_ B ) + USE SIGNAL ;
     - req_msg[30] ( PIN req_msg[30] ) ( _660_ A1 ) + USE SIGNAL ;
@@ -3474,10 +3476,10 @@ NETS 411 ;
     - req_rdy ( repeater4 A ) ( repeater3 A ) ( _568_ A ) ( _520_ A1 ) ( _338_ A ) ( _614_ A2 ) ( _635_ A2 )
       ( _555_ S ) ( _616_ A2 ) ( _646_ A2 ) ( _667_ Q ) ( _593_ A ) ( _340_ B ) + USE SIGNAL ;
     - req_val ( PIN req_val ) ( _344_ A1 ) ( _338_ B ) + USE SIGNAL ;
-    - reset ( PIN reset ) ( _346_ A1 ) ( _343_ B1 ) ( _339_ B1 ) ( _330_ A ) + USE SIGNAL ;
+    - reset ( PIN reset ) ( ANTENNA_2 DIODE ) ( _346_ A1 ) ( _343_ B1 ) ( _339_ B1 ) ( _330_ A ) + USE SIGNAL ;
     - resp_msg[0] ( PIN resp_msg[0] ) ( _596_ B ) ( _503_ B ) ( _328_ X ) + USE SIGNAL ;
     - resp_msg[10] ( PIN resp_msg[10] ) ( _641_ B ) ( _468_ X ) + USE SIGNAL ;
-    - resp_msg[11] ( PIN resp_msg[11] ) ( _648_ A ) ( _474_ Y ) + USE SIGNAL ;
+    - resp_msg[11] ( PIN resp_msg[11] ) ( ANTENNA_3 DIODE ) ( _648_ A ) ( _474_ Y ) + USE SIGNAL ;
     - resp_msg[12] ( PIN resp_msg[12] ) ( _650_ B ) ( _475_ Y ) + USE SIGNAL ;
     - resp_msg[13] ( PIN resp_msg[13] ) ( _654_ A ) ( _479_ Y ) + USE SIGNAL ;
     - resp_msg[14] ( PIN resp_msg[14] ) ( _658_ A ) ( _480_ X ) + USE SIGNAL ;

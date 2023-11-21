@@ -60,7 +60,7 @@ void dbBlockCallBackObj::removeOwner()
   if (_owner) {
     _dbBlock* block = (_dbBlock*) _owner;
     block->_callbacks.remove(this);
-    _owner = NULL;
+    _owner = nullptr;
   }
 }
 

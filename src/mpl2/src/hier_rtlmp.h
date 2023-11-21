@@ -113,6 +113,7 @@ class HierRTLMP
                       float fence_ux,
                       float fence_uy);
   void setHaloWidth(float halo_width);
+  void setHaloHeight(float halo_height);
   // Hierarchical Clustering Related Options
   void setNumBundledIOsPerBoundary(int num_bundled_ios);
   void setClusterSize(int max_num_macro,
@@ -143,6 +144,9 @@ class HierRTLMP
   {
     bus_planning_flag_ = bus_planning_flag;
   }
+  void setNumThreads(int threads) { num_threads_ = threads; }
+  void setMacroPlacementFile(const std::string& file_name);
+  void writeMacroPlacement(const std::string& file_name);
 
  private:
   void setDefaultThresholds();
@@ -195,7 +199,7 @@ class HierRTLMP
   void updateSubTree(Cluster* parent);
   // Break large flat clusters with TritonPart
   // A flat cluster does not have a logical module
-  void breakLargeFlatCluster(Cluster* cluster);
+  void breakLargeFlatCluster(Cluster* parent);
 
   // Traverse the physical hierarchy tree in a DFS manner
   // Split macros and std cells in the leaf clusters
@@ -212,7 +216,7 @@ class HierRTLMP
   void printPhysicalHierarchyTree(Cluster* parent, int level);
   // Determine the macro tilings within each cluster in a bottom-up manner
   // (Post-Order DFS manner)
-  void calClusterMacroTilings(Cluster* root_cluster);
+  void calClusterMacroTilings(Cluster* parent);
   // calculate the pin blockage for IO pins
   void createPinBlockage();
   // Determine the macro tilings for each HardMacroCluster
@@ -228,7 +232,7 @@ class HierRTLMP
   // generate a tiling for clusters.  In this case, we may want to try to set
   // the area of all standard-cell clusters to 0.0
   void enhancedMacroPlacement(Cluster* parent);
-  void hardMacroClusterMacroPlacement(Cluster* parent);
+  void hardMacroClusterMacroPlacement(Cluster* cluster);
   // Merge nets to reduce runtime
   void mergeNets(std::vector<BundledNet>& nets);
   // determine the shape for children cluster
@@ -245,12 +249,32 @@ class HierRTLMP
   void alignHardMacroGlobal(Cluster* parent);  // call this function after
                                                // multilevel macro placement
 
+  // Functions used to incorporate SA results in the children of a cluster
+  void updateChildrenShapesAndLocations(
+      Cluster* parent,
+      const std::vector<SoftMacro>& shaped_macros,
+      const std::map<std::string, int>& soft_macro_id_map);
+  void updateChildrenRealLocation(Cluster* parent,
+                                  float offset_x,
+                                  float offset_y);
+
   // force-directed placement to generate guides for macros
   void FDPlacement(std::vector<Rect>& blocks,
                    const std::vector<BundledNet>& nets,
                    float outline_width,
                    float outline_height,
-                   std::string file_name);
+                   const std::string& file_name);
+
+  // Update the locations of std cells in odb using the locations that
+  // HierRTLMP estimates for the leaf standard clusters
+  void generateTemporaryStdCellsPlacement(Cluster* cluster);
+  void setModuleStdCellsLocation(Cluster* cluster, odb::dbModule* module);
+  void setTemporaryStdCellLocation(Cluster* cluster, odb::dbInst* std_cell);
+
+  void correctAllMacrosOrientation();
+  float calculateRealMacroWirelength(odb::dbInst* macro);
+  void adjustRealMacroOrientation(const bool& is_vertical_flip);
+  void flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip);
 
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
@@ -263,7 +287,7 @@ class HierRTLMP
   const bool dynamic_congestion_weight_flag_ = false;
   // Our experiments show that for most testcases, turn off bus planning
   // can generate better results.
-  // We recommand that you turn off this flag for technology nodes with very
+  // We recommend that you turn on this flag for technology nodes with very
   // limited routing layers such as SkyWater130.  But for NanGate45,
   // ASASP7, you should turn off this option.
   bool bus_planning_flag_ = false;
@@ -278,6 +302,8 @@ class HierRTLMP
 
   // Parameters related to macro placement
   std::string report_directory_;
+  std::string macro_placement_file_;
+
   // User can specify a global region for some designs
   float global_fence_lx_ = std::numeric_limits<float>::max();
   float global_fence_ly_ = std::numeric_limits<float>::max();
@@ -285,10 +311,11 @@ class HierRTLMP
   float global_fence_uy_ = 0.0;
 
   float halo_width_ = 0.0;
+  float halo_height_ = 0.0;
 
-  const int num_runs_ = 10;     // number of runs for SA
-  const int num_threads_ = 10;  // number of threads
-  const int random_seed_ = 0;   // random seed for deterministic
+  const int num_runs_ = 10;    // number of runs for SA
+  int num_threads_ = 10;       // number of threads
+  const int random_seed_ = 0;  // random seed for deterministic
 
   float target_dead_space_ = 0.2;  // dead space for the cluster
   float target_util_ = 0.25;       // target utilization of the design
@@ -347,7 +374,7 @@ class HierRTLMP
   float pos_swap_prob_ = 0.2;
   float neg_swap_prob_ = 0.2;
   float double_swap_prob_ = 0.2;
-  float exchange_swap_prob_ = 0.0;
+  float exchange_swap_prob_ = 0.2;
   float flip_prob_ = 0.4;
   float resize_prob_ = 0.4;
 

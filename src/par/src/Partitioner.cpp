@@ -77,9 +77,9 @@ void Partitioner::Partition(const HGraphPtr& hgraph,
                             std::vector<int>& solution,
                             PartitionType partitioner_choice) const
 {
-  if (static_cast<int>(solution.size()) != hgraph->num_vertices_) {
+  if (static_cast<int>(solution.size()) != hgraph->GetNumVertices()) {
     solution.clear();
-    solution.resize(hgraph->num_vertices_);
+    solution.resize(hgraph->GetNumVertices());
     std::fill(solution.begin(), solution.end(), -1);
   }
   switch (partitioner_choice) {
@@ -123,30 +123,27 @@ void Partitioner::RandomPart(const HGraphPtr& hgraph,
 {
   // the summation of vertex weights for vertices in current block
   Matrix<float> block_balance(
-      num_parts_, std::vector<float>(hgraph->vertex_dimensions_, 0.0f));
+      num_parts_, std::vector<float>(hgraph->GetVertexDimensions(), 0.0f));
   // determine all the free vertices
-  std::vector<bool> visited(hgraph->num_vertices_,
+  std::vector<bool> visited(hgraph->GetNumVertices(),
                             false);  // if the vertex has been visited
   std::vector<int> vertices;         // the vertices can be moved
   std::vector<int> path_vertices;
   // Step 1: check fixed vertices
-  if (hgraph->fixed_vertex_flag_ == true) {
-    for (int v = 0; v < hgraph->num_vertices_; v++) {
-      if (hgraph->fixed_attr_[v] > -1) {
-        solution[v] = hgraph->fixed_attr_[v];
+  if (hgraph->HasFixedVertices()) {
+    for (int v = 0; v < hgraph->GetNumVertices(); v++) {
+      if (hgraph->GetFixedAttr(v) > -1) {
+        solution[v] = hgraph->GetFixedAttr(v);
         block_balance[solution[v]]
-            = block_balance[solution[v]] + hgraph->vertex_weights_[v];
+            = block_balance[solution[v]] + hgraph->GetVertexWeights(v);
         visited[v] = true;
       }
     }
   }
   // Step 2: put all the vertices related to critical timing paths together
-  if (hgraph->num_timing_paths_ > 0) {
-    for (int i = 0; i < hgraph->num_timing_paths_; ++i) {
-      const int first_valid_entry = hgraph->vptr_p_[i];
-      const int first_invalid_entry = hgraph->vptr_p_[i + 1];
-      for (int j = first_valid_entry; j < first_invalid_entry; ++j) {
-        const int v = hgraph->vind_p_[j];
+  if (hgraph->GetNumTimingPaths() > 0) {
+    for (int i = 0; i < hgraph->GetNumTimingPaths(); ++i) {
+      for (const int v : hgraph->PathVertices(i)) {
         if (visited[v] == false) {
           visited[v] = true;
           path_vertices.push_back(v);
@@ -158,7 +155,7 @@ void Partitioner::RandomPart(const HGraphPtr& hgraph,
                  std::default_random_engine(seed_));
   }
   // Step 3: check remaining vertices
-  for (int v = 0; v < hgraph->num_vertices_; v++) {
+  for (int v = 0; v < hgraph->GetNumVertices(); v++) {
     if (visited[v] == false) {
       vertices.push_back(v);
     }
@@ -176,7 +173,7 @@ void Partitioner::RandomPart(const HGraphPtr& hgraph,
     for (const auto& v : vertices) {
       solution[v] = block_id;
       block_balance[block_id]
-          = block_balance[block_id] + hgraph->vertex_weights_[v];
+          = block_balance[block_id] + hgraph->GetVertexWeights(v);
       if (block_balance[block_id] >= lower_block_balance[block_id]) {
         block_id++;
         block_id = block_id % num_parts_;  // adjust the block_id
@@ -191,7 +188,7 @@ void Partitioner::RandomPart(const HGraphPtr& hgraph,
     for (const auto& v : vertices) {
       solution[v] = block_id;
       block_balance[block_id]
-          = block_balance[block_id] + hgraph->vertex_weights_[v];
+          = block_balance[block_id] + hgraph->GetVertexWeights(v);
       if (block_balance[block_id] >= upper_block_balance[block_id]
           && stop_flag == false) {
         block_id++;
@@ -213,18 +210,18 @@ void Partitioner::ILPPart(const HGraphPtr& hgraph,
   logger_->report("[STATUS] Optimal ILP-based Partitioning Starts !");
   std::map<int, int> fixed_vertices_map;
   Matrix<float> vertex_weights;  // two-dimensional
-  vertex_weights.reserve(hgraph->num_vertices_);
+  vertex_weights.reserve(hgraph->GetNumVertices());
   Matrix<int> hyperedges;                // hyperedges
   std::vector<float> hyperedge_weights;  // one-dimensional
   // set vertices
-  for (int v = 0; v < hgraph->num_vertices_; v++) {
-    vertex_weights.push_back(hgraph->vertex_weights_[v]);
+  for (int v = 0; v < hgraph->GetNumVertices(); v++) {
+    vertex_weights.push_back(hgraph->GetVertexWeights(v));
   }
   // check fixed vertices
-  if (hgraph->fixed_vertex_flag_ == true) {
-    for (int v = 0; v < hgraph->num_vertices_; v++) {
-      if (hgraph->fixed_attr_[v] > -1) {
-        solution[v] = hgraph->fixed_attr_[v];
+  if (hgraph->HasFixedVertices()) {
+    for (int v = 0; v < hgraph->GetNumVertices(); v++) {
+      if (hgraph->GetFixedAttr(v) > -1) {
+        solution[v] = hgraph->GetFixedAttr(v);
       }
     }
   }
@@ -233,7 +230,7 @@ void Partitioner::ILPPart(const HGraphPtr& hgraph,
   if (ilp_accelerator_factor_ >= 1.0) {
     logger_->report(
         "All the hyperedges will be used in the ILP-based partitioning!");
-    edge_mask.resize(hgraph->num_hyperedges_);
+    edge_mask.resize(hgraph->GetNumHyperedges());
     std::iota(edge_mask.begin(), edge_mask.end(), 0);
   } else if (ilp_accelerator_factor_ > 0.0) {
     // define comp structure to compare hyperedge ( function: >)
@@ -252,7 +249,7 @@ void Partitioner::ILPPart(const HGraphPtr& hgraph,
     // use set data structure to sort hyperedges
     std::set<std::pair<int, float>, comp> unvisited_hyperedges;
     float tot_cost = 0.0;  // total hyperedge cut
-    for (auto e = 0; e < hgraph->num_hyperedges_; ++e) {
+    for (auto e = 0; e < hgraph->GetNumHyperedges(); ++e) {
       const float score = evaluator_->CalculateHyperedgeCost(e, hgraph);
       unvisited_hyperedges.insert(std::pair<int, float>(e, score));
       tot_cost += score;
@@ -273,7 +270,7 @@ void Partitioner::ILPPart(const HGraphPtr& hgraph,
     logger_->info(PAR,
                   162,
                   "Reduce the number of hyperedges from {} to {}.",
-                  hgraph->num_hyperedges_,
+                  hgraph->GetNumHyperedges(),
                   edge_mask.size());
   } else {
     logger_->warn(
@@ -285,15 +282,14 @@ void Partitioner::ILPPart(const HGraphPtr& hgraph,
   hyperedges.reserve(edge_mask.size());
   for (auto& e : edge_mask) {
     std::vector<int> hyperedge;
-    for (auto eptr_id = hgraph->eptr_[e]; eptr_id < hgraph->eptr_[e + 1];
-         eptr_id++) {
-      hyperedge.push_back(hgraph->eind_[eptr_id]);
+    for (const int vertex_id : hgraph->Vertices(e)) {
+      hyperedge.push_back(vertex_id);
     }
     hyperedges.push_back(hyperedge);
     hyperedge_weights.push_back(evaluator_->CalculateHyperedgeCost(e, hgraph));
   }
   if (ILPPartitionInst(num_parts_,
-                       hgraph->vertex_dimensions_,
+                       hgraph->GetVertexDimensions(),
                        solution,
                        fixed_vertices_map,
                        hyperedges,
@@ -317,23 +313,23 @@ void Partitioner::VilePart(const HGraphPtr& hgraph,
 {
   std::fill(solution.begin(), solution.end(), 0);
   std::vector<int> unvisited;
-  unvisited.reserve(hgraph->num_vertices_);
+  unvisited.reserve(hgraph->GetNumVertices());
   // sort the vertices based on vertex weight
   // calculate the weight for all the vertices
-  std::vector<float> average_sizes(hgraph->num_vertices_, 0.0);
+  std::vector<float> average_sizes(hgraph->GetNumVertices(), 0.0);
   // check fixed vertices
   // Step 1: check fixed vertices
-  if (hgraph->fixed_vertex_flag_ == true) {
-    for (int v = 0; v < hgraph->num_vertices_; v++) {
-      if (hgraph->fixed_attr_[v] > -1) {
-        solution[v] = hgraph->fixed_attr_[v];
+  if (hgraph->HasFixedVertices()) {
+    for (int v = 0; v < hgraph->GetNumVertices(); v++) {
+      if (hgraph->GetFixedAttr(v) > -1) {
+        solution[v] = hgraph->GetFixedAttr(v);
       } else {
         unvisited.push_back(v);
         average_sizes[v] = evaluator_->GetVertexWeightNorm(v, hgraph);
       }
     }
   } else {
-    for (int v = 0; v < hgraph->num_vertices_; v++) {
+    for (int v = 0; v < hgraph->GetNumVertices(); v++) {
       unvisited.push_back(v);
       average_sizes[v] = evaluator_->GetVertexWeightNorm(v, hgraph);
     }

@@ -1,0 +1,31 @@
+# Read the Docs configuration file for Sphinx projects
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+
+# Required
+version: 2
+
+# Set the OS, Python version and other tools you might need
+build:
+  os: ubuntu-22.04
+  apt_packages:
+    - libasound2
+  tools:
+    python: "3.7"
+    nodejs: "16"
+  jobs:
+    post_install:
+      - npm install -g @mermaid-js/mermaid-cli
+
+# Build documentation in the "docs/" directory with Sphinx
+sphinx:
+  configuration: docs/conf.py
+
+formats:
+  - pdf 
+
+# Optional but recommended, declare the Python requirements required
+# to build your documentation
+# See https://docs.readthedocs.io/en/stable/guides/reproducible-builds.html
+python:
+   install:
+   - requirements: docs/requirements.txt

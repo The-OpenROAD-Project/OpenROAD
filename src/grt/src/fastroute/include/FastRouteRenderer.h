@@ -15,10 +15,8 @@ namespace grt {
 class FastRouteRenderer : public gui::Renderer, public AbstractFastRouteRenderer
 {
  public:
-  FastRouteRenderer(odb::dbTech* tech,
-                    int tile_size,
-                    int x_corner,
-                    int y_corner);
+  FastRouteRenderer(odb::dbTech* tech);
+  void setGridVariables(int tile_size, int x_corner, int y_corner) override;
   void highlight(const FrNet* net) override;
   void setSteinerTree(const stt::Tree& stree) override;
   void setStTreeValues(const StTree& stree) override;

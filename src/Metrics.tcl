@@ -163,7 +163,7 @@ proc report_units_metric { args } {
   utl::push_metrics_stage "run__flow__platform__{}_units"
 
   foreach unit {"time" "capacitance" "resistance" "voltage" "current" "power" "distance"} {
-    utl::metric $unit "1[unit_scale_abreviation $unit][unit_suffix $unit]"
+    utl::metric $unit "1[unit_scale_abbreviation $unit][unit_suffix $unit]"
   }
 
   utl::pop_metrics_stage

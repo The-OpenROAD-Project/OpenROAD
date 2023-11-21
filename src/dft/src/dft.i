@@ -77,7 +77,7 @@ void set_dft_config_clock_mixing(const char* clock_mixing_ptr)
   } else if (clock_mixing == "clock_mix") {
     getDft()->getMutableDftConfig()->getMutableScanArchitectConfig()->setClockMixing(dft::ScanArchitectConfig::ClockMixing::ClockMix);
   } else {
-    getLogger()->error(utl::DFT, 5, "Requested clock mixing config not valid");
+    getLogger()->error(utl::DFT, 6, "Requested clock mixing config not valid");
   }
 }
 

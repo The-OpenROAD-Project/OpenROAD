@@ -308,13 +308,13 @@ void _dbBox::out(dbDiff& diff, char side, const char* field) const
 _dbTechLayer* _dbBox::getTechLayer() const
 {
   if (_flags._layer_id == 0)
-    return NULL;
+    return nullptr;
 
   switch (_flags._owner_type) {
     case dbBoxOwner::UNKNOWN:
     case dbBoxOwner::BLOCKAGE:
     case dbBoxOwner::REGION:
-      return NULL;
+      return nullptr;
 
     case dbBoxOwner::BLOCK:
     case dbBoxOwner::INST:
@@ -323,15 +323,16 @@ _dbTechLayer* _dbBox::getTechLayer() const
     case dbBoxOwner::VIA:
     case dbBoxOwner::OBSTRUCTION:
     case dbBoxOwner::SWIRE: {
-      _dbDatabase* db = (_dbDatabase*) getDatabase();
-      _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
+      _dbBlock* block = (_dbBlock*) getOwner();
+      _dbTech* tech = block->getTech();
       return tech->_layer_tbl->getPtr(_flags._layer_id);
     }
 
     case dbBoxOwner::MASTER:
     case dbBoxOwner::MPIN: {
-      _dbDatabase* db = (_dbDatabase*) getDatabase();
-      _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
+      _dbMaster* master = (_dbMaster*) getOwner();
+      _dbLib* lib = (_dbLib*) master->getOwner();
+      _dbTech* tech = lib->getTech();
       return tech->_layer_tbl->getPtr(_flags._layer_id);
     }
 
@@ -342,20 +343,20 @@ _dbTechLayer* _dbBox::getTechLayer() const
   }
 
   ZASSERT(0);
-  return NULL;
+  return nullptr;
 }
 
 _dbTechVia* _dbBox::getTechVia() const
 {
   if (_flags._is_tech_via == 0)
-    return NULL;
+    return nullptr;
 
   switch (_flags._owner_type) {
     case dbBoxOwner::UNKNOWN:
     case dbBoxOwner::BLOCKAGE:
     case dbBoxOwner::OBSTRUCTION:
     case dbBoxOwner::REGION:
-      return NULL;
+      return nullptr;
 
     case dbBoxOwner::BLOCK:
     case dbBoxOwner::INST:
@@ -364,16 +365,16 @@ _dbTechVia* _dbBox::getTechVia() const
     case dbBoxOwner::VIA:
     case dbBoxOwner::SWIRE: {
       _dbBlock* block = (_dbBlock*) getOwner();
-      _dbDatabase* db = (_dbDatabase*) block->getDatabase();
-      _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
+      _dbTech* tech = block->getTech();
       return tech->_via_tbl->getPtr(_flags._via_id);
     }
 
     case dbBoxOwner::MASTER:
     case dbBoxOwner::MPIN: {
       _dbMaster* master = (_dbMaster*) getOwner();
+      _dbLib* lib = (_dbLib*) master->getOwner();
       _dbDatabase* db = (_dbDatabase*) master->getDatabase();
-      _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
+      _dbTech* tech = db->_tech_tbl->getPtr(lib->_tech);
       return tech->_via_tbl->getPtr(_flags._via_id);
     }
 
@@ -383,18 +384,18 @@ _dbTechVia* _dbBox::getTechVia() const
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 _dbVia* _dbBox::getBlockVia() const
 {
   if (_flags._is_block_via == 0)
-    return NULL;
+    return nullptr;
 
   switch (_flags._owner_type) {
     case dbBoxOwner::UNKNOWN:
     case dbBoxOwner::REGION:
-      return NULL;
+      return nullptr;
 
     case dbBoxOwner::BLOCK:
     case dbBoxOwner::INST:
@@ -415,7 +416,7 @@ _dbVia* _dbBox::getBlockVia() const
       break;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 void _dbBox::getViaXY(int& x, int& y) const
@@ -663,7 +664,7 @@ dbObject* dbBox::getBoxOwner()
 
   switch (box->_flags._owner_type) {
     case dbBoxOwner::UNKNOWN:
-      return NULL;
+      return nullptr;
 
     case dbBoxOwner::BLOCK: {
       return owner;
@@ -725,7 +726,7 @@ dbObject* dbBox::getBoxOwner()
   }
 
   ZASSERT(0);
-  return NULL;
+  return nullptr;
 }
 
 dbBoxOwner dbBox::getOwnerType()
@@ -851,7 +852,7 @@ dbBox* dbBox::create(dbMaster* master_, dbTechVia* via_, int x, int y)
   _dbTechVia* via = (_dbTechVia*) via_;
 
   if (via->_bbox == 0)
-    return NULL;
+    return nullptr;
 
   _dbTech* tech = (_dbTech*) via->getOwner();
   _dbBox* vbbox = tech->_box_tbl->getPtr(via->_bbox);
@@ -901,7 +902,7 @@ dbBox* dbBox::create(dbMPin* pin_, dbTechVia* via_, int x, int y)
   _dbTechVia* via = (_dbTechVia*) via_;
 
   if (via->_bbox == 0)
-    return NULL;
+    return nullptr;
 
   _dbMaster* master = (_dbMaster*) pin->getOwner();
   _dbTech* tech = (_dbTech*) via->getOwner();
@@ -1001,7 +1002,7 @@ dbBox* dbBox::create(dbInst* inst_, int x1, int y1, int x2, int y2)
   _dbBlock* block = (_dbBlock*) inst->getOwner();
 
   if (inst->_halo)
-    return NULL;
+    return nullptr;
 
   _dbBox* box = block->_box_tbl->create();
   box->_flags._octilinear = false;

@@ -53,11 +53,11 @@ class ScanCellsBucket
   ScanCellsBucket& operator=(const ScanCellsBucket&) = delete;
 
   // Gets the next scan cell of the given hash domain
-  std::shared_ptr<ScanCell> pop(size_t hash_domain);
+  std::unique_ptr<ScanCell> pop(size_t hash_domain);
 
   // Init the scan cell bucket with with the given config and scan cells
   void init(const ScanArchitectConfig& config,
-            const std::vector<std::shared_ptr<ScanCell>>& scan_cells);
+            std::vector<std::unique_ptr<ScanCell>>& scan_cells);
 
   // Returns the number of bits we need to include in each hash domain
   std::unordered_map<size_t, uint64_t> getTotalBitsPerHashDomain() const;
@@ -66,7 +66,7 @@ class ScanCellsBucket
   uint64_t numberOfCells(size_t hash_domain) const;
 
  private:
-  std::unordered_map<size_t, std::vector<std::shared_ptr<ScanCell>>> buckets_;
+  std::unordered_map<size_t, std::vector<std::unique_ptr<ScanCell>>> buckets_;
   utl::Logger* logger_;
 };
 

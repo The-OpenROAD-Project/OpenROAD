@@ -44,23 +44,22 @@ template <class T>
 class dbVector : public std::vector<T>
 {
  public:
-  typedef typename std::vector<T>::iterator iterator;
-  typedef typename std::vector<T>::const_iterator const_iterator;
-  typedef std::vector<T> _base;
+  using iterator = typename std::vector<T>::iterator;
+  using const_iterator = typename std::vector<T>::const_iterator;
+  using _base = std::vector<T>;
 
   dbVector<T>& operator=(const std::vector<T>& v)
   {
-    if (this != &v)
+    if (this != &v) {
       *(std::vector<T>*) this = v;
+    }
 
     return *this;
   }
 
-  dbVector() {}
+  dbVector() = default;
 
   dbVector(const dbVector<T>& v) : std::vector<T>(v) {}
-
-  ~dbVector() {}
 
   iterator begin() { return _base::begin(); }
   iterator end() { return _base::end(); }
@@ -76,23 +75,22 @@ template <class T>
 class dbVector<T*> : public std::vector<T*>
 {
  public:
-  typedef typename std::vector<T*>::iterator iterator;
-  typedef typename std::vector<T*>::const_iterator const_iterator;
-  typedef std::vector<T*> _base;
+  using iterator = typename std::vector<T*>::iterator;
+  using const_iterator = typename std::vector<T*>::const_iterator;
+  using _base = std::vector<T*>;
 
   dbVector<T*>& operator=(const std::vector<T*>& v)
   {
-    if (this != &v)
+    if (this != &v) {
       *(std::vector<T>*) this = v;
+    }
 
     return *this;
   }
 
-  dbVector() {}
+  dbVector() = default;
 
   dbVector(const dbVector<T*>& v) : std::vector<T*>(v) {}
-
-  ~dbVector() {}
 
   iterator begin() { return _base::begin(); }
   iterator end() { return _base::end(); }
@@ -101,15 +99,18 @@ class dbVector<T*> : public std::vector<T*>
 
   bool operator==(const dbVector<T*>& rhs) const
   {
-    if (_base::size() != rhs.size())
+    if (_base::size() != rhs.size()) {
       return false;
+    }
 
     typename dbVector<T*>::const_iterator i1 = begin();
     typename dbVector<T*>::const_iterator i2 = rhs.begin();
 
-    for (; i1 != end(); ++i1, ++i2)
-      if (**i1 != **i2)
+    for (; i1 != end(); ++i1, ++i2) {
+      if (**i1 != **i2) {
         return false;
+      }
+    }
 
     return true;
   }
@@ -217,18 +218,18 @@ inline void dbVector<T*>::differences(dbDiff& diff,
   for (; i1 != end() && i2 != rhs.end(); ++i1, ++i2, ++i) {
     if (*i1 != *i2) {
       diff.report("<> %s[%d]:\n", field, i);
-      (*i1)->differences(diff, NULL, *(*i2));
+      (*i1)->differences(diff, nullptr, *(*i2));
     }
   }
 
   for (; i1 != end(); ++i1, ++i) {
     diff.report("< %s[%d]:\n", field, i);
-    (*i1)->out(diff, dbDiff::LEFT, NULL);
+    (*i1)->out(diff, dbDiff::LEFT, nullptr);
   }
 
   for (; i2 != rhs.end(); ++i2, ++i) {
     diff.report("> %s[%d]:\n", field, i);
-    (*i2)->out(diff, dbDiff::RIGHT, NULL);
+    (*i2)->out(diff, dbDiff::RIGHT, nullptr);
   }
 }
 
@@ -240,7 +241,7 @@ inline void dbVector<T*>::out(dbDiff& diff, char side, const char* field) const
 
   for (; i1 != end(); ++i1, ++i) {
     diff.report("%c %s[%d]:\n", side, field, i);
-    (*i1)->out(diff, side, NULL);
+    (*i1)->out(diff, side, nullptr);
   }
 }
 

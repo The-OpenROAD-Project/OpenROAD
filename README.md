@@ -1,6 +1,9 @@
 # OpenROAD
 
-[![Build Status](https://jenkins.openroad.tools/buildStatus/icon?job=OpenROAD-Public%2Fmaster)](https://jenkins.openroad.tools/job/OpenROAD-Public/job/master/) [![Coverity Scan Status](https://scan.coverity.com/projects/the-openroad-project-openroad/badge.svg)](https://scan.coverity.com/projects/the-openroad-project-openroad) [![Documentation Status](https://readthedocs.org/projects/openroad/badge/?version=latest)](https://openroad.readthedocs.io/en/latest/?badge=latest) [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5370/badge)](https://bestpractices.coreinfrastructure.org/projects/5370)
+[![Build Status](https://jenkins.openroad.tools/buildStatus/icon?job=OpenROAD-Public%2Fmaster)](https://jenkins.openroad.tools/job/OpenROAD-Public/job/master/)
+[![Coverity Scan Status](https://scan.coverity.com/projects/the-openroad-project-openroad/badge.svg)](https://scan.coverity.com/projects/the-openroad-project-openroad)
+[![Documentation Status](https://readthedocs.org/projects/openroad/badge/?version=latest)](https://openroad.readthedocs.io/en/latest/?badge=latest)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5370/badge)](https://bestpractices.coreinfrastructure.org/en/projects/5370)
 
 ## About OpenROAD
 
@@ -9,9 +12,67 @@ semiconductor digital design. The OpenROAD flow delivers an
 Autonomous, No-Human-In-Loop (NHIL) flow, 24 hour turnaround from
 RTL-GDSII for rapid design exploration and physical design implementation.
 
-![rtl2gds.svg](./docs/images/rtl2gds.svg)
+```mermaid
+%%{
+  init: {
+    'theme': 'neutral',
+    'themeVariables': {
+      'textColor': '#000000',
+      'noteTextColor' : '#000000',
+      'fontSize': '20px'
+    }
+  }
+}%%
 
-Documentation is also available [here](https://openroad.readthedocs.io/en/latest/main/README.html).
+flowchart LR
+    b0[                  ] --- b2[ ] --- b4[ ] --- ORFlow --- b1[ ] --- b3[ ] --- b5[                  ]
+    style b0 stroke-width:0px, fill: #FFFFFF00, color:#FFFFFF00
+    style b1 stroke-width:0px, fill: #FFFFFF00
+    style b2 stroke-width:0px, fill: #FFFFFF00
+    style b3 stroke-width:0px, fill: #FFFFFF00
+    style b4 stroke-width:0px, fill: #FFFFFF00
+    style b5 stroke-width:0px, fill: #FFFFFF00, color:#FFFFFF00
+
+    linkStyle 0 stroke-width:0px
+    linkStyle 1 stroke-width:0px
+    linkStyle 2 stroke-width:0px
+    linkStyle 3 stroke-width:0px
+    linkStyle 4 stroke-width:0px
+    linkStyle 5 stroke-width:0px
+
+
+    subgraph ORFlow
+    direction TB
+    style ORFlow fill:#ffffff00, stroke-width:0px
+        A[Verilog\n+ libraries\n + constraints] --> FLOW
+        style A fill:#74c2b5,stroke:#000000,stroke-width:4px
+        subgraph FLOW
+        style FLOW fill:#FFFFFF00,stroke-width:4px
+
+        direction TB
+            B[Synthesis]
+            B --> C[Floorplan]
+            C --> D[Placement]
+            D --> E[Clock Tree Synthesis]
+            E --> F[Routing]
+            F --> G[Finishing]
+            style B fill:#f8cecc,stroke:#000000,stroke-width:4px
+            style C fill:#fff2cc,stroke:#000000,stroke-width:4px
+            style D fill:#cce5ff,stroke:#000000,stroke-width:4px
+            style E fill:#67ab9f,stroke:#000000,stroke-width:4px
+            style F fill:#fa6800,stroke:#000000,stroke-width:4px
+            style G fill:#ff6666,stroke:#000000,stroke-width:4px
+        end
+
+        FLOW --> H[GDSII\n Final Layout]
+        %% H --- H1[ ]
+        %% style H1 stroke-width:0px, fill: #FFFFFF00
+        %% linkStyle 11 stroke-width:0px
+        style H fill:#ff0000,stroke:#000000,stroke-width:4px
+    end
+
+```
+
 
 ## OpenROAD Mission
 
@@ -21,7 +82,7 @@ open access to rapid, low-cost IC design software and expertise and
 system innovation. The OpenROAD application enables flexible flow
 control through an API with bindings in Tcl and Python.
 
-OpenROAD is used in reserach and commercial applications such as,
+OpenROAD is used in research and commercial applications such as,
 - [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)
   from [OpenROAD](https://theopenroadproject.org/)
 - [OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) from
@@ -47,12 +108,12 @@ includes GlobalFoundries shuttles, design contests and IC design
 workshops. The OpenROAD flow has been successfully used to date
 in over 600 silicon-ready tapeouts for technologies up to 12nm.
 
-## OpenROAD Flow Stages
+## Getting Started with OpenROAD-flow-scripts
 
 OpenROAD provides [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)
 as a native, ready-to-use prototyping and tapeout flow. However,
 it also enables the creation of any custom flow controllers based
-on the underlying tools, database and analysis engines.
+on the underlying tools, database and analysis engines. Please refer to the flow documentation [here](https://openroad-flow-scripts.readthedocs.io/en/latest/).
 
 OpenROAD-flow-scripts (ORFS) is a fully autonomous, RTL-GDSII flow
 for rapid architecture and design space exploration, early prediction
@@ -62,20 +123,53 @@ flow stages through Tcl commands and Python APIs.
 
 Figure below shows the main stages of the OpenROAD-flow-scripts:
 
-![ORFS_Flow.webp](./docs/images/ORFS_Flow.svg)
+```mermaid
+%%{init: { 'logLevel': 'debug', 'theme': 'dark'
+  } }%%
+timeline
+  title RTL-GDSII Using OpenROAD-flow-scripts
+  Synthesis
+    : Inputs  [RTL, SDC, .lib, .lef]
+    : Logic Synthesis  (Yosys)
+    : Output files  [Netlist, SDC]
+  Floorplan
+    : Floorplan Initialization
+    : IO placement  (random)
+    : Timing-driven mixed-size placement
+    : Macro placement
+    : Tapcell and welltie insertion
+    : PDN generation
+  Placement
+    : Global placement without placed IOs
+    : IO placement  (optimized)
+    : Global placement with placed IOs
+    : Resizing and buffering
+    : Detailed placement
+  CTS : Clock Tree Synthesis
+    : Timing optimization
+    : Filler cell insertion
+  Routing
+    : Global Routing
+    : Detailed Routing
+  Finishing
+    : Metal Fill insertion
+    : Signoff timing report
+    : Generate GDSII  (KLayout)
+    : DRC/LVS check (KLayout)
+```
 
 Here are the main steps for a physical design implementation
 using OpenROAD;
 
 - `Floorplanning`
-  - Floorplan initialization - define the chip area, utilization 
+  - Floorplan initialization - define the chip area, utilization
   - IO pin placement (for designs without pads)
-  - Tap cell and well tie insertion 
+  - Tap cell and well tie insertion
   - PDN- power distribution network creation
 - `Global Placement` - Minimize wirelengths
   - Macro placement (RAMs, embedded macros)
   - Standard cell placement
-  - Automatic placement optimization and repair for max slew, 
+  - Automatic placement optimization and repair for max slew,
     max capacitance, and max fanout violations and long wires
 - `Detailed Placement`
   - Legalize placement - align to grid, adhere to design rules
@@ -93,7 +187,7 @@ using OpenROAD;
 - `Chip Finishing`
   - Parasitic extraction using OpenRCX
   - Final timing verification
-  - Final physical verification 
+  - Final physical verification
   - Dummy metal fill for manufacturability
   - Use KLayout or Magic using generated GDS for DRC signoff
 
@@ -101,22 +195,28 @@ using OpenROAD;
 
 The OpenROAD GUI is a powerful visualization, analysis, and debugging
 tool with a customizable Tcl interface. The below figures show GUI views for
-various flow stages including post-routed timing, placement congestion, and
-CTS.
+various flow stages including floorplanning, placement congestion,
+CTS and post-routed design.
 
-![ibexGui.webp](./docs/images/ibexGui.webp)
+#### Floorplan
 
-### Automatic Hierarchical Macro Placement
+![ibex_floorplan.webp](./docs/images/ibex_floorplan.webp)
+
+#### Automatic Hierarchical Macro Placement
 
 ![Ariane133](./docs/images/ariane133_mpl2.webp)
 
-### Placement Congestion Visualization
+#### Placement Congestion Visualization
 
 ![pl_congestion.webp](./docs/images/pl_congestion.webp)
 
-### CTS
+#### CTS
 
 ![clk_routing.webp](./docs/images/clk_routing.webp)
+
+#### Routing
+
+![ibex_routing.webp](./docs/images/ibex_routing.webp)
 
 ### PDK Support
 
@@ -176,31 +276,51 @@ transceivers, OpenPower-based Microwatt etc.
 ## Build OpenROAD
 
 To build OpenROAD tools locally in your machine, follow steps
-from [here](./docs/user/Build.md).
+from [here](docs/user/Build.md).
 
 ## Regression Tests
 
-There are a set of regression tests in `test/`.
+There are a set of executable regression test scripts in `./test/`.
 
 ``` shell
-# run all tool unit tests
-test/regression
+# run tests for all tools
+./test/regression
+
 # run all flow tests
-test/regression flow
+./test/regression flow
+
 # run <tool> tests
-test/regression <tool>
-# run <tool> tool tests
-src/<tool>/test/regression
+./test/regression <tool>
+
+# run all <tool>-specific unit tests
+cd src/<tool>
+./test/regression
+
+# run only <TEST_NAME> for <tool>
+cd src/<tool>
+./test/regression <TEST_NAME>
 ```
 
 The flow tests check results such as worst slack against reference values.
 Use `report_flow_metrics [test]...` to see all of the metrics.
-Use `save_flow_metrics [test]...` to add margins to the metrics and save them to <test>.metrics_limits.
 
 ``` text
 % report_flow_metrics gcd_nangate45
                        insts    area util slack_min slack_max  tns_max clk_skew max_slew max_cap max_fanout DPL ANT drv
 gcd_nangate45            368     564  8.8     0.112    -0.015     -0.1    0.004        0       0          0   0   0   0
+```
+
+To update a failing regression, follow the instructions below:
+
+```tcl
+# update log files (i.e. *ok)
+save_ok <TEST_NAME>
+
+# update "*.metrics" for tests that use flow test
+save_flow_metrics <TEST_NAME> 
+
+# update "*.metrics_limits" files
+save_flow_metrics_limits <TEST_NAME>
 ```
 
 ## Run
@@ -228,7 +348,16 @@ the command line. Unless the `-exit` command line flag is specified, it
 enters an interactive Tcl command interpreter.
 
 A list of the available tools/modules included in the OpenROAD app
-and there descriptions are available [here](./docs/contrib/Logger.md#openroad-tool-list).
+and their descriptions are available [here](docs/contrib/Logger.md#openroad-tool-list).
+
+## Git Quickstart
+OpenROAD uses Git for version control and contributions. 
+Get familiarised with a quickstart tutorial to contribution [here](docs/contrib/GitGuide.md).
+
+
+## Understanding Warning and Error Messages
+Seeing OpenROAD warnings or errors you do not understand? We have compiled a table of all messages
+and you may potentially find your answer [here](https://openroad.readthedocs.io/en/latest/user/MessagesFinal.html).
 
 ## License
 

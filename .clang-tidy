@@ -27,6 +27,7 @@ Checks: >
   -google-readability-casting,
   -google-readability-todo,
   -google-runtime-references,
+  -google-explicit-constructor,
   performance-*,
   bugprone-*,
   -bugprone-branch-clone,

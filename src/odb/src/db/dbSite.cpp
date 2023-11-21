@@ -111,7 +111,7 @@ void _dbSite::out(dbDiff& diff, char side, const char* field) const
 ////////////////////////////////////////////////////////////////////
 _dbSite::_dbSite(_dbDatabase*, const _dbSite& s)
     : _flags(s._flags),
-      _name(NULL),
+      _name(nullptr),
       _height(s._height),
       _width(s._width),
       _next_entry(s._next_entry)
@@ -124,7 +124,7 @@ _dbSite::_dbSite(_dbDatabase*, const _dbSite& s)
 
 _dbSite::_dbSite(_dbDatabase*)
 {
-  _name = NULL;
+  _name = nullptr;
   _height = 0;
   _width = 0;
   _flags._x_symmetry = 0;
@@ -238,7 +238,7 @@ dbLib* dbSite::getLib()
 dbSite* dbSite::create(dbLib* lib_, const char* name_)
 {
   if (lib_->findSite(name_))
-    return NULL;
+    return nullptr;
 
   _dbLib* lib = (_dbLib*) lib_;
   _dbSite* site = lib->_site_tbl->create();

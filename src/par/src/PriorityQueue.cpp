@@ -103,9 +103,9 @@ std::shared_ptr<VertexGain> PriorityQueue::GetBestCandidate(
     const int vertex_id = vertices_[index]->GetVertex();
     const int to_pid = vertices_[index]->GetDestinationPart();
     const int from_pid = vertices_[index]->GetSourcePart();
-    if ((curr_block_balance[to_pid] + hgraph->vertex_weights_[vertex_id]
+    if ((curr_block_balance[to_pid] + hgraph->GetVertexWeights(vertex_id)
          < upper_block_balance[to_pid])
-        && (curr_block_balance[from_pid] - hgraph->vertex_weights_[vertex_id]
+        && (curr_block_balance[from_pid] - hgraph->GetVertexWeights(vertex_id)
             > lower_block_balance[from_pid])) {
       return true;
     }
@@ -196,9 +196,10 @@ bool PriorityQueue::CompareElementLargeThan(int index_a, int index_b)
   if (vertices_[index_a]->GetGain() > vertices_[index_b]->GetGain()) {
     return true;
   }
-  return ((vertices_[index_a]->GetGain() == vertices_[index_b]->GetGain())
-          && (hypergraph_->vertex_weights_[vertices_[index_a]->GetVertex()]
-              < hypergraph_->vertex_weights_[vertices_[index_b]->GetVertex()]));
+  return (
+      (vertices_[index_a]->GetGain() == vertices_[index_b]->GetGain())
+      && (hypergraph_->GetVertexWeights(vertices_[index_a]->GetVertex())
+          < hypergraph_->GetVertexWeights(vertices_[index_b]->GetVertex())));
 }
 
 // push the element at location index to its ordered location

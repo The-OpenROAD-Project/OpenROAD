@@ -171,7 +171,7 @@ dbBlock* dbChip::getBlock()
   _dbChip* chip = (_dbChip*) this;
 
   if (chip->_top == 0)
-    return NULL;
+    return nullptr;
 
   return (dbBlock*) chip->_block_tbl->getPtr(chip->_top);
 }
@@ -181,10 +181,7 @@ dbChip* dbChip::create(dbDatabase* db_)
   _dbDatabase* db = (_dbDatabase*) db_;
 
   if (db->_chip != 0)
-    return NULL;
-
-  if (db->_tech == 0)
-    return NULL;
+    return nullptr;
 
   _dbChip* chip = db->_chip_tbl->create();
   db->_chip = chip->getOID();

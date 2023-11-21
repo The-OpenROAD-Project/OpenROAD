@@ -1,0 +1,1685 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN gcd ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 200260 201600 ) ;
+TRACKS X 190 DO 527 STEP 380 LAYER metal1 ;
+TRACKS Y 140 DO 720 STEP 280 LAYER metal1 ;
+TRACKS X 190 DO 527 STEP 380 LAYER metal2 ;
+TRACKS Y 140 DO 720 STEP 280 LAYER metal2 ;
+TRACKS X 190 DO 527 STEP 380 LAYER metal3 ;
+TRACKS Y 140 DO 720 STEP 280 LAYER metal3 ;
+TRACKS X 190 DO 358 STEP 560 LAYER metal4 ;
+TRACKS Y 140 DO 360 STEP 560 LAYER metal4 ;
+TRACKS X 190 DO 358 STEP 560 LAYER metal5 ;
+TRACKS Y 140 DO 360 STEP 560 LAYER metal5 ;
+TRACKS X 190 DO 358 STEP 560 LAYER metal6 ;
+TRACKS Y 140 DO 360 STEP 560 LAYER metal6 ;
+TRACKS X 190 DO 126 STEP 1600 LAYER metal7 ;
+TRACKS Y 140 DO 126 STEP 1600 LAYER metal7 ;
+TRACKS X 190 DO 126 STEP 1600 LAYER metal8 ;
+TRACKS Y 140 DO 126 STEP 1600 LAYER metal8 ;
+TRACKS X 190 DO 63 STEP 3200 LAYER metal9 ;
+TRACKS Y 140 DO 63 STEP 3200 LAYER metal9 ;
+TRACKS X 190 DO 63 STEP 3200 LAYER metal10 ;
+TRACKS Y 140 DO 63 STEP 3200 LAYER metal10 ;
+COMPONENTS 1 ;
+    - _858_ DFF_X1 + PLACED ( 54340 106400 ) FS ;
+END COMPONENTS
+PINS 400 ;
+    - pin0 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 52220 ) N ;
+    - pin1 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 52500 ) N ;
+    - pin10 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 55020 ) N ;
+    - pin100 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 80220 ) N ;
+    - pin101 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 80500 ) N ;
+    - pin102 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 80780 ) N ;
+    - pin103 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 81060 ) N ;
+    - pin104 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 81340 ) N ;
+    - pin105 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 81620 ) N ;
+    - pin106 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 81900 ) N ;
+    - pin107 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 82180 ) N ;
+    - pin108 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 82460 ) N ;
+    - pin109 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 82740 ) N ;
+    - pin11 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 55300 ) N ;
+    - pin110 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 83020 ) N ;
+    - pin111 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 83300 ) N ;
+    - pin112 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 83580 ) N ;
+    - pin113 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 83860 ) N ;
+    - pin114 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 84140 ) N ;
+    - pin115 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 84420 ) N ;
+    - pin116 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 84700 ) N ;
+    - pin117 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 84980 ) N ;
+    - pin118 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 85260 ) N ;
+    - pin119 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 85540 ) N ;
+    - pin12 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 55580 ) N ;
+    - pin120 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 85820 ) N ;
+    - pin121 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 86100 ) N ;
+    - pin122 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 86380 ) N ;
+    - pin123 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 86660 ) N ;
+    - pin124 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 86940 ) N ;
+    - pin125 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 87220 ) N ;
+    - pin126 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 87500 ) N ;
+    - pin127 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 87780 ) N ;
+    - pin128 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 88060 ) N ;
+    - pin129 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 88340 ) N ;
+    - pin13 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 55860 ) N ;
+    - pin130 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 88620 ) N ;
+    - pin131 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 88900 ) N ;
+    - pin132 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 89180 ) N ;
+    - pin133 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 89460 ) N ;
+    - pin134 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 89740 ) N ;
+    - pin135 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 90020 ) N ;
+    - pin136 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 90300 ) N ;
+    - pin137 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 90580 ) N ;
+    - pin138 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 90860 ) N ;
+    - pin139 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 91140 ) N ;
+    - pin14 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 56140 ) N ;
+    - pin140 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 91420 ) N ;
+    - pin141 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 91700 ) N ;
+    - pin142 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 91980 ) N ;
+    - pin143 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 92260 ) N ;
+    - pin144 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 92540 ) N ;
+    - pin145 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 92820 ) N ;
+    - pin146 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 93100 ) N ;
+    - pin147 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 93380 ) N ;
+    - pin148 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 93660 ) N ;
+    - pin149 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 93940 ) N ;
+    - pin15 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 56420 ) N ;
+    - pin150 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 94220 ) N ;
+    - pin151 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 94500 ) N ;
+    - pin152 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 94780 ) N ;
+    - pin153 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 95060 ) N ;
+    - pin154 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 95340 ) N ;
+    - pin155 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 95620 ) N ;
+    - pin156 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 95900 ) N ;
+    - pin157 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 96180 ) N ;
+    - pin158 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 96460 ) N ;
+    - pin159 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 96740 ) N ;
+    - pin16 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 56700 ) N ;
+    - pin160 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 97020 ) N ;
+    - pin161 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 97300 ) N ;
+    - pin162 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 97580 ) N ;
+    - pin163 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 97860 ) N ;
+    - pin164 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 98140 ) N ;
+    - pin165 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 98420 ) N ;
+    - pin166 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 98700 ) N ;
+    - pin167 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 98980 ) N ;
+    - pin168 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 99260 ) N ;
+    - pin169 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 99540 ) N ;
+    - pin17 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 56980 ) N ;
+    - pin170 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 99820 ) N ;
+    - pin171 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 100100 ) N ;
+    - pin172 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 100380 ) N ;
+    - pin173 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 100660 ) N ;
+    - pin174 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 100940 ) N ;
+    - pin175 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 101220 ) N ;
+    - pin176 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 101500 ) N ;
+    - pin177 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 101780 ) N ;
+    - pin178 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 102060 ) N ;
+    - pin179 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 102340 ) N ;
+    - pin18 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 57260 ) N ;
+    - pin180 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 102620 ) N ;
+    - pin181 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 102900 ) N ;
+    - pin182 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 103180 ) N ;
+    - pin183 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 103460 ) N ;
+    - pin184 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 103740 ) N ;
+    - pin185 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 104020 ) N ;
+    - pin186 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 104300 ) N ;
+    - pin187 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 104580 ) N ;
+    - pin188 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 104860 ) N ;
+    - pin189 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 105140 ) N ;
+    - pin19 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 57540 ) N ;
+    - pin190 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 105420 ) N ;
+    - pin191 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 105700 ) N ;
+    - pin192 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 105980 ) N ;
+    - pin193 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 106260 ) N ;
+    - pin194 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 106540 ) N ;
+    - pin195 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 106820 ) N ;
+    - pin196 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 107100 ) N ;
+    - pin197 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 107380 ) N ;
+    - pin198 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 107660 ) N ;
+    - pin199 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 107940 ) N ;
+    - pin2 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 52780 ) N ;
+    - pin20 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 57820 ) N ;
+    - pin200 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 108220 ) N ;
+    - pin201 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 108500 ) N ;
+    - pin202 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 108780 ) N ;
+    - pin203 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 109060 ) N ;
+    - pin204 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 109340 ) N ;
+    - pin205 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 109620 ) N ;
+    - pin206 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 109900 ) N ;
+    - pin207 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 110180 ) N ;
+    - pin208 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 110460 ) N ;
+    - pin209 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 110740 ) N ;
+    - pin21 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 58100 ) N ;
+    - pin210 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 111020 ) N ;
+    - pin211 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 111300 ) N ;
+    - pin212 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 111580 ) N ;
+    - pin213 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 111860 ) N ;
+    - pin214 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 112140 ) N ;
+    - pin215 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 112420 ) N ;
+    - pin216 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 112700 ) N ;
+    - pin217 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 112980 ) N ;
+    - pin218 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 113260 ) N ;
+    - pin219 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 113540 ) N ;
+    - pin22 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 58380 ) N ;
+    - pin220 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 113820 ) N ;
+    - pin221 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 114100 ) N ;
+    - pin222 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 114380 ) N ;
+    - pin223 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 114660 ) N ;
+    - pin224 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 114940 ) N ;
+    - pin225 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 115220 ) N ;
+    - pin226 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 115500 ) N ;
+    - pin227 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 115780 ) N ;
+    - pin228 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 116060 ) N ;
+    - pin229 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 116340 ) N ;
+    - pin23 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 58660 ) N ;
+    - pin230 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 116620 ) N ;
+    - pin231 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 116900 ) N ;
+    - pin232 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 117180 ) N ;
+    - pin233 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 117460 ) N ;
+    - pin234 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 117740 ) N ;
+    - pin235 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 118020 ) N ;
+    - pin236 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 118300 ) N ;
+    - pin237 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 118580 ) N ;
+    - pin238 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 118860 ) N ;
+    - pin239 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 119140 ) N ;
+    - pin24 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 58940 ) N ;
+    - pin240 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 119420 ) N ;
+    - pin241 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 119700 ) N ;
+    - pin242 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 119980 ) N ;
+    - pin243 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 120260 ) N ;
+    - pin244 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 120540 ) N ;
+    - pin245 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 120820 ) N ;
+    - pin246 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 121100 ) N ;
+    - pin247 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 121380 ) N ;
+    - pin248 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 121660 ) N ;
+    - pin249 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 121940 ) N ;
+    - pin25 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 59220 ) N ;
+    - pin250 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 122220 ) N ;
+    - pin251 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 122500 ) N ;
+    - pin252 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 122780 ) N ;
+    - pin253 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 123060 ) N ;
+    - pin254 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 123340 ) N ;
+    - pin255 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 123620 ) N ;
+    - pin256 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 123900 ) N ;
+    - pin257 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 124180 ) N ;
+    - pin258 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 124460 ) N ;
+    - pin259 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 124740 ) N ;
+    - pin26 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 59500 ) N ;
+    - pin260 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 125020 ) N ;
+    - pin261 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 125300 ) N ;
+    - pin262 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 125580 ) N ;
+    - pin263 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 125860 ) N ;
+    - pin264 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 126140 ) N ;
+    - pin265 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 126420 ) N ;
+    - pin266 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 126700 ) N ;
+    - pin267 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 126980 ) N ;
+    - pin268 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 127260 ) N ;
+    - pin269 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 127540 ) N ;
+    - pin27 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 59780 ) N ;
+    - pin270 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 127820 ) N ;
+    - pin271 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 128100 ) N ;
+    - pin272 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 128380 ) N ;
+    - pin273 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 128660 ) N ;
+    - pin274 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 128940 ) N ;
+    - pin275 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 129220 ) N ;
+    - pin276 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 129500 ) N ;
+    - pin277 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 129780 ) N ;
+    - pin278 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 130060 ) N ;
+    - pin279 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 130340 ) N ;
+    - pin28 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 60060 ) N ;
+    - pin280 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 130620 ) N ;
+    - pin281 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 130900 ) N ;
+    - pin282 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 131180 ) N ;
+    - pin283 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 131460 ) N ;
+    - pin284 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 131740 ) N ;
+    - pin285 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 132020 ) N ;
+    - pin286 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 132300 ) N ;
+    - pin287 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 132580 ) N ;
+    - pin288 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 132860 ) N ;
+    - pin289 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 133140 ) N ;
+    - pin29 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 60340 ) N ;
+    - pin290 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 133420 ) N ;
+    - pin291 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 133700 ) N ;
+    - pin292 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 133980 ) N ;
+    - pin293 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 134260 ) N ;
+    - pin294 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 134540 ) N ;
+    - pin295 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 134820 ) N ;
+    - pin296 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 135100 ) N ;
+    - pin297 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 135380 ) N ;
+    - pin298 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 135660 ) N ;
+    - pin299 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 135940 ) N ;
+    - pin3 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 53060 ) N ;
+    - pin30 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 60620 ) N ;
+    - pin300 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 136220 ) N ;
+    - pin301 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 136500 ) N ;
+    - pin302 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 136780 ) N ;
+    - pin303 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 137060 ) N ;
+    - pin304 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 137340 ) N ;
+    - pin305 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 137620 ) N ;
+    - pin306 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 137900 ) N ;
+    - pin307 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 138180 ) N ;
+    - pin308 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 138460 ) N ;
+    - pin309 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 138740 ) N ;
+    - pin31 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 60900 ) N ;
+    - pin310 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 139020 ) N ;
+    - pin311 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 139300 ) N ;
+    - pin312 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 139580 ) N ;
+    - pin313 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 139860 ) N ;
+    - pin314 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 140140 ) N ;
+    - pin315 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 140420 ) N ;
+    - pin316 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 140700 ) N ;
+    - pin317 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 140980 ) N ;
+    - pin318 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 141260 ) N ;
+    - pin319 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 141540 ) N ;
+    - pin32 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 61180 ) N ;
+    - pin320 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 141820 ) N ;
+    - pin321 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 142100 ) N ;
+    - pin322 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 142380 ) N ;
+    - pin323 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 142660 ) N ;
+    - pin324 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 142940 ) N ;
+    - pin325 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 143220 ) N ;
+    - pin326 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 143500 ) N ;
+    - pin327 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 143780 ) N ;
+    - pin328 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 144060 ) N ;
+    - pin329 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 144340 ) N ;
+    - pin33 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 61460 ) N ;
+    - pin330 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 144620 ) N ;
+    - pin331 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 144900 ) N ;
+    - pin332 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 145180 ) N ;
+    - pin333 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 145460 ) N ;
+    - pin334 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 145740 ) N ;
+    - pin335 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 146020 ) N ;
+    - pin336 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 146300 ) N ;
+    - pin337 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 146580 ) N ;
+    - pin338 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 146860 ) N ;
+    - pin339 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 147140 ) N ;
+    - pin34 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 61740 ) N ;
+    - pin340 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 147420 ) N ;
+    - pin341 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 147700 ) N ;
+    - pin342 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 147980 ) N ;
+    - pin343 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 148260 ) N ;
+    - pin344 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 148540 ) N ;
+    - pin345 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 148820 ) N ;
+    - pin346 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 149100 ) N ;
+    - pin347 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 149380 ) N ;
+    - pin348 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 149660 ) N ;
+    - pin349 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 149940 ) N ;
+    - pin35 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 62020 ) N ;
+    - pin350 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 150220 ) N ;
+    - pin351 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 150500 ) N ;
+    - pin352 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 150780 ) N ;
+    - pin353 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 151060 ) N ;
+    - pin354 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 151340 ) N ;
+    - pin355 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 151620 ) N ;
+    - pin356 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 151900 ) N ;
+    - pin357 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 152180 ) N ;
+    - pin358 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 152460 ) N ;
+    - pin359 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 152740 ) N ;
+    - pin36 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 62300 ) N ;
+    - pin360 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 153020 ) N ;
+    - pin361 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 153300 ) N ;
+    - pin362 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 153580 ) N ;
+    - pin363 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 153860 ) N ;
+    - pin364 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 154140 ) N ;
+    - pin365 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 154420 ) N ;
+    - pin366 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 154700 ) N ;
+    - pin367 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 154980 ) N ;
+    - pin368 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 155260 ) N ;
+    - pin369 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 155540 ) N ;
+    - pin37 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 62580 ) N ;
+    - pin370 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 155820 ) N ;
+    - pin371 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 156100 ) N ;
+    - pin372 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 156380 ) N ;
+    - pin373 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 156660 ) N ;
+    - pin374 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 156940 ) N ;
+    - pin375 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 157220 ) N ;
+    - pin376 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 157500 ) N ;
+    - pin377 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 157780 ) N ;
+    - pin378 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 158060 ) N ;
+    - pin379 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 158340 ) N ;
+    - pin38 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 62860 ) N ;
+    - pin380 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 158620 ) N ;
+    - pin381 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 158900 ) N ;
+    - pin382 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 159180 ) N ;
+    - pin383 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 159460 ) N ;
+    - pin384 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 159740 ) N ;
+    - pin385 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 160020 ) N ;
+    - pin386 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 160300 ) N ;
+    - pin387 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 160580 ) N ;
+    - pin388 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 160860 ) N ;
+    - pin389 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 161140 ) N ;
+    - pin39 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 63140 ) N ;
+    - pin390 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 161420 ) N ;
+    - pin391 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 161700 ) N ;
+    - pin392 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 161980 ) N ;
+    - pin393 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 162260 ) N ;
+    - pin394 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 162540 ) N ;
+    - pin395 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 162820 ) N ;
+    - pin396 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 163100 ) N ;
+    - pin397 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 163380 ) N ;
+    - pin398 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 163660 ) N ;
+    - pin399 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 163940 ) N ;
+    - pin4 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 53340 ) N ;
+    - pin40 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 63420 ) N ;
+    - pin41 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 63700 ) N ;
+    - pin42 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 63980 ) N ;
+    - pin43 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 64260 ) N ;
+    - pin44 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 64540 ) N ;
+    - pin45 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 64820 ) N ;
+    - pin46 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 65100 ) N ;
+    - pin47 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 65380 ) N ;
+    - pin48 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 65660 ) N ;
+    - pin49 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 65940 ) N ;
+    - pin5 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 53620 ) N ;
+    - pin50 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 66220 ) N ;
+    - pin51 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 66500 ) N ;
+    - pin52 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 66780 ) N ;
+    - pin53 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 67060 ) N ;
+    - pin54 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 67340 ) N ;
+    - pin55 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 67620 ) N ;
+    - pin56 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 67900 ) N ;
+    - pin57 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 68180 ) N ;
+    - pin58 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 68460 ) N ;
+    - pin59 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 68740 ) N ;
+    - pin6 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 53900 ) N ;
+    - pin60 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 69020 ) N ;
+    - pin61 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 69300 ) N ;
+    - pin62 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 69580 ) N ;
+    - pin63 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 69860 ) N ;
+    - pin64 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 70140 ) N ;
+    - pin65 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 70420 ) N ;
+    - pin66 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 70700 ) N ;
+    - pin67 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 70980 ) N ;
+    - pin68 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 71260 ) N ;
+    - pin69 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 71540 ) N ;
+    - pin7 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 54180 ) N ;
+    - pin70 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 71820 ) N ;
+    - pin71 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 72100 ) N ;
+    - pin72 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 72380 ) N ;
+    - pin73 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 72660 ) N ;
+    - pin74 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 72940 ) N ;
+    - pin75 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 73220 ) N ;
+    - pin76 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 73500 ) N ;
+    - pin77 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 73780 ) N ;
+    - pin78 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 74060 ) N ;
+    - pin79 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 74340 ) N ;
+    - pin8 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 54460 ) N ;
+    - pin80 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 74620 ) N ;
+    - pin81 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 74900 ) N ;
+    - pin82 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 75180 ) N ;
+    - pin83 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 75460 ) N ;
+    - pin84 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 75740 ) N ;
+    - pin85 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 76020 ) N ;
+    - pin86 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 76300 ) N ;
+    - pin87 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 76580 ) N ;
+    - pin88 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 76860 ) N ;
+    - pin89 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 77140 ) N ;
+    - pin9 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 54740 ) N ;
+    - pin90 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 77420 ) N ;
+    - pin91 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 77700 ) N ;
+    - pin92 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 77980 ) N ;
+    - pin93 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 78260 ) N ;
+    - pin94 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 78540 ) N ;
+    - pin95 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 78820 ) N ;
+    - pin96 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 79100 ) N ;
+    - pin97 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 79380 ) N ;
+    - pin98 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 79660 ) N ;
+    - pin99 + NET net + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 79940 ) N ;
+END PINS
+NETS 1 ;
+    - net ( PIN pin99 ) ( PIN pin98 ) ( PIN pin97 ) ( PIN pin96 ) ( PIN pin95 ) ( PIN pin94 ) ( PIN pin93 )
+      ( PIN pin92 ) ( PIN pin91 ) ( PIN pin90 ) ( PIN pin9 ) ( PIN pin89 ) ( PIN pin88 ) ( PIN pin87 ) ( PIN pin86 )
+      ( PIN pin85 ) ( PIN pin84 ) ( PIN pin83 ) ( PIN pin82 ) ( PIN pin81 ) ( PIN pin80 ) ( PIN pin8 ) ( PIN pin79 )
+      ( PIN pin78 ) ( PIN pin77 ) ( PIN pin76 ) ( PIN pin75 ) ( PIN pin74 ) ( PIN pin73 ) ( PIN pin72 ) ( PIN pin71 )
+      ( PIN pin70 ) ( PIN pin7 ) ( PIN pin69 ) ( PIN pin68 ) ( PIN pin67 ) ( PIN pin66 ) ( PIN pin65 ) ( PIN pin64 )
+      ( PIN pin63 ) ( PIN pin62 ) ( PIN pin61 ) ( PIN pin60 ) ( PIN pin6 ) ( PIN pin59 ) ( PIN pin58 ) ( PIN pin57 )
+      ( PIN pin56 ) ( PIN pin55 ) ( PIN pin54 ) ( PIN pin53 ) ( PIN pin52 ) ( PIN pin51 ) ( PIN pin50 ) ( PIN pin5 )
+      ( PIN pin49 ) ( PIN pin48 ) ( PIN pin47 ) ( PIN pin46 ) ( PIN pin45 ) ( PIN pin44 ) ( PIN pin43 ) ( PIN pin42 )
+      ( PIN pin41 ) ( PIN pin40 ) ( PIN pin4 ) ( PIN pin399 ) ( PIN pin398 ) ( PIN pin397 ) ( PIN pin396 ) ( PIN pin395 )
+      ( PIN pin394 ) ( PIN pin393 ) ( PIN pin392 ) ( PIN pin391 ) ( PIN pin390 ) ( PIN pin39 ) ( PIN pin389 ) ( PIN pin388 )
+      ( PIN pin387 ) ( PIN pin386 ) ( PIN pin385 ) ( PIN pin384 ) ( PIN pin383 ) ( PIN pin382 ) ( PIN pin381 ) ( PIN pin380 )
+      ( PIN pin38 ) ( PIN pin379 ) ( PIN pin378 ) ( PIN pin377 ) ( PIN pin376 ) ( PIN pin375 ) ( PIN pin374 ) ( PIN pin373 )
+      ( PIN pin372 ) ( PIN pin371 ) ( PIN pin370 ) ( PIN pin37 ) ( PIN pin369 ) ( PIN pin368 ) ( PIN pin367 ) ( PIN pin366 )
+      ( PIN pin365 ) ( PIN pin364 ) ( PIN pin363 ) ( PIN pin362 ) ( PIN pin361 ) ( PIN pin360 ) ( PIN pin36 ) ( PIN pin359 )
+      ( PIN pin358 ) ( PIN pin357 ) ( PIN pin356 ) ( PIN pin355 ) ( PIN pin354 ) ( PIN pin353 ) ( PIN pin352 ) ( PIN pin351 )
+      ( PIN pin350 ) ( PIN pin35 ) ( PIN pin349 ) ( PIN pin348 ) ( PIN pin347 ) ( PIN pin346 ) ( PIN pin345 ) ( PIN pin344 )
+      ( PIN pin343 ) ( PIN pin342 ) ( PIN pin341 ) ( PIN pin340 ) ( PIN pin34 ) ( PIN pin339 ) ( PIN pin338 ) ( PIN pin337 )
+      ( PIN pin336 ) ( PIN pin335 ) ( PIN pin334 ) ( PIN pin333 ) ( PIN pin332 ) ( PIN pin331 ) ( PIN pin330 ) ( PIN pin33 )
+      ( PIN pin329 ) ( PIN pin328 ) ( PIN pin327 ) ( PIN pin326 ) ( PIN pin325 ) ( PIN pin324 ) ( PIN pin323 ) ( PIN pin322 )
+      ( PIN pin321 ) ( PIN pin320 ) ( PIN pin32 ) ( PIN pin319 ) ( PIN pin318 ) ( PIN pin317 ) ( PIN pin316 ) ( PIN pin315 )
+      ( PIN pin314 ) ( PIN pin313 ) ( PIN pin312 ) ( PIN pin311 ) ( PIN pin310 ) ( PIN pin31 ) ( PIN pin309 ) ( PIN pin308 )
+      ( PIN pin307 ) ( PIN pin306 ) ( PIN pin305 ) ( PIN pin304 ) ( PIN pin303 ) ( PIN pin302 ) ( PIN pin301 ) ( PIN pin300 )
+      ( PIN pin30 ) ( PIN pin3 ) ( PIN pin299 ) ( PIN pin298 ) ( PIN pin297 ) ( PIN pin296 ) ( PIN pin295 ) ( PIN pin294 )
+      ( PIN pin293 ) ( PIN pin292 ) ( PIN pin291 ) ( PIN pin290 ) ( PIN pin29 ) ( PIN pin289 ) ( PIN pin288 ) ( PIN pin287 )
+      ( PIN pin286 ) ( PIN pin285 ) ( PIN pin284 ) ( PIN pin283 ) ( PIN pin282 ) ( PIN pin281 ) ( PIN pin280 ) ( PIN pin28 )
+      ( PIN pin279 ) ( PIN pin278 ) ( PIN pin277 ) ( PIN pin276 ) ( PIN pin275 ) ( PIN pin274 ) ( PIN pin273 ) ( PIN pin272 )
+      ( PIN pin271 ) ( PIN pin270 ) ( PIN pin27 ) ( PIN pin269 ) ( PIN pin268 ) ( PIN pin267 ) ( PIN pin266 ) ( PIN pin265 )
+      ( PIN pin264 ) ( PIN pin263 ) ( PIN pin262 ) ( PIN pin261 ) ( PIN pin260 ) ( PIN pin26 ) ( PIN pin259 ) ( PIN pin258 )
+      ( PIN pin257 ) ( PIN pin256 ) ( PIN pin255 ) ( PIN pin254 ) ( PIN pin253 ) ( PIN pin252 ) ( PIN pin251 ) ( PIN pin250 )
+      ( PIN pin25 ) ( PIN pin249 ) ( PIN pin248 ) ( PIN pin247 ) ( PIN pin246 ) ( PIN pin245 ) ( PIN pin244 ) ( PIN pin243 )
+      ( PIN pin242 ) ( PIN pin241 ) ( PIN pin240 ) ( PIN pin24 ) ( PIN pin239 ) ( PIN pin238 ) ( PIN pin237 ) ( PIN pin236 )
+      ( PIN pin235 ) ( PIN pin234 ) ( PIN pin233 ) ( PIN pin232 ) ( PIN pin231 ) ( PIN pin230 ) ( PIN pin23 ) ( PIN pin229 )
+      ( PIN pin228 ) ( PIN pin227 ) ( PIN pin226 ) ( PIN pin225 ) ( PIN pin224 ) ( PIN pin223 ) ( PIN pin222 ) ( PIN pin221 )
+      ( PIN pin220 ) ( PIN pin22 ) ( PIN pin219 ) ( PIN pin218 ) ( PIN pin217 ) ( PIN pin216 ) ( PIN pin215 ) ( PIN pin214 )
+      ( PIN pin213 ) ( PIN pin212 ) ( PIN pin211 ) ( PIN pin210 ) ( PIN pin21 ) ( PIN pin209 ) ( PIN pin208 ) ( PIN pin207 )
+      ( PIN pin206 ) ( PIN pin205 ) ( PIN pin204 ) ( PIN pin203 ) ( PIN pin202 ) ( PIN pin201 ) ( PIN pin200 ) ( PIN pin20 )
+      ( PIN pin2 ) ( PIN pin199 ) ( PIN pin198 ) ( PIN pin197 ) ( PIN pin196 ) ( PIN pin195 ) ( PIN pin194 ) ( PIN pin193 )
+      ( PIN pin192 ) ( PIN pin191 ) ( PIN pin190 ) ( PIN pin19 ) ( PIN pin189 ) ( PIN pin188 ) ( PIN pin187 ) ( PIN pin186 )
+      ( PIN pin185 ) ( PIN pin184 ) ( PIN pin183 ) ( PIN pin182 ) ( PIN pin181 ) ( PIN pin180 ) ( PIN pin18 ) ( PIN pin179 )
+      ( PIN pin178 ) ( PIN pin177 ) ( PIN pin176 ) ( PIN pin175 ) ( PIN pin174 ) ( PIN pin173 ) ( PIN pin172 ) ( PIN pin171 )
+      ( PIN pin170 ) ( PIN pin17 ) ( PIN pin169 ) ( PIN pin168 ) ( PIN pin167 ) ( PIN pin166 ) ( PIN pin165 ) ( PIN pin164 )
+      ( PIN pin163 ) ( PIN pin162 ) ( PIN pin161 ) ( PIN pin160 ) ( PIN pin16 ) ( PIN pin159 ) ( PIN pin158 ) ( PIN pin157 )
+      ( PIN pin156 ) ( PIN pin155 ) ( PIN pin154 ) ( PIN pin153 ) ( PIN pin152 ) ( PIN pin151 ) ( PIN pin150 ) ( PIN pin15 )
+      ( PIN pin149 ) ( PIN pin148 ) ( PIN pin147 ) ( PIN pin146 ) ( PIN pin145 ) ( PIN pin144 ) ( PIN pin143 ) ( PIN pin142 )
+      ( PIN pin141 ) ( PIN pin140 ) ( PIN pin14 ) ( PIN pin139 ) ( PIN pin138 ) ( PIN pin137 ) ( PIN pin136 ) ( PIN pin135 )
+      ( PIN pin134 ) ( PIN pin133 ) ( PIN pin132 ) ( PIN pin131 ) ( PIN pin130 ) ( PIN pin13 ) ( PIN pin129 ) ( PIN pin128 )
+      ( PIN pin127 ) ( PIN pin126 ) ( PIN pin125 ) ( PIN pin124 ) ( PIN pin123 ) ( PIN pin122 ) ( PIN pin121 ) ( PIN pin120 )
+      ( PIN pin12 ) ( PIN pin119 ) ( PIN pin118 ) ( PIN pin117 ) ( PIN pin116 ) ( PIN pin115 ) ( PIN pin114 ) ( PIN pin113 )
+      ( PIN pin112 ) ( PIN pin111 ) ( PIN pin110 ) ( PIN pin11 ) ( PIN pin109 ) ( PIN pin108 ) ( PIN pin107 ) ( PIN pin106 )
+      ( PIN pin105 ) ( PIN pin104 ) ( PIN pin103 ) ( PIN pin102 ) ( PIN pin101 ) ( PIN pin100 ) ( PIN pin10 ) ( PIN pin1 )
+      ( PIN pin0 ) ( _858_ CK ) + USE SIGNAL ;
+END NETS
+END DESIGN

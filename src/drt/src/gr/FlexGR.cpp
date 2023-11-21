@@ -66,15 +66,29 @@ void FlexGR::main(odb::dbDatabase* db)
 
   reportCong2D();
 
-  searchRepairMacro(
-      0, 10, 2, 1 * CONGCOST, 0.5 * HISTCOST, 1.0, true, /*mode*/ 1);
+  searchRepairMacro(0,
+                    10,
+                    2,
+                    1 * CONGCOST,
+                    0.5 * HISTCOST,
+                    1.0,
+                    true,
+                    /*mode*/ RipUpMode::ALL);
+  // reportCong2D();
+  searchRepairMacro(1,
+                    30,
+                    2,
+                    1 * CONGCOST,
+                    1 * HISTCOST,
+                    0.9,
+                    true,
+                    /*mode*/ RipUpMode::ALL);
   // reportCong2D();
   searchRepairMacro(
-      1, 30, 2, 1 * CONGCOST, 1 * HISTCOST, 0.9, true, /*mode*/ 1);
+      2, 50, 2, 1 * CONGCOST, 1.5 * HISTCOST, 0.9, true, RipUpMode::ALL);
   // reportCong2D();
-  searchRepairMacro(2, 50, 2, 1 * CONGCOST, 1.5 * HISTCOST, 0.9, true, 1);
-  // reportCong2D();
-  searchRepairMacro(3, 80, 2, 2 * CONGCOST, 2 * HISTCOST, 0.9, true, 1);
+  searchRepairMacro(
+      3, 80, 2, 2 * CONGCOST, 2 * HISTCOST, 0.9, true, RipUpMode::ALL);
   // reportCong2D();
 
   //  reportCong2D();
@@ -86,7 +100,7 @@ void FlexGR::main(odb::dbDatabase* db)
                /*workerHistCost*/ 0.5 * HISTCOST,
                /*congThresh*/ 0.9,
                /*is2DRouting*/ true,
-               /*mode*/ 1,
+               /*mode*/ RipUpMode::ALL,
                /*TEST*/ false);
   // reportCong2D();
   searchRepair(/*iter*/ 1,
@@ -97,7 +111,7 @@ void FlexGR::main(odb::dbDatabase* db)
                /*workerHistCost*/ 1 * HISTCOST,
                /*congThresh*/ 0.9,
                /*is2DRouting*/ true,
-               /*mode*/ 1,
+               /*mode*/ RipUpMode::ALL,
                /*TEST*/ false);
   // reportCong2D();
   searchRepair(/*iter*/ 2,
@@ -108,7 +122,7 @@ void FlexGR::main(odb::dbDatabase* db)
                /*workerHistCost*/ 2 * HISTCOST,
                /*congThresh*/ 0.8,
                /*is2DRouting*/ true,
-               /*mode*/ 1,
+               /*mode*/ RipUpMode::ALL,
                /*TEST*/ false);
   // reportCong2D();
 
@@ -129,7 +143,7 @@ void FlexGR::main(odb::dbDatabase* db)
                /*workerHistCost*/ 0.25 * HISTCOST,
                /*congThresh*/ 1.0,
                /*is2DRouting*/ false,
-               1,
+               RipUpMode::ALL,
                /*TEST*/ false);
   reportCong3D();
   if (db != nullptr)
@@ -147,7 +161,7 @@ void FlexGR::searchRepairMacro(int iter,
                                unsigned workerHistCost,
                                double congThresh,
                                bool is2DRouting,
-                               int mode)
+                               RipUpMode mode)
 {
   frTime t;
 
@@ -246,7 +260,7 @@ void FlexGR::searchRepair(int iter,
                           unsigned workerHistCost,
                           double congThresh,
                           bool is2DRouting,
-                          int mode,
+                          RipUpMode mode,
                           bool TEST)
 {
   frTime t;
@@ -660,13 +674,13 @@ void FlexGR::updateDbCongestion(odb::dbDatabase* db, FlexGRCMap* cmap)
     }
     for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++)
       for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
-        uint horizontal_capacity
+        auto horizontal_capacity
             = cmap->getRawSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
-        uint horizontal_usage
+        auto horizontal_usage
             = cmap->getRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
-        uint vertical_capacity
+        auto vertical_capacity
             = cmap->getRawSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::N);
-        uint vertical_usage
+        auto vertical_usage
             = cmap->getRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::N);
         gcell->setCapacity(
             layer, xIdx, yIdx, horizontal_capacity, vertical_capacity, 0);

@@ -43,11 +43,19 @@
 #include <string>
 #include <vector>
 
+#include "odb.h"
 #include "odb/dbTypes.h"
 
 namespace odb {
+class Point;
 class dbInst;
 class dbModule;
+class dbBlock;
+class dbDatabase;
+class dbITerm;
+class dbTechLayer;
+class dbBox;
+class dbTrackGrid;
 }  // namespace odb
 
 namespace utl {
@@ -55,6 +63,7 @@ class Logger;
 }
 
 namespace mpl2 {
+struct Rect;
 class HardMacro;
 class SoftMacro;
 
@@ -134,19 +143,13 @@ class Metrics
           float macro_area);
 
   void addMetrics(const Metrics& metrics);
-  void inflateStdCellArea(float std_cell_util);
-  void inflateMacroArea(float inflate_macro_area);
   const std::pair<unsigned int, unsigned int> getCountStats() const;
   const std::pair<float, float> getAreaStats() const;
-  const std::pair<float, float> getInflateAreaStats() const;
   unsigned int getNumMacro() const;
   unsigned int getNumStdCell() const;
   float getStdCellArea() const;
   float getMacroArea() const;
   float getArea() const;
-  float getInflateStdCellArea() const;
-  float getInflateMacroArea() const;
-  float getInflateArea() const;
 
  private:
   // In the hierarchical autoclustering part,
@@ -159,13 +162,8 @@ class Metrics
   // we need to know the sizes of clusters.
   // std_cell_area is the sum of areas of all std cells
   // macro_area is the sum of areas of all macros
-  // inflate_std_cell_area = std_cell_area / util
-  // inflate_macro_area considers the halo width when calculate
-  // each macro area
   float std_cell_area_ = 0.0;
   float macro_area_ = 0.0;
-  float inflate_std_cell_area_ = 0.0;
-  float inflate_macro_area_ = 0.0;
 };
 
 // In this hierarchical autoclustering part,
@@ -185,6 +183,7 @@ class Cluster
   // cluster type (default type = MixedCluster)
   void setClusterType(const ClusterType& cluster_type);
   const ClusterType getClusterType() const;
+  std::string getClusterTypeString() const;
 
   // Instances (Here we store dbModule to reduce memory)
   void addDbModule(odb::dbModule* db_module);
@@ -202,12 +201,11 @@ class Cluster
   void copyInstances(const Cluster& cluster);  // only based on cluster type
 
   // IO cluster
-  // When you specify the io cluster, you must specify the postion
-  // of this IO cluster
-  void setIOClusterFlag(const std::pair<float, float> pos,
-                        const float width,
-                        const float height);
-  bool getIOClusterFlag() const;
+  // Position must be specified when setting an IO cluster
+  void setAsIOCluster(const std::pair<float, float>& pos,
+                      float width,
+                      float height);
+  bool isIOCluster() const;
 
   // Metrics Support
   void setMetrics(const Metrics& metrics);
@@ -237,6 +235,7 @@ class Cluster
   std::vector<Cluster*> getChildren() const;
 
   bool isLeaf() const;  // if the cluster is a leaf cluster
+  std::string getIsLeafString() const;
   bool mergeCluster(Cluster& cluster,
                     bool& delete_flag);  // return true if succeed
 
@@ -297,7 +296,7 @@ class Cluster
 
   // We model bundled IOS (Pads) as a cluster with no area
   // The position be the center of IOs
-  bool io_cluster_flag_ = false;
+  bool is_io_cluster_ = false;
 
   // Each cluster uses metrics to store its statistics
   Metrics metrics_;
@@ -348,7 +347,8 @@ class HardMacro
   HardMacro(odb::dbInst* inst,
             float dbu,
             int manufacturing_grid,
-            float halo_width = 0.0);
+            float halo_width = 0.0,
+            float halo_height = 0.0);
 
   // overload the comparison operators
   // based on area, width, height order
@@ -396,7 +396,30 @@ class HardMacro
   const std::string getMasterName() const;
   // update the location and orientation of the macro inst in OpenDB
   // The macro should be snaped to placement grids
-  void updateDb(float pitch_x, float pitch_y);
+  void updateDb(float pitch_x, float pitch_y, odb::dbBlock* block);
+  odb::Point computeSnapOrigin(const Rect& macro_box,
+                               const odb::dbOrientType& orientation,
+                               float& pitch_x,
+                               float& pitch_y,
+                               odb::dbBlock* block);
+
+  void computeDirectionSpacingParameters(odb::dbBlock* block,
+                                         odb::dbTechLayer* layer,
+                                         odb::dbBox* box,
+                                         float& offset,
+                                         float& pitch,
+                                         float& pin_width,
+                                         const bool& is_vertical_direction);
+  void getDirectionTrackGrid(odb::dbTrackGrid* track_grid,
+                             std::vector<int>& coordinate_grid,
+                             const bool& is_vertical_direction);
+  float getDirectionPitch(odb::dbTechLayer* layer,
+                          const bool& is_vertical_direction);
+  float getDirectionOffset(odb::dbTechLayer* layer,
+                           const bool& is_vertical_direction);
+  float getDirectionPinWidth(odb::dbBox* box,
+                             const bool& is_vertical_direction);
+
   int getXDBU() const { return micronToDbu(getX(), dbu_); }
 
   int getYDBU() const { return micronToDbu(getY(), dbu_); }
@@ -429,12 +452,13 @@ class HardMacro
   // We define x_, y_ and orientation_ here
   // to avoid keep updating OpenDB during simulated annealing
   // Also enable the multi-threading
-  float x_ = 0.0;           // lower left corner
-  float y_ = 0.0;           // lower left corner
-  float halo_width_ = 0.0;  // halo width
-  float width_ = 0.0;       // width_ = macro_width + 2 * halo_width
-  float height_ = 0.0;      // height_ = macro_height + 2 * halo_width
-  std::string name_ = "";   // macro name
+  float x_ = 0.0;            // lower left corner
+  float y_ = 0.0;            // lower left corner
+  float halo_width_ = 0.0;   // halo width
+  float halo_height_ = 0.0;  // halo height
+  float width_ = 0.0;        // width_ = macro_width + 2 * halo_width
+  float height_ = 0.0;       // height_ = macro_height + 2 * halo_width
+  std::string name_ = "";    // macro name
   odb::dbOrientType orientation_ = odb::dbOrientType::R0;
 
   // we assume all the pins locate at the center of all pins
@@ -624,7 +648,7 @@ struct BundledNet
 // Rect class use float type for Micron unit
 struct Rect
 {
-  Rect() {}
+  Rect() = default;
   Rect(const float lx,
        const float ly,
        const float ux,
@@ -654,8 +678,9 @@ struct Rect
               float core_ux,
               float core_uy)
   {
-    if (fixed_flag == true)
+    if (fixed_flag == true) {
       return;
+    }
 
     const float width = ux - lx;
     const float height = uy - ly;
@@ -703,8 +728,9 @@ struct Rect
                    float core_ux,
                    float core_uy)
   {
-    if (fixed_flag == true)
+    if (fixed_flag == true) {
       return;
+    }
     moveHor(x_dist);
     moveVer(y_dist);
     const float width = getWidth();
@@ -730,12 +756,13 @@ struct Rect
     }
 
     if (lx < core_lx - 1.0 || ly < core_ly - 1.0 || ux > core_ux + 1.0
-        || uy > core_uy + 1.0)
+        || uy > core_uy + 1.0) {
       std::cout << "Error !!!\n"
                 << "core_lx =  " << core_lx << "  "
                 << "core_ly =  " << core_ly << "  "
                 << "core_ux =  " << core_ux << "  "
                 << "core_uy =  " << core_uy << std::endl;
+    }
   }
 
   inline void resetForce()
@@ -750,8 +777,9 @@ struct Rect
 
   inline void makeSquare(float ar = 1.0)
   {
-    if (fixed_flag == true)
+    if (fixed_flag == true) {
       return;
+    }
     const float x = getX();
     const float y = getY();
     const float height = std::sqrt(getWidth() * getHeight() * ar);
@@ -787,8 +815,9 @@ struct Rect
 
   void merge(const Rect& rect)
   {
-    if (!isValid())
+    if (!isValid()) {
       return;
+    }
 
     lx = std::min(lx, rect.lx);
     ly = std::min(ly, rect.ly);
@@ -801,8 +830,9 @@ struct Rect
                 float outline_ux,
                 float outline_uy)
   {
-    if (!isValid())
+    if (!isValid()) {
       return;
+    }
 
     lx = std::max(lx, outline_lx);
     ly = std::max(ly, outline_ly);

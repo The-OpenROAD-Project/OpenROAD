@@ -86,7 +86,10 @@ class ICeWall
   void removeBump(odb::dbInst* inst);
   void removeBumpArray(odb::dbMaster* master);
 
-  void assignBump(odb::dbInst* inst, odb::dbNet* net);
+  void assignBump(odb::dbInst* inst,
+                  odb::dbNet* net,
+                  odb::dbITerm* terminal = nullptr,
+                  bool dont_route = false);
 
   void makeFakeSite(const std::string& name, int width, int height);
   odb::dbRow* findRow(const std::string& name) const;
@@ -97,7 +100,9 @@ class ICeWall
                  int north_offset,
                  int east_offset,
                  int south_offset,
-                 const odb::dbOrientType& rotation,
+                 const odb::dbOrientType& rotation_hor,
+                 const odb::dbOrientType& rotation_ver,
+                 const odb::dbOrientType& rotation_cor,
                  int ring_index);
   void removeIORows();
 
@@ -117,16 +122,22 @@ class ICeWall
                      const odb::dbOrientType& rotation = odb::dbOrientType::R0,
                      const odb::Point& offset = {0, 0},
                      const std::string& prefix = "IO_BOND_");
+  void placeTerminals(const std::vector<odb::dbITerm*>& iterms);
   void routeRDL(odb::dbTechLayer* layer,
                 odb::dbTechVia* bump_via,
                 odb::dbTechVia* pad_via,
                 const std::vector<odb::dbNet*>& nets,
                 int width = 0,
                 int spacing = 0,
-                bool allow45 = false);
+                bool allow45 = false,
+                float turn_penalty = 2.0);
   void routeRDLDebugGUI(bool enable);
 
   void connectByAbutment();
+
+  static std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>> getTouchingIterms(
+      odb::dbInst* inst0,
+      odb::dbInst* inst1);
 
  private:
   odb::dbBlock* getBlock() const;
@@ -141,10 +152,6 @@ class ICeWall
                      odb::dbInst* inst,
                      const odb::dbOrientType& base_orient,
                      bool allow_overlap = false) const;
-
-  std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>> getTouchingIterms(
-      odb::dbInst* inst0,
-      odb::dbInst* inst1) const;
 
   void makeBTerm(odb::dbNet* net,
                  odb::dbTechLayer* layer,
@@ -164,6 +171,8 @@ class ICeWall
   // Data members
   odb::dbDatabase* db_ = nullptr;
   utl::Logger* logger_ = nullptr;
+
+  std::map<odb::dbITerm*, odb::dbITerm*> routing_map_;
 
   std::unique_ptr<RDLRouter> router_;
   std::unique_ptr<RDLGui> router_gui_;

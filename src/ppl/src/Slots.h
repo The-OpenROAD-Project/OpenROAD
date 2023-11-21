@@ -103,11 +103,11 @@ struct Section
   odb::Point pos;
   std::vector<int> pin_indices;
   std::vector<PinGroupByIndex> pin_groups;
-  int cost;
-  int begin_slot;
-  int end_slot;
-  int used_slots;
-  int num_slots;
+  int cost = 0;
+  int begin_slot = 0;
+  int end_slot = 0;
+  int used_slots = 0;
+  int num_slots = 0;
   Edge edge;
 
   int getMaxContiguousSlots(const std::vector<Slot>& slots);
@@ -136,6 +136,8 @@ struct Constraint
   Interval interval;
   odb::Rect box;
   std::vector<Section> sections;
+  std::vector<int> pin_indices;
+  std::set<int> pin_groups;
   float pins_per_slots;
   int first_slot = 0;
   int last_slot = 0;

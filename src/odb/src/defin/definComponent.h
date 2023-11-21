@@ -57,8 +57,8 @@ class definComponent : public definBase
     }
   };
 
-  typedef std::map<const char*, dbMaster*, ltstr> MasterMap;
-  typedef std::map<const char*, dbSite*, ltstr> SiteMap;
+  using MasterMap = std::map<const char*, dbMaster*, ltstr>;
+  using SiteMap = std::map<const char*, dbSite*, ltstr>;
   std::vector<dbLib*> _libs;
   MasterMap _masters;
   SiteMap _sites;

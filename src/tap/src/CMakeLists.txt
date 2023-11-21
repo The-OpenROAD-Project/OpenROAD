@@ -39,6 +39,9 @@ swig_lib(NAME      tap
          NAMESPACE tap
          I_FILE    tapcell.i
          SCRIPTS   tapcell.tcl
+         SWIG_INCLUDES ${ODB_HOME}/src/swig/common
+                       ${ODB_HOME}/src/swig/tcl
+                       ${ODB_HOME}/include
 )
 
 target_sources(tap
@@ -57,6 +60,7 @@ target_link_libraries(tap
     utl
     odb
     OpenSTA
+    Boost::boost
 )
 
 messages(

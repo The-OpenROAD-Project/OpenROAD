@@ -64,7 +64,7 @@ void definRow::init()
     free((void*) (*sitr).first);
 
   _sites.clear();
-  _cur_row = NULL;
+  _cur_row = nullptr;
 }
 
 dbSite* definRow::getSite(const char* name)
@@ -93,7 +93,7 @@ dbSite* definRow::getSite(const char* name)
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 void definRow::begin(const char* name,
@@ -107,7 +107,7 @@ void definRow::begin(const char* name,
 {
   dbSite* site = getSite(site_name);
 
-  if (site == NULL) {
+  if (site == nullptr) {
     _logger->warn(
         utl::ODB,
         155,
@@ -141,7 +141,7 @@ void definRow::begin(const char* name,
 }
 void definRow::property(const char* name, const char* value)
 {
-  if (_cur_row == NULL)
+  if (_cur_row == nullptr)
     return;
 
   dbProperty* p = dbProperty::find(_cur_row, name);
@@ -153,7 +153,7 @@ void definRow::property(const char* name, const char* value)
 
 void definRow::property(const char* name, int value)
 {
-  if (_cur_row == NULL)
+  if (_cur_row == nullptr)
     return;
 
   dbProperty* p = dbProperty::find(_cur_row, name);
@@ -165,7 +165,7 @@ void definRow::property(const char* name, int value)
 
 void definRow::property(const char* name, double value)
 {
-  if (_cur_row == NULL)
+  if (_cur_row == nullptr)
     return;
 
   dbProperty* p = dbProperty::find(_cur_row, name);
@@ -185,7 +185,7 @@ void definRow::end()
       props.reverse();
   }
 
-  _cur_row = NULL;
+  _cur_row = nullptr;
 }
 
 }  // namespace odb

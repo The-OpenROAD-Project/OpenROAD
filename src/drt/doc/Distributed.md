@@ -137,4 +137,6 @@ The output will contain all the pods with their status. Make sure that they are 
 
 ## Notes
 
+<!-- . -->
+
 [^1]: It is important to note that in this tutorial, we make the router leader, the shared NFS folder, and the cluster all use the same zone on google cloud.

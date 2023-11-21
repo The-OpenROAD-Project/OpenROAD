@@ -157,6 +157,11 @@ const std::vector<std::unique_ptr<drPatchWire>>& FlexGCWorker::getPWires() const
   return impl_->pwires_;
 }
 
+void FlexGCWorker::clearPWires()
+{
+  impl_->pwires_.clear();
+}
+
 bool FlexGCWorker::setTargetNet(frBlockObject* in)
 {
   auto& owner2nets = impl_->owner2nets_;

@@ -176,13 +176,13 @@ class frLayer
       return dbTechLayerDir::NONE;
     return db_layer_->getDirection();
   }
-  bool isVertical()
+  bool isVertical() const
   {
     return (fakeCut || fakeMasterslice)
                ? false
                : db_layer_->getDirection() == dbTechLayerDir::VERTICAL;
   }
-  bool isHorizontal()
+  bool isHorizontal() const
   {
     return (fakeCut || fakeMasterslice)
                ? false
@@ -540,6 +540,13 @@ class frLayer
     } else {
       return (!cutConstraints.empty());
     }
+  }
+  bool haslef58CutSpacing(bool samenet = false) const
+  {
+    if (samenet) {
+      return (!lef58CutSpacingSamenetConstraints.empty());
+    }
+    return !lef58CutSpacingConstraints.empty();
   }
   bool hasInterLayerCutSpacing(frLayerNum layerNum, bool samenet = false) const
   {

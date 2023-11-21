@@ -55,7 +55,6 @@ using odb::dbTechNonDefaultRule;
 using odb::dbWire;
 using odb::dbWireShapeItr;
 using odb::Rect;
-using odb::ZPtr;
 
 extMainOptions::extMainOptions()
 {
@@ -476,7 +475,7 @@ uint extMain::benchWires(extMainOptions* opt)
   if (_block == NULL) {
     dbChip* chip = dbChip::create(_db);
     assert(chip);
-    _block = dbBlock::create(chip, opt->_name, '/');
+    _block = dbBlock::create(chip, opt->_name, _tech, '/');
     assert(_block);
     _prevControl = _block->getExtControl();
     _block->setBusDelimeters('[', ']');

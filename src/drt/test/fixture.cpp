@@ -87,7 +87,7 @@ void Fixture::setupTech(frTechObject* tech)
   tech->setDBUPerUU(1000);
 
   auto db = odb::dbDatabase::create();
-  db_tech = odb::dbTech::create(db);
+  db_tech = odb::dbTech::create(db, "tech");
   // TR assumes that masterslice always exists
   addLayer(tech, "masterslice", dbTechLayerType::MASTERSLICE);
   addLayer(tech, "v0", dbTechLayerType::CUT);
@@ -544,6 +544,22 @@ void Fixture::makeKeepOutZoneRule(frLayerNum layer_num,
   design->getTech()->addUConstraint(std::move(con));
 }
 
+frLef58CutSpacingConstraint*
+Fixture::makeLef58CutSpacingConstraint_parallelOverlap(frLayerNum layer_num,
+                                                       frCoord spacing)
+{
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+
+  auto uCon = make_unique<frLef58CutSpacingConstraint>();
+  auto con = uCon.get();
+  con->setCutSpacing(spacing);
+  con->setParallelOverlap(true);
+  layer->addLef58CutSpacingConstraint(con);
+  design->getTech()->addUConstraint(std::move(uCon));
+  return con;
+}
+
 frLef58CutSpacingConstraint* Fixture::makeLef58CutSpacingConstraint_adjacentCut(
     frLayerNum layer_num,
     frCoord spacing,
@@ -568,7 +584,7 @@ frLef58CutSpacingConstraint* Fixture::makeLef58CutSpacingConstraint_adjacentCut(
   con->setCutWithin(rule->getWithin());
   con->setCenterToCenter(rule->isCenterToCenter());
   layer->addLef58CutSpacingConstraint(con);
-  tech->addUConstraint(std::move(uCon));
+  design->getTech()->addUConstraint(std::move(uCon));
   return con;
 }
 

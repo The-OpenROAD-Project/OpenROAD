@@ -25,7 +25,7 @@
 /*                                                                            */
 /*  $Author: dell $ */
 /*  $Revision: #1 $ */
-/*  $Date: 2017/06/06 $ */
+/*  $Date: 2020/09/29 $ */
 /*  $State:  $                                                                */
 /* ************************************************************************** */
 /* ************************************************************************** */
@@ -45,7 +45,7 @@ EXTERN int defiPinProp_numProps(const defiPinProp* obj);
 EXTERN const char* defiPinProp_propName(const defiPinProp* obj, int index);
 EXTERN const char* defiPinProp_propValue(const defiPinProp* obj, int index);
 EXTERN double defiPinProp_propNumber(const defiPinProp* obj, int index);
-EXTERN char defiPinProp_propType(const defiPinProp* obj, int index);
+EXTERN const char defiPinProp_propType(const defiPinProp* obj, int index);
 EXTERN int defiPinProp_propIsNumber(const defiPinProp* obj, int index);
 EXTERN int defiPinProp_propIsString(const defiPinProp* obj, int index);
 

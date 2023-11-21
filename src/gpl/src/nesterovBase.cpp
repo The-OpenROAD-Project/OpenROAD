@@ -2331,14 +2331,12 @@ void NesterovBase::updateNextIter(const int iter)
   std::swap(prevSLPSumGrads_, curSLPSumGrads_);
 
   // Prevent locked instances from moving
-  int total_locked = 0;
   for (size_t k = 0; k < gCells_.size(); ++k) {
     if (gCells_[k]->isInstance() && gCells_[k]->instance()->isLocked()) {
       nextSLPCoordi_[k] = curSLPCoordi_[k];
       nextSLPWireLengthGrads_[k] = curSLPWireLengthGrads_[k];
       nextSLPDensityGrads_[k] = curSLPDensityGrads_[k];
       nextSLPSumGrads_[k] = curSLPSumGrads_[k];
-      total_locked++;
       nextCoordi_[k] = curCoordi_[k];
     }
   }
@@ -2350,7 +2348,7 @@ void NesterovBase::updateNextIter(const int iter)
 
   std::swap(curCoordi_, nextCoordi_);
 
-  // In a macro dominated design like mock-array-big you may be placing
+  // In a macro dominated design like mock-array you may be placing
   // very few std cells in a sea of fixed macros.  The overflow denominator
   // may be quite small and prevent convergence.  This is mostly due
   // to our limited ability to move instances off macros cleanly.  As that

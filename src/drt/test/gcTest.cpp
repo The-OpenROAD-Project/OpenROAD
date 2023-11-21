@@ -1128,6 +1128,39 @@ BOOST_AUTO_TEST_CASE(metal_width_via_map)
              Rect(100, 0, 200, 100));
 }
 
+BOOST_DATA_TEST_CASE(cut_spc_parallel_overlap,
+                     (bdata::make({100, 50}) ^ bdata::make({false, true})),
+                     spacing,
+                     legal)
+{
+  // Setup
+  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  frViaDef* vd_bar = makeViaDef("V2_BAR", 3, {0, 0}, {100, 100});
+
+  makeLef58CutSpacingConstraint_parallelOverlap(3, spacing);
+
+  frNet* n1 = makeNet("n1");
+  frNet* n2 = makeNet("n2");
+  makeVia(vd_bar, n1, {0, 0});
+  makeVia(vd_bar, n2, {150, 0});
+  runGC();
+
+  // // Test the results
+  auto& markers = worker.getMarkers();
+  if (legal) {
+    BOOST_TEST(markers.size() == 0);
+  } else {
+    BOOST_TEST(markers.size() == 1);
+  }
+  if (!markers.empty()) {
+    testMarker(markers[0].get(),
+               3,
+               frConstraintTypeEnum::frcLef58CutSpacingConstraint,
+               Rect(100, 0, 150, 100));
+  }
+}
+
 BOOST_DATA_TEST_CASE(cut_spc_adjacent_cuts, (bdata::make({true, false})), lef58)
 {
   // Setup

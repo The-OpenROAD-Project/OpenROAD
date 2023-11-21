@@ -45,6 +45,9 @@ if (Qt5_FOUND AND BUILD_GUI)
   target_sources(gui
    PRIVATE
     src/layoutViewer.cpp
+    src/layoutTabs.cpp
+    src/renderThread.cpp
+    src/painter.cpp
     src/mainWindow.cpp
     src/scriptWidget.cpp
     src/cmdInputWidget.cpp
@@ -101,6 +104,10 @@ else()
   target_link_libraries(gui
     PUBLIC
       odb
+  )
+  target_include_directories(gui
+    PRIVATE
+      ${OPENROAD_HOME}/include
   )
 endif()
 

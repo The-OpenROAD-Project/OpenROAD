@@ -8,6 +8,8 @@ DEFAULT_TARGET_DENSITY = 0.7
 # when an arg is None, we just skip setting it, otherwise we will set the
 # parameter after a quick type check.
 def tritonPartDesign(design, *,
+                     base_balance=[1.0],
+                     scale_factor=[1.0],
                      num_parts=2,
                      balance_constraint=1.0,
                      seed=1,
@@ -55,6 +57,8 @@ def tritonPartDesign(design, *,
     mgr.tritonPartDesign(
                      num_parts,
                      balance_constraint,
+                     base_balance,
+                     scale_factor,
                      seed,
                      timing_aware_flag,
                      top_n,

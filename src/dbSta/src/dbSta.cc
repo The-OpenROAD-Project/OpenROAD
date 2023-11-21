@@ -44,6 +44,7 @@
 #include <tcl.h>
 
 #include <algorithm>  // min
+#include <mutex>
 
 #include "AbstractPathRenderer.h"
 #include "AbstractPowerDensityDataSource.h"
@@ -175,6 +176,8 @@ std::unique_ptr<dbSta> dbSta::makeBlockSta(odb::dbBlock* block)
   clone->makeComponents();
   clone->initVars(tclInterp(), db_, logger_);
   clone->getDbNetwork()->setBlock(block);
+  clone->getDbNetwork()->setDefaultLibertyLibrary(
+      network_->defaultLibertyLibrary());
   clone->copyUnits(units());
   return clone;
 }
@@ -207,9 +210,11 @@ void dbSta::postReadLef(dbTech* tech, dbLib* library)
 
 void dbSta::postReadDef(dbBlock* block)
 {
-  db_network_->readDefAfter(block);
-  db_cbk_->addOwner(block);
-  db_cbk_->setNetwork(db_network_);
+  if (!block->getParent()) {
+    db_network_->readDefAfter(block);
+    db_cbk_->addOwner(block);
+    db_cbk_->setNetwork(db_network_);
+  }
 }
 
 void dbSta::postReadDb(dbDatabase* db)
@@ -331,6 +336,11 @@ void dbStaReport::printLine(const char* line, size_t length)
     redirectStringPrint("\n", 1);
     return;
   }
+  if (redirect_stream_) {
+    fwrite(line, sizeof(char), length, redirect_stream_);
+    fwrite("\n", sizeof(char), 1, redirect_stream_);
+    return;
+  }
 
   logger_->report("{}", line);
 }
@@ -341,6 +351,10 @@ size_t dbStaReport::printString(const char* buffer, size_t length)
   if (redirect_to_string_) {
     redirectStringPrint(buffer, length);
     return length;
+  }
+  if (redirect_stream_) {
+    size_t ret = fwrite(buffer, sizeof(char), length, redirect_stream_);
+    return std::min(ret, length);
   }
 
   // prepend saved buffer
@@ -563,6 +577,8 @@ void dbStaCbk::inDbBTermPreDisconnect(dbBTerm* bterm)
 void dbStaCbk::inDbBTermCreate(dbBTerm* bterm)
 {
   sta_->getDbNetwork()->makeTopPort(bterm);
+  Pin* pin = network_->dbToSta(bterm);
+  sta_->makePortPinAfter(pin);
 }
 
 void dbStaCbk::inDbBTermDestroy(dbBTerm* bterm)

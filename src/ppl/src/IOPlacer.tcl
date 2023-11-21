@@ -221,7 +221,6 @@ proc set_io_pin_constraint { args } {
     }
 
     if { [llength $pin_list] != 0} {
-      utl::info PPL 44 "Pin group: \[$final_group \]"
       ppl::add_pin_group $pin_list [info exists flags(-order)]
       incr group_idx
     }
@@ -306,6 +305,55 @@ proc set_pin_thick_multiplier { args } {
   }
 }
 
+sta::define_cmd_args "set_simulated_annealing" {[-temperature temperature]\
+                                                [-max_iterations iters]\
+                                                [-perturb_per_iter perturbs]\
+                                                [-alpha alpha]
+}
+
+proc set_simulated_annealing { args } {
+  sta::parse_key_args "set_simulated_annealing" args \
+  keys {-temperature -max_iterations -perturb_per_iter -alpha}
+
+  if [info exists keys(-temperature)] {
+    set temperature $keys(-temperature)
+    sta::check_positive_float "-temperature" $temperature
+  }
+  if [info exists keys(-max_iterations)] {
+    set max_iterations $keys(-max_iterations)
+    sta::check_positive_int "-max_iterations" $max_iterations
+  }
+  if [info exists keys(-perturb_per_iter)] {
+    set perturb_per_iter $keys(-perturb_per_iter)
+    sta::check_positive_int "-perturb_per_iter" $perturb_per_iter
+  }
+  if [info exists keys(-alpha)] {
+    set alpha $keys(-alpha)
+    sta::check_positive_float "-alpha" $alpha
+  }
+
+  ppl::set_simulated_annealing $temperature $max_iterations $perturb_per_iter $alpha
+}
+
+sta::define_cmd_args "simulated_annealing_debug" {
+  [-iters_between_paintings iters]
+  [-no_pause_mode no_pause_mode] # Print solver state every second based on iters_between_paintings
+}
+
+proc simulated_annealing_debug { args } {
+  sta::parse_key_args "simulated_annealing_debug" args \
+  keys {-iters_between_paintings} \
+  flags {-no_pause_mode}
+
+  if [info exists keys(-iters_between_paintings)] {
+    set iters $keys(-iters_between_paintings)
+    sta::check_positive_int "-iters_between_paintings" $iters
+    ppl::simulated_annealing_debug $iters [info exists flags(-no_pause_mode)]
+  } else {
+    utl::error PPL 108 "The -iters_between_paintings argument is required when using debug."
+  }
+}
+
 sta::define_cmd_args "place_pin" {[-pin_name pin_name]\
                                   [-layer layer]\
                                   [-location location]\
@@ -316,7 +364,7 @@ sta::define_cmd_args "place_pin" {[-pin_name pin_name]\
 proc place_pin { args } {
   sta::parse_key_args "place_pin" args \
   keys {-pin_name -layer -location -pin_size}\
-  flags {-force_to_die_boundary}
+  flags {-force_to_die_boundary -placed_status}
 
   sta::check_argc_eq0 "place_pin" $args
 
@@ -368,6 +416,13 @@ proc place_pin { args } {
   ppl::place_pin $pin $layer $x $y $width $height [info exists flags(-force_to_die_boundary)]
 }
 
+sta::define_cmd_args "write_pin_placement" { file_name }
+
+proc write_pin_placement { args } {
+  set file_name $args
+  ppl::write_pin_placement $file_name
+}
+
 sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
                                   [-ver_layers v_layers]\
                                   [-random_seed seed]\
@@ -376,7 +431,9 @@ sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
                                   [-min_distance min_dist]\
                                   [-min_distance_in_tracks]\
                                   [-exclude region]\
-                                  [-group_pins pin_list]
+                                  [-group_pins pin_list]\
+                                  [-annealing] \
+                                  [-write_pin_placement file_name]
                                  }
 
 proc place_pins { args } {
@@ -384,8 +441,8 @@ proc place_pins { args } {
   set pin_groups [ppl::parse_group_pins_arg $args]
   sta::parse_key_args "place_pins" args \
   keys {-hor_layers -ver_layers -random_seed -corner_avoidance \
-        -min_distance -exclude -group_pins} \
-  flags {-random -min_distance_in_tracks}
+        -min_distance -exclude -group_pins -write_pin_placement} \
+  flags {-random -min_distance_in_tracks -annealing}
 
   sta::check_argc_eq0 "place_pins" $args
 
@@ -437,9 +494,6 @@ proc place_pins { args } {
   set distance 1
   if [info exists keys(-corner_avoidance)] {
     set distance $keys(-corner_avoidance)
-    ppl::set_corner_avoidance [ord::microns_to_dbu $distance]
-  } else {
-    utl::report "Using ${distance}u default distance from corners."
     ppl::set_corner_avoidance [ord::microns_to_dbu $distance]
   }
 
@@ -554,7 +608,15 @@ proc place_pins { args } {
     }
   }
 
-  ppl::run_io_placement [info exists flags(-random)]
+  if [info exists keys(-write_pin_placement)] {
+    ppl::set_pin_placement_file $keys(-write_pin_placement)
+  }
+
+  if { [info exists flags(-annealing)] } {
+    ppl::run_annealing [info exists flags(-random)]
+  } else {
+    ppl::run_io_placement [info exists flags(-random)]
+  }
 }
 
 namespace eval ppl {
@@ -654,7 +716,6 @@ proc parse_layer_name { layer_name } {
 }
 
 proc add_pins_to_constraint {cmd names edge begin end edge_name} {
-  utl::info PPL 48 "Restrict pins \[$names\] to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u at the $edge_name edge."
   set pin_list [ppl::parse_pin_names $cmd $names]
   ppl::add_names_constraint $pin_list $edge $begin $end
 }
