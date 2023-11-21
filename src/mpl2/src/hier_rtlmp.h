@@ -150,7 +150,7 @@ class HierRTLMP
   void writeMacroPlacement(const std::string& file_name);
 
  private:
- 	// General Hier-RTLMP flow functions
+  // General Hier-RTLMP flow functions
   void setDefaultThresholds();
   void createDataFlow();
   void updateDataFlow();
@@ -181,7 +181,7 @@ class HierRTLMP
   void setClusterMetrics(Cluster* cluster);
   void mapIOPads();
   void createBundledIOs();
-	void calculateConnection();
+  void calculateConnection();
   void createPinBlockage();
   void getHardMacros(odb::dbModule* module,
                      std::vector<HardMacro*>& hard_macros);
@@ -189,13 +189,13 @@ class HierRTLMP
 
   void printConnection();
   void printClusters();
-	void FDPlacement(std::vector<Rect>& blocks,
+  void FDPlacement(std::vector<Rect>& blocks,
                    const std::vector<BundledNet>& nets,
                    float outline_width,
                    float outline_height,
                    const std::string& file_name);
 
-	// Multilevel Autoclustering
+  // Multilevel Autoclustering
   void multiLevelCluster(Cluster* parent);
   void setInstProperty(Cluster* cluster);
   void setInstProperty(odb::dbModule* module,
@@ -208,8 +208,8 @@ class HierRTLMP
   void leafClusterStdCellHardMacroSep(Cluster* root_cluster);
   void mapMacroInCluster2HardMacro(Cluster* cluster);
 
-	// Coarse Shaping
-	void calClusterMacroTilings(Cluster* parent);
+  // Coarse Shaping
+  void calClusterMacroTilings(Cluster* parent);
   void calHardMacroClusterShape(Cluster* cluster);
 
   // Fine Shaping
@@ -237,13 +237,13 @@ class HierRTLMP
   void updateChildrenRealLocation(Cluster* parent,
                                   float offset_x,
                                   float offset_y);
-	void mergeNets(std::vector<BundledNet>& nets);
-	void alignHardMacroGlobal(Cluster* parent);
+  void mergeNets(std::vector<BundledNet>& nets);
+  void alignHardMacroGlobal(Cluster* parent);
 
   // Hierarchical Macro Placement 2nd stage: Macro Placement
   void hardMacroClusterMacroPlacement(Cluster* cluster);
 
-	// Orientation Improvement
+  // Orientation Improvement
   void generateTemporaryStdCellsPlacement(Cluster* cluster);
   void setModuleStdCellsLocation(Cluster* cluster, odb::dbModule* module);
   void setTemporaryStdCellLocation(Cluster* cluster, odb::dbInst* std_cell);

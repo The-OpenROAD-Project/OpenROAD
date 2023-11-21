@@ -3733,8 +3733,8 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
-      sa->setBlockages(placement_blockages);
-      sa->setBlockages(macro_blockages);
+      sa->addBlockages(placement_blockages);
+      sa->addBlockages(macro_blockages);
       sa_vector.push_back(sa);
     }
     if (sa_vector.size() == 1) {
@@ -3975,8 +3975,8 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
         sa->setFences(fences);
         sa->setGuides(guides);
         sa->setNets(nets);
-        sa->setBlockages(placement_blockages);
-        sa->setBlockages(macro_blockages);
+        sa->addBlockages(placement_blockages);
+        sa->addBlockages(macro_blockages);
         sa_vector.push_back(sa);
       }
       if (sa_vector.size() == 1) {
@@ -4491,8 +4491,8 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
-      sa->setBlockages(placement_blockages);
-      sa->setBlockages(macro_blockages);
+      sa->addBlockages(placement_blockages);
+      sa->addBlockages(macro_blockages);
       sa_vector.push_back(sa);
     }
     if (sa_vector.size() == 1) {
@@ -4957,8 +4957,8 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
-      sa->setBlockages(placement_blockages);
-      sa->setBlockages(macro_blockages);
+      sa->addBlockages(placement_blockages);
+      sa->addBlockages(macro_blockages);
       sa_vector.push_back(sa);
     }
     if (sa_vector.size() == 1) {
