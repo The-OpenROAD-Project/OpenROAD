@@ -12,6 +12,8 @@
 [INFO ODB-0303] The initial 3528 rows (91728000 sites) were cut with 225 shapes for a total of 52263 rows (14219856 sites).
 [INFO CTS-0050] Root buffer is BUF_X4.
 [INFO CTS-0051] Sink buffer is BUF_X4.
+[INFO CTS-0052] The following clock buffers will be used for CTS:
+                    BUF_X4
 [INFO CTS-0049] Characterization buffer is BUF_X4.
 [INFO CTS-0039] Number of created patterns = 4200.
 [INFO CTS-0084] Compiling LUT.

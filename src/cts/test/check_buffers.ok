@@ -9,6 +9,8 @@
 [INFO ODB-0133]     Created 1 nets and 288 connections.
 [INFO CTS-0050] Root buffer is CLKBUF_X3.
 [INFO CTS-0051] Sink buffer is CLKBUF_X3.
+[INFO CTS-0052] The following clock buffers will be used for CTS:
+                    CLKBUF_X3
 [INFO CTS-0049] Characterization buffer is CLKBUF_X3.
 [INFO CTS-0039] Number of created patterns = 840.
 [INFO CTS-0084] Compiling LUT.

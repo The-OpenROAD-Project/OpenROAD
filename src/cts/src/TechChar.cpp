@@ -717,11 +717,25 @@ void TechChar::trimSortBufferList(std::vector<std::string>& buffers)
               return (this->getMaxCapLimit(buf1) < this->getMaxCapLimit(buf2));
             });
 
-  if (logger_->debugCheck(utl::CTS, "tech char", 1)) {
-    logger_->report("-----  after trimSortBufferList -----");
-    for (const std::string& bufName : buffers) {
-      logger_->report("{}", bufName);
+  // remove close max cap values within 10% of prev neighbor
+  if (options_->isBufferListInferred()) {
+    std::vector<std::string>::iterator it = buffers.begin();
+    float prev = getMaxCapLimit(*it);
+    ++it;
+    while (it != buffers.end()) {
+      float curr = getMaxCapLimit(*it);
+      if (std::abs(prev - curr) / curr < 0.1) {
+        it = buffers.erase(it);
+      } else {
+        ++it;
+        prev = curr;
+      }
     }
+  }
+
+  logger_->info(CTS, 52, "The following clock buffers will be used for CTS:");
+  for (const std::string& bufName : buffers) {
+    logger_->report("                    {}", bufName);
   }
 }
 

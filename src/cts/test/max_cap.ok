@@ -12,6 +12,8 @@
 [INFO ODB-0133]     Created 2 nets and 41 connections.
 [INFO CTS-0050] Root buffer is sky130_fd_sc_hs__clkbuf_1.
 [INFO CTS-0051] Sink buffer is sky130_fd_sc_hs__clkbuf_1.
+[INFO CTS-0052] The following clock buffers will be used for CTS:
+                    sky130_fd_sc_hs__clkbuf_1
 [INFO CTS-0049] Characterization buffer is sky130_fd_sc_hs__clkbuf_1.
 [INFO CTS-0039] Number of created patterns = 4200.
 [INFO CTS-0084] Compiling LUT.
