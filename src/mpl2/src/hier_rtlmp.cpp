@@ -3275,7 +3275,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   std::vector<Rect> placement_blockages;
   std::vector<Rect> macro_blockages;
 
-  computeBlockageOverlap(macro_blockages, placement_blockages, outline);
+  findOverlappingBlockages(macro_blockages, placement_blockages, outline);
 
   // Each cluster is modeled as Soft Macro
   // The fences or guides for each cluster is created by merging
@@ -4189,7 +4189,7 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
   std::vector<Rect> placement_blockages;
   std::vector<Rect> macro_blockages;
 
-  computeBlockageOverlap(macro_blockages, placement_blockages, outline);
+  findOverlappingBlockages(macro_blockages, placement_blockages, outline);
 
   // Each cluster is modeled as Soft Macro
   // The fences or guides for each cluster is created by merging
@@ -4671,7 +4671,7 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   std::vector<Rect> placement_blockages;
   std::vector<Rect> macro_blockages;
 
-  computeBlockageOverlap(macro_blockages, placement_blockages, outline);
+  findOverlappingBlockages(macro_blockages, placement_blockages, outline);
 
   // Each cluster is modeled as Soft Macro
   // The fences or guides for each cluster is created by merging
@@ -5062,37 +5062,17 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
 
 // Verify the blockages' areas that have overlapped with current parent
 // cluster. All the blockages will be converted to hard macros with fences.
-void HierRTLMP::computeBlockageOverlap(std::vector<Rect>& macro_blockages,
-                                       std::vector<Rect>& placement_blockages,
-                                       const Rect& outline)
+void HierRTLMP::findOverlappingBlockages(std::vector<Rect>& macro_blockages,
+                                         std::vector<Rect>& placement_blockages,
+                                         const Rect& outline)
 {
   // Placement blockages
   for (auto& blockage : blockages_) {
-    const float b_lx = std::max(outline.xMin(), blockage.xMin());
-    const float b_ly = std::max(outline.yMin(), blockage.yMin());
-    const float b_ux = std::min(outline.xMax(), blockage.xMax());
-    const float b_uy = std::min(outline.yMax(), blockage.yMax());
-
-    if ((b_ux - b_lx > 0.0) && (b_uy - b_ly > 0.0)) {
-      placement_blockages.emplace_back(b_lx - outline.xMin(),
-                                       b_ly - outline.yMin(),
-                                       b_ux - outline.xMin(),
-                                       b_uy - outline.yMin());
-    }
+    computeBlockageOverlap(placement_blockages, blockage, outline);
   }
 
   for (auto& blockage : macro_blockages_) {
-    const float b_lx = std::max(outline.xMin(), blockage.xMin());
-    const float b_ly = std::max(outline.yMin(), blockage.yMin());
-    const float b_ux = std::min(outline.xMax(), blockage.xMax());
-    const float b_uy = std::min(outline.yMax(), blockage.yMax());
-
-    if ((b_ux - b_lx > 0.0) && (b_uy - b_ly > 0.0)) {
-      macro_blockages.emplace_back(b_lx - outline.xMin(),
-                                   b_ly - outline.yMin(),
-                                   b_ux - outline.xMin(),
-                                   b_uy - outline.yMin());
-    }
+    computeBlockageOverlap(macro_blockages, blockage, outline);
   }
 
   if (graphics_) {
@@ -5103,6 +5083,23 @@ void HierRTLMP::computeBlockageOverlap(std::vector<Rect>& macro_blockages,
 
     graphics_->setOutline(dbu_outline);
     graphics_->setMacroBlockages(macro_blockages);
+  }
+}
+
+void HierRTLMP::computeBlockageOverlap(std::vector<Rect>& overlapping_blockages,
+                                       const Rect& blockage,
+                                       const Rect& outline)
+{
+  const float b_lx = std::max(outline.xMin(), blockage.xMin());
+  const float b_ly = std::max(outline.yMin(), blockage.yMin());
+  const float b_ux = std::min(outline.xMax(), blockage.xMax());
+  const float b_uy = std::min(outline.yMax(), blockage.yMax());
+
+  if ((b_ux - b_lx > 0.0) && (b_uy - b_ly > 0.0)) {
+    overlapping_blockages.emplace_back(b_lx - outline.xMin(),
+                                       b_ly - outline.yMin(),
+                                       b_ux - outline.xMin(),
+                                       b_uy - outline.yMin());
   }
 }
 

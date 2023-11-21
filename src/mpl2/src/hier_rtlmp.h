@@ -238,8 +238,13 @@ class HierRTLMP
   void multiLevelMacroPlacement(Cluster* parent);
   void multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent);
   void enhancedMacroPlacement(Cluster* parent);
-  void computeBlockageOverlap(std::vector<Rect>& blockages,
-                              std::vector<Rect>& placement_blockages,
+
+  // Cluster Placement Support
+  void findOverlappingBlockages(std::vector<Rect>& blockages,
+                                std::vector<Rect>& placement_blockages,
+                                const Rect& outline);
+  void computeBlockageOverlap(std::vector<Rect>& overlapping_blockages,
+                              const Rect& blockage,
                               const Rect& outline);
 
   // Methods for macro placement in each macro cluster
