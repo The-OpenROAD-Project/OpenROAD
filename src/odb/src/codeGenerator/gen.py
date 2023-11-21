@@ -264,10 +264,8 @@ for klass in schema["classes"]:
         else:
             field["setterArgumentType"] = field["getterReturnType"] = field["type"]
 
-        if field["name"] == '_name' and 'no-destruct' not in field["flags"]:
-          klass["has_destructible_fields"] = True
-
-        if "table" in field:
+        # For fields that we need to free/destroy in the destructor
+        if field["name"] == '_name' and 'no-destruct' not in field["flags"] or "table" in field:
           klass["has_destructible_fields"] = True
 
     klass["fields"] = [field for field in klass["fields"] if "bits" not in field]
