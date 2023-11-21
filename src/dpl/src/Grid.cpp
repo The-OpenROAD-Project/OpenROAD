@@ -85,11 +85,12 @@ void Opendp::initGridLayersMap()
   int min_row_y_coordinate = std::numeric_limits<int>::max();
   for (auto db_row : block_->getRows()) {
     auto site = db_row->getSite();
-    if (site->getClass() != odb::dbSiteClass::PAD) {
-      int row_base_x, row_base_y;
-      db_row->getOrigin(row_base_x, row_base_y);
-      min_row_y_coordinate = min(min_row_y_coordinate, row_base_y);
+    if (site->getClass() == odb::dbSiteClass::PAD) {
+      continue;
     }
+    int row_base_x, row_base_y;
+    db_row->getOrigin(row_base_x, row_base_y);
+    min_row_y_coordinate = min(min_row_y_coordinate, row_base_y);
 
     if (site_idx_to_grid_idx_.find(site->getId())
         != site_idx_to_grid_idx_.end()) {
