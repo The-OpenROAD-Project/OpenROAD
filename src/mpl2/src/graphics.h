@@ -63,9 +63,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   void finishedClustering(Cluster* root) override;
 
   void setAreaPenalty(float area) override;
-  void setOutlinePenalty(float outline_penalty,
-                         float outline_width,
-                         float outline_height) override;
+  void setOutlinePenalty(float outline_penalty) override;
   void setWirelength(float wirelength) override;
   void setFencePenalty(float fence_penalty) override;
   void setGuidancePenalty(float guidance_penalty) override;
@@ -78,6 +76,9 @@ class Graphics : public gui::Renderer, public Mpl2Observer
 
   void setMacroBlockages(
       const std::vector<mpl2::Rect>& macro_blockages) override;
+  void setOutline(const odb::Rect& outline) override;
+
+  void eraseDrawing() override;
 
  private:
   void resetPenalties();
@@ -90,6 +91,8 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   std::vector<SoftMacro> soft_macros_;
   std::vector<HardMacro> hard_macros_;
   std::vector<mpl2::Rect> macro_blockages_;
+  odb::Rect outline_;
+
   bool active_ = true;
   bool coarse_;
   bool fine_;
@@ -104,8 +107,6 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   std::optional<float> notch_penalty_;
   std::optional<float> area_penalty_;
 
-  std::optional<float> outline_width_;
-  std::optional<float> outline_height_;
   float best_norm_cost_ = 0;
   int skipped_ = 0;
 

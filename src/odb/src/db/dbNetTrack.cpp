@@ -48,14 +48,18 @@ template class dbTable<_dbNetTrack>;
 
 bool _dbNetTrack::operator==(const _dbNetTrack& rhs) const
 {
-  if (net_ != rhs.net_)
+  if (net_ != rhs.net_) {
     return false;
-  if (box_ != rhs.box_)
+  }
+  if (box_ != rhs.box_) {
     return false;
-  if (layer_ != rhs.layer_)
+  }
+  if (layer_ != rhs.layer_) {
     return false;
-  if (track_next_ != rhs.track_next_)
+  }
+  if (track_next_ != rhs.track_next_) {
     return false;
+  }
 
   return true;
 }
