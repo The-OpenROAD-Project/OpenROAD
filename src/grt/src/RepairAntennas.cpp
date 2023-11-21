@@ -133,8 +133,7 @@ odb::dbWire* RepairAntennas::makeNetWire(
         int l2 = seg.final_layer;
 
         if (seg.isVia()) {
-          int bottom_layer = std::min(l1, l2);
-          int top_layer = std::max(l1, l2);
+          auto [bottom_layer, top_layer] = std::minmax(l1, l2);
           odb::dbTechLayer* bottom_tech_layer
               = tech->findRoutingLayer(bottom_layer);
           odb::dbTechLayer* top_tech_layer = tech->findRoutingLayer(top_layer);
