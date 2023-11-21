@@ -528,11 +528,24 @@ std::string TritonCTS::selectRootBuffer(std::vector<std::string>& buffers)
   }
 
   options_->setRootBufferInferred(true);
-  // Choose the largest one because there is significant slew degradation
-  // from clock port to root buffer.  Small buffers can't recover from such
-  // large input slew.
-  std::string rootBuf
-      = selectBestMaxCapBuffer(buffers, std::numeric_limits<float>::max());
+  // estimate wire cap for root buffer
+  // assume sink buffer needs to drive clk buffers at two far ends of chip
+  // at midpoint
+  //
+  //  --------------
+  //  |      .     |
+  //  |   ===x===  |
+  //  |      .     |
+  //  --------------
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  odb::Rect coreArea = block->getCoreArea();
+  float sinkWireLength
+      = static_cast<float>(std::max(coreArea.dx(), coreArea.dy()))
+        / block->getDbUnitsPerMicron();
+  sta::Corner* corner = openSta_->cmdCorner();
+  float rootWireCap
+      = resizer_->wireSignalCapacitance(corner) * 1e-6 * sinkWireLength / 2.0;
+  std::string rootBuf = selectBestMaxCapBuffer(buffers, rootWireCap);
   return rootBuf;
 }
 
@@ -560,11 +573,10 @@ std::string TritonCTS::selectSinkBuffer(std::vector<std::string>& buffers)
   options_->setSinkBufferInferred(true);
   // estimate wire cap for sink buffer
   // assume sink buffer needs to drive clk buffers at two far ends of chip
-  // at midpoint (pin caps can't be estimated because sinks have not been
-  // collected yet)
-
+  // to account for unknown pin caps
+  //
   //  --------------
-  //  |   ===x===  |
+  //  |======x=====|
   //  |      .     |
   //  |----- .-----|
   //  |      .     |
@@ -576,7 +588,7 @@ std::string TritonCTS::selectSinkBuffer(std::vector<std::string>& buffers)
         / block->getDbUnitsPerMicron();
   sta::Corner* corner = openSta_->cmdCorner();
   float sinkWireCap
-      = resizer_->wireSignalCapacitance(corner) * 1e-6 * sinkWireLength / 2.0;
+      = resizer_->wireSignalCapacitance(corner) * 1e-6 * sinkWireLength;
 
   std::string sinkBuf = selectBestMaxCapBuffer(buffers, sinkWireCap);
   // clang-format off
@@ -595,6 +607,7 @@ std::string TritonCTS::selectBestMaxCapBuffer(
   std::string bestBuf, nextBestBuf;
   float bestArea = std::numeric_limits<float>::max();
   float bestCap = 0.0;
+  float maxCapDerate = 0.2;  // we want some margin
 
   for (const std::string& name : buffers) {
     odb::dbMaster* master = db_->findMaster(name.c_str());
@@ -609,7 +622,8 @@ std::string TritonCTS::selectBestMaxCapBuffer(
     float maxCap = 0.0;
     bool maxCapExists = false;
     out->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExists);
-    if (maxCapExists && maxCap > totalCap && area < bestArea) {
+    if (maxCapExists && (maxCap * maxCapDerate > totalCap)
+        && area < bestArea) {
       bestBuf = name;
       bestArea = area;
     }
