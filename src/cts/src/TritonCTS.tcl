@@ -86,14 +86,16 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-sink_clustering_buffer] \
                                              [-obstruction_aware] \
 					     [-apply_ndr] \
-                                             [-insertion_delay]
+                                             [-insertion_delay] \
+                                             [-sink_buffer_max_cap_derate] \
                                             }
 
 proc clock_tree_synthesis { args } {
   sta::parse_key_args "clock_tree_synthesis" args \
     keys {-root_buf -buf_list -wire_unit -clk_nets -sink_clustering_size -num_static_layers\
           -sink_clustering_buffer -distance_between_buffers -branching_point_buffers_distance -clustering_exponent\
-          -clustering_unbalance_ratio -sink_clustering_max_diameter -sink_clustering_levels -tree_buf}\
+          -clustering_unbalance_ratio -sink_clustering_max_diameter -sink_clustering_levels -tree_buf\
+          -sink_buffer_max_cap_derate}\
       flags {-post_cts_disable -sink_clustering_enable -balance_levels \
 	     -obstruction_aware -apply_ndr -insertion_delay}
 
@@ -184,6 +186,12 @@ proc clock_tree_synthesis { args } {
     cts::set_sink_buffer $sink_buf
   } else {
     cts::set_sink_buffer ""
+  }
+
+  if { [info exists keys(-sink_buffer_max_cap_derate)] } {
+    cts::set_sink_buffer_max_cap_derate $keys(-sink_buffer_max_cap_derate)
+  } else {
+    cts::set_sink_buffer_max_cap_derate -1.0
   }
 
   cts::set_obstruction_aware [info exists flags(-obstruction_aware)]

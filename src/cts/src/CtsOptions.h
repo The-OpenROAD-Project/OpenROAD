@@ -228,6 +228,27 @@ class CtsOptions
   bool isSinkBufferInferred() const { return sinkBufferInferred_; }
   void setRootBufferInferred(bool inferred) { rootBufferInferred_ = inferred; }
   bool isRootBufferInferred() const { return rootBufferInferred_; }
+  void setSinkBufferMaxCapDerate(float derate)
+  {
+    if (derate > 1.0) {
+      sinkBufferMaxCapDerate_ = 1.0;
+      sinkBufferMaxCapDerateSet_ = true;
+    } else if (derate > 0 && derate < 0.001) {
+      sinkBufferMaxCapDerate_ = 0.001;
+      sinkBufferMaxCapDerateSet_ = true;
+    } else if (derate < 0) {
+      sinkBufferMaxCapDerate_ = sinkBufferMaxCapDerateDefault_;
+      sinkBufferMaxCapDerateSet_ = false;
+    } else {
+      sinkBufferMaxCapDerate_ = derate;
+      sinkBufferMaxCapDerateSet_ = true;
+    }
+  }
+  float getSinkBufferMaxCapDerate() const { return sinkBufferMaxCapDerate_; }
+  bool isSinkBufferMaxCapDerateSet() const
+  {
+    return sinkBufferMaxCapDerateSet_;
+  }
 
  private:
   std::string clockNets_ = "";
@@ -278,6 +299,9 @@ class CtsOptions
   bool bufferListInferred_ = false;
   bool sinkBufferInferred_ = false;
   bool rootBufferInferred_ = false;
+  bool sinkBufferMaxCapDerateSet_ = false;
+  float sinkBufferMaxCapDerateDefault_ = 0.1;
+  float sinkBufferMaxCapDerate_ = sinkBufferMaxCapDerateDefault_;
 };
 
 }  // namespace cts

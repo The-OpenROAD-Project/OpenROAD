@@ -607,7 +607,6 @@ std::string TritonCTS::selectBestMaxCapBuffer(
   std::string bestBuf, nextBestBuf;
   float bestArea = std::numeric_limits<float>::max();
   float bestCap = 0.0;
-  float maxCapDerate = 0.1;  // we want some margin
 
   for (const std::string& name : buffers) {
     odb::dbMaster* master = db_->findMaster(name.c_str());
@@ -622,7 +621,9 @@ std::string TritonCTS::selectBestMaxCapBuffer(
     float maxCap = 0.0;
     bool maxCapExists = false;
     out->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExists);
-    if (maxCapExists && (maxCap * maxCapDerate > totalCap) && area < bestArea) {
+    if (maxCapExists
+        && (maxCap * options_->getSinkBufferMaxCapDerate() > totalCap)
+        && area < bestArea) {
       bestBuf = name;
       bestArea = area;
     }

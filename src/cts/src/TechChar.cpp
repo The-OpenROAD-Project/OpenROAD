@@ -463,21 +463,6 @@ void TechChar::initCharacterization()
   // Trim and sort buffer list in ascending order of max cap limit
   trimSortBufferList(masterVector);
 
-  for (const std::string& masterString : masterVector) {
-    odb::dbMaster* testBuf = db_->findMaster(masterString.c_str());
-    if (testBuf == nullptr) {
-      logger_->error(CTS,
-                     74,
-                     "Buffer {} not found. Check your -buf_list input.",
-                     masterString);
-    }
-    auto* libertyCell = db_network_->findLibertyCell(masterString.c_str());
-    if (libertyCell == nullptr) {
-      logger_->error(CTS, 106, "No Liberty found for buffer {}.", masterString);
-    }
-    masterNames_.emplace_back(masterString);
-  }
-
   float maxBuffCap = 0.0;
   std::string bufMasterName;
   std::vector<float> axisSlews, axisLoads;
@@ -677,10 +662,30 @@ void TechChar::finalizeRootSinkBuffers()
   // Sink info is not available yet, so defer adjustment till later
   logger_->info(CTS, 50, "Root buffer is {}.", options_->getRootBuffer());
   logger_->info(CTS, 51, "Sink buffer is {}.", options_->getSinkBuffer());
+  if (options_->isSinkBufferMaxCapDerateSet()) {
+    logger_->info(CTS,
+                  53,
+                  "Max cap limit derate of {:0.3f} was used to infer root or "
+                  "sink buffers.",
+                  options_->getSinkBufferMaxCapDerate());
+  }
 }
 
 void TechChar::trimSortBufferList(std::vector<std::string>& buffers)
 {
+  // Do some sanity checks
+  for (const std::string& buffer : buffers) {
+    odb::dbMaster* testBuf = db_->findMaster(buffer.c_str());
+    if (testBuf == nullptr) {
+      logger_->error(
+          CTS, 74, "No physical master cell found for buffer {}.", buffer);
+    }
+    auto* libertyCell = db_network_->findLibertyCell(buffer.c_str());
+    if (libertyCell == nullptr) {
+      logger_->error(CTS, 106, "No liberty cell found for buffer {}.", buffer);
+    }
+  }
+
   // Trim buffer list only if this was inferred
   if (options_->isBufferListInferred()) {
     // trim buffer list to keep only buffers needed between sink and root
@@ -736,6 +741,7 @@ void TechChar::trimSortBufferList(std::vector<std::string>& buffers)
   logger_->info(CTS, 52, "The following clock buffers will be used for CTS:");
   for (const std::string& bufName : buffers) {
     logger_->report("                    {}", bufName);
+    masterNames_.emplace_back(bufName);
   }
 }
 

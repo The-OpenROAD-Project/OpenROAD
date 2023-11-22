@@ -237,6 +237,12 @@ set_insertion_delay(bool insDelay)
 }
 
 void
+set_sink_buffer_max_cap_derate(float derate)
+{
+  getTritonCts()->getParms()->setSinkBufferMaxCapDerate(derate);
+}
+ 
+void
 run_triton_cts()
 {
   getTritonCts()->runTritonCts();
