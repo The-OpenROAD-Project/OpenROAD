@@ -167,7 +167,7 @@ set_clustering_unbalance_ratio(double ratio)
 void
 set_sink_clustering_size(unsigned size)
 {
-  getTritonCts()->getParms()->setSizeSinkClustering(size);
+  getTritonCts()->getParms()->setSinkClusteringSize(size);
 }
 
 void
