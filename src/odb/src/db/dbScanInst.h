@@ -49,7 +49,8 @@ class _dbScanInst : public _dbObject
  public:
   _dbScanInst(_dbDatabase*, const _dbScanInst& r);
   _dbScanInst(_dbDatabase*);
-  ~_dbScanInst();
+
+  ~_dbScanInst() = default;
 
   bool operator==(const _dbScanInst& rhs) const;
   bool operator!=(const _dbScanInst& rhs) const { return !operator==(rhs); }

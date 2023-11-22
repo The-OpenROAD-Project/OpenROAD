@@ -110,10 +110,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbScanPartition& obj)
   return stream;
 }
 
-_dbScanPartition::~_dbScanPartition()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbScanPartition - Methods

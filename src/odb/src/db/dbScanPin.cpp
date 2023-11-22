@@ -102,10 +102,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbScanPin& obj)
   return stream;
 }
 
-_dbScanPin::~_dbScanPin()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbScanPin - Methods

@@ -53,7 +53,8 @@ class _dbScanChain : public _dbObject
  public:
   _dbScanChain(_dbDatabase*, const _dbScanChain& r);
   _dbScanChain(_dbDatabase*);
-  ~_dbScanChain();
+
+  ~_dbScanChain() = default;
 
   bool operator==(const _dbScanChain& rhs) const;
   bool operator!=(const _dbScanChain& rhs) const { return !operator==(rhs); }

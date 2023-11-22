@@ -148,10 +148,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbScanChain& obj)
   return stream;
 }
 
-_dbScanChain::~_dbScanChain()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbScanChain - Methods
