@@ -599,14 +599,12 @@ pair<int, GridInfo> Opendp::getRowInfo(const Cell* cell) const
 
 GridMapKey Opendp::getGridMapKey(const dbSite* site) const
 {
-  GridMapKey gmk;
-  auto grid_idx = site_idx_to_grid_idx_.find(site->getId());
-  if (grid_idx == site_idx_to_grid_idx_.end()) {
+  auto grid_itr = site_to_grid_key_.find(site);
+  if (grid_itr == site_to_grid_key_.end()) {
     logger_->error(
         DPL, 46, "Site {} is not mapped to a grid.", site->getName());
   }
-  gmk.grid_index = grid_idx->second;
-  return gmk;
+  return grid_itr->second;
 }
 
 GridMapKey Opendp::getGridMapKey(const Cell* cell) const

@@ -92,8 +92,7 @@ void Opendp::initGridLayersMap()
     db_row->getOrigin(row_base_x, row_base_y);
     min_row_y_coordinate = min(min_row_y_coordinate, row_base_y);
 
-    if (site_idx_to_grid_idx_.find(site->getId())
-        != site_idx_to_grid_idx_.end()) {
+    if (site_to_grid_key_.find(site) != site_to_grid_key_.end()) {
       continue;
     }
 
@@ -105,12 +104,11 @@ void Opendp::initGridLayersMap()
                  "Mapping {} to grid_index: {}",
                  site->getName(),
                  grid_index);
-      site_idx_to_grid_idx_[site->getId()] = grid_index++;
+      site_to_grid_key_[site] = GridMapKey{grid_index++};
       auto rp = site->getRowPattern();
       bool updated = false;
       for (auto& [child_site, child_site_orientation] : rp) {
-        if (site_idx_to_grid_idx_.find(child_site->getId())
-            == site_idx_to_grid_idx_.end()) {
+        if (site_to_grid_key_.find(child_site) == site_to_grid_key_.end()) {
           // FIXME(mina1460): this might need more work in the future if we
           // want to allow the same hybrid cell to be part of multiple grids
           // (For example, A in AB and AC). This is good enough for now.
@@ -121,7 +119,7 @@ void Opendp::initGridLayersMap()
                      "Mapping child site {} to grid_index: {}",
                      child_site->getName(),
                      grid_index);
-          site_idx_to_grid_idx_[child_site->getId()] = grid_index;
+          site_to_grid_key_[child_site] = GridMapKey{grid_index};
           updated = true;
         }
       }
@@ -136,14 +134,13 @@ void Opendp::initGridLayersMap()
                  "Mapping non-hybrid {} to grid_index: {}",
                  site->getName(),
                  grid_index);
-      site_idx_to_grid_idx_[site->getId()] = grid_index++;
+      site_to_grid_key_[site] = GridMapKey{grid_index++};
     }
 
     if (!site->isHybrid()) {
       if (site->getHeight() < min_site_height) {
         min_site_height = site->getHeight();
-        smallest_non_hybrid_grid_key_
-            = GridMapKey{site_idx_to_grid_idx_[site->getId()]};
+        smallest_non_hybrid_grid_key_ = site_to_grid_key_[site];
       }
     }
   }
@@ -164,7 +161,7 @@ void Opendp::initGridLayersMap()
         GridInfo newGridInfo = {
             getRowCount(row_height),
             divFloor(core_.dx(), db_row->getSite()->getWidth()),
-            site_idx_to_grid_idx_.at(working_site->getId()),
+            site_to_grid_key_.at(working_site).grid_index,
             dbSite::RowPattern{{working_site, db_row->getOrient()}},
         };
         if (working_site->isHybrid()) {
@@ -183,7 +180,7 @@ void Opendp::initGridLayersMap()
         GridInfo newGridInfo = {
             calculateHybridSitesRowCount(working_site->getParent()),
             divFloor(core_.dx(), db_row->getSite()->getWidth()),
-            site_idx_to_grid_idx_.at(working_site->getId()),
+            site_to_grid_key_.at(working_site).grid_index,
             working_site->getParent()
                 ->getRowPattern(),  // FIXME(mina1460): this is wrong! in the
                                     // case of HybridAB, and HybridBA. each of A

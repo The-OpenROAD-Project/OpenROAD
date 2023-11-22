@@ -96,12 +96,6 @@ MACRO HM_100x100_1x1
   END
 END HM_100x100_1x1 
 
-SITE SingleHeightSite
-  SYMMETRY y ;
-  CLASS core ;
-  SIZE 0.19 BY 1.4 ;
-END SingleHeightSite
-
 SITE DoubleHeightSite
   SYMMETRY y ;
   CLASS core ;
@@ -148,7 +142,7 @@ MACRO MOCK_SINGLE
   FOREIGN AND2_X1 0 0 ;
   SIZE 0.76 BY 1.4 ;
   SYMMETRY X Y ;
-  SITE SingleHeightSite ;
+  SITE FreePDK45_38x28_10R_NP_162NW_34O ;
   PIN A1 
   END A1
   PIN A2 
