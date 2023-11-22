@@ -115,7 +115,6 @@ struct Master
 struct GridMapKey
 {
   int grid_index;
-  // TODO: consider removing the two operator overloading
   bool operator<(const GridMapKey& other) const
   {
     return grid_index < other.grid_index;
@@ -134,8 +133,8 @@ class HybridSiteInfo
   const dbSite* getSite() const { return site_; }
 
  private:
-  int index_;
-  dbSite* site_;
+  const int index_;
+  const dbSite* site_;
 };
 
 struct Cell
@@ -579,7 +578,6 @@ class Opendp
   unordered_map<const dbSite*, GridMapKey> site_to_grid_key_;
   GridMapKey smallest_non_hybrid_grid_key_;
   std::vector<GridInfo*> grid_info_vector_;
-  map<int, int> siteIdToGridId_;
   map<dbInst*, Cell*> db_inst_map_;
 
   Rect core_;
