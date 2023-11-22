@@ -76,6 +76,9 @@ class Graphics : public gui::Renderer, public Mpl2Observer
 
   void setMacroBlockages(
       const std::vector<mpl2::Rect>& macro_blockages) override;
+  void setPlacementBlockages(
+      const std::vector<mpl2::Rect>& placement_blockages) override;
+
   void setOutline(const odb::Rect& outline) override;
 
   void eraseDrawing() override;

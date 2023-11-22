@@ -342,6 +342,12 @@ void Graphics::setMacroBlockages(const std::vector<mpl2::Rect>& macro_blockages)
   macro_blockages_ = macro_blockages;
 }
 
+void Graphics::setPlacementBlockages(
+    const std::vector<mpl2::Rect>& placement_blockages)
+{
+  placement_blockages_ = placement_blockages;
+}
+
 void Graphics::setOutline(const odb::Rect& outline)
 {
   outline_ = outline;
@@ -355,6 +361,7 @@ void Graphics::eraseDrawing()
   soft_macros_.clear();
   hard_macros_.clear();
   macro_blockages_.clear();
+  placement_blockages_.clear();
 }
 
 }  // namespace mpl2
