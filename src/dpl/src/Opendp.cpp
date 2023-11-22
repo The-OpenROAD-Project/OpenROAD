@@ -486,7 +486,6 @@ int Opendp::gridHeight(const Cell* cell, int row_height) const
 int Opendp::gridHeight(const Cell* cell) const
 {
   int row_height = getRowHeight(cell);
-  // TODO: this is no longer correct for hybrid cells
   return std::max(1, divCeil(cell->height_, row_height));
 }
 

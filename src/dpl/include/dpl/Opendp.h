@@ -223,7 +223,6 @@ class GridInfo
 
   bool isHybrid() const
   {
-    // TODO: consider removing the second part
     return sites_.size() > 1 || sites_[0].site->isHybridParent();
   }
   int getSitesTotalHeight() const
