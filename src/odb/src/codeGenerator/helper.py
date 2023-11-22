@@ -168,8 +168,3 @@ def get_ref_type(type_name):
         return None
 
     return type_name[6:-1] + "*"
-
-def has_destructible_field(klass):
-  for field in klass["fields"]:
-    return True
-  return False
