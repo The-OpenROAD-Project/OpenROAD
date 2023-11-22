@@ -554,10 +554,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutSpacingRule& obj)
   return stream;
 }
 
-_dbTechLayerCutSpacingRule::~_dbTechLayerCutSpacingRule()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerCutSpacingRule - Methods
@@ -1458,4 +1454,4 @@ void dbTechLayerCutSpacingRule::destroy(dbTechLayerCutSpacingRule* rule)
 }
 // User Code End dbTechLayerCutSpacingRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

@@ -315,10 +315,6 @@ dbOStream& operator<<(dbOStream& stream,
   return stream;
 }
 
-_dbTechLayerCutSpacingTableDefRule::~_dbTechLayerCutSpacingTableDefRule()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerCutSpacingTableDefRule - Methods
@@ -1063,4 +1059,4 @@ void dbTechLayerCutSpacingTableDefRule::destroy(
 
 // User Code End dbTechLayerCutSpacingTableDefRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

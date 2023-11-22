@@ -187,10 +187,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerEolKeepOutRule& obj)
   return stream;
 }
 
-_dbTechLayerEolKeepOutRule::~_dbTechLayerEolKeepOutRule()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerEolKeepOutRule - Methods
@@ -358,4 +354,4 @@ void dbTechLayerEolKeepOutRule::destroy(dbTechLayerEolKeepOutRule* rule)
 
 // User Code End dbTechLayerEolKeepOutRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp
