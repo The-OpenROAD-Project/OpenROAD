@@ -354,7 +354,7 @@ bool Opendp::checkInRows(const Cell& cell) const
           || !pixel->is_valid) {
         return false;
       }
-      if (pixel->site->getId() != cell.getSite()->getId()) {
+      if (pixel->site != cell.getSite()) {
         return false;
       }
     }

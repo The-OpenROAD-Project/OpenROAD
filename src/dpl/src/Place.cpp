@@ -898,8 +898,8 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
     return PixelPt();
   }
   if (cell->isHybrid()
-      && gridPixel(grid_info.getGridIndex(), 0, bin_y)->site->getId()
-             != cell->getSite()->getId()) {
+      && gridPixel(grid_info.getGridIndex(), 0, bin_y)->site
+             != cell->getSite()) {
     debugPrint(logger_,
                DPL,
                "hybrid",
@@ -1034,8 +1034,7 @@ bool Opendp::checkPixels(const Cell* cell,
       if (pixel == nullptr || pixel->cell || !pixel->is_valid
           || (cell->inGroup() && pixel->group_ != cell->group_)
           || (!cell->inGroup() && pixel->group_)
-          || (pixel->site != nullptr
-              && pixel->site->getId() != cell_site->getId())) {
+          || (pixel->site != nullptr && pixel->site != cell_site)) {
         return false;
       }
       if (pixel->site == nullptr) {
