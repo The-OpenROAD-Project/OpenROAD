@@ -3666,6 +3666,11 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   std::vector<SACoreSoftMacro*>
       sa_containers;  // store all the SA runs to avoid memory leakage
   float best_cost = std::numeric_limits<float>::max();
+  // To give consistency across threads we check the solutions
+  // at a fixed interval independent of how many threads we are using.
+  const int check_interval = 10;
+  int begin_check = 0;
+  int end_check = std::min(check_interval, remaining_runs);
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
@@ -3673,11 +3678,8 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
              "Start Simulated Annealing Core");
   while (remaining_runs > 0) {
     std::vector<SACoreSoftMacro*> sa_vector;
-    int run_thread
-        = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
-    if (graphics_) {
-      run_thread = 1;
-    }
+    const int run_thread
+        = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
       debugPrint(logger_,
                  MPL,
@@ -3775,20 +3777,29 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
         th.join();
       }
     }
+    remaining_runs -= run_thread;
     // add macro tilings
     for (auto& sa : sa_vector) {
-      sa_containers.push_back(sa);  // add SA to containers
-      if (sa->isValid() && sa->getNormCost() < best_cost) {
-        best_cost = sa->getNormCost();
-        best_sa = sa;
-      }
+      sa_containers.push_back(sa);
     }
-    sa_vector.clear();
-    // add early stop mechanism
-    if (best_sa != nullptr) {
+    while (sa_containers.size() >= end_check) {
+      while (begin_check < end_check) {
+        auto& sa = sa_containers[begin_check];
+        if (sa->isValid() && sa->getNormCost() < best_cost) {
+          best_cost = sa->getNormCost();
+          best_sa = sa;
+        }
+        ++begin_check;
+      }
+      // add early stop mechanism
+      if (best_sa) {
+        break;
+      }
+      end_check = begin_check + std::min(check_interval, remaining_runs);
+    }
+    if (best_sa) {
       break;
     }
-    remaining_runs -= run_thread;
   }
   debugPrint(logger_,
              MPL,
@@ -3903,6 +3914,8 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     best_sa = nullptr;
     sa_containers.clear();
     best_cost = std::numeric_limits<float>::max();
+    begin_check = 0;
+    end_check = std::min(check_interval, remaining_runs);
     debugPrint(logger_,
                MPL,
                "hierarchical_macro_placement",
@@ -3910,11 +3923,8 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
                "Start Simulated Annealing Core");
     while (remaining_runs > 0) {
       std::vector<SACoreSoftMacro*> sa_vector;
-      int run_thread
-          = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
-      if (graphics_) {
-        run_thread = 1;
-      }
+      const int run_thread
+          = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
       for (int i = 0; i < run_thread; i++) {
         debugPrint(logger_,
                    MPL,
@@ -4013,20 +4023,29 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
           th.join();
         }
       }
+      remaining_runs -= run_thread;
       // add macro tilings
       for (auto& sa : sa_vector) {
-        sa_containers.push_back(sa);  // add SA to containers
-        if (sa->isValid() && sa->getNormCost() < best_cost) {
-          best_cost = sa->getNormCost();
-          best_sa = sa;
-        }
+        sa_containers.push_back(sa);
       }
-      sa_vector.clear();
-      // add early stop mechanism
-      if (best_sa != nullptr) {
+      while (sa_containers.size() >= end_check) {
+        while (begin_check < end_check) {
+          auto& sa = sa_containers[begin_check];
+          if (sa->isValid() && sa->getNormCost() < best_cost) {
+            best_cost = sa->getNormCost();
+            best_sa = sa;
+          }
+          ++begin_check;
+        }
+        // add early stop mechanism
+        if (best_sa) {
+          break;
+        }
+        end_check = begin_check + std::min(check_interval, remaining_runs);
+      }
+      if (best_sa) {
         break;
       }
-      remaining_runs -= run_thread;
     }
     debugPrint(logger_,
                MPL,
@@ -4443,8 +4462,12 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
   int remaining_runs = target_util_list.size();
   int run_id = 0;
   SACoreSoftMacro* best_sa = nullptr;
-  std::vector<SACoreSoftMacro*>
-      sa_containers;  // store all the SA runs to avoid memory leakage
+  std::vector<SACoreSoftMacro*> sa_containers;
+  // To give consistency across threads we check the solutions
+  // at a fixed interval independent of how many threads we are using.
+  const int check_interval = 10;
+  int begin_check = 0;
+  int end_check = std::min(check_interval, remaining_runs);
   float best_cost = std::numeric_limits<float>::max();
   debugPrint(logger_,
              MPL,
@@ -4453,11 +4476,8 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
              "Start Simulated Annealing Core");
   while (remaining_runs > 0) {
     std::vector<SACoreSoftMacro*> sa_vector;
-    int run_thread
-        = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
-    if (graphics_) {
-      run_thread = 1;
-    }
+    const int run_thread
+        = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
       debugPrint(logger_,
                  MPL,
@@ -4555,20 +4575,29 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
         th.join();
       }
     }
+    remaining_runs -= run_thread;
     // add macro tilings
     for (auto& sa : sa_vector) {
-      sa_containers.push_back(sa);  // add SA to containers
-      if (sa->isValid() && sa->getNormCost() < best_cost) {
-        best_cost = sa->getNormCost();
-        best_sa = sa;
-      }
+      sa_containers.push_back(sa);
     }
-    sa_vector.clear();
-    // add early stop mechanism
-    if (best_sa != nullptr) {
+    while (sa_containers.size() >= end_check) {
+      while (begin_check < end_check) {
+        auto& sa = sa_containers[begin_check];
+        if (sa->isValid() && sa->getNormCost() < best_cost) {
+          best_cost = sa->getNormCost();
+          best_sa = sa;
+        }
+        ++begin_check;
+      }
+      // add early stop mechanism
+      if (best_sa) {
+        break;
+      }
+      end_check = begin_check + std::min(check_interval, remaining_runs);
+    }
+    if (best_sa) {
       break;
     }
-    remaining_runs -= run_thread;
   }
   debugPrint(logger_,
              MPL,
@@ -4940,6 +4969,11 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   std::vector<SACoreSoftMacro*>
       sa_containers;  // store all the SA runs to avoid memory leakage
   float best_cost = std::numeric_limits<float>::max();
+  // To give consistency across threads we check the solutions
+  // at a fixed interval independent of how many threads we are using.
+  const int check_interval = 10;
+  int begin_check = 0;
+  int end_check = std::min(check_interval, remaining_runs);
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
@@ -4947,11 +4981,8 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
              "Start Simulated Annealing Core");
   while (remaining_runs > 0) {
     std::vector<SACoreSoftMacro*> sa_vector;
-    int run_thread
-        = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
-    if (graphics_) {
-      run_thread = 1;
-    }
+    const int run_thread
+        = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
       std::vector<SoftMacro> shaped_macros = macros;  // copy for multithread
       // determine the shape for each macro
@@ -5046,20 +5077,29 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
         th.join();
       }
     }
+    remaining_runs -= run_thread;
     // add macro tilings
     for (auto& sa : sa_vector) {
-      sa_containers.push_back(sa);  // add SA to containers
-      if (sa->isValid() && sa->getNormCost() < best_cost) {
-        best_cost = sa->getNormCost();
-        best_sa = sa;
-      }
+      sa_containers.push_back(sa);
     }
-    sa_vector.clear();
-    // add early stop mechanism
-    if (best_sa != nullptr) {
+    while (sa_containers.size() >= end_check) {
+      while (begin_check < end_check) {
+        auto& sa = sa_containers[begin_check];
+        if (sa->isValid() && sa->getNormCost() < best_cost) {
+          best_cost = sa->getNormCost();
+          best_sa = sa;
+        }
+        ++begin_check;
+      }
+      // add early stop mechanism
+      if (best_sa) {
+        break;
+      }
+      end_check = begin_check + std::min(check_interval, remaining_runs);
+    }
+    if (best_sa) {
       break;
     }
-    remaining_runs -= run_thread;
   }
   debugPrint(logger_,
              MPL,
@@ -5463,11 +5503,8 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
   float best_cost = std::numeric_limits<float>::max();
   while (remaining_runs > 0) {
     std::vector<SACoreHardMacro*> sa_vector;
-    int run_thread
-        = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
-    if (graphics_) {
-      run_thread = 1;
-    }
+    const int run_thread
+        = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
       // change the aspect ratio
       const float width = outline_width * vary_factor_list[run_id++];

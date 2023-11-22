@@ -49,12 +49,15 @@ template class dbTable<_dbLogicPort>;
 
 bool _dbLogicPort::operator==(const _dbLogicPort& rhs) const
 {
-  if (_name != rhs._name)
+  if (_name != rhs._name) {
     return false;
-  if (_next_entry != rhs._next_entry)
+  }
+  if (_next_entry != rhs._next_entry) {
     return false;
-  if (direction != rhs.direction)
+  }
+  if (direction != rhs.direction) {
     return false;
+  }
 
   return true;
 }
@@ -114,8 +117,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbLogicPort& obj)
 
 _dbLogicPort::~_dbLogicPort()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////

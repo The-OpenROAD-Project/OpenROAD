@@ -52,22 +52,27 @@ template class dbTable<_dbTechLayerCutClassRule>;
 bool _dbTechLayerCutClassRule::operator==(
     const _dbTechLayerCutClassRule& rhs) const
 {
-  if (flags_.length_valid_ != rhs.flags_.length_valid_)
+  if (flags_.length_valid_ != rhs.flags_.length_valid_) {
     return false;
-
-  if (flags_.cuts_valid_ != rhs.flags_.cuts_valid_)
+  }
+  if (flags_.cuts_valid_ != rhs.flags_.cuts_valid_) {
     return false;
-
-  if (_name != rhs._name)
+  }
+  if (_name != rhs._name) {
     return false;
-  if (width_ != rhs.width_)
+  }
+  if (width_ != rhs.width_) {
     return false;
-  if (length_ != rhs.length_)
+  }
+  if (length_ != rhs.length_) {
     return false;
-  if (num_cuts_ != rhs.num_cuts_)
+  }
+  if (num_cuts_ != rhs.num_cuts_) {
     return false;
-  if (_next_entry != rhs._next_entry)
+  }
+  if (_next_entry != rhs._next_entry) {
     return false;
+  }
 
   return true;
 }
@@ -162,8 +167,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassRule& obj)
 
 _dbTechLayerCutClassRule::~_dbTechLayerCutClassRule()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////
