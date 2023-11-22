@@ -1660,6 +1660,18 @@ void lefin::site(lefiSite* lefsite)
   if (site)
     return;
 
+  for (dbLib* lib : _db->getLibs()) {
+    if ((site = lib->findSite(lefsite->name()))) {
+      _logger->info(utl::ODB,
+                    394,
+                    "Duplicate site {} in {} already seen in {}",
+                    lefsite->name(),
+                    _lib->getName(),
+                    lib->getName());
+      return;
+    }
+  }
+
   site = dbSite::create(_lib, lefsite->name());
 
   if (lefsite->hasSize()) {
