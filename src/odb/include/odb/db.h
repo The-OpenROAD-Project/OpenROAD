@@ -156,6 +156,7 @@ class dbTechLayerMinStepRule;
 class dbTechLayerSpacingEolRule;
 class dbTechLayerSpacingTablePrlRule;
 class dbTechLayerWidthTableRule;
+class dbTechLayerWrongDirSpacingRule;
 // Generator Code End ClassDeclarations
 
 // Extraction Objects
@@ -7568,6 +7569,9 @@ class dbTechLayer : public dbObject
 
   dbSet<dbTechLayerKeepOutZoneRule> getTechLayerKeepOutZoneRules() const;
 
+  dbSet<dbTechLayerWrongDirSpacingRule> getTechLayerWrongDirSpacingRules()
+      const;
+
   void setRectOnly(bool rect_only);
 
   bool isRectOnly() const;
@@ -9535,6 +9539,38 @@ class dbTechLayerWidthTableRule : public dbObject
 
   static void destroy(dbTechLayerWidthTableRule* rule);
   // User Code End dbTechLayerWidthTableRule
+};
+
+class dbTechLayerWrongDirSpacingRule : public dbObject
+{
+ public:
+  void setWrongdirSpace(int wrongdir_space);
+
+  int getWrongdirSpace() const;
+
+  void setNoneolWidth(int noneol_width);
+
+  int getNoneolWidth() const;
+
+  void setLength(int length);
+
+  int getLength() const;
+
+  void setPrlLength(int prl_length);
+
+  int getPrlLength() const;
+
+  void setNoneolValid(bool noneol_valid);
+
+  bool isNoneolValid() const;
+
+  void setLengthValid(bool length_valid);
+
+  bool isLengthValid() const;
+
+  void setPrlValid(bool prl_valid);
+
+  bool isPrlValid() const;
 };
 
 // Generator Code End ClassDefinition

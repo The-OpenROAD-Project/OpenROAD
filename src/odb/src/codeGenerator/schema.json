@@ -175,6 +175,12 @@
       "type":"1_n",
       "tbl_name":"keepout_zone_rules_tbl_",
       "schema":"db_schema_keepout_zone"
+    },
+    {
+      "first":"dbTechLayer",
+      "second":"dbTechLayerWrongDirSpacingRule",
+      "type":"1_n",
+      "tbl_name":"wrongdir_spacing_rules_tbl_"
     }
   ]
 }
