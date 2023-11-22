@@ -48,11 +48,12 @@ template class dbTable<_dbTechLayerEolExtensionRule>;
 bool _dbTechLayerEolExtensionRule::operator==(
     const _dbTechLayerEolExtensionRule& rhs) const
 {
-  if (flags_.parallel_only_ != rhs.flags_.parallel_only_)
+  if (flags_.parallel_only_ != rhs.flags_.parallel_only_) {
     return false;
-
-  if (spacing_ != rhs.spacing_)
+  }
+  if (spacing_ != rhs.spacing_) {
     return false;
+  }
 
   return true;
 }

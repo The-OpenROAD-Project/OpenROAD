@@ -48,29 +48,36 @@ template class dbTable<_dbTechLayerEolKeepOutRule>;
 bool _dbTechLayerEolKeepOutRule::operator==(
     const _dbTechLayerEolKeepOutRule& rhs) const
 {
-  if (flags_.class_valid_ != rhs.flags_.class_valid_)
+  if (flags_.class_valid_ != rhs.flags_.class_valid_) {
     return false;
-
-  if (flags_.corner_only_ != rhs.flags_.corner_only_)
+  }
+  if (flags_.corner_only_ != rhs.flags_.corner_only_) {
     return false;
-
-  if (flags_.except_within_ != rhs.flags_.except_within_)
+  }
+  if (flags_.except_within_ != rhs.flags_.except_within_) {
     return false;
-
-  if (eol_width_ != rhs.eol_width_)
+  }
+  if (eol_width_ != rhs.eol_width_) {
     return false;
-  if (backward_ext_ != rhs.backward_ext_)
+  }
+  if (backward_ext_ != rhs.backward_ext_) {
     return false;
-  if (forward_ext_ != rhs.forward_ext_)
+  }
+  if (forward_ext_ != rhs.forward_ext_) {
     return false;
-  if (side_ext_ != rhs.side_ext_)
+  }
+  if (side_ext_ != rhs.side_ext_) {
     return false;
-  if (within_low_ != rhs.within_low_)
+  }
+  if (within_low_ != rhs.within_low_) {
     return false;
-  if (within_high_ != rhs.within_high_)
+  }
+  if (within_high_ != rhs.within_high_) {
     return false;
-  if (class_name_ != rhs.class_name_)
+  }
+  if (class_name_ != rhs.class_name_) {
     return false;
+  }
 
   return true;
 }

@@ -48,39 +48,46 @@ template class dbTable<_dbTechLayerMinStepRule>;
 bool _dbTechLayerMinStepRule::operator==(
     const _dbTechLayerMinStepRule& rhs) const
 {
-  if (flags_.max_edges_valid_ != rhs.flags_.max_edges_valid_)
+  if (flags_.max_edges_valid_ != rhs.flags_.max_edges_valid_) {
     return false;
-
-  if (flags_.min_adj_length1_valid_ != rhs.flags_.min_adj_length1_valid_)
+  }
+  if (flags_.min_adj_length1_valid_ != rhs.flags_.min_adj_length1_valid_) {
     return false;
-
-  if (flags_.no_between_eol_ != rhs.flags_.no_between_eol_)
+  }
+  if (flags_.no_between_eol_ != rhs.flags_.no_between_eol_) {
     return false;
-
-  if (flags_.min_adj_length2_valid_ != rhs.flags_.min_adj_length2_valid_)
+  }
+  if (flags_.min_adj_length2_valid_ != rhs.flags_.min_adj_length2_valid_) {
     return false;
-
-  if (flags_.convex_corner_ != rhs.flags_.convex_corner_)
+  }
+  if (flags_.convex_corner_ != rhs.flags_.convex_corner_) {
     return false;
-
-  if (flags_.min_between_length_valid_ != rhs.flags_.min_between_length_valid_)
+  }
+  if (flags_.min_between_length_valid_
+      != rhs.flags_.min_between_length_valid_) {
     return false;
-
-  if (flags_.except_same_corners_ != rhs.flags_.except_same_corners_)
+  }
+  if (flags_.except_same_corners_ != rhs.flags_.except_same_corners_) {
     return false;
-
-  if (min_step_length_ != rhs.min_step_length_)
+  }
+  if (min_step_length_ != rhs.min_step_length_) {
     return false;
-  if (max_edges_ != rhs.max_edges_)
+  }
+  if (max_edges_ != rhs.max_edges_) {
     return false;
-  if (min_adj_length1_ != rhs.min_adj_length1_)
+  }
+  if (min_adj_length1_ != rhs.min_adj_length1_) {
     return false;
-  if (min_adj_length2_ != rhs.min_adj_length2_)
+  }
+  if (min_adj_length2_ != rhs.min_adj_length2_) {
     return false;
-  if (eol_width_ != rhs.eol_width_)
+  }
+  if (eol_width_ != rhs.eol_width_) {
     return false;
-  if (min_between_length_ != rhs.min_between_length_)
+  }
+  if (min_between_length_ != rhs.min_between_length_) {
     return false;
+  }
 
   return true;
 }

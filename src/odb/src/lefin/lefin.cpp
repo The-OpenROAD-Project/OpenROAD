@@ -1229,18 +1229,6 @@ void lefin::macro(lefiMacro* macro)
       for (dbLib* lib : _db->getLibs()) {
         site = lib->findSite(macro->siteName());
         if (site) {
-          // replicating site in the master's lib
-          auto temp = odb::dbSite::create(_lib, site->getName().c_str());
-          temp->setWidth(site->getWidth());
-          temp->setHeight(site->getHeight());
-          if (site->getSymmetryX())
-            temp->setSymmetryX();
-          if (site->getSymmetryY())
-            temp->setSymmetryY();
-          if (site->getSymmetryR90())
-            temp->setSymmetryR90();
-          temp->setClass(site->getClass());
-          site = temp;
           break;
         }
       }
@@ -1671,6 +1659,18 @@ void lefin::site(lefiSite* lefsite)
 
   if (site)
     return;
+
+  for (dbLib* lib : _db->getLibs()) {
+    if ((site = lib->findSite(lefsite->name()))) {
+      _logger->info(utl::ODB,
+                    394,
+                    "Duplicate site {} in {} already seen in {}",
+                    lefsite->name(),
+                    _lib->getName(),
+                    lib->getName());
+      return;
+    }
+  }
 
   site = dbSite::create(_lib, lefsite->name());
 
