@@ -91,7 +91,7 @@ namespace odb {
     _{{klass.name}}(_dbDatabase*, const _{{klass.name}}& r);
     _{{klass.name}}(_dbDatabase*);
 
-    {% if klass.has_destructible_fields %}
+    {% if klass.needs_non_default_destructor %}
       ~_{{klass.name}}();
     {% else %}
       ~_{{klass.name}}() = default;

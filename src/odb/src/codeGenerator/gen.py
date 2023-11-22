@@ -266,7 +266,7 @@ for klass in schema["classes"]:
 
         # For fields that we need to free/destroy in the destructor
         if field["name"] == '_name' and 'no-destruct' not in field["flags"] or "table" in field:
-          klass["has_destructible_fields"] = True
+          klass["needs_non_default_destructor"] = True
 
     klass["fields"] = [field for field in klass["fields"] if "bits" not in field]
 

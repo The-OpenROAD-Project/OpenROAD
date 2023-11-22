@@ -291,7 +291,7 @@ namespace odb {
   }
   {% endif %}
 
-  {% if klass.has_destructible_fields %}
+  {% if klass.needs_non_default_destructor %}
     _{{klass.name}}::~_{{klass.name}}()
     {
       {% for field in klass.fields %}
