@@ -69,7 +69,10 @@ namespace odb {
 //
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
-const uint db_schema_minor = 72;  // Current revision number
+const uint db_schema_minor = 73;  // Current revision number
+
+// Revision where _dbTechLayer::wrongdir_spacing_rules_tbl_ was added
+const uint db_schema_wrongdir_spacing = 73;
 
 // Revision where _dbMaster::_lib_for_site was added
 const uint db_schema_dbmaster_lib_for_site = 72;
