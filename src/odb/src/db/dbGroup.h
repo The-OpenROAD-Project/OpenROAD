@@ -61,6 +61,7 @@ class _dbGroup : public _dbObject
  public:
   _dbGroup(_dbDatabase*, const _dbGroup& r);
   _dbGroup(_dbDatabase*);
+
   ~_dbGroup();
 
   bool operator==(const _dbGroup& rhs) const;

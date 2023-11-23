@@ -314,14 +314,12 @@ class GlobalRouter : public ant::GlobalRouteSource
   void findPins(Net* net);
   void findPins(Net* net, std::vector<RoutePt>& pins_on_grid, int& root_idx);
   float getNetSlack(Net* net);
-  void computeNetSlacks();
   odb::dbTechLayer* getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);
   void addGuidesForLocalNets(odb::dbNet* db_net,
                              GRoute& route,
                              int min_routing_layer,
                              int max_routing_layer);
-  void addGuidesForPinAccess(odb::dbNet* db_net, GRoute& route);
   void addRemainingGuides(NetRouteMap& routes,
                           std::vector<Net*>& nets,
                           int min_routing_layer,
@@ -350,12 +348,23 @@ class GlobalRouter : public ant::GlobalRouteSource
   void reportCongestion();
   void updateEdgesUsage();
   void updateDbCongestionFromGuides();
+  void computeGCellGridPatternFromGuides(
+      std::unordered_map<odb::dbNet*, Guides>& guides);
+  void fillTileSizeMaps(std::unordered_map<odb::dbNet*, Guides>& net_guides,
+                        std::map<int, int>& tile_size_x_map,
+                        std::map<int, int>& tile_size_y_map,
+                        int& min_loc_x,
+                        int& min_loc_y);
+  void findTileSize(const std::map<int, int>& tile_size_x_map,
+                    const std::map<int, int>& tile_size_y_map,
+                    int& tile_size_x,
+                    int& tile_size_y);
 
   // check functions
   void checkPinPlacement();
 
   // incremental funcions
-  void updateDirtyRoutes();
+  void updateDirtyRoutes(bool save_guides = false);
   void mergeResults(NetRouteMap& routes);
   void updateDirtyNets(std::vector<Net*>& dirty_nets);
   void updateDbCongestion();
@@ -426,7 +435,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   bool verbose_;
   int min_layer_for_clock_;
   int max_layer_for_clock_;
-  float critical_nets_percentage_;
 
   // variables for random grt
   int seed_;
@@ -491,7 +499,7 @@ class IncrementalGRoute
   // Saves global router state and enables db callbacks.
   IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block);
   // Update global routes for dirty nets.
-  void updateRoutes();
+  void updateRoutes(bool save_guides = false);
   // Disables db callbacks.
   ~IncrementalGRoute();
 

@@ -33,6 +33,9 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerKeepOutZoneRule.h"
 
+#include <cstdint>
+#include <cstring>
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -45,41 +48,51 @@ template class dbTable<_dbTechLayerKeepOutZoneRule>;
 bool _dbTechLayerKeepOutZoneRule::operator==(
     const _dbTechLayerKeepOutZoneRule& rhs) const
 {
-  if (flags_.same_mask_ != rhs.flags_.same_mask_)
+  if (flags_.same_mask_ != rhs.flags_.same_mask_) {
     return false;
-
-  if (flags_.same_metal_ != rhs.flags_.same_metal_)
+  }
+  if (flags_.same_metal_ != rhs.flags_.same_metal_) {
     return false;
-
-  if (flags_.diff_metal_ != rhs.flags_.diff_metal_)
+  }
+  if (flags_.diff_metal_ != rhs.flags_.diff_metal_) {
     return false;
-
-  if (flags_.except_aligned_side_ != rhs.flags_.except_aligned_side_)
+  }
+  if (flags_.except_aligned_side_ != rhs.flags_.except_aligned_side_) {
     return false;
-
-  if (flags_.except_aligned_end_ != rhs.flags_.except_aligned_end_)
+  }
+  if (flags_.except_aligned_end_ != rhs.flags_.except_aligned_end_) {
     return false;
-
-  if (first_cut_class_ != rhs.first_cut_class_)
+  }
+  if (first_cut_class_ != rhs.first_cut_class_) {
     return false;
-  if (second_cut_class_ != rhs.second_cut_class_)
+  }
+  if (second_cut_class_ != rhs.second_cut_class_) {
     return false;
-  if (aligned_spacing_ != rhs.aligned_spacing_)
+  }
+  if (aligned_spacing_ != rhs.aligned_spacing_) {
     return false;
-  if (side_extension_ != rhs.side_extension_)
+  }
+  if (side_extension_ != rhs.side_extension_) {
     return false;
-  if (forward_extension_ != rhs.forward_extension_)
+  }
+  if (forward_extension_ != rhs.forward_extension_) {
     return false;
-  if (end_side_extension_ != rhs.end_side_extension_)
+  }
+  if (end_side_extension_ != rhs.end_side_extension_) {
     return false;
-  if (end_forward_extension_ != rhs.end_forward_extension_)
+  }
+  if (end_forward_extension_ != rhs.end_forward_extension_) {
     return false;
-  if (side_side_extension_ != rhs.side_side_extension_)
+  }
+  if (side_side_extension_ != rhs.side_side_extension_) {
     return false;
-  if (side_forward_extension_ != rhs.side_forward_extension_)
+  }
+  if (side_forward_extension_ != rhs.side_forward_extension_) {
     return false;
-  if (spiral_extension_ != rhs.spiral_extension_)
+  }
+  if (spiral_extension_ != rhs.spiral_extension_) {
     return false;
+  }
 
   return true;
 }
@@ -175,8 +188,10 @@ _dbTechLayerKeepOutZoneRule::_dbTechLayerKeepOutZoneRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerKeepOutZoneRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  uint32_t flags_bit_field;
+  stream >> flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> obj.first_cut_class_;
   stream >> obj.second_cut_class_;
   stream >> obj.aligned_spacing_;
@@ -192,8 +207,10 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerKeepOutZoneRule& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerKeepOutZoneRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  uint32_t flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags_bit_field;
   stream << obj.first_cut_class_;
   stream << obj.second_cut_class_;
   stream << obj.aligned_spacing_;
@@ -205,10 +222,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerKeepOutZoneRule& obj)
   stream << obj.side_forward_extension_;
   stream << obj.spiral_extension_;
   return stream;
-}
-
-_dbTechLayerKeepOutZoneRule::~_dbTechLayerKeepOutZoneRule()
-{
 }
 
 ////////////////////////////////////////////////////////////////////

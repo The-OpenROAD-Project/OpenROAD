@@ -183,6 +183,7 @@ class Cluster
   // cluster type (default type = MixedCluster)
   void setClusterType(const ClusterType& cluster_type);
   const ClusterType getClusterType() const;
+  std::string getClusterTypeString() const;
 
   // Instances (Here we store dbModule to reduce memory)
   void addDbModule(odb::dbModule* db_module);
@@ -200,12 +201,11 @@ class Cluster
   void copyInstances(const Cluster& cluster);  // only based on cluster type
 
   // IO cluster
-  // When you specify the io cluster, you must specify the postion
-  // of this IO cluster
-  void setIOClusterFlag(const std::pair<float, float> pos,
-                        const float width,
-                        const float height);
-  bool getIOClusterFlag() const;
+  // Position must be specified when setting an IO cluster
+  void setAsIOCluster(const std::pair<float, float>& pos,
+                      float width,
+                      float height);
+  bool isIOCluster() const;
 
   // Metrics Support
   void setMetrics(const Metrics& metrics);
@@ -235,6 +235,7 @@ class Cluster
   std::vector<Cluster*> getChildren() const;
 
   bool isLeaf() const;  // if the cluster is a leaf cluster
+  std::string getIsLeafString() const;
   bool mergeCluster(Cluster& cluster,
                     bool& delete_flag);  // return true if succeed
 
@@ -295,7 +296,7 @@ class Cluster
 
   // We model bundled IOS (Pads) as a cluster with no area
   // The position be the center of IOs
-  bool io_cluster_flag_ = false;
+  bool is_io_cluster_ = false;
 
   // Each cluster uses metrics to store its statistics
   Metrics metrics_;
@@ -396,11 +397,11 @@ class HardMacro
   // update the location and orientation of the macro inst in OpenDB
   // The macro should be snaped to placement grids
   void updateDb(float pitch_x, float pitch_y, odb::dbBlock* block);
-  odb::Point alignOriginWithGrids(const Rect& macro_box,
-                                  const odb::dbOrientType& orientation,
-                                  float& pitch_x,
-                                  float& pitch_y,
-                                  odb::dbBlock* block);
+  odb::Point computeSnapOrigin(const Rect& macro_box,
+                               const odb::dbOrientType& orientation,
+                               float& pitch_x,
+                               float& pitch_y,
+                               odb::dbBlock* block);
 
   void computeDirectionSpacingParameters(odb::dbBlock* block,
                                          odb::dbTechLayer* layer,
@@ -647,7 +648,7 @@ struct BundledNet
 // Rect class use float type for Micron unit
 struct Rect
 {
-  Rect() {}
+  Rect() = default;
   Rect(const float lx,
        const float ly,
        const float ux,
@@ -677,8 +678,9 @@ struct Rect
               float core_ux,
               float core_uy)
   {
-    if (fixed_flag == true)
+    if (fixed_flag == true) {
       return;
+    }
 
     const float width = ux - lx;
     const float height = uy - ly;
@@ -726,8 +728,9 @@ struct Rect
                    float core_ux,
                    float core_uy)
   {
-    if (fixed_flag == true)
+    if (fixed_flag == true) {
       return;
+    }
     moveHor(x_dist);
     moveVer(y_dist);
     const float width = getWidth();
@@ -753,12 +756,13 @@ struct Rect
     }
 
     if (lx < core_lx - 1.0 || ly < core_ly - 1.0 || ux > core_ux + 1.0
-        || uy > core_uy + 1.0)
+        || uy > core_uy + 1.0) {
       std::cout << "Error !!!\n"
                 << "core_lx =  " << core_lx << "  "
                 << "core_ly =  " << core_ly << "  "
                 << "core_ux =  " << core_ux << "  "
                 << "core_uy =  " << core_uy << std::endl;
+    }
   }
 
   inline void resetForce()
@@ -773,8 +777,9 @@ struct Rect
 
   inline void makeSquare(float ar = 1.0)
   {
-    if (fixed_flag == true)
+    if (fixed_flag == true) {
       return;
+    }
     const float x = getX();
     const float y = getY();
     const float height = std::sqrt(getWidth() * getHeight() * ar);
@@ -810,8 +815,9 @@ struct Rect
 
   void merge(const Rect& rect)
   {
-    if (!isValid())
+    if (!isValid()) {
       return;
+    }
 
     lx = std::min(lx, rect.lx);
     ly = std::min(ly, rect.ly);
@@ -824,8 +830,9 @@ struct Rect
                 float outline_ux,
                 float outline_uy)
   {
-    if (!isValid())
+    if (!isValid()) {
       return;
+    }
 
     lx = std::max(lx, outline_lx);
     ly = std::max(ly, outline_ly);

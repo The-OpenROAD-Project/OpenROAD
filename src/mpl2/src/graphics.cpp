@@ -39,13 +39,27 @@
 
 namespace mpl2 {
 
-Graphics::Graphics(int dbu, utl::Logger* logger) : dbu_(dbu), logger_(logger)
+Graphics::Graphics(bool coarse, bool fine, int dbu, utl::Logger* logger)
+    : coarse_(coarse), fine_(fine), dbu_(dbu), logger_(logger)
 {
   gui::Gui::get()->registerRenderer(this);
 }
 
+void Graphics::startCoarse()
+{
+  active_ = coarse_;
+}
+
+void Graphics::startFine()
+{
+  active_ = fine_;
+}
+
 void Graphics::startSA()
 {
+  if (!active_) {
+    return;
+  }
   logger_->report("------ Start ------");
   best_norm_cost_ = std::numeric_limits<float>::max();
   skipped_ = 0;
@@ -53,6 +67,9 @@ void Graphics::startSA()
 
 void Graphics::endSA()
 {
+  if (!active_) {
+    return;
+  }
   if (skipped_ > 0) {
     logger_->report("Skipped to end: {}", skipped_);
   }
@@ -84,6 +101,9 @@ void Graphics::report(const char* name, const std::optional<T>& value)
 
 void Graphics::penaltyCalculated(float norm_cost)
 {
+  if (!active_) {
+    return;
+  }
   if (norm_cost < best_norm_cost_) {
     logger_->report("------ Penalty ------");
 
@@ -123,8 +143,6 @@ void Graphics::resetPenalties()
   boundary_penalty_.reset();
   macro_blockage_penalty_.reset();
   notch_penalty_.reset();
-  outline_width_.reset();
-  outline_height_.reset();
 }
 
 void Graphics::setNotchPenalty(float notch_penalty)
@@ -157,13 +175,9 @@ void Graphics::setAreaPenalty(float area_penalty)
   area_penalty_ = area_penalty;
 }
 
-void Graphics::setOutlinePenalty(float outline_penalty,
-                                 float outline_width,
-                                 float outline_height)
+void Graphics::setOutlinePenalty(float outline_penalty)
 {
   outline_penalty_ = outline_penalty;
-  outline_width_ = outline_width;
-  outline_height_ = outline_height;
 }
 
 void Graphics::setWirelength(float wirelength)
@@ -191,12 +205,37 @@ void Graphics::drawCluster(Cluster* cluster, gui::Painter& painter)
   }
 }
 
+void Graphics::drawBlockages(gui::Painter& painter)
+{
+  for (const auto& blockage : macro_blockages_) {
+    const int lx = dbu_ * blockage.xMin();
+    const int ly = dbu_ * blockage.yMin();
+    const int ux = dbu_ * blockage.xMax();
+    const int uy = dbu_ * blockage.yMax();
+
+    odb::Rect blockage_bbox(lx, ly, ux, uy);
+
+    blockage_bbox.moveDelta(outline_.xMin(), outline_.yMin());
+
+    painter.drawRect(blockage_bbox);
+  }
+}
+
+// We draw the shapes of SoftMacros, HardMacros and macro blockages based
+// on the outline's origin.
 void Graphics::drawObjects(gui::Painter& painter)
 {
   if (root_) {
     painter.setPen(gui::Painter::red, true);
     painter.setBrush(gui::Painter::transparent);
     drawCluster(root_, painter);
+  }
+
+  // Draw macro blockages only during SA for SoftMacros
+  if (!macro_blockages_.empty() && !soft_macros_.empty()) {
+    painter.setPen(gui::Painter::gray, true);
+    painter.setBrush(gui::Painter::gray, gui::Painter::DIAGONAL);
+    drawBlockages(painter);
   }
 
   painter.setPen(gui::Painter::yellow, true);
@@ -209,6 +248,8 @@ void Graphics::drawObjects(gui::Painter& painter)
     const int ux = lx + dbu_ * macro.getWidth();
     const int uy = ly + dbu_ * macro.getHeight();
     odb::Rect bbox(lx, ly, ux, uy);
+
+    bbox.moveDelta(outline_.xMin(), outline_.yMin());
 
     painter.drawRect(bbox);
     painter.drawString(bbox.xCenter(),
@@ -227,6 +268,8 @@ void Graphics::drawObjects(gui::Painter& painter)
     const int uy = ly + height;
     odb::Rect bbox(lx, ly, ux, uy);
 
+    bbox.moveDelta(outline_.xMin(), outline_.yMin());
+
     painter.drawRect(bbox);
     painter.drawString(bbox.xCenter(),
                        bbox.yCenter(),
@@ -234,19 +277,31 @@ void Graphics::drawObjects(gui::Painter& painter)
                        std::to_string(i++));
     switch (macro.getOrientation()) {
       case odb::dbOrientType::R0: {
-        painter.drawLine(lx, ly + 0.1 * height, lx + 0.1 * width, ly);
+        painter.drawLine(bbox.xMin(),
+                         bbox.yMin() + 0.1 * height,
+                         bbox.xMin() + 0.1 * width,
+                         bbox.yMin());
         break;
       }
       case odb::dbOrientType::MX: {
-        painter.drawLine(lx, uy - 0.1 * height, lx + 0.1 * width, uy);
+        painter.drawLine(bbox.xMin(),
+                         bbox.yMax() - 0.1 * height,
+                         bbox.xMin() + 0.1 * width,
+                         bbox.yMax());
         break;
       }
       case odb::dbOrientType::MY: {
-        painter.drawLine(ux, ly + 0.1 * height, ux - 0.1 * width, ly);
+        painter.drawLine(bbox.xMax(),
+                         bbox.yMin() + 0.1 * height,
+                         bbox.xMax() - 0.1 * width,
+                         bbox.yMin());
         break;
       }
       case odb::dbOrientType::R180: {
-        painter.drawLine(ux, uy - 0.1 * height, ux - 0.1 * width, uy);
+        painter.drawLine(bbox.xMax(),
+                         bbox.yMax() - 0.1 * height,
+                         bbox.xMax() - 0.1 * width,
+                         bbox.yMax());
         break;
       }
       case odb::dbOrientType::R90:
@@ -258,14 +313,32 @@ void Graphics::drawObjects(gui::Painter& painter)
     }
   }
 
-  if (outline_width_.has_value()) {
-    odb::Rect bbox(
-        0, 0, dbu_ * outline_width_.value(), dbu_ * outline_height_.value());
-
-    painter.setPen(gui::Painter::red, true);
+  if (root_) {
+    // Hightlight outline so we see where SA is working
+    painter.setPen(gui::Painter::cyan, true);
     painter.setBrush(gui::Painter::transparent);
-    painter.drawRect(bbox);
+    painter.drawRect(outline_);
   }
+}
+
+void Graphics::setMacroBlockages(const std::vector<mpl2::Rect>& macro_blockages)
+{
+  macro_blockages_ = macro_blockages;
+}
+
+void Graphics::setOutline(const odb::Rect& outline)
+{
+  outline_ = outline;
+}
+
+void Graphics::eraseDrawing()
+{
+  // Ensure we don't try to access the clusters after they were deleted
+  root_ = nullptr;
+
+  soft_macros_.clear();
+  hard_macros_.clear();
+  macro_blockages_.clear();
 }
 
 }  // namespace mpl2

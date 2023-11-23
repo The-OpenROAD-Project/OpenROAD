@@ -47,22 +47,30 @@ template class dbTable<_dbMetalWidthViaMap>;
 
 bool _dbMetalWidthViaMap::operator==(const _dbMetalWidthViaMap& rhs) const
 {
-  if (via_cut_class_ != rhs.via_cut_class_)
+  if (via_cut_class_ != rhs.via_cut_class_) {
     return false;
-  if (cut_layer_ != rhs.cut_layer_)
+  }
+  if (cut_layer_ != rhs.cut_layer_) {
     return false;
-  if (below_layer_width_low_ != rhs.below_layer_width_low_)
+  }
+  if (below_layer_width_low_ != rhs.below_layer_width_low_) {
     return false;
-  if (below_layer_width_high_ != rhs.below_layer_width_high_)
+  }
+  if (below_layer_width_high_ != rhs.below_layer_width_high_) {
     return false;
-  if (above_layer_width_low_ != rhs.above_layer_width_low_)
+  }
+  if (above_layer_width_low_ != rhs.above_layer_width_low_) {
     return false;
-  if (above_layer_width_high_ != rhs.above_layer_width_high_)
+  }
+  if (above_layer_width_high_ != rhs.above_layer_width_high_) {
     return false;
-  if (via_name_ != rhs.via_name_)
+  }
+  if (via_name_ != rhs.via_name_) {
     return false;
-  if (pg_via_ != rhs.pg_via_)
+  }
+  if (pg_via_ != rhs.pg_via_) {
     return false;
+  }
 
   return true;
 }
@@ -149,10 +157,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbMetalWidthViaMap& obj)
   stream << obj.via_name_;
   stream << obj.pg_via_;
   return stream;
-}
-
-_dbMetalWidthViaMap::~_dbMetalWidthViaMap()
-{
 }
 
 ////////////////////////////////////////////////////////////////////

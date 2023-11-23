@@ -77,6 +77,7 @@ class Replace
   ~Replace();
 
   void init(odb::dbDatabase* odb,
+            sta::dbSta* sta,
             rsz::Resizer* resizer,
             grt::GlobalRouter* router,
             utl::Logger* logger);
@@ -147,6 +148,7 @@ class Replace
   bool initNesterovPlace();
 
   odb::dbDatabase* db_;
+  sta::dbSta* sta_;
   rsz::Resizer* rs_;
   grt::GlobalRouter* fr_;
   utl::Logger* log_;

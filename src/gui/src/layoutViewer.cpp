@@ -152,10 +152,6 @@ LayoutViewer::LayoutViewer(
 {
   setMouseTracking(true);
 
-  QPalette palette;
-  palette.setColor(QPalette::Window, background_);
-  setPalette(palette);
-
   addMenuAndActions();
 
   connect(
@@ -276,6 +272,10 @@ void LayoutViewer::updateCenter(int dx, int dy)
   // modify the center according to the dx and dy
   center_.setX(center_.x() - dx / pixels_per_dbu_);
   center_.setY(center_.y() + dy / pixels_per_dbu_);
+
+  if (!scroller_->isScrollingWithCursor()) {
+    updateCursorCoordinates();
+  }
 }
 
 void LayoutViewer::centerAt(const odb::Point& focus)
@@ -331,6 +331,12 @@ bool LayoutViewer::isCursorInsideViewport()
   }
 
   return false;
+}
+
+void LayoutViewer::updateCursorCoordinates()
+{
+  Point mouse = screenToDBU(mapFromGlobal(QCursor::pos()));
+  emit location(mouse.x(), mouse.y());
 }
 
 void LayoutViewer::zoomIn()
@@ -1891,6 +1897,7 @@ void LayoutViewer::viewportUpdated()
 
 void LayoutViewer::saveImage(const QString& filepath,
                              const Rect& region,
+                             int width_px,
                              double dbu_per_pixel)
 {
   if (!hasDesign()) {
@@ -1915,6 +1922,12 @@ void LayoutViewer::saveImage(const QString& filepath,
   }
 
   const qreal old_pixels_per_dbu = pixels_per_dbu_;
+
+  if (width_px != 0) {
+    // Adapt resolution to width entered by user
+    pixels_per_dbu_ = width_px / static_cast<double>(save_area.dx());
+  }
+
   if (dbu_per_pixel != 0) {
     pixels_per_dbu_ = 1.0 / dbu_per_pixel;
   }
@@ -1931,17 +1944,17 @@ void LayoutViewer::saveImage(const QString& filepath,
   // We don't use Utils::renderImage as we need to have the
   // rendering be synchronous.  We directly call the draw()
   // method ourselves.
-  const int width_px = bounding_rect.width();
-  const int height_px = bounding_rect.height();
 
-  const QSize initial_size = QSize(width_px, height_px);
+  const QSize initial_size
+      = QSize(bounding_rect.width(), bounding_rect.height());
   const QSize img_size = Utils::adjustMaxImageSize(initial_size);
 
   if (img_size != initial_size) {
     logger_->warn(utl::GUI,
                   94,
-                  "Can't save image with the specified size (max width/height "
-                  "is 7200 pixels). Saved image dimensions = {} x {}.",
+                  "Resolution results in illegal size (max width/height "
+                  "is {} pixels). Saving image with dimensions = {} x {}.",
+                  Utils::MAX_IMAGE_SIZE,
                   img_size.width(),
                   img_size.height());
 
@@ -1970,7 +1983,7 @@ void LayoutViewer::saveImage(const QString& filepath,
                       highlighted_,
                       rulers_,
                       render_ratio,
-                      background_);
+                      background());
   pixels_per_dbu_ = old_pixels_per_dbu;
 
   if (!img.save(save_filepath)) {
@@ -2305,7 +2318,7 @@ void LayoutViewer::executionPaused()
 
 ////// LayoutScroll ///////
 LayoutScroll::LayoutScroll(LayoutViewer* viewer, QWidget* parent)
-    : QScrollArea(parent), viewer_(viewer)
+    : QScrollArea(parent), viewer_(viewer), scrolling_with_cursor_(false)
 {
   setWidgetResizable(false);
   setWidget(viewer);
@@ -2347,6 +2360,41 @@ void LayoutScroll::wheelEvent(QWheelEvent* event)
   // ensure changes are processed before the next wheel event to prevent
   // zoomIn and Out from jumping around on the ScrollBars
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+}
+
+bool LayoutScroll::eventFilter(QObject* object, QEvent* event)
+{
+  if (event->type() == QEvent::MouseButtonPress) {
+    QMouseEvent* press_event = static_cast<QMouseEvent*>(event);
+
+    if (press_event->button() == Qt::LeftButton) {
+      if (object == this->horizontalScrollBar()
+          || object == this->verticalScrollBar()) {
+        scrolling_with_cursor_ = true;
+      }
+    }
+  }
+
+  if (event->type() == QEvent::MouseButtonRelease) {
+    QMouseEvent* release_event = static_cast<QMouseEvent*>(event);
+
+    if (release_event->button() == Qt::LeftButton && scrolling_with_cursor_) {
+      scrolling_with_cursor_ = false;
+
+      // handle the case in which a user might click on one of the
+      // scrollbars, hold the button and move the cursor away
+      if (viewer_->isCursorInsideViewport()) {
+        viewer_->updateCursorCoordinates();
+      }
+    }
+  }
+
+  return QScrollArea::eventFilter(object, event);
+}
+
+bool LayoutScroll::isScrollingWithCursor()
+{
+  return scrolling_with_cursor_;
 }
 
 }  // namespace gui

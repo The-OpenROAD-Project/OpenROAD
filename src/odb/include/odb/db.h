@@ -149,6 +149,7 @@ class dbTechLayerCutSpacingTableDefRule;
 class dbTechLayerCutSpacingTableOrthRule;
 class dbTechLayerEolExtensionRule;
 class dbTechLayerEolKeepOutRule;
+class dbTechLayerForbiddenSpacingRule;
 class dbTechLayerKeepOutZoneRule;
 class dbTechLayerMinCutRule;
 class dbTechLayerMinStepRule;
@@ -366,31 +367,13 @@ class dbDatabase : public dbObject
   /// WARNING: This function destroys the data currently in the database.
   /// Throws ZIOError..
   ///
-  void read(std::ifstream& f);
+  void read(std::istream& f);
 
   ///
   /// Write a database to this stream.
   /// Throws ZIOError..
   ///
-  void write(FILE* file);
-
-  /// Throws ZIOError..
-  void writeTech(FILE* file);
-  void writeLib(FILE* file, dbLib* lib);
-  void writeLibs(FILE* file);
-  void writeBlock(FILE* file, dbBlock* block);
-  void writeChip(FILE* file);
-  void writeWires(FILE* file, dbBlock* block);
-  void writeNets(FILE* file, dbBlock* block);
-  void writeParasitics(FILE* file, dbBlock* block);
-  void readTech(std::ifstream& f);
-  void readLib(std::ifstream& f, dbLib*);
-  void readLibs(std::ifstream& f);
-  void readBlock(std::ifstream& f, dbBlock* block);
-  void readWires(std::ifstream& f, dbBlock* block);
-  void readNets(std::ifstream& f, dbBlock* block);
-  void readParasitics(std::ifstream& f, dbBlock* block);
-  void readChip(std::ifstream& f);
+  void write(std::ostream& file);
 
   ///
   /// ECO - The following methods implement a simple ECO mechanism for capturing
@@ -3958,6 +3941,16 @@ class dbObstruction : public dbObject
   /// Returns true if this obstruction is a "fill" obstruction.
   ///
   bool isFillObstruction();
+
+  ///
+  /// Declare this obstruction to be non "power/ground" obstruction.
+  ///
+  void setExceptPGNetsObstruction();
+
+  ///
+  /// Returns true if this obstruction is a non "power/ground" obstruction.
+  ///
+  bool isExceptPGNetsObstruction();
 
   ///
   /// Declare this obstruction to have been pushed into this block.
@@ -7570,6 +7563,9 @@ class dbTechLayer : public dbObject
 
   dbSet<dbTechLayerAreaRule> getTechLayerAreaRules() const;
 
+  dbSet<dbTechLayerForbiddenSpacingRule> getTechLayerForbiddenSpacingRules()
+      const;
+
   dbSet<dbTechLayerKeepOutZoneRule> getTechLayerKeepOutZoneRules() const;
 
   void setRectOnly(bool rect_only);
@@ -8893,6 +8889,46 @@ class dbTechLayerEolKeepOutRule : public dbObject
       uint dbid);
   static void destroy(dbTechLayerEolKeepOutRule* rule);
   // User Code End dbTechLayerEolKeepOutRule
+};
+
+class dbTechLayerForbiddenSpacingRule : public dbObject
+{
+ public:
+  void setForbiddenSpacing(std::pair<int, int> forbidden_spacing);
+
+  std::pair<int, int> getForbiddenSpacing() const;
+
+  void setWidth(int width);
+
+  int getWidth() const;
+
+  void setWithin(int within);
+
+  int getWithin() const;
+
+  void setPrl(int prl);
+
+  int getPrl() const;
+
+  void setTwoEdges(int two_edges);
+
+  int getTwoEdges() const;
+
+  // User Code Begin dbTechLayerForbiddenSpacingRule
+
+  bool hasWidth();
+
+  bool hasWithin();
+
+  bool hasPrl();
+
+  bool hasTwoEdges();
+
+  static dbTechLayerForbiddenSpacingRule* create(dbTechLayer* _layer);
+
+  static void destroy(dbTechLayerForbiddenSpacingRule* rule);
+
+  // User Code End dbTechLayerForbiddenSpacingRule
 };
 
 class dbTechLayerKeepOutZoneRule : public dbObject

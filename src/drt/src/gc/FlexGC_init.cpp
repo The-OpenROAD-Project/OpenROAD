@@ -409,38 +409,30 @@ void FlexGCWorker::Impl::initDRWorker()
 }
 void FlexGCWorker::Impl::initNetsFromDesign(const frDesign* design)
 {
-  auto block = design->getTopBlock();
-  for (auto& net : block->getNets()) {
-    // always first generate gcnet in case owner does not have any object
-    bool netExists = (owner2nets_.find(net.get()) != owner2nets_.end());
-    gcNet* gNet = nullptr;
-    // auto net = uDRNet->getFrNet();
-    for (auto& obj : net->getShapes()) {
-      if (!drcBox_.intersects(obj->getBBox()))
-        continue;
-      if (!netExists) {
-        addNet(net.get());
-        netExists = true;
+  vector<frBlockObject*> result;
+  std::map<gcNet*, std::vector<frPatchWire*>> pwires;
+  design->getRegionQuery()->queryDRObj(getExtBox(), result);
+  for (auto rptr : result) {
+    if (rptr->typeId() == frcPathSeg) {
+      auto cptr = static_cast<frPathSeg*>(rptr);
+      if (cptr->hasNet()) {
+        initRouteObj(cptr);
       }
-      gNet = initRouteObj(obj.get());
+    } else if (rptr->typeId() == frcVia) {
+      auto cptr = static_cast<frVia*>(rptr);
+      if (cptr->hasNet()) {
+        initRouteObj(cptr);
+      }
+    } else if (rptr->typeId() == frcPatchWire) {
+      auto cptr = static_cast<frPatchWire*>(rptr);
+      if (cptr->hasNet()) {
+        auto gNet = initRouteObj(cptr);
+        pwires[gNet].push_back(cptr);
+      }
     }
-    for (auto& obj : net->getVias()) {
-      if (!drcBox_.intersects(obj->getBBox()))
-        continue;
-      if (!netExists) {
-        addNet(net.get());
-        netExists = true;
-      }
-      gNet = initRouteObj(obj.get());
-    }
-    for (auto& pwire : net->getPatchWires()) {
-      if (!drcBox_.intersects(pwire->getBBox()))
-        continue;
-      if (!netExists) {
-        addNet(net.get());
-        netExists = true;
-      }
-      gNet = initRouteObj(pwire.get());
+  }
+  for (auto [gNet, patches] : pwires) {
+    for (auto pwire : patches) {
       Rect box = pwire->getBBox();
       int z = pwire->getLayerNum() / 2 - 1;
       for (auto& nt : gNet->getNonTaperedRects(z)) {
@@ -821,7 +813,6 @@ void FlexGCWorker::Impl::initNet_pins_maxRectangles_getFixedMaxRectangles(
 {
   int numLayers = getTech()->getLayers().size();
   vector<gtl::rectangle_data<frCoord>> rects;
-  Point bp, ep;
   for (int i = 0; i < numLayers; i++) {
     rects.clear();
     gtl::get_max_rectangles(rects, net->getPolygons(i, true));

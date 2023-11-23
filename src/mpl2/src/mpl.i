@@ -32,6 +32,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 %{
+#include "ord/OpenRoad.hh"
 #include "mpl2/rtl_mp.h"
 #include "Mpl2Observer.h"
 #include "graphics.h"
@@ -45,10 +46,12 @@ utl::Logger* getLogger();
 odb::dbDatabase* getDb();
 }
 
+using utl::MPL;
 using ord::getMacroPlacer2;
 %}
 
 %include "../../Exception.i"
+%include <std_string.i>
 
 %inline %{
 
@@ -87,7 +90,9 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                           const char* report_directory) {
 
   auto macro_placer = getMacroPlacer2();
-  return macro_placer->place(max_num_macro,
+  const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
+  return macro_placer->place(num_threads,
+                             max_num_macro,
                              min_num_macro,
                              max_num_inst,
                              min_num_inst,
@@ -120,13 +125,33 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              report_directory);
 }
 
-void
-set_debug_cmd()
+void set_debug_cmd(bool coarse, bool fine)
 {
   auto macro_placer = getMacroPlacer2();
   int dbu = ord::getDb()->getTech()->getDbUnitsPerMicron();
-  std::unique_ptr<Mpl2Observer> graphics = std::make_unique<Graphics>(dbu, ord::getLogger());
+  std::unique_ptr<Mpl2Observer> graphics
+    = std::make_unique<Graphics>(coarse, fine, dbu, ord::getLogger());
   macro_placer->setDebug(graphics);
+}
+
+void
+place_macro(odb::dbInst* inst, float x_origin, float y_origin, std::string orientation_string)
+{
+  odb::dbOrientType orientation(orientation_string.c_str());
+
+  getMacroPlacer2()->placeMacro(inst, x_origin, y_origin, orientation);
+}
+
+void
+set_macro_placement_file(std::string file_name)
+{
+  getMacroPlacer2()->setMacroPlacementFile(file_name);
+}
+
+void
+write_macro_placement(std::string file_name)
+{
+  getMacroPlacer2()->writeMacroPlacement(file_name);
 }
 
 } // namespace

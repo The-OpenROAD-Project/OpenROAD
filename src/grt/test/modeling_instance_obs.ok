@@ -17,7 +17,7 @@
 [INFO GRT-0088] Layer met3    Track-Pitch = 0.6800  line-2-Via Pitch: 0.6150
 [INFO GRT-0088] Layer met4    Track-Pitch = 0.9200  line-2-Via Pitch: 1.0400
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.4000  line-2-Via Pitch: 3.1100
-[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0
+[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 3
@@ -55,6 +55,6 @@ met5            391381             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
 Total         10323932           655            0.01%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 4864 um
+[INFO GRT-0018] Total wirelength: 4843 um
 [INFO GRT-0014] Routed nets: 2
 No differences found.

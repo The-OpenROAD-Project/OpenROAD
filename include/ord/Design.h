@@ -35,6 +35,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -43,6 +44,7 @@ class dbBlock;
 class dbMaster;
 class dbMTerm;
 class dbNet;
+class dbInst;
 }  // namespace odb
 
 namespace ifp {
@@ -129,6 +131,7 @@ namespace sta {
 class dbSta;
 class Corner;
 class MinMax;
+class LibertyCell;
 }  // namespace sta
 
 namespace ord {
@@ -170,7 +173,13 @@ class Design
   };
   float getNetCap(odb::dbNet* net, sta::Corner* corner, MinMax minmax);
   bool isSequential(odb::dbMaster* master);
+  bool isBuffer(odb::dbMaster* master);
+  bool isInverter(odb::dbMaster* master);
   std::vector<odb::dbMTerm*> getTimingFanoutFrom(odb::dbMTerm* input);
+  bool isInClock(odb::dbInst* inst);
+  std::uint64_t getNetRoutedLength(odb::dbNet* net);
+  float staticPower(odb::dbInst* inst, sta::Corner* corner);
+  float dynamicPower(odb::dbInst* inst, sta::Corner* corner);
 
   // Services
   ifp::InitFloorplan* getFloorplan();
@@ -196,6 +205,7 @@ class Design
  private:
   sta::dbSta* getSta();
   sta::MinMax* getMinMax(MinMax type);
+  sta::LibertyCell* getLibertyCell(odb::dbMaster* master);
 
   Tech* tech_;
 };

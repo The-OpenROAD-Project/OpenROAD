@@ -111,6 +111,7 @@ add_library(db
     dbTechLayerCutSpacingTableOrthRule.cpp
     dbTechLayerEolExtensionRule.cpp
     dbTechLayerEolKeepOutRule.cpp
+    dbTechLayerForbiddenSpacingRule.cpp
     dbTechLayerKeepOutZoneRule.cpp
     dbTechLayerMinCutRule.cpp
     dbTechLayerMinStepRule.cpp

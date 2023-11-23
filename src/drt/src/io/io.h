@@ -76,6 +76,7 @@ class Parser
   {
     return prefTrackPatterns_;
   }
+  void buildGCellPatterns(odb::dbDatabase* db);
 
  private:
   void setMasters(odb::dbDatabase*);
@@ -121,7 +122,6 @@ class Parser
                 bool& foundCenterTracks,
                 bool& hasPolys);
   void checkPins();
-  void buildGCellPatterns(odb::dbDatabase* db);
   void buildGCellPatterns_helper(frCoord& GCELLGRIDX,
                                  frCoord& GCELLGRIDY,
                                  frCoord& GCELLOFFSETX,

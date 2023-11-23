@@ -304,7 +304,7 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
         }
       }
     }
-    if (!needRipup && update_slack_ && treeedge->route.last_routelen
+    if (!needRipup && critical_nets_percentage_ && treeedge->route.last_routelen
         && critical_slack) {
       const float delta = (float) treeedge->route.routelen
                           / (float) treeedge->route.last_routelen;
@@ -356,8 +356,8 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
   const int n1a = treeedge->n1a;
   const int n2a = treeedge->n2a;
 
-  int bl = (n1a < num_terminals) ? 0 : BIG_INT;
-  int hl = 0;
+  int bl = (n1a < num_terminals) ? nets_[netID]->getPinL()[n1a] : BIG_INT;
+  int hl = (n1a < num_terminals) ? nets_[netID]->getPinL()[n1a] : 0;
   int hid = BIG_INT;
   int bid = BIG_INT;
 
@@ -394,8 +394,8 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
   treenodes[n1a].topL = hl;
   treenodes[n1a].hID = hid;
 
-  bl = (n2a < num_terminals) ? 0 : BIG_INT;
-  hl = 0;
+  bl = (n2a < num_terminals) ? nets_[netID]->getPinL()[n2a] : BIG_INT;
+  hl = (n2a < num_terminals) ? nets_[netID]->getPinL()[n2a] : 0;
   hid = bid = BIG_INT;
 
   for (int i = 0; i < treenodes[n2a].conCNT; i++) {

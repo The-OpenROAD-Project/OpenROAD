@@ -68,7 +68,7 @@ static void getVerticesInSegment(const std::vector<float>& grid,
 {
   start_idx = 0;
   end_idx = 0;
-  if (grid.size() == 0 || start_point > end_point) {
+  if (grid.empty() || start_point > end_point) {
     return;
   }
   // calculate start_idx
@@ -329,7 +329,7 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
   // (softmacro) to which it belongs to
   for (auto y : y_grid) {
     for (auto x : x_grid) {
-      vertex_list.push_back(Vertex(vertex_list.size(), Point(x, y)));
+      vertex_list.emplace_back(vertex_list.size(), Point(x, y));
     }
   }
   // initialize the macro_id and macro util for each vertex
@@ -565,9 +565,11 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
       auto& vertex = vertex_list[y_idx * x_grid.size() + x_idx];
       if (!vertex.disable_v_edge && !vertex.disable_h_edge) {
         continue;
-      } else if (vertex.disable_v_edge && vertex.disable_h_edge) {
+      }
+      if (vertex.disable_v_edge && vertex.disable_h_edge) {
         continue;
-      } else if (vertex.disable_v_edge) {
+      }
+      if (vertex.disable_v_edge) {
         const int src = vertex.vertex_id - 1;
         const int target = vertex.vertex_id + 1;
         Edge edge(edge_list.size());  // create an edge with edge id
@@ -646,9 +648,11 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
       auto& vertex = vertex_list[y_idx * x_grid.size() + x_idx];
       if (!vertex.disable_v_edge && !vertex.disable_h_edge) {
         continue;
-      } else if (vertex.disable_v_edge && vertex.disable_h_edge) {
+      }
+      if (vertex.disable_v_edge && vertex.disable_h_edge) {
         continue;
-      } else if (vertex.disable_h_edge) {
+      }
+      if (vertex.disable_h_edge) {
         const int src = vertex.vertex_id - x_grid.size();
         const int target = vertex.vertex_id + x_grid.size();
         Edge edge(edge_list.size());  // create an edge with edge id
@@ -808,7 +812,7 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
 
   int num_edges = edge_list.size();
   for (int i = 0; i < num_edges; i++) {
-    edge_list.push_back(Edge(edge_list.size(), edge_list[i]));
+    edge_list.emplace_back(edge_list.size(), edge_list[i]);
   }
 
   debugPrint(logger,
@@ -977,7 +981,7 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
   int x_id = 0;
   for (auto& net : nets) {
     // need take a detail look [fix]
-    if (net.edge_paths.size() == 0) {
+    if (net.edge_paths.empty()) {
       continue;
     }
     MPConstraint* net_c = solver->MakeRowConstraint(1, 1, "");

@@ -33,6 +33,9 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerArraySpacingRule.h"
 
+#include <cstdint>
+#include <cstring>
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -46,28 +49,33 @@ template class dbTable<_dbTechLayerArraySpacingRule>;
 bool _dbTechLayerArraySpacingRule::operator==(
     const _dbTechLayerArraySpacingRule& rhs) const
 {
-  if (flags_.parallel_overlap_ != rhs.flags_.parallel_overlap_)
+  if (flags_.parallel_overlap_ != rhs.flags_.parallel_overlap_) {
     return false;
-
-  if (flags_.long_array_ != rhs.flags_.long_array_)
+  }
+  if (flags_.long_array_ != rhs.flags_.long_array_) {
     return false;
-
-  if (flags_.via_width_valid_ != rhs.flags_.via_width_valid_)
+  }
+  if (flags_.via_width_valid_ != rhs.flags_.via_width_valid_) {
     return false;
-
-  if (flags_.within_valid_ != rhs.flags_.within_valid_)
+  }
+  if (flags_.within_valid_ != rhs.flags_.within_valid_) {
     return false;
-
-  if (via_width_ != rhs.via_width_)
+  }
+  if (via_width_ != rhs.via_width_) {
     return false;
-  if (cut_spacing_ != rhs.cut_spacing_)
+  }
+  if (cut_spacing_ != rhs.cut_spacing_) {
     return false;
-  if (within_ != rhs.within_)
+  }
+  if (within_ != rhs.within_) {
     return false;
-  if (array_width_ != rhs.array_width_)
+  }
+  if (array_width_ != rhs.array_width_) {
     return false;
-  if (cut_class_ != rhs.cut_class_)
+  }
+  if (cut_class_ != rhs.cut_class_) {
     return false;
+  }
 
   return true;
 }
@@ -141,8 +149,10 @@ _dbTechLayerArraySpacingRule::_dbTechLayerArraySpacingRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerArraySpacingRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  uint32_t flags_bit_field;
+  stream >> flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> obj.via_width_;
   stream >> obj.cut_spacing_;
   stream >> obj.within_;
@@ -155,8 +165,10 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerArraySpacingRule& obj)
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerArraySpacingRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  uint32_t flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags_bit_field;
   stream << obj.via_width_;
   stream << obj.cut_spacing_;
   stream << obj.within_;
@@ -164,10 +176,6 @@ dbOStream& operator<<(dbOStream& stream,
   stream << obj.array_spacing_map_;
   stream << obj.cut_class_;
   return stream;
-}
-
-_dbTechLayerArraySpacingRule::~_dbTechLayerArraySpacingRule()
-{
 }
 
 ////////////////////////////////////////////////////////////////////

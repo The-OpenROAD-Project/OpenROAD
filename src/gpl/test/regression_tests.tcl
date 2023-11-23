@@ -22,7 +22,8 @@ record_tests {
   error01
   diverge01
   density01
-  upf_test
   convergence01
   nograd01
+  clust01
+  clust02
 }

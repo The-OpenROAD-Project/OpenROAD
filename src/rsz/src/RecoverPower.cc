@@ -55,31 +55,18 @@
 #include "sta/Fuzzy.hh"
 #include "sta/PortDirection.hh"
 
+
 namespace rsz {
 
-using std::abs;
-using std::min;
-using std::max;
 using std::string;
 using std::vector;
-using std::map;
 using std::pair;
 
 using utl::RSZ;
 
 using sta::VertexOutEdgeIterator;
 using sta::Edge;
-using sta::Clock;
 using sta::PathExpanded;
-using sta::INF;
-using sta::fuzzyEqual;
-using sta::fuzzyLess;
-using sta::fuzzyLessEqual;
-using sta::fuzzyGreater;
-using sta::fuzzyGreaterEqual;
-using sta::Unit;
-using sta::Corners;
-using sta::InputDrive;
 
 RecoverPower::RecoverPower(Resizer* resizer)
     : logger_(nullptr),
@@ -152,14 +139,15 @@ RecoverPower::recoverPower(float recover_power_percent)
     end_index++;
     debugPrint(logger_, RSZ, "recover_power", 2, "Doing {} /{}", end_index,
                max_end_count);
-    if (end_index > max_end_count)
+    if (end_index > max_end_count) {
       break;
+    }
     //=====================================================================
     resizer_->journalBegin();
     PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
     bool changed = recoverPower(end_path, end_slack_before);
     if (changed) {
-      resizer_->updateParasitics();
+      resizer_->updateParasitics(true);
       sta_->findRequireds();
       Slack end_slack_after = sta_->vertexSlack(end, max_);
 
@@ -353,9 +341,10 @@ RecoverPower::meetsSizeCriteria(LibertyCell *cell, LibertyCell *equiv,
     if (!match_size) {
       return true;
     }
-    dbMaster* lef_cell1 = db_network_->staToDb(cell);
-    dbMaster* lef_cell2 = db_network_->staToDb(equiv);
-    if (lef_cell1->getWidth() <= lef_cell2->getWidth()) {
+    dbMaster* equivalent_cell = db_network_->staToDb(equiv);
+    dbMaster* curr_cell = db_network_->staToDb(cell);
+    if (equivalent_cell->getWidth() <= curr_cell->getWidth() &&
+        equivalent_cell->getHeight() == curr_cell->getHeight()) {
         return true;
     }
     return false;
@@ -373,7 +362,7 @@ RecoverPower::downsizeCell(LibertyPort *in_port,
   int lib_ap = dcalc_ap->libertyIndex();
   LibertyCell *cell = drvr_port->libertyCell();
   LibertyCellSeq *equiv_cells = sta_->equivCells(cell);
-  constexpr double delay_margin = 1.3; // Prevent overly aggressive downsizing
+  constexpr double delay_margin = 1.5; // Prevent overly aggressive downsizing
 
   if (equiv_cells) {
     const char *in_port_name = in_port->name();

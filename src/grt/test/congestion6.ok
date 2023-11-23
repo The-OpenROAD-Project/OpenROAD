@@ -22,7 +22,7 @@
 [INFO GRT-0088] Layer metal8  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
 [INFO GRT-0088] Layer metal9  Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
-[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0
+[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
@@ -47,10 +47,10 @@ metal10    Vertical         2305             0          100.00%
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
 [INFO GRT-0103] Extra Run for hard benchmark.
-[INFO GRT-0197] Via related to pin nodes: 2369
+[INFO GRT-0197] Via related to pin nodes: 2447
 [INFO GRT-0198] Via related Steiner nodes: 55
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 3716
-[INFO GRT-0112] Final usage 3D: 16364
+[INFO GRT-0111] Final number of vias: 3794
+[INFO GRT-0112] Final usage 3D: 16598
 [ERROR GRT-0118] Routing congestion too high. Check the congestion heatmap in the GUI.
 GRT-0118

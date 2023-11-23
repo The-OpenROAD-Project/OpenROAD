@@ -168,6 +168,7 @@ class LayoutViewer : public QWidget
   // save image of the layout
   void saveImage(const QString& filepath,
                  const odb::Rect& region = odb::Rect(),
+                 int width_px = 0,
                  double dbu_per_pixel = 0);
 
   // From QWidget
@@ -183,6 +184,7 @@ class LayoutViewer : public QWidget
   }
 
   bool isCursorInsideViewport();
+  void updateCursorCoordinates();
 
  signals:
   // indicates the current location of the mouse
@@ -274,6 +276,8 @@ class LayoutViewer : public QWidget
   void commandAboutToExecute();
   void commandFinishedExecuting();
   void executionPaused();
+
+  static QColor background() { return Qt::black; }
 
  private slots:
   void setBlock(odb::dbBlock* block);
@@ -443,8 +447,6 @@ class LayoutViewer : public QWidget
   static constexpr int animation_repeats_ = 6;
   static constexpr int animation_interval_ = 300;
 
-  const QColor background_ = Qt::black;
-
   friend class RenderThread;
 };
 
@@ -456,6 +458,7 @@ class LayoutScroll : public QScrollArea
  public:
   LayoutScroll(LayoutViewer* viewer, QWidget* parent = 0);
 
+  bool isScrollingWithCursor();
  signals:
   // indicates that the viewport (visible area of the layout) has changed
   void viewportChanged();
@@ -468,9 +471,12 @@ class LayoutScroll : public QScrollArea
   void resizeEvent(QResizeEvent* event) override;
   void scrollContentsBy(int dx, int dy) override;
   void wheelEvent(QWheelEvent* event) override;
+  bool eventFilter(QObject* object, QEvent* event) override;
 
  private:
   LayoutViewer* viewer_;
+
+  bool scrolling_with_cursor_;
 };
 
 }  // namespace gui

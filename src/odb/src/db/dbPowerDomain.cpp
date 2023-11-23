@@ -54,24 +54,33 @@ template class dbTable<_dbPowerDomain>;
 
 bool _dbPowerDomain::operator==(const _dbPowerDomain& rhs) const
 {
-  if (_name != rhs._name)
+  if (_name != rhs._name) {
     return false;
-  if (_next_entry != rhs._next_entry)
+  }
+  if (_next_entry != rhs._next_entry) {
     return false;
-  if (_group != rhs._group)
+  }
+  if (_group != rhs._group) {
     return false;
-  if (_top != rhs._top)
+  }
+  if (_top != rhs._top) {
     return false;
-  if (_parent != rhs._parent)
+  }
+  if (_parent != rhs._parent) {
     return false;
-  if (_x1 != rhs._x1)
+  }
+  if (_x1 != rhs._x1) {
     return false;
-  if (_x2 != rhs._x2)
+  }
+  if (_x2 != rhs._x2) {
     return false;
-  if (_y1 != rhs._y1)
+  }
+  if (_y1 != rhs._y1) {
     return false;
-  if (_y2 != rhs._y2)
+  }
+  if (_y2 != rhs._y2) {
     return false;
+  }
 
   return true;
 }
@@ -167,8 +176,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbPowerDomain& obj)
 
 _dbPowerDomain::~_dbPowerDomain()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -186,8 +196,9 @@ const char* dbPowerDomain::getName() const
 dbGroup* dbPowerDomain::getGroup() const
 {
   _dbPowerDomain* obj = (_dbPowerDomain*) this;
-  if (obj->_group == 0)
+  if (obj->_group == 0) {
     return nullptr;
+  }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbGroup*) par->_group_tbl->getPtr(obj->_group);
 }
@@ -215,8 +226,9 @@ void dbPowerDomain::setParent(dbPowerDomain* parent)
 dbPowerDomain* dbPowerDomain::getParent() const
 {
   _dbPowerDomain* obj = (_dbPowerDomain*) this;
-  if (obj->_parent == 0)
+  if (obj->_parent == 0) {
     return nullptr;
+  }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbPowerDomain*) par->_powerdomain_tbl->getPtr(obj->_parent);
 }
@@ -332,4 +344,4 @@ bool dbPowerDomain::getArea(int& _x1, int& _y1, int& _x2, int& _y2)
 
 // User Code End dbPowerDomainPublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

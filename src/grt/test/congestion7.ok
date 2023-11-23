@@ -22,7 +22,7 @@
 [INFO GRT-0088] Layer metal8  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
 [INFO GRT-0088] Layer metal9  Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
-[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0
+[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
@@ -47,11 +47,11 @@ metal10    Vertical         2305             0          100.00%
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
 [INFO GRT-0103] Extra Run for hard benchmark.
-[INFO GRT-0197] Via related to pin nodes: 1902
+[INFO GRT-0197] Via related to pin nodes: 1984
 [INFO GRT-0198] Via related Steiner nodes: 67
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 3043
-[INFO GRT-0112] Final usage 3D: 13583
+[INFO GRT-0111] Final number of vias: 3125
+[INFO GRT-0112] Final usage 3D: 13829
 [WARNING GRT-0115] Global routing finished with overflow.
 
 [INFO GRT-0096] Final congestion report:
@@ -70,7 +70,7 @@ metal10              0             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
 Total             4417          4454          100.84%             7 /  8 / 1530
 
-[INFO GRT-0018] Total wirelength: 14309 um
+[INFO GRT-0018] Total wirelength: 13969 um
 [INFO GRT-0014] Routed nets: 563
 No differences found.
 No differences found.

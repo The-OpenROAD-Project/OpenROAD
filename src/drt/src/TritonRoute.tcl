@@ -210,7 +210,8 @@ sta::define_cmd_args "detailed_route_debug" {
     [-maze]
     [-net name]
     [-pin name]
-    [-worker x y]
+    [-box x1 y1 x2 y2]
+    [-dump_last_worker]
     [-iter iter]
     [-pa_markers]
     [-dump_dr]
@@ -222,7 +223,7 @@ sta::define_cmd_args "detailed_route_debug" {
 
 proc detailed_route_debug { args } {
   sta::parse_key_args "detailed_route_debug" args \
-      keys {-net -worker -iter -pin -dump_dir} \
+      keys {-net -iter -pin -dump_dir -box} \
       flags {-dr -maze -pa -pa_markers -pa_edge -pa_commit -dump_dr -ta -write_net_tracks}
 
   sta::check_argc_eq0 "detailed_route_debug" $args
@@ -236,6 +237,7 @@ proc detailed_route_debug { args } {
   set pa_commit [info exists flags(-pa_commit)]
   set ta [info exists flags(-ta)]
   set write_net_tracks [info exists flags(-write_net_tracks)]
+  set dump_last_worker [info exists flags(-dump_last_worker)]
 
   if { [info exists keys(-net)] } {
     set net_name $keys(-net)
@@ -257,16 +259,18 @@ proc detailed_route_debug { args } {
   } else {
     set dump_dir ""
   }
-  set worker_x -1
-  set worker_y -1
-  if [info exists keys(-worker)] {
-    set worker $keys(-worker)
-    if { [llength $worker] != 2 } {
-      utl::error DRT 118 "-worker is a list of 2 coordinates."
+  set box_x1 -1
+  set box_y1 -1
+  set box_x2 -1
+  set box_y2 -1
+  if [info exists keys(-box)] {
+    set box $keys(-box)
+    if { [llength $box] != 4 } {
+      utl::error DRT 118 "-box is a list of 4 coordinates."
     }
-    lassign $worker worker_x worker_y
-    sta::check_positive_integer "-worker" $worker_x
-    sta::check_positive_integer "-worker" $worker_y
+    lassign $box box_x1 box_y1 box_x2 box_y2
+    sta::check_positive_integer "-box" $box_x1
+    sta::check_positive_integer "-box" $box_y1
   }
 
   if { [info exists keys(-iter)] } {
@@ -276,7 +280,7 @@ proc detailed_route_debug { args } {
   }
 
   drt::set_detailed_route_debug_cmd $net_name $pin_name $dr $dump_dr $pa $maze \
-      $worker_x $worker_y $iter $pa_markers $pa_edge $pa_commit $dump_dir $ta $write_net_tracks
+      $box_x1 $box_y1 $box_x2 $box_y2 $iter $pa_markers $pa_edge $pa_commit $dump_dir $ta $write_net_tracks $dump_last_worker
 }
 
 sta::define_cmd_args "pin_access" {

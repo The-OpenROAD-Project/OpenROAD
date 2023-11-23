@@ -35,10 +35,12 @@
 
 #pragma once
 
+#include <boost/functional/hash.hpp>
+#include <boost/unordered/unordered_map.hpp>
+#include <boost/unordered/unordered_set.hpp>
 #include <deque>
 #include <functional>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "Clock.h"
@@ -51,6 +53,25 @@ class Logger;
 }  // namespace utl
 
 namespace cts {
+
+struct pointHash
+{
+  std::size_t operator()(const cts::Point<double>& point) const
+  {
+    std::pair<double, double> dPair
+        = std::make_pair(point.getX(), point.getY());
+    return boost::hash_value(dPair);
+  }
+};
+
+struct pointEqual
+{
+  bool operator()(const cts::Point<double>& p1,
+                  const cts::Point<double>& p2) const
+  {
+    return p1 == p2;
+  }
+};
 
 class TreeBuilder
 {
@@ -120,11 +141,34 @@ class TreeBuilder
                     double x2,
                     double y2)
   {
-    if ((x >= x1) && (x <= x2) && (y >= y1) && (y <= y2)) {
+    if ((x > x1) && (x < x2) && (y > y1) && (y < y2)) {
       return true;
     }
     return false;
   }
+  bool isAlongBbox(double x,
+                   double y,
+                   double x1,
+                   double y1,
+                   double x2,
+                   double y2)
+  {
+    if ((fuzzyEqual(x, x1) || (fuzzyEqual(x, x2)))
+        && (fuzzyEqualOrGreater(y, y1) && fuzzyEqualOrSmaller(y, y2))) {
+      return true;
+    }
+    if ((fuzzyEqual(y, y1) || (fuzzyEqual(y, y2)))
+        && (fuzzyEqualOrGreater(x, x1) && fuzzyEqualOrSmaller(x, x2))) {
+      return true;
+    }
+    return false;
+  }
+  bool checkLegalitySpecial(Point<double> loc,
+                            double x1,
+                            double y1,
+                            double x2,
+                            double y2,
+                            int scalingFactor);
   bool findBlockage(const Point<double>& bufferLoc,
                     double scalingUnit,
                     double& x1,
@@ -133,7 +177,48 @@ class TreeBuilder
                     double& y2);
   Point<double> legalizeOneBuffer(Point<double> bufferLoc,
                                   const std::string& bufferName);
+  inline void addCandidatePoint(double x,
+                                double y,
+                                Point<double>& point,
+                                std::vector<Point<double>>& candidates)
+  {
+    point.setX(x);
+    point.setY(y);
+    candidates.emplace_back(point);
+  }
   utl::Logger* getLogger() { return logger_; }
+  double getBufferWidth() { return bufferWidth_; }
+  double getBufferHeight() { return bufferHeight_; }
+  bool checkLegalityLoc(const Point<double>& bufferLoc, int scalingFactor);
+  bool isOccupiedLoc(const Point<double>& bufferLoc);
+  void commitLoc(const Point<double>& bufferLoc);
+  void uncommitLoc(const Point<double>& bufferLoc);
+  void commitMoveLoc(const Point<double>& oldLoc, const Point<double>& newLoc);
+  inline bool sinkHasInsertionDelay(const Point<double>& sink)
+  {
+    return (insertionDelays_.find(sink) != insertionDelays_.end());
+  }
+  inline void setSinkInsertionDelay(const Point<double>& sink, double insDelay)
+  {
+    insertionDelays_[sink] = insDelay;
+  }
+  inline double getSinkInsertionDelay(const Point<double>& sink)
+  {
+    auto it = insertionDelays_.find(sink);
+    if (it != insertionDelays_.end()) {
+      // clang-format off
+      debugPrint(logger_, utl::CTS, "clustering", 4, "sink {} has insertion "
+		 "delay {:0.3f}", sink, it->second);
+      // clang-format on
+      return it->second;
+    }
+    return 0.0;
+  }
+  inline double computeDist(const Point<double>& x, const Point<double>& y)
+  {
+    return x.computeDist(y) + getSinkInsertionDelay(x)
+           + getSinkInsertionDelay(y);
+  }
 
  protected:
   CtsOptions* options_ = nullptr;
@@ -147,10 +232,19 @@ class TreeBuilder
   unsigned treeBufLevels_ = 0;
   std::set<ClockInst*> first_level_sink_drivers_;
   std::set<ClockInst*> second_level_sink_drivers_;
+
   std::set<ClockInst*> tree_level_buffers_;
   utl::Logger* logger_;
   odb::dbDatabase* db_;
   std::vector<odb::dbBox*> bboxList_;
+  double bufferWidth_ = 0.0;
+  double bufferHeight_ = 0.0;
+  // keep track of occupied cells to avoid overlap violations
+  // this only tracks cell origin
+  boost::unordered_set<Point<double>, pointHash, pointEqual> occupiedLocations_;
+  // keep track of insertion delays at sink pins
+  boost::unordered_map<Point<double>, double, pointHash, pointEqual>
+      insertionDelays_;
 };
 
 }  // namespace cts

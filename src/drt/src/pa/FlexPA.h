@@ -29,6 +29,7 @@
 #pragma once
 
 #include <boost/polygon/polygon.hpp>
+#include <cstdint>
 
 #include "FlexPA_unique.h"
 #include "frDesign.h"
@@ -71,7 +72,7 @@ class FlexPA
   void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
   void setTargetInstances(const frCollection<odb::dbInst*>& insts);
   void setDistributed(const std::string& rhost,
-                      ushort rport,
+                      uint16_t rport,
                       const std::string& shared_vol,
                       int cloud_sz);
 
@@ -106,14 +107,18 @@ class FlexPA
   frCollection<odb::dbInst*> target_insts_;
 
   std::string remote_host_;
-  ushort remote_port_;
+  uint16_t remote_port_;
   std::string shared_vol_;
   int cloud_sz_;
 
   // helper functions
   frDesign* getDesign() const { return design_; }
   frTechObject* getTech() const { return design_->getTech(); }
-  void setDesign(frDesign* in) { design_ = in; }
+  void setDesign(frDesign* in)
+  {
+    design_ = in;
+    unique_insts_.setDesign(in);
+  }
   void applyPatternsFile(const char* file_path);
   void getViaRawPriority(frViaDef* viaDef, ViaRawPriorityTuple& priority);
   bool isSkipInstTerm(frInstTerm* in);
@@ -214,14 +219,16 @@ class FlexPA
       std::vector<std::unique_ptr<frAccessPoint>>& aps,
       const std::vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
       T* pin,
-      frInstTerm* instTerm);
+      frInstTerm* instTerm,
+      const bool& isStdCellPin);
   template <typename T>
   void prepPoint_pin_checkPoint(
       frAccessPoint* ap,
       const gtl::polygon_90_set_data<frCoord>& polyset,
       const std::vector<gtl::polygon_90_data<frCoord>>& polys,
       T* pin,
-      frInstTerm* instTerm);
+      frInstTerm* instTerm,
+      bool deepSearch = false);
   template <typename T>
   void prepPoint_pin_checkPoint_planar(
       frAccessPoint* ap,
@@ -239,15 +246,27 @@ class FlexPA
   template <typename T>
   void prepPoint_pin_checkPoint_via(
       frAccessPoint* ap,
+      const std::vector<gtl::polygon_90_data<frCoord>>& layerPolys,
       const gtl::polygon_90_set_data<frCoord>& polyset,
       frDirEnum dir,
       T* pin,
-      frInstTerm* instTerm);
+      frInstTerm* instTerm,
+      bool deepSearch = false);
   template <typename T>
-  bool prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
-                                           frVia* via,
-                                           T* pin,
-                                           frInstTerm* instTerm);
+  bool prepPoint_pin_checkPoint_via_helper(
+      frAccessPoint* ap,
+      frVia* via,
+      T* pin,
+      frInstTerm* instTerm,
+      const std::vector<gtl::polygon_90_data<frCoord>>& layerPolys);
+  template <typename T>
+  bool prepPoint_pin_checkPoint_viaDir_helper(
+      frAccessPoint* ap,
+      frVia* via,
+      T* pin,
+      frInstTerm* instTerm,
+      const std::vector<gtl::polygon_90_data<frCoord>>& layerPolys,
+      frDirEnum dir);
   template <typename T>
   void prepPoint_pin_updateStat(
       const std::vector<std::unique_ptr<frAccessPoint>>& tmpAps,

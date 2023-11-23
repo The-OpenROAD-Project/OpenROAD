@@ -227,10 +227,20 @@ void io::Parser::setVias(odb::dbBlock* block)
                        98,
                        "Cannot find bottom layer {}.",
                        params.getBottomLayer()->getName());
-      else
+      else {
+        if (params.getBottomLayer()->getType()
+            == dbTechLayerType::MASTERSLICE) {
+          logger_->warn(DRT,
+                        190,
+                        "Via {} with MASTERSLICE layer {} will be ignored.",
+                        params.getBottomLayer()->getName(),
+                        via->getName());
+          continue;
+        }
         botLayerNum
             = tech_->name2layer.find(params.getBottomLayer()->getName())
                   ->second->getLayerNum();
+      }
 
       if (tech_->name2layer.find(params.getTopLayer()->getName())
           == tech_->name2layer.end())
@@ -238,10 +248,18 @@ void io::Parser::setVias(odb::dbBlock* block)
                        99,
                        "Cannot find top layer {}.",
                        params.getTopLayer()->getName());
-      else
+      else {
+        if (params.getTopLayer()->getType() == dbTechLayerType::MASTERSLICE) {
+          logger_->warn(DRT,
+                        191,
+                        "Via {} with MASTERSLICE layer {} will be ignored.",
+                        params.getTopLayer()->getName(),
+                        via->getName());
+          continue;
+        }
         topLayerNum = tech_->name2layer.find(params.getTopLayer()->getName())
                           ->second->getLayerNum();
-
+      }
       int xSize = params.getXCutSize();
       int ySize = params.getYCutSize();
       int xCutSpacing = params.getXCutSpacing();
@@ -732,8 +750,6 @@ void io::Parser::setNets(odb::dbBlock* block)
               nextX = beginX;
               nextY = beginY;
             }
-            prevLayer = decoder.getLayer();
-            layerName = prevLayer->getName();
             endpath = true;
           }
         } while (!endpath);
@@ -2500,6 +2516,15 @@ void io::Parser::setTechVias(odb::dbTech* db_tech)
         logger_->warn(DRT,
                       124,
                       "Via {} with unused layer {} will be ignored.",
+                      layerName,
+                      via->getName());
+        has_unknown_layer = true;
+        continue;
+      }
+      if (box->getTechLayer()->getType() == dbTechLayerType::MASTERSLICE) {
+        logger_->warn(DRT,
+                      192,
+                      "Via {} with MASTERSLICE layer {} will be ignored.",
                       layerName,
                       via->getName());
         has_unknown_layer = true;
