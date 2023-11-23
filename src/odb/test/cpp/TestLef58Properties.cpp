@@ -96,6 +96,18 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(rule->isTwoEdgesValid() == 1);
   BOOST_TEST(rule->isToConcaveCornerValid() == 0);
 
+  auto wrongDir_rules = layer->getTechLayerWrongDirSpacingRules();
+  BOOST_TEST(wrongDir_rules.size() == 1);
+  odb::dbTechLayerWrongDirSpacingRule* wrongDir_rule
+      = (odb::dbTechLayerWrongDirSpacingRule*) *wrongDir_rules.begin();
+  BOOST_TEST(wrongDir_rule->getWrongdirSpace() == 0.12 * distFactor);
+  BOOST_TEST(wrongDir_rule->isNoneolValid() == 1);
+  BOOST_TEST(wrongDir_rule->getNoneolWidth() == 0.15 * distFactor);
+  BOOST_TEST(wrongDir_rule->isPrlValid() == 1);
+  BOOST_TEST(wrongDir_rule->getPrlLength() == -0.05 * distFactor);
+  BOOST_TEST(wrongDir_rule->isLengthValid() == 1);
+  BOOST_TEST(wrongDir_rule->getLength() == 0.2 * distFactor);
+
   auto minStepRules = layer->getTechLayerMinStepRules();
   BOOST_TEST(minStepRules.size() == 4);
   auto itr = minStepRules.begin();
