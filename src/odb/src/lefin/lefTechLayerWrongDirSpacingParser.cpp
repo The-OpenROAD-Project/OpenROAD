@@ -92,8 +92,9 @@ bool parse(Iterator first,
   bool valid = qi::phrase_parse(first, last, wrongDirSpacingRule, space)
                && first == last;
 
-  if (!valid)
+  if (!valid) {
     odb::dbTechLayerWrongDirSpacingRule::destroy(sc);
+  }
   return valid;
 }
 }  // namespace lefTechLayerWrongDirSpacing

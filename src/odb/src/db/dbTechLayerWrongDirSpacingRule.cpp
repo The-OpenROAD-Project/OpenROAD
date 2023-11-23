@@ -42,8 +42,6 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
-// User Code Begin Includes
-// User Code End Includes
 namespace odb {
 template class dbTable<_dbTechLayerWrongDirSpacingRule>;
 
@@ -72,16 +70,12 @@ bool _dbTechLayerWrongDirSpacingRule::operator==(
     return false;
   }
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
 bool _dbTechLayerWrongDirSpacingRule::operator<(
     const _dbTechLayerWrongDirSpacingRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -98,8 +92,6 @@ void _dbTechLayerWrongDirSpacingRule::differences(
   DIFF_FIELD(noneol_width_);
   DIFF_FIELD(length_);
   DIFF_FIELD(prl_length_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -116,8 +108,6 @@ void _dbTechLayerWrongDirSpacingRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(length_);
   DIFF_OUT_FIELD(prl_length_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
@@ -129,8 +119,6 @@ _dbTechLayerWrongDirSpacingRule::_dbTechLayerWrongDirSpacingRule(
   noneol_width_ = 0;
   length_ = 0;
   prl_length_ = 0;
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 _dbTechLayerWrongDirSpacingRule::_dbTechLayerWrongDirSpacingRule(
@@ -145,8 +133,6 @@ _dbTechLayerWrongDirSpacingRule::_dbTechLayerWrongDirSpacingRule(
   noneol_width_ = r.noneol_width_;
   length_ = r.length_;
   prl_length_ = r.prl_length_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerWrongDirSpacingRule& obj)
@@ -159,8 +145,6 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerWrongDirSpacingRule& obj)
   stream >> obj.noneol_width_;
   stream >> obj.length_;
   stream >> obj.prl_length_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
@@ -175,19 +159,12 @@ dbOStream& operator<<(dbOStream& stream,
   stream << obj.noneol_width_;
   stream << obj.length_;
   stream << obj.prl_length_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
 _dbTechLayerWrongDirSpacingRule::~_dbTechLayerWrongDirSpacingRule()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //
