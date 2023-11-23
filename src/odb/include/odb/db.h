@@ -9571,6 +9571,16 @@ class dbTechLayerWrongDirSpacingRule : public dbObject
   void setPrlValid(bool prl_valid);
 
   bool isPrlValid() const;
+
+  // User Code Begin dbTechLayerWrongDirSpacingRule
+  static dbTechLayerWrongDirSpacingRule* create(dbTechLayer* layer);
+
+  static dbTechLayerWrongDirSpacingRule* getTechLayerWrongDirSpacingRule(
+      dbTechLayer* inly,
+      uint dbid);
+
+  static void destroy(dbTechLayerWrongDirSpacingRule* rule);
+  // User Code End dbTechLayerWrongDirSpacingRule
 };
 
 // Generator Code End ClassDefinition

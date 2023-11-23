@@ -304,6 +304,35 @@ bool dbTechLayerWrongDirSpacingRule::isPrlValid() const
 }
 
 // User Code Begin dbTechLayerWrongDirSpacingRulePublicMethods
+dbTechLayerWrongDirSpacingRule* dbTechLayerWrongDirSpacingRule::create(
+    dbTechLayer* _layer)
+{
+  _dbTechLayer* layer = (_dbTechLayer*) _layer;
+  _dbTechLayerWrongDirSpacingRule* newrule
+      = layer->wrongdir_spacing_rules_tbl_->create();
+  newrule->_layer = _layer->getImpl()->getOID();
+
+  return ((dbTechLayerWrongDirSpacingRule*) newrule);
+}
+
+dbTechLayerWrongDirSpacingRule*
+dbTechLayerWrongDirSpacingRule::getTechLayerWrongDirSpacingRule(
+    dbTechLayer* inly,
+    uint dbid)
+{
+  _dbTechLayer* layer = (_dbTechLayer*) inly;
+  return (dbTechLayerWrongDirSpacingRule*)
+      layer->wrongdir_spacing_rules_tbl_->getPtr(dbid);
+}
+
+void dbTechLayerWrongDirSpacingRule::destroy(
+    dbTechLayerWrongDirSpacingRule* rule)
+{
+  _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
+  dbProperty::destroyProperties(rule);
+  layer->wrongdir_spacing_rules_tbl_->destroy(
+      (_dbTechLayerWrongDirSpacingRule*) rule);
+}
 // User Code End dbTechLayerWrongDirSpacingRulePublicMethods
 }  // namespace odb
    // Generator Code End Cpp
