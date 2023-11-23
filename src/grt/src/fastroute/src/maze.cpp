@@ -1381,7 +1381,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
     if (nets_[netID]->isRouted())
       continue;
-    
+
     if (nets_[netID]->isDeleted())
       continue;
 
@@ -2582,7 +2582,7 @@ void FastRouteCore::InitLastUsage(const int upType)
 void FastRouteCore::SaveLastRouteLen()
 {
   for (int netID = 0; netID < netCount(); netID++) {
-    if(nets_[netID]->isDeleted()) {
+    if (nets_[netID]->isDeleted()) {
       continue;
     }
     auto& treeedges = sttrees_[netID].edges;

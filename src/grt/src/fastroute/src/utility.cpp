@@ -767,7 +767,7 @@ void FastRouteCore::layerAssignmentV4()
 
     if (nets_[netID]->isDeleted())
       continue;
-    
+
     const auto& treeedges = sttrees_[netID].edges;
     for (edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
       treeedge = &(treeedges[edgeID]);
@@ -785,7 +785,7 @@ void FastRouteCore::layerAssignmentV4()
 
     if (nets_[netID]->isRouted())
       continue;
-    
+
     if (nets_[netID]->isDeleted())
       continue;
 
@@ -910,7 +910,7 @@ void FastRouteCore::layerAssignment()
   for (netID = 0; netID < netCount(); netID++) {
     if (nets_[netID]->isRouted())
       continue;
-    
+
     if (nets_[netID]->isDeleted())
       continue;
 
@@ -963,7 +963,7 @@ void FastRouteCore::layerAssignment()
   for (netID = 0; netID < netCount(); netID++) {
     if (nets_[netID]->isRouted())
       continue;
-    
+
     if (nets_[netID]->isDeleted())
       continue;
 
@@ -1049,7 +1049,7 @@ void FastRouteCore::checkRoute3D()
   for (netID = 0; netID < netCount(); netID++) {
     if (nets_[netID]->isRouted())
       continue;
-    
+
     if (nets_[netID]->isDeleted())
       continue;
 
@@ -1177,7 +1177,7 @@ void FastRouteCore::StNetOrder()
     // if the net is routed
     if (nets_[j]->isRouted())
       continue;
-    
+
     if (nets_[j]->isDeleted())
       continue;
 
@@ -1818,9 +1818,9 @@ void FastRouteCore::copyRS(void)
   for (netID = 0; netID < netCount(); netID++) {
     if (nets_[netID]->isRouted())
       continue;
-    
+
     if (nets_[netID]->isDeleted())
-        continue;
+      continue;
 
     numNodes = sttrees_[netID].num_nodes;
     numEdges = sttrees_[netID].num_edges();
@@ -1875,7 +1875,7 @@ void FastRouteCore::copyBR(void)
     for (netID = 0; netID < netCount(); netID++) {
       if (nets_[netID]->isRouted())
         continue;
-      
+
       if (nets_[netID]->isDeleted())
         continue;
 
@@ -1891,7 +1891,7 @@ void FastRouteCore::copyBR(void)
     for (netID = 0; netID < netCount(); netID++) {
       if (nets_[netID]->isRouted())
         continue;
-      
+
       if (nets_[netID]->isDeleted())
         continue;
 
@@ -1993,7 +1993,7 @@ void FastRouteCore::freeRR(void)
     for (netID = 0; netID < netCount(); netID++) {
       if (nets_[netID]->isRouted())
         continue;
-      
+
       if (nets_[netID]->isDeleted())
         continue;
 
