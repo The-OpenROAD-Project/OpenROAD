@@ -61,7 +61,7 @@ void FastRouteCore::fixEmbeddedTrees()
   // i.e., when running overflow iterations
   if (overflow_iterations_ > 0) {
     for (int netID = 0; netID < netCount(); netID++) {
-      if (!nets_[netID]->isRouted())
+      if (!nets_[netID]->isRouted() && !nets_[netID]->isDeleted())
         checkAndFixEmbeddedTree(netID);
     }
   }
@@ -499,7 +499,7 @@ void FastRouteCore::convertToMazerouteNet(const int netID)
 void FastRouteCore::convertToMazeroute()
 {
   for (int netID = 0; netID < netCount(); netID++) {
-    if (!nets_[netID]->isRouted())
+    if (!nets_[netID]->isRouted() && !nets_[netID]->isDeleted())
       convertToMazerouteNet(netID);
   }
 
@@ -1381,6 +1381,9 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
     if (nets_[netID]->isRouted())
       continue;
+    
+    if (nets_[netID]->isDeleted())
+      continue;
 
     const int num_terminals = sttrees_[netID].num_terminals;
 
@@ -2148,6 +2151,9 @@ void FastRouteCore::findCongestedEdgesNets(
     bool vertical)
 {
   for (int netID = 0; netID < netCount(); netID++) {
+    if (nets_[netID]->isDeleted())
+      continue;
+
     const auto& treeedges = sttrees_[netID].edges;
     const int num_edges = sttrees_[netID].num_edges();
 
@@ -2257,6 +2263,9 @@ void FastRouteCore::setCongestionNets(std::set<odb::dbNet*>& congestion_nets,
         != congestion_nets.end()) {
       continue;
     }
+
+    if (nets_[netID]->isDeleted())
+      continue;
 
     const auto& treeedges = sttrees_[netID].edges;
     const int num_edges = sttrees_[netID].num_edges();
@@ -2573,6 +2582,9 @@ void FastRouteCore::InitLastUsage(const int upType)
 void FastRouteCore::SaveLastRouteLen()
 {
   for (int netID = 0; netID < netCount(); netID++) {
+    if(nets_[netID]->isDeleted()) {
+      continue;
+    }
     auto& treeedges = sttrees_[netID].edges;
     // loop for all the tree edges
     const int num_edges = sttrees_[netID].num_edges();

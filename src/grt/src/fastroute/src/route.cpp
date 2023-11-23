@@ -233,6 +233,9 @@ void FastRouteCore::routeLAll(bool firstTime)
       if (nets_[i]->isRouted())
         continue;
 
+      if (nets_[i]->isDeleted())
+        continue;
+
       for (auto& seg : seglist_[i]) {
         estimateOneSeg(&seg);
       }
@@ -240,6 +243,9 @@ void FastRouteCore::routeLAll(bool firstTime)
     // L route
     for (int i = 0; i < netCount(); i++) {
       if (nets_[i]->isRouted())
+        continue;
+
+      if (nets_[i]->isDeleted())
         continue;
 
       for (auto& seg : seglist_[i]) {
@@ -251,6 +257,9 @@ void FastRouteCore::routeLAll(bool firstTime)
   } else {  // previous is L-route
     for (int i = 0; i < netCount(); i++) {
       if (nets_[i]->isRouted())
+        continue;
+
+      if (nets_[i]->isDeleted())
         continue;
 
       for (auto& seg : seglist_[i]) {
@@ -416,12 +425,12 @@ void FastRouteCore::newrouteLAll(bool firstTime, bool viaGuided)
 {
   if (firstTime) {
     for (int i = 0; i < netCount(); i++) {
-      if (!nets_[i]->isRouted())
+      if (!nets_[i]->isRouted() && !nets_[i]->isDeleted())
         newrouteL(i, RouteType::NoRoute, viaGuided);  // do L-routing
     }
   } else {
     for (int i = 0; i < netCount(); i++) {
-      if (!nets_[i]->isRouted())
+      if (!nets_[i]->isRouted() && !nets_[i]->isDeleted())
         newrouteL(i, RouteType::LRoute, viaGuided);
     }
   }
@@ -860,7 +869,7 @@ void FastRouteCore::newrouteZ(int netID, int threshold)
 void FastRouteCore::newrouteZAll(int threshold)
 {
   for (int i = 0; i < netCount(); i++) {
-    if (!nets_[i]->isRouted())
+    if (!nets_[i]->isRouted() && !nets_[i]->isDeleted())
       newrouteZ(i, threshold);  // ripup previous route and do Z-routing
   }
 }
@@ -1062,6 +1071,9 @@ void FastRouteCore::routeMonotonicAll(int threshold)
     if (nets_[netID]->isRouted())
       continue;
 
+    if (nets_[netID]->isDeleted())
+      continue;
+
     for (int edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
       routeMonotonic(
           netID,
@@ -1247,6 +1259,9 @@ void FastRouteCore::spiralRouteAll()
     if (nets_[netID]->isRouted())
       continue;
 
+    if (nets_[netID]->isDeleted())
+      continue;
+
     const auto& treenodes = sttrees_[netID].nodes;
     const int num_terminals = sttrees_[netID].num_terminals;
 
@@ -1297,6 +1312,9 @@ void FastRouteCore::spiralRouteAll()
     if (nets_[netID]->isRouted())
       continue;
 
+    if (nets_[netID]->isDeleted())
+      continue;
+
     const auto& treeedges = sttrees_[netID].edges;
     const auto& treenodes = sttrees_[netID].nodes;
     const int num_edges = sttrees_[netID].num_edges();
@@ -1324,6 +1342,9 @@ void FastRouteCore::spiralRouteAll()
   std::queue<int> edgeQueue;
   for (int netID = 0; netID < netCount(); netID++) {
     if (nets_[netID]->isRouted())
+      continue;
+
+    if (nets_[netID]->isDeleted())
       continue;
 
     newRipupNet(netID);
@@ -1379,6 +1400,9 @@ void FastRouteCore::spiralRouteAll()
 
   for (int netID = 0; netID < netCount(); netID++) {
     if (nets_[netID]->isRouted())
+      continue;
+
+    if (nets_[netID]->isDeleted())
       continue;
 
     const auto& treenodes = sttrees_[netID].nodes;
@@ -1721,6 +1745,9 @@ void FastRouteCore::routeLVAll(int threshold, int expand, float logis_cof)
 
   for (int netID = 0; netID < netCount(); netID++) {
     if (nets_[netID]->isRouted())
+      continue;
+
+    if (nets_[netID]->isDeleted())
       continue;
 
     const int numEdges = sttrees_[netID].num_edges();

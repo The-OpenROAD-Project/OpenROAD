@@ -283,6 +283,12 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
   return net;
 }
 
+void FastRouteCore::removeNet(odb::dbNet* db_net)
+{
+  int netID = db_net_id_map_[db_net];
+  nets_[netID]->setIsDeleted(true);
+}
+
 void FastRouteCore::getNetId(odb::dbNet* db_net, int& net_id, bool& exists)
 {
   auto itr = db_net_id_map_.find(db_net);
@@ -660,6 +666,8 @@ NetRouteMap FastRouteCore::getRoutes()
   for (int netID = 0; netID < netCount(); netID++) {
     if (nets_[netID]->isRouted())
       continue;
+    if (nets_[netID]->isDeleted())
+      continue;
 
     nets_[netID]->setIsRouted(true);
     odb::dbNet* db_net = nets_[netID]->getDbNet();
@@ -725,6 +733,9 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
 
   for (int netID = 0; netID < netCount(); netID++) {
     if (nets_[netID]->isRouted()) {
+      continue;
+    }
+    if (nets_[netID]->isDeleted()) {
       continue;
     }
     auto fr_net = nets_[netID];
@@ -1540,6 +1551,7 @@ void FrNet::reset(odb::dbNet* db_net,
   db_net_ = db_net;
   is_routed_ = false;
   is_critical_ = false;
+  is_deleted_ = false;
   is_clock_ = is_clock;
   driver_idx_ = driver_idx;
   edge_cost_ = edge_cost;

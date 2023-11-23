@@ -892,6 +892,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
     if (net->isRouted())
       continue;
+    
+    if (net->isDeleted())
+      continue;
 
     int enlarge = expand;
     const int num_terminals = sttrees_[netID].num_terminals;
