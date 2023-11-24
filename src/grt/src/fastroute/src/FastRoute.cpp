@@ -285,6 +285,8 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
 
 void FastRouteCore::removeNet(odb::dbNet* db_net)
 {
+  // TODO The deleted flag is a temporary solution. Correctly delete the
+  // FrNet and update the nets list
   int netID = db_net_id_map_[db_net];
   nets_[netID]->setIsDeleted(true);
 }
@@ -734,6 +736,7 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
     if (nets_[netID]->isRouted() || nets_[netID]->isDeleted()) {
       continue;
     }
+
     auto fr_net = nets_[netID];
     odb::dbNet* db_net = fr_net->getDbNet();
     GRoute& route = routes[db_net];
