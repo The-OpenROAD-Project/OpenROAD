@@ -457,7 +457,7 @@ void HierRTLMP::hierRTLMacroPlacer()
     logger_->report("macro_blockage_weight_ = {}", macro_blockage_weight_);
     logger_->report("halo_width_ = {}", halo_width_);
     logger_->report("halo_height_ = {}", halo_height_);
-    logger_->report("bus_planning_flag_ = {}\n", bus_planning_flag_);
+    logger_->report("bus_planning_on_ = {}\n", bus_planning_on_);
   }
 
   //
@@ -616,48 +616,28 @@ void HierRTLMP::hierRTLMacroPlacer()
   // Step 2: In a bottom-up approach (Post-Order DFS), determine the macro
   // tilings within each cluster.
   //
-  // Check if the root cluster has other children clusters
-  bool macro_only_flag = true;
-  for (auto& cluster : root_cluster_->getChildren()) {
-    if (cluster->isIOCluster()) {
-      macro_only_flag = false;
-      break;
-    }
+  logger_->info(
+      MPL, 39, "[Coarse Shaping] Determining shape functions for clusters.");
+
+  if (graphics_) {
+    graphics_->startCoarse();
   }
 
-  if (macro_only_flag == true) {
-    logger_->info(MPL,
-                  27,
-                  "[Hierarchical Macro Placement] The design only has macros. "
-                  "Starting placement.\n");
-    if (graphics_) {
-      graphics_->startFine();
-    }
-    hardMacroClusterMacroPlacement(root_cluster_);
+  calClusterMacroTilings(root_cluster_);
+
+  createPinBlockage();
+
+  logger_->info(
+      MPL, 28, "[Hierarchical Macro Placement] Placing clusters and macros.");
+
+  if (graphics_) {
+    graphics_->startFine();
+  }
+
+  if (bus_planning_on_) {
+    multiLevelMacroPlacement(root_cluster_);
   } else {
-    logger_->info(
-        MPL, 39, "[Coarse Shaping] Determining shape functions for clusters.");
-
-    if (graphics_) {
-      graphics_->startCoarse();
-    }
-
-    calClusterMacroTilings(root_cluster_);
-
-    createPinBlockage();
-
-    logger_->info(
-        MPL, 28, "[Hierarchical Macro Placement] Placing clusters and macros.");
-
-    if (graphics_) {
-      graphics_->startFine();
-    }
-
-    if (bus_planning_flag_ == true) {
-      multiLevelMacroPlacement(root_cluster_);
-    } else {
-      multiLevelMacroPlacementWithoutBusPlanning(root_cluster_);
-    }
+    multiLevelMacroPlacementWithoutBusPlanning(root_cluster_);
   }
 
   generateTemporaryStdCellsPlacement(root_cluster_);
