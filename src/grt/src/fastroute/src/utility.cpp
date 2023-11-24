@@ -1853,7 +1853,7 @@ void FastRouteCore::copyBR(void)
     }
 
     for (netID = 0; netID < netCount(); netID++) {
-      if (nets_[netID]->isRouted() || nets_[netID]->isDeleted()){
+      if (nets_[netID]->isRouted() || nets_[netID]->isDeleted()) {
         continue;
       }
 

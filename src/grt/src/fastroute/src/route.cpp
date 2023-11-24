@@ -426,7 +426,7 @@ void FastRouteCore::newrouteLAll(bool firstTime, bool viaGuided)
   } else {
     for (int i = 0; i < netCount(); i++) {
       if (!nets_[i]->isRouted() && !nets_[i]->isDeleted()) {
-        newrouteL(i, RouteType::LRoute, viaGuided); 
+        newrouteL(i, RouteType::LRoute, viaGuided);
       }
     }
   }
@@ -1065,7 +1065,7 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
 void FastRouteCore::routeMonotonicAll(int threshold)
 {
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted()  || nets_[netID]->isDeleted()) {
+    if (nets_[netID]->isRouted() || nets_[netID]->isDeleted()) {
       continue;
     }
 

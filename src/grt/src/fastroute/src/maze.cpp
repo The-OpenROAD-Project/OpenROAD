@@ -1381,7 +1381,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
   for (int nidRPC = 0; nidRPC < netCount(); nidRPC++) {
     const int netID = ordering ? tree_order_cong_[nidRPC].treeIndex : nidRPC;
 
-    if (nets_[netID]->isRouted() || nets_[netID]->isDeleted()){
+    if (nets_[netID]->isRouted() || nets_[netID]->isDeleted()) {
       continue;
     }
 
@@ -2261,7 +2261,8 @@ void FastRouteCore::setCongestionNets(std::set<odb::dbNet*>& congestion_nets,
   // get Nets with overflow
   for (int netID = 0; netID < netCount(); netID++) {
     if ((congestion_nets.find(nets_[netID]->getDbNet())
-        != congestion_nets.end()) || nets_[netID]->isDeleted()) {
+         != congestion_nets.end())
+        || nets_[netID]->isDeleted()) {
       continue;
     }
 
