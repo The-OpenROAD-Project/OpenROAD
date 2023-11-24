@@ -61,8 +61,9 @@ void FastRouteCore::fixEmbeddedTrees()
   // i.e., when running overflow iterations
   if (overflow_iterations_ > 0) {
     for (int netID = 0; netID < netCount(); netID++) {
-      if (!nets_[netID]->isRouted() && !nets_[netID]->isDeleted())
+      if (!nets_[netID]->isRouted() && !nets_[netID]->isDeleted()) {
         checkAndFixEmbeddedTree(netID);
+      }
     }
   }
 }
@@ -499,8 +500,9 @@ void FastRouteCore::convertToMazerouteNet(const int netID)
 void FastRouteCore::convertToMazeroute()
 {
   for (int netID = 0; netID < netCount(); netID++) {
-    if (!nets_[netID]->isRouted() && !nets_[netID]->isDeleted())
+    if (!nets_[netID]->isRouted() && !nets_[netID]->isDeleted()) {
       convertToMazerouteNet(netID);
+    }
   }
 
   for (int i = 0; i < y_grid_; i++) {
@@ -1379,11 +1381,9 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
   for (int nidRPC = 0; nidRPC < netCount(); nidRPC++) {
     const int netID = ordering ? tree_order_cong_[nidRPC].treeIndex : nidRPC;
 
-    if (nets_[netID]->isRouted())
+    if (nets_[netID]->isRouted() || nets_[netID]->isDeleted()){
       continue;
-
-    if (nets_[netID]->isDeleted())
-      continue;
+    }
 
     const int num_terminals = sttrees_[netID].num_terminals;
 
@@ -2151,8 +2151,9 @@ void FastRouteCore::findCongestedEdgesNets(
     bool vertical)
 {
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isDeleted())
+    if (nets_[netID]->isDeleted()) {
       continue;
+    }
 
     const auto& treeedges = sttrees_[netID].edges;
     const int num_edges = sttrees_[netID].num_edges();
@@ -2259,13 +2260,10 @@ void FastRouteCore::setCongestionNets(std::set<odb::dbNet*>& congestion_nets,
 {
   // get Nets with overflow
   for (int netID = 0; netID < netCount(); netID++) {
-    if (congestion_nets.find(nets_[netID]->getDbNet())
-        != congestion_nets.end()) {
+    if ((congestion_nets.find(nets_[netID]->getDbNet())
+        != congestion_nets.end()) || nets_[netID]->isDeleted()) {
       continue;
     }
-
-    if (nets_[netID]->isDeleted())
-      continue;
 
     const auto& treeedges = sttrees_[netID].edges;
     const int num_edges = sttrees_[netID].num_edges();
