@@ -731,10 +731,7 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
   // Get routes before layer assignment
 
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted()) {
-      continue;
-    }
-    if (nets_[netID]->isDeleted()) {
+    if (nets_[netID]->isRouted || nets_[netID]->isDeleted()) {
       continue;
     }
     auto fr_net = nets_[netID];
