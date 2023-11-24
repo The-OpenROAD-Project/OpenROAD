@@ -1569,7 +1569,7 @@ Resizer::gateSlewDiff(LibertyCell *cell,
   const Pvt *pvt = tgt_slew_dcalc_ap_->operatingConditions();
   ArcDelay arc_delay;
   Slew arc_slew;
-  model->gateDelay(cell, pvt, in_slew, load_cap, 0.0, false,
+  model->gateDelay(pvt, in_slew, load_cap, 0.0, false,
                    arc_delay, arc_slew);
   return arc_slew - out_slew;
 }
@@ -1637,9 +1637,9 @@ Resizer::findBufferTargetSlews(LibertyCell *buffer,
         float load_cap = in_cap * tgt_slew_load_cap_factor;
         ArcDelay arc_delay;
         Slew arc_slew;
-        model->gateDelay(buffer, pvt, 0.0, load_cap, 0.0, false,
+        model->gateDelay(pvt, 0.0, load_cap, 0.0, false,
                         arc_delay, arc_slew);
-        model->gateDelay(buffer, pvt, arc_slew, load_cap, 0.0, false,
+        model->gateDelay(pvt, arc_slew, load_cap, 0.0, false,
                         arc_delay, arc_slew);
         slews[out_rf->index()] += arc_slew;
         counts[out_rf->index()]++;
@@ -2086,7 +2086,7 @@ Resizer::findSwapPinCandidate(LibertyPort *input_port, LibertyPort *drvr_port,
                 ArcDelay gate_delay;
                 Slew drvr_slew;
                 LibertyPort *port = arc->from();
-                arc_delay_calc_->gateDelay(cell, arc, in_slew, load_cap,
+                arc_delay_calc_->gateDelay(arc, in_slew, load_cap,
                                            nullptr, 0.0, pvt, dcalc_ap,
                                            gate_delay,
                                            drvr_slew);
@@ -2142,7 +2142,7 @@ Resizer::gateDelays(LibertyPort *drvr_port,
         float in_slew = tgt_slews_[in_rf->index()];
         ArcDelay gate_delay;
         Slew drvr_slew;
-        arc_delay_calc_->gateDelay(cell, arc, in_slew, load_cap,
+        arc_delay_calc_->gateDelay(arc, in_slew, load_cap,
                                    nullptr, 0.0, pvt, dcalc_ap,
                                    gate_delay,
                                    drvr_slew);
@@ -2348,7 +2348,7 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
           double in_slew = tgt_slews_[in_rf->index()];
           ArcDelay gate_delay;
           Slew drvr_slew;
-          arc_delay_calc->gateDelay(drvr_cell, arc, in_slew, 0.0,
+          arc_delay_calc->gateDelay(arc, in_slew, 0.0,
                                     drvr_parasitic, 0.0, pvt, dcalc_ap,
                                     gate_delay,
                                     drvr_slew);
