@@ -507,6 +507,9 @@ void FlexGCWorker::Impl::checKeepOutZone_main(gcRect* rect,
 
 void FlexGCWorker::Impl::checkMetalWidthViaTable_main(gcRect* rect)
 {
+  if (rect->getLayerNum() > TOP_ROUTING_LAYER) {
+    return;
+  }
   for (auto con : getTech()
                       ->getLayer(rect->getLayerNum())
                       ->getMetalWidthViaConstraints()) {
