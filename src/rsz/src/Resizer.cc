@@ -768,6 +768,9 @@ Resizer::closestDriver(LibertyCell* cell, LibertyCellSeq *candidates, float scal
   const auto current_limit = scale * maxLoad(output_pin->cell());
   auto diff = sta::INF;
   for (auto& cand : *candidates) {
+    if (dontUse(cand)) {
+      continue;
+    }
     auto limit = maxLoad(libraryOutputPins(cand)[0]->cell());
     if (limit == current_limit) {
       return cand;
