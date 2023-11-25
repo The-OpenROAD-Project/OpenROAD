@@ -1380,10 +1380,6 @@ void Opendp::legalCellPos(dbInst* db_inst)
     return;
   }
 
-  if (legal_pt == new_pos) {
-    return;
-  }
-
   int row_height = getRowHeight(&cell);
 
   int site_width = site_width_;
