@@ -122,10 +122,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbNetTrack& obj)
   return stream;
 }
 
-_dbNetTrack::~_dbNetTrack()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbNetTrack - Methods

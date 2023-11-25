@@ -198,10 +198,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbAccessPoint& obj)
   return stream;
 }
 
-_dbAccessPoint::~_dbAccessPoint()
-{
-}
-
 // User Code Begin PrivateMethods
 void _dbAccessPoint::setMPin(_dbMPin* mpin)
 {
@@ -483,4 +479,4 @@ void dbAccessPoint::destroy(dbAccessPoint* ap)
 }
 // User Code End dbAccessPointPublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

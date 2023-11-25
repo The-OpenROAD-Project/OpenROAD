@@ -413,10 +413,6 @@ dbOStream& operator<<(dbOStream& stream,
   return stream;
 }
 
-_dbTechLayerCutEnclosureRule::~_dbTechLayerCutEnclosureRule()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerCutEnclosureRule - Methods
@@ -1029,4 +1025,4 @@ void dbTechLayerCutEnclosureRule::destroy(dbTechLayerCutEnclosureRule* rule)
 }
 // User Code End dbTechLayerCutEnclosureRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

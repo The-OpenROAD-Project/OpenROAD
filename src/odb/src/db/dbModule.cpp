@@ -368,4 +368,4 @@ std::string dbModule::getHierarchicalName() const
 
 // User Code End dbModulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

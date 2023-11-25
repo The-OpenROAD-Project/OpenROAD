@@ -149,10 +149,6 @@ dbOStream& operator<<(dbOStream& stream,
   return stream;
 }
 
-_dbTechLayerSpacingTablePrlRule::~_dbTechLayerSpacingTablePrlRule()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerSpacingTablePrlRule - Methods
@@ -336,4 +332,4 @@ std::pair<int, int> dbTechLayerSpacingTablePrlRule::getExceptWithin(
 
 // User Code End dbTechLayerSpacingTablePrlRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp
