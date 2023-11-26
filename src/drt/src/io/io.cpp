@@ -1403,6 +1403,20 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     tmpLayer->addLef58SpacingEndOfLineConstraint(con.get());
     tech_->addUConstraint(std::move(con));
   }
+  for (auto rule : layer->getTechLayerWrongDirSpacingRules()) {
+    unique_ptr<frConstraint> uCon
+        = make_unique<frLef58SpacingWrongDirConstraint>();
+    auto rptr = static_cast<frLef58SpacingWrongDirConstraint*>(uCon.get());
+    rptr->setWrongDirSpace(rule->getWrongdirSpace());
+    rptr->setNonEol(rule->isNoneolValid());
+    rptr->setNonEolWidth(rule->getNoneolWidth());
+    rptr->setLengthValid(rule->isLengthValid());
+    rptr->setLength(rule->getLength());
+    rptr->setPrlLengthValid(rule->isPrlValid());
+    rptr->setPrlLength(rule->getPrlLength());
+    tech_->addUConstraint(std::move(uCon));
+    tmpLayer->addLef58SpacingWrongDirConstraint(rptr);
+  }
   if (tech_->hasUnidirectionalLayer(layer))
     tmpLayer->setUnidirectional(true);
   if (layer->isRectOnly()) {

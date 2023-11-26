@@ -206,6 +206,9 @@ class frConstraint
           frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint:
         return "Lef58SpacingEndOfLineWithinMaxMinLength";
 
+      case frConstraintTypeEnum::frcLef58SpacingWrongDirConstraint:
+        return "Lef58SpacingWrongDir";
+
       case frConstraintTypeEnum::frcLef58CutClassConstraint:
         return "Lef58CutClass";
 
@@ -1143,6 +1146,71 @@ class frLef58SpacingEndOfLineConstraint : public frConstraint
   bool wrongDirSpacing;
   frCoord wrongDirSpace;
   std::shared_ptr<frLef58SpacingEndOfLineWithinConstraint> withinConstraint;
+};
+
+class frLef58SpacingWrongDirConstraint : public frConstraint
+{
+ public:
+  // constructors
+  frLef58SpacingWrongDirConstraint()
+      : wrongDirSpace(0),
+        noneolValid(false),
+        noneolWidth(0),
+        lengthValid(false),
+        length(0),
+        prlLengthValid(false),
+        prlLength(0)
+  {
+  }
+  // getters
+  frCoord getWrongDirSpace() const { return wrongDirSpace; }
+  bool hasNoneolWidth() const { return noneolValid; }
+  frCoord getNoneolWidth() const { return noneolWidth; }
+  bool hasLength() const { return lengthValid; }
+  frCoord getLength() const { return length; }
+  bool hasPrlLength() const { return prlLengthValid; }
+  frCoord getPrlLength() const { return prlLength; }
+  // setters
+  void setWrongDirSpace(frCoord wrongDirSpaceIn)
+  {
+    wrongDirSpace = wrongDirSpaceIn;
+  }
+  void setNonEol(bool noneolIn) { noneolValid = noneolIn; }
+  void setNonEolWidth(frCoord noneolWidthIn) { noneolWidth = noneolWidthIn; }
+  void setLengthValid(bool lengthValidIn) { lengthValid = lengthValidIn; }
+  void setLength(frCoord lengthIn) { length = lengthIn; }
+  void setPrlLengthValid(bool prlLengthValidIn)
+  {
+    prlLengthValid = prlLengthValidIn;
+  }
+  void setPrlLength(frCoord prlLengthIn) { prlLength = prlLengthIn; }
+  // others
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcLef58SpacingWrongDirConstraint;
+  }
+  void report(utl::Logger* logger) const override
+  {
+    logger->report(
+        "SPACING WRONGDIRECTION wrongDirSpace {} noneolValid {} noneolWidth {} "
+        "lengthValid {} length {} prlLengthValid {} prlLength {} ",
+        wrongDirSpace,
+        noneolValid,
+        noneolWidth,
+        lengthValid,
+        length,
+        prlLengthValid,
+        prlLength);
+  }
+
+ protected:
+  frCoord wrongDirSpace;
+  bool noneolValid;
+  frCoord noneolWidth;
+  bool lengthValid;
+  frCoord length;
+  bool prlLengthValid;
+  frCoord prlLength;
 };
 
 class frLef58EolKeepOutConstraint : public frConstraint
