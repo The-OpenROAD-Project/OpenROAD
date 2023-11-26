@@ -795,7 +795,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   if (obj.getDatabase()->isSchema(db_schema_keepout_zone)) {
     stream >> *obj.keepout_zone_rules_tbl_;
   }
-  stream >> *obj.wrongdir_spacing_rules_tbl_;
+  if (obj.getDatabase()->isSchema(db_schema_wrongdir_spacing)) {
+    stream >> *obj.wrongdir_spacing_rules_tbl_;
+  }
   // User Code Begin >>
   stream >> obj._pitch_x;
   stream >> obj._pitch_y;
@@ -880,7 +882,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   if (obj.getDatabase()->isSchema(db_schema_keepout_zone)) {
     stream << *obj.keepout_zone_rules_tbl_;
   }
-  stream << *obj.wrongdir_spacing_rules_tbl_;
+  if (obj.getDatabase()->isSchema(db_schema_wrongdir_spacing)) {
+    stream << *obj.wrongdir_spacing_rules_tbl_;
+  }
   // User Code Begin <<
   stream << obj._pitch_x;
   stream << obj._pitch_y;

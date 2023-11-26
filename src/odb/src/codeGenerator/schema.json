@@ -180,7 +180,8 @@
       "first":"dbTechLayer",
       "second":"dbTechLayerWrongDirSpacingRule",
       "type":"1_n",
-      "tbl_name":"wrongdir_spacing_rules_tbl_"
+      "tbl_name":"wrongdir_spacing_rules_tbl_",
+      "schema":"db_schema_wrongdir_spacing"
     }
   ]
 }
