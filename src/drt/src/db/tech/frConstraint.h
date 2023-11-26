@@ -1204,13 +1204,13 @@ class frLef58SpacingWrongDirConstraint : public frConstraint
   }
 
  protected:
-  frCoord wrongDirSpace;
-  bool noneolValid;
-  frCoord noneolWidth;
-  bool lengthValid;
-  frCoord length;
-  bool prlLengthValid;
-  frCoord prlLength;
+  frCoord wrongDirSpace{0};
+  bool noneolValid{false};
+  frCoord noneolWidth{0};
+  bool lengthValid{false};
+  frCoord length{0};
+  bool prlLengthValid{false};
+  frCoord prlLength{0};
 };
 
 class frLef58EolKeepOutConstraint : public frConstraint
