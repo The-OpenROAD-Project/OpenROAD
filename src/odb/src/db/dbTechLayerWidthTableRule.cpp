@@ -120,10 +120,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerWidthTableRule& obj)
   return stream;
 }
 
-_dbTechLayerWidthTableRule::~_dbTechLayerWidthTableRule()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerWidthTableRule - Methods

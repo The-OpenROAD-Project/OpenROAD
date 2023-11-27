@@ -1504,7 +1504,7 @@ void MBFF::SetRatios(int bitmask)
     ratios_.push_back(std::numeric_limits<float>::max());
     if (best_master_[bitmask][i] != nullptr) {
       const int slot_cnt = GetBitCnt(i);
-      const int rows = GetRows(i, bitmask);
+      const int rows = GetRows(slot_cnt, bitmask);
       const int cols = slot_cnt / rows;
       ratios_[i]
           = (tray_width_[bitmask][i] / (width_ * (static_cast<float>(cols))));
