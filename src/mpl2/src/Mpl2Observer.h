@@ -65,6 +65,10 @@ class Mpl2Observer
   virtual void setMacroBlockages(const std::vector<mpl2::Rect>& macro_blockages)
   {
   }
+  virtual void setPlacementBlockages(
+      const std::vector<mpl2::Rect>& placement_blockages)
+  {
+  }
   virtual void setOutline(const odb::Rect& outline) {}
 
   virtual void setAreaPenalty(float area) {}
