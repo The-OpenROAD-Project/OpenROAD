@@ -297,7 +297,7 @@ void FastRouteCore::clearNetRoute(const int netID)
 
   // clear stree
   sttrees_[netID].nodes.clear();
-  sttrees_[netID].edges.reset();
+  sttrees_[netID].edges.clear();
 }
 
 void FastRouteCore::initEdges()

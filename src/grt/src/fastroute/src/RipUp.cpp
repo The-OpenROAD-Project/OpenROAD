@@ -465,7 +465,7 @@ void FastRouteCore::releaseNetResources(const int netID)
   // Only release resources if they were created at first place.
   // Cases like "read_guides" can call this function multiple times,
   // without creating treeedges inside the core code.
-  if (treeedges != nullptr) {
+  if (!treeedges.empty()) {
     for (int edgeID = 0; edgeID < num_edges; edgeID++) {
       const TreeEdge* treeedge = &(treeedges[edgeID]);
       const std::vector<short>& gridsX = treeedge->route.gridsX;

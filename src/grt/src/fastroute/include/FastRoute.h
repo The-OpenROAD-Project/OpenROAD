@@ -291,7 +291,7 @@ class FastRouteCore
   int copyGrids(const std::vector<TreeNode>& treenodes,
                 const int n1,
                 const int n2,
-                const TreeEdge* treeedges,
+                const std::vector<TreeEdge>& treeedges,
                 const int edge_n1n2,
                 std::vector<int>& gridsX_n1n2,
                 std::vector<int>& gridsY_n1n2);
@@ -302,7 +302,7 @@ class FastRouteCore
                         const int A2,
                         const int E1x,
                         const int E1y,
-                        TreeEdge* treeedges,
+                        std::vector<TreeEdge>& treeedges,
                         const int edge_n1A1,
                         const int edge_n1A2);
   bool updateRouteType2(const int net_id,
@@ -314,7 +314,7 @@ class FastRouteCore
                         const int C2,
                         const int E1x,
                         const int E1y,
-                        TreeEdge* treeedges,
+                        std::vector<TreeEdge>& treeedges,
                         const int edge_n1A1,
                         const int edge_n1A2,
                         const int edge_C1C2);
@@ -341,7 +341,7 @@ class FastRouteCore
   int copyGrids3D(std::vector<TreeNode>& treenodes,
                   int n1,
                   int n2,
-                  TreeEdge* treeedges,
+                  std::vector<TreeEdge>& treeedges,
                   int edge_n1n2,
                   int gridsX_n1n2[],
                   int gridsY_n1n2[],
@@ -353,7 +353,7 @@ class FastRouteCore
                           int A2,
                           int E1x,
                           int E1y,
-                          TreeEdge* treeedges,
+                          std::vector<TreeEdge>& treeedges,
                           int edge_n1A1,
                           int edge_n1A2);
   void updateRouteType23D(int netID,
@@ -365,7 +365,7 @@ class FastRouteCore
                           int C2,
                           int E1x,
                           int E1y,
-                          TreeEdge* treeedges,
+                          std::vector<TreeEdge>& treeedges,
                           int edge_n1A1,
                           int edge_n1A2,
                           int edge_C1C2);

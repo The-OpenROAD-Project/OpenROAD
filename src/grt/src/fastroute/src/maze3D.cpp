@@ -386,7 +386,7 @@ void FastRouteCore::newUpdateNodeLayers(std::vector<TreeNode>& treenodes,
 int FastRouteCore::copyGrids3D(std::vector<TreeNode>& treenodes,
                                int n1,
                                int n2,
-                               TreeEdge* treeedges,
+                               std::vector<TreeEdge>& treeedges,
                                int edge_n1n2,
                                int gridsX_n1n2[],
                                int gridsY_n1n2[],
@@ -445,7 +445,7 @@ void FastRouteCore::updateRouteType13D(int netID,
                                        int A2,
                                        int E1x,
                                        int E1y,
-                                       TreeEdge* treeedges,
+                                       std::vector<TreeEdge>& treeedges,
                                        int edge_n1A1,
                                        int edge_n1A2)
 {
@@ -665,7 +665,7 @@ void FastRouteCore::updateRouteType23D(int netID,
                                        int C2,
                                        int E1x,
                                        int E1y,
-                                       TreeEdge* treeedges,
+                                       std::vector<TreeEdge>& treeedges,
                                        int edge_n1A1,
                                        int edge_n1A2,
                                        int edge_C1C2)
@@ -895,7 +895,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
     int enlarge = expand;
     const int num_terminals = sttrees_[netID].num_terminals;
-    const auto& treeedges = sttrees_[netID].edges;
+    auto& treeedges = sttrees_[netID].edges;
     auto& treenodes = sttrees_[netID].nodes;
     const int origEng = enlarge;
 
@@ -1328,7 +1328,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                              A2,
                              E1x,
                              E1y,
-                             treeedges.get(),
+                             treeedges,
                              edge_n1A1,
                              edge_n1A2);
 
@@ -1353,7 +1353,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                              C2,
                              E1x,
                              E1y,
-                             treeedges.get(),
+                             treeedges,
                              edge_n1A1,
                              edge_n1A2,
                              edge_C1C2);
@@ -1480,7 +1480,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                              B2,
                              E2x,
                              E2y,
-                             treeedges.get(),
+                             treeedges,
                              edge_n2B1,
                              edge_n2B2);
 
@@ -1503,7 +1503,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                              D2,
                              E2x,
                              E2y,
-                             treeedges.get(),
+                             treeedges,
                              edge_n2B1,
                              edge_n2B2,
                              edge_D1D2);

@@ -225,7 +225,7 @@ struct StTree
   int num_terminals = 0;
   // The nodes (pin and Steiner nodes) in the tree.
   std::vector<TreeNode> nodes;
-  std::unique_ptr<TreeEdge[]> edges;
+  std::vector<TreeEdge> edges;
 
   int num_edges() const { return num_nodes - 1; }
 };

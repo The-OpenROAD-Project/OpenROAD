@@ -941,7 +941,7 @@ void FastRouteCore::setupHeap(const int netID,
 int FastRouteCore::copyGrids(const std::vector<TreeNode>& treenodes,
                              const int n1,
                              const int n2,
-                             const TreeEdge* treeedges,
+                             const std::vector<TreeEdge>& treeedges,
                              const int edge_n1n2,
                              std::vector<int>& gridsX_n1n2,
                              std::vector<int>& gridsY_n1n2)
@@ -1001,7 +1001,7 @@ bool FastRouteCore::updateRouteType1(const int net_id,
                                      const int A2,
                                      const int E1x,
                                      const int E1y,
-                                     TreeEdge* treeedges,
+                                     std::vector<TreeEdge>& treeedges,
                                      const int edge_n1A1,
                                      const int edge_n1A2)
 {
@@ -1140,7 +1140,7 @@ bool FastRouteCore::updateRouteType2(const int net_id,
                                      const int C2,
                                      const int E1x,
                                      const int E1y,
-                                     TreeEdge* treeedges,
+                                     std::vector<TreeEdge>& treeedges,
                                      const int edge_n1A1,
                                      const int edge_n1A2,
                                      const int edge_C1C2)
@@ -1277,7 +1277,7 @@ void FastRouteCore::reInitTree(const int netID)
     }
   }
   sttrees_[netID].nodes.clear();
-  sttrees_[netID].edges.reset();
+  sttrees_[netID].edges.clear();
 
   Tree rsmt;
   const float net_alpha = stt_builder_->getAlpha(nets_[netID]->getDbNet());
@@ -1850,7 +1850,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                            A2,
                                            E1x,
                                            E1y,
-                                           treeedges.get(),
+                                           treeedges,
                                            edge_n1A1,
                                            edge_n1A2);
           if (!route_ok) {
@@ -1883,7 +1883,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                            C2,
                                            E1x,
                                            E1y,
-                                           treeedges.get(),
+                                           treeedges,
                                            edge_n1A1,
                                            edge_n1A2,
                                            edge_C1C2);
@@ -2001,7 +2001,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                            B2,
                                            E2x,
                                            E2y,
-                                           treeedges.get(),
+                                           treeedges,
                                            edge_n2B1,
                                            edge_n2B2);
           if (!route_ok) {
@@ -2035,7 +2035,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                            D2,
                                            E2x,
                                            E2y,
-                                           treeedges.get(),
+                                           treeedges,
                                            edge_n2B1,
                                            edge_n2B2,
                                            edge_D1D2);
