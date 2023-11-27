@@ -691,7 +691,7 @@ void Optdp::createArchitecture()
     min_row_height = std::min(min_row_height, row->getSite()->getHeight());
   }
 
-  std::map<uint, std::unordered_set<std::string>> skip_list;
+  std::map<odb::uint, std::unordered_set<std::string>> skip_list;
 
   for (dbRow* row : block->getRows()) {
     if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {

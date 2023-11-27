@@ -99,7 +99,6 @@ GlobalRouter::GlobalRouter()
       verbose_(false),
       min_layer_for_clock_(-1),
       max_layer_for_clock_(-2),
-      critical_nets_percentage_(10),
       seed_(0),
       caps_perturbation_percentage_(0),
       perturbation_amount_(1),
@@ -187,12 +186,13 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   setCapacities(min_routing_layer, max_routing_layer);
 
   if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
-    critical_nets_percentage_ = 0;
     logger_->warn(
         GRT,
         300,
-        "Timing is not available, setting critical nets percentage to 0");
+        "Timing is not available, setting critical nets percentage to 0.");
+    fastroute_->setCriticalNetsPercentage(0);
   }
+
   std::vector<Net*> nets = initNetlist();
   initNets(nets);
 
@@ -753,46 +753,6 @@ float GlobalRouter::getNetSlack(Net* net)
   return slack;
 }
 
-void GlobalRouter::computeNetSlacks()
-{
-  // Find the slack for all nets
-  std::unordered_map<Net*, float> net_slack_map;
-  std::vector<float> slacks;
-  for (const auto& net_itr : db_net_map_) {
-    Net* net = net_itr.second;
-    float slack = getNetSlack(net);
-    net_slack_map[net] = slack;
-    slacks.push_back(slack);
-  }
-  std::stable_sort(slacks.begin(), slacks.end());
-
-  // Find the slack threshold based on the percentage of critical nets
-  // defined by the user
-  int threshold_index
-      = std::ceil(slacks.size() * critical_nets_percentage_ / 100);
-  threshold_index = std::min((int) slacks.size() - 1, threshold_index);
-  float slack_th = slacks[threshold_index];
-
-  // Ensure the slack threshold is negative
-  if (slack_th >= 0) {
-    for (float slack : slacks) {
-      if (slack >= 0)
-        break;
-      slack_th = slack;
-    }
-  }
-
-  if (slack_th >= 0) {
-    return;
-  }
-  // Add the slack values smaller than the threshold to the nets
-  for (auto [net, slack] : net_slack_map) {
-    if (slack <= slack_th) {
-      net->setSlack(slack);
-    }
-  }
-}
-
 void GlobalRouter::initNets(std::vector<Net*>& nets)
 {
   checkPinPlacement();
@@ -810,11 +770,6 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
     g.seed(seed_);
 
     utl::shuffle(nets.begin(), nets.end(), g);
-  }
-
-  if (critical_nets_percentage_ != 0) {
-    fastroute_->setUpdateSlack(critical_nets_percentage_);
-    computeNetSlacks();
   }
 
   for (Net* net : nets) {
@@ -911,12 +866,11 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     // See https://github.com/The-OpenROAD-Project/OpenROAD/pull/2893 and
     // https://github.com/The-OpenROAD-Project/OpenROAD/discussions/2870
     // for a detailed discussion
-    int min_pin_layer = std::numeric_limits<int>::max();
+
     for (RoutePt& pin_pos : pins_on_grid) {
       fr_net->addPin(pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
-      min_pin_layer = std::min(min_pin_layer, pin_pos.layer());
     }
-    fr_net->setMinLayer(std::max(min_pin_layer - 1, min_layer - 1));
+
     // Save stt input on debug file
     if (fastroute_->hasSaveSttInput()
         && net->getDbNet() == fastroute_->getDebugNet()) {
@@ -946,18 +900,16 @@ void GlobalRouter::getNetLayerRange(odb::dbNet* db_net,
                                     int& max_layer)
 {
   Net* net = db_net_map_[db_net];
-  int port_min_layer = std::numeric_limits<int>::max();
+  int pin_min_layer = std::numeric_limits<int>::max();
   for (const Pin& pin : net->getPins()) {
-    if (pin.isPort() || pin.isConnectedToPadOrMacro()) {
-      port_min_layer = std::min(port_min_layer, pin.getConnectionLayer());
-    }
+    pin_min_layer = std::min(pin_min_layer, pin.getConnectionLayer());
   }
 
   bool is_non_leaf_clock = isNonLeafClock(db_net);
   min_layer = (is_non_leaf_clock && min_layer_for_clock_ > 0)
                   ? min_layer_for_clock_
                   : min_routing_layer_;
-  min_layer = std::min(min_layer, port_min_layer);
+  min_layer = std::max(min_layer, pin_min_layer);
   max_layer = (is_non_leaf_clock && max_layer_for_clock_ > 0)
                   ? max_layer_for_clock_
                   : max_routing_layer_;
@@ -1365,7 +1317,14 @@ void GlobalRouter::setMaxLayerForClock(const int max_layer)
 
 void GlobalRouter::setCriticalNetsPercentage(float critical_nets_percentage)
 {
-  critical_nets_percentage_ = critical_nets_percentage;
+  if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
+    critical_nets_percentage = 0;
+    logger_->warn(
+        GRT,
+        301,
+        "Timing is not available, setting critical nets percentage to 0.");
+  }
+  fastroute_->setCriticalNetsPercentage(critical_nets_percentage);
 }
 
 void GlobalRouter::addLayerAdjustment(int layer, float reduction_percentage)
@@ -1595,6 +1554,7 @@ void GlobalRouter::readGuides(const char* file_name)
   }
 
   updateEdgesUsage();
+  computeGCellGridPatternFromGuides(guides);
   updateDbCongestionFromGuides();
   heatmap_->update();
   saveGuidesFromFile(guides);
@@ -1673,13 +1633,6 @@ void GlobalRouter::updateDbCongestionFromGuides()
 {
   auto block = db_->getChip()->getBlock();
   auto db_gcell = block->getGCellGrid();
-  if (db_gcell == nullptr) {
-    db_gcell = odb::dbGCellGrid::create(block);
-    db_gcell->addGridPatternX(
-        grid_->getXMin(), grid_->getXGrids(), grid_->getTileSize());
-    db_gcell->addGridPatternY(
-        grid_->getYMin(), grid_->getYGrids(), grid_->getTileSize());
-  }
 
   auto db_tech = db_->getTech();
   for (int k = 0; k < grid_->getNumLayers(); k++) {
@@ -1694,7 +1647,7 @@ void GlobalRouter::updateDbCongestionFromGuides()
     const unsigned short capH = fastroute_->getHorizontalCapacities()[k];
     const unsigned short capV = fastroute_->getVerticalCapacities()[k];
     for (int y = 0; y < grid_->getYGrids(); y++) {
-      for (int x = 0; x < grid_->getXGrids() - 1; x++) {
+      for (int x = 0; x < grid_->getXGrids(); x++) {
         const unsigned short blockageH = capH - h_edges_3D[k][y][x].cap;
         const unsigned short blockageV = capV - v_edges_3D[k][y][x].cap;
         const unsigned short usageH = h_edges_3D[k][y][x].usage + blockageH;
@@ -1703,6 +1656,102 @@ void GlobalRouter::updateDbCongestionFromGuides()
         db_gcell->setUsage(layer, x, y, usageH, usageV, 0);
         db_gcell->setBlockage(layer, x, y, blockageH, blockageV, 0);
       }
+    }
+  }
+}
+
+void GlobalRouter::computeGCellGridPatternFromGuides(
+    std::unordered_map<odb::dbNet*, Guides>& net_guides)
+{
+  int width = grid_->getXMax() - grid_->getXMin();
+  int height = grid_->getYMax() - grid_->getYMin();
+
+  // use the maps to detect the most used tile size. some designs may have
+  // guides larger than others, but also smaller than others.
+  std::map<int, int> tile_size_x_map;
+  std::map<int, int> tile_size_y_map;
+  int min_loc_x = std::numeric_limits<int>::max();
+  int min_loc_y = std::numeric_limits<int>::max();
+  fillTileSizeMaps(
+      net_guides, tile_size_x_map, tile_size_y_map, min_loc_x, min_loc_y);
+
+  int tile_size_x = 0;
+  int tile_size_y = 0;
+  findTileSize(tile_size_x_map, tile_size_y_map, tile_size_x, tile_size_y);
+
+  if (tile_size_x == 0 || tile_size_y == 0) {
+    logger_->error(utl::GRT,
+                   253,
+                   "Detected invalid guide dimensions: ({}, {}).",
+                   tile_size_x,
+                   tile_size_y);
+  }
+
+  int x_grids = width / tile_size_x;
+  int guide_x_idx = std::floor((min_loc_x - grid_->getXMin()) / tile_size_x);
+  int origin_x = min_loc_x - guide_x_idx * tile_size_x;
+
+  int y_grids = height / tile_size_y;
+  int guide_y_idx = std::floor((min_loc_y - grid_->getYMin()) / tile_size_y);
+  int origin_y = min_loc_y - guide_y_idx * tile_size_y;
+
+  auto db_gcell = block_->getGCellGrid();
+  if (db_gcell) {
+    db_gcell->resetGrid();
+  } else {
+    db_gcell = odb::dbGCellGrid::create(block_);
+  }
+  db_gcell->addGridPatternX(origin_x, x_grids, tile_size_x);
+  db_gcell->addGridPatternY(origin_y, y_grids, tile_size_y);
+
+  grid_->setXGrids(x_grids);
+  grid_->setYGrids(y_grids);
+}
+
+void GlobalRouter::fillTileSizeMaps(
+    std::unordered_map<odb::dbNet*, Guides>& net_guides,
+    std::map<int, int>& tile_size_x_map,
+    std::map<int, int>& tile_size_y_map,
+    int& min_loc_x,
+    int& min_loc_y)
+{
+  for (const auto& [net, guides] : net_guides) {
+    for (const auto& guide : guides) {
+      if (tile_size_x_map.find(guide.second.dx()) == tile_size_x_map.end()) {
+        tile_size_x_map[guide.second.dx()] = 1;
+      } else {
+        tile_size_x_map[guide.second.dx()]++;
+      }
+      if (tile_size_y_map.find(guide.second.dy()) == tile_size_y_map.end()) {
+        tile_size_y_map[guide.second.dy()] = 1;
+      } else {
+        tile_size_y_map[guide.second.dy()]++;
+      }
+
+      min_loc_x = std::min(guide.second.xMin(), min_loc_x);
+      min_loc_y = std::min(guide.second.yMin(), min_loc_y);
+    }
+  }
+}
+
+void GlobalRouter::findTileSize(const std::map<int, int>& tile_size_x_map,
+                                const std::map<int, int>& tile_size_y_map,
+                                int& tile_size_x,
+                                int& tile_size_y)
+{
+  int cnt_x = 0;
+  for (const auto& [size_x, count] : tile_size_x_map) {
+    if (count > cnt_x) {
+      tile_size_x = size_x;
+      cnt_x = count;
+    }
+  }
+
+  int cnt_y = 0;
+  for (const auto& [size_y, count] : tile_size_y_map) {
+    if (count > cnt_y) {
+      tile_size_y = size_y;
+      cnt_y = count;
     }
   }
 }
@@ -1751,7 +1800,7 @@ void GlobalRouter::saveGuides()
                            db_net->getConstName());
           }
 
-          if (net->isLocal()) {
+          if (net->isLocal() || (isCoveringPin(net, segment))) {
             int layer_idx1 = segment.init_layer;
             int layer_idx2 = segment.final_layer;
             odb::dbTechLayer* layer1 = routing_layers_[layer_idx1];
@@ -1760,13 +1809,8 @@ void GlobalRouter::saveGuides()
             odb::dbGuide::create(db_net, layer2, box);
           } else {
             int layer_idx = std::min(segment.init_layer, segment.final_layer);
-            odb::dbTechLayer* layer = routing_layers_[layer_idx];
-            odb::dbGuide::create(db_net, layer, box);
-            if (isCoveringPin(net, segment)) {
-              int layer_idx = std::max(segment.init_layer, segment.final_layer);
-              odb::dbTechLayer* layer = routing_layers_[layer_idx];
-              odb::dbGuide::create(db_net, layer, box);
-            }
+            odb::dbTechLayer* layer1 = routing_layers_[layer_idx];
+            odb::dbGuide::create(db_net, layer1, box);
           }
         } else if (segment.init_layer == segment.final_layer) {
           if (segment.init_layer < min_routing_layer_
@@ -3028,11 +3072,11 @@ void GlobalRouter::findLayerExtensions(std::vector<int>& layer_extensions)
       // one found, use them as the macro extension instead of PARALLELRUNLENGTH
 
       if (obstruct_layer->hasTwoWidthsSpacingRules()) {
-        std::vector<std::vector<uint>> spacing_table;
+        std::vector<std::vector<odb::uint>> spacing_table;
         obstruct_layer->getTwoWidthsSpacingTable(spacing_table);
         if (!spacing_table.empty()) {
-          std::vector<uint> last_row = spacing_table.back();
-          uint last_value = last_row.back();
+          std::vector<odb::uint> last_row = spacing_table.back();
+          odb::uint last_value = last_row.back();
           if (last_value > spacing_extension) {
             spacing_extension = last_value;
           }
@@ -3286,7 +3330,7 @@ void GlobalRouter::findNetsObstructions(odb::Rect& die_area)
   }
 
   for (odb::dbNet* db_net : nets) {
-    uint wire_cnt = 0, via_cnt = 0;
+    odb::uint wire_cnt = 0, via_cnt = 0;
     db_net->getWireCount(wire_cnt, via_cnt);
     if (wire_cnt == 0)
       continue;
@@ -3909,9 +3953,9 @@ void GlobalRouter::updateDirtyRoutes(bool save_guides)
       return;
     }
 
-    const float old_critical_nets_percentage = critical_nets_percentage_;
-    critical_nets_percentage_ = 0;
-    fastroute_->setUpdateSlack(critical_nets_percentage_);
+    const float old_critical_nets_percentage
+        = fastroute_->getCriticalNetsPercentage();
+    fastroute_->setCriticalNetsPercentage(0);
 
     initFastRouteIncr(dirty_nets);
 
@@ -3953,8 +3997,7 @@ void GlobalRouter::updateDirtyRoutes(bool save_guides)
                        "heatmap in the GUI.");
       }
     }
-    critical_nets_percentage_ = old_critical_nets_percentage;
-    fastroute_->setUpdateSlack(critical_nets_percentage_);
+    fastroute_->setCriticalNetsPercentage(old_critical_nets_percentage);
     if (save_guides) {
       saveGuides();
     }

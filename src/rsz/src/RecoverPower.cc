@@ -58,29 +58,15 @@
 
 namespace rsz {
 
-using std::abs;
-using std::min;
-using std::max;
 using std::string;
 using std::vector;
-using std::map;
 using std::pair;
 
 using utl::RSZ;
 
 using sta::VertexOutEdgeIterator;
 using sta::Edge;
-using sta::Clock;
 using sta::PathExpanded;
-using sta::INF;
-using sta::fuzzyEqual;
-using sta::fuzzyLess;
-using sta::fuzzyLessEqual;
-using sta::fuzzyGreater;
-using sta::fuzzyGreaterEqual;
-using sta::Unit;
-using sta::Corners;
-using sta::InputDrive;
 
 RecoverPower::RecoverPower(Resizer* resizer)
     : logger_(nullptr),
@@ -153,8 +139,9 @@ RecoverPower::recoverPower(float recover_power_percent)
     end_index++;
     debugPrint(logger_, RSZ, "recover_power", 2, "Doing {} /{}", end_index,
                max_end_count);
-    if (end_index > max_end_count)
+    if (end_index > max_end_count) {
       break;
+    }
     //=====================================================================
     resizer_->journalBegin();
     PathRef end_path = sta_->vertexWorstSlackPath(end, max_);

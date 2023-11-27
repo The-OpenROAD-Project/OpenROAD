@@ -33,6 +33,9 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerSpacingEolRule.h"
 
+#include <cstdint>
+#include <cstring>
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -49,200 +52,237 @@ template class dbTable<_dbTechLayerSpacingEolRule>;
 bool _dbTechLayerSpacingEolRule::operator==(
     const _dbTechLayerSpacingEolRule& rhs) const
 {
-  if (flags_.exact_width_valid_ != rhs.flags_.exact_width_valid_)
+  if (flags_.exact_width_valid_ != rhs.flags_.exact_width_valid_) {
     return false;
-
-  if (flags_.wrong_dir_spacing_valid_ != rhs.flags_.wrong_dir_spacing_valid_)
+  }
+  if (flags_.wrong_dir_spacing_valid_ != rhs.flags_.wrong_dir_spacing_valid_) {
     return false;
-
-  if (flags_.opposite_width_valid_ != rhs.flags_.opposite_width_valid_)
+  }
+  if (flags_.opposite_width_valid_ != rhs.flags_.opposite_width_valid_) {
     return false;
-
-  if (flags_.within_valid_ != rhs.flags_.within_valid_)
+  }
+  if (flags_.within_valid_ != rhs.flags_.within_valid_) {
     return false;
-
-  if (flags_.wrong_dir_within_valid_ != rhs.flags_.wrong_dir_within_valid_)
+  }
+  if (flags_.wrong_dir_within_valid_ != rhs.flags_.wrong_dir_within_valid_) {
     return false;
-
-  if (flags_.same_mask_valid_ != rhs.flags_.same_mask_valid_)
+  }
+  if (flags_.same_mask_valid_ != rhs.flags_.same_mask_valid_) {
     return false;
-
-  if (flags_.except_exact_width_valid_ != rhs.flags_.except_exact_width_valid_)
+  }
+  if (flags_.except_exact_width_valid_
+      != rhs.flags_.except_exact_width_valid_) {
     return false;
-
+  }
   if (flags_.fill_concave_corner_valid_
-      != rhs.flags_.fill_concave_corner_valid_)
+      != rhs.flags_.fill_concave_corner_valid_) {
     return false;
-
-  if (flags_.withcut_valid_ != rhs.flags_.withcut_valid_)
+  }
+  if (flags_.withcut_valid_ != rhs.flags_.withcut_valid_) {
     return false;
-
-  if (flags_.cut_class_valid_ != rhs.flags_.cut_class_valid_)
+  }
+  if (flags_.cut_class_valid_ != rhs.flags_.cut_class_valid_) {
     return false;
-
-  if (flags_.with_cut_above_valid_ != rhs.flags_.with_cut_above_valid_)
+  }
+  if (flags_.with_cut_above_valid_ != rhs.flags_.with_cut_above_valid_) {
     return false;
-
-  if (flags_.enclosure_end_valid_ != rhs.flags_.enclosure_end_valid_)
+  }
+  if (flags_.enclosure_end_valid_ != rhs.flags_.enclosure_end_valid_) {
     return false;
-
+  }
   if (flags_.enclosure_end_within_valid_
-      != rhs.flags_.enclosure_end_within_valid_)
+      != rhs.flags_.enclosure_end_within_valid_) {
     return false;
-
-  if (flags_.end_prl_spacing_valid_ != rhs.flags_.end_prl_spacing_valid_)
+  }
+  if (flags_.end_prl_spacing_valid_ != rhs.flags_.end_prl_spacing_valid_) {
     return false;
-
-  if (flags_.prl_valid_ != rhs.flags_.prl_valid_)
+  }
+  if (flags_.prl_valid_ != rhs.flags_.prl_valid_) {
     return false;
-
-  if (flags_.end_to_end_valid_ != rhs.flags_.end_to_end_valid_)
+  }
+  if (flags_.end_to_end_valid_ != rhs.flags_.end_to_end_valid_) {
     return false;
-
-  if (flags_.cut_spaces_valid_ != rhs.flags_.cut_spaces_valid_)
+  }
+  if (flags_.cut_spaces_valid_ != rhs.flags_.cut_spaces_valid_) {
     return false;
-
-  if (flags_.extension_valid_ != rhs.flags_.extension_valid_)
+  }
+  if (flags_.extension_valid_ != rhs.flags_.extension_valid_) {
     return false;
-
+  }
   if (flags_.wrong_dir_extension_valid_
-      != rhs.flags_.wrong_dir_extension_valid_)
+      != rhs.flags_.wrong_dir_extension_valid_) {
     return false;
-
-  if (flags_.other_end_width_valid_ != rhs.flags_.other_end_width_valid_)
+  }
+  if (flags_.other_end_width_valid_ != rhs.flags_.other_end_width_valid_) {
     return false;
-
-  if (flags_.max_length_valid_ != rhs.flags_.max_length_valid_)
+  }
+  if (flags_.max_length_valid_ != rhs.flags_.max_length_valid_) {
     return false;
-
-  if (flags_.min_length_valid_ != rhs.flags_.min_length_valid_)
+  }
+  if (flags_.min_length_valid_ != rhs.flags_.min_length_valid_) {
     return false;
-
-  if (flags_.two_sides_valid_ != rhs.flags_.two_sides_valid_)
+  }
+  if (flags_.two_sides_valid_ != rhs.flags_.two_sides_valid_) {
     return false;
-
-  if (flags_.equal_rect_width_valid_ != rhs.flags_.equal_rect_width_valid_)
+  }
+  if (flags_.equal_rect_width_valid_ != rhs.flags_.equal_rect_width_valid_) {
     return false;
-
-  if (flags_.parallel_edge_valid_ != rhs.flags_.parallel_edge_valid_)
+  }
+  if (flags_.parallel_edge_valid_ != rhs.flags_.parallel_edge_valid_) {
     return false;
-
-  if (flags_.subtract_eol_width_valid_ != rhs.flags_.subtract_eol_width_valid_)
+  }
+  if (flags_.subtract_eol_width_valid_
+      != rhs.flags_.subtract_eol_width_valid_) {
     return false;
-
-  if (flags_.par_prl_valid_ != rhs.flags_.par_prl_valid_)
+  }
+  if (flags_.par_prl_valid_ != rhs.flags_.par_prl_valid_) {
     return false;
-
-  if (flags_.par_min_length_valid_ != rhs.flags_.par_min_length_valid_)
+  }
+  if (flags_.par_min_length_valid_ != rhs.flags_.par_min_length_valid_) {
     return false;
-
-  if (flags_.two_edges_valid_ != rhs.flags_.two_edges_valid_)
+  }
+  if (flags_.two_edges_valid_ != rhs.flags_.two_edges_valid_) {
     return false;
-
-  if (flags_.same_metal_valid_ != rhs.flags_.same_metal_valid_)
+  }
+  if (flags_.same_metal_valid_ != rhs.flags_.same_metal_valid_) {
     return false;
-
+  }
   if (flags_.non_eol_corner_only_valid_
-      != rhs.flags_.non_eol_corner_only_valid_)
+      != rhs.flags_.non_eol_corner_only_valid_) {
     return false;
-
-  if (flags_.parallel_same_mask_valid_ != rhs.flags_.parallel_same_mask_valid_)
+  }
+  if (flags_.parallel_same_mask_valid_
+      != rhs.flags_.parallel_same_mask_valid_) {
     return false;
-
-  if (flags_.enclose_cut_valid_ != rhs.flags_.enclose_cut_valid_)
+  }
+  if (flags_.enclose_cut_valid_ != rhs.flags_.enclose_cut_valid_) {
     return false;
-
-  if (flags_.below_valid_ != rhs.flags_.below_valid_)
+  }
+  if (flags_.below_valid_ != rhs.flags_.below_valid_) {
     return false;
-
-  if (flags_.above_valid_ != rhs.flags_.above_valid_)
+  }
+  if (flags_.above_valid_ != rhs.flags_.above_valid_) {
     return false;
-
-  if (flags_.cut_spacing_valid_ != rhs.flags_.cut_spacing_valid_)
+  }
+  if (flags_.cut_spacing_valid_ != rhs.flags_.cut_spacing_valid_) {
     return false;
-
-  if (flags_.all_cuts_valid_ != rhs.flags_.all_cuts_valid_)
+  }
+  if (flags_.all_cuts_valid_ != rhs.flags_.all_cuts_valid_) {
     return false;
-
-  if (flags_.to_concave_corner_valid_ != rhs.flags_.to_concave_corner_valid_)
+  }
+  if (flags_.to_concave_corner_valid_ != rhs.flags_.to_concave_corner_valid_) {
     return false;
-
+  }
   if (flags_.min_adjacent_length_valid_
-      != rhs.flags_.min_adjacent_length_valid_)
+      != rhs.flags_.min_adjacent_length_valid_) {
     return false;
-
-  if (flags_.two_min_adj_length_valid_ != rhs.flags_.two_min_adj_length_valid_)
+  }
+  if (flags_.two_min_adj_length_valid_
+      != rhs.flags_.two_min_adj_length_valid_) {
     return false;
-
-  if (flags_.to_notch_length_valid_ != rhs.flags_.to_notch_length_valid_)
+  }
+  if (flags_.to_notch_length_valid_ != rhs.flags_.to_notch_length_valid_) {
     return false;
-
-  if (eol_space_ != rhs.eol_space_)
+  }
+  if (eol_space_ != rhs.eol_space_) {
     return false;
-  if (eol_width_ != rhs.eol_width_)
+  }
+  if (eol_width_ != rhs.eol_width_) {
     return false;
-  if (wrong_dir_space_ != rhs.wrong_dir_space_)
+  }
+  if (wrong_dir_space_ != rhs.wrong_dir_space_) {
     return false;
-  if (opposite_width_ != rhs.opposite_width_)
+  }
+  if (opposite_width_ != rhs.opposite_width_) {
     return false;
-  if (eol_within_ != rhs.eol_within_)
+  }
+  if (eol_within_ != rhs.eol_within_) {
     return false;
-  if (wrong_dir_within_ != rhs.wrong_dir_within_)
+  }
+  if (wrong_dir_within_ != rhs.wrong_dir_within_) {
     return false;
-  if (exact_width_ != rhs.exact_width_)
+  }
+  if (exact_width_ != rhs.exact_width_) {
     return false;
-  if (other_width_ != rhs.other_width_)
+  }
+  if (other_width_ != rhs.other_width_) {
     return false;
-  if (fill_triangle_ != rhs.fill_triangle_)
+  }
+  if (fill_triangle_ != rhs.fill_triangle_) {
     return false;
-  if (cut_class_ != rhs.cut_class_)
+  }
+  if (cut_class_ != rhs.cut_class_) {
     return false;
-  if (with_cut_space_ != rhs.with_cut_space_)
+  }
+  if (with_cut_space_ != rhs.with_cut_space_) {
     return false;
-  if (enclosure_end_width_ != rhs.enclosure_end_width_)
+  }
+  if (enclosure_end_width_ != rhs.enclosure_end_width_) {
     return false;
-  if (enclosure_end_within_ != rhs.enclosure_end_within_)
+  }
+  if (enclosure_end_within_ != rhs.enclosure_end_within_) {
     return false;
-  if (end_prl_space_ != rhs.end_prl_space_)
+  }
+  if (end_prl_space_ != rhs.end_prl_space_) {
     return false;
-  if (end_prl_ != rhs.end_prl_)
+  }
+  if (end_prl_ != rhs.end_prl_) {
     return false;
-  if (end_to_end_space_ != rhs.end_to_end_space_)
+  }
+  if (end_to_end_space_ != rhs.end_to_end_space_) {
     return false;
-  if (one_cut_space_ != rhs.one_cut_space_)
+  }
+  if (one_cut_space_ != rhs.one_cut_space_) {
     return false;
-  if (two_cut_space_ != rhs.two_cut_space_)
+  }
+  if (two_cut_space_ != rhs.two_cut_space_) {
     return false;
-  if (extension_ != rhs.extension_)
+  }
+  if (extension_ != rhs.extension_) {
     return false;
-  if (wrong_dir_extension_ != rhs.wrong_dir_extension_)
+  }
+  if (wrong_dir_extension_ != rhs.wrong_dir_extension_) {
     return false;
-  if (other_end_width_ != rhs.other_end_width_)
+  }
+  if (other_end_width_ != rhs.other_end_width_) {
     return false;
-  if (max_length_ != rhs.max_length_)
+  }
+  if (max_length_ != rhs.max_length_) {
     return false;
-  if (min_length_ != rhs.min_length_)
+  }
+  if (min_length_ != rhs.min_length_) {
     return false;
-  if (par_space_ != rhs.par_space_)
+  }
+  if (par_space_ != rhs.par_space_) {
     return false;
-  if (par_within_ != rhs.par_within_)
+  }
+  if (par_within_ != rhs.par_within_) {
     return false;
-  if (par_prl_ != rhs.par_prl_)
+  }
+  if (par_prl_ != rhs.par_prl_) {
     return false;
-  if (par_min_length_ != rhs.par_min_length_)
+  }
+  if (par_min_length_ != rhs.par_min_length_) {
     return false;
-  if (enclose_dist_ != rhs.enclose_dist_)
+  }
+  if (enclose_dist_ != rhs.enclose_dist_) {
     return false;
-  if (cut_to_metal_space_ != rhs.cut_to_metal_space_)
+  }
+  if (cut_to_metal_space_ != rhs.cut_to_metal_space_) {
     return false;
-  if (min_adj_length_ != rhs.min_adj_length_)
+  }
+  if (min_adj_length_ != rhs.min_adj_length_) {
     return false;
-  if (min_adj_length1_ != rhs.min_adj_length1_)
+  }
+  if (min_adj_length1_ != rhs.min_adj_length1_) {
     return false;
-  if (min_adj_length2_ != rhs.min_adj_length2_)
+  }
+  if (min_adj_length2_ != rhs.min_adj_length2_) {
     return false;
-  if (notch_length_ != rhs.notch_length_)
+  }
+  if (notch_length_ != rhs.notch_length_) {
     return false;
+  }
 
   return true;
 }
@@ -575,8 +615,10 @@ _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj)
 {
-  uint64_t* flags__bit_field = (uint64_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  uint64_t flags_bit_field;
+  stream >> flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> obj.eol_space_;
   stream >> obj.eol_width_;
   stream >> obj.wrong_dir_space_;
@@ -615,8 +657,10 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerSpacingEolRule& obj)
 {
-  uint64_t* flags__bit_field = (uint64_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  uint64_t flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags_bit_field;
   stream << obj.eol_space_;
   stream << obj.eol_width_;
   stream << obj.wrong_dir_space_;
@@ -651,10 +695,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerSpacingEolRule& obj)
   stream << obj.min_adj_length2_;
   stream << obj.notch_length_;
   return stream;
-}
-
-_dbTechLayerSpacingEolRule::~_dbTechLayerSpacingEolRule()
-{
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -1711,4 +1751,4 @@ void dbTechLayerSpacingEolRule::destroy(dbTechLayerSpacingEolRule* rule)
 
 // User Code End dbTechLayerSpacingEolRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

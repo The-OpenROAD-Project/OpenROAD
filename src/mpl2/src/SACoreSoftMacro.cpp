@@ -191,7 +191,7 @@ void SACoreSoftMacro::calPenalty()
 
 void SACoreSoftMacro::perturb()
 {
-  if (macros_.size() == 0) {
+  if (macros_.empty()) {
     return;
   }
 
@@ -241,7 +241,7 @@ void SACoreSoftMacro::perturb()
 
 void SACoreSoftMacro::restore()
 {
-  if (macros_.size() == 0) {
+  if (macros_.empty()) {
     return;
   }
 
@@ -309,29 +309,37 @@ void SACoreSoftMacro::initialize()
 
   // Reset penalites if lower than threshold
 
-  if (norm_area_penalty_ <= 1e-4)
+  if (norm_area_penalty_ <= 1e-4) {
     norm_area_penalty_ = 1.0;
+  }
 
-  if (norm_outline_penalty_ <= 1e-4)
+  if (norm_outline_penalty_ <= 1e-4) {
     norm_outline_penalty_ = 1.0;
+  }
 
-  if (norm_wirelength_ <= 1e-4)
+  if (norm_wirelength_ <= 1e-4) {
     norm_wirelength_ = 1.0;
+  }
 
-  if (norm_guidance_penalty_ <= 1e-4)
+  if (norm_guidance_penalty_ <= 1e-4) {
     norm_guidance_penalty_ = 1.0;
+  }
 
-  if (norm_fence_penalty_ <= 1e-4)
+  if (norm_fence_penalty_ <= 1e-4) {
     norm_fence_penalty_ = 1.0;
+  }
 
-  if (norm_macro_blockage_penalty_ <= 1e-4)
+  if (norm_macro_blockage_penalty_ <= 1e-4) {
     norm_macro_blockage_penalty_ = 1.0;
+  }
 
-  if (norm_boundary_penalty_ <= 1e-4)
+  if (norm_boundary_penalty_ <= 1e-4) {
     norm_boundary_penalty_ = 1.0;
+  }
 
-  if (norm_notch_penalty_ <= 1e-4)
+  if (norm_notch_penalty_ <= 1e-4) {
     norm_notch_penalty_ = 1.0;
+  }
 
   // Calculate initial temperature
   std::vector<float> cost_list;
@@ -354,7 +362,7 @@ void SACoreSoftMacro::initialize()
 
   if (cost_list.size() > 1 && delta_cost > 0.0) {
     init_temperature_
-        = (-1.0) * (delta_cost / (cost_list.size() - 1)) / log(init_prob_);
+        = (-1.0) * (delta_cost / (cost_list.size() - 1)) / std::log(init_prob_);
   } else {
     init_temperature_ = 1.0;
   }
@@ -401,7 +409,7 @@ void SACoreSoftMacro::calBoundaryPenalty()
 void SACoreSoftMacro::calMacroBlockagePenalty()
 {
   macro_blockage_penalty_ = 0.0;
-  if (blockages_.size() == 0 || macro_blockage_weight_ <= 0.0) {
+  if (blockages_.empty() || macro_blockage_weight_ <= 0.0) {
     return;
   }
 
@@ -604,13 +612,12 @@ void SACoreSoftMacro::calNotchPenalty()
       }             // end y
       if (!flag) {  // extension done
         break;
-      } else {
-        x_start_new--;  // extend left
-        for (int j = y_start; j < y_end; j++) {
-          grids[j][i] = macro_id;
-        }
-      }  // end update
-    }    // end left
+      }
+      x_start_new--;  // extend left
+      for (int j = y_start; j < y_end; j++) {
+        grids[j][i] = macro_id;
+      }
+    }  // end left
     // check top second
     for (int j = y_end; j < num_y; j++) {
       bool flag = true;
@@ -622,13 +629,12 @@ void SACoreSoftMacro::calNotchPenalty()
       }             // end y
       if (!flag) {  // extension done
         break;
-      } else {
-        y_end_new++;  // extend top
-        for (int i = x_start; i < x_end; i++) {
-          grids[j][i] = macro_id;
-        }
-      }  // end update
-    }    // end top
+      }
+      y_end_new++;  // extend top
+      for (int i = x_start; i < x_end; i++) {
+        grids[j][i] = macro_id;
+      }
+    }  // end top
     // check right third
     for (int i = x_end; i < num_x; i++) {
       bool flag = true;
@@ -640,13 +646,12 @@ void SACoreSoftMacro::calNotchPenalty()
       }             // end y
       if (!flag) {  // extension done
         break;
-      } else {
-        x_end_new++;  // extend right
-        for (int j = y_start; j < y_end; j++) {
-          grids[j][i] = macro_id;
-        }
-      }  // end update
-    }    // end right
+      }
+      x_end_new++;  // extend right
+      for (int j = y_start; j < y_end; j++) {
+        grids[j][i] = macro_id;
+      }
+    }  // end right
     // check down second
     for (int j = y_start - 1; j >= 0; j--) {
       bool flag = true;
@@ -658,13 +663,12 @@ void SACoreSoftMacro::calNotchPenalty()
       }             // end y
       if (!flag) {  // extension done
         break;
-      } else {
-        y_start_new--;  // extend down
-        for (int i = x_start; i < x_end; i++) {
-          grids[j][i] = macro_id;
-        }
-      }  // end update
-    }    // end down
+      }
+      y_start_new--;  // extend down
+      for (int i = x_start; i < x_end; i++) {
+        grids[j][i] = macro_id;
+      }
+    }  // end down
     // check the notch area
     if ((x_grid[x_start] - x_grid[x_start_new]) <= notch_h_th_) {
       notch_penalty_ += (x_grid[x_start] - x_grid[x_start_new])
@@ -738,9 +742,8 @@ void SACoreSoftMacro::resize()
     }
     if (d_x2 <= lx) {
       return;
-    } else {
-      src_macro.setWidth(d_x2 - lx);
     }
+    src_macro.setWidth(d_x2 - lx);
   } else if (option <= 0.75) {
     // change the height of soft block to Tb = a.y2 - b.y1
     float a_y2 = outline_height_;
@@ -762,9 +765,8 @@ void SACoreSoftMacro::resize()
     }
     if (c_y2 <= ly) {
       return;
-    } else {
-      src_macro.setHeight(c_y2 - ly);
     }
+    src_macro.setHeight(c_y2 - ly);
   }
 }
 
@@ -785,7 +787,7 @@ void SACoreSoftMacro::printResults() const
              2,
              "number of macros : {}",
              macros_.size());
-  for (const auto& macro : macros_)
+  for (const auto& macro : macros_) {
     debugPrint(logger_,
                MPL,
                "hierarchical_macro_placement",
@@ -796,6 +798,7 @@ void SACoreSoftMacro::printResults() const
                macro.getWidth(),
                macro.getHeight(),
                macro.getName());
+  }
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
@@ -972,13 +975,12 @@ void SACoreSoftMacro::fillDeadSpace()
         }             // end y
         if (!flag) {  // extension done
           break;
-        } else {
-          x_start_new--;  // extend left
-          for (int j = y_start; j < y_end; j++) {
-            grids[j][i] = macro_id;
-          }
-        }  // end update
-      }    // end left
+        }
+        x_start_new--;  // extend left
+        for (int j = y_start; j < y_end; j++) {
+          grids[j][i] = macro_id;
+        }
+      }  // end left
       x_start = x_start_new;
       // propagate top second
       for (int j = y_end; j < num_y; j++) {
@@ -991,13 +993,12 @@ void SACoreSoftMacro::fillDeadSpace()
         }             // end y
         if (!flag) {  // extension done
           break;
-        } else {
-          y_end_new++;  // extend top
-          for (int i = x_start; i < x_end; i++) {
-            grids[j][i] = macro_id;
-          }
-        }  // end update
-      }    // end top
+        }
+        y_end_new++;  // extend top
+        for (int i = x_start; i < x_end; i++) {
+          grids[j][i] = macro_id;
+        }
+      }  // end top
       y_end = y_end_new;
       // propagate right third
       for (int i = x_end; i < num_x; i++) {
@@ -1010,13 +1011,12 @@ void SACoreSoftMacro::fillDeadSpace()
         }             // end y
         if (!flag) {  // extension done
           break;
-        } else {
-          x_end_new++;  // extend right
-          for (int j = y_start; j < y_end; j++) {
-            grids[j][i] = macro_id;
-          }
-        }  // end update
-      }    // end right
+        }
+        x_end_new++;  // extend right
+        for (int j = y_start; j < y_end; j++) {
+          grids[j][i] = macro_id;
+        }
+      }  // end right
       x_end = x_end_new;
       // propagate down second
       for (int j = y_start - 1; j >= 0; j--) {
@@ -1029,13 +1029,12 @@ void SACoreSoftMacro::fillDeadSpace()
         }             // end y
         if (!flag) {  // extension done
           break;
-        } else {
-          y_start_new--;  // extend down
-          for (int i = x_start; i < x_end; i++) {
-            grids[j][i] = macro_id;
-          }
-        }  // end update
-      }    // end down
+        }
+        y_start_new--;  // extend down
+        for (int i = x_start; i < x_end; i++) {
+          grids[j][i] = macro_id;
+        }
+      }  // end down
       y_start = y_start_new;
       // update the location of cluster
       macros_[macro_id].setLocationF(x_grid[x_start], y_grid[y_start]);
@@ -1066,6 +1065,12 @@ void SACoreSoftMacro::calSegmentLoc(float seg_start,
   if (end_id == -1) {
     end_id = grid.size() - 1;
   }
+}
+
+// The blockages here are only those that overlap with the annealing outline.
+void SACoreSoftMacro::addBlockages(const std::vector<Rect>& blockages)
+{
+  blockages_.insert(blockages_.end(), blockages.begin(), blockages.end());
 }
 
 }  // namespace mpl2

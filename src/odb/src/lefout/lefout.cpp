@@ -372,13 +372,85 @@ void lefout::writeNameCaseSensitive(const dbOnOffType on_off_type)
   fmt::print(_out, "NAMESCASESENSITIVE {} ;\n", on_off_type.getString());
 }
 
+void lefout::writeBlockVia(dbVia* via)
+{
+  std::string name = via->getName();
+
+  if (via->isDefault())
+    fmt::print(_out, "\nVIA {} DEFAULT\n", name.c_str());
+  else
+    fmt::print(_out, "\nVIA {}\n", name.c_str());
+
+  dbTechViaGenerateRule* rule = via->getViaGenerateRule();
+
+  if (rule == nullptr) {
+    dbSet<dbBox> boxes = via->getBoxes();
+    writeBoxes(boxes, "    ");
+  } else {
+    std::string rname = rule->getName();
+    fmt::print(_out, "  VIARULE {} ;\n", rname.c_str());
+
+    dbViaParams P;
+    via->getViaParams(P);
+
+    fmt::print(_out,
+               "  CUTSIZE {:.11g} {:.11g} ;\n",
+               lefdist(P.getXCutSize()),
+               lefdist(P.getYCutSize()));
+    std::string top = P.getTopLayer()->getName();
+    std::string bot = P.getBottomLayer()->getName();
+    std::string cut = P.getCutLayer()->getName();
+    fmt::print(
+        _out, "  LAYERS {} {} {} ;\n", bot.c_str(), cut.c_str(), top.c_str());
+    fmt::print(_out,
+               "  CUTSPACING {:.11g} {:.11g} ;\n",
+               lefdist(P.getXCutSpacing()),
+               lefdist(P.getYCutSpacing()));
+    fmt::print(_out,
+               "  ENCLOSURE {:.11g} {:.11g} {:.11g} {:.11g} ;\n",
+               lefdist(P.getXBottomEnclosure()),
+               lefdist(P.getYBottomEnclosure()),
+               lefdist(P.getXTopEnclosure()),
+               lefdist(P.getYTopEnclosure()));
+
+    if ((P.getNumCutRows() != 1) || (P.getNumCutCols() != 1))
+      fmt::print(
+          _out, "  ROWCOL {} {} ;\n", P.getNumCutRows(), P.getNumCutCols());
+
+    if ((P.getXOrigin() != 0) || (P.getYOrigin() != 0))
+      fmt::print(_out,
+                 "  ORIGIN {:.11g} {:.11g} ;\n",
+                 lefdist(P.getXOrigin()),
+                 lefdist(P.getYOrigin()));
+
+    if ((P.getXTopOffset() != 0) || (P.getYTopOffset() != 0)
+        || (P.getXBottomOffset() != 0) || (P.getYBottomOffset() != 0))
+      fmt::print(_out,
+                 "  OFFSET {:.11g} {:.11g} {:.11g} {:.11g} ;\n",
+                 lefdist(P.getXBottomOffset()),
+                 lefdist(P.getYBottomOffset()),
+                 lefdist(P.getXTopOffset()),
+                 lefdist(P.getYTopOffset()));
+
+    std::string pname = via->getPattern();
+    if (strcmp(pname.c_str(), "") != 0)
+      fmt::print(_out, "  PATTERNNAME {} ;\n", pname.c_str());
+  }
+
+  fmt::print(_out, "END {}\n", name.c_str());
+}
+
 void lefout::writeBlock(dbBlock* db_block)
 {
   dbBox* bounding_box = db_block->getBBox();
   double size_x = lefdist(bounding_box->xMax());
   double size_y = lefdist(bounding_box->yMax());
 
-  fmt::print(_out, "MACRO {}\n", db_block->getName().c_str());
+  for (auto via : db_block->getVias()) {
+    writeBlockVia(via);
+  }
+
+  fmt::print(_out, "\nMACRO {}\n", db_block->getName().c_str());
   fmt::print(_out, "  FOREIGN {} 0 0 ;\n", db_block->getName().c_str());
   fmt::print(_out, "  CLASS BLOCK ;\n");
   fmt::print(_out, "  SIZE {:.11g} BY {:.11g} ;\n", size_x, size_y);

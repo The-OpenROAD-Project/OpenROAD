@@ -33,6 +33,9 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerCornerSpacingRule.h"
 
+#include <cstdint>
+#include <cstring>
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -45,58 +48,64 @@ template class dbTable<_dbTechLayerCornerSpacingRule>;
 bool _dbTechLayerCornerSpacingRule::operator==(
     const _dbTechLayerCornerSpacingRule& rhs) const
 {
-  if (flags_.corner_type_ != rhs.flags_.corner_type_)
+  if (flags_.corner_type_ != rhs.flags_.corner_type_) {
     return false;
-
-  if (flags_.same_mask_ != rhs.flags_.same_mask_)
+  }
+  if (flags_.same_mask_ != rhs.flags_.same_mask_) {
     return false;
-
-  if (flags_.corner_only_ != rhs.flags_.corner_only_)
+  }
+  if (flags_.corner_only_ != rhs.flags_.corner_only_) {
     return false;
-
-  if (flags_.except_eol_ != rhs.flags_.except_eol_)
+  }
+  if (flags_.except_eol_ != rhs.flags_.except_eol_) {
     return false;
-
-  if (flags_.except_jog_length_ != rhs.flags_.except_jog_length_)
+  }
+  if (flags_.except_jog_length_ != rhs.flags_.except_jog_length_) {
     return false;
-
-  if (flags_.edge_length_valid_ != rhs.flags_.edge_length_valid_)
+  }
+  if (flags_.edge_length_valid_ != rhs.flags_.edge_length_valid_) {
     return false;
-
-  if (flags_.include_shape_ != rhs.flags_.include_shape_)
+  }
+  if (flags_.include_shape_ != rhs.flags_.include_shape_) {
     return false;
-
-  if (flags_.min_length_valid_ != rhs.flags_.min_length_valid_)
+  }
+  if (flags_.min_length_valid_ != rhs.flags_.min_length_valid_) {
     return false;
-
-  if (flags_.except_notch_ != rhs.flags_.except_notch_)
+  }
+  if (flags_.except_notch_ != rhs.flags_.except_notch_) {
     return false;
-
+  }
   if (flags_.except_notch_length_valid_
-      != rhs.flags_.except_notch_length_valid_)
+      != rhs.flags_.except_notch_length_valid_) {
     return false;
-
-  if (flags_.except_same_net_ != rhs.flags_.except_same_net_)
+  }
+  if (flags_.except_same_net_ != rhs.flags_.except_same_net_) {
     return false;
-
-  if (flags_.except_same_metal_ != rhs.flags_.except_same_metal_)
+  }
+  if (flags_.except_same_metal_ != rhs.flags_.except_same_metal_) {
     return false;
-
-  if (flags_.corner_to_corner_ != rhs.flags_.corner_to_corner_)
+  }
+  if (flags_.corner_to_corner_ != rhs.flags_.corner_to_corner_) {
     return false;
-
-  if (within_ != rhs.within_)
+  }
+  if (within_ != rhs.within_) {
     return false;
-  if (eol_width_ != rhs.eol_width_)
+  }
+  if (eol_width_ != rhs.eol_width_) {
     return false;
-  if (jog_length_ != rhs.jog_length_)
+  }
+  if (jog_length_ != rhs.jog_length_) {
     return false;
-  if (edge_length_ != rhs.edge_length_)
+  }
+  if (edge_length_ != rhs.edge_length_) {
     return false;
-  if (min_length_ != rhs.min_length_)
+  }
+  if (min_length_ != rhs.min_length_) {
     return false;
-  if (except_notch_length_ != rhs.except_notch_length_)
+  }
+  if (except_notch_length_ != rhs.except_notch_length_) {
     return false;
+  }
 
   return true;
 }
@@ -206,8 +215,10 @@ _dbTechLayerCornerSpacingRule::_dbTechLayerCornerSpacingRule(
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCornerSpacingRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  uint32_t flags_bit_field;
+  stream >> flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> obj.within_;
   stream >> obj.eol_width_;
   stream >> obj.jog_length_;
@@ -224,8 +235,10 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCornerSpacingRule& obj)
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCornerSpacingRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  uint32_t flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags_bit_field;
   stream << obj.within_;
   stream << obj.eol_width_;
   stream << obj.jog_length_;
@@ -237,10 +250,6 @@ dbOStream& operator<<(dbOStream& stream,
   stream << obj._spacing_tbl;
   // User Code End <<
   return stream;
-}
-
-_dbTechLayerCornerSpacingRule::~_dbTechLayerCornerSpacingRule()
-{
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -560,4 +569,4 @@ void dbTechLayerCornerSpacingRule::destroy(dbTechLayerCornerSpacingRule* rule)
 }
 // User Code End dbTechLayerCornerSpacingRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

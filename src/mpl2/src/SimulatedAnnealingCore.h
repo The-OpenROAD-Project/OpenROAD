@@ -91,7 +91,7 @@ class SimulatedAnnealingCore
 
   bool isValid() const;
   bool isValid(float outline_width, float outline_height) const;
-  void writeCostFile(std::string file_name) const;
+  void writeCostFile(const std::string& file_name) const;
   float getNormCost() const;
   float getWidth() const;
   float getHeight() const;

@@ -184,6 +184,7 @@ class LayoutViewer : public QWidget
   }
 
   bool isCursorInsideViewport();
+  void updateCursorCoordinates();
 
  signals:
   // indicates the current location of the mouse
@@ -457,6 +458,7 @@ class LayoutScroll : public QScrollArea
  public:
   LayoutScroll(LayoutViewer* viewer, QWidget* parent = 0);
 
+  bool isScrollingWithCursor();
  signals:
   // indicates that the viewport (visible area of the layout) has changed
   void viewportChanged();
@@ -469,9 +471,12 @@ class LayoutScroll : public QScrollArea
   void resizeEvent(QResizeEvent* event) override;
   void scrollContentsBy(int dx, int dy) override;
   void wheelEvent(QWheelEvent* event) override;
+  bool eventFilter(QObject* object, QEvent* event) override;
 
  private:
   LayoutViewer* viewer_;
+
+  bool scrolling_with_cursor_;
 };
 
 }  // namespace gui

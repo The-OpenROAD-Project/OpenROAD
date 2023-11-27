@@ -1,4 +1,5 @@
 record_tests {
+  add_constraint_debug
   add_constraint1
   add_constraint2
   add_constraint3
@@ -62,6 +63,8 @@ record_tests {
   large_groups2
   large_groups3
   large_groups4
+  macro_not_placed
+  macro_not_placed_random
   min_dist_in_tracks1
   min_dist_in_tracks2
   multi_layers

@@ -33,6 +33,7 @@
 #include "dbDatabase.h"
 
 #include <algorithm>
+#include <fstream>
 #include <map>
 #include <string>
 
@@ -446,191 +447,19 @@ dbTech* dbDatabase::getTech()
       utl::ODB, 432, "getTech() is obsolete in a multi-tech db");
 }
 
-void dbDatabase::read(std::ifstream& file)
+void dbDatabase::read(std::istream& file)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   dbIStream stream(db, file);
   stream >> *db;
 }
 
-void dbDatabase::readTech(std::ifstream& file)
-{
-  _dbDatabase* db = (_dbDatabase*) this;
-  _dbTech* tech = (_dbTech*) getTech();
-
-  if (tech == nullptr)
-    tech = (_dbTech*) dbTech::create(this, "");
-  else {
-    tech->~_dbTech();
-    new (tech) _dbTech(db);
-  }
-
-  dbIStream stream(db, file);
-  stream >> *tech;
-}
-
-void dbDatabase::readLib(std::ifstream& file, dbLib* lib)
-{
-  _dbDatabase* db = (_dbDatabase*) this;
-  _dbLib* l = (_dbLib*) lib;
-
-  l->~_dbLib();
-  new (l) _dbLib(db);
-
-  dbIStream stream(db, file);
-  stream >> *l;
-}
-
-void dbDatabase::readLibs(std::ifstream& file)
-{
-  _dbDatabase* db = (_dbDatabase*) this;
-  dbIStream stream(db, file);
-  stream >> *db->_lib_tbl;
-}
-
-void dbDatabase::readBlock(std::ifstream& file, dbBlock* block)
-{
-  _dbDatabase* db = (_dbDatabase*) this;
-  _dbBlock* b = (_dbBlock*) block;
-  b->~_dbBlock();
-  new (b) _dbBlock(db);
-  dbIStream stream(db, file);
-  stream >> *b;
-}
-
-void dbDatabase::readNets(std::ifstream& file, dbBlock* block)
-{
-  _dbDatabase* db = (_dbDatabase*) this;
-  dbIStream stream(db, file);
-
-  std::list<dbBlockCallBackObj*>* cbs = &(((_dbBlock*) block)->_callbacks);
-  std::list<dbBlockCallBackObj*>::const_iterator cbitr;
-  for (cbitr = cbs->begin(); cbitr != cbs->end(); ++cbitr)
-    (**cbitr)().inDbBlockReadNetsBefore(
-        block);  // client ECO optimzation - payam
-
-  stream >> *((_dbBlock*) block)->_net_tbl;
-}
-
-void dbDatabase::readWires(std::ifstream& file, dbBlock* block)
-{
-  _dbDatabase* db = (_dbDatabase*) this;
-  dbIStream stream(db, file);
-  stream >> *((_dbBlock*) block)->_wire_tbl;
-}
-
-void dbDatabase::readParasitics(std::ifstream& file, dbBlock* block)
-{
-  _dbDatabase* db = (_dbDatabase*) this;
-  dbIStream stream(db, file);
-  stream >> ((_dbBlock*) block)->_num_ext_corners;
-  stream >> ((_dbBlock*) block)->_corner_name_list;
-  stream >> *((_dbBlock*) block)->_r_val_tbl;
-  stream >> *((_dbBlock*) block)->_c_val_tbl;
-  stream >> *((_dbBlock*) block)->_cc_val_tbl;
-  stream >> *((_dbBlock*) block)->_cap_node_tbl;
-  stream >> *((_dbBlock*) block)->_r_seg_tbl;
-  stream >> *((_dbBlock*) block)->_cc_seg_tbl;
-  stream >> *((_dbBlock*) block)->_extControl;
-
-  ((_dbBlock*) block)->_corners_per_block
-      = ((_dbBlock*) block)->_num_ext_corners;
-}
-
-void dbDatabase::readChip(std::ifstream& file)
-{
-  _dbDatabase* db = (_dbDatabase*) this;
-  _dbChip* chip = (_dbChip*) getChip();
-  chip->~_dbChip();
-  new (chip) _dbChip(db);
-  dbIStream stream(db, file);
-  stream >> *chip;
-}
-
-void dbDatabase::write(FILE* file)
+void dbDatabase::write(std::ostream& file)
 {
   _dbDatabase* db = (_dbDatabase*) this;
   dbOStream stream(db, file);
   stream << *db;
-  fflush(file);
-}
-
-void dbDatabase::writeTech(FILE* file)
-{
-  _dbDatabase* db = (_dbDatabase*) this;
-  _dbTech* tech = (_dbTech*) getTech();
-
-  if (tech == nullptr)
-    throw ZException("No technology");
-
-  dbOStream stream(db, file);
-  stream << *tech;
-  fflush(file);
-}
-
-void dbDatabase::writeLib(FILE* file, dbLib* lib)
-{
-  _dbDatabase* db = (_dbDatabase*) this;
-  dbOStream stream(db, file);
-  stream << *(_dbLib*) lib;
-  fflush(file);
-}
-
-void dbDatabase::writeLibs(FILE* file)
-{
-  _dbDatabase* db = (_dbDatabase*) this;
-  dbOStream stream(db, file);
-  stream << *db->_lib_tbl;
-  fflush(file);
-}
-
-void dbDatabase::writeBlock(FILE* file, dbBlock* block)
-{
-  _dbDatabase* db = (_dbDatabase*) this;
-  dbOStream stream(db, file);
-  stream << *(_dbBlock*) block;
-  fflush(file);
-}
-
-void dbDatabase::writeNets(FILE* file, dbBlock* block)
-{
-  _dbDatabase* db = (_dbDatabase*) this;
-  dbOStream stream(db, file);
-  stream << *((_dbBlock*) block)->_net_tbl;
-  fflush(file);
-}
-
-void dbDatabase::writeWires(FILE* file, dbBlock* block)
-{
-  _dbDatabase* db = (_dbDatabase*) this;
-  dbOStream stream(db, file);
-  stream << *((_dbBlock*) block)->_wire_tbl;
-  fflush(file);
-}
-
-void dbDatabase::writeParasitics(FILE* file, dbBlock* block)
-{
-  _dbDatabase* db = (_dbDatabase*) this;
-  dbOStream stream(db, file);
-  stream << ((_dbBlock*) block)->_num_ext_corners;
-  stream << ((_dbBlock*) block)->_corner_name_list;
-  stream << *((_dbBlock*) block)->_r_val_tbl;
-  stream << *((_dbBlock*) block)->_c_val_tbl;
-  stream << *((_dbBlock*) block)->_cc_val_tbl;
-  stream << *((_dbBlock*) block)->_cap_node_tbl;
-  stream << *((_dbBlock*) block)->_r_seg_tbl;
-  stream << *((_dbBlock*) block)->_cc_seg_tbl;
-  stream << *((_dbBlock*) block)->_extControl;
-  fflush(file);
-}
-
-void dbDatabase::writeChip(FILE* file)
-{
-  _dbDatabase* db = (_dbDatabase*) this;
-  _dbChip* chip = (_dbChip*) getChip();
-  dbOStream stream(db, file);
-  stream << *chip;
-  fflush(file);
+  file.flush();
 }
 
 void dbDatabase::beginEco(dbBlock* block_)
@@ -701,7 +530,7 @@ void dbDatabase::writeEco(dbBlock* block_, const char* filename)
 {
   _dbBlock* block = (_dbBlock*) block_;
 
-  FILE* file = fopen(filename, "w");
+  std::ofstream file(filename, std::ios::binary);
   if (!file) {
     int errnum = errno;
     block->getImpl()->getLogger()->error(
@@ -709,12 +538,13 @@ void dbDatabase::writeEco(dbBlock* block_, const char* filename)
     return;
   }
 
+  file.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                  | std::ios::eofbit);
+
   if (block->_journal_pending) {
     dbOStream stream(block->getDatabase(), file);
     stream << *block->_journal_pending;
   }
-
-  fclose(file);
 }
 
 void dbDatabase::commitEco(dbBlock* block_)

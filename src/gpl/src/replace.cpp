@@ -35,14 +35,19 @@
 
 #include <iostream>
 
+#include "db.h"
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "initialPlace.h"
 #include "mbff.h"
 #include "nesterovBase.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"
+#include "ord/OpenRoad.hh"
 #include "placerBase.h"
 #include "routeBase.h"
 #include "rsz/Resizer.hh"
+#include "sta/StaMain.hh"
 #include "timingBase.h"
 #include "utl/Logger.h"
 
@@ -108,11 +113,13 @@ Replace::~Replace()
 }
 
 void Replace::init(odb::dbDatabase* odb,
+                   sta::dbSta* sta,
                    rsz::Resizer* resizer,
                    grt::GlobalRouter* router,
                    utl::Logger* logger)
 {
   db_ = odb;
+  sta_ = sta;
   rs_ = resizer;
   fr_ = router;
   log_ = logger;
@@ -299,24 +306,8 @@ void Replace::doInitialPlace()
 
 void Replace::runMBFF(int max_sz, float alpha, float beta, int threads)
 {
-  int num_flops = 0;
-  int num_paths = 0;
-  vector<odb::Point> points;
-  vector<Path> paths;
-
-  auto block = db_->getChip()->getBlock();
-  for (const auto& inst : block->getInsts()) {
-    if (inst->getMaster()->isSequential()) {
-      int x_i, y_i;
-      inst->getOrigin(x_i, y_i);
-      odb::Point pt(x_i, y_i);
-      points.push_back(pt);
-      num_flops++;
-    }
-  }
-
-  MBFF pntset(num_flops, num_paths, points, paths, threads, 4, 10, log_);
-  pntset.Run((max_sz == -1 ? num_flops : max_sz), alpha, beta);
+  MBFF pntset(db_, sta_, log_, threads, 4, 10, gui_debug_);
+  pntset.Run(max_sz, alpha, beta);
 }
 
 bool Replace::initNesterovPlace()

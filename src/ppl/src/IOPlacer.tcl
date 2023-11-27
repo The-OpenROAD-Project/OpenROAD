@@ -221,7 +221,6 @@ proc set_io_pin_constraint { args } {
     }
 
     if { [llength $pin_list] != 0} {
-      utl::info PPL 44 "Pin group: \[$final_group \]"
       ppl::add_pin_group $pin_list [info exists flags(-order)]
       incr group_idx
     }
@@ -463,7 +462,7 @@ proc place_pins { args } {
 
   foreach inst [$dbBlock getInsts] {
     if { [$inst isBlock] } {
-      if { ![$inst isPlaced] } {
+      if { ![$inst isPlaced] && ![info exists flags(-random)]} {
         utl::warn PPL 15 "Macro [$inst getName] is not placed."
       } else {
         lappend blockages $inst
@@ -717,7 +716,6 @@ proc parse_layer_name { layer_name } {
 }
 
 proc add_pins_to_constraint {cmd names edge begin end edge_name} {
-  utl::info PPL 48 "Restrict pins \[$names\] to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u at the $edge_name edge."
   set pin_list [ppl::parse_pin_names $cmd $names]
   ppl::add_names_constraint $pin_list $edge $begin $end
 }

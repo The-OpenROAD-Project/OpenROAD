@@ -104,14 +104,14 @@ class drNet : public drBlockObject
   bool isInQueue() const { return inQueue_; }
   bool isRouted() const { return routed_; }
   const std::vector<frRect>& getOrigGuides() const { return origGuides_; }
-  ushort getPriority() const { return priority_; }
+  uint16_t getPriority() const { return priority_; }
   // setters
   void incPriority()
   {
-    if (priority_ < std::numeric_limits<ushort>::max())
+    if (priority_ < std::numeric_limits<uint16_t>::max())
       priority_++;
   }
-  void setPriority(ushort in) { priority_ = in; }
+  void setPriority(uint16_t in) { priority_ = in; }
   void addPin(std::unique_ptr<drPin> pinIn)
   {
     pinIn->setNet(this);
@@ -276,7 +276,7 @@ class drNet : public drBlockObject
   bool routed_;
 
   std::vector<frRect> origGuides_;
-  ushort priority_{0};
+  uint16_t priority_{0};
 
   drNet()
       : fNet_(nullptr),

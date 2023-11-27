@@ -3351,24 +3351,13 @@ void dbBlock::writeDb(char* filename, int allNode)
       dbname = fmt::format("{}.remote.{}.db", filename, getpid());
   } else
     dbname = fmt::format("{}.db", filename);
-  FILE* file = fopen(dbname.c_str(), "wb");
+  std::ofstream file(dbname, std::ios::binary);
   if (!file) {
     getImpl()->getLogger()->warn(
         utl::ODB, 19, "Can not open file {} to write!", dbname);
     return;
   }
-  int io_bufsize = 65536;
-  char* buffer = (char*) malloc(io_bufsize);
-  if (buffer == nullptr) {
-    getImpl()->getLogger()->warn(
-        utl::ODB, 20, "Memory allocation failed for io buffer");
-    fclose(file);
-    return;
-  }
-  setvbuf(file, buffer, _IOFBF, io_bufsize);
   getDataBase()->write(file);
-  free((void*) buffer);
-  fclose(file);
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
                utl::ODB,

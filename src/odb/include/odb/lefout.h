@@ -80,6 +80,7 @@ class lefout
   void writeTechBody(dbTech* tech);
   void writeLayer(dbTechLayer* layer);
   void writeVia(dbTechVia* via);
+  void writeBlockVia(dbVia* via);
   void writeHeader(dbLib* lib);
   void writeHeader(dbBlock* db_block);
   void writeLibBody(dbLib* lib);

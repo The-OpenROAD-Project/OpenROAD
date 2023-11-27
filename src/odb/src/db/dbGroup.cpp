@@ -33,6 +33,9 @@
 // Generator Code Begin Cpp
 #include "dbGroup.h"
 
+#include <cstdint>
+#include <cstring>
+
 #include "db.h"
 #include "dbBlock.h"
 #include "dbBox.h"
@@ -57,29 +60,39 @@ template class dbTable<_dbGroup>;
 
 bool _dbGroup::operator==(const _dbGroup& rhs) const
 {
-  if (flags_._type != rhs.flags_._type)
+  if (flags_._type != rhs.flags_._type) {
     return false;
-
-  if (_name != rhs._name)
+  }
+  if (_name != rhs._name) {
     return false;
-  if (_next_entry != rhs._next_entry)
+  }
+  if (_next_entry != rhs._next_entry) {
     return false;
-  if (_group_next != rhs._group_next)
+  }
+  if (_group_next != rhs._group_next) {
     return false;
-  if (_parent_group != rhs._parent_group)
+  }
+  if (_parent_group != rhs._parent_group) {
     return false;
-  if (_insts != rhs._insts)
+  }
+  if (_insts != rhs._insts) {
     return false;
-  if (_modinsts != rhs._modinsts)
+  }
+  if (_modinsts != rhs._modinsts) {
     return false;
-  if (_groups != rhs._groups)
+  }
+  if (_groups != rhs._groups) {
     return false;
-  if (region_next_ != rhs.region_next_)
+  }
+  if (region_next_ != rhs.region_next_) {
     return false;
-  if (region_prev_ != rhs.region_prev_)
+  }
+  if (region_prev_ != rhs.region_prev_) {
     return false;
-  if (region_ != rhs.region_)
+  }
+  if (region_ != rhs.region_) {
     return false;
+  }
 
   // User Code Begin ==
   if (_power_nets != rhs._power_nets)
@@ -174,8 +187,10 @@ _dbGroup::_dbGroup(_dbDatabase* db, const _dbGroup& r)
 
 dbIStream& operator>>(dbIStream& stream, _dbGroup& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  uint32_t flags_bit_field;
+  stream >> flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> obj._name;
   stream >> obj._next_entry;
   stream >> obj._group_next;
@@ -193,8 +208,10 @@ dbIStream& operator>>(dbIStream& stream, _dbGroup& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbGroup& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  uint32_t flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags_bit_field;
   stream << obj._name;
   stream << obj._next_entry;
   stream << obj._group_next;
@@ -212,8 +229,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbGroup& obj)
 
 _dbGroup::~_dbGroup()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -231,8 +249,9 @@ const char* dbGroup::getName() const
 dbGroup* dbGroup::getParentGroup() const
 {
   _dbGroup* obj = (_dbGroup*) this;
-  if (obj->_parent_group == 0)
+  if (obj->_parent_group == 0) {
     return nullptr;
+  }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbGroup*) par->_group_tbl->getPtr(obj->_parent_group);
 }
@@ -240,8 +259,9 @@ dbGroup* dbGroup::getParentGroup() const
 dbRegion* dbGroup::getRegion() const
 {
   _dbGroup* obj = (_dbGroup*) this;
-  if (obj->region_ == 0)
+  if (obj->region_ == 0) {
     return nullptr;
+  }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbRegion*) par->_region_tbl->getPtr(obj->region_);
 }
@@ -553,4 +573,4 @@ dbGroup* dbGroup::getGroup(dbBlock* block_, uint dbid_)
 
 // User Code End dbGroupPublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

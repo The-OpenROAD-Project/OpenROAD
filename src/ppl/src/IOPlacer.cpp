@@ -36,6 +36,7 @@
 #include "ppl/IOPlacer.h"
 
 #include <algorithm>
+#include <fstream>
 #include <random>
 #include <sstream>
 
@@ -1564,6 +1565,38 @@ void IOPlacer::addNamesConstraint(PinSet* pins, Edge edge, int begin, int end)
 {
   Interval interval(edge, begin, end);
   bool inserted = false;
+  std::string pin_names;
+  int pin_cnt = 0;
+  for (odb::dbBTerm* pin : *pins) {
+    pin_names += pin->getName() + " ";
+    pin_cnt++;
+    if (pin_cnt >= pins_per_report_
+        && !logger_->debugCheck(utl::PPL, "report_pin_names", 1)) {
+      pin_names += "... ";
+      break;
+    }
+  }
+
+  if (logger_->debugCheck(utl::PPL, "report_pin_names", 1)) {
+    debugPrint(logger_,
+               utl::PPL,
+               "report_pin_names",
+               1,
+               "Restrict pins [ {}] to region {}u-{}u at the {} edge.",
+               pin_names,
+               dbuToMicrons(begin),
+               dbuToMicrons(end),
+               getEdgeString(edge));
+  } else {
+    logger_->info(utl::PPL,
+                  48,
+                  "Restrict pins [ {}] to region {}u-{}u at the {} edge.",
+                  pin_names,
+                  dbuToMicrons(begin),
+                  dbuToMicrons(end),
+                  getEdgeString(edge));
+  }
+
   for (Constraint& constraint : constraints_) {
     if (constraint.interval == interval) {
       constraint.pin_list.insert(pins->begin(), pins->end());
@@ -1861,6 +1894,28 @@ Direction IOPlacer::getDirection(const std::string& direction)
 
 void IOPlacer::addPinGroup(PinList* group, bool order)
 {
+  std::string pin_names;
+  int pin_cnt = 0;
+  for (odb::dbBTerm* pin : *group) {
+    pin_names += pin->getName() + " ";
+    pin_cnt++;
+    if (pin_cnt >= pins_per_report_
+        && !logger_->debugCheck(utl::PPL, "report_pin_names", 1)) {
+      pin_names += "... ";
+      break;
+    }
+  }
+
+  if (logger_->debugCheck(utl::PPL, "report_pin_names", 1)) {
+    debugPrint(logger_,
+               utl::PPL,
+               "report_pin_names",
+               1,
+               "Pin group: [ {}]",
+               pin_names);
+  } else {
+    logger_->info(utl::PPL, 44, "Pin group: [ {}]", pin_names);
+  }
   pin_groups_.push_back({*group, order});
 }
 

@@ -59,7 +59,8 @@ class _dbTechLayerEolKeepOutRule : public _dbObject
  public:
   _dbTechLayerEolKeepOutRule(_dbDatabase*, const _dbTechLayerEolKeepOutRule& r);
   _dbTechLayerEolKeepOutRule(_dbDatabase*);
-  ~_dbTechLayerEolKeepOutRule();
+
+  ~_dbTechLayerEolKeepOutRule() = default;
 
   bool operator==(const _dbTechLayerEolKeepOutRule& rhs) const;
   bool operator!=(const _dbTechLayerEolKeepOutRule& rhs) const

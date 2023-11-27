@@ -62,7 +62,7 @@ using sta::Vertex;
 using sta::PinSeq;
 using sta::VertexSeq;
 
-typedef Slack Slacks[RiseFall::index_count][MinMax::index_count];
+using Slacks = Slack[RiseFall::index_count][MinMax::index_count];
 
 class RepairHold : StaState
 {
@@ -103,13 +103,13 @@ private:
                   int max_buffer_count,
                   int max_passes,
                   bool verbose);
-  void repairHoldPass(VertexSeq &ends,
+  void repairHoldPass(VertexSeq &hold_failures,
                       LibertyCell *buffer_cell,
                       double setup_margin,
                       double hold_margin,
                       bool allow_setup_violations,
                       int max_buffer_count);
-  void repairEndHold(Vertex *worst_vertex,
+  void repairEndHold(Vertex *end_vertex,
                      LibertyCell *buffer_cell,
                      double setup_margin,
                      double hold_margin,
@@ -119,7 +119,7 @@ private:
                      PinSeq &load_pins,
                      bool loads_have_out_port,
                      LibertyCell *buffer_cell,
-                     Point loc);
+                     const Point& loc);
   bool checkMaxSlewCap(const Pin *drvr_pin);
   void mergeInit(Slacks &slacks);
   void mergeInto(Slacks &slacks,
@@ -146,4 +146,4 @@ private:
   static constexpr int print_interval_ = 10;
 };
 
-} // namespace
+} // namespace rsz

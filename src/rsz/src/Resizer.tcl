@@ -519,8 +519,8 @@ proc report_floating_nets { args } {
     }
   }
 
-  utl::metric "timing__drv__floating__nets" $floating_net_count
-  utl::metric "timing__drv__floating__pins" $floating_pin_count
+  utl::metric_int "timing__drv__floating__nets" $floating_net_count
+  utl::metric_int "timing__drv__floating__pins" $floating_pin_count
 }
 
 sta::define_cmd_args "report_long_wires" {count}

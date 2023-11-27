@@ -292,6 +292,7 @@ class IOPlacer
   // set the offset on tracks as 15 to approximate the size of a GCell in global
   // router
   const int num_tracks_offset_ = 15;
+  const int pins_per_report_ = 5;
 
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;

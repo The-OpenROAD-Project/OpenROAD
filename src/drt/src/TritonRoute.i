@@ -158,14 +158,15 @@ set_detailed_route_debug_cmd(const char* net_name,
                              bool dump_dr,
                              bool pa,
                              bool maze,
-                             int x, int y,
+                             int x1, int y1, int x2, int y2,
                              int iter,
                              bool pa_markers,
                              bool pa_edge,
                              bool pa_commit,
                              const char* dumpDir,
                              bool ta,
-                             bool write_net_tracks)
+                             bool write_net_tracks,
+                             bool dump_last_worker)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setDebugNetName(net_name);
@@ -174,15 +175,14 @@ set_detailed_route_debug_cmd(const char* net_name,
   router->setDebugDumpDR(dump_dr, dumpDir);
   router->setDebugPA(pa);
   router->setDebugMaze(maze);
-  if (x >= 0) {
-    router->setDebugWorker(x, y);
-  }
+  router->setDebugBox(x1, y1, x2, y2);
   router->setDebugIter(iter);
   router->setDebugPaMarkers(pa_markers);
   router->setDebugPaEdge(pa_edge);
   router->setDebugPaCommit(pa_commit);
   router->setDebugTA(ta);
   router->setDebugWriteNetTracks(write_net_tracks);
+  router->setDumpLastWorker(dump_last_worker);
 }
 
 void
