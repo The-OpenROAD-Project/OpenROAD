@@ -384,6 +384,8 @@ class HTreeBuilder : public TreeBuilder
   void adjustToplevelTopology(Point<double>& a,
                               Point<double>& b,
                               const Point<double>& parLoc);
+  std::vector<unsigned> clusterDiameters() const { return clusterDiameters_; }
+  std::vector<unsigned> clusterSizes() const { return clusterSizes_; }
 
  private:
   Box<double> sinkRegion_;
@@ -397,6 +399,8 @@ class HTreeBuilder : public TreeBuilder
   unsigned minLengthSinkRegion_ = 0;
   unsigned clockTreeMaxDepth_ = 0;
   static constexpr int min_clustering_sinks_ = 200;
+  std::vector<unsigned> clusterDiameters_ = {50, 100, 200};
+  std::vector<unsigned> clusterSizes_ = {10, 20, 30};
 };
 
 }  // namespace cts

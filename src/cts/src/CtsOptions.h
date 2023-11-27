@@ -194,13 +194,17 @@ class CtsOptions
   {
     maxDiameter_ = distance;
     sinkClusteringUseMaxCap_ = false;
+    maxDiameterSet_ = true;
   }
-  unsigned getSizeSinkClustering() const { return sinkClustersSize_; }
-  void setSizeSinkClustering(unsigned size)
+  bool isMaxDiameterSet() const { return maxDiameterSet_; }
+  unsigned getSinkClusteringSize() const { return sinkClustersSize_; }
+  void setSinkClusteringSize(unsigned size)
   {
     sinkClustersSize_ = size;
     sinkClusteringUseMaxCap_ = false;
+    sinkClustersSizeSet_ = true;
   }
+  bool isSinkClusteringSizeSet() const { return sinkClustersSizeSet_; }
   unsigned getSinkClusteringLevels() const { return sinkClusteringLevels_; }
   void setSinkClusteringLevels(unsigned levels)
   {
@@ -258,7 +262,9 @@ class CtsOptions
   int buffersInserted_ = 0;
   int sinks_ = 0;
   double maxDiameter_ = 50;
+  bool maxDiameterSet_ = false;
   unsigned sinkClustersSize_ = 20;
+  bool sinkClustersSizeSet_ = false;
   bool balanceLevels_ = false;
   unsigned sinkClusteringLevels_ = 0;
   unsigned numStaticLayers_ = 0;

@@ -25,14 +25,15 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0030]  Number of static layers: 1.
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
 [INFO CTS-0021]  Distance between buffers: 7 units (100 um).
+[INFO CTS-0206] Best clustering solution was found from clustering size of 30 and clustering diameter of 50.
 [INFO CTS-0019]  Total number of sinks after clustering: 22.
-[INFO CTS-0024]  Normalized sink region: [(0.871698, 2.80452), (13.7793, 14.972)].
-[INFO CTS-0025]     Width:  12.9076.
+[INFO CTS-0024]  Normalized sink region: [(0.910944, 2.80452), (13.7793, 14.972)].
+[INFO CTS-0025]     Width:  12.8684.
 [INFO CTS-0026]     Height: 12.1675.
  Level 1
     Direction: Horizontal
     Sinks per sub-region: 11
-    Sub-region size: 6.4538 X 12.1675
+    Sub-region size: 6.4342 X 12.1675
 [INFO CTS-0034]     Segment length (rounded): 4.
     Key: 60 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 4 delay: 1
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
@@ -46,5 +47,5 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 301
 [INFO CTS-0100]  Leaf buffers 22
-[INFO CTS-0101]  Average sink wire length 118.32 um
+[INFO CTS-0101]  Average sink wire length 118.44 um
 [INFO CTS-0102]  Path depth 3 - 3

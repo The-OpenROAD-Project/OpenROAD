@@ -30,14 +30,16 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0029]  Sinks will be clustered in groups of up to 20 and with maximum cluster diameter of 100.0 um.
 [INFO CTS-0030]  Number of static layers: 0.
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
-[INFO CTS-0019]  Total number of sinks after clustering: 322.
-[INFO CTS-0024]  Normalized sink region: [(1.43857, 2.41643), (661.439, 704.276)].
+[INFO CTS-0204] A clustering solution was found from clustering size of 30 and clustering diameter of 100.
+[INFO CTS-0205] Better solution may be possible if either -sink_clustering_size, -sink_clustering_max_diameter, or both options are omitted to enable automatic clustering.
+[INFO CTS-0019]  Total number of sinks after clustering: 279.
+[INFO CTS-0024]  Normalized sink region: [(1.43857, 3.42643), (661.439, 704.276)].
 [INFO CTS-0025]     Width:  660.0000.
-[INFO CTS-0026]     Height: 701.8593.
+[INFO CTS-0026]     Height: 700.8493.
  Level 1
     Direction: Vertical
-    Sinks per sub-region: 161
-    Sub-region size: 660.0000 X 350.9296
+    Sinks per sub-region: 140
+    Sub-region size: 660.0000 X 350.4246
 [INFO CTS-0034]     Segment length (rounded): 176.
     Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
     Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
@@ -68,8 +70,8 @@ TritonCTS forced slew degradation on these wires.
     Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
  Level 2
     Direction: Horizontal
-    Sinks per sub-region: 81
-    Sub-region size: 330.0000 X 350.9296
+    Sinks per sub-region: 70
+    Sub-region size: 330.0000 X 350.4246
 [INFO CTS-0034]     Segment length (rounded): 166.
     Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
     Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
@@ -99,8 +101,8 @@ TritonCTS forced slew degradation on these wires.
     Key: 157 inSlew: 2 inCap: 1 outSlew: 3 load: 1 length: 6 delay: 1
  Level 3
     Direction: Vertical
-    Sinks per sub-region: 41
-    Sub-region size: 330.0000 X 175.4648
+    Sinks per sub-region: 35
+    Sub-region size: 330.0000 X 175.2123
 [INFO CTS-0034]     Segment length (rounded): 88.
     Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
       location: 0.75 buffer: BUF_X4
@@ -118,8 +120,8 @@ TritonCTS forced slew degradation on these wires.
     Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
  Level 4
     Direction: Horizontal
-    Sinks per sub-region: 21
-    Sub-region size: 165.0000 X 175.4648
+    Sinks per sub-region: 18
+    Sub-region size: 165.0000 X 175.2123
 [INFO CTS-0034]     Segment length (rounded): 82.
     Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
     Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
@@ -137,8 +139,8 @@ TritonCTS forced slew degradation on these wires.
     Key: 3 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 2 delay: 1
  Level 5
     Direction: Vertical
-    Sinks per sub-region: 11
-    Sub-region size: 165.0000 X 87.7324
+    Sinks per sub-region: 9
+    Sub-region size: 165.0000 X 87.6062
 [INFO CTS-0034]     Segment length (rounded): 44.
     Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
     Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
@@ -147,30 +149,30 @@ TritonCTS forced slew degradation on these wires.
     Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
     Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
     Key: 61 inSlew: 2 inCap: 1 outSlew: 3 load: 1 length: 4 delay: 1
- Out of 14 sinks, 1 sinks closer to other cluster.
+ Out of 12 sinks, 1 sinks closer to other cluster.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
-[INFO CTS-0035]  Number of sinks covered: 322.
-[INFO CTS-0018]     Created 273 clock buffers.
+[INFO CTS-0035]  Number of sinks covered: 279.
+[INFO CTS-0018]     Created 231 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 18.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 19.
-[INFO CTS-0015]     Created 273 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 2:1, 4:2, 6:1, 7:2, 8:8, 9:4, 10:11, 11:37, 12:12, 13:1, 15:1, 16:1, 19:2, 20:87..
+[INFO CTS-0015]     Created 231 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 2:1, 5:1, 6:1, 7:6, 8:11, 9:7, 10:8, 11:3, 12:2, 14:2, 15:1, 19:1, 20:3, 21:36, 30:45..
 [INFO CTS-0017]     Max level of the clock tree: 5.
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 2475
-[INFO CTS-0100]  Leaf buffers 138
-[INFO CTS-0101]  Average sink wire length 9473.65 um
+[INFO CTS-0100]  Leaf buffers 96
+[INFO CTS-0101]  Average sink wire length 9480.12 um
 [INFO CTS-0102]  Path depth 18 - 19
 [INFO RSZ-0058] Using max wire length 707um.
-[INFO RSZ-0047] Found 33 long wires.
-[INFO RSZ-0048] Inserted 87 buffers in 33 nets.
+[INFO RSZ-0047] Found 32 long wires.
+[INFO RSZ-0048] Inserted 85 buffers in 32 nets.
 Placement Analysis
 ---------------------------------
-total displacement       1815.9 u
+total displacement       1622.2 u
 average displacement        0.6 u
-max displacement           37.4 u
-original HPWL          137456.6 u
-legalized HPWL         137747.8 u
+max displacement           39.5 u
+original HPWL          134887.4 u
+legalized HPWL         135134.8 u
 delta HPWL                    0 %
 
 Clock clk
