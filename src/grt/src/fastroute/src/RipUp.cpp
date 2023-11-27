@@ -180,7 +180,7 @@ void FastRouteCore::newRipup(const TreeEdge* treeedge,
 }
 
 bool FastRouteCore::newRipupType2(const TreeEdge* treeedge,
-                                  TreeNode* treenodes,
+                                  std::vector<TreeNode>& treenodes,
                                   const int x1,
                                   const int y1,
                                   const int x2,

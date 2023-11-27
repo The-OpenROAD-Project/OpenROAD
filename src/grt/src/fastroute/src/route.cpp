@@ -271,7 +271,7 @@ void FastRouteCore::newrouteL(int netID, RouteType ripuptype, bool viaGuided)
 
   const int num_edges = sttrees_[netID].num_edges();
   const auto& treeedges = sttrees_[netID].edges;
-  const auto& treenodes = sttrees_[netID].nodes;
+  auto& treenodes = sttrees_[netID].nodes;
 
   // loop for all the tree edges
   for (int i = 0; i < num_edges; i++) {
@@ -563,7 +563,7 @@ void FastRouteCore::newrouteZ(int netID, int threshold)
   const int num_edges = sttrees_[netID].num_edges();
 
   const auto& treeedges = sttrees_[netID].edges;
-  const auto& treenodes = sttrees_[netID].nodes;
+  auto& treenodes = sttrees_[netID].nodes;
 
   // loop for all the tree edges
   for (int ind = 0; ind < num_edges; ind++) {
@@ -583,7 +583,7 @@ void FastRouteCore::newrouteZ(int netID, int threshold)
       }
       // ripup the original routing
       if (newRipupType2(treeedge,
-                        treenodes.get(),
+                        treenodes,
                         x1,
                         y1,
                         x2,
@@ -1074,7 +1074,7 @@ void FastRouteCore::routeMonotonicAll(int threshold)
 void FastRouteCore::spiralRoute(int netID, int edgeID)
 {
   const auto& treeedges = sttrees_[netID].edges;
-  const auto& treenodes = sttrees_[netID].nodes;
+  auto& treenodes = sttrees_[netID].nodes;
 
   const int edgeCost = nets_[netID]->getEdgeCost();
 
@@ -1247,7 +1247,7 @@ void FastRouteCore::spiralRouteAll()
     if (nets_[netID]->isRouted())
       continue;
 
-    const auto& treenodes = sttrees_[netID].nodes;
+    auto& treenodes = sttrees_[netID].nodes;
     const int num_terminals = sttrees_[netID].num_terminals;
 
     int numpoints = 0;
@@ -1298,7 +1298,7 @@ void FastRouteCore::spiralRouteAll()
       continue;
 
     const auto& treeedges = sttrees_[netID].edges;
-    const auto& treenodes = sttrees_[netID].nodes;
+    auto& treenodes = sttrees_[netID].nodes;
     const int num_edges = sttrees_[netID].num_edges();
 
     for (int edgeID = 0; edgeID < num_edges; edgeID++) {
@@ -1329,7 +1329,7 @@ void FastRouteCore::spiralRouteAll()
     newRipupNet(netID);
 
     const auto& treeedges = sttrees_[netID].edges;
-    const auto& treenodes = sttrees_[netID].nodes;
+    auto& treenodes = sttrees_[netID].nodes;
 
     for (int nodeID = 0; nodeID < sttrees_[netID].num_terminals; nodeID++) {
       treenodes[nodeID].assigned = true;
@@ -1381,7 +1381,7 @@ void FastRouteCore::spiralRouteAll()
     if (nets_[netID]->isRouted())
       continue;
 
-    const auto& treenodes = sttrees_[netID].nodes;
+    auto& treenodes = sttrees_[netID].nodes;
 
     for (int d = 0; d < sttrees_[netID].num_nodes; d++) {
       const int na = treenodes[d].stackAlias;

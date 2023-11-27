@@ -268,7 +268,7 @@ class FastRouteCore
       const int edge,
       std::vector<std::pair<short, short>>& blocked_positions);
   void bendEdge(TreeEdge* treeedge,
-                TreeNode* treenodes,
+                std::vector<TreeNode>& treenodes,
                 std::vector<short>& new_route_x,
                 std::vector<short>& new_route_y,
                 std::vector<std::pair<short, short>>& blocked_positions);
@@ -288,7 +288,7 @@ class FastRouteCore
                  const int regionX2,
                  const int regionY1,
                  const int regionY2);
-  int copyGrids(const TreeNode* treenodes,
+  int copyGrids(const std::vector<TreeNode>& treenodes,
                 const int n1,
                 const int n2,
                 const TreeEdge* treeedges,
@@ -296,7 +296,7 @@ class FastRouteCore
                 std::vector<int>& gridsX_n1n2,
                 std::vector<int>& gridsY_n1n2);
   bool updateRouteType1(const int net_id,
-                        const TreeNode* treenodes,
+                        const std::vector<TreeNode>& treenodes,
                         const int n1,
                         const int A1,
                         const int A2,
@@ -306,7 +306,7 @@ class FastRouteCore
                         const int edge_n1A1,
                         const int edge_n1A2);
   bool updateRouteType2(const int net_id,
-                        const TreeNode* treenodes,
+                        const std::vector<TreeNode>& treenodes,
                         const int n1,
                         const int A1,
                         const int A2,
@@ -334,11 +334,11 @@ class FastRouteCore
                    int regionX2,
                    int regionY1,
                    int regionY2);
-  void newUpdateNodeLayers(TreeNode* treenodes,
+  void newUpdateNodeLayers(std::vector<TreeNode>& treenodes,
                            const int edgeID,
                            const int n1,
                            const int lastL);
-  int copyGrids3D(TreeNode* treenodes,
+  int copyGrids3D(std::vector<TreeNode>& treenodes,
                   int n1,
                   int n2,
                   TreeEdge* treeedges,
@@ -347,7 +347,7 @@ class FastRouteCore
                   int gridsY_n1n2[],
                   int gridsL_n1n2[]);
   void updateRouteType13D(int netID,
-                          TreeNode* treenodes,
+                          std::vector<TreeNode>& treenodes,
                           int n1,
                           int A1,
                           int A2,
@@ -357,7 +357,7 @@ class FastRouteCore
                           int edge_n1A1,
                           int edge_n1A2);
   void updateRouteType23D(int netID,
-                          TreeNode* treenodes,
+                          std::vector<TreeNode>& treenodes,
                           int n1,
                           int A1,
                           int A2,
@@ -442,7 +442,7 @@ class FastRouteCore
                      const int edgeID);
 
   bool newRipupType2(const TreeEdge* treeedge,
-                     TreeNode* treenodes,
+                     std::vector<TreeNode>& treenodes,
                      const int x1,
                      const int y1,
                      const int x2,

@@ -86,10 +86,10 @@ void FastRouteCore::copyStTree(const int ind, const Tree& rsmt)
   const int numedges = numnodes - 1;
   sttrees_[ind].num_nodes = numnodes;
   sttrees_[ind].num_terminals = d;
-  sttrees_[ind].nodes.reset(new TreeNode[numnodes]);
+  sttrees_[ind].nodes.resize(numnodes);
   sttrees_[ind].edges.reset(new TreeEdge[numedges]);
 
-  const auto& treenodes = sttrees_[ind].nodes;
+  auto& treenodes = sttrees_[ind].nodes;
   const auto& treeedges = sttrees_[ind].edges;
 
   // initialize the nbrcnt for treenodes

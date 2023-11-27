@@ -379,7 +379,7 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
 
   FrNet* net = nets_[netID];
   const auto& treeedges = sttrees_[netID].edges;
-  const auto& treenodes = sttrees_[netID].nodes;
+  auto& treenodes = sttrees_[netID].nodes;
   TreeEdge* treeedge = &(treeedges[edgeID]);
 
   const std::vector<short>& gridsX = treeedge->route.gridsX;
@@ -772,7 +772,7 @@ void FastRouteCore::layerAssignmentV4()
       continue;
 
     const auto& treeedges = sttrees_[netID].edges;
-    const auto& treenodes = sttrees_[netID].nodes;
+    auto& treenodes = sttrees_[netID].nodes;
     const int num_terminals = sttrees_[netID].num_terminals;
 
     for (nodeID = 0; nodeID < num_terminals; nodeID++) {
@@ -893,7 +893,7 @@ void FastRouteCore::layerAssignment()
     if (nets_[netID]->isRouted())
       continue;
 
-    const auto& treenodes = sttrees_[netID].nodes;
+    auto& treenodes = sttrees_[netID].nodes;
 
     numpoints = 0;
 
@@ -944,7 +944,7 @@ void FastRouteCore::layerAssignment()
       continue;
 
     const auto& treeedges = sttrees_[netID].edges;
-    const auto& treenodes = sttrees_[netID].nodes;
+    auto& treenodes = sttrees_[netID].nodes;
 
     for (edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
       treeedge = &(treeedges[edgeID]);
@@ -1261,7 +1261,7 @@ void FastRouteCore::recoverEdge(int netID, int edgeID)
     logger_->error(GRT, 206, "Trying to recover a 0-length edge.");
   }
 
-  const auto& treenodes = sttrees_[netID].nodes;
+  auto& treenodes = sttrees_[netID].nodes;
 
   const std::vector<short>& gridsX = treeedge->route.gridsX;
   const std::vector<short>& gridsY = treeedge->route.gridsY;
@@ -1773,7 +1773,7 @@ void FastRouteCore::copyRS(void)
     numNodes = sttrees_[netID].num_nodes;
     numEdges = sttrees_[netID].num_edges();
 
-    sttrees_bk_[netID].nodes.reset(new TreeNode[numNodes]);
+    sttrees_bk_[netID].nodes.resize(numNodes);
 
     for (i = 0; i < numNodes; i++) {
       sttrees_bk_[netID].nodes[i].x = sttrees_[netID].nodes[i].x;
@@ -1840,7 +1840,7 @@ void FastRouteCore::copyBR(void)
       numNodes = sttrees_bk_[netID].num_nodes;
       numEdges = sttrees_bk_[netID].num_edges();
 
-      sttrees_[netID].nodes.reset(new TreeNode[numNodes]);
+      sttrees_[netID].nodes.resize(numNodes);
 
       for (i = 0; i < numNodes; i++) {
         sttrees_[netID].nodes[i].x = sttrees_bk_[netID].nodes[i].x;
