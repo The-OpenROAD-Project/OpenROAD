@@ -109,6 +109,10 @@ void FastRouteCore::copyStTree(const int ind, const Tree& rsmt)
     const int y2 = rsmt.branch[n].y;
     treenodes[i].x = x1;
     treenodes[i].y = y1;
+    // Only for DEBUG
+    //if (ind == 1586){
+      //printf("N1: %d x: %d y:%d N2: %d x: %d y: %d\n", i, x1, y1, n, x2, y2);
+    //}
     if (i < d) {
       treenodes[i].status = 2;
     } else {
@@ -139,6 +143,10 @@ void FastRouteCore::copyStTree(const int ind, const Tree& rsmt)
     if (nbrcnt[i] > 3 || nbrcnt[n] > 3)
       logger_->error(GRT, 188, "Invalid number of node neighbors.");
   }
+  // Copy num neighbors
+  for (int i = 0; i < numnodes; i++)
+    treenodes[i].nbrCount = nbrcnt[i];
+
   if (edgecnt != numnodes - 1) {
     logger_->error(
         GRT,
