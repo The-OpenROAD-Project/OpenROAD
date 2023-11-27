@@ -111,6 +111,23 @@ lefin::~lefin()
 {
 }
 
+dbSite* lefin::findSite(const char* name)
+{
+  dbSite* site = _lib->findSite(name);
+
+  if (site == nullptr) {
+    // look in the other libs
+    for (dbLib* lib : _db->getLibs()) {
+      site = lib->findSite(name);
+      if (site) {
+        break;
+      }
+    }
+  }
+
+  return site;
+}
+
 void lefin::createLibrary()
 {
   _lib = dbLib::create(_db, _lib_name, _tech, _hier_delimeter);
@@ -1221,26 +1238,17 @@ void lefin::macro(lefiMacro* macro)
   }
 
   if (macro->hasSiteName()) {
-    dbSite* site = _lib->findSite(macro->siteName());
+    dbSite* site = findSite(macro->siteName());
 
     if (site == nullptr) {
-      // look in the other libs
-      for (dbLib* lib : _db->getLibs()) {
-        site = lib->findSite(macro->siteName());
-        if (site) {
-          break;
-        }
-      }
-    }
-
-    if (site == nullptr)
       _logger->warn(utl::ODB,
                     186,
                     "macro {} references unknown site {}",
                     macro->name(),
                     macro->siteName());
-    else
+    } else {
       _master->setSite(site);
+    }
   }
 
   if (macro->hasXSymmetry())
@@ -1696,7 +1704,13 @@ void lefin::site(lefiSite* lefsite)
     converted_row_pattern.reserve(row_pattern.size());
     for (auto& row : row_pattern) {
       dbOrientType orient(row.second.c_str());
-      auto child_site = _lib->findSite(row.first.c_str());
+      auto child_site = findSite(row.first.c_str());
+      if (!child_site) {
+        ++_errors;
+        _logger->warn(
+            utl::ODB, 208, "Row pattern site {} can't be found", row.first);
+        continue;
+      }
       converted_row_pattern.push_back({child_site, orient});
     }
     site->setRowPattern(converted_row_pattern);
