@@ -1697,13 +1697,6 @@ void lefin::site(lefiSite* lefsite)
     for (auto& row : row_pattern) {
       dbOrientType orient(row.second.c_str());
       auto child_site = _lib->findSite(row.first.c_str());
-      if (_mapped_hybrid_sites.count(child_site->getId()) == 0) {
-        child_site->setParent(site);
-        _mapped_hybrid_sites[child_site->getId()] = site;
-      } else {
-        child_site->setParent(_mapped_hybrid_sites[child_site->getId()]);
-      }
-
       converted_row_pattern.push_back({child_site, orient});
     }
     site->setRowPattern(converted_row_pattern);

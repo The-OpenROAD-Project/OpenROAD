@@ -105,7 +105,6 @@ class lefin
   bool _master_modified;
   bool _ignore_non_routing_layers;
   std::vector<std::pair<odb::dbObject*, std::string>> _incomplete_props;
-  std::unordered_map<int, dbSite*> _mapped_hybrid_sites;
 
   void init();
   void setDBUPerMicron(int dbu);

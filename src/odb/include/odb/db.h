@@ -5242,13 +5242,6 @@ class dbSite : public dbObject
   void setRowPattern(const RowPattern& row_pattern);
 
   ///
-  /// sets the parent of the site
-  ///
-  void setParent(dbSite* parent);
-
-  dbSite* getParent();
-
-  ///
   /// Returns true if the row pattern is not empty
   ///
   bool hasRowPattern() const;

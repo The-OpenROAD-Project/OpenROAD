@@ -78,6 +78,19 @@ int Opendp::calculateHybridSitesRowCount(dbSite* parent_hybrid_site) const
 
 void Opendp::initGridLayersMap()
 {
+  _hybrid_parent.clear();
+  for (auto lib : db_->getLibs()) {
+    for (auto site : lib->getSites()) {
+      if (site->hasRowPattern()) {
+        for (const auto& [child_site, orient] : site->getRowPattern()) {
+          if (_hybrid_parent.count(child_site) == 0) {
+            _hybrid_parent[child_site] = site;
+          }
+        }
+      }
+    }
+  }
+
   int grid_index = 0;
   grid_info_map_.clear();
   grid_info_vector_.clear();
@@ -177,17 +190,17 @@ void Opendp::initGridLayersMap()
         }
         grid_info_map_.emplace(gmk, newGridInfo);
       } else {
+        dbSite* parent_site = _hybrid_parent.at(working_site);
         GridInfo newGridInfo = {
-            calculateHybridSitesRowCount(working_site->getParent()),
+            calculateHybridSitesRowCount(parent_site),
             divFloor(core_.dx(), db_row->getSite()->getWidth()),
             site_to_grid_key_.at(working_site).grid_index,
-            working_site->getParent()
-                ->getRowPattern(),  // FIXME(mina1460): this is wrong! in the
-                                    // case of HybridAB, and HybridBA. each of A
-                                    // and B maps to both, but the
-                                    // hybrid_sites_mapper only record one of
-                                    // them, resulting in the wrong RowPattern
-                                    // here.
+            parent_site->getRowPattern(),  // FIXME(mina1460): this is wrong! in
+                                           // the case of HybridAB, and
+                                           // HybridBA. each of A and B maps to
+                                           // both, but the hybrid_sites_mapper
+                                           // only record one of them, resulting
+                                           // in the wrong RowPattern here.
         };
         if (working_site->isHybrid()) {
           int row_offset = db_row->getBBox().ll().getY() - min_row_y_coordinate;
@@ -217,7 +230,7 @@ void Opendp::initGridLayersMap()
     grid_info_vector_[grid_info.getGridIndex()] = &grid_info;
   }
   debugPrint(logger_, DPL, "grid", 1, "grid layers map initialized");
-}
+}  // namespace dpl
 
 void Opendp::initGrid()
 {

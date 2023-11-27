@@ -80,8 +80,6 @@ class _dbSite : public _dbObject
   uint _width;
   dbId<_dbSite> _next_entry;
   dbVector<OrientedSiteInternal> _row_pattern;
-  dbId<_dbLib> _parent_lib;
-  dbId<_dbSite> _parent_site;
 
   _dbSite(_dbDatabase*, const _dbSite& s);
   _dbSite(_dbDatabase*);

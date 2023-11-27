@@ -286,29 +286,6 @@ void dbSite::setRowPattern(const RowPattern& row_pattern)
   }
 }
 
-void dbSite::setParent(dbSite* parent)
-{
-  _dbSite* site = (_dbSite*) this;
-  if (!this->isHybrid() || this->isHybridParent()) {
-    site->_parent_lib.clear();
-    site->_parent_site.clear();
-    return;
-  }
-  site->_parent_lib = parent->getLib()->getId();
-  site->_parent_site = parent->getId();
-}
-
-dbSite* dbSite::getParent()
-{
-  _dbSite* site = (_dbSite*) this;
-  if (!site->_parent_lib.isValid()) {
-    return nullptr;
-  }
-  dbDatabase* db = (dbDatabase*) site->getDatabase();
-  dbLib* lib = dbLib::getLib(db, site->_parent_lib);
-  return dbSite::getSite(lib, site->_parent_site);
-}
-
 bool dbSite::hasRowPattern() const
 {
   _dbSite* site = (_dbSite*) this;
@@ -376,8 +353,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbSite& site)
   stream << site._width;
   stream << site._next_entry;
   stream << site._row_pattern;
-  stream << site._parent_lib;
-  stream << site._parent_site;
   return stream;
 }
 
@@ -392,8 +367,6 @@ dbIStream& operator>>(dbIStream& stream, _dbSite& site)
   _dbDatabase* db = site.getImpl()->getDatabase();
   if (db->isSchema(db_schema_site_row_pattern)) {
     stream >> site._row_pattern;
-    stream >> site._parent_lib;
-    stream >> site._parent_site;
   }
   return stream;
 }
