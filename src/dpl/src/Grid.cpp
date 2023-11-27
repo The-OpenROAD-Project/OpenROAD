@@ -161,6 +161,31 @@ void Opendp::initGridLayersMap()
     logger_->error(
         DPL, 128, "Cannot find a non-hybrid grid to use for placement.");
   }
+  for (auto db_row : block_->getRows()) {
+    if (db_row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+      continue;
+    }
+    int row_base_x, row_base_y;
+    db_row->getOrigin(row_base_x, row_base_y);
+    dbSite* working_site = db_row->getSite();
+    if (row_base_y == min_row_y_coordinate) {
+      if (working_site->isHybridParent()) {
+        for (const auto& [child_site, orient] : working_site->getRowPattern()) {
+          if (_hybrid_parent[child_site] != working_site) {
+            debugPrint(logger_,
+                       DPL,
+                       "hybrid",
+                       1,
+                       "Overriding the parent of site {} from {} to {}",
+                       child_site->getName(),
+                       _hybrid_parent[child_site]->getName(),
+                       working_site->getName());
+            _hybrid_parent[child_site] == working_site;
+          }
+        }
+      }
+    }
+  }
 
   for (auto db_row : block_->getRows()) {
     if (db_row->getSite()->getClass() == odb::dbSiteClass::PAD) {
