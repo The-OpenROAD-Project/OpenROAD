@@ -75,85 +75,104 @@ template class dbTable<_dbTechLayer>;
 
 bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
 {
-  if (flags_.num_masks_ != rhs.flags_.num_masks_)
+  if (flags_.num_masks_ != rhs.flags_.num_masks_) {
     return false;
-
-  if (flags_.has_max_width_ != rhs.flags_.has_max_width_)
+  }
+  if (flags_.has_max_width_ != rhs.flags_.has_max_width_) {
     return false;
-
-  if (flags_.has_thickness_ != rhs.flags_.has_thickness_)
+  }
+  if (flags_.has_thickness_ != rhs.flags_.has_thickness_) {
     return false;
-
-  if (flags_.has_area_ != rhs.flags_.has_area_)
+  }
+  if (flags_.has_area_ != rhs.flags_.has_area_) {
     return false;
-
-  if (flags_.has_protrusion_ != rhs.flags_.has_protrusion_)
+  }
+  if (flags_.has_protrusion_ != rhs.flags_.has_protrusion_) {
     return false;
-
-  if (flags_.has_alias_ != rhs.flags_.has_alias_)
+  }
+  if (flags_.has_alias_ != rhs.flags_.has_alias_) {
     return false;
-
-  if (flags_.has_xy_pitch_ != rhs.flags_.has_xy_pitch_)
+  }
+  if (flags_.has_xy_pitch_ != rhs.flags_.has_xy_pitch_) {
     return false;
-
-  if (flags_.has_xy_offset_ != rhs.flags_.has_xy_offset_)
+  }
+  if (flags_.has_xy_offset_ != rhs.flags_.has_xy_offset_) {
     return false;
-
-  if (flags_.rect_only_ != rhs.flags_.rect_only_)
+  }
+  if (flags_.rect_only_ != rhs.flags_.rect_only_) {
     return false;
-
-  if (flags_.right_way_on_grid_only_ != rhs.flags_.right_way_on_grid_only_)
+  }
+  if (flags_.right_way_on_grid_only_ != rhs.flags_.right_way_on_grid_only_) {
     return false;
-
+  }
   if (flags_.right_way_on_grid_only_check_mask_
-      != rhs.flags_.right_way_on_grid_only_check_mask_)
+      != rhs.flags_.right_way_on_grid_only_check_mask_) {
     return false;
-
+  }
   if (flags_.rect_only_except_non_core_pins_
-      != rhs.flags_.rect_only_except_non_core_pins_)
+      != rhs.flags_.rect_only_except_non_core_pins_) {
     return false;
-
-  if (flags_.lef58_type_ != rhs.flags_.lef58_type_)
+  }
+  if (flags_.lef58_type_ != rhs.flags_.lef58_type_) {
     return false;
-
-  if (wrong_way_width_ != rhs.wrong_way_width_)
+  }
+  if (wrong_way_width_ != rhs.wrong_way_width_) {
     return false;
-  if (*cut_class_rules_tbl_ != *rhs.cut_class_rules_tbl_)
+  }
+  if (*cut_class_rules_tbl_ != *rhs.cut_class_rules_tbl_) {
     return false;
-  if (cut_class_rules_hash_ != rhs.cut_class_rules_hash_)
+  }
+  if (cut_class_rules_hash_ != rhs.cut_class_rules_hash_) {
     return false;
-  if (*spacing_eol_rules_tbl_ != *rhs.spacing_eol_rules_tbl_)
+  }
+  if (*spacing_eol_rules_tbl_ != *rhs.spacing_eol_rules_tbl_) {
     return false;
-  if (*cut_spacing_rules_tbl_ != *rhs.cut_spacing_rules_tbl_)
+  }
+  if (*cut_spacing_rules_tbl_ != *rhs.cut_spacing_rules_tbl_) {
     return false;
-  if (*minstep_rules_tbl_ != *rhs.minstep_rules_tbl_)
+  }
+  if (*minstep_rules_tbl_ != *rhs.minstep_rules_tbl_) {
     return false;
-  if (*corner_spacing_rules_tbl_ != *rhs.corner_spacing_rules_tbl_)
+  }
+  if (*corner_spacing_rules_tbl_ != *rhs.corner_spacing_rules_tbl_) {
     return false;
-  if (*spacing_table_prl_rules_tbl_ != *rhs.spacing_table_prl_rules_tbl_)
+  }
+  if (*spacing_table_prl_rules_tbl_ != *rhs.spacing_table_prl_rules_tbl_) {
     return false;
-  if (*cut_spacing_table_orth_tbl_ != *rhs.cut_spacing_table_orth_tbl_)
+  }
+  if (*cut_spacing_table_orth_tbl_ != *rhs.cut_spacing_table_orth_tbl_) {
     return false;
-  if (*cut_spacing_table_def_tbl_ != *rhs.cut_spacing_table_def_tbl_)
+  }
+  if (*cut_spacing_table_def_tbl_ != *rhs.cut_spacing_table_def_tbl_) {
     return false;
-  if (*cut_enc_rules_tbl_ != *rhs.cut_enc_rules_tbl_)
+  }
+  if (*cut_enc_rules_tbl_ != *rhs.cut_enc_rules_tbl_) {
     return false;
-  if (*eol_ext_rules_tbl_ != *rhs.eol_ext_rules_tbl_)
+  }
+  if (*eol_ext_rules_tbl_ != *rhs.eol_ext_rules_tbl_) {
     return false;
-  if (*array_spacing_rules_tbl_ != *rhs.array_spacing_rules_tbl_)
+  }
+  if (*array_spacing_rules_tbl_ != *rhs.array_spacing_rules_tbl_) {
     return false;
-  if (*eol_keep_out_rules_tbl_ != *rhs.eol_keep_out_rules_tbl_)
+  }
+  if (*eol_keep_out_rules_tbl_ != *rhs.eol_keep_out_rules_tbl_) {
     return false;
-  if (*width_table_rules_tbl_ != *rhs.width_table_rules_tbl_)
+  }
+  if (*width_table_rules_tbl_ != *rhs.width_table_rules_tbl_) {
     return false;
-  if (*min_cuts_rules_tbl_ != *rhs.min_cuts_rules_tbl_)
+  }
+  if (*min_cuts_rules_tbl_ != *rhs.min_cuts_rules_tbl_) {
     return false;
-  if (*area_rules_tbl_ != *rhs.area_rules_tbl_)
+  }
+  if (*area_rules_tbl_ != *rhs.area_rules_tbl_) {
     return false;
-  if (*forbidden_spacing_rules_tbl_ != *rhs.forbidden_spacing_rules_tbl_)
+  }
+  if (*forbidden_spacing_rules_tbl_ != *rhs.forbidden_spacing_rules_tbl_) {
     return false;
-  if (*keepout_zone_rules_tbl_ != *rhs.keepout_zone_rules_tbl_)
+  }
+  if (*keepout_zone_rules_tbl_ != *rhs.keepout_zone_rules_tbl_) {
     return false;
+  }
 
   // User Code Begin ==
   if (flags_.type_ != rhs.flags_.type_)
@@ -757,10 +776,12 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> *obj.width_table_rules_tbl_;
   stream >> *obj.min_cuts_rules_tbl_;
   stream >> *obj.area_rules_tbl_;
-  if (obj.getDatabase()->isSchema(db_schema_lef58_forbidden_spacing))
+  if (obj.getDatabase()->isSchema(db_schema_lef58_forbidden_spacing)) {
     stream >> *obj.forbidden_spacing_rules_tbl_;
-  if (obj.getDatabase()->isSchema(db_schema_keepout_zone))
+  }
+  if (obj.getDatabase()->isSchema(db_schema_keepout_zone)) {
     stream >> *obj.keepout_zone_rules_tbl_;
+  }
   // User Code Begin >>
   stream >> obj._pitch_x;
   stream >> obj._pitch_y;
@@ -839,10 +860,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << *obj.width_table_rules_tbl_;
   stream << *obj.min_cuts_rules_tbl_;
   stream << *obj.area_rules_tbl_;
-  if (obj.getDatabase()->isSchema(db_schema_lef58_forbidden_spacing))
+  if (obj.getDatabase()->isSchema(db_schema_lef58_forbidden_spacing)) {
     stream << *obj.forbidden_spacing_rules_tbl_;
-  if (obj.getDatabase()->isSchema(db_schema_keepout_zone))
+  }
+  if (obj.getDatabase()->isSchema(db_schema_keepout_zone)) {
     stream << *obj.keepout_zone_rules_tbl_;
+  }
   // User Code Begin <<
   stream << obj._pitch_x;
   stream << obj._pitch_y;
