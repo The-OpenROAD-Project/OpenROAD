@@ -180,7 +180,7 @@ void Opendp::initGridLayersMap()
                        child_site->getName(),
                        _hybrid_parent[child_site]->getName(),
                        working_site->getName());
-            _hybrid_parent[child_site] == working_site;
+            _hybrid_parent[child_site] = working_site;
           }
         }
       }
