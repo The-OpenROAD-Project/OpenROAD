@@ -798,9 +798,9 @@ void FastRouteCore::setupHeap(const int netID,
         const int cur = queue[queuehead];
         queuehead++;
         visited[cur] = true;
-        //if (cur < num_terminals) {  // cur node isn't a Steiner node
-          //continue;
-        //}
+        if (cur < num_terminals) {  // cur node isn't a Steiner node
+          continue;
+        }
         const int nbrcnt = treenodes[cur].nbrCount;
         for (int i = 0; i < nbrcnt; i++) {
           const int nbr = treenodes[cur].nbr[i];
@@ -879,9 +879,9 @@ void FastRouteCore::setupHeap(const int netID,
         visited[cur] = true;
         queuehead++;
 
-        //if (cur < num_terminals) {  // cur node isn't a Steiner node
-          //continue;
-        //}
+        if (cur < num_terminals) {  // cur node isn't a Steiner node
+          continue;
+        }
         const int nbrcnt = treenodes[cur].nbrCount;
         for (int i = 0; i < nbrcnt; i++) {
           const int nbr = treenodes[cur].nbr[i];
