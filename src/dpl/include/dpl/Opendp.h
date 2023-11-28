@@ -456,7 +456,8 @@ class Opendp
   void paintPixel(Cell* cell, int grid_x, int grid_y);
   int map_ycoordinates(int source_grid_coordinate,
                        const GridMapKey& source_grid_key,
-                       const GridMapKey& target_grid_key) const;
+                       const GridMapKey& target_grid_key,
+                       const bool start) const;
 
   // checkPlacement
   static bool isPlaced(const Cell* cell);
