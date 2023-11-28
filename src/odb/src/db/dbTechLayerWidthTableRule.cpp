@@ -48,11 +48,12 @@ template class dbTable<_dbTechLayerWidthTableRule>;
 bool _dbTechLayerWidthTableRule::operator==(
     const _dbTechLayerWidthTableRule& rhs) const
 {
-  if (flags_.wrong_direction_ != rhs.flags_.wrong_direction_)
+  if (flags_.wrong_direction_ != rhs.flags_.wrong_direction_) {
     return false;
-
-  if (flags_.orthogonal_ != rhs.flags_.orthogonal_)
+  }
+  if (flags_.orthogonal_ != rhs.flags_.orthogonal_) {
     return false;
+  }
 
   return true;
 }
@@ -117,10 +118,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerWidthTableRule& obj)
   stream << flags_bit_field;
   stream << obj.width_tbl_;
   return stream;
-}
-
-_dbTechLayerWidthTableRule::~_dbTechLayerWidthTableRule()
-{
 }
 
 ////////////////////////////////////////////////////////////////////

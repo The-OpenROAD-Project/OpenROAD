@@ -34,10 +34,12 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0029]  Sinks will be clustered in groups of up to 20 and with maximum cluster diameter of 100.0 um.
 [INFO CTS-0030]  Number of static layers: 0.
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
-[INFO CTS-0019]  Total number of sinks after clustering: 322.
-[INFO CTS-0024]  Normalized sink region: [(1.43857, 2.41643), (826.511, 721.675)].
-[INFO CTS-0025]     Width:  825.0720.
-[INFO CTS-0026]     Height: 719.2590.
+[INFO CTS-0204] A clustering solution was found from clustering size of 30 and clustering diameter of 100.
+[INFO CTS-0205] Better solution may be possible if either -sink_clustering_size, -sink_clustering_max_diameter, or both options are omitted to enable automatic clustering.
+[INFO CTS-0019]  Total number of sinks after clustering: 279.
+[INFO CTS-0024]  Normalized sink region: [(1.43857, 3.42643), (716.207, 704.276)].
+[INFO CTS-0025]     Width:  714.7683.
+[INFO CTS-0026]     Height: 700.8493.
  Level 1
     Direction: Horizontal
     Sinks per sub-region: 161
@@ -167,15 +169,14 @@ TritonCTS forced slew degradation on these wires.
  Out of 25 sinks, 1 sinks closer to other cluster.
  Out of 24 sinks, 2 sinks closer to other cluster.
  Out of 18 sinks, 1 sinks closer to other cluster.
- Out of 18 sinks, 2 sinks closer to other cluster.
- Out of 23 sinks, 1 sinks closer to other cluster.
+ Out of 16 sinks, 1 sinks closer to other cluster.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
-[INFO CTS-0035]  Number of sinks covered: 322.
-[INFO CTS-0018]     Created 311 clock buffers.
-[INFO CTS-0012]     Minimum number of buffers in the clock path: 21.
-[INFO CTS-0013]     Maximum number of buffers in the clock path: 22.
-[INFO CTS-0015]     Created 311 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 2:1, 4:2, 7:5, 8:8, 9:5, 10:9, 11:37, 12:8, 14:3, 15:2, 16:1, 19:2, 20:87..
+[INFO CTS-0035]  Number of sinks covered: 279.
+[INFO CTS-0018]     Created 235 clock buffers.
+[INFO CTS-0012]     Minimum number of buffers in the clock path: 19.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 20.
+[INFO CTS-0015]     Created 235 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 2:1, 6:5, 7:3, 8:16, 9:5, 10:1, 11:1, 12:8, 14:2, 15:1, 19:1, 20:3, 21:36, 30:45..
 [INFO CTS-0017]     Max level of the clock tree: 5.
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 2475
@@ -289,11 +290,11 @@ Path Type: max
            6.37   data required time
           -1.66   data arrival time
 ---------------------------------------------------------
-           4.70   slack (MET)
+           4.72   slack (MET)
 
 
 Startpoint: inst_2_1 (rising edge-triggered flip-flop clocked by clk)
-Endpoint: inst_3_1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: inst_1_1 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
 Path Type: max
 
@@ -337,7 +338,6 @@ Path Type: max
    0.21    1.63 ^ inst_2_1/e_out (array_tile)
    0.00    1.63 ^ inst_3_1/w_in (array_tile)
            1.63   data arrival time
-
    5.00    5.00   clock clk (rise edge)
    0.00    5.00   clock source latency
    0.00    5.00 ^ clk (in)
@@ -379,5 +379,3 @@ Path Type: max
           -1.63   data arrival time
 ---------------------------------------------------------
            4.59   slack (MET)
-
-

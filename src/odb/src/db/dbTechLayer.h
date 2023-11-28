@@ -98,6 +98,7 @@ class _dbTechLayer : public _dbObject
  public:
   _dbTechLayer(_dbDatabase*, const _dbTechLayer& r);
   _dbTechLayer(_dbDatabase*);
+
   ~_dbTechLayer();
 
   bool operator==(const _dbTechLayer& rhs) const;

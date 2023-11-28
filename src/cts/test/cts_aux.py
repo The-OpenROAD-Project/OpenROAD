@@ -65,7 +65,7 @@ def clock_tree_synthesis(design, *,
     parms.setApplyNDR(apply_ndr)
     
     if is_pos_int(sink_clustering_size):
-        parms.setSizeSinkClustering(sink_clustering_size)
+        parms.setSinkClusteringSize(sink_clustering_size)
 
     if is_pos_float(sink_clustering_max_diameter):
         parms.setMaxDiameter(sink_clustering_max_diameter)

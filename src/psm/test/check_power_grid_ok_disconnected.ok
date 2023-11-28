@@ -1,0 +1,38 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 135 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0222] Reading LEF file: Nangate45_data/fakeram45_64x32.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45_data/fakeram45_64x32.lef
+[INFO ODB-0128] Design: RocketTile
+[INFO ODB-0130]     Created 269 pins.
+[INFO ODB-0131]     Created 547 components and 1304 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 547 connections.
+[INFO ODB-0133]     Created 269 nets and 0 connections.
+[WARNING PSM-0016] Voltage pad location (VSRC) file not specified, defaulting pad location to checkerboard pattern on core area.
+[WARNING PSM-0017] X direction bump pitch is not specified, defaulting to 140um.
+[WARNING PSM-0018] Y direction bump pitch is not specified, defaulting to 140um.
+[WARNING PSM-0065] VSRC location not specified, using default checkerboard pattern with one VDD every size bumps in x-direction and one in two bumps in the y-direction
+[INFO PSM-0076] Setting metal node density to be standard cell height times 5.
+[WARNING PSM-0030] VSRC location at (100.035um, 100.100um) and size 10.000um, is not located on an existing power stripe node. Moving to closest node at (75.620um, 83.000um).
+[INFO PSM-0031] Number of PDN nodes on net VDD = 2121.
+[INFO PSM-0064] Number of voltage sources = 1.
+[INFO PSM-0040] All PDN stripes on net VDD are connected.
+[INFO PSM-0022] Using 1.100V for VDD
+[WARNING PSM-0016] Voltage pad location (VSRC) file not specified, defaulting pad location to checkerboard pattern on core area.
+[WARNING PSM-0017] X direction bump pitch is not specified, defaulting to 140um.
+[WARNING PSM-0018] Y direction bump pitch is not specified, defaulting to 140um.
+[WARNING PSM-0065] VSRC location not specified, using default checkerboard pattern with one VDD every size bumps in x-direction and one in two bumps in the y-direction
+[INFO PSM-0076] Setting metal node density to be standard cell height times 5.
+[WARNING PSM-0030] VSRC location at (100.035um, 100.100um) and size 10.000um, is not located on an existing power stripe node. Moving to closest node at (75.620um, 83.000um).
+[INFO PSM-0031] Number of PDN nodes on net VDD = 2121.
+[INFO PSM-0064] Number of voltage sources = 1.
+[INFO PSM-0040] All PDN stripes on net VDD are connected.
+########## IR report #################
+Corner: default
+Worstcase voltage: 1.10e+00 V
+Average IR drop  : 5.55e-14 V
+Worstcase IR drop: 1.58e-13 V
+######################################

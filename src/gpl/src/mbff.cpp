@@ -44,6 +44,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "graphics.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
@@ -83,6 +84,40 @@ struct Path
   int end_point;
 };
 
+// Get the function for a port.  If the port has no function then check
+// the parent bus/bundle, if any.  This covers:
+//    bundle (QN) {
+//      members (QN0, QN1, QN2, QN3);
+//      function : "IQN";
+static sta::FuncExpr* getFunction(sta::LibertyPort* port)
+{
+  sta::FuncExpr* function = port->function();
+  if (function) {
+    return function;
+  }
+
+  // There is no way to go from a bit to the containing bus/bundle
+  // so we have to walk all the ports of the cell.
+  sta::LibertyCellPortIterator port_iter(port->libertyCell());
+  while (port_iter.hasNext()) {
+    sta::LibertyPort* next_port = port_iter.next();
+    function = next_port->function();
+    if (!function) {
+      continue;
+    }
+    if (next_port->hasMembers()) {
+      std::unique_ptr<sta::ConcretePortMemberIterator> mem_iter(
+          next_port->memberIterator());
+      while (mem_iter->hasNext()) {
+        sta::ConcretePort* mem_port = mem_iter->next();
+        if (mem_port == port) {
+          return function;
+        }
+      }
+    }
+  }
+  return nullptr;
+}
 // check if a flop or single-bit in tray is inverting
 bool MBFF::IsInverting(odb::dbInst* inst)
 {
@@ -100,7 +135,7 @@ bool MBFF::IsInverting(odb::dbInst* inst)
       if (IsQPin(iterm)) {
         auto pin = network_->dbToSta(iterm);
         auto port = network_->libertyPort(pin);
-        non_invert_func_ = port->function();
+        non_invert_func_ = getFunction(port);
       }
     }
     return false;
@@ -110,7 +145,7 @@ bool MBFF::IsInverting(odb::dbInst* inst)
     if (IsQPin(iterm)) {
       auto pin = network_->dbToSta(iterm);
       auto port = network_->libertyPort(pin);
-      if (sta::FuncExpr::equiv(non_invert_func_, port->function())) {
+      if (sta::FuncExpr::equiv(non_invert_func_, getFunction(port))) {
         return false;
       }
     }
@@ -155,6 +190,27 @@ bool MBFF::HasReset(odb::dbInst* inst)
   return false;
 }
 
+bool MBFF::ClockOn(odb::dbInst* inst)
+{
+  sta::Cell* cell = network_->dbToSta(inst->getMaster());
+  if (cell == nullptr) {
+    return false;
+  }
+  sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  if (lib_cell == nullptr) {
+    return false;
+  }
+  for (auto seq : lib_cell->sequentials()) {
+    sta::FuncExpr* left = seq->clock()->left();
+    sta::FuncExpr* right = seq->clock()->right();
+    // !CLK
+    if (left && !right) {
+      return false;
+    }
+  }
+  return true;
+}
+
 int MBFF::GetBitMask(odb::dbInst* inst)
 {
   const int cnt_d = GetNumD(inst);
@@ -175,6 +231,10 @@ int MBFF::GetBitMask(odb::dbInst* inst)
   // turn 3rd bit on
   if (HasReset(inst)) {
     ret |= (1 << 2);
+  }
+  // turn 4th bit on
+  if (ClockOn(inst)) {
+    ret |= (1 << 3);
   }
   return ret;
 }
@@ -208,11 +268,11 @@ bool MBFF::IsDPin(odb::dbITerm* iterm)
   }
 
   for (auto seq : lib_cell->sequentials()) {
-    if (seq->clear() && sta::FuncExpr::equiv(seq->clear(), port->function())) {
+    if (seq->clear() && sta::FuncExpr::equiv(seq->clear(), getFunction(port))) {
       return false;
     }
     if (seq->preset()
-        && sta::FuncExpr::equiv(seq->preset(), port->function())) {
+        && sta::FuncExpr::equiv(seq->preset(), getFunction(port))) {
       return false;
     }
   }
@@ -332,7 +392,7 @@ MBFF::DataToOutputsMap MBFF::GetPinMapping(odb::dbInst* tray)
   // all output pins are Q pins
   while (port_itr.hasNext()) {
     sta::LibertyPort* port = port_itr.next();
-    if (network_->staToDb(port) == nullptr) {
+    if (port->isBus() || port->isBundle()) {
       continue;
     }
     if (port->isClock()) {
@@ -343,7 +403,8 @@ MBFF::DataToOutputsMap MBFF::GetPinMapping(odb::dbInst* tray)
     }
     if (port->direction()->isOutput()) {
       if (!q_pins.empty()) {
-        if (sta::FuncExpr::equiv(q_pins.back()->function(), port->function())) {
+        if (sta::FuncExpr::equiv(getFunction(q_pins.back()),
+                                 getFunction(port))) {
           q_pins.push_back(port);
         } else {
           qn_pins.push_back(port);
@@ -363,17 +424,18 @@ MBFF::DataToOutputsMap MBFF::GetPinMapping(odb::dbInst* tray)
 
 void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
                                 const std::vector<Tray>& trays,
-                                std::vector<std::pair<int, int>>& mapping,
-                                int bitmask)
+                                const std::vector<std::pair<int, int>>& mapping,
+                                const int bitmask)
 {
   const int num_flops = static_cast<int>(flops.size());
+  std::vector<std::pair<int, int>> new_mapping(mapping);
 
   std::map<int, int> old_to_new_idx;
   std::vector<odb::dbInst*> tray_inst;
   for (int i = 0; i < num_flops; i++) {
-    const int tray_idx = mapping[i].first;
+    const int tray_idx = new_mapping[i].first;
     if (static_cast<int>(trays[tray_idx].slots.size()) == 1) {
-      mapping[i].first = std::numeric_limits<int>::max();
+      new_mapping[i].first = std::numeric_limits<int>::max();
       continue;
     }
     if (!old_to_new_idx.count(tray_idx)) {
@@ -396,19 +458,19 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
       new_tray->setPlacementStatus(odb::dbPlacementStatus::PLACED);
       tray_inst.push_back(new_tray);
     }
-    mapping[i].first = old_to_new_idx[tray_idx];
+    new_mapping[i].first = old_to_new_idx[tray_idx];
   }
 
   odb::dbNet* clk_net = nullptr;
   for (int i = 0; i < num_flops; i++) {
     // single bit flop?
-    if (mapping[i].first == std::numeric_limits<int>::max()) {
+    if (new_mapping[i].first == std::numeric_limits<int>::max()) {
       continue;
     }
 
-    const int tray_idx = mapping[i].first;
+    const int tray_idx = new_mapping[i].first;
     const int tray_sz_idx = GetBitIdx(GetNumD(tray_inst[tray_idx]));
-    const int slot_idx = mapping[i].second;
+    const int slot_idx = new_mapping[i].second;
 
     // find the new port names
     sta::LibertyPort* d_pin = nullptr;
@@ -442,7 +504,8 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
         if (bitmask) {
           sta::Pin* pin = network_->dbToSta(iterm);
           sta::LibertyPort* iterm_port = network_->libertyPort(pin);
-          if (sta::FuncExpr::equiv(q_pin->function(), iterm_port->function())) {
+          if (sta::FuncExpr::equiv(getFunction(q_pin),
+                                   getFunction(iterm_port))) {
             tray_inst[tray_idx]->findITerm(q_pin->name())->connect(net);
           } else {
             tray_inst[tray_idx]->findITerm(qn_pin->name())->connect(net);
@@ -461,14 +524,14 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
   // all FFs in flops have the same block clock
   std::vector<bool> isConnected(static_cast<int>(tray_inst.size()));
   for (int i = 0; i < num_flops; i++) {
-    if (mapping[i].first != std::numeric_limits<int>::max()) {
-      if (!isConnected[mapping[i].first] && clk_net != nullptr) {
-        for (auto iterm : tray_inst[mapping[i].first]->getITerms()) {
+    if (new_mapping[i].first != std::numeric_limits<int>::max()) {
+      if (!isConnected[new_mapping[i].first] && clk_net != nullptr) {
+        for (auto iterm : tray_inst[new_mapping[i].first]->getITerms()) {
           if (IsClockPin(iterm)) {
             iterm->connect(clk_net);
           }
         }
-        isConnected[mapping[i].first] = true;
+        isConnected[new_mapping[i].first] = true;
       }
       odb::dbInst::destroy(insts_[flops[i].idx]);
     }
@@ -1396,6 +1459,28 @@ double MBFF::doit(const std::vector<Flop>& flops,
         pointsets[t], all_final_trays[t], all_mappings[t], bitmask);
   }
 
+  if (graphics_) {
+    Graphics::LineSegs segs;
+    for (int t = 0; t < num_pointsets; t++) {
+      const int num_flops = pointsets[t].size();
+      for (int i = 0; i < num_flops; i++) {
+        const int tray_idx = all_mappings[t][i].first;
+        if (tray_idx == std::numeric_limits<int>::max()) {
+          continue;
+        }
+        const Point tray_pt = all_final_trays[t][tray_idx].pt;
+        const odb::Point tray_pt_dbu(multiplier_ * tray_pt.x,
+                                     multiplier_ * tray_pt.y);
+        const Point flop_pt = pointsets[t][i].pt;
+        const odb::Point flop_pt_dbu(multiplier_ * flop_pt.x,
+                                     multiplier_ * flop_pt.y);
+        segs.emplace_back(flop_pt_dbu, tray_pt_dbu);
+      }
+    }
+
+    graphics_->mbff_mapping(segs);
+  }
+
   return ans;
 }
 
@@ -1419,7 +1504,7 @@ void MBFF::SetRatios(int bitmask)
     ratios_.push_back(std::numeric_limits<float>::max());
     if (best_master_[bitmask][i] != nullptr) {
       const int slot_cnt = GetBitCnt(i);
-      const int rows = GetRows(i, bitmask);
+      const int rows = GetRows(slot_cnt, bitmask);
       const int cols = slot_cnt / rows;
       ratios_[i]
           = (tray_width_[bitmask][i] / (width_ * (static_cast<float>(cols))));
@@ -1648,19 +1733,21 @@ MBFF::MBFF(odb::dbDatabase* db,
            utl::Logger* log,
            int threads,
            int knn,
-           int multistart)
+           int multistart,
+           bool debug_graphics)
+    : db_(db),
+      block_(db_->getChip()->getBlock()),
+      sta_(sta),
+      network_(sta_->getDbNetwork()),
+      log_(log),
+      num_threads_(threads),
+      multistart_(multistart),
+      knn_(knn),
+      multiplier_(block_->getDbUnitsPerMicron())
 {
-  non_invert_func_ = nullptr;
-  num_sizes_ = 7;
-  db_ = db;
-  block_ = db_->getChip()->getBlock();
-  sta_ = sta;
-  network_ = sta_->getDbNetwork();
-  log_ = log;
-  multiplier_ = static_cast<double>(block_->getDbUnitsPerMicron());
-  num_threads_ = threads;
-  knn_ = knn;
-  multistart_ = multistart;
+  if (debug_graphics && Graphics::guiActive()) {
+    graphics_ = std::make_unique<Graphics>(log_);
+  }
 }
 
 MBFF::~MBFF() = default;

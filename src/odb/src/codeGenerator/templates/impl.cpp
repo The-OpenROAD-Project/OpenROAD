@@ -59,12 +59,12 @@ namespace odb {
           {% for component in innerField.components %}
             {% if 'no-cmp' not in innerField.flags %}
               {% if innerField.table %}
-                if({{field.name}}->{{component}}!=rhs.{{field.name}}->{{component}})
+                if ({{field.name}}->{{component}}!=rhs.{{field.name}}->{{component}}) {
               {% else %}
-                if({{field.name}}.{{component}}!=rhs.{{field.name}}.{{component}})
+                if ({{field.name}}.{{component}}!=rhs.{{field.name}}.{{component}}) {
               {% endif %}
-                return false;
-    
+                  return false;
+                }  
             {% endif %}
           {% endfor %}
         {% endfor %}
@@ -72,11 +72,12 @@ namespace odb {
         {% for component in field.components %}
           {% if 'no-cmp' not in field.flags %}
             {% if field.table %}
-              if(*{{component}}!=*rhs.{{component}})
+              if (*{{component}}!=*rhs.{{component}}) {
             {% else %}
-              if({{component}}!=rhs.{{component}})
+              if ({{component}}!=rhs.{{component}}) {
             {% endif %}
                 return false;
+              }
           {% endif %}
         {% endfor %}
       {% endif %}
@@ -94,16 +95,18 @@ namespace odb {
         {% for innerField in klass.structs[0].fields %}
           {% for component in innerField.components %}
             {% if 'cmpgt' in innerField.flags %}
-              if({{field.name}}.{{component}}>=rhs.{{field.name}}.{{component}})
+              if ({{field.name}}.{{component}}>=rhs.{{field.name}}.{{component}}) {
                 return false;
+              }
             {% endif %}
           {% endfor %}
         {% endfor %}
       {% else %}
         {% for component in field.components %}
           {% if 'cmpgt' in field.flags %}
-            if({{component}}>=rhs.{{component}})
+            if ({{component}}>=rhs.{{component}}) {
               return false;
+            }
           {% endif %}
         {% endfor %}
       {% endif %}
@@ -226,9 +229,12 @@ namespace odb {
       {% else %}
         {% if 'no-serial' not in field.flags %}
           {% if 'schema' in field %}
-          if (obj.getDatabase()->isSchema({{field.schema}}))
+          if (obj.getDatabase()->isSchema({{field.schema}})) {
           {% endif %}
           stream >> {% if field.table %}*{% endif %}obj.{{field.name}};
+          {% if 'schema' in field %}
+          }
+          {% endif %}
         {% endif %}
       {% endif %}
     {% endfor %}
@@ -252,9 +258,12 @@ namespace odb {
       {% else %}
         {% if 'no-serial' not in field.flags %}
           {% if 'schema' in field %}
-          if (obj.getDatabase()->isSchema({{field.schema}}))
+          if (obj.getDatabase()->isSchema({{field.schema}})) {
           {% endif %}
           stream << {% if field.table %}*{% endif %}obj.{{field.name}};
+          {% if 'schema' in field %}
+          }
+          {% endif %}
         {% endif %}
       {% endif %}
     {% endfor %}
@@ -282,20 +291,23 @@ namespace odb {
   }
   {% endif %}
 
-  _{{klass.name}}::~_{{klass.name}}()
-  {
-    {% for field in klass.fields %}
-      {% if field.name == '_name' and 'no-destruct' not in field.flags %}
-        if(_name)
-          free((void*) _name);
-      {% endif %}
-      {% if field.table %}
-        delete {{field.name}};
-      {% endif %}
-    {% endfor %}
-    //User Code Begin Destructor
-    //User Code End Destructor
-  }
+  {% if klass.needs_non_default_destructor %}
+    _{{klass.name}}::~_{{klass.name}}()
+    {
+      {% for field in klass.fields %}
+        {% if field.name == '_name' and 'no-destruct' not in field.flags %}
+          if (_name) {
+            free((void*) _name);
+          }
+        {% endif %}
+        {% if field.table %}
+          delete {{field.name}};
+        {% endif %}
+      {% endfor %}
+      //User Code Begin Destructor
+      //User Code End Destructor
+    }
+  {% endif %}
 
   //User Code Begin PrivateMethods
   //User Code End PrivateMethods
@@ -348,8 +360,9 @@ namespace odb {
         {
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
           {% if field.isRef %}
-            if(obj->{{field.name}} == 0)
+            if(obj->{{field.name}} == 0) {
               return nullptr;
+            }
             _{{field.parent}}* par = (_{{field.parent}}*) obj->getOwner();
             return ({{field.refType}}) par->{{field.refTable}}->getPtr(obj->{{field.name}});
           {% elif field.isHashTable %}
@@ -393,5 +406,5 @@ namespace odb {
 
   //User Code Begin {{klass.name}}PublicMethods
   //User Code End {{klass.name}}PublicMethods
-}
+} // namespace odb
 // Generator Code End Cpp

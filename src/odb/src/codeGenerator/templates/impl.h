@@ -90,7 +90,12 @@ namespace odb {
         
     _{{klass.name}}(_dbDatabase*, const _{{klass.name}}& r);
     _{{klass.name}}(_dbDatabase*);
-    ~_{{klass.name}}();
+
+    {% if klass.needs_non_default_destructor %}
+      ~_{{klass.name}}();
+    {% else %}
+      ~_{{klass.name}}() = default;
+    {% endif %}
 
     bool operator==(const _{{klass.name}}& rhs) const;
     bool operator!=(const _{{klass.name}}& rhs) const { return !operator==(rhs); }
@@ -121,5 +126,5 @@ dbIStream& operator>>(dbIStream& stream, _{{klass.name}}& obj);
 dbOStream& operator<<(dbOStream& stream, const _{{klass.name}}& obj);
 // User Code Begin General
 // User Code End General
-}
+} // namespace odb
 //Generator Code End Header

@@ -34,14 +34,16 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0029]  Sinks will be clustered in groups of up to 20 and with maximum cluster diameter of 100.0 um.
 [INFO CTS-0030]  Number of static layers: 0.
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
-[INFO CTS-0019]  Total number of sinks after clustering: 322.
-[INFO CTS-0024]  Normalized sink region: [(1.43857, 2.41643), (661.439, 704.276)].
+[INFO CTS-0204] A clustering solution was found from clustering size of 30 and clustering diameter of 100.
+[INFO CTS-0205] Better solution may be possible if either -sink_clustering_size, -sink_clustering_max_diameter, or both options are omitted to enable automatic clustering.
+[INFO CTS-0019]  Total number of sinks after clustering: 279.
+[INFO CTS-0024]  Normalized sink region: [(1.43857, 3.42643), (661.439, 704.276)].
 [INFO CTS-0025]     Width:  660.0000.
-[INFO CTS-0026]     Height: 701.8593.
+[INFO CTS-0026]     Height: 700.8493.
  Level 1
     Direction: Vertical
-    Sinks per sub-region: 161
-    Sub-region size: 660.0000 X 350.9296
+    Sinks per sub-region: 140
+    Sub-region size: 660.0000 X 350.4246
 [INFO CTS-0034]     Segment length (rounded): 176.
     Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
     Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
@@ -72,8 +74,8 @@ TritonCTS forced slew degradation on these wires.
     Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
  Level 2
     Direction: Horizontal
-    Sinks per sub-region: 81
-    Sub-region size: 330.0000 X 350.9296
+    Sinks per sub-region: 70
+    Sub-region size: 330.0000 X 350.4246
 [INFO CTS-0034]     Segment length (rounded): 166.
     Key: 206 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
     Key: 104 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 9
@@ -103,8 +105,8 @@ TritonCTS forced slew degradation on these wires.
     Key: 94 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 6 delay: 1
  Level 3
     Direction: Vertical
-    Sinks per sub-region: 41
-    Sub-region size: 330.0000 X 175.4648
+    Sinks per sub-region: 35
+    Sub-region size: 330.0000 X 175.2123
 [INFO CTS-0034]     Segment length (rounded): 88.
     Key: 104 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 9
       location: 0.25 buffer: BUF_X4
@@ -122,8 +124,8 @@ TritonCTS forced slew degradation on these wires.
     Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
  Level 4
     Direction: Horizontal
-    Sinks per sub-region: 21
-    Sub-region size: 165.0000 X 175.4648
+    Sinks per sub-region: 18
+    Sub-region size: 165.0000 X 175.2123
 [INFO CTS-0034]     Segment length (rounded): 82.
     Key: 206 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
     Key: 104 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 9
@@ -141,8 +143,8 @@ TritonCTS forced slew degradation on these wires.
     Key: 0 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 2 delay: 1
  Level 5
     Direction: Vertical
-    Sinks per sub-region: 11
-    Sub-region size: 165.0000 X 87.7324
+    Sinks per sub-region: 9
+    Sub-region size: 165.0000 X 87.6062
 [INFO CTS-0034]     Segment length (rounded): 44.
     Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
     Key: 206 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
@@ -153,12 +155,12 @@ TritonCTS forced slew degradation on these wires.
     Key: 38 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 4 delay: 1
  Out of 14 sinks, 1 sinks closer to other cluster.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
-[INFO CTS-0035]  Number of sinks covered: 322.
-[INFO CTS-0018]     Created 273 clock buffers.
+[INFO CTS-0035]  Number of sinks covered: 279.
+[INFO CTS-0018]     Created 231 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 18.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 19.
-[INFO CTS-0015]     Created 273 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 2:1, 4:2, 6:1, 7:2, 8:8, 9:4, 10:11, 11:37, 12:12, 13:1, 15:1, 16:1, 19:2, 20:87..
+[INFO CTS-0015]     Created 231 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 2:1, 5:1, 6:1, 7:6, 8:11, 9:7, 10:8, 11:3, 12:2, 14:2, 15:1, 19:1, 20:3, 21:36, 30:45..
 [INFO CTS-0017]     Max level of the clock tree: 5.
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 2475
@@ -201,33 +203,29 @@ Path Type: max
    0.06    0.27 ^ wire3/Z (BUF_X32)
    0.06    0.34 ^ wire2/Z (BUF_X32)
    0.06    0.40 ^ wire1/Z (BUF_X32)
-   0.06    0.47 ^ clkbuf_0_clk/Z (BUF_X4)
-   0.03    0.50 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
-   0.03    0.52 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
-   0.03    0.56 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
-   0.03    0.59 ^ clkbuf_1_0_3_clk/Z (BUF_X4)
-   0.04    0.63 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
-   0.04    0.67 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
-   0.03    0.70 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
-   0.03    0.73 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
-   0.03    0.75 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
-   0.04    0.79 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
-   0.05    0.84 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
-   0.04    0.88 ^ clkbuf_3_0_1_clk/Z (BUF_X4)
-   0.04    0.92 ^ clkbuf_3_0_2_clk/Z (BUF_X4)
-   0.04    0.96 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
-   0.03    0.99 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
-   0.03    1.02 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
-   0.02    1.05 ^ clkbuf_5_0_0_clk/Z (BUF_X4)
-   0.03    1.07 ^ wire11/Z (BUF_X8)
-   0.05    1.13 ^ max_length10/Z (BUF_X8)
-   0.05    1.18 ^ wire9/Z (BUF_X8)
-   0.14    1.32 ^ max_length8/Z (BUF_X8)
-   0.03    1.35 ^ inst_1_1/clk (array_tile)
-   0.21    1.56 ^ inst_1_1/e_out (array_tile)
-   0.00    1.56 ^ inst_2_1/w_in (array_tile)
-           1.56   data arrival time
-
+   0.06    0.46 ^ clkbuf_0_clk/Z (BUF_X4)
+   0.04    0.50 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
+   0.04    0.54 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
+   0.04    0.58 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
+   0.04    0.62 ^ clkbuf_1_0_3_clk/Z (BUF_X4)
+   0.04    0.66 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
+   0.04    0.69 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
+   0.04    0.73 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
+   0.04    0.77 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.04    0.80 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
+   0.03    0.83 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
+   0.03    0.86 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
+   0.04    0.90 ^ clkbuf_3_0_1_clk/Z (BUF_X4)
+   0.04    0.94 ^ clkbuf_3_0_2_clk/Z (BUF_X4)
+   0.03    0.97 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
+   0.03    1.01 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
+   0.03    1.04 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
+   0.04    1.08 ^ clkbuf_5_0_0_clk/Z (BUF_X4)
+   0.03    1.11 ^ max_length10/Z (BUF_X8)
+   0.04    1.15 ^ inst_1_1/clk (array_tile)
+   0.21    1.36 ^ inst_1_1/e_out (array_tile)
+   0.00    1.36 ^ inst_2_1/w_in (array_tile)
+           1.36   data arrival time
    5.00    5.00   clock clk (rise edge)
    0.00    5.00   clock source latency
    0.00    5.00 ^ clk (in)
