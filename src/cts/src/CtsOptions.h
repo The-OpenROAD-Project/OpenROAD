@@ -230,19 +230,8 @@ class CtsOptions
   bool isRootBufferInferred() const { return rootBufferInferred_; }
   void setSinkBufferMaxCapDerate(float derate)
   {
-    if (derate > 1.0) {
-      sinkBufferMaxCapDerate_ = 1.0;
-      sinkBufferMaxCapDerateSet_ = true;
-    } else if (derate > 0 && derate < 0.001) {
-      sinkBufferMaxCapDerate_ = 0.001;
-      sinkBufferMaxCapDerateSet_ = true;
-    } else if (derate < 0) {
-      sinkBufferMaxCapDerate_ = sinkBufferMaxCapDerateDefault_;
-      sinkBufferMaxCapDerateSet_ = false;
-    } else {
-      sinkBufferMaxCapDerate_ = derate;
-      sinkBufferMaxCapDerateSet_ = true;
-    }
+    sinkBufferMaxCapDerate_ = derate;
+    sinkBufferMaxCapDerateSet_ = true;
   }
   float getSinkBufferMaxCapDerate() const { return sinkBufferMaxCapDerate_; }
   bool isSinkBufferMaxCapDerateSet() const

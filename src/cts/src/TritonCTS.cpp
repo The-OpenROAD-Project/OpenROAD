@@ -109,6 +109,12 @@ void TritonCTS::addBuilder(TreeBuilder* builder)
 
 void TritonCTS::setupCharacterization()
 {
+  // Finalize root/sink buffers
+  std::string rootBuffer = selectRootBuffer(rootBuffers_);
+  options_->setRootBuffer(rootBuffer);
+  std::string sinkBuffer = selectSinkBuffer(sinkBuffers_);
+  options_->setSinkBuffer(sinkBuffer);
+
   // A new characteriztion is always created.
   techChar_->create();
 
@@ -512,8 +518,7 @@ void TritonCTS::setRootBuffer(const char* buffers)
   std::istream_iterator<std::string> begin(ss);
   std::istream_iterator<std::string> end;
   std::vector<std::string> bufferList(begin, end);
-  std::string rootBuffer = selectRootBuffer(bufferList);
-  options_->setRootBuffer(rootBuffer);
+  rootBuffers_ = bufferList;
 }
 
 std::string TritonCTS::selectRootBuffer(std::vector<std::string>& buffers)
@@ -555,8 +560,7 @@ void TritonCTS::setSinkBuffer(const char* buffers)
   std::istream_iterator<std::string> begin(ss);
   std::istream_iterator<std::string> end;
   std::vector<std::string> bufferList(begin, end);
-  std::string sinkBuffer = selectSinkBuffer(bufferList);
-  options_->setSinkBuffer(sinkBuffer);
+  sinkBuffers_ = bufferList;
 }
 
 std::string TritonCTS::selectSinkBuffer(std::vector<std::string>& buffers)
@@ -621,8 +625,14 @@ std::string TritonCTS::selectBestMaxCapBuffer(
     float maxCap = 0.0;
     bool maxCapExists = false;
     out->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExists);
+    // clang-format off
+    debugPrint(logger_, CTS, "buffering", 1, "{} has cap limit:{}"
+               " vs. total cap:{}, derate:{}", name,
+               maxCap * options_->getSinkBufferMaxCapDerate(), totalCap,
+               options_->getSinkBufferMaxCapDerate());
+    // clang-format on
     if (maxCapExists
-        && (maxCap * options_->getSinkBufferMaxCapDerate() > totalCap)
+        && ((maxCap * options_->getSinkBufferMaxCapDerate()) > totalCap)
         && area < bestArea) {
       bestBuf = name;
       bestArea = area;

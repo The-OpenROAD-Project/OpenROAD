@@ -693,12 +693,7 @@ void TechChar::trimSortBufferList(std::vector<std::string>& buffers)
     std::string rootBuf = options_->getRootBuffer();
     float sinkCap = getMaxCapLimit(sinkBuf);
     float rootCap = getMaxCapLimit(rootBuf);
-    float lowCap = sinkCap;
-    float highCap = rootCap;
-    if (sinkCap > rootCap) {
-      lowCap = rootCap;
-      highCap = sinkCap;
-    }
+    auto [lowCap, highCap] = std::minmax(rootCap, sinkCap);
 
     std::vector<std::string>::iterator it = buffers.begin();
     while (it != buffers.end()) {
@@ -1332,6 +1327,7 @@ void TechChar::updateBufferTopologies(TechChar::SolutionData& solution)
 
 std::vector<size_t> TechChar::getCurrConfig(const SolutionData& solution)
 {
+  std::stringstream tmp;
   std::vector<size_t> config;
   for (auto inst : solution.instVector) {
     size_t masterID = cellNameToID(inst->getMaster()->getName());
@@ -1339,11 +1335,12 @@ std::vector<size_t> TechChar::getCurrConfig(const SolutionData& solution)
   }
 
   if (logger_->debugCheck(CTS, "tech char", 1)) {
-    std::cout << "currConfig: ";
+    tmp << "currConfig: ";
     for (unsigned i : config) {
-      std::cout << i << " ";
+      tmp << i << " ";
     }
-    std::cout << std::endl;
+    tmp << std::endl;
+    logger_->report(tmp.str());
   }
   return config;
 }
@@ -1359,6 +1356,7 @@ size_t TechChar::cellNameToID(const std::string& masterName)
 std::vector<size_t> TechChar::getNextConfig(
     const std::vector<size_t>& currConfig)
 {
+  std::stringstream tmp;
   size_t currNumber = 0;
   size_t numBuffers = masterNames_.size();
   for (size_t i = 0; i < currConfig.size(); ++i) {
@@ -1378,11 +1376,12 @@ std::vector<size_t> TechChar::getNextConfig(
   } while (!isTopologyMonotonic(nextConfig));
 
   if (logger_->debugCheck(CTS, "tech char", 1)) {
-    std::cout << "nextConfig: ";
+    tmp << "nextConfig: ";
     for (unsigned i : nextConfig) {
-      std::cout << i << " ";
+      tmp << i << " ";
     }
-    std::cout << std::endl;
+    tmp << std::endl;
+    logger_->report(tmp.str());
   }
 
   return nextConfig;
@@ -1696,11 +1695,13 @@ void TechChar::create()
 unsigned TechChar::getBufferingCombo(size_t numBuffers, size_t numNodes)
 {
   // check if this has been computed already
+  std::stringstream tmp;
   std::pair iPair(numBuffers, numNodes);
   auto iter = bufferingComboTable_.find(iPair);
   if (iter != bufferingComboTable_.end()) {
     if (logger_->debugCheck(CTS, "tech char", 1)) {
-      std::cout << "Monotonic entries (hashed): " << iter->second << std::endl;
+      tmp << "Monotonic entries (hashed): " << iter->second << std::endl;
+      logger_->report(tmp.str());
     }
     return iter->second;
   }
@@ -1721,21 +1722,23 @@ unsigned TechChar::getBufferingCombo(size_t numBuffers, size_t numNodes)
   for (const auto& row : matrix) {
     for (size_t val : row) {
       if (logger_->debugCheck(CTS, "tech char", 1)) {
-        std::cout << val << " ";
+        tmp << val << " ";
       }
     }
     if (isTopologyMonotonic(row)) {
       if (logger_->debugCheck(CTS, "tech char", 1)) {
-        std::cout << "monotonic";
+        tmp << "monotonic";
       }
       numMonotonic++;
     }
     if (logger_->debugCheck(CTS, "tech char", 1)) {
-      std::cout << std::endl;
+      tmp << std::endl;
+      logger_->report(tmp.str());
     }
   }
   if (logger_->debugCheck(CTS, "tech char", 1)) {
-    std::cout << "Monotonic entries: " << numMonotonic << std::endl;
+    tmp << "Monotonic entries: " << numMonotonic << std::endl;
+    logger_->report(tmp.str());
   }
 
   // insert new result into hash table

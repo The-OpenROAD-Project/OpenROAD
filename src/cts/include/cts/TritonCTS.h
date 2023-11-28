@@ -179,6 +179,10 @@ class TritonCTS
   unsigned numberOfClocks_ = 0;
   unsigned numClkNets_ = 0;
   unsigned numFixedNets_ = 0;
+
+  // root buffer and sink bufer candidates
+  std::vector<std::string> rootBuffers_;
+  std::vector<std::string> sinkBuffers_;
 };
 
 }  // namespace cts

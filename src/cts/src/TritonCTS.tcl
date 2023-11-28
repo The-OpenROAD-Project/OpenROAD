@@ -189,9 +189,11 @@ proc clock_tree_synthesis { args } {
   }
 
   if { [info exists keys(-sink_buffer_max_cap_derate)] } {
-    cts::set_sink_buffer_max_cap_derate $keys(-sink_buffer_max_cap_derate)
-  } else {
-    cts::set_sink_buffer_max_cap_derate -1.0
+    set derate $keys(-sink_buffer_max_cap_derate)
+    if {[expr {$derate > 1.0 || $derate < 0.0 }]} {
+      utl::error CTS 109 "sink_buffer_max_cap_derate needs to be between 0 and 1.0."
+    }
+    cts::set_sink_buffer_max_cap_derate $derate
   }
 
   cts::set_obstruction_aware [info exists flags(-obstruction_aware)]

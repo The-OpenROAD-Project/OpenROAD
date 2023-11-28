@@ -63,7 +63,7 @@ namespace cts {
 
 using utl::Logger;
 
-struct pairHash
+struct PairHash
 {
   std::size_t operator()(const std::pair<size_t, size_t>& iPair) const
   {
@@ -71,7 +71,7 @@ struct pairHash
   }
 };
 
-struct pairEqual
+struct PairEqual
 {
   bool operator()(const std::pair<size_t, size_t>& p1,
                   const std::pair<size_t, size_t>& p2) const
@@ -352,7 +352,7 @@ class TechChar
 
   std::map<CharKey, std::vector<ResultData>> solutionMap_;
   // keep track of acceptable buffering combinations in topology
-  boost::unordered_map<std::pair<size_t, size_t>, unsigned, pairHash, pairEqual>
+  boost::unordered_map<std::pair<size_t, size_t>, unsigned, PairHash, PairEqual>
       bufferingComboTable_;
 };
 
