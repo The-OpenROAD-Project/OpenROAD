@@ -163,7 +163,7 @@ struct Cell
   bool isHybridParent() const
   {
     dbSite* site = getSite();
-    return site ? site->isHybridParent() : false;
+    return site ? site->hasRowPattern() : false;
   }
 
   dbSite* getSite() const
@@ -223,7 +223,7 @@ class GridInfo
 
   bool isHybrid() const
   {
-    return sites_.size() > 1 || sites_[0].site->isHybridParent();
+    return sites_.size() > 1 || sites_[0].site->hasRowPattern();
   }
   int getSitesTotalHeight() const
   {

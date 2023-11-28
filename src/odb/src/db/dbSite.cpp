@@ -298,11 +298,6 @@ bool dbSite::isHybrid() const
   return site->_flags._is_hybrid != 0;
 }
 
-bool dbSite::isHybridParent() const
-{
-  return isHybrid() && hasRowPattern();
-}
-
 dbSite::RowPattern dbSite::getRowPattern()
 {
   _dbSite* site = (_dbSite*) this;

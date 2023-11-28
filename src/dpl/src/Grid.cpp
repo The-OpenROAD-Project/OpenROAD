@@ -169,7 +169,7 @@ void Opendp::initGridLayersMap()
     db_row->getOrigin(row_base_x, row_base_y);
     dbSite* working_site = db_row->getSite();
     if (row_base_y == min_row_y_coordinate) {
-      if (working_site->isHybridParent()) {
+      if (working_site->hasRowPattern()) {
         for (const auto& [child_site, orient] : working_site->getRowPattern()) {
           if (_hybrid_parent[child_site] != working_site) {
             debugPrint(logger_,
@@ -195,7 +195,7 @@ void Opendp::initGridLayersMap()
     int row_height = working_site->getHeight();
     GridMapKey gmk = getGridMapKey(working_site);
     if (grid_info_map_.find(gmk) == grid_info_map_.end()) {
-      if (working_site->isHybridParent() || !working_site->isHybrid()) {
+      if (working_site->hasRowPattern() || !working_site->isHybrid()) {
         GridInfo newGridInfo = {
             getRowCount(row_height),
             divFloor(core_.dx(), db_row->getSite()->getWidth()),

@@ -5247,14 +5247,9 @@ class dbSite : public dbObject
   bool hasRowPattern() const;
 
   ///
-  /// Returns true if this cell is a hybrid cell
+  /// Is this site in a row pattern or does it have a row pattern
   ///
   bool isHybrid() const;
-
-  ///
-  /// Returns true if this cell is a hybrid parent
-  ///
-  bool isHybridParent() const;
 
   ///
   /// returns the row pattern if available
