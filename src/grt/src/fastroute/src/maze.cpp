@@ -801,7 +801,7 @@ void FastRouteCore::setupHeap(const int netID,
         if (cur < num_terminals) {  // cur node isn't a Steiner node
           continue;
         }
-        const int nbrcnt = treenodes[cur].nbrCount;
+        const int nbrcnt = treenodes[cur].nbr_count;
         for (int i = 0; i < nbrcnt; i++) {
           const int nbr = treenodes[cur].nbr[i];
           const int edge = treenodes[cur].edge[i];
@@ -882,7 +882,7 @@ void FastRouteCore::setupHeap(const int netID,
         if (cur < num_terminals) {  // cur node isn't a Steiner node
           continue;
         }
-        const int nbrcnt = treenodes[cur].nbrCount;
+        const int nbrcnt = treenodes[cur].nbr_count;
         for (int i = 0; i < nbrcnt; i++) {
           const int nbr = treenodes[cur].nbr[i];
           const int edge = treenodes[cur].edge[i];

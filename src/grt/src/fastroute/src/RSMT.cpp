@@ -140,8 +140,9 @@ void FastRouteCore::copyStTree(const int ind, const Tree& rsmt)
       logger_->error(GRT, 188, "Invalid number of node neighbors.");
   }
   // Copy num neighbors
-  for (int i = 0; i < numnodes; i++)
-    treenodes[i].nbrCount = nbrcnt[i];
+  for (int i = 0; i < numnodes; i++) {
+    treenodes[i].nbr_count = nbrcnt[i];
+  }
 
   if (edgecnt != numnodes - 1) {
     logger_->error(
