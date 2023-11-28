@@ -598,10 +598,6 @@ pair<int, GridInfo> Opendp::getRowInfo(const Cell* cell) const
 
 GridMapKey Opendp::getGridMapKey(const dbSite* site) const
 {
-  static int cnt = 0;
-  if (++cnt == 971549 /*1165151*/) {
-    ++cnt;
-  }
   auto grid_itr = site_to_grid_key_.find(site);
   if (grid_itr == site_to_grid_key_.end()) {
     logger_->error(
