@@ -426,14 +426,6 @@ std::set<dbSite*> InitFloorplan::getSites() const
     // check if the site height is a multiple of the smallest site height
     if (site->getHeight() % min_site_height != 0) {
       if (site->isHybrid()) {
-        logger_->warn(IFP,
-                      46,
-                      "Site {} is a hybrid row, but "
-                      "its height {} is not a "
-                      "multiple of the smallest site height {}.",
-                      site->getName(),
-                      site->getHeight(),
-                      min_site_height);
         continue;
       }
       logger_->error(IFP,
