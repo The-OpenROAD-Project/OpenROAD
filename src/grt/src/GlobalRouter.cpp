@@ -1839,7 +1839,8 @@ bool GlobalRouter::isCoveringPin(Net* net, GSegment& segment)
     int seg_top_layer = std::max(segment.final_layer, segment.init_layer);
     int seg_x = segment.final_x;
     int seg_y = segment.final_y;
-    if (pin.getConnectionLayer() == seg_top_layer
+    if ((pin.getConnectionLayer() == seg_top_layer
+         || pin.getConnectionLayer() > max_routing_layer_)
         && pin.getOnGridPosition() == odb::Point(seg_x, seg_y)
         && (pin.isPort() || pin.isConnectedToPadOrMacro())) {
       return true;
@@ -1901,18 +1902,7 @@ void GlobalRouter::connectTopLevelPins(odb::dbNet* db_net, GRoute& route)
   for (Pin& pin : pins) {
     if (pin.getConnectionLayer() > max_routing_layer_) {
       odb::Point pin_pos = pin.getOnGridPosition();
-
-      int closest_layer = std::numeric_limits<int>::min();
-      for (size_t i = 0; i < route.size(); i++) {
-        if (((pin_pos.x() == route[i].init_x && pin_pos.y() == route[i].init_y)
-             || (pin_pos.x() == route[i].final_x
-                 && pin_pos.y() == route[i].final_y))) {
-          closest_layer = std::max(route[i].init_layer, closest_layer);
-          closest_layer = std::max(route[i].final_layer, closest_layer);
-        }
-      }
-
-      for (int l = closest_layer; l < pin.getConnectionLayer(); l++) {
+      for (int l = max_routing_layer_; l < pin.getConnectionLayer(); l++) {
         GSegment segment = GSegment(
             pin_pos.x(), pin_pos.y(), l, pin_pos.x(), pin_pos.y(), l + 1);
         route.push_back(segment);
