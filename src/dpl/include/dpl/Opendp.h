@@ -575,11 +575,12 @@ class Opendp
   // This map is used to map each unqie site to a grid. The key is always
   // unique, but the value is not unique in the case of hybrid sites
   // (alternating rows)
-  unordered_map<const dbSite*, GridMapKey> site_to_grid_key_;
+  map<const dbSite*, GridMapKey> site_to_grid_key_;
   GridMapKey smallest_non_hybrid_grid_key_;
   std::vector<GridInfo*> grid_info_vector_;
   std::unordered_map<dbSite*, dbSite*> _hybrid_parent;
   map<dbInst*, Cell*> db_inst_map_;
+  bool has_hybrid_rows_ = false;
 
   Rect core_;
   int row_height_ = 0;  // dbu

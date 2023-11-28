@@ -157,7 +157,6 @@ void Opendp::initGridLayersMap()
       }
     }
   }
-  bool isPureHybrid = true;
 
   for (auto db_row : block_->getRows()) {
     if (db_row->getSite()->getClass() == odb::dbSiteClass::PAD) {
@@ -166,9 +165,6 @@ void Opendp::initGridLayersMap()
     int row_base_x, row_base_y;
     db_row->getOrigin(row_base_x, row_base_y);
     dbSite* working_site = db_row->getSite();
-    if (!working_site->isHybrid()) {
-      isPureHybrid = false;
-    }
     if (row_base_y == min_row_y_coordinate) {
       if (working_site->hasRowPattern()) {
         for (const auto& [child_site, orient] : working_site->getRowPattern()) {
@@ -187,7 +183,7 @@ void Opendp::initGridLayersMap()
       }
     }
   }
-  if (!isPureHybrid && min_site_height == std::numeric_limits<int>::max()) {
+  if (!has_hybrid_rows_ && min_site_height == std::numeric_limits<int>::max()) {
     logger_->error(
         DPL, 128, "Cannot find a non-hybrid grid to use for placement.");
   }
@@ -261,7 +257,7 @@ void Opendp::initGridLayersMap()
     grid_info_vector_[grid_info.getGridIndex()] = &grid_info;
     if (grid_info.getSitesTotalHeight() < min_height) {
       min_height = grid_info.getSitesTotalHeight();
-      if (isPureHybrid) {
+      if (has_hybrid_rows_) {
         smallest_non_hybrid_grid_key_ = gmk;
       }
     }
