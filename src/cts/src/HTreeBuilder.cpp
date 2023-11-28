@@ -93,7 +93,91 @@ void HTreeBuilder::preSinkClustering(
       matching.addCap(sinkInsts[pointIdx]->getInputCap());
     }
   }
-  matching.run(clusterSize, maxDiameter, wireSegmentUnit_);
+
+  unsigned bestClusterSize = 0;
+  float bestDiameter = 0.0;
+  if (options_->isSinkClusteringSizeSet() && options_->isMaxDiameterSet()) {
+    // clang-format off
+      debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
+                 clusterSize, options_->getMaxDiameter(), wireSegmentUnit_);
+    // clang-format on
+    matching.run(clusterSize,
+                 maxDiameter,
+                 wireSegmentUnit_,
+                 bestClusterSize,
+                 bestDiameter);
+  } else if (!options_->isSinkClusteringSizeSet()
+             && options_->isMaxDiameterSet()) {
+    // only diameter is set, try clustering sizes of 10, 20 and 30 um
+    for (unsigned clusterSize2 : clusterSizes()) {
+      // clang-format off
+      debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
+                 clusterSize2, options_->getMaxDiameter(), wireSegmentUnit_);
+      // clang-format on
+      matching.run(clusterSize2,
+                   maxDiameter,
+                   wireSegmentUnit_,
+                   bestClusterSize,
+                   bestDiameter);
+    }
+  } else if (options_->isSinkClusteringSizeSet()
+             && !options_->isMaxDiameterSet()) {
+    // only clustering size is set, try diameters of 50, 100 and 200 um
+    for (unsigned clusterDiameter2 : clusterDiameters()) {
+      // clang-format off
+      debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
+                 clusterSize, clusterDiameter2, wireSegmentUnit_);
+      // clang-format on
+      float maxDiameter2 = clusterDiameter2 * (float) options_->getDbUnits()
+                           / wireSegmentUnit_;
+      matching.run(clusterSize,
+                   maxDiameter2,
+                   wireSegmentUnit_,
+                   bestClusterSize,
+                   bestDiameter);
+    }
+  } else {  // neighther clustering size nor diameter is set
+    // try diameters of 50, 100 and 200 um
+    for (unsigned clusterDiameter2 : clusterDiameters()) {
+      // try clustering sizes of 10, 20 and 30 um
+      for (unsigned clusterSize2 : clusterSizes()) {
+        // clang-format off
+        debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
+                   clusterSize2, clusterDiameter2, wireSegmentUnit_);
+        // clang-format on
+        float maxDiameter2 = clusterDiameter2 * (float) options_->getDbUnits()
+                             / wireSegmentUnit_;
+        matching.run(clusterSize2,
+                     maxDiameter2,
+                     wireSegmentUnit_,
+                     bestClusterSize,
+                     bestDiameter);
+      }
+    }
+  }
+
+  if (options_->isSinkClusteringSizeSet() || options_->isMaxDiameterSet()) {
+    logger_->info(
+        CTS,
+        204,
+        "A clustering solution was found from clustering size of {} "
+        "and clustering diameter of {:0.0f}.",
+        bestClusterSize,
+        std::round(bestDiameter / options_->getDbUnits() * wireSegmentUnit_));
+    logger_->info(CTS,
+                  205,
+                  "Better solution may be possible if either "
+                  "-sink_clustering_size, -sink_clustering_max_diameter, or "
+                  "both options are omitted to enable automatic clustering.");
+  } else {
+    logger_->info(
+        CTS,
+        206,
+        "Best clustering solution was found from clustering size of {} "
+        "and clustering diameter of {:0.0f}.",
+        bestClusterSize,
+        std::round(bestDiameter / options_->getDbUnits() * wireSegmentUnit_));
+  }
 
   unsigned clusterCount = 0;
 
@@ -228,9 +312,15 @@ void HTreeBuilder::initSinkRegion()
 
   const float maxDiameter
       = (options_->getMaxDiameter() * dbUnits) / wireSegmentUnit_;
+  // clang-format off
+  debugPrint(logger_, CTS, "clustering", 1, "maxDiameter={:0.3f} = "
+             "origMaxDiam={} * dbUnits={} / wireSegmentUnit_={}",
+             maxDiameter, options_->getMaxDiameter(), dbUnits,
+             wireSegmentUnit_);
+  // clang-format on
 
   preSinkClustering(
-      topLevelSinks, sinkInsts, maxDiameter, options_->getSizeSinkClustering());
+      topLevelSinks, sinkInsts, maxDiameter, options_->getSinkClusteringSize());
   if (topLevelSinks.size() <= min_clustering_sinks_
       || !(options_->getSinkClustering())) {
     Box<int> sinkRegionDbu = clock_.computeSinkRegion();
@@ -246,7 +336,7 @@ void HTreeBuilder::initSinkRegion()
       preSinkClustering(secondLevelLocs,
                         secondLevelInsts,
                         maxDiameter * 4,
-                        std::ceil(std::sqrt(options_->getSizeSinkClustering())),
+                        std::ceil(std::sqrt(options_->getSinkClusteringSize())),
                         true);
     }
     sinkRegion_ = clock_.computeSinkRegionClustered(topLevelSinksClustered_);
@@ -273,8 +363,8 @@ void plotBlockage(std::ofstream& file, odb::dbDatabase* db_, int scalingFactor)
 
 // distance to move sinks from old loc to new loc
 double HTreeBuilder::weightedDistance(const Point<double>& newLoc,
-				      const Point<double>& oldLoc,
-				      const std::vector<Point<double>>& sinks)
+                                      const Point<double>& oldLoc,
+                                      const std::vector<Point<double>>& sinks)
 {
   double dist = 0;
   for (const Point<double>& sink : sinks) {
@@ -312,9 +402,9 @@ unsigned HTreeBuilder::findSibling(LevelTopology& topology,
 }
 
 void HTreeBuilder::scalePosition(Point<double>& loc,
-				 const Point<double>& parLoc,
-				 double leng,
-				 double scale)
+                                 const Point<double>& parLoc,
+                                 double leng,
+                                 double scale)
 {
   double px = parLoc.getX();
   double py = parLoc.getY();
@@ -356,8 +446,8 @@ void setSiblingPosition(const Point<double>& a,
 
 // Balance the two branches on the very top level
 void HTreeBuilder::adjustToplevelTopology(Point<double>& a,
-					  Point<double>& b,
-					  const Point<double>& parLoc)
+                                          Point<double>& b,
+                                          const Point<double>& parLoc)
 {
   double da = computeDist(a, parLoc);
   double db = computeDist(b, parLoc);
@@ -1044,7 +1134,7 @@ void HTreeBuilder::run()
                     29,
                     " Sinks will be clustered in groups of up to {} and with "
                     "maximum cluster diameter of {:.1f} um.",
-                    options_->getSizeSinkClustering(),
+                    options_->getSinkClusteringSize(),
                     options_->getMaxDiameter());
     }
   }
