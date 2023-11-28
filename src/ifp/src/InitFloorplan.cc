@@ -589,7 +589,7 @@ int InitFloorplan::makeHybridRows(dbSite* parent_hybrid_site,
 
     const int offset = getOffset(pattern);
     y += offset;
-    if (offset == 0 && pattern.size() == 1 && pattern[0]->isHybridParent()) {
+    if (offset == 0 && pattern.size() == 1 && pattern[0]->hasRowPattern()) {
       auto rp = pattern[0]->getRowPattern();
       const auto rp_sz = rp.size();
       std::vector<dbSite*> rp_dbsite;
