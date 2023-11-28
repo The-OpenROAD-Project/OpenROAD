@@ -1901,7 +1901,18 @@ void GlobalRouter::connectTopLevelPins(odb::dbNet* db_net, GRoute& route)
   for (Pin& pin : pins) {
     if (pin.getConnectionLayer() > max_routing_layer_) {
       odb::Point pin_pos = pin.getOnGridPosition();
-      for (int l = max_routing_layer_; l < pin.getConnectionLayer(); l++) {
+
+      int closest_layer = std::numeric_limits<int>::min();
+      for (size_t i = 0; i < route.size(); i++) {
+        if (((pin_pos.x() == route[i].init_x && pin_pos.y() == route[i].init_y)
+             || (pin_pos.x() == route[i].final_x
+                 && pin_pos.y() == route[i].final_y))) {
+          closest_layer = std::max(route[i].init_layer, closest_layer);
+          closest_layer = std::max(route[i].final_layer, closest_layer);
+        }
+      }
+
+      for (int l = closest_layer; l < pin.getConnectionLayer(); l++) {
         GSegment segment = GSegment(
             pin_pos.x(), pin_pos.y(), l, pin_pos.x(), pin_pos.y(), l + 1);
         route.push_back(segment);
