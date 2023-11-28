@@ -6380,6 +6380,11 @@ void HierRTLMP::writeMacroPlacement(const std::string& file_name)
   }
 }
 
+void HierRTLMP::setBusPlanningOn(bool bus_planning_on)
+{
+  bus_planning_on_ = bus_planning_on;
+}
+
 void HierRTLMP::setDebug(std::unique_ptr<Mpl2Observer>& graphics)
 {
   graphics_ = std::move(graphics);

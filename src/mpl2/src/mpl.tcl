@@ -60,7 +60,7 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -target_dead_space target_dead_space \
                                           -min_ar  min_ar \
                                           -snap_layer snap_layer \
-                                          -bus_planning_flag bus_planning_flag \
+                                          -bus_planning bus_planning \
                                           -report_directory report_directory \
                                           -write_macro_placement file_name \
                                         }
@@ -74,7 +74,7 @@ proc rtl_macro_placer { args } {
         -boundary_weight -notch_weight -macro_blockage_weight  \
         -pin_access_th -target_util \
         -target_dead_space -min_ar -snap_layer \
-        -bus_planning_flag \
+        -bus_planning \
         -report_directory \
         -write_macro_placement \
     } flag {  }
@@ -116,7 +116,7 @@ proc rtl_macro_placer { args } {
     set target_dead_space 0.05
     set min_ar  0.33
     set snap_layer -1
-    set bus_planning_flag false
+    set bus_planning false
     set report_directory "hier_rtlmp"
       
     if { [info exists keys(-max_num_macro)] } {
@@ -214,8 +214,8 @@ proc rtl_macro_placer { args } {
     if { [info exists keys(-snap_layer)] } {
       set snap_layer $keys(-snap_layer)
     }
-    if { [info exists keys(-bus_planning_flag)] } {
-      set bus_planning_flag $keys(-bus_planning_flag)
+    if { [info exists keys(-bus_planning)] } {
+      set bus_planning $keys(-bus_planning)
     }
     if { [info exists keys(-report_directory)] } {
       set report_directory $keys(-report_directory)
@@ -248,7 +248,7 @@ proc rtl_macro_placer { args } {
                                       $target_dead_space \
                                       $min_ar \
                                       $snap_layer \
-                                      $bus_planning_flag \
+                                      $bus_planning \
                                       $report_directory \
                                       ]} {
 
