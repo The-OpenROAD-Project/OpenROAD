@@ -219,7 +219,7 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
         rows_placed
             += makeRows(site, clx, cly, cux, cuy, x_height_site, row_index);
         row_index += rows_placed;
-      } else if (site->isHybridParent()) {
+      } else if (site->hasRowPattern()) {
         rows_placed = makeHybridRows(
             site, odb::Point(clx, cly), odb::Point(cux, cuy), row_index);
         row_index += rows_placed;
@@ -489,7 +489,7 @@ int InitFloorplan::getOffset(const std::vector<dbSite*>& pattern) const
   if (pattern.size() != 1) {
     return 0;
   }
-  if (!pattern[0]->isHybridParent()) {
+  if (!pattern[0]->hasRowPattern()) {
     return 0;
   }
   const auto& searchPattern = pattern[0]->getRowPattern();
