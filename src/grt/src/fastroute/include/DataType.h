@@ -169,7 +169,7 @@ struct TreeNode
   short heights[max_connections];
   int eID[max_connections];
 
-  short x, y;   // position in the grid graph
+  short x, y;  // position in the grid graph
   int nbrCount = 0;
   int nbr[3];   // three neighbors
   int edge[3];  // three adjacent edges

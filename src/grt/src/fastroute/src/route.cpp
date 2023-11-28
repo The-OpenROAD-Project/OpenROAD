@@ -582,14 +582,8 @@ void FastRouteCore::newrouteZ(int netID, int threshold)
         continue;
       }
       // ripup the original routing
-      if (newRipupType2(treeedge,
-                        treenodes,
-                        x1,
-                        y1,
-                        x2,
-                        y2,
-                        num_terminals,
-                        netID)) {
+      if (newRipupType2(
+              treeedge, treenodes, x1, y1, x2, y2, num_terminals, netID)) {
         const int n1a = treenodes[n1].stackAlias;
         const int n2a = treenodes[n2].stackAlias;
         const int status1 = treenodes[n1a].status;
