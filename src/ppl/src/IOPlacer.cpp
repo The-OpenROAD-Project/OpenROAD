@@ -1582,7 +1582,7 @@ void IOPlacer::addNamesConstraint(PinSet* pins, Edge edge, int begin, int end)
                utl::PPL,
                "report_pin_names",
                1,
-               "Restrict pins [ {}] to region {}u-{}u at the {} edge.",
+               "Restrict pins [ {}] to region {:.2f}u-{:.2f}u at the {} edge.",
                pin_names,
                dbuToMicrons(begin),
                dbuToMicrons(end),
@@ -1590,7 +1590,7 @@ void IOPlacer::addNamesConstraint(PinSet* pins, Edge edge, int begin, int end)
   } else {
     logger_->info(utl::PPL,
                   48,
-                  "Restrict pins [ {}] to region {}u-{}u at the {} edge.",
+                  "Restrict pins [ {}] to region {:.2f}u-{:.2f}u at the {} edge.",
                   pin_names,
                   dbuToMicrons(begin),
                   dbuToMicrons(end),
@@ -2031,7 +2031,7 @@ void IOPlacer::run(bool random_mode)
           logger_->error(
               PPL,
               88,
-              "Cannot assign {} constrained pins to region {}u-{}u "
+              "Cannot assign {} constrained pins to region {:.2f}u-{:.2f}u "
               "at edge {}. Not "
               "enough space in the defined region.",
               constraint.pin_list.size(),
@@ -2250,8 +2250,8 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
   if (pin_width < layer->getWidth()) {
     logger_->error(PPL,
                    34,
-                   "Pin {} has dimension {}u which is less than the min width "
-                   "{}u of layer {}.",
+                   "Pin {} has dimension {:.2f}u which is less than the min width "
+                   "{:.2f}u of layer {}.",
                    bterm->getName(),
                    dbuToMicrons(pin_width),
                    dbuToMicrons(layer->getWidth()),
