@@ -901,18 +901,6 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
   if (bin_y >= grid_info.getRowCount()) {
     return PixelPt();
   }
-  if (cell->isHybrid()
-      && gridPixel(grid_info.getGridIndex(), 0, bin_y)->site
-             != cell->getSite()) {
-    debugPrint(logger_,
-               DPL,
-               "hybrid",
-               1,
-               "Bin_y {} didn't have site {}, so we look below it.",
-               bin_y,
-               cell->getSite()->getName());
-    bin_y = (bin_y + 1) % grid_info.getRowCount();
-  }
 
   int height = gridHeight(cell, row_height);
   int y_end = bin_y + height;
@@ -954,16 +942,7 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
       }
     }
   }
-  if (cell->isHybrid()) {
-    debugPrint(logger_,
-               DPL,
-               "hybrid",
-               1,
-               "Trying recursive {} search with bin_y + 1 = {}",
-               cell->name(),
-               bin_y + 1);
-    return binSearch(x, cell, bin_x, bin_y + 1);
-  }
+
   return PixelPt();
 }
 
