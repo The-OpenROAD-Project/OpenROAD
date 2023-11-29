@@ -42,7 +42,7 @@ rtl_macro_placer
     [-target_dead_space target_dead_space]
     [-min_ar min_ar]
     [-snap_layer snap_layer]
-    [-bus_planning_flag bus_planning_flag]
+    [-bus_planning]
     [-report_directory report_directory]
     [-write_macro_placement file_name]
 ```
@@ -65,7 +65,7 @@ rtl_macro_placer
 | `-target_dead_space` | Specifies the target dead space percentage, which influences the utilization of `StandardCellCluster`. The allowed values are floats, and the default value is `0.05`. |
 | `-min_ar` | Specifies the minimum aspect ratio $a$, or the ratio of its width to height of a `StandardCellCluster` from $[a, \frac{1}{a}]$. The allowed values are floats, and the default value is `0.33`. |
 | `-snap_layer` | Snap macro origins to this routing layer track. The default value is 4, and the allowed values are integers `[1, MAX_LAYER]`). |
-| `-bus_planning_flag` | Flag to enable bus planning. The recommendation is to turn on bus planning for SKY130 and off for NanGate45/ASAP7. The default value is disabled. |
+| `-bus_planning` | Flag to enable bus planning. The recommendation is to turn on bus planning for SKY130 and off for NanGate45/ASAP7. The default value is disabled. |
 | `-report_directory` | Save reports to this directory. |
 | `-write_macro_placement` | Generates a file with the macro placement in the format of multiple calls for the `place_macro` command. |
 
