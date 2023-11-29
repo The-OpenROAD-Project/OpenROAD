@@ -295,7 +295,7 @@ class CtsOptions
   bool sinkBufferInferred_ = false;
   bool rootBufferInferred_ = false;
   bool sinkBufferMaxCapDerateSet_ = false;
-  float sinkBufferMaxCapDerateDefault_ = 0.1;
+  float sinkBufferMaxCapDerateDefault_ = 0.01;
   float sinkBufferMaxCapDerate_ = sinkBufferMaxCapDerateDefault_;
 };
 

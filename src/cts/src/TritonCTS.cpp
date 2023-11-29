@@ -35,6 +35,7 @@
 
 #include "cts/TritonCTS.h"
 
+#include <cctype>
 #include <chrono>
 #include <ctime>
 #include <fstream>
@@ -450,6 +451,7 @@ void TritonCTS::setBufferList(const char* buffers)
 void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
 {
   // first, look for all buffers with name CLKBUF or clkbuf
+  // TODO: look for "is_clock_cell : true" liberty cell attribute
   sta::PatternMatch patternClkBuf("*CLKBUF*",
                                   /* is_regexp */ true,
                                   /* nocase */ true,
@@ -465,8 +467,8 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
     }
   }
 
-  // second, look for all buffers with name BUF or buf
   if (buffers.empty()) {
+    // second, look for all buffers with name BUF or buf
     sta::PatternMatch patternBuf("*BUF*",
                                  /* is_regexp */ true,
                                  /* nocase */ true,
@@ -483,8 +485,8 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
     }
   }
 
-  // abandon name patterns, just look for all buffers
   if (buffers.empty()) {
+    // abandon name patterns, just look for all buffers
     lib_iter = network_->libertyLibraryIterator();
     while (lib_iter->hasNext()) {
       sta::LibertyLibrary* lib = lib_iter->next();
@@ -494,15 +496,67 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
         }
       }
     }
+
+    if (buffers.empty()) {
+      logger_->error(
+          CTS,
+          110,
+          "No clock buffer candidates could be found from any libraries.");
+    }
+
+    // it's possible that pattern-based lib cell search missed
+    // clock buffers (because they are not loaded or linked?)
+    std::string pattern("clkbuf");
+    std::vector<std::string> clockBuffers
+        = findMatchingSubset(pattern, buffers);
+    // clang-format off
+    debugPrint(logger_, CTS, "buffering", 1, "{} buffers with 'clkbuf' "
+               "have been found", clockBuffers.size());
+    // clang-format on
+    if (!clockBuffers.empty()) {
+      buffers = clockBuffers;
+    } else {
+      pattern = std::string("buf");
+      clockBuffers = findMatchingSubset(pattern, buffers);
+      // clang-format off
+      debugPrint(logger_, CTS, "buffering", 1, "{} buffers with 'buf' "
+                 "have been found", clockBuffers.size());
+      // clang-format on
+      if (!clockBuffers.empty()) {
+        buffers = clockBuffers;
+      }
+    }
   }
 
   options_->setBufferListInferred(true);
-
   if (logger_->debugCheck(utl::CTS, "buffering", 1)) {
     for (const std::string& bufName : buffers) {
       logger_->report("{} has been inferred as clock buffer", bufName);
     }
   }
+}
+
+std::string toLowerCase(std::string str)
+{
+  std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
+    return std::tolower(c);
+  });
+  return str;
+}
+
+std::vector<std::string> TritonCTS::findMatchingSubset(
+    std::string pattern,
+    const std::vector<std::string>& buffers)
+{
+  std::vector<std::string> subset;
+  std::copy_if(buffers.begin(),
+               buffers.end(),
+               std::back_inserter(subset),
+               [&pattern](const std::string& str) {
+                 std::string lowerCaseStr = toLowerCase(str);
+                 return lowerCaseStr.find(pattern) != std::string::npos;
+               });
+  return subset;
 }
 
 bool TritonCTS::isClockBufferCandidate(sta::LibertyCell* buffer)
