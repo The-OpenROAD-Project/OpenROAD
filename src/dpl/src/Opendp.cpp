@@ -366,10 +366,6 @@ bool Opendp::isStdCell(const Cell* cell) const
     case dbMasterType::CORE_TIELOW:
     case dbMasterType::CORE_SPACER:
     case dbMasterType::CORE_WELLTAP:
-      return true;
-    case dbMasterType::BLOCK:
-    case dbMasterType::BLOCK_BLACKBOX:
-    case dbMasterType::BLOCK_SOFT:
     case dbMasterType::ENDCAP:
     case dbMasterType::ENDCAP_PRE:
     case dbMasterType::ENDCAP_POST:
@@ -389,6 +385,10 @@ bool Opendp::isStdCell(const Cell* cell) const
     case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMCORNER:
     case dbMasterType::ENDCAP_LEF58_RIGHTTOPCORNER:
     case dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER:
+      return true;
+    case dbMasterType::BLOCK:
+    case dbMasterType::BLOCK_BLACKBOX:
+    case dbMasterType::BLOCK_SOFT:
       // These classes are completely ignored by the placer.
     case dbMasterType::COVER:
     case dbMasterType::COVER_BUMP:
