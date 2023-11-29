@@ -98,6 +98,118 @@ void Design::readDef(const std::string& file_name,
                child);
 }
 
+sta::Network* Design::cmdLinkedNetwork()
+{
+  sta::Network *network = sta::Sta::sta()->cmdNetwork();;
+  if (network->isLinked())
+    return network;
+  else {
+    getLogger()->error(utl::ORD, 104, "STA network is not linked.");
+    return nullptr;
+  }
+}
+
+sta::Graph* Design::cmdGraph()
+{
+  cmdLinkedNetwork();
+  return sta::Sta::sta()->ensureGraph();
+}
+
+sta::Vertex** Design::vertices(const sta::Pin *pin)
+{
+  sta::Vertex *vertex, *vertex_bidirect_drvr;
+  static sta::Vertex *vertices[2];
+
+  cmdGraph()->pinVertices(pin, vertex, vertex_bidirect_drvr);
+  vertices[0] = vertex;
+  vertices[1] = vertex_bidirect_drvr;
+  return vertices;
+}
+
+std::vector<float> Design::arrivalsClk(const sta::RiseFall *rf,
+	                                      sta::Clock *clk,
+	                                      const sta::RiseFall *clk_rf,
+                                        sta::Vertex *vertex)
+{
+  sta::Sta *sta = sta::Sta::sta();
+  std::vector<float> arrivals;
+  const sta::ClockEdge *clk_edge = nullptr;
+
+  if (clk){
+    clk_edge = clk->edge(clk_rf);
+  }
+
+  for (auto path_ap : sta->corners()->pathAnalysisPts()) {
+    arrivals.push_back(sta::delayAsFloat(sta->vertexArrival(vertex, rf, clk_edge, path_ap, nullptr)));
+  }
+  return arrivals;
+}
+
+std::string Design::getITermName (odb::dbITerm* ITerm)
+{
+    auto MTerm_name = ITerm->getMTerm()->getName();
+    auto inst_name  = ITerm->getInst()->getName();
+    return inst_name + "/" + MTerm_name;
+}
+
+bool Design::isTimeInf(float time) {
+  return (time > 1e+10 || time < -1e+10); 
+}
+
+float Design::getPinArrivalTime(sta::Clock *clk,
+                               const sta::RiseFall *clk_rf,
+                               sta::Vertex *vertex,
+                               std::string arrrive_or_hold)
+{
+  const sta::RiseFall *rf = (arrrive_or_hold == "arrive")? sta::RiseFall::rise(): sta::RiseFall::fall();
+  std::vector<float> times = arrivalsClk(rf, clk, clk_rf, vertex);
+  float delay = -1e+10;
+  for (float delay_ : times){ 
+    if(!isTimeInf(delay_))
+      delay = std::max(delay, delay_);
+  }
+  return delay;
+}
+
+sta::ClockSeq Design::findClocksMatching(const char *pattern,
+		                                  bool regexp,
+		                                  bool nocase)
+{
+  sta::Sta *sta = sta::Sta::sta();
+  cmdLinkedNetwork();
+  sta::PatternMatch matcher(pattern, regexp, nocase, sta->tclInterp());
+  return sta::Sta::sta()->sdc()->findClocksMatching(&matcher);
+}
+
+sta::Clock* Design::defaultArrivalClock()
+{
+  return sta::Sta::sta()->sdc()->defaultArrivalClock();
+}
+
+float Design::getPinArrival(odb::dbITerm* db_pin, std::string rf) {
+    std::vector<float> pin_arr;
+    int num_vertex_elements = 2;
+
+    sta::dbSta* sta = getSta();
+    sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
+
+    sta::Vertex** vertex_arrray = vertices(sta_pin);
+    float delay = -1;
+    for (int i = 0; i < num_vertex_elements; i++) {
+      sta::Vertex* vertex = vertex_arrray[i];
+      if (vertex != nullptr) {
+        std::string arrival_or_hold = (rf == "rise")? "arrive":"hold";
+        delay = std::max(delay, getPinArrivalTime(nullptr, sta::RiseFall::rise(), vertex, arrival_or_hold));
+        delay = std::max(delay, getPinArrivalTime(defaultArrivalClock(), sta::RiseFall::rise(), vertex, arrival_or_hold));
+        for (auto clk : findClocksMatching("*", false, false)) {
+          delay = std::max(delay, getPinArrivalTime(clk, sta::RiseFall::rise(), vertex, arrival_or_hold));
+          delay = std::max(delay, getPinArrivalTime(clk, sta::RiseFall::fall(), vertex, arrival_or_hold));
+        }
+      }
+    }
+    return delay;
+}
+
 void Design::link(const std::string& design_name)
 {
   auto app = OpenRoad::openRoad();
@@ -264,6 +376,18 @@ bool Design::isInClock(odb::dbInst* inst)
     }
   }
   return false;
+}
+
+bool Design::isInPower(odb::dbITerm* iterm)
+{
+  auto* net = iterm->getNet();
+  return (net != nullptr && net->getSigType() == odb::dbSigType::POWER);
+}
+
+bool Design::isInGround(odb::dbITerm* iterm)
+{
+  auto* net = iterm->getNet();
+  return (net != nullptr && net->getSigType() == odb::dbSigType::GROUND);
 }
 
 std::uint64_t Design::getNetRoutedLength(odb::dbNet* net)

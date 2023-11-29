@@ -22,6 +22,14 @@ for inst in design.getBlock().getInsts():
     print(design.staticPower(inst, corner),
           design.dynamicPower(inst, corner),
          )
+  for iTerm in inst.getITerms():
+    if not iTerm.getNet():
+      continue
+    if not (design.isInPower(iTerm) or design.isInGround(iTerm)):
+      print(design.getITermName(iTerm), 
+            design.getPinArrival(iTerm, "rise"),
+            design.getPinArrival(iTerm, "fall")
+            )
 
 for net in design.getBlock().getNets():
   print(net.getName(), design.getNetRoutedLength(net))

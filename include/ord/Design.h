@@ -38,6 +38,11 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include "sta/Clock.hh"
+#include "sta/Graph.hh"
+#include "sta/Sdc.hh"
+#include "sta/SdcClass.hh"
+#include "sta/PatternMatch.hh"
 
 namespace odb {
 class dbBlock;
@@ -45,6 +50,7 @@ class dbMaster;
 class dbMTerm;
 class dbNet;
 class dbInst;
+class dbITerm;
 }  // namespace odb
 
 namespace ifp {
@@ -132,6 +138,11 @@ class dbSta;
 class Corner;
 class MinMax;
 class LibertyCell;
+class Network;
+class Sta;
+class RiseFall;
+class Vertex;
+class Pin;
 }  // namespace sta
 
 namespace ord {
@@ -175,6 +186,19 @@ class Design
   bool isSequential(odb::dbMaster* master);
   bool isBuffer(odb::dbMaster* master);
   bool isInverter(odb::dbMaster* master);
+  bool isInPower(odb::dbITerm* iterm);
+  bool isInGround(odb::dbITerm* iterm);
+  sta::ClockSeq findClocksMatching(const char *pattern, bool regexp, bool nocase);
+  sta::Clock* defaultArrivalClock();
+  std::string getITermName (odb::dbITerm* ITerm);
+  float getPinArrival(odb::dbITerm* db_pin, std::string rf);
+  std::vector<float> arrivalsClk(const sta::RiseFall *rf, sta::Clock *clk, const sta::RiseFall *clk_rf, sta::Vertex *vertex);
+  float getPinArrivalTime(sta::Clock *clk, const sta::RiseFall *clk_rf, sta::Vertex *vertex, std::string arrrive_or_hold);
+  sta::Graph* cmdGraph();
+  sta::Network* cmdLinkedNetwork();
+  sta::Vertex** vertices(const sta::Pin *pin);
+  bool isTimeInf(float time);
+
   std::vector<odb::dbMTerm*> getTimingFanoutFrom(odb::dbMTerm* input);
   bool isInClock(odb::dbInst* inst);
   std::uint64_t getNetRoutedLength(odb::dbNet* net);
