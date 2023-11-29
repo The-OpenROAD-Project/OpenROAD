@@ -153,7 +153,7 @@ TritonCTS forced slew degradation on these wires.
     Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
     Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
     Key: 38 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 4 delay: 1
- Out of 14 sinks, 1 sinks closer to other cluster.
+ Out of 12 sinks, 1 sinks closer to other cluster.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 279.
 [INFO CTS-0018]     Created 231 clock buffers.
@@ -164,19 +164,19 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0017]     Max level of the clock tree: 5.
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 2475
-[INFO CTS-0100]  Leaf buffers 138
-[INFO CTS-0101]  Average sink wire length 9110.76 um
+[INFO CTS-0100]  Leaf buffers 96
+[INFO CTS-0101]  Average sink wire length 9250.04 um
 [INFO CTS-0102]  Path depth 18 - 19
 [INFO RSZ-0058] Using max wire length 707um.
 [INFO RSZ-0047] Found 32 long wires.
 [INFO RSZ-0048] Inserted 85 buffers in 32 nets.
 Placement Analysis
 ---------------------------------
-total displacement       1811.7 u
+total displacement       1631.7 u
 average displacement        0.6 u
-max displacement           37.4 u
-original HPWL          135507.8 u
-legalized HPWL         135820.6 u
+max displacement           39.5 u
+original HPWL          133005.4 u
+legalized HPWL         133245.7 u
 delta HPWL                    0 %
 
 Clock clk
