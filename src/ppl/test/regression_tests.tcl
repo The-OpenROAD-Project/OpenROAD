@@ -25,6 +25,7 @@ record_tests {
   annealing1
   annealing2
   annealing3
+  annealing4
   annealing_constraint1
   annealing_constraint2
   annealing_constraint3
