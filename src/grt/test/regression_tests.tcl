@@ -55,6 +55,7 @@ record_tests {
   silence
   top_level_term1
   top_level_term2
+  top_level_term3
   tracks1
   tracks2
   tracks3
