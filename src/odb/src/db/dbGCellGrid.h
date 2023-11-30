@@ -66,7 +66,8 @@ class _dbGCellGrid : public _dbObject
  public:
   _dbGCellGrid(_dbDatabase*, const _dbGCellGrid& r);
   _dbGCellGrid(_dbDatabase*);
-  ~_dbGCellGrid();
+
+  ~_dbGCellGrid() = default;
 
   bool operator==(const _dbGCellGrid& rhs) const;
   bool operator!=(const _dbGCellGrid& rhs) const { return !operator==(rhs); }

@@ -54,6 +54,7 @@ class _dbPowerSwitch : public _dbObject
  public:
   _dbPowerSwitch(_dbDatabase*, const _dbPowerSwitch& r);
   _dbPowerSwitch(_dbDatabase*);
+
   ~_dbPowerSwitch();
 
   bool operator==(const _dbPowerSwitch& rhs) const;

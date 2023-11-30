@@ -48,22 +48,30 @@ template class dbTable<_dbIsolation>;
 
 bool _dbIsolation::operator==(const _dbIsolation& rhs) const
 {
-  if (_name != rhs._name)
+  if (_name != rhs._name) {
     return false;
-  if (_next_entry != rhs._next_entry)
+  }
+  if (_next_entry != rhs._next_entry) {
     return false;
-  if (_applies_to != rhs._applies_to)
+  }
+  if (_applies_to != rhs._applies_to) {
     return false;
-  if (_clamp_value != rhs._clamp_value)
+  }
+  if (_clamp_value != rhs._clamp_value) {
     return false;
-  if (_isolation_signal != rhs._isolation_signal)
+  }
+  if (_isolation_signal != rhs._isolation_signal) {
     return false;
-  if (_isolation_sense != rhs._isolation_sense)
+  }
+  if (_isolation_sense != rhs._isolation_sense) {
     return false;
-  if (_location != rhs._location)
+  }
+  if (_location != rhs._location) {
     return false;
-  if (_power_domain != rhs._power_domain)
+  }
+  if (_power_domain != rhs._power_domain) {
     return false;
+  }
 
   return true;
 }
@@ -150,8 +158,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbIsolation& obj)
 
 _dbIsolation::~_dbIsolation()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -206,8 +215,9 @@ void dbIsolation::setPowerDomain(dbPowerDomain* power_domain)
 dbPowerDomain* dbIsolation::getPowerDomain() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
-  if (obj->_power_domain == 0)
+  if (obj->_power_domain == 0) {
     return nullptr;
+  }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbPowerDomain*) par->_powerdomain_tbl->getPtr(obj->_power_domain);
 }

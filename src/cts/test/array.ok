@@ -30,14 +30,16 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0029]  Sinks will be clustered in groups of up to 20 and with maximum cluster diameter of 100.0 um.
 [INFO CTS-0030]  Number of static layers: 0.
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
-[INFO CTS-0019]  Total number of sinks after clustering: 322.
-[INFO CTS-0024]  Normalized sink region: [(1.43857, 2.41643), (661.439, 704.276)].
+[INFO CTS-0204] A clustering solution was found from clustering size of 30 and clustering diameter of 100.
+[INFO CTS-0205] Better solution may be possible if either -sink_clustering_size, -sink_clustering_max_diameter, or both options are omitted to enable automatic clustering.
+[INFO CTS-0019]  Total number of sinks after clustering: 279.
+[INFO CTS-0024]  Normalized sink region: [(1.43857, 3.42643), (661.439, 704.276)].
 [INFO CTS-0025]     Width:  660.0000.
-[INFO CTS-0026]     Height: 701.8593.
+[INFO CTS-0026]     Height: 700.8493.
  Level 1
     Direction: Vertical
-    Sinks per sub-region: 161
-    Sub-region size: 660.0000 X 350.9296
+    Sinks per sub-region: 140
+    Sub-region size: 660.0000 X 350.4246
 [INFO CTS-0034]     Segment length (rounded): 176.
     Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
     Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
@@ -68,8 +70,8 @@ TritonCTS forced slew degradation on these wires.
     Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
  Level 2
     Direction: Horizontal
-    Sinks per sub-region: 81
-    Sub-region size: 330.0000 X 350.9296
+    Sinks per sub-region: 70
+    Sub-region size: 330.0000 X 350.4246
 [INFO CTS-0034]     Segment length (rounded): 166.
     Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
     Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
@@ -99,8 +101,8 @@ TritonCTS forced slew degradation on these wires.
     Key: 157 inSlew: 2 inCap: 1 outSlew: 3 load: 1 length: 6 delay: 1
  Level 3
     Direction: Vertical
-    Sinks per sub-region: 41
-    Sub-region size: 330.0000 X 175.4648
+    Sinks per sub-region: 35
+    Sub-region size: 330.0000 X 175.2123
 [INFO CTS-0034]     Segment length (rounded): 88.
     Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
       location: 0.75 buffer: BUF_X4
@@ -118,8 +120,8 @@ TritonCTS forced slew degradation on these wires.
     Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
  Level 4
     Direction: Horizontal
-    Sinks per sub-region: 21
-    Sub-region size: 165.0000 X 175.4648
+    Sinks per sub-region: 18
+    Sub-region size: 165.0000 X 175.2123
 [INFO CTS-0034]     Segment length (rounded): 82.
     Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
     Key: 186 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 13
@@ -137,8 +139,8 @@ TritonCTS forced slew degradation on these wires.
     Key: 3 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 2 delay: 1
  Level 5
     Direction: Vertical
-    Sinks per sub-region: 11
-    Sub-region size: 165.0000 X 87.7324
+    Sinks per sub-region: 9
+    Sub-region size: 165.0000 X 87.6062
 [INFO CTS-0034]     Segment length (rounded): 44.
     Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
     Key: 349 inSlew: 2 inCap: 2 outSlew: 3 load: 1 length: 8 delay: 1
@@ -147,38 +149,38 @@ TritonCTS forced slew degradation on these wires.
     Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
     Key: 348 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 1
     Key: 61 inSlew: 2 inCap: 1 outSlew: 3 load: 1 length: 4 delay: 1
- Out of 14 sinks, 1 sinks closer to other cluster.
+ Out of 12 sinks, 1 sinks closer to other cluster.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
-[INFO CTS-0035]  Number of sinks covered: 322.
-[INFO CTS-0018]     Created 273 clock buffers.
+[INFO CTS-0035]  Number of sinks covered: 279.
+[INFO CTS-0018]     Created 231 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 18.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 19.
-[INFO CTS-0015]     Created 273 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 2:1, 4:2, 6:1, 7:2, 8:8, 9:4, 10:11, 11:37, 12:12, 13:1, 15:1, 16:1, 19:2, 20:87..
+[INFO CTS-0015]     Created 231 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 2:1, 5:1, 6:1, 7:6, 8:11, 9:7, 10:8, 11:3, 12:2, 14:2, 15:1, 19:1, 20:3, 21:36, 30:45..
 [INFO CTS-0017]     Max level of the clock tree: 5.
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 2475
-[INFO CTS-0100]  Leaf buffers 138
-[INFO CTS-0101]  Average sink wire length 9459.72 um
+[INFO CTS-0100]  Leaf buffers 96
+[INFO CTS-0101]  Average sink wire length 9492.68 um
 [INFO CTS-0102]  Path depth 18 - 19
 [INFO RSZ-0058] Using max wire length 707um.
-[INFO RSZ-0047] Found 33 long wires.
-[INFO RSZ-0048] Inserted 86 buffers in 33 nets.
+[INFO RSZ-0047] Found 31 long wires.
+[INFO RSZ-0048] Inserted 84 buffers in 31 nets.
 Placement Analysis
 ---------------------------------
-total displacement       2492.0 u
-average displacement        0.9 u
-max displacement           38.4 u
-original HPWL          137606.1 u
-legalized HPWL         137939.6 u
+total displacement       2304.8 u
+average displacement        0.8 u
+max displacement           39.6 u
+original HPWL          134232.7 u
+legalized HPWL         134507.4 u
 delta HPWL                    0 %
 
 Clock clk
 Latency      CRPR       Skew
-inst_1_1/clk ^
-   1.35
-inst_2_1/clk ^
-   1.11      0.00       0.25
+inst_8_14/clk ^
+   1.28
+inst_10_14/clk ^
+   1.14      0.00       0.14
 
 Startpoint: inst_1_1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: inst_2_1 (rising edge-triggered flip-flop clocked by clk)
@@ -197,31 +199,29 @@ Path Type: max
    0.06    0.27 ^ wire3/Z (BUF_X32)
    0.06    0.34 ^ wire2/Z (BUF_X32)
    0.06    0.40 ^ wire1/Z (BUF_X32)
-   0.06    0.47 ^ clkbuf_0_clk/Z (BUF_X4)
-   0.03    0.50 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
-   0.03    0.53 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
-   0.04    0.57 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
-   0.04    0.60 ^ clkbuf_1_0_3_clk/Z (BUF_X4)
-   0.04    0.64 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
-   0.03    0.67 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
-   0.04    0.71 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
-   0.04    0.75 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
-   0.04    0.79 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
-   0.04    0.82 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
-   0.04    0.86 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
+   0.06    0.46 ^ clkbuf_0_clk/Z (BUF_X4)
+   0.04    0.50 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
+   0.04    0.54 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
+   0.04    0.58 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
+   0.04    0.62 ^ clkbuf_1_0_3_clk/Z (BUF_X4)
+   0.04    0.66 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
+   0.04    0.69 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
+   0.04    0.73 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
+   0.04    0.77 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.04    0.80 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
+   0.03    0.83 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
+   0.03    0.86 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
    0.04    0.90 ^ clkbuf_3_0_1_clk/Z (BUF_X4)
    0.04    0.94 ^ clkbuf_3_0_2_clk/Z (BUF_X4)
    0.03    0.97 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
    0.03    1.01 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
-   0.04    1.05 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
-   0.05    1.10 ^ clkbuf_5_0_0_clk/Z (BUF_X4)
-   0.03    1.13 ^ max_length10/Z (BUF_X8)
-   0.05    1.18 ^ wire9/Z (BUF_X8)
-   0.14    1.32 ^ max_length8/Z (BUF_X8)
-   0.03    1.35 ^ inst_1_1/clk (array_tile)
-   0.21    1.57 ^ inst_1_1/e_out (array_tile)
-   0.00    1.57 ^ inst_2_1/w_in (array_tile)
-           1.57   data arrival time
+   0.03    1.04 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
+   0.04    1.08 ^ clkbuf_5_0_0_clk/Z (BUF_X4)
+   0.03    1.11 ^ max_length10/Z (BUF_X8)
+   0.04    1.15 ^ inst_1_1/clk (array_tile)
+   0.21    1.36 ^ inst_1_1/e_out (array_tile)
+   0.00    1.36 ^ inst_2_1/w_in (array_tile)
+           1.36   data arrival time
 
    5.00    5.00   clock clk (rise edge)
    0.00    5.00   clock source latency
@@ -233,33 +233,33 @@ Path Type: max
    0.06    5.27 ^ wire3/Z (BUF_X32)
    0.06    5.34 ^ wire2/Z (BUF_X32)
    0.06    5.40 ^ wire1/Z (BUF_X32)
-   0.06    5.47 ^ clkbuf_0_clk/Z (BUF_X4)
-   0.03    5.50 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
-   0.03    5.53 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
-   0.04    5.57 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
-   0.04    5.60 ^ clkbuf_1_0_3_clk/Z (BUF_X4)
-   0.04    5.64 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
-   0.03    5.67 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
-   0.04    5.71 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
-   0.04    5.75 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
-   0.04    5.79 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
-   0.04    5.82 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
-   0.04    5.86 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
+   0.06    5.46 ^ clkbuf_0_clk/Z (BUF_X4)
+   0.04    5.50 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
+   0.04    5.54 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
+   0.04    5.58 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
+   0.04    5.62 ^ clkbuf_1_0_3_clk/Z (BUF_X4)
+   0.04    5.66 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
+   0.04    5.69 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
+   0.04    5.73 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
+   0.04    5.77 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.04    5.80 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
+   0.03    5.83 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
+   0.03    5.86 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
    0.04    5.90 ^ clkbuf_3_0_1_clk/Z (BUF_X4)
    0.04    5.94 ^ clkbuf_3_0_2_clk/Z (BUF_X4)
    0.03    5.97 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
    0.03    6.01 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
-   0.04    6.05 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
-   0.04    6.09 ^ clkbuf_5_1_0_clk/Z (BUF_X4)
-   0.02    6.11 ^ inst_2_1/clk (array_tile)
-   0.00    6.11   clock reconvergence pessimism
-  -0.05    6.06   library setup time
-           6.06   data required time
+   0.03    6.04 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
+   0.04    6.08 ^ clkbuf_5_1_0_clk/Z (BUF_X4)
+   0.01    6.08 ^ inst_2_1/clk (array_tile)
+   0.00    6.08   clock reconvergence pessimism
+  -0.05    6.03   library setup time
+           6.03   data required time
 ---------------------------------------------------------
-           6.06   data required time
-          -1.57   data arrival time
+           6.03   data required time
+          -1.36   data arrival time
 ---------------------------------------------------------
-           4.49   slack (MET)
+           4.67   slack (MET)
 
 
 Startpoint: inst_2_1 (rising edge-triggered flip-flop clocked by clk)
@@ -279,28 +279,28 @@ Path Type: max
    0.06    0.27 ^ wire3/Z (BUF_X32)
    0.06    0.34 ^ wire2/Z (BUF_X32)
    0.06    0.40 ^ wire1/Z (BUF_X32)
-   0.06    0.47 ^ clkbuf_0_clk/Z (BUF_X4)
-   0.03    0.50 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
-   0.03    0.53 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
-   0.04    0.57 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
-   0.04    0.60 ^ clkbuf_1_0_3_clk/Z (BUF_X4)
-   0.04    0.64 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
-   0.03    0.67 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
-   0.04    0.71 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
-   0.04    0.75 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
-   0.04    0.79 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
-   0.04    0.82 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
-   0.04    0.86 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
+   0.06    0.46 ^ clkbuf_0_clk/Z (BUF_X4)
+   0.04    0.50 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
+   0.04    0.54 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
+   0.04    0.58 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
+   0.04    0.62 ^ clkbuf_1_0_3_clk/Z (BUF_X4)
+   0.04    0.66 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
+   0.04    0.69 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
+   0.04    0.73 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
+   0.04    0.77 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.04    0.80 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
+   0.03    0.83 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
+   0.03    0.86 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
    0.04    0.90 ^ clkbuf_3_0_1_clk/Z (BUF_X4)
    0.04    0.94 ^ clkbuf_3_0_2_clk/Z (BUF_X4)
    0.03    0.97 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
    0.03    1.01 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
-   0.04    1.05 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
-   0.04    1.09 ^ clkbuf_5_1_0_clk/Z (BUF_X4)
-   0.02    1.11 ^ inst_2_1/clk (array_tile)
-   0.21    1.32 ^ inst_2_1/e_out (array_tile)
-   0.00    1.32 ^ inst_3_1/w_in (array_tile)
-           1.32   data arrival time
+   0.03    1.04 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
+   0.04    1.08 ^ clkbuf_5_1_0_clk/Z (BUF_X4)
+   0.01    1.08 ^ inst_2_1/clk (array_tile)
+   0.21    1.30 ^ inst_2_1/e_out (array_tile)
+   0.00    1.30 ^ inst_3_1/w_in (array_tile)
+           1.30   data arrival time
 
    5.00    5.00   clock clk (rise edge)
    0.00    5.00   clock source latency
@@ -312,33 +312,32 @@ Path Type: max
    0.06    5.27 ^ wire3/Z (BUF_X32)
    0.06    5.34 ^ wire2/Z (BUF_X32)
    0.06    5.40 ^ wire1/Z (BUF_X32)
-   0.06    5.47 ^ clkbuf_0_clk/Z (BUF_X4)
-   0.03    5.50 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
-   0.03    5.53 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
-   0.04    5.57 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
-   0.04    5.60 ^ clkbuf_1_0_3_clk/Z (BUF_X4)
-   0.04    5.64 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
-   0.03    5.67 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
-   0.04    5.71 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
-   0.04    5.75 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
-   0.04    5.79 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
-   0.04    5.82 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
-   0.04    5.86 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
+   0.06    5.46 ^ clkbuf_0_clk/Z (BUF_X4)
+   0.04    5.50 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
+   0.04    5.54 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
+   0.04    5.58 ^ clkbuf_1_0_2_clk/Z (BUF_X4)
+   0.04    5.62 ^ clkbuf_1_0_3_clk/Z (BUF_X4)
+   0.04    5.66 ^ clkbuf_1_0_4_clk/Z (BUF_X4)
+   0.04    5.69 ^ clkbuf_2_0_0_clk/Z (BUF_X4)
+   0.04    5.73 ^ clkbuf_2_0_1_clk/Z (BUF_X4)
+   0.04    5.77 ^ clkbuf_2_0_2_clk/Z (BUF_X4)
+   0.04    5.80 ^ clkbuf_2_0_3_clk/Z (BUF_X4)
+   0.03    5.83 ^ clkbuf_2_0_4_clk/Z (BUF_X4)
+   0.03    5.86 ^ clkbuf_3_0_0_clk/Z (BUF_X4)
    0.04    5.90 ^ clkbuf_3_0_1_clk/Z (BUF_X4)
    0.04    5.94 ^ clkbuf_3_0_2_clk/Z (BUF_X4)
    0.03    5.97 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
    0.03    6.01 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
-   0.04    6.05 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
-   0.05    6.10 ^ clkbuf_5_0_0_clk/Z (BUF_X4)
-   0.03    6.13 ^ max_length10/Z (BUF_X8)
-   0.01    6.14 ^ inst_3_1/clk (array_tile)
-   0.00    6.14   clock reconvergence pessimism
-  -0.05    6.09   library setup time
-           6.09   data required time
+   0.03    6.04 ^ clkbuf_4_0_2_clk/Z (BUF_X4)
+   0.04    6.08 ^ clkbuf_5_0_0_clk/Z (BUF_X4)
+   0.02    6.10 ^ inst_3_1/clk (array_tile)
+   0.00    6.10   clock reconvergence pessimism
+  -0.05    6.05   library setup time
+           6.05   data required time
 ---------------------------------------------------------
-           6.09   data required time
-          -1.32   data arrival time
+           6.05   data required time
+          -1.30   data arrival time
 ---------------------------------------------------------
-           4.77   slack (MET)
+           4.75   slack (MET)
 
 

@@ -96,10 +96,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   // adjust the size of MixedCluster to fill the empty space
   void fillDeadSpace() override;
   void alignMacroClusters();
-  void setBlockages(const std::vector<Rect>& blockages)
-  {
-    blockages_ = blockages;
-  }
+  void addBlockages(const std::vector<Rect>& blockages);
 
  private:
   float getAreaPenalty() const;

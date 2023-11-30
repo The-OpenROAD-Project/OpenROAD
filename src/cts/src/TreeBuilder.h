@@ -237,8 +237,8 @@ class TreeBuilder
   utl::Logger* logger_;
   odb::dbDatabase* db_;
   std::vector<odb::dbBox*> bboxList_;
-  double bufferWidth_;
-  double bufferHeight_;
+  double bufferWidth_ = 0.0;
+  double bufferHeight_ = 0.0;
   // keep track of occupied cells to avoid overlap violations
   // this only tracks cell origin
   boost::unordered_set<Point<double>, pointHash, pointEqual> occupiedLocations_;

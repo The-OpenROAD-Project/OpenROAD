@@ -229,8 +229,7 @@ void SimulatedAnnealingCore<T>::calOutlinePenalty()
   // normalization
   outline_penalty_ = outline_penalty_ / (outline_area);
   if (graphics_) {
-    graphics_->setOutlinePenalty(
-        outline_penalty_, outline_width_, outline_height_);
+    graphics_->setOutlinePenalty(outline_penalty_);
   }
 }
 

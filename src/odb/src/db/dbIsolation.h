@@ -49,6 +49,7 @@ class _dbIsolation : public _dbObject
  public:
   _dbIsolation(_dbDatabase*, const _dbIsolation& r);
   _dbIsolation(_dbDatabase*);
+
   ~_dbIsolation();
 
   bool operator==(const _dbIsolation& rhs) const;

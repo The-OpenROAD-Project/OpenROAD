@@ -198,8 +198,8 @@ class MBFF
   std::vector<odb::dbInst*> insts_;
   std::vector<double> slot_disp_x_;
   std::vector<double> slot_disp_y_;
-  double height_;
-  double width_;
+  double height_ = 0.0;
+  double width_ = 0.0;
 
   std::vector<Path> paths_;
   std::set<int> flops_in_path_;
@@ -229,12 +229,12 @@ class MBFF
   std::vector<double> ratios_;
   std::vector<int> unused_;
 
-  sta::FuncExpr* non_invert_func_;
+  sta::FuncExpr* non_invert_func_ = nullptr;
   int num_threads_;
   int multistart_;
   int knn_;
   double multiplier_;
   // max tray size: 1 << (7 - 1) = 64 bits
-  int num_sizes_;
+  int num_sizes_ = 7;
 };
 }  // namespace gpl

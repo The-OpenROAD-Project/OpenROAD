@@ -679,12 +679,13 @@ bool IRSolver::createJ()
     if (inst->isBlock() || inst->isPad()) {
       std::set<Node*> nodes_J;
       std::set<int> pin_layers;
-      auto iterms = inst->getITerms();
       // Find the pin layers for the macro
-      for (auto* iterm : iterms) {
+      bool is_connected = false;
+      for (auto* iterm : inst->getITerms()) {
         if (iterm->getNet() != net_) {
           continue;
         }
+        is_connected = true;
         odb::dbTransform xform;
         inst->getTransform(xform);
         for (auto mpin : iterm->getMTerm()->getMPins()) {
@@ -703,10 +704,10 @@ bool IRSolver::createJ()
           }
         }
       }
-      double num_nodes = nodes_J.size();
+      const double num_nodes = nodes_J.size();
       // If nodes are not found on the pin layers we search for the lowest
       // metal layer that overlaps the macro
-      if (num_nodes == 0) {
+      if (is_connected && num_nodes == 0) {
         logger_->error(utl::PSM,
                        42,
                        "Unable to connect macro/pad Instance {} "

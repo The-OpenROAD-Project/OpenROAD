@@ -343,37 +343,63 @@ frCost FlexGridGraph::getNextPathCost(const FlexWavefrontGrid& currGrid,
     bool isCurrViaUp = (dir == frDirEnum::U);
     bool isForbiddenVia2Via = false;
     // check only y
-    if (currVLengthX == 0 && currVLengthY > 0
-        && getTech()->isVia2ViaForbiddenLen(gridZ,
-                                            !(currGrid.isPrevViaUp()),
-                                            !isCurrViaUp,
-                                            false,
-                                            currVLengthY,
-                                            ndr_)) {
-      isForbiddenVia2Via = true;
+    if (currVLengthX == 0 && currVLengthY > 0) {
+      isForbiddenVia2Via
+          = getTech()->isVia2ViaForbiddenLen(gridZ,
+                                             !(currGrid.isPrevViaUp()),
+                                             !isCurrViaUp,
+                                             false,
+                                             currVLengthY,
+                                             ndr_);
       // check only x
-    } else if (currVLengthX > 0 && currVLengthY == 0
-               && getTech()->isVia2ViaForbiddenLen(gridZ,
-                                                   !(currGrid.isPrevViaUp()),
-                                                   !isCurrViaUp,
-                                                   true,
-                                                   currVLengthX,
-                                                   ndr_)) {
-      isForbiddenVia2Via = true;
+    } else if (currVLengthX > 0 && currVLengthY == 0) {
+      isForbiddenVia2Via
+          = getTech()->isVia2ViaForbiddenLen(gridZ,
+                                             !(currGrid.isPrevViaUp()),
+                                             !isCurrViaUp,
+                                             true,
+                                             currVLengthX,
+                                             ndr_);
       // check both x and y
-    } else if (getTech()->isVia2ViaForbiddenLen(gridZ,
-                                                !(currGrid.isPrevViaUp()),
-                                                !isCurrViaUp,
-                                                false,
-                                                currVLengthY,
-                                                ndr_)
-               && getTech()->isVia2ViaForbiddenLen(gridZ,
-                                                   !(currGrid.isPrevViaUp()),
-                                                   !isCurrViaUp,
-                                                   true,
-                                                   currVLengthX,
-                                                   ndr_)) {
-      isForbiddenVia2Via = true;
+    } else {
+      if (getTech()->isVia2ViaPRL(gridZ,
+                                  !(currGrid.isPrevViaUp()),
+                                  !isCurrViaUp,
+                                  false,
+                                  currVLengthY)
+          || getTech()->isVia2ViaPRL(gridZ,
+                                     !(currGrid.isPrevViaUp()),
+                                     !isCurrViaUp,
+                                     true,
+                                     currVLengthX)) {
+        isForbiddenVia2Via
+            = getTech()->isVia2ViaForbiddenLen(gridZ,
+                                               !(currGrid.isPrevViaUp()),
+                                               !isCurrViaUp,
+                                               false,
+                                               currVLengthY,
+                                               ndr_)
+              || getTech()->isVia2ViaForbiddenLen(gridZ,
+                                                  !(currGrid.isPrevViaUp()),
+                                                  !isCurrViaUp,
+                                                  true,
+                                                  currVLengthX,
+                                                  ndr_);
+      } else {
+        isForbiddenVia2Via
+            = getTech()->isVia2ViaForbiddenLen(gridZ,
+                                               !(currGrid.isPrevViaUp()),
+                                               !isCurrViaUp,
+                                               false,
+                                               currVLengthY,
+                                               ndr_)
+              && getTech()->isVia2ViaForbiddenLen(gridZ,
+                                                  !(currGrid.isPrevViaUp()),
+                                                  !isCurrViaUp,
+                                                  true,
+                                                  currVLengthX,
+                                                  ndr_);
+      }
     }
 
     if (isForbiddenVia2Via) {

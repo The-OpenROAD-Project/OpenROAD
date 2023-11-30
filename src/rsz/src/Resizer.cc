@@ -259,13 +259,15 @@ Resizer::removeBuffers()
     LibertyCell *lib_cell = db_network_->libertyCell(db_inst);
     Instance *buffer = db_network_->dbToSta(db_inst);
     if (!db_inst->isDoNotTouch()
+        && !db_inst->isFixed()
         && lib_cell
         && lib_cell->isBuffer()
         // Do not remove buffers connected to input/output ports
         // because verilog netlists use the net name for the port.
         && !bufferBetweenPorts(buffer)) {
-      removeBuffer(buffer);
-      remove_count++;
+      if (removeBuffer(buffer)) {
+        remove_count++;
+      }
     }
   }
   level_drvr_vertices_valid_ = false;
@@ -287,7 +289,7 @@ Resizer::bufferBetweenPorts(Instance *buffer)
   return in_net_ports && out_net_ports;
 }
 
-void
+bool
 Resizer::removeBuffer(Instance *buffer)
 {
   LibertyCell *lib_cell = network_->libertyCell(buffer);
@@ -311,10 +313,14 @@ Resizer::removeBuffer(Instance *buffer)
     removed = out_net;
   }
 
+  bool buffer_removed = false;
   if (!sdc_->isConstrained(in_pin)
       && !sdc_->isConstrained(out_pin)
       && !sdc_->isConstrained(removed)
       && !sdc_->isConstrained(buffer)) {
+    debugPrint(logger_, RSZ, "remove_buffer", 1, "remove {}",
+               db_network_->name(buffer));
+    buffer_removed = true;
     sta_->disconnectPin(in_pin);
     sta_->disconnectPin(out_pin);
     sta_->deleteInstance(buffer);
@@ -336,6 +342,7 @@ Resizer::removeBuffer(Instance *buffer)
     }
     parasiticsInvalid(survivor);
   }
+  return buffer_removed;
 }
 
 void
@@ -768,6 +775,9 @@ Resizer::closestDriver(LibertyCell* cell, LibertyCellSeq *candidates, float scal
   const auto current_limit = scale * maxLoad(output_pin->cell());
   auto diff = sta::INF;
   for (auto& cand : *candidates) {
+    if (dontUse(cand)) {
+      continue;
+    }
     auto limit = maxLoad(libraryOutputPins(cand)[0]->cell());
     if (limit == current_limit) {
       return cand;
@@ -1569,7 +1579,7 @@ Resizer::gateSlewDiff(LibertyCell *cell,
   const Pvt *pvt = tgt_slew_dcalc_ap_->operatingConditions();
   ArcDelay arc_delay;
   Slew arc_slew;
-  model->gateDelay(cell, pvt, in_slew, load_cap, 0.0, false,
+  model->gateDelay(pvt, in_slew, load_cap, 0.0, false,
                    arc_delay, arc_slew);
   return arc_slew - out_slew;
 }
@@ -1637,9 +1647,9 @@ Resizer::findBufferTargetSlews(LibertyCell *buffer,
         float load_cap = in_cap * tgt_slew_load_cap_factor;
         ArcDelay arc_delay;
         Slew arc_slew;
-        model->gateDelay(buffer, pvt, 0.0, load_cap, 0.0, false,
+        model->gateDelay(pvt, 0.0, load_cap, 0.0, false,
                         arc_delay, arc_slew);
-        model->gateDelay(buffer, pvt, arc_slew, load_cap, 0.0, false,
+        model->gateDelay(pvt, arc_slew, load_cap, 0.0, false,
                         arc_delay, arc_slew);
         slews[out_rf->index()] += arc_slew;
         counts[out_rf->index()]++;
@@ -2086,7 +2096,7 @@ Resizer::findSwapPinCandidate(LibertyPort *input_port, LibertyPort *drvr_port,
                 ArcDelay gate_delay;
                 Slew drvr_slew;
                 LibertyPort *port = arc->from();
-                arc_delay_calc_->gateDelay(cell, arc, in_slew, load_cap,
+                arc_delay_calc_->gateDelay(arc, in_slew, load_cap,
                                            nullptr, 0.0, pvt, dcalc_ap,
                                            gate_delay,
                                            drvr_slew);
@@ -2142,7 +2152,7 @@ Resizer::gateDelays(LibertyPort *drvr_port,
         float in_slew = tgt_slews_[in_rf->index()];
         ArcDelay gate_delay;
         Slew drvr_slew;
-        arc_delay_calc_->gateDelay(cell, arc, in_slew, load_cap,
+        arc_delay_calc_->gateDelay(arc, in_slew, load_cap,
                                    nullptr, 0.0, pvt, dcalc_ap,
                                    gate_delay,
                                    drvr_slew);
@@ -2348,7 +2358,7 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
           double in_slew = tgt_slews_[in_rf->index()];
           ArcDelay gate_delay;
           Slew drvr_slew;
-          arc_delay_calc->gateDelay(drvr_cell, arc, in_slew, 0.0,
+          arc_delay_calc->gateDelay(arc, in_slew, 0.0,
                                     drvr_parasitic, 0.0, pvt, dcalc_ap,
                                     gate_delay,
                                     drvr_slew);

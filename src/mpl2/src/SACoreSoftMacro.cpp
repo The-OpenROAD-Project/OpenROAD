@@ -1062,4 +1062,10 @@ void SACoreSoftMacro::calSegmentLoc(float seg_start,
   }
 }
 
+// The blockages here are only those that overlap with the annealing outline.
+void SACoreSoftMacro::addBlockages(const std::vector<Rect>& blockages)
+{
+  blockages_.insert(blockages_.end(), blockages.begin(), blockages.end());
+}
+
 }  // namespace mpl2
