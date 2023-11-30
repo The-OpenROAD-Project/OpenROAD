@@ -1588,13 +1588,14 @@ void IOPlacer::addNamesConstraint(PinSet* pins, Edge edge, int begin, int end)
                dbuToMicrons(end),
                getEdgeString(edge));
   } else {
-    logger_->info(utl::PPL,
-                  48,
-                  "Restrict pins [ {}] to region {:.2f}u-{:.2f}u at the {} edge.",
-                  pin_names,
-                  dbuToMicrons(begin),
-                  dbuToMicrons(end),
-                  getEdgeString(edge));
+    logger_->info(
+        utl::PPL,
+        48,
+        "Restrict pins [ {}] to region {:.2f}u-{:.2f}u at the {} edge.",
+        pin_names,
+        dbuToMicrons(begin),
+        dbuToMicrons(end),
+        getEdgeString(edge));
   }
 
   for (Constraint& constraint : constraints_) {
@@ -2248,14 +2249,15 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
 
   float pin_width = std::min(width, height);
   if (pin_width < layer->getWidth()) {
-    logger_->error(PPL,
-                   34,
-                   "Pin {} has dimension {:.2f}u which is less than the min width "
-                   "{:.2f}u of layer {}.",
-                   bterm->getName(),
-                   dbuToMicrons(pin_width),
-                   dbuToMicrons(layer->getWidth()),
-                   layer->getName());
+    logger_->error(
+        PPL,
+        34,
+        "Pin {} has dimension {:.2f}u which is less than the min width "
+        "{:.2f}u of layer {}.",
+        bterm->getName(),
+        dbuToMicrons(pin_width),
+        dbuToMicrons(layer->getWidth()),
+        layer->getName());
   }
 
   const int layer_level = layer->getRoutingLevel();
