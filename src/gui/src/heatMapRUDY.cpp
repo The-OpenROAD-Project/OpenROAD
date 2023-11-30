@@ -37,7 +37,10 @@
 namespace gui {
 
 RUDYDataSource::RUDYDataSource(utl::Logger* logger, odb::dbDatabase* db)
-    : gui::HeatMapDataSource(logger, "Estimated Congestion (RUDY)", "RUDY", "RUDY")
+    : gui::HeatMapDataSource(logger,
+                             "Estimated Congestion (RUDY)",
+                             "RUDY",
+                             "RUDY")
 {
   logger_ = logger;
   db_ = db;
