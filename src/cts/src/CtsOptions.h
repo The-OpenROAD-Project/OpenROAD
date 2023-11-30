@@ -226,6 +226,8 @@ class CtsOptions
   bool applyNDR() const { return applyNDR_; }
   void enableInsertionDelay(bool insDelay) { insertionDelay_ = insDelay; }
   bool insertionDelayEnabled() const { return insertionDelay_; }
+  void enableDummyLoad(bool dummyLoad) { dummyLoad_ = dummyLoad; }
+  bool dummyLoadEnabled() const { return dummyLoad_; }
 
  private:
   std::string clockNets_ = "";
@@ -275,6 +277,7 @@ class CtsOptions
   bool obsAware_ = false;
   bool applyNDR_ = false;
   bool insertionDelay_ = false;
+  bool dummyLoad_ = false;
 };
 
 }  // namespace cts

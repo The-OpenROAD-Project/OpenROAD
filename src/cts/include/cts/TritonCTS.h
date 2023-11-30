@@ -155,6 +155,8 @@ class TritonCTS
   double computeInsertionDelay(const std::string& name,
                                odb::dbInst* inst,
                                odb::dbMTerm* mterm);
+  void writeDummyLoadsToDb(Clock& clockNet);
+  void computeIdealOutputCaps(Clock& clockNet);
 
   sta::dbSta* openSta_;
   sta::dbNetwork* network_;

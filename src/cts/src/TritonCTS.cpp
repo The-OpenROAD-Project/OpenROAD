@@ -305,6 +305,9 @@ void TritonCTS::writeDataToDb()
     if (options_->applyNDR()) {
       writeClockNDRsToDb(clkLeafNets);
     }
+    if (options_->dummyLoadEnabled()) {
+      writeDummyLoadsToDb(builder->getClock());
+    }
   }
 
   for (TreeBuilder* builder : *builders_) {
@@ -1150,6 +1153,78 @@ double TritonCTS::computeInsertionDelay(const std::string& name,
   }
 
   return insDelayPerMicron;
+}
+
+void TritonCTS::writeDummyLoadsToDb(Clock& clockNet)
+{
+  // Traverse clock tree and compute ideal output caps for clock
+  // buffers in the same level
+  computeIdealOutputCaps(clockNet);
+
+  clockNet.forEachSubNet([&](const Clock::SubNet& subNet) {
+    ClockInst* driver = subNet.getDriver();
+    // clang-format off
+    debugPrint(logger_, CTS, "dummy load", 2, "subNet {} has {} sinks {},"
+               "driver={}", subNet.getName(), subNet.getNumSinks(),
+               subNet.isLeafLevel()?"[leaf]":"", driver->getName());
+    // clang-format on
+    unsigned sinkIndex = 0;
+    float sinkCapTotal = 0.0;
+    subNet.forEachSink([&](ClockInst* inst) {
+      odb::dbITerm* inputPin = inst->isClockBuffer()
+                                   ? getFirstInput(inst->getDbInst())
+                                   : inst->getDbInputPin();
+      float cap = getInputPinCap(inputPin);
+      sinkCapTotal += cap;
+      // clang-format off
+      debugPrint(logger_, CTS, "dummy load", 2, "  sink {}: {} {} {:0.3e}",
+                 sinkIndex++, inst->getName(),
+                 inst->isClockBuffer()?"[buffer]":"", cap);
+      // clang-format on
+    });
+    // clang-format off
+    debugPrint(logger_, CTS, "dummy load", 2, "  subNet sees total cap of {:0.3e}",
+               sinkCapTotal);
+    // clang-format on
+  });
+}
+
+void TritonCTS::computeIdealOutputCaps(Clock& clockNet)
+{
+  // pass 1: compute actual output caps seen by each clock instance
+  clockNet.forEachSubNet([&](const Clock::SubNet& subNet) {
+    ClockInst* driver = subNet.getDriver();
+    float sinkCapTotal = 0.0;
+    subNet.forEachSink([&](ClockInst* inst) {
+      odb::dbITerm* inputPin = inst->isClockBuffer()
+                                   ? getFirstInput(inst->getDbInst())
+                                   : inst->getDbInputPin();
+      float cap = getInputPinCap(inputPin);
+      // TODO: include wire caps?
+      sinkCapTotal += cap;
+    });
+    driver->setOutputCap(sinkCapTotal);
+  });
+
+  // pass 2: compute ideal output caps for perfectly balanced tree
+  clockNet.forEachSubNet([&](const Clock::SubNet& subNet) {
+    float maxCap = std::numeric_limits<float>::min();
+    subNet.forEachSink([&](ClockInst* inst) {
+      if (inst->isClockBuffer() && inst->getOutputCap() > maxCap) {
+        maxCap = inst->getOutputCap();
+      }
+    });
+    subNet.forEachSink([&](ClockInst* inst) {
+      if (inst->isClockBuffer()) {
+        inst->setIdealOutputCap(maxCap);
+        // clang-format off
+        debugPrint(logger_, CTS, "dummy load", 1, "inst: {} outCap:{:0.3e} "
+                   "idealOutCap:{:0.3e}", inst->getName(),
+                   inst->getOutputCap(), inst->getIdealOutputCap());
+        // clang-format on
+      }
+    });
+  });
 }
 
 }  // namespace cts

@@ -237,6 +237,12 @@ set_insertion_delay(bool insDelay)
 }
 
 void
+set_dummy_load(bool dummyLoad)
+{
+  getTritonCts()->getParms()->enableDummyLoad(dummyLoad);
+}
+
+void
 run_triton_cts()
 {
   getTritonCts()->runTritonCts();
