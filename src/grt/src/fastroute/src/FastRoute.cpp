@@ -703,6 +703,7 @@ NetRouteMap FastRouteCore::getRoutes()
           }
         }
       } else {
+        int num_terminals = sttrees_[netID].num_terminals;
         const auto& nodes = sttrees_[netID].nodes;
         int x1 = tile_size_ * (nodes[treeedge->n1].x + 0.5) + x_corner_;
         int y1 = tile_size_ * (nodes[treeedge->n1].y + 0.5) + y_corner_;
@@ -718,6 +719,14 @@ NetRouteMap FastRouteCore::getRoutes()
             && std::abs(l1 - l2) == 1) {
           net_segs.insert(segment);
           route.push_back(segment);
+        } else if (treeedge->n1 < num_terminals && treeedge->n2 < num_terminals
+                   && std::abs(l1 - l2) > 1) {
+          auto [bottom_layer, top_layer] = std::minmax(l1, l2);
+          for (int l = bottom_layer; l < top_layer; l++) {
+            GSegment segment(x1, y1, l + 1, x2, y2, l + 2);
+            net_segs.insert(segment);
+            route.push_back(segment);
+          }
         }
       }
     }
