@@ -265,8 +265,9 @@ Resizer::removeBuffers()
         // Do not remove buffers connected to input/output ports
         // because verilog netlists use the net name for the port.
         && !bufferBetweenPorts(buffer)) {
-      removeBuffer(buffer);
-      remove_count++;
+      if (removeBuffer(buffer)) {
+        remove_count++;
+      }
     }
   }
   level_drvr_vertices_valid_ = false;
@@ -288,7 +289,7 @@ Resizer::bufferBetweenPorts(Instance *buffer)
   return in_net_ports && out_net_ports;
 }
 
-void
+bool
 Resizer::removeBuffer(Instance *buffer)
 {
   LibertyCell *lib_cell = network_->libertyCell(buffer);
@@ -312,10 +313,14 @@ Resizer::removeBuffer(Instance *buffer)
     removed = out_net;
   }
 
+  bool buffer_removed = false;
   if (!sdc_->isConstrained(in_pin)
       && !sdc_->isConstrained(out_pin)
       && !sdc_->isConstrained(removed)
       && !sdc_->isConstrained(buffer)) {
+    debugPrint(logger_, RSZ, "remove_buffer", 1, "remove {}",
+               db_network_->name(buffer));
+    buffer_removed = true;
     sta_->disconnectPin(in_pin);
     sta_->disconnectPin(out_pin);
     sta_->deleteInstance(buffer);
@@ -337,6 +342,7 @@ Resizer::removeBuffer(Instance *buffer)
     }
     parasiticsInvalid(survivor);
   }
+  return buffer_removed;
 }
 
 void

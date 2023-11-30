@@ -522,7 +522,7 @@ protected:
                    bool journal);
 
   void findResizeSlacks1();
-  void removeBuffer(Instance *buffer);
+  bool removeBuffer(Instance *buffer);
   Instance *makeInstance(LibertyCell *cell,
                          const char *name,
                          Instance *parent,
