@@ -287,8 +287,11 @@ void FastRouteCore::removeNet(odb::dbNet* db_net)
 {
   // TODO The deleted flag is a temporary solution. Correctly delete the
   // FrNet and update the nets list
-  int netID = db_net_id_map_[db_net];
-  nets_[netID]->setIsDeleted(true);
+  if (db_net_id_map_.find(db_net) != db_net_id_map_.end()) {
+    int netID = db_net_id_map_[db_net];
+    nets_[netID]->setIsDeleted(true);
+    db_net_id_map_.erase(db_net);
+  }
 }
 
 void FastRouteCore::getNetId(odb::dbNet* db_net, int& net_id, bool& exists)
