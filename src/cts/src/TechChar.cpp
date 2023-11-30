@@ -1327,7 +1327,6 @@ void TechChar::updateBufferTopologies(TechChar::SolutionData& solution)
 
 std::vector<size_t> TechChar::getCurrConfig(const SolutionData& solution)
 {
-  std::stringstream tmp;
   std::vector<size_t> config;
   for (auto inst : solution.instVector) {
     size_t masterID = cellNameToID(inst->getMaster()->getName());
@@ -1335,11 +1334,11 @@ std::vector<size_t> TechChar::getCurrConfig(const SolutionData& solution)
   }
 
   if (logger_->debugCheck(CTS, "tech char", 1)) {
+    std::stringstream tmp;
     tmp << "currConfig: ";
     for (unsigned i : config) {
       tmp << i << " ";
     }
-    tmp << std::endl;
     logger_->report(tmp.str());
   }
   return config;
@@ -1356,7 +1355,6 @@ size_t TechChar::cellNameToID(const std::string& masterName)
 std::vector<size_t> TechChar::getNextConfig(
     const std::vector<size_t>& currConfig)
 {
-  std::stringstream tmp;
   size_t currNumber = 0;
   size_t numBuffers = masterNames_.size();
   for (size_t i = 0; i < currConfig.size(); ++i) {
@@ -1376,11 +1374,11 @@ std::vector<size_t> TechChar::getNextConfig(
   } while (!isTopologyMonotonic(nextConfig));
 
   if (logger_->debugCheck(CTS, "tech char", 1)) {
+    std::stringstream tmp;
     tmp << "nextConfig: ";
     for (unsigned i : nextConfig) {
       tmp << i << " ";
     }
-    tmp << std::endl;
     logger_->report(tmp.str());
   }
 
@@ -1732,12 +1730,11 @@ unsigned TechChar::getBufferingCombo(size_t numBuffers, size_t numNodes)
       numMonotonic++;
     }
     if (logger_->debugCheck(CTS, "tech char", 1)) {
-      tmp << std::endl;
       logger_->report(tmp.str());
     }
   }
   if (logger_->debugCheck(CTS, "tech char", 1)) {
-    tmp << "Monotonic entries: " << numMonotonic << std::endl;
+    tmp << "Monotonic entries: " << numMonotonic;
     logger_->report(tmp.str());
   }
 

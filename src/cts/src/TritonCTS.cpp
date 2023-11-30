@@ -545,7 +545,7 @@ std::string toLowerCase(std::string str)
 }
 
 std::vector<std::string> TritonCTS::findMatchingSubset(
-    std::string pattern,
+    const std::string& pattern,
     const std::vector<std::string>& buffers)
 {
   std::vector<std::string> subset;
