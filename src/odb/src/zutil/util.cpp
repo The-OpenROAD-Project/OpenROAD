@@ -191,9 +191,10 @@ static void cutRow(dbBlock* block,
 
   vector<dbBox*> row_blockage_bboxs = row_blockages;
   vector<std::pair<int, int>> row_blockage_xs;
+  row_blockage_xs.reserve(row_blockages.size());
   for (dbBox* row_blockage_bbox : row_blockages) {
-    row_blockage_xs.push_back(
-        std::make_pair(row_blockage_bbox->xMin(), row_blockage_bbox->xMax()));
+    row_blockage_xs.emplace_back(row_blockage_bbox->xMin(),
+                                 row_blockage_bbox->xMax());
   }
 
   std::sort(row_blockage_xs.begin(), row_blockage_xs.end());
@@ -204,7 +205,7 @@ static void cutRow(dbBlock* block,
   for (std::pair<int, int> blockage : row_blockage_xs) {
     const int blockage_x0 = blockage.first;
     const int new_row_end_x
-        = makeSiteLoc(blockage_x0 - halo_x, site_width, 1, start_origin_x);
+        = makeSiteLoc(blockage_x0 - halo_x, site_width, true, start_origin_x);
     buildRow(block,
              row_name + "_" + std::to_string(row_sub_idx),
              row_site,
@@ -217,7 +218,7 @@ static void cutRow(dbBlock* block,
     row_sub_idx++;
     const int blockage_x1 = blockage.second;
     start_origin_x
-        = makeSiteLoc(blockage_x1 + halo_x, site_width, 0, start_origin_x);
+        = makeSiteLoc(blockage_x1 + halo_x, site_width, false, start_origin_x);
   }
   // Make last row
   buildRow(block,
