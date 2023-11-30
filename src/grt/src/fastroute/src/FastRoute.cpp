@@ -290,6 +290,7 @@ void FastRouteCore::removeNet(odb::dbNet* db_net)
   if (db_net_id_map_.find(db_net) != db_net_id_map_.end()) {
     int netID = db_net_id_map_[db_net];
     nets_[netID]->setIsDeleted(true);
+    clearNetRoute(netID);
     db_net_id_map_.erase(db_net);
   }
 }
