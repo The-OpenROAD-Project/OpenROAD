@@ -47,6 +47,7 @@ using std::vector;
 RUDYCalculator::RUDYCalculator(dbBlock* block) : block_(block)
 {
   gridBlock_ = block_->getDieArea();
+  wireWidth_ = block_->getTech()->findRoutingLayer(1)->getWidth();
   makeGrid();
 }
 
@@ -60,23 +61,22 @@ void RUDYCalculator::setGridConfig(odb::Rect block, int tileCntX, int tileCntY)
 
 void RUDYCalculator::makeGrid()
 {
-  int blockWidth = gridBlock_.xMax() - gridBlock_.xMin();
-  int blockHeight = gridBlock_.yMax() - gridBlock_.yMin();
-  int gridLx = gridBlock_.xMin();
-  int gridLy = gridBlock_.yMin();
-  int tileWidth = blockWidth / tileCntX_;
-  int tileHeight = blockHeight / tileCntY_;
+  const int blockWidth = gridBlock_.dx();
+  const int blockHeight = gridBlock_.dy();
+  const int gridLx = gridBlock_.xMin();
+  const int gridLy = gridBlock_.yMin();
+  const int tileWidth = blockWidth / tileCntX_;
+  const int tileHeight = blockHeight / tileCntY_;
 
   grid_.resize(tileCntX_);
   int curX = gridLx;
-  int curY = gridLy;
   for (auto& gridColumn : grid_) {
     gridColumn.resize(tileCntY_);
+    int curY = gridLy;
     for (auto& grid : gridColumn) {
       grid.setRect(curX, curY, curX + tileWidth, curY + tileHeight);
       curY += tileHeight;
     }
-    curY = gridLy;
     curX += tileWidth;
   }
 }
@@ -85,58 +85,49 @@ void RUDYCalculator::calculateRUDY()
 {
   // refer: https://ieeexplore.ieee.org/document/4211973
 
-  auto layer = block_->getTech()->findLayer("metal1");
-  int64_t wireWidth = wireWidth_;
-  if (layer != nullptr) {
-    wireWidth = layer->getWidth();
-  }
-
-  auto blockWidth = gridBlock_.xMax() - gridBlock_.xMin();
-  auto blockHeight = gridBlock_.yMax() - gridBlock_.yMin();
-  auto tileWidth = blockWidth / tileCntX_;
-  auto tileHeight = blockHeight / tileCntY_;
+  const int blockWidth = gridBlock_.dx();
+  const int blockHeight = gridBlock_.dy();
+  const int tileWidth = blockWidth / tileCntX_;
+  const int tileHeight = blockHeight / tileCntY_;
 
   for (auto net : block_->getNets()) {
-    auto netBox = net->getTermBBox();
-    auto netArea = netBox.area();
+    const auto netBox = net->getTermBBox();
+    const auto netArea = netBox.area();
     if (netArea == 0) {
       continue;
     }
-    auto hpwl = static_cast<float>(netBox.dx() + netBox.dy());
-    auto wireArea = hpwl * wireWidth;
-    auto netCongestion = wireArea / netArea;
+    const auto hpwl = static_cast<float>(netBox.dx() + netBox.dy());
+    const auto wireArea = hpwl * wireWidth_;
+    const auto netCongestion = wireArea / netArea;
 
     // Calculate the intersection range
-    int minXIndex
+    const int minXIndex
         = std::max(0, (netBox.xMin() - gridBlock_.xMin()) / tileWidth);
-    int maxXIndex = std::min(tileCntX_ - 1,
-                             (netBox.xMax() - gridBlock_.xMin()) / tileWidth);
-    int minYIndex
+    const int maxXIndex = std::min(
+        tileCntX_ - 1, (netBox.xMax() - gridBlock_.xMin()) / tileWidth);
+    const int minYIndex
         = std::max(0, (netBox.yMin() - gridBlock_.yMin()) / tileHeight);
-    int maxYIndex = std::min(tileCntY_ - 1,
-                             (netBox.yMax() - gridBlock_.yMin()) / tileHeight);
+    const int maxYIndex = std::min(
+        tileCntY_ - 1, (netBox.yMax() - gridBlock_.yMin()) / tileHeight);
 
     // Iterate over the tiles in the calculated range
     for (int x = minXIndex; x <= maxXIndex; ++x) {
       for (int y = minYIndex; y <= maxYIndex; ++y) {
-        Tile& grid = getTile(x, y);
-        auto gridBox = grid.getRect();
-        if (netBox.intersects(gridBox)) {
-          auto intersectArea = netBox.intersect(gridBox).area();
-          if (intersectArea == 0) {
-            continue;
-          }
-          auto gridArea = gridBox.area();
-          auto gridNetBoxRatio = static_cast<float>(intersectArea)
-                                 / static_cast<float>(gridArea);
-          auto rudy = netCongestion * gridNetBoxRatio * 100;
+        Tile& grid = getEditableTile(x, y);
+        const auto gridBox = grid.getRect();
+        if (netBox.overlaps(gridBox)) {
+          const auto intersectArea = netBox.intersect(gridBox).area();
+          const auto gridArea = gridBox.area();
+          const auto gridNetBoxRatio = static_cast<float>(intersectArea)
+                                       / static_cast<float>(gridArea);
+          const auto rudy = netCongestion * gridNetBoxRatio * 100;
           grid.addRUDY(rudy);
         }
       }
     }
   }
 }
-std::pair<int, int> RUDYCalculator::getGridSize()
+std::pair<int, int> RUDYCalculator::getGridSize() const
 {
   if (grid_.empty()) {
     return {0, 0};

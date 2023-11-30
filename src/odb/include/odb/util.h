@@ -493,10 +493,10 @@ class RUDYCalculator
   class Tile
   {
    public:
-    odb::Rect getRect() { return rect_; }
+    odb::Rect getRect() const { return rect_; }
     void setRect(int lx, int ly, int ux, int uy);
     void addRUDY(float rudy);
-    float getRUDY() { return rudy_; }
+    float getRUDY() const { return rudy_; }
 
    private:
     odb::Rect rect_;
@@ -524,14 +524,15 @@ class RUDYCalculator
    * */
   void setWireWidth(int wireWidth) { wireWidth_ = wireWidth; }
 
-  Tile& getTile(int x, int y) { return grid_.at(x).at(y); }
-  std::pair<int, int> getGridSize();
+  const Tile& getTile(int x, int y) const { return grid_.at(x).at(y); }
+  std::pair<int, int> getGridSize() const;
 
  private:
   /**
    * \pre This function should be called after `setGridConfig`
    * */
   void makeGrid();
+  Tile& getEditableTile(int x, int y) { return grid_.at(x).at(y); }
 
   dbBlock* block_;
   odb::Rect gridBlock_;
