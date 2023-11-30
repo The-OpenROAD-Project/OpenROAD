@@ -41,7 +41,6 @@
 #include <fstream>
 #include <iterator>
 #include <unordered_set>
-#include <vector>
 
 #include "Clock.h"
 #include "CtsOptions.h"
