@@ -450,25 +450,41 @@ void TritonCTS::setBufferList(const char* buffers)
 
 void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
 {
-  // first, look for all buffers with name CLKBUF or clkbuf
-  // TODO: look for "is_clock_cell : true" liberty cell attribute
-  sta::PatternMatch patternClkBuf("*CLKBUF*",
-                                  /* is_regexp */ true,
-                                  /* nocase */ true,
-                                  /* Tcl_interp* */ nullptr);
+  // first, look for buffers with "is_clock_cell: true" cell attribute
   sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
     sta::LibertyLibrary* lib = lib_iter->next();
-    for (sta::LibertyCell* buffer :
-         lib->findLibertyCellsMatching(&patternClkBuf)) {
-      if (isClockBufferCandidate(buffer)) {
+    for (sta::LibertyCell* buffer : *lib->buffers()) {
+      if (buffer->isClockCell() && isClockBufferCandidate(buffer)) {
         buffers.emplace_back(buffer->name());
+        // clang-format off
+        debugPrint(logger_, CTS, "buffering", 1, "{} has clock cell attribute",
+                   buffer->name());
+        // clang-format on
       }
     }
   }
 
+  // second, look for all buffers with name CLKBUF or clkbuf
   if (buffers.empty()) {
-    // second, look for all buffers with name BUF or buf
+    sta::PatternMatch patternClkBuf("*CLKBUF*",
+                                    /* is_regexp */ true,
+                                    /* nocase */ true,
+                                    /* Tcl_interp* */ nullptr);
+    sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
+    while (lib_iter->hasNext()) {
+      sta::LibertyLibrary* lib = lib_iter->next();
+      for (sta::LibertyCell* buffer :
+           lib->findLibertyCellsMatching(&patternClkBuf)) {
+        if (isClockBufferCandidate(buffer)) {
+          buffers.emplace_back(buffer->name());
+        }
+      }
+    }
+  }
+
+  // third, look for all buffers with name BUF or buf
+  if (buffers.empty()) {
     sta::PatternMatch patternBuf("*BUF*",
                                  /* is_regexp */ true,
                                  /* nocase */ true,
@@ -485,8 +501,8 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
     }
   }
 
+  // abandon attributes & name patterns, just look for all buffers
   if (buffers.empty()) {
-    // abandon name patterns, just look for all buffers
     lib_iter = network_->libertyLibraryIterator();
     while (lib_iter->hasNext()) {
       sta::LibertyLibrary* lib = lib_iter->next();
