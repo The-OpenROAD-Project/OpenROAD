@@ -324,7 +324,6 @@ void Opendp::initGrid()
     if (db_row_site->getClass() == odb::dbSiteClass::PAD) {
       continue;
     }
-    int current_row_height = db_row_site->getHeight();
     int current_row_site_count = db_row->getSiteCount();
     auto gmk = getGridMapKey(db_row_site);
     auto entry = grid_info_map_.at(gmk);
@@ -335,7 +334,7 @@ void Opendp::initGrid()
 
     const int x_start = (orig_x - core_.xMin()) / db_row_site->getWidth();
     const int x_end = x_start + current_row_site_count;
-    const int y_row = (orig_y - core_.yMin()) / current_row_height;
+    const int y_row = gridY(orig_y - core_.yMin(), entry.getSites()).first;
     for (int x = x_start; x < x_end; x++) {
       Pixel* pixel = gridPixel(current_row_grid_index, x, y_row);
       if (pixel == nullptr) {
