@@ -369,8 +369,8 @@ void Resizer::balanceBin(const vector<odb::dbInst*>& bin)
   }
 
   const double imbalance_factor = 0.8;
-  const int64_t target_lower_width
-      = total_width / sites.size() * imbalance_factor;
+  const double target_lower_width
+      = imbalance_factor * total_width / sites.size();
   for (auto [site, width] : sites) {
     for (auto inst : bin) {
       if (width >= target_lower_width) {
