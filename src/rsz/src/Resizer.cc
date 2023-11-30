@@ -259,6 +259,7 @@ Resizer::removeBuffers()
     LibertyCell *lib_cell = db_network_->libertyCell(db_inst);
     Instance *buffer = db_network_->dbToSta(db_inst);
     if (!db_inst->isDoNotTouch()
+        && !db_inst->isFixed()
         && lib_cell
         && lib_cell->isBuffer()
         // Do not remove buffers connected to input/output ports
