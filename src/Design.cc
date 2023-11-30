@@ -101,12 +101,13 @@ void Design::readDef(const std::string& file_name,
 sta::Network* Design::cmdLinkedNetwork()
 {
   sta::Network *network = sta::Sta::sta()->cmdNetwork();;
-  if (network->isLinked())
+  if (network->isLinked()) {
     return network;
-  else {
-    getLogger()->error(utl::ORD, 104, "STA network is not linked.");
-    return nullptr;
   }
+
+  getLogger()->error(utl::ORD, 104, "STA network is not linked.");
+  return nullptr;
+
 }
 
 sta::Graph* Design::cmdGraph()
@@ -159,14 +160,15 @@ bool Design::isTimeInf(float time) {
 float Design::getPinArrivalTime(sta::Clock *clk,
                                const sta::RiseFall *clk_rf,
                                sta::Vertex *vertex,
-                               std::string arrrive_or_hold)
+                               const std::string& arrrive_or_hold)
 {
   const sta::RiseFall *rf = (arrrive_or_hold == "arrive")? sta::RiseFall::rise(): sta::RiseFall::fall();
   std::vector<float> times = arrivalsClk(rf, clk, clk_rf, vertex);
   float delay = -1e+10;
   for (float delay_ : times){ 
-    if(!isTimeInf(delay_))
+    if(!isTimeInf(delay_)) {
       delay = std::max(delay, delay_);
+    }
   }
   return delay;
 }
@@ -186,7 +188,7 @@ sta::Clock* Design::defaultArrivalClock()
   return sta::Sta::sta()->sdc()->defaultArrivalClock();
 }
 
-float Design::getPinArrival(odb::dbITerm* db_pin, std::string rf) {
+float Design::getPinArrival(odb::dbITerm* db_pin, const std::string& rf) {
     std::vector<float> pin_arr;
     int num_vertex_elements = 2;
 

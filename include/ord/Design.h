@@ -191,9 +191,9 @@ class Design
   sta::ClockSeq findClocksMatching(const char *pattern, bool regexp, bool nocase);
   sta::Clock* defaultArrivalClock();
   std::string getITermName (odb::dbITerm* ITerm);
-  float getPinArrival(odb::dbITerm* db_pin, std::string rf);
+  float getPinArrival(odb::dbITerm* db_pin, const std::string& rf);
   std::vector<float> arrivalsClk(const sta::RiseFall *rf, sta::Clock *clk, const sta::RiseFall *clk_rf, sta::Vertex *vertex);
-  float getPinArrivalTime(sta::Clock *clk, const sta::RiseFall *clk_rf, sta::Vertex *vertex, std::string arrrive_or_hold);
+  float getPinArrivalTime(sta::Clock *clk, const sta::RiseFall *clk_rf, sta::Vertex *vertex, const std::string& arrrive_or_hold);
   sta::Graph* cmdGraph();
   sta::Network* cmdLinkedNetwork();
   sta::Vertex** vertices(const sta::Pin *pin);
