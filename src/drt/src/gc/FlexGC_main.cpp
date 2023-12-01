@@ -2376,19 +2376,19 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_parallelOverlap(
   marker->addSrc(net1->getOwner());
   marker->addVictim(net1->getOwner(),
                     std::make_tuple(rect1->getLayerNum(),
-                               Rect(gtl::xl(*rect1),
-                                    gtl::yl(*rect1),
-                                    gtl::xh(*rect1),
-                                    gtl::yh(*rect1)),
-                               rect1->isFixed()));
+                                    Rect(gtl::xl(*rect1),
+                                         gtl::yl(*rect1),
+                                         gtl::xh(*rect1),
+                                         gtl::yh(*rect1)),
+                                    rect1->isFixed()));
   marker->addSrc(net2->getOwner());
   marker->addAggressor(net2->getOwner(),
                        std::make_tuple(rect2->getLayerNum(),
-                                  Rect(gtl::xl(*rect2),
-                                       gtl::yl(*rect2),
-                                       gtl::xh(*rect2),
-                                       gtl::yh(*rect2)),
-                                  rect2->isFixed()));
+                                       Rect(gtl::xl(*rect2),
+                                            gtl::yl(*rect2),
+                                            gtl::xh(*rect2),
+                                            gtl::yh(*rect2)),
+                                       rect2->isFixed()));
   addMarker(std::move(marker));
 }
 

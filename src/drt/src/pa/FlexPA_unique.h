@@ -104,8 +104,10 @@ class UniqueInsts
   std::map<frInst*, int, frBlockObjectComp> unique2Idx_;
   // master orient track-offset to instances
   std::map<frMaster*,
-      std::map<dbOrientType, std::map<std::vector<frCoord>, std::set<frInst*, frBlockObjectComp>>>,
-      frBlockObjectComp>
+           std::map<dbOrientType,
+                    std::map<std::vector<frCoord>,
+                             std::set<frInst*, frBlockObjectComp>>>,
+           frBlockObjectComp>
       masterOT2Insts_;
 };
 

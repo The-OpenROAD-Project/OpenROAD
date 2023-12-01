@@ -501,8 +501,9 @@ void FlexGCWorker::Impl::checKeepOutZone_main(gcRect* rect,
         ptr->getNet()->getOwner(),
         std::make_tuple(layer->getLayerNum(), ptrBox, ptr->isFixed()));
     marker->addSrc(rect->getNet()->getOwner());
-    marker->addVictim(rect->getNet()->getOwner(),
-                      std::make_tuple(rect->getLayerNum(), viaBox, rect->isFixed()));
+    marker->addVictim(
+        rect->getNet()->getOwner(),
+        std::make_tuple(rect->getLayerNum(), viaBox, rect->isFixed()));
     addMarker(std::move(marker));
   }
 }

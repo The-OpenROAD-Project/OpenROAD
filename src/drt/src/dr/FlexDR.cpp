@@ -351,9 +351,11 @@ void FlexDR::initGCell2BoundaryPin()
   auto tmpVec
       = std::vector<std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>>(
           (int) ygp.getCount());
-  gcell2BoundaryPin_ = std::vector<
-      std::vector<std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>>>(
-      (int) xgp.getCount(), tmpVec);
+  gcell2BoundaryPin_
+      = std::vector<std::vector<std::map<frNet*,
+                                         std::set<std::pair<Point, frLayerNum>>,
+                                         frBlockObjectComp>>>(
+          (int) xgp.getCount(), tmpVec);
   for (auto& net : topBlock->getNets()) {
     auto netPtr = net.get();
     for (auto& guide : net->getGuides()) {

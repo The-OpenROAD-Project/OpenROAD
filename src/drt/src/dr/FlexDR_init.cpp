@@ -596,8 +596,9 @@ void FlexDRWorker::initNets_searchRepair_nodeMap_routeObjSplit(
 void FlexDRWorker::initNets_searchRepair_nodeMap_pin(
     const std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
     std::vector<frBlockObject*>& netPins,
-    const std::map<frBlockObject*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>&
-        pin2epMap,
+    const std::map<frBlockObject*,
+                   std::set<std::pair<Point, frLayerNum>>,
+                   frBlockObjectComp>& pin2epMap,
     std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap)
 {
   int currCnt = (int) netRouteObjs.size();
@@ -616,8 +617,9 @@ void FlexDRWorker::initNets_searchRepair_nodeMap_pin(
 void FlexDRWorker::initNets_searchRepair_nodeMap(
     const std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
     std::vector<frBlockObject*>& netPins,
-    const std::map<frBlockObject*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>&
-        pin2epMap,
+    const std::map<frBlockObject*,
+                   std::set<std::pair<Point, frLayerNum>>,
+                   frBlockObjectComp>& pin2epMap,
     std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap)
 {
   initNets_searchRepair_nodeMap_routeObjEnd(netRouteObjs, nodeMap);
