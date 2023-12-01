@@ -48,9 +48,6 @@
 #include "utl/Logger.h"
 
 namespace gpl {
-using namespace std;
-
-using namespace std;
 using utl::GPL;
 
 NesterovPlace::NesterovPlace()
@@ -140,8 +137,8 @@ void NesterovPlace::updatePrevGradient(const std::shared_ptr<NesterovBase>& nb)
 
   // divergence detection on
   // Wirelength / density gradient calculation
-  if (isnan(wireLengthGradSum_) || isinf(wireLengthGradSum_)
-      || isnan(densityGradSum_) || isinf(densityGradSum_)) {
+  if (std::isnan(wireLengthGradSum_) || std::isinf(wireLengthGradSum_)
+      || std::isnan(densityGradSum_) || std::isinf(densityGradSum_)) {
     isDiverged_ = true;
     divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
     divergeCode_ = 306;
@@ -179,8 +176,8 @@ void NesterovPlace::updateCurGradient(const std::shared_ptr<NesterovBase>& nb)
 
   // divergence detection on
   // Wirelength / density gradient calculation
-  if (isnan(wireLengthGradSum_) || isinf(wireLengthGradSum_)
-      || isnan(densityGradSum_) || isinf(densityGradSum_)) {
+  if (std::isnan(wireLengthGradSum_) || std::isinf(wireLengthGradSum_)
+      || std::isnan(densityGradSum_) || std::isinf(densityGradSum_)) {
     isDiverged_ = true;
     divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
     divergeCode_ = 306;
@@ -219,8 +216,8 @@ void NesterovPlace::updateNextGradient(const std::shared_ptr<NesterovBase>& nb)
 
   // divergence detection on
   // Wirelength / density gradient calculation
-  if (isnan(wireLengthGradSum_) || isinf(wireLengthGradSum_)
-      || isnan(densityGradSum_) || isinf(densityGradSum_)) {
+  if (std::isnan(wireLengthGradSum_) || std::isinf(wireLengthGradSum_)
+      || std::isnan(densityGradSum_) || std::isinf(densityGradSum_)) {
     isDiverged_ = true;
     divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
     divergeCode_ = 306;
@@ -267,7 +264,7 @@ void NesterovPlace::init()
 
   for (auto& nb : nbVec_) {
     auto stepL = nb->initDensity2(wireLengthCoefX_, wireLengthCoefY_);
-    if ((isnan(stepL) || isinf(stepL))
+    if ((std::isnan(stepL) || std::isinf(stepL))
         && recursionCntInitSLPCoef_
                < gpl::NesterovPlaceVars::maxRecursionInitSLPCoef) {
       npVars_.initialPrevCoordiUpdateCoef *= 10;
@@ -283,7 +280,7 @@ void NesterovPlace::init()
       break;
     }
 
-    if (isnan(stepL) || isinf(stepL)) {
+    if (std::isnan(stepL) || std::isinf(stepL)) {
       log_->error(
           GPL,
           304,
