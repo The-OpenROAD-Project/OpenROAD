@@ -39,6 +39,8 @@
 #include <limits>
 #include <optional>
 
+#include "boost/multi_array.hpp"
+
 #include "AbstractSteinerRenderer.h"
 #include "BufferedNet.hh"
 #include "RecoverPower.hh"
@@ -359,6 +361,93 @@ Resizer::ensureLevelDrvrVertices()
     }
     sort(level_drvr_vertices_, VertexLevelLess(network_));
     level_drvr_vertices_valid_ = true;
+  }
+}
+
+void Resizer::balanceBin(const vector<odb::dbInst*>& bin)
+{
+  // Maps sites to the total width of all instances using that site
+  map<odb::dbSite*, uint64_t> sites;
+  uint64_t total_width = 0;
+  for (auto inst : bin) {
+    auto master = inst->getMaster();
+    sites[master->getSite()] += master->getWidth();
+    total_width += master->getWidth();
+  }
+
+  const double imbalance_factor = 0.8;
+  const double target_lower_width
+      = imbalance_factor * total_width / sites.size();
+  for (auto [site, width] : sites) {
+    for (auto inst : bin) {
+      if (width >= target_lower_width) {
+        break;
+      }
+      if (inst->getMaster()->getSite() == site) {
+        continue;
+      }
+      Instance* sta_inst = db_network_->dbToSta(inst);
+      LibertyCell* cell = network_->libertyCell(sta_inst);
+      LibertyCellSeq* equiv_cells = sta_->equivCells(cell);
+      if (!equiv_cells) {
+        continue;
+      }
+      for (LibertyCell* target_cell : *equiv_cells) {
+        if (dontUse(target_cell)) {
+          continue;
+        }
+        dbMaster* target_master = db_network_->staToDb(target_cell);
+        // TODO: pick the best choice rather than the first
+        //       and consider timing criticality
+        if (target_master->getSite() == site) {
+          inst->swapMaster(target_master);
+          width += target_master->getWidth();
+          break;
+        }
+      }
+    }
+  }
+}
+
+void Resizer::balanceRowUsage()
+{
+  initBlock();
+  makeEquivCells();
+
+  // Disable incremental timing.
+  graph_delay_calc_->delaysInvalid();
+  search_->arrivalsInvalid();
+
+  const int num_bins = 10;
+  using Insts = vector<odb::dbInst*>;
+  using InstGrid = boost::multi_array<Insts, 2>;
+  InstGrid grid(boost::extents[num_bins][num_bins]);
+
+  const int core_width = core_.dx();
+  const int core_height = core_.dy();
+  const int x_step = core_width / num_bins + 1;
+  const int y_step = core_height / num_bins + 1;
+
+  for (auto inst : block_->getInsts()) {
+    auto master = inst->getMaster();
+    auto site = master->getSite();
+    // Ignore multi-height cells for now
+    if (site->hasRowPattern()) {
+      continue;
+    }
+
+    int x;
+    int y;
+    inst->getOrigin(x, y);
+    const int x_bin = (x - core_.xMin()) / x_step;
+    const int y_bin = (y - core_.yMin()) / y_step;
+    grid[x_bin][y_bin].push_back(inst);
+  }
+
+  for (int x = 0; x < num_bins; ++x) {
+    for (int y = 0; y < num_bins; ++y) {
+      balanceBin(grid[x][y]);
+    }
   }
 }
 

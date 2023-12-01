@@ -72,50 +72,149 @@ library(fake_macros) {
     }
     library_features(report_delay_calculation);
 
-cell(HM_100x400_4x4) {
-    area : 40000;
-    interface_timing : true;
-    is_macro : true;
+    cell(HM_100x400_4x4) {
+        area : 40000;
+        interface_timing : true;
+        is_macro : true;
 
-   pin (I1) {
-       direction : input;
-   }
-   pin (I2) {
-       direction : input;
-   }
-   pin (I3) {
-       direction : input;
-   }
-   pin (I4) {
-       direction : input;
-   }
-   pin (O1) {
-       direction : output;
-   }
-   pin (O2) {
-       direction : output;
-   }
-   pin (O3) {
-       direction : output;
-   }
-   pin (O4) {
-       direction : output;
-   }
-}
-
-
-cell(HM_100x100_1x1) {
-    area : 10000;
-    interface_timing : true;
-    is_macro : true;
-
-   pin (I1) {
-       direction : input;
-   }
-   pin (O1) {
-       direction : output;
-   }
-}
+    pin (I1) {
+        direction : input;
+    }
+    pin (I2) {
+        direction : input;
+    }
+    pin (I3) {
+        direction : input;
+    }
+    pin (I4) {
+        direction : input;
+    }
+    pin (O1) {
+        direction : output;
+    }
+    pin (O2) {
+        direction : output;
+    }
+    pin (O3) {
+        direction : output;
+    }
+    pin (O4) {
+        direction : output;
+    }
+    }
 
 
+    cell(HM_100x100_1x1) {
+        area : 10000;
+        interface_timing : true;
+        is_macro : true;
+
+    pin (I1) {
+        direction : input;
+    }
+    pin (O1) {
+        direction : output;
+    }
+    }
+
+    cell(MOCK_HYBRID_A){
+        area : 1000;
+        interface_timing : true;
+        is_macro : true;
+
+    pin (I1) {
+        direction : input;
+    }
+    pin (O1) {
+        direction : output;
+    }
+    }
+
+    cell(MOCK_HYBRID_G){
+        area : 1000;
+        interface_timing : true;
+        is_macro : true;
+
+    pin (I1) {
+        direction : input;
+    }
+    pin (O1) {
+        direction : output;
+    }
+    }
+
+    cell(MOCK_HYBRID_AG){
+        area : 2000;
+        interface_timing : true;
+        is_macro : true;
+
+    pin (I1) {
+        direction : input;
+    }
+    pin (O1) {
+        direction : output;
+    }
+    }
+
+    cell(MOCK_SINGLE) {
+        area : 1000;
+        interface_timing : true;
+        is_macro : true;
+
+    pin (I1) {
+        direction : input;
+    }
+    pin (I2) {
+        direction : input;
+    }
+    pin (I3) {
+        direction : input;
+    }
+    pin (I4) {
+        direction : input;
+    }
+    pin (O1) {
+        direction : output;
+    }
+    pin (O2) {
+        direction : output;
+    }
+    pin (O3) {
+        direction : output;
+    }
+    pin (O4) {
+        direction : output;
+    }
+    }
+
+    cell(MOCK_DOUBLE) {
+        area : 2000;
+        interface_timing : true;
+        is_macro : true;
+
+    pin (I1) {
+        direction : input;
+    }
+    pin (I2) {
+        direction : input;
+    }
+    pin (I3) {
+        direction : input;
+    }
+    pin (I4) {
+        direction : input;
+    }
+    pin (O1) {
+        direction : output;
+    }
+    pin (O2) {
+        direction : output;
+    }
+    pin (O3) {
+        direction : output;
+    }
+    pin (O4) {
+        direction : output;
+    }
+    }
 }
