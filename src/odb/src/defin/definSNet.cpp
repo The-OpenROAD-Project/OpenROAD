@@ -82,12 +82,12 @@ void definSNet::init()
   definBase::init();
   _snet_cnt = 0;
   _snet_iterm_cnt = 0;
-  _cur_net = NULL;
-  _cur_layer = NULL;
-  _swire = NULL;
+  _cur_net = nullptr;
+  _cur_layer = nullptr;
+  _swire = nullptr;
   _wire_type = dbWireType::NONE;
   _wire_shape_type = dbWireShapeType::NONE;
-  _shield_net = NULL;
+  _shield_net = nullptr;
   _prev_x = 0;
   _prev_y = 0;
   _prev_ext = 0;
@@ -98,13 +98,12 @@ void definSNet::init()
 
 void definSNet::begin(const char* name)
 {
-  //	notice(0,"Reading special net %s ...\n", name );
-  assert(_cur_net == NULL);
+  assert(_cur_net == nullptr);
 
   if (!_replace_wires) {
     _cur_net = _block->findNet(name);
 
-    if (_cur_net == NULL)
+    if (_cur_net == nullptr)
       _cur_net = dbNet::create(_block, name);
 
     _cur_net->setSpecial();
@@ -117,10 +116,10 @@ void definSNet::begin(const char* name)
       if (netid)
         _cur_net = dbNet::getNet(_block, netid);
       else
-        _cur_net = NULL;
+        _cur_net = nullptr;
     }
 
-    if (_cur_net == NULL) {
+    if (_cur_net == nullptr) {
       _logger->warn(utl::ODB, 156, "special net {} does not exist", name);
       ++_errors;
     } else {
@@ -142,14 +141,14 @@ void definSNet::begin(const char* name)
   }
 
   _snet_cnt++;
-  _swire = NULL;
+  _swire = nullptr;
 }
 
 void definSNet::connection(const char* iname,
                            const char* tname,
                            bool /* unused: synth */)
 {
-  if ((_cur_net == NULL) || (_replace_wires == true))
+  if ((_cur_net == nullptr) || (_replace_wires == true))
     return;
 
   if (*iname == '*') {
@@ -162,7 +161,7 @@ void definSNet::connection(const char* iname,
       if (iname[2] == 'N' || iname[2] == 'n') {
         if (iname[3] == 0) {
           dbBTerm* bterm = _block->findBTerm(tname);
-          if (bterm == NULL) {
+          if (bterm == nullptr) {
             bterm = dbBTerm::create(_cur_net, tname);
           }
           bterm->setSpecial();
@@ -175,7 +174,7 @@ void definSNet::connection(const char* iname,
 
   dbInst* inst = _block->findInst(iname);
 
-  if (inst == NULL) {
+  if (inst == nullptr) {
     _logger->warn(
         utl::ODB, 157, "error: netlist component ({}) is not defined", iname);
     ++_errors;
@@ -185,7 +184,7 @@ void definSNet::connection(const char* iname,
   dbMaster* master = inst->getMaster();
   dbMTerm* mterm = master->findMTerm(_block, tname);
 
-  if (mterm == NULL) {
+  if (mterm == nullptr) {
     _logger->warn(utl::ODB,
                   158,
                   "error: netlist component-pin ({}, {}) is not defined",
@@ -203,7 +202,7 @@ void definSNet::connection(const char* iname,
 
 void definSNet::use(dbSigType type)
 {
-  if ((_cur_net == NULL) || (_replace_wires == true))
+  if ((_cur_net == nullptr) || (_replace_wires == true))
     return;
 
   _cur_net->setSigType(type);
@@ -211,7 +210,7 @@ void definSNet::use(dbSigType type)
 
 void definSNet::source(dbSourceType source)
 {
-  if ((_cur_net == NULL) || (_replace_wires == true))
+  if ((_cur_net == nullptr) || (_replace_wires == true))
     return;
 
   _cur_net->setSourceType(source);
@@ -219,7 +218,7 @@ void definSNet::source(dbSourceType source)
 
 void definSNet::weight(int weight)
 {
-  if ((_cur_net == NULL) || (_replace_wires == true))
+  if ((_cur_net == nullptr) || (_replace_wires == true))
     return;
 
   _cur_net->setWeight(weight);
@@ -227,7 +226,7 @@ void definSNet::weight(int weight)
 
 void definSNet::fixedbump()
 {
-  if ((_cur_net == NULL) || (_replace_wires == true))
+  if ((_cur_net == nullptr) || (_replace_wires == true))
     return;
 
   _cur_net->setFixedBump(true);
@@ -235,12 +234,12 @@ void definSNet::fixedbump()
 
 void definSNet::rect(const char* layer_name, int x1, int y1, int x2, int y2)
 {
-  if (_swire == NULL)
+  if (_swire == nullptr)
     return;
 
   dbTechLayer* layer = _tech->findLayer(layer_name);
 
-  if (layer == NULL) {
+  if (layer == nullptr) {
     _logger->warn(
         utl::ODB, 159, "error: undefined layer ({}) referenced", layer_name);
     return;
@@ -259,7 +258,7 @@ void definSNet::polygon(const char* layer_name, std::vector<defPoint>& points)
 {
   dbTechLayer* layer = _tech->findLayer(layer_name);
 
-  if (layer == NULL) {
+  if (layer == nullptr) {
     _logger->warn(
         utl::ODB, 160, "error: undefined layer ({}) referenced", layer_name);
     return;
@@ -294,7 +293,7 @@ void definSNet::wire(dbWireType type, const char* shield)
   if (type == dbWireType::SHIELD) {
     _shield_net = _block->findNet(shield);
 
-    if (_shield_net == NULL) {
+    if (_shield_net == nullptr) {
       _logger->warn(
           utl::ODB, 161, "error: SHIELD net ({}) does not exists.", shield);
       _wire_type = dbWireType::NONE;
@@ -312,12 +311,12 @@ void definSNet::path(const char* layer_name, int width)
 
   _cur_layer = _tech->findLayer(layer_name);
 
-  if (_cur_layer == NULL) {
+  if (_cur_layer == nullptr) {
     _logger->warn(
         utl::ODB, 162, "error: undefined layer ({}) referenced", layer_name);
     ++_errors;
     dbSWire::destroy(_swire);
-    _swire = NULL;
+    _swire = nullptr;
     return;
   }
 
@@ -420,7 +419,7 @@ void definSNet::pathVia(const char* via_name)
 
   dbTechVia* tech_via = _tech->findVia(via_name);
 
-  if (tech_via != NULL) {
+  if (tech_via != nullptr) {
     if (_swire) {
       _cur_layer = create_via_array(_swire,
                                     _wire_shape_type,
@@ -433,15 +432,15 @@ void definSNet::pathVia(const char* via_name)
                                     0,
                                     0,
                                     _logger);
-      if (_cur_layer == NULL)
+      if (_cur_layer == nullptr)
         _errors++;
     }
   } else {
     dbVia* via = _block->findVia(via_name);
 
-    if (via == NULL) {
+    if (via == nullptr) {
       _logger->warn(
-          utl::ODB, 163, "error: undefined ia ({}) referenced", via_name);
+          utl::ODB, 163, "error: undefined via ({}) referenced", via_name);
       ++_errors;
       return;
     }
@@ -458,7 +457,7 @@ void definSNet::pathVia(const char* via_name)
                                     0,
                                     0,
                                     _logger);
-      if (_cur_layer == NULL)
+      if (_cur_layer == nullptr)
         _errors++;
     }
   }
@@ -477,7 +476,7 @@ void definSNet::pathViaArray(const char* via_name,
 
   dbTechVia* tech_via = _tech->findVia(via_name);
 
-  if (tech_via != NULL) {
+  if (tech_via != nullptr) {
     stepX = dbdist(stepX);
     stepY = dbdist(stepY);
 
@@ -496,9 +495,9 @@ void definSNet::pathViaArray(const char* via_name,
   } else {
     dbVia* via = _block->findVia(via_name);
 
-    if (via == NULL) {
+    if (via == nullptr) {
       _logger->warn(
-          utl::ODB, 164, "error: undefined ia ({}) referenced", via_name);
+          utl::ODB, 164, "error: undefined via ({}) referenced", via_name);
       ++_errors;
       return;
     }
@@ -523,7 +522,7 @@ void definSNet::pathViaArray(const char* via_name,
 
 void definSNet::pathEnd()
 {
-  _cur_layer = NULL;
+  _cur_layer = nullptr;
 }
 
 void definSNet::wireEnd()
@@ -535,12 +534,12 @@ void definSNet::wireEnd()
       wires.reverse();
   }
 
-  _swire = NULL;
+  _swire = nullptr;
 }
 
 void definSNet::property(const char* name, const char* value)
 {
-  if ((_cur_net == NULL) || _replace_wires)
+  if ((_cur_net == nullptr) || _replace_wires)
     return;
 
   dbProperty* p = dbProperty::find(_cur_net, name);
@@ -552,7 +551,7 @@ void definSNet::property(const char* name, const char* value)
 
 void definSNet::property(const char* name, int value)
 {
-  if ((_cur_net == NULL) || _replace_wires)
+  if ((_cur_net == nullptr) || _replace_wires)
     return;
 
   dbProperty* p = dbProperty::find(_cur_net, name);
@@ -564,7 +563,7 @@ void definSNet::property(const char* name, int value)
 
 void definSNet::property(const char* name, double value)
 {
-  if ((_cur_net == NULL) || _replace_wires)
+  if ((_cur_net == nullptr) || _replace_wires)
     return;
 
   dbProperty* p = dbProperty::find(_cur_net, name);
@@ -577,7 +576,7 @@ void definSNet::property(const char* name, double value)
 
 void definSNet::end()
 {
-  if (_cur_net == NULL)
+  if (_cur_net == nullptr)
     return;
 
   if (_replace_wires == false) {
@@ -597,8 +596,7 @@ void definSNet::end()
   if (swires.reversible() && swires.orderReversed())
     swires.reverse();
 
-  //	notice(0,"End\n");
-  _cur_net = NULL;
+  _cur_net = nullptr;
 }
 
 void definSNet::connect_all(dbNet* net, const char* term)
@@ -615,7 +613,7 @@ void definSNet::connect_all(dbNet* net, const char* term)
     dbMaster* master = *mitr;
     dbMTerm* mterm = master->findMTerm(_block, term);
 
-    if (mterm != NULL)
+    if (mterm != nullptr)
       matched_mterms[mterm] = 1;
   }
 
@@ -623,10 +621,6 @@ void definSNet::connect_all(dbNet* net, const char* term)
 
   for (itr = iterms.begin(); itr != iterms.end(); ++itr) {
     dbITerm* iterm = *itr;
-
-    // notice(0, "iterm %d - I%d %s M %s\n", iterm->getId(),
-    // iterm->getInst()->getId(), iterm->getInst()->getConstName(),
-    // iterm->getInst()->getMaster()->getConstName());
 
     dbMTerm* mterm = iterm->getMTerm();
 

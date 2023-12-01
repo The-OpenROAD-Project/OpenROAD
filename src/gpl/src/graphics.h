@@ -45,8 +45,10 @@ class Logger;
 namespace gpl {
 
 class InitialPlace;
+class NesterovBaseCommon;
 class NesterovBase;
 class NesterovPlace;
+class PlacerBaseCommon;
 class PlacerBase;
 class GCell;
 
@@ -54,19 +56,32 @@ class GCell;
 class Graphics : public gui::Renderer, public gui::HeatMapDataSource
 {
  public:
+  using LineSeg = std::pair<odb::Point, odb::Point>;
+  using LineSegs = std::vector<LineSeg>;
+
+  // Debug mbff
+  Graphics(utl::Logger* logger);
+
   // Debug InitialPlace
-  Graphics(utl::Logger* logger, std::shared_ptr<PlacerBase> pb);
+  Graphics(utl::Logger* logger,
+           std::shared_ptr<PlacerBaseCommon> pbc,
+           std::vector<std::shared_ptr<PlacerBase>>& pbVec);
 
   // Debug NesterovPlace
   Graphics(utl::Logger* logger,
            NesterovPlace* np,
-           std::shared_ptr<PlacerBase> pb,
-           std::shared_ptr<NesterovBase> nb,
+           std::shared_ptr<PlacerBaseCommon> pbc,
+           std::shared_ptr<NesterovBaseCommon> nbc,
+           std::vector<std::shared_ptr<PlacerBase>>& pbVec,
+           std::vector<std::shared_ptr<NesterovBase>>& nbVec,
            bool draw_bins,
            odb::dbInst* inst);
 
   // Draw the graphics; optionally pausing afterwards
   void cellPlot(bool pause = false);
+
+  // Draw the MBFF mapping
+  void mbff_mapping(const LineSegs& segs);
 
   // Show a message in the status bar
   void status(const std::string& message);
@@ -99,17 +114,29 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
     Overflow
   };
 
-  std::shared_ptr<PlacerBase> pb_;
-  std::shared_ptr<NesterovBase> nb_;
-  NesterovPlace* np_;
-  GCell* selected_;
-  bool draw_bins_;
-  utl::Logger* logger_;
-  HeatMapType heatmap_type_;
+  enum Mode
+  {
+    Mbff,
+    Initial,
+    Nesterov
+  };
+
+  std::shared_ptr<PlacerBaseCommon> pbc_;
+  std::shared_ptr<NesterovBaseCommon> nbc_;
+  std::vector<std::shared_ptr<PlacerBase>> pbVec_;
+  std::vector<std::shared_ptr<NesterovBase>> nbVec_;
+  NesterovPlace* np_ = nullptr;
+  GCell* selected_ = nullptr;
+  bool draw_bins_ = false;
+  utl::Logger* logger_ = nullptr;
+  HeatMapType heatmap_type_ = Density;
+  LineSegs mbff_edges_;
+  Mode mode_;
 
   void initHeatmap();
   void drawNesterov(gui::Painter& painter);
   void drawInitial(gui::Painter& painter);
+  void drawMBFF(gui::Painter& painter);
   void drawBounds(gui::Painter& painter);
   void reportSelected();
 };

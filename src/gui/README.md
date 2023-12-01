@@ -62,6 +62,7 @@ This command can be both be used when the GUI is active and not active.
 ```
 save_image [-resolution microns_per_pixel]
            [-area {x0 y0 x1 y1}]
+           [-width width]
            [-display_option {option value}]
            filename
 ```
@@ -71,24 +72,32 @@ Options description:
 - ``x0, y0`` first corner of the layout area (in microns) to be saved, default is to save what is visible on the screen unless called when gui is not active and then it selected the whole block.
 - ``x1, y1`` second corner of the layout area (in microns) to be saved, default is to save what is visible on the screen unless called when gui is not active and then it selected the whole block.
 - ``microns_per_pixel`` resolution in microns per pixel to use when saving the image, default will match what the GUI has selected.
+- ``width`` width of the output image in pixels, default will be computed from the resolution. Cannot be used with ``-resolution``.
 - ``option`` specific setting for a display option to show or hide specific elements. For example, to hide metal1 ``-display_option {Layers/metal1 false}``, to show routing tracks ``-display_option {Tracks/Pref true}``, or to show everthing ``-display_option {* true}``.
 
 ### Save screenshot of clock trees
 
 ```
-gui::save_clocktree_image filename
-                          clock_name
+save_clocktree_image filename
+                     -clock clock_name
+                     [-width width]
+                     [-height height]
+                     [-corner corner]
 ```
 
 Options description:
 - ``filename`` path to save the image to.
-- ``clock_name`` name of the clock to save the clocktree for.
+- ``-clock`` name of the clock to save the clocktree for.
+- ``-corner`` name of the timing corner to save the clocktree for, default to the first corner defined.
+- ``-height`` height of the image in pixels, defaults to the height of the GUI widget.
+- ``-width`` width of the image in pixels, defaults to the width of the GUI widget.
 
 ### Selecting objects
 
 ```
 select -type object_type
        [-name glob_pattern]
+       [-filter attribute=value]
        [-case_insensitive]
        [-highlight group]
 ```
@@ -98,6 +107,7 @@ Returns: number of objects selected.
 Options description:
 - ``object_type``: name of the object type. For example, ``Inst`` for instances, ``Net`` for nets, and ``DRC`` for DRC violations.
 - ``glob_pattern``: (optional) filter selection by the specified name. For example, to only select clk nets ``*clk*``. Use ``-case_insensitive`` to filter based on case insensitive instead of case sensitive.
+- ``attribute=value``: (optional) filter selection based on the objects' properties. ``attribute`` represents the property's name and ``value`` the property's value. In case the property holds a collection (e. g. BTerms in a Net) or a table (e. g. Layers in a Generate Via Rule) ``value`` can be any element within those. A special case exists for checking whether a collection is empty or not by using the value ``CONNECTED``. This can be useful to select a specific group of elements (e. g. BTerms=CONNECTED will select only Nets connected to Input/Output Pins).
 - ``group``: (optional) add the selection to the specific highlighting group. Values can be 0 to 7.
 
 ### Displaying timing cones
@@ -396,6 +406,7 @@ The currently availble heat maps are:
 - ``Routing``
 - ``Placement``
 - ``IRDrop``
+- ``RUDY`` [^RUDY]
 
 To control the settings in the heat maps:
 
@@ -421,6 +432,10 @@ gui::dump_heatmap name filename
 Options description: 
 - ``name`` is the name of the heatmap.
 - ``filename`` path to the file to write the data to.
+
+[^RUDY]: RUDY means Rectangular Uniform wire DensitY, which can predict the routing density very rough and quickly. You can see this notion in [this paper](https://past.date-conference.com/proceedings-archive/2007/DATE07/PDFFILES/08.7_1.PDF) 
+
+
 
 ### GUI Display Controls
 

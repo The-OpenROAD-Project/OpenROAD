@@ -1,0 +1,37 @@
+name: Post clang-tidy review comments
+
+on:
+  workflow_run:
+    # The name field of the lint action .github/workflows/github-actions-clang-tidy.yml
+    workflows: ["clang-tidy-review"]
+    types:
+      - completed
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Downloads the artifact uploaded by the lint action
+      - name: 'Download artifact'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: ${{github.event.workflow_run.id }},
+            });
+            const matchArtifact = artifacts.data.artifacts.filter((artifact) => {
+              return artifact.name == "clang-tidy-review"
+            })[0];
+            const download = await github.rest.actions.downloadArtifact({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              artifact_id: matchArtifact.id,
+              archive_format: 'zip',
+            });
+            const fs = require('fs');
+            fs.writeFileSync('${{github.workspace}}/clang-tidy-review.zip', Buffer.from(download.data));
+      - name: 'Unzip artifact'
+        run: unzip clang-tidy-review.zip
+      - uses: The-OpenROAD-Project/clang-tidy-review/post@master

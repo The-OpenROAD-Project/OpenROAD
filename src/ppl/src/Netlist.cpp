@@ -38,6 +38,7 @@
 #include <algorithm>
 
 #include "Slots.h"
+#include "iostream"
 #include "ppl/IOPlacer.h"
 
 namespace ppl {
@@ -56,7 +57,9 @@ void Netlist::addIONet(const IOPin& io_pin,
   net_pointer_.push_back(inst_pins_.size());
 }
 
-int Netlist::createIOGroup(const std::vector<odb::dbBTerm*>& pin_list)
+int Netlist::createIOGroup(const std::vector<odb::dbBTerm*>& pin_list,
+                           bool order,
+                           const int group_idx)
 {
   int pin_cnt = 0;
   std::vector<int> pin_indices;
@@ -66,17 +69,18 @@ int Netlist::createIOGroup(const std::vector<odb::dbBTerm*>& pin_list)
       return pin_cnt;
     }
     io_pins_[pin_idx].setInGroup();
+    io_pins_[pin_idx].setGroupIdx(group_idx);
     pin_indices.push_back(pin_idx);
     pin_cnt++;
   }
 
-  io_groups_.push_back(pin_indices);
+  io_groups_.push_back({pin_indices, order});
   return pin_indices.size();
 }
 
-void Netlist::addIOGroup(const std::vector<int>& pin_group)
+void Netlist::addIOGroup(const std::vector<int>& pin_group, bool order)
 {
-  io_groups_.push_back(pin_group);
+  io_groups_.push_back({pin_group, order});
 }
 
 void Netlist::getSinksOfIO(int idx, std::vector<InstancePin>& sinks)
@@ -165,13 +169,23 @@ int Netlist::computeDstIOtoPins(int idx, const Point& slot_pos)
   return total_distance;
 }
 
-void Netlist::clear()
+void Netlist::sortPinsFromGroup(int group_idx, Edge edge)
+{
+  PinGroupByIndex& group = io_groups_[group_idx];
+  std::vector<int>& pin_indices = group.pin_indices;
+  if (group.order && (edge == Edge::top || edge == Edge::left)) {
+    std::reverse(pin_indices.begin(), pin_indices.end());
+  }
+}
+
+void Netlist::reset()
 {
   inst_pins_.clear();
   net_pointer_.clear();
   io_pins_.clear();
   io_groups_.clear();
   _db_pin_idx_map.clear();
+  net_pointer_.push_back(0);
 }
 
 int IOPin::getArea() const

@@ -36,37 +36,33 @@
 #pragma once
 
 #include "BufferedNet.hh"
-
-#include "utl/Logger.h"
+#include "PreChecks.hh"
 #include "db_sta/dbSta.hh"
-#include "gui/gui.h"
-
+#include "sta/Corner.hh"
+#include "sta/Delay.hh"
+#include "sta/GraphClass.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/GraphClass.hh"
-#include "sta/Delay.hh"
-#include "sta/Corner.hh"
+#include "utl/Logger.h"
 
 namespace rsz {
 
 class Resizer;
-class FanoutRender;
 
 using std::vector;
 
-using sta::StaState;
+using sta::Corner;
+using sta::dbNetwork;
+using sta::dbSta;
+using sta::LibertyCell;
+using sta::LibertyPort;
+using sta::MinMax;
 using sta::Net;
 using sta::Pin;
 using sta::PinSeq;
-using sta::Vertex;
 using sta::Slew;
-using sta::Corner;
-using sta::LibertyCell;
-using sta::LibertyPort;
-using sta::dbNetwork;
-using sta::dbSta;
-using sta::MinMax;
-using sta::Vector;
+using sta::StaState;
+using sta::Vertex;
 
 using odb::Rect;
 
@@ -75,10 +71,10 @@ class LoadRegion
 {
 public:
   LoadRegion();
-  LoadRegion(Vector<Pin*> &pins,
+  LoadRegion(PinSeq& pins,
        Rect &bbox);
 
-  Vector<Pin*> pins_;
+  PinSeq pins_;
   Rect bbox_; // dbu
   vector<LoadRegion> regions_;
 };
@@ -86,26 +82,28 @@ public:
 class RepairDesign : StaState
 {
 public:
-  RepairDesign(Resizer *resizer);
-  ~RepairDesign();
-  void repairDesign(double max_wire_length,
-                    double slew_margin,
-                    double cap_margin);
-  void repairDesign(double max_wire_length, // zero for none (meters)
-                    double slew_margin,
-                    double cap_margin,
-                    int &repair_count,
-                    int &slew_violations,
-                    int &cap_violations,
-                    int &fanout_violations,
-                    int &length_violations);
-  int insertedBufferCount() const { return inserted_buffer_count_; }
-  void repairNet(Net *net,
-                 double max_wire_length,
-                 double slew_margin,
-                 double cap_margin);
-  void repairClkNets(double max_wire_length);
-  void repairClkInverters();
+ explicit RepairDesign(Resizer* resizer);
+ ~RepairDesign() override;
+ void repairDesign(double max_wire_length,
+                   double slew_margin,
+                   double cap_margin,
+                   bool verbose);
+ void repairDesign(double max_wire_length,  // zero for none (meters)
+                   double slew_margin,
+                   double cap_margin,
+                   bool verbose,
+                   int& repaired_net_count,
+                   int& slew_violations,
+                   int& cap_violations,
+                   int& fanout_violations,
+                   int& length_violations);
+ int insertedBufferCount() const { return inserted_buffer_count_; }
+ void repairNet(Net* net,
+                double max_wire_length,
+                double slew_margin,
+                double cap_margin);
+ void repairClkNets(double max_wire_length);
+ void repairClkInverters();
 
 protected:
   void init();
@@ -117,7 +115,7 @@ protected:
                  bool check_fanout,
                  int max_length, // dbu
                  bool resize_drvr,
-                 int &repair_count,
+                 int &repaired_net_count,
                  int &slew_violations,
                  int &cap_violations,
                  int &fanout_violations,
@@ -134,27 +132,28 @@ protected:
                  const Corner *&corner);
   float bufferInputMaxSlew(LibertyCell *buffer,
                            const Corner *corner) const;
-  void repairNet(BufferedNetPtr bnet,
+  void repairNet(const BufferedNetPtr& bnet,
                  const Pin *drvr_pin,
                  float max_cap,
                  int max_length, // dbu
                  const Corner *corner);
-  void repairNet(BufferedNetPtr bnet,
+  void repairNet(const BufferedNetPtr &bnet,
                  int level,
                  // Return values.
                  int &wire_length,
                  PinSeq &load_pins);
-  void repairNetWire(BufferedNetPtr bnet,
+  void checkSlewLimit(float ref_cap, float max_load_slew);
+  void repairNetWire(const BufferedNetPtr& bnet,
                      int level,
                      // Return values.
                      int &wire_length,
                      PinSeq &load_pins);
-  void repairNetJunc(BufferedNetPtr bnet,
+  void repairNetJunc(const BufferedNetPtr& bnet,
                      int level,
                      // Return values.
                      int &wire_length,
                      PinSeq &load_pins);
-  void repairNetLoad(BufferedNetPtr bnet,
+  void repairNetLoad(const BufferedNetPtr& bnet,
                      int level,
                      // Return values.
                      int &wire_length,
@@ -181,8 +180,8 @@ protected:
                            bool resize_drvr);
   void makeFanoutRepeater(PinSeq &repeater_loads,
                           PinSeq &repeater_inputs,
-                          Rect bbox,
-                          Point loc,
+                          const Rect& bbox,
+                          const Point& loc,
                           bool check_slew,
                           bool check_cap,
                           int max_length,
@@ -193,7 +192,7 @@ protected:
                          PinSeq &pins);
   bool isRepeater(const Pin *load_pin);
   void makeRepeater(const char *reason,
-                    Point loc,
+                    const Point& loc,
                     LibertyCell *buffer_cell,
                     bool resize,
                     int level,
@@ -218,17 +217,17 @@ protected:
                     Pin *&repeater_out_pin);
   LibertyCell *findBufferUnderSlew(float max_slew,
                                    float load_cap);
-  float bufferSlew(LibertyCell *buffer_cell,
-                   float load_cap,
-                   const DcalcAnalysisPt *dcalc_ap);
   bool hasInputPort(const Net *net);
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
   double dbuToMicrons(int dist) const;
 
+  void printProgress(int iteration, bool force, bool end, int repaired_net_count) const;
+
   Logger *logger_;
   dbSta *sta_;
   dbNetwork *db_network_;
+  PreChecks *pre_checks_;
   Resizer *resizer_;
   int dbu_;
 
@@ -245,28 +244,12 @@ protected:
   const MinMax *min_;
   const MinMax *max_;
 
-  FanoutRender *fanout_render_;
+  int print_interval_;
 
   // Elmore factor for 20-80% slew thresholds.
   static constexpr float elmore_skew_factor_ = 1.39;
-
-  friend class FanoutRender;
+  static constexpr int min_print_interval_ = 10;
+  static constexpr int max_print_interval_ = 100;
 };
 
-class FanoutRender : public gui::Renderer
-{
-public:
-  FanoutRender(RepairDesign *repair);
-  void setRect(Rect &rect);
-  void setDrvrLoc(Point loc);
-  void setPins(PinSeq *pins);
-  void drawObjects(gui::Painter &painter);
-
-private:
-  RepairDesign *repair_;
-  Rect rect_;
-  PinSeq *pins_;
-  Point drvr_loc_;
-};
-
-} // namespace
+}  // namespace rsz

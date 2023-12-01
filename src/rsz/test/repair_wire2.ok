@@ -10,7 +10,7 @@
 [INFO ODB-0133]     Created 5 nets and 8 connections.
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
-Path Group: (none)
+Path Group: unconstrained
 Path Type: max
 
      Cap     Slew    Delay     Time   Description
@@ -31,7 +31,7 @@ Path Type: max
 
 Startpoint: in1 (input port)
 Endpoint: out2 (output port)
-Path Group: (none)
+Path Group: unconstrained
 Path Type: max
 
      Cap     Slew    Delay     Time   Description
@@ -69,7 +69,7 @@ u1/Z manhtn 0.8 steiner 0.8 0.00
 in1 manhtn 0.7 steiner 0.7 0.00
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
-Path Group: (none)
+Path Group: unconstrained
 Path Type: max
 
      Cap     Slew    Delay     Time   Description
@@ -92,7 +92,7 @@ Path Type: max
 
 Startpoint: in1 (input port)
 Endpoint: out2 (output port)
-Path Group: (none)
+Path Group: unconstrained
 Path Type: max
 
      Cap     Slew    Delay     Time   Description

@@ -114,10 +114,6 @@ bool BufferTree::isAggregate(odb::dbInst* inst)
   }
 
   auto* network = sta_->getDbNetwork();
-  if (inst->getSourceType() != odb::dbSourceType::TIMING) {
-    return false;
-  }
-
   auto* master = inst->getMaster();
   auto* cell = network->dbToSta(master);
   if (cell == nullptr) {
@@ -138,11 +134,13 @@ BufferTreeDescriptor::BufferTreeDescriptor(
     odb::dbDatabase* db,
     sta::dbSta* sta,
     const std::set<odb::dbNet*>& focus_nets,
-    const std::set<odb::dbNet*>& guide_nets)
+    const std::set<odb::dbNet*>& guide_nets,
+    const std::set<odb::dbNet*>& tracks_nets)
     : db_(db),
       net_descriptor_(Gui::get()->getDescriptor<odb::dbNet*>()),
       focus_nets_(focus_nets),
-      guide_nets_(guide_nets)
+      guide_nets_(guide_nets),
+      tracks_nets_(tracks_nets)
 {
   BufferTree::setSTA(sta);
 }
@@ -296,6 +294,27 @@ Descriptor::Actions BufferTreeDescriptor::getActions(std::any object) const
                                            }
                                            return makeSelected(bnet);
                                          }});
+  }
+  bool has_net_tracks = false;
+  for (auto* net : bnet.getNets()) {
+    has_net_tracks |= !net->getTracks().empty();
+  }
+  if (has_net_tracks) {
+    actions.push_back(
+        Descriptor::Action{"Tracks", [this, gui, bnet]() {
+                             bool tracks_on = false;
+                             for (auto* net : bnet.getNets()) {
+                               tracks_on |= tracks_nets_.count(net) != 0;
+                             }
+                             for (auto* net : bnet.getNets()) {
+                               if (!tracks_on) {
+                                 gui->addNetTracks(net);
+                               } else {
+                                 gui->removeNetTracks(net);
+                               }
+                             }
+                             return makeSelected(bnet);
+                           }});
   }
   return actions;
 }

@@ -1,0 +1,48 @@
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0225]     Created 437 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130_fd_sc_hd_merged.lef
+***************************
+Preview DFT Report
+Number of chains: 4
+Clock domain: No Mix
+***************************
+
+Scan chain 'chain_0' has 5 cells (5 bits)
+
+  ff9_clk1_falling (clock1, falling)
+  ff7_clk1_falling
+  ff5_clk1_falling
+  ff3_clk1_falling
+  ff1_clk1_falling
+
+Scan chain 'chain_1' has 5 cells (5 bits)
+
+  ff9_clk1_rising (clock1, rising)
+  ff7_clk1_rising
+  ff5_clk1_rising
+  ff3_clk1_rising
+  ff1_clk1_rising
+
+Scan chain 'chain_2' has 5 cells (5 bits)
+
+  ff8_clk2_falling (clock2, falling)
+  ff6_clk2_falling
+  ff4_clk2_falling
+  ff2_clk2_falling
+  ff10_clk2_falling
+
+Scan chain 'chain_3' has 5 cells (5 bits)
+
+  ff8_clk2_rising (clock2, rising)
+  ff6_clk2_rising
+  ff4_clk2_rising
+  ff2_clk2_rising
+  ff10_clk2_rising
+
+
+No differences found.
+No differences found.

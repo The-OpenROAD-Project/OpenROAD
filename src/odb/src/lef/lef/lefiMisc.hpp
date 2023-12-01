@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -86,8 +86,6 @@ struct lefiGeomPolygon
   double* x;
   double* y;
   int colorMask;
-  lefiGeomPolygon();
-  LEF_COPY_CONSTRUCTOR_H(lefiGeomPolygon);
 };
 
 struct lefiGeomPolygonIter
@@ -152,7 +150,6 @@ class lefiGeometries
   lefiGeometries();
   void Init();
 
-  LEF_COPY_CONSTRUCTOR_H(lefiGeometries);
   void Destroy();
   ~lefiGeometries();
 
@@ -307,9 +304,6 @@ class lefiSite
   lefiSite();
   void Init();
 
-  LEF_COPY_CONSTRUCTOR_H(lefiSite);
-  LEF_ASSIGN_OPERATOR_H(lefiSite);
-
   void Destroy();
   ~lefiSite();
 
@@ -361,7 +355,6 @@ class lefiSitePattern
   lefiSitePattern();
   void Init();
 
-  LEF_COPY_CONSTRUCTOR_H(lefiSitePattern);
   void Destroy();
   ~lefiSitePattern();
 

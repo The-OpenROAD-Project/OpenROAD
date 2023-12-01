@@ -48,20 +48,20 @@ proc link_design { {top_cell_name ""} } {
 
   if { $top_cell_name == "" } {
     if { $current_design_name == "" } {
-      utl::error ORD 1009 "missing top_cell_name argument and no current_design."
+      utl::error ORD 2009 "missing top_cell_name argument and no current_design."
       return 0
     } else {
       set top_cell_name $current_design_name
     }
   }
   if { ![ord::db_has_tech] } {
-    utl::error ORD 1010 "no technology has been read."
+    utl::error ORD 2010 "no technology has been read."
   }
   ord::link_design_db_cmd $top_cell_name
 }
 
 sta::define_cmd_args "write_verilog" {[-sort] [-include_pwr_gnd]\
-					[-remove_cells cells] filename}
+                                        [-remove_cells cells] filename}
 
 # Copied from sta/verilog/Verilog.tcl because we don't want sta::read_verilog
 # that is in the same file.

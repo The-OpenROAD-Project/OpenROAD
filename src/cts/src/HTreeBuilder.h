@@ -38,63 +38,48 @@
 #include <cmath>
 #include <limits>
 
+#include "CtsObserver.h"
 #include "CtsOptions.h"
-#include "Graphics.h"
 #include "TreeBuilder.h"
 
-namespace utl {
-class Logger;
-}  // namespace utl
-
 namespace cts {
+class Graphics;
 
 class SegmentBuilder
 {
  public:
-  SegmentBuilder(const std::string instPrefix,
-                 const std::string netPrefix,
-                 Point<double> root,
-                 Point<double> target,
+  SegmentBuilder(const std::string& instPrefix,
+                 const std::string& netPrefix,
+                 const Point<double>& root,
+                 const Point<double>& target,
                  const std::vector<unsigned>& techCharWires,
                  Clock& clock,
                  Clock::SubNet& drivingSubNet,
-                 TechChar& techChar,
-                 unsigned techCharDistUnit,
-                 TreeBuilder* tree)
-      : instPrefix_(instPrefix),
-        netPrefix_(netPrefix),
-        root_(root),
-        target_(target),
-        techCharWires_(techCharWires),
-        clock_(&clock),
-        drivingSubNet_(&drivingSubNet),
-        techChar_(&techChar),
-        tree_(tree),
-        techCharDistUnit_(techCharDistUnit),
-        forceBuffer_(false)
-  {
-  }
+                 const TechChar& techChar,
+                 const unsigned techCharDistUnit,
+                 TreeBuilder* tree);
 
-  void build(std::string forceBuffer = "");
-  void forceBufferInSegment(std::string master);
+  void build(const std::string& forceBuffer = "");
+  void forceBufferInSegment(const std::string& master);
+
   Clock::SubNet* getDrivingSubNet() const { return drivingSubNet_; }
   unsigned getNumBufferLevels() const { return numBufferLevels_; }
+  TreeBuilder* getTree() const { return tree_; }
 
- protected:
+ private:
   const std::string instPrefix_;
   const std::string netPrefix_;
-  Point<double> root_;
-  Point<double> target_;
-  std::vector<unsigned> techCharWires_;
+  const Point<double> root_;
+  const Point<double> target_;
+  const std::vector<unsigned> techCharWires_;
+  const TechChar* techChar_;
+  const unsigned techCharDistUnit_;
   Clock* clock_;
   Clock::SubNet* drivingSubNet_;
-  TechChar* techChar_;
   TreeBuilder* tree_;
-  unsigned techCharDistUnit_;
-  bool forceBuffer_;
   unsigned numBufferLevels_ = 0;
 };
-class Graphics;
+
 //-----------------------------------------------------------------------------
 class HTreeBuilder : public TreeBuilder
 {
@@ -103,8 +88,7 @@ class HTreeBuilder : public TreeBuilder
    public:
     static constexpr unsigned NO_PARENT = std::numeric_limits<unsigned>::max();
 
-    LevelTopology(double length)
-        : length_(length), outputSlew_(0), outputCap_(0), remainingLength_(0){};
+    explicit LevelTopology(double length) : length_(length){};
 
     void addWireSegment(unsigned idx) { wireSegments_.push_back(idx); }
 
@@ -122,6 +106,8 @@ class HTreeBuilder : public TreeBuilder
       branchSinkLocs_[branchIdx].push_back(sinkLoc);
     }
 
+    unsigned getBranchingPointSize() { return branchPointLoc_.size(); }
+
     Point<double>& getBranchingPoint(unsigned idx)
     {
       return branchPointLoc_[idx];
@@ -133,9 +119,10 @@ class HTreeBuilder : public TreeBuilder
     }
 
     double getLength() const { return length_; }
+    void setLength(double x) { length_ = x; }
 
     void forEachBranchingPoint(
-        std::function<void(unsigned, Point<double>)> func) const
+        const std::function<void(unsigned, Point<double>)>& func) const
     {
       for (unsigned idx = 0; idx < branchPointLoc_.size(); ++idx) {
         func(idx, branchPointLoc_[idx]);
@@ -172,9 +159,9 @@ class HTreeBuilder : public TreeBuilder
 
    private:
     double length_;
-    unsigned outputSlew_;
-    unsigned outputCap_;
-    unsigned remainingLength_;
+    unsigned outputSlew_ = 0;
+    unsigned outputCap_ = 0;
+    unsigned remainingLength_ = 0;
     std::vector<unsigned> wireSegments_;
     std::vector<Point<double>> branchPointLoc_;
     std::vector<unsigned> parents_;
@@ -186,12 +173,110 @@ class HTreeBuilder : public TreeBuilder
   HTreeBuilder(CtsOptions* options,
                Clock& net,
                TreeBuilder* parent,
-               utl::Logger* logger)
-      : TreeBuilder(options, net, parent), logger_(logger){};
+               utl::Logger* logger,
+               odb::dbDatabase* db)
+      : TreeBuilder(options, net, parent, logger, db)
+  {
+  }
 
-  void run();
-
+  void run() override;
+  void findLegalLocations(const Point<double>& parentPoint,
+                          const Point<double>& branchPoint,
+                          double x1,
+                          double y1,
+                          double x2,
+                          double y2,
+                          std::vector<Point<double>>& points);
+  void addCandidateLoc(double x,
+                       double y,
+                       const Point<double>& parentPoint,
+                       double x1,
+                       double y1,
+                       double x2,
+                       double y2,
+                       std::vector<Point<double>>& points)
+  {
+    Point<double> candidate(x, y);
+    if ((candidate != parentPoint) && isAlongBbox(x, y, x1, y1, x2, y2)) {
+      points.emplace_back(x, y);
+    }
+  }
+  void addCandidatePointsAlongBlockage(const Point<double>& point,
+                                       const Point<double>& parentPoint,
+                                       double targetDist,
+                                       int scalingFactor,
+                                       std::vector<Point<double>>& candidates,
+                                       odb::Direction2D direction);
+  Point<double> findBestLegalLocation(
+      double targetDist,
+      const Point<double>& branchPoint,
+      const Point<double>& parentPoint,
+      const std::vector<Point<double>>& legalLocations,
+      const std::vector<Point<double>>& sinks,
+      double x1,
+      double y1,
+      double x2,
+      double y2,
+      int scalingFactor);
+  Point<double> adjustBestLegalLocation(double targetDist,
+                                        const Point<double>& currLoc,
+                                        const Point<double>& parentPoint,
+                                        const std::vector<Point<double>>& sinks,
+                                        double x1,
+                                        double y1,
+                                        double x2,
+                                        double y2,
+                                        int scalingFactor);
+  void checkLegalityAndCostSpecial(const Point<double>& oldLoc,
+                                   const Point<double>& newLoc,
+                                   const Point<double>& parentPoint,
+                                   double targetDist,
+                                   const std::vector<Point<double>>& sinks,
+                                   int scalingFactor,
+                                   double x1,
+                                   double y1,
+                                   double x2,
+                                   double y2,
+                                   Point<double>& bestLoc,
+                                   double& sinkDist,
+                                   double& bestSinkDist);
+  bool adjustAlongBlockage(double targetDist,
+                           const Point<double>& currLoc,
+                           const Point<double>& parentPoint,
+                           const std::vector<Point<double>>& sinks,
+                           double x1,
+                           double y1,
+                           double x2,
+                           double y2,
+                           int scalingFactor,
+                           Point<double>& bestLoc);
+  Point<double> adjustBeyondBlockage(const Point<double>& branchPoint,
+                                     const Point<double>& parentPoint,
+                                     double targetDist,
+                                     const std::vector<Point<double>>& sinks,
+                                     int scalingFactor);
+  void checkLegalityAndCost(const Point<double>& oldLoc,
+                            const Point<double>& newLoc,
+                            const Point<double>& parentPoint,
+                            double targetDist,
+                            const std::vector<Point<double>>& sinks,
+                            int scalingFactor,
+                            Point<double>& bestLoc,
+                            double& sinkDist,
+                            double& bestSinkDist);
+  void legalize();
+  void legalizeDummy();
+  void printHTree();
   void plotSolution();
+  std::string plotHTree();
+  unsigned findSibling(LevelTopology& topology, unsigned i, unsigned par);
+  Point<double>& findSiblingLoc(LevelTopology& topology,
+                                unsigned i,
+                                unsigned par)
+  {
+    unsigned j = findSibling(topology, i, par);
+    return topology.getBranchingPoint(j);
+  }
 
   std::vector<LevelTopology> getTopologyVector() const
   {
@@ -211,7 +296,6 @@ class HTreeBuilder : public TreeBuilder
                                   unsigned& outputCap) const;
 
  private:
-  void treeVisualizer();
   void initSinkRegion();
   void computeLevelTopology(unsigned level, double width, double height);
   unsigned computeNumberOfSinksPerSubRegion(unsigned level) const;
@@ -236,7 +320,7 @@ class HTreeBuilder : public TreeBuilder
   void initSecondLevelSinks(std::vector<std::pair<float, float>>& sinkLocations,
                             std::vector<const ClockInst*>& sinkInsts);
   void computeBranchSinks(
-      LevelTopology& topology,
+      const LevelTopology& topology,
       unsigned branchIdx,
       std::vector<std::pair<float, float>>& sinkLocations) const;
 
@@ -266,8 +350,8 @@ class HTreeBuilder : public TreeBuilder
   void preClusteringOpt(const std::vector<std::pair<float, float>>& sinks,
                         std::vector<std::pair<float, float>>& points,
                         std::vector<unsigned>& mapSinkToPoint);
-  void preSinkClustering(std::vector<std::pair<float, float>>& sinks,
-                         std::vector<const ClockInst*>& sinkInsts,
+  void preSinkClustering(const std::vector<std::pair<float, float>>& sinks,
+                         const std::vector<const ClockInst*>& sinkInsts,
                          float maxDiameter,
                          unsigned clusterSize,
                          bool secondLevel = false);
@@ -290,13 +374,24 @@ class HTreeBuilder : public TreeBuilder
     return numSinksPerSubRegion < numMaxLeafSinks_;
   }
 
- protected:
-  utl::Logger* logger_;
+  double weightedDistance(const Point<double>& newLoc,
+                          const Point<double>& oldLoc,
+                          const std::vector<Point<double>>& sinks);
+  void scalePosition(Point<double>& loc,
+                     const Point<double>& parLoc,
+                     double leng,
+                     double scale);
+  void adjustToplevelTopology(Point<double>& a,
+                              Point<double>& b,
+                              const Point<double>& parLoc);
+  std::vector<unsigned> clusterDiameters() const { return clusterDiameters_; }
+  std::vector<unsigned> clusterSizes() const { return clusterSizes_; }
+
+ private:
   Box<double> sinkRegion_;
   std::vector<LevelTopology> topologyForEachLevel_;
   std::map<Point<double>, ClockInst*> mapLocationToSink_;
   std::vector<std::pair<float, float>> topLevelSinksClustered_;
-  std::unique_ptr<Graphics> graphics_;
 
   int wireSegmentUnit_ = 0;
   unsigned minInputCap_ = 0;
@@ -304,6 +399,8 @@ class HTreeBuilder : public TreeBuilder
   unsigned minLengthSinkRegion_ = 0;
   unsigned clockTreeMaxDepth_ = 0;
   static constexpr int min_clustering_sinks_ = 200;
+  std::vector<unsigned> clusterDiameters_ = {50, 100, 200};
+  std::vector<unsigned> clusterSizes_ = {10, 20, 30};
 };
 
 }  // namespace cts

@@ -23,8 +23,7 @@ uy = design.micronToDBU(62.56)
 
 ifph.create_voltage_domain("TEMP_ANALOG", (lx, ly, ux, uy))
 
-floorplan.initFloorplan(die, core, "unithd")
-                        ##"FreePDK45_38x28_10R_NP_162NW_34O")
+floorplan.initFloorplan(die, core, [floorplan.findSite("unithd")])
 
 def_file = helpers.make_result_file("init_floorplan9.def")
 design.writeDef(def_file)

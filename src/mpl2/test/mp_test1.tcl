@@ -22,10 +22,10 @@ link_design $top_module
 #
 read_def $floorplan_def -floorplan_initialize
 
-rtl_macro_placer -max_num_inst 1000 -min_num_inst 0 \
-                 -max_num_macro 1 -min_num_macro 0 \
-                 -report_directory results/mp_test1
+set_thread_count 0
+rtl_macro_placer -report_directory results/mp_test1 -halo_width 5.0
 
 set def_file [make_result_file mp_test1.def]
 write_def $def_file
+
 diff_files mp_test1.defok $def_file

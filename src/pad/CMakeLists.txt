@@ -38,13 +38,20 @@ include("openroad")
 swig_lib(NAME      pad
          NAMESPACE pad
          I_FILE    src/pad.i
+         SWIG_INCLUDES ${ODB_HOME}/src/swig/common
+                       ${ODB_HOME}/src/swig/tcl
+                       ${ODB_HOME}/include
          SCRIPTS   src/pad.tcl
                    src/PdnGen.tcl
+                   src/ICeWall.tcl
 )
 
 target_sources(pad
   PRIVATE
-    src/MakePad.cc
+    src/MakeICeWall.cpp
+    src/ICeWall.cpp
+    src/RDLRouter.cpp
+    src/Utilities.cpp
 )
 
 target_include_directories(pad
@@ -55,6 +62,10 @@ target_include_directories(pad
 target_link_libraries(pad
   PRIVATE
     OpenSTA
+    utl
+    odb
+    gui
+    Boost::boost
 )
 
 messages(

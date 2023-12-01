@@ -35,35 +35,30 @@
 
 #include "dbIterator.h"
 #include "odb.h"
-// User Code Begin Includes
-// User Code End Includes
 
 namespace odb {
-
 class _dbGroup;
+
 template <class T>
 class dbTable;
-// User Code Begin classes
-// User Code End classes
+
 class dbGroupItr : public dbIterator
 {
-  dbTable<_dbGroup>* _group_tbl;
-  // User Code Begin Fields
-  // User Code End Fields
  public:
   dbGroupItr(dbTable<_dbGroup>* group_tbl) { _group_tbl = group_tbl; }
 
-  bool reversible();
-  bool orderReversed();
-  void reverse(dbObject* parent);
-  uint sequential();
-  uint size(dbObject* parent);
-  uint begin(dbObject* parent);
-  uint end(dbObject* parent);
-  uint next(uint id, ...);
-  dbObject* getObject(uint id, ...);
-  // User Code Begin Methods
-  // User Code End Methods
+  bool reversible() override;
+  bool orderReversed() override;
+  void reverse(dbObject* parent) override;
+  uint sequential() override;
+  uint size(dbObject* parent) override;
+  uint begin(dbObject* parent) override;
+  uint end(dbObject* parent) override;
+  uint next(uint id, ...) override;
+  dbObject* getObject(uint id, ...) override;
+
+ private:
+  dbTable<_dbGroup>* _group_tbl;
 };
 
 }  // namespace odb

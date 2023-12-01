@@ -230,9 +230,9 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
 }
 
 void TimingPathsModel::populateModel(
-    const std::set<sta::Pin*>& from,
-    const std::vector<std::set<sta::Pin*>>& thru,
-    const std::set<sta::Pin*>& to)
+    const std::set<const sta::Pin*>& from,
+    const std::vector<std::set<const sta::Pin*>>& thru,
+    const std::set<const sta::Pin*>& to)
 {
   beginResetModel();
   timing_paths_.clear();
@@ -241,9 +241,9 @@ void TimingPathsModel::populateModel(
 }
 
 bool TimingPathsModel::populatePaths(
-    const std::set<sta::Pin*>& from,
-    const std::vector<std::set<sta::Pin*>>& thru,
-    const std::set<sta::Pin*>& to)
+    const std::set<const sta::Pin*>& from,
+    const std::vector<std::set<const sta::Pin*>>& thru,
+    const std::set<const sta::Pin*>& to)
 {
   // On lines of DataBaseHandler
   QApplication::setOverrideCursor(Qt::WaitCursor);
@@ -615,7 +615,7 @@ void TimingConeRenderer::setBTerm(odb::dbBTerm* term, bool fanin, bool fanout)
   setPin(network->dbToSta(term), fanin, fanout);
 }
 
-void TimingConeRenderer::setPin(sta::Pin* pin, bool fanin, bool fanout)
+void TimingConeRenderer::setPin(const sta::Pin* pin, bool fanin, bool fanout)
 {
   if (sta_ == nullptr) {
     return;
@@ -688,7 +688,7 @@ void TimingConeRenderer::setPin(sta::Pin* pin, bool fanin, bool fanout)
   redraw();
 }
 
-bool TimingConeRenderer::isSupplyPin(sta::Pin* pin) const
+bool TimingConeRenderer::isSupplyPin(const sta::Pin* pin) const
 {
   auto* network = sta_->getDbNetwork();
   odb::dbITerm* iterm;
@@ -822,7 +822,7 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
     const int color_count = color_generator_.getColorCount();
     auto* units = sta_->units()->timeUnit();
     const std::string text_units
-        = std::string(units->scaleAbreviation()) + units->suffix();
+        = std::string(units->scaleAbbreviation()) + units->suffix();
     std::vector<std::pair<int, std::string>> legend;
     for (int i = 0; i < legend_keys; i++) {
       const double scale = static_cast<double>(i) / (legend_keys - 1);
@@ -862,9 +862,9 @@ PinSetWidget::PinSetWidget(bool add_remove_button, QWidget* parent)
   clear_->setToolTip(tr("Clear pins"));
   clear_->setAutoDefault(false);
   clear_->setDefault(false);
-  connect(clear_, SIGNAL(pressed()), this, SLOT(clearPins()));
+  connect(clear_, &QPushButton::pressed, this, &PinSetWidget::clearPins);
 
-  connect(find_pin_, SIGNAL(returnPressed()), this, SLOT(findPin()));
+  connect(find_pin_, &QLineEdit::returnPressed, this, &PinSetWidget::findPin);
 
   QVBoxLayout* layout = new QVBoxLayout;
   QHBoxLayout* row_layout = new QHBoxLayout;
@@ -890,9 +890,9 @@ PinSetWidget::PinSetWidget(bool add_remove_button, QWidget* parent)
 
   box_->setContextMenuPolicy(Qt::CustomContextMenu);
   connect(box_,
-          SIGNAL(customContextMenuRequested(const QPoint&)),
+          &QListWidget::customContextMenuRequested,
           this,
-          SLOT(showMenu(const QPoint)));
+          &PinSetWidget::showMenu);
 }
 
 void PinSetWidget::setAddMode()
@@ -937,20 +937,20 @@ void PinSetWidget::updatePins()
   }
 }
 
-void PinSetWidget::setPins(const std::set<sta::Pin*>& pins)
+void PinSetWidget::setPins(const std::set<const sta::Pin*>& pins)
 {
   pins_.clear();
   pins_.insert(pins_.end(), pins.begin(), pins.end());
   updatePins();
 }
 
-const std::set<sta::Pin*> PinSetWidget::getPins() const
+const std::set<const sta::Pin*> PinSetWidget::getPins() const
 {
-  std::set<sta::Pin*> pins(pins_.begin(), pins_.end());
+  std::set<const sta::Pin*> pins(pins_.begin(), pins_.end());
   return pins;
 }
 
-void PinSetWidget::addPin(sta::Pin* pin)
+void PinSetWidget::addPin(const sta::Pin* pin)
 {
   if (pin == nullptr) {
     return;
@@ -963,7 +963,7 @@ void PinSetWidget::addPin(sta::Pin* pin)
   pins_.push_back(pin);
 }
 
-void PinSetWidget::removePin(sta::Pin* pin)
+void PinSetWidget::removePin(const sta::Pin* pin)
 {
   pins_.erase(std::find(pins_.begin(), pins_.end(), pin));
 }
@@ -972,7 +972,7 @@ void PinSetWidget::removeSelectedPins()
 {
   for (auto* selection : box_->selectedItems()) {
     void* pin_data = selection->data(Qt::UserRole).value<void*>();
-    removePin((sta::Pin*) pin_data);
+    removePin((const sta::Pin*) pin_data);
   }
   updatePins();
 }
@@ -997,16 +997,15 @@ void PinSetWidget::findPin()
     sta::PatternMatch matcher(name.constData());
 
     // search pins
-    sta::PinSeq found_pins;
-    network->findPinsHierMatching(top_inst, &matcher, &found_pins);
+    sta::PinSeq found_pins = network->findPinsHierMatching(top_inst, &matcher);
 
-    for (auto* pin : found_pins) {
+    for (const sta::Pin* pin : found_pins) {
       addPin(pin);
     }
 
     // search ports
-    sta::PortSeq found_ports;
-    network->findPortsMatching(network->cell(top_inst), &matcher, &found_ports);
+    sta::PortSeq found_ports
+        = network->findPortsMatching(network->cell(top_inst), &matcher);
 
     for (auto* port : found_ports) {
       if (network->isBus(port) || network->isBundle(port)) {
@@ -1035,7 +1034,8 @@ void PinSetWidget::showMenu(const QPoint& point)
     return;
   }
 
-  sta::Pin* pin = (sta::Pin*) pin_item->data(Qt::UserRole).value<void*>();
+  const sta::Pin* pin
+      = (const sta::Pin*) pin_item->data(Qt::UserRole).value<void*>();
 
   // Create menu and insert some actions
   QMenu pin_menu;
@@ -1047,7 +1047,7 @@ void PinSetWidget::showMenu(const QPoint& point)
   QAction* remove_sel = pin_menu.addAction("Remove selected");
   connect(remove_sel, &QAction::triggered, [this]() { removeSelectedPins(); });
   QAction* clear_all = pin_menu.addAction("Clear all");
-  connect(clear_all, SIGNAL(triggered()), this, SLOT(clearPins()));
+  connect(clear_all, &QAction::triggered, this, &PinSetWidget::clearPins);
   QAction* inspect_action = pin_menu.addAction("Inspect");
   connect(inspect_action, &QAction::triggered, [this, pin]() {
     auto* gui = Gui::get();
@@ -1121,7 +1121,10 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
             sta_->setCorner(corner);
           });
 
-  connect(expand_clk_, SIGNAL(toggled(bool)), this, SIGNAL(expandClock(bool)));
+  connect(expand_clk_,
+          &QCheckBox::toggled,
+          this,
+          &TimingControlsDialog ::expandClock);
 
   sta_->setIncludeCapturePaths(true);
 }
@@ -1138,10 +1141,7 @@ void TimingControlsDialog::setupPinRow(const QString& label,
 
   row->setSTA(sta_->getSTA());
 
-  connect(row,
-          SIGNAL(inspect(const Selected&)),
-          this,
-          SIGNAL(inspect(const Selected&)));
+  connect(row, &PinSetWidget::inspect, this, &TimingControlsDialog::inspect);
 }
 
 void TimingControlsDialog::setSTA(sta::dbSta* sta)
@@ -1217,7 +1217,7 @@ void TimingControlsDialog::setPinSelections()
   to_->updatePins();
 }
 
-sta::Pin* TimingControlsDialog::convertTerm(Gui::odbTerm term) const
+const sta::Pin* TimingControlsDialog::convertTerm(Gui::odbTerm term) const
 {
   sta::dbNetwork* network = sta_->getNetwork();
 
@@ -1229,7 +1229,7 @@ sta::Pin* TimingControlsDialog::convertTerm(Gui::odbTerm term) const
 }
 
 void TimingControlsDialog::setThruPin(
-    const std::vector<std::set<sta::Pin*>>& pins)
+    const std::vector<std::set<const sta::Pin*>>& pins)
 {
   for (size_t i = 0; i < thru_.size(); i++) {
     layout_->removeRow(thru_start_row_);
@@ -1247,7 +1247,7 @@ void TimingControlsDialog::setThruPin(
   }
 }
 
-void TimingControlsDialog::addThruRow(const std::set<sta::Pin*>& pins)
+void TimingControlsDialog::addThruRow(const std::set<const sta::Pin*>& pins)
 {
   auto* row = new PinSetWidget(true, this);
 
@@ -1255,9 +1255,9 @@ void TimingControlsDialog::addThruRow(const std::set<sta::Pin*>& pins)
   row->setPins(pins);
 
   connect(row,
-          SIGNAL(addRemoveTriggered(PinSetWidget*)),
+          &PinSetWidget::addRemoveTriggered,
           this,
-          SLOT(addRemoveThru(PinSetWidget*)));
+          &TimingControlsDialog::addRemoveThru);
 
   for (const auto& lower_row : thru_) {
     lower_row->setRemoveMode();
@@ -1280,9 +1280,10 @@ void TimingControlsDialog::addRemoveThru(PinSetWidget* row)
   }
 }
 
-const std::vector<std::set<sta::Pin*>> TimingControlsDialog::getThruPins() const
+const std::vector<std::set<const sta::Pin*>> TimingControlsDialog::getThruPins()
+    const
 {
-  std::vector<std::set<sta::Pin*>> pins;
+  std::vector<std::set<const sta::Pin*>> pins;
   for (auto* row : thru_) {
     pins.push_back(row->getPins());
   }

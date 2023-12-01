@@ -1,29 +1,19 @@
 root: index
 entries:
-
-- file: main/CODE_OF_CONDUCT
-  title: Code of Conduct
-- file: contrib/GettingInvolved
-  title: Getting Involved
-
-- file: contrib/DeveloperGuide
-  title: Developer Guide
-  entries:
-  - file: contrib/CodingPractices
-    title: Coding Practices
-  - file: contrib/DatabaseMath
-    title: Database Math
-  - file: contrib/Logger
-    title: Logger
-  - file: contrib/CI
-    title: CI
-
-
 - file: main/README
-  title: Getting Started with OpenROAD App
+  title: Getting Started with OpenROAD
+  entries:
+  - file: user/Build.md
+    title: Building OpenROAD
+  - url: https://openroad-flow-scripts.readthedocs.io/
+    title: Getting Started with the OpenROAD Flow - OpenROAD-flow-scripts
+  - file: tutorials/index
+    title: Tutorials
+  - file: contrib/GitGuide
+    title: Git Quickstart
 
 - file: main/src/README
-  title: OpenROAD Tools and Tcl Commands
+  title: OpenROAD User Guide
   entries:
   - file: main/src/odb/README
     title: Database
@@ -34,108 +24,80 @@ entries:
         title: Unit Tests (Python)
       - file: main/src/odb/doc/OpenDB-AddFieldsInDbObjects
         title: Add Fields in DB Objects
-  - file: main/src/rcx/README
-    title: Parasitics Extraction
-    entries:
-    - file: main/src/rcx/doc/calibration
-      title: Calibration
+  - file: main/src/gui/README
+    title: GUI
+  - file: main/src/par/README
+    title: Partition Management
   - file: main/src/rmp/README
     title: Restructure
   - file: main/src/ifp/README
     title: Floorplan Initialization
   - file: main/src/ppl/README
     title: Pin Placement
-  - file: main/src/gui/README
-    title: GUI
   - file: main/src/pad/README
     title: Chip-level Connections
-    entries:
-    - file: main/src/pad/doc/README
-      title: Chip-level Connections Documentation
-      entries:
-      - file: main/src/pad/doc/add_pad
-        title: Add Pad
-      - file: main/src/pad/doc/define_pad_cell
-        title: Define Pad Cell
-      - file: main/src/pad/doc/initialize_padring
-        title: Initialize Padring
-      - file: main/src/pad/doc/place_cell
-        title: Place Cell
-      - file: main/src/pad/doc/set_bump
-        title: Set Bump
-      - file: main/src/pad/doc/set_bump_options
-        title: Set Bump Options
-      - file: main/src/pad/doc/set_padring_options
-        title: Set Padring Options
-      - file: main/src/pad/doc/TCL_Interface
-        title: TCL Interface
   - file: main/src/mpl/README
     title: Macro Placement
+  - file: main/src/mpl2/README
+    title: Hierarchical Macro Placement
   - file: main/src/tap/README
     title: Tapcell Insertion
   - file: main/src/pdn/README
-    title: PDN Analysis
+    title: PDN Generation
     entries:
-    - file: main/src/pdn/doc/README
-      title: PDN Analysis Documentation
+    - file: main/src/upf/README
+      title: Read UPF Utility
+    - file: main/src/psm/README
+      title: IR Drop Analysis
       entries:
-      - file: main/src/pdn/doc/PDN
-        title: PDN
-    - file: main/src/pdn/doc/TCL_Interface.md
-      title: Tcl Interface
-      entries:
-      - file: main/src/pdn/doc/add_global_connection.md
-        title: add_global_connection
-      - file: main/src/pdn/doc/add_pdn_connect.md
-        title: add_pdn_connect
-      - file: main/src/pdn/doc/add_pdn_ring.md
-        title: add_pdn_ring
-      - file: main/src/pdn/doc/add_pdn_stripe.md
-        title: add_pdn_stripe
-      - file: main/src/pdn/doc/define_pdn_grid.md
-        title: add_pdn_stripe
-      - file: main/src/pdn/doc/set_voltage_domain.md
-        title: add_pdn_stripe
-      - file: main/src/pdn/doc/pdngen.md
-        title: pdngen
-  - file: main/src/psm/README
-    title: IR Drop Analysis
-    entries:
-    - file: main/src/psm/doc/Vsrc_description
-      title: VSRC description
+      - file: main/src/psm/doc/Vsrc_description
+        title: VSRC Description
   - file: main/src/gpl/README
     title: Global Placement
     entries:
     - file: main/src/gpl/doc/TclCommands
-      title: Tclcommands
-  - file: main/src/sta/README
-    title: Static Timing Analyzer (external)
+      title: Tcl Commands
   - file: main/src/rsz/README
-    title: Gate Resizer
+    title: Gate Resizing
   - file: main/src/dpl/README
     title: Detailed Placement
   - file: main/src/cts/README
     title: Clock Tree Synthesis
-    entries:
-    - file: main/src/cts/doc/cts_lut_characterization
-      title: CTS LUT Characterization
   - file: main/src/grt/README
     title: Global Routing
+    entries:
+    - file: main/src/stt/src/flt/README
+      title: Flute
   - file: main/src/ant/README
     title: Antenna Checker
   - file: main/src/drt/README
-    title: Detail Routing
+    title: Detailed Routing
   - file: main/src/fin/README
     title: Metal Fill
-  - file: main/src/stt/src/flt/README
-    title: Flute
-  - file: main/src/stt/src/pdr/README
-    title: Prim-Dijkstra Revisited
-  - file: main/src/par/README
-    title: Partition Manager
+  - file: main/src/rcx/README
+    title: Parasitics Extraction
+    entries:
+    - file: main/src/rcx/doc/calibration
+      title: Calibration
+  - file: main/src/sta/README
+    title: Static Timing Analyzer (external)
+  - file: user/MessagesFinal.md
+    title: Messages Glossary
 
-- file: tutorials/index
-  title: Tutorials
+- file: contrib/GettingInvolved
+  title: Getting Involved
+  entries:
+  - file: contrib/DeveloperGuide
+    title: Developer's Guide
+  - file: contrib/CodingPractices
+    title: Coding Practices
+  - file: contrib/Logger
+    title: Logger
+  - file: contrib/CI
+    title: CI
+
+- file: main/CODE_OF_CONDUCT
+  title: Code of Conduct   
 
 - file: user/FAQS
   title: FAQs

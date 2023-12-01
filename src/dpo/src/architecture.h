@@ -58,7 +58,6 @@ class Architecture
   class Spacing;
   class Region;
 
-  Architecture();
   ~Architecture();
 
   const std::vector<Architecture::Row*>& getRows() const { return rows_; }
@@ -80,7 +79,7 @@ class Architecture
   int getCellHeightInRows(const Node* ndi) const;
 
   int postProcess(Network* network);
-  int find_closest_row(const int y);
+  int find_closest_row(int y);
 
   void clear_edge_type();
   void init_edge_type();
@@ -127,10 +126,10 @@ class Architecture
 
  private:
   // Boundary around rows.
-  int xmin_;
-  int xmax_;
-  int ymin_;
-  int ymax_;
+  int xmin_ = std::numeric_limits<int>::max();
+  int xmax_ = std::numeric_limits<int>::lowest();
+  int ymin_ = std::numeric_limits<int>::max();
+  int ymax_ = std::numeric_limits<int>::lowest();
 
   // Rows...
   std::vector<Row*> rows_;
@@ -139,12 +138,12 @@ class Architecture
   std::vector<Region*> regions_;
 
   // Spacing tables...
-  bool useSpacingTable_;
+  bool useSpacingTable_ = false;
   std::vector<std::pair<std::string, int>> edgeTypes_;
   std::vector<Spacing*> cellSpacings_;
 
   // Padding...
-  bool usePadding_;
+  bool usePadding_ = false;
   std::map<int, std::pair<int, int>> cellPaddings_;  // Padding to left,right.
 };
 
@@ -172,8 +171,6 @@ class Architecture::Row
     Power_VDD,
     Power_VSS
   };
-
-  Row();
 
   void setId(int id) { id_ = id; }
   int getId() const { return id_; }
@@ -209,21 +206,21 @@ class Architecture::Row
   double getCenterY() const { return rowLoc_ + 0.5 * rowHeight_; }
 
  private:
-  int id_;               // Every row  needs an id...  Filled in after sorting.
-  int rowLoc_;           // Y-location of the row.
-  int rowHeight_;        // Height of the row.
-  int subRowOrigin_;     // Starting X location (xmin) of the row.
-  int siteSpacing_;      // Spacing between sites in the row. XXX: Likely
-                         // assumed to be the same as the width...
-  int siteWidth_;        // Width of sites in the row.
-  int numSites_;         // Number of sites...  Ending X location (xmax) is =
-                         // subRowOrigin_ + numSites_ * siteSpacing_;
-  unsigned siteOrient_;  // Orientation of sites in the row.
-  unsigned siteSymmetry_;  // Symmetry of sites in the row.  Symmetry allows
-                           // for certain orientations...
+  int id_ = -1;           // Every row  needs an id...  Filled in after sorting.
+  int rowLoc_ = 0;        // Y-location of the row.
+  int rowHeight_ = 0;     // Height of the row.
+  int subRowOrigin_ = 0;  // Starting X location (xmin) of the row.
+  int siteSpacing_ = 0;   // Spacing between sites in the row. XXX: Likely
+                          // assumed to be the same as the width...
+  int siteWidth_ = 0;     // Width of sites in the row.
+  int numSites_ = 0;      // Number of sites...  Ending X location (xmax) is =
+                          // subRowOrigin_ + numSites_ * siteSpacing_;
+  unsigned siteOrient_ = 0;    // Orientation of sites in the row.
+  unsigned siteSymmetry_ = 0;  // Symmetry of sites in the row.  Symmetry allows
+                               // for certain orientations...
   // Voltages at the top and bottom of the row.
-  int powerTop_;
-  int powerBot_;
+  int powerTop_ = Power_UNK;
+  int powerBot_ = Power_UNK;
 };
 
 class Architecture::Region

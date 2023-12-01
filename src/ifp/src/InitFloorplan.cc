@@ -38,6 +38,7 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <set>
 
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
@@ -95,6 +96,7 @@ using odb::dbTechLayerType;
 using odb::dbTrackGrid;
 using odb::dbTransform;
 using odb::Rect;
+using odb::uint;
 
 using upf::eval_upf;
 
@@ -111,7 +113,7 @@ void InitFloorplan::initFloorplan(double utilization,
                                   int core_space_top,
                                   int core_space_left,
                                   int core_space_right,
-                                  const std::string& site_name)
+                                  const std::vector<odb::dbSite*>& extra_sites)
 {
   utl::Validator v(logger_, IFP);
   v.check_percentage("utilization", utilization, 12);
@@ -137,7 +139,7 @@ void InitFloorplan::initFloorplan(double utilization,
   const int die_uy = core_uy + core_space_top;
   initFloorplan({die_lx, die_ly, die_ux, die_uy},
                 {core_lx, core_ly, core_ux, core_uy},
-                site_name);
+                extra_sites);
 }
 
 double InitFloorplan::designArea()
@@ -159,22 +161,49 @@ static int divCeil(int dividend, int divisor)
 
 void InitFloorplan::initFloorplan(const odb::Rect& die,
                                   const odb::Rect& core,
-                                  const std::string& site_name)
+                                  const std::vector<odb::dbSite*>& extra_sites)
 {
   Rect die_area(snapToMfgGrid(die.xMin()),
                 snapToMfgGrid(die.yMin()),
                 snapToMfgGrid(die.xMax()),
                 snapToMfgGrid(die.yMax()));
   block_->setDieArea(die_area);
+  std::set<odb::dbSite*> sites = getSites();
+  sites.insert(extra_sites.begin(), extra_sites.end());
 
-  if (!site_name.empty() && core.xMin() >= 0 && core.yMin() >= 0) {
-    dbSite* site = findSite(site_name.c_str());
-    if (site) {
+  // Handle duplicated sites
+  std::map<std::string, odb::dbSite*> sites_by_name;
+  for (auto* site : sites) {
+    sites_by_name[site->getName()] = site;
+  }
+
+  if (sites.empty()) {
+    logger_->error(IFP, 42, "No sites found.");
+  }
+  // get min site height using std::min_element
+  const int min_site_height
+      = (*std::min_element(sites.begin(),
+                           sites.end(),
+                           [](dbSite* a, dbSite* b) {
+                             return a->getHeight() < b->getHeight();
+                           }))
+            ->getHeight();
+
+  if (core.xMin() >= 0 && core.yMin() >= 0) {
+    int row_index = 0;
+    eval_upf(network_, logger_, block_);
+    for (const auto& [site_name, site] : sites_by_name) {
       // Destroy any existing rows.
+      int x_height_site = site->getHeight() / min_site_height;
       auto rows = block_->getRows();
-      for (dbSet<dbRow>::iterator row_itr = rows.begin(); row_itr != rows.end();
-           row_itr = dbRow::destroy(row_itr))
-        ;
+      for (dbSet<dbRow>::iterator row_itr = rows.begin();
+           row_itr != rows.end();) {
+        if (site != row_itr->getSite()) {
+          row_itr++;
+        } else {
+          row_itr = dbRow::destroy(row_itr);
+        }
+      }
 
       uint site_dx = site->getWidth();
       uint site_dy = site->getHeight();
@@ -195,11 +224,11 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
       }
       int cux = core.xMax();
       int cuy = core.yMax();
-      eval_upf(logger_, block_);
-      makeRows(site, clx, cly, cux, cuy);
-      updateVoltageDomain(site, clx, cly, cux, cuy);
-    } else
-      logger_->warn(IFP, 9, "SITE {} not found.", site_name);
+      int rows_placed
+          = makeRows(site, clx, cly, cux, cuy, x_height_site, row_index);
+      row_index += rows_placed;
+      updateVoltageDomain(clx, cly, cux, cuy);
+    }
   }
 
   std::vector<dbBox*> blockage_bboxes;
@@ -217,8 +246,7 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
 
 // this function is used to create regions ( split overlapped rows and create
 // new ones )
-void InitFloorplan::updateVoltageDomain(dbSite* site,
-                                        int core_lx,
+void InitFloorplan::updateVoltageDomain(int core_lx,
                                         int core_ly,
                                         int core_ux,
                                         int core_uy)
@@ -226,8 +254,6 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
   // The unit for power_domain_y_space is the site height. The real space is
   // power_domain_y_space * site_dy
   static constexpr int power_domain_y_space = 6;
-  uint site_dy = site->getHeight();
-  uint site_dx = site->getWidth();
 
   // checks if a group is defined as a voltage domain, if so it creates a region
   for (dbGroup* group : block_->getGroups()) {
@@ -244,22 +270,34 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
         domain_xMax = std::max(domain_xMax, boundary->xMax());
         domain_yMax = std::max(domain_yMax, boundary->yMax());
       }
-      // snap inward to site grid
-      domain_xMin = odb::makeSiteLoc(domain_xMin, site_dx, false, 0);
-      domain_xMax = odb::makeSiteLoc(domain_xMax, site_dx, true, 0);
 
       string domain_name = group->getName();
 
-      dbSet<dbRow> rows = block_->getRows();
+      std::vector<dbRow*> rows;
+      for (dbRow* row : block_->getRows()) {
+        if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+          continue;
+        }
+        rows.push_back(row);
+      }
+
       int total_row_count = rows.size();
 
-      dbSet<dbRow>::iterator row_itr = rows.begin();
+      std::vector<dbRow*>::iterator row_itr = rows.begin();
       for (int row_processed = 0; row_processed < total_row_count;
            row_processed++) {
         dbRow* row = *row_itr;
         Rect row_bbox = row->getBBox();
         int row_yMin = row_bbox.yMin();
         int row_yMax = row_bbox.yMax();
+        auto site = row->getSite();
+
+        int site_dy = site->getHeight();
+        int site_dx = site->getWidth();
+
+        // snap inward to site grid
+        domain_xMin = odb::makeSiteLoc(domain_xMin, site_dx, false, 0);
+        domain_xMax = odb::makeSiteLoc(domain_xMax, site_dx, true, 0);
 
         // check if the rows overlapped with the area of a defined voltage
         // domains + margin
@@ -269,13 +307,14 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
         } else {
           string row_name = row->getName();
           dbOrientType orient = row->getOrient();
-          row_itr = dbRow::destroy(row_itr);
+          dbRow::destroy(row);
+          row_itr++;
 
           // lcr stands for left core row
           int lcr_xMax = domain_xMin - power_domain_y_space * site_dy;
           // in case there is at least one valid site width on the left, create
           // left core rows
-          if (lcr_xMax > core_lx + site_dx) {
+          if (lcr_xMax > core_lx + static_cast<int>(site_dx)) {
             string lcr_name = row_name + "_1";
             // warning message since tap cells might not be inserted
             if (lcr_xMax < core_lx + 10 * site_dx) {
@@ -307,7 +346,7 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
 
           // in case there is at least one valid site width on the right, create
           // right core rows
-          if (rcr_xMin + site_dx < core_ux) {
+          if (rcr_xMin + static_cast<int>(site_dx) < core_ux) {
             string rcr_name = row_name + "_2";
             if (rcr_xMin + 10 * site_dx > core_ux) {
               logger_->warn(IFP,
@@ -347,11 +386,67 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
   }
 }
 
-void InitFloorplan::makeRows(dbSite* site,
-                             int core_lx,
-                             int core_ly,
-                             int core_ux,
-                             int core_uy)
+std::set<dbSite*> InitFloorplan::getSites() const
+{
+  std::set<dbSite*> sites;
+
+  // loop over all instantiated cells in the block
+  for (dbInst* inst : block_->getInsts()) {
+    dbMaster* master = inst->getMaster();
+
+    auto site = master->getSite();
+    // if site is null, and the core is auto placeable, then warn the user and
+    // skip that cell
+    if (!master->isCoreAutoPlaceable() || master->isBlock()) {
+      continue;
+    }
+    if (site == nullptr) {
+      if (master->isCoreAutoPlaceable()) {
+        logger_->warn(IFP,
+                      43,
+                      "No site found for instance {} in block {}.",
+                      inst->getName(),
+                      block_->getName());
+      }
+      continue;
+    }
+    sites.insert(site);
+  }
+  if (sites.empty()) {
+    return sites;
+  }
+
+  const int min_site_height
+      = (*std::min_element(sites.begin(),
+                           sites.end(),
+                           [](dbSite* a, dbSite* b) {
+                             return a->getHeight() < b->getHeight();
+                           }))
+            ->getHeight();
+
+  for (auto site : sites) {
+    // check if the site height is a multiple of the smallest site height
+    if (site->getHeight() % min_site_height != 0) {
+      logger_->error(IFP,
+                     40,
+                     "Invalid height for site {} detected. The height value of "
+                     "{} is not a multiple of the smallest site height {}.",
+                     site->getName(),
+                     site->getHeight(),
+                     min_site_height);
+    }
+  }
+  return sites;
+}
+
+// Create the rows for the core area and returns the number of rows it created
+int InitFloorplan::makeRows(dbSite* site,
+                            int core_lx,
+                            int core_ly,
+                            int core_ux,
+                            int core_uy,
+                            int factor,
+                            int row_index)
 {
   int core_dx = abs(core_ux - core_lx);
   int core_dy = abs(core_uy - core_ly);
@@ -362,9 +457,10 @@ void InitFloorplan::makeRows(dbSite* site,
 
   int y = core_ly;
   for (int row = 0; row < rows_y; row++) {
-    dbOrientType orient = (row % 2 == 0) ? dbOrientType::R0   // N
-                                         : dbOrientType::MX;  // FS
-    string row_name = stdstrPrint("ROW_%d", row);
+    dbOrientType orient = (factor % 2 == 0 or row % 2 == 0)
+                              ? dbOrientType::R0   // N
+                              : dbOrientType::MX;  // FS
+    string row_name = stdstrPrint("ROW_%d", row_index + row);
     dbRow::create(block_,
                   row_name.c_str(),
                   site,
@@ -376,7 +472,15 @@ void InitFloorplan::makeRows(dbSite* site,
                   site_dx);
     y += site_dy;
   }
-  logger_->info(IFP, 1, "Added {} rows of {} sites.", rows_y, rows_x);
+  logger_->info(IFP,
+                1,
+                "Added {} rows of {} site {} with height {}.",
+                rows_y,
+                rows_x,
+                site->getName(),
+                factor);  // using the factor instead of the cell height for
+                          // reporting
+  return rows_y;
 }
 
 dbSite* InitFloorplan::findSite(const char* site_name)
@@ -467,11 +571,20 @@ void InitFloorplan::makeTracks()
   for (auto layer : block_->getDataBase()->getTech()->getLayers()) {
     if (layer->getType() == dbTechLayerType::ROUTING
         && layer->getRoutingLevel() != 0) {
-      makeTracks(layer,
-                 layer->getOffsetX(),
-                 layer->getPitchX(),
-                 layer->getOffsetY(),
-                 layer->getPitchY());
+      if (layer->getFirstLastPitch() > 0) {
+        makeTracksNonUniform(layer,
+                             layer->getOffsetX(),
+                             layer->getPitchX(),
+                             layer->getOffsetY(),
+                             layer->getPitchY(),
+                             layer->getFirstLastPitch());
+      } else {
+        makeTracks(layer,
+                   layer->getOffsetX(),
+                   layer->getPitchX(),
+                   layer->getOffsetY(),
+                   layer->getPitchY());
+      }
     }
   }
 }
@@ -554,6 +667,43 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
   }
 
   grid->addGridPatternY(origin_y, y_track_count, y_pitch);
+}
+
+void InitFloorplan::makeTracksNonUniform(odb::dbTechLayer* layer,
+                                         int x_offset,
+                                         int x_pitch,
+                                         int y_offset,
+                                         int y_pitch,
+                                         int first_last_pitch)
+{
+  if (layer->getDirection() != dbTechLayerDir::HORIZONTAL) {
+    logger_->error(IFP, 44, "Non horizontal layer uses property LEF58_PITCH.");
+  }
+
+  int cell_row_height = 0;
+  auto rows = block_->getRows();
+  for (auto row : rows) {
+    if (row->getSite()->getClass() == odb::dbSiteClass::CORE) {
+      cell_row_height = row->getSite()->getHeight();
+      break;
+    }
+  }
+
+  if (cell_row_height == 0) {
+    logger_->error(
+        IFP, 45, "No routing Row found in layer {}", layer->getName());
+  }
+  Rect die_area = block_->getDieArea();
+
+  auto y_track_count
+      = int((cell_row_height - 2 * first_last_pitch) / y_pitch) + 1;
+  int origin_y = die_area.yMin() + first_last_pitch;
+  for (int i = 0; i < y_track_count; i++) {
+    makeTracks(layer, x_offset, x_pitch, origin_y, cell_row_height);
+    origin_y += y_pitch;
+  }
+  origin_y += first_last_pitch - y_pitch;
+  makeTracks(layer, x_offset, x_pitch, origin_y, cell_row_height);
 }
 
 }  // namespace ifp

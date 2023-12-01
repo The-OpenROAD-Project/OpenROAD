@@ -65,7 +65,6 @@ using odb::dbBTerm;
 using odb::dbInst;
 using odb::dbITerm;
 using odb::dbMaster;
-using odb::dbMasterType;
 using odb::dbMPin;
 using odb::dbMTerm;
 using odb::dbNet;
@@ -82,24 +81,6 @@ using odb::dbWireType;
 using odb::Rect;
 
 ////////////////////////////////////////////////////////////////
-Optdp::Optdp()
-    : db_(nullptr),
-      logger_(nullptr),
-      opendp_(nullptr),
-      arch_(nullptr),
-      network_(nullptr),
-      routeinfo_(nullptr),
-      hpwlBefore_(0),
-      hpwlAfter_(0)
-{
-}
-
-////////////////////////////////////////////////////////////////
-Optdp::~Optdp()
-{
-}
-
-////////////////////////////////////////////////////////////////
 void Optdp::init(odb::dbDatabase* db, utl::Logger* logger, dpl::Opendp* opendp)
 {
   db_ = db;
@@ -110,7 +91,8 @@ void Optdp::init(odb::dbDatabase* db, utl::Logger* logger, dpl::Opendp* opendp)
 ////////////////////////////////////////////////////////////////
 void Optdp::improvePlacement(int seed,
                              int max_displacement_x,
-                             int max_displacement_y)
+                             int max_displacement_y,
+                             bool disallow_one_site_gaps)
 {
   logger_->report("Detailed placement improvement.");
 
@@ -127,6 +109,7 @@ void Optdp::improvePlacement(int seed,
     // Various settings.
     mgr.setSeed(seed);
     mgr.setMaxDisplacement(max_displacement_x, max_displacement_y);
+    mgr.setDisallowOneSiteGaps(disallow_one_site_gaps);
 
     // Legalization.  Doesn't particularly do much.  It only
     // populates the data structures required for detailed
@@ -155,6 +138,10 @@ void Optdp::improvePlacement(int seed,
     // Random moves and swaps with hpwl as a cost function.  Use
     // random moves and hpwl objective right now.
     dtParams.script_ += "default -p 5 -f 20 -gen rng -obj hpwl -cost (hpwl);";
+
+    if (disallow_one_site_gaps) {
+      dtParams.script_ += "disallow_one_site_gaps;";
+    }
 
     // Run the script.
     dpo::Detailed dt(dtParams);
@@ -270,11 +257,17 @@ void Optdp::initPadding()
 
   // Create and edge type for each amount of padding.  This
   // can be done by querying OpenDP.
-  dbSet<dbRow> rows = db_->getChip()->getBlock()->getRows();
-  if (rows.empty()) {
+  odb::dbSite* site = nullptr;
+  for (auto* row : db_->getChip()->getBlock()->getRows()) {
+    if (row->getSite()->getClass() != odb::dbSiteClass::PAD) {
+      site = row->getSite();
+      break;
+    }
+  }
+  if (site == nullptr) {
     return;
   }
-  int siteWidth = (*rows.begin())->getSite()->getWidth();
+  int siteWidth = site->getWidth();
   std::unordered_map<odb::dbInst*, Node*>::iterator it_n;
 
   dbSet<dbInst> insts = db_->getChip()->getBlock()->getInsts();
@@ -691,16 +684,28 @@ void Optdp::createArchitecture()
 {
   dbBlock* block = db_->getChip()->getBlock();
 
-  dbSet<dbRow> rows = block->getRows();
-
   odb::Rect dieRect = block->getDieArea();
 
-  for (dbRow* row : rows) {
+  odb::uint min_row_height = std::numeric_limits<odb::uint>::max();
+  for (dbRow* row : block->getRows()) {
+    min_row_height = std::min(min_row_height, row->getSite()->getHeight());
+  }
+
+  std::map<odb::uint, std::unordered_set<std::string>> skip_list;
+
+  for (dbRow* row : block->getRows()) {
+    if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+      continue;
+    }
     if (row->getDirection() != odb::dbRowDir::HORIZONTAL) {
       // error.
       continue;
     }
     dbSite* site = row->getSite();
+    if (site->getHeight() > min_row_height) {
+      skip_list[site->getHeight()].insert(site->getName());
+      continue;
+    }
     int originX;
     int originY;
     row->getOrigin(originX, originY);
@@ -735,7 +740,21 @@ void Optdp::createArchitecture()
     unsigned orient = dbToDpoOrient(row->getOrient());
     archRow->setOrient(orient);
   }
-
+  for (const auto& skip : skip_list) {
+    std::string skip_string = "[";
+    int i = 0;
+    for (const auto& skipped_site : skip.second) {
+      skip_string += skipped_site + ",]"[i == skip.second.size() - 1];
+      ++i;
+    }
+    logger_->warn(DPO,
+                  108,
+                  "Skipping all the rows with sites {} as their height is {} "
+                  "and the single-height is {}.",
+                  skip_string,
+                  skip.first,
+                  min_row_height);
+  }
   // Get surrounding box.
   {
     int xmin = std::numeric_limits<int>::max();
@@ -910,7 +929,7 @@ void Optdp::setUpPlacementRegions()
   logger_->info(DPO, 110, "Number of regions is {:d}", arch_->getNumRegions());
 }
 ////////////////////////////////////////////////////////////////
-unsigned Optdp::dbToDpoOrient(dbOrientType dbOrient)
+unsigned Optdp::dbToDpoOrient(const dbOrientType& dbOrient)
 {
   unsigned orient = dpo::Orientation_N;
   switch (dbOrient) {

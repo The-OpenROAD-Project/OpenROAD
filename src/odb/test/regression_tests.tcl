@@ -1,4 +1,9 @@
 record_tests {
+  bterm_hier_create
+  multi_tech
+  transform
+  rounding
+  sky130hd_multi_patterned
   dont_touch
   import_package
   read_lef
@@ -8,6 +13,8 @@ record_tests {
   dump_via_rules
   dump_vias
   read_def
+  read_def58
+  write_def58
   dump_nets
   lef_mask
   write_lef_and_def
@@ -25,6 +32,7 @@ record_tests {
   ndr
   gcd_abstract_lef
   gcd_abstract_lef_with_power
+  abstract_origin
 }
 
 record_pass_fail_tests {

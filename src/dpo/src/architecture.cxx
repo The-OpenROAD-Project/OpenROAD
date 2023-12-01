@@ -64,27 +64,17 @@ struct compareRowBottom
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-Architecture::Architecture() : useSpacingTable_(false), usePadding_(false)
-{
-  xmin_ = std::numeric_limits<int>::max();
-  xmax_ = std::numeric_limits<int>::lowest();
-  ymin_ = std::numeric_limits<int>::max();
-  ymax_ = std::numeric_limits<int>::lowest();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 Architecture::~Architecture()
 {
   clear_edge_type();
 
-  for (size_t r = 0; r < rows_.size(); r++) {
-    delete rows_[r];
+  for (auto& row : rows_) {
+    delete row;
   }
   rows_.clear();
 
-  for (size_t r = 0; r < regions_.size(); r++) {
-    delete regions_[r];
+  for (auto& region : regions_) {
+    delete region;
   }
   regions_.clear();
 
@@ -93,8 +83,8 @@ Architecture::~Architecture()
 
 void Architecture::clearSpacingTable()
 {
-  for (size_t i = 0; i < cellSpacings_.size(); i++) {
-    delete cellSpacings_[i];
+  for (auto& cellSpacing : cellSpacings_) {
+    delete cellSpacing;
   }
   cellSpacings_.clear();
 }
@@ -103,27 +93,21 @@ void Architecture::clearSpacingTable()
 ////////////////////////////////////////////////////////////////////////////////
 bool Architecture::isSingleHeightCell(const Node* ndi) const
 {
-  const int spanned
-      = (int) (ndi->getHeight() / (double) rows_[0]->getHeight() + 0.5);
-  return spanned == 1;
+  return getCellHeightInRows(ndi) == 1;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 bool Architecture::isMultiHeightCell(const Node* ndi) const
 {
-  const int spanned
-      = (int) (ndi->getHeight() / (double) rows_[0]->getHeight() + 0.5);
-  return spanned != 1;
+  return getCellHeightInRows(ndi) != 1;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 int Architecture::getCellHeightInRows(const Node* ndi) const
 {
-  const int spanned
-      = (int) (ndi->getHeight() / (double) rows_[0]->getHeight() + 0.5);
-  return spanned;
+  return std::lround(ndi->getHeight() / (double) rows_[0]->getHeight());
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -161,9 +145,7 @@ int Architecture::postProcess(Network* network)
   std::stable_sort(rows_.begin(), rows_.end(), compareRowBottom());
 
   // Determine a box surrounding all the rows.
-  for (int r = 0; r < rows_.size(); r++) {
-    const Architecture::Row* row = rows_[r];
-
+  for (auto row : rows_) {
     xmin_ = std::min(xmin_, row->getLeft());
     xmax_ = std::max(xmax_, row->getRight());
     ymin_ = std::min(ymin_, row->getBottom());
@@ -176,7 +158,7 @@ int Architecture::postProcess(Network* network)
   std::vector<std::pair<int, int>> intervals;
   int count = 0;
   for (int r = 0; r < rows_.size();) {
-    subrows.erase(subrows.begin(), subrows.end());
+    subrows.clear();
     subrows.push_back(rows_[r++]);
     while (r < rows_.size()
            && std::abs(rows_[r]->getBottom() - subrows[0]->getBottom()) == 0) {
@@ -184,10 +166,10 @@ int Architecture::postProcess(Network* network)
     }
 
     // Convert subrows to intervals.
-    intervals.erase(intervals.begin(), intervals.end());
-    for (size_t i = 0; i < subrows.size(); i++) {
-      const int lx = subrows[i]->getLeft();
-      const int rx = subrows[i]->getRight();
+    intervals.clear();
+    for (auto subrow : subrows) {
+      const int lx = subrow->getLeft();
+      const int rx = subrow->getRight();
       intervals.emplace_back(std::make_pair(lx, rx));
     }
     std::sort(intervals.begin(), intervals.end());
@@ -206,7 +188,7 @@ int Architecture::postProcess(Network* network)
         s.push(top);  // expanded interval.
       }
     }
-    intervals.erase(intervals.begin(), intervals.end());
+    intervals.clear();
     while (!s.empty()) {
       const std::pair<int, int> temp = s.top();  // copy.
       intervals.push_back(temp);
@@ -221,6 +203,7 @@ int Architecture::postProcess(Network* network)
       const int lx = intervals.front().first;
       const int rx = intervals.back().second;
       subrows[0]->setNumSites((int) ((rx - lx) / subrows[0]->getSiteSpacing()));
+      subrows[0]->setSubRowOrigin(lx);
 
       // Delete un-needed rows.
       while (subrows.size() > 1) {
@@ -267,7 +250,7 @@ int Architecture::postProcess(Network* network)
     }
   }
   // Replace original rows with new rows.
-  rows_.erase(rows_.begin(), rows_.end());
+  rows_.clear();
   rows_.insert(rows_.end(), rows.begin(), rows.end());
   // Sort rows (to be safe).
   std::stable_sort(rows_.begin(), rows_.end(), compareRowBottom());
@@ -315,12 +298,13 @@ bool Architecture::powerCompatible(const Node* ndi,
 
   flip = false;
 
-  const int spanned = (int) ((ndi->getHeight() / (double) row->getHeight())
-                             + 0.5);  // Number of spanned rows.
+  // Number of spanned rows.
+  const int spanned = std::lround(ndi->getHeight() / (double) row->getHeight());
   const int lo = row->getId();
   const int hi = lo + spanned - 1;
-  if (hi >= rows_.size())
+  if (hi >= rows_.size()) {
     return false;  // off the top of the chip.
+  }
   if (hi == lo) {
     // Single height cell.  Actually, is the check for a single height cell any
     // different than a multi height cell?  We could have power/ground at both
@@ -344,35 +328,36 @@ bool Architecture::powerCompatible(const Node* ndi,
     }
 
     return true;
-  } else {
-    // Multi-height cell.
-    const int rowBot = rows_[lo]->getBottomPower();
-    const int rowTop = rows_[hi]->getTopPower();
-
-    int ndBot = ndi->getBottomPower();
-    int ndTop = ndi->getTopPower();
-
-    if ((ndBot == rowBot || ndBot == Architecture::Row::Power_UNK
-         || rowBot == Architecture::Row::Power_UNK)
-        && (ndTop == rowTop || ndTop == Architecture::Row::Power_UNK
-            || rowTop == Architecture::Row::Power_UNK)) {
-      // The power at the top and bottom of the node match either because they
-      // are the same or because something is not specified.  No need to flip
-      // the node.
-      flip = false;
-      return true;
-    }
-    // Swap the node power rails and do the same check.  If we now get a match,
-    // things are fine as long as the cell is flipped.
-    std::swap(ndBot, ndTop);
-    if ((ndBot == rowBot || ndBot == Architecture::Row::Power_UNK
-         || rowBot == Architecture::Row::Power_UNK)
-        && (ndTop == rowTop || ndTop == Architecture::Row::Power_UNK
-            || rowTop == Architecture::Row::Power_UNK)) {
-      flip = true;
-      return true;
-    }
   }
+
+  // Multi-height cell.
+  const int rowBot = rows_[lo]->getBottomPower();
+  const int rowTop = rows_[hi]->getTopPower();
+
+  int ndBot = ndi->getBottomPower();
+  int ndTop = ndi->getTopPower();
+
+  if ((ndBot == rowBot || ndBot == Architecture::Row::Power_UNK
+       || rowBot == Architecture::Row::Power_UNK)
+      && (ndTop == rowTop || ndTop == Architecture::Row::Power_UNK
+          || rowTop == Architecture::Row::Power_UNK)) {
+    // The power at the top and bottom of the node match either because they
+    // are the same or because something is not specified.  No need to flip
+    // the node.
+    flip = false;
+    return true;
+  }
+  // Swap the node power rails and do the same check.  If we now get a match,
+  // things are fine as long as the cell is flipped.
+  std::swap(ndBot, ndTop);
+  if ((ndBot == rowBot || ndBot == Architecture::Row::Power_UNK
+       || rowBot == Architecture::Row::Power_UNK)
+      && (ndTop == rowTop || ndTop == Architecture::Row::Power_UNK
+          || rowTop == Architecture::Row::Power_UNK)) {
+    flip = true;
+    return true;
+  }
+
   return false;
 }
 
@@ -454,7 +439,7 @@ int Architecture::getCellSpacing(const Node* leftNode,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-int Architecture::getCellSpacingUsingTable(int i1, int i2) const
+int Architecture::getCellSpacingUsingTable(int firstEdge, int secondEdge) const
 {
   // In the event that one of the left or right indices is
   // void (-1), return the worst possible spacing.  This
@@ -463,35 +448,39 @@ int Architecture::getCellSpacingUsingTable(int i1, int i2) const
 
   int spacing = 0;
 
-  if (i1 == -1 && i2 == -1) {
-    for (int i = 0; i < cellSpacings_.size(); i++) {
-      Architecture::Spacing* ptr = cellSpacings_[i];
-      spacing = std::max(spacing, ptr->getSeparation());
+  if (firstEdge == -1 && secondEdge == -1) {
+    for (auto cellSpacings : cellSpacings_) {
+      spacing = std::max(spacing, cellSpacings->getSeparation());
     }
     return spacing;
-  } else if (i1 == -1) {
-    for (int i = 0; i < cellSpacings_.size(); i++) {
-      Architecture::Spacing* ptr = cellSpacings_[i];
-      if (ptr->getFirstEdge() == i2 || ptr->getSecondEdge() == i2) {
-        spacing = std::max(spacing, ptr->getSeparation());
-      }
-    }
-    return spacing;
-  } else if (i2 == -1) {
-    for (int i = 0; i < cellSpacings_.size(); i++) {
-      Architecture::Spacing* ptr = cellSpacings_[i];
-      if (ptr->getFirstEdge() == i1 || ptr->getSecondEdge() == i1) {
-        spacing = std::max(spacing, ptr->getSeparation());
+  }
+
+  if (firstEdge == -1) {
+    for (auto cellSpacings : cellSpacings_) {
+      if (cellSpacings->getFirstEdge() == secondEdge
+          || cellSpacings->getSecondEdge() == secondEdge) {
+        spacing = std::max(spacing, cellSpacings->getSeparation());
       }
     }
     return spacing;
   }
 
-  for (int i = 0; i < cellSpacings_.size(); i++) {
-    Architecture::Spacing* ptr = cellSpacings_[i];
-    if ((ptr->getFirstEdge() == i1 && ptr->getSecondEdge() == i2)
-        || (ptr->getFirstEdge() == i2 && ptr->getSecondEdge() == i1)) {
-      spacing = std::max(spacing, ptr->getSeparation());
+  if (secondEdge == -1) {
+    for (auto cellSpacings : cellSpacings_) {
+      if (cellSpacings->getFirstEdge() == firstEdge
+          || cellSpacings->getSecondEdge() == firstEdge) {
+        spacing = std::max(spacing, cellSpacings->getSeparation());
+      }
+    }
+    return spacing;
+  }
+
+  for (auto cellSpacings : cellSpacings_) {
+    if ((cellSpacings->getFirstEdge() == firstEdge
+         && cellSpacings->getSecondEdge() == secondEdge)
+        || (cellSpacings->getFirstEdge() == secondEdge
+            && cellSpacings->getSecondEdge() == firstEdge)) {
+      spacing = std::max(spacing, cellSpacings->getSeparation());
     }
   }
   return spacing;
@@ -516,33 +505,15 @@ void Architecture::init_edge_type()
 ////////////////////////////////////////////////////////////////////////////////
 int Architecture::add_edge_type(const char* name)
 {
-  for (int i = 0; i < edgeTypes_.size(); i++) {
-    auto& temp = edgeTypes_[i];
-    if (temp.first == name) {
+  for (const auto& edgeType : edgeTypes_) {
+    if (edgeType.first == name) {
       // Edge type already exists.
-      return temp.second;
+      return edgeType.second;
     }
   }
   const int n = (int) edgeTypes_.size();
   edgeTypes_.emplace_back(std::make_pair(name, n));
   return n;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-Architecture::Row::Row()
-    : id_(-1),
-      rowLoc_(0),
-      rowHeight_(0),
-      subRowOrigin_(0),
-      siteSpacing_(0),
-      siteWidth_(0),
-      numSites_(0),
-      siteOrient_(0),
-      siteSymmetry_(0),
-      powerTop_(Architecture::Row::Power_UNK),
-      powerBot_(Architecture::Row::Power_UNK)
-{
 }
 
 ////////////////////////////////////////////////////////////////////////////////

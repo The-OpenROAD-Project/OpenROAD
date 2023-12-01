@@ -61,6 +61,16 @@ struct PARinfo;
 struct ARinfo;
 struct AntennaModel;
 
+class GlobalRouteSource
+{
+ public:
+  virtual ~GlobalRouteSource() = default;
+
+  virtual bool haveRoutes() = 0;
+  virtual void makeNetWires() = 0;
+  virtual void destroyNetWires() = 0;
+};
+
 struct Violation
 {
   int routing_level;
@@ -75,7 +85,7 @@ class AntennaChecker
   ~AntennaChecker();
 
   void init(odb::dbDatabase* db,
-            grt::GlobalRouter* global_router,
+            GlobalRouteSource* global_route_source,
             utl::Logger* logger);
 
   // net nullptr -> check all nets
@@ -123,7 +133,7 @@ class AntennaChecker
                    vector<dbWireGraph::Node*>& current_path,
                    vector<dbWireGraph::Node*>& path_found);
 
-  void calculateParInfo(PARinfo& PARtable);
+  void calculateParInfo(PARinfo& par_info);
   double getPwlFactor(odb::dbTechLayerAntennaRule::pwl_pair pwl_info,
                       double ref_val,
                       double def);
@@ -148,22 +158,21 @@ class AntennaChecker
                      vector<dbWireGraph::Node*>& gate_iterms);
 
   std::pair<bool, bool> checkWirePar(const ARinfo& AntennaRatio,
-                                     dbNet* net,
-                                     bool verbose,
                                      bool report,
+                                     bool verbose,
                                      std::ofstream& report_file);
   std::pair<bool, bool> checkWireCar(const ARinfo& AntennaRatio,
                                      bool par_checked,
-                                     bool verbose,
                                      bool report,
+                                     bool verbose,
                                      std::ofstream& report_file);
   bool checkViaPar(const ARinfo& AntennaRatio,
-                   bool verbose,
                    bool report,
+                   bool verbose,
                    std::ofstream& report_file);
   bool checkViaCar(const ARinfo& AntennaRatio,
-                   bool verbose,
                    bool report,
+                   bool verbose,
                    std::ofstream& report_file);
 
   void checkNet(dbNet* net,
@@ -173,8 +182,7 @@ class AntennaChecker
                 // Return values.
                 int& net_violation_count,
                 int& pin_violation_count);
-  void checkGate(dbNet* net,
-                 dbWireGraph::Node* gate,
+  void checkGate(dbWireGraph::Node* gate,
                  vector<ARinfo>& CARtable,
                  vector<ARinfo>& VIA_CARtable,
                  bool report,
@@ -198,14 +206,14 @@ class AntennaChecker
       dbNet* net,
       int routing_level);
 
-  odb::dbDatabase* db_;
-  odb::dbBlock* block_;
-  int dbu_per_micron_;
-  grt::GlobalRouter* global_router_;
-  utl::Logger* logger_;
+  odb::dbDatabase* db_{nullptr};
+  odb::dbBlock* block_{nullptr};
+  int dbu_per_micron_{0};
+  GlobalRouteSource* global_route_source_{nullptr};
+  utl::Logger* logger_{nullptr};
   std::map<odb::dbTechLayer*, AntennaModel> layer_info_;
-  int net_violation_count_;
-  float ratio_margin_;
+  int net_violation_count_{0};
+  float ratio_margin_{0};
   std::string report_file_name_;
 
   static constexpr int max_diode_count_per_gate = 10;

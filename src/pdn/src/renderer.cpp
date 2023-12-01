@@ -108,7 +108,7 @@ void PDNRenderer::update()
         channel.source = repair.connect_to;
         channel.target = repair.target->getLayer();
         channel.rect = repair.area;
-        std::string nets = "";
+        std::string nets;
         for (auto* net : repair.nets) {
           if (!nets.empty()) {
             nets += ",";

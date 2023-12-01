@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -43,9 +43,6 @@ class defiRow
  public:
   defiRow(defrData* data);
   void Init();
-
-  DEF_COPY_CONSTRUCTOR_H(defiRow);
-  DEF_ASSIGN_OPERATOR_H(defiRow);
 
   ~defiRow();
   void Destroy();
@@ -81,7 +78,7 @@ class defiRow
   const char* propName(int index) const;
   const char* propValue(int index) const;
   double propNumber(int index) const;
-  char propType(int index) const;
+  const char propType(int index) const;
   int propIsNumber(int index) const;
   int propIsString(int index) const;
 
@@ -117,9 +114,6 @@ class defiTrack
  public:
   defiTrack(defrData* data);
   void Init();
-
-  DEF_COPY_CONSTRUCTOR_H(defiTrack);
-  DEF_ASSIGN_OPERATOR_H(defiTrack);
 
   ~defiTrack();
   void Destroy();
@@ -160,9 +154,6 @@ class defiGcellGrid
  public:
   defiGcellGrid(defrData* data);
   void Init();
-
-  DEF_COPY_CONSTRUCTOR_H(defiGcellGrid);
-  DEF_ASSIGN_OPERATOR_H(defiGcellGrid);
 
   ~defiGcellGrid();
   void Destroy();

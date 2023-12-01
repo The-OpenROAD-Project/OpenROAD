@@ -42,20 +42,20 @@ class IRDropDataSource : public gui::RealValueHeatMapDataSource
  public:
   IRDropDataSource(PDNSim* psm, utl::Logger* logger);
 
-  virtual void setBlock(odb::dbBlock* block) override;
+  void setBlock(odb::dbBlock* block) override;
 
-  virtual double getGridSizeMinimumValue() const override;
+  double getGridSizeMinimumValue() const override;
 
  protected:
-  virtual bool populateMap() override;
-  virtual void combineMapData(bool base_has_value,
-                              double& base,
-                              const double new_data,
-                              const double data_area,
-                              const double intersection_area,
-                              const double rect_area) override;
+  bool populateMap() override;
+  void combineMapData(bool base_has_value,
+                      double& base,
+                      double new_data,
+                      double data_area,
+                      double intersection_area,
+                      double rect_area) override;
 
-  virtual void determineMinMax(const gui::HeatMapDataSource::Map& map) override;
+  void determineMinMax(const gui::HeatMapDataSource::Map& map) override;
 
  private:
   void ensureLayer();

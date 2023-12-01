@@ -208,7 +208,6 @@ void FlexGCWorkerRegionQuery::Impl::init(int numLayers)
   std::vector<std::vector<rq_box_value_t<gcRect*>>> allMaxRectangles(numLayers);
   std::vector<std::vector<rq_box_value_t<gcRect>>> allSpcRectangles(numLayers);
 
-  int cntMaxRectangle = 0;
   for (auto& net : gcWorker_->getNets()) {
     for (auto& pins : net->getPins()) {
       for (auto& pin : pins) {
@@ -219,7 +218,6 @@ void FlexGCWorkerRegionQuery::Impl::init(int numLayers)
         }
         for (auto& rect : pin->getMaxRectangles()) {
           addMaxRectangle(rect.get(), allMaxRectangles);
-          cntMaxRectangle++;
         }
       }
     }

@@ -67,8 +67,7 @@ using utl::Logger;
 class Optdp
 {
  public:
-  Optdp();
-  ~Optdp();
+  Optdp() = default;
 
   Optdp(const Optdp&) = delete;
   Optdp& operator=(const Optdp&) = delete;
@@ -79,7 +78,8 @@ class Optdp
 
   void improvePlacement(int seed,
                         int max_displacement_x,
-                        int max_displacement_y);
+                        int max_displacement_y,
+                        bool disallow_one_site_gaps = false);
 
  private:
   void import();
@@ -94,16 +94,17 @@ class Optdp
   void createRouteInformation();
   void setUpNdrRules();
   void setUpPlacementRegions();
-  unsigned dbToDpoOrient(dbOrientType orient);
+  unsigned dbToDpoOrient(const dbOrientType& orient);
 
-  odb::dbDatabase* db_;
-  utl::Logger* logger_;
-  dpl::Opendp* opendp_;
+  odb::dbDatabase* db_ = nullptr;
+  utl::Logger* logger_ = nullptr;
+  dpl::Opendp* opendp_ = nullptr;
 
   // My stuff.
-  Architecture* arch_;        // Information about rows, etc.
-  Network* network_;          // The netlist, cells, etc.
-  RoutingParams* routeinfo_;  // Route info we might consider (future).
+  Architecture* arch_ = nullptr;  // Information about rows, etc.
+  Network* network_ = nullptr;    // The netlist, cells, etc.
+  RoutingParams* routeinfo_
+      = nullptr;  // Route info we might consider (future).
 
   // Some maps.
   std::unordered_map<odb::dbInst*, Node*> instMap_;
@@ -116,8 +117,8 @@ class Optdp
   std::unordered_map<odb::dbMaster*, std::pair<int, int>>
       masterPwrs_;  // top,bot
 
-  int64_t hpwlBefore_;
-  int64_t hpwlAfter_;
+  int64_t hpwlBefore_ = 0;
+  int64_t hpwlAfter_ = 0;
 };
 
 }  // namespace dpo

@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -115,7 +115,7 @@ void defiPropType::bumpProps()
   propTypes_ = newt;
 }
 
-char defiPropType::propType(char* name) const
+const char defiPropType::propType(char* name) const
 {
   int i;
 

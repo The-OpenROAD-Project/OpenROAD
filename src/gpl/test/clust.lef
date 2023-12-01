@@ -1,0 +1,32 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+MACRO FF
+  ORIGIN 0 0 ;
+  SIZE 1.00 BY 1.00 ;
+  PIN D
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT 
+      LAYER M1 ;
+        RECT -1 0 1 1 ;
+    END
+  END D
+  PIN Q
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER M1 ;
+        RECT -1 -1 1 0 ;
+    END
+  END Q
+  PIN CLK
+    DIRECTION INPUT ;
+    USE CLOCK ;
+    PORT
+      LAYER M1 ;
+        RECT -1 -1 1 1 ;
+    END
+  END CLK
+END FF

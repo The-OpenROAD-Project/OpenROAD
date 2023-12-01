@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <iostream>
+
 #include "dbCore.h"
 #include "odb.h"
 
@@ -67,11 +69,52 @@ namespace odb {
 //
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
-const uint db_schema_minor = 60;  // Current revision number
-const uint db_schema_wrongway_width
-    = 60;  // Revision where _dbTechLayer::wrong_way_width_ was added
-const uint db_schema_add_global_connect
-    = 58;  // Revision where dbGlobalConnect was added
+const uint db_schema_minor = 72;  // Current revision number
+
+// Revision where _dbMaster::_lib_for_site was added
+const uint db_schema_dbmaster_lib_for_site = 72;
+
+// Revision where _dbObstruction::_except_pg_nets was added
+const uint db_schema_except_pg_nets_obstruction = 71;
+
+// Revision where _dbTechLayer::forbidden_spacing_rules_tbl_ was added
+const uint db_schema_lef58_forbidden_spacing = 70;
+
+// Revision where upf power switch mapping was added.
+const uint db_schema_upf_power_switch_mapping = 69;
+
+// Revision where _component_shift_mask is added to _dbBlock.
+const uint db_schema_block_component_mask_shift = 68;
+
+// Revision where _minExtModelIndex & _maxExtModelIndex removed from
+// _dbBlock.
+const uint db_schema_block_ext_model_index = 67;
+
+// Revision where _tech moved to _dbBlock & _dbLib from _dbDatabase.
+// Added name to dbTech.
+const uint db_schema_block_tech = 66;
+
+// Revision where _dbGCellGrid switch to using dbMatrix
+const uint db_schema_gcell_grid_matrix = 65;
+
+// Revision where _dbBoxFlags shifted _mark bit to _layer_id
+const uint db_schema_box_layer_bits = 64;
+
+// Revision where _dbTechLayer::keepout_zone_rules_tbl_ was added
+const uint db_schema_keepout_zone = 63;
+
+// Revision where _dbBlock::_net_tracks_tbl was added
+const uint db_schema_net_tracks = 62;
+
+// Revision where _dbTechLayer::_first_last_pitch was added
+const uint db_schema_lef58_pitch = 61;
+
+// Revision where _dbTechLayer::wrong_way_width_ was added
+const uint db_schema_wrongway_width = 60;
+
+// Revision where dbGlobalConnect was added
+const uint db_schema_add_global_connect = 58;
+
 template <class T>
 class dbTable;
 class _dbProperty;
@@ -94,7 +137,6 @@ class _dbDatabase : public _dbObject
   uint _schema_minor;
   uint _master_id;  // for a unique id across all libraries
   dbId<_dbChip> _chip;
-  dbId<_dbTech> _tech;
 
   // NON_PERSISTANT_MEMBERS
   dbTable<_dbTech>* _tech_tbl;
@@ -105,7 +147,6 @@ class _dbDatabase : public _dbObject
   dbPropertyItr* _prop_itr;
   int _unique_id;
 
-  char* _file;
   utl::Logger* _logger;
 
   _dbDatabase(_dbDatabase* db);

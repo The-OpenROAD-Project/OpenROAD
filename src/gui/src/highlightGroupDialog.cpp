@@ -74,8 +74,9 @@ int HighlightGroupDialog::getSelectedHighlightGroup() const
                                                      grp7RadioButton,
                                                      grp8RadioButton};
   for (int i = 0; i < 8; ++i) {
-    if (highlight_group_buttons[i]->isChecked())
+    if (highlight_group_buttons[i]->isChecked()) {
       return i;
+    }
   }
   return 0;
 }

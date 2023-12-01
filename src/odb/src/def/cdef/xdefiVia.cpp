@@ -36,6 +36,12 @@
 #include "defiVia.h"
 #include "defiVia.hpp"
 
+union udefiPoints
+{
+  LefDefParser::defiPoints cpp;
+  ::defiPoints c;
+};
+
 // Wrappers definitions.
 const char* defiVia_name(const ::defiVia* obj)
 {
@@ -80,9 +86,9 @@ const char* defiVia_polygonName(const ::defiVia* obj, int index)
 
 ::defiPoints defiVia_getPolygon(const ::defiVia* obj, int index)
 {
-  LefDefParser::defiPoints tmp;
-  tmp = ((LefDefParser::defiVia*) obj)->getPolygon(index);
-  return *((::defiPoints*) &tmp);
+  udefiPoints tmp;
+  tmp.cpp = ((LefDefParser::defiVia*) obj)->getPolygon(index);
+  return tmp.c;
 }
 
 int defiVia_hasViaRule(const ::defiVia* obj)

@@ -36,6 +36,7 @@
 #include <boost/bind/bind.hpp>
 #include <boost/serialization/export.hpp>
 #include <boost/thread/thread.hpp>
+#include <mutex>
 #include <thread>
 
 #include "LoadBalancer.h"
@@ -123,8 +124,9 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
                 asio::read(socket, receive_buffer, asio::transfer_all());
                 failure = false;
               } catch (std::exception const& ex) {
-                if (socket.is_open())
+                if (socket.is_open()) {
                   socket.close();
+                }
                 if (std::string(ex.what()).find("read: End of file")
                     != std::string::npos) {
                   // Since asio::transfer_all() used with a stream buffer it
@@ -157,8 +159,9 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
               std::string msgStr;
               JobMessage::serializeMsg(JobMessage::WRITE, result, msgStr);
               asio::write(sock_, asio::buffer(msgStr), error);
-            } else
+            } else {
               asio::write(sock_, receive_buffer, error);
+            }
             sock_.close();
           }
         }
@@ -190,7 +193,7 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
                     // Since asio::transfer_all() used with a stream buffer it
                     // always reach an eof file exception!
                     std::lock_guard<std::mutex> lock(broadcast_failure_mutex);
-                    failed_workers.push_back({worker.ip, worker.port});
+                    failed_workers.emplace_back(worker.ip, worker.port);
                   }
                 }
               });
@@ -200,8 +203,8 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
         std::string msgStr;
         unsigned short successBroadcast
             = owner_->workers_.size() - failed_workers.size();
-        if (failed_workers.size() > 0) {
-          for (auto worker : failed_workers) {
+        if (!failed_workers.empty()) {
+          for (const auto& worker : failed_workers) {
             owner_->removeWorker(worker.first, worker.second, false);
           }
           logger_->warn(utl::DST,
@@ -210,8 +213,9 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
                         "and have been removed.",
                         failed_workers.size());
           if (failed_workers.size() > MAX_BROADCAST_FAILED_NODES
-              || failed_workers.size() == owner_->workers_.size())
+              || failed_workers.size() == owner_->workers_.size()) {
             result.setJobType(JobMessage::JobType::ERROR);
+          }
         }
         auto uDesc = std::make_unique<BroadcastJobDescription>();
         auto desc = uDesc.get();

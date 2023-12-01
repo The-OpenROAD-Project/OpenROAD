@@ -5,7 +5,6 @@
 %rename(incr_int) T::operator++(int);
 %enddef
 
-WRAP_OBJECT_OPERATOR(odb::dbRtNodeEdgeIterator)
 WRAP_OBJECT_OPERATOR(odb::dbSetIterator<dbBlock>)
 WRAP_OBJECT_OPERATOR(odb::dbSetIterator<dbCCSeg>)
 
@@ -20,5 +19,4 @@ WRAP_OBJECT_STREAM(Point)
 WRAP_OBJECT_STREAM(Rect)
 WRAP_OBJECT_STREAM(dbTransform)
 WRAP_OBJECT_STREAM(_dbViaParams)
-WRAP_OBJECT_STREAM(dbRtNodeEdgeIterator)
 

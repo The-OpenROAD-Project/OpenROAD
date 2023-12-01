@@ -35,15 +35,14 @@
 #include <algorithm>
 #include <cfloat>
 #include <limits>
+#include <string>
+#include <unordered_set>
 
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
 
 namespace dpl {
 
-using std::max;
-using std::min;
-using std::numeric_limits;
 using std::string;
 using std::vector;
 
@@ -51,26 +50,22 @@ using utl::DPL;
 
 using odb::dbBox;
 using odb::dbMaster;
-using odb::dbMPin;
-using odb::dbMTerm;
-using odb::dbNet;
 using odb::dbOrientType;
 using odb::dbRegion;
-using odb::dbSBox;
-using odb::dbSigType;
-using odb::dbSWire;
 using odb::Rect;
 
-static bool swapWidthHeight(dbOrientType orient);
+static bool swapWidthHeight(const dbOrientType& orient);
 
 void Opendp::importDb()
 {
   block_ = db_->getChip()->getBlock();
   core_ = block_->getCoreArea();
   have_fillers_ = false;
+  have_one_site_cells_ = false;
 
   importClear();
   examineRows();
+  checkOneSiteDbMaster();
   makeMacros();
   makeCells();
   makeGroups();
@@ -86,6 +81,24 @@ void Opendp::importClear()
   have_multi_row_cells_ = false;
 }
 
+void Opendp::checkOneSiteDbMaster()
+{
+  vector<dbMaster*> masters;
+  auto db_libs = db_->getLibs();
+  for (auto db_lib : db_libs) {
+    if (have_one_site_cells_) {
+      break;
+    }
+    auto masters = db_lib->getMasters();
+    for (auto db_master : masters) {
+      if (isOneSiteCell(db_master)) {
+        have_one_site_cells_ = true;
+        break;
+      }
+    }
+  }
+}
+
 void Opendp::makeMacros()
 {
   vector<dbMaster*> masters;
@@ -99,25 +112,39 @@ void Opendp::makeMacros()
 void Opendp::makeMaster(Master* master, dbMaster* db_master)
 {
   const int master_height = db_master->getHeight();
-  const bool is_multi_row
-      = master_height != row_height_ && master_height % row_height_ == 0;
-
-  master->is_multi_row = is_multi_row;
+  master->is_multi_row
+      = (master_height != row_height_ && master_height % row_height_ == 0);
 }
 
 void Opendp::examineRows()
 {
-  auto rows = block_->getRows();
-  if (!rows.empty()) {
-    for (dbRow* db_row : rows) {
-      dbSite* site = db_row->getSite();
-      row_height_ = site->getHeight();
-      site_width_ = site->getWidth();
+  std::vector<dbRow*> rows;
+  auto block_rows = block_->getRows();
+  rows.reserve(block_rows.size());
+  for (auto* row : block_rows) {
+    if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+      continue;
     }
-    row_site_count_ = divFloor(core_.dx(), site_width_);
-    row_count_ = divFloor(core_.dy(), row_height_);
-  } else
+    rows.push_back(row);
+  }
+  if (rows.empty()) {
     logger_->error(DPL, 12, "no rows found.");
+  }
+
+  int min_row_height_ = std::numeric_limits<int>::max();
+  int min_site_width_ = std::numeric_limits<int>::max();
+
+  for (dbRow* db_row : rows) {
+    dbSite* site = db_row->getSite();
+    min_row_height_
+        = std::min(min_row_height_, static_cast<int>(site->getHeight()));
+    min_site_width_
+        = std::min(min_site_width_, static_cast<int>(site->getWidth()));
+  }
+  row_height_ = min_row_height_;
+  site_width_ = min_site_width_;
+  row_site_count_ = divFloor(core_.dx(), site_width_);
+  row_count_ = divFloor(core_.dy(), row_height_);
 }
 
 void Opendp::makeCells()
@@ -127,7 +154,7 @@ void Opendp::makeCells()
   for (auto db_inst : db_insts) {
     dbMaster* db_master = db_inst->getMaster();
     if (db_master->isCoreAutoPlaceable()) {
-      cells_.push_back(Cell());
+      cells_.emplace_back();
       Cell& cell = cells_.back();
       cell.db_inst_ = db_inst;
       db_inst_map_[db_inst] = &cell;
@@ -148,8 +175,9 @@ void Opendp::makeCells()
         have_multi_row_cells_ = true;
       }
     }
-    if (isFiller(db_inst))
+    if (isFiller(db_inst)) {
       have_fillers_ = true;
+    }
   }
 }
 
@@ -165,13 +193,14 @@ Rect Opendp::getBbox(dbInst* inst)
 
   int width = master->getWidth();
   int height = master->getHeight();
-  if (swapWidthHeight(inst->getOrient()))
+  if (swapWidthHeight(inst->getOrient())) {
     std::swap(width, height);
+  }
 
   return Rect(loc_x, loc_y, loc_x + width, loc_y + height);
 }
 
-static bool swapWidthHeight(dbOrientType orient)
+static bool swapWidthHeight(const dbOrientType& orient)
 {
   switch (orient) {
     case dbOrientType::R90:
@@ -191,33 +220,67 @@ static bool swapWidthHeight(dbOrientType orient)
 
 void Opendp::makeGroups()
 {
+  regions_rtree.clear();
   // preallocate groups so it does not grow when push_back is called
   // because region cells point to them.
   auto db_groups = block_->getGroups();
-  groups_.reserve(db_groups.size());
+  int reserve_size = 0;
+  for (auto db_group : db_groups) {
+    dbRegion* parent = db_group->getRegion();
+    std::unordered_set<int> unique_heights;
+    if (parent) {
+      for (auto db_inst : db_group->getInsts()) {
+        unique_heights.insert(db_inst_map_[db_inst]->height_);
+      }
+      reserve_size += unique_heights.size();
+    }
+  }
+  reserve_size = std::max(reserve_size, (int) db_groups.size());
+  groups_.reserve(reserve_size);
+
   for (auto db_group : db_groups) {
     dbRegion* parent = db_group->getRegion();
     if (parent) {
-      groups_.emplace_back(Group());
-      struct Group& group = groups_.back();
-      string group_name = db_group->getName();
-      group.name = group_name;
-      group.boundary.mergeInit();
-      auto boundaries = parent->getBoundaries();
-      for (dbBox* boundary : boundaries) {
-        Rect box = boundary->getBox();
-        box = box.intersect(core_);
-        // offset region to core origin
-        box.moveDelta(-core_.xMin(), -core_.yMin());
+      std::set<int> unique_heights;
+      map<int, Group*> cell_height_to_group_map;
+      for (auto db_inst : db_group->getInsts()) {
+        unique_heights.insert(db_inst_map_[db_inst]->height_);
+      }
+      int index = 0;
+      for (auto height : unique_heights) {
+        groups_.emplace_back(Group());
+        struct Group& group = groups_.back();
+        string group_name
+            = string(db_group->getName()) + "_" + std::to_string(index++);
+        group.name = group_name;
+        group.boundary.mergeInit();
+        cell_height_to_group_map[height] = &group;
+        auto boundaries = parent->getBoundaries();
 
-        group.regions.push_back(box);
-        group.boundary.merge(box);
+        for (dbBox* boundary : boundaries) {
+          Rect box = boundary->getBox();
+          box = box.intersect(core_);
+          // offset region to core origin
+          box.moveDelta(-core_.xMin(), -core_.yMin());
+          if (height == *(unique_heights.begin())) {
+            bgBox bbox(
+                bgPoint(box.xMin(), box.yMin()),
+                bgPoint(box.xMax() - 1,
+                        box.yMax()
+                            - 1));  /// the -1 is to prevent imaginary overlaps
+                                    /// where a region ends and another starts
+            regions_rtree.insert(bbox);
+          }
+          group.regions.push_back(box);
+          group.boundary.merge(box);
+        }
       }
 
       for (auto db_inst : db_group->getInsts()) {
         Cell* cell = db_inst_map_[db_inst];
-        group.cells_.push_back(cell);
-        cell->group_ = &group;
+        Group* group = cell_height_to_group_map[cell->height_];
+        group->cells_.push_back(cell);
+        cell->group_ = group;
       }
     }
   }

@@ -32,6 +32,8 @@
 
 #include "db/gcObj/gcBlockObject.h"
 #include "db/gcObj/gcPin.h"
+#include "db/obj/frBlockage.h"
+#include "db/obj/frInstBlockage.h"
 #include "db/obj/frNet.h"
 
 namespace fr {
@@ -157,6 +159,30 @@ class gcNet : public gcBlockObject
   }
   bool hasOwner() const { return owner_; }
   frBlockObject* getOwner() const { return owner_; }
+  bool isBlockage() const
+  {
+    return hasOwner()
+           && (owner_->typeId() == frcInstBlockage
+               || owner_->typeId() == frcInst
+               || owner_->typeId() == frcBlockage);
+  }
+  frCoord getDesignRuleWidth() const
+  {
+    if (hasOwner()) {
+      switch (owner_->typeId()) {
+        case frcInstBlockage:
+          return static_cast<frInstBlockage*>(owner_)
+              ->getBlockage()
+              ->getDesignRuleWidth();
+        case frcBlockage:
+          return static_cast<frBlockage*>(owner_)->getDesignRuleWidth();
+        default:
+          return -1;
+      }
+    } else {
+      return -1;
+    }
+  }
   // others
   frBlockObjectEnum typeId() const override { return gccNet; }
 
@@ -215,6 +241,19 @@ class gcNet : public gcBlockObject
       }
     }
     return false;
+  }
+  gcCorner* getPolyCornerAt(frCoord x, frCoord y, frLayerNum ln) const
+  {
+    for (auto& pin : pins_[ln]) {
+      for (auto& corners : pin->getPolygonCorners()) {
+        for (auto& corner : corners) {
+          if (corner->x() == x && corner->y() == y) {
+            return corner.get();
+          }
+        }
+      }
+    }
+    return nullptr;
   }
 
  private:

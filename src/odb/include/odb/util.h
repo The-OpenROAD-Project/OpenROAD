@@ -33,7 +33,7 @@
 // Header file for the Athena Utilities
 
 #include <assert.h>
-//#define _CRTDBG_MAP_ALLOC
+// #define _CRTDBG_MAP_ALLOC
 
 #pragma once
 
@@ -42,6 +42,7 @@
 #include <vector>
 
 #include "array1.h"
+#include "geom.h"
 
 namespace utl {
 class Logger;
@@ -51,11 +52,6 @@ namespace odb {
 class dbBlock;
 class dbBox;
 using uint = unsigned int;
-
-unsigned int AthHashFunction(char* key, unsigned int len, unsigned int prime);
-int Ath__double2int(double v);
-
-int AthResourceLog(const char* title, int smallScale = 0);
 
 // Simple list
 template <class T>
@@ -70,7 +66,7 @@ class AthList
   t_elem* m_start;
 
  public:
-  AthList(void) { m_start = NULL; };
+  AthList(void) { m_start = nullptr; };
   ~AthList(void)
   {
     t_elem* i;
@@ -147,7 +143,7 @@ class AthArray
     m_ptr = (T**) malloc(sizeof(T*) * m_num_mallocated_first_level);
     unsigned int i;
     for (i = 0; i < m_num_mallocated_first_level; i++) {
-      m_ptr[i] = NULL;
+      m_ptr[i] = nullptr;
     }
     m_num_allocated_elem = 0;
     m_num_mallocated_elem = 0;
@@ -174,11 +170,11 @@ class AthArray
       for (unsigned int i = orig_first_level_size;
            i < m_num_mallocated_first_level;
            i++) {
-        m_ptr[i] = NULL;
+        m_ptr[i] = nullptr;
       }
     }
     // Allocate more elements if needed
-    if (m_ptr[first_level_idx] == NULL) {
+    if (m_ptr[first_level_idx] == nullptr) {
       unsigned int size = sizeof(T);
       m_ptr[first_level_idx] = (T*) malloc(size * m_alloc_size);
       m_num_mallocated_elem = m_num_mallocated_first_level * m_alloc_size;
@@ -251,7 +247,7 @@ class AthPool
     _freeTable = new Ath__array1D<T*>(freeAllocSize);
 
     _memDbg = false;
-    _dbgTable = NULL;
+    _dbgTable = nullptr;
     if (dbgMem) {
       _dbgTable = new AthArray<T*>(alloc_size);
       _memDbg = true;
@@ -262,29 +258,29 @@ class AthPool
     delete m_heap;
     delete _freeTable;
 
-    if (_dbgTable != NULL)
+    if (_dbgTable != nullptr)
       delete _dbgTable;
   }
 
-  T* alloc(uint* freeTableFlag = NULL, uint* id = NULL)
+  T* alloc(uint* freeTableFlag = nullptr, uint* id = nullptr)
   {
-    T* a = NULL;
+    T* a = nullptr;
 
     if (!_memDbg) {
       if (_freeTable->notEmpty()) {
         a = _freeTable->pop();
 
-        if (freeTableFlag != NULL)
+        if (freeTableFlag != nullptr)
           *freeTableFlag = 1;
       } else {
         m_heap->add();
         uint n = m_heap->getLast() - 1;
         a = &(*m_heap)[n];
 
-        if (id != NULL)
+        if (id != nullptr)
           *id = n;
 
-        if (freeTableFlag != NULL)
+        if (freeTableFlag != nullptr)
           *freeTableFlag = 0;
       }
     } else {
@@ -295,19 +291,19 @@ class AthPool
 
       uint n = _dbgTable->add(a);
 
-      if (id != NULL)
+      if (id != nullptr)
         *id = n;
-      if (freeTableFlag != NULL)
+      if (freeTableFlag != nullptr)
         *freeTableFlag = 1;
     }
     return a;
   }
   void free(T* a)
   {
-    assert(a);  // should not free NULL
+    assert(a);  // should not free nullptr
     if (_memDbg) {
       delete a;
-    } else if (_freeTable != NULL) {
+    } else if (_freeTable != nullptr) {
       _freeTable->add(a);
     }
   }
@@ -489,6 +485,62 @@ unsigned int prime)
     tmp_iter.m_ptr_to_hash = this;
     return tmp_iter;
   }
+};
+
+class RUDYCalculator
+{
+ public:
+  class Tile
+  {
+   public:
+    odb::Rect getRect() const { return rect_; }
+    void setRect(int lx, int ly, int ux, int uy);
+    void addRUDY(float rudy);
+    float getRUDY() const { return rudy_; }
+
+   private:
+    odb::Rect rect_;
+    float rudy_ = 0;
+  };
+
+  explicit RUDYCalculator(dbBlock* block);
+
+  /**
+   * \pre we need to call this function after `setGridConfig` and
+   * `setWireWidth`.
+   * */
+  void calculateRUDY();
+
+  /**
+   * Set the grid area and grid numbers.
+   * Default value will be the die area of block and (40, 40), respectively.
+   * */
+  void setGridConfig(odb::Rect block, int tileCntX, int tileCntY);
+
+  /**
+   * Set the wire length for calculate RUDY.
+   * If the layer which name is metal1 and it has getWidth value, then this
+   * function will not applied, but it will apply that information.
+   * */
+  void setWireWidth(int wireWidth) { wireWidth_ = wireWidth; }
+
+  const Tile& getTile(int x, int y) const { return grid_.at(x).at(y); }
+  std::pair<int, int> getGridSize() const;
+
+ private:
+  /**
+   * \pre This function should be called after `setGridConfig`
+   * */
+  void makeGrid();
+  Tile& getEditableTile(int x, int y) { return grid_.at(x).at(y); }
+
+  dbBlock* block_;
+  odb::Rect gridBlock_;
+  int tileCntX_ = 40;
+  int tileCntY_ = 40;
+  int wireWidth_ = 100;
+
+  std::vector<std::vector<Tile>> grid_;
 };
 
 int makeSiteLoc(int x, double site_width, bool at_left_from_macro, int offset);

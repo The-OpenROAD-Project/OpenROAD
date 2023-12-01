@@ -129,7 +129,6 @@ class gs
 
   int nslices_;   // max number of slices
   int maxslice_;  // maximum used slice
-  int csize_;     // size of the color table
 
   int init_;
 

@@ -3,6 +3,7 @@
 #include "odb/db.h"
 #include "db_sta/dbSta.hh"
 #include "db_sta/dbNetwork.hh"
+#include "db_sta/MakeDbSta.hh"
 #include "ord/OpenRoad.hh"
 #include "sta/VerilogWriter.hh"
 
@@ -16,7 +17,7 @@ using sta::Instance;
 %}
 
 %import "odb.i"
-%include "../../src/Exception.i"
+%include "../../Exception.i"
 // OpenSTA swig files
 %include "tcl/StaTcl.i"
 %include "tcl/NetworkEdit.i"
@@ -31,7 +32,7 @@ sta::Sta *
 make_block_sta(odb::dbBlock *block)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
-  return sta::makeBlockSta(openroad, block);
+  return openroad->getSta()->makeBlockSta(block).release();
 }
 
 // For testing

@@ -61,7 +61,7 @@ Pin::Pin(
   }
 
   if (connected_to_pad_or_macro) {
-    determineEdge(iterm->getInst()->getBBox()->getBox(), position_, layers);
+    determineEdge(iterm->getInst()->getBBox()->getBox(), layers);
   } else {
     connection_layer_ = layers_.back();
   }
@@ -88,26 +88,49 @@ Pin::Pin(
     boxes_per_layer_[layer->getRoutingLevel()] = boxes;
   }
 
-  determineEdge(bterm->getBlock()->getDieArea(), position_, layers);
+  determineEdge(bterm->getBlock()->getDieArea(), layers);
 }
 
 void Pin::determineEdge(const odb::Rect& bounds,
-                        const odb::Point& pin_position,
                         const std::vector<odb::dbTechLayer*>& layers)
 {
-  // Determine which edge is closest to the pin
-  const int n_dist = bounds.yMax() - pin_position.y();
-  const int s_dist = pin_position.y() - bounds.yMin();
-  const int e_dist = bounds.xMax() - pin_position.x();
-  const int w_dist = pin_position.x() - bounds.xMin();
-  const int min_dist = std::min({n_dist, s_dist, w_dist, e_dist});
-  if (n_dist == min_dist) {
+  odb::Point lower_left;
+  odb::Point upper_right;
+  int n_count = 0;
+  int s_count = 0;
+  int e_count = 0;
+  int w_count = 0;
+  for (const auto& [layer, boxes] : boxes_per_layer_) {
+    for (const auto& box : boxes) {
+      lower_left = box.ll();
+      upper_right = box.ur();
+      // Determine which edge is closest to the pin box
+      const int n_dist = bounds.yMax() - upper_right.y();
+      const int s_dist = lower_left.y() - bounds.yMin();
+      const int e_dist = bounds.xMax() - upper_right.x();
+      const int w_dist = lower_left.x() - bounds.xMin();
+      const int min_dist = std::min({n_dist, s_dist, w_dist, e_dist});
+      if (n_dist == min_dist) {
+        n_count += 1;
+      } else if (s_dist == min_dist) {
+        s_count += 1;
+      } else if (e_dist == min_dist) {
+        e_count += 1;
+      } else {
+        w_count += 1;
+      }
+    }
+  }
+
+  // voting system to determine the pin edge after checking all pin boxes
+  int edge_count = std::max({n_count, s_count, e_count, w_count});
+  if (edge_count == n_count) {
     edge_ = PinEdge::north;
-  } else if (s_dist == min_dist) {
+  } else if (edge_count == s_count) {
     edge_ = PinEdge::south;
-  } else if (e_dist == min_dist) {
+  } else if (edge_count == e_count) {
     edge_ = PinEdge::east;
-  } else {
+  } else if (edge_count == w_count) {
     edge_ = PinEdge::west;
   }
 

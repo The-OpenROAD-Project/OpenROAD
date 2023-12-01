@@ -39,6 +39,7 @@
 #include <bitset>
 #include <cassert>
 #include <chrono>
+#include <cstdint>
 #include <deque>
 #include <functional>
 #include <iostream>
@@ -49,7 +50,7 @@
 
 #include "CtsOptions.h"
 #include "db_sta/dbNetwork.hh"
-#include "ord/OpenRoad.hh"
+#include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 
 namespace utl {
@@ -82,7 +83,10 @@ class WireSegment
 
   void addBuffer(double location) { bufferLocations_.push_back(location); }
 
-  void addBufferMaster(std::string name) { bufferMasters_.push_back(name); }
+  void addBufferMaster(const std::string& name)
+  {
+    bufferMasters_.push_back(name);
+  }
 
   double getPower() const { return power_; }
   unsigned getDelay() const { return delay_; }
@@ -91,7 +95,7 @@ class WireSegment
   uint8_t getLength() const { return length_; }
   uint8_t getLoad() const { return load_; }
   uint8_t getOutputSlew() const { return outputSlew_; }
-  bool isBuffered() const { return bufferLocations_.size() > 0; }
+  bool isBuffered() const { return !bufferLocations_.empty(); }
   unsigned getNumBuffers() const { return bufferLocations_.size(); }
   const std::vector<double>& getBufferLocations() { return bufferLocations_; }
   const std::vector<std::string>& getBufferMasters() { return bufferMasters_; }
@@ -130,7 +134,6 @@ class TechChar
 {
  public:
   TechChar(CtsOptions* options,
-           ord::OpenRoad* openroad,
            odb::dbDatabase* db,
            sta::dbSta* sta,
            rsz::Resizer* resizer,
@@ -144,13 +147,13 @@ class TechChar
   void reportSegments(uint8_t length, uint8_t load, uint8_t outputSlew) const;
 
   void forEachWireSegment(
-      const std::function<void(unsigned, const WireSegment&)> func) const;
+      const std::function<void(unsigned, const WireSegment&)>& func) const;
 
   void forEachWireSegment(
       uint8_t length,
       uint8_t load,
       uint8_t outputSlew,
-      const std::function<void(unsigned, const WireSegment&)> func) const;
+      const std::function<void(unsigned, const WireSegment&)>& func) const;
 
   const WireSegment& getWireSegment(unsigned idx) const
   {
@@ -170,7 +173,7 @@ class TechChar
   double getCapPerDBU() const { return capPerDBU_; }
   utl::Logger* getLogger() { return options_->getLogger(); }
 
- protected:
+ private:
   // SolutionData represents the various different structures of the
   // characterization segment. Ports, insts, nets...
   struct SolutionData
@@ -215,7 +218,7 @@ class TechChar
     }
   };
 
-  typedef uint32_t Key;
+  using Key = uint32_t;
 
   void printCharacterization() const;
   void printSolution() const;
@@ -229,7 +232,7 @@ class TechChar
                                  uint8_t inputSlew);
 
   void compileLut(const std::vector<ResultData>& lutSols);
-  void setLengthUnit(unsigned length) { LENGTH_UNIT_MICRON = length; }
+  void setLengthUnit(unsigned length) { lengthUnit_ = length; }
   unsigned computeKey(uint8_t length, uint8_t load, uint8_t outputSlew) const
   {
     return length | (load << NUM_BITS_PER_FIELD)
@@ -267,10 +270,8 @@ class TechChar
 
   static constexpr unsigned NUM_BITS_PER_FIELD = 10;
   static constexpr unsigned MAX_NORMALIZED_VAL = (1 << NUM_BITS_PER_FIELD) - 1;
-  unsigned LENGTH_UNIT_MICRON = 10;
 
   unsigned lengthUnit_ = 0;
-  unsigned charLengthUnit_ = 0;
   unsigned lengthUnitRatio_ = 0;
 
   unsigned minSegmentLength_ = 0;
@@ -281,17 +282,15 @@ class TechChar
   unsigned maxSlew_ = 0;
 
   unsigned actualMinInputCap_ = 0;
-  unsigned actualMinInputSlew_ = 0;
 
   std::deque<WireSegment> wireSegments_;
   std::unordered_map<Key, std::deque<unsigned>> keyToWireSegments_;
 
   CtsOptions* options_;
-  ord::OpenRoad* openroad_;
   odb::dbDatabase* db_;
   rsz::Resizer* resizer_;
   sta::dbSta* openSta_;
-  sta::dbSta* openStaChar_;
+  std::unique_ptr<sta::dbSta> openStaChar_;
   sta::dbNetwork* db_network_;
   Logger* logger_;
   sta::PathAnalysisPt* charPathAnalysis_ = nullptr;

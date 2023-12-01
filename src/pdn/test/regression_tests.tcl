@@ -62,8 +62,10 @@ record_tests {
   macros_narrow_channel_jog
   macros_different_nets
   macros_grid_through
+  macros_grid_through_without_middle
   macros_cells_dont_touch
   macros_cells_overlapping_ports
+  macros_cells_not_fixed
 
   region_temp_sensor
   region_secondary_nets
@@ -74,6 +76,7 @@ record_tests {
   pads_black_parrot_no_connect
   pads_black_parrot_limit_connect
   pads_black_parrot_flipchip
+  pads_black_parrot_flipchip_connect_bumps
   pads_black_parrot_flipchip_connect_overpads
   pads_black_parrot_max_width
 
@@ -89,6 +92,7 @@ record_tests {
   asap7_taper
   asap7_offcenter_via
   asap7_no_via_generate_v1_snapped
+  asap7_failed_macro_grid
 
   existing
 
@@ -99,4 +103,6 @@ record_tests {
   power_switch_cut_rows
   
   repair_vias
+
+  sroute_test
 }

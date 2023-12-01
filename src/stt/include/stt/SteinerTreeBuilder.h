@@ -59,18 +59,16 @@ namespace stt {
 
 using utl::Logger;
 
-typedef int DTYPE;
-
 struct Branch
 {
-  DTYPE x, y;  // starting point of the branch
-  int n;       // index of neighbor
+  int x, y;  // starting point of the branch
+  int n;     // index of neighbor
 };
 
 struct Tree
 {
   int deg;                     // degree
-  DTYPE length;                // total wirelength
+  int length;                  // total wirelength
   std::vector<Branch> branch;  // array of tree branches
 
   void printTree(utl::Logger* logger) const;
@@ -87,15 +85,15 @@ class SteinerTreeBuilder
 
   Tree makeSteinerTree(const std::vector<int>& x,
                        const std::vector<int>& y,
-                       const int drvr_index,
-                       const float alpha);
+                       int drvr_index,
+                       float alpha);
   Tree makeSteinerTree(const std::vector<int>& x,
                        const std::vector<int>& y,
-                       const int drvr_index);
+                       int drvr_index);
   Tree makeSteinerTree(odb::dbNet* net,
                        const std::vector<int>& x,
                        const std::vector<int>& y,
-                       const int drvr_index);
+                       int drvr_index);
   // API only for FastRoute, that requires the use of flutes in its
   // internal flute implementation
   Tree makeSteinerTree(const std::vector<int>& x,
@@ -129,7 +127,5 @@ void reportSteinerTree(const Tree& tree,
                        int drvr_y,
                        Logger* logger);
 void reportSteinerTree(const stt::Tree& tree, Logger* logger);
-
-void highlightSteinerTree(const Tree& tree, gui::Gui* gui);
 
 }  // namespace stt

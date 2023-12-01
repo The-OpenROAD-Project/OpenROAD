@@ -33,6 +33,7 @@
 #include "dbMaster.h"
 
 #include "db.h"
+#include "dbBlock.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
 #include "dbDatabase.h"
@@ -48,8 +49,11 @@
 #include "dbTargetItr.h"
 #include "dbTechLayerAntennaRule.h"
 #include "dbTransform.h"
+#include "utl/Logger.h"
 
 namespace odb {
+
+class _dbInstHdr;
 
 template class dbHashTable<_dbMTerm>;
 template class dbTable<_dbMaster>;
@@ -107,6 +111,9 @@ bool _dbMaster::operator==(const _dbMaster& rhs) const
   if (_obstructions != rhs._obstructions)
     return false;
 
+  if (_lib_for_site != rhs._lib_for_site)
+    return false;
+
   if (_site != rhs._site)
     return false;
 
@@ -152,6 +159,7 @@ void _dbMaster::differences(dbDiff& diff,
   DIFF_FIELD(_leq);
   DIFF_FIELD(_eeq);
   DIFF_FIELD(_obstructions);
+  DIFF_FIELD(_lib_for_site);
   DIFF_FIELD(_site);
   DIFF_HASH_TABLE(_mterm_hash);
   DIFF_TABLE_NO_DEEP(_mterm_tbl);
@@ -181,6 +189,7 @@ void _dbMaster::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_leq);
   DIFF_OUT_FIELD(_eeq);
   DIFF_OUT_FIELD(_obstructions);
+  DIFF_OUT_FIELD(_lib_for_site);
   DIFF_OUT_FIELD(_site);
   DIFF_OUT_HASH_TABLE(_mterm_hash);
   DIFF_OUT_TABLE_NO_DEEP(_mterm_tbl);
@@ -255,11 +264,12 @@ _dbMaster::_dbMaster(_dbDatabase* db, const _dbMaster& m)
       _width(m._width),
       _mterm_cnt(m._mterm_cnt),
       _id(m._id),
-      _name(NULL),
+      _name(nullptr),
       _next_entry(m._next_entry),
       _leq(m._leq),
       _eeq(m._eeq),
       _obstructions(m._obstructions),
+      _lib_for_site(m._lib_for_site),
       _site(m._site),
       _mterm_hash(m._mterm_hash),
       _sta_cell(m._sta_cell)
@@ -319,6 +329,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbMaster& master)
   stream << master._leq;
   stream << master._eeq;
   stream << master._obstructions;
+  stream << master._lib_for_site;
   stream << master._site;
   stream << master._mterm_hash;
   stream << *master._mterm_tbl;
@@ -344,6 +355,13 @@ dbIStream& operator>>(dbIStream& stream, _dbMaster& master)
   stream >> master._leq;
   stream >> master._eeq;
   stream >> master._obstructions;
+  _dbDatabase* db = master.getImpl()->getDatabase();
+  if (db->isSchema(db_schema_dbmaster_lib_for_site)) {
+    stream >> master._lib_for_site;
+  } else {
+    // The site was copied into the same dbLib previously
+    master._lib_for_site = master.getOwner()->getId();
+  }
   stream >> master._site;
   stream >> master._mterm_hash;
   stream >> *master._mterm_tbl;
@@ -459,7 +477,7 @@ dbMaster* dbMaster::getLEQ()
   _dbMaster* master = (_dbMaster*) this;
 
   if (master->_leq == 0)
-    return NULL;
+    return nullptr;
 
   _dbLib* lib = (_dbLib*) master->getOwner();
   return (dbMaster*) lib->_master_tbl->getPtr(master->_leq);
@@ -476,7 +494,7 @@ dbMaster* dbMaster::getEEQ()
   _dbMaster* master = (_dbMaster*) this;
 
   if (master->_eeq == 0)
-    return NULL;
+    return nullptr;
 
   _dbLib* lib = (_dbLib*) master->getOwner();
   return (dbMaster*) lib->_master_tbl->getPtr(master->_eeq);
@@ -503,29 +521,33 @@ dbMTerm* dbMaster::findMTerm(const char* name)
 dbMTerm* dbMaster::findMTerm(dbBlock* block, const char* name)
 {
   dbMTerm* mterm = findMTerm(name);
-  if (mterm)
+  if (mterm) {
     return mterm;
-  char blk_left_bus_del, blk_right_bus_del, lib_left_bus_del, lib_right_bus_del;
-  char ttname[max_name_length];
-  uint ii = 0;
+  }
+  char blk_left_bus_del, blk_right_bus_del;
   block->getBusDelimeters(blk_left_bus_del, blk_right_bus_del);
-  getLib()->getBusDelimeters(lib_left_bus_del, lib_right_bus_del);
-  if (lib_left_bus_del == '\0' || lib_right_bus_del == '\0')
-    return mterm;
 
+  char lib_left_bus_del, lib_right_bus_del;
+  ;
+  getLib()->getBusDelimeters(lib_left_bus_del, lib_right_bus_del);
+
+  if (lib_left_bus_del == '\0' || lib_right_bus_del == '\0') {
+    return mterm;
+  }
+
+  uint ii = 0;
+  std::string ttname(name);
   if (lib_left_bus_del != blk_left_bus_del
       || lib_right_bus_del != blk_right_bus_del) {
     while (name[ii] != '\0') {
-      if (name[ii] == blk_left_bus_del)
+      if (name[ii] == blk_left_bus_del) {
         ttname[ii] = lib_left_bus_del;
-      else if (name[ii] == blk_right_bus_del)
+      } else if (name[ii] == blk_right_bus_del) {
         ttname[ii] = lib_right_bus_del;
-      else
-        ttname[ii] = name[ii];
+      }
       ii++;
     }
-    ttname[ii] = '\0';
-    mterm = findMTerm(ttname);
+    mterm = findMTerm(ttname.c_str());
   }
   return mterm;
 }
@@ -556,16 +578,19 @@ int dbMaster::getMTermCount()
 void dbMaster::setSite(dbSite* site)
 {
   _dbMaster* master = (_dbMaster*) this;
+  master->_lib_for_site = site->getLib()->getImpl()->getOID();
   master->_site = site->getImpl()->getOID();
 }
 
 dbSite* dbMaster::getSite()
 {
   _dbMaster* master = (_dbMaster*) this;
-  _dbLib* lib = (_dbLib*) master->getOwner();
 
   if (master->_site == 0)
-    return NULL;
+    return nullptr;
+
+  _dbDatabase* db = (_dbDatabase*) getDb();
+  _dbLib* lib = (_dbLib*) db->_lib_tbl->getPtr(master->_lib_for_site);
 
   return (dbSite*) lib->_site_tbl->getPtr(master->_site);
 }
@@ -712,7 +737,7 @@ int dbMaster::getMasterId()
 dbMaster* dbMaster::create(dbLib* lib_, const char* name_)
 {
   if (lib_->findMaster(name_))
-    return NULL;
+    return nullptr;
 
   _dbLib* lib = (_dbLib*) lib_;
   _dbDatabase* db = lib->getDatabase();
@@ -722,6 +747,27 @@ dbMaster* dbMaster::create(dbLib* lib_, const char* name_)
   master->_id = db->_master_id++;
   lib->_master_hash.insert(master);
   return (dbMaster*) master;
+}
+
+void dbMaster::destroy(dbMaster* master)
+{
+  auto db = master->getDb();
+  _dbMaster* master_impl = (_dbMaster*) master;
+  if (db->getChip() && db->getChip()->getBlock()) {
+    _dbBlock* block = (_dbBlock*) db->getChip()->getBlock();
+    _dbInstHdr* inst_hdr = block->_inst_hdr_hash.find(master_impl->_id);
+    if (inst_hdr) {
+      master->getImpl()->getLogger()->error(
+          utl::ODB,
+          431,
+          "Can't delete master {} which still has instances",
+          master->getName());
+    }
+  }
+
+  _dbLib* lib = (_dbLib*) master->getLib();
+  lib->_master_hash.remove(master_impl);
+  lib->_master_tbl->destroy(master_impl);
 }
 
 dbMaster* dbMaster::getMaster(dbLib* lib_, uint dbid_)

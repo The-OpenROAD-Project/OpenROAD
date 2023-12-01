@@ -37,7 +37,8 @@
 ###########################################################################
 
 include("openroad")
-
+find_package(TCL)
+find_package(Boost)
 
 add_library(dpl_lib
   src/Opendp.cpp
@@ -47,14 +48,14 @@ add_library(dpl_lib
   src/Place.cpp
   src/FillerPlacement.cpp
   src/OptMirror.cpp
-  src/Graphics.cpp
 )
 
 target_link_libraries(dpl_lib
-  PRIVATE
-    gui
+  PUBLIC
     odb
-    utl
+    OpenSTA
+  PRIVATE
+    utl_lib
 )
 
 
@@ -72,18 +73,24 @@ swig_lib(NAME         dpl
 target_sources(dpl
   PRIVATE
     src/MakeOpendp.cpp
+    src/Graphics.cpp
+    src/DplObserver.h
 )
 
 target_include_directories(dpl
   PUBLIC
     include
+  PRIVATE
+    src
 )
 
 target_link_libraries(dpl
   PRIVATE
+    ${TCL_LIBRARY}
     odb
     dpl_lib
     OpenSTA
+    gui
 )
 
 messages(
@@ -111,8 +118,14 @@ if (Python3_FOUND AND BUILD_PYTHON)
 
   target_link_libraries(dpl_py
     PUBLIC
+      ${Boost_LIBRARIES}
       dpl_lib
+      gui
       odb
   )
 
+endif()
+
+if(ENABLE_TESTS)
+  add_subdirectory(test)
 endif()

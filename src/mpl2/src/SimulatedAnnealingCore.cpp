@@ -36,7 +36,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "graphics.h"
+#include "Mpl2Observer.h"
 #include "object.h"
 #include "utl/Logger.h"
 
@@ -69,7 +69,7 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
     int k,
     int c,
     unsigned seed,
-    Graphics* graphics,
+    Mpl2Observer* graphics,
     utl::Logger* logger)
     : graphics_(graphics)
 {
@@ -228,6 +228,9 @@ void SimulatedAnnealingCore<T>::calOutlinePenalty()
   outline_penalty_ = max_width * max_height - outline_area;
   // normalization
   outline_penalty_ = outline_penalty_ / (outline_area);
+  if (graphics_) {
+    graphics_->setOutlinePenalty(outline_penalty_);
+  }
 }
 
 template <class T>
@@ -241,8 +244,9 @@ void SimulatedAnnealingCore<T>::calWirelength()
 
   // calculate the total net weight
   float tot_net_weight = 0.0;
-  for (const auto& net : nets_)
+  for (const auto& net : nets_) {
     tot_net_weight += net.weight;
+  }
 
   if (tot_net_weight <= 0.0) {
     return;
@@ -259,6 +263,10 @@ void SimulatedAnnealingCore<T>::calWirelength()
   // normalization
   wirelength_
       = wirelength_ / tot_net_weight / (outline_height_ + outline_width_);
+
+  if (graphics_) {
+    graphics_->setWirelength(wirelength_);
+  }
 }
 
 template <class T>
@@ -266,7 +274,7 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
 {
   // Initialization
   fence_penalty_ = 0.0;
-  if (fence_weight_ <= 0.0 || fences_.size() <= 0) {
+  if (fence_weight_ <= 0.0 || fences_.empty()) {
     return;
   }
 
@@ -276,12 +284,14 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
     const float ux = lx + macros_[id].getWidth();
     const float uy = ly + macros_[id].getHeight();
     // check if the macro is valid
-    if (macros_[id].getWidth() * macros_[id].getHeight() <= 1e-4)
+    if (macros_[id].getWidth() * macros_[id].getHeight() <= 1e-4) {
       continue;
+    }
     // check if the fence is valid
     if (macros_[id].getWidth() > (bbox.xMax() - bbox.xMin())
-        || macros_[id].getHeight() > (bbox.yMax() - bbox.yMin()))
+        || macros_[id].getHeight() > (bbox.yMax() - bbox.yMin())) {
       continue;
+    }
     // check how much the macro is far from no fence violation
     const float max_x_dist = ((bbox.xMax() - bbox.xMin()) - (ux - lx)) / 2.0;
     const float max_y_dist = ((bbox.yMax() - bbox.yMin()) - (uy - ly)) / 2.0;
@@ -298,6 +308,9 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
   }
   // normalization
   fence_penalty_ = fence_penalty_ / fences_.size();
+  if (graphics_) {
+    graphics_->setFencePenalty(fence_penalty_);
+  }
 }
 
 template <class T>
@@ -305,7 +318,7 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
 {
   // Initialization
   guidance_penalty_ = 0.0;
-  if (guidance_weight_ <= 0.0 || guides_.size() <= 0) {
+  if (guidance_weight_ <= 0.0 || guides_.empty()) {
     return;
   }
 
@@ -328,6 +341,9 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
     guidance_penalty_ += x_dist * x_dist + y_dist * y_dist;
   }
   guidance_penalty_ = guidance_penalty_ / guides_.size();
+  if (graphics_) {
+    graphics_->setGuidancePenalty(guidance_penalty_);
+  }
 }
 
 // Determine the positions of macros based on sequence pair
@@ -485,12 +501,15 @@ float SimulatedAnnealingCore<T>::calAverage(std::vector<float>& value_list)
     return 0;
   }
 
-  return std::accumulate(value_list.begin(), value_list.end(), 0) / size;
+  return std::accumulate(value_list.begin(), value_list.end(), 0.0f) / size;
 }
 
 template <class T>
 void SimulatedAnnealingCore<T>::fastSA()
 {
+  if (graphics_) {
+    graphics_->startSA();
+  }
   // perturb();  // Perturb from beginning
   std::iota(pos_seq_.begin(), pos_seq_.end(), 0);
   std::iota(neg_seq_.begin(), neg_seq_.end(), 0);
@@ -519,7 +538,7 @@ void SimulatedAnnealingCore<T>::fastSA()
       delta_cost = cost - pre_cost;
       const float num = distribution_(generator_);
       const float prob
-          = (delta_cost > 0.0) ? exp((-1) * delta_cost / temperature) : 1;
+          = (delta_cost > 0.0) ? std::exp((-1) * delta_cost / temperature) : 1;
       if (num < prob) {
         pre_cost = cost;
       } else {
@@ -556,10 +575,14 @@ void SimulatedAnnealingCore<T>::fastSA()
   // update the final results
   packFloorplan();
   calPenalty();
+  if (graphics_) {
+    graphics_->endSA();
+  }
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::writeCostFile(std::string file_name) const
+void SimulatedAnnealingCore<T>::writeCostFile(
+    const std::string& file_name) const
 {
   std::ofstream file(file_name);
   for (auto i = 0; i < cost_list_.size(); i++) {

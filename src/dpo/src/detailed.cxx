@@ -65,8 +65,6 @@ namespace dpo {
 // Detailed::improve:
 ////////////////////////////////////////////////////////////////////////////////
 bool Detailed::improve(DetailedMgr& mgr)
-// bool Detailed::improve( Architecture* arch, Network* network, RoutingParams*
-// rt )
 {
   mgr_ = &mgr;
 
@@ -118,6 +116,29 @@ bool Detailed::improve(DetailedMgr& mgr)
   mgr.checkOverlapInSegments();
   mgr.checkEdgeSpacingInSegments();
 
+  if (mgr.getDisallowOneSiteGaps()) {
+    std::vector<std::vector<int>> oneSiteViolations;
+    int temp_move_limit = mgr.getMoveLimit();
+    mgr.setMoveLimit(10000);
+    mgr.getOneSiteGapViolationsPerSegment(oneSiteViolations, true);
+    for (int i = 0; i < oneSiteViolations.size(); i++) {
+      if (!oneSiteViolations[i].empty()) {
+        std::string violating_node_ids = "[";
+        for (int nodeId : oneSiteViolations[i]) {
+          violating_node_ids += std::to_string(nodeId)
+                                + ",]"[nodeId == oneSiteViolations[i].back()];
+        }
+        mgr_->getLogger()->warn(
+            DPO,
+            323,
+            "One site gap violation in segment {:d} nodes: {}",
+            i,
+            violating_node_ids);
+      }
+    }
+    mgr.setMoveLimit(temp_move_limit);
+  }
+
   return true;
 }
 
@@ -125,17 +146,16 @@ bool Detailed::improve(DetailedMgr& mgr)
 //////////////////////////////////////////////////////////////////////////////////
 void Detailed::doDetailedCommand(std::vector<std::string>& args)
 {
-  if (args.size() == 0) {
+  if (args.empty()) {
     return;
   }
 
-  // Removed some checks here.  Just check after.
+  // The first argument is always the command.
 
-  // The first argument is always the command.  XXX: Not implemented, but
-  // include some samples...
+  auto logger = mgr_->getLogger();
 
   // Print something about what command will run.
-  std::string command = "";
+  std::string command;
   if (strcmp(args[0].c_str(), "mis") == 0) {
     command = "independent set matching";
   } else if (strcmp(args[0].c_str(), "gs") == 0) {
@@ -144,15 +164,17 @@ void Detailed::doDetailedCommand(std::vector<std::string>& args)
     command = "vertical swaps";
   } else if (strcmp(args[0].c_str(), "ro") == 0) {
     command = "reordering";
+  } else if (strcmp(args[0].c_str(), "orient") == 0) {
+    command = "orienting";
   } else if (strcmp(args[0].c_str(), "default") == 0) {
     command = "random improvement";
+  } else if (strcmp(args[0].c_str(), "disallow_one_site_gaps") == 0) {
+    command = "disallow_one_site_gaps";
   } else {
-    // command = "unknown command";
-    return;
+    logger->error(DPO, 1, "Unknown algorithm {:s}.", args[0]);
   }
-  mgr_->getLogger()->info(DPO, 303, "Running algorithm for {:s}.", command);
+  logger->info(DPO, 303, "Running algorithm for {:s}.", command);
 
-  // Comment out some algos I haven't confirmed as working.
   if (strcmp(args[0].c_str(), "mis") == 0) {
     DetailedMis mis(arch_, network_, rt_);
     mis.run(mgr_, args);
@@ -162,9 +184,6 @@ void Detailed::doDetailedCommand(std::vector<std::string>& args)
   } else if (strcmp(args[0].c_str(), "vs") == 0) {
     DetailedVerticalSwap vs(arch_, network_, rt_);
     vs.run(mgr_, args);
-    //} else if (strcmp(args[0].c_str(), "interleave") == 0) {
-    //  DetailedInterleave interleave(arch_, network_, rt_);
-    //  interleave.run(mgr_, args);
   } else if (strcmp(args[0].c_str(), "ro") == 0) {
     DetailedReorderer ro(arch_, network_);
     ro.run(mgr_, args);

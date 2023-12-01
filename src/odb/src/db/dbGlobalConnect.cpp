@@ -47,59 +47,56 @@
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbGlobalConnect>;
 
 bool _dbGlobalConnect::operator==(const _dbGlobalConnect& rhs) const
 {
-  if (region_ != rhs.region_)
+  if (region_ != rhs.region_) {
     return false;
-
-  if (net_ != rhs.net_)
+  }
+  if (net_ != rhs.net_) {
     return false;
-
-  if (inst_pattern_ != rhs.inst_pattern_)
+  }
+  if (inst_pattern_ != rhs.inst_pattern_) {
     return false;
-
-  if (pin_pattern_ != rhs.pin_pattern_)
+  }
+  if (pin_pattern_ != rhs.pin_pattern_) {
     return false;
+  }
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
+
 bool _dbGlobalConnect::operator<(const _dbGlobalConnect& rhs) const
 {
-  if (region_ >= rhs.region_)
+  if (region_ >= rhs.region_) {
     return false;
-
-  if (net_ >= rhs.net_)
+  }
+  if (net_ >= rhs.net_) {
     return false;
-
-  if (inst_pattern_ >= rhs.inst_pattern_)
+  }
+  if (inst_pattern_ >= rhs.inst_pattern_) {
     return false;
-
-  if (pin_pattern_ >= rhs.pin_pattern_)
+  }
+  if (pin_pattern_ >= rhs.pin_pattern_) {
     return false;
+  }
 
-  // User Code Begin <
-  // User Code End <
   return true;
 }
+
 void _dbGlobalConnect::differences(dbDiff& diff,
                                    const char* field,
                                    const _dbGlobalConnect& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(region_);
   DIFF_FIELD(net_);
   DIFF_FIELD(inst_pattern_);
   DIFF_FIELD(pin_pattern_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
+
 void _dbGlobalConnect::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -108,15 +105,13 @@ void _dbGlobalConnect::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(inst_pattern_);
   DIFF_OUT_FIELD(pin_pattern_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
+
 _dbGlobalConnect::_dbGlobalConnect(_dbDatabase* db)
 {
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
+
 _dbGlobalConnect::_dbGlobalConnect(_dbDatabase* db, const _dbGlobalConnect& r)
 {
   region_ = r.region_;
@@ -139,25 +134,15 @@ dbIStream& operator>>(dbIStream& stream, _dbGlobalConnect& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbGlobalConnect& obj)
 {
   stream << obj.region_;
   stream << obj.net_;
   stream << obj.inst_pattern_;
   stream << obj.pin_pattern_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
-
-_dbGlobalConnect::~_dbGlobalConnect()
-{
-  // User Code Begin Destructor
-  // User Code End Destructor
-}
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -168,8 +153,9 @@ _dbGlobalConnect::~_dbGlobalConnect()
 dbRegion* dbGlobalConnect::getRegion() const
 {
   _dbGlobalConnect* obj = (_dbGlobalConnect*) this;
-  if (obj->region_ == 0)
-    return NULL;
+  if (obj->region_ == 0) {
+    return nullptr;
+  }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbRegion*) par->_region_tbl->getPtr(obj->region_);
 }
@@ -177,8 +163,9 @@ dbRegion* dbGlobalConnect::getRegion() const
 dbNet* dbGlobalConnect::getNet() const
 {
   _dbGlobalConnect* obj = (_dbGlobalConnect*) this;
-  if (obj->net_ == 0)
-    return NULL;
+  if (obj->net_ == 0) {
+    return nullptr;
+  }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbNet*) par->_net_tbl->getPtr(obj->net_);
 }

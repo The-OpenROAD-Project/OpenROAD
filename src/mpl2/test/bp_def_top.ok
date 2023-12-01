@@ -1,0 +1,2307 @@
+OpenROAD 6230132b0e3fd893b08d061e697dc4d53e3dfab3 
+This program is licensed under the BSD-3 license. See the LICENSE file for details.
+Components of this program may be licensed under more restrictive licenses which must be honored.
+[INFO ODB-0222] Reading LEF file: ./Nangate45/Nangate45_tech.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0226] Finished LEF file:  ./Nangate45/Nangate45_tech.lef
+[INFO ODB-0222] Reading LEF file: ./Nangate45/Nangate45.lef
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-1) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-2) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-3) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via1Array-4) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-1) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-2) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-3) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via2Array-4) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via3Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via3Array-1) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via3Array-2) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via4Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via5Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via6Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via7Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via8Array-0) ignoring...
+[WARNING ODB-0217] duplicate VIARULE (Via9Array-0) ignoring...
+[INFO ODB-0225]     Created 135 library cells
+[INFO ODB-0226] Finished LEF file:  ./Nangate45/Nangate45.lef
+read lef file ./Nangate45/fakeram45_512x64.lef
+[INFO ODB-0222] Reading LEF file: ./Nangate45/fakeram45_512x64.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  ./Nangate45/fakeram45_512x64.lef
+read lef file ./Nangate45/fakeram45_64x7.lef
+[INFO ODB-0222] Reading LEF file: ./Nangate45/fakeram45_64x7.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  ./Nangate45/fakeram45_64x7.lef
+read lef file ./Nangate45/fakeram45_64x96.lef
+[INFO ODB-0222] Reading LEF file: ./Nangate45/fakeram45_64x96.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  ./Nangate45/fakeram45_64x96.lef
+read_lib file ./Nangate45/fakeram45_512x64.lib
+read_lib file ./Nangate45/fakeram45_64x7.lib
+read_lib file ./Nangate45/fakeram45_64x96.lib
+[WARNING STA-0337] port 'icache_id_i[0]' not found.
+[WARNING STA-0337] port 'bp_fe_cmd_i[108:0]' not found.
+[WARNING STA-0337] port 'cce_lce_cmd_i[35:0]' not found.
+[WARNING STA-0337] port 'cce_lce_data_cmd_i[539:0]' not found.
+[WARNING STA-0337] port 'lce_lce_tr_resp_i[538:0]' not found.
+[WARNING STA-0337] port 'bp_fe_queue_o[133:0]' not found.
+[WARNING STA-0337] port 'lce_cce_req_o[29:0]' not found.
+[WARNING STA-0337] port 'lce_cce_resp_o[25:0]' not found.
+[WARNING STA-0337] port 'lce_cce_data_resp_o[536:0]' not found.
+[WARNING STA-0337] port 'lce_lce_tr_resp_o[538:0]' not found.
+[INFO ODB-0128] Design: bp_fe_top
+[INFO ODB-0252]     Updated 2511 pins.
+[INFO ODB-0253]     Updated 26858 components.
+[INFO ODB-0254]     Updated 33221 nets and 105444 connections.
+Floorplan Outline: (0.0, 0.0) (899.97, 699.4),  Core Outline: (10, 9) (889, 688)
+Traversed logical hierarchy
+	Number of std cell instances : 29855
+	Area of std cell instances : 48869.88
+	Number of macros : 11
+	Area of macros : 162922.88
+	Total area : 211792.75
+	Design Utilization : 0.35
+	Core Utilization: 0.11
+
+Reset number of levels to 1
+Reset macro_blockage_weight : 50.0
+num level: 1, max_macro: 5, min_macro: 1, max_inst:5000, min_inst:1000
+area_weight_ = 0.1
+outline_weight_ = 100.0
+wirelength_weight_ = 100.0
+guidance_weight_ = 10.0
+fence_weight_ = 10.0
+boundary_weight_ = 15.0
+notch_weight_ = 10.0
+macro_blockage_weight_ = 50.0
+halo_width_ = 0.0
+bus_planning_flag_ = false
+
+Create Data Flow
+
+Perform Clustering..
+Starting TritonPart Partitioner
+Partition Parameters**
+Number of partitions = 2
+UBfactor = 5.0
+Vertex dimensions = 1
+Hyperedge dimensions = 1
+Hypergraph Information**
+#Vertices = 24020
+#Hyperedges = 23913
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 24020, 23913, 184897 , 23913 
+[COARSEN] Level 1 :: 16013, 16863, 184940 , 17034 
+[COARSEN] Level 2 :: 10675, 12240, 184944 , 12418 
+[COARSEN] Level 3 :: 7116, 9095, 184952 , 9353 
+[COARSEN] Level 4 :: 4743, 6970, 184953 , 7301 
+[COARSEN] Level 5 :: 3161, 5490, 184953 , 5834 
+[COARSEN] Level 6 :: 2107, 4422, 184953 , 4863 
+[COARSEN] Level 7 :: 1404, 3578, 184953 , 4171 
+[COARSEN] Level 8 :: 935, 2863, 184953 , 3685 
+[COARSEN] Level 9 :: 623, 2276, 184953 , 3301 
+[COARSEN] Level 10 :: 415, 1719, 184953 , 3052 
+[COARSEN] Level 11 :: 276, 965, 184953 , 2816 
+[COARSEN] Level 12 :: 183, 381, 184952 , 2627 
+=============================
+[STATUS] Initial Partitioning 
+=============================
+[ilp refinement failed]
+[INIT-PART] 0 :: Random part cutcost 1405.0
+[INIT-PART] 1 :: Random part cutcost 1374.0
+[INIT-PART] 2 :: Random part cutcost 1545.0
+[ilp refinement failed]
+[INIT-PART] 3 :: Random part cutcost 1585.0
+[ilp refinement failed]
+[INIT-PART] 4 :: Random part cutcost 1065.0
+[ilp refinement failed]
+[INIT-PART] 5 :: Random part cutcost 1366.0
+[INIT-PART] 6 :: Random part cutcost 1327.0
+[ilp refinement failed]
+[INIT-PART] 7 :: Random part cutcost 1373.0
+[INIT-PART] 8 :: Random part cutcost 1480.0
+[INIT-PART] 9 :: Random part cutcost 1252.0
+[ilp refinement failed]
+[INIT-PART] 10 :: Random part cutcost 1152.0
+[INIT-PART] 11 :: Random part cutcost 1424.0
+[ilp refinement failed]
+[INIT-PART] 12 :: Random part cutcost 1294.0
+[ilp refinement failed]
+[INIT-PART] 13 :: Random part cutcost 974.0
+[INIT-PART] 14 :: Random part cutcost 1453.0
+[INIT-PART] 15 :: Random part cutcost 1423.0
+[ilp refinement failed]
+[INIT-PART] 16 :: Random part cutcost 1305.0
+[ilp refinement failed]
+[INIT-PART] 17 :: Random part cutcost 1508.0
+[INIT-PART] 18 :: Random part cutcost 1533.0
+[ilp refinement failed]
+[INIT-PART] 19 :: Random part cutcost 1161.0
+[ilp refinement failed]
+[INIT-PART] 20 :: Random part cutcost 1016.0
+[ilp refinement failed]
+[INIT-PART] 21 :: Random part cutcost 1269.0
+[ilp refinement failed]
+[INIT-PART] 22 :: Random part cutcost 1438.0
+[ilp refinement failed]
+[INIT-PART] 23 :: Random part cutcost 1441.0
+[INIT-PART] 24 :: Random part cutcost 1484.0
+[INIT-PART] 25 :: Random part cutcost 1482.0
+[ilp refinement failed]
+[INIT-PART] 26 :: Random part cutcost 1221.0
+[ilp refinement failed]
+[INIT-PART] 27 :: Random part cutcost 1344.0
+[ilp refinement failed]
+[INIT-PART] 28 :: Random part cutcost 1400.0
+[INIT-PART] 29 :: Random part cutcost 1505.0
+[ilp refinement failed]
+[INIT-PART] 30 :: Random part cutcost 755.0
+[ilp refinement failed]
+[INIT-PART] 31 :: Random part cutcost 1260.0
+[ilp refinement failed]
+[INIT-PART] 32 :: Random part cutcost 1193.0
+[ilp refinement failed]
+[INIT-PART] 33 :: Random part cutcost 1399.0
+[INIT-PART] 34 :: Random part cutcost 1507.0
+[INIT-PART] 35 :: Random part cutcost 1420.0
+[INIT-PART] 36 :: Random part cutcost 1541.0
+[INIT-PART] 37 :: Random part cutcost 1462.0
+[INIT-PART] 38 :: Random part cutcost 1450.0
+[INIT-PART] 39 :: Random part cutcost 1482.0
+[INIT-PART] 40 :: Random part cutcost 1415.0
+[ilp refinement failed]
+[INIT-PART] 41 :: Random part cutcost 861.0
+[INIT-PART] 42 :: Random part cutcost 1526.0
+[ilp refinement failed]
+[INIT-PART] 43 :: Random part cutcost 1354.0
+[ilp refinement failed]
+[INIT-PART] 44 :: Random part cutcost 1222.0
+[INIT-PART] 45 :: Random part cutcost 1370.0
+[INIT-PART] 46 :: Random part cutcost 1519.0
+[ilp refinement failed]
+[INIT-PART] 47 :: Random part cutcost 1224.0
+[INIT-PART] 48 :: Random part cutcost 1462.0
+[INIT-PART] 49 :: Random part cutcost 1472.0
+[INIT-PART] 50 :: Vile part cutcost 1211.0
+[INIT-PART] 51 :: Ilp part cutcost 755.0
+====================================================
+[STATUS] Running V-cycle refinement on 10 partitions
+====================================================
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[INFO] 51 cutcost 1252.0 
+[INFO] 30 cutcost 1252.0 
+[INFO] 41 cutcost 1368.0 
+[INFO] 13 cutcost 957.0 
+[INFO] 20 cutcost 996.0 
+[INFO] 4 cutcost 1049.0 
+[INFO] 10 cutcost 1314.0 
+[INFO] 19 cutcost 1327.0 
+[INFO] 32 cutcost 1104.0 
+[INFO] 50 cutcost 968.0 
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 24020, 23913, 184897 , 23913 
+[COARSEN] Level 1 :: 16013, 16863, 184940 , 17034 
+[COARSEN] Level 2 :: 10675, 12240, 184944 , 12418 
+[COARSEN] Level 3 :: 7116, 9095, 184952 , 9353 
+[COARSEN] Level 4 :: 4743, 6970, 184953 , 7301 
+[COARSEN] Level 5 :: 3161, 5490, 184953 , 5834 
+[COARSEN] Level 6 :: 2107, 4423, 184953 , 4863 
+[COARSEN] Level 7 :: 1404, 3579, 184953 , 4171 
+[COARSEN] Level 8 :: 935, 2864, 184953 , 3685 
+[COARSEN] Level 9 :: 623, 2263, 184953 , 3300 
+[COARSEN] Level 10 :: 415, 1712, 184953 , 3040 
+[COARSEN] Level 11 :: 276, 1054, 184953 , 2833 
+[COARSEN] Level 12 :: 191, 448, 184952 , 2675 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 191, 448, 866.0
+[V-Refine] Level 2 :: 276, 1054, 852.0
+[V-Refine] Level 3 :: 415, 1712, 850.0
+[V-Refine] Level 4 :: 623, 2263, 849.0
+[V-Refine] Level 5 :: 935, 2864, 847.0
+[V-Refine] Level 6 :: 1404, 3579, 847.0
+[V-Refine] Level 7 :: 2107, 4423, 843.0
+[V-Refine] Level 8 :: 3161, 5490, 840.0
+[V-Refine] Level 9 :: 4743, 6970, 836.0
+[V-Refine] Level 10 :: 7116, 9095, 836.0
+[V-Refine] Level 11 :: 10675, 12240, 833.0
+[V-Refine] Level 12 :: 16013, 16863, 832.0
+[V-Refine] Level 13 :: 24020, 23913, 832.0
+[INFO] V-cycle refinement 1 delta cost 125.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 24020, 23913, 184897 , 23913 
+[COARSEN] Level 1 :: 16013, 16863, 184940 , 17034 
+[COARSEN] Level 2 :: 10675, 12239, 184944 , 12417 
+[COARSEN] Level 3 :: 7116, 9141, 184952 , 9384 
+[COARSEN] Level 4 :: 4743, 6992, 184953 , 7296 
+[COARSEN] Level 5 :: 3161, 5516, 184953 , 5878 
+[COARSEN] Level 6 :: 2107, 4456, 184953 , 4896 
+[COARSEN] Level 7 :: 1404, 3602, 184953 , 4200 
+[COARSEN] Level 8 :: 935, 2919, 184953 , 3680 
+[COARSEN] Level 9 :: 623, 2384, 184953 , 3320 
+[COARSEN] Level 10 :: 415, 1802, 184953 , 3061 
+[COARSEN] Level 11 :: 276, 1201, 184953 , 2857 
+[COARSEN] Level 12 :: 183, 471, 184953 , 2641 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 183, 471, 832.0
+[V-Refine] Level 2 :: 276, 1201, 815.0
+[V-Refine] Level 3 :: 415, 1802, 802.0
+[V-Refine] Level 4 :: 623, 2384, 802.0
+[V-Refine] Level 5 :: 935, 2919, 802.0
+[V-Refine] Level 6 :: 1404, 3602, 802.0
+[V-Refine] Level 7 :: 2107, 4456, 802.0
+[V-Refine] Level 8 :: 3161, 5516, 802.0
+[V-Refine] Level 9 :: 4743, 6992, 800.0
+[V-Refine] Level 10 :: 7116, 9141, 800.0
+[V-Refine] Level 11 :: 10675, 12239, 800.0
+[V-Refine] Level 12 :: 16013, 16863, 800.0
+[V-Refine] Level 13 :: 24020, 23913, 800.0
+[INFO] V-cycle refinement 2 delta cost 32.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 24020, 23913, 184897 , 23913 
+[COARSEN] Level 1 :: 16013, 16863, 184940 , 17034 
+[COARSEN] Level 2 :: 10675, 12239, 184944 , 12417 
+[COARSEN] Level 3 :: 7116, 9141, 184952 , 9384 
+[COARSEN] Level 4 :: 4743, 6992, 184953 , 7296 
+[COARSEN] Level 5 :: 3161, 5517, 184953 , 5880 
+[COARSEN] Level 6 :: 2107, 4443, 184953 , 4888 
+[COARSEN] Level 7 :: 1404, 3617, 184953 , 4198 
+[COARSEN] Level 8 :: 935, 2960, 184953 , 3712 
+[COARSEN] Level 9 :: 623, 2429, 184953 , 3330 
+[COARSEN] Level 10 :: 415, 1752, 184953 , 3056 
+[COARSEN] Level 11 :: 276, 1087, 184953 , 2801 
+[COARSEN] Level 12 :: 183, 468, 184953 , 2605 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 183, 468, 800.0
+[V-Refine] Level 2 :: 276, 1087, 800.0
+[V-Refine] Level 3 :: 415, 1752, 793.0
+[V-Refine] Level 4 :: 623, 2429, 792.0
+[V-Refine] Level 5 :: 935, 2960, 790.0
+[V-Refine] Level 6 :: 1404, 3617, 790.0
+[V-Refine] Level 7 :: 2107, 4443, 790.0
+[V-Refine] Level 8 :: 3161, 5517, 790.0
+[V-Refine] Level 9 :: 4743, 6992, 790.0
+[V-Refine] Level 10 :: 7116, 9141, 790.0
+[V-Refine] Level 11 :: 10675, 12239, 790.0
+[V-Refine] Level 12 :: 16013, 16863, 790.0
+[V-Refine] Level 13 :: 24020, 23913, 790.0
+[INFO] V-cycle refinement 3 delta cost 10.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 24020, 23913, 184897 , 23913 
+[COARSEN] Level 1 :: 16013, 16863, 184940 , 17034 
+[COARSEN] Level 2 :: 10675, 12239, 184944 , 12417 
+[COARSEN] Level 3 :: 7116, 9141, 184952 , 9384 
+[COARSEN] Level 4 :: 4743, 6992, 184953 , 7296 
+[COARSEN] Level 5 :: 3161, 5517, 184953 , 5880 
+[COARSEN] Level 6 :: 2107, 4443, 184953 , 4888 
+[COARSEN] Level 7 :: 1404, 3617, 184953 , 4198 
+[COARSEN] Level 8 :: 935, 2955, 184953 , 3711 
+[COARSEN] Level 9 :: 623, 2431, 184953 , 3310 
+[COARSEN] Level 10 :: 415, 1751, 184953 , 3021 
+[COARSEN] Level 11 :: 276, 1200, 184953 , 2804 
+[COARSEN] Level 12 :: 183, 493, 184953 , 2569 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 183, 493, 790.0
+[V-Refine] Level 2 :: 276, 1200, 784.0
+[V-Refine] Level 3 :: 415, 1751, 783.0
+[V-Refine] Level 4 :: 623, 2431, 783.0
+[V-Refine] Level 5 :: 935, 2955, 783.0
+[V-Refine] Level 6 :: 1404, 3617, 783.0
+[V-Refine] Level 7 :: 2107, 4443, 783.0
+[V-Refine] Level 8 :: 3161, 5517, 783.0
+[V-Refine] Level 9 :: 4743, 6992, 783.0
+[V-Refine] Level 10 :: 7116, 9141, 783.0
+[V-Refine] Level 11 :: 10675, 12239, 783.0
+[V-Refine] Level 12 :: 16013, 16863, 783.0
+[V-Refine] Level 13 :: 24020, 23913, 782.0
+[INFO] V-cycle refinement 4 delta cost 8.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 24020, 23913, 184897 , 23913 
+[COARSEN] Level 1 :: 16013, 16862, 184930 , 17033 
+[COARSEN] Level 2 :: 10675, 12240, 184945 , 12416 
+[COARSEN] Level 3 :: 7116, 9106, 184953 , 9370 
+[COARSEN] Level 4 :: 4743, 6959, 184953 , 7288 
+[COARSEN] Level 5 :: 3161, 5513, 184953 , 5886 
+[COARSEN] Level 6 :: 2107, 4449, 184953 , 4878 
+[COARSEN] Level 7 :: 1404, 3629, 184953 , 4186 
+[COARSEN] Level 8 :: 935, 2978, 184953 , 3712 
+[COARSEN] Level 9 :: 623, 2417, 184953 , 3339 
+[COARSEN] Level 10 :: 415, 1811, 184953 , 3065 
+[COARSEN] Level 11 :: 276, 1213, 184953 , 2847 
+[COARSEN] Level 12 :: 183, 509, 184953 , 2649 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 183, 509, 782.0
+[V-Refine] Level 2 :: 276, 1213, 776.0
+[V-Refine] Level 3 :: 415, 1811, 754.0
+[V-Refine] Level 4 :: 623, 2417, 754.0
+[V-Refine] Level 5 :: 935, 2978, 747.0
+[V-Refine] Level 6 :: 1404, 3629, 747.0
+[V-Refine] Level 7 :: 2107, 4449, 747.0
+[V-Refine] Level 8 :: 3161, 5513, 747.0
+[V-Refine] Level 9 :: 4743, 6959, 747.0
+[V-Refine] Level 10 :: 7116, 9106, 747.0
+[V-Refine] Level 11 :: 10675, 12240, 747.0
+[V-Refine] Level 12 :: 16013, 16862, 747.0
+[V-Refine] Level 13 :: 24020, 23913, 747.0
+[INFO] V-cycle refinement 5 delta cost 35.0
+Starting TritonPart Partitioner
+Partition Parameters**
+Number of partitions = 2
+UBfactor = 5.0
+Vertex dimensions = 1
+Hyperedge dimensions = 1
+Hypergraph Information**
+#Vertices = 22386
+#Hyperedges = 23312
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 22386, 23312, 183301 , 23312 
+[COARSEN] Level 1 :: 14923, 16416, 183337 , 16678 
+[COARSEN] Level 2 :: 9948, 11925, 183346 , 12172 
+[COARSEN] Level 3 :: 6631, 8856, 183354 , 9185 
+[COARSEN] Level 4 :: 4420, 6787, 183355 , 7183 
+[COARSEN] Level 5 :: 2946, 5339, 183355 , 5792 
+[COARSEN] Level 6 :: 1963, 4293, 183354 , 4853 
+[COARSEN] Level 7 :: 1308, 3475, 183354 , 4183 
+[COARSEN] Level 8 :: 871, 2835, 183354 , 3720 
+[COARSEN] Level 9 :: 580, 2295, 183354 , 3349 
+[COARSEN] Level 10 :: 386, 1806, 183354 , 3103 
+[COARSEN] Level 11 :: 257, 1302, 183354 , 2904 
+[COARSEN] Level 12 :: 171, 795, 183354 , 2745 
+=============================
+[STATUS] Initial Partitioning 
+=============================
+[INIT-PART] 0 :: Random part cutcost 1365.0
+[INIT-PART] 1 :: Random part cutcost 1470.0
+[ilp refinement failed]
+[INIT-PART] 2 :: Random part cutcost 1306.0
+[ilp refinement failed]
+[INIT-PART] 3 :: Random part cutcost 1445.0
+[INIT-PART] 4 :: Random part cutcost 1417.0
+[INIT-PART] 5 :: Random part cutcost 1321.0
+[ilp refinement failed]
+[INIT-PART] 6 :: Random part cutcost 1491.0
+[ilp refinement failed]
+[INIT-PART] 7 :: Random part cutcost 1194.0
+[INIT-PART] 8 :: Random part cutcost 1364.0
+[ilp refinement failed]
+[INIT-PART] 9 :: Random part cutcost 1396.0
+[INIT-PART] 10 :: Random part cutcost 1322.0
+[INIT-PART] 11 :: Random part cutcost 1561.0
+[INIT-PART] 12 :: Random part cutcost 1316.0
+[ilp refinement failed]
+[INIT-PART] 13 :: Random part cutcost 1207.0
+[ilp refinement failed]
+[INIT-PART] 14 :: Random part cutcost 1451.0
+[ilp refinement failed]
+[INIT-PART] 15 :: Random part cutcost 1457.0
+[INIT-PART] 16 :: Random part cutcost 1473.0
+[INIT-PART] 17 :: Random part cutcost 1468.0
+[INIT-PART] 18 :: Random part cutcost 1312.0
+[INIT-PART] 19 :: Random part cutcost 1396.0
+[ilp refinement failed]
+[INIT-PART] 20 :: Random part cutcost 1162.0
+[INIT-PART] 21 :: Random part cutcost 1373.0
+[INIT-PART] 22 :: Random part cutcost 1481.0
+[INIT-PART] 23 :: Random part cutcost 1317.0
+[INIT-PART] 24 :: Random part cutcost 1432.0
+[ilp refinement failed]
+[INIT-PART] 25 :: Random part cutcost 1315.0
+[INIT-PART] 26 :: Random part cutcost 1392.0
+[INIT-PART] 27 :: Random part cutcost 1270.0
+[INIT-PART] 28 :: Random part cutcost 1364.0
+[ilp refinement failed]
+[INIT-PART] 29 :: Random part cutcost 1406.0
+[INIT-PART] 30 :: Random part cutcost 1403.0
+[INIT-PART] 31 :: Random part cutcost 1325.0
+[ilp refinement failed]
+[INIT-PART] 32 :: Random part cutcost 1413.0
+[INIT-PART] 33 :: Random part cutcost 1391.0
+[INIT-PART] 34 :: Random part cutcost 1241.0
+[INIT-PART] 35 :: Random part cutcost 1355.0
+[INIT-PART] 36 :: Random part cutcost 1331.0
+[INIT-PART] 37 :: Random part cutcost 1426.0
+[INIT-PART] 38 :: Random part cutcost 1440.0
+[INIT-PART] 39 :: Random part cutcost 1445.0
+[INIT-PART] 40 :: Random part cutcost 1317.0
+[INIT-PART] 41 :: Random part cutcost 1209.0
+[ilp refinement failed]
+[INIT-PART] 42 :: Random part cutcost 1400.0
+[ilp refinement failed]
+[INIT-PART] 43 :: Random part cutcost 1356.0
+[INIT-PART] 44 :: Random part cutcost 1456.0
+[ilp refinement failed]
+[INIT-PART] 45 :: Random part cutcost 1335.0
+[INIT-PART] 46 :: Random part cutcost 1384.0
+[INIT-PART] 47 :: Random part cutcost 1396.0
+[ilp refinement failed]
+[INIT-PART] 48 :: Random part cutcost 1253.0
+[ilp refinement failed]
+[INIT-PART] 49 :: Random part cutcost 1456.0
+[INIT-PART] 50 :: Vile part cutcost 1383.0
+[INIT-PART] 51 :: Ilp part cutcost 1162.0
+====================================================
+[STATUS] Running V-cycle refinement on 10 partitions
+====================================================
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[INFO] 51 cutcost 1339.0 
+[INFO] 20 cutcost 1339.0 
+[INFO] 7 cutcost 1176.0 
+[INFO] 13 cutcost 1187.0 
+[INFO] 41 cutcost 980.0 
+[INFO] 34 cutcost 1023.0 
+[INFO] 48 cutcost 1350.0 
+[INFO] 27 cutcost 1064.0 
+[INFO] 2 cutcost 1385.0 
+[INFO] 18 cutcost 1084.0 
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 22386, 23312, 183301 , 23312 
+[COARSEN] Level 1 :: 14923, 16416, 183337 , 16678 
+[COARSEN] Level 2 :: 9948, 11925, 183346 , 12173 
+[COARSEN] Level 3 :: 6631, 8854, 183354 , 9186 
+[COARSEN] Level 4 :: 4420, 6782, 183355 , 7191 
+[COARSEN] Level 5 :: 2946, 5345, 183355 , 5794 
+[COARSEN] Level 6 :: 1963, 4254, 183354 , 4806 
+[COARSEN] Level 7 :: 1308, 3445, 183355 , 4137 
+[COARSEN] Level 8 :: 871, 2810, 183354 , 3675 
+[COARSEN] Level 9 :: 580, 2188, 183354 , 3286 
+[COARSEN] Level 10 :: 386, 1734, 183354 , 3007 
+[COARSEN] Level 11 :: 257, 1157, 183354 , 2773 
+[COARSEN] Level 12 :: 171, 639, 183354 , 2523 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 171, 639, 937.0
+[V-Refine] Level 2 :: 257, 1157, 911.0
+[V-Refine] Level 3 :: 386, 1734, 902.0
+[V-Refine] Level 4 :: 580, 2188, 873.0
+[V-Refine] Level 5 :: 871, 2810, 861.0
+[V-Refine] Level 6 :: 1308, 3445, 861.0
+[V-Refine] Level 7 :: 1963, 4254, 859.0
+[V-Refine] Level 8 :: 2946, 5345, 859.0
+[V-Refine] Level 9 :: 4420, 6782, 859.0
+[V-Refine] Level 10 :: 6631, 8854, 859.0
+[V-Refine] Level 11 :: 9948, 11925, 859.0
+[V-Refine] Level 12 :: 14923, 16416, 859.0
+[V-Refine] Level 13 :: 22386, 23312, 859.0
+[INFO] V-cycle refinement 1 delta cost 121.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 22386, 23312, 183301 , 23312 
+[COARSEN] Level 1 :: 14923, 16416, 183337 , 16678 
+[COARSEN] Level 2 :: 9948, 11924, 183346 , 12171 
+[COARSEN] Level 3 :: 6631, 8861, 183354 , 9185 
+[COARSEN] Level 4 :: 4420, 6746, 183355 , 7158 
+[COARSEN] Level 5 :: 2946, 5340, 183355 , 5791 
+[COARSEN] Level 6 :: 1963, 4308, 183354 , 4855 
+[COARSEN] Level 7 :: 1308, 3527, 183354 , 4214 
+[COARSEN] Level 8 :: 871, 2896, 183354 , 3740 
+[COARSEN] Level 9 :: 580, 2343, 183354 , 3382 
+[COARSEN] Level 10 :: 386, 1820, 183354 , 3101 
+[COARSEN] Level 11 :: 257, 1267, 183354 , 2885 
+[COARSEN] Level 12 :: 171, 789, 183354 , 2671 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 171, 789, 853.0
+[V-Refine] Level 2 :: 257, 1267, 831.0
+[V-Refine] Level 3 :: 386, 1820, 826.0
+[V-Refine] Level 4 :: 580, 2343, 823.0
+[V-Refine] Level 5 :: 871, 2896, 804.0
+[V-Refine] Level 6 :: 1308, 3527, 804.0
+[V-Refine] Level 7 :: 1963, 4308, 804.0
+[V-Refine] Level 8 :: 2946, 5340, 804.0
+[V-Refine] Level 9 :: 4420, 6746, 804.0
+[V-Refine] Level 10 :: 6631, 8861, 804.0
+[V-Refine] Level 11 :: 9948, 11924, 804.0
+[V-Refine] Level 12 :: 14923, 16416, 804.0
+[V-Refine] Level 13 :: 22386, 23312, 804.0
+[INFO] V-cycle refinement 2 delta cost 55.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 22386, 23312, 183301 , 23312 
+[COARSEN] Level 1 :: 14923, 16416, 183337 , 16678 
+[COARSEN] Level 2 :: 9948, 11925, 183346 , 12172 
+[COARSEN] Level 3 :: 6631, 8845, 183354 , 9168 
+[COARSEN] Level 4 :: 4420, 6771, 183355 , 7159 
+[COARSEN] Level 5 :: 2946, 5295, 183355 , 5750 
+[COARSEN] Level 6 :: 1963, 4227, 183355 , 4798 
+[COARSEN] Level 7 :: 1308, 3372, 183354 , 4112 
+[COARSEN] Level 8 :: 871, 2711, 183354 , 3626 
+[COARSEN] Level 9 :: 580, 2202, 183354 , 3299 
+[COARSEN] Level 10 :: 386, 1718, 183354 , 3068 
+[COARSEN] Level 11 :: 257, 1251, 183354 , 2914 
+[COARSEN] Level 12 :: 171, 692, 183354 , 2730 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 171, 692, 798.0
+[V-Refine] Level 2 :: 257, 1251, 765.0
+[V-Refine] Level 3 :: 386, 1718, 765.0
+[V-Refine] Level 4 :: 580, 2202, 762.0
+[V-Refine] Level 5 :: 871, 2711, 760.0
+[V-Refine] Level 6 :: 1308, 3372, 760.0
+[V-Refine] Level 7 :: 1963, 4227, 760.0
+[V-Refine] Level 8 :: 2946, 5295, 758.0
+[V-Refine] Level 9 :: 4420, 6771, 758.0
+[V-Refine] Level 10 :: 6631, 8845, 756.0
+[V-Refine] Level 11 :: 9948, 11925, 756.0
+[V-Refine] Level 12 :: 14923, 16416, 756.0
+[V-Refine] Level 13 :: 22386, 23312, 756.0
+[INFO] V-cycle refinement 3 delta cost 48.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 22386, 23312, 183301 , 23312 
+[COARSEN] Level 1 :: 14923, 16416, 183337 , 16678 
+[COARSEN] Level 2 :: 9948, 11925, 183346 , 12172 
+[COARSEN] Level 3 :: 6631, 8847, 183355 , 9168 
+[COARSEN] Level 4 :: 4420, 6778, 183355 , 7153 
+[COARSEN] Level 5 :: 2946, 5330, 183355 , 5780 
+[COARSEN] Level 6 :: 1963, 4287, 183355 , 4847 
+[COARSEN] Level 7 :: 1308, 3428, 183354 , 4144 
+[COARSEN] Level 8 :: 871, 2767, 183354 , 3671 
+[COARSEN] Level 9 :: 580, 2222, 183354 , 3341 
+[COARSEN] Level 10 :: 386, 1754, 183354 , 3095 
+[COARSEN] Level 11 :: 257, 1283, 183354 , 2892 
+[COARSEN] Level 12 :: 171, 816, 183354 , 2667 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 171, 816, 756.0
+[V-Refine] Level 2 :: 257, 1283, 755.0
+[V-Refine] Level 3 :: 386, 1754, 755.0
+[V-Refine] Level 4 :: 580, 2222, 754.0
+[V-Refine] Level 5 :: 871, 2767, 753.0
+[V-Refine] Level 6 :: 1308, 3428, 753.0
+[V-Refine] Level 7 :: 1963, 4287, 753.0
+[V-Refine] Level 8 :: 2946, 5330, 753.0
+[V-Refine] Level 9 :: 4420, 6778, 753.0
+[V-Refine] Level 10 :: 6631, 8847, 753.0
+[V-Refine] Level 11 :: 9948, 11925, 753.0
+[V-Refine] Level 12 :: 14923, 16416, 753.0
+[V-Refine] Level 13 :: 22386, 23312, 753.0
+[INFO] V-cycle refinement 4 delta cost 3.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 22386, 23312, 183301 , 23312 
+[COARSEN] Level 1 :: 14923, 16416, 183337 , 16678 
+[COARSEN] Level 2 :: 9948, 11925, 183346 , 12172 
+[COARSEN] Level 3 :: 6631, 8847, 183355 , 9168 
+[COARSEN] Level 4 :: 4420, 6778, 183355 , 7153 
+[COARSEN] Level 5 :: 2946, 5330, 183355 , 5780 
+[COARSEN] Level 6 :: 1963, 4287, 183355 , 4847 
+[COARSEN] Level 7 :: 1308, 3428, 183354 , 4144 
+[COARSEN] Level 8 :: 871, 2767, 183354 , 3671 
+[COARSEN] Level 9 :: 580, 2219, 183354 , 3341 
+[COARSEN] Level 10 :: 386, 1715, 183354 , 3055 
+[COARSEN] Level 11 :: 257, 1291, 183354 , 2858 
+[COARSEN] Level 12 :: 171, 762, 183354 , 2576 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 171, 762, 753.0
+[V-Refine] Level 2 :: 257, 1291, 753.0
+[V-Refine] Level 3 :: 386, 1715, 752.0
+[V-Refine] Level 4 :: 580, 2219, 752.0
+[V-Refine] Level 5 :: 871, 2767, 752.0
+[V-Refine] Level 6 :: 1308, 3428, 752.0
+[V-Refine] Level 7 :: 1963, 4287, 752.0
+[V-Refine] Level 8 :: 2946, 5330, 752.0
+[V-Refine] Level 9 :: 4420, 6778, 752.0
+[V-Refine] Level 10 :: 6631, 8847, 752.0
+[V-Refine] Level 11 :: 9948, 11925, 752.0
+[V-Refine] Level 12 :: 14923, 16416, 752.0
+[V-Refine] Level 13 :: 22386, 23312, 752.0
+[INFO] V-cycle refinement 5 delta cost 1.0
+Starting TritonPart Partitioner
+Partition Parameters**
+Number of partitions = 2
+UBfactor = 5.0
+Vertex dimensions = 1
+Hyperedge dimensions = 1
+Hypergraph Information**
+#Vertices = 21221
+#Hyperedges = 22747
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 21221, 22747, 181993 , 22747 
+[COARSEN] Level 1 :: 14147, 15970, 182027 , 16290 
+[COARSEN] Level 2 :: 9431, 11605, 182037 , 11951 
+[COARSEN] Level 3 :: 6287, 8625, 182046 , 9065 
+[COARSEN] Level 4 :: 4191, 6622, 182046 , 7106 
+[COARSEN] Level 5 :: 2793, 5176, 182045 , 5717 
+[COARSEN] Level 6 :: 1861, 4172, 182045 , 4823 
+[COARSEN] Level 7 :: 1240, 3344, 182045 , 4152 
+[COARSEN] Level 8 :: 826, 2712, 182045 , 3701 
+[COARSEN] Level 9 :: 550, 2185, 182045 , 3362 
+[COARSEN] Level 10 :: 366, 1723, 182045 , 3106 
+[COARSEN] Level 11 :: 243, 1263, 182044 , 2917 
+[COARSEN] Level 12 :: 161, 837, 182044 , 2754 
+=============================
+[STATUS] Initial Partitioning 
+=============================
+[ilp refinement failed]
+[INIT-PART] 0 :: Random part cutcost 1473.0
+[INIT-PART] 1 :: Random part cutcost 1528.0
+[INIT-PART] 2 :: Random part cutcost 1514.0
+[INIT-PART] 3 :: Random part cutcost 1525.0
+[ilp refinement failed]
+[INIT-PART] 4 :: Random part cutcost 788.0
+[ilp refinement failed]
+[INIT-PART] 5 :: Random part cutcost 1383.0
+[INIT-PART] 6 :: Random part cutcost 1462.0
+[INIT-PART] 7 :: Random part cutcost 1286.0
+[INIT-PART] 8 :: Random part cutcost 1354.0
+[INIT-PART] 9 :: Random part cutcost 1489.0
+[INIT-PART] 10 :: Random part cutcost 1490.0
+[ilp refinement failed]
+[INIT-PART] 11 :: Random part cutcost 1393.0
+[INIT-PART] 12 :: Random part cutcost 1458.0
+[INIT-PART] 13 :: Random part cutcost 1473.0
+[INIT-PART] 14 :: Random part cutcost 1525.0
+[INIT-PART] 15 :: Random part cutcost 1424.0
+[INIT-PART] 16 :: Random part cutcost 1332.0
+[ilp refinement failed]
+[INIT-PART] 17 :: Random part cutcost 1311.0
+[INIT-PART] 18 :: Random part cutcost 1354.0
+[INIT-PART] 19 :: Random part cutcost 1539.0
+[INIT-PART] 20 :: Random part cutcost 1402.0
+[INIT-PART] 21 :: Random part cutcost 1572.0
+[ilp refinement failed]
+[INIT-PART] 22 :: Random part cutcost 1325.0
+[INIT-PART] 23 :: Random part cutcost 1545.0
+[INIT-PART] 24 :: Random part cutcost 1417.0
+[INIT-PART] 25 :: Random part cutcost 1277.0
+[INIT-PART] 26 :: Random part cutcost 1282.0
+[INIT-PART] 27 :: Random part cutcost 1327.0
+[INIT-PART] 28 :: Random part cutcost 1278.0
+[INIT-PART] 29 :: Random part cutcost 1581.0
+[ilp refinement failed]
+[INIT-PART] 30 :: Random part cutcost 1486.0
+[INIT-PART] 31 :: Random part cutcost 1386.0
+[ilp refinement failed]
+[INIT-PART] 32 :: Random part cutcost 1219.0
+[INIT-PART] 33 :: Random part cutcost 1304.0
+[INIT-PART] 34 :: Random part cutcost 1543.0
+[INIT-PART] 35 :: Random part cutcost 1614.0
+[INIT-PART] 36 :: Random part cutcost 1277.0
+[ilp refinement failed]
+[INIT-PART] 37 :: Random part cutcost 1342.0
+[INIT-PART] 38 :: Random part cutcost 1521.0
+[ilp refinement failed]
+[INIT-PART] 39 :: Random part cutcost 1160.0
+[INIT-PART] 40 :: Random part cutcost 1433.0
+[INIT-PART] 41 :: Random part cutcost 1454.0
+[INIT-PART] 42 :: Random part cutcost 1352.0
+[INIT-PART] 43 :: Random part cutcost 1334.0
+[INIT-PART] 44 :: Random part cutcost 1514.0
+[ilp refinement failed]
+[INIT-PART] 45 :: Random part cutcost 1438.0
+[ilp refinement failed]
+[INIT-PART] 46 :: Random part cutcost 1217.0
+[INIT-PART] 47 :: Random part cutcost 1485.0
+[ilp refinement failed]
+[INIT-PART] 48 :: Random part cutcost 1381.0
+[INIT-PART] 49 :: Random part cutcost 1655.0
+[INIT-PART] 50 :: Vile part cutcost 1477.0
+[INIT-PART] 51 :: Ilp part cutcost 788.0
+====================================================
+[STATUS] Running V-cycle refinement on 10 partitions
+====================================================
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[INFO] 51 cutcost 780.0 
+[INFO] 4 cutcost 780.0 
+[INFO] 39 cutcost 1152.0 
+[INFO] 46 cutcost 917.0 
+[INFO] 32 cutcost 927.0 
+[INFO] 36 cutcost 759.0 
+[INFO] 25 cutcost 1183.0 
+[INFO] 28 cutcost 1169.0 
+[INFO] 26 cutcost 1151.0 
+[INFO] 7 cutcost 1165.0 
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 21221, 22747, 181993 , 22747 
+[COARSEN] Level 1 :: 14147, 15970, 182027 , 16290 
+[COARSEN] Level 2 :: 9431, 11605, 182037 , 11951 
+[COARSEN] Level 3 :: 6287, 8625, 182046 , 9065 
+[COARSEN] Level 4 :: 4191, 6622, 182046 , 7106 
+[COARSEN] Level 5 :: 2793, 5176, 182045 , 5717 
+[COARSEN] Level 6 :: 1861, 4172, 182045 , 4823 
+[COARSEN] Level 7 :: 1240, 3344, 182045 , 4152 
+[COARSEN] Level 8 :: 826, 2712, 182045 , 3701 
+[COARSEN] Level 9 :: 550, 2182, 182045 , 3361 
+[COARSEN] Level 10 :: 366, 1693, 182045 , 3109 
+[COARSEN] Level 11 :: 243, 1192, 182044 , 2884 
+[COARSEN] Level 12 :: 161, 807, 182044 , 2690 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 161, 807, 747.0
+[V-Refine] Level 2 :: 243, 1192, 747.0
+[V-Refine] Level 3 :: 366, 1693, 717.0
+[V-Refine] Level 4 :: 550, 2182, 717.0
+[V-Refine] Level 5 :: 826, 2712, 716.0
+[V-Refine] Level 6 :: 1240, 3344, 716.0
+[V-Refine] Level 7 :: 1861, 4172, 715.0
+[V-Refine] Level 8 :: 2793, 5176, 715.0
+[V-Refine] Level 9 :: 4191, 6622, 715.0
+[V-Refine] Level 10 :: 6287, 8625, 715.0
+[V-Refine] Level 11 :: 9431, 11605, 715.0
+[V-Refine] Level 12 :: 14147, 15970, 715.0
+[V-Refine] Level 13 :: 21221, 22747, 715.0
+[INFO] V-cycle refinement 1 delta cost 44.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 21221, 22747, 181993 , 22747 
+[COARSEN] Level 1 :: 14147, 15970, 182027 , 16290 
+[COARSEN] Level 2 :: 9431, 11605, 182037 , 11951 
+[COARSEN] Level 3 :: 6287, 8625, 182046 , 9065 
+[COARSEN] Level 4 :: 4191, 6622, 182046 , 7106 
+[COARSEN] Level 5 :: 2793, 5176, 182045 , 5717 
+[COARSEN] Level 6 :: 1861, 4172, 182045 , 4823 
+[COARSEN] Level 7 :: 1240, 3344, 182045 , 4152 
+[COARSEN] Level 8 :: 826, 2713, 182045 , 3700 
+[COARSEN] Level 9 :: 550, 2191, 182045 , 3361 
+[COARSEN] Level 10 :: 366, 1693, 182045 , 3111 
+[COARSEN] Level 11 :: 243, 1278, 182045 , 2870 
+[COARSEN] Level 12 :: 161, 864, 182044 , 2696 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 161, 864, 715.0
+[V-Refine] Level 2 :: 243, 1278, 715.0
+[V-Refine] Level 3 :: 366, 1693, 715.0
+[V-Refine] Level 4 :: 550, 2191, 715.0
+[V-Refine] Level 5 :: 826, 2713, 715.0
+[V-Refine] Level 6 :: 1240, 3344, 715.0
+[V-Refine] Level 7 :: 1861, 4172, 715.0
+[V-Refine] Level 8 :: 2793, 5176, 715.0
+[V-Refine] Level 9 :: 4191, 6622, 715.0
+[V-Refine] Level 10 :: 6287, 8625, 715.0
+[V-Refine] Level 11 :: 9431, 11605, 715.0
+[V-Refine] Level 12 :: 14147, 15970, 715.0
+[V-Refine] Level 13 :: 21221, 22747, 715.0
+[INFO] V-cycle refinement 2 delta cost 0.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 21221, 22747, 181993 , 22747 
+[COARSEN] Level 1 :: 14147, 15970, 182027 , 16290 
+[COARSEN] Level 2 :: 9431, 11605, 182037 , 11951 
+[COARSEN] Level 3 :: 6287, 8625, 182046 , 9065 
+[COARSEN] Level 4 :: 4191, 6622, 182046 , 7106 
+[COARSEN] Level 5 :: 2793, 5176, 182045 , 5717 
+[COARSEN] Level 6 :: 1861, 4172, 182045 , 4823 
+[COARSEN] Level 7 :: 1240, 3344, 182045 , 4152 
+[COARSEN] Level 8 :: 826, 2713, 182045 , 3700 
+[COARSEN] Level 9 :: 550, 2191, 182045 , 3361 
+[COARSEN] Level 10 :: 366, 1693, 182045 , 3111 
+[COARSEN] Level 11 :: 243, 1278, 182045 , 2870 
+[COARSEN] Level 12 :: 161, 864, 182044 , 2696 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 161, 864, 715.0
+[V-Refine] Level 2 :: 243, 1278, 715.0
+[V-Refine] Level 3 :: 366, 1693, 715.0
+[V-Refine] Level 4 :: 550, 2191, 715.0
+[V-Refine] Level 5 :: 826, 2713, 715.0
+[V-Refine] Level 6 :: 1240, 3344, 715.0
+[V-Refine] Level 7 :: 1861, 4172, 715.0
+[V-Refine] Level 8 :: 2793, 5176, 715.0
+[V-Refine] Level 9 :: 4191, 6622, 715.0
+[V-Refine] Level 10 :: 6287, 8625, 715.0
+[V-Refine] Level 11 :: 9431, 11605, 715.0
+[V-Refine] Level 12 :: 14147, 15970, 715.0
+[V-Refine] Level 13 :: 21221, 22747, 715.0
+[INFO] V-cycle refinement 3 delta cost 0.0
+Starting TritonPart Partitioner
+Partition Parameters**
+Number of partitions = 2
+UBfactor = 5.0
+Vertex dimensions = 1
+Hyperedge dimensions = 1
+Hypergraph Information**
+#Vertices = 20405
+#Hyperedges = 22280
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 20405, 22280, 35532 , 22280 
+[COARSEN] Level 1 :: 13603, 15625, 35533 , 15981 
+[COARSEN] Level 2 :: 9068, 11379, 35534 , 11749 
+[COARSEN] Level 3 :: 6045, 8437, 35533 , 8916 
+[COARSEN] Level 4 :: 4029, 6419, 35533 , 6978 
+[COARSEN] Level 5 :: 2685, 4969, 35533 , 5630 
+[COARSEN] Level 6 :: 1789, 3856, 35533 , 4694 
+[COARSEN] Level 7 :: 1192, 2953, 35533 , 4039 
+[COARSEN] Level 8 :: 794, 2277, 35533 , 3654 
+[COARSEN] Level 9 :: 529, 1744, 35533 , 3401 
+[COARSEN] Level 10 :: 352, 1306, 35533 , 3231 
+[COARSEN] Level 11 :: 234, 954, 35533 , 3101 
+[COARSEN] Level 12 :: 155, 637, 35533 , 3000 
+=============================
+[STATUS] Initial Partitioning 
+=============================
+[INIT-PART] 0 :: Random part cutcost 1458.0
+[INIT-PART] 1 :: Random part cutcost 1801.0
+[ilp refinement failed]
+[INIT-PART] 2 :: Random part cutcost 1174.0
+[ilp refinement failed]
+[INIT-PART] 3 :: Random part cutcost 1608.0
+[INIT-PART] 4 :: Random part cutcost 1440.0
+[INIT-PART] 5 :: Random part cutcost 1701.0
+[INIT-PART] 6 :: Random part cutcost 1529.0
+[INIT-PART] 7 :: Random part cutcost 1598.0
+[INIT-PART] 8 :: Random part cutcost 1786.0
+[INIT-PART] 9 :: Random part cutcost 1743.0
+[INIT-PART] 10 :: Random part cutcost 1502.0
+[INIT-PART] 11 :: Random part cutcost 1517.0
+[INIT-PART] 12 :: Random part cutcost 1621.0
+[INIT-PART] 13 :: Random part cutcost 1649.0
+[INIT-PART] 14 :: Random part cutcost 1649.0
+[INIT-PART] 15 :: Random part cutcost 1543.0
+[ilp refinement failed]
+[INIT-PART] 16 :: Random part cutcost 1659.0
+[INIT-PART] 17 :: Random part cutcost 1563.0
+[ilp refinement failed]
+[INIT-PART] 18 :: Random part cutcost 1381.0
+[ilp refinement failed]
+[INIT-PART] 19 :: Random part cutcost 1304.0
+[INIT-PART] 20 :: Random part cutcost 1490.0
+[INIT-PART] 21 :: Random part cutcost 1548.0
+[INIT-PART] 22 :: Random part cutcost 1780.0
+[INIT-PART] 23 :: Random part cutcost 1566.0
+[INIT-PART] 24 :: Random part cutcost 1476.0
+[INIT-PART] 25 :: Random part cutcost 1551.0
+[INIT-PART] 26 :: Random part cutcost 1582.0
+[INIT-PART] 27 :: Random part cutcost 1570.0
+[INIT-PART] 28 :: Random part cutcost 1475.0
+[INIT-PART] 29 :: Random part cutcost 1469.0
+[INIT-PART] 30 :: Random part cutcost 1571.0
+[INIT-PART] 31 :: Random part cutcost 1475.0
+[INIT-PART] 32 :: Random part cutcost 1541.0
+[INIT-PART] 33 :: Random part cutcost 1761.0
+[INIT-PART] 34 :: Random part cutcost 1487.0
+[ilp refinement failed]
+[INIT-PART] 35 :: Random part cutcost 1452.0
+[INIT-PART] 36 :: Random part cutcost 1703.0
+[ilp refinement failed]
+[INIT-PART] 37 :: Random part cutcost 1642.0
+[INIT-PART] 38 :: Random part cutcost 1569.0
+[ilp refinement failed]
+[INIT-PART] 39 :: Random part cutcost 1656.0
+[INIT-PART] 40 :: Random part cutcost 1529.0
+[ilp refinement failed]
+[INIT-PART] 41 :: Random part cutcost 1541.0
+[ilp refinement failed]
+[INIT-PART] 42 :: Random part cutcost 1485.0
+[INIT-PART] 43 :: Random part cutcost 1562.0
+[ilp refinement failed]
+[INIT-PART] 44 :: Random part cutcost 1634.0
+[ilp refinement failed]
+[INIT-PART] 45 :: Random part cutcost 1595.0
+[INIT-PART] 46 :: Random part cutcost 1587.0
+[INIT-PART] 47 :: Random part cutcost 1625.0
+[ilp refinement failed]
+[INIT-PART] 48 :: Random part cutcost 1490.0
+[ilp refinement failed]
+[INIT-PART] 49 :: Random part cutcost 1422.0
+[INIT-PART] 50 :: Vile part cutcost 1495.0
+[INIT-PART] 51 :: Ilp part cutcost 1174.0
+====================================================
+[STATUS] Running V-cycle refinement on 10 partitions
+====================================================
+[INFO] 51 cutcost 1171.0 
+[INFO] 2 cutcost 1171.0 
+[INFO] 19 cutcost 1125.0 
+[INFO] 18 cutcost 1102.0 
+[INFO] 49 cutcost 1245.0 
+[INFO] 4 cutcost 1117.0 
+[INFO] 35 cutcost 1122.0 
+[INFO] 0 cutcost 1127.0 
+[INFO] 29 cutcost 1087.0 
+[INFO] 31 cutcost 1113.0 
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 20405, 22280, 35532 , 22280 
+[COARSEN] Level 1 :: 13603, 15625, 35533 , 15981 
+[COARSEN] Level 2 :: 9068, 11378, 35534 , 11752 
+[COARSEN] Level 3 :: 6045, 8443, 35534 , 8928 
+[COARSEN] Level 4 :: 4029, 6394, 35533 , 6995 
+[COARSEN] Level 5 :: 2685, 4937, 35533 , 5637 
+[COARSEN] Level 6 :: 1789, 3873, 35533 , 4702 
+[COARSEN] Level 7 :: 1192, 2977, 35533 , 4100 
+[COARSEN] Level 8 :: 794, 2265, 35533 , 3700 
+[COARSEN] Level 9 :: 529, 1742, 35533 , 3437 
+[COARSEN] Level 10 :: 352, 1310, 35533 , 3261 
+[COARSEN] Level 11 :: 234, 909, 35533 , 3104 
+[COARSEN] Level 12 :: 155, 609, 35533 , 3010 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 155, 609, 1084.0
+[V-Refine] Level 2 :: 234, 909, 1084.0
+[V-Refine] Level 3 :: 352, 1310, 1074.0
+[V-Refine] Level 4 :: 529, 1742, 1071.0
+[V-Refine] Level 5 :: 794, 2265, 1071.0
+[V-Refine] Level 6 :: 1192, 2977, 1068.0
+[V-Refine] Level 7 :: 1789, 3873, 1064.0
+[V-Refine] Level 8 :: 2685, 4937, 1057.0
+[V-Refine] Level 9 :: 4029, 6394, 1057.0
+[V-Refine] Level 10 :: 6045, 8443, 1057.0
+[V-Refine] Level 11 :: 9068, 11378, 1057.0
+[V-Refine] Level 12 :: 13603, 15625, 1057.0
+[V-Refine] Level 13 :: 20405, 22280, 1057.0
+[INFO] V-cycle refinement 1 delta cost 30.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 20405, 22280, 35532 , 22280 
+[COARSEN] Level 1 :: 13603, 15625, 35533 , 15981 
+[COARSEN] Level 2 :: 9068, 11378, 35534 , 11751 
+[COARSEN] Level 3 :: 6045, 8433, 35534 , 8882 
+[COARSEN] Level 4 :: 4029, 6364, 35533 , 6955 
+[COARSEN] Level 5 :: 2685, 4909, 35533 , 5588 
+[COARSEN] Level 6 :: 1789, 3789, 35533 , 4647 
+[COARSEN] Level 7 :: 1192, 2908, 35533 , 3985 
+[COARSEN] Level 8 :: 794, 2211, 35533 , 3613 
+[COARSEN] Level 9 :: 529, 1669, 35533 , 3369 
+[COARSEN] Level 10 :: 352, 1231, 35533 , 3196 
+[COARSEN] Level 11 :: 234, 853, 35533 , 3071 
+[COARSEN] Level 12 :: 155, 481, 35533 , 2965 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 155, 481, 1057.0
+[V-Refine] Level 2 :: 234, 853, 1057.0
+[V-Refine] Level 3 :: 352, 1231, 1057.0
+[V-Refine] Level 4 :: 529, 1669, 1057.0
+[V-Refine] Level 5 :: 794, 2211, 1053.0
+[V-Refine] Level 6 :: 1192, 2908, 1051.0
+[V-Refine] Level 7 :: 1789, 3789, 1051.0
+[V-Refine] Level 8 :: 2685, 4909, 1051.0
+[V-Refine] Level 9 :: 4029, 6364, 1051.0
+[V-Refine] Level 10 :: 6045, 8433, 1051.0
+[V-Refine] Level 11 :: 9068, 11378, 1051.0
+[V-Refine] Level 12 :: 13603, 15625, 1051.0
+[V-Refine] Level 13 :: 20405, 22280, 1051.0
+[INFO] V-cycle refinement 2 delta cost 6.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 20405, 22280, 35532 , 22280 
+[COARSEN] Level 1 :: 13603, 15625, 35533 , 15981 
+[COARSEN] Level 2 :: 9068, 11378, 35534 , 11751 
+[COARSEN] Level 3 :: 6045, 8433, 35534 , 8882 
+[COARSEN] Level 4 :: 4029, 6367, 35533 , 6965 
+[COARSEN] Level 5 :: 2685, 4859, 35533 , 5500 
+[COARSEN] Level 6 :: 1789, 3724, 35533 , 4530 
+[COARSEN] Level 7 :: 1192, 2773, 35533 , 3869 
+[COARSEN] Level 8 :: 794, 2043, 35533 , 3502 
+[COARSEN] Level 9 :: 529, 1433, 35533 , 3243 
+[COARSEN] Level 10 :: 352, 970, 35533 , 3076 
+[COARSEN] Level 11 :: 276, 642, 35533 , 2980 
+[COARSEN] Level 12 :: 263, 573, 35533 , 2973 
+[COARSEN] Level 13 :: 260, 549, 35533 , 2973 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 260, 549, 1051.0
+[V-Refine] Level 2 :: 263, 573, 1051.0
+[V-Refine] Level 3 :: 276, 642, 1051.0
+[V-Refine] Level 4 :: 352, 970, 1051.0
+[V-Refine] Level 5 :: 529, 1433, 1051.0
+[V-Refine] Level 6 :: 794, 2043, 1051.0
+[V-Refine] Level 7 :: 1192, 2773, 1051.0
+[V-Refine] Level 8 :: 1789, 3724, 1051.0
+[V-Refine] Level 9 :: 2685, 4859, 1051.0
+[V-Refine] Level 10 :: 4029, 6367, 1051.0
+[V-Refine] Level 11 :: 6045, 8433, 1051.0
+[V-Refine] Level 12 :: 9068, 11378, 1051.0
+[V-Refine] Level 13 :: 13603, 15625, 1051.0
+[V-Refine] Level 14 :: 20405, 22280, 1051.0
+[INFO] V-cycle refinement 3 delta cost 0.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 20405, 22280, 35532 , 22280 
+[COARSEN] Level 1 :: 13603, 15625, 35533 , 15981 
+[COARSEN] Level 2 :: 9068, 11378, 35534 , 11751 
+[COARSEN] Level 3 :: 6045, 8433, 35534 , 8882 
+[COARSEN] Level 4 :: 4029, 6367, 35533 , 6965 
+[COARSEN] Level 5 :: 2685, 4859, 35533 , 5500 
+[COARSEN] Level 6 :: 1789, 3724, 35533 , 4530 
+[COARSEN] Level 7 :: 1192, 2773, 35533 , 3869 
+[COARSEN] Level 8 :: 794, 2043, 35533 , 3502 
+[COARSEN] Level 9 :: 529, 1433, 35533 , 3243 
+[COARSEN] Level 10 :: 352, 970, 35533 , 3076 
+[COARSEN] Level 11 :: 276, 642, 35533 , 2980 
+[COARSEN] Level 12 :: 263, 573, 35533 , 2973 
+[COARSEN] Level 13 :: 260, 549, 35533 , 2973 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 260, 549, 1051.0
+[V-Refine] Level 2 :: 263, 573, 1051.0
+[V-Refine] Level 3 :: 276, 642, 1051.0
+[V-Refine] Level 4 :: 352, 970, 1051.0
+[V-Refine] Level 5 :: 529, 1433, 1051.0
+[V-Refine] Level 6 :: 794, 2043, 1051.0
+[V-Refine] Level 7 :: 1192, 2773, 1051.0
+[V-Refine] Level 8 :: 1789, 3724, 1051.0
+[V-Refine] Level 9 :: 2685, 4859, 1051.0
+[V-Refine] Level 10 :: 4029, 6367, 1051.0
+[V-Refine] Level 11 :: 6045, 8433, 1051.0
+[V-Refine] Level 12 :: 9068, 11378, 1051.0
+[V-Refine] Level 13 :: 13603, 15625, 1051.0
+[V-Refine] Level 14 :: 20405, 22280, 1051.0
+[INFO] V-cycle refinement 4 delta cost 0.0
+Starting TritonPart Partitioner
+Partition Parameters**
+Number of partitions = 2
+UBfactor = 5.0
+Vertex dimensions = 1
+Hyperedge dimensions = 1
+Hypergraph Information**
+#Vertices = 8702
+#Hyperedges = 11908
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 8702, 11908, 15992 , 11908 
+[COARSEN] Level 1 :: 5801, 6887, 15992 , 8582 
+[COARSEN] Level 2 :: 3867, 5036, 15991 , 6741 
+[COARSEN] Level 3 :: 2577, 3769, 15991 , 5485 
+[COARSEN] Level 4 :: 1717, 2870, 15991 , 4642 
+[COARSEN] Level 5 :: 1144, 2193, 15991 , 4065 
+[COARSEN] Level 6 :: 762, 1667, 15991 , 3691 
+[COARSEN] Level 7 :: 507, 1219, 15991 , 3335 
+[COARSEN] Level 8 :: 337, 887, 15991 , 3158 
+[COARSEN] Level 9 :: 224, 638, 15991 , 3040 
+[COARSEN] Level 10 :: 149, 450, 15991 , 2950 
+=============================
+[STATUS] Initial Partitioning 
+=============================
+[INIT-PART] 0 :: Random part cutcost 1010.0
+[INIT-PART] 1 :: Random part cutcost 1981.0
+[ilp refinement failed]
+[INIT-PART] 2 :: Random part cutcost 882.0
+[INIT-PART] 3 :: Random part cutcost 970.0
+[INIT-PART] 4 :: Random part cutcost 2020.0
+[INIT-PART] 5 :: Random part cutcost 971.0
+[INIT-PART] 6 :: Random part cutcost 1945.0
+[INIT-PART] 7 :: Random part cutcost 950.0
+[INIT-PART] 8 :: Random part cutcost 949.0
+[INIT-PART] 9 :: Random part cutcost 1868.0
+[INIT-PART] 10 :: Random part cutcost 970.0
+[ilp refinement failed]
+[INIT-PART] 11 :: Random part cutcost 1045.0
+[INIT-PART] 12 :: Random part cutcost 1993.0
+[INIT-PART] 13 :: Random part cutcost 971.0
+[ilp refinement failed]
+[INIT-PART] 14 :: Random part cutcost 705.0
+[INIT-PART] 15 :: Random part cutcost 934.0
+[INIT-PART] 16 :: Random part cutcost 1963.0
+[ilp refinement failed]
+[INIT-PART] 17 :: Random part cutcost 803.0
+[INIT-PART] 18 :: Random part cutcost 1866.0
+[ilp refinement failed]
+[INIT-PART] 19 :: Random part cutcost 818.0
+[ilp refinement failed]
+[INIT-PART] 20 :: Random part cutcost 934.0
+[ilp refinement failed]
+[INIT-PART] 21 :: Random part cutcost 912.0
+[ilp refinement failed]
+[INIT-PART] 22 :: Random part cutcost 1199.0
+[ilp refinement failed]
+[INIT-PART] 23 :: Random part cutcost 741.0
+[INIT-PART] 24 :: Random part cutcost 965.0
+[INIT-PART] 25 :: Random part cutcost 865.0
+[INIT-PART] 26 :: Random part cutcost 2102.0
+[ilp refinement failed]
+[INIT-PART] 27 :: Random part cutcost 997.0
+[INIT-PART] 28 :: Random part cutcost 921.0
+[INIT-PART] 29 :: Random part cutcost 908.0
+[INIT-PART] 30 :: Random part cutcost 869.0
+[INIT-PART] 31 :: Random part cutcost 976.0
+[ilp refinement failed]
+[INIT-PART] 32 :: Random part cutcost 1035.0
+[ilp refinement failed]
+[INIT-PART] 33 :: Random part cutcost 838.0
+[INIT-PART] 34 :: Random part cutcost 1044.0
+[INIT-PART] 35 :: Random part cutcost 959.0
+[INIT-PART] 36 :: Random part cutcost 930.0
+[INIT-PART] 37 :: Random part cutcost 931.0
+[INIT-PART] 38 :: Random part cutcost 847.0
+[INIT-PART] 39 :: Random part cutcost 1914.0
+[ilp refinement failed]
+[INIT-PART] 40 :: Random part cutcost 944.0
+[INIT-PART] 41 :: Random part cutcost 848.0
+[INIT-PART] 42 :: Random part cutcost 950.0
+[INIT-PART] 43 :: Random part cutcost 1960.0
+[INIT-PART] 44 :: Random part cutcost 951.0
+[INIT-PART] 45 :: Random part cutcost 975.0
+[INIT-PART] 46 :: Random part cutcost 929.0
+[INIT-PART] 47 :: Random part cutcost 954.0
+[ilp refinement failed]
+[INIT-PART] 48 :: Random part cutcost 695.0
+[ilp refinement failed]
+[INIT-PART] 49 :: Random part cutcost 1053.0
+[INIT-PART] 50 :: Vile part cutcost 878.0
+[INIT-PART] 51 :: Ilp part cutcost 695.0
+====================================================
+[STATUS] Running V-cycle refinement on 10 partitions
+====================================================
+[INFO] 48 cutcost 692.0 
+[INFO] 51 cutcost 692.0 
+[INFO] 14 cutcost 721.0 
+[INFO] 23 cutcost 729.0 
+[INFO] 17 cutcost 762.0 
+[INFO] 19 cutcost 752.0 
+[INFO] 33 cutcost 716.0 
+[INFO] 38 cutcost 721.0 
+[INFO] 41 cutcost 721.0 
+[INFO] 25 cutcost 747.0 
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 8702, 11908, 15992 , 11908 
+[COARSEN] Level 1 :: 5801, 6887, 15992 , 8582 
+[COARSEN] Level 2 :: 3867, 5043, 15991 , 6664 
+[COARSEN] Level 3 :: 2577, 3782, 15991 , 5420 
+[COARSEN] Level 4 :: 1717, 2882, 15991 , 4596 
+[COARSEN] Level 5 :: 1144, 2213, 15991 , 4026 
+[COARSEN] Level 6 :: 762, 1671, 15991 , 3637 
+[COARSEN] Level 7 :: 507, 1240, 15991 , 3378 
+[COARSEN] Level 8 :: 337, 904, 15991 , 3001 
+[COARSEN] Level 9 :: 224, 646, 15991 , 2862 
+[COARSEN] Level 10 :: 149, 458, 15991 , 2776 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 149, 458, 687.0
+[V-Refine] Level 2 :: 224, 646, 684.0
+[V-Refine] Level 3 :: 337, 904, 683.0
+[V-Refine] Level 4 :: 507, 1240, 681.0
+[V-Refine] Level 5 :: 762, 1671, 681.0
+[V-Refine] Level 6 :: 1144, 2213, 671.0
+[V-Refine] Level 7 :: 1717, 2882, 668.0
+[V-Refine] Level 8 :: 2577, 3782, 667.0
+[V-Refine] Level 9 :: 3867, 5043, 663.0
+[V-Refine] Level 10 :: 5801, 6887, 663.0
+[V-Refine] Level 11 :: 8702, 11908, 663.0
+[INFO] V-cycle refinement 1 delta cost 29.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 8702, 11908, 15992 , 11908 
+[COARSEN] Level 1 :: 5801, 6887, 15992 , 8582 
+[COARSEN] Level 2 :: 3867, 5039, 15991 , 6735 
+[COARSEN] Level 3 :: 2577, 3750, 15991 , 5388 
+[COARSEN] Level 4 :: 1717, 2843, 15991 , 4549 
+[COARSEN] Level 5 :: 1144, 2158, 15991 , 3968 
+[COARSEN] Level 6 :: 762, 1613, 15991 , 3574 
+[COARSEN] Level 7 :: 507, 1189, 15991 , 3303 
+[COARSEN] Level 8 :: 337, 883, 15991 , 3140 
+[COARSEN] Level 9 :: 224, 647, 15991 , 3024 
+[COARSEN] Level 10 :: 149, 462, 15991 , 2939 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 149, 462, 662.0
+[V-Refine] Level 2 :: 224, 647, 658.0
+[V-Refine] Level 3 :: 337, 883, 656.0
+[V-Refine] Level 4 :: 507, 1189, 655.0
+[V-Refine] Level 5 :: 762, 1613, 655.0
+[V-Refine] Level 6 :: 1144, 2158, 655.0
+[V-Refine] Level 7 :: 1717, 2843, 654.0
+[V-Refine] Level 8 :: 2577, 3750, 652.0
+[V-Refine] Level 9 :: 3867, 5039, 652.0
+[V-Refine] Level 10 :: 5801, 6887, 652.0
+[V-Refine] Level 11 :: 8702, 11908, 652.0
+[INFO] V-cycle refinement 2 delta cost 11.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 8702, 11908, 15992 , 11908 
+[COARSEN] Level 1 :: 5801, 6887, 15992 , 8582 
+[COARSEN] Level 2 :: 3867, 5039, 15991 , 6735 
+[COARSEN] Level 3 :: 2577, 3750, 15991 , 5387 
+[COARSEN] Level 4 :: 1717, 2839, 15991 , 4338 
+[COARSEN] Level 5 :: 1144, 2152, 15991 , 3767 
+[COARSEN] Level 6 :: 762, 1622, 15991 , 3364 
+[COARSEN] Level 7 :: 507, 1210, 15991 , 3104 
+[COARSEN] Level 8 :: 337, 886, 15991 , 2924 
+[COARSEN] Level 9 :: 224, 619, 15991 , 2802 
+[COARSEN] Level 10 :: 149, 444, 15991 , 2715 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 149, 444, 651.0
+[V-Refine] Level 2 :: 224, 619, 651.0
+[V-Refine] Level 3 :: 337, 886, 651.0
+[V-Refine] Level 4 :: 507, 1210, 651.0
+[V-Refine] Level 5 :: 762, 1622, 651.0
+[V-Refine] Level 6 :: 1144, 2152, 651.0
+[V-Refine] Level 7 :: 1717, 2839, 651.0
+[V-Refine] Level 8 :: 2577, 3750, 650.0
+[V-Refine] Level 9 :: 3867, 5039, 650.0
+[V-Refine] Level 10 :: 5801, 6887, 650.0
+[V-Refine] Level 11 :: 8702, 11908, 650.0
+[INFO] V-cycle refinement 3 delta cost 2.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 8702, 11908, 15992 , 11908 
+[COARSEN] Level 1 :: 5801, 6887, 15992 , 8582 
+[COARSEN] Level 2 :: 3867, 5039, 15991 , 6735 
+[COARSEN] Level 3 :: 2577, 3749, 15991 , 5387 
+[COARSEN] Level 4 :: 1717, 2831, 15991 , 4339 
+[COARSEN] Level 5 :: 1144, 2152, 15991 , 3751 
+[COARSEN] Level 6 :: 762, 1623, 15991 , 3351 
+[COARSEN] Level 7 :: 507, 1216, 15991 , 3098 
+[COARSEN] Level 8 :: 337, 889, 15991 , 2929 
+[COARSEN] Level 9 :: 224, 641, 15991 , 2804 
+[COARSEN] Level 10 :: 149, 453, 15991 , 2718 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 149, 453, 649.0
+[V-Refine] Level 2 :: 224, 641, 649.0
+[V-Refine] Level 3 :: 337, 889, 648.0
+[V-Refine] Level 4 :: 507, 1216, 648.0
+[V-Refine] Level 5 :: 762, 1623, 648.0
+[V-Refine] Level 6 :: 1144, 2152, 648.0
+[V-Refine] Level 7 :: 1717, 2831, 648.0
+[V-Refine] Level 8 :: 2577, 3749, 648.0
+[V-Refine] Level 9 :: 3867, 5039, 648.0
+[V-Refine] Level 10 :: 5801, 6887, 648.0
+[V-Refine] Level 11 :: 8702, 11908, 648.0
+[INFO] V-cycle refinement 4 delta cost 2.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 8702, 11908, 15992 , 11908 
+[COARSEN] Level 1 :: 5801, 6887, 15992 , 8582 
+[COARSEN] Level 2 :: 3867, 5039, 15991 , 6735 
+[COARSEN] Level 3 :: 2577, 3747, 15991 , 5384 
+[COARSEN] Level 4 :: 1717, 2838, 15991 , 4556 
+[COARSEN] Level 5 :: 1144, 2165, 15991 , 3765 
+[COARSEN] Level 6 :: 762, 1625, 15991 , 3369 
+[COARSEN] Level 7 :: 507, 1202, 15991 , 3102 
+[COARSEN] Level 8 :: 337, 862, 15991 , 2923 
+[COARSEN] Level 9 :: 224, 621, 15991 , 2797 
+[COARSEN] Level 10 :: 149, 442, 15991 , 2710 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 149, 442, 648.0
+[V-Refine] Level 2 :: 224, 621, 648.0
+[V-Refine] Level 3 :: 337, 862, 648.0
+[V-Refine] Level 4 :: 507, 1202, 648.0
+[V-Refine] Level 5 :: 762, 1625, 648.0
+[V-Refine] Level 6 :: 1144, 2165, 648.0
+[V-Refine] Level 7 :: 1717, 2838, 648.0
+[V-Refine] Level 8 :: 2577, 3747, 648.0
+[V-Refine] Level 9 :: 3867, 5039, 648.0
+[V-Refine] Level 10 :: 5801, 6887, 648.0
+[V-Refine] Level 11 :: 8702, 11908, 648.0
+[INFO] V-cycle refinement 5 delta cost 0.0
+Starting TritonPart Partitioner
+Partition Parameters**
+Number of partitions = 2
+UBfactor = 5.0
+Vertex dimensions = 1
+Hyperedge dimensions = 1
+Hypergraph Information**
+#Vertices = 11724
+#Hyperedges = 14964
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 11724, 14964, 19542 , 14964 
+[COARSEN] Level 1 :: 7815, 9388, 19542 , 10896 
+[COARSEN] Level 2 :: 5209, 6971, 19542 , 8181 
+[COARSEN] Level 3 :: 3472, 5245, 19542 , 6308 
+[COARSEN] Level 4 :: 2314, 3969, 19542 , 5040 
+[COARSEN] Level 5 :: 1542, 3027, 19542 , 4232 
+[COARSEN] Level 6 :: 1027, 2331, 19541 , 3739 
+[COARSEN] Level 7 :: 684, 1816, 19541 , 3437 
+[COARSEN] Level 8 :: 455, 1358, 19541 , 3211 
+[COARSEN] Level 9 :: 303, 1006, 19541 , 3076 
+[COARSEN] Level 10 :: 201, 716, 19541 , 2955 
+[COARSEN] Level 11 :: 133, 511, 19541 , 2894 
+=============================
+[STATUS] Initial Partitioning 
+=============================
+[ilp refinement failed]
+[INIT-PART] 0 :: Random part cutcost 2079.0
+[INIT-PART] 1 :: Random part cutcost 1656.0
+[INIT-PART] 2 :: Random part cutcost 1519.0
+[ilp refinement failed]
+[INIT-PART] 3 :: Random part cutcost 1482.0
+[INIT-PART] 4 :: Random part cutcost 1873.0
+[INIT-PART] 5 :: Random part cutcost 1497.0
+[INIT-PART] 6 :: Random part cutcost 1668.0
+[INIT-PART] 7 :: Random part cutcost 1938.0
+[INIT-PART] 8 :: Random part cutcost 1223.0
+[INIT-PART] 9 :: Random part cutcost 1244.0
+[INIT-PART] 10 :: Random part cutcost 1491.0
+[ilp refinement failed]
+[INIT-PART] 11 :: Random part cutcost 1374.0
+[INIT-PART] 12 :: Random part cutcost 1496.0
+[INIT-PART] 13 :: Random part cutcost 1928.0
+[INIT-PART] 14 :: Random part cutcost 1496.0
+[ilp refinement failed]
+[INIT-PART] 15 :: Random part cutcost 969.0
+[INIT-PART] 16 :: Random part cutcost 1665.0
+[ilp refinement failed]
+[INIT-PART] 17 :: Random part cutcost 869.0
+[INIT-PART] 18 :: Random part cutcost 1501.0
+[INIT-PART] 19 :: Random part cutcost 1492.0
+[INIT-PART] 20 :: Random part cutcost 1506.0
+[INIT-PART] 21 :: Random part cutcost 1472.0
+[INIT-PART] 22 :: Random part cutcost 1494.0
+[ilp refinement failed]
+[INIT-PART] 23 :: Random part cutcost 1568.0
+[ilp refinement failed]
+[INIT-PART] 24 :: Random part cutcost 1240.0
+[INIT-PART] 25 :: Random part cutcost 1495.0
+[ilp refinement failed]
+[INIT-PART] 26 :: Random part cutcost 1472.0
+[ilp refinement failed]
+[INIT-PART] 27 :: Random part cutcost 1349.0
+[INIT-PART] 28 :: Random part cutcost 1141.0
+[ilp refinement failed]
+[INIT-PART] 29 :: Random part cutcost 928.0
+[INIT-PART] 30 :: Random part cutcost 1616.0
+[INIT-PART] 31 :: Random part cutcost 1484.0
+[INIT-PART] 32 :: Random part cutcost 1665.0
+[INIT-PART] 33 :: Random part cutcost 1490.0
+[ilp refinement failed]
+[INIT-PART] 34 :: Random part cutcost 966.0
+[INIT-PART] 35 :: Random part cutcost 1635.0
+[INIT-PART] 36 :: Random part cutcost 1516.0
+[INIT-PART] 37 :: Random part cutcost 1844.0
+[INIT-PART] 38 :: Random part cutcost 1516.0
+[INIT-PART] 39 :: Random part cutcost 1957.0
+[INIT-PART] 40 :: Random part cutcost 1656.0
+[INIT-PART] 41 :: Random part cutcost 1767.0
+[ilp refinement failed]
+[INIT-PART] 42 :: Random part cutcost 1738.0
+[INIT-PART] 43 :: Random part cutcost 1506.0
+[INIT-PART] 44 :: Random part cutcost 2105.0
+[INIT-PART] 45 :: Random part cutcost 1666.0
+[INIT-PART] 46 :: Random part cutcost 1410.0
+[INIT-PART] 47 :: Random part cutcost 1518.0
+[INIT-PART] 48 :: Random part cutcost 1497.0
+[INIT-PART] 49 :: Random part cutcost 1485.0
+[INIT-PART] 50 :: Vile part cutcost 1319.0
+[INIT-PART] 51 :: Ilp part cutcost 869.0
+====================================================
+[STATUS] Running V-cycle refinement on 10 partitions
+====================================================
+[INFO] 51 cutcost 1197.0 
+[INFO] 17 cutcost 1197.0 
+[INFO] 29 cutcost 1215.0 
+[INFO] 34 cutcost 791.0 
+[INFO] 15 cutcost 806.0 
+[INFO] 28 cutcost 797.0 
+[INFO] 8 cutcost 792.0 
+[INFO] 24 cutcost 811.0 
+[INFO] 9 cutcost 813.0 
+[INFO] 50 cutcost 841.0 
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 11724, 14964, 19542 , 14964 
+[COARSEN] Level 1 :: 7815, 9390, 19542 , 10900 
+[COARSEN] Level 2 :: 5209, 6979, 19542 , 8260 
+[COARSEN] Level 3 :: 3472, 5265, 19542 , 6659 
+[COARSEN] Level 4 :: 2314, 4002, 19542 , 5363 
+[COARSEN] Level 5 :: 1542, 3068, 19542 , 4452 
+[COARSEN] Level 6 :: 1027, 2337, 19542 , 3572 
+[COARSEN] Level 7 :: 684, 1790, 19541 , 3239 
+[COARSEN] Level 8 :: 455, 1310, 19541 , 3015 
+[COARSEN] Level 9 :: 303, 964, 19541 , 2855 
+[COARSEN] Level 10 :: 201, 712, 19541 , 2753 
+[COARSEN] Level 11 :: 133, 500, 19541 , 2653 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 133, 500, 776.0
+[V-Refine] Level 2 :: 201, 712, 776.0
+[V-Refine] Level 3 :: 303, 964, 776.0
+[V-Refine] Level 4 :: 455, 1310, 776.0
+[V-Refine] Level 5 :: 684, 1790, 770.0
+[V-Refine] Level 6 :: 1027, 2337, 756.0
+[V-Refine] Level 7 :: 1542, 3068, 753.0
+[V-Refine] Level 8 :: 2314, 4002, 752.0
+[V-Refine] Level 9 :: 3472, 5265, 750.0
+[V-Refine] Level 10 :: 5209, 6979, 747.0
+[V-Refine] Level 11 :: 7815, 9390, 743.0
+[V-Refine] Level 12 :: 11724, 14964, 741.0
+[INFO] V-cycle refinement 1 delta cost 50.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 11724, 14964, 19542 , 14964 
+[COARSEN] Level 1 :: 7815, 9389, 19542 , 10898 
+[COARSEN] Level 2 :: 5209, 6972, 19542 , 8344 
+[COARSEN] Level 3 :: 3472, 5265, 19542 , 6745 
+[COARSEN] Level 4 :: 2314, 3987, 19542 , 5522 
+[COARSEN] Level 5 :: 1542, 3138, 19542 , 4767 
+[COARSEN] Level 6 :: 1027, 2377, 19541 , 3969 
+[COARSEN] Level 7 :: 684, 1830, 19541 , 3625 
+[COARSEN] Level 8 :: 455, 1368, 19541 , 3225 
+[COARSEN] Level 9 :: 303, 1048, 19541 , 3076 
+[COARSEN] Level 10 :: 201, 781, 19541 , 2982 
+[COARSEN] Level 11 :: 133, 581, 19541 , 2912 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 133, 581, 741.0
+[V-Refine] Level 2 :: 201, 781, 740.0
+[V-Refine] Level 3 :: 303, 1048, 740.0
+[V-Refine] Level 4 :: 455, 1368, 739.0
+[V-Refine] Level 5 :: 684, 1830, 739.0
+[V-Refine] Level 6 :: 1027, 2377, 739.0
+[V-Refine] Level 7 :: 1542, 3138, 738.0
+[V-Refine] Level 8 :: 2314, 3987, 738.0
+[V-Refine] Level 9 :: 3472, 5265, 738.0
+[V-Refine] Level 10 :: 5209, 6972, 738.0
+[V-Refine] Level 11 :: 7815, 9389, 738.0
+[V-Refine] Level 12 :: 11724, 14964, 738.0
+[INFO] V-cycle refinement 2 delta cost 3.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 11724, 14964, 19542 , 14964 
+[COARSEN] Level 1 :: 7815, 9389, 19542 , 10898 
+[COARSEN] Level 2 :: 5209, 6972, 19542 , 8344 
+[COARSEN] Level 3 :: 3472, 5265, 19542 , 6745 
+[COARSEN] Level 4 :: 2314, 3979, 19542 , 5508 
+[COARSEN] Level 5 :: 1542, 3100, 19542 , 4726 
+[COARSEN] Level 6 :: 1027, 2356, 19542 , 3857 
+[COARSEN] Level 7 :: 684, 1785, 19541 , 3351 
+[COARSEN] Level 8 :: 455, 1345, 19541 , 3078 
+[COARSEN] Level 9 :: 303, 1043, 19541 , 2943 
+[COARSEN] Level 10 :: 201, 730, 19541 , 2834 
+[COARSEN] Level 11 :: 133, 480, 19541 , 2786 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 133, 480, 738.0
+[V-Refine] Level 2 :: 201, 730, 738.0
+[V-Refine] Level 3 :: 303, 1043, 738.0
+[V-Refine] Level 4 :: 455, 1345, 738.0
+[V-Refine] Level 5 :: 684, 1785, 738.0
+[V-Refine] Level 6 :: 1027, 2356, 738.0
+[V-Refine] Level 7 :: 1542, 3100, 737.0
+[V-Refine] Level 8 :: 2314, 3979, 737.0
+[V-Refine] Level 9 :: 3472, 5265, 737.0
+[V-Refine] Level 10 :: 5209, 6972, 737.0
+[V-Refine] Level 11 :: 7815, 9389, 737.0
+[V-Refine] Level 12 :: 11724, 14964, 737.0
+[INFO] V-cycle refinement 3 delta cost 1.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 11724, 14964, 19542 , 14964 
+[COARSEN] Level 1 :: 7815, 9388, 19542 , 10897 
+[COARSEN] Level 2 :: 5209, 6973, 19542 , 8343 
+[COARSEN] Level 3 :: 3472, 5222, 19542 , 6440 
+[COARSEN] Level 4 :: 2314, 3978, 19542 , 5322 
+[COARSEN] Level 5 :: 1542, 3010, 19542 , 4249 
+[COARSEN] Level 6 :: 1027, 2307, 19542 , 3712 
+[COARSEN] Level 7 :: 684, 1746, 19541 , 3373 
+[COARSEN] Level 8 :: 455, 1337, 19541 , 3143 
+[COARSEN] Level 9 :: 303, 1060, 19541 , 2999 
+[COARSEN] Level 10 :: 201, 738, 19541 , 2913 
+[COARSEN] Level 11 :: 133, 522, 19541 , 2843 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 133, 522, 734.0
+[V-Refine] Level 2 :: 201, 738, 734.0
+[V-Refine] Level 3 :: 303, 1060, 734.0
+[V-Refine] Level 4 :: 455, 1337, 734.0
+[V-Refine] Level 5 :: 684, 1746, 734.0
+[V-Refine] Level 6 :: 1027, 2307, 734.0
+[V-Refine] Level 7 :: 1542, 3010, 734.0
+[V-Refine] Level 8 :: 2314, 3978, 730.0
+[V-Refine] Level 9 :: 3472, 5222, 730.0
+[V-Refine] Level 10 :: 5209, 6973, 730.0
+[V-Refine] Level 11 :: 7815, 9388, 728.0
+[V-Refine] Level 12 :: 11724, 14964, 726.0
+[INFO] V-cycle refinement 4 delta cost 11.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 11724, 14964, 19542 , 14964 
+[COARSEN] Level 1 :: 7815, 9389, 19542 , 10898 
+[COARSEN] Level 2 :: 5209, 6952, 19542 , 8026 
+[COARSEN] Level 3 :: 3472, 5230, 19542 , 6264 
+[COARSEN] Level 4 :: 2314, 3975, 19542 , 5168 
+[COARSEN] Level 5 :: 1542, 3046, 19541 , 4227 
+[COARSEN] Level 6 :: 1027, 2333, 19542 , 3645 
+[COARSEN] Level 7 :: 684, 1791, 19542 , 3319 
+[COARSEN] Level 8 :: 455, 1338, 19541 , 3079 
+[COARSEN] Level 9 :: 303, 1001, 19541 , 2917 
+[COARSEN] Level 10 :: 201, 754, 19541 , 2834 
+[COARSEN] Level 11 :: 133, 528, 19541 , 2761 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 133, 528, 724.0
+[V-Refine] Level 2 :: 201, 754, 724.0
+[V-Refine] Level 3 :: 303, 1001, 724.0
+[V-Refine] Level 4 :: 455, 1338, 724.0
+[V-Refine] Level 5 :: 684, 1791, 724.0
+[V-Refine] Level 6 :: 1027, 2333, 724.0
+[V-Refine] Level 7 :: 1542, 3046, 724.0
+[V-Refine] Level 8 :: 2314, 3975, 724.0
+[V-Refine] Level 9 :: 3472, 5230, 724.0
+[V-Refine] Level 10 :: 5209, 6952, 724.0
+[V-Refine] Level 11 :: 7815, 9389, 723.0
+[V-Refine] Level 12 :: 11724, 14964, 723.0
+[INFO] V-cycle refinement 5 delta cost 3.0
+Starting TritonPart Partitioner
+Partition Parameters**
+Number of partitions = 2
+UBfactor = 5.0
+Vertex dimensions = 1
+Hyperedge dimensions = 1
+Hypergraph Information**
+#Vertices = 6869
+#Hyperedges = 10739
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 6869, 10739, 10747 , 10739 
+[COARSEN] Level 1 :: 4579, 5873, 10747 , 7810 
+[COARSEN] Level 2 :: 3052, 4434, 10747 , 6126 
+[COARSEN] Level 3 :: 2034, 3377, 10747 , 5033 
+[COARSEN] Level 4 :: 1355, 2595, 10747 , 4388 
+[COARSEN] Level 5 :: 903, 2006, 10747 , 3932 
+[COARSEN] Level 6 :: 601, 1566, 10747 , 3518 
+[COARSEN] Level 7 :: 400, 1164, 10747 , 3158 
+[COARSEN] Level 8 :: 266, 914, 10747 , 3052 
+[COARSEN] Level 9 :: 177, 666, 10747 , 2918 
+=============================
+[STATUS] Initial Partitioning 
+=============================
+[ilp refinement failed]
+[INIT-PART] 0 :: Random part cutcost 828.0
+[INIT-PART] 1 :: Random part cutcost 1464.0
+[INIT-PART] 2 :: Random part cutcost 1882.0
+[INIT-PART] 3 :: Random part cutcost 1971.0
+[ilp refinement failed]
+[INIT-PART] 4 :: Random part cutcost 1032.0
+[ilp refinement failed]
+[INIT-PART] 5 :: Random part cutcost 1597.0
+[INIT-PART] 6 :: Random part cutcost 1950.0
+[INIT-PART] 7 :: Random part cutcost 1471.0
+[INIT-PART] 8 :: Random part cutcost 1412.0
+[INIT-PART] 9 :: Random part cutcost 1417.0
+[INIT-PART] 10 :: Random part cutcost 1451.0
+[INIT-PART] 11 :: Random part cutcost 1478.0
+[INIT-PART] 12 :: Random part cutcost 1541.0
+[INIT-PART] 13 :: Random part cutcost 1460.0
+[INIT-PART] 14 :: Random part cutcost 1405.0
+[ilp refinement failed]
+[INIT-PART] 15 :: Random part cutcost 956.0
+[INIT-PART] 16 :: Random part cutcost 1459.0
+[ilp refinement failed]
+[INIT-PART] 17 :: Random part cutcost 2019.0
+[INIT-PART] 18 :: Random part cutcost 1743.0
+[INIT-PART] 19 :: Random part cutcost 1497.0
+[INIT-PART] 20 :: Random part cutcost 1491.0
+[INIT-PART] 21 :: Random part cutcost 1906.0
+[INIT-PART] 22 :: Random part cutcost 1615.0
+[INIT-PART] 23 :: Random part cutcost 1527.0
+[ilp refinement failed]
+[INIT-PART] 24 :: Random part cutcost 1071.0
+[ilp refinement failed]
+[INIT-PART] 25 :: Random part cutcost 1399.0
+[INIT-PART] 26 :: Random part cutcost 1386.0
+[INIT-PART] 27 :: Random part cutcost 1864.0
+[INIT-PART] 28 :: Random part cutcost 1518.0
+[ilp refinement failed]
+[INIT-PART] 29 :: Random part cutcost 1152.0
+[ilp refinement failed]
+[INIT-PART] 30 :: Random part cutcost 830.0
+[INIT-PART] 31 :: Random part cutcost 1680.0
+[ilp refinement failed]
+[INIT-PART] 32 :: Random part cutcost 906.0
+[ilp refinement failed]
+[INIT-PART] 33 :: Random part cutcost 1434.0
+[INIT-PART] 34 :: Random part cutcost 1465.0
+[ilp refinement failed]
+[INIT-PART] 35 :: Random part cutcost 1707.0
+[INIT-PART] 36 :: Random part cutcost 1450.0
+[INIT-PART] 37 :: Random part cutcost 1651.0
+[INIT-PART] 38 :: Random part cutcost 1499.0
+[INIT-PART] 39 :: Random part cutcost 1462.0
+[INIT-PART] 40 :: Random part cutcost 1469.0
+[INIT-PART] 41 :: Random part cutcost 1742.0
+[ilp refinement failed]
+[INIT-PART] 42 :: Random part cutcost 1626.0
+[ilp refinement failed]
+[INIT-PART] 43 :: Random part cutcost 803.0
+[ilp refinement failed]
+[INIT-PART] 44 :: Random part cutcost 1989.0
+[INIT-PART] 45 :: Random part cutcost 1669.0
+[INIT-PART] 46 :: Random part cutcost 1988.0
+[INIT-PART] 47 :: Random part cutcost 1449.0
+[INIT-PART] 48 :: Random part cutcost 1719.0
+[INIT-PART] 49 :: Random part cutcost 1959.0
+[INIT-PART] 50 :: Vile part cutcost 1188.0
+[INIT-PART] 51 :: Ilp part cutcost 803.0
+====================================================
+[STATUS] Running V-cycle refinement on 10 partitions
+====================================================
+[ilp refinement failed]
+[ilp refinement failed]
+[INFO] 51 cutcost 759.0 
+[INFO] 43 cutcost 759.0 
+[INFO] 0 cutcost 799.0 
+[INFO] 30 cutcost 839.0 
+[INFO] 32 cutcost 881.0 
+[INFO] 15 cutcost 1214.0 
+[INFO] 4 cutcost 880.0 
+[INFO] 24 cutcost 899.0 
+[INFO] 29 cutcost 1196.0 
+[INFO] 50 cutcost 795.0 
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 6869, 10739, 10747 , 10739 
+[COARSEN] Level 1 :: 4579, 5872, 10747 , 7814 
+[COARSEN] Level 2 :: 3052, 4411, 10747 , 6112 
+[COARSEN] Level 3 :: 2034, 3351, 10747 , 4846 
+[COARSEN] Level 4 :: 1355, 2550, 10747 , 4099 
+[COARSEN] Level 5 :: 903, 1952, 10747 , 3658 
+[COARSEN] Level 6 :: 601, 1515, 10747 , 3386 
+[COARSEN] Level 7 :: 400, 1167, 10747 , 3062 
+[COARSEN] Level 8 :: 266, 942, 10747 , 2942 
+[COARSEN] Level 9 :: 177, 623, 10747 , 2792 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 177, 623, 713.0
+[V-Refine] Level 2 :: 266, 942, 699.0
+[V-Refine] Level 3 :: 400, 1167, 680.0
+[V-Refine] Level 4 :: 601, 1515, 676.0
+[V-Refine] Level 5 :: 903, 1952, 668.0
+[V-Refine] Level 6 :: 1355, 2550, 668.0
+[V-Refine] Level 7 :: 2034, 3351, 661.0
+[V-Refine] Level 8 :: 3052, 4411, 652.0
+[V-Refine] Level 9 :: 4579, 5872, 647.0
+[V-Refine] Level 10 :: 6869, 10739, 643.0
+[INFO] V-cycle refinement 1 delta cost 116.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 6869, 10739, 10747 , 10739 
+[COARSEN] Level 1 :: 4579, 5868, 10747 , 7810 
+[COARSEN] Level 2 :: 3052, 4402, 10747 , 6239 
+[COARSEN] Level 3 :: 2034, 3351, 10747 , 5177 
+[COARSEN] Level 4 :: 1355, 2558, 10747 , 4228 
+[COARSEN] Level 5 :: 903, 1948, 10747 , 3651 
+[COARSEN] Level 6 :: 601, 1520, 10747 , 3372 
+[COARSEN] Level 7 :: 400, 1168, 10747 , 3193 
+[COARSEN] Level 8 :: 266, 912, 10747 , 3063 
+[COARSEN] Level 9 :: 177, 629, 10747 , 2738 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 177, 629, 641.0
+[V-Refine] Level 2 :: 266, 912, 640.0
+[V-Refine] Level 3 :: 400, 1168, 640.0
+[V-Refine] Level 4 :: 601, 1520, 640.0
+[V-Refine] Level 5 :: 903, 1948, 640.0
+[V-Refine] Level 6 :: 1355, 2558, 640.0
+[V-Refine] Level 7 :: 2034, 3351, 636.0
+[V-Refine] Level 8 :: 3052, 4402, 636.0
+[V-Refine] Level 9 :: 4579, 5868, 636.0
+[V-Refine] Level 10 :: 6869, 10739, 636.0
+[INFO] V-cycle refinement 2 delta cost 7.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 6869, 10739, 10747 , 10739 
+[COARSEN] Level 1 :: 4579, 5868, 10747 , 7810 
+[COARSEN] Level 2 :: 3052, 4412, 10747 , 6245 
+[COARSEN] Level 3 :: 2034, 3362, 10747 , 4863 
+[COARSEN] Level 4 :: 1355, 2578, 10747 , 4223 
+[COARSEN] Level 5 :: 903, 1964, 10747 , 3780 
+[COARSEN] Level 6 :: 601, 1521, 10747 , 3459 
+[COARSEN] Level 7 :: 400, 1186, 10747 , 3281 
+[COARSEN] Level 8 :: 266, 884, 10747 , 3005 
+[COARSEN] Level 9 :: 177, 691, 10747 , 2917 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 177, 691, 635.0
+[V-Refine] Level 2 :: 266, 884, 635.0
+[V-Refine] Level 3 :: 400, 1186, 635.0
+[V-Refine] Level 4 :: 601, 1521, 634.0
+[V-Refine] Level 5 :: 903, 1964, 634.0
+[V-Refine] Level 6 :: 1355, 2578, 634.0
+[V-Refine] Level 7 :: 2034, 3362, 634.0
+[V-Refine] Level 8 :: 3052, 4412, 634.0
+[V-Refine] Level 9 :: 4579, 5868, 634.0
+[V-Refine] Level 10 :: 6869, 10739, 633.0
+[INFO] V-cycle refinement 3 delta cost 3.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 6869, 10739, 10747 , 10739 
+[COARSEN] Level 1 :: 4579, 5871, 10747 , 7811 
+[COARSEN] Level 2 :: 3052, 4410, 10747 , 6078 
+[COARSEN] Level 3 :: 2034, 3350, 10747 , 5017 
+[COARSEN] Level 4 :: 1355, 2549, 10747 , 4209 
+[COARSEN] Level 5 :: 903, 1949, 10747 , 3614 
+[COARSEN] Level 6 :: 601, 1489, 10747 , 3177 
+[COARSEN] Level 7 :: 400, 1112, 10747 , 2991 
+[COARSEN] Level 8 :: 266, 874, 10747 , 2868 
+[COARSEN] Level 9 :: 177, 659, 10747 , 2784 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 177, 659, 627.0
+[V-Refine] Level 2 :: 266, 874, 627.0
+[V-Refine] Level 3 :: 400, 1112, 627.0
+[V-Refine] Level 4 :: 601, 1489, 626.0
+[V-Refine] Level 5 :: 903, 1949, 623.0
+[V-Refine] Level 6 :: 1355, 2549, 623.0
+[V-Refine] Level 7 :: 2034, 3350, 623.0
+[V-Refine] Level 8 :: 3052, 4410, 623.0
+[V-Refine] Level 9 :: 4579, 5871, 622.0
+[V-Refine] Level 10 :: 6869, 10739, 622.0
+[INFO] V-cycle refinement 4 delta cost 11.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 6869, 10739, 10747 , 10739 
+[COARSEN] Level 1 :: 4579, 5870, 10747 , 7810 
+[COARSEN] Level 2 :: 3052, 4410, 10747 , 6078 
+[COARSEN] Level 3 :: 2034, 3354, 10747 , 4892 
+[COARSEN] Level 4 :: 1355, 2556, 10747 , 4257 
+[COARSEN] Level 5 :: 903, 1994, 10747 , 3804 
+[COARSEN] Level 6 :: 601, 1547, 10747 , 3527 
+[COARSEN] Level 7 :: 400, 1172, 10747 , 3032 
+[COARSEN] Level 8 :: 266, 879, 10747 , 2888 
+[COARSEN] Level 9 :: 177, 658, 10747 , 2806 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 177, 658, 622.0
+[V-Refine] Level 2 :: 266, 879, 622.0
+[V-Refine] Level 3 :: 400, 1172, 621.0
+[V-Refine] Level 4 :: 601, 1547, 621.0
+[V-Refine] Level 5 :: 903, 1994, 621.0
+[V-Refine] Level 6 :: 1355, 2556, 621.0
+[V-Refine] Level 7 :: 2034, 3354, 621.0
+[V-Refine] Level 8 :: 3052, 4410, 619.0
+[V-Refine] Level 9 :: 4579, 5870, 619.0
+[V-Refine] Level 10 :: 6869, 10739, 618.0
+[INFO] V-cycle refinement 5 delta cost 4.0
+Starting TritonPart Partitioner
+Partition Parameters**
+Number of partitions = 2
+UBfactor = 5.0
+Vertex dimensions = 1
+Hyperedge dimensions = 1
+Hypergraph Information**
+#Vertices = 5883
+#Hyperedges = 10407
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 5883, 10407, 26840 , 10407 
+[COARSEN] Level 1 :: 3921, 4273, 26839 , 7640 
+[COARSEN] Level 2 :: 2613, 3172, 26839 , 5893 
+[COARSEN] Level 3 :: 1741, 2415, 26839 , 4666 
+[COARSEN] Level 4 :: 1160, 1906, 26839 , 3796 
+[COARSEN] Level 5 :: 773, 1497, 26839 , 3443 
+[COARSEN] Level 6 :: 515, 1127, 26839 , 2526 
+[COARSEN] Level 7 :: 343, 776, 26839 , 2132 
+[COARSEN] Level 8 :: 228, 446, 26839 , 1886 
+[COARSEN] Level 9 :: 156, 179, 26839 , 1480 
+=============================
+[STATUS] Initial Partitioning 
+=============================
+[ilp refinement failed]
+[INIT-PART] 0 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 1 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 2 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 3 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 4 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 5 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 6 :: Random part cutcost 65.0
+[ilp refinement failed]
+[INIT-PART] 7 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 8 :: Random part cutcost 105.0
+[ilp refinement failed]
+[INIT-PART] 9 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 10 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 11 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 12 :: Random part cutcost 95.0
+[ilp refinement failed]
+[INIT-PART] 13 :: Random part cutcost 110.0
+[ilp refinement failed]
+[INIT-PART] 14 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 15 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 16 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 17 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 18 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 19 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 20 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 21 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 22 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 23 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 24 :: Random part cutcost 125.0
+[ilp refinement failed]
+[INIT-PART] 25 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 26 :: Random part cutcost 100.0
+[ilp refinement failed]
+[INIT-PART] 27 :: Random part cutcost 116.0
+[ilp refinement failed]
+[INIT-PART] 28 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 29 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 30 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 31 :: Random part cutcost 95.0
+[ilp refinement failed]
+[INIT-PART] 32 :: Random part cutcost 97.0
+[ilp refinement failed]
+[INIT-PART] 33 :: Random part cutcost 95.0
+[ilp refinement failed]
+[INIT-PART] 34 :: Random part cutcost 131.0
+[ilp refinement failed]
+[INIT-PART] 35 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 36 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 37 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 38 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 39 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 40 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 41 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 42 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 43 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 44 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 45 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 46 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 47 :: Random part cutcost 125.0
+[ilp refinement failed]
+[INIT-PART] 48 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 49 :: Random part cutcost 139.0
+[ilp refinement failed]
+[INIT-PART] 50 :: Vile part cutcost 139.0
+[INIT-PART] 51 :: Ilp part cutcost 65.0
+====================================================
+[STATUS] Running V-cycle refinement on 10 partitions
+====================================================
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[ilp refinement failed]
+[INFO] 51 cutcost 33.0 
+[INFO] 6 cutcost 33.0 
+[INFO] 33 cutcost 63.0 
+[INFO] 31 cutcost 63.0 
+[INFO] 12 cutcost 63.0 
+[INFO] 32 cutcost 60.0 
+[INFO] 26 cutcost 68.0 
+[INFO] 8 cutcost 68.0 
+[INFO] 13 cutcost 78.0 
+[INFO] 27 cutcost 79.0 
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 5883, 10407, 26840 , 10407 
+[COARSEN] Level 1 :: 3921, 4273, 26839 , 7640 
+[COARSEN] Level 2 :: 2613, 3171, 26839 , 5893 
+[COARSEN] Level 3 :: 1741, 2417, 26839 , 4823 
+[COARSEN] Level 4 :: 1160, 1908, 26839 , 4104 
+[COARSEN] Level 5 :: 773, 1469, 26839 , 2787 
+[COARSEN] Level 6 :: 515, 1118, 26839 , 2368 
+[COARSEN] Level 7 :: 343, 738, 26839 , 1986 
+[COARSEN] Level 8 :: 228, 408, 26839 , 1727 
+[COARSEN] Level 9 :: 151, 106, 26839 , 1448 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[ilp refinement failed]
+[V-Refine] Level 1 :: 151, 106, 33.0
+[ilp refinement failed]
+[V-Refine] Level 2 :: 228, 408, 33.0
+[ilp refinement failed]
+[V-Refine] Level 3 :: 343, 738, 33.0
+[ilp refinement failed]
+[V-Refine] Level 4 :: 515, 1118, 33.0
+[ilp refinement failed]
+[V-Refine] Level 5 :: 773, 1469, 33.0
+[V-Refine] Level 6 :: 1160, 1908, 33.0
+[V-Refine] Level 7 :: 1741, 2417, 33.0
+[V-Refine] Level 8 :: 2613, 3171, 33.0
+[V-Refine] Level 9 :: 3921, 4273, 33.0
+[V-Refine] Level 10 :: 5883, 10407, 33.0
+[INFO] V-cycle refinement 1 delta cost 0.0
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 5883, 10407, 26840 , 10407 
+[COARSEN] Level 1 :: 3921, 4273, 26839 , 7640 
+[COARSEN] Level 2 :: 2613, 3171, 26839 , 5893 
+[COARSEN] Level 3 :: 1741, 2417, 26839 , 4823 
+[COARSEN] Level 4 :: 1160, 1908, 26839 , 4104 
+[COARSEN] Level 5 :: 773, 1469, 26839 , 2787 
+[COARSEN] Level 6 :: 515, 1118, 26839 , 2368 
+[COARSEN] Level 7 :: 343, 738, 26839 , 1986 
+[COARSEN] Level 8 :: 228, 408, 26839 , 1727 
+[COARSEN] Level 9 :: 151, 106, 26839 , 1448 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[ilp refinement failed]
+[V-Refine] Level 1 :: 151, 106, 33.0
+[ilp refinement failed]
+[V-Refine] Level 2 :: 228, 408, 33.0
+[ilp refinement failed]
+[V-Refine] Level 3 :: 343, 738, 33.0
+[ilp refinement failed]
+[V-Refine] Level 4 :: 515, 1118, 33.0
+[ilp refinement failed]
+[V-Refine] Level 5 :: 773, 1469, 33.0
+[V-Refine] Level 6 :: 1160, 1908, 33.0
+[V-Refine] Level 7 :: 1741, 2417, 33.0
+[V-Refine] Level 8 :: 2613, 3171, 33.0
+[V-Refine] Level 9 :: 3921, 4273, 33.0
+[V-Refine] Level 10 :: 5883, 10407, 33.0
+[INFO] V-cycle refinement 2 delta cost 0.0
+
+Break mixed clusters into std cell and macro clusters.
+
+Print Physical Hierachy Tree after splitting std cell and macros in leaf clusters
+
+root  (0)  num_macro :  11   num_std_cell :  29855  macro_area :  162922.875  std_cell_area : 48869.88
+
++---L0  (1)  num_macro :  0   num_std_cell :  0  macro_area :  0.0  std_cell_area : 0.0
+
++---L1  (2)  num_macro :  0   num_std_cell :  0  macro_area :  0.0  std_cell_area : 0.0
+
++---L2  (3)  num_macro :  0   num_std_cell :  0  macro_area :  0.0  std_cell_area : 0.0
+
++---T0  (4)  num_macro :  0   num_std_cell :  0  macro_area :  0.0  std_cell_area : 0.0
+
++---T1  (5)  num_macro :  0   num_std_cell :  0  macro_area :  0.0  std_cell_area : 0.0
+
++---T2  (6)  num_macro :  0   num_std_cell :  0  macro_area :  0.0  std_cell_area : 0.0
+
++---R0  (7)  num_macro :  0   num_std_cell :  0  macro_area :  0.0  std_cell_area : 0.0
+
++---R1  (8)  num_macro :  0   num_std_cell :  0  macro_area :  0.0  std_cell_area : 0.0
+
++---R2  (9)  num_macro :  0   num_std_cell :  0  macro_area :  0.0  std_cell_area : 0.0
+
++---B0  (10)  num_macro :  0   num_std_cell :  0  macro_area :  0.0  std_cell_area : 0.0
+
++---B1  (11)  num_macro :  0   num_std_cell :  0  macro_area :  0.0  std_cell_area : 0.0
+
++---B2  (12)  num_macro :  0   num_std_cell :  0  macro_area :  0.0  std_cell_area : 0.0
+
++---icache_1_0_0_0  (13)  num_macro :  0   num_std_cell :  807  macro_area :  0.0  std_cell_area : 889.76624
+
++---(root)_glue_logic_0  (14)  num_macro :  1   num_std_cell :  3226  macro_area :  17301.4375  std_cell_area : 5205.6196
+
++---+---bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem  (33)  num_macro :  1   num_std_cell :  0  macro_area :  17301.4375  std_cell_area : 0.0
+
++---+---(root)_glue_logic_0  (34)  num_macro :  0   num_std_cell :  3226  macro_area :  0.0  std_cell_area : 5205.6196
+
++---icache_1_1  (15)  num_macro :  0   num_std_cell :  1635  macro_area :  0.0  std_cell_area : 1598.6438
+
++---icache_1_0_1  (16)  num_macro :  0   num_std_cell :  1166  macro_area :  0.0  std_cell_area : 1309.5177
+
++---icache_1_0_0_1_0_0  (17)  num_macro :  0   num_std_cell :  4843  macro_area :  0.0  std_cell_area : 8792.383
+
++---icache_1_0_0_1_1_0  (18)  num_macro :  0   num_std_cell :  4856  macro_area :  0.0  std_cell_area : 8794.502
+
++---icache_1_0_0_1_0_1  (19)  num_macro :  0   num_std_cell :  3840  macro_area :  0.0  std_cell_area : 7199.2793
+
++---icache_1_0_0_1_1_1_0  (20)  num_macro :  0   num_std_cell :  3001  macro_area :  0.0  std_cell_area : 4838.2686
+
++---icache_1_0_0_1_1_1_1  (21)  num_macro :  0   num_std_cell :  3847  macro_area :  0.0  std_cell_area : 5909.235
+
++---(root)_glue_logic_1  (22)  num_macro :  0   num_std_cell :  2634  macro_area :  0.0  std_cell_area : 4332.5845
+
++---icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem  (23)  num_macro :  2   num_std_cell :  0  macro_area :  34602.875  std_cell_area : 0.0
+
++---icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem  (25)  num_macro :  1   num_std_cell :  0  macro_area :  17301.4375  std_cell_area : 0.0
+
++---icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem  (26)  num_macro :  1   num_std_cell :  0  macro_area :  17301.4375  std_cell_area : 0.0
+
++---icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem  (27)  num_macro :  1   num_std_cell :  0  macro_area :  17301.4375  std_cell_area : 0.0
+
++---icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem  (28)  num_macro :  3   num_std_cell :  0  macro_area :  51904.3125  std_cell_area : 0.0
+
++---icache_1/metadata_mem.macro_mem.mem  (31)  num_macro :  1   num_std_cell :  0  macro_area :  3011.12  std_cell_area : 0.0
+
++---icache_1/tag_mem.macro_mem.mem  (32)  num_macro :  1   num_std_cell :  0  macro_area :  4198.81  std_cell_area : 0.0
+
+Determine shaping function for clusters -- Macro Tilings.
+
+Creating the pin blockage for root cluster
+Perform Multilevel macro placement...
+[MultiLevelMacroPlacement] working on children of cluster root
+[MultiLevelMacroPlacement] lx = 10.07, ly = 9.8, ux = 879.7, uy = 679.0
+[MultiLevelMacroPlacement] Finish calculating connection
+[MultiLevelMacroPlacement] Finish updating dataflow
+Finish creating bundled connections
+[MultiLevelMacroPlacement] Start Simulated Annealing Core
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster root
+sa_id = 1, target_util = 0.25, target_dead_space = 0.05
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster root
+sa_id = 2, target_util = 0.25, target_dead_space = 0.1
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster root
+sa_id = 3, target_util = 0.25, target_dead_space = 0.15
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster root
+sa_id = 4, target_util = 0.25, target_dead_space = 0.2
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster root
+sa_id = 5, target_util = 0.25, target_dead_space = 0.25
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster root
+sa_id = 6, target_util = 0.25, target_dead_space = 0.3
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster root
+sa_id = 7, target_util = 0.25, target_dead_space = 0.35000002
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster root
+sa_id = 8, target_util = 0.25, target_dead_space = 0.4
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster root
+sa_id = 9, target_util = 0.25, target_dead_space = 0.45000002
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster root
+sa_id = 10, target_util = 0.25, target_dead_space = 0.5
+[MultiLevelMacroPlacement] Finish Simulated Annealing Core
+[MultiLevelMacroPlacement] Finish Simulated Annealing for cluster root
+[MultiLevelMacroPlacement] working on children of cluster (root)_glue_logic_0
+[MultiLevelMacroPlacement] lx = 494.42746, ly = 9.8, ux = 340.8126, uy = 114.00187
+fixed cluster : L0, lx = -10.07, ly = -9.8, width = 0.0, height = 233.133
+fixed cluster : L1, lx = -10.07, ly = 223.333, width = 0.0, height = 233.133
+fixed cluster : L2, lx = -10.07, ly = 456.466, width = 0.0, height = 233.133
+fixed cluster : T0, lx = -10.07, ly = 689.60004, width = 299.99, height = 0.0
+fixed cluster : T1, lx = 289.91998, ly = 689.60004, width = 299.99, height = 0.0
+fixed cluster : T2, lx = 589.91, ly = 689.60004, width = 299.99, height = 0.0
+fixed cluster : R0, lx = 889.89996, ly = 456.467, width = 0.0, height = 233.133
+fixed cluster : R1, lx = 889.89996, ly = 223.334, width = 0.0, height = 233.133
+fixed cluster : R2, lx = 889.89996, ly = -9.799, width = 0.0, height = 233.133
+fixed cluster : B0, lx = 589.91, ly = -9.8, width = 299.99, height = 0.0
+fixed cluster : B1, lx = 289.91998, ly = -9.8, width = 299.99, height = 0.0
+fixed cluster : B2, lx = -10.07, ly = -9.8, width = 299.99, height = 0.0
+fixed cluster : icache_1_0_0_0, lx = 450.7331, ly = 123.80187, width = 384.50696, height = 154.14731
+fixed cluster : icache_1_1, lx = 315.21002, ly = 9.8, width = 179.21744, height = 113.4
+fixed cluster : icache_1_0_1, lx = 10.07, ly = 377.79187, width = 152.57, height = 66.83258
+fixed cluster : icache_1_0_0_1_0_0, lx = 197.5553, ly = 277.94916, width = 420.29834, height = 138.69849
+fixed cluster : icache_1_0_0_1_1_0, lx = 467.78003, ly = 416.64764, width = 269.41998, height = 272.15234
+fixed cluster : icache_1_0_0_1_0_1, lx = 10.07, ly = 123.200005, width = 187.48529, height = 254.59189
+fixed cluster : icache_1_0_0_1_1_1_0, lx = 617.85364, ly = 277.94916, width = 271.91644, height = 138.69849
+fixed cluster : icache_1_0_0_1_1_1_1, lx = 197.5553, ly = 123.200005, width = 253.1778, height = 154.74918
+fixed cluster : (root)_glue_logic_1, lx = 162.64001, ly = 416.64764, width = 305.14, height = 141.37683
+fixed cluster : icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem, lx = 737.2, ly = 416.64764, width = 152.57, height = 226.8
+fixed cluster : icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem, lx = 10.07, ly = 9.8, width = 152.57, height = 113.4
+fixed cluster : icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem, lx = 162.64001, ly = 9.8, width = 152.57, height = 113.4
+fixed cluster : icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem, lx = 10.07, ly = 444.62445, width = 152.57, height = 113.4
+fixed cluster : icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem, lx = 10.07, ly = 558.0245, width = 457.71002, height = 113.4
+fixed cluster : icache_1/metadata_mem.macro_mem.mem, lx = 836.0, ly = 9.8, width = 53.77, height = 56.0
+fixed cluster : icache_1/tag_mem.macro_mem.mem, lx = 835.24005, ly = 65.8, width = 54.53, height = 77.0
+[MultiLevelMacroPlacement] Finish calculating connection
+[MultiLevelMacroPlacement] Finish updating dataflow
+Finish creating bundled connections
+[MultiLevelMacroPlacement] Start Simulated Annealing Core
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster (root)_glue_logic_0
+sa_id = 1, target_util = 0.25, target_dead_space = 0.05
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster (root)_glue_logic_0
+sa_id = 2, target_util = 0.25, target_dead_space = 0.1
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster (root)_glue_logic_0
+sa_id = 3, target_util = 0.25, target_dead_space = 0.15
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster (root)_glue_logic_0
+sa_id = 4, target_util = 0.25, target_dead_space = 0.2
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster (root)_glue_logic_0
+sa_id = 5, target_util = 0.25, target_dead_space = 0.25
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster (root)_glue_logic_0
+sa_id = 6, target_util = 0.25, target_dead_space = 0.3
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster (root)_glue_logic_0
+sa_id = 7, target_util = 0.25, target_dead_space = 0.35000002
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster (root)_glue_logic_0
+sa_id = 8, target_util = 0.25, target_dead_space = 0.4
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster (root)_glue_logic_0
+sa_id = 9, target_util = 0.25, target_dead_space = 0.45000002
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster (root)_glue_logic_0
+sa_id = 10, target_util = 0.25, target_dead_space = 0.5
+[MultiLevelMacroPlacement] Finish Simulated Annealing Core
+[MultiLevelMacroPlacement] Finish Simulated Annealing for cluster (root)_glue_logic_0
+
+[Hier-RTLMP::HardMacroClusterMacroPlacement] Place macros in cluster: bp_fe_pc_gen_1.genblk1_branch_prediction_1.btb_1.btb_mem.macro_mem.mem
+Align macros within the cluster (root)_glue_logic_0
+boundary_h_th : 152.57, boundary_v_th : 113.4
+notch_h_th : 190.7125, notch_v_th : 141.75
+
+[Hier-RTLMP::HardMacroClusterMacroPlacement] Place macros in cluster: icache_1/data_mem_banks_0__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_1__data_mem_bank.macro_mem.mem
+
+[Hier-RTLMP::HardMacroClusterMacroPlacement] Place macros in cluster: icache_1/data_mem_banks_2__data_mem_bank.macro_mem.mem
+
+[Hier-RTLMP::HardMacroClusterMacroPlacement] Place macros in cluster: icache_1/data_mem_banks_3__data_mem_bank.macro_mem.mem
+
+[Hier-RTLMP::HardMacroClusterMacroPlacement] Place macros in cluster: icache_1/data_mem_banks_4__data_mem_bank.macro_mem.mem
+
+[Hier-RTLMP::HardMacroClusterMacroPlacement] Place macros in cluster: icache_1/data_mem_banks_5__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_6__data_mem_bank.macro_mem.mem||icache_1/data_mem_banks_7__data_mem_bank.macro_mem.mem
+
+[Hier-RTLMP::HardMacroClusterMacroPlacement] Place macros in cluster: icache_1/metadata_mem.macro_mem.mem
+
+[Hier-RTLMP::HardMacroClusterMacroPlacement] Place macros in cluster: icache_1/tag_mem.macro_mem.mem
+Align macros within the cluster root
+boundary_h_th : 53.77, boundary_v_th : 56.0
+notch_h_th : 67.2125, notch_v_th : 70.0
+number of updated macros : 11
+number of macros in HardMacroCluster : 11

@@ -34,34 +34,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include "network.h"
 
-#include "architecture.h"
-#include "orientation.h"
-
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-Node::Node()
-    : id_(0),
-      left_(0),
-      bottom_(0),
-      origLeft_(0.0),
-      origBottom_(0.0),
-      w_(0.0),
-      h_(0.0),
-      type_(UNKNOWN),
-      fixed_(Node::NOT_FIXED),
-      etl_(EDGETYPE_DEFAULT),
-      etr_(EDGETYPE_DEFAULT),
-      powerTop_(Architecture::Row::Power_UNK),
-      powerBot_(Architecture::Row::Power_UNK),
-      regionId_(0),
-      currentOrient_(Orientation_N),
-      availOrient_(Orientation_N),
-      isDefinedByShapes_(false)
-{
-}
-
+Node::Node() = default;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 bool Node::adjustCurrOrient(unsigned newOri)
@@ -79,8 +56,7 @@ bool Node::adjustCurrOrient(unsigned newOri)
     if (newOri == Orientation_N || curOri == Orientation_FN
         || curOri == Orientation_FS || curOri == Orientation_S) {
       // Rotate the cell counter-clockwise by 90 degrees.
-      for (int pi = 0; pi < pins_.size(); pi++) {
-        Pin* pin = pins_[pi];
+      for (Pin* pin : pins_) {
         double dx = pin->getOffsetX();
         double dy = pin->getOffsetY();
         pin->setOffsetX(-dy);
@@ -101,8 +77,7 @@ bool Node::adjustCurrOrient(unsigned newOri)
     if (newOri == Orientation_E || curOri == Orientation_FE
         || curOri == Orientation_FW || curOri == Orientation_W) {
       // Rotate the cell clockwise by 90 degrees.
-      for (int pi = 0; pi < pins_.size(); pi++) {
-        Pin* pin = pins_[pi];
+      for (Pin* pin : pins_) {
         double dx = pin->getOffsetX();
         double dy = pin->getOffsetY();
         pin->setOffsetX(dy);
@@ -152,8 +127,7 @@ bool Node::adjustCurrOrient(unsigned newOri)
     }
   }
 
-  for (int pi = 0; pi < pins_.size(); pi++) {
-    Pin* pin = pins_[pi];
+  for (Pin* pin : pins_) {
     pin->setOffsetX(pin->getOffsetX() * mX);
     pin->setOffsetY(pin->getOffsetY() * mY);
   }
@@ -166,39 +140,29 @@ bool Node::adjustCurrOrient(unsigned newOri)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-Pin::Pin()
-    : pinWidth_(0),
-      pinHeight_(0),
-      dir_(Pin::Dir_INOUT),
-      pinLayer_(0),
-      node_(nullptr),
-      edge_(nullptr),
-      offsetX_(0.0),
-      offsetY_(0.0)
-{
-}
+Pin::Pin() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 Network::~Network()
 {
   // Delete edges.
-  for (int i = 0; i < edges_.size(); i++) {
-    delete edges_[i];
+  for (auto edge : edges_) {
+    delete edge;
   }
   edges_.clear();
   edgeNames_.clear();
 
   // Delete cells.
-  for (int i = 0; i < nodes_.size(); i++) {
-    delete nodes_[i];
+  for (auto node : nodes_) {
+    delete node;
   }
   nodes_.clear();
   nodeNames_.clear();
 
   // Delete pins.
-  for (int i = 0; i < pins_.size(); i++) {
-    delete pins_[i];
+  for (auto pin : pins_) {
+    delete pin;
   }
   pins_.clear();
 }
@@ -237,27 +201,6 @@ Node* Network::createAndAddFillerNode(int left,
   const int id = (int) nodes_.size();
   ndi->setFixed(Node::FIXED_XY);
   ndi->setType(Node::FILLER);
-  ndi->setId(id);
-  ndi->setHeight(height);
-  ndi->setWidth(width);
-  ndi->setBottom(bottom);
-  ndi->setLeft(left);
-  nodes_.push_back(ndi);
-  return getNode(id);
-}
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-Node* Network::createAndAddShapeNode(int left,
-                                     int bottom,
-                                     int width,
-                                     int height)
-{
-  // Add shape cells to list of network cells.  We have
-  // the parent node from which we can derive a name.
-  Node* ndi = new Node();
-  const int id = (int) nodes_.size();
-  ndi->setFixed(Node::FIXED_XY);
-  ndi->setType(Node::SHAPE);
   ndi->setId(id);
   ndi->setHeight(height);
   ndi->setWidth(width);

@@ -1,0 +1,27 @@
+{
+  "name": "dbTechLayerWidthTableRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "type": "bool",
+      "name": "wrong_direction_",
+      "bits": 1
+    },
+    {
+      "type": "bool",
+      "name": "orthogonal_",
+      "bits": 1
+    },
+    {
+      "type": "dbVector<int>",
+      "name": "width_tbl_",
+      "flags" : ["private", "no-template"]
+    }
+  ],
+  "cpp_includes": [
+    "dbTechLayer.h"
+  ],
+  "h_includes": [
+    "dbVector.h"
+  ]
+}

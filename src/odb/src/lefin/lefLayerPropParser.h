@@ -176,6 +176,7 @@ class lefTechLayerEolKeepOutRuleParser
                 odb::dbTechLayerEolKeepOutRule* rule,
                 odb::dbTechLayer* layer);
 };
+
 class lefTechLayerAreaRuleParser
 {
  public:
@@ -204,6 +205,37 @@ class lefTechLayerAreaRuleParser
       odb::dbTechLayerAreaRule* rule,
       odb::dbTechLayer* layer,
       std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props);
+};
+
+class lefTechLayerPitchRuleParser
+{
+ public:
+  lefTechLayerPitchRuleParser(lefin*);
+  void parse(std::string, odb::dbTechLayer*);
+
+ private:
+  void setInt(double val,
+              odb::dbTechLayer* layer,
+              void (odb::dbTechLayer::*func)(int));
+  void setPitchXY(boost::fusion::vector<double, double>& params,
+                  odb::dbTechLayer* layer);
+  lefin* lefin_;
+};
+
+class lefTechLayerForbiddenSpacingRuleParser
+{
+ public:
+  lefTechLayerForbiddenSpacingRuleParser(lefin*);
+  void parse(std::string, odb::dbTechLayer*);
+
+ private:
+  lefin* lefin_;
+  bool parseSubRule(std::string, odb::dbTechLayer* layer);
+  void setInt(double val,
+              odb::dbTechLayerForbiddenSpacingRule* rule,
+              void (odb::dbTechLayerForbiddenSpacingRule::*func)(int));
+  void setForbiddenSpacing(const boost::fusion::vector<double, double>& params,
+                           odb::dbTechLayerForbiddenSpacingRule* rule);
 };
 
 class ArraySpacingParser
@@ -297,6 +329,23 @@ class MetalWidthViaMapParser
   bool cut_class_;
   std::vector<std::pair<dbObject*, std::string>>& incomplete_props_;
   dbMetalWidthViaMap* via_map;
+};
+
+class KeepOutZoneParser
+{
+ public:
+  KeepOutZoneParser(dbTechLayer* layer, lefin* lefin)
+      : layer_(layer), lefin_(lefin), rule_(nullptr)
+  {
+  }
+  void parse(const std::string&);
+
+ private:
+  bool parseSubRule(std::string);
+  void setInt(double val, void (odb::dbTechLayerKeepOutZoneRule::*func)(int));
+  dbTechLayer* layer_;
+  lefin* lefin_;
+  dbTechLayerKeepOutZoneRule* rule_;
 };
 
 }  // namespace odb

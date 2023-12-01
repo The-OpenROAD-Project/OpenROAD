@@ -42,6 +42,7 @@
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
+#include "db_sta/dbNetwork.hh"
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -61,8 +62,8 @@ PinSet *
 tclListSetPin(Tcl_Obj *source,
               Tcl_Interp *interp);
 
-typedef NetSeq TmpNetSeq;
-typedef PinSet TmpPinSet;
+using TmpNetSeq = NetSeq ;
+using TmpPinSet = PinSet;
 
 } // namespace
 
@@ -92,6 +93,29 @@ using sta::stringEq;
 using rsz::Resizer;
 using rsz::ParasiticsSrc;
 
+template <class SET_TYPE, class OBJECT_TYPE>
+SET_TYPE *
+tclListNetworkSet(Tcl_Obj *const source,
+                  swig_type_info *swig_type,
+                  Tcl_Interp *interp,
+                  const Network *network)
+{
+  int argc;
+  Tcl_Obj **argv;
+  if (Tcl_ListObjGetElements(interp, source, &argc, &argv) == TCL_OK
+      && argc > 0) {
+    SET_TYPE *set = new SET_TYPE(network);
+    for (int i = 0; i < argc; i++) {
+      void *obj;
+      // Ignore returned TCL_ERROR because can't get swig_type_info.
+      SWIG_ConvertPtr(argv[i], &obj, swig_type, false);
+      set->insert(reinterpret_cast<OBJECT_TYPE*>(obj));
+    }
+    return set;
+  }
+  else
+    return nullptr;
+}
 %}
 
 ////////////////////////////////////////////////////////////////
@@ -122,11 +146,24 @@ using rsz::ParasiticsSrc;
   NetSeq *nets = $1;
   NetSeq::Iterator net_iter(nets);
   while (net_iter.hasNext()) {
-    Net *net = net_iter.next();
-    Tcl_Obj *obj = SWIG_NewInstanceObj(net, SWIGTYPE_p_Net, false);
+    const Net *net = net_iter.next();
+    Tcl_Obj *obj = SWIG_NewInstanceObj(const_cast<Net*>(net), SWIGTYPE_p_Net, false);
     Tcl_ListObjAppendElement(interp, list, obj);
   }
   delete nets;
+  Tcl_SetObjResult(interp, list);
+}
+
+%typemap(out) TmpPinSet* {
+  Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
+  PinSet *pins = $1;
+  PinSet::Iterator pin_iter(pins);
+  while (pin_iter.hasNext()) {
+    const Pin *pin = pin_iter.next();
+    Tcl_Obj *obj = SWIG_NewInstanceObj(const_cast<Pin*>(pin), SWIGTYPE_p_Pin, false);
+    Tcl_ListObjAppendElement(interp, list, obj);
+  }
+  delete pins;
   Tcl_SetObjResult(interp, list);
 }
 
@@ -135,8 +172,8 @@ using rsz::ParasiticsSrc;
   NetSeq *nets = $1;
   NetSeq::Iterator net_iter(nets);
   while (net_iter.hasNext()) {
-    Net *net = net_iter.next();
-    Tcl_Obj *obj = SWIG_NewInstanceObj(net, SWIGTYPE_p_Net, false);
+    const Net *net = net_iter.next();
+    Tcl_Obj *obj = SWIG_NewInstanceObj(const_cast<Net*>(net), SWIGTYPE_p_Net, false);
     Tcl_ListObjAppendElement(interp, list, obj);
   }
   Tcl_SetObjResult(interp, list);
@@ -148,15 +185,17 @@ using rsz::ParasiticsSrc;
 }
 
 %typemap(in) PinSet* {
-  $1 = tclListSetPin($input, interp);
+  Resizer *resizer = getResizer();
+  dbNetwork *network = resizer->getDbNetwork();
+  $1 = tclListNetworkSet<PinSet, Pin>($input, SWIGTYPE_p_Pin, interp, network);
 }
 
 %typemap(out) PinSet {
   Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
   PinSet::Iterator pin_iter($1);
   while (pin_iter.hasNext()) {
-    Pin *pin = pin_iter.next();
-    Tcl_Obj *obj = SWIG_NewInstanceObj(pin, SWIGTYPE_p_Pin, false);
+    const Pin *pin = pin_iter.next();
+    Tcl_Obj *obj = SWIG_NewInstanceObj(const_cast<Pin*>(pin), SWIGTYPE_p_Pin, false);
     Tcl_ListObjAppendElement(interp, list, obj);
   }
   Tcl_SetObjResult(interp, list);
@@ -394,6 +433,14 @@ find_floating_nets()
   return resizer->findFloatingNets();
 }
 
+TmpPinSet *
+find_floating_pins()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->findFloatingPins();
+}
+
 void
 repair_tie_fanout_cmd(LibertyPort *tie_port,
                       double separation, // meters
@@ -407,11 +454,12 @@ repair_tie_fanout_cmd(LibertyPort *tie_port,
 void
 repair_design_cmd(double max_length,
                   double slew_margin,
-                  double cap_margin)
+                  double cap_margin,
+                  bool verbose)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairDesign(max_length, slew_margin, cap_margin);
+  resizer->repairDesign(max_length, slew_margin, cap_margin, verbose);
 }
 
 int
@@ -451,11 +499,15 @@ repair_net_cmd(Net *net,
 void
 repair_setup(double setup_margin,
              double repair_tns_end_percent,
-             int max_passes)
+             int max_passes,
+             bool verbose,
+             bool skip_pin_swap, bool skip_gate_cloning)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairSetup(setup_margin, repair_tns_end_percent, max_passes);
+  resizer->repairSetup(setup_margin, repair_tns_end_percent,
+                       max_passes, verbose,
+                       skip_pin_swap, skip_gate_cloning);
 }
 
 void
@@ -471,13 +523,15 @@ repair_hold(double setup_margin,
             double hold_margin,
             bool allow_setup_violations,
             float max_buffer_percent,
-            int max_passes)
+            int max_passes,
+            bool verbose)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->repairHold(setup_margin, hold_margin,
                       allow_setup_violations,
-                      max_buffer_percent, max_passes);
+                      max_buffer_percent, max_passes,
+                      verbose);
 }
 
 void
@@ -500,6 +554,15 @@ hold_buffer_count()
 {
   Resizer *resizer = getResizer();
   return resizer->holdBufferCount();
+}
+
+////////////////////////////////////////////////////////////////
+void
+recover_power(float recover_power_percent)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->recoverPower(recover_power_percent);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -551,7 +614,7 @@ float
 resize_net_slack(Net *net)
 {
   Resizer *resizer = getResizer();
-  return resizer->resizeNetSlack(net);
+  return resizer->resizeNetSlack(net).value();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -626,10 +689,10 @@ highlight_steiner_tree(const Pin *drvr_pin)
 }
 
 PinSet
-find_fanin_fanouts(PinSet *pins)
+find_fanin_fanouts(PinSet* pins)
 {
   Resizer *resizer = getResizer();
-  return resizer->findFaninFanouts(pins);
+  return resizer->findFaninFanouts(*pins);
 }
 
 void

@@ -29,7 +29,7 @@
 #include "frRTree.h"
 #include "ta/FlexTA.h"
 
-using namespace fr;
+namespace fr {
 
 struct FlexTAWorkerRegionQuery::Impl
 {
@@ -143,3 +143,5 @@ void FlexTAWorkerRegionQuery::queryCost(
 {
   impl_->costs_.at(layerNum).query(bgi::intersects(box), back_inserter(result));
 }
+
+}  // namespace fr

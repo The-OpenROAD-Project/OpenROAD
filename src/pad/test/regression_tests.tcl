@@ -1,19 +1,29 @@
 record_tests {
-  soc_bsg_black_parrot_nangate45
-  soc_bsg_black_parrot_nangate45.flipchip
-  soc_bsg_black_parrot_nangate45-nocells
-  flipchip_test
-  flipchip_test.m9
-  coyote_tc_sky130
-  coyote_tc_sky130.some_pad_locations
-  coyote_tc_sky130.no_pad_locations
-  coyote_tc_sky130.not_enough_space
-  coyote_tc_sky130.max_pad_spacing_constraint
-  coyote_tc_max_spacing_constraint_anchor_cells_far
-  coyote_tc_max_spacing_constraint_no_adjacent_cell
-  caravel_sky130
-  tcl_interface
-  tcl_interface.flipchip
-  tcl_interface.flipchip1
-  tcl_interface.flipchip2
+  bump_array_make
+  bump_array_remove
+  bump_array_remove_single
+
+  make_io_sites
+  place_pad
+  place_pad_outsideofrow
+  place_bondpad
+  place_bondpad_stagger
+  place_pad_no_master
+  place_pad_wrong_master
+  assign_bumps
+
+  connect_by_abutment
+
+  rdl_route
+  rdl_route_failed
+  rdl_route_assignments
+  rdl_route_45
+  rdl_route_45_cost
+  rdl_route_via
+  rdl_route_bump_via
+
+  skywater130_overlapping_filler
+
+  skywater130_caravel
+  skywater130_coyote_tc
 }

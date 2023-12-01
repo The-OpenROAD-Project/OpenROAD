@@ -34,6 +34,7 @@
 
 #include "DataType.h"
 #include "FastRoute.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -141,12 +142,17 @@ void FastRouteCore::setupHeap3D(int netID,
   dest_heap_3D.clear();
 
   if (num_terminals == 2) {  // 2-pin net
-    d1_3D[0][y1][x1] = 0;
-    directions_3D[0][y1][x1] = Direction::Origin;
-    src_heap_3D.push_back(&d1_3D[0][y1][x1]);
-    d2_3D[0][y2][x2] = 0;
-    directions_3D[0][y2][x2] = Direction::Origin;
-    dest_heap_3D.push_back(&d2_3D[0][y2][x2]);
+    const int node1_alias = treenodes[n1].stackAlias;
+    const int node2_alias = treenodes[n2].stackAlias;
+    const int node1_access_layer = nets_[netID]->getPinL()[node1_alias];
+    const int node2_access_layer = nets_[netID]->getPinL()[node2_alias];
+
+    d1_3D[node1_access_layer][y1][x1] = 0;
+    directions_3D[node1_access_layer][y1][x1] = Direction::Origin;
+    src_heap_3D.push_back(&d1_3D[node1_access_layer][y1][x1]);
+    d2_3D[node2_access_layer][y2][x2] = 0;
+    directions_3D[node2_access_layer][y2][x2] = Direction::Origin;
+    dest_heap_3D.push_back(&d2_3D[node2_access_layer][y2][x2]);
   } else {  // net with more than 2 pins
     for (int i = regionY1; i <= regionY2; i++) {
       for (int j = regionX1; j <= regionX2; j++) {
@@ -850,23 +856,22 @@ void FastRouteCore::updateRouteType23D(int netID,
 
 void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                          int ripupTHlb,
-                                         int ripupTHub,
-                                         int layerOrientation)
+                                         int ripupTHub)
 {
-  multi_array<Direction, 3> directions_3D(
+  static multi_array<Direction, 3> directions_3D(
       boost::extents[num_layers_][y_grid_][x_grid_]);
-  multi_array<int, 3> corr_edge_3D(
+  static multi_array<int, 3> corr_edge_3D(
       boost::extents[num_layers_][y_grid_][x_grid_]);
-  multi_array<parent3D, 3> pr_3D_(
+  static multi_array<parent3D, 3> pr_3D_(
       boost::extents[num_layers_][y_grid_][x_grid_]);
 
-  std::vector<bool> pop_heap2_3D(num_layers_ * y_range_ * x_range_, false);
+  int64 total_size = static_cast<int64>(num_layers_) * y_range_ * x_range_;
+  static std::vector<bool> pop_heap2_3D(total_size, false);
 
   // allocate memory for priority queue
-  std::vector<int*> src_heap_3D;
-  std::vector<int*> dest_heap_3D;
-  src_heap_3D.resize(y_grid_ * x_grid_ * num_layers_);
-  dest_heap_3D.resize(y_grid_ * x_grid_ * num_layers_);
+  total_size = static_cast<int64>(y_grid_) * x_grid_ * num_layers_;
+  static std::vector<int*> src_heap_3D(total_size);
+  static std::vector<int*> dest_heap_3D(total_size);
 
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_; j++) {
@@ -876,8 +881,10 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
   const int endIND = tree_order_pv_.size() * 0.9;
 
-  multi_array<int, 3> d1_3D(boost::extents[num_layers_][y_range_][x_range_]);
-  multi_array<int, 3> d2_3D(boost::extents[num_layers_][y_range_][x_range_]);
+  static multi_array<int, 3> d1_3D(
+      boost::extents[num_layers_][y_range_][x_range_]);
+  static multi_array<int, 3> d2_3D(
+      boost::extents[num_layers_][y_range_][x_range_]);
 
   for (int orderIndex = 0; orderIndex < endIND; orderIndex++) {
     const int netID = tree_order_pv_[orderIndex].treeIndex;
@@ -973,7 +980,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         const int curY = remd / x_range_;
         removeMin3D(src_heap_3D);
 
-        const bool Horizontal = (((curL % 2) - layerOrientation) == 0);
+        const bool Horizontal
+            = layer_directions_[curL] == odb::dbTechLayerDir::HORIZONTAL;
 
         if (Horizontal) {
           // left
@@ -1597,12 +1605,14 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           {
             const int min_y = std::min(gridsY[i], gridsY[i + 1]);
             v_edges_[min_y][gridsX[i]].usage += net->getEdgeCost();
+            v_used_ggrid_.insert(std::make_pair(min_y, gridsX[i]));
             v_edges_3D_[gridsL[i]][min_y][gridsX[i]].usage
                 += net->getLayerEdgeCost(gridsL[i]);
           } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
           {
             const int min_x = std::min(gridsX[i], gridsX[i + 1]);
             h_edges_[gridsY[i]][min_x].usage += net->getEdgeCost();
+            h_used_ggrid_.insert(std::make_pair(gridsY[i], min_x));
             h_edges_3D_[gridsL[i]][gridsY[i]][min_x].usage
                 += net->getLayerEdgeCost(gridsL[i]);
           }
@@ -1626,7 +1636,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         treenodes[d].status = 0;
 
         if (d < num_terminals) {
-          treenodes[d].botL = treenodes[d].topL = 0;
+          treenodes[d].botL = nets_[netID]->getPinL()[d];
+          treenodes[d].topL = nets_[netID]->getPinL()[d];
           // treenodes[d].l = 0;
           treenodes[d].assigned = true;
           treenodes[d].status = 1;

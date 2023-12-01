@@ -42,8 +42,6 @@ CmdInputWidget::CmdInputWidget(const QString& interp_name, QWidget* parent)
       line_height_(0),
       document_margins_(0),
       max_height_(QWIDGETSIZE_MAX),
-      history_(),
-      history_buffer_last_(),
       historyPosition_(0)
 {
   setObjectName("interperter_scripting");  // for settings
@@ -55,18 +53,17 @@ CmdInputWidget::CmdInputWidget(const QString& interp_name, QWidget* parent)
   // precompute size for updating text box size
   document_margins_ = 2 * (document()->documentMargin() + 3);
 
-  connect(this, SIGNAL(textChanged()), this, SLOT(updateSize()));
+  connect(
+      this, &CmdInputWidget::textChanged, this, &CmdInputWidget::updateSize);
   updateSize();
 
   connect(this,
-          SIGNAL(commandFinishedExecuting(bool)),
+          &CmdInputWidget::commandFinishedExecuting,
           this,
-          SLOT(commandFinished(bool)));
+          &CmdInputWidget::commandFinished);
 }
 
-CmdInputWidget::~CmdInputWidget()
-{
-}
+CmdInputWidget::~CmdInputWidget() = default;
 
 void CmdInputWidget::setWidgetFont(const QFont& font)
 {

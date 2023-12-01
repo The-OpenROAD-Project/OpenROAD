@@ -52,12 +52,6 @@ class extProcess;
 class extConductor
 {
   extConductor(Logger* logger);
-  void print(FILE* fp,
-             const char* sep,
-             const char* key,
-             int v,
-             bool pos = false);
-  void printConductor(FILE* fp, Ath__parser* parse);
 
   char _name[128];
   double _height;
@@ -97,8 +91,6 @@ class extDielectric
                 const char* key,
                 int v,
                 bool pos = false);
-  void printDielectric(FILE* fp, Ath__parser* parser);
-  void printDielectric(FILE* fp, float planeWidth, float planeThickness);
 
   char _name[128];
   char _non_conformal_metal[128];
@@ -281,7 +273,7 @@ class extProcess
                              int overMet,
                              double X,
                              double width,
-                             double thichness,
+                             double thickness,
                              bool diag = false);
 
   extVariation* getVariation(uint met);

@@ -33,31 +33,31 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerEolExtensionRule.h"
 
+#include <cstdint>
+#include <cstring>
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
-// User Code Begin Includes
-// User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayerEolExtensionRule>;
 
 bool _dbTechLayerEolExtensionRule::operator==(
     const _dbTechLayerEolExtensionRule& rhs) const
 {
-  if (flags_.parallel_only_ != rhs.flags_.parallel_only_)
+  if (flags_.parallel_only_ != rhs.flags_.parallel_only_) {
     return false;
-
-  if (spacing_ != rhs.spacing_)
+  }
+  if (spacing_ != rhs.spacing_) {
     return false;
+  }
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
+
 bool _dbTechLayerEolExtensionRule::operator<(
     const _dbTechLayerEolExtensionRule& rhs) const
 {
@@ -67,19 +67,18 @@ bool _dbTechLayerEolExtensionRule::operator<(
   // User Code End <
   return true;
 }
+
 void _dbTechLayerEolExtensionRule::differences(
     dbDiff& diff,
     const char* field,
     const _dbTechLayerEolExtensionRule& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_.parallel_only_);
   DIFF_FIELD(spacing_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
+
 void _dbTechLayerEolExtensionRule::out(dbDiff& diff,
                                        char side,
                                        const char* field) const
@@ -88,18 +87,15 @@ void _dbTechLayerEolExtensionRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(flags_.parallel_only_);
   DIFF_OUT_FIELD(spacing_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
+
 _dbTechLayerEolExtensionRule::_dbTechLayerEolExtensionRule(_dbDatabase* db)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field = 0;
+  flags_ = {};
   spacing_ = 0;
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
+
 _dbTechLayerEolExtensionRule::_dbTechLayerEolExtensionRule(
     _dbDatabase* db,
     const _dbTechLayerEolExtensionRule& r)
@@ -107,40 +103,30 @@ _dbTechLayerEolExtensionRule::_dbTechLayerEolExtensionRule(
   flags_.parallel_only_ = r.flags_.parallel_only_;
   flags_.spare_bits_ = r.flags_.spare_bits_;
   spacing_ = r.spacing_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerEolExtensionRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  uint32_t flags_bit_field;
+  stream >> flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> obj.spacing_;
   stream >> obj.extension_tbl_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerEolExtensionRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  uint32_t flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags_bit_field;
   stream << obj.spacing_;
   stream << obj.extension_tbl_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
-
-_dbTechLayerEolExtensionRule::~_dbTechLayerEolExtensionRule()
-{
-  // User Code Begin Destructor
-  // User Code End Destructor
-}
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -214,4 +200,4 @@ void dbTechLayerEolExtensionRule::destroy(dbTechLayerEolExtensionRule* rule)
 
 // User Code End dbTechLayerEolExtensionRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

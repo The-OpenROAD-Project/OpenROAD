@@ -87,14 +87,18 @@ class Rectangle_b
   }
   bool is_overlap(T xmin, T ymin, T xmax, T ymax)
   {
-    if (xmin >= xmax_)
+    if (xmin >= xmax_) {
       return false;
-    if (xmax <= xmin_)
+    }
+    if (xmax <= xmin_) {
       return false;
-    if (ymin >= ymax_)
+    }
+    if (ymin >= ymax_) {
       return false;
-    if (ymax <= ymin_)
+    }
+    if (ymax <= ymin_) {
       return false;
+    }
     return true;
   }
 

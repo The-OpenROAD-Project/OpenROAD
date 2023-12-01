@@ -8,7 +8,7 @@
 [INFO ODB-0131]     Created 17 components and 92 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 34 connections.
 [INFO ODB-0133]     Created 7 nets and 30 connections.
-[INFO IFP-0001] Added 857 rows of 210 sites.
+[INFO IFP-0001] Added 857 rows of 210 site FreePDK45_38x28_10R_NP_162NW_34O with height 1.
 Placement Analysis
 ---------------------------------
 total displacement          6.8 u
@@ -19,8 +19,10 @@ legalized HPWL           2533.0 u
 delta HPWL                    0 %
 
 worst slack -0.39
+[INFO RSZ-0094] Found 4 endpoints with setup violations.
 [INFO RSZ-0040] Inserted 2 buffers.
 [INFO RSZ-0041] Resized 18 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
+Repair timing output passed/skipped equivalence test
 worst slack -0.06
 worst slack -0.06

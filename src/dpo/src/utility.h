@@ -77,7 +77,7 @@ class Utility
       return;
     }
     for (RandomAccessIter i = first + 1; i != last; ++i) {
-      long randnum = ((*rng)()) % (i - first + 1);
+      auto randnum = ((*rng)()) % (i - first + 1);
       std::iter_swap(i, first + randnum);
     }
   }

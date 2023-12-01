@@ -122,34 +122,14 @@ class RoutingParams
 
  public:
   RoutingParams()
-      : grid_x_(0),
-        grid_y_(0),
-        num_layers_(0),
-        default_layer_(1),
-        origin_x_(0),
-        origin_y_(0),
-        tile_size_x_(0),
-        tile_size_y_(0),
-        blockage_porosity_(0.0),
-        num_ni_terminals_(0),
-        num_route_blockages_(0),
-        num_edge_adjusts_(0),
-        Xlowerbound_(0.0),
-        Xupperbound_(0.0),
-        Ylowerbound_(0.0),
-        Yupperbound_(0.0),
-        XpitchGcd_(0.0),
-        YpitchGcd_(0.0),
-        hasObs_(0),
-        numRules_(0)
   {
-    v_capacity_.erase(v_capacity_.begin(), v_capacity_.end());
-    h_capacity_.erase(h_capacity_.begin(), h_capacity_.end());
-    wire_width_.erase(wire_width_.begin(), wire_width_.end());
-    wire_spacing_.erase(wire_spacing_.begin(), wire_spacing_.end());
-    via_spacing_.erase(via_spacing_.begin(), via_spacing_.end());
+    v_capacity_.clear();
+    h_capacity_.clear();
+    wire_width_.clear();
+    wire_spacing_.clear();
+    via_spacing_.clear();
 
-    edge_adjusts_.erase(edge_adjusts_.begin(), edge_adjusts_.end());
+    edge_adjusts_.clear();
   }
 
   void postProcess();
@@ -168,14 +148,14 @@ class RoutingParams
   double get_maximum_spacing(int layer);
 
  public:
-  int grid_x_;
-  int grid_y_;
-  int num_layers_;
+  int grid_x_ = 0;
+  int grid_y_ = 0;
+  int num_layers_ = 0;
 
-  int default_layer_;
+  int default_layer_ = 1;
 
-  double origin_x_;
-  double origin_y_;
+  double origin_x_ = 0;
+  double origin_y_ = 0;
 
   std::vector<double> v_capacity_;
   std::vector<double> h_capacity_;
@@ -184,16 +164,16 @@ class RoutingParams
   std::vector<double> via_spacing_;
   std::vector<int> layer_dir_;
 
-  double tile_size_x_;
-  double tile_size_y_;
+  double tile_size_x_ = 0;
+  double tile_size_y_ = 0;
 
-  double blockage_porosity_;
+  double blockage_porosity_ = 0;
 
-  int num_ni_terminals_;
-  int num_route_blockages_;
+  int num_ni_terminals_ = 0;
+  int num_route_blockages_ = 0;
 
   // Stuff for edge adjustements (ICCAD12).
-  int num_edge_adjusts_;
+  int num_edge_adjusts_ = 0;
   std::vector<EdgeAdjust> edge_adjusts_;
 
   // Map for routing blockages...  We have the name of the node and a vector of
@@ -204,17 +184,17 @@ class RoutingParams
   std::vector<std::vector<Rectangle>> layerBlockages_;
 
   // Added to get information from LEF/DEF...
-  double Xlowerbound_;
-  double Xupperbound_;
-  double Ylowerbound_;
-  double Yupperbound_;
-  double XpitchGcd_;
-  double YpitchGcd_;
-  int hasObs_;
+  double Xlowerbound_ = 0;
+  double Xupperbound_ = 0;
+  double Ylowerbound_ = 0;
+  double Yupperbound_ = 0;
+  double XpitchGcd_ = 0;
+  double YpitchGcd_ = 0;
+  int hasObs_ = 0;
   std::vector<std::vector<std::vector<unsigned>>> obs_;
 
   // Stuff for routing rules...  These vectors should all be the same length...
-  int numRules_;
+  int numRules_ = 0;
   std::vector<std::vector<double>> ruleWidths_;
   std::vector<std::vector<double>> ruleSpacings_;
 

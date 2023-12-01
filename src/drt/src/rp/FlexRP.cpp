@@ -28,14 +28,9 @@
 
 #include "FlexRP.h"
 
-#include <iostream>
-#include <sstream>
-
-#include "db/infra/frTime.h"
 #include "frProfileTask.h"
-#include "gc/FlexGC.h"
 
-using namespace fr;
+namespace fr {
 
 void FlexRP::main()
 {
@@ -43,3 +38,5 @@ void FlexRP::main()
   init();
   prep();
 }
+
+}  // namespace fr

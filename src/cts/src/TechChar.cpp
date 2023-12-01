@@ -58,14 +58,12 @@ namespace cts {
 using utl::CTS;
 
 TechChar::TechChar(CtsOptions* options,
-                   ord::OpenRoad* openroad,
                    odb::dbDatabase* db,
                    sta::dbSta* sta,
                    rsz::Resizer* resizer,
                    sta::dbNetwork* db_network,
                    Logger* logger)
     : options_(options),
-      openroad_(openroad),
       db_(db),
       resizer_(resizer),
       openSta_(sta),
@@ -153,9 +151,7 @@ void TechChar::compileLut(const std::vector<TechChar::ResultData>& lutSols)
 
 void TechChar::initLengthUnits()
 {
-  charLengthUnit_ = options_->getWireSegmentUnit();
-  lengthUnit_ = LENGTH_UNIT_MICRON;
-  lengthUnitRatio_ = charLengthUnit_ / lengthUnit_;
+  lengthUnitRatio_ = options_->getWireSegmentUnit() / lengthUnit_;
 }
 
 inline void TechChar::reportCharacterizationBounds() const
@@ -213,7 +209,7 @@ inline WireSegment& TechChar::createWireSegment(uint8_t length,
 }
 
 void TechChar::forEachWireSegment(
-    const std::function<void(unsigned, const WireSegment&)> func) const
+    const std::function<void(unsigned, const WireSegment&)>& func) const
 {
   for (unsigned idx = 0; idx < wireSegments_.size(); ++idx) {
     func(idx, wireSegments_[idx]);
@@ -224,7 +220,7 @@ void TechChar::forEachWireSegment(
     uint8_t length,
     uint8_t load,
     uint8_t outputSlew,
-    const std::function<void(unsigned, const WireSegment&)> func) const
+    const std::function<void(unsigned, const WireSegment&)>& func) const
 {
   const unsigned key = computeKey(length, load, outputSlew);
 
@@ -252,8 +248,7 @@ void TechChar::report() const
   forEachWireSegment([&](unsigned idx, const WireSegment& segment) {
     std::string buffLocs;
     for (unsigned idx = 0; idx < segment.getNumBuffers(); ++idx) {
-      buffLocs
-          = buffLocs + std::to_string(segment.getBufferLocation(idx)) + " ";
+      buffLocs += std::to_string(segment.getBufferLocation(idx)) + " ";
     }
 
     logger_->report("     {:<5}{:<5}{:<10}{:<12}{:<8}{:<8}{:<8}{:<8}{:<10}{}",
@@ -299,8 +294,7 @@ void TechChar::reportSegments(uint8_t length,
       length, load, outputSlew, [&](unsigned idx, const WireSegment& segment) {
         std::string buffLocs;
         for (unsigned idx = 0; idx < segment.getNumBuffers(); ++idx) {
-          buffLocs
-              = buffLocs + std::to_string(segment.getBufferLocation(idx)) + " ";
+          buffLocs += std::to_string(segment.getBufferLocation(idx)) + " ";
         }
         logger_->report(
             "     {:<5}{:<5}{:<10}{:<12}{:<8}{:<8}{:<8}{:<8}{:<10}{}",
@@ -362,7 +356,7 @@ void TechChar::printSolution() const
               * ((float) (segment.getLength())
                  * (float) (options_->getWireSegmentUnit()));
 
-        report += std::to_string((unsigned long) (wirelengthValue));
+        report += std::to_string(lround(wirelengthValue));
         report += "," + segment.getBufferMaster(idx);
         if (!(idx + 1 >= segment.getNumBuffers())) {
           report += ",";
@@ -371,7 +365,7 @@ void TechChar::printSolution() const
     } else {
       const float wirelengthValue = (float) (segment.getLength())
                                     * (float) (options_->getWireSegmentUnit());
-      report += std::to_string((unsigned long) (wirelengthValue));
+      report += std::to_string(lround(wirelengthValue));
     }
 
     logger_->report("{}", report);
@@ -576,7 +570,7 @@ void TechChar::initCharacterization()
         "    Check the -wire_unit parameter or the technology files.");
   }
 
-  setLengthUnit(charBuf_->getHeight() * 10 / 2 / dbUnitsPerMicron);
+  setLengthUnit(charBuf_->getHeight() * 10 / 2);
 
   // Gets the max slew and max cap if they weren't added as parameters.
   float maxSlew = 0.0;
@@ -596,7 +590,7 @@ void TechChar::initCharacterization()
       libertyCell->bufferPorts(input, output);
       sta::LibertyLibrary* lib = libertyCell->libertyLibrary();
 
-      input->slewLimit(sta::MinMax::max(), maxSlew, maxSlewExist);
+      output->slewLimit(sta::MinMax::max(), maxSlew, maxSlewExist);
       if (!maxSlewExist)
         lib->defaultMaxSlew(maxSlew, maxSlewExist);
       if (!maxSlewExist)
@@ -757,7 +751,7 @@ void TechChar::createStaInstance()
 {
   // Creates a new OpenSTA instance that is used only for the characterization.
   // Creates the new instance based on the charcterization block.
-  openStaChar_ = sta::makeBlockSta(openroad_, charBlock_);
+  openStaChar_ = openSta_->makeBlockSta(charBlock_);
   // Gets the corner and other analysis attributes from the new instance.
   charCorner_ = openStaChar_->cmdCorner();
   sta::PathAPIndex path_ap_index
@@ -859,8 +853,8 @@ TechChar::ResultData TechChar::computeTopologyResults(
     // buffer.
     for (odb::dbInst* bufferInst : solution.instVector) {
       sta::Instance* bufferInstSta = db_network_->dbToSta(bufferInst);
-      sta::PowerResult instResults;
-      openStaChar_->power(bufferInstSta, charCorner_, instResults);
+      sta::PowerResult instResults
+          = openStaChar_->power(bufferInstSta, charCorner_);
       totalPower = totalPower + instResults.total();
     }
   }
@@ -1180,28 +1174,18 @@ void TechChar::create()
         buffersUpdate--;
       } while (buffersUpdate != 0);
     }
-    delete openStaChar_;
-    openStaChar_ = nullptr;
+    openStaChar_.reset(nullptr);
   }
   logger_->info(CTS, 39, "Number of created patterns = {}.", topologiesCreated);
   // Post-processing of the results.
   const std::vector<ResultData> convertedSolutions
       = characterizationPostProcess();
-  // Changes the segment units back to micron and creates the wire segments.
-  const float dbUnitsPerMicron = charBlock_->getDbUnitsPerMicron();
-  const float segmentDistance = options_->getWireSegmentUnit();
-  options_->setWireSegmentUnit(segmentDistance / dbUnitsPerMicron);
   compileLut(convertedSolutions);
   if (logger_->debugCheck(CTS, "characterization", 3)) {
     printCharacterization();
     printSolution();
   }
-  // super confused -cherry
-  if (openStaChar_ != nullptr) {
-    openStaChar_->clear();
-    delete openStaChar_;
-    openStaChar_ = nullptr;
-  }
+  odb::dbBlock::destroy(charBlock_);
 }
 
 }  // namespace cts

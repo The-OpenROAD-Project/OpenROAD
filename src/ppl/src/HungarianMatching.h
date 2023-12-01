@@ -61,7 +61,7 @@ using utl::Logger;
 class HungarianMatching
 {
  public:
-  HungarianMatching(Section& section,
+  HungarianMatching(const Section& section,
                     Netlist* netlist,
                     Core* core,
                     std::vector<Slot>& slots,
@@ -72,17 +72,20 @@ class HungarianMatching
   void findAssignmentForGroups();
   void getFinalAssignment(std::vector<IOPin>& assignment,
                           MirroredPins& mirrored_pins,
-                          bool assign_mirrored) const;
-  void getAssignmentForGroups(std::vector<IOPin>& assignment);
+                          bool assign_mirrored);
+  void getAssignmentForGroups(std::vector<IOPin>& assignment,
+                              MirroredPins& mirrored_pins,
+                              bool only_mirrored);
 
  private:
   std::vector<std::vector<int>> hungarian_matrix_;
   std::vector<int> assignment_;
+  std::vector<int> valid_starting_slots_;
   HungarianAlgorithm hungarian_solver_;
   Netlist* netlist_;
   Core* core_;
   const std::vector<int>& pin_indices_;
-  const std::vector<std::vector<int>>& pin_groups_;
+  const std::vector<PinGroupByIndex>& pin_groups_;
   std::vector<Slot>& slots_;
   int begin_slot_;
   int end_slot_;
@@ -91,7 +94,6 @@ class HungarianMatching
   int num_pin_groups_;
   int non_blocked_slots_;
   int group_slots_;
-  int group_size_;
   Edge edge_;
   const int hungarian_fail = std::numeric_limits<int>::max();
   Logger* logger_;
@@ -99,7 +101,13 @@ class HungarianMatching
 
   void createMatrix();
   void createMatrixForGroups();
+  void assignMirroredPins(IOPin& io_pin,
+                          MirroredPins& mirrored_pins,
+                          std::vector<IOPin>& assignment);
   int getSlotIdxByPosition(const odb::Point& position, int layer) const;
+  bool groupHasMirroredPin(const std::vector<int>& group,
+                           MirroredPins& mirrored_pins);
+  Edge getMirroredEdge(const Edge& edge);
 };
 
 }  // namespace ppl

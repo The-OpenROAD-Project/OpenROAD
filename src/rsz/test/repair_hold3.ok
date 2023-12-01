@@ -11,5 +11,6 @@ worst slack -0.03
 worst slack 1.95
 [INFO RSZ-0046] Found 2 endpoints with hold violations.
 [INFO RSZ-0032] Inserted 2 hold buffers.
+Repair timing output passed/skipped equivalence test
 worst slack 0.01
 worst slack 1.93

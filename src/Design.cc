@@ -35,12 +35,19 @@
 
 #include "ord/Design.h"
 
+#include <tcl.h>
+
 #include "ant/AntennaChecker.hh"
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "grt/GlobalRouter.h"
 #include "ifp/InitFloorplan.hh"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "ord/Tech.h"
+#include "sta/Corner.hh"
+#include "sta/TimingArc.hh"
+#include "sta/TimingRole.hh"
 #include "utl/Logger.h"
 
 namespace ord {
@@ -69,7 +76,8 @@ void Design::readVerilog(const std::string& file_name)
 void Design::readDef(const std::string& file_name,
                      bool continue_on_errors,  // = false
                      bool floorplan_init,      // = false
-                     bool incremental          // = false
+                     bool incremental,         // = false
+                     bool child                // = false
 )
 {
   auto app = OpenRoad::openRoad();
@@ -82,8 +90,12 @@ void Design::readDef(const std::string& file_name,
   if (tech_->getDB()->getTech() == nullptr) {
     getLogger()->error(utl::ORD, 102, "No technology has been read.");
   }
-  app->readDef(
-      file_name.c_str(), continue_on_errors, floorplan_init, incremental);
+  app->readDef(file_name.c_str(),
+               tech_->getDB()->getTech(),
+               continue_on_errors,
+               floorplan_init,
+               incremental,
+               child);
 }
 
 void Design::link(const std::string& design_name)
@@ -148,6 +160,167 @@ const std::string Design::evalTclString(const std::string& cmd)
 Tech* Design::getTech()
 {
   return tech_;
+}
+
+sta::dbSta* Design::getSta()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getSta();
+}
+
+std::vector<sta::Corner*> Design::getCorners()
+{
+  sta::Corners* corners = getSta()->corners();
+  return {corners->begin(), corners->end()};
+}
+
+sta::MinMax* Design::getMinMax(MinMax type)
+{
+  return type == Max ? sta::MinMax::max() : sta::MinMax::min();
+}
+
+float Design::getNetCap(odb::dbNet* net, sta::Corner* corner, MinMax minmax)
+{
+  sta::dbSta* sta = getSta();
+  sta::Net* sta_net = sta->getDbNetwork()->dbToSta(net);
+
+  float pin_cap;
+  float wire_cap;
+  sta->connectedCap(sta_net, corner, getMinMax(minmax), pin_cap, wire_cap);
+  return pin_cap + wire_cap;
+}
+
+sta::LibertyCell* Design::getLibertyCell(odb::dbMaster* master)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+
+  sta::Cell* cell = network->dbToSta(master);
+  if (!cell) {
+    return nullptr;
+  }
+  return network->libertyCell(cell);
+}
+
+bool Design::isBuffer(odb::dbMaster* master)
+{
+  auto lib_cell = getLibertyCell(master);
+  if (!lib_cell) {
+    return false;
+  }
+  return lib_cell->isBuffer();
+}
+
+bool Design::isInverter(odb::dbMaster* master)
+{
+  auto lib_cell = getLibertyCell(master);
+  if (!lib_cell) {
+    return false;
+  }
+  return lib_cell->isInverter();
+}
+
+bool Design::isSequential(odb::dbMaster* master)
+{
+  auto lib_cell = getLibertyCell(master);
+  if (!lib_cell) {
+    return false;
+  }
+  return lib_cell->hasSequentials();
+}
+
+float Design::staticPower(odb::dbInst* inst, sta::Corner* corner)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+
+  sta::Instance* sta_inst = network->dbToSta(inst);
+  if (!sta_inst) {
+    return 0.0;
+  }
+  sta::PowerResult power = sta->power(sta_inst, corner);
+  return power.leakage();
+}
+
+float Design::dynamicPower(odb::dbInst* inst, sta::Corner* corner)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+
+  sta::Instance* sta_inst = network->dbToSta(inst);
+  if (!sta_inst) {
+    return 0.0;
+  }
+  sta::PowerResult power = sta->power(sta_inst, corner);
+  return (power.internal() + power.switching());
+}
+
+bool Design::isInClock(odb::dbInst* inst)
+{
+  for (auto* iterm : inst->getITerms()) {
+    auto* net = iterm->getNet();
+    if (net != nullptr && net->getSigType() == odb::dbSigType::CLOCK) {
+      return true;
+    }
+  }
+  return false;
+}
+
+std::uint64_t Design::getNetRoutedLength(odb::dbNet* net)
+{
+  std::uint64_t route_length = 0;
+  if (net->getSigType().isSupply()) {
+    for (odb::dbSWire* swire : net->getSWires()) {
+      for (odb::dbSBox* wire : swire->getWires()) {
+        if (wire != nullptr && !(wire->isVia())) {
+          route_length += wire->getLength();
+        }
+      }
+    }
+  } else {
+    auto* wire = net->getWire();
+    if (wire != nullptr) {
+      route_length += wire->getLength();
+    }
+  }
+  return route_length;
+}
+
+// I'd like to return a std::set but swig gave me way too much grief
+// so I just copy the set to a vector.
+std::vector<odb::dbMTerm*> Design::getTimingFanoutFrom(odb::dbMTerm* input)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+
+  odb::dbMaster* master = input->getMaster();
+  sta::Cell* cell = network->dbToSta(master);
+  if (!cell) {
+    return {};
+  }
+
+  sta::LibertyCell* lib_cell = network->libertyCell(cell);
+  if (!lib_cell) {
+    return {};
+  }
+
+  sta::Port* port = network->dbToSta(input);
+  sta::LibertyPort* lib_port = network->libertyPort(port);
+
+  std::set<odb::dbMTerm*> outputs;
+  for (auto arc_set : lib_cell->timingArcSets(lib_port, /* to */ nullptr)) {
+    sta::TimingRole* role = arc_set->role();
+    if (role->isTimingCheck() || role->isAsyncTimingCheck()
+        || role->isNonSeqTimingCheck() || role->isDataCheck()) {
+      continue;
+    }
+    sta::LibertyPort* to_port = arc_set->to();
+    odb::dbMTerm* to_mterm = master->findMTerm(to_port->name());
+    if (to_mterm) {
+      outputs.insert(to_mterm);
+    }
+  }
+  return {outputs.begin(), outputs.end()};
 }
 
 grt::GlobalRouter* Design::getGlobalRouter()
@@ -244,6 +417,12 @@ pdn::PdnGen* Design::getPdnGen()
 {
   auto app = OpenRoad::openRoad();
   return app->getPdnGen();
+}
+
+pad::ICeWall* Design::getICeWall()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getICeWall();
 }
 
 }  // namespace ord

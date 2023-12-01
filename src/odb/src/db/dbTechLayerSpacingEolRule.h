@@ -36,11 +36,7 @@
 #include "dbCore.h"
 #include "odb.h"
 
-// User Code Begin Includes
-// User Code End Includes
-
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -94,14 +90,25 @@ struct dbTechLayerSpacingEolRuleFlags
   bool to_notch_length_valid_ : 1;
   uint spare_bits_ : 23;
 };
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbTechLayerSpacingEolRule : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
+  _dbTechLayerSpacingEolRule(_dbDatabase*, const _dbTechLayerSpacingEolRule& r);
+  _dbTechLayerSpacingEolRule(_dbDatabase*);
+
+  ~_dbTechLayerSpacingEolRule() = default;
+
+  bool operator==(const _dbTechLayerSpacingEolRule& rhs) const;
+  bool operator!=(const _dbTechLayerSpacingEolRule& rhs) const
+  {
+    return !operator==(rhs);
+  }
+  bool operator<(const _dbTechLayerSpacingEolRule& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbTechLayerSpacingEolRule& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
 
   dbTechLayerSpacingEolRuleFlags flags_;
   int eol_space_;
@@ -141,25 +148,8 @@ class _dbTechLayerSpacingEolRule : public _dbObject
   // User Code Begin Fields
   dbId<_dbTechLayer> _layer;
   // User Code End Fields
-  _dbTechLayerSpacingEolRule(_dbDatabase*, const _dbTechLayerSpacingEolRule& r);
-  _dbTechLayerSpacingEolRule(_dbDatabase*);
-  ~_dbTechLayerSpacingEolRule();
-  bool operator==(const _dbTechLayerSpacingEolRule& rhs) const;
-  bool operator!=(const _dbTechLayerSpacingEolRule& rhs) const
-  {
-    return !operator==(rhs);
-  }
-  bool operator<(const _dbTechLayerSpacingEolRule& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayerSpacingEolRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerSpacingEolRule& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header

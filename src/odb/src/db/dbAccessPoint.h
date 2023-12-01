@@ -41,7 +41,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -53,38 +52,15 @@ class _dbMPin;
 class _dbBPin;
 class _dbITerm;
 class _dbObject;
-// User Code Begin Classes
-// User Code End Classes
-
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbAccessPoint : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
-
-  Point point_;
-  dbId<_dbTechLayer> layer_;
-  dbId<_dbLib> lib_;
-  dbId<_dbMaster> master_;
-  dbId<_dbMPin> mpin_;
-  dbId<_dbBPin> bpin_;
-  std::array<bool, 6> accesses_;
-  dbAccessType::Value low_type_;
-  dbAccessType::Value high_type_;
-  dbVector<dbId<_dbITerm>>
-      iterms_;  // list of iterms that prefer this access point
-  dbVector<dbVector<std::pair<dbObjectType, dbId<_dbObject>>>>
-      vias_;  // list of vias by num of cuts
-  dbVector<std::tuple<Rect, bool, bool>> path_segs_;
-
-  // User Code Begin Fields
-  // User Code End Fields
   _dbAccessPoint(_dbDatabase*, const _dbAccessPoint& r);
   _dbAccessPoint(_dbDatabase*);
-  ~_dbAccessPoint();
+
+  ~_dbAccessPoint() = default;
+
   bool operator==(const _dbAccessPoint& rhs) const;
   bool operator!=(const _dbAccessPoint& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbAccessPoint& rhs) const;
@@ -95,10 +71,23 @@ class _dbAccessPoint : public _dbObject
   // User Code Begin Methods
   void setMPin(_dbMPin* mpin);
   // User Code End Methods
+
+  Point point_;
+  dbId<_dbTechLayer> layer_;
+  dbId<_dbLib> lib_;
+  dbId<_dbMaster> master_;
+  dbId<_dbMPin> mpin_;
+  dbId<_dbBPin> bpin_;
+  std::array<bool, 6> accesses_;
+  dbAccessType::Value low_type_;
+  dbAccessType::Value high_type_;
+  // list of iterms that prefer this access point
+  dbVector<dbId<_dbITerm>> iterms_;
+  // list of vias by num of cuts
+  dbVector<dbVector<std::pair<dbObjectType, dbId<_dbObject>>>> vias_;
+  dbVector<std::tuple<Rect, bool, bool>> path_segs_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbAccessPoint& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbAccessPoint& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header

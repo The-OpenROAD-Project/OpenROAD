@@ -35,14 +35,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 %{
 #include "ord/OpenRoad.hh"
 #include "psm/pdnsim.h"
+#include "sta/Corner.hh"
 
 namespace ord {
 psm::PDNSim*
 getPDNSim();
 }
 
+namespace odb {
+class dbNet;
+}
+
 using ord::getPDNSim;
 using psm::PDNSim;
+using sta::Corner;
 %}
 
 %inline %{
@@ -51,110 +57,82 @@ void
 import_vsrc_cfg_cmd(const char* vsrc)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->import_vsrc_cfg(vsrc);
+  pdnsim->setVsrcCfg(vsrc);
 }
 
 void 
-set_power_net_cmd(const char* net)
+set_power_net_cmd(odb::dbNet* net)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->set_power_net(net);
+  pdnsim->setNet(net);
 }
 
 void 
 set_bump_pitch_x_cmd(float bump_pitch)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->set_bump_pitch_x(bump_pitch);
+  pdnsim->setBumpPitchX(bump_pitch);
 }
 
 void 
 set_bump_pitch_y_cmd(float bump_pitch)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->set_bump_pitch_y(bump_pitch);
+  pdnsim->setBumpPitchY(bump_pitch);
 }
 
 void
 set_node_density(float node_density)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->set_node_density(node_density);
+  pdnsim->setNodeDensity(node_density);
 }
 
 void
 set_node_density_factor(int node_density_factor)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->set_node_density_factor(node_density_factor);
-}
-
-
-
-void 
-set_net_voltage_cmd(const char* net_name, float voltage)
-{
-  PDNSim* pdnsim = getPDNSim();
-  pdnsim->set_pdnsim_net_voltage(net_name, voltage);
-}
-
-
-
-void 
-import_em_enable(int enable_em)
-{
-  PDNSim* pdnsim = getPDNSim();
-  pdnsim->import_enable_em(enable_em);
-}
-
-
-void 
-import_out_file_cmd(const char* out_file)
-{
-  PDNSim* pdnsim = getPDNSim();
-  pdnsim->import_out_file(out_file);
+  pdnsim->setNodeDensityFactor(node_density_factor);
 }
 
 void 
-import_em_out_file_cmd(const char* out_file)
+set_net_voltage_cmd(odb::dbNet* net, float voltage)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->import_em_out_file(out_file);
-}
-
-
-void 
-import_spice_out_file_cmd(const char* out_file)
-{
-  PDNSim* pdnsim = getPDNSim();
-  pdnsim->import_spice_out_file(out_file);
+  pdnsim->setNetVoltage(net, voltage);
 }
 
 void 
-analyze_power_grid_cmd()
+analyze_power_grid_cmd(const char* voltage_file, bool enable_em, const char* em_file, const char* error_file)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->analyze_power_grid();
+  pdnsim->analyzePowerGrid(voltage_file, enable_em, em_file, error_file);
 }
 
-int
-check_connectivity_cmd()
+bool
+check_connectivity_cmd(const char* error_file)
 {
   PDNSim* pdnsim = getPDNSim();
-  return pdnsim->check_connectivity();
+  return pdnsim->checkConnectivity(error_file);
 }
 
 void
-write_pg_spice_cmd()
+write_pg_spice_cmd(const char* file)
 {
   PDNSim* pdnsim = getPDNSim();
-  return pdnsim->write_pg_spice();
+  return pdnsim->writeSpice(file);
 }
 
-void set_debug_gui_cmd()
+void set_debug_gui()
 {
   PDNSim* pdnsim = getPDNSim();
   pdnsim->setDebugGui();
+}
+
+void set_corner(Corner* corner)
+{
+  PDNSim* pdnsim = getPDNSim();
+  pdnsim->setCorner(corner);
 }
 
 %} // inline

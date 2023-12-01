@@ -67,8 +67,9 @@ void Worker::run()
   service_.run();
 }
 
-void Worker::handle_accept(boost::shared_ptr<WorkerConnection> connection,
-                           const boost::system::error_code& err)
+void Worker::handle_accept(
+    const boost::shared_ptr<WorkerConnection>& connection,
+    const boost::system::error_code& err)
 {
   if (!err) {
     connection->start();

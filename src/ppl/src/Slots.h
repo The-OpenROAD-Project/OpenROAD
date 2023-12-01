@@ -58,6 +58,7 @@ class Interval
   int getBegin() const { return begin_; }
   int getEnd() const { return end_; }
   int getLayer() const { return layer_; }
+  bool operator==(const Interval& interval) const;
 
  private:
   Edge edge_;
@@ -82,43 +83,6 @@ struct TopLayerGrid
   int ury() { return region.yMax(); }
 };
 
-// Section: a region in the die boundary that contains a set
-// of slots. By default, each section has 200 slots
-struct Section
-{
-  odb::Point pos;
-  std::vector<int> pin_indices;
-  std::vector<std::vector<int>> pin_groups;
-  int cost;
-  int begin_slot;
-  int end_slot;
-  int used_slots;
-  int num_slots;
-  Edge edge;
-};
-
-struct Constraint
-{
-  Constraint(PinList pins, Direction dir, Interval interv)
-      : pin_list(pins), direction(dir), interval(interv)
-  {
-    box = odb::Rect(-1, -1, -1, -1);
-    pins_per_slots = 0;
-  }
-  Constraint(PinList pins, Direction dir, odb::Rect b)
-      : pin_list(pins), direction(dir), interval(Edge::invalid, -1, -1), box(b)
-  {
-    pins_per_slots = 0;
-  }
-
-  PinList pin_list;
-  Direction direction;
-  Interval interval;
-  odb::Rect box;
-  std::vector<Section> sections;
-  float pins_per_slots;
-};
-
 // Slot: an on-track position in the die boundary where a pin
 // can be placed
 struct Slot
@@ -128,6 +92,55 @@ struct Slot
   odb::Point pos;
   int layer;
   Edge edge;
+
+  bool isAvailable() const { return (!blocked && !used); }
+};
+
+// Section: a region in the die boundary that contains a set
+// of slots. By default, each section has 200 slots
+struct Section
+{
+  odb::Point pos;
+  std::vector<int> pin_indices;
+  std::vector<PinGroupByIndex> pin_groups;
+  int cost = 0;
+  int begin_slot = 0;
+  int end_slot = 0;
+  int used_slots = 0;
+  int num_slots = 0;
+  Edge edge;
+
+  int getMaxContiguousSlots(const std::vector<Slot>& slots);
+};
+
+struct Constraint
+{
+  Constraint(const PinSet& pins, Direction dir, Interval interv)
+      : pin_list(pins), direction(dir), interval(interv)
+  {
+    box = odb::Rect(-1, -1, -1, -1);
+    pins_per_slots = 0;
+    first_slot = -1;
+    last_slot = -1;
+  }
+  Constraint(const PinSet& pins, Direction dir, odb::Rect b)
+      : pin_list(pins), direction(dir), interval(Edge::invalid, -1, -1), box(b)
+  {
+    pins_per_slots = 0;
+    first_slot = -1;
+    last_slot = -1;
+  }
+
+  PinSet pin_list;
+  Direction direction;
+  Interval interval;
+  odb::Rect box;
+  std::vector<Section> sections;
+  std::vector<int> pin_indices;
+  std::set<int> pin_groups;
+  float pins_per_slots;
+  int first_slot = 0;
+  int last_slot = 0;
 };
 
 template <typename T>

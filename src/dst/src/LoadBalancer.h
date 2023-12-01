@@ -27,9 +27,11 @@
  */
 
 #pragma once
+
 #include <boost/asio.hpp>
 #include <boost/asio/thread_pool.hpp>
 #include <boost/thread/thread.hpp>
+#include <cstdint>
 #include <mutex>
 #include <queue>
 #include <vector>
@@ -55,11 +57,13 @@ class LoadBalancer
                const char* workers_domain,
                unsigned short port = 1234);
   ~LoadBalancer();
-  bool addWorker(std::string ip, unsigned short port);
-  void updateWorker(ip::address ip, unsigned short port);
+  bool addWorker(const std::string& ip, unsigned short port);
+  void updateWorker(const ip::address& ip, unsigned short port);
   void getNextWorker(ip::address& ip, unsigned short& port);
-  void removeWorker(ip::address ip, unsigned short port, bool lock = true);
-  void punishWorker(ip::address ip, unsigned short port);
+  void removeWorker(const ip::address& ip,
+                    unsigned short port,
+                    bool lock = true);
+  void punishWorker(const ip::address& ip, unsigned short port);
 
  private:
   struct worker
@@ -98,7 +102,7 @@ class LoadBalancer
   std::vector<std::string> broadcastData;
 
   void start_accept();
-  void handle_accept(BalancerConnection::pointer connection,
+  void handle_accept(const BalancerConnection::pointer& connection,
                      const boost::system::error_code& err);
   void lookUpWorkers(const char* domain, unsigned short port);
   friend class dst::BalancerConnection;

@@ -36,36 +36,23 @@
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb.h"
-// User Code Begin Includes
-// User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-// User Code Begin Classes
-// User Code End Classes
-
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbTechLayerCutSpacingTableOrthRule : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
-
-  dbVector<std::pair<int, int>> spacing_tbl_;  //{cutWithin, orthoSpacing}
-
-  // User Code Begin Fields
-  // User Code End Fields
   _dbTechLayerCutSpacingTableOrthRule(
       _dbDatabase*,
       const _dbTechLayerCutSpacingTableOrthRule& r);
   _dbTechLayerCutSpacingTableOrthRule(_dbDatabase*);
-  ~_dbTechLayerCutSpacingTableOrthRule();
+
+  ~_dbTechLayerCutSpacingTableOrthRule() = default;
+
   bool operator==(const _dbTechLayerCutSpacingTableOrthRule& rhs) const;
   bool operator!=(const _dbTechLayerCutSpacingTableOrthRule& rhs) const
   {
@@ -76,14 +63,13 @@ class _dbTechLayerCutSpacingTableOrthRule : public _dbObject
                    const char* field,
                    const _dbTechLayerCutSpacingTableOrthRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
+
+  //{cutWithin, orthoSpacing}
+  dbVector<std::pair<int, int>> spacing_tbl_;
 };
 dbIStream& operator>>(dbIStream& stream,
                       _dbTechLayerCutSpacingTableOrthRule& obj);
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCutSpacingTableOrthRule& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header

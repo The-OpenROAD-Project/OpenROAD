@@ -46,6 +46,7 @@ class definBlockage : public definBase
   dbInst* _inst;
   bool _slots;
   bool _fills;
+  bool _except_pg_nets;
   bool _pushdown;
   bool _soft;
   bool _has_min_spacing;
@@ -60,6 +61,7 @@ class definBlockage : public definBase
   virtual void blockageRoutingComponent(const char* comp);
   virtual void blockageRoutingSlots();
   virtual void blockageRoutingFills();
+  virtual void blockageRoutingExceptPGNets();
   virtual void blockageRoutingPushdown();
   virtual void blockageRoutingMinSpacing(int spacing);
   virtual void blockageRoutingEffectiveWidth(int width);

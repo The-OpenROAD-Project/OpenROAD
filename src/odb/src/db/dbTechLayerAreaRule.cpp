@@ -33,60 +33,58 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerAreaRule.h"
 
+#include <cstdint>
+#include <cstring>
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
-// User Code Begin Includes
-// User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayerAreaRule>;
 
 bool _dbTechLayerAreaRule::operator==(const _dbTechLayerAreaRule& rhs) const
 {
-  if (flags_.except_rectangle_ != rhs.flags_.except_rectangle_)
+  if (flags_.except_rectangle_ != rhs.flags_.except_rectangle_) {
     return false;
-
-  if (flags_.overlap_ != rhs.flags_.overlap_)
+  }
+  if (flags_.overlap_ != rhs.flags_.overlap_) {
     return false;
-
-  if (area_ != rhs.area_)
+  }
+  if (area_ != rhs.area_) {
     return false;
-
-  if (except_min_width_ != rhs.except_min_width_)
+  }
+  if (except_min_width_ != rhs.except_min_width_) {
     return false;
-
-  if (except_edge_length_ != rhs.except_edge_length_)
+  }
+  if (except_edge_length_ != rhs.except_edge_length_) {
     return false;
-
-  if (trim_layer_ != rhs.trim_layer_)
+  }
+  if (trim_layer_ != rhs.trim_layer_) {
     return false;
-
-  if (mask_ != rhs.mask_)
+  }
+  if (mask_ != rhs.mask_) {
     return false;
-
-  if (rect_width_ != rhs.rect_width_)
+  }
+  if (rect_width_ != rhs.rect_width_) {
     return false;
+  }
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
+
 bool _dbTechLayerAreaRule::operator<(const _dbTechLayerAreaRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
+
 void _dbTechLayerAreaRule::differences(dbDiff& diff,
                                        const char* field,
                                        const _dbTechLayerAreaRule& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_.except_rectangle_);
   DIFF_FIELD(flags_.overlap_);
   DIFF_FIELD(area_);
@@ -95,10 +93,9 @@ void _dbTechLayerAreaRule::differences(dbDiff& diff,
   DIFF_FIELD(trim_layer_);
   DIFF_FIELD(mask_);
   DIFF_FIELD(rect_width_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
+
 void _dbTechLayerAreaRule::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -111,17 +108,14 @@ void _dbTechLayerAreaRule::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(mask_);
   DIFF_OUT_FIELD(rect_width_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
+
 _dbTechLayerAreaRule::_dbTechLayerAreaRule(_dbDatabase* db)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field = 0;
-  // User Code Begin Constructor
-  // User Code End Constructor
+  flags_ = {};
 }
+
 _dbTechLayerAreaRule::_dbTechLayerAreaRule(_dbDatabase* db,
                                            const _dbTechLayerAreaRule& r)
 {
@@ -134,14 +128,14 @@ _dbTechLayerAreaRule::_dbTechLayerAreaRule(_dbDatabase* db,
   trim_layer_ = r.trim_layer_;
   mask_ = r.mask_;
   rect_width_ = r.rect_width_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerAreaRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  uint32_t flags_bit_field;
+  stream >> flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> obj.area_;
   stream >> obj.except_min_width_;
   stream >> obj.except_edge_length_;
@@ -151,14 +145,15 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerAreaRule& obj)
   stream >> obj.trim_layer_;
   stream >> obj.mask_;
   stream >> obj.rect_width_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerAreaRule& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  uint32_t flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags_bit_field;
   stream << obj.area_;
   stream << obj.except_min_width_;
   stream << obj.except_edge_length_;
@@ -168,19 +163,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerAreaRule& obj)
   stream << obj.trim_layer_;
   stream << obj.mask_;
   stream << obj.rect_width_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
-
-_dbTechLayerAreaRule::~_dbTechLayerAreaRule()
-{
-  // User Code Begin Destructor
-  // User Code End Destructor
-}
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -363,4 +347,4 @@ void dbTechLayerAreaRule::destroy(dbTechLayerAreaRule* rule)
 
 // User Code End dbTechLayerAreaRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

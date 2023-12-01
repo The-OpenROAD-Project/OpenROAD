@@ -36,18 +36,12 @@
 #include "dbCore.h"
 #include "odb.h"
 
-// User Code Begin Includes
-// User Code End Includes
-
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
 class _dbTechLayerCutClassRule;
-// User Code Begin Classes
-// User Code End Classes
 
 struct dbTechLayerCutEnclosureRuleFlags
 {
@@ -77,14 +71,26 @@ struct dbTechLayerCutEnclosureRuleFlags
   bool concave_corners_valid_ : 1;
   uint spare_bits_ : 7;
 };
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbTechLayerCutEnclosureRule : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
+  _dbTechLayerCutEnclosureRule(_dbDatabase*,
+                               const _dbTechLayerCutEnclosureRule& r);
+  _dbTechLayerCutEnclosureRule(_dbDatabase*);
+
+  ~_dbTechLayerCutEnclosureRule() = default;
+
+  bool operator==(const _dbTechLayerCutEnclosureRule& rhs) const;
+  bool operator!=(const _dbTechLayerCutEnclosureRule& rhs) const
+  {
+    return !operator==(rhs);
+  }
+  bool operator<(const _dbTechLayerCutEnclosureRule& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbTechLayerCutEnclosureRule& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
 
   dbTechLayerCutEnclosureRuleFlags flags_;
   dbId<_dbTechLayerCutClassRule> cut_class_;
@@ -105,30 +111,9 @@ class _dbTechLayerCutEnclosureRule : public _dbObject
   int second_par_within_;
   int below_enclosure_;
   uint num_corners_;
-
-  // User Code Begin Fields
-  // User Code End Fields
-  _dbTechLayerCutEnclosureRule(_dbDatabase*,
-                               const _dbTechLayerCutEnclosureRule& r);
-  _dbTechLayerCutEnclosureRule(_dbDatabase*);
-  ~_dbTechLayerCutEnclosureRule();
-  bool operator==(const _dbTechLayerCutEnclosureRule& rhs) const;
-  bool operator!=(const _dbTechLayerCutEnclosureRule& rhs) const
-  {
-    return !operator==(rhs);
-  }
-  bool operator<(const _dbTechLayerCutEnclosureRule& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayerCutEnclosureRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutEnclosureRule& obj);
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCutEnclosureRule& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header

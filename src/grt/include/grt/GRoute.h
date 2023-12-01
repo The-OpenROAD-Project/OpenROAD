@@ -34,7 +34,9 @@
 
 #pragma once
 
+#include <cmath>
 #include <map>
+#include <set>
 #include <vector>
 
 namespace odb {
@@ -55,7 +57,7 @@ struct GSegment
   int final_layer;
   GSegment() = default;
   GSegment(int x0, int y0, int l0, int x1, int y1, int l1);
-  bool isVia() { return (init_x == final_x && init_y == final_y); }
+  bool isVia() const { return (init_x == final_x && init_y == final_y); }
   int length()
   {
     return std::abs(init_x - final_x) + std::abs(init_y - final_y);
@@ -91,6 +93,27 @@ class Capacities
 struct cmpById
 {
   bool operator()(odb::dbNet* net1, odb::dbNet* net2) const;
+};
+
+struct TileCongestion
+{
+  int capacity;
+  int usage;
+};
+
+struct TileInformation
+{
+  std::set<odb::dbNet*, cmpById> nets;
+  TileCongestion congestion;
+};
+
+using NetsPerCongestedArea = std::map<std::pair<int, int>, TileInformation>;
+
+struct CongestionInformation
+{
+  GSegment segment;
+  TileCongestion congestion;
+  std::set<odb::dbNet*, cmpById> sources;
 };
 
 // class Route is defined in fastroute core.

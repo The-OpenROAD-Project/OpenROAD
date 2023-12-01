@@ -41,11 +41,9 @@
 #include <vector>
 
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
-namespace odb {
-class Rect;
-}
 namespace boost::serialization {
 class access;
 }
@@ -204,7 +202,8 @@ enum class frConstraintTypeEnum
   frcLef58EolKeepOutConstraint,
   frcLef58MinimumCutConstraint,
   frcMetalWidthViaConstraint,
-  frcLef58AreaConstraint
+  frcLef58AreaConstraint,
+  frcLef58KeepOutZoneConstraint
 };
 
 std::ostream& operator<<(std::ostream& os, frConstraintTypeEnum type);
@@ -286,6 +285,13 @@ enum class frAccessPointEnum
   NearbyGrid = 4  // nearby grid or 1/2 grid
 };
 
+enum class RipUpMode
+{
+  DRC = 0,
+  ALL = 1,
+  NEARDRC = 2
+};
+
 namespace bg = boost::geometry;
 
 typedef bg::model::d2::point_xy<frCoord, bg::cs::cartesian> point_t;
@@ -305,8 +311,6 @@ struct frDebugSettings
         debugTA(false),
         draw(true),
         allowPause(true),
-        x(-1),
-        y(-1),
         iter(0),
         paMarkers(false),
         paEdge(false),
@@ -317,7 +321,9 @@ struct frDebugSettings
         fixedShapeCost(-1),
         markerDecay(-1),
         ripupMode(-1),
-        followGuide(-1)
+        followGuide(-1),
+        writeNetTracks(false),
+        dumpLastWorker(false)
 
   {
   }
@@ -333,8 +339,7 @@ struct frDebugSettings
   bool allowPause;
   std::string netName;
   std::string pinName;
-  int x;
-  int y;
+  odb::Rect box{-1, -1, -1, -1};
   int iter;
   bool paMarkers;
   bool paEdge;
@@ -348,6 +353,8 @@ struct frDebugSettings
   float markerDecay;
   int ripupMode;
   int followGuide;
+  bool writeNetTracks;
+  bool dumpLastWorker;
 };
 
 // Avoids the need to split the whole serializer like

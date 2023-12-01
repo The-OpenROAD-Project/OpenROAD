@@ -37,7 +37,6 @@
 
 namespace sta {
 class dbSta;
-class Resizer;
 }
 
 namespace rsz {
@@ -57,4 +56,4 @@ deleteResizer(rsz::Resizer *resizer);
 void
 initResizer(OpenRoad *openroad);
 
-} // namespace
+} // namespace ord

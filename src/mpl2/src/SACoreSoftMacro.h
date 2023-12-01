@@ -35,6 +35,7 @@
 
 #include <vector>
 
+#include "Mpl2Observer.h"
 #include "SimulatedAnnealingCore.h"
 #include "object.h"
 
@@ -78,7 +79,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                   int k,
                   int c,
                   unsigned seed,
-                  Graphics* graphics,
+                  Mpl2Observer* graphics,
                   utl::Logger* logger);
   // accessors
   float getBoundaryPenalty() const;
@@ -95,12 +96,10 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   // adjust the size of MixedCluster to fill the empty space
   void fillDeadSpace() override;
   void alignMacroClusters();
-  void setBlockages(const std::vector<Rect>& blockages)
-  {
-    blockages_ = blockages;
-  }
+  void addBlockages(const std::vector<Rect>& blockages);
 
  private:
+  float getAreaPenalty() const;
   float calNormCost() const override;
   void calPenalty() override;
 

@@ -1,0 +1,29 @@
+name: clang-tidy-review
+
+on:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+      - name: ClangTidy Gen
+        uses: The-OpenROAD-Project/clang-tidy-review@master
+        with:
+          build_dir: './build'
+          cmake_command: cmake . -B build
+          config_file: '.clang-tidy'
+          split_workflow: true
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: clang-tidy-review
+          path: |
+            clang-tidy-review-output.json
+            clang-tidy-review-metadata.json
+
+      - uses: The-OpenROAD-Project/clang-tidy-review/upload@master

@@ -55,7 +55,7 @@ class Worker
   Distributed* dist_;
   utl::Logger* logger_;
   void start_accept();
-  void handle_accept(boost::shared_ptr<WorkerConnection> connection,
+  void handle_accept(const boost::shared_ptr<WorkerConnection>& connection,
                      const boost::system::error_code& err);
   friend class WorkerConnection;
 };

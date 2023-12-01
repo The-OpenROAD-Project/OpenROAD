@@ -39,6 +39,7 @@
 namespace odb {
 class dbDatabase;
 class dbInst;
+
 }  // namespace odb
 namespace sta {
 class dbSta;
@@ -58,7 +59,9 @@ class Logger;
 
 namespace gpl {
 
+class PlacerBaseCommon;
 class PlacerBase;
+class NesterovBaseCommon;
 class NesterovBase;
 class RouteBase;
 class TimingBase;
@@ -74,6 +77,7 @@ class Replace
   ~Replace();
 
   void init(odb::dbDatabase* odb,
+            sta::dbSta* sta,
             rsz::Resizer* resizer,
             grt::GlobalRouter* router,
             utl::Logger* logger);
@@ -81,6 +85,7 @@ class Replace
 
   void doIncrementalPlace();
   void doInitialPlace();
+  void runMBFF(int max_sz, float alpha, float beta, int threads);
 
   int doNesterovPlace(int start_iter = 0);
 
@@ -143,12 +148,15 @@ class Replace
   bool initNesterovPlace();
 
   odb::dbDatabase* db_;
+  sta::dbSta* sta_;
   rsz::Resizer* rs_;
   grt::GlobalRouter* fr_;
   utl::Logger* log_;
 
-  std::shared_ptr<PlacerBase> pb_;
-  std::shared_ptr<NesterovBase> nb_;
+  std::shared_ptr<PlacerBaseCommon> pbc_;
+  std::shared_ptr<NesterovBaseCommon> nbc_;
+  std::vector<std::shared_ptr<PlacerBase>> pbVec_;
+  std::vector<std::shared_ptr<NesterovBase>> nbVec_;
   std::shared_ptr<RouteBase> rb_;
   std::shared_ptr<TimingBase> tb_;
 
@@ -161,6 +169,8 @@ class Replace
   int initialPlaceMaxFanout_;
   float initialPlaceNetWeightScale_;
   bool forceCPU_;
+
+  int total_placeable_insts_;
 
   int nesterovPlaceMaxIter_;
   int binGridCntX_;
@@ -197,7 +207,6 @@ class Replace
   // temp variable; OpenDB should have these values.
   int padLeft_;
   int padRight_;
-
   bool gui_debug_;
   int gui_debug_pause_iterations_;
   int gui_debug_update_iterations_;

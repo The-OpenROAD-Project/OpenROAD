@@ -75,14 +75,12 @@ DetailedGlobalSwap::DetailedGlobalSwap()
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedGlobalSwap::run(DetailedMgr* mgrPtr, std::string command)
+void DetailedGlobalSwap::run(DetailedMgr* mgrPtr, const std::string& command)
 {
   // A temporary interface to allow for a string which we will decode to create
   // the arguments.
-  std::string scriptString = command;
   boost::char_separator<char> separators(" \r\t\n;");
-  boost::tokenizer<boost::char_separator<char>> tokens(scriptString,
-                                                       separators);
+  boost::tokenizer<boost::char_separator<char>> tokens(command, separators);
   std::vector<std::string> args;
   for (boost::tokenizer<boost::char_separator<char>>::iterator it
        = tokens.begin();
@@ -162,8 +160,8 @@ void DetailedGlobalSwap::globalSwap()
   mgr_->resortSegments();
 
   // Get candidate cells.
-  std::vector<Node*> candidates = mgr_->singleHeightCells_;
-  Utility::random_shuffle(candidates.begin(), candidates.end(), mgr_->rng_);
+  std::vector<Node*> candidates = mgr_->getSingleHeightCells();
+  Utility::random_shuffle(candidates.begin(), candidates.end(), mgr_->getRng());
 
   // Wirelength objective.
   DetailedHPWL hpwlObj(network_);
@@ -172,21 +170,19 @@ void DetailedGlobalSwap::globalSwap()
   double currHpwl = hpwlObj.curr();
   double nextHpwl = 0.;
   // Consider each candidate cell once.
-  for (int attempt = 0; attempt < candidates.size(); attempt++) {
-    Node* ndi = candidates[attempt];
-
+  for (auto ndi : candidates) {
     if (!generate(ndi)) {
       continue;
     }
 
-    double delta = hpwlObj.delta(mgr_->nMoved_,
-                                 mgr_->movedNodes_,
-                                 mgr_->curLeft_,
-                                 mgr_->curBottom_,
-                                 mgr_->curOri_,
-                                 mgr_->newLeft_,
-                                 mgr_->newBottom_,
-                                 mgr_->newOri_);
+    double delta = hpwlObj.delta(mgr_->getNMoved(),
+                                 mgr_->getMovedNodes(),
+                                 mgr_->getCurLeft(),
+                                 mgr_->getCurBottom(),
+                                 mgr_->getCurOri(),
+                                 mgr_->getNewLeft(),
+                                 mgr_->getNewBottom(),
+                                 mgr_->getNewOri());
 
     nextHpwl = currHpwl - delta;  // -delta is +ve is less.
 
@@ -197,7 +193,6 @@ void DetailedGlobalSwap::globalSwap()
       mgr_->rejectMove();
     }
   }
-  return;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -217,8 +212,8 @@ bool DetailedGlobalSwap::getRange(Node* nd, Rectangle& nodeBbox)
   double ymin = arch_->getMinY();
   double ymax = arch_->getMaxY();
 
-  xpts_.erase(xpts_.begin(), xpts_.end());
-  ypts_.erase(ypts_.begin(), ypts_.end());
+  xpts_.clear();
+  ypts_.clear();
   for (int n = 0; n < nd->getNumPins(); n++) {
     pin = nd->getPins()[n];
 
@@ -229,12 +224,12 @@ bool DetailedGlobalSwap::getRange(Node* nd, Rectangle& nodeBbox)
     int numPins = ed->getNumPins();
     if (numPins <= 1) {
       continue;
-    } else if (numPins > skipNetsLargerThanThis_) {
+    }
+    if (numPins > skipNetsLargerThanThis_) {
       continue;
-    } else {
-      if (!calculateEdgeBB(ed, nd, nodeBbox)) {
-        continue;
-      }
+    }
+    if (!calculateEdgeBB(ed, nd, nodeBbox)) {
+      continue;
     }
 
     // We've computed an interval for the pin.  We need to alter it to work for
@@ -291,9 +286,7 @@ bool DetailedGlobalSwap::calculateEdgeBB(Edge* ed, Node* nd, Rectangle& bbox)
   bbox.reset();
 
   int count = 0;
-  for (int pe = 0; pe < ed->getPins().size(); pe++) {
-    Pin* pin = ed->getPins()[pe];
-
+  for (Pin* pin : ed->getPins()) {
     Node* other = pin->getNode();
     if (other == nd) {
       continue;
@@ -341,9 +334,7 @@ double DetailedGlobalSwap::delta(Node* ndi, double new_x, double new_y)
     old_box.reset();
     new_box.reset();
 
-    for (int pj = 0; pj < edi->getPins().size(); pj++) {
-      Pin* pinj = edi->getPins()[pj];
-
+    for (Pin* pinj : edi->getPins()) {
       Node* ndj = pinj->getNode();
 
       x = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
@@ -381,9 +372,7 @@ double DetailedGlobalSwap::delta(Node* ndi, Node* ndj)
   ++traversal_;
   for (int c = 0; c <= 1; c++) {
     Node* ndi = nodes[c];
-    for (int pi = 0; pi < ndi->getPins().size(); pi++) {
-      Pin* pini = ndi->getPins()[pi];
-
+    for (Pin* pini : ndi->getPins()) {
       Edge* edi = pini->getEdge();
 
       int npins = edi->getNumPins();
@@ -398,9 +387,7 @@ double DetailedGlobalSwap::delta(Node* ndi, Node* ndj)
       old_box.reset();
       new_box.reset();
 
-      for (int pj = 0; pj < edi->getPins().size(); pj++) {
-        Pin* pinj = edi->getPins()[pj];
-
+      for (Pin* pinj : edi->getPins()) {
         Node* ndj = pinj->getNode();
 
         x = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
@@ -477,10 +464,10 @@ bool DetailedGlobalSwap::generate(Node* ndi)
     bbox.set_ymax(std::min(bbox.ymax(), lbox.ymax()));
   }
 
-  if (mgr_->reverseCellToSegs_[ndi->getId()].size() != 1) {
+  if (mgr_->getNumReverseCellToSegs(ndi->getId()) != 1) {
     return false;
   }
-  int si = mgr_->reverseCellToSegs_[ndi->getId()][0]->getSegId();
+  int si = mgr_->getReverseCellToSegs(ndi->getId())[0]->getSegId();
 
   // Position target so center of cell at center of box.
   int xj = (int) std::floor(0.5 * (bbox.xmin() + bbox.xmax())
@@ -492,8 +479,8 @@ bool DetailedGlobalSwap::generate(Node* ndi)
   int rj = arch_->find_closest_row(yj);
   yj = arch_->getRow(rj)->getBottom();  // Row alignment.
   int sj = -1;
-  for (int s = 0; s < mgr_->segsInRow_[rj].size(); s++) {
-    DetailedSeg* segPtr = mgr_->segsInRow_[rj][s];
+  for (int s = 0; s < mgr_->getNumSegsInRow(rj); s++) {
+    DetailedSeg* segPtr = mgr_->getSegsInRow(rj)[s];
     if (xj >= segPtr->getMinX() && xj <= segPtr->getMaxX()) {
       sj = segPtr->getSegId();
       break;
@@ -502,7 +489,7 @@ bool DetailedGlobalSwap::generate(Node* ndi)
   if (sj == -1) {
     return false;
   }
-  if (ndi->getRegionId() != mgr_->segments_[sj]->getRegId()) {
+  if (ndi->getRegionId() != mgr_->getSegment(sj)->getRegId()) {
     return false;
   }
 
@@ -543,7 +530,7 @@ bool DetailedGlobalSwap::generate(DetailedMgr* mgr,
   network_ = mgr->getNetwork();
   rt_ = mgr->getRoutingParams();
 
-  Node* ndi = candidates[(*(mgr_->rng_))() % (candidates.size())];
+  Node* ndi = candidates[mgr_->getRandom(candidates.size())];
 
   return generate(ndi);
 }

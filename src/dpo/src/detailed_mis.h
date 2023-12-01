@@ -69,31 +69,16 @@ class DetailedMisParams
     Colour = 2,
   };
 
- public:
-  DetailedMisParams()
-      : _maxDifferenceInMetric(0.03),
-        _maxNumNodes(15),
-        _maxPasses(1),
-        _sizeTol(1.10),
-        _skipNetsLargerThanThis(50),
-        _strategy(Binning),
-        _useSameSize(true)
-  // ************************************************************
-  {
-    ;
-  }
-
- public:
-  double _maxDifferenceInMetric;  // How much we allow the routine to
-                                  // reintroduce overlap into placement
-  unsigned _maxNumNodes;  // Only consider this many number of nodes for B&B (<=
-                          // MAX_BB_NODES)
-  unsigned _maxPasses;    // Maximum number of B&B passes
-  double _sizeTol;        // Tolerance for what is considered same-size
-  unsigned _skipNetsLargerThanThis;  // Skip nets larger than this amount.
-  Strategy _strategy;                // The type of strategy to consider
-  bool _useSameSize;  // If 'false', cells can swap with approximately same-size
-                      // locations
+  double _maxDifferenceInMetric = 0.03;  // How much we allow the routine to
+                                         // reintroduce overlap into placement
+  unsigned _maxNumNodes = 15;  // Only consider this many number of nodes for
+                               // B&B (<= MAX_BB_NODES)
+  unsigned _maxPasses = 1;     // Maximum number of B&B passes
+  double _sizeTol = 1.1;       // Tolerance for what is considered same-size
+  unsigned _skipNetsLargerThanThis = 50;  // Skip nets larger than this amount.
+  Strategy _strategy = Binning;           // The type of strategy to consider
+  bool _useSameSize = true;  // If 'false', cells can swap with approximately
+                             // same-size locations
 };
 
 ////////////////////////////////////////////////////////////////////////////////

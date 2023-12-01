@@ -49,11 +49,7 @@ using std::unordered_set;
 using odb::dbITerm;
 using odb::dbOrientType;
 
-static dbOrientType orientMirrorY(dbOrientType orient);
-
-NetBox::NetBox() : net_(nullptr), ignore_(false)
-{
-}
+static dbOrientType orientMirrorY(const dbOrientType& orient);
 
 NetBox::NetBox(dbNet* net, Rect box, bool ignore)
     : net_(net), box_(box), ignore_(ignore)
@@ -125,9 +121,10 @@ void Opendp::findNetBoxes()
                   // so it has to be checked once here instead of where it is
                   // needed.
                   || net->getITerms().size() > mirror_max_iterm_count_;
-    if (ignore)
+    if (ignore) {
       debugPrint(
           logger_, DPL, "opt_mirror", 2, "ignore {}", net->getConstName());
+    }
     net_box_map_[net] = NetBox(net, net->getTermBBox(), ignore);
   }
 }
@@ -192,7 +189,7 @@ int Opendp::mirrorCandidates(vector<dbInst*>& mirror_candidates)
 }
 
 // apply mirror about Y axis to orient
-static dbOrientType orientMirrorY(dbOrientType orient)
+static dbOrientType orientMirrorY(const dbOrientType& orient)
 {
   switch (orient) {
     case dbOrientType::R0:
@@ -224,8 +221,9 @@ int64_t Opendp::hpwl(dbInst* inst)
     dbNet* net = iterm->getNet();
     if (net) {
       NetBox& net_box = net_box_map_[net];
-      if (!net_box.ignore_)
+      if (!net_box.ignore_) {
         inst_hpwl += net_box.hpwl();
+      }
     }
   }
   return inst_hpwl;
@@ -237,8 +235,9 @@ void Opendp::updateNetBoxes(dbInst* inst)
     dbNet* net = iterm->getNet();
     if (net) {
       NetBox& net_box = net_box_map_[net];
-      if (!net_box.ignore_)
+      if (!net_box.ignore_) {
         net_box_map_[net].box_ = net->getTermBBox();
+      }
     }
   }
 }
@@ -247,8 +246,9 @@ void Opendp::saveNetBoxes(dbInst* inst)
 {
   for (dbITerm* iterm : inst->getITerms()) {
     dbNet* net = iterm->getNet();
-    if (net)
+    if (net) {
       net_box_map_[net].saveBox();
+    }
   }
 }
 
@@ -256,8 +256,9 @@ void Opendp::restoreNetBoxes(dbInst* inst)
 {
   for (dbITerm* iterm : inst->getITerms()) {
     dbNet* net = iterm->getNet();
-    if (net)
+    if (net) {
       net_box_map_[net].restoreBox();
+    }
   }
 }
 

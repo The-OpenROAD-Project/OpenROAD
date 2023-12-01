@@ -32,12 +32,13 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 #############################################################################
 
-sta::define_cmd_args "detailed_placement" {[-max_displacement disp|{disp_x disp_y}]}
+sta::define_cmd_args "detailed_placement" {[-max_displacement disp|{disp_x disp_y}] [-disallow_one_site_gaps] [-report_file_name file_name]}
 
 proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
-    keys {-max_displacement} flags {}
+    keys {-max_displacement -report_file_name} flags {-disallow_one_site_gaps}
 
+set disallow_one_site_gaps [info exists flags(-disallow_one_site_gaps)]
   if { [info exists keys(-max_displacement)] } {
     set max_displacement $keys(-max_displacement)
     if { [llength $max_displacement] == 1 } {
@@ -56,6 +57,10 @@ proc detailed_placement { args } {
     set max_displacement_x 0
     set max_displacement_y 0
   }
+  set file_name ""
+  if { [info exists keys(-report_file_name) ] } {
+    set file_name $keys(-report_file_name)
+  }
 
   sta::check_argc_eq0 "detailed_placement" $args
   if { [ord::db_has_rows] } {
@@ -65,7 +70,8 @@ proc detailed_placement { args } {
                               / [$site getWidth]]
     set max_displacement_y [expr [ord::microns_to_dbu $max_displacement_y] \
                               / [$site getHeight]]
-    dpl::detailed_placement_cmd $max_displacement_x $max_displacement_y
+    dpl::detailed_placement_cmd $max_displacement_x $max_displacement_y \
+                                $disallow_one_site_gaps $file_name 
     dpl::report_legalization_stats
   } else {
     utl::error "DPL" 27 "no rows defined in design. Use initialize_floorplan to add rows."
@@ -134,15 +140,19 @@ proc remove_fillers { args } {
   dpl::remove_fillers_cmd
 }
 
-sta::define_cmd_args "check_placement" {[-verbose]}
+sta::define_cmd_args "check_placement" {[-verbose] [-disallow_one_site_gaps] [-report_file_name file_name]}
 
 proc check_placement { args } {
   sta::parse_key_args "check_placement" args \
-    keys {} flags {-verbose}
-
+    keys {-report_file_name} flags {-verbose -disallow_one_site_gaps}
   set verbose [info exists flags(-verbose)]
-  sta::check_argc_eq0 "check_placement" $args
-  dpl::check_placement_cmd $verbose
+  set disallow_one_site_gaps [info exists flags(-disallow_one_site_gaps)]
+  sta::check_argc_eq0 "check_placement" $args 
+  set file_name ""
+  if { [info exists keys(-report_file_name) ] } {
+    set file_name $keys(-report_file_name)
+  }
+  dpl::check_placement_cmd $verbose $disallow_one_site_gaps $file_name
 }
 
 sta::define_cmd_args "optimize_mirroring" {}
@@ -158,10 +168,8 @@ namespace eval dpl {
 # measured as a multiple of row_height.
 proc detailed_placement_debug { args } {
   sta::parse_key_args "detailed_placement_debug" args \
-      keys {-instance -min_displacement} \
-      flags {-displacement}
+      keys {-instance -min_displacement}
 
-  set displacement [info exists flags(-displacement)]
 
   if { [info exists keys(-min_displacement)] } {
     set min_displacement $keys(-min_displacement)
@@ -180,27 +188,31 @@ proc detailed_placement_debug { args } {
       set debug_instance "NULL"
   }
 
-  dpl::set_debug_cmd $displacement $min_displacement $debug_instance
+  dpl::set_debug_cmd $min_displacement $debug_instance
 }
 
 proc get_masters_arg { arg_name arg } {
-  set matched 0
   set masters {}
   # Expand master name regexps
   set db [ord::get_db]
   foreach name $arg {
+    set matched 0
     foreach lib [$db getLibs] {
       foreach master [$lib getMasters] {
         set master_name [$master getConstName]
-        if { [regexp $name $master_name] } {
+        if { [string match $name $master_name] } {
           lappend masters $master
           set matched 1
         }
       }
     }
+    if { !$matched } {
+      utl::warn "DPL" 28 "$name did not match any masters."
+    }
   }
-  if { !$matched } {
-    utl::warn "DPL" 28 "$name did not match any masters."
+  if { [llength $arg] > 0 && [llength $masters] == 0 } {
+    utl::error "DPL" 39 "\"$arg\" did not match any masters.
+This could be due to a change from using regex to glob to search for cell masters. https://github.com/The-OpenROAD-Project/OpenROAD/pull/3210"
   }
   return $masters
 }

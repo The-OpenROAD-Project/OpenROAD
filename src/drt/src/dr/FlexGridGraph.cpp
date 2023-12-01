@@ -323,7 +323,7 @@ void FlexGridGraph::initEdges(
           if (yTrack != ySubMap.end() && yTrack->second != nullptr)
             break;
         }
-        // didnt find default track, then create tracks if possible
+        // didn't find default track, then create tracks if possible
         if (!restrictedRouting && nextLNum >= VIA_ACCESS_LAYERNUM) {
           dbTechLayerDir prefDir
               = design->getTech()->getLayer(nextLNum)->getDir();

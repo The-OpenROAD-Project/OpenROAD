@@ -28,8 +28,10 @@
 
 #pragma once
 
+#include <cstdint>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "db/obj/frMarker.h"
@@ -38,6 +40,7 @@
 extern std::string DBPROCESSNODE;
 extern std::string OUT_MAZE_FILE;
 extern std::string DRC_RPT_FILE;
+extern std::optional<int> DRC_RPT_ITER_STEP;
 extern std::string CMAP_FILE;
 extern std::string GUIDE_REPORT_FILE;
 // to be removed

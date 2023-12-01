@@ -33,6 +33,7 @@
 #pragma once
 
 #include <array>
+#include <memory>
 #include <vector>
 
 #include "db.h"
@@ -53,32 +54,21 @@ class tmg_rc_sh
   Rect _via_upper_rect;
 
  public:
-  int xMin() { return _rect.xMin(); }
-  int xMax() { return _rect.xMax(); }
-  int yMin() { return _rect.yMin(); }
-  int yMax() { return _rect.yMax(); }
-  bool isVia() { return (_tech_via || _block_via); }
-  dbTechVia* getTechVia() { return _tech_via; }
-  dbVia* getVia() { return _block_via; }
-  dbTechLayer* getTechLayer() { return _layer; }
-  uint getDX() { return (_rect.xMax() - _rect.xMin()); }
-  uint getDY() { return (_rect.yMax() - _rect.yMin()); }
-  void setXmin(int x)
-  {
-    _rect.reset(x, _rect.yMin(), _rect.xMax(), _rect.yMax());
-  }
-  void setXmax(int x)
-  {
-    _rect.reset(_rect.xMin(), _rect.yMin(), x, _rect.yMax());
-  }
-  void setYmin(int y)
-  {
-    _rect.reset(_rect.xMin(), y, _rect.xMax(), _rect.yMax());
-  }
-  void setYmax(int y)
-  {
-    _rect.reset(_rect.xMin(), _rect.yMin(), _rect.xMax(), y);
-  }
+  const Rect& rect() const { return _rect; }
+  int xMin() const { return _rect.xMin(); }
+  int xMax() const { return _rect.xMax(); }
+  int yMin() const { return _rect.yMin(); }
+  int yMax() const { return _rect.yMax(); }
+  bool isVia() const { return (_tech_via || _block_via); }
+  dbTechVia* getTechVia() const { return _tech_via; }
+  dbVia* getVia() const { return _block_via; }
+  dbTechLayer* getTechLayer() const { return _layer; }
+  uint getDX() const { return (_rect.xMax() - _rect.xMin()); }
+  uint getDY() const { return (_rect.yMax() - _rect.yMin()); }
+  void setXmin(int x) { _rect.set_xlo(x); }
+  void setXmax(int x) { _rect.set_xhi(x); }
+  void setYmin(int y) { _rect.set_ylo(y); }
+  void setYmax(int y) { _rect.set_yhi(y); }
 };
 
 struct tmg_rc
@@ -154,17 +144,13 @@ class tmg_conn
   dbNet* _net;
   bool _hasSWire;
   bool _preserveSWire;
-  bool _gVerbose;
   int _swireNetCnt;
   bool _connected;
-  bool _isTree;
   dbWireEncoder _encoder;
   dbWire* _newWire;
   dbTechNonDefaultRule* _net_rule;
   dbTechNonDefaultRule* _path_rule;
   int _misc_cnt;
-  int _max_length;
-  int _cut_length;
   int _cut_end_extMin;
   int _need_short_wire_id;
   std::vector<std::array<tmg_connect_shape, 32>> _csVV;
@@ -178,58 +164,38 @@ class tmg_conn
   int _shortNmax;
   int _last_id;
   int _firstSegmentAfterVia;
-  int _vertSplitCnt;
-  int _horzSplitCnt;
+  utl::Logger* logger_;
 
  public:
-  tmg_conn();
-  void analyzeNet(dbNet* net,
-                  bool force,
-                  bool verbose,
-                  bool no_convert,
-                  int cutLength = 0,
-                  int maxLength = 0,
-                  bool no_patch = true);
+  tmg_conn(utl::Logger* logger);
+  void analyzeNet(dbNet* net);
   void loadNet(dbNet* net);
   void loadWire(dbWire* wire);
   void loadSWire(dbNet* net);
-  void analyzeLoadedNet(bool verbose, bool no_convert);
   bool isConnected() { return _connected; }
-  bool isTree() { return _isTree; }
-  int ptDist(int fr, int to);
+  int ptDist(int fr, int to) const;
 
-  void printConnections();
-  void checkConnOrdered(bool verbose);
-  void checkConnected(bool verbose);
-  void resetSplitCnt()
-  {
-    _vertSplitCnt = 0;
-    _horzSplitCnt = 0;
-  }
-  int getSplitCnt() { return (_vertSplitCnt + _horzSplitCnt); }
-  void set_gv(bool verbose);
+  void checkConnOrdered();
 
  private:
-  void splitTtop(bool verbose);
-  void splitBySj(bool verbose,
-                 int j,
-                 tmg_rc_sh* sj,
+  void splitTtop();
+  void splitBySj(int j,
+                 const tmg_rc_sh* sj,
                  int rt,
                  int sjxMin,
                  int sjyMin,
                  int sjxMax,
                  int sjyMax);
-  void findConnections(bool verbose);
-  void removeShortLoops(int* loop_remaining);
-  void removeWireLoops(int* loop_remaining);
-  void treeReorder(bool verbose, bool no_convert);
+  void findConnections();
+  void removeShortLoops();
+  void removeWireLoops();
+  void treeReorder(bool no_convert);
   bool checkConnected();
   void checkVisited();
-  void printDisconnect();
   tmg_rcpt* allocPt();
-  void addRc(dbShape& s, int ifr, int ito);
+  void addRc(const dbShape& s, int ifr, int ito);
   void addRc(int k,
-             tmg_rc_sh& s,
+             const tmg_rc_sh& s,
              int ifr,
              int ito,
              int xmin,
@@ -242,7 +208,6 @@ class tmg_conn
   void connectTerm(int j, bool soft);
   void connectTermSoft(int j, int rt, Rect& rect, int k);
   void addShort(int i0, int i1);
-  void adjustShapes();
   void relocateShorts();
   void setSring();
   void detachTilePins();
@@ -254,37 +219,28 @@ class tmg_conn
   bool dfsNext(int* from, int* to, int* k, bool* is_short, bool* is_loop);
   int isVisited(int j);
   void addToWire(int fr, int to, int k, bool is_short, bool is_loop);
-  int getExtension(int ipt, tmg_rc* rc);
-  int addPoint(int ipt, tmg_rc* rc);
-  int addPoint(int ifr, int ipt, tmg_rc* rc);
-  int addPointIfExt(int ipt, tmg_rc* rc);
-  void adjustCommit(tmg_rcpt* p, tmg_rc** rV, tmg_rcpt** spV, int sN);
+  int getExtension(int ipt, const tmg_rc* rc);
+  int addPoint(int ipt, const tmg_rc* rc);
+  int addPoint(int ifr, int ipt, const tmg_rc* rc);
+  int addPointIfExt(int ipt, const tmg_rc* rc);
   tmg_rc* addRcPatch(int ifr, int ito);
   int getDisconnectedStart();
   void copyWireIdToVisitedShorts(int j);
 };
 
-class tmg_conn_search_internal;
-
 class tmg_conn_search
 {
- private:
-  tmg_conn_search_internal* _d;
-
  public:
   tmg_conn_search();
   ~tmg_conn_search();
   void clear();
-  void printShape(dbNet* net, int lev, char* filenm);
-  void resetSorted();
-  void sort();
-  void addShape(int lev, int xlo, int ylo, int xhi, int yhi, int isVia, int id);
-  void searchStart(int lyr, int xlo, int ylo, int xhi, int yhi, int isVia);
+  void addShape(int lev, const Rect& bounds, int isVia, int id);
+  void searchStart(int lev, const Rect& bounds, int isVia);
   bool searchNext(int* id);
-  void setXmin(int xmin);
-  void setXmax(int xmax);
-  void setYmin(int ymin);
-  void setYmax(int ymax);
+
+ private:
+  class Impl;
+  std::unique_ptr<Impl> impl_;
 };
 
 }  // namespace odb

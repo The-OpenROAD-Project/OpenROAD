@@ -101,12 +101,30 @@ proc report_worst_negative_slack_metric { args } {
   utl::metric_float $metric_name [worst_negative_slack $min_max]
 }
 
+# From https://wiki.tcl-lang.org/page/Inf
+proc ::tcl::mathfunc::finite {x} {
+    expr {[string is double -strict $x] && $x == $x && $x + 1 != $x}
+}
+
 define_cmd_args "report_erc_metrics" {}
 proc report_erc_metrics { } {
 
-    set max_slew_limit [sta::max_slew_check_slack_limit]
-    set max_cap_limit [sta::max_capacitance_check_slack_limit]
-    set max_fanout_limit [sta::max_fanout_check_limit]
+    # Avoid tcl errors from division involving Inf
+    if {[::tcl::mathfunc::finite [sta::max_slew_check_limit]]} {
+      set max_slew_limit [sta::max_slew_check_slack_limit]
+    } else {
+      set max_slew_limit 0
+    }
+    if {[::tcl::mathfunc::finite [sta::max_capacitance_check_limit]]} {
+      set max_cap_limit [sta::max_capacitance_check_slack_limit]
+    } else {
+      set max_cap_limit 0
+    }
+    if {[::tcl::mathfunc::finite [sta::max_fanout_check_limit]]} {
+      set max_fanout_limit [sta::max_fanout_check_limit]
+    } else {
+      set max_fanout_limit 0
+    }
     set max_slew_violation [sta::max_slew_violation_count]
     set max_cap_violation [sta::max_capacitance_violation_count]
     set max_fanout_violation [sta::max_fanout_violation_count]
@@ -145,7 +163,7 @@ proc report_units_metric { args } {
   utl::push_metrics_stage "run__flow__platform__{}_units"
 
   foreach unit {"time" "capacitance" "resistance" "voltage" "current" "power" "distance"} {
-    utl::metric $unit "1[unit_scale_abreviation $unit][unit_suffix $unit]"
+    utl::metric $unit "1[unit_scale_abbreviation $unit][unit_suffix $unit]"
   }
 
   utl::pop_metrics_stage

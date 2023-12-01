@@ -162,7 +162,7 @@ bool MacroPlacer::init()
     findAdjacencies();
   } else {
     logger_->warn(MPL,
-                  2,
+                  98,
                   "Some instances do not have Liberty models. TritonMP will "
                   "place macros without connection information.");
   }
@@ -193,7 +193,7 @@ void MacroPlacer::reportEdgePinCounts()
   }
   for (int i = 0; i < core_edge_count; i++) {
     CoreEdge edge = coreEdgeFromIndex(i);
-    logger_->info(MPL, 9, "{} pins {}.", coreEdgeString(edge), counts[i]);
+    logger_->info(MPL, 102, "{} pins {}.", coreEdgeString(edge), counts[i]);
   }
 }
 
@@ -411,7 +411,7 @@ void MacroPlacer::placeMacrosCornerMaxWl()
   solution_count_ = 0;
   bool found_best = false;
   int best_setIdx = 0;
-  double bestWwl = -DBL_MAX;
+  double bestWwl = std::numeric_limits<double>::lowest();
   for (auto& partition_set : allSets) {
     // skip for top partition
     if (partition_set.size() == 1) {
@@ -511,9 +511,17 @@ void MacroPlacer::cutRoundUp(const Layout& layout,
                              bool horizontal)
 {
   dbBlock* block = db_->getChip()->getBlock();
-  dbSet<dbRow> rows = block->getRows();
+  dbSite* site = nullptr;
+  for (auto* row : block->getRows()) {
+    if (row->getSite()->getClass() != odb::dbSiteClass::PAD) {
+      site = row->getSite();
+      break;
+    }
+  }
+  if (site == nullptr) {
+    logger_->error(utl::MPL, 97, "Unable to find a site");
+  }
   const double dbu = db_->getTech()->getDbUnitsPerMicron();
-  dbSite* site = rows.begin()->getSite();
   if (horizontal) {
     double siteSizeX = site->getWidth() / dbu;
     cutLine = round(cutLine / siteSizeX) * siteSizeX;
@@ -698,7 +706,7 @@ vector<pair<Partition, Partition>> MacroPlacer::getPartitions(
         uClass = SE;
         break;
       default:
-        logger_->error(MPL, 12, "Unhandled partition class.");
+        logger_->error(MPL, 64, "Unhandled partition class.");
         lClass = W;
         uClass = E;
         break;
@@ -798,7 +806,7 @@ bool MacroPlacer::findMacros()
       if (dps == dbPlacementStatus::NONE
           || dps == dbPlacementStatus::UNPLACED) {
         logger_->error(MPL,
-                       3,
+                       99,
                        "Macro {} is unplaced, use global_placement to get an "
                        "initial placement before macro placement.",
                        inst->getConstName());
@@ -818,11 +826,11 @@ bool MacroPlacer::findMacros()
   }
 
   if (macros_.empty()) {
-    logger_->warn(MPL, 4, "No macros found.");
+    logger_->warn(MPL, 100, "No macros found.");
     return false;
   }
 
-  logger_->info(MPL, 5, "Found {} macros.", macros_.size());
+  logger_->info(MPL, 101, "Found {} macros.", macros_.size());
   logger_->metric("floorplan__design__instance__count__macros", macros_.size());
   return true;
 }
@@ -1277,7 +1285,7 @@ CoreEdge MacroPlacer::findNearestEdge(dbBTerm* bTerm)
   if (status == dbPlacementStatus::UNPLACED
       || status == dbPlacementStatus::NONE) {
     logger_->warn(
-        MPL, 11, "Pin {} is not placed, using west.", bTerm->getConstName());
+        MPL, 65, "Pin {} is not placed, using west.", bTerm->getConstName());
     return CoreEdge::West;
   } else {
     const double dbu = db_->getTech()->getDbUnitsPerMicron();

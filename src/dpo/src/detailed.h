@@ -60,7 +60,7 @@ struct DetailedParams
 class Detailed
 {
  public:
-  Detailed(DetailedParams& params)
+  explicit Detailed(DetailedParams& params)
       : params_(params),
         mgr_(nullptr),
         arch_(nullptr),

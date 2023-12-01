@@ -35,10 +35,16 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
+#include <vector>
 
 namespace odb {
 class dbBlock;
+class dbMaster;
+class dbMTerm;
+class dbNet;
+class dbInst;
 }  // namespace odb
 
 namespace ifp {
@@ -117,6 +123,17 @@ namespace pdn {
 class PdnGen;
 }
 
+namespace pad {
+class ICeWall;
+}
+
+namespace sta {
+class dbSta;
+class Corner;
+class MinMax;
+class LibertyCell;
+}  // namespace sta
+
 namespace ord {
 
 class Tech;
@@ -124,12 +141,13 @@ class Tech;
 class Design
 {
  public:
-  Design(Tech* tech);
+  explicit Design(Tech* tech);
   void readVerilog(const std::string& file_name);
   void readDef(const std::string& file_name,
                bool continue_on_errors = false,
                bool floorplan_init = false,
-               bool incremental = false);
+               bool incremental = false,
+               bool child = false);
   void link(const std::string& design_name);
 
   void readDb(const std::string& file_name);
@@ -145,6 +163,23 @@ class Design
   const std::string evalTclString(const std::string& cmd);
 
   Tech* getTech();
+
+  // Timing related methods
+  std::vector<sta::Corner*> getCorners();
+  enum MinMax
+  {
+    Min,
+    Max
+  };
+  float getNetCap(odb::dbNet* net, sta::Corner* corner, MinMax minmax);
+  bool isSequential(odb::dbMaster* master);
+  bool isBuffer(odb::dbMaster* master);
+  bool isInverter(odb::dbMaster* master);
+  std::vector<odb::dbMTerm*> getTimingFanoutFrom(odb::dbMTerm* input);
+  bool isInClock(odb::dbInst* inst);
+  std::uint64_t getNetRoutedLength(odb::dbNet* net);
+  float staticPower(odb::dbInst* inst, sta::Corner* corner);
+  float dynamicPower(odb::dbInst* inst, sta::Corner* corner);
 
   // Services
   ifp::InitFloorplan* getFloorplan();
@@ -165,8 +200,13 @@ class Design
   stt::SteinerTreeBuilder* getSteinerTreeBuilder();
   psm::PDNSim* getPDNSim();
   pdn::PdnGen* getPdnGen();
+  pad::ICeWall* getICeWall();
 
  private:
+  sta::dbSta* getSta();
+  sta::MinMax* getMinMax(MinMax type);
+  sta::LibertyCell* getLibertyCell(odb::dbMaster* master);
+
   Tech* tech_;
 };
 

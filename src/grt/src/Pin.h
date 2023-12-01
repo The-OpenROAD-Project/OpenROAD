@@ -78,6 +78,7 @@ class Pin
   odb::dbBTerm* getBTerm() const;
   std::string getName() const;
   const odb::Point& getPosition() const { return position_; }
+  const std::vector<int>& getLayers() const { return layers_; }
   int getNumLayers() const { return layers_.size(); }
   int getConnectionLayer() const;
   PinEdge getEdge() const { return edge_; }
@@ -96,7 +97,6 @@ class Pin
 
  private:
   void determineEdge(const odb::Rect& bounds,
-                     const odb::Point& pin_position,
                      const std::vector<odb::dbTechLayer*>& layers);
 
   union

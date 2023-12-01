@@ -41,7 +41,7 @@
 #include <vector>
 
 #include "CtsOptions.h"
-#include "Graphics.h"
+#include "HTreeBuilder.h"
 #include "TechChar.h"
 #include "Util.h"
 
@@ -50,8 +50,6 @@ class Logger;
 }  // namespace utl
 
 namespace cts {
-
-class Graphics;
 
 using utl::Logger;
 
@@ -64,18 +62,24 @@ class Matching
   unsigned getP1() const { return p_1; }
 
  private:
-  unsigned p_0;
-  unsigned p_1;
+  const unsigned p_0;
+  const unsigned p_1;
 };
 
 class SinkClustering
 {
  public:
-  SinkClustering(CtsOptions* options, TechChar* techChar);
+  SinkClustering(const CtsOptions* options,
+                 TechChar* techChar,
+                 HTreeBuilder* HTree);
 
   void addPoint(double x, double y) { points_.emplace_back(x, y); }
   void addCap(float cap) { pointsCap_.emplace_back(cap); }
-  void run(unsigned groupSize, float maxDiameter, int scaleFactor);
+  void run(unsigned groupSize,
+           float maxDiameter,
+           int scaleFactor,
+           unsigned& bestSize,
+           float& bestDiameter);
   unsigned getNumPoints() const { return points_.size(); }
 
   const std::vector<Matching>& allMatchings() const { return matchings_; }
@@ -93,9 +97,8 @@ class SinkClustering
   void computeAllThetas();
   void sortPoints();
   void writePlotFile();
-  void findBestMatching(unsigned groupSize);
+  bool findBestMatching(unsigned groupSize);
   void writePlotFile(unsigned groupSize);
-  void clusteringVisualizer(const std::vector<Point<double>>& points);
 
   double computeTheta(double x, double y) const;
   unsigned numVertex(unsigned x, unsigned y) const;
@@ -107,9 +110,9 @@ class SinkClustering
   static bool isOne(double pos);
   static bool isZero(double pos);
 
-  CtsOptions* options_;
+  const CtsOptions* options_;
   Logger* logger_;
-  TechChar* techChar_;
+  const TechChar* techChar_;
   std::vector<Point<double>> points_;
   std::vector<float> pointsCap_;
   std::vector<std::pair<double, unsigned>> thetaIndexVector_;
@@ -120,8 +123,12 @@ class SinkClustering
   float capPerUnit_;
   bool useMaxCapLimit_;
   int scaleFactor_;
-  std::unique_ptr<Graphics> graphics_;
   static constexpr double max_cap__factor_ = 10;
+  HTreeBuilder* HTree_;
+  bool firstRun_ = true;
+  double xSpan_ = 0.0;
+  double ySpan_ = 0.0;
+  double bestSolutionCost_ = std::numeric_limits<double>::max();
 };
 
 }  // namespace cts

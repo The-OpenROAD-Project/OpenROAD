@@ -43,7 +43,7 @@ Load pins
 
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
-Path Group: (none)
+Path Group: unconstrained
 Path Type: max
 
   Delay    Time   Description

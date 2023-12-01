@@ -1,27 +1,114 @@
-Checks: >
-  -*,
-  readability-identifier-naming
 
-WarningsAsErrors: "*"
+Checks: >
+  clang-diagnostic-*,
+  clang-analyzer-*,
+  -clang-analyzer-core.NonNullParamChecker,
+  -clang-analyzer-cplusplus.NewDeleteLeaks,
+  -clang-analyzer-optin.performance.Padding,
+  readability-*,
+  -readability-identifier-naming
+  -readability-braces-around-statements,
+  -readability-convert-member-functions-to-static,
+  -readability-function-cognitive-complexity,
+  -readability-identifier-length,
+  -readability-implicit-bool-conversion,
+  -readability-isolate-declaration,
+  -readability-magic-numbers,
+  -readability-make-member-function-const,
+  -readability-named-parameter,
+  -readability-qualified-auto,
+  -readability-redundant-access-specifiers,
+  -readability-simplify-boolean-expr,
+  -readability-static-definition-in-anonymous-namespace,
+  -readability-uppercase-literal-suffix,
+  -readability-use-anyofallof,
+  google-*,
+  -google-readability-avoid-underscore-in-googletest-name,
+  -google-readability-casting,
+  -google-readability-todo,
+  -google-runtime-references,
+  -google-explicit-constructor,
+  performance-*,
+  bugprone-*,
+  -bugprone-branch-clone,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-exception-escape,
+  -bugprone-macro-parentheses,
+  -bugprone-move-forwarding-reference,
+  -bugprone-narrowing-conversions,
+  -bugprone-suspicious-missing-comma,
+  modernize-*,
+  -modernize-avoid-bind,
+  -modernize-avoid-c-arrays,
+  -modernize-concat-nested-namespaces,
+  -modernize-pass-by-value,
+  -modernize-raw-string-literal,
+  -modernize-return-braced-init-list,
+  -modernize-use-auto,
+  -modernize-use-nodiscard,
+  -modernize-use-trailing-return-type,
+  -modernize-use-transparent-functors,
+  misc-*,
+  -misc-const-correctness,
+  -misc-no-recursion,
+  -misc-non-private-member-variables-in-classes,
+  -misc-redundant-expression,
+  -misc-unused-parameters,
 
 CheckOptions:
-  - { key: readability-identifier-naming.ClassCase,                value: CamelCase  }
-  - { key: readability-identifier-naming.EnumCase,                 value: CamelCase  }
-  - { key: readability-identifier-naming.UnionCase,                value: CamelCase  }
-  - { key: readability-identifier-naming.TemplateParameterCase,    value: CamelCase  }
-  - { key: readability-identifier-naming.TypedefCase,              value: CamelCase  }
-  - { key: readability-identifier-naming.TypeAliasCase,            value: CamelCase  }
-  - { key: readability-identifier-naming.FunctionCase,             value: camelBack  }
-  - { key: readability-identifier-naming.ClassMethodCase,          value: camelBack  }
-  - { key: readability-identifier-naming.VariableCase,             value: lower_case }
-  - { key: readability-identifier-naming.ClassMemberCase,          value: lower_case }
-  - { key: readability-identifier-naming.ClassMemberSuffix,        value: _          }
-  - { key: readability-identifier-naming.MemberCase,               value: lower_case }
-  - { key: readability-identifier-naming.PrivateMemberSuffix,      value: '_'        }
-  - { key: readability-identifier-naming.ProtectedMemberSuffix,    value: '_'        }
-  - { key: readability-identifier-naming.PrivateMemberCase,        value: lower_case }
-  - { key: readability-identifier-naming.ProtectedMemberCase,      value: lower_case }
-  - { key: readability-identifier-naming.NamespaceCase,            value: lower_case }
-  - { key: readability-identifier-naming.ConstantCase,             value: lower_case }
-  - { key: readability-identifier-naming.ParameterCase,            value: lower_case }
-  - { key: readability-identifier-naming.MacroDefinitionCase,      value: UPPER_CASE }
+   - key:             google-runtime-int.TypeSuffix
+     value:           _t
+
+# Not currently handling identifier naming
+# WarningsAsErrors: "*"
+
+# Google Style Guide Identifier naming
+# CheckOptions:
+#   - key:             readability-identifier-naming.ClassCase
+#     value:           CamelCase
+#   - key:             readability-identifier-naming.ClassMemberCase
+#     value:           lower_case
+#   - key:             readability-identifier-naming.ConstexprVariableCase
+#     value:           CamelCase
+#   - key:             readability-identifier-naming.ConstexprVariablePrefix
+#     value:           k
+#   - key:             readability-identifier-naming.EnumCase
+#     value:           CamelCase
+#   - key:             readability-identifier-naming.EnumConstantCase
+#     value:           CamelCase
+#   - key:             readability-identifier-naming.EnumConstantPrefix
+#     value:           k
+#   - key:             readability-identifier-naming.FunctionCase
+#     value:           CamelCase
+#   - key:             readability-identifier-naming.GlobalConstantCase
+#     value:           CamelCase
+#   - key:             readability-identifier-naming.GlobalConstantPrefix
+#     value:           k
+#   - key:             readability-identifier-naming.StaticConstantCase
+#     value:           CamelCase
+#   - key:             readability-identifier-naming.StaticConstantPrefix
+#     value:           k
+#   - key:             readability-identifier-naming.StaticVariableCase
+#     value:           lower_case
+#   - key:             readability-identifier-naming.MacroDefinitionCase
+#     value:           UPPER_CASE
+#   - key:             readability-identifier-naming.MacroDefinitionIgnoredRegexp
+#     value:           '^[A-Z]+(_[A-Z]+)*_$'
+#   - key:             readability-identifier-naming.MemberCase
+#     value:           lower_case
+#   - key:             readability-identifier-naming.PrivateMemberSuffix
+#     value:           _
+#   - key:             readability-identifier-naming.PublicMemberSuffix
+#     value:           ''
+#   - key:             readability-identifier-naming.NamespaceCase
+#     value:           lower_case
+#   - key:             readability-identifier-naming.ParameterCase
+#     value:           lower_case
+#   - key:             readability-identifier-naming.TypeAliasCase
+#     value:           CamelCase
+#   - key:             readability-identifier-naming.TypedefCase
+#     value:           CamelCase
+#   - key:             readability-identifier-naming.VariableCase
+#     value:           lower_case
+#   - key:             readability-identifier-naming.IgnoreMainLikeFunctions
+#     value:           1

@@ -83,8 +83,15 @@ using utl::Logger;
 class LevelBalancer
 {
  public:
-  LevelBalancer(TreeBuilder* root, CtsOptions* options, Logger* logger)
-      : root_(root), options_(options), logger_(logger), levelBufCount_(0)
+  LevelBalancer(TreeBuilder* root,
+                const CtsOptions* options,
+                Logger* logger,
+                double scalingUnit)
+      : root_(root),
+        options_(options),
+        logger_(logger),
+        levelBufCount_(0),
+        wireSegmentUnit_(scalingUnit)
   {
   }
 
@@ -93,7 +100,7 @@ class LevelBalancer
                        std::vector<ClockInst*> cluster,
                        Clock::SubNet* driverNet,
                        unsigned bufLevels,
-                       const std::string nameSuffix);
+                       const std::string& nameSuffix);
   void fixTreeLevels(TreeBuilder* builder,
                      unsigned parentDepth,
                      unsigned maxTreeDepth);
@@ -104,9 +111,11 @@ class LevelBalancer
       = std::map<odb::dbInst*, std::pair<unsigned, TreeBuilder*>>;
 
   TreeBuilder* root_;
-  CtsOptions* options_;
+  const CtsOptions* options_;
   Logger* logger_;
   CellLevelMap cgcLevelMap_;
   unsigned levelBufCount_;
+  double wireSegmentUnit_;
 };
+
 }  // namespace cts

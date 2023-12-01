@@ -140,7 +140,8 @@ void make_instance_grid(pdn::VoltageDomain* domain,
                         int y1,
                         bool pg_pins_to_boundary,
                         bool default_grid, 
-                        const std::vector<odb::dbTechLayer*>& generate_obstructions)
+                        const std::vector<odb::dbTechLayer*>& generate_obstructions,
+                        bool is_bump)
 {
   PdnGen* pdngen = ord::getPdnGen();
   StartsWith starts_with = POWER;
@@ -149,7 +150,7 @@ void make_instance_grid(pdn::VoltageDomain* domain,
   }
   
   std::array<int, 4> halo{x0, y0, x1, y1};
-  pdngen->makeInstanceGrid(domain, name, starts_with, inst, halo, pg_pins_to_boundary, default_grid, generate_obstructions);
+  pdngen->makeInstanceGrid(domain, name, starts_with, inst, halo, pg_pins_to_boundary, default_grid, generate_obstructions, is_bump);
 }
 
 void make_existing_grid(const char* name, 
@@ -201,6 +202,40 @@ void make_ring(const char* grid_name,
                      nets);
   }
 }
+
+void createSrouteWires(
+    const char* net,
+    const char* outerNet,
+    odb::dbTechLayer* layer0,
+    odb::dbTechLayer* layer1,
+    int cut_pitch_x,
+    int cut_pitch_y,
+    const std::vector<odb::dbTechViaGenerateRule*>& vias,
+    const std::vector<odb::dbTechVia*>& techvias,
+    int max_rows,
+    int max_columns,
+    const std::vector<odb::dbTechLayer*>& ongrid,
+    std::vector<int> metalwidths,
+    std::vector<int> metalspaces,
+    const std::vector<odb::dbInst*>& insts)
+{
+  PdnGen* pdngen = ord::getPdnGen();
+  pdngen->createSrouteWires(net,
+                            outerNet,
+                            layer0,
+                            layer1,
+                            cut_pitch_x,
+                            cut_pitch_y,
+                            vias,
+                            techvias,
+                            max_rows,
+                            max_columns,
+                            ongrid,
+                            metalwidths,
+                            metalspaces,
+                            insts);
+}
+
 
 void make_followpin(const char* grid_name, 
                     odb::dbTechLayer* layer, 

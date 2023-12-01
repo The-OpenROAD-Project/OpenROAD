@@ -33,7 +33,8 @@
 #include "dbTypes.h"
 
 #include <ctype.h>
-#include <string.h>
+
+#include <cstring>
 
 #include "dbId.h"
 
@@ -185,6 +186,24 @@ dbOrientType dbOrientType::flipY() const
       return R90;
   }
   return R0;
+}
+
+bool dbOrientType::isRightAngleRotation() const
+{
+  switch (_value) {
+    case R90:
+    case R270:
+    case MYR90:
+    case MXR90:
+      return true;
+    case R0:
+    case R180:
+    case MY:
+    case MX:
+      return false;
+  }
+  assert(false);
+  return false;
 }
 
 dbGroupType::dbGroupType(const char* orient)

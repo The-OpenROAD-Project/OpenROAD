@@ -176,13 +176,13 @@ class frLayer
       return dbTechLayerDir::NONE;
     return db_layer_->getDirection();
   }
-  bool isVertical()
+  bool isVertical() const
   {
     return (fakeCut || fakeMasterslice)
                ? false
                : db_layer_->getDirection() == dbTechLayerDir::VERTICAL;
   }
-  bool isHorizontal()
+  bool isHorizontal() const
   {
     return (fakeCut || fakeMasterslice)
                ? false
@@ -190,7 +190,7 @@ class frLayer
   }
   bool isUnidirectional() const
   {
-    // We don't handle coloring so any double/triple patterned
+    // We don't handle coloring so any multiple patterned
     // layer is treated as unidirectional.
     // RectOnly could allow for a purely wrong-way rect but
     // we ignore that rare case and treat it as unidirectional.
@@ -541,6 +541,13 @@ class frLayer
       return (!cutConstraints.empty());
     }
   }
+  bool haslef58CutSpacing(bool samenet = false) const
+  {
+    if (samenet) {
+      return (!lef58CutSpacingSamenetConstraints.empty());
+    }
+    return !lef58CutSpacingConstraints.empty();
+  }
   bool hasInterLayerCutSpacing(frLayerNum layerNum, bool samenet = false) const
   {
     if (samenet) {
@@ -689,6 +696,22 @@ class frLayer
     return (!lef58AreaConstraints.empty());
   }
 
+  void addKeepOutZoneConstraint(frLef58KeepOutZoneConstraint* in)
+  {
+    keepOutZoneConstraints.push_back(in);
+  }
+
+  const std::vector<frLef58KeepOutZoneConstraint*>& getKeepOutZoneConstraints()
+      const
+  {
+    return keepOutZoneConstraints;
+  }
+
+  bool hasKeepOutZoneConstraints() const
+  {
+    return (!keepOutZoneConstraints.empty());
+  }
+
   void setLef58SameNetInterCutSpcTblConstraint(
       frLef58CutSpacingTableConstraint* con)
   {
@@ -819,6 +842,7 @@ class frLayer
   std::vector<frLef58EolKeepOutConstraint*> lef58EolKeepOutConstraints;
   std::vector<frMetalWidthViaConstraint*> metalWidthViaConstraints;
   std::vector<frLef58AreaConstraint*> lef58AreaConstraints;
+  std::vector<frLef58KeepOutZoneConstraint*> keepOutZoneConstraints;
   drEolSpacingConstraint drEolCon;
 };
 }  // namespace fr

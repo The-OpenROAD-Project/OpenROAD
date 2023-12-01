@@ -53,12 +53,12 @@ class Ruler
         const std::string& label = "");
 
   odb::Point& getPt0() { return pt0_; }
-  const odb::Point getPt0() const { return pt0_; }
+  odb::Point getPt0() const { return pt0_; }
   odb::Point& getPt1() { return pt1_; }
-  const odb::Point getPt1() const { return pt1_; }
-  const odb::Point getManhattanJoinPt() const;
-  static const odb::Point getManhattanJoinPt(const odb::Point& pt0,
-                                             const odb::Point& pt1);
+  odb::Point getPt1() const { return pt1_; }
+  odb::Point getManhattanJoinPt() const;
+  static odb::Point getManhattanJoinPt(const odb::Point& pt0,
+                                       const odb::Point& pt1);
   const std::string getName() const { return name_; }
   void setName(const std::string& name) { name_ = name; }
   const std::string getLabel() const { return label_; }
@@ -82,6 +82,8 @@ class Ruler
   std::string name_;
   std::string label_;
 };
+
+using Rulers = std::vector<std::unique_ptr<Ruler>>;
 
 class RulerDescriptor : public Descriptor
 {

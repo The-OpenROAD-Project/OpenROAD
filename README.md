@@ -1,84 +1,222 @@
 # OpenROAD
 
-[![Build Status](https://jenkins.openroad.tools/buildStatus/icon?job=OpenROAD-Public%2Fmaster)](https://jenkins.openroad.tools/job/OpenROAD-Public/job/master/) [![Coverity Scan Status](https://scan.coverity.com/projects/the-openroad-project-openroad/badge.svg)](https://scan.coverity.com/projects/the-openroad-project-openroad) [![Documentation Status](https://readthedocs.org/projects/openroad/badge/?version=latest)](https://openroad.readthedocs.io/en/latest/?badge=latest) [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5370/badge)](https://bestpractices.coreinfrastructure.org/projects/5370)
+[![Build Status](https://jenkins.openroad.tools/buildStatus/icon?job=OpenROAD-Public%2Fmaster)](https://jenkins.openroad.tools/job/OpenROAD-Public/job/master/)
+[![Coverity Scan Status](https://scan.coverity.com/projects/the-openroad-project-openroad/badge.svg)](https://scan.coverity.com/projects/the-openroad-project-openroad)
+[![Documentation Status](https://readthedocs.org/projects/openroad/badge/?version=latest)](https://openroad.readthedocs.io/en/latest/?badge=latest)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5370/badge)](https://bestpractices.coreinfrastructure.org/en/projects/5370)
 
-OpenROAD is an integrated chip physical design tool that takes a
-design from synthesized Verilog to routed layout.
+## About OpenROAD
 
-An outline of steps used to build a chip using OpenROAD is shown below:
+OpenROAD is the leading open-source, foundational application for
+semiconductor digital design. The OpenROAD flow delivers an
+Autonomous, No-Human-In-Loop (NHIL) flow, 24 hour turnaround from
+RTL-GDSII for rapid design exploration and physical design implementation.
 
-* Initialize floorplan - define the chip size and cell rows
-* Place pins (for designs without pads )
-* Place macro cells (RAMs, embedded macros)
-* Insert substrate tap cells
-* Insert power distribution network
-* Macro Placement of macro cells
-* Global placement of standard cells
-* Repair max slew, max capacitance, and max fanout violations and long wires
-* Clock tree synthesis
-* Optimize setup/hold timing
-* Insert fill cells
-* Global routing (route guides for detailed routing)
-* Antenna repair
-* Detailed routing
-* Parasitic extraction
-* Static timing analysis
+```mermaid
+%%{
+  init: {
+    'theme': 'neutral',
+    'themeVariables': {
+      'textColor': '#000000',
+      'noteTextColor' : '#000000',
+      'fontSize': '20px'
+    }
+  }
+}%%
 
-OpenROAD uses the OpenDB database and OpenSTA for static timing analysis.
+flowchart LR
+    b0[                  ] --- b2[ ] --- b4[ ] --- ORFlow --- b1[ ] --- b3[ ] --- b5[                  ]
+    style b0 stroke-width:0px, fill: #FFFFFF00, color:#FFFFFF00
+    style b1 stroke-width:0px, fill: #FFFFFF00
+    style b2 stroke-width:0px, fill: #FFFFFF00
+    style b3 stroke-width:0px, fill: #FFFFFF00
+    style b4 stroke-width:0px, fill: #FFFFFF00
+    style b5 stroke-width:0px, fill: #FFFFFF00, color:#FFFFFF00
 
-Documentation is also available [here](https://openroad.readthedocs.io/en/latest/main/README.html).
+    linkStyle 0 stroke-width:0px
+    linkStyle 1 stroke-width:0px
+    linkStyle 2 stroke-width:0px
+    linkStyle 3 stroke-width:0px
+    linkStyle 4 stroke-width:0px
+    linkStyle 5 stroke-width:0px
 
-## Getting Started with OpenROAD
 
-[OpenROAD](https://theopenroadproject.org/) is the leading
-open-source, foundational application for semiconductor digital design.
-It eliminates the barriers of cost, risk and uncertainty in hardware
-design to foster open access, expertise, rapid innovation, and faster
-design turnaround. The OpenROAD application enables flexible flow
+    subgraph ORFlow
+    direction TB
+    style ORFlow fill:#ffffff00, stroke-width:0px
+        A[Verilog\n+ libraries\n + constraints] --> FLOW
+        style A fill:#74c2b5,stroke:#000000,stroke-width:4px
+        subgraph FLOW
+        style FLOW fill:#FFFFFF00,stroke-width:4px
+
+        direction TB
+            B[Synthesis]
+            B --> C[Floorplan]
+            C --> D[Placement]
+            D --> E[Clock Tree Synthesis]
+            E --> F[Routing]
+            F --> G[Finishing]
+            style B fill:#f8cecc,stroke:#000000,stroke-width:4px
+            style C fill:#fff2cc,stroke:#000000,stroke-width:4px
+            style D fill:#cce5ff,stroke:#000000,stroke-width:4px
+            style E fill:#67ab9f,stroke:#000000,stroke-width:4px
+            style F fill:#fa6800,stroke:#000000,stroke-width:4px
+            style G fill:#ff6666,stroke:#000000,stroke-width:4px
+        end
+
+        FLOW --> H[GDSII\n Final Layout]
+        %% H --- H1[ ]
+        %% style H1 stroke-width:0px, fill: #FFFFFF00
+        %% linkStyle 11 stroke-width:0px
+        style H fill:#ff0000,stroke:#000000,stroke-width:4px
+    end
+
+```
+
+
+## OpenROAD Mission
+
+[OpenROAD](https://theopenroadproject.org/) eliminates the barriers
+of cost, schedule risk and uncertainty in hardware design to promote
+open access to rapid, low-cost IC design software and expertise and
+system innovation. The OpenROAD application enables flexible flow
 control through an API with bindings in Tcl and Python.
 
-OpenROAD is a foundational building block in open-source digital flows like
-[OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts),
-[OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) from
-[Efabless](https://efabless.com/), Silicon Compiler Systems; as
-well as [OpenFASoC](https://github.com/idea-fasoc/OpenFASOC) for
-mixed-signal design flows.
+OpenROAD is used in research and commercial applications such as,
+- [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)
+  from [OpenROAD](https://theopenroadproject.org/)
+- [OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) from
+  [Efabless](https://efabless.com/)
+- [Silicon Compiler](https://github.com/siliconcompiler/siliconcompiler)
+  from [Zero ASIC](https://www.zeroasic.com/)
+- [Hammer](https://docs.hammer-eda.org/en/latest/Examples/openroad-nangate45.html)
+  from [UC Berkeley](https://github.com/ucb-bar)
+- [OpenFASoC](https://github.com/idea-fasoc/OpenFASOC) from
+  [IDEA-FASoC](https://github.com/idea-fasoc) for mixed-signal design flows
 
-OpenROAD users span hardware designers, industry collaborators,
-enthusiasts, academics, and researchers.
+OpenROAD fosters a vibrant ecosystem of users through active
+collaboration and partnership through software development and key
+alliances. Our growing user community includes hardware designers,
+software engineers, industry collaborators, VLSI enthusiasts,
+students and researchers.
 
-Two main flow controllers are supported by the
-[OpenROAD](https://github.com/The-OpenROAD-Project/OpenROAD)
-project repository:
+OpenROAD strongly advocates and enables IC design-based education
+and workforce development initiatives through training content and
+courses across several global universities, the Google-SkyWater
+[shuttles](https://platform.efabless.com/projects/public) also
+includes GlobalFoundries shuttles, design contests and IC design
+workshops. The OpenROAD flow has been successfully used to date
+in over 600 silicon-ready tapeouts for technologies up to 12nm.
 
--   [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts) -
-     Supported by the OpenROAD project
+## Getting Started with OpenROAD-flow-scripts
 
--   [OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) -
-     Supported by [Efabless](https://efabless.com/)
+OpenROAD provides [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)
+as a native, ready-to-use prototyping and tapeout flow. However,
+it also enables the creation of any custom flow controllers based
+on the underlying tools, database and analysis engines. Please refer to the flow documentation [here](https://openroad-flow-scripts.readthedocs.io/en/latest/).
 
-The OpenROAD flow delivers an autonomous, no-human-in-the-loop, 24 hour
-turnaround from RTL to GDSII for design exploration and physical design
-implementation.
+OpenROAD-flow-scripts (ORFS) is a fully autonomous, RTL-GDSII flow
+for rapid architecture and design space exploration, early prediction
+of QoR and detailed physical design implementation. However, ORFS
+also enables manual intervention for finer user control of individual
+flow stages through Tcl commands and Python APIs.
 
-![rtl2gds.webp](./docs/images/rtl2gds.webp)
+Figure below shows the main stages of the OpenROAD-flow-scripts:
+
+```mermaid
+%%{init: { 'logLevel': 'debug', 'theme': 'dark'
+  } }%%
+timeline
+  title RTL-GDSII Using OpenROAD-flow-scripts
+  Synthesis
+    : Inputs  [RTL, SDC, .lib, .lef]
+    : Logic Synthesis  (Yosys)
+    : Output files  [Netlist, SDC]
+  Floorplan
+    : Floorplan Initialization
+    : IO placement  (random)
+    : Timing-driven mixed-size placement
+    : Macro placement
+    : Tapcell and welltie insertion
+    : PDN generation
+  Placement
+    : Global placement without placed IOs
+    : IO placement  (optimized)
+    : Global placement with placed IOs
+    : Resizing and buffering
+    : Detailed placement
+  CTS : Clock Tree Synthesis
+    : Timing optimization
+    : Filler cell insertion
+  Routing
+    : Global Routing
+    : Detailed Routing
+  Finishing
+    : Metal Fill insertion
+    : Signoff timing report
+    : Generate GDSII  (KLayout)
+    : DRC/LVS check (KLayout)
+```
+
+Here are the main steps for a physical design implementation
+using OpenROAD;
+
+- `Floorplanning`
+  - Floorplan initialization - define the chip area, utilization
+  - IO pin placement (for designs without pads)
+  - Tap cell and well tie insertion
+  - PDN- power distribution network creation
+- `Global Placement` - Minimize wirelengths
+  - Macro placement (RAMs, embedded macros)
+  - Standard cell placement
+  - Automatic placement optimization and repair for max slew,
+    max capacitance, and max fanout violations and long wires
+- `Detailed Placement`
+  - Legalize placement - align to grid, adhere to design rules
+  - Incremental timing analysis for early estimates
+- `Clock Tree Synthesis` - Generate a balanced tree to meet timing
+  and reduce skews
+  - Insert buffers and resize for high fanout nets
+- `Optimize setup/hold timing`
+- `Global routing`
+  - Antenna repair
+  - Create routing guides
+- `Detailed routing`
+  - Legalize routes, DRC-correct routing to meet timing, power
+    constraints
+- `Chip Finishing`
+  - Parasitic extraction using OpenRCX
+  - Final timing verification
+  - Final physical verification
+  - Dummy metal fill for manufacturability
+  - Use KLayout or Magic using generated GDS for DRC signoff
 
 ### GUI
 
 The OpenROAD GUI is a powerful visualization, analysis, and debugging
 tool with a customizable Tcl interface. The below figures show GUI views for
-various flow stages including post-routed timing, placement congestion, and
-CTS.
+various flow stages including floorplanning, placement congestion,
+CTS and post-routed design.
 
-![ibexGui.webp](./docs/images/ibexGui.webp)
+#### Floorplan
 
-### Placement Congestion View:
+![ibex_floorplan.webp](./docs/images/ibex_floorplan.webp)
+
+#### Automatic Hierarchical Macro Placement
+
+![Ariane133](./docs/images/ariane133_mpl2.webp)
+
+#### Placement Congestion Visualization
 
 ![pl_congestion.webp](./docs/images/pl_congestion.webp)
 
-### CTS:
+#### CTS
 
 ![clk_routing.webp](./docs/images/clk_routing.webp)
+
+#### Routing
+
+![ibex_routing.webp](./docs/images/ibex_routing.webp)
 
 ### PDK Support
 
@@ -86,7 +224,7 @@ The OpenROAD application is PDK independent. However, it has been tested
 and validated with specific PDKs in the context of various flow
 controllers.
 
-OpenLane supports Skywater130.
+OpenLane supports SkyWater 130nm and GlobalFoundries 180nm.
 
 OpenROAD-flow-scripts supports several public and private PDKs
 including:
@@ -94,7 +232,7 @@ including:
 #### Open-Source PDKs
 
 -   `GF180` - 180nm
--   `Skywater130` - 130nm
+-   `SKY130` - 130nm
 -   `Nangate45` - 45nm
 -   `ASAP7` - Predictive FinFET 7nm
 
@@ -115,10 +253,10 @@ platform-specific files yourself.
 
 ## Tapeouts
 
-OpenROAD has been used for full physical implementation in over 240 tapeouts
-in Sky130 through the Google-sponsored, Efabless [MPW
-shuttle](https://efabless.com/open_shuttle_program) and
-[ChipIgnite](https://efabless.com/) programs.
+OpenROAD has been used for full physical implementation in over
+600 tapeouts in SKY130 and GF180 through the Google-sponsored,
+Efabless [MPW shuttle](https://efabless.com/open_shuttle_program)
+and [ChipIgnite](https://efabless.com/) programs.
 
 ![shuttle.webp](./docs/images/shuttle.webp)
 
@@ -135,141 +273,54 @@ Examples of designs include Open processor cores, RISC-V based SoCs,
 cryptocurrency miners, robotic app processors, amateur satellite radio
 transceivers, OpenPower-based Microwatt etc.
 
-## Install dependencies
+## Build OpenROAD
 
-For a limited number of configurations, the following script can be used
-to install dependencies.  The script `etc/DependencyInstaller.sh` supports
-Centos7, Ubuntu 20.04, Ubuntu 22.04, RHEL 8, Debian 10 and Debian 11. To correctly install the dependencies with the
-script you need to run as root or prepend `sudo` to the commands below.
-
-``` shell
-./etc/DependencyInstaller.sh -help
-
-Usage: etc/DependencyInstaller.sh
-                                # Installs all of OpenROAD's dependencies no
-                                #     need to run -base or -common. Requires
-                                #     privileged access.
-                                #
-       etc/DependencyInstaller.sh -base
-                                # Installs OpenROAD's dependencies using
-                                #     package managers (-common must be
-                                #     executed in another command).
-       etc/DependencyInstaller.sh -common
-                                # Installs OpenROAD's common dependencies
-                                #     (-base must be executed in another
-                                #     command).
-       etc/DependencyInstaller.sh -prefix=DIR
-                                # Installs common dependencies in an existing
-                                #     user-specified directory. Only used
-                                #     with -common. This flag cannot be used
-                                #     with sudo or with root access.
-       etc/DependencyInstaller.sh -local
-                                # Installs common dependencies in
-                                #    "$HOME/.local". Only used with
-                                #    -common. This flag cannot be used with
-                                #    sudo or with root access.
-```
-
-## Build
-
-The first step, independent of the build method, is to download the repository:
-
-``` shell
-git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git
-cd OpenROAD
-```
-
-OpenROAD git submodules (cloned by the `--recursive` flag) are located in `src/`.
-
-The default build type is RELEASE to compile optimized code.
-The resulting executable is in `build/src/openroad`.
-
-Optional CMake variables passed as `-D<var>=<value>` arguments to CMake are show below.
-
-| Argument               | Value                     |
-|------------------------|---------------------------|
-| `CMAKE_BUILD_TYPE`     | DEBUG, RELEASE            |
-| `CMAKE_CXX_FLAGS`      | Additional compiler flags |
-| `TCL_LIBRARY`          | Path to Tcl library       |
-| `TCL_HEADER`           | Path to `tcl.h`           |
-| `ZLIB_ROOT`            | Path to `zlib`            |
-| `CMAKE_INSTALL_PREFIX` | Path to install binary    |
-| `GPU`                  | true, false               |
-
-> **Note:** There is a `openroad_build.log` file that is generated with every build in the build directory. In case of filing issues, it can be uploaded in the "Relevant log output" section of OpenROAD [issue forms](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/issues/new/choose).
-
-### Build by hand
-
-``` shell
-mkdir build
-cd build
-cmake ..
-make
-```
-
-The default install directory is `/usr/local`.
-To install in a different directory with CMake use:
-
-``` shell
-cmake .. -DCMAKE_INSTALL_PREFIX=<prefix_path>
-```
-
-Alternatively, you can use the `DESTDIR` variable with make.
-
-``` shell
-make DESTDIR=<prefix_path> install
-```
-
-### Build using support script
-
-``` shell
-./etc/Build.sh
-# To build with debug option enabled and if the Tcl library is not on the default path
-./etc/Build.sh -cmake="-DCMAKE_BUILD_TYPE=DEBUG -DTCL_LIB=/path/to/tcl/lib"
-```
-
-The default install directory is `/usr/local`.
-To install in a different directory use:
-
-``` shell
-./etc/Build.sh -cmake="-DCMAKE_INSTALL_PREFIX=<prefix_path>"
-```
-
-### LTO Options
-By default, OpenROAD is built with link time optimizations enabled. This adds
-about 1 minute to compile times and improves the runtime by about 11%. If
-you would like to disable LTO pass `-DLINK_TIME_OPTIMIZATION=OFF` when
-generating a build.
-
-### GPU acceleration
-The default solver for initial placement is single threaded. If you would like
-to enable GPU and use the CUDA solver, set `-DGPU=true` at cmake time.
-
-Also, remember to install CUDA Toolkit and proper driver manually. See https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html
+To build OpenROAD tools locally in your machine, follow steps
+from [here](docs/user/Build.md).
 
 ## Regression Tests
 
-There are a set of regression tests in `test/`.
+There are a set of executable regression test scripts in `./test/`.
 
 ``` shell
-# run all tool unit tests
-test/regression
+# run tests for all tools
+./test/regression
+
 # run all flow tests
-test/regression flow
+./test/regression flow
+
 # run <tool> tests
-test/regression <tool>
-# run <tool> tool tests
-src/<tool>/test/regression
+./test/regression <tool>
+
+# run all <tool>-specific unit tests
+cd src/<tool>
+./test/regression
+
+# run only <TEST_NAME> for <tool>
+cd src/<tool>
+./test/regression <TEST_NAME>
 ```
 
 The flow tests check results such as worst slack against reference values.
 Use `report_flow_metrics [test]...` to see all of the metrics.
-Use `save_flow_metrics [test]...` to add margins to the metrics and save them to <test>.metrics_limits.
 
 ``` text
 % report_flow_metrics gcd_nangate45
                        insts    area util slack_min slack_max  tns_max clk_skew max_slew max_cap max_fanout DPL ANT drv
 gcd_nangate45            368     564  8.8     0.112    -0.015     -0.1    0.004        0       0          0   0   0   0
+```
+
+To update a failing regression, follow the instructions below:
+
+```tcl
+# update log files (i.e. *ok)
+save_ok <TEST_NAME>
+
+# update "*.metrics" for tests that use flow test
+save_flow_metrics <TEST_NAME> 
+
+# update "*.metrics_limits" files
+save_flow_metrics_limits <TEST_NAME>
 ```
 
 ## Run
@@ -296,29 +347,17 @@ OpenROAD then sources the command file `cmd_file` if it is specified on
 the command line. Unless the `-exit` command line flag is specified, it
 enters an interactive Tcl command interpreter.
 
-Below is a list of the available tools/modules included in the OpenROAD app:
+A list of the available tools/modules included in the OpenROAD app
+and their descriptions are available [here](docs/contrib/Logger.md#openroad-tool-list).
 
-| Tool | Purpose |
-|-|-|
-| [OpenROAD](./src/README.md) | OpenROAD (global commands) |
-| [OpenDB](./src/odb/README.md) | Database |
-| [OpenRCX](./src/rcx/README.md) | Parasitics extraction |
-| [Restructure](./src/rmp/README.md) | Synthesis |
-| [Floorplan](./src/ifp/README.md) | Initialize floorplan |
-| [ioPlacer](./src/ppl/README.md) | Pin placement |
-| [ICeWall](./src/pad/README.md) | Chip-level connections |
-| [TritonMacroPlacer](./src/mpl/README.md) | Macro placement |
-| [Tapcell](./src/tap/README.md) | Tapcell insertion |
-| [PDN](./src/pdn/README.md), [PDNSim](./src/psm/README.md) | PDN analysis |
-| [RePlAce](./src/gpl/README.md) | Global placement |
-| [OpenSTA](src/sta/README.md) | Timing analysis |
-| [Resizer](./src/rsz/README.md) | Gate resizer |
-| [OpenDP](./src/dpl/README.md) | Detailed placement |
-| [TritonCTS 2.0](./src/cts/README.md) | Clock tree synthesis |
-| [FastRoute](./src/grt/README.md), [Antenna Checker](./src/ant/README.md) | Global routing |
-| [TritonRoute](./src/drt/README.md) | Detailed routing |
-| [Metal Fill](./src/fin/README.md) | Metal fill |
-| [GUI](./src/gui/README.md) | Graphical user interface |
+## Git Quickstart
+OpenROAD uses Git for version control and contributions. 
+Get familiarised with a quickstart tutorial to contribution [here](docs/contrib/GitGuide.md).
+
+
+## Understanding Warning and Error Messages
+Seeing OpenROAD warnings or errors you do not understand? We have compiled a table of all messages
+and you may potentially find your answer [here](https://openroad.readthedocs.io/en/latest/user/MessagesFinal.html).
 
 ## License
 

@@ -43,7 +43,7 @@ class taPin : public taBlockObject
       : taBlockObject(),
         guide_(nullptr),
         pinFigs_(),
-        wlen_helper_(0),
+        nextIrouteDir_(0),
         hasPinCoord_(false),
         pinCoord_(0),
         cost_(0),
@@ -51,7 +51,7 @@ class taPin : public taBlockObject
   {
   }
   // getters
-  int getWlenHelper() const { return wlen_helper_; }
+  int getNextIrouteDir() const { return nextIrouteDir_; }
   bool hasPinCoord() const { return hasPinCoord_; }
   int getPinCoord() const { return pinCoord_; }
   frGuide* getGuide() const { return guide_; }
@@ -61,7 +61,7 @@ class taPin : public taBlockObject
   }
   frCost getCost() const { return cost_; }
   int getNumAssigned() const { return numAssigned_; }
-  void setWlenHelper(int in) { wlen_helper_ = in; }
+  void setNextIrouteDir(int in) { nextIrouteDir_ = in; }
   void setPinCoord(frCoord in)
   {
     hasPinCoord_ = true;
@@ -90,7 +90,7 @@ class taPin : public taBlockObject
  protected:
   frGuide* guide_;
   std::vector<std::unique_ptr<taPinFig>> pinFigs_;
-  int wlen_helper_;  // for nbr global guides
+  int nextIrouteDir_;  // for nbr global guides
   bool hasPinCoord_;
   frCoord pinCoord_;  // for local guides and pin guides
   frCost cost_;

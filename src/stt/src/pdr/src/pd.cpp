@@ -148,9 +148,10 @@ static void buildSpanningTree(const ListGraph::NodeMap<Point>& node_point,
                               const vector<Neighbors>& nn,
                               ListGraph& graph)
 {
-  using namespace boost::heap;
-  using Heap
-      = d_ary_heap<SearchEdge, arity<2>, mutable_<true>, compare<CmpEdge>>;
+  using Heap = boost::heap::d_ary_heap<SearchEdge,
+                                       boost::heap::arity<2>,
+                                       boost::heap::mutable_<true>,
+                                       boost::heap::compare<CmpEdge>>;
 
   const int num_nodes = graph.maxNodeId() + 1;
   int num_visited = 0;
@@ -161,7 +162,7 @@ static void buildSpanningTree(const ListGraph::NodeMap<Point>& node_point,
   vector<Heap::handle_type> handles(num_nodes);
 
   Heap heap;
-  handles[graph.id(driver_node)] = heap.push({0, 0, INVALID, driver_node});
+  handles[ListGraph::id(driver_node)] = heap.push({0, 0, INVALID, driver_node});
 
   while (!heap.empty()) {
     const SearchEdge edge = heap.top();
@@ -178,8 +179,8 @@ static void buildSpanningTree(const ListGraph::NodeMap<Point>& node_point,
     }
 
     // Add the neareset neighbors to the heap
-    for (const int neighbor : nn[graph.id(edge.node)]) {
-      auto neighbor_node = graph.nodeFromId(neighbor);
+    for (const int neighbor : nn[ListGraph::id(edge.node)]) {
+      auto neighbor_node = ListGraph::nodeFromId(neighbor);
       if (visited[neighbor_node]) {
         continue;  // already in the graph
       }
@@ -282,11 +283,10 @@ static CandidateSteiner best_steiner_for_node(
 // routing tree design".
 static void steinerize(ListGraph& graph, ListGraph::NodeMap<Point>& node_point)
 {
-  using namespace boost::heap;
-  using Heap = d_ary_heap<CandidateSteiner,
-                          arity<2>,
-                          mutable_<true>,
-                          compare<CmpCandidate>>;
+  using Heap = boost::heap::d_ary_heap<CandidateSteiner,
+                                       boost::heap::arity<2>,
+                                       boost::heap::mutable_<true>,
+                                       boost::heap::compare<CmpCandidate>>;
   Heap heap;
   std::map<ListGraph::Node, Heap::handle_type> handles;
 
@@ -345,7 +345,7 @@ static void steinerize(ListGraph& graph, ListGraph::NodeMap<Point>& node_point)
     handles[best.node]
         = heap.push(best_steiner_for_node(graph, best.node, node_point));
 
-    for (auto node : {opp1, opp2}) {
+    for (const auto& node : {opp1, opp2}) {
       *handles[node] = best_steiner_for_node(graph, node, node_point);
       heap.update(handles[node]);
     }
@@ -406,11 +406,11 @@ static void makeTreeRecursive(const ListGraph& graph,
                               const ListGraph::NodeMap<Point>& node_point,
                               Tree& tree)
 {
-  const int parent_id = graph.id(parent);
+  const int parent_id = ListGraph::id(parent);
   const int parent_x = node_point[parent].getX();
   const int parent_y = node_point[parent].getY();
 
-  const int n = graph.id(node);
+  const int n = ListGraph::id(node);
   const int x = node_point[node].getX();
   const int y = node_point[node].getY();
   tree.branch[n] = {x, y, parent_id};
@@ -461,7 +461,7 @@ Tree primDijkstra(const vector<int>& x,
 
   const auto nn = get_nearest_neighbors(pts);
 
-  auto driver_node = graph.nodeFromId(driver_index);
+  auto driver_node = ListGraph::nodeFromId(driver_index);
   buildSpanningTree(node_point, driver_node, alpha, nn, graph);
 
   steinerize(graph, node_point);

@@ -41,4 +41,7 @@
 
 %include <std_string.i>
 
+%import <std_vector.i>
+%import "dbtypes.i"
+
 %include "ifp/InitFloorplan.hh"

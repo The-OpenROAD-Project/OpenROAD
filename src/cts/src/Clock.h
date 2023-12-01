@@ -36,6 +36,7 @@
 #pragma once
 
 #include <cassert>
+#include <cstdint>
 #include <deque>
 #include <functional>
 #include <unordered_map>
@@ -65,13 +66,15 @@ class ClockInst
             int x,
             int y,
             odb::dbITerm* pinObj = nullptr,
-            float inputCap = 0.0)
+            float inputCap = 0.0,
+            float insertionDelay = 0.0)
       : name_(name),
         master_(master),
         type_(type),
         location_(x, y),
         inputPinObj_(pinObj),
-        inputCap_(inputCap)
+        inputCap_(inputCap),
+        insertionDelay_(insertionDelay)
   {
   }
 
@@ -87,10 +90,10 @@ class ClockInst
   odb::dbITerm* getDbInputPin() const { return inputPinObj_; }
   void setInputCap(float cap) { inputCap_ = cap; }
   float getInputCap() const { return inputCap_; }
-
   bool isClockBuffer() const { return type_ == CLOCK_BUFFER; }
+  double getInsertionDelay() const { return insertionDelay_; }
 
- protected:
+ private:
   std::string name_;
   std::string master_;
   InstType type_;
@@ -98,6 +101,7 @@ class ClockInst
   odb::dbInst* instObj_ = nullptr;
   odb::dbITerm* inputPinObj_ = nullptr;
   float inputCap_;
+  double insertionDelay_;  // insertion delay in terms of length, not time
 };
 
 //-----------------------------------------------------------------------------
@@ -107,14 +111,14 @@ class Clock
  public:
   class SubNet
   {
-   protected:
+   private:
     std::string name_;
     std::deque<ClockInst*> instances_;
     std::unordered_map<ClockInst*, unsigned> mapInstToIdx_;
     bool leafLevel_;
 
    public:
-    SubNet(const std::string& name) : name_(name), leafLevel_(false) {}
+    explicit SubNet(const std::string& name) : name_(name), leafLevel_(false) {}
 
     void setLeafLevel(bool isLeaf) { leafLevel_ = isLeaf; }
     bool isLeafLevel() const { return leafLevel_; }
@@ -176,12 +180,7 @@ class Clock
         const std::string& clockPin,
         const std::string& sdcClockName,
         int clockPinX,
-        int clockPinY)
-      : netName_(netName),
-        clockPin_(clockPin),
-        sdcClockName_(sdcClockName),
-        clockPinX_(clockPinX),
-        clockPinY_(clockPinY){};
+        int clockPinY);
 
   ClockInst& addClockBuffer(const std::string& name,
                             const std::string& master,
@@ -194,13 +193,13 @@ class Clock
     return clockBuffers_.back();
   }
 
-  ClockInst* findClockByName(std::string name)
+  ClockInst* findClockByName(const std::string& name)
   {
     if (mapNameToInst_.find(name) == mapNameToInst_.end()) {
       return nullptr;
-    } else {
-      return mapNameToInst_.at(name);
     }
+
+    return mapNameToInst_.at(name);
   }
 
   SubNet& addSubNet(const std::string& name)
@@ -221,6 +220,16 @@ class Clock
                float inputCap)
   {
     sinks_.emplace_back(name, "", CLOCK_SINK, x, y, pinObj, inputCap);
+  }
+
+  void addSink(const std::string& name,
+               int x,
+               int y,
+               odb::dbITerm* pinObj,
+               float inputCap,
+               float insDelay)
+  {
+    sinks_.emplace_back(name, "", CLOCK_SINK, x, y, pinObj, inputCap, insDelay);
   }
 
   std::string getName() const { return netName_; }

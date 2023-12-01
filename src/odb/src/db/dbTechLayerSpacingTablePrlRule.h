@@ -42,13 +42,10 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-// User Code Begin Classes
-// User Code End Classes
 
 struct dbTechLayerSpacingTablePrlRuleFlags
 {
@@ -57,29 +54,16 @@ struct dbTechLayerSpacingTablePrlRuleFlags
   bool exceept_eol_ : 1;
   uint spare_bits_ : 29;
 };
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbTechLayerSpacingTablePrlRule : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
-
-  dbTechLayerSpacingTablePrlRuleFlags flags_;
-  int eol_width_;
-  dbVector<int> length_tbl_;
-  dbVector<int> width_tbl_;
-  dbVector<dbVector<int>> spacing_tbl_;
-  dbVector<std::tuple<int, int, int>> influence_tbl_;
-
-  // User Code Begin Fields
-  std::map<uint, std::pair<int, int>> _within_tbl;
-  // User Code End Fields
   _dbTechLayerSpacingTablePrlRule(_dbDatabase*,
                                   const _dbTechLayerSpacingTablePrlRule& r);
   _dbTechLayerSpacingTablePrlRule(_dbDatabase*);
-  ~_dbTechLayerSpacingTablePrlRule();
+
+  ~_dbTechLayerSpacingTablePrlRule() = default;
+
   bool operator==(const _dbTechLayerSpacingTablePrlRule& rhs) const;
   bool operator!=(const _dbTechLayerSpacingTablePrlRule& rhs) const
   {
@@ -97,11 +81,20 @@ class _dbTechLayerSpacingTablePrlRule : public _dbObject
   uint getLengthIdx(const int length) const;
 
   // User Code End Methods
+
+  dbTechLayerSpacingTablePrlRuleFlags flags_;
+  int eol_width_;
+  dbVector<int> length_tbl_;
+  dbVector<int> width_tbl_;
+  dbVector<dbVector<int>> spacing_tbl_;
+  dbVector<std::tuple<int, int, int>> influence_tbl_;
+
+  // User Code Begin Fields
+  std::map<uint, std::pair<int, int>> _within_tbl;
+  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj);
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerSpacingTablePrlRule& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header

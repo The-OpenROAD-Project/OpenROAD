@@ -32,6 +32,7 @@
 
 #include <algorithm>
 
+#include "AbstractFastRouteRenderer.h"
 #include "DataType.h"
 #include "FastRoute.h"
 #include "utl/Logger.h"
@@ -722,7 +723,7 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
             i, net->getPinX(), net->getPinY(), flute_accuracy, coeffV, rsmt);
       }
     }
-    if (debug_->isOn_ && debug_->steinerTree_
+    if (debug_->isOn() && debug_->steinerTree_
         && net->getDbNet() == debug_->net_) {
       steinerTreeVisualization(rsmt, net);
     }

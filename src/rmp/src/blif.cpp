@@ -107,7 +107,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
   }
 
   std::set<odb::dbInst*>& insts = this->instances_to_optimize;
-  std::map<uint, odb::dbInst*> instMap;
+  std::map<odb::uint, odb::dbInst*> instMap;
   std::vector<std::string> subckts;
   std::set<std::string> inputs, outputs, const0, const1, clocks;
 
@@ -115,7 +115,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
   int instIndex = 0;
 
   for (auto&& inst : insts) {
-    instMap.insert(std::pair<uint, odb::dbInst*>(inst->getId(), inst));
+    instMap.insert(std::pair<odb::uint, odb::dbInst*>(inst->getId(), inst));
   }
 
   for (auto&& inst : insts) {

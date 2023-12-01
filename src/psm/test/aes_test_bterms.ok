@@ -1,0 +1,32 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 135 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0128] Design: aes_cipher_top
+[INFO ODB-0130]     Created 390 pins.
+[INFO ODB-0131]     Created 19835 components and 101835 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 39670 connections.
+[INFO ODB-0133]     Created 18908 nets and 62165 connections.
+[INFO PSM-0022] Using 1.100V for VDD
+[INFO PSM-0076] Setting metal node density to be standard cell height times 5.
+[INFO PSM-0031] Number of PDN nodes on net VDD = 26705.
+[INFO PSM-0064] Number of voltage sources = 1125.
+[INFO PSM-0040] All PDN stripes on net VDD are connected.
+########## IR report #################
+Corner: default
+Worstcase voltage: 1.09e+00 V
+Average IR drop  : 6.30e-04 V
+Worstcase IR drop: 1.40e-02 V
+######################################
+[INFO PSM-0022] Using 0.000V for VSS
+[INFO PSM-0076] Setting metal node density to be standard cell height times 5.
+[INFO PSM-0031] Number of PDN nodes on net VSS = 26606.
+[INFO PSM-0064] Number of voltage sources = 1125.
+[INFO PSM-0040] All PDN stripes on net VSS are connected.
+########## IR report #################
+Corner: default
+Worstcase voltage: 1.09e-02 V
+Average IR drop  : 6.26e-04 V
+Worstcase IR drop: 1.09e-02 V
+######################################

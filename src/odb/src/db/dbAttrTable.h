@@ -48,131 +48,145 @@ template <typename T>
 class dbAttrTable
 {
  public:
-  static const uint page_size;
-  static const uint page_shift;
-  unsigned int _page_cnt;
-  T** _pages;
-
-  dbAttrTable()
-  {
-    _pages = NULL;
-    _page_cnt = 0;
-  }
-
-  dbAttrTable(const dbAttrTable<T>& V)
-  {
-    _pages = NULL;
-    _page_cnt = 0;
-  }
+  dbAttrTable() = default;
+  dbAttrTable(const dbAttrTable<T>& V) = delete;
 
   ~dbAttrTable() { clear(); }
 
-  T getAttr(uint id) const
-  {
-    // Pages are not created util the prop-list is being set.
-    // This approach allows objects to test for properties without populating
-    // pages. (which would populate the table).
-    unsigned int page = (id & ~(page_size - 1)) >> page_shift;
+  T getAttr(uint id) const;
+  void setAttr(uint id, const T& attr);
 
-    if (page >= _page_cnt)  // Page not present...
-      return T();
+  T* getPage(uint page);
+  void resizePageTable(uint page);
 
-    if (_pages[page] == NULL)  // Page not present
-      return T();
-
-    unsigned int offset = id & (page_size - 1);
-    return _pages[page][offset];
-  }
-
-  void setAttr(uint id, T attr)
-  {
-    unsigned int page = (id & ~(page_size - 1)) >> page_shift;
-    T* pg = getPage(page);
-    unsigned int offset = id & (page_size - 1);
-    pg[offset] = attr;
-  }
-
-  void clear()
-  {
-    if (_pages) {
-      unsigned int i;
-
-      for (i = 0; i < _page_cnt; ++i)
-        delete[] _pages[i];
-
-      delete[] _pages;
-    }
-
-    _pages = NULL;
-    _page_cnt = 0;
-  }
+  void clear();
 
   bool operator==(const dbAttrTable<T>& rhs) const;
-  bool operator!=(const dbAttrTable<T>& rhs) const { return !operator==(rhs); }
+  bool operator!=(const dbAttrTable<T>& rhs) const { return !(this == rhs); }
   void differences(dbDiff& diff,
                    const char* field,
                    const dbAttrTable<T>& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 
-  T* getPage(uint page)
-  {
-    if (page >= _page_cnt)
-      resizePageTable(page);
+ private:
+  unsigned int _page_cnt = 0;
+  T** _pages = nullptr;
 
-    if (_pages[page] == NULL) {
-      _pages[page] = new T[page_size];
+  static constexpr uint page_size = 32;
+  static constexpr uint page_shift = 5;
 
-      uint i;
+  template <class U>
+  friend dbOStream& operator<<(dbOStream& stream, const dbAttrTable<U>& t);
 
-      for (i = 0; i < page_size; ++i)
-        _pages[page][i] = 0U;
-    }
-
-    return _pages[page];
-  }
-
-  void resizePageTable(uint page)
-  {
-    T** old_pages = _pages;
-    unsigned int old_page_cnt = _page_cnt;
-
-    if (_page_cnt == 0)
-      _page_cnt = 1;
-
-    while (page >= _page_cnt)
-      _page_cnt *= 2;
-
-    _pages = new T*[_page_cnt];
-
-    unsigned int i;
-
-    for (i = 0; i < old_page_cnt; ++i)
-      _pages[i] = old_pages[i];
-
-    for (; i < _page_cnt; ++i)
-      _pages[i] = NULL;
-
-    delete[] old_pages;
-  }
+  template <class U>
+  friend dbIStream& operator>>(dbIStream& stream, dbAttrTable<U>& t);
 };
 
 template <typename T>
-const uint dbAttrTable<T>::page_size = 32;
+inline T dbAttrTable<T>::getAttr(const uint id) const
+{
+  // Pages are not created util the prop-list is being set.
+  // This approach allows objects to test for properties without populating
+  // pages. (which would populate the table).
+  const unsigned int page = (id & ~(page_size - 1)) >> page_shift;
+
+  if (page >= _page_cnt) {  // Page not present...
+    return T();
+  }
+
+  if (_pages[page] == nullptr) {  // Page not present
+    return T();
+  }
+
+  const unsigned int offset = id & (page_size - 1);
+  return _pages[page][offset];
+}
+
 template <typename T>
-const uint dbAttrTable<T>::page_shift = 5;
+inline void dbAttrTable<T>::setAttr(const uint id, const T& attr)
+{
+  const unsigned int page = (id & ~(page_size - 1)) >> page_shift;
+  T* pg = getPage(page);
+  const unsigned int offset = id & (page_size - 1);
+  pg[offset] = attr;
+}
+
+template <typename T>
+inline void dbAttrTable<T>::clear()
+{
+  if (_pages) {
+    for (int i = 0; i < _page_cnt; ++i) {
+      delete[] _pages[i];
+    }
+
+    delete[] _pages;
+  }
+
+  _pages = nullptr;
+  _page_cnt = 0;
+}
+
+template <typename T>
+inline T* dbAttrTable<T>::getPage(const uint page)
+{
+  if (page >= _page_cnt) {
+    resizePageTable(page);
+  }
+
+  if (_pages[page] == nullptr) {
+    _pages[page] = new T[page_size];
+
+    for (int i = 0; i < page_size; ++i) {
+      _pages[page][i] = 0U;
+    }
+  }
+
+  return _pages[page];
+}
+
+template <typename T>
+inline void dbAttrTable<T>::resizePageTable(const uint page)
+{
+  T** old_pages = _pages;
+  unsigned int old_page_cnt = _page_cnt;
+
+  if (_page_cnt == 0) {
+    _page_cnt = 1;
+  }
+
+  while (page >= _page_cnt) {
+    _page_cnt *= 2;
+  }
+
+  _pages = new T*[_page_cnt];
+
+  unsigned int i;
+
+  for (i = 0; i < old_page_cnt; ++i) {
+    _pages[i] = old_pages[i];
+  }
+
+  for (; i < _page_cnt; ++i) {
+    _pages[i] = nullptr;
+  }
+
+  delete[] old_pages;
+}
 
 template <typename T>
 inline bool dbAttrTable<T>::operator==(const dbAttrTable<T>& rhs) const
 {
-  if (_page_cnt != rhs._page_cnt)
+  if (_page_cnt != rhs._page_cnt) {
     return false;
+  }
 
-  uint i;
-  uint n = _page_cnt * page_size;
+  const uint n = _page_cnt * page_size;
 
-  for (i = 0; i < n; ++i)
-    if (getAttr(i) != rhs.getAttr(i))
+  for (int i = 0; i < n; ++i) {
+    if (getAttr(i) != rhs.getAttr(i)) {
       return false;
+    }
+  }
 
   return true;
 }
@@ -182,8 +196,8 @@ inline void dbAttrTable<T>::differences(dbDiff& diff,
                                         const char* field,
                                         const dbAttrTable<T>& rhs) const
 {
-  uint sz1 = _page_cnt * page_size;
-  uint sz2 = rhs._page_cnt * page_size;
+  const uint sz1 = _page_cnt * page_size;
+  const uint sz2 = rhs._page_cnt * page_size;
   uint i = 0;
 
   for (; i < sz1 && i < sz2; ++i) {
@@ -202,18 +216,16 @@ inline void dbAttrTable<T>::differences(dbDiff& diff,
 
   if (i < sz1) {
     for (; i < sz1; ++i) {
-      T o1 = getAttr(i);
       diff.report("< %s[%d] = ", field, i);
-      diff << o1;
+      diff << getAttr(i);
       diff << "\n";
     }
   }
 
   if (i < sz2) {
     for (; i < sz2; ++i) {
-      T o2 = rhs.getAttr(i);
       diff.report("> %s[%d] = ", field, i);
-      diff << o2;
+      diff << rhs.getAttr(i);
       diff << "\n";
     }
   }
@@ -221,16 +233,14 @@ inline void dbAttrTable<T>::differences(dbDiff& diff,
 
 template <typename T>
 inline void dbAttrTable<T>::out(dbDiff& diff,
-                                char side,
+                                const char side,
                                 const char* field) const
 {
-  uint sz1 = _page_cnt * page_size;
-  uint i = 0;
+  const uint sz1 = _page_cnt * page_size;
 
-  for (; i < sz1; ++i) {
-    T o1 = getAttr(i);
+  for (int i = 0; i < sz1; ++i) {
     diff.report("%c %s[%d] = ", side, field, i);
-    diff << o1;
+    diff << getAttr(i);
     diff << "\n";
   }
 }
@@ -240,17 +250,17 @@ inline dbOStream& operator<<(dbOStream& stream, const dbAttrTable<T>& t)
 {
   stream << t._page_cnt;
 
-  uint i;
-  for (i = 0; i < t._page_cnt; ++i) {
-    if (t._pages[i] == NULL)
+  for (int i = 0; i < t._page_cnt; ++i) {
+    if (t._pages[i] == nullptr) {
       stream << 0U;
-    else {
+    } else {
       stream << (i + 1);
 
       uint j;
 
-      for (j = 0; j < dbAttrTable<T>::page_size; ++j)
+      for (j = 0; j < dbAttrTable<T>::page_size; ++j) {
         stream << t._pages[i][j];
+      }
     }
   }
 
@@ -264,25 +274,25 @@ inline dbIStream& operator>>(dbIStream& stream, dbAttrTable<T>& t)
 
   stream >> t._page_cnt;
 
-  if (t._page_cnt == 0)
+  if (t._page_cnt == 0) {
     return stream;
+  }
 
   t._pages = new T*[t._page_cnt];
 
-  uint i;
-
-  for (i = 0; i < t._page_cnt; ++i) {
+  for (int i = 0; i < t._page_cnt; ++i) {
     uint p;
     stream >> p;
 
-    if (p == 0U)
-      t._pages[i] = NULL;
-    else {
+    if (p == 0U) {
+      t._pages[i] = nullptr;
+    } else {
       t._pages[i] = new T[dbAttrTable<T>::page_size];
       uint j;
 
-      for (j = 0; j < dbAttrTable<T>::page_size; j++)
+      for (j = 0; j < dbAttrTable<T>::page_size; j++) {
         stream >> t._pages[i][j];
+      }
     }
   }
 

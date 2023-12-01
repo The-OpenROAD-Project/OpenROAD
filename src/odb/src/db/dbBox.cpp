@@ -55,6 +55,7 @@
 #include "dbTechLayer.h"
 #include "dbTechVia.h"
 #include "dbVia.h"
+#include "utl/Logger.h"
 
 namespace odb {
 
@@ -307,13 +308,13 @@ void _dbBox::out(dbDiff& diff, char side, const char* field) const
 _dbTechLayer* _dbBox::getTechLayer() const
 {
   if (_flags._layer_id == 0)
-    return NULL;
+    return nullptr;
 
   switch (_flags._owner_type) {
     case dbBoxOwner::UNKNOWN:
     case dbBoxOwner::BLOCKAGE:
     case dbBoxOwner::REGION:
-      return NULL;
+      return nullptr;
 
     case dbBoxOwner::BLOCK:
     case dbBoxOwner::INST:
@@ -322,15 +323,16 @@ _dbTechLayer* _dbBox::getTechLayer() const
     case dbBoxOwner::VIA:
     case dbBoxOwner::OBSTRUCTION:
     case dbBoxOwner::SWIRE: {
-      _dbDatabase* db = (_dbDatabase*) getDatabase();
-      _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
+      _dbBlock* block = (_dbBlock*) getOwner();
+      _dbTech* tech = block->getTech();
       return tech->_layer_tbl->getPtr(_flags._layer_id);
     }
 
     case dbBoxOwner::MASTER:
     case dbBoxOwner::MPIN: {
-      _dbDatabase* db = (_dbDatabase*) getDatabase();
-      _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
+      _dbMaster* master = (_dbMaster*) getOwner();
+      _dbLib* lib = (_dbLib*) master->getOwner();
+      _dbTech* tech = lib->getTech();
       return tech->_layer_tbl->getPtr(_flags._layer_id);
     }
 
@@ -341,20 +343,20 @@ _dbTechLayer* _dbBox::getTechLayer() const
   }
 
   ZASSERT(0);
-  return NULL;
+  return nullptr;
 }
 
 _dbTechVia* _dbBox::getTechVia() const
 {
   if (_flags._is_tech_via == 0)
-    return NULL;
+    return nullptr;
 
   switch (_flags._owner_type) {
     case dbBoxOwner::UNKNOWN:
     case dbBoxOwner::BLOCKAGE:
     case dbBoxOwner::OBSTRUCTION:
     case dbBoxOwner::REGION:
-      return NULL;
+      return nullptr;
 
     case dbBoxOwner::BLOCK:
     case dbBoxOwner::INST:
@@ -363,16 +365,16 @@ _dbTechVia* _dbBox::getTechVia() const
     case dbBoxOwner::VIA:
     case dbBoxOwner::SWIRE: {
       _dbBlock* block = (_dbBlock*) getOwner();
-      _dbDatabase* db = (_dbDatabase*) block->getDatabase();
-      _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
+      _dbTech* tech = block->getTech();
       return tech->_via_tbl->getPtr(_flags._via_id);
     }
 
     case dbBoxOwner::MASTER:
     case dbBoxOwner::MPIN: {
       _dbMaster* master = (_dbMaster*) getOwner();
+      _dbLib* lib = (_dbLib*) master->getOwner();
       _dbDatabase* db = (_dbDatabase*) master->getDatabase();
-      _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
+      _dbTech* tech = db->_tech_tbl->getPtr(lib->_tech);
       return tech->_via_tbl->getPtr(_flags._via_id);
     }
 
@@ -382,18 +384,18 @@ _dbTechVia* _dbBox::getTechVia() const
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 _dbVia* _dbBox::getBlockVia() const
 {
   if (_flags._is_block_via == 0)
-    return NULL;
+    return nullptr;
 
   switch (_flags._owner_type) {
     case dbBoxOwner::UNKNOWN:
     case dbBoxOwner::REGION:
-      return NULL;
+      return nullptr;
 
     case dbBoxOwner::BLOCK:
     case dbBoxOwner::INST:
@@ -414,7 +416,7 @@ _dbVia* _dbBox::getBlockVia() const
       break;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 void _dbBox::getViaXY(int& x, int& y) const
@@ -552,6 +554,40 @@ void dbBox::getViaBoxes(std::vector<dbShape>& shapes)
   }
 }
 
+void dbBox::getViaLayerBoxes(dbTechLayer* layer, std::vector<dbShape>& shapes)
+{
+  _dbBox* box = (_dbBox*) this;
+
+  int x = 0;
+  int y = 0;
+  box->getViaXY(x, y);
+
+  dbSet<dbBox> boxes;
+
+  if (box->_flags._is_tech_via) {
+    boxes = getTechVia()->getBoxes();
+  } else if (box->_flags._is_block_via) {
+    boxes = getBlockVia()->getBoxes();
+  } else {
+    throw ZException("getViaBoxes called with non-via");
+  }
+
+  shapes.clear();
+
+  for (dbBox* b : boxes) {
+    dbTechLayer* box_layer = b->getTechLayer();
+    if (box_layer == layer) {
+      int xmin = b->xMin() + x;
+      int ymin = b->yMin() + y;
+      int xmax = b->xMax() + x;
+      int ymax = b->yMax() + y;
+      Rect r(xmin, ymin, xmax, ymax);
+      dbShape shape(box_layer, r);
+      shapes.push_back(shape);
+    }
+  }
+}
+
 int dbBox::getDir()
 {
   Rect rect = getBox();
@@ -628,7 +664,7 @@ dbObject* dbBox::getBoxOwner()
 
   switch (box->_flags._owner_type) {
     case dbBoxOwner::UNKNOWN:
-      return NULL;
+      return nullptr;
 
     case dbBoxOwner::BLOCK: {
       return owner;
@@ -690,7 +726,7 @@ dbObject* dbBox::getBoxOwner()
   }
 
   ZASSERT(0);
-  return NULL;
+  return nullptr;
 }
 
 dbBoxOwner dbBox::getOwnerType()
@@ -717,7 +753,16 @@ dbBox* dbBox::create(dbBPin* bpin_,
 
   _dbBox* box = block->_box_tbl->create();
   box->_flags._octilinear = false;
-  box->_flags._layer_id = layer_->getImpl()->getOID();
+  const auto layer_id = layer_->getImpl()->getOID();
+  if (layer_id >= (1 << 9)) {
+    bpin->getLogger()->error(
+        utl::ODB,
+        430,
+        "Layer {} has index {} which is too large to be stored",
+        layer_->getName(),
+        layer_id);
+  }
+  box->_flags._layer_id = layer_id;
   box->_flags._owner_type = dbBoxOwner::BPIN;
   box->_owner = bpin->getOID();
   box->_shape._rect.init(x1, y1, x2, y2);
@@ -807,7 +852,7 @@ dbBox* dbBox::create(dbMaster* master_, dbTechVia* via_, int x, int y)
   _dbTechVia* via = (_dbTechVia*) via_;
 
   if (via->_bbox == 0)
-    return NULL;
+    return nullptr;
 
   _dbTech* tech = (_dbTech*) via->getOwner();
   _dbBox* vbbox = tech->_box_tbl->getPtr(via->_bbox);
@@ -857,7 +902,7 @@ dbBox* dbBox::create(dbMPin* pin_, dbTechVia* via_, int x, int y)
   _dbTechVia* via = (_dbTechVia*) via_;
 
   if (via->_bbox == 0)
-    return NULL;
+    return nullptr;
 
   _dbMaster* master = (_dbMaster*) pin->getOwner();
   _dbTech* tech = (_dbTech*) via->getOwner();
@@ -957,7 +1002,7 @@ dbBox* dbBox::create(dbInst* inst_, int x1, int y1, int x2, int y2)
   _dbBlock* block = (_dbBlock*) inst->getOwner();
 
   if (inst->_halo)
-    return NULL;
+    return nullptr;
 
   _dbBox* box = block->_box_tbl->create();
   box->_flags._octilinear = false;
@@ -993,24 +1038,8 @@ bool dbBox::isVisited()
 }
 void dbBox::setVisited(bool value)
 {
-  /*
-          if (getId()==333485)
-  {
-                  fprintf(stdout, "setVisited=%d\n", value);
-  }
-  */
   _dbBox* box = (_dbBox*) this;
   box->_flags._visited = (value == true) ? 1 : 0;
-}
-bool dbBox::isMarked()
-{
-  _dbBox* box = (_dbBox*) this;
-  return box->_flags._mark == 1;
-}
-void dbBox::setMarked(bool value)
-{
-  _dbBox* box = (_dbBox*) this;
-  box->_flags._mark = (value == true) ? 1 : 0;
 }
 
 }  // namespace odb

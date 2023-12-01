@@ -35,17 +35,17 @@
 
 #include "Clustering.h"
 
-#include <float.h>
 #include <lemon/list_graph.h>
 #include <lemon/maps.h>
 #include <lemon/network_simplex.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/timeb.h>
-#include <time.h>
 
 #include <algorithm>
 #include <array>
+#include <cfloat>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -58,12 +58,14 @@
 
 namespace cts::CKMeans {
 
-using namespace lemon;
+using lemon::INVALID;
+using lemon::ListDigraph;
+using lemon::NetworkSimplex;
 using utl::CTS;
 
 struct Sink
 {
-  Sink(const float x, const float y, unsigned idx)
+  Sink(const float x, const float y, const unsigned idx)
       : x(x), y(y), cluster_idx(-1), sink_idx(idx){};
 
   // location
@@ -76,7 +78,7 @@ Clustering::Clustering(const std::vector<std::pair<float, float>>& sinks,
                        const float xBranch,
                        const float yBranch,
                        Logger* logger)
-    : logger_(logger), segment_length_(0.0), branching_point_(xBranch, yBranch)
+    : logger_(logger), branching_point_(xBranch, yBranch)
 {
   sinks_.reserve(sinks.size());
   for (size_t i = 0; i < sinks.size(); ++i) {
@@ -85,9 +87,7 @@ Clustering::Clustering(const std::vector<std::pair<float, float>>& sinks,
   srand(56);
 }
 
-Clustering::~Clustering()
-{
-}
+Clustering::~Clustering() = default;
 
 /*** Capacitated K means **************************************************/
 void Clustering::iterKmeans(const unsigned iter,
@@ -179,11 +179,10 @@ float Clustering::Kmeans(const unsigned n,
     // collect results
     clusters.clear();
     clusters.resize(n);
-    for (size_t i = 0; i < sinks_.size(); ++i) {
-      Sink* sink = &sinks_[i];
+    for (Sink& sink : sinks_) {
       int position = 0;
-      if (sink->cluster_idx >= 0 && sink->cluster_idx < n) {
-        position = sink->cluster_idx;
+      if (sink.cluster_idx >= 0 && sink.cluster_idx < n) {
+        position = sink.cluster_idx;
       } else {
         // Added to check wrong assignment
 
@@ -195,7 +194,7 @@ float Clustering::Kmeans(const unsigned n,
         for (size_t j = 0; j < means.size(); ++j) {
           if (clusters[j].size() < cap) {
             minimumDist = calcDist(
-                std::make_pair(means[j].first, means[j].second), sink);
+                std::make_pair(means[j].first, means[j].second), &sink);
             minimumDistClusterIndex = j;
             break;
           }
@@ -209,7 +208,7 @@ float Clustering::Kmeans(const unsigned n,
           for (size_t j = 0; j < means.size(); ++j) {
             if (clusters[j].size() < cap) {
               const float currentDist = calcDist(
-                  std::make_pair(means[j].first, means[j].second), sink);
+                  std::make_pair(means[j].first, means[j].second), &sink);
               if (currentDist < minimumDist) {
                 minimumDist = currentDist;
                 minimumDistClusterIndex = j;
@@ -220,7 +219,7 @@ float Clustering::Kmeans(const unsigned n,
 
         position = minimumDistClusterIndex;
       }
-      clusters[position].push_back(sink);
+      clusters[position].push_back(&sink);
     }
 
     float delta = 0;
@@ -228,17 +227,18 @@ float Clustering::Kmeans(const unsigned n,
     // use weighted center
     for (unsigned i = 0; i < n; ++i) {
       float sum_x = 0, sum_y = 0;
-      for (size_t j = 0; j < clusters[i].size(); ++j) {
-        sum_x += clusters[i][j]->x;
-        sum_y += clusters[i][j]->y;
+      for (const auto& cluster : clusters[i]) {
+        sum_x += cluster->x;
+        sum_y += cluster->y;
       }
       const float pre_x = means[i].first;
       const float pre_y = means[i].second;
 
-      if (clusters[i].size() > 0) {
+      if (!clusters[i].empty()) {
         means[i] = std::make_pair(sum_x / clusters[i].size(),
                                   sum_y / clusters[i].size());
-        delta += abs(pre_x - means[i].first) + abs(pre_y - means[i].second);
+        delta += std::abs(pre_x - means[i].first)
+                 + std::abs(pre_y - means[i].second);
       }
     }
 
@@ -258,27 +258,28 @@ float Clustering::calcSilh(
     const std::vector<std::pair<float, float>>& means) const
 {
   float sum_silh = 0;
-  for (size_t i = 0; i < sinks_.size(); ++i) {
-    const Sink* sink = &sinks_[i];
+  for (const Sink& sink : sinks_) {
     float in_d = 0, out_d = FLT_MAX;
     for (size_t j = 0; j < means.size(); ++j) {
       const float x = means[j].first;
       const float y = means[j].second;
-      if (sink->cluster_idx == j) {
+      if (sink.cluster_idx == j) {
         // within the cluster
-        in_d = calcDist({x, y}, sink);
+        in_d = calcDist({x, y}, &sink);
       } else {
         // outside of the cluster
-        const float d = calcDist({x, y}, sink);
+        const float d = calcDist({x, y}, &sink);
         out_d = std::min(d, out_d);
       }
     }
     const float temp = std::max(out_d, in_d);
     if (temp == 0) {
-      if (out_d == 0)
+      if (out_d == 0) {
         sum_silh += -1;
-      if (in_d == 0)
+      }
+      if (in_d == 0) {
         sum_silh += 1;
+      }
     } else {
       sum_silh += (out_d - in_d) / temp;
     }
@@ -342,7 +343,7 @@ void Clustering::minCostFlow(const std::vector<std::pair<float, float>>& means,
 
   debugPrint(logger_,
              CTS,
-             "tritoncts",
+             "clustering",
              1,
              "Graph has {} nodes and {} edges",
              countNodes(graph),
@@ -371,13 +372,13 @@ void Clustering::minCostFlow(const std::vector<std::pair<float, float>>& means,
   for (ListDigraph::ArcIt it(graph); it != INVALID; ++it) {
     debugPrint(logger_,
                CTS,
-               "tritoncts",
+               "clustering",
                2,
                "{}-{}",
                graph.id(graph.source(it)),
                graph.id(graph.target(it)));
-    debugPrint(logger_, CTS, "tritoncts", 2, " cost = ", edge_cost[it]);
-    debugPrint(logger_, CTS, "tritoncts", 2, " cap = ", edge_capacity[it]);
+    debugPrint(logger_, CTS, "clustering", 2, " cost = ", edge_cost[it]);
+    debugPrint(logger_, CTS, "clustering", 2, " cap = ", edge_capacity[it]);
   }
 
   NetworkSimplex<ListDigraph, int, int> flow(graph);
@@ -389,11 +390,13 @@ void Clustering::minCostFlow(const std::vector<std::pair<float, float>>& means,
   flow.flowMap(solution);
 
   ListDigraph::NodeMap<std::pair<int, int>> node_map(graph);
-  for (size_t i = 0; i < sink_nodes.size(); ++i)
+  for (size_t i = 0; i < sink_nodes.size(); ++i) {
     node_map[sink_nodes[i]] = {i, -1};
+  }
 
-  for (size_t i = 0; i < cluster_nodes.size(); ++i)
+  for (size_t i = 0; i < cluster_nodes.size(); ++i) {
     node_map[cluster_nodes[i]] = {-1, i};
+  }
 
   node_map[src] = {-2, -2};
   node_map[target] = {-2, -2};
@@ -406,7 +409,7 @@ void Clustering::minCostFlow(const std::vector<std::pair<float, float>>& means,
         && node_map[graph.target(it)].first == -1) {
       debugPrint(logger_,
                  CTS,
-                 "tritoncts",
+                 "clustering",
                  3,
                  "Flow from: sink_{}  to cluster_{} flow = {}",
                  node_map[graph.source(it)].first,
@@ -442,7 +445,8 @@ float Clustering::calcDist(const std::pair<float, float>& loc, const Sink* sink)
 float Clustering::calcDist(const std::pair<float, float>& loc1,
                            const std::pair<float, float>& loc2)
 {
-  return fabs(loc1.first - loc2.first) + fabs(loc1.second - loc2.second);
+  return std::abs(loc1.first - loc2.first)
+         + std::abs(loc1.second - loc2.second);
 }
 
 }  // namespace cts::CKMeans

@@ -43,6 +43,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "architecture.h"
+#include "orientation.h"
+
 namespace dpo {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -63,10 +66,8 @@ class Node
     UNKNOWN,
     CELL,
     TERMINAL,
-    TERMINAL_NI,
     MACROCELL,
-    FILLER,
-    SHAPE
+    FILLER
   };
 
   enum Fixity
@@ -115,9 +116,7 @@ class Node
   bool adjustCurrOrient(unsigned newOrient);
 
   bool isTerminal() const { return (type_ == TERMINAL); }
-  bool isTerminalNI() const { return (type_ == TERMINAL_NI); }
   bool isFiller() const { return (type_ == FILLER); }
-  bool isShape() const { return (type_ == SHAPE); }
   bool isFixed() const { return (fixed_ != NOT_FIXED); }
 
   int getLeftEdgeType() const { return etl_; }
@@ -130,41 +129,35 @@ class Node
   int getNumPins() const { return (int) pins_.size(); }
   const std::vector<Pin*>& getPins() const { return pins_; }
 
-  bool isDefinedByShapes() const { return isDefinedByShapes_; }
-
  private:
   // Id.
-  int id_;
+  int id_ = 0;
   // Current position; bottom corner.
-  int left_;
-  int bottom_;
+  int left_ = 0;
+  int bottom_ = 0;
   // Original position.  Stored as double still.
-  double origLeft_;
-  double origBottom_;
+  double origLeft_ = 0;
+  double origBottom_ = 0;
   // Width and height.
-  int w_;
-  int h_;
+  int w_ = 0;
+  int h_ = 0;
   // Type.
-  Type type_;
+  Type type_ = UNKNOWN;
   // Fixed or not fixed.
-  Fixity fixed_;
+  Fixity fixed_ = NOT_FIXED;
   // For edge types and spacing tables.
-  int etl_;
-  int etr_;
+  int etl_ = EDGETYPE_DEFAULT;
+  int etr_ = EDGETYPE_DEFAULT;
   // For power.
-  int powerTop_;
-  int powerBot_;
+  int powerTop_ = Architecture::Row::Power_UNK;
+  int powerBot_ = Architecture::Row::Power_UNK;
   // Regions.
-  int regionId_;
+  int regionId_ = 0;
   // Orientations.
-  unsigned currentOrient_;
-  unsigned availOrient_;
+  unsigned currentOrient_ = Orientation_N;
+  unsigned availOrient_ = Orientation_N;
   // Pins.
   std::vector<Pin*> pins_;
-  // Shapes.  Legacy from bookshelf in which
-  // some fixed macros are not rectangles
-  // and are defined by sub-rectanges (shapes).
-  bool isDefinedByShapes_;
 
   friend class Network;
 };
@@ -228,18 +221,18 @@ class Pin
 
  private:
   // Pin width and height.
-  double pinWidth_;
-  double pinHeight_;
+  double pinWidth_ = 0;
+  double pinHeight_ = 0;
   // Direction.
-  int dir_;
+  int dir_ = Dir_INOUT;
   // Layer.
-  int pinLayer_;
+  int pinLayer_ = 0;
   // Node and edge for pin.
-  Node* node_;
-  Edge* edge_;
+  Node* node_ = nullptr;
+  Edge* edge_ = nullptr;
   // Offsets from cell center.
-  double offsetX_;
-  double offsetY_;
+  double offsetX_ = 0;
+  double offsetY_ = 0;
 
   friend class Network;
 };
@@ -258,20 +251,18 @@ class Network
   class comparePinsByEdgeId
   {
    public:
-    comparePinsByEdgeId() : nw_(nullptr) {}
-    comparePinsByEdgeId(Network* nw) : nw_(nw) {}
+    explicit comparePinsByEdgeId(Network* nw) : nw_(nw) {}
     bool operator()(const Pin* a, const Pin* b)
     {
       return a->getEdge()->getId() < b->getEdge()->getId();
     }
-    Network* nw_;
+    Network* nw_ = nullptr;
   };
 
   class comparePinsByOffset
   {
    public:
-    comparePinsByOffset() : nw_(nullptr) {}
-    comparePinsByOffset(Network* nw) : nw_(nw) {}
+    explicit comparePinsByOffset(Network* nw) : nw_(nw) {}
     bool operator()(const Pin* a, const Pin* b)
     {
       if (a->getOffsetX() == b->getOffsetX()) {
@@ -279,7 +270,7 @@ class Network
       }
       return a->getOffsetX() < b->getOffsetX();
     }
-    Network* nw_;
+    Network* nw_ = nullptr;
   };
 
  public:
@@ -304,11 +295,6 @@ class Network
 
   // For creating and adding cells.
   Node* createAndAddNode();  // Network cells.
-  Node* createAndAddShapeNode(
-      int left,
-      int bottom,
-      int width,
-      int height);  // Extras for non-rectangular shapes.
   Node* createAndAddFillerNode(int left,
                                int bottom,
                                int width,

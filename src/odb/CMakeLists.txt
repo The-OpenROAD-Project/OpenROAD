@@ -26,9 +26,11 @@ add_subdirectory(src/lefin)
 add_subdirectory(src/lefout)
 add_subdirectory(src/def)
 add_subdirectory(src/zutil)
-add_subdirectory(src/tm)
 add_subdirectory(src/cdl)
-add_subdirectory(test/cpp)
+
+if(ENABLE_TESTS)
+  add_subdirectory(test/cpp)
+endif()
 
 add_library(odb INTERFACE)
 target_link_libraries(odb
@@ -39,9 +41,8 @@ target_link_libraries(odb
     defout
     lefin
     lefout
-    tm
     zutil
-    utl
+    utl_lib
     ${TCL_LIBRARY}
 )
 
@@ -73,12 +74,14 @@ endif()
 ############################################################
 # Unit testing
 ############################################################
-enable_testing()
+if(ENABLE_TESTS)
+  enable_testing()
 
-add_executable(parseTest
-  ${PROJECT_SOURCE_DIR}/test/parseTest.cpp
-)
+  add_executable(parseTest
+    ${PROJECT_SOURCE_DIR}/test/parseTest.cpp
+  )
 
-target_link_libraries(parseTest
-  odb
-)
+  target_link_libraries(parseTest
+    odb
+  )
+endif()

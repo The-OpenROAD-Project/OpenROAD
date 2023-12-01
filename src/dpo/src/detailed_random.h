@@ -77,17 +77,18 @@ class DetailedRandom
  public:
   DetailedRandom(Architecture* arch, Network* network);
 
-  void run(DetailedMgr* mgrPtr, std::string command);
+  void run(DetailedMgr* mgrPtr, const std::string& command);
   void run(DetailedMgr* mgrPtr, std::vector<std::string>& args);
 
  private:
   double go();
 
-  double eval(std::vector<double>& costs, std::vector<std::string>& expr);
-  double doOperation(double a, double b, char op);
-  bool isOperator(char ch);
-  bool isObjective(char ch);
-  bool isNumber(char ch);
+  double eval(const std::vector<double>& costs,
+              const std::vector<std::string>& expr) const;
+  double doOperation(double a, double b, char op) const;
+  bool isOperator(char ch) const;
+  bool isObjective(char ch) const;
+  bool isNumber(char ch) const;
 
   void collectCandidates();
 
@@ -125,19 +126,19 @@ class RandomGenerator : public DetailedGenerator
   RandomGenerator();
 
  public:
-  bool generate(DetailedMgr* mgr, std::vector<Node*>& candiates) override;
+  bool generate(DetailedMgr* mgr, std::vector<Node*>& candidates) override;
   void stats() override;
   void init(DetailedMgr*) override {}
 
  private:
-  DetailedMgr* mgr_;
-  Architecture* arch_;
-  Network* network_;
-  RoutingParams* rt_;
+  DetailedMgr* mgr_ = nullptr;
+  Architecture* arch_ = nullptr;
+  Network* network_ = nullptr;
+  RoutingParams* rt_ = nullptr;
 
-  int attempts_;
-  int moves_;
-  int swaps_;
+  int attempts_ = 0;
+  int moves_ = 0;
+  int swaps_ = 0;
 };
 
 class DisplacementGenerator : public DetailedGenerator
@@ -146,19 +147,19 @@ class DisplacementGenerator : public DetailedGenerator
   DisplacementGenerator();
 
  public:
-  bool generate(DetailedMgr* mgr, std::vector<Node*>& candiates) override;
+  bool generate(DetailedMgr* mgr, std::vector<Node*>& candidates) override;
   void stats() override;
   void init(DetailedMgr*) override {}
 
  private:
-  DetailedMgr* mgr_;
-  Architecture* arch_;
-  Network* network_;
-  RoutingParams* rt_;
+  DetailedMgr* mgr_ = nullptr;
+  Architecture* arch_ = nullptr;
+  Network* network_ = nullptr;
+  RoutingParams* rt_ = nullptr;
 
-  int attempts_;
-  int moves_;
-  int swaps_;
+  int attempts_ = 0;
+  int moves_ = 0;
+  int swaps_ = 0;
 };
 
 }  // namespace dpo

@@ -11,8 +11,7 @@ design.link("top")
 
 floorplan = design.getFloorplan()
 floorplan.initFloorplan(helpers.make_rect(design, 0, 0, 1000, 1000),
-                        helpers.make_rect(design, 100, 100, 900, 900),
-                        "FreePDK45_38x28_10R_NP_162NW_34O")
+                        helpers.make_rect(design, 100, 100, 900, 900))
 
 def_file = helpers.make_result_file("init_floorplan1.def")
 design.writeDef(def_file)

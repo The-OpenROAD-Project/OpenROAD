@@ -48,7 +48,11 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
 
   FlexMazeIdx nextIdx(gridX, gridY, gridZ);
   // get cost
-  nextEstCost = getEstCost(nextIdx, dstMazeIdx1, dstMazeIdx2, dir);
+  nextEstCost
+      = getEstCost(FlexMazeIdx(currGrid.x(), currGrid.y(), currGrid.z()),
+                   dstMazeIdx1,
+                   dstMazeIdx2,
+                   dir);
   nextPathCost = getNextPathCost(currGrid, dir);
   Point currPt;
   getPoint(currPt, gridX, gridY);
@@ -161,11 +165,16 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
                                  const FlexMazeIdx& dstMazeIdx2,
                                  const frDirEnum& dir) const
 {
+  int gridX = src.x();
+  int gridY = src.y();
+  int gridZ = src.z();
+  auto edgeLength = getEdgeLength(gridX, gridY, gridZ, dir);
+  getNextGrid(gridX, gridY, gridZ, dir);
   // bend cost
   int bendCnt = 0;
   int forbiddenPenalty = 0;
   Point srcPoint, dstPoint1, dstPoint2;
-  getPoint(srcPoint, src.x(), src.y());
+  getPoint(srcPoint, gridX, gridY);
   getPoint(dstPoint1, dstMazeIdx1.x(), dstMazeIdx1.y());
   getPoint(dstPoint2, dstMazeIdx2.x(), dstMazeIdx2.y());
   frCoord minCostX = std::max(std::max(dstPoint1.x() - srcPoint.x(),
@@ -200,48 +209,48 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
   if (src.z() == dstMazeIdx1.z() && dstMazeIdx1.z() == dstMazeIdx2.z()) {
   }
 
-  int gridX = src.x();
-  int gridY = src.y();
-  int gridZ = src.z();
-  getNextGrid(gridX, gridY, gridZ, dir);
   Point nextPoint;
   getPoint(nextPoint, gridX, gridY);
   // avoid propagating to location that will cause forbidden via spacing to
   // boundary pin
+  bool isForbidden = false;
   if (dstMazeIdx1 == dstMazeIdx2 && gridZ == dstMazeIdx1.z()) {
-    if (drWorker_ && drWorker_->getDRIter() >= 30
-        && drWorker_->getRipupMode() == 0) {
-      auto layerNum = (gridZ + 1) * 2;
-      auto layer = getTech()->getLayer(layerNum);
-      if (layer->isUnidirectional()) {
-        bool isH = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
-        if (isH) {
-          auto gap = abs(nextPoint.y() - dstPoint1.y());
-          if (gap
-              && (getTech()->isVia2ViaForbiddenLen(
-                      gridZ, false, false, false, gap, ndr_)
-                  || layerNum - 2 < BOTTOM_ROUTING_LAYER)
-              && (getTech()->isVia2ViaForbiddenLen(
-                      gridZ, true, true, false, gap, ndr_)
-                  || layerNum + 2 > getTech()->getTopLayerNum())) {
-            forbiddenPenalty = layer->getPitch() * ggDRCCost_ * 20;
-          }
-        } else {
-          auto gap = abs(nextPoint.x() - dstPoint1.x());
-          if (gap
-              && (getTech()->isVia2ViaForbiddenLen(
-                      gridZ, false, false, true, gap, ndr_)
-                  || layerNum - 2 < BOTTOM_ROUTING_LAYER)
-              && (getTech()->isVia2ViaForbiddenLen(
-                      gridZ, true, true, true, gap, ndr_)
-                  || layerNum + 2 > getTech()->getTopLayerNum())) {
-            forbiddenPenalty = layer->getPitch() * ggDRCCost_ * 20;
-          }
+    auto layerNum = (gridZ + 1) * 2;
+    auto layer = getTech()->getLayer(layerNum);
+    if (layer->isUnidirectional()) {
+      bool isH = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
+      if (isH) {
+        auto gap = abs(nextPoint.y() - dstPoint1.y());
+        if (gap
+            && (getTech()->isVia2ViaForbiddenLen(
+                    gridZ, false, false, false, gap, ndr_)
+                || layerNum - 2 < BOTTOM_ROUTING_LAYER)
+            && (getTech()->isVia2ViaForbiddenLen(
+                    gridZ, true, true, false, gap, ndr_)
+                || layerNum + 2 > getTech()->getTopLayerNum())) {
+          isForbidden = true;
+        }
+      } else {
+        auto gap = abs(nextPoint.x() - dstPoint1.x());
+        if (gap
+            && (getTech()->isVia2ViaForbiddenLen(
+                    gridZ, false, false, true, gap, ndr_)
+                || layerNum - 2 < BOTTOM_ROUTING_LAYER)
+            && (getTech()->isVia2ViaForbiddenLen(
+                    gridZ, true, true, true, gap, ndr_)
+                || layerNum + 2 > getTech()->getTopLayerNum())) {
+          isForbidden = true;
         }
       }
     }
   }
-
+  if (isForbidden) {
+    if (drWorker_->getDRIter() >= 3) {
+      forbiddenPenalty = 2 * ggMarkerCost_ * edgeLength;
+    } else {
+      forbiddenPenalty = 2 * ggDRCCost_ * edgeLength;
+    }
+  }
   return (minCostX + minCostY + minCostZ + bendCnt + forbiddenPenalty);
 }
 
@@ -336,37 +345,63 @@ frCost FlexGridGraph::getNextPathCost(const FlexWavefrontGrid& currGrid,
     bool isCurrViaUp = (dir == frDirEnum::U);
     bool isForbiddenVia2Via = false;
     // check only y
-    if (currVLengthX == 0 && currVLengthY > 0
-        && getTech()->isVia2ViaForbiddenLen(gridZ,
-                                            !(currGrid.isPrevViaUp()),
-                                            !isCurrViaUp,
-                                            false,
-                                            currVLengthY,
-                                            ndr_)) {
-      isForbiddenVia2Via = true;
+    if (currVLengthX == 0 && currVLengthY > 0) {
+      isForbiddenVia2Via
+          = getTech()->isVia2ViaForbiddenLen(gridZ,
+                                             !(currGrid.isPrevViaUp()),
+                                             !isCurrViaUp,
+                                             false,
+                                             currVLengthY,
+                                             ndr_);
       // check only x
-    } else if (currVLengthX > 0 && currVLengthY == 0
-               && getTech()->isVia2ViaForbiddenLen(gridZ,
-                                                   !(currGrid.isPrevViaUp()),
-                                                   !isCurrViaUp,
-                                                   true,
-                                                   currVLengthX,
-                                                   ndr_)) {
-      isForbiddenVia2Via = true;
+    } else if (currVLengthX > 0 && currVLengthY == 0) {
+      isForbiddenVia2Via
+          = getTech()->isVia2ViaForbiddenLen(gridZ,
+                                             !(currGrid.isPrevViaUp()),
+                                             !isCurrViaUp,
+                                             true,
+                                             currVLengthX,
+                                             ndr_);
       // check both x and y
-    } else if (getTech()->isVia2ViaForbiddenLen(gridZ,
-                                                !(currGrid.isPrevViaUp()),
-                                                !isCurrViaUp,
-                                                false,
-                                                currVLengthY,
-                                                ndr_)
-               && getTech()->isVia2ViaForbiddenLen(gridZ,
-                                                   !(currGrid.isPrevViaUp()),
-                                                   !isCurrViaUp,
-                                                   true,
-                                                   currVLengthX,
-                                                   ndr_)) {
-      isForbiddenVia2Via = true;
+    } else {
+      if (getTech()->isVia2ViaPRL(gridZ,
+                                  !(currGrid.isPrevViaUp()),
+                                  !isCurrViaUp,
+                                  false,
+                                  currVLengthY)
+          || getTech()->isVia2ViaPRL(gridZ,
+                                     !(currGrid.isPrevViaUp()),
+                                     !isCurrViaUp,
+                                     true,
+                                     currVLengthX)) {
+        isForbiddenVia2Via
+            = getTech()->isVia2ViaForbiddenLen(gridZ,
+                                               !(currGrid.isPrevViaUp()),
+                                               !isCurrViaUp,
+                                               false,
+                                               currVLengthY,
+                                               ndr_)
+              || getTech()->isVia2ViaForbiddenLen(gridZ,
+                                                  !(currGrid.isPrevViaUp()),
+                                                  !isCurrViaUp,
+                                                  true,
+                                                  currVLengthX,
+                                                  ndr_);
+      } else {
+        isForbiddenVia2Via
+            = getTech()->isVia2ViaForbiddenLen(gridZ,
+                                               !(currGrid.isPrevViaUp()),
+                                               !isCurrViaUp,
+                                               false,
+                                               currVLengthY,
+                                               ndr_)
+              && getTech()->isVia2ViaForbiddenLen(gridZ,
+                                                  !(currGrid.isPrevViaUp()),
+                                                  !isCurrViaUp,
+                                                  true,
+                                                  currVLengthX,
+                                                  ndr_);
+      }
     }
 
     if (isForbiddenVia2Via) {

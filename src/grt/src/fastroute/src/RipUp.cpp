@@ -274,6 +274,7 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
                                   const int x2,
                                   const int y2,
                                   const int ripup_threshold,
+                                  const float critical_slack,
                                   const int netID,
                                   const int edgeID)
 {
@@ -303,7 +304,18 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
         }
       }
     }
-
+    if (!needRipup && critical_nets_percentage_ && treeedge->route.last_routelen
+        && critical_slack) {
+      const float delta = (float) treeedge->route.routelen
+                          / (float) treeedge->route.last_routelen;
+      if (nets_[netID]->getSlack() <= critical_slack
+          && (nets_[netID]->getSlack()
+              > std::ceil(std::numeric_limits<float>::lowest()))
+          && (delta >= 2)) {
+        nets_[netID]->setIsCritical(true);
+        needRipup = true;
+      }
+    }
     if (needRipup) {
       const int edgeCost = nets_[netID]->getEdgeCost();
 
@@ -322,7 +334,7 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
     }
   } else {
     printEdge(netID, edgeID);
-    logger_->error(GRT, 121, "Route type is not maze, netID {}.", netID);
+    logger_->error(GRT, 500, "Route type is not maze, netID {}.", netID);
   }
 }
 
@@ -344,8 +356,8 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
   const int n1a = treeedge->n1a;
   const int n2a = treeedge->n2a;
 
-  int bl = (n1a < num_terminals) ? 0 : BIG_INT;
-  int hl = 0;
+  int bl = (n1a < num_terminals) ? nets_[netID]->getPinL()[n1a] : BIG_INT;
+  int hl = (n1a < num_terminals) ? nets_[netID]->getPinL()[n1a] : 0;
   int hid = BIG_INT;
   int bid = BIG_INT;
 
@@ -382,8 +394,8 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
   treenodes[n1a].topL = hl;
   treenodes[n1a].hID = hid;
 
-  bl = (n2a < num_terminals) ? 0 : BIG_INT;
-  hl = 0;
+  bl = (n2a < num_terminals) ? nets_[netID]->getPinL()[n2a] : BIG_INT;
+  hl = (n2a < num_terminals) ? nets_[netID]->getPinL()[n2a] : 0;
   hid = bid = BIG_INT;
 
   for (int i = 0; i < treenodes[n2a].conCNT; i++) {
@@ -471,13 +483,13 @@ void FastRouteCore::releaseNetResources(const int netID)
           edge = &v_edges_[ymin][gridsX[i]];
           edge_3D = &v_edges_3D_[gridsL[i]][ymin][gridsX[i]];
           edge->usage -= edgeCost;
-          edge_3D->usage -= edgeCost;
+          edge_3D->usage -= nets_[netID]->getLayerEdgeCost(gridsL[i]);
         } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
           const int xmin = std::min(gridsX[i], gridsX[i + 1]);
           edge = &h_edges_[gridsY[i]][xmin];
           edge_3D = &h_edges_3D_[gridsL[i]][gridsY[i]][xmin];
           edge->usage -= edgeCost;
-          edge_3D->usage -= edgeCost;
+          edge_3D->usage -= nets_[netID]->getLayerEdgeCost(gridsL[i]);
         }
       }
     }

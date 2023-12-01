@@ -28,21 +28,23 @@
 
 #include "distributed/drUpdate.h"
 #include "ta/FlexTA.h"
-using namespace fr;
+
+namespace fr {
 
 void FlexTAWorker::saveToGuides()
 {
   for (auto& iroute : iroutes_) {
     for (auto& uPinFig : iroute->getFigs()) {
       if (uPinFig->typeId() == tacPathSeg) {
-        std::unique_ptr<frPathSeg> pathSeg = std::make_unique<frPathSeg>(
-            *static_cast<taPathSeg*>(uPinFig.get()));
-        drUpdate update(drUpdate::ADD_GUIDE);
-        update.setPathSeg(*pathSeg.get());
-        update.setIndexInOwner(iroute->getGuide()->getIndexInOwner());
-        update.setNet(iroute->getGuide()->getNet());
-        design_->addUpdate(update);
-
+        std::unique_ptr<frPathSeg> pathSeg
+            = std::make_unique<frPathSeg>(*static_cast<taPathSeg*>(uPinFig.get()));
+        if (save_updates_) {
+          drUpdate update(drUpdate::ADD_GUIDE);
+          update.setPathSeg(*pathSeg);
+          update.setIndexInOwner(iroute->getGuide()->getIndexInOwner());
+          update.setNet(iroute->getGuide()->getNet());
+          design_->addUpdate(update);
+        }
         pathSeg->addToNet(iroute->getGuide()->getNet());
         auto guide = iroute->getGuide();
         std::vector<std::unique_ptr<frConnFig>> tmp;
@@ -59,3 +61,5 @@ void FlexTAWorker::end()
 {
   saveToGuides();
 }
+
+}  // namespace fr

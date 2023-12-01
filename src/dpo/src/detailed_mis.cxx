@@ -181,8 +181,12 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   // Do some things that only need to be done once regardless
   // of the number of passes.
   collectMovableCells();  // Movable cells.
-  colorCells();           // Color the cells.
-  buildGrid();            // Grid for searching for neigbours.
+  if (candidates_.empty()) {
+    mgrPtr_->getLogger()->info(DPO, 202, "No movable cells found");
+    return;
+  }
+  colorCells();  // Color the cells.
+  buildGrid();   // Grid for searching for neigbours.
 
   for (int p = 1; p <= passes; p++) {
     const double curr_obj = (obj_ == DetailedMis::Hpwl) ? curr_hpwl : curr_disp;
@@ -208,10 +212,17 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   }
   mgrPtr_->resortSegments();
 
-  const double hpwl_imp = (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
-  const double disp_imp = (((init_disp - curr_disp) / init_disp) * 100.);
-  const double curr_imp = (obj_ == DetailedMis::Hpwl) ? hpwl_imp : disp_imp;
-  const double curr_obj = (obj_ == DetailedMis::Hpwl) ? curr_hpwl : curr_disp;
+  double curr_imp;
+  double curr_obj;
+  if (obj_ == DetailedMis::Hpwl) {
+    const double hpwl_imp = (((init_hpwl - curr_hpwl) / init_hpwl) * 100.);
+    curr_imp = hpwl_imp;
+    curr_obj = curr_hpwl;
+  } else {
+    const double disp_imp = (((init_disp - curr_disp) / init_disp) * 100.);
+    curr_imp = disp_imp;
+    curr_obj = curr_disp;
+  }
   mgrPtr_->getLogger()->info(
       DPO,
       302,
@@ -237,11 +248,8 @@ void DetailedMis::place()
   // if it has been involved is >= a certain number of problems, it has "had
   // some chance" to be moved, so skip it.
   Utility::random_shuffle(
-      candidates_.begin(), candidates_.end(), mgrPtr_->rng_);
-  for (size_t i = 0; i < candidates_.size(); i++) {
-    // Pick a candidate as a seed.
-    Node* ndi = candidates_[i];
-
+      candidates_.begin(), candidates_.end(), mgrPtr_->getRng());
+  for (Node* ndi : candidates_) {  // Pick a candidate as a seed.
     // Skip seed if it has been used already.
     if (timesUsed_[ndi->getId()] >= maxTimesUsed_) {
       continue;
@@ -256,8 +264,7 @@ void DetailedMis::place()
     solveMatch();
 
     // Increment times each node has been used.
-    for (size_t j = 0; j < neighbours_.size(); j++) {
-      const Node* ndj = neighbours_[j];
+    for (const Node* ndj : neighbours_) {
       ++timesUsed_[ndj->getId()];
     }
 
@@ -270,14 +277,14 @@ void DetailedMis::place()
 //////////////////////////////////////////////////////////////////////////////////
 void DetailedMis::collectMovableCells()
 {
-  candidates_.erase(candidates_.begin(), candidates_.end());
+  candidates_.clear();
   candidates_.insert(candidates_.end(),
-                     mgrPtr_->singleHeightCells_.begin(),
-                     mgrPtr_->singleHeightCells_.end());
-  for (size_t i = 2; i < mgrPtr_->multiHeightCells_.size(); i++) {
+                     mgrPtr_->getSingleHeightCells().begin(),
+                     mgrPtr_->getSingleHeightCells().end());
+  for (size_t i = 2; i < mgrPtr_->getNumMultiHeights(); i++) {
     candidates_.insert(candidates_.end(),
-                       mgrPtr_->multiHeightCells_[i].begin(),
-                       mgrPtr_->multiHeightCells_[i].end());
+                       mgrPtr_->getMultiHeightCells(i).begin(),
+                       mgrPtr_->getMultiHeightCells(i).end());
   }
 }
 
@@ -290,8 +297,7 @@ void DetailedMis::colorCells()
 
   movable_.resize(network_->getNumNodes());
   std::fill(movable_.begin(), movable_.end(), false);
-  for (size_t i = 0; i < candidates_.size(); i++) {
-    const Node* ndi = candidates_[i];
+  for (const Node* ndi : candidates_) {
     movable_[ndi->getId()] = true;
   }
 
@@ -365,8 +371,7 @@ void DetailedMis::buildGrid()
   // average width and height of the cells.
   double avgH = 0.;
   double avgW = 0.;
-  for (size_t i = 0; i < candidates_.size(); i++) {
-    const Node* ndi = candidates_[i];
+  for (const Node* ndi : candidates_) {
     avgH += ndi->getHeight();
     avgW += ndi->getWidth();
   }
@@ -414,9 +419,7 @@ void DetailedMis::populateGrid()
 
   // Insert cells into the constructed grid.
   cellToBinMap_.clear();
-  for (size_t n = 0; n < candidates_.size(); ++n) {
-    Node* ndi = candidates_[n];
-
+  for (Node* ndi : candidates_) {
     const double y = ndi->getBottom() + 0.5 * ndi->getHeight();
     const double x = ndi->getLeft() + 0.5 * ndi->getWidth();
 
@@ -460,7 +463,7 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
     return false;
   }
 
-  const int spanned_i = (int) (ndi->getHeight() / singleRowHeight + 0.5);
+  const int spanned_i = std::lround(ndi->getHeight() / singleRowHeight);
 
   std::deque<Bucket*> Q;
   Q.push_back(it->second);
@@ -476,10 +479,8 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
 
     // Scan all the cells in this bucket.  If they are compatible with the
     // original cell, then add them to the neighbour list.
-    for (size_t j = 0; j < currPtr->nodes_.size(); j++) {
-      Node* ndj = currPtr->nodes_[j];
-
-      const int spanned_j = (int) (ndj->getHeight() / singleRowHeight + 0.5);
+    for (Node* ndj : currPtr->nodes_) {
+      const int spanned_j = std::lround(ndj->getHeight() / singleRowHeight);
 
       // Check to make sure the cell is not the original, that they have
       // the same region, that they have the same size (if applicable),
@@ -518,14 +519,18 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
     }
 
     // Add more bins to the queue if we have not yet collected enough cells.
-    if (currPtr->i_ - 1 >= 0)
+    if (currPtr->i_ - 1 >= 0) {
       Q.push_back(grid_[currPtr->i_ - 1][currPtr->j_]);
-    if (currPtr->i_ + 1 <= dimW_ - 1)
+    }
+    if (currPtr->i_ + 1 <= dimW_ - 1) {
       Q.push_back(grid_[currPtr->i_ + 1][currPtr->j_]);
-    if (currPtr->j_ - 1 >= 0)
+    }
+    if (currPtr->j_ - 1 >= 0) {
       Q.push_back(grid_[currPtr->i_][currPtr->j_ - 1]);
-    if (currPtr->j_ + 1 <= dimH_ - 1)
+    }
+    if (currPtr->j_ + 1 <= dimH_ - 1) {
       Q.push_back(grid_[currPtr->i_][currPtr->j_ + 1]);
+    }
   }
   return true;
 }
@@ -550,7 +555,7 @@ void DetailedMis::solveMatch()
     Node* ndi = nodes[i];
 
     pos[i] = std::make_pair(ndi->getLeft(), ndi->getBottom());
-    seg[i] = mgrPtr_->reverseCellToSegs_[ndi->getId()];  // copy!
+    seg[i] = mgrPtr_->getReverseCellToSegs(ndi->getId());  // copy!
   }
 
   lemon::ListDigraph g;
@@ -572,7 +577,7 @@ void DetailedMis::solveMatch()
 
   std::map<lemon::ListDigraph::Arc, std::pair<int, int>> reverseMap;
 
-  int icost;
+  double icost;
   for (int i = 0; i < nNodes; i++) {
     // Supply to node.
     lemon::ListDigraph::Arc arc_sv = g.addArc(supplyNode, nodeForCell[i]);
@@ -607,22 +612,23 @@ void DetailedMis::solveMatch()
       }
 
       // Okay to assign the cell to this location.
-      icost = 0;
       if (obj_ == DetailedMis::Hpwl) {
-        icost = (int) getHpwl(ndi,
-                              pos[j].first + 0.5 * ndi->getWidth(),
-                              pos[j].second + 0.5 * ndi->getHeight());
+        icost = getHpwl(ndi,
+                        pos[j].first + 0.5 * ndi->getWidth(),
+                        pos[j].second + 0.5 * ndi->getHeight());
       } else {
-        icost = (int) getDisp(ndi,
-                              pos[j].first + 0.5 * ndi->getWidth(),
-                              pos[j].second + 0.5 * ndi->getHeight());
+        icost = getDisp(ndi,
+                        pos[j].first + 0.5 * ndi->getWidth(),
+                        pos[j].second + 0.5 * ndi->getHeight());
       }
 
       // Node to spot.
       lemon::ListDigraph::Arc arc_vu = g.addArc(nodeForCell[i], nodeForSpot[j]);
       l_i[arc_vu] = 0;
       u_i[arc_vu] = 1;
-      c_i[arc_vu] = icost;
+      c_i[arc_vu] = icost > std::numeric_limits<int>::max()
+                        ? std::numeric_limits<int>::max()
+                        : static_cast<int>(icost);
 
       reverseMap[arc_vu] = std::make_pair(i, j);
     }
@@ -689,8 +695,7 @@ void DetailedMis::solveMatch()
           // This means an error someplace else...
           mgrPtr_->internalError("Unable to interpret flow during matching");
         }
-        for (size_t s = 0; s < old_segs.size(); s++) {
-          const DetailedSeg* segPtr = old_segs[s];
+        for (const DetailedSeg* segPtr : old_segs) {
           const int segId = segPtr->getSegId();
           mgrPtr_->removeCellFromSegment(ndi, segId);
         }
@@ -705,8 +710,7 @@ void DetailedMis::solveMatch()
           // Not setup for non-same size stuff right now.
           mgrPtr_->internalError("Unable to interpret flow during matching");
         }
-        for (size_t s = 0; s < new_segs.size(); s++) {
-          const DetailedSeg* segPtr = new_segs[s];
+        for (const DetailedSeg* segPtr : new_segs) {
           const int segId = segPtr->getSegId();
           mgrPtr_->addCellToSegment(ndi, segId);
         }

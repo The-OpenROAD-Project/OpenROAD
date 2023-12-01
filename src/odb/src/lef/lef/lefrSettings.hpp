@@ -1,6 +1,6 @@
 // *****************************************************************************
 // *****************************************************************************
-// Copyright 2012 - 2017, Cadence Design Systems
+// Copyright 2012 - 2019, Cadence Design Systems
 //
 // This  file  is  part  of  the  Cadence  LEF/DEF  Open   Source
 // Distribution,  Product Version 5.8.
@@ -36,6 +36,8 @@
 #include <string>
 
 #include "lefrReader.hpp"
+
+#define lefMaxOxides 32
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
@@ -83,29 +85,28 @@ class lefrSettings
 
   static std::string getToken(const std::string& input, int& startIdx);
 
-  lefKeywordMap Keyword_set;
-
-  char CommentChar;
-  double VersionNum;
-  int DisPropStrProcess;
-  int CaseSensitive;
-  int CaseSensitiveSet;
-  int DeltaNumberLines;
+  LEFI_LINE_NUMBER_FUNCTION LineNumberFunction;
+  LEFI_READ_FUNCTION ReadFunction;
   int AntennaInoutWarnings;
   int AntennaInputWarnings;
   int AntennaOutputWarnings;
   int ArrayWarnings;
+  int CaseSensitive;
+  int CaseSensitiveSet;
   int CaseSensitiveWarnings;
+  char CommentChar;
   int CorrectionTableWarnings;
+  int DeltaNumberLines;
   int DielectricWarnings;
+  int DisPropStrProcess;
   int EdgeRateScaleFactorWarnings;
   int EdgeRateThreshold1Warnings;
   int EdgeRateThreshold2Warnings;
   int IRDropWarnings;
   int InoutAntennaWarnings;
   int InputAntennaWarnings;
-  LEFI_LINE_NUMBER_FUNCTION LineNumberFunction;
   int LayerWarnings;
+  int LogFileAppend;
   int MacroWarnings;
   int MaxStackViaWarnings;
   int MinFeatureWarnings;
@@ -115,7 +116,6 @@ class lefrSettings
   int NonDefaultWarnings;
   int OutputAntennaWarnings;
   int PinWarnings;
-  LEFI_READ_FUNCTION ReadFunction;
   int ReadEncrypted;
   int RegisterUnused;
   int RelaxMode;
@@ -123,15 +123,14 @@ class lefrSettings
   int SiteWarnings;
   int SpacingWarnings;
   int TimingWarnings;
+  int TotalMsgLimit;
   int UnitsWarnings;
   int UseMinSpacingWarnings;
   int ViaRuleWarnings;
   int ViaWarnings;
-  int LogFileAppend;
-  int TotalMsgLimit;
   lefiUserData UserData;
-
-  StringSet Lef58TypePairs;
+  int dAllMsgs;
+  double VersionNum;
 
   LEFI_MALLOC_FUNCTION MallocFunction;
   LEFI_REALLOC_FUNCTION ReallocFunction;
@@ -139,13 +138,16 @@ class lefrSettings
   LEFI_LOG_FUNCTION ErrorLogFunction;
   LEFI_LOG_FUNCTION SetLogFunction;
   LEFI_WARNING_LOG_FUNCTION WarningLogFunction;
+  StringSet Lef58TypePairs;
 
   int MsgLimit[MAX_LEF_MSGS];
 
   MsgsDisableMap msgsDisableMap;
-  int dAllMsgs;
 
   lefrProps lefProps;
+  static const char* lefOxides[lefMaxOxides];
+
+  lefKeywordMap Keyword_set;
 };
 
 extern lefrSettings* lefSettings;

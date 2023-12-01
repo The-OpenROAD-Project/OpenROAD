@@ -65,14 +65,12 @@ DetailedOrient::DetailedOrient(Architecture* arch, Network* network)
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
-void DetailedOrient::run(DetailedMgr* mgrPtr, std::string command)
+void DetailedOrient::run(DetailedMgr* mgrPtr, const std::string& command)
 {
   // A temporary interface to allow for a string which we will decode to create
   // the arguments.
-  std::string scriptString = command;
   boost::char_separator<char> separators(" \r\t\n;");
-  boost::tokenizer<boost::char_separator<char>> tokens(scriptString,
-                                                       separators);
+  boost::tokenizer<boost::char_separator<char>> tokens(command, separators);
   std::vector<std::string> args;
   for (boost::tokenizer<boost::char_separator<char>>::iterator it
        = tokens.begin();
@@ -151,13 +149,12 @@ int DetailedOrient::orientCells(int& changed)
   int errors = 0;
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* ndi = network_->getNode(i);
-    if (!(ndi->isTerminal() || ndi->isTerminalNI() || ndi->isFixed())) {
+    if (!(ndi->isTerminal() || ndi->isFixed())) {
       // Figure out the lowest row for the cell.  Not that single
       // height cells are only in one row.
       int bottom = arch_->getNumRows();
-      for (int s = 0; s < mgrPtr_->reverseCellToSegs_[ndi->getId()].size();
-           s++) {
-        DetailedSeg* segPtr = mgrPtr_->reverseCellToSegs_[ndi->getId()][s];
+      for (int s = 0; s < mgrPtr_->getNumReverseCellToSegs(ndi->getId()); s++) {
+        DetailedSeg* segPtr = mgrPtr_->getReverseCellToSegs(ndi->getId())[s];
         bottom = std::min(bottom, segPtr->getRowId());
       }
       if (bottom < arch_->getNumRows()) {
@@ -200,8 +197,7 @@ bool DetailedOrient::orientMultiHeightCellForRow(Node* ndi, int row)
   if (arch_->powerCompatible(ndi, arch_->getRow(row), flip)) {
     if (flip) {
       // Flip the pins.
-      for (int pi = 0; pi < ndi->getPins().size(); pi++) {
-        Pin* pin = ndi->getPins()[pi];
+      for (Pin* pin : ndi->getPins()) {
         pin->setOffsetY(pin->getOffsetY() * (-1));
       }
       // I'm not sure the following is correct, but I am going
@@ -225,10 +221,10 @@ bool DetailedOrient::orientMultiHeightCellForRow(Node* ndi, int row)
           break;
       }
       return true;
-    } else {
-      // No need to flip.
-      return true;
     }
+
+    // No need to flip.
+    return true;
   }
   // Not power compatible!
   return false;
@@ -262,37 +258,35 @@ bool DetailedOrient::orientSingleHeightCellForRow(Node* ndi, int row)
     }
 
     if (cellOri == Orientation_FS) {
-      for (int pi = 0; pi < ndi->getPins().size(); pi++) {
-        Pin* pin = ndi->getPins()[pi];
+      for (Pin* pin : ndi->getPins()) {
         pin->setOffsetY(pin->getOffsetY() * (-1));
       }
       ndi->setCurrOrient(Orientation_N);
       return true;
-    } else if (cellOri == Orientation_S) {
-      for (int pi = 0; pi < ndi->getPins().size(); pi++) {
-        Pin* pin = ndi->getPins()[pi];
-        ;
+    }
+    if (cellOri == Orientation_S) {
+      for (Pin* pin : ndi->getPins()) {
         pin->setOffsetY(pin->getOffsetY() * (-1));
       }
       ndi->setCurrOrient(Orientation_FN);
       return true;
     }
     return false;
-  } else if (rowOri == Orientation_FS || Orientation_S) {
+  }
+  if (rowOri == Orientation_FS || Orientation_S) {
     if (cellOri == Orientation_FS || cellOri == Orientation_S) {
       return true;
     }
 
     if (cellOri == Orientation_N) {
-      for (int pi = 0; pi < ndi->getPins().size(); pi++) {
-        Pin* pin = ndi->getPins()[pi];
+      for (Pin* pin : ndi->getPins()) {
         pin->setOffsetY(pin->getOffsetY() * (-1));
       }
       ndi->setCurrOrient(Orientation_FS);
       return true;
-    } else if (cellOri == Orientation_FN) {
-      for (int pi = 0; pi < ndi->getPins().size(); pi++) {
-        Pin* pin = ndi->getPins()[pi];
+    }
+    if (cellOri == Orientation_FN) {
+      for (Pin* pin : ndi->getPins()) {
         pin->setOffsetY(pin->getOffsetY() * (-1));
       }
       ndi->setCurrOrient(Orientation_S);
@@ -315,8 +309,8 @@ int DetailedOrient::flipCells()
   double lx, rx;
 
   int nflips = 0;
-  for (int s = 0; s < mgrPtr_->segments_.size(); s++) {
-    DetailedSeg* segment = mgrPtr_->segments_[s];
+  for (int s = 0; s < mgrPtr_->getNumSegments(); s++) {
+    DetailedSeg* segment = mgrPtr_->getSegment(s);
 
     int row = segment->getRowId();
 
@@ -324,7 +318,8 @@ int DetailedOrient::flipCells()
       continue;
     }
 
-    std::vector<Node*>& nodes = mgrPtr_->cellsInSeg_[segment->getSegId()];
+    const std::vector<Node*>& nodes
+        = mgrPtr_->getCellsInSeg(segment->getSegId());
     for (int i = 0; i < nodes.size(); i++) {
       Node* ndi = nodes[i];
       // Only consider single height cells.
@@ -357,9 +352,7 @@ int DetailedOrient::flipCells()
         double newMinX = std::numeric_limits<double>::max();
         double newMaxX = std::numeric_limits<double>::lowest();
 
-        for (int pj = 0; pj < edi->getPins().size(); pj++) {
-          Pin* pinj = edi->getPins()[pj];
-
+        for (Pin* pinj : edi->getPins()) {
           Node* ndj = pinj->getNode();
 
           double x
@@ -428,8 +421,7 @@ int DetailedOrient::flipCells()
       // we need to change the orientiation.
 
       // Update pin offsets.
-      for (int pi = 0; pi < ndi->getPins().size(); pi++) {
-        Pin* pin = ndi->getPins()[pi];
+      for (Pin* pin : ndi->getPins()) {
         pin->setOffsetX(pin->getOffsetX() * (-1));
       }
       // Update/swap edge types.
@@ -512,9 +504,7 @@ bool DetailedOrient::orientAdjust(Node* ndi, unsigned newOri)
       break;
   }
 
-  for (int pi = 0; pi < ndi->getPins().size(); pi++) {
-    Pin* pin = ndi->getPins()[pi];
-
+  for (Pin* pin : ndi->getPins()) {
     if (mX == -1) {
       pin->setOffsetX(pin->getOffsetX() * (double) mX);
     }
@@ -575,69 +565,69 @@ bool DetailedOrient::isLegalSym(unsigned rowOri,
   // Messy...
   if (siteSym == Symmetry_Y) {
     if (rowOri == Orientation_N) {
-      if (cellOri == Orientation_N || cellOri == Orientation_FN)
+      if (cellOri == Orientation_N || cellOri == Orientation_FN) {
         return true;
-      else
-        return false;
-    } else if (rowOri == Orientation_FS) {
-      if (cellOri == Orientation_S || cellOri == Orientation_FS)
-        return true;
-      else
-        return false;
-    } else {
-      // XXX: Odd...
+      }
       return false;
     }
+    if (rowOri == Orientation_FS) {
+      if (cellOri == Orientation_S || cellOri == Orientation_FS) {
+        return true;
+      }
+      return false;
+    }
+    // XXX: Odd...
+    return false;
   }
   if (siteSym == Symmetry_X) {
     if (rowOri == Orientation_N) {
-      if (cellOri == Orientation_N || cellOri == Orientation_FS)
+      if (cellOri == Orientation_N || cellOri == Orientation_FS) {
         return true;
-      else
-        return false;
-    } else if (rowOri == Orientation_FS) {
-      if (cellOri == Orientation_N || cellOri == Orientation_FS)
-        return true;
-      else
-        return false;
-    } else {
-      // XXX: Odd...
+      }
       return false;
     }
+    if (rowOri == Orientation_FS) {
+      if (cellOri == Orientation_N || cellOri == Orientation_FS) {
+        return true;
+      }
+      return false;
+    }
+    // XXX: Odd...
+    return false;
   }
   if (siteSym == (Symmetry_X | Symmetry_Y)) {
     if (rowOri == Orientation_N) {
       if (cellOri == Orientation_N || cellOri == Orientation_FN
-          || cellOri == Orientation_S || cellOri == Orientation_FS)
+          || cellOri == Orientation_S || cellOri == Orientation_FS) {
         return true;
-      else
-        return false;
-    } else if (rowOri == Orientation_FS) {
-      if (cellOri == Orientation_N || cellOri == Orientation_FN
-          || cellOri == Orientation_S || cellOri == Orientation_FS)
-        return true;
-      else
-        return false;
-    } else {
-      // XXX: Odd...
+      }
       return false;
     }
+    if (rowOri == Orientation_FS) {
+      if (cellOri == Orientation_N || cellOri == Orientation_FN
+          || cellOri == Orientation_S || cellOri == Orientation_FS) {
+        return true;
+      }
+      return false;
+    }
+    // XXX: Odd...
+    return false;
   }
   if (siteSym == Symmetry_UNKNOWN) {
     if (rowOri == Orientation_N) {
-      if (cellOri == Orientation_N)
+      if (cellOri == Orientation_N) {
         return true;
-      else
-        return false;
-    } else if (rowOri == Orientation_FS) {
-      if (cellOri == Orientation_FS)
-        return true;
-      else
-        return false;
-    } else {
-      // XXX: Odd...
+      }
       return false;
     }
+    if (rowOri == Orientation_FS) {
+      if (cellOri == Orientation_FS) {
+        return true;
+      }
+      return false;
+    }
+    // XXX: Odd...
+    return false;
   }
   if (siteSym == Symmetry_ROT90) {
     // XXX: Not handled.

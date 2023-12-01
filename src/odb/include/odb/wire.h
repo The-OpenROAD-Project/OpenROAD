@@ -296,7 +296,6 @@ class Ath__track
   void initTargetWire(int noPowerWire);
   Ath__wire* nextTargetWire(int noPowerWire);
   Ath__wire* getTargetWire();
-  void adjustMetalFill();
   void adjustOverlapMakerEnd(uint markerCnt);
   void adjustOverlapMakerEnd(uint markerCnt, int start, uint markerLen);
   uint trackContextOn(int orig,
@@ -493,7 +492,6 @@ class Ath__grid
               uint* gxy,
               Ath__array1D<uint>* idtable,
               Ath__grid* g);
-  void adjustMetalFill();
   void adjustOverlapMakerEnd();
   void initContextGrids();
   void initContextTracks();
@@ -605,8 +603,8 @@ class Ath__gridTable
                  uint* width,
                  uint* pitch,
                  uint* spacing,
-                 int* X1 = NULL,
-                 int* Y1 = NULL);
+                 int* X1 = nullptr,
+                 int* Y1 = nullptr);
   ~Ath__gridTable();
   Ath__grid* getGrid(uint row, uint col);
   void init1(uint memChunk, uint rowSize, uint colSize, uint dx, uint dy);
@@ -738,7 +736,6 @@ class Ath__gridTable
   bool usingDbSdb() { return _useDbSdb; }
   void reverseTargetTrack();
   bool targetTrackReversed() { return _targetTrackReversed; };
-  void adjustMetalFill();
   void incrNotAlignedOverlap(Ath__wire* w1, Ath__wire* w2);
   void incrSignalOverlap();
   void incrPowerOverlap();
@@ -762,7 +759,7 @@ class Ath__gridTable
                             uint couplingDist,
                             rcx::CoupleAndCompute coupleAndCompute,
                             void* compPtr,
-                            int* startXY = NULL);
+                            int* startXY = nullptr);
   int dealloc(uint dir, int hiXY);
   void dealloc();
 

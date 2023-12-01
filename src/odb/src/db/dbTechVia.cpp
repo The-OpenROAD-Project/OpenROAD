@@ -150,8 +150,8 @@ void _dbTechVia::out(dbDiff& diff, char side, const char* field) const
 _dbTechVia::_dbTechVia(_dbDatabase*, const _dbTechVia& v)
     : _flags(v._flags),
       _resistance(v._resistance),
-      _name(NULL),
-      _pattern(NULL),
+      _name(nullptr),
+      _pattern(nullptr),
       _bbox(v._bbox),
       _boxes(v._boxes),
       _top(v._top),
@@ -293,7 +293,7 @@ dbBox* dbTechVia::getBBox()
   _dbTechVia* via = (_dbTechVia*) this;
 
   if (via->_bbox == 0)
-    return NULL;
+    return nullptr;
 
   _dbTech* tech = (_dbTech*) via->getOwner();
   return (dbBox*) tech->_box_tbl->getPtr(via->_bbox);
@@ -311,7 +311,7 @@ dbTechLayer* dbTechVia::getTopLayer()
   _dbTechVia* via = (_dbTechVia*) this;
 
   if (via->_top == 0)
-    return NULL;
+    return nullptr;
 
   _dbTech* tech = (_dbTech*) via->getOwner();
   return (dbTechLayer*) tech->_layer_tbl->getPtr(via->_top);
@@ -322,7 +322,7 @@ dbTechLayer* dbTechVia::getBottomLayer()
   _dbTechVia* via = (_dbTechVia*) this;
 
   if (via->_bottom == 0)
-    return NULL;
+    return nullptr;
 
   _dbTech* tech = (_dbTech*) via->getOwner();
   return (dbTechLayer*) tech->_layer_tbl->getPtr(via->_bottom);
@@ -333,7 +333,7 @@ dbTechNonDefaultRule* dbTechVia::getNonDefaultRule()
   _dbTechVia* via = (_dbTechVia*) this;
 
   if (via->_non_default_rule == 0)
-    return NULL;
+    return nullptr;
 
   _dbTech* tech = (_dbTech*) via->getOwner();
   return (dbTechNonDefaultRule*) tech->_non_default_rule_tbl->getPtr(
@@ -357,7 +357,7 @@ dbTechViaGenerateRule* dbTechVia::getViaGenerateRule()
   _dbTechVia* via = (_dbTechVia*) this;
 
   if (via->_generate_rule == 0)
-    return NULL;
+    return nullptr;
 
   _dbTech* tech = (_dbTech*) via->getOwner();
   _dbTechViaGenerateRule* rule
@@ -369,7 +369,7 @@ std::string dbTechVia::getPattern()
 {
   _dbTechVia* via = (_dbTechVia*) this;
 
-  if (via->_pattern == NULL) {
+  if (via->_pattern == nullptr) {
     return "";
   }
 
@@ -427,7 +427,7 @@ void dbTechVia::getViaParams(dbViaParams& params)
 dbTechVia* dbTechVia::create(dbTech* tech_, const char* name_)
 {
   if (tech_->findVia(name_))
-    return NULL;
+    return nullptr;
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechVia* via = tech->_via_tbl->create();
@@ -448,7 +448,7 @@ dbTechVia* dbTechVia::clone(dbTechNonDefaultRule* rule_,
   dbTech* tech_ = (dbTech*) rule->getOwner();
 
   if (tech_->findVia(new_name))
-    return NULL;
+    return nullptr;
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechVia* via = tech->_via_tbl->create();
@@ -479,7 +479,7 @@ dbTechVia* dbTechVia::create(dbTechNonDefaultRule* rule_, const char* name_)
   dbTech* tech_ = (dbTech*) rule->getOwner();
 
   if (tech_->findVia(name_))
-    return NULL;
+    return nullptr;
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechVia* via = tech->_via_tbl->create();

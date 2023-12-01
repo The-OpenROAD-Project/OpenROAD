@@ -31,54 +31,15 @@
 #include <bitset>
 #include <memory>
 #include <queue>
-#include <vector>
 
 #include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
 #include "global.h"
-// #include <boost/pool/pool_alloc.hpp>
 
 namespace fr {
 class FlexWavefrontGrid
 {
  public:
-  FlexWavefrontGrid()
-      : xIdx_(-1),
-        yIdx_(-1),
-        zIdx_(-1),
-        pathCost_(0),
-        cost_(0),
-        vLengthX_(std::numeric_limits<frCoord>::max()),
-        vLengthY_(std::numeric_limits<frCoord>::max()),
-        dist_(0),
-        prevViaUp_(false),
-        tLength_(std::numeric_limits<frCoord>::max()),
-        backTraceBuffer_()
-  {
-  }
-  FlexWavefrontGrid(int xIn,
-                    int yIn,
-                    int zIn,
-                    frCoord vLengthXIn,
-                    frCoord vLengthYIn,
-                    bool prevViaUpIn,
-                    frCoord tLengthIn,
-                    frCoord distIn,
-                    frCost pathCostIn,
-                    frCost costIn /*, frDirEnum preTurnDirIn*/)
-      : xIdx_(xIn),
-        yIdx_(yIn),
-        zIdx_(zIn),
-        pathCost_(pathCostIn),
-        cost_(costIn),
-        vLengthX_(vLengthXIn),
-        vLengthY_(vLengthYIn),
-        dist_(distIn),
-        prevViaUp_(prevViaUpIn),
-        tLength_(tLengthIn),
-        backTraceBuffer_()
-  {
-  }
   FlexWavefrontGrid(int xIn,
                     int yIn,
                     int zIn,
@@ -89,7 +50,7 @@ class FlexWavefrontGrid
                     frCoord distIn,
                     frCost pathCostIn,
                     frCost costIn,
-                    std::bitset<WAVEFRONTBITSIZE> backTraceBufferIn)
+                    const std::bitset<WAVEFRONTBITSIZE>& backTraceBufferIn = {})
       : xIdx_(xIn),
         yIdx_(yIn),
         zIdx_(zIn),
@@ -107,18 +68,15 @@ class FlexWavefrontGrid
   {
     if (cost_ != b.cost_) {
       return cost_ > b.cost_;  // prefer smaller cost
-    } else {
-      if (dist_ != b.dist_) {
-        return dist_ > b.dist_;  // prefer routing close to pin gravity center
-                                 // (centerPt)
-      } else {
-        if (zIdx_ != b.zIdx_) {
-          return zIdx_ < b.zIdx_;  // prefer upper layer
-        } else {
-          return pathCost_ < b.pathCost_;  // prefer larger pathcost, DFS-style
-        }
-      }
     }
+    if (dist_ != b.dist_) {
+      return dist_ > b.dist_;  // prefer routing close to pin gravity center
+                               // (centerPt)
+    }
+    if (zIdx_ != b.zIdx_) {
+      return zIdx_ < b.zIdx_;  // prefer upper layer
+    }
+    return pathCost_ < b.pathCost_;  // prefer larger pathcost, DFS-style
   }
   // getters
   frMIdx x() const { return xIdx_; }
@@ -126,7 +84,7 @@ class FlexWavefrontGrid
   frMIdx z() const { return zIdx_; }
   frCost getPathCost() const { return pathCost_; }
   frCost getCost() const { return cost_; }
-  std::bitset<WAVEFRONTBITSIZE> getBackTraceBuffer() const
+  const std::bitset<WAVEFRONTBITSIZE>& getBackTraceBuffer() const
   {
     return backTraceBuffer_;
   }
@@ -190,7 +148,6 @@ class myPriorityQueue : public std::priority_queue<FlexWavefrontGrid>
     this->c.clear();
     this->c.shrink_to_fit();
   }
-  void init(int val) { this->c.reserve(val); }
 };
 
 class FlexWavefront

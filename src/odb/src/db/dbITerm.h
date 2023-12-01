@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 
 #include "dbCore.h"
@@ -83,7 +84,7 @@ class _dbITerm : public _dbObject
 
   _dbITerm(_dbDatabase*);
   _dbITerm(_dbDatabase*, const _dbITerm& i);
-  ~_dbITerm();
+
   bool operator==(const _dbITerm& rhs) const;
   bool operator!=(const _dbITerm& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbITerm& rhs) const;
@@ -115,10 +116,6 @@ inline _dbITerm::_dbITerm(_dbDatabase*, const _dbITerm& i)
       _next_net_iterm(i._next_net_iterm),
       _prev_net_iterm(i._prev_net_iterm),
       _sta_vertex_id(0)
-{
-}
-
-inline _dbITerm::~_dbITerm()
 {
 }
 

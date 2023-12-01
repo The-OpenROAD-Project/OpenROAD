@@ -1,8 +1,8 @@
-[INFO ODB-0222] Reading LEF file: Nangate45.lef
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
 [INFO ODB-0223]     Created 22 technology layers
 [INFO ODB-0224]     Created 27 technology vias
-[INFO ODB-0225]     Created 134 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45.lef
+[INFO ODB-0225]     Created 135 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
 [INFO ODB-0128] Design: aes_cipher_top
 [INFO ODB-0130]     Created 388 pins.
 [INFO ODB-0131]     Created 19835 components and 101835 component-terminals.
@@ -18,7 +18,8 @@
 [INFO PSM-0064] Number of voltage sources = 4.
 [INFO PSM-0040] All PDN stripes on net VDD are connected.
 ########## IR report #################
-Worstcase voltage: 1.08e+00 V
-Average IR drop  : 6.60e-03 V
-Worstcase IR drop: 1.85e-02 V
+Corner: default
+Worstcase voltage: 1.05e+00 V
+Average IR drop  : 1.71e-02 V
+Worstcase IR drop: 4.87e-02 V
 ######################################

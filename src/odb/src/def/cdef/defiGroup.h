@@ -25,7 +25,7 @@
 /*                                                                            */
 /*  $Author: dell $ */
 /*  $Revision: #1 $ */
-/*  $Date: 2017/06/06 $ */
+/*  $Date: 2020/09/29 $ */
 /*  $State:  $                                                                */
 /* ************************************************************************** */
 /* ************************************************************************** */
@@ -60,7 +60,7 @@ EXTERN int defiGroup_numProps(const defiGroup* obj);
 EXTERN const char* defiGroup_propName(const defiGroup* obj, int index);
 EXTERN const char* defiGroup_propValue(const defiGroup* obj, int index);
 EXTERN double defiGroup_propNumber(const defiGroup* obj, int index);
-EXTERN char defiGroup_propType(const defiGroup* obj, int index);
+EXTERN const char defiGroup_propType(const defiGroup* obj, int index);
 EXTERN int defiGroup_propIsNumber(const defiGroup* obj, int index);
 EXTERN int defiGroup_propIsString(const defiGroup* obj, int index);
 

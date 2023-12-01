@@ -32,13 +32,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "ir_solver.h"
 
-#include <math.h>
-#include <stdlib.h>
-#include <time.h>
-
 #include <Eigen/Sparse>
 #include <Eigen/SparseLU>
 #include <cmath>
+#include <cstdlib>
+#include <ctime>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -49,11 +47,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <vector>
 
-#include "get_power.h"
-#include "get_voltage.h"
+#include "db_sta/dbNetwork.hh"
 #include "gmat.h"
 #include "node.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
+#include "pad/ICeWall.h"
+#include "rsz/Resizer.hh"
+#include "sta/Corner.hh"
 
 namespace psm {
 using odb::dbBlock;
@@ -75,10 +76,7 @@ using odb::dbVia;
 using odb::dbViaParams;
 
 using std::endl;
-using std::get;
 using std::ifstream;
-using std::make_pair;
-using std::make_tuple;
 using std::map;
 using std::ofstream;
 using std::pair;
@@ -88,7 +86,6 @@ using std::stod;
 using std::string;
 using std::stringstream;
 using std::to_string;
-using std::tuple;
 using std::vector;
 
 using Eigen::Map;
@@ -99,38 +96,51 @@ using Eigen::VectorXd;
 
 IRSolver::IRSolver(odb::dbDatabase* db,
                    sta::dbSta* sta,
+                   rsz::Resizer* resizer,
                    utl::Logger* logger,
-                   std::string vsrc_loc,
-                   std::string power_net,
-                   std::string out_file,
-                   std::string em_out_file,
-                   std::string spice_out_file,
+                   odb::dbNet* net,
+                   const std::optional<float>& voltage,
+                   const std::string& vsrc_loc,
                    bool em_analyze,
                    int bump_pitch_x,
                    int bump_pitch_y,
                    float node_density_um,
                    int node_density_factor_user,
-                   const std::map<std::string, float>& net_voltage_map)
+                   sta::Corner* corner)
 {
   db_ = db;
   sta_ = sta;
+  resizer_ = resizer;
   logger_ = logger;
+  net_ = net;
+  supply_voltage_src_ = voltage;
   vsrc_file_ = vsrc_loc;
-  power_net_ = power_net;
-  out_file_ = out_file;
-  em_out_file_ = em_out_file;
   em_flag_ = em_analyze;
-  spice_out_file_ = spice_out_file;
   bump_pitch_x_ = bump_pitch_x;
   bump_pitch_y_ = bump_pitch_y;
   node_density_um_ = node_density_um;
   node_density_factor_user_ = node_density_factor_user;
-  net_voltage_map_ = net_voltage_map;
+  corner_ = corner;
+
+  if (net_ == nullptr) {
+    logger_->error(utl::PSM, 88, "Invalid net specified");
+  }
+  if (!net_->getSigType().isSupply()) {
+    logger_->error(utl::PSM, 87, "{} is not a supply net.", net_->getName());
+  }
+
+  if (corner_ == nullptr) {
+    corner_ = sta_->cmdCorner();
+  }
+  if (corner_ == nullptr) {
+    corner_ = sta_->corners()->findCorner(0);
+  }
+  if (corner_ == nullptr) {
+    logger_->error(utl::PSM, 86, "Unable to proceed without a valid corner");
+  }
 }
 
-IRSolver::~IRSolver()
-{
-}
+IRSolver::~IRSolver() = default;
 
 //! Returns the created G matrix for the design
 /*
@@ -145,7 +155,7 @@ GMat* IRSolver::getGMat()
 /*
  * \return J vector
  */
-vector<double> IRSolver::getJ()
+const vector<double>& IRSolver::getJ() const
 {
   return J_;
 }
@@ -159,7 +169,6 @@ void IRSolver::solveIR()
                   "Powergrid is not connected to all instances, therefore the "
                   "IR Solver may not be accurate. LVS may also fail.");
   }
-  const int unit_micron = db_->getTech()->getDbUnitsPerMicron();
   CscMatrix* Gmat = Gmat_->getGMat();
   // fill A
   double* values = &(Gmat->values[0]);
@@ -197,61 +206,34 @@ void IRSolver::solveIR()
                1,
                "Solving system of equations GV=J complete");
   }
-  ofstream ir_report;
-  ir_report.open(out_file_);
-  ir_report << "Instance name, "
-            << " X location, "
-            << " Y location, "
-            << " Voltage "
-            << "\n";
+
   const int num_nodes = Gmat_->getNumNodes();
   int node_num = 0;
   double sum_volt = 0;
-  wc_voltage = supply_voltage_src;
+  wc_voltage_ = getSupplyVoltageSrc();
   while (node_num < num_nodes) {
     Node* node = Gmat_->getNode(node_num);
     const double volt = x(node_num);
     sum_volt = sum_volt + volt;
-    if (power_net_type_ == dbSigType::POWER) {
-      if (volt < wc_voltage) {
-        wc_voltage = volt;
+    if (net_->getSigType() == dbSigType::POWER) {
+      if (volt < wc_voltage_) {
+        wc_voltage_ = volt;
       }
     } else {
-      if (volt > wc_voltage) {
-        wc_voltage = volt;
+      if (volt > wc_voltage_) {
+        wc_voltage_ = volt;
       }
     }
     node->setVoltage(volt);
     node_num++;
-    if (node->hasInstances()) {
-      const Point node_loc = node->getLoc();
-      const float loc_x = node_loc.getX() / ((float) unit_micron);
-      const float loc_y = node_loc.getY() / ((float) unit_micron);
-      if (out_file_ != "") {
-        for (dbInst* inst : node->getInstances()) {
-          ir_report << inst->getName() << ", " << loc_x << ", " << loc_y << ", "
-                    << setprecision(6) << volt << "\n";
-        }
-      }
-    }
   }
-  ir_report << endl;
-  ir_report.close();
-  avg_voltage = sum_volt / num_nodes;
+  avg_voltage_ = sum_volt / num_nodes;
+
   if (em_flag_) {
     DokMatrix* Gmat_dok = Gmat_->getGMatDOK();
     int resistance_number = 0;
-    max_cur = 0;
+    max_cur_ = 0;
     double sum_cur = 0;
-    ofstream em_report;
-    if (em_out_file_ != "") {
-      em_report.open(em_out_file_);
-      em_report << "Segment name, "
-                << " Current, "
-                << " Node 1, "
-                << " Node 2 "
-                << "\n";
-    }
     Point node_loc;
     for (auto [loc, value] : Gmat_dok->values) {
       const NodeIdx col = loc.first;
@@ -263,7 +245,7 @@ void IRSolver::solveIR()
       if (abs(cond) < 1e-15) {    // ignore if an empty cell
         continue;
       }
-      const string net_name = power_net_;
+      const string net_name = net_->getName();
       if (col < num_nodes) {  // resistances
         const double resistance = -1 / cond;
 
@@ -289,172 +271,386 @@ void IRSolver::solveIR()
         const double v2 = node2->getVoltage();
         double seg_cur = (v1 - v2) / resistance;
         sum_cur += abs(seg_cur);
-        if (em_out_file_ != "") {
-          em_report << segment_name << ", " << setprecision(3) << seg_cur
-                    << ", " << node1_name << ", " << node2_name << endl;
-        }
         seg_cur = abs(seg_cur);
-        if (seg_cur > max_cur) {
-          max_cur = seg_cur;
+        if (seg_cur > max_cur_) {
+          max_cur_ = seg_cur;
         }
         resistance_number++;
       }
     }  // for gmat values
-    avg_cur = sum_cur / resistance_number;
-    num_res = resistance_number;
+    avg_cur_ = sum_cur / resistance_number;
+    num_res_ = resistance_number;
 
   }  // enable em
 }
 
-//! Function to add C4 bumps to the G matrix
-bool IRSolver::addC4Bump()
+void IRSolver::writeVoltageFile(const std::string& file) const
 {
-  if (C4Bumps_.size() == 0) {
+  ofstream ir_report;
+  ir_report.open(file);
+  if (!ir_report) {
+    logger_->error(utl::PSM, 90, "Unable to open {}", file);
+  }
+
+  ir_report << "Instance name, "
+            << "X location, "
+            << "Y location, "
+            << "Voltage" << endl;
+
+  const int unit_micron = db_->getTech()->getDbUnitsPerMicron();
+  const int num_nodes = Gmat_->getNumNodes();
+  int node_num = 0;
+  while (node_num < num_nodes) {
+    Node* node = Gmat_->getNode(node_num);
+    node_num++;
+    if (node->hasInstances()) {
+      const Point node_loc = node->getLoc();
+      const float loc_x = node_loc.getX() / ((float) unit_micron);
+      const float loc_y = node_loc.getY() / ((float) unit_micron);
+      for (dbInst* inst : node->getInstances()) {
+        ir_report << inst->getName() << ", " << loc_x << ", " << loc_y << ", "
+                  << setprecision(6) << node->getVoltage() << endl;
+      }
+    }
+  }
+  ir_report << endl;
+  ir_report.close();
+}
+
+void IRSolver::writeEMFile(const std::string& file) const
+{
+  DokMatrix* Gmat_dok = Gmat_->getGMatDOK();
+  int resistance_number = 0;
+  ofstream em_report;
+  em_report.open(file);
+  if (!em_report) {
+    logger_->error(utl::PSM, 91, "Unable to open {}", file);
+  }
+  em_report << "Segment name, "
+            << "Current, "
+            << "Node 1, "
+            << "Node 2" << endl;
+
+  const int num_nodes = Gmat_->getNumNodes();
+  Point node_loc;
+  for (auto [loc, value] : Gmat_dok->values) {
+    const NodeIdx col = loc.first;
+    const NodeIdx row = loc.second;
+    if (col <= row) {
+      continue;  // ignore lower half and diagonal as matrix is symmetric
+    }
+    const double cond = value;  // get cond value
+    if (abs(cond) < 1e-15) {    // ignore if an empty cell
+      continue;
+    }
+    const string net_name = net_->getName();
+    if (col < num_nodes) {  // resistances
+      const double resistance = -1 / cond;
+
+      const Node* node1 = Gmat_->getNode(col);
+      const Node* node2 = Gmat_->getNode(row);
+      node_loc = node1->getLoc();
+      const int x1 = node_loc.getX();
+      const int y1 = node_loc.getY();
+      const int l1 = node1->getLayerNum();
+      const string node1_name = net_name + "_" + to_string(x1) + "_"
+                                + to_string(y1) + "_" + to_string(l1);
+
+      node_loc = node2->getLoc();
+      int x2 = node_loc.getX();
+      int y2 = node_loc.getY();
+      int l2 = node2->getLayerNum();
+      string node2_name = net_name + "_" + to_string(x2) + "_" + to_string(y2)
+                          + "_" + to_string(l2);
+
+      const string segment_name = "seg_" + to_string(resistance_number);
+
+      const double v1 = node1->getVoltage();
+      const double v2 = node2->getVoltage();
+      double seg_cur = (v1 - v2) / resistance;
+      em_report << segment_name << ", " << setprecision(3) << seg_cur << ", "
+                << node1_name << ", " << node2_name << endl;
+      resistance_number++;
+    }
+  }
+}
+
+//! Function to add sources to the G matrix
+bool IRSolver::addSources()
+{
+  if (sources_.empty()) {
     logger_->error(utl::PSM, 14, "Number of voltage sources cannot be 0.");
   }
   logger_->info(
-      utl::PSM, 64, "Number of voltage sources = {}.", C4Bumps_.size());
+      utl::PSM, 64, "Number of voltage sources = {}.", sources_.size());
   size_t it = 0;
-  for (auto [node_loc, voltage_value] : C4Nodes_) {
-    Gmat_->addC4Bump(node_loc, it++);  // add the  bump
+  for (auto [node_loc, voltage_value] : source_nodes_) {
+    Gmat_->addSource(node_loc, it++);  // add the  bump
     J_.push_back(voltage_value);       // push back  vdd
   }
   return true;
 }
 
 //! Function that parses the Vsrc file
-void IRSolver::readC4Data()
+void IRSolver::readSourceData(bool require_voltage)
 {
-  const int unit_micron = (db_->getTech())->getDbUnitsPerMicron();
-  if (vsrc_file_ != "") {
+  findPdnWires();
+
+  if (!vsrc_file_.empty()) {
+    createSourcesFromVsrc(vsrc_file_);
+    return;
+  }
+
+  if (require_voltage && !supply_voltage_src_.has_value()) {
+    logger_->error(
+        utl::PSM, 93, "Voltage on net {} is not set.", net_->getName());
+  }
+  if (!supply_voltage_src_.has_value()) {
+    // default to 0 if voltage is not required
+    supply_voltage_src_ = 0;
+  }
+
+  if (require_voltage) {
     logger_->info(utl::PSM,
-                  15,
-                  "Reading location of VDD and VSS sources from {}.",
-                  vsrc_file_);
-    ifstream file(vsrc_file_);
-    string line = "";
-    // Iterate through each line and split the content using delimiter
-    while (getline(file, line)) {
-      int x = -1, y = -1, size = -1;
-      stringstream X(line);
-      string val;
-      for (int i = 0; i < 4; ++i) {
-        getline(X, val, ',');
-        if (i == 0) {
-          x = (int) (unit_micron * stod(val));
-        } else if (i == 1) {
-          y = (int) (unit_micron * stod(val));
-        } else if (i == 2) {
-          size = (int) (unit_micron * stod(val));
-        } else {
-          supply_voltage_src = stod(val);
-        }
-      }
-      if (x == -1 || y == -1 || size == -1) {
-        logger_->error(utl::PSM, 75, "Expected four values on line: {}", line);
+                  22,
+                  "Using {:.3f}V for {}",
+                  getSupplyVoltageSrc(),
+                  net_->getName());
+  }
+
+  const bool added_from_pads = createSourcesFromPads();
+  const bool added_from_bterms = createSourcesFromBTerms();
+  if (added_from_pads || added_from_bterms) {
+    return;
+  }
+
+  createDefaultSources();
+}
+
+void IRSolver::createSourcesFromVsrc(const std::string& vsrc_file)
+{
+  ifstream file(vsrc_file);
+  if (!file) {
+    logger_->error(utl::PSM, 89, "Unable to open {}.", vsrc_file);
+  }
+
+  logger_->info(utl::PSM,
+                15,
+                "Reading location of VDD and VSS sources from {}.",
+                vsrc_file);
+
+  const int unit_micron = db_->getTech()->getDbUnitsPerMicron();
+  string line;
+  // Iterate through each line and split the content using delimiter
+  while (getline(file, line)) {
+    int x = -1, y = -1, size = -1;
+    stringstream X(line);
+    string val;
+    for (int i = 0; i < 4; ++i) {
+      getline(X, val, ',');
+      if (i == 0) {
+        x = (int) (unit_micron * stod(val));
+      } else if (i == 1) {
+        y = (int) (unit_micron * stod(val));
+      } else if (i == 2) {
+        size = (int) (unit_micron * stod(val));
       } else {
-        C4Bumps_.push_back({x, y, size, supply_voltage_src});
+        supply_voltage_src_ = stod(val);
       }
     }
-    file.close();
-  } else {
-    logger_->warn(utl::PSM,
-                  16,
-                  "Voltage pad location (VSRC) file not specified, defaulting "
-                  "pad location to checkerboard pattern on core area.");
-    dbChip* chip = db_->getChip();
-    dbBlock* block = chip->getBlock();
-    odb::Rect coreRect = block->getCoreArea();
-    const int coreW = coreRect.xMax() - coreRect.xMin();
-    const int coreL = coreRect.yMax() - coreRect.yMin();
-    const odb::Rect dieRect = block->getDieArea();
-    const int offset_x = coreRect.xMin() - dieRect.xMin();
-    const int offset_y = coreRect.yMin() - dieRect.yMin();
-    if (bump_pitch_x_ == 0) {
-      bump_pitch_x_ = bump_pitch_default_ * unit_micron;
-      logger_->warn(
-          utl::PSM,
-          17,
-          "X direction bump pitch is not specified, defaulting to {}um.",
-          bump_pitch_default_);
-    }
-    if (bump_pitch_y_ == 0) {
-      bump_pitch_y_ = bump_pitch_default_ * unit_micron;
-      logger_->warn(
-          utl::PSM,
-          18,
-          "Y direction bump pitch is not specified, defaulting to {}um.",
-          bump_pitch_default_);
-    }
-    if (!net_voltage_map_.empty() && net_voltage_map_.count(power_net_) > 0) {
-      supply_voltage_src = net_voltage_map_.at(power_net_);
+    if (x == -1 || y == -1 || size == -1) {
+      logger_->error(utl::PSM, 75, "Expected four values on line: {}", line);
     } else {
-      logger_->warn(
-          utl::PSM, 19, "Voltage on net {} is not explicitly set.", power_net_);
-      const pair<double, double> supply_voltages = getSupplyVoltage();
-      dbNet* power_net = block->findNet(power_net_.data());
-      if (power_net == NULL) {
-        logger_->error(utl::PSM,
-                       20,
-                       "Cannot find net {} in the design. Please provide a "
-                       "valid VDD/VSS net.",
-                       power_net_);
-      }
-      power_net_type_ = power_net->getSigType();
-      if (power_net_type_ == dbSigType::GROUND) {
-        supply_voltage_src = supply_voltages.second;
-        logger_->warn(utl::PSM,
-                      21,
-                      "Using voltage {:4.3f}V for ground network.",
-                      supply_voltage_src);
-      } else {
-        supply_voltage_src = supply_voltages.first;
-        logger_->warn(utl::PSM,
-                      22,
-                      "Using voltage {:4.3f}V for VDD network.",
-                      supply_voltage_src);
-      }
+      sources_.push_back({x, y, size, getSupplyVoltageSrc(), top_layer_, true});
     }
-    if (coreW < bump_pitch_x_ || coreL < bump_pitch_y_) {
-      float to_micron = 1.0f / unit_micron;
-      const int x_cor = coreW / 2 + offset_x;
-      const int y_cor = coreL / 2 + offset_y;
-      logger_->warn(utl::PSM,
-                    63,
-                    "Specified bump pitches of {:4.3f} and {:4.3f} are less "
-                    "than core width of {:4.3f} or core height of {:4.3f}. "
-                    "Changing bump location to the center of the die at "
-                    "({:4.3f}, {:4.3f}).",
-                    bump_pitch_x_ * to_micron,
-                    bump_pitch_y_ * to_micron,
-                    coreW * to_micron,
-                    coreL * to_micron,
-                    x_cor * to_micron,
-                    y_cor * to_micron);
-      C4Bumps_.push_back(
-          {x_cor, y_cor, bump_size_ * unit_micron, supply_voltage_src});
-    }
-    const int num_b_x = coreW / bump_pitch_x_;
-    const int centering_offset_x = (coreW - (num_b_x - 1) * bump_pitch_x_) / 2;
-    const int num_b_y = coreL / bump_pitch_y_;
-    const int centering_offset_y = (coreL - (num_b_y - 1) * bump_pitch_y_) / 2;
+  }
+  file.close();
+}
+
+void IRSolver::createDefaultSources()
+{
+  logger_->warn(utl::PSM,
+                16,
+                "Voltage pad location (VSRC) file not specified, defaulting "
+                "pad location to checkerboard pattern on core area.");
+  dbChip* chip = db_->getChip();
+  dbBlock* block = chip->getBlock();
+  odb::Rect coreRect = block->getCoreArea();
+  const int coreW = coreRect.xMax() - coreRect.xMin();
+  const int coreL = coreRect.yMax() - coreRect.yMin();
+  const odb::Rect dieRect = block->getDieArea();
+  const int offset_x = coreRect.xMin() - dieRect.xMin();
+  const int offset_y = coreRect.yMin() - dieRect.yMin();
+  const int unit_micron = db_->getTech()->getDbUnitsPerMicron();
+  if (bump_pitch_x_ == 0) {
+    bump_pitch_x_ = bump_pitch_default_ * unit_micron;
+    logger_->warn(
+        utl::PSM,
+        17,
+        "X direction bump pitch is not specified, defaulting to {}um.",
+        bump_pitch_default_);
+  }
+  if (bump_pitch_y_ == 0) {
+    bump_pitch_y_ = bump_pitch_default_ * unit_micron;
+    logger_->warn(
+        utl::PSM,
+        18,
+        "Y direction bump pitch is not specified, defaulting to {}um.",
+        bump_pitch_default_);
+  }
+  if (coreW < bump_pitch_x_ || coreL < bump_pitch_y_) {
+    float to_micron = 1.0f / unit_micron;
+    const int x_cor = coreW / 2 + offset_x;
+    const int y_cor = coreL / 2 + offset_y;
     logger_->warn(utl::PSM,
-                  65,
-                  "VSRC location not specified, using default checkerboard "
-                  "pattern with one VDD every size bumps in x-direction and "
-                  "one in two bumps in the y-direction");
-    for (int i = 0; i < num_b_y; i++) {
-      for (int j = 0; j < num_b_x; j = j + 6) {
-        const int x_cor = (bump_pitch_x_ * j) + (((2 * i) % 6) * bump_pitch_x_)
-                          + offset_x + centering_offset_x;
-        const int y_cor = (bump_pitch_y_ * i) + offset_y + centering_offset_y;
-        if (x_cor <= coreW && y_cor <= coreL) {
-          C4Bumps_.push_back(
-              {x_cor, y_cor, bump_size_ * unit_micron, supply_voltage_src});
-        }
+                  63,
+                  "Specified bump pitches of {:4.3f} and {:4.3f} are less "
+                  "than core width of {:4.3f} or core height of {:4.3f}. "
+                  "Changing bump location to the center of the die at "
+                  "({:4.3f}, {:4.3f}).",
+                  bump_pitch_x_ * to_micron,
+                  bump_pitch_y_ * to_micron,
+                  coreW * to_micron,
+                  coreL * to_micron,
+                  x_cor * to_micron,
+                  y_cor * to_micron);
+    sources_.push_back({x_cor,
+                        y_cor,
+                        bump_size_ * unit_micron,
+                        getSupplyVoltageSrc(),
+                        top_layer_,
+                        true});
+  }
+  const int num_b_x = coreW / bump_pitch_x_;
+  const int centering_offset_x = (coreW - (num_b_x - 1) * bump_pitch_x_) / 2;
+  const int num_b_y = coreL / bump_pitch_y_;
+  const int centering_offset_y = (coreL - (num_b_y - 1) * bump_pitch_y_) / 2;
+  logger_->warn(utl::PSM,
+                65,
+                "VSRC location not specified, using default checkerboard "
+                "pattern with one VDD every size bumps in x-direction and "
+                "one in two bumps in the y-direction");
+  for (int i = 0; i < num_b_y; i++) {
+    for (int j = 0; j < num_b_x; j = j + 6) {
+      const int x_cor = (bump_pitch_x_ * j) + (((2 * i) % 6) * bump_pitch_x_)
+                        + offset_x + centering_offset_x;
+      const int y_cor = (bump_pitch_y_ * i) + offset_y + centering_offset_y;
+      if (x_cor <= coreW && y_cor <= coreL) {
+        sources_.push_back({x_cor,
+                            y_cor,
+                            bump_size_ * unit_micron,
+                            getSupplyVoltageSrc(),
+                            top_layer_,
+                            true});
       }
     }
   }
+}
+
+bool IRSolver::createSourcesFromBTerms()
+{
+  const int pitch_multiplier = 10;
+
+  bool added = false;
+  for (auto* bterm : net_->getBTerms()) {
+    for (auto* bpin : bterm->getBPins()) {
+      if (!bpin->getPlacementStatus().isPlaced()) {
+        continue;
+      }
+
+      for (auto* box : bpin->getBoxes()) {
+        auto* layer = box->getTechLayer();
+        if (layer == nullptr) {
+          continue;
+        }
+        const auto rect = box->getBox();
+
+        const int src_size = rect.minDXDY();
+
+        int pitch = 0;
+        auto* next_layer
+            = db_->getTech()->findRoutingLayer(layer->getRoutingLevel() + 1);
+        if (next_layer != nullptr) {
+          pitch = pitch_multiplier * next_layer->getPitch();
+        }
+        if (pitch == 0) {
+          pitch = pitch_multiplier * src_size;
+        }
+
+        odb::Point src;
+        int dx = 0;
+        int dy = 0;
+        if (rect.dx() < rect.dy()) {
+          dy = pitch;
+          src = odb::Point(rect.xCenter(), rect.yMin() + dy / 2);
+        } else if (rect.dy() < rect.dx()) {
+          dx = pitch;
+          src = odb::Point(rect.xMin() + dx / 2, rect.yCenter());
+        } else {
+          sources_.push_back({rect.xCenter(),
+                              rect.yCenter(),
+                              src_size,
+                              getSupplyVoltageSrc(),
+                              layer->getRoutingLevel(),
+                              false});
+          continue;
+        }
+
+        for (; rect.intersects(src);) {
+          sources_.push_back({src.x(),
+                              src.y(),
+                              src_size,
+                              getSupplyVoltageSrc(),
+                              layer->getRoutingLevel(),
+                              false});
+          src.addX(dx);
+          src.addY(dy);
+        }
+        added = true;
+      }
+    }
+  }
+  return added;
+}
+
+bool IRSolver::createSourcesFromPads()
+{
+  bool added = false;
+  for (auto* iterm : net_->getITerms()) {
+    auto* inst = iterm->getInst();
+    if (!inst->isPlaced()) {
+      continue;
+    }
+    if (!inst->isPad()) {
+      continue;
+    }
+
+    odb::dbTransform xform;
+    inst->getTransform(xform);
+
+    auto* mterm = iterm->getMTerm();
+    for (auto* mpin : mterm->getMPins()) {
+      for (auto* box : mpin->getGeometry()) {
+        auto* layer = box->getTechLayer();
+        if (layer == nullptr) {
+          continue;
+        }
+        auto rect = box->getBox();
+        xform.apply(rect);
+        const int src_size = rect.minDXDY();
+
+        sources_.push_back({rect.xCenter(),
+                            rect.yCenter(),
+                            src_size,
+                            getSupplyVoltageSrc(),
+                            layer->getRoutingLevel(),
+                            false});
+
+        added = true;
+      }
+    }
+  }
+  return added;
 }
 
 //! Function to create a J vector from the current map
@@ -464,7 +660,7 @@ bool IRSolver::createJ()
   J_.resize(num_nodes, 0);
 
   for (auto [inst, power] : getPower()) {
-    if (!inst->getPlacementStatus().isPlaced()) {
+    if (!inst->isPlaced()) {
       logger_->warn(utl::PSM,
                     71,
                     "Instance {} is not placed. Therefore, the"
@@ -481,84 +677,42 @@ bool IRSolver::createJ()
     // TODO: The condition for PADs needs to be handled sperately once an
     // appropriate testcase is found. Conditionally treated the same as a macro.
     if (inst->isBlock() || inst->isPad()) {
-      dbBox* inst_bBox = inst->getBBox();
+      std::set<Node*> nodes_J;
       std::set<int> pin_layers;
-      auto iterms = inst->getITerms();
       // Find the pin layers for the macro
-      for (auto&& iterm : iterms) {
-        if (iterm->getSigType() == power_net_type_) {
-          auto mterm = iterm->getMTerm();
-          for (auto mpin : mterm->getMPins()) {
-            for (auto box : mpin->getGeometry()) {
-              dbTechLayer* pin_layer = box->getTechLayer();
-              if (pin_layer) {
-                pin_layers.insert(pin_layer->getRoutingLevel());
-              }
+      bool is_connected = false;
+      for (auto* iterm : inst->getITerms()) {
+        if (iterm->getNet() != net_) {
+          continue;
+        }
+        is_connected = true;
+        odb::dbTransform xform;
+        inst->getTransform(xform);
+        for (auto mpin : iterm->getMTerm()->getMPins()) {
+          for (auto box : mpin->getGeometry()) {
+            dbTechLayer* pin_layer = box->getTechLayer();
+            if (pin_layer) {
+              odb::Rect pin_shape = box->getBox();
+              xform.apply(pin_shape);
+              Gmat_->foreachNode(pin_layer->getRoutingLevel(),
+                                 pin_shape.xMin(),
+                                 pin_shape.xMax(),
+                                 pin_shape.yMin(),
+                                 pin_shape.yMax(),
+                                 [&](Node* node) { nodes_J.insert(node); });
             }
           }
         }
       }
-      // Search for all nodes within the macro boundary
-      vector<Node*> nodes_J;
-      for (auto ll : pin_layers) {
-        vector<Node*> nodes_J_l = Gmat_->getNodes(ll,
-                                                  inst_bBox->xMin(),
-                                                  inst_bBox->xMax(),
-                                                  inst_bBox->yMin(),
-                                                  inst_bBox->yMax());
-        nodes_J.insert(nodes_J.end(), nodes_J_l.begin(), nodes_J_l.end());
-      }
-      double num_nodes = nodes_J.size();
+      const double num_nodes = nodes_J.size();
       // If nodes are not found on the pin layers we search for the lowest
       // metal layer that overlaps the macro
-      if (num_nodes == 0) {
-        const int max_l
-            = *std::max_element(pin_layers.begin(), pin_layers.end());
-        for (int pl = bottom_layer_ + 1; pl <= top_layer_; pl++) {
-          nodes_J = Gmat_->getNodes(pl,
-                                    inst_bBox->xMin(),
-                                    inst_bBox->xMax(),
-                                    inst_bBox->yMin(),
-                                    inst_bBox->yMax());
-          num_nodes = nodes_J.size();
-          if (num_nodes > 0) {
-            logger_->warn(
-                utl::PSM,
-                74,
-                "No nodes found in macro or pad bounding box for Instance {} "
-                "for the pin layer at routing level {}. Using layer {}.",
-                inst->getName(),
-                max_l,
-                pl);
-            break;
-          }
-        }
-        // If nodes are still not found we connect to the neartest node on the
-        // highest pin layer with a warning
-        if (num_nodes == 0) {
-          if (Gmat_->findLayer(max_l)) {
-            Node* node_J = Gmat_->getNode(x, y, max_l, true);
-            nodes_J = {node_J};
-            num_nodes = 1.0;
-            const Point node_loc = node_J->getLoc();
-            logger_->warn(
-                utl::PSM,
-                72,
-                "No nodes found in macro/pad bounding box for Instance {}."
-                "Using nearest node at ({}, {}) on the pin layer at "
-                "routing level {}.",
-                inst->getName(),
-                node_loc.getX(),
-                node_loc.getY(),
-                max_l);
-          } else {
-            logger_->error(utl::PSM,
-                           42,
-                           "Unable to connect macro/pad Instance {} "
-                           "to the power grid.",
-                           inst->getName());
-          }
-        }
+      if (is_connected && num_nodes == 0) {
+        logger_->error(utl::PSM,
+                       42,
+                       "Unable to connect macro/pad Instance {} "
+                       "to the power grid.",
+                       inst->getName());
       }
       // Distribute the power across all nodes within the bounding box
       for (auto node_J : nodes_J) {
@@ -590,7 +744,7 @@ bool IRSolver::createJ()
   // Creating the J matrix
   for (int i = 0; i < num_nodes; ++i) {
     const Node* node_J = Gmat_->getNode(i);
-    if (power_net_type_ == dbSigType::GROUND) {
+    if (net_->getSigType() == dbSigType::GROUND) {
       J_[i] = (node_J->getCurrent());
     } else {
       J_[i] = -1 * (node_J->getCurrent());
@@ -602,14 +756,14 @@ bool IRSolver::createJ()
 
 //! Function to find and store the upper and lower PDN layers and return a list
 // of wires for all PDN tasks
-vector<dbSBox*> IRSolver::findPdnWires(dbNet* power_net)
+void IRSolver::findPdnWires()
 {
-  vector<dbSBox*> power_wires;
+  power_wires_.clear();
   // Iterate through all wires till we reach the lowest abstraction level
-  for (dbSWire* curSWire : power_net->getSWires()) {
+  for (dbSWire* curSWire : net_->getSWires()) {
     for (dbSBox* curWire : curSWire->getWires()) {
       // Store wires in an easy to access format as we reuse it multiple times
-      power_wires.push_back(curWire);
+      power_wires_.push_back(curWire);
       int l;
       // If the wire is a via get extract the top layer
       // We assume the bottom most layer must have power stripes.
@@ -634,8 +788,6 @@ vector<dbSBox*> IRSolver::findPdnWires(dbNet* power_net)
       }
     }
   }
-  // return the list of wires to be used in all subsequent loops
-  return power_wires;
 }
 
 map<Point, ViaCut> IRSolver::getViaCuts(Point loc,
@@ -643,7 +795,7 @@ map<Point, ViaCut> IRSolver::getViaCuts(Point loc,
                                         int lb,
                                         int lt,
                                         bool has_params,
-                                        dbViaParams params)
+                                        const dbViaParams& params)
 {
   int num_rows = 1;
   int num_cols = 1;
@@ -717,7 +869,7 @@ map<Point, ViaCut> IRSolver::getViaCuts(Point loc,
     via_cuts.insert({loc, via_cut});
   }
 
-  if (via_cuts.size() < 1) {
+  if (via_cuts.empty()) {
     logger_->error(utl::PSM,
                    81,
                    "Via connection failed at {}, {}",
@@ -728,12 +880,13 @@ map<Point, ViaCut> IRSolver::getViaCuts(Point loc,
 }
 
 //! Function to create the nodes of the G matrix
-void IRSolver::createGmatViaNodes(const vector<dbSBox*>& power_wires)
+void IRSolver::createGmatViaNodes()
 {
-  for (auto curWire : power_wires) {
+  for (auto curWire : power_wires_) {
     // For a Via we create the nodes at the top and bottom ends of the via
-    if (!(curWire->isVia()))
+    if (!(curWire->isVia())) {
       continue;
+    }
     dbTechLayer* via_bottom_layer;
     dbTechLayer* via_top_layer;
     dbSet<dbBox> via_boxes;
@@ -768,14 +921,26 @@ void IRSolver::createGmatViaNodes(const vector<dbSBox*>& power_wires)
   }
 }
 
-void IRSolver::createGmatWireNodes(const vector<dbSBox*>& power_wires,
-                                   const vector<odb::Rect>& macros)
+void IRSolver::createGmatWireNodes()
 {
-  for (auto curWire : power_wires) {
+  std::set<odb::dbITerm*> macros_terms;
+  dbBlock* block = db_->getChip()->getBlock();
+  for (auto* inst : block->getInsts()) {
+    if (inst->isBlock() || inst->isPad()) {
+      for (auto* iterm : inst->getITerms()) {
+        if (iterm->getNet() == net_) {
+          macros_terms.insert(iterm);
+        }
+      }
+    }
+  }
+
+  for (auto curWire : power_wires_) {
     // For a stripe we create nodes at the ends of the stripes and at a fixed
     // frequency in the lowermost layer.
-    if (curWire->isVia())
+    if (curWire->isVia()) {
       continue;
+    }
     dbTechLayer* wire_layer = curWire->getTechLayer();
     const int l = wire_layer->getRoutingLevel();
     dbTechLayerDir::Value layer_dir = wire_layer->getDirection();
@@ -797,30 +962,34 @@ void IRSolver::createGmatWireNodes(const vector<dbSBox*>& power_wires,
     // For all layers we create the end nodes
     Gmat_->setNode({x_loc1, y_loc1}, l);
     Gmat_->setNode({x_loc2, y_loc2}, l);
-    // Special condition: if the stripe ovelaps a macro ensure a node is
-    // created
-    for (const auto& macro : macros) {
-      if (layer_dir == dbTechLayerDir::Value::HORIZONTAL) {
-        // y range is withing the marco (min, max)
-        if (y_loc1 >= macro.yMin() && y_loc1 <= macro.yMax()) {
-          // Both x values outside the macro
-          // (Values inside will already have a node at endpoints)
-          if (x_loc1 < macro.xMin() && x_loc2 > macro.xMax()) {
-            const int x = (macro.xMin() + macro.xMax()) / 2;
-            Gmat_->setNode({x, y_loc1}, l);
-          }
-        }
-      } else {
-        if (x_loc1 >= macro.xMin() && x_loc1 <= macro.xMax()) {
-          if (y_loc1 < macro.yMin() && y_loc2 > macro.yMax()) {
-            const int y = (macro.yMin() + macro.yMax()) / 2;
-            Gmat_->setNode({x_loc1, y}, l);
+
+    // Check if shape overlaps a macro pin
+    // and add node if there is an overlap with the current shape
+    for (auto* iterm : macros_terms) {
+      if (iterm->getBBox().intersects(curWire->getBox())) {
+        odb::dbTransform xform;
+        iterm->getInst()->getTransform(xform);
+        for (auto* mpin : iterm->getMTerm()->getMPins()) {
+          for (auto* geom : mpin->getGeometry()) {
+            if (geom->getTechLayer() != wire_layer) {
+              continue;
+            }
+            odb::Rect pin_rect = geom->getBox();
+            xform.apply(pin_rect);
+            if (pin_rect.intersects(curWire->getBox())) {
+              // add node at center of overlap
+              const odb::Rect overlap = pin_rect.intersect(curWire->getBox());
+
+              Gmat_->setNode({overlap.xCenter(), overlap.yCenter()}, l);
+            }
           }
         }
       }
     }
-    if (l != bottom_layer_)
+
+    if (l != bottom_layer_) {
       continue;
+    }
 
     // special case for bottom layers we design a dense grid at a fixed
     // frequency
@@ -899,10 +1068,11 @@ NodeEnclosure IRSolver::getViaEnclosure(int layer, dbSet<dbBox> via_boxes)
 }
 
 //! Function to create the connections of the G matrix
-void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
-                                     bool connection_only)
+void IRSolver::createGmatConnections(bool connection_only)
 {
-  for (auto curWire : power_wires) {
+  odb::dbTech* tech = db_->getTech();
+
+  for (auto curWire : power_wires_) {
     // For vias we make 3 connections
     // 1) From the top node to the bottom node
     // 2) Nodes within the top enclosure
@@ -949,7 +1119,7 @@ void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
           = getViaCuts(loc, via_boxes, bot_l, top_l, has_params, params);
 
       // Find the resistance of each via cut
-      const double R = via_bottom_layer->getUpperLayer()->getResistance()
+      const double R = getResistance(via_bottom_layer->getUpperLayer())
                        * via_cuts.size() / (num_via_rows * num_via_cols);
       if (!checkValidR(R) && !connection_only) {
         logger_->error(utl::PSM,
@@ -977,7 +1147,7 @@ void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
                         "Node at ({}, {}) and layer {} moved from ({}, {}).",
                         bot_node_loc.getX(),
                         bot_node_loc.getY(),
-                        bot_l,
+                        tech->findRoutingLayer(bot_l)->getName(),
                         cut_loc.getX(),
                         cut_loc.getY());
         }
@@ -988,7 +1158,7 @@ void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
                         "Node at ({}, {}) and layer {} moved from ({}, {}).",
                         top_node_loc.getX(),
                         top_node_loc.getY(),
-                        top_l,
+                        tech->findRoutingLayer(top_l)->getName(),
                         cut_loc.getX(),
                         cut_loc.getY());
         }
@@ -1003,7 +1173,7 @@ void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
       const auto bot_layer_dir = via_bottom_layer->getDirection();
       // The bottom layer must be connected by a rail and not by the enclosure.
       if (bot_l != bottom_layer_) {
-        const double rho = via_bottom_layer->getResistance();
+        const double rho = getResistance(via_bottom_layer);
         if (!checkValidR(rho) && !connection_only) {
           logger_->error(utl::PSM,
                          36,
@@ -1024,7 +1194,7 @@ void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
       }
       // Create the connections in the top enclosure
       const auto top_layer_dir = via_top_layer->getDirection();
-      const double rho = via_top_layer->getResistance();
+      const double rho = getResistance(via_top_layer);
       if (!checkValidR(rho) && !connection_only) {
         logger_->error(utl::PSM,
                        37,
@@ -1047,7 +1217,7 @@ void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
       // stripe
       dbTechLayer* wire_layer = curWire->getTechLayer();
       int l = wire_layer->getRoutingLevel();
-      double rho = wire_layer->getResistance();
+      double rho = getResistance(wire_layer);
       if (!checkValidR(rho) && !connection_only) {
         logger_->error(utl::PSM,
                        66,
@@ -1076,16 +1246,16 @@ void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
   }
 }
 
-//! Function to create the nodes for the c4 bumps
-int IRSolver::createC4Nodes(bool connection_only, int unit_micron)
+//! Function to create the nodes for the sources
+int IRSolver::createSourceNodes(bool connection_only, int unit_micron)
 {
-  int num_C4 = 0;
-  for (size_t it = 0; it < C4Bumps_.size(); ++it) {
-    const int x = C4Bumps_[it].x;
-    const int y = C4Bumps_[it].y;
-    const int size = C4Bumps_[it].size;
-    const double v = C4Bumps_[it].voltage;
-    const Node* node = Gmat_->getNode(x, y, top_layer_, true);
+  int num = 0;
+  for (const auto& source : sources_) {
+    const int x = source.x;
+    const int y = source.y;
+    const int size = source.size;
+    const double v = source.voltage;
+    const Node* node = Gmat_->getNode(x, y, source.layer, true);
     const Point node_loc = node->getLoc();
     const double new_loc1 = node_loc.getX() / ((double) unit_micron);
     const double new_loc2 = node_loc.getY() / ((double) unit_micron);
@@ -1094,52 +1264,43 @@ int IRSolver::createC4Nodes(bool connection_only, int unit_micron)
       const double old_loc1 = x / ((double) unit_micron);
       const double old_loc2 = y / ((double) unit_micron);
       const double old_size = size / ((double) unit_micron);
-      logger_->warn(utl::PSM,
-                    30,
-                    "VSRC location at ({:4.3f}um, {:4.3f}um) and "
-                    "size {:4.3f}um, is not located on an existing "
-                    "power stripe node. Moving to closest node at "
-                    "({:4.3f}um, {:4.3f}um).",
-                    old_loc1,
-                    old_loc2,
-                    old_size,
-                    new_loc1,
-                    new_loc2);
+      if (source.user_specified) {
+        logger_->warn(utl::PSM,
+                      30,
+                      "VSRC location at ({:4.3f}um, {:4.3f}um) and "
+                      "size {:4.3f}um, is not located on an existing "
+                      "power stripe node. Moving to closest node at "
+                      "({:4.3f}um, {:4.3f}um).",
+                      old_loc1,
+                      old_loc2,
+                      old_size,
+                      new_loc1,
+                      new_loc2);
+      }
     }
     const NodeIdx k = node->getGLoc();
-    const auto ret = C4Nodes_.insert({k, v});
+    const auto ret = source_nodes_.insert({k, v});
     if (ret.second == false) {
-      // key already exists and voltage value is different occurs when a user
-      // specifies two different voltage supply values by mistake in two
-      // nearby nodes
-      logger_->warn(utl::PSM,
-                    67,
-                    "Multiple voltage supply values mapped"
-                    "at the same node ({:4.3f}um, {:4.3f}um)."
-                    "If you provided a vsrc file. Check for duplicate entries."
-                    "Choosing voltage value {:4.3f}.",
-                    new_loc1,
-                    new_loc2,
-                    ret.first->second);
+      if (ret.first->second != v) {
+        // key already exists and voltage value is different occurs when a user
+        // specifies two different voltage supply values by mistake in two
+        // nearby nodes
+        logger_->warn(
+            utl::PSM,
+            67,
+            "Multiple voltage supply values mapped "
+            "at the same node ({:4.3f}um, {:4.3f}um). "
+            "If you provided a vsrc file. Check for duplicate entries. "
+            "Choosing voltage value {:4.3f}.",
+            new_loc1,
+            new_loc2,
+            ret.first->second);
+      }
     } else {
-      num_C4++;
+      num++;
     }
   }
-  return num_C4;
-}
-
-//! Function to find and store the macro boundaries
-vector<odb::Rect> IRSolver::getMacroBoundaries()
-{
-  dbChip* chip = db_->getChip();
-  dbBlock* block = chip->getBlock();
-  vector<odb::Rect> macro_boundaries;
-  for (auto* inst : block->getInsts()) {
-    if (inst->isBlock() || inst->isPad()) {
-      macro_boundaries.push_back(inst->getBBox()->getBox());
-    }
-  }
-  return macro_boundaries;
+  return num;
 }
 
 //! Function to create a G matrix using the nodes
@@ -1161,8 +1322,17 @@ bool IRSolver::createGmat(bool connection_only)
         node_density_um_);
   } else {  // Node density as a factor of row height either set by user or by
             // default
-    dbSet<dbRow> rows = block->getRows();
-    const int siteHeight = (*rows.begin())->getSite()->getHeight();
+    dbRow* row = nullptr;
+    for (auto* db_row : block->getRows()) {
+      if (db_row->getSite()->getClass() != odb::dbSiteClass::PAD) {
+        row = db_row;
+        break;
+      }
+    }
+    if (row == nullptr) {
+      logger_->error(utl::PSM, 82, "Unable to find a row");
+    }
+    const int siteHeight = row->getSite()->getHeight();
     if (node_density_factor_user_ > 0) {
       node_density_factor_ = node_density_factor_user_;
     }
@@ -1174,63 +1344,53 @@ bool IRSolver::createGmat(bool connection_only)
     node_density_ = siteHeight * node_density_factor_;
   }
 
-  Gmat_ = std::make_unique<GMat>(num_routing_layers, logger_);
-  const auto macro_boundaries = getMacroBoundaries();
-  dbNet* power_net = block->findNet(power_net_.data());
-  if (power_net == NULL) {
-    logger_->error(utl::PSM,
-                   27,
-                   "Cannot find net {} in the design. Please provide a valid "
-                   "VDD/VSS net.",
-                   power_net_);
-  }
-  power_net_type_ = power_net->getSigType();
+  Gmat_ = std::make_unique<GMat>(num_routing_layers, logger_, db_->getTech());
   debugPrint(logger_,
              utl::PSM,
              "G Matrix",
              1,
              "Extracting power stripes on net {}",
-             power_net->getName());
-
-  // Extract all power wires for the net and store the upper and lower layers
-  const vector<dbSBox*> power_wires = findPdnWires(power_net);
+             net_->getName());
 
   // Create all the nodes for the G matrix
-  createGmatViaNodes(power_wires);
-  createGmatWireNodes(power_wires, macro_boundaries);
+  createGmatViaNodes();
+  createGmatWireNodes();
 
   if (Gmat_->getNumNodes() == 0) {
-    logger_->warn(
-        utl::PSM, 70, "Net {} has no nodes and will be skipped", power_net_);
+    logger_->warn(utl::PSM,
+                  70,
+                  "Net {} has no nodes and will be skipped",
+                  net_->getName());
     return true;
   }
 
-  // insert c4 bumps as nodes
-  const int num_C4 = createC4Nodes(connection_only, unit_micron);
+  // insert source as nodes
+  const int num_sources = createSourceNodes(connection_only, unit_micron);
 
   // All new nodes must be inserted by this point
   // initialize G Matrix
   logger_->info(utl::PSM,
                 31,
                 "Number of PDN nodes on net {} = {}.",
-                power_net_,
+                net_->getName(),
                 Gmat_->getNumNodes());
-  Gmat_->initializeGmatDok(num_C4);
+  Gmat_->initializeGmatDok(num_sources);
 
   // Iterate through all the wires to populate conductance matrix
-  createGmatConnections(power_wires, connection_only);
+  createGmatConnections(connection_only);
 
   debugPrint(
       logger_, utl::PSM, "G Matrix", 1, "G matrix created successfully.");
   return true;
 }
 
-bool IRSolver::checkValidR(double R)
+bool IRSolver::checkValidR(double R) const
 {
   return R >= 1e-12;
 }
 
-bool IRSolver::checkConnectivity(bool connection_only)
+bool IRSolver::checkConnectivity(const std::string& error_file,
+                                 bool connection_only)
 {
   const CscMatrix* Amat = Gmat_->getAMat();
   const int num_nodes = Gmat_->getNumNodes();
@@ -1240,14 +1400,14 @@ bool IRSolver::checkConnectivity(bool connection_only)
   // If we want to test the connectivity of the grid we just start from a single
   // point
   if (connection_only) {
-    Node* c4_node = Gmat_->getNode(C4Nodes_.begin()->first);
-    node_q.push(c4_node);
+    Node* node = Gmat_->getNode(source_nodes_.begin()->first);
+    node_q.push(node);
   } else {
     // If we do IR analysis, we assume the grid can be connected by different
     // bumps
-    for (auto [node_loc, voltage] : C4Nodes_) {
-      Node* c4_node = Gmat_->getNode(node_loc);
-      node_q.push(c4_node);
+    for (auto [node_loc, voltage] : source_nodes_) {
+      Node* node = Gmat_->getNode(node_loc);
+      node_q.push(node);
     }
   }
   while (!node_q.empty()) {
@@ -1274,7 +1434,9 @@ bool IRSolver::checkConnectivity(bool connection_only)
       }
     }
   }
+
   bool unconnected_node = false;
+  auto tech = db_->getTech();
   for (Node* node : Gmat_->getAllNodes()) {
     if (!node->getConnected()) {
       const Point node_loc = node->getLoc();
@@ -1285,10 +1447,10 @@ bool IRSolver::checkConnectivity(bool connection_only)
                     38,
                     "Unconnected PDN node on net {} at location ({:4.3f}um, "
                     "{:4.3f}um), layer: {}.",
-                    power_net_,
+                    net_->getName(),
                     loc_x,
                     loc_y,
-                    node->getLayerNum());
+                    tech->findRoutingLayer(node->getLayerNum())->getName());
       if (node->hasInstances()) {
         for (dbInst* inst : node->getInstances()) {
           logger_->warn(utl::PSM,
@@ -1298,19 +1460,286 @@ bool IRSolver::checkConnectivity(bool connection_only)
                         inst->getName(),
                         loc_x,
                         loc_y,
-                        node->getLayerNum());
+                        tech->findRoutingLayer(node->getLayerNum())->getName());
         }
       }
     }
   }
-  if (unconnected_node == false) {
-    logger_->info(
-        utl::PSM, 40, "All PDN stripes on net {} are connected.", power_net_);
+  findUnconnectedInstances();
+  for (auto* inst : unconnected_insts_) {
+    unconnected_node = true;
+    logger_->warn(utl::PSM,
+                  94,
+                  "{} is not connected to {}.",
+                  inst->getName(),
+                  net_->getName());
   }
+  if (!unconnected_node) {
+    logger_->info(utl::PSM,
+                  40,
+                  "All PDN stripes on net {} are connected.",
+                  net_->getName());
+  }
+
+  if (!error_file.empty()) {
+    writeErrorFile(error_file);
+  }
+
   return !unconnected_node;
 }
 
-bool IRSolver::getConnectionTest()
+bool IRSolver::isStdCell(odb::dbInst* inst) const
+{
+  if (inst->isCore()) {
+    return true;
+  }
+  if (inst->isBlock() || inst->isPad() || inst->getMaster()->isCover()) {
+    return false;
+  }
+  if (inst->isEndCap()) {
+    if (inst->getMaster()->getType() == odb::dbMasterType::ENDCAP_BOTTOMLEFT
+        || inst->getMaster()->getType() == odb::dbMasterType::ENDCAP_BOTTOMRIGHT
+        || inst->getMaster()->getType() == odb::dbMasterType::ENDCAP_TOPLEFT
+        || inst->getMaster()->getType() == odb::dbMasterType::ENDCAP_TOPRIGHT) {
+      // endcap is pad
+      return false;
+    }
+  }
+  return true;
+}
+
+bool IRSolver::isConnected(odb::dbITerm* iterm) const
+{
+  odb::dbTransform xform;
+  iterm->getInst()->getTransform(xform);
+
+  for (auto* mpin : iterm->getMTerm()->getMPins()) {
+    for (auto* geom : mpin->getGeometry()) {
+      auto* layer = geom->getTechLayer();
+      if (layer == nullptr) {
+        continue;
+      }
+      odb::Rect pin_shape = geom->getBox();
+      xform.apply(pin_shape);
+      bool has_connection = false;
+      Gmat_->foreachNode(layer->getRoutingLevel(),
+                         pin_shape.xMin(),
+                         pin_shape.xMax(),
+                         pin_shape.yMin(),
+                         pin_shape.yMax(),
+                         [&](Node* node) { has_connection = true; });
+
+      if (has_connection) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+void IRSolver::findUnconnectedInstancesByStdCells(
+    ITermMap& iterms,
+    std::set<odb::dbInst*>& connected_insts)
+{
+  for (auto itr = iterms.begin(); itr != iterms.end();) {
+    odb::dbInst* inst = itr->first;
+    if (!isStdCell(inst)) {
+      itr++;
+      continue;
+    }
+    int x, y;
+    inst->getLocation(x, y);
+    Node* node = Gmat_->getNode(x, y, bottom_layer_, true);
+    if (!node) {
+      unconnected_insts_.push_back(inst);
+    } else {
+      connected_insts.insert(inst);
+    }
+    itr = iterms.erase(itr);
+  }
+}
+
+void IRSolver::findUnconnectedInstancesByITerms(
+    ITermMap& iterms,
+    std::set<odb::dbInst*>& connected_insts)
+{
+  for (auto itr = iterms.begin(); itr != iterms.end();) {
+    odb::dbInst* inst = itr->first;
+
+    odb::dbTransform xform;
+    inst->getTransform(xform);
+
+    bool all_connected = true;
+    for (auto* iterm : itr->second) {
+      if (!isConnected(iterm)) {
+        all_connected = false;
+      }
+    }
+    if (all_connected) {
+      connected_insts.insert(inst);
+      itr = iterms.erase(itr);
+    } else {
+      itr++;
+    }
+  }
+}
+
+void IRSolver::findUnconnectedInstancesByAbutment(
+    ITermMap& iterms,
+    std::set<odb::dbInst*>& connected_insts)
+{
+  std::set<odb::dbInst*> inst_set;
+  std::set<odb::dbITerm*> terminals_connected_to_grid;
+  for (auto* iterm : net_->getITerms()) {
+    odb::dbInst* inst = iterm->getInst();
+    if (isStdCell(inst)) {
+      continue;
+    }
+    inst_set.insert(inst);
+    const bool inst_connected
+        = connected_insts.find(inst) != connected_insts.end();
+    if (inst_connected || isConnected(iterm)) {
+      terminals_connected_to_grid.insert(iterm);
+    }
+  }
+  std::vector<odb::dbInst*> insts;
+  insts.insert(insts.begin(), inst_set.begin(), inst_set.end());
+
+  std::map<odb::dbITerm*, std::set<odb::dbITerm*>> connections;
+  for (size_t i = 0; i < insts.size(); i++) {
+    auto* inst0 = insts[i];
+    for (size_t j = i + 1; j < insts.size(); j++) {
+      auto* inst1 = insts[j];
+      const auto inst_connections
+          = pad::ICeWall::getTouchingIterms(inst0, inst1);
+      for (const auto& [iterm0, iterm1] : inst_connections) {
+        connections[iterm0].insert(iterm1);
+        connections[iterm1].insert(iterm0);
+      }
+    }
+  }
+
+  for (auto itr = iterms.begin(); itr != iterms.end();) {
+    bool connected = false;
+    for (auto* iterm : itr->second) {
+      if (terminals_connected_to_grid.find(iterm)
+          != terminals_connected_to_grid.end()) {
+        connected = true;
+        break;
+      }
+
+      std::queue<odb::dbITerm*> terms_to_check;
+      terms_to_check.push(iterm);
+      std::set<odb::dbITerm*> checked;
+      while (!terms_to_check.empty()) {
+        odb::dbITerm* check_term = terms_to_check.front();
+        terms_to_check.pop();
+        checked.insert(check_term);
+
+        if (terminals_connected_to_grid.find(check_term)
+            != terminals_connected_to_grid.end()) {
+          connected = true;
+          terminals_connected_to_grid.insert(iterm);
+          break;
+        } else {
+          for (auto* next_iterm : connections[check_term]) {
+            if (checked.find(next_iterm) == checked.end()) {
+              terms_to_check.push(next_iterm);
+            }
+          }
+        }
+      }
+    }
+
+    if (connected) {
+      itr = iterms.erase(itr);
+    } else {
+      itr++;
+    }
+  }
+}
+
+void IRSolver::findUnconnectedInstances()
+{
+  unconnected_insts_.clear();
+
+  std::set<odb::dbInst*> connected_insts;
+  for (Node* node : Gmat_->getAllNodes()) {
+    if (node->hasInstances()) {
+      for (odb::dbInst* inst : node->getInstances()) {
+        connected_insts.insert(inst);
+      }
+    }
+  }
+
+  ITermMap iterms;
+  for (odb::dbInst* inst : db_->getChip()->getBlock()->getInsts()) {
+    if (!inst->isPlaced()) {
+      continue;
+    }
+    const bool has_inst = connected_insts.find(inst) != connected_insts.end();
+    if (has_inst) {
+      continue;
+    }
+    for (auto* iterm : inst->getITerms()) {
+      if (iterm->getNet() == net_) {
+        iterms[inst].push_back(iterm);
+      }
+    }
+  }
+
+  findUnconnectedInstancesByStdCells(iterms, connected_insts);
+  findUnconnectedInstancesByITerms(iterms, connected_insts);
+  findUnconnectedInstancesByAbutment(iterms, connected_insts);
+
+  for (const auto& [inst, inst_iterms] : iterms) {
+    unconnected_insts_.push_back(inst);
+  }
+}
+
+void IRSolver::writeErrorFile(const std::string& file) const
+{
+  ofstream error_report;
+  error_report.open(file);
+  if (!error_report) {
+    logger_->error(utl::PSM, 92, "Unable to open {}", file);
+  }
+
+  auto* tech = db_->getTech();
+  const float unit_micron = tech->getDbUnitsPerMicron();
+  for (Node* node : Gmat_->getAllNodes()) {
+    if (!node->getConnected()) {
+      const Point node_loc = node->getLoc();
+      const float loc_x = node_loc.getX() / unit_micron;
+      const float loc_y = node_loc.getY() / unit_micron;
+      error_report << "violation type: Unconnected PDN node" << endl;
+      error_report << "  srcs: " << endl;
+      error_report << fmt::format(
+          "    bbox = ({}, {}) - ({}, {}) on Layer {}",
+          loc_x - 0.05,
+          loc_y - 0.05,
+          loc_x + 0.05,
+          loc_y + 0.05,
+          tech->findRoutingLayer(node->getLayerNum())->getName())
+                   << endl;
+    }
+  }
+  for (auto* inst : unconnected_insts_) {
+    const odb::Rect inst_rect = inst->getBBox()->getBox();
+    error_report << "violation type: Unconnected instance" << endl;
+    error_report << "  srcs: inst:" << inst->getName() << endl;
+    error_report << fmt::format(
+        "    bbox = ({}, {}) - ({}, {}) on Layer {}",
+        inst_rect.xMin() / unit_micron,
+        inst_rect.yMin() / unit_micron,
+        inst_rect.xMax() / unit_micron,
+        inst_rect.yMax() / unit_micron,
+        tech->findRoutingLayer(bottom_layer_)->getName())
+                 << endl;
+  }
+}
+
+bool IRSolver::getConnectionTest() const
 {
   return connection_;
 }
@@ -1320,54 +1749,68 @@ bool IRSolver::getConnectionTest()
  *\return vector of pairs of instance name
  and its corresponding power value
 */
-vector<pair<odb::dbInst*, double>> IRSolver::getPower()
+vector<pair<odb::dbInst*, float>> IRSolver::getPower()
 {
   debugPrint(
       logger_, utl::PSM, "IR Solver", 1, "Executing STA for power calculation");
-  return PowerInst().executePowerPerInst(sta_, logger_);
+
+  vector<pair<odb::dbInst*, float>> power_report;
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  std::unique_ptr<sta::LeafInstanceIterator> inst_iter(
+      network->leafInstanceIterator());
+  sta::PowerResult total_calc;
+  while (inst_iter->hasNext()) {
+    sta::Instance* inst = inst_iter->next();
+    sta::LibertyCell* cell = network->libertyCell(inst);
+    if (cell != nullptr) {
+      sta::PowerResult inst_power = sta_->power(inst, corner_);
+      total_calc.incr(inst_power);
+      power_report.emplace_back(network->staToDb(inst), inst_power.total());
+      debugPrint(logger_,
+                 utl::PSM,
+                 "get power",
+                 2,
+                 "Power of instance {} is {}",
+                 network->name(inst),
+                 inst_power.total());
+    }
+  }
+
+  debugPrint(
+      logger_, utl::PSM, "get power", 1, "Total power: {}", total_calc.total());
+  return power_report;
 }
 
-pair<double, double> IRSolver::getSupplyVoltage()
-{
-  return SupplyVoltage().getSupplyVoltage(sta_, logger_);
-}
-
-bool IRSolver::getResult()
-{
-  return result_;
-}
-
-int IRSolver::printSpice()
+void IRSolver::writeSpiceFile(const std::string& file) const
 {
   DokMatrix* Gmat = Gmat_->getGMatDOK();
 
   ofstream pdnsim_spice_file;
-  pdnsim_spice_file.open(spice_out_file_);
+  pdnsim_spice_file.open(file);
   if (!pdnsim_spice_file.is_open()) {
     logger_->error(
         utl::PSM,
         41,
         "Could not open SPICE file {}. Please check if it is a valid path.",
-        spice_out_file_);
+        file);
   }
-  const vector<double> J = getJ();
+  const vector<double>& J = getJ();
   const int num_nodes = Gmat_->getNumNodes();
   int resistance_number = 0;
   int voltage_number = 0;
   int current_number = 0;
 
-  for (auto it = Gmat->values.begin(); it != Gmat->values.end(); it++) {
-    const NodeIdx col = (it->first).first;
-    const NodeIdx row = (it->first).second;
+  for (const auto& [loc, cond] : Gmat->values) {
+    const NodeIdx col = loc.first;
+    const NodeIdx row = loc.second;
     if (col <= row) {
       continue;  // ignore lower half and diagonal as matrix is symmetric
     }
-    const double cond = it->second;  // get cond value
-    if (abs(cond) < 1e-15) {         // ignore if an empty cell
+    if (abs(cond) < 1e-15) {  // ignore if an empty cell
       continue;
     }
 
-    const string net_name = power_net_;
+    const string net_name = net_->getName();
     if (col < num_nodes) {  // resistances
       const double resistance = -1 / cond;
 
@@ -1421,63 +1864,73 @@ int IRSolver::printSpice()
   pdnsim_spice_file << ".END" << endl;
   pdnsim_spice_file << endl;
   pdnsim_spice_file.close();
-  return 1;
 }
 
-int IRSolver::getMinimumResolution()
+int IRSolver::getMinimumResolution() const
 {
   return node_density_;
 }
 
-bool IRSolver::build()
+bool IRSolver::build(const std::string& error_file, bool connectivity_only)
 {
-  readC4Data();
+  if (em_flag_) {
+    logger_->info(utl::PSM, 4, "EM calculation is enabled.");
+  }
 
-  bool res = createGmat();
+  connection_ = false;
+
+  readSourceData(!connectivity_only);
+
+  bool res = createGmat(connectivity_only);
   if (Gmat_->getNumNodes() == 0) {
     connection_ = true;
     return false;
   }
 
-  if (res) {
+  if (res && !connectivity_only) {
     res = createJ();
   }
   if (res) {
-    res = addC4Bump();
+    res = addSources();
   }
-  if (res) {
+  if (res && !connectivity_only) {
     res = Gmat_->generateCSCMatrix();
+  }
+  if (res) {
     res = Gmat_->generateACSCMatrix();
   }
   if (res) {
-    connection_ = checkConnectivity();
-    res = connection_;
+    connection_ = checkConnectivity(error_file, connectivity_only);
+    if (!connectivity_only) {
+      res = connection_;
+    }
   }
-  result_ = res;
-  return result_;
+  return res;
 }
 
-bool IRSolver::buildConnection()
+double IRSolver::getResistance(odb::dbTechLayer* layer) const
 {
-  readC4Data();
+  double res;
 
-  bool res = createGmat(true);
-  if (Gmat_->getNumNodes() == 0) {
-    connection_ = true;
-    return true;
+  if (layer->getRoutingLevel() == 0) {
+    double cap;
+    resizer_->layerRC(layer, corner_, res, cap);
+  } else {
+    double r_per_meter, cap_per_meter;
+    resizer_->layerRC(layer, corner_, r_per_meter, cap_per_meter);
+
+    const double width_meter = static_cast<double>(layer->getWidth())
+                               / layer->getTech()->getLefUnits() * 1e-6;
+
+    res = r_per_meter * width_meter;
   }
 
-  if (res) {
-    res = addC4Bump();
+  if (res == 0.0) {
+    // Get database resistance
+    res = layer->getResistance();
   }
-  if (res) {
-    res = Gmat_->generateACSCMatrix();
-  }
-  if (res) {
-    connection_ = checkConnectivity(true);
-    res = connection_;
-  }
-  result_ = res;
-  return result_;
+
+  return res;
 }
+
 }  // namespace psm

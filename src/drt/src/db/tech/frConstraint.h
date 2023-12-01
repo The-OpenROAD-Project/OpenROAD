@@ -223,6 +223,8 @@ class frConstraint
 
       case frConstraintTypeEnum::frcLef58AreaConstraint:
         return "Lef58Area";
+      case frConstraintTypeEnum::frcLef58KeepOutZoneConstraint:
+        return "KeepOutZone";
     }
     return "";
   }
@@ -1924,6 +1926,7 @@ class frLef58CutSpacingConstraint : public frConstraint
   void setToAll(bool in) { toAll = in; }
   void setNoPrl(bool in) { noPrl = in; }
   void setSideParallelOverlap(bool in) { sideParallelOverlap = in; }
+  void setParallelOverlap(bool in) { parallelOverlap = in; }
   void setExceptSameNet(bool in) { exceptSameNet = in; }
   void setExceptSameMetal(bool in) { exceptSameMetal = in; }
   void setExceptSameMetalOverlap(bool in) { exceptSameMetalOverlap = in; }
@@ -2416,6 +2419,29 @@ class frLef58AreaConstraint : public frConstraint
   odb::dbTechLayerAreaRule* db_rule_;
 };
 
+// LEF58_KEEPOUTZONE rule
+class frLef58KeepOutZoneConstraint : public frConstraint
+{
+ public:
+  frLef58KeepOutZoneConstraint(odb::dbTechLayerKeepOutZoneRule* rule)
+      : db_rule_(rule)
+  {
+  }
+  // getter
+  odb::dbTechLayerKeepOutZoneRule* getODBRule() const { return db_rule_; }
+  // others
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcLef58KeepOutZoneConstraint;
+  }
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("LEF58_KEEPOUTZONE");
+  }
+
+ private:
+  odb::dbTechLayerKeepOutZoneRule* db_rule_;
+};
 class frNonDefaultRule
 {
   friend class FlexRP;

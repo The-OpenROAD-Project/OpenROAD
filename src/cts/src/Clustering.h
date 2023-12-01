@@ -51,34 +51,34 @@ class Clustering
 {
  public:
   Clustering(const std::vector<std::pair<float, float>>& sinks,
-             const float xBranch,
-             const float yBranch,
+             float xBranch,
+             float yBranch,
              Logger* logger);
   ~Clustering();
 
-  void iterKmeans(const unsigned iter,
-                  const unsigned n,
-                  const unsigned cap,
-                  const unsigned max,
-                  const unsigned power,
+  void iterKmeans(unsigned iter,
+                  unsigned n,
+                  unsigned cap,
+                  unsigned max,
+                  unsigned power,
                   std::vector<std::pair<float, float>>& means);
 
   void getClusters(std::vector<std::vector<unsigned>>& newClusters) const;
 
  private:
-  float Kmeans(const unsigned n,
-               const unsigned cap,
-               const unsigned max,
-               const unsigned power,
+  float Kmeans(unsigned n,
+               unsigned cap,
+               unsigned max,
+               unsigned power,
                std::vector<std::pair<float, float>>& means);
   float calcSilh(const std::vector<std::pair<float, float>>& means) const;
   void minCostFlow(const std::vector<std::pair<float, float>>& means,
-                   const unsigned cap,
-                   const float dist,
-                   const unsigned power);
+                   unsigned cap,
+                   float dist,
+                   unsigned power);
   void fixSegmentLengths(std::vector<std::pair<float, float>>& means);
   void fixSegment(const std::pair<float, float>& fixedPoint,
-                  const float targetDist,
+                  float targetDist,
                   std::pair<float, float>& movablePoint);
 
   static float calcDist(const std::pair<float, float>& loc, const Sink* sink);
@@ -89,7 +89,7 @@ class Clustering
   std::vector<Sink> sinks_;
   std::vector<std::vector<Sink*>> clusters_;
 
-  float segment_length_;
+  float segment_length_ = 0.0;
   std::pair<float, float> branching_point_;
 };
 

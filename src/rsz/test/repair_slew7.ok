@@ -10,7 +10,7 @@
 [INFO ODB-0133]     Created 10 nets and 22 connections.
 Startpoint: u1/A4 (internal pin)
 Endpoint: out1 (output port)
-Path Group: (none)
+Path Group: unconstrained
 Path Type: max
 Corner: slow
 
@@ -42,7 +42,7 @@ u1/ZN                                  10.47   15.05   -4.58 (VIOLATED)
 [INFO RSZ-0039] Resized 3 instances.
 Startpoint: u1/A4 (internal pin)
 Endpoint: out1 (output port)
-Path Group: (none)
+Path Group: unconstrained
 Path Type: max
 Corner: slow
 

@@ -60,7 +60,7 @@ class frConnFig;
 class FlexPAGraphics : public gui::Renderer
 {
  public:
-  // Debug pin acess
+  // Debug pin access
   FlexPAGraphics(frDebugSettings* settings,
                  frDesign* design,
                  odb::dbDatabase* db,

@@ -99,10 +99,9 @@ inline void diff_out_object(dbDiff& diff,
                             dbId<T> id,
                             dbTable<T>* tbl)
 {
-  if (diff.deepDiff() == false)
+  if (diff.deepDiff() == false) {
     diff.out(side, field, (unsigned int) id);
-
-  else if (id != 0) {
+  } else if (id != 0) {
     T* o = tbl->getPtr(id);
     o->out(diff, side, field);
   }
@@ -115,10 +114,9 @@ inline void diff_out_object(dbDiff& diff,
                             dbId<T> id,
                             dbArrayTable<T>* tbl)
 {
-  if (diff.deepDiff() == false)
+  if (diff.deepDiff() == false) {
     diff.out(side, field, (unsigned int) id);
-
-  else if (id != 0) {
+  } else if (id != 0) {
     T* o = tbl->getPtr(id);
     o->out(diff, side, field);
   }
@@ -147,17 +145,17 @@ inline void diff_set(dbDiff& diff,
     dbSet<T> lhs_set(lhs_owner, lhs_itr);
     std::vector<T*> lhs_vec;
 
-    for (itr = lhs_set.begin(); itr != lhs_set.end(); ++itr)
+    for (itr = lhs_set.begin(); itr != lhs_set.end(); ++itr) {
       lhs_vec.push_back(*itr);
+    }
 
     dbSet<T> rhs_set(rhs_owner, rhs_itr);
     std::vector<T*> rhs_vec;
 
-    for (itr = rhs_set.begin(); itr != rhs_set.end(); ++itr)
+    for (itr = rhs_set.begin(); itr != rhs_set.end(); ++itr) {
       rhs_vec.push_back(*itr);
-#ifndef WIN32
+    }
     set_symmetric_diff(diff, field, lhs_vec, rhs_vec);
-#endif
   }
 }
 
@@ -177,8 +175,9 @@ inline void diff_out_set(dbDiff& diff,
     diff.begin_object("<> %s\n", field);
     dbSet<T> oset(owner, set_itr);
 
-    for (itr = oset.begin(); itr != oset.end(); ++itr)
-      (*itr)->out(diff, side, NULL);
+    for (itr = oset.begin(); itr != oset.end(); ++itr) {
+      (*itr)->out(diff, side, nullptr);
+    }
 
     diff.end_object();
   }
@@ -197,9 +196,7 @@ inline void set_symmetric_diff(dbDiff& diff,
   std::vector<T*> rhs_vec;
   lhs.getObjects(lhs_vec);
   rhs.getObjects(rhs_vec);
-#ifndef WIN32
   set_symmetric_diff(diff, field, lhs_vec, rhs_vec);
-#endif
 }
 
 //
@@ -215,9 +212,7 @@ inline void set_symmetric_diff(dbDiff& diff,
   std::vector<T*> rhs_vec;
   lhs.getObjects(lhs_vec);
   rhs.getObjects(rhs_vec);
-#ifndef WIN32
   set_symmetric_diff(diff, field, lhs_vec, rhs_vec);
-#endif
 }
 
 //
@@ -255,17 +250,17 @@ inline void set_symmetric_diff(dbDiff& diff,
     T* o2 = *i2;
 
     if (o1 == *sd) {
-      o1->out(diff, dbDiff::LEFT, NULL);
+      o1->out(diff, dbDiff::LEFT, nullptr);
       ++i1;
       ++sd;
     } else if (o2 == *sd) {
-      o2->out(diff, dbDiff::RIGHT, NULL);
+      o2->out(diff, dbDiff::RIGHT, nullptr);
       ++i2;
       ++sd;
     } else  // equal keys
     {
       // compare internals
-      o1->differences(diff, NULL, *o2);
+      o1->differences(diff, nullptr, *o2);
       ++i1;
       ++i2;
     }
@@ -273,12 +268,12 @@ inline void set_symmetric_diff(dbDiff& diff,
 
   for (; i1 != lhs.end(); ++i1) {
     T* o1 = *i1;
-    o1->out(diff, dbDiff::LEFT, NULL);
+    o1->out(diff, dbDiff::LEFT, nullptr);
   }
 
   for (; i2 != rhs.end(); ++i2) {
     T* o2 = *i2;
-    o2->out(diff, dbDiff::RIGHT, NULL);
+    o2->out(diff, dbDiff::RIGHT, nullptr);
   }
 
   diff.end_object();

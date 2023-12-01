@@ -15,7 +15,7 @@ CLOCK
 Driver    length delay
 Startpoint: in1 (clock source 'in1')
 Endpoint: out1 (output port)
-Path Group: (none)
+Path Group: unconstrained
 Path Type: max
 
     Cap    Slew   Delay    Time   Description

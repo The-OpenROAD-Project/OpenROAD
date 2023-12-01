@@ -38,9 +38,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace psm {
 
-using std::make_pair;
-using std::max;
-using std::pair;
 using std::vector;
 
 Node::Node(const Point& loc, int layer) : layer_(layer), loc_(loc)

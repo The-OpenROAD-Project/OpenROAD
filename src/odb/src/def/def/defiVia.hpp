@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -44,10 +44,6 @@ class defiVia
 {
  public:
   defiVia(defrData* data);
-
-  DEF_COPY_CONSTRUCTOR_H(defiVia);
-  DEF_ASSIGN_OPERATOR_H(defiVia);
-
   void Init();
 
   void clear();

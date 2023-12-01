@@ -1,0 +1,9 @@
+[INFO ODB-0222] Reading LEF file: pin_edge.lef
+[INFO ODB-0223]     Created 24 technology layers
+[INFO ODB-0224]     Created 9 technology vias
+[INFO ODB-0226] Finished LEF file:  pin_edge.lef
+[INFO ODB-0128] Design: test
+[INFO ODB-0130]     Created 50 pins.
+[INFO ODB-0133]     Created 25 nets and 0 connections.
+[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
+No differences found.

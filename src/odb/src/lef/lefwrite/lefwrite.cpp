@@ -65,7 +65,7 @@ int main(int argc, char** argv)
   int* aspc;
   int encrypt = 0;
 
-#ifdef WIN32
+#if (defined WIN32 && _MSC_VER < 1800)
   // Enable two-digit exponent format
   _set_output_format(_TWO_DIGIT_EXPONENT);
 #endif

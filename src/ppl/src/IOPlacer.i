@@ -35,7 +35,9 @@
 
 %{
 #include "ppl/IOPlacer.h"
+#include "IOPlacerRenderer.h"
 #include "ord/OpenRoad.hh"
+
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -45,8 +47,8 @@ ppl::IOPlacer* getIOPlacer();
 using ord::getIOPlacer;
 using ppl::Edge;
 using ppl::Direction;
+using ppl::PinSet;
 using ppl::PinList;
-using ppl::PinGroup;
 using std::vector;
 using std::set;
 
@@ -106,15 +108,18 @@ tclSetStdSeq(Tcl_Obj *const source,
 //
 ////////////////////////////////////////////////////////////////
 
-%typemap(in) PinGroup* {
+%typemap(in) PinList* {
   $1 = tclListStdSeq<odb::dbBTerm*>($input, SWIGTYPE_p_odb__dbBTerm, interp);
 }
 
-%typemap(in) PinList* {
+%typemap(in) PinSet* {
   $1 = tclSetStdSeq<odb::dbBTerm*>($input, SWIGTYPE_p_odb__dbBTerm, interp);
 }
 
 %include "../../Exception.i"
+
+%ignore ppl::IOPlacer::getRenderer;
+%ignore ppl::IOPlacer::setRenderer;
 
 %inline %{
 
@@ -130,6 +135,12 @@ void
 set_slots_factor(float factor)
 {
   getIOPlacer()->getParameters()->setSlotsFactor(factor);
+}
+
+void
+set_slots_per_section(int slots_per_section)
+{
+  getIOPlacer()->getParameters()->setSlotsPerSection(slots_per_section);
 }
 
 Edge
@@ -151,7 +162,7 @@ exclude_interval(Edge edge, int begin, int end)
 }
 
 void
-add_names_constraint(PinList *pin_list, Edge edge, int begin, int end)
+add_names_constraint(PinSet *pin_list, Edge edge, int begin, int end)
 {
   getIOPlacer()->addNamesConstraint(pin_list, edge, begin, end);
 }
@@ -163,7 +174,7 @@ void add_direction_constraint(Direction direction, Edge edge,
 }
 
 void
-add_top_layer_constraint(PinList *pin_list,
+add_top_layer_constraint(PinSet *pin_list,
                          int x1, int y1,
                          int x2, int y2)
 {
@@ -213,9 +224,9 @@ add_ver_layer(odb::dbTechLayer* layer)
 }
 
 void
-add_pin_group(PinGroup *pin_group)
+add_pin_group(PinList *pin_list, bool order)
 {
-  getIOPlacer()->addPinGroup(pin_group);
+  getIOPlacer()->addPinGroup(pin_list, order);
 }
 
 void
@@ -272,6 +283,11 @@ set_min_distance_in_tracks(bool in_tracks)
   getIOPlacer()->getParameters()->setMinDistanceInTracks(in_tracks);
 }
 
+void set_pin_placement_file(const char* file_name)
+{
+  getIOPlacer()->getParameters()->setPinPlacementFile(file_name);
+}
+
 void
 create_pin_shape_pattern(odb::dbTechLayer* layer, int x_step, int y_step,
                          const odb::Rect& region,
@@ -305,6 +321,45 @@ void
 clear_constraints()
 {
   getIOPlacer()->clearConstraints();
+}
+
+void
+set_simulated_annealing(float temperature,
+                        int max_iterations,
+                        int perturb_per_iter,
+                        float alpha)
+{
+  getIOPlacer()->setAnnealingConfig(temperature, max_iterations, perturb_per_iter, alpha);
+}
+
+void
+simulated_annealing_debug(int iters_between_paintings,
+                          bool no_pause_mode)
+{
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+
+  IOPlacer* ioplacer = getIOPlacer();
+  if(ioplacer->getRenderer() == nullptr) {
+    ioplacer->setRenderer(std::make_unique<IOPlacerRenderer>());
+  }
+
+  getIOPlacer()->setAnnealingDebugOn();
+  getIOPlacer()->setAnnealingDebugNoPauseMode(no_pause_mode);
+  getIOPlacer()->setAnnealingDebugPaintInterval(iters_between_paintings);
+}
+
+void
+run_annealing(bool random)
+{
+  getIOPlacer()->runAnnealing(random);
+}
+
+void
+write_pin_placement(const char* file_name)
+{
+  getIOPlacer()->writePinPlacement(file_name);
 }
 
 } // namespace

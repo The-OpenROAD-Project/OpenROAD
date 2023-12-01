@@ -61,7 +61,7 @@ class Ext
                    const std::string& dir,
                    const std::string& file,
                    int pattern);
-  bool bench_verilog(const std::string& file);
+  void bench_verilog(const std::string& file);
 
   struct BenchWiresOptions
   {
@@ -98,8 +98,8 @@ class Ext
     bool resPatterns = false;
   };
 
-  bool bench_wires(const BenchWiresOptions& bwo);
-  bool write_spef_nets(odb::dbObject* block,
+  void bench_wires(const BenchWiresOptions& bwo);
+  void write_spef_nets(odb::dbObject* block,
                        bool flatten,
                        bool parallel,
                        int corner);
@@ -119,19 +119,18 @@ class Ext
     bool lef_res = false;
   };
 
-  bool extract(ExtractOptions options);
+  void extract(ExtractOptions options);
 
-  bool define_process_corner(int ext_model_index, const std::string& name);
-  bool define_derived_corner(const std::string& name,
+  void define_process_corner(int ext_model_index, const std::string& name);
+  void define_derived_corner(const std::string& name,
                              const std::string& process_corner_name,
                              float res_factor,
                              float cc_factor,
                              float gndc_factor);
-  bool get_ext_db_corner(int& index, const std::string& name);
-  bool get_corners(std::list<std::string>& corner_list);
-  bool delete_corners();
-  bool clean(bool all_models, bool ext_only);
-  bool adjust_rc(float res_factor, float cc_factor, float gndc_factor);
+  void get_ext_db_corner(int& index, const std::string& name);
+  void get_corners(std::list<std::string>& corner_list);
+  void delete_corners();
+  void adjust_rc(float res_factor, float cc_factor, float gndc_factor);
 
   struct SpefOptions
   {
@@ -161,7 +160,7 @@ class Ext
     const char* cap_units = "PF";
     const char* res_units = "OHM";
   };
-  bool write_spef(const SpefOptions& options);
+  void write_spef(const SpefOptions& options);
 
   struct ReadSpefOpts
   {
@@ -193,7 +192,7 @@ class Ext
     bool log = false;
   };
 
-  bool read_spef(ReadSpefOpts& opt);
+  void read_spef(ReadSpefOpts& opt);
 
   struct DiffOptions
   {
@@ -217,8 +216,8 @@ class Ext
     bool log = false;
   };
 
-  bool diff_spef(const DiffOptions& opt);
-  bool calibrate(const std::string& spef_file,
+  void diff_spef(const DiffOptions& opt);
+  void calibrate(const std::string& spef_file,
                  const std::string& db_corner_name,
                  int corner,
                  int spef_corner,
