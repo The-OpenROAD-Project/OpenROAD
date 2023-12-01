@@ -93,13 +93,13 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
 
   if (npVars.debug && Graphics::guiActive()) {
     graphics_ = std::make_unique<Graphics>(log_,
-                                      this,
-                                      pbc,
-                                      nbc,
-                                      pbVec,
-                                      nbVec,
-                                      npVars_.debug_draw_bins,
-                                      npVars.debug_inst);
+                                           this,
+                                           pbc,
+                                           nbc,
+                                           pbVec,
+                                           nbVec,
+                                           npVars_.debug_draw_bins,
+                                           npVars.debug_inst);
   }
   init();
 }

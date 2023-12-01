@@ -241,14 +241,16 @@ int FlexDRWorker::main(frDesign* design)
     {
       std::string viaDataStr;
       serializeViaData(*via_data_, viaDataStr);
-      std::ofstream viaDataFile(fmt::format("{}/viadata.bin", workerPath).c_str());
+      std::ofstream viaDataFile(
+          fmt::format("{}/viadata.bin", workerPath).c_str());
       viaDataFile << viaDataStr;
       viaDataFile.close();
     }
     {
       std::string workerStr;
       serializeWorker(this, workerStr);
-      std::ofstream workerFile(fmt::format("{}/worker.bin", workerPath).c_str());
+      std::ofstream workerFile(
+          fmt::format("{}/worker.bin", workerPath).c_str());
       workerFile << workerStr;
       workerFile.close();
     }
@@ -348,9 +350,9 @@ void FlexDR::initGCell2BoundaryPin()
   auto gCellPatterns = topBlock->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
-  auto tmpVec
-      = std::vector<std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>>(
-          (int) ygp.getCount());
+  auto tmpVec = std::vector<std::map<frNet*,
+                                     std::set<std::pair<Point, frLayerNum>>,
+                                     frBlockObjectComp>>((int) ygp.getCount());
   gcell2BoundaryPin_
       = std::vector<std::vector<std::map<frNet*,
                                          std::set<std::pair<Point, frLayerNum>>,

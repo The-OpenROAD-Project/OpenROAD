@@ -159,8 +159,12 @@ void FlexDRWorker::initNetObjs_pathSeg(
 void FlexDRWorker::initNetObjs_via(
     const frVia* via,
     std::set<frNet*, frBlockObjectComp>& nets,
-    std::map<frNet*, std::vector<std::unique_ptr<drConnFig>>, frBlockObjectComp>& netRouteObjs,
-    std::map<frNet*, std::vector<std::unique_ptr<drConnFig>>, frBlockObjectComp>& netExtObjs)
+    std::map<frNet*,
+             std::vector<std::unique_ptr<drConnFig>>,
+             frBlockObjectComp>& netRouteObjs,
+    std::map<frNet*,
+             std::vector<std::unique_ptr<drConnFig>>,
+             frBlockObjectComp>& netExtObjs)
 {
   auto net = via->getNet();
   nets.insert(net);
@@ -394,8 +398,9 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap_helper(
     const frNet* net,
     const Point& bp,
     const frLayerNum lNum,
-    std::map<frBlockObject*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>&
-        pin2epMap)
+    std::map<frBlockObject*,
+             std::set<std::pair<Point, frLayerNum>>,
+             frBlockObjectComp>& pin2epMap)
 {
   frRegionQuery::Objects<frBlockObject> result;
   design->getRegionQuery()->query({bp, bp}, lNum, result);
@@ -425,8 +430,9 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap(
     const frDesign* design,
     const frNet* net,
     const std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
-    std::map<frBlockObject*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>&
-        pin2epMap)
+    std::map<frBlockObject*,
+             std::set<std::pair<Point, frLayerNum>>,
+             frBlockObjectComp>& pin2epMap)
 {
   // should not count extObjs in union find
   for (auto& uPtr : netRouteObjs) {
@@ -504,7 +510,8 @@ void FlexDRWorker::initNets_searchRepair_nodeMap_routeObjSplit_helper(
     const frCoord trackCoord,
     const frCoord splitCoord,
     const frLayerNum lNum,
-    std::vector<std::map<frCoord, std::map<frCoord, std::pair<frCoord, int>>>>& mergeHelper,
+    std::vector<std::map<frCoord, std::map<frCoord, std::pair<frCoord, int>>>>&
+        mergeHelper,
     std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap)
 {
   auto it1 = mergeHelper[lNum].find(trackCoord);
@@ -532,10 +539,10 @@ void FlexDRWorker::initNets_searchRepair_nodeMap_routeObjSplit(
     std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap)
 {
   const int num_layers = getTech()->getLayers().size();
-  std::vector<std::map<frCoord, std::map<frCoord, std::pair<frCoord, int>>>> horzMergeHelper(
-      num_layers);
-  std::vector<std::map<frCoord, std::map<frCoord, std::pair<frCoord, int>>>> vertMergeHelper(
-      num_layers);
+  std::vector<std::map<frCoord, std::map<frCoord, std::pair<frCoord, int>>>>
+      horzMergeHelper(num_layers);
+  std::vector<std::map<frCoord, std::map<frCoord, std::pair<frCoord, int>>>>
+      vertMergeHelper(num_layers);
   for (int i = 0; i < (int) netRouteObjs.size(); i++) {
     auto connFig = netRouteObjs[i].get();
     if (connFig->typeId() == drcPathSeg) {
@@ -691,8 +698,12 @@ void FlexDRWorker::initNets_searchRepair_connComp(
 void FlexDRWorker::initNets_searchRepair(
     const frDesign* design,
     const std::set<frNet*, frBlockObjectComp>& nets,
-    std::map<frNet*, std::vector<std::unique_ptr<drConnFig>>, frBlockObjectComp>& netRouteObjs,
-    std::map<frNet*, std::vector<std::unique_ptr<drConnFig>>, frBlockObjectComp>& netExtObjs,
+    std::map<frNet*,
+             std::vector<std::unique_ptr<drConnFig>>,
+             frBlockObjectComp>& netRouteObjs,
+    std::map<frNet*,
+             std::vector<std::unique_ptr<drConnFig>>,
+             frBlockObjectComp>& netExtObjs,
     std::map<frNet*, std::vector<frRect>, frBlockObjectComp>& netOrigGuides)
 {
   for (auto net : nets) {
@@ -1418,11 +1429,12 @@ void FlexDRWorker::initNet_boundary(
   } else {
     const auto it = boundaryPin_.find(dNet->getFrNet());
     if (it != boundaryPin_.end()) {
-      transform(
-          it->second.begin(),
-          it->second.end(),
-          inserter(extBounds, extBounds.end()),
-          [](const std::pair<Point, frLayerNum>& pr) { return std::make_pair(pr, 0); });
+      transform(it->second.begin(),
+                it->second.end(),
+                inserter(extBounds, extBounds.end()),
+                [](const std::pair<Point, frLayerNum>& pr) {
+                  return std::make_pair(pr, 0);
+                });
     }
   }
   for (auto& [pr, area] : extBounds) {
@@ -1861,8 +1873,10 @@ void FlexDRWorker::initMazeIdx_connFig(drConnFig* connFig)
   if (connFig->typeId() == drcPathSeg) {
     auto obj = static_cast<drPathSeg*>(connFig);
     auto [bp, ep] = obj->getPoints();
-    bp = {std::max(bp.x(), getExtBox().xMin()), std::max(bp.y(), getExtBox().yMin())};
-    ep = {std::min(ep.x(), getExtBox().xMax()), std::min(ep.y(), getExtBox().yMax())};
+    bp = {std::max(bp.x(), getExtBox().xMin()),
+          std::max(bp.y(), getExtBox().yMin())};
+    ep = {std::min(ep.x(), getExtBox().xMax()),
+          std::min(ep.y(), getExtBox().yMax())};
     const auto lNum = obj->getLayerNum();
     if (gridGraph_.hasMazeIdx(bp, lNum) && gridGraph_.hasMazeIdx(ep, lNum)) {
       FlexMazeIdx bi, ei;
@@ -2140,7 +2154,7 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
     const frMarker& marker)
 {
   std::set<drNet*> vioNets;  // for self-violation, only add cost for one side
-                        // (experiment with self cut spacing)
+                             // (experiment with self cut spacing)
 
   const Rect mBox = marker.getBBox();
   const auto lNum = marker.getLayerNum();
@@ -2198,13 +2212,13 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
                 case frcInstBlockage: {
                   frInst* inst = (static_cast<frInstBlockage*>(src))->getInst();
                   std::cout << inst->getName() << "/OBS"
-                       << " ";
+                            << " ";
                   break;
                 }
                 case frcInst: {
                   frInst* inst = (static_cast<frInst*>(src));
                   std::cout << inst->getName() << "/OBS"
-                       << " ";
+                            << " ";
                   break;
                 }
                 case frcBlockage: {
@@ -2220,8 +2234,8 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
             const Rect bbox = marker.getBBox();
             const double dbu = getTech()->getDBUPerUU();
             std::cout << "    bbox = ( " << bbox.xMin() / dbu << ", "
-                 << bbox.yMin() / dbu << " ) - ( " << bbox.xMax() / dbu << ", "
-                 << bbox.yMax() / dbu << " ) on Layer ";
+                      << bbox.yMin() / dbu << " ) - ( " << bbox.xMax() / dbu
+                      << ", " << bbox.yMax() / dbu << " ) on Layer ";
             if (getTech()->getLayer(marker.getLayerNum())->getType()
                     == dbTechLayerType::CUT
                 && marker.getLayerNum() - 1 >= getTech()->getBottomLayerNum()) {

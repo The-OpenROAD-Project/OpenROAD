@@ -586,10 +586,11 @@ class FlexDRWorker
                              std::map<frNet*,
                                       std::vector<std::unique_ptr<drConnFig>>,
                                       frBlockObjectComp>& netExtObjs);
-  void initNets_segmentTerms(const Point& bp,
-                             frLayerNum lNum,
-                             const frNet* net,
-                             std::set<frBlockObject*, frBlockObjectComp>& terms);
+  void initNets_segmentTerms(
+      const Point& bp,
+      frLayerNum lNum,
+      const frNet* net,
+      std::set<frBlockObject*, frBlockObjectComp>& terms);
   void initNets_initDR(
       const frDesign* design,
       std::set<frNet*, frBlockObjectComp>& nets,

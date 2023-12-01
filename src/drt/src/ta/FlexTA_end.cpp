@@ -36,8 +36,8 @@ void FlexTAWorker::saveToGuides()
   for (auto& iroute : iroutes_) {
     for (auto& uPinFig : iroute->getFigs()) {
       if (uPinFig->typeId() == tacPathSeg) {
-        std::unique_ptr<frPathSeg> pathSeg
-            = std::make_unique<frPathSeg>(*static_cast<taPathSeg*>(uPinFig.get()));
+        std::unique_ptr<frPathSeg> pathSeg = std::make_unique<frPathSeg>(
+            *static_cast<taPathSeg*>(uPinFig.get()));
         if (save_updates_) {
           drUpdate update(drUpdate::ADD_GUIDE);
           update.setPathSeg(*pathSeg);

@@ -2581,8 +2581,10 @@ static int fastModulo(const int input, const int ceil)
 
 static float getOverlapDensityArea(const Bin& bin, const GCell* cell)
 {
-  int rectLx = std::max(bin.lx(), cell->dLx()), rectLy = std::max(bin.ly(), cell->dLy()),
-      rectUx = std::min(bin.ux(), cell->dUx()), rectUy = std::min(bin.uy(), cell->dUy());
+  int rectLx = std::max(bin.lx(), cell->dLx()),
+      rectLy = std::max(bin.ly(), cell->dLy()),
+      rectUx = std::min(bin.ux(), cell->dUx()),
+      rectUy = std::min(bin.uy(), cell->dUy());
 
   if (rectLx >= rectUx || rectLy >= rectUy) {
     return 0;

@@ -893,7 +893,7 @@ class FlexGridGraph
   {
     Node& n = nodes_[getIdx(x, y, z)];
     std::cout << "\nNode ( " << x << " " << y << " " << z << " ) (idx) / "
-         << " ( " << xCoords_[x] << " " << yCoords_[y] << " ) (coords)\n";
+              << " ( " << xCoords_[x] << " " << yCoords_[y] << " ) (coords)\n";
     std::cout << "hasEastEdge " << n.hasEastEdge << "\n";
     std::cout << "hasNorthEdge " << n.hasNorthEdge << "\n";
     std::cout << "hasUpEdge " << n.hasUpEdge << "\n";
@@ -910,8 +910,10 @@ class FlexGridGraph
     std::cout << "markerCostPlanar " << n.markerCostPlanar << "\n";
     std::cout << "markerCostVia " << n.markerCostVia << "\n";
     std::cout << "fixedShapeCostVia " << n.fixedShapeCostVia << "\n";
-    std::cout << "fixedShapeCostPlanarHorz " << n.fixedShapeCostPlanarHorz << "\n";
-    std::cout << "fixedShapeCostPlanarVert " << n.fixedShapeCostPlanarVert << "\n";
+    std::cout << "fixedShapeCostPlanarHorz " << n.fixedShapeCostPlanarHorz
+              << "\n";
+    std::cout << "fixedShapeCostPlanarVert " << n.fixedShapeCostPlanarVert
+              << "\n";
   }
 
  private:

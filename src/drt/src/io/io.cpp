@@ -2820,7 +2820,8 @@ void io::Writer::mergeSplitConnFigs(
   // }
   //  initialize pathseg and via map
   std::map<std::tuple<frLayerNum, bool, frCoord>,
-      std::map<frCoord, std::vector<std::tuple<std::shared_ptr<frPathSeg>, bool>>>>
+           std::map<frCoord,
+                    std::vector<std::tuple<std::shared_ptr<frPathSeg>, bool>>>>
       pathSegMergeMap;
   std::map<std::tuple<frCoord, frCoord, frLayerNum>, std::shared_ptr<frVia>>
       viaMergeMap;

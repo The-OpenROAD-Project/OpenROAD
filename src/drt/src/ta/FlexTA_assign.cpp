@@ -65,9 +65,9 @@ void FlexTAWorker::modMinSpacingCostPlanar(
   // spacing value needed
   frCoord bloatDist = layer->getMinSpacingValue(width1, width2, length1, false);
   if (fig->getNet()->getNondefaultRule()) {
-    bloatDist
-        = std::max(bloatDist,
-              fig->getNet()->getNondefaultRule()->getSpacing(lNum / 2 - 1));
+    bloatDist = std::max(
+        bloatDist,
+        fig->getNet()->getNondefaultRule()->getSpacing(lNum / 2 - 1));
   }
 
   frSquaredDistance bloatDistSquare = (frSquaredDistance) bloatDist * bloatDist;
@@ -199,9 +199,9 @@ void FlexTAWorker::modMinSpacingCostVia(
   frCoord bloatDist = layer->getMinSpacingValue(
       width1, width2, isCurrPs ? length2 : std::min(length1, length2), false);
   if (fig->getNet()->getNondefaultRule()) {
-    bloatDist
-        = std::max(bloatDist,
-              fig->getNet()->getNondefaultRule()->getSpacing(lNum / 2 - 1));
+    bloatDist = std::max(
+        bloatDist,
+        fig->getNet()->getNondefaultRule()->getSpacing(lNum / 2 - 1));
   }
   int idx1, idx2;
   if (isH) {
@@ -269,9 +269,9 @@ void FlexTAWorker::modMinSpacingCostVia(
 
     frCoord reqDist = layer->getMinSpacingValue(width1, width2, prl, false);
     if (fig->getNet()->getNondefaultRule()) {
-      reqDist
-          = std::max(reqDist,
-                fig->getNet()->getNondefaultRule()->getSpacing(lNum / 2 - 1));
+      reqDist = std::max(
+          reqDist,
+          fig->getNet()->getNondefaultRule()->getSpacing(lNum / 2 - 1));
     }
 
     if (isH) {
@@ -755,9 +755,10 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
     }
 
     auto& [obj, con] = pr;
-    frCoord tmpOvlp
-        = -std::max(box.xMin(), bounds.xMin()) + std::min(box.xMax(), bounds.xMax())
-          - std::max(box.yMin(), bounds.yMin()) + std::min(box.yMax(), bounds.yMax()) + 1;
+    frCoord tmpOvlp = -std::max(box.xMin(), bounds.xMin())
+                      + std::min(box.xMax(), bounds.xMax())
+                      - std::max(box.yMin(), bounds.yMin())
+                      + std::min(box.yMax(), bounds.yMax()) + 1;
     if (tmpOvlp <= 0) {
       logger_->error(DRT,
                      412,
