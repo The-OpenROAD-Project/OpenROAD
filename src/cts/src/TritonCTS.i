@@ -185,7 +185,7 @@ set_num_static_layers(unsigned num)
 void
 set_sink_buffer(const char* buffer)
 {
-  getTritonCts()->getParms()->setSinkBuffer(buffer);
+  getTritonCts()->setSinkBuffer(buffer);
 }
 
 void
@@ -236,6 +236,12 @@ set_insertion_delay(bool insDelay)
   getTritonCts()->getParms()->enableInsertionDelay(insDelay);
 }
 
+void
+set_sink_buffer_max_cap_derate(float derate)
+{
+  getTritonCts()->getParms()->setSinkBufferMaxCapDerate(derate);
+}
+ 
 void
 run_triton_cts()
 {
