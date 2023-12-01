@@ -1571,16 +1571,16 @@ void IOPlacer::addNamesConstraint(PinSet* pins, Edge edge, int begin, int end)
     pin_names += pin->getName() + " ";
     pin_cnt++;
     if (pin_cnt >= pins_per_report_
-        && !logger_->debugCheck(utl::PPL, "report_pin_names", 1)) {
+        && !logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
       pin_names += "... ";
       break;
     }
   }
 
-  if (logger_->debugCheck(utl::PPL, "report_pin_names", 1)) {
+  if (logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
     debugPrint(logger_,
                utl::PPL,
-               "report_pin_names",
+               "pin_groups",
                1,
                "Restrict pins [ {}] to region {:.2f}u-{:.2f}u at the {} edge.",
                pin_names,
@@ -1634,6 +1634,13 @@ void IOPlacer::addTopLayerConstraint(PinSet* pins, const odb::Rect& region)
 
 void IOPlacer::addMirroredPins(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2)
 {
+  debugPrint(logger_,
+             utl::PPL,
+             "mirrored_pins",
+             1,
+             "Mirroring pins {} and {}",
+             bterm1->getName(),
+             bterm2->getName());
   mirrored_pins_[bterm1] = bterm2;
 }
 
@@ -1901,19 +1908,15 @@ void IOPlacer::addPinGroup(PinList* group, bool order)
     pin_names += pin->getName() + " ";
     pin_cnt++;
     if (pin_cnt >= pins_per_report_
-        && !logger_->debugCheck(utl::PPL, "report_pin_names", 1)) {
+        && !logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
       pin_names += "... ";
       break;
     }
   }
 
-  if (logger_->debugCheck(utl::PPL, "report_pin_names", 1)) {
-    debugPrint(logger_,
-               utl::PPL,
-               "report_pin_names",
-               1,
-               "Pin group: [ {}]",
-               pin_names);
+  if (logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
+    debugPrint(
+        logger_, utl::PPL, "pin_groups", 1, "Pin group: [ {}]", pin_names);
   } else {
     logger_->info(utl::PPL, 44, "Pin group: [ {}]", pin_names);
   }

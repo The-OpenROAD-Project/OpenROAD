@@ -235,7 +235,6 @@ proc set_io_pin_constraint { args } {
     }
 
     foreach {pin1 pin2} $mirrored_pins {
-      utl::info PPL 80 "Mirroring pins $pin1 and $pin2."
       set bterm1 [ppl::parse_pin_names "set_io_pin_constraint -mirrored_pins" $pin1]
       set bterm2 [ppl::parse_pin_names "set_io_pin_constraint -mirrored_pins" $pin2]
       ppl::add_mirrored_pins $bterm1 $bterm2
