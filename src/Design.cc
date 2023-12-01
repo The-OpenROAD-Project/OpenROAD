@@ -106,8 +106,6 @@ sta::Network* Design::cmdLinkedNetwork()
   }
 
   getLogger()->error(utl::ORD, 104, "STA network is not linked.");
-  return nullptr;
-
 }
 
 sta::Graph* Design::cmdGraph()
@@ -164,10 +162,10 @@ float Design::getPinArrivalTime(sta::Clock *clk,
 {
   const sta::RiseFall *rf = (arrrive_or_hold == "arrive")? sta::RiseFall::rise(): sta::RiseFall::fall();
   std::vector<float> times = arrivalsClk(rf, clk, clk_rf, vertex);
-  float delay = -1e+10;
-  for (float delay_ : times){ 
-    if(!isTimeInf(delay_)) {
-      delay = std::max(delay, delay_);
+  float delay = -sta::INF;
+  for (float delay_time : times){ 
+    if(!isTimeInf(delay_time)) {
+      delay = std::max(delay, delay_time);
     }
   }
   return delay;
@@ -190,7 +188,7 @@ sta::Clock* Design::defaultArrivalClock()
 
 float Design::getPinArrival(odb::dbITerm* db_pin, const std::string& rf) {
     std::vector<float> pin_arr;
-    int num_vertex_elements = 2;
+    const int num_vertex_elements = 2;
 
     sta::dbSta* sta = getSta();
     sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
