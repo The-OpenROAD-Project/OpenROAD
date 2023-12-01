@@ -539,7 +539,7 @@ void Fixture::makeMetalWidthViaMap(frLayerNum layer_num,
 void Fixture::makeKeepOutZoneRule(frLayerNum layer_num,
                                   odb::dbTechLayerKeepOutZoneRule* dbRule)
 {
-  auto con = make_unique<frLef58KeepOutZoneConstraint>(dbRule);
+  auto con = std::make_unique<frLef58KeepOutZoneConstraint>(dbRule);
   auto layer = design->getTech()->getLayer(layer_num);
   layer->addKeepOutZoneConstraint(con.get());
   design->getTech()->addUConstraint(std::move(con));
@@ -552,7 +552,7 @@ Fixture::makeLef58CutSpacingConstraint_parallelOverlap(frLayerNum layer_num,
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
 
-  auto uCon = make_unique<frLef58CutSpacingConstraint>();
+  auto uCon = std::make_unique<frLef58CutSpacingConstraint>();
   auto con = uCon.get();
   con->setCutSpacing(spacing);
   con->setParallelOverlap(true);

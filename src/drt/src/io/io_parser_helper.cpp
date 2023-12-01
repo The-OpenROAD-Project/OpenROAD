@@ -653,7 +653,7 @@ void io::Parser::checkFig(frPinFig* uFig,
   } else if (uFig->typeId() == frcPolygon) {
     hasPolys = true;
     auto polygon = static_cast<frPolygon*>(uFig);
-    vector<gtl::point_data<frCoord>> points;
+    std::vector<gtl::point_data<frCoord>> points;
     for (Point pt : polygon->getPoints()) {
       xform.apply(pt);
       points.emplace_back(pt.x(), pt.y());
@@ -671,7 +671,7 @@ void io::Parser::checkFig(frPinFig* uFig,
       return;
     }
     auto layer = tech_->getLayer(polygon->getLayerNum());
-    vector<gtl::rectangle_data<frCoord>> rects;
+    std::vector<gtl::rectangle_data<frCoord>> rects;
     gtl::polygon_90_data<frCoord> poly;
     poly.set(points.begin(), points.end());
     gtl::get_max_rectangles(rects, poly);

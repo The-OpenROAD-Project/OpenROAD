@@ -663,7 +663,7 @@ frUInt4 FlexTAWorker::assignIroute_getNextIrouteDirCost(taPin* iroute,
     std::cout << "Error: nextIrouteDirCost < 0"
          << ", trackLoc@" << trackLoc / dbu << " box (" << endBox.xMin() / dbu
          << ", " << endBox.yMin() / dbu << ") (" << endBox.xMax() / dbu << ", "
-         << endBox.yMax() / dbu << ")" << endl;
+         << endBox.yMax() / dbu << ")" << std::endl;
     return (frUInt4) 0;
   }
   return (frUInt4) nextIrouteDirCost;

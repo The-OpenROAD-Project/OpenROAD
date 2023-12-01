@@ -1014,13 +1014,13 @@ void FlexPA::prepPoint_pin_checkPoint_via(
   }
   const int maxNumViaTrial = 2;
   // use std:pair to ensure deterministic behavior
-  vector<pair<int, frViaDef*>> viaDefs;
+  std::vector<std::pair<int, frViaDef*>> viaDefs;
   getViasFromMetalWidthMap(bp, layerNum, polyset, viaDefs);
 
   if (viaDefs.empty()) {  // no via map entry
     // hardcode first two single vias
     for (auto& [tup, viaDef] : layerNum2ViaDefs_[layerNum + 1][1]) {
-      viaDefs.push_back(make_pair(viaDefs.size(), viaDef));
+      viaDefs.push_back(std::make_pair(viaDefs.size(), viaDef));
       if (viaDefs.size() >= maxNumViaTrial && !deepSearch)
         break;
     }
@@ -1134,7 +1134,7 @@ bool FlexPA::prepPoint_pin_checkPoint_viaDir_helper(
     via->addToPin(pin);
   }
   // PS
-  auto ps = make_unique<frPathSeg>();
+  auto ps = std::make_unique<frPathSeg>();
   auto style = upperlayer->getDefaultSegStyle();
   if (dir == frDirEnum::W || dir == frDirEnum::S) {
     ps->setPoints(ep, bp);
@@ -1343,7 +1343,7 @@ bool FlexPA::prepPoint_pin_helper(
                      || masterType == dbMasterType::RING;
   }
   const bool isIOPin = (instTerm == nullptr);
-  std::vector<unique_ptr<frAccessPoint>> tmpAps;
+  std::vector<std::unique_ptr<frAccessPoint>> tmpAps;
   prepPoint_pin_genPoints(
       tmpAps, apset, pin, instTerm, pinShapes, lowerType, upperType);
   prepPoint_pin_checkPoints(tmpAps, pinShapes, pin, instTerm, isStdCellPin);
@@ -1617,9 +1617,9 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> instRows)
 #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < cloud_sz_; i++) {
       try {
-        vector<std::vector<frInst*>>::const_iterator start
+        std::vector<std::vector<frInst*>>::const_iterator start
             = instRows.begin() + (i * batch_size);
-        vector<std::vector<frInst*>>::const_iterator end
+        std::vector<std::vector<frInst*>>::const_iterator end
             = (i == cloud_sz_ - 1) ? instRows.end() : start + batch_size;
         std::vector<std::vector<frInst*>> batch(start, end);
         std::string path = fmt::format("{}/batch_{}.bin", shared_vol_, i);

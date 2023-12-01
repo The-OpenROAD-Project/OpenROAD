@@ -456,16 +456,16 @@ void FlexGCWorker::Impl::checKeepOutZone_main(gcRect* rect,
     // skip non-rectangular vias
     return;
   }
-  vector<rq_box_value_t<gcRect*>> allResults;
+  std::vector<rq_box_value_t<gcRect*>> allResults;
   auto& workerRegionQuery = getWorkerRegionQuery();
   {
-    vector<rq_box_value_t<gcRect*>> results;
+    std::vector<rq_box_value_t<gcRect*>> results;
     workerRegionQuery.queryMaxRectangle(
         sideQueryBox, layer->getLayerNum(), results);
     allResults.insert(allResults.end(), results.begin(), results.end());
   }
   {
-    vector<rq_box_value_t<gcRect*>> results;
+    std::vector<rq_box_value_t<gcRect*>> results;
     workerRegionQuery.queryMaxRectangle(
         endQueryBox, layer->getLayerNum(), results);
     allResults.insert(allResults.end(), results.begin(), results.end());
@@ -492,17 +492,17 @@ void FlexGCWorker::Impl::checKeepOutZone_main(gcRect* rect,
                    gtl::yl(markerRect),
                    gtl::xh(markerRect),
                    gtl::yh(markerRect));
-    auto marker = make_unique<frMarker>();
+    auto marker = std::make_unique<frMarker>();
     marker->setBBox(markerBox);
     marker->setLayerNum(layer->getLayerNum());
     marker->setConstraint(con);
     marker->addSrc(ptr->getNet()->getOwner());
     marker->addAggressor(
         ptr->getNet()->getOwner(),
-        make_tuple(layer->getLayerNum(), ptrBox, ptr->isFixed()));
+        std::make_tuple(layer->getLayerNum(), ptrBox, ptr->isFixed()));
     marker->addSrc(rect->getNet()->getOwner());
     marker->addVictim(rect->getNet()->getOwner(),
-                      make_tuple(rect->getLayerNum(), viaBox, rect->isFixed()));
+                      std::make_tuple(rect->getLayerNum(), viaBox, rect->isFixed()));
     addMarker(std::move(marker));
   }
 }

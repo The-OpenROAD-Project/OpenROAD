@@ -408,7 +408,7 @@ void FlexGCWorker::Impl::initDRWorker()
 }
 void FlexGCWorker::Impl::initNetsFromDesign(const frDesign* design)
 {
-  vector<frBlockObject*> result;
+  std::vector<frBlockObject*> result;
   std::map<gcNet*, std::vector<frPatchWire*>> pwires;
   design->getRegionQuery()->queryDRObj(getExtBox(), result);
   for (auto rptr : result) {

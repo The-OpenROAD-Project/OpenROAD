@@ -500,7 +500,7 @@ void FlexTAWorker::initIroute(frGuide* guide)
       viaDef
           = getDesign()->getTech()->getLayer(layerNum + 1)->getDefaultViaDef();
     }
-    std::unique_ptr<taPinFig> via = make_unique<taVia>(viaDef);
+    std::unique_ptr<taPinFig> via = std::make_unique<taVia>(viaDef);
     via->setNet(guide->getNet());
     auto rViaPtr = static_cast<taVia*>(via.get());
     rViaPtr->setOrigin(isH ? Point(coord, trackLoc) : Point(trackLoc, coord));
@@ -515,7 +515,7 @@ void FlexTAWorker::initIroute(frGuide* guide)
       viaDef
           = getDesign()->getTech()->getLayer(layerNum - 1)->getDefaultViaDef();
     }
-    std::unique_ptr<taPinFig> via = make_unique<taVia>(viaDef);
+    std::unique_ptr<taPinFig> via = std::make_unique<taVia>(viaDef);
     via->setNet(guide->getNet());
     auto rViaPtr = static_cast<taVia*>(via.get());
     rViaPtr->setOrigin(isH ? Point(coord, trackLoc) : Point(trackLoc, coord));

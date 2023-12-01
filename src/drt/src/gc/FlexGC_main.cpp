@@ -2322,7 +2322,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_parallelOverlap(
   box_t queryBox;
   myBloat(markerRect, 0, queryBox);
   auto& workerRegionQuery = getWorkerRegionQuery();
-  vector<rq_box_value_t<gcRect*>> result;
+  std::vector<rq_box_value_t<gcRect*>> result;
   auto secondLayerNum = rect1->getLayerNum() - 1;
   if (secondLayerNum >= getTech()->getBottomLayerNum()
       && secondLayerNum <= getTech()->getTopLayerNum()) {
@@ -2364,7 +2364,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_parallelOverlap(
     return;
   }
 
-  auto marker = make_unique<frMarker>();
+  auto marker = std::make_unique<frMarker>();
   auto layerNum = rect1->getLayerNum();
   Rect box(gtl::xl(markerRect),
            gtl::yl(markerRect),
@@ -2375,7 +2375,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_parallelOverlap(
   marker->setConstraint(con);
   marker->addSrc(net1->getOwner());
   marker->addVictim(net1->getOwner(),
-                    make_tuple(rect1->getLayerNum(),
+                    std::make_tuple(rect1->getLayerNum(),
                                Rect(gtl::xl(*rect1),
                                     gtl::yl(*rect1),
                                     gtl::xh(*rect1),
@@ -2383,7 +2383,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_parallelOverlap(
                                rect1->isFixed()));
   marker->addSrc(net2->getOwner());
   marker->addAggressor(net2->getOwner(),
-                       make_tuple(rect2->getLayerNum(),
+                       std::make_tuple(rect2->getLayerNum(),
                                   Rect(gtl::xl(*rect2),
                                        gtl::yl(*rect2),
                                        gtl::xh(*rect2),

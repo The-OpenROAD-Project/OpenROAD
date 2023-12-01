@@ -449,7 +449,7 @@ void FlexDRConnectivityChecker::finish(
         regionQuery->removeDRObj(via);
         net->removeVia(via);
       } else {
-        std::cout << "Error: finish unsupported type" << endl;
+        std::cout << "Error: finish unsupported type" << std::endl;
         exit(1);
       }
       netRouteObjs[i] = nullptr;

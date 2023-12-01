@@ -594,7 +594,7 @@ void FlexDRWorker::initNets_searchRepair_nodeMap_routeObjSplit(
 }
 // creates entries in the node_map with pin access points and their pins
 void FlexDRWorker::initNets_searchRepair_nodeMap_pin(
-    const vector<unique_ptr<drConnFig>>& netRouteObjs,
+    const std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
     std::vector<frBlockObject*>& netPins,
     const std::map<frBlockObject*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>&
         pin2epMap,
@@ -616,9 +616,9 @@ void FlexDRWorker::initNets_searchRepair_nodeMap_pin(
 void FlexDRWorker::initNets_searchRepair_nodeMap(
     const std::vector<std::unique_ptr<drConnFig>>& netRouteObjs,
     std::vector<frBlockObject*>& netPins,
-    const std::map<frBlockObject*, std::set<pair<Point, frLayerNum>>, frBlockObjectComp>&
+    const std::map<frBlockObject*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>&
         pin2epMap,
-    std::map<pair<Point, frLayerNum>, std::set<int>>& nodeMap)
+    std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap)
 {
   initNets_searchRepair_nodeMap_routeObjEnd(netRouteObjs, nodeMap);
   initNets_searchRepair_nodeMap_routeObjSplit(netRouteObjs, nodeMap);
@@ -632,7 +632,7 @@ void FlexDRWorker::initNets_searchRepair_connComp(
     std::vector<int>& compIdx)
 {
   const int nCnt = (int) compIdx.size();  // total node cnt
-  std::vector<vector<int>> adjVec(nCnt, std::vector<int>());
+  std::vector<std::vector<int>> adjVec(nCnt, std::vector<int>());
   std::vector<bool> adjVisited(nCnt, false);
   for (const auto& [pr, idxS] : nodeMap) {
     for (auto it1 = idxS.begin(); it1 != idxS.end(); it1++) {
@@ -720,8 +720,8 @@ void FlexDRWorker::initNets_searchRepair(
     vExtObjs.resize(numSubNets);
     vExtObjs[0] = std::move(netExtObjs[net]);
 
-    vector<vector<unique_ptr<drConnFig>>> vRouteObjs;
-    vector<vector<frBlockObject*>> vPins;
+    std::vector<std::vector<std::unique_ptr<drConnFig>>> vRouteObjs;
+    std::vector<std::vector<frBlockObject*>> vPins;
 
     vRouteObjs.resize(numSubNets);
     vPins.resize(numSubNets);
@@ -1288,14 +1288,14 @@ void FlexDRWorker::initNet_term(const frDesign* design,
         shiftXform.setOrient(dbOrientType(dbOrientType::R0));
         instXform = inst->getUpdatedXform();
         auto trueTerm = instTerm->getTerm();
-        const std::string name = inst->getName() + "/"s + trueTerm->getName();
+        const std::string name = inst->getName() + "/" + trueTerm->getName();
         initNet_term_helper(
             design, trueTerm, term, inst, dNet, name, shiftXform);
         break;
       }
       case frcBTerm: {
         auto trueTerm = static_cast<frBTerm*>(term);
-        const std::string name = "PIN/"s + trueTerm->getName();
+        const std::string name = "PIN/" + trueTerm->getName();
         initNet_term_helper(
             design, trueTerm, term, nullptr, dNet, name, shiftXform);
         break;
@@ -2143,7 +2143,7 @@ void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
   const Rect mBox = marker.getBBox();
   const auto lNum = marker.getLayerNum();
 
-  vector<rq_box_value_t<drConnFig*>> results;
+  std::vector<rq_box_value_t<drConnFig*>> results;
   getWorkerRegionQuery().query(mBox, lNum, results);
 
   for (auto& [objBox, connFig] : results) {
@@ -2639,7 +2639,7 @@ void FlexDRWorker::route_queue_update_from_marker(
 }
 
 void FlexDRWorker::getRipUpNetsFromMarker(frMarker* marker,
-                                          set<drNet*>& nets,
+                                          std::set<drNet*>& nets,
                                           const frCoord bloatDist)
 {
   // if shapes don't overlap routeBox, ignore violation

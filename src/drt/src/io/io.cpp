@@ -1065,11 +1065,11 @@ void io::Parser::setBTerms_addPinFig_helper(frBPin* pinIn,
                                             odb::Rect bbox,
                                             frLayerNum finalLayerNum)
 {
-  unique_ptr<frRect> pinFig = make_unique<frRect>();
+  std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
   pinFig->setBBox(bbox);
   pinFig->addToPin(pinIn);
   pinFig->setLayerNum(finalLayerNum);
-  unique_ptr<frPinFig> uptr(std::move(pinFig));
+  std::unique_ptr<frPinFig> uptr(std::move(pinFig));
   pinIn->addPinFig(std::move(uptr));
 }
 
@@ -1177,7 +1177,7 @@ void io::Parser::readDesign(odb::dbDatabase* db)
     logger_->report("Design:                   {}",
                     design_->getTopBlock()->getName());
     // TODO Rect can't be logged directly
-    stringstream dieBoxSStream;
+    std::stringstream dieBoxSStream;
     dieBoxSStream << dieBox;
     logger_->report("Die area:                 {}", dieBoxSStream.str());
     logger_->report("Number of track patterns: {}",
@@ -1592,7 +1592,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
             layer->getName());
         break;
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::PARALLELOVERLAP: {
-        auto con = make_unique<frLef58CutSpacingConstraint>();
+        auto con = std::make_unique<frLef58CutSpacingConstraint>();
         con->setCutSpacing(rule->getCutSpacing());
         con->setCenterToCenter(rule->isCenterToCenter());
         con->setSameNet(rule->isSameNet());
@@ -1710,8 +1710,8 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
                     layer->getName());
       continue;
     }
-    unique_ptr<frConstraint> uCon
-        = make_unique<frLef58KeepOutZoneConstraint>(rule);
+    std::unique_ptr<frConstraint> uCon
+        = std::make_unique<frLef58KeepOutZoneConstraint>(rule);
     auto rptr = static_cast<frLef58KeepOutZoneConstraint*>(uCon.get());
     tech_->addUConstraint(std::move(uCon));
     tmpLayer->addKeepOutZoneConstraint(rptr);
@@ -2285,7 +2285,7 @@ void io::Parser::setMasters(odb::dbDatabase* db)
         }
       }
 
-      vector<gtl::polygon_90_set_data<frCoord>> layerPolys(
+      std::vector<gtl::polygon_90_set_data<frCoord>> layerPolys(
           tech_->getLayers().size());
       for (auto obs : master->getObstructions()) {
         frLayerNum layerNum = -1;
@@ -2346,13 +2346,13 @@ void io::Parser::setMasters(odb::dbDatabase* db)
           using gtl::operators::operator+=;
           layerPolys[layerNum] += rect;
         } else {
-          auto blkIn = make_unique<frBlockage>();
+          auto blkIn = std::make_unique<frBlockage>();
           blkIn->setId(numBlockages_++);
           blkIn->setDesignRuleWidth(obs->getDesignRuleWidth());
-          auto pinIn = make_unique<frBPin>();
+          auto pinIn = std::make_unique<frBPin>();
           pinIn->setId(0);
           // pinFig
-          std::unique_ptr<frRect> pinFig = make_unique<frRect>();
+          std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
           pinFig->setBBox(Rect(xl, yl, xh, yh));
           pinFig->addToPin(pinIn.get());
           pinFig->setLayerNum(layerNum);
@@ -2374,13 +2374,13 @@ void io::Parser::setMasters(odb::dbDatabase* db)
             frCoord yl = gtl::yl(rect);
             frCoord xh = gtl::xh(rect);
             frCoord yh = gtl::yh(rect);
-            auto blkIn = make_unique<frBlockage>();
+            auto blkIn = std::make_unique<frBlockage>();
             blkIn->setId(numBlockages_);
             numBlockages_++;
-            auto pinIn = make_unique<frBPin>();
+            auto pinIn = std::make_unique<frBPin>();
             pinIn->setId(0);
             // pinFig
-            std::unique_ptr<frRect> pinFig = make_unique<frRect>();
+            std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
             pinFig->setBBox(Rect(xl, yl, xh, yh));
             pinFig->addToPin(pinIn.get());
             pinFig->setLayerNum(lNum);

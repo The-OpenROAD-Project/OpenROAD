@@ -576,7 +576,7 @@ void TritonCTS::populateTritonCTS()
               CTS, 114, "Clock {} overlaps a previous clock.", clkName);
         }
       }
-      clockNetsInfo.emplace_back(make_pair(clkNets, clkName));
+      clockNetsInfo.emplace_back(std::make_pair(clkNets, clkName));
       allClkNets.insert(clkNets.begin(), clkNets.end());
     }
   }

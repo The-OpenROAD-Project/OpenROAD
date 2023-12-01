@@ -1741,7 +1741,7 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
           if (VERBOSE > 0) {
             std::cout << "Warning: no output maze log specified, skipped writing "
                     "maze log"
-                 << endl;
+                 << std::endl;
           }
         } else {
           gridGraph_.print();

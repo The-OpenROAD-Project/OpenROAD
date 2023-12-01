@@ -62,10 +62,10 @@ static int64_t getOverlapArea(const Bin* bin,
 
 static int64_t getOverlapAreaUnscaled(const Bin* bin, const Instance* inst);
 
-static float getDistance(const vector<FloatPoint>& a,
-                         const vector<FloatPoint>& b);
+static float getDistance(const std::vector<FloatPoint>& a,
+                         const std::vector<FloatPoint>& b);
 
-static float getSecondNorm(const vector<FloatPoint>& a);
+static float getSecondNorm(const std::vector<FloatPoint>& a);
 
 // Note that
 // int64_t is ideal in the following function, but
@@ -2404,7 +2404,7 @@ bool NesterovBase::nesterovUpdateStepLength()
 
   debugPrint(log_, GPL, "np", 1, "NewStepLength: {:g}", newStepLength);
 
-  if (isnan(newStepLength) || isinf(newStepLength)) {
+  if (std::isnan(newStepLength) || std::isinf(newStepLength)) {
     isDiverged_ = true;
     divergeMsg_ = "RePlAce diverged at newStepLength.";
     divergeCode_ = 305;
@@ -2701,8 +2701,8 @@ static float fastExp(float a)
   return a;
 }
 
-static float getDistance(const vector<FloatPoint>& a,
-                         const vector<FloatPoint>& b)
+static float getDistance(const std::vector<FloatPoint>& a,
+                         const std::vector<FloatPoint>& b)
 {
   float sumDistance = 0.0f;
   for (size_t i = 0; i < a.size(); i++) {
@@ -2713,7 +2713,7 @@ static float getDistance(const vector<FloatPoint>& a,
   return sqrt(sumDistance / (2.0 * a.size()));
 }
 
-static float getSecondNorm(const vector<FloatPoint>& a)
+static float getSecondNorm(const std::vector<FloatPoint>& a)
 {
   float norm = 0;
   for (auto& coordi : a) {

@@ -772,7 +772,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_TN(gcSegment* edge,
                                              endPrlSpacing,
                                              endPrl,
                                              false);
-  vector<pair<segment_t, gcSegment*>> results;
+  std::vector<std::pair<segment_t, gcSegment*>> results;
   auto& workerRegionQuery = getWorkerRegionQuery();
   workerRegionQuery.queryPolygonEdge(queryBox, edge->getLayerNum(), results);
   for (auto& [boostSeg, ptr] : results) {
