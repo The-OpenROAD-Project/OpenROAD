@@ -230,8 +230,9 @@ void FastRouteCore::routeLAll(bool firstTime)
   if (firstTime) {  // no previous route
     // estimate congestion with 0.5+0.5 L
     for (int i = 0; i < netCount(); i++) {
-      if (nets_[i]->isRouted())
+      if (nets_[i]->isRouted() || nets_[i]->isDeleted()) {
         continue;
+      }
 
       for (auto& seg : seglist_[i]) {
         estimateOneSeg(&seg);
@@ -239,8 +240,9 @@ void FastRouteCore::routeLAll(bool firstTime)
     }
     // L route
     for (int i = 0; i < netCount(); i++) {
-      if (nets_[i]->isRouted())
+      if (nets_[i]->isRouted() || nets_[i]->isDeleted()) {
         continue;
+      }
 
       for (auto& seg : seglist_[i]) {
         // no need to reroute the H or V segs
@@ -250,8 +252,9 @@ void FastRouteCore::routeLAll(bool firstTime)
     }
   } else {  // previous is L-route
     for (int i = 0; i < netCount(); i++) {
-      if (nets_[i]->isRouted())
+      if (nets_[i]->isRouted() || nets_[i]->isDeleted()) {
         continue;
+      }
 
       for (auto& seg : seglist_[i]) {
         // no need to reroute the H or V segs
@@ -416,13 +419,15 @@ void FastRouteCore::newrouteLAll(bool firstTime, bool viaGuided)
 {
   if (firstTime) {
     for (int i = 0; i < netCount(); i++) {
-      if (!nets_[i]->isRouted())
+      if (!nets_[i]->isRouted() && !nets_[i]->isDeleted()) {
         newrouteL(i, RouteType::NoRoute, viaGuided);  // do L-routing
+      }
     }
   } else {
     for (int i = 0; i < netCount(); i++) {
-      if (!nets_[i]->isRouted())
+      if (!nets_[i]->isRouted() && !nets_[i]->isDeleted()) {
         newrouteL(i, RouteType::LRoute, viaGuided);
+      }
     }
   }
 }
@@ -854,8 +859,9 @@ void FastRouteCore::newrouteZ(int netID, int threshold)
 void FastRouteCore::newrouteZAll(int threshold)
 {
   for (int i = 0; i < netCount(); i++) {
-    if (!nets_[i]->isRouted())
+    if (!nets_[i]->isRouted() && !nets_[i]->isDeleted()) {
       newrouteZ(i, threshold);  // ripup previous route and do Z-routing
+    }
   }
 }
 
@@ -1053,8 +1059,9 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
 void FastRouteCore::routeMonotonicAll(int threshold)
 {
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted())
+    if (nets_[netID]->isRouted() || nets_[netID]->isDeleted()) {
       continue;
+    }
 
     for (int edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
       routeMonotonic(
@@ -1238,8 +1245,9 @@ void FastRouteCore::spiralRoute(int netID, int edgeID)
 void FastRouteCore::spiralRouteAll()
 {
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted())
+    if (nets_[netID]->isRouted() || nets_[netID]->isDeleted()) {
       continue;
+    }
 
     auto& treenodes = sttrees_[netID].nodes;
     const int num_terminals = sttrees_[netID].num_terminals;
@@ -1288,8 +1296,9 @@ void FastRouteCore::spiralRouteAll()
   }
 
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted())
+    if (nets_[netID]->isRouted() || nets_[netID]->isDeleted()) {
       continue;
+    }
 
     auto& treeedges = sttrees_[netID].edges;
     auto& treenodes = sttrees_[netID].nodes;
@@ -1317,8 +1326,9 @@ void FastRouteCore::spiralRouteAll()
 
   std::queue<int> edgeQueue;
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted())
+    if (nets_[netID]->isRouted() || nets_[netID]->isDeleted()) {
       continue;
+    }
 
     newRipupNet(netID);
 
@@ -1372,8 +1382,9 @@ void FastRouteCore::spiralRouteAll()
   }
 
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted())
+    if (nets_[netID]->isRouted() || nets_[netID]->isDeleted()) {
       continue;
+    }
 
     auto& treenodes = sttrees_[netID].nodes;
 
@@ -1714,8 +1725,9 @@ void FastRouteCore::routeLVAll(int threshold, int expand, float logis_cof)
   multi_array<float, 2> d2(boost::extents[y_range_][x_range_]);
 
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted())
+    if (nets_[netID]->isRouted() || nets_[netID]->isDeleted()) {
       continue;
+    }
 
     const int numEdges = sttrees_[netID].num_edges();
     for (int edgeID = 0; edgeID < numEdges; edgeID++) {
