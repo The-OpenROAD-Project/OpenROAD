@@ -63,6 +63,7 @@ class dbSta;
 class Clock;
 class dbNetwork;
 class Unit;
+class LibertyCell;
 }  // namespace sta
 
 namespace stt {
@@ -73,12 +74,12 @@ namespace cts {
 
 using utl::Logger;
 
-class Clock;
 class ClockInst;
 class CtsOptions;
 class TechChar;
 class StaEngine;
 class TreeBuilder;
+class Clock;
 
 class TritonCTS
 {
@@ -156,7 +157,8 @@ class TritonCTS
                                odb::dbInst* inst,
                                odb::dbMTerm* mterm);
   void writeDummyLoadsToDb(Clock& clockNet);
-  void computeIdealOutputCaps(Clock& clockNet);
+  bool computeIdealOutputCaps(Clock& clockNet);
+  void findCandidateDummyCells(std::vector<sta::LibertyCell*>& dummyCandidates);
 
   sta::dbSta* openSta_;
   sta::dbNetwork* network_;

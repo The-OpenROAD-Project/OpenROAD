@@ -1155,42 +1155,42 @@ double TritonCTS::computeInsertionDelay(const std::string& name,
   return insDelayPerMicron;
 }
 
+void addDummyCell(
+    ClockInst*& inst,
+    Clock::SubNet& subNet,
+    const std::vector<sta::LibertyCell*>& dummyCandidates)
+{
+}
+
 void TritonCTS::writeDummyLoadsToDb(Clock& clockNet)
 {
   // Traverse clock tree and compute ideal output caps for clock
   // buffers in the same level
-  computeIdealOutputCaps(clockNet);
+  if (!computeIdealOutputCaps(clockNet)) {
+    // No cap adjustment is needed
+    return;
+  }
 
-  clockNet.forEachSubNet([&](const Clock::SubNet& subNet) {
-    ClockInst* driver = subNet.getDriver();
-    // clang-format off
-    debugPrint(logger_, CTS, "dummy load", 2, "subNet {} has {} sinks {},"
-               "driver={}", subNet.getName(), subNet.getNumSinks(),
-               subNet.isLeafLevel()?"[leaf]":"", driver->getName());
-    // clang-format on
-    unsigned sinkIndex = 0;
-    float sinkCapTotal = 0.0;
+  // Find suitable candidate cells for dummy loads
+  std::vector<sta::LibertyCell*> dummyCandidates;
+  findCandidateDummyCells(dummyCandidates);
+
+  clockNet.forEachSubNet([&](Clock::SubNet& subNet) {
     subNet.forEachSink([&](ClockInst* inst) {
-      odb::dbITerm* inputPin = inst->isClockBuffer()
-                                   ? getFirstInput(inst->getDbInst())
-                                   : inst->getDbInputPin();
-      float cap = getInputPinCap(inputPin);
-      sinkCapTotal += cap;
-      // clang-format off
-      debugPrint(logger_, CTS, "dummy load", 2, "  sink {}: {} {} {:0.3e}",
-                 sinkIndex++, inst->getName(),
-                 inst->isClockBuffer()?"[buffer]":"", cap);
-      // clang-format on
+      if (inst->isClockBuffer()
+          && !sta::fuzzyEqual(inst->getOutputCap(),
+                              inst->getIdealOutputCap())) {
+        addDummyCell(inst, subNet, dummyCandidates);
+      }
     });
-    // clang-format off
-    debugPrint(logger_, CTS, "dummy load", 2, "  subNet sees total cap of {:0.3e}",
-               sinkCapTotal);
-    // clang-format on
   });
 }
 
-void TritonCTS::computeIdealOutputCaps(Clock& clockNet)
+// Return true if any clock buffers need cap adjustment; false otherwise
+bool TritonCTS::computeIdealOutputCaps(Clock& clockNet)
 {
+  bool needAdjust = false;
+
   // pass 1: compute actual output caps seen by each clock instance
   clockNet.forEachSubNet([&](const Clock::SubNet& subNet) {
     ClockInst* driver = subNet.getDriver();
@@ -1217,14 +1217,26 @@ void TritonCTS::computeIdealOutputCaps(Clock& clockNet)
     subNet.forEachSink([&](ClockInst* inst) {
       if (inst->isClockBuffer()) {
         inst->setIdealOutputCap(maxCap);
-        // clang-format off
-        debugPrint(logger_, CTS, "dummy load", 1, "inst: {} outCap:{:0.3e} "
-                   "idealOutCap:{:0.3e}", inst->getName(),
-                   inst->getOutputCap(), inst->getIdealOutputCap());
-        // clang-format on
+        float cap = inst->getOutputCap();
+        if (!sta::fuzzyEqual(cap, maxCap)) {
+          needAdjust = true;
+          // clang-format off
+          debugPrint(logger_, CTS, "dummy load", 1, "inst: {} outCap:{:0.3e}"
+                     "idealOutCap:{:0.3e}", inst->getName(), cap, maxCap);
+          // clang-format on
+        }
       }
     });
   });
+
+  return needAdjust;
 }
+
+void TritonCTS::findCandidateDummyCells(
+    std::vector<sta::LibertyCell*>& dummyCandidates)
+{
+  
+}
+
 
 }  // namespace cts
