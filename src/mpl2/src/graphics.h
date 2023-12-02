@@ -62,6 +62,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
 
   void finishedClustering(Cluster* root) override;
 
+  void setStepAndPerturbation(int step, int perturbation) override;
   void setAreaPenalty(float area) override;
   void setOutlinePenalty(float outline_penalty) override;
   void setWirelength(float wirelength) override;
@@ -114,6 +115,8 @@ class Graphics : public gui::Renderer, public Mpl2Observer
 
   float best_norm_cost_ = 0;
   int skipped_ = 0;
+  int step_ = 0;
+  int perturbation_ = 0;
 
   Cluster* root_ = nullptr;
 };

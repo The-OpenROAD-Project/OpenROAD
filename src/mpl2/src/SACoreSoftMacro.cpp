@@ -233,9 +233,7 @@ void SACoreSoftMacro::perturb()
     resize();  // Flip one macro
   }
 
-  // update the macro locations based on Sequence Pair
   packFloorplan();
-  // Update all the penalties
   calPenalty();
 }
 

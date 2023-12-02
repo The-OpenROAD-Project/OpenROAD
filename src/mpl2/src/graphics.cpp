@@ -105,7 +105,8 @@ void Graphics::penaltyCalculated(float norm_cost)
     return;
   }
   if (norm_cost < best_norm_cost_) {
-    logger_->report("------ Penalty ------");
+    logger_->report(
+        "------ Step {}: Perturbation {} ------", step_, perturbation_);
 
     report("Area", area_penalty_);
     report("Outline Penalty", outline_penalty_);
@@ -143,6 +144,12 @@ void Graphics::resetPenalties()
   boundary_penalty_.reset();
   macro_blockage_penalty_.reset();
   notch_penalty_.reset();
+}
+
+void Graphics::setStepAndPerturbation(int step, int perturbation)
+{
+  step_ = step;
+  perturbation_ = perturbation;
 }
 
 void Graphics::setNotchPenalty(float notch_penalty)

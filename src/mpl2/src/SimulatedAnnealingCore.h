@@ -120,6 +120,7 @@ class SimulatedAnnealingCore
   void calFencePenalty();
 
   // operations
+  void initSequencePair();
   void packFloorplan();
   virtual void perturb() = 0;
   virtual void restore() = 0;

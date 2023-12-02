@@ -71,6 +71,7 @@ class Mpl2Observer
   }
   virtual void setOutline(const odb::Rect& outline) {}
 
+  virtual void setStepAndPerturbation(int step, int perturbation) {}
   virtual void setAreaPenalty(float area) {}
   virtual void setOutlinePenalty(float outline_penalty) {}
   virtual void setWirelength(float wirelength) {}
