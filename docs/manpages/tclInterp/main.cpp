@@ -13,6 +13,6 @@ int tclAppInit(Tcl_Interp* interp)
 int main(int argc, char* argv[]){
     // Setup the app with tcl
     auto* interp = Tcl_CreateInterp();
-    Tclx_Init(interp);
+    Tcl_Init(interp);
     Tcl_Main(1, argv, tclAppInit);
 }

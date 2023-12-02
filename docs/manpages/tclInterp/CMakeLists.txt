@@ -44,10 +44,9 @@ endif()
 target_link_libraries(main.o  
                  ${TCL_LIBRARY}
                  ${TCL_READLINE_LIBRARY})
-
-include_directories(/usr/include/tclx8.4)
+#include_directories(/usr/include/tclx8.4)
 
 if (BUILD_TCLX AND TCLX_LIBRARY AND TCLX_H)
   target_link_libraries(main.o ${TCLX_LIBRARY})
-  #target_include_directories(main.o ${TCLX_H})
+  target_include_directories(main.o PRIVATE /usr/include/tclx8.4)
 endif()
