@@ -58,6 +58,7 @@ class Logger;
 namespace gui {
 class HeatMapDataSource;
 class PlacementDensityDataSource;
+class RUDYDataSource;
 class Painter;
 class Selected;
 class Options;
@@ -796,6 +797,7 @@ class Gui
   std::set<Renderer*> renderers_;
 
   std::unique_ptr<PlacementDensityDataSource> placement_density_heat_map_;
+  std::unique_ptr<RUDYDataSource> rudy_heat_map_;
 
   static Gui* singleton_;
 };

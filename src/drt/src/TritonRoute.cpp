@@ -240,6 +240,10 @@ std::string TritonRoute::runDRWorker(const std::string& workerStr,
 void TritonRoute::debugSingleWorker(const std::string& dumpDir,
                                     const std::string& drcRpt)
 {
+  {
+    io::Writer writer(design_.get(), logger_);
+    writer.updateTrackAssignment(db_->getChip()->getBlock());
+  }
   bool on = debug_->debugDR;
   FlexDRViaData viaData;
   std::ifstream viaDataFile(fmt::format("{}/viadata.bin", dumpDir),

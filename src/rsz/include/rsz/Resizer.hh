@@ -219,6 +219,9 @@ public:
   void bufferInputs();
   void bufferOutputs();
 
+  // Balance the usage of hybrid rows
+  void balanceRowUsage();
+
   // Resize drvr_pin instance to target slew.
   void resizeDrvrToTargetSlew(const Pin *drvr_pin);
   // Accessor for debugging.
@@ -362,6 +365,7 @@ protected:
   void findBuffers();
   bool isLinkCell(LibertyCell *cell);
   void findTargetLoads();
+  void balanceBin(const vector<odb::dbInst*>& bin);
 
   //==============================
   // APIs for gate cloning
@@ -522,7 +526,7 @@ protected:
                    bool journal);
 
   void findResizeSlacks1();
-  void removeBuffer(Instance *buffer);
+  bool removeBuffer(Instance *buffer);
   Instance *makeInstance(LibertyCell *cell,
                          const char *name,
                          Instance *parent,

@@ -70,6 +70,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/heatMap.cpp
     src/heatMapSetup.cpp
     src/heatMapPlacementDensity.cpp
+    src/heatMapRUDY.cpp
     src/browserWidget.cpp
     src/globalConnectDialog.cpp
     src/clockWidget.cpp
