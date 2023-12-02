@@ -565,11 +565,10 @@ void SimulatedAnnealingCore<T>::fastSA()
     }
 
     temperature *= t_factor;
+    step++;
 
     cost_list_.push_back(pre_cost);
     T_list_.push_back(temperature);
-
-    step++;
 
     if ((num_restart <= max_num_restart)
         && (step == std::floor(max_num_step_ / max_num_restart)
