@@ -27,8 +27,8 @@
 // CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
 // SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
 // INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)//
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE//
 // POSSIBILITY OF SUCH DAMAGE.
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -525,8 +525,16 @@ std::string TritonCTS::selectRootBuffer(std::vector<std::string>& bufferVector)
   std::string rootBuf;
   for (const std::string& name : bufferVector) {
     odb::dbMaster* master = db_->findMaster(name.c_str());
+    if (master == nullptr) {
+      logger_->error(
+          CTS, 110, "Physical master could not be found for cell '{}'", name);
+    }
     sta::Cell* masterCell = network_->dbToSta(master);
     sta::LibertyCell* libCell = network_->libertyCell(masterCell);
+    if (libCell == nullptr) {
+      logger_->error(
+          CTS, 112, "Liberty cell could not be found for cell '{}'", name);
+    }
     sta::LibertyPort *in, *out;
     libCell->bufferPorts(in, out);
     if (out->driveResistance() < bestRes) {
@@ -1155,10 +1163,9 @@ double TritonCTS::computeInsertionDelay(const std::string& name,
   return insDelayPerMicron;
 }
 
-void addDummyCell(
-    ClockInst*& inst,
-    Clock::SubNet& subNet,
-    const std::vector<sta::LibertyCell*>& dummyCandidates)
+void addDummyCell(ClockInst*& inst,
+                  Clock::SubNet& subNet,
+                  const std::vector<sta::LibertyCell*>& dummyCandidates)
 {
 }
 
@@ -1235,8 +1242,37 @@ bool TritonCTS::computeIdealOutputCaps(Clock& clockNet)
 void TritonCTS::findCandidateDummyCells(
     std::vector<sta::LibertyCell*>& dummyCandidates)
 {
-  
-}
+  // Add existing buffer list
+  for (const std::string& buffer : options_->getBufferList()) {
+    odb::dbMaster* master = db_->findMaster(buffer.c_str());
+    if (master == nullptr) {
+      logger_->error(CTS,
+                     109,
+                     "Physical master could not be found for cell '{}'.",
+                     buffer);
+    } else {
+      sta::Cell* masterCell = network_->dbToSta(master);
+      sta::LibertyCell* libCell = network_->libertyCell(masterCell);
+      if (libCell) {
+        dummyCandidates.emplace_back(libCell);
+      }
+    }
+  }
 
+  // Add additional inverter cells
+  sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
+  while (lib_iter->hasNext()) {
+    sta::LibertyLibrary* lib = lib_iter->next();
+    for (sta::LibertyCell* inv : *lib->inverters()) {
+      dummyCandidates.emplace_back(inv);
+    }
+  }
+  
+  if (logger_->debugCheck(utl::CTS, "dummy load", 1)) {
+    for (const sta::LibertyCell* libCell : dummyCandidates) {
+      logger_->report("{} is a dummy cell candidate", libCell->name());
+    }
+  }
+}
 
 }  // namespace cts
