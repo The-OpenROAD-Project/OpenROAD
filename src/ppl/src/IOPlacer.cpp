@@ -727,17 +727,18 @@ Edge IOPlacer::getMirroredEdge(const Edge& edge)
   return mirrored_edge;
 }
 
-int IOPlacer::computeRegionIncrease(const Interval& interval, const int num_pins)
+int IOPlacer::computeRegionIncrease(const Interval& interval,
+                                    const int num_pins)
 {
-  const bool vertical
+  const bool vertical_pin
       = interval.getEdge() == Edge::top || interval.getEdge() == Edge::bottom;
   const int interval_length = std::abs(interval.getEnd() - interval.getBegin());
   int min_dist = std::numeric_limits<int>::min();
 
   if (interval.getLayer() != -1) {
-    min_dist = vertical ? core_->getMinDstPinsX()[interval.getLayer()]
-                        : core_->getMinDstPinsY()[interval.getLayer()];
-  } else if (vertical) {
+    min_dist = vertical_pin ? core_->getMinDstPinsX()[interval.getLayer()]
+                            : core_->getMinDstPinsY()[interval.getLayer()];
+  } else if (vertical_pin) {
     for (int layer_idx : ver_layers_) {
       const int layer_min_dist = core_->getMinDstPinsX()[layer_idx];
       min_dist = std::max(layer_min_dist, min_dist);
@@ -775,17 +776,17 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
   int ub_x = ub.x();
   int ub_y = ub.y();
 
-  bool vertical = (edge == Edge::top || edge == Edge::bottom);
-  int min = vertical ? lb_x : lb_y;
-  int max = vertical ? ub_x : ub_y;
+  bool vertical_pin = (edge == Edge::top || edge == Edge::bottom);
+  int min = vertical_pin ? lb_x : lb_y;
+  int max = vertical_pin ? ub_x : ub_y;
 
   int offset = parms_->getCornerAvoidance();
   bool dist_in_tracks = parms_->getMinDistanceInTracks();
   for (int layer : layers) {
     int curr_x, curr_y, start_idx, end_idx;
     // get the on grid min distance
-    int tech_min_dst = vertical ? core_->getMinDstPinsX()[layer]
-                                : core_->getMinDstPinsY()[layer];
+    int tech_min_dst = vertical_pin ? core_->getMinDstPinsX()[layer]
+                                    : core_->getMinDstPinsY()[layer];
     int min_dst_pins
         = dist_in_tracks
               ? tech_min_dst * parms_->getMinDistance()
@@ -804,17 +805,18 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
       }
     }
 
-    int init_tracks = vertical ? core_->getInitTracksX()[layer]
-                               : core_->getInitTracksY()[layer];
-    int num_tracks = vertical ? core_->getNumTracksX()[layer]
-                              : core_->getNumTracksY()[layer];
+    int init_tracks = vertical_pin ? core_->getInitTracksX()[layer]
+                                   : core_->getInitTracksY()[layer];
+    int num_tracks = vertical_pin ? core_->getNumTracksX()[layer]
+                                  : core_->getNumTracksY()[layer];
 
     float thickness_multiplier
-        = vertical ? parms_->getVerticalThicknessMultiplier()
-                   : parms_->getHorizontalThicknessMultiplier();
+        = vertical_pin ? parms_->getVerticalThicknessMultiplier()
+                       : parms_->getHorizontalThicknessMultiplier();
 
-    int half_width = vertical ? int(ceil(core_->getMinWidthX()[layer] / 2.0))
-                              : int(ceil(core_->getMinWidthY()[layer] / 2.0));
+    int half_width = vertical_pin
+                         ? int(ceil(core_->getMinWidthX()[layer] / 2.0))
+                         : int(ceil(core_->getMinWidthY()[layer] / 2.0));
 
     half_width *= thickness_multiplier;
 
@@ -827,7 +829,7 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
                        static_cast<int>(floor((max - half_width - init_tracks)
                                               / min_dst_pins)))
               - num_tracks_offset;
-    if (vertical) {
+    if (vertical_pin) {
       curr_x = init_tracks + start_idx * min_dst_pins;
       curr_y = (edge == Edge::bottom) ? lb_y : ub_y;
     } else {
@@ -839,7 +841,7 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
     for (int i = start_idx; i <= end_idx; ++i) {
       Point pos(curr_x, curr_y);
       slots.push_back(pos);
-      if (vertical) {
+      if (vertical_pin) {
         curr_x += min_dst_pins;
       } else {
         curr_y += min_dst_pins;
@@ -853,8 +855,8 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
     for (const Point& pos : slots) {
       curr_x = pos.getX();
       curr_y = pos.getY();
-      bool blocked = vertical ? checkBlocked(edge, curr_x, layer)
-                              : checkBlocked(edge, curr_y, layer);
+      bool blocked = vertical_pin ? checkBlocked(edge, curr_x, layer)
+                                  : checkBlocked(edge, curr_y, layer);
       slots_.push_back({blocked, false, Point(curr_x, curr_y), layer, edge});
     }
   }
@@ -1765,8 +1767,8 @@ void IOPlacer::initConstraints(bool annealing)
       constraint.pins_per_slots
           = static_cast<float>(constraint.pin_list.size()) / num_slots;
       if (constraint.pins_per_slots > 1) {
-        int increase
-            = computeRegionIncrease(constraint.interval, constraint.pin_list.size());
+        int increase = computeRegionIncrease(constraint.interval,
+                                             constraint.pin_list.size());
         logger_->warn(PPL,
                       110,
                       "Constraint has {} pins, but only {} available slots.\n"
