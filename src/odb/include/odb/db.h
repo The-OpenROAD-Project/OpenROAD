@@ -5159,10 +5159,17 @@ class dbLib : public dbObject
 class dbSite : public dbObject
 {
  public:
+  struct OrientedSite
+  {
+    dbSite* site;
+    dbOrientType orientation;
+  };
+  using RowPattern = std::vector<OrientedSite>;
+
   ///
   /// Get the site name.
   ///
-  std::string getName();
+  std::string getName() const;
 
   ///
   /// Get the site name.
@@ -5182,7 +5189,7 @@ class dbSite : public dbObject
   ///
   /// Get the height of this site
   ///
-  uint getHeight();
+  uint getHeight() const;
 
   ///
   /// Set the height of this site
@@ -5230,6 +5237,26 @@ class dbSite : public dbObject
   bool getSymmetryR90();
 
   ///
+  /// set the row pattern of this site
+  ///
+  void setRowPattern(const RowPattern& row_pattern);
+
+  ///
+  /// Returns true if the row pattern is not empty
+  ///
+  bool hasRowPattern() const;
+
+  ///
+  /// Is this site in a row pattern or does it have a row pattern
+  ///
+  bool isHybrid() const;
+
+  ///
+  /// returns the row pattern if available
+  ///
+  RowPattern getRowPattern();
+
+  ///
   /// Get the library of this site.
   ///
   dbLib* getLib();
@@ -5257,7 +5284,7 @@ class dbMaster : public dbObject
   ///
   /// Get the master cell name.
   ///
-  std::string getName();
+  std::string getName() const;
 
   ///
   /// Get the master cell name.

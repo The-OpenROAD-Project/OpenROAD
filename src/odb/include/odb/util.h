@@ -33,7 +33,7 @@
 // Header file for the Athena Utilities
 
 #include <assert.h>
-//#define _CRTDBG_MAP_ALLOC
+// #define _CRTDBG_MAP_ALLOC
 
 #pragma once
 
@@ -42,6 +42,7 @@
 #include <vector>
 
 #include "array1.h"
+#include "geom.h"
 
 namespace utl {
 class Logger;
@@ -484,6 +485,62 @@ unsigned int prime)
     tmp_iter.m_ptr_to_hash = this;
     return tmp_iter;
   }
+};
+
+class RUDYCalculator
+{
+ public:
+  class Tile
+  {
+   public:
+    odb::Rect getRect() const { return rect_; }
+    void setRect(int lx, int ly, int ux, int uy);
+    void addRUDY(float rudy);
+    float getRUDY() const { return rudy_; }
+
+   private:
+    odb::Rect rect_;
+    float rudy_ = 0;
+  };
+
+  explicit RUDYCalculator(dbBlock* block);
+
+  /**
+   * \pre we need to call this function after `setGridConfig` and
+   * `setWireWidth`.
+   * */
+  void calculateRUDY();
+
+  /**
+   * Set the grid area and grid numbers.
+   * Default value will be the die area of block and (40, 40), respectively.
+   * */
+  void setGridConfig(odb::Rect block, int tileCntX, int tileCntY);
+
+  /**
+   * Set the wire length for calculate RUDY.
+   * If the layer which name is metal1 and it has getWidth value, then this
+   * function will not applied, but it will apply that information.
+   * */
+  void setWireWidth(int wireWidth) { wireWidth_ = wireWidth; }
+
+  const Tile& getTile(int x, int y) const { return grid_.at(x).at(y); }
+  std::pair<int, int> getGridSize() const;
+
+ private:
+  /**
+   * \pre This function should be called after `setGridConfig`
+   * */
+  void makeGrid();
+  Tile& getEditableTile(int x, int y) { return grid_.at(x).at(y); }
+
+  dbBlock* block_;
+  odb::Rect gridBlock_;
+  int tileCntX_ = 40;
+  int tileCntY_ = 40;
+  int wireWidth_ = 100;
+
+  std::vector<std::vector<Tile>> grid_;
 };
 
 int makeSiteLoc(int x, double site_width, bool at_left_from_macro, int offset);
