@@ -162,10 +162,6 @@ dbOStream& operator<<(dbOStream& stream,
   return stream;
 }
 
-_dbTechLayerWrongDirSpacingRule::~_dbTechLayerWrongDirSpacingRule()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerWrongDirSpacingRule - Methods
