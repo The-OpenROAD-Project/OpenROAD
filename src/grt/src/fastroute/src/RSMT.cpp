@@ -86,11 +86,11 @@ void FastRouteCore::copyStTree(const int ind, const Tree& rsmt)
   const int numedges = numnodes - 1;
   sttrees_[ind].num_nodes = numnodes;
   sttrees_[ind].num_terminals = d;
-  sttrees_[ind].nodes.reset(new TreeNode[numnodes]);
-  sttrees_[ind].edges.reset(new TreeEdge[numedges]);
+  sttrees_[ind].nodes.resize(numnodes);
+  sttrees_[ind].edges.resize(numedges);
 
-  const auto& treenodes = sttrees_[ind].nodes;
-  const auto& treeedges = sttrees_[ind].edges;
+  auto& treenodes = sttrees_[ind].nodes;
+  auto& treeedges = sttrees_[ind].edges;
 
   // initialize the nbrcnt for treenodes
   const int sizeV = 2 * nets_[ind]->getNumPins();
@@ -139,6 +139,11 @@ void FastRouteCore::copyStTree(const int ind, const Tree& rsmt)
     if (nbrcnt[i] > 3 || nbrcnt[n] > 3)
       logger_->error(GRT, 188, "Invalid number of node neighbors.");
   }
+  // Copy num neighbors
+  for (int i = 0; i < numnodes; i++) {
+    treenodes[i].nbr_count = nbrcnt[i];
+  }
+
   if (edgecnt != numnodes - 1) {
     logger_->error(
         GRT,
@@ -653,8 +658,9 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
   for (int i = 0; i < netCount(); i++) {
     FrNet* net = nets_[i];
 
-    if (net->isRouted())
+    if (net->isRouted() || net->isDeleted()) {
       continue;
+    }
 
     float coeffV = 1.36;
 

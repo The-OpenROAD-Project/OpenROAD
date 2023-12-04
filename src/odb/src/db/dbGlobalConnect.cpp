@@ -144,10 +144,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbGlobalConnect& obj)
   return stream;
 }
 
-_dbGlobalConnect::~_dbGlobalConnect()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbGlobalConnect - Methods

@@ -374,4 +374,4 @@ bool dbPowerDomain::getArea(int& _x1, int& _y1, int& _x2, int& _y2)
 
 // User Code End dbPowerDomainPublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

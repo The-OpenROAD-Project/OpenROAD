@@ -122,10 +122,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj)
   return stream;
 }
 
-_dbGuide::~_dbGuide()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbGuide - Methods

@@ -51,7 +51,6 @@
 #include "lefrReader.hpp"
 #include "poly_decomp.h"
 #include "utl/Logger.h"
-
 namespace odb {
 
 using LefDefParser::lefrSetRelaxMode;
@@ -110,6 +109,23 @@ void lefin::init()
 
 lefin::~lefin()
 {
+}
+
+dbSite* lefin::findSite(const char* name)
+{
+  dbSite* site = _lib->findSite(name);
+
+  if (site == nullptr) {
+    // look in the other libs
+    for (dbLib* lib : _db->getLibs()) {
+      site = lib->findSite(name);
+      if (site) {
+        break;
+      }
+    }
+  }
+
+  return site;
 }
 
 void lefin::createLibrary()
@@ -1222,38 +1238,17 @@ void lefin::macro(lefiMacro* macro)
   }
 
   if (macro->hasSiteName()) {
-    dbSite* site = _lib->findSite(macro->siteName());
+    dbSite* site = findSite(macro->siteName());
 
     if (site == nullptr) {
-      // look in the other libs
-      for (dbLib* lib : _db->getLibs()) {
-        site = lib->findSite(macro->siteName());
-        if (site) {
-          // replicating site in the master's lib
-          auto temp = odb::dbSite::create(_lib, site->getName().c_str());
-          temp->setWidth(site->getWidth());
-          temp->setHeight(site->getHeight());
-          if (site->getSymmetryX())
-            temp->setSymmetryX();
-          if (site->getSymmetryY())
-            temp->setSymmetryY();
-          if (site->getSymmetryR90())
-            temp->setSymmetryR90();
-          temp->setClass(site->getClass());
-          site = temp;
-          break;
-        }
-      }
-    }
-
-    if (site == nullptr)
       _logger->warn(utl::ODB,
                     186,
                     "macro {} references unknown site {}",
                     macro->name(),
                     macro->siteName());
-    else
+    } else {
       _master->setSite(site);
+    }
   }
 
   if (macro->hasXSymmetry())
@@ -1672,6 +1667,18 @@ void lefin::site(lefiSite* lefsite)
   if (site)
     return;
 
+  for (dbLib* lib : _db->getLibs()) {
+    if ((site = lib->findSite(lefsite->name()))) {
+      _logger->info(utl::ODB,
+                    394,
+                    "Duplicate site {} in {} already seen in {}",
+                    lefsite->name(),
+                    _lib->getName(),
+                    lib->getName());
+      return;
+    }
+  }
+
   site = dbSite::create(_lib, lefsite->name());
 
   if (lefsite->hasSize()) {
@@ -1690,6 +1697,24 @@ void lefin::site(lefiSite* lefsite)
 
   if (lefsite->hasClass())
     site->setClass(dbSiteClass(lefsite->siteClass()));
+
+  if (lefsite->hasRowPattern()) {
+    auto row_pattern = lefsite->getRowPatterns();
+    std::vector<dbSite::OrientedSite> converted_row_pattern;
+    converted_row_pattern.reserve(row_pattern.size());
+    for (auto& row : row_pattern) {
+      dbOrientType orient(row.second.c_str());
+      auto child_site = findSite(row.first.c_str());
+      if (!child_site) {
+        ++_errors;
+        _logger->warn(
+            utl::ODB, 208, "Row pattern site {} can't be found", row.first);
+        continue;
+      }
+      converted_row_pattern.push_back({child_site, orient});
+    }
+    site->setRowPattern(converted_row_pattern);
+  }
 }
 
 void lefin::spacingBegin(void* /* unused: ptr */)
@@ -1813,12 +1838,17 @@ void lefin::version(double num)
 
 void lefin::via(lefiVia* via, dbTechNonDefaultRule* rule)
 {
-  if (!_create_tech)
+  if (!_create_tech && !via->hasViaRule()) {
     return;
+  }
 
   if (_tech->findVia(via->name())) {
-    _logger->warn(
-        utl::ODB, 208, "VIA: duplicate VIA ({}) ignored...", via->name());
+    debugPrint(_logger,
+               utl::ODB,
+               "lefin",
+               1,
+               "VIA: duplicate VIA ({}) ignored...",
+               via->name());
     return;
   }
 

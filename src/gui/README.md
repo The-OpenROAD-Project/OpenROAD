@@ -406,6 +406,7 @@ The currently availble heat maps are:
 - ``Routing``
 - ``Placement``
 - ``IRDrop``
+- ``RUDY`` [^RUDY]
 
 To control the settings in the heat maps:
 
@@ -431,6 +432,10 @@ gui::dump_heatmap name filename
 Options description: 
 - ``name`` is the name of the heatmap.
 - ``filename`` path to the file to write the data to.
+
+[^RUDY]: RUDY means Rectangular Uniform wire DensitY, which can predict the routing density very rough and quickly. You can see this notion in [this paper](https://past.date-conference.com/proceedings-archive/2007/DATE07/PDFFILES/08.7_1.PDF) 
+
+
 
 ### GUI Display Controls
 

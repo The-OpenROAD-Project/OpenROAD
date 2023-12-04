@@ -69,10 +69,16 @@ namespace odb {
 //
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
-const uint db_schema_minor = 72;  // Current revision number
+const uint db_schema_minor = 74;  // Current revision number
 
 // Revision where _dbLevelShifter was added
-const uint db_schema_level_shifter = 72;
+const uint db_schema_level_shifter = 74;
+
+// Revision where _dbSite::_row_pattern/_parent_lib/_parent_site were added
+const uint db_schema_site_row_pattern = 73;
+
+// Revision where _dbMaster::_lib_for_site was added
+const uint db_schema_dbmaster_lib_for_site = 72;
 
 // Revision where _dbObstruction::_except_pg_nets was added
 const uint db_schema_except_pg_nets_obstruction = 71;

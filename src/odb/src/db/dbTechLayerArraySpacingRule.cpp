@@ -178,10 +178,6 @@ dbOStream& operator<<(dbOStream& stream,
   return stream;
 }
 
-_dbTechLayerArraySpacingRule::~_dbTechLayerArraySpacingRule()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerArraySpacingRule - Methods

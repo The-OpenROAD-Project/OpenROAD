@@ -203,10 +203,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinStepRule& obj)
   return stream;
 }
 
-_dbTechLayerMinStepRule::~_dbTechLayerMinStepRule()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerMinStepRule - Methods
@@ -413,4 +409,4 @@ void dbTechLayerMinStepRule::destroy(dbTechLayerMinStepRule* rule)
 }
 // User Code End dbTechLayerMinStepRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp
