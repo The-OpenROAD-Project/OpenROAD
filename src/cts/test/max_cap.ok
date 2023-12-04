@@ -10,16 +10,20 @@
 [INFO ODB-0131]     Created 21 components and 146 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 2 nets and 41 connections.
-[INFO CTS-0049] Characterization buffer is: sky130_fd_sc_hs__clkbuf_1.
-[INFO CTS-0039] Number of created patterns = 12240.
+[INFO CTS-0050] Root buffer is sky130_fd_sc_hs__clkbuf_1.
+[INFO CTS-0051] Sink buffer is sky130_fd_sc_hs__clkbuf_1.
+[INFO CTS-0052] The following clock buffers will be used for CTS:
+                    sky130_fd_sc_hs__clkbuf_1
+[INFO CTS-0049] Characterization buffer is sky130_fd_sc_hs__clkbuf_1.
+[INFO CTS-0039] Number of created patterns = 4200.
 [INFO CTS-0084] Compiling LUT.
 Min. len    Max. len    Min. cap    Max. cap    Min. slew   Max. slew
-2           8           1           41          1           12          
-[WARNING CTS-0043] 1632 wires are pure wire and no slew degradation.
+2           8           1           34          1           11          
+[WARNING CTS-0043] 480 wires are pure wire and no slew degradation.
 TritonCTS forced slew degradation on these wires.
-[INFO CTS-0046]     Number of wire segments: 12216.
-[INFO CTS-0047]     Number of keys in characterization LUT: 1504.
-[INFO CTS-0048]     Actual min input cap: 2.
+[INFO CTS-0046]     Number of wire segments: 3747.
+[INFO CTS-0047]     Number of keys in characterization LUT: 355.
+[INFO CTS-0048]     Actual min input cap: 1.
 [INFO CTS-0007] Net "clk1" found for clock "clk1".
 [INFO CTS-0010]  Clock net "clk1" has 20 sinks.
 [INFO CTS-0008] TritonCTS found 1 clock nets.
@@ -39,32 +43,31 @@ TritonCTS forced slew degradation on these wires.
     Sinks per sub-region: 10
     Sub-region size: 36.0360 X 24.0240
 [INFO CTS-0034]     Segment length (rounded): 12.
-    Key: 326 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 12
-      location: 0.25 buffer: sky130_fd_sc_hs__clkbuf_1
-    Key: 38 inSlew: 1 inCap: 2 outSlew: 1 load: 1 length: 4 delay: 8
+    Key: 193 inSlew: 1 inCap: 2 outSlew: 1 load: 1 length: 8 delay: 4
       location: 0.5 buffer: sky130_fd_sc_hs__clkbuf_1
+    Key: 26 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 4 delay: 1
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 20.
-[INFO CTS-0018]     Created 5 clock buffers.
-[INFO CTS-0012]     Minimum number of buffers in the clock path: 3.
-[INFO CTS-0013]     Maximum number of buffers in the clock path: 3.
-[INFO CTS-0015]     Created 5 clock nets.
+[INFO CTS-0018]     Created 3 clock buffers.
+[INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
+[INFO CTS-0015]     Created 3 clock nets.
 [INFO CTS-0016]     Fanout distribution for the current clock = 10:2..
 [INFO CTS-0017]     Max level of the clock tree: 1.
 [INFO CTS-0098] Clock net "clk1"
 [INFO CTS-0099]  Sinks 20
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 1224.59 um
-[INFO CTS-0102]  Path depth 3 - 3
+[INFO CTS-0101]  Average sink wire length 1169.67 um
+[INFO CTS-0102]  Path depth 2 - 2
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-r11/CLK                                 1.00    1.83   -0.83 (VIOLATED)
+r11/CLK                                 1.00    1.96   -0.96 (VIOLATED)
 
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-clkbuf_1_0_1_clk1/X                     0.15    0.28   -0.13 (VIOLATED)
+clkbuf_1_0_0_clk1/X                     0.15    0.29   -0.15 (VIOLATED)
 

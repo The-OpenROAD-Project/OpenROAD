@@ -745,6 +745,12 @@ void FlexRP::prep_via2viaForbiddenLen_helper(const frLayerNum& lNum,
   } else {
     tech->via2ViaForbiddenLen[tableLayerIdx][tableEntryIdx] = forbiddenRanges;
   }
+
+  if (!ndr) {
+    frCoord prl = 0;
+    prep_via2viaPRL(lNum, viaDef1, viaDef2, isHorizontal, prl);
+    tech->via2ViaPrlLen[tableLayerIdx][tableEntryIdx] = prl;
+  }
 }
 
 bool FlexRP::hasMinStepViol(Rect& r1, Rect& r2, frLayerNum lNum)
@@ -1671,6 +1677,36 @@ void FlexRP::prep_via2viaForbiddenLen_minSpc(frLayerNum lNum,
     if (minReqDist != INT_MIN) {
       forbiddenRanges.push_back(make_pair(minNonOverlapDist, minReqDist));
     }
+  }
+}
+
+void FlexRP::prep_via2viaPRL(frLayerNum lNum,
+                             frViaDef* viaDef1,
+                             frViaDef* viaDef2,
+                             bool isCurrDirX,
+                             frCoord& prl)
+{
+  if (!viaDef1 || !viaDef2) {
+    return;
+  }
+  frVia via1(viaDef1);
+  Rect viaBox1;
+  if (viaDef1->getLayer1Num() == lNum) {
+    viaBox1 = via1.getLayer1BBox();
+  } else {
+    viaBox1 = via1.getLayer2BBox();
+  }
+  frVia via2(viaDef2);
+  Rect viaBox2;
+  if (viaDef2->getLayer1Num() == lNum) {
+    viaBox2 = via2.getLayer1BBox();
+  } else {
+    viaBox2 = via2.getLayer2BBox();
+  }
+  if (isCurrDirX) {
+    prl = (viaBox1.dx() + viaBox2.dx()) / 2;
+  } else {
+    prl = (viaBox1.dy() + viaBox2.dy()) / 2;
   }
 }
 
