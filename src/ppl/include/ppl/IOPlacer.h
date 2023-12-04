@@ -269,7 +269,7 @@ class IOPlacer
   double dbuToMicrons(int64_t dbu);
   int micronsToDbu(double microns);
   Edge getMirroredEdge(const Edge& edge);
-  int computeRegionIncrease(const Interval& interval, int num_pins);
+  int computeRegionIncrease(const Interval& interval, const int num_pins);
 
   // db functions
   void populateIOPlacer(const std::set<int>& hor_layer_idx,

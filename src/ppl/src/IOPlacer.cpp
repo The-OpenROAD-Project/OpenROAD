@@ -727,11 +727,11 @@ Edge IOPlacer::getMirroredEdge(const Edge& edge)
   return mirrored_edge;
 }
 
-int IOPlacer::computeRegionIncrease(const Interval& interval, int num_pins)
+int IOPlacer::computeRegionIncrease(const Interval& interval, const int num_pins)
 {
-  bool vertical
+  const bool vertical
       = interval.getEdge() == Edge::top || interval.getEdge() == Edge::bottom;
-  int interval_length = std::abs(interval.getEnd() - interval.getBegin());
+  const int interval_length = std::abs(interval.getEnd() - interval.getBegin());
   int min_dist = std::numeric_limits<int>::min();
 
   if (interval.getLayer() != -1) {
@@ -739,18 +739,18 @@ int IOPlacer::computeRegionIncrease(const Interval& interval, int num_pins)
                         : core_->getMinDstPinsY()[interval.getLayer()];
   } else if (vertical) {
     for (int layer_idx : ver_layers_) {
-      int layer_min_dist = core_->getMinDstPinsX()[layer_idx];
+      const int layer_min_dist = core_->getMinDstPinsX()[layer_idx];
       min_dist = std::max(layer_min_dist, min_dist);
     }
   } else {
     for (int layer_idx : ver_layers_) {
-      int layer_min_dist = core_->getMinDstPinsX()[layer_idx];
+      const int layer_min_dist = core_->getMinDstPinsX()[layer_idx];
       min_dist = std::max(layer_min_dist, min_dist);
     }
   }
 
-  bool dist_in_tracks = parms_->getMinDistanceInTracks();
-  int user_min_dist = parms_->getMinDistance();
+  const bool dist_in_tracks = parms_->getMinDistanceInTracks();
+  const int user_min_dist = parms_->getMinDistance();
   if (dist_in_tracks) {
     min_dist *= user_min_dist;
   } else if (user_min_dist != 0) {
@@ -760,7 +760,7 @@ int IOPlacer::computeRegionIncrease(const Interval& interval, int num_pins)
     min_dist *= default_min_dist_;
   }
 
-  int increase = (num_pins * min_dist) - interval_length;
+  const int increase = (num_pins * min_dist) - interval_length;
 
   return increase;
 }
