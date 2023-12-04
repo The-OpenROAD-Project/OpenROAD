@@ -729,7 +729,6 @@ Edge IOPlacer::getMirroredEdge(const Edge& edge)
 
 void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 {
-  const int default_min_dist = 2;
   Point lb = core_->getBoundary().ll();
   Point ub = core_->getBoundary().ur();
 
@@ -757,7 +756,7 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
                                 / tech_min_dst);
 
     min_dst_pins
-        = (min_dst_pins == 0) ? default_min_dist * tech_min_dst : min_dst_pins;
+        = (min_dst_pins == 0) ? default_min_dist_ * tech_min_dst : min_dst_pins;
 
     if (offset == -1) {
       offset = num_tracks_offset_ * tech_min_dst;
@@ -1732,15 +1731,41 @@ void IOPlacer::initConstraints(bool annealing)
         int interval_length = std::abs(interval.getEnd() - interval.getBegin());
         bool vertical = interval.getEdge() == Edge::top
                         || interval.getEdge() == Edge::bottom;
-        int min_dist = vertical ? core_->getMinDstPinsX()[interval.getLayer()]
-                                : core_->getMinDstPinsY()[interval.getLayer()];
-        logger_->report("Available slots: {}",
-                        std::ceil((float) interval_length / min_dist));
-        logger_->warn(PPL,
-                      110,
-                      "Constraint has {} pins, but only {} available slots",
-                      constraint.pin_list.size(),
-                      num_slots);
+        int min_dist = std::numeric_limits<int>::min();
+        if (interval.getLayer() != -1) {
+          min_dist = vertical ? core_->getMinDstPinsX()[interval.getLayer()]
+                              : core_->getMinDstPinsY()[interval.getLayer()];
+        } else if (vertical) {
+          for (int layer_idx : ver_layers_) {
+            int layer_min_dist = core_->getMinDstPinsX()[layer_idx];
+            min_dist = std::max(layer_min_dist, min_dist);
+          }
+        } else {
+          for (int layer_idx : ver_layers_) {
+            int layer_min_dist = core_->getMinDstPinsX()[layer_idx];
+            min_dist = std::max(layer_min_dist, min_dist);
+          }
+        }
+        bool dist_in_tracks = parms_->getMinDistanceInTracks();
+        int user_min_dist = parms_->getMinDistance();
+        if (dist_in_tracks) {
+          min_dist *= user_min_dist;
+        } else if (user_min_dist != 0) {
+          min_dist = std::ceil(static_cast<float>(user_min_dist) / min_dist)
+                     * min_dist;
+        } else {
+          min_dist *= default_min_dist_;
+        }
+        int increase
+            = (constraint.pin_list.size() * min_dist) - interval_length;
+        logger_->warn(
+            PPL,
+            110,
+            "Constraint has {} pins, but only {} available slots.\n"
+            "Increase the region in at least {}um.",
+            constraint.pin_list.size(),
+            num_slots,
+            dbuToMicrons(increase));
         constraints_no_slots++;
       }
     } else {
