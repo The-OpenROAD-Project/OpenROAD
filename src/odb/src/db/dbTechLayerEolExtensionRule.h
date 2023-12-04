@@ -55,7 +55,8 @@ class _dbTechLayerEolExtensionRule : public _dbObject
   _dbTechLayerEolExtensionRule(_dbDatabase*,
                                const _dbTechLayerEolExtensionRule& r);
   _dbTechLayerEolExtensionRule(_dbDatabase*);
-  ~_dbTechLayerEolExtensionRule();
+
+  ~_dbTechLayerEolExtensionRule() = default;
 
   bool operator==(const _dbTechLayerEolExtensionRule& rhs) const;
   bool operator!=(const _dbTechLayerEolExtensionRule& rhs) const

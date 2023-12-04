@@ -697,10 +697,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerSpacingEolRule& obj)
   return stream;
 }
 
-_dbTechLayerSpacingEolRule::~_dbTechLayerSpacingEolRule()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerSpacingEolRule - Methods
@@ -1755,4 +1751,4 @@ void dbTechLayerSpacingEolRule::destroy(dbTechLayerSpacingEolRule* rule)
 
 // User Code End dbTechLayerSpacingEolRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

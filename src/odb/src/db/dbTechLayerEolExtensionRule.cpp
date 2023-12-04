@@ -128,10 +128,6 @@ dbOStream& operator<<(dbOStream& stream,
   return stream;
 }
 
-_dbTechLayerEolExtensionRule::~_dbTechLayerEolExtensionRule()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerEolExtensionRule - Methods
@@ -204,4 +200,4 @@ void dbTechLayerEolExtensionRule::destroy(dbTechLayerEolExtensionRule* rule)
 
 // User Code End dbTechLayerEolExtensionRulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

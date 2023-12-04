@@ -87,6 +87,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   bool isClock() const { return is_clock_; }
   bool isRouted() const { return is_routed_; }
   bool isCritical() { return is_critical_; }
+  bool isDeleted() { return is_deleted_; }
   float getSlack() const { return slack_; }
   odb::dbNet* getDbNet() const { return db_net_; }
   int getDriverIdx() const { return driver_idx_; }
@@ -117,6 +118,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   void setMinLayer(int min_layer) { min_layer_ = min_layer; }
   void setSlack(float slack) { slack_ = slack; }
   void setIsCritical(bool is_critical) { is_critical_ = is_critical; }
+  void setIsDeleted(bool is_deleted) { is_deleted_ = is_deleted; }
 
  private:
   odb::dbNet* db_net_;
@@ -133,6 +135,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   // Non-null when an NDR has been applied to the net.
   std::unique_ptr<std::vector<int>> edge_cost_per_layer_;
   bool is_routed_ = false;
+  bool is_deleted_ = false;
 };
 
 struct Edge  // An Edge is the routing track holder between two adjacent
@@ -169,7 +172,8 @@ struct TreeNode
   short heights[max_connections];
   int eID[max_connections];
 
-  short x, y;   // position in the grid graph
+  int16_t x, y;  // position in the grid graph
+  int nbr_count = 0;
   int nbr[3];   // three neighbors
   int edge[3];  // three adjacent edges
   int hID;
@@ -223,8 +227,8 @@ struct StTree
   int num_nodes = 0;
   int num_terminals = 0;
   // The nodes (pin and Steiner nodes) in the tree.
-  std::unique_ptr<TreeNode[]> nodes;
-  std::unique_ptr<TreeEdge[]> edges;
+  std::vector<TreeNode> nodes;
+  std::vector<TreeEdge> edges;
 
   int num_edges() const { return num_nodes - 1; }
 };

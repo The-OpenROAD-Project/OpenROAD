@@ -222,10 +222,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinCutRule& obj)
   return stream;
 }
 
-_dbTechLayerMinCutRule::~_dbTechLayerMinCutRule()
-{
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechLayerMinCutRule - Methods

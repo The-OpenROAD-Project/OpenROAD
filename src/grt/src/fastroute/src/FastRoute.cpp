@@ -283,6 +283,18 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
   return net;
 }
 
+void FastRouteCore::removeNet(odb::dbNet* db_net)
+{
+  // TODO The deleted flag is a temporary solution. Correctly delete the
+  // FrNet and update the nets list
+  if (db_net_id_map_.find(db_net) != db_net_id_map_.end()) {
+    int netID = db_net_id_map_[db_net];
+    nets_[netID]->setIsDeleted(true);
+    clearNetRoute(netID);
+    db_net_id_map_.erase(db_net);
+  }
+}
+
 void FastRouteCore::getNetId(odb::dbNet* db_net, int& net_id, bool& exists)
 {
   auto itr = db_net_id_map_.find(db_net);
@@ -296,8 +308,8 @@ void FastRouteCore::clearNetRoute(const int netID)
   releaseNetResources(netID);
 
   // clear stree
-  sttrees_[netID].nodes.reset();
-  sttrees_[netID].edges.reset();
+  sttrees_[netID].nodes.clear();
+  sttrees_[netID].edges.clear();
 }
 
 void FastRouteCore::initEdges()
@@ -658,8 +670,9 @@ NetRouteMap FastRouteCore::getRoutes()
 {
   NetRouteMap routes;
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted())
+    if (nets_[netID]->isRouted() || nets_[netID]->isDeleted()) {
       continue;
+    }
 
     nets_[netID]->setIsRouted(true);
     odb::dbNet* db_net = nets_[netID]->getDbNet();
@@ -694,6 +707,7 @@ NetRouteMap FastRouteCore::getRoutes()
           }
         }
       } else {
+        int num_terminals = sttrees_[netID].num_terminals;
         const auto& nodes = sttrees_[netID].nodes;
         int x1 = tile_size_ * (nodes[treeedge->n1].x + 0.5) + x_corner_;
         int y1 = tile_size_ * (nodes[treeedge->n1].y + 0.5) + y_corner_;
@@ -709,6 +723,14 @@ NetRouteMap FastRouteCore::getRoutes()
             && std::abs(l1 - l2) == 1) {
           net_segs.insert(segment);
           route.push_back(segment);
+        } else if (treeedge->n1 < num_terminals && treeedge->n2 < num_terminals
+                   && std::abs(l1 - l2) > 1) {
+          auto [bottom_layer, top_layer] = std::minmax(l1, l2);
+          for (int l = bottom_layer; l < top_layer; l++) {
+            GSegment segment(x1, y1, l + 1, x2, y2, l + 2);
+            net_segs.insert(segment);
+            route.push_back(segment);
+          }
         }
       }
     }
@@ -724,9 +746,10 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
   // Get routes before layer assignment
 
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted()) {
+    if (nets_[netID]->isRouted() || nets_[netID]->isDeleted()) {
       continue;
     }
+
     auto fr_net = nets_[netID];
     odb::dbNet* db_net = fr_net->getDbNet();
     GRoute& route = routes[db_net];
@@ -1540,6 +1563,7 @@ void FrNet::reset(odb::dbNet* db_net,
   db_net_ = db_net;
   is_routed_ = false;
   is_critical_ = false;
+  is_deleted_ = false;
   is_clock_ = is_clock;
   driver_idx_ = driver_idx;
   edge_cost_ = edge_cost;

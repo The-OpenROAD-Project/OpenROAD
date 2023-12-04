@@ -200,10 +200,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbGCellGrid& obj)
   return stream;
 }
 
-_dbGCellGrid::~_dbGCellGrid()
-{
-}
-
 // User Code Begin PrivateMethods
 
 dbIStream& operator>>(dbIStream& stream, dbGCellGrid::GCellData& obj)
@@ -769,4 +765,4 @@ dbMatrix<dbGCellGrid::GCellData> dbGCellGrid::getCongestionMap(
 }
 // User Code End dbGCellGridPublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

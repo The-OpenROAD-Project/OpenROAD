@@ -164,6 +164,17 @@ class frTechObject
                       len);
   }
 
+  // PRL table related
+  bool isVia2ViaPRL(int tableLayerIdx,
+                    bool isPrevDown,
+                    bool isCurrDown,
+                    bool isCurrDirX,
+                    frCoord len)
+  {
+    int tableEntryIdx = getTableEntryIdx(!isPrevDown, !isCurrDown, !isCurrDirX);
+    return len <= via2ViaPrlLen[tableLayerIdx][tableEntryIdx];
+  }
+
   bool isViaForbiddenTurnLen(int tableLayerIdx,
                              bool isDown,
                              bool isCurrDirX,
@@ -328,6 +339,8 @@ class frTechObject
   // via2ViaForbiddenLen[z][7], prev via is up,   curr via is up,   forbidden y
   // dist range (for non-shape-based rule)
   ByLayer<std::array<ForbiddenRanges, 8>> via2ViaForbiddenLen;
+
+  ByLayer<std::array<frCoord, 8>> via2ViaPrlLen;
 
   // viaForbiddenTurnLen[z][0], last via is down, forbidden x dist range before
   // turn
