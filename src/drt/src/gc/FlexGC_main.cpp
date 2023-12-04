@@ -916,25 +916,25 @@ void FlexGCWorker::Impl::checkMetalSpacing_wrongDir_getQueryBox(gcSegment* edge,
                                                                 box_t& queryBox)
 {
   switch (edge->getDir()) {
-    case frDirEnum::W:
+    case frDirEnum::E:
       bg::set<bg::min_corner, 0>(queryBox, edge->high().x());
       bg::set<bg::min_corner, 1>(queryBox, edge->high().y() - spcVal);
       bg::set<bg::max_corner, 0>(queryBox, edge->low().x());
       bg::set<bg::max_corner, 1>(queryBox, edge->low().y());
       break;
-    case frDirEnum::E:
+    case frDirEnum::W:
       bg::set<bg::min_corner, 0>(queryBox, edge->low().x());
       bg::set<bg::min_corner, 1>(queryBox, edge->low().y());
       bg::set<bg::max_corner, 0>(queryBox, edge->high().x());
       bg::set<bg::max_corner, 1>(queryBox, edge->high().y() + spcVal);
       break;
-    case frDirEnum::S:
+    case frDirEnum::N:
       bg::set<bg::min_corner, 0>(queryBox, edge->high().x());
       bg::set<bg::min_corner, 1>(queryBox, edge->high().y());
       bg::set<bg::max_corner, 0>(queryBox, edge->low().x() + spcVal);
       bg::set<bg::max_corner, 1>(queryBox, edge->low().y());
       break;
-    case frDirEnum::N:
+    case frDirEnum::S:
       bg::set<bg::min_corner, 0>(queryBox, edge->low().x() - spcVal);
       bg::set<bg::min_corner, 1>(queryBox, edge->low().y());
       bg::set<bg::max_corner, 0>(queryBox, edge->high().x());
@@ -962,7 +962,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_wrongDir(gcPin* pin, frLayer* layer)
             auto edgeLength = gtl::length(*edge);
             auto noneolLength = con->getNoneolWidth();
             if (edgeLength < noneolLength) {
-              return;
+              continue;
             }
           }
           gtl::rectangle_data<frCoord> rect1(edge->getLowCorner()->x(),
@@ -976,18 +976,18 @@ void FlexGCWorker::Impl::checkMetalSpacing_wrongDir(gcPin* pin, frLayer* layer)
           workerRegionQuery.queryPolygonEdge(queryBox, layerNum, results);
           for (auto& [boostSeg, ptr] : results) {
             if (edge.get() == ptr) {
-              return;
+              continue;
             }
 
             auto net1 = edge->getNet();
             auto net2 = ptr->getNet();
             if (net1 == net2) {
-              return;
+              continue;
             }
 
             // no violation if fixed shapes
             if (edge->isFixed() && ptr->isFixed()) {
-              return;
+              continue;
             }
             // Check prl run length (avoid corner of bloat)
 
@@ -1001,7 +1001,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_wrongDir(gcPin* pin, frLayer* layer)
             frCoord dist = gtl::euclidean_distance(rect1, rect2);
 
             if (dist >= spcVal) {
-              return;
+              continue;
             }
             //} else {
             // Other edge is rightDir

@@ -685,3 +685,18 @@ void Fixture::initRegionQuery()
   query->init();
   query->initDRObj();
 }
+
+frLef58SpacingWrongDirConstraint* Fixture::makeLef58WrongDirSpcConstraint(
+    frLayerNum layer_num,
+    frCoord spacing)
+{
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+
+  auto uCon = make_unique<frLef58SpacingWrongDirConstraint>();
+  auto con = uCon.get();
+  con->setWrongDirSpace(spacing);
+  layer->addLef58SpacingWrongDirConstraint(con);
+  design->getTech()->addUConstraint(std::move(uCon));
+  return con;
+}
