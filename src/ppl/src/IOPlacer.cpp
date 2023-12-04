@@ -1765,36 +1765,8 @@ void IOPlacer::initConstraints(bool annealing)
       constraint.pins_per_slots
           = static_cast<float>(constraint.pin_list.size()) / num_slots;
       if (constraint.pins_per_slots > 1) {
-        const Interval& interval = constraint.interval;
-        bool vertical = interval.getEdge() == Edge::top
-                        || interval.getEdge() == Edge::bottom;
-        int min_dist = std::numeric_limits<int>::min();
-        if (interval.getLayer() != -1) {
-          min_dist = vertical ? core_->getMinDstPinsX()[interval.getLayer()]
-                              : core_->getMinDstPinsY()[interval.getLayer()];
-        } else if (vertical) {
-          for (int layer_idx : ver_layers_) {
-            int layer_min_dist = core_->getMinDstPinsX()[layer_idx];
-            min_dist = std::max(layer_min_dist, min_dist);
-          }
-        } else {
-          for (int layer_idx : ver_layers_) {
-            int layer_min_dist = core_->getMinDstPinsX()[layer_idx];
-            min_dist = std::max(layer_min_dist, min_dist);
-          }
-        }
-        bool dist_in_tracks = parms_->getMinDistanceInTracks();
-        int user_min_dist = parms_->getMinDistance();
-        if (dist_in_tracks) {
-          min_dist *= user_min_dist;
-        } else if (user_min_dist != 0) {
-          min_dist = std::ceil(static_cast<float>(user_min_dist) / min_dist)
-                     * min_dist;
-        } else {
-          min_dist *= default_min_dist_;
-        }
         int increase
-            = computeRegionIncrease(interval, constraint.pin_list.size());
+            = computeRegionIncrease(constraint.interval, constraint.pin_list.size());
         logger_->warn(PPL,
                       110,
                       "Constraint has {} pins, but only {} available slots.\n"
