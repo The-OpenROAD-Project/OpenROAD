@@ -727,6 +727,44 @@ Edge IOPlacer::getMirroredEdge(const Edge& edge)
   return mirrored_edge;
 }
 
+int IOPlacer::computeRegionIncrease(const Interval& interval, int num_pins)
+{
+  bool vertical
+      = interval.getEdge() == Edge::top || interval.getEdge() == Edge::bottom;
+  int interval_length = std::abs(interval.getEnd() - interval.getBegin());
+  int min_dist = std::numeric_limits<int>::min();
+
+  if (interval.getLayer() != -1) {
+    min_dist = vertical ? core_->getMinDstPinsX()[interval.getLayer()]
+                        : core_->getMinDstPinsY()[interval.getLayer()];
+  } else if (vertical) {
+    for (int layer_idx : ver_layers_) {
+      int layer_min_dist = core_->getMinDstPinsX()[layer_idx];
+      min_dist = std::max(layer_min_dist, min_dist);
+    }
+  } else {
+    for (int layer_idx : ver_layers_) {
+      int layer_min_dist = core_->getMinDstPinsX()[layer_idx];
+      min_dist = std::max(layer_min_dist, min_dist);
+    }
+  }
+
+  bool dist_in_tracks = parms_->getMinDistanceInTracks();
+  int user_min_dist = parms_->getMinDistance();
+  if (dist_in_tracks) {
+    min_dist *= user_min_dist;
+  } else if (user_min_dist != 0) {
+    min_dist
+        = std::ceil(static_cast<float>(user_min_dist) / min_dist) * min_dist;
+  } else {
+    min_dist *= default_min_dist_;
+  }
+
+  int increase = (num_pins * min_dist) - interval_length;
+
+  return increase;
+}
+
 void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 {
   Point lb = core_->getBoundary().ll();
@@ -1728,7 +1766,6 @@ void IOPlacer::initConstraints(bool annealing)
           = static_cast<float>(constraint.pin_list.size()) / num_slots;
       if (constraint.pins_per_slots > 1) {
         const Interval& interval = constraint.interval;
-        int interval_length = std::abs(interval.getEnd() - interval.getBegin());
         bool vertical = interval.getEdge() == Edge::top
                         || interval.getEdge() == Edge::bottom;
         int min_dist = std::numeric_limits<int>::min();
@@ -1757,15 +1794,14 @@ void IOPlacer::initConstraints(bool annealing)
           min_dist *= default_min_dist_;
         }
         int increase
-            = (constraint.pin_list.size() * min_dist) - interval_length;
-        logger_->warn(
-            PPL,
-            110,
-            "Constraint has {} pins, but only {} available slots.\n"
-            "Increase the region in at least {}um.",
-            constraint.pin_list.size(),
-            num_slots,
-            dbuToMicrons(increase));
+            = computeRegionIncrease(interval, constraint.pin_list.size());
+        logger_->warn(PPL,
+                      110,
+                      "Constraint has {} pins, but only {} available slots.\n"
+                      "Increase the region in at least {}um.",
+                      constraint.pin_list.size(),
+                      num_slots,
+                      dbuToMicrons(increase));
         constraints_no_slots++;
       }
     } else {
