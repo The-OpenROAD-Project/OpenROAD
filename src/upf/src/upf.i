@@ -152,4 +152,49 @@
     upf::update_power_switch_port_map(
         getOpenRoad()->getLogger(), db->getChip()->getBlock(), name, model_port, switch_port); 
   }
+
+  void create_or_update_level_shifter_cmd(char* name,
+                                    char* domain,
+                                    char* source,
+                                    char* sink,
+                                    char* use_functional_equivalence,
+                                    char* applies_to,
+                                    char* applies_to_boundary,
+                                    char* rule,
+                                    char* threshold,
+                                    char* no_shift,
+                                    char* force_shift,
+                                    char* location,
+                                    char* input_supply,
+                                    char* output_supply,
+                                    char* internal_supply,
+                                    char* name_prefix,
+                                    char* name_suffix,
+                                    bool update)
+  {
+    odb::dbDatabase* db = getOpenRoad()->getDb();
+    upf::create_or_update_level_shifter(
+        getOpenRoad()->getLogger(), db->getChip()->getBlock(), name, domain, source, sink, use_functional_equivalence, applies_to, applies_to_boundary, rule, threshold, no_shift, force_shift, location, input_supply, output_supply, internal_supply, name_prefix, name_suffix, update); 
+  }
+
+  void add_level_shifter_element_cmd(char* level_shifter_name, char* element)
+  {
+    odb::dbDatabase* db = getOpenRoad()->getDb();
+    upf::add_level_shifter_element(
+        getOpenRoad()->getLogger(), db->getChip()->getBlock(), level_shifter_name, element); 
+  }
+
+  void exclude_level_shifter_element_cmd(char* level_shifter_name, char* exclude_element)
+  {
+    odb::dbDatabase* db = getOpenRoad()->getDb();
+    upf::exclude_level_shifter_element(
+        getOpenRoad()->getLogger(), db->getChip()->getBlock(), level_shifter_name, exclude_element); 
+  }
+
+  void handle_level_shifter_instance_cmd(char* level_shifter_name, char* instance, char* port)
+  {
+    odb::dbDatabase* db = getOpenRoad()->getDb();
+    upf::handle_level_shifter_instance(
+        getOpenRoad()->getLogger(), db->getChip()->getBlock(), level_shifter_name, instance, port); 
+  }
 %}  // inline
