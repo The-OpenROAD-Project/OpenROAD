@@ -1254,7 +1254,7 @@ void FastRouteCore::spiralRouteAll()
 
     int numpoints = 0;
 
-    for (int d = 0; d < sttrees_[netID].num_nodes; d++) {
+    for (int d = 0; d < sttrees_[netID].num_nodes(); d++) {
       treenodes[d].topL = -1;
       treenodes[d].botL = num_layers_;
       // treenodes[d].l = 0;
@@ -1388,7 +1388,7 @@ void FastRouteCore::spiralRouteAll()
 
     auto& treenodes = sttrees_[netID].nodes;
 
-    for (int d = 0; d < sttrees_[netID].num_nodes; d++) {
+    for (int d = 0; d < sttrees_[netID].num_nodes(); d++) {
       const int na = treenodes[d].stackAlias;
 
       treenodes[d].status = treenodes[na].status;
@@ -1441,7 +1441,7 @@ void FastRouteCore::routeLVEnew(int netID,
   }
 
   if (sttrees_[netID].num_terminals > 2) {
-    for (int j = 0; j < sttrees_[netID].num_nodes; j++) {
+    for (int j = 0; j < sttrees_[netID].num_nodes(); j++) {
       if (treenodes[j].x < x1) {
         xmin = x1;
       }

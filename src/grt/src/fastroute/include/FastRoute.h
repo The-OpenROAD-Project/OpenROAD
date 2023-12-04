@@ -246,6 +246,7 @@ class FastRouteCore
                      const int L,
                      float& slack_th);
   void convertToMazeroute();
+  int splitEdge(std::vector<TreeEdge> &treeedges, std::vector<TreeNode> &treenodes, int n1, int n2, int edge_n1n2);
   void updateCongestionHistory(const int upType, bool stopDEC, int& max_adj);
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
@@ -260,6 +261,7 @@ class FastRouteCore
   void InitEstUsage();
   void SaveLastRouteLen();
   void fixEmbeddedTrees();
+  void fixLoops();
   void checkAndFixEmbeddedTree(const int net_id);
   bool areEdgesOverlapping(const int net_id,
                            const int edge_id,

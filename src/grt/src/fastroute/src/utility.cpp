@@ -823,7 +823,7 @@ void FastRouteCore::layerAssignmentV4()
       }
     }
 
-    for (nodeID = 0; nodeID < sttrees_[netID].num_nodes; nodeID++) {
+    for (nodeID = 0; nodeID < sttrees_[netID].num_nodes(); nodeID++) {
       treenodes[nodeID].topL = -1;
       treenodes[nodeID].botL = num_layers_;
       treenodes[nodeID].conCNT = 0;
@@ -903,7 +903,7 @@ void FastRouteCore::layerAssignment()
 
     numpoints = 0;
 
-    for (d = 0; d < sttrees_[netID].num_nodes; d++) {
+    for (d = 0; d < sttrees_[netID].num_nodes(); d++) {
       treenodes[d].topL = -1;
       treenodes[d].botL = num_layers_;
       // treenodes[d].l = 0;
@@ -1001,7 +1001,7 @@ void FastRouteCore::printEdge3D(int netID, int edgeID)
 
 void FastRouteCore::printTree3D(int netID)
 {
-  for (int nodeID = 0; nodeID < sttrees_[netID].num_nodes; nodeID++) {
+  for (int nodeID = 0; nodeID < sttrees_[netID].num_nodes(); nodeID++) {
     int x = tile_size_ * (sttrees_[netID].nodes[nodeID].x + 0.5) + x_corner_;
     int y = tile_size_ * (sttrees_[netID].nodes[nodeID].y + 0.5) + y_corner_;
     int l = num_layers_;
@@ -1037,7 +1037,7 @@ void FastRouteCore::checkRoute3D()
     const auto& treenodes = sttrees_[netID].nodes;
     const int num_terminals = sttrees_[netID].num_terminals;
 
-    for (nodeID = 0; nodeID < sttrees_[netID].num_nodes; nodeID++) {
+    for (nodeID = 0; nodeID < sttrees_[netID].num_nodes(); nodeID++) {
       if (nodeID < num_terminals) {
         if ((treenodes[nodeID].botL > nets_[netID]->getPinL()[nodeID])
             || (treenodes[nodeID].topL < nets_[netID]->getPinL()[nodeID])) {
@@ -1654,7 +1654,7 @@ void FastRouteCore::printEdge2D(int netID, int edgeID)
 
 void FastRouteCore::printTree2D(int netID)
 {
-  for (int nodeID = 0; nodeID < sttrees_[netID].num_nodes; nodeID++) {
+  for (int nodeID = 0; nodeID < sttrees_[netID].num_nodes(); nodeID++) {
     logger_->report("nodeID {},  [{}, {}]",
                     nodeID,
                     sttrees_[netID].nodes[nodeID].y,
@@ -1787,7 +1787,7 @@ void FastRouteCore::copyRS(void)
       continue;
     }
 
-    numNodes = sttrees_[netID].num_nodes;
+    numNodes = sttrees_[netID].num_nodes();
     numEdges = sttrees_[netID].num_edges();
 
     sttrees_bk_[netID].nodes.resize(numNodes);
@@ -1800,7 +1800,6 @@ void FastRouteCore::copyRS(void)
         sttrees_bk_[netID].nodes[i].edge[j] = sttrees_[netID].nodes[i].edge[j];
       }
     }
-    sttrees_bk_[netID].num_nodes = sttrees_[netID].num_nodes;
     sttrees_bk_[netID].num_terminals = sttrees_[netID].num_terminals;
 
     sttrees_bk_[netID].edges.resize(numEdges);
@@ -1856,7 +1855,7 @@ void FastRouteCore::copyBR(void)
         continue;
       }
 
-      numNodes = sttrees_bk_[netID].num_nodes;
+      numNodes = sttrees_bk_[netID].num_nodes();
       numEdges = sttrees_bk_[netID].num_edges();
 
       sttrees_[netID].nodes.resize(numNodes);
@@ -1873,7 +1872,6 @@ void FastRouteCore::copyBR(void)
 
       sttrees_[netID].edges.resize(numEdges);
 
-      sttrees_[netID].num_nodes = sttrees_bk_[netID].num_nodes;
       sttrees_[netID].num_terminals = sttrees_bk_[netID].num_terminals;
 
       for (edgeID = 0; edgeID < numEdges; edgeID++) {

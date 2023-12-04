@@ -769,14 +769,14 @@ void FastRouteCore::setupHeap(const int netID,
     d2[y2][x2] = 0;
     dest_heap.push_back(&d2[y2][x2]);
   } else {  // net with more than 2 pins
-    const int numNodes = sttrees_[netID].num_nodes;
+    const int numNodes = sttrees_[netID].num_nodes();
 
     std::vector<bool> visited(numNodes, false);
     std::vector<int> queue(numNodes);
 
     // find all the grids on tree edges in subtree t1 (connecting to n1) and put
     // them into src_heap
-    if (n1 < num_terminals) {  // n1 is a Pin node
+    if (false && n1 < num_terminals) {  // n1 is a Pin node
       // just need to put n1 itself into src_heap
       d1[y1][x1] = 0;
       src_heap.push_back(&d1[y1][x1]);
@@ -800,9 +800,9 @@ void FastRouteCore::setupHeap(const int netID,
         const int cur = queue[queuehead];
         queuehead++;
         visited[cur] = true;
-        if (cur < num_terminals) {  // cur node isn't a Steiner node
-          continue;
-        }
+        //if (cur < num_terminals) {  // cur node isn't a Steiner node
+          //continue;
+        //}
         const int nbrcnt = treenodes[cur].nbr_count;
         for (int i = 0; i < nbrcnt; i++) {
           const int nbr = treenodes[cur].nbr[i];
@@ -827,7 +827,6 @@ void FastRouteCore::setupHeap(const int netID,
               src_heap.push_back(&d1[nbrY][nbrX]);
               corr_edge_[nbrY][nbrX] = edge;
             }
-
             const Route* route = &(treeedges[edge].route);
             if (route->type != RouteType::MazeRoute) {
               logger_->error(GRT, 125, "Setup heap: not maze routing.");
@@ -856,7 +855,7 @@ void FastRouteCore::setupHeap(const int netID,
     // find all the grids on subtree t2 (connect to n2) and put them into
     // dest_heap find all the grids on tree edges in subtree t2 (connecting to
     // n2) and put them into dest_heap
-    if (n2 < num_terminals) {  // n2 is a Pin node
+    if (false && n2 < num_terminals) {  // n2 is a Pin node
       // just need to put n1 itself into src_heap
       d2[y2][x2] = 0;
       dest_heap.push_back(&d2[y2][x2]);
@@ -881,9 +880,9 @@ void FastRouteCore::setupHeap(const int netID,
         visited[cur] = true;
         queuehead++;
 
-        if (cur < num_terminals) {  // cur node isn't a Steiner node
-          continue;
-        }
+        //if (cur < num_terminals) {  // cur node isn't a Steiner node
+          //continue;
+        //}
         const int nbrcnt = treenodes[cur].nbr_count;
         for (int i = 0; i < nbrcnt; i++) {
           const int nbr = treenodes[cur].nbr[i];
@@ -1025,6 +1024,7 @@ bool FastRouteCore::updateRouteType1(const int net_id,
   // copy (n1, A2)
   const int cnt_n1A2 = copyGrids(
       treenodes, n1, A2, treeedges, edge_n1A2, gridsX_n1A2, gridsY_n1A2);
+
 
   // update route for (n1, A1) and (n1, A2)
   // find the index of E1 in (n1, A1)
@@ -1327,6 +1327,120 @@ float getCost(const int i,
   return cost;
 }
 
+int FastRouteCore::splitEdge(std::vector<TreeEdge> &treeedges, std::vector<TreeNode> &treenodes, int n1, int n2, int edge_n1n2)
+{
+  const int n2x = treenodes[n2].x;
+  const int n2y = treenodes[n2].y;
+
+  // create new node
+  const int new_node_id = treenodes.size();
+  TreeNode new_node;
+  new_node.x = n2x;
+  new_node.y = n2y;
+  new_node.stackAlias = treenodes[n2].stackAlias;
+
+  // create new edge
+  const int new_edge_id = treeedges.size();
+  TreeEdge new_edge;
+
+  //printf("New node: %d new edge: %d\n", new_node_id, new_edge_id);
+  // find one neighbor node different to n1
+  int B1;
+  int edge_n2B1;
+  if (treenodes[n2].nbr[0] == n1) {
+    B1 = treenodes[n2].nbr[1];
+    edge_n2B1 = treenodes[n2].edge[1]; 
+  } else if (treenodes[n2].nbr[1] == n1) {
+    B1 = treenodes[n2].nbr[0];
+    edge_n2B1 = treenodes[n2].edge[0];
+  } else {
+    B1 = treenodes[n2].nbr[0];
+    edge_n2B1 = treenodes[n2].edge[0];
+  }
+
+  //printf("edges updated: %d %d\n", edge_n2B1, edge_n1n2);
+  //printf("nodes updated: %d %d %d\n", B1, n2, n1);
+
+  // update n2 neighbor
+  int cnt = 0;
+  for (int i = 0; i < treenodes[n2].nbr_count; i++) {
+    if (treenodes[n2].nbr[i] == n1) continue;
+    else if (treenodes[n2].nbr[i] == B1){
+      treenodes[n2].nbr[cnt] = new_node_id;
+      treenodes[n2].edge[cnt] = new_edge_id;
+      cnt++;
+    }
+    else {
+      treenodes[n2].nbr[cnt] = treenodes[n2].nbr[i];
+      treenodes[n2].edge[cnt] = treenodes[n2].edge[i];
+      cnt++;
+    }
+  }
+  //printf("old nbr: %d new nbr: %d\n", treenodes[n2].nbr_count, cnt);
+  treenodes[n2].nbr_count = cnt;
+
+  // change edge neighbor
+  if (treeedges[edge_n2B1].n1 == n2) {
+    treeedges[edge_n2B1].n1 = new_node_id;
+    treeedges[edge_n2B1].n1a = new_node.stackAlias;
+  }
+  else {
+    treeedges[edge_n2B1].n2 = new_node_id;
+    treeedges[edge_n2B1].n2a = new_node.stackAlias;
+  }
+
+  // change current edge
+  if (treeedges[edge_n1n2].n1 == n2) {
+    treeedges[edge_n1n2].n1 = new_node_id;
+    treeedges[edge_n1n2].n1a = new_node.stackAlias;
+  }
+  else {
+    treeedges[edge_n1n2].n2 = new_node_id;
+    treeedges[edge_n1n2].n2a = new_node.stackAlias;
+  }
+
+  // change node neighbor
+  for (int i = 0; treenodes[B1].nbr_count; i++) {
+    if (treenodes[B1].nbr[i] == n2) treenodes[B1].nbr[i] = new_node_id;
+  }
+
+  // change n1 node
+  for (int i = 0; treenodes[n1].nbr_count; i++) {
+    if (treenodes[n1].nbr[i] == n2) treenodes[n1].nbr[i] = new_node_id;
+  }
+     
+  // config new edge
+  new_edge.len = 0;
+  new_edge.n1 = new_node_id;
+  new_edge.n1a = new_node.stackAlias;
+  new_edge.n2 = n2;
+  new_edge.n2a = treenodes[n2].stackAlias;
+  new_edge.route.type = RouteType::MazeRoute;
+  new_edge.route.routelen = 0;
+  new_edge.route.gridsX.push_back(n2x);
+  new_edge.route.gridsY.push_back(n2y);
+
+  // config new node
+  //new_node.assigned = false; // ??
+  //new_node.status = 0; // ??? 
+  //new_node.eID[0] = edge_n2B1; // ??
+  //new_node.eID[1] = new_edge_id;  // ??
+  //new_node.eID[2] = edge_n1n2;  // ??
+  //new_node.conCNT = 3;
+  new_node.nbr_count = 3;
+  new_node.nbr[0] = B1;
+  new_node.nbr[1] = n2;
+  new_node.nbr[2] = n1;
+  new_node.edge[0] = edge_n2B1;
+  new_node.edge[1] = new_edge_id;
+  new_node.edge[2] = edge_n1n2;
+ 
+  treeedges.push_back(new_edge);
+  treenodes.push_back(new_node);
+        
+  return new_node_id;
+}
+
 void FastRouteCore::mazeRouteMSMD(const int iter,
                                   const int expand,
                                   const float cost_height,
@@ -1401,8 +1515,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
       const int edgeID = net_eo_[edgeREC].edgeID;
       TreeEdge* treeedge = &(treeedges[edgeID]);
 
-      const int n1 = treeedge->n1;
-      const int n2 = treeedge->n2;
+      int n1 = treeedge->n1;
+      int n2 = treeedge->n2;
       const int n1x = treenodes[n1].x;
       const int n1y = treenodes[n1].y;
       const int n2x = treenodes[n2].x;
@@ -1808,6 +1922,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
       const int edge_n1n2 = edgeID;
       // (1) consider subtree1
+      if (n1 < num_terminals && (E1x != n1x || E1y != n1y))
+      {
+        // split neighbor edge and return id new node
+        n1 = splitEdge(treeedges, treenodes, n2, n1, edgeID);
+      }
       if (n1 >= num_terminals && (E1x != n1x || E1y != n1y))
       // n1 is not a pin and E1!=n1, then make change to subtree1,
       // otherwise, no change to subtree1
@@ -1959,6 +2078,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
       }    // n1 is not a pin and E1!=n1
 
       // (2) consider subtree2
+      if (n2 < num_terminals && (E2x != n2x || E2y != n2y))
+      {
+        // split neighbor edge and return id new node
+        n2 = splitEdge(treeedges, treenodes, n1, n2, edgeID);
+      }
       if (n2 >= num_terminals && (E2x != n2x || E2y != n2y))
       // n2 is not a pin and E2!=n2, then make change to subtree2,
       // otherwise, no change to subtree2
