@@ -1158,11 +1158,7 @@ Point Opendp::legalGridPt(const Cell* cell,
     row_height = getRowHeight(cell);
   }
   Point legal = legalPt(cell, pt, row_height, site_width);
-  if (cell->isHybrid()) {
-    return Point(gridX(legal.getX(), site_width), gridY(cell));
-  }
-  return Point(gridX(legal.getX(), site_width),
-               gridY(legal.getY(), row_height));
+  return Point(gridX(legal.getX(), site_width), gridY(legal.getY(), cell));
 }
 
 Point Opendp::nearestBlockEdge(const Cell* cell,
@@ -1304,22 +1300,21 @@ Point Opendp::pointOffMacro(const Cell& cell)
   Point init = initialLocation(&cell, false);
   int init_x = init.getX();
   int init_y = init.getY();
-  int row_height = getRowHeight(&cell);
   int site_width = site_width_;
 
   auto grid_info = getGridInfo(&cell);
   Pixel* pixel1 = gridPixel(grid_info.getGridIndex(),
                             gridX(init_x, site_width),
-                            gridY(init_y, row_height));
+                            gridY(init_y, &cell));
   Pixel* pixel2 = gridPixel(grid_info.getGridIndex(),
                             gridX(init_x + cell.width_, site_width),
-                            gridY(init_y, row_height));
+                            gridY(init_y, &cell));
   Pixel* pixel3 = gridPixel(grid_info.getGridIndex(),
                             gridX(init_x, site_width),
-                            gridY(init_y + cell.height_, row_height));
+                            gridY(init_y + cell.height_, &cell));
   Pixel* pixel4 = gridPixel(grid_info.getGridIndex(),
                             gridX(init_x + cell.width_, site_width),
-                            gridY(init_y + cell.height_, row_height));
+                            gridY(init_y + cell.height_, &cell));
 
   Cell* block = nullptr;
   if (pixel1 && pixel1->cell && isBlock(pixel1->cell)) {
@@ -1367,8 +1362,8 @@ void Opendp::legalCellPos(dbInst* db_inst)
 
   int site_width = site_width_;
   // transform to grid Pos for align
-  Point legal_grid_pt = Point(gridX(new_pos.getX(), site_width),
-                              gridY(new_pos.getY(), row_height));
+  Point legal_grid_pt
+      = Point(gridX(new_pos.getX(), site_width), gridY(new_pos.getY(), &cell));
   // Transform position on real position
   int x = (legal_grid_pt.getX() + padLeft(&cell)) * site_width_;
   int y = legal_grid_pt.getY() * row_height;
@@ -1448,7 +1443,7 @@ Point Opendp::legalGridPt(const Cell* cell,
     row_height = getRowHeight(cell);
   }
   Point pt = legalPt(cell, padded, row_height, site_width);
-  return Point(gridX(pt.getX(), site_width), gridY(pt.getY(), row_height));
+  return Point(gridX(pt.getX(), site_width), gridY(pt.getY(), cell));
 }
 
 ////////////////////////////////////////////////////////////////
