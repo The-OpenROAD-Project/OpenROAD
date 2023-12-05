@@ -1221,17 +1221,31 @@ BOOST_AUTO_TEST_CASE(cut_keepoutzone)
 }
 
 BOOST_DATA_TEST_CASE(route_wrong_direction_spc,
-                     (bdata::make({100, 50}) ^ bdata::make({false, true})),
+                     (bdata::make({100, 50, 100, 100})
+                      ^ bdata::make({false, true, true, true})
+                      ^ bdata::make({false, false, true, false})
+                      ^ bdata::make({150, 150, 150, 150})
+                      ^ bdata::make({false, false, false, true})
+                      ^ bdata::make({50, 50, 50, 50})),
                      spacing,
-                     legal)
+                     legal,
+                     noneolValid,
+                     noneolWidth,
+                     prlValid,
+                     prlLength)
 {
   //  Setup
-  makeLef58WrongDirSpcConstraint(2, spacing);
+  makeLef58WrongDirSpcConstraint(
+      2, spacing, noneolValid, noneolWidth, prlValid, prlLength);
   db_tech->findLayer("m1")->setDirection(odb::dbTechLayerDir::VERTICAL);
   frNet* n1 = makeNet("n1");
   frNet* n2 = makeNet("n2");
   makePathseg(n1, 2, {0, 50}, {100, 50}, 100);
-  makePathseg(n2, 2, {0, 200}, {100, 200}, 100);
+  if (prlValid) {
+    makePathseg(n2, 2, {50, 200}, {150, 200}, 100);
+  } else {
+    makePathseg(n2, 2, {0, 200}, {100, 200}, 100);
+  }
 
   runGC();
 
@@ -1240,7 +1254,7 @@ BOOST_DATA_TEST_CASE(route_wrong_direction_spc,
   if (legal) {
     BOOST_TEST(markers.size() == 0);
   } else {
-    BOOST_TEST(markers.size() == 1);  // 1
+    BOOST_TEST(markers.size() == 1);
   }
   if (!markers.empty()) {
     testMarker(markers[0].get(),

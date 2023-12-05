@@ -214,7 +214,11 @@ class Fixture
       frCoord within);
   frLef58SpacingWrongDirConstraint* makeLef58WrongDirSpcConstraint(
       frLayerNum layer_num,
-      frCoord spacing);
+      frCoord spacing,
+      bool hasNoneol,
+      frCoord noneolWidth,
+      bool hasPrl,
+      frCoord prlLength);
   // Public data members are accessible from inside the test function
   std::unique_ptr<fr::Logger> logger;
   std::unique_ptr<frDesign> design;

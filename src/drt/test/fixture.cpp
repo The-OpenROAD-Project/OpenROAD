@@ -688,7 +688,11 @@ void Fixture::initRegionQuery()
 
 frLef58SpacingWrongDirConstraint* Fixture::makeLef58WrongDirSpcConstraint(
     frLayerNum layer_num,
-    frCoord spacing)
+    frCoord spacing,
+    bool hasNoneol,
+    frCoord noneolWidth,
+    bool hasPrl,
+    frCoord prlLength)
 {
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
@@ -696,6 +700,14 @@ frLef58SpacingWrongDirConstraint* Fixture::makeLef58WrongDirSpcConstraint(
   auto uCon = make_unique<frLef58SpacingWrongDirConstraint>();
   auto con = uCon.get();
   con->setWrongDirSpace(spacing);
+  if (hasNoneol) {
+    con->setNonEol(hasNoneol);
+    con->setNonEolWidth(noneolWidth);
+  }
+  if (hasPrl) {
+    con->setPrlLengthValid(hasPrl);
+    con->setPrlLength(prlLength);
+  }
   layer->addLef58SpacingWrongDirConstraint(con);
   design->getTech()->addUConstraint(std::move(uCon));
   return con;

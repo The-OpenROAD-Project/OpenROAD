@@ -1152,7 +1152,7 @@ class frLef58SpacingWrongDirConstraint : public frConstraint
 {
  public:
   // constructors
-  frLef58SpacingWrongDirConstraint() {}
+  frLef58SpacingWrongDirConstraint() = default;
   // getters
   frCoord getWrongDirSpace() const { return wrongDirSpace; }
   bool hasNoneolWidth() const { return noneolValid; }
