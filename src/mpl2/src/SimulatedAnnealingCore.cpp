@@ -528,7 +528,11 @@ void SimulatedAnnealingCore<T>::fastSA()
 
   initSequencePair();
 
+  std::vector<int> best_positive_sequence;
+  std::vector<int> best_negative_sequence;
+
   float cost = calNormCost();
+  float lowest_cost = std::numeric_limits<float>::max();
   float pre_cost = cost;
   float delta_cost = 0.0;
   float temperature = init_temperature_;
@@ -555,8 +559,16 @@ void SimulatedAnnealingCore<T>::fastSA()
         graphics_->setPerturbation(i);
       }
       perturb();
-
       cost = calNormCost();
+
+      // Make sure we don't waste a good result generated
+      // when temperature is too high
+      if (lowest_cost > cost && isValid()) {
+        lowest_cost = cost;
+        best_negative_sequence = neg_seq_;
+        best_positive_sequence = pos_seq_;
+      }
+
       delta_cost = cost - pre_cost;
       const float random = distribution_(generator_);
       const float acceptance_probability
@@ -596,6 +608,11 @@ void SimulatedAnnealingCore<T>::fastSA()
       packFloorplan();
       calPenalty();
       pre_cost = calNormCost();
+    }
+
+    if (lowest_cost < calNormCost()) {
+      pos_seq_ = best_positive_sequence;
+      neg_seq_ = best_negative_sequence;
     }
   }
 
