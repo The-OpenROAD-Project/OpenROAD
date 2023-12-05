@@ -523,16 +523,6 @@ int Opendp::gridEndX(int x, int site_width) const
   return divCeil(x, site_width);
 }
 
-int Opendp::gridY(int y, int row_height) const
-{
-  return y / row_height;
-}
-
-int Opendp::gridEndY(int y, int row_height) const
-{
-  return divCeil(y, row_height);
-}
-
 int Opendp::gridX(int x, int site_width) const
 {
   return x / site_width;
@@ -584,16 +574,8 @@ pair<int, GridInfo> Opendp::getRowInfo(const Cell* cell) const
     logger_->error(DPL, 43, "No grid layers mapped.");
   }
   GridMapKey key = getGridMapKey(cell);
-  auto layer = grid_info_map_.find(key);
-  if (layer == grid_info_map_.end()) {
-    // this means the cell is taller than any layer
-    logger_->error(DPL,
-                   44,
-                   "Cell {} with height {} is taller than any row.",
-                   cell->name(),
-                   cell->height_);
-  }
-  return std::make_pair(cell->height_, layer->second);
+  auto layer = *grid_info_vector_.at(key);
+  return std::make_pair(cell->height_, layer);
 }
 
 GridMapKey Opendp::getGridMapKey(const dbSite* site) const
@@ -624,7 +606,7 @@ GridMapKey Opendp::getGridMapKey(const Cell* cell) const
 
 GridInfo Opendp::getGridInfo(const Cell* cell) const
 {
-  return grid_info_map_.at(getGridMapKey(cell));
+  return *grid_info_vector_.at(getGridMapKey(cell));
 }
 
 int Opendp::getSiteWidth(const Cell* cell) const
@@ -684,22 +666,26 @@ pair<int, int> Opendp::gridEndY(int y,
 
 int Opendp::gridY(const Cell* cell) const
 {
+  return gridY(cell->y_, cell);
+}
+
+int Opendp::gridY(const int y, const Cell* cell) const
+{
   if (cell->isHybrid()) {
     auto grid_info = getGridInfo(cell);
-    return gridY(cell->y_, grid_info.getSites()).first;
+    return gridY(y, grid_info.getSites()).first;
   }
-  int row_height = getRowHeight(cell);
 
-  return cell->y_ / row_height;
+  return y / getRowHeight(cell);
 }
 
 void Opendp::setGridPaddedLoc(Cell* cell, int x, int y, int site_width) const
 {
   cell->x_ = (x + padLeft(cell)) * site_width;
   if (cell->isHybrid()) {
-    auto grid_info = grid_info_map_.at(getGridMapKey(cell));
-    int total_sites_height = grid_info.getSitesTotalHeight();
-    const auto& sites = grid_info.getSites();
+    auto grid_info = grid_info_vector_.at(getGridMapKey(cell));
+    int total_sites_height = grid_info->getSitesTotalHeight();
+    const auto& sites = grid_info->getSites();
     const int sites_size = sites.size();
     int height = (y / sites_size) * total_sites_height;
     for (int s = 0; s < y % sites_size; s++) {
@@ -707,17 +693,7 @@ void Opendp::setGridPaddedLoc(Cell* cell, int x, int y, int site_width) const
     }
     cell->y_ = height;
     if (cell->isHybridParent()) {
-      debugPrint(
-          logger_,
-          DPL,
-          "hybrid",
-          1,
-          "Offsetting cell {} to start at {} instead of {} -> offset: {}",
-          cell->name(),
-          cell->y_ + grid_info.getOffset(),
-          cell->y_,
-          grid_info.getOffset());
-      cell->y_ += grid_info.getOffset();
+      cell->y_ += grid_info->getOffset();
     }
     return;
   }
@@ -750,13 +726,18 @@ int Opendp::gridEndX(const Cell* cell) const
 
 int Opendp::gridEndY(const Cell* cell) const
 {
+  return gridEndY(cell->y_, cell);
+}
+
+int Opendp::gridEndY(int y, const Cell* cell) const
+{
   if (cell->isHybrid()) {
     auto grid_info = getGridInfo(cell);
     const auto& grid_sites = grid_info.getSites();
-    return gridY(cell->y_ + cell->height_, grid_sites).first;
+    return gridY(y + cell->height_, grid_sites).first;
   }
   int row_height = getRowHeight(cell);
-  return divCeil(cell->y_ + cell->height_, row_height);
+  return divCeil(y + cell->height_, row_height);
 }
 
 double Opendp::dbuToMicrons(int64_t dbu) const

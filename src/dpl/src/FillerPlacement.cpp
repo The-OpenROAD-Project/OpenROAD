@@ -75,16 +75,16 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
         chosen_grid_key = grid_idx;
       }
     }
-    auto chosen_grid_info = grid_info_map_.at(chosen_grid_key);
-    int chosen_row_count = chosen_grid_info.getRowCount();
-    if (!chosen_grid_info.isHybrid()) {
+    auto chosen_grid_info = grid_info_vector_.at(chosen_grid_key);
+    int chosen_row_count = chosen_grid_info->getRowCount();
+    if (!chosen_grid_info->isHybrid()) {
       int site_height = min_height;
       for (int row = 0; row < chosen_row_count; row++) {
         placeRowFillers(
-            row, prefix, filler_masters, site_height, chosen_grid_info);
+            row, prefix, filler_masters, site_height, *chosen_grid_info);
       }
     } else {
-      const auto& hybrid_sites_vec = chosen_grid_info.getSites();
+      const auto& hybrid_sites_vec = chosen_grid_info->getSites();
       const int hybrid_sites_num = hybrid_sites_vec.size();
       for (int row = 0; row < chosen_row_count; row++) {
         placeRowFillers(
@@ -92,7 +92,7 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
             prefix,
             filler_masters,
             hybrid_sites_vec[row % hybrid_sites_num].site->getHeight(),
-            chosen_grid_info);
+            *chosen_grid_info);
       }
     }
   }
