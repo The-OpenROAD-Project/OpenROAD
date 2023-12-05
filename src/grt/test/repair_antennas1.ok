@@ -10,6 +10,20 @@
 [INFO ODB-0131]     Created 1360 components and 6650 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
+Net: clk
+  Pin: clkbuf_0_clk/A (sky130_fd_sc_hs__clkbuf_1)
+    Layer: met2
+      Partial area ratio:  462.20
+      Required ratio:  400.00 (Side area) (VIOLATED)
+
+
+Net: req_msg[15]
+  Pin: _589_/A (sky130_fd_sc_hs__and2_1)
+    Layer: met3
+      Partial area ratio: 1052.04
+      Required ratio:  400.00 (Side area) (VIOLATED)
+
+
 Net: req_msg[28]
   Pin: _652_/A1 (sky130_fd_sc_hs__a22oi_1)
     Layer: met3
@@ -17,24 +31,31 @@ Net: req_msg[28]
       Required ratio:  400.00 (Side area) (VIOLATED)
 
 
-Net: reset
-  Pin: _346_/A1 (sky130_fd_sc_hs__o31ai_1)
+Net: resp_msg[14]
+  Pin: _658_/A (sky130_fd_sc_hs__nand2_1)
     Layer: met2
-      Partial area ratio:  423.53
+      Partial area ratio:  506.30
       Required ratio:  400.00 (Side area) (VIOLATED)
 
 
-Net: resp_msg[11]
-  Pin: _648_/A (sky130_fd_sc_hs__nand2_1)
+Net: resp_msg[7]
+  Pin: _629_/B (sky130_fd_sc_hs__nand2_1)
     Layer: met2
-      Partial area ratio:  404.81
+      Partial area ratio:  560.26
       Required ratio:  400.00 (Side area) (VIOLATED)
 
 
-[INFO ANT-0002] Found 3 net violations.
-[INFO ANT-0001] Found 3 pin violations.
-[INFO GRT-0012] Found 3 antenna violations.
-[INFO GRT-0015] Inserted 3 diodes.
+Net: _229_
+  Pin: _546_/B1 (sky130_fd_sc_hs__o21ai_1)
+    Layer: met2
+      Partial area ratio:  473.93
+      Required ratio:  400.00 (Side area) (VIOLATED)
+
+
+[INFO ANT-0002] Found 6 net violations.
+[INFO ANT-0001] Found 6 pin violations.
+[INFO GRT-0012] Found 6 antenna violations.
+[INFO GRT-0015] Inserted 6 diodes.
 [INFO ANT-0002] Found 0 net violations.
 [INFO ANT-0001] Found 0 pin violations.
 No differences found.
