@@ -48,6 +48,7 @@
 #include <cmath>
 
 #include "dbGroup.h"
+#include "dbLevelShifter.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbPowerDomain>;
@@ -154,6 +155,11 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj)
   stream >> obj._x2;
   stream >> obj._y1;
   stream >> obj._y2;
+  // User Code Begin >>
+  if (stream.getDatabase()->isSchema(db_schema_level_shifter)) {
+    stream >> obj._levelshifters;
+  }
+  // User Code End >>
   return stream;
 }
 
@@ -171,6 +177,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbPowerDomain& obj)
   stream << obj._x2;
   stream << obj._y1;
   stream << obj._y2;
+  // User Code Begin <<
+  stream << obj._levelshifters;
+  // User Code End <<
   return stream;
 }
 
@@ -283,6 +292,12 @@ void dbPowerDomain::addIsolation(dbIsolation* iso)
   obj->_isolation.push_back(iso->getImpl()->getOID());
 }
 
+void dbPowerDomain::addLevelShifter(dbLevelShifter* shifter)
+{
+  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  obj->_levelshifters.push_back(shifter->getImpl()->getOID());
+}
+
 std::vector<dbPowerSwitch*> dbPowerDomain::getPowerSwitches()
 {
   _dbPowerDomain* obj = (_dbPowerDomain*) this;
@@ -309,6 +324,21 @@ std::vector<dbIsolation*> dbPowerDomain::getIsolations()
   }
 
   return isolations;
+}
+
+std::vector<dbLevelShifter*> dbPowerDomain::getLevelShifters()
+{
+  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+
+  std::vector<dbLevelShifter*> levelshifters;
+
+  for (const auto& shifter : obj->_levelshifters) {
+    levelshifters.push_back(
+        (dbLevelShifter*) par->_levelshifter_tbl->getPtr(shifter));
+  }
+
+  return levelshifters;
 }
 
 bool dbPowerDomain::setArea(float _x1, float _y1, float _x2, float _y2)

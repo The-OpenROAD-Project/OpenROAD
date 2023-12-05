@@ -131,6 +131,7 @@ class dbGlobalConnect;
 class dbGroup;
 class dbGuide;
 class dbIsolation;
+class dbLevelShifter;
 class dbLogicPort;
 class dbMetalWidthViaMap;
 class dbModInst;
@@ -924,6 +925,11 @@ class dbBlock : public dbObject
   dbSet<dbIsolation> getIsolations();
 
   ///
+  /// Get the LevelShifters of this block.
+  ///
+  dbSet<dbLevelShifter> getLevelShifters();
+
+  ///
   /// Get the groups of this block.
   ///
   dbSet<dbGroup> getGroups();
@@ -1005,6 +1011,12 @@ class dbBlock : public dbObject
   /// Returns nullptr if the object was not found.
   ///
   dbIsolation* findIsolation(const char* name);
+
+  ///
+  /// Find a specific LevelShifter in this block.
+  /// Returns nullptr if the object was not found.
+  ///
+  dbLevelShifter* findLevelShifter(const char* name);
 
   ///
   /// Find a specific group in this block.
@@ -7312,6 +7324,89 @@ class dbIsolation : public dbObject
   // User Code End dbIsolation
 };
 
+class dbLevelShifter : public dbObject
+{
+ public:
+  const char* getName() const;
+
+  dbPowerDomain* getDomain() const;
+
+  void setSource(std::string source);
+
+  std::string getSource() const;
+
+  void setSink(std::string sink);
+
+  std::string getSink() const;
+
+  void setUseFunctionalEquivalence(bool use_functional_equivalence);
+
+  bool isUseFunctionalEquivalence() const;
+
+  void setAppliesTo(std::string applies_to);
+
+  std::string getAppliesTo() const;
+
+  void setAppliesToBoundary(std::string applies_to_boundary);
+
+  std::string getAppliesToBoundary() const;
+
+  void setRule(std::string rule);
+
+  std::string getRule() const;
+
+  void setThreshold(float threshold);
+
+  float getThreshold() const;
+
+  void setNoShift(bool no_shift);
+
+  bool isNoShift() const;
+
+  void setForceShift(bool force_shift);
+
+  bool isForceShift() const;
+
+  void setLocation(std::string location);
+
+  std::string getLocation() const;
+
+  void setInputSupply(std::string input_supply);
+
+  std::string getInputSupply() const;
+
+  void setOutputSupply(std::string output_supply);
+
+  std::string getOutputSupply() const;
+
+  void setInternalSupply(std::string internal_supply);
+
+  std::string getInternalSupply() const;
+
+  void setNamePrefix(std::string name_prefix);
+
+  std::string getNamePrefix() const;
+
+  void setNameSuffix(std::string name_suffix);
+
+  std::string getNameSuffix() const;
+
+  // User Code Begin dbLevelShifter
+
+  static dbLevelShifter* create(dbBlock* block,
+                                const char* name,
+                                dbPowerDomain* domain);
+  static void destroy(dbLevelShifter* shifter);
+
+  void addElement(const std::string& element);
+  void addExcludeElement(const std::string& element);
+  void addInstance(const std::string& instance, const std::string& port);
+  std::vector<std::string> getElements() const;
+  std::vector<std::string> getExcludeElements() const;
+  std::vector<std::pair<std::string, std::string>> getInstances() const;
+  // User Code End dbLevelShifter
+};
+
 class dbLogicPort : public dbObject
 {
  public:
@@ -7475,9 +7570,11 @@ class dbPowerDomain : public dbObject
 
   void addPowerSwitch(dbPowerSwitch* ps);
   void addIsolation(dbIsolation* iso);
+  void addLevelShifter(dbLevelShifter* shifter);
 
   std::vector<dbPowerSwitch*> getPowerSwitches();
   std::vector<dbIsolation*> getIsolations();
+  std::vector<dbLevelShifter*> getLevelShifters();
 
   bool setArea(float x1, float y1, float x2, float y2);
   bool getArea(int& x1, int& y1, int& x2, int& y2);
