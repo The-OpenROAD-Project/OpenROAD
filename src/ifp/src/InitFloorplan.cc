@@ -108,7 +108,7 @@ void InitFloorplan::initFloorplan(double utilization,
                                   const std::vector<odb::dbSite*>& extra_sites)
 {
   utl::Validator v(logger_, IFP);
-  v.check_percentage("utilization", utilization, 12);
+  v.check_non_negative("utilization", utilization, 12);
   v.check_non_negative("core_space_bottom", core_space_bottom, 32);
   v.check_non_negative("core_space_top", core_space_top, 33);
   v.check_non_negative("core_space_left", core_space_left, 34);

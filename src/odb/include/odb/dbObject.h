@@ -92,6 +92,7 @@ enum dbObjectType
   dbGroupObj,
   dbGuideObj,
   dbIsolationObj,
+  dbLevelShifterObj,
   dbLogicPortObj,
   dbMetalWidthViaMapObj,
   dbModInstObj,
