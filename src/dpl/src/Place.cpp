@@ -1302,10 +1302,10 @@ Point Opendp::pointOffMacro(const Cell& cell)
                             gridY(init_y, &cell));
   Pixel* pixel3 = gridPixel(grid_info.getGridIndex(),
                             gridX(init_x, site_width),
-                            gridY(init_y + cell.height_, &cell));
+                            gridEndY(init_y, &cell));
   Pixel* pixel4 = gridPixel(grid_info.getGridIndex(),
                             gridX(init_x + cell.width_, site_width),
-                            gridY(init_y + cell.height_, &cell));
+                            gridEndY(init_y, &cell));
 
   Cell* block = nullptr;
   if (pixel1 && pixel1->cell && isBlock(pixel1->cell)) {
