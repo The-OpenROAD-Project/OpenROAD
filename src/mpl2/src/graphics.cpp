@@ -146,9 +146,13 @@ void Graphics::resetPenalties()
   notch_penalty_.reset();
 }
 
-void Graphics::setStepAndPerturbation(int step, int perturbation)
+void Graphics::setStep(int step)
 {
   step_ = step;
+}
+
+void Graphics::setPerturbation(int perturbation)
+{
   perturbation_ = perturbation;
 }
 

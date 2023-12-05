@@ -546,9 +546,13 @@ void SimulatedAnnealingCore<T>::fastSA()
   int step = 1;
 
   while (step <= max_num_step_) {
+    if (graphics_) {
+      graphics_->setStep(step);
+    }
+
     for (int i = 0; i < num_perturb_per_step_; i++) {
       if (graphics_) {
-        graphics_->setStepAndPerturbation(step, i);
+        graphics_->setPerturbation(i);
       }
       perturb();
 
@@ -575,6 +579,10 @@ void SimulatedAnnealingCore<T>::fastSA()
             && (outline_penalty_ > 0.0))) {
       shrink();
 
+      packFloorplan();
+      calPenalty();
+      pre_cost = calNormCost();
+
       num_restart++;
       step = 1;
       num_perturb_per_step_ *= 2;
@@ -584,11 +592,18 @@ void SimulatedAnnealingCore<T>::fastSA()
     // Avoid considering notch during initial steps
     if (step == max_num_step_ - macros_.size() * 2) {
       notch_weight_ = original_notch_weight_;
+
       packFloorplan();
       calPenalty();
       pre_cost = calNormCost();
     }
   }
+
+  // As there's a tiny possibility of restoring the sequence pair in
+  // the last step and as we don't pack the floorplan when restoring,
+  // we need to update the floorplan and penalties one last time.
+  packFloorplan();
+  calPenalty();
 
   if (graphics_) {
     graphics_->endSA();

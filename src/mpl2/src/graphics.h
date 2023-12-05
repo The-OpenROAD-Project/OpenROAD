@@ -62,7 +62,8 @@ class Graphics : public gui::Renderer, public Mpl2Observer
 
   void finishedClustering(Cluster* root) override;
 
-  void setStepAndPerturbation(int step, int perturbation) override;
+  void setStep(int step) override;
+  void setPerturbation(int perturbation) override;
   void setAreaPenalty(float area) override;
   void setOutlinePenalty(float outline_penalty) override;
   void setWirelength(float wirelength) override;

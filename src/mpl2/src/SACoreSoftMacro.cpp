@@ -237,15 +237,13 @@ void SACoreSoftMacro::perturb()
   calPenalty();
 }
 
+// To reduce the runtime, here we do not call PackFloorplan again.
 void SACoreSoftMacro::restore()
 {
   if (macros_.empty()) {
     return;
   }
 
-  // To reduce the runtime, here we do not call PackFloorplan
-  // again. So when we need to generate the final floorplan out,
-  // we need to call PackFloorplan again at the end of SA process
   if (action_id_ == 5) {
     macros_[macro_id_] = pre_macros_[macro_id_];
   } else if (action_id_ == 1) {
