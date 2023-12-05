@@ -1346,27 +1346,26 @@ void Opendp::legalCellPos(dbInst* db_inst)
 {
   Cell cell;
   convertDbToCell(db_inst, cell);
-  Point init_pos = initialLocation(
-      &cell, false);  // returns the initial position of the cell
-  Point legal_pt = pointOffMacro(
-      cell);  // returns the modified position if the cell is in a macro
-  Point new_pos = legalPt(
-      &cell,
-      legal_pt);  // return the modified position if the cell is outside the die
+  // returns the initial position of the cell
+  const Point init_pos = initialLocation(&cell, false);
+  // returns the modified position if the cell is in a macro
+  const Point legal_pt = pointOffMacro(cell);
+  // return the modified position if the cell is outside the die
+  const Point new_pos = legalPt(&cell, legal_pt);
 
   if (init_pos == new_pos) {
     return;
   }
 
-  int row_height = getRowHeight(&cell);
+  const int row_height = getRowHeight(&cell);
 
-  int site_width = site_width_;
+  const int site_width = site_width_;
   // transform to grid Pos for align
-  Point legal_grid_pt
+  const Point legal_grid_pt
       = Point(gridX(new_pos.getX(), site_width), gridY(new_pos.getY(), &cell));
   // Transform position on real position
-  int x = (legal_grid_pt.getX() + padLeft(&cell)) * site_width_;
-  int y = legal_grid_pt.getY() * row_height;
+  const int x = (legal_grid_pt.getX() + padLeft(&cell)) * site_width_;
+  const int y = legal_grid_pt.getY() * row_height;
   // Set position of cell on db
   db_inst->setLocation(core_.xMin() + x, core_.yMin() + y);
 }
