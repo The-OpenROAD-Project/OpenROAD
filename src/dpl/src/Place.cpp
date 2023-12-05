@@ -1357,17 +1357,14 @@ void Opendp::legalCellPos(dbInst* db_inst)
     return;
   }
 
-  const int row_height = getRowHeight(&cell);
-
-  const int site_width = site_width_;
   // transform to grid Pos for align
   const Point legal_grid_pt
-      = Point(gridX(new_pos.getX(), site_width), gridY(new_pos.getY(), &cell));
+      = Point(gridX(new_pos.getX(), site_width_), gridY(new_pos.getY(), &cell));
   // Transform position on real position
-  const int x = (legal_grid_pt.getX() + padLeft(&cell)) * site_width_;
-  const int y = legal_grid_pt.getY() * row_height;
+  setGridPaddedLoc(
+      &cell, legal_grid_pt.getX(), legal_grid_pt.getY(), site_width_);
   // Set position of cell on db
-  db_inst->setLocation(core_.xMin() + x, core_.yMin() + y);
+  db_inst->setLocation(core_.xMin() + cell.x_, core_.yMin() + cell.y_);
 }
 
 // Legalize pt origin for cell
