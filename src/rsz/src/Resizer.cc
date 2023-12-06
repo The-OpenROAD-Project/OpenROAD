@@ -951,8 +951,36 @@ Resizer::resizePreamble()
   ensureLevelDrvrVertices();
   sta_->ensureClkNetwork();
   makeEquivCells();
+  checkLibertyForAllCorners();
   findBuffers();
   findTargetLoads();
+}
+
+void
+Resizer::checkLibertyForAllCorners()
+{
+  for (Corner *corner : *sta_->corners()) {
+    int lib_ap_index = corner->libertyIndex(max_);
+    LibertyLibraryIterator *lib_iter = network_->libertyLibraryIterator();
+    while (lib_iter->hasNext()) {
+      LibertyLibrary *lib = lib_iter->next();
+      LibertyCellIterator cell_iter(lib);
+      while (cell_iter.hasNext()) {
+        LibertyCell *cell = cell_iter.next();
+        if (isLinkCell(cell) && !dontUse(cell)) {
+          LibertyCell *corner_cell = cell->cornerCell(lib_ap_index);
+          if (!corner_cell) {
+            logger_->warn(RSZ, 96,
+                          "Cell {} is missing in {} and will be set dont-use",
+                          cell->name(), corner->name());
+            setDontUse(cell, true);
+            continue;
+          }
+        }
+      }
+    }
+    delete lib_iter;
+  }
 }
 
 void
@@ -1544,7 +1572,7 @@ Resizer::findTargetLoads()
       LibertyCellIterator cell_iter(lib);
       while (cell_iter.hasNext()) {
         LibertyCell *cell = cell_iter.next();
-        if (isLinkCell(cell)) {
+        if (isLinkCell(cell) && !dontUse(cell)) {
           LibertyCell *corner_cell = cell->cornerCell(lib_ap_index);
           float tgt_load;
           bool exists;
@@ -2281,6 +2309,7 @@ double
 Resizer::findMaxWireLength()
 {
   init();
+  checkLibertyForAllCorners();
   findBuffers();
   findTargetLoads();
   return findMaxWireLength1();
