@@ -8,11 +8,6 @@
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 88 connections.
 [INFO PPL-0044] Pin group: [ resp_msg[0] resp_msg[1] clk resp_val resp_rdy ... ]
-[INFO PPL-0080] Mirroring pins resp_msg[0] and req_msg[0].
-[INFO PPL-0080] Mirroring pins resp_msg[1] and req_msg[1].
-[INFO PPL-0080] Mirroring pins resp_val and req_val.
-[INFO PPL-0080] Mirroring pins resp_rdy and req_rdy.
-[INFO PPL-0080] Mirroring pins resp_msg[10] and req_msg[10].
 Found 0 macro blocks.
 [INFO PPL-0010] Tentative 0 to set up sections.
 [INFO PPL-0001] Number of slots           2494
