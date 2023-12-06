@@ -609,16 +609,12 @@ void SimulatedAnnealingCore<T>::fastSA()
       calPenalty();
       pre_cost = calNormCost();
     }
-
-    if (lowest_cost < calNormCost()) {
-      pos_seq_ = best_positive_sequence;
-      neg_seq_ = best_negative_sequence;
-    }
   }
 
-  // As there's a tiny possibility of restoring the sequence pair in
-  // the last step and as we don't pack the floorplan when restoring,
-  // we need to update the floorplan and penalties one last time.
+  if (lowest_cost < calNormCost()) {
+    pos_seq_ = best_positive_sequence;
+    neg_seq_ = best_negative_sequence;
+  }
   packFloorplan();
   calPenalty();
 
