@@ -727,9 +727,47 @@ Edge IOPlacer::getMirroredEdge(const Edge& edge)
   return mirrored_edge;
 }
 
+int IOPlacer::computeRegionIncrease(const Interval& interval,
+                                    const int num_pins)
+{
+  const bool vertical_pin
+      = interval.getEdge() == Edge::top || interval.getEdge() == Edge::bottom;
+  const int interval_length = std::abs(interval.getEnd() - interval.getBegin());
+  int min_dist = std::numeric_limits<int>::min();
+
+  if (interval.getLayer() != -1) {
+    min_dist = vertical_pin ? core_->getMinDstPinsX()[interval.getLayer()]
+                            : core_->getMinDstPinsY()[interval.getLayer()];
+  } else if (vertical_pin) {
+    for (int layer_idx : ver_layers_) {
+      const int layer_min_dist = core_->getMinDstPinsX()[layer_idx];
+      min_dist = std::max(layer_min_dist, min_dist);
+    }
+  } else {
+    for (int layer_idx : ver_layers_) {
+      const int layer_min_dist = core_->getMinDstPinsX()[layer_idx];
+      min_dist = std::max(layer_min_dist, min_dist);
+    }
+  }
+
+  const bool dist_in_tracks = parms_->getMinDistanceInTracks();
+  const int user_min_dist = parms_->getMinDistance();
+  if (dist_in_tracks) {
+    min_dist *= user_min_dist;
+  } else if (user_min_dist != 0) {
+    min_dist
+        = std::ceil(static_cast<float>(user_min_dist) / min_dist) * min_dist;
+  } else {
+    min_dist *= default_min_dist_;
+  }
+
+  const int increase = (num_pins * min_dist) - interval_length;
+
+  return increase;
+}
+
 void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 {
-  const int default_min_dist = 2;
   Point lb = core_->getBoundary().ll();
   Point ub = core_->getBoundary().ur();
 
@@ -738,19 +776,17 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
   int ub_x = ub.x();
   int ub_y = ub.y();
 
-  bool vertical = (edge == Edge::top || edge == Edge::bottom);
-  int min = vertical ? lb_x : lb_y;
-  int max = vertical ? ub_x : ub_y;
+  bool vertical_pin = (edge == Edge::top || edge == Edge::bottom);
+  int min = vertical_pin ? lb_x : lb_y;
+  int max = vertical_pin ? ub_x : ub_y;
 
   int offset = parms_->getCornerAvoidance();
-
-  int i = 0;
   bool dist_in_tracks = parms_->getMinDistanceInTracks();
   for (int layer : layers) {
     int curr_x, curr_y, start_idx, end_idx;
     // get the on grid min distance
-    int tech_min_dst
-        = vertical ? core_->getMinDstPinsX()[i] : core_->getMinDstPinsY()[i];
+    int tech_min_dst = vertical_pin ? core_->getMinDstPinsX()[layer]
+                                    : core_->getMinDstPinsY()[layer];
     int min_dst_pins
         = dist_in_tracks
               ? tech_min_dst * parms_->getMinDistance()
@@ -759,7 +795,7 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
                                 / tech_min_dst);
 
     min_dst_pins
-        = (min_dst_pins == 0) ? default_min_dist * tech_min_dst : min_dst_pins;
+        = (min_dst_pins == 0) ? default_min_dist_ * tech_min_dst : min_dst_pins;
 
     if (offset == -1) {
       offset = num_tracks_offset_ * tech_min_dst;
@@ -769,17 +805,18 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
       }
     }
 
-    int init_tracks
-        = vertical ? core_->getInitTracksX()[i] : core_->getInitTracksY()[i];
-    int num_tracks
-        = vertical ? core_->getNumTracksX()[i] : core_->getNumTracksY()[i];
+    int init_tracks = vertical_pin ? core_->getInitTracksX()[layer]
+                                   : core_->getInitTracksY()[layer];
+    int num_tracks = vertical_pin ? core_->getNumTracksX()[layer]
+                                  : core_->getNumTracksY()[layer];
 
     float thickness_multiplier
-        = vertical ? parms_->getVerticalThicknessMultiplier()
-                   : parms_->getHorizontalThicknessMultiplier();
+        = vertical_pin ? parms_->getVerticalThicknessMultiplier()
+                       : parms_->getHorizontalThicknessMultiplier();
 
-    int half_width = vertical ? int(ceil(core_->getMinWidthX()[i] / 2.0))
-                              : int(ceil(core_->getMinWidthY()[i] / 2.0));
+    int half_width = vertical_pin
+                         ? int(ceil(core_->getMinWidthX()[layer] / 2.0))
+                         : int(ceil(core_->getMinWidthY()[layer] / 2.0));
 
     half_width *= thickness_multiplier;
 
@@ -792,7 +829,7 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
                        static_cast<int>(floor((max - half_width - init_tracks)
                                               / min_dst_pins)))
               - num_tracks_offset;
-    if (vertical) {
+    if (vertical_pin) {
       curr_x = init_tracks + start_idx * min_dst_pins;
       curr_y = (edge == Edge::bottom) ? lb_y : ub_y;
     } else {
@@ -804,7 +841,7 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
     for (int i = start_idx; i <= end_idx; ++i) {
       Point pos(curr_x, curr_y);
       slots.push_back(pos);
-      if (vertical) {
+      if (vertical_pin) {
         curr_x += min_dst_pins;
       } else {
         curr_y += min_dst_pins;
@@ -818,11 +855,10 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
     for (const Point& pos : slots) {
       curr_x = pos.getX();
       curr_y = pos.getY();
-      bool blocked = vertical ? checkBlocked(edge, curr_x, layer)
-                              : checkBlocked(edge, curr_y, layer);
+      bool blocked = vertical_pin ? checkBlocked(edge, curr_x, layer)
+                                  : checkBlocked(edge, curr_y, layer);
       slots_.push_back({blocked, false, Point(curr_x, curr_y), layer, edge});
     }
-    i++;
   }
 }
 
@@ -1404,26 +1440,10 @@ void IOPlacer::updatePinArea(IOPin& pin)
   }
 
   if (pin.getLayer() != top_grid_->layer) {
-    int index = -1;
     int required_min_area = 0;
 
-    int i = 0;
-    for (int layer : hor_layers_) {
-      if (layer == pin.getLayer()) {
-        index = i;
-      }
-      i++;
-    }
-
-    i = 0;
-    for (int layer : ver_layers_) {
-      if (layer == pin.getLayer()) {
-        index = i;
-      }
-      i++;
-    }
-
-    if (index == -1) {
+    if (hor_layers_.find(pin.getLayer()) == hor_layers_.end()
+        && ver_layers_.find(pin.getLayer()) == ver_layers_.end()) {
       logger_->error(PPL,
                      77,
                      "Layer {} of Pin {} not found.",
@@ -1434,12 +1454,12 @@ void IOPlacer::updatePinArea(IOPin& pin)
     if (pin.getOrientation() == Orientation::north
         || pin.getOrientation() == Orientation::south) {
       float thickness_multiplier = parms_->getVerticalThicknessMultiplier();
-      int half_width = int(ceil(core_->getMinWidthX()[index] / 2.0))
+      int half_width = int(ceil(core_->getMinWidthX()[pin.getLayer()] / 2.0))
                        * thickness_multiplier;
-      int height = int(
-          std::max(2.0 * half_width,
-                   ceil(core_->getMinAreaX()[index] / (2.0 * half_width))));
-      required_min_area = core_->getMinAreaX()[index];
+      int height = int(std::max(
+          2.0 * half_width,
+          ceil(core_->getMinAreaX()[pin.getLayer()] / (2.0 * half_width))));
+      required_min_area = core_->getMinAreaX()[pin.getLayer()];
 
       int ext = 0;
       if (parms_->getVerticalLength() != -1) {
@@ -1466,12 +1486,12 @@ void IOPlacer::updatePinArea(IOPin& pin)
     if (pin.getOrientation() == Orientation::west
         || pin.getOrientation() == Orientation::east) {
       float thickness_multiplier = parms_->getHorizontalThicknessMultiplier();
-      int half_width = int(ceil(core_->getMinWidthY()[index] / 2.0))
+      int half_width = int(ceil(core_->getMinWidthY()[pin.getLayer()] / 2.0))
                        * thickness_multiplier;
-      int height = int(
-          std::max(2.0 * half_width,
-                   ceil(core_->getMinAreaY()[index] / (2.0 * half_width))));
-      required_min_area = core_->getMinAreaY()[index];
+      int height = int(std::max(
+          2.0 * half_width,
+          ceil(core_->getMinAreaY()[pin.getLayer()] / (2.0 * half_width))));
+      required_min_area = core_->getMinAreaY()[pin.getLayer()];
 
       int ext = 0;
       if (parms_->getHorizontalLengthExtend() != -1) {
@@ -1571,16 +1591,16 @@ void IOPlacer::addNamesConstraint(PinSet* pins, Edge edge, int begin, int end)
     pin_names += pin->getName() + " ";
     pin_cnt++;
     if (pin_cnt >= pins_per_report_
-        && !logger_->debugCheck(utl::PPL, "report_pin_names", 1)) {
+        && !logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
       pin_names += "... ";
       break;
     }
   }
 
-  if (logger_->debugCheck(utl::PPL, "report_pin_names", 1)) {
+  if (logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
     debugPrint(logger_,
                utl::PPL,
-               "report_pin_names",
+               "pin_groups",
                1,
                "Restrict pins [ {}] to region {:.2f}u-{:.2f}u at the {} edge.",
                pin_names,
@@ -1634,6 +1654,13 @@ void IOPlacer::addTopLayerConstraint(PinSet* pins, const odb::Rect& region)
 
 void IOPlacer::addMirroredPins(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2)
 {
+  debugPrint(logger_,
+             utl::PPL,
+             "mirrored_pins",
+             1,
+             "Mirroring pins {} and {}",
+             bterm1->getName(),
+             bterm2->getName());
   mirrored_pins_[bterm1] = bterm2;
 }
 
@@ -1740,11 +1767,15 @@ void IOPlacer::initConstraints(bool annealing)
       constraint.pins_per_slots
           = static_cast<float>(constraint.pin_list.size()) / num_slots;
       if (constraint.pins_per_slots > 1) {
+        int increase = computeRegionIncrease(constraint.interval,
+                                             constraint.pin_list.size());
         logger_->warn(PPL,
                       110,
-                      "Constraint has {} pins, but only {} available slots",
+                      "Constraint has {} pins, but only {} available slots.\n"
+                      "Increase the region in at least {}um.",
                       constraint.pin_list.size(),
-                      num_slots);
+                      num_slots,
+                      dbuToMicrons(increase));
         constraints_no_slots++;
       }
     } else {
@@ -1901,19 +1932,15 @@ void IOPlacer::addPinGroup(PinList* group, bool order)
     pin_names += pin->getName() + " ";
     pin_cnt++;
     if (pin_cnt >= pins_per_report_
-        && !logger_->debugCheck(utl::PPL, "report_pin_names", 1)) {
+        && !logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
       pin_names += "... ";
       break;
     }
   }
 
-  if (logger_->debugCheck(utl::PPL, "report_pin_names", 1)) {
-    debugPrint(logger_,
-               utl::PPL,
-               "report_pin_names",
-               1,
-               "Pin group: [ {}]",
-               pin_names);
+  if (logger_->debugCheck(utl::PPL, "pin_groups", 1)) {
+    debugPrint(
+        logger_, utl::PPL, "pin_groups", 1, "Pin group: [ {}]", pin_names);
   } else {
     logger_->info(utl::PPL, 44, "Pin group: [ {}]", pin_names);
   }
@@ -2427,16 +2454,16 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
 
   Rect boundary = getBlock()->getDieArea();
 
-  std::vector<int> min_spacings_x;
-  std::vector<int> min_spacings_y;
-  std::vector<int> init_tracks_x;
-  std::vector<int> init_tracks_y;
-  std::vector<int> min_areas_x;
-  std::vector<int> min_areas_y;
-  std::vector<int> min_widths_x;
-  std::vector<int> min_widths_y;
-  std::vector<int> num_tracks_x;
-  std::vector<int> num_tracks_y;
+  std::map<int, int> min_spacings_x;
+  std::map<int, int> min_spacings_y;
+  std::map<int, int> init_tracks_x;
+  std::map<int, int> init_tracks_y;
+  std::map<int, int> min_areas_x;
+  std::map<int, int> min_areas_y;
+  std::map<int, int> min_widths_x;
+  std::map<int, int> min_widths_y;
+  std::map<int, int> num_tracks_x;
+  std::map<int, int> num_tracks_y;
 
   for (int hor_layer_idx : hor_layer_idxs) {
     int min_spacing_y = 0;
@@ -2453,11 +2480,11 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
     min_area_y = hor_layer->getArea() * database_unit * database_unit;
     min_width_y = hor_layer->getWidth();
 
-    min_spacings_y.push_back(min_spacing_y);
-    init_tracks_y.push_back(init_track_y);
-    min_areas_y.push_back(min_area_y);
-    min_widths_y.push_back(min_width_y);
-    num_tracks_y.push_back(num_track_y);
+    min_spacings_y[hor_layer_idx] = min_spacing_y;
+    init_tracks_y[hor_layer_idx] = init_track_y;
+    min_areas_y[hor_layer_idx] = min_area_y;
+    min_widths_y[hor_layer_idx] = min_width_y;
+    num_tracks_y[hor_layer_idx] = num_track_y;
   }
 
   for (int ver_layer_idx : ver_layer_idxs) {
@@ -2475,11 +2502,11 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
     min_area_x = ver_layer->getArea() * database_unit * database_unit;
     min_width_x = ver_layer->getWidth();
 
-    min_spacings_x.push_back(min_spacing_x);
-    init_tracks_x.push_back(init_track_x);
-    min_areas_x.push_back(min_area_x);
-    min_widths_x.push_back(min_width_x);
-    num_tracks_x.push_back(num_track_x);
+    min_spacings_x[ver_layer_idx] = min_spacing_x;
+    init_tracks_x[ver_layer_idx] = init_track_x;
+    min_areas_x[ver_layer_idx] = min_area_x;
+    min_widths_x[ver_layer_idx] = min_width_x;
+    num_tracks_x[ver_layer_idx] = num_track_x;
   }
 
   *core_ = Core(boundary,
