@@ -1,5 +1,5 @@
 # Build an array of tiles with misc flops and hook up a clk net for CTS
-# This demonstrates the trouble with blockage unaware fixing.
+# This test demonstrates the need for dummy load insertion to balance tree leaves
 
 source "helpers.tcl"
 source Nangate45/Nangate45.vars
@@ -138,7 +138,7 @@ clock_tree_synthesis  -root_buf $cts_buffer \
     -sink_clustering_max_diameter $cts_cluster_diameter \
     -balance_levels \
     -obstruction_aware \
-    -dummy_load
+    -use_dummy_load
 
 set_propagated_clock [all_clocks]
 estimate_parasitics -placement

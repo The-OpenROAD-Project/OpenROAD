@@ -1519,9 +1519,11 @@ void TritonCTS::findCandidateDummyCells(
 
   if (logger_->debugCheck(utl::CTS, "dummy load", 1)) {
     for (const sta::LibertyCell* libCell : dummyCandidates) {
-      logger_->report("{} is a dummy cell candidate with input cap={:0.3e}",
-                      libCell->name(),
-                      getInputCap(libCell));
+      // clang-format off
+      logger_->debug(CTS, "dummy load",
+                     "{} is a dummy cell candidate with input cap={:0.3e}",
+                     libCell->name(), getInputCap(libCell));
+      // clang-format on
     }
   }
 }

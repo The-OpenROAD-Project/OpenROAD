@@ -63,13 +63,13 @@ TritonCTS forced slew degradation on these wires.
 [DEBUG CTS-dummy load] clkbuf_0_clk => clkbuf_2_2__f_clk cap:9.95e-15 idealCap:1.14e-14 delCap:1.42e-15
 [DEBUG CTS-dummy load] clkbuf_0_clk => clkbuf_2_3__f_clk cap:9.95e-15 idealCap:1.14e-14 delCap:1.42e-15
 [DEBUG CTS-dummy load] clkbuf_2_0__f_clk => clkbuf_leaf_28_clk cap:7.60e-15 idealCap:9.50e-15 delCap:1.90e-15
-CLKBUF_X3 is a dummy cell candidate with input cap=1.421e-15
-INV_X1 is a dummy cell candidate with input cap=1.700e-15
-INV_X2 is a dummy cell candidate with input cap=3.251e-15
-INV_X4 is a dummy cell candidate with input cap=6.258e-15
-INV_X8 is a dummy cell candidate with input cap=1.181e-14
-INV_X16 is a dummy cell candidate with input cap=2.523e-14
-INV_X32 is a dummy cell candidate with input cap=4.919e-14
+[DEBUG CTS-dummy load] CLKBUF_X3 is a dummy cell candidate with input cap=1.421e-15
+[DEBUG CTS-dummy load] INV_X1 is a dummy cell candidate with input cap=1.700e-15
+[DEBUG CTS-dummy load] INV_X2 is a dummy cell candidate with input cap=3.251e-15
+[DEBUG CTS-dummy load] INV_X4 is a dummy cell candidate with input cap=6.258e-15
+[DEBUG CTS-dummy load] INV_X8 is a dummy cell candidate with input cap=1.181e-14
+[DEBUG CTS-dummy load] INV_X16 is a dummy cell candidate with input cap=2.523e-14
+[DEBUG CTS-dummy load] INV_X32 is a dummy cell candidate with input cap=4.919e-14
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 288
 [INFO CTS-0100]  Leaf buffers 29
