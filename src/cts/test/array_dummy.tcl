@@ -130,7 +130,7 @@ set_wire_rc -signal -layer $wire_rc_layer
 set_wire_rc -clock  -layer $wire_rc_layer_clk
 set_dont_use $dont_use
 
-set_debug_level CTS "dummy load" 1
+set_debug_level CTS "dummy load" 2
 
 clock_tree_synthesis  -root_buf $cts_buffer \
     -buf_list $cts_buffer \
