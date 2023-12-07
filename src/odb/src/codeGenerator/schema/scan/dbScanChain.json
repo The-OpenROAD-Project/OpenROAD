@@ -3,51 +3,52 @@
   "type": "dbObject",
   "fields": [
     {
-      "name": "name",
+      "name": "name_",
       "type": "std::string",
       "flags": ["private"]
     },
     {
-      "name": "length",
-      "type": "uint"
+      "name": "length_",
+      "type": "uint",
+      "flags": ["private"]
     },
     {
-      "name": "cells",
+      "name": "cells_",
       "type": "dbVector<dbId<dbInst>>",
       "flags": ["private"]
     },
     {
-      "name": "scanIn",
+      "name": "scan_in_",
       "type": "dbId<dbScanPin>",
       "flags": ["private"]
     },
     {
-      "name": "scanOut",
+      "name": "scan_out_",
       "type": "dbId<dbScanPin>",
       "flags": ["private"]
     },
     {
-      "name": "scanClock",
+      "name": "scan_clock_",
       "type": "dbId<dbScanPin>",
       "flags": ["private"]
     },
     {
-      "name": "scanEnable",
+      "name": "scan_enable_",
       "type": "dbId<dbScanPin>",
       "flags": ["private"]
     },
     {
-      "name": "testMode",
+      "name": "test_mode_",
       "type": "std::string",
       "flags": ["private"]
     },
     {
-      "name": "partitions",
+      "name": "partitions_",
       "type": "dbVector<dbId<dbScanPartition>>",
       "flags": ["private"]
     },
     {
-      "name": "scanInsts",
+      "name": "scan_insts_",
       "type": "dbVector<dbId<dbScanInst>>",
       "flags": ["private"]
     }

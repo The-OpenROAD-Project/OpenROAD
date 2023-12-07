@@ -4,7 +4,8 @@
   "fields": [
     {
       "name": "bits",
-      "type": "uint"
+      "type": "uint",
+      "flags": ["private"]
     },
     {
       "name": "scanIn",

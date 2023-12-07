@@ -13,7 +13,7 @@
       "flags": ["private"]
     },
     {
-      "name": "name",
+      "name": "name_",
       "type": "std::string",
       "flags": ["private"]
     }

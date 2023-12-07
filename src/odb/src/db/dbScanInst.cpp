@@ -116,18 +116,5 @@ dbOStream& operator<<(dbOStream& stream, const _dbScanInst& obj)
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbScanInst::setBits(uint bits)
-{
-  _dbScanInst* obj = (_dbScanInst*) this;
-
-  obj->bits = bits;
-}
-
-uint dbScanInst::getBits() const
-{
-  _dbScanInst* obj = (_dbScanInst*) this;
-  return obj->bits;
-}
-
 }  // namespace odb
    // Generator Code End Cpp

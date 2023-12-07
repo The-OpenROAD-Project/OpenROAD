@@ -64,16 +64,16 @@ class _dbScanChain : public _dbObject
                    const _dbScanChain& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 
-  std::string name;
-  uint length;
-  dbVector<dbId<dbInst>> cells;
-  dbId<dbScanPin> scanIn;
-  dbId<dbScanPin> scanOut;
-  dbId<dbScanPin> scanClock;
-  dbId<dbScanPin> scanEnable;
-  std::string testMode;
-  dbVector<dbId<dbScanPartition>> partitions;
-  dbVector<dbId<dbScanInst>> scanInsts;
+  std::string name_;
+  uint length_;
+  dbVector<dbId<dbInst>> cells_;
+  dbId<dbScanPin> scan_in_;
+  dbId<dbScanPin> scan_out_;
+  dbId<dbScanPin> scan_clock_;
+  dbId<dbScanPin> scan_enable_;
+  std::string test_mode_;
+  dbVector<dbId<dbScanPartition>> partitions_;
+  dbVector<dbId<dbScanInst>> scan_insts_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbScanChain& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbScanChain& obj);

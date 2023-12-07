@@ -7628,9 +7628,6 @@ class dbPowerSwitch : public dbObject
 class dbScanChain : public dbObject
 {
  public:
-  void setLength(uint length);
-
-  uint getLength() const;
 };
 
 class dbScanInst : public dbObject
@@ -7642,9 +7639,6 @@ class dbScanInst : public dbObject
     ShiftRegister,
     BlackBox
   };
-  void setBits(uint bits);
-
-  uint getBits() const;
 };
 
 class dbScanPartition : public dbObject

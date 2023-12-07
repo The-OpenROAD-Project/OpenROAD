@@ -44,13 +44,6 @@ template class dbTable<_dbScanPin>;
 
 bool _dbScanPin::operator==(const _dbScanPin& rhs) const
 {
-  if (bterm != rhs.bterm) {
-    return false;
-  }
-  if (iterm != rhs.iterm) {
-    return false;
-  }
-
   return true;
 }
 
@@ -64,19 +57,13 @@ void _dbScanPin::differences(dbDiff& diff,
                              const _dbScanPin& rhs) const
 {
   DIFF_BEGIN
-  DIFF_FIELD(bterm);
-  DIFF_FIELD(iterm);
   DIFF_END
 }
 
-void _dbScanPin::out(dbDiff& diff, char side, const char* field) const
-{
-  DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(bterm);
-  DIFF_OUT_FIELD(iterm);
+void _dbScanPin::out(dbDiff& diff, char side, const char* field) const {
+    DIFF_OUT_BEGIN
 
-  DIFF_END
-}
+        DIFF_END}
 
 _dbScanPin::_dbScanPin(_dbDatabase* db)
 {
@@ -84,21 +71,15 @@ _dbScanPin::_dbScanPin(_dbDatabase* db)
 
 _dbScanPin::_dbScanPin(_dbDatabase* db, const _dbScanPin& r)
 {
-  bterm = r.bterm;
-  iterm = r.iterm;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbScanPin& obj)
 {
-  stream >> obj.bterm;
-  stream >> obj.iterm;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbScanPin& obj)
 {
-  stream << obj.bterm;
-  stream << obj.iterm;
   return stream;
 }
 

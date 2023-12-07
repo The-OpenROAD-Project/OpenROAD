@@ -65,7 +65,7 @@ class _dbScanPartition : public _dbObject
 
   dbId<dbScanPin> start_;
   dbId<dbScanPin> stop_;
-  std::string name;
+  std::string name_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbScanPartition& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbScanPartition& obj);

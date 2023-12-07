@@ -50,7 +50,7 @@ bool _dbScanPartition::operator==(const _dbScanPartition& rhs) const
   if (stop_ != rhs.stop_) {
     return false;
   }
-  if (name != rhs.name) {
+  if (name_ != rhs.name_) {
     return false;
   }
 
@@ -69,7 +69,7 @@ void _dbScanPartition::differences(dbDiff& diff,
   DIFF_BEGIN
   DIFF_FIELD(start_);
   DIFF_FIELD(stop_);
-  DIFF_FIELD(name);
+  DIFF_FIELD(name_);
   DIFF_END
 }
 
@@ -78,7 +78,7 @@ void _dbScanPartition::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(start_);
   DIFF_OUT_FIELD(stop_);
-  DIFF_OUT_FIELD(name);
+  DIFF_OUT_FIELD(name_);
 
   DIFF_END
 }
@@ -91,14 +91,14 @@ _dbScanPartition::_dbScanPartition(_dbDatabase* db, const _dbScanPartition& r)
 {
   start_ = r.start_;
   stop_ = r.stop_;
-  name = r.name;
+  name_ = r.name_;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbScanPartition& obj)
 {
   stream >> obj.start_;
   stream >> obj.stop_;
-  stream >> obj.name;
+  stream >> obj.name_;
   return stream;
 }
 
@@ -106,7 +106,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbScanPartition& obj)
 {
   stream << obj.start_;
   stream << obj.stop_;
-  stream << obj.name;
+  stream << obj.name_;
   return stream;
 }
 

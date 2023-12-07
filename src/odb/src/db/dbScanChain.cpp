@@ -44,25 +44,25 @@ template class dbTable<_dbScanChain>;
 
 bool _dbScanChain::operator==(const _dbScanChain& rhs) const
 {
-  if (name != rhs.name) {
+  if (name_ != rhs.name_) {
     return false;
   }
-  if (length != rhs.length) {
+  if (length_ != rhs.length_) {
     return false;
   }
-  if (scanIn != rhs.scanIn) {
+  if (scan_in_ != rhs.scan_in_) {
     return false;
   }
-  if (scanOut != rhs.scanOut) {
+  if (scan_out_ != rhs.scan_out_) {
     return false;
   }
-  if (scanClock != rhs.scanClock) {
+  if (scan_clock_ != rhs.scan_clock_) {
     return false;
   }
-  if (scanEnable != rhs.scanEnable) {
+  if (scan_enable_ != rhs.scan_enable_) {
     return false;
   }
-  if (testMode != rhs.testMode) {
+  if (test_mode_ != rhs.test_mode_) {
     return false;
   }
 
@@ -79,26 +79,26 @@ void _dbScanChain::differences(dbDiff& diff,
                                const _dbScanChain& rhs) const
 {
   DIFF_BEGIN
-  DIFF_FIELD(name);
-  DIFF_FIELD(length);
-  DIFF_FIELD(scanIn);
-  DIFF_FIELD(scanOut);
-  DIFF_FIELD(scanClock);
-  DIFF_FIELD(scanEnable);
-  DIFF_FIELD(testMode);
+  DIFF_FIELD(name_);
+  DIFF_FIELD(length_);
+  DIFF_FIELD(scan_in_);
+  DIFF_FIELD(scan_out_);
+  DIFF_FIELD(scan_clock_);
+  DIFF_FIELD(scan_enable_);
+  DIFF_FIELD(test_mode_);
   DIFF_END
 }
 
 void _dbScanChain::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
-  DIFF_OUT_FIELD(name);
-  DIFF_OUT_FIELD(length);
-  DIFF_OUT_FIELD(scanIn);
-  DIFF_OUT_FIELD(scanOut);
-  DIFF_OUT_FIELD(scanClock);
-  DIFF_OUT_FIELD(scanEnable);
-  DIFF_OUT_FIELD(testMode);
+  DIFF_OUT_FIELD(name_);
+  DIFF_OUT_FIELD(length_);
+  DIFF_OUT_FIELD(scan_in_);
+  DIFF_OUT_FIELD(scan_out_);
+  DIFF_OUT_FIELD(scan_clock_);
+  DIFF_OUT_FIELD(scan_enable_);
+  DIFF_OUT_FIELD(test_mode_);
 
   DIFF_END
 }
@@ -109,42 +109,42 @@ _dbScanChain::_dbScanChain(_dbDatabase* db)
 
 _dbScanChain::_dbScanChain(_dbDatabase* db, const _dbScanChain& r)
 {
-  name = r.name;
-  length = r.length;
-  scanIn = r.scanIn;
-  scanOut = r.scanOut;
-  scanClock = r.scanClock;
-  scanEnable = r.scanEnable;
-  testMode = r.testMode;
+  name_ = r.name_;
+  length_ = r.length_;
+  scan_in_ = r.scan_in_;
+  scan_out_ = r.scan_out_;
+  scan_clock_ = r.scan_clock_;
+  scan_enable_ = r.scan_enable_;
+  test_mode_ = r.test_mode_;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbScanChain& obj)
 {
-  stream >> obj.name;
-  stream >> obj.length;
-  stream >> obj.cells;
-  stream >> obj.scanIn;
-  stream >> obj.scanOut;
-  stream >> obj.scanClock;
-  stream >> obj.scanEnable;
-  stream >> obj.testMode;
-  stream >> obj.partitions;
-  stream >> obj.scanInsts;
+  stream >> obj.name_;
+  stream >> obj.length_;
+  stream >> obj.cells_;
+  stream >> obj.scan_in_;
+  stream >> obj.scan_out_;
+  stream >> obj.scan_clock_;
+  stream >> obj.scan_enable_;
+  stream >> obj.test_mode_;
+  stream >> obj.partitions_;
+  stream >> obj.scan_insts_;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbScanChain& obj)
 {
-  stream << obj.name;
-  stream << obj.length;
-  stream << obj.cells;
-  stream << obj.scanIn;
-  stream << obj.scanOut;
-  stream << obj.scanClock;
-  stream << obj.scanEnable;
-  stream << obj.testMode;
-  stream << obj.partitions;
-  stream << obj.scanInsts;
+  stream << obj.name_;
+  stream << obj.length_;
+  stream << obj.cells_;
+  stream << obj.scan_in_;
+  stream << obj.scan_out_;
+  stream << obj.scan_clock_;
+  stream << obj.scan_enable_;
+  stream << obj.test_mode_;
+  stream << obj.partitions_;
+  stream << obj.scan_insts_;
   return stream;
 }
 
@@ -153,19 +153,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbScanChain& obj)
 // dbScanChain - Methods
 //
 ////////////////////////////////////////////////////////////////////
-
-void dbScanChain::setLength(uint length)
-{
-  _dbScanChain* obj = (_dbScanChain*) this;
-
-  obj->length = length;
-}
-
-uint dbScanChain::getLength() const
-{
-  _dbScanChain* obj = (_dbScanChain*) this;
-  return obj->length;
-}
 
 }  // namespace odb
    // Generator Code End Cpp

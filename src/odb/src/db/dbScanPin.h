@@ -41,8 +41,6 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-class dbBTerm;
-class dbITerm;
 
 class _dbScanPin : public _dbObject
 {
@@ -59,9 +57,6 @@ class _dbScanPin : public _dbObject
                    const char* field,
                    const _dbScanPin& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-
-  dbId<dbBTerm> bterm;
-  dbId<dbITerm> iterm;
 };
 dbIStream& operator>>(dbIStream& stream, _dbScanPin& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbScanPin& obj);
