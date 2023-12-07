@@ -256,7 +256,7 @@ void LoadBalancer::handle_accept(const BalancerConnection::pointer& connection,
 #if !SWIG && FMT_VERSION >= 100000
 namespace boost::asio::ip {
 
-inline static auto format_as(const boost::asio::ip::address f)
+static auto format_as(const boost::asio::ip::address f)
 {
   return fmt::streamed(f);
 }
