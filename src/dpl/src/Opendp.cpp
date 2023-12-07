@@ -744,7 +744,7 @@ int Opendp::gridEndX(const Cell* cell) const
 
 int Opendp::gridEndY(const Cell* cell) const
 {
-  return gridEndY(cell->y_, cell);
+  return gridEndY(cell->y_ + cell->height_, cell);
 }
 
 int Opendp::gridEndY(int y, const Cell* cell) const
@@ -752,10 +752,10 @@ int Opendp::gridEndY(int y, const Cell* cell) const
   if (cell->isHybrid()) {
     auto grid_info = getGridInfo(cell);
     const auto& grid_sites = grid_info.getSites();
-    return gridY(y + cell->height_, grid_sites).first;
+    return gridY(y, grid_sites).first;
   }
   int row_height = getRowHeight(cell);
-  return divCeil(y + cell->height_, row_height);
+  return divCeil(y, row_height);
 }
 
 double Opendp::dbuToMicrons(int64_t dbu) const
