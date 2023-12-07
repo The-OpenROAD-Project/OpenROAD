@@ -11,7 +11,7 @@ make clean && make all
 
 - Setup environment variables as follows. This is to avoid overwriting the system default for `MANPATH`.
 ```
-echo "MANDATORY_MANPATH $(pwd) >> ~/.manpath"
+echo "MANDATORY_MANPATH $(pwd)" >> ~/.manpath
 ```
 
 - Afterwards, you can read your manpages using:
