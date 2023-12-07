@@ -61,7 +61,7 @@ void FastRouteCore::fixEmbeddedTrees()
   // i.e., when running overflow iterations
   if (overflow_iterations_ > 0) {
     for (int netID = 0; netID < netCount(); netID++) {
-      if (nets_[netID] != nullptr && !nets_[netID]->isRouted()) {
+      if (!skipNet(netID)) {
         checkAndFixEmbeddedTree(netID);
       }
     }
@@ -500,7 +500,7 @@ void FastRouteCore::convertToMazerouteNet(const int netID)
 void FastRouteCore::convertToMazeroute()
 {
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID] != nullptr && !nets_[netID]->isRouted()) {
+    if (!skipNet(netID)) {
       convertToMazerouteNet(netID);
     }
   }
@@ -1383,7 +1383,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
   for (int nidRPC = 0; nidRPC < netCount(); nidRPC++) {
     const int netID = ordering ? tree_order_cong_[nidRPC].treeIndex : nidRPC;
 
-    if (nets_[netID] == nullptr || nets_[netID]->isRouted()) {
+    if (skipNet(netID)) {
       continue;
     }
 

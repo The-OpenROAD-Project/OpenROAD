@@ -672,7 +672,7 @@ NetRouteMap FastRouteCore::getRoutes()
 {
   NetRouteMap routes;
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID] == nullptr || nets_[netID]->isRouted()) {
+    if (skipNet(netID)) {
       continue;
     }
 
@@ -748,7 +748,7 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
   // Get routes before layer assignment
 
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID] == nullptr || nets_[netID]->isRouted()) {
+    if (skipNet(netID)) {
       continue;
     }
 
@@ -1022,8 +1022,7 @@ NetRouteMap FastRouteCore::run()
   // debug mode Rectilinear Steiner Tree before overflow iterations
   if (debug_->isOn() && debug_->rectilinearSTree_) {
     for (int netID = 0; netID < netCount(); netID++) {
-      if (nets_[netID]->getDbNet() == debug_->net_ && !nets_[netID]->isRouted()
-          && nets_[netID] != nullptr) {
+      if (nets_[netID]->getDbNet() == debug_->net_ && !skipNet(netID)) {
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -1274,8 +1273,7 @@ NetRouteMap FastRouteCore::run()
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn() && debug_->tree2D_) {
     for (int netID = 0; netID < netCount(); netID++) {
-      if (nets_[netID]->getDbNet() == debug_->net_ && !nets_[netID]->isRouted()
-          && nets_[netID] != nullptr) {
+      if (nets_[netID]->getDbNet() == debug_->net_ && !skipNet(netID)) {
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -1332,8 +1330,7 @@ NetRouteMap FastRouteCore::run()
   // Debug mode Tree 3D after layer assignament
   if (debug_->isOn() && debug_->tree3D_) {
     for (int netID = 0; netID < netCount(); netID++) {
-      if (nets_[netID]->getDbNet() == debug_->net_ && !nets_[netID]->isRouted()
-          && nets_[netID] != nullptr) {
+      if (nets_[netID]->getDbNet() == debug_->net_ && !skipNet(netID)) {
         StTreeVisualization(sttrees_[netID], nets_[netID], true);
       }
     }
