@@ -3650,7 +3650,8 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   const int num_perturb_per_step = (macros.size() > num_perturb_per_step_)
                                        ? macros.size()
                                        : num_perturb_per_step_;
-  int remaining_runs = target_util_list.size();
+  const int total_runs = target_util_list.size();
+  int remaining_runs = total_runs;
   int run_id = 0;
   SACoreSoftMacro* best_sa = nullptr;
   std::vector<SACoreSoftMacro*>
@@ -3660,7 +3661,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   // at a fixed interval independent of how many threads we are using.
   const int check_interval = 10;
   int begin_check = 0;
-  int end_check = std::min(check_interval, remaining_runs);
+  int end_check = std::min(check_interval, total_runs);
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
@@ -3781,11 +3782,12 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
         }
         ++begin_check;
       }
-      // add early stop mechanism
-      if (best_sa) {
+      const int remaining_checks = total_runs - begin_check;
+
+      if (best_sa || remaining_checks == 0) {
         break;
       }
-      end_check = begin_check + std::min(check_interval, remaining_runs);
+      end_check = begin_check + std::min(check_interval, remaining_checks);
     }
     if (best_sa) {
       break;
@@ -3903,13 +3905,13 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
                       nullptr);
     }
     macros = shaped_macros;
-    remaining_runs = target_util_list.size();
+    remaining_runs = total_runs;
     run_id = 0;
     best_sa = nullptr;
     sa_containers.clear();
     best_cost = std::numeric_limits<float>::max();
     begin_check = 0;
-    end_check = std::min(check_interval, remaining_runs);
+    end_check = std::min(check_interval, total_runs);
     debugPrint(logger_,
                MPL,
                "hierarchical_macro_placement",
@@ -4031,11 +4033,12 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
           }
           ++begin_check;
         }
-        // add early stop mechanism
-        if (best_sa) {
+        const int remaining_checks = total_runs - begin_check;
+
+        if (best_sa || remaining_runs == 0) {
           break;
         }
-        end_check = begin_check + std::min(check_interval, remaining_runs);
+        end_check = begin_check + std::min(check_interval, remaining_checks);
       }
       if (best_sa) {
         break;
@@ -4427,7 +4430,8 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
   const int num_perturb_per_step = (macros.size() > num_perturb_per_step_)
                                        ? macros.size()
                                        : num_perturb_per_step_;
-  int remaining_runs = target_util_list.size();
+  const int total_runs = target_util_list.size();
+  int remaining_runs = total_runs;
   int run_id = 0;
   SACoreSoftMacro* best_sa = nullptr;
   std::vector<SACoreSoftMacro*> sa_containers;
@@ -4435,7 +4439,7 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
   // at a fixed interval independent of how many threads we are using.
   const int check_interval = 10;
   int begin_check = 0;
-  int end_check = std::min(check_interval, remaining_runs);
+  int end_check = std::min(check_interval, total_runs);
   float best_cost = std::numeric_limits<float>::max();
   debugPrint(logger_,
              MPL,
@@ -4557,11 +4561,12 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
         }
         ++begin_check;
       }
-      // add early stop mechanism
-      if (best_sa) {
+      const int remaining_checks = total_runs - begin_check;
+
+      if (best_sa || remaining_checks == 0) {
         break;
       }
-      end_check = begin_check + std::min(check_interval, remaining_runs);
+      end_check = begin_check + std::min(check_interval, remaining_checks);
     }
     if (best_sa) {
       break;
@@ -4906,7 +4911,8 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   const int num_perturb_per_step = (macros.size() > num_perturb_per_step_)
                                        ? macros.size()
                                        : num_perturb_per_step_;
-  int remaining_runs = target_util_list.size();
+  const int total_runs = target_util_list.size();
+  int remaining_runs = total_runs;
   int run_id = 0;
   SACoreSoftMacro* best_sa = nullptr;
   std::vector<SACoreSoftMacro*>
@@ -4916,7 +4922,7 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   // at a fixed interval independent of how many threads we are using.
   const int check_interval = 10;
   int begin_check = 0;
-  int end_check = std::min(check_interval, remaining_runs);
+  int end_check = std::min(check_interval, total_runs);
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
@@ -5034,11 +5040,12 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
         }
         ++begin_check;
       }
-      // add early stop mechanism
-      if (best_sa) {
+      const int remaining_checks = total_runs - begin_check;
+
+      if (best_sa || remaining_runs == 0) {
         break;
       }
-      end_check = begin_check + std::min(check_interval, remaining_runs);
+      end_check = begin_check + std::min(check_interval, remaining_checks);
     }
     if (best_sa) {
       break;
