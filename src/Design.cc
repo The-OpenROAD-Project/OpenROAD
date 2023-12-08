@@ -132,6 +132,7 @@ std::vector<float> Design::arrivalsClk(const sta::RiseFall *rf,
 {
   sta::Sta *sta = sta::Sta::sta();
   std::vector<float> arrivals;
+  
   const sta::ClockEdge *clk_edge = nullptr;
 
   if (clk){
@@ -193,10 +194,10 @@ float Design::getPinArrival(odb::dbITerm* db_pin, const std::string& rf) {
     sta::dbSta* sta = getSta();
     sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
 
-    std::array<sta::Vertex*, 2> vertex_array = vertices(sta_pin);
+    std::array<sta::Vertex*, 2> vertex_arrray = vertices(sta_pin);
     float delay = -1;
     for (int i = 0; i < num_vertex_elements; i++) {
-      sta::Vertex* vertex = vertex_array[i];
+      sta::Vertex* vertex = vertex_arrray[i];
       if (vertex != nullptr) {
         std::string arrival_or_hold = (rf == "rise")? "arrive":"hold";
         delay = std::max(delay, getPinArrivalTime(nullptr, sta::RiseFall::rise(), vertex, arrival_or_hold));
