@@ -366,4 +366,6 @@ inline bool is_loading(const Archive& ar)
   return std::is_same<typename Archive::is_loading, boost::mpl::true_>::value;
 }
 
+using utl::format_as;
+
 }  // namespace fr

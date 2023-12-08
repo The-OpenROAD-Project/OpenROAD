@@ -318,7 +318,7 @@ void MultilevelPartitioner::InitialPartition(
         "[INIT-PART] {} :: Random part cutcost = {}, balance_flag = {}",
         i,
         initial_solutions_cost.back(),
-        initial_solutions_flag.back());
+        (bool) initial_solutions_flag.back());
   }
   // generate random vile solution
   for (int i = 0; i < num_initial_random_solutions_; ++i) {
@@ -343,7 +343,7 @@ void MultilevelPartitioner::InitialPartition(
         "[INIT-PART] {} :: Random VILE part cutcost = {}, balance_flag = {}",
         i,
         initial_solutions_cost.back(),
-        initial_solutions_flag.back());
+        (bool) initial_solutions_flag.back());
   }
 
   // Vile partitioning. Vile partitioning needs refiner to generated a balanced
@@ -365,7 +365,7 @@ void MultilevelPartitioner::InitialPartition(
                                    <= upper_block_balance);
   logger_->report("[INIT-PART] :: VILE part cutcost = {}, balance_flag = {}",
                   initial_solutions_cost.back(),
-                  initial_solutions_flag.back());
+                  (bool) initial_solutions_flag.back());
   // ILP partitioning
   if (hgraph->GetNumVertices() <= num_vertices_threshold_ilp_) {
     auto& ilp_solution = initial_solutions.back();
@@ -392,7 +392,7 @@ void MultilevelPartitioner::InitialPartition(
                                      <= upper_block_balance);
     logger_->report("[INIT-PART] :: ILP part cutcost = {}, balance_flag = {}",
                     initial_solutions_cost.back(),
-                    initial_solutions_flag.back());
+                    (bool) initial_solutions_flag.back());
   }
   // sort the solutions based on cost
   std::vector<int> solution_ids(initial_solutions_cost.size(), 0);

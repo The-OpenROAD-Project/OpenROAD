@@ -88,6 +88,7 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
 					     [-apply_ndr] \
                                              [-insertion_delay] \
                                              [-sink_buffer_max_cap_derate] \
+                                             [-use_dummy_load]
                                             }
 
 proc clock_tree_synthesis { args } {
@@ -97,7 +98,7 @@ proc clock_tree_synthesis { args } {
           -clustering_unbalance_ratio -sink_clustering_max_diameter -sink_clustering_levels -tree_buf\
           -sink_buffer_max_cap_derate}\
       flags {-post_cts_disable -sink_clustering_enable -balance_levels \
-	     -obstruction_aware -apply_ndr -insertion_delay}
+	     -obstruction_aware -apply_ndr -insertion_delay -use_dummy_load}
 
   sta::check_argc_eq0 "clock_tree_synthesis" $args
 
@@ -201,6 +202,8 @@ proc clock_tree_synthesis { args } {
   cts::set_apply_ndr [info exists flags(-apply_ndr)]
 
   cts::set_insertion_delay [info exists flags(-insertion_delay)]
+    
+  cts::set_dummy_load [info exists flags(-use_dummy_load)]
     
   if { [ord::get_db_block] == "NULL" } {
     utl::error CTS 103 "No design block found."

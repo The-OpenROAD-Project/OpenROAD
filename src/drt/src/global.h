@@ -177,4 +177,6 @@ std::ostream& operator<<(std::ostream& os, const frNet& fig);
 std::ostream& operator<<(std::ostream& os, const drNet& n);
 std::ostream& operator<<(std::ostream& os, const frMarker& m);
 
+using utl::format_as;
+
 }  // namespace fr

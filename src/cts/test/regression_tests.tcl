@@ -17,4 +17,5 @@ record_tests {
   array_no_blockages
   array_ins_delay
   insertion_delay    
+  dummy_load
 }
