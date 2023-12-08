@@ -47,12 +47,6 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-// User Code Begin Classes
-namespace {
-template <class>
-inline constexpr bool always_false_v = false;
-}  // namespace
-// User Code End Classes
 
 class _dbScanPin : public _dbObject
 {

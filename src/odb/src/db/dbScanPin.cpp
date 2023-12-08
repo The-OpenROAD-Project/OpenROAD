@@ -39,6 +39,12 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 
+// User Code Begin Includes
+namespace {
+template <class>
+inline constexpr bool always_false_v = false;
+}  // namespace
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbScanPin>;
 
