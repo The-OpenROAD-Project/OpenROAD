@@ -114,10 +114,10 @@ sta::Graph* Design::cmdGraph()
   return sta::Sta::sta()->ensureGraph();
 }
 
-sta::Vertex** Design::vertices(const sta::Pin *pin)
+std::array<sta::Vertex*, 2> Design::vertices(const sta::Pin *pin)
 {
   sta::Vertex *vertex, *vertex_bidirect_drvr;
-  static sta::Vertex *vertices[2];
+  std::array<sta::Vertex*, 2> vertices;
 
   cmdGraph()->pinVertices(pin, vertex, vertex_bidirect_drvr);
   vertices[0] = vertex;
@@ -193,10 +193,10 @@ float Design::getPinArrival(odb::dbITerm* db_pin, const std::string& rf) {
     sta::dbSta* sta = getSta();
     sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
 
-    sta::Vertex** vertex_arrray = vertices(sta_pin);
+    std::array<sta::Vertex*, 2> vertex_array = vertices(sta_pin);
     float delay = -1;
     for (int i = 0; i < num_vertex_elements; i++) {
-      sta::Vertex* vertex = vertex_arrray[i];
+      sta::Vertex* vertex = vertex_array[i];
       if (vertex != nullptr) {
         std::string arrival_or_hold = (rf == "rise")? "arrive":"hold";
         delay = std::max(delay, getPinArrivalTime(nullptr, sta::RiseFall::rise(), vertex, arrival_or_hold));

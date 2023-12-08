@@ -196,7 +196,7 @@ class Design
   float getPinArrivalTime(sta::Clock *clk, const sta::RiseFall *clk_rf, sta::Vertex *vertex, const std::string& arrrive_or_hold);
   sta::Graph* cmdGraph();
   sta::Network* cmdLinkedNetwork();
-  sta::Vertex** vertices(const sta::Pin *pin);
+  std::array<sta::Vertex*, 2> vertices(const sta::Pin *pin);
   bool isTimeInf(float time);
 
   std::vector<odb::dbMTerm*> getTimingFanoutFrom(odb::dbMTerm* input);
