@@ -33,14 +33,26 @@
 // Generator Code Begin Header
 #pragma once
 
+#include "dbBTerm.h"
+#include "dbBlock.h"
 #include "dbCore.h"
+#include "dbITerm.h"
 #include "odb.h"
+// User Code Begin Includes
+#include <variant>
+// User Code End Includes
 
 namespace odb {
 class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
+// User Code Begin Classes
+namespace {
+template <class>
+inline constexpr bool always_false_v = false;
+}  // namespace
+// User Code End Classes
 
 class _dbScanPin : public _dbObject
 {
@@ -57,6 +69,10 @@ class _dbScanPin : public _dbObject
                    const char* field,
                    const _dbScanPin& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+
+  // User Code Begin Fields
+  std::variant<dbId<_dbBTerm>, dbId<_dbITerm>> pin_;
+  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbScanPin& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbScanPin& obj);

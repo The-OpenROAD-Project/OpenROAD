@@ -37,6 +37,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <variant>
 #include <vector>
 
 #include "dbMatrix.h"
@@ -7649,6 +7650,11 @@ class dbScanPartition : public dbObject
 class dbScanPin : public dbObject
 {
  public:
+  // User Code Begin dbScanPin
+  std::variant<dbBTerm*, dbITerm*> getPin() const;
+  void setPin(dbBTerm* bterm);
+  void setPin(dbITerm* iterm);
+  // User Code End dbScanPin
 };
 
 class dbTechLayer : public dbObject

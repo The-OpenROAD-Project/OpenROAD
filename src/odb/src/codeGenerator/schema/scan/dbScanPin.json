@@ -2,5 +2,10 @@
   "name": "dbScanPin",
   "type": "dbObject",
   "fields": [
+  ],
+  "h_includes": [
+    "dbBTerm.h",
+    "dbITerm.h",
+    "dbBlock.h"
   ]
 }
