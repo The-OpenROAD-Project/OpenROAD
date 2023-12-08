@@ -519,7 +519,7 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
     if (buffers.empty()) {
       logger_->error(
           CTS,
-          117,
+          110,
           "No clock buffer candidates could be found from any libraries.");
     }
 
@@ -688,7 +688,7 @@ std::string TritonCTS::selectBestMaxCapBuffer(
     odb::dbMaster* master = db_->findMaster(name.c_str());
     if (master == nullptr) {
       logger_->error(
-          CTS, 110, "Physical master could not be found for cell '{}'", name);
+          CTS, 117, "Physical master could not be found for cell '{}'", name);
     }
     sta::Cell* masterCell = network_->dbToSta(master);
     sta::LibertyCell* libCell = network_->libertyCell(masterCell);
