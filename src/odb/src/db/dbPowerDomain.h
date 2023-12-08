@@ -45,6 +45,7 @@ class _dbDatabase;
 class _dbPowerSwitch;
 class _dbIsolation;
 class _dbGroup;
+class _dbLevelShifter;
 
 class _dbPowerDomain : public _dbObject
 {
@@ -74,6 +75,7 @@ class _dbPowerDomain : public _dbObject
   int _x2;
   int _y1;
   int _y2;
+  dbVector<dbId<_dbLevelShifter>> _levelshifters;
 };
 dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbPowerDomain& obj);

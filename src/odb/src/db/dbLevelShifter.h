@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, Nefelus Inc
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,28 +30,59 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+// Generator Code Begin Header
 #pragma once
 
-#include <cassert>
-#include <climits>
-#include <cmath>
-#include <cstdarg>
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-
-#include "utl/Logger.h"
+#include "dbCore.h"
+#include "dbVector.h"
+#include "odb.h"
 
 namespace odb {
+class dbIStream;
+class dbOStream;
+class dbDiff;
+class _dbDatabase;
+class _dbPowerDomain;
 
-using uint = unsigned int;
-using uchar = unsigned char;
+class _dbLevelShifter : public _dbObject
+{
+ public:
+  _dbLevelShifter(_dbDatabase*, const _dbLevelShifter& r);
+  _dbLevelShifter(_dbDatabase*);
 
-using int64 = std::int64_t;
-using uint64 = std::uint64_t;
+  ~_dbLevelShifter();
 
-#ifndef SWIG
-using utl::format_as;
-#endif
+  bool operator==(const _dbLevelShifter& rhs) const;
+  bool operator!=(const _dbLevelShifter& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbLevelShifter& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbLevelShifter& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
 
+  char* _name;
+  dbId<_dbLevelShifter> _next_entry;
+  dbId<_dbPowerDomain> _domain;
+  dbVector<std::string> _elements;
+  dbVector<std::string> _exclude_elements;
+  std::string _source;
+  std::string _sink;
+  bool _use_functional_equivalence;
+  std::string _applies_to;
+  std::string _applies_to_boundary;
+  std::string _rule;
+  float _threshold;
+  bool _no_shift;
+  bool _force_shift;
+  std::string _location;
+  std::string _input_supply;
+  std::string _output_supply;
+  std::string _internal_supply;
+  std::string _name_prefix;
+  std::string _name_suffix;
+  dbVector<std::pair<std::string, std::string>> _instances;
+};
+dbIStream& operator>>(dbIStream& stream, _dbLevelShifter& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbLevelShifter& obj);
 }  // namespace odb
+   // Generator Code End Header

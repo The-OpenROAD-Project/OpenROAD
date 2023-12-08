@@ -511,7 +511,7 @@ class Opendp
   int gridX(const Cell* cell, int site_width) const;
   int gridPaddedX(const Cell* cell) const;
   int gridPaddedX(const Cell* cell, int site_width) const;
-  int gridY(int y, int row_height) const;
+  int gridY(int y, const Cell* cell) const;
   int gridY(const Cell* cell) const;
   pair<int, int> gridY(int y, const dbSite::RowPattern& grid_sites) const;
   pair<int, int> gridEndY(int y, const dbSite::RowPattern& grid_sites) const;
@@ -520,7 +520,7 @@ class Opendp
   int gridEndX(int x, int site_width) const;
   int gridEndX(const Cell* cell) const;
   int gridEndX(const Cell* cell, int site_width) const;
-  int gridEndY(int y, int row_height) const;
+  int gridEndY(int y, const Cell* cell) const;
   int gridEndY(const Cell* cell) const;
   void setGridPaddedLoc(Cell* cell, int x, int y, int site_width) const;
   std::pair<int, GridInfo> getRowInfo(const Cell* cell) const;

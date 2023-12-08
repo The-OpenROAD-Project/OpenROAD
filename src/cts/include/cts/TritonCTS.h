@@ -64,6 +64,7 @@ namespace sta {
 class dbSta;
 class Clock;
 class dbNetwork;
+class Unit;
 class LibertyCell;
 }  // namespace sta
 
@@ -75,12 +76,12 @@ namespace cts {
 
 using utl::Logger;
 
-class Clock;
 class ClockInst;
 class CtsOptions;
 class TechChar;
 class StaEngine;
 class TreeBuilder;
+class Clock;
 
 class TritonCTS
 {
@@ -104,7 +105,7 @@ class TritonCTS
   std::vector<std::string> findMatchingSubset(
       const std::string& pattern,
       const std::vector<std::string>& buffers);
-  bool isClockBufferCandidate(sta::LibertyCell* buffer);
+  bool isClockCellCandidate(sta::LibertyCell* cell);
   void setRootBuffer(const char* buffers);
   std::string selectRootBuffer(std::vector<std::string>& buffers);
   void setSinkBuffer(const char* buffers);
@@ -165,6 +166,9 @@ class TritonCTS
   double computeInsertionDelay(const std::string& name,
                                odb::dbInst* inst,
                                odb::dbMTerm* mterm);
+  void writeDummyLoadsToDb(Clock& clockNet);
+  bool computeIdealOutputCaps(Clock& clockNet);
+  void findCandidateDummyCells(std::vector<sta::LibertyCell*>& dummyCandidates);
 
   sta::dbSta* openSta_;
   sta::dbNetwork* network_;

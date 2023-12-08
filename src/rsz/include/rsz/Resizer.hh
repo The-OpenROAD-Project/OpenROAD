@@ -362,6 +362,7 @@ protected:
   bool hasTristateOrDontTouchDriver(const Net *net);
   bool isTristateDriver(const Pin *pin);
   void makeEquivCells();
+  void checkLibertyForAllCorners();
   void findBuffers();
   bool isLinkCell(LibertyCell *cell);
   void findTargetLoads();
