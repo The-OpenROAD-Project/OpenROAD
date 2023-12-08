@@ -37,6 +37,8 @@
 #include <string>
 #include <vector>
 
+#include "utl/Logger.h"
+
 namespace odb {
 class dbNet;
 }
@@ -252,5 +254,7 @@ struct OrderNetEdge
   int length;
   int edgeID;
 };
+
+using utl::format_as;
 
 }  // namespace grt
