@@ -199,6 +199,10 @@ class Design
   std::array<sta::Vertex*, 2> vertices(const sta::Pin *pin);
   bool isTimeInf(float time);
 
+  float slew_corner(sta::Vertex *vertex);
+  float getPinSlew(odb::dbITerm* db_pin);                         
+
+
   std::vector<odb::dbMTerm*> getTimingFanoutFrom(odb::dbMTerm* input);
   bool isInClock(odb::dbInst* inst);
   std::uint64_t getNetRoutedLength(odb::dbNet* net);

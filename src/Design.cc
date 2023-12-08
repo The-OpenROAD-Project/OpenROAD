@@ -98,6 +98,43 @@ void Design::readDef(const std::string& file_name,
                child);
 }
 
+float Design::slew_corner(sta::Vertex *vertex)                            
+{
+
+  sta::Sta *sta = sta::Sta::sta();
+  
+  float slew_max = -sta::INF;
+
+  for (auto corner : getCorners()) {
+      slew_max = std::max(slew_max,  sta::delayAsFloat(sta->vertexSlew(vertex,  sta::RiseFall::rise(), corner, sta::MinMax::max())));
+  }
+
+  return slew_max;
+}
+
+
+float Design::getPinSlew(odb::dbITerm* db_pin) {
+    const int num_vertex_elements = 2;
+
+    sta::dbSta* sta = getSta();
+
+    sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
+
+    std::array<sta::Vertex*, 2> vertex_array = vertices(sta_pin);
+
+    float pinSlew = -sta::INF;
+    for (int i = 0; i < num_vertex_elements; i++) {
+      sta::Vertex* vertex = vertex_array[i];
+      if(vertex != nullptr){
+        float pinSlewTemp = slew_corner(vertex);
+        pinSlew = std::max(pinSlew,  pinSlewTemp);
+      }
+    }
+
+    return pinSlew;
+}
+
+
 sta::Network* Design::cmdLinkedNetwork()
 {
   sta::Network *network = sta::Sta::sta()->cmdNetwork();;
