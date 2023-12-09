@@ -4,6 +4,7 @@ record_tests {
   timing_api
   timing_api_2
   timing_api_3
+  timing_api_4
   upf_test
   upf_aes
 }

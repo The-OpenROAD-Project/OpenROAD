@@ -98,6 +98,63 @@ void Design::readDef(const std::string& file_name,
                child);
 }
 
+
+
+odb::dbITerm* Design::staToDBPin(const sta::Pin *pin)
+{
+  ord::OpenRoad *openroad = ord::OpenRoad::openRoad();
+  sta::dbNetwork *db_network = openroad->getDbNetwork();
+  odb::dbITerm *iterm;
+  odb::dbBTerm *bterm;
+  db_network->staToDb(pin, iterm, bterm);
+  return iterm;
+}
+
+sta::PinSet Design::findStartPoints()
+{
+  sta::Network *network = sta::Sta::sta()->cmdNetwork();;
+  sta::PinSet pins(network);
+  sta::VertexPinCollector visitor(pins);
+  sta::Sta::sta()->visitStartpoints(&visitor);
+  return pins;
+}
+
+std::vector<std::string> Design::extractStartPointNames() 
+{
+    std::vector<std::string> startPointNames;
+
+    // This will need to be edited
+    sta::PinSet startpoints = findStartPoints();
+
+    for (const auto& startpoint : startpoints) {
+
+        odb::dbITerm* dbITermPin = staToDBPin(startpoint);
+
+        if (dbITermPin == nullptr) {
+            continue;
+        }
+
+        startPointNames.push_back(getITermName(dbITermPin));
+    }
+
+    return startPointNames;
+}
+
+bool Design::isPinStartPoint(const std::vector<std::string>& startPointNames, odb::dbITerm* db_pin) {
+    std::string pinName = getITermName(db_pin);
+
+    for (const auto& sp_name : startPointNames) {
+        if (sp_name == pinName) {
+            return true;
+            break;
+        }
+    }
+
+   return false;
+}
+
+
+
 float Design::slew_corner(sta::Vertex *vertex)                            
 {
 

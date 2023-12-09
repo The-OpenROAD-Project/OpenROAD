@@ -143,11 +143,14 @@ class Sta;
 class RiseFall;
 class Vertex;
 class Pin;
+class PinSet;
 }  // namespace sta
 
 namespace ord {
 
 class Tech;
+
+class OpenRoad;
 
 class Design
 {
@@ -200,8 +203,13 @@ class Design
   bool isTimeInf(float time);
 
   float slew_corner(sta::Vertex *vertex);
-  float getPinSlew(odb::dbITerm* db_pin);                         
+  float getPinSlew(odb::dbITerm* db_pin);      
 
+  odb::dbITerm* staToDBPin(const sta::Pin *pin);  
+  sta::PinSet findStartPoints();
+  std::vector<std::string> extractStartPointNames();
+  bool isPinStartPoint(const std::vector<std::string>& startPointNames, odb::dbITerm* db_pin);
+  
 
   std::vector<odb::dbMTerm*> getTimingFanoutFrom(odb::dbMTerm* input);
   bool isInClock(odb::dbInst* inst);
