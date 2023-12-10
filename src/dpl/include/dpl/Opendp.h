@@ -499,8 +499,7 @@ class Opendp
   int gridPaddedWidth(const Cell* cell, int site_width) const;
   int gridPaddedWidth(const Cell* cell) const;
   int64_t paddedArea(const Cell* cell) const;
-  const int coordinateToHeight(const int y_coordinate,
-                               const GridMapKey gmk) const;
+  int coordinateToHeight(int y_coordinate, GridMapKey gmk) const;
   int gridNearestHeight(const Cell* cell) const;
   int gridNearestHeight(const Cell* cell, int row_height) const;
   int gridNearestWidth(const Cell* cell) const;
