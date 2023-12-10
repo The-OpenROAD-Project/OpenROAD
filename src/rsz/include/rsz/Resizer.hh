@@ -350,7 +350,7 @@ public:
   dbBlock* getDbBlock() { return block_; };
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
-  void removeBuffer(Instance *buffer);
+  bool removeBuffer(Instance *buffer);
   void swapPins(Instance *inst, LibertyPort *port1,
                 LibertyPort *port2, bool journal);
   bool replaceCell(Instance *inst, LibertyCell *cell, bool journal);
@@ -527,7 +527,6 @@ protected:
                                 SteinerPt pt,
                                 const ParasiticAnalysisPt *parasitics_ap);
   void findResizeSlacks1();
-  bool removeBuffer(Instance *buffer);
   Instance *makeInstance(LibertyCell *cell,
                          const char *name,
                          Instance *parent,

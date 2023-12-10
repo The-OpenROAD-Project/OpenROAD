@@ -974,7 +974,7 @@ Resizer::checkLibertyForAllCorners()
         if (isLinkCell(cell) && !dontUse(cell)) {
           LibertyCell *corner_cell = cell->cornerCell(lib_ap_index);
           if (!corner_cell) {
-            logger_->warn(RSZ, 96,
+            logger_->warn(RSZ, 98,
                           "Cell {} is missing in {} and will be set dont-use",
                           cell->name(), corner->name());
             setDontUse(cell, true);
