@@ -205,11 +205,15 @@ class Design
   float slew_corner(sta::Vertex *vertex);
   float getPinSlew(odb::dbITerm* db_pin);      
 
-  odb::dbITerm* staToDBPin(const sta::Pin *pin);  
+  odb::dbITerm* staToDBPin(const sta::Pin *pin); 
+
   sta::PinSet findStartPoints();
   std::vector<std::string> extractStartPointNames();
   bool isPinStartPoint(const std::vector<std::string>& startPointNames, odb::dbITerm* db_pin);
-  
+
+  sta::PinSet findEndpoints();
+  std::vector<std::string> extractEndpointNames();
+  bool isPinEndpoint(const std::vector<std::string>& endpointNames, odb::dbITerm* db_pin);
 
   std::vector<odb::dbMTerm*> getTimingFanoutFrom(odb::dbMTerm* input);
   bool isInClock(odb::dbInst* inst);

@@ -100,8 +100,7 @@ void Design::readDef(const std::string& file_name,
 
 
 
-odb::dbITerm* Design::staToDBPin(const sta::Pin *pin)
-{
+odb::dbITerm* Design::staToDBPin(const sta::Pin *pin) {
   ord::OpenRoad *openroad = ord::OpenRoad::openRoad();
   sta::dbNetwork *db_network = openroad->getDbNetwork();
   odb::dbITerm *iterm;
@@ -110,8 +109,7 @@ odb::dbITerm* Design::staToDBPin(const sta::Pin *pin)
   return iterm;
 }
 
-sta::PinSet Design::findStartPoints()
-{
+sta::PinSet Design::findStartPoints() {
   sta::Network *network = sta::Sta::sta()->cmdNetwork();;
   sta::PinSet pins(network);
   sta::VertexPinCollector visitor(pins);
@@ -119,8 +117,48 @@ sta::PinSet Design::findStartPoints()
   return pins;
 }
 
-std::vector<std::string> Design::extractStartPointNames() 
-{
+sta::PinSet Design::findEndpoints() {
+  sta::Network *network = sta::Sta::sta()->cmdNetwork();;
+  sta::PinSet pins(network);
+  sta::VertexPinCollector visitor(pins);
+  sta::Sta::sta()->visitEndpoints(&visitor);
+  return pins;
+}
+
+std::vector<std::string> Design::extractEndpointNames() {
+    std::vector<std::string> endpointNames;
+
+    // This will need to be edited
+    sta::PinSet endPoints = findEndpoints();
+
+    for (const auto& endpoint : endPoints) {
+
+        odb::dbITerm* dbITermPin = staToDBPin(endpoint);
+
+        if (dbITermPin == nullptr) {
+            continue;
+        }
+
+        endpointNames.push_back(getITermName(dbITermPin));
+    }
+
+    return endpointNames;
+}
+
+bool Design::isPinEndpoint(const std::vector<std::string>& endpointNames, odb::dbITerm* db_pin) {
+    std::string pinName = getITermName(db_pin);
+
+    for (const auto& ep_name : endpointNames) {
+        if (ep_name == pinName) {
+            return true;
+            break;
+        }
+    }
+
+   return false;
+}
+
+std::vector<std::string> Design::extractStartPointNames() {
     std::vector<std::string> startPointNames;
 
     // This will need to be edited
@@ -155,9 +193,7 @@ bool Design::isPinStartPoint(const std::vector<std::string>& startPointNames, od
 
 
 
-float Design::slew_corner(sta::Vertex *vertex)                            
-{
-
+float Design::slew_corner(sta::Vertex *vertex) {
   sta::Sta *sta = sta::Sta::sta();
   
   float slew_max = -sta::INF;
