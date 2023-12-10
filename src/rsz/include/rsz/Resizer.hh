@@ -521,9 +521,6 @@ protected:
                                 SteinerTree *tree,
                                 SteinerPt pt,
                                 const ParasiticAnalysisPt *parasitics_ap);
-  bool replaceCell(Instance *inst,
-                   LibertyCell *replacement,
-                   bool journal);
   void findResizeSlacks1();
   Instance *makeInstance(LibertyCell *cell,
                          const char *name,
