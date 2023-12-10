@@ -67,14 +67,18 @@ class ClockInst
             int y,
             odb::dbITerm* pinObj = nullptr,
             float inputCap = 0.0,
-            float insertionDelay = 0.0)
+            float insertionDelay = 0.0,
+            float outputCap = 0.0,
+            float idealOutputCap = 0.0)
       : name_(name),
         master_(master),
         type_(type),
         location_(x, y),
         inputPinObj_(pinObj),
         inputCap_(inputCap),
-        insertionDelay_(insertionDelay)
+        insertionDelay_(insertionDelay),
+        outputCap_(outputCap),
+        idealOutputCap_(idealOutputCap)
   {
   }
 
@@ -92,6 +96,10 @@ class ClockInst
   float getInputCap() const { return inputCap_; }
   bool isClockBuffer() const { return type_ == CLOCK_BUFFER; }
   double getInsertionDelay() const { return insertionDelay_; }
+  void setOutputCap(float cap) { outputCap_ = cap; }
+  float getOutputCap() const { return outputCap_; }
+  void setIdealOutputCap(float cap) { idealOutputCap_ = cap; }
+  float getIdealOutputCap() const { return idealOutputCap_; }
 
  private:
   std::string name_;
@@ -102,6 +110,8 @@ class ClockInst
   odb::dbITerm* inputPinObj_ = nullptr;
   float inputCap_;
   double insertionDelay_;  // insertion delay in terms of length, not time
+  float outputCap_;        // current load cap seen by this instance
+  float idealOutputCap_;   // ideal load cap needed for perfectly balanced tree
 };
 
 //-----------------------------------------------------------------------------

@@ -76,6 +76,9 @@ class Graphics : public gui::Renderer, public Mpl2Observer
 
   void setMacroBlockages(
       const std::vector<mpl2::Rect>& macro_blockages) override;
+  void setPlacementBlockages(
+      const std::vector<mpl2::Rect>& placement_blockages) override;
+
   void setOutline(const odb::Rect& outline) override;
 
   void eraseDrawing() override;
@@ -83,7 +86,8 @@ class Graphics : public gui::Renderer, public Mpl2Observer
  private:
   void resetPenalties();
   void drawCluster(Cluster* cluster, gui::Painter& painter);
-  void drawBlockages(gui::Painter& painter);
+  void drawAllBlockages(gui::Painter& painter);
+  void drawBlockage(const Rect& blockage, gui::Painter& painter);
 
   template <typename T>
   void report(const char* name, const std::optional<T>& value);
@@ -91,6 +95,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   std::vector<SoftMacro> soft_macros_;
   std::vector<HardMacro> hard_macros_;
   std::vector<mpl2::Rect> macro_blockages_;
+  std::vector<mpl2::Rect> placement_blockages_;
   odb::Rect outline_;
 
   bool active_ = true;

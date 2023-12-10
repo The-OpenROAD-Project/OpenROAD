@@ -224,6 +224,7 @@ const char* FlexDRGraphics::route_shape_cost_visible_ = "Route Shape Cost";
 const char* FlexDRGraphics::marker_cost_visible_ = "Marker Cost";
 const char* FlexDRGraphics::fixed_shape_cost_visible_ = "Fixed Shape Cost";
 const char* FlexDRGraphics::maze_search_visible_ = "Maze Search";
+const char* FlexDRGraphics::current_net_only_visible_ = "Current Net Only";
 
 static std::string workerOrigin(FlexDRWorker* worker)
 {
@@ -268,6 +269,7 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
   addDisplayControl(route_guides_visible_, true);
   addDisplayControl(routing_objs_visible_, true);
   addDisplayControl(maze_search_visible_, true);
+  addDisplayControl(current_net_only_visible_, false);
 
   gui_->registerRenderer(this);
 }
@@ -290,6 +292,8 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   painter.setBrush(layer);
 
   // Draw segs & vias
+  const bool draw_current_net_only_
+      = checkDisplayControl(current_net_only_visible_);
   if (checkDisplayControl(routing_objs_visible_)) {
     if (drawWholeDesign_) {
       Rect box = design_->getTopBlock()->getDieBox();
@@ -304,6 +308,8 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       std::vector<drConnFig*> figs;
       worker_->getWorkerRegionQuery().query(box, layerNum, figs);
       for (auto& fig : figs) {
+        if (draw_current_net_only_ && fig->getNet() != net_)
+          continue;
         drawObj(fig, painter, layerNum);
       }
     }

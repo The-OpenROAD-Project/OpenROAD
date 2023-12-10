@@ -232,7 +232,6 @@ class TreeBuilder
   unsigned treeBufLevels_ = 0;
   std::set<ClockInst*> first_level_sink_drivers_;
   std::set<ClockInst*> second_level_sink_drivers_;
-
   std::set<ClockInst*> tree_level_buffers_;
   utl::Logger* logger_;
   odb::dbDatabase* db_;

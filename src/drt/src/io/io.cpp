@@ -3204,6 +3204,7 @@ void io::Writer::updateDbConn(odb::dbBlock* block,
         }
       }
       _wire_encoder.end();
+      net->setWireOrdered(false);
     }
   }
 }

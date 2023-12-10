@@ -1895,6 +1895,21 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net,
   }
 }
 
+void GlobalRouter::connectTopLevelPins(odb::dbNet* db_net, GRoute& route)
+{
+  std::vector<Pin>& pins = db_net_map_[db_net]->getPins();
+  for (Pin& pin : pins) {
+    if (pin.getConnectionLayer() > max_routing_layer_) {
+      odb::Point pin_pos = pin.getOnGridPosition();
+      for (int l = max_routing_layer_; l < pin.getConnectionLayer(); l++) {
+        GSegment segment = GSegment(
+            pin_pos.x(), pin_pos.y(), l, pin_pos.x(), pin_pos.y(), l + 1);
+        route.push_back(segment);
+      }
+    }
+  }
+}
+
 void GlobalRouter::addRemainingGuides(NetRouteMap& routes,
                                       std::vector<Net*>& nets,
                                       int min_routing_layer,
@@ -1912,6 +1927,8 @@ void GlobalRouter::addRemainingGuides(NetRouteMap& routes,
       if (route.empty()) {
         addGuidesForLocalNets(
             db_net, route, min_routing_layer, max_routing_layer);
+      } else {
+        connectTopLevelPins(db_net, route);
       }
     }
   }
@@ -1924,7 +1941,7 @@ void GlobalRouter::connectPadPins(NetRouteMap& routes)
     GRoute& route = net_route.second;
     Net* net = getNet(db_net);
     if (pad_pins_connections_.find(db_net) != pad_pins_connections_.end()
-        || net->getNumPins() > 1) {
+        && net->getNumPins() > 1) {
       for (GSegment& segment : pad_pins_connections_[db_net]) {
         route.push_back(segment);
       }
@@ -2811,6 +2828,7 @@ Net* GlobalRouter::addNet(odb::dbNet* db_net)
 void GlobalRouter::removeNet(odb::dbNet* db_net)
 {
   Net* net = db_net_map_[db_net];
+  fastroute_->removeNet(db_net);
   delete net;
   db_net_map_.erase(db_net);
   dirty_nets_.erase(db_net);

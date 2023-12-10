@@ -35,6 +35,7 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <set>
 #include <unordered_map>
@@ -268,6 +269,7 @@ class IOPlacer
   double dbuToMicrons(int64_t dbu);
   int micronsToDbu(double microns);
   Edge getMirroredEdge(const Edge& edge);
+  int computeRegionIncrease(const Interval& interval, int num_pins);
 
   // db functions
   void populateIOPlacer(const std::set<int>& hor_layer_idx,
@@ -293,6 +295,7 @@ class IOPlacer
   // router
   const int num_tracks_offset_ = 15;
   const int pins_per_report_ = 5;
+  const int default_min_dist_ = 2;
 
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
