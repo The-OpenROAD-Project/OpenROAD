@@ -869,8 +869,16 @@ void Opendp::diamondSearchSide(const Cell* cell,
   int bin_y = min(y_max, max(y_min, y + y_offset));
   PixelPt avail_pt = binSearch(x, cell, bin_x, bin_y);
   if (avail_pt.pixel) {
-    int avail_dist = abs(x - avail_pt.pt.getX()) * getSiteWidth(cell)
-                     + abs(y - avail_pt.pt.getY()) * getRowHeight(cell);
+    int y_dist = 0;
+    if (cell->isHybrid() && !cell->isHybridParent()) {
+      auto gmk = getGridMapKey(cell);
+
+      y_dist = abs(coordinateToHeight(y, gmk)
+                   - coordinateToHeight(avail_pt.pt.getY(), gmk));
+    } else {
+      y_dist = abs(y - avail_pt.pt.getY()) * getRowHeight(cell);
+    }
+    int avail_dist = abs(x - avail_pt.pt.getX()) * getSiteWidth(cell) + y_dist;
     if (best_pt.pixel == nullptr || avail_dist < best_dist) {
       best_pt = avail_pt;
       best_dist = avail_dist;
@@ -902,7 +910,7 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
     return PixelPt();
   }
 
-  int height = gridHeight(cell, row_height);
+  int height = gridHeight(cell);
   int y_end = bin_y + height;
 
   if (debug_observer_) {

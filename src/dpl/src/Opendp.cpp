@@ -478,9 +478,31 @@ int Opendp::gridPaddedWidth(const Cell* cell) const
   return divCeil(paddedWidth(cell), site_width);
 }
 
-int Opendp::gridHeight(const Cell* cell, int row_height) const
+const int Opendp::coordinateToHeight(const int y_coordinate,
+                                     const GridMapKey gmk) const
 {
-  return std::max(1, divCeil(cell->height_, row_height));
+  // gets a coordinate and its grid, and returns the height of the coordinate.
+  // This is useful for hybrid sites
+  auto grid_info = grid_info_map_.at(gmk);
+  if (grid_info.isHybrid()) {
+    auto& grid_sites = grid_info.getSites();
+    const int total_height = grid_info.getSitesTotalHeight();
+    int patterns_below = divFloor(
+        y_coordinate, grid_sites.size());  // if you are at index 10, and row
+    // pattern is 3, this given you 3
+    int remaining_rows = y_coordinate % grid_sites.size();
+    int height = patterns_below * total_height
+                 + remaining_rows
+                       * std::accumulate(
+                           grid_sites.begin(),
+                           grid_sites.begin() + remaining_rows,
+                           0,
+                           [](int sum, const dbSite::OrientedSite& entry) {
+                             return sum + entry.site->getHeight();
+                           });
+    return height;
+  }
+  return y_coordinate * grid_info.getSitesTotalHeight();
 }
 
 int Opendp::gridHeight(const Cell* cell) const
