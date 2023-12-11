@@ -696,18 +696,17 @@ frLef58SpacingWrongDirConstraint* Fixture::makeLef58WrongDirSpcConstraint(
 {
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
-
-  auto uCon = make_unique<frLef58SpacingWrongDirConstraint>();
-  auto con = uCon.get();
-  con->setWrongDirSpace(spacing);
+  odb::dbTechLayerWrongDirSpacingRule* rule;
+  rule->setWrongdirSpace(spacing);
   if (hasNoneol) {
-    con->setNonEol(hasNoneol);
-    con->setNonEolWidth(noneolWidth);
+    rule->setNoneolValid(hasNoneol);
+    rule->setNoneolWidth(noneolWidth);
   }
   if (hasPrl) {
-    con->setPrlLengthValid(hasPrl);
-    con->setPrlLength(prlLength);
+    rule->setPrlLength(prlLength);
   }
+  auto uCon = make_unique<frLef58SpacingWrongDirConstraint>(rule);
+  auto con = uCon.get();
   layer->addLef58SpacingWrongDirConstraint(con);
   design->getTech()->addUConstraint(std::move(uCon));
   return con;

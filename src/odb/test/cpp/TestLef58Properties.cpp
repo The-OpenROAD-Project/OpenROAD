@@ -103,7 +103,6 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(wrongDir_rule->getWrongdirSpace() == 0.12 * distFactor);
   BOOST_TEST(wrongDir_rule->isNoneolValid() == 1);
   BOOST_TEST(wrongDir_rule->getNoneolWidth() == 0.15 * distFactor);
-  BOOST_TEST(wrongDir_rule->isPrlValid() == 1);
   BOOST_TEST(wrongDir_rule->getPrlLength() == -0.05 * distFactor);
   BOOST_TEST(wrongDir_rule->isLengthValid() == 1);
   BOOST_TEST(wrongDir_rule->getLength() == 0.2 * distFactor);

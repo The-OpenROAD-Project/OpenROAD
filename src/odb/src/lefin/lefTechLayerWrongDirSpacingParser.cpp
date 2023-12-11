@@ -79,9 +79,7 @@ bool parse(Iterator first,
                   sc,
                   true)]
               >> double_[boost::bind(&noneolWidthParser, _1, sc, l)])
-         >> -(lit("PRL")[boost::bind(
-                  &odb::dbTechLayerWrongDirSpacingRule::setPrlValid, sc, true)]
-              >> double_[boost::bind(&prlLengthParser, _1, sc, l)])
+         >> -(lit("PRL") >> double_[boost::bind(&prlLengthParser, _1, sc, l)])
          >> -(lit("LENGTH")[boost::bind(
                   &odb::dbTechLayerWrongDirSpacingRule::setLengthValid,
                   sc,

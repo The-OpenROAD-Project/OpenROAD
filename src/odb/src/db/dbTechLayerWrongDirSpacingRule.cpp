@@ -54,9 +54,6 @@ bool _dbTechLayerWrongDirSpacingRule::operator==(
   if (flags_.length_valid_ != rhs.flags_.length_valid_) {
     return false;
   }
-  if (flags_.prl_valid_ != rhs.flags_.prl_valid_) {
-    return false;
-  }
   if (wrongdir_space_ != rhs.wrongdir_space_) {
     return false;
   }
@@ -87,7 +84,6 @@ void _dbTechLayerWrongDirSpacingRule::differences(
   DIFF_BEGIN
   DIFF_FIELD(flags_.noneol_valid_);
   DIFF_FIELD(flags_.length_valid_);
-  DIFF_FIELD(flags_.prl_valid_);
   DIFF_FIELD(wrongdir_space_);
   DIFF_FIELD(noneol_width_);
   DIFF_FIELD(length_);
@@ -102,7 +98,6 @@ void _dbTechLayerWrongDirSpacingRule::out(dbDiff& diff,
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(flags_.noneol_valid_);
   DIFF_OUT_FIELD(flags_.length_valid_);
-  DIFF_OUT_FIELD(flags_.prl_valid_);
   DIFF_OUT_FIELD(wrongdir_space_);
   DIFF_OUT_FIELD(noneol_width_);
   DIFF_OUT_FIELD(length_);
@@ -127,7 +122,6 @@ _dbTechLayerWrongDirSpacingRule::_dbTechLayerWrongDirSpacingRule(
 {
   flags_.noneol_valid_ = r.flags_.noneol_valid_;
   flags_.length_valid_ = r.flags_.length_valid_;
-  flags_.prl_valid_ = r.flags_.prl_valid_;
   flags_.spare_bits_ = r.flags_.spare_bits_;
   wrongdir_space_ = r.wrongdir_space_;
   noneol_width_ = r.noneol_width_;
@@ -258,22 +252,6 @@ bool dbTechLayerWrongDirSpacingRule::isLengthValid() const
       = (_dbTechLayerWrongDirSpacingRule*) this;
 
   return obj->flags_.length_valid_;
-}
-
-void dbTechLayerWrongDirSpacingRule::setPrlValid(bool prl_valid)
-{
-  _dbTechLayerWrongDirSpacingRule* obj
-      = (_dbTechLayerWrongDirSpacingRule*) this;
-
-  obj->flags_.prl_valid_ = prl_valid;
-}
-
-bool dbTechLayerWrongDirSpacingRule::isPrlValid() const
-{
-  _dbTechLayerWrongDirSpacingRule* obj
-      = (_dbTechLayerWrongDirSpacingRule*) this;
-
-  return obj->flags_.prl_valid_;
 }
 
 // User Code Begin dbTechLayerWrongDirSpacingRulePublicMethods

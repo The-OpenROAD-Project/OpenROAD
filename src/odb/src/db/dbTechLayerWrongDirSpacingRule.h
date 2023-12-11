@@ -49,8 +49,7 @@ struct dbTechLayerWrongDirSpacingRuleFlags
 {
   bool noneol_valid_ : 1;
   bool length_valid_ : 1;
-  bool prl_valid_ : 1;
-  uint spare_bits_ : 29;
+  uint spare_bits_ : 30;
 };
 
 class _dbTechLayerWrongDirSpacingRule : public _dbObject

@@ -650,26 +650,13 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_check(
   // non-endprl region.
   bool checkPrl = false;
   if (endPrlSpacing > 0) {
-    const frDirEnum dir = edge->getDir();
-    const gtl::orientation_2d orient
-        = (dir == frDirEnum::W || dir == frDirEnum::E) ? gtl::HORIZONTAL
-                                                       : gtl::VERTICAL;
+    const gtl::orientation_2d orient = getOrientation(edge);
     const gtl::orientation_2d opp_orient{orient.get_perpendicular()};
     checkPrl
         = std::abs(edge->low().get(opp_orient) - ptr->low().get(opp_orient))
           > eolNonPrlSpacing;
     if (checkPrl) {
-      const frCoord edge1_low = edge->low().get(orient);
-      const frCoord edge1_high = edge->high().get(orient);
-      const frCoord edge1_min = std::min(edge1_low, edge1_high);
-      const frCoord edge1_max = std::max(edge1_low, edge1_high);
-
-      const frCoord edge2_low = ptr->low().get(orient);
-      const frCoord edge2_high = ptr->high().get(orient);
-      const frCoord edge2_min = std::min(edge2_low, edge2_high);
-      const frCoord edge2_max = std::max(edge2_low, edge2_high);
-      const frCoord prl
-          = std::min(edge1_max, edge2_max) - std::max(edge1_min, edge2_min);
+      const frCoord prl = getPrl(edge, ptr, orient);
       if (prl < 0 || prl > endPrl) {
         return;
       }

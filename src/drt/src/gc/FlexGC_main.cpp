@@ -944,36 +944,45 @@ void FlexGCWorker::Impl::checkMetalSpacing_wrongDir_getQueryBox(gcSegment* edge,
       break;
   }
 }
+gtl::orientation_2d FlexGCWorker::Impl::getOrientation(gcSegment* edge) const
+{
+  const frDirEnum dir = edge->getDir();
+  return (dir == frDirEnum::W || dir == frDirEnum::E) ? gtl::HORIZONTAL
+                                                      : gtl::VERTICAL;
+}
+frCoord FlexGCWorker::Impl::getPrl(gcSegment* edge,
+                                   gcSegment* ptr,
+                                   gtl::orientation_2d orient) const
+{
+  const frCoord edge1_low = edge->low().get(orient);
+  const frCoord edge1_high = edge->high().get(orient);
+  const frCoord edge1_min = std::min(edge1_low, edge1_high);
+  const frCoord edge1_max = std::max(edge1_low, edge1_high);
+
+  const frCoord edge2_low = ptr->low().get(orient);
+  const frCoord edge2_high = ptr->high().get(orient);
+  const frCoord edge2_min = std::min(edge2_low, edge2_high);
+  const frCoord edge2_max = std::max(edge2_low, edge2_high);
+  return std::min(edge1_max, edge2_max) - std::max(edge1_min, edge2_min);
+}
 
 void FlexGCWorker::Impl::checkMetalSpacing_wrongDir(gcPin* pin, frLayer* layer)
 {
   auto lef58WrongDirCons = layer->getLef58SpacingWrongDirConstraints();
   auto layerNum = layer->getLayerNum();
   for (auto con : lef58WrongDirCons) {
-    if (con->hasLength()) {
-      logger_->warn(
-          DRT, 333, "Unsupported branch LENGTH in checkMetalSpacing_wrongDir.");
-    }
-    if (con->hasPrlLength()) {
-      auto prlLength = con->getPrlLength();
-      if (prlLength < 0) {
-        logger_->warn(DRT,
-                      334,
-                      "Unsupported negative value for prlLength in branch PRL "
-                      "in checkMetalSpacing_wrongDir.");
-      }
-    }
-    auto spcVal = con->getWrongDirSpace();
+    auto rule = con->getODBRule();
+    auto spcVal = rule->getWrongdirSpace();
     // Loop over all edges of pin
     for (auto& edges : pin->getPolygonEdges()) {
       for (auto& edge : edges) {
         // Check wrongDir edge
         if (edge->isVertical() != layer->isVertical()) {
           // Check noneol flag
-          if (con->hasNoneolWidth()) {
+          if (rule->isNoneolValid()) {
             // Get edge length and compare
             auto edgeLength = gtl::length(*edge);
-            auto noneolLength = con->getNoneolWidth();
+            auto noneolLength = rule->getNoneolWidth();
             if (edgeLength < noneolLength) {
               continue;
             }
@@ -994,51 +1003,30 @@ void FlexGCWorker::Impl::checkMetalSpacing_wrongDir(gcPin* pin, frLayer* layer)
                 continue;
               }
 
-              auto net1 = edge->getNet();
-              auto net2 = ptr->getNet();
-              if (net1 == net2) {
-                continue;
-              }
-
               // no violation if fixed shapes
               if (edge->isFixed() && ptr->isFixed()) {
                 continue;
               }
 
               // Get edges prl
-              const frDirEnum dir = edge->getDir();
-              const gtl::orientation_2d orient
-                  = (dir == frDirEnum::W || dir == frDirEnum::E)
-                        ? gtl::HORIZONTAL
-                        : gtl::VERTICAL;
-              const frCoord edge1_low = edge->low().get(orient);
-              const frCoord edge1_high = edge->high().get(orient);
-              const frCoord edge1_min = std::min(edge1_low, edge1_high);
-              const frCoord edge1_max = std::max(edge1_low, edge1_high);
-
-              const frCoord edge2_low = ptr->low().get(orient);
-              const frCoord edge2_high = ptr->high().get(orient);
-              const frCoord edge2_min = std::min(edge2_low, edge2_high);
-              const frCoord edge2_max = std::max(edge2_low, edge2_high);
-              const frCoord prl = std::min(edge1_max, edge2_max)
-                                  - std::max(edge1_min, edge2_min);
-              // Check prl run length > 0
+              const gtl::orientation_2d orient = getOrientation(edge.get());
+              const frCoord prl = getPrl(edge.get(), ptr, orient);
+              // Check prl run length > 0 (avoid error with negative
+              // prlLength)
               if (prl <= 0) {
                 continue;
               }
               // Check PRL branch
-              if (con->hasPrlLength()) {
-                auto prlLength = con->getPrlLength();
-                if (prl <= prlLength) {
-                  continue;
-                }
+              auto prlLength = rule->getPrlLength();
+              if (prl <= prlLength) {
+                continue;
               }
 
               // Check other edge noneol
-              if (con->hasNoneolWidth()) {
+              if (rule->isNoneolValid()) {
                 // Get edge length and compare
                 auto ptrLength = gtl::length(*ptr);
-                auto noneolLength = con->getNoneolWidth();
+                auto noneolLength = rule->getNoneolWidth();
                 if (ptrLength < noneolLength) {
                   continue;
                 }
@@ -1056,6 +1044,8 @@ void FlexGCWorker::Impl::checkMetalSpacing_wrongDir(gcPin* pin, frLayer* layer)
               }
 
               // Make marker
+              auto net1 = edge->getNet();
+              auto net2 = ptr->getNet();
               gtl::rectangle_data<frCoord> markerRect(rect1);
               gtl::generalized_intersect(markerRect, rect2);
               auto marker = make_unique<frMarker>();

@@ -1151,30 +1151,12 @@ class frLef58SpacingEndOfLineConstraint : public frConstraint
 class frLef58SpacingWrongDirConstraint : public frConstraint
 {
  public:
-  // constructors
-  frLef58SpacingWrongDirConstraint() = default;
-  // getters
-  frCoord getWrongDirSpace() const { return wrongDirSpace; }
-  bool hasNoneolWidth() const { return noneolValid; }
-  frCoord getNoneolWidth() const { return noneolWidth; }
-  bool hasLength() const { return lengthValid; }
-  frCoord getLength() const { return length; }
-  bool hasPrlLength() const { return prlLengthValid; }
-  frCoord getPrlLength() const { return prlLength; }
-  // setters
-  void setWrongDirSpace(frCoord wrongDirSpaceIn)
+  frLef58SpacingWrongDirConstraint(odb::dbTechLayerWrongDirSpacingRule* rule)
+      : db_rule_(rule)
   {
-    wrongDirSpace = wrongDirSpaceIn;
   }
-  void setNonEol(bool noneolIn) { noneolValid = noneolIn; }
-  void setNonEolWidth(frCoord noneolWidthIn) { noneolWidth = noneolWidthIn; }
-  void setLengthValid(bool lengthValidIn) { lengthValid = lengthValidIn; }
-  void setLength(frCoord lengthIn) { length = lengthIn; }
-  void setPrlLengthValid(bool prlLengthValidIn)
-  {
-    prlLengthValid = prlLengthValidIn;
-  }
-  void setPrlLength(frCoord prlLengthIn) { prlLength = prlLengthIn; }
+  // getter
+  odb::dbTechLayerWrongDirSpacingRule* getODBRule() const { return db_rule_; }
   // others
   frConstraintTypeEnum typeId() const override
   {
@@ -1182,26 +1164,11 @@ class frLef58SpacingWrongDirConstraint : public frConstraint
   }
   void report(utl::Logger* logger) const override
   {
-    logger->report(
-        "SPACING WRONGDIRECTION wrongDirSpace {} noneolValid {} noneolWidth {} "
-        "lengthValid {} length {} prlLengthValid {} prlLength {} ",
-        wrongDirSpace,
-        noneolValid,
-        noneolWidth,
-        lengthValid,
-        length,
-        prlLengthValid,
-        prlLength);
+    logger->report("LEF58_SPACING WRONGDIRECTION");
   }
 
- protected:
-  frCoord wrongDirSpace{0};
-  bool noneolValid{false};
-  frCoord noneolWidth{0};
-  bool lengthValid{false};
-  frCoord length{0};
-  bool prlLengthValid{false};
-  frCoord prlLength{0};
+ private:
+  odb::dbTechLayerWrongDirSpacingRule* db_rule_;
 };
 
 class frLef58EolKeepOutConstraint : public frConstraint

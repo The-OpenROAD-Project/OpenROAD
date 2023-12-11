@@ -28,11 +28,6 @@
       "default": 0
     },
     {
-      "type": "bool",
-      "name": "prl_valid_",
-      "bits": "1"
-    },
-    {
       "type": "int",
       "name": "prl_length_",
       "default": 0
