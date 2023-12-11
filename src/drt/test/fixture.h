@@ -212,13 +212,9 @@ class Fixture
       int adjacent_cuts,
       int two_cuts,
       frCoord within);
-  frLef58SpacingWrongDirConstraint* makeLef58WrongDirSpcConstraint(
+  void makeLef58WrongDirSpcConstraint(
       frLayerNum layer_num,
-      frCoord spacing,
-      bool hasNoneol,
-      frCoord noneolWidth,
-      bool hasPrl,
-      frCoord prlLength);
+      odb::dbTechLayerWrongDirSpacingRule* dbRule);
   // Public data members are accessible from inside the test function
   std::unique_ptr<fr::Logger> logger;
   std::unique_ptr<frDesign> design;

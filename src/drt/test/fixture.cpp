@@ -686,28 +686,12 @@ void Fixture::initRegionQuery()
   query->initDRObj();
 }
 
-frLef58SpacingWrongDirConstraint* Fixture::makeLef58WrongDirSpcConstraint(
+void Fixture::makeLef58WrongDirSpcConstraint(
     frLayerNum layer_num,
-    frCoord spacing,
-    bool hasNoneol,
-    frCoord noneolWidth,
-    bool hasPrl,
-    frCoord prlLength)
+    odb::dbTechLayerWrongDirSpacingRule* dbRule)
 {
-  frTechObject* tech = design->getTech();
-  frLayer* layer = tech->getLayer(layer_num);
-  odb::dbTechLayerWrongDirSpacingRule* rule;
-  rule->setWrongdirSpace(spacing);
-  if (hasNoneol) {
-    rule->setNoneolValid(hasNoneol);
-    rule->setNoneolWidth(noneolWidth);
-  }
-  if (hasPrl) {
-    rule->setPrlLength(prlLength);
-  }
-  auto uCon = make_unique<frLef58SpacingWrongDirConstraint>(rule);
-  auto con = uCon.get();
-  layer->addLef58SpacingWrongDirConstraint(con);
-  design->getTech()->addUConstraint(std::move(uCon));
-  return con;
+  auto con = make_unique<frLef58SpacingWrongDirConstraint>(dbRule);
+  auto layer = design->getTech()->getLayer(layer_num);
+  layer->addLef58SpacingWrongDirConstraint(con.get());
+  design->getTech()->addUConstraint(std::move(con));
 }

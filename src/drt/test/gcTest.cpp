@@ -1225,23 +1225,32 @@ BOOST_DATA_TEST_CASE(route_wrong_direction_spc,
                       ^ bdata::make({false, true, true, true})
                       ^ bdata::make({false, false, true, false})
                       ^ bdata::make({150, 150, 150, 150})
-                      ^ bdata::make({false, false, false, true})
-                      ^ bdata::make({50, 50, 50, 50})),
+                      ^ bdata::make({0, 0, 0, 50})),
                      spacing,
                      legal,
                      noneolValid,
                      noneolWidth,
-                     prlValid,
                      prlLength)
 {
-  //  Setup
-  makeLef58WrongDirSpcConstraint(
-      2, spacing, noneolValid, noneolWidth, prlValid, prlLength);
-  db_tech->findLayer("m1")->setDirection(odb::dbTechLayerDir::VERTICAL);
+  // Setup
+  auto db_layer = db_tech->findLayer("m1");
+  db_layer->setDirection(odb::dbTechLayerDir::VERTICAL);
+  auto dbRule = odb::dbTechLayerWrongDirSpacingRule::create(db_layer);
+  dbRule->setWrongdirSpace(spacing);
+  if (noneolValid) {
+    dbRule->setNoneolValid(noneolValid);
+    dbRule->setNoneolWidth(noneolWidth);
+  }
+  if (prlLength != 0) {
+    dbRule->setPrlLength(prlLength);
+  }
+
+  makeLef58WrongDirSpcConstraint(2, dbRule);
+
   frNet* n1 = makeNet("n1");
   frNet* n2 = makeNet("n2");
   makePathseg(n1, 2, {0, 50}, {100, 50}, 100);
-  if (prlValid) {
+  if (prlLength != 0) {
     makePathseg(n2, 2, {50, 200}, {150, 200}, 100);
   } else {
     makePathseg(n2, 2, {0, 200}, {100, 200}, 100);
