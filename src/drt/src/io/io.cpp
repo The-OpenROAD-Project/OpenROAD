@@ -1410,12 +1410,14 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     if (rule->isLengthValid()) {
       logger_->warn(
           DRT, 333, "Unsupported branch LENGTH in WrongDirSpacingRule.");
+      continue;
     }
     if (rule->getPrlLength() < 0) {
       logger_->warn(DRT,
                     334,
                     "Unsupported negative value for prlLength in branch PRL "
                     "in WrongDirSpacingRule.");
+      continue;
     }
     tech_->addUConstraint(std::move(uCon));
     tmpLayer->addLef58SpacingWrongDirConstraint(rptr);

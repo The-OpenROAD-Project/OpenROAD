@@ -221,7 +221,6 @@ class FlexGCWorker::Impl
   void checkMetalSpacing_wrongDir_getQueryBox(gcSegment* edge,
                                               frCoord spcVal,
                                               box_t& queryBox);
-  gtl::orientation_2d getOrientation(gcSegment* edge) const;
   frCoord getPrl(gcSegment* edge,
                  gcSegment* ptr,
                  const gtl::orientation_2d& orient) const;

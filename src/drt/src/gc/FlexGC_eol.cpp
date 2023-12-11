@@ -650,7 +650,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_check(
   // non-endprl region.
   bool checkPrl = false;
   if (endPrlSpacing > 0) {
-    const gtl::orientation_2d orient = getOrientation(edge);
+    const gtl::orientation_2d orient = edge->getOrientation();
     const gtl::orientation_2d opp_orient{orient.get_perpendicular()};
     checkPrl
         = std::abs(edge->low().get(opp_orient) - ptr->low().get(opp_orient))

@@ -944,12 +944,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_wrongDir_getQueryBox(gcSegment* edge,
       break;
   }
 }
-gtl::orientation_2d FlexGCWorker::Impl::getOrientation(gcSegment* edge) const
-{
-  const frDirEnum dir = edge->getDir();
-  return (dir == frDirEnum::W || dir == frDirEnum::E) ? gtl::HORIZONTAL
-                                                      : gtl::VERTICAL;
-}
+
 frCoord FlexGCWorker::Impl::getPrl(gcSegment* edge,
                                    gcSegment* ptr,
                                    const gtl::orientation_2d& orient) const
@@ -1009,13 +1004,8 @@ void FlexGCWorker::Impl::checkMetalSpacing_wrongDir(gcPin* pin, frLayer* layer)
               }
 
               // Get edges prl
-              const gtl::orientation_2d orient = getOrientation(edge.get());
+              const gtl::orientation_2d orient = edge->getOrientation();
               const frCoord prl = getPrl(edge.get(), ptr, orient);
-              // Check prl run length > 0 (avoid error with negative
-              // prlLength)
-              if (prl <= 0) {
-                continue;
-              }
               // Check PRL branch
               auto prlLength = rule->getPrlLength();
               if (prl <= prlLength) {
