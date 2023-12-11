@@ -952,7 +952,7 @@ gtl::orientation_2d FlexGCWorker::Impl::getOrientation(gcSegment* edge) const
 }
 frCoord FlexGCWorker::Impl::getPrl(gcSegment* edge,
                                    gcSegment* ptr,
-                                   gtl::orientation_2d orient) const
+                                   const gtl::orientation_2d& orient) const
 {
   const frCoord edge1_low = edge->low().get(orient);
   const frCoord edge1_high = edge->high().get(orient);

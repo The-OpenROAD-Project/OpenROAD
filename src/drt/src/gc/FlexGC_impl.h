@@ -224,7 +224,7 @@ class FlexGCWorker::Impl
   gtl::orientation_2d getOrientation(gcSegment* edge) const;
   frCoord getPrl(gcSegment* edge,
                  gcSegment* ptr,
-                 gtl::orientation_2d orient) const;
+                 const gtl::orientation_2d& orient) const;
   void checkMetalSpacing_wrongDir(gcPin* pin, frLayer* layer);
   frCoord checkMetalSpacing_getMaxSpcVal(frLayerNum layerNum,
                                          bool checkNDRs = true);
