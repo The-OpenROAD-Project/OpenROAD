@@ -35,7 +35,6 @@
 
 #include "LevelBalancer.h"
 
-#include "Clock.h"
 #include "CtsOptions.h"
 #include "TreeBuilder.h"
 #include "cts/TritonCTS.h"

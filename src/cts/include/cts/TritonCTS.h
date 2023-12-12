@@ -42,6 +42,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "Clock.h"
+
 namespace utl {
 class Logger;
 }
@@ -76,12 +78,10 @@ namespace cts {
 
 using utl::Logger;
 
-class ClockInst;
 class CtsOptions;
 class TechChar;
 class StaEngine;
 class TreeBuilder;
-class Clock;
 
 class TritonCTS
 {
@@ -158,6 +158,7 @@ class TritonCTS
                                         int bufCounter,
                                         Clock& clockNet);
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
+  odb::dbITerm* getFirstOutput(odb::dbInst* inst) const;
   odb::dbITerm* getSingleOutput(odb::dbInst* inst, odb::dbITerm* input) const;
   void findClockRoots(sta::Clock* clk, std::set<odb::dbNet*>& clockNets);
   float getInputPinCap(odb::dbITerm* iterm);
@@ -169,6 +170,18 @@ class TritonCTS
   void writeDummyLoadsToDb(Clock& clockNet);
   bool computeIdealOutputCaps(Clock& clockNet);
   void findCandidateDummyCells(std::vector<sta::LibertyCell*>& dummyCandidates);
+  void insertDummyCell(Clock& clockNet,
+                       ClockInst* inst,
+                       const std::vector<sta::LibertyCell*>& dummyCandidates);
+  ClockInst& placeDummyCell(Clock& clockNet,
+                            const ClockInst* inst,
+                            const sta::LibertyCell* dummyCell,
+                            odb::dbInst*& dummyInst);
+  void connectDummyCell(const ClockInst* inst,
+                        odb::dbInst* dummyInst,
+                        Clock::SubNet& subNet,
+                        ClockInst& dummyClock);
+  void printClockNetwork(Clock clockNet) const;
 
   sta::dbSta* openSta_;
   sta::dbNetwork* network_;
@@ -180,6 +193,7 @@ class TritonCTS
   std::set<odb::dbNet*> staClockNets_;
   std::set<odb::dbNet*> visitedClockNets_;
   std::map<odb::dbInst*, ClockInst*> inst2clkbuf_;
+  std::map<ClockInst*, Clock::SubNet*> driver2subnet_;
 
   // db vars
   odb::dbDatabase* db_;
@@ -187,6 +201,7 @@ class TritonCTS
   unsigned numberOfClocks_ = 0;
   unsigned numClkNets_ = 0;
   unsigned numFixedNets_ = 0;
+  unsigned dummyLoadIndex_ = 0;
 
   // root buffer and sink bufer candidates
   std::vector<std::string> rootBuffers_;
