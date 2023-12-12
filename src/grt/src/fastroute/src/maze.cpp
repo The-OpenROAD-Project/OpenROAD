@@ -2262,9 +2262,9 @@ void FastRouteCore::setCongestionNets(std::set<odb::dbNet*>& congestion_nets,
 {
   // get Nets with overflow
   for (int netID = 0; netID < netCount(); netID++) {
-    if ((congestion_nets.find(nets_[netID]->getDbNet())
-         != congestion_nets.end())
-        || nets_[netID] == nullptr) {
+    if (nets_[netID] == nullptr
+        || (congestion_nets.find(nets_[netID]->getDbNet())
+            != congestion_nets.end())) {
       continue;
     }
 
