@@ -211,7 +211,7 @@ class gcSegment : public gtl::segment_data<frCoord>, public gcShape
   }
   gtl::orientation_2d getOrientation() const
   {
-    const frDirEnum dir = this->getDir();
+    const frDirEnum dir = getDir();
     return (dir == frDirEnum::W || dir == frDirEnum::E) ? gtl::HORIZONTAL
                                                         : gtl::VERTICAL;
   }
