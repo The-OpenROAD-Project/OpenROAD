@@ -312,6 +312,13 @@ proc remove_buffers { args } {
   rsz::remove_buffers_cmd
 }
 
+sta::define_cmd_args "balance_row_usage" {}
+
+proc balance_row_usage { args } {
+  sta::check_argc_eq0 "balance_row_usage" $args
+  rsz::balance_row_usage_cmd
+}
+
 sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length] \
                                       [-max_utilization util] \
                                       [-slew_margin slack_margin] \

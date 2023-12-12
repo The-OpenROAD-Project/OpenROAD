@@ -9,10 +9,6 @@
 [INFO ODB-0133]     Created 54 nets and 88 connections.
 [INFO PPL-0044] Pin group: [ resp_msg[3] resp_msg[2] resp_msg[14] req_val ]
 [INFO PPL-0044] Pin group: [ req_rdy req_msg[10] req_msg[11] req_msg[12] req_msg[13] ... ]
-[INFO PPL-0080] Mirroring pins resp_msg[3] and req_msg[3].
-[INFO PPL-0080] Mirroring pins resp_msg[2] and req_msg[2].
-[INFO PPL-0080] Mirroring pins resp_msg[14] and req_msg[14].
-[INFO PPL-0080] Mirroring pins req_val and resp_val.
 Found 0 macro blocks.
 [INFO PPL-0010] Tentative 0 to set up sections.
 [INFO PPL-0001] Number of slots           2494

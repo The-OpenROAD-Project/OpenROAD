@@ -47,6 +47,8 @@
 
 #pragma once
 
+#include "utl/Logger.h"
+
 namespace odb {
 
 // Note that the use of the word 'orientation' here is distinct from
@@ -308,5 +310,7 @@ inline constexpr Direction2D north{Direction2D::North};
 
 inline constexpr Direction3D down{Direction3D::Down};
 inline constexpr Direction3D up{Direction3D::Up};
+
+using utl::format_as;
 
 }  // namespace odb

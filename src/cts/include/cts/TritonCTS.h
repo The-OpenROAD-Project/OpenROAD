@@ -40,6 +40,7 @@
 #include <set>
 #include <string>
 #include <unordered_set>
+#include <vector>
 
 namespace utl {
 class Logger;
@@ -52,6 +53,7 @@ class dbInst;
 class dbNet;
 class dbITerm;
 class dbMTerm;
+class Rect;
 }  // namespace odb
 
 namespace rsz {
@@ -63,6 +65,7 @@ class dbSta;
 class Clock;
 class dbNetwork;
 class Unit;
+class LibertyCell;
 }  // namespace sta
 
 namespace stt {
@@ -73,12 +76,12 @@ namespace cts {
 
 using utl::Logger;
 
-class Clock;
 class ClockInst;
 class CtsOptions;
 class TechChar;
 class StaEngine;
 class TreeBuilder;
+class Clock;
 
 class TritonCTS
 {
@@ -98,9 +101,17 @@ class TritonCTS
   TechChar* getCharacterization() { return techChar_; }
   int setClockNets(const char* names);
   void setBufferList(const char* buffers);
-  void inferBufferList(std::vector<std::string>& bufferVector);
+  void inferBufferList(std::vector<std::string>& buffers);
+  std::vector<std::string> findMatchingSubset(
+      const std::string& pattern,
+      const std::vector<std::string>& buffers);
+  bool isClockCellCandidate(sta::LibertyCell* cell);
   void setRootBuffer(const char* buffers);
-  std::string selectRootBuffer(std::vector<std::string>& bufferVector);
+  std::string selectRootBuffer(std::vector<std::string>& buffers);
+  void setSinkBuffer(const char* buffers);
+  std::string selectSinkBuffer(std::vector<std::string>& buffers);
+  std::string selectBestMaxCapBuffer(const std::vector<std::string>& buffers,
+                                     float totalCap);
 
  private:
   void addBuilder(TreeBuilder* builder);
@@ -155,6 +166,9 @@ class TritonCTS
   double computeInsertionDelay(const std::string& name,
                                odb::dbInst* inst,
                                odb::dbMTerm* mterm);
+  void writeDummyLoadsToDb(Clock& clockNet);
+  bool computeIdealOutputCaps(Clock& clockNet);
+  void findCandidateDummyCells(std::vector<sta::LibertyCell*>& dummyCandidates);
 
   sta::dbSta* openSta_;
   sta::dbNetwork* network_;
@@ -173,6 +187,10 @@ class TritonCTS
   unsigned numberOfClocks_ = 0;
   unsigned numClkNets_ = 0;
   unsigned numFixedNets_ = 0;
+
+  // root buffer and sink bufer candidates
+  std::vector<std::string> rootBuffers_;
+  std::vector<std::string> sinkBuffers_;
 };
 
 }  // namespace cts

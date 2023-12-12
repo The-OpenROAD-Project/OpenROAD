@@ -343,6 +343,14 @@ remove_buffers_cmd()
 }
 
 void
+balance_row_usage_cmd()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->balanceRowUsage();
+}
+
+void
 set_max_utilization(double max_utilization)
 {
   ensureLinked();

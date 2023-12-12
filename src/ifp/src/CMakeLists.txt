@@ -69,16 +69,15 @@ if (Python3_FOUND AND BUILD_PYTHON)
            NAMESPACE     ifp
            LANGUAGE      python
            I_FILE        InitFloorplan-py.i
-           SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/src/ifp/include
-                         ${ODB_HOME}/src/swig/common
+           SWIG_INCLUDES ${ODB_HOME}/src/swig/common
                          ${ODB_HOME}/src/swig/python
-                         ${ODB_HOME}/include
            SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/ifp_py.py
   )
 
-  target_include_directories(ifp_py
+  target_link_libraries(ifp_py
     PUBLIC
-      ../include
+      ifp
+      odb
   )
 endif()
 

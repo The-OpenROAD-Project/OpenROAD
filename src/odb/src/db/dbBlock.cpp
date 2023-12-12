@@ -82,6 +82,7 @@
 #include "dbIntHashTable.hpp"
 #include "dbIsolation.h"
 #include "dbJournal.h"
+#include "dbLevelShifter.h"
 #include "dbLogicPort.h"
 #include "dbModInst.h"
 #include "dbModule.h"
@@ -202,6 +203,9 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _isolation_tbl = new dbTable<_dbIsolation>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbIsolationObj);
 
+  _levelshifter_tbl = new dbTable<_dbLevelShifter>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbLevelShifterObj);
+
   _group_tbl = new dbTable<_dbGroup>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbGroupObj);
 
@@ -318,6 +322,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _logicport_hash.setTable(_logicport_tbl);
   _powerswitch_hash.setTable(_powerswitch_tbl);
   _isolation_hash.setTable(_isolation_tbl);
+  _levelshifter_hash.setTable(_levelshifter_tbl);
   _group_hash.setTable(_group_tbl);
   _inst_hdr_hash.setTable(_inst_hdr_tbl);
   _bterm_hash.setTable(_bterm_tbl);
@@ -402,6 +407,7 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
       _logicport_hash(block._logicport_hash),
       _powerswitch_hash(block._powerswitch_hash),
       _isolation_hash(block._isolation_hash),
+      _levelshifter_hash(block._levelshifter_hash),
       _group_hash(block._group_hash),
       _inst_hdr_hash(block._inst_hdr_hash),
       _bterm_hash(block._bterm_hash),
@@ -440,6 +446,9 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
       = new dbTable<_dbPowerSwitch>(db, this, *block._powerswitch_tbl);
 
   _isolation_tbl = new dbTable<_dbIsolation>(db, this, *block._isolation_tbl);
+
+  _levelshifter_tbl
+      = new dbTable<_dbLevelShifter>(db, this, *block._levelshifter_tbl);
 
   _group_tbl = new dbTable<_dbGroup>(db, this, *block._group_tbl);
 
@@ -516,6 +525,7 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
   _logicport_hash.setTable(_logicport_tbl);
   _powerswitch_hash.setTable(_powerswitch_tbl);
   _isolation_hash.setTable(_isolation_tbl);
+  _levelshifter_hash.setTable(_levelshifter_tbl);
 
   _net_bterm_itr = new dbNetBTermItr(_bterm_tbl);
 
@@ -591,6 +601,7 @@ _dbBlock::~_dbBlock()
   delete _logicport_tbl;
   delete _powerswitch_tbl;
   delete _isolation_tbl;
+  delete _levelshifter_tbl;
   delete _group_tbl;
   delete ap_tbl_;
   delete global_connect_tbl_;
@@ -762,6 +773,9 @@ dbObjectTable* _dbBlock::getObjectTable(dbObjectType type)
     case dbIsolationObj:
       return _isolation_tbl;
 
+    case dbLevelShifterObj:
+      return _levelshifter_tbl;
+
     case dbGroupObj:
       return _group_tbl;
 
@@ -887,6 +901,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._logicport_hash;
   stream << block._powerswitch_hash;
   stream << block._isolation_hash;
+  stream << block._levelshifter_hash;
   stream << block._group_hash;
   stream << block._inst_hdr_hash;
   stream << block._bterm_hash;
@@ -907,6 +922,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << *block._logicport_tbl;
   stream << *block._powerswitch_tbl;
   stream << *block._isolation_tbl;
+  stream << *block._levelshifter_tbl;
   stream << *block._group_tbl;
   stream << *block.ap_tbl_;
   stream << *block.global_connect_tbl_;
@@ -989,6 +1005,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block._logicport_hash;
   stream >> block._powerswitch_hash;
   stream >> block._isolation_hash;
+  if (db->isSchema(db_schema_level_shifter)) {
+    stream >> block._levelshifter_hash;
+  }
   stream >> block._group_hash;
   stream >> block._inst_hdr_hash;
   stream >> block._bterm_hash;
@@ -1017,6 +1036,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block._logicport_tbl;
   stream >> *block._powerswitch_tbl;
   stream >> *block._isolation_tbl;
+  if (db->isSchema(db_schema_level_shifter)) {
+    stream >> *block._levelshifter_tbl;
+  }
   stream >> *block._group_tbl;
   stream >> *block.ap_tbl_;
   if (db->isSchema(db_schema_add_global_connect)) {
@@ -1184,6 +1206,10 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
   if (_isolation_hash != rhs._isolation_hash)
     return false;
 
+  if (_levelshifter_hash != rhs._levelshifter_hash) {
+    return false;
+  }
+
   if (_group_hash != rhs._group_hash)
     return false;
 
@@ -1243,6 +1269,12 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
 
   if (*_isolation_tbl != *rhs._isolation_tbl)
     return false;
+
+  if (*_levelshifter_tbl != *rhs._levelshifter_tbl) {
+    {
+      return false;
+    }
+  }
 
   if (*_group_tbl != *rhs._group_tbl)
     return false;
@@ -1366,6 +1398,7 @@ void _dbBlock::differences(dbDiff& diff,
     DIFF_HASH_TABLE(_logicport_hash);
     DIFF_HASH_TABLE(_powerswitch_hash);
     DIFF_HASH_TABLE(_isolation_hash);
+    DIFF_HASH_TABLE(_levelshifter_hash);
     DIFF_HASH_TABLE(_group_hash);
     DIFF_HASH_TABLE(_inst_hdr_hash);
     DIFF_HASH_TABLE(_bterm_hash);
@@ -1388,6 +1421,7 @@ void _dbBlock::differences(dbDiff& diff,
   DIFF_TABLE(_logicport_tbl);
   DIFF_TABLE(_powerswitch_tbl);
   DIFF_TABLE(_isolation_tbl);
+  DIFF_TABLE(_levelshifter_tbl);
   DIFF_TABLE(_group_tbl);
   DIFF_TABLE(ap_tbl_);
   DIFF_TABLE(global_connect_tbl_);
@@ -1460,6 +1494,7 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
     DIFF_OUT_HASH_TABLE(_logicport_hash);
     DIFF_OUT_HASH_TABLE(_powerswitch_hash);
     DIFF_OUT_HASH_TABLE(_isolation_hash);
+    DIFF_OUT_HASH_TABLE(_levelshifter_hash);
     DIFF_OUT_HASH_TABLE(_group_hash);
     DIFF_OUT_HASH_TABLE(_inst_hdr_hash);
     DIFF_OUT_HASH_TABLE(_bterm_hash);
@@ -1482,6 +1517,7 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE(_logicport_tbl);
   DIFF_OUT_TABLE(_powerswitch_tbl);
   DIFF_OUT_TABLE(_isolation_tbl);
+  DIFF_OUT_TABLE(_levelshifter_tbl);
   DIFF_OUT_TABLE(_group_tbl);
   DIFF_OUT_TABLE(ap_tbl_);
   DIFF_OUT_TABLE(global_connect_tbl_);
@@ -1744,6 +1780,12 @@ dbSet<dbIsolation> dbBlock::getIsolations()
   return dbSet<dbIsolation>(block, block->_isolation_tbl);
 }
 
+dbSet<dbLevelShifter> dbBlock::getLevelShifters()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbLevelShifter>(block, block->_levelshifter_tbl);
+}
+
 dbSet<dbGroup> dbBlock::getGroups()
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -1815,6 +1857,12 @@ dbIsolation* dbBlock::findIsolation(const char* name)
 {
   _dbBlock* block = (_dbBlock*) this;
   return (dbIsolation*) block->_isolation_hash.find(name);
+}
+
+dbLevelShifter* dbBlock::findLevelShifter(const char* name)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return (dbLevelShifter*) block->_levelshifter_hash.find(name);
 }
 
 dbModInst* dbBlock::findModInst(const char* path)

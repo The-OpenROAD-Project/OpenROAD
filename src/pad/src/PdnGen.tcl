@@ -799,7 +799,7 @@ proc is_inst_in_voltage_domain {inst domain_name} {
   set power_net [dict get $voltage_domain primary_power]
   set ground_net [dict get $voltage_domain primary_ground]
 
-  return [match_inst_connection $inst $power_net] && [match_inst_connection $inst $ground_net]
+  return [expr {[match_inst_connection $inst $power_net] && [match_inst_connection $inst $ground_net]}]
 }
 
 proc get_block_inst_masters {} {
@@ -816,7 +816,7 @@ proc get_block_inst_masters {} {
 }
 
 proc is_cell_present {cell_name} {
-  return [lsearch [get_block_inst_masters] $cell_name] > -1
+  return [expr {[lsearch [get_block_inst_masters] $cell_name] > -1}]
 }
 
 proc check_pwr_pads {grid cells} {
@@ -6043,24 +6043,24 @@ proc sort_insts_by_x_and_y {inst1 inst2} {
   lassign [$inst2 getOrigin] x2 y2
 
   if {$x1 == $x2} {
-    return $y1 - $y2
+    return [expr {$y1 - $y2}]
   }
-  return $x1 - $x2
+  return [expr {$x1 - $x2}]
 }
 
 proc sort_insts_by_y {inst1 inst2} {
   lassign [$inst1 getOrigin] x1 y1
   lassign [$inst2 getOrigin] x2 y2
 
-  return $y1 - $y2
+  return [expr {$y1 - $y2}]
 }
 
 proc sort_by_min_x {rect1 rect2} {
-  return [$rect1 xMin] - [$rect2 xMin]
+  return [expr {[$rect1 xMin] - [$rect2 xMin]}]
 }
 
 proc sort_by_min_y {rect1 rect2} {
-  return [$rect1 yMin] - [$rect2 yMin]
+  return [expr {[$rect1 yMin] - [$rect2 yMin]}]
 }
 
 proc rightmost_rect {rects} {

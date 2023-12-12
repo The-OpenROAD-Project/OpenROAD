@@ -252,3 +252,14 @@ void LoadBalancer::handle_accept(const BalancerConnection::pointer& connection,
   start_accept();
 }
 }  // namespace dst
+
+#if !SWIG && FMT_VERSION >= 100000
+namespace boost::asio::ip {
+
+static auto format_as(const boost::asio::ip::address f)
+{
+  return fmt::streamed(f);
+}
+
+}  // namespace boost::asio::ip
+#endif
