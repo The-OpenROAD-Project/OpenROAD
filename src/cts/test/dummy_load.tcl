@@ -7,7 +7,7 @@ read_def check_buffers.def
 create_clock -period 5 clk
 set_wire_rc -clock -layer metal5
 
-set_debug_level CTS "dummy load" 1
+#set_debug_level CTS "dummy load" 1
 
 clock_tree_synthesis -root_buf CLKBUF_X3 \
                      -buf_list CLKBUF_X3 \
