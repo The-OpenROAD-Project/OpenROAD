@@ -364,8 +364,8 @@ class HardMacro
   float getX() const;
   float getY() const;
   // The position of pins relative to the lower left of the instance
-  float getPinX() const;
-  float getPinY() const;
+  inline float getPinX() const {return x_ + pin_x_;}
+  inline float getPinY() const {return y_ + pin_y_;}
   // The position of pins relative to the origin of the canvas;
   float getAbsPinX() const;
   float getAbsPinY() const;
@@ -549,8 +549,11 @@ class SoftMacro
                  float area);
   float getX() const;
   float getY() const;
-  float getPinX() const;
-  float getPinY() const;
+
+  // The position of pins relative to the lower left of the instance
+  inline float getPinX() const {return x_ + 0.5f * width_;}
+  inline float getPinY() const {return y_ + 0.5f * height_;}
+
   const std::pair<float, float> getLocation() const;
   float getWidth() const;
   float getHeight() const;
