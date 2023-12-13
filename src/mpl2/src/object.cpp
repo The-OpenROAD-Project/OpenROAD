@@ -835,38 +835,6 @@ const std::pair<float, float> HardMacro::getLocation() const
   return std::pair<float, float>(x_, y_);
 }
 
-float HardMacro::getX() const
-{
-  return x_;
-}
-
-float HardMacro::getY() const
-{
-  return y_;
-}
-
-// The position of pins relative to the origin of the canvas;
-float HardMacro::getAbsPinX() const
-{
-  return pin_x_;
-}
-
-float HardMacro::getAbsPinY() const
-{
-  return pin_y_;
-}
-
-// width and height
-float HardMacro::getWidth() const
-{
-  return width_;
-}
-
-float HardMacro::getHeight() const
-{
-  return height_;
-}
-
 // Note that the real X and Y does NOT include halo_width
 void HardMacro::setRealLocation(const std::pair<float, float>& location)
 {
@@ -1426,31 +1394,6 @@ void SoftMacro::setShapes(
   }
   width_ = width_list_[0].first;
   height_ = height_list_[0].first;
-}
-
-float SoftMacro::getX() const
-{
-  return x_;
-}
-
-float SoftMacro::getY() const
-{
-  return y_;
-}
-
-const std::pair<float, float> SoftMacro::getLocation() const
-{
-  return std::pair<float, float>(x_, y_);
-}
-
-float SoftMacro::getWidth() const
-{
-  return width_;
-}
-
-float SoftMacro::getHeight() const
-{
-  return height_;
 }
 
 float SoftMacro::getArea() const
