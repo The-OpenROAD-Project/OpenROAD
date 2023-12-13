@@ -521,14 +521,7 @@ class SoftMacro
 
   // name
   const std::string getName() const;
-  // Physical Information
-  void setReference(float refer_lx, float refer_ly)
-  {
-    refer_lx_ = refer_lx;
-    refer_ly_ = refer_ly;
-    x_ = refer_lx;
-    y_ = refer_ly;
-  }
+
   void setX(float x);
   void setY(float y);
   void setLocation(const std::pair<float, float>& location);
@@ -597,8 +590,6 @@ class SoftMacro
   // Interfaces with hard macro
   Cluster* cluster_ = nullptr;
   bool fixed_ = false;  // if the macro is fixed
-  float refer_lx_ = -1.0;
-  float refer_ly_ = -1.0;
 
   // Alignment support
   // if the cluster has been aligned related to other macro_cluster or

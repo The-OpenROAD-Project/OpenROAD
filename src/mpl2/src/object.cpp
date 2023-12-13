@@ -1170,15 +1170,6 @@ const std::string SoftMacro::getName() const
 // Physical Information
 void SoftMacro::setX(float x)
 {
-  if (refer_lx_ > 0.0 && refer_ly_ > 0.0) {
-    if (x > refer_lx_) {
-      x_ = x;
-    } else {
-      x_ = refer_lx_;
-    }
-    return;
-  }
-
   if (!fixed_) {
     x_ = x;
   }
@@ -1186,15 +1177,6 @@ void SoftMacro::setX(float x)
 
 void SoftMacro::setY(float y)
 {
-  if (refer_lx_ > 0.0 && refer_ly_ > 0.0) {
-    if (y > refer_ly_) {
-      y_ = y;
-    } else {
-      y_ = refer_ly_;
-    }
-    return;
-  }
-
   if (!fixed_) {
     y_ = y;
   }
