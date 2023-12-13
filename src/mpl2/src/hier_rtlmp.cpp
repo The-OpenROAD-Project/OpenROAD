@@ -3782,7 +3782,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
         ++begin_check;
       }
       // add early stop mechanism
-      if (best_sa) {
+      if (best_sa || remaining_runs == 0) {
         break;
       }
       end_check = begin_check + std::min(check_interval, remaining_runs);
@@ -4032,7 +4032,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
           ++begin_check;
         }
         // add early stop mechanism
-        if (best_sa) {
+        if (best_sa || remaining_runs == 0) {
           break;
         }
         end_check = begin_check + std::min(check_interval, remaining_runs);
@@ -4558,7 +4558,7 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
         ++begin_check;
       }
       // add early stop mechanism
-      if (best_sa) {
+      if (best_sa || remaining_runs == 0) {
         break;
       }
       end_check = begin_check + std::min(check_interval, remaining_runs);
@@ -5035,7 +5035,7 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
         ++begin_check;
       }
       // add early stop mechanism
-      if (best_sa) {
+      if (best_sa || remaining_runs == 0) {
         break;
       }
       end_check = begin_check + std::min(check_interval, remaining_runs);

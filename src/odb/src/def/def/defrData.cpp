@@ -35,8 +35,6 @@
 
 #include "defrSettings.hpp"
 
-using namespace std;
-
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
 defrData::defrData(const defrCallbacks* pCallbacks,

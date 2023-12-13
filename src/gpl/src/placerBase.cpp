@@ -44,7 +44,6 @@
 namespace gpl {
 
 using namespace odb;
-using namespace std;
 using utl::GPL;
 
 static int fastModulo(const int input, const int ceil);
@@ -538,9 +537,9 @@ void Pin::updateCoordi(odb::dbBTerm* bTerm)
   }
 
   if (lx == INT_MAX || ly == INT_MAX || ux == INT_MIN || uy == INT_MIN) {
-    string msg
-        = string(bTerm->getConstName()) + " toplevel port is not placed!\n";
-    msg += "       Replace will regard " + string(bTerm->getConstName())
+    std::string msg = std::string(bTerm->getConstName())
+                      + " toplevel port is not placed!\n";
+    msg += "       Replace will regard " + std::string(bTerm->getConstName())
            + " is placed in (0, 0)";
     slog_->warn(GPL, 1, msg);
   }
@@ -1193,7 +1192,7 @@ void PlacerBase::initInstsForUnusableSites()
   for (dbBlockage* blockage : db_->getChip()->getBlock()->getBlockages()) {
     dbInst* inst = blockage->getInstance();
     if (inst && !inst->isFixed()) {
-      string msg
+      std::string msg
           = "Blockages associated with moveable instances "
             " are unsupported and ignored [inst: "
             + inst->getName() + "]\n";
@@ -1374,19 +1373,19 @@ static std::pair<int, int> getMinMaxIdx(int ll,
 
 static bool isCoreAreaOverlap(Die& die, Instance& inst)
 {
-  int rectLx = max(die.coreLx(), inst.lx()),
-      rectLy = max(die.coreLy(), inst.ly()),
-      rectUx = min(die.coreUx(), inst.ux()),
-      rectUy = min(die.coreUy(), inst.uy());
+  int rectLx = std::max(die.coreLx(), inst.lx()),
+      rectLy = std::max(die.coreLy(), inst.ly()),
+      rectUx = std::min(die.coreUx(), inst.ux()),
+      rectUy = std::min(die.coreUy(), inst.uy());
   return !(rectLx >= rectUx || rectLy >= rectUy);
 }
 
 static int64_t getOverlapWithCoreArea(Die& die, Instance& inst)
 {
-  int rectLx = max(die.coreLx(), inst.lx()),
-      rectLy = max(die.coreLy(), inst.ly()),
-      rectUx = min(die.coreUx(), inst.ux()),
-      rectUy = min(die.coreUy(), inst.uy());
+  int rectLx = std::max(die.coreLx(), inst.lx()),
+      rectLy = std::max(die.coreLy(), inst.ly()),
+      rectUx = std::min(die.coreUx(), inst.ux()),
+      rectUy = std::min(die.coreUy(), inst.uy());
   return static_cast<int64_t>(rectUx - rectLx)
          * static_cast<int64_t>(rectUy - rectLy);
 }

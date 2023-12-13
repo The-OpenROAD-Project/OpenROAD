@@ -631,7 +631,7 @@ void Opendp::shiftMove(Cell* cell)
   // magic number alert
   int boundary_margin = 3;
   int margin_width = gridPaddedWidth(cell, site_width) * boundary_margin;
-  set<Cell*> region_cells;
+  std::set<Cell*> region_cells;
   for (int x = grid_x - margin_width; x < grid_x + margin_width; x++) {
     for (int y = grid_y - boundary_margin; y < grid_y + boundary_margin; y++) {
       Pixel* pixel = gridPixel(grid_index, x, y);

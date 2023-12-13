@@ -656,11 +656,11 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
   const int flute_accuracy = 2;
 
   for (int i = 0; i < netCount(); i++) {
-    FrNet* net = nets_[i];
-
-    if (net->isRouted() || net->isDeleted()) {
+    if (skipNet(i)) {
       continue;
     }
+
+    FrNet* net = nets_[i];
 
     float coeffV = 1.36;
 

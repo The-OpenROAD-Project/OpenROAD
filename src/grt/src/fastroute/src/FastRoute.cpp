@@ -289,8 +289,10 @@ void FastRouteCore::removeNet(odb::dbNet* db_net)
   // FrNet and update the nets list
   if (db_net_id_map_.find(db_net) != db_net_id_map_.end()) {
     int netID = db_net_id_map_[db_net];
-    nets_[netID]->setIsDeleted(true);
     clearNetRoute(netID);
+    FrNet* delete_net = nets_[netID];
+    nets_[netID] = nullptr;
+    delete delete_net;
     db_net_id_map_.erase(db_net);
   }
 }
@@ -670,7 +672,7 @@ NetRouteMap FastRouteCore::getRoutes()
 {
   NetRouteMap routes;
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted() || nets_[netID]->isDeleted()) {
+    if (skipNet(netID)) {
       continue;
     }
 
@@ -746,7 +748,7 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
   // Get routes before layer assignment
 
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted() || nets_[netID]->isDeleted()) {
+    if (skipNet(netID)) {
       continue;
     }
 
@@ -1020,8 +1022,7 @@ NetRouteMap FastRouteCore::run()
   // debug mode Rectilinear Steiner Tree before overflow iterations
   if (debug_->isOn() && debug_->rectilinearSTree_) {
     for (int netID = 0; netID < netCount(); netID++) {
-      if (nets_[netID]->getDbNet() == debug_->net_
-          && !nets_[netID]->isRouted()) {
+      if (nets_[netID]->getDbNet() == debug_->net_ && !skipNet(netID)) {
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -1272,8 +1273,7 @@ NetRouteMap FastRouteCore::run()
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn() && debug_->tree2D_) {
     for (int netID = 0; netID < netCount(); netID++) {
-      if (nets_[netID]->getDbNet() == debug_->net_
-          && !nets_[netID]->isRouted()) {
+      if (nets_[netID]->getDbNet() == debug_->net_ && !skipNet(netID)) {
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -1330,8 +1330,7 @@ NetRouteMap FastRouteCore::run()
   // Debug mode Tree 3D after layer assignament
   if (debug_->isOn() && debug_->tree3D_) {
     for (int netID = 0; netID < netCount(); netID++) {
-      if (nets_[netID]->getDbNet() == debug_->net_
-          && !nets_[netID]->isRouted()) {
+      if (nets_[netID]->getDbNet() == debug_->net_ && !skipNet(netID)) {
         StTreeVisualization(sttrees_[netID], nets_[netID], true);
       }
     }
@@ -1563,7 +1562,6 @@ void FrNet::reset(odb::dbNet* db_net,
   db_net_ = db_net;
   is_routed_ = false;
   is_critical_ = false;
-  is_deleted_ = false;
   is_clock_ = is_clock;
   driver_idx_ = driver_idx;
   edge_cost_ = edge_cost;

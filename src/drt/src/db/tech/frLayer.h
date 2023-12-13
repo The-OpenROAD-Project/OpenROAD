@@ -529,7 +529,7 @@ class frLayer
   {
     frCoord s = 0;
     for (auto con : getCutSpacing()) {
-      s = max(s, con->getCutSpacing());
+      s = std::max(s, con->getCutSpacing());
     }
     return s;
   }

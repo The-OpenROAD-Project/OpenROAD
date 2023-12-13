@@ -53,7 +53,6 @@
 
 namespace gpl {
 
-using namespace std;
 using utl::GPL;
 
 Replace::Replace()

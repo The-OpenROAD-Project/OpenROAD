@@ -34,6 +34,7 @@
 #include "nesterovBase.h"
 
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <random>
 #include <utility>
@@ -50,7 +51,6 @@ namespace gpl {
 
 using utl::GPL;
 
-using namespace std;
 using namespace odb;
 
 static int fastModulo(const int input, const int ceil);
@@ -63,10 +63,10 @@ static int64_t getOverlapArea(const Bin* bin,
 
 static int64_t getOverlapAreaUnscaled(const Bin* bin, const Instance* inst);
 
-static float getDistance(const vector<FloatPoint>& a,
-                         const vector<FloatPoint>& b);
+static float getDistance(const std::vector<FloatPoint>& a,
+                         const std::vector<FloatPoint>& b);
 
-static float getSecondNorm(const vector<FloatPoint>& a);
+static float getSecondNorm(const std::vector<FloatPoint>& a);
 
 // Note that
 // int64_t is ideal in the following function, but
@@ -133,7 +133,6 @@ void GCell::setInstance(Instance* inst)
   dUx_ = ux_ = inst->ux();
   dUy_ = uy_ = inst->uy();
 }
-
 Instance* GCell::instance() const
 {
   return insts_.empty() ? nullptr : *insts_.begin();
@@ -1596,8 +1595,8 @@ void NesterovBase::init()
 void NesterovBase::initFillerGCells()
 {
   // extract average dx/dy in range (10%, 90%)
-  vector<int> dxStor;
-  vector<int> dyStor;
+  std::vector<int> dxStor;
+  std::vector<int> dyStor;
 
   dxStor.reserve(pb_->placeInsts().size());
   dyStor.reserve(pb_->placeInsts().size());
@@ -1694,7 +1693,7 @@ void NesterovBase::initFillerGCells()
   // mt19937 supports huge range of random values.
   // rand()'s RAND_MAX is only 32767.
   //
-  mt19937 randVal(0);
+  std::mt19937 randVal(0);
   for (int i = 0; i < fillerCnt; i++) {
     // instability problem between g++ and clang++!
     auto randX = randVal();
@@ -2188,11 +2187,11 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
     // To prevent instability problem,
     // I partitioned the fabs(~~.x) + fabs(~~.y) as two terms.
     //
-    wireLengthGradSum_ += fabs(wireLengthGrads[i].x);
-    wireLengthGradSum_ += fabs(wireLengthGrads[i].y);
+    wireLengthGradSum_ += std::fabs(wireLengthGrads[i].x);
+    wireLengthGradSum_ += std::fabs(wireLengthGrads[i].y);
 
-    densityGradSum_ += fabs(densityGrads[i].x);
-    densityGradSum_ += fabs(densityGrads[i].y);
+    densityGradSum_ += std::fabs(densityGrads[i].x);
+    densityGradSum_ += std::fabs(densityGrads[i].y);
 
     sumGrads[i].x = wireLengthGrads[i].x + densityPenalty_ * densityGrads[i].x;
     sumGrads[i].y = wireLengthGrads[i].y + densityPenalty_ * densityGrads[i].y;
@@ -2215,7 +2214,7 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
     sumGrads[i].x /= sumPrecondi.x;
     sumGrads[i].y /= sumPrecondi.y;
 
-    gradSum += fabs(sumGrads[i].x) + fabs(sumGrads[i].y);
+    gradSum += std::fabs(sumGrads[i].x) + std::fabs(sumGrads[i].y);
   }
 
   debugPrint(log_,
@@ -2405,7 +2404,7 @@ bool NesterovBase::nesterovUpdateStepLength()
 
   debugPrint(log_, GPL, "np", 1, "NewStepLength: {:g}", newStepLength);
 
-  if (isnan(newStepLength) || isinf(newStepLength)) {
+  if (std::isnan(newStepLength) || std::isinf(newStepLength)) {
     isDiverged_ = true;
     divergeMsg_ = "RePlAce diverged at newStepLength.";
     divergeCode_ = 305;
@@ -2582,8 +2581,10 @@ static int fastModulo(const int input, const int ceil)
 
 static float getOverlapDensityArea(const Bin& bin, const GCell* cell)
 {
-  int rectLx = max(bin.lx(), cell->dLx()), rectLy = max(bin.ly(), cell->dLy()),
-      rectUx = min(bin.ux(), cell->dUx()), rectUy = min(bin.uy(), cell->dUy());
+  int rectLx = std::max(bin.lx(), cell->dLx()),
+      rectLy = std::max(bin.ly(), cell->dLy()),
+      rectUx = std::min(bin.ux(), cell->dUx()),
+      rectUy = std::min(bin.uy(), cell->dUy());
 
   if (rectLx >= rectUx || rectLy >= rectUy) {
     return 0;
@@ -2597,8 +2598,10 @@ static int64_t getOverlapArea(const Bin* bin,
                               const Instance* inst,
                               int dbu_per_micron)
 {
-  int rectLx = max(bin->lx(), inst->lx()), rectLy = max(bin->ly(), inst->ly()),
-      rectUx = min(bin->ux(), inst->ux()), rectUy = min(bin->uy(), inst->uy());
+  int rectLx = std::max(bin->lx(), inst->lx()),
+      rectLy = std::max(bin->ly(), inst->ly()),
+      rectUx = std::min(bin->ux(), inst->ux()),
+      rectUy = std::min(bin->uy(), inst->uy());
 
   if (rectLx >= rectUx || rectLy >= rectUy) {
     return 0;
@@ -2631,7 +2634,7 @@ static int64_t getOverlapArea(const Bin* bin,
     // we are using an upper limit of 1.15*(overlap) between the macro
     // and the bin.
     if (scaled >= original) {
-      return min<float>(scaled, original * 1.15);
+      return std::min<float>(scaled, original * 1.15);
     }
     // If the scaled value is smaller than the actual overlap
     // then use the original overlap value instead.
@@ -2648,8 +2651,10 @@ static int64_t getOverlapArea(const Bin* bin,
 
 static int64_t getOverlapAreaUnscaled(const Bin* bin, const Instance* inst)
 {
-  int rectLx = max(bin->lx(), inst->lx()), rectLy = max(bin->ly(), inst->ly()),
-      rectUx = min(bin->ux(), inst->ux()), rectUy = min(bin->uy(), inst->uy());
+  int rectLx = std::max(bin->lx(), inst->lx()),
+      rectLy = std::max(bin->ly(), inst->ly()),
+      rectUx = std::min(bin->ux(), inst->ux()),
+      rectUy = std::min(bin->uy(), inst->uy());
 
   if (rectLx >= rectUx || rectLy >= rectUy) {
     return 0;
@@ -2670,15 +2675,15 @@ static int64_t getOverlapAreaUnscaled(const Bin* bin, const Instance* inst)
 //      (1/(2*pi*sigmaX*sigmaY))*e^(-(y-meanY)^2/(2*sigmaY*sigmaY))*e^(-(x-meanX)^2/(2*sigmaX*sigmaX))
 static float calculateBiVariateNormalCDF(biNormalParameters i)
 {
-  const float x1 = (i.meanX - i.lx) / (sqrt(2) * i.sigmaX);
-  const float x2 = (i.meanX - i.ux) / (sqrt(2) * i.sigmaX);
+  const float x1 = (i.meanX - i.lx) / (std::sqrt(2) * i.sigmaX);
+  const float x2 = (i.meanX - i.ux) / (std::sqrt(2) * i.sigmaX);
 
-  const float y1 = (i.meanY - i.ly) / (sqrt(2) * i.sigmaY);
-  const float y2 = (i.meanY - i.uy) / (sqrt(2) * i.sigmaY);
+  const float y1 = (i.meanY - i.ly) / (std::sqrt(2) * i.sigmaY);
+  const float y2 = (i.meanY - i.uy) / (std::sqrt(2) * i.sigmaY);
 
   return 0.25
-         * (erf(x1) * erf(y1) + erf(x2) * erf(y2) - erf(x1) * erf(y2)
-            - erf(x2) * erf(y1));
+         * (std::erf(x1) * std::erf(y1) + std::erf(x2) * std::erf(y2)
+            - std::erf(x1) * std::erf(y2) - std::erf(x2) * std::erf(y1));
 }
 //
 // https://codingforspeed.com/using-faster-exponential-approximation/
@@ -2698,8 +2703,8 @@ static float fastExp(float a)
   return a;
 }
 
-static float getDistance(const vector<FloatPoint>& a,
-                         const vector<FloatPoint>& b)
+static float getDistance(const std::vector<FloatPoint>& a,
+                         const std::vector<FloatPoint>& b)
 {
   float sumDistance = 0.0f;
   for (size_t i = 0; i < a.size(); i++) {
@@ -2707,16 +2712,15 @@ static float getDistance(const vector<FloatPoint>& a,
     sumDistance += (a[i].y - b[i].y) * (a[i].y - b[i].y);
   }
 
-  return sqrt(sumDistance / (2.0 * a.size()));
+  return std::sqrt(sumDistance / (2.0 * a.size()));
 }
 
-static float getSecondNorm(const vector<FloatPoint>& a)
+static float getSecondNorm(const std::vector<FloatPoint>& a)
 {
   float norm = 0;
   for (auto& coordi : a) {
     norm += coordi.x * coordi.x + coordi.y * coordi.y;
   }
-  return sqrt(norm / (2.0 * a.size()));
+  return std::sqrt(norm / (2.0 * a.size()));
 }
-
 }  // namespace gpl
