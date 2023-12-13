@@ -488,15 +488,14 @@ int Opendp::coordinateToHeight(int y_coordinate, GridMapKey gmk) const
     const int total_height = grid_info.getSitesTotalHeight();
     int patterns_below = divFloor(y_coordinate, grid_sites.size());
     int remaining_rows = y_coordinate % grid_sites.size();
-    int height = patterns_below * total_height
-                 + remaining_rows
-                       * std::accumulate(
-                           grid_sites.begin(),
-                           grid_sites.begin() + remaining_rows,
-                           0,
-                           [](int sum, const dbSite::OrientedSite& entry) {
-                             return sum + entry.site->getHeight();
-                           });
+    int remaining_rows_height
+        = std::accumulate(grid_sites.begin(),
+                          grid_sites.begin() + remaining_rows,
+                          0,
+                          [](int sum, const dbSite::OrientedSite& entry) {
+                            return sum + entry.site->getHeight();
+                          });
+    int height = patterns_below * total_height + remaining_rows_height;
     return height;
   }
   return y_coordinate * grid_info.getSitesTotalHeight();
