@@ -775,7 +775,7 @@ void TechChar::collectSlewsLoadsFromTableAxis(sta::LibertyCell* libCell,
       const sta::TableModel* delayModel = gateModel->delayModel();
       sta::FloatSeq* slews = nullptr;
       sta::FloatSeq* loads = nullptr;
-      sta::TableAxisPtr axis1 = delayModel->axis1();
+      const sta::TableAxis* axis1 = delayModel->axis1();
       if (axis1) {
         if (axis1->variable() == sta::TableAxisVariable::input_net_transition) {
           slews = axis1->values();
@@ -784,7 +784,7 @@ void TechChar::collectSlewsLoadsFromTableAxis(sta::LibertyCell* libCell,
           loads = axis1->values();
         }
       }
-      sta::TableAxisPtr axis2 = delayModel->axis2();
+      const sta::TableAxis* axis2 = delayModel->axis2();
       if (axis2) {
         if (axis2->variable() == sta::TableAxisVariable::input_net_transition) {
           slews = axis2->values();
