@@ -14,7 +14,7 @@ import datetime
 # edited docs
 docs = ["./src/man2/ppl.txt"]
 
-# identify key section and stored in ManPage class. TODO.
+# identify key section and stored in ManPage class. 
 class ManPage():
     def __init__(self):
         self.name = ""
@@ -28,13 +28,15 @@ class ManPage():
         assert self.desc, print("func desc not set")
         assert self.synopsis, print("func synopsis not set")
         assert self.switches, print("func switches not set")
-        filepath = f"./src/{self.name}.md"
+        filepath = f"./src/man2/{self.name}.md"
         with open(filepath, "w") as f:
             self.write_header(f)
             self.write_name(f)
             self.write_synopsis(f)
             self.write_description(f)
             self.write_options(f)
+            self.write_placeholder(f) #TODO.
+            self.write_copyright(f)
     
     def write_header(self, f):
         assert isinstance(f, io.TextIOBase) and\
@@ -66,7 +68,7 @@ class ManPage():
          f.writable(), "File pointer is not open for writing."
 
         f.write(f"\n# DESCRIPTION\n\n")
-        f.write(f"{self.desc.strip()}\n")
+        f.write(f"{self.desc}\n")
 
     def write_options(self, f):
         assert isinstance(f, io.TextIOBase) and\
@@ -75,7 +77,24 @@ class ManPage():
         f.write(f"\n# OPTIONS\n")
         for key, val in self.switches.items():
             f.write(f"\n`{key}`: {val}\n")
-            
+
+    def write_placeholder(self, f):
+        assert isinstance(f, io.TextIOBase) and\
+         f.writable(), "File pointer is not open for writing."
+
+        # TODO: these are all not populated currently, not parseable from docs. 
+        # TODO: Arguments can actually be parsed, but you need to preprocess the synopsis further. 
+        sections = ["ARGUMENTS", "EXAMPLES", "ENVIRONMENT", "FILES", "SEE ALSO", "HISTORY", "BUGS"]
+        for s in sections:
+            f.write(f"\n# {s}\n")
+
+    def write_copyright(self, f):
+        assert isinstance(f, io.TextIOBase) and\
+         f.writable(), "File pointer is not open for writing."
+
+        f.write(f"\n# COPYRIGHT\n\n")
+        f.write(f"Copyright (c) 2024, The Regents of the University of California. All rights reserved.\n")
+
 def extract_headers(text, level = 1):
     assert isinstance(level, int) and level >= 1
     pattern = r'^#{%d}\s+(.*)$' % level
@@ -90,7 +109,7 @@ def extract_description(text):
     headers = "|".join(re.escape(x) for x in sorted_headers)
     pattern = rf'### ({headers})(.*?)```tcl'
     custom_strings = re.findall(pattern, text, flags=re.DOTALL)
-    return [custom_string[1] for custom_string in custom_strings]
+    return [custom_string[1].strip() for custom_string in custom_strings]
 
 def extract_tcl_code(text):
     pattern = r'```tcl\s+(.*?)```'
@@ -106,23 +125,6 @@ def extract_tables(text):
 
     return table_matches
 
-
-
-# sections to populate
-# 1) Header (starts and ends with ---) title, author, date
-# 2) NAME
-# 3) SYNOPSIS
-# 4) DESCRIPTION
-# 5) OPTIONS
-# 6) ARGUMENTS
-# 7) EXAMPLES
-# 8) ENVIRONMENT
-# 9) FILES
-# 10) SEE ALSO
-# 11) HISTORY
-# 12) BUGS
-# 13) COPYRIGHT
-
 for doc in docs:
     text = open(doc).read()
 
@@ -136,7 +138,7 @@ for doc in docs:
     # synopsis content
     func_synopsis = extract_tcl_code(text)
 
-    # switch names
+    # switch names (TODO: needs refactoring...)
     switch_names = extract_tables(text)
     idx = 0
     func_switches, tmp = [], []
@@ -176,6 +178,5 @@ for func_id in range(len(func_synopsis)):
         switches_dict[switch_name] = switch_description
     temp.switches = switches_dict
     temp.write_roff_file()
-    break
 
 print('Ok')

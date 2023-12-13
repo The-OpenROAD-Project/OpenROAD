@@ -36,3 +36,21 @@ the edges of the die boundary.
 `-size`:  The width and height (in microns) of the pins assigned to this grid. The centers of the pins are placed on the grid positions. Pins may have half of their shapes outside the defined region.
 
 `-pin_keepout`:  The boundary (in microns) around existing routing obstructions that the pins should avoid; this defaults to the `layer` minimum spacing.
+
+# ARGUMENTS
+
+# EXAMPLES
+
+# ENVIRONMENT
+
+# FILES
+
+# SEE ALSO
+
+# HISTORY
+
+# BUGS
+
+# COPYRIGHT
+
+Copyright (c) 2024, The Regents of the University of California. All rights reserved.

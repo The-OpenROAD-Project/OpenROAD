@@ -113,6 +113,4 @@ OpenROAD binary.
 
 # COPYRIGHT
 
-Copyright (c) 2023, The Regents of the University of California.
-       
-All rights reserved.
+Copyright (c) 2024, The Regents of the University of California. All rights reserved.
