@@ -38,20 +38,19 @@
 #include "db/obj/frMaster.h"
 #include "frDesign.h"
 
-using namespace std;
 using namespace fr;
 
-string OUT_MAZE_FILE;
-string DRC_RPT_FILE;
+std::string OUT_MAZE_FILE;
+std::string DRC_RPT_FILE;
 std::optional<int> DRC_RPT_ITER_STEP;
-string CMAP_FILE;
-string GUIDE_REPORT_FILE;
+std::string CMAP_FILE;
+std::string GUIDE_REPORT_FILE;
 
 // to be removed
 int OR_SEED = -1;
 double OR_K = 0;
 
-string DBPROCESSNODE = "";
+std::string DBPROCESSNODE = "";
 int MAX_THREADS = 1;
 int BATCHSIZE = 1024;
 int BATCHSIZETA = 8;
@@ -117,12 +116,12 @@ std::string REPAIR_PDN_LAYER_NAME;
 frLayerNum GC_IGNORE_PDN_LAYER = -1;
 namespace fr {
 
-ostream& operator<<(ostream& os, const frRect& pinFigIn)
+std::ostream& operator<<(std::ostream& os, const frRect& pinFigIn)
 {
   //  if (pinFigIn.getPin()) {
   //    os << "PINFIG (PINNAME/LAYER) " <<
   //    pinFigIn.getPin()->getTerm()->getName()
-  //       << " " << pinFigIn.getLayerNum() << endl;
+  //       << " " << pinFigIn.getLayerNum() << std::endl;
   //  }
   Rect tmpBox = pinFigIn.getBBox();
   os << "  RECT " << tmpBox.xMin() << " " << tmpBox.yMin() << " "
@@ -130,11 +129,11 @@ ostream& operator<<(ostream& os, const frRect& pinFigIn)
   return os;
 }
 
-ostream& operator<<(ostream& os, const frPolygon& pinFigIn)
+std::ostream& operator<<(std::ostream& os, const frPolygon& pinFigIn)
 {
   //  if (pinFigIn.getPin()) {
   //    os << "PINFIG (NAME/LAYER) " << pinFigIn.getPin()->getTerm()->getName()
-  //       << " " << pinFigIn.getLayerNum() << endl;
+  //       << " " << pinFigIn.getLayerNum() << std::endl;
   //  }
   os << "  POLYGON";
   for (auto& m : pinFigIn.getPoints()) {
@@ -143,22 +142,22 @@ ostream& operator<<(ostream& os, const frPolygon& pinFigIn)
   return os;
 }
 
-ostream& operator<<(ostream& os, const frMPin& pinIn)
+std::ostream& operator<<(std::ostream& os, const frMPin& pinIn)
 {
   os << "PIN (NAME) " << pinIn.getTerm()->getName();
   for (auto& m : pinIn.getFigs()) {
     if (m->typeId() == frcRect) {
-      os << endl << *(static_cast<frRect*>(m.get()));
+      os << std::endl << *(static_cast<frRect*>(m.get()));
     } else if (m->typeId() == frcPolygon) {
-      os << endl << *(static_cast<frPolygon*>(m.get()));
+      os << std::endl << *(static_cast<frPolygon*>(m.get()));
     } else {
-      os << endl << "Unsupported pinFig object!";
+      os << std::endl << "Unsupported pinFig object!";
     }
   }
   return os;
 }
 
-ostream& operator<<(ostream& os, const frBTerm& termIn)
+std::ostream& operator<<(std::ostream& os, const frBTerm& termIn)
 {
   frString name;
   frString netName;
@@ -168,12 +167,12 @@ ostream& operator<<(ostream& os, const frBTerm& termIn)
   }
   os << "TERM (NAME/NET) " << name << " " << netName;
   for (auto& m : termIn.getPins()) {
-    os << endl << *m;
+    os << std::endl << *m;
   }
   return os;
 }
 
-ostream& operator<<(ostream& os, const frInstTerm& instTermIn)
+std::ostream& operator<<(std::ostream& os, const frInstTerm& instTermIn)
 {
   frString name;
   frString cellName;
@@ -186,12 +185,12 @@ ostream& operator<<(ostream& os, const frInstTerm& instTermIn)
     netName = instTermIn.getNet()->getName();
   }
   os << "INSTTERM: (INST/CELL/TERM/NET) " << name << " " << cellName << " "
-     << termName << " " << netName << endl;
+     << termName << " " << netName << std::endl;
   os << *instTermIn.getTerm() << "END_INSTTERM";
   return os;
 }
 
-ostream& operator<<(ostream& os, const frViaDef& viaDefIn)
+std::ostream& operator<<(std::ostream& os, const frViaDef& viaDefIn)
 {
   frString name;
   name = viaDefIn.getName();
@@ -201,61 +200,61 @@ ostream& operator<<(ostream& os, const frViaDef& viaDefIn)
   }
   for (auto& m : viaDefIn.getLayer1Figs()) {
     if (m->typeId() == frcRect) {
-      os << endl << *(static_cast<frRect*>(m.get()));
+      os << std::endl << *(static_cast<frRect*>(m.get()));
     } else if (m->typeId() == frcPolygon) {
-      os << endl << *(static_cast<frPolygon*>(m.get()));
+      os << std::endl << *(static_cast<frPolygon*>(m.get()));
     } else {
-      os << endl << "Unsupported pinFig object!";
+      os << std::endl << "Unsupported pinFig object!";
     }
   }
   for (auto& m : viaDefIn.getCutFigs()) {
     if (m->typeId() == frcRect) {
-      os << endl << *(static_cast<frRect*>(m.get()));
+      os << std::endl << *(static_cast<frRect*>(m.get()));
     } else if (m->typeId() == frcPolygon) {
-      os << endl << *(static_cast<frPolygon*>(m.get()));
+      os << std::endl << *(static_cast<frPolygon*>(m.get()));
     } else {
-      os << endl << "Unsupported pinFig object!";
+      os << std::endl << "Unsupported pinFig object!";
     }
   }
   for (auto& m : viaDefIn.getLayer2Figs()) {
     if (m->typeId() == frcRect) {
-      os << endl << *(static_cast<frRect*>(m.get()));
+      os << std::endl << *(static_cast<frRect*>(m.get()));
     } else if (m->typeId() == frcPolygon) {
-      os << endl << *(static_cast<frPolygon*>(m.get()));
+      os << std::endl << *(static_cast<frPolygon*>(m.get()));
     } else {
-      os << endl << "Unsupported pinFig object!";
+      os << std::endl << "Unsupported pinFig object!";
     }
   }
   return os;
 }
 
-ostream& operator<<(ostream& os, const frBlock& blockIn)
+std::ostream& operator<<(std::ostream& os, const frBlock& blockIn)
 {
   Rect box = blockIn.getBBox();
-  os << "MACRO " << blockIn.getName() << endl
-     << "  ORIGIN " << box.xMin() << " " << box.yMin() << endl
+  os << "MACRO " << blockIn.getName() << std::endl
+     << "  ORIGIN " << box.xMin() << " " << box.yMin() << std::endl
      << "  SIZE " << box.xMax() << " " << box.yMax();
   for (auto& m : blockIn.getTerms()) {
-    os << endl << *m;
+    os << std::endl << *m;
   }
   return os;
 }
 
-ostream& operator<<(ostream& os, const frInst& instIn)
+std::ostream& operator<<(std::ostream& os, const frInst& instIn)
 {
   Point tmpPoint = instIn.getOrigin();
   auto tmpOrient = instIn.getOrient();
   frString tmpName = instIn.getName();
   frString tmpString = instIn.getMaster()->getName();
   os << "- " << tmpName << " " << tmpString << " + STATUS + ( " << tmpPoint.x()
-     << " " << tmpPoint.y() << " ) " << tmpOrient.getString() << endl;
+     << " " << tmpPoint.y() << " ) " << tmpOrient.getString() << std::endl;
   for (auto& m : instIn.getInstTerms()) {
-    os << endl << *m;
+    os << std::endl << *m;
   }
   return os;
 }
 
-ostream& operator<<(ostream& os, const drConnFig& fig)
+std::ostream& operator<<(std::ostream& os, const drConnFig& fig)
 {
   switch (fig.typeId()) {
     case drcPathSeg: {
@@ -285,7 +284,7 @@ ostream& operator<<(ostream& os, const drConnFig& fig)
   return os;
 }
 
-ostream& operator<<(ostream& os, const frPathSeg& p)
+std::ostream& operator<<(std::ostream& os, const frPathSeg& p)
 {
   os << "frPathSeg: begin (" << p.getBeginPoint().x() << " "
      << p.getBeginPoint().y() << " ) end ( " << p.getEndPoint().x() << " "
@@ -296,7 +295,7 @@ ostream& operator<<(ostream& os, const frPathSeg& p)
   return os;
 }
 
-ostream& operator<<(ostream& os, const frGuide& p)
+std::ostream& operator<<(std::ostream& os, const frGuide& p)
 {
   os << "frGuide: begin " << p.getBeginPoint() << " end " << p.getEndPoint()
      << " begin LayerNum " << p.getBeginLayerNum() << " end layerNum "
@@ -304,7 +303,7 @@ ostream& operator<<(ostream& os, const frGuide& p)
   return os;
 }
 
-ostream& operator<<(ostream& os, const frConnFig& fig)
+std::ostream& operator<<(std::ostream& os, const frConnFig& fig)
 {
   switch (fig.typeId()) {
     case frcPathSeg: {
@@ -342,7 +341,7 @@ ostream& operator<<(ostream& os, const frConnFig& fig)
   return os;
 }
 
-ostream& operator<<(ostream& os, const frBlockObject& fig)
+std::ostream& operator<<(std::ostream& os, const frBlockObject& fig)
 {
   switch (fig.typeId()) {
     case frcInstTerm: {
@@ -374,7 +373,7 @@ ostream& operator<<(ostream& os, const frBlockObject& fig)
   return os;
 }
 
-ostream& operator<<(ostream& os, const frNet& n)
+std::ostream& operator<<(std::ostream& os, const frNet& n)
 {
   os << "frNet " << n.getName() << (n.isClock() ? "CLOCK NET " : " ")
      << (n.hasNDR() ? "NDR " + n.getNondefaultRule()->getName() + " " : " ")
@@ -382,14 +381,14 @@ ostream& operator<<(ostream& os, const frNet& n)
   return os;
 }
 
-ostream& operator<<(ostream& os, const drNet& n)
+std::ostream& operator<<(std::ostream& os, const drNet& n)
 {
   os << "drNet " << *n.getFrNet() << "\nnRipupAvoids " << n.getNRipupAvoids()
      << " maxRipupAvoids " << n.getMaxRipupAvoids() << "\n";
   return os;
 }
 
-ostream& operator<<(ostream& os, const frMarker& m)
+std::ostream& operator<<(std::ostream& os, const frMarker& m)
 {
   os << "MARKER: box " << m.getBBox() << " lNum " << m.getLayerNum()
      << " constraint: ";
