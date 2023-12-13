@@ -281,6 +281,27 @@ static unsigned char charNum(unsigned char c)
   return 0;
 }
 
+// Decodes a decimal integer from the string s.
+// Returns the decoded value in *value and returns
+// the number of characters read.
+inline const char* readDecimalInt(const char* s, int &value)
+{
+  value = 0;
+  bool negative = (*s == '-');
+  if (negative || *s == '+') {
+    ++s;
+  }
+  constexpr int zero_code = int('0');
+  while (*s >= '0' && *s <= '9') {
+    value = 10 * value + (int(*s) - zero_code);
+    ++s;
+  }
+  if (negative) {
+    value = -value;
+  }
+  return s;
+}
+
 // Init LUTs from base64 encoded string variables.
 static void initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
 {
@@ -293,19 +314,21 @@ static void initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
 #endif
 
   for (int d = 4; d <= to_d; d++) {
-    int char_cnt;
-    sscanf(pwv, "d=%d%n", &d, &char_cnt);
-    pwv += char_cnt + 1;
+    if (pwv[0] == 'd' && pwv[1] == '=') {
+      pwv = readDecimalInt(pwv + 2, d);
+    }
+    ++pwv;
 #if FLUTE_ROUTING == 1
-    sscanf(prt, "d=%d%n", &d, &char_cnt);
-    prt += char_cnt + 1;
+    if (pwv[0] == 'd' && pwv[1] == '=') {
+      pwv = readDecimalInt(pwv + 2, d);
+    }
+    ++pwv;
 #endif
     for (int k = 0; k < numgrp[d]; k++) {
       int ns = charNum(*pwv++);
       if (ns == 0) {  // same as some previous group
         int kk;
-        sscanf(pwv, "%d%n", &kk, &char_cnt);
-        pwv += char_cnt + 1;
+        pwv = readDecimalInt(pwv, kk) + 1;
         numsoln[d][k] = numsoln[d][kk];
         LUT[d][k] = LUT[d][kk];
       } else {
