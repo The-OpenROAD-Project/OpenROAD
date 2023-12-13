@@ -263,7 +263,8 @@ void TritonCTS::countSinksPostDbWrite(
                 : !builder->isAnyTreeBuffer(getClockFromInst(iterm->getInst()));
       if (!terminate) {
         odb::dbITerm* outputPin = iterm->getInst()->getFirstOutput();
-        if (outputPin) {
+        // ignore dummy buffer and inverters added to balance loads
+        if (outputPin && outputPin->getNet() != nullptr) {
           countSinksPostDbWrite(builder,
                                 outputPin->getNet(),
                                 sinks_cnt,
@@ -276,7 +277,20 @@ void TritonCTS::countSinksPostDbWrite(
                                 fullTree,
                                 sinks);
         } else {
-          logger_->report("Hanging buffer {}", name);
+          std::string cellType = "complex cell";
+          odb::dbInst* inst = iterm->getInst();
+          sta::Cell* masterCell = network_->dbToSta(inst->getMaster());
+          if (masterCell) {
+            sta::LibertyCell* libCell = network_->libertyCell(masterCell);
+            if (libCell) {
+              if (libCell->isInverter()) {
+                cellType = "inverter";
+              } else if (libCell->isBuffer()) {
+                cellType = "buffer";
+              }
+            }
+          }
+          logger_->report("Hanging {} '{}'", cellType, name);
         }
         if (builder->isLeafBuffer(getClockFromInst(iterm->getInst()))) {
           leafSinks++;
