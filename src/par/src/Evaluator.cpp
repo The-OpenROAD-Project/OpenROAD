@@ -110,10 +110,11 @@ float GoldenEvaluator::GetPathTimingScore(int path_id,
   if (hgraph->GetNumTimingPaths() <= 0
       || hgraph->GetTimingPathSlackSize() < hgraph->GetNumTimingPaths()
       || path_id >= hgraph->GetNumTimingPaths()) {
-    logger_->warn(
-        PAR,
-        111,
-        "This no timing-critical paths when calling GetPathTimingScore()");
+    debugPrint(logger_,
+               PAR,
+               "evaluation",
+               1,
+               "No timing-critical paths when calling GetPathTimingScore()");
     return 0.0;
   }
   return std::pow(1.0 - hgraph->PathTimingSlack(path_id), timing_exp_factor_);
@@ -246,37 +247,23 @@ PathStats GoldenEvaluator::GetTimingCuts(const HGraphPtr& hgraph,
 
 void GoldenEvaluator::PrintPathStats(const PathStats& path_stats) const
 {
-  logger_->info(
-      PAR, 143, "Total number of timing paths = {}", path_stats.tot_num_path);
-  logger_->info(PAR,
-                144,
-                "Total number of timing-critical paths = {}",
-                path_stats.tot_num_critical_path);
-  logger_->info(PAR,
-                145,
-                "Total number of timing-noncritical paths = {}",
-                path_stats.tot_num_noncritical_path);
-  logger_->info(PAR,
-                146,
-                "The worst number of cuts on timing-critical paths = {}",
-                path_stats.worst_cut_critical_path);
-  logger_->info(PAR,
-                147,
-                "The average number of cuts on timing-critical paths = {}",
-                path_stats.avg_cut_critical_path);
-  logger_->info(
-      PAR,
-      148,
+  logger_->report("Total number of timing paths = {}", path_stats.tot_num_path);
+  logger_->report("Total number of timing-critical paths = {}",
+                  path_stats.tot_num_critical_path);
+  logger_->report("Total number of timing-noncritical paths = {}",
+                  path_stats.tot_num_noncritical_path);
+  logger_->report("The worst number of cuts on timing-critical paths = {}",
+                  path_stats.worst_cut_critical_path);
+  logger_->report("The average number of cuts on timing-critical paths = {}",
+                  path_stats.avg_cut_critical_path);
+  logger_->report(
       "Total number of timing-noncritical to timing critical paths = {}",
       path_stats.number_non2critical_path);
-  logger_->info(PAR,
-                149,
-                "The worst number of cuts on timing-non2critical paths = {}",
-                path_stats.worst_cut_non2critical_path);
-  logger_->info(PAR,
-                150,
-                "The average number of cuts on timing-non2critical paths = {}",
-                path_stats.avg_cut_non2critical_path);
+  logger_->report("The worst number of cuts on timing-non2critical paths = {}",
+                  path_stats.worst_cut_non2critical_path);
+  logger_->report(
+      "The average number of cuts on timing-non2critical paths = {}",
+      path_stats.avg_cut_non2critical_path);
 }
 
 /*
@@ -572,16 +559,16 @@ PartitionToken GoldenEvaluator::CutEvaluator(const HGraphPtr& hgraph,
     path_cost += CalculatePathCost(path_id, hgraph, solution);
   }
   const float cost = edge_cost + path_cost;
-  // print the statistics
-  if (print_flag == true) {
-    // print cost
-    logger_->report("[Cutcost of partition : {}]", cost);
+
+  if (print_flag && logger_->debugCheck(PAR, "evaluation", 1)) {
+    logger_->report("\nPrint Statistics for Partition\n");
+    logger_->report("Cutcost : {}", cost);
     // print block balance
     const std::vector<float> tot_vertex_weights
         = hgraph->GetTotalVertexWeights();
     for (auto block_id = 0; block_id < num_parts_; block_id++) {
       std::string line
-          = "[Vertex balance of block_" + std::to_string(block_id) + " : ";
+          = "Vertex balance of block_" + std::to_string(block_id) + " : ";
       for (auto dim = 0; dim < tot_vertex_weights.size(); dim++) {
         std::stringstream ss;  // for converting float to string
         ss << std::fixed << std::setprecision(5)
@@ -648,7 +635,8 @@ bool GoldenEvaluator::ConstraintAndCutEvaluator(
     }
   }
 
-  if (print_flag == true) {
+  if (print_flag == true && logger_->debugCheck(PAR, "evaluation", 1)) {
+    logger_->report("\nConstraints and Cut Evaluation\n");
     logger_->report("Satisfy the balance constraint : {}",
                     balance_satisfied_flag);
     logger_->report("Satisfy the group constraint : {}", group_satisified_flag);

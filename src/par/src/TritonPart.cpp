@@ -985,6 +985,7 @@ std::vector<int> TritonPart::PartitionKWaySimpleMode(
 
   // call the multilevel partitioner to partition hypergraph_
   // but the evaluation is the original_hypergraph_
+  logger_->info(PAR, 77, "Partitioning using multilevel methodology.");
   MultiLevelPartition();
 
   return solution_;
@@ -1749,14 +1750,22 @@ void TritonPart::MultiLevelPartition()
 
   // check the base balance constraint
   if (static_cast<int>(base_balance_.size()) != num_parts_) {
-    logger_->warn(PAR, 352, "no base balance is specified. Use default value.");
+    debugPrint(logger_,
+               PAR,
+               "multilevel_partitioning",
+               1,
+               "no base balance is specified. Use default value.");
     base_balance_.clear();
     base_balance_.resize(num_parts_);
     std::fill(base_balance_.begin(), base_balance_.end(), 1.0 / num_parts_);
   }
 
   if (static_cast<int>(scale_factor_.size()) != num_parts_) {
-    logger_->warn(PAR, 353, "no scale factor is specified. Use default value.");
+    debugPrint(logger_,
+               PAR,
+               "multilevel_partitioning",
+               1,
+               "no scale factor is specified. Use default value.");
     scale_factor_.clear();
     scale_factor_.resize(num_parts_);
     std::fill(scale_factor_.begin(), scale_factor_.end(), 1.0);
@@ -1769,36 +1778,36 @@ void TritonPart::MultiLevelPartition()
 
   // check the weighting scheme
   if (static_cast<int>(e_wt_factors_.size()) != hyperedge_dimensions_) {
-    logger_->warn(
-        PAR,
-        139,
-        "No hyperedge weighting is specified. Use default value of 1.");
+    debugPrint(logger_,
+               PAR,
+               "multilevel_partitioning",
+               1,
+               "No hyperedge weighting is specified. Use default value of 1.");
     e_wt_factors_.clear();
     e_wt_factors_.resize(hyperedge_dimensions_);
     std::fill(e_wt_factors_.begin(), e_wt_factors_.end(), 1.0);
   }
-  logger_->info(PAR,
-                77,
-                "hyperedge weight factor : [ {} ]",
-                GetVectorString(e_wt_factors_));
 
   if (static_cast<int>(v_wt_factors_.size()) != vertex_dimensions_) {
-    logger_->warn(
-        PAR, 141, "No vertex weighting is specified. Use default value of 1.");
+    debugPrint(logger_,
+               PAR,
+               "multilevel_partitioning",
+               1,
+               "No vertex weighting is specified. Use default value of 1.");
     v_wt_factors_.clear();
     v_wt_factors_.resize(vertex_dimensions_);
     std::fill(v_wt_factors_.begin(), v_wt_factors_.end(), 1.0);
   }
-  logger_->info(
-      PAR, 78, "vertex weight factor : [ {} ]", GetVectorString(v_wt_factors_));
 
   if (static_cast<int>(placement_wt_factors_.size()) != placement_dimensions_) {
     if (placement_dimensions_ <= 0) {
       placement_wt_factors_.clear();
     } else {
-      logger_->warn(
+      debugPrint(
+          logger_,
           PAR,
-          140,
+          "multilevel_partitioning",
+          1,
           "No placement weighting is specified. Use default value of 1.");
       placement_wt_factors_.clear();
       placement_wt_factors_.resize(placement_dimensions_);
@@ -1806,44 +1815,51 @@ void TritonPart::MultiLevelPartition()
           placement_wt_factors_.begin(), placement_wt_factors_.end(), 1.0f);
     }
   }
-  logger_->info(PAR,
-                79,
-                "placement weight factor : [ {} ]",
-                GetVectorString(placement_wt_factors_));
-  // print all the weighting parameters
-  logger_->info(PAR, 80, "net_timing_factor : {}", net_timing_factor_);
-  logger_->info(PAR, 81, "path_timing_factor : {}", path_timing_factor_);
-  logger_->info(PAR, 82, "path_snaking_factor : {}", path_snaking_factor_);
-  logger_->info(PAR, 83, "timing_exp_factor : {}", timing_exp_factor_);
-  // coarsening related parameters
-  logger_->info(PAR, 84, "coarsen order : {}", ToString(coarsen_order_));
-  logger_->info(PAR,
-                85,
-                "thr_coarsen_hyperedge_size_skip : {}",
-                thr_coarsen_hyperedge_size_skip_);
-  logger_->info(PAR, 86, "thr_coarsen_vertices : {}", thr_coarsen_vertices_);
-  logger_->info(
-      PAR, 87, "thr_coarsen_hyperedges : {}", thr_coarsen_hyperedges_);
-  logger_->info(PAR, 88, "coarsening_ratio : {}", coarsening_ratio_);
-  logger_->info(PAR, 89, "max_coarsen_iters : {}", max_coarsen_iters_);
-  logger_->info(PAR, 90, "adj_diff_ratio : {}", adj_diff_ratio_);
-  logger_->info(
-      PAR, 91, "min_num_vertcies_each_part : {}", min_num_vertices_each_part_);
-  // initial partitioning parameter
-  logger_->info(PAR, 92, "num_initial_solutions : {}", num_initial_solutions_);
-  logger_->info(
-      PAR, 93, "num_best_initial_solutions : {}", num_best_initial_solutions_);
-  // refinement related parameters
-  logger_->info(PAR, 94, "refine_iters : {}", refiner_iters_);
-  logger_->info(
-      PAR, 95, "max_moves (FM or greedy refinement) : {}", max_moves_);
-  logger_->info(PAR, 96, "early_stop_ratio : {}", early_stop_ratio_);
-  logger_->info(PAR, 97, "total_corking_passes : {}", total_corking_passes_);
-  logger_->info(PAR, 98, "v_cycle_flag : {}", v_cycle_flag_);
-  logger_->info(PAR, 99, "max_num_vcycle : {}", max_num_vcycle_);
-  logger_->info(PAR, 100, "num_coarsen_solutions : {}", num_coarsen_solutions_);
-  logger_->info(
-      PAR, 101, "num_vertices_threshold_ilp : {}", num_vertices_threshold_ilp_);
+
+  if (logger_->debugCheck(PAR, "multilevel_partitioning", 1)) {
+    logger_->report("\nMultilevel Partitioning Parameters:\n");
+
+    logger_->report("hyperedge weight factor : [ {} ]",
+                    GetVectorString(e_wt_factors_));
+    logger_->report("vertex weight factor : [ {} ]",
+                    GetVectorString(v_wt_factors_));
+    logger_->report("placement weight factor : [ {} ]\n",
+                    GetVectorString(placement_wt_factors_));
+
+    // print all the weighting parameters
+    logger_->report("net_timing_factor : {}", net_timing_factor_);
+    logger_->report("path_timing_factor : {}", path_timing_factor_);
+    logger_->report("path_snaking_factor : {}", path_snaking_factor_);
+    logger_->report("timing_exp_factor : {}\n", timing_exp_factor_);
+
+    // coarsening related parameters
+    logger_->report("coarsen order : {}", ToString(coarsen_order_));
+    logger_->report("thr_coarsen_hyperedge_size_skip : {}",
+                    thr_coarsen_hyperedge_size_skip_);
+    logger_->report("thr_coarsen_vertices : {}", thr_coarsen_vertices_);
+    logger_->report("thr_coarsen_hyperedges : {}", thr_coarsen_hyperedges_);
+    logger_->report("coarsening_ratio : {}", coarsening_ratio_);
+    logger_->report("max_coarsen_iters : {}", max_coarsen_iters_);
+    logger_->report("adj_diff_ratio : {}", adj_diff_ratio_);
+    logger_->report("min_num_vertcies_each_part : {}\n",
+                    min_num_vertices_each_part_);
+
+    // initial partitioning parameter
+    logger_->report("num_initial_solutions : {}", num_initial_solutions_);
+    logger_->report("num_best_initial_solutions : {}\n",
+                    num_best_initial_solutions_);
+
+    // refinement related parameters
+    logger_->report("refine_iters : {}", refiner_iters_);
+    logger_->report("max_moves (FM or greedy refinement) : {}", max_moves_);
+    logger_->report("early_stop_ratio : {}", early_stop_ratio_);
+    logger_->report("total_corking_passes : {}", total_corking_passes_);
+    logger_->report("v_cycle_flag : {}", v_cycle_flag_);
+    logger_->report("max_num_vcycle : {}", max_num_vcycle_);
+    logger_->report("num_coarsen_solutions : {}", num_coarsen_solutions_);
+    logger_->report("num_vertices_threshold_ilp : {}\n",
+                    num_vertices_threshold_ilp_);
+  }
 
   // create the evaluator class
   auto tritonpart_evaluator
@@ -2007,8 +2023,9 @@ void TritonPart::MultiLevelPartition()
                                                   true);
 
   // generate the timing report
-  if (timing_aware_flag_ == true) {
-    logger_->report("[STATUS] Displaying timing path cuts statistics");
+  if (timing_aware_flag_
+      && logger_->debugCheck(PAR, "multilevel_partitioning", 1)) {
+    logger_->report("[\nPrint timing path cuts statistics\n");
     PathStats path_stats
         = tritonpart_evaluator->GetTimingCuts(original_hypergraph_, solution_);
     tritonpart_evaluator->PrintPathStats(path_stats);
@@ -2021,10 +2038,12 @@ void TritonPart::MultiLevelPartition()
             end_timestamp_global - start_time_stamp_global)
             .count();
   total_global_time *= 1e-9;
-  logger_->info(PAR,
-                109,
-                "The runtime of multi-level partitioner : {} seconds",
-                total_global_time);
+  debugPrint(logger_,
+             PAR,
+             "multilevel_partitioning",
+             1,
+             "The runtime of multilevel partitioner : {} seconds",
+             total_global_time);
 }
 
 }  // namespace par
