@@ -114,7 +114,7 @@ float GoldenEvaluator::GetPathTimingScore(int path_id,
                PAR,
                "evaluation",
                1,
-               "No timing-critical paths when calling GetPathTimingScore()");
+               "No timing-critical paths when calling GetPathTimingScore()!");
     return 0.0;
   }
   return std::pow(1.0 - hgraph->PathTimingSlack(path_id), timing_exp_factor_);
@@ -128,10 +128,11 @@ float GoldenEvaluator::CalculatePathCost(int path_id,
   if (hgraph->GetNumTimingPaths() <= 0
       || hgraph->GetTimingPathCostSize() < hgraph->GetNumTimingPaths()
       || path_id >= hgraph->GetNumTimingPaths()) {
-    logger_->warn(
-        PAR,
-        112,
-        "This no timing-critical paths when calling CalculatePathsCost()");
+    debugPrint(logger_,
+               PAR,
+               "evaluation",
+               1,
+               "No timing-critical paths when calling CalculatePathsCost()!");
     return 0.0;
   }
   float cost = 0.0;
@@ -176,8 +177,11 @@ std::vector<float> GoldenEvaluator::GetPathsCost(
   std::vector<float> paths_cost;  // the path_cost for each path
   if (hgraph->GetNumTimingPaths() <= 0
       || hgraph->GetTimingPathCostSize() < hgraph->GetNumTimingPaths()) {
-    logger_->warn(
-        PAR, 113, "This no timing-critical paths when calling GetPathsCost()");
+    debugPrint(logger_,
+               PAR,
+               "evaluation",
+               1,
+               "No timing-critical paths when calling GetPathsCost()");
     return paths_cost;
   }
   // check each timing path
@@ -193,8 +197,11 @@ PathStats GoldenEvaluator::GetTimingCuts(const HGraphPtr& hgraph,
 {
   PathStats path_stats;  // create tha path related statistics
   if (hgraph->GetNumTimingPaths() <= 0) {
-    logger_->warn(
-        PAR, 114, "This no timing-critical paths when calling GetTimingCuts()");
+    debugPrint(logger_,
+               PAR,
+               "evaluation",
+               1,
+               "This no timing-critical paths when calling GetTimingCuts()");
     return path_stats;
   }
 
@@ -247,22 +254,24 @@ PathStats GoldenEvaluator::GetTimingCuts(const HGraphPtr& hgraph,
 
 void GoldenEvaluator::PrintPathStats(const PathStats& path_stats) const
 {
-  logger_->report("Total number of timing paths = {}", path_stats.tot_num_path);
-  logger_->report("Total number of timing-critical paths = {}",
+  logger_->report("\tTotal number of timing paths = {}",
+                  path_stats.tot_num_path);
+  logger_->report("\tTotal number of timing-critical paths = {}",
                   path_stats.tot_num_critical_path);
-  logger_->report("Total number of timing-noncritical paths = {}",
+  logger_->report("\tTotal number of timing-noncritical paths = {}",
                   path_stats.tot_num_noncritical_path);
-  logger_->report("The worst number of cuts on timing-critical paths = {}",
+  logger_->report("\tThe worst number of cuts on timing-critical paths = {}",
                   path_stats.worst_cut_critical_path);
-  logger_->report("The average number of cuts on timing-critical paths = {}",
+  logger_->report("\tThe average number of cuts on timing-critical paths = {}",
                   path_stats.avg_cut_critical_path);
   logger_->report(
-      "Total number of timing-noncritical to timing critical paths = {}",
+      "\tTotal number of timing-noncritical to timing critical paths = {}",
       path_stats.number_non2critical_path);
-  logger_->report("The worst number of cuts on timing-non2critical paths = {}",
-                  path_stats.worst_cut_non2critical_path);
   logger_->report(
-      "The average number of cuts on timing-non2critical paths = {}",
+      "\tThe worst number of cuts on timing-non2critical paths = {}",
+      path_stats.worst_cut_non2critical_path);
+  logger_->report(
+      "\tThe average number of cuts on timing-non2critical paths = {}",
       path_stats.avg_cut_non2critical_path);
 }
 
