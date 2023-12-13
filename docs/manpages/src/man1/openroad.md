@@ -18,11 +18,7 @@ openroad [-python] cmd_file
 
 # DESCRIPTION
 
-The **openroad** command is the command-line interface for
-OpenROAD, an open-source initiative for chip design and
-optimization.   It  provides a range of options to con‐
-trol its behavior and execute commands specified in the
-cmd_file.
+The **openroad** command is the command-line interface for OpenROAD, an open-source initiative for chip design and optimization. It provides a range of options to control its behavior and execute commands specified in the cmd_file.
 
 # OPTIONS
 
