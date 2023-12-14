@@ -141,10 +141,7 @@ class HierRTLMP
   void setSnapLayer(int snap_layer);
   void setReportDirectory(const char* report_directory);
   void setDebug(std::unique_ptr<Mpl2Observer>& graphics);
-  void setBusPlanningFlag(bool bus_planning_flag)
-  {
-    bus_planning_flag_ = bus_planning_flag;
-  }
+  void setBusPlanningOn(bool bus_planning_on);
 
   void setNumThreads(int threads) { num_threads_ = threads; }
   void setMacroPlacementFile(const std::string& file_name);
@@ -274,7 +271,7 @@ class HierRTLMP
   // We recommend that you turn on this flag for technology nodes with very
   // limited routing layers such as SkyWater130.  But for NanGate45,
   // ASASP7, you should turn off this option.
-  bool bus_planning_flag_ = false;
+  bool bus_planning_on_ = false;
 
   // technology-related variables
   float dbu_ = 0.0;

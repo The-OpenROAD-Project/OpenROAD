@@ -457,7 +457,7 @@ void HierRTLMP::hierRTLMacroPlacer()
     logger_->report("macro_blockage_weight_ = {}", macro_blockage_weight_);
     logger_->report("halo_width_ = {}", halo_width_);
     logger_->report("halo_height_ = {}", halo_height_);
-    logger_->report("bus_planning_flag_ = {}\n", bus_planning_flag_);
+    logger_->report("bus_planning_on_ = {}\n", bus_planning_on_);
   }
 
   //
@@ -499,8 +499,8 @@ void HierRTLMP::hierRTLMacroPlacer()
   // (1) the design only has fake macros (for academic fake testcases)
   // (2) the design has on logical hierarchy (for academic fake testcases)
   if (metrics_->getNumStdCell() == 0) {
-    logger_->warn(MPL, 25, "This design has no standard cells ..");
-    logger_->warn(MPL, 26, "Each macro is treated as a single cluster");
+    logger_->warn(MPL, 25, "This design has no standard cells!");
+    logger_->warn(MPL, 26, "Each macro is treated as a single cluster!");
     auto module = block_->getTopModule();
     for (odb::dbInst* inst : module->getInsts()) {
       const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
@@ -629,7 +629,7 @@ void HierRTLMP::hierRTLMacroPlacer()
     logger_->info(MPL,
                   27,
                   "[Hierarchical Macro Placement] The design only has macros. "
-                  "Starting placement.\n");
+                  "Starting macro placement.\n");
     if (graphics_) {
       graphics_->startFine();
     }
@@ -653,7 +653,7 @@ void HierRTLMP::hierRTLMacroPlacer()
       graphics_->startFine();
     }
 
-    if (bus_planning_flag_ == true) {
+    if (bus_planning_on_) {
       multiLevelMacroPlacement(root_cluster_);
     } else {
       multiLevelMacroPlacementWithoutBusPlanning(root_cluster_);
