@@ -158,7 +158,6 @@ class TritonCTS
                                         int bufCounter,
                                         Clock& clockNet);
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
-  odb::dbITerm* getFirstOutput(odb::dbInst* inst) const;
   odb::dbITerm* getSingleOutput(odb::dbInst* inst, odb::dbITerm* input) const;
   void findClockRoots(sta::Clock* clk, std::set<odb::dbNet*>& clockNets);
   float getInputPinCap(odb::dbITerm* iterm);

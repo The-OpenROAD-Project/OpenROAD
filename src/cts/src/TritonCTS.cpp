@@ -277,20 +277,21 @@ void TritonCTS::countSinksPostDbWrite(
                                 fullTree,
                                 sinks);
         } else {
-          std::string cellType = "complex cell";
+          std::string cellType = "Complex cell";
           odb::dbInst* inst = iterm->getInst();
           sta::Cell* masterCell = network_->dbToSta(inst->getMaster());
           if (masterCell) {
             sta::LibertyCell* libCell = network_->libertyCell(masterCell);
             if (libCell) {
               if (libCell->isInverter()) {
-                cellType = "inverter";
+                cellType = "Inverter";
               } else if (libCell->isBuffer()) {
-                cellType = "buffer";
+                cellType = "Buffer";
               }
             }
           }
-          logger_->report("Hanging {} '{}'", cellType, name);
+          logger_->info(
+              CTS, 121, "{} '{}' has unconnected output pin.", cellType, name);
         }
         if (builder->isLeafBuffer(getClockFromInst(iterm->getInst()))) {
           leafSinks++;
@@ -1237,18 +1238,6 @@ odb::dbITerm* TritonCTS::getFirstInput(odb::dbInst* inst) const
   return nullptr;
 }
 
-odb::dbITerm* TritonCTS::getFirstOutput(odb::dbInst* inst) const
-{
-  odb::dbSet<odb::dbITerm> iterms = inst->getITerms();
-  for (odb::dbITerm* iterm : iterms) {
-    if (iterm->isOutputSignal()) {
-      return iterm;
-    }
-  }
-
-  return nullptr;
-}
-
 odb::dbITerm* TritonCTS::getSingleOutput(odb::dbInst* inst,
                                          odb::dbITerm* input) const
 {
@@ -1372,7 +1361,10 @@ float getInputCap(const sta::LibertyCell* cell)
 {
   sta::LibertyPort *in, *out;
   cell->bufferPorts(in, out);
-  return in->capacitance();
+  if (in != nullptr) {
+    return in->capacitance();
+  }
+  return 0.0;
 }
 
 sta::LibertyCell* findBestDummyCell(
@@ -1599,7 +1591,7 @@ ClockInst& TritonCTS::placeDummyCell(Clock& clockNet,
                                      const sta::LibertyCell* dummyCell,
                                      odb::dbInst*& dummyInst)
 {
-  odb::dbMaster* master = db_->findMaster(dummyCell->name());
+  odb::dbMaster* master = network_->staToDb(dummyCell);
   if (master == nullptr) {
     logger_->error(CTS,
                    118,
@@ -1626,12 +1618,12 @@ void TritonCTS::connectDummyCell(const ClockInst* inst,
                                  Clock::SubNet& subNet,
                                  ClockInst& dummyClock)
 {
-  odb::dbInst* sinkInst = block_->findInst((inst->getName()).c_str());
+  odb::dbInst* sinkInst = inst->getDbInst();
   if (sinkInst == nullptr) {
     logger_->error(
         CTS, 119, "Phyiscal instance {} is not found.", inst->getName());
   }
-  odb::dbITerm* iTerm = getFirstOutput(sinkInst);
+  odb::dbITerm* iTerm = sinkInst->getFirstOutput();
   odb::dbNet* sinkNet = iTerm->getNet();
   odb::dbITerm* dummyInputPin = getFirstInput(dummyInst);
   dummyInputPin->connect(sinkNet);
