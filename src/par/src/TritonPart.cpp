@@ -259,21 +259,14 @@ void TritonPart::PartitionHypergraph(unsigned int num_parts_arg,
   logger_->report("\tVertex dimensions = {}", vertex_dimensions_);
   logger_->report("\tHyperedge dimensions = {}", hyperedge_dimensions_);
   logger_->report("\tPlacement dimensions = {}", placement_dimensions_);
-  logger_->report("\tHypergraph file = {}", hypergraph_file);
-  logger_->report("\tSolution file = {}", solution_file);
   logger_->report("\tGlobal net threshold = {}", global_net_threshold_);
-  if (!fixed_file.empty()) {
-    logger_->report("\tFixed file  = {}", fixed_file);
-  }
-  if (!community_file.empty()) {
-    logger_->report("\tCommunity file = {}", community_file);
-  }
-  if (!group_file.empty()) {
-    logger_->report("\tGroup file = {}", group_file);
-  }
-  if (!placement_file.empty()) {
-    logger_->report("\tPlacement file = {}\n", placement_file);
-  }
+  informFiles(fixed_file,
+              community_file,
+              group_file,
+              placement_file,
+              hypergraph_file,
+              "",
+              solution_file);
 
   // set the random seed
   srand(seed_);  // set the random seed
@@ -387,18 +380,8 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
         fence_.ux / dbu,
         fence_.uy / dbu);
   }
-  if (!fixed_file.empty()) {
-    logger_->report("\tFixed file  = {}", fixed_file);
-  }
-  if (!community_file.empty()) {
-    logger_->report("\tCommunity file = {}", community_file);
-  }
-  if (!group_file.empty()) {
-    logger_->report("\tGroup file = {}", group_file);
-  }
-  if (!solution_file.empty()) {
-    logger_->report("\tSolution file = {}", solution_file);
-  }
+  informFiles(
+      fixed_file, community_file, group_file, "", "", "", solution_file);
 
   // set the random seed
   srand(seed_);  // set the random seed
@@ -461,7 +444,7 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
       solution_file_name = solution_file_name + str_ss.str();
     }
     logger_->info(
-        PAR, 6, "Updated solution file name = {}", solution_file_name);
+        PAR, 6, "Updated solution file name: {}", solution_file_name);
     std::ofstream file_output;
     file_output.open(solution_file_name);
 
@@ -525,20 +508,13 @@ void TritonPart::EvaluateHypergraphSolution(
   logger_->report("\tVertex dimensions = {}", vertex_dimensions_);
   logger_->report("\tHyperedge dimensions = {}", hyperedge_dimensions_);
   logger_->report("\tPlacement dimensions = {}", placement_dimensions_);
-  logger_->report("\tHypergraph file = {}", hypergraph_file);
-  logger_->report("\tSolution file = {}", solution_file);
-  if (!fixed_file.empty()) {
-    logger_->report("\tFixed file  = {}", fixed_file);
-  }
-  if (!community_file.empty()) {
-    logger_->report("\tCommunity file = {}", community_file);
-  }
-  if (!group_file.empty()) {
-    logger_->report("\tGroup file = {}", group_file);
-  }
-  if (!placement_file.empty()) {
-    logger_->report("\tPlacement file = {}", placement_file);
-  }
+  informFiles(fixed_file,
+              community_file,
+              group_file,
+              placement_file,
+              hypergraph_file,
+              "",
+              solution_file);
 
   int part_id = -1;
   std::ifstream solution_file_input(solution_file);
@@ -776,25 +752,13 @@ void TritonPart::EvaluatePartDesignSolution(
         fence_.ux / dbu,
         fence_.uy / dbu);
   }
-  if (!fixed_file.empty()) {
-    logger_->report("\tFixed file  = {}", fixed_file);
-  }
-  if (!community_file.empty()) {
-    logger_->report("\tCommunity file = {}", community_file);
-  }
-  if (!group_file.empty()) {
-    logger_->report("\tGroup file = {}", group_file);
-  }
-  if (!hypergraph_file.empty()) {
-    logger_->report("\tHypergraph file = {}", hypergraph_file);
-  }
-  if (!hypergraph_int_weight_file.empty()) {
-    logger_->report("\tHypergraph_int_weight_file = {}",
-                    hypergraph_int_weight_file);
-  }
-  if (!solution_file.empty()) {
-    logger_->report("\tSolution file = {}", solution_file);
-  }
+  informFiles(fixed_file,
+              community_file,
+              group_file,
+              "",
+              hypergraph_file,
+              hypergraph_int_weight_file,
+              solution_file);
 
   // set the random seed
   srand(seed_);  // set the random seed
@@ -2085,6 +2049,41 @@ void TritonPart::MultiLevelPartition()
              1,
              "The runtime of multilevel partitioner : {} seconds",
              total_global_time);
+}
+
+void TritonPart::informFiles(const std::string& fixed_file,
+                             const std::string& community_file,
+                             const std::string& group_file,
+                             const std::string& placement_file,
+                             const std::string& hypergraph_file,
+                             const std::string& hypergraph_int_weight_file,
+                             const std::string& solution_file)
+{
+  std::string files("Display Used Files");
+
+  if (!fixed_file.empty()) {
+    files += ("\n\tFixed file: " + fixed_file);
+  }
+  if (!community_file.empty()) {
+    files += ("\n\tCommunity file: " + community_file);
+  }
+  if (!group_file.empty()) {
+    files += ("\n\tGroup file: " + group_file);
+  }
+  if (!placement_file.empty()) {
+    files += ("\n\tPlacement file: " + placement_file);
+  }
+  if (!hypergraph_file.empty()) {
+    files += ("\n\tHypergraph file: " + hypergraph_file);
+  }
+  if (!hypergraph_int_weight_file.empty()) {
+    files += ("\n\tHypergraph int weight file: " + hypergraph_int_weight_file);
+  }
+  if (!solution_file.empty()) {
+    files += ("\n\tSolution file: " + solution_file);
+  }
+
+  logger_->info(PAR, 38, files);
 }
 
 }  // namespace par
