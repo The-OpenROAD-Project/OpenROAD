@@ -74,6 +74,15 @@ class Point
 
   int x() const { return x_; }
   int y() const { return y_; }
+  struct Hash
+  {
+    std::size_t operator()(const Point& p) const
+    {
+      size_t hashX = std::hash<int>{}(p.getX());
+      size_t hashY = std::hash<int>{}(p.getY());
+      return hashX ^ (hashY + 0x9e3779b9 + (hashX << 6) + (hashX >> 2));
+    }
+  };
 
   // compute the square distance between two points
   static int64 squaredDistance(Point p0, Point p1);

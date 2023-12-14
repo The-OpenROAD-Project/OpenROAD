@@ -809,8 +809,8 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
     return avail_pt;
   }
 
-  std::queue<std::pair<int, int>> positionsQueue;
-  std::unordered_set<std::pair<int, int>, PairHash> visitedPositions;
+  std::queue<odb::Point> positionsQueue;
+  std::unordered_set<odb::Point, odb::Point::Hash> visitedPositions;
 
   positionsQueue.push({0, 0});
   int iteration = 0;
@@ -827,8 +827,9 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
     ++iteration;
 
     for (int p = 0; p < n; p++) {
-      int x_offset = positionsQueue.front().first;
-      int y_offset = positionsQueue.front().second;
+      auto front = positionsQueue.front();
+      int x_offset = front.getX();
+      int y_offset = front.getY();
       positionsQueue.pop();
 
       // Check if this position has been visited
