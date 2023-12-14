@@ -146,6 +146,9 @@ void Clustering::fixSegment(const std::pair<float, float>& fixedPoint,
                             std::pair<float, float>& movablePoint)
 {
   const float actualDist = calcDist(fixedPoint, movablePoint);
+  if (actualDist == 0) {
+    return;
+  }
   const float ratio = targetDist / actualDist;
 
   const float dx = (movablePoint.first - fixedPoint.first) * ratio;

@@ -1300,7 +1300,7 @@ void dbNetwork::staToDb(const Instance* instance,
                         dbInst*& db_inst,
                         dbModInst*& mod_inst) const
 {
-  if (instance) {
+  if (instance && instance != top_instance_) {
     dbObject* obj
         = reinterpret_cast<dbObject*>(const_cast<Instance*>(instance));
     dbObjectType type = obj->getObjectType();

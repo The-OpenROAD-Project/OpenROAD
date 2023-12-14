@@ -148,7 +148,8 @@ class drNet : public drBlockObject
   }
   void removeShape(drConnFig* shape, bool isExt = false)
   {
-    vector<unique_ptr<drConnFig>>* v = isExt ? &extConnFigs_ : &routeConnFigs_;
+    std::vector<std::unique_ptr<drConnFig>>* v
+        = isExt ? &extConnFigs_ : &routeConnFigs_;
     for (int i = 0; i < v->size(); i++) {
       auto& s = (*v)[i];
       if (s.get() == shape) {

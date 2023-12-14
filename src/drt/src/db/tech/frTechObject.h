@@ -220,7 +220,7 @@ class frTechObject
     return nonDefaultRules;
   }
 
-  frNonDefaultRule* getNondefaultRule(string name)
+  frNonDefaultRule* getNondefaultRule(std::string name)
   {
     for (std::unique_ptr<frNonDefaultRule>& nd : nonDefaultRules) {
       if (nd->getName() == name)

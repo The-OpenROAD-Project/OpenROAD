@@ -12,7 +12,6 @@
 #include "lefout.h"
 #include "utl/Logger.h"
 using namespace odb;
-using namespace std;
 
 BOOST_AUTO_TEST_SUITE(test_suite)
 
@@ -140,8 +139,8 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(corner_rule->isExceptEol());
   BOOST_TEST(corner_rule->isCornerToCorner());
   BOOST_TEST(corner_rule->getEolWidth() == 0.090 * distFactor);
-  vector<pair<int, int>> spacing;
-  vector<int> corner_width;
+  std::vector<std::pair<int, int>> spacing;
+  std::vector<int> corner_width;
   corner_rule->getSpacingTable(spacing);
   corner_rule->getWidthTable(corner_width);
   BOOST_TEST(spacing.size() == 1);
@@ -157,10 +156,10 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(spacing_tbl_rule->isSameMask() == false);
   BOOST_TEST(spacing_tbl_rule->isExceeptEol() == true);
   BOOST_TEST(spacing_tbl_rule->getEolWidth() == 0.090 * distFactor);
-  vector<int> width;
-  vector<int> length;
-  vector<vector<int>> spacing_tbl;
-  map<unsigned int, pair<int, int>> within;
+  std::vector<int> width;
+  std::vector<int> length;
+  std::vector<std::vector<int>> spacing_tbl;
+  std::map<unsigned int, std::pair<int, int>> within;
   spacing_tbl_rule->getTable(width, length, spacing_tbl, within);
   BOOST_TEST(width.size() == 2);
   BOOST_TEST(length.size() == 2);

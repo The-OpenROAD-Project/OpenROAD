@@ -50,15 +50,13 @@
 #include <unistd.h>
 #endif /* WIN32 */
 
-using namespace std;
-
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
 #include "def_parser.hpp"
 
 int defrData::defGetKeyword(const char* name, int* result)
 {
-  map<const char*, int, defCompareCStrings>::const_iterator search
+  std::map<const char*, int, defCompareCStrings>::const_iterator search
       = settings->Keyword_set.find(name);
 
   if (search != settings->Keyword_set.end()) {
@@ -69,9 +67,9 @@ int defrData::defGetKeyword(const char* name, int* result)
   return FALSE;
 }
 
-int defrData::defGetAlias(const string& name, string& result)
+int defrData::defGetAlias(const std::string& name, std::string& result)
 {
-  map<string, string, defCompareStrings>::iterator search
+  std::map<std::string, std::string, defCompareStrings>::iterator search
       = def_alias_set.find(name);
 
   if (search != def_alias_set.end()) {
@@ -82,9 +80,9 @@ int defrData::defGetAlias(const string& name, string& result)
   return FALSE;
 }
 
-int defrData::defGetDefine(const string& name, string& result)
+int defrData::defGetDefine(const std::string& name, std::string& result)
 {
-  map<string, string, defCompareStrings>::iterator search
+  std::map<std::string, std::string, defCompareStrings>::iterator search
       = def_defines_set.find(name);
 
   if (search != def_defines_set.end()) {
@@ -411,7 +409,7 @@ void defrData::StoreAlias()
 
   char* uc_line = (char*) malloc(tokenSize);
 
-  string so_far; /* contains alias contents as we build it */
+  std::string so_far; /* contains alias contents as we build it */
 
   if (strcmp(line, "=") != 0) {
     defError(6000, "Expecting '='");
@@ -547,7 +545,7 @@ int defrData::sublex(YYSTYPE* pYylval)
     } else if (fc == '&') {
       /* begins with &.  If &alias, read contents and */
       /* store them.  Otherwise it's a define, or a macro use. */
-      string alias;
+      std::string alias;
       uc_array(deftoken, uc_token);
 
       if (strcmp(uc_token, "&ALIAS") == 0)
@@ -924,7 +922,7 @@ int defrData::sublex(YYSTYPE* pYylval)
    defined, substitute the definition.  Otherwise return it. */
 int defrData::amper_lookup(YYSTYPE* pYylval, char* tkn)
 {
-  string defValue;
+  std::string defValue;
 
   /* printf("Amper_lookup: %s\n", tkn); */
 

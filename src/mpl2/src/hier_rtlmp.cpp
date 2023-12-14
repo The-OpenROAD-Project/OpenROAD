@@ -3782,7 +3782,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
         ++begin_check;
       }
       // add early stop mechanism
-      if (best_sa) {
+      if (best_sa || remaining_runs == 0) {
         break;
       }
       end_check = begin_check + std::min(check_interval, remaining_runs);
@@ -4032,7 +4032,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
           ++begin_check;
         }
         // add early stop mechanism
-        if (best_sa) {
+        if (best_sa || remaining_runs == 0) {
           break;
         }
         end_check = begin_check + std::min(check_interval, remaining_runs);
@@ -4558,7 +4558,7 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
         ++begin_check;
       }
       // add early stop mechanism
-      if (best_sa) {
+      if (best_sa || remaining_runs == 0) {
         break;
       }
       end_check = begin_check + std::min(check_interval, remaining_runs);
@@ -5035,7 +5035,7 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
         ++begin_check;
       }
       // add early stop mechanism
-      if (best_sa) {
+      if (best_sa || remaining_runs == 0) {
         break;
       }
       end_check = begin_check + std::min(check_interval, remaining_runs);
@@ -5507,8 +5507,8 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
                                 height,
                                 macros,
                                 area_weight_,
-                                outline_weight_ * (i + 1) * 10,
-                                wirelength_weight_ / (i + 1),
+                                outline_weight_ * (run_id + 1) * 10,
+                                wirelength_weight_ / (run_id + 1),
                                 guidance_weight_,
                                 fence_weight_,
                                 pos_swap_prob_ * 10 / action_sum,

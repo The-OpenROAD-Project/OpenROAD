@@ -241,7 +241,13 @@ set_sink_buffer_max_cap_derate(float derate)
 {
   getTritonCts()->getParms()->setSinkBufferMaxCapDerate(derate);
 }
- 
+
+void
+set_dummy_load(bool dummyLoad)
+{
+  getTritonCts()->getParms()->enableDummyLoad(dummyLoad);
+}
+
 void
 run_triton_cts()
 {

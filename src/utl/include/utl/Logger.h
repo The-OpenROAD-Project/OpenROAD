@@ -327,3 +327,41 @@ class Logger
 #undef GENERATE_STRING
 
 }  // namespace utl
+
+// Define stream_as for fmt > v10
+#if !SWIG && FMT_VERSION >= 100000
+
+namespace utl {
+
+struct test_ostream
+{
+ public:
+  template <class T>
+  static auto test(int)
+      -> decltype(std::declval<std::ostream>() << std::declval<T>(),
+                  std::true_type());
+
+  template <class>
+  static auto test(...) -> std::false_type;
+};
+
+template <class T,
+          class = std::enable_if_t<decltype(test_ostream::test<T>(0))::value>>
+auto format_as(T t)
+{
+  return fmt::streamed(t);
+}
+
+}  // namespace utl
+
+#else
+namespace utl {
+
+// Uncallable class
+template <class T>
+class format_as
+{
+};
+
+}  // namespace utl
+#endif

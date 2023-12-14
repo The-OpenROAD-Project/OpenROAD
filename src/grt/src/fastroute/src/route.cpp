@@ -230,7 +230,7 @@ void FastRouteCore::routeLAll(bool firstTime)
   if (firstTime) {  // no previous route
     // estimate congestion with 0.5+0.5 L
     for (int i = 0; i < netCount(); i++) {
-      if (nets_[i]->isRouted() || nets_[i]->isDeleted()) {
+      if (skipNet(i)) {
         continue;
       }
 
@@ -240,7 +240,7 @@ void FastRouteCore::routeLAll(bool firstTime)
     }
     // L route
     for (int i = 0; i < netCount(); i++) {
-      if (nets_[i]->isRouted() || nets_[i]->isDeleted()) {
+      if (skipNet(i)) {
         continue;
       }
 
@@ -252,7 +252,7 @@ void FastRouteCore::routeLAll(bool firstTime)
     }
   } else {  // previous is L-route
     for (int i = 0; i < netCount(); i++) {
-      if (nets_[i]->isRouted() || nets_[i]->isDeleted()) {
+      if (skipNet(i)) {
         continue;
       }
 
@@ -419,13 +419,13 @@ void FastRouteCore::newrouteLAll(bool firstTime, bool viaGuided)
 {
   if (firstTime) {
     for (int i = 0; i < netCount(); i++) {
-      if (!nets_[i]->isRouted() && !nets_[i]->isDeleted()) {
+      if (!skipNet(i)) {
         newrouteL(i, RouteType::NoRoute, viaGuided);  // do L-routing
       }
     }
   } else {
     for (int i = 0; i < netCount(); i++) {
-      if (!nets_[i]->isRouted() && !nets_[i]->isDeleted()) {
+      if (!skipNet(i)) {
         newrouteL(i, RouteType::LRoute, viaGuided);
       }
     }
@@ -859,7 +859,7 @@ void FastRouteCore::newrouteZ(int netID, int threshold)
 void FastRouteCore::newrouteZAll(int threshold)
 {
   for (int i = 0; i < netCount(); i++) {
-    if (!nets_[i]->isRouted() && !nets_[i]->isDeleted()) {
+    if (!skipNet(i)) {
       newrouteZ(i, threshold);  // ripup previous route and do Z-routing
     }
   }
@@ -1059,7 +1059,7 @@ void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
 void FastRouteCore::routeMonotonicAll(int threshold)
 {
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted() || nets_[netID]->isDeleted()) {
+    if (skipNet(netID)) {
       continue;
     }
 
@@ -1245,7 +1245,7 @@ void FastRouteCore::spiralRoute(int netID, int edgeID)
 void FastRouteCore::spiralRouteAll()
 {
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted() || nets_[netID]->isDeleted()) {
+    if (skipNet(netID)) {
       continue;
     }
 
@@ -1296,7 +1296,7 @@ void FastRouteCore::spiralRouteAll()
   }
 
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted() || nets_[netID]->isDeleted()) {
+    if (skipNet(netID)) {
       continue;
     }
 
@@ -1326,7 +1326,7 @@ void FastRouteCore::spiralRouteAll()
 
   std::queue<int> edgeQueue;
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted() || nets_[netID]->isDeleted()) {
+    if (skipNet(netID)) {
       continue;
     }
 
@@ -1382,7 +1382,7 @@ void FastRouteCore::spiralRouteAll()
   }
 
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted() || nets_[netID]->isDeleted()) {
+    if (skipNet(netID)) {
       continue;
     }
 
@@ -1725,7 +1725,7 @@ void FastRouteCore::routeLVAll(int threshold, int expand, float logis_cof)
   multi_array<float, 2> d2(boost::extents[y_range_][x_range_]);
 
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted() || nets_[netID]->isDeleted()) {
+    if (skipNet(netID)) {
       continue;
     }
 

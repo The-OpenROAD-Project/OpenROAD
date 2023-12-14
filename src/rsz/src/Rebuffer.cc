@@ -95,7 +95,7 @@ RepairSetup::rebuffer(const Pin *drvr_pin)
       debugPrint(logger_, RSZ, "rebuffer", 2, "driver {}",
                  sdc_network_->pathName(drvr_pin));
       sta_->findRequireds();
-      BufferedNetSeq Z = rebufferBottomUp(bnet, 1);
+      const BufferedNetSeq& Z = rebufferBottomUp(bnet, 1);
       Required best_slack_penalized = -INF;
       BufferedNetPtr best_option = nullptr;
       int best_index = 0;
@@ -213,13 +213,13 @@ RepairSetup::rebufferBottomUp(const BufferedNetPtr& bnet,
     return addWireAndBuffer(Z, bnet, level);
   }
   case BufferedNetType::junction: {
-    BufferedNetSeq Z1 = rebufferBottomUp(bnet->ref(), level + 1);
-    BufferedNetSeq Z2 = rebufferBottomUp(bnet->ref2(), level + 1);
+    const BufferedNetSeq& Z1 = rebufferBottomUp(bnet->ref(), level + 1);
+    const BufferedNetSeq& Z2 = rebufferBottomUp(bnet->ref2(), level + 1);
     BufferedNetSeq Z;
     // Combine the options from both branches.
-    for (BufferedNetPtr p : Z1) {
-      for (BufferedNetPtr q : Z2) {
-        BufferedNetPtr min_req = fuzzyLess(p->required(sta_),
+    for (const BufferedNetPtr& p : Z1) {
+      for (const BufferedNetPtr& q : Z2) {
+        const BufferedNetPtr& min_req = fuzzyLess(p->required(sta_),
                                            q->required(sta_)) ? p : q;
         BufferedNetPtr junc = make_shared<BufferedNet>(BufferedNetType::junction,
                                                        bnet->location(),
@@ -227,7 +227,7 @@ RepairSetup::rebufferBottomUp(const BufferedNetPtr& bnet,
         junc->setCapacitance(p->cap() + q->cap());
         junc->setRequiredPath(min_req->requiredPath());
         junc->setRequiredDelay(min_req->requiredDelay());
-        Z.push_back(junc);
+        Z.push_back(std::move(junc));
       }
     }
     // Prune the options if there exists another option with
@@ -236,7 +236,7 @@ RepairSetup::rebufferBottomUp(const BufferedNetPtr& bnet,
     // Presort options to hit better options sooner.
     sort(Z.begin(),
          Z.end(),
-         [=](BufferedNetPtr option1, BufferedNetPtr option2) {
+         [this](const BufferedNetPtr& option1, const BufferedNetPtr& option2) {
            Slack slack1 = slackPenalized(option1);
            Slack slack2 = slackPenalized(option2);
 
@@ -258,14 +258,14 @@ RepairSetup::rebufferBottomUp(const BufferedNetPtr& bnet,
          });
     int si = 0;
     for (size_t pi = 0; pi < Z.size(); pi++) {
-      BufferedNetPtr p = Z[pi];
+      const BufferedNetPtr& p = Z[pi];
       float Lp = p->cap();
       // Remove options by shifting down with index si.
       si = pi + 1;
       // Because the options are sorted we don't have to look
       // beyond the first option.
       for (size_t qi = pi + 1; qi < Z.size(); qi++) {
-        BufferedNetPtr q = Z[qi];
+        const BufferedNetPtr& q = Z[qi];
         float Lq = q->cap();
         // We know Tq <= Tp from the sort so we don't need to check req.
         // If q is the same or worse than p, remove solution q.
@@ -306,7 +306,7 @@ RepairSetup::addWireAndBuffer(const BufferedNetSeq& Z,
 {
   BufferedNetSeq Z1;
   Point wire_end = bnet_wire->location();
-  for (BufferedNetPtr p : Z) {
+  for (const BufferedNetPtr& p : Z) {
     Point p_loc = p->location();
     int wire_length_dbu = abs(wire_end.x() - p_loc.x())
       + abs(wire_end.y() - p_loc.y());
