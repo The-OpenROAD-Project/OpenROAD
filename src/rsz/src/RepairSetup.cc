@@ -853,7 +853,9 @@ RepairSetup::splitLoads(PathRef *drvr_path,
     Vertex *load_vertex = fanout_slack.first;
     Pin *load_pin = load_vertex->pin();
     // Leave ports connected to original net so verilog port names are preserved.
-    if (!network_->isTopLevelPort(load_pin)) {
+    if (!(network_->isTopLevelPort(load_pin)
+          // Avoid output->output timing arcs (e.g. asap7).
+          || load_vertex->isDriver(network_))) {
       LibertyPort *load_port = network_->libertyPort(load_pin);
       Instance *load = network_->instance(load_pin);
 

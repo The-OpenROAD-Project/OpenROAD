@@ -7,7 +7,7 @@
 #include "helper.cpp"
 
 using namespace odb;
-using namespace std;
+
 BOOST_AUTO_TEST_SUITE(test_suite)
 
 struct F_DEFAULT

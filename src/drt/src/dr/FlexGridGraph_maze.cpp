@@ -30,7 +30,6 @@
 #include "dr/FlexDR_graphics.h"
 #include "dr/FlexGridGraph.h"
 
-using namespace std;
 using namespace fr;
 
 int debugMazeIter = std::numeric_limits<int>().max();
@@ -140,12 +139,12 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
     wavefront_.push(nextWavefrontGrid);
   }
   if (drWorker_->getDRIter() >= debugMazeIter)
-    cout << "Creating " << nextWavefrontGrid.x() << " " << nextWavefrontGrid.y()
-         << " " << nextWavefrontGrid.z()
-         << " coords: " << xCoords_[nextWavefrontGrid.x()] << " "
-         << yCoords_[nextWavefrontGrid.y()] << " cost "
-         << nextWavefrontGrid.getCost() << " g "
-         << nextWavefrontGrid.getPathCost() << "\n";
+    std::cout << "Creating " << nextWavefrontGrid.x() << " "
+              << nextWavefrontGrid.y() << " " << nextWavefrontGrid.z()
+              << " coords: " << xCoords_[nextWavefrontGrid.x()] << " "
+              << yCoords_[nextWavefrontGrid.y()] << " cost "
+              << nextWavefrontGrid.getCost() << " g "
+              << nextWavefrontGrid.getPathCost() << "\n";
   return;
 }
 
@@ -178,16 +177,19 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
   getPoint(srcPoint, gridX, gridY);
   getPoint(dstPoint1, dstMazeIdx1.x(), dstMazeIdx1.y());
   getPoint(dstPoint2, dstMazeIdx2.x(), dstMazeIdx2.y());
-  frCoord minCostX
-      = max(max(dstPoint1.x() - srcPoint.x(), srcPoint.x() - dstPoint2.x()), 0)
-        * 1;
-  frCoord minCostY
-      = max(max(dstPoint1.y() - srcPoint.y(), srcPoint.y() - dstPoint2.y()), 0)
-        * 1;
-  frCoord minCostZ = max(max(getZHeight(dstMazeIdx1.z()) - getZHeight(src.z()),
-                             getZHeight(src.z()) - getZHeight(dstMazeIdx2.z())),
-                         0)
+  frCoord minCostX = std::max(std::max(dstPoint1.x() - srcPoint.x(),
+                                       srcPoint.x() - dstPoint2.x()),
+                              0)
                      * 1;
+  frCoord minCostY = std::max(std::max(dstPoint1.y() - srcPoint.y(),
+                                       srcPoint.y() - dstPoint2.y()),
+                              0)
+                     * 1;
+  frCoord minCostZ
+      = std::max(std::max(getZHeight(dstMazeIdx1.z()) - getZHeight(src.z()),
+                          getZHeight(src.z()) - getZHeight(dstMazeIdx2.z())),
+                 0)
+        * 1;
 
   bendCnt += (minCostX && dir != frDirEnum::UNKNOWN && dir != frDirEnum::E
               && dir != frDirEnum::W)
@@ -405,7 +407,7 @@ frCost FlexGridGraph::getNextPathCost(const FlexWavefrontGrid& currGrid,
     if (isForbiddenVia2Via) {
       if (drWorker_) {
         if (drWorker_->getDRIter() >= debugMazeIter)
-          cout << "isForbiddenVia2Via\n";
+          std::cout << "isForbiddenVia2Via\n";
         if (drWorker_->getDRIter() >= 3) {
           nextPathCost += 2 * ggMarkerCost_ * edgeLength;
         } else {
@@ -458,7 +460,7 @@ frCost FlexGridGraph::getNextPathCost(const FlexWavefrontGrid& currGrid,
     if (isForbiddenTLen) {
       if (drWorker_) {
         if (drWorker_->getDRIter() >= debugMazeIter)
-          cout << "isForbiddenTLen\n";
+          std::cout << "isForbiddenTLen\n";
         if (drWorker_->getDRIter() >= 3) {
           nextPathCost += 2 * ggDRCCost_ * edgeLength;
         } else {
@@ -493,10 +495,11 @@ frCoord FlexGridGraph::getCostsNDR(frMIdx gridX,
   frMIdx startX, startY, endX, endY;
   frCoord r, x1, x2, y1, y2;
   frCoord sp, wext;
-  frCoord layerWidth = max((int) layer->getWidth(), ndr_->getWidth(gridZ));
-  sp = max(ndr_->getSpacing(gridZ),
-           layer->getMinSpacingValue(layerWidth, layer->getWidth(), 0, false));
-  wext = max(ndr_->getWireExtension(gridZ), (int) layer->getWidth() / 2)
+  frCoord layerWidth = std::max((int) layer->getWidth(), ndr_->getWidth(gridZ));
+  sp = std::max(
+      ndr_->getSpacing(gridZ),
+      layer->getMinSpacingValue(layerWidth, layer->getWidth(), 0, false));
+  wext = std::max(ndr_->getWireExtension(gridZ), (int) layer->getWidth() / 2)
          - layer->getWidth() / 2;
 
   // get iteration bounds
@@ -584,10 +587,11 @@ frCoord FlexGridGraph::getViaCostsNDR(frMIdx gridX,
     return getCosts(gridX, gridY, gridZ, dir, layer);
   frMIdx startX, startY, endX, endY;
   frCoord x1, x2, y1, y2;
-  frCoord layerWidth = max((int) layer->getWidth(), ndr_->getWidth(gridZ));
+  frCoord layerWidth = std::max((int) layer->getWidth(), ndr_->getWidth(gridZ));
   frCoord r, sp;
-  sp = max(ndr_->getSpacing(gridZ),
-           layer->getMinSpacingValue(layerWidth, layer->getWidth(), 0, false));
+  sp = std::max(
+      ndr_->getSpacing(gridZ),
+      layer->getMinSpacingValue(layerWidth, layer->getWidth(), 0, false));
 
   // get iteration bounds
   r = layerWidth / 2 + sp + layer->getWidth() / 2 - 1;
@@ -753,8 +757,8 @@ bool FlexGridGraph::isExpandable(const FlexWavefrontGrid& currGrid,
 }
 
 void FlexGridGraph::traceBackPath(const FlexWavefrontGrid& currGrid,
-                                  vector<FlexMazeIdx>& path,
-                                  vector<FlexMazeIdx>& root,
+                                  std::vector<FlexMazeIdx>& path,
+                                  std::vector<FlexMazeIdx>& root,
                                   FlexMazeIdx& ccMazeIdx1,
                                   FlexMazeIdx& ccMazeIdx2) const
 {
@@ -771,7 +775,7 @@ void FlexGridGraph::traceBackPath(const FlexWavefrontGrid& currGrid,
     currDir = getLastDir(backTraceBuffer);
     backTraceBuffer >>= DIRBITSIZE;
     if (currDir == frDirEnum::UNKNOWN) {
-      cout << "Warning: unexpected direction in tracBackPath\n";
+      std::cout << "Warning: unexpected direction in tracBackPath\n";
       break;
     }
     root.push_back(FlexMazeIdx(currX, currY, currZ));
@@ -788,7 +792,7 @@ void FlexGridGraph::traceBackPath(const FlexWavefrontGrid& currGrid,
     currDir = getPrevAstarNodeDir({currX, currY, currZ});
     root.push_back(FlexMazeIdx(currX, currY, currZ));
     if (currDir == frDirEnum::UNKNOWN) {
-      cout << "Warning: unexpected direction in tracBackPath\n";
+      std::cout << "Warning: unexpected direction in tracBackPath\n";
       break;
     }
     if (currDir != prevDir) {
@@ -803,30 +807,30 @@ void FlexGridGraph::traceBackPath(const FlexWavefrontGrid& currGrid,
     path.push_back(FlexMazeIdx(currX, currY, currZ));
   }
   for (auto& mi : path) {
-    ccMazeIdx1.set(min(ccMazeIdx1.x(), mi.x()),
-                   min(ccMazeIdx1.y(), mi.y()),
-                   min(ccMazeIdx1.z(), mi.z()));
-    ccMazeIdx2.set(max(ccMazeIdx2.x(), mi.x()),
-                   max(ccMazeIdx2.y(), mi.y()),
-                   max(ccMazeIdx2.z(), mi.z()));
+    ccMazeIdx1.set(std::min(ccMazeIdx1.x(), mi.x()),
+                   std::min(ccMazeIdx1.y(), mi.y()),
+                   std::min(ccMazeIdx1.z(), mi.z()));
+    ccMazeIdx2.set(std::max(ccMazeIdx2.x(), mi.x()),
+                   std::max(ccMazeIdx2.y(), mi.y()),
+                   std::max(ccMazeIdx2.z(), mi.z()));
   }
 }
 
-bool FlexGridGraph::search(vector<FlexMazeIdx>& connComps,
+bool FlexGridGraph::search(std::vector<FlexMazeIdx>& connComps,
                            drPin* nextPin,
-                           vector<FlexMazeIdx>& path,
+                           std::vector<FlexMazeIdx>& path,
                            FlexMazeIdx& ccMazeIdx1,
                            FlexMazeIdx& ccMazeIdx2,
                            const Point& centerPt,
-                           map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox)
+                           std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox)
 {
   if (drWorker_->getDRIter() >= debugMazeIter) {
-    cout << "INIT search: target pin " << nextPin->getName()
-         << "\nsource points:\n";
+    std::cout << "INIT search: target pin " << nextPin->getName()
+              << "\nsource points:\n";
     for (auto& idx : connComps)
-      cout << idx.x() << " " << idx.y() << " " << idx.z()
-           << " coords: " << xCoords_[idx.x()] << " " << yCoords_[idx.y()]
-           << "\n";
+      std::cout << idx.x() << " " << idx.y() << " " << idx.z()
+                << " coords: " << xCoords_[idx.x()] << " " << yCoords_[idx.y()]
+                << "\n";
   }
   // prep nextPinBox
   frMIdx xDim, yDim, zDim;
@@ -835,12 +839,12 @@ bool FlexGridGraph::search(vector<FlexMazeIdx>& connComps,
   FlexMazeIdx dstMazeIdx2(0, 0, 0);
   for (auto& ap : nextPin->getAccessPatterns()) {
     FlexMazeIdx mi = ap->getMazeIdx();
-    dstMazeIdx1.set(min(dstMazeIdx1.x(), mi.x()),
-                    min(dstMazeIdx1.y(), mi.y()),
-                    min(dstMazeIdx1.z(), mi.z()));
-    dstMazeIdx2.set(max(dstMazeIdx2.x(), mi.x()),
-                    max(dstMazeIdx2.y(), mi.y()),
-                    max(dstMazeIdx2.z(), mi.z()));
+    dstMazeIdx1.set(std::min(dstMazeIdx1.x(), mi.x()),
+                    std::min(dstMazeIdx1.y(), mi.y()),
+                    std::min(dstMazeIdx1.z(), mi.z()));
+    dstMazeIdx2.set(std::max(dstMazeIdx2.x(), mi.x()),
+                    std::max(dstMazeIdx2.y(), mi.y()),
+                    std::max(dstMazeIdx2.z(), mi.z()));
   }
 
   wavefront_.cleanup();
@@ -882,10 +886,10 @@ bool FlexGridGraph::search(vector<FlexMazeIdx>& connComps,
       graphics_->searchNode(this, currGrid);
     }
     if (drWorker_->getDRIter() >= debugMazeIter)
-      cout << "Expanding " << currGrid.x() << " " << currGrid.y() << " "
-           << currGrid.z() << " coords: " << xCoords_[currGrid.x()] << " "
-           << yCoords_[currGrid.y()] << " cost " << currGrid.getCost() << " g "
-           << currGrid.getPathCost() << "\n";
+      std::cout << "Expanding " << currGrid.x() << " " << currGrid.y() << " "
+                << currGrid.z() << " coords: " << xCoords_[currGrid.x()] << " "
+                << yCoords_[currGrid.y()] << " cost " << currGrid.getCost()
+                << " g " << currGrid.getPathCost() << "\n";
     if (isDst(currGrid.x(), currGrid.y(), currGrid.z())) {
       traceBackPath(currGrid, path, connComps, ccMazeIdx1, ccMazeIdx2);
       return true;

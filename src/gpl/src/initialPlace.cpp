@@ -39,7 +39,6 @@
 #include "solver.h"
 
 namespace gpl {
-using namespace std;
 
 typedef Eigen::Triplet<float> T;
 
@@ -89,7 +88,7 @@ void InitialPlace::doBicgstabPlace()
 
   std::unique_ptr<Graphics> graphics;
   if (ipVars_.debug && Graphics::guiActive()) {
-    graphics = make_unique<Graphics>(log_, pbc_, pbVec_);
+    graphics = std::make_unique<Graphics>(log_, pbc_, pbVec_);
   }
 
   placeInstsCenter();
@@ -133,7 +132,7 @@ void InitialPlace::doBicgstabPlace()
                              instLocVecY_,
                              log_);
     }
-    float error_max = max(error.x, error.y);
+    float error_max = std::max(error.x, error.y);
     log_->report("[InitialPlace]  Iter: {} CG residual: {:0.8f} HPWL: {}",
                  iter,
                  error_max,
@@ -272,7 +271,7 @@ void InitialPlace::createSparseMatrix()
   // to fill in SparseMatrix from Eigen docs.
   //
 
-  vector<T> listX, listY;
+  std::vector<T> listX, listY;
   listX.reserve(1000000);
   listY.reserve(1000000);
 
@@ -300,7 +299,7 @@ void InitialPlace::createSparseMatrix()
     }
 
     float netWeight = ipVars_.netWeightScale / (net->pins().size() - 1);
-    // cout << "net: " << net.net()->getConstName() << endl;
+    // std::cout << "net: " << net.net()->getConstName() << std::endl;
 
     // foreach two pins in single nets.
     auto& pins = net->pins();
@@ -329,7 +328,7 @@ void InitialPlace::createSparseMatrix()
           if (pin1->isPlaceInstConnected() && pin2->isPlaceInstConnected()) {
             const int inst1 = pin1->instance()->extId();
             const int inst2 = pin2->instance()->extId();
-            // cout << "inst: " << inst1 << " " << inst2 << endl;
+            // std::cout << "inst: " << inst1 << " " << inst2 << std::endl;
 
             listX.push_back(T(inst1, inst1, weightX));
             listX.push_back(T(inst2, inst2, weightX));
@@ -337,8 +336,8 @@ void InitialPlace::createSparseMatrix()
             listX.push_back(T(inst1, inst2, -weightX));
             listX.push_back(T(inst2, inst1, -weightX));
 
-            // cout << pin1->cx() << " "
-            //  << pin1->instance()->cx() << endl;
+            // std::cout << pin1->cx() << " "
+            //  << pin1->instance()->cx() << std::endl;
             fixedInstForceVecX_(inst1)
                 += -weightX
                    * ((pin1->cx() - pin1->instance()->cx())
@@ -353,7 +352,7 @@ void InitialPlace::createSparseMatrix()
           else if (!pin1->isPlaceInstConnected()
                    && pin2->isPlaceInstConnected()) {
             const int inst2 = pin2->instance()->extId();
-            // cout << "inst2: " << inst2 << endl;
+            // std::cout << "inst2: " << inst2 << std::endl;
             listX.push_back(T(inst2, inst2, weightX));
 
             fixedInstForceVecX_(inst2)
@@ -364,7 +363,7 @@ void InitialPlace::createSparseMatrix()
           else if (pin1->isPlaceInstConnected()
                    && !pin2->isPlaceInstConnected()) {
             const int inst1 = pin1->instance()->extId();
-            // cout << "inst1: " << inst1 << endl;
+            // std::cout << "inst1: " << inst1 << std::endl;
             listX.push_back(T(inst1, inst1, weightX));
 
             fixedInstForceVecX_(inst1)
