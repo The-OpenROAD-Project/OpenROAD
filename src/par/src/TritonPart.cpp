@@ -443,8 +443,7 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
       str_ss << ".uy_" << fence_.uy / dbu;
       solution_file_name = solution_file_name + str_ss.str();
     }
-    logger_->info(
-        PAR, 6, "Updated solution file name: {}", solution_file_name);
+    logger_->info(PAR, 6, "Updated solution file name: {}", solution_file_name);
     std::ofstream file_output;
     file_output.open(solution_file_name);
 
