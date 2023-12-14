@@ -731,20 +731,6 @@ int Opendp::distChange(const Cell* cell, int x, int y) const
   return pt_dist - cell_dist;
 }
 
-////////////////////////////////////////////////////////////////
-struct PairHash
-{
-  template <class T1, class T2>
-  std::size_t operator()(const std::pair<T1, T2>& p) const
-  {
-    auto h1 = std::hash<T1>{}(p.first);
-    auto h2 = std::hash<T2>{}(p.second);
-
-    // Use a simple hash combination technique
-    return h1 ^ h2;
-  }
-};
-
 PixelPt Opendp::diamondSearch(const Cell* cell,
                               // grid
                               int x,
