@@ -42,6 +42,7 @@
 #include <iterator>
 #include <unordered_set>
 
+#include "Clock.h"
 #include "CtsOptions.h"
 #include "HTreeBuilder.h"
 #include "LevelBalancer.h"
@@ -960,8 +961,8 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
   // create subNets
   numClkNets_ = 0;
   numFixedNets_ = 0;
-  const Clock::SubNet* rootSubNet = nullptr;
-  clockNet.forEachSubNet([&](const Clock::SubNet& subNet) {
+  const ClockSubNet* rootSubNet = nullptr;
+  clockNet.forEachSubNet([&](const ClockSubNet& subNet) {
     bool outputPinFound = true;
     bool inputPinFound = true;
     bool leafLevelNet = subNet.isLeafLevel();
@@ -1396,7 +1397,7 @@ void TritonCTS::writeDummyLoadsToDb(Clock& clockNet)
   std::vector<sta::LibertyCell*> dummyCandidates;
   findCandidateDummyCells(dummyCandidates);
 
-  clockNet.forEachSubNet([&](Clock::SubNet& subNet) {
+  clockNet.forEachSubNet([&](ClockSubNet& subNet) {
     subNet.forEachSink([&](ClockInst* inst) {
       if (inst->isClockBuffer()
           && !sta::fuzzyEqual(inst->getOutputCap(),
@@ -1417,7 +1418,7 @@ bool TritonCTS::computeIdealOutputCaps(Clock& clockNet)
   bool needAdjust = false;
 
   // pass 1: compute actual output caps seen by each clock instance
-  clockNet.forEachSubNet([&](Clock::SubNet& subNet) {
+  clockNet.forEachSubNet([&](ClockSubNet& subNet) {
     // build driver -> subNet map
     ClockInst* driver = subNet.getDriver();
     driver2subnet_[driver] = &subNet;
@@ -1434,7 +1435,7 @@ bool TritonCTS::computeIdealOutputCaps(Clock& clockNet)
   });
 
   // pass 2: compute ideal output caps for perfectly balanced tree
-  clockNet.forEachSubNet([&](const Clock::SubNet& subNet) {
+  clockNet.forEachSubNet([&](const ClockSubNet& subNet) {
     ClockInst* driver = subNet.getDriver();
     float maxCap = std::numeric_limits<float>::min();
     subNet.forEachSink([&](ClockInst* inst) {
@@ -1582,7 +1583,7 @@ void TritonCTS::insertDummyCell(
         CTS, 120, "Subnet was not found for clock buffer {}.", inst->getName());
     return;
   }
-  Clock::SubNet* subNet = driver2subnet_[inst];
+  ClockSubNet* subNet = driver2subnet_[inst];
   connectDummyCell(inst, dummyInst, *subNet, dummyClock);
 }
 
@@ -1615,7 +1616,7 @@ ClockInst& TritonCTS::placeDummyCell(Clock& clockNet,
 
 void TritonCTS::connectDummyCell(const ClockInst* inst,
                                  odb::dbInst* dummyInst,
-                                 Clock::SubNet& subNet,
+                                 ClockSubNet& subNet,
                                  ClockInst& dummyClock)
 {
   odb::dbInst* sinkInst = inst->getDbInst();
@@ -1633,7 +1634,7 @@ void TritonCTS::connectDummyCell(const ClockInst* inst,
 
 void TritonCTS::printClockNetwork(Clock clockNet) const
 {
-  clockNet.forEachSubNet([&](Clock::SubNet& subNet) {
+  clockNet.forEachSubNet([&](ClockSubNet& subNet) {
     ClockInst* driver = subNet.getDriver();
     logger_->report("{} has {} sinks", driver->getName(), subNet.getNumSinks());
     subNet.forEachSink([&](ClockInst* inst) {

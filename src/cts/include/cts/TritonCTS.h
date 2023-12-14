@@ -42,8 +42,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include "Clock.h"
-
 namespace utl {
 class Logger;
 }
@@ -78,10 +76,13 @@ namespace cts {
 
 using utl::Logger;
 
+class ClockInst;
 class CtsOptions;
 class TechChar;
 class StaEngine;
 class TreeBuilder;
+class Clock;
+class ClockSubNet;
 
 class TritonCTS
 {
@@ -178,7 +179,7 @@ class TritonCTS
                             odb::dbInst*& dummyInst);
   void connectDummyCell(const ClockInst* inst,
                         odb::dbInst* dummyInst,
-                        Clock::SubNet& subNet,
+                        ClockSubNet& subNet,
                         ClockInst& dummyClock);
   void printClockNetwork(Clock clockNet) const;
 
@@ -192,7 +193,7 @@ class TritonCTS
   std::set<odb::dbNet*> staClockNets_;
   std::set<odb::dbNet*> visitedClockNets_;
   std::map<odb::dbInst*, ClockInst*> inst2clkbuf_;
-  std::map<ClockInst*, Clock::SubNet*> driver2subnet_;
+  std::map<ClockInst*, ClockSubNet*> driver2subnet_;
 
   // db vars
   odb::dbDatabase* db_;
