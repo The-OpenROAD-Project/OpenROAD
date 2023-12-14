@@ -42,6 +42,7 @@
 #include <cstdlib>
 #include <limits>
 #include <memory>
+#include <unordered_set>
 
 #include "DplObserver.h"
 #include "dpl/Opendp.h"
@@ -731,6 +732,18 @@ int Opendp::distChange(const Cell* cell, int x, int y) const
 }
 
 ////////////////////////////////////////////////////////////////
+struct PairHash
+{
+  template <class T1, class T2>
+  std::size_t operator()(const std::pair<T1, T2>& p) const
+  {
+    auto h1 = std::hash<T1>{}(p.first);
+    auto h2 = std::hash<T2>{}(p.second);
+
+    // Use a simple hash combination technique
+    return h1 ^ h2;
+  }
+};
 
 PixelPt Opendp::diamondSearch(const Cell* cell,
                               // grid
@@ -796,42 +809,37 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
     return avail_pt;
   }
 
-  for (int i = 1; i < std::max(scaled_max_displacement_y_, max_displacement_x_);
-       i++) {
-    PixelPt best_pt;
-    int best_dist = 0;
-    // left side
-    for (int j = 1; j < i * 2; j++) {
-      int x_offset = -((j + 1) / 2);
-      int y_offset = (i * 2 - j) / 2;
-      if (abs(x_offset) < max_displacement_x_
-          && abs(y_offset) < scaled_max_displacement_y_) {
-        if (j % 2 == 1) {
-          y_offset = -y_offset;
-        }
-        diamondSearchSide(cell,
-                          x,
-                          y,
-                          x_min,
-                          y_min,
-                          x_max,
-                          y_max,
-                          x_offset,
-                          y_offset,
-                          best_pt,
-                          best_dist);
-      }
-    }
+  std::queue<std::pair<int, int>> positionsQueue;
+  std::unordered_set<std::pair<int, int>, PairHash> visitedPositions;
 
-    // right side
-    for (int j = 1; j < (i + 1) * 2; j++) {
-      int x_offset = (j - 1) / 2;
-      int y_offset = ((i + 1) * 2 - j) / 2;
+  positionsQueue.push({0, 0});
+  int iteration = 0;
+  int max_iterations
+      = std::max(scaled_max_displacement_y_, max_displacement_x_);
+
+  while (!positionsQueue.empty()) {
+    if (iteration >= max_iterations) {
+      return PixelPt();
+    }
+    int n = positionsQueue.size();
+    PixelPt best_pt;
+    int best_dist = std::numeric_limits<int>::max();
+    ++iteration;
+
+    for (int p = 0; p < n; p++) {
+      int x_offset = positionsQueue.front().first;
+      int y_offset = positionsQueue.front().second;
+      positionsQueue.pop();
+
+      // Check if this position has been visited
+      if (visitedPositions.count({x_offset, y_offset}) > 0) {
+        continue;
+      }
+
+      PixelPt cur_pt;
+      int cur_dist = 0;
       if (abs(x_offset) < max_displacement_x_
           && abs(y_offset) < scaled_max_displacement_y_) {
-        if (j % 2 == 1) {
-          y_offset = -y_offset;
-        }
         diamondSearchSide(cell,
                           x,
                           y,
@@ -841,14 +849,29 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
                           y_max,
                           x_offset,
                           y_offset,
-                          best_pt,
-                          best_dist);
+                          cur_pt,
+                          cur_dist);
+
+        if (cur_pt.pixel && cur_dist < best_dist) {
+          best_pt = cur_pt;
+          best_dist = cur_dist;
+        }
+
+        // Mark the current position as visited
+        visitedPositions.insert({x_offset, y_offset});
+
+        // Enqueue neighboring positions for exploration
+        positionsQueue.push({x_offset - 1, y_offset});
+        positionsQueue.push({x_offset + 1, y_offset});
+        positionsQueue.push({x_offset, y_offset - 1});
+        positionsQueue.push({x_offset, y_offset + 1});
       }
     }
     if (best_pt.pixel) {
       return best_pt;
     }
   }
+
   return PixelPt();
 }
 
@@ -1033,10 +1056,10 @@ bool Opendp::checkPixels(const Cell* cell,
       }
     }
     if (disallow_one_site_gaps_) {
-      // here we need to check for abutting first, if there is an abutting cell
-      // then we continue as there is nothing wrong with it
-      // if there is no abutting cell, we will then check cells at 1+ distances
-      // we only need to check on the left and right sides
+      // here we need to check for abutting first, if there is an abutting
+      // cell then we continue as there is nothing wrong with it if there is
+      // no abutting cell, we will then check cells at 1+ distances we only
+      // need to check on the left and right sides
       int x_begin = max(0, x - 1);
       int y_begin = max(0, y - 1);
       // inclusive search, so we don't add 1 to the end
@@ -1085,8 +1108,8 @@ bool Opendp::checkPixels(const Cell* cell,
       int offset = 0;
       for (int step = 0; step < steps; step++) {
         // left side
-        // x_begin doesn't need to be mapped since we support only uniform site
-        // width in all grids for now
+        // x_begin doesn't need to be mapped since we support only uniform
+        // site width in all grids for now
         if (!isAbutted(0, x_begin, y_begin_mapped + offset)
             && cellAtSite(0, x_begin - 1, y_begin_mapped + offset)) {
           return false;
@@ -1230,9 +1253,9 @@ bool Opendp::moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const
   int layer_site_count = grid_info.getSiteCount();
   int layer_row_count = grid_info.getRowCount();
 
-  // since the site doesn't have to be empty, we don't need to check all layers.
-  // They will be checked in the checkPixels in the diamondSearch method after
-  // this initialization
+  // since the site doesn't have to be empty, we don't need to check all
+  // layers. They will be checked in the checkPixels in the diamondSearch
+  // method after this initialization
   for (int x = grid_x - 1; x >= 0; --x) {  // left
     if (grid_[grid_index][grid_y][x].is_valid) {
       best_dist = (grid_x - x - 1) * site_width;
