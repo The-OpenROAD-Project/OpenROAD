@@ -319,10 +319,10 @@ static void initLUT(int to_d, LUT_TYPE LUT, NUMSOLN_TYPE numsoln)
     }
     ++pwv;
 #if FLUTE_ROUTING == 1
-    if (pwv[0] == 'd' && pwv[1] == '=') {
-      pwv = readDecimalInt(pwv + 2, d);
+    if (prt[0] == 'd' && prt[1] == '=') {
+      prt = readDecimalInt(prt + 2, d);
     }
-    ++pwv;
+    ++prt;
 #endif
     for (int k = 0; k < numgrp[d]; k++) {
       int ns = charNum(*pwv++);
