@@ -248,7 +248,7 @@ class ClockSubNet : Clock
 
  public:
   explicit ClockSubNet(const std::string& name)
-    : Clock("", "", "", 0, 0), name_(name)
+      : Clock("", "", "", 0, 0), name_(name)
   {
   }
 
