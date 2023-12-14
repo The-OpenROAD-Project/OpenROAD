@@ -988,7 +988,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_wrongDir(gcPin* pin, frLayer* layer)
                                              edge->getHighCorner()->y());
           box_t queryBox;
           checkMetalSpacing_wrongDir_getQueryBox(edge.get(), spcVal, queryBox);
-          vector<pair<segment_t, gcSegment*>> results;
+          std::vector<std::pair<segment_t, gcSegment*>> results;
           auto& workerRegionQuery = getWorkerRegionQuery();
           workerRegionQuery.queryPolygonEdge(queryBox, layerNum, results);
           for (auto& [boostSeg, ptr] : results) {
@@ -1038,7 +1038,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_wrongDir(gcPin* pin, frLayer* layer)
               auto net2 = ptr->getNet();
               gtl::rectangle_data<frCoord> markerRect(rect1);
               gtl::generalized_intersect(markerRect, rect2);
-              auto marker = make_unique<frMarker>();
+              auto marker = std::make_unique<frMarker>();
               Rect box(gtl::xl(markerRect),
                        gtl::yl(markerRect),
                        gtl::xh(markerRect),
@@ -1047,27 +1047,31 @@ void FlexGCWorker::Impl::checkMetalSpacing_wrongDir(gcPin* pin, frLayer* layer)
               marker->setLayerNum(layerNum);
               marker->setConstraint(con);
               marker->addSrc(net1->getOwner());
-              frCoord llx
-                  = min(edge->getLowCorner()->x(), edge->getHighCorner()->x());
-              frCoord lly
-                  = min(edge->getLowCorner()->y(), edge->getHighCorner()->y());
-              frCoord urx
-                  = max(edge->getLowCorner()->x(), edge->getHighCorner()->x());
-              frCoord ury
-                  = max(edge->getLowCorner()->y(), edge->getHighCorner()->y());
+              frCoord llx = std::min(edge->getLowCorner()->x(),
+                                     edge->getHighCorner()->x());
+              frCoord lly = std::min(edge->getLowCorner()->y(),
+                                     edge->getHighCorner()->y());
+              frCoord urx = std::max(edge->getLowCorner()->x(),
+                                     edge->getHighCorner()->x());
+              frCoord ury = std::max(edge->getLowCorner()->y(),
+                                     edge->getHighCorner()->y());
               marker->addVictim(net1->getOwner(),
-                                make_tuple(edge->getLayerNum(),
-                                           Rect(llx, lly, urx, ury),
-                                           edge->isFixed()));
+                                std::make_tuple(edge->getLayerNum(),
+                                                Rect(llx, lly, urx, ury),
+                                                edge->isFixed()));
               marker->addSrc(net2->getOwner());
-              llx = min(ptr->getLowCorner()->x(), ptr->getHighCorner()->x());
-              lly = min(ptr->getLowCorner()->y(), ptr->getHighCorner()->y());
-              urx = max(ptr->getLowCorner()->x(), ptr->getHighCorner()->x());
-              ury = max(ptr->getLowCorner()->y(), ptr->getHighCorner()->y());
+              llx = std::min(ptr->getLowCorner()->x(),
+                             ptr->getHighCorner()->x());
+              lly = std::min(ptr->getLowCorner()->y(),
+                             ptr->getHighCorner()->y());
+              urx = std::max(ptr->getLowCorner()->x(),
+                             ptr->getHighCorner()->x());
+              ury = std::max(ptr->getLowCorner()->y(),
+                             ptr->getHighCorner()->y());
               marker->addAggressor(net2->getOwner(),
-                                   make_tuple(ptr->getLayerNum(),
-                                              Rect(llx, lly, urx, ury),
-                                              ptr->isFixed()));
+                                   std::make_tuple(ptr->getLayerNum(),
+                                                   Rect(llx, lly, urx, ury),
+                                                   ptr->isFixed()));
               addMarker(std::move(marker));
             }
           }

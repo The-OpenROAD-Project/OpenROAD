@@ -1406,8 +1406,8 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     tech_->addUConstraint(std::move(con));
   }
   for (auto rule : layer->getTechLayerWrongDirSpacingRules()) {
-    unique_ptr<frConstraint> uCon
-        = make_unique<frLef58SpacingWrongDirConstraint>(rule);
+    std::unique_ptr<frConstraint> uCon
+        = std::make_unique<frLef58SpacingWrongDirConstraint>(rule);
     auto rptr = static_cast<frLef58SpacingWrongDirConstraint*>(uCon.get());
     if (rule->isLengthValid()) {
       logger_->warn(
