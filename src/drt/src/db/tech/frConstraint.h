@@ -206,6 +206,9 @@ class frConstraint
           frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint:
         return "Lef58SpacingEndOfLineWithinMaxMinLength";
 
+      case frConstraintTypeEnum::frcLef58SpacingWrongDirConstraint:
+        return "Lef58SpacingWrongDir";
+
       case frConstraintTypeEnum::frcLef58CutClassConstraint:
         return "Lef58CutClass";
 
@@ -1143,6 +1146,29 @@ class frLef58SpacingEndOfLineConstraint : public frConstraint
   bool wrongDirSpacing;
   frCoord wrongDirSpace;
   std::shared_ptr<frLef58SpacingEndOfLineWithinConstraint> withinConstraint;
+};
+
+class frLef58SpacingWrongDirConstraint : public frConstraint
+{
+ public:
+  frLef58SpacingWrongDirConstraint(odb::dbTechLayerWrongDirSpacingRule* rule)
+      : db_rule_(rule)
+  {
+  }
+  // getter
+  odb::dbTechLayerWrongDirSpacingRule* getODBRule() const { return db_rule_; }
+  // others
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcLef58SpacingWrongDirConstraint;
+  }
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("LEF58_SPACING WRONGDIRECTION");
+  }
+
+ private:
+  odb::dbTechLayerWrongDirSpacingRule* db_rule_;
 };
 
 class frLef58EolKeepOutConstraint : public frConstraint

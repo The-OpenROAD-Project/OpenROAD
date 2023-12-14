@@ -445,6 +445,8 @@ std::ostream& operator<<(std::ostream& os, const frMarker& m)
       return os << "frcLef58SpacingEndOfLineWithinEncloseCutConstraint";
     case frConstraintTypeEnum::frcLef58SpacingEndOfLineWithinEndToEndConstraint:
       return os << "frcLef58SpacingEndOfLineWithinEndToEndConstraint";
+    case frConstraintTypeEnum::frcLef58SpacingWrongDirConstraint:
+      return os << "frcLef58SpacingWrongDirConstraint";
     case frConstraintTypeEnum::
         frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint:
       return os << "frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint";

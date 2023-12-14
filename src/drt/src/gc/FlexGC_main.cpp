@@ -869,6 +869,9 @@ void FlexGCWorker::Impl::checkMetalSpacing()
         continue;
       }
       for (auto& pin : targetNet_->getPins(i)) {
+        if (currLayer->hasLef58SpacingWrongDirConstraints()) {
+          checkMetalSpacing_wrongDir(pin.get(), currLayer);
+        }
         for (auto& maxrect : pin->getMaxRectangles()) {
           checkMetalSpacing_main(maxrect.get(),
                                  getDRWorker() || !AUTO_TAPER_NDR_NETS);
@@ -891,6 +894,9 @@ void FlexGCWorker::Impl::checkMetalSpacing()
       }
       for (auto& net : getNets()) {
         for (auto& pin : net->getPins(i)) {
+          if (currLayer->hasLef58SpacingWrongDirConstraints()) {
+            checkMetalSpacing_wrongDir(pin.get(), currLayer);
+          }
           for (auto& maxrect : pin->getMaxRectangles()) {
             // Short, NSMetal, metSpc
             checkMetalSpacing_main(maxrect.get(),
@@ -900,6 +906,176 @@ void FlexGCWorker::Impl::checkMetalSpacing()
         for (auto& sr : net->getSpecialSpcRects())
           checkMetalSpacing_main(
               sr.get(), getDRWorker() || !AUTO_TAPER_NDR_NETS, true);
+      }
+    }
+  }
+}
+
+void FlexGCWorker::Impl::checkMetalSpacing_wrongDir_getQueryBox(gcSegment* edge,
+                                                                frCoord spcVal,
+                                                                box_t& queryBox)
+{
+  switch (edge->getDir()) {
+    case frDirEnum::W:
+      bg::set<bg::min_corner, 0>(queryBox, edge->high().x());
+      bg::set<bg::min_corner, 1>(queryBox, edge->high().y());
+      bg::set<bg::max_corner, 0>(queryBox, edge->low().x());
+      bg::set<bg::max_corner, 1>(queryBox, edge->low().y() + spcVal);
+      break;
+    case frDirEnum::E:
+      bg::set<bg::min_corner, 0>(queryBox, edge->low().x());
+      bg::set<bg::min_corner, 1>(queryBox, edge->low().y() - spcVal);
+      bg::set<bg::max_corner, 0>(queryBox, edge->high().x());
+      bg::set<bg::max_corner, 1>(queryBox, edge->high().y());
+      break;
+    case frDirEnum::S:
+      bg::set<bg::min_corner, 0>(queryBox, edge->high().x() - spcVal);
+      bg::set<bg::min_corner, 1>(queryBox, edge->high().y());
+      bg::set<bg::max_corner, 0>(queryBox, edge->low().x());
+      bg::set<bg::max_corner, 1>(queryBox, edge->low().y());
+      break;
+    case frDirEnum::N:
+      bg::set<bg::min_corner, 0>(queryBox, edge->low().x());
+      bg::set<bg::min_corner, 1>(queryBox, edge->low().y());
+      bg::set<bg::max_corner, 0>(queryBox, edge->high().x() + spcVal);
+      bg::set<bg::max_corner, 1>(queryBox, edge->high().y());
+      break;
+    default:
+      break;
+  }
+}
+
+frCoord FlexGCWorker::Impl::getPrl(gcSegment* edge,
+                                   gcSegment* ptr,
+                                   const gtl::orientation_2d& orient) const
+{
+  const frCoord edge1_low = edge->low().get(orient);
+  const frCoord edge1_high = edge->high().get(orient);
+  const frCoord edge1_min = std::min(edge1_low, edge1_high);
+  const frCoord edge1_max = std::max(edge1_low, edge1_high);
+
+  const frCoord edge2_low = ptr->low().get(orient);
+  const frCoord edge2_high = ptr->high().get(orient);
+  const frCoord edge2_min = std::min(edge2_low, edge2_high);
+  const frCoord edge2_max = std::max(edge2_low, edge2_high);
+  return std::min(edge1_max, edge2_max) - std::max(edge1_min, edge2_min);
+}
+
+void FlexGCWorker::Impl::checkMetalSpacing_wrongDir(gcPin* pin, frLayer* layer)
+{
+  auto lef58WrongDirCons = layer->getLef58SpacingWrongDirConstraints();
+  auto layerNum = layer->getLayerNum();
+  for (auto con : lef58WrongDirCons) {
+    auto rule = con->getODBRule();
+    auto spcVal = rule->getWrongdirSpace();
+    // Loop over all edges of pin
+    for (auto& edges : pin->getPolygonEdges()) {
+      for (auto& edge : edges) {
+        // Check wrongDir edge
+        if (edge->isVertical() != layer->isVertical()) {
+          // Check noneol flag
+          if (rule->isNoneolValid()) {
+            // Get edge length and compare
+            auto edgeLength = gtl::length(*edge);
+            auto noneolLength = rule->getNoneolWidth();
+            if (edgeLength < noneolLength) {
+              continue;
+            }
+          }
+          gtl::rectangle_data<frCoord> rect1(edge->getLowCorner()->x(),
+                                             edge->getLowCorner()->y(),
+                                             edge->getHighCorner()->x(),
+                                             edge->getHighCorner()->y());
+          box_t queryBox;
+          checkMetalSpacing_wrongDir_getQueryBox(edge.get(), spcVal, queryBox);
+          std::vector<std::pair<segment_t, gcSegment*>> results;
+          auto& workerRegionQuery = getWorkerRegionQuery();
+          workerRegionQuery.queryPolygonEdge(queryBox, layerNum, results);
+          for (auto& [boostSeg, ptr] : results) {
+            // Check query edge wrongDir
+            if (ptr->isVertical() != layer->isVertical()) {
+              if (edge.get() == ptr) {
+                continue;
+              }
+
+              // no violation if fixed shapes
+              if (edge->isFixed() && ptr->isFixed()) {
+                continue;
+              }
+
+              // Get edges prl
+              const gtl::orientation_2d orient = edge->getOrientation();
+              const frCoord prl = getPrl(edge.get(), ptr, orient);
+              // Check PRL branch
+              auto prlLength = rule->getPrlLength();
+              if (prl <= prlLength) {
+                continue;
+              }
+
+              // Check other edge noneol
+              if (rule->isNoneolValid()) {
+                // Get edge length and compare
+                auto ptrLength = gtl::length(*ptr);
+                auto noneolLength = rule->getNoneolWidth();
+                if (ptrLength < noneolLength) {
+                  continue;
+                }
+              }
+
+              // Check wrongDir spacing
+              gtl::rectangle_data<frCoord> rect2(ptr->getLowCorner()->x(),
+                                                 ptr->getLowCorner()->y(),
+                                                 ptr->getHighCorner()->x(),
+                                                 ptr->getHighCorner()->y());
+              frCoord dist = gtl::euclidean_distance(rect1, rect2);
+
+              if (dist >= spcVal) {
+                continue;
+              }
+
+              // Make marker
+              auto net1 = edge->getNet();
+              auto net2 = ptr->getNet();
+              gtl::rectangle_data<frCoord> markerRect(rect1);
+              gtl::generalized_intersect(markerRect, rect2);
+              auto marker = std::make_unique<frMarker>();
+              Rect box(gtl::xl(markerRect),
+                       gtl::yl(markerRect),
+                       gtl::xh(markerRect),
+                       gtl::yh(markerRect));
+              marker->setBBox(box);
+              marker->setLayerNum(layerNum);
+              marker->setConstraint(con);
+              marker->addSrc(net1->getOwner());
+              frCoord llx = std::min(edge->getLowCorner()->x(),
+                                     edge->getHighCorner()->x());
+              frCoord lly = std::min(edge->getLowCorner()->y(),
+                                     edge->getHighCorner()->y());
+              frCoord urx = std::max(edge->getLowCorner()->x(),
+                                     edge->getHighCorner()->x());
+              frCoord ury = std::max(edge->getLowCorner()->y(),
+                                     edge->getHighCorner()->y());
+              marker->addVictim(net1->getOwner(),
+                                std::make_tuple(edge->getLayerNum(),
+                                                Rect(llx, lly, urx, ury),
+                                                edge->isFixed()));
+              marker->addSrc(net2->getOwner());
+              llx = std::min(ptr->getLowCorner()->x(),
+                             ptr->getHighCorner()->x());
+              lly = std::min(ptr->getLowCorner()->y(),
+                             ptr->getHighCorner()->y());
+              urx = std::max(ptr->getLowCorner()->x(),
+                             ptr->getHighCorner()->x());
+              ury = std::max(ptr->getLowCorner()->y(),
+                             ptr->getHighCorner()->y());
+              marker->addAggressor(net2->getOwner(),
+                                   std::make_tuple(ptr->getLayerNum(),
+                                                   Rect(llx, lly, urx, ury),
+                                                   ptr->isFixed()));
+              addMarker(std::move(marker));
+            }
+          }
+        }
       }
     }
   }

@@ -64,6 +64,7 @@ class _dbTechLayerMinCutRule;
 class _dbTechLayerAreaRule;
 class _dbTechLayerForbiddenSpacingRule;
 class _dbTechLayerKeepOutZoneRule;
+class _dbTechLayerWrongDirSpacingRule;
 // User Code Begin Classes
 class _dbTechLayerSpacingRule;
 class _dbTechMinCutRule;
@@ -152,6 +153,8 @@ class _dbTechLayer : public _dbObject
   dbTable<_dbTechLayerForbiddenSpacingRule>* forbidden_spacing_rules_tbl_;
 
   dbTable<_dbTechLayerKeepOutZoneRule>* keepout_zone_rules_tbl_;
+
+  dbTable<_dbTechLayerWrongDirSpacingRule>* wrongdir_spacing_rules_tbl_;
 
   // User Code Begin Fields
 

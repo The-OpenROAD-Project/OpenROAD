@@ -1405,6 +1405,25 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     tmpLayer->addLef58SpacingEndOfLineConstraint(con.get());
     tech_->addUConstraint(std::move(con));
   }
+  for (auto rule : layer->getTechLayerWrongDirSpacingRules()) {
+    std::unique_ptr<frConstraint> uCon
+        = std::make_unique<frLef58SpacingWrongDirConstraint>(rule);
+    auto rptr = static_cast<frLef58SpacingWrongDirConstraint*>(uCon.get());
+    if (rule->isLengthValid()) {
+      logger_->warn(
+          DRT, 333, "Unsupported branch LENGTH in WrongDirSpacingRule.");
+      continue;
+    }
+    if (rule->getPrlLength() < 0) {
+      logger_->warn(DRT,
+                    334,
+                    "Unsupported negative value for prlLength in branch PRL "
+                    "in WrongDirSpacingRule.");
+      continue;
+    }
+    tech_->addUConstraint(std::move(uCon));
+    tmpLayer->addLef58SpacingWrongDirConstraint(rptr);
+  }
   if (tech_->hasUnidirectionalLayer(layer))
     tmpLayer->setUnidirectional(true);
   if (layer->isRectOnly()) {

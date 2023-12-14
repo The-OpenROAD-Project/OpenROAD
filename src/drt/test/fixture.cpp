@@ -686,3 +686,13 @@ void Fixture::initRegionQuery()
   query->init();
   query->initDRObj();
 }
+
+void Fixture::makeLef58WrongDirSpcConstraint(
+    frLayerNum layer_num,
+    odb::dbTechLayerWrongDirSpacingRule* dbRule)
+{
+  auto con = std::make_unique<frLef58SpacingWrongDirConstraint>(dbRule);
+  auto layer = design->getTech()->getLayer(layer_num);
+  layer->addLef58SpacingWrongDirConstraint(con.get());
+  design->getTech()->addUConstraint(std::move(con));
+}

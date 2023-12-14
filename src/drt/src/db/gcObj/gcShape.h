@@ -209,6 +209,12 @@ class gcSegment : public gtl::segment_data<frCoord>, public gcShape
         return frDirEnum::UNKNOWN;
     }
   }
+  gtl::orientation_2d getOrientation() const
+  {
+    const frDirEnum dir = getDir();
+    return (dir == frDirEnum::W || dir == frDirEnum::E) ? gtl::HORIZONTAL
+                                                        : gtl::VERTICAL;
+  }
   // setters
   void setSegment(const gtl::segment_data<frCoord>& in)
   {

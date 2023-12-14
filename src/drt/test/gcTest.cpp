@@ -1219,4 +1219,58 @@ BOOST_AUTO_TEST_CASE(cut_keepoutzone)
              frConstraintTypeEnum::frcLef58KeepOutZoneConstraint,
              Rect(150, 150, 200, 200));
 }
+
+BOOST_DATA_TEST_CASE(route_wrong_direction_spc,
+                     (bdata::make({100, 50, 100, 100})
+                      ^ bdata::make({false, true, true, true})
+                      ^ bdata::make({false, false, true, false})
+                      ^ bdata::make({150, 150, 150, 150})
+                      ^ bdata::make({0, 0, 0, 50})),
+                     spacing,
+                     legal,
+                     noneolValid,
+                     noneolWidth,
+                     prlLength)
+{
+  // Setup
+  auto db_layer = db_tech->findLayer("m1");
+  db_layer->setDirection(odb::dbTechLayerDir::VERTICAL);
+  auto dbRule = odb::dbTechLayerWrongDirSpacingRule::create(db_layer);
+  dbRule->setWrongdirSpace(spacing);
+  if (noneolValid) {
+    dbRule->setNoneolValid(noneolValid);
+    dbRule->setNoneolWidth(noneolWidth);
+  }
+  if (prlLength != 0) {
+    dbRule->setPrlLength(prlLength);
+  }
+
+  makeLef58WrongDirSpcConstraint(2, dbRule);
+
+  frNet* n1 = makeNet("n1");
+  frNet* n2 = makeNet("n2");
+  makePathseg(n1, 2, {0, 50}, {100, 50}, 100);
+  if (prlLength != 0) {
+    makePathseg(n2, 2, {50, 200}, {150, 200}, 100);
+  } else {
+    makePathseg(n2, 2, {0, 200}, {100, 200}, 100);
+  }
+
+  runGC();
+
+  // // Test the results
+  auto& markers = worker.getMarkers();
+  if (legal) {
+    BOOST_TEST(markers.size() == 0);
+  } else {
+    BOOST_TEST(markers.size() == 1);
+  }
+  if (!markers.empty()) {
+    testMarker(markers[0].get(),
+               2,
+               frConstraintTypeEnum::frcLef58SpacingWrongDirConstraint,
+               Rect(0, 100, 100, 150));
+  }
+}
+
 BOOST_AUTO_TEST_SUITE_END();
