@@ -834,6 +834,15 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* net,
   int xPin, yPin;
   if (iterm == nullptr) {
     odb::dbBTerm* bterm = net->get1stBTerm();  // Clock pin
+    if (bterm == nullptr) {
+      logger_->info(
+          CTS,
+          122,
+          "Clock net \"{}\" is skipped for CTS because it is not "
+          "connected to any output instance pin or input block terminal.",
+          net->getName());
+      return nullptr;
+    }
     driver = bterm->getConstName();
     bterm->getFirstPinLocation(xPin, yPin);
   } else {
