@@ -212,3 +212,5 @@ suppress_message TAP 101
 suppress_message PAR 6
 suppress_message PAR 38
 
+# suppress ord message with number of threads
+suppress_message ORD 30
