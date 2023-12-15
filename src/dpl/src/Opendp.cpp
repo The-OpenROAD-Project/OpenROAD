@@ -523,16 +523,6 @@ int Opendp::gridEndX(int x, int site_width) const
   return divCeil(x, site_width);
 }
 
-int Opendp::gridY(int y, int row_height) const
-{
-  return y / row_height;
-}
-
-int Opendp::gridEndY(int y, int row_height) const
-{
-  return divCeil(y, row_height);
-}
-
 int Opendp::gridX(int x, int site_width) const
 {
   return x / site_width;
@@ -684,13 +674,17 @@ pair<int, int> Opendp::gridEndY(int y,
 
 int Opendp::gridY(const Cell* cell) const
 {
+  return gridY(cell->y_, cell);
+}
+
+int Opendp::gridY(const int y, const Cell* cell) const
+{
   if (cell->isHybrid()) {
     auto grid_info = getGridInfo(cell);
-    return gridY(cell->y_, grid_info.getSites()).first;
+    return gridY(y, grid_info.getSites()).first;
   }
-  int row_height = getRowHeight(cell);
 
-  return cell->y_ / row_height;
+  return y / getRowHeight(cell);
 }
 
 void Opendp::setGridPaddedLoc(Cell* cell, int x, int y, int site_width) const
@@ -750,13 +744,18 @@ int Opendp::gridEndX(const Cell* cell) const
 
 int Opendp::gridEndY(const Cell* cell) const
 {
+  return gridEndY(cell->y_ + cell->height_, cell);
+}
+
+int Opendp::gridEndY(int y, const Cell* cell) const
+{
   if (cell->isHybrid()) {
     auto grid_info = getGridInfo(cell);
     const auto& grid_sites = grid_info.getSites();
-    return gridY(cell->y_ + cell->height_, grid_sites).first;
+    return gridY(y, grid_sites).first;
   }
   int row_height = getRowHeight(cell);
-  return divCeil(cell->y_ + cell->height_, row_height);
+  return divCeil(y, row_height);
 }
 
 double Opendp::dbuToMicrons(int64_t dbu) const

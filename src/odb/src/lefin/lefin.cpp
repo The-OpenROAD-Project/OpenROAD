@@ -661,10 +661,16 @@ void lefin::layer(lefiLayer* layer)
     bool valid = true;
     bool supported = true;
     if (type.getValue() == dbTechLayerType::ROUTING) {
-      if (!strcmp(layer->propName(iii), "LEF58_SPACING"))
-        lefTechLayerSpacingEolParser::parse(layer->propValue(iii), l, this);
-      else if (!strcmp(layer->propName(iii), "LEF58_MINSTEP")
-               || !strcmp(layer->propName(iii), "LEF57_MINSTEP")) {
+      if (!strcmp(layer->propName(iii), "LEF58_SPACING")) {
+        if (std::string(layer->propValue(iii)).find("WRONGDIRECTION")
+            != std::string::npos) {
+          lefTechLayerWrongDirSpacingParser::parse(
+              layer->propValue(iii), l, this);
+        } else {
+          lefTechLayerSpacingEolParser::parse(layer->propValue(iii), l, this);
+        }
+      } else if (!strcmp(layer->propName(iii), "LEF58_MINSTEP")
+                 || !strcmp(layer->propName(iii), "LEF57_MINSTEP")) {
         lefTechLayerMinStepParser minStepParser;
         valid = minStepParser.parse(layer->propValue(iii), l, this);
       } else if (!strcmp(layer->propName(iii), "LEF58_CORNERSPACING"))

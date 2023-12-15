@@ -53,7 +53,6 @@
 
 namespace gpl {
 
-using namespace std;
 using utl::GPL;
 
 Replace::Replace()
@@ -482,8 +481,10 @@ void Replace::setUniformTargetDensityMode(bool mode)
 float Replace::getUniformTargetDensity()
 {
   // TODO: update to be compatible with multiple target densities
-  initNesterovPlace();
-  return nbVec_[0]->uniformTargetDensity();
+  if (initNesterovPlace()) {
+    return nbVec_[0]->uniformTargetDensity();
+  }
+  return 1;
 }
 
 void Replace::setInitDensityPenalityFactor(float penaltyFactor)

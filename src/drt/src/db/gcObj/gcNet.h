@@ -38,7 +38,6 @@
 
 namespace fr {
 class frNet;
-using namespace std;
 class gcNet : public gcBlockObject
 {
  public:
@@ -202,12 +201,15 @@ class gcNet : public gcBlockObject
   {
     taperedRects[zIdx].push_back(bx);
   }
-  const vector<Rect>& getTaperedRects(int z) const { return taperedRects[z]; }
+  const std::vector<Rect>& getTaperedRects(int z) const
+  {
+    return taperedRects[z];
+  }
   void addNonTaperedRect(const Rect& bx, int zIdx)
   {
     nonTaperedRects[zIdx].push_back(bx);
   }
-  const vector<Rect>& getNonTaperedRects(int z) const
+  const std::vector<Rect>& getNonTaperedRects(int z) const
   {
     return nonTaperedRects[z];
   }
@@ -216,14 +218,14 @@ class gcNet : public gcBlockObject
                          gcPin* pin,
                          gcNet* net)
   {
-    unique_ptr<gcRect> sp = make_unique<gcRect>();
+    std::unique_ptr<gcRect> sp = std::make_unique<gcRect>();
     sp->setLayerNum(lNum);
     sp->addToNet(net);
     sp->addToPin(pin);
     sp->setRect(bx);
     specialSpacingRects.push_back(std::move(sp));
   }
-  const vector<unique_ptr<gcRect>>& getSpecialSpcRects() const
+  const std::vector<std::unique_ptr<gcRect>>& getSpecialSpcRects() const
   {
     return specialSpacingRects;
   }
@@ -265,11 +267,11 @@ class gcNet : public gcBlockObject
       routeRectangles_;  // only cut layer
   std::vector<std::vector<std::unique_ptr<gcPin>>> pins_;
   frBlockObject* owner_;
-  vector<vector<Rect>> taperedRects;     //(only routing layer)
-  vector<vector<Rect>> nonTaperedRects;  //(only routing layer)
+  std::vector<std::vector<Rect>> taperedRects;     //(only routing layer)
+  std::vector<std::vector<Rect>> nonTaperedRects;  //(only routing layer)
   // A non-tapered rect within a tapered max rectangle still require nondefault
   // spacing. This list hold these rectangles
-  vector<unique_ptr<gcRect>> specialSpacingRects;
+  std::vector<std::unique_ptr<gcRect>> specialSpacingRects;
 
   void init();
 };

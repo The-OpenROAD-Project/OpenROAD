@@ -425,8 +425,8 @@ void Opendp::visitCellPixels(
       transform.apply(rect);
       int x_start = gridX(rect.xMin() - core_.xMin(), site_width_);
       int x_end = gridEndX(rect.xMax() - core_.xMin(), site_width_);
-      int y_start = gridY(rect.yMin() - core_.yMin(), row_height_);
-      int y_end = gridEndY(rect.yMax() - core_.yMin(), row_height_);
+      int y_start = gridY(rect.yMin() - core_.yMin(), &cell);
+      int y_end = gridEndY(rect.yMax() - core_.yMin(), &cell);
 
       // Since there is an obstruction, we need to visit all the pixels at all
       // layers (for all row heights)

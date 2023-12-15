@@ -2207,6 +2207,7 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
   const int num_parts = 2;  // We use two-way partitioning here
   const int num_vertices = static_cast<int>(vertex_weight.size());
   std::vector<float> hyperedge_weights(hyperedges.size(), 1.0f);
+  logger_->info(MPL, 23, "[Multilevel Autoclustering] Calling Partitioner.");
   std::vector<int> part
       = tritonpart_->PartitionKWaySimpleMode(num_parts,
                                              balance_constraint,
@@ -3778,7 +3779,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
         ++begin_check;
       }
       // add early stop mechanism
-      if (best_sa) {
+      if (best_sa || remaining_runs == 0) {
         break;
       }
       end_check = begin_check + std::min(check_interval, remaining_runs);
@@ -4028,7 +4029,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
           ++begin_check;
         }
         // add early stop mechanism
-        if (best_sa) {
+        if (best_sa || remaining_runs == 0) {
           break;
         }
         end_check = begin_check + std::min(check_interval, remaining_runs);
@@ -4554,7 +4555,7 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
         ++begin_check;
       }
       // add early stop mechanism
-      if (best_sa) {
+      if (best_sa || remaining_runs == 0) {
         break;
       }
       end_check = begin_check + std::min(check_interval, remaining_runs);
@@ -5031,7 +5032,7 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
         ++begin_check;
       }
       // add early stop mechanism
-      if (best_sa) {
+      if (best_sa || remaining_runs == 0) {
         break;
       }
       end_check = begin_check + std::min(check_interval, remaining_runs);
@@ -5503,8 +5504,8 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
                                 height,
                                 macros,
                                 area_weight_,
-                                outline_weight_ * (i + 1) * 10,
-                                wirelength_weight_ / (i + 1),
+                                outline_weight_ * (run_id + 1) * 10,
+                                wirelength_weight_ / (run_id + 1),
                                 guidance_weight_,
                                 fence_weight_,
                                 pos_swap_prob_ * 10 / action_sum,
