@@ -8,7 +8,6 @@
 [WARNING STA-0160] ./Nangate45/fake_macros.lib line 32, default_max_transition is 0.0.
 [INFO ODB-0128] Design: macro_only
 [INFO ODB-0253]     Updated 10 components.
-[INFO ORD-0030] Using 8 thread(s).
 Floorplan Outline: (0.0, 0.0) (450.0, 450.0),  Core Outline: (4.94, 4.2) (444.98, 443.8)
 Traversed logical hierarchy
 	Number of std cell instances: 0
@@ -22,10 +21,11 @@ Traversed logical hierarchy
 	Core Utilization: 0.00
 	Manufacturing Grid: 10
 
+[WARNING MPL-0026] Design has no IO pins!
 [INFO MPL-0024] [Multilevel Autoclustering] Creating clustered netlist.
-[WARNING MPL-0025] This design has no standard cells!
-[WARNING MPL-0026] Each macro is treated as a single cluster!
-[INFO MPL-0027] [Hierarchical Macro Placement] Skipping coarse and fine shaping, because the design only has macros. Starting macro placement.
-
+[WARNING MPL-0025] Design has no standard cells!
+[INFO MPL-0030] [Multilevel Autoclustering] Treating each macro a single cluster.
+[WARNING MPL-0027] Design has only macros!
+[INFO MPL-0029] [Hierarchical Macro Placement] Placing macros.
 [INFO MPL-0037] Updated location of 10 macros
 No differences found.
