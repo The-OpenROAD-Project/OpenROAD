@@ -116,7 +116,72 @@ class ClockInst
 
 //-----------------------------------------------------------------------------
 
-class ClockSubNet;
+class ClockSubNet
+{
+ private:
+  std::string name_;
+  std::deque<ClockInst*> instances_;
+  std::unordered_map<ClockInst*, unsigned> mapInstToIdx_;
+  bool leafLevel_ = false;
+
+ public:
+  explicit ClockSubNet(const std::string& name) : name_(name) {}
+
+  void setLeafLevel(bool isLeaf) { leafLevel_ = isLeaf; }
+  bool isLeafLevel() const { return leafLevel_; }
+
+  void addInst(ClockInst& inst)
+  {
+    instances_.push_back(&inst);
+    mapInstToIdx_[&inst] = instances_.size() - 1;
+  }
+
+  unsigned findIndex(ClockInst* inst) const { return mapInstToIdx_.at(inst); }
+
+  void replaceSink(ClockInst* curSink, ClockInst* newSink)
+  {
+    const unsigned idx = findIndex(curSink);
+    instances_[idx] = newSink;
+    mapInstToIdx_.erase(curSink);
+    mapInstToIdx_[newSink] = idx;
+  }
+
+  void removeSinks(std::set<ClockInst*> sinksToRemove)
+  {
+    ClockInst* driver = getDriver();
+    std::vector<ClockInst*> instsToPreserve;
+    forEachSink([&](ClockInst* inst) {
+      if (sinksToRemove.find(inst) == sinksToRemove.end()) {
+        instsToPreserve.emplace_back(inst);
+      }
+    });
+    instances_.clear();
+    mapInstToIdx_.clear();
+    addInst(*driver);
+    for (auto inst : instsToPreserve) {
+      addInst(*inst);
+    }
+  }
+
+  std::string getName() const { return name_; }
+  int getNumSinks() const { return instances_.size() - 1; }
+
+  ClockInst* getDriver() const
+  {
+    assert(instances_.size() > 0);
+    return instances_[0];
+  }
+
+  void forEachSink(const std::function<void(ClockInst*)>& func) const
+  {
+    if (instances_.size() < 2) {
+      return;
+    }
+    for (unsigned inst = 1; inst < instances_.size(); ++inst) {
+      func(instances_[inst]);
+    }
+  }
+};
 
 class Clock
 {
@@ -236,76 +301,6 @@ class Clock
   odb::dbObject* driverPin_ = nullptr;
 
   unsigned numLevels_ = 0;
-};
-
-class ClockSubNet : Clock
-{
- private:
-  std::string name_;
-  std::deque<ClockInst*> instances_;
-  std::unordered_map<ClockInst*, unsigned> mapInstToIdx_;
-  bool leafLevel_ = false;
-
- public:
-  explicit ClockSubNet(const std::string& name)
-      : Clock("", "", "", 0, 0), name_(name)
-  {
-  }
-
-  void setLeafLevel(bool isLeaf) { leafLevel_ = isLeaf; }
-  bool isLeafLevel() const { return leafLevel_; }
-
-  void addInst(ClockInst& inst)
-  {
-    instances_.push_back(&inst);
-    mapInstToIdx_[&inst] = instances_.size() - 1;
-  }
-
-  unsigned findIndex(ClockInst* inst) const { return mapInstToIdx_.at(inst); }
-
-  void replaceSink(ClockInst* curSink, ClockInst* newSink)
-  {
-    const unsigned idx = findIndex(curSink);
-    instances_[idx] = newSink;
-    mapInstToIdx_.erase(curSink);
-    mapInstToIdx_[newSink] = idx;
-  }
-
-  void removeSinks(std::set<ClockInst*> sinksToRemove)
-  {
-    ClockInst* driver = getDriver();
-    std::vector<ClockInst*> instsToPreserve;
-    forEachSink([&](ClockInst* inst) {
-      if (sinksToRemove.find(inst) == sinksToRemove.end()) {
-        instsToPreserve.emplace_back(inst);
-      }
-    });
-    instances_.clear();
-    mapInstToIdx_.clear();
-    addInst(*driver);
-    for (auto inst : instsToPreserve) {
-      addInst(*inst);
-    }
-  }
-
-  std::string getName() const { return name_; }
-  int getNumSinks() const { return instances_.size() - 1; }
-
-  ClockInst* getDriver() const
-  {
-    assert(instances_.size() > 0);
-    return instances_[0];
-  }
-
-  void forEachSink(const std::function<void(ClockInst*)>& func) const
-  {
-    if (instances_.size() < 2) {
-      return;
-    }
-    for (unsigned inst = 1; inst < instances_.size(); ++inst) {
-      func(instances_[inst]);
-    }
-  }
 };
 
 }  // namespace cts
