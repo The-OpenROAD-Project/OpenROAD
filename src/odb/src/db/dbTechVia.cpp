@@ -415,9 +415,9 @@ void dbTechVia::getViaParams(dbViaParams& params)
 {
   _dbTechVia* via = (_dbTechVia*) this;
 
-  if (via->_flags._has_params == 1)
+  if (via->_flags._has_params == 0) {
     params = dbViaParams();
-  else {
+  } else {
     params = via->_via_params;
     _dbTech* tech = (_dbTech*) via->getOwner();
     params._tech = (dbTech*) tech;

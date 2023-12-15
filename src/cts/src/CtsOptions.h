@@ -242,6 +242,8 @@ class CtsOptions
   {
     return sinkBufferMaxCapDerateSet_;
   }
+  void enableDummyLoad(bool dummyLoad) { dummyLoad_ = dummyLoad; }
+  bool dummyLoadEnabled() const { return dummyLoad_; }
 
  private:
   std::string clockNets_ = "";
@@ -297,6 +299,7 @@ class CtsOptions
   bool sinkBufferMaxCapDerateSet_ = false;
   float sinkBufferMaxCapDerateDefault_ = 0.01;
   float sinkBufferMaxCapDerate_ = sinkBufferMaxCapDerateDefault_;
+  bool dummyLoad_ = false;
 };
 
 }  // namespace cts

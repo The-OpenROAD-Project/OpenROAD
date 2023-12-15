@@ -1017,4 +1017,177 @@ bool eval_upf(sta::dbNetwork* network, utl::Logger* logger, odb::dbBlock* block)
   return true;
 }
 
+bool create_or_update_level_shifter(utl::Logger* logger,
+                                    odb::dbBlock* block,
+                                    const char* name,
+                                    const char* domain,
+                                    const char* source,
+                                    const char* sink,
+                                    const char* use_functional_equivalence,
+                                    const char* applies_to,
+                                    const char* applies_to_boundary,
+                                    const char* rule,
+                                    const char* threshold,
+                                    const char* no_shift,
+                                    const char* force_shift,
+                                    const char* location,
+                                    const char* input_supply,
+                                    const char* output_supply,
+                                    const char* internal_supply,
+                                    const char* name_prefix,
+                                    const char* name_suffix,
+                                    bool update)
+{
+  odb::dbLevelShifter* ls = nullptr;
+  odb::dbPowerDomain* pd = block->findPowerDomain(domain);
+
+  if (update) {
+    ls = block->findLevelShifter(name);
+    if (ls == nullptr) {
+      logger->warn(
+          utl::UPF, 32, "Couldn't find level shifter {} to update", name);
+      return false;
+    }
+  }
+
+  if (ls == nullptr) {
+    if (pd == nullptr) {
+      logger->warn(utl::UPF,
+                   38,
+                   "Couldn't find power domain {} for level shifter {}",
+                   domain,
+                   name);
+      return false;
+    }
+    ls = odb::dbLevelShifter::create(block, name, pd);
+    if (ls == nullptr) {
+      logger->warn(utl::UPF, 44, "Couldn't create level shifter {}", name);
+      return false;
+    }
+  }
+
+  if (strlen(source) > 0) {
+    ls->setSource(source);
+  }
+
+  if (strlen(sink) > 0) {
+    ls->setSink(sink);
+  }
+
+  if (strlen(applies_to) > 0) {
+    ls->setAppliesTo(applies_to);
+  }
+
+  if (strlen(applies_to_boundary) > 0) {
+    ls->setAppliesToBoundary(applies_to_boundary);
+  }
+
+  if (strlen(rule) > 0) {
+    ls->setRule(rule);
+  }
+
+  if (strlen(location) > 0) {
+    ls->setLocation(location);
+  }
+
+  if (strlen(input_supply) > 0) {
+    ls->setInputSupply(input_supply);
+  }
+
+  if (strlen(output_supply) > 0) {
+    ls->setOutputSupply(output_supply);
+  }
+
+  if (strlen(internal_supply) > 0) {
+    ls->setInternalSupply(internal_supply);
+  }
+
+  if (strlen(name_prefix) > 0) {
+    ls->setNamePrefix(name_prefix);
+  }
+
+  if (strlen(name_suffix) > 0) {
+    ls->setNameSuffix(name_suffix);
+  }
+
+  if (strlen(threshold) > 0) {
+    ls->setThreshold(std::stof(threshold));
+  }
+
+  if (strlen(no_shift) > 0) {
+    ls->setNoShift(std::stoi(no_shift));
+  }
+
+  if (strlen(force_shift) > 0) {
+    ls->setForceShift(std::stoi(force_shift));
+  }
+
+  ls->setUseFunctionalEquivalence(
+      strcasecmp(use_functional_equivalence, "FALSE") ? true : false);
+
+  return true;
+}
+
+bool add_level_shifter_element(utl::Logger* logger,
+                               odb::dbBlock* block,
+                               const char* level_shifter_name,
+                               const char* element)
+{
+  odb::dbLevelShifter* ls = block->findLevelShifter(level_shifter_name);
+  if (ls == nullptr) {
+    logger->warn(utl::UPF,
+                 39,
+                 "Couldn't find level shifter {} to add element {}",
+                 level_shifter_name,
+                 element);
+    return false;
+  }
+
+  std::string _element(element);
+  ls->addElement(_element);
+
+  return true;
+}
+
+bool exclude_level_shifter_element(utl::Logger* logger,
+                                   odb::dbBlock* block,
+                                   const char* level_shifter_name,
+                                   const char* exclude_element)
+{
+  odb::dbLevelShifter* ls = block->findLevelShifter(level_shifter_name);
+  if (ls == nullptr) {
+    logger->warn(utl::UPF,
+                 41,
+                 "Couldn't find level shifter {} to exclude element {}",
+                 level_shifter_name,
+                 exclude_element);
+    return false;
+  }
+
+  ls->addExcludeElement(exclude_element);
+
+  return true;
+}
+
+bool handle_level_shifter_instance(utl::Logger* logger,
+                                   odb::dbBlock* block,
+                                   const char* level_shifter_name,
+                                   const char* instance_name,
+                                   const char* port_name)
+{
+  odb::dbLevelShifter* ls = block->findLevelShifter(level_shifter_name);
+  if (ls == nullptr) {
+    logger->warn(utl::UPF,
+                 42,
+                 "Couldn't find level shifter {} to add instance {}",
+                 level_shifter_name,
+                 instance_name);
+    return false;
+  }
+
+  ls->addInstance(instance_name, port_name);
+
+  return true;
+}
+
 }  // namespace upf
