@@ -1,7 +1,7 @@
 VERSION 5.8 ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
-DESIGN mp_test1 ;
+DESIGN macro_only ;
 UNITS DISTANCE MICRONS 2000 ;
 DIEAREA ( 0 0 ) ( 900000 900000 ) ;
 ROW ROW_0 FreePDK45_38x28_10R_NP_162NW_34O 9880 8400 N DO 2316 BY 1 STEP 380 0 ;
@@ -350,38 +350,4 @@ COMPONENTS 10 ;
     - U8 HM_100x100_1x1 ;
     - U9 HM_100x100_1x1 ;
 END COMPONENTS
-PINS 8 ;
-    - i1 + NET i1 + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal3 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 70 483980 ) N ;
-    - i2 + NET i2 + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal3 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 70 443660 ) N ;
-    - i3 + NET i3 + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal3 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 70 463820 ) N ;
-    - i4 + NET i4 + DIRECTION INPUT + USE SIGNAL
-      + PORT
-        + LAYER metal3 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 70 423500 ) N ;
-    - o1 + NET o1 + DIRECTION OUTPUT + USE SIGNAL
-      + PORT
-        + LAYER metal3 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 899930 483980 ) N ;
-    - o2 + NET o2 + DIRECTION OUTPUT + USE SIGNAL
-      + PORT
-        + LAYER metal3 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 899930 443660 ) N ;
-    - o3 + NET o3 + DIRECTION OUTPUT + USE SIGNAL
-      + PORT
-        + LAYER metal3 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 899930 423500 ) N ;
-    - o4 + NET o4 + DIRECTION OUTPUT + USE SIGNAL
-      + PORT
-        + LAYER metal3 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 899930 463820 ) N ;
-END PINS
 END DESIGN
