@@ -445,6 +445,7 @@ class HierRTLMP
   // clusters However, we store the instances in their corresponding clusters
   // map IO pins to Pads (for designs with IO pads)
   std::map<odb::dbBTerm*, odb::dbInst*> io_pad_map_;
+  bool design_has_io_clusters_ = true;
 
   std::unique_ptr<Mpl2Observer> graphics_;
 };

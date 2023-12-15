@@ -498,6 +498,7 @@ void HierRTLMP::hierRTLMacroPlacer()
   // add two enhancements to handle corner cases
   // (1) the design only has fake macros (for academic fake testcases)
   // (2) the design has on logical hierarchy (for academic fake testcases)
+  bool design_has_only_macros = false;
   if (metrics_->getNumStdCell() == 0) {
     logger_->warn(MPL, 25, "This design has no standard cells!");
     logger_->warn(MPL, 26, "Each macro is treated as a single cluster!");
@@ -530,6 +531,9 @@ void HierRTLMP::hierRTLMacroPlacer()
                    "model {} as a cluster.",
                    cluster_name);
       }
+    }
+    if (!design_has_io_clusters_) {
+      design_has_only_macros = true;
     }
     // reset parameters
     pos_swap_prob_ = 0.2;
@@ -612,23 +616,11 @@ void HierRTLMP::hierRTLMacroPlacer()
   root_soft_macro->setY(root_ly);
   root_cluster_->setSoftMacro(root_soft_macro);
 
-  //
-  // Step 2: In a bottom-up approach (Post-Order DFS), determine the macro
-  // tilings within each cluster.
-  //
-  // Check if the root cluster has other children clusters
-  bool macro_only_flag = true;
-  for (auto& cluster : root_cluster_->getChildren()) {
-    if (cluster->isIOCluster()) {
-      macro_only_flag = false;
-      break;
-    }
-  }
-
-  if (macro_only_flag == true) {
+  if (design_has_only_macros) {
     logger_->info(MPL,
                   27,
-                  "[Hierarchical Macro Placement] The design only has macros. "
+                  "[Hierarchical Macro Placement] Skipping coarse and fine "
+                  "shaping, because the design only has macros. "
                   "Starting macro placement.\n");
     if (graphics_) {
       graphics_->startFine();
@@ -1015,6 +1007,11 @@ void HierRTLMP::createBundledIOs()
       delete cluster_map_[cluster_id];
       cluster_map_.erase(cluster_id);
     }
+  }
+
+  // At this point the cluster map has only the root (id = 0) and bundledIOs
+  if (cluster_map_.size() == 1) {
+    design_has_io_clusters_ = false;
   }
 }
 
