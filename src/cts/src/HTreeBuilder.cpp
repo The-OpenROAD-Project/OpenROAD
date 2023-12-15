@@ -246,7 +246,7 @@ void HTreeBuilder::preSinkClustering(
       }
 
       baseName = secondLevel ? "clknet_leaf2_" : "clknet_leaf_";
-      Clock::SubNet& clockSubNet
+      ClockSubNet& clockSubNet
           = clock_.addSubNet(baseName + std::to_string(clusterCount));
       // Subnet that connects the new -sink- buffer to each specific sink
       clockSubNet.addInst(rootBuffer);
@@ -1770,7 +1770,7 @@ void HTreeBuilder::createClockSubNets()
   // clang-format on
 
   addTreeLevelBuffer(&rootBuffer);
-  Clock::SubNet& rootClockSubNet = clock_.addSubNet("clknet_0");
+  ClockSubNet& rootClockSubNet = clock_.addSubNet("clknet_0");
   rootClockSubNet.addInst(rootBuffer);
   treeBufLevels_++;
 
@@ -1882,7 +1882,7 @@ void HTreeBuilder::createClockSubNets()
   unsigned numSinks = 0;
   leafTopology.forEachBranchingPoint(
       [&](unsigned idx, Point<double> branchPoint) {
-        Clock::SubNet* subNet = leafTopology.getBranchDrivingSubNet(idx);
+        ClockSubNet* subNet = leafTopology.getBranchDrivingSubNet(idx);
         subNet->setLeafLevel(true);
 
         const std::vector<Point<double>>& sinkLocs
@@ -1922,7 +1922,7 @@ void HTreeBuilder::createSingleBufferClockNet()
   // clang-format on
 
   addTreeLevelBuffer(&rootBuffer);
-  Clock::SubNet& clockSubNet = clock_.addSubNet("clknet_0");
+  ClockSubNet& clockSubNet = clock_.addSubNet("clknet_0");
   clockSubNet.addInst(rootBuffer);
 
   clock_.forEachSink([&](ClockInst& inst) { clockSubNet.addInst(inst); });
@@ -2030,7 +2030,7 @@ SegmentBuilder::SegmentBuilder(const std::string& instPrefix,
                                const Point<double>& target,
                                const std::vector<unsigned>& techCharWires,
                                Clock& clock,
-                               Clock::SubNet& drivingSubNet,
+                               ClockSubNet& drivingSubNet,
                                const TechChar& techChar,
                                const unsigned techCharDistUnit,
                                TreeBuilder* tree)
