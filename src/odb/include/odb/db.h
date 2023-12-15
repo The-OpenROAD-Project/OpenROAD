@@ -7634,7 +7634,7 @@ class dbScanChain : public dbObject
 class dbScanInst : public dbObject
 {
  public:
-  enum SCAN_INST_TYPE
+  enum class SCAN_INST_TYPE
   {
     OneBit,
     ShiftRegister,
