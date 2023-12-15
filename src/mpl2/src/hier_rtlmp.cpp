@@ -500,8 +500,11 @@ void HierRTLMP::hierRTLMacroPlacer()
   // (2) the design has on logical hierarchy (for academic fake testcases)
   bool design_has_only_macros = false;
   if (metrics_->getNumStdCell() == 0) {
-    logger_->warn(MPL, 25, "This design has no standard cells!");
-    logger_->warn(MPL, 26, "Each macro is treated as a single cluster!");
+    logger_->warn(MPL, 25, "Design has no standard cells!");
+    logger_->info(
+        MPL,
+        30,
+        "[Multilevel Autoclustering] Treating each macro a single cluster.");
     auto module = block_->getTopModule();
     for (odb::dbInst* inst : module->getInsts()) {
       const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
@@ -617,11 +620,8 @@ void HierRTLMP::hierRTLMacroPlacer()
   root_cluster_->setSoftMacro(root_soft_macro);
 
   if (design_has_only_macros) {
-    logger_->info(MPL,
-                  27,
-                  "[Hierarchical Macro Placement] Skipping coarse and fine "
-                  "shaping, because the design only has macros. "
-                  "Starting macro placement.\n");
+    logger_->warn(MPL, 27, "Design has only macros!");
+    logger_->info(MPL, 29, "[Hierarchical Macro Placement] Placing macros.");
     if (graphics_) {
       graphics_->startFine();
     }
@@ -1011,6 +1011,7 @@ void HierRTLMP::createBundledIOs()
 
   // At this point the cluster map has only the root (id = 0) and bundledIOs
   if (cluster_map_.size() == 1) {
+    logger_->warn(MPL, 26, "Design has no IO pins!");
     design_has_io_clusters_ = false;
   }
 }
