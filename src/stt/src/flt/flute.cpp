@@ -281,9 +281,6 @@ static unsigned char charNum(unsigned char c)
   return 0;
 }
 
-// Decodes a decimal integer from the string s.
-// Returns the decoded value in *value and returns
-// the number of characters read.
 inline const char* readDecimalInt(const char* s, int& value)
 {
   value = 0;
