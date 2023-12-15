@@ -1,26 +1,15 @@
+# Case in which we treat the root as a macro cluster and jump
+# from initializing the physical tree to macro placement
 source "helpers.tcl"
-set LIB_DIR "./Nangate45"
-#
-set tech_lef "$LIB_DIR/Nangate45_tech.lef"
-set std_cell_lef "$LIB_DIR/Nangate45.lef"
-set fake_macro_lef "$LIB_DIR/fake_macros.lef"
-set liberty_file "$LIB_DIR/Nangate45_fast.lib"
-set fake_macro_lib "$LIB_DIR/fake_macros.lib"
- 
-set synth_verilog "./testcases/macro_only.v"
-set floorplan_def "./testcases/macro_only.def"
-set top_module "macro_only"
- 
-read_lef $tech_lef
-read_lef $std_cell_lef
-read_lef $fake_macro_lef
-read_liberty $liberty_file
-read_liberty $fake_macro_lib
- 
-read_verilog $synth_verilog
-link_design $top_module
-#
-read_def $floorplan_def -floorplan_initialize
+
+read_lef "./Nangate45/Nangate45_tech.lef"
+read_lef "./Nangate45/fake_macros.lef"
+read_liberty "./Nangate45/fake_macros.lib"
+
+read_verilog "./testcases/macro_only.v"
+link_design "macro_only"
+
+read_def "./testcases/macro_only.def" -floorplan_initialize
 
 set_thread_count 0
 rtl_macro_placer -report_directory results/macro_only -halo_width 4.0
