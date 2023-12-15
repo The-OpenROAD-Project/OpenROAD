@@ -22,11 +22,7 @@ class {{klass.name}} : public dbObject
   {% endfor %}
   {% for _enum in klass.enums %}
     {% if _enum.public %}
-      {% if _enum.class %}
-        enum class {{ _enum.name }}{% if "type" in _enum %} :{{ _enum.type }}{% endif %}
-      {% else %}
-        enum {{ _enum.name }}{% if "type" in _enum %} :{{ _enum.type }}{% endif %}
-      {% endif %}
+    enum {% if _enum.class %} class {% endif %} {{ _enum.name }}{% if "type" in _enum %} :{{ _enum.type }}{% endif %}
     {
       {% for value in _enum["values"]%}
       {% if not loop.first %},{%endif%}{{value}}
