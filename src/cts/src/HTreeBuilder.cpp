@@ -1736,9 +1736,13 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
   }
 
   if (movedSinks > 0) {
-    logger_->report(" Out of {} sinks, {} sinks closer to other cluster.",
-                    sinks.size(),
-                    movedSinks);
+    debugPrint(logger_,
+               CTS,
+               "clustering",
+               1,
+               " Out of {} sinks, {} sinks closer to other cluster.",
+               sinks.size(),
+               movedSinks);
   }
 
   assert(std::abs(computeDist(branchPt1, rootLocation) - targetDist) < 0.001
