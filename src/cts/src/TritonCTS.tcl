@@ -85,10 +85,14 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-num_static_layers] \
                                              [-sink_clustering_buffer] \
                                              [-obstruction_aware] \
+                                             [-no_obstruction_aware] \
 					     [-apply_ndr] \
+					     [-dont_apply_ndr] \
                                              [-insertion_delay] \
-                                             [-sink_buffer_max_cap_derate] \
-                                             [-use_dummy_load]
+                                             [-no_insertion_delay] \
+                                             [-use_dummy_load] \
+                                             [-dont_use_dummy_load] \
+                                             [-sink_buffer_max_cap_derate]
                                             }
 
 proc clock_tree_synthesis { args } {
@@ -98,7 +102,9 @@ proc clock_tree_synthesis { args } {
           -clustering_unbalance_ratio -sink_clustering_max_diameter -sink_clustering_levels -tree_buf\
           -sink_buffer_max_cap_derate}\
       flags {-post_cts_disable -sink_clustering_enable -balance_levels \
-	     -obstruction_aware -apply_ndr -insertion_delay -use_dummy_load}
+             -obstruction_aware -apply_ndr -insertion_delay -use_dummy_load \
+             -no_obstruction_aware -dont_apply_ndr -no_insertion_delay -dont_use_dummy_load \
+             }
 
   sta::check_argc_eq0 "clock_tree_synthesis" $args
 
@@ -197,13 +203,29 @@ proc clock_tree_synthesis { args } {
     cts::set_sink_buffer_max_cap_derate $derate
   }
 
-  cts::set_obstruction_aware [info exists flags(-obstruction_aware)]
+  if { [info exists flags(-no_obstruction_aware)] } {
+    cts::set_obstruction_aware false
+  } else {
+    cts::set_obstruction_aware true
+  }
 
-  cts::set_apply_ndr [info exists flags(-apply_ndr)]
-
-  cts::set_insertion_delay [info exists flags(-insertion_delay)]
+  if { [info exists flags(-dont_apply_ndr)] } {
+    cts::set_apply_ndr false
+  } else {
+    cts::set_apply_ndr true
+  }
     
-  cts::set_dummy_load [info exists flags(-use_dummy_load)]
+  if { [info exists flags(-no_insertion_delay)] } {
+    cts::set_insertion_delay false
+  } else {
+    cts::set_insertion_delay true
+  }
+        
+  if { [info exists flags(-dont_use_dummy_load)] } {
+    cts::set_dummy_load false
+  } else {
+    cts::set_dummy_load true
+  }
     
   if { [ord::get_db_block] == "NULL" } {
     utl::error CTS 103 "No design block found."

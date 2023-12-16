@@ -48,8 +48,10 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0015]     Created 25 clock nets.
 [INFO CTS-0016]     Fanout distribution for the current clock = 11:2, 12:1, 13:5, 14:16..
 [INFO CTS-0017]     Max level of the clock tree: 1.
+[INFO CTS-0202] Non-default rule CTS_NDR_0 for double spacing has been applied to 2 clock nets
 [INFO CTS-0098] Clock net "clk"
-[INFO CTS-0099]  Sinks 301
+[INFO CTS-0099]  Sinks 307
 [INFO CTS-0100]  Leaf buffers 22
-[INFO CTS-0101]  Average sink wire length 118.44 um
+[INFO CTS-0101]  Average sink wire length 118.11 um
 [INFO CTS-0102]  Path depth 3 - 3
+[INFO CTS-0207]  Leaf load cells 6

@@ -290,16 +290,16 @@ class CtsOptions
   std::vector<odb::dbNet*> clockNetsObjs_;
   utl::Logger* logger_ = nullptr;
   stt::SteinerTreeBuilder* sttBuilder_ = nullptr;
-  bool obsAware_ = false;
-  bool applyNDR_ = false;
-  bool insertionDelay_ = false;
+  bool obsAware_ = true;
+  bool applyNDR_ = true;
+  bool insertionDelay_ = true;
   bool bufferListInferred_ = false;
   bool sinkBufferInferred_ = false;
   bool rootBufferInferred_ = false;
   bool sinkBufferMaxCapDerateSet_ = false;
   float sinkBufferMaxCapDerateDefault_ = 0.01;
   float sinkBufferMaxCapDerate_ = sinkBufferMaxCapDerateDefault_;
-  bool dummyLoad_ = false;
+  bool dummyLoad_ = true;
 };
 
 }  // namespace cts
