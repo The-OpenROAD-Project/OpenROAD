@@ -1,1 +1,1 @@
-../main.tcl
+../scripts/main.tcl

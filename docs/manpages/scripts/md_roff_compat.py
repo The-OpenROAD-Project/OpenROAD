@@ -100,7 +100,7 @@ def extract_headers(text, level = 1):
     pattern = r'^#{%d}\s+(.*)$' % level
     headers = re.findall(pattern, text, flags=re.MULTILINE)
     # TODO: Handle developer commands
-    headers.remove("Useful Developer Commands")
+    if "Useful Developer Commands" in headers: headers.remove("Useful Developer Commands")
     return headers
 
 def extract_description(text):
@@ -125,58 +125,59 @@ def extract_tables(text):
 
     return table_matches
 
-for doc in docs:
-    text = open(doc).read()
+if __name__ == "__main__":
+    for doc in docs:
+        text = open(doc).read()
 
-    # function names
-    func_names = extract_headers(text, 3)
-    func_names = ["_".join(s.lower().split()) for s in func_names]
+        # function names
+        func_names = extract_headers(text, 3)
+        func_names = ["_".join(s.lower().split()) for s in func_names]
 
-    # function description
-    func_descs = extract_description(text)
+        # function description
+        func_descs = extract_description(text)
 
-    # synopsis content
-    func_synopsis = extract_tcl_code(text)
+        # synopsis content
+        func_synopsis = extract_tcl_code(text)
 
-    # switch names (TODO: needs refactoring...)
-    switch_names = extract_tables(text)
-    idx = 0
-    func_switches, tmp = [], []
-    for s in switch_names:
-        # TODO: Handle developer commands
-        if "Command Name" in s:
-            break
-        if "Switch Name" in s:
-            if tmp: func_switches.append(tmp)
-            tmp = []
-        tmp.append(s.strip())
-    if tmp: func_switches.append(tmp)
+        # switch names (TODO: needs refactoring...)
+        switch_names = extract_tables(text)
+        idx = 0
+        func_switches, tmp = [], []
+        for s in switch_names:
+            # TODO: Handle developer commands
+            if "Command Name" in s:
+                break
+            if "Switch Name" in s:
+                if tmp: func_switches.append(tmp)
+                tmp = []
+            tmp.append(s.strip())
+        if tmp: func_switches.append(tmp)
 
-# grouping the parsed outputs together
-offset_switch_idx = 0
+    # grouping the parsed outputs together
+    offset_switch_idx = 0
 
-for func_id in range(len(func_synopsis)):
-    temp = ManPage()
+    for func_id in range(len(func_synopsis)):
+        temp = ManPage()
 
-    temp.name = func_names[func_id]
-    temp.desc = func_descs[func_id]
+        temp.name = func_names[func_id]
+        temp.desc = func_descs[func_id]
 
-    # logic if synopsis is one liner, it means that it has no switches
-    temp.synopsis = func_synopsis[func_id]
-    if len(temp.synopsis) == 3: offset_switch_idx += 1
+        # logic if synopsis is one liner, it means that it has no switches
+        temp.synopsis = func_synopsis[func_id]
+        if len(temp.synopsis) == 3: offset_switch_idx += 1
 
-    switches = func_switches[offset_switch_idx + func_id]
-    switches_dict = {}
-    for idx, x in enumerate(switches):
-        if idx == 0 or idx == 1: continue
-        switch_name = x.split("|")[1]
-        # Find the index of the 2nd and last occurrence of "|". Since some content might contain "|"
-        second_pipe_index = x.find("|", x.find("|") + 1)
-        last_pipe_index = x.rfind("|")
-        switch_description = x[second_pipe_index+1: last_pipe_index-1] 
-        switch_name = switch_name.replace("`", "").strip()
-        switches_dict[switch_name] = switch_description
-    temp.switches = switches_dict
-    temp.write_roff_file()
+        switches = func_switches[offset_switch_idx + func_id]
+        switches_dict = {}
+        for idx, x in enumerate(switches):
+            if idx == 0 or idx == 1: continue
+            switch_name = x.split("|")[1]
+            # Find the index of the 2nd and last occurrence of "|". Since some content might contain "|"
+            second_pipe_index = x.find("|", x.find("|") + 1)
+            last_pipe_index = x.rfind("|")
+            switch_description = x[second_pipe_index+1: last_pipe_index-1] 
+            switch_name = switch_name.replace("`", "").strip()
+            switches_dict[switch_name] = switch_description
+        temp.switches = switches_dict
+        temp.write_roff_file()
 
-print('Ok')
+    print('Ok')
