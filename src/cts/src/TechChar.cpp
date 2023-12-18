@@ -1269,13 +1269,13 @@ void TechChar::updateBufferTopologiesOld(TechChar::SolutionData& solution)
                  "from {} to {}, index:{}",
                  *(masterItr), newBufMaster->getName(), index);
       masterItr++;
-      // clang-format on 
+      // clang-format on
       unsigned topologyCounter = 0;
       for (unsigned topologyIndex = 0;
            topologyIndex < solution.topologyDescriptor.size();
            topologyIndex++) {
         const std::string topologyS
-          = solution.topologyDescriptor[topologyIndex];
+            = solution.topologyDescriptor[topologyIndex];
         // clang-format off
         debugPrint(logger_, CTS, "tech char", 1, "  topo:{} topoIdx:{}",
                    topologyS, topologyIndex);
