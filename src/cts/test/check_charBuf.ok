@@ -44,7 +44,6 @@ TritonCTS forced slew degradation on these wires.
     Sinks per sub-region: 8
     Sub-region size: 1.3571 X 0.6786
 [INFO CTS-0034]     Segment length (rounded): 1.
-    Key: 4956 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 1 delay: 1
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 16.
 [INFO CTS-0018]     Created 3 clock buffers.

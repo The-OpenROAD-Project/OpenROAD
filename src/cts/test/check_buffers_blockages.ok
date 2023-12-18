@@ -44,13 +44,11 @@ TritonCTS forced slew degradation on these wires.
     Sinks per sub-region: 15
     Sub-region size: 6.0909 X 10.7806
 [INFO CTS-0034]     Segment length (rounded): 4.
-    Key: 14 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 4 delay: 1
  Level 2
     Direction: Vertical
     Sinks per sub-region: 8
     Sub-region size: 6.0909 X 5.3903
 [INFO CTS-0034]     Segment length (rounded): 2.
-    Key: 0 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 2 delay: 1
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(3.358, 6.302)]=>[(3.584, 6.290)] parentPt:[(7.358, 6.064)] new branchPt is outside blockage
 [DEBUG CTS-legalizer] findBestLegalLocation branchPt:[(11.178, 8.122)]=>[(11.095, 7.800)] parentPt:[(11.358, 6.064)] new branchPt is outside blockage

@@ -406,7 +406,11 @@ void TechChar::reportSegment(unsigned key) const
 {
   const WireSegment& seg = getWireSegment(key);
 
-  logger_->report(
+  debugPrint(
+      logger_,
+      CTS,
+      "tech char",
+      1,
       "    Key: {} inSlew: {} inCap: {} outSlew: {} load: {} length: {} delay: "
       "{}",
       key,
@@ -418,9 +422,13 @@ void TechChar::reportSegment(unsigned key) const
       seg.getDelay());
 
   for (unsigned idx = 0; idx < seg.getNumBuffers(); ++idx) {
-    logger_->report("      location: {} buffer: {}",
-                    seg.getBufferLocation(idx),
-                    seg.getBufferMaster(idx));
+    debugPrint(logger_,
+               CTS,
+               "tech char",
+               1,
+               "      location: {} buffer: {}",
+               seg.getBufferLocation(idx),
+               seg.getBufferMaster(idx));
   }
 }
 
