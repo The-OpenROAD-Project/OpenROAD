@@ -212,11 +212,15 @@ void HierRTLMP::setReportDirectory(const char* report_directory)
   report_directory_ = report_directory;
 }
 
-//
 // Set defaults for min/max number of instances and macros if not set by user.
-//
 void HierRTLMP::setDefaultThresholds()
 {
+  debugPrint(logger_,
+             MPL,
+             "multilevel_autoclustering",
+             1,
+             "Setting default threholds...");
+
   std::string snap_layer_name;
   // calculate the pitch_x and pitch_y based on the pins of macros
   for (auto& macro : hard_macro_map_) {
@@ -308,10 +312,8 @@ void HierRTLMP::setDefaultThresholds()
                macro_blockage_weight_);
   }
 
-  //
   // Set sizes for root level based on coarsening_factor and the number of
   // physical hierarchy levels
-  //
   unsigned coarsening_factor = std::pow(coarsening_ratio_, max_num_level_ - 1);
   max_num_macro_base_ = max_num_macro_base_ * coarsening_factor;
   min_num_macro_base_ = min_num_macro_base_ * coarsening_factor;
@@ -329,126 +331,6 @@ void HierRTLMP::setDefaultThresholds()
       min_num_macro_base_,
       max_num_inst_base_,
       min_num_inst_base_);
-}
-
-  // This function works as following:
-  // 1) Traverse the logical hierarchy, get all the statistics of each logical
-  //    module in logical_module_map_ and associate each hard macro with its
-  //    HardMacro object
-  // 2) Create Bundled pins and treat each bundled pin as a cluster with no size
-  //    The number of bundled IOs is num_bundled_IOs_ x 4  (four boundaries)
-  // 3) Create physical hierarchy tree in a DFS manner (Postorder)
-  // 4) Place clusters and macros in a BFS manner (Preorder)
-void HierRTLMP::run()
-{
-  //
-  // Get the database information
-  //
-  block_ = db_->getChip()->getBlock();
-  dbu_ = db_->getTech()->getDbUnitsPerMicron();
-  if (db_->getTech()->hasManufacturingGrid()) {
-    manufacturing_grid_ = db_->getTech()->getManufacturingGrid();
-  } else {
-    // No manufacturing grid value in tech lef. set to default
-    manufacturing_grid_ = 1;
-  }
-
-  //
-  // Get the floorplan information
-  //
-  odb::Rect die_box = block_->getDieArea();
-  floorplan_lx_ = dbuToMicron(die_box.xMin(), dbu_);
-  floorplan_ly_ = dbuToMicron(die_box.yMin(), dbu_);
-  floorplan_ux_ = dbuToMicron(die_box.xMax(), dbu_);
-  floorplan_uy_ = dbuToMicron(die_box.yMax(), dbu_);
-
-  odb::Rect core_box = block_->getCoreArea();
-  float core_lx = dbuToMicron(core_box.xMin(), dbu_);
-  float core_ly = dbuToMicron(core_box.yMin(), dbu_);
-  float core_ux = dbuToMicron(core_box.xMax(), dbu_);
-  float core_uy = dbuToMicron(core_box.yMax(), dbu_);
-
-  logger_->report(
-      "Floorplan Outline: ({}, {}) ({}, {}),  Core Outline: ({}, {}) ({}, {})",
-      floorplan_lx_,
-      floorplan_ly_,
-      floorplan_ux_,
-      floorplan_uy_,
-      core_lx,
-      core_ly,
-      core_ux,
-      core_uy);
-
-  //
-  // Compute metrics for dbModules
-  // Associate all the hard macros with their HardMacro objects
-  // and report the statistics
-  //
-  metrics_ = computeMetrics(block_->getTopModule());
-  float core_area = (core_ux - core_lx) * (core_uy - core_ly);
-  float util
-      = (metrics_->getStdCellArea() + metrics_->getMacroArea()) / core_area;
-  float core_util
-      = metrics_->getStdCellArea() / (core_area - metrics_->getMacroArea());
-
-  // Check if placement is feasible in the core area when considering
-  // the macro halos
-  float macro_with_halo_area = 0;
-  int unfixed_macros = 0;
-  for (auto inst : block_->getInsts()) {
-    auto master = inst->getMaster();
-    if (master->isBlock()) {
-      const auto width
-          = dbuToMicron(master->getWidth(), dbu_) + 2 * halo_width_;
-      const auto height
-          = dbuToMicron(master->getHeight(), dbu_) + 2 * halo_width_;
-      macro_with_halo_area += width * height;
-      unfixed_macros += !inst->getPlacementStatus().isFixed();
-    }
-  }
-
-  logger_->report(
-      "Traversed logical hierarchy\n"
-      "\tNumber of std cell instances: {}\n"
-      "\tArea of std cell instances: {:.2f}\n"
-      "\tNumber of macros: {}\n"
-      "\tArea of macros: {:.2f}\n"
-      "\tArea of macros with halos: {:.2f}\n"
-      "\tArea of std cell instances + Area of macros: {:.2f}\n"
-      "\tCore area: {:.2f}\n"
-      "\tDesign Utilization: {:.2f}\n"
-      "\tCore Utilization: {:.2f}\n"
-      "\tManufacturing Grid: {}\n",
-      metrics_->getNumStdCell(),
-      metrics_->getStdCellArea(),
-      metrics_->getNumMacro(),
-      metrics_->getMacroArea(),
-      macro_with_halo_area,
-      metrics_->getStdCellArea() + metrics_->getMacroArea(),
-      core_area,
-      util,
-      core_util,
-      manufacturing_grid_);
-
-  if (unfixed_macros == 0) {
-    logger_->info(MPL, 17, "No unfixed macros. Skipping placement.");
-    return;
-  }
-
-  if (macro_with_halo_area + metrics_->getStdCellArea() > core_area) {
-    logger_->error(MPL,
-                   16,
-                   "The instance area with halos {} exceeds the core area {}",
-                   macro_with_halo_area + metrics_->getStdCellArea(),
-                   core_area);
-  }
-
-  debugPrint(logger_,
-             MPL,
-             "multilevel_autoclustering",
-             1,
-             "Setting default threholds...");
-  setDefaultThresholds();
 
   if (logger_->debugCheck(MPL, "multilevel_autoclustering", 1)) {
     logger_->report("\nPrint Default Parameters\n");
@@ -464,7 +346,21 @@ void HierRTLMP::run()
     logger_->report("halo_height_ = {}", halo_height_);
     logger_->report("bus_planning_on_ = {}\n", bus_planning_on_);
   }
+}
 
+// This function works as following:
+// 1) Traverse the logical hierarchy, get all the statistics of each logical
+//    module in logical_module_map_ and associate each hard macro with its
+//    HardMacro object
+// 2) Create Bundled pins and treat each bundled pin as a cluster with no size
+//    The number of bundled IOs is num_bundled_IOs_ x 4  (four boundaries)
+// 3) Create physical hierarchy tree in a DFS manner (Postorder)
+// 4) Place clusters and macros in a BFS manner (Preorder)
+void HierRTLMP::run()
+{
+  initMacroPlacer();
+
+  setDefaultThresholds();
   //
   // Initialize the physical hierarchy tree
   // create root cluster
@@ -689,15 +585,119 @@ void HierRTLMP::run()
 // Private functions
 ////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////
-// Hierarchical clustering related functions
+void HierRTLMP::initMacroPlacer()
+{
+  block_ = db_->getChip()->getBlock();
+  dbu_ = db_->getTech()->getDbUnitsPerMicron();
 
-//
+  if (db_->getTech()->hasManufacturingGrid()) {
+    manufacturing_grid_ = db_->getTech()->getManufacturingGrid();
+  } else {
+    manufacturing_grid_ = 1;
+  }
+
+  odb::Rect die_box = block_->getDieArea();
+  floorplan_lx_ = dbuToMicron(die_box.xMin(), dbu_);
+  floorplan_ly_ = dbuToMicron(die_box.yMin(), dbu_);
+  floorplan_ux_ = dbuToMicron(die_box.xMax(), dbu_);
+  floorplan_uy_ = dbuToMicron(die_box.yMax(), dbu_);
+
+  odb::Rect core_box = block_->getCoreArea();
+  float core_lx = dbuToMicron(core_box.xMin(), dbu_);
+  float core_ly = dbuToMicron(core_box.yMin(), dbu_);
+  float core_ux = dbuToMicron(core_box.xMax(), dbu_);
+  float core_uy = dbuToMicron(core_box.yMax(), dbu_);
+
+  logger_->report(
+      "Floorplan Outline: ({}, {}) ({}, {}),  Core Outline: ({}, {}) ({}, {})",
+      floorplan_lx_,
+      floorplan_ly_,
+      floorplan_ux_,
+      floorplan_uy_,
+      core_lx,
+      core_ly,
+      core_ux,
+      core_uy);
+
+  float core_area = (core_ux - core_lx) * (core_uy - core_ly);
+
+  computeMetricsForModules(core_area);
+}
+
+void HierRTLMP::computeMetricsForModules(float core_area)
+{
+  metrics_ = computeMetrics(block_->getTopModule());
+
+  float util
+      = (metrics_->getStdCellArea() + metrics_->getMacroArea()) / core_area;
+  float core_util
+      = metrics_->getStdCellArea() / (core_area - metrics_->getMacroArea());
+
+  // Check if placement is feasible in the core area when considering
+  // the macro halos
+  float macro_with_halo_area = 0;
+  int unfixed_macros = 0;
+  for (auto inst : block_->getInsts()) {
+    auto master = inst->getMaster();
+    if (master->isBlock()) {
+      const auto width
+          = dbuToMicron(master->getWidth(), dbu_) + 2 * halo_width_;
+      const auto height
+          = dbuToMicron(master->getHeight(), dbu_) + 2 * halo_width_;
+      macro_with_halo_area += width * height;
+      unfixed_macros += !inst->getPlacementStatus().isFixed();
+    }
+  }
+  reportLogicalHierarchyInformation(
+      macro_with_halo_area, core_area, util, core_util);
+
+  if (unfixed_macros == 0) {
+    logger_->info(MPL, 17, "No unfixed macros. Skipping placement.");
+    return;
+  }
+
+  if (macro_with_halo_area + metrics_->getStdCellArea() > core_area) {
+    logger_->error(MPL,
+                   16,
+                   "The instance area with halos {} exceeds the core area {}",
+                   macro_with_halo_area + metrics_->getStdCellArea(),
+                   core_area);
+  }
+}
+
+void HierRTLMP::reportLogicalHierarchyInformation(float macro_with_halo_area,
+                                                  float core_area,
+                                                  float util,
+                                                  float core_util)
+{
+  logger_->report(
+      "Traversed logical hierarchy\n"
+      "\tNumber of std cell instances: {}\n"
+      "\tArea of std cell instances: {:.2f}\n"
+      "\tNumber of macros: {}\n"
+      "\tArea of macros: {:.2f}\n"
+      "\tArea of macros with halos: {:.2f}\n"
+      "\tArea of std cell instances + Area of macros: {:.2f}\n"
+      "\tCore area: {:.2f}\n"
+      "\tDesign Utilization: {:.2f}\n"
+      "\tCore Utilization: {:.2f}\n"
+      "\tManufacturing Grid: {}\n",
+      metrics_->getNumStdCell(),
+      metrics_->getStdCellArea(),
+      metrics_->getNumMacro(),
+      metrics_->getMacroArea(),
+      macro_with_halo_area,
+      metrics_->getStdCellArea() + metrics_->getMacroArea(),
+      core_area,
+      util,
+      core_util,
+      manufacturing_grid_);
+}
+
 // Traverse Logical Hierarchy
 // Recursive function to collect the design metrics (number of std cells,
 // area of std cells, number of macros and area of macros) in the logical
 // hierarchy
-//
 Metrics* HierRTLMP::computeMetrics(odb::dbModule* module)
 {
   unsigned int num_std_cell = 0;

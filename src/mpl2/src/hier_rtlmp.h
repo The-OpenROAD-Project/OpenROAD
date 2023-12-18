@@ -139,6 +139,13 @@ class HierRTLMP
 
  private:
   // General Hier-RTLMP flow functions
+  void initMacroPlacer();
+  void computeMetricsForModules(float core_area);
+  void reportLogicalHierarchyInformation(float macro_with_halo_area,
+                                         float core_area,
+                                         float util,
+                                         float core_util);
+
   void setDefaultThresholds();
   void createDataFlow();
   void updateDataFlow();
