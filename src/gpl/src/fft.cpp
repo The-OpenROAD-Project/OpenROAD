@@ -42,51 +42,11 @@
 
 namespace gpl {
 
-FFT::FFT()
-    : binDensity_(nullptr),
-      electroPhi_(nullptr),
-      electroForceX_(nullptr),
-      electroForceY_(nullptr),
-      binCntX_(0),
-      binCntY_(0),
-      binSizeX_(0),
-      binSizeY_(0)
-{
-}
-
 FFT::FFT(int binCntX, int binCntY, int binSizeX, int binSizeY)
     : binCntX_(binCntX),
       binCntY_(binCntY),
       binSizeX_(binSizeX),
       binSizeY_(binSizeY)
-{
-  init();
-}
-
-FFT::~FFT()
-{
-  using std::vector;
-  for (int i = 0; i < binCntX_; i++) {
-    delete[] binDensity_[i];
-    delete[] electroPhi_[i];
-    delete[] electroForceX_[i];
-    delete[] electroForceY_[i];
-  }
-  delete[] binDensity_;
-  delete[] electroPhi_;
-  delete[] electroForceX_;
-  delete[] electroForceY_;
-
-  csTable_.clear();
-  wx_.clear();
-  wxSquare_.clear();
-  wy_.clear();
-  wySquare_.clear();
-
-  workArea_.clear();
-}
-
-void FFT::init()
 {
   binDensity_ = new float*[binCntX_];
   electroPhi_ = new float*[binCntX_];
@@ -128,6 +88,29 @@ void FFT::init()
   }
 }
 
+FFT::~FFT()
+{
+  using std::vector;
+  for (int i = 0; i < binCntX_; i++) {
+    delete[] binDensity_[i];
+    delete[] electroPhi_[i];
+    delete[] electroForceX_[i];
+    delete[] electroForceY_[i];
+  }
+  delete[] binDensity_;
+  delete[] electroPhi_;
+  delete[] electroForceX_;
+  delete[] electroForceY_;
+
+  csTable_.clear();
+  wx_.clear();
+  wxSquare_.clear();
+  wy_.clear();
+  wySquare_.clear();
+
+  workArea_.clear();
+}
+
 void FFT::updateDensity(int x, int y, float density)
 {
   binDensity_[x][y] = density;
@@ -149,7 +132,7 @@ void FFT::doFFT()
          binCntY_,
          -1,
          binDensity_,
-         NULL,
+         nullptr,
          (int*) &workArea_[0],
          (float*) &csTable_[0]);
 
@@ -207,21 +190,21 @@ void FFT::doFFT()
          binCntY_,
          1,
          electroPhi_,
-         NULL,
+         nullptr,
          (int*) &workArea_[0],
          (float*) &csTable_[0]);
   ddsct2d(binCntX_,
           binCntY_,
           1,
           electroForceX_,
-          NULL,
+          nullptr,
           (int*) &workArea_[0],
           (float*) &csTable_[0]);
   ddcst2d(binCntX_,
           binCntY_,
           1,
           electroForceY_,
-          NULL,
+          nullptr,
           (int*) &workArea_[0],
           (float*) &csTable_[0]);
 }
