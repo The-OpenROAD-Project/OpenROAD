@@ -51,15 +51,18 @@ clock_tree_synthesis
     [-balance_levels]
     [-num_static_layers]
     [-sink_clustering_buffer]
-    [-use_dummy_load]
+    [-no_obstruction_aware]
+    [-no_insertion_delay]
+    [-dont_apply_ndr]
+    [-dont_use_dummy_load]
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-buf_list` | Tcl list of master cells (buffers) that will be considered when making the wire segments (e.g. `{BUFXX, BUFYY}`). |
-| `-root_buffer` | The master cell of the buffer that serves as root for the clock tree. If this parameter is omitted, the first master cell from `-buf_list` is taken. |
+| `-buf_list` | Tcl list of master cells (buffers) that will be considered when making the wire segments (e.g. `{BUFXX, BUFYY}`). Buffer list will be inferred automatically if this option is not specified. |
+| `-root_buffer` | The master cell of the buffer that serves as root for the clock tree. If this parameter is omitted, the root buffer will be selected automatically from the buffer list. |
 | `-wire_unit` | Minimum unit distance between buffers for a specific wire. If this parameter is omitted, the code gets the value from ten times the height of `-root_buffer`. |
 | `-clk_nets` | String containing the names of the clock roots. If this parameter is omitted, `cts` automatically looks for the clock roots automatically. |
 | `-distance_between_buffers` | Distance (in microns) between buffers that `cts` should use when creating the tree. When using this parameter, the clock tree algorithm is simplified and only uses a fraction of the segments from the LUT. |
@@ -67,16 +70,16 @@ clock_tree_synthesis
 | `-clustering_exponent` | Value that determines the power used on the difference between sink and means on the CKMeans clustering algorithm. The default value is `4`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-clustering_unbalance_ratio` | Value determines each cluster's maximum capacity during CKMeans. A value of `0.5` (i.e., 50%) means that each cluster will have exactly half of all sinks for a specific region (half for each branch). The default value is `0.6`, and the allowed values are floats `[0, 1.0]`. |
 | `-sink_clustering_enable` | Enables pre-clustering of sinks to create one level of sub-tree before building H-tree. Each cluster is driven by buffer which becomes end point of H-tree structure. |
-| `-sink_clustering_size` | Specifies the maximum number of sinks per cluster. The default value is `20`, and the allowed values are integers `[0, MAX_INT]`. |
-| `-sink_clustering_max_diameter` | Specifies maximum diameter (in microns) of sink cluster. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-sink_clustering_size` | Specifies the maximum number of sinks per cluster like 20. If this parameter is omitted, an optimal value will be inferred automatically. |
+| `-sink_clustering_max_diameter` | Specifies maximum diameter (in microns) of sink cluster like 50. If this parameter is omitted, an optimal value will be inferred automatically. |
 | `-balance_levels` | Attempt to keep a similar number of levels in the clock tree across non-register cells (e.g., clock-gate or inverter). The default value is `False`, and the allowed values are bool. |
 | `-clk_nets` | String containing the names of the clock roots. If this parameter is omitted, `cts` looks for the clock roots automatically. |
 | `-num_static_layers` | Set the number of static layers. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
-| `-sink_clustering_buffer` | Set the sink clustering buffer(s) to be used. |
-| `-obstruction_aware` | Enables obstruction-aware buffering such that clock buffers are not placed on top of blockages or hard macros. This option may reduce legalizer displacement, leading to better latency, skew or timing QoR.  The default value is `False`, and the allowed values are bool. |
-| `-apply_ndr` | Applies 2X spacing non-default rule to all clock nets except leaf-level nets. The default value is `False`. |
-| `-insertion_delay` | Considers insertion delays in macro timing models to improve clustering. The default value is `False`. |
-| `-use_dummy_load` | Applies dummy buffer or inverter cells at clock tree leaves to balance loads.  The default values is `False`. |
+| `-sink_clustering_buffer` | Set the sink clustering buffer(s) to be used. If this parameter is omitted, the sink buffer will be inferred automatically from the buffer list. |
+| `-no_obstruction_aware` | Disables obstruction-aware buffering that prevents clock buffers from being placed on top of blockages or hard macros. This option may increase legalizer displacement, leading to worse latency, skew or timing QoR.  The default value is `False`, meaning that CTS is obstruction-aware. |
+| `-no_insertion_delay` | Do not consider insertion delays in macro timing models to improve clustering. The default value is `False`, meaning that insertion delays in timing models are considered. |
+| `-dont_apply_ndr` | Disables 2X spacing non-default rule to all clock nets except leaf-level nets. The default value is `False`, meaning that 2X spacing non-default rule is applied to clock nets. |
+| `-dont_use_dummy_load` | Disables insertion of dummy buffer or inverter cells at clock tree leaves to balance loads.  The default values is `False`, meaning that dummy buffers/inverters are inserted at clock leaves. |
 
 ### Report CTS
 
