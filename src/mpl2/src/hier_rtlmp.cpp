@@ -360,24 +360,8 @@ void HierRTLMP::run()
 {
   initMacroPlacer();
 
-  setDefaultThresholds();
-  //
-  // Initialize the physical hierarchy tree
-  // create root cluster
-  //
-  cluster_id_ = 0;
-  // set the level of cluster to be 0
-  root_cluster_ = new Cluster(cluster_id_, std::string("root"), logger_);
-  // set the design metrics as the metrics for the root cluster
-  root_cluster_->addDbModule(block_->getTopModule());
-  root_cluster_->setMetrics(*metrics_);
-  cluster_map_[cluster_id_++] = root_cluster_;
-  // assign cluster_id property of each instance
-  for (auto inst : block_->getInsts()) {
-    odb::dbIntProperty::create(inst, "cluster_id", cluster_id_);
-  }
+  initPhysicalHierarchy();
 
-  // Map IOs to Pads only if the design has pads.
   mapIOPads();
 
   // Model IO pins as bundled IO clusters under the root node.
@@ -694,6 +678,24 @@ void HierRTLMP::reportLogicalHierarchyInformation(float macro_with_halo_area,
       manufacturing_grid_);
 }
 
+void HierRTLMP::initPhysicalHierarchy()
+{
+  setDefaultThresholds();
+
+  cluster_id_ = 0;
+
+  root_cluster_ = new Cluster(cluster_id_, std::string("root"), logger_);
+  root_cluster_->addDbModule(block_->getTopModule());
+  root_cluster_->setMetrics(*metrics_);
+
+  cluster_map_[cluster_id_++] = root_cluster_;
+
+  // Assign cluster_id property of each instance
+  for (auto inst : block_->getInsts()) {
+    odb::dbIntProperty::create(inst, "cluster_id", cluster_id_);
+  }
+}
+
 // Traverse Logical Hierarchy
 // Recursive function to collect the design metrics (number of std cells,
 // area of std cells, number of macros and area of macros) in the logical
@@ -796,12 +798,7 @@ void HierRTLMP::setClusterMetrics(Cluster* cluster)
   }
 }
 
-//
-// Handle IOs
-// Map IOs to Pads for designs with IO pads
-// If the design does not have IO pads,
-// do nothing
-//
+// Handle IOs: Map IOs to Pads for designs with IO pads
 void HierRTLMP::mapIOPads()
 {
   // Check if this design has IO pads

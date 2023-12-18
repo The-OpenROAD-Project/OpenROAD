@@ -145,6 +145,7 @@ class HierRTLMP
                                          float core_area,
                                          float util,
                                          float core_util);
+  void initPhysicalHierarchy();
 
   void setDefaultThresholds();
   void createDataFlow();
