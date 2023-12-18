@@ -331,10 +331,15 @@ void HierRTLMP::setDefaultThresholds()
       min_num_inst_base_);
 }
 
-///////////////////////////////////////////////////////////////
-// Top Level Interface function
-//
-void HierRTLMP::hierRTLMacroPlacer()
+  // This function works as following:
+  // 1) Traverse the logical hierarchy, get all the statistics of each logical
+  //    module in logical_module_map_ and associate each hard macro with its
+  //    HardMacro object
+  // 2) Create Bundled pins and treat each bundled pin as a cluster with no size
+  //    The number of bundled IOs is num_bundled_IOs_ x 4  (four boundaries)
+  // 3) Create physical hierarchy tree in a DFS manner (Postorder)
+  // 4) Place clusters and macros in a BFS manner (Preorder)
+void HierRTLMP::run()
 {
   //
   // Get the database information
