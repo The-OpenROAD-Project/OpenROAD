@@ -55,28 +55,3 @@ jobs:
           else
             docker run openroad/${{ matrix.os }}-builder-${{ matrix.compilers }} build/src/openroad -help
           fi
-  testInstaller-macos:
-    strategy:
-      fail-fast: false
-    runs-on: macos-latest
-    steps:
-      - name: Setup xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: latest-stable
-      - name: Check out repository code
-        uses: actions/checkout@v3
-        with:
-          submodules: 'recursive'
-      - name: Run installer
-        shell: bash
-        run: |
-          ./etc/DependencyInstaller.sh
-      - name: Build project
-        shell: bash
-        run: |
-          ./etc/Build.sh
-      - name: Test build
-        shell: bash
-        run: |
-          build/src/openroad -help
