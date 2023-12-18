@@ -493,18 +493,14 @@ void HierRTLMP::hierRTLMacroPlacer()
   createDataFlow();
 
   // Create physical hierarchy tree in a post-order DFS manner
-  logger_->info(
-      MPL, 24, "[Multilevel Autoclustering] Creating clustered netlist.");
   // add two enhancements to handle corner cases
   // (1) the design only has fake macros (for academic fake testcases)
   // (2) the design has on logical hierarchy (for academic fake testcases)
   bool design_has_only_macros = false;
   if (metrics_->getNumStdCell() == 0) {
     logger_->warn(MPL, 25, "Design has no standard cells!");
-    logger_->info(
-        MPL,
-        30,
-        "[Multilevel Autoclustering] Treating each macro a single cluster.");
+
+    // In this case we treat each macro as a single cluster
     auto module = block_->getTopModule();
     for (odb::dbInst* inst : module->getInsts()) {
       const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
@@ -621,25 +617,17 @@ void HierRTLMP::hierRTLMacroPlacer()
 
   if (design_has_only_macros) {
     logger_->warn(MPL, 27, "Design has only macros!");
-    logger_->info(MPL, 29, "[Hierarchical Macro Placement] Placing macros.");
     if (graphics_) {
       graphics_->startFine();
     }
     hardMacroClusterMacroPlacement(root_cluster_);
   } else {
-    logger_->info(
-        MPL, 39, "[Coarse Shaping] Determining shape functions for clusters.");
-
     if (graphics_) {
       graphics_->startCoarse();
     }
 
     calClusterMacroTilings(root_cluster_);
-
     createPinBlockage();
-
-    logger_->info(
-        MPL, 28, "[Hierarchical Macro Placement] Placing clusters and macros.");
 
     if (graphics_) {
       graphics_->startFine();
@@ -683,8 +671,6 @@ void HierRTLMP::hierRTLMacroPlacer()
   if (graphics_) {
     graphics_->eraseDrawing();
   }
-
-  logger_->info(MPL, 37, "Updated location of {} macros", num_updated_macros_);
 
   debugPrint(logger_,
              MPL,
@@ -2208,7 +2194,7 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
   const int num_parts = 2;  // We use two-way partitioning here
   const int num_vertices = static_cast<int>(vertex_weight.size());
   std::vector<float> hyperedge_weights(hyperedges.size(), 1.0f);
-  logger_->info(MPL, 23, "[Multilevel Autoclustering] Calling Partitioner.");
+  logger_->info(MPL, 23, "Calling Partitioner.");
   std::vector<int> part
       = tritonpart_->PartitionKWaySimpleMode(num_parts,
                                              balance_constraint,
