@@ -360,100 +360,7 @@ void HierRTLMP::run()
 {
   initMacroPlacer();
 
-  initPhysicalHierarchy();
-
-  createIOClusters();
-
-  createDataFlow();
-
-  // Create physical hierarchy tree in a post-order DFS manner
-  // add two enhancements to handle corner cases
-  // (1) the design only has fake macros (for academic fake testcases)
-  // (2) the design has on logical hierarchy (for academic fake testcases)
-  bool design_has_only_macros = false;
-  if (metrics_->getNumStdCell() == 0) {
-    logger_->warn(MPL, 25, "Design has no standard cells!");
-
-    // In this case we treat each macro as a single cluster
-    auto module = block_->getTopModule();
-    for (odb::dbInst* inst : module->getInsts()) {
-      const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-      if (liberty_cell == nullptr) {
-        continue;
-      }
-      odb::dbMaster* master = inst->getMaster();
-      // check if the instance is a Pad, Cover or empty block (such as marker)
-      if (master->isPad() || master->isCover()) {
-        continue;
-      }
-      if (master->isBlock()) {
-        std::string cluster_name = inst->getName();
-        Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
-        cluster->addLeafMacro(inst);
-        setInstProperty(cluster);
-        setClusterMetrics(cluster);
-        cluster_map_[cluster_id_++] = cluster;
-        // modify the physical hierarchy tree
-        cluster->setParent(root_cluster_);
-        cluster->setClusterType(HardMacroCluster);
-        root_cluster_->addChild(cluster);
-        debugPrint(logger_,
-                   MPL,
-                   "multilevel_autoclustering",
-                   1,
-                   "model {} as a cluster.",
-                   cluster_name);
-      }
-    }
-    if (!design_has_io_clusters_) {
-      design_has_only_macros = true;
-    }
-    // reset parameters
-    pos_swap_prob_ = 0.2;
-    neg_swap_prob_ = 0.2;
-    double_swap_prob_ = 0.2;
-    exchange_swap_prob_ = 0.2;
-    flip_prob_ = 0.2;
-    resize_prob_ = 0.0;
-    guidance_weight_ = 0.0;
-    fence_weight_ = 0.0;
-    boundary_weight_ = 0.0;
-    notch_weight_ = 0.0;
-    macro_blockage_weight_ = 0.0;
-    // virtual_weight_ = 1.0;
-    // max_num_ff_dist_ = 1;
-    // dataflow_weight_ = 1.0;
-  } else {
-    multiLevelCluster(root_cluster_);
-    //
-    // Break mixed leaf clusters into a standard-cell cluster and hard-macro
-    // clusters. Merge macros based on connection signatures and footprints.
-    // Based on types of designs, we support two types of breaking up. Suppose
-    // current cluster is A -- Type 1:  Replace A by A1, A2, A3 Type 2:  Create
-    // a subtree for A
-    //          A  ->    A
-    //               |  |   |
-    //              A1  A2  A3
-    //
-    debugPrint(logger_,
-               MPL,
-               "multilevel_autoclustering",
-               1,
-               "Breaking mixed clusters...");
-    leafClusterStdCellHardMacroSep(root_cluster_);
-    if (graphics_) {
-      graphics_->finishedClustering(root_cluster_);
-    }
-  }
-  if (logger_->debugCheck(MPL, "multilevel_autoclustering", 1)) {
-    logger_->report("\nPrint Physical Hierarchy\n");
-    printPhysicalHierarchyTree(root_cluster_, 0);
-  }
-
-  // Map the macros in each cluster to their HardMacro objects
-  for (auto& [cluster_id, cluster] : cluster_map_) {
-    mapMacroInCluster2HardMacro(cluster);
-  }
+  runMultilevelAutoclustering();
 
   //
   // Place macros in a hierarchical mode based on the physical hierarchical
@@ -489,7 +396,8 @@ void HierRTLMP::run()
   root_soft_macro->setY(root_ly);
   root_cluster_->setSoftMacro(root_soft_macro);
 
-  if (design_has_only_macros) {
+  // At this point we have checked the existence of both std cells and IOs
+  if (!design_has_io_clusters_) {
     logger_->warn(MPL, 27, "Design has only macros!");
     if (graphics_) {
       graphics_->startFine();
@@ -683,6 +591,89 @@ void HierRTLMP::initPhysicalHierarchy()
   for (auto inst : block_->getInsts()) {
     odb::dbIntProperty::create(inst, "cluster_id", cluster_id_);
   }
+}
+
+// Transform the logical hierarchy into a physical hierarchy.
+void HierRTLMP::runMultilevelAutoclustering()
+{
+  initPhysicalHierarchy();
+
+  createIOClusters();
+  createDataFlow();
+
+  if (metrics_->getNumStdCell() == 0) {
+    logger_->warn(MPL, 25, "Design has no standard cells!");
+
+    treatEachMacroAsSingleCluster();
+    resetSAParameters();
+
+  } else {
+    multilevelAutocluster(root_cluster_);
+    breakMixedLeafClusters(root_cluster_);
+
+    if (graphics_) {
+      graphics_->finishedClustering(root_cluster_);
+    }
+  }
+
+  if (logger_->debugCheck(MPL, "multilevel_autoclustering", 1)) {
+    logger_->report("\nPrint Physical Hierarchy\n");
+    printPhysicalHierarchyTree(root_cluster_, 0);
+  }
+
+  // Map the macros in each cluster to their HardMacro objects
+  for (auto& [cluster_id, cluster] : cluster_map_) {
+    mapMacroInCluster2HardMacro(cluster);
+  }
+}
+
+void HierRTLMP::treatEachMacroAsSingleCluster()
+{
+  auto module = block_->getTopModule();
+  for (odb::dbInst* inst : module->getInsts()) {
+    const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
+    if (liberty_cell == nullptr) {
+      continue;
+    }
+    odb::dbMaster* master = inst->getMaster();
+
+    if (master->isPad() || master->isCover()) {
+      continue;
+    }
+    if (master->isBlock()) {
+      std::string cluster_name = inst->getName();
+      Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
+      cluster->addLeafMacro(inst);
+      setInstProperty(cluster);
+      setClusterMetrics(cluster);
+      cluster_map_[cluster_id_++] = cluster;
+      // modify the physical hierarchy tree
+      cluster->setParent(root_cluster_);
+      cluster->setClusterType(HardMacroCluster);
+      root_cluster_->addChild(cluster);
+      debugPrint(logger_,
+                 MPL,
+                 "multilevel_autoclustering",
+                 1,
+                 "model {} as a cluster.",
+                 cluster_name);
+    }
+  }
+}
+
+void HierRTLMP::resetSAParameters()
+{
+  pos_swap_prob_ = 0.2;
+  neg_swap_prob_ = 0.2;
+  double_swap_prob_ = 0.2;
+  exchange_swap_prob_ = 0.2;
+  flip_prob_ = 0.2;
+  resize_prob_ = 0.0;
+  guidance_weight_ = 0.0;
+  fence_weight_ = 0.0;
+  boundary_weight_ = 0.0;
+  notch_weight_ = 0.0;
+  macro_blockage_weight_ = 0.0;
 }
 
 // Traverse Logical Hierarchy
@@ -1002,7 +993,7 @@ void HierRTLMP::createIOClusters()
 
 // Create physical hierarchy tree in a post-order DFS manner
 // Recursive call for creating the physical hierarchy tree
-void HierRTLMP::multiLevelCluster(Cluster* parent)
+void HierRTLMP::multilevelAutocluster(Cluster* parent)
 {
   bool force_split = false;
   if (level_ == 0) {
@@ -1075,10 +1066,10 @@ void HierRTLMP::multiLevelCluster(Cluster* parent)
                  1,
                  "\tChild Cluster: {}",
                  child->getName());
-      multiLevelCluster(child);
+      multilevelAutocluster(child);
     }
   } else {
-    multiLevelCluster(parent);
+    multilevelAutocluster(parent);
   }
 
   setInstProperty(parent);
@@ -2241,11 +2232,19 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
   breakLargeFlatCluster(cluster_part_1);
 }
 
-// Traverse the physical hierarchy tree in a DFS manner
-// Split macros and std cells in the leaf clusters
-// In the normal operation, we call this function after
-// creating the physical hierarchy tree
-void HierRTLMP::leafClusterStdCellHardMacroSep(Cluster* root_cluster)
+// Break mixed leaf clusters into a standard-cell cluster and hard-macro
+// clusters.
+// Merge macros based on connection signatures and footprints.
+// Based on types of designs, we support two types of breaking up:
+// Suppose current cluster is A.
+//   1) Replace A by A1, A2, A3
+//   2) Type 2:  Create a subtree:
+//      A  ->        A
+//               |   |   |
+//               A1  A2  A3
+// Split macros and std cells in the leaf clusters. In the normal operation,
+// we call this function after creating the physical hierarchy.
+void HierRTLMP::breakMixedLeafClusters(Cluster* root_cluster)
 {
   if (root_cluster->getChildren().empty() || root_cluster->getNumMacro() == 0) {
     return;
@@ -2259,7 +2258,7 @@ void HierRTLMP::leafClusterStdCellHardMacroSep(Cluster* root_cluster)
       if (child->getChildren().empty()) {
         leaf_clusters.push_back(child);
       } else {
-        leafClusterStdCellHardMacroSep(child);
+        breakMixedLeafClusters(child);
       }
     } else {
       child->setClusterType(StdCellCluster);

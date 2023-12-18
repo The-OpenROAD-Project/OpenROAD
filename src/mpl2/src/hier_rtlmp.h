@@ -145,10 +145,6 @@ class HierRTLMP
                                          float core_area,
                                          float util,
                                          float core_util);
-  void initPhysicalHierarchy();
-
-  void setDefaultThresholds();
-  void createDataFlow();
   void updateDataFlow();
   void dataFlowDFSIOPin(int parent,
                         int idx,
@@ -175,8 +171,7 @@ class HierRTLMP
                            bool backward_flag);
   Metrics* computeMetrics(odb::dbModule* module);
   void setClusterMetrics(Cluster* cluster);
-  void mapIOPads();
-  void createIOClusters();
+
   void calculateConnection();
   void createPinBlockage();
   void setPlacementBlockages();
@@ -193,7 +188,15 @@ class HierRTLMP
                    const std::string& file_name);
 
   // Multilevel Autoclustering
-  void multiLevelCluster(Cluster* parent);
+  void runMultilevelAutoclustering();
+  void initPhysicalHierarchy();
+  void setDefaultThresholds();
+  void createIOClusters();
+  void mapIOPads();
+  void createDataFlow();
+  void treatEachMacroAsSingleCluster();
+  void resetSAParameters();
+  void multilevelAutocluster(Cluster* parent);
   void setInstProperty(Cluster* cluster);
   void setInstProperty(odb::dbModule* module,
                        int cluster_id,
@@ -202,7 +205,7 @@ class HierRTLMP
   void mergeClusters(std::vector<Cluster*>& candidate_clusters);
   void updateSubTree(Cluster* parent);
   void breakLargeFlatCluster(Cluster* parent);
-  void leafClusterStdCellHardMacroSep(Cluster* root_cluster);
+  void breakMixedLeafClusters(Cluster* root_cluster);
   void mapMacroInCluster2HardMacro(Cluster* cluster);
 
   // Coarse Shaping
