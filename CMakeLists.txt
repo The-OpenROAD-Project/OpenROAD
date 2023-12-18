@@ -148,7 +148,7 @@ add_subdirectory(third-party)
 
 if(ENABLE_TESTS)
   enable_testing()
-  add_custom_target(build_and_test ${CMAKE_CTEST_COMMAND} --parallel --output-on-failure)
+  add_custom_target(build_and_test ${CMAKE_CTEST_COMMAND} --parallel --output-on-failure -LE IntegrationTest)
   include(GoogleTest)
 endif()
 
