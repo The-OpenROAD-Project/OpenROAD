@@ -1,4 +1,4 @@
-find_program (BASH_PROGRAM bash)
+find_program (BASH_PROGRAM bash REQUIRED)
 
 function(gpl_test test_name)
   add_test (
@@ -38,8 +38,6 @@ clust01
 clust02
 )
 
-if (BASH_PROGRAM)
-  foreach(TEST_NAME IN LISTS TEST_NAMES)
-    gpl_test(${TEST_NAME})
-  endforeach()
-endif (BASH_PROGRAM)
+foreach(TEST_NAME IN LISTS TEST_NAMES)
+  gpl_test(${TEST_NAME})
+endforeach()
