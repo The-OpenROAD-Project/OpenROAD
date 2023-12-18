@@ -844,9 +844,9 @@ Flop MBFF::GetNewFlop(const std::vector<Flop>& prob_dist, const double tot_dist)
   const double rand_num = (double) (rand() % 101);
   double cum_sum = 0;
   Flop new_flop;
-  for (size_t i = 0; i < prob_dist.size(); i++) {
-    cum_sum += prob_dist[i].prob;
-    new_flop = prob_dist[i];
+  for (const Flop& flop : prob_dist) {
+    cum_sum += flop.prob;
+    new_flop = flop;
     if (cum_sum * 100.0 >= rand_num * tot_dist) {
       break;
     }
@@ -1016,8 +1016,8 @@ double MBFF::GetSilh(const std::vector<Flop>& flops,
       if (j != clusters[i].first) {
         max_den = std::max(
             max_den, GetDist(flops[i].pt, trays[j].slots[clusters[i].second]));
-        for (size_t k = 0; k < trays[j].slots.size(); k++) {
-          min_num = std::min(min_num, GetDist(flops[i].pt, trays[j].slots[k]));
+        for (const Point& slot : trays[j].slots) {
+          min_num = std::min(min_num, GetDist(flops[i].pt, slot));
         }
       }
     }
