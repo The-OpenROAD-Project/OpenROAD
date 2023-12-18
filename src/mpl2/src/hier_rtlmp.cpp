@@ -362,19 +362,8 @@ void HierRTLMP::run()
 
   initPhysicalHierarchy();
 
-  mapIOPads();
+  createIOClusters();
 
-  // Model IO pins as bundled IO clusters under the root node.
-  debugPrint(logger_,
-             MPL,
-             "multilevel_autoclustering",
-             1,
-             "Creating bundledIO clusters...");
-  createBundledIOs();
-
-  // Dataflow is used to improve quality of macro placement.
-  debugPrint(
-      logger_, MPL, "multilevel_autoclustering", 1, "Creating dataflow...");
   createDataFlow();
 
   // Create physical hierarchy tree in a post-order DFS manner
@@ -832,13 +821,20 @@ void HierRTLMP::mapIOPads()
   }
 }
 
-//
-// Create Bundled IOs in the following the order : L, T, R, B
-// We will have num_bundled_IOs_ x 4 clusters for bundled IOs
-// Bundled IOs are only created for pins in the region
-//
-void HierRTLMP::createBundledIOs()
+// Model IO pins as bundled IO clusters under the root node.
+// IO clusters are created in the following the order : L, T, R, B.
+// We will have num_bundled_IOs_ x 4 clusters for bundled IOs.
+// Bundled IOs are only created for pins in the region.
+void HierRTLMP::createIOClusters()
 {
+  mapIOPads();
+
+  debugPrint(logger_,
+             MPL,
+             "multilevel_autoclustering",
+             1,
+             "Creating bundledIO clusters...");
+
   // convert from micron to dbu
   floorplan_lx_ = micronToDbu(floorplan_lx_, dbu_);
   floorplan_ly_ = micronToDbu(floorplan_ly_, dbu_);
@@ -1596,10 +1592,12 @@ void HierRTLMP::calculateConnection()
   }      // end net traversal
 }
 
-// Create Dataflow Information
-// model each std cell instance, IO pin and macro pin as vertices
+// Dataflow is used to improve quality of macro placement.
+// Here we model each std cell instance, IO pin and macro pin as vertices.
 void HierRTLMP::createDataFlow()
 {
+  debugPrint(
+      logger_, MPL, "multilevel_autoclustering", 1, "Creating dataflow...");
   if (max_num_ff_dist_ <= 0) {
     return;
   }

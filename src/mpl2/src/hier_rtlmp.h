@@ -176,7 +176,7 @@ class HierRTLMP
   Metrics* computeMetrics(odb::dbModule* module);
   void setClusterMetrics(Cluster* cluster);
   void mapIOPads();
-  void createBundledIOs();
+  void createIOClusters();
   void calculateConnection();
   void createPinBlockage();
   void setPlacementBlockages();
