@@ -348,14 +348,21 @@ void HierRTLMP::setDefaultThresholds()
   }
 }
 
-// This function works as following:
-// 1) Traverse the logical hierarchy, get all the statistics of each logical
-//    module in logical_module_map_ and associate each hard macro with its
-//    HardMacro object
-// 2) Create Bundled pins and treat each bundled pin as a cluster with no size
-//    The number of bundled IOs is num_bundled_IOs_ x 4  (four boundaries)
-// 3) Create physical hierarchy tree in a DFS manner (Postorder)
-// 4) Place clusters and macros in a BFS manner (Preorder)
+// Top Level Function
+// The algorithm of our MacroPlacer is divided into 5 steps.
+// 1) Multilevel Autoclustering:
+//      Transform logical hierarchy into physical hierarchy.
+// 2) Coarse Shaping -> Bottom - Up:
+//      Determine the rough shape function for each cluster.
+// 3) Fine Shaping -> Top - Down:
+//      Refine the possible shapes of each cluster based on the fixed 
+//      outline and location of its parent cluster.
+//      *This is executed within hierarchical placement method.
+// 4) Hierarchical Macro Placement -> Top - Down
+//      a) Placement of Cluster (one level at a time);
+//      b) Placement of Macros (one macro cluster at a time).
+// 5) Orientation Improvement
+//      Attempts macro flipping to improve WR
 void HierRTLMP::run()
 {
   initMacroPlacer();
@@ -382,35 +389,7 @@ void HierRTLMP::run()
   correctAllMacrosOrientation();
 
   writeMacroPlacement(macro_placement_file_);
-
-  // Clear the memory to avoid memory leakage
-  // release all the pointers
-  // metrics map
-  for (auto& [module, metrics] : logical_module_map_) {
-    delete metrics;
-  }
-  logical_module_map_.clear();
-  // hard macro map
-  for (auto& [inst, hard_macro] : hard_macro_map_) {
-    delete hard_macro;
-  }
-  hard_macro_map_.clear();
-  // delete all clusters
-  for (auto& [cluster_id, cluster] : cluster_map_) {
-    delete cluster;
-  }
-  cluster_map_.clear();
-
-  if (graphics_) {
-    graphics_->eraseDrawing();
-  }
-
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             1,
-             "number of macros in HardMacroCluster : {}",
-             num_hard_macros_cluster_);
+  clear();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -6222,7 +6201,8 @@ void HierRTLMP::setModuleStdCellsLocation(Cluster* cluster,
 }
 
 // Update the locations of std cells in odb using the locations that
-// HierRTLMP estimates for the leaf standard clusters
+// HierRTLMP estimates for the leaf standard clusters. This is needed
+// for the orientation improvement step.
 void HierRTLMP::generateTemporaryStdCellsPlacement(Cluster* cluster)
 {
   if (cluster->isLeaf() && cluster->getNumStdCell() != 0) {
@@ -6362,6 +6342,34 @@ void HierRTLMP::writeMacroPlacement(const std::string& file_name)
         << " " << y << "} -orientation " << inst->getOrient().getString()
         << '\n';
   }
+}
+
+void HierRTLMP::clear()
+{
+  for (auto& [module, metrics] : logical_module_map_) {
+    delete metrics;
+  }
+  logical_module_map_.clear();
+
+  for (auto& [inst, hard_macro] : hard_macro_map_) {
+    delete hard_macro;
+  }
+  hard_macro_map_.clear();
+
+  for (auto& [cluster_id, cluster] : cluster_map_) {
+    delete cluster;
+  }
+  cluster_map_.clear();
+
+  if (graphics_) {
+    graphics_->eraseDrawing();
+  }
+  debugPrint(logger_,
+             MPL,
+             "hierarchical_macro_placement",
+             1,
+             "number of macros in HardMacroCluster : {}",
+             num_hard_macros_cluster_);
 }
 
 void HierRTLMP::setBusPlanningOn(bool bus_planning_on)
