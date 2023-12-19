@@ -193,7 +193,7 @@ class HierRTLMP
   void treatEachMacroAsSingleCluster();
   void resetSAParameters();
   void multilevelAutocluster(Cluster* parent);
-	void printPhysicalHierarchyTree(Cluster* parent, int level);
+  void printPhysicalHierarchyTree(Cluster* parent, int level);
   void setInstProperty(Cluster* cluster);
   void setInstProperty(odb::dbModule* module,
                        int cluster_id,
@@ -206,8 +206,8 @@ class HierRTLMP
   void mapMacroInCluster2HardMacro(Cluster* cluster);
 
   // Coarse Shaping
-	void runCoarseShaping();
-	void setRootShapes();
+  void runCoarseShaping();
+  void setRootShapes();
   void calculateChildrenTilings(Cluster* parent);
   void calculateMacroTilings(Cluster* cluster);
   void setIOClustersBlockages();
@@ -215,15 +215,15 @@ class HierRTLMP
 
   // Fine Shaping
   bool runFineShaping(Cluster* parent,
-                            std::vector<SoftMacro>& macros,
-                            std::map<std::string, int>& soft_macro_id_map,
-                            float target_util,
-                            float target_dead_space);
+                      std::vector<SoftMacro>& macros,
+                      std::map<std::string, int>& soft_macro_id_map,
+                      float target_util,
+                      float target_dead_space);
 
   // Hierarchical Macro Placement 1st stage: Cluster Placement
-  void multiLevelMacroPlacement(Cluster* parent);
-  void multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent);
-  void enhancedMacroPlacement(Cluster* parent);
+  void runHierarchicalMacroPlacement(Cluster* parent);
+  void runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent);
+  void runEnhancedHierarchicalMacroPlacement(Cluster* parent);
 
   void findOverlappingBlockages(std::vector<Rect>& blockages,
                                 std::vector<Rect>& placement_blockages,
@@ -448,7 +448,7 @@ class HierRTLMP
   // map IO pins to Pads (for designs with IO pads)
   std::map<odb::dbBTerm*, odb::dbInst*> io_pad_map_;
   bool design_has_io_clusters_ = true;
-	bool design_has_only_macros_ = false;
+  bool design_has_only_macros_ = false;
 
   std::unique_ptr<Mpl2Observer> graphics_;
 };

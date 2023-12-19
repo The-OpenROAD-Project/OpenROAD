@@ -368,9 +368,9 @@ void HierRTLMP::run()
   }
 
   if (bus_planning_on_) {
-    multiLevelMacroPlacement(root_cluster_);
+    runHierarchicalMacroPlacement(root_cluster_);
   } else {
-    multiLevelMacroPlacementWithoutBusPlanning(root_cluster_);
+    runHierarchicalMacroPlacementWithoutBusPlanning(root_cluster_);
   }
 
   generateTemporaryStdCellsPlacement(root_cluster_);
@@ -640,7 +640,7 @@ void HierRTLMP::runCoarseShaping()
     logger_->warn(MPL, 27, "Design has only macros!");
     root_cluster_->setClusterType(HardMacroCluster);
     return;
-  } 
+  }
 
   if (graphics_) {
     graphics_->startCoarse();
@@ -2509,7 +2509,6 @@ static bool comparePairProduct(const std::pair<float, float>& p1,
   return p1.first * p1.second < p2.first * p2.second;
 }
 
-
 // Determine the macro tilings within each cluster in a bottom-up manner.
 // (Post-Order DFS manner)
 // Coarse shaping:  In this step, we only consider the size of macros
@@ -3187,7 +3186,6 @@ void HierRTLMP::setPlacementBlockages()
   }
 }
 
-//
 // Cluster Placement Engine Starts ...........................................
 // The cluster placement is done in a top-down manner
 // (Preorder DFS)
@@ -3205,8 +3203,7 @@ void HierRTLMP::setPlacementBlockages()
 // times. The first time is to determine the location of pin access. The second
 // time is to determine the location of children clusters. We assume the
 // summation of pin access size is equal to the area of standard-cell clusters
-//
-void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
+void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
 {
   // base case
   // If the parent cluster has no macros (parent cluster is a StdCellCluster or
@@ -3674,10 +3671,10 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
                  target_dead_space);
 
       if (!runFineShaping(parent,
-                                shaped_macros,
-                                soft_macro_id_map,
-                                target_util,
-                                target_dead_space)) {
+                          shaped_macros,
+                          soft_macro_id_map,
+                          target_util,
+                          target_dead_space)) {
         debugPrint(logger_,
                    MPL,
                    "fine_shaping",
@@ -3923,10 +3920,10 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
                    target_dead_space);
 
         if (!runFineShaping(parent,
-                                  shaped_macros,
-                                  soft_macro_id_map,
-                                  target_util,
-                                  target_dead_space)) {
+                            shaped_macros,
+                            soft_macro_id_map,
+                            target_util,
+                            target_dead_space)) {
           debugPrint(
               logger_,
               MPL,
@@ -4096,7 +4093,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   for (auto& cluster : parent->getChildren()) {
     if (cluster->getClusterType() == MixedCluster
         || cluster->getClusterType() == HardMacroCluster) {
-      multiLevelMacroPlacement(cluster);
+      runHierarchicalMacroPlacement(cluster);
     }
   }
 
@@ -4139,7 +4136,7 @@ void HierRTLMP::mergeNets(std::vector<BundledNet>& nets)
 }
 
 // Multilevel macro placement without bus planning
-void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
+void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
 {
   // base case
   // If the parent cluster has no macros (parent cluster is a StdCellCluster or
@@ -4450,10 +4447,10 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
                  target_dead_space);
 
       if (!runFineShaping(parent,
-                                shaped_macros,
-                                soft_macro_id_map,
-                                target_util,
-                                target_dead_space)) {
+                          shaped_macros,
+                          soft_macro_id_map,
+                          target_util,
+                          target_dead_space)) {
         debugPrint(logger_,
                    MPL,
                    "fine_shaping",
@@ -4573,7 +4570,7 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
       sa_containers[i]->printResults();
     }
 
-    enhancedMacroPlacement(parent);
+    runEnhancedHierarchicalMacroPlacement(parent);
   } else {
     best_sa->alignMacroClusters();
     best_sa->fillDeadSpace();
@@ -4615,7 +4612,7 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
   for (auto& cluster : parent->getChildren()) {
     if (cluster->getClusterType() == MixedCluster
         || cluster->getClusterType() == HardMacroCluster) {
-      multiLevelMacroPlacementWithoutBusPlanning(cluster);
+      runHierarchicalMacroPlacementWithoutBusPlanning(cluster);
     }
   }
 
@@ -4631,7 +4628,7 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
 // be very hard to generate a valid tiling for the clusters.
 // Here, we may want to try setting the area of all standard-cell clusters to 0.
 // This should be only be used in mixed clusters.
-void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
+void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
 {
   // base case
   // If the parent cluster has no macros (parent cluster is a StdCellCluster or
@@ -4927,10 +4924,10 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
                  target_util,
                  target_dead_space);
       if (!runFineShaping(parent,
-                                shaped_macros,
-                                soft_macro_id_map,
-                                target_util,
-                                target_dead_space)) {
+                          shaped_macros,
+                          soft_macro_id_map,
+                          target_util,
+                          target_dead_space)) {
         debugPrint(logger_,
                    MPL,
                    "fine_shaping",
@@ -5146,12 +5143,11 @@ void HierRTLMP::computeBlockageOverlap(std::vector<Rect>& overlapping_blockages,
 // cluster. The target utilization is based on tiling results we calculated
 // before. The tiling results (which only consider the contribution of hard
 // macros) will give us very close starting point.
-bool HierRTLMP::runFineShaping(
-    Cluster* parent,
-    std::vector<SoftMacro>& macros,
-    std::map<std::string, int>& soft_macro_id_map,
-    float target_util,
-    float target_dead_space)
+bool HierRTLMP::runFineShaping(Cluster* parent,
+                               std::vector<SoftMacro>& macros,
+                               std::map<std::string, int>& soft_macro_id_map,
+                               float target_util,
+                               float target_dead_space)
 {
   const float outline_width = parent->getWidth();
   const float outline_height = parent->getHeight();
