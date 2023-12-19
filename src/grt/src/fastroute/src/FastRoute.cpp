@@ -984,7 +984,7 @@ NetRouteMap FastRouteCore::run()
                "LV routing round {}, enlarge {}.",
                i,
                enlarge_);
-    routeLVAll(newTH, enlarge_, LOGIS_COF);
+    routeMonotonicAll(newTH, enlarge_, LOGIS_COF);
 
     past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
 
