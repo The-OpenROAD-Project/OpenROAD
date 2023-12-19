@@ -355,7 +355,7 @@ void HierRTLMP::setDefaultThresholds()
 // 2) Coarse Shaping -> Bottom - Up:
 //      Determine the rough shape function for each cluster.
 // 3) Fine Shaping -> Top - Down:
-//      Refine the possible shapes of each cluster based on the fixed 
+//      Refine the possible shapes of each cluster based on the fixed
 //      outline and location of its parent cluster.
 //      *This is executed within hierarchical placement method.
 // 4) Hierarchical Macro Placement -> Top - Down
