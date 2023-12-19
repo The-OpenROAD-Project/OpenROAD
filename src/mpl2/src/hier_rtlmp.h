@@ -174,7 +174,7 @@ class HierRTLMP
   void calculateConnection();
   void getHardMacros(odb::dbModule* module,
                      std::vector<HardMacro*>& hard_macros);
-	void clear();
+  void clear();
 
   void printConnection();
   void printClusters();
