@@ -525,7 +525,7 @@ void dbLevelShifter::setCellOutput(std::string cell_output)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_cell_output = cell_output;
+  obj->_cell_output = std::move(cell_output);
 }
 
 std::string dbLevelShifter::getCellOutput() const
