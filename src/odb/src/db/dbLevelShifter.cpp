@@ -499,7 +499,7 @@ void dbLevelShifter::setCellName(std::string cell_name)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_cell_name = std::move(cell_name);
+  obj->_cell_name = cell_name;
 }
 
 std::string dbLevelShifter::getCellName() const
@@ -512,7 +512,7 @@ void dbLevelShifter::setCellInput(std::string cell_input)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_cell_input = std::move(cell_input);
+  obj->_cell_input = cell_input;
 }
 
 std::string dbLevelShifter::getCellInput() const
@@ -525,7 +525,7 @@ void dbLevelShifter::setCellOutput(std::string cell_output)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_cell_output = std::move(cell_output);
+  obj->_cell_output = cell_output;
 }
 
 std::string dbLevelShifter::getCellOutput() const
