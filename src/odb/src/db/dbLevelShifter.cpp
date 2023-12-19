@@ -499,7 +499,7 @@ void dbLevelShifter::setCellName(std::string cell_name)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_cell_name = cell_name;
+  obj->_cell_name = std::move(cell_name);
 }
 
 std::string dbLevelShifter::getCellName() const
