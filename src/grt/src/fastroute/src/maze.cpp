@@ -1346,7 +1346,8 @@ int FastRouteCore::splitEdge(std::vector<TreeEdge>& treeedges,
   for (int i = 0; i < treenodes[n2].nbr_count; i++) {
     if (treenodes[n2].nbr[i] == n1) {
       continue;
-    } else if (treenodes[n2].nbr[i] == B1) {
+    }
+    if (treenodes[n2].nbr[i] == B1) {
       treenodes[n2].nbr[cnt] = new_node_id;
       treenodes[n2].edge[cnt] = new_edge_id;
       cnt++;

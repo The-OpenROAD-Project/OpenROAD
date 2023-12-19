@@ -265,7 +265,6 @@ class FastRouteCore
   void InitEstUsage();
   void SaveLastRouteLen();
   void fixEmbeddedTrees();
-  void fixLoops();
   void checkAndFixEmbeddedTree(const int net_id);
   bool areEdgesOverlapping(const int net_id,
                            const int edge_id,
