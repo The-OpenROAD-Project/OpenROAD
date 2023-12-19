@@ -912,7 +912,7 @@ void FastRouteCore::setupHeap(const int netID,
         queuetail++;
       }  // loop i (3 neigbors for cur node)
     }    // while queue is not empty
-  }        // net with more than two pins
+  }      // net with more than two pins
 
   for (int i = regionY1; i <= regionY2; i++) {
     for (int j = regionX1; j <= regionX2; j++)
@@ -1005,7 +1005,6 @@ bool FastRouteCore::updateRouteType1(const int net_id,
   // copy (n1, A2)
   const int cnt_n1A2 = copyGrids(
       treenodes, n1, A2, treeedges, edge_n1A2, gridsX_n1A2, gridsY_n1A2);
-
 
   // update route for (n1, A1) and (n1, A2)
   // find the index of E1 in (n1, A1)
@@ -1308,7 +1307,11 @@ float getCost(const int i,
   return cost;
 }
 
-int FastRouteCore::splitEdge(std::vector<TreeEdge> &treeedges, std::vector<TreeNode> &treenodes, int n1, int n2, int edge_n1n2)
+int FastRouteCore::splitEdge(std::vector<TreeEdge>& treeedges,
+                             std::vector<TreeNode>& treenodes,
+                             int n1,
+                             int n2,
+                             int edge_n1n2)
 {
   const int n2x = treenodes[n2].x;
   const int n2y = treenodes[n2].y;
@@ -1329,7 +1332,7 @@ int FastRouteCore::splitEdge(std::vector<TreeEdge> &treeedges, std::vector<TreeN
   int edge_n2B1;
   if (treenodes[n2].nbr[0] == n1) {
     B1 = treenodes[n2].nbr[1];
-    edge_n2B1 = treenodes[n2].edge[1]; 
+    edge_n2B1 = treenodes[n2].edge[1];
   } else if (treenodes[n2].nbr[1] == n1) {
     B1 = treenodes[n2].nbr[0];
     edge_n2B1 = treenodes[n2].edge[0];
@@ -1341,13 +1344,13 @@ int FastRouteCore::splitEdge(std::vector<TreeEdge> &treeedges, std::vector<TreeN
   // update n2 neighbor
   int cnt = 0;
   for (int i = 0; i < treenodes[n2].nbr_count; i++) {
-    if (treenodes[n2].nbr[i] == n1) continue;
-    else if (treenodes[n2].nbr[i] == B1){
+    if (treenodes[n2].nbr[i] == n1) {
+      continue;
+    } else if (treenodes[n2].nbr[i] == B1) {
       treenodes[n2].nbr[cnt] = new_node_id;
       treenodes[n2].edge[cnt] = new_edge_id;
       cnt++;
-    }
-    else {
+    } else {
       treenodes[n2].nbr[cnt] = treenodes[n2].nbr[i];
       treenodes[n2].edge[cnt] = treenodes[n2].edge[i];
       cnt++;
@@ -1359,8 +1362,7 @@ int FastRouteCore::splitEdge(std::vector<TreeEdge> &treeedges, std::vector<TreeN
   if (treeedges[edge_n2B1].n1 == n2) {
     treeedges[edge_n2B1].n1 = new_node_id;
     treeedges[edge_n2B1].n1a = new_node.stackAlias;
-  }
-  else {
+  } else {
     treeedges[edge_n2B1].n2 = new_node_id;
     treeedges[edge_n2B1].n2a = new_node.stackAlias;
   }
@@ -1369,22 +1371,25 @@ int FastRouteCore::splitEdge(std::vector<TreeEdge> &treeedges, std::vector<TreeN
   if (treeedges[edge_n1n2].n1 == n2) {
     treeedges[edge_n1n2].n1 = new_node_id;
     treeedges[edge_n1n2].n1a = new_node.stackAlias;
-  }
-  else {
+  } else {
     treeedges[edge_n1n2].n2 = new_node_id;
     treeedges[edge_n1n2].n2a = new_node.stackAlias;
   }
 
   // change node neighbor
   for (int i = 0; i < treenodes[B1].nbr_count; i++) {
-    if (treenodes[B1].nbr[i] == n2) treenodes[B1].nbr[i] = new_node_id;
+    if (treenodes[B1].nbr[i] == n2) {
+      treenodes[B1].nbr[i] = new_node_id;
+    }
   }
 
   // change n1 node
   for (int i = 0; i < treenodes[n1].nbr_count; i++) {
-    if (treenodes[n1].nbr[i] == n2) treenodes[n1].nbr[i] = new_node_id;
+    if (treenodes[n1].nbr[i] == n2) {
+      treenodes[n1].nbr[i] = new_node_id;
+    }
   }
-     
+
   // config new edge
   new_edge.len = 0;
   new_edge.n1 = new_node_id;
@@ -1404,10 +1409,10 @@ int FastRouteCore::splitEdge(std::vector<TreeEdge> &treeedges, std::vector<TreeN
   new_node.edge[0] = edge_n2B1;
   new_node.edge[1] = new_edge_id;
   new_node.edge[2] = edge_n1n2;
- 
+
   treeedges.push_back(new_edge);
   treenodes.push_back(new_node);
-        
+
   return new_node_id;
 }
 
@@ -1892,8 +1897,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
       const int edge_n1n2 = edgeID;
       // (1) consider subtree1
-      if (n1 < num_terminals && (E1x != n1x || E1y != n1y))
-      {
+      if (n1 < num_terminals && (E1x != n1x || E1y != n1y)) {
         // split neighbor edge and return id new node
         n1 = splitEdge(treeedges, treenodes, n2, n1, edgeID);
       }
@@ -2048,8 +2052,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
       }    // n1 is not a pin and E1!=n1
 
       // (2) consider subtree2
-      if (n2 < num_terminals && (E2x != n2x || E2y != n2y))
-      {
+      if (n2 < num_terminals && (E2x != n2x || E2y != n2y)) {
         // split neighbor edge and return id new node
         n2 = splitEdge(treeedges, treenodes, n1, n2, edgeID);
       }
