@@ -906,8 +906,7 @@ get_connected_terms(odb::dbBlock* block, odb::dbITerm* iterm)
         connectedDomain
             = block->findPowerDomain(connectedInst->getGroup()->getName());
       }
-      external_iterms.push_back(
-          std::make_pair(connectedIterm, connectedDomain));
+      external_iterms.emplace_back(connectedIterm, connectedDomain);
     }
   }
 
