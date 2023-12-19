@@ -51,9 +51,7 @@ namespace gpl {
 
 using utl::GPL;
 
-using namespace odb;
-
-static int fastModulo(const int input, const int ceil);
+static int fastModulo(int input, int ceil);
 
 static float calculateBiVariateNormalCDF(biNormalParameters i);
 
@@ -80,43 +78,23 @@ static float fastExp(float exp);
 ////////////////////////////////////////////////
 // GCell
 
-GCell::GCell()
-    : lx_(0),
-      ly_(0),
-      ux_(0),
-      uy_(0),
-      dLx_(0),
-      dLy_(0),
-      dUx_(0),
-      dUy_(0),
-      densityScale_(0),
-      gradientX_(0),
-      gradientY_(0)
-{
-}
-
-GCell::GCell(Instance* inst) : GCell()
+GCell::GCell(Instance* inst)
 {
   setInstance(inst);
 }
 
-GCell::GCell(const std::vector<Instance*>& insts) : GCell()
+GCell::GCell(const std::vector<Instance*>& insts)
 {
   setClusteredInstance(insts);
 }
 
-GCell::GCell(int cx, int cy, int dx, int dy) : GCell()
+GCell::GCell(const int cx, const int cy, const int dx, const int dy)
 {
   dLx_ = lx_ = cx - dx / 2;
   dLy_ = ly_ = cy - dy / 2;
   dUx_ = ux_ = cx + dx / 2;
   dUy_ = uy_ = cy + dy / 2;
   setFiller();
-}
-
-GCell::~GCell()
-{
-  insts_.clear();
 }
 
 void GCell::clearInstances()
@@ -151,18 +129,6 @@ void GCell::setFiller()
 void GCell::setClusteredInstance(const std::vector<Instance*>& insts)
 {
   insts_ = insts;
-}
-
-void GCell::setLocation(int lx, int ly)
-{
-  ux_ = lx + (ux_ - lx_);
-  uy_ = ly + (uy_ - ly_);
-  lx = lx_;
-  ly = ly_;
-
-  for (auto& gPin : gPins_) {
-    gPin->updateLocation(this);
-  }
 }
 
 void GCell::setCenterLocation(int cx, int cy)
@@ -255,12 +221,12 @@ bool GCell::isInstance() const
 
 bool GCell::isClusteredInstance() const
 {
-  return (insts_.size() > 0);
+  return !insts_.empty();
 }
 
 bool GCell::isFiller() const
 {
-  return (insts_.size() == 0);
+  return insts_.empty();
 }
 
 bool GCell::isMacroInstance() const
@@ -282,39 +248,14 @@ bool GCell::isStdInstance() const
 ////////////////////////////////////////////////
 // GNet
 
-GNet::GNet()
-    : lx_(0),
-      ly_(0),
-      ux_(0),
-      uy_(0),
-      timingWeight_(1),
-      customWeight_(1),
-      waExpMinSumX_(0),
-      waXExpMinSumX_(0),
-      waExpMaxSumX_(0),
-      waXExpMaxSumX_(0),
-      waExpMinSumY_(0),
-      waYExpMinSumY_(0),
-      waExpMaxSumY_(0),
-      waYExpMaxSumY_(0),
-      isDontCare_(0)
-{
-}
-
-GNet::GNet(Net* net) : GNet()
+GNet::GNet(Net* net)
 {
   nets_.push_back(net);
 }
 
-GNet::GNet(const std::vector<Net*>& nets) : GNet()
+GNet::GNet(const std::vector<Net*>& nets)
 {
   nets_ = nets;
-}
-
-GNet::~GNet()
-{
-  gPins_.clear();
-  nets_.clear();
 }
 
 Net* GNet::net() const
@@ -379,36 +320,18 @@ void GNet::clearWaVars()
 
 void GNet::setDontCare()
 {
-  isDontCare_ = 1;
+  isDontCare_ = true;
 }
 
 bool GNet::isDontCare() const
 {
-  return (gPins_.size() == 0) || (isDontCare_ == 1);
+  return gPins_.empty() || isDontCare_;
 }
 
 ////////////////////////////////////////////////
 // GPin
 
-GPin::GPin()
-    : gCell_(nullptr),
-      gNet_(nullptr),
-      offsetCx_(0),
-      offsetCy_(0),
-      cx_(0),
-      cy_(0),
-      maxExpSumX_(0),
-      maxExpSumY_(0),
-      minExpSumX_(0),
-      minExpSumY_(0),
-      hasMaxExpSumX_(0),
-      hasMaxExpSumY_(0),
-      hasMinExpSumX_(0),
-      hasMinExpSumY_(0)
-{
-}
-
-GPin::GPin(Pin* pin) : GPin()
+GPin::GPin(Pin* pin)
 {
   pins_.push_back(pin);
   cx_ = pin->cx();
@@ -417,16 +340,9 @@ GPin::GPin(Pin* pin) : GPin()
   offsetCy_ = pin->offsetCy();
 }
 
-GPin::GPin(const std::vector<Pin*>& pins) : GPin()
+GPin::GPin(const std::vector<Pin*>& pins)
 {
   pins_ = pins;
-}
-
-GPin::~GPin()
-{
-  gCell_ = nullptr;
-  gNet_ = nullptr;
-  pins_.clear();
 }
 
 Pin* GPin::pin() const
@@ -452,10 +368,10 @@ void GPin::setCenterLocation(int cx, int cy)
 
 void GPin::clearWaVars()
 {
-  hasMaxExpSumX_ = 0;
-  hasMaxExpSumY_ = 0;
-  hasMinExpSumX_ = 0;
-  hasMinExpSumY_ = 0;
+  hasMaxExpSumX_ = false;
+  hasMaxExpSumY_ = false;
+  hasMinExpSumX_ = false;
+  hasMinExpSumY_ = false;
 
   maxExpSumX_ = maxExpSumY_ = 0;
   minExpSumX_ = minExpSumY_ = 0;
@@ -463,25 +379,25 @@ void GPin::clearWaVars()
 
 void GPin::setMaxExpSumX(float maxExpSumX)
 {
-  hasMaxExpSumX_ = 1;
+  hasMaxExpSumX_ = true;
   maxExpSumX_ = maxExpSumX;
 }
 
 void GPin::setMaxExpSumY(float maxExpSumY)
 {
-  hasMaxExpSumY_ = 1;
+  hasMaxExpSumY_ = true;
   maxExpSumY_ = maxExpSumY;
 }
 
 void GPin::setMinExpSumX(float minExpSumX)
 {
-  hasMinExpSumX_ = 1;
+  hasMinExpSumX_ = true;
   minExpSumX_ = minExpSumX;
 }
 
 void GPin::setMinExpSumY(float minExpSumY)
 {
-  hasMinExpSumY_ = 1;
+  hasMinExpSumY_ = true;
   minExpSumY_ = minExpSumY;
 }
 
@@ -500,28 +416,7 @@ void GPin::updateDensityLocation(const GCell* gCell)
 ////////////////////////////////////////////////////////
 // Bin
 
-Bin::Bin()
-    : x_(0),
-      y_(0),
-      lx_(0),
-      ly_(0),
-      ux_(0),
-      uy_(0),
-      nonPlaceArea_(0),
-      instPlacedArea_(0),
-      instPlacedAreaUnscaled_(0),
-      nonPlaceAreaUnscaled_(0),
-      fillerArea_(0),
-      density_(0),
-      targetDensity_(0),
-      electroPhi_(0),
-      electroForceX_(0),
-      electroForceY_(0)
-{
-}
-
 Bin::Bin(int x, int y, int lx, int ly, int ux, int uy, float targetDensity)
-    : Bin()
 {
   x_ = x;
   y_ = y;
@@ -530,16 +425,6 @@ Bin::Bin(int x, int y, int lx, int ly, int ux, int uy, float targetDensity)
   ux_ = ux;
   uy_ = uy;
   targetDensity_ = targetDensity;
-}
-
-Bin::~Bin()
-{
-  x_ = y_ = 0;
-  lx_ = ly_ = ux_ = uy_ = 0;
-  nonPlaceArea_ = instPlacedArea_ = fillerArea_ = nonPlaceAreaUnscaled_
-      = instPlacedAreaUnscaled_ = 0;
-  electroPhi_ = electroForceX_ = electroForceY_ = 0;
-  density_ = targetDensity_ = 0;
 }
 
 const int64_t Bin::binArea() const
@@ -596,36 +481,9 @@ void Bin::setElectroPhi(float phi)
 ////////////////////////////////////////////////
 // BinGrid
 
-BinGrid::BinGrid()
-    : log_(nullptr),
-      lx_(0),
-      ly_(0),
-      ux_(0),
-      uy_(0),
-      binCntX_(0),
-      binCntY_(0),
-      binSizeX_(0),
-      binSizeY_(0),
-      targetDensity_(0),
-      overflowArea_(0),
-      overflowAreaUnscaled_(0),
-      isSetBinCnt_(0)
-{
-}
-
-BinGrid::BinGrid(Die* die) : BinGrid()
+BinGrid::BinGrid(Die* die)
 {
   setCorePoints(die);
-}
-
-BinGrid::~BinGrid()
-{
-  bins_.clear();
-  binCntX_ = binCntY_ = 0;
-  binSizeX_ = binSizeY_ = 0;
-  isSetBinCnt_ = 0;
-  overflowArea_ = 0;
-  overflowAreaUnscaled_ = 0;
 }
 
 void BinGrid::setCorePoints(const Die* die)
@@ -636,9 +494,9 @@ void BinGrid::setCorePoints(const Die* die)
   uy_ = die->coreUy();
 }
 
-void BinGrid::setPlacerBase(const std::shared_ptr<PlacerBase> pb)
+void BinGrid::setPlacerBase(std::shared_ptr<PlacerBase> pb)
 {
-  pb_ = pb;
+  pb_ = std::move(pb);
 }
 
 void BinGrid::setLogger(utl::Logger* log)
@@ -653,7 +511,7 @@ void BinGrid::setTargetDensity(float density)
 
 void BinGrid::setBinCnt(int binCntX, int binCntY)
 {
-  isSetBinCnt_ = 1;
+  isSetBinCnt_ = true;
   binCntX_ = binCntX;
   binCntY_ = binCntY;
 }
@@ -786,8 +644,8 @@ void BinGrid::initBins()
 
   log_->info(GPL, 28, "BinCnt: {} {}", binCntX_, binCntY_);
 
-  binSizeX_ = ceil(static_cast<float>((ux_ - lx_)) / binCntX_);
-  binSizeY_ = ceil(static_cast<float>((uy_ - ly_)) / binCntY_);
+  binSizeX_ = std::ceil(static_cast<float>((ux_ - lx_)) / binCntX_);
+  binSizeY_ = std::ceil(static_cast<float>((uy_ - ly_)) / binCntY_);
 
   log_->info(GPL, 29, "BinSize: {} {}", binSizeX_, binSizeY_);
 
@@ -967,109 +825,35 @@ std::pair<int, int> BinGrid::getMinMaxIdxY(const Instance* inst) const
 
 ////////////////////////////////////////////////
 // NesterovBaseVars
-NesterovBaseVars::NesterovBaseVars()
-{
-  reset();
-}
-
 void NesterovBaseVars::reset()
 {
-  targetDensity = 1.0;
-  binCntX = binCntY = 0;
-  minWireLengthForceBar = -300;
-  isSetBinCnt = 0;
-  useUniformTargetDensity = 0;
+  *this = NesterovBaseVars();
 }
 
 ////////////////////////////////////////////////
 // NesterovPlaceVars
-NesterovPlaceVars::NesterovPlaceVars()
-{
-  reset();
-}
-
 void NesterovPlaceVars::reset()
 {
-  maxNesterovIter = 5000;
-  maxBackTrack = 10;
-  initDensityPenalty = 0.00008;
-  initWireLengthCoef = 0.25;
-  targetOverflow = 0.1;
-  minPhiCoef = 0.95;
-  maxPhiCoef = 1.05;
-  minPreconditioner = 1.0;
-  initialPrevCoordiUpdateCoef = 100;
-  referenceHpwl = 446000000;
-  routabilityCheckOverflow = 0.20;
-  forceCPU = false;
-  timingDrivenMode = true;
-  routabilityDrivenMode = true;
-  debug = false;
-  debug_pause_iterations = 10;
-  debug_update_iterations = 10;
-  debug_draw_bins = true;
-  debug_inst = nullptr;
+  *this = NesterovPlaceVars();
 }
 
 ////////////////////////////////////////////////
 // NesterovBaseCommon
 ///////////////////////////////////////////////
 
-NesterovBaseCommon::NesterovBaseCommon() : pbc_(nullptr), log_(nullptr)
-{
-}
-
 NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
                                        std::shared_ptr<PlacerBaseCommon> pbc,
                                        utl::Logger* log)
-    : NesterovBaseCommon()
 {
   nbVars_ = nbVars;
   pbc_ = std::move(pbc);
   log_ = log;
-  init();
-}
 
-NesterovBaseCommon::~NesterovBaseCommon()
-{
-  reset();
-}
-
-void NesterovBaseCommon::reset()
-{
-  nbVars_.reset();
-  pbc_ = nullptr;
-  log_ = nullptr;
-
-  gCellStor_.clear();
-  gNetStor_.clear();
-  gPinStor_.clear();
-
-  gCells_.clear();
-  gNets_.clear();
-  gPins_.clear();
-
-  gCellMap_.clear();
-  gPinMap_.clear();
-  gNetMap_.clear();
-
-  gCellStor_.shrink_to_fit();
-  gNetStor_.shrink_to_fit();
-  gPinStor_.shrink_to_fit();
-
-  gCells_.shrink_to_fit();
-
-  gNets_.shrink_to_fit();
-  gPins_.shrink_to_fit();
-}
-
-void NesterovBaseCommon::init()
-{
   // gCellStor init
   gCellStor_.reserve(pbc_->placeInsts().size());
 
   for (auto& inst : pbc_->placeInsts()) {
-    gCellStor_.push_back(GCell(inst));
+    gCellStor_.emplace_back(inst);
   }
 
   // TODO:
@@ -1425,104 +1209,16 @@ int64_t NesterovBaseCommon::getHpwl()
 ////////////////////////////////////////////////
 // NesterovBase
 
-NesterovBase::NesterovBase()
-    : pb_(nullptr),
-      nbc_(nullptr),
-      log_(nullptr),
-      fillerDx_(0),
-      fillerDy_(0),
-      whiteSpaceArea_(0),
-      movableArea_(0),
-      totalFillerArea_(0),
-      stdInstsArea_(0),
-      macroInstsArea_(0),
-      sumPhi_(0),
-      targetDensity_(0),
-      uniformTargetDensity_(0),
-      stepLength_(0),
-      densityPenalty_(0),
-
-      isDiverged_(false),
-      isMaxPhiCoefChanged_(false),
-      minSumOverflow(1e30),
-      hpwlWithMinSumOverflow(1e30),
-      iter_(0),
-      isConverged_(false),
-      isSnapshotSaved(false),
-      snapshotA(0),
-      snapshotDensityPenalty(0),
-      snapshotStepLength(0),
-      snapshotWlCoefX(0),
-      snapshotWlCoefY(0)
-
-{
-}
-
 NesterovBase::NesterovBase(NesterovBaseVars nbVars,
                            std::shared_ptr<PlacerBase> pb,
                            std::shared_ptr<NesterovBaseCommon> nbc,
                            utl::Logger* log)
-    : NesterovBase()
 {
   nbVars_ = nbVars;
   pb_ = std::move(pb);
   nbc_ = std::move(nbc);
   log_ = log;
-  init();
-}
 
-NesterovBase::~NesterovBase()
-{
-  reset();
-}
-
-void NesterovBase::reset()
-{
-  nbVars_.reset();
-  pb_ = nullptr;
-  log_ = nullptr;
-
-  fillerDx_ = fillerDy_ = 0;
-  whiteSpaceArea_ = movableArea_ = 0;
-  totalFillerArea_ = 0;
-
-  stdInstsArea_ = macroInstsArea_ = 0;
-
-  gCellStor_.clear();
-  gCells_.clear();
-  gCellInsts_.clear();
-  gCellFillers_.clear();
-
-  gCellStor_.shrink_to_fit();
-  gCells_.shrink_to_fit();
-  gCellInsts_.shrink_to_fit();
-  gCellFillers_.shrink_to_fit();
-
-  isMaxPhiCoefChanged_ = false;
-  sumPhi_ = 0;
-  targetDensity_ = 0;
-  uniformTargetDensity_ = 0;
-
-  iter_ = 0;
-  minSumOverflow = 1e30;
-  hpwlWithMinSumOverflow = 1e30;
-  isConverged_ = false;
-  isDiverged_ = false;
-
-  // snapshot info
-  isSnapshotSaved = false;
-  snapshotCoordi.clear();
-  snapshotSLPCoordi.clear();
-  snapshotSLPSumGrads.clear();
-  snapshotA = 0;
-  snapshotDensityPenalty = 0;
-  snapshotStepLength = 0;
-  snapshotWlCoefX = 0;
-  snapshotWlCoefY = 0;
-}
-
-void NesterovBase::init()
-{
   // Set a fixed seed
   srand(42);
   // area update from pb
@@ -1622,6 +1318,12 @@ void NesterovBase::initFillerGCells()
     maxIdx = dxStor.size();
   }
 
+  // This should never happen (implies no placeable insts) but it
+  // quiets clang-tidy.
+  if (maxIdx == minIdx) {
+    return;
+  }
+
   for (int i = minIdx; i < maxIdx; i++) {
     dxSum += dxStor[i];
     dySum += dyStor[i];
@@ -1709,14 +1411,8 @@ void NesterovBase::initFillerGCells()
     gCellStor_.push_back(myGCell);
   }
 }
-// gcell update
-void NesterovBase::updateGCellLocation(const std::vector<FloatPoint>& coordis)
-{
-  for (auto& coordi : coordis) {
-    int idx = &coordi - &coordis[0];
-    gCells_[idx]->setLocation(coordi.x, coordi.y);
-  }
-}
+
+NesterovBase::~NesterovBase() = default;
 
 // gcell update
 void NesterovBase::updateGCellCenterLocation(
@@ -1817,7 +1513,8 @@ int64_t NesterovBase::totalFillerArea() const
 int64_t NesterovBase::nesterovInstsArea() const
 {
   return stdInstsArea_
-         + static_cast<int64_t>(round(pb_->macroInstsArea() * targetDensity_));
+         + static_cast<int64_t>(
+             std::round(pb_->macroInstsArea() * targetDensity_));
 }
 
 float NesterovBase::sumPhi() const
@@ -1964,11 +1661,11 @@ float NesterovBase::getDensityCoordiLayoutInsideX(const GCell* gCell,
   float adjVal = cx;
   // TODO will change base on each assigned binGrids.
   //
-  if (cx - gCell->dDx() / 2 < bg_.lx()) {
-    adjVal = bg_.lx() + gCell->dDx() / 2;
+  if (cx - gCell->dDx() / 2.0f < bg_.lx()) {
+    adjVal = bg_.lx() + gCell->dDx() / 2.0f;
   }
-  if (cx + gCell->dDx() / 2 > bg_.ux()) {
-    adjVal = bg_.ux() - gCell->dDx() / 2;
+  if (cx + gCell->dDx() / 2.0f > bg_.ux()) {
+    adjVal = bg_.ux() - gCell->dDx() / 2.0f;
   }
   return adjVal;
 }
@@ -1979,11 +1676,11 @@ float NesterovBase::getDensityCoordiLayoutInsideY(const GCell* gCell,
   float adjVal = cy;
   // TODO will change base on each assigned binGrids.
   //
-  if (cy - gCell->dDy() / 2 < bg_.ly()) {
-    adjVal = bg_.ly() + gCell->dDy() / 2;
+  if (cy - gCell->dDy() / 2.0f < bg_.ly()) {
+    adjVal = bg_.ly() + gCell->dDy() / 2.0f;
   }
-  if (cy + gCell->dDy() / 2 > bg_.uy()) {
-    adjVal = bg_.uy() - gCell->dDy() / 2;
+  if (cy + gCell->dDy() / 2.0f > bg_.uy()) {
+    adjVal = bg_.uy() - gCell->dDy() / 2.0f;
   }
 
   return adjVal;
@@ -2295,8 +1992,8 @@ void NesterovBase::updateDensityCenterNextSLP()
 void NesterovBase::resetMinSumOverflow()
 {
   // reset the divergence detect conditions
-  minSumOverflow = 1e30;
-  hpwlWithMinSumOverflow = 1e30;
+  minSumOverflow_ = 1e30;
+  hpwlWithMinSumOverflow_ = 1e30;
 }
 
 float NesterovBase::getPhiCoef(float scaledDiffHpwl) const
@@ -2387,9 +2084,9 @@ void NesterovBase::updateNextIter(const int iter)
                  prevHpwl_);
   }
 
-  if (iter > 50 && minSumOverflow > sumOverflowUnscaled_) {
-    minSumOverflow = sumOverflowUnscaled_;
-    hpwlWithMinSumOverflow = prevHpwl_;
+  if (iter > 50 && minSumOverflow_ > sumOverflowUnscaled_) {
+    minSumOverflow_ = sumOverflowUnscaled_;
+    hpwlWithMinSumOverflow_ = prevHpwl_;
   }
 }
 
@@ -2499,12 +2196,11 @@ void NesterovBase::snapshot()
     return;
   }
   // save snapshots for routability-driven
-  snapshotCoordi = curCoordi_;
-  snapshotSLPCoordi = curSLPCoordi_;
-  snapshotSLPSumGrads = curSLPSumGrads_;
-  snapshotDensityPenalty = densityPenalty_;
-  snapshotStepLength = stepLength_;
-  isSnapshotSaved = true;
+  snapshotCoordi_ = curCoordi_;
+  snapshotSLPCoordi_ = curSLPCoordi_;
+  snapshotSLPSumGrads_ = curSLPSumGrads_;
+  snapshotDensityPenalty_ = densityPenalty_;
+  snapshotStepLength_ = stepLength_;
 }
 
 bool NesterovBase::checkConvergence()
@@ -2540,8 +2236,8 @@ bool NesterovBase::checkConvergence()
 bool NesterovBase::checkDivergence()
 {
   if (sumOverflowUnscaled_ < 0.3f
-      && sumOverflowUnscaled_ - minSumOverflow >= 0.02f
-      && hpwlWithMinSumOverflow * 1.2f < prevHpwl_) {
+      && sumOverflowUnscaled_ - minSumOverflow_ >= 0.02f
+      && hpwlWithMinSumOverflow_ * 1.2f < prevHpwl_) {
     divergeMsg_ = "RePlAce divergence detected. ";
     divergeMsg_ += "Re-run with a smaller max_phi_cof value.";
     divergeCode_ = 307;
@@ -2557,11 +2253,11 @@ bool NesterovBase::revertDivergence()
     return true;
   }
   // revert back the current density penality
-  curCoordi_ = snapshotCoordi;
-  curSLPCoordi_ = snapshotSLPCoordi;
-  curSLPSumGrads_ = snapshotSLPSumGrads;
-  densityPenalty_ = snapshotDensityPenalty;
-  stepLength_ = snapshotStepLength;
+  curCoordi_ = snapshotCoordi_;
+  curSLPCoordi_ = snapshotSLPCoordi_;
+  curSLPSumGrads_ = snapshotSLPSumGrads_;
+  densityPenalty_ = snapshotDensityPenalty_;
+  stepLength_ = snapshotStepLength_;
 
   updateGCellDensityCenterLocation(curCoordi_);
   updateDensityForceBin();
@@ -2581,17 +2277,16 @@ static int fastModulo(const int input, const int ceil)
 
 static float getOverlapDensityArea(const Bin& bin, const GCell* cell)
 {
-  int rectLx = std::max(bin.lx(), cell->dLx()),
-      rectLy = std::max(bin.ly(), cell->dLy()),
-      rectUx = std::min(bin.ux(), cell->dUx()),
-      rectUy = std::min(bin.uy(), cell->dUy());
+  const int rectLx = std::max(bin.lx(), cell->dLx());
+  const int rectLy = std::max(bin.ly(), cell->dLy());
+  const int rectUx = std::min(bin.ux(), cell->dUx());
+  const int rectUy = std::min(bin.uy(), cell->dUy());
 
   if (rectLx >= rectUx || rectLy >= rectUy) {
     return 0;
-  } else {
-    return static_cast<float>(rectUx - rectLx)
-           * static_cast<float>(rectUy - rectLy);
   }
+  return static_cast<float>(rectUx - rectLx)
+         * static_cast<float>(rectUy - rectLy);
 }
 
 static int64_t getOverlapArea(const Bin* bin,
@@ -2640,28 +2335,24 @@ static int64_t getOverlapArea(const Bin* bin,
     // then use the original overlap value instead.
     // This is implemented to prevent cells from being placed
     // at the outer sides of the macro.
-    else {
-      return original;
-    }
-  } else {
-    return static_cast<float>(rectUx - rectLx)
-           * static_cast<float>(rectUy - rectLy);
+    return original;
   }
+  return static_cast<float>(rectUx - rectLx)
+         * static_cast<float>(rectUy - rectLy);
 }
 
 static int64_t getOverlapAreaUnscaled(const Bin* bin, const Instance* inst)
 {
-  int rectLx = std::max(bin->lx(), inst->lx()),
-      rectLy = std::max(bin->ly(), inst->ly()),
-      rectUx = std::min(bin->ux(), inst->ux()),
-      rectUy = std::min(bin->uy(), inst->uy());
+  const int rectLx = std::max(bin->lx(), inst->lx());
+  const int rectLy = std::max(bin->ly(), inst->ly());
+  const int rectUx = std::min(bin->ux(), inst->ux());
+  const int rectUy = std::min(bin->uy(), inst->uy());
 
   if (rectLx >= rectUx || rectLy >= rectUy) {
     return 0;
-  } else {
-    return static_cast<int64_t>(rectUx - rectLx)
-           * static_cast<int64_t>(rectUy - rectLy);
   }
+  return static_cast<int64_t>(rectUx - rectLx)
+         * static_cast<int64_t>(rectUy - rectLy);
 }
 
 // A function that does 2D integration to the density function of a
@@ -2687,20 +2378,20 @@ static float calculateBiVariateNormalCDF(biNormalParameters i)
 }
 //
 // https://codingforspeed.com/using-faster-exponential-approximation/
-static float fastExp(float a)
+static float fastExp(float exp)
 {
-  a = 1.0f + a / 1024.0f;
-  a *= a;
-  a *= a;
-  a *= a;
-  a *= a;
-  a *= a;
-  a *= a;
-  a *= a;
-  a *= a;
-  a *= a;
-  a *= a;
-  return a;
+  exp = 1.0f + exp / 1024.0f;
+  exp *= exp;
+  exp *= exp;
+  exp *= exp;
+  exp *= exp;
+  exp *= exp;
+  exp *= exp;
+  exp *= exp;
+  exp *= exp;
+  exp *= exp;
+  exp *= exp;
+  return exp;
 }
 
 static float getDistance(const std::vector<FloatPoint>& a,
