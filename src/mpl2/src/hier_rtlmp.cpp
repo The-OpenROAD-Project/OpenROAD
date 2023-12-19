@@ -3673,7 +3673,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
                  target_util,
                  target_dead_space);
 
-      if (!shapeChildrenCluster(parent,
+      if (!runFineShaping(parent,
                                 shaped_macros,
                                 soft_macro_id_map,
                                 target_util,
@@ -3922,7 +3922,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
                    target_util,
                    target_dead_space);
 
-        if (!shapeChildrenCluster(parent,
+        if (!runFineShaping(parent,
                                   shaped_macros,
                                   soft_macro_id_map,
                                   target_util,
@@ -4449,7 +4449,7 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
                  target_util,
                  target_dead_space);
 
-      if (!shapeChildrenCluster(parent,
+      if (!runFineShaping(parent,
                                 shaped_macros,
                                 soft_macro_id_map,
                                 target_util,
@@ -4926,7 +4926,7 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
                  parent->getName(),
                  target_util,
                  target_dead_space);
-      if (!shapeChildrenCluster(parent,
+      if (!runFineShaping(parent,
                                 shaped_macros,
                                 soft_macro_id_map,
                                 target_util,
@@ -5146,7 +5146,7 @@ void HierRTLMP::computeBlockageOverlap(std::vector<Rect>& overlapping_blockages,
 // cluster. The target utilization is based on tiling results we calculated
 // before. The tiling results (which only consider the contribution of hard
 // macros) will give us very close starting point.
-bool HierRTLMP::shapeChildrenCluster(
+bool HierRTLMP::runFineShaping(
     Cluster* parent,
     std::vector<SoftMacro>& macros,
     std::map<std::string, int>& soft_macro_id_map,

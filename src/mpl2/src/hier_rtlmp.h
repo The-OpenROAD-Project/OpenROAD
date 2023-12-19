@@ -214,7 +214,7 @@ class HierRTLMP
   void setPlacementBlockages();
 
   // Fine Shaping
-  bool shapeChildrenCluster(Cluster* parent,
+  bool runFineShaping(Cluster* parent,
                             std::vector<SoftMacro>& macros,
                             std::map<std::string, int>& soft_macro_id_map,
                             float target_util,
