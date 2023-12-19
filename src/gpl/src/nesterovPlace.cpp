@@ -50,24 +50,7 @@
 namespace gpl {
 using utl::GPL;
 
-NesterovPlace::NesterovPlace()
-    : pbc_(nullptr),
-      nbc_(nullptr),
-      log_(nullptr),
-      rb_(nullptr),
-      tb_(nullptr),
-      npVars_(),
-      baseWireLengthCoef_(0),
-      wireLengthCoefX_(0),
-      wireLengthCoefY_(0),
-      prevHpwl_(0),
-      isDiverged_(false),
-      isRoutabilityNeed_(true),
-      divergeCode_(0),
-      recursionCntWlCoef_(0),
-      recursionCntInitSLPCoef_(0)
-{
-}
+NesterovPlace::NesterovPlace() = default;
 
 NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
                              const std::shared_ptr<PlacerBaseCommon>& pbc,
@@ -84,8 +67,8 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
   nbc_ = nbc;
   pbVec_ = pbVec;
   nbVec_ = nbVec;
-  rb_ = rb;
-  tb_ = tb;
+  rb_ = std::move(rb);
+  tb_ = std::move(tb);
   log_ = log;
 
   if (npVars.debug && Graphics::guiActive()) {
