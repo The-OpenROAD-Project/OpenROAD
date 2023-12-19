@@ -1583,7 +1583,8 @@ void FlexPA::prepPoint()
         if (term.get()->getType().isSupply()) {
           continue;
         }
-        if (term->getNet() == nullptr) {
+        auto net = term->getNet();
+        if (!net || net->isSpecial()) {
           continue;
         }
         int nAps = 0;
