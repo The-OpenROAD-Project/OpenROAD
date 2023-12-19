@@ -512,7 +512,7 @@ void dbLevelShifter::setCellInput(std::string cell_input)
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
 
-  obj->_cell_input = cell_input;
+  obj->_cell_input = std::move(cell_input);
 }
 
 std::string dbLevelShifter::getCellInput() const
