@@ -349,7 +349,7 @@ void HierRTLMP::setDefaultThresholds()
 }
 
 // Top Level Function
-// The algorithm of our MacroPlacer is divided into 5 steps.
+// The flow of our MacroPlacer is divided into 5 stages.
 // 1) Multilevel Autoclustering:
 //      Transform logical hierarchy into physical hierarchy.
 // 2) Coarse Shaping -> Bottom - Up:
@@ -5159,7 +5159,7 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
       if (shapes.empty()) {
         logger_->error(MPL,
                        7,
-                       "[Fine Shaping] Not enough space in cluster: {} for "
+                       "Not enough space in cluster: {} for "
                        "child hard macro cluster: {}",
                        parent->getName(),
                        cluster->getName());
@@ -5178,7 +5178,7 @@ bool HierRTLMP::runFineShaping(Cluster* parent,
       if (shapes.empty()) {
         logger_->error(MPL,
                        8,
-                       "[Fine Shaping] Not enough space in cluster: {} for "
+                       "Not enough space in cluster: {} for "
                        "child mixed cluster: {}",
                        parent->getName(),
                        cluster->getName());
