@@ -2790,8 +2790,9 @@ bool DbTermAccessPointDescriptor::lessThan(std::any l, std::any r) const
   if (l_term_ap.iterm != r_term_ap.iterm && l_term_ap.iterm != nullptr
       && r_term_ap.iterm != nullptr) {
     return l_term_ap.iterm->getId() < r_term_ap.iterm->getId();
-  } else if (l_term_ap.bterm != r_term_ap.bterm && l_term_ap.bterm != nullptr
-             && r_term_ap.bterm != nullptr) {
+  }
+  if (l_term_ap.bterm != r_term_ap.bterm && l_term_ap.bterm != nullptr
+      && r_term_ap.bterm != nullptr) {
     return l_term_ap.bterm->getId() < r_term_ap.bterm->getId();
   }
   return l_term_ap.ap->getId() < r_term_ap.ap->getId();
