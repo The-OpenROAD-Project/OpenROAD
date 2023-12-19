@@ -22,10 +22,6 @@ Traversed logical hierarchy
 	Manufacturing Grid: 10
 
 [WARNING MPL-0026] Design has no IO pins!
-[INFO MPL-0024] [Multilevel Autoclustering] Creating clustered netlist.
 [WARNING MPL-0025] Design has no standard cells!
-[INFO MPL-0030] [Multilevel Autoclustering] Treating each macro a single cluster.
 [WARNING MPL-0027] Design has only macros!
-[INFO MPL-0029] [Hierarchical Macro Placement] Placing macros.
-[INFO MPL-0037] Updated location of 10 macros
 No differences found.
