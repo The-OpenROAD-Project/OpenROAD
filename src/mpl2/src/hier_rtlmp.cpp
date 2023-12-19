@@ -361,65 +361,16 @@ void HierRTLMP::run()
   initMacroPlacer();
 
   runMultilevelAutoclustering();
+  runCoarseShaping();
 
-  //
-  // Place macros in a hierarchical mode based on the physical hierarchical
-  // tree
-  //
-  //  -- Shape Engine --
-  // Calculate the shape and area of each cluster in a bottom-up approach.
-  // Start by determining the macro tilings within each cluster.
-  // When placing clusters at each level, we can adjust the utilization of
-  // standard cells dynamically. Step 1: Establish the size of the root cluster.
-  //
-  SoftMacro* root_soft_macro = new SoftMacro(root_cluster_);
+  if (graphics_) {
+    graphics_->startFine();
+  }
 
-  // TODO: This adjustment should have been done earlier...
-  //
-  const float root_lx = std::max(
-      dbuToMicron(block_->getCoreArea().xMin(), dbu_), global_fence_lx_);
-  const float root_ly = std::max(
-      dbuToMicron(block_->getCoreArea().yMin(), dbu_), global_fence_ly_);
-  const float root_ux = std::min(
-      dbuToMicron(block_->getCoreArea().xMax(), dbu_), global_fence_ux_);
-  const float root_uy = std::min(
-      dbuToMicron(block_->getCoreArea().yMax(), dbu_), global_fence_uy_);
-
-  const float root_area = (root_ux - root_lx) * (root_uy - root_ly);
-  const float root_width = root_ux - root_lx;
-  const std::vector<std::pair<float, float>> root_width_list
-      = {std::pair<float, float>(root_width, root_width)};
-
-  root_soft_macro->setShapes(root_width_list, root_area);
-  root_soft_macro->setWidth(root_width);  // This will set height automatically
-  root_soft_macro->setX(root_lx);
-  root_soft_macro->setY(root_ly);
-  root_cluster_->setSoftMacro(root_soft_macro);
-
-  // At this point we have checked the existence of both std cells and IOs
-  if (!design_has_io_clusters_) {
-    logger_->warn(MPL, 27, "Design has only macros!");
-    if (graphics_) {
-      graphics_->startFine();
-    }
-    hardMacroClusterMacroPlacement(root_cluster_);
+  if (bus_planning_on_) {
+    multiLevelMacroPlacement(root_cluster_);
   } else {
-    if (graphics_) {
-      graphics_->startCoarse();
-    }
-
-    calClusterMacroTilings(root_cluster_);
-    createPinBlockage();
-
-    if (graphics_) {
-      graphics_->startFine();
-    }
-
-    if (bus_planning_on_) {
-      multiLevelMacroPlacement(root_cluster_);
-    } else {
-      multiLevelMacroPlacementWithoutBusPlanning(root_cluster_);
-    }
+    multiLevelMacroPlacementWithoutBusPlanning(root_cluster_);
   }
 
   generateTemporaryStdCellsPlacement(root_cluster_);
@@ -609,7 +560,7 @@ void HierRTLMP::runMultilevelAutoclustering()
 
   } else {
     multilevelAutocluster(root_cluster_);
-    breakMixedLeafClusters(root_cluster_);
+    breakMixedLeafCluster(root_cluster_);
 
     if (graphics_) {
       graphics_->finishedClustering(root_cluster_);
@@ -640,6 +591,7 @@ void HierRTLMP::treatEachMacroAsSingleCluster()
     if (master->isPad() || master->isCover()) {
       continue;
     }
+
     if (master->isBlock()) {
       std::string cluster_name = inst->getName();
       Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
@@ -658,6 +610,10 @@ void HierRTLMP::treatEachMacroAsSingleCluster()
                  "model {} as a cluster.",
                  cluster_name);
     }
+
+    if (!design_has_io_clusters_) {
+      design_has_only_macros_ = true;
+    }
   }
 }
 
@@ -674,6 +630,51 @@ void HierRTLMP::resetSAParameters()
   boundary_weight_ = 0.0;
   notch_weight_ = 0.0;
   macro_blockage_weight_ = 0.0;
+}
+
+void HierRTLMP::runCoarseShaping()
+{
+  setRootShapes();
+
+  if (design_has_only_macros_) {
+    logger_->warn(MPL, 27, "Design has only macros!");
+    root_cluster_->setClusterType(HardMacroCluster);
+    return;
+  } 
+
+  if (graphics_) {
+    graphics_->startCoarse();
+  }
+
+  calculateChildrenTilings(root_cluster_);
+
+  setIOClustersBlockages();
+  setPlacementBlockages();
+}
+
+void HierRTLMP::setRootShapes()
+{
+  SoftMacro* root_soft_macro = new SoftMacro(root_cluster_);
+
+  const float root_lx = std::max(
+      dbuToMicron(block_->getCoreArea().xMin(), dbu_), global_fence_lx_);
+  const float root_ly = std::max(
+      dbuToMicron(block_->getCoreArea().yMin(), dbu_), global_fence_ly_);
+  const float root_ux = std::min(
+      dbuToMicron(block_->getCoreArea().xMax(), dbu_), global_fence_ux_);
+  const float root_uy = std::min(
+      dbuToMicron(block_->getCoreArea().yMax(), dbu_), global_fence_uy_);
+
+  const float root_area = (root_ux - root_lx) * (root_uy - root_ly);
+  const float root_width = root_ux - root_lx;
+  const std::vector<std::pair<float, float>> root_width_list
+      = {std::pair<float, float>(root_width, root_width)};
+
+  root_soft_macro->setShapes(root_width_list, root_area);
+  root_soft_macro->setWidth(root_width);  // This will set height automatically
+  root_soft_macro->setX(root_lx);
+  root_soft_macro->setY(root_ly);
+  root_cluster_->setSoftMacro(root_soft_macro);
 }
 
 // Traverse Logical Hierarchy
@@ -2244,7 +2245,7 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
 //               A1  A2  A3
 // Split macros and std cells in the leaf clusters. In the normal operation,
 // we call this function after creating the physical hierarchy.
-void HierRTLMP::breakMixedLeafClusters(Cluster* root_cluster)
+void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
 {
   if (root_cluster->getChildren().empty() || root_cluster->getNumMacro() == 0) {
     return;
@@ -2258,7 +2259,7 @@ void HierRTLMP::breakMixedLeafClusters(Cluster* root_cluster)
       if (child->getChildren().empty()) {
         leaf_clusters.push_back(child);
       } else {
-        breakMixedLeafClusters(child);
+        breakMixedLeafCluster(child);
       }
     } else {
       child->setClusterType(StdCellCluster);
@@ -2508,16 +2509,14 @@ static bool comparePairProduct(const std::pair<float, float>& p1,
   return p1.first * p1.second < p2.first * p2.second;
 }
 
-/////////////////////////////////////////////////////////////////////////////
-// Macro Placement related functions
+
 // Determine the macro tilings within each cluster in a bottom-up manner.
 // (Post-Order DFS manner)
-// Coarse coarsening:  In this step, we only consider the size of macros
+// Coarse shaping:  In this step, we only consider the size of macros
 // Ignore all the standard-cell clusters.
 // At this stage, we assume the standard cell placer will automatically
 // place standard cells in the empty space between macros.
-//
-void HierRTLMP::calClusterMacroTilings(Cluster* parent)
+void HierRTLMP::calculateChildrenTilings(Cluster* parent)
 {
   // base case, no macros in current cluster
   if (parent->getNumMacro() == 0) {
@@ -2539,7 +2538,7 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
                1,
                "{} is a Macro cluster",
                parent->getName());
-    calHardMacroClusterShape(parent);
+    calculateMacroTilings(parent);
     return;
   }
 
@@ -2554,7 +2553,7 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
     // Recursively visit the children of Mixed Cluster
     for (auto& cluster : parent->getChildren()) {
       if (cluster->getNumMacro() > 0) {
-        calClusterMacroTilings(cluster);
+        calculateChildrenTilings(cluster);
       }
     }
 
@@ -2568,8 +2567,6 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
   // if the current cluster is the root cluster,
   // the shape is fixed, i.e., the fixed die.
   // Thus, we do not need to determine the shapes for it
-  // if (parent->getParent() == nullptr)
-  //  return;
   // calculate macro tiling for parent cluster based on
   // the macro tilings of its children
   std::vector<SoftMacro> macros;
@@ -2792,7 +2789,7 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
 // Determine the macro tilings for each HardMacroCluster
 // multi thread enabled
 // random seed deterministic enabled
-void HierRTLMP::calHardMacroClusterShape(Cluster* cluster)
+void HierRTLMP::calculateMacroTilings(Cluster* cluster)
 {
   // Check if the cluster is a HardMacroCluster
   if (cluster->getClusterType() != HardMacroCluster) {
@@ -3013,7 +3010,7 @@ void HierRTLMP::calHardMacroClusterShape(Cluster* cluster)
 
 // Create pin blockage for Bundled IOs
 // Each pin blockage is a macro only blockage
-void HierRTLMP::createPinBlockage()
+void HierRTLMP::setIOClustersBlockages()
 {
   debugPrint(logger_,
              MPL,

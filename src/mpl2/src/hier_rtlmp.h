@@ -74,7 +74,7 @@ class Metrics;
 struct Rect;
 class SoftMacro;
 
-// Hierarchial RTL-MP
+// Hierarchical RTL-MP
 // Support Multi-Level Clustering.
 // Support designs with IO Pads.
 // Support timing-driven macro placement (not enabled now, June, 2022)
@@ -171,13 +171,9 @@ class HierRTLMP
                            bool backward_flag);
   Metrics* computeMetrics(odb::dbModule* module);
   void setClusterMetrics(Cluster* cluster);
-
   void calculateConnection();
-  void createPinBlockage();
-  void setPlacementBlockages();
   void getHardMacros(odb::dbModule* module,
                      std::vector<HardMacro*>& hard_macros);
-  void printPhysicalHierarchyTree(Cluster* parent, int level);
 
   void printConnection();
   void printClusters();
@@ -197,6 +193,7 @@ class HierRTLMP
   void treatEachMacroAsSingleCluster();
   void resetSAParameters();
   void multilevelAutocluster(Cluster* parent);
+	void printPhysicalHierarchyTree(Cluster* parent, int level);
   void setInstProperty(Cluster* cluster);
   void setInstProperty(odb::dbModule* module,
                        int cluster_id,
@@ -205,12 +202,16 @@ class HierRTLMP
   void mergeClusters(std::vector<Cluster*>& candidate_clusters);
   void updateSubTree(Cluster* parent);
   void breakLargeFlatCluster(Cluster* parent);
-  void breakMixedLeafClusters(Cluster* root_cluster);
+  void breakMixedLeafCluster(Cluster* root_cluster);
   void mapMacroInCluster2HardMacro(Cluster* cluster);
 
   // Coarse Shaping
-  void calClusterMacroTilings(Cluster* parent);
-  void calHardMacroClusterShape(Cluster* cluster);
+	void runCoarseShaping();
+	void setRootShapes();
+  void calculateChildrenTilings(Cluster* parent);
+  void calculateMacroTilings(Cluster* cluster);
+  void setIOClustersBlockages();
+  void setPlacementBlockages();
 
   // Fine Shaping
   bool shapeChildrenCluster(Cluster* parent,
@@ -447,6 +448,7 @@ class HierRTLMP
   // map IO pins to Pads (for designs with IO pads)
   std::map<odb::dbBTerm*, odb::dbInst*> io_pad_map_;
   bool design_has_io_clusters_ = true;
+	bool design_has_only_macros_ = false;
 
   std::unique_ptr<Mpl2Observer> graphics_;
 };
