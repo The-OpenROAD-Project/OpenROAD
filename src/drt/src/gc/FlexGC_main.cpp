@@ -1824,10 +1824,9 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
     patchBx.set_xhi(chosenEdg->length() / 2);
     patchBx.set_yhi(length);
     offset.setX((chosenEdg->low().x() + chosenEdg->high().x()) / 2);
-    if (chosenEdg->getOuterDir() == frDirEnum::N) {
+    if (chosenEdg->getOuterDir() == frDirEnum::N
+        || chosenEdg->getOuterDir() == frDirEnum::S) {
       offset.setY(chosenEdg->low().y());
-    } else if (chosenEdg->getOuterDir() == frDirEnum::S) {
-      offset.setY(chosenEdg->low().y() - length);
     } else
       logger_->error(
           DRT, 4500, "Edge outer dir should be either North or South");
@@ -1836,10 +1835,9 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
     patchBx.set_ylo(-chosenEdg->length() / 2);
     patchBx.set_yhi(chosenEdg->length() / 2);
     offset.setY((chosenEdg->low().y() + chosenEdg->high().y()) / 2);
-    if (chosenEdg->getOuterDir() == frDirEnum::E) {
+    if (chosenEdg->getOuterDir() == frDirEnum::E
+        || chosenEdg->getOuterDir() == frDirEnum::W) {
       offset.setX(chosenEdg->low().x());
-    } else if (chosenEdg->getOuterDir() == frDirEnum::W) {
-      offset.setX(chosenEdg->low().x() - length);
     } else
       logger_->error(DRT, 4501, "Edge outer dir should be either East or West");
   }
