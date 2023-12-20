@@ -1735,7 +1735,7 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
         logger_->info(DRT, 2002, "Routing net {}", net->getFrNet()->getName());
       // route
       mazeNetInit(net);
-      vector<FlexMazeIdx> paths;
+      std::vector<FlexMazeIdx> paths;
       bool isRouted = routeNet(net, paths);
       if (isRouted == false) {
         if (OUT_MAZE_FILE == std::string("")) {
@@ -2904,7 +2904,7 @@ void FlexDRWorker::routeNet_prepAreaMap(drNet* net,
   }
 }
 
-bool FlexDRWorker::routeNet(drNet* net, vector<FlexMazeIdx>& paths)
+bool FlexDRWorker::routeNet(drNet* net, std::vector<FlexMazeIdx>& paths)
 {
   //  ProfileTask profile("DR:routeNet");
 
