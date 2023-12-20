@@ -1770,8 +1770,9 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
         drNet* currNet = net;
         for (auto& pwire : gcWorker_->getPWires()) {
           auto net = pwire->getNet();
-          if (!net)
+          if (!net) {
             net = currNet;
+          }
           auto tmpPWire = make_unique<drPatchWire>();
           tmpPWire->setLayerNum(pwire->getLayerNum());
           Point origin = pwire->getOrigin();
