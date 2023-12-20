@@ -814,7 +814,7 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
       positionsHeap;
 
   std::unordered_set<odb::Point, odb::Point::Hash> visitedPositions;
-  odb::Point center = {x, y};
+  const odb::Point center = {x, y};
   positionsHeap.push({0, center});
   PixelPt best_pt;
   int best_dist = std::numeric_limits<int>::max();
@@ -822,11 +822,10 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
   while (!positionsHeap.empty()) {
     auto top = positionsHeap.top();
     positionsHeap.pop();
-    int new_x = top.p.getX();
-    int new_y = top.p.getY();
-    int x_offset = new_x - x;
-    int y_offset = new_y - y;
-
+    const int new_x = top.p.getX();
+    const int new_y = top.p.getY();
+    const int x_offset = new_x - x;
+    const int y_offset = new_y - y;
     // Check if this position has been visited
     if (visitedPositions.count({new_x, new_y}) > 0) {
       continue;
@@ -855,33 +854,36 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
       } else if (best_dist < cur_dist) {
         ++best_for;
       }
-      if (best_for >= 5) {
+      if (best_for >= 7) {
         return best_pt;
       }
-
-      // Mark the current position as visited
       visitedPositions.insert({new_x, new_y});
-
-      // Enqueue neighboring positions for exploration
-      auto manhattanDistance = [&](odb::Point& p1, odb::Point& p2) -> int {
+      auto manhattanDistance
+          = [&](const odb::Point& p1, const odb::Point& p2) -> int {
         int x_dist = std::abs(p1.getX() - p2.getX()) * site_width;
         int y_dist = std::abs(p2.getY() - p1.getY())
                      * grid_info.getSitesTotalHeight();  // FIXME(mina1460):
                                                          // this needs PR #4363
         return x_dist + y_dist;
       };
-      odb::Point below = {new_x - 1, new_y};
-      odb::Point above = {new_x + 1, new_y};
-      odb::Point left = {new_x, new_y - 1};
-      odb::Point right = {new_x, new_y + 1};
+      const odb::Point below = {new_x - 1, new_y};
+      const odb::Point above = {new_x + 1, new_y};
+      const odb::Point left = {new_x, new_y - 1};
+      const odb::Point right = {new_x, new_y + 1};
       auto d_below = manhattanDistance(below, center);
       auto d_above = manhattanDistance(above, center);
       auto d_left = manhattanDistance(left, center);
       auto d_right = manhattanDistance(right, center);
-      positionsHeap.push({d_below, below});
-      positionsHeap.push({d_above, above});
-      positionsHeap.push({d_left, left});
-      positionsHeap.push({d_right, right});
+      auto check_and_push
+          = [&](const odb::Point& p, const int distance_to_point) {
+              if (visitedPositions.count(p) == 0) {
+                positionsHeap.push({distance_to_point, p});
+              }
+            };
+      check_and_push(below, d_below);
+      check_and_push(above, d_above);
+      check_and_push(left, d_left);
+      check_and_push(right, d_right);
     }
   }
   if (best_pt.pixel) {
