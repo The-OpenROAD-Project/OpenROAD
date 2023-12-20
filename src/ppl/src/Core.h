@@ -35,6 +35,8 @@
 
 #pragma once
 
+#include <map>
+
 #include "odb/geom.h"
 
 namespace ppl {
@@ -47,16 +49,16 @@ class Core
  public:
   Core();
   Core(const Rect& boundary,
-       const std::vector<int>& min_dst_pins_x,
-       const std::vector<int>& min_dst_pins_y,
-       const std::vector<int>& init_tracks_x,
-       const std::vector<int>& init_tracks_y,
-       const std::vector<int>& num_tracks_x,
-       const std::vector<int>& num_tracks_y,
-       const std::vector<int>& min_area_x,
-       const std::vector<int>& min_area_y,
-       const std::vector<int>& min_width_x,
-       const std::vector<int>& min_width_y,
+       const std::map<int, int>& min_dst_pins_x,
+       const std::map<int, int>& min_dst_pins_y,
+       const std::map<int, int>& init_tracks_x,
+       const std::map<int, int>& init_tracks_y,
+       const std::map<int, int>& num_tracks_x,
+       const std::map<int, int>& num_tracks_y,
+       const std::map<int, int>& min_area_x,
+       const std::map<int, int>& min_area_y,
+       const std::map<int, int>& min_width_x,
+       const std::map<int, int>& min_width_y,
        const int& database_unit)
       : boundary_(boundary),
         min_dst_pins_x_(min_dst_pins_x),
@@ -74,32 +76,32 @@ class Core
   }
 
   Rect getBoundary() const { return boundary_; }
-  std::vector<int> getMinDstPinsX() const { return min_dst_pins_x_; }
-  std::vector<int> getMinDstPinsY() const { return min_dst_pins_y_; }
-  std::vector<int> getInitTracksX() const { return init_tracks_x_; }
-  std::vector<int> getInitTracksY() const { return init_tracks_y_; }
-  std::vector<int> getNumTracksX() const { return num_tracks_x_; }
-  std::vector<int> getNumTracksY() const { return num_tracks_y_; }
-  std::vector<int> getMinAreaX() const { return min_area_x_; }
-  std::vector<int> getMinAreaY() const { return min_area_y_; }
-  std::vector<int> getMinWidthX() const { return min_width_x_; }
-  std::vector<int> getMinWidthY() const { return min_width_y_; }
+  std::map<int, int> getMinDstPinsX() const { return min_dst_pins_x_; }
+  std::map<int, int> getMinDstPinsY() const { return min_dst_pins_y_; }
+  std::map<int, int> getInitTracksX() const { return init_tracks_x_; }
+  std::map<int, int> getInitTracksY() const { return init_tracks_y_; }
+  std::map<int, int> getNumTracksX() const { return num_tracks_x_; }
+  std::map<int, int> getNumTracksY() const { return num_tracks_y_; }
+  std::map<int, int> getMinAreaX() const { return min_area_x_; }
+  std::map<int, int> getMinAreaY() const { return min_area_y_; }
+  std::map<int, int> getMinWidthX() const { return min_width_x_; }
+  std::map<int, int> getMinWidthY() const { return min_width_y_; }
   int getDatabaseUnit() const { return database_unit_; }
   int getPerimeter() const;
   odb::Point getMirroredPosition(const odb::Point& position) const;
 
  private:
   Rect boundary_;
-  std::vector<int> min_dst_pins_x_;
-  std::vector<int> min_dst_pins_y_;
-  std::vector<int> init_tracks_x_;
-  std::vector<int> init_tracks_y_;
-  std::vector<int> num_tracks_x_;
-  std::vector<int> num_tracks_y_;
-  std::vector<int> min_area_x_;
-  std::vector<int> min_area_y_;
-  std::vector<int> min_width_x_;
-  std::vector<int> min_width_y_;
+  std::map<int, int> min_dst_pins_x_;
+  std::map<int, int> min_dst_pins_y_;
+  std::map<int, int> init_tracks_x_;
+  std::map<int, int> init_tracks_y_;
+  std::map<int, int> num_tracks_x_;
+  std::map<int, int> num_tracks_y_;
+  std::map<int, int> min_area_x_;
+  std::map<int, int> min_area_y_;
+  std::map<int, int> min_width_x_;
+  std::map<int, int> min_width_y_;
   int database_unit_;
 };
 

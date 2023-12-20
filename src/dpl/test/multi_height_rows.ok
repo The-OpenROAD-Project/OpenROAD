@@ -4,7 +4,7 @@
 [INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
 [INFO ODB-0222] Reading LEF file: Nangate45/fake_macros.lef
-[INFO ODB-0225]     Created 5 library cells
+[INFO ODB-0225]     Created 9 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/fake_macros.lef
 [INFO ODB-0128] Design: top
 [INFO ODB-0130]     Created 6 pins.

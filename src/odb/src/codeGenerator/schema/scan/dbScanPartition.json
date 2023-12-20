@@ -1,0 +1,27 @@
+{
+  "name": "dbScanPartition",
+  "type": "dbObject",
+  "fields": [
+    {
+      "name": "start_",
+      "type": "dbId<dbScanPin>",
+      "flags": ["private"]
+    },
+    {
+      "name": "stop_",
+      "type": "dbId<dbScanPin>",
+      "flags": ["private"]
+    },
+    {
+      "name": "name_",
+      "type": "std::string",
+      "flags": ["private"]
+    }
+  ],
+  "h_includes": [
+    "dbScanPin.h"
+  ],
+  "cpp_includes": [
+    "dbScanPin.h"
+  ]
+}
