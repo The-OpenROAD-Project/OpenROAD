@@ -795,70 +795,96 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
     return avail_pt;
   }
 
-  std::queue<odb::Point> positionsQueue;
+  struct PQ_entry
+  {
+    int manhattan_distance;
+    odb::Point p;
+    bool operator>(const PQ_entry& other) const
+    {
+      return manhattan_distance > other.manhattan_distance;
+    }
+    bool operator==(const PQ_entry& other) const
+    {
+      return manhattan_distance == other.manhattan_distance;
+    }
+  };
+  std::priority_queue<PQ_entry, std::vector<PQ_entry>, std::greater<PQ_entry>>
+      positionsHeap;
+
   std::unordered_set<odb::Point, odb::Point::Hash> visitedPositions;
+  odb::Point center = {x, y};
+  positionsHeap.push({0, center});
+  PixelPt best_pt;
+  int best_dist = std::numeric_limits<int>::max();
+  int best_for = 0;
+  while (!positionsHeap.empty()) {
+    auto top = positionsHeap.top();
+    positionsHeap.pop();
+    int new_x = top.p.getX();
+    int new_y = top.p.getY();
+    int x_offset = new_x - x;
+    int y_offset = new_y - y;
 
-  positionsQueue.push({0, 0});
-  int iteration = 0;
-  int max_iterations
-      = std::max(scaled_max_displacement_y_, max_displacement_x_);
-
-  while (!positionsQueue.empty()) {
-    if (iteration >= max_iterations) {
-      return PixelPt();
+    // Check if this position has been visited
+    if (visitedPositions.count({new_x, new_y}) > 0) {
+      continue;
     }
-    int n = positionsQueue.size();
-    PixelPt best_pt;
-    int best_dist = std::numeric_limits<int>::max();
-    ++iteration;
 
-    for (int p = 0; p < n; p++) {
-      auto front = positionsQueue.front();
-      int x_offset = front.getX();
-      int y_offset = front.getY();
-      positionsQueue.pop();
+    PixelPt cur_pt;
+    int cur_dist = 0;
+    if (abs(x_offset) < max_displacement_x_
+        && abs(y_offset) < scaled_max_displacement_y_) {
+      diamondSearchSide(cell,
+                        x,
+                        y,
+                        x_min,
+                        y_min,
+                        x_max,
+                        y_max,
+                        x_offset,
+                        y_offset,
+                        cur_pt,
+                        cur_dist);
 
-      // Check if this position has been visited
-      if (visitedPositions.count({x_offset, y_offset}) > 0) {
-        continue;
+      if (cur_pt.pixel && cur_dist < best_dist) {
+        best_pt = cur_pt;
+        best_dist = cur_dist;
+        best_for = 0;
+      } else if (best_dist < cur_dist) {
+        ++best_for;
+      }
+      if (best_for >= 5) {
+        return best_pt;
       }
 
-      PixelPt cur_pt;
-      int cur_dist = 0;
-      if (abs(x_offset) < max_displacement_x_
-          && abs(y_offset) < scaled_max_displacement_y_) {
-        diamondSearchSide(cell,
-                          x,
-                          y,
-                          x_min,
-                          y_min,
-                          x_max,
-                          y_max,
-                          x_offset,
-                          y_offset,
-                          cur_pt,
-                          cur_dist);
+      // Mark the current position as visited
+      visitedPositions.insert({new_x, new_y});
 
-        if (cur_pt.pixel && cur_dist < best_dist) {
-          best_pt = cur_pt;
-          best_dist = cur_dist;
-        }
-
-        // Mark the current position as visited
-        visitedPositions.insert({x_offset, y_offset});
-
-        // Enqueue neighboring positions for exploration
-        positionsQueue.push({x_offset - 1, y_offset});
-        positionsQueue.push({x_offset + 1, y_offset});
-        positionsQueue.push({x_offset, y_offset - 1});
-        positionsQueue.push({x_offset, y_offset + 1});
-      }
-    }
-    if (best_pt.pixel) {
-      return best_pt;
+      // Enqueue neighboring positions for exploration
+      auto manhattanDistance = [&](odb::Point& p1, odb::Point& p2) -> int {
+        int x_dist = std::abs(p1.getX() - p2.getX()) * site_width;
+        int y_dist = std::abs(p2.getY() - p1.getY())
+                     * grid_info.getSitesTotalHeight();  // FIXME(mina1460):
+                                                         // this needs PR #4363
+        return x_dist + y_dist;
+      };
+      odb::Point below = {new_x - 1, new_y};
+      odb::Point above = {new_x + 1, new_y};
+      odb::Point left = {new_x, new_y - 1};
+      odb::Point right = {new_x, new_y + 1};
+      auto d_below = manhattanDistance(below, center);
+      auto d_above = manhattanDistance(above, center);
+      auto d_left = manhattanDistance(left, center);
+      auto d_right = manhattanDistance(right, center);
+      positionsHeap.push({d_below, below});
+      positionsHeap.push({d_above, above});
+      positionsHeap.push({d_left, left});
+      positionsHeap.push({d_right, right});
     }
   }
-
+  if (best_pt.pixel) {
+    return best_pt;
+  }
   return PixelPt();
 }
 
@@ -875,7 +901,7 @@ void Opendp::diamondSearchSide(const Cell* cell,
                                PixelPt& best_pt,
                                int& best_dist) const
 {
-  int bin_x = min(x_max, max(x_min, x + x_offset * bin_search_width_));
+  int bin_x = min(x_max, max(x_min, x + x_offset));
   int bin_y = min(y_max, max(y_min, y + y_offset));
   PixelPt avail_pt = binSearch(x, cell, bin_x, bin_y);
   if (avail_pt.pixel) {
