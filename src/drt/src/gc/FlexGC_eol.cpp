@@ -30,7 +30,6 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
 
-using namespace std;
 using namespace fr;
 bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_isEolEdge(
     gcSegment* edge,
@@ -141,7 +140,7 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEncloseCut(
   // the enclose cut allCuts=true  --> return true if all cut segment satisfies
   // the enclose cut (at least one has to be found)
   for (auto layerNum : layers) {
-    vector<pair<segment_t, gcSegment*>> results;
+    std::vector<std::pair<segment_t, gcSegment*>> results;
     auto& workerRegionQuery = getWorkerRegionQuery();
     workerRegionQuery.queryPolygonEdge(queryBox, layerNum, results);
     for (auto& [boostSeg, ptr] : results) {
@@ -331,7 +330,7 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasParallelEdge_oneDir(
       edge, constraint, isSegLow, queryBox, queryRect);
   gtl::rectangle_data<frCoord> triggerRect;
 
-  vector<pair<segment_t, gcSegment*>> results;
+  std::vector<std::pair<segment_t, gcSegment*>> results;
   auto& workerRegionQuery = getWorkerRegionQuery();
   workerRegionQuery.queryPolygonEdge(queryBox, edge->getLayerNum(), results);
   gtl::polygon_90_set_data<frCoord> tmpPoly;
@@ -521,7 +520,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_helper(
   gtl::generalized_intersect(markerRect, rect2);
   // skip if markerRect contains anything
   auto& workerRegionQuery = getWorkerRegionQuery();
-  vector<rq_box_value_t<gcRect*>> result;
+  std::vector<rq_box_value_t<gcRect*>> result;
   gtl::rectangle_data<frCoord> bloatMarkerRect(markerRect);
   if (gtl::area(markerRect) == 0) {
     if (edge1->getDir() == frDirEnum::W || edge1->getDir() == frDirEnum::E) {
@@ -542,7 +541,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_helper(
   if (!checkMetalEndOfLine_eol_hasEncloseCut(edge1, edge2, constraint))
     return;
 
-  auto marker = make_unique<frMarker>();
+  auto marker = std::make_unique<frMarker>();
   Rect box(gtl::xl(markerRect),
            gtl::yl(markerRect),
            gtl::xh(markerRect),
@@ -551,22 +550,26 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_helper(
   marker->setLayerNum(layerNum);
   marker->setConstraint(constraint);
   marker->addSrc(net1->getOwner());
-  frCoord llx = min(edge1->getLowCorner()->x(), edge1->getHighCorner()->x());
-  frCoord lly = min(edge1->getLowCorner()->y(), edge1->getHighCorner()->y());
-  frCoord urx = max(edge1->getLowCorner()->x(), edge1->getHighCorner()->x());
-  frCoord ury = max(edge1->getLowCorner()->y(), edge1->getHighCorner()->y());
+  frCoord llx
+      = std::min(edge1->getLowCorner()->x(), edge1->getHighCorner()->x());
+  frCoord lly
+      = std::min(edge1->getLowCorner()->y(), edge1->getHighCorner()->y());
+  frCoord urx
+      = std::max(edge1->getLowCorner()->x(), edge1->getHighCorner()->x());
+  frCoord ury
+      = std::max(edge1->getLowCorner()->y(), edge1->getHighCorner()->y());
   marker->addVictim(
       net1->getOwner(),
-      make_tuple(
+      std::make_tuple(
           edge1->getLayerNum(), Rect(llx, lly, urx, ury), edge1->isFixed()));
   marker->addSrc(net2->getOwner());
-  llx = min(edge2->getLowCorner()->x(), edge2->getHighCorner()->x());
-  lly = min(edge2->getLowCorner()->y(), edge2->getHighCorner()->y());
-  urx = max(edge2->getLowCorner()->x(), edge2->getHighCorner()->x());
-  ury = max(edge2->getLowCorner()->y(), edge2->getHighCorner()->y());
+  llx = std::min(edge2->getLowCorner()->x(), edge2->getHighCorner()->x());
+  lly = std::min(edge2->getLowCorner()->y(), edge2->getHighCorner()->y());
+  urx = std::max(edge2->getLowCorner()->x(), edge2->getHighCorner()->x());
+  ury = std::max(edge2->getLowCorner()->y(), edge2->getHighCorner()->y());
   marker->addAggressor(
       net2->getOwner(),
-      make_tuple(
+      std::make_tuple(
           edge2->getLayerNum(), Rect(llx, lly, urx, ury), edge2->isFixed()));
   addMarker(std::move(marker));
 }
@@ -650,26 +653,13 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_check(
   // non-endprl region.
   bool checkPrl = false;
   if (endPrlSpacing > 0) {
-    const frDirEnum dir = edge->getDir();
-    const gtl::orientation_2d orient
-        = (dir == frDirEnum::W || dir == frDirEnum::E) ? gtl::HORIZONTAL
-                                                       : gtl::VERTICAL;
+    const gtl::orientation_2d orient = edge->getOrientation();
     const gtl::orientation_2d opp_orient{orient.get_perpendicular()};
     checkPrl
         = std::abs(edge->low().get(opp_orient) - ptr->low().get(opp_orient))
           > eolNonPrlSpacing;
     if (checkPrl) {
-      const frCoord edge1_low = edge->low().get(orient);
-      const frCoord edge1_high = edge->high().get(orient);
-      const frCoord edge1_min = std::min(edge1_low, edge1_high);
-      const frCoord edge1_max = std::max(edge1_low, edge1_high);
-
-      const frCoord edge2_low = ptr->low().get(orient);
-      const frCoord edge2_high = ptr->high().get(orient);
-      const frCoord edge2_min = std::min(edge2_low, edge2_high);
-      const frCoord edge2_max = std::max(edge2_low, edge2_high);
-      const frCoord prl
-          = std::min(edge1_max, edge2_max) - std::max(edge1_min, edge2_min);
+      const frCoord prl = getPrl(edge, ptr, orient);
       if (prl < 0 || prl > endPrl) {
         return;
       }
@@ -699,7 +689,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol(
                                              eolNonPrlSpacing,
                                              endPrlSpacing,
                                              endPrl);
-  vector<pair<segment_t, gcSegment*>> results;
+  std::vector<std::pair<segment_t, gcSegment*>> results;
   auto& workerRegionQuery = getWorkerRegionQuery();
   workerRegionQuery.queryPolygonEdge(queryBox, edge->getLayerNum(), results);
   for (auto& [boostSeg, ptr] : results) {
@@ -769,7 +759,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_TN(gcSegment* edge,
                                              endPrlSpacing,
                                              endPrl,
                                              false);
-  vector<pair<segment_t, gcSegment*>> results;
+  std::vector<std::pair<segment_t, gcSegment*>> results;
   auto& workerRegionQuery = getWorkerRegionQuery();
   workerRegionQuery.queryPolygonEdge(queryBox, edge->getLayerNum(), results);
   for (auto& [boostSeg, ptr] : results) {
@@ -961,10 +951,10 @@ void FlexGCWorker::Impl::checkMetalEOLkeepout_helper(
 
   auto net1 = edge->getNet();
   auto net2 = rect->getNet();
-  frCoord llx = min(edge->getLowCorner()->x(), edge->getHighCorner()->x());
-  frCoord lly = min(edge->getLowCorner()->y(), edge->getHighCorner()->y());
-  frCoord urx = max(edge->getLowCorner()->x(), edge->getHighCorner()->x());
-  frCoord ury = max(edge->getLowCorner()->y(), edge->getHighCorner()->y());
+  frCoord llx = std::min(edge->getLowCorner()->x(), edge->getHighCorner()->x());
+  frCoord lly = std::min(edge->getLowCorner()->y(), edge->getHighCorner()->y());
+  frCoord urx = std::max(edge->getLowCorner()->x(), edge->getHighCorner()->x());
+  frCoord ury = std::max(edge->getLowCorner()->y(), edge->getHighCorner()->y());
 
   gtl::rectangle_data<frCoord> rect2(queryRect);
   gtl::intersect(rect2, *rect);
@@ -975,7 +965,7 @@ void FlexGCWorker::Impl::checkMetalEOLkeepout_helper(
   gtl::rectangle_data<frCoord> markerRect(llx, lly, urx, ury);
   gtl::generalized_intersect(markerRect, rect2);
 
-  auto marker = make_unique<frMarker>();
+  auto marker = std::make_unique<frMarker>();
   Rect box(gtl::xl(markerRect),
            gtl::yl(markerRect),
            gtl::xh(markerRect),
@@ -987,12 +977,12 @@ void FlexGCWorker::Impl::checkMetalEOLkeepout_helper(
 
   marker->addVictim(
       net1->getOwner(),
-      make_tuple(
+      std::make_tuple(
           edge->getLayerNum(), Rect(llx, lly, urx, ury), edge->isFixed()));
   marker->addSrc(net2->getOwner());
   marker->addAggressor(
       net2->getOwner(),
-      make_tuple(
+      std::make_tuple(
           rect->getLayerNum(), Rect(llx2, lly2, urx2, ury2), rect->isFixed()));
   addMarker(std::move(marker));
 }
@@ -1009,7 +999,7 @@ void FlexGCWorker::Impl::checkMetalEOLkeepout_main(
   getEolKeepOutQueryBox(edge, constraint, queryBox, queryRect);
   if (constraint->isCornerOnly()) {
     // For corners, we query polygon edges to make sure we catch concave corners
-    vector<pair<segment_t, gcSegment*>> results;
+    std::vector<std::pair<segment_t, gcSegment*>> results;
     auto& workerRegionQuery = getWorkerRegionQuery();
     workerRegionQuery.queryPolygonEdge(queryBox, layerNum, results);
     for (auto& [box, ptr] : results) {
@@ -1022,7 +1012,7 @@ void FlexGCWorker::Impl::checkMetalEOLkeepout_main(
       checkMetalEOLkeepout_helper(edge, &rect, queryRect, constraint);
     }
   } else {
-    vector<rq_box_value_t<gcRect*>> results;
+    std::vector<rq_box_value_t<gcRect*>> results;
     auto& workerRegionQuery = getWorkerRegionQuery();
     workerRegionQuery.queryMaxRectangle(queryBox, layerNum, results);
     for (auto& [box, ptr] : results)
@@ -1165,7 +1155,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_ext_helper(
   gtl::rectangle_data<frCoord> edgeRect;
   gtl::set_points(edgeRect, edge1->low(), edge1->high());
   gtl::generalized_intersect(markerRect, edgeRect);
-  auto marker = make_unique<frMarker>();
+  auto marker = std::make_unique<frMarker>();
   Rect box(gtl::xl(markerRect),
            gtl::yl(markerRect),
            gtl::xh(markerRect),
@@ -1174,22 +1164,26 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_ext_helper(
   marker->setLayerNum(edge1->getLayerNum());
   marker->setConstraint(constraint);
   marker->addSrc(edge1->getNet()->getOwner());
-  frCoord llx = min(edge1->getLowCorner()->x(), edge1->getHighCorner()->x());
-  frCoord lly = min(edge1->getLowCorner()->y(), edge1->getHighCorner()->y());
-  frCoord urx = max(edge1->getLowCorner()->x(), edge1->getHighCorner()->x());
-  frCoord ury = max(edge1->getLowCorner()->y(), edge1->getHighCorner()->y());
+  frCoord llx
+      = std::min(edge1->getLowCorner()->x(), edge1->getHighCorner()->x());
+  frCoord lly
+      = std::min(edge1->getLowCorner()->y(), edge1->getHighCorner()->y());
+  frCoord urx
+      = std::max(edge1->getLowCorner()->x(), edge1->getHighCorner()->x());
+  frCoord ury
+      = std::max(edge1->getLowCorner()->y(), edge1->getHighCorner()->y());
   marker->addVictim(
       edge1->getNet()->getOwner(),
-      make_tuple(
+      std::make_tuple(
           edge1->getLayerNum(), Rect(llx, lly, urx, ury), edge1->isFixed()));
   marker->addSrc(edge2->getNet()->getOwner());
-  llx = min(edge2->getLowCorner()->x(), edge2->getHighCorner()->x());
-  lly = min(edge2->getLowCorner()->y(), edge2->getHighCorner()->y());
-  urx = max(edge2->getLowCorner()->x(), edge2->getHighCorner()->x());
-  ury = max(edge2->getLowCorner()->y(), edge2->getHighCorner()->y());
+  llx = std::min(edge2->getLowCorner()->x(), edge2->getHighCorner()->x());
+  lly = std::min(edge2->getLowCorner()->y(), edge2->getHighCorner()->y());
+  urx = std::max(edge2->getLowCorner()->x(), edge2->getHighCorner()->x());
+  ury = std::max(edge2->getLowCorner()->y(), edge2->getHighCorner()->y());
   marker->addAggressor(
       edge2->getNet()->getOwner(),
-      make_tuple(
+      std::make_tuple(
           edge2->getLayerNum(), Rect(llx, lly, urx, ury), edge2->isFixed()));
   addMarker(std::move(marker));
 }
@@ -1219,7 +1213,7 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_ext(
                             queryBox,
                             queryRect);
 
-  vector<pair<segment_t, gcSegment*>> results;
+  std::vector<std::pair<segment_t, gcSegment*>> results;
   auto& workerRegionQuery = getWorkerRegionQuery();
   workerRegionQuery.queryPolygonEdge(queryBox, layerNum, results);
   for (auto& [seg, ptr] : results) {

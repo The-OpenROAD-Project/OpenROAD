@@ -131,8 +131,11 @@ float IlpRefine::Pass(
                        upper_block_balance,
                        lower_block_balance)
       == false) {
-    logger_->warn(
-        PAR, 115, "ILP-based partitioning cannot find a valid solution.");
+    debugPrint(logger_,
+               PAR,
+               "partitioning",
+               1,
+               "ILP-based partitioning could not find a valid solution.");
     return 0.0;  // no valid solution
   }
   // try to update the solution

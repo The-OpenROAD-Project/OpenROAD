@@ -39,6 +39,8 @@
 #include <iomanip>
 #include <ostream>
 
+#include "utl/Logger.h"
+
 namespace cts {
 
 inline bool fuzzyEqual(double x1, double x2, double epsilon = 1e-6)
@@ -213,5 +215,7 @@ class Box
   T centerY_ = 0;
   bool centerSet_ = false;
 };
+
+using utl::format_as;
 
 }  // namespace cts

@@ -1,0 +1,63 @@
+{
+  "name": "dbScanChain",
+  "type": "dbObject",
+  "fields": [
+    {
+      "name": "name_",
+      "type": "std::string",
+      "flags": ["private"]
+    },
+    {
+      "name": "length_",
+      "type": "uint",
+      "flags": ["private"]
+    },
+    {
+      "name": "cells_",
+      "type": "dbVector<dbId<dbInst>>",
+      "flags": ["private"]
+    },
+    {
+      "name": "scan_in_",
+      "type": "dbId<dbScanPin>",
+      "flags": ["private"]
+    },
+    {
+      "name": "scan_out_",
+      "type": "dbId<dbScanPin>",
+      "flags": ["private"]
+    },
+    {
+      "name": "scan_clock_",
+      "type": "dbId<dbScanPin>",
+      "flags": ["private"]
+    },
+    {
+      "name": "scan_enable_",
+      "type": "dbId<dbScanPin>",
+      "flags": ["private"]
+    },
+    {
+      "name": "test_mode_",
+      "type": "std::string",
+      "flags": ["private"]
+    },
+    {
+      "name": "partitions_",
+      "type": "dbVector<dbId<dbScanPartition>>",
+      "flags": ["private"]
+    },
+    {
+      "name": "scan_insts_",
+      "type": "dbVector<dbId<dbScanInst>>",
+      "flags": ["private"]
+    }
+  ],
+  "h_includes": [
+    "dbVector.h",
+    "dbScanPin.h"
+  ],
+  "cpp_includes": [
+    "dbScanPin.h"
+  ]
+}

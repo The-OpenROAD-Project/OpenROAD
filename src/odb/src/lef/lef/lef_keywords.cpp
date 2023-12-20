@@ -48,23 +48,21 @@
 
 #include "lefrData.hpp"
 
-using namespace std;
-
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
 #include "lef_parser.hpp"
 
 extern YYSTYPE lefyylval;
 
-inline string strip_case(const char* str)
+inline std::string strip_case(const char* str)
 {
-  string result(str);
+  std::string result(str);
 
   if (lefData->namesCaseSensitive) {
     return result;
   };
 
-  for (string::iterator p = result.begin(); result.end() != p; ++p) {
+  for (std::string::iterator p = result.begin(); result.end() != p; ++p) {
     *p = toupper(*p);
   }
 
@@ -73,7 +71,7 @@ inline string strip_case(const char* str)
 
 inline int lefGetKeyword(const char* name, int* result)
 {
-  map<const char*, int, lefCompareCStrings>::iterator search
+  std::map<const char*, int, lefCompareCStrings>::iterator search
       = lefSettings->Keyword_set.find(name);
   if (search != lefSettings->Keyword_set.end()) {
     *result = search->second;
@@ -85,7 +83,7 @@ inline int lefGetKeyword(const char* name, int* result)
 
 inline int lefGetStringDefine(const char* name, const char** value)
 {
-  map<string, string, lefCompareStrings>::iterator search
+  std::map<std::string, std::string, lefCompareStrings>::iterator search
       = lefData->defines_set.find(strip_case(name));
 
   if (search != lefData->defines_set.end()) {
@@ -97,7 +95,7 @@ inline int lefGetStringDefine(const char* name, const char** value)
 
 inline int lefGetIntDefine(const char* name, int* value)
 {
-  map<string, int, lefCompareStrings>::iterator search
+  std::map<std::string, int, lefCompareStrings>::iterator search
       = lefData->defineb_set.find(strip_case(name));
 
   if (search != lefData->defineb_set.end()) {
@@ -109,7 +107,7 @@ inline int lefGetIntDefine(const char* name, int* value)
 
 inline int lefGetDoubleDefine(const char* name, double* value)
 {
-  map<string, double, lefCompareStrings>::iterator search
+  std::map<std::string, double, lefCompareStrings>::iterator search
       = lefData->define_set.find(strip_case(name));
 
   if (search != lefData->define_set.end()) {
@@ -121,7 +119,7 @@ inline int lefGetDoubleDefine(const char* name, double* value)
 
 inline int lefGetAlias(const char* name, const char** value)
 {
-  map<string, string, lefCompareStrings>::iterator search
+  std::map<std::string, std::string, lefCompareStrings>::iterator search
       = lefData->alias_set.find(strip_case(name));
 
   if (search != lefData->alias_set.end()) {
@@ -283,7 +281,7 @@ char* qStrCopy(char* string)
 
 void lefAddStringDefine(const char* token, const char* str)
 {
-  string tmpStr((lefData->lefDefIf == TRUE) ? "" : "\"");
+  std::string tmpStr((lefData->lefDefIf == TRUE) ? "" : "\"");
 
   tmpStr += str;
 
@@ -554,7 +552,7 @@ void lefuc_array(char* source, char* dest)
 
 void lefStoreAlias()
 {
-  string so_far;  // contains alias contents as we build it
+  std::string so_far;  // contains alias contents as we build it
 
   int tokenSize = 10240;
   char* aname = (char*) malloc(tokenSize);

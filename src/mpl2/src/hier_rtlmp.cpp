@@ -457,7 +457,7 @@ void HierRTLMP::hierRTLMacroPlacer()
     logger_->report("macro_blockage_weight_ = {}", macro_blockage_weight_);
     logger_->report("halo_width_ = {}", halo_width_);
     logger_->report("halo_height_ = {}", halo_height_);
-    logger_->report("bus_planning_flag_ = {}\n", bus_planning_flag_);
+    logger_->report("bus_planning_on_ = {}\n", bus_planning_on_);
   }
 
   //
@@ -498,9 +498,13 @@ void HierRTLMP::hierRTLMacroPlacer()
   // add two enhancements to handle corner cases
   // (1) the design only has fake macros (for academic fake testcases)
   // (2) the design has on logical hierarchy (for academic fake testcases)
+  bool design_has_only_macros = false;
   if (metrics_->getNumStdCell() == 0) {
-    logger_->warn(MPL, 25, "This design has no standard cells ..");
-    logger_->warn(MPL, 26, "Each macro is treated as a single cluster");
+    logger_->warn(MPL, 25, "Design has no standard cells!");
+    logger_->info(
+        MPL,
+        30,
+        "[Multilevel Autoclustering] Treating each macro a single cluster.");
     auto module = block_->getTopModule();
     for (odb::dbInst* inst : module->getInsts()) {
       const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
@@ -530,6 +534,9 @@ void HierRTLMP::hierRTLMacroPlacer()
                    "model {} as a cluster.",
                    cluster_name);
       }
+    }
+    if (!design_has_io_clusters_) {
+      design_has_only_macros = true;
     }
     // reset parameters
     pos_swap_prob_ = 0.2;
@@ -612,24 +619,9 @@ void HierRTLMP::hierRTLMacroPlacer()
   root_soft_macro->setY(root_ly);
   root_cluster_->setSoftMacro(root_soft_macro);
 
-  //
-  // Step 2: In a bottom-up approach (Post-Order DFS), determine the macro
-  // tilings within each cluster.
-  //
-  // Check if the root cluster has other children clusters
-  bool macro_only_flag = true;
-  for (auto& cluster : root_cluster_->getChildren()) {
-    if (cluster->isIOCluster()) {
-      macro_only_flag = false;
-      break;
-    }
-  }
-
-  if (macro_only_flag == true) {
-    logger_->info(MPL,
-                  27,
-                  "[Hierarchical Macro Placement] The design only has macros. "
-                  "Starting placement.\n");
+  if (design_has_only_macros) {
+    logger_->warn(MPL, 27, "Design has only macros!");
+    logger_->info(MPL, 29, "[Hierarchical Macro Placement] Placing macros.");
     if (graphics_) {
       graphics_->startFine();
     }
@@ -645,7 +637,6 @@ void HierRTLMP::hierRTLMacroPlacer()
     calClusterMacroTilings(root_cluster_);
 
     createPinBlockage();
-    setPlacementBlockages();
 
     logger_->info(
         MPL, 28, "[Hierarchical Macro Placement] Placing clusters and macros.");
@@ -654,7 +645,7 @@ void HierRTLMP::hierRTLMacroPlacer()
       graphics_->startFine();
     }
 
-    if (bus_planning_flag_ == true) {
+    if (bus_planning_on_) {
       multiLevelMacroPlacement(root_cluster_);
     } else {
       multiLevelMacroPlacementWithoutBusPlanning(root_cluster_);
@@ -1016,6 +1007,12 @@ void HierRTLMP::createBundledIOs()
       delete cluster_map_[cluster_id];
       cluster_map_.erase(cluster_id);
     }
+  }
+
+  // At this point the cluster map has only the root (id = 0) and bundledIOs
+  if (cluster_map_.size() == 1) {
+    logger_->warn(MPL, 26, "Design has no IO pins!");
+    design_has_io_clusters_ = false;
   }
 }
 
@@ -2211,6 +2208,7 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
   const int num_parts = 2;  // We use two-way partitioning here
   const int num_vertices = static_cast<int>(vertex_weight.size());
   std::vector<float> hyperedge_weights(hyperedges.size(), 1.0f);
+  logger_->info(MPL, 23, "[Multilevel Autoclustering] Calling Partitioner.");
   std::vector<int> part
       = tritonpart_->PartitionKWaySimpleMode(num_parts,
                                              balance_constraint,
@@ -3782,7 +3780,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
         ++begin_check;
       }
       // add early stop mechanism
-      if (best_sa) {
+      if (best_sa || remaining_runs == 0) {
         break;
       }
       end_check = begin_check + std::min(check_interval, remaining_runs);
@@ -4032,7 +4030,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
           ++begin_check;
         }
         // add early stop mechanism
-        if (best_sa) {
+        if (best_sa || remaining_runs == 0) {
           break;
         }
         end_check = begin_check + std::min(check_interval, remaining_runs);
@@ -4558,7 +4556,7 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
         ++begin_check;
       }
       // add early stop mechanism
-      if (best_sa) {
+      if (best_sa || remaining_runs == 0) {
         break;
       }
       end_check = begin_check + std::min(check_interval, remaining_runs);
@@ -5035,7 +5033,7 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
         ++begin_check;
       }
       // add early stop mechanism
-      if (best_sa) {
+      if (best_sa || remaining_runs == 0) {
         break;
       }
       end_check = begin_check + std::min(check_interval, remaining_runs);
@@ -5507,8 +5505,8 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
                                 height,
                                 macros,
                                 area_weight_,
-                                outline_weight_ * (i + 1) * 10,
-                                wirelength_weight_ / (i + 1),
+                                outline_weight_ * (run_id + 1) * 10,
+                                wirelength_weight_ / (run_id + 1),
                                 guidance_weight_,
                                 fence_weight_,
                                 pos_swap_prob_ * 10 / action_sum,
@@ -6386,6 +6384,11 @@ void HierRTLMP::writeMacroPlacement(const std::string& file_name)
         << " " << y << "} -orientation " << inst->getOrient().getString()
         << '\n';
   }
+}
+
+void HierRTLMP::setBusPlanningOn(bool bus_planning_on)
+{
+  bus_planning_on_ = bus_planning_on;
 }
 
 void HierRTLMP::setDebug(std::unique_ptr<Mpl2Observer>& graphics)

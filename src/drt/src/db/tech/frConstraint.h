@@ -206,6 +206,9 @@ class frConstraint
           frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint:
         return "Lef58SpacingEndOfLineWithinMaxMinLength";
 
+      case frConstraintTypeEnum::frcLef58SpacingWrongDirConstraint:
+        return "Lef58SpacingWrongDir";
+
       case frConstraintTypeEnum::frcLef58CutClassConstraint:
         return "Lef58CutClass";
 
@@ -1143,6 +1146,29 @@ class frLef58SpacingEndOfLineConstraint : public frConstraint
   bool wrongDirSpacing;
   frCoord wrongDirSpace;
   std::shared_ptr<frLef58SpacingEndOfLineWithinConstraint> withinConstraint;
+};
+
+class frLef58SpacingWrongDirConstraint : public frConstraint
+{
+ public:
+  frLef58SpacingWrongDirConstraint(odb::dbTechLayerWrongDirSpacingRule* rule)
+      : db_rule_(rule)
+  {
+  }
+  // getter
+  odb::dbTechLayerWrongDirSpacingRule* getODBRule() const { return db_rule_; }
+  // others
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcLef58SpacingWrongDirConstraint;
+  }
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("LEF58_SPACING WRONGDIRECTION");
+  }
+
+ private:
+  odb::dbTechLayerWrongDirSpacingRule* db_rule_;
 };
 
 class frLef58EolKeepOutConstraint : public frConstraint
@@ -2442,24 +2468,23 @@ class frLef58KeepOutZoneConstraint : public frConstraint
  private:
   odb::dbTechLayerKeepOutZoneRule* db_rule_;
 };
-using namespace std;
 class frNonDefaultRule
 {
   friend class FlexRP;
   friend class frTechObject;
 
  private:
-  string name_;
+  std::string name_;
   // each vector position is a metal layer
-  vector<frCoord> widths_;
-  vector<frCoord> spacings_;
-  vector<frCoord> wireExtensions_;
-  vector<drEolSpacingConstraint> drEolCons_;
-  vector<int> minCuts_;  // min cuts per cut layer
+  std::vector<frCoord> widths_;
+  std::vector<frCoord> spacings_;
+  std::vector<frCoord> wireExtensions_;
+  std::vector<drEolSpacingConstraint> drEolCons_;
+  std::vector<int> minCuts_;  // min cuts per cut layer
 
   // vias for each layer
-  vector<vector<frViaDef*>> vias_;
-  vector<vector<frViaRuleGenerate*>> viasRules_;
+  std::vector<std::vector<frViaDef*>> vias_;
+  std::vector<std::vector<frViaRuleGenerate*>> viasRules_;
 
   bool hardSpacing_ = false;
 
@@ -2519,7 +2544,7 @@ class frNonDefaultRule
   void addVia(frViaDef* via, int z)
   {
     if (z >= (int) vias_.size()) {
-      vias_.resize(z + 1, vector<frViaDef*>());
+      vias_.resize(z + 1, std::vector<frViaDef*>());
     }
     vias_[z].push_back(via);
   }
@@ -2527,16 +2552,16 @@ class frNonDefaultRule
   void addViaRule(frViaRuleGenerate* via, int z)
   {
     if (z >= (int) viasRules_.size()) {
-      viasRules_.resize(z + 1, vector<frViaRuleGenerate*>());
+      viasRules_.resize(z + 1, std::vector<frViaRuleGenerate*>());
     }
     viasRules_[z].push_back(via);
   }
 
   void setHardSpacing(bool isHard) { hardSpacing_ = isHard; }
 
-  void setName(const char* n) { name_ = string(n); }
+  void setName(const char* n) { name_ = std::string(n); }
 
-  string getName() const { return name_; }
+  std::string getName() const { return name_; }
 
   frCoord getWidth(int z) const
   {
@@ -2578,9 +2603,9 @@ class frNonDefaultRule
     return minCuts_[z];
   }
 
-  const vector<frViaDef*>& getVias(int z) const { return vias_[z]; }
+  const std::vector<frViaDef*>& getVias(int z) const { return vias_[z]; }
 
-  const vector<frViaRuleGenerate*>& getViaRules(int z) const
+  const std::vector<frViaRuleGenerate*>& getViaRules(int z) const
   {
     return viasRules_[z];
   }
