@@ -1329,10 +1329,10 @@ int FastRouteCore::splitEdge(std::vector<TreeEdge>& treeedges,
 
   // find one neighbor node id different to n1
   int nbr;
-  int edge_n2_nbr; // edge id that connects the neighbor
+  int edge_n2_nbr;  // edge id that connects the neighbor
   if (treenodes[n2].nbr[0] == n1) {
     nbr = treenodes[n2].nbr[1];
-    edge_n2_nbr = treenodes[n2].edge[1]; 
+    edge_n2_nbr = treenodes[n2].edge[1];
   } else {
     nbr = treenodes[n2].nbr[0];
     edge_n2_nbr = treenodes[n2].edge[0];
