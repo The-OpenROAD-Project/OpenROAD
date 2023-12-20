@@ -859,7 +859,8 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
       }
       visitedPositions.insert({new_x, new_y});
       auto manhattanDistance
-          = [&](const odb::Point& p1, const odb::Point& p2) -> int {
+          = [grid_info, site_width](const odb::Point& p1,
+                                    const odb::Point& p2) -> int {
         int x_dist = std::abs(p1.getX() - p2.getX()) * site_width;
         int y_dist = std::abs(p2.getY() - p1.getY())
                      * grid_info.getSitesTotalHeight();  // FIXME(mina1460):
