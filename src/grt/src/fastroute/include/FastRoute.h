@@ -248,9 +248,9 @@ class FastRouteCore
   void convertToMazeroute();
   int splitEdge(std::vector<TreeEdge>& treeedges,
                 std::vector<TreeNode>& treenodes,
-                const int n1,
-                const int n2,
-                const int edge_n1n2);
+                int n1,
+                int n2,
+                int edge_n1n2);
   void updateCongestionHistory(const int upType, bool stopDEC, int& max_adj);
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
