@@ -96,8 +96,18 @@ void io::Parser::initDefaultVias()
                        tech_->getLayer(layerNum)->getName());
       }
     } else {
+      // Check whether there are pins above top routing layer
+      bool pinsAboveTop = false;
+      if (design_->getTopBlock()) {
+        for (const auto& bTerm : design_->getTopBlock()->getTerms()) {
+          if (bTerm->isAboveTopLayer()) {
+            pinsAboveTop = true;
+            break;
+          }
+        }
+      }
       if (layerNum >= BOTTOM_ROUTING_LAYER
-          && (layerNum <= TOP_ROUTING_LAYER)) {  //  || pins above top layer
+          && (layerNum <= TOP_ROUTING_LAYER || pinsAboveTop)) {
         logger_->error(DRT,
                        233,
                        "{} does not have any vias.",
