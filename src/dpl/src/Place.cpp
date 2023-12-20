@@ -731,6 +731,8 @@ int Opendp::distChange(const Cell* cell, int x, int y) const
   return pt_dist - cell_dist;
 }
 
+////////////////////////////////////////////////////////////////
+
 PixelPt Opendp::diamondSearch(const Cell* cell,
                               // grid
                               int x,
@@ -1069,10 +1071,10 @@ bool Opendp::checkPixels(const Cell* cell,
       }
     }
     if (disallow_one_site_gaps_) {
-      // here we need to check for abutting first, if there is an abutting
-      // cell then we continue as there is nothing wrong with it if there is
-      // no abutting cell, we will then check cells at 1+ distances we only
-      // need to check on the left and right sides
+      // here we need to check for abutting first, if there is an abutting cell
+      // then we continue as there is nothing wrong with it
+      // if there is no abutting cell, we will then check cells at 1+ distances
+      // we only need to check on the left and right sides
       int x_begin = max(0, x - 1);
       int y_begin = max(0, y - 1);
       // inclusive search, so we don't add 1 to the end
@@ -1121,8 +1123,8 @@ bool Opendp::checkPixels(const Cell* cell,
       int offset = 0;
       for (int step = 0; step < steps; step++) {
         // left side
-        // x_begin doesn't need to be mapped since we support only uniform
-        // site width in all grids for now
+        // x_begin doesn't need to be mapped since we support only uniform site
+        // width in all grids for now
         if (!isAbutted(0, x_begin, y_begin_mapped + offset)
             && cellAtSite(0, x_begin - 1, y_begin_mapped + offset)) {
           return false;
@@ -1266,9 +1268,9 @@ bool Opendp::moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const
   int layer_site_count = grid_info.getSiteCount();
   int layer_row_count = grid_info.getRowCount();
 
-  // since the site doesn't have to be empty, we don't need to check all
-  // layers. They will be checked in the checkPixels in the diamondSearch
-  // method after this initialization
+  // since the site doesn't have to be empty, we don't need to check all layers.
+  // They will be checked in the checkPixels in the diamondSearch method after
+  // this initialization
   for (int x = grid_x - 1; x >= 0; --x) {  // left
     if (grid_[grid_index][grid_y][x].is_valid) {
       best_dist = (grid_x - x - 1) * site_width;
