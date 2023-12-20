@@ -9,11 +9,11 @@
 [INFO ODB-0133]     Created 11 nets and 25 connections.
 Placement Analysis
 ---------------------------------
-total displacement         15.9 u
-average displacement        1.6 u
-max displacement            2.7 u
+total displacement         14.6 u
+average displacement        1.5 u
+max displacement            2.4 u
 original HPWL              65.5 u
-legalized HPWL             88.0 u
-delta HPWL                   34 %
+legalized HPWL             84.4 u
+delta HPWL                   29 %
 
 No differences found.
