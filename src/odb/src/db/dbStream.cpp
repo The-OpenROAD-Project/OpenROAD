@@ -86,10 +86,9 @@ dbIStream& operator>>(dbIStream& stream, Oct& o)
   return stream;
 }
 
-dbOStream::dbOStream(_dbDatabase* db, FILE* f)
+dbOStream::dbOStream(_dbDatabase* db, std::ostream& f) : _f(f)
 {
   _db = db;
-  _f = f;
   _lef_dist_factor = 0.001;
   _lef_area_factor = 0.000001;
 
@@ -101,7 +100,7 @@ dbOStream::dbOStream(_dbDatabase* db, FILE* f)
   }
 }
 
-dbIStream::dbIStream(_dbDatabase* db, std::ifstream& f) : _f(f)
+dbIStream::dbIStream(_dbDatabase* db, std::istream& f) : _f(f)
 {
   _db = db;
 

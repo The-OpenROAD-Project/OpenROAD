@@ -54,16 +54,21 @@ template class dbTable<_dbModule>;
 
 bool _dbModule::operator==(const _dbModule& rhs) const
 {
-  if (_name != rhs._name)
+  if (_name != rhs._name) {
     return false;
-  if (_next_entry != rhs._next_entry)
+  }
+  if (_next_entry != rhs._next_entry) {
     return false;
-  if (_insts != rhs._insts)
+  }
+  if (_insts != rhs._insts) {
     return false;
-  if (_modinsts != rhs._modinsts)
+  }
+  if (_modinsts != rhs._modinsts) {
     return false;
-  if (_mod_inst != rhs._mod_inst)
+  }
+  if (_mod_inst != rhs._mod_inst) {
     return false;
+  }
 
   return true;
 }
@@ -143,8 +148,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbModule& obj)
 
 _dbModule::~_dbModule()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -162,8 +168,9 @@ const char* dbModule::getName() const
 dbModInst* dbModule::getModInst() const
 {
   _dbModule* obj = (_dbModule*) this;
-  if (obj->_mod_inst == 0)
+  if (obj->_mod_inst == 0) {
     return nullptr;
+  }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbModInst*) par->_modinst_tbl->getPtr(obj->_mod_inst);
 }
@@ -361,4 +368,4 @@ std::string dbModule::getHierarchicalName() const
 
 // User Code End dbModulePublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

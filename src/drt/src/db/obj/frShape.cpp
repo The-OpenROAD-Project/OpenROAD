@@ -33,7 +33,6 @@
 #include "distributed/frArchive.h"
 #include "serialization.h"
 
-using namespace std;
 using namespace fr;
 
 frPathSeg::frPathSeg(const drPathSeg& in)

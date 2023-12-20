@@ -58,13 +58,21 @@ class PlacementDensityDataSource
   ~PlacementDensityDataSource() {}
 };
 
+class RUDYDataSource
+{
+ public:
+  RUDYDataSource() = default;
+  ~RUDYDataSource() = default;
+};
+
 ////
 
 Gui::Gui()
     : continue_after_close_(false),
       logger_(nullptr),
       db_(nullptr),
-      placement_density_heat_map_(nullptr)
+      placement_density_heat_map_(nullptr),
+      rudy_heat_map_(nullptr)
 {
 }
 

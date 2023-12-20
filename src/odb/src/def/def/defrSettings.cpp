@@ -30,8 +30,6 @@
 
 #include "def_parser.hpp"
 
-using namespace std;
-
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
 defrSettings* defSettings = NULL;

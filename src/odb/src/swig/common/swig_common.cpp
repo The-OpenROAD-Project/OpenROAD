@@ -182,7 +182,7 @@ odb::dbDatabase* read_db(odb::dbDatabase* db, const char* db_path)
 
 int write_db(odb::dbDatabase* db, const char* db_path)
 {
-  FILE* fp = fopen(db_path, "wb");
+  std::ofstream fp(db_path, std::ios::binary);
   if (!fp) {
     int errnum = errno;
     fprintf(stderr, "Error opening file: %s\n", strerror(errnum));
@@ -190,7 +190,6 @@ int write_db(odb::dbDatabase* db, const char* db_path)
     return errno;
   }
   db->write(fp);
-  fclose(fp);
   return 1;
 }
 
