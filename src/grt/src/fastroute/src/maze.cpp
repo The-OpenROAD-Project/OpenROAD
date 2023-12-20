@@ -840,7 +840,7 @@ void FastRouteCore::setupHeap(const int netID,
         // add the neighbor of cur node into queue
         queue[queuetail] = nbr;
         queuetail++;
-      }  // loop i (3 neigbors for cur node)
+      }  // loop i (3 neighbors for cur node)
     }    // while queue is not empty
 
     // find all the grids on subtree t2 (connect to n2) and put them into
@@ -1309,9 +1309,9 @@ float getCost(const int i,
 
 int FastRouteCore::splitEdge(std::vector<TreeEdge>& treeedges,
                              std::vector<TreeNode>& treenodes,
-                             int n1,
-                             int n2,
-                             int edge_n1n2)
+                             const int n1,
+                             const int n2,
+                             const int edge_n1n2)
 {
   const int n2x = treenodes[n2].x;
   const int n2y = treenodes[n2].y;
@@ -1328,17 +1328,14 @@ int FastRouteCore::splitEdge(std::vector<TreeEdge>& treeedges,
   TreeEdge new_edge;
 
   // find one neighbor node different to n1
-  int B1;
-  int edge_n2B1;
+  int nbr;//B1;
+  int edge_n2_nbr; //edge_n2B1;
   if (treenodes[n2].nbr[0] == n1) {
-    B1 = treenodes[n2].nbr[1];
-    edge_n2B1 = treenodes[n2].edge[1];
-  } else if (treenodes[n2].nbr[1] == n1) {
-    B1 = treenodes[n2].nbr[0];
-    edge_n2B1 = treenodes[n2].edge[0];
+    nbr = treenodes[n2].nbr[1];
+    edge_n2_nbr = treenodes[n2].edge[1]; 
   } else {
-    B1 = treenodes[n2].nbr[0];
-    edge_n2B1 = treenodes[n2].edge[0];
+    nbr = treenodes[n2].nbr[0];
+    edge_n2_nbr = treenodes[n2].edge[0];
   }
 
   // update n2 neighbor
@@ -1347,7 +1344,7 @@ int FastRouteCore::splitEdge(std::vector<TreeEdge>& treeedges,
     if (treenodes[n2].nbr[i] == n1) {
       continue;
     }
-    if (treenodes[n2].nbr[i] == B1) {
+    if (treenodes[n2].nbr[i] == nbr) {
       treenodes[n2].nbr[cnt] = new_node_id;
       treenodes[n2].edge[cnt] = new_edge_id;
       cnt++;
@@ -1360,12 +1357,12 @@ int FastRouteCore::splitEdge(std::vector<TreeEdge>& treeedges,
   treenodes[n2].nbr_count = cnt;
 
   // change edge neighbor
-  if (treeedges[edge_n2B1].n1 == n2) {
-    treeedges[edge_n2B1].n1 = new_node_id;
-    treeedges[edge_n2B1].n1a = new_node.stackAlias;
+  if (treeedges[edge_n2_nbr].n1 == n2) {
+    treeedges[edge_n2_nbr].n1 = new_node_id;
+    treeedges[edge_n2_nbr].n1a = new_node.stackAlias;
   } else {
-    treeedges[edge_n2B1].n2 = new_node_id;
-    treeedges[edge_n2B1].n2a = new_node.stackAlias;
+    treeedges[edge_n2_nbr].n2 = new_node_id;
+    treeedges[edge_n2_nbr].n2a = new_node.stackAlias;
   }
 
   // change current edge
@@ -1378,9 +1375,9 @@ int FastRouteCore::splitEdge(std::vector<TreeEdge>& treeedges,
   }
 
   // change node neighbor
-  for (int i = 0; i < treenodes[B1].nbr_count; i++) {
-    if (treenodes[B1].nbr[i] == n2) {
-      treenodes[B1].nbr[i] = new_node_id;
+  for (int i = 0; i < treenodes[nbr].nbr_count; i++) {
+    if (treenodes[nbr].nbr[i] == n2) {
+      treenodes[nbr].nbr[i] = new_node_id;
     }
   }
 
@@ -1404,10 +1401,10 @@ int FastRouteCore::splitEdge(std::vector<TreeEdge>& treeedges,
 
   // config new node
   new_node.nbr_count = 3;
-  new_node.nbr[0] = B1;
+  new_node.nbr[0] = nbr;
   new_node.nbr[1] = n2;
   new_node.nbr[2] = n1;
-  new_node.edge[0] = edge_n2B1;
+  new_node.edge[0] = edge_n2_nbr;
   new_node.edge[1] = new_edge_id;
   new_node.edge[2] = edge_n1n2;
 
