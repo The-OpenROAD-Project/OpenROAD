@@ -775,22 +775,7 @@ void Opendp::erasePixel(Cell* cell)
     int site_width = getSiteWidth(cell);
     int x_end = gridPaddedEndX(cell, site_width);
     int y_end = gridEndY(cell);
-    debugPrint(logger_,
-               DPL,
-               "hybrid",
-               1,
-               "Checking cell {} isHybrid {}",
-               cell->name(),
-               cell->isHybrid());
     int y_start = gridY(cell);
-    debugPrint(logger_,
-               DPL,
-               "hybrid",
-               1,
-               "Checking cell {} in rows. Y start {} y end {}",
-               cell->name(),
-               y_start,
-               y_end);
 
     for (const auto& [target_GridMapKey, target_grid_info] : grid_info_map_) {
       int layer_y_start
