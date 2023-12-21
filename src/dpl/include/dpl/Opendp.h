@@ -617,7 +617,7 @@ class Opendp
   std::unique_ptr<DplObserver> debug_observer_;
 
   // Magic numbers
-  static constexpr int bin_search_width_ = 10;
+  static constexpr int bin_search_width_ = 2;
   static constexpr double group_refine_percent_ = .05;
   static constexpr double refine_percent_ = .02;
   static constexpr int rand_seed_ = 777;
