@@ -421,8 +421,8 @@ void dbTable<T>::destroy(T* t)
   dbTablePage* page = (dbTablePage*) t->getObjectPage();
 
   page->_alloccnt--;
-  t->~T();  // call destructor
   t->_oid &= ~DB_ALLOC_BIT;
+  t->~T();  // call destructor
 
   uint offset = t - (T*) page->_objects;
   uint id = page->_page_addr + offset;

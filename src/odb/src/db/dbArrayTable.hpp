@@ -294,8 +294,8 @@ void dbArrayTable<T>::destroy(T* t)
   dbArrayTablePage* page = (dbArrayTablePage*) t->getObjectPage();
 
   page->_alloccnt--;
-  t->~T();  // call destructor
   t->_oid &= ~DB_ALLOC_BIT;
+  t->~T();  // call destructor
 
   // Add to freelist
   _dbFreeObject* o = (_dbFreeObject*) t;
