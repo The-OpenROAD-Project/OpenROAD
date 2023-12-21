@@ -15,7 +15,7 @@ pipeline {
           stages {
             stage('Build centos7 gcc') {
               steps {
-                sh './etc/Build.sh -no-warnings';
+                sh './etc/Build.sh';
               }
             }
             stage('Check message IDs') {
@@ -56,7 +56,7 @@ pipeline {
           stages {
             stage('Build centos7 gcc without GUI') {
               steps {
-                sh './etc/Build.sh -no-warnings -no-gui -dir=build-without-gui';
+                sh './etc/Build.sh -no-gui -dir=build-without-gui';
               }
             }
           }
