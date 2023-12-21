@@ -19,10 +19,26 @@ echo "MANDATORY_MANPATH $(pwd)" >> ~/.manpath
 man template
 ```
 
+### What about inside OpenROAD?
+
+- To run `man` commands inside OpenROAD, you can either use the Linux `man` binary:
+```tcl
+# create a man wrapper
+source scripts/main.tcl
+man openroad
+```
+
+- Or the `Tcl` script that outputs raw text.
+```tcl
+source scripts/Utl.tcl
+# you will be prompted to enter the RELATIVE path to cat folders.
+man openroad
+```
+
 ## Prototype 2 (git-pages)
 
-- TOdo. 
+- TODO, they use another word processor that seems more versatile called AsciiDoc.
+- Reference: https://github.com/git/git/tree/master/Documentation 
 
 ## TODO
 - pandoc not the most perfect, as pandoc does not seem to do the indentation perfectly as in other manpages. for the options section
-- Need to add to `MANPATH`: https://unix.stackexchange.com/questions/344603/how-to-append-to-manpath
