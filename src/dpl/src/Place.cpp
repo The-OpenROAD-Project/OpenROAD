@@ -741,11 +741,6 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
   // Diamond search limits.
   int x_min = x - max_displacement_x_;
   int x_max = x + max_displacement_x_;
-  // TODO: IMO, this is still not correct.
-  //  I am scaling based on the smallest row_height to keep code consistent with
-  //  the original code.
-  //  max_displacement_y_ is in microns, and this doesn't translate directly to
-  //  x and y on the grid.
   int scaled_max_displacement_y_
       = map_ycoordinates(max_displacement_y_,
                          smallest_non_hybrid_grid_key_,
@@ -755,6 +750,7 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
   int y_max = y + scaled_max_displacement_y_;
 
   auto [row_height, grid_info] = getRowInfo(cell);
+  auto gmk = getGridMapKey(cell);
   int site_width = getSiteWidth(cell);
 
   // Restrict search to group boundary.
@@ -859,12 +855,11 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
       }
       visitedPositions.insert({new_x, new_y});
       auto manhattanDistance
-          = [grid_info, site_width](const odb::Point& p1,
-                                    const odb::Point& p2) -> int {
+          = [&](const odb::Point& p1, const odb::Point& p2) -> int {
         int x_dist = std::abs(p1.getX() - p2.getX()) * site_width;
-        int y_dist = std::abs(p2.getY() - p1.getY())
-                     * grid_info.getSitesTotalHeight();  // FIXME(mina1460):
-                                                         // this needs PR #4363
+        int y_dist = std::abs(coordinateToHeight(p2.getY(), gmk)
+                              - coordinateToHeight(p1.getY(), gmk));
+
         return x_dist + y_dist;
       };
       const odb::Point below = {new_x - 1, new_y};
