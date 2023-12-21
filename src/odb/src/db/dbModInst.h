@@ -49,6 +49,7 @@ class _dbModInst : public _dbObject
  public:
   _dbModInst(_dbDatabase*, const _dbModInst& r);
   _dbModInst(_dbDatabase*);
+
   ~_dbModInst();
 
   bool operator==(const _dbModInst& rhs) const;

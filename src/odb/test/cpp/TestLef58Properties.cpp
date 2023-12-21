@@ -12,7 +12,6 @@
 #include "lefout.h"
 #include "utl/Logger.h"
 using namespace odb;
-using namespace std;
 
 BOOST_AUTO_TEST_SUITE(test_suite)
 
@@ -54,16 +53,19 @@ BOOST_AUTO_TEST_CASE(test_default)
 
   lefParser.createTechAndLib("tech", libname, path.c_str());
 
-  FILE* write;
   path = std::string(std::getenv("BASE_DIR"))
          + "/results/TestLef58PropertiesDbRW";
-  write = fopen(path.c_str(), "w");
+  std::ofstream write;
+  write.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                   | std::ios::eofbit);
+  write.open(path, std::ios::binary);
+
   db1->write(write);
 
   std::ifstream read;
   read.exceptions(std::ifstream::failbit | std::ifstream::badbit
                   | std::ios::eofbit);
-  read.open(path.c_str(), std::ios::binary);
+  read.open(path, std::ios::binary);
 
   db2->read(read);
 
@@ -92,6 +94,17 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(rule->getParMinLength() == -0.1 * distFactor);
   BOOST_TEST(rule->isTwoEdgesValid() == 1);
   BOOST_TEST(rule->isToConcaveCornerValid() == 0);
+
+  auto wrongDir_rules = layer->getTechLayerWrongDirSpacingRules();
+  BOOST_TEST(wrongDir_rules.size() == 1);
+  odb::dbTechLayerWrongDirSpacingRule* wrongDir_rule
+      = (odb::dbTechLayerWrongDirSpacingRule*) *wrongDir_rules.begin();
+  BOOST_TEST(wrongDir_rule->getWrongdirSpace() == 0.12 * distFactor);
+  BOOST_TEST(wrongDir_rule->isNoneolValid() == 1);
+  BOOST_TEST(wrongDir_rule->getNoneolWidth() == 0.15 * distFactor);
+  BOOST_TEST(wrongDir_rule->getPrlLength() == -0.05 * distFactor);
+  BOOST_TEST(wrongDir_rule->isLengthValid() == 1);
+  BOOST_TEST(wrongDir_rule->getLength() == 0.2 * distFactor);
 
   auto minStepRules = layer->getTechLayerMinStepRules();
   BOOST_TEST(minStepRules.size() == 4);
@@ -126,8 +139,8 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(corner_rule->isExceptEol());
   BOOST_TEST(corner_rule->isCornerToCorner());
   BOOST_TEST(corner_rule->getEolWidth() == 0.090 * distFactor);
-  vector<pair<int, int>> spacing;
-  vector<int> corner_width;
+  std::vector<std::pair<int, int>> spacing;
+  std::vector<int> corner_width;
   corner_rule->getSpacingTable(spacing);
   corner_rule->getWidthTable(corner_width);
   BOOST_TEST(spacing.size() == 1);
@@ -143,10 +156,10 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(spacing_tbl_rule->isSameMask() == false);
   BOOST_TEST(spacing_tbl_rule->isExceeptEol() == true);
   BOOST_TEST(spacing_tbl_rule->getEolWidth() == 0.090 * distFactor);
-  vector<int> width;
-  vector<int> length;
-  vector<vector<int>> spacing_tbl;
-  map<unsigned int, pair<int, int>> within;
+  std::vector<int> width;
+  std::vector<int> length;
+  std::vector<std::vector<int>> spacing_tbl;
+  std::map<unsigned int, std::pair<int, int>> within;
   spacing_tbl_rule->getTable(width, length, spacing_tbl, within);
   BOOST_TEST(width.size() == 2);
   BOOST_TEST(length.size() == 2);

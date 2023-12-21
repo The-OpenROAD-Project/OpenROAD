@@ -60,36 +60,48 @@ template class dbTable<_dbAccessPoint>;
 
 bool _dbAccessPoint::operator==(const _dbAccessPoint& rhs) const
 {
-  if (point_ != rhs.point_)
+  if (point_ != rhs.point_) {
     return false;
-  if (layer_ != rhs.layer_)
+  }
+  if (layer_ != rhs.layer_) {
     return false;
-  if (lib_ != rhs.lib_)
+  }
+  if (lib_ != rhs.lib_) {
     return false;
-  if (master_ != rhs.master_)
+  }
+  if (master_ != rhs.master_) {
     return false;
-  if (mpin_ != rhs.mpin_)
+  }
+  if (mpin_ != rhs.mpin_) {
     return false;
-  if (bpin_ != rhs.bpin_)
+  }
+  if (bpin_ != rhs.bpin_) {
     return false;
+  }
 
   return true;
 }
 
 bool _dbAccessPoint::operator<(const _dbAccessPoint& rhs) const
 {
-  if (point_ >= rhs.point_)
+  if (point_ >= rhs.point_) {
     return false;
-  if (layer_ >= rhs.layer_)
+  }
+  if (layer_ >= rhs.layer_) {
     return false;
-  if (lib_ >= rhs.lib_)
+  }
+  if (lib_ >= rhs.lib_) {
     return false;
-  if (master_ >= rhs.master_)
+  }
+  if (master_ >= rhs.master_) {
     return false;
-  if (mpin_ >= rhs.mpin_)
+  }
+  if (mpin_ >= rhs.mpin_) {
     return false;
-  if (bpin_ >= rhs.bpin_)
+  }
+  if (bpin_ >= rhs.bpin_) {
     return false;
+  }
 
   return true;
 }
@@ -184,10 +196,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbAccessPoint& obj)
   stream << high;
   // User Code End <<
   return stream;
-}
-
-_dbAccessPoint::~_dbAccessPoint()
-{
 }
 
 // User Code Begin PrivateMethods
@@ -471,4 +479,4 @@ void dbAccessPoint::destroy(dbAccessPoint* ap)
 }
 // User Code End dbAccessPointPublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

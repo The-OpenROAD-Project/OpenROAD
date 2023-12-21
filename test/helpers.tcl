@@ -208,9 +208,9 @@ suppress_message PPL 60
 suppress_message TAP 100
 suppress_message TAP 101
 
-# suppress par messages with runtime
-suppress_message PAR 1
-suppress_message PAR 30
-suppress_message PAR 109
-suppress_message PAR 110
+# suppress par messages with files' names
+suppress_message PAR 6
+suppress_message PAR 38
 
+# suppress ord message with number of threads
+suppress_message ORD 30

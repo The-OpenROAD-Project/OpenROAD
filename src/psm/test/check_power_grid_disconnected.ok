@@ -3,9 +3,9 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-[INFO ODB-0222] Reading LEF file: Nangate45/fakeram45_64x32.lef
+[INFO ODB-0222] Reading LEF file: Nangate45_data/fakeram45_64x32.lef
 [INFO ODB-0225]     Created 1 library cells
-[INFO ODB-0226] Finished LEF file:  Nangate45/fakeram45_64x32.lef
+[INFO ODB-0226] Finished LEF file:  Nangate45_data/fakeram45_64x32.lef
 [INFO ODB-0128] Design: RocketTile
 [INFO ODB-0130]     Created 269 pins.
 [INFO ODB-0131]     Created 547 components and 1304 component-terminals.
@@ -17,7 +17,7 @@
 [WARNING PSM-0065] VSRC location not specified, using default checkerboard pattern with one VDD every size bumps in x-direction and one in two bumps in the y-direction
 [INFO PSM-0076] Setting metal node density to be standard cell height times 5.
 [WARNING PSM-0030] VSRC location at (100.035um, 100.100um) and size 10.000um, is not located on an existing power stripe node. Moving to closest node at (76.120um, 83.500um).
-[INFO PSM-0031] Number of PDN nodes on net VDD = 2239.
+[INFO PSM-0031] Number of PDN nodes on net VDD = 2238.
 [INFO PSM-0064] Number of voltage sources = 1.
 [WARNING PSM-0038] Unconnected PDN node on net VDD at location (58.160um, 97.000um), layer: metal5.
 [WARNING PSM-0038] Unconnected PDN node on net VDD at location (58.160um, 97.000um), layer: metal6.

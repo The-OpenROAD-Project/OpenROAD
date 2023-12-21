@@ -392,3 +392,165 @@ proc map_power_switch { args } {
     }
 
 }
+
+# Define command arguments for set_level_shifter
+sta::define_cmd_args "set_level_shifter" { \
+    [-domain domain] \
+    [-elements elements] \
+    [-exclude_elements exclude_elements] \
+    [-source source] \
+    [-sink sink] \
+    [-use_functional_equivalence use_functional_equivalence] \
+    [-applies_to applies_to] \
+    [-applies_to_boundary applies_to_boundary] \
+    [-rule rule] \
+    [-threshold threshold] \
+    [-no_shift] \
+    [-force_shift] \
+    [-location location] \
+    [-input_supply input_supply] \
+    [-output_supply output_supply] \
+    [-internal_supply internal_supply] \
+    [-name_prefix name_prefix] \
+    [-name_suffix name_suffix] \
+    [-instance instance] \
+    [-update] \
+    [-use_equivalence use_equivalence] \
+    name 
+}
+
+# Procedure to set or update a level shifter
+proc set_level_shifter { args } {
+    check_block_exists
+
+    sta::parse_key_args "set_level_shifter" args \
+        keys {-domain -elements -exclude_elements -source -sink -use_functional_equivalence -applies_to -applies_to_boundary -rule -threshold  -location -input_supply -output_supply -internal_supply -name_prefix -name_suffix -instance  -use_equivalence} flags {-update -no_shift -force_shift}
+
+    sta::check_argc_eq1 "set_level_shifter" $args
+
+    set name [lindex $args 0]
+
+    set domain ""
+    set elements {}
+    set exclude_elements {}
+    set source ""
+    set sink ""
+    set use_functional_equivalence "TRUE"
+    set applies_to ""
+    set applies_to_boundary ""
+    set rule ""
+    set threshold ""
+    set no_shift ""
+    set force_shift ""
+    set location ""
+    set input_supply ""
+    set output_supply ""
+    set internal_supply ""
+    set name_prefix ""
+    set name_suffix ""
+    set instance {}
+    set update 0
+
+    if { [info exists keys(-domain)] } {
+        set domain $keys(-domain)
+    }
+
+    if { [info exists keys(-elements)] } {
+        set elements $keys(-elements)
+    }
+
+    if { [info exists keys(-exclude_elements)] } {
+        set exclude_elements $keys(-exclude_elements)
+    }
+
+    if { [info exists keys(-source)] } {
+        set source $keys(-source)
+    }
+
+    if { [info exists keys(-sink)] } {
+        set sink $keys(-sink)
+    }
+
+    if { [info exists keys(-use_functional_equivalence)] } {
+        set use_functional_equivalence $keys(-use_functional_equivalence)
+    }
+
+    if { [info exists keys(-applies_to)] } {
+        set applies_to $keys(-applies_to)
+    }
+
+    if { [info exists keys(-applies_to_boundary)] } {
+        set applies_to_boundary $keys(-applies_to_boundary)
+    }
+
+    if { [info exists keys(-rule)] } {
+        set rule $keys(-rule)
+    }
+
+    if { [info exists keys(-threshold)] } {
+        set threshold $keys(-threshold)
+    }
+
+    if { [info exists keys(-location)] } {
+        set location $keys(-location)
+    }
+
+    if { [info exists keys(-input_supply)] } {
+        set input_supply $keys(-input_supply)
+    }
+
+    if { [info exists keys(-output_supply)] } {
+        set output_supply $keys(-output_supply)
+    }   
+
+    if { [info exists keys(-internal_supply)] } {
+        set internal_supply $keys(-internal_supply)
+    }
+
+    if { [info exists keys(-name_prefix)] } {
+        set name_prefix $keys(-name_prefix)
+    }
+
+    if { [info exists keys(-name_suffix)] } {
+        set name_suffix $keys(-name_suffix)
+    }
+
+    if { [info exists keys(-instance)] } {
+        set instance $keys(-instance)
+    }
+
+    if { [info exists keys(-use_equivalence)] } {
+        utl::warn UPF 57 "-use_equivalence is deprecated in UPF and not supported in OpenROAD"
+    }
+
+    if { [info exists flags(-update)] } {
+        set update 1
+    }
+
+    if { [info exists flags(-no_shift)] } {
+        set no_shift "1"
+    }
+
+    if { [info exists flags(-force_shift)] } {
+        set force_shift "1"
+    }
+
+    set ok [upf::create_or_update_level_shifter_cmd $name $domain $source $sink $use_functional_equivalence $applies_to $applies_to_boundary $rule $threshold $no_shift $force_shift $location $input_supply $output_supply $internal_supply $name_prefix $name_suffix $update]
+
+    if { $ok == 0 } {
+        return
+    }
+
+    foreach element $elements {
+        upf::add_level_shifter_element_cmd $name $element
+    }
+
+    foreach exclude_element $exclude_elements {
+        upf::exclude_level_shifter_element_cmd $name $exclude_element
+    }
+
+    foreach {instance_name port_name} $instance {
+        upf::handle_level_shifter_instance_cmd $name $instance_name $port_name
+    }
+
+}

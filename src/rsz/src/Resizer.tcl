@@ -156,12 +156,6 @@ proc set_wire_rc { args } {
       set wire_res [rsz::layer_resistance $layer $corner]
       set wire_cap [rsz::layer_capacitance $layer $corner]
     }
-
-    # Unfortunately this does not work very well with technologies like sky130
-    # that use inappropriate kohm/pf units.
-    if { 0 } {
-      utl::info RSZ 61 "$signal_clk wire resistance [sta::format_resistance [expr $wire_res * 1e-6] 6] [sta::unit_scale_abbreviation resistance][sta::unit_suffix resistance]/um capacitance [sta::format_capacitance [expr $wire_cap * 1e-6] 6] [sta::unit_scale_abbreviation capacitance][sta::unit_suffix capacitance]/um."
-    }
   } else {
     ord::ensure_units_initialized
     if { [info exists keys(-resistance)] } {
@@ -310,6 +304,13 @@ sta::define_cmd_args "remove_buffers" {}
 proc remove_buffers { args } {
   sta::check_argc_eq0 "remove_buffers" $args
   rsz::remove_buffers_cmd
+}
+
+sta::define_cmd_args "balance_row_usage" {}
+
+proc balance_row_usage { args } {
+  sta::check_argc_eq0 "balance_row_usage" $args
+  rsz::balance_row_usage_cmd
 }
 
 sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length] \
@@ -469,15 +470,15 @@ proc repair_timing { args } {
   if { $recover_power_percent >= 0 } {
     rsz::recover_power $recover_power_percent
   } else {
-      if { $setup } {
-    rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
-      $verbose \
-      $skip_pin_swap $skip_gate_cloning
+    if { $setup } {
+      rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
+        $verbose \
+        $skip_pin_swap $skip_gate_cloning
     }
-      if { $hold } {
-    rsz::repair_hold $setup_margin $hold_margin \
-      $allow_setup_violations $max_buffer_percent $max_passes \
-      $verbose	  
+    if { $hold } {
+      rsz::repair_hold $setup_margin $hold_margin \
+        $allow_setup_violations $max_buffer_percent $max_passes \
+        $verbose
     }
   }
 }
@@ -519,8 +520,8 @@ proc report_floating_nets { args } {
     }
   }
 
-  utl::metric "timing__drv__floating__nets" $floating_net_count
-  utl::metric "timing__drv__floating__pins" $floating_pin_count
+  utl::metric_int "timing__drv__floating__nets" $floating_net_count
+  utl::metric_int "timing__drv__floating__pins" $floating_pin_count
 }
 
 sta::define_cmd_args "report_long_wires" {count}
@@ -605,7 +606,8 @@ proc check_corner_wire_caps {} {
   set have_rc 1
   foreach corner [sta::corners] {
     if { [rsz::wire_signal_capacitance $corner] == 0.0 } {
-      utl::warn RSZ 14 "wire capacitance for corner [$corner name] is zero. Use the set_wire_rc command to set wire resistance and capacitance."
+      utl::warn RSZ 14 "wire capacitance for corner [$corner name] is zero.\
+        Use the set_wire_rc command to set wire resistance and capacitance."
       set have_rc 0
     }
   }
@@ -617,11 +619,13 @@ proc check_max_wire_length { max_wire_length } {
     set min_delay_max_wire_length [rsz::find_max_wire_length]
     if { $max_wire_length > 0 } {
       if { $max_wire_length < $min_delay_max_wire_length } {
-        utl::warn RSZ 65 "max wire length less than [format %.0fu [sta::distance_sta_ui $min_delay_max_wire_length]] increases wire delays."
+        set wire_length_fmt [format %.0fu [sta::distance_sta_ui $min_delay_max_wire_length]]
+        utl::warn RSZ 65 "max wire length less than $wire_length_fmt increases wire delays."
       }
     } else {
       set max_wire_length $min_delay_max_wire_length
-      utl::info RSZ 58 "Using max wire length [format %.0f [sta::distance_sta_ui $max_wire_length]]um."
+      set max_wire_length_fmt [format %.0f [sta::distance_sta_ui $max_wire_length]]
+      utl::info RSZ 58 "Using max wire length ${max_wire_length_fmt}um."
     }
   }
   return $max_wire_length

@@ -57,7 +57,6 @@
 #include "sta/StaMain.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "ta/FlexTA.h"
-using namespace std;
 using namespace fr;
 using namespace triton_route;
 
@@ -240,6 +239,10 @@ std::string TritonRoute::runDRWorker(const std::string& workerStr,
 void TritonRoute::debugSingleWorker(const std::string& dumpDir,
                                     const std::string& drcRpt)
 {
+  {
+    io::Writer writer(design_.get(), logger_);
+    writer.updateTrackAssignment(db_->getChip()->getBlock());
+  }
   bool on = debug_->debugDR;
   FlexDRViaData viaData;
   std::ifstream viaDataFile(fmt::format("{}/viadata.bin", dumpDir),
@@ -467,7 +470,7 @@ void TritonRoute::applyUpdates(
           std::unique_ptr<frPathSeg> uSeg = std::make_unique<frPathSeg>(seg);
           auto net = update.getNet();
           uSeg->addToNet(net);
-          vector<unique_ptr<frConnFig>> tmp;
+          std::vector<std::unique_ptr<frConnFig>> tmp;
           tmp.push_back(std::move(uSeg));
           auto idx = update.getIndexInOwner();
           if (idx < 0 || idx >= net->getGuides().size())
@@ -948,8 +951,8 @@ void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
   for (int i = offset; i < (int) xgp.getCount(); i += size) {
     for (int j = offset; j < (int) ygp.getCount(); j += size) {
       Rect routeBox1 = design_->getTopBlock()->getGCellBox(Point(i, j));
-      const int max_i = min((int) xgp.getCount() - 1, i + size - 1);
-      const int max_j = min((int) ygp.getCount(), j + size - 1);
+      const int max_i = std::min((int) xgp.getCount() - 1, i + size - 1);
+      const int max_j = std::min((int) ygp.getCount(), j + size - 1);
       Rect routeBox2 = design_->getTopBlock()->getGCellBox(Point(max_i, max_j));
       Rect routeBox(routeBox1.xMin(),
                     routeBox1.yMin(),
@@ -1012,8 +1015,13 @@ void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
 {
   GC_IGNORE_PDN_LAYER = -1;
   initDesign();
-  if (design_->getTopBlock()->getGCellPatterns().empty()) {
-    initGuide();
+  auto gcellGrid = db_->getChip()->getBlock()->getGCellGrid();
+  if (gcellGrid != nullptr && gcellGrid->getNumGridPatternsX() == 1
+      && gcellGrid->getNumGridPatternsY() == 1) {
+    io::Parser parser(db_, getDesign(), logger_);
+    parser.buildGCellPatterns(db_);
+  } else if (!initGuide()) {
+    logger_->error(DRT, 1, "GCELLGRID is undefined");
   }
   Rect requiredDrcBox(x1, y1, x2, y2);
   if (requiredDrcBox.area() == 0) {
@@ -1268,13 +1276,13 @@ int TritonRoute::getWorkerResultsSize()
   return results_sz_;
 }
 
-void TritonRoute::reportDRC(const string& file_name,
+void TritonRoute::reportDRC(const std::string& file_name,
                             const frList<std::unique_ptr<frMarker>>& markers,
                             Rect drcBox)
 {
   double dbu = getDesign()->getTech()->getDBUPerUU();
 
-  if (file_name == string("")) {
+  if (file_name == std::string("")) {
     if (VERBOSE > 0) {
       logger_->warn(
           DRT,
@@ -1283,7 +1291,7 @@ void TritonRoute::reportDRC(const string& file_name,
     }
     return;
   }
-  ofstream drcRpt(file_name.c_str());
+  std::ofstream drcRpt(file_name.c_str());
   if (drcRpt.is_open()) {
     for (const auto& marker : markers) {
       // get violation bbox
@@ -1307,7 +1315,7 @@ void TritonRoute::reportDRC(const string& file_name,
       } else {
         drcRpt << "nullptr";
       }
-      drcRpt << endl;
+      drcRpt << std::endl;
       // get source(s) of violation
       // format: type:name/identifier
       drcRpt << "    srcs: ";
@@ -1358,6 +1366,6 @@ void TritonRoute::reportDRC(const string& file_name,
       drcRpt << layer->getName() << "\n";
     }
   } else {
-    cout << "Error: Fail to open DRC report file\n";
+    std::cout << "Error: Fail to open DRC report file\n";
   }
 }
