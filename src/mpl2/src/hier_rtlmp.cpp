@@ -2265,23 +2265,8 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
 
     createOneMacroClusterForEachMacro(parent, hard_macros, macro_clusters);
 
-    // classify macros based on size
     std::vector<int> macro_size_class(hard_macros.size(), -1);
-    for (int i = 0; i < hard_macros.size(); i++) {
-      if (macro_size_class[i] == -1) {
-        for (int j = i + 1; j < hard_macros.size(); j++) {
-          if ((macro_size_class[j] == -1)
-              && ((*hard_macros[i]) == (*hard_macros[j]))) {
-            macro_size_class[j] = i;
-          }
-        }
-      }
-    }
-
-    for (int i = 0; i < hard_macros.size(); i++) {
-      macro_size_class[i]
-          = (macro_size_class[i] == -1) ? i : macro_size_class[i];
-    }
+    classifyMacrosBasedOnSize(hard_macros, macro_size_class);
 
     // classify macros based on connection signature
     calculateConnection();
@@ -2421,6 +2406,26 @@ void HierRTLMP::createOneMacroClusterForEachMacro(Cluster* parent,
     parent->addChild(single_macro_cluster);
     macro_clusters.push_back(single_macro_cluster);
   }
+}
+
+void HierRTLMP::classifyMacrosBasedOnSize(const std::vector<HardMacro*>& hard_macros,
+                                          std::vector<int>& macro_size_class)
+{
+  for (int i = 0; i < hard_macros.size(); i++) {
+    if (macro_size_class[i] == -1) {
+      for (int j = i + 1; j < hard_macros.size(); j++) {
+        if ((macro_size_class[j] == -1)
+            && ((*hard_macros[i]) == (*hard_macros[j]))) {
+          macro_size_class[j] = i;
+        }
+      }
+    }
+  }
+
+  for (int i = 0; i < hard_macros.size(); i++) {
+    macro_size_class[i]
+        = (macro_size_class[i] == -1) ? i : macro_size_class[i];
+  } 
 }
 
 // Map all the macros into their HardMacro objects for all the clusters
