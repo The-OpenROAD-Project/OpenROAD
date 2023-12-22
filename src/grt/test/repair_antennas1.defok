@@ -1321,7 +1321,7 @@ COMPONENTS 1366 ;
     - _551_ sky130_fd_sc_hs__a21oi_1 + PLACED ( 107520 56610 ) FS ;
     - _552_ sky130_fd_sc_hs__nand2_1 + PLACED ( 103680 66600 ) N ;
     - _553_ sky130_fd_sc_hs__nand2_1 + PLACED ( 107040 63270 ) FS ;
-    - _554_ sky130_fd_sc_hs__nand2_1 + PLACED ( 127680 153180 ) N ;
+    - _554_ sky130_fd_sc_hs__nand2_1 + PLACED ( 120960 153180 ) N ;
     - _555_ sky130_fd_sc_hs__mux2_1 + PLACED ( 125760 163170 ) FS ;
     - _556_ sky130_fd_sc_hs__nand2_1 + PLACED ( 127680 159840 ) N ;
     - _557_ sky130_fd_sc_hs__nand2_1 + PLACED ( 124320 153180 ) N ;
