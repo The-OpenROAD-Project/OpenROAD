@@ -2267,45 +2267,16 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
 
     std::vector<int> macro_size_class(hard_macros.size(), -1);
     classifyMacrosBasedOnSize(hard_macros, macro_size_class);
-
     std::vector<int> macro_signature_class(hard_macros.size(), -1);
     classifyMacrosBasedOnConnSignature(hard_macros, macro_clusters, macro_signature_class);
 
-    // macros with the same size and the same connection signature
-    // belong to the same class
     std::vector<int> macro_class(hard_macros.size(), -1);
-    for (int i = 0; i < hard_macros.size(); i++) {
-      if (macro_class[i] == -1) {
-        macro_class[i] = i;
-        for (int j = i + 1; j < hard_macros.size(); j++) {
-          if (macro_class[j] == -1 && macro_size_class[i] == macro_size_class[j]
-              && macro_signature_class[i] == macro_signature_class[j]) {
-            macro_class[j] = i;
-            debugPrint(logger_,
-                       MPL,
-                       "multilevel_autoclustering",
-                       1,
-                       "merge {} with {}",
-                       macro_clusters[i]->getName(),
-                       macro_clusters[j]->getName());
-            bool delete_flag = false;
-            macro_clusters[i]->mergeCluster(*macro_clusters[j], delete_flag);
-            if (delete_flag) {
-              // remove the merged macro cluster
-              cluster_map_.erase(macro_clusters[j]->getId());
-              delete macro_clusters[j];
-            }
-          }
-        }
-      }
-    }
+    groupSingleMacroClusters(hard_macros, macro_clusters, macro_class, macro_size_class, macro_signature_class);
 
-    // clear the hard macros in current leaf cluster
     cluster->clearHardMacros();
-    // Restore the structure of physical hierarchical tree
-    // Thus the order of leaf clusters will not change the final
-    // macro grouping results (This is very important !!!
-    // Don't touch the next line SetInstProperty command!!!)
+
+    // IMPORTANT: Restore the structure of physical hierarchical tree. Thus the order of leaf
+    // clusters will not change the final macro grouping results.
     setInstProperty(cluster);
 
     std::vector<int> virtual_conn_clusters;
@@ -2430,6 +2401,40 @@ void HierRTLMP::classifyMacrosBasedOnConnSignature(const std::vector<HardMacro*>
       for (auto& [cluster_id, weight] : cluster->getConnection()) {
         logger_->report(
             " {} {} ", cluster_map_[cluster_id]->getName(), weight);
+      }
+    }
+  }
+}
+
+// Macros with the same size and the same connection signature belong to the same class
+void HierRTLMP::groupSingleMacroClusters(const std::vector<HardMacro*>& hard_macros,
+                                         std::vector<Cluster*>& macro_clusters,
+                                         std::vector<int>& macro_class,
+                                         std::vector<int>& macro_size_class,
+                                         std::vector<int>& macro_signature_class)
+{
+  for (int i = 0; i < hard_macros.size(); i++) {
+    if (macro_class[i] == -1) {
+      macro_class[i] = i;
+      for (int j = i + 1; j < hard_macros.size(); j++) {
+        if (macro_class[j] == -1 && macro_size_class[i] == macro_size_class[j]
+            && macro_signature_class[i] == macro_signature_class[j]) {
+          macro_class[j] = i;
+          debugPrint(logger_,
+                      MPL,
+                      "multilevel_autoclustering",
+                      1,
+                      "merge {} with {}",
+                      macro_clusters[i]->getName(),
+                      macro_clusters[j]->getName());
+          bool delete_flag = false;
+          macro_clusters[i]->mergeCluster(*macro_clusters[j], delete_flag);
+          if (delete_flag) {
+            // remove the merged macro cluster
+            cluster_map_.erase(macro_clusters[j]->getId());
+            delete macro_clusters[j];
+          }
+        }
       }
     }
   }
