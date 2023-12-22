@@ -68,11 +68,11 @@ class FlexPAGraphics : public gui::Renderer
 
   void startPin(frBPin* pin,
                 frInstTerm* inst_term,
-                set<frInst*, frBlockObjectComp>* instClass);
+                std::set<frInst*, frBlockObjectComp>* instClass);
 
   void startPin(frMPin* pin,
                 frInstTerm* inst_term,
-                set<frInst*, frBlockObjectComp>* instClass);
+                std::set<frInst*, frBlockObjectComp>* instClass);
 
   void setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& aps,
               frAccessPointEnum lower_type,
@@ -86,9 +86,10 @@ class FlexPAGraphics : public gui::Renderer
                    const frPathSeg* seg,
                    const std::vector<std::unique_ptr<frMarker>>& markers);
 
-  void setObjsAndMakers(const vector<pair<frConnFig*, frBlockObject*>>& objs,
-                        const std::vector<std::unique_ptr<frMarker>>& markers,
-                        const FlexPA::PatternType type);
+  void setObjsAndMakers(
+      const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
+      const std::vector<std::unique_ptr<frMarker>>& markers,
+      const FlexPA::PatternType type);
 
   // Show a message in the status bar
   void status(const std::string& message);

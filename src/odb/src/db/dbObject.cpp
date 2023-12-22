@@ -126,6 +126,7 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbTechLayerSpacingEolRule",
                                  "dbTechLayerSpacingTablePrlRule",
                                  "dbTechLayerWidthTableRule",
+                                 "dbTechLayerWrongDirSpacingRule",
                                  // Generator Code End ObjectNames
 
                                  // Lib Objects

@@ -54,7 +54,7 @@ class SegmentBuilder
                  const Point<double>& target,
                  const std::vector<unsigned>& techCharWires,
                  Clock& clock,
-                 Clock::SubNet& drivingSubNet,
+                 ClockSubNet& drivingSubNet,
                  const TechChar& techChar,
                  const unsigned techCharDistUnit,
                  TreeBuilder* tree);
@@ -62,7 +62,7 @@ class SegmentBuilder
   void build(const std::string& forceBuffer = "");
   void forceBufferInSegment(const std::string& master);
 
-  Clock::SubNet* getDrivingSubNet() const { return drivingSubNet_; }
+  ClockSubNet* getDrivingSubNet() const { return drivingSubNet_; }
   unsigned getNumBufferLevels() const { return numBufferLevels_; }
   TreeBuilder* getTree() const { return tree_; }
 
@@ -75,7 +75,7 @@ class SegmentBuilder
   const TechChar* techChar_;
   const unsigned techCharDistUnit_;
   Clock* clock_;
-  Clock::SubNet* drivingSubNet_;
+  ClockSubNet* drivingSubNet_;
   TreeBuilder* tree_;
   unsigned numBufferLevels_ = 0;
 };
@@ -129,12 +129,12 @@ class HTreeBuilder : public TreeBuilder
       }
     }
 
-    Clock::SubNet* getBranchDrivingSubNet(unsigned idx) const
+    ClockSubNet* getBranchDrivingSubNet(unsigned idx) const
     {
       return branchDrivingSubNet_[idx];
     }
 
-    void setBranchDrivingSubNet(unsigned idx, Clock::SubNet& subNet)
+    void setBranchDrivingSubNet(unsigned idx, ClockSubNet& subNet)
     {
       branchDrivingSubNet_[idx] = &subNet;
     }
@@ -165,7 +165,7 @@ class HTreeBuilder : public TreeBuilder
     std::vector<unsigned> wireSegments_;
     std::vector<Point<double>> branchPointLoc_;
     std::vector<unsigned> parents_;
-    std::vector<Clock::SubNet*> branchDrivingSubNet_;
+    std::vector<ClockSubNet*> branchDrivingSubNet_;
     std::vector<std::vector<Point<double>>> branchSinkLocs_;
   };
 

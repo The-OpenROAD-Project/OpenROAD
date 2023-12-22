@@ -34,7 +34,6 @@
 #include "db/infra/frTime.h"
 #include "gc/FlexGC.h"
 
-using namespace std;
 using namespace fr;
 
 void FlexPA::initViaRawPriority()
@@ -140,7 +139,7 @@ void FlexPA::initTrackCoords()
   }
 
   // half coords
-  vector<vector<frCoord>> halfTrackCoords(numLayers);
+  std::vector<std::vector<frCoord>> halfTrackCoords(numLayers);
   for (int i = 0; i < numLayers; i++) {
     frCoord prevFullCoord = std::numeric_limits<frCoord>::max();
 

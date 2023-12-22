@@ -31,7 +31,6 @@
 #include "db/tech/frViaDef.h"
 #include "distributed/frArchive.h"
 #include "serialization.h"
-using namespace std;
 using namespace fr;
 
 void frAccessPoint::addViaDef(frViaDef* in)
