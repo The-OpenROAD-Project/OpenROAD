@@ -2386,9 +2386,9 @@ void HierRTLMP::classifyMacrosBasedOnConnSignature(
         if (macro_signature_class[j] != -1) {
           continue;
         }
-        bool flag = macro_clusters[i]->isSameConnSignature(
-            *macro_clusters[j], signature_net_threshold_);
-        if (flag) {
+
+        if (macro_clusters[i]->isSameConnSignature(
+            *macro_clusters[j], signature_net_threshold_)) {
           macro_signature_class[j] = i;
         }
       }
