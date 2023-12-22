@@ -2246,21 +2246,19 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
   }
 
   // We need to update the metrics of the design if necessary
-  // for each leaf clusters with macros, first group macros based on
-  // connection signatures and macro sizes
-  for (auto& cluster : mixed_leaves) {
-    // based on the type of current cluster,
-    Cluster* parent = cluster;  // std cell dominated cluster
-    // add a subtree if the cluster is macro dominated cluster
-    // based macro_dominated_cluster_threshold_ (defualt = 0.01)
-    if (cluster->getNumStdCell() * macro_dominated_cluster_threshold_
-        < cluster->getNumMacro()) {
-      parent = cluster->getParent();  // replacement
+  // for each leaf clusters with macros.
+  for (auto& mixed_leaf : mixed_leaves) {
+    Cluster* parent = mixed_leaf;
+
+    // Split by replacement if macro dominated
+    if (mixed_leaf->getNumStdCell() * macro_dominated_cluster_threshold_
+        < mixed_leaf->getNumMacro()) {
+      parent = mixed_leaf->getParent();  // replacement
     }
 
-    mapMacroInCluster2HardMacro(cluster);
+    mapMacroInCluster2HardMacro(mixed_leaf);
 
-    std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
+    std::vector<HardMacro*> hard_macros = mixed_leaf->getHardMacros();
     std::vector<Cluster*> macro_clusters;
 
     createOneMacroClusterForEachMacro(parent, hard_macros, macro_clusters);
@@ -2278,11 +2276,11 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
                              macro_size_class,
                              macro_signature_class);
 
-    cluster->clearHardMacros();
+    mixed_leaf->clearHardMacros();
 
     // IMPORTANT: Restore the structure of physical hierarchical tree. Thus the
     // order of leaf clusters will not change the final macro grouping results.
-    setInstProperty(cluster);
+    setInstProperty(mixed_leaf);
 
     std::vector<int> virtual_conn_clusters;
     // Never use SetInstProperty Command in following lines
@@ -2290,12 +2288,12 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
     // based on different types of designs, we handle differently
     // whether a replacement or a subtree
     // Deal with the standard cell cluster
-    if (parent == cluster) {
+    if (parent == mixed_leaf) {
       // If we need a subtree , add standard cell cluster
-      std::string std_cell_cluster_name = cluster->getName();
+      std::string std_cell_cluster_name = mixed_leaf->getName();
       Cluster* std_cell_cluster
           = new Cluster(cluster_id_, std_cell_cluster_name, logger_);
-      std_cell_cluster->copyInstances(*cluster);
+      std_cell_cluster->copyInstances(*mixed_leaf);
       std_cell_cluster->clearLeafMacros();
       std_cell_cluster->setClusterType(StdCellCluster);
       setClusterMetrics(std_cell_cluster);
@@ -2306,10 +2304,10 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
       virtual_conn_clusters.push_back(std_cell_cluster->getId());
     } else {
       // If we need add a replacement
-      cluster->clearLeafMacros();
-      cluster->setClusterType(StdCellCluster);
-      setClusterMetrics(cluster);
-      virtual_conn_clusters.push_back(cluster->getId());
+      mixed_leaf->clearLeafMacros();
+      mixed_leaf->setClusterType(StdCellCluster);
+      setClusterMetrics(mixed_leaf);
+      virtual_conn_clusters.push_back(mixed_leaf->getId());
       // In this case, we do not to modify the physical hierarchy tree
     }
     // Deal with macro clusters
@@ -2319,7 +2317,7 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
       }
       macro_clusters[i]->setClusterType(HardMacroCluster);
       setClusterMetrics(macro_clusters[i]);
-      virtual_conn_clusters.push_back(cluster->getId());
+      virtual_conn_clusters.push_back(mixed_leaf->getId());
     }
 
     // add virtual connections
