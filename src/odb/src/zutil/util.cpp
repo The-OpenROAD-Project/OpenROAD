@@ -56,7 +56,7 @@ void RUDYCalculator::setGridConfig(odb::Rect block, int tileCntX, int tileCntY)
   gridBlock_ = block;
   tileCntX_ = tileCntX;
   tileCntY_ = tileCntY;
-  makeGrid();
+  //makeGrid();
 }
 
 void RUDYCalculator::makeGrid()
