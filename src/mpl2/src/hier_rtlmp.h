@@ -204,19 +204,21 @@ class HierRTLMP
   void updateSubTree(Cluster* parent);
   void breakLargeFlatCluster(Cluster* parent);
   void breakMixedLeafCluster(Cluster* root_cluster);
-  void createOneMacroClusterForEachMacro(Cluster* parent,
-																				 const std::vector<HardMacro*>& hard_macros,
-																				 std::vector<Cluster*>& single_macro_clusters);
-	void classifyMacrosBasedOnSize(const std::vector<HardMacro*>& hard_macros,
-																 std::vector<int>& macro_size_class);
-	void classifyMacrosBasedOnConnSignature(const std::vector<HardMacro*>& hard_macros,
-																					std::vector<Cluster*>& macro_clusters,
-																 					std::vector<int>& macro_signature_class);
-	void groupSingleMacroClusters(const std::vector<HardMacro*>& hard_macros,
-																std::vector<Cluster*>& macro_clusters,
-																std::vector<int>& macro_class,
-																std::vector<int>& macro_size_class,
-																std::vector<int>& macro_signature_class);
+  void createOneMacroClusterForEachMacro(
+      Cluster* parent,
+      const std::vector<HardMacro*>& hard_macros,
+      std::vector<Cluster*>& single_macro_clusters);
+  void classifyMacrosBasedOnSize(const std::vector<HardMacro*>& hard_macros,
+                                 std::vector<int>& macro_size_class);
+  void classifyMacrosBasedOnConnSignature(
+      const std::vector<HardMacro*>& hard_macros,
+      std::vector<Cluster*>& macro_clusters,
+      std::vector<int>& macro_signature_class);
+  void groupSingleMacroClusters(const std::vector<HardMacro*>& hard_macros,
+                                std::vector<Cluster*>& macro_clusters,
+                                std::vector<int>& macro_class,
+                                std::vector<int>& macro_size_class,
+                                std::vector<int>& macro_signature_class);
   void mapMacroInCluster2HardMacro(Cluster* cluster);
 
   // Coarse Shaping

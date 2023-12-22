@@ -2268,15 +2268,20 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
     std::vector<int> macro_size_class(hard_macros.size(), -1);
     classifyMacrosBasedOnSize(hard_macros, macro_size_class);
     std::vector<int> macro_signature_class(hard_macros.size(), -1);
-    classifyMacrosBasedOnConnSignature(hard_macros, macro_clusters, macro_signature_class);
+    classifyMacrosBasedOnConnSignature(
+        hard_macros, macro_clusters, macro_signature_class);
 
     std::vector<int> macro_class(hard_macros.size(), -1);
-    groupSingleMacroClusters(hard_macros, macro_clusters, macro_class, macro_size_class, macro_signature_class);
+    groupSingleMacroClusters(hard_macros,
+                             macro_clusters,
+                             macro_class,
+                             macro_size_class,
+                             macro_signature_class);
 
     cluster->clearHardMacros();
 
-    // IMPORTANT: Restore the structure of physical hierarchical tree. Thus the order of leaf
-    // clusters will not change the final macro grouping results.
+    // IMPORTANT: Restore the structure of physical hierarchical tree. Thus the
+    // order of leaf clusters will not change the final macro grouping results.
     setInstProperty(cluster);
 
     std::vector<int> virtual_conn_clusters;
@@ -2321,7 +2326,7 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
     for (int i = 0; i < virtual_conn_clusters.size(); i++) {
       for (int j = i + 1; j < virtual_conn_clusters.size(); j++) {
         parent->addVirtualConnection(virtual_conn_clusters[i],
-                                             virtual_conn_clusters[j]);
+                                     virtual_conn_clusters[j]);
       }
     }
   }
@@ -2329,13 +2334,15 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
   setInstProperty(root_cluster);
 }
 
-void HierRTLMP::createOneMacroClusterForEachMacro(Cluster* parent,
-                                                  const std::vector<HardMacro*>& hard_macros,
-																			            std::vector<Cluster*>& macro_clusters)
+void HierRTLMP::createOneMacroClusterForEachMacro(
+    Cluster* parent,
+    const std::vector<HardMacro*>& hard_macros,
+    std::vector<Cluster*>& macro_clusters)
 {
   for (auto& hard_macro : hard_macros) {
     std::string cluster_name = hard_macro->getName();
-    Cluster* single_macro_cluster = new Cluster(cluster_id_, cluster_name, logger_);
+    Cluster* single_macro_cluster
+        = new Cluster(cluster_id_, cluster_name, logger_);
 
     single_macro_cluster->addLeafMacro(hard_macro->getInst());
 
@@ -2351,8 +2358,9 @@ void HierRTLMP::createOneMacroClusterForEachMacro(Cluster* parent,
   }
 }
 
-void HierRTLMP::classifyMacrosBasedOnSize(const std::vector<HardMacro*>& hard_macros,
-                                          std::vector<int>& macro_size_class)
+void HierRTLMP::classifyMacrosBasedOnSize(
+    const std::vector<HardMacro*>& hard_macros,
+    std::vector<int>& macro_size_class)
 {
   for (int i = 0; i < hard_macros.size(); i++) {
     if (macro_size_class[i] == -1) {
@@ -2366,14 +2374,14 @@ void HierRTLMP::classifyMacrosBasedOnSize(const std::vector<HardMacro*>& hard_ma
   }
 
   for (int i = 0; i < hard_macros.size(); i++) {
-    macro_size_class[i]
-        = (macro_size_class[i] == -1) ? i : macro_size_class[i];
-  } 
+    macro_size_class[i] = (macro_size_class[i] == -1) ? i : macro_size_class[i];
+  }
 }
 
-void HierRTLMP::classifyMacrosBasedOnConnSignature(const std::vector<HardMacro*>& hard_macros,
-                                                   std::vector<Cluster*>& macro_clusters,
-                                                   std::vector<int>& macro_signature_class)
+void HierRTLMP::classifyMacrosBasedOnConnSignature(
+    const std::vector<HardMacro*>& hard_macros,
+    std::vector<Cluster*>& macro_clusters,
+    std::vector<int>& macro_signature_class)
 {
   calculateConnection();
 
@@ -2399,19 +2407,20 @@ void HierRTLMP::classifyMacrosBasedOnConnSignature(const std::vector<HardMacro*>
     for (auto& cluster : macro_clusters) {
       logger_->report("Macro Signature: {}", cluster->getName());
       for (auto& [cluster_id, weight] : cluster->getConnection()) {
-        logger_->report(
-            " {} {} ", cluster_map_[cluster_id]->getName(), weight);
+        logger_->report(" {} {} ", cluster_map_[cluster_id]->getName(), weight);
       }
     }
   }
 }
 
-// Macros with the same size and the same connection signature belong to the same class
-void HierRTLMP::groupSingleMacroClusters(const std::vector<HardMacro*>& hard_macros,
-                                         std::vector<Cluster*>& macro_clusters,
-                                         std::vector<int>& macro_class,
-                                         std::vector<int>& macro_size_class,
-                                         std::vector<int>& macro_signature_class)
+// Macros with the same size and the same connection signature belong to the
+// same class
+void HierRTLMP::groupSingleMacroClusters(
+    const std::vector<HardMacro*>& hard_macros,
+    std::vector<Cluster*>& macro_clusters,
+    std::vector<int>& macro_class,
+    std::vector<int>& macro_size_class,
+    std::vector<int>& macro_signature_class)
 {
   for (int i = 0; i < hard_macros.size(); i++) {
     if (macro_class[i] == -1) {
@@ -2421,12 +2430,12 @@ void HierRTLMP::groupSingleMacroClusters(const std::vector<HardMacro*>& hard_mac
             && macro_signature_class[i] == macro_signature_class[j]) {
           macro_class[j] = i;
           debugPrint(logger_,
-                      MPL,
-                      "multilevel_autoclustering",
-                      1,
-                      "merge {} with {}",
-                      macro_clusters[i]->getName(),
-                      macro_clusters[j]->getName());
+                     MPL,
+                     "multilevel_autoclustering",
+                     1,
+                     "merge {} with {}",
+                     macro_clusters[i]->getName(),
+                     macro_clusters[j]->getName());
           bool delete_flag = false;
           macro_clusters[i]->mergeCluster(*macro_clusters[j], delete_flag);
           if (delete_flag) {
