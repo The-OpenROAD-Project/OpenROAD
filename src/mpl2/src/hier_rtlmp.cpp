@@ -2281,8 +2281,7 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
     // order of leaf clusters will not change the final macro grouping results.
     setInstProperty(mixed_leaf);
 
-    // Never use SetInstProperty Command in following lines for the reason
-    // above!
+    // Never use setInstProperty in following lines for the reason above!
     std::vector<int> virtual_conn_clusters;
     if (parent == mixed_leaf) {
       addStdCellClustertoSubTree(mixed_leaf, parent, virtual_conn_clusters);
