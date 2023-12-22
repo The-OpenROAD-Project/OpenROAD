@@ -2231,12 +2231,12 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
   }
 
   // Traverse the physical hierarchy tree in a DFS manner (post-order)
-  std::vector<Cluster*> leaf_clusters;
+  std::vector<Cluster*> mixed_leaves;
   for (auto& child : root_cluster->getChildren()) {
     setInstProperty(child);
     if (child->getNumMacro() > 0) {
       if (child->getChildren().empty()) {
-        leaf_clusters.push_back(child);
+        mixed_leaves.push_back(child);
       } else {
         breakMixedLeafCluster(child);
       }
@@ -2245,39 +2245,25 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
     }
   }
 
-  // after this step, the std cells and macros for leaf cluster has been
-  // seperated. We need to update the metrics of the design if necessary
+  // We need to update the metrics of the design if necessary
   // for each leaf clusters with macros, first group macros based on
   // connection signatures and macro sizes
-  for (auto& cluster : leaf_clusters) {
+  for (auto& cluster : mixed_leaves) {
     // based on the type of current cluster,
-    Cluster* parent_cluster = cluster;  // std cell dominated cluster
+    Cluster* parent = cluster;  // std cell dominated cluster
     // add a subtree if the cluster is macro dominated cluster
     // based macro_dominated_cluster_threshold_ (defualt = 0.01)
     if (cluster->getNumStdCell() * macro_dominated_cluster_threshold_
         < cluster->getNumMacro()) {
-      parent_cluster = cluster->getParent();  // replacement
+      parent = cluster->getParent();  // replacement
     }
 
-    // Map macros into the HardMacro objects
-    // and get all the HardMacros
     mapMacroInCluster2HardMacro(cluster);
-    std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
 
-    // create a cluster for each macro
+    std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
     std::vector<Cluster*> macro_clusters;
-    for (auto& hard_macro : hard_macros) {
-      std::string cluster_name = hard_macro->getName();
-      Cluster* macro_cluster = new Cluster(cluster_id_, cluster_name, logger_);
-      macro_cluster->addLeafMacro(hard_macro->getInst());
-      setInstProperty(macro_cluster);
-      setClusterMetrics(macro_cluster);
-      cluster_map_[cluster_id_++] = macro_cluster;
-      // modify the physical hierachy tree
-      macro_cluster->setParent(parent_cluster);
-      parent_cluster->addChild(macro_cluster);
-      macro_clusters.push_back(macro_cluster);
-    }
+
+    createOneMacroClusterForEachMacro(parent, hard_macros, macro_clusters);
 
     // classify macros based on size
     std::vector<int> macro_size_class(hard_macros.size(), -1);
@@ -2371,7 +2357,7 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
     // based on different types of designs, we handle differently
     // whether a replacement or a subtree
     // Deal with the standard cell cluster
-    if (parent_cluster == cluster) {
+    if (parent == cluster) {
       // If we need a subtree , add standard cell cluster
       std::string std_cell_cluster_name = cluster->getName();
       Cluster* std_cell_cluster
@@ -2382,8 +2368,8 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
       setClusterMetrics(std_cell_cluster);
       cluster_map_[cluster_id_++] = std_cell_cluster;
       // modify the physical hierachy tree
-      std_cell_cluster->setParent(parent_cluster);
-      parent_cluster->addChild(std_cell_cluster);
+      std_cell_cluster->setParent(parent);
+      parent->addChild(std_cell_cluster);
       virtual_conn_clusters.push_back(std_cell_cluster->getId());
     } else {
       // If we need add a replacement
@@ -2406,13 +2392,35 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
     // add virtual connections
     for (int i = 0; i < virtual_conn_clusters.size(); i++) {
       for (int j = i + 1; j < virtual_conn_clusters.size(); j++) {
-        parent_cluster->addVirtualConnection(virtual_conn_clusters[i],
+        parent->addVirtualConnection(virtual_conn_clusters[i],
                                              virtual_conn_clusters[j]);
       }
     }
   }
   // Set the inst property back
   setInstProperty(root_cluster);
+}
+
+void HierRTLMP::createOneMacroClusterForEachMacro(Cluster* parent,
+                                                  const std::vector<HardMacro*>& hard_macros,
+																			            std::vector<Cluster*>& macro_clusters)
+{
+  for (auto& hard_macro : hard_macros) {
+    std::string cluster_name = hard_macro->getName();
+    Cluster* single_macro_cluster = new Cluster(cluster_id_, cluster_name, logger_);
+
+    single_macro_cluster->addLeafMacro(hard_macro->getInst());
+
+    setInstProperty(single_macro_cluster);
+    setClusterMetrics(single_macro_cluster);
+
+    cluster_map_[cluster_id_++] = single_macro_cluster;
+
+    // modify the physical hierachy tree
+    single_macro_cluster->setParent(parent);
+    parent->addChild(single_macro_cluster);
+    macro_clusters.push_back(single_macro_cluster);
+  }
 }
 
 // Map all the macros into their HardMacro objects for all the clusters
