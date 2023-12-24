@@ -1790,7 +1790,7 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
           for (auto p : paths) {
             Point pp;
             gridGraph_.getPoint(pp, p.x(), p.y());
-            frCoord pathLength = Point::manhattanDistance(origin, pp);
+            frCoord pathLength = Point::squaredDistance(origin, pp);
             if (pathLength < closestDist) {
               closestDist = pathLength;
               closest = pp;
