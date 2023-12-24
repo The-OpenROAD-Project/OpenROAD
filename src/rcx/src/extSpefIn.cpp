@@ -38,7 +38,20 @@
 
 namespace rcx {
 
-using namespace odb;
+using odb::dbBTerm;
+using odb::dbCapNode;
+using odb::dbCCSeg;
+using odb::dbInst;
+using odb::dbITerm;
+using odb::dbNet;
+using odb::dbRSeg;
+using odb::dbSet;
+using odb::dbShape;
+using odb::dbSigType;
+using odb::dbWire;
+using odb::dbWirePath;
+using odb::dbWirePathItr;
+using odb::dbWirePathShape;
 using utl::RCX;
 
 dbInst* extSpef::getDbInst(uint id)
