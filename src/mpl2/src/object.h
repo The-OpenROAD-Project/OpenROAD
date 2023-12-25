@@ -244,6 +244,7 @@ class Cluster
   void addConnection(int cluster_id, float weight);
   const std::map<int, float> getConnection() const;
   bool isSameConnSignature(const Cluster& cluster, float net_threshold);
+  bool isDirectlyConnectedTo(const Cluster& cluster);
   // Get closely-connected cluster if such cluster exists
   // For example, if a small cluster A is closely connected to a
   // well-formed cluster B, (there are also other well-formed clusters
@@ -326,6 +327,7 @@ class Cluster
   // pin access for each bundled connection
   std::map<int, std::pair<PinAccess, float>> pin_access_map_;
   std::map<PinAccess, std::map<PinAccess, float>> boundary_connection_map_;
+
   utl::Logger* logger_;
 };
 

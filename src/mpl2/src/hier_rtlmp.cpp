@@ -2257,23 +2257,36 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
     }
 
     mapMacroInCluster2HardMacro(mixed_leaf);
-
     std::vector<HardMacro*> hard_macros = mixed_leaf->getHardMacros();
     std::vector<Cluster*> macro_clusters;
-
     createOneMacroClusterForEachMacro(parent, hard_macros, macro_clusters);
 
     std::vector<int> macro_size_class(hard_macros.size(), -1);
     classifyMacrosBasedOnSize(hard_macros, macro_size_class);
+
+    calculateConnection();
+    std::vector<int> macro_interconn_class(hard_macros.size(), -1);
+    classifyMacrosBasedOnInterconn(macro_clusters, macro_interconn_class);
     std::vector<int> macro_signature_class(hard_macros.size(), -1);
-    classifyMacrosBasedOnConnSignature(
-        hard_macros, macro_clusters, macro_signature_class);
+    classifyMacrosBasedOnConnSignature(macro_clusters, macro_signature_class);
+
+    if (logger_->debugCheck(MPL, "multilevel_autoclustering", 2)) {
+      logger_->report("\nPrint Connection Signature\n");
+      for (auto& cluster : macro_clusters) {
+        logger_->report("Macro Signature: {}", cluster->getName());
+        for (auto& [cluster_id, weight] : cluster->getConnection()) {
+          logger_->report(
+              " {} {} ", cluster_map_[cluster_id]->getName(), weight);
+        }
+      }
+    }
 
     std::vector<int> macro_class(hard_macros.size(), -1);
     groupSingleMacroClusters(hard_macros,
                              macro_clusters,
                              macro_class,
                              macro_size_class,
+                             macro_interconn_class,
                              macro_signature_class);
 
     mixed_leaf->clearHardMacros();
@@ -2373,73 +2386,107 @@ void HierRTLMP::classifyMacrosBasedOnSize(
 }
 
 void HierRTLMP::classifyMacrosBasedOnConnSignature(
-    const std::vector<HardMacro*>& hard_macros,
     std::vector<Cluster*>& macro_clusters,
     std::vector<int>& macro_signature_class)
 {
   calculateConnection();
 
-  for (int i = 0; i < hard_macros.size(); i++) {
+  for (int i = 0; i < macro_clusters.size(); i++) {
     if (macro_signature_class[i] == -1) {
       macro_signature_class[i] = i;
-      for (int j = i + 1; j < hard_macros.size(); j++) {
+      for (int j = i + 1; j < macro_clusters.size(); j++) {
         if (macro_signature_class[j] != -1) {
           continue;
         }
 
-        if (macro_clusters[i]->isSameConnSignature(
-            *macro_clusters[j], signature_net_threshold_)) {
+        if (macro_clusters[i]->isSameConnSignature(*macro_clusters[j],
+                                                   signature_net_threshold_)) {
           macro_signature_class[j] = i;
         }
       }
     }
   }
+}
 
-  // print the connnection signature
-  if (logger_->debugCheck(MPL, "multilevel_autoclustering", 2)) {
-    logger_->report("\nPrint Connection Signature\n");
-    for (auto& cluster : macro_clusters) {
-      logger_->report("Macro Signature: {}", cluster->getName());
-      for (auto& [cluster_id, weight] : cluster->getConnection()) {
-        logger_->report(" {} {} ", cluster_map_[cluster_id]->getName(), weight);
+void HierRTLMP::classifyMacrosBasedOnInterconn(
+    std::vector<Cluster*>& macro_clusters,
+    std::vector<int>& macro_interconn_class)
+{
+  for (int i = 0; i < macro_clusters.size(); i++) {
+    if (macro_interconn_class[i] == -1) {
+      macro_interconn_class[i] = i;
+      for (int j = 0; j < macro_clusters.size(); j++) {
+        if (macro_clusters[i]->isDirectlyConnectedTo(*macro_clusters[j])) {
+          if (macro_interconn_class[j] != -1) {
+            macro_interconn_class[i] = macro_interconn_class[j];
+            break;
+          } else {
+            macro_interconn_class[j] = i;
+          }
+        }
       }
     }
   }
 }
 
-// Macros with the same size and the same connection signature belong to the
-// same class
+// We determine if the macros belong to the same class based on:
+// 1. Size && and Interconnection (Directly connected macro clusters
+//    should be grouped)
+//    * We prioritize this type of grouping.
+// 2. Size && Connection Signature (Macros with same connection
+//    signature should be grouped)
 void HierRTLMP::groupSingleMacroClusters(
     const std::vector<HardMacro*>& hard_macros,
     std::vector<Cluster*>& macro_clusters,
     std::vector<int>& macro_class,
     std::vector<int>& macro_size_class,
+    std::vector<int>& macro_interconn_class,
     std::vector<int>& macro_signature_class)
 {
   for (int i = 0; i < hard_macros.size(); i++) {
-    if (macro_class[i] == -1) {
-      macro_class[i] = i;
-      for (int j = i + 1; j < hard_macros.size(); j++) {
-        if (macro_class[j] == -1 && macro_size_class[i] == macro_size_class[j]
-            && macro_signature_class[i] == macro_signature_class[j]) {
+    if (macro_class[i] != -1) {
+      continue;
+    }
+    macro_class[i] = i;
+
+    for (int j = i + 1; j < hard_macros.size(); j++) {
+      if (macro_class[j] != -1) {
+        continue;
+      }
+
+      if (macro_size_class[i] == macro_size_class[j]) {
+        if (macro_interconn_class[i] == macro_interconn_class[j]) {
           macro_class[j] = i;
-          debugPrint(logger_,
-                     MPL,
-                     "multilevel_autoclustering",
-                     1,
-                     "merge {} with {}",
-                     macro_clusters[i]->getName(),
-                     macro_clusters[j]->getName());
-          bool delete_flag = false;
-          macro_clusters[i]->mergeCluster(*macro_clusters[j], delete_flag);
-          if (delete_flag) {
-            // remove the merged macro cluster
-            cluster_map_.erase(macro_clusters[j]->getId());
-            delete macro_clusters[j];
-          }
+          // TO DO: add debug print for interconnection merge
+
+          groupMacroClustersWithSameClassification(macro_clusters[i],
+                                                   macro_clusters[j]);
+
+          continue;
+        }
+
+        if (macro_signature_class[i] == macro_signature_class[j]) {
+          macro_class[j] = i;
+          // TO DO: add debug print for signature merge
+
+          groupMacroClustersWithSameClassification(macro_clusters[i],
+                                                   macro_clusters[j]);
         }
       }
     }
+  }
+}
+
+void HierRTLMP::groupMacroClustersWithSameClassification(Cluster* macro_from,
+                                                         Cluster* macro_to)
+{
+  bool delete_merged = false;
+
+  macro_from->mergeCluster(*macro_to, delete_merged);
+
+  if (delete_merged) {
+    cluster_map_.erase(macro_to->getId());
+    delete macro_to;
   }
 }
 

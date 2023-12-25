@@ -212,14 +212,18 @@ class HierRTLMP
   void classifyMacrosBasedOnSize(const std::vector<HardMacro*>& hard_macros,
                                  std::vector<int>& macro_size_class);
   void classifyMacrosBasedOnConnSignature(
-      const std::vector<HardMacro*>& hard_macros,
       std::vector<Cluster*>& macro_clusters,
       std::vector<int>& macro_signature_class);
+  void classifyMacrosBasedOnInterconn(std::vector<Cluster*>& macro_clusters,
+                                      std::vector<int>& macro_interconn_class);
   void groupSingleMacroClusters(const std::vector<HardMacro*>& hard_macros,
                                 std::vector<Cluster*>& macro_clusters,
                                 std::vector<int>& macro_class,
                                 std::vector<int>& macro_size_class,
+                                std::vector<int>& macro_interconn_class,
                                 std::vector<int>& macro_signature_class);
+  void groupMacroClustersWithSameClassification(Cluster* macro_from,
+                                                Cluster* macro_to);
   void addStdCellClustertoSubTree(Cluster* mixed_leaf,
                                   Cluster* parent,
                                   std::vector<int>& virtual_conn_clusters);

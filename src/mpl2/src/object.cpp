@@ -580,7 +580,16 @@ bool Cluster::isSameConnSignature(const Cluster& cluster, float net_threshold)
   return true;
 }
 
-//
+bool Cluster::isDirectlyConnectedTo(const Cluster& cluster)
+{
+  for (const auto& [cluster_id, num_of_conn] : connection_map_) {
+    if (cluster_id == cluster.getId())
+    return true;
+  }
+
+  return false;
+}
+
 // Get closely-connected cluster if such cluster exists
 // For example, if a small cluster A is closely connected to a
 // well-formed cluster B, (there are also other well-formed clusters
