@@ -50,14 +50,16 @@ proc man { name } {
 
   set man_path $MAN_PATH
   set man_sections {}
-  foreach man_section {man1 man2 man3} {
+  foreach man_section {cat1 cat2 cat3} {
       lappend man_sections "$man_path/$man_section"
   }
   set man_found false
   foreach man_section $man_sections {
     set length [string length $man_section]
     # Get suffix for man section
-    set man_suffix [string range $man_section [expr {$length - 1}] $length]
+    #set man_suffix [string range $man_section [expr {$length - 1}] $length]
+    set man_suffix "cat"
+
     set name1 $name
     append name1 ".$man_suffix"
     set man_file [file join $man_section $name1]
@@ -78,8 +80,8 @@ proc man { name } {
 
           # Ask user to continue or quit
           if {[llength $lines] > $page_size} {
-              puts -nonewline "Press 'q' to quit or any other key to continue: "
-              flush stdout
+              puts -nonewline "---\nPress 'q' to quit or any other key to continue: \n---"
+              flush stdout;
               set input [gets stdin]
               if {$input == "q"} {
                 break
@@ -94,3 +96,16 @@ proc man { name } {
   }
 }
 
+proc clear {} {
+    exec clear
+}
+
+proc test { } {
+  puts -nonewline "This is a line of text\r"
+  flush stdout ;# Flush the output to ensure the line is printed immediately
+  ;
+
+  puts "                                                 " ;# Print a space to clear the line
+  flush stdout ;# Flush the output to ensure the space is printed immediately
+
+}
