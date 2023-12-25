@@ -6,7 +6,7 @@ pipeline {
   stages {
     stage('Run Coverity') {
       steps {
-        sh './etc/CodeCoverage.sh static';
+        sh 'bash -ic "./etc/CodeCoverage.sh static"';
       }
     }
   }

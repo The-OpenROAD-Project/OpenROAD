@@ -82,14 +82,18 @@ void TreeBuilder::initBlockages()
     buffer = options_->getRootBuffer();
   }
   odb::dbMaster* libCell = db_->findMaster(buffer.c_str());
-  assert(libCell != nullptr);
-  bufferWidth_ = (double) libCell->getWidth() / techChar_->getLengthUnit();
-  bufferHeight_ = (double) libCell->getHeight() / techChar_->getLengthUnit();
-  // clang-format off
-  debugPrint(logger_, CTS, "legalizer", 3, "buf width= {:0.3f} buf ht= {:0.3f} "
-	     "scalingUnit={}", bufferWidth_, bufferHeight_,
-	     techChar_->getLengthUnit());
-  // clang-format on
+  if (libCell != nullptr) {
+    bufferWidth_ = (double) libCell->getWidth() / techChar_->getLengthUnit();
+    bufferHeight_ = (double) libCell->getHeight() / techChar_->getLengthUnit();
+    // clang-format off
+    debugPrint(logger_, CTS, "legalizer", 3, "buf width= {:0.3f} buf ht= {:0.3f} "
+               "scalingUnit={}", bufferWidth_, bufferHeight_,
+               techChar_->getLengthUnit());
+    // clang-format on
+  } else {
+    logger_->error(
+        CTS, 77, "No physical master cell found for cell {}.", buffer);
+  }
 }
 
 // Check if location (x, y) is legal by checking if

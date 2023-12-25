@@ -193,10 +193,10 @@ class FlexGridGraph
               mIdx1.z());
     if (enclosureOption == 1) {
       if (xCoords_[mIdx1.x()] > box.xMin()) {
-        mIdx1.setX(max(0, mIdx1.x() - 1));
+        mIdx1.setX(std::max(0, mIdx1.x() - 1));
       }
       if (yCoords_[mIdx1.y()] > box.yMin()) {
-        mIdx1.setY(max(0, mIdx1.y() - 1));
+        mIdx1.setY(std::max(0, mIdx1.y() - 1));
       }
     }
     const int ux
@@ -205,13 +205,14 @@ class FlexGridGraph
     const int uy
         = std::upper_bound(yCoords_.begin(), yCoords_.end(), box.yMax())
           - yCoords_.begin();
-    mIdx2.set(frMIdx(max(0, ux - 1)), frMIdx(max(0, uy - 1)), mIdx2.z());
+    mIdx2.set(
+        frMIdx(std::max(0, ux - 1)), frMIdx(std::max(0, uy - 1)), mIdx2.z());
     if (enclosureOption == 2) {
       if (xCoords_[mIdx2.x()] > box.xMax()) {
-        mIdx2.setX(max(0, mIdx2.x() - 1));
+        mIdx2.setX(std::max(0, mIdx2.x() - 1));
       }
       if (yCoords_[mIdx2.y()] > box.yMax()) {
-        mIdx2.setY(max(0, mIdx2.y() - 1));
+        mIdx2.setY(std::max(0, mIdx2.y() - 1));
       }
     }
   }
@@ -410,7 +411,7 @@ class FlexGridGraph
           default:;
         }
       } else {
-        // cout <<"not valid edge";
+        // std::cout <<"not valid edge";
       }
     }
     return sol;
@@ -773,7 +774,7 @@ class FlexGridGraph
         }
         break;
       case dbTechLayerDir::NONE:
-        cout << "Error: Invalid preferred direction on layer " << z << ".";
+        std::cout << "Error: Invalid preferred direction on layer " << z << ".";
         break;
     }
   }
@@ -798,7 +799,7 @@ class FlexGridGraph
         }
         break;
       case dbTechLayerDir::NONE:
-        cout << "Error: Invalid preferred direction on layer " << z << ".";
+        std::cout << "Error: Invalid preferred direction on layer " << z << ".";
         break;
     }
   }
@@ -891,26 +892,28 @@ class FlexGridGraph
   void printNode(frMIdx x, frMIdx y, frMIdx z)
   {
     Node& n = nodes_[getIdx(x, y, z)];
-    cout << "\nNode ( " << x << " " << y << " " << z << " ) (idx) / "
-         << " ( " << xCoords_[x] << " " << yCoords_[y] << " ) (coords)\n";
-    cout << "hasEastEdge " << n.hasEastEdge << "\n";
-    cout << "hasNorthEdge " << n.hasNorthEdge << "\n";
-    cout << "hasUpEdge " << n.hasUpEdge << "\n";
-    cout << "isBlockedEast " << n.isBlockedEast << "\n";
-    cout << "isBlockedNorth " << n.isBlockedNorth << "\n";
-    cout << "isBlockedUp " << n.isBlockedUp << "\n";
-    cout << "hasSpecialVia " << n.hasSpecialVia << "\n";
-    cout << "overrideShapeCostVia " << n.overrideShapeCostVia << "\n";
-    cout << "hasGridCostEast " << n.hasGridCostEast << "\n";
-    cout << "hasGridCostNorth " << n.hasGridCostNorth << "\n";
-    cout << "hasGridCostUp " << n.hasGridCostUp << "\n";
-    cout << "routeShapeCostPlanar " << n.routeShapeCostPlanar << "\n";
-    cout << "routeShapeCostVia " << n.routeShapeCostVia << "\n";
-    cout << "markerCostPlanar " << n.markerCostPlanar << "\n";
-    cout << "markerCostVia " << n.markerCostVia << "\n";
-    cout << "fixedShapeCostVia " << n.fixedShapeCostVia << "\n";
-    cout << "fixedShapeCostPlanarHorz " << n.fixedShapeCostPlanarHorz << "\n";
-    cout << "fixedShapeCostPlanarVert " << n.fixedShapeCostPlanarVert << "\n";
+    std::cout << "\nNode ( " << x << " " << y << " " << z << " ) (idx) / "
+              << " ( " << xCoords_[x] << " " << yCoords_[y] << " ) (coords)\n";
+    std::cout << "hasEastEdge " << n.hasEastEdge << "\n";
+    std::cout << "hasNorthEdge " << n.hasNorthEdge << "\n";
+    std::cout << "hasUpEdge " << n.hasUpEdge << "\n";
+    std::cout << "isBlockedEast " << n.isBlockedEast << "\n";
+    std::cout << "isBlockedNorth " << n.isBlockedNorth << "\n";
+    std::cout << "isBlockedUp " << n.isBlockedUp << "\n";
+    std::cout << "hasSpecialVia " << n.hasSpecialVia << "\n";
+    std::cout << "overrideShapeCostVia " << n.overrideShapeCostVia << "\n";
+    std::cout << "hasGridCostEast " << n.hasGridCostEast << "\n";
+    std::cout << "hasGridCostNorth " << n.hasGridCostNorth << "\n";
+    std::cout << "hasGridCostUp " << n.hasGridCostUp << "\n";
+    std::cout << "routeShapeCostPlanar " << n.routeShapeCostPlanar << "\n";
+    std::cout << "routeShapeCostVia " << n.routeShapeCostVia << "\n";
+    std::cout << "markerCostPlanar " << n.markerCostPlanar << "\n";
+    std::cout << "markerCostVia " << n.markerCostVia << "\n";
+    std::cout << "fixedShapeCostVia " << n.fixedShapeCostVia << "\n";
+    std::cout << "fixedShapeCostPlanarHorz " << n.fixedShapeCostPlanarHorz
+              << "\n";
+    std::cout << "fixedShapeCostPlanarVert " << n.fixedShapeCostPlanarVert
+              << "\n";
   }
 
  private:
@@ -1210,8 +1213,8 @@ class FlexGridGraph
               const Point& centerPt);
   bool hasAlignedUpDefTrack(
       frLayerNum layerNum,
-      const map<frLayerNum, frTrackPattern*>& xSubMap,
-      const map<frLayerNum, frTrackPattern*>& ySubMap) const;
+      const std::map<frLayerNum, frTrackPattern*>& xSubMap,
+      const std::map<frLayerNum, frTrackPattern*>& ySubMap) const;
 
  private:
   bool outOfDieVia(frMIdx x, frMIdx y, frMIdx z, const Rect& dieBox);

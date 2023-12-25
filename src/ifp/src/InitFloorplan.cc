@@ -64,26 +64,19 @@ using std::string;
 
 using sta::dbNetwork;
 using sta::stdstrPrint;
-using sta::stringEqual;
 using sta::StringVector;
-using sta::Vector;
 
 using utl::IFP;
 using utl::Logger;
 
 using odb::dbBlock;
 using odb::dbBox;
-using odb::dbBPin;
-using odb::dbBTerm;
-using odb::dbChip;
-using odb::dbDatabase;
 using odb::dbGroup;
 using odb::dbGroupType;
 using odb::dbInst;
 using odb::dbLib;
 using odb::dbMaster;
 using odb::dbOrientType;
-using odb::dbPlacementStatus;
 using odb::dbRegion;
 using odb::dbRow;
 using odb::dbRowDir;
@@ -94,7 +87,6 @@ using odb::dbTechLayer;
 using odb::dbTechLayerDir;
 using odb::dbTechLayerType;
 using odb::dbTrackGrid;
-using odb::dbTransform;
 using odb::Rect;
 using odb::uint;
 
@@ -116,7 +108,7 @@ void InitFloorplan::initFloorplan(double utilization,
                                   const std::vector<odb::dbSite*>& extra_sites)
 {
   utl::Validator v(logger_, IFP);
-  v.check_percentage("utilization", utilization, 12);
+  v.check_non_negative("utilization", utilization, 12);
   v.check_non_negative("core_space_bottom", core_space_bottom, 32);
   v.check_non_negative("core_space_top", core_space_top, 33);
   v.check_non_negative("core_space_left", core_space_left, 34);
@@ -193,23 +185,20 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
     int row_index = 0;
     eval_upf(network_, logger_, block_);
     for (const auto& [site_name, site] : sites_by_name) {
-      // Destroy any existing rows.
-      int x_height_site = site->getHeight() / min_site_height;
       auto rows = block_->getRows();
       for (dbSet<dbRow>::iterator row_itr = rows.begin();
            row_itr != rows.end();) {
-        if (site != row_itr->getSite()) {
+        if (site != row_itr->getSite() || row_itr->getSite()->isHybrid()) {
           row_itr++;
         } else {
           row_itr = dbRow::destroy(row_itr);
         }
       }
-
-      uint site_dx = site->getWidth();
-      uint site_dy = site->getHeight();
+      const uint site_dx = site->getWidth();
+      const uint site_dy = site->getHeight();
       // core lower left corner to multiple of site dx/dy.
-      int clx = divCeil(core.xMin(), site_dx) * site_dx;
-      int cly = divCeil(core.yMin(), site_dy) * site_dy;
+      const int clx = divCeil(core.xMin(), site_dx) * site_dx;
+      const int cly = divCeil(core.yMin(), site_dy) * site_dy;
       if (clx != core.xMin() || cly != core.yMin()) {
         dbTech* tech = block_->getDataBase()->getTech();
         const double dbu = tech->getDbUnitsPerMicron();
@@ -222,11 +211,20 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
                       clx / dbu,
                       cly / dbu);
       }
-      int cux = core.xMax();
-      int cuy = core.yMax();
-      int rows_placed
-          = makeRows(site, clx, cly, cux, cuy, x_height_site, row_index);
-      row_index += rows_placed;
+      const int cux = core.xMax();
+      const int cuy = core.yMax();
+      int rows_placed = 0;
+      if (!site->isHybrid()) {
+        const int x_height_site = site->getHeight() / min_site_height;
+        rows_placed
+            += makeRows(site, clx, cly, cux, cuy, x_height_site, row_index);
+        row_index += rows_placed;
+      } else if (site->hasRowPattern()) {
+        rows_placed = makeHybridRows(
+            site, odb::Point(clx, cly), odb::Point(cux, cuy), row_index);
+        row_index += rows_placed;
+      }
+
       updateVoltageDomain(clx, cly, cux, cuy);
     }
   }
@@ -427,6 +425,9 @@ std::set<dbSite*> InitFloorplan::getSites() const
   for (auto site : sites) {
     // check if the site height is a multiple of the smallest site height
     if (site->getHeight() % min_site_height != 0) {
+      if (site->isHybrid()) {
+        continue;
+      }
       logger_->error(IFP,
                      40,
                      "Invalid height for site {} detected. The height value of "
@@ -483,12 +484,190 @@ int InitFloorplan::makeRows(dbSite* site,
   return rows_y;
 }
 
+int InitFloorplan::getOffset(const std::vector<dbSite*>& pattern) const
+{
+  if (pattern.size() != 1) {
+    return 0;
+  }
+  if (!pattern[0]->hasRowPattern()) {
+    return 0;
+  }
+  const auto& searchPattern = pattern[0]->getRowPattern();
+  std::vector<dbSite*> searchPattern_dbSite(searchPattern.size(), nullptr);
+  for (int i = 0; i < searchPattern.size(); i++) {
+    searchPattern_dbSite[i] = searchPattern[i].site;
+  }
+  int min_offset = std::numeric_limits<int>::max();
+  bool found_solution = false;
+  for (const auto& p_it : repeating_row_patterns_) {
+    if (p_it.size() < searchPattern_dbSite.size()) {
+      continue;
+    }
+
+    for (int j = 0; j <= p_it.size() - searchPattern_dbSite.size(); ++j) {
+      if (std::equal(searchPattern_dbSite.begin(),
+                     searchPattern_dbSite.end(),
+                     p_it.begin() + j)) {
+        debugPrint(logger_,
+                   IFP,
+                   "hybrid",
+                   1,
+                   "Found a match for parent-hybrid cell {} at offset {} of a "
+                   "previously constucted pattern",
+                   pattern[0]->getName(),
+                   j);
+        int offset = 0;
+        for (int k = 0; k < j; ++k) {
+          offset += p_it[k]->getHeight();
+        }
+        if (offset < min_offset) {
+          min_offset = offset;
+          found_solution = true;
+        }
+      }
+    }
+  }
+
+  return (found_solution) ? min_offset : 0;
+}
+
+int InitFloorplan::makeHybridRows(dbSite* parent_hybrid_site,
+                                  const odb::Point& core_ll,
+                                  const odb::Point& core_ur,
+                                  const int row_index)
+{
+  auto row_pattern = parent_hybrid_site->getRowPattern();
+  auto hybrid_site = row_pattern[0].site;
+  const int site_width = hybrid_site->getWidth();
+  for (const auto& [site, orient] : row_pattern) {
+    debugPrint(logger_,
+               utl::IFP,
+               "hybrid",
+               1,
+               "Site {} with width {} and height {}",
+               site->getName(),
+               site->getWidth(),
+               site->getHeight());
+    if (site->getWidth() != site_width) {
+      logger_->error(
+          IFP,
+          47,
+          "The width of all hybrid sites "
+          "should be the same. Site {}'s width is {} and site {}'s width is {}",
+          hybrid_site->getName(),
+          site_width,
+          site->getName(),
+          site->getWidth());
+    }
+  }
+
+  const int core_height = abs(core_ur.y() - core_ll.y());
+  const int core_width = abs(core_ur.x() - core_ll.x());
+  const int rows_x = core_width / site_width;
+  int row = 0;
+  std::vector<std::vector<dbSite*>> patterns_to_construct;
+  generateContiguousHybridRows(
+      parent_hybrid_site, row_pattern, patterns_to_construct);
+
+  for (const auto& pattern : patterns_to_construct) {
+    std::string pattern_sites = "[";
+    if (pattern.empty()) {
+      pattern_sites = "[]";
+    }
+    for (int i = 0; i < pattern.size(); i++) {
+      pattern_sites += pattern[i]->getName() + ",]"[i == pattern.size() - 1];
+    }
+    debugPrint(logger_,
+               utl::IFP,
+               "hybrid",
+               1,
+               "Pattern {} with {} sites",
+               pattern_sites,
+               pattern.size());
+    int y = core_ll.y();
+    int pattern_iterator = 0;
+
+    const int offset = getOffset(pattern);
+    y += offset;
+    if (offset == 0 && pattern.size() == 1 && pattern[0]->hasRowPattern()) {
+      auto rp = pattern[0]->getRowPattern();
+      const auto rp_sz = rp.size();
+      std::vector<dbSite*> rp_dbsite;
+      rp_dbsite.resize(rp_sz * 2, nullptr);
+      for (int i = 0; i < rp_sz; ++i) {
+        rp_dbsite[i] = rp[i].site;
+        rp_dbsite[i + rp_sz] = rp[i].site;
+      }
+      repeating_row_patterns_.push_back(rp_dbsite);
+    }
+    while (y < core_height) {
+      // TODO: should I get orient from hybrid_sites.second?
+      const dbOrientType orient = (pattern_iterator % 2 == 0)
+                                      ? dbOrientType::R0   // N
+                                      : dbOrientType::MX;  // FS
+      if (pattern.empty()) {
+        break;
+      }
+      dbSite* site_it = nullptr;
+      if (pattern.size() == 1) {
+        site_it = parent_hybrid_site;
+      } else {
+        site_it = pattern[pattern_iterator % pattern.size()];
+      }
+      const string row_name = stdstrPrint("ROW_%d", row_index + row);
+      dbRow::create(block_,
+                    row_name.c_str(),
+                    site_it,
+                    core_ll.x(),
+                    y,
+                    orient,
+                    dbRowDir::HORIZONTAL,
+                    rows_x,
+                    site_width);
+      y += site_it->getHeight();
+      ++pattern_iterator;
+      ++row;
+    }
+  }
+  return row;
+}
+
+void InitFloorplan::generateContiguousHybridRows(
+    dbSite* parent_hybrid_site,
+    const dbSite::RowPattern& row_pattern,
+    std::vector<std::vector<dbSite*>>& output_patterns_list)
+{
+  output_patterns_list.clear();
+  output_patterns_list.resize(2);
+  // Order doesn't matter because for HybridAG, the pattern is A then G, and for
+  // HybridGA it is G then A. yet both share the same grid.
+  std::set<int> pattern_sites_ids;
+  for (auto& [site, orient] : row_pattern) {
+    pattern_sites_ids.insert(site->getId());
+  }
+  if (constructed_patterns_.find(pattern_sites_ids)
+      == constructed_patterns_.end()) {  // it was not constructed before
+    for (auto& [site, orient] : row_pattern) {
+      output_patterns_list[0].push_back(site);
+    }
+    constructed_patterns_.insert(pattern_sites_ids);
+  }
+
+  const std::set<int> parent_site({(int) parent_hybrid_site->getId()});
+  if (constructed_patterns_.find(parent_site)
+      == constructed_patterns_.end()) {  // it was not constructed before
+    constructed_patterns_.insert(parent_site);
+    output_patterns_list[1].push_back(parent_hybrid_site);
+  }
+}
+
 dbSite* InitFloorplan::findSite(const char* site_name)
 {
   for (dbLib* lib : block_->getDataBase()->getLibs()) {
     dbSite* site = lib->findSite(site_name);
-    if (site)
+    if (site) {
       return site;
+    }
   }
   return nullptr;
 }

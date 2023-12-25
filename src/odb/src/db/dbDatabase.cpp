@@ -152,6 +152,11 @@ dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
     case dbPropertyObj:
       return _prop_tbl;
     default:
+      getLogger()->critical(
+          utl::ODB,
+          438,
+          "Internal inconsistency: no table found for type {}",
+          type);
       break;
   }
 

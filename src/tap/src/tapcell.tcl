@@ -39,6 +39,7 @@ sta::define_cmd_args "tapcell" {[-tapcell_master tapcell_master]\
                                 [-endcap_master endcap_master]\
                                 [-endcap_prefix endcap_prefix]\
                                 [-distance dist]\
+                                [-disallow_one_site_gaps]\
                                 [-halo_width_x halo_x]\
                                 [-halo_width_y halo_y]\
                                 [-tap_nwin2_master tap_nwin2_master]\
@@ -63,7 +64,7 @@ proc tapcell { args } {
               -tap_nwout3_master -tap_nwintie_master -tap_nwouttie_master \
               -cnrcap_nwin_master -cnrcap_nwout_master -incnrcap_nwin_master \
               -incnrcap_nwout_master -tbtie_cpp -tap_prefix -endcap_prefix} \
-    flags {-no_cell_at_top_bottom}
+    flags {-no_cell_at_top_bottom -disallow_one_site_gaps}
 
   sta::check_argc_eq0 "tapcell" $args
 
@@ -146,6 +147,7 @@ proc tapcell { args } {
     utl::warn TAP 16 "no_cell_at_top_bottom option is deprecated."
   }
 
+  set disallow_one_site_gaps [info exists flags(-disallow_one_site_gaps)]
   if { [info exists keys(-tap_prefix)] } {
     tap::set_tap_prefix $keys(-tap_prefix)
   }
@@ -179,7 +181,7 @@ proc tapcell { args } {
     }
   }
 
-  tap::run $endcap_master $halo_x $halo_y $cnrcap_nwin_master $cnrcap_nwout_master $tap_nwintie_master $tap_nwin2_master $tap_nwin3_master $tap_nwouttie_master $tap_nwout2_master $tap_nwout3_master $incnrcap_nwin_master $incnrcap_nwout_master $tapcell_master $dist
+  tap::run $endcap_master $halo_x $halo_y $cnrcap_nwin_master $cnrcap_nwout_master $tap_nwintie_master $tap_nwin2_master $tap_nwin3_master $tap_nwouttie_master $tap_nwout2_master $tap_nwout3_master $incnrcap_nwin_master $incnrcap_nwout_master $tapcell_master $dist $disallow_one_site_gaps
 }
 
 sta::define_cmd_args "cut_rows" {[-endcap_master endcap_master]\

@@ -58,19 +58,21 @@ class dbIdValidation
 template <class T>
 class dbId
 {
+  constexpr static unsigned int invalid = 0;
   unsigned int _id;
 
  public:
   using _type = T;
 
-  dbId() { _id = 0; }
+  dbId() { _id = invalid; }
   dbId(const dbId<T>& id) : _id(id._id) {}
   dbId(unsigned int id) { _id = id; }
 
   operator unsigned int() const { return _id; }
   unsigned int& id() { return _id; }
 
-  bool isValid() { return _id > 0; }
+  bool isValid() const { return _id != invalid; }
+  void clear() { _id = invalid; }
 
   friend dbOStream& operator<<(dbOStream& stream, const dbId<T>& id)
   {

@@ -59,7 +59,7 @@ class deltaDebugger:
         self.error_string = opt.error_string
         self.use_stdout = opt.use_stdout
         self.exit_early_on_error = opt.exit_early_on_error
-        self.step_count = 0
+        self.step_count = 1
 
         # timeout used to measure the time the original input takes
         # to reach an error to use as standard timeout for different 
@@ -158,8 +158,6 @@ class deltaDebugger:
     # and calls the step funtion, then returns the stderr of the step.
     def perform_step(self, cut_index=-1):
         # read base db in memory
-        print("___________________________________")
-        print("Reading base odb file", flush=True)
         self.base_db = odb.dbDatabase.create()
         self.base_db = odb.read_db(self.base_db, self.temp_base_db_file)
 
@@ -173,7 +171,6 @@ class deltaDebugger:
                 return cut_result
 
         # Write DB
-        print("Writing odb file", flush=True)
         odb.write_db(self.base_db, self.base_db_file)
         if (self.dump_def != 0):
             print("Writing def file")
@@ -186,7 +183,6 @@ class deltaDebugger:
 
         if (cut_index != -1):
             self.step_count += 1
-        print(f"Step {self.step_count} is running, deltaDebug is waiting.", flush=True)
 
         # Perform step, and check the error code  
         start_time = time.time()
@@ -198,10 +194,7 @@ class deltaDebugger:
         # buggy cut.
         if (error_string is not None):
             self.timeout = max(120, 1.2 * (end_time - start_time))
-            print(f"Timeout updated to approx {ceil(self.timeout/60.0)} minutes!")
-
-        print(f"Error Code found: {error_string}")
-        print(f"Step {self.step_count} is done.", flush=True)
+            print(f"Error Code found: {error_string}")
 
         return error_string
 
@@ -284,15 +277,16 @@ class deltaDebugger:
     # whehter to cut Insts or Nets.
     def cut_block(self, index=0):  
         block = self.base_db.getChip().getBlock()
+        message = [f"Step {self.step_count}"]
         if (self.cut_level == cutLevel.Insts):  # Insts cut level
             elms = block.getInsts()
-            print("Insts level debugging")
+            message += ["Insts level debugging"]
 
         elif (self.cut_level == cutLevel.Nets):  # Nets cut level
             elms = block.getNets()
-            print("Nets level debugging")
+            message += ["Nets level debugging"]
 
-        print(f"Number of Insts {len(block.getInsts())}\nNumber of Nets {len(block.getNets())}")
+        message += [f"Insts {len(block.getInsts())}", f"Nets {len(block.getNets())}"]
 
         num_elms = len(elms)
         num_elms_to_cut = int(num_elms * 1.0 / self.n)
@@ -305,7 +299,8 @@ class deltaDebugger:
 
         cut_position_string = '#' * self.n
         cut_position_string = cut_position_string[:index] + 'C' + cut_position_string[index+1:]
-        print(f"Number of elements to be cut is {num_elms_to_cut}, [{cut_position_string}]", flush=True)
+        message += [f"cut elements {num_elms_to_cut}"]
+        message += [f"timeout {ceil(self.timeout/60.0)} minutes"]
 
         for i in range(start, end):
             elm = elms[i]
@@ -315,7 +310,9 @@ class deltaDebugger:
                 self.clear_dont_touch_net(elm)
             elm.destroy(elm)
 
-        print("Done cutting design.", flush=True)
+        print(", ".join(message), flush=True)
+        print(f"[{cut_position_string}]", flush=True)
+
         return 0
 
 

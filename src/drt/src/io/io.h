@@ -147,7 +147,7 @@ class Parser
                                       T* trueTerm,
                                       frInst* inst,
                                       dbTransform& shiftXform,
-                                      vector<frRect>& rects);
+                                      std::vector<frRect>& rects);
   void patchGuides(frNet* net, frBlockObject* pin, std::vector<frRect>& rects);
   static int distL1(const Rect& b, const Point& p);
   static void getClosestPoint(const frRect& r,

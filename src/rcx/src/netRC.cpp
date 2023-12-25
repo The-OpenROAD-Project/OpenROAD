@@ -45,8 +45,30 @@ namespace rcx {
 FILE* fp;
 #endif
 
+using odb::dbBlock;
+using odb::dbBox;
+using odb::dbBTerm;
+using odb::dbCapNode;
+using odb::dbCCSeg;
+using odb::dbIntProperty;
+using odb::dbITerm;
+using odb::dbNet;
+using odb::dbRSeg;
+using odb::dbSet;
+using odb::dbShape;
+using odb::dbSigType;
+using odb::dbTechLayer;
+using odb::dbTechLayerType;
+using odb::dbTechVia;
+using odb::dbVia;
+using odb::dbWire;
+using odb::dbWirePath;
+using odb::dbWirePathItr;
+using odb::dbWirePathShape;
+using odb::MAX_INT;
+using odb::Point;
+using odb::Rect;
 using utl::RCX;
-using namespace odb;
 
 void extMain::print_RC(dbRSeg* rc)
 {
@@ -1310,8 +1332,7 @@ char* extMain::addRCCorner(const char* name, int model, int userDefined)
     _processCornerTable = new Ath__array1D<extCorner*>();
   }
 
-  uint ii = 0;
-  for (; ii < _processCornerTable->getCnt(); ii++) {
+  for (uint ii = 0; ii < _processCornerTable->getCnt(); ii++) {
     extCorner* s = _processCornerTable->get(ii);
     if (s->_model == model) {
       logger_->info(

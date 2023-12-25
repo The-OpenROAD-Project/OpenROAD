@@ -7,7 +7,7 @@
 #include "helper.cpp"
 
 using namespace odb;
-using namespace std;
+
 BOOST_AUTO_TEST_SUITE(test_suite)
 
 struct F_DEFAULT
@@ -34,7 +34,7 @@ BOOST_FIXTURE_TEST_CASE(test_default, F_DEFAULT)
   dbModule* parent_mod = block->findModule("parent_mod");
   BOOST_TEST(parent_mod != nullptr);
   // dbModule::getName()
-  BOOST_TEST(string(parent_mod->getName()) == "parent_mod");
+  BOOST_TEST(std::string(parent_mod->getName()) == "parent_mod");
   // dbModInst::create() Succeed
   BOOST_TEST(dbModInst::create(parent_mod, master_mod, "i1") != nullptr);
   // dbModInst::create() rejected duplicate name
@@ -46,7 +46,7 @@ BOOST_FIXTURE_TEST_CASE(test_default, F_DEFAULT)
   // dbModule getModInst()
   BOOST_TEST(master_mod->getModInst() == modInst);
   // dbModInst::getName()
-  BOOST_TEST(string(modInst->getName()) == "i1");
+  BOOST_TEST(std::string(modInst->getName()) == "i1");
   // dbModule::getChildren()
   BOOST_TEST(parent_mod->getChildren().size() == 1);
   // dbBlock::getModInsts()

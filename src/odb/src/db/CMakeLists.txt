@@ -93,6 +93,7 @@ add_library(db
     dbGroup.cpp
     dbGuide.cpp
     dbIsolation.cpp
+    dbLevelShifter.cpp
     dbLogicPort.cpp
     dbMetalWidthViaMap.cpp
     dbModInst.cpp
@@ -100,6 +101,10 @@ add_library(db
     dbNetTrack.cpp
     dbPowerDomain.cpp
     dbPowerSwitch.cpp
+    dbScanChain.cpp
+    dbScanInst.cpp
+    dbScanPartition.cpp
+    dbScanPin.cpp
     dbTechLayer.cpp
     dbTechLayerAreaRule.cpp
     dbTechLayerArraySpacingRule.cpp
@@ -118,6 +123,7 @@ add_library(db
     dbTechLayerSpacingEolRule.cpp
     dbTechLayerSpacingTablePrlRule.cpp
     dbTechLayerWidthTableRule.cpp
+    dbTechLayerWrongDirSpacingRule.cpp
     dbGroupInstItr.cpp
     dbGroupItr.cpp
     dbGroupModInstItr.cpp

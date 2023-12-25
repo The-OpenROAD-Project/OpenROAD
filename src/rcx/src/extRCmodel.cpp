@@ -40,7 +40,8 @@
 
 namespace rcx {
 
-using namespace odb;
+using odb::dbRSeg;
+using odb::SEQ;
 using utl::RCX;
 
 bool OUREVERSEORDER = false;
