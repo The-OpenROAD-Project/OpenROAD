@@ -1,4 +1,4 @@
-from openroad import Tech, Design
+from openroad import Tech, Design, Timing
 
 tech = Tech()
 tech.readLiberty("Nangate45/Nangate45_typ.lib")
@@ -8,7 +8,7 @@ tech.readLef("Nangate45/Nangate45_stdcell.lef")
 design = Design(tech)
 design.readDef("gcd_nangate45.def")
 design.evalTclString("read_sdc timing_api_2.sdc")
-
+timing = Timing(design)
 
 for inst in design.getBlock().getInsts():
   print(inst.getName(), 
@@ -18,17 +18,19 @@ for inst in design.getBlock().getInsts():
         design.isBuffer(inst.getMaster()),
         design.isInverter(inst.getMaster()),
         )
-  for corner in design.getCorners():
+  for corner in timing.getCorners():
     print(design.staticPower(inst, corner),
           design.dynamicPower(inst, corner),
          )
   for iTerm in inst.getITerms():
     if not iTerm.getNet():
       continue
-    if not (design.isInPower(iTerm) or design.isInGround(iTerm)):
+    if not (design.isInSupply(iTerm)):
       print(design.getITermName(iTerm), 
-            design.getPinArrival(iTerm, "rise"),
-            design.getPinArrival(iTerm, "fall")
+            timing.getPinArrival(iTerm, Timing.Rise),
+            timing.getPinArrival(iTerm, Timing.Fall),
+            timing.getPinSlew(iTerm),
+            timing.isEndpoint(iTerm) 
             )
 
 for net in design.getBlock().getNets():

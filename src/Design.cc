@@ -45,9 +45,6 @@
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "ord/Tech.h"
-#include "sta/Corner.hh"
-#include "sta/TimingArc.hh"
-#include "sta/TimingRole.hh"
 #include "utl/Logger.h"
 
 namespace ord {
@@ -96,249 +93,6 @@ void Design::readDef(const std::string& file_name,
                floorplan_init,
                incremental,
                child);
-}
-
-
-
-odb::dbITerm* Design::staToDBPin(const sta::Pin *pin) {
-  ord::OpenRoad *openroad = ord::OpenRoad::openRoad();
-  sta::dbNetwork *db_network = openroad->getDbNetwork();
-  odb::dbITerm *iterm;
-  odb::dbBTerm *bterm;
-  db_network->staToDb(pin, iterm, bterm);
-  return iterm;
-}
-
-sta::PinSet Design::findStartPoints() {
-  sta::Network *network = sta::Sta::sta()->cmdNetwork();;
-  sta::PinSet pins(network);
-  sta::VertexPinCollector visitor(pins);
-  sta::Sta::sta()->visitStartpoints(&visitor);
-  return pins;
-}
-
-sta::PinSet Design::findEndpoints() {
-  sta::Network *network = sta::Sta::sta()->cmdNetwork();;
-  sta::PinSet pins(network);
-  sta::VertexPinCollector visitor(pins);
-  sta::Sta::sta()->visitEndpoints(&visitor);
-  return pins;
-}
-
-std::vector<std::string> Design::extractEndpointNames() {
-    std::vector<std::string> endpointNames;
-
-    // This will need to be edited
-    sta::PinSet endPoints = findEndpoints();
-
-    for (const auto& endpoint : endPoints) {
-
-        odb::dbITerm* dbITermPin = staToDBPin(endpoint);
-
-        if (dbITermPin == nullptr) {
-            continue;
-        }
-
-        endpointNames.push_back(getITermName(dbITermPin));
-    }
-
-    return endpointNames;
-}
-
-bool Design::isPinEndpoint(const std::vector<std::string>& endpointNames, odb::dbITerm* db_pin) {
-    std::string pinName = getITermName(db_pin);
-
-    for (const auto& ep_name : endpointNames) {
-        if (ep_name == pinName) {
-            return true;
-            break;
-        }
-    }
-
-   return false;
-}
-
-std::vector<std::string> Design::extractStartPointNames() {
-    std::vector<std::string> startPointNames;
-
-    // This will need to be edited
-    sta::PinSet startpoints = findStartPoints();
-
-    for (const auto& startpoint : startpoints) {
-
-        odb::dbITerm* dbITermPin = staToDBPin(startpoint);
-
-        if (dbITermPin == nullptr) {
-            continue;
-        }
-
-        startPointNames.push_back(getITermName(dbITermPin));
-    }
-
-    return startPointNames;
-}
-
-bool Design::isPinStartPoint(const std::vector<std::string>& startPointNames, odb::dbITerm* db_pin) {
-    std::string pinName = getITermName(db_pin);
-
-    for (const auto& sp_name : startPointNames) {
-        if (sp_name == pinName) {
-            return true;
-            break;
-        }
-    }
-
-   return false;
-}
-
-
-
-float Design::slew_corner(sta::Vertex *vertex) {
-  sta::Sta *sta = sta::Sta::sta();
-  
-  float slew_max = -sta::INF;
-
-  for (auto corner : getCorners()) {
-      slew_max = std::max(slew_max,  sta::delayAsFloat(sta->vertexSlew(vertex,  sta::RiseFall::rise(), corner, sta::MinMax::max())));
-  }
-
-  return slew_max;
-}
-
-
-float Design::getPinSlew(odb::dbITerm* db_pin) {
-    const int num_vertex_elements = 2;
-
-    sta::dbSta* sta = getSta();
-
-    sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
-
-    std::array<sta::Vertex*, 2> vertex_array = vertices(sta_pin);
-
-    float pinSlew = -sta::INF;
-    for (int i = 0; i < num_vertex_elements; i++) {
-      sta::Vertex* vertex = vertex_array[i];
-      if(vertex != nullptr){
-        float pinSlewTemp = slew_corner(vertex);
-        pinSlew = std::max(pinSlew,  pinSlewTemp);
-      }
-    }
-
-    return pinSlew;
-}
-
-
-sta::Network* Design::cmdLinkedNetwork()
-{
-  sta::Network *network = sta::Sta::sta()->cmdNetwork();;
-  if (network->isLinked()) {
-    return network;
-  }
-
-  getLogger()->error(utl::ORD, 104, "STA network is not linked.");
-}
-
-sta::Graph* Design::cmdGraph()
-{
-  cmdLinkedNetwork();
-  return sta::Sta::sta()->ensureGraph();
-}
-
-std::array<sta::Vertex*, 2> Design::vertices(const sta::Pin *pin)
-{
-  sta::Vertex *vertex, *vertex_bidirect_drvr;
-  std::array<sta::Vertex*, 2> vertices;
-
-  cmdGraph()->pinVertices(pin, vertex, vertex_bidirect_drvr);
-  vertices[0] = vertex;
-  vertices[1] = vertex_bidirect_drvr;
-  return vertices;
-}
-
-std::vector<float> Design::arrivalsClk(const sta::RiseFall *rf,
-	                                      sta::Clock *clk,
-	                                      const sta::RiseFall *clk_rf,
-                                        sta::Vertex *vertex)
-{
-  sta::Sta *sta = sta::Sta::sta();
-  std::vector<float> arrivals;
-  
-  const sta::ClockEdge *clk_edge = nullptr;
-
-  if (clk){
-    clk_edge = clk->edge(clk_rf);
-  }
-
-  for (auto path_ap : sta->corners()->pathAnalysisPts()) {
-    arrivals.push_back(sta::delayAsFloat(sta->vertexArrival(vertex, rf, clk_edge, path_ap, nullptr)));
-  }
-  return arrivals;
-}
-
-std::string Design::getITermName (odb::dbITerm* ITerm)
-{
-    auto MTerm_name = ITerm->getMTerm()->getName();
-    auto inst_name  = ITerm->getInst()->getName();
-    return inst_name + "/" + MTerm_name;
-}
-
-bool Design::isTimeInf(float time) {
-  return (time > 1e+10 || time < -1e+10); 
-}
-
-float Design::getPinArrivalTime(sta::Clock *clk,
-                               const sta::RiseFall *clk_rf,
-                               sta::Vertex *vertex,
-                               const std::string& arrrive_or_hold)
-{
-  const sta::RiseFall *rf = (arrrive_or_hold == "arrive")? sta::RiseFall::rise(): sta::RiseFall::fall();
-  std::vector<float> times = arrivalsClk(rf, clk, clk_rf, vertex);
-  float delay = -sta::INF;
-  for (float delay_time : times){ 
-    if(!isTimeInf(delay_time)) {
-      delay = std::max(delay, delay_time);
-    }
-  }
-  return delay;
-}
-
-sta::ClockSeq Design::findClocksMatching(const char *pattern,
-		                                  bool regexp,
-		                                  bool nocase)
-{
-  sta::Sta *sta = sta::Sta::sta();
-  cmdLinkedNetwork();
-  sta::PatternMatch matcher(pattern, regexp, nocase, sta->tclInterp());
-  return sta::Sta::sta()->sdc()->findClocksMatching(&matcher);
-}
-
-sta::Clock* Design::defaultArrivalClock()
-{
-  return sta::Sta::sta()->sdc()->defaultArrivalClock();
-}
-
-float Design::getPinArrival(odb::dbITerm* db_pin, const std::string& rf) {
-    std::vector<float> pin_arr;
-    const int num_vertex_elements = 2;
-
-    sta::dbSta* sta = getSta();
-    sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
-
-    std::array<sta::Vertex*, 2> vertex_arrray = vertices(sta_pin);
-    float delay = -1;
-    for (int i = 0; i < num_vertex_elements; i++) {
-      sta::Vertex* vertex = vertex_arrray[i];
-      if (vertex != nullptr) {
-        std::string arrival_or_hold = (rf == "rise")? "arrive":"hold";
-        delay = std::max(delay, getPinArrivalTime(nullptr, sta::RiseFall::rise(), vertex, arrival_or_hold));
-        delay = std::max(delay, getPinArrivalTime(defaultArrivalClock(), sta::RiseFall::rise(), vertex, arrival_or_hold));
-        for (auto clk : findClocksMatching("*", false, false)) {
-          delay = std::max(delay, getPinArrivalTime(clk, sta::RiseFall::rise(), vertex, arrival_or_hold));
-          delay = std::max(delay, getPinArrivalTime(clk, sta::RiseFall::fall(), vertex, arrival_or_hold));
-        }
-      }
-    }
-    return delay;
 }
 
 void Design::link(const std::string& design_name)
@@ -409,12 +163,6 @@ sta::dbSta* Design::getSta()
 {
   auto app = OpenRoad::openRoad();
   return app->getSta();
-}
-
-std::vector<sta::Corner*> Design::getCorners()
-{
-  sta::Corners* corners = getSta()->corners();
-  return {corners->begin(), corners->end()};
 }
 
 sta::MinMax* Design::getMinMax(MinMax type)
@@ -509,16 +257,24 @@ bool Design::isInClock(odb::dbInst* inst)
   return false;
 }
 
-bool Design::isInPower(odb::dbITerm* iterm)
+std::string Design::getITermName(odb::dbITerm* ITerm)
 {
-  auto* net = iterm->getNet();
-  return (net != nullptr && net->getSigType() == odb::dbSigType::POWER);
+  auto MTerm_name = ITerm->getMTerm()->getName();
+  auto inst_name = ITerm->getInst()->getName();
+  return inst_name + "/" + MTerm_name;
 }
 
-bool Design::isInGround(odb::dbITerm* iterm)
+bool Design::isInSupply(odb::dbITerm* iterm)
 {
-  auto* net = iterm->getNet();
-  return (net != nullptr && net->getSigType() == odb::dbSigType::GROUND);
+  auto* mTerm = iterm->getMTerm();
+  if (mTerm != nullptr) {
+    auto sig_type = mTerm->getSigType();
+    if (sig_type == odb::dbSigType::POWER
+        || sig_type == odb::dbSigType::GROUND) {
+      return true;
+    }
+  }
+  return false;
 }
 
 std::uint64_t Design::getNetRoutedLength(odb::dbNet* net)
@@ -539,43 +295,6 @@ std::uint64_t Design::getNetRoutedLength(odb::dbNet* net)
     }
   }
   return route_length;
-}
-
-// I'd like to return a std::set but swig gave me way too much grief
-// so I just copy the set to a vector.
-std::vector<odb::dbMTerm*> Design::getTimingFanoutFrom(odb::dbMTerm* input)
-{
-  sta::dbSta* sta = getSta();
-  sta::dbNetwork* network = sta->getDbNetwork();
-
-  odb::dbMaster* master = input->getMaster();
-  sta::Cell* cell = network->dbToSta(master);
-  if (!cell) {
-    return {};
-  }
-
-  sta::LibertyCell* lib_cell = network->libertyCell(cell);
-  if (!lib_cell) {
-    return {};
-  }
-
-  sta::Port* port = network->dbToSta(input);
-  sta::LibertyPort* lib_port = network->libertyPort(port);
-
-  std::set<odb::dbMTerm*> outputs;
-  for (auto arc_set : lib_cell->timingArcSets(lib_port, /* to */ nullptr)) {
-    sta::TimingRole* role = arc_set->role();
-    if (role->isTimingCheck() || role->isAsyncTimingCheck()
-        || role->isNonSeqTimingCheck() || role->isDataCheck()) {
-      continue;
-    }
-    sta::LibertyPort* to_port = arc_set->to();
-    odb::dbMTerm* to_mterm = master->findMTerm(to_port->name());
-    if (to_mterm) {
-      outputs.insert(to_mterm);
-    }
-  }
-  return {outputs.begin(), outputs.end()};
 }
 
 grt::GlobalRouter* Design::getGlobalRouter()

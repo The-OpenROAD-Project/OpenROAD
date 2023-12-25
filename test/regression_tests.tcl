@@ -3,9 +3,6 @@ record_tests {
   get_core_die_areas
   timing_api
   timing_api_2
-  timing_api_3
-  timing_api_4
-  timing_api_5
   upf_test
   upf_aes
 }

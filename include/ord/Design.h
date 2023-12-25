@@ -38,11 +38,6 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#include "sta/Clock.hh"
-#include "sta/Graph.hh"
-#include "sta/Sdc.hh"
-#include "sta/SdcClass.hh"
-#include "sta/PatternMatch.hh"
 
 namespace odb {
 class dbBlock;
@@ -138,12 +133,6 @@ class dbSta;
 class Corner;
 class MinMax;
 class LibertyCell;
-class Network;
-class Sta;
-class RiseFall;
-class Vertex;
-class Pin;
-class PinSet;
 }  // namespace sta
 
 namespace ord {
@@ -179,7 +168,6 @@ class Design
   Tech* getTech();
 
   // Timing related methods
-  std::vector<sta::Corner*> getCorners();
   enum MinMax
   {
     Min,
@@ -189,33 +177,8 @@ class Design
   bool isSequential(odb::dbMaster* master);
   bool isBuffer(odb::dbMaster* master);
   bool isInverter(odb::dbMaster* master);
-  bool isInPower(odb::dbITerm* iterm);
-  bool isInGround(odb::dbITerm* iterm);
-  sta::ClockSeq findClocksMatching(const char *pattern, bool regexp, bool nocase);
-  sta::Clock* defaultArrivalClock();
-  std::string getITermName (odb::dbITerm* ITerm);
-  float getPinArrival(odb::dbITerm* db_pin, const std::string& rf);
-  std::vector<float> arrivalsClk(const sta::RiseFall *rf, sta::Clock *clk, const sta::RiseFall *clk_rf, sta::Vertex *vertex);
-  float getPinArrivalTime(sta::Clock *clk, const sta::RiseFall *clk_rf, sta::Vertex *vertex, const std::string& arrrive_or_hold);
-  sta::Graph* cmdGraph();
-  sta::Network* cmdLinkedNetwork();
-  std::array<sta::Vertex*, 2> vertices(const sta::Pin *pin);
-  bool isTimeInf(float time);
-
-  float slew_corner(sta::Vertex *vertex);
-  float getPinSlew(odb::dbITerm* db_pin);      
-
-  odb::dbITerm* staToDBPin(const sta::Pin *pin); 
-
-  sta::PinSet findStartPoints();
-  std::vector<std::string> extractStartPointNames();
-  bool isPinStartPoint(const std::vector<std::string>& startPointNames, odb::dbITerm* db_pin);
-
-  sta::PinSet findEndpoints();
-  std::vector<std::string> extractEndpointNames();
-  bool isPinEndpoint(const std::vector<std::string>& endpointNames, odb::dbITerm* db_pin);
-
-  std::vector<odb::dbMTerm*> getTimingFanoutFrom(odb::dbMTerm* input);
+  bool isInSupply(odb::dbITerm* iterm);
+  std::string getITermName(odb::dbITerm* ITerm);
   bool isInClock(odb::dbInst* inst);
   std::uint64_t getNetRoutedLength(odb::dbNet* net);
   float staticPower(odb::dbInst* inst, sta::Corner* corner);
