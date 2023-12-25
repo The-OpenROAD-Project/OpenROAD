@@ -583,8 +583,9 @@ bool Cluster::isSameConnSignature(const Cluster& cluster, float net_threshold)
 bool Cluster::isDirectlyConnectedTo(const Cluster& cluster)
 {
   for (const auto& [cluster_id, num_of_conn] : connection_map_) {
-    if (cluster_id == cluster.getId())
-    return true;
+    if (cluster_id == cluster.getId()) {
+      return true;
+    }
   }
 
   return false;

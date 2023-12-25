@@ -2420,9 +2420,9 @@ void HierRTLMP::classifyMacrosBasedOnInterconn(
           if (macro_interconn_class[j] != -1) {
             macro_interconn_class[i] = macro_interconn_class[j];
             break;
-          } else {
-            macro_interconn_class[j] = i;
           }
+
+          macro_interconn_class[j] = i;
         }
       }
     }
