@@ -69,6 +69,7 @@ class Parser
   bool readGuide();
   void postProcess();
   void postProcessGuide();
+  bool checkPinsAboveTopRoutingLayer();
   void initDefaultVias();
   void initRPin();
   auto& getTrackOffsetMap() { return trackOffsetMap_; }

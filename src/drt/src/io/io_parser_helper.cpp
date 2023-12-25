@@ -45,6 +45,29 @@ using namespace boost::polygon::operators;
 using Rectangle = boost::polygon::rectangle_data<int>;
 namespace gtl = boost::polygon;
 
+bool io::Parser::checkPinsAboveTopRoutingLayer()
+{
+  if (design_->getTopBlock()) {
+    for (const auto& bTerm : design_->getTopBlock()->getTerms()) {
+      if (bTerm->isAboveTopLayer()) {
+        return true;
+      }
+    }
+    for (const auto& inst : design_->getTopBlock()->getInsts()) {
+      for (const auto& iTerm : inst->getInstTerms()) {
+        for (const auto& pin : iTerm->getTerm()->getPins()) {
+          for (const auto& fig : pin->getFigs()) {
+            if (((frShape*) (fig.get()))->getLayerNum() > TOP_ROUTING_LAYER) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+
 void io::Parser::initDefaultVias()
 {
   for (auto& uViaDef : tech_->getVias()) {
@@ -60,20 +83,8 @@ void io::Parser::initDefaultVias()
     tech_->getLayer(viaDef->getCutLayerNum())->setDefaultViaDef(viaDef);
   }
   // Check whether there are pins above top routing layer
-  bool pinsAboveTop = false;
-  if (design_->getTopBlock()) {
-    for (const auto& net : design_->getTopBlock()->getNets()) {
-      for (const auto& shape : net->getShapes()) {
-        if (shape->getLayerNum() > TOP_ROUTING_LAYER) {
-          pinsAboveTop = true;
-          break;
-        }
-      }
-      if (pinsAboveTop) {
-        break;
-      }
-    }
-  }
+  bool pinsAboveTop = checkPinsAboveTopRoutingLayer();
+
   for (auto layerNum = design_->getTech()->getBottomLayerNum();
        layerNum <= design_->getTech()->getTopLayerNum();
        ++layerNum) {
