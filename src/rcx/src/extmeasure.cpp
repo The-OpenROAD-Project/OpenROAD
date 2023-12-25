@@ -36,8 +36,23 @@
 
 namespace rcx {
 
+using odb::dbBTerm;
+using odb::dbCapNode;
+using odb::dbCCSeg;
+using odb::dbNet;
+using odb::dbRSeg;
+using odb::dbSet;
+using odb::dbShape;
+using odb::dbTech;
+using odb::dbTechLayer;
+using odb::dbTechLayerDir;
+using odb::dbWire;
+using odb::dbWirePath;
+using odb::dbWirePathItr;
+using odb::dbWirePathShape;
+using odb::gs;
+using odb::SEQ;
 using utl::RCX;
-using namespace odb;
 
 bool extMeasure::getFirstShape(dbNet* net, dbShape& s)
 {

@@ -32,9 +32,9 @@
 
 #pragma once
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "util.h"
 
@@ -45,7 +45,7 @@ using uint = unsigned int;
 class NameTable
 {
  public:
-  NameTable(uint n, char* zero = NULL);
+  NameTable(uint n, char* zero = nullptr);
   ~NameTable();
 
   uint addNewName(char* name, uint dataId);
@@ -53,7 +53,7 @@ class NameTable
   uint getDataId(char* name,
                  uint ignoreFlag = 0,
                  uint exitFlag = 0,
-                 int* nn = 0);
+                 int* nn = nullptr);
 
  private:
   class NameBucket;
