@@ -54,6 +54,7 @@ const int SLACK_MODE = 1;
 
 ChartsWidget::ChartsWidget(QWidget* parent)
     : QDockWidget("Charts", parent),
+      logger_(nullptr),
       sta_(nullptr),
       label_(new QLabel(this)),
       mode_menu_(new QComboBox(this)),
@@ -131,13 +132,22 @@ void ChartsWidget::setSlackMode()
   std::vector<float> all_slack;
   int unconstrained_count = 0;
 
-  for (auto pin : end_points) {
+  for (const auto& pin : end_points) {
     double pin_slack = 0;
     pin_slack = sta_gui.getPinSlack(pin);
-    if (pin_slack != sta::INF)
+    if (pin_slack != sta::INF) {
       all_slack.push_back(time_units->staToUser(pin_slack));
-    else
+    } else {
       unconstrained_count++;
+    }
+  }
+
+  if (all_slack.size() == 0) {
+    logger_->warn(utl::GUI,
+                  97,
+                  "All pins are unconstrained. Cannot plot histogram. Check if "
+                  "timing data is loaded!");
+    return;
   }
 
   if (unconstrained_count != 0) {
@@ -158,7 +168,7 @@ void ChartsWidget::setSlackMode()
   std::vector<float> pos_buckets[total_pos_buckets];
   std::vector<float> neg_buckets[total_neg_buckets];
 
-  for (auto slack : all_slack) {
+  for (const auto& slack : all_slack) {
     if (slack < 0) {
       int bucket_index = slack;
       neg_buckets[bucket_index + offset].push_back(slack);
@@ -241,6 +251,11 @@ void ChartsWidget::setSlackMode()
   chart_->legend()->markers(series)[1]->setVisible(false);
   chart_->legend()->setVisible(true);
   chart_->legend()->setAlignment(Qt::AlignBottom);
+}
+
+void ChartsWidget::setLogger(utl::Logger* logger)
+{
+  logger_ = logger;
 }
 
 }  // namespace gui
