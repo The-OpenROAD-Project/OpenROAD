@@ -272,7 +272,7 @@ class extSpef
                   uint capNodeId,
                   double* totCap);
   uint getMultiples(uint cnt, uint base);
-  uint readMaxMapId(int* cornerCnt = NULL);
+  uint readMaxMapId(int* cornerCnt = nullptr);
   void addNameMapId(uint ii, uint id);
   uint getNameMapId(uint ii);
   void setCap(const double* cap, uint n, double* totCap, uint startIndex);
@@ -314,7 +314,7 @@ class extSpef
   char* makeName(char* name);
   odb::dbNet* getDbNet(uint* id, uint spefId = 0);
   odb::dbInst* getDbInst(uint id);
-  odb::dbCapNode* createCapNode(uint nodeId, char* capWord = NULL);
+  odb::dbCapNode* createCapNode(uint nodeId, char* capWord = nullptr);
   void addCouplingCaps(odb::dbNet* net, double* totCap);
   void addCouplingCaps(odb::dbSet<odb::dbCCSeg>& capSet, double* totCap);
   uint writeCapPortsAndIterms(odb::dbSet<odb::dbCapNode>& capSet, bool bterms);

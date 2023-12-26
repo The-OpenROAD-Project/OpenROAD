@@ -54,7 +54,7 @@ class Ext
   void init(
       odb::dbDatabase* db,
       Logger* logger,
-      std::function<void()> rcx_init = []() {});
+      const std::function<void()>& rcx_init = []() {});
   void setLogger(Logger* logger);
 
   void write_rules(const std::string& name,
@@ -198,7 +198,7 @@ class Ext
   {
     const char* net = nullptr;
     bool use_ids = false;
-    bool test_parsing = 0;
+    bool test_parsing = false;
     const char* file = nullptr;
     const char* db_corner_name = nullptr;
     int spef_corner = -1;
