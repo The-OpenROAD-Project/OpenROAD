@@ -123,8 +123,6 @@ void ChartsWidget::clearChart()
 
 void ChartsWidget::setSlackMode()
 {
-  chart_->setTitle("Endpoint Slack");
-
   STAGuiInterface sta_gui(sta_);
 
   auto time_units = sta_->units()->timeUnit();
@@ -149,6 +147,8 @@ void ChartsWidget::setSlackMode()
                   "timing data is loaded!");
     return;
   }
+
+  chart_->setTitle("Endpoint Slack");
 
   if (unconstrained_count != 0) {
     const QString label_message = "Number of unconstrained pins: ";
