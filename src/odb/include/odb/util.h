@@ -539,6 +539,7 @@ class RUDYCalculator
   int tileCntX_ = 40;
   int tileCntY_ = 40;
   int wireWidth_ = 100;
+  const int pitches_in_tile_ = 15;
 
   std::vector<std::vector<Tile>> grid_;
 };

@@ -38,6 +38,7 @@
 
 #include "db.h"
 #include "utl/Logger.h"
+#include <iostream>
 
 namespace odb {
 
@@ -47,8 +48,35 @@ using std::vector;
 RUDYCalculator::RUDYCalculator(dbBlock* block) : block_(block)
 {
   gridBlock_ = block_->getDieArea();
+  //from RUDY paper: "The wire width p is defined by the
+  // average wire-to-wire pitch ~p and number of routing layers l: p = ~p/l.
   wireWidth_ = block_->getTech()->findRoutingLayer(1)->getWidth();
-  makeGrid();
+
+  int track_spacing = 0;
+  odb::dbTechLayer* tech_layer = block_->getTech()->findRoutingLayer(3);
+  odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
+
+  if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+    int track_step_y = -1;
+    int init_track_y, num_tracks_y;
+    track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
+    track_spacing = track_step_y;
+  } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+    int track_step_x = -1;
+    int init_track_x, num_tracks_x;
+    track_grid->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
+    track_spacing = track_step_x;
+  } else{
+//    logger_->error(GPL, 82, "Cannot find track spacing.");
+    return;
+  }
+  
+  int upper_rightX = gridBlock_.xMax();
+  int upper_rightY = gridBlock_.yMax();
+  int tile_size = pitches_in_tile_ * track_spacing;
+  int x_grids = upper_rightX / tile_size;
+  int y_grids = upper_rightY / tile_size;
+  setGridConfig(gridBlock_, x_grids, y_grids);
 }
 
 void RUDYCalculator::setGridConfig(odb::Rect block, int tileCntX, int tileCntY)
@@ -56,7 +84,7 @@ void RUDYCalculator::setGridConfig(odb::Rect block, int tileCntX, int tileCntY)
   gridBlock_ = block;
   tileCntX_ = tileCntX;
   tileCntY_ = tileCntY;
-  //makeGrid();
+  makeGrid();
 }
 
 void RUDYCalculator::makeGrid()
@@ -91,13 +119,16 @@ void RUDYCalculator::calculateRUDY()
   const int tileHeight = blockHeight / tileCntY_;
 
   for (auto net : block_->getNets()) {
+//    if(net->getSigType().isSupply())
+//      continue;
+    
     const auto netBox = net->getTermBBox();
     const auto netArea = netBox.area();
     if (netArea == 0) {
       continue;
     }
     const auto hpwl = static_cast<float>(netBox.dx() + netBox.dy());
-    const auto wireArea = hpwl * wireWidth_;
+    const auto wireArea = hpwl * wireWidth_; //wire length = L, wireWidth_ = p
     const auto netCongestion = wireArea / netArea;
 
     // Calculate the intersection range
@@ -113,15 +144,15 @@ void RUDYCalculator::calculateRUDY()
     // Iterate over the tiles in the calculated range
     for (int x = minXIndex; x <= maxXIndex; ++x) {
       for (int y = minYIndex; y <= maxYIndex; ++y) {
-        Tile& grid = getEditableTile(x, y);
-        const auto gridBox = grid.getRect();
-        if (netBox.overlaps(gridBox)) {
-          const auto intersectArea = netBox.intersect(gridBox).area();
-          const auto gridArea = gridBox.area();
-          const auto gridNetBoxRatio = static_cast<float>(intersectArea)
-                                       / static_cast<float>(gridArea);
-          const auto rudy = netCongestion * gridNetBoxRatio * 100;
-          grid.addRUDY(rudy);
+        Tile& tile = getEditableTile(x, y);
+        const auto tileBox = tile.getRect();
+        if (netBox.overlaps(tileBox)) {
+          const auto intersectArea = netBox.intersect(tileBox).area();
+          const auto tileArea = tileBox.area();
+          const auto tileNetBoxRatio = static_cast<float>(intersectArea)
+                                       / static_cast<float>(tileArea);
+          const auto rudy = netCongestion * tileNetBoxRatio * 100;
+          tile.addRUDY(rudy);
         }
       }
     }
