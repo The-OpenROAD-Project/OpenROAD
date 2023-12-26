@@ -2389,8 +2389,6 @@ void HierRTLMP::classifyMacrosBasedOnConnSignature(
     std::vector<Cluster*>& macro_clusters,
     std::vector<int>& macro_signature_class)
 {
-  calculateConnection();
-
   for (int i = 0; i < macro_clusters.size(); i++) {
     if (macro_signature_class[i] == -1) {
       macro_signature_class[i] = i;
