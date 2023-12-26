@@ -36,8 +36,17 @@
 
 namespace rcx {
 
+using odb::dbBlock;
+using odb::dbCapNode;
+using odb::dbCCSeg;
+using odb::dbDatabase;
+using odb::dbNet;
+using odb::dbRSeg;
+using odb::dbSet;
+using odb::dbTech;
+using odb::dbTechLayer;
+using odb::SEQ;
 using utl::RCX;
-using namespace odb;
 
 void extMain::init(odb::dbDatabase* db, Logger* logger)
 {
@@ -123,121 +132,8 @@ void extMain::setupMapping(uint itermCnt)
 }
 
 extMain::extMain()
-    : _db(nullptr),
-      _tech(nullptr),
-      _block(nullptr),
-      _spef(nullptr),
-      _origSpefFilePrefix(nullptr),
-      _newSpefFilePrefix(nullptr),
-      _seqPool(nullptr),
-      _dgContextBaseTrack(nullptr),
-      _dgContextLowTrack(nullptr),
-      _dgContextHiTrack(nullptr),
-      _dgContextTrackBase(nullptr),
-      _prevControl(nullptr),
-      _blkInfoVDD(nullptr),
-      _viaInfoVDD(nullptr),
-      _blkInfoGND(nullptr),
-      _viaInfoGND(nullptr),
-      _stdCirVDD(nullptr),
-      _globCirVDD(nullptr),
-      _globGeomVDD(nullptr),
-      _stdCirGND(nullptr),
-      _globCirGND(nullptr),
-      _stdCirHeadVDD(nullptr),
-      _globCirHeadVDD(nullptr),
-      _globGeomGND(nullptr),
-      _stdCirHeadGND(nullptr),
-      _globCirHeadGND(nullptr),
-      _blkInfo(nullptr),
-      _viaInfo(nullptr),
-      _globCir(nullptr),
-      _globGeom(nullptr),
-      _stdCir(nullptr),
-      _globCirHead(nullptr),
-      _stdCirHead(nullptr),
-      _viaStackGlobCir(nullptr),
-      _viaStackGlobVDD(nullptr),
-      _viaStackGlobGND(nullptr),
-      _junct2viaMap(nullptr),
-      _netUtil(nullptr),
-      _viaM1Table(nullptr),
-      _viaUpTable(nullptr),
-      _via2JunctionMap(nullptr),
-      _supplyViaMap{nullptr, nullptr},
-      _supplyViaTable{nullptr, nullptr},
-      _coordsFP(nullptr),
-      _coordsGND(nullptr),
-      _coordsVDD(nullptr),
-      _subCktNodeFP{{nullptr, nullptr}, {nullptr, nullptr}},
-      _junct2iterm(nullptr)
 {
-  _debug_net_id = 0;
-  _previous_percent_extracted = 0;
-
   _modelTable = new Ath__array1D<extRCModel*>(8);
-
-  _btermTable = nullptr;
-  _itermTable = nullptr;
-  _nodeTable = nullptr;
-
-  _usingMetalPlanes = false;
-  _ccUp = 0;
-  _couplingFlag = 0;
-  _ccContextDepth = 0;
-  _mergeViaRes = false;
-  _mergeResBound = 0.0;
-  _mergeParallelCC = false;
-  _reportNetNoWire = false;
-  _netNoWireCnt = 0;
-
-  _resFactor = 1.0;
-  _resModify = false;
-  _ccFactor = 1.0;
-  _ccModify = false;
-  _gndcFactor = 1.0;
-  _gndcModify = false;
-
-  _dbPowerId = 1;
-  _dbSignalId = 2;
-  _CCsegId = 3;
-
-  _CCnoPowerSource = 0;
-  _CCnoPowerTarget = 0;
-
-  _coupleThreshold = 0.1;  // fF
-
-  _singlePlaneLayerMap = nullptr;
-  _usingMetalPlanes = false;
-  _geomSeq = nullptr;
-
-  _dgContextArray = nullptr;
-
-  _ccContextArray = nullptr;
-  _ccMergedContextArray = nullptr;
-
-  _noModelRC = false;
-
-  _currentModel = nullptr;
-
-  _extRun = 0;
-  _foreign = false;
-  _diagFlow = false;
-  _processCornerTable = nullptr;
-  _scaledCornerTable = nullptr;
-  _batchScaleExt = true;
-  _cornerCnt = 0;
-  _rotatedGs = false;
-
-  _getBandWire = false;
-  _search = nullptr;
-  _printBandInfo = false;
-
-  _writeNameMap = true;
-  _fullIncrSpef = false;
-  _noFullIncrSpef = false;
-  _adjust_colinear = false;
-  _power_source_file = nullptr;
 }
 
 void extMain::initDgContextArray()

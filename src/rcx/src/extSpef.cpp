@@ -1771,8 +1771,8 @@ uint extSpef::writeBlock(const char* nodeCoord,
   }
 
   _partial = !tnets.empty();
-  for (uint j = 0; j < tnets.size(); j++) {
-    tnets[j]->setMark(true);
+  for (odb::dbNet* tnet : tnets) {
+    tnet->setMark(true);
   }
 
   if (!_stopBeforeDnets && !_stopAfterNameMap) {
