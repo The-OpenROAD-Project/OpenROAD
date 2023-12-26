@@ -49,9 +49,6 @@
 
 namespace gui {
 
-const int SELECT = 0;
-const int SLACK_MODE = 1;
-
 ChartsWidget::ChartsWidget(QWidget* parent)
     : QDockWidget("Charts", parent),
       logger_(nullptr),
@@ -103,7 +100,7 @@ void ChartsWidget::changeMode()
 
   clearChart();
 
-  if (mode_menu_->currentIndex() == SLACK_MODE) {
+  if (mode_menu_->currentIndex() == SLACK_HISTOGRAM) {
     setSlackMode();
   }
 }
@@ -131,8 +128,8 @@ void ChartsWidget::setSlackMode()
   int unconstrained_count = 0;
 
   for (const auto& pin : end_points) {
-    double pin_slack = 0;
-    pin_slack = sta_gui.getPinSlack(pin);
+    double pin_slack = sta_gui.getPinSlack(pin);
+
     if (pin_slack != sta::INF) {
       all_slack.push_back(time_units->staToUser(pin_slack));
     } else {

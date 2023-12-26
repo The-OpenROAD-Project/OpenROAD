@@ -53,6 +53,11 @@ class ChartsWidget : public QDockWidget
   Q_OBJECT
 
  public:
+  enum Mode
+  {
+    SELECT,
+    SLACK_HISTOGRAM
+  };
   ChartsWidget(QWidget* parent = nullptr);
 
   void setSTA(sta::dbSta* sta) { sta_ = sta; };
