@@ -391,7 +391,7 @@ class AthHash
       typename AthList<t_elem>::iterator iter = m_data[i].start();
       while (!iter.end()) {
         if (_allocKeyFlag > 0)
-          free((void*)iter.getVal().key);
+          free((void*) iter.getVal().key);
         iter.next();
       }
     }
