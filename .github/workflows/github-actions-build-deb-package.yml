@@ -46,8 +46,8 @@ jobs:
           path: ${{ steps.artifact.outputs.file }}
 
       - name: Set release version
-      id: set_version
-      run: echo "RELEASE_VERSION=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
+        id: set_version
+        run: echo "RELEASE_VERSION=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
 
       - name: Create GitHub Release
         id: create_release
