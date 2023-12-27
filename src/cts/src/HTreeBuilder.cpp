@@ -238,7 +238,7 @@ void HTreeBuilder::preSinkClustering(
 		   baseName + std::to_string(clusterCount),
 		   center, legalCenter);
       }
-      // clang-format on 
+      // clang-format on
       if (!secondLevel) {
         addFirstLevelSinkDriver(&rootBuffer);
       } else {

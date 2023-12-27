@@ -2513,27 +2513,45 @@ COMPONENTS 763 ;
     - user2_vssd_lvclmap_pad sky130_ef_io__vssd_lvc_pad + FIXED ( 0 2204000 ) FE ;
 END COMPONENTS
 PINS 722 ;
-    - clock + NET clock + DIRECTION INPUT + USE SIGNAL ;
+    - clock + NET clock + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31300 -31225 ) ( 31300 31225 )
+        + FIXED ( 1019500 64215 ) N ;
     - clock_core + NET clock_core + DIRECTION OUTPUT + USE SIGNAL ;
-    - flash_clk + NET flash_clk + DIRECTION OUTPUT + USE SIGNAL ;
+    - flash_clk + NET flash_clk + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31300 -31225 ) ( 31300 31225 )
+        + FIXED ( 1836500 64215 ) N ;
     - flash_clk_core + NET flash_clk_core + DIRECTION INPUT + USE SIGNAL ;
     - flash_clk_ieb_core + NET flash_clk_ieb_core + DIRECTION INPUT + USE SIGNAL ;
     - flash_clk_oeb_core + NET flash_clk_oeb_core + DIRECTION INPUT + USE SIGNAL ;
-    - flash_csb + NET flash_csb + DIRECTION OUTPUT + USE SIGNAL ;
+    - flash_csb + NET flash_csb + SPECIAL + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31300 -31225 ) ( 31300 31225 )
+        + FIXED ( 1562500 64215 ) N ;
     - flash_csb_core + NET flash_csb_core + DIRECTION INPUT + USE SIGNAL ;
     - flash_csb_ieb_core + NET flash_csb_ieb_core + DIRECTION INPUT + USE SIGNAL ;
     - flash_csb_oeb_core + NET flash_csb_oeb_core + DIRECTION INPUT + USE SIGNAL ;
-    - flash_io0 + NET flash_io0 + DIRECTION INOUT + USE SIGNAL ;
+    - flash_io0 + NET flash_io0 + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31300 -31225 ) ( 31300 31225 )
+        + FIXED ( 2110500 64215 ) N ;
     - flash_io0_di_core + NET flash_io0_di_core + DIRECTION OUTPUT + USE SIGNAL ;
     - flash_io0_do_core + NET flash_io0_do_core + DIRECTION INPUT + USE SIGNAL ;
     - flash_io0_ieb_core + NET flash_io0_ieb_core + DIRECTION INPUT + USE SIGNAL ;
     - flash_io0_oeb_core + NET flash_io0_oeb_core + DIRECTION INPUT + USE SIGNAL ;
-    - flash_io1 + NET flash_io1 + DIRECTION INOUT + USE SIGNAL ;
+    - flash_io1 + NET flash_io1 + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31300 -31225 ) ( 31300 31225 )
+        + FIXED ( 2384500 64215 ) N ;
     - flash_io1_di_core + NET flash_io1_di_core + DIRECTION OUTPUT + USE SIGNAL ;
     - flash_io1_do_core + NET flash_io1_do_core + DIRECTION INPUT + USE SIGNAL ;
     - flash_io1_ieb_core + NET flash_io1_ieb_core + DIRECTION INPUT + USE SIGNAL ;
     - flash_io1_oeb_core + NET flash_io1_oeb_core + DIRECTION INPUT + USE SIGNAL ;
-    - gpio + NET gpio + DIRECTION INOUT + USE SIGNAL ;
+    - gpio + NET gpio + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31300 -31225 ) ( 31300 31225 )
+        + FIXED ( 2658500 64215 ) N ;
     - gpio_in_core + NET gpio_in_core + DIRECTION OUTPUT + USE SIGNAL ;
     - gpio_inenb_core + NET gpio_inenb_core + DIRECTION INPUT + USE SIGNAL ;
     - gpio_mode0_core + NET gpio_mode0_core + DIRECTION INPUT + USE SIGNAL ;
@@ -2571,44 +2589,158 @@ PINS 722 ;
     - mprj_analog_io[7] + NET mprj_analog_io[7] + DIRECTION INOUT + USE SIGNAL ;
     - mprj_analog_io[8] + NET mprj_analog_io[8] + DIRECTION INOUT + USE SIGNAL ;
     - mprj_analog_io[9] + NET mprj_analog_io[9] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[0] + NET mprj_io[0] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[10] + NET mprj_io[10] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[11] + NET mprj_io[11] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[12] + NET mprj_io[12] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[13] + NET mprj_io[13] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[14] + NET mprj_io[14] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[15] + NET mprj_io[15] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[16] + NET mprj_io[16] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[17] + NET mprj_io[17] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[18] + NET mprj_io[18] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[19] + NET mprj_io[19] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[1] + NET mprj_io[1] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[20] + NET mprj_io[20] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[21] + NET mprj_io[21] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[22] + NET mprj_io[22] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[23] + NET mprj_io[23] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[24] + NET mprj_io[24] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[25] + NET mprj_io[25] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[26] + NET mprj_io[26] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[27] + NET mprj_io[27] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[28] + NET mprj_io[28] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[29] + NET mprj_io[29] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[2] + NET mprj_io[2] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[30] + NET mprj_io[30] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[31] + NET mprj_io[31] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[32] + NET mprj_io[32] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[33] + NET mprj_io[33] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[34] + NET mprj_io[34] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[35] + NET mprj_io[35] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[36] + NET mprj_io[36] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[37] + NET mprj_io[37] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[3] + NET mprj_io[3] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[4] + NET mprj_io[4] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[5] + NET mprj_io[5] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[6] + NET mprj_io[6] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[7] + NET mprj_io[7] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[8] + NET mprj_io[8] + DIRECTION INOUT + USE SIGNAL ;
-    - mprj_io[9] + NET mprj_io[9] + DIRECTION INOUT + USE SIGNAL ;
+    - mprj_io[0] + NET mprj_io[0] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 3523785 617500 ) N ;
+    - mprj_io[10] + NET mprj_io[10] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 3523785 3533500 ) N ;
+    - mprj_io[11] + NET mprj_io[11] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 3523785 3758500 ) N ;
+    - mprj_io[12] + NET mprj_io[12] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 3523785 3983500 ) N ;
+    - mprj_io[13] + NET mprj_io[13] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 3523785 4429500 ) N ;
+    - mprj_io[14] + NET mprj_io[14] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 3523785 4875500 ) N ;
+    - mprj_io[15] + NET mprj_io[15] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31300 -31225 ) ( 31300 31225 )
+        + FIXED ( 3167500 5123785 ) N ;
+    - mprj_io[16] + NET mprj_io[16] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31300 -31225 ) ( 31300 31225 )
+        + FIXED ( 2658500 5123785 ) N ;
+    - mprj_io[17] + NET mprj_io[17] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31300 -31225 ) ( 31300 31225 )
+        + FIXED ( 2401500 5123785 ) N ;
+    - mprj_io[18] + NET mprj_io[18] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31300 -31225 ) ( 31300 31225 )
+        + FIXED ( 1956500 5123785 ) N ;
+    - mprj_io[19] + NET mprj_io[19] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31300 -31225 ) ( 31300 31225 )
+        + FIXED ( 1447500 5123785 ) N ;
+    - mprj_io[1] + NET mprj_io[1] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 3523785 843500 ) N ;
+    - mprj_io[20] + NET mprj_io[20] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31300 -31225 ) ( 31300 31225 )
+        + FIXED ( 1189500 5123785 ) N ;
+    - mprj_io[21] + NET mprj_io[21] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31300 -31225 ) ( 31300 31225 )
+        + FIXED ( 932500 5123785 ) N ;
+    - mprj_io[22] + NET mprj_io[22] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31300 -31225 ) ( 31300 31225 )
+        + FIXED ( 675500 5123785 ) N ;
+    - mprj_io[23] + NET mprj_io[23] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31300 -31225 ) ( 31300 31225 )
+        + FIXED ( 418500 5123785 ) N ;
+    - mprj_io[24] + NET mprj_io[24] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 64215 4808500 ) N ;
+    - mprj_io[25] + NET mprj_io[25] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 64215 3959500 ) N ;
+    - mprj_io[26] + NET mprj_io[26] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 64215 3743500 ) N ;
+    - mprj_io[27] + NET mprj_io[27] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 64215 3527500 ) N ;
+    - mprj_io[28] + NET mprj_io[28] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 64215 3311500 ) N ;
+    - mprj_io[29] + NET mprj_io[29] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 64215 3095500 ) N ;
+    - mprj_io[2] + NET mprj_io[2] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 3523785 1068500 ) N ;
+    - mprj_io[30] + NET mprj_io[30] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 64215 2879500 ) N ;
+    - mprj_io[31] + NET mprj_io[31] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 64215 2663500 ) N ;
+    - mprj_io[32] + NET mprj_io[32] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 64215 2025500 ) N ;
+    - mprj_io[33] + NET mprj_io[33] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 64215 1809500 ) N ;
+    - mprj_io[34] + NET mprj_io[34] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 64215 1593500 ) N ;
+    - mprj_io[35] + NET mprj_io[35] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 64215 1377500 ) N ;
+    - mprj_io[36] + NET mprj_io[36] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 64215 1161500 ) N ;
+    - mprj_io[37] + NET mprj_io[37] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 64215 945500 ) N ;
+    - mprj_io[3] + NET mprj_io[3] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 3523785 1294500 ) N ;
+    - mprj_io[4] + NET mprj_io[4] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 3523785 1519500 ) N ;
+    - mprj_io[5] + NET mprj_io[5] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 3523785 1744500 ) N ;
+    - mprj_io[6] + NET mprj_io[6] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 3523785 1970500 ) N ;
+    - mprj_io[7] + NET mprj_io[7] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 3523785 2856500 ) N ;
+    - mprj_io[8] + NET mprj_io[8] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 3523785 3082500 ) N ;
+    - mprj_io[9] + NET mprj_io[9] + SPECIAL + DIRECTION INOUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -31225 -31300 ) ( 31225 31300 )
+        + FIXED ( 3523785 3307500 ) N ;
     - mprj_io_analog_en[0] + NET mprj_io_analog_en[0] + DIRECTION INPUT + USE SIGNAL ;
     - mprj_io_analog_en[10] + NET mprj_io_analog_en[10] + DIRECTION INPUT + USE SIGNAL ;
     - mprj_io_analog_en[11] + NET mprj_io_analog_en[11] + DIRECTION INPUT + USE SIGNAL ;
@@ -3219,7 +3351,10 @@ PINS 722 ;
     - mprj_io_vtrip_sel[9] + NET mprj_io_vtrip_sel[9] + DIRECTION INPUT + USE SIGNAL ;
     - por + NET por + DIRECTION INPUT + USE SIGNAL ;
     - porb_h + NET porb_h + DIRECTION INPUT + USE SIGNAL ;
-    - resetb + NET resetb + DIRECTION INPUT + USE SIGNAL ;
+    - resetb + NET resetb + SPECIAL + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met5 ( -6147 -9255 ) ( 6148 9255 )
+        + FIXED ( 747157 63630 ) N ;
     - resetb_core_h + NET resetb_core_h + DIRECTION OUTPUT + USE SIGNAL ;
     - vccd + NET vccd + SPECIAL + DIRECTION INOUT + USE POWER ;
     - vccd1 + NET vccd1 + SPECIAL + DIRECTION INOUT + USE POWER ;
@@ -3236,7 +3371,51 @@ PINS 722 ;
     - vssd2 + NET vssd2 + SPECIAL + DIRECTION INOUT + USE GROUND ;
     - vssio + NET vssio + SPECIAL + DIRECTION INOUT + USE GROUND ;
 END PINS
-SPECIALNETS 18 ;
+SPECIALNETS 63 ;
+    - clock ( PIN clock ) ( clock_pad PAD ) + USE SIGNAL ;
+    - flash_clk ( PIN flash_clk ) ( flash_clk_pad PAD ) + USE SIGNAL ;
+    - flash_csb ( PIN flash_csb ) ( flash_csb_pad PAD ) + USE SIGNAL ;
+    - flash_io0 ( PIN flash_io0 ) ( flash_io0_pad PAD ) + USE SIGNAL ;
+    - flash_io1 ( PIN flash_io1 ) ( flash_io1_pad PAD ) + USE SIGNAL ;
+    - gpio ( PIN gpio ) ( gpio_pad PAD ) + USE SIGNAL ;
+    - mprj_io[0] ( PIN mprj_io[0] ) ( mprj_pads.area1_io_pad\[0\] PAD ) + USE SIGNAL ;
+    - mprj_io[10] ( PIN mprj_io[10] ) ( mprj_pads.area1_io_pad\[10\] PAD ) + USE SIGNAL ;
+    - mprj_io[11] ( PIN mprj_io[11] ) ( mprj_pads.area1_io_pad\[11\] PAD ) + USE SIGNAL ;
+    - mprj_io[12] ( PIN mprj_io[12] ) ( mprj_pads.area1_io_pad\[12\] PAD ) + USE SIGNAL ;
+    - mprj_io[13] ( PIN mprj_io[13] ) ( mprj_pads.area1_io_pad\[13\] PAD ) + USE SIGNAL ;
+    - mprj_io[14] ( PIN mprj_io[14] ) ( mprj_pads.area1_io_pad\[14\] PAD ) + USE SIGNAL ;
+    - mprj_io[15] ( PIN mprj_io[15] ) ( mprj_pads.area1_io_pad\[15\] PAD ) + USE SIGNAL ;
+    - mprj_io[16] ( PIN mprj_io[16] ) ( mprj_pads.area1_io_pad\[16\] PAD ) + USE SIGNAL ;
+    - mprj_io[17] ( PIN mprj_io[17] ) ( mprj_pads.area1_io_pad\[17\] PAD ) + USE SIGNAL ;
+    - mprj_io[18] ( PIN mprj_io[18] ) ( mprj_pads.area2_io_pad\[0\] PAD ) + USE SIGNAL ;
+    - mprj_io[19] ( PIN mprj_io[19] ) ( mprj_pads.area2_io_pad\[1\] PAD ) + USE SIGNAL ;
+    - mprj_io[1] ( PIN mprj_io[1] ) ( mprj_pads.area1_io_pad\[1\] PAD ) + USE SIGNAL ;
+    - mprj_io[20] ( PIN mprj_io[20] ) ( mprj_pads.area2_io_pad\[2\] PAD ) + USE SIGNAL ;
+    - mprj_io[21] ( PIN mprj_io[21] ) ( mprj_pads.area2_io_pad\[3\] PAD ) + USE SIGNAL ;
+    - mprj_io[22] ( PIN mprj_io[22] ) ( mprj_pads.area2_io_pad\[4\] PAD ) + USE SIGNAL ;
+    - mprj_io[23] ( PIN mprj_io[23] ) ( mprj_pads.area2_io_pad\[5\] PAD ) + USE SIGNAL ;
+    - mprj_io[24] ( PIN mprj_io[24] ) ( mprj_pads.area2_io_pad\[6\] PAD ) + USE SIGNAL ;
+    - mprj_io[25] ( PIN mprj_io[25] ) ( mprj_pads.area2_io_pad\[7\] PAD ) + USE SIGNAL ;
+    - mprj_io[26] ( PIN mprj_io[26] ) ( mprj_pads.area2_io_pad\[8\] PAD ) + USE SIGNAL ;
+    - mprj_io[27] ( PIN mprj_io[27] ) ( mprj_pads.area2_io_pad\[9\] PAD ) + USE SIGNAL ;
+    - mprj_io[28] ( PIN mprj_io[28] ) ( mprj_pads.area2_io_pad\[10\] PAD ) + USE SIGNAL ;
+    - mprj_io[29] ( PIN mprj_io[29] ) ( mprj_pads.area2_io_pad\[11\] PAD ) + USE SIGNAL ;
+    - mprj_io[2] ( PIN mprj_io[2] ) ( mprj_pads.area1_io_pad\[2\] PAD ) + USE SIGNAL ;
+    - mprj_io[30] ( PIN mprj_io[30] ) ( mprj_pads.area2_io_pad\[12\] PAD ) + USE SIGNAL ;
+    - mprj_io[31] ( PIN mprj_io[31] ) ( mprj_pads.area2_io_pad\[13\] PAD ) + USE SIGNAL ;
+    - mprj_io[32] ( PIN mprj_io[32] ) ( mprj_pads.area2_io_pad\[14\] PAD ) + USE SIGNAL ;
+    - mprj_io[33] ( PIN mprj_io[33] ) ( mprj_pads.area2_io_pad\[15\] PAD ) + USE SIGNAL ;
+    - mprj_io[34] ( PIN mprj_io[34] ) ( mprj_pads.area2_io_pad\[16\] PAD ) + USE SIGNAL ;
+    - mprj_io[35] ( PIN mprj_io[35] ) ( mprj_pads.area2_io_pad\[17\] PAD ) + USE SIGNAL ;
+    - mprj_io[36] ( PIN mprj_io[36] ) ( mprj_pads.area2_io_pad\[18\] PAD ) + USE SIGNAL ;
+    - mprj_io[37] ( PIN mprj_io[37] ) ( mprj_pads.area2_io_pad\[19\] PAD ) + USE SIGNAL ;
+    - mprj_io[3] ( PIN mprj_io[3] ) ( mprj_pads.area1_io_pad\[3\] PAD ) + USE SIGNAL ;
+    - mprj_io[4] ( PIN mprj_io[4] ) ( mprj_pads.area1_io_pad\[4\] PAD ) + USE SIGNAL ;
+    - mprj_io[5] ( PIN mprj_io[5] ) ( mprj_pads.area1_io_pad\[5\] PAD ) + USE SIGNAL ;
+    - mprj_io[6] ( PIN mprj_io[6] ) ( mprj_pads.area1_io_pad\[6\] PAD ) + USE SIGNAL ;
+    - mprj_io[7] ( PIN mprj_io[7] ) ( mprj_pads.area1_io_pad\[7\] PAD ) + USE SIGNAL ;
+    - mprj_io[8] ( PIN mprj_io[8] ) ( mprj_pads.area1_io_pad\[8\] PAD ) + USE SIGNAL ;
+    - mprj_io[9] ( PIN mprj_io[9] ) ( mprj_pads.area1_io_pad\[9\] PAD ) + USE SIGNAL ;
     - mprj_pads.analog_a ( IO_FILL_IO_SOUTH_0_40 AMUXBUS_A ) ( IO_FILL_IO_SOUTH_0_20 AMUXBUS_A ) ( IO_FILL_IO_SOUTH_0_0 AMUXBUS_A ) ( IO_FILL_IO_SOUTH_0_50 AMUXBUS_A ) ( IO_FILL_IO_SOUTH_0_55 AMUXBUS_A ) ( connect_0 AMUXBUS_A ) ( IO_CORNER_SOUTH_WEST_INST AMUXBUS_A )
       ( IO_FILL_IO_WEST_0_0 AMUXBUS_A ) ( connect_1 AMUXBUS_A ) ( IO_FILL_IO_WEST_0_20 AMUXBUS_A ) ( connect_2 AMUXBUS_A ) ( IO_FILL_IO_WEST_0_40 AMUXBUS_A ) ( connect_3 AMUXBUS_A ) ( IO_FILL_IO_EAST_1_80 AMUXBUS_A ) ( IO_FILL_IO_EAST_1_60 AMUXBUS_A )
       ( IO_FILL_IO_EAST_1_40 AMUXBUS_A ) ( IO_FILL_IO_EAST_1_20 AMUXBUS_A ) ( IO_FILL_IO_EAST_1_0 AMUXBUS_A ) ( brk_vccd_0 AMUXBUS_A ) ( IO_FILL_IO_WEST_0_60 AMUXBUS_A ) ( connect_4 AMUXBUS_A ) ( IO_FILL_IO_EAST_1_100 AMUXBUS_A ) ( brk_vdda_0 AMUXBUS_A )
@@ -3621,6 +3800,7 @@ SPECIALNETS 18 ;
       ( mprj_pads.area1_io_pad\[12\] VSSIO_Q ) ( mprj_pads.area1_io_pad\[11\] VSSIO_Q ) ( mprj_pads.area1_io_pad\[10\] VSSIO_Q ) ( mprj_pads.area1_io_pad\[0\] VSSIO_Q ) ( mgmt_vssio_hvclamp_pad\[1\] VSSIO_Q ) ( mgmt_vssio_hvclamp_pad\[0\] VSSIO_Q ) ( mgmt_vssd_lvclmap_pad VSSIO_Q ) ( mgmt_vssa_hvclamp_pad VSSIO_Q )
       ( mgmt_vddio_hvclamp_pad\[1\] VSSIO_Q ) ( mgmt_vddio_hvclamp_pad\[0\] VSSIO_Q ) ( mgmt_vdda_hvclamp_pad VSSIO_Q ) ( mgmt_vccd_lvclamp_pad VSSIO_Q ) ( mgmt_corner\[1\] VSSIO_Q ) ( mgmt_corner\[0\] VSSIO_Q ) ( gpio_pad VSSIO_Q ) ( flash_io1_pad VSSIO_Q )
       ( flash_io0_pad VSSIO_Q ) ( flash_csb_pad VSSIO_Q ) ( flash_clk_pad VSSIO_Q ) ( clock_pad VSSIO_Q ) + USE GROUND ;
+    - resetb ( PIN resetb ) ( resetb_pad PAD ) + USE SIGNAL ;
     - vccd ( PIN vccd ) ( IO_FILL_IO_SOUTH_0_40 VCCD ) ( IO_FILL_IO_SOUTH_0_40 VCCHIB ) ( IO_FILL_IO_SOUTH_0_20 VCCD ) ( IO_FILL_IO_SOUTH_0_20 VCCHIB ) ( IO_FILL_IO_SOUTH_0_0 VCCD ) ( IO_FILL_IO_SOUTH_0_0 VCCHIB )
       ( IO_FILL_IO_SOUTH_0_50 VCCD ) ( IO_FILL_IO_SOUTH_0_50 VCCHIB ) ( IO_FILL_IO_SOUTH_0_55 VCCD ) ( IO_FILL_IO_SOUTH_0_55 VCCHIB ) ( connect_0 VCCD ) ( connect_0 VCCHIB ) ( IO_CORNER_SOUTH_WEST_INST VCCD ) ( IO_CORNER_SOUTH_WEST_INST VCCHIB )
       ( IO_FILL_IO_WEST_0_0 VCCD ) ( IO_FILL_IO_WEST_0_0 VCCHIB ) ( connect_1 VCCD ) ( connect_1 VCCHIB ) ( IO_FILL_IO_WEST_0_20 VCCD ) ( IO_FILL_IO_WEST_0_20 VCCHIB ) ( connect_2 VCCD ) ( connect_2 VCCHIB )
@@ -4420,28 +4600,22 @@ SPECIALNETS 18 ;
       ( mgmt_vccd_lvclamp_pad VSSIO ) ( mgmt_vccd_lvclamp_pad SRC_BDY_LVC1 ) ( mgmt_corner\[1\] VSSIO ) ( mgmt_corner\[0\] VSSIO ) ( gpio_pad VSSIO ) ( flash_io1_pad VSSIO ) ( flash_io0_pad VSSIO ) ( flash_csb_pad VSSIO )
       ( flash_clk_pad VSSIO ) ( clock_pad VSSIO ) + USE GROUND ;
 END SPECIALNETS
-NETS 760 ;
-    - clock ( PIN clock ) ( clock_pad PAD ) + USE SIGNAL ;
+NETS 715 ;
     - clock_core ( PIN clock_core ) ( clock_pad IN ) + USE SIGNAL ;
-    - flash_clk ( PIN flash_clk ) ( flash_clk_pad PAD ) + USE SIGNAL ;
     - flash_clk_core ( PIN flash_clk_core ) ( flash_clk_pad OUT ) + USE SIGNAL ;
     - flash_clk_ieb_core ( PIN flash_clk_ieb_core ) ( flash_clk_pad INP_DIS ) + USE SIGNAL ;
     - flash_clk_oeb_core ( PIN flash_clk_oeb_core ) ( flash_clk_pad OE_N ) + USE SIGNAL ;
-    - flash_csb ( PIN flash_csb ) ( flash_csb_pad PAD ) + USE SIGNAL ;
     - flash_csb_core ( PIN flash_csb_core ) ( flash_csb_pad OUT ) + USE SIGNAL ;
     - flash_csb_ieb_core ( PIN flash_csb_ieb_core ) ( flash_csb_pad INP_DIS ) + USE SIGNAL ;
     - flash_csb_oeb_core ( PIN flash_csb_oeb_core ) ( flash_csb_pad OE_N ) + USE SIGNAL ;
-    - flash_io0 ( PIN flash_io0 ) ( flash_io0_pad PAD ) + USE SIGNAL ;
     - flash_io0_di_core ( PIN flash_io0_di_core ) ( flash_io0_pad IN ) + USE SIGNAL ;
     - flash_io0_do_core ( PIN flash_io0_do_core ) ( flash_io0_pad OUT ) + USE SIGNAL ;
     - flash_io0_ieb_core ( PIN flash_io0_ieb_core ) ( flash_io0_pad INP_DIS ) ( flash_io0_pad DM[2] ) ( flash_io0_pad DM[1] ) + USE SIGNAL ;
     - flash_io0_oeb_core ( PIN flash_io0_oeb_core ) ( flash_io0_pad OE_N ) ( flash_io0_pad DM[0] ) + USE SIGNAL ;
-    - flash_io1 ( PIN flash_io1 ) ( flash_io1_pad PAD ) + USE SIGNAL ;
     - flash_io1_di_core ( PIN flash_io1_di_core ) ( flash_io1_pad IN ) + USE SIGNAL ;
     - flash_io1_do_core ( PIN flash_io1_do_core ) ( flash_io1_pad OUT ) + USE SIGNAL ;
     - flash_io1_ieb_core ( PIN flash_io1_ieb_core ) ( flash_io1_pad INP_DIS ) ( flash_io1_pad DM[2] ) ( flash_io1_pad DM[1] ) + USE SIGNAL ;
     - flash_io1_oeb_core ( PIN flash_io1_oeb_core ) ( flash_io1_pad OE_N ) ( flash_io1_pad DM[0] ) + USE SIGNAL ;
-    - gpio ( PIN gpio ) ( gpio_pad PAD ) + USE SIGNAL ;
     - gpio_in_core ( PIN gpio_in_core ) ( gpio_pad IN ) + USE SIGNAL ;
     - gpio_inenb_core ( PIN gpio_inenb_core ) ( gpio_pad INP_DIS ) + USE SIGNAL ;
     - gpio_mode0_core ( PIN gpio_mode0_core ) ( gpio_pad DM[0] ) + USE SIGNAL ;
@@ -4485,44 +4659,6 @@ NETS 760 ;
     - mprj_analog_io[7] ( PIN mprj_analog_io[7] ) ( mprj_pads.area1_io_pad\[14\] PAD_A_ESD_0_H ) + USE SIGNAL ;
     - mprj_analog_io[8] ( PIN mprj_analog_io[8] ) ( mprj_pads.area1_io_pad\[15\] PAD_A_ESD_0_H ) + USE SIGNAL ;
     - mprj_analog_io[9] ( PIN mprj_analog_io[9] ) ( mprj_pads.area1_io_pad\[16\] PAD_A_ESD_0_H ) + USE SIGNAL ;
-    - mprj_io[0] ( PIN mprj_io[0] ) ( mprj_pads.area1_io_pad\[0\] PAD ) + USE SIGNAL ;
-    - mprj_io[10] ( PIN mprj_io[10] ) ( mprj_pads.area1_io_pad\[10\] PAD ) + USE SIGNAL ;
-    - mprj_io[11] ( PIN mprj_io[11] ) ( mprj_pads.area1_io_pad\[11\] PAD ) + USE SIGNAL ;
-    - mprj_io[12] ( PIN mprj_io[12] ) ( mprj_pads.area1_io_pad\[12\] PAD ) + USE SIGNAL ;
-    - mprj_io[13] ( PIN mprj_io[13] ) ( mprj_pads.area1_io_pad\[13\] PAD ) + USE SIGNAL ;
-    - mprj_io[14] ( PIN mprj_io[14] ) ( mprj_pads.area1_io_pad\[14\] PAD ) + USE SIGNAL ;
-    - mprj_io[15] ( PIN mprj_io[15] ) ( mprj_pads.area1_io_pad\[15\] PAD ) + USE SIGNAL ;
-    - mprj_io[16] ( PIN mprj_io[16] ) ( mprj_pads.area1_io_pad\[16\] PAD ) + USE SIGNAL ;
-    - mprj_io[17] ( PIN mprj_io[17] ) ( mprj_pads.area1_io_pad\[17\] PAD ) + USE SIGNAL ;
-    - mprj_io[18] ( PIN mprj_io[18] ) ( mprj_pads.area2_io_pad\[0\] PAD ) + USE SIGNAL ;
-    - mprj_io[19] ( PIN mprj_io[19] ) ( mprj_pads.area2_io_pad\[1\] PAD ) + USE SIGNAL ;
-    - mprj_io[1] ( PIN mprj_io[1] ) ( mprj_pads.area1_io_pad\[1\] PAD ) + USE SIGNAL ;
-    - mprj_io[20] ( PIN mprj_io[20] ) ( mprj_pads.area2_io_pad\[2\] PAD ) + USE SIGNAL ;
-    - mprj_io[21] ( PIN mprj_io[21] ) ( mprj_pads.area2_io_pad\[3\] PAD ) + USE SIGNAL ;
-    - mprj_io[22] ( PIN mprj_io[22] ) ( mprj_pads.area2_io_pad\[4\] PAD ) + USE SIGNAL ;
-    - mprj_io[23] ( PIN mprj_io[23] ) ( mprj_pads.area2_io_pad\[5\] PAD ) + USE SIGNAL ;
-    - mprj_io[24] ( PIN mprj_io[24] ) ( mprj_pads.area2_io_pad\[6\] PAD ) + USE SIGNAL ;
-    - mprj_io[25] ( PIN mprj_io[25] ) ( mprj_pads.area2_io_pad\[7\] PAD ) + USE SIGNAL ;
-    - mprj_io[26] ( PIN mprj_io[26] ) ( mprj_pads.area2_io_pad\[8\] PAD ) + USE SIGNAL ;
-    - mprj_io[27] ( PIN mprj_io[27] ) ( mprj_pads.area2_io_pad\[9\] PAD ) + USE SIGNAL ;
-    - mprj_io[28] ( PIN mprj_io[28] ) ( mprj_pads.area2_io_pad\[10\] PAD ) + USE SIGNAL ;
-    - mprj_io[29] ( PIN mprj_io[29] ) ( mprj_pads.area2_io_pad\[11\] PAD ) + USE SIGNAL ;
-    - mprj_io[2] ( PIN mprj_io[2] ) ( mprj_pads.area1_io_pad\[2\] PAD ) + USE SIGNAL ;
-    - mprj_io[30] ( PIN mprj_io[30] ) ( mprj_pads.area2_io_pad\[12\] PAD ) + USE SIGNAL ;
-    - mprj_io[31] ( PIN mprj_io[31] ) ( mprj_pads.area2_io_pad\[13\] PAD ) + USE SIGNAL ;
-    - mprj_io[32] ( PIN mprj_io[32] ) ( mprj_pads.area2_io_pad\[14\] PAD ) + USE SIGNAL ;
-    - mprj_io[33] ( PIN mprj_io[33] ) ( mprj_pads.area2_io_pad\[15\] PAD ) + USE SIGNAL ;
-    - mprj_io[34] ( PIN mprj_io[34] ) ( mprj_pads.area2_io_pad\[16\] PAD ) + USE SIGNAL ;
-    - mprj_io[35] ( PIN mprj_io[35] ) ( mprj_pads.area2_io_pad\[17\] PAD ) + USE SIGNAL ;
-    - mprj_io[36] ( PIN mprj_io[36] ) ( mprj_pads.area2_io_pad\[18\] PAD ) + USE SIGNAL ;
-    - mprj_io[37] ( PIN mprj_io[37] ) ( mprj_pads.area2_io_pad\[19\] PAD ) + USE SIGNAL ;
-    - mprj_io[3] ( PIN mprj_io[3] ) ( mprj_pads.area1_io_pad\[3\] PAD ) + USE SIGNAL ;
-    - mprj_io[4] ( PIN mprj_io[4] ) ( mprj_pads.area1_io_pad\[4\] PAD ) + USE SIGNAL ;
-    - mprj_io[5] ( PIN mprj_io[5] ) ( mprj_pads.area1_io_pad\[5\] PAD ) + USE SIGNAL ;
-    - mprj_io[6] ( PIN mprj_io[6] ) ( mprj_pads.area1_io_pad\[6\] PAD ) + USE SIGNAL ;
-    - mprj_io[7] ( PIN mprj_io[7] ) ( mprj_pads.area1_io_pad\[7\] PAD ) + USE SIGNAL ;
-    - mprj_io[8] ( PIN mprj_io[8] ) ( mprj_pads.area1_io_pad\[8\] PAD ) + USE SIGNAL ;
-    - mprj_io[9] ( PIN mprj_io[9] ) ( mprj_pads.area1_io_pad\[9\] PAD ) + USE SIGNAL ;
     - mprj_io_analog_en[0] ( PIN mprj_io_analog_en[0] ) ( mprj_pads.area1_io_pad\[0\] ANALOG_EN ) + USE SIGNAL ;
     - mprj_io_analog_en[10] ( PIN mprj_io_analog_en[10] ) ( mprj_pads.area1_io_pad\[10\] ANALOG_EN ) + USE SIGNAL ;
     - mprj_io_analog_en[11] ( PIN mprj_io_analog_en[11] ) ( mprj_pads.area1_io_pad\[11\] ANALOG_EN ) + USE SIGNAL ;
@@ -5184,7 +5320,6 @@ NETS 760 ;
       ( mprj_pads.area1_io_pad\[17\] ENABLE_VDDA_H ) ( mprj_pads.area1_io_pad\[16\] ENABLE_VDDA_H ) ( mprj_pads.area1_io_pad\[15\] ENABLE_VDDA_H ) ( mprj_pads.area1_io_pad\[14\] ENABLE_VDDA_H ) ( mprj_pads.area1_io_pad\[13\] ENABLE_VDDA_H ) ( mprj_pads.area1_io_pad\[12\] ENABLE_VDDA_H ) ( mprj_pads.area1_io_pad\[11\] ENABLE_VDDA_H ) ( mprj_pads.area1_io_pad\[10\] ENABLE_VDDA_H )
       ( mprj_pads.area1_io_pad\[0\] ENABLE_VDDA_H ) ( gpio_pad ENABLE_VDDA_H ) ( gpio_pad ENABLE_H ) ( flash_io1_pad ENABLE_VDDA_H ) ( flash_io1_pad ENABLE_H ) ( flash_io0_pad ENABLE_VDDA_H ) ( flash_io0_pad ENABLE_H ) ( flash_csb_pad ENABLE_VDDA_H )
       ( flash_csb_pad ENABLE_H ) ( flash_clk_pad ENABLE_VDDA_H ) ( flash_clk_pad ENABLE_H ) ( clock_pad ENABLE_VDDA_H ) ( clock_pad ENABLE_H ) + USE SIGNAL ;
-    - resetb ( PIN resetb ) ( resetb_pad PAD ) + USE SIGNAL ;
     - resetb_core_h ( PIN resetb_core_h ) ( resetb_pad XRES_H_N ) + USE SIGNAL ;
     - xresloop ( resetb_pad TIE_WEAK_HI_H ) ( resetb_pad PAD_A_ESD_H ) + USE SIGNAL ;
 END NETS

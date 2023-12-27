@@ -23,4 +23,4 @@ rcx_aux.extract_parasitics(ext_model_file="45_patterns.rules",
 spef_file = helpers.make_result_file("45_gcd.spef")
 rcx_aux.write_spef(filename=spef_file, nets=test_nets)
 
-helpers.diff_files("45_gcd.spefok", spef_file)
+helpers.diff_files("45_gcd.spefok", spef_file, "^\\*(DATE|VERSION)")

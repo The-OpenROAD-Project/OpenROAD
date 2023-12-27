@@ -812,6 +812,11 @@ void DRCWidget::loadJSONReport(const QString& filename)
       } else if (shape_type == "edge") {
         shapes.emplace_back(
             DRCViolation::DRCLine(shape_points[0], shape_points[1]));
+      } else if (shape_type == "edge_pair") {
+        shapes.emplace_back(
+            DRCViolation::DRCLine(shape_points[0], shape_points[1]));
+        shapes.emplace_back(
+            DRCViolation::DRCLine(shape_points[2], shape_points[3]));
       } else if (shape_type == "polygon") {
         shapes.emplace_back(DRCViolation::DRCPoly(shape_points));
       } else {

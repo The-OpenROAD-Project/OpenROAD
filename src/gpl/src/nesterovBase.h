@@ -68,15 +68,12 @@ class FFT;
 class GCell
 {
  public:
-  GCell();
-
   // instance cells
   GCell(Instance* inst);
   GCell(const std::vector<Instance*>& insts);
 
   // filler cells
   GCell(int cx, int cy, int dx, int dy);
-  ~GCell();
 
   Instance* instance() const;
   const std::vector<Instance*>& insts() const { return insts_; }
@@ -109,7 +106,6 @@ class GCell
   int dDx() const;
   int dDy() const;
 
-  void setLocation(int lx, int ly);
   void setCenterLocation(int cx, int cy);
   void setSize(int dx, int dy);
 
@@ -118,8 +114,8 @@ class GCell
   void setDensitySize(int dDx, int dDy);
 
   void setDensityScale(float densityScale);
-  void setGradientX(float gradX);
-  void setGradientY(float gradY);
+  void setGradientX(float gradientX);
+  void setGradientY(float gradientY);
 
   float gradientX() const { return gradientX_; }
   float gradientY() const { return gradientY_; }
@@ -134,19 +130,19 @@ class GCell
  private:
   std::vector<Instance*> insts_;
   std::vector<GPin*> gPins_;
-  int lx_;
-  int ly_;
-  int ux_;
-  int uy_;
+  int lx_ = 0;
+  int ly_ = 0;
+  int ux_ = 0;
+  int uy_ = 0;
 
-  int dLx_;
-  int dLy_;
-  int dUx_;
-  int dUy_;
+  int dLx_ = 0;
+  int dLy_ = 0;
+  int dUx_ = 0;
+  int dUy_ = 0;
 
-  float densityScale_;
-  float gradientX_;
-  float gradientY_;
+  float densityScale_ = 0;
+  float gradientX_ = 0;
+  float gradientY_ = 0;
 };
 
 inline int GCell::lx() const
@@ -231,10 +227,8 @@ inline int GCell::dDy() const
 class GNet
 {
  public:
-  GNet();
   GNet(Net* net);
   GNet(const std::vector<Net*>& nets);
-  ~GNet();
 
   Net* net() const;
   const std::vector<Net*>& nets() const { return nets_; }
@@ -263,16 +257,16 @@ class GNet
   void clearWaVars();
 
   void addWaExpMinSumX(float waExpMinSumX);
-  void addWaXExpMinSumX(float waExpXMinSumX);
+  void addWaXExpMinSumX(float waXExpMinSumX);
 
   void addWaExpMinSumY(float waExpMinSumY);
-  void addWaYExpMinSumY(float waExpXMinSumY);
+  void addWaYExpMinSumY(float waYExpMinSumY);
 
   void addWaExpMaxSumX(float waExpMaxSumX);
-  void addWaXExpMaxSumX(float waExpXMaxSumX);
+  void addWaXExpMaxSumX(float waXExpMaxSumX);
 
   void addWaExpMaxSumY(float waExpMaxSumY);
-  void addWaYExpMaxSumY(float waExpXMaxSumY);
+  void addWaYExpMaxSumY(float waYExpMaxSumY);
 
   float waExpMinSumX() const;
   float waXExpMinSumX() const;
@@ -289,13 +283,13 @@ class GNet
  private:
   std::vector<GPin*> gPins_;
   std::vector<Net*> nets_;
-  int lx_;
-  int ly_;
-  int ux_;
-  int uy_;
+  int lx_ = 0;
+  int ly_ = 0;
+  int ux_ = 0;
+  int uy_ = 0;
 
-  float timingWeight_;
-  float customWeight_;
+  float timingWeight_ = 1;
+  float customWeight_ = 1;
 
   //
   // weighted average WL model stor for better indexing
@@ -314,11 +308,11 @@ class GNet
   // waExpMaxSumX_ : store sigma {exp(-x_i/gamma)}
   // waXExpMaxSumX_: store sigma {x_i*exp(-x_i/gamma)}
   //
-  float waExpMinSumX_;
-  float waXExpMinSumX_;
+  float waExpMinSumX_ = 0;
+  float waXExpMinSumX_ = 0;
 
-  float waExpMaxSumX_;
-  float waXExpMaxSumX_;
+  float waExpMaxSumX_ = 0;
+  float waXExpMaxSumX_ = 0;
 
   //
   // Y forces.
@@ -328,13 +322,13 @@ class GNet
   // waExpMaxSumY_ : store sigma {exp(-y_i/gamma)}
   // waYExpMaxSumY_: store sigma {y_i*exp(-y_i/gamma)}
   //
-  float waExpMinSumY_;
-  float waYExpMinSumY_;
+  float waExpMinSumY_ = 0;
+  float waYExpMinSumY_ = 0;
 
-  float waExpMaxSumY_;
-  float waYExpMaxSumY_;
+  float waExpMaxSumY_ = 0;
+  float waYExpMaxSumY_ = 0;
 
-  unsigned char isDontCare_ : 1;
+  bool isDontCare_ = false;
 };
 
 inline int GNet::lx() const
@@ -441,10 +435,8 @@ inline float GNet::waYExpMaxSumY() const
 class GPin
 {
  public:
-  GPin();
   GPin(Pin* pin);
   GPin(const std::vector<Pin*>& pins);
-  ~GPin();
 
   Pin* pin() const;
   const std::vector<Pin*>& pins() const { return pins_; }
@@ -471,24 +463,24 @@ class GPin
   float minExpSumX() const { return minExpSumX_; }
   float minExpSumY() const { return minExpSumY_; }
 
-  bool hasMaxExpSumX() const { return (hasMaxExpSumX_ == 1); }
-  bool hasMaxExpSumY() const { return (hasMaxExpSumY_ == 1); }
-  bool hasMinExpSumX() const { return (hasMinExpSumX_ == 1); }
-  bool hasMinExpSumY() const { return (hasMinExpSumY_ == 1); }
+  bool hasMaxExpSumX() const { return hasMaxExpSumX_; }
+  bool hasMaxExpSumY() const { return hasMaxExpSumY_; }
+  bool hasMinExpSumX() const { return hasMinExpSumX_; }
+  bool hasMinExpSumY() const { return hasMinExpSumY_; }
 
   void setCenterLocation(int cx, int cy);
   void updateLocation(const GCell* gCell);
   void updateDensityLocation(const GCell* gCell);
 
  private:
-  GCell* gCell_;
-  GNet* gNet_;
+  GCell* gCell_ = nullptr;
+  GNet* gNet_ = nullptr;
   std::vector<Pin*> pins_;
 
-  int offsetCx_;
-  int offsetCy_;
-  int cx_;
-  int cy_;
+  int offsetCx_ = 0;
+  int offsetCy_ = 0;
+  int cx_ = 0;
+  int cy_ = 0;
 
   // weighted average WL vals stor for better indexing
   // Please check the equation (4) in the ePlace-MS paper.
@@ -497,30 +489,27 @@ class GPin
   // minExpSum_: holds exp(-x_i/gamma)
   // the x_i is equal to cx_ variable.
   //
-  float maxExpSumX_;
-  float maxExpSumY_;
+  float maxExpSumX_ = 0;
+  float maxExpSumY_ = 0;
 
-  float minExpSumX_;
-  float minExpSumY_;
+  float minExpSumX_ = 0;
+  float minExpSumY_ = 0;
 
   // flag variables
   //
   // check whether
   // this pin is considered in a WA models.
-  unsigned char hasMaxExpSumX_ : 1;
-  unsigned char hasMaxExpSumY_ : 1;
+  bool hasMaxExpSumX_ = false;
+  bool hasMaxExpSumY_ = false;
 
-  unsigned char hasMinExpSumX_ : 1;
-  unsigned char hasMinExpSumY_ : 1;
+  bool hasMinExpSumX_ = false;
+  bool hasMinExpSumY_ = false;
 };
 
 class Bin
 {
  public:
-  Bin();
   Bin(int x, int y, int lx, int ly, int ux, int uy, float targetDensity);
-
-  ~Bin();
 
   int x() const { return x_; };
   int y() const { return y_; };
@@ -572,27 +561,27 @@ class Bin
 
  private:
   // index
-  int x_;
-  int y_;
+  int x_ = 0;
+  int y_ = 0;
 
   // coordinate
-  int lx_;
-  int ly_;
-  int ux_;
-  int uy_;
+  int lx_ = 0;
+  int ly_ = 0;
+  int ux_ = 0;
+  int uy_ = 0;
 
-  int64_t nonPlaceArea_;
-  int64_t instPlacedArea_;
+  int64_t nonPlaceArea_ = 0;
+  int64_t instPlacedArea_ = 0;
 
-  int64_t instPlacedAreaUnscaled_;
-  int64_t nonPlaceAreaUnscaled_;
-  int64_t fillerArea_;
+  int64_t instPlacedAreaUnscaled_ = 0;
+  int64_t nonPlaceAreaUnscaled_ = 0;
+  int64_t fillerArea_ = 0;
 
-  float density_;
-  float targetDensity_;  // will enable bin-wise density screening
-  float electroPhi_;
-  float electroForceX_;
-  float electroForceY_;
+  float density_ = 0;
+  float targetDensity_ = 0;  // will enable bin-wise density screening
+  float electroPhi_ = 0;
+  float electroForceX_ = 0;
+  float electroForceY_ = 0;
 };
 
 inline int Bin::cx() const
@@ -672,11 +661,10 @@ inline void Bin::addFillerArea(int64_t area)
 class BinGrid
 {
  public:
-  BinGrid();
+  BinGrid() = default;
   BinGrid(Die* die);
-  ~BinGrid();
 
-  void setPlacerBase(const std::shared_ptr<PlacerBase> pb);
+  void setPlacerBase(std::shared_ptr<PlacerBase> pb);
   void setLogger(utl::Logger* log);
   void setCorePoints(const Die* die);
   void setBinCnt(int binCntX, int binCntY);
@@ -718,20 +706,19 @@ class BinGrid
  private:
   std::vector<Bin> bins_;
   std::shared_ptr<PlacerBase> pb_;
-  utl::Logger* log_;
-  int lx_;
-  int ly_;
-  int ux_;
-  int uy_;
-  int binCntX_;
-  int binCntY_;
-  int binSizeX_;
-  int binSizeY_;
-  float targetDensity_;
-  int64_t overflowArea_;
-  int64_t overflowAreaUnscaled_;
-
-  unsigned char isSetBinCnt_ : 1;
+  utl::Logger* log_ = nullptr;
+  int lx_ = 0;
+  int ly_ = 0;
+  int ux_ = 0;
+  int uy_ = 0;
+  int binCntX_ = 0;
+  int binCntY_ = 0;
+  int binSizeX_ = 0;
+  int binSizeY_ = 0;
+  float targetDensity_ = 0;
+  int64_t overflowArea_ = 0;
+  int64_t overflowAreaUnscaled_ = 0;
+  bool isSetBinCnt_ = false;
 };
 
 inline std::vector<Bin>& BinGrid::bins()
@@ -742,46 +729,44 @@ inline std::vector<Bin>& BinGrid::bins()
 class NesterovBaseVars
 {
  public:
-  float targetDensity;
-  int binCntX;
-  int binCntY;
-  float minWireLengthForceBar;
+  float targetDensity = 1.0;
+  int binCntX = 0;
+  int binCntY = 0;
+  float minWireLengthForceBar = -300;
   // temp variables
-  unsigned char isSetBinCnt : 1;
-  unsigned char useUniformTargetDensity : 1;
+  bool isSetBinCnt = false;
+  bool useUniformTargetDensity = false;
 
-  NesterovBaseVars();
   void reset();
 };
 
 class NesterovPlaceVars
 {
  public:
-  int maxNesterovIter;
-  int maxBackTrack;
-  float initDensityPenalty;           // INIT_LAMBDA
-  float initWireLengthCoef;           // base_wcof
-  float targetOverflow;               // overflow
-  float minPhiCoef;                   // pcof_min
-  float maxPhiCoef;                   // pcof_max
-  float minPreconditioner;            // MIN_PRE
-  float initialPrevCoordiUpdateCoef;  // z_ref_alpha
-  float referenceHpwl;                // refDeltaHpwl
-  float routabilityCheckOverflow;
+  int maxNesterovIter = 5000;
+  int maxBackTrack = 10;
+  float initDensityPenalty = 0.00008;       // INIT_LAMBDA
+  float initWireLengthCoef = 0.25;          // base_wcof
+  float targetOverflow = 0.1;               // overflow
+  float minPhiCoef = 0.95;                  // pcof_min
+  float maxPhiCoef = 1.05;                  // pcof_max
+  float minPreconditioner = 1.0;            // MIN_PRE
+  float initialPrevCoordiUpdateCoef = 100;  // z_ref_alpha
+  float referenceHpwl = 446000000;          // refDeltaHpwl
+  float routabilityCheckOverflow = 0.20;
 
   static const int maxRecursionWlCoef = 10;
   static const int maxRecursionInitSLPCoef = 10;
 
-  bool forceCPU;
-  bool timingDrivenMode;
-  bool routabilityDrivenMode;
-  bool debug;
-  int debug_pause_iterations;
-  int debug_update_iterations;
-  bool debug_draw_bins;
-  odb::dbInst* debug_inst;
+  bool forceCPU = false;
+  bool timingDrivenMode = true;
+  bool routabilityDrivenMode = true;
+  bool debug = false;
+  int debug_pause_iterations = 10;
+  int debug_update_iterations = 10;
+  bool debug_draw_bins = true;
+  odb::dbInst* debug_inst = nullptr;
 
-  NesterovPlaceVars();
   void reset();
 };
 
@@ -790,11 +775,9 @@ class NesterovPlaceVars
 class NesterovBaseCommon
 {
  public:
-  NesterovBaseCommon();
   NesterovBaseCommon(NesterovBaseVars nbVars,
                      std::shared_ptr<PlacerBaseCommon> pb,
                      utl::Logger* log);
-  ~NesterovBaseCommon();
 
   const std::vector<GCell*>& gCells() const { return gCells_; }
   const std::vector<GNet*>& gNets() const { return gNets_; }
@@ -843,7 +826,7 @@ class NesterovBaseCommon
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBaseCommon> pbc_;
-  utl::Logger* log_;
+  utl::Logger* log_ = nullptr;
 
   std::vector<GCell> gCellStor_;
   std::vector<GNet> gNetStor_;
@@ -856,9 +839,6 @@ class NesterovBaseCommon
   std::unordered_map<Instance*, GCell*> gCellMap_;
   std::unordered_map<Pin*, GPin*> gPinMap_;
   std::unordered_map<Net*, GNet*> gNetMap_;
-
-  void init();
-  void reset();
 };
 
 // Stores instances belonging to a specific power domain
@@ -868,7 +848,6 @@ class NesterovBaseCommon
 class NesterovBase
 {
  public:
-  NesterovBase();
   NesterovBase(NesterovBaseVars nbVars,
                std::shared_ptr<PlacerBase> pb,
                std::shared_ptr<NesterovBaseCommon> nbc,
@@ -886,9 +865,6 @@ class NesterovBase
 
   float getWireLengthGradSum() const { return wireLengthGradSum_; }
   float getDensityGradSum() const { return densityGradSum_; }
-
-  // update gCells with lx, ly
-  void updateGCellLocation(const std::vector<FloatPoint>& coordis);
 
   // update gCells with cx, cy
   void updateGCellCenterLocation(const std::vector<FloatPoint>& coordis);
@@ -1023,18 +999,19 @@ class NesterovBase
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBase> pb_;
   std::shared_ptr<NesterovBaseCommon> nbc_;
-  utl::Logger* log_;
+  utl::Logger* log_ = nullptr;
 
   BinGrid bg_;
   std::unique_ptr<FFT> fft_;
 
-  int fillerDx_, fillerDy_;
-  int64_t whiteSpaceArea_;
-  int64_t movableArea_;
-  int64_t totalFillerArea_;
+  int fillerDx_ = 0;
+  int fillerDy_ = 0;
+  int64_t whiteSpaceArea_ = 0;
+  int64_t movableArea_ = 0;
+  int64_t totalFillerArea_ = 0;
 
-  int64_t stdInstsArea_;
-  int64_t macroInstsArea_;
+  int64_t stdInstsArea_ = 0;
+  int64_t macroInstsArea_ = 0;
 
   std::vector<GCell> gCellStor_;
 
@@ -1042,9 +1019,9 @@ class NesterovBase
   std::vector<GCell*> gCellInsts_;
   std::vector<GCell*> gCellFillers_;
 
-  float sumPhi_;
-  float targetDensity_;
-  float uniformTargetDensity_;
+  float sumPhi_ = 0;
+  float targetDensity_ = 0;
+  float uniformTargetDensity_ = 0;
 
   // Nesterov loop data for each region
   // SLP is Step Length Prediction.
@@ -1077,53 +1054,47 @@ class NesterovBase
   // densityPenalty stor
   std::vector<float> densityPenaltyStor_;
 
-  float wireLengthGradSum_;
-  float densityGradSum_;
+  float wireLengthGradSum_ = 0;
+  float densityGradSum_ = 0;
 
   // alpha
-  float stepLength_;
+  float stepLength_ = 0;
 
   // opt_phi_cof
-  float densityPenalty_;
+  float densityPenalty_ = 0;
 
   // base_wcof
-  float baseWireLengthCoef_;
+  float baseWireLengthCoef_ = 0;
 
   // phi is described in ePlace paper.
-  float sumOverflow_;
-  float sumOverflowUnscaled_;
+  float sumOverflow_ = 0;
+  float sumOverflowUnscaled_ = 0;
 
   // half-parameter-wire-length
-  int64_t prevHpwl_;
+  int64_t prevHpwl_ = 0;
 
-  float isDiverged_;
+  float isDiverged_ = false;
 
   std::string divergeMsg_;
-  int divergeCode_;
+  int divergeCode_ = 0;
 
   NesterovPlaceVars* npVars_;
 
-  bool isMaxPhiCoefChanged_;
+  bool isMaxPhiCoefChanged_ = false;
 
-  float minSumOverflow;
-  float hpwlWithMinSumOverflow;
-  int iter_;
-  bool isConverged_;
+  float minSumOverflow_ = 1e30;
+  float hpwlWithMinSumOverflow_ = 1e30;
+  int iter_ = 0;
+  bool isConverged_ = false;
 
   // Snapshot data
-  bool isSnapshotSaved;
-  std::vector<FloatPoint> snapshotCoordi;
-  std::vector<FloatPoint> snapshotSLPCoordi;
-  std::vector<FloatPoint> snapshotSLPSumGrads;
-  float snapshotA;
-  float snapshotDensityPenalty;
-  float snapshotStepLength;
-  float snapshotWlCoefX;
-  float snapshotWlCoefY;
+  std::vector<FloatPoint> snapshotCoordi_;
+  std::vector<FloatPoint> snapshotSLPCoordi_;
+  std::vector<FloatPoint> snapshotSLPSumGrads_;
+  float snapshotDensityPenalty_ = 0;
+  float snapshotStepLength_ = 0;
 
-  void init();
   void initFillerGCells();
-  void reset();
 };
 
 inline std::vector<Bin>& NesterovBase::bins()

@@ -3384,9 +3384,10 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
     auto db_term = block->findBTerm(term->getName().c_str());
     if (db_term == nullptr)
       logger_->error(DRT, 301, "bterm {} not found in db", term->getName());
-    if (db_term->getSigType() == odb::dbSigType::POWER
-        || db_term->getSigType() == odb::dbSigType::GROUND)
+    auto db_net = db_term->getNet();
+    if (db_term->getSigType().isSupply() || (db_net && db_net->isSpecial())) {
       continue;
+    }
     auto db_pins = db_term->getBPins();
     auto& pins = term->getPins();
     if (db_pins.size() != pins.size())
