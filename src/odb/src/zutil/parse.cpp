@@ -160,7 +160,7 @@ void Ath__parser::addSeparator(const char* s)
   strcat(_wordSeparators, s);
 }
 
-void Ath__parser::openFile(char* name)
+void Ath__parser::openFile(const char* name)
 {
   if (name != nullptr && strlen(name) > 4
       && !strcmp(name + strlen(name) - 3, ".gz")) {

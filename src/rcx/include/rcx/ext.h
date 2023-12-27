@@ -54,6 +54,7 @@ class Ext
   void init(
       odb::dbDatabase* db,
       Logger* logger,
+      const char* spef_version,
       const std::function<void()>& rcx_init = []() {});
   void setLogger(Logger* logger);
 
@@ -229,6 +230,7 @@ class Ext
   odb::dbDatabase* _db = nullptr;
   std::unique_ptr<extMain> _ext;
   Logger* logger_ = nullptr;
+  const char* spef_version_ = nullptr;
 };  // namespace rcx
 
 }  // namespace rcx
