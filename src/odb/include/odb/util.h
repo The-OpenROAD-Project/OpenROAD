@@ -353,7 +353,7 @@ class AthHash
     return m_listOfPrimes[i];
   }
 
-  unsigned int hashFunction(char* key, unsigned int, unsigned int prime)
+  unsigned int hashFunction(const char* key, unsigned int, unsigned int prime)
   {
     unsigned int hash = 0;
     int c;
@@ -364,21 +364,9 @@ class AthHash
     return hash % prime;
   }
 
-#if 0
-        // original "broken" hash function
-	unsigned int hashFunction(char *key, unsigned int len,
-unsigned int prime)
-	{
-		unsigned int hash, i;
-		for (hash=len, i=0; i<len; ++i)
-			hash = (hash<<4)^(hash>>28)^key[i];
-		return (hash % prime);
-	}
-#endif
-
   struct t_elem
   {
-    char* key;
+    const char* key;
     T data;
   };
   int _allocKeyFlag;
@@ -403,14 +391,14 @@ unsigned int prime)
       typename AthList<t_elem>::iterator iter = m_data[i].start();
       while (!iter.end()) {
         if (_allocKeyFlag > 0)
-          free(iter.getVal().key);
+          free((void*)iter.getVal().key);
         iter.next();
       }
     }
     delete[] m_data;
   }
 
-  void add(char* key, T data)
+  void add(const char* key, T data)
   {
     unsigned int hash_val = hashFunction(key, strlen(key), m_prime);
     t_elem new_t_elem;
@@ -424,7 +412,7 @@ unsigned int prime)
 
   // Get a stored value. Returns success of failure depending
   // if the value actually is stored or not
-  bool get(char* key, T& data)
+  bool get(const char* key, T& data)
   {
     unsigned int hash_val = hashFunction(key, strlen(key), m_prime);
     typename AthList<t_elem>::iterator iter = m_data[hash_val].start();

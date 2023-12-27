@@ -1466,7 +1466,7 @@ class extMain
   void updatePrevControl();
   void getPrevControl();
 
-  uint makeBlockRCsegs(const char* netNames,
+  void makeBlockRCsegs(const char* netNames,
                        uint cc_up,
                        uint ccFlag,
                        double resBound,
@@ -1486,9 +1486,9 @@ class extMain
   double getViaResistance_b(odb::dbVia* via, odb::dbNet* net = nullptr);
 
   void getShapeRC(odb::dbNet* net,
-                  odb::dbShape& s,
-                  odb::Point& prevPoint,
-                  odb::dbWirePathShape& pshape);
+                  const odb::dbShape& s,
+                  const odb::Point& prevPoint,
+                  const odb::dbWirePathShape& pshape);
   void setResAndCap(odb::dbRSeg* rc,
                     const double* restbl,
                     const double* captbl);
@@ -1496,15 +1496,15 @@ class extMain
                        std::vector<uint>& rsegJid,
                        uint& srcId,
                        odb::Point& prevPoint,
-                       odb::dbWirePath& path,
-                       odb::dbWirePathShape& pshape,
+                       const odb::dbWirePath& path,
+                       const odb::dbWirePathShape& pshape,
                        bool isBranch,
-                       double* restbl,
-                       double* captbl);
-  uint print_shape(odb::dbShape& shape, uint j1, uint j2);
+                       const double* restbl,
+                       const double* captbl);
+  uint print_shape(const odb::dbShape& shape, uint j1, uint j2);
   uint getNodeId(odb::dbWirePath& path, bool branch, uint* nodeType);
   uint getNodeId(odb::dbWirePathShape& pshape, uint* nodeType);
-  uint computePathDir(odb::Point& p1, odb::Point& p2, uint* length);
+  uint computePathDir(const odb::Point& p1, const odb::Point& p2, uint* length);
   uint openSpefFile(char* filename, uint mode);
 
   //-------------------------------------------------------------- SPEF
@@ -1548,13 +1548,14 @@ class extMain
                 bool calib = false,
                 int app_print_limit = 0);
   uint readSPEFincr(char* filename);
-  uint writeSPEF(bool stop);
+  void writeSPEF(bool stop);
   uint writeSPEF(uint netId,
                  bool single_pi,
                  uint debug,
                  int corner,
-                 const char* corner_name);
-  uint writeSPEF(char* filename,
+                 const char* corner_name,
+                 const char* spef_version);
+  void writeSPEF(char* filename,
                  char* netNames,
                  bool noNameMap,
                  char* nodeCoord,
@@ -1574,6 +1575,7 @@ class extMain
                  bool noBackSlash,
                  int corner,
                  const char* corner_name,
+                 const char* spef_version,
                  bool parallel);
   uint writeNetSPEF(odb::dbNet* net, double resBound, uint debug);
   uint makeITermCapNode(uint id, odb::dbNet* net);
@@ -1671,7 +1673,7 @@ class extMain
 
   static odb::dbRSeg* getRseg(odb::dbNet* net, uint shapeId, Logger* logger);
 
-  uint write_spef_nets(bool flatten, bool parallel);
+  void write_spef_nets(bool flatten, bool parallel);
   extSpef* getSpef();
 
   uint getLayerSearchBoundaries(odb::dbTechLayer* layer,
@@ -1760,7 +1762,6 @@ class extMain
                     bool m1Vias,
                     bool power);
 
-  void set_adjust_colinear(bool v);
   uint writeViaInfo_old(FILE* fp,
                         std::vector<odb::dbBox*>& viaTable,
                         bool m1Vias);
@@ -2071,9 +2072,9 @@ class extMain
 
   bool _useDbSdb;
 
-  Ath__array1D<int>* _nodeTable = nullptr;
-  Ath__array1D<int>* _btermTable = nullptr;
-  Ath__array1D<int>* _itermTable = nullptr;
+  Ath__array1D<int>* _nodeTable = nullptr;   // junction id -> cap node id
+  Ath__array1D<int>* _btermTable = nullptr;  // bterm id -> cap node id
+  Ath__array1D<int>* _itermTable = nullptr;  // iterm id -> cap node id
 
   uint _dbPowerId = 1;
   uint _dbSignalId = 2;
@@ -2180,7 +2181,6 @@ class extMain
   std::vector<odb::dbBox*> _viaM1_VDDtable;
   std::vector<odb::dbBox*>* _viaM1Table = nullptr;
   std::vector<odb::dbBox*>* _viaUpTable = nullptr;
-  bool _adjust_colinear = false;
 
   uint _stackedViaResCnt;
   uint _totViaResCnt;
