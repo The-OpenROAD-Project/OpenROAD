@@ -266,25 +266,25 @@ class Ath__track
 
   bool place2(Ath__wire* w, int mark1, int mark2);
   void insertWire(Ath__wire* w, int mark1, int mark2);
-  uint initTargetTracks(uint sourceTrack, uint trackDist, bool tohi);
+  uint initTargetTracks(uint srcTrack, uint trackDist, bool tohi);
   void findNeighborWire(Ath__wire*, Ath__array1D<Ath__wire*>*, bool);
   void getTrackWires(std::vector<Ath__wire*>& ctxwire);
   void buildDgContext(Ath__array1D<odb::SEQ*>* dgContext,
                       Ath__wire**& allWire,
                       int& awcnt,
-                      int& a1wcnt);
+                      int& awsize);
   int getBandWires(Ath__array1D<Ath__wire*>* bandWire);
-  uint couplingCaps(Ath__grid* resGrid,
-                    uint currentTrack,
-                    uint ccTrackDist,
-                    uint ccDomain,
-                    Ath__array1D<uint>* ccTable,
+  uint couplingCaps(Ath__grid* ccGrid,
+                    uint srcTrack,
+                    uint trackDist,
+                    uint ccThreshold,
+                    Ath__array1D<uint>* ccIdTable,
                     uint met,
                     rcx::CoupleAndCompute coupleAndCompute,
                     void* compPtr);
 
   uint findOverlap(Ath__wire* origWire,
-                   uint ccDomain,
+                   uint ccThreshold,
                    Ath__array1D<Ath__wire*>* wTable,
                    Ath__array1D<Ath__wire*>* nwTable,
                    Ath__grid* ccGrid,
