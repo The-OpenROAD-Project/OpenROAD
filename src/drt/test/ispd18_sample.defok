@@ -144,10 +144,10 @@ NETS 11 ;
     - net1240 ( inst3502 A ) ( inst2015 Y ) + USE SIGNAL
       + ROUTED Metal2 ( 91000 78850 ) ( * 80750 )
       NEW Metal3 ( 91000 78850 ) ( 96200 * )
-      NEW Metal2 ( 96200 76570 ) ( * 78850 )
+      NEW Metal2 ( 96200 76950 ) ( * 78850 )
       NEW Metal1 ( 91000 80750 ) VIA12_1C
       NEW Metal2 ( 91000 78850 ) VIA23_1C
       NEW Metal2 ( 96200 78850 ) VIA23_1C
-      NEW Metal1 ( 96200 76570 ) VIA12_1C_V ;
+      NEW Metal1 ( 96200 76950 ) VIA12_1C_V ;
 END NETS
 END DESIGN

@@ -2650,7 +2650,15 @@ void FlexDRWorker::route_queue_update_from_marker(
     }
   }
   for (auto& victimOwner : uniqueVictimOwners) {
-    checks.push_back({victimOwner, -1, false});
+    if (victimOwner->typeId() == frcNet) {
+      if (getDRNets(((frNet*) (victimOwner)))) {
+        for (auto dNet : *(getDRNets(((frNet*) (victimOwner))))) {
+          checks.push_back({dNet, -1, false});
+        }
+      }
+    } else {
+      checks.push_back({victimOwner, -1, false});
+    }
   }
 }
 
@@ -2858,11 +2866,8 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
     }
   }
 
-  // assign terms to each subnet
+  // assign costs to subnets of terms
   for (auto& [net, objs] : frNet2Terms) {
-    for (auto dNet : owner2nets_[net]) {
-      dNet->setFrNetTerms(objs);
-    }
     initMazeCost_terms(objs, true);
   }
 }

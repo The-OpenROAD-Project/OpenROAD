@@ -35,6 +35,52 @@
 
 using namespace fr;
 
+drNet* FlexGCWorker::Impl::getDRNet(frBlockObject* obj)
+{
+  switch (obj->typeId()) {
+    case frcBTerm: {
+      auto bterm = static_cast<frBTerm*>(obj);
+      frNet* fNet = bterm->getNet();
+      if (fNet) {
+        if (getDRWorker()) {
+          if (getDRWorker()->getDRNets(fNet)) {
+            for (auto dNet : *(getDRWorker()->getDRNets(fNet))) {
+              for (auto& term : dNet->getFrNetTerms()) {
+                if (term == bterm) {
+                  return dNet;
+                }
+              }
+            }
+          }
+        }
+      }
+      break;
+    }
+    case frcInstTerm: {
+      auto instTerm = static_cast<frInstTerm*>(obj);
+      frNet* fNet = instTerm->getNet();
+      if (fNet) {
+        if (getDRWorker()) {
+          if (getDRWorker()->getDRNets(fNet)) {
+            for (auto dNet : *(getDRWorker()->getDRNets(fNet))) {
+              for (auto& term : dNet->getFrNetTerms()) {
+                if (term == instTerm) {
+                  return dNet;
+                }
+              }
+            }
+          }
+        }
+      }
+      break;
+    }
+    default: {
+      logger_->error(DRT, 40, "obj has no drNet.");
+    }
+  }
+  return nullptr;
+}
+
 gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
 {
   bool isFloatingVDD = false;
@@ -44,7 +90,10 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
     case frcBTerm: {
       auto bterm = static_cast<frBTerm*>(obj);
       if (bterm->hasNet()) {
-        owner = bterm->getNet();
+        owner = getDRNet(bterm);
+        if (!owner) {
+          owner = bterm->getNet();
+        }
       } else {
         dbSigType sigType = bterm->getType();
         isFloatingVDD = (sigType == dbSigType::POWER);
@@ -56,7 +105,10 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
     case frcInstTerm: {
       auto instTerm = static_cast<frInstTerm*>(obj);
       if (instTerm->hasNet()) {
-        owner = instTerm->getNet();
+        owner = getDRNet(instTerm);
+        if (!owner) {
+          owner = instTerm->getNet();
+        }
       } else {
         dbSigType sigType = instTerm->getTerm()->getType();
         isFloatingVDD = (sigType == dbSigType::POWER);
@@ -183,10 +235,40 @@ void FlexGCWorker::Impl::initDesign(const frDesign* design, bool skipDR)
                  point_t(extBox.xMax(), extBox.yMax()));
   auto regionQuery = design->getRegionQuery();
   frRegionQuery::Objects<frBlockObject> queryResult;
+  std::map<frNet*, std::set<frBlockObject*>> frNet2Terms;
   // init all non-dr objs from design
   for (auto i = 0; i <= getTech()->getTopLayerNum(); i++) {
     queryResult.clear();
     regionQuery->query(queryBox, i, queryResult);
+    if (getDRWorker()) {
+      for (auto& [box, obj] : queryResult) {
+        switch (obj->typeId()) {
+          case frcBTerm: {
+            if (static_cast<frBTerm*>(obj)->getNet()) {
+              frNet2Terms[static_cast<frBTerm*>(obj)->getNet()].insert(obj);
+            }
+            break;
+          }
+          case frcInstTerm: {
+            if (static_cast<frInstTerm*>(obj)->getNet()) {
+              frNet2Terms[static_cast<frInstTerm*>(obj)->getNet()].insert(obj);
+            }
+            break;
+          }
+          default: {
+            break;
+          }
+        }
+      }
+      // assign terms to each subnet
+      for (auto& [net, objs] : frNet2Terms) {
+        if (getDRWorker()->getDRNets(net)) {
+          for (auto dNet : *(getDRWorker()->getDRNets(net))) {
+            dNet->setFrNetTerms(objs);
+          }
+        }
+      }
+    }
     for (auto& [box, obj] : queryResult) {
       if (initDesign_skipObj(obj)) {
         continue;

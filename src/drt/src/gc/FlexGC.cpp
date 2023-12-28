@@ -209,13 +209,6 @@ void FlexGCWorker::clearPWires()
 bool FlexGCWorker::setTargetNet(frBlockObject* in)
 {
   auto& owner2nets = impl_->owner2nets_;
-  if (in->typeId() == drcNet) {
-    frBlockObject* temp = ((drNet*) (in))->getFrNet();
-    if (owner2nets.find(temp) != owner2nets.end()) {
-      impl_->targetNet_ = owner2nets[temp];
-      return true;
-    }
-  }
   if (owner2nets.find(in) != owner2nets.end()) {
     impl_->targetNet_ = owner2nets[in];
     return true;

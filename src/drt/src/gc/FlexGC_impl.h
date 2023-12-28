@@ -172,6 +172,7 @@ class FlexGCWorker::Impl
 
   void modifyMarkers();
   // init
+  drNet* getDRNet(frBlockObject* obj);
   gcNet* getNet(frBlockObject* obj);
   gcNet* getNet(drNet* net);
   void initObj(const Rect& box,
