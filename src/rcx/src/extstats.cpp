@@ -112,20 +112,15 @@ uint extMain::calcMinMaxRC()
 {
   _currentModel = getRCmodel(0);
 
-  odb::dbSet<odb::dbTechLayer> layers = _tech->getLayers();
-  odb::dbSet<odb::dbTechLayer>::iterator itr;
-
   uint cnt = 0;
 
-  for (itr = layers.begin(); itr != layers.end(); ++itr) {
-    odb::dbTechLayer* layer = *itr;
-
+  for (odb::dbTechLayer* layer : _tech->getLayers()) {
     if (layer->getRoutingLevel() == 0) {
       continue;
     }
 
-    int met = layer->getRoutingLevel();
-    int width = layer->getWidth();
+    const int met = layer->getRoutingLevel();
+    const int width = layer->getWidth();
     int dist = layer->getSpacing();
     if (dist == 0) {
       dist = layer->getPitch() - layer->getWidth();

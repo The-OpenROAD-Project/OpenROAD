@@ -3630,7 +3630,7 @@ class dbWire : public dbObject
   ///
   /// Get junction id associated with the term
   ///
-  uint getTermJid(int termid);
+  uint getTermJid(int termid) const;
 
   ///
   /// check if this wire equals the target wire
