@@ -49,16 +49,20 @@ bool io::Parser::checkPinsAboveTopRoutingLayer()
 {
   if (design_->getTopBlock()) {
     for (const auto& bTerm : design_->getTopBlock()->getTerms()) {
-      if (bTerm->isAboveTopLayer()) {
-        return true;
+      if (!bTerm->getNet()->isSpecial()) {
+        if (bTerm->isAboveTopLayer()) {
+          return true;
+        }
       }
     }
     for (const auto& inst : design_->getTopBlock()->getInsts()) {
       for (const auto& iTerm : inst->getInstTerms()) {
-        for (const auto& pin : iTerm->getTerm()->getPins()) {
-          for (const auto& fig : pin->getFigs()) {
-            if (((frShape*) (fig.get()))->getLayerNum() > TOP_ROUTING_LAYER) {
-              return true;
+        if (!iTerm->getNet()->isSpecial()) {
+          for (const auto& pin : iTerm->getTerm()->getPins()) {
+            for (const auto& fig : pin->getFigs()) {
+              if (((frShape*) (fig.get()))->getLayerNum() > TOP_ROUTING_LAYER) {
+                return true;
+              }
             }
           }
         }
