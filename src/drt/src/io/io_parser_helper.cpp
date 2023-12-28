@@ -49,7 +49,7 @@ bool io::Parser::checkPinsAboveTopRoutingLayer()
 {
   if (design_->getTopBlock()) {
     for (const auto& bTerm : design_->getTopBlock()->getTerms()) {
-      if (!bTerm->getNet()->isSpecial()) {
+      if (bTerm->getNet() && !bTerm->getNet()->isSpecial()) {
         if (bTerm->isAboveTopLayer()) {
           return true;
         }
@@ -57,7 +57,7 @@ bool io::Parser::checkPinsAboveTopRoutingLayer()
     }
     for (const auto& inst : design_->getTopBlock()->getInsts()) {
       for (const auto& iTerm : inst->getInstTerms()) {
-        if (!iTerm->getNet()->isSpecial()) {
+        if (iTerm->getNet() && !iTerm->getNet()->isSpecial()) {
           for (const auto& pin : iTerm->getTerm()->getPins()) {
             for (const auto& fig : pin->getFigs()) {
               if (((frShape*) (fig.get()))->getLayerNum() > TOP_ROUTING_LAYER) {
