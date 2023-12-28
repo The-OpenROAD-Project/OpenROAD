@@ -369,7 +369,6 @@ void FastRouteCore::viaStack(int netID,
 {
   FrNet* net = nets_[netID];
   const auto& treenodes = sttrees_[netID].nodes;
-  int num_terminals = sttrees_[netID].num_terminals;
   int node_x = treenodes[nodeID].x;
   int node_y = treenodes[nodeID].y;
   bot_pin_l = BIG_INT;
