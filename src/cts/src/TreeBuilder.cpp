@@ -244,7 +244,7 @@ bool TreeBuilder::checkLegalityLoc(const Point<double>& bufferLoc,
   // check if location is within core area
   odb::Rect coreArea = db_->getChip()->getBlock()->getCoreArea();
   odb::Point loc(bufferLoc.getX() * scalingFactor,
-		 bufferLoc.getY() * scalingFactor);
+                 bufferLoc.getY() * scalingFactor);
   if (!coreArea.overlaps(loc)) {
     // clang-format off
     debugPrint(logger_, CTS, "legalizer", 4, "loc {} is outside core area",
@@ -252,7 +252,7 @@ bool TreeBuilder::checkLegalityLoc(const Point<double>& bufferLoc,
     // clang-format on
     return false;
   }
-  
+
   double x1, y1, x2, y2;
   if (findBlockage(bufferLoc, scalingFactor, x1, y1, x2, y2)) {
     // clang-format off
