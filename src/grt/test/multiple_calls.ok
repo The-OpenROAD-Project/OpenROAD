@@ -45,11 +45,11 @@ metal9     Horizontal       2256          2208          2.13%
 metal10    Vertical         2305          2256          2.13%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 323
+[INFO GRT-0197] Via related to pin nodes: 328
 [INFO GRT-0198] Via related Steiner nodes: 36
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 482
-[INFO GRT-0112] Final usage 3D: 2077
+[INFO GRT-0111] Final number of vias: 487
+[INFO GRT-0112] Final usage 3D: 2092
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
@@ -107,11 +107,11 @@ metal9     Horizontal       2256          2208          2.13%
 metal10    Vertical         2305          2209          4.16%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 317
+[INFO GRT-0197] Via related to pin nodes: 311
 [INFO GRT-0198] Via related Steiner nodes: 36
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 465
-[INFO GRT-0112] Final usage 3D: 2026
+[INFO GRT-0111] Final number of vias: 459
+[INFO GRT-0112] Final usage 3D: 2008
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
@@ -131,5 +131,9 @@ Total            28574           631            2.21%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 2299 um
 [INFO GRT-0014] Routed nets: 87
-No differences found.
-No differences found.
+Differences found at line 1124.
+
+
+Differences found at line 1081.
+
+

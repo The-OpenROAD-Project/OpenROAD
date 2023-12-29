@@ -37,11 +37,11 @@ met5       Horizontal     431286        195760          54.61%
 ---------------------------------------------------------------
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
-[INFO GRT-0197] Via related to pin nodes: 2
+[INFO GRT-0197] Via related to pin nodes: 3
 [INFO GRT-0198] Via related Steiner nodes: 1
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 8
-[INFO GRT-0112] Final usage 3D: 355
+[INFO GRT-0111] Final number of vias: 9
+[INFO GRT-0112] Final usage 3D: 358
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
