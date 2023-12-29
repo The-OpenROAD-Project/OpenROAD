@@ -141,8 +141,15 @@ BrowserWidget::BrowserWidget(
 
   display_controls_warning_->setStyleSheet("color: red;");
 
-  model_->setHorizontalHeaderLabels(
-      {"Instance", "Master", "Instances", "Macros", "Modules", "Area"});
+  model_->setHorizontalHeaderLabels({"Instance",
+                                     "Master",
+                                     "Local Instances",
+                                     "Instances",
+                                     "Local Macros",
+                                     "Macros",
+                                     "Local Modules",
+                                     "Modules",
+                                     " Area "});
   view_->setModel(model_);
   view_->setContextMenuPolicy(Qt::CustomContextMenu);
 
@@ -405,6 +412,7 @@ void BrowserWidget::updateModel()
   view_->header()->resizeSections(QHeaderView::ResizeToContents);
   model_modified_ = false;
   setUpdatesEnabled(true);
+  view_->setSortingEnabled(true);
 }
 
 void BrowserWidget::clearModel()
@@ -550,8 +558,6 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
                                  QStandardItem* parent,
                                  bool is_leaf) const
 {
-  QLocale locale(QLocale::English);  // for number formatting
-
   double scale_to_um
       = block_->getDbUnitsPerMicron() * block_->getDbUnitsPerMicron();
 
@@ -563,7 +569,7 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
   }
 
   QString text
-      = locale.toString(disp_area, 'f', 3) + " " + units + "m\u00B2";  // m2
+      = QString::number(disp_area, 'f', 3) + " " + units + "m\u00B2";  // m2
 
   auto makeDataItem
       = [item](const QString& text, bool right_align = true) -> QStandardItem* {
@@ -576,29 +582,34 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
     return data_item;
   };
 
-  auto makeHierText
-      = [&locale](int current, int total, bool is_leaf) -> QString {
-    if (!is_leaf) {
-      return locale.toString(current) + "/" + locale.toString(total);
-    }
-    return locale.toString(total);
-  };
-
   QStandardItem* master_item
       = makeDataItem(QString::fromStdString(master), false);
 
   QStandardItem* area = makeDataItem(text);
 
+  QStandardItem* local_insts = makeDataItem(QString::number(stats.insts));
   QStandardItem* insts
-      = makeDataItem(makeHierText(stats.hier_insts, stats.insts, is_leaf));
+      = makeDataItem(QString::number(stats.hier_insts));
 
+  QStandardItem* local_macros
+      = makeDataItem(QString::number(stats.macros));
   QStandardItem* macros
-      = makeDataItem(makeHierText(stats.hier_macros, stats.macros, is_leaf));
+      = makeDataItem(QString::number(stats.hier_macros));
 
   QStandardItem* modules
-      = makeDataItem(makeHierText(stats.hier_modules, stats.modules, is_leaf));
+      = makeDataItem(QString::number(stats.modules));
+  QStandardItem* local_modules
+      = makeDataItem(QString::number(stats.hier_modules));
 
-  parent->appendRow({item, master_item, insts, macros, modules, area});
+  parent->appendRow({item,
+                     master_item,
+                     local_insts,
+                     insts,
+                     local_macros,
+                     macros,
+                     local_modules,
+                     modules,
+                     area});
 }
 
 void BrowserWidget::inDbInstCreate(odb::dbInst*)
