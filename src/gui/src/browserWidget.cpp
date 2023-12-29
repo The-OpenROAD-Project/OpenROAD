@@ -53,6 +53,63 @@ Q_DECLARE_METATYPE(QStandardItem*);
 
 namespace gui {
 
+struct BrowserWidget::ModuleStats
+{
+  int64_t area = 0;
+  int macros = 0;
+  int insts = 0;
+  int modules = 0;
+
+  int hier_macros = 0;
+  int hier_insts = 0;
+  int hier_modules = 0;
+
+  void incrementInstances()
+  {
+    insts++;
+    hier_insts++;
+  }
+
+  void resetInstances() { hier_insts = 0; }
+
+  void incrementMacros()
+  {
+    macros++;
+    hier_macros++;
+  }
+
+  void resetMacros() { hier_macros = 0; }
+
+  void incrementModules()
+  {
+    modules++;
+    hier_modules++;
+  }
+
+  void resetModules() { hier_modules = 0; }
+
+  ModuleStats& operator+=(const ModuleStats& other)
+  {
+    area += other.area;
+    macros += other.macros;
+    insts += other.insts;
+    modules += other.modules;
+
+    hier_macros += other.hier_macros;
+    hier_insts += other.hier_insts;
+    hier_modules += other.hier_modules;
+
+    return *this;
+  }
+
+  friend ModuleStats operator+(ModuleStats lhs, const ModuleStats& other)
+  {
+    lhs += other;
+
+    return lhs;
+  }
+};
+
 ///////
 
 BrowserWidget::BrowserWidget(
