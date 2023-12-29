@@ -700,6 +700,7 @@ NetRouteMap FastRouteCore::getRoutes()
 
           GSegment segment
               = GSegment(lastX, lastY, lastL + 1, xreal, yreal, gridsL[i] + 1);
+
           lastX = xreal;
           lastY = yreal;
           lastL = gridsL[i];
