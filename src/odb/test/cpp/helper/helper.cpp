@@ -1,3 +1,5 @@
+#include "helper.h"
+
 #include <stdio.h>
 
 #include "db.h"
@@ -39,17 +41,6 @@ dbDatabase* createSimpleDB()
   return db;
 }
 
-// #     (n1)   +-----
-// #    --------|a    \    (n5)
-// #     (n2)   | (i1)o|-----------+
-// #    --------|b    /            |       +-------
-// #            +-----             +--------\a     \    (n7)
-// #                                         ) (i3)o|---------------
-// #     (n3)   +-----             +--------/b     /
-// #    --------|a    \    (n6)    |       +-------
-// #     (n4)   | (i2)o|-----------+
-// #    --------|b    /
-// #            +-----
 dbDatabase* create2LevetDbNoBTerms()
 {
   dbDatabase* db = createSimpleDB();
@@ -79,6 +70,7 @@ dbDatabase* create2LevetDbNoBTerms()
   i3->findITerm("o")->connect(n7);
   return db;
 }
+
 dbDatabase* create2LevetDbWithBTerms()
 {
   dbDatabase* db = create2LevetDbNoBTerms();

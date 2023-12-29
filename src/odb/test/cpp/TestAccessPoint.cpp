@@ -3,7 +3,7 @@
 #include <fstream>
 
 #include "db.h"
-#include "helper.cpp"
+#include "helper.h"
 
 using namespace odb;
 

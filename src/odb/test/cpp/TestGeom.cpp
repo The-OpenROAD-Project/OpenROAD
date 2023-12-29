@@ -3,7 +3,7 @@
 #include <iostream>
 
 #include "db.h"
-#include "helper.cpp"
+#include "helper.h"
 using namespace odb;
 
 BOOST_AUTO_TEST_SUITE(test_suite)

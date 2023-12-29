@@ -2,7 +2,7 @@
 #include <boost/test/included/unit_test.hpp>
 
 #include "db.h"
-#include "helper.cpp"
+#include "helper.h"
 
 using namespace odb;
 
