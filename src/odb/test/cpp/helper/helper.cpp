@@ -1,11 +1,9 @@
 #include "helper.h"
 
-#include <stdio.h>
-
 #include "db.h"
 #include "utl/Logger.h"
 
-using namespace odb;
+namespace odb {
 
 dbMaster* createMaster2X1(dbLib* lib,
                           const char* name,
@@ -86,3 +84,5 @@ dbDatabase* create2LevetDbWithBTerms()
   OUT->setIoType(dbIoType::OUTPUT);
   return db;
 }
+
+}  // namespace odb

@@ -6,7 +6,8 @@
 #include "db.h"
 #include "helper.h"
 
-using namespace odb;
+namespace odb {
+namespace {
 
 BOOST_AUTO_TEST_SUITE(test_suite)
 
@@ -139,11 +140,12 @@ BOOST_FIXTURE_TEST_CASE(test_iterators, F_DETAILED)
   BOOST_TEST(children.size() == 3);
   BOOST_TEST(children.reversible());
   for (int j = 0; j < 2; j++) {
-    if (j == 1)
+    if (j == 1) {
       children.reverse();
+    }
     for (modinst_itr = children.begin(), i = j ? 1 : 3;
          modinst_itr != children.end();
-         ++modinst_itr, i = i + (j ? 1 : -1))
+         ++modinst_itr, i = i + (j ? 1 : -1)) {
       switch (i) {
         case 1:
           BOOST_TEST(*modinst_itr == i1);
@@ -158,6 +160,7 @@ BOOST_FIXTURE_TEST_CASE(test_iterators, F_DETAILED)
           BOOST_TEST(false);
           break;
       }
+    }
   }
 
   dbSet<dbInst> insts = parent_mod->getInsts();
@@ -165,10 +168,11 @@ BOOST_FIXTURE_TEST_CASE(test_iterators, F_DETAILED)
   BOOST_TEST(insts.size() == 3);
   BOOST_TEST(insts.reversible());
   for (int j = 0; j < 2; j++) {
-    if (j == 1)
+    if (j == 1) {
       insts.reverse();
+    }
     for (inst_itr = insts.begin(), i = j ? 1 : 3; inst_itr != insts.end();
-         ++inst_itr, i = i + (j ? 1 : -1))
+         ++inst_itr, i = i + (j ? 1 : -1)) {
       switch (i) {
         case 1:
           BOOST_TEST(*inst_itr == inst1);
@@ -183,7 +187,11 @@ BOOST_FIXTURE_TEST_CASE(test_iterators, F_DETAILED)
           BOOST_TEST(false);
           break;
       }
+    }
   }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+}  // namespace
+}  // namespace odb

@@ -8,10 +8,12 @@
 #include "db.h"
 #include "defin.h"
 #include "defout.h"
+#include "env.h"
 #include "lefin.h"
 #include "lefout.h"
 #include "utl/Logger.h"
-using namespace odb;
+
+namespace odb {
 
 BOOST_AUTO_TEST_SUITE(test_suite)
 
@@ -23,13 +25,12 @@ BOOST_AUTO_TEST_CASE(lef58_class)
   lefin lefParser(db1, logger, false);
 
   const char* libname = "gscl45nm.lef";
-  std::string path
-      = std::string(std::getenv("BASE_DIR")) + "/data/gscl45nm.lef";
+  std::string path = testTmpPath("/data/gscl45nm.lef");
   lefParser.createTechAndLib("tech", libname, path.c_str());
 
   odb::dbLib* dbLib = db1->findLib(libname);
 
-  path = std::string(std::getenv("BASE_DIR")) + "/data/lef58class_gscl45nm.lef";
+  path = testTmpPath("/data/lef58class_gscl45nm.lef");
   lefParser.updateLib(dbLib, path.c_str());
 
   odb::dbMaster* endcap = db1->findMaster("ENDCAP_BOTTOMEDGE_NOT_A_REAL_CELL");
@@ -48,13 +49,12 @@ BOOST_AUTO_TEST_CASE(test_default)
   lefin lefParser(db1, logger, false);
   const char* libname = "gscl45nm.lef";
 
-  std::string path
-      = std::string(std::getenv("BASE_DIR")) + "/data/gscl45nm.lef";
+  std::string path = testTmpPath("/data/gscl45nm.lef");
 
   lefParser.createTechAndLib("tech", libname, path.c_str());
 
-  path = std::string(std::getenv("BASE_DIR"))
-         + "/results/TestLef58PropertiesDbRW";
+  path = testTmpPath("/results/TestLef58PropertiesDbRW");
+
   std::ofstream write;
   write.exceptions(std::ifstream::failbit | std::ifstream::badbit
                    | std::ios::eofbit);
@@ -482,3 +482,5 @@ BOOST_AUTO_TEST_CASE(test_default)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+}  // namespace odb

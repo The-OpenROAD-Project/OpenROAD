@@ -1,5 +1,7 @@
 #include "db.h"
 
+namespace odb {
+
 odb::dbMaster* createMaster2X1(odb::dbLib* lib,
                                const char* name,
                                uint width,
@@ -24,3 +26,5 @@ odb::dbDatabase* createSimpleDB();
 odb::dbDatabase* create2LevetDbNoBTerms();
 
 odb::dbDatabase* create2LevetDbWithBTerms();
+
+}  // namespace odb

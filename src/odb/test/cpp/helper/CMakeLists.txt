@@ -1,7 +1,7 @@
 include(openroad)
 
 
-add_library(odb_test_helper helper.cpp)
+add_library(odb_test_helper helper.cpp env.cpp)
 
 
 target_link_libraries(odb_test_helper

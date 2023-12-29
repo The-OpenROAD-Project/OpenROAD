@@ -5,11 +5,12 @@
 #include "CallBack.h"
 #include "db.h"
 #include "helper.h"
-using namespace odb;
+
+namespace odb {
+namespace {
 
 BOOST_AUTO_TEST_SUITE(test_suite)
 dbDatabase* db;
-dbLib* lib;
 dbBlock* block;
 CallBack* cb;
 void setup()
@@ -19,7 +20,7 @@ void setup()
 }
 void tearDown()
 {
-  db->destroy(db);
+  dbDatabase::destroy(db);
   delete cb;
 }
 BOOST_AUTO_TEST_CASE(test_inst_and_iterm)
@@ -73,7 +74,8 @@ BOOST_AUTO_TEST_CASE(test_inst_and_iterm)
   i1->findITerm("a")->disconnect();
   BOOST_TEST(cb->events.size() == 0);
 
-  i1->destroy(i1);
+  dbInst::destroy(i1);
+
   BOOST_TEST(cb->events.size() == 4);
   BOOST_TEST(cb->events[0] == "Destroy iterm a of inst i1");
   BOOST_TEST(cb->events[1] == "Destroy iterm b of inst i1");
@@ -115,7 +117,8 @@ BOOST_AUTO_TEST_CASE(test_bterm)
   BOOST_TEST(cb->events[0] == "Predisconnect IN1");
   BOOST_TEST(cb->events[1] == "Postdisconnect IN1 from n1");
   cb->clearEvents();
-  IN1->destroy(IN1);
+  dbBTerm::destroy(IN1);
+
   BOOST_TEST(cb->events.size() == 1);
   BOOST_TEST(cb->events[0] == "Destroy IN1");
   tearDown();
@@ -260,3 +263,6 @@ BOOST_AUTO_TEST_CASE(test_swire)
   BOOST_TEST(cb->events[2] == "Destroy swire");
 }
 BOOST_AUTO_TEST_SUITE_END()
+
+}  // namespace
+}  // namespace odb
