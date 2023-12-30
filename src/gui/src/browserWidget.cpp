@@ -143,13 +143,13 @@ BrowserWidget::BrowserWidget(
 
   model_->setHorizontalHeaderLabels({"Instance",
                                      "Master",
-                                     "Local Instances",
                                      "Instances",
-                                     "Local Macros",
                                      "Macros",
-                                     "Local Modules",
                                      "Modules",
-                                     " Area "});
+                                     "Area",
+                                     "Local Instances",
+                                     "Local Macros",
+                                     "Local Modules"});
   view_->setModel(model_);
   view_->setContextMenuPolicy(Qt::CustomContextMenu);
 
@@ -569,7 +569,7 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
   }
 
   QString text
-      = QString::number(disp_area, 'f', 3) + " " + units + "m\u00B2";  // m2
+    = QString::number(disp_area, 'f', 3) + " " + units + "m\u00B2";  // m2
 
   auto makeDataItem
       = [item](const QString& text, bool right_align = true) -> QStandardItem* {
@@ -603,13 +603,13 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
 
   parent->appendRow({item,
                      master_item,
-                     local_insts,
                      insts,
-                     local_macros,
                      macros,
-                     local_modules,
                      modules,
-                     area});
+                     area,
+                     local_insts,
+                     local_macros,
+                     local_modules});
 }
 
 void BrowserWidget::inDbInstCreate(odb::dbInst*)
