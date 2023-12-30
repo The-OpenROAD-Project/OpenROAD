@@ -193,6 +193,7 @@ place_io_fill -row IO_WEST sky130_ef_io__com_bus_slice_20um sky130_ef_io__com_bu
 place_io_fill -row IO_EAST sky130_ef_io__com_bus_slice_20um sky130_ef_io__com_bus_slice_10um sky130_ef_io__com_bus_slice_5um sky130_ef_io__com_bus_slice_1um
 
 connect_by_abutment
+place_io_terminals */PAD
 
 set def_file [make_result_file "skywater130_caravel.def"]
 write_def $def_file

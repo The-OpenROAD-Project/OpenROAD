@@ -32,7 +32,6 @@
 #include "db/obj/frVia.h"
 #include "distributed/frArchive.h"
 
-using namespace std;
 using namespace fr;
 
 drVia::drVia(const frVia& in)

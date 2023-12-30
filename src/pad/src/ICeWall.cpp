@@ -349,8 +349,8 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
             const odb::Point& origin,
             const odb::dbOrientType& orient) -> odb::dbRow* {
     const std::string row_name = getRowName(name, ring_index);
-    odb::dbTransform rotation(orient);
-    rotation.concat(rotation_cor);
+    odb::dbTransform rotation(rotation_cor);
+    rotation.concat(orient);
     return odb::dbRow::create(block,
                               row_name.c_str(),
                               corner_site,

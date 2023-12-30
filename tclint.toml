@@ -1,0 +1,5 @@
+[style]
+indent = 2
+line-length = 100
+allow-aligned-sets = true
+indent-namespace-eval = false

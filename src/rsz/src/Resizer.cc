@@ -290,9 +290,7 @@ Resizer::bufferBetweenPorts(Instance *buffer)
   Pin *out_pin = db_network_->findPin(buffer, out_port);
   Net *in_net = db_network_->net(in_pin);
   Net *out_net = db_network_->net(out_pin);
-  bool in_net_ports = hasPort(in_net);
-  bool out_net_ports = hasPort(out_net);
-  return in_net_ports && out_net_ports;
+  return hasPort(in_net) && hasPort(out_net);
 }
 
 bool
@@ -728,17 +726,9 @@ Resizer::hasPort(const Net *net)
   if (!net) {
     return false;
   }
-  bool has_top_level_port = false;
-  NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
-  while (pin_iter->hasNext()) {
-    const Pin *pin = pin_iter->next();
-    if (network_->isTopLevelPort(pin)) {
-      has_top_level_port = true;
-      break;
-    }
-  }
-  delete pin_iter;
-  return has_top_level_port;
+
+  dbNet *db_net = db_network_->staToDb(net);
+  return !db_net->getBTerms().empty();
 }
 
 float

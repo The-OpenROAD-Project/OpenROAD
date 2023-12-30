@@ -100,6 +100,10 @@ enum dbObjectType
   dbNetTrackObj,
   dbPowerDomainObj,
   dbPowerSwitchObj,
+  dbScanChainObj,
+  dbScanInstObj,
+  dbScanPartitionObj,
+  dbScanPinObj,
   dbTechLayerObj,
   dbTechLayerAreaRuleObj,
   dbTechLayerArraySpacingRuleObj,
@@ -118,6 +122,7 @@ enum dbObjectType
   dbTechLayerSpacingEolRuleObj,
   dbTechLayerSpacingTablePrlRuleObj,
   dbTechLayerWidthTableRuleObj,
+  dbTechLayerWrongDirSpacingRuleObj,
   // Generator Code End DbObjectType
 
   // Lib Objects

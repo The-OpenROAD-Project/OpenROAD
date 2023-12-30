@@ -37,8 +37,6 @@
 
 namespace rcx {
 
-using namespace odb;
-
 void extSpef::initNodeCoordTables(uint memChunk)
 {
   _capNodeTable = new Ath__array1D<uint>(memChunk);

@@ -1,4 +1,5 @@
 record_tests {
+  disallow_one_site_gaps
   gcd_fakeram
   gcd_nangate45
   gcd_sky130

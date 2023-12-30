@@ -140,7 +140,7 @@ BOOST_AUTO_TEST_CASE(metal_short_obs)
   instTerm->addToNet(n1);
 
   n1->addInstTerm(instTerm);
-  auto instTermNode = make_unique<frNode>();
+  auto instTermNode = std::make_unique<frNode>();
   instTermNode->setPin(instTerm);
   instTermNode->setType(frNodeTypeEnum::frcPin);
   n1->addNode(instTermNode);
@@ -674,7 +674,7 @@ BOOST_AUTO_TEST_CASE(eol_endtoend)
   // Setup
   auto con = makeLef58SpacingEolConstraint(2);
   auto endToEnd
-      = make_shared<frLef58SpacingEndOfLineWithinEndToEndConstraint>();
+      = std::make_shared<frLef58SpacingEndOfLineWithinEndToEndConstraint>();
   con->getWithinConstraint()->setEndToEndConstraint(endToEnd);
   endToEnd->setEndToEndSpace(300);
   con->getWithinConstraint()->setSameMask(true);
@@ -963,17 +963,17 @@ BOOST_DATA_TEST_CASE(eol_min_max,
                  // eolSpacing to be neglected
   {
     if (max && legal)
-      y += 10;  // right(510) > max(500) --> minMax violated --> legal
+      y += 10;  // right(510) > std::max(500) --> minMax violated --> legal
     else if (!max && !legal)
-      y += 100;      // right(600) & left(500) >= min(500) --> minMax is met
-                     // --> illegal
+      y += 100;  // right(600) & left(500) >= std::min(500) --> minMax is met
+                 // --> illegal
   } else if (legal)  // both sides need to violate minMax to have no
                      // eolSpacing violations
   {
     if (max)
-      y += 110;  // right(610) & left(510) > max(500)
+      y += 110;  // right(610) & left(510) > std::max(500)
     else
-      y -= 10;  // right(490) & left(390) < min(500)
+      y -= 10;  // right(490) & left(390) < std::min(500)
   }
   makePathseg(n1, 2, {500, 0}, {500, y});
   makePathseg(n1, 2, {0, 700}, {1000, 700});
@@ -1219,4 +1219,58 @@ BOOST_AUTO_TEST_CASE(cut_keepoutzone)
              frConstraintTypeEnum::frcLef58KeepOutZoneConstraint,
              Rect(150, 150, 200, 200));
 }
+
+BOOST_DATA_TEST_CASE(route_wrong_direction_spc,
+                     (bdata::make({100, 50, 100, 100})
+                      ^ bdata::make({false, true, true, true})
+                      ^ bdata::make({false, false, true, false})
+                      ^ bdata::make({150, 150, 150, 150})
+                      ^ bdata::make({0, 0, 0, 50})),
+                     spacing,
+                     legal,
+                     noneolValid,
+                     noneolWidth,
+                     prlLength)
+{
+  // Setup
+  auto db_layer = db_tech->findLayer("m1");
+  db_layer->setDirection(odb::dbTechLayerDir::VERTICAL);
+  auto dbRule = odb::dbTechLayerWrongDirSpacingRule::create(db_layer);
+  dbRule->setWrongdirSpace(spacing);
+  if (noneolValid) {
+    dbRule->setNoneolValid(noneolValid);
+    dbRule->setNoneolWidth(noneolWidth);
+  }
+  if (prlLength != 0) {
+    dbRule->setPrlLength(prlLength);
+  }
+
+  makeLef58WrongDirSpcConstraint(2, dbRule);
+
+  frNet* n1 = makeNet("n1");
+  frNet* n2 = makeNet("n2");
+  makePathseg(n1, 2, {0, 50}, {100, 50}, 100);
+  if (prlLength != 0) {
+    makePathseg(n2, 2, {50, 200}, {150, 200}, 100);
+  } else {
+    makePathseg(n2, 2, {0, 200}, {100, 200}, 100);
+  }
+
+  runGC();
+
+  // // Test the results
+  auto& markers = worker.getMarkers();
+  if (legal) {
+    BOOST_TEST(markers.size() == 0);
+  } else {
+    BOOST_TEST(markers.size() == 1);
+  }
+  if (!markers.empty()) {
+    testMarker(markers[0].get(),
+               2,
+               frConstraintTypeEnum::frcLef58SpacingWrongDirConstraint,
+               Rect(0, 100, 100, 150));
+  }
+}
+
 BOOST_AUTO_TEST_SUITE_END();

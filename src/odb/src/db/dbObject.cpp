@@ -104,6 +104,10 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbNetTrack",
                                  "dbPowerDomain",
                                  "dbPowerSwitch",
+                                 "dbScanChain",
+                                 "dbScanInst",
+                                 "dbScanPartition",
+                                 "dbScanPin",
                                  "dbTechLayer",
                                  "dbTechLayerAreaRule",
                                  "dbTechLayerArraySpacingRule",
@@ -122,6 +126,7 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbTechLayerSpacingEolRule",
                                  "dbTechLayerSpacingTablePrlRule",
                                  "dbTechLayerWidthTableRule",
+                                 "dbTechLayerWrongDirSpacingRule",
                                  // Generator Code End ObjectNames
 
                                  // Lib Objects

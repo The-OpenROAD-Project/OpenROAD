@@ -31,7 +31,6 @@
 #include "db/obj/frInst.h"
 #include "db/obj/frInstTerm.h"
 
-using namespace std;
 using namespace fr;
 
 Rect frRPin::getBBox()
@@ -52,7 +51,7 @@ Rect frRPin::getBBox()
       pt = accessPoint->getPoint();
       break;
     default:
-      cout << "ERROR: Invalid term type in frRPin." << endl;
+      std::cout << "ERROR: Invalid term type in frRPin." << std::endl;
       break;
   }
 

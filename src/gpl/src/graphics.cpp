@@ -238,7 +238,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
     for (auto& bin : nbVec_[0]->bins()) {
       float fx = bin.electroForceX();
       float fy = bin.electroForceY();
-      float f = hypot(fx, fy);
+      float f = std::hypot(fx, fy);
       float ratio = f / efMax;
       float dx = fx / f * max_len * ratio;
       float dy = fy / f * max_len * ratio;
@@ -255,7 +255,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
 void Graphics::drawMBFF(gui::Painter& painter)
 {
   painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
-  for (auto [start, end] : mbff_edges_) {
+  for (const auto& [start, end] : mbff_edges_) {
     painter.drawLine(start, end);
   }
 }

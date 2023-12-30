@@ -406,7 +406,11 @@ void TechChar::reportSegment(unsigned key) const
 {
   const WireSegment& seg = getWireSegment(key);
 
-  logger_->report(
+  debugPrint(
+      logger_,
+      CTS,
+      "tech char",
+      1,
       "    Key: {} inSlew: {} inCap: {} outSlew: {} load: {} length: {} delay: "
       "{}",
       key,
@@ -418,9 +422,13 @@ void TechChar::reportSegment(unsigned key) const
       seg.getDelay());
 
   for (unsigned idx = 0; idx < seg.getNumBuffers(); ++idx) {
-    logger_->report("      location: {} buffer: {}",
-                    seg.getBufferLocation(idx),
-                    seg.getBufferMaster(idx));
+    debugPrint(logger_,
+               CTS,
+               "tech char",
+               1,
+               "      location: {} buffer: {}",
+               seg.getBufferLocation(idx),
+               seg.getBufferMaster(idx));
   }
 }
 
@@ -775,7 +783,7 @@ void TechChar::collectSlewsLoadsFromTableAxis(sta::LibertyCell* libCell,
       const sta::TableModel* delayModel = gateModel->delayModel();
       sta::FloatSeq* slews = nullptr;
       sta::FloatSeq* loads = nullptr;
-      sta::TableAxisPtr axis1 = delayModel->axis1();
+      const sta::TableAxis* axis1 = delayModel->axis1();
       if (axis1) {
         if (axis1->variable() == sta::TableAxisVariable::input_net_transition) {
           slews = axis1->values();
@@ -784,7 +792,7 @@ void TechChar::collectSlewsLoadsFromTableAxis(sta::LibertyCell* libCell,
           loads = axis1->values();
         }
       }
-      sta::TableAxisPtr axis2 = delayModel->axis2();
+      const sta::TableAxis* axis2 = delayModel->axis2();
       if (axis2) {
         if (axis2->variable() == sta::TableAxisVariable::input_net_transition) {
           slews = axis2->values();
@@ -1261,13 +1269,13 @@ void TechChar::updateBufferTopologiesOld(TechChar::SolutionData& solution)
                  "from {} to {}, index:{}",
                  *(masterItr), newBufMaster->getName(), index);
       masterItr++;
-      // clang-format on 
+      // clang-format on
       unsigned topologyCounter = 0;
       for (unsigned topologyIndex = 0;
            topologyIndex < solution.topologyDescriptor.size();
            topologyIndex++) {
         const std::string topologyS
-          = solution.topologyDescriptor[topologyIndex];
+            = solution.topologyDescriptor[topologyIndex];
         // clang-format off
         debugPrint(logger_, CTS, "tech char", 1, "  topo:{} topoIdx:{}",
                    topologyS, topologyIndex);

@@ -59,15 +59,23 @@ void Partitioner::EnableIlpAcceleration(float acceleration_factor)
   ilp_accelerator_factor_ = acceleration_factor;
   ilp_accelerator_factor_ = std::max(ilp_accelerator_factor_, 0.0f);
   ilp_accelerator_factor_ = std::min(ilp_accelerator_factor_, 1.0f);
-  logger_->info(
-      PAR, 159, "Set ILP accelerator factor to {}", ilp_accelerator_factor_);
+  debugPrint(logger_,
+             PAR,
+             "partitioning",
+             1,
+             "Set ILP accelerator factor to {}",
+             ilp_accelerator_factor_);
 }
 
 void Partitioner::DisableIlpAcceleration()
 {
   ilp_accelerator_factor_ = 1.0;
-  logger_->info(
-      PAR, 160, "Reset ILP accelerator factor to {}", ilp_accelerator_factor_);
+  debugPrint(logger_,
+             PAR,
+             "partitioning",
+             1,
+             "Reset ILP accelerator factor to {}",
+             ilp_accelerator_factor_);
 }
 
 // The main function of Partitioning
@@ -207,8 +215,12 @@ void Partitioner::ILPPart(const HGraphPtr& hgraph,
                           const Matrix<float>& lower_block_balance,
                           std::vector<int>& solution) const
 {
-  logger_->report("[STATUS] Optimal ILP-based Partitioning Starts !");
-  std::map<int, int> fixed_vertices_map;
+  debugPrint(logger_,
+             PAR,
+             "partitioning",
+             1,
+             "Starting Optimal ILP-based Partitioning") std::map<int, int>
+      fixed_vertices_map;
   Matrix<float> vertex_weights;  // two-dimensional
   vertex_weights.reserve(hgraph->GetNumVertices());
   Matrix<int> hyperedges;                // hyperedges
@@ -228,7 +240,11 @@ void Partitioner::ILPPart(const HGraphPtr& hgraph,
   // check the hyperedges to be used
   std::vector<int> edge_mask;  // store the hyperedges being used.
   if (ilp_accelerator_factor_ >= 1.0) {
-    logger_->report(
+    debugPrint(
+        logger_,
+        PAR,
+        "partitioning",
+        1,
         "All the hyperedges will be used in the ILP-based partitioning!");
     edge_mask.resize(hgraph->GetNumHyperedges());
     std::iota(edge_mask.begin(), edge_mask.end(), 0);
@@ -265,17 +281,27 @@ void Partitioner::ILPPart(const HGraphPtr& hgraph,
         break;  // the set has been sorted
       }
     }
-    logger_->info(
-        PAR, 161, "ilp_accelerator_factor = {}", ilp_accelerator_factor_);
-    logger_->info(PAR,
-                  162,
-                  "Reduce the number of hyperedges from {} to {}.",
-                  hgraph->GetNumHyperedges(),
-                  edge_mask.size());
+    debugPrint(logger_,
+               PAR,
+               "partitioning",
+               1,
+               "ilp_accelerator_factor = {}",
+               ilp_accelerator_factor_);
+    debugPrint(logger_,
+               PAR,
+               "partitioning",
+               1,
+               "Reduce the number of hyperedges from {} to {}.",
+               hgraph->GetNumHyperedges(),
+               edge_mask.size());
   } else {
-    logger_->warn(
-        PAR, 116, "ilp_accelerator_factor = {}", ilp_accelerator_factor_);
-    logger_->warn(PAR, 117, "No hyperedges will be used !!!");
+    debugPrint(logger_,
+               PAR,
+               "partitioning",
+               1,
+               "ilp_accelerator_factor = {}",
+               ilp_accelerator_factor_);
+    debugPrint(logger_, PAR, "partitioning", 1, "No hyperedges will be used");
   }
   // update hyperedges and hyperedge_weights
   hyperedge_weights.reserve(edge_mask.size());
@@ -296,12 +322,14 @@ void Partitioner::ILPPart(const HGraphPtr& hgraph,
                        hyperedge_weights,
                        vertex_weights,
                        upper_block_balance,
-                       lower_block_balance)
-      == true) {
-    logger_->report("[STATUS] Optimal ILP-based Partitioning Finished !");
+                       lower_block_balance)) {
   } else {
-    logger_->report("[STATUS] Optimal ILP-based Partitioning Failed!");
-    logger_->report("[STATUS] Call random partitioning !");
+    debugPrint(
+        logger_,
+        PAR,
+        "partitioning",
+        1,
+        "Optimal ILP-based Partitioning failed. Calling random partitioning.");
     RandomPart(hgraph, upper_block_balance, lower_block_balance, solution);
   }
 }
