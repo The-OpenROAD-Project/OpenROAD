@@ -47,14 +47,13 @@ jobs:
 
       - name: Set release version
         id: set_version
-        run: echo "RELEASE_VERSION=$(date +'%Y%m%d')" >> $GITHUB_ENV
-
+        run: echo "RELEASE_VERSION=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
 
       - name: Check if release exists
         id: check_release
         run: |
           TAG_NAME="v${RELEASE_VERSION}"
-          RELEASE_INFO=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${TAG_NAME}")
+          RELEASE_INFO=$(wget -qO- --header "Authorization: Bearer $GITHUB_TOKEN" "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${TAG_NAME}")
           if [ -z "$RELEASE_INFO" ]; then
             echo "Release does not exist."
             echo "::set-output name=upload_url::https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases"
