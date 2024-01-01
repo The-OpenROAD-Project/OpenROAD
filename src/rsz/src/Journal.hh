@@ -52,7 +52,6 @@ using odb::Point;
 using std::vector;
 using utl::Logger;
 
-using sta::dbSta;
 using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::Instance;
