@@ -1671,7 +1671,8 @@ void TechChar::create()
     openStaChar_.reset(nullptr);
   }
   if (logger_->debugCheck(utl::CTS, "tech char", 1)) {
-    logger_->info(CTS, 39, "Number of created patterns = {}.", topologiesCreated);
+    logger_->info(
+        CTS, 39, "Number of created patterns = {}.", topologiesCreated);
   }
   // Post-processing of the results.
   const std::vector<ResultData> convertedSolutions
