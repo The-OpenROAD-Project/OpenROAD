@@ -37,6 +37,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <variant>
 #include <vector>
 
 #include "dbMatrix.h"
@@ -139,6 +140,10 @@ class dbModule;
 class dbNetTrack;
 class dbPowerDomain;
 class dbPowerSwitch;
+class dbScanChain;
+class dbScanInst;
+class dbScanPartition;
+class dbScanPin;
 class dbTechLayer;
 class dbTechLayerAreaRule;
 class dbTechLayerArraySpacingRule;
@@ -157,6 +162,7 @@ class dbTechLayerMinStepRule;
 class dbTechLayerSpacingEolRule;
 class dbTechLayerSpacingTablePrlRule;
 class dbTechLayerWidthTableRule;
+class dbTechLayerWrongDirSpacingRule;
 // Generator Code End ClassDeclarations
 
 // Extraction Objects
@@ -3624,7 +3630,7 @@ class dbWire : public dbObject
   ///
   /// Get junction id associated with the term
   ///
-  uint getTermJid(int termid);
+  uint getTermJid(int termid) const;
 
   ///
   /// check if this wire equals the target wire
@@ -7621,6 +7627,37 @@ class dbPowerSwitch : public dbObject
   // User Code End dbPowerSwitch
 };
 
+class dbScanChain : public dbObject
+{
+ public:
+};
+
+class dbScanInst : public dbObject
+{
+ public:
+  enum class SCAN_INST_TYPE
+  {
+    OneBit,
+    ShiftRegister,
+    BlackBox
+  };
+};
+
+class dbScanPartition : public dbObject
+{
+ public:
+};
+
+class dbScanPin : public dbObject
+{
+ public:
+  // User Code Begin dbScanPin
+  std::variant<dbBTerm*, dbITerm*> getPin() const;
+  void setPin(dbBTerm* bterm);
+  void setPin(dbITerm* iterm);
+  // User Code End dbScanPin
+};
+
 class dbTechLayer : public dbObject
 {
  public:
@@ -7691,6 +7728,9 @@ class dbTechLayer : public dbObject
       const;
 
   dbSet<dbTechLayerKeepOutZoneRule> getTechLayerKeepOutZoneRules() const;
+
+  dbSet<dbTechLayerWrongDirSpacingRule> getTechLayerWrongDirSpacingRules()
+      const;
 
   void setRectOnly(bool rect_only);
 
@@ -9659,6 +9699,44 @@ class dbTechLayerWidthTableRule : public dbObject
 
   static void destroy(dbTechLayerWidthTableRule* rule);
   // User Code End dbTechLayerWidthTableRule
+};
+
+class dbTechLayerWrongDirSpacingRule : public dbObject
+{
+ public:
+  void setWrongdirSpace(int wrongdir_space);
+
+  int getWrongdirSpace() const;
+
+  void setNoneolWidth(int noneol_width);
+
+  int getNoneolWidth() const;
+
+  void setLength(int length);
+
+  int getLength() const;
+
+  void setPrlLength(int prl_length);
+
+  int getPrlLength() const;
+
+  void setNoneolValid(bool noneol_valid);
+
+  bool isNoneolValid() const;
+
+  void setLengthValid(bool length_valid);
+
+  bool isLengthValid() const;
+
+  // User Code Begin dbTechLayerWrongDirSpacingRule
+  static dbTechLayerWrongDirSpacingRule* create(dbTechLayer* layer);
+
+  static dbTechLayerWrongDirSpacingRule* getTechLayerWrongDirSpacingRule(
+      dbTechLayer* inly,
+      uint dbid);
+
+  static void destroy(dbTechLayerWrongDirSpacingRule* rule);
+  // User Code End dbTechLayerWrongDirSpacingRule
 };
 
 // Generator Code End ClassDefinition

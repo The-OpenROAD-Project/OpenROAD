@@ -40,7 +40,6 @@ namespace gpl {
 class FFT
 {
  public:
-  FFT();
   FFT(int binCntX, int binCntY, int binSizeX, int binSizeY);
   ~FFT();
 
@@ -57,10 +56,10 @@ class FFT
  private:
   // 2D array; width: binCntX_, height: binCntY_;
   // No hope to use Vector at this moment...
-  float** binDensity_;
-  float** electroPhi_;
-  float** electroForceX_;
-  float** electroForceY_;
+  float** binDensity_ = nullptr;
+  float** electroPhi_ = nullptr;
+  float** electroForceX_ = nullptr;
+  float** electroForceY_ = nullptr;
 
   // cos/sin table (prev: w_2d)
   // length:  max(binCntX, binCntY) * 3 / 2
@@ -78,12 +77,10 @@ class FFT
   // length: round(sqrt( max(binCntX_, binCntY_) )) + 2
   std::vector<int> workArea_;
 
-  int binCntX_;
-  int binCntY_;
-  int binSizeX_;
-  int binSizeY_;
-
-  void init();
+  int binCntX_ = 0;
+  int binCntY_ = 0;
+  int binSizeX_ = 0;
+  int binSizeY_ = 0;
 };
 
 //

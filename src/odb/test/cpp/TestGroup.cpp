@@ -7,7 +7,7 @@
 #include "helper.cpp"
 
 using namespace odb;
-using namespace std;
+
 struct F_DETAILED
 {
   F_DETAILED()
@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE(test_group_modinst_iterator)
          modinst_itr != modinsts.end();
          ++modinst_itr, i = i + (j ? 1 : -1))
       BOOST_TEST(std::string(((dbModInst*) *modinst_itr)->getName())
-                 == "i" + to_string(i));
+                 == "i" + std::to_string(i));
   }
 }
 BOOST_AUTO_TEST_CASE(test_group_inst_iterator)
@@ -190,7 +190,7 @@ BOOST_AUTO_TEST_CASE(test_group_inst_iterator)
     for (inst_itr = insts.begin(), i = j ? 1 : 3; inst_itr != insts.end();
          ++inst_itr, i = i + (j ? 1 : -1))
       BOOST_TEST(std::string(((dbInst*) *inst_itr)->getName())
-                 == "i" + to_string(i));
+                 == "i" + std::to_string(i));
   }
 }
 BOOST_AUTO_TEST_CASE(test_group_net_iterators)
@@ -205,7 +205,7 @@ BOOST_AUTO_TEST_CASE(test_group_net_iterators)
     for (net_itr = nets.begin(), i = j ? 3 : 1; net_itr != nets.end();
          ++net_itr, i = i + (j ? -1 : 1))
       BOOST_TEST(std::string(((dbNet*) *net_itr)->getName())
-                 == "n" + to_string(i));
+                 == "n" + std::to_string(i));
   }
   group->addGroundNet(n1);
   group->addGroundNet(n2);
@@ -219,7 +219,7 @@ BOOST_AUTO_TEST_CASE(test_group_net_iterators)
     for (net_itr = nets.begin(), i = j ? 3 : 1; net_itr != nets.end();
          ++net_itr, i = i + (j ? -1 : 1))
       BOOST_TEST(std::string(((dbNet*) *net_itr)->getName())
-                 == "n" + to_string(i));
+                 == "n" + std::to_string(i));
   }
 }
 BOOST_AUTO_TEST_CASE(test_group_group_iterator)
@@ -235,7 +235,7 @@ BOOST_AUTO_TEST_CASE(test_group_group_iterator)
          group_itr != children.end();
          ++group_itr, i = i + (j ? 1 : -1))
       BOOST_TEST(std::string(((dbGroup*) *group_itr)->getName())
-                 == "child" + to_string(i));
+                 == "child" + std::to_string(i));
   }
 }
 BOOST_AUTO_TEST_SUITE_END()
