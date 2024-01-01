@@ -391,16 +391,25 @@ class DbTechLayerDescriptor : public Descriptor
 
 // The ap doesn't know its location as it is associated the master and
 // needs the iterm to get a location
-struct DbItermAccessPoint
+struct DbTermAccessPoint
 {
-  odb::dbAccessPoint* ap;
-  odb::dbITerm* iterm;
+  odb::dbAccessPoint* ap{nullptr};
+  odb::dbITerm* iterm{nullptr};
+  odb::dbBTerm* bterm{nullptr};
+  DbTermAccessPoint(odb::dbAccessPoint* apIn, odb::dbITerm* itermIn)
+      : ap(apIn), iterm(itermIn)
+  {
+  }
+  DbTermAccessPoint(odb::dbAccessPoint* apIn, odb::dbBTerm* btermIn)
+      : ap(apIn), bterm(btermIn)
+  {
+  }
 };
 
-class DbItermAccessPointDescriptor : public Descriptor
+class DbTermAccessPointDescriptor : public Descriptor
 {
  public:
-  DbItermAccessPointDescriptor(odb::dbDatabase* db);
+  DbTermAccessPointDescriptor(odb::dbDatabase* db);
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;

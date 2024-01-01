@@ -18,4 +18,9 @@ jobs:
       # See issue #4347 for tracking
       - name: Lint
         run: |
-          tclint src/rsz/src/Resizer.tcl
+          tclint \
+            src/rsz/src/Resizer.tcl \
+            src/gui/src/gui.tcl \
+            src/pdn/src/pdn.tcl \
+            src/pad/src/pad.tcl \
+            src/psm/src/pdnsim.tcl
