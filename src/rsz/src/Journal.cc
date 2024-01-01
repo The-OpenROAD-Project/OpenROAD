@@ -229,10 +229,4 @@ sta::Network * Journal::network()
   return resizer_->network_;
 }
 
-dbSta *Journal::sta()
-{
-  return resizer_->sta_;
-}
-
-
 }  // namespace rsz

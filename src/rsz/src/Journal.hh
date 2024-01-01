@@ -68,7 +68,9 @@ class Undo
  public:
   // base class for undo elements
   Undo() = default;
+  virtual ~Undo() = default;
   virtual int UndoOperation(Resizer *resizer) = 0;
+
 };
 
 class UndoBufferToInverter: public Undo
@@ -149,7 +151,6 @@ public:
   void reportStatistics();
  private:
   Network *network();
-  dbSta *sta();
 
  private:
   Resizer *resizer_;
