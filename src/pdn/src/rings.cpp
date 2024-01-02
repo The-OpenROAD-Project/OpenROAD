@@ -184,10 +184,16 @@ void Rings::makeShapes(const ShapeTreeMap& other_shapes)
 
   const auto nets = getNets();
 
-  odb::Rect boundary;
-  if (extend_to_boundary_) {
-    boundary = grid->getGridBoundary();
-  }
+  const odb::Rect boundary = grid->getGridBoundary();
+  auto check_in_bounds = [&](const odb::Rect& shape) {
+    if (grid->type() == Grid::Core && !boundary.contains(shape)) {
+      getLogger()->warn(
+          utl::PDN,
+          236,
+          "Core ring shape falls outside the die bounds. Try increasing the "
+          "core_space during initialize_floorplan.");
+    }
+  };
 
   odb::Rect core = grid->getDomainArea();
   core.set_xlo(core.xMin() - offset_[0]);
@@ -210,6 +216,7 @@ void Rings::makeShapes(const ShapeTreeMap& other_shapes)
       int y_start = core.yMin() - width;
       int y_end = core.yMin();
       for (auto net : nets) {
+        check_in_bounds({x_start, y_start, x_end, y_end});
         addShape(new Shape(layer,
                            net,
                            odb::Rect(x_start, y_start, x_end, y_end),
@@ -229,6 +236,7 @@ void Rings::makeShapes(const ShapeTreeMap& other_shapes)
       y_start = core.yMax();
       y_end = y_start + width;
       for (auto net : nets) {
+        check_in_bounds({x_start, y_start, x_end, y_end});
         addShape(new Shape(layer,
                            net,
                            odb::Rect(x_start, y_start, x_end, y_end),
@@ -251,6 +259,7 @@ void Rings::makeShapes(const ShapeTreeMap& other_shapes)
         y_end = boundary.yMax();
       }
       for (auto net : nets) {
+        check_in_bounds({x_start, y_start, x_end, y_end});
         addShape(new Shape(layer,
                            net,
                            odb::Rect(x_start, y_start, x_end, y_end),
@@ -270,6 +279,7 @@ void Rings::makeShapes(const ShapeTreeMap& other_shapes)
         y_end = core.yMax() + width;
       }
       for (auto net : nets) {
+        check_in_bounds({x_start, y_start, x_end, y_end});
         addShape(new Shape(layer,
                            net,
                            odb::Rect(x_start, y_start, x_end, y_end),
