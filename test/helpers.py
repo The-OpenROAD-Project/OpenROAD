@@ -1,6 +1,7 @@
 import odb
 import os
 import utl
+import re
 
 def make_rect(design, xl, yl, xh, yh):
     xl = design.micronToDBU(xl)
@@ -18,7 +19,10 @@ def make_result_file(filename):
     filename = "{}-py{}".format(*root_ext)
     return os.path.join(result_dir, filename)
 
-def diff_files(file1, file2):
+def diff_files(file1, file2, ignore=None):
+    if ignore:
+        ignore = re.compile(ignore)
+
     with open(file1, 'r') as f:
         lines1 = f.readlines()
 
@@ -28,6 +32,8 @@ def diff_files(file1, file2):
     num_lines1 = len(lines1)
     num_lines2 = len(lines2)
     for i in range(min(num_lines1, num_lines2)):
+        if ignore and (ignore.search(lines1[i]) or ignore.search(lines2[i])):
+            continue
         if lines1[i] != lines2[i]:
             utl.report(f"Differences found at line {i+1}.")
             utl.report(lines1[i][:-1])

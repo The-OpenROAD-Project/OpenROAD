@@ -224,7 +224,7 @@ sta::define_cmd_args "detailed_route_debug" {
 proc detailed_route_debug { args } {
   sta::parse_key_args "detailed_route_debug" args \
       keys {-net -iter -pin -dump_dir -box} \
-      flags {-dr -maze -pa -pa_markers -pa_edge -pa_commit -dump_dr -ta -write_net_tracks}
+      flags {-dr -maze -pa -pa_markers -pa_edge -pa_commit -dump_dr -ta -write_net_tracks -dump_last_worker}
 
   sta::check_argc_eq0 "detailed_route_debug" $args
 

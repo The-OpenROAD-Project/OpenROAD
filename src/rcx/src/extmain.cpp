@@ -230,50 +230,40 @@ uint extMain::getResCapTable()
   calcMinMaxRC();
   _currentModel = getRCmodel(0);
 
-  dbSet<dbTechLayer> layers = _tech->getLayers();
-  dbSet<dbTechLayer>::iterator itr;
-
   extMeasure m(logger_);
   m._underMet = 0;
   m._overMet = 0;
 
   uint cnt = 0;
-  uint n = 0;
-  for (itr = layers.begin(); itr != layers.end(); ++itr) {
-    dbTechLayer* layer = *itr;
-
+  for (dbTechLayer* layer : _tech->getLayers()) {
     if (layer->getRoutingLevel() == 0) {
       continue;
     }
 
-    n = layer->getRoutingLevel();
+    const uint n = layer->getRoutingLevel();
 
-    uint w = layer->getWidth();  // nm
+    const uint w = layer->getWidth();  // nm
     _minWidthTable[n] = w;
 
     m._width = w;
     m._met = n;
 
     uint sp = layer->getSpacing();  // nm
-
     _minDistTable[n] = sp;
     if (sp == 0) {
       sp = layer->getPitch() - layer->getWidth();
       _minDistTable[n] = sp;
     }
     double resTable[20];
-    bool newResModel = true;
-    if (newResModel) {
-      for (uint jj = 0; jj < _modelMap.getCnt(); jj++) {
-        resTable[jj] = 0.0;
-      }
-      calcRes0(resTable, n, w, 1);
-    }
     for (uint jj = 0; jj < _modelMap.getCnt(); jj++) {
-      uint modelIndex = _modelMap.get(jj);
+      resTable[jj] = 0.0;
+    }
+    calcRes0(resTable, n, w, 1);
+    for (uint jj = 0; jj < _modelMap.getCnt(); jj++) {
+      const uint modelIndex = _modelMap.get(jj);
       extMetRCTable* rcModel = _currentModel->getMetRCTable(modelIndex);
 
-      double res = layer->getResistance();  // OHMS per square
+      const double res = layer->getResistance();  // OHMS per square
       _resistanceTable[jj][n] = res;
 
       _capacitanceTable[jj][n] = 0.0;
@@ -281,16 +271,15 @@ uint extMain::getResCapTable()
       extDistRC* rc = rcModel->getOverFringeRC(&m);
 
       if (rc != nullptr) {
-        double r1 = rc->getRes();
+        const double r1 = rc->getRes();
         _capacitanceTable[jj][n] = rc->getFringe();
         debugPrint(logger_,
                    RCX,
                    "extrules",
                    1,
-                   "EXT_RES: "
-                   "R "
+                   "EXT_RES: R "
                    "Layer= {} met= {}   w= {} cc= {:g} fr= {:g} res= {:g} "
-                   "model_res= {:g} new_model_res= {:g} ",
+                   "model_res= {:g} new_model_res= {:g}",
                    layer->getConstName(),
                    n,
                    w,
@@ -308,9 +297,7 @@ uint extMain::getResCapTable()
                    RCX,
                    "extrules",
                    1,
-                   "EXT_RES_LEF: "
-                   "R "
-                   "Layer= {} met= {}  lef_res= {:g}\n",
+                   "EXT_RES_LEF: R Layer= {} met= {}  lef_res= {:g}",
                    layer->getConstName(),
                    n,
                    res);
@@ -355,21 +342,24 @@ bool extMain::checkLayerResistance()
   return true;
 }
 
-double extMain::getLefResistance(uint level, uint width, uint len, uint model)
+double extMain::getLefResistance(const uint level,
+                                 const uint width,
+                                 const uint len,
+                                 const uint model)
 {
-  double res = _resistanceTable[model][level];
-  double n = 1.0 * len;
+  double n = len;
 
   if (_lef_res) {
     n /= width;
   }
 
-  double r = n * res;
-
-  return r;
+  return n * _resistanceTable[model][level];
 }
 
-double extMain::getResistance(uint level, uint width, uint len, uint model)
+double extMain::getResistance(const uint level,
+                              const uint width,
+                              const uint len,
+                              const uint model)
 {
   return getLefResistance(level, width, len, model);
 }
@@ -415,9 +405,9 @@ double extMain::getLoCoupling()
   return _coupleThreshold;
 }
 
-double extMain::getFringe(uint met,
-                          uint width,
-                          uint modelIndex,
+double extMain::getFringe(const uint met,
+                          const uint width,
+                          const uint modelIndex,
                           double& areaCap)
 {
   areaCap = 0.0;
