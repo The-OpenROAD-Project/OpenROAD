@@ -254,7 +254,7 @@ std::vector<float> ChartsWidget::getSlackForAllEndpoints() const
       unconstrained_count++;
   }
 
-  if (unconstrained_count != 0) {
+  if (unconstrained_count != 0 && unconstrained_count != end_points.size()) {
     const QString label_message = "Number of unconstrained pins: ";
     QString unconstrained_number;
     unconstrained_number.setNum(unconstrained_count);
