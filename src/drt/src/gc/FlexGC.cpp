@@ -87,7 +87,7 @@ void FlexGCWorker::Impl::addMarker(std::unique_ptr<frMarker> in)
       aggressors_;
   bool modified = false;
   for (auto& src : in->getSrcs()) {
-    if (src->typeId() == drcNet) {
+    if (src && src->typeId() == drcNet) {
       srcs.at(i) = ((drNet*) (src))->getFrNet();
       srcs_.insert(srcs.at(i));
       modified = true;
@@ -103,7 +103,7 @@ void FlexGCWorker::Impl::addMarker(std::unique_ptr<frMarker> in)
 
   modified = false;
   for (auto& aggressor : in->getAggressors()) {
-    if (aggressor.first->typeId() == drcNet) {
+    if (aggressor.first && aggressor.first->typeId() == drcNet) {
       frNet* temp = ((drNet*) (aggressor.first))->getFrNet();
       aggressors_.emplace_back(temp, aggressor.second);
       modified = true;
@@ -117,7 +117,7 @@ void FlexGCWorker::Impl::addMarker(std::unique_ptr<frMarker> in)
 
   modified = false;
   for (auto& victim : in->getVictims()) {
-    if (victim.first->typeId() == drcNet) {
+    if (victim.first && victim.first->typeId() == drcNet) {
       frNet* temp = ((drNet*) (victim.first))->getFrNet();
       victims_.emplace_back(temp, victim.second);
       modified = true;
