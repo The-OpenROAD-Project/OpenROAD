@@ -2943,10 +2943,8 @@ void FlexDRWorker::initMazeCost_terms(const std::set<frBlockObject*>& objs,
 
             if (isRoutingLayer) {
               modMinSpacingCostPlanar(box, zIdx, type);
-              if (!isSkipVia) {
-                modMinSpacingCostVia(box, zIdx, type, true, false);
-                modMinSpacingCostVia(box, zIdx, type, false, false);
-              }
+              modMinSpacingCostVia(box, zIdx, type, true, false);
+              modMinSpacingCostVia(box, zIdx, type, false, false);
               modEolSpacingRulesCost(box, zIdx, type);
             } else {
               modCutSpacingCost(box, zIdx, type);

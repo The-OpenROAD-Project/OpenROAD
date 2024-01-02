@@ -49,11 +49,9 @@
 
 namespace gui {
 
-const int SELECT = 0;
-const int SLACK_MODE = 1;
-
 ChartsWidget::ChartsWidget(QWidget* parent)
     : QDockWidget("Charts", parent),
+      logger_(nullptr),
       sta_(nullptr),
       label_(new QLabel(this)),
       mode_menu_(new QComboBox(this)),
@@ -102,7 +100,7 @@ void ChartsWidget::changeMode()
 
   clearChart();
 
-  if (mode_menu_->currentIndex() == SLACK_MODE) {
+  if (mode_menu_->currentIndex() == SLACK_HISTOGRAM) {
     setSlackMode();
   }
 }
@@ -122,9 +120,17 @@ void ChartsWidget::clearChart()
 
 void ChartsWidget::setSlackMode()
 {
-  chart_->setTitle("Endpoint Slack");
-
   std::vector<float> all_slack = getSlackForAllEndpoints();
+
+  if (all_slack.size() == 0) {
+    logger_->warn(utl::GUI,
+                  97,
+                  "All pins are unconstrained. Cannot plot histogram. Check if "
+                  "timing data is loaded!");
+    return;
+  }
+
+  chart_->setTitle("Endpoint Slack");
 
   auto max_slack = std::max_element(all_slack.begin(), all_slack.end());
   auto min_slack = std::min_element(all_slack.begin(), all_slack.end());
@@ -138,7 +144,7 @@ void ChartsWidget::setSlackMode()
   std::vector<float> pos_buckets[total_pos_buckets];
   std::vector<float> neg_buckets[total_neg_buckets];
 
-  for (auto slack : all_slack) {
+  for (const auto& slack : all_slack) {
     if (slack < 0) {
       int bucket_index = slack / digit_compensator_;
       neg_buckets[bucket_index + offset].push_back(slack);
@@ -266,6 +272,11 @@ void ChartsWidget::setDigitCompensator(float max_slack, float min_slack)
 
   digit_compensator_
       = digits > max_digits_ ? std::pow(10, digits - max_digits_) : 1;
+}
+
+void ChartsWidget::setLogger(utl::Logger* logger)
+{
+  logger_ = logger;
 }
 
 }  // namespace gui

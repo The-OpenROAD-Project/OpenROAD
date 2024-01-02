@@ -53,9 +53,15 @@ class ChartsWidget : public QDockWidget
   Q_OBJECT
 
  public:
+  enum Mode
+  {
+    SELECT,
+    SLACK_HISTOGRAM
+  };
   ChartsWidget(QWidget* parent = nullptr);
 
   void setSTA(sta::dbSta* sta) { sta_ = sta; };
+  void setLogger(utl::Logger* logger);
   void setSlackMode();
   void clearChart();
 
@@ -67,6 +73,7 @@ class ChartsWidget : public QDockWidget
   void setDigitCompensator(float max_slack, float min_slack);
 
  private:
+  utl::Logger* logger_;
   sta::dbSta* sta_;
 
   QLabel* label_;

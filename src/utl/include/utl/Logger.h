@@ -347,7 +347,7 @@ struct test_ostream
 
 template <class T,
           class = std::enable_if_t<decltype(test_ostream::test<T>(0))::value>>
-auto format_as(T t)
+auto format_as(const T& t)
 {
   return fmt::streamed(t);
 }
