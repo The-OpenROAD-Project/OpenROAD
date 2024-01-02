@@ -170,12 +170,9 @@ void ChartsWidget::setSlackMode()
     *pos_set << 0;
     QString curr_value = "";
     QString next_value = "";
-    time_values << open_bracket
-                       + curr_value.setNum((i - total_neg_buckets)
-                                           * digit_compensator_)
+    time_values << open_bracket + curr_value.setNum((i - total_neg_buckets))
                        + comma
-                       + next_value.setNum(((i + 1) - total_neg_buckets)
-                                           * digit_compensator_)
+                       + next_value.setNum(((i + 1) - total_neg_buckets))
                        + close_parenthesis;
     if (max_y < bucket_count)
       max_y = bucket_count;
@@ -187,25 +184,13 @@ void ChartsWidget::setSlackMode()
     *neg_set << 0;
     QString curr_value = "";
     QString next_value = "";
-    time_values << open_bracket + curr_value.setNum(i * digit_compensator_)
-                       + comma + next_value.setNum((i + 1) * digit_compensator_)
-                       + close_parenthesis;
+    time_values << open_bracket + curr_value.setNum(i) + comma
+                       + next_value.setNum((i + 1)) + close_parenthesis;
     if (max_y < bucket_count)
       max_y = bucket_count;
   }
 
-  const QString start_title = "Slack [";
-  const QString time_suffix = sta_->units()->timeUnit()->suffix();
-  const QString time_scale_abreviation
-      = sta_->units()->timeUnit()->scaleAbbreviation();
-  const QString end_title = "]";
-  const QString axis_x_title
-      = start_title + time_scale_abreviation + time_suffix + end_title;
-
-  axis_x_->setTitleText(axis_x_title);
-  axis_x_->append(time_values);
-  axis_x_->setGridLineVisible(false);
-  axis_x_->setVisible(true);
+  setXAxisLabel(time_values);
 
   QStackedBarSeries* series = new QStackedBarSeries(this);
 
@@ -258,11 +243,15 @@ std::vector<float> ChartsWidget::getSlackForAllEndpoints() const
   return all_slack;
 }
 
+int ChartsWidget::computeDigits(int input_value)
+{
+  return input_value > 0 ? static_cast<int>(std::log10(input_value) + 1) : 1;
+}
+
 void ChartsWidget::setDigitCompensator(float max_slack, float min_slack)
 {
   const float max_abs_slack = std::max(max_slack, std::abs(min_slack));
-  const int digits
-      = max_abs_slack > 0 ? static_cast<int>(std::log10(max_abs_slack) + 1) : 1;
+  const int digits = computeDigits(max_abs_slack);
 
   digit_compensator_
       = digits > max_digits_ ? std::pow(10, digits - max_digits_) : 1;
@@ -282,6 +271,32 @@ void ChartsWidget::populateBuckets(const std::vector<float>& all_slack,
       pos_buckets[bucket_index].push_back(slack);
     }
   }
+}
+
+void ChartsWidget::setXAxisLabel(const QStringList& time_values)
+{
+  const QString start_title = "Slack [";
+  const QString time_scale_abreviation
+      = sta_->units()->timeUnit()->scaleAbbreviation();
+  QString time_suffix = sta_->units()->timeUnit()->suffix();
+
+  if (digit_compensator_ != 0) {
+    QString tenth = " * 10^";
+    QString compensator_power;
+    compensator_power.setNum(computeDigits(digit_compensator_) - 1);
+    tenth.append(compensator_power);
+
+    time_suffix.append(tenth);
+  }
+
+  const QString end_title = "]";
+  const QString axis_x_title
+      = start_title + time_scale_abreviation + time_suffix + end_title;
+
+  axis_x_->setTitleText(axis_x_title);
+  axis_x_->append(time_values);
+  axis_x_->setGridLineVisible(false);
+  axis_x_->setVisible(true);
 }
 
 void ChartsWidget::setLogger(utl::Logger* logger)

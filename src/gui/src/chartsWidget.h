@@ -72,7 +72,9 @@ class ChartsWidget : public QDockWidget
 
   // Slack Histogram
   std::vector<float> getSlackForAllEndpoints() const;
+  int computeDigits(int input_value);
   void setDigitCompensator(float max_slack, float min_slack);
+  void setXAxisLabel(const QStringList& time_values);
   void populateBuckets(const std::vector<float>& all_slack,
                        BucketsVector& neg_buckets,
                        BucketsVector& pos_buckets,
