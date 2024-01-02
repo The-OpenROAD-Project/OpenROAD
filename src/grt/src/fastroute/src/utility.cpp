@@ -203,12 +203,12 @@ void FastRouteCore::fillVIA()
         if (node1_alias < num_terminals) {
           if (treenodes[node1_alias].hID == BIG_INT
               && edgeID == treenodes[node1_alias].lID) {
-            short pin_botL, pin_topL;
-            short edge_init = gridsL[0];
-            viaStack(netID, node1_alias, pin_botL, pin_topL);
+            int16_t pin_botL, pin_topL;
+            int16_t edge_init = gridsL[0];
+            getviaStackRange(netID, node1_alias, pin_botL, pin_topL);
             pin_botL = std::min(pin_botL, edge_init);
             pin_topL = std::max(pin_topL, edge_init);
-            for (short l = pin_botL; l < pin_topL; l++) {
+            for (int16_t l = pin_botL; l < pin_topL; l++) {
               tmpX[newCNT] = gridsX[0];
               tmpY[newCNT] = gridsY[0];
               tmpL[newCNT] = l;
@@ -284,15 +284,15 @@ void FastRouteCore::fillVIA()
 
         if (node2_alias < num_terminals && treenodes[node2_alias].hID == BIG_INT
             && edgeID == treenodes[node2_alias].lID) {
-          short pin_botL, pin_topL;
-          viaStack(netID, node2_alias, pin_botL, pin_topL);
+          int16_t pin_botL, pin_topL;
+          getviaStackRange(netID, node2_alias, pin_botL, pin_topL);
           pin_botL = std::min(pin_botL, tmpL[newCNT - 1]);
           pin_topL = std::max(pin_topL, tmpL[newCNT - 1]);
           if (pin_botL == tmpL[newCNT - 1]) {
             pin_botL++;
           }
 
-          for (short l = tmpL[newCNT - 1] - 1; l > pin_botL; l--) {
+          for (int16_t l = tmpL[newCNT - 1] - 1; l > pin_botL; l--) {
             tmpX[newCNT] = tmpX[newCNT - 1];
             tmpY[newCNT] = tmpY[newCNT - 1];
             tmpL[newCNT] = l;
@@ -364,10 +364,10 @@ void FastRouteCore::fillVIA()
 }
 
 /*returns the start and end of the stack necessary to reach a node*/
-void FastRouteCore::viaStack(int netID,
+void FastRouteCore::getviaStackRange(int netID,
                              int nodeID,
-                             short& bot_pin_l,
-                             short& top_pin_l)
+                             int16_t& bot_pin_l,
+                             int16_t& top_pin_l)
 {
   FrNet* net = nets_[netID];
   const auto& treenodes = sttrees_[netID].nodes;
@@ -382,8 +382,8 @@ void FastRouteCore::viaStack(int netID,
 
   for (int p = 0; p < pin_L.size(); p++) {
     if (pin_X[p] == node_x && pin_Y[p] == node_y) {
-      bot_pin_l = std::min(bot_pin_l, (short) pin_L[p]);
-      top_pin_l = std::max(top_pin_l, (short) pin_L[p]);
+      bot_pin_l = std::min(bot_pin_l, (int16_t) pin_L[p]);
+      top_pin_l = std::max(top_pin_l, (int16_t) pin_L[p]);
     }
   }
 }
