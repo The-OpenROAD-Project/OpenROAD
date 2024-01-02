@@ -46,10 +46,12 @@ Ext::Ext() : _ext(std::make_unique<extMain>())
 
 void Ext::init(odb::dbDatabase* db,
                Logger* logger,
+               const char* spef_version,
                const std::function<void()>& rcx_init)
 {
   _db = db;
   logger_ = logger;
+  spef_version_ = spef_version;
   _ext->init(db, logger);
 
   // Define swig TCL commands.
@@ -278,8 +280,12 @@ void Ext::write_spef(const SpefOptions& options)
 
   uint netId = options.net_id;
   if (netId > 0) {
-    _ext->writeSPEF(
-        netId, options.single_pi, options.debug, options.corner, name);
+    _ext->writeSPEF(netId,
+                    options.single_pi,
+                    options.debug,
+                    options.corner,
+                    name,
+                    spef_version_);
     return;
   }
   if (!options.init) {
@@ -305,6 +311,7 @@ void Ext::write_spef(const SpefOptions& options)
                   options.no_backslash,
                   options.corner,
                   name,
+                  spef_version_,
                   options.parallel);
 
   logger_->info(RCX, 17, "Finished writing SPEF ...");

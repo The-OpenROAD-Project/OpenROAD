@@ -806,13 +806,16 @@ RepairSetup::splitLoads(PathRef *drvr_path,
   VertexOutEdgeIterator edge_iter(drvr_vertex, graph_);
   while (edge_iter.hasNext()) {
     Edge *edge = edge_iter.next();
-    Vertex *fanout_vertex = edge->to(graph_);
-    const Slack fanout_slack = sta_->vertexSlack(fanout_vertex, rf, max_);
-    const Slack slack_margin = fanout_slack - drvr_slack;
-    debugPrint(logger_, RSZ, "repair_setup", 4, " fanin {} slack_margin = {}",
-               network_->pathName(fanout_vertex->pin()),
-               delayAsString(slack_margin, sta_, 3));
-    fanout_slacks.emplace_back(fanout_vertex, slack_margin);
+    // Watch out for problematic asap7 output->output timing arcs.
+    if (edge->isWire()) {
+      Vertex *fanout_vertex = edge->to(graph_);
+      const Slack fanout_slack = sta_->vertexSlack(fanout_vertex, rf, max_);
+      const Slack slack_margin = fanout_slack - drvr_slack;
+      debugPrint(logger_, RSZ, "repair_setup", 4, " fanin {} slack_margin = {}",
+                 network_->pathName(fanout_vertex->pin()),
+                 delayAsString(slack_margin, sta_, 3));
+      fanout_slacks.emplace_back(fanout_vertex, slack_margin);
+    }
   }
 
   sort(fanout_slacks.begin(), fanout_slacks.end(),
@@ -853,9 +856,7 @@ RepairSetup::splitLoads(PathRef *drvr_path,
     Vertex *load_vertex = fanout_slack.first;
     Pin *load_pin = load_vertex->pin();
     // Leave ports connected to original net so verilog port names are preserved.
-    if (!(network_->isTopLevelPort(load_pin)
-          // Avoid output->output timing arcs (e.g. asap7).
-          || load_vertex->isDriver(network_))) {
+    if (!network_->isTopLevelPort(load_pin)) {
       LibertyPort *load_port = network_->libertyPort(load_pin);
       Instance *load = network_->instance(load_pin);
 
