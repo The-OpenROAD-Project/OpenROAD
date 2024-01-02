@@ -49,31 +49,51 @@ jobs:
         id: set_version
         run: echo "RELEASE_VERSION=v$(date +'%Y-%m-%d')" >> $GITHUB_ENV
 
-      - name: Check if release exists
-        id: check_release
-        run: |
-          TAG_NAME="v${RELEASE_VERSION}"
-          RELEASE_INFO=$(wget -qO- --header "Authorization: Bearer $GITHUB_TOKEN" "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${TAG_NAME}"  || true)
-          if [ -z "$RELEASE_INFO" ]; then
-            echo "Release does not exist."
-            echo "::set-output name=upload_url::https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases"
-          else
-            echo "Release exists."
-            RELEASE_ID=$(echo $RELEASE_INFO | jq -r '.id')
-            echo "::set-output name=upload_url::https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets"
-          fi
+      # - name: Check if release exists
+      #   id: check_release
+      #   run: |
+      #     TAG_NAME="v${RELEASE_VERSION}"
+      #     RELEASE_INFO=$(wget -qO- --header "Authorization: Bearer $GITHUB_TOKEN" "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${TAG_NAME}"  || true)
+      #     if [ -z "$RELEASE_INFO" ]; then
+      #       echo "Release does not exist."
+      #       echo "::set-output name=upload_url::https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases"
+      #       echo "::set-output name=new_release::true"
+      #     else
+      #       echo "Release exists."
+      #       RELEASE_ID=$(echo $RELEASE_INFO | jq -r '.id')
+      #       echo "::set-output name=upload_url::https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets"
+      #       echo "::set-output name=new_release::false"
+      #     fi
+      - name: Get release info
+        uses: cardinalby/git-get-release-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.RELEASE_VERSION }}
+          release_name: Release ${{ env.RELEASE_VERSION }}
+        id: release_info
 
-      - name: Create GitHub Release
-        id: create_release
-        if: steps.check_release.outputs.upload_url == 'https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases'
+      # - name: Create GitHub Release
+      #   id: create_release
+      #   if: steps.check_release.outputs.upload_url == 'https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases'
+      #   uses: actions/create-release@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     tag_name: ${{ env.RELEASE_VERSION }}
+      #     release_name: Release ${{ env.RELEASE_VERSION }}
+      #     draft: false
+      #     prerelease: false
+
+      - name: Create release if not exists
+        if: steps.release_info.outputs.name == ''
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ env.RELEASE_VERSION }}
           release_name: Release ${{ env.RELEASE_VERSION }}
-          draft: false
-          prerelease: false
+        id: create_release
 
       - name: Upload Release Asset
         id: upload-release-asset
@@ -81,7 +101,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.check_release.outputs.upload_url }}
+          upload_url: ${{ steps.release_info.outputs.upload_url || steps.create_release.outputs.upload_url }}
           asset_path: ${{ steps.artifact.outputs.file }}
           asset_name: ${{ steps.artifact.outputs.name }}.deb
           asset_content_type: application/octet-stream
