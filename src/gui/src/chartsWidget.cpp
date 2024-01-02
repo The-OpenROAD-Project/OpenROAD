@@ -49,6 +49,8 @@
 
 namespace gui {
 
+using BucketsVector = std::vector<std::vector<float>>;
+
 ChartsWidget::ChartsWidget(QWidget* parent)
     : QDockWidget("Charts", parent),
       logger_(nullptr),
@@ -141,18 +143,10 @@ void ChartsWidget::setSlackMode()
   int total_neg_buckets = std::ceil(std::abs(*min_slack) / digit_compensator_);
   int offset = std::abs(*min_slack) / digit_compensator_;
 
-  std::vector<float> pos_buckets[total_pos_buckets];
-  std::vector<float> neg_buckets[total_neg_buckets];
+  BucketsVector pos_buckets(total_pos_buckets);
+  BucketsVector neg_buckets(total_neg_buckets);
 
-  for (const auto& slack : all_slack) {
-    if (slack < 0) {
-      int bucket_index = slack / digit_compensator_;
-      neg_buckets[bucket_index + offset].push_back(slack);
-    } else {
-      int bucket_index = slack / digit_compensator_;
-      pos_buckets[bucket_index].push_back(slack);
-    }
-  }
+  populateBuckets(all_slack, pos_buckets, neg_buckets, offset);
 
   QBarSet* neg_set = new QBarSet("");
   neg_set->setBorderColor(0x8b0000);  // darkred
@@ -272,6 +266,22 @@ void ChartsWidget::setDigitCompensator(float max_slack, float min_slack)
 
   digit_compensator_
       = digits > max_digits_ ? std::pow(10, digits - max_digits_) : 1;
+}
+
+void ChartsWidget::populateBuckets(const std::vector<float>& all_slack,
+                                   BucketsVector& pos_buckets,
+                                   BucketsVector& neg_buckets,
+                                   int offset)
+{
+  for (const auto& slack : all_slack) {
+    if (slack < 0) {
+      int bucket_index = slack / digit_compensator_;
+      neg_buckets[bucket_index + offset].push_back(slack);
+    } else {
+      int bucket_index = slack / digit_compensator_;
+      pos_buckets[bucket_index].push_back(slack);
+    }
+  }
 }
 
 void ChartsWidget::setLogger(utl::Logger* logger)

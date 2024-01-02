@@ -48,6 +48,8 @@ class dbSta;
 
 namespace gui {
 
+using BucketsVector = std::vector<std::vector<float>>;
+
 class ChartsWidget : public QDockWidget
 {
   Q_OBJECT
@@ -71,6 +73,10 @@ class ChartsWidget : public QDockWidget
   // Slack Histogram
   std::vector<float> getSlackForAllEndpoints() const;
   void setDigitCompensator(float max_slack, float min_slack);
+  void populateBuckets(const std::vector<float>& all_slack,
+                       BucketsVector& neg_buckets,
+                       BucketsVector& pos_buckets,
+                       int offset);
 
  private:
   utl::Logger* logger_;
