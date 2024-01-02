@@ -53,30 +53,6 @@ RUDYCalculator::RUDYCalculator(dbBlock* block) : block_(block)
   //from RUDY paper: "The wire width p is defined by the
   // average wire-to-wire pitch ~p and number of routing layers l: p = ~p/l.
    wireWidth_ = block_->getTech()->findRoutingLayer(1)->getWidth();
-//  for ( int i=1; i < block_->getTech()->getRoutingLayerCount() -1; ++i ){
-////    wireWidth_ += block_->getTech()->findRoutingLayer(i)->getWidth();
-//    
-//      int track_spacing = 0;
-//      odb::dbTechLayer* tech_layer = block_->getTech()->findRoutingLayer(i);
-//      odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
-//
-//      //This code is the same on GRT, make a method for it? For example: getTrackSpacing()
-//      if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-//        int track_step_y = -1, init_track_y, num_tracks_y;
-//        track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
-//        track_spacing = track_step_y;
-//      } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-//        int track_step_x = -1, init_track_x, num_tracks_x;
-//        track_grid->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
-//        track_spacing = track_step_x;
-//      } else{
-////          logger_->error(GPL, 82, "Cannot find track spacing.");
-//        return;
-//      }
-//      std::cout<< "track_spacing:" << track_spacing <<", i:" << i << std::endl;
-//    wireWidth_ += track_spacing;
-//  }
-//  wireWidth_ /= block_->getTech()->getRoutingLayerCount();
 
   int track_spacing = 0;
   odb::dbTechLayer* tech_layer = block_->getTech()->findRoutingLayer(3);
@@ -177,7 +153,6 @@ void RUDYCalculator::calculateRUDY()
           const auto tileNetBoxRatio = static_cast<float>(intersectArea)
                                        / static_cast<float>(tileArea);
           const auto rudy = netCongestion * tileNetBoxRatio * 100;
-          //std::cout<< "normal addition: " << rudy << std::endl;
           tile.addRUDY(rudy);
         }
       }
