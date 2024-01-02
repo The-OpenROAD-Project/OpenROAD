@@ -365,9 +365,9 @@ void FastRouteCore::fillVIA()
 
 /*returns the start and end of the stack necessary to reach a node*/
 void FastRouteCore::getviaStackRange(int netID,
-                             int nodeID,
-                             int16_t& bot_pin_l,
-                             int16_t& top_pin_l)
+                                     int nodeID,
+                                     int16_t& bot_pin_l,
+                                     int16_t& top_pin_l)
 {
   FrNet* net = nets_[netID];
   const auto& treenodes = sttrees_[netID].nodes;
