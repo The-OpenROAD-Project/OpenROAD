@@ -71,6 +71,7 @@ jobs:
         with:
           tag_name: ${{ env.RELEASE_VERSION }}
           release_name: Release ${{ env.RELEASE_VERSION }}
+          doNotFailIfNotFound: true
         id: release_info
 
       # - name: Create GitHub Release
