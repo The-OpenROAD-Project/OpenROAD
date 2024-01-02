@@ -1329,9 +1329,15 @@ double TritonCTS::computeInsertionDelay(const std::string& name,
 {
   double insDelayPerMicron = 0.0;
 
-  if (options_->insertionDelayEnabled()) {
+  if (options_->insertionDelayEnabled() && mterm != nullptr) {
     sta::LibertyCell* libCell = network_->libertyCell(network_->dbToSta(inst));
+    if (libCell == nullptr) {
+      return insDelayPerMicron;
+    }
     sta::LibertyPort* libPort = libCell->findLibertyPort(mterm->getConstName());
+    if (libPort == nullptr) {
+      return insDelayPerMicron;
+    }
     sta::RiseFallMinMax insDelays = libPort->clockTreePathDelays();
     if (insDelays.hasValue()) {
       // use average of max rise and max fall
