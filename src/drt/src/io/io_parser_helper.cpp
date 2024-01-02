@@ -45,13 +45,18 @@ using namespace boost::polygon::operators;
 using Rectangle = boost::polygon::rectangle_data<int>;
 namespace gtl = boost::polygon;
 
-bool io::Parser::checkPinsAboveTopRoutingLayer()
+int io::Parser::getTopPinLayer()
 {
+  int topPinLayer = 0;
   if (design_->getTopBlock()) {
     for (const auto& bTerm : design_->getTopBlock()->getTerms()) {
       if (bTerm->getNet() && !bTerm->getNet()->isSpecial()) {
-        if (bTerm->isAboveTopLayer()) {
-          return true;
+        for (const auto& pin : bTerm->getPins()) {
+          for (const auto& fig : pin->getFigs()) {
+            if (((frShape*) (fig.get()))->getLayerNum() > topPinLayer) {
+              topPinLayer = ((frShape*) (fig.get()))->getLayerNum();
+            }
+          }
         }
       }
     }
@@ -60,8 +65,8 @@ bool io::Parser::checkPinsAboveTopRoutingLayer()
         if (iTerm->getNet() && !iTerm->getNet()->isSpecial()) {
           for (const auto& pin : iTerm->getTerm()->getPins()) {
             for (const auto& fig : pin->getFigs()) {
-              if (((frShape*) (fig.get()))->getLayerNum() > TOP_ROUTING_LAYER) {
-                return true;
+              if (((frShape*) (fig.get()))->getLayerNum() > topPinLayer) {
+                topPinLayer = ((frShape*) (fig.get()))->getLayerNum();
               }
             }
           }
@@ -69,7 +74,7 @@ bool io::Parser::checkPinsAboveTopRoutingLayer()
       }
     }
   }
-  return false;
+  return topPinLayer;
 }
 
 void io::Parser::initDefaultVias()
@@ -87,7 +92,7 @@ void io::Parser::initDefaultVias()
     tech_->getLayer(viaDef->getCutLayerNum())->setDefaultViaDef(viaDef);
   }
   // Check whether there are pins above top routing layer
-  bool pinsAboveTop = checkPinsAboveTopRoutingLayer();
+  int topPinLayer = getTopPinLayer();
 
   for (auto layerNum = design_->getTech()->getBottomLayerNum();
        layerNum <= design_->getTech()->getTopLayerNum();
@@ -127,7 +132,7 @@ void io::Parser::initDefaultVias()
       }
     } else {
       if (layerNum >= BOTTOM_ROUTING_LAYER
-          && (layerNum <= TOP_ROUTING_LAYER || pinsAboveTop)) {
+          && (layerNum <= std::max(TOP_ROUTING_LAYER, topPinLayer))) {
         logger_->error(DRT,
                        233,
                        "{} does not have any vias.",
