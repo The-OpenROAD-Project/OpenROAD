@@ -40,7 +40,6 @@
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
-//#include <iostream>
 
 namespace odb {
 
@@ -113,7 +112,6 @@ void RUDYCalculator::makeGrid()
 void RUDYCalculator::calculateRUDY()
 {
   // refer: https://ieeexplore.ieee.org/document/4211973
-  
   const int blockWidth = gridBlock_.dx();
   const int blockHeight = gridBlock_.dy();
   const int tileWidth = blockWidth / tileCntX_;
@@ -175,7 +173,6 @@ void RUDYCalculator::calculateRUDY()
       for (odb::dbBox* obstr_box : master->getObstructions()) {
         obstructions_cnt++;
         macroObstrRect = obstr_box->getBox();
-//        drawRect(macroObstrRect.xMin(), macroObstrRect.yMin(), macroObstrRect.dx(), macroObstrRect.d);
         transform.apply(macroObstrRect);
         const auto obstr_area = macroObstrRect.area();
         if (obstr_area == 0) {
@@ -211,10 +208,8 @@ void RUDYCalculator::calculateRUDY()
           }
         }
       }
-//      std::cout<< "obstructions_cnt: " << obstructions_cnt << std::endl;
     }
   }
-//  std::cout<< "macros_cnt: " << macros_cnt << std::endl;
 }
 
 std::pair<int, int> RUDYCalculator::getGridSize() const
