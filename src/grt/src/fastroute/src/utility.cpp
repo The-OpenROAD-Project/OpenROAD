@@ -205,7 +205,7 @@ void FastRouteCore::fillVIA()
               && edgeID == treenodes[node1_alias].lID) {
             int16_t pin_botL, pin_topL;
             int16_t edge_init = gridsL[0];
-            getviaStackRange(netID, node1_alias, pin_botL, pin_topL);
+            getViaStackRange(netID, node1_alias, pin_botL, pin_topL);
             pin_botL = std::min(pin_botL, edge_init);
             pin_topL = std::max(pin_topL, edge_init);
             for (int16_t l = pin_botL; l < pin_topL; l++) {
@@ -285,7 +285,7 @@ void FastRouteCore::fillVIA()
         if (node2_alias < num_terminals && treenodes[node2_alias].hID == BIG_INT
             && edgeID == treenodes[node2_alias].lID) {
           int16_t pin_botL, pin_topL;
-          getviaStackRange(netID, node2_alias, pin_botL, pin_topL);
+          getViaStackRange(netID, node2_alias, pin_botL, pin_topL);
           pin_botL = std::min(pin_botL, tmpL[newCNT - 1]);
           pin_topL = std::max(pin_topL, tmpL[newCNT - 1]);
           if (pin_botL == tmpL[newCNT - 1]) {
@@ -364,7 +364,7 @@ void FastRouteCore::fillVIA()
 }
 
 /*returns the start and end of the stack necessary to reach a node*/
-void FastRouteCore::getviaStackRange(int netID,
+void FastRouteCore::getViaStackRange(int netID,
                                      int nodeID,
                                      int16_t& bot_pin_l,
                                      int16_t& top_pin_l)
