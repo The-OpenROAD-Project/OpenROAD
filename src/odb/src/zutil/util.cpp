@@ -37,6 +37,8 @@
 #include <string>
 
 #include "db.h"
+#include "odb/db.h"
+#include "odb/dbShape.h"
 #include "utl/Logger.h"
 //#include <iostream>
 
@@ -50,20 +52,43 @@ RUDYCalculator::RUDYCalculator(dbBlock* block) : block_(block)
   gridBlock_ = block_->getDieArea();
   //from RUDY paper: "The wire width p is defined by the
   // average wire-to-wire pitch ~p and number of routing layers l: p = ~p/l.
-  wireWidth_ = block_->getTech()->findRoutingLayer(1)->getWidth();
+   wireWidth_ = block_->getTech()->findRoutingLayer(1)->getWidth();
+//  for ( int i=1; i < block_->getTech()->getRoutingLayerCount() -1; ++i ){
+////    wireWidth_ += block_->getTech()->findRoutingLayer(i)->getWidth();
+//    
+//      int track_spacing = 0;
+//      odb::dbTechLayer* tech_layer = block_->getTech()->findRoutingLayer(i);
+//      odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
+//
+//      //This code is the same on GRT, make a method for it? For example: getTrackSpacing()
+//      if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+//        int track_step_y = -1, init_track_y, num_tracks_y;
+//        track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
+//        track_spacing = track_step_y;
+//      } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+//        int track_step_x = -1, init_track_x, num_tracks_x;
+//        track_grid->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
+//        track_spacing = track_step_x;
+//      } else{
+////          logger_->error(GPL, 82, "Cannot find track spacing.");
+//        return;
+//      }
+//      std::cout<< "track_spacing:" << track_spacing <<", i:" << i << std::endl;
+//    wireWidth_ += track_spacing;
+//  }
+//  wireWidth_ /= block_->getTech()->getRoutingLayerCount();
 
   int track_spacing = 0;
   odb::dbTechLayer* tech_layer = block_->getTech()->findRoutingLayer(3);
   odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
 
+  //This code is the same on GRT, make a method for it? For example: getTrackSpacing()
   if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-    int track_step_y = -1;
-    int init_track_y, num_tracks_y;
+    int track_step_y = -1, init_track_y, num_tracks_y;
     track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
     track_spacing = track_step_y;
   } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-    int track_step_x = -1;
-    int init_track_x, num_tracks_x;
+    int track_step_x = -1, init_track_x, num_tracks_x;
     track_grid->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
     track_spacing = track_step_x;
   } else{
@@ -112,7 +137,7 @@ void RUDYCalculator::makeGrid()
 void RUDYCalculator::calculateRUDY()
 {
   // refer: https://ieeexplore.ieee.org/document/4211973
-
+  
   const int blockWidth = gridBlock_.dx();
   const int blockHeight = gridBlock_.dy();
   const int tileWidth = blockWidth / tileCntX_;
@@ -128,7 +153,7 @@ void RUDYCalculator::calculateRUDY()
       continue;
     }
     const auto hpwl = static_cast<float>(netBox.dx() + netBox.dy());
-    const auto wireArea = hpwl * wireWidth_; //wire length = L, wireWidth_ = p
+    const auto wireArea = hpwl * wireWidth_;
     const auto netCongestion = wireArea / netArea;
 
     // Calculate the intersection range
@@ -152,12 +177,71 @@ void RUDYCalculator::calculateRUDY()
           const auto tileNetBoxRatio = static_cast<float>(intersectArea)
                                        / static_cast<float>(tileArea);
           const auto rudy = netCongestion * tileNetBoxRatio * 100;
+          //std::cout<< "normal addition: " << rudy << std::endl;
           tile.addRUDY(rudy);
         }
       }
     }
   }
+  
+  int macros_cnt = 0;
+  int obstructions_cnt = 0;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    
+    odb::dbMaster* master = inst->getMaster();
+    int pX, pY;
+    inst->getOrigin(pX, pY);
+    odb::Point origin = odb::Point(pX, pY);
+    odb::dbTransform transform(inst->getOrient(), origin);
+    if (master->isBlock()) {
+      macros_cnt++;
+      odb::Rect macroObstrRect;
+      obstructions_cnt = 0;
+      for (odb::dbBox* obstr_box : master->getObstructions()) {
+        obstructions_cnt++;
+        macroObstrRect = obstr_box->getBox();
+//        drawRect(macroObstrRect.xMin(), macroObstrRect.yMin(), macroObstrRect.dx(), macroObstrRect.d);
+        transform.apply(macroObstrRect);
+        const auto obstr_area = macroObstrRect.area();
+        if (obstr_area == 0) {
+          continue;
+        }
+        
+        // Calculate the intersection range
+        const int minXIndex
+            = std::max(0, (macroObstrRect.xMin() - gridBlock_.xMin()) / tileWidth);
+        const int maxXIndex = std::min(
+            tileCntX_ - 1, (macroObstrRect.xMax() - gridBlock_.xMin()) / tileWidth);
+        const int minYIndex
+            = std::max(0, (macroObstrRect.yMin() - gridBlock_.yMin()) / tileHeight);
+        const int maxYIndex = std::min(
+            tileCntY_ - 1, (macroObstrRect.yMax() - gridBlock_.yMin()) / tileHeight);
+        
+        // Iterate over the tiles in the calculated range
+        for (int x = minXIndex; x <= maxXIndex; ++x) {
+          for (int y = minYIndex; y <= maxYIndex; ++y) {
+            Tile& tile = getEditableTile(x, y);
+            const auto tileBox = tile.getRect();
+            if (macroObstrRect.overlaps(tileBox)) {
+              const auto hpwl = static_cast<float>(tileBox.dx() + tileBox.dy());
+              const auto wireArea = hpwl * wireWidth_; 
+              const auto obstr_congestion = wireArea / tileBox.area();
+              const auto intersectArea = macroObstrRect.intersect(tileBox).area();
+              const auto tileArea = tileBox.area();
+              const auto tileObstrBoxRatio = static_cast<float>(intersectArea)
+                                           / static_cast<float>(tileArea);
+              const auto rudy = obstr_congestion * tileObstrBoxRatio * 100 * 2;
+              tile.addRUDY(rudy);
+            }
+          }
+        }
+      }
+//      std::cout<< "obstructions_cnt: " << obstructions_cnt << std::endl;
+    }
+  }
+//  std::cout<< "macros_cnt: " << macros_cnt << std::endl;
 }
+
 std::pair<int, int> RUDYCalculator::getGridSize() const
 {
   if (grid_.empty()) {
