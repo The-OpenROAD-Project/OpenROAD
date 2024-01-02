@@ -124,46 +124,26 @@ void ChartsWidget::setSlackMode()
 {
   chart_->setTitle("Endpoint Slack");
 
-  STAGuiInterface sta_gui(sta_);
-
-  auto time_units = sta_->units()->timeUnit();
-  auto end_points = sta_gui.getEndPoints();
-  std::vector<float> all_slack;
-  int unconstrained_count = 0;
-
-  for (auto pin : end_points) {
-    double pin_slack = 0;
-    pin_slack = sta_gui.getPinSlack(pin);
-    if (pin_slack != sta::INF)
-      all_slack.push_back(time_units->staToUser(pin_slack));
-    else
-      unconstrained_count++;
-  }
-
-  if (unconstrained_count != 0) {
-    const QString label_message = "Number of unconstrained pins: ";
-    QString unconstrained_number;
-    unconstrained_number.setNum(unconstrained_count);
-    label_->setText(label_message + unconstrained_number);
-  }
+  std::vector<float> all_slack = getSlackForAllEndpoints();
 
   auto max_slack = std::max_element(all_slack.begin(), all_slack.end());
-
   auto min_slack = std::min_element(all_slack.begin(), all_slack.end());
 
-  //+1 for values around zero
-  int total_pos_buckets = *max_slack + 1;
-  int total_neg_buckets = abs(*min_slack) + 1;
-  int offset = abs(*min_slack);
+  setDigitCompensator(*max_slack, *min_slack);
+
+  int total_pos_buckets = std::ceil(*max_slack / digit_compensator_);
+  int total_neg_buckets = std::ceil(std::abs(*min_slack) / digit_compensator_);
+  int offset = std::abs(*min_slack) / digit_compensator_;
+
   std::vector<float> pos_buckets[total_pos_buckets];
   std::vector<float> neg_buckets[total_neg_buckets];
 
   for (auto slack : all_slack) {
     if (slack < 0) {
-      int bucket_index = slack;
+      int bucket_index = slack / digit_compensator_;
       neg_buckets[bucket_index + offset].push_back(slack);
     } else {
-      int bucket_index = slack;
+      int bucket_index = slack / digit_compensator_;
       pos_buckets[bucket_index].push_back(slack);
     }
   }
@@ -190,8 +170,12 @@ void ChartsWidget::setSlackMode()
     *pos_set << 0;
     QString curr_value = "";
     QString next_value = "";
-    time_values << open_bracket + curr_value.setNum(i - total_neg_buckets)
-                       + comma + next_value.setNum((i + 1) - total_neg_buckets)
+    time_values << open_bracket
+                       + curr_value.setNum((i - total_neg_buckets)
+                                           * digit_compensator_)
+                       + comma
+                       + next_value.setNum(((i + 1) - total_neg_buckets)
+                                           * digit_compensator_)
                        + close_parenthesis;
     if (max_y < bucket_count)
       max_y = bucket_count;
@@ -203,15 +187,17 @@ void ChartsWidget::setSlackMode()
     *neg_set << 0;
     QString curr_value = "";
     QString next_value = "";
-    time_values << open_bracket + curr_value.setNum(i) + comma
-                       + next_value.setNum(i + 1) + close_parenthesis;
+    time_values << open_bracket + curr_value.setNum(i * digit_compensator_)
+                       + comma + next_value.setNum((i + 1) * digit_compensator_)
+                       + close_parenthesis;
     if (max_y < bucket_count)
       max_y = bucket_count;
   }
 
   const QString start_title = "Slack [";
-  const QString time_suffix = time_units->suffix();
-  const QString time_scale_abreviation = time_units->scaleAbbreviation();
+  const QString time_suffix = sta_->units()->timeUnit()->suffix();
+  const QString time_scale_abreviation
+      = sta_->units()->timeUnit()->scaleAbbreviation();
   const QString end_title = "]";
   const QString axis_x_title
       = start_title + time_scale_abreviation + time_suffix + end_title;
@@ -241,6 +227,45 @@ void ChartsWidget::setSlackMode()
   chart_->legend()->markers(series)[1]->setVisible(false);
   chart_->legend()->setVisible(true);
   chart_->legend()->setAlignment(Qt::AlignBottom);
+}
+
+std::vector<float> ChartsWidget::getSlackForAllEndpoints() const
+{
+  STAGuiInterface sta_gui(sta_);
+
+  auto time_units = sta_->units()->timeUnit();
+  auto end_points = sta_gui.getEndPoints();
+
+  std::vector<float> all_slack;
+  int unconstrained_count = 0;
+
+  for (auto pin : end_points) {
+    double pin_slack = 0;
+    pin_slack = sta_gui.getPinSlack(pin);
+    if (pin_slack != sta::INF)
+      all_slack.push_back(time_units->staToUser(pin_slack));
+    else
+      unconstrained_count++;
+  }
+
+  if (unconstrained_count != 0) {
+    const QString label_message = "Number of unconstrained pins: ";
+    QString unconstrained_number;
+    unconstrained_number.setNum(unconstrained_count);
+    label_->setText(label_message + unconstrained_number);
+  }
+
+  return all_slack;
+}
+
+void ChartsWidget::setDigitCompensator(float max_slack, float min_slack)
+{
+  const float max_abs_slack = std::max(max_slack, std::abs(min_slack));
+  const int digits
+      = max_abs_slack > 0 ? static_cast<int>(std::log10(max_abs_slack) + 1) : 1;
+
+  digit_compensator_
+      = digits > max_digits_ ? std::pow(10, digits - max_digits_) : 1;
 }
 
 }  // namespace gui

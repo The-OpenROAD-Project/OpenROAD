@@ -62,6 +62,10 @@ class ChartsWidget : public QDockWidget
  private slots:
   void changeMode();
 
+  // Slack Histogram
+  std::vector<float> getSlackForAllEndpoints() const;
+  void setDigitCompensator(float max_slack, float min_slack);
+
  private:
   sta::dbSta* sta_;
 
@@ -71,6 +75,10 @@ class ChartsWidget : public QDockWidget
   QChartView* display_;
   QBarCategoryAxis* axis_x_;
   QValueAxis* axis_y_;
+
+  // Maximum digits in the number of buckets when casting float --> integer
+  int max_digits_ = 2;
+  int digit_compensator_ = 0;
 };
 
 }  // namespace gui
