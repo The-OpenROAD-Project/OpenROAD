@@ -38,6 +38,7 @@
 #include <istream>
 #include <ostream>
 #include <string>
+#include <unordered_map>
 
 #include "ZException.h"
 #include "dbObject.h"
@@ -192,6 +193,18 @@ class dbOStream
     return *this;
   }
 
+  template <class T1, class T2>
+  dbOStream& operator<<(const std::unordered_map<T1, T2>& m)
+  {
+    uint sz = m.size();
+    *this << sz;
+    for (auto const& [key, val] : m) {
+      *this << key;
+      *this << val;
+    }
+    return *this;
+  }
+
   template <class T, std::size_t SIZE>
   dbOStream& operator<<(const std::array<T, SIZE>& a)
   {
@@ -330,6 +343,20 @@ class dbIStream
   }
   template <class T1, class T2>
   dbIStream& operator>>(std::map<T1, T2>& m)
+  {
+    uint sz;
+    *this >> sz;
+    for (uint i = 0; i < sz; i++) {
+      T1 key;
+      T2 val;
+      *this >> key;
+      *this >> val;
+      m[key] = val;
+    }
+    return *this;
+  }
+  template <class T1, class T2>
+  dbIStream& operator>>(std::unordered_map<T1, T2>& m)
   {
     uint sz;
     *this >> sz;

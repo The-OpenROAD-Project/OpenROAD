@@ -1116,7 +1116,7 @@ void MBFF::RunSilh(std::vector<std::vector<Tray>>& trays,
   }
 
   // run multistart_ in parallel
-  for (const auto [bit_idx, tray_idx] : ind) {
+  for (const auto& [bit_idx, tray_idx] : ind) {
     const int rows = GetRows(GetBitCnt(bit_idx), bitmask);
     const int cols = GetBitCnt(bit_idx) / rows;
 

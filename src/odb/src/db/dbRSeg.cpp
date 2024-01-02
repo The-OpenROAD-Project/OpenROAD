@@ -651,8 +651,8 @@ uint dbRSeg::getShapeId()
 void dbRSeg::setCoords(int x, int y)
 {
   _dbRSeg* seg = (_dbRSeg*) this;
-  int prev_x = seg->_xcoord;
-  int prev_y = seg->_ycoord;
+  const int prev_x = seg->_xcoord;
+  const int prev_y = seg->_ycoord;
   seg->_xcoord = x;
   seg->_ycoord = y;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
@@ -786,7 +786,7 @@ dbRSeg* dbRSeg::create(dbNet* net_,
       for (uint ii = 0; ii < cornerCnt; ii++)
         (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + ii] = 0.0;
     } else {
-      uint capIdx = block->_c_val_tbl->getIdx(cornerCnt, (float) 0.0);
+      const uint capIdx = block->_c_val_tbl->getIdx(cornerCnt, (float) 0.0);
       ZASSERT((seg->getOID() - 1) * cornerCnt + 1 == capIdx);
     }
 
