@@ -1830,7 +1830,7 @@ Descriptor::Properties DbITermDescriptor::getProperties(std::any object) const
   SelectionSet aps;
   for (auto& [mpin, ap_vec] : iterm->getAccessPoints()) {
     for (auto ap : ap_vec) {
-      DbItermAccessPoint iap{ap, iterm};
+      DbTermAccessPoint iap{ap, iterm};
       aps.insert(gui->makeSelected(iap));
     }
   }
@@ -1926,10 +1926,18 @@ Descriptor::Properties DbBTermDescriptor::getProperties(std::any object) const
 {
   auto gui = Gui::get();
   auto bterm = std::any_cast<odb::dbBTerm*>(object);
+  SelectionSet aps;
+  for (auto* pin : bterm->getBPins()) {
+    for (auto ap : pin->getAccessPoints()) {
+      DbTermAccessPoint bap{ap, bterm};
+      aps.insert(gui->makeSelected(bap));
+    }
+  }
   Properties props{{"Block", gui->makeSelected(bterm->getBlock())},
                    {"Net", gui->makeSelected(bterm->getNet())},
                    {"Signal type", bterm->getSigType().getString()},
-                   {"IO type", bterm->getIoType().getString()}};
+                   {"IO type", bterm->getIoType().getString()},
+                   {"Access Points", aps}};
 
   populateODBProperties(props, bterm);
 
@@ -2674,55 +2682,59 @@ bool DbTechLayerDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbItermAccessPointDescriptor::DbItermAccessPointDescriptor(odb::dbDatabase* db)
+DbTermAccessPointDescriptor::DbTermAccessPointDescriptor(odb::dbDatabase* db)
     : db_(db)
 {
 }
 
-std::string DbItermAccessPointDescriptor::getName(std::any object) const
+std::string DbTermAccessPointDescriptor::getName(std::any object) const
 {
-  auto iterm_ap = std::any_cast<DbItermAccessPoint>(object);
+  auto iterm_ap = std::any_cast<DbTermAccessPoint>(object);
   auto ap = iterm_ap.ap;
   std::string name(ap->getLowType().getString());
   name += std::string("/") + ap->getHighType().getString();
   return name;
 }
 
-std::string DbItermAccessPointDescriptor::getTypeName() const
+std::string DbTermAccessPointDescriptor::getTypeName() const
 {
   return "Access Point";
 }
 
-bool DbItermAccessPointDescriptor::getBBox(std::any object,
-                                           odb::Rect& bbox) const
+bool DbTermAccessPointDescriptor::getBBox(std::any object,
+                                          odb::Rect& bbox) const
 {
-  auto iterm_ap = std::any_cast<DbItermAccessPoint>(object);
+  auto iterm_ap = std::any_cast<DbTermAccessPoint>(object);
   odb::Point pt = iterm_ap.ap->getPoint();
-  int x, y;
-  iterm_ap.iterm->getInst()->getLocation(x, y);
-  odb::dbTransform xform({x, y});
-  xform.apply(pt);
+  if (iterm_ap.iterm) {
+    int x, y;
+    iterm_ap.iterm->getInst()->getLocation(x, y);
+    odb::dbTransform xform({x, y});
+    xform.apply(pt);
+  }
   bbox = {pt, pt};
   return true;
 }
 
-void DbItermAccessPointDescriptor::highlight(std::any object,
-                                             Painter& painter) const
+void DbTermAccessPointDescriptor::highlight(std::any object,
+                                            Painter& painter) const
 {
-  auto iterm_ap = std::any_cast<DbItermAccessPoint>(object);
+  auto iterm_ap = std::any_cast<DbTermAccessPoint>(object);
   odb::Point pt = iterm_ap.ap->getPoint();
-  int x, y;
-  iterm_ap.iterm->getInst()->getLocation(x, y);
-  odb::dbTransform xform({x, y});
-  xform.apply(pt);
+  if (iterm_ap.iterm) {
+    int x, y;
+    iterm_ap.iterm->getInst()->getLocation(x, y);
+    odb::dbTransform xform({x, y});
+    xform.apply(pt);
+  }
   const int shape_size = 100;
   painter.drawX(pt.x(), pt.y(), shape_size);
 }
 
-Descriptor::Properties DbItermAccessPointDescriptor::getProperties(
+Descriptor::Properties DbTermAccessPointDescriptor::getProperties(
     std::any object) const
 {
-  auto iterm_ap = std::any_cast<DbItermAccessPoint>(object);
+  auto iterm_ap = std::any_cast<DbTermAccessPoint>(object);
   auto ap = iterm_ap.ap;
 
   std::vector<odb::dbDirection> accesses;
@@ -2762,26 +2774,31 @@ Descriptor::Properties DbItermAccessPointDescriptor::getProperties(
   return props;
 }
 
-Selected DbItermAccessPointDescriptor::makeSelected(std::any object) const
+Selected DbTermAccessPointDescriptor::makeSelected(std::any object) const
 {
-  if (object.type() == typeid(DbItermAccessPoint)) {
-    auto iterm_ap = std::any_cast<DbItermAccessPoint>(object);
+  if (object.type() == typeid(DbTermAccessPoint)) {
+    auto iterm_ap = std::any_cast<DbTermAccessPoint>(object);
     return Selected(iterm_ap, this);
   }
   return Selected();
 }
 
-bool DbItermAccessPointDescriptor::lessThan(std::any l, std::any r) const
+bool DbTermAccessPointDescriptor::lessThan(std::any l, std::any r) const
 {
-  auto l_iterm_ap = std::any_cast<DbItermAccessPoint>(l);
-  auto r_iterm_ap = std::any_cast<DbItermAccessPoint>(r);
-  if (l_iterm_ap.iterm != r_iterm_ap.iterm) {
-    return l_iterm_ap.iterm->getId() < r_iterm_ap.iterm->getId();
+  auto l_term_ap = std::any_cast<DbTermAccessPoint>(l);
+  auto r_term_ap = std::any_cast<DbTermAccessPoint>(r);
+  if (l_term_ap.iterm != r_term_ap.iterm && l_term_ap.iterm != nullptr
+      && r_term_ap.iterm != nullptr) {
+    return l_term_ap.iterm->getId() < r_term_ap.iterm->getId();
   }
-  return l_iterm_ap.ap->getId() < r_iterm_ap.ap->getId();
+  if (l_term_ap.bterm != r_term_ap.bterm && l_term_ap.bterm != nullptr
+      && r_term_ap.bterm != nullptr) {
+    return l_term_ap.bterm->getId() < r_term_ap.bterm->getId();
+  }
+  return l_term_ap.ap->getId() < r_term_ap.ap->getId();
 }
 
-bool DbItermAccessPointDescriptor::getAllObjects(SelectionSet& objects) const
+bool DbTermAccessPointDescriptor::getAllObjects(SelectionSet& objects) const
 {
   auto* chip = db_->getChip();
   if (chip == nullptr) {
@@ -2795,7 +2812,15 @@ bool DbItermAccessPointDescriptor::getAllObjects(SelectionSet& objects) const
   for (auto* iterm : block->getITerms()) {
     for (auto [mpin, aps] : iterm->getAccessPoints()) {
       for (auto* ap : aps) {
-        objects.insert(makeSelected(DbItermAccessPoint{ap, iterm}));
+        objects.insert(makeSelected(DbTermAccessPoint{ap, iterm}));
+      }
+    }
+  }
+
+  for (auto* bterm : block->getBTerms()) {
+    for (auto* pin : bterm->getBPins()) {
+      for (auto* ap : pin->getAccessPoints()) {
+        objects.insert(makeSelected(DbTermAccessPoint{ap, bterm}));
       }
     }
   }
