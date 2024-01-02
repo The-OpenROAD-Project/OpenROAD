@@ -235,8 +235,9 @@ float Timing::getPinArrival_(sta::Pin* sta_pin, RiseFall rf, MinMax minmax)
   float d1, d2;
   sta::Clock* defaultArrivalClock = getSta()->sdc()->defaultArrivalClock();
   for (auto vertex : vertex_array) {
-    if (vertex == nullptr)
+    if (vertex == nullptr) {
       continue;
+    }
     const sta::RiseFall* clk_r = sta::RiseFall::rise();
     const sta::RiseFall* clk_f = sta::RiseFall::fall();
     const sta::RiseFall* arrive_hold = (rf == Rise) ? clk_r : clk_f;

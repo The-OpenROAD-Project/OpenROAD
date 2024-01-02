@@ -112,7 +112,7 @@ class Timing
   float getPinArrivalTime(sta::Clock* clk,
                           const sta::RiseFall* clk_rf,
                           sta::Vertex* vertex,
-                          const sta::RiseFall* arrive_or_hold);
+                          const sta::RiseFall* arrive_hold);
   sta::Graph* cmdGraph();
   sta::Network* cmdLinkedNetwork();
   std::pair<odb::dbITerm*, odb::dbBTerm*> staToDBPin(const sta::Pin* pin);
