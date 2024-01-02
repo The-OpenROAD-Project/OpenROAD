@@ -257,24 +257,16 @@ bool Design::isInClock(odb::dbInst* inst)
   return false;
 }
 
-std::string Design::getITermName(odb::dbITerm* ITerm)
+std::string Design::getITermName(odb::dbITerm* pin)
 {
-  auto MTerm_name = ITerm->getMTerm()->getName();
-  auto inst_name = ITerm->getInst()->getName();
+  auto MTerm_name = pin->getMTerm()->getName();
+  auto inst_name = pin->getInst()->getName();
   return inst_name + "/" + MTerm_name;
 }
 
-bool Design::isInSupply(odb::dbITerm* iterm)
+bool Design::isInSupply(odb::dbITerm* pin)
 {
-  auto* mTerm = iterm->getMTerm();
-  if (mTerm != nullptr) {
-    auto sig_type = mTerm->getSigType();
-    if (sig_type == odb::dbSigType::POWER
-        || sig_type == odb::dbSigType::GROUND) {
-      return true;
-    }
-  }
-  return false;
+  return pin->getSigType().isSupply();
 }
 
 std::uint64_t Design::getNetRoutedLength(odb::dbNet* net)

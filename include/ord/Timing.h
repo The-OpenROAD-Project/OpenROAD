@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2022, The Regents of the University of California
+// Copyright (c) 2023, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -44,11 +44,8 @@
 #include "sta/SdcClass.hh"
 
 namespace odb {
-// class dbBlock;
 class dbMaster;
 class dbMTerm;
-// class dbNet;
-// class dbInst;
 class dbITerm;
 class dbBTerm;
 }  // namespace odb
@@ -56,14 +53,12 @@ class dbBTerm;
 namespace sta {
 class dbSta;
 class Corner;
-// class MinMax;
 class LibertyCell;
 class Network;
 class Sta;
 class RiseFall;
 class Vertex;
 class Pin;
-// class PinSet;
 }  // namespace sta
 
 namespace ord {
@@ -80,12 +75,17 @@ class Timing
     Rise,
     Fall
   };
+  enum MinMax
+  {
+    Min,
+    Max
+  };
 
   sta::ClockSeq findClocksMatching(const char* pattern,
                                    bool regexp,
                                    bool nocase);
-  float getPinArrival(odb::dbITerm* db_pin, RiseFall rf);
-  float getPinArrival(odb::dbBTerm* db_pin, RiseFall rf);
+  float getPinArrival(odb::dbITerm* db_pin, RiseFall rf, MinMax mm = Max);
+  float getPinArrival(odb::dbBTerm* db_pin, RiseFall rf, MinMax mm = Max);
   std::vector<float> arrivalsClk(const sta::RiseFall* rf,
                                  sta::Clock* clk,
                                  const sta::RiseFall* clk_rf,
@@ -96,7 +96,6 @@ class Timing
                           const sta::RiseFall* arrive_or_hold);
   sta::Graph* cmdGraph();
   sta::Network* cmdLinkedNetwork();
-  std::array<sta::Vertex*, 2> vertices(const sta::Pin* pin);
   bool isTimeInf(float time);
 
   float slew_corner(sta::Vertex* vertex);
@@ -105,8 +104,6 @@ class Timing
 
   std::pair<odb::dbITerm*, odb::dbBTerm*> staToDBPin(const sta::Pin* pin);
 
-  bool isStartpoint(odb::dbITerm* db_pin);
-  bool isStartpoint(odb::dbBTerm* db_pin);
   bool isEndpoint(odb::dbITerm* db_pin);
   bool isEndpoint(odb::dbBTerm* db_pin);
 
@@ -116,10 +113,10 @@ class Timing
  private:
   sta::LibertyCell* getLibertyCell(odb::dbMaster* master);
   sta::dbSta* getSta();
-  bool isStartpoint_(sta::Pin* sta_pin);
+  std::array<sta::Vertex*, 2> vertices(const sta::Pin* pin);
   bool isEndpoint_(sta::Pin* sta_pin);
   float getPinSlew_(sta::Pin* sta_pin);
-  float getPinArrival_(sta::Pin* sta_pin, RiseFall rf);
+  float getPinArrival_(sta::Pin* sta_pin, RiseFall rf, MinMax mm);
   Design* design_;
 };
 

@@ -139,8 +139,6 @@ namespace ord {
 
 class Tech;
 
-class OpenRoad;
-
 class Design
 {
  public:
@@ -177,8 +175,8 @@ class Design
   bool isSequential(odb::dbMaster* master);
   bool isBuffer(odb::dbMaster* master);
   bool isInverter(odb::dbMaster* master);
-  bool isInSupply(odb::dbITerm* iterm);
-  std::string getITermName(odb::dbITerm* ITerm);
+  bool isInSupply(odb::dbITerm* pin);
+  std::string getITermName(odb::dbITerm* pin);
   bool isInClock(odb::dbInst* inst);
   std::uint64_t getNetRoutedLength(odb::dbNet* net);
   float staticPower(odb::dbInst* inst, sta::Corner* corner);
