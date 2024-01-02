@@ -96,41 +96,44 @@ bool Timing::isEndpoint_(sta::Pin* sta_pin)
   return false;
 }
 
-float Timing::slew(sta::Vertex* vertex, sta::MinMax minmax)
+float Timing::slew_all_corners(sta::Vertex* vertex, sta::MinMax* minmax)
 {
   auto sta = getSta();
-  float slew = -sta::INF;
-  float slew_min = +sta::INF;
-  float slew;
+  bool max = (minmax == sta::MinMax::max());
+  float slew = (max) ? -sta::INF : sta::INF;
+  float slew_corner;
   for (auto corner : getCorners()) {
-    slew = sta::delayAsFloat(sta->vertexSlew(vertex, sta::RiseFall::rise(), corner, minmax));
-    slew_max = std::max(slew_max,
+    slew_corner = sta::delayAsFloat(
+        sta->vertexSlew(vertex, sta::RiseFall::rise(), corner, minmax));
+    slew = (max) ? std::max(slew, slew_corner) : std::min(slew, slew_corner);
   }
-  return slew_max:slew_min;
+  return slew;
 }
 
-float Timing::getPinSlew(odb::dbITerm* db_pin)
+float Timing::getPinSlew(odb::dbITerm* db_pin, MinMax minmax)
 {
   sta::dbSta* sta = getSta();
   sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
-  return getPinSlew_(sta_pin);
+  return getPinSlew_(sta_pin, minmax);
 }
 
-float Timing::getPinSlew(odb::dbBTerm* db_pin)
+float Timing::getPinSlew(odb::dbBTerm* db_pin, MinMax minmax)
 {
   sta::dbSta* sta = getSta();
   sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
-  return getPinSlew_(sta_pin);
+  return getPinSlew_(sta_pin, minmax);
 }
 
-float Timing::getPinSlew_(sta::Pin* sta_pin)
+float Timing::getPinSlew_(sta::Pin* sta_pin, MinMax minmax)
 {
   auto vertex_array = vertices(sta_pin);
-  float pinSlew = -sta::INF;
+  float pinSlew = (minmax == Max) ? -sta::INF : sta::INF;
+  auto sta_minmax = (minmax == Max) ? sta::MinMax::max() : sta::MinMax::min();
   for (auto vertex : vertex_array) {
     if (vertex != nullptr) {
-      float pinSlewTemp = slew_corner(vertex);
-      pinSlew = std::max(pinSlew, pinSlewTemp);
+      float pinSlewTemp = slew_all_corners(vertex, sta_minmax);
+      pinSlew = (minmax == Max) ? std::max(pinSlew, pinSlewTemp)
+                                : std::min(pinSlew, pinSlewTemp);
     }
   }
   return pinSlew;
@@ -170,13 +173,10 @@ std::vector<float> Timing::arrivalsClk(const sta::RiseFall* rf,
 {
   auto sta = getSta();
   std::vector<float> arrivals;
-
   const sta::ClockEdge* clk_edge = nullptr;
-
   if (clk) {
     clk_edge = clk->edge(clk_rf);
   }
-
   for (auto path_ap : sta->corners()->pathAnalysisPts()) {
     arrivals.push_back(sta::delayAsFloat(
         sta->vertexArrival(vertex, rf, clk_edge, path_ap, nullptr)));
@@ -214,47 +214,42 @@ sta::ClockSeq Timing::findClocksMatching(const char* pattern,
   return sta->sdc()->findClocksMatching(&matcher);
 }
 
-float Timing::getPinArrival(odb::dbITerm* db_pin, RiseFall rf, MinMax mm)
+float Timing::getPinArrival(odb::dbITerm* db_pin, RiseFall rf, MinMax minmax)
 {
   sta::dbSta* sta = getSta();
   sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
-  return getPinArrival_(sta_pin, rf, mm);
+  return getPinArrival_(sta_pin, rf, minmax);
 }
 
-float Timing::getPinArrival(odb::dbBTerm* db_pin, RiseFall rf, MinMax mm)
+float Timing::getPinArrival(odb::dbBTerm* db_pin, RiseFall rf, MinMax minmax)
 {
   sta::dbSta* sta = getSta();
   sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
-  return getPinArrival_(sta_pin, rf);
+  return getPinArrival_(sta_pin, rf, minmax);
 }
 
-float Timing::getPinArrival_(sta::Pin* sta_pin, RiseFall rf, MinMax mm)
+float Timing::getPinArrival_(sta::Pin* sta_pin, RiseFall rf, MinMax minmax)
 {
   auto vertex_array = vertices(sta_pin);
-  float delay = -1;
+  float delay = (minmax == Max) ? -sta::INF : sta::INF;
   float d1, d2;
-  sta::Clock* defaultArrivalClock
-      = getSta()->sdc()->defaultArrivalClock();
+  sta::Clock* defaultArrivalClock = getSta()->sdc()->defaultArrivalClock();
   for (auto vertex : vertex_array) {
-    if (vertex == nullptr) {
-      continue
-    }
-    const sta::RiseFall* arrive_hold
-        = (rf == Rise) ? sta::RiseFall::rise() : sta::RiseFall::fall();
-    const sta::RiseFall* clk_rf = sta::RiseFall::rise();
-    d1 = getPinArrivalTime(nullptr, clk_rf, vertex, arrive_hold);
-    d2 = getPinArrivalTime(defaultArrivalClock, clk_rf, vertex, arrive_hold);
+    if (vertex == nullptr)
+      continue;
+    const sta::RiseFall* clk_r = sta::RiseFall::rise();
+    const sta::RiseFall* clk_f = sta::RiseFall::fall();
+    const sta::RiseFall* arrive_hold = (rf == Rise) ? clk_r : clk_f;
+    d1 = getPinArrivalTime(nullptr, clk_r, vertex, arrive_hold);
+    d2 = getPinArrivalTime(defaultArrivalClock, clk_r, vertex, arrive_hold);
+    delay = (minmax == Max) ? std::max({d1, d2, delay})
+                            : std::min({d1, d2, delay});
     for (auto clk : findClocksMatching("*", false, false)) {
-      delay
-          = std::max(delay,
-                     getPinArrivalTime(
-                         clk, sta::RiseFall::rise(), vertex, arrive_hold));
-      delay
-          = std::max(delay,
-                     getPinArrivalTime(
-                         clk, sta::RiseFall::fall(), vertex, arrive_hold));
+      d1 = getPinArrivalTime(clk, clk_r, vertex, arrive_hold);
+      d2 = getPinArrivalTime(clk, clk_f, vertex, arrive_hold);
+      delay = (minmax == Max) ? std::max({d1, d2, delay})
+                              : std::min({d1, d2, delay});
     }
-    
   }
   return delay;
 }
