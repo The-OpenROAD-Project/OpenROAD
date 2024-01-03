@@ -121,7 +121,7 @@ void ChartsWidget::showToolTip(bool is_hovering, int bar_index)
         = QString("Interval: ") + axis_x_->categories()[bar_index];
     time_info.append(QString("\nTime Unit: %1 *10^%2")
                          .arg(time_unit)
-                         .arg(computeDigits(digit_compensator_)));
+                         .arg(computeDigits(digit_compensator_ - 1)));
     const QString tool_tip = number_of_pins + time_info;
 
     QToolTip::showText(QCursor::pos(), tool_tip, this);
