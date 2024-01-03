@@ -181,6 +181,15 @@ float Design::getNetCap(odb::dbNet* net, sta::Corner* corner, MinMax minmax)
   return pin_cap + wire_cap;
 }
 
+float Design::getPortCap(odb::dbITerm* pin, sta::Corner* corner, MinMax minmax)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::Pin* sta_pin = network->dbToSta(pin);
+  sta::LibertyPort* lib_port = network->libertyPort(sta_pin);
+  return sta->capacitance(lib_port, corner, getMinMax(minmax));
+}
+
 sta::LibertyCell* Design::getLibertyCell(odb::dbMaster* master)
 {
   sta::dbSta* sta = getSta();

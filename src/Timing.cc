@@ -261,6 +261,28 @@ std::vector<sta::Corner*> Timing::getCorners()
   return {corners->begin(), corners->end()};
 }
 
+float Timing::getPinSlack(odb::dbITerm* db_pin, RiseFall rf, MinMax minmax)
+{
+  sta::dbSta* sta = getSta();
+  sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
+  return getPinSlack_(sta_pin, rf, minmax);
+}
+
+float Timing::getPinSlack(odb::dbBTerm* db_pin, RiseFall rf, MinMax minmax)
+{
+  sta::dbSta* sta = getSta();
+  sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
+  return getPinSlack_(sta_pin, rf, minmax);
+}
+
+float Timing::getPinSlack_(sta::Pin* sta_pin, RiseFall rf, MinMax minmax)
+{
+  sta::dbSta* sta = getSta();
+  auto sta_minmax = (minmax == Max) ? sta::MinMax::max() : sta::MinMax::min();
+  auto sta_rf = (rf == Rise) ? sta::RiseFall::rise() : sta::RiseFall::fall();
+  return sta->pinSlack(sta_pin, sta_rf, sta_minmax);
+}
+
 // I'd like to return a std::set but swig gave me way too much grief
 // so I just copy the set to a vector.
 std::vector<odb::dbMTerm*> Timing::getTimingFanoutFrom(odb::dbMTerm* input)

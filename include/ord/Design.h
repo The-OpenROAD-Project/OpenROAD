@@ -172,6 +172,7 @@ class Design
     Max
   };
   float getNetCap(odb::dbNet* net, sta::Corner* corner, MinMax minmax);
+  float getPortCap(odb::dbITerm* pin, sta::Corner* corner, MinMax minmax);
   bool isSequential(odb::dbMaster* master);
   bool isBuffer(odb::dbMaster* master);
   bool isInverter(odb::dbMaster* master);
