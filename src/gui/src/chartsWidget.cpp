@@ -110,18 +110,23 @@ void ChartsWidget::changeMode()
 void ChartsWidget::showToolTip(bool is_hovering, int bar_index)
 {
   if (is_hovering) {
-    QString time_unit = sta_->units()->timeUnit()->scaleAbbreviation();
-    time_unit.append(sta_->units()->timeUnit()->suffix());
-
     const qreal index_value = static_cast<QBarSet*>(sender())->at(bar_index);
     const QString number_of_pins
         = QString("Number of Endpoints: %1\n").arg(index_value);
 
-    QString time_info
-        = QString("Interval: ") + axis_x_->categories()[bar_index];
-    time_info.append(QString("\nTime Unit: %1 *10^%2")
-                         .arg(time_unit)
-                         .arg(computeDigits(digit_compensator_ - 1)));
+    QString time_unit = sta_->units()->timeUnit()->scaleAbbreviation();
+    time_unit.append(sta_->units()->timeUnit()->suffix());
+
+    const int x_index = (bar_index - index_offset_);
+    const int compensator = digit_compensator_ > 1 ? std::pow(
+                                10, computeDigits(digit_compensator_ - 1))
+                                                   : 1;
+
+    QString time_info = QString("Interval: [%1, %2) %3")
+                            .arg((x_index - 1) * compensator)
+                            .arg(x_index * compensator)
+                            .arg(time_unit);
+
     const QString tool_tip = number_of_pins + time_info;
 
     QToolTip::showText(QCursor::pos(), tool_tip, this);
@@ -165,12 +170,12 @@ void ChartsWidget::setSlackMode()
 
   int total_pos_buckets = std::ceil(*max_slack / digit_compensator_);
   int total_neg_buckets = std::ceil(std::abs(*min_slack) / digit_compensator_);
-  int offset = std::abs(*min_slack) / digit_compensator_;
+  index_offset_ = std::abs(*min_slack) / digit_compensator_;
 
   BucketsVector pos_buckets(total_pos_buckets);
   BucketsVector neg_buckets(total_neg_buckets);
 
-  populateBuckets(all_slack, pos_buckets, neg_buckets, offset);
+  populateBuckets(all_slack, pos_buckets, neg_buckets);
 
   QBarSet* neg_set = new QBarSet("");
   neg_set->setBorderColor(0x8b0000);  // darkred
@@ -278,13 +283,12 @@ void ChartsWidget::setDigitCompensator(const float max_slack,
 
 void ChartsWidget::populateBuckets(const std::vector<float>& all_slack,
                                    BucketsVector& pos_buckets,
-                                   BucketsVector& neg_buckets,
-                                   const int offset)
+                                   BucketsVector& neg_buckets)
 {
   for (const auto& slack : all_slack) {
     if (slack < 0) {
       int bucket_index = slack / digit_compensator_;
-      neg_buckets[bucket_index + offset].push_back(slack);
+      neg_buckets[bucket_index + index_offset_].push_back(slack);
     } else {
       int bucket_index = slack / digit_compensator_;
       pos_buckets[bucket_index].push_back(slack);
@@ -314,6 +318,7 @@ void ChartsWidget::setXAxisLabel(const QStringList& time_values)
 
   axis_x_->setTitleText(axis_x_title);
   axis_x_->append(time_values);
+  axis_x_->setLabelsAngle(-90);
   axis_x_->setGridLineVisible(false);
   axis_x_->setVisible(true);
 }

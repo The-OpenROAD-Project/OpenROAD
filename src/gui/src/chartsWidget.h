@@ -77,8 +77,7 @@ class ChartsWidget : public QDockWidget
   void setDigitCompensator(float max_slack, float min_slack);
   void populateBuckets(const std::vector<float>& all_slack,
                        BucketsVector& neg_buckets,
-                       BucketsVector& pos_buckets,
-                       int offset);
+                       BucketsVector& pos_buckets);
   void setXAxisLabel(const QStringList& time_values);
   void setYAxisLabel(int max_y);
 
@@ -95,6 +94,10 @@ class ChartsWidget : public QDockWidget
   // Maximum digits in the number of buckets when casting float --> integer
   const int max_digits_ = 2;
   int digit_compensator_ = 0;
+
+  // Used to keep one bar set for negative slack values
+  // and other for positive values
+  int index_offset_ = 0;
   const int default_tick_count_ = 15;
 };
 
