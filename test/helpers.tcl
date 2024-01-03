@@ -78,16 +78,20 @@ proc run_equivalence_test {test lib remove_cells} {
 }
 #===========================================================================================
 
-proc diff_files { file1 file2 } {
+proc diff_files { file1 file2 {ignore ""}} {
   set stream1 [open $file1 r]
   set stream2 [open $file2 r]
-  
+
+  set skip false
   set line 1
   set found_diff 0
   set line1_length [gets $stream1 line1]
   set line2_length [gets $stream2 line2]
   while { $line1_length >= 0 && $line2_length >= 0 } {
-    if { $line1 != $line2 } {
+    if {$ignore ne ""} {
+      set skip [regexp $ignore $line1 || regexp $ignore $line2]
+    }
+    if { !$skip && $line1 != $line2 } {
       set found_diff 1
       break
     }

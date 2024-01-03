@@ -40,7 +40,8 @@
 
 namespace rcx {
 
-using namespace odb;
+using odb::dbRSeg;
+using odb::SEQ;
 using utl::RCX;
 
 bool OUREVERSEORDER = false;
@@ -1721,7 +1722,7 @@ extDistRC* extDistRCTable::getRC(uint s, bool compute)
 
 extDistRC* extDistWidthRCTable::getFringeRC(uint mou, uint w, int index_dist)
 {
-  int wIndex = getWidthIndex(w);
+  const int wIndex = getWidthIndex(w);
   if ((wIndex < 0) || (wIndex >= (int) _widthTable->getCnt())) {
     return nullptr;
   }

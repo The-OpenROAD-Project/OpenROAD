@@ -358,7 +358,7 @@ void dbWire::addOneSeg(unsigned char op, int value)
   wire->_opcodes.push_back(op);
 }
 
-uint dbWire::getTermJid(int termid)
+uint dbWire::getTermJid(const int termid) const
 {
   _dbWire* wire = (_dbWire*) this;
   int topcd = WOP_ITERM;
@@ -367,21 +367,22 @@ uint dbWire::getTermJid(int termid)
     topcd = WOP_BTERM;
     ttid = -termid;
   }
-  uint wlen = wire->length();
+  const uint wlen = wire->length();
   uint jj;
   for (jj = 0; jj < wlen; jj++) {
     if ((wire->_opcodes[jj] & WOP_OPCODE_MASK) == topcd) {
-      if (wire->_data[jj] == ttid)
+      if (wire->_data[jj] == ttid) {
         break;
-      else
-        continue;
+      }
     }
   }
-  if (jj == wlen)
+  if (jj == wlen) {
     return 0;
+  }
   jj--;
-  if ((wire->_opcodes[jj] & WOP_OPCODE_MASK) == WOP_PROPERTY)
+  if ((wire->_opcodes[jj] & WOP_OPCODE_MASK) == WOP_PROPERTY) {
     jj--;
+  }
   return jj;
 }
 
