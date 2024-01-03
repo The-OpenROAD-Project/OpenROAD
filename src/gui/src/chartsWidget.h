@@ -69,6 +69,7 @@ class ChartsWidget : public QDockWidget
 
  private slots:
   void changeMode();
+  void showToolTip(bool is_hovering, int bar_index);
 
  private:
   void getSlackForAllEndpoints(std::vector<float>& all_slack) const;

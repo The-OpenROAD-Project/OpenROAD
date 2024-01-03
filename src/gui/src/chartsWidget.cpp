@@ -107,6 +107,29 @@ void ChartsWidget::changeMode()
   }
 }
 
+void ChartsWidget::showToolTip(bool is_hovering, int bar_index)
+{
+  if (is_hovering) {
+    QString time_unit = sta_->units()->timeUnit()->scaleAbbreviation();
+    time_unit.append(sta_->units()->timeUnit()->suffix());
+
+    const qreal index_value = static_cast<QBarSet*>(sender())->at(bar_index);
+    const QString number_of_pins
+        = QString("Number of Endpoints: %1\n").arg(index_value);
+
+    QString time_info
+        = QString("Interval: ") + axis_x_->categories()[bar_index];
+    time_info.append(QString("\nTime Unit: %1 *10^%2")
+                         .arg(time_unit)
+                         .arg(computeDigits(digit_compensator_)));
+    const QString tool_tip = number_of_pins + time_info;
+
+    QToolTip::showText(QCursor::pos(), tool_tip, this);
+  } else {
+    QToolTip::hideText();
+  }
+}
+
 void ChartsWidget::clearChart()
 {
   chart_->setTitle("");
@@ -156,6 +179,9 @@ void ChartsWidget::setSlackMode()
   QBarSet* pos_set = new QBarSet("");
   pos_set->setBorderColor(0x006400);  // darkgreen
   pos_set->setColor(0x90ee90);        // lightgreen
+
+  connect(neg_set, &QBarSet::hovered, this, &ChartsWidget::showToolTip);
+  connect(pos_set, &QBarSet::hovered, this, &ChartsWidget::showToolTip);
 
   QStringList time_values;
 
