@@ -277,7 +277,7 @@ void ChartsWidget::setXAxisLabel(const QStringList& time_values)
       = sta_->units()->timeUnit()->scaleAbbreviation();
   QString time_suffix = sta_->units()->timeUnit()->suffix();
 
-  if (digit_compensator_ != 0) {
+  if (digit_compensator_ > 1) {
     QString tenth = " * 10^";
     QString compensator_power;
     compensator_power.setNum(computeDigits(digit_compensator_) - 1);
@@ -299,11 +299,8 @@ void ChartsWidget::setXAxisLabel(const QStringList& time_values)
 void ChartsWidget::setYAxisLabel(const int max_y)
 {
   axis_y_->setTitleText("Number of Endpoints");
-
-  const int max_y_digits = computeDigits(max_y);
-
-  axis_y_->setRange(0, std::pow(10, max_y_digits));
-  axis_y_->setTickCount(default_tick_);
+  axis_y_->setRange(0, max_y);
+  axis_y_->setTickCount(default_tick_count_);
   axis_y_->setLabelFormat("%i");
   axis_y_->setVisible(true);
 }

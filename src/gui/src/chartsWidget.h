@@ -95,9 +95,7 @@ class ChartsWidget : public QDockWidget
   // Maximum digits in the number of buckets when casting float --> integer
   const int max_digits_ = 2;
   int digit_compensator_ = 0;
-
-  // Tick count for round numbers in the y axis
-  const int default_tick_ = 21;
+  const int default_tick_count_ = 15;
 };
 
 }  // namespace gui
