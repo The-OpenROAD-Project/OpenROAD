@@ -170,9 +170,8 @@ void ChartsWidget::setSlackMode()
     *pos_set << 0;
     QString curr_value = "";
     QString next_value = "";
-    time_values << open_bracket + curr_value.setNum((i - total_neg_buckets))
-                       + comma
-                       + next_value.setNum(((i + 1) - total_neg_buckets))
+    time_values << open_bracket + curr_value.setNum(i - total_neg_buckets)
+                       + comma + next_value.setNum((i + 1) - total_neg_buckets)
                        + close_parenthesis;
     if (max_y < bucket_count)
       max_y = bucket_count;
@@ -185,7 +184,7 @@ void ChartsWidget::setSlackMode()
     QString curr_value = "";
     QString next_value = "";
     time_values << open_bracket + curr_value.setNum(i) + comma
-                       + next_value.setNum((i + 1)) + close_parenthesis;
+                       + next_value.setNum(i + 1) + close_parenthesis;
     if (max_y < bucket_count)
       max_y = bucket_count;
   }
