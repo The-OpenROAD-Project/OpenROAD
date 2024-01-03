@@ -1677,10 +1677,10 @@ Tree flutes_MD(int d,
 
 #if FLUTE_LOCAL_REFINEMENT == 1
   if (BreakInX(bestbp)) {
-    t = hmergetree(bestt1, bestt2, s);
+    t = hmergetree(std::move(bestt1), std::move(bestt2), s);
     local_refinement(degree, &t, si[BreakPt(bestbp)]);
   } else {
-    t = vmergetree(bestt1, bestt2);
+    t = vmergetree(std::move(bestt1), std::move(bestt2));
     local_refinement(degree, &t, BreakPt(bestbp));
   }
 #else

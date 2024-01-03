@@ -154,8 +154,8 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
         continue;
       }
 
-      auto mtermName = mterm->getName();
-      auto netName = (net == NULL) ? ("dummy_" + std::to_string(dummy_nets++))
+      const auto& mtermName = mterm->getName();
+      const auto& netName = (net == NULL) ? ("dummy_" + std::to_string(dummy_nets++))
                                    : net->getName();
 
       currentConnections += " " + mtermName + "=" + netName;
@@ -280,7 +280,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
     else if (cell->hasSequentials())
       currentGate += " " + currentClock;
 
-    subckts[instIndex++] = currentGate;
+    subckts[instIndex++] = std::move(currentGate);
   }
 
   // remove drivers from input list
