@@ -2003,8 +2003,8 @@ vector<Violation> AntennaChecker::getAntennaViolations(dbNet* net,
             }
           }
         }
-        Violation antenna_violation
-            = {layer->getRoutingLevel(), std::move(gates), diode_count_per_gate};
+        Violation antenna_violation = {
+            layer->getRoutingLevel(), std::move(gates), diode_count_per_gate};
         antenna_violations.push_back(antenna_violation);
       }
     }
