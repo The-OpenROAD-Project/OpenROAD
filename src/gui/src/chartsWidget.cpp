@@ -122,7 +122,8 @@ void ChartsWidget::clearChart()
 
 void ChartsWidget::setSlackMode()
 {
-  std::vector<float> all_slack = getSlackForAllEndpoints();
+  std::vector<float> all_slack;
+  getSlackForAllEndpoints(all_slack);
 
   if (all_slack.size() == 0) {
     logger_->warn(utl::GUI,
@@ -209,14 +210,12 @@ void ChartsWidget::setSlackMode()
   chart_->legend()->setAlignment(Qt::AlignBottom);
 }
 
-std::vector<float> ChartsWidget::getSlackForAllEndpoints() const
+void ChartsWidget::getSlackForAllEndpoints(std::vector<float>& all_slack) const
 {
   STAGuiInterface sta_gui(sta_);
 
   auto time_units = sta_->units()->timeUnit();
   auto end_points = sta_gui.getEndPoints();
-
-  std::vector<float> all_slack;
   int unconstrained_count = 0;
 
   for (auto pin : end_points) {
@@ -234,8 +233,6 @@ std::vector<float> ChartsWidget::getSlackForAllEndpoints() const
     unconstrained_number.setNum(unconstrained_count);
     label_->setText(label_message + unconstrained_number);
   }
-
-  return all_slack;
 }
 
 int ChartsWidget::computeDigits(const int input_value)
@@ -256,7 +253,7 @@ void ChartsWidget::setDigitCompensator(const float max_slack,
 void ChartsWidget::populateBuckets(const std::vector<float>& all_slack,
                                    BucketsVector& pos_buckets,
                                    BucketsVector& neg_buckets,
-                                   int offset)
+                                   const int offset)
 {
   for (const auto& slack : all_slack) {
     if (slack < 0) {
