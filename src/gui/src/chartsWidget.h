@@ -70,7 +70,7 @@ class ChartsWidget : public QDockWidget
  private slots:
   void changeMode();
 
-  // Slack Histogram
+ private:
   std::vector<float> getSlackForAllEndpoints() const;
   int computeDigits(const int input_value);
   void setDigitCompensator(const float max_slack, const float min_slack);
@@ -81,7 +81,6 @@ class ChartsWidget : public QDockWidget
   void setXAxisLabel(const QStringList& time_values);
   void setYAxisLabel(const int max_y);
 
- private:
   utl::Logger* logger_;
   sta::dbSta* sta_;
 
