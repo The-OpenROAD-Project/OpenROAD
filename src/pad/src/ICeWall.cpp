@@ -1048,7 +1048,8 @@ void ICeWall::placeTerminals(const std::vector<odb::dbITerm*>& iterms)
     odb::Rect shape = pin_shape->getBox();
     pad_transform.apply(shape);
 
-    makeBTerm(net, top_layer, shape);
+    auto layer = tech->findRoutingLayer(highest_level);
+    makeBTerm(net, layer, shape);
   }
 }
 
