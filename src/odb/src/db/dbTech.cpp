@@ -572,7 +572,7 @@ void _dbTech::_setLefVersion(double inver)
              minor_version,
              opt_minor_version);
   else
-    snprintf(_version_buf, 10, "%d.%d", major_version, minor_version);
+    snprintf(_version_buf, 12, "%d.%d", major_version, minor_version);
 }
 
 dbObjectTable* _dbTech::getObjectTable(dbObjectType type)
