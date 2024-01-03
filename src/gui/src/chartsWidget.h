@@ -72,13 +72,14 @@ class ChartsWidget : public QDockWidget
 
   // Slack Histogram
   std::vector<float> getSlackForAllEndpoints() const;
-  int computeDigits(int input_value);
-  void setDigitCompensator(float max_slack, float min_slack);
-  void setXAxisLabel(const QStringList& time_values);
+  int computeDigits(const int input_value);
+  void setDigitCompensator(const float max_slack, const float min_slack);
   void populateBuckets(const std::vector<float>& all_slack,
                        BucketsVector& neg_buckets,
                        BucketsVector& pos_buckets,
                        int offset);
+  void setXAxisLabel(const QStringList& time_values);
+  void setYAxisLabel(const int max_y);
 
  private:
   utl::Logger* logger_;
@@ -92,8 +93,11 @@ class ChartsWidget : public QDockWidget
   QValueAxis* axis_y_;
 
   // Maximum digits in the number of buckets when casting float --> integer
-  int max_digits_ = 2;
+  const int max_digits_ = 2;
   int digit_compensator_ = 0;
+
+  // Tick count for round numbers in the y axis
+  const int default_tick_ = 21;
 };
 
 }  // namespace gui

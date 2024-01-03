@@ -199,11 +199,7 @@ void ChartsWidget::setSlackMode()
   series->setBarWidth(1.0);
   chart_->addSeries(series);
 
-  axis_y_->setTitleText("Number of Endpoints");
-  axis_y_->setRange(0, max_y);
-  axis_y_->setTickCount(15);
-  axis_y_->setLabelFormat("%i");
-  axis_y_->setVisible(true);
+  setYAxisLabel(max_y);
 
   series->attachAxis(axis_x_);
   series->attachAxis(axis_y_);
@@ -243,12 +239,13 @@ std::vector<float> ChartsWidget::getSlackForAllEndpoints() const
   return all_slack;
 }
 
-int ChartsWidget::computeDigits(int input_value)
+int ChartsWidget::computeDigits(const int input_value)
 {
   return input_value > 0 ? static_cast<int>(std::log10(input_value) + 1) : 1;
 }
 
-void ChartsWidget::setDigitCompensator(float max_slack, float min_slack)
+void ChartsWidget::setDigitCompensator(const float max_slack,
+                                       const float min_slack)
 {
   const float max_abs_slack = std::max(max_slack, std::abs(min_slack));
   const int digits = computeDigits(max_abs_slack);
@@ -297,6 +294,18 @@ void ChartsWidget::setXAxisLabel(const QStringList& time_values)
   axis_x_->append(time_values);
   axis_x_->setGridLineVisible(false);
   axis_x_->setVisible(true);
+}
+
+void ChartsWidget::setYAxisLabel(const int max_y)
+{
+  axis_y_->setTitleText("Number of Endpoints");
+
+  const int max_y_digits = computeDigits(max_y);
+
+  axis_y_->setRange(0, std::pow(10, max_y_digits));
+  axis_y_->setTickCount(default_tick_);
+  axis_y_->setLabelFormat("%i");
+  axis_y_->setVisible(true);
 }
 
 void ChartsWidget::setLogger(utl::Logger* logger)
