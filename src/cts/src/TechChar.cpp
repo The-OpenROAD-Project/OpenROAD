@@ -655,9 +655,9 @@ void TechChar::initCharacterization()
     }
   } else {
     reduceOrExpand(axisSlews, slewSteps);
-    slewsToTest_ = axisSlews;
+    slewsToTest_ = std::move(axisSlews);
     reduceOrExpand(axisLoads, loadSteps);
-    loadsToTest_ = axisLoads;
+    loadsToTest_ = std::move(axisLoads);
   }
 
   if (loadsToTest_.empty() || slewsToTest_.empty()) {
@@ -1507,7 +1507,7 @@ std::vector<TechChar::ResultData> TechChar::characterizationPostProcess()
           topologyResult.push_back(topologyS);
         }
       }
-      convertedResult.topology = topologyResult;
+      convertedResult.topology = std::move(topologyResult);
       // Send the results to a vector. This will be used to create the
       // wiresegments for CTS.
       convertedSolutions.push_back(convertedResult);
@@ -1646,7 +1646,7 @@ void TechChar::create()
             } else {
               std::vector<ResultData> resultGroup;
               resultGroup.push_back(results);
-              solutionMap_[solutionKey] = resultGroup;
+              solutionMap_[solutionKey] = std::move(resultGroup);
             }
             topologiesCreated++;
             if (logger_->debugCheck(utl::CTS, "tech char", 1)

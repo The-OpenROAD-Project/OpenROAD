@@ -208,9 +208,9 @@ void FastRouteCore::fixOverlappingEdge(
         h_used_ggrid_.insert(std::make_pair(new_route_y[k], min_x));
       }
     }
-    treeedge->route.gridsX = new_route_x;
-    treeedge->route.gridsY = new_route_y;
     treeedge->route.routelen = new_route_x.size() - 1;
+    treeedge->route.gridsX = std::move(new_route_x);
+    treeedge->route.gridsY = std::move(new_route_y);
   }
 }
 
