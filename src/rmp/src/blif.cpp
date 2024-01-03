@@ -146,8 +146,9 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
       auto network_ = open_sta_->network();
       auto port_ = network_->libertyPort(pin_);
       if (port_->isClock()) {
-        if (net == nullptr)
+        if (net == nullptr) {
           continue;
+        }
         clocks.insert(net->getName());
         currentClocks.insert(net->getName());
         currentClock = net->getName();
@@ -161,8 +162,9 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
 
       currentConnections += " " + mtermName + "=" + netName;
 
-      if (net == nullptr)
+      if (net == nullptr) {
         continue;
+      }
       // check whether connected net is input/output
       // If it's only connected to one Iterm OR
       // It's connected to another instance that's outside the bubble
@@ -464,8 +466,9 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
 
     for (auto&& lib : block->getDb()->getLibs()) {
       master = lib->findMaster(masterName.c_str());
-      if (master != nullptr)
+      if (master != nullptr) {
         break;
+      }
     }
 
     if (master == nullptr
@@ -496,8 +499,9 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
                              + std::to_string(instIds[constMaster]);
       for (auto&& lib : block->getDb()->getLibs()) {
         master = lib->findMaster(constMaster.c_str());
-        if (master != nullptr)
+        if (master != nullptr) {
           break;
+        }
       }
 
       if (master != nullptr) {
