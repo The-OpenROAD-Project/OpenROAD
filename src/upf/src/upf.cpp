@@ -899,8 +899,7 @@ get_connected_terms(odb::dbBlock* block, odb::dbITerm* iterm)
     // TODO: if connectedInst is isolation cell or level shifting cell
     // then ignore it
 
-    if (!connectedInst->getGroup()
-        || connectedInst->getGroup() != iterm->getInst()->getGroup()) {
+    if (connectedInst->getGroup() != iterm->getInst()->getGroup()) {
       odb::dbPowerDomain* connectedDomain = nullptr;
       if (connectedInst->getGroup()) {
         connectedDomain
