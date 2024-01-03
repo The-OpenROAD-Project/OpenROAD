@@ -73,14 +73,14 @@ class ChartsWidget : public QDockWidget
 
  private:
   void getSlackForAllEndpoints(std::vector<float>& all_slack) const;
-  int computeDigits(const int input_value);
-  void setDigitCompensator(const float max_slack, const float min_slack);
+  int computeDigits(int input_value);
+  void setDigitCompensator(float max_slack, float min_slack);
   void populateBuckets(const std::vector<float>& all_slack,
                        BucketsVector& neg_buckets,
                        BucketsVector& pos_buckets,
-                       const int offset);
+                       int offset);
   void setXAxisLabel(const QStringList& time_values);
-  void setYAxisLabel(const int max_y);
+  void setYAxisLabel(int max_y);
 
   utl::Logger* logger_;
   sta::dbSta* sta_;
