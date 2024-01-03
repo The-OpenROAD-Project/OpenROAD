@@ -2015,8 +2015,10 @@ void TritonPart::MultiLevelPartition()
 
   // Perform the last-minute refinement
   tritonpart_coarsener->SetThrCoarsenHyperedgeSizeSkip(global_net_threshold_);
-  tritonpart_mlevel_partitioner->VcycleRefinement(
-      hypergraph_, upper_block_balance, lower_block_balance, solution_);
+  tritonpart_mlevel_partitioner->VcycleRefinement(original_hypergraph_,
+                                                  upper_block_balance,
+                                                  lower_block_balance,
+                                                  solution_);
 
   // evaluate on the original hypergraph
   // tritonpart_evaluator->CutEvaluator(original_hypergraph_, solution_, true);
