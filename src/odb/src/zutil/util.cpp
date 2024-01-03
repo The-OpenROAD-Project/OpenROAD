@@ -119,8 +119,9 @@ void RUDYCalculator::calculateRUDY()
   const int tileHeight = blockHeight / tileCntY_;
 
   for (auto net : block_->getNets()) {
-    if (net->getSigType().isSupply())
+    if (net->getSigType().isSupply()) {
       continue;
+    }
 
     const auto netBox = net->getTermBBox();
     const auto netArea = netBox.area();
