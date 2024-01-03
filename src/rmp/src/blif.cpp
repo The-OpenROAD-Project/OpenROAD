@@ -155,8 +155,9 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
       }
 
       const auto& mtermName = mterm->getName();
-      const auto& netName = (net == NULL) ? ("dummy_" + std::to_string(dummy_nets++))
-                                   : net->getName();
+      const auto& netName = (net == NULL)
+                                ? ("dummy_" + std::to_string(dummy_nets++))
+                                : net->getName();
 
       currentConnections += " " + mtermName + "=" + netName;
 

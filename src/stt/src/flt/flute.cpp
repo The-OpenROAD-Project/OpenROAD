@@ -50,8 +50,8 @@
 #define LUT_VAR_CHECK 3
 
 // Set this to LUT_FILE, LUT_VAR, or LUT_VAR_CHECK.
-//#define LUT_SOURCE LUT_FILE
-//#define LUT_SOURCE LUT_VAR_CHECK
+// #define LUT_SOURCE LUT_FILE
+// #define LUT_SOURCE LUT_VAR_CHECK
 #define LUT_SOURCE LUT_VAR
 
 namespace stt {
@@ -860,9 +860,9 @@ int flutes_wl_MD(int d,
   for (r = d / 2 - 1, pnlty = dy; r >= 0; r--, pnlty += dy) {
     penalty[s[r]] += pnlty, penalty[s[d - 1 - r]] += pnlty;
   }
-  //#define CCWL 0.16
-  //    for (r=0; r<d; r++)
-  //        penalty[r] = abs(d-1-r-r)*dx + abs(d-1-si[r]-si[r])*dy;
+  // #define CCWL 0.16
+  //     for (r=0; r<d; r++)
+  //         penalty[r] = abs(d-1-r-r)*dx + abs(d-1-si[r]-si[r])*dy;
 
   // Compute distx[], disty[]
   xydiff = (xs[d - 1] - xs[0]) - (ys[d - 1] - ys[0]);
@@ -1491,10 +1491,10 @@ Tree flutes_MD(int d,
   }
   penalty[s[1]] += pnlty, penalty[s[d - 2]] += pnlty;
   penalty[s[0]] += pnlty, penalty[s[d - 1]] += pnlty;
-  //#define CC 0.16
-  //#define v(r) ((r==0||r==1||r==d-2||r==d-1) ? d-3 : abs(d-1-r-r))
-  //    for (r=0; r<d; r++)
-  //        penalty[r] = v(r)*dx + v(si[r])*dy;
+  // #define CC 0.16
+  // #define v(r) ((r==0||r==1||r==d-2||r==d-1) ? d-3 : abs(d-1-r-r))
+  //     for (r=0; r<d; r++)
+  //         penalty[r] = v(r)*dx + v(si[r])*dy;
 
   // Compute distx[], disty[]
   xydiff = (xs[d - 1] - xs[0]) - (ys[d - 1] - ys[0]);
