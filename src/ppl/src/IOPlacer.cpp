@@ -672,7 +672,7 @@ void IOPlacer::getBlockedRegionsFromDbObstructions()
 
 double IOPlacer::dbuToMicrons(int64_t dbu)
 {
-  return (double) dbu / (getBlock()->getDbUnitsPerMicron());
+  return static_cast<double>(dbu) / (getBlock()->getDbUnitsPerMicron());
 }
 
 int IOPlacer::micronsToDbu(double microns)
@@ -1180,8 +1180,8 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
 
       int section_max_group = 0;
       for (const auto& group : sections[i].pin_groups) {
-        section_max_group
-            = std::max((int) group.pin_indices.size(), section_max_group);
+        section_max_group = std::max(static_cast<int>(group.pin_indices.size()),
+                                     section_max_group);
       }
 
       // avoid two or more groups in a same section when one of the number of
@@ -2245,15 +2245,16 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
 {
   if (width == 0 && height == 0) {
     const int database_unit = getTech()->getLefUnits();
-    const int min_area = layer->getArea() * database_unit * database_unit;
+    const double min_area
+        = static_cast<double>(layer->getArea()) * database_unit * database_unit;
     if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
       width = layer->getMinWidth();
-      height = int(std::max((double) width,
-                            ceil(static_cast<double>(min_area) / width)));
+      height
+          = int(std::max(static_cast<double>(width), ceil(min_area / width)));
     } else {
       height = layer->getMinWidth();
-      width = int(std::max((double) height,
-                           ceil(static_cast<double>(min_area) / height)));
+      width
+          = int(std::max(static_cast<double>(height), ceil(min_area / height)));
     }
   }
   const int mfg_grid = getTech()->getManufacturingGrid();
