@@ -51,6 +51,8 @@ class Logger;
 namespace odb {
 class dbBlock;
 class dbBox;
+class dbMaster;
+class dbInst;
 using uint = unsigned int;
 
 // Simple list
@@ -521,6 +523,7 @@ class RUDYCalculator
    * */
   void makeGrid();
   Tile& getEditableTile(int x, int y) { return grid_.at(x).at(y); }
+  void processMacroObstruction(odb::dbMaster* macro, odb::dbInst* instance);
 
   dbBlock* block_;
   odb::Rect gridBlock_;
