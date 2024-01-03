@@ -146,7 +146,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
       auto network_ = open_sta_->network();
       auto port_ = network_->libertyPort(pin_);
       if (port_->isClock()) {
-        if (net == NULL)
+        if (net == nullptr)
           continue;
         clocks.insert(net->getName());
         currentClocks.insert(net->getName());
@@ -155,13 +155,13 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
       }
 
       const auto& mtermName = mterm->getName();
-      const auto& netName = (net == NULL)
+      const auto& netName = (net == nullptr)
                                 ? ("dummy_" + std::to_string(dummy_nets++))
                                 : net->getName();
 
       currentConnections += " " + mtermName + "=" + netName;
 
-      if (net == NULL)
+      if (net == nullptr)
         continue;
       // check whether connected net is input/output
       // If it's only connected to one Iterm OR
@@ -464,11 +464,11 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
 
     for (auto&& lib : block->getDb()->getLibs()) {
       master = lib->findMaster(masterName.c_str());
-      if (master != NULL)
+      if (master != nullptr)
         break;
     }
 
-    if (master == NULL
+    if (master == nullptr
         && (masterName == "_const0_" || masterName == "_const1_")) {
       if (connections.size() < 1) {
         logger_->info(RMP,
@@ -479,7 +479,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
       }
       auto constNetName = connections[0].substr(connections[0].find("=") + 1);
       odb::dbNet* net = block->findNet(constNetName.c_str());
-      if (net == NULL) {
+      if (net == nullptr) {
         std::string net_name_modified
             = std::string("or_") + std::to_string(call_id_) + constNetName;
         net = odb::dbNet::create(block, net_name_modified.c_str());
@@ -496,11 +496,11 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
                              + std::to_string(instIds[constMaster]);
       for (auto&& lib : block->getDb()->getLibs()) {
         master = lib->findMaster(constMaster.c_str());
-        if (master != NULL)
+        if (master != nullptr)
           break;
       }
 
-      if (master != NULL) {
+      if (master != nullptr) {
         while (block->findInst(instName.c_str())) {
           instIds[constMaster]++;
           instName = constMaster + "_" + std::to_string(call_id_)
@@ -513,7 +513,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
       continue;
     }
 
-    if (master == NULL) {
+    if (master == nullptr) {
       logger_->info(RMP,
                     9,
                     "Master ({}) not found while stitching back instances.",
@@ -533,7 +533,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
 
     auto newInst = odb::dbInst::create(block, master, instName.c_str());
 
-    if (newInst == NULL) {
+    if (newInst == nullptr) {
       logger_->error(RMP,
                      76,
                      "Could not create new instance of type {} with name {}.",
@@ -579,7 +579,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
       }
 
       odb::dbNet* net = block->findNet(netName.c_str());
-      if (net == NULL) {
+      if (net == nullptr) {
         std::string net_name_modified
             = std::string("or_") + std::to_string(call_id_) + netName;
         net = block->findNet(net_name_modified.c_str());
