@@ -83,6 +83,7 @@ class _dbTech : public _dbObject
 {
  private:
   double _version;
+
  public:
   // PERSISTANT-MEMBERS
   std::string _name;
