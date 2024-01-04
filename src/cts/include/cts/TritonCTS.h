@@ -181,7 +181,7 @@ class TritonCTS
                         odb::dbInst* dummyInst,
                         ClockSubNet& subNet,
                         ClockInst& dummyClock);
-  void printClockNetwork(Clock clockNet) const;
+  void printClockNetwork(const Clock& clockNet) const;
 
   sta::dbSta* openSta_;
   sta::dbNetwork* network_;

@@ -45,9 +45,6 @@
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "ord/Tech.h"
-#include "sta/Corner.hh"
-#include "sta/TimingArc.hh"
-#include "sta/TimingRole.hh"
 #include "utl/Logger.h"
 
 namespace ord {
@@ -168,12 +165,6 @@ sta::dbSta* Design::getSta()
   return app->getSta();
 }
 
-std::vector<sta::Corner*> Design::getCorners()
-{
-  sta::Corners* corners = getSta()->corners();
-  return {corners->begin(), corners->end()};
-}
-
 sta::MinMax* Design::getMinMax(MinMax type)
 {
   return type == Max ? sta::MinMax::max() : sta::MinMax::min();
@@ -266,6 +257,18 @@ bool Design::isInClock(odb::dbInst* inst)
   return false;
 }
 
+std::string Design::getITermName(odb::dbITerm* pin)
+{
+  auto MTerm_name = pin->getMTerm()->getName();
+  auto inst_name = pin->getInst()->getName();
+  return inst_name + "/" + MTerm_name;
+}
+
+bool Design::isInSupply(odb::dbITerm* pin)
+{
+  return pin->getSigType().isSupply();
+}
+
 std::uint64_t Design::getNetRoutedLength(odb::dbNet* net)
 {
   std::uint64_t route_length = 0;
@@ -284,43 +287,6 @@ std::uint64_t Design::getNetRoutedLength(odb::dbNet* net)
     }
   }
   return route_length;
-}
-
-// I'd like to return a std::set but swig gave me way too much grief
-// so I just copy the set to a vector.
-std::vector<odb::dbMTerm*> Design::getTimingFanoutFrom(odb::dbMTerm* input)
-{
-  sta::dbSta* sta = getSta();
-  sta::dbNetwork* network = sta->getDbNetwork();
-
-  odb::dbMaster* master = input->getMaster();
-  sta::Cell* cell = network->dbToSta(master);
-  if (!cell) {
-    return {};
-  }
-
-  sta::LibertyCell* lib_cell = network->libertyCell(cell);
-  if (!lib_cell) {
-    return {};
-  }
-
-  sta::Port* port = network->dbToSta(input);
-  sta::LibertyPort* lib_port = network->libertyPort(port);
-
-  std::set<odb::dbMTerm*> outputs;
-  for (auto arc_set : lib_cell->timingArcSets(lib_port, /* to */ nullptr)) {
-    sta::TimingRole* role = arc_set->role();
-    if (role->isTimingCheck() || role->isAsyncTimingCheck()
-        || role->isNonSeqTimingCheck() || role->isDataCheck()) {
-      continue;
-    }
-    sta::LibertyPort* to_port = arc_set->to();
-    odb::dbMTerm* to_mterm = master->findMTerm(to_port->name());
-    if (to_mterm) {
-      outputs.insert(to_mterm);
-    }
-  }
-  return {outputs.begin(), outputs.end()};
 }
 
 grt::GlobalRouter* Design::getGlobalRouter()

@@ -101,6 +101,7 @@ struct FrNet  // A Net is a set of connected MazePoints
 
   int getPinX(int idx) const { return pin_x_[idx]; }
   int getPinY(int idx) const { return pin_y_[idx]; }
+  int getPinL(int idx) const { return pin_l_[idx]; }
   const std::vector<int>& getPinX() const { return pin_x_; }
   const std::vector<int>& getPinY() const { return pin_y_; }
   const std::vector<int>& getPinL() const { return pin_l_; }

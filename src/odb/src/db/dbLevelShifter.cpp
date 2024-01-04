@@ -102,6 +102,15 @@ bool _dbLevelShifter::operator==(const _dbLevelShifter& rhs) const
   if (_name_suffix != rhs._name_suffix) {
     return false;
   }
+  if (_cell_name != rhs._cell_name) {
+    return false;
+  }
+  if (_cell_input != rhs._cell_input) {
+    return false;
+  }
+  if (_cell_output != rhs._cell_output) {
+    return false;
+  }
 
   return true;
 }
@@ -134,6 +143,9 @@ void _dbLevelShifter::differences(dbDiff& diff,
   DIFF_FIELD(_internal_supply);
   DIFF_FIELD(_name_prefix);
   DIFF_FIELD(_name_suffix);
+  DIFF_FIELD(_cell_name);
+  DIFF_FIELD(_cell_input);
+  DIFF_FIELD(_cell_output);
   DIFF_END
 }
 
@@ -158,6 +170,9 @@ void _dbLevelShifter::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_internal_supply);
   DIFF_OUT_FIELD(_name_prefix);
   DIFF_OUT_FIELD(_name_suffix);
+  DIFF_OUT_FIELD(_cell_name);
+  DIFF_OUT_FIELD(_cell_input);
+  DIFF_OUT_FIELD(_cell_output);
 
   DIFF_END
 }
@@ -186,6 +201,9 @@ _dbLevelShifter::_dbLevelShifter(_dbDatabase* db, const _dbLevelShifter& r)
   _internal_supply = r._internal_supply;
   _name_prefix = r._name_prefix;
   _name_suffix = r._name_suffix;
+  _cell_name = r._cell_name;
+  _cell_input = r._cell_input;
+  _cell_output = r._cell_output;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbLevelShifter& obj)
@@ -211,6 +229,13 @@ dbIStream& operator>>(dbIStream& stream, _dbLevelShifter& obj)
   stream >> obj._name_prefix;
   stream >> obj._name_suffix;
   stream >> obj._instances;
+  // User Code Begin >>
+  if (stream.getDatabase()->isSchema(db_schema_level_shifter_cell)) {
+    stream >> obj._cell_name;
+    stream >> obj._cell_input;
+    stream >> obj._cell_output;
+  }
+  // User Code End >>
   return stream;
 }
 
@@ -237,6 +262,11 @@ dbOStream& operator<<(dbOStream& stream, const _dbLevelShifter& obj)
   stream << obj._name_prefix;
   stream << obj._name_suffix;
   stream << obj._instances;
+  // User Code Begin <<
+  stream << obj._cell_name;
+  stream << obj._cell_input;
+  stream << obj._cell_output;
+  // User Code End <<
   return stream;
 }
 
@@ -463,6 +493,45 @@ std::string dbLevelShifter::getNameSuffix() const
 {
   _dbLevelShifter* obj = (_dbLevelShifter*) this;
   return obj->_name_suffix;
+}
+
+void dbLevelShifter::setCellName(std::string cell_name)
+{
+  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+
+  obj->_cell_name = cell_name;
+}
+
+std::string dbLevelShifter::getCellName() const
+{
+  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  return obj->_cell_name;
+}
+
+void dbLevelShifter::setCellInput(std::string cell_input)
+{
+  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+
+  obj->_cell_input = cell_input;
+}
+
+std::string dbLevelShifter::getCellInput() const
+{
+  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  return obj->_cell_input;
+}
+
+void dbLevelShifter::setCellOutput(std::string cell_output)
+{
+  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+
+  obj->_cell_output = cell_output;
+}
+
+std::string dbLevelShifter::getCellOutput() const
+{
+  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  return obj->_cell_output;
 }
 
 // User Code Begin dbLevelShifterPublicMethods

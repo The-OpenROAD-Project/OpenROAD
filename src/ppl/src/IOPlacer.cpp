@@ -179,7 +179,8 @@ void IOPlacer::randomPlacement()
           != pin_list.end()) {
         std::vector<int> valid_slots
             = getValidSlots(first_slot, last_slot, top_layer);
-        randomPlacement(io_group.pin_indices, valid_slots, top_layer, true);
+        randomPlacement(
+            io_group.pin_indices, std::move(valid_slots), top_layer, true);
       }
     }
 
@@ -214,7 +215,7 @@ void IOPlacer::randomPlacement()
     }
   }
 
-  randomPlacement(pin_indices, valid_slots, false, false);
+  randomPlacement(std::move(pin_indices), valid_slots, false, false);
   placeFallbackPins(true);
 }
 
@@ -671,7 +672,7 @@ void IOPlacer::getBlockedRegionsFromDbObstructions()
 
 double IOPlacer::dbuToMicrons(int64_t dbu)
 {
-  return (double) dbu / (getBlock()->getDbUnitsPerMicron());
+  return static_cast<double>(dbu) / (getBlock()->getDbUnitsPerMicron());
 }
 
 int IOPlacer::micronsToDbu(double microns)
@@ -823,7 +824,9 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
     int num_tracks_offset = std::ceil(offset / min_dst_pins);
 
     start_idx
-        = std::max(0.0, ceil((min + half_width - init_tracks) / min_dst_pins))
+        = std::max(0.0,
+                   ceil(static_cast<double>((min + half_width - init_tracks))
+                        / min_dst_pins))
           + num_tracks_offset;
     end_idx = std::min((num_tracks - 1),
                        static_cast<int>(floor((max - half_width - init_tracks)
@@ -1177,8 +1180,8 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
 
       int section_max_group = 0;
       for (const auto& group : sections[i].pin_groups) {
-        section_max_group
-            = std::max((int) group.pin_indices.size(), section_max_group);
+        section_max_group = std::max(static_cast<int>(group.pin_indices.size()),
+                                     section_max_group);
       }
 
       // avoid two or more groups in a same section when one of the number of
@@ -1204,7 +1207,7 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
           }
         }
         total_pins_assigned += group_size;
-        sections[i].pin_groups.push_back({group, order});
+        sections[i].pin_groups.push_back({std::move(group), order});
         group_assigned = true;
         break;
       }
@@ -2242,13 +2245,16 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
 {
   if (width == 0 && height == 0) {
     const int database_unit = getTech()->getLefUnits();
-    const int min_area = layer->getArea() * database_unit * database_unit;
+    const double min_area
+        = static_cast<double>(layer->getArea()) * database_unit * database_unit;
     if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
       width = layer->getMinWidth();
-      height = int(std::max((double) width, ceil(min_area / width)));
+      height
+          = int(std::max(static_cast<double>(width), ceil(min_area / width)));
     } else {
       height = layer->getMinWidth();
-      width = int(std::max((double) height, ceil(min_area / height)));
+      width
+          = int(std::max(static_cast<double>(height), ceil(min_area / height)));
     }
   }
   const int mfg_grid = getTech()->getManufacturingGrid();
@@ -2388,7 +2394,8 @@ void IOPlacer::movePinToTrack(odb::Point& pos,
   if (layer != top_grid_->layer) {  // pin is placed in the die boundaries
     if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
       track_grid->getGridPatternY(0, init_track, num_track, min_spacing);
-      pos.setY(round((pos.y() - init_track) / min_spacing) * min_spacing
+      pos.setY(round(static_cast<double>((pos.y() - init_track)) / min_spacing)
+                   * min_spacing
                + init_track);
       int dist_lb = abs(pos.x() - lb_x);
       int dist_ub = abs(pos.x() - ub_x);
@@ -2396,7 +2403,8 @@ void IOPlacer::movePinToTrack(odb::Point& pos,
       pos.setX(new_x);
     } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
       track_grid->getGridPatternX(0, init_track, num_track, min_spacing);
-      pos.setX(round((pos.x() - init_track) / min_spacing) * min_spacing
+      pos.setX(round(static_cast<double>((pos.x() - init_track)) / min_spacing)
+                   * min_spacing
                + init_track);
       int dist_lb = abs(pos.y() - lb_y);
       int dist_ub = abs(pos.y() - ub_y);
