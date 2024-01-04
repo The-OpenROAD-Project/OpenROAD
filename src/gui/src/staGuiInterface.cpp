@@ -697,7 +697,7 @@ STAGuiInterface::STAGuiInterface(sta::dbSta* sta)
       corner_(nullptr),
       use_max_(true),
       one_path_per_endpoint_(true),
-      max_path_count_(1000),
+      max_path_count_(50),
       include_unconstrained_(false),
       include_capture_path_(false)
 {
