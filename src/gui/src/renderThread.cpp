@@ -518,7 +518,7 @@ void RenderThread::drawInstanceShapes(dbTechLayer* layer,
       continue;
     }
 
-    dbBlock* child;
+    dbBlock* child = nullptr;
     if (has_child_blocks
         && (child = inst->getBlock()->findChild(master->getName().c_str()))) {
       // setup the instance's transform
