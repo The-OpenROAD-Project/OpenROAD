@@ -1401,6 +1401,21 @@ int dbTechLayer::getSpacing()
   return layer->_spacing;
 }
 
+int dbTechLayer::getTrackSpacing(odb::dbTrackGrid* track_grid)
+{
+  if (getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+    int track_step_y = -1, init_track_y, num_tracks_y;
+    track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
+    return track_step_y;
+  } else if (getDirection() == odb::dbTechLayerDir::VERTICAL) {
+    int track_step_x = -1, init_track_x, num_tracks_x;
+    track_grid->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
+    return track_step_x;
+  }
+  getImpl()->getLogger()->error(utl::ODB, 101, "Cannot find track spacing.");
+  return 0;
+}
+
 void dbTechLayer::setSpacing(int spacing)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;

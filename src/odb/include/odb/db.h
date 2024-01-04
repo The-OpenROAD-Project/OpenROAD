@@ -7801,6 +7801,11 @@ class dbTechLayer : public dbObject
   int getSpacing(int width, int length = 0);
 
   ///
+  /// Get the spacing between tracks for this layer.
+  ///
+  int getTrackSpacing(odb::dbTrackGrid* track_grid);
+
+  ///
   /// The number of masks for this layer (aka double/triple patterning).
   /// Allowable values are in [1, 3].
   ///
@@ -7813,6 +7818,7 @@ class dbTechLayer : public dbObject
   void getMaxWideDRCRange(int& owidth, int& olength);
   void getMinWideDRCRange(int& owidth, int& olength);
 
+  ///
   /// Get the collection of spacing rules for the object, assuming
   /// coding in LEF 5.4 format.
   ///
@@ -7873,7 +7879,6 @@ class dbTechLayer : public dbObject
   dbTechLayerAntennaRule* getOxide2AntennaRule() const;
   void writeAntennaRulesLef(lefout& writer) const;
 
-  ///
   ///
   /// Get collection of minimum cuts, minimum enclosure rules, if exist
   ///

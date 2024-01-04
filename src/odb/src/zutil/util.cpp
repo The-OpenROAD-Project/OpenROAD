@@ -49,28 +49,12 @@ using std::vector;
 RUDYCalculator::RUDYCalculator(dbBlock* block) : block_(block)
 {
   gridBlock_ = block_->getDieArea();
-  // from RUDY paper: "The wire width p is defined by the
-  //  average wire-to-wire pitch ~p and number of routing layers l: p = ~p/l.
+  // TODO: Match the wire width with the paper definition
   wireWidth_ = block_->getTech()->findRoutingLayer(1)->getWidth();
 
-  int track_spacing = 0;
   odb::dbTechLayer* tech_layer = block_->getTech()->findRoutingLayer(3);
   odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
-
-  // This code is the same on GRT, make a method for it? For example:
-  // getTrackSpacing()
-  if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-    int track_step_y = -1, init_track_y, num_tracks_y;
-    track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
-    track_spacing = track_step_y;
-  } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-    int track_step_x = -1, init_track_x, num_tracks_x;
-    track_grid->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
-    track_spacing = track_step_x;
-  } else {
-    //    logger_->error(GPL, 82, "Cannot find track spacing.");
-    return;
-  }
+  int track_spacing = tech_layer->getTrackSpacing(track_grid);
 
   int upper_rightX = gridBlock_.xMax();
   int upper_rightY = gridBlock_.yMax();
@@ -119,6 +103,7 @@ void RUDYCalculator::calculateRUDY()
   const int tileHeight = blockHeight / tileCntY_;
 
   for (auto net : block_->getNets()) {
+    // TODO: handle supply nets for routing congestion prediction.
     if (net->getSigType().isSupply()) {
       continue;
     }
@@ -181,7 +166,7 @@ void RUDYCalculator::processMacroObstruction(odb::dbMaster* macro,
     odb::Rect macroObstrRect = obstr_box->getBox();
     transform.apply(macroObstrRect);
     const auto obstr_area = macroObstrRect.area();
-    if (obstr_area == 0) {      
+    if (obstr_area == 0) {
       continue;
     }
 

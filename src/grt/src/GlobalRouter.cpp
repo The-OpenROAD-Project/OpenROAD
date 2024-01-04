@@ -2423,7 +2423,9 @@ odb::Point GlobalRouter::getRectMiddle(const odb::Rect& rect)
 
 void GlobalRouter::initGrid(int max_layer)
 {
-  int track_spacing = trackSpacing();
+  odb::dbTechLayer* tech_layer = routing_layers_[layer_for_guide_dimension_];
+  odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
+  int track_spacing = tech_layer->getTrackSpacing(track_grid);
 
   odb::Rect rect = block_->getDieArea();
 
@@ -2453,28 +2455,6 @@ void GlobalRouter::initGrid(int max_layer)
               perfect_regular_x,
               perfect_regular_y,
               num_layers);
-}
-
-// Assumes initRoutingLayers and initRoutingTracks have been called
-// to check layers and tracks.
-int GlobalRouter::trackSpacing()
-{
-  odb::dbTechLayer* tech_layer = routing_layers_[layer_for_guide_dimension_];
-  odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
-
-  if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-    int track_step_y = -1;
-    int init_track_y, num_tracks_y;
-    track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
-    return track_step_y;
-  } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-    int track_step_x = -1;
-    int init_track_x, num_tracks_x;
-    track_grid->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
-    return track_step_x;
-  }
-  logger_->error(GRT, 82, "Cannot find track spacing.");
-  return 0;
 }
 
 void getViaDims(std::map<int, odb::dbTechVia*> default_vias,
