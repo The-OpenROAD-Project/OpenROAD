@@ -24,6 +24,7 @@ _lcov() {
         --exclude "/opt/*" \
         --exclude "/usr/lib/*" \
         --exclude "/usr/local/*" \
+        --exclude "*/.local/*" \
         --exclude "*build*" \
         --output-file ./coverage-output/main_coverage.info
 
