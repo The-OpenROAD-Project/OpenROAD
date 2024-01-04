@@ -569,7 +569,7 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
   }
 
   QString text
-    = QString::number(disp_area, 'f', 3) + " " + units + "m\u00B2";  // m2
+      = QString::number(disp_area, 'f', 3) + " " + units + "m\u00B2";  // m2
 
   auto makeDataItem
       = [item](const QString& text, bool right_align = true) -> QStandardItem* {
@@ -587,19 +587,15 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
 
   QStandardItem* area = makeDataItem(text);
 
-  QStandardItem* local_insts = makeDataItem(QString::number(stats.insts));
-  QStandardItem* insts
-      = makeDataItem(QString::number(stats.hier_insts));
+  QStandardItem* local_insts = makeDataItem(QString::number(stats.hier_insts));
+  QStandardItem* insts = makeDataItem(QString::number(stats.insts));
 
   QStandardItem* local_macros
-      = makeDataItem(QString::number(stats.macros));
-  QStandardItem* macros
       = makeDataItem(QString::number(stats.hier_macros));
+  QStandardItem* macros = makeDataItem(QString::number(stats.macros));
 
-  QStandardItem* modules
-      = makeDataItem(QString::number(stats.modules));
-  QStandardItem* local_modules
-      = makeDataItem(QString::number(stats.hier_modules));
+  QStandardItem* modules = makeDataItem(QString::number(stats.hier_modules));
+  QStandardItem* local_modules = makeDataItem(QString::number(stats.modules));
 
   parent->appendRow({item,
                      master_item,
