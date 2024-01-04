@@ -989,7 +989,8 @@ void ICeWall::placeBondPads(odb::dbMaster* bond,
   }
 }
 
-void ICeWall::placeTerminals(const std::vector<odb::dbITerm*>& iterms)
+void ICeWall::placeTerminals(const std::vector<odb::dbITerm*>& iterms,
+                             const bool allow_non_top_layer)
 {
   auto* block = getBlock();
   if (block == nullptr) {
@@ -1045,10 +1046,19 @@ void ICeWall::placeTerminals(const std::vector<odb::dbITerm*>& iterms)
                      mterm->getName());
     }
 
+    auto layer = tech->findRoutingLayer(highest_level);
+    if (!allow_non_top_layer && layer != top_layer) {
+      logger_->error(utl::PAD,
+                     120,
+                     "No shape in terminal {}/{} found on layer {}",
+                     inst->getName(),
+                     mterm->getName(),
+                     top_layer->getName());
+    }
+
     odb::Rect shape = pin_shape->getBox();
     pad_transform.apply(shape);
 
-    auto layer = tech->findRoutingLayer(highest_level);
     makeBTerm(net, layer, shape);
   }
 }
