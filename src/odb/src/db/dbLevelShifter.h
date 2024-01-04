@@ -81,6 +81,9 @@ class _dbLevelShifter : public _dbObject
   std::string _name_prefix;
   std::string _name_suffix;
   dbVector<std::pair<std::string, std::string>> _instances;
+  std::string _cell_name;
+  std::string _cell_input;
+  std::string _cell_output;
 };
 dbIStream& operator>>(dbIStream& stream, _dbLevelShifter& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbLevelShifter& obj);

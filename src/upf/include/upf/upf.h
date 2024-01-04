@@ -160,4 +160,15 @@ bool handle_level_shifter_instance(utl::Logger* logger,
                                    const char* instance_name,
                                    const char* port_name);
 
+bool set_domain_voltage(utl::Logger* logger,
+                        odb::dbBlock* block,
+                        const char* domain,
+                        float voltage);
+
+bool set_level_shifter_cell(utl::Logger* logger,
+                            odb::dbBlock* block,
+                            const char* shifter,
+                            const char* cell,
+                            const char* input,
+                            const char* ouput);
 }  // namespace upf
