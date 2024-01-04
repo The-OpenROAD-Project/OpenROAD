@@ -45,6 +45,7 @@ class dbMaster;
 class dbMTerm;
 class dbNet;
 class dbInst;
+class dbITerm;
 }  // namespace odb
 
 namespace ifp {
@@ -165,7 +166,6 @@ class Design
   Tech* getTech();
 
   // Timing related methods
-  std::vector<sta::Corner*> getCorners();
   enum MinMax
   {
     Min,
@@ -175,7 +175,8 @@ class Design
   bool isSequential(odb::dbMaster* master);
   bool isBuffer(odb::dbMaster* master);
   bool isInverter(odb::dbMaster* master);
-  std::vector<odb::dbMTerm*> getTimingFanoutFrom(odb::dbMTerm* input);
+  bool isInSupply(odb::dbITerm* pin);
+  std::string getITermName(odb::dbITerm* pin);
   bool isInClock(odb::dbInst* inst);
   std::uint64_t getNetRoutedLength(odb::dbNet* net);
   float staticPower(odb::dbInst* inst, sta::Corner* corner);
