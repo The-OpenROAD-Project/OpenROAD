@@ -5839,7 +5839,7 @@ class dbTech : public dbObject
   /// Get the LEF version in this technology as a number or as a string.
   ///
   double getLefVersion() const;
-  const char* getLefVersionStr() const;
+  std::string getLefVersionStr() const;
 
   ///
   /// Set the LEF version of this technology, in both number and string form.
