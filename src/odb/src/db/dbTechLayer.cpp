@@ -1407,7 +1407,7 @@ int dbTechLayer::getTrackSpacing(odb::dbTrackGrid* track_grid)
     int track_step_y = -1, init_track_y, num_tracks_y;
     track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
     return track_step_y;
-  } else if (getDirection() == odb::dbTechLayerDir::VERTICAL) {
+  } if (getDirection() == odb::dbTechLayerDir::VERTICAL) {
     int track_step_x = -1, init_track_x, num_tracks_x;
     track_grid->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
     return track_step_x;
