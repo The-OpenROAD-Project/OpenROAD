@@ -48,8 +48,6 @@ class dbSta;
 
 namespace gui {
 
-using BucketsVector = std::vector<std::vector<float>>;
-
 class ChartsWidget : public QDockWidget
 {
   Q_OBJECT

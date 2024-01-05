@@ -47,8 +47,6 @@
 
 namespace gui {
 
-using BucketsVector = std::vector<std::vector<float>>;
-
 ChartsWidget::ChartsWidget(QWidget* parent)
     : QDockWidget("Charts", parent),
       logger_(nullptr),
