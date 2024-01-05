@@ -24,6 +24,6 @@ for inst in design.getBlock().getInsts():
           )
     for i, corner in enumerate(timing.getCorners()):
       print(f"Corner {i}", 
-            design.getPortCap(iTerm, corner, Design.Max),
-            design.getPortCap(iTerm, corner, Design.Min),
+            timing.getPortCap(iTerm, corner, Timing.Max),
+            timing.getPortCap(iTerm, corner, Timing.Min),
       )

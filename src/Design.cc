@@ -165,31 +165,6 @@ sta::dbSta* Design::getSta()
   return app->getSta();
 }
 
-sta::MinMax* Design::getMinMax(MinMax type)
-{
-  return type == Max ? sta::MinMax::max() : sta::MinMax::min();
-}
-
-float Design::getNetCap(odb::dbNet* net, sta::Corner* corner, MinMax minmax)
-{
-  sta::dbSta* sta = getSta();
-  sta::Net* sta_net = sta->getDbNetwork()->dbToSta(net);
-
-  float pin_cap;
-  float wire_cap;
-  sta->connectedCap(sta_net, corner, getMinMax(minmax), pin_cap, wire_cap);
-  return pin_cap + wire_cap;
-}
-
-float Design::getPortCap(odb::dbITerm* pin, sta::Corner* corner, MinMax minmax)
-{
-  sta::dbSta* sta = getSta();
-  sta::dbNetwork* network = sta->getDbNetwork();
-  sta::Pin* sta_pin = network->dbToSta(pin);
-  sta::LibertyPort* lib_port = network->libertyPort(sta_pin);
-  return sta->capacitance(lib_port, corner, getMinMax(minmax));
-}
-
 sta::LibertyCell* Design::getLibertyCell(odb::dbMaster* master)
 {
   sta::dbSta* sta = getSta();
@@ -227,32 +202,6 @@ bool Design::isSequential(odb::dbMaster* master)
     return false;
   }
   return lib_cell->hasSequentials();
-}
-
-float Design::staticPower(odb::dbInst* inst, sta::Corner* corner)
-{
-  sta::dbSta* sta = getSta();
-  sta::dbNetwork* network = sta->getDbNetwork();
-
-  sta::Instance* sta_inst = network->dbToSta(inst);
-  if (!sta_inst) {
-    return 0.0;
-  }
-  sta::PowerResult power = sta->power(sta_inst, corner);
-  return power.leakage();
-}
-
-float Design::dynamicPower(odb::dbInst* inst, sta::Corner* corner)
-{
-  sta::dbSta* sta = getSta();
-  sta::dbNetwork* network = sta->getDbNetwork();
-
-  sta::Instance* sta_inst = network->dbToSta(inst);
-  if (!sta_inst) {
-    return 0.0;
-  }
-  sta::PowerResult power = sta->power(sta_inst, corner);
-  return (power.internal() + power.switching());
 }
 
 bool Design::isInClock(odb::dbInst* inst)

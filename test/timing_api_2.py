@@ -19,8 +19,8 @@ for inst in design.getBlock().getInsts():
         design.isInverter(inst.getMaster()),
         )
   for corner in timing.getCorners():
-    print(design.staticPower(inst, corner),
-          design.dynamicPower(inst, corner),
+    print(timing.staticPower(inst, corner),
+          timing.dynamicPower(inst, corner),
          )
   for iTerm in inst.getITerms():
     if not iTerm.getNet():

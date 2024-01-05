@@ -130,8 +130,6 @@ class ICeWall;
 
 namespace sta {
 class dbSta;
-class Corner;
-class MinMax;
 class LibertyCell;
 }  // namespace sta
 
@@ -165,14 +163,6 @@ class Design
 
   Tech* getTech();
 
-  // Timing related methods
-  enum MinMax
-  {
-    Min,
-    Max
-  };
-  float getNetCap(odb::dbNet* net, sta::Corner* corner, MinMax minmax);
-  float getPortCap(odb::dbITerm* pin, sta::Corner* corner, MinMax minmax);
   bool isSequential(odb::dbMaster* master);
   bool isBuffer(odb::dbMaster* master);
   bool isInverter(odb::dbMaster* master);
@@ -180,8 +170,6 @@ class Design
   std::string getITermName(odb::dbITerm* pin);
   bool isInClock(odb::dbInst* inst);
   std::uint64_t getNetRoutedLength(odb::dbNet* net);
-  float staticPower(odb::dbInst* inst, sta::Corner* corner);
-  float dynamicPower(odb::dbInst* inst, sta::Corner* corner);
 
   // Services
   ifp::InitFloorplan* getFloorplan();
@@ -206,7 +194,6 @@ class Design
 
  private:
   sta::dbSta* getSta();
-  sta::MinMax* getMinMax(MinMax type);
   sta::LibertyCell* getLibertyCell(odb::dbMaster* master);
 
   Tech* tech_;

@@ -12,8 +12,8 @@ timing = Timing(design)
 for corner in timing.getCorners():
     for net in design.getBlock().getNets():
         print(net.getName(),
-              design.getNetCap(net, corner, Design.Max),
-              design.getNetCap(net, corner, Design.Min))
+              timing.getNetCap(net, corner, Timing.Max),
+              timing.getNetCap(net, corner, Timing.Min))
 
 for inst in design.getBlock().getInsts():
     print(inst.getName(), inst.getMaster().getName(),

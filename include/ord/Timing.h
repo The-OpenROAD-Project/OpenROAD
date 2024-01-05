@@ -48,6 +48,8 @@ class dbMaster;
 class dbMTerm;
 class dbITerm;
 class dbBTerm;
+class dbInst;
+class dbNet;
 }  // namespace odb
 
 namespace sta {
@@ -97,12 +99,18 @@ class Timing
   bool isEndpoint(odb::dbITerm* db_pin);
   bool isEndpoint(odb::dbBTerm* db_pin);
 
+  float getNetCap(odb::dbNet* net, sta::Corner* corner, MinMax minmax);
+  float getPortCap(odb::dbITerm* pin, sta::Corner* corner, MinMax minmax);
+  float staticPower(odb::dbInst* inst, sta::Corner* corner);
+  float dynamicPower(odb::dbInst* inst, sta::Corner* corner);
+
   std::vector<odb::dbMTerm*> getTimingFanoutFrom(odb::dbMTerm* input);
   std::vector<sta::Corner*> getCorners();
 
  private:
-  sta::LibertyCell* getLibertyCell(odb::dbMaster* master);
   sta::dbSta* getSta();
+  sta::MinMax* getMinMax(MinMax type);
+  sta::LibertyCell* getLibertyCell(odb::dbMaster* master);
   std::array<sta::Vertex*, 2> vertices(const sta::Pin* pin);
   bool isEndpoint_(sta::Pin* sta_pin);
   float getPinSlew_(sta::Pin* sta_pin, MinMax minmax);
