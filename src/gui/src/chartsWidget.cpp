@@ -235,7 +235,7 @@ void ChartsWidget::getSlackForAllEndpoints(std::vector<float>& all_slack) const
   }
 }
 
-// The define the slack interval as being inclusive in its lower
+// We define the slack interval as being inclusive in its lower
 // boundary and exclusive in upper: [lower upper)
 void ChartsWidget::populateBuckets(const std::vector<float>& all_slack,
                                    std::deque<int>& pos_buckets,
