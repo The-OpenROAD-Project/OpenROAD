@@ -75,16 +75,16 @@ std::pair<odb::dbITerm*, odb::dbBTerm*> Timing::staToDBPin(const sta::Pin* pin)
 bool Timing::isEndpoint(odb::dbITerm* db_pin)
 {
   sta::Pin* sta_pin = getSta()->getDbNetwork()->dbToSta(db_pin);
-  return isEndpoint_(sta_pin);
+  return isEndpoint(sta_pin);
 }
 
 bool Timing::isEndpoint(odb::dbBTerm* db_pin)
 {
   sta::Pin* sta_pin = getSta()->getDbNetwork()->dbToSta(db_pin);
-  return isEndpoint_(sta_pin);
+  return isEndpoint(sta_pin);
 }
 
-bool Timing::isEndpoint_(sta::Pin* sta_pin)
+bool Timing::isEndpoint(sta::Pin* sta_pin)
 {
   auto search = getSta()->search();
   auto vertex_array = vertices(sta_pin);
@@ -96,7 +96,7 @@ bool Timing::isEndpoint_(sta::Pin* sta_pin)
   return false;
 }
 
-float Timing::slew_all_corners(sta::Vertex* vertex, sta::MinMax* minmax)
+float Timing::slewAllCorners(sta::Vertex* vertex, sta::MinMax* minmax)
 {
   auto sta = getSta();
   bool max = (minmax == sta::MinMax::max());
@@ -114,23 +114,23 @@ float Timing::getPinSlew(odb::dbITerm* db_pin, MinMax minmax)
 {
   sta::dbSta* sta = getSta();
   sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
-  return getPinSlew_(sta_pin, minmax);
+  return getPinSlew(sta_pin, minmax);
 }
 
 float Timing::getPinSlew(odb::dbBTerm* db_pin, MinMax minmax)
 {
   sta::dbSta* sta = getSta();
   sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
-  return getPinSlew_(sta_pin, minmax);
+  return getPinSlew(sta_pin, minmax);
 }
 
-float Timing::getPinSlew_(sta::Pin* sta_pin, MinMax minmax)
+float Timing::getPinSlew(sta::Pin* sta_pin, MinMax minmax)
 {
   auto vertex_array = vertices(sta_pin);
   float pinSlew = (minmax == Max) ? -sta::INF : sta::INF;
   for (auto vertex : vertex_array) {
     if (vertex != nullptr) {
-      float pinSlewTemp = slew_all_corners(vertex, getMinMax(minmax));
+      float pinSlewTemp = slewAllCorners(vertex, getMinMax(minmax));
       pinSlew = (minmax == Max) ? std::max(pinSlew, pinSlewTemp)
                                 : std::min(pinSlew, pinSlewTemp);
     }
@@ -217,17 +217,17 @@ float Timing::getPinArrival(odb::dbITerm* db_pin, RiseFall rf, MinMax minmax)
 {
   sta::dbSta* sta = getSta();
   sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
-  return getPinArrival_(sta_pin, rf, minmax);
+  return getPinArrival(sta_pin, rf, minmax);
 }
 
 float Timing::getPinArrival(odb::dbBTerm* db_pin, RiseFall rf, MinMax minmax)
 {
   sta::dbSta* sta = getSta();
   sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
-  return getPinArrival_(sta_pin, rf, minmax);
+  return getPinArrival(sta_pin, rf, minmax);
 }
 
-float Timing::getPinArrival_(sta::Pin* sta_pin, RiseFall rf, MinMax minmax)
+float Timing::getPinArrival(sta::Pin* sta_pin, RiseFall rf, MinMax minmax)
 {
   auto vertex_array = vertices(sta_pin);
   float delay = (minmax == Max) ? -sta::INF : sta::INF;
@@ -264,17 +264,17 @@ float Timing::getPinSlack(odb::dbITerm* db_pin, RiseFall rf, MinMax minmax)
 {
   sta::dbSta* sta = getSta();
   sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
-  return getPinSlack_(sta_pin, rf, minmax);
+  return getPinSlack(sta_pin, rf, minmax);
 }
 
 float Timing::getPinSlack(odb::dbBTerm* db_pin, RiseFall rf, MinMax minmax)
 {
   sta::dbSta* sta = getSta();
   sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
-  return getPinSlack_(sta_pin, rf, minmax);
+  return getPinSlack(sta_pin, rf, minmax);
 }
 
-float Timing::getPinSlack_(sta::Pin* sta_pin, RiseFall rf, MinMax minmax)
+float Timing::getPinSlack(sta::Pin* sta_pin, RiseFall rf, MinMax minmax)
 {
   sta::dbSta* sta = getSta();
   auto sta_rf = (rf == Rise) ? sta::RiseFall::rise() : sta::RiseFall::fall();
