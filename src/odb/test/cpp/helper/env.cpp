@@ -34,6 +34,8 @@
 
 #include <stdexcept>
 
+namespace odb {
+
 std::string testTmpPath(const std::string& file)
 {
   const char* base_dir = std::getenv("BASE_DIR");
@@ -42,3 +44,5 @@ std::string testTmpPath(const std::string& file)
   }
   return std::string(base_dir) + file;
 }
+
+}  // namespace odb
