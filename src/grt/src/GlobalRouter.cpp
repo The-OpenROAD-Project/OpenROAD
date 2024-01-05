@@ -3111,6 +3111,7 @@ void GlobalRouter::findLayerExtensions(std::vector<int>& layer_extensions)
 int GlobalRouter::findObstructions(odb::Rect& die_area)
 {
   int obstructions_cnt = 0;
+  odb::dbTech* tech = db_->getTech();
   for (odb::dbObstruction* obstruction : block_->getObstructions()) {
     odb::dbBox* obstruction_box = obstruction->getBBox();
 
@@ -3127,6 +3128,13 @@ int GlobalRouter::findObstructions(odb::Rect& die_area)
       }
       applyObstructionAdjustment(obstruction_rect,
                                  obstruction_box->getTechLayer());
+      if (obstruction_rect == grid_->getGridArea()) {
+        for (int l = layer; l <= max_routing_layer_; l++) {
+          odb::dbTechLayer* tech_layer = tech->findRoutingLayer(l);
+          applyObstructionAdjustment(obstruction_rect,
+                                     tech_layer);
+        }
+      }
       obstructions_cnt++;
     }
   }
