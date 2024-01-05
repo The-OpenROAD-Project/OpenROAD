@@ -3140,15 +3140,17 @@ int GlobalRouter::findObstructions(odb::Rect& die_area)
     }
   }
 
-  for (odb::dbBTerm* bterm : block_->getBTerms()) {
-    for (odb::dbBPin* bterm_pin : bterm->getBPins()) {
-      for (odb::dbBox* bpin_box : bterm_pin->getBoxes()) {
-        odb::dbTechLayer* tech_layer = bpin_box->getTechLayer();
-        if (tech_layer->getRoutingLevel() >= first_blocked_layer) {
-          logger_->error(utl::GRT,
-                         16,
-                         "Pin {} is placed at a blocked layer.",
-                         bterm->getName());
+  if (first_blocked_layer != std::numeric_limits<int>::max()) {
+    for (odb::dbBTerm* bterm : block_->getBTerms()) {
+      for (odb::dbBPin* bterm_pin : bterm->getBPins()) {
+        for (odb::dbBox* bpin_box : bterm_pin->getBoxes()) {
+          odb::dbTechLayer* tech_layer = bpin_box->getTechLayer();
+          if (tech_layer->getRoutingLevel() >= first_blocked_layer) {
+            logger_->error(utl::GRT,
+                           16,
+                           "Pin {} is placed at a blocked layer.",
+                           bterm->getName());
+          }
         }
       }
     }
