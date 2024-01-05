@@ -243,7 +243,8 @@ void ChartsWidget::populateBuckets(const std::vector<float>& all_slack,
   auto max_slack = std::max_element(all_slack.begin(), all_slack.end());
   auto min_slack = std::min_element(all_slack.begin(), all_slack.end());
 
-  const float bucket_interval = (*max_slack - *min_slack) / number_of_buckets_;
+  float bucket_interval = (*max_slack - *min_slack) / number_of_buckets_;
+  bucket_interval = std::ceil(bucket_interval * 10) / 10;
 
   setBucketInterval(bucket_interval);
 
@@ -279,7 +280,7 @@ void ChartsWidget::populateBuckets(const std::vector<float>& all_slack,
       }
     }
 
-    if (*max_slack >= positive_upper) {
+    if (*max_slack >= positive_lower) {
       pos_buckets.push_back(pos_slack_count);
 
       if (largest_slack_count_ < pos_slack_count) {
