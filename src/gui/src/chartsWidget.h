@@ -73,13 +73,12 @@ class ChartsWidget : public QDockWidget
 
  private:
   void getSlackForAllEndpoints(std::vector<float>& all_slack) const;
-  int computeDigits(int input_value);
-  void setDigitCompensator(float max_slack, float min_slack);
   void populateBuckets(const std::vector<float>& all_slack,
-                       BucketsVector& neg_buckets,
-                       BucketsVector& pos_buckets);
-  void setXAxisLabel(const QStringList& time_values);
-  void setYAxisLabel(int max_y);
+                       std::deque<int>& neg_buckets,
+                       std::deque<int>& pos_buckets);
+  void setBucketInterval(float bucket_interval);
+  void setXAxisConfig(const QStringList& time_values);
+  void setYAxisConfig();
 
   utl::Logger* logger_;
   sta::dbSta* sta_;
@@ -91,14 +90,11 @@ class ChartsWidget : public QDockWidget
   QBarCategoryAxis* axis_x_;
   QValueAxis* axis_y_;
 
-  // Maximum digits in the number of buckets when casting float --> integer
-  const int max_digits_ = 2;
-  int digit_compensator_ = 0;
-
-  // Used to keep one bar set for negative slack values
-  // and other for positive values
-  int index_offset_ = 0;
+  const int number_of_buckets_ = 20;
   const int default_tick_count_ = 15;
+  int largest_slack_count_ = 0;  // Used to configure the y axis.
+
+  float bucket_interval_ = 0;
 };
 
 }  // namespace gui

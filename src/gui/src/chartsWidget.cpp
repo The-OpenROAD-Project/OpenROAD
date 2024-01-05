@@ -39,8 +39,6 @@
 #include <QtCharts>
 #include <algorithm>
 #include <cmath>
-#include <iostream>
-#include <set>
 #include <vector>
 
 #include "sta/MinMax.hh"
@@ -114,20 +112,10 @@ void ChartsWidget::showToolTip(bool is_hovering, int bar_index)
     const QString number_of_pins
         = QString("Number of Endpoints: %1\n").arg(index_value);
 
-    QString time_unit = sta_->units()->timeUnit()->scaleAbbreviation();
-    time_unit.append(sta_->units()->timeUnit()->suffix());
+    // QString time_unit = sta_->units()->timeUnit()->scaleAbbreviation();
+    // time_unit.append(sta_->units()->timeUnit()->suffix());
 
-    const int x_index = (bar_index - index_offset_);
-    const int compensator = digit_compensator_ > 1 ? std::pow(
-                                10, computeDigits(digit_compensator_ - 1))
-                                                   : 1;
-
-    QString time_info = QString("Interval: [%1, %2) %3")
-                            .arg((x_index - 1) * compensator)
-                            .arg(x_index * compensator)
-                            .arg(time_unit);
-
-    const QString tool_tip = number_of_pins + time_info;
+    const QString tool_tip = number_of_pins;
 
     QToolTip::showText(QCursor::pos(), tool_tip, this);
   } else {
@@ -161,19 +149,7 @@ void ChartsWidget::setSlackMode()
     return;
   }
 
-  chart_->setTitle("Endpoint Slack");
-
-  auto max_slack = std::max_element(all_slack.begin(), all_slack.end());
-  auto min_slack = std::min_element(all_slack.begin(), all_slack.end());
-
-  setDigitCompensator(*max_slack, *min_slack);
-
-  int total_pos_buckets = std::ceil(*max_slack / digit_compensator_);
-  int total_neg_buckets = std::ceil(std::abs(*min_slack) / digit_compensator_);
-  index_offset_ = std::abs(*min_slack) / digit_compensator_;
-
-  BucketsVector pos_buckets(total_pos_buckets);
-  BucketsVector neg_buckets(total_neg_buckets);
+  std::deque<int> neg_buckets, pos_buckets;
 
   populateBuckets(all_slack, pos_buckets, neg_buckets);
 
@@ -193,45 +169,36 @@ void ChartsWidget::setSlackMode()
   const QString open_bracket = "[";
   const QString close_parenthesis = ")";
   const QString comma = ", ";
-  int bucket_count = 0;
-  int max_y = 0;
 
-  for (int i = 0; i < total_neg_buckets; ++i) {
-    bucket_count = neg_buckets[i].size();
-    *neg_set << bucket_count;
+  for (int i = 0; i < neg_buckets.size(); ++i) {
+    *neg_set << neg_buckets[i];
     *pos_set << 0;
-    QString curr_value = "";
-    QString next_value = "";
-    time_values << open_bracket + curr_value.setNum(i - total_neg_buckets)
-                       + comma + next_value.setNum((i + 1) - total_neg_buckets)
-                       + close_parenthesis;
-    if (max_y < bucket_count)
-      max_y = bucket_count;
+    float lower = (i - static_cast<int>(neg_buckets.size())) * bucket_interval_;
+    float upper = lower + bucket_interval_;
+
+    time_values << open_bracket + QString("").setNum(lower) + comma
+                       + QString("").setNum(upper) + close_parenthesis;
   }
 
-  for (int i = 0; i < total_pos_buckets; ++i) {
-    bucket_count = pos_buckets[i].size();
-    *pos_set << bucket_count;
+  for (int i = 0; i < pos_buckets.size(); ++i) {
     *neg_set << 0;
-    QString curr_value = "";
-    QString next_value = "";
-    time_values << open_bracket + curr_value.setNum(i) + comma
-                       + next_value.setNum(i + 1) + close_parenthesis;
-    if (max_y < bucket_count)
-      max_y = bucket_count;
+    *pos_set << pos_buckets[i];
+    float lower = i * bucket_interval_;
+    float upper = lower + bucket_interval_;
+
+    time_values << open_bracket + QString().setNum(lower) + comma
+                       + QString().setNum(upper) + close_parenthesis;
   }
 
-  setXAxisLabel(time_values);
+  setXAxisConfig(time_values);
+  setYAxisConfig();
 
   QStackedBarSeries* series = new QStackedBarSeries(this);
+  chart_->addSeries(series);
 
   series->append(neg_set);
   series->append(pos_set);
   series->setBarWidth(1.0);
-  chart_->addSeries(series);
-
-  setYAxisLabel(max_y);
-
   series->attachAxis(axis_x_);
   series->attachAxis(axis_y_);
 
@@ -239,6 +206,7 @@ void ChartsWidget::setSlackMode()
   chart_->legend()->markers(series)[1]->setVisible(false);
   chart_->legend()->setVisible(true);
   chart_->legend()->setAlignment(Qt::AlignBottom);
+  chart_->setTitle("Endpoint Slack");
 }
 
 void ChartsWidget::getSlackForAllEndpoints(std::vector<float>& all_slack) const
@@ -249,7 +217,7 @@ void ChartsWidget::getSlackForAllEndpoints(std::vector<float>& all_slack) const
   auto end_points = sta_gui.getEndPoints();
   int unconstrained_count = 0;
 
-  for (auto pin : end_points) {
+  for (const auto& pin : end_points) {
     double pin_slack = 0;
     pin_slack = sta_gui.getPinSlack(pin);
     if (pin_slack != sta::INF)
@@ -266,51 +234,74 @@ void ChartsWidget::getSlackForAllEndpoints(std::vector<float>& all_slack) const
   }
 }
 
-int ChartsWidget::computeDigits(const int input_value)
-{
-  return input_value > 0 ? static_cast<int>(std::log10(input_value) + 1) : 1;
-}
-
-void ChartsWidget::setDigitCompensator(const float max_slack,
-                                       const float min_slack)
-{
-  const float max_abs_slack = std::max(max_slack, std::abs(min_slack));
-  const int digits = computeDigits(max_abs_slack);
-
-  digit_compensator_
-      = digits > max_digits_ ? std::pow(10, digits - max_digits_) : 1;
-}
-
+// The define the slack interval as being inclusive in its lower
+// boundary and exclusive in upper: [x y) ps/ns/...
 void ChartsWidget::populateBuckets(const std::vector<float>& all_slack,
-                                   BucketsVector& pos_buckets,
-                                   BucketsVector& neg_buckets)
+                                   std::deque<int>& pos_buckets,
+                                   std::deque<int>& neg_buckets)
 {
-  for (const auto& slack : all_slack) {
-    if (slack < 0) {
-      int bucket_index = slack / digit_compensator_;
-      neg_buckets[bucket_index + index_offset_].push_back(slack);
-    } else {
-      int bucket_index = slack / digit_compensator_;
-      pos_buckets[bucket_index].push_back(slack);
+  auto max_slack = std::max_element(all_slack.begin(), all_slack.end());
+  auto min_slack = std::min_element(all_slack.begin(), all_slack.end());
+
+  const float bucket_interval = (*max_slack - *min_slack) / number_of_buckets_;
+
+  setBucketInterval(bucket_interval);
+
+  float positive_lower = 0.0f, positive_upper = 0.0f, negative_lower = 0.0f,
+        negative_upper = 0.0f;
+
+  int bucket_index = 0, pos_slack_count = 0, neg_slack_count = 0;
+
+  do {
+    pos_slack_count = 0;
+    neg_slack_count = 0;
+
+    positive_lower = bucket_interval * bucket_index;
+    positive_upper = bucket_interval * (bucket_index + 1);
+    negative_lower = -positive_upper;
+    negative_upper = -positive_lower;
+
+    for (const auto& slack : all_slack) {
+      if (negative_lower <= slack && slack < negative_upper) {
+        ++neg_slack_count;
+      } else if (positive_lower <= slack && slack < positive_upper) {
+        ++pos_slack_count;
+      }
     }
-  }
+
+    // Push zeros - meaning no slack values in the current range - only in
+    // situations where the bucket is in a valid position of the queue.
+    if (*min_slack < negative_upper) {
+      neg_buckets.push_front(neg_slack_count);
+
+      if (largest_slack_count_ < neg_slack_count) {
+        largest_slack_count_ = neg_slack_count;
+      }
+    }
+
+    if (*max_slack >= positive_upper) {
+      pos_buckets.push_back(pos_slack_count);
+
+      if (largest_slack_count_ < pos_slack_count) {
+        largest_slack_count_ = pos_slack_count;
+      }
+    }
+
+    ++bucket_index;
+  } while (*min_slack < negative_upper || *max_slack >= positive_upper);
 }
 
-void ChartsWidget::setXAxisLabel(const QStringList& time_values)
+void ChartsWidget::setBucketInterval(float bucket_interval)
+{
+  bucket_interval_ = bucket_interval;
+}
+
+void ChartsWidget::setXAxisConfig(const QStringList& time_values)
 {
   const QString start_title = "Slack [";
   const QString time_scale_abreviation
       = sta_->units()->timeUnit()->scaleAbbreviation();
   QString time_suffix = sta_->units()->timeUnit()->suffix();
-
-  if (digit_compensator_ > 1) {
-    QString tenth = " * 10^";
-    QString compensator_power;
-    compensator_power.setNum(computeDigits(digit_compensator_) - 1);
-    tenth.append(compensator_power);
-
-    time_suffix.append(tenth);
-  }
 
   const QString end_title = "]";
   const QString axis_x_title
@@ -323,10 +314,10 @@ void ChartsWidget::setXAxisLabel(const QStringList& time_values)
   axis_x_->setVisible(true);
 }
 
-void ChartsWidget::setYAxisLabel(const int max_y)
+void ChartsWidget::setYAxisConfig()
 {
   axis_y_->setTitleText("Number of Endpoints");
-  axis_y_->setRange(0, max_y);
+  axis_y_->setRange(0, largest_slack_count_);
   axis_y_->setTickCount(default_tick_count_);
   axis_y_->setLabelFormat("%i");
   axis_y_->setVisible(true);
