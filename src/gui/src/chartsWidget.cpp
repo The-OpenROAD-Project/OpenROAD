@@ -106,14 +106,17 @@ void ChartsWidget::changeMode()
 void ChartsWidget::showToolTip(bool is_hovering, int bar_index)
 {
   if (is_hovering) {
-    const qreal index_value = static_cast<QBarSet*>(sender())->at(bar_index);
     const QString number_of_pins
-        = QString("Number of Endpoints: %1\n").arg(index_value);
+        = QString("Number of Endpoints: %1\n").arg(bar_index);
 
-    // QString time_unit = sta_->units()->timeUnit()->scaleAbbreviation();
-    // time_unit.append(sta_->units()->timeUnit()->suffix());
+    QString time_unit = sta_->units()->timeUnit()->scaleAbbreviation();
+    time_unit.append(sta_->units()->timeUnit()->suffix());
 
-    const QString tool_tip = number_of_pins;
+    QString time_info
+        = QString("Interval: %1 ").arg(axis_x_->categories()[bar_index])
+          + time_unit;
+
+    const QString tool_tip = number_of_pins + time_info;
 
     QToolTip::showText(QCursor::pos(), tool_tip, this);
   } else {
