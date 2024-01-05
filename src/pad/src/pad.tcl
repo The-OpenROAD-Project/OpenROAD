@@ -334,7 +334,7 @@ proc place_bondpad {args} {
 sta::define_cmd_args "place_io_terminals" {inst_terms}
 
 proc place_io_terminals {args} {
-  sta::parse_key_args "place_bondpad" args \
+  sta::parse_key_args "place_io_terminals" args \
     keys {} \
     flags {-allow_non_top_layer}
 
