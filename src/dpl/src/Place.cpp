@@ -799,7 +799,8 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
     odb::Point p;
     bool operator>(const PQ_entry& other) const
     {
-      return manhattan_distance > other.manhattan_distance;
+      return std::tie(manhattan_distance, p)
+             > std::tie(other.manhattan_distance, other.p);
     }
     bool operator==(const PQ_entry& other) const
     {
