@@ -107,7 +107,8 @@ void ChartsWidget::showToolTip(bool is_hovering, int bar_index)
 {
   if (is_hovering) {
     const QString number_of_pins
-        = QString("Number of Endpoints: %1\n").arg(bar_index);
+        = QString("Number of Endpoints: %1\n")
+              .arg(static_cast<QBarSet*>(sender())->at(bar_index));
 
     QString time_unit = sta_->units()->timeUnit()->scaleAbbreviation();
     time_unit.append(sta_->units()->timeUnit()->suffix());
