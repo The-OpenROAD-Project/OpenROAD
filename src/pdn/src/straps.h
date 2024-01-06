@@ -150,6 +150,7 @@ class PadDirectConnectionStraps : public Straps
   bool canConnect() const;
 
   void makeShapes(const ShapeTreeMap& other_shapes) override;
+  bool refineShapes(const ShapeTreeMap& other_shapes) override;
 
   void report() const override;
   Type type() const override { return GridComponent::PadConnect; }
@@ -176,7 +177,9 @@ class PadDirectConnectionStraps : public Straps
   };
 
   odb::dbITerm* iterm_;
-  odb::dbWireShapeType target_shapes_ = odb::dbWireShapeType::RING;
+  odb::dbWireShapeType target_shapes_type_ = odb::dbWireShapeType::RING;
+  std::map<Shape*, Shape*> target_shapes_;
+  std::map<Shape*, odb::Rect> target_pin_shape_;
   odb::dbDirection pad_edge_;
   ConnectionType type_ = ConnectionType::None;
   std::vector<odb::dbTechLayer*> layers_;

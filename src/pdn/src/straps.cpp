@@ -825,6 +825,8 @@ void PadDirectConnectionStraps::makeShapes(const ShapeTreeMap& other_shapes)
              1,
              "Direct connect pin start of make shapes for {}",
              getName());
+  target_shapes_.clear();
+  target_pin_shape_.clear();
   switch (type_) {
     case ConnectionType::None:
       break;
@@ -872,7 +874,7 @@ ShapePtr PadDirectConnectionStraps::getClosestShape(
            bgi::intersects(search) && bgi::satisfies([&](const auto& other) {
              const auto& shape = other.second;
              return shape->getNet() == net
-                    && shape->getType() == target_shapes_;
+                    && shape->getType() == target_shapes_type_;
            }));
        it != search_shapes.qend();
        it++) {
@@ -934,7 +936,7 @@ void PadDirectConnectionStraps::makeShapesFacingCore(
   std::set<odb::dbTechLayer*> connectable_layers;
   for (const auto& [layer, shapes] : other_shapes) {
     for (const auto& [box, shape] : shapes) {
-      if (shape->getType() == target_shapes_) {
+      if (shape->getType() == target_shapes_type_) {
         const auto layers = getGrid()->connectableLayers(layer);
         connectable_layers.insert(layers.begin(), layers.end());
       }
@@ -999,6 +1001,8 @@ void PadDirectConnectionStraps::makeShapesFacingCore(
       // preserved
       shape->addITermConnection(pin_rect.intersect(shape_rect));
       addShape(shape);
+
+      target_shapes_[shape] = closest_shape.get();
     }
   }
 }
@@ -1086,16 +1090,17 @@ void PadDirectConnectionStraps::makeShapesOverPads(
   setSpacing(std::max(getWidth(), layer.getSpacing(getWidth())));
   Straps::checkLayerSpecifications();
 
-  const int target_offset = layer.snapToManufacturingGrid(
-      inst_offset + getSpacing() + getWidth() / 2, false);
-  const int offset = target_offset + index * (getSpacing() + getWidth());
-
   odb::Rect pin_shape;
   pin_shape.mergeInit();
   for (auto* pin : pins_) {
     pin_shape.merge(pin->getBox());
   }
   transform.apply(pin_shape);
+  odb::Rect org_pin_shape = pin_shape;
+
+  const int target_offset = layer.snapToManufacturingGrid(
+      inst_offset + getSpacing() + getWidth() / 2, false);
+  const int offset = target_offset + index * (getSpacing() + getWidth());
 
   if (is_horizontal) {
     pin_shape.set_ylo(offset - getWidth() / 2);
@@ -1136,6 +1141,8 @@ void PadDirectConnectionStraps::makeShapesOverPads(
     shape->setAllowsNonPreferredDirectionChange();
   }
   addShape(shape);
+  target_shapes_[shape] = closest_shape.get();
+  target_pin_shape_[shape] = org_pin_shape;
 }
 
 bool PadDirectConnectionStraps::snapRectToClosestShape(
@@ -1249,6 +1256,72 @@ void PadDirectConnectionStraps::setConnectionType(ConnectionType type)
   }
 
   initialize(type);
+}
+
+bool PadDirectConnectionStraps::refineShapes(const ShapeTreeMap& other_shapes)
+{
+  if (type_ != ConnectionType::OverPads) {
+    return GridComponent::refineShapes(other_shapes);
+  }
+
+  std::set<Shape*> refine;
+  for (const auto& [layer, shapes] : getShapes()) {
+    for (const auto& [box, shape] : shapes) {
+      auto find_shape = target_shapes_.find(shape.get());
+      if (find_shape == target_shapes_.end()) {
+        continue;
+      }
+
+      Shape* target = find_shape->second;
+      int layer0 = target->getLayer()->getRoutingLevel();
+      int layer1 = shape->getLayer()->getRoutingLevel();
+      if (layer0 > layer1) {
+        std::swap(layer0, layer1);
+      }
+      if (layer1 - layer0 <= 1) {
+        continue;
+      }
+
+      const odb::Rect expected_via
+          = shape->getRect().intersect(find_shape->second->getRect());
+      const Box expected_via_box = Shape::rectToBox(expected_via);
+
+      auto* tech = target->getLayer()->getTech();
+      for (int layer = layer0 + 1; layer < layer1; layer++) {
+        auto* tech_layer = tech->findRoutingLayer(layer);
+
+        if (other_shapes.count(tech_layer) == 0) {
+          continue;
+        }
+        const auto layer_shapes = other_shapes.at(tech_layer);
+        const bool has_obstruction
+            = layer_shapes.qbegin(bgi::intersects(expected_via_box))
+              != layer_shapes.qend();
+
+        if (!has_obstruction) {
+          continue;
+        }
+
+        refine.insert(shape.get());
+
+        debugPrint(getLogger(),
+                   utl::PDN,
+                   "Pad",
+                   3,
+                   "Refine shape {} with obstruction {} using pin {}",
+                   Shape::getRectText(expected_via, tech->getLefUnits()),
+                   tech_layer->getName(),
+                   Shape::getRectText(target_pin_shape_[shape.get()],
+                                      tech->getLefUnits()));
+      }
+    }
+  }
+
+  for (auto* shape : refine) {
+    removeShape(shape);
+  }
+
+  return false;
 }
 
 ////////

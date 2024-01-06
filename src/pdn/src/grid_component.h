@@ -86,6 +86,7 @@ class GridComponent
   VoltageDomain* getDomain() const;
 
   virtual void makeShapes(const ShapeTreeMap& other_shapes) = 0;
+  virtual bool refineShapes(const ShapeTreeMap& other_shapes) { return false; };
 
   const ShapeTreeMap& getShapes() const { return shapes_; }
   void getShapes(ShapeTreeMap& shapes) const;

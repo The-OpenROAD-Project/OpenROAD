@@ -148,6 +148,15 @@ void Grid::makeShapes(const ShapeTreeMap& global_shapes,
     component->getObstructions(local_obstructions);
     component->getShapes(local_shapes);
   }
+  bool modified = false;
+  do {
+    modified = false;
+    for (auto* component : getGridComponents()) {
+      // make initial shapes
+      modified |= component->refineShapes(local_shapes);
+      // TODO handle obstruction changes
+    }
+  } while (modified);
 
   ShapeTreeMap all_shapes = global_shapes;
   // insert power switches
