@@ -197,4 +197,17 @@
     upf::handle_level_shifter_instance(
         getOpenRoad()->getLogger(), db->getChip()->getBlock(), level_shifter_name, instance, port); 
   }
+
+  void set_domain_voltage_cmd(char* domain, float voltage)
+  {
+    odb::dbDatabase* db = getOpenRoad()->getDb();
+    upf::set_domain_voltage(
+        getOpenRoad()->getLogger(), db->getChip()->getBlock(), domain, voltage); 
+  }
+
+  void set_level_shifter_cell_cmd(char* shifter, char* cell, char* input, char* output){
+    odb::dbDatabase* db = getOpenRoad()->getDb();
+    upf::set_level_shifter_cell(
+        getOpenRoad()->getLogger(), db->getChip()->getBlock(), shifter, cell, input, output); 
+  }
 %}  // inline

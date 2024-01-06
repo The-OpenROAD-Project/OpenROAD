@@ -213,7 +213,7 @@ class DbInstancePinIterator : public InstancePinIterator
   dbSet<dbITerm>::iterator iitr_end_;
   dbSet<dbBTerm>::iterator bitr_;
   dbSet<dbBTerm>::iterator bitr_end_;
-  Pin* next_;
+  Pin* next_ = nullptr;
 };
 
 DbInstancePinIterator::DbInstancePinIterator(const Instance* inst,

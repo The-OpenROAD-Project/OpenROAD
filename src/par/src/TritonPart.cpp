@@ -1750,7 +1750,12 @@ void TritonPart::BuildTimingPaths()
 // the return value is the partitioning solution
 void TritonPart::MultiLevelPartition()
 {
-  logger_->info(PAR, 16, "Partitioning using multilevel methodology.");
+  debugPrint(logger_,
+             PAR,
+             "multilevel_partitioning",
+             1,
+             "Starting multilevel partitioning.");
+
   auto start_time_stamp_global = std::chrono::high_resolution_clock::now();
 
   // check the base balance constraint

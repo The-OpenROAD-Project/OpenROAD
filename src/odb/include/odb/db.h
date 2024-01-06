@@ -5839,7 +5839,7 @@ class dbTech : public dbObject
   /// Get the LEF version in this technology as a number or as a string.
   ///
   double getLefVersion() const;
-  const char* getLefVersionStr() const;
+  std::string getLefVersionStr() const;
 
   ///
   /// Set the LEF version of this technology, in both number and string form.
@@ -7396,6 +7396,18 @@ class dbLevelShifter : public dbObject
 
   std::string getNameSuffix() const;
 
+  void setCellName(std::string cell_name);
+
+  std::string getCellName() const;
+
+  void setCellInput(std::string cell_input);
+
+  std::string getCellInput() const;
+
+  void setCellOutput(std::string cell_output);
+
+  std::string getCellOutput() const;
+
   // User Code Begin dbLevelShifter
 
   static dbLevelShifter* create(dbBlock* block,
@@ -7564,6 +7576,10 @@ class dbPowerDomain : public dbObject
   void setParent(dbPowerDomain* parent);
 
   dbPowerDomain* getParent() const;
+
+  void setVoltage(float voltage);
+
+  float getVoltage() const;
 
   // User Code Begin dbPowerDomain
   void setGroup(dbGroup* group);

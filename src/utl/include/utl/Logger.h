@@ -276,7 +276,7 @@ class Logger
       key = metric;
     else
       key = fmt::format(FMT_RUNTIME(metrics_stages_.top()), metric);
-    metrics_entries_.push_back({key, value});
+    metrics_entries_.push_back({std::move(key), value});
   }
 
   void flushMetrics();

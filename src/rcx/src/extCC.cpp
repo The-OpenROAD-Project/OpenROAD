@@ -426,7 +426,7 @@ uint Ath__track::couplingCaps(Ath__grid* ccGrid,
     nwTable = &w2Table;
     nexy = wire->_xy;
     nelen = wire->_len;
-    int delta;
+    int delta = 0;
     if (pwire) {
       delta = pwire->_xy + pwire->_len - wire->_xy;
     }

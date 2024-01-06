@@ -913,7 +913,7 @@ dbTechLayerRule* dbCreateNetUtil::getRule(int routingLayer, int width)
     return rule;
 
   // Create a non-default-rule for this width
-  dbTechNonDefaultRule* nd_rule;
+  dbTechNonDefaultRule* nd_rule = nullptr;
   char rule_name[64];
 
   while (_ruleNameHint >= 0) {

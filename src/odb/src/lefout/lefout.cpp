@@ -78,7 +78,7 @@ void lefout::insertObstruction(dbTechLayer* layer,
   obstructions[layer] += poly.bloat(bloat, bloat, bloat, bloat);
 }
 
-void lefout::writeVersion(const char* version)
+void lefout::writeVersion(const std::string& version)
 {
   fmt::print(_out, "VERSION {} ;\n", version);
 }
