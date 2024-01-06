@@ -685,9 +685,31 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFormingRing()
 {
   auto pins_by_layer = getPinsByLayer();
 
+  // cleanup pins
+
+  // remove pins that do not form a complete ring
+  auto* master = iterm_->getInst()->getMaster();
+  auto remove_filter = [master](odb::dbBox* box) {
+    const odb::Rect rect = box->getBox();
+    const bool matches_x
+        = rect.dx() == master->getWidth() || rect.dx() == master->getHeight();
+    const bool matches_y
+        = rect.dy() == master->getWidth() || rect.dy() == master->getHeight();
+    return !matches_x && !matches_y;
+  };
+  for (auto& [layer, layer_pins] : pins_by_layer) {
+    auto remove_itr
+        = std::remove_if(layer_pins.begin(), layer_pins.end(), remove_filter);
+    layer_pins.erase(remove_itr, layer_pins.end());
+  }
+
   std::vector<odb::dbBox*> pins;
   odb::dbTechLayer* top_layer = nullptr;
-  for (const auto& [layer, layer_pins] : getPinsByLayer()) {
+  for (const auto& [layer, layer_pins] : pins_by_layer) {
+    if (layer_pins.empty()) {
+      continue;
+    }
+
     bool use_pins = false;
     if (top_layer == nullptr) {
       use_pins = true;
@@ -715,7 +737,6 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFormingRing()
     return {};
   }
 
-  auto* master = iterm_->getInst()->getMaster();
   for (auto* obs : master->getObstructions()) {
     auto* obs_layer = obs->getTechLayer();
     if (obs_layer == nullptr) {
@@ -736,22 +757,17 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFormingRing()
         if (geo_layer->getNumber() > routing_layer->getNumber()) {
           // pins might be obstructed
           return {};
+        } else if (geo_layer->getNumber() == routing_layer->getNumber()) {
+          for (auto* pin : pins) {
+            if (pin->getBox().intersects(geo->getBox())) {
+              // pins will be obstructed
+              return {};
+            }
+          }
         }
       }
     }
   }
-
-  // remove pins that do not form a complete ring
-  auto remove_itr
-      = std::remove_if(pins.begin(), pins.end(), [master](odb::dbBox* box) {
-          const odb::Rect rect = box->getBox();
-          const bool matches_x = rect.dx() == master->getWidth()
-                                 || rect.dx() == master->getHeight();
-          const bool matches_y = rect.dy() == master->getWidth()
-                                 || rect.dy() == master->getHeight();
-          return !matches_x && !matches_y;
-        });
-  pins.erase(remove_itr, pins.end());
 
   if (pad_edge_ == odb::dbDirection::EAST
       || pad_edge_ == odb::dbDirection::WEST) {
@@ -1034,15 +1050,14 @@ void PadDirectConnectionStraps::makeShapesOverPads(
              utl::PDN,
              "Pad",
              2,
-             "Pad connections for {} has {} connections and this on is at "
+             "Pad connections for {} has {} connections and this one is at "
              "index ({}), will use {} to connect.",
              getName(),
              straps.size(),
              index,
-             getLayer()->getName())
+             getLayer()->getName());
 
-      const bool is_horizontal
-      = isConnectHorizontal();
+  const bool is_horizontal = isConnectHorizontal();
 
   odb::dbInst* inst = iterm_->getInst();
   const odb::Rect inst_rect = inst->getBBox()->getBox();
