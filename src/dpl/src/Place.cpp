@@ -817,7 +817,7 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
   int best_dist = std::numeric_limits<int>::max();
   int best_for = 0;
   while (!positionsHeap.empty()) {
-    auto top = positionsHeap.top();
+    const auto top = positionsHeap.top();
     positionsHeap.pop();
     const int new_x = top.p.getX();
     const int new_y = top.p.getY();
