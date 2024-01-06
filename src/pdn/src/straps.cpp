@@ -497,7 +497,8 @@ PadDirectConnectionStraps::PadDirectConnectionStraps(
 
 bool PadDirectConnectionStraps::canConnect() const
 {
-  return pad_edge_ != odb::dbDirection::NONE && !pins_.empty() && type_ != None;
+  return pad_edge_ != odb::dbDirection::NONE && !pins_.empty()
+         && type_ != ConnectionType::None;
 }
 
 void PadDirectConnectionStraps::initialize(ConnectionType type)
@@ -541,17 +542,17 @@ void PadDirectConnectionStraps::initialize(ConnectionType type)
              pad_edge_ == odb::dbDirection::WEST);
 
   switch (type) {
-    case None:
+    case ConnectionType::None:
       pins_ = getPinsFacingCore();
       if (pins_.empty()) {
         // check if pins are accessible from above
         pins_ = getPinsFormingRing();
       }
       break;
-    case Edge:
+    case ConnectionType::Edge:
       pins_ = getPinsFacingCore();
       break;
-    case OverPads:
+    case ConnectionType::OverPads:
       pins_ = getPinsFormingRing();
       break;
   }
@@ -675,7 +676,7 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFacingCore()
   pins.erase(std::remove_if(pins.begin(), pins.end(), remove_func), pins.end());
 
   if (!pins.empty()) {
-    type_ = Edge;
+    type_ = ConnectionType::Edge;
   }
   return pins;
 }
@@ -763,7 +764,7 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFormingRing()
   }
   setLayer(routing_layer);
   if (!pins.empty()) {
-    type_ = OverPads;
+    type_ = ConnectionType::OverPads;
   }
   return pins;
 }
@@ -776,13 +777,13 @@ void PadDirectConnectionStraps::report() const
   logger->report("    Pin: {}", getName());
   std::string connection_type = "Unknown";
   switch (type_) {
-    case None:
+    case ConnectionType::None:
       connection_type = "None";
       break;
-    case Edge:
+    case ConnectionType::Edge:
       connection_type = "Edge";
       break;
-    case OverPads:
+    case ConnectionType::OverPads:
       connection_type = "Over pads";
       break;
   }
@@ -809,12 +810,12 @@ void PadDirectConnectionStraps::makeShapes(const ShapeTreeMap& other_shapes)
              "Direct connect pin start of make shapes for {}",
              getName());
   switch (type_) {
-    case None:
+    case ConnectionType::None:
       break;
-    case Edge:
+    case ConnectionType::Edge:
       makeShapesFacingCore(other_shapes);
       break;
-    case OverPads:
+    case ConnectionType::OverPads:
       makeShapesOverPads(other_shapes);
       break;
   }
@@ -928,11 +929,6 @@ void PadDirectConnectionStraps::makeShapesFacingCore(
   odb::dbTransform transform;
   inst->getTransform(transform);
 
-  const bool is_south = pad_edge_ == odb::dbDirection::SOUTH;
-  const bool is_north = pad_edge_ == odb::dbDirection::NORTH;
-  const bool is_west = pad_edge_ == odb::dbDirection::WEST;
-  const bool is_east = pad_edge_ == odb::dbDirection::EAST;
-
   const bool is_horizontal_strap = isConnectHorizontal();
 
   auto* net = iterm_->getNet();
@@ -958,16 +954,8 @@ void PadDirectConnectionStraps::makeShapesFacingCore(
         continue;
       }
 
-      odb::Rect shape_rect = pin_rect;
-      if (is_west) {
-        shape_rect.set_xhi(closest_shape->getRect().xMax());
-      } else if (is_east) {
-        shape_rect.set_xlo(closest_shape->getRect().xMin());
-      } else if (is_south) {
-        shape_rect.set_yhi(closest_shape->getRect().yMax());
-      } else if (is_north) {
-        shape_rect.set_ylo(closest_shape->getRect().yMin());
-      } else {
+      odb::Rect shape_rect;
+      if (!snapRectToClosestShape(closest_shape, pin_rect, shape_rect)) {
         continue;
       }
 
@@ -1121,21 +1109,8 @@ void PadDirectConnectionStraps::makeShapesOverPads(
     return;
   }
 
-  const bool is_south = pad_edge_ == odb::dbDirection::SOUTH;
-  const bool is_north = pad_edge_ == odb::dbDirection::NORTH;
-  const bool is_west = pad_edge_ == odb::dbDirection::WEST;
-  const bool is_east = pad_edge_ == odb::dbDirection::EAST;
-
-  odb::Rect shape_rect = pin_shape;
-  if (is_west) {
-    shape_rect.set_xhi(closest_shape->getRect().xMax());
-  } else if (is_east) {
-    shape_rect.set_xlo(closest_shape->getRect().xMin());
-  } else if (is_south) {
-    shape_rect.set_yhi(closest_shape->getRect().yMax());
-  } else if (is_north) {
-    shape_rect.set_ylo(closest_shape->getRect().yMin());
-  } else {
+  odb::Rect shape_rect;
+  if (!snapRectToClosestShape(closest_shape, pin_shape, shape_rect)) {
     return;
   }
 
@@ -1148,9 +1123,35 @@ void PadDirectConnectionStraps::makeShapesOverPads(
   addShape(shape);
 }
 
+bool PadDirectConnectionStraps::snapRectToClosestShape(
+    const ShapePtr closest_shape,
+    const odb::Rect& pin_shape,
+    odb::Rect& new_shape) const
+{
+  new_shape = pin_shape;
+  switch (pad_edge_) {
+    case odb::dbDirection::WEST:
+      new_shape.set_xhi(closest_shape->getRect().xMax());
+      break;
+    case odb::dbDirection::EAST:
+      new_shape.set_xlo(closest_shape->getRect().xMin());
+      break;
+    case odb::dbDirection::SOUTH:
+      new_shape.set_yhi(closest_shape->getRect().yMax());
+      break;
+    case odb::dbDirection::NORTH:
+      new_shape.set_ylo(closest_shape->getRect().yMin());
+      break;
+    default:
+      return false;
+  }
+
+  return true;
+}
+
 void PadDirectConnectionStraps::getConnectableShapes(ShapeTreeMap& shapes) const
 {
-  if (type_ != OverPads) {
+  if (type_ != ConnectionType::OverPads) {
     return;
   }
 
@@ -1177,7 +1178,7 @@ void PadDirectConnectionStraps::cutShapes(const ShapeTreeMap& obstructions)
 {
   Straps::cutShapes(obstructions);
 
-  if (type_ != OverPads) {
+  if (type_ != ConnectionType::OverPads) {
     return;
   }
 
@@ -1207,18 +1208,18 @@ void PadDirectConnectionStraps::unifyConnectionTypes(
 {
   std::set<ConnectionType> types;
   for (auto* strap : straps) {
-    if (strap->getConnectionType() == None) {
+    if (strap->getConnectionType() == ConnectionType::None) {
       continue;
     }
     types.insert(strap->getConnectionType());
   }
 
-  ConnectionType global_connection = None;
+  ConnectionType global_connection = ConnectionType::None;
   if (types.size() == 1) {
     global_connection = *types.begin();
   } else {
     // Multiple methods found, pick Edge
-    global_connection = Edge;
+    global_connection = ConnectionType::Edge;
   }
 
   for (auto* strap : straps) {
