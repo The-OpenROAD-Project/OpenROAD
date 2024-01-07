@@ -1214,6 +1214,10 @@ void PadDirectConnectionStraps::cutShapes(const ShapeTreeMap& obstructions)
     for (const auto& entry : layer_shapes) {
       const auto& shape = entry.second;
       if (inst_shape.contains(shape->getRect())) {
+        // reject shapes that only connect to pad
+        remove_shapes.push_back(shape.get());
+      } else if (!inst_shape.intersects(shape->getRect())) {
+        // reject shapes that do not connect to pad
         remove_shapes.push_back(shape.get());
       }
     }
@@ -1258,67 +1262,201 @@ void PadDirectConnectionStraps::setConnectionType(ConnectionType type)
   initialize(type);
 }
 
-bool PadDirectConnectionStraps::refineShapes(const ShapeTreeMap& other_shapes)
+bool PadDirectConnectionStraps::strapViaIsObstructed(
+    Shape* shape,
+    const ShapeTreeMap& other_shapes,
+    const ShapeTreeMap& other_obstructions,
+    bool recheck) const
+{
+  auto find_shape = target_shapes_.find(shape);
+  if (find_shape == target_shapes_.end()) {
+    return false;
+  }
+
+  Shape* target = find_shape->second;
+  int layer0 = target->getLayer()->getRoutingLevel();
+  int layer1 = shape->getLayer()->getRoutingLevel();
+  if (layer0 > layer1) {
+    std::swap(layer0, layer1);
+  }
+  if (layer1 - layer0 <= 1) {
+    return false;
+  }
+
+  if (!shape->getRect().intersects(find_shape->second->getRect())) {
+    // if new shape doesn't intersects target reject
+    return true;
+  }
+
+  const odb::Rect expected_via
+      = shape->getRect().intersect(find_shape->second->getRect());
+  const Box expected_via_box = Shape::rectToBox(expected_via);
+
+  auto* tech = target->getLayer()->getTech();
+  for (int layer = layer0 + 1; layer < layer1; layer++) {
+    auto* tech_layer = tech->findRoutingLayer(layer);
+
+    if (other_obstructions.count(tech_layer) == 0) {
+      continue;
+    }
+    const auto layer_shapes = other_obstructions.at(tech_layer);
+    const bool has_obstruction
+        = layer_shapes.qbegin(bgi::intersects(expected_via_box))
+          != layer_shapes.qend();
+
+    if (has_obstruction) {
+      debugPrint(
+          getLogger(),
+          utl::PDN,
+          "Pad",
+          recheck ? 4 : 3,
+          "Direct connect shape {} with obstruction {} using pin {} on {}",
+          Shape::getRectText(expected_via, tech->getLefUnits()),
+          tech_layer->getName(),
+          Shape::getRectText(target_pin_shape_.at(shape), tech->getLefUnits()),
+          shape->getNet()->getName());
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool PadDirectConnectionStraps::refineShapes(ShapeTreeMap& all_shapes,
+                                             ShapeTreeMap& all_obstructions)
 {
   if (type_ != ConnectionType::OverPads) {
-    return GridComponent::refineShapes(other_shapes);
+    return GridComponent::refineShapes(all_shapes, all_obstructions);
   }
 
   std::set<Shape*> refine;
   for (const auto& [layer, shapes] : getShapes()) {
     for (const auto& [box, shape] : shapes) {
-      auto find_shape = target_shapes_.find(shape.get());
-      if (find_shape == target_shapes_.end()) {
+      if (!strapViaIsObstructed(
+              shape.get(), all_shapes, all_obstructions, false)) {
         continue;
       }
 
-      Shape* target = find_shape->second;
-      int layer0 = target->getLayer()->getRoutingLevel();
-      int layer1 = shape->getLayer()->getRoutingLevel();
-      if (layer0 > layer1) {
-        std::swap(layer0, layer1);
-      }
-      if (layer1 - layer0 <= 1) {
-        continue;
-      }
+      refine.insert(shape.get());
+    }
+  }
 
-      const odb::Rect expected_via
-          = shape->getRect().intersect(find_shape->second->getRect());
-      const Box expected_via_box = Shape::rectToBox(expected_via);
+  if (refine.empty()) {
+    return false;
+  }
 
-      auto* tech = target->getLayer()->getTech();
-      for (int layer = layer0 + 1; layer < layer1; layer++) {
-        auto* tech_layer = tech->findRoutingLayer(layer);
+  for (auto* refine_shape : refine) {
+    std::unique_ptr<Shape> shape(refine_shape->copy());
+    removeShape(refine_shape);
 
-        if (other_shapes.count(tech_layer) == 0) {
-          continue;
-        }
-        const auto layer_shapes = other_shapes.at(tech_layer);
-        const bool has_obstruction
-            = layer_shapes.qbegin(bgi::intersects(expected_via_box))
-              != layer_shapes.qend();
+    // remove shape from all_shapes and all_obstructions
+    auto* layer = shape->getLayer();
+    auto find_shape = [&](const ShapeValue& other) {
+      const auto& other_shape = other.second;
+      return other_shape.get() == refine_shape;
+    };
+    // remove from all_shapes
+    auto& layer_shapes = all_shapes[layer];
+    auto find_all_shapes_itr = layer_shapes.qbegin(bgi::satisfies(find_shape));
+    if (find_all_shapes_itr != layer_shapes.qend()) {
+      layer_shapes.remove(*find_all_shapes_itr);
+    }
+    // remove from all_obstructions
+    auto& layer_obstruction = all_obstructions[layer];
+    auto find_all_obstructions_itr
+        = layer_obstruction.qbegin(bgi::satisfies(find_shape));
+    if (find_all_obstructions_itr != layer_obstruction.qend()) {
+      layer_obstruction.remove(*find_all_obstructions_itr);
+    }
 
-        if (!has_obstruction) {
-          continue;
-        }
+    const TechLayer tech_layer(layer);
+    for (int width : {getWidth(), tech_layer.getMinWidth()}) {
+      setWidth(width);
 
-        refine.insert(shape.get());
-
-        debugPrint(getLogger(),
-                   utl::PDN,
-                   "Pad",
-                   3,
-                   "Refine shape {} with obstruction {} using pin {}",
-                   Shape::getRectText(expected_via, tech->getLefUnits()),
-                   tech_layer->getName(),
-                   Shape::getRectText(target_pin_shape_[shape.get()],
-                                      tech->getLefUnits()));
+      if (refineShape(shape.get(),
+                      target_pin_shape_[refine_shape],
+                      all_shapes,
+                      all_obstructions)) {
+        break;
       }
     }
   }
 
-  for (auto* shape : refine) {
-    removeShape(shape);
+  return true;
+}
+
+bool PadDirectConnectionStraps::refineShape(Shape* shape,
+                                            const odb::Rect& pin_shape,
+                                            ShapeTreeMap& all_shapes,
+                                            ShapeTreeMap& all_obstructions)
+{
+  const TechLayer tech_layer(shape->getLayer());
+
+  const int delta = tech_layer.getMinIncrementStep();
+
+  int search_min;
+  int search_max;
+
+  const bool horizontal = isHorizontal();
+
+  if (horizontal) {
+    search_min = pin_shape.yMin();
+    search_max = pin_shape.yMax() - getWidth();
+  } else {
+    search_min = pin_shape.xMin();
+    search_max = pin_shape.xMax() - getWidth();
+  }
+
+  for (int check_loc = search_min; check_loc <= search_max;
+       check_loc += delta) {
+    odb::Rect new_rect = shape->getRect();
+
+    if (horizontal) {
+      new_rect.set_ylo(check_loc);
+      new_rect.set_yhi(check_loc + getWidth());
+    } else {
+      new_rect.set_xlo(check_loc);
+      new_rect.set_xhi(check_loc + getWidth());
+    }
+
+    std::unique_ptr<Shape> new_shape(shape->copy());
+    new_shape->setRect(new_rect);
+
+    debugPrint(
+        getLogger(),
+        utl::PDN,
+        "Pad",
+        4,
+        "Checking new shape: {} on {}",
+        Shape::getRectText(new_shape->getRect(),
+                           new_shape->getLayer()->getTech()->getLefUnits()),
+        new_shape->getLayer()->getName());
+
+    // check if legal
+    if (strapViaIsObstructed(
+            new_shape.get(), all_shapes, all_obstructions, true)) {
+      continue;
+    }
+    const ShapePtr& added_shape = addShape(new_shape.release());
+    if (added_shape != nullptr) {
+      added_shape->clearITermConnections();
+      added_shape->addITermConnection(
+          pin_shape.intersect(added_shape->getRect()));
+
+      // shape was added
+      cutShapes(all_obstructions);
+
+      // check if shape was removed during cutting
+      if (getShapeCount() == 0) {
+        continue;
+      }
+
+      // add shape to all_shapes and all_obstructions
+      getObstructions(all_obstructions);
+      getShapes(all_shapes);
+
+      return true;
+    }
   }
 
   return false;

@@ -148,13 +148,17 @@ void Grid::makeShapes(const ShapeTreeMap& global_shapes,
     component->getObstructions(local_obstructions);
     component->getShapes(local_shapes);
   }
+
+  // refine shapes
   bool modified = false;
   do {
     modified = false;
     for (auto* component : getGridComponents()) {
-      // make initial shapes
-      modified |= component->refineShapes(local_shapes);
-      // TODO handle obstruction changes
+      // attempt to refine shapes
+      const bool comp_modified
+          = component->refineShapes(local_shapes, local_obstructions);
+
+      modified |= comp_modified;
     }
   } while (modified);
 

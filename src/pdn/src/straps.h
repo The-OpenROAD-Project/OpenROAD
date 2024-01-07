@@ -150,7 +150,8 @@ class PadDirectConnectionStraps : public Straps
   bool canConnect() const;
 
   void makeShapes(const ShapeTreeMap& other_shapes) override;
-  bool refineShapes(const ShapeTreeMap& other_shapes) override;
+  bool refineShapes(ShapeTreeMap& all_shapes,
+                    ShapeTreeMap& all_obstructions) override;
 
   void report() const override;
   Type type() const override { return GridComponent::PadConnect; }
@@ -210,8 +211,18 @@ class PadDirectConnectionStraps : public Straps
                               const odb::Rect& pin_shape,
                               odb::Rect& new_shape) const;
 
+  bool strapViaIsObstructed(Shape* shape,
+                            const ShapeTreeMap& other_shapes,
+                            const ShapeTreeMap& other_obstructions,
+                            bool recheck) const;
+
   void setConnectionType(ConnectionType type);
   ConnectionType getConnectionType() const { return type_; }
+
+  bool refineShape(Shape* shape,
+                   const odb::Rect& pin_shape,
+                   ShapeTreeMap& all_shapes,
+                   ShapeTreeMap& all_obstructions);
 };
 
 class RepairChannelStraps : public Straps

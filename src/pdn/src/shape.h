@@ -162,6 +162,10 @@ class Shape
   {
     iterm_connections_.erase(iterm);
   }
+  void clearITermConnections()
+  {
+    iterm_connections_.clear();
+  }
   const std::set<odb::Rect>& getItermConnections() const
   {
     return iterm_connections_;
