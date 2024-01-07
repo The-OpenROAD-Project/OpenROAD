@@ -203,9 +203,8 @@ int TechLayer::getMinIncrementStep() const
   if (layer_->getTech()->hasManufacturingGrid()) {
     const int grid = layer_->getTech()->getManufacturingGrid();
     return grid;
-  } else {
-    return 1;
   }
+  return 1;
 }
 
 odb::Rect TechLayer::adjustToMinArea(const odb::Rect& rect) const

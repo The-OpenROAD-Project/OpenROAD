@@ -207,7 +207,7 @@ class PadDirectConnectionStraps : public Straps
   ShapePtr getClosestShape(const ShapeTree& search_shapes,
                            const odb::Rect& pin_shape,
                            odb::dbNet* net) const;
-  bool snapRectToClosestShape(const ShapePtr closest_shape,
+  bool snapRectToClosestShape(const ShapePtr& closest_shape,
                               const odb::Rect& pin_shape,
                               odb::Rect& new_shape) const;
 

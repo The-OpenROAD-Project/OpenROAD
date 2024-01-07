@@ -757,7 +757,8 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFormingRing()
         if (geo_layer->getNumber() > routing_layer->getNumber()) {
           // pins might be obstructed
           return {};
-        } else if (geo_layer->getNumber() == routing_layer->getNumber()) {
+        }
+        if (geo_layer->getNumber() == routing_layer->getNumber()) {
           for (auto* pin : pins) {
             if (pin->getBox().intersects(geo->getBox())) {
               // pins will be obstructed
@@ -1146,7 +1147,7 @@ void PadDirectConnectionStraps::makeShapesOverPads(
 }
 
 bool PadDirectConnectionStraps::snapRectToClosestShape(
-    const ShapePtr closest_shape,
+    const ShapePtr& closest_shape,
     const odb::Rect& pin_shape,
     odb::Rect& new_shape) const
 {
@@ -1299,7 +1300,7 @@ bool PadDirectConnectionStraps::strapViaIsObstructed(
     if (other_obstructions.count(tech_layer) == 0) {
       continue;
     }
-    const auto layer_shapes = other_obstructions.at(tech_layer);
+    const auto& layer_shapes = other_obstructions.at(tech_layer);
     const bool has_obstruction
         = layer_shapes.qbegin(bgi::intersects(expected_via_box))
           != layer_shapes.qend();
