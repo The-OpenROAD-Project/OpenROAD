@@ -1797,19 +1797,11 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
             }
           }
           tmpPWire->setOrigin(closest);
-          if (box.yMin() == 0) {
-            tmpPWire->setOffsetBox(
-                Rect(box.xMin(),
-                     origin.getY() - closest.getY(),
-                     box.xMax(),
-                     origin.getY() - closest.getY() + box.yMax()));
-          } else {
-            tmpPWire->setOffsetBox(
-                Rect(origin.getX() - closest.getX(),
-                     box.yMin(),
-                     origin.getX() - closest.getX() + box.xMax(),
-                     box.yMax()));
-          }
+          tmpPWire->setOffsetBox(
+              Rect(origin.getX() - closest.getX() + box.xMin(),
+                   origin.getY() - closest.getY() + box.yMin(),
+                   origin.getX() - closest.getX() + box.xMax(),
+                   origin.getY() - closest.getY() + box.yMax()));
           tmpPWire->addToNet(net);
           pwire->addToNet(net);
 
