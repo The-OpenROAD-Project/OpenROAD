@@ -111,7 +111,7 @@ class dbStaReport : public sta::ReportTcl
  protected:
   void printLine(const char* line, size_t length) override;
 
-  Logger* logger_;
+  Logger* logger_ = nullptr;
 
  private:
   // text buffer for tcl puts output when in GUI mode.

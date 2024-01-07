@@ -1978,7 +1978,7 @@ void GlobalRouter::mergeBox(std::vector<odb::Rect>& guide_box,
       final_box.push_back(box);
   }
   guide_box.clear();
-  guide_box = final_box;
+  guide_box = std::move(final_box);
 }
 
 odb::Rect GlobalRouter::globalRoutingToBox(const GSegment& route)
@@ -2805,7 +2805,7 @@ std::vector<Net*> GlobalRouter::initNetlist()
   std::sort(clk_nets.begin(), clk_nets.end(), nameLess);
   std::sort(non_clk_nets.begin(), non_clk_nets.end(), nameLess);
 
-  std::vector<Net*> nets = clk_nets;
+  std::vector<Net*> nets = std::move(clk_nets);
   nets.insert(nets.end(), non_clk_nets.begin(), non_clk_nets.end());
 
   return nets;

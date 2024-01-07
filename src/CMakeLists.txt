@@ -67,6 +67,7 @@ set(GUI_HOME ${PROJECT_SOURCE_DIR}/src/gui)
 
 set(OPENROAD_SOURCE
   Design.cc
+  Timing.cc
   Tech.cc
   OpenRoad.cc
   Main.cc

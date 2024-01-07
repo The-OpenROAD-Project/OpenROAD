@@ -1,0 +1,41 @@
+create_power_domain PD_TOP \
+  -elements {.}  \
+
+create_power_domain PD_D1 \
+  -elements {d1} \
+
+create_power_domain PD_D2 \
+  -elements {d2} \
+
+create_power_domain PD_D3 \
+  -elements {d3} \
+
+create_power_domain PD_D4 \
+  -elements {d4} \
+
+set_domain_voltage -domain "PD_D1" -voltage 2.1
+set_domain_voltage -domain "PD_D2" -voltage 3.1
+set_domain_voltage -domain "PD_D3" -voltage 4.1
+set_domain_voltage -domain "PD_D4" -voltage 2.9
+
+
+set_level_shifter ls_1 \
+  -domain "PD_D1" \
+  -elements {"."} \
+  -applies_to "outputs" \
+  -rule "low_to_high" \
+  -threshold 0.3 \
+  -location "self" 
+
+set_level_shifter_cell  -level_shifter "ls_1" -cell_name "sky130_fd_sc_hd__and2_0" -input_port "A" -output_port "X"
+
+# In this case it should only shift from PD_3 not PD_2
+set_level_shifter ls_4 \
+  -domain "PD_D4" \
+  -elements {"."} \
+  -applies_to "inputs" \
+  -rule "high_to_low" \
+  -threshold 0.6 \
+  -location "self" 
+
+set_level_shifter_cell  -level_shifter "ls_4" -cell_name "sky130_fd_sc_hd__and2_0" -input_port "A" -output_port "X"

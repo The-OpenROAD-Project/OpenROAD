@@ -312,7 +312,7 @@ int SimulatedAnnealing::randomAssignmentForGroups(
       group_slot = slot_indices[slot_idx];
     }
 
-    const auto pin_list = group.pin_indices;
+    const auto& pin_list = group.pin_indices;
     for (const auto& pin_idx : pin_list) {
       const IOPin& io_pin = netlist_->getIoPin(pin_idx);
       pin_assignment_[pin_idx] = group_slot;

@@ -49,7 +49,9 @@ sta::define_cmd_args "analyze_power_grid" {
 
 proc analyze_power_grid { args } {
   sta::parse_key_args "analyze_power_grid" args \
-    keys {-vsrc -outfile -error_file -em_outfile -net -dx -dy -node_density -node_density_factor -corner} flags {-enable_em}
+    keys {-vsrc -outfile -error_file -em_outfile -net -dx -dy -node_density -node_density_factor \
+      -corner} \
+    flags {-enable_em}
   if { [info exists keys(-vsrc)] } {
     psm::import_vsrc_cfg_cmd $keys(-vsrc)
   }
@@ -70,9 +72,10 @@ proc analyze_power_grid { args } {
   psm::set_corner [sta::parse_corner_or_default keys]
 
   if { [info exists keys(-node_density)] && [info exists keys(-node_density_factor)] } {
-    utl::error PSM 77 "Cannot use both node_density and node_density_factor together. Use any one argument"
+    utl::error PSM 77 "Cannot use both node_density and node_density_factor together.\
+      Use any one argument"
   }
-  
+
   if { [info exists keys(-node_density)] } {
     set val_node_density $keys(-node_density)
     psm::set_node_density $val_node_density
@@ -100,7 +103,8 @@ proc analyze_power_grid { args } {
   if { [ord::db_has_rows] } {
     psm::analyze_power_grid_cmd $voltage_file $enable_em $em_file $error_file
   } else {
-    utl::error PSM 56 "No rows defined in design. Floorplan not defined. Use initialize_floorplan to add rows."
+    utl::error PSM 56 "No rows defined in design. Floorplan not defined.\
+      Use initialize_floorplan to add rows."
   }
 }
 
@@ -172,7 +176,8 @@ proc write_pg_spice { args } {
   if { [ord::db_has_rows] } {
     psm::write_pg_spice_cmd $keys(-outfile)
   } else {
-    utl::error PSM 61 "No rows defined in design. Use initialize_floorplan to add rows and construct PDN."
+    utl::error PSM 61 "No rows defined in design.\
+      Use initialize_floorplan to add rows and construct PDN."
   }
 }
 
@@ -188,7 +193,8 @@ proc set_pdnsim_net_voltage { args } {
     set voltage $keys(-voltage)
     psm::set_net_voltage_cmd $net $voltage
   } else {
-    utl::error PSM 62 "Argument -net or -voltage not specified. Please specify both -net and -voltage arguments."
+    utl::error PSM 62 "Argument -net or -voltage not specified.\
+      Please specify both -net and -voltage arguments."
   }
 }
 
