@@ -53,6 +53,7 @@
 #include "dpo/MakeOptdp.h"
 #include "dst/MakeDistributed.h"
 #include "fin/MakeFinale.h"
+#include "ram/MakeRam.h"
 #include "gpl/MakeReplace.h"
 #include "grt/MakeGlobalRouter.h"
 #include "gui/MakeGui.h"
@@ -145,6 +146,7 @@ OpenRoad::~OpenRoad()
   deleteTritonRoute(detailed_router_);
   deleteReplace(replace_);
   deleteFinale(finale_);
+  deleteRamGen(ram_gen_);
   deleteAntennaChecker(antenna_checker_);
   odb::dbDatabase::destroy(db_);
 #ifdef ENABLE_PAR
@@ -192,6 +194,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   opendp_ = makeOpendp();
   optdp_ = makeOptdp();
   finale_ = makeFinale();
+  ram_gen_ = makeRamGen();
   global_router_ = makeGlobalRouter();
   restructure_ = makeRestructure();
   tritonCts_ = makeTritonCts();
@@ -233,6 +236,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   initOpendp(this);
   initOptdp(this);
   initFinale(this);
+  initRamGen(this);
   initGlobalRouter(this);
   initTritonCts(this);
   initTapcell(this);

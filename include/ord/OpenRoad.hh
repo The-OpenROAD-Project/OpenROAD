@@ -95,6 +95,10 @@ namespace fin {
 class Finale;
 }
 
+namespace ram {
+class RamGen;
+}
+
 namespace mpl {
 class MacroPlacer;
 }
@@ -179,6 +183,7 @@ class OpenRoad
   dpl::Opendp* getOpendp() { return opendp_; }
   dpo::Optdp* getOptdp() { return optdp_; }
   fin::Finale* getFinale() { return finale_; }
+  ram::RamGen* getRamGen() { return ram_gen_; }
   tap::Tapcell* getTapcell() { return tapcell_; }
   mpl::MacroPlacer* getMacroPlacer() { return macro_placer_; }
   mpl2::MacroPlacer2* getMacroPlacer2() { return macro_placer2_; }
@@ -263,6 +268,7 @@ class OpenRoad
   dpl::Opendp* opendp_ = nullptr;
   dpo::Optdp* optdp_ = nullptr;
   fin::Finale* finale_ = nullptr;
+  ram::RamGen* ram_gen_ = nullptr;
   mpl::MacroPlacer* macro_placer_ = nullptr;
   mpl2::MacroPlacer2* macro_placer2_ = nullptr;
   grt::GlobalRouter* global_router_ = nullptr;
