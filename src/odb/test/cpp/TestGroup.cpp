@@ -4,9 +4,10 @@
 #include <string>
 
 #include "db.h"
-#include "helper.cpp"
+#include "helper.h"
 
-using namespace odb;
+namespace odb {
+namespace {
 
 struct F_DETAILED
 {
@@ -169,13 +170,15 @@ BOOST_AUTO_TEST_CASE(test_group_modinst_iterator)
   int i;
   BOOST_TEST(modinsts.reversible());
   for (int j = 0; j < 2; j++) {
-    if (j == 1)
+    if (j == 1) {
       modinsts.reverse();
+    }
     for (modinst_itr = modinsts.begin(), i = j ? 1 : 3;
          modinst_itr != modinsts.end();
-         ++modinst_itr, i = i + (j ? 1 : -1))
+         ++modinst_itr, i = i + (j ? 1 : -1)) {
       BOOST_TEST(std::string(((dbModInst*) *modinst_itr)->getName())
                  == "i" + std::to_string(i));
+    }
   }
 }
 BOOST_AUTO_TEST_CASE(test_group_inst_iterator)
@@ -185,12 +188,14 @@ BOOST_AUTO_TEST_CASE(test_group_inst_iterator)
   int i;
   BOOST_TEST(insts.reversible());
   for (int j = 0; j < 2; j++) {
-    if (j == 1)
+    if (j == 1) {
       insts.reverse();
+    }
     for (inst_itr = insts.begin(), i = j ? 1 : 3; inst_itr != insts.end();
-         ++inst_itr, i = i + (j ? 1 : -1))
+         ++inst_itr, i = i + (j ? 1 : -1)) {
       BOOST_TEST(std::string(((dbInst*) *inst_itr)->getName())
                  == "i" + std::to_string(i));
+    }
   }
 }
 BOOST_AUTO_TEST_CASE(test_group_net_iterators)
@@ -200,12 +205,14 @@ BOOST_AUTO_TEST_CASE(test_group_net_iterators)
   int i;
   BOOST_TEST(nets.reversible());
   for (int j = 0; j < 2; j++) {
-    if (j == 1)
+    if (j == 1) {
       nets.reverse();
+    }
     for (net_itr = nets.begin(), i = j ? 3 : 1; net_itr != nets.end();
-         ++net_itr, i = i + (j ? -1 : 1))
+         ++net_itr, i = i + (j ? -1 : 1)) {
       BOOST_TEST(std::string(((dbNet*) *net_itr)->getName())
                  == "n" + std::to_string(i));
+    }
   }
   group->addGroundNet(n1);
   group->addGroundNet(n2);
@@ -214,12 +221,14 @@ BOOST_AUTO_TEST_CASE(test_group_net_iterators)
   nets = group->getGroundNets();
   BOOST_TEST(nets.reversible());
   for (int j = 0; j < 2; j++) {
-    if (j == 1)
+    if (j == 1) {
       nets.reverse();
+    }
     for (net_itr = nets.begin(), i = j ? 3 : 1; net_itr != nets.end();
-         ++net_itr, i = i + (j ? -1 : 1))
+         ++net_itr, i = i + (j ? -1 : 1)) {
       BOOST_TEST(std::string(((dbNet*) *net_itr)->getName())
                  == "n" + std::to_string(i));
+    }
   }
 }
 BOOST_AUTO_TEST_CASE(test_group_group_iterator)
@@ -229,13 +238,18 @@ BOOST_AUTO_TEST_CASE(test_group_group_iterator)
   int i;
   BOOST_TEST(children.reversible());
   for (int j = 0; j < 2; j++) {
-    if (j == 1)
+    if (j == 1) {
       children.reverse();
+    }
     for (group_itr = children.begin(), i = j ? 1 : 3;
          group_itr != children.end();
-         ++group_itr, i = i + (j ? 1 : -1))
+         ++group_itr, i = i + (j ? 1 : -1)) {
       BOOST_TEST(std::string(((dbGroup*) *group_itr)->getName())
                  == "child" + std::to_string(i));
+    }
   }
 }
 BOOST_AUTO_TEST_SUITE_END()
+
+}  // namespace
+}  // namespace odb

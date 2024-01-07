@@ -1123,7 +1123,7 @@ RepairDesign::makeRegionRepeaters(LoadRegion &region,
                          check_slew, check_cap, max_length, resize_drvr);
     }
     else {
-      region.pins_ = repeater_loads;
+      region.pins_ = std::move(repeater_loads);
     }
 
     for (const Pin *pin : repeater_inputs) {

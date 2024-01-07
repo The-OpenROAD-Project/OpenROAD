@@ -228,6 +228,7 @@ Point<double> TreeBuilder::legalizeOneBuffer(Point<double> bufferLoc,
 // Check if a particular location is legal by checking
 // 1) if the location is occupied by another cell
 // 2) if the location is sitting on a blockage
+// 3) if the location is within core area
 bool TreeBuilder::checkLegalityLoc(const Point<double>& bufferLoc,
                                    int scalingFactor)
 {
@@ -235,6 +236,18 @@ bool TreeBuilder::checkLegalityLoc(const Point<double>& bufferLoc,
   if (occupiedLocations_.find(bufferLoc) != occupiedLocations_.end()) {
     // clang-format off
     debugPrint(logger_, CTS, "legalizer", 4, "loc {} is already occupied",
+	       bufferLoc);
+    // clang-format on
+    return false;
+  }
+
+  // check if location is within core area
+  odb::Rect coreArea = db_->getChip()->getBlock()->getCoreArea();
+  odb::Point loc(bufferLoc.getX() * scalingFactor,
+                 bufferLoc.getY() * scalingFactor);
+  if (!coreArea.overlaps(loc)) {
+    // clang-format off
+    debugPrint(logger_, CTS, "legalizer", 4, "loc {} is outside core area",
 	       bufferLoc);
     // clang-format on
     return false;

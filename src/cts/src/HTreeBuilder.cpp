@@ -263,7 +263,7 @@ void HTreeBuilder::preSinkClustering(
     }
     clusterCount++;
   }
-  topLevelSinksClustered_ = newSinkLocations;
+  topLevelSinksClustered_ = std::move(newSinkLocations);
   if (clusterCount) {
     treeBufLevels_++;
   }
