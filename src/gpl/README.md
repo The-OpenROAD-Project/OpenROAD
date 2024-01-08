@@ -80,6 +80,8 @@ default, modified with `-timing_driven_net_weight_max`). The multiplier
 is scaled from the full value for the worst slack, to 1.0 at the
 timing_driven_nets_percentage point. Use the `set_wire_rc` command to set
 resistance and capacitance of estimated wires used for timing.
+- `-pad_left`: Padding applied to each instance's left side in mulitples of the site width.
+- `-pad_right`: Padding applied to each instance's right side in mulitples of the site width.
 
 ### Cluster Flops
 
