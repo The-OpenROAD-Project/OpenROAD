@@ -1407,9 +1407,11 @@ void dbTechLayer::setSpacing(int spacing)
   layer->_spacing = spacing;
 }
 
-int dbTechLayer::getAverageTrackSpacing(odb::dbTrackGrid* track_grid)
+void dbTechLayer::getAverageTrackSpacing(odb::dbTrackGrid* track_grid,
+                                         int& track_step,
+                                         int& track_init,
+                                         int& num_tracks)
 {
-  int track_step, track_init, num_tracks;
   if (getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
     if (track_grid->getNumGridPatternsY() == 1) {
       track_grid->getGridPatternY(0, track_init, num_tracks, track_step);
@@ -1421,7 +1423,7 @@ int dbTechLayer::getAverageTrackSpacing(odb::dbTrackGrid* track_grid)
                                     414,
                                     "Horizontal tracks for layer {} not found.",
                                     getName());
-      return 0;  // error throws
+      return;  // error throws
     }
   } else if (getDirection() == odb::dbTechLayerDir::VERTICAL) {
     if (track_grid->getNumGridPatternsX() == 1) {
@@ -1432,14 +1434,13 @@ int dbTechLayer::getAverageTrackSpacing(odb::dbTrackGrid* track_grid)
     } else {
       getImpl()->getLogger()->error(
           utl::ODB, 415, "Vertical tracks for layer {} not found.", getName());
-      return 0;  // error throws
+      return;  // error throws
     }
   } else {
     getImpl()->getLogger()->error(
         utl::ODB, 416, "Layer {} has invalid direction.", getName());
-    return 0;  // error throws
+    return;  // error throws
   }
-  return track_step;
 }
 
 void dbTechLayer::getAverageTrackPattern(odb::dbTrackGrid* grid,

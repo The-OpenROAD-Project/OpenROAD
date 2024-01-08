@@ -54,7 +54,9 @@ RUDYCalculator::RUDYCalculator(dbBlock* block) : block_(block)
 
   odb::dbTechLayer* tech_layer = block_->getTech()->findRoutingLayer(3);
   odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
-  int track_spacing = tech_layer->getAverageTrackSpacing(track_grid);
+  int track_spacing, track_init, num_tracks;
+  tech_layer->getAverageTrackSpacing(
+      track_grid, track_spacing, track_init, num_tracks);
 
   int upper_rightX = gridBlock_.xMax();
   int upper_rightY = gridBlock_.yMax();

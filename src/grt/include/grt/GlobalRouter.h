@@ -390,7 +390,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   void makeBtermPins(Net* net, odb::dbNet* db_net, const odb::Rect& die_area);
   void initClockNets();
   bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
-  int trackSpacing();
   void initGridAndNets();
 
   utl::Logger* logger_;

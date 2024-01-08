@@ -2425,7 +2425,9 @@ void GlobalRouter::initGrid(int max_layer)
 {
   odb::dbTechLayer* tech_layer = routing_layers_[layer_for_guide_dimension_];
   odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
-  int track_spacing = tech_layer->getAverageTrackSpacing(track_grid);
+  int track_spacing, track_init, num_tracks;
+  tech_layer->getAverageTrackSpacing(
+      track_grid, track_spacing, track_init, num_tracks);
 
   odb::Rect rect = block_->getDieArea();
 
@@ -2597,8 +2599,8 @@ void GlobalRouter::initRoutingTracks(int max_routing_layer)
     }
 
     int track_step, track_init, num_tracks;
-    tech_layer->getAverageTrackPattern(
-        track_grid, true, track_init, num_tracks, track_step);
+    tech_layer->getAverageTrackSpacing(
+        track_grid, track_step, track_init, num_tracks);
 
     RoutingTracks layer_tracks = RoutingTracks(level,
                                                track_step,
