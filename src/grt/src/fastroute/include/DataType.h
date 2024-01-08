@@ -224,13 +224,13 @@ struct TreeEdge
 
 struct StTree
 {
-  int num_nodes = 0;
   int num_terminals = 0;
   // The nodes (pin and Steiner nodes) in the tree.
   std::vector<TreeNode> nodes;
   std::vector<TreeEdge> edges;
 
-  int num_edges() const { return num_nodes - 1; }
+  int num_edges() const { return edges.size(); }
+  int num_nodes() const { return nodes.size(); }
 };
 
 struct OrderNetPin
