@@ -318,11 +318,62 @@ void ChartsWidget::setXAxisConfig(const QStringList& time_values)
 
 void ChartsWidget::setYAxisConfig()
 {
+  int y_interval = computeYInterval();
+  int max_y = 0;
+  int tick_count = 1;
+
+  // Do this instead of just using the return value of computeMaxYSnap()
+  // so we don't get an empty range at the end of the axis.
+  while (max_y < largest_slack_count_) {
+    max_y += y_interval;
+    ++tick_count;
+  }
+
+  axis_y_->setRange(0, max_y);
+  axis_y_->setTickCount(tick_count);
   axis_y_->setTitleText("Number of Endpoints");
-  axis_y_->setRange(0, largest_slack_count_);
-  axis_y_->setTickCount(default_tick_count_);
   axis_y_->setLabelFormat("%i");
   axis_y_->setVisible(true);
+}
+
+// Our intervals are always multiples of 5/50/500.. or 10/100/1000..
+// with the exception of the situation where we have too few buckets.
+int ChartsWidget::computeYInterval()
+{
+  int snap_max = computeMaxYSnap();
+  int digits = computeNumberOfDigits(snap_max);
+  int total = std::pow(10, digits);
+
+  if (computeFirstDigit(snap_max, digits) < 5) {
+    total /= 2;
+  }
+
+  // We ceil to deal with the cases in which we have less than
+  // 10 endpoints in the largest bucket.
+  return static_cast<int>(std::ceil(static_cast<float>(total) / 10));
+}
+
+// Snap to an upper value based on the first digit
+int ChartsWidget::computeMaxYSnap()
+{
+  if (largest_slack_count_ <= 10) {
+    return largest_slack_count_;
+  }
+
+  int digits = computeNumberOfDigits(largest_slack_count_);
+  int first_digit = computeFirstDigit(largest_slack_count_, digits);
+
+  return (first_digit + 1) * std::pow(10, digits - 1);
+}
+
+int ChartsWidget::computeNumberOfDigits(int value)
+{
+  return static_cast<int>(std::log10(value)) + 1;
+}
+
+int ChartsWidget::computeFirstDigit(int value, int digits)
+{
+  return static_cast<int>(value / std::pow(10, digits - 1));
 }
 
 void ChartsWidget::setLogger(utl::Logger* logger)
