@@ -7818,8 +7818,19 @@ class dbTechLayer : public dbObject
 
   ///
   /// Get the spacing between tracks for this layer.
+  /// If the layer has a multi pattern spacing returns the average.
   ///
-  int getTrackSpacing(odb::dbTrackGrid* track_grid);
+  int getAverageTrackSpacing(odb::dbTrackGrid* track_grid);
+  
+  ///
+  /// Populate parameters with average track information
+  /// for tracks with multiple patterns.
+  ///
+  void getAverageTrackPattern(odb::dbTrackGrid* grid,
+                                bool is_x,
+                                int& track_init,
+                                int& num_tracks,
+                                int& track_step);
 
   ///
   /// The number of masks for this layer (aka double/triple patterning).

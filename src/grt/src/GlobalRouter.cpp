@@ -2425,7 +2425,7 @@ void GlobalRouter::initGrid(int max_layer)
 {
   odb::dbTechLayer* tech_layer = routing_layers_[layer_for_guide_dimension_];
   odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
-  int track_spacing = tech_layer->getTrackSpacing(track_grid);
+  int track_spacing = tech_layer->getAverageTrackSpacing(track_grid);
 
   odb::Rect rect = block_->getDieArea();
 
@@ -2617,37 +2617,8 @@ void GlobalRouter::initRoutingTracks(int max_routing_layer)
     }
 
     int track_step, track_init, num_tracks;
-    if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-      if (track_grid->getNumGridPatternsY() == 1) {
-        track_grid->getGridPatternY(0, track_init, num_tracks, track_step);
-      } else if (track_grid->getNumGridPatternsY() > 1) {
-        averageTrackPattern(
-            track_grid, false, track_init, num_tracks, track_step);
-      } else {
-        logger_->error(GRT,
-                       124,
-                       "Horizontal tracks for layer {} not found.",
-                       tech_layer->getName());
-        return;  // error throws
-      }
-    } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-      if (track_grid->getNumGridPatternsX() == 1) {
-        track_grid->getGridPatternX(0, track_init, num_tracks, track_step);
-      } else if (track_grid->getNumGridPatternsX() > 1) {
-        averageTrackPattern(
-            track_grid, true, track_init, num_tracks, track_step);
-      } else {
-        logger_->error(GRT,
-                       147,
-                       "Vertical tracks for layer {} not found.",
-                       tech_layer->getName());
-        return;  // error throws
-      }
-    } else {
-      logger_->error(
-          GRT, 148, "Layer {} has invalid direction.", tech_layer->getName());
-      return;  // error throws
-    }
+    tech_layer->getAverageTrackPattern(
+        track_grid, true, track_init, num_tracks, track_step);
 
     RoutingTracks layer_tracks = RoutingTracks(level,
                                                track_step,

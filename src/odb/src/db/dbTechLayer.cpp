@@ -63,6 +63,8 @@
 // User Code Begin Includes
 #include <spdlog/fmt/ostr.h>
 
+#include <iostream>
+
 #include "dbHashTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayerAntennaRule.h"
@@ -1401,25 +1403,66 @@ int dbTechLayer::getSpacing()
   return layer->_spacing;
 }
 
-int dbTechLayer::getTrackSpacing(odb::dbTrackGrid* track_grid)
-{
-  if (getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-    int track_step_y = -1, init_track_y, num_tracks_y;
-    track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
-    return track_step_y;
-  } if (getDirection() == odb::dbTechLayerDir::VERTICAL) {
-    int track_step_x = -1, init_track_x, num_tracks_x;
-    track_grid->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
-    return track_step_x;
-  }
-  getImpl()->getLogger()->error(utl::ODB, 101, "Cannot find track spacing.");
-  return 0;
-}
-
 void dbTechLayer::setSpacing(int spacing)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->_spacing = spacing;
+}
+
+int dbTechLayer::getAverageTrackSpacing(odb::dbTrackGrid* track_grid)
+{
+  int track_step, track_init, num_tracks;
+  if (getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+    if (track_grid->getNumGridPatternsY() == 1) {
+      track_grid->getGridPatternY(0, track_init, num_tracks, track_step);
+      std::cout << "common track_step: " << track_step << std::endl;
+    } else if (track_grid->getNumGridPatternsY() > 1) {
+      getAverageTrackPattern(
+          track_grid, false, track_init, num_tracks, track_step);
+    } else {
+      getImpl()->getLogger()->error(utl::ODB,
+                                    414,
+                                    "Horizontal tracks for layer {} not found.",
+                                    getName());
+      return 0;  // error throws
+    }
+  } else if (getDirection() == odb::dbTechLayerDir::VERTICAL) {
+    if (track_grid->getNumGridPatternsX() == 1) {
+      track_grid->getGridPatternX(0, track_init, num_tracks, track_step);
+      std::cout << "common track_step: " << track_step << std::endl;
+    } else if (track_grid->getNumGridPatternsX() > 1) {
+      getAverageTrackPattern(
+          track_grid, true, track_init, num_tracks, track_step);
+    } else {
+      getImpl()->getLogger()->error(
+          utl::ODB, 415, "Vertical tracks for layer {} not found.", getName());
+      return 0;  // error throws
+    }
+  } else {
+    getImpl()->getLogger()->error(
+        utl::ODB, 416, "Layer {} has invalid direction.", getName());
+    return 0;  // error throws
+  }
+  return track_step;
+}
+
+void dbTechLayer::getAverageTrackPattern(odb::dbTrackGrid* grid,
+                                         bool is_x,
+                                         int& track_init,
+                                         int& num_tracks,
+                                         int& track_step)
+{
+  std::vector<int> coordinates;
+  if (is_x) {
+    grid->getGridX(coordinates);
+  } else {
+    grid->getGridY(coordinates);
+  }
+  const int span = coordinates.back() - coordinates.front();
+  track_init = coordinates.front();
+  track_step = std::ceil((float) span / coordinates.size());
+  num_tracks = coordinates.size();
+  std::cout << "average track step: " << track_step << std::endl;
 }
 
 double dbTechLayer::getEdgeCapacitance()
