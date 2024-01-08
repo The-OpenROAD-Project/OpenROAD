@@ -58,7 +58,7 @@ proc man { name } {
     set length [string length $man_section]
     # Get suffix for man section
     #set man_suffix [string range $man_section [expr {$length - 1}] $length]
-    set man_suffix "cat"
+    set man_suffix "md"
 
     set name1 $name
     append name1 ".$man_suffix"

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>set_io_pin_constraint</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">set_io_pin_constraint</h1>
+<p class="date">23/12/17</p>
+</header>
+<h1>NAME</h1>
+<p>set_io_pin_constraint - set io pin constraint</p>
+<h1>SYNOPSIS</h1>
+<p>set_io_pin_constraint [-direction direction] [-pin_names names] [-region edge:interval] [-mirrored_pins names] [-group] [-order]</p>
+<h1>DESCRIPTION</h1>
+<p>The <code>set_io_pin_constraint</code> command sets region constraints for pins according to the pin direction or the pin name. This command can be called multiple times with different constraints.</p>
+<p>You can use the <code>set_io_pin_constraint</code> command to restrict pins to the pin placement grid created with the <code>define_pin_shape_pattern</code> command.</p>
+<p>It is possible to use the <code>-region</code>, <code>-group</code> and <code>-order</code> arguments together per <code>set_io_pin_constraint</code> call, but the <code>-mirrored_pins</code> argument should be called alone.</p>
+<h1>OPTIONS</h1>
+<p><code>-direction</code>: Pin direction (<code>input</code>, <code>output</code>, <code>inout</code>, or <code>feedthrough</code>).</p>
+<p><code>-pin_names</code>: List of names. Only one of (<code>-direction</code>, <code>-pin_names</code>) should be used in a single call for the <code>set_io_pin_constraint</code> command.</p>
+<p><code>-region</code>: Syntax is <code>-region edge:interval</code>. The <code>edge</code> values are (<code>top|bottom|left|right</code>). The <code>interval</code> can be the whole edge with the wildcard <code>*</code> value or a range of values.</p>
+<p><code>-mirrored_pins</code>: List of pins that sets pairs of pins that will be symmetrically placed in the vertical or the horizontal edges. The number of pins in this list <strong>must be even</strong>. For example, in <code>set_io_pin_constraint -mirrored_pins {pin1 pin2 pin3 pin4 pin5 pin6}</code>, the pins <code>pin1</code> and <code>pin2</code> will be placed symmetrically to each other. Same for <code>pin3</code> and <code>pin4</code>, and for <code>pin5</code> and <code>pin6</code>.</p>
+<p><code>-group</code>: Flag places together on the die boundary the pin list defined in <code>-pin_names,</code> similar to the <code>-group_pins</code> option on the <code>place_pins</code> command.</p>
+<p><code>-order</code>: Flag places the pins ordered in ascending x/y position and must be used only when <code>-group</code> is also used.</p>
+<h1>ARGUMENTS</h1>
+<h1>EXAMPLES</h1>
+<h1>ENVIRONMENT</h1>
+<h1>FILES</h1>
+<h1>SEE ALSO</h1>
+<h1>HISTORY</h1>
+<h1>BUGS</h1>
+<h1>COPYRIGHT</h1>
+<p>Copyright (c) 2024, The Regents of the University of California. All rights reserved.</p>
+<h1>AUTHORS</h1>
+<p>Jack Luar (TODO@TODO.com).</p>
+</body>
+</html>

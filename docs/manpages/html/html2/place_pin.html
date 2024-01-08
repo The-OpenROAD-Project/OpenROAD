@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>place_pin</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">place_pin</h1>
+<p class="date">23/12/17</p>
+</header>
+<h1>NAME</h1>
+<p>place_pin - place pin</p>
+<h1>SYNOPSIS</h1>
+<p>place_pin -pin_name pin_name -layer layer -location {x y} [-pin_size {width height}] [-force_to_die_boundary]</p>
+<h1>DESCRIPTION</h1>
+<p>The <code>place_pin</code> command places a specific pin in the specified location with the specified size. It is recommended that individual pins be placed before the <code>place_pins</code> command, as the routing tracks occupied by these individual pins will be blocked, preventing overlaps.</p>
+<p>To place an individual pin:</p>
+<h1>OPTIONS</h1>
+<p><code>-hor_layers</code>: The layers to create the metal shapes of pins placed in horizontal tracks. It can be a single layer or a list of layer names.</p>
+<p><code>-ver_layers</code>: The layers to create the metal shapes of pins placed in vertical tracks. It can be a single layer or a list of layer names.</p>
+<p><code>-corner_avoidance</code>: The distance (in microns) from each corner within which pin placement should be avoided.</p>
+<p><code>-min_distance</code>: The minimum distance between pins on the die boundary. This distance can be in microns (default) or in number of tracks between each pin.</p>
+<p><code>-min_distance_in_tracks</code>: Flag that allows setting the min distance in number of tracks instead of microns.</p>
+<p><code>-exclude</code>: A region where pins cannot be placed. Either <code>top|bottom|left|right:edge_interval</code>, which is the edge interval from the selected edge; <code>begin:end</code> for begin-end of all edges.</p>
+<p><code>-group_pins</code>: A list of pins to be placed together on the die boundary.</p>
+<p><code>-annealing</code>: Flag to enable simulated annealing pin placement.</p>
+<p><code>-write_pin_placement</code>: A file with the pin placement generated in the format of multiple calls for the <code>place_pin</code> command.</p>
+<h1>ARGUMENTS</h1>
+<h1>EXAMPLES</h1>
+<h1>ENVIRONMENT</h1>
+<h1>FILES</h1>
+<h1>SEE ALSO</h1>
+<h1>HISTORY</h1>
+<h1>BUGS</h1>
+<h1>COPYRIGHT</h1>
+<p>Copyright (c) 2024, The Regents of the University of California. All rights reserved.</p>
+<h1>AUTHORS</h1>
+<p>Jack Luar (TODO@TODO.com).</p>
+</body>
+</html>

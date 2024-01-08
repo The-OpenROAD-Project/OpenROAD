@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>openroad</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">openroad</h1>
+<p class="date">2023/11/13</p>
+</header>
+<h1>NAME</h1>
+<p>openroad - OpenROAD command-line-interface.</p>
+<h1>SYNOPSIS</h1>
+<p>openroad [-help] [-version] [-no_init] [-exit] [-gui] [-threads count|max] [-log file_name] [-metrics file_name] cmd_file</p>
+<p>openroad [-python] cmd_file</p>
+<h1>DESCRIPTION</h1>
+<p>The <strong>openroad</strong> command is the command-line interface for OpenROAD, an open-source initiative for chip design and optimization. It provides a range of options to control its behavior and execute commands specified in the cmd_file.</p>
+<h1>OPTIONS</h1>
+<p><code>-help</code>: Display help information.</p>
+<p><code>-version</code>: Display version information.</p>
+<p><code>-no_init</code>: Skip initialization steps.</p>
+<p><code>-exit</code>: Exit after executing commands in cmd_file.</p>
+<p><code>-gui</code>: Launch the graphical user interface (GUI).</p>
+<p><code>-threads  count|max</code>: Specify the number of threads to use (or use max available).</p>
+<p><code>-log file_name</code>: Log output to the specified file.</p>
+<p><code>-metrics file_name</code>: Save performance metrics to the specified file.</p>
+<p><code>-python</code>: Execute the cmd_file as a Python script.</p>
+<h1>ARGUMENTS</h1>
+<p><code>cmd_file</code>: The command file containing OpenROAD commands to be executed.</p>
+<h1>EXAMPLES</h1>
+<p><strong>openroad -help</strong>: Prints the help information</p>
+<p><strong>openroad -version -exit</strong>: Prints the version information, and exits the program thereafter.</p>
+<p><strong>openroad -threads max -log test.log -metrics test.metrics</strong>: Prints the log and metric respectively to <code>test.log</code> and <code>test.metrics</code>. Also runs the script with maximum available number of threads.</p>
+<p><strong>openroad -gui</strong>: Launches OpenROAD GUI, which further interactive Tcl commands can be run.</p>
+<h1>TCL COMMANDS</h1>
+<p>These Tcl-based commands are callable from within the OpenROAD binary.</p>
+<ul>
+<li><p>read_lef [-tech] [-library] filename</p>
+<ul>
+<li><p>Read Library Exchange Format (.lef) files.</p></li>
+<li><p>tech: Technology-specific information</p></li>
+<li><p>library: .lib files</p></li>
+</ul></li>
+<li><p>read_def filename</p>
+<ul>
+<li><p>Read Design Exchange Format (.def) files.</p></li>
+</ul></li>
+<li><p>write_def [-version 5.8|5.7|5.6|5.5|5.4|5.3] filename</p>
+<ul>
+<li><p>Write Design Exchange Format (.def) files.</p></li>
+<li><p>version 5.8|5.7|5.6|5.5|5.4|5.3: Corresponding DEF version to use.</p></li>
+</ul></li>
+<li><p>read_verilog filename</p>
+<ul>
+<li><p>Read Verilog (.v) input file.</p></li>
+</ul></li>
+<li><p>write_verilog filename</p>
+<ul>
+<li><p>Write Verilog (.v) file based on current database.</p></li>
+</ul></li>
+<li><p>read_db filename</p>
+<ul>
+<li><p>Read OpenDB (.odb) database files.</p></li>
+</ul></li>
+<li><p>write_db filename</p>
+<ul>
+<li><p>Write OpenDB (.odb) database files.</p></li>
+</ul></li>
+<li><p>write_abstract_lef filename</p>
+<ul>
+<li><p>Write abstract Library Exchange Format (.lef) files based on current database.</p></li>
+</ul></li>
+</ul>
+<h1>ENVIRONMENT</h1>
+<h1>FILES</h1>
+<h1>SEE ALSO</h1>
+<h1>HISTORY</h1>
+<h1>BUGS</h1>
+<h1>COPYRIGHT</h1>
+<p>Copyright (c) 2024, The Regents of the University of California. All rights reserved.</p>
+<h1>AUTHORS</h1>
+<p>Jack Luar (TODO@TODO.com).</p>
+</body>
+</html>
