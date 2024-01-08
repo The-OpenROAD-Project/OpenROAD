@@ -1,36 +1,73 @@
-pipeline {
-  agent any;
-  stages {
-    stage('Build for Coverage') {
-      steps {
-        sh './etc/Build.sh -coverage';
-      }
-    }
-    stage('Dynamic Code Coverage') {
-      steps {
-        sh './etc/CodeCoverage.sh dynamic';
-        publishHTML([
-            allowMissing: false,
-            alwaysLinkToLastBuild: false,
-            keepAll: false,
-            reportDir: 'coverage-output',
-            reportFiles: 'index.html',
-            reportName: 'Dynamic Code Coverage',
-            reportTitles: ''
-        ]);
-      }
-    }
+// pipeline {
+//   agent any;
+//   stages {
+//     stage('Build for Coverage') {
+//       steps {
+//         sh './etc/Build.sh -coverage';
+//       }
+//     }
+//     stage('Dynamic Code Coverage') {
+//       steps {
+//         sh './etc/CodeCoverage.sh dynamic';
+//         publishHTML([
+//             allowMissing: false,
+//             alwaysLinkToLastBuild: false,
+//             keepAll: false,
+//             reportDir: 'coverage-output',
+//             reportFiles: 'index.html',
+//             reportName: 'Dynamic Code Coverage',
+//             reportTitles: ''
+//         ]);
+//       }
+//     }
+//   }
+//   post {
+//     failure {
+//       script {
+//         emailext (
+//             to:'$DEFAULT_RECIPIENTS',
+//             replyTo: '$DEFAULT_REPLYTO',
+//             subject: '$DEFAULT_SUBJECT',
+//             body: '$DEFAULT_CONTENT',
+//             );
+//       }
+//     }
+//   }
+// }
+@Library('utils@main') _
+
+node {
+  stage('Checkout'){
+    checkout scm
   }
-  post {
-    failure {
-      script {
-        emailext (
-            to:'$DEFAULT_RECIPIENTS',
-            replyTo: '$DEFAULT_REPLYTO',
-            subject: '$DEFAULT_SUBJECT',
-            body: '$DEFAULT_CONTENT',
-            );
-      }
+
+  try {
+    stage('Build for Coverage') {
+      sh './etc/Build.sh -coverage';
+    }
+
+    stage('Dynamic Code Coverage') {
+      sh './etc/CodeCoverage.sh dynamic';
+      publishHTML([
+          allowMissing: false,
+          alwaysLinkToLastBuild: false,
+          keepAll: false,
+          reportDir: 'coverage-output',
+          reportFiles: 'index.html',
+          reportName: 'Dynamic Code Coverage',
+          reportTitles: ''
+      ]);
+    }
+
+  } finally {
+    catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+      def EMAIL_TO = emailDetails(env.BRANCH_NAME, COMMIT_AUTHOR_EMAIL)
+      emailext (
+          to: "$EMAIL_TO",
+          replyTo: '$DEFAULT_REPLYTO',
+          subject: '$DEFAULT_SUBJECT',
+          body: '$DEFAULT_CONTENT',
+          );
     }
   }
 }

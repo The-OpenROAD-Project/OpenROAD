@@ -1,25 +1,51 @@
-pipeline {
-  agent any;
-  environment {
-    COVERITY_TOKEN = credentials('COVERITY_TOKEN');
+// pipeline {
+//   agent any;
+//   environment {
+//     COVERITY_TOKEN = credentials('COVERITY_TOKEN');
+//   }
+//   stages {
+//     stage('Run Coverity') {
+//       steps {
+//         sh 'bash -ic "./etc/CodeCoverage.sh static"';
+//       }
+//     }
+//   }
+//   post {
+//     failure {
+//       script {
+//         emailext (
+//             to:'$DEFAULT_RECIPIENTS',
+//             replyTo: '$DEFAULT_REPLYTO',
+//             subject: '$DEFAULT_SUBJECT',
+//             body: '$DEFAULT_CONTENT',
+//             );
+//       }
+//     }
+//   }
+// }
+@Library('utils@main') _
+
+node {
+  def COVERITY_TOKEN = credentials('COVERITY_TOKEN');
+
+  stage('Checkout'){
+    checkout scm
   }
-  stages {
+
+  try {
     stage('Run Coverity') {
-      steps {
-        sh 'bash -ic "./etc/CodeCoverage.sh static"';
-      }
+      sh 'bash -ic "./etc/CodeCoverage.sh static"';
     }
-  }
-  post {
-    failure {
-      script {
-        emailext (
-            to:'$DEFAULT_RECIPIENTS',
-            replyTo: '$DEFAULT_REPLYTO',
-            subject: '$DEFAULT_SUBJECT',
-            body: '$DEFAULT_CONTENT',
-            );
-      }
+
+  } finally {
+    catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+      def EMAIL_TO = emailDetails(env.BRANCH_NAME, COMMIT_AUTHOR_EMAIL)
+      emailext (
+          to: "$EMAIL_TO",
+          replyTo: '$DEFAULT_REPLYTO',
+          subject: '$DEFAULT_SUBJECT',
+          body: '$DEFAULT_CONTENT',
+          );
     }
   }
 }
