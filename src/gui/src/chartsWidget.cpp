@@ -245,9 +245,8 @@ void ChartsWidget::populateBuckets(const std::vector<float>& all_slack,
   auto max_slack = std::max_element(all_slack.begin(), all_slack.end());
   auto min_slack = std::min_element(all_slack.begin(), all_slack.end());
 
-  float bucket_interval = (*max_slack - *min_slack) / number_of_buckets_;
-  bucket_interval = std::ceil(bucket_interval * 10) / 10;
-
+  float bucket_interval
+      = std::ceil((*max_slack - *min_slack) / number_of_buckets_);
   setBucketInterval(bucket_interval);
 
   float positive_lower = 0.0f, positive_upper = 0.0f, negative_lower = 0.0f,
