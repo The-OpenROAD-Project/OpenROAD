@@ -2582,26 +2582,6 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
   return pitches;
 }
 
-// For multiple track patterns we need to compute an average
-// track pattern for gcell construction.
-void GlobalRouter::averageTrackPattern(odb::dbTrackGrid* grid,
-                                       bool is_x,
-                                       int& track_init,
-                                       int& num_tracks,
-                                       int& track_step)
-{
-  std::vector<int> coordinates;
-  if (is_x) {
-    grid->getGridX(coordinates);
-  } else {
-    grid->getGridY(coordinates);
-  }
-  const int span = coordinates.back() - coordinates.front();
-  track_init = coordinates.front();
-  track_step = std::ceil((float) span / coordinates.size());
-  num_tracks = coordinates.size();
-}
-
 void GlobalRouter::initRoutingTracks(int max_routing_layer)
 {
   auto l2vPitches = calcLayerPitches(max_routing_layer);
