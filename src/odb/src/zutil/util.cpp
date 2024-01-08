@@ -32,7 +32,6 @@
 
 #include "util.h"
 
-#include <iostream>
 #include <map>
 #include <numeric>
 #include <string>
@@ -53,13 +52,6 @@ RUDYCalculator::RUDYCalculator(dbBlock* block) : block_(block)
   // TODO: Match the wire width with the paper definition
   wireWidth_ = block_->getTech()->findRoutingLayer(1)->getWidth();
 
-  for (int i = 1; i < block->getTech()->getRoutingLayerCount(); i++) {
-    odb::dbTechLayer* tech_layer2 = block_->getTech()->findRoutingLayer(i);
-    odb::dbTrackGrid* track_grid2 = block_->findTrackGrid(tech_layer2);
-    int track_spacing2 = tech_layer2->getAverageTrackSpacing(track_grid2);
-    std::cout << "metal: " << i << ", track step:" << track_spacing2
-              << std::endl;
-  }
   odb::dbTechLayer* tech_layer = block_->getTech()->findRoutingLayer(3);
   odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
   int track_spacing = tech_layer->getAverageTrackSpacing(track_grid);
