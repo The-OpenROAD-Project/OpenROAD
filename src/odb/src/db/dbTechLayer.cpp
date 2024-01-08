@@ -63,8 +63,6 @@
 // User Code Begin Includes
 #include <spdlog/fmt/ostr.h>
 
-#include <iostream>
-
 #include "dbHashTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayerAntennaRule.h"
@@ -1415,7 +1413,6 @@ int dbTechLayer::getAverageTrackSpacing(odb::dbTrackGrid* track_grid)
   if (getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
     if (track_grid->getNumGridPatternsY() == 1) {
       track_grid->getGridPatternY(0, track_init, num_tracks, track_step);
-      std::cout << "common track_step: " << track_step << std::endl;
     } else if (track_grid->getNumGridPatternsY() > 1) {
       getAverageTrackPattern(
           track_grid, false, track_init, num_tracks, track_step);
@@ -1429,7 +1426,6 @@ int dbTechLayer::getAverageTrackSpacing(odb::dbTrackGrid* track_grid)
   } else if (getDirection() == odb::dbTechLayerDir::VERTICAL) {
     if (track_grid->getNumGridPatternsX() == 1) {
       track_grid->getGridPatternX(0, track_init, num_tracks, track_step);
-      std::cout << "common track_step: " << track_step << std::endl;
     } else if (track_grid->getNumGridPatternsX() > 1) {
       getAverageTrackPattern(
           track_grid, true, track_init, num_tracks, track_step);
@@ -1462,7 +1458,6 @@ void dbTechLayer::getAverageTrackPattern(odb::dbTrackGrid* grid,
   track_init = coordinates.front();
   track_step = std::ceil((float) span / coordinates.size());
   num_tracks = coordinates.size();
-  std::cout << "average track step: " << track_step << std::endl;
 }
 
 double dbTechLayer::getEdgeCapacitance()
