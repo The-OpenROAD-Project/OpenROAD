@@ -208,12 +208,13 @@
 // }
 
 node {
-  def COMMIT_AUTHOR_EMAIL = sh (returnStdout: true, script: "git --no-pager show -s --format='%ae'").trim();
-  def EQUIVALENCE_CHECK = 1;
 
   stage('Checkout'){
     checkout scm
   }
+
+  def COMMIT_AUTHOR_EMAIL = sh (returnStdout: true, script: "git --no-pager show -s --format='%ae'").trim();
+  def EQUIVALENCE_CHECK = 1;
 
   try {
     timeout(time: 9, unit: 'HOURS') {  
