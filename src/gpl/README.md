@@ -18,6 +18,8 @@ Features:
 
 ## Commands
 
+### Global Placement
+
 ```
 global_placement
     [-timing_driven]
@@ -51,14 +53,7 @@ global_placement
     [-force_cpu]
 ```
 
-```
-cluster_flops  
-    [-tray_weight tray_weight]  
-    [-timing_weight timing_weight]  
-    [-max_split_size max_split_size]  
-```
-
-### Tuning Parameters
+#### Options
 
 - `-timing_driven`: Enable timing-driven mode
 - `-routability_driven`: Enable routability-driven mode
@@ -78,24 +73,32 @@ cluster_flops
 - `-timing_driven_nets_percentage`: Set the percentage of nets that are reweighted in timing-driven mode. Default value is 10. Allowed values are `[0-100, float]`   
 - `-verbose_level`: set verbose level for RePlAce. Default value is 1. Allowed values are `[0-5, int]`.
 - `-force_cpu`: Force to use the CPU solver even if the GPU is available.
-- `tray_weight`: Set the weighting factor for tray cost in flip-flop clustering (recommended to be `[20.0, float]`).    
-- `timing_weight`: Set the weighting factor for timing-critical paths in flip-flop clusering (recommended to be `[1.0. float]`).   
-- `max_split_size`: The maximum size of a single pointset after running the pointset decomposition algorithm for runtime improvement in flop clustering (to not run pointset decomposition, set as `-1`).  
-
-
-`-timing_driven` does a virtual `repair_design` to find slacks and
+- `-timing_driven` does a virtual `repair_design` to find slacks and
 weight nets with low slack. It adjusts the worst slacks (10% by default,
 modified with -timing_driven_nets_percentage) using a multiplier (1.9 by
 default, modified with `-timing_driven_net_weight_max`). The multiplier
 is scaled from the full value for the worst slack, to 1.0 at the
 timing_driven_nets_percentage point. Use the `set_wire_rc` command to set
 resistance and capacitance of estimated wires used for timing.
+- `-pad_left`: Padding applied to each instance's left side in mulitples of the site width.
+- `-pad_right`: Padding applied to each instance's right side in mulitples of the site width.
 
-## Example scripts
+### Cluster Flops
 
-## Regression tests
+Cluster single bit flops into multi-bit flops.
 
-## Limitations
+```
+cluster_flops
+    [-tray_weight tray_weight]
+    [-timing_weight timing_weight]
+    [-max_split_size max_split_size]
+```
+
+#### Options
+
+- `-tray_weight`: Set the weighting factor for tray cost in flip-flop clustering (recommended to be `[20.0, float]`).
+- `-timing_weight`: Set the weighting factor for timing-critical paths in flip-flop clusering (recommended to be `[1.0. float]`).
+- `-max_split_size`: The maximum size of a single pointset after running the pointset decomposition algorithm for runtime improvement in flop clustering (to not run pointset decomposition, set as `-1`).
 
 ## Using the Python interface to gpl
 

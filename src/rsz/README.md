@@ -256,6 +256,11 @@ repair_clock_nets
 
 ### Repair Clock Inverters
 
+The repair_clock_inverters command replaces an inverter in the clock
+tree with multiple fanouts with one inverter per fanout.  This
+prevents the inverter from splitting up the clock tree seen by CTS.
+It should be run before clock_tree_synthesis.
+
 ```tcl
 repair_clock_inverters
 ```
