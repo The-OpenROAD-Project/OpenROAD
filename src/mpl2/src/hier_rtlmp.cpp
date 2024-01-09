@@ -2230,12 +2230,12 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
   }
 
   // Traverse the physical hierarchy tree in a DFS manner (post-order)
-  std::vector<Cluster*> leaf_clusters;
+  std::vector<Cluster*> mixed_leaves;
   for (auto& child : root_cluster->getChildren()) {
     setInstProperty(child);
     if (child->getNumMacro() > 0) {
       if (child->getChildren().empty()) {
-        leaf_clusters.push_back(child);
+        mixed_leaves.push_back(child);
       } else {
         breakMixedLeafCluster(child);
       }
@@ -2244,41 +2244,42 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
     }
   }
 
-  // after this step, the std cells and macros for leaf cluster has been
-  // seperated. We need to update the metrics of the design if necessary
-  // for each leaf clusters with macros, first group macros based on
-  // connection signatures and macro sizes
-  for (auto& cluster : leaf_clusters) {
-    // based on the type of current cluster,
-    Cluster* parent_cluster = cluster;  // std cell dominated cluster
-    // add a subtree if the cluster is macro dominated cluster
-    // based macro_dominated_cluster_threshold_ (defualt = 0.01)
-    if (cluster->getNumStdCell() * macro_dominated_cluster_threshold_
-        < cluster->getNumMacro()) {
-      parent_cluster = cluster->getParent();  // replacement
+  // We need to update the metrics of the design if necessary
+  // for each leaf clusters with macros.
+  for (auto& mixed_leaf : mixed_leaves) {
+    Cluster* parent = mixed_leaf;
+
+    // Split by replacement if macro dominated.
+    if (mixed_leaf->getNumStdCell() * macro_dominated_cluster_threshold_
+        < mixed_leaf->getNumMacro()) {
+      parent = mixed_leaf->getParent();
     }
 
-    // Map macros into the HardMacro objects
-    // and get all the HardMacros
-    mapMacroInCluster2HardMacro(cluster);
-    std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
+    mapMacroInCluster2HardMacro(mixed_leaf);
 
-    // create a cluster for each macro
+    std::vector<HardMacro*> hard_macros = mixed_leaf->getHardMacros();
     std::vector<Cluster*> macro_clusters;
+
+    // createOneMacroClusterForEachMacro
     for (auto& hard_macro : hard_macros) {
       std::string cluster_name = hard_macro->getName();
-      Cluster* macro_cluster = new Cluster(cluster_id_, cluster_name, logger_);
-      macro_cluster->addLeafMacro(hard_macro->getInst());
-      setInstProperty(macro_cluster);
-      setClusterMetrics(macro_cluster);
-      cluster_map_[cluster_id_++] = macro_cluster;
+      Cluster* single_macro_cluster
+          = new Cluster(cluster_id_, cluster_name, logger_);
+
+      single_macro_cluster->addLeafMacro(hard_macro->getInst());
+
+      setInstProperty(single_macro_cluster);
+      setClusterMetrics(single_macro_cluster);
+
+      cluster_map_[cluster_id_++] = single_macro_cluster;
+
       // modify the physical hierachy tree
-      macro_cluster->setParent(parent_cluster);
-      parent_cluster->addChild(macro_cluster);
-      macro_clusters.push_back(macro_cluster);
+      single_macro_cluster->setParent(parent);
+      parent->addChild(single_macro_cluster);
+      macro_clusters.push_back(single_macro_cluster);
     }
 
-    // classify macros based on size
+    // classifyMacrosBasedOnSize
     std::vector<int> macro_size_class(hard_macros.size(), -1);
     for (int i = 0; i < hard_macros.size(); i++) {
       if (macro_size_class[i] == -1) {
@@ -2290,14 +2291,14 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
         }
       }
     }
-
     for (int i = 0; i < hard_macros.size(); i++) {
       macro_size_class[i]
           = (macro_size_class[i] == -1) ? i : macro_size_class[i];
     }
 
-    // classify macros based on connection signature
     calculateConnection();
+
+    // classifyMacrosBasedOnConnSignature
     std::vector<int> macro_signature_class(hard_macros.size(), -1);
     for (int i = 0; i < hard_macros.size(); i++) {
       if (macro_signature_class[i] == -1) {
@@ -2314,8 +2315,6 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
         }
       }
     }
-
-    // print the connnection signature
     if (logger_->debugCheck(MPL, "multilevel_autoclustering", 2)) {
       logger_->report("\nPrint Connection Signature\n");
       for (auto& cluster : macro_clusters) {
@@ -2327,8 +2326,7 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
       }
     }
 
-    // macros with the same size and the same connection signature
-    // belong to the same class
+    // groupSingleMacroClusters
     std::vector<int> macro_class(hard_macros.size(), -1);
     for (int i = 0; i < hard_macros.size(); i++) {
       if (macro_class[i] == -1) {
@@ -2356,42 +2354,42 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
       }
     }
 
-    // clear the hard macros in current leaf cluster
-    cluster->clearHardMacros();
-    // Restore the structure of physical hierarchical tree
-    // Thus the order of leaf clusters will not change the final
-    // macro grouping results (This is very important !!!
-    // Don't touch the next line SetInstProperty command!!!)
-    setInstProperty(cluster);
+    mixed_leaf->clearHardMacros();
 
+    // IMPORTANT: Restore the structure of physical hierarchical tree. Thus the
+    // order of leaf clusters will not change the final macro grouping results.
+    setInstProperty(mixed_leaf);
+
+    // Never use SetInstProperty in the following lines for the reason above!
     std::vector<int> virtual_conn_clusters;
-    // Never use SetInstProperty Command in following lines
-    // for above reason!!!
-    // based on different types of designs, we handle differently
-    // whether a replacement or a subtree
-    // Deal with the standard cell cluster
-    if (parent_cluster == cluster) {
-      // If we need a subtree , add standard cell cluster
-      std::string std_cell_cluster_name = cluster->getName();
+
+    if (parent == mixed_leaf) {
+      std::string std_cell_cluster_name = mixed_leaf->getName();
       Cluster* std_cell_cluster
           = new Cluster(cluster_id_, std_cell_cluster_name, logger_);
-      std_cell_cluster->copyInstances(*cluster);
+
+      std_cell_cluster->copyInstances(*mixed_leaf);
       std_cell_cluster->clearLeafMacros();
       std_cell_cluster->setClusterType(StdCellCluster);
+
       setClusterMetrics(std_cell_cluster);
+
       cluster_map_[cluster_id_++] = std_cell_cluster;
+
       // modify the physical hierachy tree
-      std_cell_cluster->setParent(parent_cluster);
-      parent_cluster->addChild(std_cell_cluster);
+      std_cell_cluster->setParent(parent);
+      parent->addChild(std_cell_cluster);
       virtual_conn_clusters.push_back(std_cell_cluster->getId());
     } else {
-      // If we need add a replacement
-      cluster->clearLeafMacros();
-      cluster->setClusterType(StdCellCluster);
-      setClusterMetrics(cluster);
-      virtual_conn_clusters.push_back(cluster->getId());
       // In this case, we do not to modify the physical hierarchy tree
+      mixed_leaf->clearLeafMacros();
+      mixed_leaf->setClusterType(StdCellCluster);
+
+      setClusterMetrics(mixed_leaf);
+
+      virtual_conn_clusters.push_back(mixed_leaf->getId());
     }
+
     // Deal with macro clusters
     for (int i = 0; i < macro_class.size(); i++) {
       if (macro_class[i] != i) {
@@ -2399,14 +2397,14 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
       }
       macro_clusters[i]->setClusterType(HardMacroCluster);
       setClusterMetrics(macro_clusters[i]);
-      virtual_conn_clusters.push_back(cluster->getId());
+      virtual_conn_clusters.push_back(mixed_leaf->getId());
     }
 
     // add virtual connections
     for (int i = 0; i < virtual_conn_clusters.size(); i++) {
       for (int j = i + 1; j < virtual_conn_clusters.size(); j++) {
-        parent_cluster->addVirtualConnection(virtual_conn_clusters[i],
-                                             virtual_conn_clusters[j]);
+        parent->addVirtualConnection(virtual_conn_clusters[i],
+                                     virtual_conn_clusters[j]);
       }
     }
   }
