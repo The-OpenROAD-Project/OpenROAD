@@ -1524,7 +1524,7 @@ Resizer::dontTouch(const Instance *inst)
   if (!db_inst) {
     return false;
   }
-  return db_inst->isDoNotTouch();
+  return db_inst->isDoNotTouch() || db_inst->isPad();
 }
 
 void
