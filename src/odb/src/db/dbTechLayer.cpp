@@ -1056,10 +1056,10 @@ uint _dbTechLayer::getTwIdx(const int width, const int prl) const
   return 0;
 }
 void _dbTechLayer::getAverageTrackPattern(dbTrackGrid* grid,
-                                         bool is_x,
-                                         int& track_init,
-                                         int& num_tracks,
-                                         int& track_step)
+                                          bool is_x,
+                                          int& track_init,
+                                          int& num_tracks,
+                                          int& track_step)
 {
   std::vector<int> coordinates;
   if (is_x) {
