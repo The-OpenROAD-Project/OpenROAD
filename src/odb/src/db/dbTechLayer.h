@@ -44,7 +44,6 @@ namespace odb {
 class dbIStream;
 class dbOStream;
 class dbDiff;
-class dbTrackGrid;
 class _dbDatabase;
 class _dbTechLayerCutClassRule;
 template <class T>
@@ -72,6 +71,7 @@ class _dbTechMinCutRule;
 class _dbTechMinEncRule;
 class _dbTechV55InfluenceEntry;
 class _dbTechLayerAntennaRule;
+class dbTrackGrid;
 // User Code End Classes
 
 struct dbTechLayerFlags
