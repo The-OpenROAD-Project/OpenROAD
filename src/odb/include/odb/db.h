@@ -7826,16 +7826,6 @@ class dbTechLayer : public dbObject
                               int& num_tracks);
 
   ///
-  /// Populate parameters with average track information
-  /// for tracks with multiple patterns.
-  ///
-  void getAverageTrackPattern(odb::dbTrackGrid* grid,
-                              bool is_x,
-                              int& track_init,
-                              int& num_tracks,
-                              int& track_step);
-
-  ///
   /// The number of masks for this layer (aka double/triple patterning).
   /// Allowable values are in [1, 3].
   ///
