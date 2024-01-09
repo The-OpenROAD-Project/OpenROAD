@@ -1271,25 +1271,29 @@ RepairDesign::makeRepeater(const char *reason,
   // way from the loads to the driver.
 
   Net *net = nullptr, *in_net;
-  bool have_output_port_load = false;
+  bool preserve_outputs = false;
   for (const Pin *pin : load_pins) {
     if (network_->isTopLevelPort(pin)) {
       net = network_->net(network_->term(pin));
       if (network_->direction(pin)->isAnyOutput()) {
-        have_output_port_load = true;
+        preserve_outputs = true;
         break;
       }
     }
     else {
       net = network_->net(pin);
+      Instance* inst = network_->instance(pin);
+      if (resizer_->dontTouch(inst)) {
+        preserve_outputs = true;
+        break;
+      }
     }
   }
   Instance *parent = db_network_->topInstance();
 
   // If the net is driven by an input port,
   // use the net as the repeater input net so the port stays connected to it.
-  if (hasInputPort(net)
-      || !have_output_port_load) {
+  if (hasInputPort(net) || !preserve_outputs) {
     in_net = net;
     out_net = resizer_->makeUniqueNet();
     // Copy signal type to new net.
