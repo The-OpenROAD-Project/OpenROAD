@@ -113,9 +113,8 @@ dbInst* dbCreateNetUtil::createInst(dbInst* inst0)
     return nullptr;
 
   inst->setOrient(inst0->getOrient());
-  int x, y;
-  inst0->getOrigin(x, y);
-  inst->setOrigin(x, y);
+  const Point origin = inst0->getOrigin();
+  inst->setOrigin(origin.x(), origin.y());
   inst->setPlacementStatus(inst0->getPlacementStatus());
 
   return inst;
@@ -164,9 +163,8 @@ dbInst* dbCreateNetUtil::createInst(dbInst* inst0,
     dbInst* inst
         = dbInst::create(_block, inst0->getMaster(), inst0->getConstName());
     inst->setOrient(inst0->getOrient());
-    int x, y;
-    inst0->getOrigin(x, y);
-    inst->setOrigin(x, y);
+    const Point origin = inst0->getOrigin();
+    inst->setOrigin(origin.x(), origin.y());
     inst->setPlacementStatus(inst0->getPlacementStatus());
 
     if (createInstance)
@@ -251,11 +249,9 @@ bool dbCreateNetUtil::printEcoInstVerbose(FILE* fp,
 
   dbBox* bb = inst->getBBox();
 
-  int x1, y1;
-  inst->getOrigin(x1, y1);
+  const Point origin = inst->getOrigin();
 
-  int x2, y2;
-  inst->getLocation(x2, y2);
+  const Point loc = inst->getLocation();
 
   std::string orient1 = inst->getOrient().getString();
 
@@ -266,10 +262,10 @@ bool dbCreateNetUtil::printEcoInstVerbose(FILE* fp,
           inst->getId(),
           inst->getMaster()->getConstName(),
           orient1.c_str(),
-          x2,
-          y2,
-          x1,
-          y1,
+          loc.x(),
+          loc.y(),
+          origin.x(),
+          origin.y(),
           bb->getDX(),
           bb->getDY(),
           bb->xMin(),
@@ -314,10 +310,10 @@ uint dbCreateNetUtil::printEcoInst(dbInst* ecoInst, dbBlock* srcBlock, FILE* fp)
     }
     dbBox* origBox = origInst->getBBox();
 
-    int x1, y1;
-    origInst->getOrigin(x1, y1);
-    if (_useLocation)
-      origInst->getLocation(x1, y1);
+    Point pt = origInst->getOrigin();
+    if (_useLocation) {
+      pt = origInst->getLocation();
+    }
 
     std::string orient1 = origInst->getOrient().getString();
 
@@ -326,8 +322,8 @@ uint dbCreateNetUtil::printEcoInst(dbInst* ecoInst, dbBlock* srcBlock, FILE* fp)
               "milos_moveCell %s Orientation %s Location %d %d    W %d H %d\n",
               origInst->getConstName(),
               orient1.c_str(),
-              x1,
-              y1,
+              pt.x(),
+              pt.y(),
               origBox->getDX(),
               origBox->getDY());
     } else {
@@ -335,8 +331,8 @@ uint dbCreateNetUtil::printEcoInst(dbInst* ecoInst, dbBlock* srcBlock, FILE* fp)
               "Milos Place Instance %s Orientation %s Location %d %d\n",
               origInst->getConstName(),
               orient1.c_str(),
-              x1,
-              y1);
+              pt.x(),
+              pt.y());
     }
     printEcoInstVerbose(fp, origInst, "#V_new ");
     printEcoInstVerbose(fp, ecoInst, "#V_old ");
@@ -363,13 +359,10 @@ uint dbCreateNetUtil::printEcoInst(dbInst* ecoInst, dbBlock* srcBlock, FILE* fp)
 
   // worst case : a box was moved to its original space
   // if (r0!=r1) { // different bboxes
-  int x0, y0;
-  ecoInst->getOrigin(x0, y0);
   std::string orient = ecoInst->getOrient().getString();
-  int x1, y1;
-  origInst->getOrigin(x1, y1);
+  Point pt = origInst->getOrigin();
   if (_useLocation)
-    origInst->getLocation(x1, y1);
+    pt = origInst->getLocation();
 
   std::string orient1 = origInst->getOrient().getString();
 
@@ -378,8 +371,8 @@ uint dbCreateNetUtil::printEcoInst(dbInst* ecoInst, dbBlock* srcBlock, FILE* fp)
             "milos_moveCell %s Orientation %s Location %d %d    W %d H %d\n",
             origInst->getConstName(),
             orient1.c_str(),
-            x1,
-            y1,
+            pt.x(),
+            pt.y(),
             origBox->getDX(),
             origBox->getDY());
   } else {
@@ -387,8 +380,8 @@ uint dbCreateNetUtil::printEcoInst(dbInst* ecoInst, dbBlock* srcBlock, FILE* fp)
             "Milos Place Instance %s Orientation %s Location %d %d\n",
             origInst->getConstName(),
             orient1.c_str(),
-            x1,
-            y1);
+            pt.x(),
+            pt.y());
   }
   printEcoInstVerbose(fp, origInst, "#V_new ");
   printEcoInstVerbose(fp, ecoInst, "#V_old ");

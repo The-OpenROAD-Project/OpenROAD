@@ -2909,8 +2909,7 @@ void GlobalRouter::makeItermPins(Net* net,
     const bool connected_to_macro = master->isBlock();
 
     odb::dbInst* inst = iterm->getInst();
-    odb::dbTransform transform;
-    inst->getTransform(transform);
+    const odb::dbTransform transform = inst->getTransform();
 
     odb::Point pin_pos;
     std::vector<odb::dbTechLayer*> pin_layers;
@@ -3218,14 +3217,9 @@ int GlobalRouter::findInstancesObstructions(
   int pin_out_of_die_count = 0;
   odb::dbTech* tech = db_->getTech();
   for (odb::dbInst* inst : block_->getInsts()) {
-    int pX, pY;
-
     odb::dbMaster* master = inst->getMaster();
 
-    inst->getOrigin(pX, pY);
-    odb::Point origin = odb::Point(pX, pY);
-
-    odb::dbTransform transform(inst->getOrient(), origin);
+    const odb::dbTransform transform = inst->getTransform();
 
     bool isMacro = false;
     if (master->isBlock()) {
