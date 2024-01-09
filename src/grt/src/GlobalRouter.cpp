@@ -2423,7 +2423,11 @@ odb::Point GlobalRouter::getRectMiddle(const odb::Rect& rect)
 
 void GlobalRouter::initGrid(int max_layer)
 {
-  int track_spacing = trackSpacing();
+  odb::dbTechLayer* tech_layer = routing_layers_[layer_for_guide_dimension_];
+  odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
+  int track_spacing, track_init, num_tracks;
+  tech_layer->getAverageTrackSpacing(
+      track_grid, track_spacing, track_init, num_tracks);
 
   odb::Rect rect = block_->getDieArea();
 
@@ -2453,28 +2457,6 @@ void GlobalRouter::initGrid(int max_layer)
               perfect_regular_x,
               perfect_regular_y,
               num_layers);
-}
-
-// Assumes initRoutingLayers and initRoutingTracks have been called
-// to check layers and tracks.
-int GlobalRouter::trackSpacing()
-{
-  odb::dbTechLayer* tech_layer = routing_layers_[layer_for_guide_dimension_];
-  odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
-
-  if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-    int track_step_y = -1;
-    int init_track_y, num_tracks_y;
-    track_grid->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
-    return track_step_y;
-  } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-    int track_step_x = -1;
-    int init_track_x, num_tracks_x;
-    track_grid->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
-    return track_step_x;
-  }
-  logger_->error(GRT, 82, "Cannot find track spacing.");
-  return 0;
 }
 
 void getViaDims(std::map<int, odb::dbTechVia*> default_vias,
@@ -2602,26 +2584,6 @@ std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
   return pitches;
 }
 
-// For multiple track patterns we need to compute an average
-// track pattern for gcell construction.
-void GlobalRouter::averageTrackPattern(odb::dbTrackGrid* grid,
-                                       bool is_x,
-                                       int& track_init,
-                                       int& num_tracks,
-                                       int& track_step)
-{
-  std::vector<int> coordinates;
-  if (is_x) {
-    grid->getGridX(coordinates);
-  } else {
-    grid->getGridY(coordinates);
-  }
-  const int span = coordinates.back() - coordinates.front();
-  track_init = coordinates.front();
-  track_step = std::ceil((float) span / coordinates.size());
-  num_tracks = coordinates.size();
-}
-
 void GlobalRouter::initRoutingTracks(int max_routing_layer)
 {
   auto l2vPitches = calcLayerPitches(max_routing_layer);
@@ -2637,37 +2599,8 @@ void GlobalRouter::initRoutingTracks(int max_routing_layer)
     }
 
     int track_step, track_init, num_tracks;
-    if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-      if (track_grid->getNumGridPatternsY() == 1) {
-        track_grid->getGridPatternY(0, track_init, num_tracks, track_step);
-      } else if (track_grid->getNumGridPatternsY() > 1) {
-        averageTrackPattern(
-            track_grid, false, track_init, num_tracks, track_step);
-      } else {
-        logger_->error(GRT,
-                       124,
-                       "Horizontal tracks for layer {} not found.",
-                       tech_layer->getName());
-        return;  // error throws
-      }
-    } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-      if (track_grid->getNumGridPatternsX() == 1) {
-        track_grid->getGridPatternX(0, track_init, num_tracks, track_step);
-      } else if (track_grid->getNumGridPatternsX() > 1) {
-        averageTrackPattern(
-            track_grid, true, track_init, num_tracks, track_step);
-      } else {
-        logger_->error(GRT,
-                       147,
-                       "Vertical tracks for layer {} not found.",
-                       tech_layer->getName());
-        return;  // error throws
-      }
-    } else {
-      logger_->error(
-          GRT, 148, "Layer {} has invalid direction.", tech_layer->getName());
-      return;  // error throws
-    }
+    tech_layer->getAverageTrackSpacing(
+        track_grid, track_step, track_init, num_tracks);
 
     RoutingTracks layer_tracks = RoutingTracks(level,
                                                track_step,
