@@ -1,7 +1,7 @@
 ---
 title: set_io_pin_constraint(2)
 author: Jack Luar (TODO@TODO.com)
-date: 23/12/17
+date: 24/01/09
 ---
 
 # NAME
@@ -50,15 +50,7 @@ called alone.
 
 # EXAMPLES
 
-# ENVIRONMENT
-
-# FILES
-
 # SEE ALSO
-
-# HISTORY
-
-# BUGS
 
 # COPYRIGHT
 

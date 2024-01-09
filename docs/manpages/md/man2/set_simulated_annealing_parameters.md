@@ -1,7 +1,7 @@
 ---
 title: set_simulated_annealing_parameters(2)
 author: Jack Luar (TODO@TODO.com)
-date: 23/12/17
+date: 24/01/09
 ---
 
 # NAME
@@ -23,29 +23,19 @@ The `set_simulated_annealing` command defines the parameters for simulated annea
 
 # OPTIONS
 
-`-pin_name`:  The name of a pin of the design.
+`-temperature`:  Temperature parameter. The default value is `1.0`, and the allowed values are floats `[0, MAX_FLOAT]`.
 
-`-layer`:  The routing layer where the pin is placed.
+`-max_iterations`:  The maximum number of iterations. The default value is `2000`, and the allowed values are integers `[0, MAX_INT]`.
 
-`-location`:  The center of the pin (in microns).
+`-perturb_per_iter`:  The number of perturbations per iteration. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`.
 
-`-pin_size`:  Tthe width and height of the pin (in microns).
-
-`-force_to_die_boundary`:  When this flag is enabled, the pin will be snapped to the nearest routing track, next to the die boundary.
+`-alpha`:  The temperature decay factor. The default value is `0.985`, and the allowed values are floats `(0, 1]`.
 
 # ARGUMENTS
 
 # EXAMPLES
 
-# ENVIRONMENT
-
-# FILES
-
 # SEE ALSO
-
-# HISTORY
-
-# BUGS
 
 # COPYRIGHT
 

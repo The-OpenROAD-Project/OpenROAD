@@ -1,7 +1,7 @@
 ---
 title: set_pin_length(2)
 author: Jack Luar (TODO@TODO.com)
-date: 23/12/17
+date: 24/01/09
 ---
 
 # NAME
@@ -22,23 +22,15 @@ pins.
 
 # OPTIONS
 
-`-hor_extension`:  The length (in microns) for the horizontal pins.
+`-hor_length`:  The length (in microns) of the horizontal pins.
 
-`-ver_extension`:  The length (in microns) for the vertical pins.
+`-ver_length`:  The length (in microns) of the vertical pins.
 
 # ARGUMENTS
 
 # EXAMPLES
 
-# ENVIRONMENT
-
-# FILES
-
 # SEE ALSO
-
-# HISTORY
-
-# BUGS
 
 # COPYRIGHT
 

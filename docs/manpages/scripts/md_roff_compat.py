@@ -8,11 +8,10 @@ import re
 import io
 import datetime
 
-# original docs
-#docs = ["../../src/ppl/README.md"]
-
-# edited docs
-docs = ["./src/man2/ppl.txt"]
+# list of edited docs
+SRC_DIR = "./md/man2"
+tools = ["dpl"]#"dft", "cts", "ant", "ppl"]
+docs = [f"{SRC_DIR}/{tool}.txt" for tool in tools]
 
 # identify key section and stored in ManPage class. 
 class ManPage():
@@ -27,8 +26,9 @@ class ManPage():
         assert self.name, print("func name not set")
         assert self.desc, print("func desc not set")
         assert self.synopsis, print("func synopsis not set")
-        assert self.switches, print("func switches not set")
-        filepath = f"./src/man2/{self.name}.md"
+        # it is okay for a function to have no switches.
+        #assert self.switches, print("func switches not set")
+        filepath = f"{SRC_DIR}/{self.name}.md"
         with open(filepath, "w") as f:
             self.write_header(f)
             self.write_name(f)
@@ -75,6 +75,8 @@ class ManPage():
          f.writable(), "File pointer is not open for writing."
 
         f.write(f"\n# OPTIONS\n")
+        if not self.switches:
+            f.write(f"\nThis command has no switches.\n")
         for key, val in self.switches.items():
             f.write(f"\n`{key}`: {val}\n")
 
@@ -84,7 +86,7 @@ class ManPage():
 
         # TODO: these are all not populated currently, not parseable from docs. 
         # TODO: Arguments can actually be parsed, but you need to preprocess the synopsis further. 
-        sections = ["ARGUMENTS", "EXAMPLES", "ENVIRONMENT", "FILES", "SEE ALSO", "HISTORY", "BUGS"]
+        sections = ["ARGUMENTS", "EXAMPLES", "SEE ALSO"]
         for s in sections:
             f.write(f"\n# {s}\n")
 
@@ -123,6 +125,9 @@ def extract_tables(text):
     table_pattern = r'^\s*\|.*$'
     table_matches = re.findall(table_pattern, text, flags=re.MULTILINE)
 
+    # Exclude matches containing HTML tags
+    table_matches = [table for table in table_matches if not re.search(r'<.*?>', table)]
+
     return table_matches
 
 if __name__ == "__main__":
@@ -153,31 +158,41 @@ if __name__ == "__main__":
             tmp.append(s.strip())
         if tmp: func_switches.append(tmp)
 
-    # grouping the parsed outputs together
-    offset_switch_idx = 0
+        print(len(func_names)); print(func_names)
+        print(len(func_descs)); print(func_descs)
+        print(len(func_synopsis)); print(func_synopsis)
+        print(len(func_switches)); print(func_switches)
 
-    for func_id in range(len(func_synopsis)):
-        temp = ManPage()
+        # grouping the parsed outputs together
+        offset_switch_idx = 0
+        for func_id in range(len(func_synopsis)):
+            temp = ManPage()
 
-        temp.name = func_names[func_id]
-        temp.desc = func_descs[func_id]
+            temp.name = func_names[func_id]
+            temp.desc = func_descs[func_id]
+            temp.synopsis = func_synopsis[func_id]
 
-        # logic if synopsis is one liner, it means that it has no switches
-        temp.synopsis = func_synopsis[func_id]
-        if len(temp.synopsis) == 3: offset_switch_idx += 1
+            # logic if synopsis is one liner, it means that it has no switches
+            if len(temp.synopsis.split("\n")) == 2:
+                temp.write_roff_file()
+                offset_switch_idx += 1
+                continue
 
-        switches = func_switches[offset_switch_idx + func_id]
-        switches_dict = {}
-        for idx, x in enumerate(switches):
-            if idx == 0 or idx == 1: continue
-            switch_name = x.split("|")[1]
-            # Find the index of the 2nd and last occurrence of "|". Since some content might contain "|"
-            second_pipe_index = x.find("|", x.find("|") + 1)
-            last_pipe_index = x.rfind("|")
-            switch_description = x[second_pipe_index+1: last_pipe_index-1] 
-            switch_name = switch_name.replace("`", "").strip()
-            switches_dict[switch_name] = switch_description
-        temp.switches = switches_dict
-        temp.write_roff_file()
 
-    print('Ok')
+            switches = func_switches[func_id - offset_switch_idx]
+            switches_dict = {}
+            for idx, x in enumerate(switches):
+                # Skip header and | --- | dividers.
+                if idx == 0: continue
+                if "---" in x: continue
+                switch_name = x.split("|")[1]
+                # Find the index of the 2nd and last occurrence of "|". Since some content might contain "|"
+                second_pipe_index = x.find("|", x.find("|") + 1)
+                last_pipe_index = x.rfind("|")
+                switch_description = x[second_pipe_index+1: last_pipe_index-1] 
+                switch_name = switch_name.replace("`", "").strip()
+                switches_dict[switch_name] = switch_description
+            temp.switches = switches_dict
+            temp.write_roff_file()
+
+        print('Ok')

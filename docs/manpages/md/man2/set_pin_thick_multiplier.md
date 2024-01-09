@@ -1,7 +1,7 @@
 ---
 title: set_pin_thick_multiplier(2)
 author: Jack Luar (TODO@TODO.com)
-date: 23/12/17
+date: 24/01/09
 ---
 
 # NAME
@@ -22,27 +22,15 @@ vertical and horizontal pins.
 
 # OPTIONS
 
-`-temperature`:  Temperature parameter. The default value is `1.0`, and the allowed values are floats `[0, MAX_FLOAT]`.
+`-hor_multiplier`:  The thickness multiplier for the horizontal pins.
 
-`-max_iterations`:  The maximum number of iterations. The default value is `2000`, and the allowed values are integers `[0, MAX_INT]`.
-
-`-perturb_per_iter`:  The number of perturbations per iteration. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`.
-
-`-alpha`:  The temperature decay factor. The default value is `0.985`, and the allowed values are floats `(0, 1]`.
+`-ver_multiplier`:  The thickness multiplier for the vertical pins.
 
 # ARGUMENTS
 
 # EXAMPLES
 
-# ENVIRONMENT
-
-# FILES
-
 # SEE ALSO
-
-# HISTORY
-
-# BUGS
 
 # COPYRIGHT
 

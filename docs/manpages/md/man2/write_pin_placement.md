@@ -1,7 +1,7 @@
 ---
 title: write_pin_placement(2)
 author: Jack Luar (TODO@TODO.com)
-date: 23/12/17
+date: 24/01/09
 ---
 
 # NAME
@@ -20,21 +20,15 @@ The `write_pin_placement` command writes a file with the pin placement in the fo
 
 # OPTIONS
 
-`file_name`:  The name of the file with the pin placement.
+`-random_seed`:  Specify the seed for random operations.
+
+`-random`:  When this flag is enabled, the pin placement is random.
 
 # ARGUMENTS
 
 # EXAMPLES
 
-# ENVIRONMENT
-
-# FILES
-
 # SEE ALSO
-
-# HISTORY
-
-# BUGS
 
 # COPYRIGHT
 
