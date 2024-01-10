@@ -3266,6 +3266,12 @@ class dbITerm : public dbObject
   dbMTerm* getMTerm() const;
 
   ///
+  /// Get the name of this iterm.  This is not persistently stored
+  /// and is constructed on the fly.
+  ///
+  std::string getName(char separator = '/') const;
+
+  ///
   /// Get bbox of this iterm (ie the transfromed bbox of the mterm)
   ///
   Rect getBBox();
