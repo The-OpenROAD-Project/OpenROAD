@@ -2211,9 +2211,8 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
   breakLargeFlatCluster(cluster_part_1);
 }
 
-// Break mixed leaf clusters into a standard-cell cluster and hard-macro
-// clusters.
-// Merge macros based on connection signatures and footprints.
+// Break mixed leaves into standard-cell and hard-macro clusters.
+// Merge macros based on connection signature and footprint.
 // Based on types of designs, we support two types of breaking up:
 // Suppose current cluster is A.
 //   1) Replace A by A1, A2, A3
@@ -2221,8 +2220,6 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
 //      A  ->        A
 //               |   |   |
 //               A1  A2  A3
-// Split macros and std cells in the leaf clusters. In the normal operation,
-// we call this function after creating the physical hierarchy.
 void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
 {
   if (root_cluster->getChildren().empty() || root_cluster->getNumMacro() == 0) {
@@ -2270,33 +2267,11 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
     std::vector<int> signature_class(hard_macros.size(), -1);
     classifyMacrosByConnSignature(macro_clusters, signature_class);
 
-    // groupSingleMacroClusters
     std::vector<int> macro_class(hard_macros.size(), -1);
-    for (int i = 0; i < hard_macros.size(); i++) {
-      if (macro_class[i] == -1) {
-        macro_class[i] = i;
-        for (int j = i + 1; j < hard_macros.size(); j++) {
-          if (macro_class[j] == -1 && size_class[i] == size_class[j]
-              && signature_class[i] == signature_class[j]) {
-            macro_class[j] = i;
-            debugPrint(logger_,
-                       MPL,
-                       "multilevel_autoclustering",
-                       1,
-                       "merge {} with {}",
-                       macro_clusters[i]->getName(),
-                       macro_clusters[j]->getName());
-            bool delete_flag = false;
-            macro_clusters[i]->mergeCluster(*macro_clusters[j], delete_flag);
-            if (delete_flag) {
-              // remove the merged macro cluster
-              cluster_map_.erase(macro_clusters[j]->getId());
-              delete macro_clusters[j];
-            }
-          }
-        }
-      }
-    }
+    // Use both size and connection signature classifications to group
+    // single-macro macro clusters into the same cluster.
+    groupSingleMacroClusters(
+        macro_clusters, size_class, signature_class, macro_class);
 
     mixed_leaf->clearHardMacros();
 
@@ -2424,6 +2399,39 @@ void HierRTLMP::classifyMacrosByConnSignature(
       logger_->report("Macro Signature: {}", cluster->getName());
       for (auto& [cluster_id, weight] : cluster->getConnection()) {
         logger_->report(" {} {} ", cluster_map_[cluster_id]->getName(), weight);
+      }
+    }
+  }
+}
+
+void HierRTLMP::groupSingleMacroClusters(
+    const std::vector<Cluster*>& macro_clusters,
+    const std::vector<int>& size_class,
+    const std::vector<int>& signature_class,
+    std::vector<int>& macro_class)
+{
+  for (int i = 0; i < macro_clusters.size(); i++) {
+    if (macro_class[i] == -1) {
+      macro_class[i] = i;
+      for (int j = i + 1; j < macro_clusters.size(); j++) {
+        if (macro_class[j] == -1 && size_class[i] == size_class[j]
+            && signature_class[i] == signature_class[j]) {
+          macro_class[j] = i;
+          debugPrint(logger_,
+                     MPL,
+                     "multilevel_autoclustering",
+                     1,
+                     "merge {} with {}",
+                     macro_clusters[i]->getName(),
+                     macro_clusters[j]->getName());
+          bool delete_merged = false;
+          macro_clusters[i]->mergeCluster(*macro_clusters[j], delete_merged);
+          if (delete_merged) {
+            // remove the merged macro cluster
+            cluster_map_.erase(macro_clusters[j]->getId());
+            delete macro_clusters[j];
+          }
+        }
       }
     }
   }
