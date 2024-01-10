@@ -1,3 +1,5 @@
+include("openroad")
+
 find_program (BASH_PROGRAM bash REQUIRED)
 
 function(gpl_test test_name)
@@ -41,3 +43,31 @@ clust02
 foreach(TEST_NAME IN LISTS TEST_NAMES)
   gpl_test(${TEST_NAME})
 endforeach()
+
+add_executable(fft_test fft_test.cc)
+
+target_include_directories(fft_test
+  PUBLIC
+  ${PROJECT_SOURCE_DIR}
+)
+
+target_link_libraries(fft_test
+  gtest
+  gtest_main
+  spdlog::spdlog
+)
+
+gtest_discover_tests(fft_test
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_sources(fft_test
+  PRIVATE
+  fft_test.cc
+  ../src/fft.cpp
+  ../src/fftsg.cpp
+  ../src/fftsg2d.cpp
+)
+
+
+add_dependencies(build_and_test fft_test)

@@ -37,3 +37,8 @@ MPL2 debug messages are divided in:
 ### Bus Planning
 Special case for bus planning with a single level.
 - Group Name: `bus_planning`
+
+### Fine Shaping
+- Group Name: `flipping`
+- Levels:
+1. Print the wire length before and after flipping

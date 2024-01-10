@@ -270,6 +270,11 @@ dbBTerm* dbITerm::getBTerm()
   return (dbBTerm*) child->_bterm_tbl->getPtr(bterm);
 }
 
+std::string dbITerm::getName(const char separator) const
+{
+  return getInst()->getName() + separator + getMTerm()->getName();
+}
+
 dbBlock* dbITerm::getBlock() const
 {
   return (dbBlock*) getImpl()->getOwner();
