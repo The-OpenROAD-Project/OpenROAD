@@ -2262,22 +2262,8 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
 
     createOneClusterForEachMacro(parent, hard_macros, macro_clusters);
 
-    // classifyMacrosBasedOnSize
-    std::vector<int> macro_size_class(hard_macros.size(), -1);
-    for (int i = 0; i < hard_macros.size(); i++) {
-      if (macro_size_class[i] == -1) {
-        for (int j = i + 1; j < hard_macros.size(); j++) {
-          if ((macro_size_class[j] == -1)
-              && ((*hard_macros[i]) == (*hard_macros[j]))) {
-            macro_size_class[j] = i;
-          }
-        }
-      }
-    }
-    for (int i = 0; i < hard_macros.size(); i++) {
-      macro_size_class[i]
-          = (macro_size_class[i] == -1) ? i : macro_size_class[i];
-    }
+    std::vector<int> size_class(hard_macros.size(), -1);
+    classifyMacrosBySize(hard_macros, size_class);
 
     calculateConnection();
 
@@ -2315,7 +2301,7 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
       if (macro_class[i] == -1) {
         macro_class[i] = i;
         for (int j = i + 1; j < hard_macros.size(); j++) {
-          if (macro_class[j] == -1 && macro_size_class[i] == macro_size_class[j]
+          if (macro_class[j] == -1 && size_class[i] == size_class[j]
               && macro_signature_class[i] == macro_signature_class[j]) {
             macro_class[j] = i;
             debugPrint(logger_,
@@ -2416,6 +2402,24 @@ void HierRTLMP::createOneClusterForEachMacro(
     single_macro_cluster->setParent(parent);
     parent->addChild(single_macro_cluster);
     macro_clusters.push_back(single_macro_cluster);
+  }
+}
+
+void HierRTLMP::classifyMacrosBySize(const std::vector<HardMacro*>& hard_macros,
+                                     std::vector<int>& size_class)
+{
+  for (int i = 0; i < hard_macros.size(); i++) {
+    if (size_class[i] == -1) {
+      for (int j = i + 1; j < hard_macros.size(); j++) {
+        if ((size_class[j] == -1) && ((*hard_macros[i]) == (*hard_macros[j]))) {
+          size_class[j] = i;
+        }
+      }
+    }
+  }
+
+  for (int i = 0; i < hard_macros.size(); i++) {
+    size_class[i] = (size_class[i] == -1) ? i : size_class[i];
   }
 }
 

@@ -207,6 +207,8 @@ class HierRTLMP
   void createOneClusterForEachMacro(Cluster* parent,
                                     const std::vector<HardMacro*>& hard_macros,
                                     std::vector<Cluster*>& macro_clusters);
+  void classifyMacrosBySize(const std::vector<HardMacro*>& hard_macros,
+                            std::vector<int>& size_class);
   void mapMacroInCluster2HardMacro(Cluster* cluster);
 
   // Coarse Shaping
