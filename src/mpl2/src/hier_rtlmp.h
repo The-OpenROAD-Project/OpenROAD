@@ -204,6 +204,7 @@ class HierRTLMP
   void updateSubTree(Cluster* parent);
   void breakLargeFlatCluster(Cluster* parent);
   void breakMixedLeafCluster(Cluster* root_cluster);
+  void breakMixedLeaf(Cluster* mixed_leaf);
   void mapMacroInCluster2HardMacro(Cluster* cluster);
   void createOneClusterForEachMacro(Cluster* parent,
                                     const std::vector<HardMacro*>& hard_macros,

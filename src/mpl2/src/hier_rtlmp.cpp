@@ -2241,73 +2241,78 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
     }
   }
 
-  // We need to update the metrics of the design if necessary
-  // for each leaf clusters with macros.
   for (auto& mixed_leaf : mixed_leaves) {
-    Cluster* parent = mixed_leaf;
-
-    // Split by replacement if macro dominated.
-    if (mixed_leaf->getNumStdCell() * macro_dominated_cluster_threshold_
-        < mixed_leaf->getNumMacro()) {
-      parent = mixed_leaf->getParent();
-    }
-
-    mapMacroInCluster2HardMacro(mixed_leaf);
-
-    std::vector<HardMacro*> hard_macros = mixed_leaf->getHardMacros();
-    std::vector<Cluster*> macro_clusters;
-
-    createOneClusterForEachMacro(parent, hard_macros, macro_clusters);
-
-    std::vector<int> size_class(hard_macros.size(), -1);
-    classifyMacrosBySize(hard_macros, size_class);
-
-    calculateConnection();
-
-    std::vector<int> signature_class(hard_macros.size(), -1);
-    classifyMacrosByConnSignature(macro_clusters, signature_class);
-
-    std::vector<int> macro_class(hard_macros.size(), -1);
-    // Use both size and connection signature classifications to group
-    // single-macro macro clusters into the same cluster.
-    groupSingleMacroClusters(
-        macro_clusters, size_class, signature_class, macro_class);
-
-    mixed_leaf->clearHardMacros();
-
-    // IMPORTANT: Restore the structure of physical hierarchical tree. Thus the
-    // order of leaf clusters will not change the final macro grouping results.
-    setInstProperty(mixed_leaf);
-
-    // Never use SetInstProperty in the following lines for the reason above!
-    std::vector<int> virtual_conn_clusters;
-
-    if (parent == mixed_leaf) {
-      addStdCellClusterToSubTree(parent, mixed_leaf, virtual_conn_clusters);
-    } else {
-      replaceByStdCellCluster(mixed_leaf, virtual_conn_clusters);
-    }
-
-    // Deal with macro clusters
-    for (int i = 0; i < macro_class.size(); i++) {
-      if (macro_class[i] != i) {
-        continue;  // this macro cluster has been merged
-      }
-      macro_clusters[i]->setClusterType(HardMacroCluster);
-      setClusterMetrics(macro_clusters[i]);
-      virtual_conn_clusters.push_back(mixed_leaf->getId());
-    }
-
-    // add virtual connections
-    for (int i = 0; i < virtual_conn_clusters.size(); i++) {
-      for (int j = i + 1; j < virtual_conn_clusters.size(); j++) {
-        parent->addVirtualConnection(virtual_conn_clusters[i],
-                                     virtual_conn_clusters[j]);
-      }
-    }
+    breakMixedLeaf(mixed_leaf);
   }
+
   // Set the inst property back
   setInstProperty(root_cluster);
+}
+
+void HierRTLMP::breakMixedLeaf(Cluster* mixed_leaf)
+{
+  Cluster* parent = mixed_leaf;
+
+  // Split by replacement if macro dominated.
+  if (mixed_leaf->getNumStdCell() * macro_dominated_cluster_threshold_
+      < mixed_leaf->getNumMacro()) {
+    parent = mixed_leaf->getParent();
+  }
+
+  mapMacroInCluster2HardMacro(mixed_leaf);
+
+  std::vector<HardMacro*> hard_macros = mixed_leaf->getHardMacros();
+  std::vector<Cluster*> macro_clusters;
+
+  createOneClusterForEachMacro(parent, hard_macros, macro_clusters);
+
+  std::vector<int> size_class(hard_macros.size(), -1);
+  classifyMacrosBySize(hard_macros, size_class);
+
+  calculateConnection();
+
+  std::vector<int> signature_class(hard_macros.size(), -1);
+  classifyMacrosByConnSignature(macro_clusters, signature_class);
+
+  std::vector<int> macro_class(hard_macros.size(), -1);
+  // Use both size and connection signature classifications to group
+  // single-macro macro clusters into the same cluster.
+  groupSingleMacroClusters(
+      macro_clusters, size_class, signature_class, macro_class);
+
+  mixed_leaf->clearHardMacros();
+
+  // IMPORTANT: Restore the structure of physical hierarchical tree. Thus the
+  // order of leaf clusters will not change the final macro grouping results.
+  setInstProperty(mixed_leaf);
+
+  // Never use SetInstProperty in the following lines for the reason above!
+  std::vector<int> virtual_conn_clusters;
+
+  // Deal with the std cells
+  if (parent == mixed_leaf) {
+    addStdCellClusterToSubTree(parent, mixed_leaf, virtual_conn_clusters);
+  } else {
+    replaceByStdCellCluster(mixed_leaf, virtual_conn_clusters);
+  }
+
+  // Deal with the macros
+  for (int i = 0; i < macro_class.size(); i++) {
+    if (macro_class[i] != i) {
+      continue;  // this macro cluster has been merged
+    }
+    macro_clusters[i]->setClusterType(HardMacroCluster);
+    setClusterMetrics(macro_clusters[i]);
+    virtual_conn_clusters.push_back(mixed_leaf->getId());
+  }
+
+  // add virtual connections
+  for (int i = 0; i < virtual_conn_clusters.size(); i++) {
+    for (int j = i + 1; j < virtual_conn_clusters.size(); j++) {
+      parent->addVirtualConnection(virtual_conn_clusters[i],
+                                   virtual_conn_clusters[j]);
+    }
+  }
 }
 
 // Map all the macros into their HardMacro objects for all the clusters
