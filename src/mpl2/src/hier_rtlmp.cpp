@@ -2267,33 +2267,8 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
 
     calculateConnection();
 
-    // classifyMacrosBasedOnConnSignature
-    std::vector<int> macro_signature_class(hard_macros.size(), -1);
-    for (int i = 0; i < hard_macros.size(); i++) {
-      if (macro_signature_class[i] == -1) {
-        macro_signature_class[i] = i;
-        for (int j = i + 1; j < hard_macros.size(); j++) {
-          if (macro_signature_class[j] != -1) {
-            continue;
-          }
-          bool flag = macro_clusters[i]->isSameConnSignature(
-              *macro_clusters[j], signature_net_threshold_);
-          if (flag) {
-            macro_signature_class[j] = i;
-          }
-        }
-      }
-    }
-    if (logger_->debugCheck(MPL, "multilevel_autoclustering", 2)) {
-      logger_->report("\nPrint Connection Signature\n");
-      for (auto& cluster : macro_clusters) {
-        logger_->report("Macro Signature: {}", cluster->getName());
-        for (auto& [cluster_id, weight] : cluster->getConnection()) {
-          logger_->report(
-              " {} {} ", cluster_map_[cluster_id]->getName(), weight);
-        }
-      }
-    }
+    std::vector<int> signature_class(hard_macros.size(), -1);
+    classifyMacrosByConnSignature(macro_clusters, signature_class);
 
     // groupSingleMacroClusters
     std::vector<int> macro_class(hard_macros.size(), -1);
@@ -2302,7 +2277,7 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
         macro_class[i] = i;
         for (int j = i + 1; j < hard_macros.size(); j++) {
           if (macro_class[j] == -1 && size_class[i] == size_class[j]
-              && macro_signature_class[i] == macro_signature_class[j]) {
+              && signature_class[i] == signature_class[j]) {
             macro_class[j] = i;
             debugPrint(logger_,
                        MPL,
@@ -2420,6 +2395,37 @@ void HierRTLMP::classifyMacrosBySize(const std::vector<HardMacro*>& hard_macros,
 
   for (int i = 0; i < hard_macros.size(); i++) {
     size_class[i] = (size_class[i] == -1) ? i : size_class[i];
+  }
+}
+
+void HierRTLMP::classifyMacrosByConnSignature(
+    const std::vector<Cluster*>& macro_clusters,
+    std::vector<int>& signature_class)
+{
+  for (int i = 0; i < macro_clusters.size(); i++) {
+    if (signature_class[i] == -1) {
+      signature_class[i] = i;
+      for (int j = i + 1; j < macro_clusters.size(); j++) {
+        if (signature_class[j] != -1) {
+          continue;
+        }
+
+        if (macro_clusters[i]->isSameConnSignature(*macro_clusters[j],
+                                                   signature_net_threshold_)) {
+          signature_class[j] = i;
+        }
+      }
+    }
+  }
+
+  if (logger_->debugCheck(MPL, "multilevel_autoclustering", 2)) {
+    logger_->report("\nPrint Connection Signature\n");
+    for (auto& cluster : macro_clusters) {
+      logger_->report("Macro Signature: {}", cluster->getName());
+      for (auto& [cluster_id, weight] : cluster->getConnection()) {
+        logger_->report(" {} {} ", cluster_map_[cluster_id]->getName(), weight);
+      }
+    }
   }
 }
 
