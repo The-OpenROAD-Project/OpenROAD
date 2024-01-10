@@ -539,7 +539,10 @@ void HierRTLMP::runMultilevelAutoclustering()
 
   } else {
     multilevelAutocluster(root_cluster_);
-    breakMixedLeafCluster(root_cluster_);
+
+    std::vector<std::vector<Cluster*>> mixed_leaves;
+    fetchMixedLeaves(root_cluster_, mixed_leaves);
+    breakMixedLeaves(mixed_leaves);
 
     if (graphics_) {
       graphics_->finishedClustering(root_cluster_);
@@ -2211,6 +2214,36 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
   breakLargeFlatCluster(cluster_part_1);
 }
 
+// Traverse the physical hierarchy tree in a DFS manner (post-order)
+void HierRTLMP::fetchMixedLeaves(
+    Cluster* parent,
+    std::vector<std::vector<Cluster*>>& mixed_leaves)
+{
+  if (parent->getChildren().empty() || parent->getNumMacro() == 0) {
+    return;
+  }
+
+  std::vector<Cluster*> sister_mixed_leaves;
+
+  for (auto& child : parent->getChildren()) {
+    setInstProperty(child);
+    if (child->getNumMacro() > 0) {
+      if (child->getChildren().empty()) {
+        sister_mixed_leaves.push_back(child);
+      } else {
+        fetchMixedLeaves(child, mixed_leaves);
+      }
+    } else {
+      child->setClusterType(StdCellCluster);
+    }
+  }
+
+  // We push the leaves after finishing searching the children so
+  // that each vector of clusters represents the children of one
+  // parent.
+  mixed_leaves.push_back(sister_mixed_leaves);
+}
+
 // Break mixed leaves into standard-cell and hard-macro clusters.
 // Merge macros based on connection signature and footprint.
 // Based on types of designs, we support two types of breaking up:
@@ -2220,33 +2253,18 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
 //      A  ->        A
 //               |   |   |
 //               A1  A2  A3
-void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
+void HierRTLMP::breakMixedLeaves(
+    const std::vector<std::vector<Cluster*>>& mixed_leaves)
 {
-  if (root_cluster->getChildren().empty() || root_cluster->getNumMacro() == 0) {
-    return;
-  }
+  for (const std::vector<Cluster*>& sister_mixed_leaves : mixed_leaves) {
+    Cluster* parent = sister_mixed_leaves[0]->getParent();
 
-  // Traverse the physical hierarchy tree in a DFS manner (post-order)
-  std::vector<Cluster*> mixed_leaves;
-  for (auto& child : root_cluster->getChildren()) {
-    setInstProperty(child);
-    if (child->getNumMacro() > 0) {
-      if (child->getChildren().empty()) {
-        mixed_leaves.push_back(child);
-      } else {
-        breakMixedLeafCluster(child);
-      }
-    } else {
-      child->setClusterType(StdCellCluster);
+    for (Cluster* mixed_leaf : sister_mixed_leaves) {
+      breakMixedLeaf(mixed_leaf);
     }
-  }
 
-  for (auto& mixed_leaf : mixed_leaves) {
-    breakMixedLeaf(mixed_leaf);
+    setInstProperty(parent);
   }
-
-  // Set the inst property back
-  setInstProperty(root_cluster);
 }
 
 void HierRTLMP::breakMixedLeaf(Cluster* mixed_leaf)
