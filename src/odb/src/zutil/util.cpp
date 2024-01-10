@@ -48,15 +48,19 @@ using std::vector;
 
 RUDYCalculator::RUDYCalculator(dbBlock* block) : block_(block)
 {
-  gridBlock_ = block_->getDieArea();
+  if (gridBlock_.area() == 0) {
+    return;
+  }
   // TODO: Match the wire width with the paper definition
   wireWidth_ = block_->getTech()->findRoutingLayer(1)->getWidth();
 
   odb::dbTechLayer* tech_layer = block_->getTech()->findRoutingLayer(3);
   odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
+  if (track_grid == nullptr) {
+    return;
+  }
   int track_spacing, track_init, num_tracks;
-  tech_layer->getAverageTrackSpacing(
-      track_grid, track_spacing, track_init, num_tracks);
+  track_grid->getAverageTrackSpacing(track_spacing, track_init, num_tracks);
 
   int upper_rightX = gridBlock_.xMax();
   int upper_rightY = gridBlock_.yMax();
@@ -105,9 +109,51 @@ void RUDYCalculator::calculateRUDY()
   const int tileHeight = blockHeight / tileCntY_;
 
   for (auto net : block_->getNets()) {
-    // TODO: handle supply nets for routing congestion prediction.
     if (net->getSigType().isSupply()) {
-      continue;
+      for (odb::dbSWire* swire : net->getSWires()) {
+        for (odb::dbSBox* s : swire->getWires()) {
+          if (s->isVia()) {
+            continue;
+          } else {
+            odb::Rect wire_rect = s->getBox();
+
+            // Calculate the intersection range
+            const int minXIndex = std::max(
+                0, (wire_rect.xMin() - gridBlock_.xMin()) / tileWidth);
+            const int maxXIndex
+                = std::min(tileCntX_ - 1,
+                           (wire_rect.xMax() - gridBlock_.xMin()) / tileWidth);
+            const int minYIndex = std::max(
+                0, (wire_rect.yMin() - gridBlock_.yMin()) / tileHeight);
+            const int maxYIndex
+                = std::min(tileCntY_ - 1,
+                           (wire_rect.yMax() - gridBlock_.yMin()) / tileHeight);
+
+            // Iterate over the tiles in the calculated range
+            for (int x = minXIndex; x <= maxXIndex; ++x) {
+              for (int y = minYIndex; y <= maxYIndex; ++y) {
+                Tile& tile = getEditableTile(x, y);
+                const auto tileBox = tile.getRect();
+                if (wire_rect.overlaps(tileBox)) {
+                  const auto hpwl
+                      = static_cast<float>(tileBox.dx() + tileBox.dy());
+                  const auto wireArea = hpwl * wireWidth_;
+                  const auto obstr_congestion = wireArea / tileBox.area();
+                  const auto intersectArea
+                      = wire_rect.intersect(tileBox).area();
+                  const auto tileArea = tileBox.area();
+                  const auto tileObstrBoxRatio
+                      = static_cast<float>(intersectArea)
+                        / static_cast<float>(tileArea);
+                  const auto rudy
+                      = obstr_congestion * tileObstrBoxRatio * 100 * 2;
+                  tile.addRUDY(rudy);
+                }
+              }
+            }
+          }
+        }
+      }
     }
 
     const auto netBox = net->getTermBBox();

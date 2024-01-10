@@ -3910,6 +3910,14 @@ class dbTrackGrid : public dbObject
   static dbTrackGrid* create(dbBlock* block, dbTechLayer* layer);
 
   ///
+  /// Get the spacing between tracks for this grid.
+  /// If the layer has a multi pattern spacing, returns the average.
+  ///
+  void getAverageTrackSpacing(int& track_step,
+                              int& track_init,
+                              int& num_tracks);
+
+  ///
   /// Translate a database-id back to a pointer.
   ///
   static dbTrackGrid* getTrackGrid(dbBlock* block, uint oid);
@@ -7815,15 +7823,6 @@ class dbTechLayer : public dbObject
   /// Get the minimum spacing to a wide line.
   ///
   int getSpacing(int width, int length = 0);
-
-  ///
-  /// Get the spacing between tracks for this layer.
-  /// If the layer has a multi pattern spacing returns the average.
-  ///
-  void getAverageTrackSpacing(odb::dbTrackGrid* track_grid,
-                              int& track_step,
-                              int& track_init,
-                              int& num_tracks);
 
   ///
   /// The number of masks for this layer (aka double/triple patterning).

@@ -524,6 +524,9 @@ class RUDYCalculator
   void makeGrid();
   Tile& getEditableTile(int x, int y) { return grid_.at(x).at(y); }
   void processMacroObstruction(odb::dbMaster* macro, odb::dbInst* instance);
+  void processTilesIntersection(const odb::Rect obstruction_rect,
+                                const int tileWidth,
+                                const int);
 
   dbBlock* block_;
   odb::Rect gridBlock_;

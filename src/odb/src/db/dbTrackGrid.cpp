@@ -246,6 +246,43 @@ void dbTrackGrid::getGridPatternY(int i,
   step = grid->_y_step[i];
 }
 
+void dbTrackGrid::getAverageTrackSpacing(int& track_step,
+                                         int& track_init,
+                                         int& num_tracks)
+{
+  auto layer = getTechLayer();
+  if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+    if (getNumGridPatternsY() == 1) {
+      getGridPatternY(0, track_init, num_tracks, track_step);
+    } else if (getNumGridPatternsY() > 1) {
+      _dbTrackGrid* track_grid = (_dbTrackGrid*) this;
+      track_grid->getAverageTrackPattern(
+          false, track_init, num_tracks, track_step);
+    } else {
+      getImpl()->getLogger()->error(utl::ODB,
+                                    414,
+                                    "Horizontal tracks for layer {} not found.",
+                                    layer->getName());
+    }
+  } else if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+    if (getNumGridPatternsX() == 1) {
+      getGridPatternX(0, track_init, num_tracks, track_step);
+    } else if (getNumGridPatternsX() > 1) {
+      _dbTrackGrid* track_grid = (_dbTrackGrid*) this;
+      track_grid->getAverageTrackPattern(
+          true, track_init, num_tracks, track_step);
+    } else {
+      getImpl()->getLogger()->error(utl::ODB,
+                                    415,
+                                    "Vertical tracks for layer {} not found.",
+                                    layer->getName());
+    }
+  } else {
+    getImpl()->getLogger()->error(
+        utl::ODB, 416, "Layer {} has invalid direction.", layer->getName());
+  }
+}
+
 dbTrackGrid* dbTrackGrid::create(dbBlock* block_, dbTechLayer* layer_)
 {
   _dbBlock* block = (_dbBlock*) block_;
@@ -270,5 +307,25 @@ void dbTrackGrid::destroy(dbTrackGrid* grid_)
   dbProperty::destroyProperties(grid);
   block->_track_grid_tbl->destroy(grid);
 }
+
+// User Code Begin PrivateMethods
+void _dbTrackGrid::getAverageTrackPattern(bool is_x,
+                                          int& track_init,
+                                          int& num_tracks,
+                                          int& track_step)
+{
+  std::vector<int> coordinates;
+  dbTrackGrid* track_grid = (dbTrackGrid*) this;
+  if (is_x) {
+    track_grid->getGridX(coordinates);
+  } else {
+    track_grid->getGridY(coordinates);
+  }
+  const int span = coordinates.back() - coordinates.front();
+  track_init = coordinates.front();
+  track_step = std::ceil((float) span / coordinates.size());
+  num_tracks = coordinates.size();
+}
+// User Code End PrivateMethods
 
 }  // namespace odb
