@@ -66,7 +66,7 @@ static vector<Neighbors> get_nearest_neighbors(const vector<Point>& pts)
   thread_local static vector<int> data;
   data.clear();
 
-  const int pt_count = pts.size();
+  const size_t pt_count = pts.size();
 
   vector<Neighbors> neighbors(pt_count);
 
@@ -76,22 +76,20 @@ static vector<Neighbors> get_nearest_neighbors(const vector<Point>& pts)
   // therefore not a nearest neighbor.  This depends on processing the
   // nodes in order of increasing y distance.
   data.reserve(pt_count * 5);
-  data.resize(pt_count, std::numeric_limits<int>::max());
-  data.resize(pt_count * 2, std::numeric_limits<int>::min());
-  data.resize(pt_count * 3, std::numeric_limits<int>::max());
+  data.resize(pt_count * 2, std::numeric_limits<int>::max());
   data.resize(pt_count * 4, std::numeric_limits<int>::min());
   data.resize(pt_count * 5);
-  int* const ur = &data[0];
-  int* const ul = &data[pt_count];
-  int* const lr = &data[pt_count * 2];
+  int* const ur = &data[0];  // NOLINT
+  int* const lr = &data[pt_count];
+  int* const ul = &data[pt_count * 2];
   int* const ll = &data[pt_count * 3];
   int* const sorted = &data[pt_count * 4];
 
   // sort in y-axis
   std::iota(sorted, sorted + pt_count, 0);
   std::stable_sort(sorted, sorted + pt_count, [&pts](int i, int j) {
-      return std::make_pair(pts[i].getY(), pts[i].getX())
-      < std::make_pair(pts[j].getY(), pts[j].getX());
+    return std::make_pair(pts[i].getY(), pts[i].getX())
+           < std::make_pair(pts[j].getY(), pts[j].getX());
   });
 
   // Compute neighbors going from bottom to top in Y
