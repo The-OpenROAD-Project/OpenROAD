@@ -2260,24 +2260,7 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
     std::vector<HardMacro*> hard_macros = mixed_leaf->getHardMacros();
     std::vector<Cluster*> macro_clusters;
 
-    // createOneMacroClusterForEachMacro
-    for (auto& hard_macro : hard_macros) {
-      std::string cluster_name = hard_macro->getName();
-      Cluster* single_macro_cluster
-          = new Cluster(cluster_id_, cluster_name, logger_);
-
-      single_macro_cluster->addLeafMacro(hard_macro->getInst());
-
-      setInstProperty(single_macro_cluster);
-      setClusterMetrics(single_macro_cluster);
-
-      cluster_map_[cluster_id_++] = single_macro_cluster;
-
-      // modify the physical hierachy tree
-      single_macro_cluster->setParent(parent);
-      parent->addChild(single_macro_cluster);
-      macro_clusters.push_back(single_macro_cluster);
-    }
+    createOneClusterForEachMacro(parent, hard_macros, macro_clusters);
 
     // classifyMacrosBasedOnSize
     std::vector<int> macro_size_class(hard_macros.size(), -1);
@@ -2410,6 +2393,30 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
   }
   // Set the inst property back
   setInstProperty(root_cluster);
+}
+
+void HierRTLMP::createOneClusterForEachMacro(
+    Cluster* parent,
+    const std::vector<HardMacro*>& hard_macros,
+    std::vector<Cluster*>& macro_clusters)
+{
+  for (auto& hard_macro : hard_macros) {
+    std::string cluster_name = hard_macro->getName();
+    Cluster* single_macro_cluster
+        = new Cluster(cluster_id_, cluster_name, logger_);
+
+    single_macro_cluster->addLeafMacro(hard_macro->getInst());
+
+    setInstProperty(single_macro_cluster);
+    setClusterMetrics(single_macro_cluster);
+
+    cluster_map_[cluster_id_++] = single_macro_cluster;
+
+    // modify the physical hierachy tree
+    single_macro_cluster->setParent(parent);
+    parent->addChild(single_macro_cluster);
+    macro_clusters.push_back(single_macro_cluster);
+  }
 }
 
 // Map all the macros into their HardMacro objects for all the clusters
