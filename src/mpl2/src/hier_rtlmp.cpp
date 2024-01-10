@@ -2244,15 +2244,6 @@ void HierRTLMP::fetchMixedLeaves(
   mixed_leaves.push_back(sister_mixed_leaves);
 }
 
-// Break mixed leaves into standard-cell and hard-macro clusters.
-// Merge macros based on connection signature and footprint.
-// Based on types of designs, we support two types of breaking up:
-// Suppose current cluster is A.
-//   1) Replace A by A1, A2, A3
-//   2) Type 2:  Create a subtree:
-//      A  ->        A
-//               |   |   |
-//               A1  A2  A3
 void HierRTLMP::breakMixedLeaves(
     const std::vector<std::vector<Cluster*>>& mixed_leaves)
 {
@@ -2267,6 +2258,14 @@ void HierRTLMP::breakMixedLeaves(
   }
 }
 
+// Break mixed leaf into standard-cell and hard-macro clusters.
+// Merge macros based on connection signature and footprint.
+// Based on types of designs, we support two types of breaking up:
+//   1) Replace cluster A by A1, A2, A3
+//   2) Create a subtree:
+//      A  ->        A
+//               |   |   |
+//               A1  A2  A3
 void HierRTLMP::breakMixedLeaf(Cluster* mixed_leaf)
 {
   Cluster* parent = mixed_leaf;
@@ -2294,7 +2293,7 @@ void HierRTLMP::breakMixedLeaf(Cluster* mixed_leaf)
 
   std::vector<int> macro_class(hard_macros.size(), -1);
   // Use both size and connection signature classifications to group
-  // single-macro macro clusters into the same cluster.
+  // single-macro macro clusters into the same macro cluster.
   groupSingleMacroClusters(
       macro_clusters, size_class, signature_class, macro_class);
 
