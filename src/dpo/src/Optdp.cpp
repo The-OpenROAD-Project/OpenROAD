@@ -706,14 +706,12 @@ void Optdp::createArchitecture()
       skip_list[site->getHeight()].insert(site->getName());
       continue;
     }
-    int originX;
-    int originY;
-    row->getOrigin(originX, originY);
+    odb::Point origin = row->getOrigin();
 
     Architecture::Row* archRow = arch_->createAndAddRow();
 
-    archRow->setSubRowOrigin(originX);
-    archRow->setBottom(originY);
+    archRow->setSubRowOrigin(origin.x());
+    archRow->setBottom(origin.y());
     archRow->setSiteSpacing(row->getSpacing());
     archRow->setNumSites(row->getSiteCount());
     archRow->setSiteWidth(site->getWidth());

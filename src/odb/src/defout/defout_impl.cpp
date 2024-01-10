@@ -249,9 +249,8 @@ void defout_impl::writeRows(dbBlock* block)
 
   for (itr = rows.begin(); itr != rows.end(); ++itr) {
     dbRow* row = *itr;
-    int x, y;
     std::string n = row->getName();
-    row->getOrigin(x, y);
+    Point origin = row->getOrigin();
     int s = row->getSpacing();
     int c = row->getSiteCount();
     dbSite* site = row->getSite();
@@ -262,8 +261,8 @@ void defout_impl::writeRows(dbBlock* block)
             "ROW %s %s %d %d %s ",
             n.c_str(),
             sn.c_str(),
-            defdist(x),
-            defdist(y),
+            defdist(origin.x()),
+            defdist(origin.y()),
             o);
 
     if (row->getDirection() == dbRowDir::VERTICAL)
@@ -392,8 +391,7 @@ void defout_impl::writeVia(dbVia* via)
     std::string rname = rule->getName();
     fprintf(_out, " + VIARULE %s", rname.c_str());
 
-    dbViaParams P;
-    via->getViaParams(P);
+    const dbViaParams P = via->getViaParams();
 
     fprintf(_out,
             " + CUTSIZE %d %d ",

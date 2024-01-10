@@ -549,18 +549,12 @@ void RepairAntennas::setInstsPlacementStatus(
 
 odb::Rect RepairAntennas::getInstRect(odb::dbInst* inst, odb::dbITerm* iterm)
 {
-  int min = std::numeric_limits<int>::min();
-  int max = std::numeric_limits<int>::max();
-
-  int x, y;
-  inst->getOrigin(x, y);
-  odb::Point origin = odb::Point(x, y);
-  odb::dbTransform transform(inst->getOrient(), origin);
+  const odb::dbTransform transform = inst->getTransform();
 
   odb::Rect inst_rect;
 
   if (inst->getMaster()->isBlock()) {
-    inst_rect = odb::Rect(max, max, min, min);
+    inst_rect.mergeInit();
     odb::dbMTerm* mterm = iterm->getMTerm();
     if (mterm != nullptr) {
       for (odb::dbMPin* mterm_pin : mterm->getMPins()) {
