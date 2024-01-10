@@ -13,6 +13,9 @@ FastRoute4.1 algorithm.
 
 ### Global Route
 
+This command performs global routing with the option to use a `guide_file`.
+You may also choose to use incremental global routing using `-start_incremental`.
+
 ```tcl
 global_route 
     [-guide_file out_file]
@@ -44,6 +47,9 @@ global_route
 
 ### Set Routing Layers
 
+This command sets the minimum and maximum routing layers for signal and clock nets.
+Example: `set_routing_layers -signal Metal2-Metal10 -clock Metal6-Metal9`
+
 ```tcl
 set_routing_layers 
     [-signal min-max]
@@ -57,9 +63,11 @@ set_routing_layers
 | `-signal` | Set the min and max routing signal layer (names) in this format "%s-%s". |
 | `-clock` | Set the min and max routing clock layer (names) in this format "%s-%s". |
 
-Example: `set_routing_layers -signal Metal2-Metal10 -clock Metal6-Metal9`
-
 ### Set Macro Extension
+
+This command sets the halo (in terms of GCells) along the boundaries of macros.
+A `GCell` is typically defined in terms of `Mx` routing tracks.
+Example: `set_macro_extension 2`
 
 ```tcl
 set_macro_extension extension
@@ -69,11 +77,11 @@ set_macro_extension extension
 
 | Argument Name | Description | 
 | ----- | ----- |
-| `extension` | Number of `GCells` added to the blockage boundaries from macros. A `GCell` is typically defined in terms of `Mx` routing tracks.  The default `GCell` size is 15 `M3` pitches. | 
-
-Example: `set_macro_extension 2`
+| `extension` | Number of `GCells` added to the blockage boundaries from macros. The default `GCell` size is 15 `M3` pitches. |
 
 ### Set Pin Offset
+
+This command sets the pin offset distance.
 
 ```tcl
 set_pin_offset offset 
@@ -92,6 +100,14 @@ adjustments in the routing layers of the design.  Such adjustments reduce the nu
 routing tracks that the global router assumes to exist. This promotes the spreading of routing
 and reduces peak congestion, to reduce challenges for detailed routing.
 
+You can set adjustment for a
+specific layer, e.g., `set_global_routing_layer_adjustment Metal4 0.5` reduces
+the routing resources of routing layer `Metal4` by 50%.  You can also set adjustment
+for all layers at once using `*`, e.g., `set_global_routing_layer_adjustment * 0.3` reduces the routing resources of all routing layers by 30%.  And, you can
+also set resource adjustment for a layer range, e.g.: `set_global_routing_layer_adjustment
+Metal4-Metal8 0.3` reduces the routing resources of routing layers  `Metal4`,
+`Metal5`, `Metal6`, `Metal7` and `Metal8` by 30%.
+
 ```tcl
 set_global_routing_layer_adjustment layer adjustment
 ```
@@ -103,15 +119,10 @@ set_global_routing_layer_adjustment layer adjustment
 | `layer` | Integer for the layer number (e.g. for M1 you would use 1). |
 | `adjustment` | Float indicating the percentage reduction of each edge in the specified layer. |
 
-You can set adjustment for a
-specific layer, e.g., `set_global_routing_layer_adjustment Metal4 0.5` reduces
-the routing resources of routing layer `Metal4` by 50%.  You can also set adjustment
-for all layers at once using `*`, e.g., `set_global_routing_layer_adjustment * 0.3` reduces the routing resources of all routing layers by 30%.  And, you can
-also set resource adjustment for a layer range, e.g.: `set_global_routing_layer_adjustment
-Metal4-Metal8 0.3` reduces the routing resources of routing layers  `Metal4`,
-`Metal5`, `Metal6`, `Metal7` and `Metal8` by 30%.
 
 ### Set Routing Alpha
+
+This command sets routing alphas for a given net `net_name`.
 
 By default the global router uses heuristic rectilinear Steiner minimum
 trees (RSMTs) as an initial basis to construct route guides. An RSMT
@@ -125,6 +136,8 @@ and 1.0. When alpha is 0.0 the net topology minimizes total wirelength
 (i.e. capacitance).  When alpha is 1.0 it minimizes longest path between
 the driver and loads (i.e., maximum resistance).  Typical values are
 0.4-0.8. You can call it multiple times for different nets.
+
+Example: `set_routing_alpha -net clk 0.3` sets the alpha value of 0.3 for net *clk*.
 
 ```tcl
 set_routing_alpha 
@@ -143,9 +156,10 @@ set_routing_alpha
 | `-min_hpwl` | Set the minimum half-perimetere wirelength (microns). | 
 | `alpha` | Float between 0 and 1 describing the trade-off between wirelength and path depth. |
 
-Example: `set_routing_alpha -net clk 0.3` sets the alpha value of 0.3 for net *clk*.
-
 ### Set Global Routing Region Adjustment
+
+Set global routing region adjustment.
+Example: `set_global_routing_region_adjustment {1.5 2 20 30.5} -layer Metal4 -adjustment 0.7`
 
 ```tcl
 set_global_routing_region_adjustment
@@ -162,13 +176,15 @@ set_global_routing_region_adjustment
 | `-layer` | Integer for the layer number (e.g. for M1 you would use 1). |
 | `-adjustment` | Float indicating the percentage reduction of each edge in the specified layer. |
 
-Example: `set_global_routing_region_adjustment {1.5 2 20 30.5} -layer Metal4 -adjustment 0.7`
+### Set Global Routing Random
 
-### Set Global Routing Randomness
+The command randomizes global routing by shuffling the order of the nets
+and randomly subtracts or adds to the capacities of a random set of edges. 
 
-The randomized global routing shuffles the
-order of the nets and randomly subtracts or adds to the capacities of
-a random set of edges. 
+Example:
+`set_global_routing_random -seed 42 \
+  -capacities_perturbation_percentage 50 \
+  -perturbation_amount 2`
 
 ```tcl
 set_global_routing_random 
@@ -185,12 +201,7 @@ set_global_routing_random
 | `-capacities_perturbation_percentage` | Sets the percentage of edges whose capacities are perturbed. By default, the edge capacities are perturbed by adding or subtracting 1 (track) from the original capacity.  |
 | `-perturbation_amount` | Sets the perturbation value of the edge capacities. This option is only meaningful when `-capacities_perturbation_percentage` is used. |
 
-Example:
-`set_global_routing_random -seed 42 \
-  -capacities_perturbation_percentage 50 \
-  -perturbation_amount 2`
-
-### Set Specific Nets to Route
+### Set Nets to Route
 
 The `set_nets_to_route` command defines a list of nets to route. Only the nets
 defined in this command are routed, leaving the remaining nets without any
@@ -216,21 +227,6 @@ iteration to repair antennas. Filler instances added by the
 `filler_placement` command should NOT be in the database when
 `repair_antennas` is called. 
 
-```tcl
-repair_antennas 
-    [diode_cell]
-    [-iterations iterations]
-    [-ratio_margin margin]
-```
-
-#### Options
-
-| Switch Name | Description |
-| ----- | ----- |
-| `diode_cell` | Diode cell to fix antenna violations. |
-| `-iterations` | Number of iterations. The default value is `1`, and the allowed values are integers `[0, MAX_INT]`. |
-| `-ratio_margin` | Add a margin to the antenna ratios. The default value is `0`, and the allowed values are integers `[0, 100]`. |
-
 See LEF/DEF 5.8 Language Reference, Appendix C, "Calculating and
 Fixing Process Antenna Violations" for a [description](coriolis.lip6.fr/doc/lefdef/lefdefref/lefdefref.pdf) 
 of antenna violations.
@@ -248,22 +244,42 @@ diodes are inserted. The following warning message will be reported:
 [WARNING GRT-0243] Unable to repair antennas on net with diodes.
 ```
 
-### Write Global Routing Guides
+```tcl
+repair_antennas 
+    [diode_cell]
+    [-iterations iterations]
+    [-ratio_margin margin]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `diode_cell` | Diode cell to fix antenna violations. |
+| `-iterations` | Number of iterations. The default value is `1`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-ratio_margin` | Add a margin to the antenna ratios. The default value is `0`, and the allowed values are integers `[0, 100]`. |
+
+### Write Guides
+
+This command writes global routing guides, which can be used as input 
+for global routing.
+
+Example: `write_guides route.guide`.
 
 ```tcl
 write_guides file_name
 ```
 
+#### Options
+
 | Switch Name | Description |
 | ----- | ----- |
 | `file_name` | Guide file name. |
 
-Example: `write_guides route.guide`.
+### Estimate Parasitics
 
-### Estimate Global Routing Parasitics
-
-To estimate RC parasitics based on global route results, use the `-global_routing`
-option of the `estimate_parasitics` command.
+This command estimates RC parasitics based on global route results
+by using the `-global_routing` option of the `estimate_parasitics` command.
 
 ```{note}
 To see the function definition for `estimate_parasitics`, refer to 
@@ -274,7 +290,7 @@ To see the function definition for `estimate_parasitics`, refer to
 estimate_parasitics -global_routing
 ```
 
-### Plot Global Routing Guides
+### Draw Route Guides
 
 The `draw_route_guides` command plots the route guides for a set of nets.
 To erase the route guides from the GUI, pass an empty list to this command:
@@ -293,12 +309,14 @@ draw_route_guides
 | `net_names` | Tcl list of set of nets (e.g. `{net1, net2}`). |
 | `-show_pin_locations` | Draw circles for the pin positions on the routing grid. |
 
-### Report Wirelength
+### Report Wire Length
 
 The `report_wire_length` command reports the wire length of the nets. Use the `-global_route`
 and the `-detailed_route` flags to report the wire length from global and detailed routing,
 respectively. If none of these flags are used, the tool will identify the state of the design
 and report the wire length accordingly.
+
+Example: `report_wire_length -net {clk net60} -global_route -detailed_route -verbose -file out.csv`
 
 ```tcl
 report_wire_length 
@@ -319,9 +337,7 @@ report_wire_length
 | `-detailed_route` | Report the wire length of the detailed routing. |
 | `-verbose` | This flag enables the full reporting of the layer-wise wirelength information. |
 
-Example: `report_wire_length -net {clk net60} -global_route -detailed_route -verbose -file out.csv`
-
-### Debug Mode
+### Global Route Debug
 
 The `global_route_debug` command allows you to start a debug mode to view the status of the Steiner Trees.
 It also allows you to dump the input positions for the Steiner tree creation of a net.

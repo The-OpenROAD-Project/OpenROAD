@@ -10,7 +10,8 @@ import datetime
 
 # list of edited docs
 SRC_DIR = "./md/man2"
-tools = ["dpl"]#"dft", "cts", "ant", "ppl"]
+# problematic: drt, gpl, grt
+tools = ["gui"]#"fin", "dpl", "dft", "cts", "ant", "ppl"]
 docs = [f"{SRC_DIR}/{tool}.txt" for tool in tools]
 
 # identify key section and stored in ManPage class. 
