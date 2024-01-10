@@ -2230,12 +2230,12 @@ void io::Parser::setMasters(odb::dbDatabase* db)
       std::vector<frBoundary> bounds;
       frBoundary bound;
       std::vector<Point> points;
-      points.push_back(origin);
-      points.push_back(Point(sizeX, origin.y()));
-      points.push_back(Point(sizeX, sizeY));
-      points.push_back(Point(origin.x(), sizeY));
+      points.emplace_back(origin);
+      points.emplace_back(sizeX, origin.y());
+      points.emplace_back(sizeX, sizeY);
+      points.emplace_back(origin.x(), sizeY);
       bound.setPoints(points);
-      bounds.push_back(bound);
+      bounds.emplace_back(bound);
       tmpMaster->setBoundaries(bounds);
       tmpMaster->setMasterType(master->getType());
 
