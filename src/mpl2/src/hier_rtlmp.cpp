@@ -2331,6 +2331,47 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
   setInstProperty(root_cluster);
 }
 
+// Map all the macros into their HardMacro objects for all the clusters
+void HierRTLMP::mapMacroInCluster2HardMacro(Cluster* cluster)
+{
+  if (cluster->getClusterType() == StdCellCluster) {
+    return;
+  }
+
+  std::vector<HardMacro*> hard_macros;
+  for (const auto& macro : cluster->getLeafMacros()) {
+    hard_macros.push_back(hard_macro_map_[macro]);
+  }
+  for (const auto& module : cluster->getDbModules()) {
+    getHardMacros(module, hard_macros);
+  }
+  cluster->specifyHardMacros(hard_macros);
+}
+
+// Get all the hard macros in a logical module
+void HierRTLMP::getHardMacros(odb::dbModule* module,
+                              std::vector<HardMacro*>& hard_macros)
+{
+  for (odb::dbInst* inst : module->getInsts()) {
+    const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
+    if (liberty_cell == nullptr) {
+      continue;
+    }
+    odb::dbMaster* master = inst->getMaster();
+    // check if the instance is a pad or empty block (such as marker)
+    if (master->isPad() || master->isCover()) {
+      continue;
+    }
+    if (master->isBlock()) {
+      hard_macros.push_back(hard_macro_map_[inst]);
+    }
+  }
+
+  for (odb::dbModInst* inst : module->getChildren()) {
+    getHardMacros(inst->getMaster(), hard_macros);
+  }
+}
+
 void HierRTLMP::createOneClusterForEachMacro(
     Cluster* parent,
     const std::vector<HardMacro*>& hard_macros,
@@ -2434,47 +2475,6 @@ void HierRTLMP::groupSingleMacroClusters(
         }
       }
     }
-  }
-}
-
-// Map all the macros into their HardMacro objects for all the clusters
-void HierRTLMP::mapMacroInCluster2HardMacro(Cluster* cluster)
-{
-  if (cluster->getClusterType() == StdCellCluster) {
-    return;
-  }
-
-  std::vector<HardMacro*> hard_macros;
-  for (const auto& macro : cluster->getLeafMacros()) {
-    hard_macros.push_back(hard_macro_map_[macro]);
-  }
-  for (const auto& module : cluster->getDbModules()) {
-    getHardMacros(module, hard_macros);
-  }
-  cluster->specifyHardMacros(hard_macros);
-}
-
-// Get all the hard macros in a logical module
-void HierRTLMP::getHardMacros(odb::dbModule* module,
-                              std::vector<HardMacro*>& hard_macros)
-{
-  for (odb::dbInst* inst : module->getInsts()) {
-    const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-    if (liberty_cell == nullptr) {
-      continue;
-    }
-    odb::dbMaster* master = inst->getMaster();
-    // check if the instance is a pad or empty block (such as marker)
-    if (master->isPad() || master->isCover()) {
-      continue;
-    }
-    if (master->isBlock()) {
-      hard_macros.push_back(hard_macro_map_[inst]);
-    }
-  }
-
-  for (odb::dbModInst* inst : module->getChildren()) {
-    getHardMacros(inst->getMaster(), hard_macros);
   }
 }
 

@@ -204,6 +204,7 @@ class HierRTLMP
   void updateSubTree(Cluster* parent);
   void breakLargeFlatCluster(Cluster* parent);
   void breakMixedLeafCluster(Cluster* root_cluster);
+	void mapMacroInCluster2HardMacro(Cluster* cluster);
   void createOneClusterForEachMacro(Cluster* parent,
                                     const std::vector<HardMacro*>& hard_macros,
                                     std::vector<Cluster*>& macro_clusters);
@@ -216,7 +217,6 @@ class HierRTLMP
                                 const std::vector<int>& size_class,
                                 const std::vector<int>& signature_class,
                                 std::vector<int>& macro_class);
-  void mapMacroInCluster2HardMacro(Cluster* cluster);
 
   // Coarse Shaping
   void runCoarseShaping();
