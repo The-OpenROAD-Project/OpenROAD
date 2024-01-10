@@ -2285,13 +2285,7 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
     if (parent == mixed_leaf) {
       addStdCellClusterToSubTree(parent, mixed_leaf, virtual_conn_clusters);
     } else {
-      // In this case, we do not to modify the physical hierarchy tree
-      mixed_leaf->clearLeafMacros();
-      mixed_leaf->setClusterType(StdCellCluster);
-
-      setClusterMetrics(mixed_leaf);
-
-      virtual_conn_clusters.push_back(mixed_leaf->getId());
+      replaceByStdCellCluster(mixed_leaf, virtual_conn_clusters);
     }
 
     // Deal with macro clusters
@@ -2484,6 +2478,18 @@ void HierRTLMP::addStdCellClusterToSubTree(
   std_cell_cluster->setParent(parent);
   parent->addChild(std_cell_cluster);
   virtual_conn_clusters.push_back(std_cell_cluster->getId());
+}
+
+// We don't modify the physical hierarchy when spliting by replacement
+void HierRTLMP::replaceByStdCellCluster(Cluster* mixed_leaf,
+                                        std::vector<int>& virtual_conn_clusters)
+{
+  mixed_leaf->clearLeafMacros();
+  mixed_leaf->setClusterType(StdCellCluster);
+
+  setClusterMetrics(mixed_leaf);
+
+  virtual_conn_clusters.push_back(mixed_leaf->getId());
 }
 
 // Print Physical Hierarchy tree in a DFS manner
