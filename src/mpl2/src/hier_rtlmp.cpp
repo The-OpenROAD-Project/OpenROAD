@@ -2283,22 +2283,7 @@ void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
     std::vector<int> virtual_conn_clusters;
 
     if (parent == mixed_leaf) {
-      std::string std_cell_cluster_name = mixed_leaf->getName();
-      Cluster* std_cell_cluster
-          = new Cluster(cluster_id_, std_cell_cluster_name, logger_);
-
-      std_cell_cluster->copyInstances(*mixed_leaf);
-      std_cell_cluster->clearLeafMacros();
-      std_cell_cluster->setClusterType(StdCellCluster);
-
-      setClusterMetrics(std_cell_cluster);
-
-      cluster_map_[cluster_id_++] = std_cell_cluster;
-
-      // modify the physical hierachy tree
-      std_cell_cluster->setParent(parent);
-      parent->addChild(std_cell_cluster);
-      virtual_conn_clusters.push_back(std_cell_cluster->getId());
+      addStdCellClusterToSubTree(parent, mixed_leaf, virtual_conn_clusters);
     } else {
       // In this case, we do not to modify the physical hierarchy tree
       mixed_leaf->clearLeafMacros();
@@ -2476,6 +2461,29 @@ void HierRTLMP::groupSingleMacroClusters(
       }
     }
   }
+}
+
+void HierRTLMP::addStdCellClusterToSubTree(
+    Cluster* parent,
+    Cluster* mixed_leaf,
+    std::vector<int>& virtual_conn_clusters)
+{
+  std::string std_cell_cluster_name = mixed_leaf->getName();
+  Cluster* std_cell_cluster
+      = new Cluster(cluster_id_, std_cell_cluster_name, logger_);
+
+  std_cell_cluster->copyInstances(*mixed_leaf);
+  std_cell_cluster->clearLeafMacros();
+  std_cell_cluster->setClusterType(StdCellCluster);
+
+  setClusterMetrics(std_cell_cluster);
+
+  cluster_map_[cluster_id_++] = std_cell_cluster;
+
+  // modify the physical hierachy tree
+  std_cell_cluster->setParent(parent);
+  parent->addChild(std_cell_cluster);
+  virtual_conn_clusters.push_back(std_cell_cluster->getId());
 }
 
 // Print Physical Hierarchy tree in a DFS manner
