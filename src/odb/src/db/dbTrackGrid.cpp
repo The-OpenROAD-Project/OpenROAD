@@ -44,6 +44,7 @@
 #include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
+#include <iostream>
 
 namespace odb {
 
@@ -251,6 +252,15 @@ void dbTrackGrid::getAverageTrackSpacing(int& track_step,
                                          int& num_tracks)
 {
   auto layer = getTechLayer();
+  if(layer == nullptr) {
+    std::cout<<"layer is empty!"<<std::endl;
+    getImpl()->getLogger()->error(utl::ODB,
+                              418,
+                              "Layer is empty."
+                              );
+    return;
+  }
+  std::cout<<"layer: "<<layer->getName()<<std::endl;
   if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
     if (getNumGridPatternsY() == 1) {
       getGridPatternY(0, track_init, num_tracks, track_step);

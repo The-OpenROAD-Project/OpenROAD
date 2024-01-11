@@ -526,7 +526,8 @@ class RUDYCalculator
   void processMacroObstruction(odb::dbMaster* macro, odb::dbInst* instance);
   void processTilesIntersection(const odb::Rect obstruction_rect,
                                 const int tileWidth,
-                                const int);
+                                const int tileHeight,
+                                const int net_per_tile);
 
   dbBlock* block_;
   odb::Rect gridBlock_;
