@@ -40,7 +40,6 @@
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "utl/Logger.h"
-#include <iostream>
 
 namespace odb {
 
@@ -49,34 +48,26 @@ using std::vector;
 
 RUDYCalculator::RUDYCalculator(dbBlock* block) : block_(block)
 {
-  std::cout<<"hey0!"<<std::endl;
-//  if (gridBlock_.area() == 0) {
-//    std::cout<<"gridBlock_.area() == 0!"<<std::endl;
-//    return;
-//  }
-  std::cout<<"hey00!"<<std::endl;
+  gridBlock_ = block_->getDieArea();
+  if (gridBlock_.area() == 0) {
+    return;
+  }
   // TODO: Match the wire width with the paper definition
   wireWidth_ = block_->getTech()->findRoutingLayer(1)->getWidth();
 
   odb::dbTechLayer* tech_layer = block_->getTech()->findRoutingLayer(3);
   odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
   if (track_grid == nullptr) {
-    std::cout<<"track grid is nullptr!"<<std::endl;
     return;
   }
-  std::cout<<"hey000!"<<std::endl;
   int track_spacing, track_init, num_tracks;
   track_grid->getAverageTrackSpacing(track_spacing, track_init, num_tracks);
-  std::cout<<"WTF!"<<std::endl;
   int upper_rightX = gridBlock_.xMax();
   int upper_rightY = gridBlock_.yMax();
   int tile_size = pitches_in_tile_ * track_spacing;
-  std::cout<<"track_spacing:"<<track_spacing<<std::endl;
   int x_grids = upper_rightX / tile_size;
   int y_grids = upper_rightY / tile_size;
-  std::cout<<"gridBlock_, x_grids, y_grids:"<<gridBlock_<<","<< x_grids<<","<< y_grids<<std::endl;
   setGridConfig(gridBlock_, x_grids, y_grids);
-  std::cout<<"WTF2!"<<std::endl;
 }
 
 void RUDYCalculator::setGridConfig(odb::Rect block, int tileCntX, int tileCntY)
@@ -117,10 +108,8 @@ void RUDYCalculator::calculateRUDY()
   const int tile_width = block_width / tileCntX_;
   const int tile_height = block_height / tileCntY_;
 
-  std::cout<<"hey!"<<std::endl;
   for (auto net : block_->getNets()) {
     if (!net->getSigType().isSupply()) {
-      std::cout<<"hey2!"<<std::endl;
       const auto netBox = net->getTermBBox();
       const auto netArea = netBox.area();
       if (netArea == 0) {
@@ -157,7 +146,6 @@ void RUDYCalculator::calculateRUDY()
         }
       }
     } else {
-      std::cout<<"hey3!"<<std::endl;
       for (odb::dbSWire* swire : net->getSWires()) {
         for (odb::dbSBox* s : swire->getWires()) {
           if (s->isVia()) {
