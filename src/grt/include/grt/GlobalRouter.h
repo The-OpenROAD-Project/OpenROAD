@@ -178,6 +178,9 @@ class GlobalRouter : public ant::GlobalRouteSource
   void setPinOffset(int pin_offset);
   int getMinRoutingLayer() const { return min_routing_layer_; }
 
+  void report_inst_count();
+  std::string getInstanceType(odb::dbInst* inst) const;
+
   // flow functions
   void readGuides(const char* file_name);
   void loadGuidesFromDB();

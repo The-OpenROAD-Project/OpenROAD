@@ -54,6 +54,10 @@ namespace utl {
 class Logger;
 }
 
+namespace sta {
+class dbSta;
+}  // namespace sta
+
 namespace odb {
 
 class dbShape;
@@ -3182,6 +3186,8 @@ class dbInst : public dbObject
   void setPinAccessIdx(uint idx);
 
   uint getPinAccessIdx() const;
+
+  std::string getInstanceType();
 
   ///
   /// Create a new instance.

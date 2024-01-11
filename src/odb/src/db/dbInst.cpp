@@ -63,6 +63,10 @@
 #include "dbTable.hpp"
 #include "dbTransform.h"
 #include "utl/Logger.h"
+//#include "ord/OpenRoad.hh"
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
+#include "sta/Liberty.hh"
 
 namespace odb {
 
@@ -1593,6 +1597,109 @@ dbITerm* dbInst::getFirstOutput()
   getImpl()->getLogger()->warn(
       utl::ODB, 47, "instance {} has no output pin", getConstName());
   return nullptr;
+}
+
+std::string dbInst::getInstanceType()
+{
+  //const auto sta_ = ord::OpenRoad::openRoad()->getSta();
+  odb::dbMaster* master = getMaster();
+  const auto master_type = master->getType();
+  const auto source_type = getSourceType();
+  if (master->isBlock()) {
+    return "Macro";
+  }
+  if (master->isPad()) {
+    if (master_type == odb::dbMasterType::PAD_INPUT) {
+      return "Input pad";
+    }
+    if (master_type == odb::dbMasterType::PAD_OUTPUT) {
+      return "Output pad";
+    }
+    if (master_type == odb::dbMasterType::PAD_INOUT) {
+      return "Input/output pad";
+    }
+    if (master_type == odb::dbMasterType::PAD_POWER) {
+      return "Power pad";
+    }
+    if (master_type == odb::dbMasterType::PAD_SPACER) {
+      return "Pad spacer";
+    }
+    if (master_type == odb::dbMasterType::PAD_AREAIO) {
+      return "Area IO";
+    }
+    return "Pad";
+  }
+  if (master->isEndCap()) {
+    return "Endcap";
+  }
+  if (master->isFiller()) {
+    return "Fill";
+  }
+  if (master_type == odb::dbMasterType::CORE_WELLTAP) {
+    return "Tapcell";
+  }
+  if (master->isCover()) {
+    if (master_type == odb::dbMasterType::COVER_BUMP) {
+      return "Bump";
+    }
+    return "Cover";
+  }
+  if (master_type == odb::dbMasterType::CORE_ANTENNACELL) {
+    return "Antenna";
+  }
+  if (master_type == odb::dbMasterType::CORE_TIEHIGH
+      || master_type == odb::dbMasterType::CORE_TIELOW) {
+    return "Tie";
+  }
+  if (source_type == odb::dbSourceType::DIST) {
+    return "Other_lef";
+  }
+
+  /*sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Cell* cell = network->dbToSta(master);
+  if (cell == nullptr) {
+    return "Other_lef";
+  }
+  sta::LibertyCell* lib_cell = network->libertyCell(cell);
+  if (lib_cell == nullptr) {
+    if (master->isCore()) {
+      return "Standard cell";
+    }
+    // default to use overall instance setting if there is no liberty cell and
+    // it's not a core cell.
+    return "Other"; 
+  }
+
+  if (lib_cell->isInverter() || lib_cell->isBuffer()) {
+    if (source_type == odb::dbSourceType::TIMING) {
+      for (auto* iterm : getITerms()) {
+        // look through iterms and check for clock nets
+        auto* net = iterm->getNet();
+        if (net == nullptr) {
+          continue;
+        }
+        if (net->getSigType() == odb::dbSigType::CLOCK) {
+          return "Clock buffer/inverter";
+        }
+      }
+      return "Buffer/inverter from timing repair";
+    }
+    return "Buffer/inverter";
+  }
+  if (lib_cell->isClockGate()) {
+    return "Clock gate";
+  }
+  if (lib_cell->isLevelShifter()) {
+    return "Level shifter";
+  }
+  if (lib_cell->hasSequentials()) {
+    return "Sequential";
+  }
+  if (lib_cell->portCount() == 0) {
+    return "Physical";  // generic physical
+  }*/
+  // not anything else, so combinational
+  return "Combinational";
 }
 
 }  // namespace odb

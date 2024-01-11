@@ -216,6 +216,12 @@ add_net_to_route(odb::dbNet* net)
 }
 
 void
+report_inst_count()
+{
+  getGlobalRouter()->report_inst_count();
+}
+
+void
 highlight_net_route(odb::dbNet *net, bool show_pin_locations)
 {
   if (!gui::Gui::enabled()) {

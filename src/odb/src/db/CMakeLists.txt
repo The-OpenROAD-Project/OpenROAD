@@ -151,6 +151,8 @@ target_link_libraries(db
     PUBLIC
         zutil
         utl_lib
+        OpenSTA
+        dbSta_lib
         ${TCL_LIBRARY}
 )
 
