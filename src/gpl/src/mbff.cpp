@@ -844,9 +844,9 @@ Flop MBFF::GetNewFlop(const std::vector<Flop>& prob_dist, const double tot_dist)
   const double rand_num = (double) (rand() % 101);
   double cum_sum = 0;
   Flop new_flop;
-  for (size_t i = 0; i < prob_dist.size(); i++) {
-    cum_sum += prob_dist[i].prob;
-    new_flop = prob_dist[i];
+  for (const Flop& flop : prob_dist) {
+    cum_sum += flop.prob;
+    new_flop = flop;
     if (cum_sum * 100.0 >= rand_num * tot_dist) {
       break;
     }
@@ -1016,8 +1016,8 @@ double MBFF::GetSilh(const std::vector<Flop>& flops,
       if (j != clusters[i].first) {
         max_den = std::max(
             max_den, GetDist(flops[i].pt, trays[j].slots[clusters[i].second]));
-        for (size_t k = 0; k < trays[j].slots.size(); k++) {
-          min_num = std::min(min_num, GetDist(flops[i].pt, trays[j].slots[k]));
+        for (const Point& slot : trays[j].slots) {
+          min_num = std::min(min_num, GetDist(flops[i].pt, slot));
         }
       }
     }
@@ -1116,7 +1116,7 @@ void MBFF::RunSilh(std::vector<std::vector<Tray>>& trays,
   }
 
   // run multistart_ in parallel
-  for (const auto [bit_idx, tray_idx] : ind) {
+  for (const auto& [bit_idx, tray_idx] : ind) {
     const int rows = GetRows(GetBitCnt(bit_idx), bitmask);
     const int cols = GetBitCnt(bit_idx) / rows;
 
@@ -1710,10 +1710,8 @@ void MBFF::ReadFFs()
     sta::Cell* cell = network_->dbToSta(inst->getMaster());
     sta::LibertyCell* lib_cell = network_->libertyCell(cell);
     if (lib_cell && lib_cell->hasSequentials()) {
-      int x_i;
-      int y_i;
-      inst->getOrigin(x_i, y_i);
-      const Point pt{x_i / multiplier_, y_i / multiplier_};
+      const odb::Point origin = inst->getOrigin();
+      const Point pt{origin.x() / multiplier_, origin.y() / multiplier_};
       flops_.push_back({pt, num_flops, 0.0});
       insts_.push_back(inst);
       num_flops++;

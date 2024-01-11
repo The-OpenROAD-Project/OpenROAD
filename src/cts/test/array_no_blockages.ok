@@ -14,15 +14,6 @@
 [INFO CTS-0052] The following clock buffers will be used for CTS:
                     BUF_X4
 [INFO CTS-0049] Characterization buffer is BUF_X4.
-[INFO CTS-0039] Number of created patterns = 4200.
-[INFO CTS-0084] Compiling LUT.
-Min. len    Max. len    Min. cap    Max. cap    Min. slew   Max. slew
-2           8           1           20          1           7           
-[WARNING CTS-0043] 560 wires are pure wire and no slew degradation.
-TritonCTS forced slew degradation on these wires.
-[INFO CTS-0046]     Number of wire segments: 4200.
-[INFO CTS-0047]     Number of keys in characterization LUT: 320.
-[INFO CTS-0048]     Actual min input cap: 1.
 [INFO CTS-0007] Net "clk" found for clock "clk".
 [INFO CTS-0010]  Clock net "clk" has 2475 sinks.
 [INFO CTS-0008] TritonCTS found 1 clock nets.
@@ -45,115 +36,26 @@ TritonCTS forced slew degradation on these wires.
     Sinks per sub-region: 140
     Sub-region size: 660.0000 X 350.4246
 [INFO CTS-0034]     Segment length (rounded): 176.
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 206 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 104 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 9
-      location: 0.25 buffer: BUF_X4
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 206 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 104 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 9
-      location: 0.25 buffer: BUF_X4
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 206 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 104 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 9
-      location: 0.25 buffer: BUF_X4
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 206 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 104 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 9
-      location: 0.25 buffer: BUF_X4
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 206 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 104 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 9
-      location: 0.25 buffer: BUF_X4
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
  Level 2
     Direction: Horizontal
     Sinks per sub-region: 70
     Sub-region size: 330.0000 X 350.4246
 [INFO CTS-0034]     Segment length (rounded): 166.
-    Key: 206 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 104 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 9
-      location: 0.25 buffer: BUF_X4
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 206 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 104 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 9
-      location: 0.25 buffer: BUF_X4
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 206 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 104 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 9
-      location: 0.25 buffer: BUF_X4
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 206 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 104 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 9
-      location: 0.25 buffer: BUF_X4
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 206 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 104 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 9
-      location: 0.25 buffer: BUF_X4
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 94 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 6 delay: 1
  Level 3
     Direction: Vertical
     Sinks per sub-region: 35
     Sub-region size: 330.0000 X 175.2123
 [INFO CTS-0034]     Segment length (rounded): 88.
-    Key: 104 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 9
-      location: 0.25 buffer: BUF_X4
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 206 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 104 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 9
-      location: 0.25 buffer: BUF_X4
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 206 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 104 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 9
-      location: 0.25 buffer: BUF_X4
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
  Level 4
     Direction: Horizontal
     Sinks per sub-region: 18
     Sub-region size: 165.0000 X 175.2123
 [INFO CTS-0034]     Segment length (rounded): 82.
-    Key: 206 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 104 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 9
-      location: 0.25 buffer: BUF_X4
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 206 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 104 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 9
-      location: 0.25 buffer: BUF_X4
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 206 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 104 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 9
-      location: 0.25 buffer: BUF_X4
-    Key: 0 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 2 delay: 1
  Level 5
     Direction: Vertical
     Sinks per sub-region: 9
     Sub-region size: 165.0000 X 87.6062
 [INFO CTS-0034]     Segment length (rounded): 44.
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 206 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 104 inSlew: 3 inCap: 1 outSlew: 1 load: 1 length: 8 delay: 9
-      location: 0.25 buffer: BUF_X4
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 98 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 8 delay: 1
-    Key: 38 inSlew: 2 inCap: 1 outSlew: 2 load: 1 length: 4 delay: 1
- Out of 12 sinks, 1 sinks closer to other cluster.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 279.
 [INFO CTS-0018]     Created 231 clock buffers.

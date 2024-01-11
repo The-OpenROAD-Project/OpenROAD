@@ -59,6 +59,7 @@
 #include "dbTechLayerSpacingEolRule.h"
 #include "dbTechLayerSpacingTablePrlRule.h"
 #include "dbTechLayerWidthTableRule.h"
+#include "dbTechLayerWrongDirSpacingRule.h"
 // User Code Begin Includes
 #include <spdlog/fmt/ostr.h>
 
@@ -171,6 +172,9 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
     return false;
   }
   if (*keepout_zone_rules_tbl_ != *rhs.keepout_zone_rules_tbl_) {
+    return false;
+  }
+  if (*wrongdir_spacing_rules_tbl_ != *rhs.wrongdir_spacing_rules_tbl_) {
     return false;
   }
 
@@ -356,6 +360,7 @@ void _dbTechLayer::differences(dbDiff& diff,
   DIFF_TABLE(area_rules_tbl_);
   DIFF_TABLE(forbidden_spacing_rules_tbl_);
   DIFF_TABLE(keepout_zone_rules_tbl_);
+  DIFF_TABLE(wrongdir_spacing_rules_tbl_);
   // User Code Begin Differences
   DIFF_FIELD(flags_.type_);
   DIFF_FIELD(flags_.direction_);
@@ -437,6 +442,7 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE(area_rules_tbl_);
   DIFF_OUT_TABLE(forbidden_spacing_rules_tbl_);
   DIFF_OUT_TABLE(keepout_zone_rules_tbl_);
+  DIFF_OUT_TABLE(wrongdir_spacing_rules_tbl_);
 
   // User Code Begin Out
   DIFF_OUT_FIELD(flags_.type_);
@@ -574,6 +580,11 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerKeepOutZoneRuleObj);
+  wrongdir_spacing_rules_tbl_ = new dbTable<_dbTechLayerWrongDirSpacingRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerWrongDirSpacingRuleObj);
   // User Code Begin Constructor
   flags_.type_ = dbTechLayerType::ROUTING;
   flags_.direction_ = dbTechLayerDir::NONE;
@@ -695,6 +706,8 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
       db, this, *r.forbidden_spacing_rules_tbl_);
   keepout_zone_rules_tbl_ = new dbTable<_dbTechLayerKeepOutZoneRule>(
       db, this, *r.keepout_zone_rules_tbl_);
+  wrongdir_spacing_rules_tbl_ = new dbTable<_dbTechLayerWrongDirSpacingRule>(
+      db, this, *r.wrongdir_spacing_rules_tbl_);
   // User Code Begin CopyConstructor
   flags_ = r.flags_;
   _pitch_x = r._pitch_x;
@@ -782,6 +795,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   if (obj.getDatabase()->isSchema(db_schema_keepout_zone)) {
     stream >> *obj.keepout_zone_rules_tbl_;
   }
+  if (obj.getDatabase()->isSchema(db_schema_wrongdir_spacing)) {
+    stream >> *obj.wrongdir_spacing_rules_tbl_;
+  }
   // User Code Begin >>
   stream >> obj._pitch_x;
   stream >> obj._pitch_y;
@@ -865,6 +881,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   }
   if (obj.getDatabase()->isSchema(db_schema_keepout_zone)) {
     stream << *obj.keepout_zone_rules_tbl_;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_wrongdir_spacing)) {
+    stream << *obj.wrongdir_spacing_rules_tbl_;
   }
   // User Code Begin <<
   stream << obj._pitch_x;
@@ -951,6 +970,8 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
       return forbidden_spacing_rules_tbl_;
     case dbTechLayerKeepOutZoneRuleObj:
       return keepout_zone_rules_tbl_;
+    case dbTechLayerWrongDirSpacingRuleObj:
+      return wrongdir_spacing_rules_tbl_;
       // User Code Begin getObjectTable
     case dbTechLayerSpacingRuleObj:
       return _spacing_rules_tbl;
@@ -989,6 +1010,7 @@ _dbTechLayer::~_dbTechLayer()
   delete area_rules_tbl_;
   delete forbidden_spacing_rules_tbl_;
   delete keepout_zone_rules_tbl_;
+  delete wrongdir_spacing_rules_tbl_;
   // User Code Begin Destructor
   if (_name)
     free((void*) _name);
@@ -1032,6 +1054,23 @@ uint _dbTechLayer::getTwIdx(const int width, const int prl) const
       return idx;
   }
   return 0;
+}
+void _dbTechLayer::getAverageTrackPattern(dbTrackGrid* grid,
+                                          bool is_x,
+                                          int& track_init,
+                                          int& num_tracks,
+                                          int& track_step)
+{
+  std::vector<int> coordinates;
+  if (is_x) {
+    grid->getGridX(coordinates);
+  } else {
+    grid->getGridY(coordinates);
+  }
+  const int span = coordinates.back() - coordinates.front();
+  track_init = coordinates.front();
+  track_step = std::ceil((float) span / coordinates.size());
+  num_tracks = coordinates.size();
 }
 // User Code End PrivateMethods
 
@@ -1179,6 +1218,14 @@ dbSet<dbTechLayerKeepOutZoneRule> dbTechLayer::getTechLayerKeepOutZoneRules()
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
   return dbSet<dbTechLayerKeepOutZoneRule>(obj, obj->keepout_zone_rules_tbl_);
+}
+
+dbSet<dbTechLayerWrongDirSpacingRule>
+dbTechLayer::getTechLayerWrongDirSpacingRules() const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerWrongDirSpacingRule>(
+      obj, obj->wrongdir_spacing_rules_tbl_);
 }
 
 void dbTechLayer::setRectOnly(bool rect_only)
@@ -1375,6 +1422,41 @@ void dbTechLayer::setSpacing(int spacing)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->_spacing = spacing;
+}
+
+void dbTechLayer::getAverageTrackSpacing(odb::dbTrackGrid* track_grid,
+                                         int& track_step,
+                                         int& track_init,
+                                         int& num_tracks)
+{
+  if (getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+    if (track_grid->getNumGridPatternsY() == 1) {
+      track_grid->getGridPatternY(0, track_init, num_tracks, track_step);
+    } else if (track_grid->getNumGridPatternsY() > 1) {
+      _dbTechLayer* layer = (_dbTechLayer*) this;
+      layer->getAverageTrackPattern(
+          track_grid, false, track_init, num_tracks, track_step);
+    } else {
+      getImpl()->getLogger()->error(utl::ODB,
+                                    414,
+                                    "Horizontal tracks for layer {} not found.",
+                                    getName());
+    }
+  } else if (getDirection() == odb::dbTechLayerDir::VERTICAL) {
+    if (track_grid->getNumGridPatternsX() == 1) {
+      track_grid->getGridPatternX(0, track_init, num_tracks, track_step);
+    } else if (track_grid->getNumGridPatternsX() > 1) {
+      _dbTechLayer* layer = (_dbTechLayer*) this;
+      layer->getAverageTrackPattern(
+          track_grid, true, track_init, num_tracks, track_step);
+    } else {
+      getImpl()->getLogger()->error(
+          utl::ODB, 415, "Vertical tracks for layer {} not found.", getName());
+    }
+  } else {
+    getImpl()->getLogger()->error(
+        utl::ODB, 416, "Layer {} has invalid direction.", getName());
+  }
 }
 
 double dbTechLayer::getEdgeCapacitance()

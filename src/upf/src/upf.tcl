@@ -554,3 +554,78 @@ proc set_level_shifter { args } {
     }
 
 }
+
+
+# Procedure to set the voltage of a power domain which takes a float voltage
+# Arguments: -domain, -voltage
+
+sta::define_cmd_args "set_domain_voltage" { \
+    [-domain domain] \
+    [-voltage voltage] 
+}
+
+proc set_domain_voltage { args } {
+    check_block_exists
+
+    sta::parse_key_args "set_domain_voltage" args \
+        keys {-domain -voltage} flags {}
+
+    sta::check_argc_eq0 "set_domain_voltage" $args
+
+    set domain ""
+    set voltage 0.0
+
+    if { [info exists keys(-domain)] } {
+        set domain $keys(-domain)
+    }
+
+    if { [info exists keys(-voltage)] } {
+        set voltage $keys(-voltage)
+    }
+
+    upf::set_domain_voltage_cmd $domain $voltage
+}
+
+# Procedure to set the library cell used for level shifter identifying cell_name, input_port, output_port for a given 
+# level_shifter strategy
+
+# Arguments: -level_shifter, -cell_name, -input_port, -output_port
+
+sta::define_cmd_args "set_level_shifter_cell" { \
+    [-level_shifter level_shifter] \
+    [-cell_name cell_name] \
+    [-input_port input_port] \
+    [-output_port output_port] 
+}
+
+proc set_level_shifter_cell { args } {
+    check_block_exists
+
+    sta::parse_key_args "set_level_shifter_cell" args \
+        keys {-level_shifter -cell_name -input_port -output_port} flags {}
+
+    sta::check_argc_eq0 "set_level_shifter_cell" $args
+
+    set level_shifter ""
+    set cell_name ""
+    set input_port ""
+    set output_port ""
+
+    if { [info exists keys(-level_shifter)] } {
+        set level_shifter $keys(-level_shifter)
+    }
+
+    if { [info exists keys(-cell_name)] } {
+        set cell_name $keys(-cell_name)
+    }
+
+    if { [info exists keys(-input_port)] } {
+        set input_port $keys(-input_port)
+    }
+
+    if { [info exists keys(-output_port)] } {
+        set output_port $keys(-output_port)
+    }
+
+    upf::set_level_shifter_cell_cmd $level_shifter $cell_name $input_port $output_port
+} 

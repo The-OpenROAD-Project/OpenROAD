@@ -3,5 +3,5 @@
 [INFO ODB-0224]     Created 27 technology vias
 [INFO ODB-0225]     Created 135 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
-Writing partition to verilog.
+[INFO PAR-0001] Writing partition to verilog.
 No differences found.

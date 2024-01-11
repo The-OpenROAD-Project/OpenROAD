@@ -141,13 +141,6 @@ class FollowPins : public Straps
 class PadDirectConnectionStraps : public Straps
 {
  public:
-  enum ConnectionType
-  {
-    None,
-    Edge,
-    OverPads
-  };
-
   PadDirectConnectionStraps(
       Grid* grid,
       odb::dbITerm* iterm,
@@ -157,6 +150,8 @@ class PadDirectConnectionStraps : public Straps
   bool canConnect() const;
 
   void makeShapes(const ShapeTreeMap& other_shapes) override;
+  bool refineShapes(ShapeTreeMap& all_shapes,
+                    ShapeTreeMap& all_obstructions) override;
 
   void report() const override;
   Type type() const override { return GridComponent::PadConnect; }
@@ -171,17 +166,23 @@ class PadDirectConnectionStraps : public Straps
   // cut shapes and remove if connection to ring is not possible
   void cutShapes(const ShapeTreeMap& obstructions) override;
 
-  void setConnectionType(ConnectionType type);
-  ConnectionType getConnectionType() const { return type_; }
-
   static void unifyConnectionTypes(
       const std::set<PadDirectConnectionStraps*>& straps);
 
  private:
+  enum class ConnectionType
+  {
+    None,
+    Edge,
+    OverPads
+  };
+
   odb::dbITerm* iterm_;
-  odb::dbWireShapeType target_shapes_ = odb::dbWireShapeType::RING;
+  odb::dbWireShapeType target_shapes_type_ = odb::dbWireShapeType::RING;
+  std::map<Shape*, Shape*> target_shapes_;
+  std::map<Shape*, odb::Rect> target_pin_shape_;
   odb::dbDirection pad_edge_;
-  ConnectionType type_ = None;
+  ConnectionType type_ = ConnectionType::None;
   std::vector<odb::dbTechLayer*> layers_;
 
   std::vector<odb::dbBox*> pins_;
@@ -206,6 +207,22 @@ class PadDirectConnectionStraps : public Straps
   ShapePtr getClosestShape(const ShapeTree& search_shapes,
                            const odb::Rect& pin_shape,
                            odb::dbNet* net) const;
+  bool snapRectToClosestShape(const ShapePtr& closest_shape,
+                              const odb::Rect& pin_shape,
+                              odb::Rect& new_shape) const;
+
+  bool strapViaIsObstructed(Shape* shape,
+                            const ShapeTreeMap& other_shapes,
+                            const ShapeTreeMap& other_obstructions,
+                            bool recheck) const;
+
+  void setConnectionType(ConnectionType type);
+  ConnectionType getConnectionType() const { return type_; }
+
+  bool refineShape(Shape* shape,
+                   const odb::Rect& pin_shape,
+                   ShapeTreeMap& all_shapes,
+                   ShapeTreeMap& all_obstructions);
 };
 
 class RepairChannelStraps : public Straps

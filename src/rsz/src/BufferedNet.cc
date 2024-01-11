@@ -421,7 +421,7 @@ makeBufferedNetFromTree(const SteinerTree *tree,
                                             tree->location(to),
                                             bnet, bnet1, resizer);
           } else {
-            bnet = bnet1;
+            bnet = std::move(bnet1);
           }
         }
       }
@@ -441,7 +441,7 @@ makeBufferedNetFromTree(const SteinerTree *tree,
                                           tree->location(to),
                                           bnet, bnet1, resizer);
         } else {
-          bnet = bnet1;
+          bnet = std::move(bnet1);
         }
       }
     }
@@ -561,7 +561,7 @@ makeBufferedNet(RoutePt &from,
         bnet = make_shared<BufferedNet>(BufferedNetType::junction,
                                         to_pt, bnet, load_bnet, resizer);
       } else {
-        bnet = load_bnet;
+        bnet = std::move(load_bnet);
       }
     }
   }
@@ -576,7 +576,7 @@ makeBufferedNet(RoutePt &from,
           bnet = make_shared<BufferedNet>(BufferedNetType::junction,
                                           to_pt, bnet, bnet1, resizer);
         } else {
-          bnet = bnet1;
+          bnet = std::move(bnet1);
         }
       }
     }

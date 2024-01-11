@@ -286,9 +286,7 @@ Resizer::bufferBetweenPorts(Instance *buffer)
   Pin *out_pin = db_network_->findPin(buffer, out_port);
   Net *in_net = db_network_->net(in_pin);
   Net *out_net = db_network_->net(out_pin);
-  bool in_net_ports = hasPort(in_net);
-  bool out_net_ports = hasPort(out_net);
-  return in_net_ports && out_net_ports;
+  return hasPort(in_net) && hasPort(out_net);
 }
 
 bool
@@ -436,11 +434,9 @@ void Resizer::balanceRowUsage()
       continue;
     }
 
-    int x;
-    int y;
-    inst->getOrigin(x, y);
-    const int x_bin = (x - core_.xMin()) / x_step;
-    const int y_bin = (y - core_.yMin()) / y_step;
+    const Point origin = inst->getOrigin();
+    const int x_bin = (origin.x() - core_.xMin()) / x_step;
+    const int y_bin = (origin.y() - core_.yMin()) / y_step;
     grid[x_bin][y_bin].push_back(inst);
   }
 
@@ -724,17 +720,9 @@ Resizer::hasPort(const Net *net)
   if (!net) {
     return false;
   }
-  bool has_top_level_port = false;
-  NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
-  while (pin_iter->hasNext()) {
-    const Pin *pin = pin_iter->next();
-    if (network_->isTopLevelPort(pin)) {
-      has_top_level_port = true;
-      break;
-    }
-  }
-  delete pin_iter;
-  return has_top_level_port;
+
+  dbNet *db_net = db_network_->staToDb(net);
+  return !db_net->getBTerms().empty();
 }
 
 float
@@ -1534,7 +1522,7 @@ Resizer::dontTouch(const Instance *inst)
   if (!db_inst) {
     return false;
   }
-  return db_inst->isDoNotTouch();
+  return db_inst->isDoNotTouch() || db_inst->isPad();
 }
 
 void

@@ -1636,13 +1636,11 @@ void dbBlock::ComputeBBox()
   }
 
   dbSet<dbWire> wires(block, block->_wire_tbl);
-  dbSet<dbWire>::iterator witr;
 
-  for (witr = wires.begin(); witr != wires.end(); ++witr) {
-    dbWire* wire = *witr;
-    Rect r;
-    if (wire->getBBox(r)) {
-      bbox->_shape._rect.merge(r);
+  for (dbWire* wire : wires) {
+    const auto opt_bbox = wire->getBBox();
+    if (opt_bbox) {
+      bbox->_shape._rect.merge(opt_bbox.value());
     }
   }
 

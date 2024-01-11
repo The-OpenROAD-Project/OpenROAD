@@ -625,8 +625,7 @@ bool IRSolver::createSourcesFromPads()
       continue;
     }
 
-    odb::dbTransform xform;
-    inst->getTransform(xform);
+    const odb::dbTransform xform = inst->getTransform();
 
     auto* mterm = iterm->getMTerm();
     for (auto* mpin : mterm->getMPins()) {
@@ -686,8 +685,7 @@ bool IRSolver::createJ()
           continue;
         }
         is_connected = true;
-        odb::dbTransform xform;
-        inst->getTransform(xform);
+        const odb::dbTransform xform = inst->getTransform();
         for (auto mpin : iterm->getMTerm()->getMPins()) {
           for (auto box : mpin->getGeometry()) {
             dbTechLayer* pin_layer = box->getTechLayer();
@@ -897,14 +895,14 @@ void IRSolver::createGmatViaNodes()
       via_top_layer = via->getTopLayer();
       via_bottom_layer = via->getBottomLayer();
       via_boxes = via->getBoxes();
-      via->getViaParams(params);
+      params = via->getViaParams();
       has_params = via->hasParams();
     } else {
       dbTechVia* via = curWire->getTechVia();
       via_top_layer = via->getTopLayer();
       via_bottom_layer = via->getBottomLayer();
       via_boxes = via->getBoxes();
-      via->getViaParams(params);
+      params = via->getViaParams();
       has_params = via->hasParams();
     }
     const Point loc = curWire->getViaXY();
@@ -967,8 +965,7 @@ void IRSolver::createGmatWireNodes()
     // and add node if there is an overlap with the current shape
     for (auto* iterm : macros_terms) {
       if (iterm->getBBox().intersects(curWire->getBox())) {
-        odb::dbTransform xform;
-        iterm->getInst()->getTransform(xform);
+        const odb::dbTransform xform = iterm->getInst()->getTransform();
         for (auto* mpin : iterm->getMTerm()->getMPins()) {
           for (auto* geom : mpin->getGeometry()) {
             if (geom->getTechLayer() != wire_layer) {
@@ -1088,7 +1085,7 @@ void IRSolver::createGmatConnections(bool connection_only)
         has_params = via->hasParams();
         via_boxes = via->getBoxes();
         if (has_params) {
-          via->getViaParams(params);
+          params = via->getViaParams();
         }
         via_top_layer = via->getTopLayer();
         via_bottom_layer = via->getBottomLayer();
@@ -1097,7 +1094,7 @@ void IRSolver::createGmatConnections(bool connection_only)
         has_params = via->hasParams();
         via_boxes = via->getBoxes();
         if (has_params) {
-          via->getViaParams(params);
+          params = via->getViaParams();
         }
         via_top_layer = via->getTopLayer();
         via_bottom_layer = via->getBottomLayer();
@@ -1510,8 +1507,7 @@ bool IRSolver::isStdCell(odb::dbInst* inst) const
 
 bool IRSolver::isConnected(odb::dbITerm* iterm) const
 {
-  odb::dbTransform xform;
-  iterm->getInst()->getTransform(xform);
+  const odb::dbTransform xform = iterm->getInst()->getTransform();
 
   for (auto* mpin : iterm->getMTerm()->getMPins()) {
     for (auto* geom : mpin->getGeometry()) {
@@ -1565,9 +1561,6 @@ void IRSolver::findUnconnectedInstancesByITerms(
 {
   for (auto itr = iterms.begin(); itr != iterms.end();) {
     odb::dbInst* inst = itr->first;
-
-    odb::dbTransform xform;
-    inst->getTransform(xform);
 
     bool all_connected = true;
     for (auto* iterm : itr->second) {

@@ -204,8 +204,7 @@ void ICeWall::assignBump(odb::dbInst* inst,
 
   assertMasterType(inst, odb::dbMasterType::COVER_BUMP);
 
-  odb::dbTransform xform;
-  inst->getTransform(xform);
+  const odb::dbTransform xform = inst->getTransform();
 
   odb::dbTechLayer* top_layer = nullptr;
   odb::Rect top_shape;
@@ -349,8 +348,8 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
             const odb::Point& origin,
             const odb::dbOrientType& orient) -> odb::dbRow* {
     const std::string row_name = getRowName(name, ring_index);
-    odb::dbTransform rotation(orient);
-    rotation.concat(rotation_cor);
+    odb::dbTransform rotation(rotation_cor);
+    rotation.concat(orient);
     return odb::dbRow::create(block,
                               row_name.c_str(),
                               corner_site,
@@ -519,9 +518,7 @@ void ICeWall::placePad(odb::dbMaster* master,
 
 int ICeWall::snapToRowSite(odb::dbRow* row, int location) const
 {
-  int x, y;
-  row->getOrigin(x, y);
-  const odb::Point origin(x, y);
+  const odb::Point origin = row->getOrigin();
 
   const double spacing = row->getSpacing();
   int relative_location;
@@ -952,9 +949,9 @@ void ICeWall::placeBondPads(odb::dbMaster* bond,
     odb::dbTransform pad_transform(inst->getOrient());
     odb::Point pad_offset = offset;
     pad_transform.apply(pad_offset);
-    int x, y;
-    inst->getOrigin(x, y);
-    const odb::Point pad_loc(x + pad_offset.x(), y + pad_offset.y());
+    const odb::Point origin = inst->getOrigin();
+    const odb::Point pad_loc(origin.x() + pad_offset.x(),
+                             origin.y() + pad_offset.y());
 
     pad_transform.concat(pad_xform);
     const odb::dbOrientType pad_orient = pad_transform.getOrient();
@@ -966,8 +963,7 @@ void ICeWall::placeBondPads(odb::dbMaster* bond,
     bond_inst->setOrigin(pad_loc.x(), pad_loc.y());
     bond_inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
 
-    odb::dbTransform xform;
-    bond_inst->getTransform(xform);
+    const odb::dbTransform xform = bond_inst->getTransform();
     odb::Rect bpin_shape = bond_rect;
     xform.apply(bpin_shape);
 
@@ -989,7 +985,8 @@ void ICeWall::placeBondPads(odb::dbMaster* bond,
   }
 }
 
-void ICeWall::placeTerminals(const std::vector<odb::dbITerm*>& iterms)
+void ICeWall::placeTerminals(const std::vector<odb::dbITerm*>& iterms,
+                             const bool allow_non_top_layer)
 {
   auto* block = getBlock();
   if (block == nullptr) {
@@ -1015,23 +1012,23 @@ void ICeWall::placeTerminals(const std::vector<odb::dbITerm*>& iterms)
       continue;
     }
 
-    odb::dbTransform pad_transform;
-    inst->getTransform(pad_transform);
+    const odb::dbTransform pad_transform = inst->getTransform();
 
     auto* mterm = iterm->getMTerm();
     odb::dbBox* pin_shape = nullptr;
+    int highest_level = 0;
     for (auto* mpin : mterm->getMPins()) {
       for (auto* geom : mpin->getGeometry()) {
         auto* layer = geom->getTechLayer();
         if (layer == nullptr) {
           continue;
         }
-        if (layer != top_layer) {
+        if (layer->getRoutingLevel() <= highest_level) {
           continue;
         }
 
         pin_shape = geom;
-        break;
+        highest_level = layer->getRoutingLevel();
       }
     }
 
@@ -1044,10 +1041,20 @@ void ICeWall::placeTerminals(const std::vector<odb::dbITerm*>& iterms)
                      mterm->getName());
     }
 
+    auto layer = tech->findRoutingLayer(highest_level);
+    if (!allow_non_top_layer && layer != top_layer) {
+      logger_->error(utl::PAD,
+                     120,
+                     "No shape in terminal {}/{} found on layer {}",
+                     inst->getName(),
+                     mterm->getName(),
+                     top_layer->getName());
+    }
+
     odb::Rect shape = pin_shape->getBox();
     pad_transform.apply(shape);
 
-    makeBTerm(net, top_layer, shape);
+    makeBTerm(net, layer, shape);
   }
 }
 
@@ -1188,8 +1195,7 @@ std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>> ICeWall::getTouchingIterms(
   using ShapeMap = std::map<odb::dbTechLayer*, std::set<odb::Rect>>;
   auto populate_map = [](odb::dbITerm* iterm) -> ShapeMap {
     ShapeMap map;
-    odb::dbTransform xform;
-    iterm->getInst()->getTransform(xform);
+    const odb::dbTransform xform = iterm->getInst()->getTransform();
 
     for (auto* mpin : iterm->getMTerm()->getMPins()) {
       for (auto* geom : mpin->getGeometry()) {

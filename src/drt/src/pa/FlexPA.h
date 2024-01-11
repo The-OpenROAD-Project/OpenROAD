@@ -135,7 +135,7 @@ class FlexPA
       const Point& pt,
       const frLayerNum layerNum,
       const gtl::polygon_90_set_data<frCoord>& polyset,
-      vector<pair<int, frViaDef*>>& viaDefs);
+      std::vector<std::pair<int, frViaDef*>>& viaDefs);
   template <typename T>
   int prepPoint_pin(T* pin, frInstTerm* instTerm = nullptr);
   template <typename T>

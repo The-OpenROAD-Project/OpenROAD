@@ -111,33 +111,13 @@ _dbScanPin::_dbScanPin(_dbDatabase* db, const _dbScanPin& r)
 
 dbIStream& operator>>(dbIStream& stream, _dbScanPin& obj)
 {
-  // User Code Begin >>
-  int index = 0;
-  stream >> index;
-  if (index == 0) {
-    dbId<_dbBTerm> bterm;
-    stream >> bterm;
-    obj.pin_ = bterm;
-  } else if (index == 1) {
-    dbId<_dbITerm> iterm;
-    stream >> iterm;
-    obj.pin_ = iterm;
-  }
-  // User Code End >>
+  stream >> obj.pin_;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbScanPin& obj)
 {
-  // User Code Begin <<
-  int index = obj.pin_.index();
-  stream << index;
-  if (index == 0) {
-    stream << std::get<0>(obj.pin_);
-  } else if (index == 1) {
-    stream << std::get<1>(obj.pin_);
-  }
-  // User Code End <<
+  stream << obj.pin_;
   return stream;
 }
 

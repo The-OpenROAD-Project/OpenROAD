@@ -22,6 +22,7 @@
     {
       "name": "SCAN_INST_TYPE",
       "public": true,
+      "class": true,
       "values": [
         "OneBit",
         "ShiftRegister",

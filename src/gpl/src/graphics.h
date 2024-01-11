@@ -87,22 +87,22 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
   void status(const std::string& message);
 
   // From Renderer API
-  virtual void drawObjects(gui::Painter& painter) override;
-  virtual gui::SelectionSet select(odb::dbTechLayer* layer,
-                                   const odb::Rect& region) override;
+  void drawObjects(gui::Painter& painter) override;
+  gui::SelectionSet select(odb::dbTechLayer* layer,
+                           const odb::Rect& region) override;
 
   // From HeatMapDataSource
-  virtual bool canAdjustGrid() const override { return false; }
-  virtual double getGridXSize() const override;
-  virtual double getGridYSize() const override;
-  virtual odb::Rect getBounds() const override;
-  virtual bool populateMap() override;
-  virtual void combineMapData(bool base_has_value,
-                              double& base,
-                              const double new_data,
-                              const double data_area,
-                              const double intersection_area,
-                              const double rect_area) override;
+  bool canAdjustGrid() const override { return false; }
+  double getGridXSize() const override;
+  double getGridYSize() const override;
+  odb::Rect getBounds() const override;
+  bool populateMap() override;
+  void combineMapData(bool base_has_value,
+                      double& base,
+                      double new_data,
+                      double data_area,
+                      double intersection_area,
+                      double rect_area) override;
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();

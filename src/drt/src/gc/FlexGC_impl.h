@@ -218,6 +218,13 @@ class FlexGCWorker::Impl
   void initRegionQuery();
 
   void checkMetalSpacing();
+  void checkMetalSpacing_wrongDir_getQueryBox(gcSegment* edge,
+                                              frCoord spcVal,
+                                              box_t& queryBox);
+  frCoord getPrl(gcSegment* edge,
+                 gcSegment* ptr,
+                 const gtl::orientation_2d& orient) const;
+  void checkMetalSpacing_wrongDir(gcPin* pin, frLayer* layer);
   frCoord checkMetalSpacing_getMaxSpcVal(frLayerNum layerNum,
                                          bool checkNDRs = true);
   void myBloat(const gtl::rectangle_data<frCoord>& rect,

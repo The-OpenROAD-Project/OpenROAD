@@ -4,10 +4,11 @@
 #include <string>
 
 #include "db.h"
-#include "helper.cpp"
+#include "helper.h"
 
-using namespace odb;
-using namespace std;
+namespace odb {
+namespace {
+
 BOOST_AUTO_TEST_SUITE(test_suite)
 
 struct F_DEFAULT
@@ -34,7 +35,7 @@ BOOST_FIXTURE_TEST_CASE(test_default, F_DEFAULT)
   dbModule* parent_mod = block->findModule("parent_mod");
   BOOST_TEST(parent_mod != nullptr);
   // dbModule::getName()
-  BOOST_TEST(string(parent_mod->getName()) == "parent_mod");
+  BOOST_TEST(std::string(parent_mod->getName()) == "parent_mod");
   // dbModInst::create() Succeed
   BOOST_TEST(dbModInst::create(parent_mod, master_mod, "i1") != nullptr);
   // dbModInst::create() rejected duplicate name
@@ -46,7 +47,7 @@ BOOST_FIXTURE_TEST_CASE(test_default, F_DEFAULT)
   // dbModule getModInst()
   BOOST_TEST(master_mod->getModInst() == modInst);
   // dbModInst::getName()
-  BOOST_TEST(string(modInst->getName()) == "i1");
+  BOOST_TEST(std::string(modInst->getName()) == "i1");
   // dbModule::getChildren()
   BOOST_TEST(parent_mod->getChildren().size() == 1);
   // dbBlock::getModInsts()
@@ -139,11 +140,12 @@ BOOST_FIXTURE_TEST_CASE(test_iterators, F_DETAILED)
   BOOST_TEST(children.size() == 3);
   BOOST_TEST(children.reversible());
   for (int j = 0; j < 2; j++) {
-    if (j == 1)
+    if (j == 1) {
       children.reverse();
+    }
     for (modinst_itr = children.begin(), i = j ? 1 : 3;
          modinst_itr != children.end();
-         ++modinst_itr, i = i + (j ? 1 : -1))
+         ++modinst_itr, i = i + (j ? 1 : -1)) {
       switch (i) {
         case 1:
           BOOST_TEST(*modinst_itr == i1);
@@ -158,6 +160,7 @@ BOOST_FIXTURE_TEST_CASE(test_iterators, F_DETAILED)
           BOOST_TEST(false);
           break;
       }
+    }
   }
 
   dbSet<dbInst> insts = parent_mod->getInsts();
@@ -165,10 +168,11 @@ BOOST_FIXTURE_TEST_CASE(test_iterators, F_DETAILED)
   BOOST_TEST(insts.size() == 3);
   BOOST_TEST(insts.reversible());
   for (int j = 0; j < 2; j++) {
-    if (j == 1)
+    if (j == 1) {
       insts.reverse();
+    }
     for (inst_itr = insts.begin(), i = j ? 1 : 3; inst_itr != insts.end();
-         ++inst_itr, i = i + (j ? 1 : -1))
+         ++inst_itr, i = i + (j ? 1 : -1)) {
       switch (i) {
         case 1:
           BOOST_TEST(*inst_itr == inst1);
@@ -183,7 +187,11 @@ BOOST_FIXTURE_TEST_CASE(test_iterators, F_DETAILED)
           BOOST_TEST(false);
           break;
       }
+    }
   }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+}  // namespace
+}  // namespace odb
