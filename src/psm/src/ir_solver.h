@@ -140,7 +140,7 @@ class IRSolver
   bool createSourcesFromPads();
   void createDefaultSources();
   //! Function to create a J vector from the current map
-  bool createJ();
+  bool createJ(size_t gmat_nodes);
   //! Function to create a G matrix using the nodes
   bool createGmat(bool connection_only = false);
   //! Function to find and store the upper and lower PDN layers and return a
@@ -170,6 +170,8 @@ class IRSolver
   bool checkValidR(double R) const;
 
   double getResistance(odb::dbTechLayer* layer) const;
+
+  std::pair<bool, std::set<Node*>> getInstNodes(odb::dbInst* inst) const;
 
   struct InstCompare
   {
@@ -247,5 +249,6 @@ class IRSolver
 
   std::vector<odb::dbSBox*> power_wires_;
   std::vector<odb::dbInst*> unconnected_insts_;
+  std::map<odb::dbITerm*, odb::dbITerm*> iterms_connected_by_abutment_;
 };
 }  // namespace psm
