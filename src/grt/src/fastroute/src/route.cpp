@@ -1189,7 +1189,7 @@ void FastRouteCore::spiralRouteAll()
   }
 }
 
-void FastRouteCore::routeMonotonicNew(int netID,
+void FastRouteCore::routeMonotonic(int netID,
                                       int edgeID,
                                       multi_array<float, 2>& d1,
                                       multi_array<float, 2>& d2,
@@ -1526,7 +1526,7 @@ void FastRouteCore::routeMonotonicAll(int threshold,
 
     const int numEdges = sttrees_[netID].num_edges();
     for (int edgeID = 0; edgeID < numEdges; edgeID++) {
-      routeMonotonicNew(
+      routeMonotonic(
           netID,
           edgeID,
           d1,

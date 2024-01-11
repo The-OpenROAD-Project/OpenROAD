@@ -413,7 +413,7 @@ class FastRouteCore
   void routeSegH(Segment* seg);
   void routeSegLFirstTime(Segment* seg);
   void spiralRoute(int netID, int edgeID);
-  void routeMonotonicNew(int netID,
+  void routeMonotonic(int netID,
                          int edgeID,
                          multi_array<float, 2>& d1,
                          multi_array<float, 2>& d2,
