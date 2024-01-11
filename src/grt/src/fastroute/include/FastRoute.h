@@ -414,11 +414,11 @@ class FastRouteCore
   void routeSegLFirstTime(Segment* seg);
   void spiralRoute(int netID, int edgeID);
   void routeMonotonic(int netID,
-                         int edgeID,
-                         multi_array<float, 2>& d1,
-                         multi_array<float, 2>& d2,
-                         int threshold,
-                         int enlarge);
+                      int edgeID,
+                      multi_array<float, 2>& d1,
+                      multi_array<float, 2>& d2,
+                      int threshold,
+                      int enlarge);
 
   // ripup functions
   void ripupSegL(const Segment* seg);

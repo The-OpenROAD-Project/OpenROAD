@@ -1190,11 +1190,11 @@ void FastRouteCore::spiralRouteAll()
 }
 
 void FastRouteCore::routeMonotonic(int netID,
-                                      int edgeID,
-                                      multi_array<float, 2>& d1,
-                                      multi_array<float, 2>& d2,
-                                      int threshold,
-                                      int enlarge)
+                                   int edgeID,
+                                   multi_array<float, 2>& d1,
+                                   multi_array<float, 2>& d2,
+                                   int threshold,
+                                   int enlarge)
 {
   // only route the non-degraded edges (len>0)
   if (sttrees_[netID].edges[edgeID].len <= threshold) {
@@ -1526,13 +1526,12 @@ void FastRouteCore::routeMonotonicAll(int threshold,
 
     const int numEdges = sttrees_[netID].num_edges();
     for (int edgeID = 0; edgeID < numEdges; edgeID++) {
-      routeMonotonic(
-          netID,
-          edgeID,
-          d1,
-          d2,
-          threshold,
-          expand);  // ripup previous route and do Monotonic routing
+      routeMonotonic(netID,
+                     edgeID,
+                     d1,
+                     d2,
+                     threshold,
+                     expand);  // ripup previous route and do Monotonic routing
     }
   }
   h_cost_table_.clear();
