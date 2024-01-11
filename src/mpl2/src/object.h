@@ -547,7 +547,7 @@ class SoftMacro
   float getPinX() const { return x_ + 0.5f * width_; }
   float getPinY() const { return y_ + 0.5f * height_; }
 
-  const std::pair<float, float> getLocation() const
+  std::pair<float, float> getLocation() const
   {
     return std::pair<float, float>(x_, y_);
   }
