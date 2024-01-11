@@ -642,8 +642,7 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFacingCore()
     pins.insert(pins.end(), layer_pins.begin(), layer_pins.end());
   }
 
-  odb::dbTransform transform;
-  inst->getTransform(transform);
+  const odb::dbTransform transform = inst->getTransform();
 
   // remove all pins that do not face the core
   std::function<bool(odb::dbBox*)> remove_func;
@@ -945,8 +944,7 @@ void PadDirectConnectionStraps::makeShapesFacingCore(
   }
 
   auto* inst = iterm_->getInst();
-  odb::dbTransform transform;
-  inst->getTransform(transform);
+  const odb::dbTransform transform = inst->getTransform();
 
   const bool is_horizontal_strap = isConnectHorizontal();
 
@@ -1066,8 +1064,7 @@ void PadDirectConnectionStraps::makeShapesOverPads(
 
   odb::dbInst* inst = iterm_->getInst();
   const odb::Rect inst_rect = inst->getBBox()->getBox();
-  odb::dbTransform transform;
-  inst->getTransform(transform);
+  const odb::dbTransform transform = inst->getTransform();
 
   const int inst_width = is_horizontal ? inst_rect.dy() : inst_rect.dx();
   const int inst_offset = is_horizontal ? inst_rect.yMin() : inst_rect.xMin();

@@ -187,9 +187,8 @@ void RUDYCalculator::processMacroObstruction(odb::dbMaster* macro,
   const int tile_width = block_width / tileCntX_;
   const int tile_height = block_height / tileCntY_;
   for (odb::dbBox* obstr_box : macro->getObstructions()) {
-    int pX, pY;
-    instance->getOrigin(pX, pY);
-    odb::dbTransform transform(instance->getOrient(), odb::Point(pX, pY));
+    const odb::Point origin = instance->getOrigin();
+    odb::dbTransform transform(instance->getOrient(), origin);
     odb::Rect macroObstrRect = obstr_box->getBox();
     transform.apply(macroObstrRect);
     const auto obstr_area = macroObstrRect.area();

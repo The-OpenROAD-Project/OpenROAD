@@ -136,8 +136,7 @@ const odb::Rect TimingPathNode::getPinLargestBox() const
 {
   if (isPinITerm()) {
     auto* iterm = getPinAsITerm();
-    odb::dbTransform transform;
-    iterm->getInst()->getTransform(transform);
+    const odb::dbTransform transform = iterm->getInst()->getTransform();
 
     odb::Rect pin_rect;
     auto* mterm = iterm->getMTerm();

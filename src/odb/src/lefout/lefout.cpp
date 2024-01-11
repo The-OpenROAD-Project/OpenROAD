@@ -243,8 +243,7 @@ void lefout::findInstsObstructions(ObstructionMap& obstructions,
 {  // Find all insts obsturctions and Iterms
 
   for (auto* inst : db_block->getInsts()) {
-    dbTransform trans;
-    inst->getTransform(trans);
+    const dbTransform trans = inst->getTransform();
 
     // Add insts obstructions
     for (auto* obs : inst->getMaster()->getObstructions()) {
@@ -390,8 +389,7 @@ void lefout::writeBlockVia(dbVia* via)
     std::string rname = rule->getName();
     fmt::print(_out, "  VIARULE {} ;\n", rname.c_str());
 
-    dbViaParams P;
-    via->getViaParams(P);
+    const dbViaParams P = via->getViaParams();
 
     fmt::print(_out,
                "  CUTSIZE {:.11g} {:.11g} ;\n",
@@ -1062,8 +1060,7 @@ void lefout::writeVia(dbTechVia* via)
     std::string rname = rule->getName();
     fmt::print(_out, "\n    VIARULE {} \n", rname.c_str());
 
-    dbViaParams P;
-    via->getViaParams(P);
+    const dbViaParams P = via->getViaParams();
 
     fmt::print(_out,
                " + CUTSIZE {:.11g} {:.11g}\n",
@@ -1180,11 +1177,14 @@ void lefout::writeMaster(dbMaster* master)
   if (master->getType() != dbMasterType::NONE)
     fmt::print(_out, "    CLASS {} ;\n", master->getType().getString());
 
-  int x, y;
-  master->getOrigin(x, y);
+  const odb::Point origin = master->getOrigin();
 
-  if ((x != 0) || (y != 0))
-    fmt::print(_out, "    ORIGIN {:.11g} {:.11g} ;\n", lefdist(x), lefdist(y));
+  if (origin != Point()) {
+    fmt::print(_out,
+               "    ORIGIN {:.11g} {:.11g} ;\n",
+               lefdist(origin.x()),
+               lefdist(origin.y()));
+  }
 
   if (master->getEEQ()) {
     std::string eeq = master->getEEQ()->getName();
@@ -1228,8 +1228,8 @@ void lefout::writeMaster(dbMaster* master)
     fmt::print(_out, "{}", " ;\n");
   }
 
-  if ((x != 0) || (y != 0)) {
-    dbTransform t(Point(-x, -y));
+  if (origin != Point()) {
+    dbTransform t(Point(-origin.x(), -origin.y()));
     master->transform(t);
   }
 
@@ -1254,8 +1254,8 @@ void lefout::writeMaster(dbMaster* master)
     fmt::print(_out, "{}", "    END\n");
   }
 
-  if ((x != 0) || (y != 0)) {
-    dbTransform t(Point(x, y));
+  if (origin != Point()) {
+    dbTransform t(origin);
     master->transform(t);
   }
 
