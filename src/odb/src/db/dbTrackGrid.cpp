@@ -251,11 +251,8 @@ void dbTrackGrid::getAverageTrackSpacing(int& track_step,
                                          int& num_tracks)
 {
   auto layer = getTechLayer();
-  if(layer == nullptr) {
-    getImpl()->getLogger()->error(utl::ODB,
-                              418,
-                              "Layer is empty."
-                              );
+  if (layer == nullptr) {
+    getImpl()->getLogger()->error(utl::ODB, 418, "Layer is empty.");
     return;
   }
   if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {

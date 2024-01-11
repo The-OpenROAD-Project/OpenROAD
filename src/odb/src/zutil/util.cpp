@@ -113,7 +113,7 @@ void RUDYCalculator::calculateRUDY()
       const auto netBox = net->getTermBBox();
       const auto netArea = netBox.area();
       if (netArea == 0) {
-        //TODO: handle nets with 0 area from getTermBBox()
+        // TODO: handle nets with 0 area from getTermBBox()
         continue;
       }
       const auto hpwl = static_cast<float>(netBox.dx() + netBox.dy());
@@ -184,46 +184,50 @@ void RUDYCalculator::processMacroObstruction(odb::dbMaster* macro,
       continue;
     }
     processTilesIntersection(macroObstrRect, tile_width, tile_height, 2);
-//    // Calculate the intersection range
-//    const int minXIndex
-//        = std::max(0, (macroObstrRect.xMin() - gridBlock_.xMin()) / tile_width);
-//    const int maxXIndex = std::min(
-//        tileCntX_ - 1, (macroObstrRect.xMax() - gridBlock_.xMin()) / tile_width);
-//    const int minYIndex
-//        = std::max(0, (macroObstrRect.yMin() - gridBlock_.yMin()) / tile_height);
-//    const int maxYIndex
-//        = std::min(tileCntY_ - 1,
-//                   (macroObstrRect.yMax() - gridBlock_.yMin()) / tile_height);
-//
-//    // Iterate over the tiles in the calculated range
-//    for (int x = minXIndex; x <= maxXIndex; ++x) {
-//      for (int y = minYIndex; y <= maxYIndex; ++y) {
-//        Tile& tile = getEditableTile(x, y);
-//        const auto tileBox = tile.getRect();
-//        if (macroObstrRect.overlaps(tileBox)) {
-//          const auto hpwl = static_cast<float>(tileBox.dx() + tileBox.dy());
-//          const auto wireArea = hpwl * wireWidth_;
-//          const auto obstr_congestion = wireArea / tileBox.area();
-//          const auto intersectArea = macroObstrRect.intersect(tileBox).area();
-//          const auto tileArea = tileBox.area();
-//          const auto tileObstrBoxRatio = static_cast<float>(intersectArea)
-//                                         / static_cast<float>(tileArea);
-//          const auto rudy = obstr_congestion * tileObstrBoxRatio * 100 * 2;
-//          tile.addRUDY(rudy);
-//        }
-//      }
-//    }
+    //    // Calculate the intersection range
+    //    const int minXIndex
+    //        = std::max(0, (macroObstrRect.xMin() - gridBlock_.xMin()) /
+    //        tile_width);
+    //    const int maxXIndex = std::min(
+    //        tileCntX_ - 1, (macroObstrRect.xMax() - gridBlock_.xMin()) /
+    //        tile_width);
+    //    const int minYIndex
+    //        = std::max(0, (macroObstrRect.yMin() - gridBlock_.yMin()) /
+    //        tile_height);
+    //    const int maxYIndex
+    //        = std::min(tileCntY_ - 1,
+    //                   (macroObstrRect.yMax() - gridBlock_.yMin()) /
+    //                   tile_height);
+    //
+    //    // Iterate over the tiles in the calculated range
+    //    for (int x = minXIndex; x <= maxXIndex; ++x) {
+    //      for (int y = minYIndex; y <= maxYIndex; ++y) {
+    //        Tile& tile = getEditableTile(x, y);
+    //        const auto tileBox = tile.getRect();
+    //        if (macroObstrRect.overlaps(tileBox)) {
+    //          const auto hpwl = static_cast<float>(tileBox.dx() +
+    //          tileBox.dy()); const auto wireArea = hpwl * wireWidth_; const
+    //          auto obstr_congestion = wireArea / tileBox.area(); const auto
+    //          intersectArea = macroObstrRect.intersect(tileBox).area(); const
+    //          auto tileArea = tileBox.area(); const auto tileObstrBoxRatio =
+    //          static_cast<float>(intersectArea)
+    //                                         / static_cast<float>(tileArea);
+    //          const auto rudy = obstr_congestion * tileObstrBoxRatio * 100 *
+    //          2; tile.addRUDY(rudy);
+    //        }
+    //      }
+    //    }
   }
 }
 
 void RUDYCalculator::processTilesIntersection(const odb::Rect obstruction_rect,
-                                const int tile_width,
-                                const int tile_height,
-                                const int nets_per_tile)
+                                              const int tile_width,
+                                              const int tile_height,
+                                              const int nets_per_tile)
 {
   // Calculate the intersection range
-  const int minXIndex = std::max(
-      0, (obstruction_rect.xMin() - gridBlock_.xMin()) / tile_width);
+  const int minXIndex
+      = std::max(0, (obstruction_rect.xMin() - gridBlock_.xMin()) / tile_width);
   const int maxXIndex
       = std::min(tileCntX_ - 1,
                  (obstruction_rect.xMax() - gridBlock_.xMin()) / tile_width);
@@ -239,17 +243,14 @@ void RUDYCalculator::processTilesIntersection(const odb::Rect obstruction_rect,
       Tile& tile = getEditableTile(x, y);
       const auto tileBox = tile.getRect();
       if (obstruction_rect.overlaps(tileBox)) {
-        const auto hpwl
-            = static_cast<float>(tileBox.dx() + tileBox.dy());
+        const auto hpwl = static_cast<float>(tileBox.dx() + tileBox.dy());
         const auto wireArea = hpwl * wireWidth_;
         const auto tileArea = tileBox.area();
         const auto obstr_congestion = wireArea / tileArea;
-        const auto intersectArea
-            = obstruction_rect.intersect(tileBox).area();
-        
+        const auto intersectArea = obstruction_rect.intersect(tileBox).area();
+
         const auto tileObstrBoxRatio
-            = static_cast<float>(intersectArea)
-              / static_cast<float>(tileArea);
+            = static_cast<float>(intersectArea) / static_cast<float>(tileArea);
         const auto rudy
             = obstr_congestion * tileObstrBoxRatio * 100 * nets_per_tile;
         tile.addRUDY(rudy);
