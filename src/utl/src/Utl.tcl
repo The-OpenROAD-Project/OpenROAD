@@ -3,7 +3,7 @@ set MAN_PATH ""
 
 proc get_input { } {
   # Get the relative path from the user
-  puts "Please enter the relative path to the cat folders:"
+  puts "Please enter an optional relative path to the cat folders:"
   flush stdout
   gets stdin relative_path
 
@@ -37,16 +37,15 @@ proc check_valid_man_path { path } {
 }
 
 proc man { name } {
+  set DEFAULT_MAN_PATH "../docs/manpages/cat"
   global MAN_PATH
-  if { [string length $MAN_PATH] == 0 } {
-    set MAN_PATH [get_input]
-    if { $MAN_PATH == 0 } { return }
+  set MAN_PATH [get_input]
+  if { [check_valid_man_path $MAN_PATH] == false } {
+    puts "Using default manpath."
+    set MAN_PATH $DEFAULT_MAN_PATH
   }
-
-  if { [check_valid_man_path $MAN_PATH] == 0 } {
-    set $MAN_PATH ""
-    puts ""
-  }
+  puts $DEFAULT_MAN_PATH
+  puts $MAN_PATH
 
   set man_path $MAN_PATH
   set man_sections {}
