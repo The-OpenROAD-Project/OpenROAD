@@ -2895,7 +2895,7 @@ void Resizer::journalRestore(int& resize_count,
                network_->pathName(inst),
                port1->name(),
                port2->name());
-    swapPins(inst, port2, port1, false);
+    swapPins(inst, port1, port2, false);
   }
   swapped_pins_.clear();
 
