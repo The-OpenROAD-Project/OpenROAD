@@ -528,6 +528,9 @@ class RUDYCalculator
                                 const int tileWidth,
                                 const int tileHeight,
                                 const int net_per_tile);
+  void processTilesIntersectionSignalNet(const odb::Rect net_rect,
+                                const int tile_width,
+                                const int tile_height);
 
   dbBlock* block_;
   odb::Rect gridBlock_;
