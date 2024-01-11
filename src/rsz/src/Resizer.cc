@@ -1661,6 +1661,10 @@ void Resizer::findBufferTargetSlews()
     }
   }
 
+  if (tgt_slew_corner_ == nullptr) {
+      logger_->error(RSZ, 91, "Target slew corner not found.");
+    }
+
   debugPrint(logger_,
              RSZ,
              "target_load",

@@ -60,7 +60,6 @@ using sta::Net;
 using sta::Network;
 using sta::Pin;
 using sta::PinSeq;
-using sta::UnorderedMap;
 
 using stt::SteinerTreeBuilder;
 

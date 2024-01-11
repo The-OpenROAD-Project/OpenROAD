@@ -109,7 +109,6 @@ using sta::Required;
 using sta::RiseFall;
 using sta::Slack;
 using sta::Slew;
-using sta::Sta;
 using sta::StaState;
 using sta::TimingArc;
 using sta::UnorderedSet;
