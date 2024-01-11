@@ -1710,10 +1710,8 @@ void MBFF::ReadFFs()
     sta::Cell* cell = network_->dbToSta(inst->getMaster());
     sta::LibertyCell* lib_cell = network_->libertyCell(cell);
     if (lib_cell && lib_cell->hasSequentials()) {
-      int x_i;
-      int y_i;
-      inst->getOrigin(x_i, y_i);
-      const Point pt{x_i / multiplier_, y_i / multiplier_};
+      const odb::Point origin = inst->getOrigin();
+      const Point pt{origin.x() / multiplier_, origin.y() / multiplier_};
       flops_.push_back({pt, num_flops, 0.0});
       insts_.push_back(inst);
       num_flops++;

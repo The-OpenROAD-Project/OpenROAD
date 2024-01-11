@@ -452,15 +452,12 @@ void RenderThread::drawInstanceOutlines(QPainter* painter,
     if (minimum_size > master->getWidth()
         && minimum_size > master->getHeight()) {
       painter->setTransform(initial_xfm);
-      int x;
-      int y;
-      inst->getOrigin(x, y);
-      painter->drawPoint(x, y);
+      auto origin = inst->getOrigin();
+      painter->drawPoint(origin.x(), origin.y());
     } else {
       // setup the instance's transform
       QTransform xfm = initial_xfm;
-      dbTransform inst_xfm;
-      inst->getTransform(inst_xfm);
+      const dbTransform inst_xfm = inst->getTransform();
       addInstTransform(xfm, inst_xfm);
       painter->setTransform(xfm);
 
@@ -523,8 +520,7 @@ void RenderThread::drawInstanceShapes(dbTechLayer* layer,
         && (child = inst->getBlock()->findChild(master->getName().c_str()))) {
       // setup the instance's transform
       QTransform xfm = initial_xfm;
-      dbTransform inst_xfm;
-      inst->getTransform(inst_xfm);
+      const dbTransform inst_xfm = inst->getTransform();
       addInstTransform(xfm, inst_xfm);
       painter->setTransform(xfm);
       Rect bbox = child->getBBox()->getBox();
@@ -555,8 +551,7 @@ void RenderThread::drawInstanceShapes(dbTechLayer* layer,
 
     // setup the instance's transform
     QTransform xfm = initial_xfm;
-    dbTransform inst_xfm;
-    inst->getTransform(inst_xfm);
+    const dbTransform inst_xfm = inst->getTransform();
     addInstTransform(xfm, inst_xfm);
     painter->setTransform(xfm);
 
@@ -637,8 +632,7 @@ void RenderThread::drawITermLabels(QPainter* painter,
       continue;
     }
 
-    odb::dbTransform xform;
-    inst->getTransform(xform);
+    const odb::dbTransform xform = inst->getTransform();
     for (auto inst_iterm : inst->getITerms()) {
       bool drawn = false;
       for (auto* mpin : inst_iterm->getMTerm()->getMPins()) {

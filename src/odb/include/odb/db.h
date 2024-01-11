@@ -35,6 +35,7 @@
 #include <cstdint>
 #include <list>
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 #include <variant>
@@ -2806,7 +2807,7 @@ class dbInst : public dbObject
   ///
   /// Get the "placed" origin of this instance.
   ///
-  void getOrigin(int& x, int& y);
+  Point getOrigin();
 
   ///
   /// Set the "placed" origin of this instance.
@@ -2860,7 +2861,7 @@ class dbInst : public dbObject
   /// Get the transform of this instance.
   /// Equivalent to getOrient() and getOrigin()
   ///
-  void getTransform(dbTransform& t);
+  dbTransform getTransform();
 
   ///
   /// Set the transform of this instance.
@@ -3266,6 +3267,12 @@ class dbITerm : public dbObject
   dbMTerm* getMTerm() const;
 
   ///
+  /// Get the name of this iterm.  This is not persistently stored
+  /// and is constructed on the fly.
+  ///
+  std::string getName(char separator = '/') const;
+
+  ///
   /// Get bbox of this iterm (ie the transfromed bbox of the mterm)
   ///
   Rect getBBox();
@@ -3498,7 +3505,7 @@ class dbVia : public dbObject
   ///
   /// Get the via params used to generate this via.
   ///
-  void getViaParams(dbViaParams& params_return);
+  dbViaParams getViaParams();
 
   ///
   /// Get the block this via belongs too.
@@ -3690,7 +3697,7 @@ class dbWire : public dbObject
   ///
   /// Get the bounding box of this wire
   ///
-  bool getBBox(Rect& r);
+  std::optional<Rect> getBBox();
 
   ///
   /// Get the total path length contained in this wire.
@@ -3706,10 +3713,11 @@ class dbWire : public dbObject
   /// Get the count of wire segments contained in this wire.
   ///
   uint count();
+
   ///
   /// Get junction coordinate.
   ///
-  void getCoord(int jid, int& x, int& y);
+  Point getCoord(int jid);
 
   ///
   /// Get junction property
@@ -4850,7 +4858,7 @@ class dbRow : public dbObject
   ///
   /// Get the origin of this row
   ///
-  void getOrigin(int& x, int& y);
+  Point getOrigin();
 
   ///
   /// Get the site-orientation of this row
@@ -5312,7 +5320,7 @@ class dbMaster : public dbObject
   ///
   /// Get the x,y origin of this master
   ///
-  void getOrigin(int& x, int& y);
+  Point getOrigin();
 
   ///
   /// Set the x,y origin of this master, default is (0,0)
@@ -6057,7 +6065,7 @@ class dbTechVia : public dbObject
   ///
   /// Get the via params used to generate this via.
   ///
-  void getViaParams(dbViaParams& params_return);
+  dbViaParams getViaParams();
 
   ///
   /// Get the technology this via belongs too.
@@ -7817,6 +7825,15 @@ class dbTechLayer : public dbObject
   int getSpacing(int width, int length = 0);
 
   ///
+  /// Get the spacing between tracks for this layer.
+  /// If the layer has a multi pattern spacing returns the average.
+  ///
+  void getAverageTrackSpacing(odb::dbTrackGrid* track_grid,
+                              int& track_step,
+                              int& track_init,
+                              int& num_tracks);
+
+  ///
   /// The number of masks for this layer (aka double/triple patterning).
   /// Allowable values are in [1, 3].
   ///
@@ -7829,6 +7846,7 @@ class dbTechLayer : public dbObject
   void getMaxWideDRCRange(int& owidth, int& olength);
   void getMinWideDRCRange(int& owidth, int& olength);
 
+  ///
   /// Get the collection of spacing rules for the object, assuming
   /// coding in LEF 5.4 format.
   ///
@@ -7889,7 +7907,6 @@ class dbTechLayer : public dbObject
   dbTechLayerAntennaRule* getOxide2AntennaRule() const;
   void writeAntennaRulesLef(lefout& writer) const;
 
-  ///
   ///
   /// Get collection of minimum cuts, minimum enclosure rules, if exist
   ///

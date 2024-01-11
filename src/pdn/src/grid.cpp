@@ -1291,8 +1291,7 @@ odb::Rect InstanceGrid::getDomainBoundary() const
   odb::Rect pin_box;
   pin_box.mergeInit();
 
-  odb::dbTransform transform;
-  inst_->getTransform(transform);
+  const odb::dbTransform transform = inst_->getTransform();
 
   for (auto* pin : inst_->getMaster()->getMTerms()) {
     if (!pin->getSigType().isSupply()) {
@@ -1352,8 +1351,7 @@ ShapeTreeMap InstanceGrid::getInstanceObstructions(
 {
   ShapeTreeMap obs;
 
-  odb::dbTransform transform;
-  inst->getTransform(transform);
+  const odb::dbTransform transform = inst->getTransform();
 
   auto* master = inst->getMaster();
 
@@ -1423,8 +1421,7 @@ ShapeTreeMap InstanceGrid::getInstancePins(odb::dbInst* inst)
 {
   // add instance pins
   std::vector<ShapePtr> pins;
-  odb::dbTransform transform;
-  inst->getTransform(transform);
+  const odb::dbTransform transform = inst->getTransform();
   for (auto* iterm : inst->getITerms()) {
     odb::dbNet* net = iterm->getNet();
     for (auto* mpin : iterm->getMTerm()->getMPins()) {

@@ -6284,6 +6284,16 @@ void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip)
     inst->setLocation(macro_location.getX(), macro_location.getY());
     const float new_wirelength = calculateRealMacroWirelength(inst);
 
+    debugPrint(logger_,
+               MPL,
+               "flipping",
+               1,
+               "Inst {} flip {} orig_WL {} new_WL {}",
+               inst->getName(),
+               is_vertical_flip ? "V" : "H",
+               original_wirelength,
+               new_wirelength);
+
     if (new_wirelength > original_wirelength) {
       flipRealMacro(inst, is_vertical_flip);
       inst->setLocation(macro_location.getX(), macro_location.getY());

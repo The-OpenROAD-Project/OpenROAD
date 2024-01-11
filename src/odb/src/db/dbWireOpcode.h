@@ -105,9 +105,9 @@ namespace odb {
 
 struct WirePoint
 {
-  int _x;
-  int _y;
-  dbTechLayer* _layer;
+  int _x = 0;
+  int _y = 0;
+  dbTechLayer* _layer = nullptr;
 };
 
 template <class O, class D>

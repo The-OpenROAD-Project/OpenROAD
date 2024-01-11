@@ -205,8 +205,7 @@ void io::Parser::setVias(odb::dbBlock* block)
 {
   for (auto via : block->getVias()) {
     if (via->getViaGenerateRule() != nullptr && via->hasParams()) {
-      odb::dbViaParams params;
-      via->getViaParams(params);
+      const odb::dbViaParams params = via->getViaParams();
       frLayerNum cutLayerNum = 0;
       frLayerNum botLayerNum = 0;
       frLayerNum topLayerNum = 0;
@@ -2225,20 +2224,18 @@ void io::Parser::setMasters(odb::dbDatabase* db)
         tree.clear();
       }
       auto tmpMaster = std::make_unique<frMaster>(master->getName());
-      frCoord originX;
-      frCoord originY;
-      master->getOrigin(originX, originY);
+      odb::Point origin = master->getOrigin();
       frCoord sizeX = master->getWidth();
       frCoord sizeY = master->getHeight();
       std::vector<frBoundary> bounds;
       frBoundary bound;
       std::vector<Point> points;
-      points.push_back(Point(originX, originY));
-      points.push_back(Point(sizeX, originY));
-      points.push_back(Point(sizeX, sizeY));
-      points.push_back(Point(originX, sizeY));
+      points.emplace_back(origin);
+      points.emplace_back(sizeX, origin.y());
+      points.emplace_back(sizeX, sizeY);
+      points.emplace_back(origin.x(), sizeY);
       bound.setPoints(points);
-      bounds.push_back(bound);
+      bounds.emplace_back(bound);
       tmpMaster->setBoundaries(bounds);
       tmpMaster->setMasterType(master->getType());
 
