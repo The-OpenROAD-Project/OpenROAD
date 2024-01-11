@@ -497,7 +497,8 @@ PadDirectConnectionStraps::PadDirectConnectionStraps(
 
 bool PadDirectConnectionStraps::canConnect() const
 {
-  return pad_edge_ != odb::dbDirection::NONE && !pins_.empty() && type_ != None;
+  return pad_edge_ != odb::dbDirection::NONE && !pins_.empty()
+         && type_ != ConnectionType::None;
 }
 
 void PadDirectConnectionStraps::initialize(ConnectionType type)
@@ -541,17 +542,17 @@ void PadDirectConnectionStraps::initialize(ConnectionType type)
              pad_edge_ == odb::dbDirection::WEST);
 
   switch (type) {
-    case None:
+    case ConnectionType::None:
       pins_ = getPinsFacingCore();
       if (pins_.empty()) {
         // check if pins are accessible from above
         pins_ = getPinsFormingRing();
       }
       break;
-    case Edge:
+    case ConnectionType::Edge:
       pins_ = getPinsFacingCore();
       break;
-    case OverPads:
+    case ConnectionType::OverPads:
       pins_ = getPinsFormingRing();
       break;
   }
@@ -641,8 +642,7 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFacingCore()
     pins.insert(pins.end(), layer_pins.begin(), layer_pins.end());
   }
 
-  odb::dbTransform transform;
-  inst->getTransform(transform);
+  const odb::dbTransform transform = inst->getTransform();
 
   // remove all pins that do not face the core
   std::function<bool(odb::dbBox*)> remove_func;
@@ -675,7 +675,7 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFacingCore()
   pins.erase(std::remove_if(pins.begin(), pins.end(), remove_func), pins.end());
 
   if (!pins.empty()) {
-    type_ = Edge;
+    type_ = ConnectionType::Edge;
   }
   return pins;
 }
@@ -684,9 +684,31 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFormingRing()
 {
   auto pins_by_layer = getPinsByLayer();
 
+  // cleanup pins
+
+  // remove pins that do not form a complete ring
+  auto* master = iterm_->getInst()->getMaster();
+  auto remove_filter = [master](odb::dbBox* box) {
+    const odb::Rect rect = box->getBox();
+    const bool matches_x
+        = rect.dx() == master->getWidth() || rect.dx() == master->getHeight();
+    const bool matches_y
+        = rect.dy() == master->getWidth() || rect.dy() == master->getHeight();
+    return !matches_x && !matches_y;
+  };
+  for (auto& [layer, layer_pins] : pins_by_layer) {
+    auto remove_itr
+        = std::remove_if(layer_pins.begin(), layer_pins.end(), remove_filter);
+    layer_pins.erase(remove_itr, layer_pins.end());
+  }
+
   std::vector<odb::dbBox*> pins;
   odb::dbTechLayer* top_layer = nullptr;
-  for (const auto& [layer, layer_pins] : getPinsByLayer()) {
+  for (const auto& [layer, layer_pins] : pins_by_layer) {
+    if (layer_pins.empty()) {
+      continue;
+    }
+
     bool use_pins = false;
     if (top_layer == nullptr) {
       use_pins = true;
@@ -714,7 +736,6 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFormingRing()
     return {};
   }
 
-  auto* master = iterm_->getInst()->getMaster();
   for (auto* obs : master->getObstructions()) {
     auto* obs_layer = obs->getTechLayer();
     if (obs_layer == nullptr) {
@@ -736,21 +757,17 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFormingRing()
           // pins might be obstructed
           return {};
         }
+        if (geo_layer->getNumber() == routing_layer->getNumber()) {
+          for (auto* pin : pins) {
+            if (pin->getBox().intersects(geo->getBox())) {
+              // pins will be obstructed
+              return {};
+            }
+          }
+        }
       }
     }
   }
-
-  // remove pins that do not form a complete ring
-  auto remove_itr
-      = std::remove_if(pins.begin(), pins.end(), [master](odb::dbBox* box) {
-          const odb::Rect rect = box->getBox();
-          const bool matches_x = rect.dx() == master->getWidth()
-                                 || rect.dx() == master->getHeight();
-          const bool matches_y = rect.dy() == master->getWidth()
-                                 || rect.dy() == master->getHeight();
-          return !matches_x && !matches_y;
-        });
-  pins.erase(remove_itr, pins.end());
 
   if (pad_edge_ == odb::dbDirection::EAST
       || pad_edge_ == odb::dbDirection::WEST) {
@@ -763,7 +780,7 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFormingRing()
   }
   setLayer(routing_layer);
   if (!pins.empty()) {
-    type_ = OverPads;
+    type_ = ConnectionType::OverPads;
   }
   return pins;
 }
@@ -776,13 +793,13 @@ void PadDirectConnectionStraps::report() const
   logger->report("    Pin: {}", getName());
   std::string connection_type = "Unknown";
   switch (type_) {
-    case None:
+    case ConnectionType::None:
       connection_type = "None";
       break;
-    case Edge:
+    case ConnectionType::Edge:
       connection_type = "Edge";
       break;
-    case OverPads:
+    case ConnectionType::OverPads:
       connection_type = "Over pads";
       break;
   }
@@ -808,13 +825,15 @@ void PadDirectConnectionStraps::makeShapes(const ShapeTreeMap& other_shapes)
              1,
              "Direct connect pin start of make shapes for {}",
              getName());
+  target_shapes_.clear();
+  target_pin_shape_.clear();
   switch (type_) {
-    case None:
+    case ConnectionType::None:
       break;
-    case Edge:
+    case ConnectionType::Edge:
       makeShapesFacingCore(other_shapes);
       break;
-    case OverPads:
+    case ConnectionType::OverPads:
       makeShapesOverPads(other_shapes);
       break;
   }
@@ -855,7 +874,7 @@ ShapePtr PadDirectConnectionStraps::getClosestShape(
            bgi::intersects(search) && bgi::satisfies([&](const auto& other) {
              const auto& shape = other.second;
              return shape->getNet() == net
-                    && shape->getType() == target_shapes_;
+                    && shape->getType() == target_shapes_type_;
            }));
        it != search_shapes.qend();
        it++) {
@@ -917,7 +936,7 @@ void PadDirectConnectionStraps::makeShapesFacingCore(
   std::set<odb::dbTechLayer*> connectable_layers;
   for (const auto& [layer, shapes] : other_shapes) {
     for (const auto& [box, shape] : shapes) {
-      if (shape->getType() == target_shapes_) {
+      if (shape->getType() == target_shapes_type_) {
         const auto layers = getGrid()->connectableLayers(layer);
         connectable_layers.insert(layers.begin(), layers.end());
       }
@@ -925,13 +944,7 @@ void PadDirectConnectionStraps::makeShapesFacingCore(
   }
 
   auto* inst = iterm_->getInst();
-  odb::dbTransform transform;
-  inst->getTransform(transform);
-
-  const bool is_south = pad_edge_ == odb::dbDirection::SOUTH;
-  const bool is_north = pad_edge_ == odb::dbDirection::NORTH;
-  const bool is_west = pad_edge_ == odb::dbDirection::WEST;
-  const bool is_east = pad_edge_ == odb::dbDirection::EAST;
+  const odb::dbTransform transform = inst->getTransform();
 
   const bool is_horizontal_strap = isConnectHorizontal();
 
@@ -958,16 +971,8 @@ void PadDirectConnectionStraps::makeShapesFacingCore(
         continue;
       }
 
-      odb::Rect shape_rect = pin_rect;
-      if (is_west) {
-        shape_rect.set_xhi(closest_shape->getRect().xMax());
-      } else if (is_east) {
-        shape_rect.set_xlo(closest_shape->getRect().xMin());
-      } else if (is_south) {
-        shape_rect.set_yhi(closest_shape->getRect().yMax());
-      } else if (is_north) {
-        shape_rect.set_ylo(closest_shape->getRect().yMin());
-      } else {
+      odb::Rect shape_rect;
+      if (!snapRectToClosestShape(closest_shape, pin_rect, shape_rect)) {
         continue;
       }
 
@@ -995,6 +1000,8 @@ void PadDirectConnectionStraps::makeShapesFacingCore(
       // preserved
       shape->addITermConnection(pin_rect.intersect(shape_rect));
       addShape(shape);
+
+      target_shapes_[shape] = closest_shape.get();
     }
   }
 }
@@ -1046,20 +1053,18 @@ void PadDirectConnectionStraps::makeShapesOverPads(
              utl::PDN,
              "Pad",
              2,
-             "Pad connections for {} has {} connections and this on is at "
+             "Pad connections for {} has {} connections and this one is at "
              "index ({}), will use {} to connect.",
              getName(),
              straps.size(),
              index,
-             getLayer()->getName())
+             getLayer()->getName());
 
-      const bool is_horizontal
-      = isConnectHorizontal();
+  const bool is_horizontal = isConnectHorizontal();
 
   odb::dbInst* inst = iterm_->getInst();
   const odb::Rect inst_rect = inst->getBBox()->getBox();
-  odb::dbTransform transform;
-  inst->getTransform(transform);
+  const odb::dbTransform transform = inst->getTransform();
 
   const int inst_width = is_horizontal ? inst_rect.dy() : inst_rect.dx();
   const int inst_offset = is_horizontal ? inst_rect.yMin() : inst_rect.xMin();
@@ -1083,16 +1088,17 @@ void PadDirectConnectionStraps::makeShapesOverPads(
   setSpacing(std::max(getWidth(), layer.getSpacing(getWidth())));
   Straps::checkLayerSpecifications();
 
-  const int target_offset = layer.snapToManufacturingGrid(
-      inst_offset + getSpacing() + getWidth() / 2, false);
-  const int offset = target_offset + index * (getSpacing() + getWidth());
-
   odb::Rect pin_shape;
   pin_shape.mergeInit();
   for (auto* pin : pins_) {
     pin_shape.merge(pin->getBox());
   }
   transform.apply(pin_shape);
+  odb::Rect org_pin_shape = pin_shape;
+
+  const int target_offset = layer.snapToManufacturingGrid(
+      inst_offset + getSpacing() + getWidth() / 2, false);
+  const int offset = target_offset + index * (getSpacing() + getWidth());
 
   if (is_horizontal) {
     pin_shape.set_ylo(offset - getWidth() / 2);
@@ -1121,21 +1127,8 @@ void PadDirectConnectionStraps::makeShapesOverPads(
     return;
   }
 
-  const bool is_south = pad_edge_ == odb::dbDirection::SOUTH;
-  const bool is_north = pad_edge_ == odb::dbDirection::NORTH;
-  const bool is_west = pad_edge_ == odb::dbDirection::WEST;
-  const bool is_east = pad_edge_ == odb::dbDirection::EAST;
-
-  odb::Rect shape_rect = pin_shape;
-  if (is_west) {
-    shape_rect.set_xhi(closest_shape->getRect().xMax());
-  } else if (is_east) {
-    shape_rect.set_xlo(closest_shape->getRect().xMin());
-  } else if (is_south) {
-    shape_rect.set_yhi(closest_shape->getRect().yMax());
-  } else if (is_north) {
-    shape_rect.set_ylo(closest_shape->getRect().yMin());
-  } else {
+  odb::Rect shape_rect;
+  if (!snapRectToClosestShape(closest_shape, pin_shape, shape_rect)) {
     return;
   }
 
@@ -1146,11 +1139,39 @@ void PadDirectConnectionStraps::makeShapesOverPads(
     shape->setAllowsNonPreferredDirectionChange();
   }
   addShape(shape);
+  target_shapes_[shape] = closest_shape.get();
+  target_pin_shape_[shape] = org_pin_shape;
+}
+
+bool PadDirectConnectionStraps::snapRectToClosestShape(
+    const ShapePtr& closest_shape,
+    const odb::Rect& pin_shape,
+    odb::Rect& new_shape) const
+{
+  new_shape = pin_shape;
+  switch (pad_edge_) {
+    case odb::dbDirection::WEST:
+      new_shape.set_xhi(closest_shape->getRect().xMax());
+      break;
+    case odb::dbDirection::EAST:
+      new_shape.set_xlo(closest_shape->getRect().xMin());
+      break;
+    case odb::dbDirection::SOUTH:
+      new_shape.set_yhi(closest_shape->getRect().yMax());
+      break;
+    case odb::dbDirection::NORTH:
+      new_shape.set_ylo(closest_shape->getRect().yMin());
+      break;
+    default:
+      return false;
+  }
+
+  return true;
 }
 
 void PadDirectConnectionStraps::getConnectableShapes(ShapeTreeMap& shapes) const
 {
-  if (type_ != OverPads) {
+  if (type_ != ConnectionType::OverPads) {
     return;
   }
 
@@ -1177,7 +1198,7 @@ void PadDirectConnectionStraps::cutShapes(const ShapeTreeMap& obstructions)
 {
   Straps::cutShapes(obstructions);
 
-  if (type_ != OverPads) {
+  if (type_ != ConnectionType::OverPads) {
     return;
   }
 
@@ -1191,6 +1212,10 @@ void PadDirectConnectionStraps::cutShapes(const ShapeTreeMap& obstructions)
     for (const auto& entry : layer_shapes) {
       const auto& shape = entry.second;
       if (inst_shape.contains(shape->getRect())) {
+        // reject shapes that only connect to pad
+        remove_shapes.push_back(shape.get());
+      } else if (!inst_shape.intersects(shape->getRect())) {
+        // reject shapes that do not connect to pad
         remove_shapes.push_back(shape.get());
       }
     }
@@ -1207,18 +1232,18 @@ void PadDirectConnectionStraps::unifyConnectionTypes(
 {
   std::set<ConnectionType> types;
   for (auto* strap : straps) {
-    if (strap->getConnectionType() == None) {
+    if (strap->getConnectionType() == ConnectionType::None) {
       continue;
     }
     types.insert(strap->getConnectionType());
   }
 
-  ConnectionType global_connection = None;
+  ConnectionType global_connection = ConnectionType::None;
   if (types.size() == 1) {
     global_connection = *types.begin();
   } else {
     // Multiple methods found, pick Edge
-    global_connection = Edge;
+    global_connection = ConnectionType::Edge;
   }
 
   for (auto* strap : straps) {
@@ -1233,6 +1258,206 @@ void PadDirectConnectionStraps::setConnectionType(ConnectionType type)
   }
 
   initialize(type);
+}
+
+bool PadDirectConnectionStraps::strapViaIsObstructed(
+    Shape* shape,
+    const ShapeTreeMap& other_shapes,
+    const ShapeTreeMap& other_obstructions,
+    bool recheck) const
+{
+  auto find_shape = target_shapes_.find(shape);
+  if (find_shape == target_shapes_.end()) {
+    return false;
+  }
+
+  Shape* target = find_shape->second;
+  int layer0 = target->getLayer()->getRoutingLevel();
+  int layer1 = shape->getLayer()->getRoutingLevel();
+  if (layer0 > layer1) {
+    std::swap(layer0, layer1);
+  }
+  if (layer1 - layer0 <= 1) {
+    return false;
+  }
+
+  if (!shape->getRect().intersects(find_shape->second->getRect())) {
+    // if new shape doesn't intersects target reject
+    return true;
+  }
+
+  const odb::Rect expected_via
+      = shape->getRect().intersect(find_shape->second->getRect());
+  const Box expected_via_box = Shape::rectToBox(expected_via);
+
+  auto* tech = target->getLayer()->getTech();
+  for (int layer = layer0 + 1; layer < layer1; layer++) {
+    auto* tech_layer = tech->findRoutingLayer(layer);
+
+    if (other_obstructions.count(tech_layer) == 0) {
+      continue;
+    }
+    const auto& layer_shapes = other_obstructions.at(tech_layer);
+    const bool has_obstruction
+        = layer_shapes.qbegin(bgi::intersects(expected_via_box))
+          != layer_shapes.qend();
+
+    if (has_obstruction) {
+      debugPrint(
+          getLogger(),
+          utl::PDN,
+          "Pad",
+          recheck ? 4 : 3,
+          "Direct connect shape {} with obstruction {} using pin {} on {}",
+          Shape::getRectText(expected_via, tech->getLefUnits()),
+          tech_layer->getName(),
+          Shape::getRectText(target_pin_shape_.at(shape), tech->getLefUnits()),
+          shape->getNet()->getName());
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool PadDirectConnectionStraps::refineShapes(ShapeTreeMap& all_shapes,
+                                             ShapeTreeMap& all_obstructions)
+{
+  if (type_ != ConnectionType::OverPads) {
+    return GridComponent::refineShapes(all_shapes, all_obstructions);
+  }
+
+  std::set<Shape*> refine;
+  for (const auto& [layer, shapes] : getShapes()) {
+    for (const auto& [box, shape] : shapes) {
+      if (!strapViaIsObstructed(
+              shape.get(), all_shapes, all_obstructions, false)) {
+        continue;
+      }
+
+      refine.insert(shape.get());
+    }
+  }
+
+  if (refine.empty()) {
+    return false;
+  }
+
+  for (auto* refine_shape : refine) {
+    std::unique_ptr<Shape> shape(refine_shape->copy());
+    removeShape(refine_shape);
+
+    // remove shape from all_shapes and all_obstructions
+    auto* layer = shape->getLayer();
+    auto find_shape = [&](const ShapeValue& other) {
+      const auto& other_shape = other.second;
+      return other_shape.get() == refine_shape;
+    };
+    // remove from all_shapes
+    auto& layer_shapes = all_shapes[layer];
+    auto find_all_shapes_itr = layer_shapes.qbegin(bgi::satisfies(find_shape));
+    if (find_all_shapes_itr != layer_shapes.qend()) {
+      layer_shapes.remove(*find_all_shapes_itr);
+    }
+    // remove from all_obstructions
+    auto& layer_obstruction = all_obstructions[layer];
+    auto find_all_obstructions_itr
+        = layer_obstruction.qbegin(bgi::satisfies(find_shape));
+    if (find_all_obstructions_itr != layer_obstruction.qend()) {
+      layer_obstruction.remove(*find_all_obstructions_itr);
+    }
+
+    const TechLayer tech_layer(layer);
+    for (int width : {getWidth(), tech_layer.getMinWidth()}) {
+      setWidth(width);
+
+      if (refineShape(shape.get(),
+                      target_pin_shape_[refine_shape],
+                      all_shapes,
+                      all_obstructions)) {
+        break;
+      }
+    }
+  }
+
+  return true;
+}
+
+bool PadDirectConnectionStraps::refineShape(Shape* shape,
+                                            const odb::Rect& pin_shape,
+                                            ShapeTreeMap& all_shapes,
+                                            ShapeTreeMap& all_obstructions)
+{
+  const TechLayer tech_layer(shape->getLayer());
+
+  const int delta = tech_layer.getMinIncrementStep();
+
+  int search_min;
+  int search_max;
+
+  const bool horizontal = isHorizontal();
+
+  if (horizontal) {
+    search_min = pin_shape.yMin();
+    search_max = pin_shape.yMax() - getWidth();
+  } else {
+    search_min = pin_shape.xMin();
+    search_max = pin_shape.xMax() - getWidth();
+  }
+
+  for (int check_loc = search_min; check_loc <= search_max;
+       check_loc += delta) {
+    odb::Rect new_rect = shape->getRect();
+
+    if (horizontal) {
+      new_rect.set_ylo(check_loc);
+      new_rect.set_yhi(check_loc + getWidth());
+    } else {
+      new_rect.set_xlo(check_loc);
+      new_rect.set_xhi(check_loc + getWidth());
+    }
+
+    std::unique_ptr<Shape> new_shape(shape->copy());
+    new_shape->setRect(new_rect);
+
+    debugPrint(
+        getLogger(),
+        utl::PDN,
+        "Pad",
+        4,
+        "Checking new shape: {} on {}",
+        Shape::getRectText(new_shape->getRect(),
+                           new_shape->getLayer()->getTech()->getLefUnits()),
+        new_shape->getLayer()->getName());
+
+    // check if legal
+    if (strapViaIsObstructed(
+            new_shape.get(), all_shapes, all_obstructions, true)) {
+      continue;
+    }
+    const ShapePtr& added_shape = addShape(new_shape.release());
+    if (added_shape != nullptr) {
+      added_shape->clearITermConnections();
+      added_shape->addITermConnection(
+          pin_shape.intersect(added_shape->getRect()));
+
+      // shape was added
+      cutShapes(all_obstructions);
+
+      // check if shape was removed during cutting
+      if (getShapeCount() == 0) {
+        continue;
+      }
+
+      // add shape to all_shapes and all_obstructions
+      getObstructions(all_obstructions);
+      getShapes(all_shapes);
+
+      return true;
+    }
+  }
+
+  return false;
 }
 
 ////////

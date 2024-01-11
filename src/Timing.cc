@@ -75,16 +75,16 @@ std::pair<odb::dbITerm*, odb::dbBTerm*> Timing::staToDBPin(const sta::Pin* pin)
 bool Timing::isEndpoint(odb::dbITerm* db_pin)
 {
   sta::Pin* sta_pin = getSta()->getDbNetwork()->dbToSta(db_pin);
-  return isEndpoint_(sta_pin);
+  return isEndpoint(sta_pin);
 }
 
 bool Timing::isEndpoint(odb::dbBTerm* db_pin)
 {
   sta::Pin* sta_pin = getSta()->getDbNetwork()->dbToSta(db_pin);
-  return isEndpoint_(sta_pin);
+  return isEndpoint(sta_pin);
 }
 
-bool Timing::isEndpoint_(sta::Pin* sta_pin)
+bool Timing::isEndpoint(sta::Pin* sta_pin)
 {
   auto search = getSta()->search();
   auto vertex_array = vertices(sta_pin);
@@ -96,7 +96,7 @@ bool Timing::isEndpoint_(sta::Pin* sta_pin)
   return false;
 }
 
-float Timing::slew_all_corners(sta::Vertex* vertex, sta::MinMax* minmax)
+float Timing::slewAllCorners(sta::Vertex* vertex, sta::MinMax* minmax)
 {
   auto sta = getSta();
   bool max = (minmax == sta::MinMax::max());
@@ -114,24 +114,23 @@ float Timing::getPinSlew(odb::dbITerm* db_pin, MinMax minmax)
 {
   sta::dbSta* sta = getSta();
   sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
-  return getPinSlew_(sta_pin, minmax);
+  return getPinSlew(sta_pin, minmax);
 }
 
 float Timing::getPinSlew(odb::dbBTerm* db_pin, MinMax minmax)
 {
   sta::dbSta* sta = getSta();
   sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
-  return getPinSlew_(sta_pin, minmax);
+  return getPinSlew(sta_pin, minmax);
 }
 
-float Timing::getPinSlew_(sta::Pin* sta_pin, MinMax minmax)
+float Timing::getPinSlew(sta::Pin* sta_pin, MinMax minmax)
 {
   auto vertex_array = vertices(sta_pin);
   float pinSlew = (minmax == Max) ? -sta::INF : sta::INF;
-  auto sta_minmax = (minmax == Max) ? sta::MinMax::max() : sta::MinMax::min();
   for (auto vertex : vertex_array) {
     if (vertex != nullptr) {
-      float pinSlewTemp = slew_all_corners(vertex, sta_minmax);
+      float pinSlewTemp = slewAllCorners(vertex, getMinMax(minmax));
       pinSlew = (minmax == Max) ? std::max(pinSlew, pinSlewTemp)
                                 : std::min(pinSlew, pinSlewTemp);
     }
@@ -218,17 +217,17 @@ float Timing::getPinArrival(odb::dbITerm* db_pin, RiseFall rf, MinMax minmax)
 {
   sta::dbSta* sta = getSta();
   sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
-  return getPinArrival_(sta_pin, rf, minmax);
+  return getPinArrival(sta_pin, rf, minmax);
 }
 
 float Timing::getPinArrival(odb::dbBTerm* db_pin, RiseFall rf, MinMax minmax)
 {
   sta::dbSta* sta = getSta();
   sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
-  return getPinArrival_(sta_pin, rf, minmax);
+  return getPinArrival(sta_pin, rf, minmax);
 }
 
-float Timing::getPinArrival_(sta::Pin* sta_pin, RiseFall rf, MinMax minmax)
+float Timing::getPinArrival(sta::Pin* sta_pin, RiseFall rf, MinMax minmax)
 {
   auto vertex_array = vertices(sta_pin);
   float delay = (minmax == Max) ? -sta::INF : sta::INF;
@@ -259,6 +258,27 @@ std::vector<sta::Corner*> Timing::getCorners()
 {
   sta::Corners* corners = getSta()->corners();
   return {corners->begin(), corners->end()};
+}
+
+float Timing::getPinSlack(odb::dbITerm* db_pin, RiseFall rf, MinMax minmax)
+{
+  sta::dbSta* sta = getSta();
+  sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
+  return getPinSlack(sta_pin, rf, minmax);
+}
+
+float Timing::getPinSlack(odb::dbBTerm* db_pin, RiseFall rf, MinMax minmax)
+{
+  sta::dbSta* sta = getSta();
+  sta::Pin* sta_pin = sta->getDbNetwork()->dbToSta(db_pin);
+  return getPinSlack(sta_pin, rf, minmax);
+}
+
+float Timing::getPinSlack(sta::Pin* sta_pin, RiseFall rf, MinMax minmax)
+{
+  sta::dbSta* sta = getSta();
+  auto sta_rf = (rf == Rise) ? sta::RiseFall::rise() : sta::RiseFall::fall();
+  return sta->pinSlack(sta_pin, sta_rf, getMinMax(minmax));
 }
 
 // I'd like to return a std::set but swig gave me way too much grief
@@ -296,6 +316,57 @@ std::vector<odb::dbMTerm*> Timing::getTimingFanoutFrom(odb::dbMTerm* input)
     }
   }
   return {outputs.begin(), outputs.end()};
+}
+
+sta::MinMax* Timing::getMinMax(MinMax type)
+{
+  return type == Max ? sta::MinMax::max() : sta::MinMax::min();
+}
+
+float Timing::getNetCap(odb::dbNet* net, sta::Corner* corner, MinMax minmax)
+{
+  sta::dbSta* sta = getSta();
+  sta::Net* sta_net = sta->getDbNetwork()->dbToSta(net);
+
+  float pin_cap;
+  float wire_cap;
+  sta->connectedCap(sta_net, corner, getMinMax(minmax), pin_cap, wire_cap);
+  return pin_cap + wire_cap;
+}
+
+float Timing::getPortCap(odb::dbITerm* pin, sta::Corner* corner, MinMax minmax)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::Pin* sta_pin = network->dbToSta(pin);
+  sta::LibertyPort* lib_port = network->libertyPort(sta_pin);
+  return sta->capacitance(lib_port, corner, getMinMax(minmax));
+}
+
+float Timing::staticPower(odb::dbInst* inst, sta::Corner* corner)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+
+  sta::Instance* sta_inst = network->dbToSta(inst);
+  if (!sta_inst) {
+    return 0.0;
+  }
+  sta::PowerResult power = sta->power(sta_inst, corner);
+  return power.leakage();
+}
+
+float Timing::dynamicPower(odb::dbInst* inst, sta::Corner* corner)
+{
+  sta::dbSta* sta = getSta();
+  sta::dbNetwork* network = sta->getDbNetwork();
+
+  sta::Instance* sta_inst = network->dbToSta(inst);
+  if (!sta_inst) {
+    return 0.0;
+  }
+  sta::PowerResult power = sta->power(sta_inst, corner);
+  return (power.internal() + power.switching());
 }
 
 }  // namespace ord

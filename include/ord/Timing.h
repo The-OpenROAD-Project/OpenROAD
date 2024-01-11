@@ -48,6 +48,8 @@ class dbMaster;
 class dbMTerm;
 class dbITerm;
 class dbBTerm;
+class dbInst;
+class dbNet;
 }  // namespace odb
 
 namespace sta {
@@ -91,20 +93,30 @@ class Timing
   float getPinSlew(odb::dbITerm* db_pin, MinMax minmax = Max);
   float getPinSlew(odb::dbBTerm* db_pin, MinMax minmax = Max);
 
+  float getPinSlack(odb::dbITerm* db_pin, RiseFall rf, MinMax minmax = Max);
+  float getPinSlack(odb::dbBTerm* db_pin, RiseFall rf, MinMax minmax = Max);
+
   bool isEndpoint(odb::dbITerm* db_pin);
   bool isEndpoint(odb::dbBTerm* db_pin);
+
+  float getNetCap(odb::dbNet* net, sta::Corner* corner, MinMax minmax);
+  float getPortCap(odb::dbITerm* pin, sta::Corner* corner, MinMax minmax);
+  float staticPower(odb::dbInst* inst, sta::Corner* corner);
+  float dynamicPower(odb::dbInst* inst, sta::Corner* corner);
 
   std::vector<odb::dbMTerm*> getTimingFanoutFrom(odb::dbMTerm* input);
   std::vector<sta::Corner*> getCorners();
 
  private:
-  sta::LibertyCell* getLibertyCell(odb::dbMaster* master);
   sta::dbSta* getSta();
+  sta::MinMax* getMinMax(MinMax type);
+  sta::LibertyCell* getLibertyCell(odb::dbMaster* master);
   std::array<sta::Vertex*, 2> vertices(const sta::Pin* pin);
-  bool isEndpoint_(sta::Pin* sta_pin);
-  float getPinSlew_(sta::Pin* sta_pin, MinMax minmax);
-  float getPinArrival_(sta::Pin* sta_pin, RiseFall rf, MinMax minmax);
-  float slew_all_corners(sta::Vertex* vertex, sta::MinMax* minmax);
+  bool isEndpoint(sta::Pin* sta_pin);
+  float getPinSlew(sta::Pin* sta_pin, MinMax minmax);
+  float getPinArrival(sta::Pin* sta_pin, RiseFall rf, MinMax minmax);
+  float getPinSlack(sta::Pin* sta_pin, RiseFall rf, MinMax minmax);
+  float slewAllCorners(sta::Vertex* vertex, sta::MinMax* minmax);
   std::vector<float> arrivalsClk(const sta::RiseFall* rf,
                                  sta::Clock* clk,
                                  const sta::RiseFall* clk_rf,

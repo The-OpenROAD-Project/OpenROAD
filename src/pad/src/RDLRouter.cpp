@@ -1027,8 +1027,7 @@ std::set<odb::Rect> RDLRouter::getITermShapes(odb::dbITerm* iterm) const
 {
   std::set<odb::Rect> rects;
 
-  odb::dbTransform xform;
-  iterm->getInst()->getTransform(xform);
+  const odb::dbTransform xform = iterm->getInst()->getTransform();
 
   for (auto* mpin : iterm->getMTerm()->getMPins()) {
     for (auto* geom : mpin->getGeometry()) {
@@ -1063,8 +1062,7 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
       continue;
     }
 
-    odb::dbTransform xform;
-    inst->getTransform(xform);
+    const odb::dbTransform xform = inst->getTransform();
 
     auto* master = inst->getMaster();
     for (auto* obs : master->getObstructions()) {
@@ -1168,8 +1166,7 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
       via = pad_accessvia_;
     }
 
-    odb::dbTransform xform;
-    iterm->getInst()->getTransform(xform);
+    const odb::dbTransform xform = iterm->getInst()->getTransform();
 
     bool found = false;
     for (auto* mpin : iterm->getMTerm()->getMPins()) {

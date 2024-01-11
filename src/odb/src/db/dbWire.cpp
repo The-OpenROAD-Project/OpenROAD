@@ -624,20 +624,21 @@ void dbWire::shuffleWireSeg(dbNet** newNets, dbRSeg** new_rsegs)
     rwire->attach(leadNewNet);
 }
 
-bool dbWire::getBBox(Rect& bbox)
+std::optional<Rect> dbWire::getBBox()
 {
-  bbox.reset(INT_MAX, INT_MAX, INT_MIN, INT_MIN);
-  dbWireShapeItr itr;
-  dbShape s;
-  uint cnt = 0;
+  Rect bbox;
+  bbox.mergeInit();
 
+  dbShape s;
+  dbWireShapeItr itr;
   for (itr.begin(this); itr.next(s);) {
-    Rect r = s.getBox();
-    bbox.merge(r);
-    ++cnt;
+    bbox.merge(s.getBox());
   }
 
-  return cnt > 0;
+  if (!bbox.isInverted()) {
+    return bbox;
+  }
+  return {};
 }
 
 #define DB_WIRE_SHAPE_INVALID_SHAPE_ID 0
@@ -667,9 +668,6 @@ void dbWire::getShape(int shape_id, dbShape& shape)
         return;
 
       WirePoint pnt;
-      // dimitri_fix
-      pnt._x = 0;
-      pnt._y = 0;
       getPrevPoint(
           tech, block, wire->_opcodes, wire->_data, shape_id, false, pnt);
       Rect b = box->getBox();
@@ -713,19 +711,16 @@ void dbWire::getShape(int shape_id, dbShape& shape)
   }
 }
 
-void dbWire::getCoord(int jid, int& x, int& y)
+Point dbWire::getCoord(int jid)
 {
   _dbWire* wire = (_dbWire*) this;
   ZASSERT((0 <= jid) && (jid < (int) wire->length()));
   dbBlock* block = (dbBlock*) wire->getOwner();
   dbTech* tech = getDb()->getTech();
-  // dimitri_fix LOOK_AGAIN WirePoint pnt;
   WirePoint pnt;
-  pnt._x = 0;
-  pnt._y = 0;
   getPrevPoint(tech, block, wire->_opcodes, wire->_data, jid, false, pnt);
-  x = pnt._x;
-  y = pnt._y;
+
+  return {pnt._x, pnt._y};
 }
 
 bool dbWire::getProperty(int jid, int& prpty)
@@ -1761,10 +1756,11 @@ void dbWire::destroy(dbWire* wire_)
   _dbNet* net = (_dbNet*) wire_->getNet();
   for (auto callback : block->_callbacks)
     callback->inDbWireDestroy(wire_);
-  Rect bbox;
+  const auto opt_bbox = wire_->getBBox();
 
-  if (wire_->getBBox(bbox))
-    block->remove_rect(bbox);
+  if (opt_bbox) {
+    block->remove_rect(opt_bbox.value());
+  }
   if (net) {
     if (wire->_flags._is_global)
       net->_global_wire = 0;

@@ -235,8 +235,7 @@ ViaRepair::ObsRect ViaRepair::collectInstanceObstructions(odb::dbBlock* block)
       continue;
     }
 
-    odb::dbTransform xform;
-    inst->getTransform(xform);
+    const odb::dbTransform xform = inst->getTransform();
 
     odb::dbMaster* master = inst->getMaster();
     for (auto* obs : master->getObstructions()) {

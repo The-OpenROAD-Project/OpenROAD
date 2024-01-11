@@ -2,9 +2,10 @@
 #include <boost/test/included/unit_test.hpp>
 
 #include "db.h"
-#include "helper.cpp"
+#include "helper.h"
 
-using namespace odb;
+namespace odb {
+namespace {
 
 BOOST_AUTO_TEST_SUITE(test_suite)
 
@@ -45,3 +46,6 @@ BOOST_AUTO_TEST_CASE(test_clear_tracks)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+}  // namespace
+}  // namespace odb

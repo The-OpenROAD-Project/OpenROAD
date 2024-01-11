@@ -484,8 +484,7 @@ DbVia::ViaLayerShape DbGenerateVia::generate(odb::dbBlock* block,
 
     via->setViaGenerateRule(rule_);
 
-    odb::dbViaParams params;
-    via->getViaParams(params);
+    odb::dbViaParams params = via->getViaParams();
 
     params.setBottomLayer(bottom_);
     params.setCutLayer(cut_);

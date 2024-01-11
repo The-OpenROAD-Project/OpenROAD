@@ -334,16 +334,16 @@ proc place_bondpad {args} {
 sta::define_cmd_args "place_io_terminals" {inst_terms}
 
 proc place_io_terminals {args} {
-  sta::parse_key_args "place_bondpad" args \
+  sta::parse_key_args "place_io_terminals" args \
     keys {} \
-    flags {}
+    flags {-allow_non_top_layer}
 
   set iterms []
   foreach pin [get_pins {*}$args] {
     lappend iterms [ sta::sta_to_db_pin $pin]
   }
 
-  pad::place_terminals $iterms
+  pad::place_terminals $iterms [info exists flags(-allow_non_top_layer)]
 }
 
 sta::define_hidden_cmd_args "make_fake_io_site" {-name name \
