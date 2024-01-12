@@ -115,11 +115,6 @@ class _dbTechLayer : public _dbObject
   uint getV55RowIdx(const int& rowVal) const;
   uint getV55ColIdx(const int& colVal) const;
   uint getTwIdx(const int width, const int prl) const;
-  void getAverageTrackPattern(dbTrackGrid* grid,
-                              bool is_x,
-                              int& track_init,
-                              int& num_tracks,
-                              int& track_step);
   // User Code End Methods
 
   dbTechLayerFlags flags_;
