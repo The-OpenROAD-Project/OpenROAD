@@ -6221,7 +6221,7 @@ void HierRTLMP::generateTemporaryStdCellsPlacement(Cluster* cluster)
 
 float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
 {
-  float wirelength = 0.0;
+  float wirelength = 0.0f;
 
   for (odb::dbITerm* iterm : macro->getITerms()) {
     if (iterm->getSigType() != odb::dbSigType::SIGNAL) {
@@ -6230,28 +6230,8 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
 
     odb::dbNet* net = iterm->getNet();
     if (net != nullptr) {
-      const float x1 = dbuToMicron(iterm->getBBox().xCenter(), dbu_);
-      const float y1 = dbuToMicron(iterm->getBBox().yCenter(), dbu_);
-
-      for (odb::dbITerm* net_iterm : net->getITerms()) {
-        if (net_iterm == iterm) {
-          continue;
-        }
-
-        if (net_iterm->getInst()->getPlacementStatus().isPlaced()) {
-          const float x2 = dbuToMicron(net_iterm->getBBox().xCenter(), dbu_);
-          const float y2 = dbuToMicron(net_iterm->getBBox().yCenter(), dbu_);
-
-          wirelength += (std::abs(x2 - x1) + std::abs(y2 - y1));
-        }
-      }
-
-      for (odb::dbBTerm* net_bterm : net->getBTerms()) {
-        const float x2 = dbuToMicron(net_bterm->getBBox().xCenter(), dbu_);
-        const float y2 = dbuToMicron(net_bterm->getBBox().yCenter(), dbu_);
-
-        wirelength += (std::abs(x2 - x1) + std::abs(y2 - y1));
-      }
+      const odb::Rect bbox = net->getTermBBox();
+      wirelength += dbuToMicron(bbox.dx() + bbox.dy(), dbu_);
     }
   }
 
