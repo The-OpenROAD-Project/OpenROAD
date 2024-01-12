@@ -291,28 +291,56 @@ void TimingWidget::writePathReportCommand(const QModelIndex& selected_index,
 {
   TimingPathsModel* focus_model
       = static_cast<TimingPathsModel*>(focus_view_->model());
-
   TimingPath* selected_path = focus_model->getPathAt(selected_index);
 
   if (type == CLOSEST_MATCH) {
     TimingNodeList* node_list = &selected_path->getPathNodes();
 
-    const int node_after_clock_idx = selected_path->getClkPathEndIndex() + 1;
-
-    // We write the clock nodes when the path has only clock nodes.
-    const int start_idx
-        = node_after_clock_idx == node_list->size() ? 0 : node_after_clock_idx;
+    const int clock_end_idx = selected_path->getClkPathEndIndex();
+    int start_idx = clock_end_idx + 1;
 
     QString closest_match_command = "report_checks ";
+    QString through_rise_or_fall;
+    QString through_node;
 
-    for (int i = start_idx; i < node_list->size(); i++) {
-      QString through_node
-          = QString::fromStdString((*node_list)[i]->getNodeName());
-      QString through_rise_or_fall = (*node_list)[i]->isRisingEdge()
-                                         ? " -rise_through "
-                                         : " -fall_through ";
+    // We actually write the clock nodes when the path has only clock nodes.
+    if (start_idx == node_list->size()) {
+      start_idx = 0;
 
-      closest_match_command += through_rise_or_fall + through_node;
+      // The first and last node must also be written with -through. The path
+      // cannot be found otherwise.
+      for (int i = start_idx; i < node_list->size(); i++) {
+        through_rise_or_fall = (*node_list)[i]->isRisingEdge()
+                                   ? " -rise_through "
+                                   : " -fall_through ";
+        through_node = QString::fromStdString((*node_list)[i]->getNodeName());
+
+        closest_match_command += through_rise_or_fall + through_node;
+      }
+    } else {
+      QString from_rise_or_fall = (*node_list)[start_idx]->isRisingEdge()
+                                      ? "-rise_from "
+                                      : "-fall_from ";
+      QString start_node
+          = QString::fromStdString(selected_path->getStartStageName());
+
+      closest_match_command += from_rise_or_fall + start_node;
+
+      for (int i = (start_idx + 1); i < (node_list->size() - 1); i++) {
+        through_rise_or_fall = (*node_list)[i]->isRisingEdge()
+                                   ? " -rise_through "
+                                   : " -fall_through ";
+        through_node = QString::fromStdString((*node_list)[i]->getNodeName());
+
+        closest_match_command += through_rise_or_fall + through_node;
+      }
+
+      QString to_rise_or_fall
+          = node_list->back()->isRisingEdge() ? " -rise_to " : " -fall_to ";
+      QString end_node
+          = QString::fromStdString(selected_path->getEndStageName());
+
+      closest_match_command += to_rise_or_fall + end_node;
     }
 
     QString path_delay_config = focus_view_ == setup_timing_table_view_
