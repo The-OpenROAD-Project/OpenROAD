@@ -294,34 +294,26 @@ void TimingWidget::writePathReportCommand(const QModelIndex& selected_index,
 
   TimingPath* selected_path = focus_model->getPathAt(selected_index);
 
-  QString start_node
-      = QString::fromStdString(selected_path->getStartStageName());
-  QString end_node = QString::fromStdString(selected_path->getEndStageName());
-
   if (type == CLOSEST_MATCH) {
     TimingNodeList* node_list = &selected_path->getPathNodes();
 
-    const int start_idx = selected_path->getClkPathEndIndex() + 1;
+    const int node_after_clock_idx = selected_path->getClkPathEndIndex() + 1;
 
-    QString start_rise_or_fall = (*node_list)[start_idx]->isRisingEdge()
-                                     ? "-rise_from "
-                                     : "-fall_from ";
-    QString closest_match_command
-        = "report_checks " + start_rise_or_fall + start_node;
+    // We write the clock nodes when the path has only clock nodes.
+    const int start_idx
+        = node_after_clock_idx == node_list->size() ? 0 : node_after_clock_idx;
 
-    for (int node_idx = (start_idx + 1); node_idx < ((*node_list).size() - 1);
-         node_idx++) {
+    QString closest_match_command = "report_checks ";
+
+    for (int i = start_idx; i < node_list->size(); i++) {
       QString through_node
-          = QString::fromStdString((*node_list)[node_idx]->getNodeName());
-      QString through_rise_or_fall = (*node_list)[node_idx]->isRisingEdge()
+          = QString::fromStdString((*node_list)[i]->getNodeName());
+      QString through_rise_or_fall = (*node_list)[i]->isRisingEdge()
                                          ? " -rise_through "
                                          : " -fall_through ";
 
       closest_match_command += through_rise_or_fall + through_node;
     }
-
-    QString end_rise_or_fall
-        = (*node_list).back()->isRisingEdge() ? " -rise_to " : " -fall_to ";
 
     QString path_delay_config = focus_view_ == setup_timing_table_view_
                                     ? " -path_delay max"
@@ -331,13 +323,16 @@ void TimingWidget::writePathReportCommand(const QModelIndex& selected_index,
         = " -fields {capacitance slew input_pins nets fanout} -format "
           "full_clock_expanded";
 
-    closest_match_command
-        += end_rise_or_fall + end_node + path_delay_config + fields_and_format;
+    closest_match_command += path_delay_config + fields_and_format;
 
     emit setCommand(closest_match_command);
   }
 
   if (type == FROM_START_TO_END) {
+    QString start_node
+        = QString::fromStdString(selected_path->getStartStageName());
+    QString end_node = QString::fromStdString(selected_path->getEndStageName());
+
     QString from_start_to_end_command
         = "report_checks -from " + start_node + " -to " + end_node;
 
