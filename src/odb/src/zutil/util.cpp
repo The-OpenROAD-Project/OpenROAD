@@ -103,24 +103,22 @@ void RUDYCalculator::makeGrid()
 void RUDYCalculator::calculateRUDY()
 {
   // refer: https://ieeexplore.ieee.org/document/4211973
-  const int block_width = gridBlock_.dx();
-  const int block_height = gridBlock_.dy();
-  const int tile_width = block_width / tileCntX_;
-  const int tile_height = block_height / tileCntY_;
+  const int tile_width = gridBlock_.dx() / tileCntX_;
+  const int tile_height = gridBlock_.dy() / tileCntY_;
 
   for (auto net : block_->getNets()) {
     if (!net->getSigType().isSupply()) {
-      const auto netBox = net->getTermBBox();
-      processTilesIntersectionSignalNet(netBox, tile_width, tile_height);
+      const auto net_rect = net->getTermBBox();
+      processIntersectionSignalNet(net_rect, tile_width, tile_height);
     } else {
       for (odb::dbSWire* swire : net->getSWires()) {
         for (odb::dbSBox* s : swire->getWires()) {
           if (s->isVia()) {
             continue;
-          } else {
-            odb::Rect wire_rect = s->getBox();
-            processTilesIntersection(wire_rect, tile_width, tile_height, 2);
           }
+          odb::Rect wire_rect = s->getBox();
+          processIntersectionGenericObstruction(
+              wire_rect, tile_width, tile_height, 1);
         }
       }
     }
@@ -137,27 +135,27 @@ void RUDYCalculator::calculateRUDY()
 void RUDYCalculator::processMacroObstruction(odb::dbMaster* macro,
                                              odb::dbInst* instance)
 {
-  const int block_width = gridBlock_.dx();
-  const int block_height = gridBlock_.dy();
-  const int tile_width = block_width / tileCntX_;
-  const int tile_height = block_height / tileCntY_;
+  const int tile_width = gridBlock_.dx() / tileCntX_;
+  const int tile_height = gridBlock_.dy() / tileCntY_;
   for (odb::dbBox* obstr_box : macro->getObstructions()) {
     const odb::Point origin = instance->getOrigin();
     odb::dbTransform transform(instance->getOrient(), origin);
-    odb::Rect macroObstrRect = obstr_box->getBox();
-    transform.apply(macroObstrRect);
-    const auto obstr_area = macroObstrRect.area();
+    odb::Rect macro_obstruction = obstr_box->getBox();
+    transform.apply(macro_obstruction);
+    const auto obstr_area = macro_obstruction.area();
     if (obstr_area == 0) {
       continue;
     }
-    processTilesIntersection(macroObstrRect, tile_width, tile_height, 2);
+    processIntersectionGenericObstruction(
+        macro_obstruction, tile_width, tile_height, 2);
   }
 }
 
-void RUDYCalculator::processTilesIntersection(const odb::Rect obstruction_rect,
-                                              const int tile_width,
-                                              const int tile_height,
-                                              const int nets_per_tile)
+void RUDYCalculator::processIntersectionGenericObstruction(
+    odb::Rect obstruction_rect,
+    const int tile_width,
+    const int tile_height,
+    const int nets_per_tile)
 {
   // Calculate the intersection range
   const int minXIndex
@@ -193,36 +191,36 @@ void RUDYCalculator::processTilesIntersection(const odb::Rect obstruction_rect,
   }
 }
 
-void RUDYCalculator::processTilesIntersectionSignalNet(const odb::Rect netBox,
-                                                       const int tile_width,
-                                                       const int tile_height)
+void RUDYCalculator::processIntersectionSignalNet(const odb::Rect net_rect,
+                                                  const int tile_width,
+                                                  const int tile_height)
 {
-  const auto netArea = netBox.area();
+  const auto netArea = net_rect.area();
   if (netArea == 0) {
     // TODO: handle nets with 0 area from getTermBBox()
     return;
   }
-  const auto hpwl = static_cast<float>(netBox.dx() + netBox.dy());
+  const auto hpwl = static_cast<float>(net_rect.dx() + net_rect.dy());
   const auto wireArea = hpwl * wireWidth_;
   const auto netCongestion = wireArea / netArea;
 
   // Calculate the intersection range
   const int minXIndex
-      = std::max(0, (netBox.xMin() - gridBlock_.xMin()) / tile_width);
+      = std::max(0, (net_rect.xMin() - gridBlock_.xMin()) / tile_width);
   const int maxXIndex = std::min(
-      tileCntX_ - 1, (netBox.xMax() - gridBlock_.xMin()) / tile_width);
+      tileCntX_ - 1, (net_rect.xMax() - gridBlock_.xMin()) / tile_width);
   const int minYIndex
-      = std::max(0, (netBox.yMin() - gridBlock_.yMin()) / tile_height);
+      = std::max(0, (net_rect.yMin() - gridBlock_.yMin()) / tile_height);
   const int maxYIndex = std::min(
-      tileCntY_ - 1, (netBox.yMax() - gridBlock_.yMin()) / tile_height);
+      tileCntY_ - 1, (net_rect.yMax() - gridBlock_.yMin()) / tile_height);
 
   // Iterate over the tiles in the calculated range
   for (int x = minXIndex; x <= maxXIndex; ++x) {
     for (int y = minYIndex; y <= maxYIndex; ++y) {
       Tile& tile = getEditableTile(x, y);
       const auto tileBox = tile.getRect();
-      if (netBox.overlaps(tileBox)) {
-        const auto intersectArea = netBox.intersect(tileBox).area();
+      if (net_rect.overlaps(tileBox)) {
+        const auto intersectArea = net_rect.intersect(tileBox).area();
         const auto tileArea = tileBox.area();
         const auto tileNetBoxRatio
             = static_cast<float>(intersectArea) / static_cast<float>(tileArea);
