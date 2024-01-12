@@ -1330,8 +1330,10 @@ void FastRouteCore::routeMonotonic(int netID,
     }
   }
   int cnt = 0;
-  std::vector<int> gridsX(x_range_ + y_range_);
-  std::vector<int> gridsY(x_range_ + y_range_);
+  std::vector<short int>& gridsX = treeedge->route.gridsX;
+  gridsX.resize(x_range_ + y_range_);
+  std::vector<short int>& gridsY = treeedge->route.gridsY;
+  gridsY.resize(x_range_ + y_range_);
   const int edgeCost = nets_[netID]->getEdgeCost();
 
   if (BL1) {
@@ -1484,16 +1486,9 @@ void FastRouteCore::routeMonotonic(int netID,
   cnt++;
 
   treeedge->route.routelen = cnt - 1;
-  treeedge->route.gridsX.clear();
-  treeedge->route.gridsY.clear();
 
-  treeedge->route.gridsX.resize(cnt, 0);
-  treeedge->route.gridsY.resize(cnt, 0);
-
-  for (int i = 0; i < cnt; i++) {
-    treeedge->route.gridsX[i] = gridsX[i];
-    treeedge->route.gridsY[i] = gridsY[i];
-  }
+  gridsX.resize(cnt);
+  gridsY.resize(cnt);
 }
 
 void FastRouteCore::routeMonotonicAll(int threshold,
