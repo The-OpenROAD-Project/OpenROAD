@@ -1,171 +1,173 @@
-/*
-BSD 3-Clause License
-
-Copyright (c) 2020, The Regents of the University of Minnesota
-
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
-* Neither the name of the copyright holder nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
+//
+// Copyright (c) 2024, The Regents of the University of California
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 #include "node.h"
 
-#include <iostream>
-#include <vector>
+#include "odb/db.h"
+#include "shape.h"
 
 namespace psm {
 
-using std::vector;
-
-Node::Node(const Point& loc, int layer) : layer_(layer), loc_(loc)
+Node::Node(const odb::Point& pt, odb::dbTechLayer* layer)
+    : pt_(pt), layer_(layer)
 {
 }
 
-//! Get the layer number of the node
-/*
- * \return Layer number of the node
- * */
-int Node::getLayerNum() const
+bool Node::compare(const Node* other) const
 {
-  return layer_;
+  if (other == nullptr) {
+    return true;
+  }
+
+  int lhs_x = pt_.getX();
+  int lhs_y = pt_.getY();
+  int lhs_l = layer_->getNumber();
+  NodeType lhs_t = getType();
+  int lhs_s = getTypeCompareInfo();
+
+  int rhs_x = other->pt_.getX();
+  int rhs_y = other->pt_.getY();
+  int rhs_l = other->layer_->getNumber();
+  NodeType rhs_t = other->getType();
+  int rhs_s = other->getTypeCompareInfo();
+
+  return std::tie(lhs_l, lhs_x, lhs_y, lhs_t, lhs_s)
+         < std::tie(rhs_l, rhs_x, rhs_y, rhs_t, rhs_s);
 }
 
-//! Get the location of the node
-/*
- * \return NodeLoc which is x and y index
- * */
-Point Node::getLoc() const
+bool Node::compare(const std::unique_ptr<Node>& other) const
 {
-  return loc_;
+  return compare(other.get());
 }
 
-//! Get location of the node in G matrix
-/*
- * \return Location in G matrix
- */
-NodeIdx Node::getGLoc() const
+std::string Node::describe(const std::string& prefix) const
 {
-  return node_loc_;
+  const double dbus = getDBUs();
+
+  std::string desc = fmt::format("{}{}: ({:.4f}, {:.4f}) on {}",
+                                 prefix,
+                                 getTypeName(),
+                                 pt_.getX() / dbus,
+                                 pt_.getY() / dbus,
+                                 layer_->getName());
+
+  return desc;
 }
 
-//! Set location of the node in G matrix
-/*
- * \param t_loc Location in the G matrix
- */
-void Node::setGLoc(NodeIdx t_loc)
+double Node::getDBUs() const
 {
-  node_loc_ = t_loc;
+  return layer_->getTech()->getLefUnits();
 }
 
-//! Function to print node details
-void Node::print(utl::Logger* logger) const
+void Node::print(utl::Logger* logger, const std::string& prefix) const
 {
-  logger->report("Node: {}", node_loc_);
-  logger->report(
-      "  Location: Layer {}, x {}, y {}", layer_, loc_.getX(), loc_.getY());
-  logger->report("  Current: {:5.4e}A", current_src_);
-  logger->report("  Voltage: {:5.4e}V", voltage_);
-  logger->report("  Has connection: {}", connected_ ? "true" : "false");
-  logger->report("  Has instances:  {}", hasInstances() ? "true" : "false");
+  logger->report(describe(prefix));
 }
 
-//! Function to set the current value at a particular node
-/*
- * \param t_current Current magnitude
- */
-void Node::setCurrent(double t_current)
+std::string Node::getName() const
 {
-  current_src_ = t_current;
+  std::string type = getTypeName();
+
+  auto space = type.find(' ');
+  while (space != std::string::npos) {
+    type.erase(space, 1);
+    space = type.find(' ');
+  }
+
+  return fmt::format(
+      "{}_{}_{}_{}", type, layer_->getName(), pt_.getX(), pt_.getY());
 }
 
-//! Function to get the value of current at a node
-double Node::getCurrent() const
+std::string Node::getTypeName() const
 {
-  return current_src_;
+  switch (getType()) {
+    case NodeType::None:
+      return "Node";
+    case NodeType::Source:
+      return "Source Node";
+    case NodeType::ITerm:
+      return "ITerm Node";
+    case NodeType::BPin:
+      return "BPin Node";
+  }
+
+  return "unknown";
 }
 
-//! Function to add the current source
-/*
- * \param t_current Value of current source
- */
-void Node::addCurrentSrc(double t_current)
+///////////////////
+
+TerminalNode::TerminalNode(const odb::Rect& shape, odb::dbTechLayer* layer)
+    : Node(odb::Point(shape.xCenter(), shape.yCenter()), layer), shape_(shape)
 {
-  double node_cur = getCurrent();
-  setCurrent(node_cur + t_current);
 }
 
-//! Function to set the value of the voltage source
-/*
- * \param t_voltage Voltage source magnitude
- * */
-void Node::setVoltage(double t_voltage)
+///////////////////
+
+SourceNode::SourceNode(Node* node)
+    : Node(node->getPoint(), node->getLayer()), source_(node)
 {
-  voltage_ = t_voltage;
 }
 
-//! Function to get the value of the voltage source
-/*
- * \return Voltage value at the node
- */
-double Node::getVoltage() const
+////////////////////
+
+ITermNode::ITermNode(odb::dbITerm* iterm,
+                     const odb::Point& pt,
+                     odb::dbTechLayer* layer)
+    : TerminalNode({pt, pt}, layer), iterm_(iterm)
 {
-  return voltage_;
 }
 
-bool Node::getConnected() const
+int ITermNode::getTypeCompareInfo() const
 {
-  return connected_;
+  return iterm_->getId();
 }
 
-void Node::setConnected()
+std::string ITermNode::describe(const std::string& prefix) const
 {
-  connected_ = true;
+  return TerminalNode::describe(prefix) + ": " + iterm_->getName();
 }
 
-bool Node::hasInstances() const
+////////////////////
+
+BPinNode::BPinNode(odb::dbBPin* pin,
+                   const odb::Rect& shape,
+                   odb::dbTechLayer* layer)
+    : TerminalNode(shape, layer), pin_(pin)
 {
-  return !connected_instances_.empty();
 }
 
-void Node::setEnclosure(NodeEnclosure encl)
+int BPinNode::getTypeCompareInfo() const
 {
-  encl_ = encl;
-}
-NodeEnclosure Node::getEnclosure() const
-{
-  return encl_;
+  return pin_->getId();
 }
 
-const vector<dbInst*>& Node::getInstances() const
-{
-  return connected_instances_;
-}
-
-void Node::addInstance(dbInst* inst)
-{
-  connected_instances_.push_back(inst);
-}
 }  // namespace psm

@@ -1,5 +1,4 @@
 from openroad import Design, Tech
-import helpers
 import pdnsim_aux
 
 tech = Tech()

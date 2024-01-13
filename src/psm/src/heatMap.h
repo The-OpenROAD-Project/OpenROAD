@@ -34,17 +34,23 @@
 
 #include "gui/heatMap.h"
 
+namespace sta {
+class Sta;
+class Corner;
+}  // namespace sta
+
 namespace psm {
 class PDNSim;
 
 class IRDropDataSource : public gui::RealValueHeatMapDataSource
 {
  public:
-  IRDropDataSource(PDNSim* psm, utl::Logger* logger);
+  IRDropDataSource(PDNSim* psm, sta::Sta* sta, utl::Logger* logger);
 
   void setBlock(odb::dbBlock* block) override;
 
-  double getGridSizeMinimumValue() const override;
+  void setNet(odb::dbNet* net) { net_ = net; }
+  void setCorner(sta::Corner* corner) { corner_ = corner; }
 
  protected:
   bool populateMap() override;
@@ -59,11 +65,18 @@ class IRDropDataSource : public gui::RealValueHeatMapDataSource
 
  private:
   void ensureLayer();
+  void ensureCorner();
+  void ensureNet();
   void setLayer(const std::string& name);
+  void setCorner(const std::string& name);
+  void setNet(const std::string& name);
 
   psm::PDNSim* psm_;
+  sta::Sta* sta_;
   odb::dbTech* tech_;
   odb::dbTechLayer* layer_;
+  odb::dbNet* net_;
+  sta::Corner* corner_;
 };
 
 }  // namespace psm

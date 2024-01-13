@@ -260,6 +260,22 @@ std::vector<sta::Corner*> Timing::getCorners()
   return {corners->begin(), corners->end()};
 }
 
+sta::Corner* Timing::cmdCorner()
+{
+  return getSta()->cmdCorner();
+}
+
+sta::Corner* Timing::findCorner(const char* corner)
+{
+  for (auto* sta_corner : getCorners()) {
+    if (strcmp(sta_corner->name(), corner) == 0) {
+      return sta_corner;
+    }
+  }
+
+  return nullptr;
+}
+
 float Timing::getPinSlack(odb::dbITerm* db_pin, RiseFall rf, MinMax minmax)
 {
   sta::dbSta* sta = getSta();

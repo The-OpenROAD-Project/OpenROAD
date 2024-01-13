@@ -32,23 +32,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "psm/pdnsim.h"
 
-#include <tcl.h>
-
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
 #include <string>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "debug_gui.h"
-#include "gmat.h"
 #include "heatMap.h"
+#include "ir_network.h"
 #include "ir_solver.h"
-#include "node.h"
 #include "odb/db.h"
+#include "shape.h"
 #include "sta/Corner.hh"
 #include "sta/DcalcAnalysisPt.hh"
 #include "sta/Liberty.hh"
@@ -69,237 +62,186 @@ void PDNSim::init(utl::Logger* logger,
   sta_ = sta;
   resizer_ = resizer;
   logger_ = logger;
-  heatmap_ = std::make_unique<IRDropDataSource>(this, logger_);
+  debug_gui_enabled_ = false;
+  heatmap_ = std::make_unique<IRDropDataSource>(this, sta, logger_);
   heatmap_->registerHeatMap();
 }
 
-void PDNSim::setDebugGui()
+void PDNSim::setDebugGui(bool enable)
 {
-  debug_gui_ = std::make_unique<DebugGui>(this);
-}
+  debug_gui_enabled_ = enable;
 
-void PDNSim::setNetVoltage(odb::dbNet* net, float voltage)
-{
-  net_voltage_map_[net] = voltage;
-}
-
-void PDNSim::setVsrcCfg(const std::string& vsrc)
-{
-  vsrc_loc_ = vsrc;
-  logger_->info(utl::PSM, 1, "Reading voltage source file: {}.", vsrc_loc_);
-}
-
-std::unique_ptr<IRSolver> PDNSim::getIRSolver(bool require_voltage)
-{
-  if (corner_ == nullptr) {
-    corner_ = sta_->cmdCorner();
-  }
-  if (corner_ == nullptr) {
-    corner_ = sta_->corners()->findCorner(0);
-  }
-  if (corner_ == nullptr) {
-    logger_->error(utl::PSM, 84, "Unable to proceed without a valid corner");
+  for (const auto& [net, solver] : solvers_) {
+    solver->enableGui(debug_gui_enabled_);
   }
 
-  std::optional<float> voltage = getNetVoltage(net_, require_voltage);
-
-  return std::make_unique<IRSolver>(db_,
-                                    sta_,
-                                    resizer_,
-                                    logger_,
-                                    net_,
-                                    voltage,
-                                    vsrc_loc_,
-                                    require_voltage,
-                                    bump_pitch_x_,
-                                    bump_pitch_y_,
-                                    node_density_,
-                                    node_density_factor_,
-                                    corner_);
+  gui::Gui::get()->registerDescriptor<Node*>(new NodeDescriptor(solvers_));
+  gui::Gui::get()->registerDescriptor<Connection*>(
+      new ConnectionDescriptor(solvers_));
 }
 
-void PDNSim::writeSpice(const std::string& file)
+void PDNSim::setNetVoltage(odb::dbNet* net, sta::Corner* corner, float voltage)
 {
-  auto irsolve_h = getIRSolver(false);
-
-  if (irsolve_h->build()) {
-    irsolve_h->writeSpiceFile(file);
-  }
+  auto& voltages = user_voltages_[net];
+  voltages[corner] = voltage;
 }
 
-void PDNSim::saveIRDrop(psm::IRSolver* ir_solver)
-{
-  GMat* gmat_obj = ir_solver->getGMat();
-
-  IRDropByLayer ir_drop;
-  std::vector<Node*> nodes = gmat_obj->getAllNodes();
-  int vsize;
-  vsize = nodes.size();
-  odb::dbTech* tech = db_->getTech();
-  for (int n = 0; n < vsize; n++) {
-    Node* node = nodes[n];
-    int node_layer_num = node->getLayerNum();
-    Point node_loc = node->getLoc();
-    odb::Point point = odb::Point(node_loc.getX(), node_loc.getY());
-    double voltage = node->getVoltage();
-    odb::dbTechLayer* node_layer = tech->findRoutingLayer(node_layer_num);
-    // Absolute is needed for GND nets. In case of GND net voltage is higher
-    // than supply.
-    ir_drop[node_layer][point]
-        = std::abs(ir_solver->getSupplyVoltageSrc() - voltage);
-  }
-  ir_drop_ = ir_drop;
-
-  if (debug_gui_) {
-    debug_gui_->setSources(ir_solver->getSources());
-  }
-}
-
-void PDNSim::analyzePowerGrid(const std::string& voltage_file,
+void PDNSim::analyzePowerGrid(odb::dbNet* net,
+                              sta::Corner* corner,
+                              GeneratedSourceType source_type,
+                              const std::string& voltage_file,
                               bool enable_em,
                               const std::string& em_file,
-                              const std::string& error_file)
+                              const std::string& error_file,
+                              const std::string& voltage_source_file)
 {
-  auto irsolve_h = getIRSolver(enable_em);
-
-  if (!irsolve_h->build(error_file)) {
-    saveIRDrop(irsolve_h.get());
-    logger_->error(
-        utl::PSM, 78, "IR drop setup failed.  Analysis can't proceed.");
-  }
-  const std::string corner_name
-      = corner_ != nullptr ? corner_->name() : "default";
-  const std::string metric_suffix
-      = fmt::format("__net:{}__corner:{}", net_->getName(), corner_name);
-  irsolve_h->solveIR();
-  logger_->report("########## IR report #################");
-  logger_->report("Corner: {}", corner_name);
-  logger_->report("Worstcase voltage: {:3.2e} V",
-                  irsolve_h->getWorstCaseVoltage());
-  const double avg_drop
-      = std::abs(irsolve_h->getSupplyVoltageSrc() - irsolve_h->getAvgVoltage());
-  const double worst_drop = std::abs(irsolve_h->getSupplyVoltageSrc()
-                                     - irsolve_h->getWorstCaseVoltage());
-  logger_->report("Average IR drop  : {:3.2e} V", avg_drop);
-  logger_->report("Worstcase IR drop: {:3.2e} V", worst_drop);
-  logger_->report("######################################");
-
-  logger_->metric(
-      fmt::format("design_powergrid__voltage__worst{}", metric_suffix),
-      irsolve_h->getWorstCaseVoltage());
-  logger_->metric(
-      fmt::format("design_powergrid__drop__average{}", metric_suffix),
-      avg_drop);
-  logger_->metric(fmt::format("design_powergrid__drop__worst{}", metric_suffix),
-                  worst_drop);
-
-  if (!voltage_file.empty()) {
-    irsolve_h->writeVoltageFile(voltage_file);
-  }
-
-  if (enable_em) {
-    logger_->report("########## EM analysis ###############");
-    logger_->report("Maximum current: {:3.2e} A", irsolve_h->getMaxCurrent());
-    logger_->report("Average current: {:3.2e} A", irsolve_h->getAvgCurrent());
-    logger_->report("Number of resistors: {}", irsolve_h->getNumResistors());
-    logger_->report("######################################");
-
-    logger_->metric(
-        fmt::format("design_powergrid__current__average{}", metric_suffix),
-        irsolve_h->getAvgCurrent());
-    logger_->metric(
-        fmt::format("design_powergrid__current__max{}", metric_suffix),
-        irsolve_h->getMaxCurrent());
-
-    if (!em_file.empty()) {
-      irsolve_h->writeEMFile(em_file);
-    }
-  }
-
-  saveIRDrop(irsolve_h.get());
-  min_resolution_ = irsolve_h->getMinimumResolution();
-  heatmap_->update();
-}
-
-bool PDNSim::checkConnectivity(const std::string& error_file)
-{
-  auto irsolve_h = getIRSolver(false);
-  if (!irsolve_h->build(error_file, true)) {
-    return false;
-  }
-  if (debug_gui_) {
-    debug_gui_->setSources(irsolve_h->getSources());
-  }
-  return irsolve_h->getConnectionTest();
-}
-
-void PDNSim::getIRDropMap(IRDropByLayer& ir_drop)
-{
-  ir_drop = ir_drop_;
-}
-
-void PDNSim::getIRDropForLayer(odb::dbTechLayer* layer, IRDropByPoint& ir_drop)
-{
-  auto it = ir_drop_.find(layer);
-  if (it == ir_drop_.end()) {
-    ir_drop.clear();
+  if (!checkConnectivity(net, false, error_file)) {
     return;
   }
 
-  ir_drop = it->second;
+  auto* solver = getIRSolver(net, false);
+  solver->solve(corner, source_type, voltage_source_file);
+  solver->report(corner);
+
+  heatmap_->setNet(net);
+  heatmap_->setCorner(corner);
+  heatmap_->update();
+
+  if (enable_em) {
+    solver->reportEM(corner);
+    solver->writeEMFile(em_file, corner);
+  }
+
+  solver->writeInstanceVoltageFile(voltage_file, corner);
 }
 
-int PDNSim::getMinimumResolution()
+bool PDNSim::checkConnectivity(odb::dbNet* net,
+                               bool floorplanning,
+                               const std::string& error_file)
 {
-  if (min_resolution_ <= 0) {
-    logger_->error(
-        utl::PSM,
-        68,
-        "Minimum resolution not set. Please run analyze_power_grid first.");
+  auto* solver = getIRSolver(net, floorplanning);
+  const bool check = solver->check();
+  solver->writeErrorFile(error_file);
+
+  if (debug_gui_enabled_) {
+    solver->enableGui(true);
   }
-  return min_resolution_;
+
+  if (logger_->debugCheck(utl::PSM, "stats", 1)) {
+    solver->getNetwork()->reportStats();
+  }
+
+  if (check) {
+    logger_->info(
+        utl::PSM, 400, "All shapes on net {} are connected.", net->getName());
+  } else {
+    logger_->error(
+        utl::PSM, 690, "Check connectivity failed on {}.", net->getName());
+  }
+  return check;
 }
 
-std::optional<float> PDNSim::getNetVoltage(odb::dbNet* net,
-                                           bool require_voltage) const
+void PDNSim::writeSpiceNetwork(odb::dbNet* net,
+                               sta::Corner* corner,
+                               GeneratedSourceType source_type,
+                               const std::string& spice_file,
+                               const std::string& voltage_source_file)
 {
-  if (net == nullptr) {
-    return {};
+  auto* solver = getIRSolver(net, false);
+  solver->writeSpiceFile(source_type, spice_file, corner, voltage_source_file);
+}
+
+psm::IRSolver* PDNSim::getIRSolver(odb::dbNet* net, bool floorplanning)
+{
+  auto& solver = solvers_[net];
+  if (solver == nullptr) {
+    solver = std::make_unique<IRSolver>(net,
+                                        floorplanning,
+                                        sta_,
+                                        resizer_,
+                                        logger_,
+                                        user_voltages_,
+                                        generated_source_settings_);
+    addOwner(net->getBlock());
   }
 
-  auto find_net = net_voltage_map_.find(net);
-  if (find_net != net_voltage_map_.end()) {
-    return find_net->second;
-  }
+  return solver.get();
+}
 
-  if (net->getSigType() == odb::dbSigType::GROUND) {
-    return 0.0;
+void PDNSim::getIRDropForLayer(odb::dbNet* net,
+                               sta::Corner* corner,
+                               odb::dbTechLayer* layer,
+                               IRDropByPoint& ir_drop) const
+{
+  auto find_solver = solvers_.find(net);
+  if (find_solver == solvers_.end()) {
+    return;
   }
+  ir_drop = find_solver->second->getIRDrop(layer, corner);
+}
 
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  sta::LibertyLibrary* default_library = network->defaultLibertyLibrary();
-  if (default_library == nullptr) {
-    if (!require_voltage) {
-      return {};
-    }
-
-    logger_->error(
-        utl::PSM,
-        79,
-        "Can't determine the supply voltage as no Liberty is loaded.");
+void PDNSim::setGeneratedSourceSettings(const GeneratedSourceSettings& settings)
+{
+  if (settings.bump_dx > 0) {
+    generated_source_settings_.bump_dx = settings.bump_dx;
   }
-
-  const sta::DcalcAnalysisPt* dcalc_ap
-      = corner_->findDcalcAnalysisPt(sta::MinMax::max());
-  const sta::Pvt* pvt = dcalc_ap->operatingConditions();
-  if (pvt == nullptr) {
-    pvt = default_library->defaultOperatingConditions();
+  if (settings.bump_dy > 0) {
+    generated_source_settings_.bump_dy = settings.bump_dy;
   }
-  if (pvt) {
-    return pvt->voltage();
+  if (settings.bump_interval > 0) {
+    generated_source_settings_.bump_interval = settings.bump_interval;
   }
+  if (settings.bump_size > 0) {
+    generated_source_settings_.bump_size = settings.bump_size;
+  }
+  if (settings.strap_track_pitch > 0) {
+    generated_source_settings_.strap_track_pitch = settings.strap_track_pitch;
+  }
+}
 
-  return {};
+void PDNSim::clearSolvers()
+{
+  solvers_.clear();
+}
+
+void PDNSim::inDbPostMoveInst(odb::dbInst*)
+{
+  clearSolvers();
+}
+
+void PDNSim::inDbNetDestroy(odb::dbNet*)
+{
+  clearSolvers();
+}
+
+void PDNSim::inDbBTermPostConnect(odb::dbBTerm*)
+{
+  clearSolvers();
+}
+
+void PDNSim::inDbBTermPostDisConnect(odb::dbBTerm*, odb::dbNet*)
+{
+  clearSolvers();
+}
+
+void PDNSim::inDbBPinDestroy(odb::dbBPin*)
+{
+  clearSolvers();
+}
+
+void PDNSim::inDbSWireAddSBox(odb::dbSBox*)
+{
+  clearSolvers();
+}
+
+void PDNSim::inDbSWireRemoveSBox(odb::dbSBox*)
+{
+  clearSolvers();
+}
+
+void PDNSim::inDbSWirePostDestroySBoxes(odb::dbSWire*)
+{
+  clearSolvers();
 }
 
 }  // namespace psm
