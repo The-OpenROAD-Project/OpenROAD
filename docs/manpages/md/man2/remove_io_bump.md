@@ -20,9 +20,11 @@ This command removes a single bump instance.
 
 # OPTIONS
 
-`instance_name`:  Name of the bump.
+`-bump`:  Name of the bump master.
 
 # ARGUMENTS
+
+`instance_name`:  Name of the bump.
 
 # EXAMPLES
 

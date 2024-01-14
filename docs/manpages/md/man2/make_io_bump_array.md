@@ -45,6 +45,8 @@ make_io_bump_array -bump BUMP -origin "200 200" -rows 14 -columns 14 -pitch "200
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

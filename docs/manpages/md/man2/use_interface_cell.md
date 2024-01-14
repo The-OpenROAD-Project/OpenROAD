@@ -30,6 +30,8 @@ This command sets the interface cell.
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

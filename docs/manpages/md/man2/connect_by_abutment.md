@@ -23,6 +23,8 @@ This command has no switches.
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

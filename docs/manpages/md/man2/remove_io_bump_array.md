@@ -30,6 +30,8 @@ remove_io_bump_array -bump BUMP
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

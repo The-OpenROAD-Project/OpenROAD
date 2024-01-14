@@ -48,6 +48,8 @@ called alone.
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

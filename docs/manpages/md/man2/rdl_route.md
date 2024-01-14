@@ -43,7 +43,25 @@ To route the RDL for the bump arrays.
 
 `nets`:  Nets to route.
 
+`Command Name`:  Description
+
+`find_site`:  Find site given site name.
+
+`find_master`:  Find master given master name.
+
+`find_instance`:  Find instance given instance name.
+
+`find_net`:  Find net given net name.
+
+`assert_required`:  Assert argument that is required for `cmd`
+
+`connect_iterm`:  Connect instance terminals. Required inputs are: `inst_name`, `iterm_name`, `net_name`.
+
+`convert_tcl`:  These functions read from $ICeWall::library parameters to generate a standalone Tcl script.
+
 # ARGUMENTS
+
+This command has no arguments.
 
 # EXAMPLES
 

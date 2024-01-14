@@ -45,6 +45,8 @@ place_pad -master sky130_fd_io__top_power_hvc_wpad -row IO_SOUTH -location 517.5
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

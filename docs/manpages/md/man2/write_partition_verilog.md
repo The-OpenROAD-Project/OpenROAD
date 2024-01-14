@@ -30,6 +30,8 @@ This command writes the partition result to verilog.
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

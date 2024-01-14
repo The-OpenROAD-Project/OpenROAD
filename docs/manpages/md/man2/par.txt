@@ -575,7 +575,7 @@ set timing_guardband true
 set part_design_solution_file "${design}_part_design.hgr.part.${num_parts}"
 
 ##############################################################################################
-### TritonPart with slack progagation
+## TritonPart with slack progagation
 ##############################################################################################
 puts "Start TritonPart with slack propagation"
 # call triton_part to partition the netlist

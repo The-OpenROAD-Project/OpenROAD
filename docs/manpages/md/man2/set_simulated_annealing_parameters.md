@@ -33,6 +33,8 @@ The `set_simulated_annealing` command defines the parameters for simulated annea
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

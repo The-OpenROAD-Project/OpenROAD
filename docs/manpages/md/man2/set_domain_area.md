@@ -27,6 +27,8 @@ This command sets the power domain area.
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

@@ -27,6 +27,8 @@ The `check_antennas` command will check for antenna violations.
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

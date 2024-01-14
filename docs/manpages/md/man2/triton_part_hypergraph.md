@@ -120,6 +120,8 @@ This command performs hypergraph netlist partitioning.
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

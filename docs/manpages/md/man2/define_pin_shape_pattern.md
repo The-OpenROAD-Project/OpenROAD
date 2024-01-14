@@ -39,6 +39,8 @@ the edges of the die boundary.
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

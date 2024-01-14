@@ -29,6 +29,8 @@ partially outside the die area.
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

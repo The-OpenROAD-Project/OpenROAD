@@ -54,6 +54,8 @@ endpoints are repaired to reduced the total negative slack.
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

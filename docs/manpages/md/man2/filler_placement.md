@@ -32,6 +32,8 @@ from `FILLER_` use `-prefix <new prefix>`.
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

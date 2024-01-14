@@ -45,6 +45,8 @@ This command creates or update isolation strategy.
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

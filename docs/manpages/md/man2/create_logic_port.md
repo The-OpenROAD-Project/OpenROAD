@@ -28,6 +28,8 @@ This command creates logic port. Direction must be specified from:
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

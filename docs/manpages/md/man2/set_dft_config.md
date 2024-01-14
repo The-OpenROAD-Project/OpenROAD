@@ -27,6 +27,8 @@ The command `set_dft_config` sets the DFT configuration variables.
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

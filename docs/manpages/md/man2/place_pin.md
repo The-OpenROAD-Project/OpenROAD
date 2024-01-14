@@ -40,6 +40,8 @@ To place an individual pin:
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

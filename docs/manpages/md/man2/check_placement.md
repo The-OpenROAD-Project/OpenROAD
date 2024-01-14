@@ -31,6 +31,8 @@ The `check_placement` command checks the placement legality. It returns
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

@@ -30,6 +30,8 @@ This command maps existing power switch.
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

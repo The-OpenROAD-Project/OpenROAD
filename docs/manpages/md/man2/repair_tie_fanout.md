@@ -31,6 +31,8 @@ of the tie high/low cell.
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

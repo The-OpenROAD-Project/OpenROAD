@@ -31,6 +31,8 @@ place_io_terminals u_*/VDD
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

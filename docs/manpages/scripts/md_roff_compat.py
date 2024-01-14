@@ -10,7 +10,7 @@ import datetime
 
 # list of edited docs
 SRC_DIR = "./md/man2"
-# problematic: drt, gpl, grt, gui, ifp, mpl2, pdn, psm
+# problematic: gpl, grt, gui, ifp, mpl2, pdn, psm
 # psm: need to handle the table wrt the #### Options, not all tables. 
 # also you need to change the ### FUNCTION_NAME parsing. Sometimes the 
 #    function name could be something weird like `diff_spef` or `pdngen`
@@ -19,8 +19,8 @@ SRC_DIR = "./md/man2"
 # sta: documentation is hosted elsewhere. (not currently in RTD also.)
 # 
 tools = ["ant", "cts", "dft", "dpl", "fin", "pad", "par", "ppl", "rsz",\
-            "tap", "upf"]
-#tools = ["rsz"]
+            "tap", "upf", "drt"]
+#tools = ["drt"]
 docs = [f"{SRC_DIR}/{tool}.txt" for tool in tools]
 
 # identify key section and stored in ManPage class. 
@@ -30,6 +30,7 @@ class ManPage():
         self.desc = ""
         self.synopsis = ""
         self.switches = {}
+        self.args = {}
         self.datetime = datetime.datetime.now().strftime("%y/%m/%d")
 
     def write_roff_file(self):
@@ -45,6 +46,7 @@ class ManPage():
             self.write_synopsis(f)
             self.write_description(f)
             self.write_options(f)
+            self.write_arguments(f)
             self.write_placeholder(f) #TODO.
             self.write_copyright(f)
     
@@ -90,13 +92,24 @@ class ManPage():
         for key, val in self.switches.items():
             f.write(f"\n`{key}`: {val}\n")
 
+    def write_arguments(self, f):
+        assert isinstance(f, io.TextIOBase) and\
+         f.writable(), "File pointer is not open for writing."
+
+        f.write(f"\n# ARGUMENTS\n")
+        if not self.args:
+            f.write(f"\nThis command has no arguments.\n")
+        for key, val in self.args.items():
+            f.write(f"\n`{key}`: {val}\n")
+
+
     def write_placeholder(self, f):
         assert isinstance(f, io.TextIOBase) and\
          f.writable(), "File pointer is not open for writing."
 
         # TODO: these are all not populated currently, not parseable from docs. 
         # TODO: Arguments can actually be parsed, but you need to preprocess the synopsis further. 
-        sections = ["ARGUMENTS", "EXAMPLES", "SEE ALSO"]
+        sections = ["EXAMPLES", "SEE ALSO"]
         for s in sections:
             f.write(f"\n# {s}\n")
 
@@ -130,6 +143,41 @@ def extract_tcl_code(text):
     tcl_code_matches = [x for x in tcl_code_matches if "./test/gcd.tcl" not in x]
     return tcl_code_matches
 
+def extract_arguments(text):
+    # Goal is to extract all the text from the end of tcl code to the next ### header.
+    # Returns options and arguments.
+    level2 = extract_headers(text, 2)
+    level3 = extract_headers(text, 3)
+
+    # form these 2 regex styles. 
+    # ### Header 1 {text} ### Header2; ### Header n-2 {text} ### Header n-1
+    # ### Header n {text} ## closest_level2_header
+    first = [rf'### ({level3[i]})(.*?)### ({level3[i+1]})'  for i in range(len(level3) - 1)]
+
+    # find the next closest level2 header to the last level3 header.
+    closest_level2 = [text.find(x) - text.find(level3[-1]) for x in level2]
+    closest_level2_idx = [idx for idx, x in enumerate(closest_level2) if x > 0][0]
+
+    second = [rf"### ({level3[-1]})(.*?)## ({level2[closest_level2_idx]})"]
+    final_options, final_args = [], []
+    for idx, regex in enumerate(first + second):
+        match = re.findall(regex, text, flags = re.DOTALL)
+        # get text until the next header
+        a = match[0][1] 
+        a = a[a.find("#"):]
+        options = a.split("####")[1:]
+        if not options:
+            final_options.append([])
+            final_args.append([])
+            continue
+        options, args = options[0], options[1:]
+        final_options.append(extract_tables(options))
+        tmp_arg = []
+        for arg in args:
+            tmp_arg.extend(extract_tables(arg))
+        final_args.append(tmp_arg)
+    return final_options, final_args
+
 def extract_tables(text):
     # Find all lines that start with "|"
     table_pattern = r'^\s*\|.*$'
@@ -138,7 +186,23 @@ def extract_tables(text):
     # Exclude matches containing HTML tags
     table_matches = [table for table in table_matches if not re.search(r'<.*?>', table)]
 
+    # Remove text containing switch 
+    table_matches = [table for table in table_matches if "Switch Name" not in table]
+
+    # Remove text containing "---"
+    table_matches = [table for table in table_matches if "---" not in table]
+
     return table_matches
+
+def parse_switch(text):
+    # Find the index of the 1nd and last occurrence of "|". Since some content might contain "|"
+    switch_name = text.split("|")[1]
+    switch_name = switch_name.replace("`", "").strip()
+    second_pipe_index = text.find("|", text.find("|") + 1)
+    last_pipe_index = text.rfind("|")
+    switch_description = text[second_pipe_index+1: last_pipe_index-1] 
+    return switch_name, switch_description
+
 
 if __name__ == "__main__":
     for doc in docs:
@@ -154,55 +218,29 @@ if __name__ == "__main__":
         # synopsis content
         func_synopsis = extract_tcl_code(text)
 
-        # switch names (TODO: needs refactoring...)
-        switch_names = extract_tables(text)
-        idx = 0
-        func_switches, tmp = [], []
-        for s in switch_names:
-            # TODO: Handle developer commands
-            if "Command Name" in s:
-                break
-            if "Switch Name" in s:
-                if tmp: func_switches.append(tmp)
-                tmp = []
-            tmp.append(s.strip())
-        if tmp: func_switches.append(tmp)
+        # arguments
+        func_options, func_args = extract_arguments(text)
 
-        print(len(func_names)); print(func_names)
-        print(len(func_descs)); print(func_descs)
-        print(len(func_synopsis)); print(func_synopsis)
-        print(len(func_switches)); print(func_switches)
-
-        # grouping the parsed outputs together
-        offset_switch_idx = 0
         for func_id in range(len(func_synopsis)):
-            temp = ManPage()
+            manpage = ManPage()
+            manpage.name = func_names[func_id]
+            manpage.desc = func_descs[func_id]
+            manpage.synopsis = func_synopsis[func_id]
+            if func_options[func_id]:
+                # convert it to dict 
+                # TODO change this into a function. Or subsume under option/args parsing.
+                switches_dict = {}
+                for line in func_options[func_id]:
+                    key, val = parse_switch(line)
+                    switches_dict[key] = val
+                manpage.switches = switches_dict
+            
+            if func_args[func_id]:
+                # convert it to dict
+                args_dict = {}
+                for line in func_args[func_id]:
+                    key, val = parse_switch(line)
+                    args_dict[key] = val
+                manpage.args = args_dict
 
-            temp.name = func_names[func_id]
-            temp.desc = func_descs[func_id]
-            temp.synopsis = func_synopsis[func_id]
-
-            # logic if synopsis is one liner, it means that it has no switches
-            if len(temp.synopsis.split("\n")) == 2:
-                temp.write_roff_file()
-                offset_switch_idx += 1
-                continue
-
-
-            switches = func_switches[func_id - offset_switch_idx]
-            switches_dict = {}
-            for idx, x in enumerate(switches):
-                # Skip header and | --- | dividers.
-                if idx == 0: continue
-                if "---" in x: continue
-                switch_name = x.split("|")[1]
-                # Find the index of the 2nd and last occurrence of "|". Since some content might contain "|"
-                second_pipe_index = x.find("|", x.find("|") + 1)
-                last_pipe_index = x.rfind("|")
-                switch_description = x[second_pipe_index+1: last_pipe_index-1] 
-                switch_name = switch_name.replace("`", "").strip()
-                switches_dict[switch_name] = switch_description
-            temp.switches = switches_dict
-            temp.write_roff_file()
-
-        print('Ok')
+            manpage.write_roff_file()

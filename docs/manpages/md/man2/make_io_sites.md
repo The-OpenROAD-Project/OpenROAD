@@ -52,6 +52,8 @@ make_io_sites -horizontal_site IOSITE_H -vertical_site IOSITE_V -corner_site IOS
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

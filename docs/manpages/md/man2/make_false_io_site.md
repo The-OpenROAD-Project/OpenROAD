@@ -39,6 +39,8 @@ make_fake_io_site -name IO_CSITE -width 200 -height 204
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

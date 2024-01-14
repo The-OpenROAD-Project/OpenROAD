@@ -50,6 +50,10 @@ The `place_pins` command places all pins together. Use the following command to 
 
 # ARGUMENTS
 
+`-random_seed`:  Specify the seed for random operations.
+
+`-random`:  When this flag is enabled, the pin placement is random.
+
 # EXAMPLES
 
 # SEE ALSO

@@ -29,6 +29,8 @@ wire from the clock input pin to the clock root buffer.
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

@@ -21,11 +21,13 @@ This command is used for removing tapcells or endcaps based on their prefix.
 
 # OPTIONS
 
-`-master`:  Master to use for the tapcells.
+`-tap_prefix`:  Remove tapcells with said prefix.
 
-`-distance`:  Distance between tapcells.
+`-endcap_prefix`:  Remove endcaps with said prefix.
 
 # ARGUMENTS
+
+This command has no arguments.
 
 # EXAMPLES
 

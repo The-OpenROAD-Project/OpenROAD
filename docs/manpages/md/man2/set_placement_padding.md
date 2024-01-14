@@ -43,6 +43,8 @@ specify padding for all instances of a common master, use the `-filter`
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

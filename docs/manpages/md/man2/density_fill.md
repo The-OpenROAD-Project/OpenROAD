@@ -27,6 +27,8 @@ This command performs density fill to meet metal density DRC rules.
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

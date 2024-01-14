@@ -39,6 +39,8 @@ place_bondpad -bond PAD IO_*
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

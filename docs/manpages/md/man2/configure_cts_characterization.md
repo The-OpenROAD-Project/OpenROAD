@@ -34,6 +34,8 @@ as well as the number of steps they will be divided for characterization.
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

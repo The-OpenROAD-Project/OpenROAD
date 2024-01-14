@@ -27,6 +27,8 @@ This command creates power domain for a group of modules.
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

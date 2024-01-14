@@ -24,6 +24,8 @@ Sources the UPF file.
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

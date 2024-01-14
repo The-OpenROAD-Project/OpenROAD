@@ -45,6 +45,8 @@ assign_io_bump -net p_ddr_addr_6_o BUMP_7_0
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

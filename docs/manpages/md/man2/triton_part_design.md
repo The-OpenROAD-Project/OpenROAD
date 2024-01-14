@@ -150,6 +150,8 @@ This command partitions the design netlist. Note that design must be loaded in m
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

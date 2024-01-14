@@ -38,6 +38,8 @@ or to override the values in the LEF.
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

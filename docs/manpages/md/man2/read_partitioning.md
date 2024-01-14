@@ -27,6 +27,8 @@ This command reads the partition file into design.
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

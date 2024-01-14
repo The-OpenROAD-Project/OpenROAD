@@ -26,6 +26,8 @@ not perform any modification to the design.
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO

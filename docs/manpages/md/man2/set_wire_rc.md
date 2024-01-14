@@ -42,6 +42,8 @@ nets with the `-signal` and `-clock` flags. Without either `-signal` or
 
 # ARGUMENTS
 
+This command has no arguments.
+
 # EXAMPLES
 
 # SEE ALSO
