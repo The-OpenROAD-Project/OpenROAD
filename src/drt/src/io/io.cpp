@@ -567,11 +567,10 @@ void io::Parser::setNets(odb::dbBlock* block)
         logger_->error(DRT,
                        307,
                        "Net {} of signal type {} cannot be connected to iterm "
-                       "{}/{} with signal type {}",
+                       "{} with signal type {}",
                        net->getName(),
                        net->getSigType().getString(),
-                       term->getInst()->getName(),
-                       term->getMTerm()->getName(),
+                       term->getName(),
                        term->getSigType().getString());
       if (tmpBlock_->name2inst_.find(term->getInst()->getName())
           == tmpBlock_->name2inst_.end())
@@ -581,11 +580,8 @@ void io::Parser::setNets(odb::dbBlock* block)
       // gettin inst term
       auto frterm = inst->getMaster()->getTerm(term->getMTerm()->getName());
       if (frterm == nullptr)
-        logger_->error(DRT,
-                       106,
-                       "Component pin {}/{} not found.",
-                       term->getInst()->getName(),
-                       term->getMTerm()->getName());
+        logger_->error(
+            DRT, 106, "Component pin {} not found.", term->getName());
       int idx = frterm->getIndexInOwner();
       auto& instTerms = inst->getInstTerms();
       auto instTerm = instTerms[idx].get();
@@ -1122,9 +1118,8 @@ void io::Parser::setAccessPoints(odb::dbDatabase* db)
         if (ap_map.find(db_ap) == ap_map.end())
           logger_->error(DRT,
                          1011,
-                         "Access Point not found for iterm {}/{}",
-                         db_inst->getName(),
-                         db_term->getMTerm()->getName());
+                         "Access Point not found for iterm {}",
+                         db_term->getName());
         db_aps_map[db_ap->getMPin()] = db_ap;
       }
       int idx = 0;
