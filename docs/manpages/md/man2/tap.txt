@@ -9,7 +9,19 @@ Tapcell and endcap insertion.
 - Parameters without square brackets `-param2 param2` are required.
 ```
 
-### Add Tapcell/Endcap
+### Tapcell
+
+This command inserts tapcells or endcaps.
+
+The figures below show two examples of tapcell insertion. When only the 
+`-tapcell_master` and `-endcap_master` masters are given, the tapcell placement
+is similar to Figure 1. When the remaining masters are give, the tapcell
+placement is similar to Figure 2.
+
+| <img src="./doc/image/tapcell_example1.svg" width=450px> | <img src="./doc/image/tapcell_example2.svg" width=450px> |
+|:--:|:--:|
+| Figure 1: Tapcell insertion representation | Figure 2:  Tapcell insertion around macro representation |
+
 
 ```tcl
 tapcell 
@@ -54,16 +66,9 @@ tapcell
 | `-tap_prefix` | Prefix for the tapcell instances. The default value is `TAP_`. |
 | `-endcap_prefix` | Prefix for the endcaps instances. The default value is `PHY_`. |
 
-The figures below show two examples of tapcell insertion. When only the 
-`-tapcell_master` and `-endcap_master` masters are given, the tapcell placement
-is similar to Figure 1. When the remaining masters are give, the tapcell
-placement is similar to Figure 2.
+### Cut Rows
 
-| <img src="./doc/image/tapcell_example1.svg" width=450px> | <img src="./doc/image/tapcell_example2.svg" width=450px> |
-|:--:|:--:|
-| Figure 1: Tapcell insertion representation | Figure 2:  Tapcell insertion around macro representation |
-
-### Only cutting rows
+This command cuts rows.
 
 ```tcl
 cut_rows 
@@ -80,7 +85,7 @@ cut_rows
 | `-halo_width_x` | Horizontal halo size (in microns) around macros during cut rows. |
 | `-halo_width_y` | Vertical halo size (in microns) around macros during cut rows. |
 
-### Only adding boundary/endcap cells
+### Place Endcaps
 
 Place endcaps into the design, the naming for the arguments to `place_endcaps` is based on the 
 LEF58 `CLASS` specification foe endcaps.
@@ -130,7 +135,9 @@ place_endcaps
 | `-top_edge` | List of masters for the top row endcaps. (overrides `-endcap_horizontal`). |
 | `-bottom_edge` | List of masters for the bottom row endcaps. (overrides `-endcap_horizontal`). |
 
-### Only adding tapcells cells
+### Place Tapcells
+
+This command is used for tapcell placement only.
 
 ```tcl
 place_tapcells
@@ -146,7 +153,9 @@ place_tapcells
 | `-distance` | Distance between tapcells. |
 
 
-### Remove Tapcells/Endcaps
+### Tapcell Ripup
+
+This command is used for removing tapcells or endcaps based on their prefix.
 
 ```tcl
 tapcell_ripup
@@ -165,7 +174,7 @@ tapcell_ripup
 
 You can find script examples for both 45nm and 14nm in `./etc/scripts`
 
-```tcl
+```
 ./etc/scripts/example_14nm.tcl
 ./etc/scripts/example_45nm.tcl
 ```

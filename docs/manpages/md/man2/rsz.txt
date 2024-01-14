@@ -92,7 +92,7 @@ estimate_parasitics
 | ----- | ----- |
 | `-placement` or `-global_routing` | Either of these flags must be set. Parasitics are estimated based after placement stage versus after global routing stage. |
 
-### Set Don't Use
+### Set Dont Use
 
 The `set_dont_use` command removes library cells from consideration by
 the `resizer` engine and the `CTS` engine. `lib_cells` is a list of cells returned by `get_lib_cells`
@@ -100,18 +100,16 @@ or a list of cell names (`wildcards` allowed). For example, `DLY*` says do
 not use cells with names that begin with `DLY` in all libraries.
 
 ```tcl
-set_dont_use lib_cells
-unset_dont_use lib_cells
+set_dont_use lib_cells # unset_dont_use lib_cells
 ```
 
-### Set Don't Touch
+### Set Dont Touch
 
 The `set_dont_touch` command prevents the resizer commands from
 modifying instances or nets.
 
 ```tcl
-set_dont_touch instances_nets
-unset_dont_touch instances_nets
+set_dont_touch instances_nets # unset_dont_touch instances_nets
 ```
 
 ### Buffer Ports
@@ -240,7 +238,9 @@ this option be used with global routing based parasitics.
 
 The `clock_tree_synthesis` command inserts a clock tree in the design
 but may leave a long wire from the clock input pin to the clock tree
-root buffer. The `repair_clock_nets` command inserts buffers in the
+root buffer.
+
+The `repair_clock_nets` command inserts buffers in the
 wire from the clock input pin to the clock root buffer.
 
 ```tcl
@@ -255,6 +255,8 @@ repair_clock_nets
 | `-max_wire_length` | Maximum length of wires (in microns), defaults to a value that minimizes the wire delay for the wire RC values specified by `set_wire_rc`. |
 
 ### Repair Clock Inverters
+
+This command repairs clock inverters.
 
 ```tcl
 repair_clock_inverters
@@ -284,7 +286,7 @@ report_floating_nets
 | ----- | ----- |
 | `-verbose` | Print the net names. |
 
-### Useful Developer Commands
+## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/Resizer.cc) or the [swig file](./src/Resizer.i).
 
@@ -307,7 +309,7 @@ If you are a developer, you might find these useful. More details can be found i
 A typical `resizer` command file (after a design and Liberty libraries have
 been read) is shown below.
 
-```tcl
+```
 read_sdc gcd.sdc
 
 set_wire_rc -layer metal2
@@ -325,7 +327,7 @@ repair_timing
 Note that OpenSTA commands can be used to report timing metrics before
 or after resizing the design.
 
-```tcl
+```
 set_wire_rc -layer metal2
 report_checks
 report_tns

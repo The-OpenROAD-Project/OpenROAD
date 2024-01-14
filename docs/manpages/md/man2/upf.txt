@@ -27,6 +27,8 @@ read_upf
 
 ### Create Power Domain
 
+This command creates power domain for a group of modules.
+
 ```tcl
 create_power_domain
     [-elements elements]
@@ -42,6 +44,9 @@ create_power_domain
 
 ### Create Logic Port
 
+This command creates logic port. Direction must be specified from:
+`in`, `out`, `inout`.
+
 ```tcl
 create_logic_port
     [-direction direction]
@@ -56,6 +61,8 @@ create_logic_port
 | `port_name` | Port name. |
 
 ### Create Power Switch
+
+This command creates power switch.
 
 ```tcl
 create_power_switch
@@ -78,7 +85,9 @@ create_power_switch
 | `-on_state` | One of {`state_name`, `input_supply_port`, `boolean_expression`}. |
 | `name` | Power switch name. |
 
-### Create or Update Isolation Strategy
+### Set Isolation 
+
+This command creates or update isolation strategy.
 
 ```tcl 
 set_isolation
@@ -105,7 +114,9 @@ set_isolation
 | `-update` | Only available if using existing strategy, will error if the strategy doesn't exist. |
 | `name` | Isolation strategy name. |
 
-### Set Interface cell
+### Use Interface cell
+
+This command sets the interface cell.
 
 ```tcl 
 use_interface_cell
@@ -124,6 +135,8 @@ use_interface_cell
 
 ### Set Domain Area
 
+This command sets the power domain area.
+
 ```tcl
 set_domain_area
     domain_name
@@ -138,7 +151,9 @@ set_domain_area
 | `-area` | x-/y- coordinates in microns for the lower left and upper right corners of the power domain area. |
 
 
-### Map existing power switch
+### Map Power Switch
+
+This command maps existing power switch.
 
 ```tcl 
 map_power_switch
@@ -159,7 +174,7 @@ map_power_switch
 
 Example script demonstrating how to run `upf` related commands can be found here:
 
-```tcl
+```
 ./test/upf_test.tcl
 ```
 

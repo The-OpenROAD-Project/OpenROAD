@@ -1,7 +1,7 @@
 ---
 title: estimate_parasitics(2)
 author: Jack Luar (TODO@TODO.com)
-date: 24/01/10
+date: 24/01/14
 ---
 
 # NAME
@@ -10,22 +10,27 @@ estimate_parasitics - estimate parasitics
 
 # SYNOPSIS
 
-estimate_parasitics -global_routing
+estimate_parasitics
+    -placement|-global_routing
 
 
 # DESCRIPTION
 
-This command estimates RC parasitics based on global route results
-by using the `-global_routing` option of the `estimate_parasitics` command.
+Estimate RC parasitics based on placed component pin locations. If there are
+no component locations, then no parasitics are added. The resistance and capacitance
+values are per distance unit of a routing wire. Use the `set_units` command to check
+units or `set_cmd_units` to change units. The goal is to represent "average"
+routing layer resistance and capacitance. If the set_wire_rc command is not
+called before resizing, then the default_wireload model specified in the first
+Liberty file read or with the SDC set_wire_load command is used to make parasitics.
 
-```{note}
-To see the function definition for `estimate_parasitics`, refer to 
-[Resizer docs](../rsz/README.md#estimate-parasitics).
-```
+After the `global_route` command has been called, the global routing topology
+and layers can be used to estimate parasitics  with the `-global_routing`
+flag.
 
 # OPTIONS
 
-This command has no switches.
+`-placement or -global_routing`:  Either of these flags must be set. Parasitics are estimated based after placement stage versus after global routing stage.
 
 # ARGUMENTS
 

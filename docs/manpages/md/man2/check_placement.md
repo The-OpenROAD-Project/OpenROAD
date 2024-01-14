@@ -1,7 +1,7 @@
 ---
 title: check_placement(2)
 author: Jack Luar (TODO@TODO.com)
-date: 24/01/09
+date: 24/01/14
 ---
 
 # NAME
@@ -27,7 +27,7 @@ The `check_placement` command checks the placement legality. It returns
 
 `-disallow_one_site_gaps`:  Disable one site gap during placement check.
 
-`-report_file_name`:  File name for saving the report to (e.g. `report.json`.
+`-report_filename`:  File name for saving the report to (e.g. `report.json`.
 
 # ARGUMENTS
 

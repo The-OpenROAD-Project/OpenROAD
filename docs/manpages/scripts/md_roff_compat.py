@@ -10,8 +10,17 @@ import datetime
 
 # list of edited docs
 SRC_DIR = "./md/man2"
-# problematic: drt, gpl, grt, gui, ifp, mpl2, 
-tools = ["par"]#"pad", "fin", "dpl", "dft", "cts", "ant", "ppl"]
+# problematic: drt, gpl, grt, gui, ifp, mpl2, pdn, psm
+# psm: need to handle the table wrt the #### Options, not all tables. 
+# also you need to change the ### FUNCTION_NAME parsing. Sometimes the 
+#    function name could be something weird like `diff_spef` or `pdngen`
+#    so it would be better to have a more informative header for the RTD docs. 
+# rmp: many level 3 headers
+# sta: documentation is hosted elsewhere. (not currently in RTD also.)
+# 
+tools = ["ant", "cts", "dft", "dpl", "fin", "pad", "par", "ppl", "rsz",\
+            "tap", "upf"]
+#tools = ["rsz"]
 docs = [f"{SRC_DIR}/{tool}.txt" for tool in tools]
 
 # identify key section and stored in ManPage class. 
