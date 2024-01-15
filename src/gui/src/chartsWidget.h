@@ -32,9 +32,10 @@
 
 #pragma once
 
-#include <QComboBox>
 #include <QDockWidget>
 #include <QLabel>
+#ifdef ENABLE_CHARTS
+#include <QComboBox>
 #include <QPushButton>
 #include <QString>
 #include <QtCharts>
@@ -79,5 +80,16 @@ class ChartsWidget : public QDockWidget
   QBarCategoryAxis* axis_x_;
   QValueAxis* axis_y_;
 };
+#else
+class ChartsWidget : public QDockWidget
+{
+  Q_OBJECT
 
+ public:
+  ChartsWidget(QWidget* parent = nullptr);
+
+ private:
+  QLabel* label_;
+};
+#endif
 }  // namespace gui
