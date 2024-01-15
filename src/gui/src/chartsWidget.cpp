@@ -100,7 +100,7 @@ ChartsWidget::ChartsWidget(QWidget* parent)
   label_->setText("QtCharts is not installed.");
   label_->setAlignment(Qt::AlignCenter);
 #endif
-  container->setLayout(layout);
+  container->setLayout(controls_layout);
 
   setWidget(container);
 }
