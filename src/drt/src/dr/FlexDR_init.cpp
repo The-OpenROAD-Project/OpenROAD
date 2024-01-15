@@ -2866,8 +2866,11 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
     }
   }
 
-  // assign costs to subnets of terms
+  // assign terms to each subnet
   for (auto& [net, objs] : frNet2Terms) {
+    for (auto dNet : owner2nets_[net]) {
+      dNet->setFrNetTerms(objs);
+    }
     initMazeCost_terms(objs, true);
   }
 }
