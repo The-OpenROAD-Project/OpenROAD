@@ -22,13 +22,13 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-load19/D                                0.05    0.07   -0.02 (VIOLATED)
+drvr/Q                                  0.05    0.05   -0.00 (VIOLATED)
 
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-drvr/Q                                 60.73   31.21   29.52 (MET)
+drvr/Q                                 60.73   22.81   37.92 (MET)
 
 [INFO RSZ-0039] Resized 1 instances.
 max slew
