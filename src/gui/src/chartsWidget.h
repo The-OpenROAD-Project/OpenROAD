@@ -34,6 +34,7 @@
 
 #include <QDockWidget>
 #include <QLabel>
+
 #ifdef ENABLE_CHARTS
 #include <QComboBox>
 #include <QPushButton>
@@ -49,20 +50,23 @@ class dbSta;
 #endif
 
 namespace gui {
-#ifdef ENABLE_CHARTS
+
 class ChartsWidget : public QDockWidget
 {
   Q_OBJECT
 
  public:
+  ChartsWidget(QWidget* parent = nullptr);
+#ifdef ENABLE_CHARTS
   enum Mode
   {
     SELECT,
     SLACK_HISTOGRAM
   };
-  ChartsWidget(QWidget* parent = nullptr);
-
-  void setSTA(sta::dbSta* sta) { sta_ = sta; };
+  void setSTA(sta::dbSta* sta)
+  {
+    sta_ = sta;
+  };
   void setLogger(utl::Logger* logger);
   void setSlackMode();
   void clearChart();
@@ -74,20 +78,13 @@ class ChartsWidget : public QDockWidget
   utl::Logger* logger_;
   sta::dbSta* sta_;
 
-  QLabel* label_;
   QComboBox* mode_menu_;
   QChart* chart_;
   QChartView* display_;
   QBarCategoryAxis* axis_x_;
   QValueAxis* axis_y_;
-};
-#else
-class ChartsWidget : public QDockWidget
-{
-  Q_OBJECT
-
- public:
-  ChartsWidget(QWidget* parent = nullptr);
-};
 #endif
+  QLabel* label_;
+};
+
 }  // namespace gui
