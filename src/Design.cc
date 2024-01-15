@@ -217,9 +217,7 @@ bool Design::isInClock(odb::dbInst* inst)
 
 std::string Design::getITermName(odb::dbITerm* pin)
 {
-  auto MTerm_name = pin->getMTerm()->getName();
-  auto inst_name = pin->getInst()->getName();
-  return inst_name + "/" + MTerm_name;
+  return pin->getName();
 }
 
 bool Design::isInSupply(odb::dbITerm* pin)
