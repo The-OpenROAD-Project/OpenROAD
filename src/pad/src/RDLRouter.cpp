@@ -280,11 +280,9 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
     for (const auto& [net, segments] : failed) {
       logger_->report("  {}", net->getName());
       for (const auto& segment : segments) {
-        logger_->report("    {}/{} -> {}/{}",
-                        segment.target0.terminal->getInst()->getName(),
-                        segment.target0.terminal->getMTerm()->getName(),
-                        segment.target1.terminal->getInst()->getName(),
-                        segment.target1.terminal->getMTerm()->getName());
+        logger_->report("    {} -> {}",
+                        segment.target0.terminal->getName(),
+                        segment.target1.terminal->getName());
       }
     }
   }
@@ -1240,9 +1238,8 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
                  utl::PAD,
                  "Router",
                  2,
-                 "Finding routing pair for {}/{} ({})",
-                 iterm0.first->getInst()->getName(),
-                 iterm0.first->getMTerm()->getName(),
+                 "Finding routing pair for {} ({})",
+                 iterm0.first->getName(),
                  iterm0.first->getNet()->getName());
 
       odb::dbITerm* find_terminal = nullptr;
@@ -1284,9 +1281,8 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
                    utl::PAD,
                    "Router",
                    2,
-                   "  {}/{} ({}): {:.4f}um",
-                   iterm1.first->getInst()->getName(),
-                   iterm1.first->getMTerm()->getName(),
+                   "  {} ({}): {:.4f}um",
+                   iterm1.first->getName(),
                    iterm1.first->getNet()->getName(),
                    new_dist / dbus);
 
@@ -1302,9 +1298,8 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
       if (pt0 == point) {
         logger_->error(utl::PAD,
                        37,
-                       "Unable to find routing pair for {}/{} ({})",
-                       iterm0.first->getInst()->getName(),
-                       iterm0.first->getMTerm()->getName(),
+                       "Unable to find routing pair for {} ({})",
+                       iterm0.first->getName(),
                        iterm0.first->getNet()->getName());
       }
 

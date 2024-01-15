@@ -808,7 +808,7 @@ void PadDirectConnectionStraps::report() const
 
 std::string PadDirectConnectionStraps::getName() const
 {
-  return iterm_->getInst()->getName() + "/" + iterm_->getMTerm()->getName();
+  return iterm_->getName();
 }
 
 bool PadDirectConnectionStraps::isConnectHorizontal() const

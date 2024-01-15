@@ -362,10 +362,7 @@ QPointF ClockNodeGraphicsViewItem::getBottomAnchor() const
 
 QString ClockNodeGraphicsViewItem::getITermName(odb::dbITerm* term)
 {
-  std::string name = term->getInst()->getName();
-  name += "/";
-  name += term->getMTerm()->getName();
-  return QString::fromStdString(name);
+  return QString::fromStdString(term->getName());
 }
 
 void ClockNodeGraphicsViewItem::setName(odb::dbITerm* term)
