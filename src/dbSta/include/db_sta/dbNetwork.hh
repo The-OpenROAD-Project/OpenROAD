@@ -57,7 +57,11 @@ using odb::dbIoType;
 using odb::dbITerm;
 using odb::dbLib;
 using odb::dbMaster;
+using odb::dbModBTerm;
 using odb::dbModInst;
+using odb::dbModITerm;
+using odb::dbModNet;
+using odb::dbModule;
 using odb::dbMTerm;
 using odb::dbNet;
 using odb::dbObject;
@@ -77,6 +81,7 @@ class dbNetworkObserver
 
  private:
   dbNetwork* owner_ = nullptr;
+
   friend class dbNetwork;
 };
 
@@ -102,6 +107,7 @@ class dbNetwork : public ConcreteNetwork
   dbBlock* block() const { return block_; }
   void makeLibrary(dbLib* lib);
   void makeCell(Library* library, dbMaster* master);
+  void makeVerilogCell(Library* library, dbModInst*);
 
   void location(const Pin* pin,
                 // Return values.
@@ -121,14 +127,27 @@ class dbNetwork : public ConcreteNetwork
                dbInst*& db_inst,
                dbModInst*& mod_inst) const;
   dbNet* staToDb(const Net* net) const;
+  void staToDb(const Net* net, dbNet*& dnet, dbModNet*& modnet) const;
   void staToDb(const Pin* pin,
                // Return values.
                dbITerm*& iterm,
-               dbBTerm*& bterm) const;
+               dbBTerm*& bterm,
+               dbModITerm*& miterm,
+               dbModBTerm*& mbterm) const;
+  void staToDb(const Term* term,
+               dbITerm*& iterm,
+               dbBTerm*& bterm,
+               dbModITerm*& miterm,
+               dbModBTerm*& mbterm) const;
   dbBTerm* staToDb(const Term* term) const;
   dbMaster* staToDb(const Cell* cell) const;
+  void staToDb(const Cell* cell, dbMaster*& master, dbModule*& module) const;
   dbMaster* staToDb(const LibertyCell* cell) const;
   dbMTerm* staToDb(const Port* port) const;
+  void staToDb(const Port* port,
+               dbBTerm*& bterm,
+               dbMTerm*& mterm,
+               dbModBTerm*& modbterm) const;
   dbMTerm* staToDb(const LibertyPort* port) const;
   void staToDb(PortDirection* dir,
                // Return values.
@@ -136,20 +155,31 @@ class dbNetwork : public ConcreteNetwork
                dbIoType& io_type) const;
 
   Pin* dbToSta(dbBTerm* bterm) const;
+
   Term* dbToStaTerm(dbBTerm* bterm) const;
+  Term* dbToStaTerm(dbModBTerm* modbterm) const;
+  Term* dbToStaTerm(dbModITerm* moditerm) const;
+
   Pin* dbToSta(dbITerm* iterm) const;
+  Pin* dbToSta(dbModITerm* iterm) const;
+
   Instance* dbToSta(dbInst* inst) const;
   Instance* dbToSta(dbModInst* inst) const;
   Net* dbToSta(dbNet* net) const;
   const Net* dbToSta(const dbNet* net) const;
+  Net* dbToSta(dbModNet* net) const;
   Cell* dbToSta(dbMaster* master) const;
+  Cell* dbToSta(dbModule* master) const;
   Port* dbToSta(dbMTerm* mterm) const;
+  Port* dbToSta(dbModBTerm* modbterm) const;
   PortDirection* dbToSta(const dbSigType& sig_type,
                          const dbIoType& io_type) const;
   // dbStaCbk::inDbBTermCreate
   Port* makeTopPort(dbBTerm* bterm);
   void setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type);
   ObjectId id(const Port* port) const override;
+  CellPortIterator* portIterator(const Cell* cell) const override;
+  bool hasMembers(const Port* port) const override;
 
   ////////////////////////////////////////////////////////////////
   //
@@ -168,8 +198,11 @@ class dbNetwork : public ConcreteNetwork
   Instance* topInstance() const override;
   // Name local to containing cell/instance.
   const char* name(const Instance* instance) const override;
+  // Check might need to hack this one
+  //  const char* name(const Port* p) const override;
   ObjectId id(const Instance* instance) const override;
   Cell* cell(const Instance* instance) const override;
+  Cell* cell(const Port* port) const override;
   Instance* parent(const Instance* instance) const override;
   bool isLeaf(const Instance* instance) const override;
   Instance* findInstance(const char* path_name) const override;
@@ -177,6 +210,11 @@ class dbNetwork : public ConcreteNetwork
   InstanceChildIterator* childIterator(const Instance* instance) const override;
   InstancePinIterator* pinIterator(const Instance* instance) const override;
   InstanceNetIterator* netIterator(const Instance* instance) const override;
+
+  void findInstPinsHierMatching(const Instance* instance,
+                                const PatternMatch* pattern,
+                                // Return value.
+                                PinSeq& matches) const;
 
   ////////////////////////////////////////////////////////////////
   // Pin functions
@@ -186,8 +224,10 @@ class dbNetwork : public ConcreteNetwork
   Port* port(const Pin* pin) const override;
   Instance* instance(const Pin* pin) const override;
   Net* net(const Pin* pin) const override;
+  Net* hnet(const Pin* pin) const;
   Term* term(const Pin* pin) const override;
   PortDirection* direction(const Pin* pin) const override;
+  PortDirection* direction(const Port* pin) const override;
   VertexId vertexId(const Pin* pin) const override;
   void setVertexId(Pin* pin, VertexId id) override;
 
@@ -263,7 +303,7 @@ class dbNetwork : public ConcreteNetwork
   void visitConnectedPins(const Net* net,
                           PinVisitor& visitor,
                           NetSet& visited_nets) const override;
-  bool portMsbFirst(const char* port_name);
+  bool portMsbFirst(const char* port_name, const char* cell_name);
 
   dbDatabase* db_ = nullptr;
   Logger* logger_ = nullptr;

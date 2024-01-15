@@ -84,7 +84,10 @@
 #include "dbJournal.h"
 #include "dbLevelShifter.h"
 #include "dbLogicPort.h"
+#include "dbModBTerm.h"
+#include "dbModITerm.h"
 #include "dbModInst.h"
+#include "dbModNet.h"
 #include "dbModule.h"
 #include "dbModuleInstItr.h"
 #include "dbModuleModInstItr.h"
@@ -190,6 +193,15 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   _modinst_tbl = new dbTable<_dbModInst>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbModInstObj);
+
+  _modbterm_tbl = new dbTable<_dbModBTerm>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbModBTermObj);
+
+  _moditerm_tbl = new dbTable<_dbModITerm>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbModITermObj);
+
+  _modnet_tbl = new dbTable<_dbModNet>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbModNetObj);
 
   _powerdomain_tbl = new dbTable<_dbPowerDomain>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbPowerDomainObj);
@@ -318,6 +330,9 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _inst_hash.setTable(_inst_tbl);
   _module_hash.setTable(_module_tbl);
   _modinst_hash.setTable(_modinst_tbl);
+  _modbterm_hash.setTable(_modbterm_tbl);
+  _moditerm_hash.setTable(_moditerm_tbl);
+  _modnet_hash.setTable(_modnet_tbl);
   _powerdomain_hash.setTable(_powerdomain_tbl);
   _logicport_hash.setTable(_logicport_tbl);
   _powerswitch_hash.setTable(_powerswitch_tbl);
@@ -897,6 +912,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._inst_hash;
   stream << block._module_hash;
   stream << block._modinst_hash;
+  stream << block._modbterm_hash;
+  stream << block._moditerm_hash;
+  stream << block._modnet_hash;
   stream << block._powerdomain_hash;
   stream << block._logicport_hash;
   stream << block._powerswitch_hash;
@@ -918,6 +936,10 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << *block._inst_tbl;
   stream << *block._module_tbl;
   stream << *block._modinst_tbl;
+  stream << *block._modbterm_tbl;
+  stream << *block._moditerm_tbl;
+  stream << *block._modnet_tbl;
+
   stream << *block._powerdomain_tbl;
   stream << *block._logicport_tbl;
   stream << *block._powerswitch_tbl;
@@ -1001,6 +1023,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block._inst_hash;
   stream >> block._module_hash;
   stream >> block._modinst_hash;
+  stream >> block._modbterm_hash;
+  stream >> block._moditerm_hash;
+  stream >> block._modnet_hash;
   stream >> block._powerdomain_hash;
   stream >> block._logicport_hash;
   stream >> block._powerswitch_hash;
@@ -1032,6 +1057,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block._inst_tbl;
   stream >> *block._module_tbl;
   stream >> *block._modinst_tbl;
+  stream >> *block._modbterm_tbl;
+  stream >> *block._moditerm_tbl;
+  stream >> *block._modnet_tbl;
   stream >> *block._powerdomain_tbl;
   stream >> *block._logicport_tbl;
   stream >> *block._powerswitch_tbl;
@@ -1752,6 +1780,18 @@ dbSet<dbModInst> dbBlock::getModInsts()
 {
   _dbBlock* block = (_dbBlock*) this;
   return dbSet<dbModInst>(block, block->_modinst_tbl);
+}
+
+dbSet<dbModBTerm> dbBlock::getModBTerms()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbModBTerm>(block, block->_modbterm_tbl);
+}
+
+dbSet<dbModNet> dbBlock::getModNets()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbModNet>(block, block->_modnet_tbl);
 }
 
 dbSet<dbPowerDomain> dbBlock::getPowerDomains()
@@ -3996,6 +4036,160 @@ dbTech* dbBlock::getTech()
 {
   _dbBlock* block = (_dbBlock*) this;
   return (dbTech*) block->getTech();
+}
+
+void dbBlock::getChildModules(std::vector<dbModule*>& child_modules)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  std::vector<odb::_dbModule*> contents;
+  block->_module_tbl->getObjects(contents);
+  for (auto dbm : contents) {
+    child_modules.push_back((dbModule*) dbm);
+  }
+}
+void dbBlock::dumpDebug()
+{
+  _dbBlock* block = (_dbBlock*) this;
+
+  printf("Debug: Data base tables for block at %p:\n", block);
+
+  printf("Block ports\n");
+  // got through the ports and their owner
+  printf("\t\tBTerm Ports +++\n");
+  dbSet<dbBTerm> block_bterms = getBTerms();
+  for (auto bt : block_bterms) {
+    printf("\t\tBterm (%u) %s Net %s (%u)  Mod Net %s (%u) \n",
+           bt->getId(),
+           bt->getName().c_str(),
+           bt->getNet() ? bt->getNet()->getName().c_str() : "",
+           bt->getNet() ? bt->getNet()->getId() : 0,
+
+           bt->getModNet() ? bt->getModNet()->getName() : "",
+           bt->getModNet() ? bt->getModNet()->getId() : 0);
+  }
+  printf("\t\tBTerm Ports ---\n");
+
+  if (block->_module_tbl) {
+    printf("module table %d\n", block->_module_tbl->size());
+    std::vector<odb::_dbModule*> contents;
+    block->_module_tbl->getObjects(contents);
+    printf("Content size %lu modules\n", contents.size());
+
+    for (auto mi : contents) {
+      odb::_dbModule* cur_obj = mi;
+      printf("\tModule %s\n", ((dbModule*) cur_obj)->getName());
+
+      // got through the ports and their owner
+      printf("\t\tModBTerm Ports +++\n");
+      std::vector<dbId<dbModBTerm>> module_ports = cur_obj->_port_vec;
+      for (std::vector<dbId<dbModBTerm>>::iterator it = module_ports.begin();
+           it != module_ports.end();
+           it++) {
+        dbModBTerm* module_port = ((dbModule*) cur_obj)->getdbModBTerm(*it);
+        printf("\t\tPort %s\n", module_port->getName());
+        printf("\t\tPort parent %s\n\n", module_port->getParent()->getName());
+      }
+      printf("\t\tModBTermPorts ---\n");
+
+      printf("\t\tModule instances +++\n");
+      std::vector<dbId<dbModInst>> module_instances = cur_obj->_modinst_vec;
+      for (std::vector<dbId<dbModInst>>::iterator it = module_instances.begin();
+           it != module_instances.end();
+           it++) {
+        dbModInst* module_inst
+            = (dbModInst*) (((dbModule*) cur_obj)->getModInst(*it));
+        printf("\t\tMod inst %s ", module_inst->getName());
+        dbModule* master = module_inst->getMaster();
+        printf("\t\tMaster %s\n\n", module_inst->getMaster()->getName());
+        _dbBlock* owner = (_dbBlock*) (master->getOwner());
+        _dbBlock* current_block = (_dbBlock*) this;
+        if (owner != current_block)
+          printf("\t\t\tMaster owner in wrong block\n");
+
+        printf("\t\tConnections\n");
+        unsigned count = ((_dbModInst*) module_inst)->_pin_vec.size();
+        for (unsigned i = 0; i < count; i++) {
+          dbModITerm* miterm_pin = nullptr;
+          module_inst->getPinAtIx(i, miterm_pin);
+          printf("\t\t\tModIterm : %s (%u) Net %s (%u) \n",
+                 miterm_pin->getName(),
+                 miterm_pin->getId(),
+                 miterm_pin->getNet()
+                     ? ((_dbModNet*) miterm_pin->getNet())->_name
+                     : "No-net",
+                 miterm_pin->getNet()->getId());
+        }
+      }
+
+      printf("\t\tModule instances ---\n");
+      printf("\t\tDb instances +++\n");
+      std::vector<dbId<dbInst>> db_instances = cur_obj->_dbinst_vec;
+      for (std::vector<dbId<dbInst>>::iterator it = db_instances.begin();
+           it != db_instances.end();
+           it++) {
+        dbInst* db_inst = (dbInst*) (((dbModule*) cur_obj)->getdbInst(*it));
+        printf("\t\tdb inst %s\n", db_inst->getName().c_str());
+        printf("\t\tdb iterms:\n");
+        dbSet<dbITerm> iterms = db_inst->getITerms();
+        dbSet<dbITerm>::iterator iterm_itr;
+        for (iterm_itr = iterms.begin(); iterm_itr != iterms.end();
+             ++iterm_itr) {
+          dbITerm* iterm = *iterm_itr;
+          dbMTerm* mterm = iterm->getMTerm();
+          printf("\t\t\t\t iterm: %s Net: %s Mod net : %s\n",
+                 mterm->getName().c_str(),
+                 iterm->getNet() ? iterm->getNet()->getName().c_str()
+                                 : "unk-dbnet",
+                 iterm->getModNet() ? iterm->getModNet()->getName()
+                                    : "unk-modnet");
+        }
+      }
+      printf("\t\tDb instances ---\n");
+
+      printf("\tModule nets (modnets) +++ \n");
+      printf("\t# nets %lu\n", cur_obj->_modnet_map.size());
+      for (auto mn : cur_obj->_modnet_map) {
+        dbId<dbModNet> mn_el = mn.second;
+        printf("\t\tNet: %s (%u)\n", mn.first.c_str(), mn_el.id());
+        _dbModNet* mod_net = block->_modnet_tbl->getPtr(mn_el.id());
+        (void) mod_net;
+        printf("\t\tConnections -> modIterms/modbterms/bterms/iterms:\n");
+        dbVector<dbId<_dbModITerm>> moditerms
+            = ((_dbModNet*) mod_net)->_moditerms;
+        dbVector<dbId<_dbModBTerm>> modbterms
+            = ((_dbModNet*) mod_net)->_modbterms;
+        dbVector<dbId<_dbITerm>> iterms = ((_dbModNet*) mod_net)->_iterms;
+        dbVector<dbId<_dbBTerm>> bterms = ((_dbModNet*) mod_net)->_bterms;
+        printf("\t\t -> %lu moditerms\n", moditerms.size());
+        printf("\t\t -> %lu modbterms\n", modbterms.size());
+        printf("\t\t -> %lu iterms\n", iterms.size());
+        printf("\t\t -> %lu bterms\n", bterms.size());
+
+        /*
+        dbVector<dbId<_dbITerm> >::iterator it_iter;
+        dbVector<dbId<_dbITerm> >::iterator bt_iter;
+        printf("\t\t: moditerms\n");
+        for (auto it_iter= iterms.begin(); it_iter != iterms.end(); it_iter++){
+          printf("\t\t\t%s\n",(*it_iter) -> getMTerm() -> _name);
+        }
+        printf("\t\t: modbterms\n");
+        for (auto it: bterms){
+          printf("\t\t\t%s\n",it -> getName().c_str());
+        }
+        */
+      }
+      /*
+      printf("\tModule nets --- \n");
+      printf("InstanceNets+++\n");
+      InstanceNetIterator* inetIter = netIterator(((dbModule*)cur_obj) ->
+      getInstance()); while (inetIter.hasNext()){ printf("Net %s\n",
+      inetIter.next() -> getName().c_str());
+      }
+      printf("InstanceNets---\n");
+      */
+    }
+  } else
+    printf("Empty module table\n");
 }
 
 }  // namespace odb

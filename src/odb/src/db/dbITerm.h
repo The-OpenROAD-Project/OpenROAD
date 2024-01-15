@@ -43,6 +43,7 @@
 namespace odb {
 
 class _dbNet;
+class _dbModNet;
 class _dbMTerm;
 class _dbInst;
 class _dbITerm;
@@ -76,6 +77,7 @@ class _dbITerm : public _dbObject
   dbITermFlags _flags;
   uint _ext_id;
   dbId<_dbNet> _net;
+  dbId<_dbModNet> _mnet;
   dbId<_dbInst> _inst;
   dbId<_dbITerm> _next_net_iterm;
   dbId<_dbITerm> _prev_net_iterm;
@@ -125,6 +127,7 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbITerm& iterm)
   stream << *bit_field;
   stream << iterm._ext_id;
   stream << iterm._net;
+  stream << iterm._mnet;
   stream << iterm._inst;
   stream << iterm._next_net_iterm;
   stream << iterm._prev_net_iterm;
@@ -138,6 +141,7 @@ inline dbIStream& operator>>(dbIStream& stream, _dbITerm& iterm)
   stream >> *bit_field;
   stream >> iterm._ext_id;
   stream >> iterm._net;
+  stream >> iterm._mnet;
   stream >> iterm._inst;
   stream >> iterm._next_net_iterm;
   stream >> iterm._prev_net_iterm;

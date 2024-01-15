@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, Nefelus Inc
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,81 +30,42 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+// Generator Code Begin Header
 #pragma once
 
-#include <cstdint>
-
 #include "dbCore.h"
-#include "dbDatabase.h"
-#include "dbId.h"
-#include "dbTypes.h"
 #include "odb.h"
 
 namespace odb {
-
-class _dbNet;
-class _dbModNet;
-class _dbBox;
-class _dbBlock;
-class _dbBPin;
-class _dbITerm;
-class _dbDatabase;
 class dbIStream;
 class dbOStream;
 class dbDiff;
+class _dbDatabase;
+class _dbModInst;
+class _dbModNet;
 
-struct _dbBTermFlags
-{
-  dbIoType::Value _io_type : 4;
-  dbSigType::Value _sig_type : 4;
-  uint _orient : 4;  // This field is not used anymore. Replaced by bpin...
-  uint _status : 4;  // This field is not used anymore. Replaced by bpin...
-  uint _spef : 1;
-  uint _special : 1;
-  uint _mark : 1;
-  uint _spare_bits : 13;
-};
-
-//
-// block terminal
-//
-class _dbBTerm : public _dbObject
+class _dbModITerm : public _dbObject
 {
  public:
-  enum Field  // dbJournalField name
-  {
-    FLAGS
-  };
-  // PERSISTANT-MEMBERS
-  _dbBTermFlags _flags;
-  uint _ext_id;
-  char* _name;
-  dbId<_dbBTerm> _next_entry;
-  dbId<_dbNet> _net;
-  dbId<_dbModNet> _mnet;
-  dbId<_dbBTerm> _next_bterm;
-  dbId<_dbBTerm> _prev_bterm;
-  dbId<_dbBlock> _parent_block;  // Up hierarchy: TWG
-  dbId<_dbITerm> _parent_iterm;  // Up hierarchy: TWG
-  dbId<_dbBPin> _bpins;          // Up hierarchy: TWG
-  dbId<_dbBTerm> _ground_pin;
-  dbId<_dbBTerm> _supply_pin;
-  std::uint32_t _sta_vertex_id;  // not saved
+  _dbModITerm(_dbDatabase*, const _dbModITerm& r);
+  _dbModITerm(_dbDatabase*);
 
-  _dbBTerm(_dbDatabase*);
-  _dbBTerm(_dbDatabase*, const _dbBTerm& b);
-  ~_dbBTerm();
+  ~_dbModITerm();
 
-  void connectNet(_dbNet* net, _dbBlock* block);
-  void disconnectNet(_dbBTerm* bterm, _dbBlock* block);
-  bool operator==(const _dbBTerm& rhs) const;
-  bool operator!=(const _dbBTerm& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbBTerm& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbBTerm& rhs) const;
+  bool operator==(const _dbModITerm& rhs) const;
+  bool operator!=(const _dbModITerm& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbModITerm& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbModITerm& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+
+  char* _name;
+  uint _flags;
+  dbId<_dbModInst> _parent;
+  dbId<_dbModNet> _net;
 };
-
-dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm);
-dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm);
-
+dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbModITerm& obj);
 }  // namespace odb
+   // Generator Code End Header

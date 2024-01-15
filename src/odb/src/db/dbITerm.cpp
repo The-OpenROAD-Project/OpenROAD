@@ -50,6 +50,7 @@
 #include "dbMPin.h"
 #include "dbMTerm.h"
 #include "dbMaster.h"
+#include "dbModNet.h"
 #include "dbNet.h"
 #include "dbShape.h"
 #include "dbTable.h"
@@ -431,6 +432,29 @@ void dbITerm::connect(dbNet* net_)
 
   for (auto callback : block->_callbacks)
     callback->inDbITermPostConnect(this);
+}
+
+dbModNet* dbITerm::getModNet()
+{
+  _dbITerm* iterm = (_dbITerm*) this;
+  _dbBlock* block = (_dbBlock*) iterm->getOwner();
+  if (iterm->_mnet == 0)
+    return nullptr;
+  _dbModNet* net = block->_modnet_tbl->getPtr(iterm->_mnet);
+  return ((dbModNet*) (net));
+}
+
+void dbITerm::connect(dbModNet* mod_net)
+{
+  unsigned id = mod_net->getId();
+  dbId<_dbModNet> net_el(id);
+  _dbITerm* iterm = (_dbITerm*) this;
+  if (iterm->_mnet == net_el)
+    return;
+  dbId<_dbITerm> iterm_el(getId());
+  _dbModNet* local_mod_net = (_dbModNet*) mod_net;
+  local_mod_net->_iterms.push_back(iterm_el);
+  iterm->_mnet = net_el;
 }
 
 void dbITerm::disconnect()

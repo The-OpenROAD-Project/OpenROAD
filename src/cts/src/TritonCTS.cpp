@@ -1277,7 +1277,9 @@ void TritonCTS::findClockRoots(sta::Clock* clk,
   for (const sta::Pin* pin : clk->leafPins()) {
     odb::dbITerm* instTerm;
     odb::dbBTerm* port;
-    network_->staToDb(pin, instTerm, port);
+    odb::dbModITerm* moditerm;
+    odb::dbModBTerm* modbterm;
+    network_->staToDb(pin, instTerm, port, moditerm, modbterm);
     odb::dbNet* net = instTerm ? instTerm->getNet() : port->getNet();
     clockNets.insert(net);
   }

@@ -136,7 +136,10 @@ class dbIsolation;
 class dbLevelShifter;
 class dbLogicPort;
 class dbMetalWidthViaMap;
+class dbModBTerm;
 class dbModInst;
+class dbModITerm;
+class dbModNet;
 class dbModule;
 class dbNetTrack;
 class dbPowerDomain;
@@ -826,7 +829,7 @@ class dbBlock : public dbObject
   /// Get block chip name.
   ///
   std::string getName();
-
+  void dumpDebug();
   ///
   /// Get the block chip name.
   ///
@@ -873,6 +876,8 @@ class dbBlock : public dbObject
   ///
   dbSet<dbBlock> getChildren();
 
+  void getChildModules(std::vector<dbModule*>& child_modules);
+
   ///
   /// Find a specific child-block of this block.
   /// Returns nullptr if the object was not found.
@@ -909,6 +914,8 @@ class dbBlock : public dbObject
   /// Get the modinsts of this block.
   ///
   dbSet<dbModInst> getModInsts();
+  dbSet<dbModNet> getModNets();
+  dbSet<dbModBTerm> getModBTerms();
 
   ///
   /// Get the Power Domains of this block.
@@ -1682,6 +1689,9 @@ class dbBTerm : public dbObject
   ///
   dbNet* getNet();
 
+  // AF
+  dbModNet* getModNet();
+
   /// Disconnect the block-terminal from it's net.
   ///
   void disconnect();
@@ -1689,6 +1699,7 @@ class dbBTerm : public dbObject
   /// Connect the block-terminal to net.
   ///
   void connect(dbNet* net);
+  void connect(dbModNet* mod_net);
 
   ///
   /// Get the block of this block-terminal.
@@ -3190,11 +3201,13 @@ class dbInst : public dbObject
   /// If false, it will be added to the top module.
   /// Returns nullptr if an instance with this name already exists.
   /// Returns nullptr if the master is not FROZEN.
-  ///
+  /// If dbmodule is non null the dbInst is added to that module.
+
   static dbInst* create(dbBlock* block,
                         dbMaster* master,
                         const char* name,
-                        bool physical_only = false);
+                        bool physical_only = false,
+                        dbModule* = nullptr);
 
   ///
   /// Create a new instance within the specified region.
@@ -3202,12 +3215,16 @@ class dbInst : public dbObject
   /// If false, it will be added to the top module.
   /// Returns nullptr if an instance with this name already exists.
   /// Returns nullptr if the master is not FROZEN.
-  ///
+  /// If db module present then the dbinst is added to that module
+
   static dbInst* create(dbBlock* block,
                         dbMaster* master,
                         const char* name,
                         dbRegion* region,
-                        bool physical_only = false);
+                        bool physical_only = false,
+                        dbModule* parent_module = nullptr
+
+  );
 
   ///
   /// Create a new instance of child_block in top_block.
@@ -3260,6 +3277,9 @@ class dbITerm : public dbObject
   /// to a net.
   ///
   dbNet* getNet();
+
+  // AF
+  dbModNet* getModNet();
 
   ///
   /// Get the master-terminal that this instance-terminal is representing.
@@ -3411,6 +3431,10 @@ class dbITerm : public dbObject
   /// Connect this iterm to this net.
   ///
   void connect(dbNet* net);
+
+  // connect this iterm to a dbmodNet
+  // AF.
+  void connect(dbModNet* net);
 
   ///
   /// Disconnect this iterm from the net it is connected to.
@@ -7501,9 +7525,46 @@ class dbMetalWidthViaMap : public dbObject
   // User Code End dbMetalWidthViaMap
 };
 
+class dbModBTerm : public dbObject
+{
+ public:
+  const char* getName() const;
+
+  void setFlags(uint flags);
+
+  uint getFlags() const;
+
+  dbModule* getParent() const;
+
+  void setNet(dbModNet* net);
+
+  dbModNet* getNet() const;
+
+  // User Code Begin dbModBTerm
+
+  void setSigType(dbSigType type);
+  dbSigType getSigType();
+  void setIoType(dbIoType type);
+  dbIoType getIoType();
+
+  static dbModBTerm* create(dbModule* parentModule, const char* name);
+
+  bool connect(dbModNet*);
+
+  char* getName();
+
+  void staSetPort(void* p);
+  void* staPort();
+
+ private:
+  // User Code End dbModBTerm
+};
+
 class dbModInst : public dbObject
 {
  public:
+  const char* getName() const;
+
   dbModule* getParent() const;
 
   dbModule* getMaster() const;
@@ -7520,11 +7581,53 @@ class dbModInst : public dbObject
   static dbSet<dbModInst>::iterator destroy(dbSet<dbModInst>::iterator& itr);
 
   static dbModInst* getModInst(dbBlock* block_, uint dbid_);
-
-  std::string getName() const;
+  dbModITerm* getdbModITerm(dbId<dbModITerm>);
 
   std::string getHierarchicalName() const;
+
+  bool getPinAtIx(unsigned ix, dbModITerm*& ret) const;
+  bool findModITerm(const char* name, dbModITerm*& ret) const;
+
+  std::vector<dbId<dbModITerm>>& getPinVec() const;
+
   // User Code End dbModInst
+};
+
+class dbModITerm : public dbObject
+{
+ public:
+  void setFlags(uint flags);
+
+  uint getFlags() const;
+
+  dbModInst* getParent() const;
+
+  void setNet(dbModNet* net);
+
+  dbModNet* getNet() const;
+
+  // User Code Begin dbModITerm
+  void setSigType(dbSigType type);
+  dbSigType getSigType();
+  void setIoType(dbIoType type);
+  dbIoType getIoType();
+
+  static dbModITerm* create(dbModInst* parentInstance, const char* name);
+  bool connect(dbModNet*);
+  char* getName();
+  // User Code End dbModITerm
+};
+
+class dbModNet : public dbObject
+{
+ public:
+  dbModule* getParent() const;
+
+  // User Code Begin dbModNet
+  static dbModNet* create(dbModule* parentModule, const char* name);
+  const char* getName() const;
+  dbModBTerm* connectedToModBTerm() const;
+  // User Code End dbModNet
 };
 
 class dbModule : public dbObject
@@ -7535,16 +7638,27 @@ class dbModule : public dbObject
   dbModInst* getModInst() const;
 
   // User Code Begin dbModule
+  std::string getHierarchicalName(std::string& separator);
+  std::string getHierarchicalName() const;
+  std::string hierarchicalNameR(std::string& separator);
+  void highestModWithNetNamed(const char* name,
+                              dbModule*& highest_module,
+                              std::string& highest_net_name);
 
   // Adding an inst to a new module will remove it from its previous
   // module.
   void addInst(dbInst* inst);
+  void addInstInHierarchy(dbInst* inst);
+
+  dbBlock* getOwner();
 
   dbSet<dbInst> getInsts();
 
   dbSet<dbModInst> getChildren();
 
   dbModInst* findModInst(const char* name);
+  void removeModInst(const char* name);
+  dbInst* findDbInst(const char* name);
 
   std::vector<dbInst*> getLeafInsts();
 
@@ -7554,7 +7668,27 @@ class dbModule : public dbObject
 
   static dbModule* getModule(dbBlock* block_, uint dbid_);
 
-  std::string getHierarchicalName() const;
+  bool findPortIx(const char* port_name, unsigned& ix) const;
+
+  std::vector<dbId<dbModBTerm>>& getPortVec() const;
+  std::vector<dbId<dbModInst>>& getModInstVec() const;
+  std::vector<dbId<dbInst>>& getDbInstVec() const;
+
+  dbModInst* getModInst(dbId<dbModInst>);
+  dbInst* getdbInst(dbId<dbInst>);
+  size_t getModInstCount();
+  size_t getDbInstCount();
+
+  dbModBTerm* getdbModBTerm(dbId<dbModBTerm>);
+  dbModBTerm* getdbModBTerm(dbBlock*, dbId<dbModBTerm>);
+  dbModNet* getModNet(const char* net_name);
+
+  bool findModBTerm(const char* port_name, dbModBTerm*& ret);
+
+  void staSetCell(void* cell);
+  void* getStaCell();
+
+ private:
   // User Code End dbModule
 };
 

@@ -693,7 +693,9 @@ bool TimingConeRenderer::isSupplyPin(const sta::Pin* pin) const
   auto* network = sta_->getDbNetwork();
   odb::dbITerm* iterm;
   odb::dbBTerm* bterm;
-  network->staToDb(pin, iterm, bterm);
+  odb::dbModITerm* moditerm = nullptr;
+  odb::dbModBTerm* modbterm = nullptr;
+  network->staToDb(pin, iterm, bterm, moditerm, modbterm);
   if (iterm != nullptr) {
     if (iterm->getSigType().isSupply()) {
       return true;
@@ -1053,7 +1055,9 @@ void PinSetWidget::showMenu(const QPoint& point)
     auto* gui = Gui::get();
     odb::dbITerm* iterm;
     odb::dbBTerm* bterm;
-    sta_->getDbNetwork()->staToDb(pin, iterm, bterm);
+    odb::dbModITerm* moditerm;
+    odb::dbModBTerm* modbterm;
+    sta_->getDbNetwork()->staToDb(pin, iterm, bterm, moditerm, modbterm);
     if (iterm != nullptr) {
       emit inspect(gui->makeSelected(iterm));
     } else {

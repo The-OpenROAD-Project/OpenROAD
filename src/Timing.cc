@@ -68,7 +68,9 @@ std::pair<odb::dbITerm*, odb::dbBTerm*> Timing::staToDBPin(const sta::Pin* pin)
   sta::dbNetwork* db_network = openroad->getDbNetwork();
   odb::dbITerm* iterm;
   odb::dbBTerm* bterm;
-  db_network->staToDb(pin, iterm, bterm);
+  odb::dbModITerm* moditerm;
+  odb::dbModBTerm* modbterm;
+  db_network->staToDb(pin, iterm, bterm, moditerm, modbterm);
   return std::make_pair(iterm, bterm);
 }
 

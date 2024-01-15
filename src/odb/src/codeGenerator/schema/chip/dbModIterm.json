@@ -1,0 +1,28 @@
+{
+    "name":"dbModITerm",
+    "type":"dbObject",
+    "fields":[
+        {
+            "name":"_name",
+            "type":"char *",
+            "flags":["no-set","no-get"]
+        },
+	{
+	    "name":"_flags",
+	    "type":"uint"
+	},
+        {
+	    "name":"_parent",
+            "type":"dbId<_dbModInst>",
+            "flags":["no-set"],
+            "parent":"dbBlock" 
+        },
+        {
+	    "name":"_net",
+            "type":"dbId<_dbModNet>",
+            "parent":"dbBlock" 
+        }
+    ],
+    "constructors":[],
+    "cpp_includes":["dbBlock.h","dbModInst.h","dbModNet.h","dbHashTable.hpp"]
+}

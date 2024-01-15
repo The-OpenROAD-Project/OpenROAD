@@ -1,35 +1,72 @@
 {
-  "name":"dbModule",
-  "type":"dbObject",
-  "fields":[
-    {
-      "name":"_name",
-      "type":"char *",
-      "flags":["no-set"]
-    },
-    {
-      "name":"_next_entry",
-      "type":"dbId<_dbModule>",
-      "flags":["no-set","no-get"]
-    },
-    {
-      "name":"_insts",
-      "type":"dbId<_dbInst>",
-      "flags":["no-set","no-get"],
-      "parent":"dbBlock"
-    },
-    {
-      "name":"_modinsts",
-      "type":"dbId<_dbModInst>",
-      "flags":["no-set","no-get"],
-      "parent":"dbBlock"
-    },
-    {
-      "name":"_mod_inst",
-      "type":"dbId<_dbModInst>",
-      "flags":["no-set"],
-      "parent":"dbBlock"
-    }
-  ],
-  "cpp_includes":["dbBlock.h","dbHashTable.hpp"]
+    "name":"dbModule",
+    "type":"dbObject",
+    "fields":[
+	{
+	    "name":"_name",
+	    "type":"char *",
+	    "flags":["no-set"]
+	},
+	{
+	    "name":"_next_entry",
+	    "type":"dbId<_dbModule>",
+	    "flags":["no-set","no-get"]
+	},
+	{
+	    "name":"_insts",
+	    "type":"dbId<_dbInst>",
+	    "flags":["no-set","no-get"],
+	    "parent":"dbBlock"
+	},
+	{
+	    "name":"_mod_inst",
+	    "type":"dbId<_dbModInst>",
+	    "flags":["no-set"],
+	    "parent":"dbBlock"
+	},
+	{
+	    "name":"_modinsts",
+	    "type":"dbId<_dbModInst>",
+	    "flags":["no-set","no-get"],
+	    "parent":"dbBlock"
+	},
+	{
+	    "name":"_modnets",
+	    "type":"dbId<_dbModNet>",
+	    "flags":["no-set","no-get"],
+	    "parent":"dbBlock"
+	},
+	{
+	    "name":"_port_vec",
+	    "type":"std::vector< dbId<dbModBTerm> >",
+	    "flags":["no-set","no-get"]	    
+	},
+	{
+	    "name":"_modinst_vec",
+	    "type":"std::vector< dbId<dbModInst> >",
+	    "flags":["no-set","no-get"]	    
+	},
+	{
+	    "name":"_dbinst_vec",
+	    "type":"std::vector< dbId<dbInst> >",
+	    "flags":["no-set","no-get"]	    	    
+	},
+	{
+      	    "name":"_port_map",
+	    "type":"std::map<std::string, uint > ",
+	    "flags": ["no-set","no-get","no-template" ]
+	},
+	{
+	    "name":"_modnet_map",
+	    "type":"std::map<std::string,dbId<dbModNet> >",
+	    "flags":["no-set","no-get"]
+	}
+    ],
+    "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbModBTerm.h", "dbModInst.h", "dbInst.h"],
+    "h_includes": [
+	"dbVector.h",
+	"dbSet.h"
+    ]
 }
+
+

@@ -102,7 +102,9 @@ sta_to_db_port(Port *port)
   Pin *pin = db_network->findPin(db_network->topInstance(), port);
   dbITerm *iterm;
   dbBTerm *bterm;
-  db_network->staToDb(pin, iterm, bterm);
+  dbModITerm* moditerm;
+  dbModBTerm* modbterm;
+  db_network->staToDb(pin, iterm, bterm,moditerm, modbterm);  
   return bterm;
 }
 
@@ -113,7 +115,9 @@ sta_to_db_pin(Pin *pin)
   sta::dbNetwork *db_network = openroad->getDbNetwork();
   dbITerm *iterm;
   dbBTerm *bterm;
-  db_network->staToDb(pin, iterm, bterm);
+  dbModITerm* moditerm;
+  dbModBTerm* modbterm;  
+  db_network->staToDb(pin, iterm, bterm, moditerm, modbterm);
   return iterm;
 }
 

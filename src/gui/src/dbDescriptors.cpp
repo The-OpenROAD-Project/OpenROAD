@@ -1659,30 +1659,31 @@ Descriptor::Actions DbNetDescriptor::getActions(std::any object) const
   }
 
   if (!net->getSigType().isSupply()) {
-    actions.push_back({"Timing", [this, gui, net]() {
-                         auto* network = sta_->getDbNetwork();
-                         auto* drivers
-                             = network->drivers(network->dbToSta(net));
+    actions.push_back(
+        {"Timing", [this, gui, net]() {
+           auto* network = sta_->getDbNetwork();
+           auto* drivers = network->drivers(network->dbToSta(net));
 
-                         if (!drivers->empty()) {
-                           std::set<Gui::odbTerm> terms;
+           if (!drivers->empty()) {
+             std::set<Gui::odbTerm> terms;
 
-                           for (auto* driver : *drivers) {
-                             odb::dbITerm* iterm = nullptr;
-                             odb::dbBTerm* bterm = nullptr;
+             for (auto* driver : *drivers) {
+               odb::dbITerm* iterm = nullptr;
+               odb::dbBTerm* bterm = nullptr;
+               odb::dbModITerm* moditerm = nullptr;
+               odb::dbModBTerm* modbterm = nullptr;
+               network->staToDb(driver, iterm, bterm, moditerm, modbterm);
+               if (iterm != nullptr) {
+                 terms.insert(iterm);
+               } else {
+                 terms.insert(bterm);
+               }
+             }
 
-                             network->staToDb(driver, iterm, bterm);
-                             if (iterm != nullptr) {
-                               terms.insert(iterm);
-                             } else {
-                               terms.insert(bterm);
-                             }
-                           }
-
-                           gui->timingPathsThrough(terms);
-                         }
-                         return makeSelected(net);
-                       }});
+             gui->timingPathsThrough(terms);
+           }
+           return makeSelected(net);
+         }});
   }
   if (!net->getGuides().empty()) {
     actions.push_back(Descriptor::Action{"Route Guides", [this, gui, net]() {

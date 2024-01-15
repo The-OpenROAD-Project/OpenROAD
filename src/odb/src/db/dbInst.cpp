@@ -1309,16 +1309,18 @@ uint dbInst::getPinAccessIdx() const
 dbInst* dbInst::create(dbBlock* block_,
                        dbMaster* master_,
                        const char* name_,
-                       bool physical_only)
+                       bool physical_only,
+                       dbModule* target_module)
 {
-  return create(block_, master_, name_, nullptr, physical_only);
+  return create(block_, master_, name_, nullptr, physical_only, target_module);
 }
 
 dbInst* dbInst::create(dbBlock* block_,
                        dbMaster* master_,
                        const char* name_,
                        dbRegion* region,
-                       bool physical_only)
+                       bool physical_only,
+                       dbModule* parent_module)
 {
   _dbBlock* block = (_dbBlock*) block_;
   _dbMaster* master = (_dbMaster*) master_;
@@ -1383,6 +1385,11 @@ dbInst* dbInst::create(dbBlock* block_,
   if (!physical_only) {
     block_->getTopModule()->addInst((dbInst*) inst);
   }
+  // add to the verilog hierarchy
+  if (parent_module)
+    parent_module->addInstInHierarchy((dbInst*) inst);
+  else
+    block_->getTopModule()->addInstInHierarchy((dbInst*) inst);
 
   if (region) {
     region->addInst((dbInst*) inst);

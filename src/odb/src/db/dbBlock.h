@@ -90,6 +90,9 @@ class _dbPowerSwitch;
 class _dbIsolation;
 class _dbLevelShifter;
 class _dbModInst;
+class _dbModITerm;
+class _dbModBTerm;
+class _dbModNet;
 class _dbGroup;
 class _dbAccessPoint;
 class _dbGlobalConnect;
@@ -171,6 +174,10 @@ class _dbBlock : public _dbObject
   dbHashTable<_dbLogicPort> _logicport_hash;
   dbHashTable<_dbPowerSwitch> _powerswitch_hash;
   dbHashTable<_dbIsolation> _isolation_hash;
+  dbHashTable<_dbModBTerm> _modbterm_hash;
+  dbHashTable<_dbModITerm> _moditerm_hash;
+  dbHashTable<_dbModNet> _modnet_hash;
+
   dbHashTable<_dbLevelShifter> _levelshifter_hash;
   dbHashTable<_dbGroup> _group_hash;
   dbIntHashTable<_dbInstHdr> _inst_hdr_hash;
@@ -222,6 +229,11 @@ class _dbBlock : public _dbObject
   dbPagedVector<float, 4096, 12>* _r_val_tbl;
   dbPagedVector<float, 4096, 12>* _c_val_tbl;
   dbPagedVector<float, 4096, 12>* _cc_val_tbl;
+
+  dbTable<_dbModBTerm>* _modbterm_tbl;
+  dbTable<_dbModITerm>* _moditerm_tbl;
+  dbTable<_dbModNet>* _modnet_tbl;
+
   dbTable<_dbCapNode>* _cap_node_tbl;
   dbTable<_dbRSeg>* _r_seg_tbl;
   dbTable<_dbCCSeg>* _cc_seg_tbl;

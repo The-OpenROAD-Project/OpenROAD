@@ -491,6 +491,7 @@ void OpenRoad::writeDb(const char* filename)
   stream.open(filename, std::ios::binary);
 
   db_->write(stream);
+  stream.close();
 }
 
 void OpenRoad::diffDbs(const char* filename1,

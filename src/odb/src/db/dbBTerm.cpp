@@ -51,6 +51,7 @@
 #include "dbJournal.h"
 #include "dbMTerm.h"
 #include "dbMaster.h"
+#include "dbModNet.h"
 #include "dbNet.h"
 #include "dbShape.h"
 #include "dbTable.h"
@@ -255,6 +256,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
   stream << bterm._name;
   stream << bterm._next_entry;
   stream << bterm._net;
+  stream << bterm._mnet;
   stream << bterm._next_bterm;
   stream << bterm._prev_bterm;
   stream << bterm._parent_block;
@@ -273,6 +275,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
   stream >> bterm._name;
   stream >> bterm._next_entry;
   stream >> bterm._net;
+  stream >> bterm._mnet;
   stream >> bterm._next_bterm;
   stream >> bterm._prev_bterm;
   stream >> bterm._parent_block;
@@ -426,6 +429,30 @@ dbNet* dbBTerm::getNet()
     return (dbNet*) net;
   }
   return nullptr;
+}
+
+dbModNet* dbBTerm::getModNet()
+{
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  if (bterm->_mnet) {
+    _dbBlock* block = (_dbBlock*) getBlock();
+    _dbModNet* net = block->_modnet_tbl->getPtr(bterm->_mnet);
+    return (dbModNet*) net;
+  }
+  return nullptr;
+}
+
+void dbBTerm::connect(dbModNet* net_)
+{
+  dbId<_dbModNet> net_el(net_->getId());
+  _dbBTerm* bterm = (_dbBTerm*) this;
+  if (bterm->_mnet == net_el)
+    return;
+
+  _dbModNet* mod_net = (_dbModNet*) net_;
+  dbId<_dbBTerm> bterm_el(getId());
+  mod_net->_bterms.push_back(bterm_el);
+  bterm->_mnet = net_el;
 }
 
 void dbBTerm::connect(dbNet* net_)

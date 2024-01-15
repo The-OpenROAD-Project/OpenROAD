@@ -96,7 +96,10 @@ add_library(db
     dbLevelShifter.cpp
     dbLogicPort.cpp
     dbMetalWidthViaMap.cpp
+    dbModBTerm.cpp
     dbModInst.cpp
+    dbModITerm.cpp
+    dbModNet.cpp
     dbModule.cpp
     dbNetTrack.cpp
     dbPowerDomain.cpp
