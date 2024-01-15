@@ -46,9 +46,10 @@
 namespace sta {
 class dbSta;
 }
+#endif
 
 namespace gui {
-
+#ifdef ENABLE_CHARTS
 class ChartsWidget : public QDockWidget
 {
   Q_OBJECT

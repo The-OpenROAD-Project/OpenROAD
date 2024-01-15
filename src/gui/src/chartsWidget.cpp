@@ -32,11 +32,11 @@
 
 #include "chartsWidget.h"
 
-#include <QWidget>
 #ifdef ENABLE_CHARTS
 #include <QColor>
 #include <QFrame>
 #include <QString>
+#include <QWidget>
 #include <QtCharts>
 #include <algorithm>
 #include <cmath>
@@ -47,9 +47,10 @@
 #include "sta/MinMax.hh"
 #include "sta/Units.hh"
 #include "staGuiInterface.h"
+#endif
 
 namespace gui {
-
+#ifdef ENABLE_CHARTS
 ChartsWidget::ChartsWidget(QWidget* parent)
     : QDockWidget("Charts", parent),
       logger_(nullptr),
@@ -261,13 +262,8 @@ ChartsWidget::ChartsWidget(QWidget* parent)
 {
   setObjectName("charts_widget");  // for settings
 
-  QWidget* container = new QWidget(this);
-  container->addWidget(label_);
-
-  label_->setText("QtCharts is not installed.")
-      label_->setAlignment(Qt::AlignCenter);
-
-  setWidget(container);
+  label_->setText("QtCharts is not installed.");
+  label_->setAlignment(Qt::AlignCenter);
 }
 #endif
 
