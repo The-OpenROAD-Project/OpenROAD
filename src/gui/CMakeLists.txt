@@ -29,10 +29,6 @@ if (Qt5_FOUND AND BUILD_GUI)
 
     target_compile_definitions(gui PRIVATE ENABLE_CHARTS)
 
-    list(APPEND CHARTS_SRC
-      "src/chartsWidget.cpp"
-    )
-
     list(APPEND CHARTS_LIB
       "Qt5::Charts"
     )
@@ -77,7 +73,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/gui_utils.cpp
     src/colorGenerator.cpp
     src/bufferTreeDescriptor.cpp
-    ${CHARTS_SRC}
+    src/chartsWidget.cpp
     resources/resource.qrc
   )
 
