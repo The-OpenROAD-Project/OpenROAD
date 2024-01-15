@@ -415,10 +415,7 @@ odb::dbITerm* MBFF::GetScanEnable(odb::dbInst* inst)
   return nullptr;
 }
 
-odb::dbITerm* MBFF :
-
-    bool
-    MBFF::IsSupplyPin(odb::dbITerm* iterm)
+bool MBFF::IsSupplyPin(odb::dbITerm* iterm)
 {
   return iterm->getSigType().isSupply();
 }
@@ -780,7 +777,7 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
         scan_enable = iterm;
       }
       if (IsSupplyPin(iterm)) {
-        if (iterm->getSigType() == dbSigType::GROUND) {
+        if (iterm->getSigType() == odb::dbSigType::GROUND) {
           ground = iterm;
         } else {
           power = iterm;
@@ -806,7 +803,7 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
           }
         }
         if (IsSupplyPin(iterm)) {
-          if (iterm->getIoType() == dbSigType::GROUND) {
+          if (iterm->getIoType() == odb::dbSigType::GROUND) {
             ground->connect(net);
           } else {
             power->connect(net);
