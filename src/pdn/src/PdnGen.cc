@@ -854,12 +854,10 @@ void PdnGen::checkDesign(odb::dbBlock* block) const
     }
     for (auto* term : inst->getITerms()) {
       if (term->getSigType().isSupply() && term->getNet() == nullptr) {
-        logger_->warn(
-            utl::PDN,
-            189,
-            "Supply pin {} of instance {} is not connected to any net.",
-            term->getMTerm()->getName(),
-            inst->getName());
+        logger_->warn(utl::PDN,
+                      189,
+                      "Supply pin {} is not connected to any net.",
+                      term->getName());
       }
     }
   }
