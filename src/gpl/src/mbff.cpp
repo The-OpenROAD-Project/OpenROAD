@@ -555,12 +555,12 @@ bool MBFF::IsSame(sta::FuncExpr* expr1,
   if (expr1 != nullptr && expr2 != nullptr && expr1->op() == expr2->op()) {
     if (expr1->op() == sta::FuncExpr::op_port) {
       return PortType(expr1->port(), inst1) == PortType(expr2->port(), inst2);
-    } if (expr1->op() == sta::FuncExpr::op_not) {
-      return IsSame(expr1->left(), inst1, expr2->left(), inst2);
-    } else {
-      return IsSame(expr1->left(), inst1, expr2->left(), inst2)
-             && IsSame(expr1->right(), inst1, expr2->right(), inst2);
     }
+    if (expr1->op() == sta::FuncExpr::op_not) {
+      return IsSame(expr1->left(), inst1, expr2->left(), inst2);
+    }
+    return IsSame(expr1->left(), inst1, expr2->left(), inst2)
+           && IsSame(expr1->right(), inst1, expr2->right(), inst2);
   }
   return false;
 }
@@ -803,7 +803,7 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
           }
         }
         if (IsSupplyPin(iterm)) {
-          if (iterm->getSignalType() == odb::dbSigType::GROUND) {
+          if (iterm->getSigType() == odb::dbSigType::GROUND) {
             ground->connect(net);
           } else {
             power->connect(net);
