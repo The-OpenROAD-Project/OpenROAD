@@ -555,7 +555,7 @@ bool MBFF::IsSame(sta::FuncExpr* expr1,
   if (expr1 != nullptr && expr2 != nullptr && expr1->op() == expr2->op()) {
     if (expr1->op() == sta::FuncExpr::op_port) {
       return PortType(expr1->port(), inst1) == PortType(expr2->port(), inst2);
-    } else if (expr1->op() == sta::FuncExpr::op_not) {
+    } if (expr1->op() == sta::FuncExpr::op_not) {
       return IsSame(expr1->left(), inst1, expr2->left(), inst2);
     } else {
       return IsSame(expr1->left(), inst1, expr2->left(), inst2)
