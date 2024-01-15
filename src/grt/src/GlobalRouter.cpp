@@ -868,8 +868,6 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     // for a detailed discussion
 
     for (RoutePt& pin_pos : pins_on_grid) {
-      if(net->getName() == "a[1005]")
-        logger_->report("adding pin: ({}, {}, {})", pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
       fr_net->addPin(pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
     }
 
