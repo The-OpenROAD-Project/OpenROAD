@@ -251,9 +251,13 @@ void Replace::doInitialPlace()
   ip_->doBicgstabPlace();
 }
 
-void Replace::runMBFF(int max_sz, float alpha, float beta, int threads)
+void Replace::runMBFF(int max_sz,
+                      float alpha,
+                      float beta,
+                      int threads,
+                      int top_k)
 {
-  MBFF pntset(db_, sta_, log_, threads, 4, 10, gui_debug_);
+  MBFF pntset(db_, sta_, log_, threads, 4, 10, top_k, gui_debug_);
   pntset.Run(max_sz, alpha, beta);
 }
 
