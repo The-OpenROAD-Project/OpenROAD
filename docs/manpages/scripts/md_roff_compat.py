@@ -10,17 +10,19 @@ import datetime
 
 # list of edited docs
 SRC_DIR = "./md/man2"
-# problematic: gpl, grt, gui, ifp, mpl2, pdn, psm
-# psm: need to handle the table wrt the #### Options, not all tables. 
+# problematic: gui, rcx
 # also you need to change the ### FUNCTION_NAME parsing. Sometimes the 
 #    function name could be something weird like `diff_spef` or `pdngen`
 #    so it would be better to have a more informative header for the RTD docs. 
-# rmp: many level 3 headers
+# TODO: New function name parsing. Instead of parsing level3 header. 
+#       parse the func_name from the tcl itself. Then the level3 header can be used to
+#       be the description of the function. E.g. `func_name - Useful Function Description` in the roff.
 # sta: documentation is hosted elsewhere. (not currently in RTD also.)
 # 
 tools = ["ant", "cts", "dft", "dpl", "fin", "pad", "par", "ppl", "rsz",\
-            "tap", "upf", "drt"]
-#tools = ["drt"]
+            "tap", "upf", "drt", "gpl", "grt", "ifp", "mpl2", "pdn", "psm",\
+            "rmp", "rcx"]
+#tools = ["rcx"]
 docs = [f"{SRC_DIR}/{tool}.txt" for tool in tools]
 
 # identify key section and stored in ManPage class. 
@@ -125,7 +127,7 @@ def extract_headers(text, level = 1):
     pattern = r'^#{%d}\s+(.*)$' % level
     headers = re.findall(pattern, text, flags=re.MULTILINE)
     # TODO: Handle developer commands
-    if "Useful Developer Commands" in headers: headers.remove("Useful Developer Commands")
+    #if "Useful Developer Commands" in headers: headers.remove("Useful Developer Commands")
     return headers
 
 def extract_description(text):
@@ -155,13 +157,15 @@ def extract_arguments(text):
     first = [rf'### ({level3[i]})(.*?)### ({level3[i+1]})'  for i in range(len(level3) - 1)]
 
     # find the next closest level2 header to the last level3 header.
-    closest_level2 = [text.find(x) - text.find(level3[-1]) for x in level2]
+    closest_level2 = [text.find(f"## {x}") - text.find(f"### {level3[-1]}") for x in level2]
     closest_level2_idx = [idx for idx, x in enumerate(closest_level2) if x > 0][0]
 
+    # This will disambiguate cases where different level headers share the same name.
     second = [rf"### ({level3[-1]})(.*?)## ({level2[closest_level2_idx]})"]
     final_options, final_args = [], []
     for idx, regex in enumerate(first + second):
         match = re.findall(regex, text, flags = re.DOTALL)
+        #print(regex)
         # get text until the next header
         a = match[0][1] 
         a = a[a.find("#"):]
@@ -220,6 +224,12 @@ if __name__ == "__main__":
 
         # arguments
         func_options, func_args = extract_arguments(text)
+
+        #print(f"Names: {len(func_names)}")
+        #print(f"Desc: {len(func_descs)}")
+        #print(f"Syn: {len(func_synopsis)}")
+        #print(f"Options: {len(func_options)}")
+        #print(f"Args: {len(func_args)}")
 
         for func_id in range(len(func_synopsis)):
             manpage = ManPage()

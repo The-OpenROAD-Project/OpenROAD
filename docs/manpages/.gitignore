@@ -1,1 +1,4 @@
 test/results
+
+# dont save intermediate results
+md/man2/*md

@@ -71,7 +71,7 @@ global_placement
     [-timing_driven_nets_percentage]
 ```
 
-#### General Arguments
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -116,11 +116,11 @@ global_placement
 | `-timing_driven_nets_percentage` | Set the reweighted percentage of nets in timing-driven mode. The default value is 10. Allowed values are floats `[0, 100]`. |
 
 
-### Useful developer functions
+### Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/replace.cpp) or the [swig file](./src/replace.i).
 
-```tcl
+```
 # debugging global placement 
 global_placement_debug -pause -update -inst -draw_bins -initial
 

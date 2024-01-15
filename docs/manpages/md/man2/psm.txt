@@ -25,6 +25,8 @@ Features:
 
 ### Analyze Power Grid
 
+This command analyzes power grid.
+
 ```tcl
 analyze_power_grid
     [-vsrc vsrc_file]
@@ -57,8 +59,11 @@ analyze_power_grid
 
 ### Check Power Grid
 
+This command checks power grid.
+
 ```tcl
-check_power_grid -net net_name
+check_power_grid 
+    -net net_name
 ```
 
 #### Options
@@ -67,7 +72,9 @@ check_power_grid -net net_name
 | ----- | ----- |
 | `-net` | Name of the net to analyze. Must be a power or ground net name. |
 
-### Write Spice Power Grid
+### Write PG Spice
+
+This command writes the `spice` file for power grid.
 
 ```tcl
 write_pg_spice
@@ -91,6 +98,8 @@ write_pg_spice
 
 ### Set PDNSim Net voltage
 
+This command sets PDNSim net voltage.
+
 ```tcl
 set_pdnsim_net_voltage
     [-net net_name]
@@ -104,7 +113,7 @@ set_pdnsim_net_voltage
 | `-net` | Name of the net to analyze. It must be a power or ground net name. |
 | `-voltage` | Sets the voltage on a specific net. If this option is not given, the Liberty file's voltage value is obtained from operating conditions. |
 
-### Useful Developer Commands
+## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/pdnsim.cpp) or the [swig file](./src/pdnsim.i).
 
@@ -116,7 +125,7 @@ If you are a developer, you might find these useful. More details can be found i
 
 Example scripts demonstrating how to run PDNSim on a sample design on `aes` as follows:
 
-```tcl
+```
 ./test/aes_test_vdd.tcl
 ./test/aes_test_vss.tcl
 ```

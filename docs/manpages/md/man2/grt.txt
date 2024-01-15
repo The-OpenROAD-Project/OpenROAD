@@ -276,19 +276,6 @@ write_guides file_name
 | ----- | ----- |
 | `file_name` | Guide file name. |
 
-### Estimate Parasitics
-
-This command estimates RC parasitics based on global route results
-by using the `-global_routing` option of the `estimate_parasitics` command.
-
-```{note}
-To see the function definition for `estimate_parasitics`, refer to 
-[Resizer docs](../rsz/README.md#estimate-parasitics).
-```
-
-```tcl
-estimate_parasitics -global_routing
-```
 
 ### Draw Route Guides
 
@@ -373,7 +360,9 @@ Examples scripts demonstrating how to run FastRoute on a sample design of `gcd` 
 ./test/gcd.tcl
 ```
 
-### Read Global Routing Guides
+### Read Guides
+
+This command reads global routing guides. 
 
 ```tcl
 read_guides file_name 
@@ -385,7 +374,7 @@ read_guides file_name
 | ----- | ----- |
 | `file_name` | Path to global routing guide. | 
 
-### Useful developer functions
+## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/GlobalRouter.cpp) or the [swig file](./src/GlobalRouter.i).
 
