@@ -803,7 +803,7 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
           }
         }
         if (IsSupplyPin(iterm)) {
-          if (iterm->getIoType() == odb::dbSigType::GROUND) {
+          if (iterm->getSignalType() == odb::dbSigType::GROUND) {
             ground->connect(net);
           } else {
             power->connect(net);
@@ -2132,10 +2132,8 @@ void MBFF::ReadFFs()
   int num_flops = 0;
   for (auto inst : block_->getInsts()) {
     if (IsValidFlop(inst)) {
-      int x_i;
-      int y_i;
-      inst->getOrigin(x_i, y_i);
-      const Point pt{x_i / multiplier_, y_i / multiplier_};
+      const odb::Point origin = inst->getOrigin();
+      const Point pt{origin.x() / multiplier_, origin.y() / multiplier_};
       flops_.push_back({pt, num_flops, 0.0});
       insts_.push_back(inst);
       name_to_idx_[inst->getName()] = num_flops;
