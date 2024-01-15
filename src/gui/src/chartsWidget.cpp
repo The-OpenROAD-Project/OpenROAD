@@ -89,6 +89,8 @@ ChartsWidget::ChartsWidget(QWidget* parent)
   layout->addWidget(controls_frame);
   layout->addWidget(display_);
 
+  container->setLayout(layout);
+
   chart_->addAxis(axis_y_, Qt::AlignLeft);
   chart_->addAxis(axis_x_, Qt::AlignBottom);
 
@@ -99,9 +101,9 @@ ChartsWidget::ChartsWidget(QWidget* parent)
 #else
   label_->setText("QtCharts is not installed.");
   label_->setAlignment(Qt::AlignCenter);
-#endif
+  // We need this layout in order to centralize the label.
   container->setLayout(controls_layout);
-
+#endif
   setWidget(container);
 }
 
