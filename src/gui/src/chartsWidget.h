@@ -88,9 +88,6 @@ class ChartsWidget : public QDockWidget
 
  public:
   ChartsWidget(QWidget* parent = nullptr);
-
- private:
-  QLabel* label_;
 };
 #endif
 }  // namespace gui

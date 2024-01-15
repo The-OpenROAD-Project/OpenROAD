@@ -47,6 +47,8 @@
 #include "sta/MinMax.hh"
 #include "sta/Units.hh"
 #include "staGuiInterface.h"
+#else
+#include <QHBoxLayout>
 #endif
 
 namespace gui {
@@ -257,13 +259,18 @@ void ChartsWidget::setLogger(utl::Logger* logger)
   logger_ = logger;
 }
 #else
-ChartsWidget::ChartsWidget(QWidget* parent)
-    : QDockWidget("Charts", parent), label_(new QLabel(this))
+ChartsWidget::ChartsWidget(QWidget* parent) : QDockWidget("Charts", parent)
 {
   setObjectName("charts_widget");  // for settings
 
-  label_->setText("QtCharts is not installed.");
-  label_->setAlignment(Qt::AlignCenter);
+  QWidget* container = new QWidget(this);
+  QHBoxLayout* layout = new QHBoxLayout;
+  QLabel* label = new QLabel("QtCharts is not installed.");
+  label->setAlignment(Qt::AlignCenter);
+  layout->addWidget(label);
+  container->setLayout(layout);
+
+  setWidget(container);
 }
 #endif
 
