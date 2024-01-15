@@ -47,15 +47,14 @@ namespace gtl = boost::polygon;
 
 int io::Parser::getTopPinLayer()
 {
-  int topPinLayer = 0;
+  frLayerNum topPinLayer = 0;
   if (design_->getTopBlock()) {
     for (const auto& bTerm : design_->getTopBlock()->getTerms()) {
       if (bTerm->getNet() && !bTerm->getNet()->isSpecial()) {
         for (const auto& pin : bTerm->getPins()) {
           for (const auto& fig : pin->getFigs()) {
-            if (((frShape*) (fig.get()))->getLayerNum() > topPinLayer) {
-              topPinLayer = ((frShape*) (fig.get()))->getLayerNum();
-            }
+            topPinLayer = std::max(topPinLayer,
+                                   ((frShape*) (fig.get()))->getLayerNum());
           }
         }
       }
@@ -65,9 +64,8 @@ int io::Parser::getTopPinLayer()
         if (iTerm->getNet() && !iTerm->getNet()->isSpecial()) {
           for (const auto& pin : iTerm->getTerm()->getPins()) {
             for (const auto& fig : pin->getFigs()) {
-              if (((frShape*) (fig.get()))->getLayerNum() > topPinLayer) {
-                topPinLayer = ((frShape*) (fig.get()))->getLayerNum();
-              }
+              topPinLayer = std::max(topPinLayer,
+                                     ((frShape*) (fig.get()))->getLayerNum());
             }
           }
         }
@@ -92,7 +90,7 @@ void io::Parser::initDefaultVias()
     tech_->getLayer(viaDef->getCutLayerNum())->setDefaultViaDef(viaDef);
   }
   // Check whether there are pins above top routing layer
-  int topPinLayer = getTopPinLayer();
+  frLayerNum topPinLayer = getTopPinLayer();
 
   for (auto layerNum = design_->getTech()->getBottomLayerNum();
        layerNum <= design_->getTech()->getTopLayerNum();
