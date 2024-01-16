@@ -40,7 +40,6 @@
 #include <set>
 #include <string>
 
-#include "ZComponents.h"
 #include "db.h"
 #include "dbAccessPoint.h"
 #include "dbArrayTable.h"
@@ -83,6 +82,7 @@
 #include "dbIntHashTable.hpp"
 #include "dbIsolation.h"
 #include "dbJournal.h"
+#include "dbLevelShifter.h"
 #include "dbLogicPort.h"
 #include "dbModInst.h"
 #include "dbModule.h"
@@ -107,7 +107,6 @@
 #include "dbSBoxItr.h"
 #include "dbSWire.h"
 #include "dbSWireItr.h"
-#include "dbSearch.h"
 #include "dbShape.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -203,6 +202,9 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   _isolation_tbl = new dbTable<_dbIsolation>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbIsolationObj);
+
+  _levelshifter_tbl = new dbTable<_dbLevelShifter>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbLevelShifterObj);
 
   _group_tbl = new dbTable<_dbGroup>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbGroupObj);
@@ -320,6 +322,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _logicport_hash.setTable(_logicport_tbl);
   _powerswitch_hash.setTable(_powerswitch_tbl);
   _isolation_hash.setTable(_isolation_tbl);
+  _levelshifter_hash.setTable(_levelshifter_tbl);
   _group_hash.setTable(_group_tbl);
   _inst_hdr_hash.setTable(_inst_hdr_tbl);
   _bterm_hash.setTable(_bterm_tbl);
@@ -404,6 +407,7 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
       _logicport_hash(block._logicport_hash),
       _powerswitch_hash(block._powerswitch_hash),
       _isolation_hash(block._isolation_hash),
+      _levelshifter_hash(block._levelshifter_hash),
       _group_hash(block._group_hash),
       _inst_hdr_hash(block._inst_hdr_hash),
       _bterm_hash(block._bterm_hash),
@@ -442,6 +446,9 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
       = new dbTable<_dbPowerSwitch>(db, this, *block._powerswitch_tbl);
 
   _isolation_tbl = new dbTable<_dbIsolation>(db, this, *block._isolation_tbl);
+
+  _levelshifter_tbl
+      = new dbTable<_dbLevelShifter>(db, this, *block._levelshifter_tbl);
 
   _group_tbl = new dbTable<_dbGroup>(db, this, *block._group_tbl);
 
@@ -518,6 +525,7 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
   _logicport_hash.setTable(_logicport_tbl);
   _powerswitch_hash.setTable(_powerswitch_tbl);
   _isolation_hash.setTable(_isolation_tbl);
+  _levelshifter_hash.setTable(_levelshifter_tbl);
 
   _net_bterm_itr = new dbNetBTermItr(_bterm_tbl);
 
@@ -593,6 +601,7 @@ _dbBlock::~_dbBlock()
   delete _logicport_tbl;
   delete _powerswitch_tbl;
   delete _isolation_tbl;
+  delete _levelshifter_tbl;
   delete _group_tbl;
   delete ap_tbl_;
   delete global_connect_tbl_;
@@ -651,10 +660,6 @@ _dbBlock::~_dbBlock()
     _cbitr = _callbacks.begin();
     (*_cbitr)->removeOwner();
   }
-#ifdef ZUI
-  if (_searchDb)
-    delete _searchDb;
-#endif
   if (_journal)
     delete _journal;
 
@@ -767,6 +772,9 @@ dbObjectTable* _dbBlock::getObjectTable(dbObjectType type)
 
     case dbIsolationObj:
       return _isolation_tbl;
+
+    case dbLevelShifterObj:
+      return _levelshifter_tbl;
 
     case dbGroupObj:
       return _group_tbl;
@@ -893,6 +901,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._logicport_hash;
   stream << block._powerswitch_hash;
   stream << block._isolation_hash;
+  stream << block._levelshifter_hash;
   stream << block._group_hash;
   stream << block._inst_hdr_hash;
   stream << block._bterm_hash;
@@ -913,6 +922,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << *block._logicport_tbl;
   stream << *block._powerswitch_tbl;
   stream << *block._isolation_tbl;
+  stream << *block._levelshifter_tbl;
   stream << *block._group_tbl;
   stream << *block.ap_tbl_;
   stream << *block.global_connect_tbl_;
@@ -995,6 +1005,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block._logicport_hash;
   stream >> block._powerswitch_hash;
   stream >> block._isolation_hash;
+  if (db->isSchema(db_schema_level_shifter)) {
+    stream >> block._levelshifter_hash;
+  }
   stream >> block._group_hash;
   stream >> block._inst_hdr_hash;
   stream >> block._bterm_hash;
@@ -1023,6 +1036,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block._logicport_tbl;
   stream >> *block._powerswitch_tbl;
   stream >> *block._isolation_tbl;
+  if (db->isSchema(db_schema_level_shifter)) {
+    stream >> *block._levelshifter_tbl;
+  }
   stream >> *block._group_tbl;
   stream >> *block.ap_tbl_;
   if (db->isSchema(db_schema_add_global_connect)) {
@@ -1190,6 +1206,10 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
   if (_isolation_hash != rhs._isolation_hash)
     return false;
 
+  if (_levelshifter_hash != rhs._levelshifter_hash) {
+    return false;
+  }
+
   if (_group_hash != rhs._group_hash)
     return false;
 
@@ -1249,6 +1269,12 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
 
   if (*_isolation_tbl != *rhs._isolation_tbl)
     return false;
+
+  if (*_levelshifter_tbl != *rhs._levelshifter_tbl) {
+    {
+      return false;
+    }
+  }
 
   if (*_group_tbl != *rhs._group_tbl)
     return false;
@@ -1372,6 +1398,7 @@ void _dbBlock::differences(dbDiff& diff,
     DIFF_HASH_TABLE(_logicport_hash);
     DIFF_HASH_TABLE(_powerswitch_hash);
     DIFF_HASH_TABLE(_isolation_hash);
+    DIFF_HASH_TABLE(_levelshifter_hash);
     DIFF_HASH_TABLE(_group_hash);
     DIFF_HASH_TABLE(_inst_hdr_hash);
     DIFF_HASH_TABLE(_bterm_hash);
@@ -1394,6 +1421,7 @@ void _dbBlock::differences(dbDiff& diff,
   DIFF_TABLE(_logicport_tbl);
   DIFF_TABLE(_powerswitch_tbl);
   DIFF_TABLE(_isolation_tbl);
+  DIFF_TABLE(_levelshifter_tbl);
   DIFF_TABLE(_group_tbl);
   DIFF_TABLE(ap_tbl_);
   DIFF_TABLE(global_connect_tbl_);
@@ -1466,6 +1494,7 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
     DIFF_OUT_HASH_TABLE(_logicport_hash);
     DIFF_OUT_HASH_TABLE(_powerswitch_hash);
     DIFF_OUT_HASH_TABLE(_isolation_hash);
+    DIFF_OUT_HASH_TABLE(_levelshifter_hash);
     DIFF_OUT_HASH_TABLE(_group_hash);
     DIFF_OUT_HASH_TABLE(_inst_hdr_hash);
     DIFF_OUT_HASH_TABLE(_bterm_hash);
@@ -1488,6 +1517,7 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE(_logicport_tbl);
   DIFF_OUT_TABLE(_powerswitch_tbl);
   DIFF_OUT_TABLE(_isolation_tbl);
+  DIFF_OUT_TABLE(_levelshifter_tbl);
   DIFF_OUT_TABLE(_group_tbl);
   DIFF_OUT_TABLE(ap_tbl_);
   DIFF_OUT_TABLE(global_connect_tbl_);
@@ -1606,13 +1636,11 @@ void dbBlock::ComputeBBox()
   }
 
   dbSet<dbWire> wires(block, block->_wire_tbl);
-  dbSet<dbWire>::iterator witr;
 
-  for (witr = wires.begin(); witr != wires.end(); ++witr) {
-    dbWire* wire = *witr;
-    Rect r;
-    if (wire->getBBox(r)) {
-      bbox->_shape._rect.merge(r);
+  for (dbWire* wire : wires) {
+    const auto opt_bbox = wire->getBBox();
+    if (opt_bbox) {
+      bbox->_shape._rect.merge(opt_bbox.value());
     }
   }
 
@@ -1750,6 +1778,12 @@ dbSet<dbIsolation> dbBlock::getIsolations()
   return dbSet<dbIsolation>(block, block->_isolation_tbl);
 }
 
+dbSet<dbLevelShifter> dbBlock::getLevelShifters()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbLevelShifter>(block, block->_levelshifter_tbl);
+}
+
 dbSet<dbGroup> dbBlock::getGroups()
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -1821,6 +1855,12 @@ dbIsolation* dbBlock::findIsolation(const char* name)
 {
   _dbBlock* block = (_dbBlock*) this;
   return (dbIsolation*) block->_isolation_hash.find(name);
+}
+
+dbLevelShifter* dbBlock::findLevelShifter(const char* name)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return (dbLevelShifter*) block->_levelshifter_hash.find(name);
 }
 
 dbModInst* dbBlock::findModInst(const char* path)
@@ -2777,113 +2817,6 @@ dbBlockSearch* dbBlock::getSearchDb()
   return block->_searchDb;
 }
 
-#ifdef ZUI
-ZPtr<ISdb> dbBlock::getSignalNetSdb(ZContext& context, dbTech* tech)
-{
-  _dbBlock* block = (_dbBlock*) this;
-  if (block->_searchDb == nullptr)
-    block->_searchDb = new dbBlockSearch(this, tech);
-  if (block->_searchDb == nullptr)
-    return nullptr;
-  return block->_searchDb->getSignalNetSdb(context);
-}
-dbBlockSearch* dbBlock::getSearchDb()
-{
-  _dbBlock* block = (_dbBlock*) this;
-  return block->_searchDb;
-}
-ZPtr<ISdb> dbBlock::getNetSdb(ZContext& context, dbTech* tech)
-{
-  _dbBlock* block = (_dbBlock*) this;
-  if (block->_searchDb == nullptr)
-    block->_searchDb = new dbBlockSearch(this, tech);
-  if (block->_searchDb == nullptr)
-    return nullptr;
-  return block->_searchDb->getNetSdb(context);
-}
-ZPtr<ISdb> dbBlock::getNetSdb()
-{
-  _dbBlock* block = (_dbBlock*) this;
-  if (block->_searchDb == nullptr)
-    return nullptr;
-  return block->_searchDb->getNetSdb();
-}
-void dbBlock::resetNetSdb()
-{
-  _dbBlock* block = (_dbBlock*) this;
-  if (block->_searchDb == nullptr)
-    return;
-  block->_searchDb->resetNetSdb();
-}
-void dbBlock::removeSdb(std::vector<dbNet*>& nets)
-{
-  ZPtr<ISdb> netSdb = getNetSdb();
-  if (netSdb == nullptr || netSdb->getSearchPtr() == nullptr)
-    return;
-  dbNet::markNets(nets, this, true);
-  netSdb->removeMarkedNetWires();
-  dbNet::markNets(nets, this, false);
-}
-
-dbBlockSearch* dbBlock::initSearchBlock(dbTech* tech,
-                                        bool nets,
-                                        bool insts,
-                                        ZContext& context,
-                                        bool skipViaCuts)
-{
-  _dbBlock* block = (_dbBlock*) this;
-
-  /* TODO: TEMPORARY FIX
-      if (block->_searchDb!=nullptr)
-              delete block->_searchDb;
-  */
-
-  block->_searchDb = new dbBlockSearch(this, tech);
-
-  if (skipViaCuts)
-    block->_searchDb->setViaCutsFlag(skipViaCuts);
-  block->_searchDb->makeSearchDB(nets, insts, context);
-
-  return block->_searchDb;
-}
-
-uint dbBlock::getInsts(int x1,
-                       int y1,
-                       int x2,
-                       int y2,
-                       std::vector<dbInst*>& result)
-{
-  _dbBlock* block = (_dbBlock*) this;
-  return block->_searchDb->getInstBoxes(x1, y1, x2, y2, result);
-}
-#endif
-void dbBlock::updateNetFlags(std::vector<dbNet*>& result)
-{
-  _dbBlock* block = (_dbBlock*) this;
-  dbSet<dbNet> nets = getNets();
-  dbSet<dbNet>::iterator nitr;
-
-  for (nitr = nets.begin(); nitr != nets.end(); ++nitr) {
-    dbNet* net = *nitr;
-
-    _dbNet* n = (_dbNet*) *nitr;
-
-    if (n->_flags._wire_altered != 1)
-      continue;
-
-    n->_flags._reduced = 0;
-    n->_flags._extracted = 0;
-    n->_flags._rc_graph = 0;
-    n->_flags._wire_ordered = 0;
-
-    if (block->_journal) {
-      // assert(0);
-    }
-
-    result.push_back(net);
-  }
-}
-
 void dbBlock::getWireUpdatedNets(std::vector<dbNet*>& result)
 {
   dbSet<dbNet> nets = getNets();
@@ -2947,9 +2880,6 @@ void dbBlock::destroyCornerParasitics(std::vector<dbNet*>& nets)
     dbNet* net = dbNet::getNet(this, nets[jj]->getId());
     cnets.push_back(net);
   }
-#ifdef ZUI
-  removeSdb(cnets);
-#endif
   destroyCCs(cnets);
   destroyRSegs(cnets);
   destroyCNs(cnets, true);
@@ -3459,32 +3389,21 @@ dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, u
 void dbBlock::writeDb(char* filename, int allNode)
 {
   _dbBlock* block = (_dbBlock*) this;
-  char dbname[max_name_length];
+  std::string dbname;
   if (allNode) {
     if (block->_journal)
-      sprintf(dbname, "%s.main.%d.db", filename, getpid());
+      dbname = fmt::format("{}.main.{}.db", filename, getpid());
     else
-      sprintf(dbname, "%s.remote.%d.db", filename, getpid());
+      dbname = fmt::format("{}.remote.{}.db", filename, getpid());
   } else
-    sprintf(dbname, "%s.db", filename);
-  FILE* file = fopen(dbname, "wb");
+    dbname = fmt::format("{}.db", filename);
+  std::ofstream file(dbname, std::ios::binary);
   if (!file) {
     getImpl()->getLogger()->warn(
         utl::ODB, 19, "Can not open file {} to write!", dbname);
     return;
   }
-  int io_bufsize = 65536;
-  char* buffer = (char*) malloc(io_bufsize);
-  if (buffer == nullptr) {
-    getImpl()->getLogger()->warn(
-        utl::ODB, 20, "Memory allocation failed for io buffer");
-    fclose(file);
-    return;
-  }
-  setvbuf(file, buffer, _IOFBF, io_bufsize);
   getDataBase()->write(file);
-  free((void*) buffer);
-  fclose(file);
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
                utl::ODB,
@@ -3744,7 +3663,6 @@ resultTable)
         return instsToMark.size();
 }
 */
-#define FAST_INST_TERMS
 int dbBlock::markBackwardsUser2(std::vector<dbInst*>& startingInsts,
                                 std::vector<dbInst*>& instsToMark,
                                 bool mark,
@@ -3766,16 +3684,9 @@ int dbBlock::markBackwardsUser2(std::vector<dbInst*>& startingInsts,
     } else if (inst->getUserFlag2())
       return -1;
 
-#ifdef FAST_INST_TERMS
     dbMaster* master = inst->getMaster();
     for (uint ii = 0; ii < (uint) master->getMTermCount(); ii++) {
       dbITerm* iterm = inst->getITerm(ii);
-#else
-    dbSet<dbITerm> iterms = inst->getITerms();
-    dbSet<dbITerm>::iterator iitr;
-    for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
-      dbITerm* iterm = *iitr;
-#endif
       if (!iterm->isInputSignal())
         continue;
       if (iterm->isClocked())

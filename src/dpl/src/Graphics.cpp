@@ -76,9 +76,9 @@ void Graphics::binSearch(const Cell* cell, int xl, int yl, int xh, int yh)
   }
   Rect core = dp_->getCore();
   int xl_dbu = core.xMin() + xl * dp_->getSiteWidth();
-  int yl_dbu = core.yMin() + yl * dp_->getRowHeight();
+  int yl_dbu = core.yMin() + yl * dp_->getRowHeight(cell);
   int xh_dbu = core.xMin() + xh * dp_->getSiteWidth();
-  int yh_dbu = core.yMin() + yh * dp_->getRowHeight();
+  int yh_dbu = core.yMin() + yh * dp_->getRowHeight(cell);
   searched_.emplace_back(xl_dbu, yl_dbu, xh_dbu, yh_dbu);
 }
 
@@ -95,17 +95,15 @@ void Graphics::drawObjects(gui::Painter& painter)
     return;
   }
 
-  // Compare the squared distances to save calling sqrt
-  float min_length = min_displacement_ * dp_->getRowHeight();
-  min_length *= min_length;
-
   odb::Rect core = block_->getCoreArea();
 
   for (const auto& cell : dp_->getCells()) {
     if (!cell.is_placed_) {
       continue;
     }
-
+    // Compare the squared distances to save calling sqrt
+    float min_length = min_displacement_ * dp_->getRowHeight(&cell);
+    min_length *= min_length;
     int lx = core.xMin() + cell.x_;
     int ly = core.yMin() + cell.y_;
 

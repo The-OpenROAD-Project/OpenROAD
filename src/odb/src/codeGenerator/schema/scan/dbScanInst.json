@@ -1,0 +1,39 @@
+{
+  "name": "dbScanInst",
+  "type": "dbObject",
+  "fields": [
+    {
+      "name": "bits",
+      "type": "uint",
+      "flags": ["private"]
+    },
+    {
+      "name": "scanIn",
+      "type": "dbId<dbScanPin>",
+      "flags": ["private"]
+    },
+    {
+      "name": "scanOut",
+      "type": "dbId<dbScanPin>",
+      "flags": ["private"]
+    }
+  ],
+  "enums": [
+    {
+      "name": "SCAN_INST_TYPE",
+      "public": true,
+      "class": true,
+      "values": [
+        "OneBit",
+        "ShiftRegister",
+        "BlackBox"
+      ]
+    }
+  ],
+  "h_includes": [
+    "dbScanPin.h"
+  ],
+  "cpp_includes": [
+    "dbScanPin.h"
+  ]
+}

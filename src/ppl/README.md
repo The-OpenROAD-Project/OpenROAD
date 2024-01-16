@@ -22,11 +22,11 @@ the edges of the die boundary.
 
 ```tcl
 define_pin_shape_pattern 
-    [-layer layer]
-    [-x_step x_step]
-    [-y_step y_step]
-    [-region {llx lly urx ury}]
-    [-size {width height}]
+    -layer layer
+    -x_step x_step
+    -y_step y_step
+    -region {llx lly urx ury}
+    -size {width height}
     [-pin_keepout dist]
 ```
 
@@ -191,9 +191,9 @@ To place an individual pin:
 
 ```tcl
 place_pin 
-    [-pin_name pin_name]
-    [-layer layer]
-    [-location {x y}]
+    -pin_name pin_name
+    -layer layer
+    -location {x y}
     [-pin_size {width height}]
     [-force_to_die_boundary]
 ```
@@ -214,8 +214,8 @@ Use the following command to perform pin placement:
 
 ```tcl
 place_pins 
-    [-hor_layers h_layers]
-    [-ver_layers v_layers]
+    -hor_layers h_layers
+    -ver_layers v_layers
     [-random_seed seed]
     [-random]
     [-corner_avoidance length]
@@ -255,7 +255,19 @@ microns to 60.5 microns, and the left edge from its beginning to 50 microns.
 | `-random_seed` | Specify the seed for random operations. |
 | `-random` | When this flag is enabled, the pin placement is random. |
 
+### Write Pin Placement
 
+Use the following command to write a file with the pin placement in the format of multiple calls for the `place_pin` command:
+
+```tcl
+write_pin_placement file_name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `file_name` | The name of the file with the pin placement. |
 
 ### Useful Developer Commands
 

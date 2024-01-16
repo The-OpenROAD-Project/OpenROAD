@@ -1,10 +1,10 @@
 //Generator Code Begin ClassDeclarations
-{% for klass in schema.classes %}
+{% for klass in schema.classes|sort(attribute='name') %}
 class {{klass.name}};
 {% endfor %}
 //Generator Code End ClassDeclarations
 //Generator Code Begin ClassDefinition
-{% for klass in schema.classes %}
+{% for klass in schema.classes|sort(attribute='name') %}
 
 class {{klass.name}} : public dbObject
 {
@@ -22,7 +22,7 @@ class {{klass.name}} : public dbObject
   {% endfor %}
   {% for _enum in klass.enums %}
     {% if _enum.public %}
-    enum {{ _enum.name }}{% if "type" in _enum %} :{{ _enum.type }}{% endif %}
+    enum {% if _enum.class %} class {% endif %} {{ _enum.name }}{% if "type" in _enum %} :{{ _enum.type }}{% endif %}
     {
       {% for value in _enum["values"]%}
       {% if not loop.first %},{%endif%}{{value}}

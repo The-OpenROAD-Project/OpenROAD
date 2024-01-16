@@ -423,9 +423,9 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeParentItem(site_group_, "Rows", root, Qt::Unchecked, true);
 
   // Rows
-  makeParentItem(pin_markers_, "Pin Markers", root, Qt::Checked);
+  makeParentItem(io_pins_, "Pins", root, Qt::Checked);
   pin_markers_font_ = QApplication::font();  // use default font
-  setNameItemDoubleClickAction(pin_markers_, [this]() {
+  setNameItemDoubleClickAction(io_pins_, [this]() {
     pin_markers_font_ = QFontDialog::getFont(
         nullptr, pin_markers_font_, this, "Pin marker font");
   });
@@ -457,7 +457,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   makeLeafItem(
       instance_shapes_.pins, "Pins", instance_shape, Qt::Checked, true);
   makeLeafItem(instance_shapes_.iterm_labels,
-               "Pin labels",
+               "Pin Names",
                instance_shape,
                Qt::Unchecked,
                false,
@@ -655,7 +655,7 @@ void DisplayControls::readSettings(QSettings* settings)
   readSettingsForRow(settings, nets_group_);
   readSettingsForRow(settings, instance_group_);
   readSettingsForRow(settings, blockage_group_);
-  readSettingsForRow(settings, pin_markers_);
+  readSettingsForRow(settings, io_pins_);
   readSettingsForRow(settings, rulers_);
   readSettingsForRow(settings, tracks_group_);
   readSettingsForRow(settings, misc_group_);
@@ -729,7 +729,7 @@ void DisplayControls::writeSettings(QSettings* settings)
   writeSettingsForRow(settings, nets_group_);
   writeSettingsForRow(settings, instance_group_);
   writeSettingsForRow(settings, blockage_group_);
-  writeSettingsForRow(settings, pin_markers_);
+  writeSettingsForRow(settings, io_pins_);
   writeSettingsForRow(settings, rulers_);
   writeSettingsForRow(settings, tracks_group_);
   writeSettingsForRow(settings, misc_group_);
@@ -1647,9 +1647,9 @@ bool DisplayControls::isScaleBarVisible() const
   return isModelRowVisible(&misc_.scale_bar);
 }
 
-bool DisplayControls::arePinMarkersVisible() const
+bool DisplayControls::areIOPinsVisible() const
 {
-  return isModelRowVisible(&pin_markers_);
+  return isModelRowVisible(&io_pins_);
 }
 
 QFont DisplayControls::pinMarkersFont()
@@ -1885,6 +1885,27 @@ void DisplayControls::techInit(odb::dbTech* tech)
 void DisplayControls::blockLoaded(odb::dbBlock* block)
 {
   addTech(block->getTech());
+}
+
+void DisplayControls::setCurrentBlock(odb::dbBlock* block)
+{
+  if (!block) {
+    return;
+  }
+  auto tech = block->getTech();
+  addTech(tech);
+
+  std::set<odb::dbTech*> visible_techs{tech};
+  for (auto child : block->getChildren()) {
+    visible_techs.insert(child->getTech());
+  }
+
+  for (auto& [layer, row] : layer_controls_) {
+    const bool visible
+        = visible_techs.find(layer->getTech()) != visible_techs.end();
+    QModelIndex idx = model_->indexFromItem(row.name);
+    view_->setRowHidden(idx.row(), idx.parent(), !visible);
+  }
 }
 
 void DisplayControls::restoreTclCommands(std::vector<std::string>& cmds)

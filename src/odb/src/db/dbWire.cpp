@@ -38,7 +38,6 @@
 #include "dbBlock.h"
 #include "dbBlockCallBackObj.h"
 #include "dbNet.h"
-#include "dbRtTree.h"
 #include "dbShape.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
@@ -359,7 +358,7 @@ void dbWire::addOneSeg(unsigned char op, int value)
   wire->_opcodes.push_back(op);
 }
 
-uint dbWire::getTermJid(int termid)
+uint dbWire::getTermJid(const int termid) const
 {
   _dbWire* wire = (_dbWire*) this;
   int topcd = WOP_ITERM;
@@ -368,21 +367,22 @@ uint dbWire::getTermJid(int termid)
     topcd = WOP_BTERM;
     ttid = -termid;
   }
-  uint wlen = wire->length();
+  const uint wlen = wire->length();
   uint jj;
   for (jj = 0; jj < wlen; jj++) {
     if ((wire->_opcodes[jj] & WOP_OPCODE_MASK) == topcd) {
-      if (wire->_data[jj] == ttid)
+      if (wire->_data[jj] == ttid) {
         break;
-      else
-        continue;
+      }
     }
   }
-  if (jj == wlen)
+  if (jj == wlen) {
     return 0;
+  }
   jj--;
-  if ((wire->_opcodes[jj] & WOP_OPCODE_MASK) == WOP_PROPERTY)
+  if ((wire->_opcodes[jj] & WOP_OPCODE_MASK) == WOP_PROPERTY) {
     jj--;
+  }
   return jj;
 }
 
@@ -624,20 +624,21 @@ void dbWire::shuffleWireSeg(dbNet** newNets, dbRSeg** new_rsegs)
     rwire->attach(leadNewNet);
 }
 
-bool dbWire::getBBox(Rect& bbox)
+std::optional<Rect> dbWire::getBBox()
 {
-  bbox.reset(INT_MAX, INT_MAX, INT_MIN, INT_MIN);
-  dbWireShapeItr itr;
-  dbShape s;
-  uint cnt = 0;
+  Rect bbox;
+  bbox.mergeInit();
 
+  dbShape s;
+  dbWireShapeItr itr;
   for (itr.begin(this); itr.next(s);) {
-    Rect r = s.getBox();
-    bbox.merge(r);
-    ++cnt;
+    bbox.merge(s.getBox());
   }
 
-  return cnt > 0;
+  if (!bbox.isInverted()) {
+    return bbox;
+  }
+  return {};
 }
 
 #define DB_WIRE_SHAPE_INVALID_SHAPE_ID 0
@@ -667,9 +668,6 @@ void dbWire::getShape(int shape_id, dbShape& shape)
         return;
 
       WirePoint pnt;
-      // dimitri_fix
-      pnt._x = 0;
-      pnt._y = 0;
       getPrevPoint(
           tech, block, wire->_opcodes, wire->_data, shape_id, false, pnt);
       Rect b = box->getBox();
@@ -713,19 +711,16 @@ void dbWire::getShape(int shape_id, dbShape& shape)
   }
 }
 
-void dbWire::getCoord(int jid, int& x, int& y)
+Point dbWire::getCoord(int jid)
 {
   _dbWire* wire = (_dbWire*) this;
   ZASSERT((0 <= jid) && (jid < (int) wire->length()));
   dbBlock* block = (dbBlock*) wire->getOwner();
   dbTech* tech = getDb()->getTech();
-  // dimitri_fix LOOK_AGAIN WirePoint pnt;
   WirePoint pnt;
-  pnt._x = 0;
-  pnt._y = 0;
   getPrevPoint(tech, block, wire->_opcodes, wire->_data, jid, false, pnt);
-  x = pnt._x;
-  y = pnt._y;
+
+  return {pnt._x, pnt._y};
 }
 
 bool dbWire::getProperty(int jid, int& prpty)
@@ -1710,126 +1705,6 @@ void dbWire::detach()
     callback->inDbWirePostDetach(this, (dbNet*) net);
 }
 
-void dbWire::copy(dbWire* dst_,
-                  dbWire* src_,
-                  bool removeITermsBTerms,
-                  bool copyVias)
-{
-  _dbWire* dst = (_dbWire*) dst_;
-  _dbWire* src = (_dbWire*) src_;
-
-  assert(dst->getDatabase() == src->getDatabase());
-  _dbBlock* block = (_dbBlock*) dst_->getBlock();
-  for (auto callback : block->_callbacks)
-    callback->inDbWirePreCopy(src_, dst_);
-  uint n = src->_opcodes.size();
-
-  // Free the old memory
-  dst->_data.~dbVector<int>();
-  new (&dst->_data) dbVector<int>();
-  dst->_data.reserve(n);
-  dst->_data = src->_data;
-
-  // Free the old memory
-  dst->_opcodes.~dbVector<unsigned char>();
-  new (&dst->_opcodes) dbVector<unsigned char>();
-  dst->_opcodes.reserve(n);
-  dst->_opcodes = src->_opcodes;
-
-  if (removeITermsBTerms) {
-    uint i;
-
-    for (i = 0; i < n; ++i) {
-      unsigned char opcode = dst->_opcodes[i] & WOP_OPCODE_MASK;
-
-      if (opcode == WOP_ITERM || opcode == WOP_BTERM) {
-        dst->_opcodes[i] = WOP_NOP;
-        dst->_data[i] = 0;
-      }
-    }
-  }
-
-  if (copyVias) {
-    _dbBlock* src_block = (_dbBlock*) src->getOwner();
-    _dbBlock* dst_block = (_dbBlock*) dst->getOwner();
-
-    if (src_block != dst_block) {
-      uint i;
-
-      for (i = 0; i < n; ++i) {
-        unsigned char opcode = dst->_opcodes[i] & WOP_OPCODE_MASK;
-
-        if (opcode == WOP_VIA) {
-          uint vid = dst->_data[i];
-          _dbVia* src_via = src_block->_via_tbl->getPtr(vid);
-          dbVia* dst_via = ((dbBlock*) dst_block)->findVia(src_via->_name);
-
-          // duplicate src-via in dst-block if needed
-          if (dst_via == nullptr)
-            dst_via = dbVia::copy((dbBlock*) dst_block, (dbVia*) src_via);
-
-          dst->_data[i] = dst_via->getImpl()->getOID();
-        }
-      }
-    }
-  }
-  for (auto callback : block->_callbacks)
-    callback->inDbWirePostCopy(src_, dst_);
-}
-
-void dbWire::copy(dbWire* dst,
-                  dbWire* src,
-                  const Rect& bbox,
-                  bool removeITermsBTerms,
-                  bool copyVias)
-{
-  _dbBlock* block = (_dbBlock*) dst->getBlock();
-  for (auto callback : block->_callbacks)
-    callback->inDbWirePreCopy(src, dst);
-  dbRtTree tree;
-  tree.decode(src, !removeITermsBTerms);
-
-  Rect r;
-  dbRtTree::edge_iterator itr;
-
-  for (itr = tree.begin_edges(); itr != tree.end_edges();) {
-    dbRtEdge* edge = *itr;
-    edge->getBBox(r);
-
-    if (!bbox.intersects(r))
-      ++itr;
-    else
-      itr = tree.deleteEdge(itr, true);
-  }
-
-  if (copyVias) {
-    dbBlock* src_block = (dbBlock*) src->getImpl()->getOwner();
-    dbBlock* dst_block = (dbBlock*) dst->getImpl()->getOwner();
-
-    if (src_block != dst_block) {
-      for (itr = tree.begin_edges(); itr != tree.end_edges();) {
-        dbRtEdge* edge = *itr;
-
-        if (edge->getType() == dbRtEdge::VIA) {
-          dbVia* src_via = ((dbRtVia*) edge)->getVia();
-          std::string name = src_via->getName();
-          dbVia* dst_via = dst_block->findVia(name.c_str());
-
-          // duplicate src-via in dst-block if needed
-          if (dst_via == nullptr)
-            dst_via = dbVia::copy(dst_block, src_via);
-
-          ((dbRtVia*) edge)->setVia(dst_via);
-        }
-      }
-    }
-  }
-
-  tree.encode(dst, !removeITermsBTerms);
-  for (auto callback : block->_callbacks)
-    callback->inDbWirePostCopy(src, dst);
-}
-
 dbWire* dbWire::create(dbNet* net_, bool global_wire)
 {
   _dbNet* net = (_dbNet*) net_;
@@ -1881,10 +1756,11 @@ void dbWire::destroy(dbWire* wire_)
   _dbNet* net = (_dbNet*) wire_->getNet();
   for (auto callback : block->_callbacks)
     callback->inDbWireDestroy(wire_);
-  Rect bbox;
+  const auto opt_bbox = wire_->getBBox();
 
-  if (wire_->getBBox(bbox))
-    block->remove_rect(bbox);
+  if (opt_bbox) {
+    block->remove_rect(opt_bbox.value());
+  }
   if (net) {
     if (wire->_flags._is_global)
       net->_global_wire = 0;

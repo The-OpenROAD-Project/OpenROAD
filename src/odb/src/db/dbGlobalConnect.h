@@ -65,7 +65,8 @@ class _dbGlobalConnect : public _dbObject
  public:
   _dbGlobalConnect(_dbDatabase*, const _dbGlobalConnect& r);
   _dbGlobalConnect(_dbDatabase*);
-  ~_dbGlobalConnect();
+
+  ~_dbGlobalConnect() = default;
 
   bool operator==(const _dbGlobalConnect& rhs) const;
   bool operator!=(const _dbGlobalConnect& rhs) const

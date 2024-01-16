@@ -1,0 +1,72 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 135 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 88 components and 422 component-terminals.
+[INFO ODB-0133]     Created 54 nets and 88 connections.
+[INFO PPL-0044] Pin group: [ req_msg[0] req_msg[1] req_msg[2] req_msg[3] req_msg[4] ... ]
+Found 0 macro blocks.
+[INFO PPL-0001] Number of slots           2494
+[INFO PPL-0002] Number of I/O             54
+[INFO PPL-0003] Number of I/O w/sink      54
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0012] I/O nets HPWL: 2452.71 um.
+[INFO PPL-0070] Pin clk placed at (60.33um, 0.04um).
+[INFO PPL-0070] Pin req_msg[29] placed at (44.37um, 0.04um).
+[INFO PPL-0070] Pin req_msg[26] placed at (29.93um, 0.04um).
+[INFO PPL-0070] Pin req_msg[22] placed at (85.22um, 0.04um).
+[INFO PPL-0070] Pin req_msg[20] placed at (15.29um, 0.04um).
+[INFO PPL-0070] Pin req_msg[14] placed at (22.32um, 0.04um).
+[INFO PPL-0070] Pin req_msg[13] placed at (74.00um, 0.04um).
+[INFO PPL-0070] Pin req_msg[11] placed at (52.34um, 0.04um).
+[INFO PPL-0070] Pin req_msg[10] placed at (38.85um, 0.04um).
+[INFO PPL-0070] Pin req_msg[9] placed at (38.66um, 0.04um).
+[INFO PPL-0070] Pin req_msg[8] placed at (38.48um, 0.04um).
+[INFO PPL-0070] Pin req_msg[7] placed at (38.28um, 0.04um).
+[INFO PPL-0070] Pin req_msg[6] placed at (38.09um, 0.04um).
+[INFO PPL-0070] Pin req_msg[5] placed at (37.91um, 0.04um).
+[INFO PPL-0070] Pin req_msg[4] placed at (37.72um, 0.04um).
+[INFO PPL-0070] Pin req_msg[3] placed at (37.52um, 0.04um).
+[INFO PPL-0070] Pin req_msg[2] placed at (37.34um, 0.04um).
+[INFO PPL-0070] Pin req_msg[1] placed at (37.15um, 0.04um).
+[INFO PPL-0070] Pin req_msg[0] placed at (36.95um, 0.04um).
+[INFO PPL-0070] Pin resp_msg[14] placed at (67.36um, 0.04um).
+[INFO PPL-0070] Pin req_msg[24] placed at (100.09um, 48.65um).
+[INFO PPL-0070] Pin req_msg[21] placed at (100.09um, 63.77um).
+[INFO PPL-0070] Pin req_msg[17] placed at (100.09um, 41.23um).
+[INFO PPL-0070] Pin req_msg[12] placed at (100.09um, 86.59um).
+[INFO PPL-0070] Pin resp_msg[13] placed at (100.09um, 11.97um).
+[INFO PPL-0070] Pin resp_msg[12] placed at (100.09um, 13.23um).
+[INFO PPL-0070] Pin resp_msg[11] placed at (100.09um, 33.95um).
+[INFO PPL-0070] Pin resp_val placed at (100.09um, 27.37um).
+[INFO PPL-0070] Pin req_msg[31] placed at (82.75um, 100.77um).
+[INFO PPL-0070] Pin req_msg[30] placed at (17.95um, 100.77um).
+[INFO PPL-0070] Pin req_msg[27] placed at (55.38um, 100.77um).
+[INFO PPL-0070] Pin req_msg[25] placed at (25.93um, 100.77um).
+[INFO PPL-0070] Pin req_msg[23] placed at (39.80um, 100.77um).
+[INFO PPL-0070] Pin req_msg[19] placed at (70.78um, 100.77um).
+[INFO PPL-0070] Pin req_msg[18] placed at (32.97um, 100.77um).
+[INFO PPL-0070] Pin req_msg[16] placed at (78.38um, 100.77um).
+[INFO PPL-0070] Pin req_msg[15] placed at (12.82um, 100.77um).
+[INFO PPL-0070] Pin req_val placed at (85.22um, 100.77um).
+[INFO PPL-0070] Pin resp_msg[10] placed at (38.85um, 100.77um).
+[INFO PPL-0070] Pin resp_msg[9] placed at (38.66um, 100.77um).
+[INFO PPL-0070] Pin resp_msg[8] placed at (38.48um, 100.77um).
+[INFO PPL-0070] Pin resp_msg[7] placed at (38.28um, 100.77um).
+[INFO PPL-0070] Pin resp_msg[6] placed at (38.09um, 100.77um).
+[INFO PPL-0070] Pin resp_msg[5] placed at (37.91um, 100.77um).
+[INFO PPL-0070] Pin resp_msg[4] placed at (37.72um, 100.77um).
+[INFO PPL-0070] Pin resp_msg[3] placed at (37.52um, 100.77um).
+[INFO PPL-0070] Pin resp_msg[2] placed at (37.34um, 100.77um).
+[INFO PPL-0070] Pin resp_msg[1] placed at (37.15um, 100.77um).
+[INFO PPL-0070] Pin req_msg[28] placed at (0.04um, 15.05um).
+[INFO PPL-0070] Pin req_rdy placed at (0.04um, 11.83um).
+[INFO PPL-0070] Pin reset placed at (0.04um, 52.43um).
+[INFO PPL-0070] Pin resp_msg[15] placed at (0.04um, 12.67um).
+[INFO PPL-0070] Pin resp_msg[0] placed at (0.04um, 81.55um).
+[INFO PPL-0070] Pin resp_rdy placed at (0.04um, 89.11um).
+No differences found.
+No differences found.

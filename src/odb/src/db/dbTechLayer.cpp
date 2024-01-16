@@ -33,6 +33,9 @@
 // Generator Code Begin Cpp
 #include "dbTechLayer.h"
 
+#include <cstdint>
+#include <cstring>
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbDiff.hpp"
@@ -49,12 +52,14 @@
 #include "dbTechLayerCutSpacingTableOrthRule.h"
 #include "dbTechLayerEolExtensionRule.h"
 #include "dbTechLayerEolKeepOutRule.h"
+#include "dbTechLayerForbiddenSpacingRule.h"
 #include "dbTechLayerKeepOutZoneRule.h"
 #include "dbTechLayerMinCutRule.h"
 #include "dbTechLayerMinStepRule.h"
 #include "dbTechLayerSpacingEolRule.h"
 #include "dbTechLayerSpacingTablePrlRule.h"
 #include "dbTechLayerWidthTableRule.h"
+#include "dbTechLayerWrongDirSpacingRule.h"
 // User Code Begin Includes
 #include <spdlog/fmt/ostr.h>
 
@@ -71,83 +76,107 @@ template class dbTable<_dbTechLayer>;
 
 bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
 {
-  if (flags_.num_masks_ != rhs.flags_.num_masks_)
+  if (flags_.num_masks_ != rhs.flags_.num_masks_) {
     return false;
-
-  if (flags_.has_max_width_ != rhs.flags_.has_max_width_)
+  }
+  if (flags_.has_max_width_ != rhs.flags_.has_max_width_) {
     return false;
-
-  if (flags_.has_thickness_ != rhs.flags_.has_thickness_)
+  }
+  if (flags_.has_thickness_ != rhs.flags_.has_thickness_) {
     return false;
-
-  if (flags_.has_area_ != rhs.flags_.has_area_)
+  }
+  if (flags_.has_area_ != rhs.flags_.has_area_) {
     return false;
-
-  if (flags_.has_protrusion_ != rhs.flags_.has_protrusion_)
+  }
+  if (flags_.has_protrusion_ != rhs.flags_.has_protrusion_) {
     return false;
-
-  if (flags_.has_alias_ != rhs.flags_.has_alias_)
+  }
+  if (flags_.has_alias_ != rhs.flags_.has_alias_) {
     return false;
-
-  if (flags_.has_xy_pitch_ != rhs.flags_.has_xy_pitch_)
+  }
+  if (flags_.has_xy_pitch_ != rhs.flags_.has_xy_pitch_) {
     return false;
-
-  if (flags_.has_xy_offset_ != rhs.flags_.has_xy_offset_)
+  }
+  if (flags_.has_xy_offset_ != rhs.flags_.has_xy_offset_) {
     return false;
-
-  if (flags_.rect_only_ != rhs.flags_.rect_only_)
+  }
+  if (flags_.rect_only_ != rhs.flags_.rect_only_) {
     return false;
-
-  if (flags_.right_way_on_grid_only_ != rhs.flags_.right_way_on_grid_only_)
+  }
+  if (flags_.right_way_on_grid_only_ != rhs.flags_.right_way_on_grid_only_) {
     return false;
-
+  }
   if (flags_.right_way_on_grid_only_check_mask_
-      != rhs.flags_.right_way_on_grid_only_check_mask_)
+      != rhs.flags_.right_way_on_grid_only_check_mask_) {
     return false;
-
+  }
   if (flags_.rect_only_except_non_core_pins_
-      != rhs.flags_.rect_only_except_non_core_pins_)
+      != rhs.flags_.rect_only_except_non_core_pins_) {
     return false;
-
-  if (flags_.lef58_type_ != rhs.flags_.lef58_type_)
+  }
+  if (flags_.lef58_type_ != rhs.flags_.lef58_type_) {
     return false;
-
-  if (wrong_way_width_ != rhs.wrong_way_width_)
+  }
+  if (wrong_way_width_ != rhs.wrong_way_width_) {
     return false;
-  if (*cut_class_rules_tbl_ != *rhs.cut_class_rules_tbl_)
+  }
+  if (*cut_class_rules_tbl_ != *rhs.cut_class_rules_tbl_) {
     return false;
-  if (cut_class_rules_hash_ != rhs.cut_class_rules_hash_)
+  }
+  if (cut_class_rules_hash_ != rhs.cut_class_rules_hash_) {
     return false;
-  if (*spacing_eol_rules_tbl_ != *rhs.spacing_eol_rules_tbl_)
+  }
+  if (*spacing_eol_rules_tbl_ != *rhs.spacing_eol_rules_tbl_) {
     return false;
-  if (*cut_spacing_rules_tbl_ != *rhs.cut_spacing_rules_tbl_)
+  }
+  if (*cut_spacing_rules_tbl_ != *rhs.cut_spacing_rules_tbl_) {
     return false;
-  if (*minstep_rules_tbl_ != *rhs.minstep_rules_tbl_)
+  }
+  if (*minstep_rules_tbl_ != *rhs.minstep_rules_tbl_) {
     return false;
-  if (*corner_spacing_rules_tbl_ != *rhs.corner_spacing_rules_tbl_)
+  }
+  if (*corner_spacing_rules_tbl_ != *rhs.corner_spacing_rules_tbl_) {
     return false;
-  if (*spacing_table_prl_rules_tbl_ != *rhs.spacing_table_prl_rules_tbl_)
+  }
+  if (*spacing_table_prl_rules_tbl_ != *rhs.spacing_table_prl_rules_tbl_) {
     return false;
-  if (*cut_spacing_table_orth_tbl_ != *rhs.cut_spacing_table_orth_tbl_)
+  }
+  if (*cut_spacing_table_orth_tbl_ != *rhs.cut_spacing_table_orth_tbl_) {
     return false;
-  if (*cut_spacing_table_def_tbl_ != *rhs.cut_spacing_table_def_tbl_)
+  }
+  if (*cut_spacing_table_def_tbl_ != *rhs.cut_spacing_table_def_tbl_) {
     return false;
-  if (*cut_enc_rules_tbl_ != *rhs.cut_enc_rules_tbl_)
+  }
+  if (*cut_enc_rules_tbl_ != *rhs.cut_enc_rules_tbl_) {
     return false;
-  if (*eol_ext_rules_tbl_ != *rhs.eol_ext_rules_tbl_)
+  }
+  if (*eol_ext_rules_tbl_ != *rhs.eol_ext_rules_tbl_) {
     return false;
-  if (*array_spacing_rules_tbl_ != *rhs.array_spacing_rules_tbl_)
+  }
+  if (*array_spacing_rules_tbl_ != *rhs.array_spacing_rules_tbl_) {
     return false;
-  if (*eol_keep_out_rules_tbl_ != *rhs.eol_keep_out_rules_tbl_)
+  }
+  if (*eol_keep_out_rules_tbl_ != *rhs.eol_keep_out_rules_tbl_) {
     return false;
-  if (*width_table_rules_tbl_ != *rhs.width_table_rules_tbl_)
+  }
+  if (*width_table_rules_tbl_ != *rhs.width_table_rules_tbl_) {
     return false;
-  if (*min_cuts_rules_tbl_ != *rhs.min_cuts_rules_tbl_)
+  }
+  if (*min_cuts_rules_tbl_ != *rhs.min_cuts_rules_tbl_) {
     return false;
-  if (*area_rules_tbl_ != *rhs.area_rules_tbl_)
+  }
+  if (*area_rules_tbl_ != *rhs.area_rules_tbl_) {
     return false;
-  if (*keepout_zone_rules_tbl_ != *rhs.keepout_zone_rules_tbl_)
+  }
+  if (*forbidden_spacing_rules_tbl_ != *rhs.forbidden_spacing_rules_tbl_) {
     return false;
+  }
+  if (*keepout_zone_rules_tbl_ != *rhs.keepout_zone_rules_tbl_) {
+    return false;
+  }
+  if (*wrongdir_spacing_rules_tbl_ != *rhs.wrongdir_spacing_rules_tbl_) {
+    return false;
+  }
 
   // User Code Begin ==
   if (flags_.type_ != rhs.flags_.type_)
@@ -329,7 +358,9 @@ void _dbTechLayer::differences(dbDiff& diff,
   DIFF_TABLE(width_table_rules_tbl_);
   DIFF_TABLE(min_cuts_rules_tbl_);
   DIFF_TABLE(area_rules_tbl_);
+  DIFF_TABLE(forbidden_spacing_rules_tbl_);
   DIFF_TABLE(keepout_zone_rules_tbl_);
+  DIFF_TABLE(wrongdir_spacing_rules_tbl_);
   // User Code Begin Differences
   DIFF_FIELD(flags_.type_);
   DIFF_FIELD(flags_.direction_);
@@ -409,7 +440,9 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE(width_table_rules_tbl_);
   DIFF_OUT_TABLE(min_cuts_rules_tbl_);
   DIFF_OUT_TABLE(area_rules_tbl_);
+  DIFF_OUT_TABLE(forbidden_spacing_rules_tbl_);
   DIFF_OUT_TABLE(keepout_zone_rules_tbl_);
+  DIFF_OUT_TABLE(wrongdir_spacing_rules_tbl_);
 
   // User Code Begin Out
   DIFF_OUT_FIELD(flags_.type_);
@@ -459,8 +492,7 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
 
 _dbTechLayer::_dbTechLayer(_dbDatabase* db)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &flags_;
-  *flags__bit_field = 0;
+  flags_ = {};
   cut_class_rules_tbl_ = new dbTable<_dbTechLayerCutClassRule>(
       db,
       this,
@@ -538,11 +570,21 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerAreaRuleObj);
+  forbidden_spacing_rules_tbl_ = new dbTable<_dbTechLayerForbiddenSpacingRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerForbiddenSpacingRuleObj);
   keepout_zone_rules_tbl_ = new dbTable<_dbTechLayerKeepOutZoneRule>(
       db,
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerKeepOutZoneRuleObj);
+  wrongdir_spacing_rules_tbl_ = new dbTable<_dbTechLayerWrongDirSpacingRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerWrongDirSpacingRuleObj);
   // User Code Begin Constructor
   flags_.type_ = dbTechLayerType::ROUTING;
   flags_.direction_ = dbTechLayerDir::NONE;
@@ -660,8 +702,12 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
       = new dbTable<_dbTechLayerMinCutRule>(db, this, *r.min_cuts_rules_tbl_);
   area_rules_tbl_
       = new dbTable<_dbTechLayerAreaRule>(db, this, *r.area_rules_tbl_);
+  forbidden_spacing_rules_tbl_ = new dbTable<_dbTechLayerForbiddenSpacingRule>(
+      db, this, *r.forbidden_spacing_rules_tbl_);
   keepout_zone_rules_tbl_ = new dbTable<_dbTechLayerKeepOutZoneRule>(
       db, this, *r.keepout_zone_rules_tbl_);
+  wrongdir_spacing_rules_tbl_ = new dbTable<_dbTechLayerWrongDirSpacingRule>(
+      db, this, *r.wrongdir_spacing_rules_tbl_);
   // User Code Begin CopyConstructor
   flags_ = r.flags_;
   _pitch_x = r._pitch_x;
@@ -723,8 +769,10 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream >> *flags__bit_field;
+  uint32_t flags_bit_field;
+  stream >> flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> *obj.cut_class_rules_tbl_;
   stream >> obj.cut_class_rules_hash_;
   stream >> *obj.spacing_eol_rules_tbl_;
@@ -741,8 +789,15 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> *obj.width_table_rules_tbl_;
   stream >> *obj.min_cuts_rules_tbl_;
   stream >> *obj.area_rules_tbl_;
-  if (obj.getDatabase()->isSchema(db_schema_keepout_zone))
+  if (obj.getDatabase()->isSchema(db_schema_lef58_forbidden_spacing)) {
+    stream >> *obj.forbidden_spacing_rules_tbl_;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_keepout_zone)) {
     stream >> *obj.keepout_zone_rules_tbl_;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_wrongdir_spacing)) {
+    stream >> *obj.wrongdir_spacing_rules_tbl_;
+  }
   // User Code Begin >>
   stream >> obj._pitch_x;
   stream >> obj._pitch_y;
@@ -801,8 +856,10 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
 {
-  uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
-  stream << *flags__bit_field;
+  uint32_t flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags_bit_field;
   stream << *obj.cut_class_rules_tbl_;
   stream << obj.cut_class_rules_hash_;
   stream << *obj.spacing_eol_rules_tbl_;
@@ -819,8 +876,15 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << *obj.width_table_rules_tbl_;
   stream << *obj.min_cuts_rules_tbl_;
   stream << *obj.area_rules_tbl_;
-  if (obj.getDatabase()->isSchema(db_schema_keepout_zone))
+  if (obj.getDatabase()->isSchema(db_schema_lef58_forbidden_spacing)) {
+    stream << *obj.forbidden_spacing_rules_tbl_;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_keepout_zone)) {
     stream << *obj.keepout_zone_rules_tbl_;
+  }
+  if (obj.getDatabase()->isSchema(db_schema_wrongdir_spacing)) {
+    stream << *obj.wrongdir_spacing_rules_tbl_;
+  }
   // User Code Begin <<
   stream << obj._pitch_x;
   stream << obj._pitch_y;
@@ -902,8 +966,12 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
       return min_cuts_rules_tbl_;
     case dbTechLayerAreaRuleObj:
       return area_rules_tbl_;
+    case dbTechLayerForbiddenSpacingRuleObj:
+      return forbidden_spacing_rules_tbl_;
     case dbTechLayerKeepOutZoneRuleObj:
       return keepout_zone_rules_tbl_;
+    case dbTechLayerWrongDirSpacingRuleObj:
+      return wrongdir_spacing_rules_tbl_;
       // User Code Begin getObjectTable
     case dbTechLayerSpacingRuleObj:
       return _spacing_rules_tbl;
@@ -940,7 +1008,9 @@ _dbTechLayer::~_dbTechLayer()
   delete width_table_rules_tbl_;
   delete min_cuts_rules_tbl_;
   delete area_rules_tbl_;
+  delete forbidden_spacing_rules_tbl_;
   delete keepout_zone_rules_tbl_;
+  delete wrongdir_spacing_rules_tbl_;
   // User Code Begin Destructor
   if (_name)
     free((void*) _name);
@@ -1118,11 +1188,27 @@ dbSet<dbTechLayerAreaRule> dbTechLayer::getTechLayerAreaRules() const
   return dbSet<dbTechLayerAreaRule>(obj, obj->area_rules_tbl_);
 }
 
+dbSet<dbTechLayerForbiddenSpacingRule>
+dbTechLayer::getTechLayerForbiddenSpacingRules() const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerForbiddenSpacingRule>(
+      obj, obj->forbidden_spacing_rules_tbl_);
+}
+
 dbSet<dbTechLayerKeepOutZoneRule> dbTechLayer::getTechLayerKeepOutZoneRules()
     const
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
   return dbSet<dbTechLayerKeepOutZoneRule>(obj, obj->keepout_zone_rules_tbl_);
+}
+
+dbSet<dbTechLayerWrongDirSpacingRule>
+dbTechLayer::getTechLayerWrongDirSpacingRules() const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerWrongDirSpacingRule>(
+      obj, obj->wrongdir_spacing_rules_tbl_);
 }
 
 void dbTechLayer::setRectOnly(bool rect_only)
@@ -2208,7 +2294,7 @@ dbTechLayer* dbTechLayer::getUpperLayer()
   return (dbTechLayer*) tech->_layer_tbl->getPtr(layer->_upper);
 }
 
-dbTech* dbTechLayer::getTech()
+dbTech* dbTechLayer::getTech() const
 {
   return (dbTech*) getImpl()->getOwner();
 }

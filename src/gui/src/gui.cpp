@@ -45,6 +45,7 @@
 #include "drcWidget.h"
 #include "geom.h"
 #include "heatMapPlacementDensity.h"
+#include "heatMapRUDY.h"
 #include "inspector.h"
 #include "layoutViewer.h"
 #include "lefin.h"
@@ -674,6 +675,7 @@ void Gui::setResolution(double pixels_per_dbu)
 
 void Gui::saveImage(const std::string& filename,
                     const odb::Rect& region,
+                    int width_px,
                     double dbu_per_pixel,
                     const std::map<std::string, bool>& display_settings)
 {
@@ -731,6 +733,7 @@ void Gui::saveImage(const std::string& filename,
     save_cmds += std::to_string(save_region.yMin() / dbu_per_micron) + " ";
     save_cmds += std::to_string(save_region.xMax() / dbu_per_micron) + " ";
     save_cmds += std::to_string(save_region.yMax() / dbu_per_micron) + " ";
+    save_cmds += std::to_string(width_px) + " ";
     save_cmds += std::to_string(dbu_per_pixel) + " ";
     save_cmds += "$::gui::display_settings\n";
     // delete display settings map
@@ -747,7 +750,7 @@ void Gui::saveImage(const std::string& filename,
     }
 
     main_window->getLayoutViewer()->saveImage(
-        filename.c_str(), save_region, dbu_per_pixel);
+        filename.c_str(), save_region, width_px, dbu_per_pixel);
     // restore settings
     main_window->getControls()->restore();
   }
@@ -892,6 +895,7 @@ void Gui::setHeatMapSetting(const std::string& name,
   const std::string rebuild_map_option = "rebuild";
   if (option == rebuild_map_option) {
     source->destroyMap();
+    source->ensureMap();
   } else {
     auto settings = source->getSettings();
 
@@ -952,6 +956,33 @@ void Gui::setHeatMapSetting(const std::string& name,
   }
 
   source->getRenderer()->redraw();
+}
+
+Renderer::Setting Gui::getHeatMapSetting(const std::string& name,
+                                         const std::string& option)
+{
+  HeatMapDataSource* source = getHeatMap(name);
+
+  const std::string map_has_option = "has_data";
+  if (option == map_has_option) {
+    return source->hasData();
+  }
+
+  auto settings = source->getSettings();
+
+  if (settings.count(option) == 0) {
+    QStringList options;
+    for (const auto& [key, kv] : settings) {
+      options.append(QString::fromStdString(key));
+    }
+    logger_->error(utl::GUI,
+                   95,
+                   "{} is not a valid option. Valid options are: {}",
+                   option,
+                   options.join(", ").toStdString());
+  }
+
+  return settings[option];
 }
 
 void Gui::dumpHeatMap(const std::string& name, const std::string& file)
@@ -1235,6 +1266,8 @@ void Gui::init(odb::dbDatabase* db, utl::Logger* logger)
   placement_density_heat_map_
       = std::make_unique<PlacementDensityDataSource>(logger);
   placement_density_heat_map_->registerHeatMap();
+  rudy_heat_map_ = std::make_unique<RUDYDataSource>(logger, db_);
+  rudy_heat_map_->registerHeatMap();
 }
 
 //////////////////////////////////////////////////

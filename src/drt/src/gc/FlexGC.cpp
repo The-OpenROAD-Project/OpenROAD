@@ -30,7 +30,6 @@
 
 #include "gc/FlexGC_impl.h"
 
-using namespace std;
 using namespace fr;
 
 FlexGCWorker::FlexGCWorker(frTechObject* techIn,
@@ -155,6 +154,11 @@ const std::vector<std::unique_ptr<frMarker>>& FlexGCWorker::getMarkers() const
 const std::vector<std::unique_ptr<drPatchWire>>& FlexGCWorker::getPWires() const
 {
   return impl_->pwires_;
+}
+
+void FlexGCWorker::clearPWires()
+{
+  impl_->pwires_.clear();
 }
 
 bool FlexGCWorker::setTargetNet(frBlockObject* in)

@@ -28,8 +28,8 @@
 ########## IR report #################
 Corner: default
 Worstcase voltage: 1.10e+00 V
-Average IR drop  : 2.91e-04 V
-Worstcase IR drop: 5.13e-04 V
+Average IR drop  : 3.22e-04 V
+Worstcase IR drop: 5.66e-04 V
 ######################################
 No differences found.
 No differences found.

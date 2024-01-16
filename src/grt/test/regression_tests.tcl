@@ -51,11 +51,14 @@ record_tests {
   report_wire_length4
   report_wire_length5
   report_wire_length6
+  set_nets_to_route1
   silence
   top_level_term1
   top_level_term2
+  top_level_term3
   tracks1
   tracks2
   tracks3
   upper_layer_net
+  modeling_instance_obs
 }

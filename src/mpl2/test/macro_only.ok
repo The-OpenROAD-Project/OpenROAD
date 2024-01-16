@@ -1,0 +1,27 @@
+[INFO ODB-0222] Reading LEF file: ./Nangate45/Nangate45_tech.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0226] Finished LEF file:  ./Nangate45/Nangate45_tech.lef
+[INFO ODB-0222] Reading LEF file: ./Nangate45/fake_macros.lef
+[INFO ODB-0225]     Created 9 library cells
+[INFO ODB-0226] Finished LEF file:  ./Nangate45/fake_macros.lef
+[WARNING STA-0160] ./Nangate45/fake_macros.lib line 32, default_max_transition is 0.0.
+[INFO ODB-0128] Design: macro_only
+[INFO ODB-0253]     Updated 10 components.
+Floorplan Outline: (0.0, 0.0) (450.0, 450.0),  Core Outline: (4.94, 4.2) (444.98, 443.8)
+Traversed logical hierarchy
+	Number of std cell instances: 0
+	Area of std cell instances: 0.00
+	Number of macros: 10
+	Area of macros: 166000.00
+	Area of macros with halos: 187920.00
+	Area of std cell instances + Area of macros: 166000.00
+	Core area: 193441.58
+	Design Utilization: 0.86
+	Core Utilization: 0.00
+	Manufacturing Grid: 10
+
+[WARNING MPL-0026] Design has no IO pins!
+[WARNING MPL-0025] Design has no standard cells!
+[WARNING MPL-0027] Design has only macros!
+No differences found.

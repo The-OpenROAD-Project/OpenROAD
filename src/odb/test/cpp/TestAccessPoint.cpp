@@ -3,10 +3,11 @@
 #include <fstream>
 
 #include "db.h"
-#include "helper.cpp"
+#include "env.h"
+#include "helper.h"
 
-using namespace odb;
-using namespace std;
+namespace odb {
+namespace {
 
 BOOST_AUTO_TEST_SUITE(test_suite)
 
@@ -28,10 +29,11 @@ BOOST_AUTO_TEST_CASE(test_default)
   ap->setHighType(dbAccessType::HalfGrid);
   ap->setAccess(true, dbDirection::DOWN);
   iterm->setAccessPoint(pin, ap);
-  FILE* write;
-  std::string path
-      = std::string(std::getenv("BASE_DIR")) + "/results/TestAccessPointDbRW";
-  write = fopen(path.c_str(), "w");
+  std::string path = testTmpPath("/results/TestAccessPointDbRW");
+  std::ofstream write;
+  write.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                   | std::ios::eofbit);
+  write.open(path, std::ios::binary);
   db->write(write);
   dbDatabase::destroy(db);
 
@@ -75,3 +77,6 @@ BOOST_AUTO_TEST_CASE(test_default)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+}  // namespace
+}  // namespace odb

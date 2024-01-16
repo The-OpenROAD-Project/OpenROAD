@@ -133,7 +133,7 @@ void CtsGraphics::drawHTree(gui::Painter& painter)
   });
 
   Point<double> topLevelBufferLoc
-      = h_tree_builder_->getSinkRegion().computeCenter();
+      = h_tree_builder_->getSinkRegion().getCenter();
   h_tree_builder_->getTopologyVector().front().forEachBranchingPoint(
       [&](unsigned idx, Point<double> branchPoint) {
         const int unit = h_tree_builder_->getWireSegmentUnit();

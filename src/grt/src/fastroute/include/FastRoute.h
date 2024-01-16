@@ -56,7 +56,8 @@ class Logger;
 
 namespace odb {
 class dbDatabase;
-}
+class dbTechLayerDir;
+}  // namespace odb
 
 namespace stt {
 class SteinerTreeBuilder;
@@ -106,7 +107,7 @@ class FastRouteCore
   void addHCapacity(short horizontalCapacity, int layer);
   void setLowerLeft(int x, int y);
   void setTileSize(int size);
-  void setLayerOrientation(int x);
+  void addLayerDirection(int layer_idx, const odb::dbTechLayerDir& direction);
   FrNet* addNet(odb::dbNet* db_net,
                 bool is_clock,
                 int driver_idx,
@@ -115,6 +116,7 @@ class FastRouteCore
                 int max_layer,
                 float slack,
                 std::vector<int>* edge_cost_per_layer);
+  void removeNet(odb::dbNet* db_net);
   void initEdges();
   void setNumAdjustments(int nAdjustements);
   void addAdjustment(int x1,
@@ -162,10 +164,21 @@ class FastRouteCore
   int getEdgeCapacity(int x1, int y1, int x2, int y2, int layer);
   const multi_array<Edge3D, 3>& getHorizontalEdges3D() { return h_edges_3D_; }
   const multi_array<Edge3D, 3>& getVerticalEdges3D() { return v_edges_3D_; }
+  void setLastColVCapacity(short cap, int layer)
+  {
+    last_col_v_capacity_3D_[layer] = cap;
+  }
+  void setLastRowHCapacity(short cap, int layer)
+  {
+    last_row_h_capacity_3D_[layer] = cap;
+  }
+  void setRegularX(bool regular_x) { regular_x_ = regular_x; }
+  void setRegularY(bool regular_y) { regular_y_ = regular_y; }
   void incrementEdge3DUsage(int x1, int y1, int x2, int y2, int layer);
   void setMaxNetDegree(int);
   void setVerbose(bool v);
-  void setUpdateSlack(int u);
+  void setCriticalNetsPercentage(float u);
+  float getCriticalNetsPercentage() { return critical_nets_percentage_; };
   void setMakeWireParasiticsBuilder(AbstractMakeWireParasitics* builder);
   void setOverflowIterations(int iterations);
   void setCongestionReportIterStep(int congestion_report_iter_step);
@@ -233,6 +246,11 @@ class FastRouteCore
                      const int L,
                      float& slack_th);
   void convertToMazeroute();
+  int splitEdge(std::vector<TreeEdge>& treeedges,
+                std::vector<TreeNode>& treenodes,
+                int n1,
+                int n2,
+                int edge_n1n2);
   void updateCongestionHistory(const int upType, bool stopDEC, int& max_adj);
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
@@ -256,7 +274,7 @@ class FastRouteCore
       const int edge,
       std::vector<std::pair<short, short>>& blocked_positions);
   void bendEdge(TreeEdge* treeedge,
-                TreeNode* treenodes,
+                std::vector<TreeNode>& treenodes,
                 std::vector<short>& new_route_x,
                 std::vector<short>& new_route_y,
                 std::vector<std::pair<short, short>>& blocked_positions);
@@ -276,25 +294,25 @@ class FastRouteCore
                  const int regionX2,
                  const int regionY1,
                  const int regionY2);
-  int copyGrids(const TreeNode* treenodes,
+  int copyGrids(const std::vector<TreeNode>& treenodes,
                 const int n1,
                 const int n2,
-                const TreeEdge* treeedges,
+                const std::vector<TreeEdge>& treeedges,
                 const int edge_n1n2,
                 std::vector<int>& gridsX_n1n2,
                 std::vector<int>& gridsY_n1n2);
   bool updateRouteType1(const int net_id,
-                        const TreeNode* treenodes,
+                        const std::vector<TreeNode>& treenodes,
                         const int n1,
                         const int A1,
                         const int A2,
                         const int E1x,
                         const int E1y,
-                        TreeEdge* treeedges,
+                        std::vector<TreeEdge>& treeedges,
                         const int edge_n1A1,
                         const int edge_n1A2);
   bool updateRouteType2(const int net_id,
-                        const TreeNode* treenodes,
+                        const std::vector<TreeNode>& treenodes,
                         const int n1,
                         const int A1,
                         const int A2,
@@ -302,17 +320,14 @@ class FastRouteCore
                         const int C2,
                         const int E1x,
                         const int E1y,
-                        TreeEdge* treeedges,
+                        std::vector<TreeEdge>& treeedges,
                         const int edge_n1A1,
                         const int edge_n1A2,
                         const int edge_C1C2);
   void reInitTree(const int netID);
 
   // maze3D functions
-  void mazeRouteMSMDOrder3D(int expand,
-                            int ripupTHlb,
-                            int ripupTHub,
-                            int layerOrientation);
+  void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub);
   void setupHeap3D(int netID,
                    int edgeID,
                    std::vector<int*>& src_heap_3D,
@@ -325,30 +340,30 @@ class FastRouteCore
                    int regionX2,
                    int regionY1,
                    int regionY2);
-  void newUpdateNodeLayers(TreeNode* treenodes,
+  void newUpdateNodeLayers(std::vector<TreeNode>& treenodes,
                            const int edgeID,
                            const int n1,
                            const int lastL);
-  int copyGrids3D(TreeNode* treenodes,
+  int copyGrids3D(std::vector<TreeNode>& treenodes,
                   int n1,
                   int n2,
-                  TreeEdge* treeedges,
+                  std::vector<TreeEdge>& treeedges,
                   int edge_n1n2,
                   int gridsX_n1n2[],
                   int gridsY_n1n2[],
                   int gridsL_n1n2[]);
   void updateRouteType13D(int netID,
-                          TreeNode* treenodes,
+                          std::vector<TreeNode>& treenodes,
                           int n1,
                           int A1,
                           int A2,
                           int E1x,
                           int E1y,
-                          TreeEdge* treeedges,
+                          std::vector<TreeEdge>& treeedges,
                           int edge_n1A1,
                           int edge_n1A2);
   void updateRouteType23D(int netID,
-                          TreeNode* treenodes,
+                          std::vector<TreeNode>& treenodes,
                           int n1,
                           int A1,
                           int A2,
@@ -356,7 +371,7 @@ class FastRouteCore
                           int C2,
                           int E1x,
                           int E1y,
-                          TreeEdge* treeedges,
+                          std::vector<TreeEdge>& treeedges,
                           int edge_n1A1,
                           int edge_n1A2,
                           int edge_C1C2);
@@ -395,9 +410,7 @@ class FastRouteCore
   void newrouteZ_edge(int netID, int edgeID);
   void newrouteLAll(bool firstTime, bool viaGuided);
   void newrouteZAll(int threshold);
-  void routeMonotonicAll(int threshold);
-  void routeMonotonic(int netID, int edgeID, int threshold);
-  void routeLVAll(int threshold, int expand, float logis_cof);
+  void routeMonotonicAll(int threshold, int expand, float logis_cof);
   void spiralRouteAll();
   void newrouteLInMaze(int netID);
   void estimateOneSeg(Segment* seg);
@@ -405,12 +418,12 @@ class FastRouteCore
   void routeSegH(Segment* seg);
   void routeSegLFirstTime(Segment* seg);
   void spiralRoute(int netID, int edgeID);
-  void routeLVEnew(int netID,
-                   int edgeID,
-                   multi_array<float, 2>& d1,
-                   multi_array<float, 2>& d2,
-                   int threshold,
-                   int enlarge);
+  void routeMonotonic(int netID,
+                      int edgeID,
+                      multi_array<float, 2>& d1,
+                      multi_array<float, 2>& d2,
+                      int threshold,
+                      int enlarge);
 
   // ripup functions
   void ripupSegL(const Segment* seg);
@@ -433,7 +446,7 @@ class FastRouteCore
                      const int edgeID);
 
   bool newRipupType2(const TreeEdge* treeedge,
-                     TreeNode* treenodes,
+                     std::vector<TreeNode>& treenodes,
                      const int x1,
                      const int y1,
                      const int x2,
@@ -448,6 +461,10 @@ class FastRouteCore
   void printEdge(const int netID, const int edgeID);
   void ConvertToFull3DType2();
   void fillVIA();
+  void getViaStackRange(int netID,
+                        int nodeID,
+                        int16_t& bot_pin_l,
+                        int16_t& top_pin_l);
   int threeDVIA();
   void fixEdgeAssignment(int& net_layer,
                          multi_array<Edge3D, 3>& edges_3D,
@@ -457,6 +474,7 @@ class FastRouteCore
                          int l,
                          bool horizontal,
                          int& best_cost);
+  bool skipNet(int netID);
   void assignEdge(int netID, int edgeID, bool processDIR);
   void recoverEdge(int netID, int edgeID);
   void layerAssignmentV4();
@@ -503,7 +521,7 @@ class FastRouteCore
   int overflow_iterations_;
   int congestion_report_iter_step_;
   std::string congestion_file_name_;
-  int layer_orientation_;
+  std::vector<odb::dbTechLayerDir> layer_directions_;
   int x_range_;
   int y_range_;
 
@@ -526,14 +544,18 @@ class FastRouteCore
   bool has_2D_overflow_;
   int grid_hv_;
   bool verbose_;
-  int update_slack_;
+  float critical_nets_percentage_;
   int via_cost_;
   int mazeedge_threshold_;
   float v_capacity_lb_;
   float h_capacity_lb_;
+  bool regular_x_;
+  bool regular_y_;
 
   std::vector<short> v_capacity_3D_;
   std::vector<short> h_capacity_3D_;
+  std::vector<short> last_col_v_capacity_3D_;
+  std::vector<short> last_row_h_capacity_3D_;
   std::vector<float> cost_hvh_;       // Horizontal first Z
   std::vector<float> cost_vhv_;       // Vertical first Z
   std::vector<float> cost_h_;         // Horizontal segment cost

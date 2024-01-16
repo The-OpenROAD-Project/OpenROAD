@@ -62,8 +62,8 @@ PinSet *
 tclListSetPin(Tcl_Obj *source,
               Tcl_Interp *interp);
 
-typedef NetSeq TmpNetSeq;
-typedef PinSet TmpPinSet;
+using TmpNetSeq = NetSeq ;
+using TmpPinSet = PinSet;
 
 } // namespace
 
@@ -151,6 +151,19 @@ tclListNetworkSet(Tcl_Obj *const source,
     Tcl_ListObjAppendElement(interp, list, obj);
   }
   delete nets;
+  Tcl_SetObjResult(interp, list);
+}
+
+%typemap(out) TmpPinSet* {
+  Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
+  PinSet *pins = $1;
+  PinSet::Iterator pin_iter(pins);
+  while (pin_iter.hasNext()) {
+    const Pin *pin = pin_iter.next();
+    Tcl_Obj *obj = SWIG_NewInstanceObj(const_cast<Pin*>(pin), SWIGTYPE_p_Pin, false);
+    Tcl_ListObjAppendElement(interp, list, obj);
+  }
+  delete pins;
   Tcl_SetObjResult(interp, list);
 }
 
@@ -330,6 +343,14 @@ remove_buffers_cmd()
 }
 
 void
+balance_row_usage_cmd()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->balanceRowUsage();
+}
+
+void
 set_max_utilization(double max_utilization)
 {
   ensureLinked();
@@ -418,6 +439,14 @@ find_floating_nets()
   ensureLinked();
   Resizer *resizer = getResizer();
   return resizer->findFloatingNets();
+}
+
+TmpPinSet *
+find_floating_pins()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  return resizer->findFloatingPins();
 }
 
 void

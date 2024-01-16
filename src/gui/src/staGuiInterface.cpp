@@ -55,10 +55,9 @@ std::string TimingPathNode::getNodeName(bool include_master) const
   if (isPinITerm()) {
     odb::dbITerm* iterm = getPinAsITerm();
 
-    odb::dbInst* inst = iterm->getInst();
-
-    std::string name = inst->getName() + "/" + iterm->getMTerm()->getName();
+    std::string name = iterm->getName();
     if (include_master) {
+      odb::dbInst* inst = iterm->getInst();
       name += " (" + inst->getMaster()->getName() + ")";
     }
 
@@ -136,8 +135,7 @@ const odb::Rect TimingPathNode::getPinLargestBox() const
 {
   if (isPinITerm()) {
     auto* iterm = getPinAsITerm();
-    odb::dbTransform transform;
-    iterm->getInst()->getTransform(transform);
+    const odb::dbTransform transform = iterm->getInst()->getTransform();
 
     odb::Rect pin_rect;
     auto* mterm = iterm->getMTerm();
@@ -697,7 +695,7 @@ STAGuiInterface::STAGuiInterface(sta::dbSta* sta)
       corner_(nullptr),
       use_max_(true),
       one_path_per_endpoint_(true),
-      max_path_count_(1000),
+      max_path_count_(50),
       include_unconstrained_(false),
       include_capture_path_(false)
 {

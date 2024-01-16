@@ -459,11 +459,10 @@ bool dbInst::rename(const char* name)
   return true;
 }
 
-void dbInst::getOrigin(int& x, int& y)
+Point dbInst::getOrigin()
 {
   _dbInst* inst = (_dbInst*) this;
-  x = inst->_x;
-  y = inst->_y;
+  return {inst->_x, inst->_y};
 }
 
 void dbInst::setOrigin(int x, int y)
@@ -632,11 +631,10 @@ void dbInst::setPlacementStatus(dbPlacementStatus status)
   }
 }
 
-void dbInst::getTransform(dbTransform& t)
+dbTransform dbInst::getTransform()
 {
   _dbInst* inst = (_dbInst*) this;
-  t = dbTransform(inst->_flags._orient, Point(inst->_x, inst->_y));
-  return;
+  return dbTransform(inst->_flags._orient, Point(inst->_x, inst->_y));
 }
 
 void dbInst::setTransform(dbTransform& t)
@@ -655,8 +653,7 @@ static void getParentTransform(dbInst* inst, dbTransform& t)
     t = dbTransform();
   else {
     getParentTransform(parent, t);
-    dbTransform x;
-    parent->getTransform(x);
+    dbTransform x = parent->getTransform();
     x.concat(t);
     t = x;
   }
@@ -665,8 +662,7 @@ static void getParentTransform(dbInst* inst, dbTransform& t)
 void dbInst::getHierTransform(dbTransform& t)
 {
   getParentTransform(this, t);
-  dbTransform x;
-  getTransform(x);
+  dbTransform x = getTransform();
   x.concat(t);
   t = x;
   return;
@@ -1413,6 +1409,47 @@ dbInst* dbInst::create(dbBlock* block_,
   }
 
   return (dbInst*) inst;
+}
+
+dbInst* dbInst::create(dbBlock* top_block,
+                       dbBlock* child_block,
+                       const char* name)
+{
+  if (top_block->findInst(name)) {
+    top_block->getImpl()->getLogger()->error(
+        utl::ODB,
+        436,
+        "Attempt to create instance with duplicate name: {}",
+        name);
+  }
+  // Find or create a dbLib to put the new dbMaster in.
+  dbDatabase* db = top_block->getDataBase();
+  dbTech* tech = child_block->getTech();
+  dbLib* lib = nullptr;
+  for (auto l : db->getLibs()) {
+    if (l->getTech() == tech) {
+      lib = l;
+      break;
+    }
+  }
+  if (!lib) {
+    std::string lib_name = child_block->getName() + tech->getName();
+    lib = dbLib::create(db, lib_name.c_str(), child_block->getTech());
+  }
+  auto master = dbMaster::create(lib, child_block->getName().c_str());
+  master->setType(dbMasterType::BLOCK);
+  auto bbox = child_block->getBBox();
+  master->setWidth(bbox->getDX());
+  master->setHeight(bbox->getDY());
+  for (auto term : child_block->getBTerms()) {
+    dbMTerm::create(
+        master, term->getName().c_str(), term->getIoType(), term->getSigType());
+  }
+  master->setFrozen();
+  auto inst = dbInst::create(top_block, master, name);
+  inst->bindBlock(child_block);
+
+  return inst;
 }
 
 void dbInst::destroy(dbInst* inst_)

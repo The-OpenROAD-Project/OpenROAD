@@ -80,7 +80,14 @@ public:
                   const Point &pt2) const;
 };
 
-typedef std::unordered_map<Point, PinSeq, PointHash, PointEqual> LocPinMap;
+class PinLoc
+{
+public:
+  const Pin* pin;
+  Point loc;
+};
+
+using LocPinMap = std::unordered_map<Point, PinSeq, PointHash, PointEqual>;
 
 class SteinerTree;
 
@@ -97,8 +104,8 @@ class SteinerTree
 {
 public:
   SteinerTree(const Pin *drvr_pin, Resizer *resizer);
-  PinSeq &pins() { return pins_; }
-  int pinCount() const { return pins_.size(); }
+  Vector<PinLoc> &pinlocs() { return pinlocs_; }
+  int pinCount() const { return pinlocs_.size(); }
   int branchCount() const;
   void branch(int index,
               // Return values.
@@ -119,13 +126,14 @@ public:
   void validatePoint(SteinerPt pt) const;
 
   void populateSides();
-  void populateSides(const SteinerPt from,
-		     const SteinerPt to,
+  void populateSides(SteinerPt from,
+		     SteinerPt to,
                      const std::vector<SteinerPt>& adj1,
                      const std::vector<SteinerPt>& adj2,
                      const std::vector<SteinerPt>& adj3);
-  void populateSides(const SteinerPt from, const SteinerPt to,
-		     const SteinerPt adj,
+  void populateSides(SteinerPt from,
+                     SteinerPt to,
+		     SteinerPt adj,
                      const std::vector<SteinerPt>& adj1,
                      const std::vector<SteinerPt>& adj2,
                      const std::vector<SteinerPt>& adj3);
@@ -146,13 +154,13 @@ public:
   static SteinerPt null_pt;
 
 protected:
-  void locAddPin(Point &loc,
+  void locAddPin(const Point &loc,
                  const Pin *pin);
 
   stt::Tree tree_;
   const Pin *drvr_pin_;
   int drvr_steiner_pt_;            // index into tree_.branch
-  PinSeq pins_;                    // Initial input
+  Vector<PinLoc> pinlocs_;         // Initial input
   LocPinMap loc_pin_map_;          // location -> pins map
   std::vector<SteinerPt>  left_;
   std::vector<SteinerPt>  right_;
@@ -164,4 +172,4 @@ protected:
   friend class GateCloner;
 };
 
-} // namespace
+} // namespace rsz

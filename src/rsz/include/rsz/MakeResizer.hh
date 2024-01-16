@@ -56,4 +56,4 @@ deleteResizer(rsz::Resizer *resizer);
 void
 initResizer(OpenRoad *openroad);
 
-} // namespace
+} // namespace ord

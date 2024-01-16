@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -euo pipefail
 
@@ -24,7 +24,9 @@ _lcov() {
         --exclude "/opt/*" \
         --exclude "/usr/lib/*" \
         --exclude "/usr/local/*" \
+        --exclude "*/.local/*" \
         --exclude "*build*" \
+        --exclude "*/third-party/*" \
         --output-file ./coverage-output/main_coverage.info
 
     genhtml ./coverage-output/main_coverage.info \

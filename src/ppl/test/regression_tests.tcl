@@ -1,4 +1,5 @@
 record_tests {
+  add_constraint_debug
   add_constraint1
   add_constraint2
   add_constraint3
@@ -21,9 +22,11 @@ record_tests {
   add_constraint_error4
   add_constraint_error5
   add_constraint_error6
+  add_constraint_error7
   annealing1
   annealing2
   annealing3
+  annealing4
   annealing_constraint1
   annealing_constraint2
   annealing_constraint3
@@ -62,6 +65,8 @@ record_tests {
   large_groups2
   large_groups3
   large_groups4
+  macro_not_placed
+  macro_not_placed_random
   min_dist_in_tracks1
   min_dist_in_tracks2
   multi_layers
@@ -101,7 +106,9 @@ record_tests {
   top_layer6
   top_layer7
   top_layer_error
+  top_layer_error2
   write_pin_placement1
   write_pin_placement2
   write_pin_placement3
+  write_pin_placement4
 }

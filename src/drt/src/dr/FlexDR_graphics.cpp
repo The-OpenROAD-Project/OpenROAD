@@ -224,6 +224,7 @@ const char* FlexDRGraphics::route_shape_cost_visible_ = "Route Shape Cost";
 const char* FlexDRGraphics::marker_cost_visible_ = "Marker Cost";
 const char* FlexDRGraphics::fixed_shape_cost_visible_ = "Fixed Shape Cost";
 const char* FlexDRGraphics::maze_search_visible_ = "Maze Search";
+const char* FlexDRGraphics::current_net_only_visible_ = "Current Net Only";
 
 static std::string workerOrigin(FlexDRWorker* worker)
 {
@@ -268,6 +269,7 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
   addDisplayControl(route_guides_visible_, true);
   addDisplayControl(routing_objs_visible_, true);
   addDisplayControl(maze_search_visible_, true);
+  addDisplayControl(current_net_only_visible_, false);
 
   gui_->registerRenderer(this);
 }
@@ -290,6 +292,8 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   painter.setBrush(layer);
 
   // Draw segs & vias
+  const bool draw_current_net_only_
+      = checkDisplayControl(current_net_only_visible_);
   if (checkDisplayControl(routing_objs_visible_)) {
     if (drawWholeDesign_) {
       Rect box = design_->getTopBlock()->getDieBox();
@@ -304,6 +308,8 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       std::vector<drConnFig*> figs;
       worker_->getWorkerRegionQuery().query(box, layerNum, figs);
       for (auto& fig : figs) {
+        if (draw_current_net_only_ && fig->getNet() != net_)
+          continue;
         drawObj(fig, painter, layerNum);
       }
     }
@@ -523,8 +529,8 @@ void FlexDRGraphics::show(bool checkStopConditions)
       return;
     }
     const Rect& rBox = worker_->getRouteBox();
-    if (settings_->x >= 0
-        && !rBox.intersects(Point(settings_->x, settings_->y))) {
+    if (settings_->box != odb::Rect(-1, -1, -1, -1)
+        && !rBox.intersects(settings_->box)) {
       return;
     }
   }
@@ -595,8 +601,8 @@ void FlexDRGraphics::startWorker(FlexDRWorker* in)
     return;
   }
   const Rect& rBox = in->getRouteBox();
-  if (settings_->x >= 0
-      && !rBox.intersects(Point(settings_->x, settings_->y))) {
+  if (settings_->box != odb::Rect(-1, -1, -1, -1)
+      && !rBox.intersects(settings_->box)) {
     return;
   }
   status("Start worker: origin " + workerOrigin(in) + " "
@@ -692,7 +698,7 @@ void FlexDRGraphics::startNet(drNet* net)
   }
 }
 
-void FlexDRGraphics::endNet(drNet* net)
+void FlexDRGraphics::midNet(drNet* net)
 {
   if (!net_) {
     return;
@@ -704,7 +710,7 @@ void FlexDRGraphics::endNet(drNet* net)
     point_cnt += pts.size();
   }
 
-  status("End net: " + net->getFrNet()->getName() + " searched "
+  status("Mid net: " + net->getFrNet()->getName() + " searched "
          + std::to_string(point_cnt) + " points");
 
   if (settings_->draw) {
@@ -717,6 +723,25 @@ void FlexDRGraphics::endNet(drNet* net)
 
   for (auto& points : points_by_layer_) {
     points.clear();
+  }
+}
+
+void FlexDRGraphics::endNet(drNet* net)
+{
+  if (!net_) {
+    return;
+  }
+  gui_->removeSelected<GridGraphDescriptor::Data>();
+  assert(net == net_);
+
+  status("End net: " + net->getFrNet()->getName() + " After GC");
+
+  if (settings_->draw) {
+    gui_->redraw();
+  }
+
+  if (settings_->allowPause) {
+    gui_->pause();
   }
   net_ = nullptr;
 }
@@ -731,6 +756,22 @@ void FlexDRGraphics::startIter(int iter)
     }
 
     status("Start iter: " + std::to_string(iter));
+    if (settings_->allowPause) {
+      gui_->pause();
+    }
+  }
+}
+
+void FlexDRGraphics::endWorker(int iter)
+{
+  if (worker_ == nullptr)
+    return;
+  if (iter >= settings_->iter) {
+    gui_->removeSelected<GridGraphDescriptor::Data>();
+    status("End Worker: " + std::to_string(iter));
+    if (settings_->draw) {
+      gui_->redraw();
+    }
     if (settings_->allowPause) {
       gui_->pause();
     }

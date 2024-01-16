@@ -58,32 +58,41 @@ bool dbIdValidation::isId(const char* inid)
 
 dbOrientType::dbOrientType(const char* orient)
 {
-  if (strcasecmp(orient, "R0") == 0)
+  if (strcasecmp(orient, "R0") == 0) {
     _value = R0;
-
-  else if (strcasecmp(orient, "R90") == 0)
+  } else if (strcasecmp(orient, "R90") == 0) {
     _value = R90;
-
-  else if (strcasecmp(orient, "R180") == 0)
+  } else if (strcasecmp(orient, "R180") == 0) {
     _value = R180;
-
-  else if (strcasecmp(orient, "R270") == 0)
+  } else if (strcasecmp(orient, "R270") == 0) {
     _value = R270;
-
-  else if (strcasecmp(orient, "MY") == 0)
+  } else if (strcasecmp(orient, "MY") == 0) {
     _value = MY;
-
-  else if (strcasecmp(orient, "MYR90") == 0)
+  } else if (strcasecmp(orient, "MYR90") == 0) {
     _value = MYR90;
-
-  else if (strcasecmp(orient, "MX") == 0)
+  } else if (strcasecmp(orient, "MX") == 0) {
     _value = MX;
-
-  else if (strcasecmp(orient, "MXR90") == 0)
+  } else if (strcasecmp(orient, "MXR90") == 0) {
     _value = MXR90;
-
-  else
+  } else if (strcasecmp(orient, "N") == 0) {  // LEF/DEF style names
     _value = R0;
+  } else if (strcasecmp(orient, "W") == 0) {
+    _value = R90;
+  } else if (strcasecmp(orient, "S") == 0) {
+    _value = R180;
+  } else if (strcasecmp(orient, "E") == 0) {
+    _value = R270;
+  } else if (strcasecmp(orient, "FN") == 0) {
+    _value = MY;
+  } else if (strcasecmp(orient, "FE") == 0) {
+    _value = MYR90;
+  } else if (strcasecmp(orient, "FS") == 0) {
+    _value = MX;
+  } else if (strcasecmp(orient, "FW") == 0) {
+    _value = MXR90;
+  } else {
+    _value = R0;
+  }
 }
 
 dbOrientType::dbOrientType(Value orient)
@@ -186,6 +195,24 @@ dbOrientType dbOrientType::flipY() const
       return R90;
   }
   return R0;
+}
+
+bool dbOrientType::isRightAngleRotation() const
+{
+  switch (_value) {
+    case R90:
+    case R270:
+    case MYR90:
+    case MXR90:
+      return true;
+    case R0:
+    case R180:
+    case MY:
+    case MX:
+      return false;
+  }
+  assert(false);
+  return false;
 }
 
 dbGroupType::dbGroupType(const char* orient)

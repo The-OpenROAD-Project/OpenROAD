@@ -51,11 +51,9 @@ dbInstShapeItr::dbInstShapeItr(bool expand_vias)
 
 void dbInstShapeItr::begin(dbInst* inst, IteratorType type)
 {
-  int x, y;
   _inst = inst;
-  _inst->getOrigin(x, y);
   _master = _inst->getMaster();
-  _transform = dbTransform(inst->getOrient(), Point(x, y));
+  _transform = _inst->getTransform();
   _type = type;
   _state = 0;
 }
@@ -64,11 +62,9 @@ void dbInstShapeItr::begin(dbInst* inst,
                            IteratorType type,
                            const dbTransform& t)
 {
-  int x, y;
   _inst = inst;
-  _inst->getOrigin(x, y);
   _master = _inst->getMaster();
-  _transform = dbTransform(inst->getOrient(), Point(x, y));
+  _transform = _inst->getTransform();
   _transform.concat(t);
   _type = type;
   _state = 0;

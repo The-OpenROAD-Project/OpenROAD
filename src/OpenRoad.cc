@@ -35,6 +35,7 @@
 
 #include "ord/OpenRoad.hh"
 
+#include <fstream>
 #include <iostream>
 #include <thread>
 #ifdef ENABLE_PYTHON3
@@ -416,7 +417,12 @@ void OpenRoad::writeLef(const char* filename)
     for (auto lib : libs) {
       std::string name(filename);
       if (cnt > 0) {
-        name += "_" + std::to_string(cnt);
+        auto pos = name.rfind('.');
+        if (pos != string::npos) {
+          name.insert(pos, "_" + std::to_string(cnt));
+        } else {
+          name += "_" + std::to_string(cnt);
+        }
         std::ofstream os;
         os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
         os.open(name);
@@ -466,7 +472,11 @@ void OpenRoad::readDb(const char* filename)
                     | std::ios::eofbit);
   stream.open(filename, std::ios::binary);
 
-  db_->read(stream);
+  try {
+    db_->read(stream);
+  } catch (const std::ios_base::failure& f) {
+    logger_->error(ORD, 54, "odb file {} is invalid: {}", filename, f.what());
+  }
 
   for (OpenRoadObserver* observer : observers_) {
     observer->postReadDb(db_);
@@ -475,11 +485,12 @@ void OpenRoad::readDb(const char* filename)
 
 void OpenRoad::writeDb(const char* filename)
 {
-  FILE* stream = fopen(filename, "w");
-  if (stream) {
-    db_->write(stream);
-    fclose(stream);
-  }
+  std::ofstream stream;
+  stream.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                    | std::ios::eofbit);
+  stream.open(filename, std::ios::binary);
+
+  db_->write(stream);
 }
 
 void OpenRoad::diffDbs(const char* filename1,

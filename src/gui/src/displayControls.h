@@ -239,7 +239,7 @@ class DisplayControls : public QDockWidget,
   bool areSelectedVisible() override;
 
   bool isScaleBarVisible() const override;
-  bool arePinMarkersVisible() const override;
+  bool areIOPinsVisible() const override;
   QFont pinMarkersFont() override;
   bool areAccessPointsVisible() const override;
   bool areRegionsVisible() const override;
@@ -268,6 +268,8 @@ class DisplayControls : public QDockWidget,
   // Tells this widget that a new design is loaded and the
   // options displayed need to match
   void blockLoaded(odb::dbBlock* block);
+
+  void setCurrentBlock(odb::dbBlock* block);
 
   // This is called by the check boxes to update the state
   void itemChanged(QStandardItem* item);
@@ -502,7 +504,7 @@ class DisplayControls : public QDockWidget,
 
   // Object controls
   NetModels nets_;
-  ModelRow pin_markers_;
+  ModelRow io_pins_;
   ModelRow rulers_;
   BlockageModels blockages_;
   TrackModels tracks_;

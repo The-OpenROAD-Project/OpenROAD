@@ -84,7 +84,8 @@ class TritonPart
   // partitioning, placement information is extracted from OpenDB
   void PartitionDesign(unsigned int num_parts_arg,
                        float balance_constraint_arg,
-                       std::vector<float> base_balance_arg,
+                       const std::vector<float>& base_balance_arg,
+                       const std::vector<float>& scale_factor_arg,
                        unsigned int seed_arg,
                        bool timing_aware_flag_arg,
                        int top_n_arg,
@@ -108,7 +109,8 @@ class TritonPart
   // only used for testing
   void EvaluatePartDesignSolution(unsigned int num_parts_arg,
                                   float balance_constraint_arg,
-                                  std::vector<float> base_balance_arg,
+                                  const std::vector<float>& base_balance_arg,
+                                  const std::vector<float>& scale_factor_arg,
                                   bool timing_aware_flag_arg,
                                   int top_n_arg,
                                   bool fence_flag_arg,
@@ -134,7 +136,8 @@ class TritonPart
   // attributes both follows the hMETIS format
   void PartitionHypergraph(unsigned int num_parts,
                            float balance_constraint,
-                           std::vector<float> base_balance,
+                           const std::vector<float>& base_balance,
+                           const std::vector<float>& scale_factor,
                            unsigned int seed,
                            int vertex_dimension,
                            int hyperedge_dimension,
@@ -151,7 +154,8 @@ class TritonPart
   // The vertex balance should be satisfied
   void EvaluateHypergraphSolution(unsigned int num_parts,
                                   float balance_constraint,
-                                  std::vector<float> base_balance,
+                                  const std::vector<float>& base_balance,
+                                  const std::vector<float>& scale_factor,
                                   int vertex_dimension,
                                   int hyperedge_dimension,
                                   const char* hypergraph_file,
@@ -252,6 +256,14 @@ class TritonPart
                    const std::string& group_file);
   void BuildTimingPaths();  // Find all the critical timing paths
 
+  void informFiles(const std::string& fixed_file,
+                   const std::string& community_file,
+                   const std::string& group_file,
+                   const std::string& placement_file,
+                   const std::string& hypergraph_file,
+                   const std::string& hypergraph_int_weight_file,
+                   const std::string& solution_file);
+
   // private member functions
   ord::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
@@ -264,6 +276,8 @@ class TritonPart
   float ub_factor_ = 1.0;            // balance constraint
   int num_parts_ = 2;                // number of partitions
   std::vector<float> base_balance_;  // the target balance for each block
+  std::vector<float> scale_factor_;  // the scale factor for each block
+                                     // (multi-technology-nodes)
 
   // random seed
   int seed_ = 0;

@@ -101,6 +101,7 @@ proc create_menu_item { args } {
 }
 
 sta::define_cmd_args "save_image" {[-area {x0 y0 x1 y1}] \
+                                   [-width width] \
                                    [-resolution microns_per_pixel] \
                                    [-display_option option] \
                                    path
@@ -109,7 +110,7 @@ sta::define_cmd_args "save_image" {[-area {x0 y0 x1 y1}] \
 proc save_image { args } {
   set options [gui::parse_options $args]
   sta::parse_key_args "save_image" args \
-    keys {-area -resolution -display_option} flags {}
+    keys {-area -width -resolution -display_option} flags {}
 
   set resolution 0
   if { [info exists keys(-resolution)] } {
@@ -121,7 +122,8 @@ proc save_image { args } {
     set resolution [expr $keys(-resolution) * [$tech getLefUnits]]
     if {$resolution < 1} {
       set resolution 1.0
-      utl::warn GUI 31 "Resolution too high for design, defaulting to [expr $resolution / [$tech getLefUnits]] um per pixel"
+      set res_per_pixel [expr $resolution / [$tech getLefUnits]]
+      utl::warn GUI 31 "Resolution too high for design, defaulting to ${res_per_pixel}um per pixel"
     }
   }
 
@@ -133,10 +135,22 @@ proc save_image { args } {
     }
   }
 
+  set width 0
+  if { [info exists keys(-width)] } {
+    if {$resolution != 0} {
+      utl::error GUI 96 "Cannot set -width if -resolution has already been specified."
+    }
+    sta::check_positive_int "-width" $keys(-width)
+    set width $keys(-width)
+    if { $width == 0 } {
+      utl::error GUI 98 "Specified -width cannot be zero."
+    }
+  }
+
   sta::check_argc_eq1 "save_image" $args
   set path [lindex $args 0]
 
-  gui::save_image $path {*}$area $resolution $options
+  gui::save_image $path {*}$area $width $resolution $options
 
   # delete map
   rename $options ""
@@ -227,7 +241,7 @@ proc select { args } {
     }
     set case_sense 0
   }
-  
+
   return [gui::select $type $name $attribute $value $case_sense $highlight]
 }
 
@@ -309,7 +323,7 @@ proc focus_net { args } {
   if { $net == "NULL" } {
     utl::error GUI 71 "Unable to find net \"$net_name\"."
   }
-  
+
   if { [info exists flags(-remove)] } {
     gui::remove_focus_net $net
   } else {
@@ -318,28 +332,28 @@ proc focus_net { args } {
 }
 
 namespace eval gui {
-  proc parse_options { args_var } {
-    set options [gui::DisplayControlMap]
-    while { $args_var != {} } {
-      set arg [lindex $args_var 0]
-      if { $arg == "-display_option" } {
-        set opt [lindex $args_var 1]
+proc parse_options { args_var } {
+  set options [gui::DisplayControlMap]
+  while { $args_var != {} } {
+    set arg [lindex $args_var 0]
+    if { $arg == "-display_option" } {
+      set opt [lindex $args_var 1]
 
-        if {[llength $opt] != 2} {
-          utl::error GUI 19 "Display option must have 2 elements {control name} {value}."
-        }
-
-        set key [lindex $opt 0]
-        set val [lindex $opt 1]
-
-        $options set $key $val
-
-        set args_var [lrange $args_var 1 end]
-      } else {
-        set args_var [lrange $args_var 1 end]
+      if {[llength $opt] != 2} {
+        utl::error GUI 19 "Display option must have 2 elements {control name} {value}."
       }
-    }
 
-    return $options
+      set key [lindex $opt 0]
+      set val [lindex $opt 1]
+
+      $options set $key $val
+
+      set args_var [lrange $args_var 1 end]
+    } else {
+      set args_var [lrange $args_var 1 end]
+    }
   }
+
+  return $options
+}
 }

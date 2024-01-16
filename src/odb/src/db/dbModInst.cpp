@@ -49,20 +49,27 @@ template class dbTable<_dbModInst>;
 
 bool _dbModInst::operator==(const _dbModInst& rhs) const
 {
-  if (_name != rhs._name)
+  if (_name != rhs._name) {
     return false;
-  if (_next_entry != rhs._next_entry)
+  }
+  if (_next_entry != rhs._next_entry) {
     return false;
-  if (_parent != rhs._parent)
+  }
+  if (_parent != rhs._parent) {
     return false;
-  if (_module_next != rhs._module_next)
+  }
+  if (_module_next != rhs._module_next) {
     return false;
-  if (_master != rhs._master)
+  }
+  if (_master != rhs._master) {
     return false;
-  if (_group_next != rhs._group_next)
+  }
+  if (_group_next != rhs._group_next) {
     return false;
-  if (_group != rhs._group)
+  }
+  if (_group != rhs._group) {
     return false;
+  }
 
   return true;
 }
@@ -154,8 +161,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbModInst& obj)
 
 _dbModInst::~_dbModInst()
 {
-  if (_name)
+  if (_name) {
     free((void*) _name);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -167,8 +175,9 @@ _dbModInst::~_dbModInst()
 dbModule* dbModInst::getParent() const
 {
   _dbModInst* obj = (_dbModInst*) this;
-  if (obj->_parent == 0)
+  if (obj->_parent == 0) {
     return nullptr;
+  }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbModule*) par->_module_tbl->getPtr(obj->_parent);
 }
@@ -176,8 +185,9 @@ dbModule* dbModInst::getParent() const
 dbModule* dbModInst::getMaster() const
 {
   _dbModInst* obj = (_dbModInst*) this;
-  if (obj->_master == 0)
+  if (obj->_master == 0) {
     return nullptr;
+  }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbModule*) par->_module_tbl->getPtr(obj->_master);
 }
@@ -185,8 +195,9 @@ dbModule* dbModInst::getMaster() const
 dbGroup* dbModInst::getGroup() const
 {
   _dbModInst* obj = (_dbModInst*) this;
-  if (obj->_group == 0)
+  if (obj->_group == 0) {
     return nullptr;
+  }
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbGroup*) par->_group_tbl->getPtr(obj->_group);
 }
@@ -284,4 +295,4 @@ std::string dbModInst::getHierarchicalName() const
 }
 // User Code End dbModInstPublicMethods
 }  // namespace odb
-   // Generator Code End Cpp
+// Generator Code End Cpp

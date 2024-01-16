@@ -21,7 +21,7 @@
 [INFO PSM-0040] All PDN stripes on net VSS are connected.
 ########## IR report #################
 Corner: default
-Worstcase voltage: 9.92e-04 V
-Average IR drop  : 6.34e-04 V
-Worstcase IR drop: 9.92e-04 V
+Worstcase voltage: 1.10e-03 V
+Average IR drop  : 7.02e-04 V
+Worstcase IR drop: 1.10e-03 V
 ######################################

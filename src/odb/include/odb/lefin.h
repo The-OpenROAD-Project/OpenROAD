@@ -75,6 +75,7 @@ class dbLib;
 class dbMaster;
 class dbDatabase;
 class dbTechLayer;
+class dbSite;
 
 using namespace LefDefParser;
 
@@ -135,6 +136,7 @@ class lefin
                      int design_rule_width,
                      double offset_x = 0.0,
                      double offset_y = 0.0);
+  dbSite* findSite(const char* name);
 
  public:
   // convert distance value to db-units (1nm = 1db unit)

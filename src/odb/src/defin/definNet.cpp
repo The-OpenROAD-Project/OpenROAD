@@ -245,7 +245,7 @@ void definNet::nonDefaultRule(const char* rule)
 
     if (def_rule == nullptr) {
       _logger->warn(utl::ODB,
-                    101,
+                    136,
                     "error: undefined NONDEFAULTRULE ({}) referenced",
                     rule);
       ++_errors;
@@ -610,6 +610,13 @@ void definNet::pathRect(int deltaX1, int deltaY1, int deltaX2, int deltaY2)
 void definNet::pathColor(int color)
 {
   _wire_encoder.setColor(static_cast<uint8_t>(color));
+}
+
+void definNet::pathViaColor(int bottom_color, int cut_color, int top_color)
+{
+  _wire_encoder.setViaColor(static_cast<uint8_t>(bottom_color),
+                            static_cast<uint8_t>(cut_color),
+                            static_cast<uint8_t>(top_color));
 }
 
 void definNet::pathEnd()

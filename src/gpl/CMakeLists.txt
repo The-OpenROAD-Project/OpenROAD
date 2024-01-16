@@ -41,6 +41,9 @@ include("openroad")
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 find_package(Eigen3 REQUIRED)
+find_package(ortools REQUIRED)
+find_package(LEMON NAMES LEMON lemon REQUIRED)
+find_package(OpenMP REQUIRED)
 
 swig_lib(NAME      gpl
          NAMESPACE gpl
@@ -59,11 +62,11 @@ target_sources(gpl
     src/fft.cpp
     src/fftsg.cpp
     src/fftsg2d.cpp
-    src/point.cpp
     src/routeBase.cpp
     src/timingBase.cpp
     src/graphics.cpp
     src/solver.cpp
+    src/mbff.cpp
 )
 
 messages(TARGET gpl)
@@ -71,6 +74,7 @@ messages(TARGET gpl)
 target_include_directories(gpl
   PUBLIC
     include
+    ${LEMON_INCLUDE_DIRS}
 )
 
 target_link_libraries(gpl
@@ -82,6 +86,9 @@ target_link_libraries(gpl
     OpenSTA
     rsz
     grt
+    ortools::ortools
+    Threads::Threads
+    OpenMP::OpenMP_CXX
 )
 
 # Allow users to use GPU or not
@@ -126,6 +133,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
   target_include_directories(gpl_py
     PUBLIC
       include
+      
   )
 
   target_link_libraries(gpl_py
@@ -140,3 +148,5 @@ if (Python3_FOUND AND BUILD_PYTHON)
   )
 
 endif()
+
+add_subdirectory(test)

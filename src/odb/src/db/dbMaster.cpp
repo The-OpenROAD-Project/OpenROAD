@@ -111,6 +111,9 @@ bool _dbMaster::operator==(const _dbMaster& rhs) const
   if (_obstructions != rhs._obstructions)
     return false;
 
+  if (_lib_for_site != rhs._lib_for_site)
+    return false;
+
   if (_site != rhs._site)
     return false;
 
@@ -156,6 +159,7 @@ void _dbMaster::differences(dbDiff& diff,
   DIFF_FIELD(_leq);
   DIFF_FIELD(_eeq);
   DIFF_FIELD(_obstructions);
+  DIFF_FIELD(_lib_for_site);
   DIFF_FIELD(_site);
   DIFF_HASH_TABLE(_mterm_hash);
   DIFF_TABLE_NO_DEEP(_mterm_tbl);
@@ -185,6 +189,7 @@ void _dbMaster::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_leq);
   DIFF_OUT_FIELD(_eeq);
   DIFF_OUT_FIELD(_obstructions);
+  DIFF_OUT_FIELD(_lib_for_site);
   DIFF_OUT_FIELD(_site);
   DIFF_OUT_HASH_TABLE(_mterm_hash);
   DIFF_OUT_TABLE_NO_DEEP(_mterm_tbl);
@@ -264,6 +269,7 @@ _dbMaster::_dbMaster(_dbDatabase* db, const _dbMaster& m)
       _leq(m._leq),
       _eeq(m._eeq),
       _obstructions(m._obstructions),
+      _lib_for_site(m._lib_for_site),
       _site(m._site),
       _mterm_hash(m._mterm_hash),
       _sta_cell(m._sta_cell)
@@ -323,6 +329,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbMaster& master)
   stream << master._leq;
   stream << master._eeq;
   stream << master._obstructions;
+  stream << master._lib_for_site;
   stream << master._site;
   stream << master._mterm_hash;
   stream << *master._mterm_tbl;
@@ -348,6 +355,13 @@ dbIStream& operator>>(dbIStream& stream, _dbMaster& master)
   stream >> master._leq;
   stream >> master._eeq;
   stream >> master._obstructions;
+  _dbDatabase* db = master.getImpl()->getDatabase();
+  if (db->isSchema(db_schema_dbmaster_lib_for_site)) {
+    stream >> master._lib_for_site;
+  } else {
+    // The site was copied into the same dbLib previously
+    master._lib_for_site = master.getOwner()->getId();
+  }
   stream >> master._site;
   stream >> master._mterm_hash;
   stream >> *master._mterm_tbl;
@@ -384,7 +398,7 @@ dbObjectTable* _dbMaster::getObjectTable(dbObjectType type)
 //
 ////////////////////////////////////////////////////////////////////
 
-std::string dbMaster::getName()
+std::string dbMaster::getName() const
 {
   _dbMaster* master = (_dbMaster*) this;
   return master->_name;
@@ -396,11 +410,10 @@ const char* dbMaster::getConstName()
   return master->_name;
 }
 
-void dbMaster::getOrigin(int& x, int& y)
+Point dbMaster::getOrigin()
 {
   _dbMaster* master = (_dbMaster*) this;
-  x = master->_x;
-  y = master->_y;
+  return {master->_x, master->_y};
 }
 
 void dbMaster::setOrigin(int x, int y)
@@ -507,29 +520,33 @@ dbMTerm* dbMaster::findMTerm(const char* name)
 dbMTerm* dbMaster::findMTerm(dbBlock* block, const char* name)
 {
   dbMTerm* mterm = findMTerm(name);
-  if (mterm)
+  if (mterm) {
     return mterm;
-  char blk_left_bus_del, blk_right_bus_del, lib_left_bus_del, lib_right_bus_del;
-  char ttname[max_name_length];
-  uint ii = 0;
+  }
+  char blk_left_bus_del, blk_right_bus_del;
   block->getBusDelimeters(blk_left_bus_del, blk_right_bus_del);
-  getLib()->getBusDelimeters(lib_left_bus_del, lib_right_bus_del);
-  if (lib_left_bus_del == '\0' || lib_right_bus_del == '\0')
-    return mterm;
 
+  char lib_left_bus_del, lib_right_bus_del;
+  ;
+  getLib()->getBusDelimeters(lib_left_bus_del, lib_right_bus_del);
+
+  if (lib_left_bus_del == '\0' || lib_right_bus_del == '\0') {
+    return mterm;
+  }
+
+  uint ii = 0;
+  std::string ttname(name);
   if (lib_left_bus_del != blk_left_bus_del
       || lib_right_bus_del != blk_right_bus_del) {
     while (name[ii] != '\0') {
-      if (name[ii] == blk_left_bus_del)
+      if (name[ii] == blk_left_bus_del) {
         ttname[ii] = lib_left_bus_del;
-      else if (name[ii] == blk_right_bus_del)
+      } else if (name[ii] == blk_right_bus_del) {
         ttname[ii] = lib_right_bus_del;
-      else
-        ttname[ii] = name[ii];
+      }
       ii++;
     }
-    ttname[ii] = '\0';
-    mterm = findMTerm(ttname);
+    mterm = findMTerm(ttname.c_str());
   }
   return mterm;
 }
@@ -560,16 +577,19 @@ int dbMaster::getMTermCount()
 void dbMaster::setSite(dbSite* site)
 {
   _dbMaster* master = (_dbMaster*) this;
+  master->_lib_for_site = site->getLib()->getImpl()->getOID();
   master->_site = site->getImpl()->getOID();
 }
 
 dbSite* dbMaster::getSite()
 {
   _dbMaster* master = (_dbMaster*) this;
-  _dbLib* lib = (_dbLib*) master->getOwner();
 
   if (master->_site == 0)
     return nullptr;
+
+  _dbDatabase* db = (_dbDatabase*) getDb();
+  _dbLib* lib = (_dbLib*) db->_lib_tbl->getPtr(master->_lib_for_site);
 
   return (dbSite*) lib->_site_tbl->getPtr(master->_site);
 }

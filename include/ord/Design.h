@@ -35,10 +35,17 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
+#include <vector>
 
 namespace odb {
 class dbBlock;
+class dbMaster;
+class dbMTerm;
+class dbNet;
+class dbInst;
+class dbITerm;
 }  // namespace odb
 
 namespace ifp {
@@ -121,6 +128,11 @@ namespace pad {
 class ICeWall;
 }
 
+namespace sta {
+class dbSta;
+class LibertyCell;
+}  // namespace sta
+
 namespace ord {
 
 class Tech;
@@ -151,6 +163,14 @@ class Design
 
   Tech* getTech();
 
+  bool isSequential(odb::dbMaster* master);
+  bool isBuffer(odb::dbMaster* master);
+  bool isInverter(odb::dbMaster* master);
+  bool isInSupply(odb::dbITerm* pin);
+  std::string getITermName(odb::dbITerm* pin);
+  bool isInClock(odb::dbInst* inst);
+  std::uint64_t getNetRoutedLength(odb::dbNet* net);
+
   // Services
   ifp::InitFloorplan* getFloorplan();
   ant::AntennaChecker* getAntennaChecker();
@@ -173,6 +193,9 @@ class Design
   pad::ICeWall* getICeWall();
 
  private:
+  sta::dbSta* getSta();
+  sta::LibertyCell* getLibertyCell(odb::dbMaster* master);
+
   Tech* tech_;
 };
 

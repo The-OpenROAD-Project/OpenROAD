@@ -36,6 +36,7 @@
 #include "dbHashTable.h"
 #include "dbId.h"
 #include "dbTypes.h"
+#include "dbVector.h"
 #include "odb.h"
 
 namespace odb {
@@ -45,6 +46,8 @@ class dbTable;
 class dbIStream;
 class dbOStream;
 class dbDiff;
+class _dbLib;
+class _dbSite;
 
 struct dbSiteFlags
 {
@@ -52,8 +55,20 @@ struct dbSiteFlags
   uint _y_symmetry : 1;
   uint _R90_symmetry : 1;
   dbSiteClass::Value _class : 4;
-  uint _spare_bits : 25;
+  uint _is_hybrid : 1;
+  uint _spare_bits : 24;
 };
+
+struct OrientedSiteInternal
+{
+  dbId<_dbLib> lib;
+  dbId<_dbSite> site;
+  dbOrientType orientation;
+  bool operator==(const OrientedSiteInternal& rhs) const;
+};
+
+dbOStream& operator<<(dbOStream& stream, const OrientedSiteInternal& s);
+dbIStream& operator>>(dbIStream& stream, OrientedSiteInternal& s);
 
 class _dbSite : public _dbObject
 {
@@ -64,6 +79,7 @@ class _dbSite : public _dbObject
   uint _height;
   uint _width;
   dbId<_dbSite> _next_entry;
+  dbVector<OrientedSiteInternal> _row_pattern;
 
   _dbSite(_dbDatabase*, const _dbSite& s);
   _dbSite(_dbDatabase*);
@@ -75,26 +91,6 @@ class _dbSite : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
 };
 
-inline dbOStream& operator<<(dbOStream& stream, const _dbSite& site)
-{
-  uint* bit_field = (uint*) &site._flags;
-  stream << *bit_field;
-  stream << site._name;
-  stream << site._height;
-  stream << site._width;
-  stream << site._next_entry;
-  return stream;
-}
-
-inline dbIStream& operator>>(dbIStream& stream, _dbSite& site)
-{
-  uint* bit_field = (uint*) &site._flags;
-  stream >> *bit_field;
-  stream >> site._name;
-  stream >> site._height;
-  stream >> site._width;
-  stream >> site._next_entry;
-  return stream;
-}
-
+dbOStream& operator<<(dbOStream& stream, const _dbSite& site);
+dbIStream& operator>>(dbIStream& stream, _dbSite& site);
 }  // namespace odb

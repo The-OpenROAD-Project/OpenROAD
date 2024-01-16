@@ -96,7 +96,8 @@ class _dbTechLayerSpacingEolRule : public _dbObject
  public:
   _dbTechLayerSpacingEolRule(_dbDatabase*, const _dbTechLayerSpacingEolRule& r);
   _dbTechLayerSpacingEolRule(_dbDatabase*);
-  ~_dbTechLayerSpacingEolRule();
+
+  ~_dbTechLayerSpacingEolRule() = default;
 
   bool operator==(const _dbTechLayerSpacingEolRule& rhs) const;
   bool operator!=(const _dbTechLayerSpacingEolRule& rhs) const

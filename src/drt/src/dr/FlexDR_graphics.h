@@ -61,7 +61,11 @@ class FlexDRGraphics : public gui::Renderer
 
   void startIter(int iter);
 
+  void endWorker(int iter);
+
   void startNet(drNet* net);
+
+  void midNet(drNet* net);
 
   void endNet(drNet* net);
 
@@ -118,6 +122,7 @@ class FlexDRGraphics : public gui::Renderer
   static const char* marker_cost_visible_;
   static const char* fixed_shape_cost_visible_;
   static const char* maze_search_visible_;
+  static const char* current_net_only_visible_;
 
   void drawMarker(int xl, int yl, int xh, int yh, gui::Painter& painter);
 };

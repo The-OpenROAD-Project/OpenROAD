@@ -230,8 +230,9 @@ void FastRouteCore::routeLAll(bool firstTime)
   if (firstTime) {  // no previous route
     // estimate congestion with 0.5+0.5 L
     for (int i = 0; i < netCount(); i++) {
-      if (nets_[i]->isRouted())
+      if (skipNet(i)) {
         continue;
+      }
 
       for (auto& seg : seglist_[i]) {
         estimateOneSeg(&seg);
@@ -239,8 +240,9 @@ void FastRouteCore::routeLAll(bool firstTime)
     }
     // L route
     for (int i = 0; i < netCount(); i++) {
-      if (nets_[i]->isRouted())
+      if (skipNet(i)) {
         continue;
+      }
 
       for (auto& seg : seglist_[i]) {
         // no need to reroute the H or V segs
@@ -250,8 +252,9 @@ void FastRouteCore::routeLAll(bool firstTime)
     }
   } else {  // previous is L-route
     for (int i = 0; i < netCount(); i++) {
-      if (nets_[i]->isRouted())
+      if (skipNet(i)) {
         continue;
+      }
 
       for (auto& seg : seglist_[i]) {
         // no need to reroute the H or V segs
@@ -270,8 +273,8 @@ void FastRouteCore::newrouteL(int netID, RouteType ripuptype, bool viaGuided)
   const int edgeCost = nets_[netID]->getEdgeCost();
 
   const int num_edges = sttrees_[netID].num_edges();
-  const auto& treeedges = sttrees_[netID].edges;
-  const auto& treenodes = sttrees_[netID].nodes;
+  auto& treeedges = sttrees_[netID].edges;
+  auto& treenodes = sttrees_[netID].nodes;
 
   // loop for all the tree edges
   for (int i = 0; i < num_edges; i++) {
@@ -416,13 +419,15 @@ void FastRouteCore::newrouteLAll(bool firstTime, bool viaGuided)
 {
   if (firstTime) {
     for (int i = 0; i < netCount(); i++) {
-      if (!nets_[i]->isRouted())
+      if (!skipNet(i)) {
         newrouteL(i, RouteType::NoRoute, viaGuided);  // do L-routing
+      }
     }
   } else {
     for (int i = 0; i < netCount(); i++) {
-      if (!nets_[i]->isRouted())
+      if (!skipNet(i)) {
         newrouteL(i, RouteType::LRoute, viaGuided);
+      }
     }
   }
 }
@@ -436,7 +441,7 @@ void FastRouteCore::newrouteZ_edge(int netID, int edgeID)
     return;
   }
 
-  const auto& treeedges = sttrees_[netID].edges;
+  auto& treeedges = sttrees_[netID].edges;
   TreeEdge* treeedge = &(treeedges[edgeID]);
   const auto& treenodes = sttrees_[netID].nodes;
   const int n1 = treeedge->n1;
@@ -562,8 +567,8 @@ void FastRouteCore::newrouteZ(int netID, int threshold)
   const int num_terminals = sttrees_[netID].num_terminals;
   const int num_edges = sttrees_[netID].num_edges();
 
-  const auto& treeedges = sttrees_[netID].edges;
-  const auto& treenodes = sttrees_[netID].nodes;
+  auto& treeedges = sttrees_[netID].edges;
+  auto& treenodes = sttrees_[netID].nodes;
 
   // loop for all the tree edges
   for (int ind = 0; ind < num_edges; ind++) {
@@ -582,14 +587,8 @@ void FastRouteCore::newrouteZ(int netID, int threshold)
         continue;
       }
       // ripup the original routing
-      if (newRipupType2(treeedge,
-                        treenodes.get(),
-                        x1,
-                        y1,
-                        x2,
-                        y2,
-                        num_terminals,
-                        netID)) {
+      if (newRipupType2(
+              treeedge, treenodes, x1, y1, x2, y2, num_terminals, netID)) {
         const int n1a = treenodes[n1].stackAlias;
         const int n2a = treenodes[n2].stackAlias;
         const int status1 = treenodes[n1a].status;
@@ -860,221 +859,16 @@ void FastRouteCore::newrouteZ(int netID, int threshold)
 void FastRouteCore::newrouteZAll(int threshold)
 {
   for (int i = 0; i < netCount(); i++) {
-    if (!nets_[i]->isRouted())
+    if (!skipNet(i)) {
       newrouteZ(i, threshold);  // ripup previous route and do Z-routing
-  }
-}
-
-// Ripup the original route and do Monotonic routing within bounding box
-void FastRouteCore::routeMonotonic(int netID, int edgeID, int threshold)
-{
-  if (sttrees_[netID].edges[edgeID].route.routelen <= threshold) {
-    return;
-  }
-
-  const int edgeCost = nets_[netID]->getEdgeCost();
-
-  static const bool same_x = false;
-  static const bool same_y = true;
-
-  const auto& treeedges = sttrees_[netID].edges;
-  TreeEdge* treeedge = &(treeedges[edgeID]);
-  const auto& treenodes = sttrees_[netID].nodes;
-  const int n1 = treeedge->n1;
-  const int n2 = treeedge->n2;
-  const int x1 = treenodes[n1].x;
-  const int y1 = treenodes[n1].y;
-  const int x2 = treenodes[n2].x;
-  const int y2 = treenodes[n2].y;
-
-  if (x1 == x2 || y1 == y2) {  // Do Z-routing if not H or V edge
-    return;
-  }
-
-  // ripup the original routing
-  newRipup(treeedge, x1, y1, x2, y2, netID);
-
-  const int segWidth = abs(x1 - x2);
-  const int segHeight = abs(y1 - y2);
-  int xl, yl, xr, yr;
-  if (x1 <= x2) {
-    xl = x1;
-    yl = y1;
-    xr = x2;
-    yr = y2;
-  } else {
-    xl = x2;
-    yl = y2;
-    xr = x1;
-    yr = y1;
-  }
-
-  // find the best monotonic path from (x1, y1) to (x2, y2)
-  multi_array<float, 2> cost(boost::extents[segHeight + 1][segWidth + 1]);
-  // remember the parent of a grid on the shortest
-  // path, true - same x, false - same y
-  multi_array<bool, 2> parent(boost::extents[segHeight + 1][segWidth + 1]);
-
-  std::vector<int> gridsX(x_range_ + y_range_);
-  std::vector<int> gridsY(x_range_ + y_range_);
-
-  int cnt = 0;
-  if (yl <= yr) {
-    // initialize first column
-    cost[0][0] = 0;
-    for (int j = 0; j < segHeight; j++) {
-      cost[j + 1][0]
-          = cost[j][0]
-            + std::max(0.0f,
-                       v_edges_[yl + j][xl].est_usage_red() - v_capacity_lb_);
-      parent[j + 1][0] = same_x;
-    }
-    // update other columns
-    for (int i = 0; i < segWidth; i++) {
-      const int x = xl + i;
-      // update the cost of a column of grids by h-edges
-      for (int j = 0; j <= segHeight; j++) {
-        const float tmp = std::max(
-            0.0f, h_edges_[yl + j][x].est_usage_red() - h_capacity_lb_);
-        cost[j][i + 1] = cost[j][i] + tmp;
-        parent[j][i + 1] = same_y;
-      }
-      // update the cost of a column of grids by v-edges
-      const int ind_x = x + 1;
-      const int ind_i = i + 1;
-      for (int j = 0; j < segHeight; j++) {
-        const int ind_j = j + 1;
-        const float tmp = cost[j][ind_i]
-                          + std::max(0.0f,
-                                     v_edges_[yl + j][ind_x].est_usage_red()
-                                         - v_capacity_lb_);
-        if (cost[ind_j][ind_i] > tmp) {
-          cost[ind_j][ind_i] = tmp;
-          parent[ind_j][ind_i] = same_x;
-        }
-      }
-    }
-
-    // store the shortest path and update the usage
-    int curX = xr;
-    int curY = yr;
-
-    while (curX != xl || curY != yl) {
-      gridsX[cnt] = curX;
-      gridsY[cnt] = curY;
-      cnt++;
-      if (parent[curY - yl][curX - xl] == same_x) {
-        curY--;
-        v_edges_[curY][curX].est_usage += edgeCost;
-        v_used_ggrid_.insert(std::make_pair(curY, curX));
-      } else {
-        curX--;
-        h_edges_[curY][curX].est_usage += edgeCost;
-        h_used_ggrid_.insert(std::make_pair(curY, curX));
-      }
-    }
-
-    gridsX[cnt] = xl;
-    gridsY[cnt] = yl;
-    cnt++;
-  } else {  // yl>yr
-    // initialize first column
-    cost[segHeight][0] = 0;
-    for (int j = segHeight - 1, k = 0; j >= 0; j--, k++) {
-      cost[j][0] = cost[j + 1][0]
-                   + std::max(0.0f,
-                              v_edges_[(yl - 1) - k][xl].est_usage_red()
-                                  - v_capacity_lb_);
-      parent[j][0] = same_x;
-    }
-    // update other columns
-    for (int i = 0; i < segWidth; i++) {
-      const int x = xl + i;
-      // update the cost of a column of grids by h-edges
-      const int ind_i = i + 1;
-      for (int j = segHeight, k = 0; j >= 0; j--, k++) {
-        const float tmp = std::max(
-            0.0f, h_edges_[yl - k][x].est_usage_red() - h_capacity_lb_);
-        cost[j][ind_i] = cost[j][i] + tmp;
-        parent[j][ind_i] = same_y;
-      }
-      // update the cost of a column of grids by v-edges
-      const int ind_x = x + 1;
-      for (int j = segHeight - 1, k = 0; j >= 0; j--, k++) {
-        const float tmp
-            = cost[j + 1][ind_i]
-              + std::max(0.0f,
-                         v_edges_[(yl - 1) - k][ind_x].est_usage_red()
-                             - v_capacity_lb_);
-        if (cost[j][ind_i] > tmp) {
-          cost[j][ind_i] = tmp;
-          parent[j][ind_i] = same_x;
-        }
-      }
-    }
-
-    // store the shortest path and update the usage
-    int curX = xr;
-    int curY = yr;
-
-    while (curX != xl || curY != yl) {
-      gridsX[cnt] = curX;
-      gridsY[cnt] = curY;
-      cnt++;
-      if (parent[curY - yr][curX - xl] == same_x) {
-        v_edges_[curY][curX].est_usage += edgeCost;
-        v_used_ggrid_.insert(std::make_pair(curY, curX));
-        curY++;
-      } else {
-        curX--;
-        h_edges_[curY][curX].est_usage += edgeCost;
-        h_used_ggrid_.insert(std::make_pair(curY, curX));
-      }
-    }
-    gridsX[cnt] = xl;
-    gridsY[cnt] = yl;
-    cnt++;
-
-  }  // yl>yr
-  treeedge->route.routelen = cnt - 1;
-
-  treeedge->route.gridsX.resize(cnt);
-  treeedge->route.gridsY.resize(cnt);
-  if (x1 != gridsX[0] || y1 != gridsY[0]) {  // gridsX[] and gridsY[] store
-                                             // the path from n2 to n1
-    cnt = 0;
-    for (int i = treeedge->route.routelen; i >= 0; i--) {
-      treeedge->route.gridsX[cnt] = gridsX[i];
-      treeedge->route.gridsY[cnt] = gridsY[i];
-      cnt++;
-    }
-  } else {  // gridsX[] and gridsY[] store the path from n1 to n2
-    for (int i = 0; i <= treeedge->route.routelen; i++) {
-      treeedge->route.gridsX[i] = gridsX[i];
-      treeedge->route.gridsY[i] = gridsY[i];
-    }
-  }
-}
-
-void FastRouteCore::routeMonotonicAll(int threshold)
-{
-  for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted())
-      continue;
-
-    for (int edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
-      routeMonotonic(
-          netID,
-          edgeID,
-          threshold);  // ripup previous route and do Monotonic routing
     }
   }
 }
 
 void FastRouteCore::spiralRoute(int netID, int edgeID)
 {
-  const auto& treeedges = sttrees_[netID].edges;
-  const auto& treenodes = sttrees_[netID].nodes;
+  auto& treeedges = sttrees_[netID].edges;
+  auto& treenodes = sttrees_[netID].nodes;
 
   const int edgeCost = nets_[netID]->getEdgeCost();
 
@@ -1244,15 +1038,16 @@ void FastRouteCore::spiralRoute(int netID, int edgeID)
 void FastRouteCore::spiralRouteAll()
 {
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted())
+    if (skipNet(netID)) {
       continue;
+    }
 
-    const auto& treenodes = sttrees_[netID].nodes;
+    auto& treenodes = sttrees_[netID].nodes;
     const int num_terminals = sttrees_[netID].num_terminals;
 
     int numpoints = 0;
 
-    for (int d = 0; d < sttrees_[netID].num_nodes; d++) {
+    for (int d = 0; d < sttrees_[netID].num_nodes(); d++) {
       treenodes[d].topL = -1;
       treenodes[d].botL = num_layers_;
       // treenodes[d].l = 0;
@@ -1264,7 +1059,8 @@ void FastRouteCore::spiralRouteAll()
       treenodes[d].status = 0;
 
       if (d < num_terminals) {
-        treenodes[d].botL = treenodes[d].topL = 0;
+        treenodes[d].botL = nets_[netID]->getPinL()[d];
+        treenodes[d].topL = nets_[netID]->getPinL()[d];
         // treenodes[d].l = 0;
         treenodes[d].assigned = true;
         treenodes[d].status = 2;
@@ -1293,11 +1089,12 @@ void FastRouteCore::spiralRouteAll()
   }
 
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted())
+    if (skipNet(netID)) {
       continue;
+    }
 
-    const auto& treeedges = sttrees_[netID].edges;
-    const auto& treenodes = sttrees_[netID].nodes;
+    auto& treeedges = sttrees_[netID].edges;
+    auto& treenodes = sttrees_[netID].nodes;
     const int num_edges = sttrees_[netID].num_edges();
 
     for (int edgeID = 0; edgeID < num_edges; edgeID++) {
@@ -1322,13 +1119,14 @@ void FastRouteCore::spiralRouteAll()
 
   std::queue<int> edgeQueue;
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted())
+    if (skipNet(netID)) {
       continue;
+    }
 
     newRipupNet(netID);
 
-    const auto& treeedges = sttrees_[netID].edges;
-    const auto& treenodes = sttrees_[netID].nodes;
+    auto& treeedges = sttrees_[netID].edges;
+    auto& treenodes = sttrees_[netID].nodes;
 
     for (int nodeID = 0; nodeID < sttrees_[netID].num_terminals; nodeID++) {
       treenodes[nodeID].assigned = true;
@@ -1377,12 +1175,13 @@ void FastRouteCore::spiralRouteAll()
   }
 
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted())
+    if (skipNet(netID)) {
       continue;
+    }
 
-    const auto& treenodes = sttrees_[netID].nodes;
+    auto& treenodes = sttrees_[netID].nodes;
 
-    for (int d = 0; d < sttrees_[netID].num_nodes; d++) {
+    for (int d = 0; d < sttrees_[netID].num_nodes(); d++) {
       const int na = treenodes[d].stackAlias;
 
       treenodes[d].status = treenodes[na].status;
@@ -1390,19 +1189,19 @@ void FastRouteCore::spiralRouteAll()
   }
 }
 
-void FastRouteCore::routeLVEnew(int netID,
-                                int edgeID,
-                                multi_array<float, 2>& d1,
-                                multi_array<float, 2>& d2,
-                                int threshold,
-                                int enlarge)
+void FastRouteCore::routeMonotonic(int netID,
+                                   int edgeID,
+                                   multi_array<float, 2>& d1,
+                                   multi_array<float, 2>& d2,
+                                   int threshold,
+                                   int enlarge)
 {
   // only route the non-degraded edges (len>0)
   if (sttrees_[netID].edges[edgeID].len <= threshold) {
     return;
   }
 
-  const auto& treeedges = sttrees_[netID].edges;
+  auto& treeedges = sttrees_[netID].edges;
   TreeEdge* treeedge = &(treeedges[edgeID]);
   const auto& treenodes = sttrees_[netID].nodes;
   const int n1 = treeedge->n1;
@@ -1435,7 +1234,7 @@ void FastRouteCore::routeLVEnew(int netID,
   }
 
   if (sttrees_[netID].num_terminals > 2) {
-    for (int j = 0; j < sttrees_[netID].num_nodes; j++) {
+    for (int j = 0; j < sttrees_[netID].num_nodes(); j++) {
       if (treenodes[j].x < x1) {
         xmin = x1;
       }
@@ -1531,8 +1330,10 @@ void FastRouteCore::routeLVEnew(int netID,
     }
   }
   int cnt = 0;
-  std::vector<int> gridsX(x_range_ + y_range_);
-  std::vector<int> gridsY(x_range_ + y_range_);
+  std::vector<short int>& gridsX = treeedge->route.gridsX;
+  gridsX.resize(x_range_ + y_range_);
+  std::vector<short int>& gridsY = treeedge->route.gridsY;
+  gridsY.resize(x_range_ + y_range_);
   const int edgeCost = nets_[netID]->getEdgeCost();
 
   if (BL1) {
@@ -1685,19 +1486,14 @@ void FastRouteCore::routeLVEnew(int netID,
   cnt++;
 
   treeedge->route.routelen = cnt - 1;
-  treeedge->route.gridsX.clear();
-  treeedge->route.gridsY.clear();
 
-  treeedge->route.gridsX.resize(cnt, 0);
-  treeedge->route.gridsY.resize(cnt, 0);
-
-  for (int i = 0; i < cnt; i++) {
-    treeedge->route.gridsX[i] = gridsX[i];
-    treeedge->route.gridsY[i] = gridsY[i];
-  }
+  gridsX.resize(cnt);
+  gridsY.resize(cnt);
 }
 
-void FastRouteCore::routeLVAll(int threshold, int expand, float logis_cof)
+void FastRouteCore::routeMonotonicAll(int threshold,
+                                      int expand,
+                                      float logis_cof)
 {
   debugPrint(logger_,
              GRT,
@@ -1719,17 +1515,18 @@ void FastRouteCore::routeLVAll(int threshold, int expand, float logis_cof)
   multi_array<float, 2> d2(boost::extents[y_range_][x_range_]);
 
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID]->isRouted())
+    if (skipNet(netID)) {
       continue;
+    }
 
     const int numEdges = sttrees_[netID].num_edges();
     for (int edgeID = 0; edgeID < numEdges; edgeID++) {
-      routeLVEnew(netID,
-                  edgeID,
-                  d1,
-                  d2,
-                  threshold,
-                  expand);  // ripup previous route and do Monotonic routing
+      routeMonotonic(netID,
+                     edgeID,
+                     d1,
+                     d2,
+                     threshold,
+                     expand);  // ripup previous route and do Monotonic routing
     }
   }
   h_cost_table_.clear();
@@ -1738,7 +1535,7 @@ void FastRouteCore::routeLVAll(int threshold, int expand, float logis_cof)
 void FastRouteCore::newrouteLInMaze(int netID)
 {
   const int num_edges = sttrees_[netID].num_edges();
-  const auto& treeedges = sttrees_[netID].edges;
+  auto& treeedges = sttrees_[netID].edges;
   const auto& treenodes = sttrees_[netID].nodes;
 
   const int edgeCost = nets_[netID]->getEdgeCost();

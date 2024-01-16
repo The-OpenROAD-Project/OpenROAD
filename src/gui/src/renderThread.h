@@ -132,9 +132,9 @@ class RenderThread : public QThread
   void drawGCellGrid(QPainter* painter, const odb::Rect& bounds);
   void drawSelected(Painter& painter, const SelectionSet& selected);
   void drawHighlighted(Painter& painter, const HighlightSet& highlighted);
-  void drawPinMarkers(Painter& painter,
-                      odb::dbBlock* block,
-                      const odb::Rect& bounds);
+  void drawIOPins(Painter& painter,
+                  odb::dbBlock* block,
+                  const odb::Rect& bounds);
   void drawAccessPoints(Painter& painter,
                         const std::vector<odb::dbInst*>& insts);
   void drawRouteGuides(Painter& painter, odb::dbTechLayer* layer);
@@ -148,6 +148,8 @@ class RenderThread : public QThread
   void addInstTransform(QTransform& xfm, const odb::dbTransform& inst_xfm);
   QColor getColor(odb::dbTechLayer* layer);
   Qt::BrushStyle getPattern(odb::dbTechLayer* layer);
+
+  void drawRenderIndication(Painter& painter, const odb::Rect& bounds);
 
   utl::Logger* logger_ = nullptr;
   LayoutViewer* viewer_;
@@ -166,6 +168,7 @@ class RenderThread : public QThread
   QWaitCondition condition_;
   bool restart_ = false;
   bool abort_ = false;
+  bool is_first_render_done_ = false;
 };
 
 }  // namespace gui

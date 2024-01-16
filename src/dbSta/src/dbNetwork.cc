@@ -213,7 +213,7 @@ class DbInstancePinIterator : public InstancePinIterator
   dbSet<dbITerm>::iterator iitr_end_;
   dbSet<dbBTerm>::iterator bitr_;
   dbSet<dbBTerm>::iterator bitr_end_;
-  Pin* next_;
+  Pin* next_ = nullptr;
 };
 
 DbInstancePinIterator::DbInstancePinIterator(const Instance* inst,
@@ -721,9 +721,7 @@ Point dbNetwork::location(const Pin* pin) const
     if (iterm->getAvgXY(&x, &y)) {
       return Point(x, y);
     }
-    dbInst* inst = iterm->getInst();
-    inst->getOrigin(x, y);
-    return Point(x, y);
+    return iterm->getInst()->getOrigin();
   }
   if (bterm) {
     int x, y;
@@ -972,12 +970,13 @@ void dbNetwork::makeTopCell()
                 [=](const char* port_name) { return portMsbFirst(port_name); });
 }
 
-void dbNetwork::makeTopPort(dbBTerm* bterm)
+Port* dbNetwork::makeTopPort(dbBTerm* bterm)
 {
   const char* port_name = bterm->getConstName();
   Port* port = makePort(top_cell_, port_name);
   PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
   setDirection(port, dir);
+  return port;
 }
 
 void dbNetwork::setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type)
@@ -1221,6 +1220,29 @@ void dbNetwork::deletePin(Pin* pin)
   }
 }
 
+Port* dbNetwork::makePort(Cell* cell, const char* name)
+{
+  if (cell == top_cell_ && !block_->findBTerm(name)) {
+    odb::dbNet* net = block_->findNet(name);
+    if (!net) {
+      // a bterm must have a net
+      net = odb::dbNet::create(block_, name);
+    }
+    // Making the bterm creates the port in the db callback
+    odb::dbBTerm::create(net, name);
+    return findPort(cell, name);
+  }
+  return ConcreteNetwork::makePort(cell, name);
+}
+
+Pin* dbNetwork::makePin(Instance* inst, Port* port, Net* net)
+{
+  if (inst != top_instance_) {
+    return ConcreteNetwork::makePin(inst, port, net);
+  }
+  return nullptr;
+}
+
 Net* dbNetwork::makeNet(const char* name, Instance* parent)
 {
   if (parent == top_instance_) {
@@ -1276,7 +1298,7 @@ void dbNetwork::staToDb(const Instance* instance,
                         dbInst*& db_inst,
                         dbModInst*& mod_inst) const
 {
-  if (instance) {
+  if (instance && instance != top_instance_) {
     dbObject* obj
         = reinterpret_cast<dbObject*>(const_cast<Instance*>(instance));
     dbObjectType type = obj->getObjectType();

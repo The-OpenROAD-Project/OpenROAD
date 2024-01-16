@@ -6,6 +6,9 @@ record_tests {
   buffer_ports6
   buffer_ports7
   buffer_ports8
+  buffer_varying_lengths
+  eqy_repair_setup2
+  eqy_repair_setup5
   fanin_fanout1
   make_parasitics1
   make_parasitics2
@@ -78,6 +81,8 @@ record_tests {
   repair_slew16
   repair_slew17
   report_floating_nets1
+  report_floating_nets2
+  report_floating_nets3
   repair_tie1
   repair_tie2
   repair_tie3

@@ -691,7 +691,7 @@ void Optdp::createArchitecture()
     min_row_height = std::min(min_row_height, row->getSite()->getHeight());
   }
 
-  std::map<uint, std::unordered_set<std::string>> skip_list;
+  std::map<odb::uint, std::unordered_set<std::string>> skip_list;
 
   for (dbRow* row : block->getRows()) {
     if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
@@ -706,14 +706,12 @@ void Optdp::createArchitecture()
       skip_list[site->getHeight()].insert(site->getName());
       continue;
     }
-    int originX;
-    int originY;
-    row->getOrigin(originX, originY);
+    odb::Point origin = row->getOrigin();
 
     Architecture::Row* archRow = arch_->createAndAddRow();
 
-    archRow->setSubRowOrigin(originX);
-    archRow->setBottom(originY);
+    archRow->setSubRowOrigin(origin.x());
+    archRow->setBottom(origin.y());
     archRow->setSiteSpacing(row->getSpacing());
     archRow->setNumSites(row->getSiteCount());
     archRow->setSiteWidth(site->getWidth());

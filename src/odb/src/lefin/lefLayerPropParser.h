@@ -46,6 +46,12 @@ class lefTechLayerSpacingEolParser
   static void parse(const std::string&, dbTechLayer*, lefin*);
 };
 
+class lefTechLayerWrongDirSpacingParser
+{
+ public:
+  static void parse(std::string, dbTechLayer*, lefin*);
+};
+
 class lefTechLayerMinStepParser
 {
  public:
@@ -220,6 +226,22 @@ class lefTechLayerPitchRuleParser
   void setPitchXY(boost::fusion::vector<double, double>& params,
                   odb::dbTechLayer* layer);
   lefin* lefin_;
+};
+
+class lefTechLayerForbiddenSpacingRuleParser
+{
+ public:
+  lefTechLayerForbiddenSpacingRuleParser(lefin*);
+  void parse(std::string, odb::dbTechLayer*);
+
+ private:
+  lefin* lefin_;
+  bool parseSubRule(std::string, odb::dbTechLayer* layer);
+  void setInt(double val,
+              odb::dbTechLayerForbiddenSpacingRule* rule,
+              void (odb::dbTechLayerForbiddenSpacingRule::*func)(int));
+  void setForbiddenSpacing(const boost::fusion::vector<double, double>& params,
+                           odb::dbTechLayerForbiddenSpacingRule* rule);
 };
 
 class ArraySpacingParser

@@ -190,6 +190,23 @@ Example:
   -capacities_perturbation_percentage 50 \
   -perturbation_amount 2`
 
+### Set Specific Nets to Route
+
+The `set_nets_to_route` command defines a list of nets to route. Only the nets
+defined in this command are routed, leaving the remaining nets without any
+global route guides.
+
+```tcl
+set_nets_to_route 
+    net_names 
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `net_names` | Tcl list of set of nets (e.g. `{net1, net2}`). |
+
 ### Repair Antennas
 
 The `repair_antennas` command checks the global routing for antenna

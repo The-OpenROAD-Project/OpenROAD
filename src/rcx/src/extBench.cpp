@@ -46,16 +46,12 @@ using odb::dbBlock;
 using odb::dbBox;
 using odb::dbChip;
 using odb::dbNet;
-using odb::dbRSeg;
 using odb::dbSet;
-using odb::dbShape;
 using odb::dbTechLayer;
 using odb::dbTechLayerRule;
 using odb::dbTechNonDefaultRule;
 using odb::dbWire;
-using odb::dbWireShapeItr;
 using odb::Rect;
-using odb::ZPtr;
 
 extMainOptions::extMainOptions()
 {
@@ -68,10 +64,12 @@ extMainOptions::extMainOptions()
 
 uint extRCModel::benchWithVar_density(extMainOptions* opt, extMeasure* measure)
 {
-  if (opt->_db_only)
+  if (opt->_db_only) {
     return benchDB_WS(opt, measure);
-  if (opt->_listsFlag)
+  }
+  if (opt->_listsFlag) {
     return benchWithVar_lists(opt, measure);
+  }
 
   uint cnt = 0;
   int met = measure->_met;
@@ -97,8 +95,8 @@ uint extRCModel::benchWithVar_density(extMainOptions* opt, extMeasure* measure)
         measure->_rIndex
             = measure->_dataTable.findNextBiggestIndex(r);  // layout
 
-        double top_width = w;
-        double top_widthR = w;
+        double top_width;
+        double top_widthR;
         double bot_width = w;
         double thickness = t;
         double bot_widthR = w;
@@ -107,7 +105,7 @@ uint extRCModel::benchWithVar_density(extMainOptions* opt, extMeasure* measure)
         if (r <= 0.0) {
           top_width = w;
           top_widthR = w;
-        } else if (xvar != NULL) {
+        } else if (xvar != nullptr) {
           top_width = xvar->getTopWidth(measure->_wIndex, measure->_sIndex);
           top_widthR = xvar->getTopWidthR(measure->_wIndex, measure->_sIndex);
 
@@ -126,8 +124,12 @@ uint extRCModel::benchWithVar_density(extMainOptions* opt, extMeasure* measure)
 
         measure->setTargetParams(w, s, r, t, h);
         measureResistance(measure, ro, top_widthR, bot_widthR, thicknessR);
-        measurePatternVar(
-            measure, top_width, bot_width, thickness, measure->_wireCnt, NULL);
+        measurePatternVar(measure,
+                          top_width,
+                          bot_width,
+                          thickness,
+                          measure->_wireCnt,
+                          nullptr);
 
         cnt++;
       }
@@ -176,8 +178,9 @@ uint extRCModel::benchWithVar_lists(extMainOptions* opt, extMeasure* measure)
 
     for (nditr = nd_rules.begin(); nditr != nd_rules.end(); ++nditr) {
       tst_rule = (*nditr)->getLayerRule(layer);
-      if (tst_rule == NULL)
+      if (tst_rule == nullptr) {
         continue;
+      }
 
       double w = tst_rule->getWidth();
       double s = tst_rule->getSpacing();
@@ -197,8 +200,9 @@ uint extRCModel::benchWithVar_lists(extMainOptions* opt, extMeasure* measure)
 
           for (uint kk = 0; kk < thTable->getCnt(); kk++) {
             double tt = thTable->get(kk);  // layout
-            if (!opt->_thListFlag)         // multiplier
+            if (!opt->_thListFlag) {       // multiplier
               tt *= t;
+            }
 
             double top_width = w;
             double top_widthR = w;
@@ -216,7 +220,7 @@ uint extRCModel::benchWithVar_lists(extMainOptions* opt, extMeasure* measure)
                               bot_width,
                               thickness,
                               measure->_wireCnt,
-                              NULL);
+                              nullptr);
 
             cnt++;
           }
@@ -229,38 +233,45 @@ uint extRCModel::benchWithVar_lists(extMainOptions* opt, extMeasure* measure)
 
 uint extRCModel::linesOverBench(extMainOptions* opt)
 {
-  if (opt->_met == 0)
+  if (opt->_met == 0) {
     return 0;
+  }
 
   extMeasure measure(logger_);
   measure.updateForBench(opt, _extMain);
   measure._diag = false;
 
   sprintf(_patternName, "O%d", opt->_wireCnt + 1);
-  if (opt->_res_patterns)
+  if (opt->_res_patterns) {
     sprintf(_patternName, "R%d", opt->_wireCnt + 1);
+  }
 
   uint cnt = 0;
 
   for (int met = 1; met <= (int) _layerCnt; met++) {
-    if (met > opt->_met_cnt)
+    if (met > opt->_met_cnt) {
       continue;
-    if ((opt->_met > 0) && (opt->_met != met))
+    }
+    if ((opt->_met > 0) && (opt->_met != met)) {
       continue;
+    }
 
     measure._met = met;
 
-    if (!opt->_db_only)
+    if (!opt->_db_only) {
       computeTables(&measure, opt->_wireCnt + 1, 1000, 1000, 1000);
+    }
 
     uint patternSep = measure.initWS_box(opt, 20);
 
     for (int underMet = 0; underMet < met; underMet++) {
-      if ((opt->_underMet > 0) && (opt->_underMet != underMet))
+      if ((opt->_underMet > 0) && (opt->_underMet != underMet)) {
         continue;
+      }
 
-      if (met - underMet > (int) opt->_underDist)
+      if (met - underMet > (int) opt->_underDist) {
         continue;
+      }
 
       measure.setMets(met, underMet, -1);
 
@@ -269,11 +280,13 @@ uint extRCModel::linesOverBench(extMainOptions* opt)
       cnt += cnt1;
       measure._ur[measure._dir] += patternSep;
 
-      if (opt->_underMet == 0 && !opt->_gen_def_patterns)
+      if (opt->_underMet == 0 && !opt->_gen_def_patterns) {
         break;
+      }
 
-      if (underMet == 0 && opt->_res_patterns)
+      if (underMet == 0 && opt->_res_patterns) {
         break;
+      }
     }
     opt->_ur[0] = std::max(opt->_ur[0], measure._ur[0]);
     opt->_ur[1] = std::max(opt->_ur[1], measure._ur[1]);
@@ -287,8 +300,9 @@ uint extRCModel::linesOverBench(extMainOptions* opt)
 
 uint extRCModel::linesUnderBench(extMainOptions* opt)
 {
-  if (opt->_overMet == 0)
+  if (opt->_overMet == 0) {
     return 0;
+  }
 
   extMeasure measure(logger_);
   measure.updateForBench(opt, _extMain);
@@ -300,27 +314,33 @@ uint extRCModel::linesUnderBench(extMainOptions* opt)
   uint cnt = 0;
 
   for (int met = 1; met < (int) _layerCnt; met++) {
-    if (met > opt->_met_cnt)
+    if (met > opt->_met_cnt) {
       continue;
-    if ((opt->_met > 0) && (opt->_met != met))
+    }
+    if ((opt->_met > 0) && (opt->_met != met)) {
       continue;
+    }
 
     measure._met = met;
 
-    if (!opt->_db_only)
+    if (!opt->_db_only) {
       computeTables(&measure, opt->_wireCnt + 1, 1000, 1000, 1000);
+    }
 
     patternSep = measure.initWS_box(opt, 20);
 
     for (int overMet = met + 1; overMet <= (int) _layerCnt; overMet++) {
-      if (overMet > opt->_met_cnt)
+      if (overMet > opt->_met_cnt) {
         continue;
+      }
 
-      if ((opt->_overMet > 0) && (opt->_overMet != overMet))
+      if ((opt->_overMet > 0) && (opt->_overMet != overMet)) {
         continue;
+      }
 
-      if (overMet - met > (int) opt->_overDist)
+      if (overMet - met > (int) opt->_overDist) {
         continue;
+      }
 
       measure.setMets(met, 0, overMet);
 
@@ -340,8 +360,9 @@ uint extRCModel::linesUnderBench(extMainOptions* opt)
 
 uint extRCModel::linesDiagUnderBench(extMainOptions* opt)
 {
-  if (opt->_overMet == 0)
+  if (opt->_overMet == 0) {
     return 0;
+  }
 
   extMeasure measure(logger_);
   measure.updateForBench(opt, _extMain);
@@ -353,28 +374,34 @@ uint extRCModel::linesDiagUnderBench(extMainOptions* opt)
   uint cnt = 0;
 
   for (int met = 1; met < (int) _layerCnt; met++) {
-    if (met > opt->_met_cnt)
+    if (met > opt->_met_cnt) {
       continue;
+    }
 
-    if ((opt->_met > 0) && (opt->_met != met))
+    if ((opt->_met > 0) && (opt->_met != met)) {
       continue;
+    }
 
     measure._met = met;
-    if (!opt->_db_only)
+    if (!opt->_db_only) {
       computeTables(&measure, opt->_wireCnt + 1, 1000, 1000, 1000);
+    }
 
     patternSep = measure.initWS_box(opt, 20);
 
     for (int overMet = met + 1; overMet < met + 5 && overMet <= (int) _layerCnt;
          overMet++) {
-      if (overMet > opt->_met_cnt)
+      if (overMet > opt->_met_cnt) {
         continue;
+      }
 
-      if ((opt->_overMet > 0) && (opt->_overMet != overMet))
+      if ((opt->_overMet > 0) && (opt->_overMet != overMet)) {
         continue;
+      }
 
-      if (overMet - met > (int) opt->_overDist)
+      if (overMet - met > (int) opt->_overDist) {
         continue;
+      }
 
       measure.setMets(met, 0, overMet);
 
@@ -397,8 +424,9 @@ uint extRCModel::linesDiagUnderBench(extMainOptions* opt)
 
 uint extRCModel::linesOverUnderBench(extMainOptions* opt)
 {
-  if (opt->_overMet == 0)
+  if (opt->_overMet == 0) {
     return 0;
+  }
 
   extMeasure measure(logger_);
   measure.updateForBench(opt, _extMain);
@@ -408,31 +436,39 @@ uint extRCModel::linesOverUnderBench(extMainOptions* opt)
   uint cnt = 0;
 
   for (int met = 1; met <= (int) _layerCnt - 1; met++) {
-    if (met > opt->_met_cnt)
+    if (met > opt->_met_cnt) {
       continue;
-    if ((opt->_met > 0) && (opt->_met != met))
+    }
+    if ((opt->_met > 0) && (opt->_met != met)) {
       continue;
+    }
 
     measure._met = met;
 
-    if (!opt->_db_only)
+    if (!opt->_db_only) {
       computeTables(&measure, opt->_wireCnt + 1, 1000, 1000, 1000);
+    }
 
     measure.initWS_box(opt, 20);
 
     for (int underMet = 1; underMet < met; underMet++) {
-      if (met - underMet > (int) opt->_underDist)
+      if (met - underMet > (int) opt->_underDist) {
         continue;
-      if ((opt->_underMet > 0) && ((int) opt->_underMet != underMet))
+      }
+      if ((opt->_underMet > 0) && ((int) opt->_underMet != underMet)) {
         continue;
+      }
 
       for (uint overMet = met + 1; overMet <= _layerCnt; overMet++) {
-        if (overMet > opt->_met_cnt)
+        if (overMet > opt->_met_cnt) {
           continue;
-        if (overMet - met > opt->_overDist)
+        }
+        if (overMet - met > opt->_overDist) {
           continue;
-        if ((opt->_overMet > 0) && (opt->_overMet != (int) overMet))
+        }
+        if ((opt->_overMet > 0) && (opt->_overMet != (int) overMet)) {
           continue;
+        }
 
         measure.initWS_box(opt, 20);
         measure.setMets(met, underMet, overMet);
@@ -473,7 +509,7 @@ uint extMain::benchWires(extMainOptions* opt)
 
   opt->_tech = _tech;
 
-  if (_block == NULL) {
+  if (_block == nullptr) {
     dbChip* chip = dbChip::create(_db);
     assert(chip);
     _block = dbBlock::create(chip, opt->_name, _tech, '/');
@@ -513,15 +549,16 @@ uint extMain::benchWires(extMainOptions* opt)
     m->linesUnderBench(opt);
     m->linesDiagUnderBench(opt);
   } else {
-    if (opt->_over)
+    if (opt->_over) {
       m->linesOverBench(opt);
-    else if (opt->_overUnder)
+    } else if (opt->_overUnder) {
       m->linesOverUnderBench(opt);
-    else {
-      if (opt->_diag)
+    } else {
+      if (opt->_diag) {
         m->linesDiagUnderBench(opt);
-      else
+      } else {
         m->linesUnderBench(opt);
+      }
     }
   }
 
@@ -548,10 +585,10 @@ uint extMeasure::getRSeg(dbNet* net, uint shapeId)
   dbWire* w = net->getWire();
 
   int rsegId = 0;
-  if (w->getProperty(shapeId, rsegId) && rsegId != 0)
+  if (w->getProperty(shapeId, rsegId) && rsegId != 0) {
     return rsegId;
-  else
-    return 0;
+  }
+  return 0;
 }
 
 uint extRCModel::runWiresSolver(uint netId, int shapeId)

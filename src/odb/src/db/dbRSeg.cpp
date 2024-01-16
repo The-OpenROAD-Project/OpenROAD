@@ -552,15 +552,6 @@ void dbRSeg::printCcSegs()
   getCcSegs(ccsegs);
   getImpl()->getLogger()->info(
       utl::ODB, 54, "CC segs of RSeg {}-{}", getSourceNode(), getTargetNode());
-#if 0
-    uint j;
-    dbCCSeg *seg;
-    for (j=0;j<ccsegs.size();j++)
-    {
-        seg = ccsegs[j];
-        getImpl()->getLogger()->info(utl::ODB, 55, "           CC{} : {}-{}", j, seg->getSourceNode(), seg->getTargetNode()); 
-    }
-#endif
 }
 
 void dbRSeg::printCC()
@@ -660,8 +651,8 @@ uint dbRSeg::getShapeId()
 void dbRSeg::setCoords(int x, int y)
 {
   _dbRSeg* seg = (_dbRSeg*) this;
-  int prev_x = seg->_xcoord;
-  int prev_y = seg->_ycoord;
+  const int prev_x = seg->_xcoord;
+  const int prev_y = seg->_ycoord;
   seg->_xcoord = x;
   seg->_ycoord = y;
   _dbBlock* block = (_dbBlock*) seg->getOwner();
@@ -795,7 +786,7 @@ dbRSeg* dbRSeg::create(dbNet* net_,
       for (uint ii = 0; ii < cornerCnt; ii++)
         (*block->_c_val_tbl)[(seg->getOID() - 1) * cornerCnt + 1 + ii] = 0.0;
     } else {
-      uint capIdx = block->_c_val_tbl->getIdx(cornerCnt, (float) 0.0);
+      const uint capIdx = block->_c_val_tbl->getIdx(cornerCnt, (float) 0.0);
       ZASSERT((seg->getOID() - 1) * cornerCnt + 1 == capIdx);
     }
 

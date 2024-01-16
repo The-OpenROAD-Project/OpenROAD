@@ -111,7 +111,7 @@ class dbStaReport : public sta::ReportTcl
  protected:
   void printLine(const char* line, size_t length) override;
 
-  Logger* logger_;
+  Logger* logger_ = nullptr;
 
  private:
   // text buffer for tcl puts output when in GUI mode.
@@ -176,6 +176,8 @@ std::unique_ptr<dbSta> dbSta::makeBlockSta(odb::dbBlock* block)
   clone->makeComponents();
   clone->initVars(tclInterp(), db_, logger_);
   clone->getDbNetwork()->setBlock(block);
+  clone->getDbNetwork()->setDefaultLibertyLibrary(
+      network_->defaultLibertyLibrary());
   clone->copyUnits(units());
   return clone;
 }

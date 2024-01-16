@@ -3,7 +3,6 @@ include(openroad)
 set(TEST_LIBS
         odb
         zutil 
-        tm
         lef
         defin
         defout
@@ -13,6 +12,7 @@ set(TEST_LIBS
         ${TCL_LIBRARY}
         Boost::boost
         utl_lib
+        odb_test_helper
 )
 
 add_executable(OdbGTests TestDbWire.cc TestAbstractLef.cc)
@@ -69,3 +69,5 @@ add_dependencies(build_and_test
         TestMaster
         OdbGTests
 )
+
+add_subdirectory(helper)

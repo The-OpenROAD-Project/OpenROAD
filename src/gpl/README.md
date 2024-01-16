@@ -127,7 +127,26 @@ global_placement_debug -pause -update -inst -draw_bins -initial
 get_global_placement_uniform_density -pad_left -pad_right 
 ```
 
-## Example scripts
+### Cluster Flops
+
+Cluster single bit flops into multi-bit flops.
+
+```
+cluster_flops
+    [-tray_weight tray_weight]
+    [-timing_weight timing_weight]
+    [-max_split_size max_split_size]
+```
+
+#### General Arguments
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-tray_weight` | Set the weighting factor for tray cost (recommended to be `[20.0, float]`). |
+| `-timing_weight` | Set the weighting factor for timing-critical paths in (recommended to be `[1.0. float]`). |
+| `-max_split_size` | The maximum size of a single pointset after running the pointset decomposition algorithm for runtime improvement (to not run pointset decomposition, set as `-1`). |
+
+# Example Scripts
 
 Example scripts demonstrating how to run `gpl` on a sample design on `core01` as follows:
 
@@ -196,7 +215,9 @@ about this tool.
     D. J.-H. Huang, Y. Luo, C.-C. Teng and C.-K. Cheng, "ePlace-MS:
     Electrostatics based Placement for Mixed-Size Circuits", IEEE TCAD 34(5)
     (2015), pp. 685-698. [(.pdf)](https://cseweb.ucsd.edu/~jlu/papers/eplace-ms-tcad14/paper.pdf)
-
+-   A. B. Kahng, J. Li and L. Wang,   
+    "Improved Flop Tray-Based Design Implementation for Power Reduction",   
+    IEEE/ACM ICCAD, 2016, pp. 20:1-20:8.   
 -   The timing-driven mode has been implemented by
     Mingyu Woo (only available in [legacy repo in standalone
     branch](https://github.com/The-OpenROAD-Project/RePlAce/tree/standalone).)

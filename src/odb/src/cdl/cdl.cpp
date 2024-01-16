@@ -133,7 +133,7 @@ readMasters(utl::Logger* logger, dbBlock* block, const char* fileName)
     line = line.substr(7);  // drop leading .subckt
 
     dbMaster* master = nullptr;
-    std::vector<dbMTerm*>* mterms;
+    std::vector<dbMTerm*>* mterms = nullptr;
     std::sregex_iterator tokens_begin(line.begin(), line.end(), token);
     std::sregex_iterator tokens_end;
     for (auto i = tokens_begin; i != tokens_end; ++i) {

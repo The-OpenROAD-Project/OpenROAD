@@ -1,0 +1,26 @@
+name: Lint Tcl code
+
+on:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install tclint
+        run: |
+          python -m pip install tclint==0.1.6
+
+      # TODO: hardcoded list of files while we incrementally lint codebase
+      # See issue #4347 for tracking
+      - name: Lint
+        run: |
+          tclint \
+            src/rsz/src/Resizer.tcl \
+            src/gui/src/gui.tcl \
+            src/pdn/src/pdn.tcl \
+            src/pad/src/pad.tcl \
+            src/psm/src/pdnsim.tcl

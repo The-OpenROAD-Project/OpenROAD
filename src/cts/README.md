@@ -48,8 +48,10 @@ clock_tree_synthesis
     [-sink_clustering_enable]
     [-sink_clustering_size cluster_size]
     [-sink_clustering_max_diameter max_diameter]
+    [-balance_levels]
     [-num_static_layers]
     [-sink_clustering_buffer]
+    [-use_dummy_load]
 ```
 
 #### Options
@@ -66,10 +68,15 @@ clock_tree_synthesis
 | `-clustering_unbalance_ratio` | Value determines each cluster's maximum capacity during CKMeans. A value of `0.5` (i.e., 50%) means that each cluster will have exactly half of all sinks for a specific region (half for each branch). The default value is `0.6`, and the allowed values are floats `[0, 1.0]`. |
 | `-sink_clustering_enable` | Enables pre-clustering of sinks to create one level of sub-tree before building H-tree. Each cluster is driven by buffer which becomes end point of H-tree structure. |
 | `-sink_clustering_size` | Specifies the maximum number of sinks per cluster. The default value is `20`, and the allowed values are integers `[0, MAX_INT]`. |
-| `sink_clustering_max_diameter` | Specifies maximum diameter (in microns) of sink cluster. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-sink_clustering_max_diameter` | Specifies maximum diameter (in microns) of sink cluster. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-balance_levels` | Attempt to keep a similar number of levels in the clock tree across non-register cells (e.g., clock-gate or inverter). The default value is `False`, and the allowed values are bool. |
 | `-clk_nets` | String containing the names of the clock roots. If this parameter is omitted, `cts` looks for the clock roots automatically. |
 | `-num_static_layers` | Set the number of static layers. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-sink_clustering_buffer` | Set the sink clustering buffer(s) to be used. |
+| `-obstruction_aware` | Enables obstruction-aware buffering such that clock buffers are not placed on top of blockages or hard macros. This option may reduce legalizer displacement, leading to better latency, skew or timing QoR.  The default value is `False`, and the allowed values are bool. |
+| `-apply_ndr` | Applies 2X spacing non-default rule to all clock nets except leaf-level nets. The default value is `False`. |
+| `-insertion_delay` | Considers insertion delays in macro timing models to improve clustering. The default value is `False`. |
+| `-use_dummy_load` | Applies dummy buffer or inverter cells at clock tree leaves to balance loads.  The default values is `False`. |
 
 ### Report CTS
 
@@ -147,3 +154,4 @@ Many guidance provided by (alphabetic order):
 ## License
 
 BSD 3-Clause License. See [LICENSE](LICENSE) file.
+

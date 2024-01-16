@@ -13,4 +13,5 @@
 worst slack -1.88
 [INFO RSZ-0094] Found 1 endpoints with setup violations.
 [INFO RSZ-0041] Resized 15 instances.
+Repair timing output passed/skipped equivalence test
 worst slack 0.09

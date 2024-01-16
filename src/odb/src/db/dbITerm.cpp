@@ -270,6 +270,11 @@ dbBTerm* dbITerm::getBTerm()
   return (dbBTerm*) child->_bterm_tbl->getPtr(bterm);
 }
 
+std::string dbITerm::getName(const char separator) const
+{
+  return getInst()->getName() + separator + getMTerm()->getName();
+}
+
 dbBlock* dbITerm::getBlock() const
 {
   return (dbBlock*) getImpl()->getOwner();
@@ -305,78 +310,19 @@ bool dbITerm::isSpecial()
 void dbITerm::setSpecial()
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  //_dbBlock * block = (_dbBlock *) getOwner();
-  // dimitri_fix: need to FIX on FULL_ECO uint prev_flags = flagsToUInt(iterm);
-#ifdef FULL_ECO
-  uint prev_flags = flagsToUInt(iterm);
-#endif
-
   iterm->_flags._special = 1;
-
-#ifdef FULL_ECO
-  if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: Iterm {}, setSpecial",
-               getId());
-    block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(iterm));
-  }
-#endif
 }
 
 void dbITerm::clearSpecial()
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  //_dbBlock * block = (_dbBlock *) getOwner();
-  // dimitri_fix: need to FIX on FULL_ECO //uint prev_flags =
-  // flagsToUInt(iterm);
-#ifdef FULL_ECO
-  uint prev_flags = flagsToUInt(iterm);
-#endif
-
   iterm->_flags._special = 0;
-
-#ifdef FULL_ECO
-  if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: Iterm {}, clearSpecial\n",
-               getId());
-    block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(iterm));
-  }
-#endif
 }
 
 void dbITerm::setSpef(uint v)
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  //_dbBlock * block = (_dbBlock *) getOwner();
-  // dimitri_fix: need to FIX on FULL_ECO //uint prev_flags =
-  // flagsToUInt(iterm);
-#ifdef FULL_ECO
-  uint prev_flags = flagsToUInt(iterm);
-#endif
-
   iterm->_flags._spef = v;
-
-#ifdef FULL_ECO
-  if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: Iterm {}, setSpef",
-               getId());
-    block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(iterm));
-  }
-#endif
 }
 
 bool dbITerm::isSpef()
@@ -406,51 +352,13 @@ bool dbITerm::isConnected()
 void dbITerm::setConnected()
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  // dimitri_fix: need to FIX on FULL_ECO uint prev_flags = flagsToUInt(iterm);
-#ifdef FULL_ECO
-  _dbBlock* block = (_dbBlock*) getOwner();
-  uint prev_flags = flagsToUInt(iterm);
-#endif
-
   iterm->_flags._connected = 1;
-
-#ifdef FULL_ECO
-  if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: Iterm {}, setConnected",
-               getId());
-    block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(iterm));
-  }
-#endif
 }
 
 void dbITerm::clearConnected()
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  // uint prev_flags = flagsToUInt(iterm);
-#ifdef FULL_ECO
-  _dbBlock* block = (_dbBlock*) getOwner();
-  uint prev_flags = flagsToUInt(iterm);
-#endif
-
   iterm->_flags._connected = 0;
-
-#ifdef FULL_ECO
-  if (block->_journal) {
-    debugPrint(getImpl()->getLogger(),
-               utl::ODB,
-               "DB_ECO",
-               1,
-               "ECO: Iterm {}, clearConnected",
-               getId());
-    block->_journal->updateField(
-        this, _dbNet::FLAGS, prev_flags, flagsToUInt(iterm));
-  }
-#endif
 }
 
 void dbITerm::connect(dbNet* net_)
@@ -647,8 +555,7 @@ Rect dbITerm::getBBox()
 {
   dbMTerm* term = getMTerm();
   Rect bbox = term->getBBox();
-  odb::dbTransform inst_xfm;
-  getInst()->getTransform(inst_xfm);
+  const odb::dbTransform inst_xfm = getInst()->getTransform();
   inst_xfm.apply(bbox);
   return bbox;
 }
@@ -659,13 +566,8 @@ bool dbITerm::getAvgXY(int* x, int* y)
   int nn = 0;
   double xx = 0.0;
   double yy = 0.0;
-  int px;
-  int py;
   dbInst* inst = getInst();
-  inst->getOrigin(px, py);
-  Point origin = Point(px, py);
-  dbOrientType orient = inst->getOrient();
-  dbTransform transform(orient, origin);
+  const dbTransform transform = inst->getTransform();
 
   dbSet<dbMPin> mpins = mterm->getMPins();
   dbSet<dbMPin>::iterator mpin_itr;
@@ -753,8 +655,7 @@ std::vector<dbAccessPoint*> dbITerm::getPrefAccessPoints() const
 
 std::vector<Rect> dbITerm::getGeometries() const
 {
-  dbTransform transform;
-  getInst()->getTransform(transform);
+  const dbTransform transform = getInst()->getTransform();
 
   std::vector<Rect> geometries;
   for (dbMPin* mpin : getMTerm()->getMPins()) {

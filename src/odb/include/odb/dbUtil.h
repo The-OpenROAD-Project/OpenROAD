@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <vector>
 
@@ -203,10 +204,6 @@ class dbCreateNetUtil
                         dbBlock* srcBlock,
                         const char* fileName,
                         bool debug);
-  dbNet* copyNet(dbNet* net,
-                 bool copyVias = true,
-                 char* name = nullptr,
-                 bool removeITermsBTerms = true);
   dbNet* getCurrentNet();
   // OpenRCX 7/27/20
   std::vector<dbTechLayer*> getRoutingLayer() { return _routingLayers; };

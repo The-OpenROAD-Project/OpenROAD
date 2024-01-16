@@ -1,3 +1,3 @@
 record_tests {
-    bp_fe_top
+    macro_only
 }

@@ -32,6 +32,9 @@
 
 #include "chartsWidget.h"
 
+#include <QHBoxLayout>
+
+#ifdef ENABLE_CHARTS
 #include <QColor>
 #include <QFrame>
 #include <QString>
@@ -46,34 +49,37 @@
 #include "sta/MinMax.hh"
 #include "sta/Units.hh"
 #include "staGuiInterface.h"
+#endif
 
 namespace gui {
 
-const int SELECT = 0;
-const int SLACK_MODE = 1;
-
 ChartsWidget::ChartsWidget(QWidget* parent)
     : QDockWidget("Charts", parent),
+#ifdef ENABLE_CHARTS
+      logger_(nullptr),
       sta_(nullptr),
-      label_(new QLabel(this)),
       mode_menu_(new QComboBox(this)),
       chart_(new QChart),
       display_(new QChartView(chart_, this)),
       axis_x_(new QBarCategoryAxis(this)),
-      axis_y_(new QValueAxis(this))
+      axis_y_(new QValueAxis(this)),
+#endif
+      label_(new QLabel(this))
 {
   setObjectName("charts_widget");  // for settings
 
   QWidget* container = new QWidget(this);
+  QHBoxLayout* controls_layout = new QHBoxLayout;
+  controls_layout->addWidget(label_);
+
+#ifdef ENABLE_CHARTS
   QVBoxLayout* layout = new QVBoxLayout;
   QFrame* controls_frame = new QFrame;
-  QHBoxLayout* controls_layout = new QHBoxLayout;
 
   mode_menu_->addItem("Select Mode");
   mode_menu_->addItem("Endpoint Slack");
 
-  controls_layout->addWidget(mode_menu_);
-  controls_layout->addWidget(label_);
+  controls_layout->insertWidget(0, mode_menu_);
   controls_layout->insertStretch(1);
 
   controls_frame->setLayout(controls_layout);
@@ -82,8 +88,8 @@ ChartsWidget::ChartsWidget(QWidget* parent)
 
   layout->addWidget(controls_frame);
   layout->addWidget(display_);
+
   container->setLayout(layout);
-  setWidget(container);
 
   chart_->addAxis(axis_y_, Qt::AlignLeft);
   chart_->addAxis(axis_x_, Qt::AlignBottom);
@@ -92,8 +98,16 @@ ChartsWidget::ChartsWidget(QWidget* parent)
           qOverload<int>(&QComboBox::currentIndexChanged),
           this,
           &ChartsWidget::changeMode);
+#else
+  label_->setText("QtCharts is not installed.");
+  label_->setAlignment(Qt::AlignCenter);
+  // We need this layout in order to centralize the label.
+  container->setLayout(controls_layout);
+#endif
+  setWidget(container);
 }
 
+#ifdef ENABLE_CHARTS
 void ChartsWidget::changeMode()
 {
   if (mode_menu_->currentIndex() == SELECT) {
@@ -102,7 +116,7 @@ void ChartsWidget::changeMode()
 
   clearChart();
 
-  if (mode_menu_->currentIndex() == SLACK_MODE) {
+  if (mode_menu_->currentIndex() == SLACK_HISTOGRAM) {
     setSlackMode();
   }
 }
@@ -122,8 +136,6 @@ void ChartsWidget::clearChart()
 
 void ChartsWidget::setSlackMode()
 {
-  chart_->setTitle("Endpoint Slack");
-
   STAGuiInterface sta_gui(sta_);
 
   auto time_units = sta_->units()->timeUnit();
@@ -131,14 +143,25 @@ void ChartsWidget::setSlackMode()
   std::vector<float> all_slack;
   int unconstrained_count = 0;
 
-  for (auto pin : end_points) {
-    double pin_slack = 0;
-    pin_slack = sta_gui.getPinSlack(pin);
-    if (pin_slack != sta::INF)
+  for (const auto& pin : end_points) {
+    double pin_slack = sta_gui.getPinSlack(pin);
+
+    if (pin_slack != sta::INF) {
       all_slack.push_back(time_units->staToUser(pin_slack));
-    else
+    } else {
       unconstrained_count++;
+    }
   }
+
+  if (all_slack.size() == 0) {
+    logger_->warn(utl::GUI,
+                  97,
+                  "All pins are unconstrained. Cannot plot histogram. Check if "
+                  "timing data is loaded!");
+    return;
+  }
+
+  chart_->setTitle("Endpoint Slack");
 
   if (unconstrained_count != 0) {
     const QString label_message = "Number of unconstrained pins: ";
@@ -158,7 +181,7 @@ void ChartsWidget::setSlackMode()
   std::vector<float> pos_buckets[total_pos_buckets];
   std::vector<float> neg_buckets[total_neg_buckets];
 
-  for (auto slack : all_slack) {
+  for (const auto& slack : all_slack) {
     if (slack < 0) {
       int bucket_index = slack;
       neg_buckets[bucket_index + offset].push_back(slack);
@@ -243,4 +266,9 @@ void ChartsWidget::setSlackMode()
   chart_->legend()->setAlignment(Qt::AlignBottom);
 }
 
+void ChartsWidget::setLogger(utl::Logger* logger)
+{
+  logger_ = logger;
+}
+#endif
 }  // namespace gui

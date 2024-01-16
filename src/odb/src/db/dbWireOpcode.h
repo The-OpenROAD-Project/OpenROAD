@@ -72,6 +72,7 @@ namespace odb {
 #define WOP_RECT 14      //  X X X 0 1 1 1 0 :  operand = first offset
 #define WOP_NOP 15       //  X X X 0 1 1 1 1 :  operand = 0
 #define WOP_COLOR 16     //  X X X 1 0 0 0 0 :  operand = integer operand
+#define WOP_VIACOLOR 17  //  X X X 1 0 0 0 1 :  operand = via color
 
 // opcode-flags
 #define WOP_VIA_EXIT_TOP \
@@ -104,9 +105,9 @@ namespace odb {
 
 struct WirePoint
 {
-  int _x;
-  int _y;
-  dbTechLayer* _layer;
+  int _x = 0;
+  int _y = 0;
+  dbTechLayer* _layer = nullptr;
 };
 
 template <class O, class D>

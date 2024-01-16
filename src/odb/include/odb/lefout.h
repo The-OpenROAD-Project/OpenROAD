@@ -80,12 +80,14 @@ class lefout
   void writeTechBody(dbTech* tech);
   void writeLayer(dbTechLayer* layer);
   void writeVia(dbTechVia* via);
+  void writeBlockVia(dbVia* via);
   void writeHeader(dbLib* lib);
   void writeHeader(dbBlock* db_block);
   void writeLibBody(dbLib* lib);
   void writeMaster(dbMaster* master);
   void writeMTerm(dbMTerm* mterm);
   void writeSite(dbSite* site);
+  void writeViaMap(dbTech* tech, bool use_via_cut_class);
   void writeNonDefaultRule(dbTech* tech, dbTechNonDefaultRule* rule);
   void writeLayerRule(dbTechLayerRule* rule);
   void writeSameNetRule(dbTechSameNetRule* rule);
@@ -93,7 +95,7 @@ class lefout
   void writeTechViaGenerateRule(dbTechViaGenerateRule* rule);
   void writePropertyDefinition(dbProperty* prop);
   void writePropertyDefinitions(dbLib* lib);
-  void writeVersion(const char* version);
+  void writeVersion(const std::string& version);
   void writeNameCaseSensitive(const dbOnOffType on_off_type);
   void writeBusBitChars(char left_bus_delimeter, char right_bus_delimeter);
   void writeUnits(int database_units);

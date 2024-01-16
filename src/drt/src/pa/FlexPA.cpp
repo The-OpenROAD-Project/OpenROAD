@@ -33,6 +33,7 @@
 #include <boost/io/ios_state.hpp>
 #include <boost/serialization/export.hpp>
 #include <chrono>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 
@@ -47,7 +48,6 @@
 #include "gc/FlexGC.h"
 #include "serialization.h"
 
-using namespace std;
 using namespace fr;
 BOOST_CLASS_EXPORT(PinAccessJobDescription)
 
@@ -157,7 +157,7 @@ void FlexPA::setTargetInstances(const frCollection<odb::dbInst*>& insts)
 }
 
 void FlexPA::setDistributed(const std::string& rhost,
-                            const ushort rport,
+                            const uint16_t rport,
                             const std::string& shared_vol,
                             const int cloud_sz)
 {
