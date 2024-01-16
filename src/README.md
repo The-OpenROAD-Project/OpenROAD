@@ -6,7 +6,7 @@ The following commands are used to read and write design data.
 ````{eval-rst}
 .. tabs::
 
-   .. tab:: Tcl
+   .. code-tab:: tcl
 
       read_lef [-tech] [-library] filename
       read_def filename
@@ -17,7 +17,8 @@ The following commands are used to read and write design data.
       write_db filename
       write_abstract_lef filename
 
-   .. tab:: Python
+   .. code-tab:: python
+   
       WIP
 
 ````
@@ -28,10 +29,12 @@ Use the Tcl `source` command to read commands from a file.
 ````{eval-rst}
 .. tabs::
 
-   .. tab:: Tcl
+   .. code-tab:: tcl
+
       source [-echo] file
 
-   .. tab:: Python
+   .. code-tab:: py
+
       WIP
 ````
 
@@ -57,14 +60,16 @@ technology exists in the database.
 ````{eval-rst}
 .. tabs::
 
-   .. tab:: Tcl
+   .. code-tab:: tcl
+
       read_lef liberty1.lef
       read_def reg1.def
       # Write the db for future runs.
       write_db reg1.db
 
 
-   .. tab:: Python
+   .. code-tab:: py
+
       WIP
 ````
 
@@ -76,7 +81,8 @@ The `link_design` command is used to flatten the design and make a database.
 ````{eval-rst}
 .. tabs::
 
-   .. tab:: Tcl
+   .. code-tab:: tcl
+
       read_lef liberty1.lef
       read_verilog reg1.v
       link_design top
@@ -84,7 +90,8 @@ The `link_design` command is used to flatten the design and make a database.
       write_db reg1.db
 
 
-   .. tab:: Python
+   .. code-tab:: py
+
       WIP
 ````
 
