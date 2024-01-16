@@ -244,6 +244,7 @@ class Cluster
   void addConnection(int cluster_id, float weight);
   const std::map<int, float> getConnection() const;
   bool isSameConnSignature(const Cluster& cluster, float net_threshold);
+  bool hasMacroConnectionWith(const Cluster& cluster, float net_threshold);
   // Get closely-connected cluster if such cluster exists
   // For example, if a small cluster A is closely connected to a
   // well-formed cluster B, (there are also other well-formed clusters

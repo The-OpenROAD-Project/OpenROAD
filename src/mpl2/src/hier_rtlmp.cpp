@@ -2288,6 +2288,9 @@ void HierRTLMP::breakMixedLeaf(Cluster* mixed_leaf)
 
   calculateConnection();
 
+  std::vector<int> interconn_class(hard_macros.size(), -1);
+  classifyMacrosByInterconn(macro_clusters, interconn_class);
+
   std::vector<int> signature_class(hard_macros.size(), -1);
   classifyMacrosByConnSignature(macro_clusters, signature_class);
 
@@ -2412,6 +2415,28 @@ void HierRTLMP::classifyMacrosBySize(const std::vector<HardMacro*>& hard_macros,
 
   for (int i = 0; i < hard_macros.size(); i++) {
     size_class[i] = (size_class[i] == -1) ? i : size_class[i];
+  }
+}
+
+void HierRTLMP::classifyMacrosByInterconn(
+    const std::vector<Cluster*>& macro_clusters,
+    std::vector<int>& interconn_class)
+{
+  for (int i = 0; i < macro_clusters.size(); i++) {
+    if (interconn_class[i] == -1) {
+      interconn_class[i] = i;
+      for (int j = 0; j < macro_clusters.size(); j++) {
+        if (macro_clusters[i]->hasMacroConnectionWith(
+                *macro_clusters[j], signature_net_threshold_)) {
+          if (interconn_class[j] != -1) {
+            interconn_class[i] = interconn_class[j];
+            break;
+          }
+
+          interconn_class[j] = i;
+        }
+      }
+    }
   }
 }
 

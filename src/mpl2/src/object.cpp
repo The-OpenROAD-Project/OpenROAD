@@ -580,6 +580,23 @@ bool Cluster::isSameConnSignature(const Cluster& cluster, float net_threshold)
   return true;
 }
 
+// Directly connected macros should be grouped in an array of macros.
+// The number of connections must be greater than the threshold in order for
+// the macros to be considered part of the same array.
+bool Cluster::hasMacroConnectionWith(const Cluster& cluster,
+                                     float net_threshold)
+{
+  if (id_ != cluster.getId()) {
+    for (const auto& [cluster_id, num_of_conn] : connection_map_) {
+      if (cluster_id == cluster.getId() && num_of_conn > net_threshold) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 //
 // Get closely-connected cluster if such cluster exists
 // For example, if a small cluster A is closely connected to a
