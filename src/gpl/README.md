@@ -1,9 +1,8 @@
 # Global Placement
 
 The global placement module in OpenROAD (`gpl`) is based on the open-source
-RePlAce tool, from the
-paper "Advancing Solution Quality and Routability Validation in
-Global Placement".
+RePlAce tool, from the paper "Advancing Solution Quality and Routability Validation
+in Global Placement".
 
 Features:
 
