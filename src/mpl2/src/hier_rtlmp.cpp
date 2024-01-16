@@ -2322,7 +2322,13 @@ void HierRTLMP::breakMixedLeaf(Cluster* mixed_leaf)
     if (macro_class[i] != i) {
       continue;  // this macro cluster has been merged
     }
+
     macro_clusters[i]->setClusterType(HardMacroCluster);
+
+    if (interconn_class[i] != -1) {
+      macro_clusters[i]->setAsMacroArray();
+    }
+
     setClusterMetrics(macro_clusters[i]);
     virtual_conn_clusters.push_back(mixed_leaf->getId());
   }

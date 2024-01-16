@@ -200,12 +200,12 @@ class Cluster
   void clearHardMacros();
   void copyInstances(const Cluster& cluster);  // only based on cluster type
 
-  // IO cluster
   // Position must be specified when setting an IO cluster
   void setAsIOCluster(const std::pair<float, float>& pos,
                       float width,
                       float height);
   bool isIOCluster() const;
+  void setAsMacroArray();
 
   // Metrics Support
   void setMetrics(const Metrics& metrics);
@@ -298,6 +298,7 @@ class Cluster
   // We model bundled IOS (Pads) as a cluster with no area
   // The position be the center of IOs
   bool is_io_cluster_ = false;
+  bool is_macro_array_ = false;
 
   // Each cluster uses metrics to store its statistics
   Metrics metrics_;

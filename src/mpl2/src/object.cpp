@@ -341,6 +341,11 @@ bool Cluster::isIOCluster() const
   return is_io_cluster_;
 }
 
+void Cluster::setAsMacroArray()
+{
+  is_macro_array_ = true;
+}
+
 // Metrics Support and Statistics
 void Cluster::setMetrics(const Metrics& metrics)
 {
