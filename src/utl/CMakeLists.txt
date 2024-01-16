@@ -40,13 +40,8 @@ find_package(Boost 1.78 REQUIRED)
 swig_lib(NAME      utl
          NAMESPACE utl
          I_FILE    src/Logger.i
-         SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/src
-)
-
-swig_lib(NAME      utl_funcs
-         NAMESPACE utl
-         I_FILE    src/Utl.i
          SCRIPTS   src/Utl.tcl
+         SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/src
 )
 
 if (Python3_FOUND AND BUILD_PYTHON)
@@ -93,18 +88,6 @@ target_link_libraries(utl_lib
     spdlog::spdlog
 )
 
-target_include_directories(utl_funcs
-  PUBLIC
-    include
-  PRIVATE
-    src
-)
-
-target_link_libraries(utl_funcs
-  PUBLIC
-    spdlog::spdlog
-)
-
 target_sources(utl
   PRIVATE
     src/LoggerCommon.cpp
@@ -127,7 +110,8 @@ target_compile_definitions(utl
 target_link_libraries(utl
   PUBLIC
     utl_lib
-    utl_funcs
+  PRIVATE
+    OpenSTA
 )
 
 ############################################################
