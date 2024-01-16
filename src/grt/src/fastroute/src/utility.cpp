@@ -225,7 +225,7 @@ void FastRouteCore::fillVIA()
             tmpY[newCNT] = gridsY[0];
             tmpL[newCNT] = l;
             newCNT++;
-            if(node1_alias >= num_terminals) {
+            if (node1_alias >= num_terminals) {
               numVIAT2++;
             }
           }
@@ -263,7 +263,7 @@ void FastRouteCore::fillVIA()
             tmpY[newCNT] = tmpY[newCNT - 1];
             tmpL[newCNT] = l;
             newCNT++;
-            if(node1_alias >= num_terminals) {
+            if (node1_alias >= num_terminals) {
               numVIAT2++;
             }
           }
