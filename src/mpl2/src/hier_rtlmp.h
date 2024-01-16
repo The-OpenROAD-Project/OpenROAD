@@ -223,7 +223,7 @@ class HierRTLMP
   void groupSingleMacroClusters(const std::vector<Cluster*>& macro_clusters,
                                 const std::vector<int>& size_class,
                                 const std::vector<int>& signature_class,
-                                const std::vector<int>& interconn_class,
+                                std::vector<int>& interconn_class,
                                 std::vector<int>& macro_class);
   void mergeMacroClustersWithinSameClass(Cluster* target, Cluster* source);
   void addStdCellClusterToSubTree(Cluster* parent,
@@ -237,6 +237,7 @@ class HierRTLMP
   void setRootShapes();
   void calculateChildrenTilings(Cluster* parent);
   void calculateMacroTilings(Cluster* cluster);
+  void setTightPackingTilings(Cluster* macro_array);
   void setIOClustersBlockages();
   void setPlacementBlockages();
 

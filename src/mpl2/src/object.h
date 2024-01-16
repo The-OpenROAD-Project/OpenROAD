@@ -205,7 +205,8 @@ class Cluster
                       float width,
                       float height);
   bool isIOCluster() const;
-  void setAsMacroArray();
+  void setAsArrayOfInterconnectedMacros();
+  bool isArrayOfInterconnectedMacros() const;
 
   // Metrics Support
   void setMetrics(const Metrics& metrics);
@@ -298,7 +299,7 @@ class Cluster
   // We model bundled IOS (Pads) as a cluster with no area
   // The position be the center of IOs
   bool is_io_cluster_ = false;
-  bool is_macro_array_ = false;
+  bool is_array_of_interconnected_macros = false;
 
   // Each cluster uses metrics to store its statistics
   Metrics metrics_;

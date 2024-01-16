@@ -2288,17 +2288,17 @@ void HierRTLMP::breakMixedLeaf(Cluster* mixed_leaf)
 
   calculateConnection();
 
-  std::vector<int> interconn_class(hard_macros.size(), -1);
-  classifyMacrosByInterconn(macro_clusters, interconn_class);
-
   std::vector<int> signature_class(hard_macros.size(), -1);
   classifyMacrosByConnSignature(macro_clusters, signature_class);
+
+  std::vector<int> interconn_class(hard_macros.size(), -1);
+  classifyMacrosByInterconn(macro_clusters, interconn_class);
 
   std::vector<int> macro_class(hard_macros.size(), -1);
   groupSingleMacroClusters(macro_clusters,
                            size_class,
-                           interconn_class,
                            signature_class,
+                           interconn_class,
                            macro_class);
 
   mixed_leaf->clearHardMacros();
@@ -2326,7 +2326,7 @@ void HierRTLMP::breakMixedLeaf(Cluster* mixed_leaf)
     macro_clusters[i]->setClusterType(HardMacroCluster);
 
     if (interconn_class[i] != -1) {
-      macro_clusters[i]->setAsMacroArray();
+      macro_clusters[i]->setAsArrayOfInterconnectedMacros();
     }
 
     setClusterMetrics(macro_clusters[i]);
@@ -2487,8 +2487,8 @@ void HierRTLMP::classifyMacrosByConnSignature(
 void HierRTLMP::groupSingleMacroClusters(
     const std::vector<Cluster*>& macro_clusters,
     const std::vector<int>& size_class,
-    const std::vector<int>& interconn_class,
     const std::vector<int>& signature_class,
+    std::vector<int>& interconn_class,
     std::vector<int>& macro_class)
 {
   for (int i = 0; i < macro_clusters.size(); i++) {
@@ -2516,22 +2516,25 @@ void HierRTLMP::groupSingleMacroClusters(
 
           mergeMacroClustersWithinSameClass(macro_clusters[i],
                                             macro_clusters[j]);
-          continue;
-        }
+        } else {
+          // We need this so we can distinguish arrays of interconnected macros
+          // from grouped macro clusters with same signature.
+          interconn_class[i] = -1;
 
-        if (signature_class[i] == signature_class[j]) {
-          macro_class[j] = i;
+          if (signature_class[i] == signature_class[j]) {
+            macro_class[j] = i;
 
-          debugPrint(logger_,
-                     MPL,
-                     "multilevel_autoclustering",
-                     1,
-                     "Merging same signature clusters {} and {}.",
-                     macro_clusters[j]->getName(),
-                     macro_clusters[i]->getName());
+            debugPrint(logger_,
+                       MPL,
+                       "multilevel_autoclustering",
+                       1,
+                       "Merging same signature clusters {} and {}.",
+                       macro_clusters[j]->getName(),
+                       macro_clusters[i]->getName());
 
-          mergeMacroClustersWithinSameClass(macro_clusters[i],
-                                            macro_clusters[j]);
+            mergeMacroClustersWithinSameClass(macro_clusters[i],
+                                              macro_clusters[j]);
+          }
         }
       }
     }
@@ -2892,19 +2895,13 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   }
 }
 
-//
-// Determine the macro tilings for each HardMacroCluster
-// multi thread enabled
-// random seed deterministic enabled
 void HierRTLMP::calculateMacroTilings(Cluster* cluster)
 {
-  // Check if the cluster is a HardMacroCluster
   if (cluster->getClusterType() != HardMacroCluster) {
     return;
   }
 
   std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
-  // macro tilings
   std::set<std::pair<float, float>> macro_tilings;  // <width, height>
 
   if (hard_macros.size() == 1) {
@@ -2924,6 +2921,12 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
                cluster->getName());
     return;
   }
+
+  if (cluster->isArrayOfInterconnectedMacros()) {
+    setTightPackingTilings(cluster);
+    return;
+  }
+
   // otherwise call simulated annealing to determine tilings
   // set the action probabilities
   const float action_sum = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
@@ -3113,6 +3116,30 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
   }
   line += "\n";
   debugPrint(logger_, MPL, "coarse_shaping", 2, "{}", line);
+}
+
+// Used only for arrays of interconnected macros.
+void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
+{
+  std::vector<std::pair<float, float>> tight_packing_tilings;
+
+  int divider = 1;
+  int columns = 0, rows = 0;
+
+  while (divider <= macro_array->getNumMacro()) {
+    if (macro_array->getNumMacro() % divider == 0) {
+      columns = macro_array->getNumMacro() / divider;
+      rows = divider;
+
+      tight_packing_tilings.push_back(std::pair<float, float>(
+          columns * macro_array->getHardMacros().front()->getWidth(),
+          rows * macro_array->getHardMacros().front()->getHeight()));
+    }
+
+    ++divider;
+  }
+
+  macro_array->setMacroTilings(tight_packing_tilings);
 }
 
 // Create pin blockage for Bundled IOs

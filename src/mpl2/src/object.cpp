@@ -341,9 +341,14 @@ bool Cluster::isIOCluster() const
   return is_io_cluster_;
 }
 
-void Cluster::setAsMacroArray()
+void Cluster::setAsArrayOfInterconnectedMacros()
 {
-  is_macro_array_ = true;
+  is_array_of_interconnected_macros = true;
+}
+
+bool Cluster::isArrayOfInterconnectedMacros() const
+{
+  return is_array_of_interconnected_macros;
 }
 
 // Metrics Support and Statistics
