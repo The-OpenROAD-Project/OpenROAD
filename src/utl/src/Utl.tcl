@@ -56,10 +56,9 @@ proc man { name } {
   foreach man_section $man_sections {
     set length [string length $man_section]
     # Get suffix for man section
-    #set man_suffix [string range $man_section [expr {$length - 1}] $length]
     set man_suffix "md"
-
-    set name1 $name
+    # Replace all "::" with "_"
+    set name1 [string map { "::" "_" } $name]
     append name1 ".$man_suffix"
     set man_file [file join $man_section $name1]
     if { [file exists $man_file] } {

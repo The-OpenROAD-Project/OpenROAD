@@ -10,7 +10,6 @@ import datetime
 
 # list of edited docs
 SRC_DIR = "./md/man2"
-# problematic: gui, rcx
 # also you need to change the ### FUNCTION_NAME parsing. Sometimes the 
 #    function name could be something weird like `diff_spef` or `pdngen`
 #    so it would be better to have a more informative header for the RTD docs. 
@@ -18,11 +17,11 @@ SRC_DIR = "./md/man2"
 #       parse the func_name from the tcl itself. Then the level3 header can be used to
 #       be the description of the function. E.g. `func_name - Useful Function Description` in the roff.
 # sta: documentation is hosted elsewhere. (not currently in RTD also.)
+# odb: documentation is hosted on doxygen. 
 # 
 tools = ["ant", "cts", "dft", "dpl", "fin", "pad", "par", "ppl", "rsz",\
             "tap", "upf", "drt", "gpl", "grt", "ifp", "mpl2", "pdn", "psm",\
-            "rmp", "rcx"]
-#tools = ["rcx"]
+            "rmp", "rcx", "gui"]
 docs = [f"{SRC_DIR}/{tool}.txt" for tool in tools]
 
 # identify key section and stored in ManPage class. 
@@ -212,9 +211,10 @@ if __name__ == "__main__":
     for doc in docs:
         text = open(doc).read()
 
-        # function names
+        # function names (and convert gui:: to gui_)
         func_names = extract_headers(text, 3)
         func_names = ["_".join(s.lower().split()) for s in func_names]
+        func_names = [s.replace("::", "_") for s in func_names]
 
         # function description
         func_descs = extract_description(text)
