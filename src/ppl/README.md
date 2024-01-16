@@ -5,7 +5,7 @@ wirelengths. Pin placement also creates a metal shape for each pin using
 min-area rules.
 
 For designs with unplaced cells, the net wirelength is computed considering
-the center of the die area as the unplaced cells' position.
+the center of the die area as the unplaced cells position.
 
 ## Commands
 
@@ -205,7 +205,7 @@ place_pin
 | `-pin_name` | The name of a pin of the design. |
 | `-layer` | The routing layer where the pin is placed. |
 | `-location` | The center of the pin (in microns). |
-| `-pin_size` | Tthe width and height of the pin (in microns). |
+| `-pin_size` | The width and height of the pin (in microns). |
 | `-force_to_die_boundary` | When this flag is enabled, the pin will be snapped to the nearest routing track, next to the die boundary. |
 
 ### Place All Pins
