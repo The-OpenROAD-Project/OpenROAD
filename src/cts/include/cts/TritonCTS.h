@@ -40,6 +40,7 @@
 #include <set>
 #include <string>
 #include <unordered_set>
+#include <vector>
 
 namespace utl {
 class Logger;
@@ -51,6 +52,8 @@ class dbBlock;
 class dbInst;
 class dbNet;
 class dbITerm;
+class dbMTerm;
+class Rect;
 }  // namespace odb
 
 namespace rsz {
@@ -61,6 +64,8 @@ namespace sta {
 class dbSta;
 class Clock;
 class dbNetwork;
+class Unit;
+class LibertyCell;
 }  // namespace sta
 
 namespace stt {
@@ -71,12 +76,13 @@ namespace cts {
 
 using utl::Logger;
 
-class Clock;
 class ClockInst;
 class CtsOptions;
 class TechChar;
 class StaEngine;
 class TreeBuilder;
+class Clock;
+class ClockSubNet;
 
 class TritonCTS
 {
@@ -96,6 +102,17 @@ class TritonCTS
   TechChar* getCharacterization() { return techChar_; }
   int setClockNets(const char* names);
   void setBufferList(const char* buffers);
+  void inferBufferList(std::vector<std::string>& buffers);
+  std::vector<std::string> findMatchingSubset(
+      const std::string& pattern,
+      const std::vector<std::string>& buffers);
+  bool isClockCellCandidate(sta::LibertyCell* cell);
+  void setRootBuffer(const char* buffers);
+  std::string selectRootBuffer(std::vector<std::string>& buffers);
+  void setSinkBuffer(const char* buffers);
+  std::string selectSinkBuffer(std::vector<std::string>& buffers);
+  std::string selectBestMaxCapBuffer(const std::vector<std::string>& buffers,
+                                     float totalCap);
 
  private:
   void addBuilder(TreeBuilder* builder);
@@ -111,7 +128,8 @@ class TritonCTS
   // db functions
   bool masterExists(const std::string& master) const;
   void populateTritonCTS();
-  void writeClockNetsToDb(Clock& clockNet);
+  void writeClockNetsToDb(Clock& clockNet, std::set<odb::dbNet*>& clkLeafNets);
+  void writeClockNDRsToDb(const std::set<odb::dbNet*>& clkLeafNets);
   void incrementNumClocks() { ++numberOfClocks_; }
   void clearNumClocks() { numberOfClocks_ = 0; }
   unsigned getNumClocks() const { return numberOfClocks_; }
@@ -146,16 +164,36 @@ class TritonCTS
   float getInputPinCap(odb::dbITerm* iterm);
   bool isSink(odb::dbITerm* iterm);
   ClockInst* getClockFromInst(odb::dbInst* inst);
+  double computeInsertionDelay(const std::string& name,
+                               odb::dbInst* inst,
+                               odb::dbMTerm* mterm);
+  void writeDummyLoadsToDb(Clock& clockNet);
+  bool computeIdealOutputCaps(Clock& clockNet);
+  void findCandidateDummyCells(std::vector<sta::LibertyCell*>& dummyCandidates);
+  void insertDummyCell(Clock& clockNet,
+                       ClockInst* inst,
+                       const std::vector<sta::LibertyCell*>& dummyCandidates);
+  ClockInst& placeDummyCell(Clock& clockNet,
+                            const ClockInst* inst,
+                            const sta::LibertyCell* dummyCell,
+                            odb::dbInst*& dummyInst);
+  void connectDummyCell(const ClockInst* inst,
+                        odb::dbInst* dummyInst,
+                        ClockSubNet& subNet,
+                        ClockInst& dummyClock);
+  void printClockNetwork(const Clock& clockNet) const;
 
   sta::dbSta* openSta_;
   sta::dbNetwork* network_;
   Logger* logger_;
   CtsOptions* options_;
   TechChar* techChar_;
+  rsz::Resizer* resizer_;
   std::vector<TreeBuilder*>* builders_;
   std::set<odb::dbNet*> staClockNets_;
   std::set<odb::dbNet*> visitedClockNets_;
   std::map<odb::dbInst*, ClockInst*> inst2clkbuf_;
+  std::map<ClockInst*, ClockSubNet*> driver2subnet_;
 
   // db vars
   odb::dbDatabase* db_;
@@ -163,6 +201,11 @@ class TritonCTS
   unsigned numberOfClocks_ = 0;
   unsigned numClkNets_ = 0;
   unsigned numFixedNets_ = 0;
+  unsigned dummyLoadIndex_ = 0;
+
+  // root buffer and sink bufer candidates
+  std::vector<std::string> rootBuffers_;
+  std::vector<std::string> sinkBuffers_;
 };
 
 }  // namespace cts

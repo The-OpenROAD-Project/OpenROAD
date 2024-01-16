@@ -1,0 +1,16 @@
+{
+  "name": "dbScanPin",
+  "type": "dbObject",
+  "fields": [
+    {
+      "name": "pin_",
+      "type": "std::variant<dbId<_dbBTerm>, dbId<_dbITerm>>",
+      "flags": ["private", "no-template"]
+    }
+  ],
+  "h_includes": [
+    "dbBTerm.h",
+    "dbITerm.h",
+    "dbBlock.h"
+  ]
+}

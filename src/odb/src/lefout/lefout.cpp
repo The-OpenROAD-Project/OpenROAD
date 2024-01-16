@@ -78,7 +78,7 @@ void lefout::insertObstruction(dbTechLayer* layer,
   obstructions[layer] += poly.bloat(bloat, bloat, bloat, bloat);
 }
 
-void lefout::writeVersion(const char* version)
+void lefout::writeVersion(const std::string& version)
 {
   fmt::print(_out, "VERSION {} ;\n", version);
 }
@@ -243,8 +243,7 @@ void lefout::findInstsObstructions(ObstructionMap& obstructions,
 {  // Find all insts obsturctions and Iterms
 
   for (auto* inst : db_block->getInsts()) {
-    dbTransform trans;
-    inst->getTransform(trans);
+    const dbTransform trans = inst->getTransform();
 
     // Add insts obstructions
     for (auto* obs : inst->getMaster()->getObstructions()) {
@@ -372,13 +371,84 @@ void lefout::writeNameCaseSensitive(const dbOnOffType on_off_type)
   fmt::print(_out, "NAMESCASESENSITIVE {} ;\n", on_off_type.getString());
 }
 
+void lefout::writeBlockVia(dbVia* via)
+{
+  std::string name = via->getName();
+
+  if (via->isDefault())
+    fmt::print(_out, "\nVIA {} DEFAULT\n", name.c_str());
+  else
+    fmt::print(_out, "\nVIA {}\n", name.c_str());
+
+  dbTechViaGenerateRule* rule = via->getViaGenerateRule();
+
+  if (rule == nullptr) {
+    dbSet<dbBox> boxes = via->getBoxes();
+    writeBoxes(boxes, "    ");
+  } else {
+    std::string rname = rule->getName();
+    fmt::print(_out, "  VIARULE {} ;\n", rname.c_str());
+
+    const dbViaParams P = via->getViaParams();
+
+    fmt::print(_out,
+               "  CUTSIZE {:.11g} {:.11g} ;\n",
+               lefdist(P.getXCutSize()),
+               lefdist(P.getYCutSize()));
+    std::string top = P.getTopLayer()->getName();
+    std::string bot = P.getBottomLayer()->getName();
+    std::string cut = P.getCutLayer()->getName();
+    fmt::print(
+        _out, "  LAYERS {} {} {} ;\n", bot.c_str(), cut.c_str(), top.c_str());
+    fmt::print(_out,
+               "  CUTSPACING {:.11g} {:.11g} ;\n",
+               lefdist(P.getXCutSpacing()),
+               lefdist(P.getYCutSpacing()));
+    fmt::print(_out,
+               "  ENCLOSURE {:.11g} {:.11g} {:.11g} {:.11g} ;\n",
+               lefdist(P.getXBottomEnclosure()),
+               lefdist(P.getYBottomEnclosure()),
+               lefdist(P.getXTopEnclosure()),
+               lefdist(P.getYTopEnclosure()));
+
+    if ((P.getNumCutRows() != 1) || (P.getNumCutCols() != 1))
+      fmt::print(
+          _out, "  ROWCOL {} {} ;\n", P.getNumCutRows(), P.getNumCutCols());
+
+    if ((P.getXOrigin() != 0) || (P.getYOrigin() != 0))
+      fmt::print(_out,
+                 "  ORIGIN {:.11g} {:.11g} ;\n",
+                 lefdist(P.getXOrigin()),
+                 lefdist(P.getYOrigin()));
+
+    if ((P.getXTopOffset() != 0) || (P.getYTopOffset() != 0)
+        || (P.getXBottomOffset() != 0) || (P.getYBottomOffset() != 0))
+      fmt::print(_out,
+                 "  OFFSET {:.11g} {:.11g} {:.11g} {:.11g} ;\n",
+                 lefdist(P.getXBottomOffset()),
+                 lefdist(P.getYBottomOffset()),
+                 lefdist(P.getXTopOffset()),
+                 lefdist(P.getYTopOffset()));
+
+    std::string pname = via->getPattern();
+    if (strcmp(pname.c_str(), "") != 0)
+      fmt::print(_out, "  PATTERNNAME {} ;\n", pname.c_str());
+  }
+
+  fmt::print(_out, "END {}\n", name.c_str());
+}
+
 void lefout::writeBlock(dbBlock* db_block)
 {
   dbBox* bounding_box = db_block->getBBox();
   double size_x = lefdist(bounding_box->xMax());
   double size_y = lefdist(bounding_box->yMax());
 
-  fmt::print(_out, "MACRO {}\n", db_block->getName().c_str());
+  for (auto via : db_block->getVias()) {
+    writeBlockVia(via);
+  }
+
+  fmt::print(_out, "\nMACRO {}\n", db_block->getName().c_str());
   fmt::print(_out, "  FOREIGN {} 0 0 ;\n", db_block->getName().c_str());
   fmt::print(_out, "  CLASS BLOCK ;\n");
   fmt::print(_out, "  SIZE {:.11g} BY {:.11g} ;\n", size_x, size_y);
@@ -497,6 +567,9 @@ void lefout::writeTechBody(dbTech* tech)
     writeLayer(layer);
   }
 
+  writeViaMap(tech, false);
+  writeViaMap(tech, true);
+
   // VIA's not using generate rule and not default
   dbSet<dbTechVia> vias = tech->getVias();
   dbSet<dbTechVia>::iterator vitr;
@@ -557,6 +630,56 @@ void lefout::writeTechBody(dbTech* tech)
     dbTechNonDefaultRule* rule = *ritr;
     writeNonDefaultRule(tech, rule);
   }
+}
+
+void lefout::writeViaMap(dbTech* tech, const bool use_via_cut_class)
+{
+  auto via_map_set = tech->getMetalWidthViaMap();
+  bool found = false;
+  for (auto via_map : via_map_set) {
+    if (via_map->isViaCutClass() == use_via_cut_class) {
+      found = true;
+      break;
+    }
+  }
+  if (!found) {
+    return;
+  }
+  fmt::print(_out, "PROPERTYDEFINITIONS\n");
+  fmt::print(_out, " LIBRARY LEF58_METALWIDTHVIAMAP STRING\n");
+  fmt::print(_out, "  \"METALWIDTHVIAMAP\n");
+  if (use_via_cut_class) {
+    fmt::print(_out, "   USEVIACUTCLASS\n");
+  }
+  for (auto via_map : via_map_set) {
+    if (via_map->isViaCutClass() != use_via_cut_class) {
+      continue;
+    }
+    if (via_map->getBelowLayerWidthLow() == via_map->getBelowLayerWidthHigh()
+        && via_map->getAboveLayerWidthLow()
+               == via_map->getAboveLayerWidthHigh()) {
+      fmt::print(_out,
+                 "   VIA {} {} {} {} {}\n",
+                 via_map->getCutLayer()->getName(),
+                 lefdist(via_map->getBelowLayerWidthLow()),
+                 lefdist(via_map->getAboveLayerWidthLow()),
+                 via_map->getViaName(),
+                 via_map->isPgVia() ? "PGVIA" : "");
+    } else {
+      fmt::print(_out,
+                 "   VIA {} {} {} {} {} {} {}\n",
+                 via_map->getCutLayer()->getName(),
+                 lefdist(via_map->getBelowLayerWidthLow()),
+                 lefdist(via_map->getBelowLayerWidthHigh()),
+                 lefdist(via_map->getAboveLayerWidthLow()),
+                 lefdist(via_map->getAboveLayerWidthHigh()),
+                 via_map->getViaName(),
+                 via_map->isPgVia() ? "PGVIA" : "");
+    }
+  }
+  fmt::print(_out, "   ;\n");
+  fmt::print(_out, " \" ;\n");
+  fmt::print(_out, "END PROPERTYDEFINITIONS\n");
 }
 
 void lefout::writeNonDefaultRule(dbTech* tech, dbTechNonDefaultRule* rule)
@@ -937,8 +1060,7 @@ void lefout::writeVia(dbTechVia* via)
     std::string rname = rule->getName();
     fmt::print(_out, "\n    VIARULE {} \n", rname.c_str());
 
-    dbViaParams P;
-    via->getViaParams(P);
+    const dbViaParams P = via->getViaParams();
 
     fmt::print(_out,
                " + CUTSIZE {:.11g} {:.11g}\n",
@@ -1055,11 +1177,14 @@ void lefout::writeMaster(dbMaster* master)
   if (master->getType() != dbMasterType::NONE)
     fmt::print(_out, "    CLASS {} ;\n", master->getType().getString());
 
-  int x, y;
-  master->getOrigin(x, y);
+  const odb::Point origin = master->getOrigin();
 
-  if ((x != 0) || (y != 0))
-    fmt::print(_out, "    ORIGIN {:.11g} {:.11g} ;\n", lefdist(x), lefdist(y));
+  if (origin != Point()) {
+    fmt::print(_out,
+               "    ORIGIN {:.11g} {:.11g} ;\n",
+               lefdist(origin.x()),
+               lefdist(origin.y()));
+  }
 
   if (master->getEEQ()) {
     std::string eeq = master->getEEQ()->getName();
@@ -1103,8 +1228,8 @@ void lefout::writeMaster(dbMaster* master)
     fmt::print(_out, "{}", " ;\n");
   }
 
-  if ((x != 0) || (y != 0)) {
-    dbTransform t(Point(-x, -y));
+  if (origin != Point()) {
+    dbTransform t(Point(-origin.x(), -origin.y()));
     master->transform(t);
   }
 
@@ -1129,8 +1254,8 @@ void lefout::writeMaster(dbMaster* master)
     fmt::print(_out, "{}", "    END\n");
   }
 
-  if ((x != 0) || (y != 0)) {
-    dbTransform t(Point(x, y));
+  if (origin != Point()) {
+    dbTransform t(origin);
     master->transform(t);
   }
 

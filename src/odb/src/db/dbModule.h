@@ -53,6 +53,7 @@ class _dbModule : public _dbObject
  public:
   _dbModule(_dbDatabase*, const _dbModule& r);
   _dbModule(_dbDatabase*);
+
   ~_dbModule();
 
   bool operator==(const _dbModule& rhs) const;

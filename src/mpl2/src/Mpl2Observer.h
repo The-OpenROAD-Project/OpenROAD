@@ -39,9 +39,12 @@
 #include <vector>
 
 #include "object.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace mpl2 {
+
+class Cluster;
 
 class Mpl2Observer
 {
@@ -49,22 +52,36 @@ class Mpl2Observer
   Mpl2Observer() = default;
   virtual ~Mpl2Observer() = default;
 
-  virtual void startSA(){};
-  virtual void saStep(const std::vector<SoftMacro>& macros){};
-  virtual void saStep(const std::vector<HardMacro>& macros){};
-  virtual void endSA(){};
+  virtual void startCoarse() {}
+  virtual void startFine() {}
 
-  virtual void setAreaPenalty(float area){};
-  virtual void setOutlinePenalty(float outline_penalty,
-                                 float outline_width,
-                                 float outline_height){};
-  virtual void setWirelength(float wirelength){};
-  virtual void setFencePenalty(float fence_penalty){};
-  virtual void setGuidancePenalty(float guidance_penalty){};
-  virtual void setBoundaryPenalty(float boundary_penalty){};
-  virtual void setMacroBlockagePenalty(float macro_blockage_penalty){};
-  virtual void setNotchPenalty(float notch_penalty){};
-  virtual void penaltyCalculated(float norm_cost){};
+  virtual void startSA() {}
+  virtual void saStep(const std::vector<SoftMacro>& macros) {}
+  virtual void saStep(const std::vector<HardMacro>& macros) {}
+  virtual void endSA() {}
+
+  virtual void finishedClustering(Cluster* root) {}
+
+  virtual void setMacroBlockages(const std::vector<mpl2::Rect>& macro_blockages)
+  {
+  }
+  virtual void setPlacementBlockages(
+      const std::vector<mpl2::Rect>& placement_blockages)
+  {
+  }
+  virtual void setOutline(const odb::Rect& outline) {}
+
+  virtual void setAreaPenalty(float area) {}
+  virtual void setOutlinePenalty(float outline_penalty) {}
+  virtual void setWirelength(float wirelength) {}
+  virtual void setFencePenalty(float fence_penalty) {}
+  virtual void setGuidancePenalty(float guidance_penalty) {}
+  virtual void setBoundaryPenalty(float boundary_penalty) {}
+  virtual void setMacroBlockagePenalty(float macro_blockage_penalty) {}
+  virtual void setNotchPenalty(float notch_penalty) {}
+  virtual void penaltyCalculated(float norm_cost) {}
+
+  virtual void eraseDrawing() {}
 };
 
 }  // namespace mpl2

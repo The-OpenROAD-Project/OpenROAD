@@ -51,6 +51,7 @@ clock_tree_synthesis
     [-balance_levels]
     [-num_static_layers]
     [-sink_clustering_buffer]
+    [-use_dummy_load]
 ```
 
 #### Options
@@ -72,6 +73,10 @@ clock_tree_synthesis
 | `-clk_nets` | String containing the names of the clock roots. If this parameter is omitted, `cts` looks for the clock roots automatically. |
 | `-num_static_layers` | Set the number of static layers. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-sink_clustering_buffer` | Set the sink clustering buffer(s) to be used. |
+| `-obstruction_aware` | Enables obstruction-aware buffering such that clock buffers are not placed on top of blockages or hard macros. This option may reduce legalizer displacement, leading to better latency, skew or timing QoR.  The default value is `False`, and the allowed values are bool. |
+| `-apply_ndr` | Applies 2X spacing non-default rule to all clock nets except leaf-level nets. The default value is `False`. |
+| `-insertion_delay` | Considers insertion delays in macro timing models to improve clustering. The default value is `False`. |
+| `-use_dummy_load` | Applies dummy buffer or inverter cells at clock tree leaves to balance loads.  The default values is `False`. |
 
 ### Report CTS
 
@@ -149,3 +154,4 @@ Many guidance provided by (alphabetic order):
 ## License
 
 BSD 3-Clause License. See [LICENSE](LICENSE) file.
+

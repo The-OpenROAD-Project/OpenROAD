@@ -61,9 +61,7 @@ bool create_logic_port(utl::Logger* logger,
 bool create_power_switch(utl::Logger* logger,
                          odb::dbBlock* block,
                          const char* name,
-                         const char* power_domain,
-                         const char* out_port,
-                         const char* in_port);
+                         const char* power_domain);
 
 bool update_power_switch_control(utl::Logger* logger,
                                  odb::dbBlock* block,
@@ -74,6 +72,16 @@ bool update_power_switch_on(utl::Logger* logger,
                             odb::dbBlock* block,
                             const char* name,
                             const char* on_state);
+
+bool update_power_switch_input(utl::Logger* logger,
+                               odb::dbBlock* block,
+                               const char* name,
+                               const char* in_port);
+
+bool update_power_switch_output(utl::Logger* logger,
+                                odb::dbBlock* block,
+                                const char* name,
+                                const char* out_port);
 
 bool set_isolation(utl::Logger* logger,
                    odb::dbBlock* block,
@@ -104,4 +112,63 @@ bool eval_upf(sta::dbNetwork* network,
               utl::Logger* logger,
               odb::dbBlock* block);
 
+bool update_power_switch_cell(utl::Logger* logger,
+                              odb::dbBlock* block,
+                              const char* name,
+                              odb::dbMaster* cell);
+
+bool update_power_switch_port_map(utl::Logger* logger,
+                                  odb::dbBlock* block,
+                                  const char* name,
+                                  const char* model_port,
+                                  const char* switch_port);
+
+bool create_or_update_level_shifter(utl::Logger* logger,
+                                    odb::dbBlock* block,
+                                    const char* name,
+                                    const char* domain,
+                                    const char* source,
+                                    const char* sink,
+                                    const char* use_functional_equivalence,
+                                    const char* applies_to,
+                                    const char* applies_to_boundary,
+                                    const char* rule,
+                                    const char* threshold,
+                                    const char* no_shift,
+                                    const char* force_shift,
+                                    const char* location,
+                                    const char* input_supply,
+                                    const char* output_supply,
+                                    const char* internal_supply,
+                                    const char* name_prefix,
+                                    const char* name_suffix,
+                                    bool update);
+
+bool add_level_shifter_element(utl::Logger* logger,
+                               odb::dbBlock* block,
+                               const char* level_shifter_name,
+                               const char* element);
+
+bool exclude_level_shifter_element(utl::Logger* logger,
+                                   odb::dbBlock* block,
+                                   const char* level_shifter_name,
+                                   const char* exclude_element);
+
+bool handle_level_shifter_instance(utl::Logger* logger,
+                                   odb::dbBlock* block,
+                                   const char* level_shifter_name,
+                                   const char* instance_name,
+                                   const char* port_name);
+
+bool set_domain_voltage(utl::Logger* logger,
+                        odb::dbBlock* block,
+                        const char* domain,
+                        float voltage);
+
+bool set_level_shifter_cell(utl::Logger* logger,
+                            odb::dbBlock* block,
+                            const char* shifter,
+                            const char* cell,
+                            const char* input,
+                            const char* ouput);
 }  // namespace upf

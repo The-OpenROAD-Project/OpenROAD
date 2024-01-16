@@ -95,7 +95,7 @@ estimate_parasitics
 ### Set Don't Use
 
 The `set_dont_use` command removes library cells from consideration by
-the `resizer`. `lib_cells` is a list of cells returned by `get_lib_cells`
+the `resizer` engine and the `CTS` engine. `lib_cells` is a list of cells returned by `get_lib_cells`
 or a list of cell names (`wildcards` allowed). For example, `DLY*` says do
 not use cells with names that begin with `DLY` in all libraries.
 
@@ -261,6 +261,11 @@ repair_clock_nets
 | `-max_wire_length` | Maximum length of wires (in microns), defaults to a value that minimizes the wire delay for the wire RC values specified by `set_wire_rc`. |
 
 ### Repair Clock Inverters
+
+The repair_clock_inverters command replaces an inverter in the clock
+tree with multiple fanouts with one inverter per fanout.  This
+prevents the inverter from splitting up the clock tree seen by CTS.
+It should be run before clock_tree_synthesis.
 
 ```tcl
 repair_clock_inverters

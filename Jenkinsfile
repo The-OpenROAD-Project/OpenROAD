@@ -1,7 +1,7 @@
 pipeline {
   agent any;
   options {
-    timeout(time: 1, unit: 'HOURS')
+    timeout(time: 75, unit: 'MINUTES')
   }
   environment {
     COMMIT_AUTHOR_EMAIL = sh (returnStdout: true, script: "git --no-pager show -s --format='%ae'").trim();
@@ -10,10 +10,10 @@ pipeline {
   stages {
     stage('Build and test') {
       parallel {
-        stage('Local centos7 gcc8') {
+        stage('Local centos7 gcc') {
           agent any;
           stages {
-            stage('Build centos7 gcc8') {
+            stage('Build centos7 gcc') {
               steps {
                 sh './etc/Build.sh -no-warnings';
               }
@@ -23,7 +23,7 @@ pipeline {
                 sh 'cd src && ../etc/find_messages.py > messages.txt';
               }
             }
-            stage('Test centos7 gcc8') {
+            stage('Test centos7 gcc') {
               steps {
                 script {
                   parallel (
@@ -34,9 +34,11 @@ pipeline {
                       'sky130hd aes':         { sh './test/regression aes_sky130hd' },
                       'sky130hd gcd':         { sh './test/regression gcd_sky130hd' },
                       'sky130hd ibex':        { sh './test/regression ibex_sky130hd' },
+                      'sky130hd jpeg':        { sh './test/regression jpeg_sky130hd' },
                       'sky130hs aes':         { sh './test/regression aes_sky130hs' },
                       'sky130hs gcd':         { sh './test/regression gcd_sky130hs' },
                       'sky130hs ibex':        { sh './test/regression ibex_sky130hs' },
+                      'sky130hs jpeg':        { sh './test/regression jpeg_sky130hs' },
                       )
                 }
               }
@@ -49,17 +51,17 @@ pipeline {
             }
           }
         }
-        stage('Local centos7 gcc8 without GUI') {
+        stage('Local centos7 gcc without GUI') {
           agent any;
           stages {
-            stage('Build centos7 gcc8 without GUI') {
+            stage('Build centos7 gcc without GUI') {
               steps {
                 sh './etc/Build.sh -no-warnings -no-gui -dir=build-without-gui';
               }
             }
           }
         }
-        stage('Docker centos7 gcc8') {
+        stage('Docker centos7 gcc') {
           agent any;
           stages{
             stage('Pull centos7') {
@@ -81,8 +83,8 @@ pipeline {
               steps {
                 script {
                   parallel (
-                      'build gcc8':   { sh './etc/DockerHelper.sh create -os=centos7 -target=builder -compiler=gcc' },
-                      'build clang7': { sh './etc/DockerHelper.sh create -os=centos7 -target=builder -compiler=clang' },
+                      'build gcc':   { sh './etc/DockerHelper.sh create -os=centos7 -target=builder -compiler=gcc' },
+                      'build clang': { sh './etc/DockerHelper.sh create -os=centos7 -target=builder -compiler=clang' },
                       )
                 }
               }
@@ -91,18 +93,18 @@ pipeline {
               steps {
                 script {
                   parallel (
-                      'test gcc8':   { sh './etc/DockerHelper.sh test -os=centos7 -target=builder -compiler=gcc' },
-                      'test clang7': { sh './etc/DockerHelper.sh test -os=centos7 -target=builder -compiler=clang' },
+                      'test gcc':   { sh './etc/DockerHelper.sh test -os=centos7 -target=builder -compiler=gcc' },
+                      'test clang': { sh './etc/DockerHelper.sh test -os=centos7 -target=builder -compiler=clang' },
                       )
                 }
               }
             }
           }
         }
-        stage('Docker ubuntu20.04 gcc9') {
+        stage('Docker Ubuntu 20.04 gcc') {
           agent any;
           stages{
-            stage('Pull ubuntu20.04') {
+            stage('Pull Ubuntu 20.04') {
               steps {
                 retry(3) {
                   script {
@@ -117,22 +119,62 @@ pipeline {
                 }
               }
             }
-            stage('Build docker ubuntu20.04') {
+            stage('Build docker Ubuntu 20.04') {
               steps {
                 script {
                   parallel (
-                      'build gcc9':    { sh './etc/DockerHelper.sh create -os=ubuntu20.04 -target=builder -compiler=gcc' },
-                      'build clang10': { sh './etc/DockerHelper.sh create -os=ubuntu20.04 -target=builder -compiler=clang' },
+                      'build gcc':   { sh './etc/DockerHelper.sh create -os=ubuntu20.04 -target=builder -compiler=gcc' },
+                      'build clang': { sh './etc/DockerHelper.sh create -os=ubuntu20.04 -target=builder -compiler=clang' },
                       )
                 }
               }
             }
-            stage('Test docker ubuntu20.04') {
+            stage('Test docker Ubuntu 20.04') {
               steps {
                 script {
                   parallel (
-                      'test gcc9':    { sh './etc/DockerHelper.sh test -os=ubuntu20.04 -target=builder -compiler=gcc' },
-                      'test clang10': { sh './etc/DockerHelper.sh test -os=ubuntu20.04 -target=builder -compiler=clang' },
+                      'test gcc':    { sh './etc/DockerHelper.sh test -os=ubuntu20.04 -target=builder -compiler=gcc' },
+                      'test clang': { sh './etc/DockerHelper.sh test -os=ubuntu20.04 -target=builder -compiler=clang' },
+                      )
+                }
+              }
+            }
+          }
+        }
+        stage('Docker Ubuntu 22.04 gcc') {
+          agent any;
+          stages{
+            stage('Pull Ubuntu 22.04') {
+              steps {
+                retry(3) {
+                  script {
+                    try {
+                      sh 'docker pull openroad/ubuntu22.04-dev'
+                    }
+                    catch (err) {
+                      echo err.getMessage();
+                      sh 'sleep 1m ; exit 1';
+                    }
+                  }
+                }
+              }
+            }
+            stage('Build docker Ubuntu 22.04') {
+              steps {
+                script {
+                  parallel (
+                      'build gcc':   { sh './etc/DockerHelper.sh create -os=ubuntu22.04 -target=builder -compiler=gcc' },
+                      'build clang': { sh './etc/DockerHelper.sh create -os=ubuntu22.04 -target=builder -compiler=clang' },
+                      )
+                }
+              }
+            }
+            stage('Test docker Ubuntu 22.04') {
+              steps {
+                script {
+                  parallel (
+                      'test gcc':   { sh './etc/DockerHelper.sh test -os=ubuntu22.04 -target=builder -compiler=gcc' },
+                      'test clang': { sh './etc/DockerHelper.sh test -os=ubuntu22.04 -target=builder -compiler=clang' },
                       )
                 }
               }

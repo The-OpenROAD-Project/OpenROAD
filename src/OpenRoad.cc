@@ -35,6 +35,7 @@
 
 #include "ord/OpenRoad.hh"
 
+#include <fstream>
 #include <iostream>
 #include <thread>
 #ifdef ENABLE_PYTHON3
@@ -471,7 +472,11 @@ void OpenRoad::readDb(const char* filename)
                     | std::ios::eofbit);
   stream.open(filename, std::ios::binary);
 
-  db_->read(stream);
+  try {
+    db_->read(stream);
+  } catch (const std::ios_base::failure& f) {
+    logger_->error(ORD, 54, "odb file {} is invalid: {}", filename, f.what());
+  }
 
   for (OpenRoadObserver* observer : observers_) {
     observer->postReadDb(db_);
@@ -480,11 +485,12 @@ void OpenRoad::readDb(const char* filename)
 
 void OpenRoad::writeDb(const char* filename)
 {
-  FILE* stream = fopen(filename, "w");
-  if (stream) {
-    db_->write(stream);
-    fclose(stream);
-  }
+  std::ofstream stream;
+  stream.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                    | std::ios::eofbit);
+  stream.open(filename, std::ios::binary);
+
+  db_->write(stream);
 }
 
 void OpenRoad::diffDbs(const char* filename1,

@@ -1,5 +1,4 @@
-git+https://github.com/f4pga/sphinx_f4pga_theme.git
-git+https://github.com/executablebooks/sphinx-external-toc
+git+https://github.com/executablebooks/sphinx-external-toc.git@v0.3.1
 sphinx
 sphinx-autobuild
 myst-parser

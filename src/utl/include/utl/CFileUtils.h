@@ -33,6 +33,7 @@
 #pragma once
 
 #include <boost/core/span.hpp>
+#include <cstdint>
 #include <cstdio>
 #include <string>
 

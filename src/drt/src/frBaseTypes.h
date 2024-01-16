@@ -41,11 +41,9 @@
 #include <vector>
 
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
-namespace odb {
-class Rect;
-}
 namespace boost::serialization {
 class access;
 }
@@ -193,6 +191,7 @@ enum class frConstraintTypeEnum
   frcLef58SpacingEndOfLineWithinEncloseCutConstraint,
   frcLef58SpacingEndOfLineWithinParallelEdgeConstraint,
   frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint,
+  frcLef58SpacingWrongDirConstraint,
   frcLef58CutClassConstraint,  // not supported
   frcNonSufficientMetalConstraint,
   frcSpacingSamenetConstraint,
@@ -287,6 +286,13 @@ enum class frAccessPointEnum
   NearbyGrid = 4  // nearby grid or 1/2 grid
 };
 
+enum class RipUpMode
+{
+  DRC = 0,
+  ALL = 1,
+  NEARDRC = 2
+};
+
 namespace bg = boost::geometry;
 
 typedef bg::model::d2::point_xy<frCoord, bg::cs::cartesian> point_t;
@@ -306,8 +312,6 @@ struct frDebugSettings
         debugTA(false),
         draw(true),
         allowPause(true),
-        x(-1),
-        y(-1),
         iter(0),
         paMarkers(false),
         paEdge(false),
@@ -319,7 +323,8 @@ struct frDebugSettings
         markerDecay(-1),
         ripupMode(-1),
         followGuide(-1),
-        writeNetTracks(false)
+        writeNetTracks(false),
+        dumpLastWorker(false)
 
   {
   }
@@ -335,8 +340,7 @@ struct frDebugSettings
   bool allowPause;
   std::string netName;
   std::string pinName;
-  int x;
-  int y;
+  odb::Rect box{-1, -1, -1, -1};
   int iter;
   bool paMarkers;
   bool paEdge;
@@ -351,6 +355,7 @@ struct frDebugSettings
   int ripupMode;
   int followGuide;
   bool writeNetTracks;
+  bool dumpLastWorker;
 };
 
 // Avoids the need to split the whole serializer like
@@ -361,5 +366,7 @@ inline bool is_loading(const Archive& ar)
 {
   return std::is_same<typename Archive::is_loading, boost::mpl::true_>::value;
 }
+
+using utl::format_as;
 
 }  // namespace fr

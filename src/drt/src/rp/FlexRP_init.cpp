@@ -26,16 +26,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <iostream>
-#include <sstream>
-
 #include "FlexRP.h"
-#include "db/infra/frTime.h"
 #include "frProfileTask.h"
-#include "gc/FlexGC.h"
 
-using namespace std;
-using namespace fr;
+namespace fr {
 
 void FlexRP::init()
 {
@@ -49,6 +43,7 @@ void FlexRP::init()
       continue;
     }
     tech_->via2ViaForbiddenLen.push_back({});
+    tech_->via2ViaPrlLen.push_back({});
     tech_->viaForbiddenTurnLen.push_back({});
     tech_->viaForbiddenPlanarLen.push_back({});
     tech_->line2LineForbiddenLen.push_back({});
@@ -59,3 +54,5 @@ void FlexRP::init()
     }
   }
 }
+
+}  // namespace fr

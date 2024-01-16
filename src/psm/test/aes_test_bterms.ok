@@ -16,7 +16,7 @@
 ########## IR report #################
 Corner: default
 Worstcase voltage: 1.09e+00 V
-Average IR drop  : 6.29e-04 V
+Average IR drop  : 6.30e-04 V
 Worstcase IR drop: 1.40e-02 V
 ######################################
 [INFO PSM-0022] Using 0.000V for VSS
@@ -26,7 +26,7 @@ Worstcase IR drop: 1.40e-02 V
 [INFO PSM-0040] All PDN stripes on net VSS are connected.
 ########## IR report #################
 Corner: default
-Worstcase voltage: 1.10e-02 V
-Average IR drop  : 6.25e-04 V
-Worstcase IR drop: 1.10e-02 V
+Worstcase voltage: 1.09e-02 V
+Average IR drop  : 6.26e-04 V
+Worstcase IR drop: 1.09e-02 V
 ######################################

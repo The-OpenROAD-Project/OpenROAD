@@ -203,13 +203,18 @@ class Fixture
       std::vector<frCoord> prlTbl,
       std::vector<std::vector<frCoord>> spacingTbl);
   void initRegionQuery();
+  frLef58CutSpacingConstraint* makeLef58CutSpacingConstraint_parallelOverlap(
+      frLayerNum layer_num,
+      frCoord spacing);
   frLef58CutSpacingConstraint* makeLef58CutSpacingConstraint_adjacentCut(
       frLayerNum layer_num,
       frCoord spacing,
       int adjacent_cuts,
       int two_cuts,
       frCoord within);
-
+  void makeLef58WrongDirSpcConstraint(
+      frLayerNum layer_num,
+      odb::dbTechLayerWrongDirSpacingRule* dbRule);
   // Public data members are accessible from inside the test function
   std::unique_ptr<fr::Logger> logger;
   std::unique_ptr<frDesign> design;

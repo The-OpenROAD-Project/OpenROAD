@@ -43,8 +43,9 @@ rtl_macro_placer
     [-target_dead_space target_dead_space]
     [-min_ar min_ar]
     [-snap_layer snap_layer]
-    [-bus_planning_flag bus_planning_flag]
+    [-bus_planning]
     [-report_directory report_directory]
+    [-write_macro_placement file_name]
 ```
 
 #### Generic Parameters
@@ -66,8 +67,9 @@ rtl_macro_placer
 | `-target_dead_space` | Specifies the target dead space percentage, which influences the utilization of `StandardCellCluster`. The allowed values are floats, and the default value is `0.05`. |
 | `-min_ar` | Specifies the minimum aspect ratio $a$, or the ratio of its width to height of a `StandardCellCluster` from $[a, \frac{1}{a}]$. The allowed values are floats, and the default value is `0.33`. |
 | `-snap_layer` | Snap macro origins to this routing layer track. The default value is 4, and the allowed values are integers `[1, MAX_LAYER]`). |
-| `-bus_planning_flag` | Flag to enable bus planning. The recommendation is to turn on bus planning for SKY130 and off for NanGate45/ASAP7. The default value is disabled. |
+| `-bus_planning` | Flag to enable bus planning. We recommend to enable bus planning for technologies with very limited routing layers such as SKY130 and GF180. As for technologies such as NanGate45 and ASAP7, we recommend to keep it disabled. |
 | `-report_directory` | Save reports to this directory. |
+| `-write_macro_placement` | Generates a file with the macro placement in the format of multiple calls for the `place_macro` command. |
 
 
 #### Simulated Annealing Weight parameters
@@ -84,6 +86,33 @@ Do note that while action probabilities are normalized to 1.0, the weights are n
 | `-boundary_weight` | Weight for the boundary, or how far the hard macro clusters are from boundaries. Note that mixed macro clusters are not pushed, thus not considered in this cost.  The allowed values are floats, and the default value is `50.0`. |
 | `-notch_weight` | Weight for the notch, or the existence of dead space that cannot be used for placement & routing. Note that this cost applies only to hard macro clusters.  The allowed values are floats, and the default value is `10.0`. |
 | `-macro_blockage_weight` | Weight for macro blockage, or the overlapping instances of the macro.  The allowed values are floats, and the default value is `10.0`. |
+
+### Write Macro Placement
+
+Command to write a file with the macro placement in the format of multiple calls for the `place_macro` command:
+
+```tcl
+write_macro_placement file_name
+```
+
+### Place Macro
+
+Command for placement of one specific macro.
+
+```tcl
+place_macro
+    -macro_name macro_name
+    -location {x y}
+    [-orientation orientation]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-macro_name` | The name of a macro of the design. |
+| `-location` | The lower left corner of the macro in microns. |
+| `-orientation` | The orientation according to odb. If nothing is specified, defaults to `R0`.  We only allow `R0`, `MY`, `MX` and `R180`.  |
 
 ## Example scripts
 

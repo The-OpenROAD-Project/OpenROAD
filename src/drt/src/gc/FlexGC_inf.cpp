@@ -27,7 +27,6 @@
 
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
-using namespace std;
 using namespace fr;
 
 void FlexGCWorker::Impl::checkRectMetSpcTblInf_queryBox(
@@ -99,7 +98,7 @@ void FlexGCWorker::Impl::checkOrthRectsMetSpcTblInf(
         gtl::intersect(rect2, *rects[j]);
         gtl::rectangle_data<frCoord> markerRect(rect1);
         gtl::generalized_intersect(markerRect, rect2);
-        auto marker = make_unique<frMarker>();
+        auto marker = std::make_unique<frMarker>();
         Rect box(gtl::xl(markerRect),
                  gtl::yl(markerRect),
                  gtl::xh(markerRect),
@@ -110,20 +109,20 @@ void FlexGCWorker::Impl::checkOrthRectsMetSpcTblInf(
             getTech()->getLayer(lNum)->getSpacingTableInfluence());
         marker->addSrc(rects[i]->getNet()->getOwner());
         marker->addVictim(rects[i]->getNet()->getOwner(),
-                          make_tuple(lNum,
-                                     Rect(gtl::xl(rect1),
-                                          gtl::yl(rect1),
-                                          gtl::xh(rect1),
-                                          gtl::yh(rect1)),
-                                     rects[i]->isFixed()));
+                          std::make_tuple(lNum,
+                                          Rect(gtl::xl(rect1),
+                                               gtl::yl(rect1),
+                                               gtl::xh(rect1),
+                                               gtl::yh(rect1)),
+                                          rects[i]->isFixed()));
         marker->addSrc(rects[j]->getNet()->getOwner());
         marker->addAggressor(rects[j]->getNet()->getOwner(),
-                             make_tuple(lNum,
-                                        Rect(gtl::xl(rect2),
-                                             gtl::yl(rect2),
-                                             gtl::xh(rect2),
-                                             gtl::yh(rect2)),
-                                        rects[j]->isFixed()));
+                             std::make_tuple(lNum,
+                                             Rect(gtl::xl(rect2),
+                                                  gtl::yl(rect2),
+                                                  gtl::xh(rect2),
+                                                  gtl::yh(rect2)),
+                                             rects[j]->isFixed()));
         addMarker(std::move(marker));
       } else
         break;  // spacing is larger than required, no need to check other
@@ -147,17 +146,8 @@ void FlexGCWorker::Impl::checkRectMetSpcTblInf(
 {
   frCoord width = rect->width();
   frLayerNum lNum = rect->getLayerNum();
-  auto owner = rect->getNet()->getOwner();
-  if (owner != nullptr
-      && (owner->typeId() == frcInstBlockage
-          || owner->typeId() == frcBlockage)) {
-    frBlockage* blkg;
-    if (owner->typeId() == frcInstBlockage)
-      blkg = static_cast<frInstBlockage*>(owner)->getBlockage();
-    else
-      blkg = static_cast<frBlockage*>(owner);
-    if (blkg->getDesignRuleWidth() != -1)
-      width = blkg->getDesignRuleWidth();
+  if (rect->getNet()->getDesignRuleWidth() != -1) {
+    width = rect->getNet()->getDesignRuleWidth();
   }
   if (width < con->getMinWidth())
     return;
@@ -182,11 +172,11 @@ void FlexGCWorker::Impl::checkRectMetSpcTblInf(
                                            queryBox.max_corner().x(),
                                            queryBox.max_corner().y());
     auto& workerRegionQuery = getWorkerRegionQuery();
-    vector<rq_box_value_t<gcRect*>> result;
+    std::vector<rq_box_value_t<gcRect*>> result;
     workerRegionQuery.queryMaxRectangle(queryBox, lNum, result);
     if (result.size() < 2)
       continue;
-    vector<gcRect*> rects;
+    std::vector<gcRect*> rects;
     for (auto& [objBox, objPtr] : result) {
       if (!gtl::intersects(*objPtr, queryRect, false))
         continue;  // ignore if it only touches the query region

@@ -27,6 +27,6 @@ The NOWIREEXTENSIONATPIN statement will be ignored. See file sky130hd_data/io/sk
 ########## IR report #################
 Corner: default
 Worstcase voltage: 1.80e+00 V
-Average IR drop  : 4.70e-04 V
-Worstcase IR drop: 2.12e-03 V
+Average IR drop  : 9.79e-05 V
+Worstcase IR drop: 3.22e-04 V
 ######################################

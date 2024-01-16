@@ -119,7 +119,9 @@ void Tapcell::run(const Options& options)
   placeTapcells(options);
 }
 
-int Tapcell::placeTapcells(odb::dbMaster* tapcell_master, const int dist)
+int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
+                           const int dist,
+                           const bool disallow_one_site_gaps)
 {
   std::vector<Edge> edges;
 
@@ -159,16 +161,18 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master, const int dist)
   int inst = 0;
   for (auto* row : db_->getChip()->getBlock()->getRows()) {
     const bool is_edge = edge_rows.find(row) != edge_rows.end();
-    inst += placeTapcells(tapcell_master, dist, row, is_edge);
+    inst += placeTapcells(
+        tapcell_master, dist, row, is_edge, disallow_one_site_gaps);
   }
   logger_->info(utl::TAP, 5, "Inserted {} tapcells.", inst);
   return inst;
 }
 
 int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
-                           int dist,
+                           const int dist,
                            odb::dbRow* row,
-                           bool is_edge)
+                           const bool is_edge,
+                           const bool disallow_one_site_gaps)
 {
   if (row->getSite()->getName() != tapcell_master->getSite()->getName()) {
     return 0;
@@ -215,7 +219,8 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
     x = odb::makeSiteLoc(x, site_width, true, llx);
     // Check if site is filled
     const odb::dbOrientType ori = row->getOrient();
-    bool overlap = checkIfFilled(x, tap_width, ori, row_insts);
+    bool overlap = checkIfFilled(
+        x, tap_width, ori, row_insts, site_width, disallow_one_site_gaps);
     if (!overlap) {
       const int lly = row_bb.yMin();
       auto* inst = makeInstance(
@@ -236,7 +241,9 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
 bool Tapcell::checkIfFilled(const int x,
                             const int width,
                             const odb::dbOrientType& orient,
-                            const std::set<odb::dbInst*>& row_insts)
+                            const std::set<odb::dbInst*>& row_insts,
+                            const int site_width,
+                            const bool disallow_one_site_gaps)
 {
   int x_start;
   int x_end;
@@ -246,6 +253,12 @@ bool Tapcell::checkIfFilled(const int x,
   } else {
     x_start = x;
     x_end = x + width;
+  }
+
+  if (disallow_one_site_gaps) {
+    // The +1 is to convert > to >= (< to <=) below
+    x_start -= site_width + 1;
+    x_end += site_width + 1;
   }
 
   for (const auto& inst : row_insts) {
@@ -912,7 +925,7 @@ Tapcell::CornerMap Tapcell::placeEndcapCorner(const Tapcell::Corner& corner,
       if (row_orient == odb::dbOrientType::R0) {
         master = options.right_top_edge;
       } else {
-        master = options.left_bottom_edge;
+        master = options.right_bottom_edge;
       }
       break;
     case CornerType::Unknown:
@@ -939,41 +952,41 @@ Tapcell::CornerMap Tapcell::placeEndcapCorner(const Tapcell::Corner& corner,
   const int width = master->getWidth();
   const int height = master->getHeight();
 
-  odb::dbOrientType orient = row_orient;
+  // Adjust placement position
   odb::Point ll = corner.pt;
   switch (corner.type) {
     case CornerType::OuterBottomLeft:
+    case CornerType::InnerTopRight:
       break;
     case CornerType::OuterBottomRight:
+    case CornerType::InnerTopLeft:
       ll.addX(-width);
-      if (master->getSymmetryY()) {
-        orient = orient.flipY();
-      }
       break;
     case CornerType::OuterTopRight:
-      ll.addX(-width);
-      ll.addY(-height);
-      if (master->getSymmetryY()) {
-        orient = orient.flipY();
-      }
-      break;
-    case CornerType::OuterTopLeft:
-      ll.addY(-height);
-      break;
     case CornerType::InnerBottomLeft:
       ll.addX(-width);
       ll.addY(-height);
       break;
+    case CornerType::OuterTopLeft:
     case CornerType::InnerBottomRight:
       ll.addY(-height);
-      if (master->getSymmetryY()) {
-        orient = orient.flipY();
-      }
       break;
-    case CornerType::InnerTopLeft:
-      ll.addX(-width);
+    case CornerType::Unknown:
       break;
+  }
+
+  // Adjust orientation
+  odb::dbOrientType orient = row_orient;
+  switch (corner.type) {
+    case CornerType::OuterBottomLeft:
+    case CornerType::OuterTopLeft:
+    case CornerType::InnerBottomRight:
     case CornerType::InnerTopRight:
+      break;
+    case CornerType::OuterBottomRight:
+    case CornerType::OuterTopRight:
+    case CornerType::InnerBottomLeft:
+    case CornerType::InnerTopLeft:
       if (master->getSymmetryY()) {
         orient = orient.flipY();
       }
@@ -1373,37 +1386,32 @@ EndcapCellOptions Tapcell::correctEndcapOptions(const Options& options) const
 
   // Endcaps
   bopts.left_edge = options.endcap_master;
+  bopts.right_edge = options.endcap_master;
 
-  if (options.tap_nwin3_master) {
-    bopts.top_edge.push_back(options.tap_nwout3_master);
+  for (auto* master : {options.tap_nwin3_master,
+                       options.tap_nwin2_master,
+                       options.tap_nwintie_master}) {
+    if (master != nullptr) {
+      bopts.bottom_edge.push_back(master);
+    }
   }
-  if (options.tap_nwin2_master) {
-    bopts.top_edge.push_back(options.tap_nwout2_master);
-  }
-  if (options.tap_nwintie_master) {
-    bopts.top_edge.push_back(options.tap_nwouttie_master);
-  }
-  if (options.tap_nwout3_master) {
-    bopts.bottom_edge.push_back(options.tap_nwin3_master);
-  }
-  if (options.tap_nwout2_master) {
-    bopts.bottom_edge.push_back(options.tap_nwin2_master);
-  }
-  if (options.tap_nwouttie_master) {
-    bopts.bottom_edge.push_back(options.tap_nwintie_master);
+  for (auto* master : {options.tap_nwout3_master,
+                       options.tap_nwout2_master,
+                       options.tap_nwouttie_master}) {
+    if (master != nullptr) {
+      bopts.top_edge.push_back(master);
+    }
   }
 
   bopts.left_top_corner = options.cnrcap_nwout_master;
-  bopts.left_top_edge = options.incnrcap_nwout_master;
-
   bopts.left_bottom_corner = options.cnrcap_nwin_master;
-  bopts.left_bottom_edge = options.incnrcap_nwin_master;
-
   bopts.right_top_corner = options.cnrcap_nwout_master;
-  bopts.right_top_edge = options.incnrcap_nwout_master;
-
   bopts.right_bottom_corner = options.cnrcap_nwin_master;
-  bopts.right_bottom_edge = options.incnrcap_nwin_master;
+
+  bopts.left_top_edge = options.incnrcap_nwin_master;
+  bopts.left_bottom_edge = options.incnrcap_nwout_master;
+  bopts.right_top_edge = options.incnrcap_nwin_master;
+  bopts.right_bottom_edge = options.incnrcap_nwout_master;
 
   return bopts;
 }
@@ -1416,7 +1424,7 @@ void Tapcell::placeTapcells(const Options& options)
 
   const int dist = options.dist >= 0 ? options.dist : defaultDistance();
 
-  placeTapcells(options.tapcell_master, dist);
+  placeTapcells(options.tapcell_master, dist, options.disallow_one_site_gaps);
 }
 
 }  // namespace tap

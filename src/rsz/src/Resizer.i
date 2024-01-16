@@ -62,8 +62,8 @@ PinSet *
 tclListSetPin(Tcl_Obj *source,
               Tcl_Interp *interp);
 
-typedef NetSeq TmpNetSeq;
-typedef PinSet TmpPinSet;
+using TmpNetSeq = NetSeq ;
+using TmpPinSet = PinSet;
 
 } // namespace
 
@@ -340,6 +340,14 @@ remove_buffers_cmd()
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->removeBuffers();
+}
+
+void
+balance_row_usage_cmd()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->balanceRowUsage();
 }
 
 void

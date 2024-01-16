@@ -94,7 +94,7 @@ class Options
   virtual bool areSelectedVisible() = 0;
 
   virtual bool isScaleBarVisible() const = 0;
-  virtual bool arePinMarkersVisible() const = 0;
+  virtual bool areIOPinsVisible() const = 0;
   virtual QFont pinMarkersFont() = 0;
   virtual bool areAccessPointsVisible() const = 0;
   virtual bool areRegionsVisible() const = 0;

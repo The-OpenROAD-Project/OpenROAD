@@ -152,10 +152,6 @@ LayoutViewer::LayoutViewer(
 {
   setMouseTracking(true);
 
-  QPalette palette;
-  palette.setColor(QPalette::Window, background_);
-  setPalette(palette);
-
   addMenuAndActions();
 
   connect(
@@ -218,9 +214,7 @@ Rect LayoutViewer::getBounds() const
 
   Rect die = block_->getDieArea();
 
-  Rect visible(0, 0, die.xMax(), die.yMax());
-
-  bbox.merge(visible);
+  bbox.merge(die);
 
   return bbox;
 }
@@ -278,6 +272,10 @@ void LayoutViewer::updateCenter(int dx, int dy)
   // modify the center according to the dx and dy
   center_.setX(center_.x() - dx / pixels_per_dbu_);
   center_.setY(center_.y() + dy / pixels_per_dbu_);
+
+  if (!scroller_->isScrollingWithCursor()) {
+    updateCursorCoordinates();
+  }
 }
 
 void LayoutViewer::centerAt(const odb::Point& focus)
@@ -321,6 +319,24 @@ void LayoutViewer::centerAt(const odb::Point& focus)
   if (y_val != 0) {
     center_.setY(adjusted_pt.y());
   }
+}
+
+bool LayoutViewer::isCursorInsideViewport()
+{
+  QPoint mouse_pos = scroller_->mapFromGlobal(QCursor::pos());
+  QRect layout_boundaries = scroller_->viewport()->rect();
+
+  if (layout_boundaries.contains(mouse_pos)) {
+    return true;
+  }
+
+  return false;
+}
+
+void LayoutViewer::updateCursorCoordinates()
+{
+  Point mouse = screenToDBU(mapFromGlobal(QCursor::pos()));
+  emit location(mouse.x(), mouse.y());
 }
 
 void LayoutViewer::zoomIn()
@@ -581,8 +597,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
       if (inst_boxes == nullptr) {
         continue;
       }
-      dbTransform inst_xfm;
-      inst->getTransform(inst_xfm);
+      const dbTransform inst_xfm = inst->getTransform();
 
       if (inst_osb_visible) {
         for (auto& box : inst_boxes->obs) {
@@ -865,8 +880,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
       }
       if (options_->areInstancePinsVisible()
           && options_->areInstancePinsSelectable()) {
-        odb::dbTransform xform;
-        inst->getTransform(xform);
+        const odb::dbTransform xform = inst->getTransform();
         for (auto* iterm : inst->getITerms()) {
           for (auto* mpin : iterm->getMTerm()->getMPins()) {
             for (auto* geom : mpin->getGeometry()) {
@@ -1215,19 +1229,23 @@ void LayoutViewer::resizeEvent(QResizeEvent* event)
 void LayoutViewer::updateScaleAndCentering(const QSize& new_size)
 {
   if (hasDesign()) {
-    const odb::Rect block_bounds = getBounds();
+    const odb::Rect bounds = getBounds();
 
     // compute new pixels_per_dbu_
-    pixels_per_dbu_
-        = computePixelsPerDBU(new_size, getPaddedRect(block_bounds));
+    pixels_per_dbu_ = computePixelsPerDBU(new_size, getPaddedRect(bounds));
 
-    // compute new centering shift
-    // the offset necessary to center the block in the viewport.
     // expand area to fill whole scroller window
     const QSize new_area = new_size.expandedTo(scroller_->size());
+
+    // Compute new centering shift - that is the offset necessary to center the
+    // block in the viewport. We need to take into account not only the
+    // dimensions (dx and dy) of the bounds but how far it is from the dbu
+    // origin
     centering_shift_
-        = QPoint((new_area.width() - block_bounds.dx() * pixels_per_dbu_) / 2,
-                 (new_area.height() + block_bounds.dy() * pixels_per_dbu_) / 2);
+        = QPoint(((new_area.width() - bounds.dx() * pixels_per_dbu_) / 2
+                  - bounds.xMin() * pixels_per_dbu_),
+                 ((new_area.height() + bounds.dy() * pixels_per_dbu_) / 2
+                  + bounds.yMin() * pixels_per_dbu_));
 
     fullRepaint();
   }
@@ -1335,9 +1353,7 @@ std::vector<std::pair<odb::dbObject*, odb::Rect>> LayoutViewer::getRowRects(
 
   std::vector<std::pair<odb::dbObject*, odb::Rect>> rects;
   for (auto& [box, row] : rows) {
-    int x;
-    int y;
-    row->getOrigin(x, y);
+    odb::Point pt = row->getOrigin();
 
     rects.emplace_back(row, row->getBBox());
 
@@ -1381,16 +1397,16 @@ std::vector<std::pair<odb::dbObject*, odb::Rect>> LayoutViewer::getRowRects(
     if (h_visible) {
       // row height can be seen
       for (int i = 0; i < count; ++i) {
-        const Rect row_rect(x, y, x + w, y + h);
+        const Rect row_rect(pt.x(), pt.y(), pt.x() + w, pt.y() + h);
         if (row_rect.intersects(bounds)) {
           // only paint rows that can be seen
           rects.emplace_back(obj, row_rect);
         }
 
         if (dir == dbRowDir::HORIZONTAL) {
-          x += spacing;
+          pt.addX(spacing);
         } else {
-          y += spacing;
+          pt.addY(spacing);
         }
       }
     }
@@ -1877,6 +1893,7 @@ void LayoutViewer::viewportUpdated()
 
 void LayoutViewer::saveImage(const QString& filepath,
                              const Rect& region,
+                             int width_px,
                              double dbu_per_pixel)
 {
   if (!hasDesign()) {
@@ -1901,6 +1918,12 @@ void LayoutViewer::saveImage(const QString& filepath,
   }
 
   const qreal old_pixels_per_dbu = pixels_per_dbu_;
+
+  if (width_px != 0) {
+    // Adapt resolution to width entered by user
+    pixels_per_dbu_ = width_px / static_cast<double>(save_area.dx());
+  }
+
   if (dbu_per_pixel != 0) {
     pixels_per_dbu_ = 1.0 / dbu_per_pixel;
   }
@@ -1912,15 +1935,38 @@ void LayoutViewer::saveImage(const QString& filepath,
                                       screen_region.width(),
                                       screen_region.height());
 
-  const QRect bounding_rect = save_region.boundingRect();
+  QRect bounding_rect = save_region.boundingRect();
 
   // We don't use Utils::renderImage as we need to have the
   // rendering be synchronous.  We directly call the draw()
   // method ourselves.
-  const int width_px = bounding_rect.width();
-  const int height_px = bounding_rect.height();
 
-  const QSize img_size = Utils::adjustMaxImageSize(QSize(width_px, height_px));
+  const QSize initial_size
+      = QSize(bounding_rect.width(), bounding_rect.height());
+  const QSize img_size = Utils::adjustMaxImageSize(initial_size);
+
+  if (img_size != initial_size) {
+    logger_->warn(utl::GUI,
+                  94,
+                  "Resolution results in illegal size (max width/height "
+                  "is {} pixels). Saving image with dimensions = {} x {}.",
+                  Utils::MAX_IMAGE_SIZE,
+                  img_size.width(),
+                  img_size.height());
+
+    // Set resolution according to adjusted size
+    pixels_per_dbu_ = computePixelsPerDBU(img_size, save_area);
+
+    const QRectF adjuted_screen_region = dbuToScreen(save_area);
+    const QRegion adjusted_save_region
+        = QRegion(adjuted_screen_region.left(),
+                  adjuted_screen_region.top(),
+                  adjuted_screen_region.width(),
+                  adjuted_screen_region.height());
+
+    bounding_rect = adjusted_save_region.boundingRect();
+  }
+
   QImage img(img_size, QImage::Format_ARGB32_Premultiplied);
 
   const qreal render_ratio
@@ -1933,7 +1979,7 @@ void LayoutViewer::saveImage(const QString& filepath,
                       highlighted_,
                       rulers_,
                       render_ratio,
-                      background_);
+                      background());
   pixels_per_dbu_ = old_pixels_per_dbu;
 
   if (!img.save(save_filepath)) {
@@ -2268,7 +2314,7 @@ void LayoutViewer::executionPaused()
 
 ////// LayoutScroll ///////
 LayoutScroll::LayoutScroll(LayoutViewer* viewer, QWidget* parent)
-    : QScrollArea(parent), viewer_(viewer)
+    : QScrollArea(parent), viewer_(viewer), scrolling_with_cursor_(false)
 {
   setWidgetResizable(false);
   setWidget(viewer);
@@ -2310,6 +2356,41 @@ void LayoutScroll::wheelEvent(QWheelEvent* event)
   // ensure changes are processed before the next wheel event to prevent
   // zoomIn and Out from jumping around on the ScrollBars
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+}
+
+bool LayoutScroll::eventFilter(QObject* object, QEvent* event)
+{
+  if (event->type() == QEvent::MouseButtonPress) {
+    QMouseEvent* press_event = static_cast<QMouseEvent*>(event);
+
+    if (press_event->button() == Qt::LeftButton) {
+      if (object == this->horizontalScrollBar()
+          || object == this->verticalScrollBar()) {
+        scrolling_with_cursor_ = true;
+      }
+    }
+  }
+
+  if (event->type() == QEvent::MouseButtonRelease) {
+    QMouseEvent* release_event = static_cast<QMouseEvent*>(event);
+
+    if (release_event->button() == Qt::LeftButton && scrolling_with_cursor_) {
+      scrolling_with_cursor_ = false;
+
+      // handle the case in which a user might click on one of the
+      // scrollbars, hold the button and move the cursor away
+      if (viewer_->isCursorInsideViewport()) {
+        viewer_->updateCursorCoordinates();
+      }
+    }
+  }
+
+  return QScrollArea::eventFilter(object, event);
+}
+
+bool LayoutScroll::isScrollingWithCursor()
+{
+  return scrolling_with_cursor_;
 }
 
 }  // namespace gui

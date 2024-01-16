@@ -82,7 +82,8 @@ class _dbTechLayerCutSpacingTableDefRule : public _dbObject
       _dbDatabase*,
       const _dbTechLayerCutSpacingTableDefRule& r);
   _dbTechLayerCutSpacingTableDefRule(_dbDatabase*);
-  ~_dbTechLayerCutSpacingTableDefRule();
+
+  ~_dbTechLayerCutSpacingTableDefRule() = default;
 
   bool operator==(const _dbTechLayerCutSpacingTableDefRule& rhs) const;
   bool operator!=(const _dbTechLayerCutSpacingTableDefRule& rhs) const

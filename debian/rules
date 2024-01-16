@@ -6,6 +6,9 @@ export DH_VERBOSE = 1
 
 export DEB_BUILD_MAINT_OPTIONS=optimize=-lto
 
+export OPENROAD_EXE = $(abspath ./obj-x86_64-linux-gnu/src/openroad)
+
+
 %:
 	dh $@
 
