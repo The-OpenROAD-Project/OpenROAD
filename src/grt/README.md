@@ -143,7 +143,7 @@ set_routing_alpha
 | `-min_fanout` | Set the minimum number for fanout. | 
 | `-min_hpwl` | Set the minimum half-perimetere wirelength (microns). | 
 | `-clock_nets` | Flag to set routing alpha for clock nets. The default value is `False`, and the allowed values are bools. |
-| `alpha` | Set the trade-off value between wirelength and path depth. The allowed values are floats [0, 1]. |
+| `alpha` | Set the trade-off value between wirelength and path depth. The allowed values are floats `[0, 1]`. |
 
 Example: `set_routing_alpha -net clk 0.3` sets the alpha value of 0.3 for net *clk*.
 

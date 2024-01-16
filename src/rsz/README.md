@@ -227,7 +227,7 @@ repair_timing
 | ----- | ----- |
 | `-setup` | Repair setup timing. |
 | `-hold` | Repair hold timing. |
-| `-recover_power` | Set the percentage of paths to recover power for. The default value is `0`, and the allowed values are floats (0, 100]. |
+| `-recover_power` | Set the percentage of paths to recover power for. The default value is `0`, and the allowed values are floats `(0, 100]`. |
 | `-setup_margin` | Add additional setup slack margin. |
 | `-hold_margin` | Add additional hold slack margin. |
 | `-allow_setup_violations` | While repairing hold violations, buffers are not inserted that will cause setup violations unless `-allow_setup_violations` is specified. |
