@@ -237,6 +237,10 @@ void FastRouteCore::fillVIA()
           newCNT++;
         }
 
+        if(routeLen <= 0) {
+          logger_->error(GRT, 252, "Edge has no previous routing.");
+        }
+
         if (treenodes[node2_alias].hID == edgeID
             || (edgeID == treenodes[node2_alias].lID
                 && treenodes[node2_alias].hID == BIG_INT
@@ -270,6 +274,8 @@ void FastRouteCore::fillVIA()
             }
           }
         }
+
+        // Update the edge's route only if there were VIAs added for this edge
         if (newCNT != routeLen) {
           if (treeedges[edgeID].route.type == RouteType::MazeRoute) {
             treeedges[edgeID].route.gridsX.clear();
