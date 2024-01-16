@@ -237,7 +237,7 @@ void FastRouteCore::fillVIA()
           newCNT++;
         }
 
-        if(routeLen <= 0) {
+        if (routeLen <= 0) {
           logger_->error(GRT, 252, "Edge has no previous routing.");
         }
 
