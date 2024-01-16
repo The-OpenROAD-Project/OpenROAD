@@ -32,6 +32,9 @@
 
 #include "chartsWidget.h"
 
+#include <QHBoxLayout>
+
+#ifdef ENABLE_CHARTS
 #include <QColor>
 #include <QFrame>
 #include <QString>
@@ -46,32 +49,37 @@
 #include "sta/MinMax.hh"
 #include "sta/Units.hh"
 #include "staGuiInterface.h"
+#endif
 
 namespace gui {
 
 ChartsWidget::ChartsWidget(QWidget* parent)
     : QDockWidget("Charts", parent),
+#ifdef ENABLE_CHARTS
       logger_(nullptr),
       sta_(nullptr),
-      label_(new QLabel(this)),
       mode_menu_(new QComboBox(this)),
       chart_(new QChart),
       display_(new QChartView(chart_, this)),
       axis_x_(new QBarCategoryAxis(this)),
-      axis_y_(new QValueAxis(this))
+      axis_y_(new QValueAxis(this)),
+#endif
+      label_(new QLabel(this))
 {
   setObjectName("charts_widget");  // for settings
 
   QWidget* container = new QWidget(this);
+  QHBoxLayout* controls_layout = new QHBoxLayout;
+  controls_layout->addWidget(label_);
+
+#ifdef ENABLE_CHARTS
   QVBoxLayout* layout = new QVBoxLayout;
   QFrame* controls_frame = new QFrame;
-  QHBoxLayout* controls_layout = new QHBoxLayout;
 
   mode_menu_->addItem("Select Mode");
   mode_menu_->addItem("Endpoint Slack");
 
-  controls_layout->addWidget(mode_menu_);
-  controls_layout->addWidget(label_);
+  controls_layout->insertWidget(0, mode_menu_);
   controls_layout->insertStretch(1);
 
   controls_frame->setLayout(controls_layout);
@@ -80,8 +88,8 @@ ChartsWidget::ChartsWidget(QWidget* parent)
 
   layout->addWidget(controls_frame);
   layout->addWidget(display_);
+
   container->setLayout(layout);
-  setWidget(container);
 
   chart_->addAxis(axis_y_, Qt::AlignLeft);
   chart_->addAxis(axis_x_, Qt::AlignBottom);
@@ -90,8 +98,16 @@ ChartsWidget::ChartsWidget(QWidget* parent)
           qOverload<int>(&QComboBox::currentIndexChanged),
           this,
           &ChartsWidget::changeMode);
+#else
+  label_->setText("QtCharts is not installed.");
+  label_->setAlignment(Qt::AlignCenter);
+  // We need this layout in order to centralize the label.
+  container->setLayout(controls_layout);
+#endif
+  setWidget(container);
 }
 
+#ifdef ENABLE_CHARTS
 void ChartsWidget::changeMode()
 {
   if (mode_menu_->currentIndex() == SELECT) {
@@ -254,5 +270,5 @@ void ChartsWidget::setLogger(utl::Logger* logger)
 {
   logger_ = logger;
 }
-
+#endif
 }  // namespace gui

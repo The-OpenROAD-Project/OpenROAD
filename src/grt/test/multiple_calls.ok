@@ -45,8 +45,8 @@ metal9     Horizontal       2256          2208          2.13%
 metal10    Vertical         2305          2256          2.13%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 489
-[INFO GRT-0198] Via related Steiner nodes: 0
+[INFO GRT-0197] Via related to pin nodes: 368
+[INFO GRT-0198] Via related Steiner nodes: 26
 [INFO GRT-0199] Via filling finished.
 [INFO GRT-0111] Final number of vias: 612
 [INFO GRT-0112] Final usage 3D: 2467
@@ -107,8 +107,8 @@ metal9     Horizontal       2256          2208          2.13%
 metal10    Vertical         2305          2209          4.16%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 581
-[INFO GRT-0198] Via related Steiner nodes: 0
+[INFO GRT-0197] Via related to pin nodes: 393
+[INFO GRT-0198] Via related Steiner nodes: 26
 [INFO GRT-0199] Via filling finished.
 [INFO GRT-0111] Final number of vias: 693
 [INFO GRT-0112] Final usage 3D: 2710

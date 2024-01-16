@@ -160,7 +160,7 @@ void FastRouteCore::setupHeap3D(int netID,
       }
     }
 
-    const int numNodes = sttrees_[netID].num_nodes;
+    const int numNodes = sttrees_[netID].num_nodes();
     std::vector<bool> heapVisited(numNodes, false);
     std::vector<int> heapQueue(numNodes);
 
@@ -1627,7 +1627,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       // re statis the node overlap
       int numpoints = 0;
 
-      for (int d = 0; d < sttrees_[netID].num_nodes; d++) {
+      for (int d = 0; d < sttrees_[netID].num_nodes(); d++) {
         treenodes[d].topL = -1;
         treenodes[d].botL = num_layers_;
         treenodes[d].assigned = false;

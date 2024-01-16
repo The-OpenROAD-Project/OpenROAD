@@ -46,7 +46,7 @@ metal9     Horizontal        196           182          7.14%
 metal10    Vertical          196           182          7.14%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 56
+[INFO GRT-0197] Via related to pin nodes: 33
 [INFO GRT-0198] Via related Steiner nodes: 0
 [INFO GRT-0199] Via filling finished.
 [INFO GRT-0111] Final number of vias: 71

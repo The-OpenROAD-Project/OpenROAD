@@ -38,7 +38,7 @@ met4       Vertical         8968          4355          51.44%
 met5       Horizontal       2964          1443          51.32%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 74
+[INFO GRT-0197] Via related to pin nodes: 47
 [INFO GRT-0198] Via related Steiner nodes: 0
 [INFO GRT-0199] Via filling finished.
 [INFO GRT-0111] Final number of vias: 75
