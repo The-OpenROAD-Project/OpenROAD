@@ -53,9 +53,7 @@
 
 #include "browserWidget.h"
 #include "bufferTreeDescriptor.h"
-#ifdef ENABLE_CHARTS
 #include "chartsWidget.h"
-#endif
 #include "clockWidget.h"
 #include "dbDescriptors.h"
 #include "displayControls.h"
@@ -105,9 +103,7 @@ MainWindow::MainWindow(QWidget* parent)
       clock_viewer_(new ClockWidget(this)),
       hierarchy_widget_(
           new BrowserWidget(viewers_->getModuleSettings(), controls_, this)),
-#ifdef ENABLE_CHARTS
       charts_widget_(new ChartsWidget(this)),
-#endif
       find_dialog_(new FindObjectDialog(this)),
       goto_dialog_(new GotoLocationDialog(this, viewers_))
 {
@@ -129,9 +125,7 @@ MainWindow::MainWindow(QWidget* parent)
   addDockWidget(Qt::RightDockWidgetArea, timing_widget_);
   addDockWidget(Qt::RightDockWidgetArea, drc_viewer_);
   addDockWidget(Qt::RightDockWidgetArea, clock_viewer_);
-#ifdef ENABLE_CHARTS
   addDockWidget(Qt::RightDockWidgetArea, charts_widget_);
-#endif
 
   tabifyDockWidget(selection_browser_, script_);
   selection_browser_->hide();
@@ -682,9 +676,7 @@ void MainWindow::createMenus()
   windows_menu_->addAction(drc_viewer_->toggleViewAction());
   windows_menu_->addAction(clock_viewer_->toggleViewAction());
   windows_menu_->addAction(hierarchy_widget_->toggleViewAction());
-#ifdef ENABLE_CHARTS
   windows_menu_->addAction(charts_widget_->toggleViewAction());
-#endif
 
   auto option_menu = menuBar()->addMenu("&Options");
   option_menu->addAction(hide_option_);

@@ -597,8 +597,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
       if (inst_boxes == nullptr) {
         continue;
       }
-      dbTransform inst_xfm;
-      inst->getTransform(inst_xfm);
+      const dbTransform inst_xfm = inst->getTransform();
 
       if (inst_osb_visible) {
         for (auto& box : inst_boxes->obs) {
@@ -881,8 +880,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
       }
       if (options_->areInstancePinsVisible()
           && options_->areInstancePinsSelectable()) {
-        odb::dbTransform xform;
-        inst->getTransform(xform);
+        const odb::dbTransform xform = inst->getTransform();
         for (auto* iterm : inst->getITerms()) {
           for (auto* mpin : iterm->getMTerm()->getMPins()) {
             for (auto* geom : mpin->getGeometry()) {
@@ -1355,9 +1353,7 @@ std::vector<std::pair<odb::dbObject*, odb::Rect>> LayoutViewer::getRowRects(
 
   std::vector<std::pair<odb::dbObject*, odb::Rect>> rects;
   for (auto& [box, row] : rows) {
-    int x;
-    int y;
-    row->getOrigin(x, y);
+    odb::Point pt = row->getOrigin();
 
     rects.emplace_back(row, row->getBBox());
 
@@ -1401,16 +1397,16 @@ std::vector<std::pair<odb::dbObject*, odb::Rect>> LayoutViewer::getRowRects(
     if (h_visible) {
       // row height can be seen
       for (int i = 0; i < count; ++i) {
-        const Rect row_rect(x, y, x + w, y + h);
+        const Rect row_rect(pt.x(), pt.y(), pt.x() + w, pt.y() + h);
         if (row_rect.intersects(bounds)) {
           // only paint rows that can be seen
           rects.emplace_back(obj, row_rect);
         }
 
         if (dir == dbRowDir::HORIZONTAL) {
-          x += spacing;
+          pt.addX(spacing);
         } else {
-          y += spacing;
+          pt.addY(spacing);
         }
       }
     }

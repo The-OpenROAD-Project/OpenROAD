@@ -23,5 +23,6 @@ record_tests {
   placement_blockage2
   tiecells
   upf_test
+  upf_shifter_test
 }
 

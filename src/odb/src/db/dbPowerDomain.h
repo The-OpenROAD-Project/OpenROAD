@@ -76,6 +76,7 @@ class _dbPowerDomain : public _dbObject
   int _y1;
   int _y2;
   dbVector<dbId<_dbLevelShifter>> _levelshifters;
+  float _voltage;
 };
 dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbPowerDomain& obj);

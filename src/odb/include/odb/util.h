@@ -51,6 +51,8 @@ class Logger;
 namespace odb {
 class dbBlock;
 class dbBox;
+class dbMaster;
+class dbInst;
 using uint = unsigned int;
 
 // Simple list
@@ -521,12 +523,21 @@ class RUDYCalculator
    * */
   void makeGrid();
   Tile& getEditableTile(int x, int y) { return grid_.at(x).at(y); }
+  void processMacroObstruction(odb::dbMaster* macro, odb::dbInst* instance);
+  void processIntersectionGenericObstruction(odb::Rect obstruction_rect,
+                                             int tile_width,
+                                             int tile_height,
+                                             int nets_per_tile);
+  void processIntersectionSignalNet(odb::Rect net_rect,
+                                    int tile_width,
+                                    int tile_height);
 
   dbBlock* block_;
   odb::Rect gridBlock_;
   int tileCntX_ = 40;
   int tileCntY_ = 40;
   int wireWidth_ = 100;
+  const int pitches_in_tile_ = 15;
 
   std::vector<std::vector<Tile>> grid_;
 };

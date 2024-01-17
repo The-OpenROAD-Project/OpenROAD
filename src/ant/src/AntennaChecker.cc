@@ -682,7 +682,7 @@ vector<PARinfo> AntennaChecker::buildWireParTable(
 
     PARinfo par_info;
     par_info.wire_root = wire_root;
-    par_info.iterms = iv;
+    par_info.iterms = std::move(iv);
     par_info.wire_area = wire_area;
     par_info.side_wire_area = side_wire_area;
     par_info.iterm_gate_area = iterm_gate_area;
@@ -1021,7 +1021,7 @@ vector<PARinfo> AntennaChecker::buildViaParTable(
 
       PARinfo par_info;
       par_info.wire_root = wire_root;
-      par_info.iterms = iv;
+      par_info.iterms = std::move(iv);
       par_info.PAR = par;
       par_info.diff_PAR = diff_par;
 
@@ -2003,8 +2003,8 @@ vector<Violation> AntennaChecker::getAntennaViolations(dbNet* net,
             }
           }
         }
-        Violation antenna_violation
-            = {layer->getRoutingLevel(), gates, diode_count_per_gate};
+        Violation antenna_violation = {
+            layer->getRoutingLevel(), std::move(gates), diode_count_per_gate};
         antenna_violations.push_back(antenna_violation);
       }
     }

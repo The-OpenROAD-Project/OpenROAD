@@ -213,7 +213,7 @@ class DbInstancePinIterator : public InstancePinIterator
   dbSet<dbITerm>::iterator iitr_end_;
   dbSet<dbBTerm>::iterator bitr_;
   dbSet<dbBTerm>::iterator bitr_end_;
-  Pin* next_;
+  Pin* next_ = nullptr;
 };
 
 DbInstancePinIterator::DbInstancePinIterator(const Instance* inst,
@@ -721,9 +721,7 @@ Point dbNetwork::location(const Pin* pin) const
     if (iterm->getAvgXY(&x, &y)) {
       return Point(x, y);
     }
-    dbInst* inst = iterm->getInst();
-    inst->getOrigin(x, y);
-    return Point(x, y);
+    return iterm->getInst()->getOrigin();
   }
   if (bterm) {
     int x, y;

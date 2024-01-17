@@ -4,9 +4,11 @@
 #include <string>
 
 #include "db.h"
-#include "helper.cpp"
+#include "env.h"
+#include "helper.h"
 
-using namespace odb;
+namespace odb {
+namespace {
 
 BOOST_AUTO_TEST_SUITE(test_suite)
 
@@ -22,12 +24,11 @@ struct F_DEFAULT
   dbDatabase* db;
   dbLib* lib;
   dbBlock* block;
-  std::string journal_path
-      = std::string(std::getenv("BASE_DIR")) + "/results/db_jounal.eco";
+  std::string journal_path = testTmpPath("/results/db_jounal.eco");
 };
 BOOST_FIXTURE_TEST_CASE(test_write, F_DEFAULT)
 {
-  db->beginEco(block);
+  dbDatabase::beginEco(block);
   auto i1 = odb::dbInst::create(block, lib->findMaster("and2"), "i1");
   auto i2 = odb::dbInst::create(block, lib->findMaster("and2"), "i2");
   auto n1 = odb::dbNet::create(block, "n1");
@@ -42,14 +43,14 @@ BOOST_FIXTURE_TEST_CASE(test_write, F_DEFAULT)
   odb::dbBTerm::destroy(b3);
   odb::dbInst::destroy(i2);
   odb::dbNet::destroy(n2);
-  db->endEco(block);
-  db->writeEco(block, journal_path.c_str());
+  dbDatabase::endEco(block);
+  dbDatabase::writeEco(block, journal_path.c_str());
 }
 BOOST_FIXTURE_TEST_CASE(test_read, F_DEFAULT)
 {
-  db->beginEco(block);
-  db->readEco(block, journal_path.c_str());
-  db->commitEco(block);
+  dbDatabase::beginEco(block);
+  dbDatabase::readEco(block, journal_path.c_str());
+  dbDatabase::commitEco(block);
   auto i1 = block->findInst("i1");
   auto n1 = block->findNet("n1");
   auto b1 = block->findBTerm("b1");
@@ -74,3 +75,6 @@ BOOST_FIXTURE_TEST_CASE(test_read, F_DEFAULT)
   BOOST_TEST(b2->getNet() == nullptr);
 }
 BOOST_AUTO_TEST_SUITE_END()
+
+}  // namespace
+}  // namespace odb

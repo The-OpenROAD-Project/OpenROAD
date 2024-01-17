@@ -10,7 +10,7 @@ _versionCompare() {
 
 _equivalenceDeps() {
     yosysVersion=yosys-0.33
-    eqyVersion=0cc2ff0
+    eqyVersion=8327ac7
 
     # yosys
     yosysPrefix=${PREFIX:-"/usr/local"}

@@ -90,9 +90,6 @@ bool _dbTech::operator==(const _dbTech& rhs) const
   if (_version != rhs._version)
     return false;
 
-  if (strcmp(_version_buf, rhs._version_buf) != 0)
-    return false;
-
   if (_name != rhs._name)
     return false;
 
@@ -189,7 +186,6 @@ void _dbTech::differences(dbDiff& diff,
   DIFF_FIELD(_flags._hasminsppin);
   DIFF_FIELD(_flags._minsppin);
   DIFF_FIELD(_version);
-  DIFF_FIELD(_version_buf);
   DIFF_FIELD(_name);
   DIFF_FIELD(_via_cnt);
   DIFF_FIELD(_layer_cnt);
@@ -234,7 +230,6 @@ void _dbTech::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_flags._hasminsppin);
   DIFF_OUT_FIELD(_flags._minsppin);
   DIFF_OUT_FIELD(_version);
-  DIFF_OUT_FIELD(_version_buf);
   DIFF_OUT_FIELD(_name);
   DIFF_OUT_FIELD(_via_cnt);
   DIFF_OUT_FIELD(_layer_cnt);
@@ -291,7 +286,6 @@ _dbTech::_dbTech(_dbDatabase* db)
   _flags._minsppin = dbOnOffType::OFF;
   _flags._spare_bits = 0;
   _version = 5.4;
-  strncpy(_version_buf, "5.4", 9);
 
   _layer_tbl = new dbTable<_dbTechLayer>(
       db, this, (GetObjTbl_t) &_dbTech::getObjectTable, dbTechLayerObj);
@@ -393,8 +387,6 @@ _dbTech::_dbTech(_dbDatabase* db, const _dbTech& t)
       _samenet_matrix(t._samenet_matrix),
       _via_hash(t._via_hash)
 {
-  strncpy(_version_buf, t._version_buf, sizeof(_version_buf));
-
   _layer_tbl = new dbTable<_dbTechLayer>(db, this, *t._layer_tbl);
 
   _via_tbl = new dbTable<_dbTechVia>(db, this, *t._via_tbl);
@@ -548,9 +540,18 @@ double _dbTech::_getLefVersion() const
   return _version;
 }
 
-const char* _dbTech::_getLefVersionStr() const
+std::string _dbTech::_getLefVersionStr() const
 {
-  return (const char*) _version_buf;
+  int major_version = (int) floor(_version);
+  int minor_version = ((int) floor(_version * 10.0)) - (major_version * 10);
+  int opt_minor_version = ((int) floor(_version * 1000.0))
+                          - (major_version * 1000) - (minor_version * 100);
+
+  if (opt_minor_version > 0) {
+    return fmt::format(
+        "{}.{}.{}", major_version, minor_version, opt_minor_version);
+  }
+  return fmt::format("{}.{}", major_version, minor_version);
 }
 
 //
@@ -560,19 +561,6 @@ const char* _dbTech::_getLefVersionStr() const
 void _dbTech::_setLefVersion(double inver)
 {
   _version = inver;
-  int major_version = (int) floor(inver);
-  int minor_version = ((int) floor(inver * 10.0)) - (major_version * 10);
-  int opt_minor_version = ((int) floor(inver * 1000.0)) - (major_version * 1000)
-                          - (minor_version * 100);
-  if (opt_minor_version > 0)
-    snprintf(_version_buf,
-             sizeof(_version_buf),
-             "%d.%d.%d",
-             major_version,
-             minor_version,
-             opt_minor_version);
-  else
-    snprintf(_version_buf, 10, "%d.%d", major_version, minor_version);
 }
 
 dbObjectTable* _dbTech::getObjectTable(dbObjectType type)
@@ -708,7 +696,7 @@ double dbTech::getLefVersion() const
   return tech->_getLefVersion();
 }
 
-const char* dbTech::getLefVersionStr() const
+std::string dbTech::getLefVersionStr() const
 {
   _dbTech* tech = (_dbTech*) this;
   return tech->_getLefVersionStr();
