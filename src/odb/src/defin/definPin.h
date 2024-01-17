@@ -52,8 +52,10 @@ class definPin : public definBase
   {
     dbTechLayer* _layer;
     Rect _rect;
+    uint _mask;
 
-    PinRect(dbTechLayer* layer, const Rect& rect) : _layer(layer), _rect(rect)
+    PinRect(dbTechLayer* layer, const Rect& rect, uint mask)
+        : _layer(layer), _rect(rect), _mask(mask)
     {
     }
   };
@@ -61,9 +63,10 @@ class definPin : public definBase
   struct Polygon : public definPolygon
   {
     dbTechLayer* _layer;
+    uint _mask;
 
-    Polygon(dbTechLayer* layer, const std::vector<Point>& points)
-        : definPolygon(points), _layer(layer)
+    Polygon(dbTechLayer* layer, const std::vector<Point>& points, uint mask)
+        : definPolygon(points), _layer(layer), _mask(mask)
     {
     }
   };
@@ -116,8 +119,13 @@ class definPin : public definBase
                             dbOrientType orient);
   virtual void pinMinSpacing(int spacing);
   virtual void pinEffectiveWidth(int width);
-  virtual void pinRect(const char* layer, int x1, int y1, int x2, int y2);
-  virtual void pinPolygon(std::vector<defPoint>& points);
+  virtual void pinRect(const char* layer,
+                       int x1,
+                       int y1,
+                       int x2,
+                       int y2,
+                       uint mask);
+  virtual void pinPolygon(std::vector<defPoint>& points, uint mask);
   virtual void pinGroundPin(const char* groundPin);
   virtual void pinSupplyPin(const char* supplyPin);
   virtual void pinEnd();
