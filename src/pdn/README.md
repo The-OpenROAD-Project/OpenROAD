@@ -38,13 +38,13 @@ pdngen
 | `-reset` | Reset the grid and domain specifications. |
 | `-ripup` | Ripup the existing power grid, as specified by the voltage domains. |
 | `-report_only` | Print the current specifications. |
-| `-failed_via_report` | Generate a report file which can be viewed in the DRC viewer for all the failed vias (ie. those that did not get built or were removed). |
+| `-failed_via_report` | Generate a report file that can be viewed in the DRC viewer for all the failed vias (i.e., those that did not get built or were removed). |
 
 ### Define Voltage Domains
 
 Defines a named voltage domain with the names of the power and ground nets for a region.
 
-This region must already exist in the floorplan before referencing it with the `set_voltage_domain` command. If the `-region` argument is not supplied then region is the entire core area of the design.
+This region must already exist in the floorplan before referencing it with the `set_voltage_domain` command. If the `-region` argument is not supplied, then the region is the entire core area of the design.
 
 ```tcl
 set_voltage_domain 
@@ -60,7 +60,7 @@ set_voltage_domain
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-name` | Defines the name of the voltage domain, default is "Core" or region name if provided. |
+| `-name` | Defines the name of the voltage domain. The default is "Core" or region name if provided. |
 | `-power` | Specifies the name of the power net for this voltage domain. |
 | `-ground` | Specifies the name of the ground net for this voltage domain. |
 | `-region` | Specifies a region of the design occupied by this voltage domain. |
@@ -97,8 +97,8 @@ define_pdn_grid
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-name` | Defines a name to use when referring to this grid definition. |
-| `-voltage_domain` | Defines the name of the voltage domain for this grid (Default: Last domain created). |
+| `-name` | The name to use when referring to this grid definition. |
+| `-voltage_domain` | This grid's voltage domain name. Defaults to the last domain created. |
 | `-pins` | Defines a list of layers which where the power straps will be promoted to block pins. |
 | `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: GROUND). |
 | `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations. |
