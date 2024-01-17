@@ -226,7 +226,12 @@ void definPin::pinEffectiveWidth(int width)
   _has_effective_width = true;
 }
 
-void definPin::pinRect(const char* layer_name, int x1, int y1, int x2, int y2)
+void definPin::pinRect(const char* layer_name,
+                       int x1,
+                       int y1,
+                       int x2,
+                       int y2,
+                       uint mask)
 {
   if (_cur_bterm == nullptr)
     return;
@@ -241,14 +246,14 @@ void definPin::pinRect(const char* layer_name, int x1, int y1, int x2, int y2)
   }
 
   Rect r(dbdist(x1), dbdist(y1), dbdist(x2), dbdist(y2));
-  _rects.push_back(PinRect(_layer, r));
+  _rects.push_back(PinRect(_layer, r, mask));
 }
 
-void definPin::pinPolygon(std::vector<defPoint>& points)
+void definPin::pinPolygon(std::vector<defPoint>& points, uint mask)
 {
   std::vector<Point> P;
   translate(points, P);
-  _polygons.push_back(Polygon(_layer, P));
+  _polygons.push_back(Polygon(_layer, P, mask));
 }
 
 void definPin::pinGroundPin(const char* groundPin)
@@ -325,7 +330,7 @@ void definPin::addRect(PinRect& r, dbBPin* pin)
   int ymin = r._rect.yMin() + _orig_y;
   int xmax = r._rect.xMax() + _orig_x;
   int ymax = r._rect.yMax() + _orig_y;
-  dbBox::create(pin, r._layer, xmin, ymin, xmax, ymax);
+  dbBox::create(pin, r._layer, xmin, ymin, xmax, ymax, r._mask);
 }
 
 void definPin::addPolygon(Polygon& p, dbBPin* pin)
@@ -338,7 +343,7 @@ void definPin::addPolygon(Polygon& p, dbBPin* pin)
 
   for (itr = R.begin(); itr != R.end(); ++itr) {
     Rect& r = *itr;
-    PinRect R(p._layer, r);
+    PinRect R(p._layer, r, p._mask);
     addRect(R, pin);
   }
 }

@@ -22,7 +22,7 @@ PINS 12 ;
     - clk + NET clk + DIRECTION INPUT + USE SIGNAL ;
     - inp0 + NET inp0 + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal1 ( -25 -25 ) ( 25 25 )
+        + LAYER metal1 MASK 2 ( -25 -25 ) ( 25 25 )
         + LAYER metal2 ( -10 -25 ) ( 10 50 )
         + FIXED ( 10000 5025 ) N
       + PORT
