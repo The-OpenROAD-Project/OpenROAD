@@ -2,6 +2,7 @@
 
 SRC_BASE_PATH="../../src"
 DEST_BASE_PATH="./md/man2"
+mkdir -p $DEST_BASE_PATH
 
 # Loop through all folders inside "../src"
 for MODULE_PATH in "$SRC_BASE_PATH"/*; do

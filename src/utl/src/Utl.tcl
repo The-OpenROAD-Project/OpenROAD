@@ -37,7 +37,7 @@ proc check_valid_man_path { path } {
 }
 
 proc man { name } {
-  set DEFAULT_MAN_PATH "../docs/manpages/cat"
+  set DEFAULT_MAN_PATH "../docs/man/cat"
   global MAN_PATH
   set MAN_PATH [get_input]
   if { [check_valid_man_path $MAN_PATH] == false } {

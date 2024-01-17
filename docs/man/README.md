@@ -6,7 +6,10 @@
 - Use pandoc to convert markdown to roff format.  
 - Ensure that all the source files are in `src` folder before runnig. 
 ```
-make clean && make all
+make clean
+
+# Note this step is important as it regenerates the documentation using latest sources.
+make preprocess && make all
 ```
 
 - Setup environment variables as follows. This is to avoid overwriting the system default for `MANPATH`.
