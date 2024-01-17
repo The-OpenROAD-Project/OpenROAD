@@ -242,8 +242,8 @@ void ChartsWidget::populateBuckets(const std::vector<float>& all_slack,
   auto max_slack = std::max_element(all_slack.begin(), all_slack.end());
   auto min_slack = std::min_element(all_slack.begin(), all_slack.end());
 
-  float bucket_interval
-      = std::ceil((*max_slack - *min_slack) / number_of_buckets_);
+  float exact_interval = (*max_slack - *min_slack) / number_of_buckets_;
+  int bucket_interval = computeSnapBucketInterval(exact_interval);
   setBucketInterval(bucket_interval);
 
   float positive_lower = 0.0f, positive_upper = 0.0f, negative_lower = 0.0f,
@@ -288,6 +288,23 @@ void ChartsWidget::populateBuckets(const std::vector<float>& all_slack,
 
     ++bucket_index;
   } while (*min_slack < negative_upper || *max_slack >= positive_upper);
+}
+
+// Our intervals are always multiples of 50/100/150...
+int ChartsWidget::computeSnapBucketInterval(float exact_interval)
+{
+  if (exact_interval < 10) {
+    return std::ceil(exact_interval);
+  }
+
+  int snap_interval = 0;
+  int digits = computeNumberOfDigits(static_cast<int>(exact_interval));
+
+  while (snap_interval < exact_interval) {
+    snap_interval += 5 * std::pow(10, digits - 2);
+  }
+
+  return snap_interval;
 }
 
 void ChartsWidget::setNegativeCountOffset(int neg_count_offset)
@@ -343,8 +360,7 @@ void ChartsWidget::setYAxisConfig()
   axis_y_->setVisible(true);
 }
 
-// Our intervals are always multiples of 5/50/500.. or 10/100/1000..
-// with the exception of the situation where we have small buckets.
+// Our intervals are always multiples of 50/100/150...
 int ChartsWidget::computeYInterval()
 {
   int snap_max = computeMaxYSnap();

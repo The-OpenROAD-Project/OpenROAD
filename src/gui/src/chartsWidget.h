@@ -80,6 +80,7 @@ class ChartsWidget : public QDockWidget
   void populateBuckets(const std::vector<float>& all_slack,
                        std::deque<int>& neg_buckets,
                        std::deque<int>& pos_buckets);
+  int computeSnapBucketInterval(float exact_interval);
   void setBucketInterval(float bucket_interval);
   void setNegativeCountOffset(int neg_count_offset);
   void setXAxisConfig(int all_bars_count);
