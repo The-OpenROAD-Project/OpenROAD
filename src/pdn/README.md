@@ -145,10 +145,10 @@ define_pdn_grid
 | `-halo` | Specifies the design's default minimum separation of selected macros from other cells. This is only used if the macro does not define halo values in the LEF description. If one value is specified, it will be used on all four sides; if two values are specified, the first will be applied to left/right sides, and the second will be applied to top/bottom sides; if four values are specified, then they are applied to left, bottom, right and top sides respectively (Default: 0). |
 | `-pins` | Defines a list of layers where the power straps will be promoted to block pins. |
 | `-starts_with` | Use `POWER` or `GROUND`  for the first placed strap. Defaults to `GROUND`.|
-| `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations. |
+| `-obstructions` | Specify the layers to add routing blockages in order to avoid DRC violations. |
 | `-power_switch_cell` | Defines the name of the coarse grain power switch cell to be used wherever the stdcell rail connects to the rest of the power grid. The mesh layers are associated with the unswitched power net of the voltage domain, whereas the stdcell rail is associated with the switched power net of the voltage domain. The placement of a power switch cell connects the unswitched power mesh to the switched power rail through a power switch defined by the `define_power_switch_cell` command. |
 | `-power_control` | Defines the name of the power control signal used to control the switching of the inserted power switches. |
-| `-power_control_network` | Defines the structure of the power control signal network. Choose from STAR, or DAISY. If STAR is specified, then the network is wired as a high-fanout net with the power control signal driving the power control pin on every power switch. If DAISY is specified then the power switches are connected in a daisy-chain configuration - note, this requires that the power swich defined by the `define_power_switch_cell`  command defines an acknowledge pin for the switch. |
+| `-power_control_network` | Defines the structure of the power control signal network. Choose from STAR or DAISY. If STAR is specified, then the network is wired as a high-fanout net with the power control signal driving the power control pin on every power switch. If DAISY is specified, then the power switches are connected in a daisy-chain configuration - note, this requires that the power switch defined by the `define_power_switch_cell`  command defines an acknowledge pin for the switch. |
 
 Example usage:
 
@@ -260,7 +260,7 @@ add_pdn_stripe -grid main_grid -layer metal4 -width 0.48 -pitch 56.0 -offset 2 -
 
 ### Add Rings
 
-The `add_pdn_ring` command is used to define power/ground rings around a grid region. The ring structure is built using two layers that are orthogonal to each other. A power/ground pair will be added above and below the grid using the horizontal layer, with another power/ground pair to the left and right using the vertical layer. Together these 4 pairs of power/ground stripes form a ring around the specified grid. Power straps on these layers that are inside the enclosed region are extend to connect to the ring.
+The `add_pdn_ring` command defines power/ground rings around a grid region. The ring structure is built using two layers that are orthogonal to each other. A power/ground pair will be added above and below the grid using the horizontal layer, with another power/ground pair to the left and right using the vertical layer. These four pairs of power/ground stripes form a ring around the specified grid. Power straps on these layers that are inside the enclosed region are extended to connect to the ring.
 
 ```tcl
 add_pdn_ring 
@@ -292,7 +292,7 @@ add_pdn_ring
 | `-extend_to_boundary` | Extend the rings to the grid boundary. |
 | `-connect_to_pads` | The core side of the pad pins will be connected to the ring. |
 | `-connect_to_pad_layers` | Restrict the pad pins layers to this list. |
-| `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: grid setting). |
+| `-starts_with` | Use `POWER` or `GROUND`  for the first placed strap. Defaults to `GROUND`. |
 | `-nets` | Limit straps to just this list of nets. |
 
 Example usage: 
@@ -324,7 +324,7 @@ add_pdn_connect
 | ----- | ----- |
 | `-layers` | Layers to be connected where there are overlapping power or overlapping ground nets. |
 | `-grid` | Specifies the name of the grid definition to which this connection will be added (Default: Last grid created by `define_pdn_grid`). |
-| `-cut_pitch` | When the two layers are parallel e.g. overlapping stdcell rails, specify the distance between via cuts. |
+| `-cut_pitch` | When the two layers are parallel, e.g., overlapping stdcell rails, specify the distance between via cuts. |
 | `-fixed_vias` | List of fixed vias to be used to form the via stack. |
 | `-dont_use_vias` | List or pattern of vias to not use to form the via stack. |
 | `-max_rows` | Maximum number of rows when adding arrays of vias. |
@@ -371,18 +371,18 @@ If you are a developer, you might find these useful. More details can be found i
 | Command Name | Description |
 | ----- | ----- |
 | `name_cmp` | Compare 2 input strings `obj1` and `obj2` if they are equal. |
-| `check_design_state` | Check if design is loaded. |
-| `get_layer` | Get the layer reference of layer name. |
+| `check_design_state` | Check if the design is loaded. |
+| `get_layer` | Get the layer reference of the layer name. |
 | `get_voltage_domains` | Gets a Tcl list of power domains in design. |
 | `match_orientation` | Checks if a given orientation `orient` is within a list of orientations `orients`. |
-| `get_insts` | Get Tcl list of instances. |
-| `get_masters` | Get Tcl list of masters. |
-| `get_one_to_two` | If a Tcl list has one element `{x}`, Tcl list `{x x}` is returned. If a Tcl list of two elements `{y y}`, list as is returned. Otherwise, for any other list lengths, error is triggered. |
-| `get_one_to_four` | Similar logic for above function, except the logic only works for lists of length one, two and four respectively. All other list lengths triggers error. |
-| `get_obstructions` | Get Tcl list of layers. |
+| `get_insts` | Get the Tcl list of instances. |
+| `get_masters` | Get the Tcl list of masters. |
+| `get_one_to_two` | If a Tcl list has one element `{x}`, Tcl list `{x x}` is returned. If a Tcl list of two elements `{y y}`, list as is returned. Otherwise, for any other list lengths, an error is triggered. |
+| `get_one_to_four` | Similar logic for the above function, except the logic only works for lists of length one, two, and four, respectively. All other list lengths trigger errors. |
+| `get_obstructions` | Get the Tcl list of layers. |
 | `get_starts_with` | If value starts with `POWER`, return 1; else if value starts with `GROUND` return 0; else return error. |
 | `get_mterm` | Find master terminal. |
-| `get_orientations` | Get list of valid orientations. | 
+| `get_orientations` | Get the list of valid orientations. | 
 
 ## Example scripts
 
