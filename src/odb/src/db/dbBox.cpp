@@ -756,9 +756,6 @@ dbTechLayer* dbBox::getTechLayer()
 uint dbBox::getLayerMask()
 {
   _dbBox* box = (_dbBox*) this;
-  if (getTechLayer() == nullptr) {
-    return 0;
-  }
   return box->_flags._layer_mask;
 }
 
@@ -783,6 +780,13 @@ dbBox* dbBox::create(dbBPin* bpin_,
         "Layer {} has index {} which is too large to be stored",
         layer_->getName(),
         layer_id);
+  }
+  if (mask >= 4) {
+    bpin->getLogger()->error(utl::ODB, 434, "Mask must be between 0 and 3.");
+  }
+  if (layer_ == nullptr && mask != 0) {
+    bpin->getLogger()->error(
+        utl::ODB, 435, "Mask must be 0 when no layer is provided.");
   }
   box->_flags._layer_id = layer_id;
   box->_flags._layer_mask = mask;
