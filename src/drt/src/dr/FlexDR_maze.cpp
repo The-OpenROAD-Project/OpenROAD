@@ -2937,7 +2937,7 @@ bool FlexDRWorker::routeNet(drNet* net)
           path, connComps, unConnPins, mazeIdx2unConnPins, isFirstConn);
       routeNet_postAstarWritePath(
           net, path, realPinAPMazeIdx, mazeIdx2TaperBox, apMazeIdx);
-      routeNet_postAstarPatchMinAreaVio(net, path, areaMap);
+      // routeNet_postAstarPatchMinAreaVio(net, path, areaMap);
       routeNet_AddCutSpcCost(path);
       isFirstConn = false;
     } else {
