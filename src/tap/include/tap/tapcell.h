@@ -168,7 +168,9 @@ class Tapcell
                      const odb::dbOrientType& orient,
                      const std::set<odb::dbInst*>& row_insts,
                      int site_width,
-                     bool disallow_one_site_gaps);
+                     bool disallow_one_site_gaps,
+                     bool& partially_overlap,
+                     int& x_limit);
   int placeTapcells(odb::dbMaster* tapcell_master,
                     int dist,
                     bool disallow_one_site_gaps);
