@@ -9,15 +9,15 @@ git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git
 cd OpenROAD
 ```
 
-OpenROAD git submodules (cloned by the `--recursive` flag) are located in `src/`. 
+OpenROAD git submodules (cloned by the `--recursive` flag) are located in `src/`.
 
 ```{note}
-There are 3 methods for building OpenROAD (in order of recommendation): prebuilt binaries, docker images, and finally local build.  
+There are three methods for building OpenROAD (in order of recommendation): prebuilt binaries, docker images, and finally, local build.  
 ```
 
 ## Build with Prebuilt Binaries
 
-Courtesy of [Precision Innovations](https://precisioninno.com/), there are pre-built binaries
+Courtesy of [Precision Innovations](https://precisioninno.com/), there are prebuilt binaries
 of OpenROAD with self-contained dependencies released on a regular basis.
 Refer to this [link](https://openroad-flow-scripts.readthedocs.io/en/latest/user/BuildWithPrebuilt.html) for instructions.
 
@@ -80,9 +80,7 @@ sudo ./etc/DependencyInstaller.sh
 ```{warning}
 `etc/DependencyInstaller.sh` defaults to installing system 
 packages and requires sudo access. These packages can affect
-your environment. We recommend users install dependencies
-locally using [setup.sh](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/blob/master/setup.sh)
-from OpenROAD-flow-scripts.
+your environment.
 ```
 
 ### Compiling OpenROAD Manually
