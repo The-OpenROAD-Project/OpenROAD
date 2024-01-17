@@ -18,28 +18,24 @@ by the user as per the interface described below.
 - Parameters without square brackets `-param2 param2` are required.
 ```
 
+### Restructure
+
 Restructuring can be done in two modes: area or delay.
 
-### Area Mode
+- Method 1: Area Mode
+Example: `restructure -liberty_file ckt.lib -target area -tielo_pin ABC -tiehi_pin DEF`
+
+- Method 2: Timing Mode
+Example: `restructure -liberty_file ckt.lib -target delay -tielo_pin ABC -tiehi_pin DEF -slack_threshold 1 -depth_threshold 2` 
 
 ```tcl
 restructure 
     -liberty_file liberty_file
-    -target area
+    -target area|delay
     -tielo_pin  tielo_pin_name
     -tiehi_pin  tiehi_pin_name
-```
-
-### Timing Mode
-
-```tcl
-restructure 
-    -liberty_file liberty_file
-    -target delay
     -slack_threshold slack_val
     -depth_threshold depth_threshold
-    -tielo_pin  tielo_pin_name
-    -tiehi_pin  tiehi_pin_name
 ```
 
 #### Options
@@ -57,7 +53,7 @@ restructure
 
 Example scripts on running `rmp` for a sample design of `gcd` as follows:
 
-```tcl
+```
 ./test/gcd_restructure.tcl
 ```
 

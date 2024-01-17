@@ -123,7 +123,7 @@ set_pin_length
 | `-hor_length` | The length (in microns) of the horizontal pins. |
 | `-ver_length` | The length (in microns) of the vertical pins. |
 
-### Set Pin Extension
+### Set Pin Length Extension
 
 The `set_pin_length_extension` command defines the an extension of the length
 of all vertical and horizontal pins. Note that this command may generate pins
@@ -181,7 +181,7 @@ set_simulated_annealing
 | `-perturb_per_iter` | The number of perturbations per iteration. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-alpha` | The temperature decay factor. The default value is `0.985`, and the allowed values are floats `(0, 1]`. |
 
-### Place Individual Pin
+### Place Pin
 
 The `place_pin` command places a specific pin in the specified location with the specified size.
 It is recommended that individual pins be placed before the `place_pins` command,
@@ -208,9 +208,9 @@ place_pin
 | `-pin_size` | Tthe width and height of the pin (in microns). |
 | `-force_to_die_boundary` | When this flag is enabled, the pin will be snapped to the nearest routing track, next to the die boundary. |
 
-### Place All Pins
+### Place Pins
 
-Use the following command to perform pin placement:
+The `place_pins` command places all pins together. Use the following command to perform pin placement:
 
 ```tcl
 place_pins 
@@ -257,10 +257,11 @@ microns to 60.5 microns, and the left edge from its beginning to 50 microns.
 
 ### Write Pin Placement
 
-Use the following command to write a file with the pin placement in the format of multiple calls for the `place_pin` command:
+The `write_pin_placement` command writes a file with the pin placement in the format of multiple calls for the `place_pin` command:
 
 ```tcl
-write_pin_placement file_name
+write_pin_placement 
+    file_name
 ```
 
 #### Options
@@ -285,24 +286,6 @@ If you are a developer, you might find these useful. More details can be found i
 | `exclude_intervals` | Set exclude interval. |
 | `add_pins_to_constraint` | Add pins to constrained region. |
 | `add_pins_to_top_layer` | Add pins to top layer. | 
-
-
-#### Configure Simulated Annealing Solver
-
-The `set_simulated_annealing` command defines the parameters of the Simulated Annealing
-solver.
-
-```
-set_simulated_annealing [-temperature temperature]
-                        [-max_iterations iters]
-                        [-perturb_per_iter perturbs]
-                        [-alpha alpha]
-```
-
-- The `-temperature` sets the initial temperature of the Simulated Annealing solver.
-- The `-max_iterations` sets the number of iterations performed by the Simulated Annealing solver.
-- The `-perturb_per_iter` sets the number of perturbations performed at each iteration.
-- The `-alpha` sets the reduction factor of the temperature at each iteration.
 
 ## Example scripts
 

@@ -11,7 +11,9 @@ planning approach that exploits the hierarchy and data flow inherent in the desi
 - Parameters without square brackets `-param2 param2` are required.
 ```
 
-### Hier-RTLMP algorithm
+### RTL Macro Placer
+
+This command executes the Hier-RTLMP algorithm for macro placement.
 
 ```tcl
 rtl_macro_placer 
@@ -47,7 +49,7 @@ rtl_macro_placer
     [-write_macro_placement file_name]
 ```
 
-#### Generic Parameters
+#### Options
 
 | Switch Name | Description |
 | ----- | ----- |
@@ -69,7 +71,6 @@ rtl_macro_placer
 | `-report_directory` | Save reports to this directory. |
 | `-write_macro_placement` | Generates a file with the macro placement in the format of multiple calls for the `place_macro` command. |
 
-
 #### Simulated Annealing Weight parameters
 
 Do note that while action probabilities are normalized to 1.0, the weights are not necessarily normalized. 
@@ -87,11 +88,18 @@ Do note that while action probabilities are normalized to 1.0, the weights are n
 
 ### Write Macro Placement
 
-Command to write a file with the macro placement in the format of multiple calls for the `place_macro` command:
+Command to write a file with the macro placement in the format of
+multiple calls for the `place_macro` command:
 
 ```tcl
 write_macro_placement file_name
 ```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `filename` | Filename to write the macro placement flow commands to. |
 
 ### Place Macro
 

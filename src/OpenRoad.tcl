@@ -33,9 +33,6 @@
 ##
 ############################################################################
 
-# source Utl.tcl
-source ../src/utl/src/Utl.tcl
-
 # -library is the default
 sta::define_cmd_args "read_lef" {[-tech] [-library] [-tech_name name] filename}
 

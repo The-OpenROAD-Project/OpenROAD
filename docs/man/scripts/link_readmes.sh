@@ -8,7 +8,7 @@ for MODULE_PATH in "$SRC_BASE_PATH"/*; do
     if [ -d "$MODULE_PATH" ]; then
         MODULE=$(basename "$MODULE_PATH")
         SRC_PATH="$SRC_BASE_PATH/$MODULE/README.md"
-        DEST_PATH="$DEST_BASE_PATH/$MODULE.txt"
+        DEST_PATH="$DEST_BASE_PATH/$MODULE.md"
 
         # Check if README.md exists before copying
         if [ -e "$SRC_PATH" ]; then

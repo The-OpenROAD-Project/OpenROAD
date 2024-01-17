@@ -25,6 +25,8 @@ guide format.
 
 ### Detailed Route
 
+This command performs detailed routing.
+
 ```tcl
 detailed_route 
     [-output_maze filename]
@@ -89,7 +91,7 @@ Some arguments that are helpful for developers are listed here.
 | `-or_seed` | Random seed for the order of nets to reroute. The default value is `-1`, and the allowed values are integers `[0, MAX_INT]`. | 
 | `-or_k` | Number of swaps is given by $k * sizeof(rerouteNets)$. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 
-### Detailed Route Debugging
+### Detailed Route Debug
 
 The following command and arguments are useful when debugging error
 messages from `drt` and to understand its behavior.
@@ -131,7 +133,9 @@ detailed_route_debug
 | `-pa_commit` | Enable visibility of pin access commits. |
 | `-write_net_tracks` | Enable writing of net track assigments. |
 
-### Check Pin Access 
+### Pin Access
+
+This function checks pin access.
 
 ```tcl
 pin_access
@@ -158,7 +162,7 @@ pin_access
 | `-verbose` | Sets verbose mode if the value is greater than 1, else non-verbose mode (must be integer, or error will be triggered.) |
 | `-distributed` | Refer to distributed arguments [here](#distributed-arguments). |
 
-### Distributed arguments
+#### Distributed Arguments
 
 We have compiled all distributed arguments in this section.
 
@@ -174,7 +178,7 @@ Additional setup is required. Please refer to this [guide](./doc/Distributed.md)
 | `-shared_volume` | The mount path of the nfs shared folder. |
 | `-cloud_size` | The number of workers. |
 
-### Useful developer functions
+## Useful developer functions
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/TritonRoute.cpp) or the [swig file](./src/TritonRoute.i).
 

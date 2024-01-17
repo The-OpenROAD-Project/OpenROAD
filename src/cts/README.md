@@ -16,6 +16,9 @@ command. Use `set_wire_rc` command to set the clock routing layer.
 
 ### Configure CTS Characterization
 
+Configure key CTS characterization parameters, for example maximum slew and capacitance,
+as well as the number of steps they will be divided for characterization.
+
 ```tcl
 configure_cts_characterization 
     [-max_slew max_slew]
@@ -34,6 +37,8 @@ configure_cts_characterization
 | `-cap_steps` | Number of steps that `max_cap` will be divided into for characterization. The default value is `34`, and the allowed values are integers `[0, MAX_INT]`. |
 
 ### Clock Tree Synthesis
+
+Perform clock tree synthesis.
 
 ```tcl
 clock_tree_synthesis 
@@ -78,9 +83,7 @@ clock_tree_synthesis
 
 ### Report CTS
 
-Another command available from `cts` is `report_cts`. It is used to
-extract metrics after a successful `clock_tree_synthesis` run. These are:
- 
+This command is used to extract the following metrics after a successful `clock_tree_synthesis` run. 
 - Number of Clock Roots
 - Number of Buffers Inserted
 - Number of Clock Subnets
@@ -107,7 +110,7 @@ If you are a developer, you might find these useful. More details can be found i
 
 ## Example scripts
 
-```tcl
+```
 clock_tree_synthesis -root_buf "BUF_X4" \
                      -buf_list "BUF_X4" \
                      -wire_unit 20

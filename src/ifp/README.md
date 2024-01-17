@@ -13,43 +13,14 @@ This tool initializes floorplan constraints, die/core area, and makes tracks.
 
 Do note that there are two ways of setting the floorplan dimensions.
 The user can either specify manually die/core area, or
-specify the utilization/aspect ratio.
+specify the utilization/aspect ratio. If you set both, 
+unexpected behaviour might occur.
 
-#### Method 1: Automatic die size calculation
+- Method 1: Automatic die size calculation
+Example: `initialize_floorplan -utilization 70 -aspect_ratio 1.0 -core_space 0.0 -sites FreePDK45_38x28_10R_NP_162NW_34O`
 
-```tcl
-initialize_floorplan
-  [-utilization util]
-  [-aspect_ratio ratio]
-  [-core_space space | {bottom top left right}]
-  [-sites site_name]
-```
-##### Options
-
-| Switch Name | Description |
-| ----- | ----- |
-| `-utilization` | Percentage utilization. Allowed values are `double` in the range `(0-100]`. |
-| `-aspect_ratio` | Ratio $\frac{height}{width}$. The default value is `1.0` and the allowed values are floats `[0, 1.0]`. |
-| `-core_space` | Space around the core, default `0.0` microns. Allowed values are either one value for all margins or a set of four values, one for each margin. The order of the four values are: `{bottom top left right}`. |
-| `-sites` | Tcl list of sites to make rows for (e.g. `{SITEXX, SITEYY}`) |
-
-
-#### Method 2: Set die/core area
-
-```tcl
-initialize_floorplan
-  [-die_area {llx lly urx ury}]
-  [-core_area {llx lly urx ury}]
-  [-sites site_name]
-```
-
-##### Options
-
-| Switch Name | Description |
-| ----- | ----- |
-| `-die_area` | Die area coordinates in microns (lower left x/y and upper right x/y coordinates). |
-| `-core_area` | Core area coordinates in microns (lower left x/y and upper right x/y coordinates). |
-| `-sites` | Tcl list of sites to make rows for (e.g. `{SITEXX, ...}`) |
+- Method 2: Set die/core area
+Example: `initialize_floorplan -die_area 0 0 2000 2000 -core_area 100 100 1900 1900` -sites FreePDK45_38x28_10R_NP_162NW_34O`
 
 The die area and core area used to write ROWs can be specified explicitly
 with the `-die_area` and `-core_area` arguments. Alternatively, the die and
@@ -68,10 +39,32 @@ die =  ( 0, 0 )
         core_height + core_space_bottom + core_space_top )
 ```
 
+
+```tcl
+initialize_floorplan
+  [-utilization util]
+  [-aspect_ratio ratio]
+  [-core_space space | {bottom top left right}]
+  [-sites site_name]
+  [-die_area {llx lly urx ury}]
+  [-core_area {llx lly urx ury}]
+  [-sites site_name]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-utilization` | Percentage utilization. Allowed values are `double` in the range `(0-100]`. |
+| `-aspect_ratio` | Ratio $\frac{height}{width}$. The default value is `1.0` and the allowed values are floats `[0, 1.0]`. |
+| `-core_space` | Space around the core, default `0.0` microns. Allowed values are either one value for all margins or a set of four values, one for each margin. The order of the four values are: `{bottom top left right}`. |
+| `-sites` | Tcl list of sites to make rows for (e.g. `{SITEXX, SITEYY}`) |
+| `-die_area` | Die area coordinates in microns (lower left x/y and upper right x/y coordinates). |
+| `-core_area` | Core area coordinates in microns (lower left x/y and upper right x/y coordinates). |
+
 ### Make Tracks
 
 The `initialize_floorplan` command removes existing tracks. 
-
 Use the `make_tracks` command to add routing tracks to a floorplan.
 
 ```tcl
@@ -91,9 +84,9 @@ make_tracks
 | `-x_pitch`, `-y_pitch` | If set, overrides the LEF technology x-/y- pitch. Use the same unit as in the LEF file. |
 | `-x_offset`, `-y_offset` | If set, overrides the LEF technology x-/y- offset. Use the same unit as in the LEFT file. |
 
-### Inserting tieoff cells
+### Insert tiecells
 
-To insert tiecells:
+This comamnd inserts tiecells.
 
 ```tcl
 insert_tiecells 
@@ -108,7 +101,7 @@ insert_tiecells
 | `tie_pin` | Indicates the master and port to use to tie off nets. For example, `LOGIC0_X1/Z` for the Nangate45 library, where `LOGIC0_X1` is the master and `Z` is the output port on the master. |
 | `-prefix` | Used to control the prefix of the new tiecell names. This will default to `TIEOFF_`. |
 
-### Useful developer functions
+## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/InitFloorplan.cc) or the [swig file](./src/InitFloorPlan.i).
 
@@ -120,7 +113,7 @@ If you are a developer, you might find these useful. More details can be found i
 
 Example scripts on running `ifp` for a sample design of `mpd_top` are as follows:
 
-```tcl
+```
 ./test/upf_test.tcl
 ```
 

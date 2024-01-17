@@ -27,6 +27,8 @@ objects. Optionally, OpenRCX can generate a `.spef` file.
 
 ### Define Process Corner
 
+This command defines proccess corner.
+
 ```tcl
 define_process_corner 
     [-ext_model_index index]
@@ -93,7 +95,7 @@ write_spef
 | `-nets` | Net name. |
 | `filename` | Output filename. |
 
-### Scale RC
+### Adjust RC
 
 Use the `adjust_rc` command to scale the resistance, ground, and coupling
 capacitance. 
@@ -113,7 +115,7 @@ adjust_rc
 | `-cc_factor` | Scale factor for coupling capacitance. |
 | `-gndc_factor` | Scale factor for ground capacitance. |
 
-### Comparing SPEF files
+### Diff SPEF
 
 The `diff_spef` command compares the parasitics in the reference database `<filename>.spef`.
 The output of this command is `diff_spef.out`
@@ -139,7 +141,7 @@ diff_spef
 | `-r_cc_cap` | Read coupled capacitance. |
 | `r_conn` | Read connections. |
 
-### Extraction Rules File Generation
+### Bench Wires
 
 The `bench_wires` command produces a layout which contains various patterns
 that are used to characterize per-unit length R and C values. The generated patterns model
@@ -178,7 +180,7 @@ bench_wires
 | `-s_list` | Lists of wire spacing multipliers from the minimum spacing defined in the LEF. The list will be the input index on the OpenRCX RC table (Extraction Rules file). |
 | `-over_dist`, `-under_dist` | Consider over and under metal distance respectively. |
 
-### Generate verilog netlist
+### Bench Verilog
 
 `bench_verilog` is used after the `bench_wires` command. This command
 generates a Verilog netlist of the generated pattern layout by the `bench_wires`
@@ -200,7 +202,7 @@ bench_verilog
 | ----- | ----- |
 | `filename` | Name for the Verilog output file (e.g., `output.v`). |
 
-### Read SPEF
+### Bench Read SPEF
 
 The `bench_read_spef` command reads a `<filename>.spef` file and stores the
 parasitics into the database.
@@ -216,7 +218,7 @@ bench_read_spef
 | ----- | ----- |
 | `filename` | Path to the input `.spef` file. |
 
-### Write Rule File
+### Write Rules
 
 The `write_rules` command writes the Extraction Rules file (RC technology file)
 for OpenRCX. It processes the parasitics data from the layout patterns that are

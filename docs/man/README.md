@@ -28,9 +28,8 @@ source scripts/main.tcl
 man openroad
 ```
 
-- Or the `Tcl` script that outputs raw text.
+- Or just within OpenROAD itself.
 ```tcl
-source scripts/Utl.tcl
 # you will be prompted to enter the RELATIVE path to cat folders.
 man openroad
 ```

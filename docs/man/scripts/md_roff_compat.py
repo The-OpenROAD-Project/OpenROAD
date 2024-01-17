@@ -22,7 +22,7 @@ SRC_DIR = "./md/man2"
 tools = ["ant", "cts", "dft", "dpl", "fin", "pad", "par", "ppl", "rsz",\
             "tap", "upf", "drt", "gpl", "grt", "ifp", "mpl2", "pdn", "psm",\
             "rmp", "rcx", "gui"]
-docs = [f"{SRC_DIR}/{tool}.txt" for tool in tools]
+docs = [f"{SRC_DIR}/{tool}.md" for tool in tools]
 
 # identify key section and stored in ManPage class. 
 class ManPage():
