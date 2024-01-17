@@ -99,9 +99,9 @@ define_pdn_grid
 | ----- | ----- |
 | `-name` | The name to use when referring to this grid definition. |
 | `-voltage_domain` | This grid's voltage domain name. Defaults to the last domain created. |
-| `-pins` | Defines a list of layers which where the power straps will be promoted to block pins. |
-| `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: GROUND). |
-| `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations. |
+| `-pins` | List of layers where the power straps will be promoted to block pins. |
+| `-starts_with` | Use `POWER` or `GROUND`  for the first placed strap. Defaults to `GROUND`. |
+| `-obstructions` | Layers to add routing blockages to avoid DRC violations. |
 
 Example usage:
 
@@ -134,17 +134,17 @@ define_pdn_grid
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-macro` | Defines the type of grid being added as a macro. |
-| `-name` | Defines a name to use when referring to this grid definition. |
-| `-grid_over_pg_pins`, `-grid_over_boundary` | Place the power grid over the power ground pins of the macro. (Default True), or Place the power grid over the entire macro.  |
-| `-voltage_domain` | Defines the name of the voltage domain for this grid. (Default: Last domain created). |
+| `-macro` | The type of grid added as a macro. |
+| `-name` | The name to use when referring to this grid definition. |
+| `-grid_over_pg_pins`, `-grid_over_boundary` | Place the power grid over the power ground pins of the macro (default) or place the power grid over the entire macro.  |
+| `-voltage_domain` | Grid's voltage domain name. Defaults to the last domain created. |
 | `-orient` | For a macro, defines a set of valid orientations. LEF orientations (N, FN, S, FS, E, FE, W and FW) can be used as well as standard geometry orientations (R0, R90, R180, R270, MX, MY, MXR90 and MYR90). Macros with one of the valid orientations will use this grid specification. |
 | `-instances` | For a macro, defines a set of valid instances. Macros with a matching instance name will use this grid specification. |
-| `-cells` | For a macro, defines a set of valid cells. Macros which are instances of one of these cells will use this grid specification. |
+| `-cells` | For a macro, defines a set of valid cells. Macros, which are instances of one of these cells, will use this grid specification. |
 | `-default` | For a macro, specifies this is a default grid that can be overwritten. |
-| `-halo` | Specifies the default minimum separation of selected macros from other cells in the design. This is only used if the macro does not define halo values in the LEF description. If 1 value is specified it will be used on all 4 sides, if two values are specified, the first will be applied to left/right sides and the second will be applied to top/bottom sides, if 4 values are specified, then they are applied to left, bottom, right and top sides respectively (Default: 0). |
-| `-pins` | Defines a list of layers which where the power straps will be promoted to block pins. |
-| `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: GROUND). |
+| `-halo` | Specifies the design's default minimum separation of selected macros from other cells. This is only used if the macro does not define halo values in the LEF description. If one value is specified, it will be used on all four sides; if two values are specified, the first will be applied to left/right sides, and the second will be applied to top/bottom sides; if four values are specified, then they are applied to left, bottom, right and top sides respectively (Default: 0). |
+| `-pins` | Defines a list of layers where the power straps will be promoted to block pins. |
+| `-starts_with` | Use `POWER` or `GROUND`  for the first placed strap. Defaults to `GROUND`.|
 | `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations. |
 | `-power_switch_cell` | Defines the name of the coarse grain power switch cell to be used wherever the stdcell rail connects to the rest of the power grid. The mesh layers are associated with the unswitched power net of the voltage domain, whereas the stdcell rail is associated with the switched power net of the voltage domain. The placement of a power switch cell connects the unswitched power mesh to the switched power rail through a power switch defined by the `define_power_switch_cell` command. |
 | `-power_control` | Defines the name of the power control signal used to control the switching of the inserted power switches. |
@@ -157,7 +157,7 @@ define_pdn_grid -macro -name ram          -orient {R0 R180 MX MY} -grid_over_pg_
 define_pdn_grid -macro -name rotated_rams -orient {E FE W FW}     -grid_over_boundary -starts_with POWER -pin_direction horizontal
 ```
 
-### Define Power Grid for an existing routing solution
+### Define Power Grid for an Existing Routing Solution
 
 ```tcl
 define_pdn_grid 
@@ -170,9 +170,9 @@ define_pdn_grid
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-existing` | Flag to enable defining for existing routing solution. |
-| `-name` | Defines a name to use when referring to this grid definition (defaults to `existing_grid`). |
-| `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations. |
+| `-existing` | Enable use of existing routing solution. |
+| `-name` | The name to use when referring to this grid definition. Defaults to `existing_grid`. |
+| `-obstructions` | The layers to add routing blockages in order to avoid DRC violations. |
 
 Example usage:
 
@@ -182,7 +182,7 @@ define_pdn_grid -name main_grid -existing
 
 ### Define Power Switch Cell
 
-Define a power switch cell that will be inserted into a power grid 
+Define a power switch cell that will be inserted into a power grid.
 
 ```tcl
 define_power_switch_cell 
@@ -200,10 +200,10 @@ define_power_switch_cell
 | ----- | ----- |
 | `-name` | The name of the power switch cell. |
 | `-control` | The name of the power control port of the power switch cell. |
-| `-switched_power` | Defines the name of the pin that outputs the switched power net. |
-| `-power` | Defines the name of the pin that connects to the unswitched power net. |
-| `-ground` | Defines the name of the pin that connects to the ground net. |
-| `-acknowledge` | Defines the name of the output control signal of the power control switch if it has one. |
+| `-switched_power` | The pin's name that outputs the switched power net. |
+| `-power` | The pin's name that connects to the unswitched power net. |
+| `-ground` | The pin's name that connects to the ground net. |
+| `-acknowledge` | The name of the output control signal of the power control switch if it has one. |
 
 Example usage:
 
@@ -211,7 +211,7 @@ Example usage:
 define_power_switch_cell -name POWER_SWITCH -control SLEEP -switched_power VDD -power VDDG -ground VSS
 ```
 
-### Add Straps/Stripes
+### Add Stripes
 
 Defines a pattern of power and ground stripes in a single layer to be added to a power grid.
 
@@ -236,15 +236,15 @@ add_pdn_stripe
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-layer` | Specifies the name of the layer for these stripes. |
-| `-grid` | Specifies the grid to which this stripe definition will be added. (Default: Last grid defined by `define_pdn_grid`). |
-| `-width` | Value for the width of stripe. |
-| `-followpins` | Indicates that the stripe forms part of the stdcell rails, pitch and spacing are dictated by the stdcell rows, the `-width` is not needed if it can be determined from the cells. |
+| `-layer` | The layer name for these stripes. |
+| `-grid` | The grid to which this stripe definition will be added. (Default: Last grid defined by `define_pdn_grid`). |
+| `-width` | Value for the width of the stripe. |
+| `-followpins` | Indicates that the stripe forms part of the stdcell rails, pitch and spacing are dictated by the stdcell rows, and the `-width` is not needed if it can be determined from the cells. |
 | `-extend_to_core_ring` | Extend the stripes to the core PG ring. |
 | `-pitch` | Value for the distance between each power/ground pair. |
-| `-spacing` | Optional specification of the spacing between power/ground pairs within a single pitch (Default: pitch / 2). |
+| `-spacing` | Optional specification of the spacing between power/ground pairs within a single pitch defaults to `pitch / 2`. |
 | `-offset` | Value for the offset of the stripe from the lower left corner of the design core area. |
-| `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: grid setting). |
+| `-starts_with` | Use `POWER` or `GROUND`  for the first placed strap. Defaults to `GROUND`. |
 | `-extend_to_boundary` | Extend the stripes to the boundary of the grid. |
 | `-snap_to_grid` | Snap the stripes to the defined routing grid. |
 | `-number_of_straps` | Number of power/ground pairs to add. |
