@@ -290,7 +290,6 @@ void ChartsWidget::populateBuckets(const std::vector<float>& all_slack,
   } while (*min_slack < negative_upper || *max_slack >= positive_upper);
 }
 
-// Our intervals are always multiples of 50/100/150...
 int ChartsWidget::computeSnapBucketInterval(float exact_interval)
 {
   if (exact_interval < 10) {
@@ -360,7 +359,6 @@ void ChartsWidget::setYAxisConfig()
   axis_y_->setVisible(true);
 }
 
-// Our intervals are always multiples of 50/100/150...
 int ChartsWidget::computeYInterval()
 {
   int snap_max = computeMaxYSnap();

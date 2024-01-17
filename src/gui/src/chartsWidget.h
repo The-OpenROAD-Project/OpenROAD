@@ -68,14 +68,14 @@ class ChartsWidget : public QDockWidget
     sta_ = sta;
   };
   void setLogger(utl::Logger* logger);
-  void setSlackMode();
-  void clearChart();
 
  private slots:
   void changeMode();
   void showToolTip(bool is_hovering, int bar_index);
 
  private:
+  void setSlackMode();
+  void clearChart();
   void getSlackForAllEndpoints(std::vector<float>& all_slack) const;
   void populateBuckets(const std::vector<float>& all_slack,
                        std::deque<int>& neg_buckets,
