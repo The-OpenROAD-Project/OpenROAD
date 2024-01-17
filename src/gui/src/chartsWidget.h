@@ -81,7 +81,8 @@ class ChartsWidget : public QDockWidget
                        std::deque<int>& neg_buckets,
                        std::deque<int>& pos_buckets);
   void setBucketInterval(float bucket_interval);
-  void setXAxisConfig(const QStringList& time_values);
+  void setNegativeCountOffset(int neg_count_offset);
+  void setXAxisConfig(int all_bars_count);
   void setYAxisConfig();
   int computeMaxYSnap();
   int computeNumberOfDigits(int value);
@@ -94,13 +95,14 @@ class ChartsWidget : public QDockWidget
   QComboBox* mode_menu_;
   QChart* chart_;
   QChartView* display_;
-  QBarCategoryAxis* axis_x_;
+  QValueAxis* axis_x_;
   QValueAxis* axis_y_;
 
   const int number_of_buckets_ = 15;
   int largest_slack_count_ = 0;  // Used to configure the y axis.
 
   float bucket_interval_ = 0;
+  int neg_count_offset_ = 0;
 #endif
   QLabel* label_;
 };

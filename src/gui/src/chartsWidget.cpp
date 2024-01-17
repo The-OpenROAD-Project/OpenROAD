@@ -59,7 +59,7 @@ ChartsWidget::ChartsWidget(QWidget* parent)
       mode_menu_(new QComboBox(this)),
       chart_(new QChart),
       display_(new QChartView(chart_, this)),
-      axis_x_(new QBarCategoryAxis(this)),
+      axis_x_(new QValueAxis(this)),
       axis_y_(new QValueAxis(this)),
 #endif
       label_(new QLabel(this))
@@ -129,9 +129,11 @@ void ChartsWidget::showToolTip(bool is_hovering, int bar_index)
     QString time_unit = sta_->units()->timeUnit()->scaleAbbreviation();
     time_unit.append(sta_->units()->timeUnit()->suffix());
 
+    const int lower = (bar_index - neg_count_offset_) * bucket_interval_;
+    const int upper = lower + bucket_interval_;
+
     QString time_info
-        = QString("Interval: %1 ").arg(axis_x_->categories()[bar_index])
-          + time_unit;
+        = QString("Interval: [%1, %2) ").arg(lower).arg(upper) + time_unit;
 
     const QString tool_tip = number_of_pins + time_info;
 
@@ -147,7 +149,6 @@ void ChartsWidget::clearChart()
   chart_->removeAllSeries();
 
   axis_x_->setTitleText("");
-  axis_x_->clear();
   axis_x_->hide();
 
   axis_y_->setTitleText("");
@@ -168,8 +169,8 @@ void ChartsWidget::setSlackMode()
   }
 
   std::deque<int> neg_buckets, pos_buckets;
-
   populateBuckets(all_slack, pos_buckets, neg_buckets);
+  setNegativeCountOffset(static_cast<int>(neg_buckets.size()));
 
   QBarSet* neg_set = new QBarSet("");
   neg_set->setBorderColor(0x8b0000);  // darkred
@@ -182,8 +183,6 @@ void ChartsWidget::setSlackMode()
   connect(neg_set, &QBarSet::hovered, this, &ChartsWidget::showToolTip);
   connect(pos_set, &QBarSet::hovered, this, &ChartsWidget::showToolTip);
 
-  QStringList time_values;
-
   const QString open_bracket = "[";
   const QString close_parenthesis = ")";
   const QString comma = ", ";
@@ -191,33 +190,22 @@ void ChartsWidget::setSlackMode()
   for (int i = 0; i < neg_buckets.size(); ++i) {
     *neg_set << neg_buckets[i];
     *pos_set << 0;
-    float lower = (i - static_cast<int>(neg_buckets.size())) * bucket_interval_;
-    float upper = lower + bucket_interval_;
-
-    time_values << open_bracket + QString("").setNum(lower) + comma
-                       + QString("").setNum(upper) + close_parenthesis;
   }
 
   for (int i = 0; i < pos_buckets.size(); ++i) {
     *neg_set << 0;
     *pos_set << pos_buckets[i];
-    float lower = i * bucket_interval_;
-    float upper = lower + bucket_interval_;
-
-    time_values << open_bracket + QString().setNum(lower) + comma
-                       + QString().setNum(upper) + close_parenthesis;
   }
 
-  setXAxisConfig(time_values);
-  setYAxisConfig();
-
   QStackedBarSeries* series = new QStackedBarSeries(this);
-  chart_->addSeries(series);
-
   series->append(neg_set);
   series->append(pos_set);
   series->setBarWidth(1.0);
-  series->attachAxis(axis_x_);
+  chart_->addSeries(series);
+
+  setXAxisConfig(pos_set->count());
+  setYAxisConfig();
+
   series->attachAxis(axis_y_);
 
   chart_->legend()->markers(series)[0]->setVisible(false);
@@ -309,12 +297,17 @@ void ChartsWidget::populateBuckets(const std::vector<float>& all_slack,
   } while (*min_slack < negative_upper || *max_slack >= positive_upper);
 }
 
+void ChartsWidget::setNegativeCountOffset(int neg_count_offset)
+{
+  neg_count_offset_ = neg_count_offset;
+}
+
 void ChartsWidget::setBucketInterval(float bucket_interval)
 {
   bucket_interval_ = bucket_interval;
 }
 
-void ChartsWidget::setXAxisConfig(const QStringList& time_values)
+void ChartsWidget::setXAxisConfig(int all_bars_count)
 {
   const QString start_title = "Slack [";
   const QString time_scale_abreviation
@@ -326,9 +319,14 @@ void ChartsWidget::setXAxisConfig(const QStringList& time_values)
       = start_title + time_scale_abreviation + time_suffix + end_title;
 
   axis_x_->setTitleText(axis_x_title);
-  axis_x_->append(time_values);
-  axis_x_->setLabelsAngle(-90);
+
+  const int pos_bars_count = all_bars_count - neg_count_offset_;
+
+  axis_x_->setRange((-neg_count_offset_ * bucket_interval_),
+                    pos_bars_count * bucket_interval_);
+  axis_x_->setTickCount(all_bars_count + 1);
   axis_x_->setGridLineVisible(false);
+  axis_x_->setLabelFormat("%d");
   axis_x_->setVisible(true);
 }
 
@@ -353,7 +351,7 @@ void ChartsWidget::setYAxisConfig()
 }
 
 // Our intervals are always multiples of 5/50/500.. or 10/100/1000..
-// with the exception of the situation where we have too few buckets.
+// with the exception of the situation where we have small buckets.
 int ChartsWidget::computeYInterval()
 {
   int snap_max = computeMaxYSnap();
