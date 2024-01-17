@@ -80,8 +80,9 @@ bool _dbBox::operator==(const _dbBox& rhs) const
   if (_flags._layer_id != rhs._flags._layer_id)
     return false;
 
-  if (_flags._layer_mask != rhs._flags._layer_mask)
+  if (_flags._layer_mask != rhs._flags._layer_mask) {
     return false;
+  }
 
   if (_flags._via_id != rhs._flags._via_id)
     return false;
@@ -140,8 +141,9 @@ int _dbBox::equal(const _dbBox& rhs) const
   }
   if (_flags._octilinear != rhs._flags._octilinear)
     return false;
-  if (_flags._layer_mask != rhs._flags._layer_mask)
+  if (_flags._layer_mask != rhs._flags._layer_mask) {
     return false;
+  }
   if (design_rule_width_ != rhs.design_rule_width_)
     return false;
   if (isOct() && _shape._oct != _shape._oct)
@@ -215,8 +217,9 @@ bool _dbBox::operator<(const _dbBox& rhs) const
     return _shape._rect < rhs._shape._rect;
   if (design_rule_width_ >= rhs.design_rule_width_)
     return false;
-  if (_flags._layer_mask >= rhs._flags._layer_mask)
+  if (_flags._layer_mask >= rhs._flags._layer_mask) {
     return false;
+  }
   return false;
 }
 

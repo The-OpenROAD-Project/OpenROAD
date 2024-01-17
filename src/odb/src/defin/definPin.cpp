@@ -246,14 +246,14 @@ void definPin::pinRect(const char* layer_name,
   }
 
   Rect r(dbdist(x1), dbdist(y1), dbdist(x2), dbdist(y2));
-  _rects.push_back(PinRect(_layer, r, mask));
+  _rects.emplace_back(_layer, r, mask);
 }
 
 void definPin::pinPolygon(std::vector<defPoint>& points, uint mask)
 {
   std::vector<Point> P;
   translate(points, P);
-  _polygons.push_back(Polygon(_layer, P, mask));
+  _polygons.emplace_back(_layer, P, mask);
 }
 
 void definPin::pinGroundPin(const char* groundPin)
