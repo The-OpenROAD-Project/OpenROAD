@@ -175,7 +175,6 @@ void ChartsWidget::setSlackMode()
   QBarSet* neg_set = new QBarSet("");
   neg_set->setBorderColor(0x8b0000);  // darkred
   neg_set->setColor(0xf08080);        // lightcoral
-
   QBarSet* pos_set = new QBarSet("");
   pos_set->setBorderColor(0x006400);  // darkgreen
   pos_set->setColor(0x90ee90);        // lightgreen
@@ -183,15 +182,10 @@ void ChartsWidget::setSlackMode()
   connect(neg_set, &QBarSet::hovered, this, &ChartsWidget::showToolTip);
   connect(pos_set, &QBarSet::hovered, this, &ChartsWidget::showToolTip);
 
-  const QString open_bracket = "[";
-  const QString close_parenthesis = ")";
-  const QString comma = ", ";
-
   for (int i = 0; i < neg_buckets.size(); ++i) {
     *neg_set << neg_buckets[i];
     *pos_set << 0;
   }
-
   for (int i = 0; i < pos_buckets.size(); ++i) {
     *neg_set << 0;
     *pos_set << pos_buckets[i];
@@ -205,7 +199,6 @@ void ChartsWidget::setSlackMode()
 
   setXAxisConfig(pos_set->count());
   setYAxisConfig();
-
   series->attachAxis(axis_y_);
 
   chart_->legend()->markers(series)[0]->setVisible(false);
