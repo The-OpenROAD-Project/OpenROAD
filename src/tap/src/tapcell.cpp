@@ -229,8 +229,10 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
                                  disallow_one_site_gaps,
                                  partially_overlap,
                                  x_limit);
-    if (!overlap || partially_overlap) {
-      int x_loc = partially_overlap ? x_limit - tap_width : x;
+    int x_loc = partially_overlap ? x_limit - tap_width : x;
+    if (!overlap
+        || (partially_overlap
+            && !isOverlapping(x_loc, tap_width, ori, row_insts))) {
       const int lly = row_bb.yMin();
       auto* inst = makeInstance(
           db_->getChip()->getBlock(),
@@ -247,6 +249,21 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
   return insts;
 }
 
+inline void findStartEnd(int x,
+                         int width,
+                         const odb::dbOrientType& orient,
+                         int& x_start,
+                         int& x_end)
+{
+  if (orient == odb::dbOrientType::MY || orient == odb::dbOrientType::R180) {
+    x_start = x - width;
+    x_end = x;
+  } else {
+    x_start = x;
+    x_end = x + width;
+  }
+}
+
 bool Tapcell::checkIfFilled(const int x,
                             const int width,
                             const odb::dbOrientType& orient,
@@ -258,13 +275,7 @@ bool Tapcell::checkIfFilled(const int x,
 {
   int x_start;
   int x_end;
-  if (orient == odb::dbOrientType::MY || orient == odb::dbOrientType::R180) {
-    x_start = x - width;
-    x_end = x;
-  } else {
-    x_start = x;
-    x_end = x + width;
-  }
+  findStartEnd(x, width, orient, x_start, x_end);
 
   if (disallow_one_site_gaps) {
     // The +1 is to convert > to >= (< to <=) below
@@ -277,6 +288,24 @@ bool Tapcell::checkIfFilled(const int x,
     if (x_end > inst_bb.xMin() && x_start < inst_bb.xMax()) {
       partially_overlap = x_start < inst_bb.xMin();
       x_limit = inst_bb.xMin();
+      return true;
+    }
+  }
+  return false;
+}
+
+bool Tapcell::isOverlapping(const int x,
+                            const int width,
+                            const odb::dbOrientType& orient,
+                            const std::set<odb::dbInst*>& row_insts)
+{
+  int x_start;
+  int x_end;
+  findStartEnd(x, width, orient, x_start, x_end);
+
+  for (const auto& inst : row_insts) {
+    const odb::Rect inst_bb = inst->getBBox()->getBox();
+    if (x_end > inst_bb.xMin() && x_start < inst_bb.xMax()) {
       return true;
     }
   }
