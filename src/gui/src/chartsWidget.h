@@ -97,7 +97,7 @@ class ChartsWidget : public QDockWidget
   QBarCategoryAxis* axis_x_;
   QValueAxis* axis_y_;
 
-  const int number_of_buckets_ = 25;
+  const int number_of_buckets_ = 15;
   int largest_slack_count_ = 0;  // Used to configure the y axis.
 
   float bucket_interval_ = 0;
