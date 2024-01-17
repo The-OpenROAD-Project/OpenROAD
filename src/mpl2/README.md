@@ -15,7 +15,7 @@ planning approach that exploits the hierarchy and data flow inherent in the desi
 
 ```tcl
 rtl_macro_placer 
-    [-halo_width halo_width]
+    [-max_num_macro max_num_macro]
     [-min_num_macro min_num_macro]
     [-max_num_inst max_num_inst]  
     [-min_num_inst min_num_inst] 
@@ -38,6 +38,7 @@ rtl_macro_placer
     [-boundary_weight boundary_weight]
     [-notch_weight notch_weight]
     [-macro_blockage_weight macro_blockage_weight]
+    [-pin_access_th pin_access_th]
     [-target_util target_util]
     [-target_dead_space target_dead_space]
     [-min_ar min_ar]
@@ -59,8 +60,9 @@ rtl_macro_placer
 | `-num_bundled_ios` | Specifies the number of bundled pins for the left, right, top, and bottom boundaries. The default value is `3`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-large_net_threshold` | Ignore nets with many connections during clustering, such as global nets. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-signature_net_threshold` | Minimum number of connections between two clusters to be identified as connected. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
-| `-halo_width` | iHorizontal/vertical halo around macros (microns). The allowed values are floats, and the default value is `0.0`. |
+| `-halo_width` | Horizontal/vertical halo around macros (microns). The allowed values are floats, and the default value is `0.0`. |
 | `-fence_lx`, `-fence_ly`, `-fence_ux`, `-fence_uy` | Defines the global fence bounding box coordinates. The default values are the core area coordinates). |
+| `-pin_access_th` | Specifies the pin access threshold value of macros. The default value is `0.0`, and the allowed values are floats [0,1]. |
 | `-target_util` | Specifies the target utilization of `MixedCluster` and has higher priority than target_dead_space. The allowed values are floats, and the default value is `0.25`. |
 | `-target_dead_space` | Specifies the target dead space percentage, which influences the utilization of `StandardCellCluster`. The allowed values are floats, and the default value is `0.05`. |
 | `-min_ar` | Specifies the minimum aspect ratio $a$, or the ratio of its width to height of a `StandardCellCluster` from $[a, \frac{1}{a}]$. The allowed values are floats, and the default value is `0.33`. |
