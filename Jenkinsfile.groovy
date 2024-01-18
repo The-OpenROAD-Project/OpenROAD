@@ -222,6 +222,7 @@ node {
         Map tasks = [failFast: false]
         tasks["Local centos7 gcc"] = {
           node {
+              checkout scm
               stage('Build centos7 gcc') {
                   sh './etc/Build.sh -no-warnings';
               }
@@ -254,6 +255,7 @@ node {
         }
         tasks["Local centos7 gcc without GUI"] = {
           node {
+            checkout scm
             stage('Build centos7 gcc without GUI') {
               sh './etc/Build.sh -no-warnings -no-gui -dir=build-without-gui'; 
             }
@@ -295,21 +297,22 @@ node {
     }
   } finally {
     catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-       if ( env.BRANCH_NAME == 'master' ) {
-          echo('Main development branch: report to stakeholders and commit author.');
-          EMAIL_TO="$COMMIT_AUTHOR_EMAIL, \$DEFAULT_RECIPIENTS, cherry@parallaxsw.com";
-          REPLY_TO="$EMAIL_TO";
-        } else {
-          echo('Feature development branch: report only to commit author.');
-          EMAIL_TO="$COMMIT_AUTHOR_EMAIL";
-          REPLY_TO='$DEFAULT_REPLYTO';
-        }
-        emailext (
-            to: "$EMAIL_TO",
-            replyTo: "$REPLY_TO",
-            subject: '$DEFAULT_SUBJECT',
-            body: '$DEFAULT_CONTENT',
-            );
+      //  if ( env.BRANCH_NAME == 'master' ) {
+      //     echo('Main development branch: report to stakeholders and commit author.');
+      //     EMAIL_TO="$COMMIT_AUTHOR_EMAIL, \$DEFAULT_RECIPIENTS, cherry@parallaxsw.com";
+      //     REPLY_TO="$EMAIL_TO";
+      //   } else {
+      //     echo('Feature development branch: report only to commit author.');
+      //     EMAIL_TO="$COMMIT_AUTHOR_EMAIL";
+      //     REPLY_TO='$DEFAULT_REPLYTO';
+      //   }
+      //   emailext (
+      //       to: "$EMAIL_TO",
+      //       replyTo: "$REPLY_TO",
+      //       subject: '$DEFAULT_SUBJECT',
+      //       body: '$DEFAULT_CONTENT',
+      //       );
+      sendEmail(env.BRANCH_NAME, COMMIT_AUTHOR_EMAIL, "$DEFAULT_CONTENT")
     }
   }
 }

@@ -61,13 +61,14 @@ node {
 
   } finally {
     catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-      def EMAIL_TO = emailDetails(env.BRANCH_NAME, COMMIT_AUTHOR_EMAIL)
-      emailext (
-          to: "$EMAIL_TO",
-          replyTo: '$DEFAULT_REPLYTO',
-          subject: '$DEFAULT_SUBJECT',
-          body: '$DEFAULT_CONTENT',
-          );
+      // def EMAIL_TO = emailDetails(env.BRANCH_NAME, COMMIT_AUTHOR_EMAIL)
+      // emailext (
+      //     to: "$EMAIL_TO",
+      //     replyTo: '$DEFAULT_REPLYTO',
+      //     subject: '$DEFAULT_SUBJECT',
+      //     body: '$DEFAULT_CONTENT',
+      //     );
+      sendEmail(env.BRANCH_NAME, COMMIT_AUTHOR_EMAIL, "$DEFAULT_CONTENT")
     }
   }
 }
