@@ -27,7 +27,7 @@ jobs:
       contents: read
 
     # Don't run on the upstream repository and only run on the right branch.
-    if: ${{ (github.repository != 'The-OpenROAD-Project/OpenROAD') && endsWith(github.ref, '/master') }}
+    if: ${{ github.repository_owner == 'Precision-Innovations' && (github.repository != 'The-OpenROAD-Project/OpenROAD') && endsWith(github.ref, '/master') }}
 
     steps:
 
