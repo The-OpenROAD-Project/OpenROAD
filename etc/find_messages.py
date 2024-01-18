@@ -80,8 +80,9 @@ warn_regexp_c = \
       \s*,\s*                                          # ,
       (?P<id>\d+)                                      # id
       \s*,\s*                                          # ,
-      (?P<message>("(?:[^"\\]|\\.)+?"\s*)+)            # message
+      (?P<message>("(?:[^"\\]|\\.)+?"(?:\s*\\n\s*"(?:[^"\\]|\\.)+?")*\s*))  # message
     ''', re.VERBOSE | re.MULTILINE)
+
 
 warn_regexp_tcl = \
     re.compile(r'''

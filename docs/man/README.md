@@ -9,7 +9,7 @@
 make clean
 
 # Note this step is important as it regenerates the documentation using latest sources.
-make preprocess && make all
+make preprocess && make all #-j16
 ```
 
 - Setup environment variables as follows. This is to avoid overwriting the system default for `MANPATH`.

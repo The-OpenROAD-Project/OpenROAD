@@ -2,6 +2,7 @@ test/results
 
 # dont save intermediate results
 md/man2/*md
+md/man3/*md
 html
 man
 cat

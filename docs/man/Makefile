@@ -114,6 +114,7 @@ clean:
 	rm -rf $(HTML1_DIR) $(HTML2_DIR) $(HTML3_DIR)
 	rm -rf $(CAT1_DIR) $(CAT2_DIR) $(CAT3_DIR)
 	rm -rf ./md/man2/*md
+	rm -rf ./md/man3/*md
 
 # Phony targets
 .PHONY: all 
