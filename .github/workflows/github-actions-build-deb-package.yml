@@ -2,8 +2,8 @@ name: Build deb packages
 
 on:
   push:
-  schedule:
-  - cron: "0 8 * * SUN"
+    branches:
+      - main
 
 jobs:
   builder:
@@ -67,6 +67,7 @@ jobs:
         with:
           tag_name: ${{ env.RELEASE_VERSION }}
           release_name: Release ${{ env.RELEASE_VERSION }}
+          body: "Release"
         id: create_release
 
       - name: Upload Release Asset
