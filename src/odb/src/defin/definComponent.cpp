@@ -241,8 +241,9 @@ void definComponent::placement(int status, int x, int y, int orient)
 
 void definComponent::halo(int left, int bottom, int right, int top)
 {
-  if (_cur_inst == nullptr)
+  if (_cur_inst == nullptr) {
     return;
+  }
 
   dbBox::create(
       _cur_inst, dbdist(left), dbdist(bottom), dbdist(right), dbdist(top));
