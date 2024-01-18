@@ -2,8 +2,8 @@ name: Build deb packages
 
 on:
   push:
-    # branches:
-    #   - main
+    branches:
+      - main
 
 jobs:
   builder:
