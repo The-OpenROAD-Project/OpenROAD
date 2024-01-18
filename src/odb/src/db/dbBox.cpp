@@ -80,6 +80,10 @@ bool _dbBox::operator==(const _dbBox& rhs) const
   if (_flags._layer_id != rhs._flags._layer_id)
     return false;
 
+  if (_flags._layer_mask != rhs._flags._layer_mask) {
+    return false;
+  }
+
   if (_flags._via_id != rhs._flags._via_id)
     return false;
   if (_flags._octilinear != rhs._flags._octilinear)
@@ -137,6 +141,9 @@ int _dbBox::equal(const _dbBox& rhs) const
   }
   if (_flags._octilinear != rhs._flags._octilinear)
     return false;
+  if (_flags._layer_mask != rhs._flags._layer_mask) {
+    return false;
+  }
   if (design_rule_width_ != rhs.design_rule_width_)
     return false;
   if (isOct() && _shape._oct != _shape._oct)
@@ -210,6 +217,9 @@ bool _dbBox::operator<(const _dbBox& rhs) const
     return _shape._rect < rhs._shape._rect;
   if (design_rule_width_ >= rhs.design_rule_width_)
     return false;
+  if (_flags._layer_mask >= rhs._flags._layer_mask) {
+    return false;
+  }
   return false;
 }
 
@@ -227,6 +237,7 @@ void _dbBox::differences(dbDiff& diff,
   DIFF_FIELD(_flags._layer_id);
   DIFF_FIELD(_flags._via_id);
   DIFF_FIELD(_flags._octilinear);
+  DIFF_FIELD(_flags._layer_mask);
 
   if (isOct()) {
     DIFF_FIELD(_shape._oct);
@@ -249,6 +260,7 @@ void _dbBox::out(dbDiff& diff, char side, const char* field) const
     DIFF_OUT_FIELD(_flags._layer_id);
     DIFF_OUT_FIELD(_flags._via_id);
     DIFF_OUT_FIELD(_flags._octilinear);
+    DIFF_OUT_FIELD(_flags._layer_mask);
     if (isOct()) {
       DIFF_OUT_FIELD(_shape._oct);
     } else {
@@ -741,12 +753,19 @@ dbTechLayer* dbBox::getTechLayer()
   return (dbTechLayer*) box->getTechLayer();
 }
 
+uint dbBox::getLayerMask()
+{
+  _dbBox* box = (_dbBox*) this;
+  return box->_flags._layer_mask;
+}
+
 dbBox* dbBox::create(dbBPin* bpin_,
                      dbTechLayer* layer_,
                      int x1,
                      int y1,
                      int x2,
-                     int y2)
+                     int y2,
+                     uint mask)
 {
   _dbBPin* bpin = (_dbBPin*) bpin_;
   _dbBlock* block = (_dbBlock*) bpin->getOwner();
@@ -762,7 +781,15 @@ dbBox* dbBox::create(dbBPin* bpin_,
         layer_->getName(),
         layer_id);
   }
+  if (mask >= 4) {
+    bpin->getLogger()->error(utl::ODB, 434, "Mask must be between 0 and 3.");
+  }
+  if (layer_ == nullptr && mask != 0) {
+    bpin->getLogger()->error(
+        utl::ODB, 435, "Mask must be 0 when no layer is provided.");
+  }
   box->_flags._layer_id = layer_id;
+  box->_flags._layer_mask = mask;
   box->_flags._owner_type = dbBoxOwner::BPIN;
   box->_owner = bpin->getOID();
   box->_shape._rect.init(x1, y1, x2, y2);

@@ -26,7 +26,7 @@ END COMPONENTS
 PINS 12 ;
 - inp0 + NET inp0 + DIRECTION INPUT 
   + PORT
-    + LAYER metal1 ( -25 0 ) ( 25 50 ) 
+    + LAYER metal1 MASK 2 ( -25 0 ) ( 25 50 ) 
     + LAYER metal2 ( -10 0 ) ( 10 75 ) 
     + FIXED ( 10000 5000 ) N
   + PORT

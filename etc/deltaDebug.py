@@ -20,6 +20,7 @@
 
 import odb
 import os
+import sys
 import signal
 import subprocess
 import argparse
@@ -103,7 +104,9 @@ class deltaDebugger:
 
         # Perform a step with no cuts to measure timeout
         print("Performing a step with the original input file to calculate timeout.")
-        self.perform_step()
+        if self.perform_step() is None:
+            print("No error found in the original input file.")
+            sys.exit(1)
 
         while (True):
             err = None

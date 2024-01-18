@@ -1023,13 +1023,11 @@ int definReader::pinCallback(defrCallbackType_e /* unused: type */,
 
       // For a given port, add all boxes/shapes belonging to that port
       for (int i = 0; i < port->numLayer(); ++i) {
-        if (port->layerMask(i) != 0) {
-          UNSUPPORTED("MASK on pin's layer is unsupported");
-        }
+        uint mask = port->layerMask(i);
 
         int xl, yl, xh, yh;
         port->bounds(i, &xl, &yl, &xh, &yh);
-        pinR->pinRect(port->layer(i), xl, yl, xh, yh);
+        pinR->pinRect(port->layer(i), xl, yl, xh, yh, mask);
 
         if (port->hasLayerSpacing(i)) {
           pinR->pinMinSpacing(port->layerSpacing(i));
@@ -1065,13 +1063,11 @@ int definReader::pinCallback(defrCallbackType_e /* unused: type */,
 
     // Add boxes/shapes for the pin with single port
     for (int i = 0; i < pin->numLayer(); ++i) {
-      if (pin->layerMask(i) != 0) {
-        UNSUPPORTED("MASK on pin's layer is unsupported");
-      }
+      uint mask = pin->layerMask(i);
 
       int xl, yl, xh, yh;
       pin->bounds(i, &xl, &yl, &xh, &yh);
-      pinR->pinRect(pin->layer(i), xl, yl, xh, yh);
+      pinR->pinRect(pin->layer(i), xl, yl, xh, yh, mask);
 
       if (pin->hasLayerSpacing(i)) {
         pinR->pinMinSpacing(pin->layerSpacing(i));
