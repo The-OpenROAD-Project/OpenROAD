@@ -223,29 +223,31 @@ node {
         tasks["Local centos7 gcc"] = {
           node {
               checkout scm
-              stage('Build centos7 gcc') {
-                  sh './etc/Build.sh -no-warnings';
+              try {
+                stage('Build centos7 gcc') {
+                    sh './etc/Build.sh -no-warnings';
+                }
+                stage('Check message IDs') {
+                    sh 'cd src && ../etc/find_messages.py > messages.txt';
+                }
+                stage('Test centos7 gcc') {
+                    parallel (
+                        'Unit tests':           { sh './test/regression' },
+                        'nangate45 aes':        { sh './test/regression aes_nangate45' },
+                        'nangate45 gcd':        { sh './test/regression gcd_nangate45' },
+                        'nangate45 tinyRocket': { sh './test/regression tinyRocket_nangate45' },
+                        'sky130hd aes':         { sh './test/regression aes_sky130hd' },
+                        'sky130hd gcd':         { sh './test/regression gcd_sky130hd' },
+                        'sky130hd ibex':        { sh './test/regression ibex_sky130hd' },
+                        'sky130hd jpeg':        { sh './test/regression jpeg_sky130hd' },
+                        'sky130hs aes':         { sh './test/regression aes_sky130hs' },
+                        'sky130hs gcd':         { sh './test/regression gcd_sky130hs' },
+                        'sky130hs ibex':        { sh './test/regression ibex_sky130hs' },
+                        'sky130hs jpeg':        { sh './test/regression jpeg_sky130hs' },
+                    )
+                }
               }
-              stage('Check message IDs') {
-                  sh 'cd src && ../etc/find_messages.py > messages.txt';
-              }
-              stage('Test centos7 gcc') {
-                  parallel (
-                      'Unit tests':           { sh './test/regression' },
-                      'nangate45 aes':        { sh './test/regression aes_nangate45' },
-                      'nangate45 gcd':        { sh './test/regression gcd_nangate45' },
-                      'nangate45 tinyRocket': { sh './test/regression tinyRocket_nangate45' },
-                      'sky130hd aes':         { sh './test/regression aes_sky130hd' },
-                      'sky130hd gcd':         { sh './test/regression gcd_sky130hd' },
-                      'sky130hd ibex':        { sh './test/regression ibex_sky130hd' },
-                      'sky130hd jpeg':        { sh './test/regression jpeg_sky130hd' },
-                      'sky130hs aes':         { sh './test/regression aes_sky130hs' },
-                      'sky130hs gcd':         { sh './test/regression gcd_sky130hs' },
-                      'sky130hs ibex':        { sh './test/regression ibex_sky130hs' },
-                      'sky130hs jpeg':        { sh './test/regression jpeg_sky130hs' },
-                  )
-              }
-              post {
+              finally {
                   always {
                       sh "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
                       archiveArtifacts artifacts: '**/results.tgz', allowEmptyArchive: true;
