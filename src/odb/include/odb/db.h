@@ -594,6 +594,12 @@ class dbBox : public dbObject
   dbTechLayer* getTechLayer();
 
   ///
+  /// Get the layer mask assigned to this box.
+  /// Returns 0 is not assigned or bbox has no layer
+  ///
+  uint getLayerMask();
+
+  ///
   /// Add a physical pin to a dbBPin.
   /// Returns nullptr if this dbBPin already has a pin.
   ///
@@ -602,7 +608,8 @@ class dbBox : public dbObject
                        int x1,
                        int y1,
                        int x2,
-                       int y2);
+                       int y2,
+                       uint mask = 0);
 
   ///
   /// Add a box to a block-via.
