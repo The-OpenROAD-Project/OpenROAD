@@ -1532,9 +1532,13 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
 
   if (net->numRectangles()) {
     for (int i = 0; i < net->numRectangles(); i++) {
-      snetR->wire(net->rectShapeType(i), net->rectRouteStatusShieldName(i));
-      snetR->rect(
-          net->rectName(i), net->xl(i), net->yl(i), net->xh(i), net->yh(i));
+      snetR->wire(net->rectRouteStatus(i), net->rectRouteStatusShieldName(i));
+      snetR->rect(net->rectName(i),
+                  net->xl(i),
+                  net->yl(i),
+                  net->xh(i),
+                  net->yh(i),
+                  net->rectShapeType(i));
       snetR->wireEnd();
     }
   }

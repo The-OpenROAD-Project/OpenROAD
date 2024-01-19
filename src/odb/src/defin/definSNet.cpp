@@ -232,7 +232,12 @@ void definSNet::fixedbump()
   _cur_net->setFixedBump(true);
 }
 
-void definSNet::rect(const char* layer_name, int x1, int y1, int x2, int y2)
+void definSNet::rect(const char* layer_name,
+                     int x1,
+                     int y1,
+                     int x2,
+                     int y2,
+                     const char* type)
 {
   if (_swire == nullptr)
     return;
@@ -245,13 +250,13 @@ void definSNet::rect(const char* layer_name, int x1, int y1, int x2, int y2)
     return;
   }
 
-  dbSBox::create(_swire,
-                 layer,
-                 dbdist(x1),
-                 dbdist(y1),
-                 dbdist(x2),
-                 dbdist(y2),
-                 dbWireShapeType::NONE);
+  dbSBox* box = dbSBox::create(_swire,
+                               layer,
+                               dbdist(x1),
+                               dbdist(y1),
+                               dbdist(x2),
+                               dbdist(y2),
+                               dbWireShapeType(type));
 }
 
 void definSNet::polygon(const char* layer_name, std::vector<defPoint>& points)

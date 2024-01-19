@@ -76,7 +76,12 @@ class definSNet : public definBase
                           const char* pname,
                           bool synthesized);
   virtual void use(dbSigType type);
-  virtual void rect(const char* layer, int x1, int y1, int x2, int y2);
+  virtual void rect(const char* layer,
+                    int x1,
+                    int y1,
+                    int x2,
+                    int y2,
+                    const char* type);
   virtual void polygon(const char* layer, std::vector<defPoint>& points);
   virtual void wire(dbWireType type, const char* shield);
   virtual void path(const char* layer, int width);
