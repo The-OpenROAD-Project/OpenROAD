@@ -243,6 +243,7 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
           fmt::format("{}TAPCELL_{}_", tap_prefix_, row->getName()));
       row_insts.insert(inst);
       insts++;
+      x = x_loc;
     }
   }
 
