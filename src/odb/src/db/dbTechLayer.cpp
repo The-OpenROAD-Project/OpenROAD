@@ -120,6 +120,9 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
   if (wrong_way_width_ != rhs.wrong_way_width_) {
     return false;
   }
+  if (_layer_adjustment != rhs._layer_adjustment) {
+    return false;
+  }
   if (*cut_class_rules_tbl_ != *rhs.cut_class_rules_tbl_) {
     return false;
   }
@@ -342,6 +345,7 @@ void _dbTechLayer::differences(dbDiff& diff,
   DIFF_FIELD(flags_.rect_only_except_non_core_pins_);
   DIFF_FIELD(flags_.lef58_type_);
   DIFF_FIELD(wrong_way_width_);
+  DIFF_FIELD(_layer_adjustment);
   DIFF_TABLE(cut_class_rules_tbl_);
   DIFF_HASH_TABLE(cut_class_rules_hash_);
   DIFF_TABLE(spacing_eol_rules_tbl_);
@@ -424,6 +428,7 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(flags_.rect_only_except_non_core_pins_);
   DIFF_OUT_FIELD(flags_.lef58_type_);
   DIFF_OUT_FIELD(wrong_way_width_);
+  DIFF_OUT_FIELD(_layer_adjustment);
   DIFF_OUT_TABLE(cut_class_rules_tbl_);
   DIFF_OUT_HASH_TABLE(cut_class_rules_hash_);
   DIFF_OUT_TABLE(spacing_eol_rules_tbl_);
@@ -670,6 +675,7 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
   flags_.lef58_type_ = r.flags_.lef58_type_;
   flags_.spare_bits_ = r.flags_.spare_bits_;
   wrong_way_width_ = r.wrong_way_width_;
+  _layer_adjustment = r._layer_adjustment;
   cut_class_rules_tbl_ = new dbTable<_dbTechLayerCutClassRule>(
       db, this, *r.cut_class_rules_tbl_);
   cut_class_rules_hash_.setTable(cut_class_rules_tbl_);
@@ -773,6 +779,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> flags_bit_field;
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
+  stream >> obj._layer_adjustment;
   stream >> *obj.cut_class_rules_tbl_;
   stream >> obj.cut_class_rules_hash_;
   stream >> *obj.spacing_eol_rules_tbl_;
@@ -860,6 +867,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
   stream << flags_bit_field;
+  stream << obj._layer_adjustment;
   stream << *obj.cut_class_rules_tbl_;
   stream << obj.cut_class_rules_hash_;
   stream << *obj.spacing_eol_rules_tbl_;
@@ -1074,6 +1082,19 @@ uint dbTechLayer::getWrongWayWidth() const
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
   return obj->wrong_way_width_;
+}
+
+void dbTechLayer::setLayerAdjustment(float layer_adjustment)
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+
+  obj->_layer_adjustment = layer_adjustment;
+}
+
+float dbTechLayer::getLayerAdjustment() const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return obj->_layer_adjustment;
 }
 
 dbSet<dbTechLayerCutClassRule> dbTechLayer::getTechLayerCutClassRules() const

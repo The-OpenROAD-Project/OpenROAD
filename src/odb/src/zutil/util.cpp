@@ -32,6 +32,8 @@
 
 #include "util.h"
 
+#include <fstream>
+#include <iostream>
 #include <map>
 #include <numeric>
 #include <string>
@@ -128,6 +130,54 @@ void RUDYCalculator::calculateRUDY()
     odb::dbMaster* master = instance->getMaster();
     if (master->isBlock()) {
       processMacroObstruction(master, instance);
+    }
+  }
+
+  odb::dbTech* tech = block_->getTech();
+  // TODO probably remove this vector, depending on test.
+  std::vector<float> grt_adjustments;
+  int valid_layers = 1;
+  for (int l = 1; l <= tech->getRoutingLayerCount(); l++) {
+    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(l);
+    grt_adjustments.push_back(tech_layer->getLayerAdjustment());
+    //    if (tech_layer == nullptr) {
+    //      logger_->error(GRT, 85, "Routing layer {} not found.", l);
+    //    }
+    //    if (tech_layer->getRoutingLevel() != 0) {
+    //      if (tech_layer->getDirection() != odb::dbTechLayerDir::HORIZONTAL
+    //          && tech_layer->getDirection() != odb::dbTechLayerDir::VERTICAL)
+    //          {
+    //        logger_->error(GRT,
+    //                       84,
+    //                       "Layer {} does not have a valid direction.",
+    //                       tech_layer->getName());
+    //      }
+    //      routing_layers_[valid_layers] = tech_layer;
+    //      valid_layers++;
+  }
+  std::ofstream file;
+  file.open("example.txt", std::ios::app);
+  file << "tech: " << tech->getName() << std::endl;
+  float rudy_adjustment = 0.0;
+  for (int i = 0; i < grt_adjustments.size(); ++i) {
+    file << i << ":" << grt_adjustments[i] << " | ";
+    rudy_adjustment += grt_adjustments[i];
+  }
+  rudy_adjustment /= (grt_adjustments.size() - 1);
+  rudy_adjustment *= 100;
+  file << std::endl
+       << "avrg:" << rudy_adjustment << ", tech: " << tech->getName()
+       << std::endl
+       << std::endl;
+  file.close();
+  for (int x = 0; x < tileCntX_; ++x) {
+    for (int y = 0; y < tileCntY_; ++y) {
+      Tile& tile = getEditableTile(x, y);
+      {
+        //        std::cout<<"rudyBefore: "<<tile.getRUDY();
+        tile.addRUDY(rudy_adjustment);
+        //        std::cout<<", rudyAfter: "<<tile.getRUDY()<<std::endl;
+      }
     }
   }
 }

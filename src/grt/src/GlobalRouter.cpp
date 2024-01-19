@@ -1132,8 +1132,10 @@ void GlobalRouter::computeUserGlobalAdjustments(int min_routing_layer,
     return;
 
   for (int l = min_routing_layer; l <= max_routing_layer; l++) {
-    if (adjustments_[l] == 0) {
-      adjustments_[l] = adjustment_;
+    //    if (adjustments_[l] == 0) {
+    //      adjustments_[l] = adjustment_;
+    if (db_->getTech()->findRoutingLayer(l)->getLayerAdjustment() == 0.0) {
+      db_->getTech()->findRoutingLayer(l)->setLayerAdjustment(adjustment_);
     }
   }
 }
@@ -1144,7 +1146,9 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
   int y_grids = grid_->getYGrids();
 
   for (int layer = 1; layer <= max_routing_layer; layer++) {
-    float adjustment = adjustments_[layer];
+    //    float adjustment = adjustments_[layer];
+    float adjustment
+        = db_->getTech()->findRoutingLayer(layer)->getLayerAdjustment();
     if (adjustment != 0) {
       if (horizontal_capacities_[layer - 1] != 0) {
         int newCap = grid_->getHorizontalEdgesCapacities()[layer - 1]
@@ -1342,7 +1346,8 @@ void GlobalRouter::addLayerAdjustment(int layer, float reduction_percentage)
                     tech_layer->getName(),
                     max_tech_layer->getName());
   } else {
-    adjustments_[layer] = reduction_percentage;
+    //    adjustments_[layer] = reduction_percentage;
+    tech_layer->setLayerAdjustment(reduction_percentage);
   }
 }
 

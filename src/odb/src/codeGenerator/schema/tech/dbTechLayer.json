@@ -136,6 +136,11 @@
       "flags":[
         "no-serial"
       ]
+    },
+    {
+      "name":"_layer_adjustment",
+      "type":"float",
+      "flags":[]  
     }
   ],
   "enums": [
