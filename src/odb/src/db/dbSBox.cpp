@@ -53,17 +53,21 @@ bool _dbSBox::operator==(const _dbSBox& rhs) const
   if (_sflags._wire_type != rhs._sflags._wire_type)
     return false;
 
-  if (_sflags._direction != rhs._sflags._direction)
+  if (_sflags._direction != rhs._sflags._direction) {
     return false;
+  }
 
-  if (_sflags._via_bottom_mask != rhs._sflags._via_bottom_mask)
+  if (_sflags._via_bottom_mask != rhs._sflags._via_bottom_mask) {
     return false;
+  }
 
-  if (_sflags._via_cut_mask != rhs._sflags._via_cut_mask)
+  if (_sflags._via_cut_mask != rhs._sflags._via_cut_mask) {
     return false;
+  }
 
-  if (_sflags._via_top_mask != rhs._sflags._via_top_mask)
+  if (_sflags._via_top_mask != rhs._sflags._via_top_mask) {
     return false;
+  }
 
   if (_dbBox::operator!=(rhs))
     return false;
@@ -76,17 +80,21 @@ int _dbSBox::equal(const _dbSBox& rhs) const
   if (_sflags._wire_type != rhs._sflags._wire_type)
     return false;
 
-  if (_sflags._direction != rhs._sflags._direction)
+  if (_sflags._direction != rhs._sflags._direction) {
     return false;
+  }
 
-  if (_sflags._via_bottom_mask != rhs._sflags._via_bottom_mask)
+  if (_sflags._via_bottom_mask != rhs._sflags._via_bottom_mask) {
     return false;
+  }
 
-  if (_sflags._via_cut_mask != rhs._sflags._via_cut_mask)
+  if (_sflags._via_cut_mask != rhs._sflags._via_cut_mask) {
     return false;
+  }
 
-  if (_sflags._via_top_mask != rhs._sflags._via_top_mask)
+  if (_sflags._via_top_mask != rhs._sflags._via_top_mask) {
     return false;
+  }
 
   return _dbBox::equal(rhs);
 }
@@ -96,32 +104,40 @@ bool _dbSBox::operator<(const _dbSBox& rhs) const
   if (_sflags._wire_type < rhs._sflags._wire_type)
     return true;
 
-  if (_sflags._direction < rhs._sflags._direction)
+  if (_sflags._direction < rhs._sflags._direction) {
     return true;
+  }
 
-  if (_sflags._via_bottom_mask < rhs._sflags._via_bottom_mask)
+  if (_sflags._via_bottom_mask < rhs._sflags._via_bottom_mask) {
     return true;
+  }
 
-  if (_sflags._via_cut_mask < rhs._sflags._via_cut_mask)
+  if (_sflags._via_cut_mask < rhs._sflags._via_cut_mask) {
     return true;
+  }
 
-  if (_sflags._via_top_mask < rhs._sflags._via_top_mask)
+  if (_sflags._via_top_mask < rhs._sflags._via_top_mask) {
     return true;
+  }
 
   if (_sflags._wire_type > rhs._sflags._wire_type)
     return false;
 
-  if (_sflags._direction > rhs._sflags._direction)
+  if (_sflags._direction > rhs._sflags._direction) {
     return false;
+  }
 
-  if (_sflags._via_bottom_mask > rhs._sflags._via_bottom_mask)
+  if (_sflags._via_bottom_mask > rhs._sflags._via_bottom_mask) {
     return false;
+  }
 
-  if (_sflags._via_cut_mask > rhs._sflags._via_cut_mask)
+  if (_sflags._via_cut_mask > rhs._sflags._via_cut_mask) {
     return false;
+  }
 
-  if (_sflags._via_top_mask > rhs._sflags._via_top_mask)
+  if (_sflags._via_top_mask > rhs._sflags._via_top_mask) {
     return false;
+  }
 
   return _dbBox::operator<(rhs);
 }

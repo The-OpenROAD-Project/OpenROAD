@@ -1704,9 +1704,11 @@ void defout_impl::writeSWire(dbSWire* wire)
       box->getViaXY(x, y);
 
       if (box->hasViaLayerMasks()) {
-        vn = "MASK " + std::to_string(box->getViaTopLayerMask())
-             + std::to_string(box->getViaCutLayerMask())
-             + std::to_string(box->getViaBottomLayerMask()) + " " + vn;
+        vn = fmt::format("MASK {}{}{} {}",
+                         box->getViaTopLayerMask(),
+                         box->getViaCutLayerMask(),
+                         box->getViaBottomLayerMask(),
+                         vn);
       }
 
       if (type.getValue() == dbWireShapeType::NONE)
@@ -1739,9 +1741,11 @@ void defout_impl::writeSWire(dbSWire* wire)
       box->getViaXY(x, y);
 
       if (box->hasViaLayerMasks()) {
-        vn = "MASK " + std::to_string(box->getViaTopLayerMask())
-             + std::to_string(box->getViaCutLayerMask())
-             + std::to_string(box->getViaBottomLayerMask()) + " " + vn;
+        vn = fmt::format("MASK {}{}{} {}",
+                         box->getViaTopLayerMask(),
+                         box->getViaCutLayerMask(),
+                         box->getViaBottomLayerMask(),
+                         vn);
       }
 
       if (type.getValue() == dbWireShapeType::NONE)
