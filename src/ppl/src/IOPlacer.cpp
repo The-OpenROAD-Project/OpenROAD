@@ -1777,6 +1777,11 @@ void IOPlacer::initConstraints(bool annealing)
     getPinsFromDirectionConstraint(constraint);
     constraint.sections = createSectionsPerConstraint(constraint);
     int num_slots = 0;
+    int region_begin = constraint.interval.getBegin();
+    int region_end = constraint.interval.getEnd();
+    const std::string region_edge
+        = getEdgeString(constraint.interval.getEdge());
+
     for (const Section& sec : constraint.sections) {
       num_slots += sec.num_slots;
     }
@@ -1789,9 +1794,13 @@ void IOPlacer::initConstraints(bool annealing)
         logger_->warn(PPL,
                       110,
                       "Constraint has {} pins, but only {} available slots.\n"
-                      "Increase the region in at least {}um.",
+                      "Increase the region {}-{} on the {} edge in at least "
+                      "{}um.",
                       constraint.pin_list.size(),
                       num_slots,
+                      dbuToMicrons(region_begin),
+                      dbuToMicrons(region_end),
+                      region_edge,
                       dbuToMicrons(increase));
         constraints_no_slots++;
       }
