@@ -46,12 +46,23 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 
-struct _dbSBoxFlags
+struct _dbSBoxFlagsNoMask
 {
   dbWireShapeType::Value _wire_type : 6;
   uint _direction : 2;  // 0 = undefiend, 1 = horizontal, 2 = vertical, 3 =
                         // octilinear
   uint _spare_bits : 24;
+};
+
+struct _dbSBoxFlags
+{
+  dbWireShapeType::Value _wire_type : 6;
+  uint _direction : 2;  // 0 = undefiend, 1 = horizontal, 2 = vertical, 3 =
+                        // octilinear
+  uint _via_bottom_mask : 2;
+  uint _via_cut_mask : 2;
+  uint _via_top_mask : 2;
+  uint _spare_bits : 18;
 };
 
 class _dbSBox : public _dbBox
@@ -81,6 +92,9 @@ inline _dbSBox::_dbSBox(_dbDatabase* db) : _dbBox(db)
 {
   _sflags._wire_type = dbWireShapeType::COREWIRE;
   _sflags._direction = 0;
+  _sflags._via_bottom_mask = 0;
+  _sflags._via_cut_mask = 0;
+  _sflags._via_top_mask = 0;
   _sflags._spare_bits = 0;
 }
 
@@ -99,8 +113,19 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbSBox& box)
 inline dbIStream& operator>>(dbIStream& stream, _dbSBox& box)
 {
   stream >> (_dbBox&) box;
-  uint* bit_field = (uint*) &box._sflags;
-  stream >> *bit_field;
+  if (box.getDatabase()->isSchema(db_schema_dbsbox_via_mask)) {
+    uint* bit_field = (uint*) &box._flags;
+    stream >> *bit_field;
+  } else {
+    _dbSBoxFlagsNoMask old;
+    uint* bit_field = (uint*) &old;
+    stream >> *bit_field;
+    box._sflags._direction = old._direction;
+    box._sflags._wire_type = old._wire_type;
+    box._sflags._via_bottom_mask = 0;
+    box._sflags._via_cut_mask = 0;
+    box._sflags._via_top_mask = 0;
+  }
   return stream;
 }
 

@@ -1538,7 +1538,8 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
                   net->yl(i),
                   net->xh(i),
                   net->yh(i),
-                  net->rectShapeType(i));
+                  net->rectShapeType(i),
+                  net->rectMask(i));
       snetR->wireEnd();
     }
   }
@@ -1555,6 +1556,10 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
       std::string layerName;
 
       int pathId;
+      uint next_mask = 0;
+      uint next_via_bottom_mask = 0;
+      uint next_via_cut_mask = 0;
+      uint next_via_top_mask = 0;
       while ((pathId = path->next()) != DEFIPATH_DONE) {
         switch (pathId) {
           case DEFIPATH_LAYER:
@@ -1575,7 +1580,10 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
               path->getViaData(&numX, &numY, &stepX, &stepY);
               snetR->pathViaArray(viaName, numX, numY, stepX, stepY);
             } else {
-              snetR->pathVia(viaName);
+              snetR->pathVia(viaName,
+                             next_via_bottom_mask,
+                             next_via_cut_mask,
+                             next_via_top_mask);
               path->prev();  // put back the token
             }
             break;
@@ -1590,7 +1598,7 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
             int x;
             int y;
             path->getPoint(&x, &y);
-            snetR->pathPoint(x, y);
+            snetR->pathPoint(x, y, next_mask);
             break;
           }
 
@@ -1599,7 +1607,7 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
             int y;
             int ext;
             path->getFlushPoint(&x, &y, &ext);
-            snetR->pathPoint(x, y, ext);
+            snetR->pathPoint(x, y, ext, next_mask);
             break;
           }
 
@@ -1612,12 +1620,26 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
             break;
 
           case DEFIPATH_MASK:
+            next_mask = path->getMask();
+            break;
+
           case DEFIPATH_VIAMASK:
-            UNSUPPORTED("MASK in special net's routing is unsupported");
+            next_via_bottom_mask = path->getViaBottomMask();
+            next_via_cut_mask = path->getViaCutMask();
+            next_via_top_mask = path->getViaTopMask();
+            break;
 
           default:
             UNSUPPORTED(
                 "Unknown construct in special net's routing is unsupported");
+        }
+        if (pathId != DEFIPATH_MASK) {
+          next_mask = 0;
+        }
+        if (pathId != DEFIPATH_VIAMASK) {
+          next_via_bottom_mask = 0;
+          next_via_cut_mask = 0;
+          next_via_top_mask = 0;
         }
       }
       snetR->pathEnd();

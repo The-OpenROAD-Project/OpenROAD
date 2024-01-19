@@ -459,6 +459,14 @@ void _dbBox::getViaXY(int& x, int& y) const
   }
 }
 
+void _dbBox::checkMask(uint mask)
+{
+  if (mask >= 4) {
+    getImpl()->getLogger()->error(
+        utl::ODB, 434, "Mask must be between 0 and 3.");
+  }
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbBox - Methods
@@ -759,6 +767,13 @@ uint dbBox::getLayerMask()
   return box->_flags._layer_mask;
 }
 
+void dbBox::setLayerMask(uint mask)
+{
+  _dbBox* box = (_dbBox*) this;
+  box->checkMask(mask);
+  box->_flags._layer_mask = mask;
+}
+
 dbBox* dbBox::create(dbBPin* bpin_,
                      dbTechLayer* layer_,
                      int x1,
@@ -781,18 +796,14 @@ dbBox* dbBox::create(dbBPin* bpin_,
         layer_->getName(),
         layer_id);
   }
-  if (mask >= 4) {
-    bpin->getLogger()->error(utl::ODB, 434, "Mask must be between 0 and 3.");
-  }
-  if (layer_ == nullptr && mask != 0) {
-    bpin->getLogger()->error(
-        utl::ODB, 435, "Mask must be 0 when no layer is provided.");
-  }
   box->_flags._layer_id = layer_id;
   box->_flags._layer_mask = mask;
   box->_flags._owner_type = dbBoxOwner::BPIN;
   box->_owner = bpin->getOID();
   box->_shape._rect.init(x1, y1, x2, y2);
+
+  dbBox* dbbox = (dbBox*) box;
+  dbbox->setLayerMask(mask);
 
   box->_next_box = bpin->_boxes;
   bpin->_boxes = box->getOID();

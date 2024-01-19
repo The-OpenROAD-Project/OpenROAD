@@ -53,6 +53,18 @@ bool _dbSBox::operator==(const _dbSBox& rhs) const
   if (_sflags._wire_type != rhs._sflags._wire_type)
     return false;
 
+  if (_sflags._direction != rhs._sflags._direction)
+    return false;
+
+  if (_sflags._via_bottom_mask != rhs._sflags._via_bottom_mask)
+    return false;
+
+  if (_sflags._via_cut_mask != rhs._sflags._via_cut_mask)
+    return false;
+
+  if (_sflags._via_top_mask != rhs._sflags._via_top_mask)
+    return false;
+
   if (_dbBox::operator!=(rhs))
     return false;
 
@@ -64,6 +76,18 @@ int _dbSBox::equal(const _dbSBox& rhs) const
   if (_sflags._wire_type != rhs._sflags._wire_type)
     return false;
 
+  if (_sflags._direction != rhs._sflags._direction)
+    return false;
+
+  if (_sflags._via_bottom_mask != rhs._sflags._via_bottom_mask)
+    return false;
+
+  if (_sflags._via_cut_mask != rhs._sflags._via_cut_mask)
+    return false;
+
+  if (_sflags._via_top_mask != rhs._sflags._via_top_mask)
+    return false;
+
   return _dbBox::equal(rhs);
 }
 
@@ -72,7 +96,31 @@ bool _dbSBox::operator<(const _dbSBox& rhs) const
   if (_sflags._wire_type < rhs._sflags._wire_type)
     return true;
 
+  if (_sflags._direction < rhs._sflags._direction)
+    return true;
+
+  if (_sflags._via_bottom_mask < rhs._sflags._via_bottom_mask)
+    return true;
+
+  if (_sflags._via_cut_mask < rhs._sflags._via_cut_mask)
+    return true;
+
+  if (_sflags._via_top_mask < rhs._sflags._via_top_mask)
+    return true;
+
   if (_sflags._wire_type > rhs._sflags._wire_type)
+    return false;
+
+  if (_sflags._direction > rhs._sflags._direction)
+    return false;
+
+  if (_sflags._via_bottom_mask > rhs._sflags._via_bottom_mask)
+    return false;
+
+  if (_sflags._via_cut_mask > rhs._sflags._via_cut_mask)
+    return false;
+
+  if (_sflags._via_top_mask > rhs._sflags._via_top_mask)
     return false;
 
   return _dbBox::operator<(rhs);
@@ -86,6 +134,12 @@ void _dbSBox::differences(dbDiff& diff,
     return;
 
   DIFF_BEGIN
+  DIFF_FIELD(_sflags._wire_type);
+  DIFF_FIELD(_sflags._direction);
+  DIFF_FIELD(_sflags._via_bottom_mask);
+  DIFF_FIELD(_sflags._via_cut_mask);
+  DIFF_FIELD(_sflags._via_top_mask);
+  DIFF_FIELD(_sflags._wire_type);
   DIFF_FIELD(_sflags._wire_type);
   DIFF_FIELD(_flags._owner_type);
   DIFF_FIELD(_flags._is_tech_via);
@@ -104,6 +158,10 @@ void _dbSBox::out(dbDiff& diff, char side, const char* field) const
   if (!diff.deepDiff()) {
     DIFF_OUT_BEGIN
     DIFF_OUT_FIELD(_sflags._wire_type);
+    DIFF_OUT_FIELD(_sflags._direction);
+    DIFF_OUT_FIELD(_sflags._via_bottom_mask);
+    DIFF_OUT_FIELD(_sflags._via_cut_mask);
+    DIFF_OUT_FIELD(_sflags._via_top_mask);
     DIFF_OUT_FIELD(_flags._owner_type);
     DIFF_OUT_FIELD(_flags._is_tech_via);
     DIFF_OUT_FIELD(_flags._is_block_via);
@@ -178,6 +236,44 @@ Oct dbSBox::getOct()
   _dbSBox* box = (_dbSBox*) this;
   return box->_shape._oct;
 }
+
+uint dbSBox::getViaBottomLayerMask()
+{
+  _dbSBox* box = (_dbSBox*) this;
+  return box->_sflags._via_bottom_mask;
+}
+
+uint dbSBox::getViaCutLayerMask()
+{
+  _dbSBox* box = (_dbSBox*) this;
+  return box->_sflags._via_cut_mask;
+}
+
+uint dbSBox::getViaTopLayerMask()
+{
+  _dbSBox* box = (_dbSBox*) this;
+  return box->_sflags._via_top_mask;
+}
+
+bool dbSBox::hasViaLayerMasks()
+{
+  _dbSBox* box = (_dbSBox*) this;
+  return box->_sflags._via_bottom_mask != 0 || box->_sflags._via_cut_mask != 0
+         || box->_sflags._via_top_mask != 0;
+}
+
+void dbSBox::setViaLayerMask(uint bottom, uint cut, uint top)
+{
+  _dbSBox* box = (_dbSBox*) this;
+  box->checkMask(bottom);
+  box->checkMask(cut);
+  box->checkMask(top);
+
+  box->_sflags._via_bottom_mask = bottom;
+  box->_sflags._via_cut_mask = cut;
+  box->_sflags._via_top_mask = top;
+}
+
 dbSBox* dbSBox::create(dbSWire* wire_,
                        dbTechLayer* layer_,
                        int x1,
