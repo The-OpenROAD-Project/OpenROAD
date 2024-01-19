@@ -1107,6 +1107,12 @@ class dbBlock : public dbObject
   //
   void writeGuides(const char* filename) const;
 
+  //
+  // Utiliy to write macro placement in mpl2 input format for individual
+  // macro placement
+  //
+  void writeMacroPlacement(const std::string& file_name);
+
   ///
   /// Find a specific via of this block.
   /// Returns nullptr if the object was not found.
