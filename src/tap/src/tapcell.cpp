@@ -1470,4 +1470,19 @@ void Tapcell::placeTapcells(const Options& options)
   placeTapcells(options.tapcell_master, dist, options.disallow_one_site_gaps);
 }
 
+odb::dbBlock* Tapcell::getBlock() const
+{
+  return db_->getChip()->getBlock();
+}
+
+double Tapcell::dbuToMicrons(int64_t dbu)
+{
+  return static_cast<double>(dbu) / (getBlock()->getDbUnitsPerMicron());
+}
+
+int Tapcell::micronsToDbu(double microns)
+{
+  return (int64_t) (microns * getBlock()->getDbUnitsPerMicron());
+}
+
 }  // namespace tap

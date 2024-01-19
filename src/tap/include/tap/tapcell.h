@@ -225,6 +225,9 @@ class Tapcell
   odb::dbMaster* getMasterByType(const odb::dbMasterType& type) const;
   std::set<odb::dbMaster*> findMasterByType(
       const odb::dbMasterType& type) const;
+  odb::dbBlock* getBlock() const;
+  double dbuToMicrons(int64_t dbu);
+  int micronsToDbu(double microns);
 
   odb::dbDatabase* db_ = nullptr;
   utl::Logger* logger_ = nullptr;
