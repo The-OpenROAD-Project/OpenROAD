@@ -479,10 +479,6 @@ int definReader::componentsCallback(defrCallbackType_e /* unused: type */,
     UNSUPPORTED("MASKSHIFT on component is unsupported");
   }
 
-  if (comp->hasHalo() > 0) {
-    UNSUPPORTED("HALO on component is unsupported");
-  }
-
   if (comp->hasRouteHalo() > 0) {
     UNSUPPORTED("ROUTEHALO on component is unsupported");
   }
@@ -496,6 +492,11 @@ int definReader::componentsCallback(defrCallbackType_e /* unused: type */,
   }
   if (comp->hasRegionName()) {
     componentR->region(comp->regionName());
+  }
+  if (comp->hasHalo() > 0) {
+    int left, bottom, right, top;
+    comp->haloEdges(&left, &bottom, &right, &top);
+    componentR->halo(left, bottom, right, top);
   }
 
   componentR->placement(comp->placementStatus(),
