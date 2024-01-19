@@ -509,9 +509,9 @@ void definSNet::pathViaArray(const char* via_name,
                                     numY,
                                     stepX,
                                     stepY,
-                                    0,
-                                    0,
-                                    0,
+                                    /* bottom_mask */ 0,
+                                    /* cut_mask */ 0,
+                                    /* top_mask */ 0,
                                     _logger);
   } else {
     dbVia* via = _block->findVia(via_name);
@@ -537,9 +537,9 @@ void definSNet::pathViaArray(const char* via_name,
                                     numY,
                                     stepX,
                                     stepY,
-                                    0,
-                                    0,
-                                    0,
+                                    /* bottom_mask */ 0,
+                                    /* cut_mask */ 0,
+                                    /* top_mask */ 0,
                                     _logger);
   }
 }
