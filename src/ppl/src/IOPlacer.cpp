@@ -680,6 +680,13 @@ int IOPlacer::micronsToDbu(double microns)
   return (int64_t) (microns * getBlock()->getDbUnitsPerMicron());
 }
 
+double IOPlacer::areaDbuToMicrons(int64_t dbu)
+{
+  return static_cast<double>(dbu)
+         / ((getBlock()->getDbUnitsPerMicron()
+             * (getBlock()->getDbUnitsPerMicron())));
+}
+
 void IOPlacer::writePinPlacement(const char* file_name)
 {
   std::string filename = file_name;
@@ -745,12 +752,20 @@ int IOPlacer::computeRegionIncrease(const Interval& interval,
       min_dist = std::max(layer_min_dist, min_dist);
     }
   } else {
-    for (int layer_idx : ver_layers_) {
-      const int layer_min_dist = core_->getMinDstPinsX()[layer_idx];
+    for (int layer_idx : hor_layers_) {
+      const int layer_min_dist = core_->getMinDstPinsY()[layer_idx];
       min_dist = std::max(layer_min_dist, min_dist);
     }
   }
 
+  const int increase = computeIncrease(min_dist, num_pins, interval_length);
+  return increase;
+}
+
+int IOPlacer::computeIncrease(int min_dist,
+                              const int num_pins,
+                              const int curr_length)
+{
   const bool dist_in_tracks = parms_->getMinDistanceInTracks();
   const int user_min_dist = parms_->getMinDistance();
   if (dist_in_tracks) {
@@ -762,8 +777,7 @@ int IOPlacer::computeRegionIncrease(const Interval& interval,
     min_dist *= default_min_dist_;
   }
 
-  const int increase = (num_pins * min_dist) - interval_length;
-
+  const int increase = (num_pins * min_dist) - curr_length;
   return increase;
 }
 

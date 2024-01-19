@@ -268,8 +268,12 @@ class IOPlacer
   void getBlockedRegionsFromDbObstructions();
   double dbuToMicrons(int64_t dbu);
   int micronsToDbu(double microns);
+  double areaDbuToMicrons(int64_t dbu);
   Edge getMirroredEdge(const Edge& edge);
   int computeRegionIncrease(const Interval& interval, int num_pins);
+  int computeIncrease(const int min_dist,
+                      const int num_pins,
+                      const int curr_length);
 
   // db functions
   void populateIOPlacer(const std::set<int>& hor_layer_idx,
