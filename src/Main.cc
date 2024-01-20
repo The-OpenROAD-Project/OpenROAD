@@ -67,7 +67,6 @@
 #include "gui/gui.h"
 #include "ord/InitOpenRoad.hh"
 #include "ord/OpenRoad.hh"
-#include "ord/Version.hh"
 #include "sta/StaMain.hh"
 #include "sta/StringUtil.hh"
 #include "utl/Logger.h"
@@ -248,7 +247,8 @@ int main(int argc, char* argv[])
     return 0;
   }
   if (argc == 2 && stringEq(argv[1], "-version")) {
-    printf("%s %s\n", OPENROAD_VERSION, OPENROAD_GIT_DESCRIBE);
+    ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+    printf("%s %s\n", openroad->getVersion(), openroad->getGitDescribe());
     return 0;
   }
 
@@ -490,9 +490,10 @@ static void showUsage(const char* prog, const char* init_filename)
 
 static void showSplash()
 {
-  utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
-  string sha = OPENROAD_GIT_DESCRIBE;
-  logger->report("OpenROAD {} {}", OPENROAD_VERSION, sha.c_str());
+  ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
+  utl::Logger* logger = openroad->getLogger();
+  logger->report(
+      "OpenROAD {} {}", openroad->getVersion(), openroad->getGitDescribe());
   logger->report(
       "This program is licensed under the BSD-3 license. See the LICENSE file "
       "for details.");
