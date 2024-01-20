@@ -771,6 +771,12 @@ void dbBox::setLayerMask(uint mask)
 {
   _dbBox* box = (_dbBox*) this;
   box->checkMask(mask);
+
+  if (box->_flags._layer_id == 0 && mask != 0) {
+    getImpl()->getLogger()->error(
+        utl::ODB, 435, "Mask must be 0 when no layer is provided.");
+  }
+
   box->_flags._layer_mask = mask;
 }
 
@@ -797,7 +803,6 @@ dbBox* dbBox::create(dbBPin* bpin_,
         layer_id);
   }
   box->_flags._layer_id = layer_id;
-  box->_flags._layer_mask = mask;
   box->_flags._owner_type = dbBoxOwner::BPIN;
   box->_owner = bpin->getOID();
   box->_shape._rect.init(x1, y1, x2, y2);
