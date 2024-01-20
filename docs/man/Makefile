@@ -103,10 +103,13 @@ $(HTML3_DIR)/%.html: $(MAN3_DIR)/%.3 | $(HTML3_DIR)
 # Rule to generate a cat file from a corresponding roff file
 $(CAT1_DIR)/%.md: $(MAN1_DIR)/%.1 | $(CAT1_DIR)
 	$(PANDOC) -s -o markdown $< -o $@
+	sed -i 's/\\\[/\[/g; s/\\]/\]/g; s/\\_/_/g' $@
 $(CAT2_DIR)/%.md: $(MAN2_DIR)/%.2 | $(CAT2_DIR)
 	$(PANDOC) -s -o markdown $< -o $@
+	sed -i 's/\\\[/\[/g; s/\\]/\]/g; s/\\_/_/g' $@
 $(CAT3_DIR)/%.md: $(MAN3_DIR)/%.3 | $(CAT3_DIR)
 	$(PANDOC) -s -o markdown $< -o $@
+	sed -i 's/\\\[/\[/g; s/\\]/\]/g; s/\\_/_/g' $@
 
 # Clean target to remove all generated man pages
 clean:
