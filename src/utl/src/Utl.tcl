@@ -1,46 +1,12 @@
 global MAN_PATH 
 set MAN_PATH ""
 
-proc get_input { } {
-  # Get the relative path from the user
-  puts "Please enter an optional relative path to the cat folders:"
-  flush stdout
-  gets stdin relative_path
-
-  # Convert the relative path to an absolute path
-  set absolute_path [file join [pwd] $relative_path]
-
-  # Display the absolute path
-  puts "Absolute Path: $absolute_path"
-  if { [check_valid_path $absolute_path] } {
-    return $absolute_path
-  }
-  return ""
-}
-
-proc check_valid_path { path } {
-  if {[file isdirectory $path]} {
-    return true 
-  } else {
-    puts "Invalid path, please retry."
-    return false
-  }
-}
-
-proc check_valid_man_path { path } {
-  if {[file isdirectory "$path/man1"]} {
-    return true
-  } else {
-    puts "Invalid man path, please retry."
-    return false
-  }
-}
-
+sta::define_cmd_args "man" {name}
 proc man { name } {
   set DEFAULT_MAN_PATH "../docs/man/cat"
   global MAN_PATH
-  set MAN_PATH [get_input]
-  if { [check_valid_man_path $MAN_PATH] == false } {
+  set MAN_PATH [utl::get_input]
+  if { [utl::check_valid_man_path $MAN_PATH] == false } {
     puts "Using default manpath."
     set MAN_PATH $DEFAULT_MAN_PATH
   }
@@ -94,6 +60,42 @@ proc man { name } {
   }
 }
 
-proc clear {} {
-    exec clear
+namespace eval utl {
+
+proc get_input { } {
+  # Get the relative path from the user
+  puts "Please enter an optional relative path to the cat folders:"
+  flush stdout
+  gets stdin relative_path
+
+  # Convert the relative path to an absolute path
+  set absolute_path [file join [pwd] $relative_path]
+
+  # Display the absolute path
+  puts "Absolute Path: $absolute_path"
+  if { [utl::check_valid_path $absolute_path] } {
+    return $absolute_path
+  }
+  return ""
+}
+
+proc check_valid_path { path } {
+  if {[file isdirectory $path]} {
+    return true 
+  } else {
+    puts "Invalid path, please retry."
+    return false
+  }
+}
+
+proc check_valid_man_path { path } {
+  if {[file isdirectory "$path/man1"]} {
+    return true
+  } else {
+    puts "Invalid man path, please retry."
+    return false
+  }
+}
+
+# utl namespace end
 }
