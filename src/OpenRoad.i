@@ -294,15 +294,13 @@ using odb::dbTech;
 const char *
 openroad_version()
 {
-  OpenRoad *openroad = getOpenRoad();
-  return openroad->getVersion();
+  return ord::OpenRoad::getVersion();
 }
 
 const char *
 openroad_git_describe()
 {
-  OpenRoad *openroad = getOpenRoad();
-  return openroad->getGitDescribe();
+  return ord::OpenRoad::getGitDescribe();
 }
 
 void

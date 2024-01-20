@@ -247,8 +247,8 @@ class OpenRoad
   void addObserver(OpenRoadObserver* observer);
   void removeObserver(OpenRoadObserver* observer);
 
-  const char* getVersion() const;
-  const char* getGitDescribe() const;
+  static const char* getVersion();
+  static const char* getGitDescribe();
 
  protected:
   ~OpenRoad();

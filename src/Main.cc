@@ -247,8 +247,9 @@ int main(int argc, char* argv[])
     return 0;
   }
   if (argc == 2 && stringEq(argv[1], "-version")) {
-    ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
-    printf("%s %s\n", openroad->getVersion(), openroad->getGitDescribe());
+    printf("%s %s\n",
+           ord::OpenRoad::getVersion(),
+           ord::OpenRoad::getGitDescribe());
     return 0;
   }
 

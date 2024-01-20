@@ -619,12 +619,12 @@ int OpenRoad::getThreadCount()
   return threads_;
 }
 
-const char* OpenRoad::getVersion() const
+const char* OpenRoad::getVersion()
 {
   return OPENROAD_VERSION;
 }
 
-const char* OpenRoad::getGitDescribe() const
+const char* OpenRoad::getGitDescribe()
 {
   return OPENROAD_GIT_DESCRIBE;
 }

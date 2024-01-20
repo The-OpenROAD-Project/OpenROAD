@@ -64,7 +64,7 @@ void initOpenRCX(OpenRoad* openroad)
 {
   openroad->getOpenRCX()->init(openroad->getDb(),
                                openroad->getLogger(),
-                               openroad->getVersion(),
+                               ord::OpenRoad::getVersion(),
                                [openroad] {
                                  rcx::Rcx_Init(openroad->tclInterp());
                                  sta::evalTclInit(openroad->tclInterp(),
