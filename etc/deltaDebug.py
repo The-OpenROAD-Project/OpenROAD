@@ -32,15 +32,17 @@ import errno
 import enum
 
 persistence_range = [1, 2, 3, 4, 5, 6]
-persistence_start_range = persistence_range[1:]
+cut_multiple = range(1, 128)
 
 parser = argparse.ArgumentParser('Arguments for delta debugging')
 parser.add_argument('--base_db_path', type=str, help='Path to the db file to perform the step on')
 parser.add_argument('--error_string', type=str, help='The output that indicates target error has occured')
 parser.add_argument('--step', type=str, help='Command used to perform step on the input odb file')
-parser.add_argument('--start', type=int, default=persistence_start_range[0],
-                    choices=persistence_start_range,
-                    help='Starting persistence level')
+parser.add_argument('--timeout', type=int, default=None,
+                    help='Specify initial timeout in seconds, default is to measure it')
+parser.add_argument('--multiplier', type=int, default=cut_multiple[0],
+                    choices=cut_multiple,
+                    help='Multiply number of cuts with this number')
 parser.add_argument('--persistence', type=int,
                     default=persistence_range[0],
                     choices=persistence_range,
@@ -71,16 +73,12 @@ class deltaDebugger:
         self.use_stdout = opt.use_stdout
         self.exit_early_on_error = opt.exit_early_on_error
         self.step_count = 1
-        # Initial Number of cuts
-        self.n = opt.start
-
-        # timeout used to measure the time the original input takes
-        # to reach an error to use as standard timeout for different 
-        # cuts.
-        self.timeout = 1e6  # Timeout in seconds
 
         # Setting persistence for the run
         self.persistence = opt.persistence
+
+        self.multiplier = opt.multiplier
+        self.timeout = opt.timeout
 
         # Temporary file names to hold the original base_db file across the run
         self.original_base_db_file = os.path.join(base_db_directory, f"deltaDebug_base_original_{base_db_name}")
@@ -114,18 +112,25 @@ class deltaDebugger:
         # Rename the base db file to a temp name to keep it from overwritting across the two steps cut
         os.rename(self.base_db_file, self.temp_base_db_file)
 
-        # Perform a step with no cuts to measure timeout
-        print("Performing a step with the original input file to calculate timeout.")
-        if self.perform_step() is None:
-            print("No error found in the original input file.")
-            sys.exit(1)
+        if self.timeout is None:
+            # timeout used to measure the time the original input takes
+            # to reach an error to use as standard timeout for different
+            # cuts.
+            self.timeout = 1e6  # Timeout in seconds
+
+            # Perform a step with no cuts to measure timeout
+            print("Performing a step with the original input file to calculate timeout.")
+            if self.perform_step() is None:
+                print("No error found in the original input file.")
+                sys.exit(1)
 
         while (True):
             err = None
+            self.n = 2  # Initial Number of cuts
 
             while self.n <= (2 ** self.persistence):
                 error_in_range = None
-                for j in range(self.n):
+                for j in range(self.n * self.multiplier):
                     current_err = self.perform_step(cut_index=j)
                     if (current_err == "NOCUT"):
                         break
@@ -303,7 +308,9 @@ class deltaDebugger:
         message += [f"Insts {len(block.getInsts())}", f"Nets {len(block.getNets())}"]
 
         num_elms = len(elms)
-        num_elms_to_cut = int(num_elms * 1.0 / self.n)
+
+        cuts = self.n * self.multiplier
+        num_elms_to_cut = int(num_elms * 1.0 / cuts)
         if (num_elms == 1 or num_elms_to_cut == 0):
             # No further cuts could be done on the current odb
             return "NOCUT"
@@ -311,7 +318,7 @@ class deltaDebugger:
         start = index * num_elms_to_cut
         end = start + num_elms_to_cut
 
-        cut_position_string = '#' * self.n
+        cut_position_string = '#' * cuts
         cut_position_string = cut_position_string[:index] + 'C' + cut_position_string[index+1:]
         message += [f"cut elements {num_elms_to_cut}"]
         message += [f"timeout {ceil(self.timeout/60.0)} minutes"]
