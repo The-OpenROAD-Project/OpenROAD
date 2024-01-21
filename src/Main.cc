@@ -491,10 +491,10 @@ static void showUsage(const char* prog, const char* init_filename)
 
 static void showSplash()
 {
-  ord::OpenRoad* openroad = ord::OpenRoad::openRoad();
-  utl::Logger* logger = openroad->getLogger();
-  logger->report(
-      "OpenROAD {} {}", openroad->getVersion(), openroad->getGitDescribe());
+  utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
+  logger->report("OpenROAD {} {}",
+                 ord::OpenRoad::getVersion(),
+                 ord::OpenRoad::getGitDescribe());
   logger->report(
       "This program is licensed under the BSD-3 license. See the LICENSE file "
       "for details.");
