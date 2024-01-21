@@ -1,0 +1,8 @@
+# dont save intermediate results
+man/md/man2/*md
+man/md/man3/*md
+html
+man/man1
+man/man2
+man/man3
+cat

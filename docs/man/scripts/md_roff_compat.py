@@ -22,16 +22,16 @@ tools = ["ant", "cts", "dbSta", "dft", "dpl", "dpo", "drt",\
         "mpl2", "odb", "pad", "par", "pdn", "ppl", "psm",\
         "rcx", "rmp", "rsz", "sta", "stt", "tap", "upf", "utl"]
 # Process man2 (except odb and sta)
-DEST_DIR2 = SRC_DIR = "./md/man2"
+DEST_DIR2 = SRC_DIR = "./man/md/man2"
 exclude = ["odb", "sta"]
 docs2 = [f"{SRC_DIR}/{tool}.md" for tool in tools if tool not in exclude]
 
 # Process man3 (add extra path for ORD messages)
-SRC_DIR = "../../src"
-DEST_DIR3 = "./md/man3"
+SRC_DIR = "../src"
+DEST_DIR3 = "./man/md/man3"
 exclude = ["sta"] #sta excluded because its format is different, and no severity level.
 docs3 = [f"{SRC_DIR}/{tool}/messages.txt" for tool in tools if tool not in exclude]
-docs3.append("../../messages.txt")
+docs3.append("../messages.txt")
 
 if __name__ == "__main__":
     for doc in docs2:

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-SRC_BASE_PATH="../../src"
-DEST_BASE_PATH="./md/man2"
+SRC_BASE_PATH="../src"
+DEST_BASE_PATH="./man/md/man2"
 mkdir -p $DEST_BASE_PATH
 
 # Loop through all folders inside "../src"
