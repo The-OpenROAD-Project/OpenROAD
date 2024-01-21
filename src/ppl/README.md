@@ -212,6 +212,9 @@ place_pin
 
 The `place_pins` command places all pins together. Use the following command to perform pin placement:
 
+Developer arguments:
+- `-random`, `-random_seed`
+
 ```tcl
 place_pins 
     -hor_layers h_layers

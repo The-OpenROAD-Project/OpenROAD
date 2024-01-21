@@ -27,6 +27,12 @@ guide format.
 
 This command performs detailed routing.
 
+Developer arguments
+- `-or_seed`, `-or_k`
+
+Distributed arguments
+- `-distributed` , `-remote_host`, `-remote_port`, `-shared_volume`, `-cloud_size`
+
 ```tcl
 detailed_route 
     [-output_maze filename]

@@ -37,6 +37,14 @@ is scaled from the full value for the worst slack, to 1.0 at the
 `timing_driven_nets_percentage` point. Use the `set_wire_rc` command to set
 resistance and capacitance of estimated wires used for timing.
 
+Routability-driven arguments
+- They begin with `-routability`.
+- `-routability_check_overflow`, `-routability_max_density`, `-routability_max_bloat_iter`, `-routability_max_inflation_iter`, `-routability_target_rc_metric`, `-routability_inflation_ratio_coef`, `-routability_max_inflation_ratio`, `-routability_rc_coefficients`
+
+Timing-driven arguments
+- They begin with `-timing_driven`.
+- `-timing_driven_net_reweight_overflow`, `-timing_driven_net_weight_max`, `-timing_driven_nets_percentage`
+
 ```tcl
 global_placement
     [-timing_driven]

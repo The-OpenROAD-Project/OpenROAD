@@ -8,13 +8,13 @@ mkdir -p $DEST_BASE_PATH
 for MODULE_PATH in "$SRC_BASE_PATH"/*; do
     if [ -d "$MODULE_PATH" ]; then
         MODULE=$(basename "$MODULE_PATH")
-        SRC_PATH="$SRC_BASE_PATH/$MODULE/README.md"
-        DEST_PATH="$DEST_BASE_PATH/$MODULE.md"
+	SRC_PATH=$(realpath $SRC_BASE_PATH/$MODULE/README.md)
+	DEST_PATH="$(realpath $DEST_BASE_PATH/$MODULE).md"
 
         # Check if README.md exists before copying
         if [ -e "$SRC_PATH" ]; then
-            cp "$SRC_PATH" "$DEST_PATH"
-            echo "File copied from $SRC_PATH to $DEST_PATH"
+            ln -s -f "$SRC_PATH" "$DEST_PATH"
+            echo "File linked from $SRC_PATH to $DEST_PATH"
         else
             echo "ERROR: README.md not found in $MODULE_PATH"
         fi
