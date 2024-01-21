@@ -31,7 +31,7 @@ MAN1_PAGES = $(patsubst $(SRC1_DIR)/%.md,$(MAN1_DIR)/%.1,$(MAN1_FILES))
 HTML1_DIR = $(HTML_ROOT_DIR)/html1
 HTML1_PAGES = $(patsubst $(SRC1_DIR)/%.md,$(HTML1_DIR)/%.html,$(MAN1_FILES))
 CAT1_DIR = $(CAT_ROOT_DIR)/cat1
-CAT1_PAGES = $(patsubst $(SRC1_DIR)/%.md,$(CAT1_DIR)/%.md,$(MAN1_FILES))
+CAT1_PAGES = $(patsubst $(SRC1_DIR)/%.md,$(CAT1_DIR)/%.1,$(MAN1_FILES))
 
 MAN2_DIR = $(MAN_ROOT_DIR)/$(MAN2)
 SRC2_DIR = $(SRC_DIR)/$(MAN2)
@@ -41,7 +41,7 @@ MAN2_PAGES = $(patsubst $(SRC2_DIR)/%.md,$(MAN2_DIR)/%.2,$(MAN2_FILES))
 HTML2_DIR = $(HTML_ROOT_DIR)/html2
 HTML2_PAGES = $(patsubst $(SRC2_DIR)/%.md,$(HTML2_DIR)/%.html,$(MAN2_FILES))
 CAT2_DIR = $(CAT_ROOT_DIR)/cat2
-CAT2_PAGES = $(patsubst $(SRC2_DIR)/%.md,$(CAT2_DIR)/%.md,$(MAN2_FILES))
+CAT2_PAGES = $(patsubst $(SRC2_DIR)/%.md,$(CAT2_DIR)/%.2,$(MAN2_FILES))
 
 MAN3_DIR = $(MAN_ROOT_DIR)/$(MAN3)
 SRC3_DIR = $(SRC_DIR)/$(MAN3)
@@ -50,7 +50,7 @@ MAN3_PAGES = $(patsubst $(SRC3_DIR)/%.md,$(MAN3_DIR)/%.3,$(MAN3_FILES))
 HTML3_DIR = $(HTML_ROOT_DIR)/html3
 HTML3_PAGES = $(patsubst $(SRC3_DIR)/%.md,$(HTML3_DIR)/%.html,$(MAN3_FILES))
 CAT3_DIR = $(CAT_ROOT_DIR)/cat3
-CAT3_PAGES = $(patsubst $(SRC3_DIR)/%.md,$(CAT3_DIR)/%.md,$(MAN3_FILES))
+CAT3_PAGES = $(patsubst $(SRC3_DIR)/%.md,$(CAT3_DIR)/%.3,$(MAN3_FILES))
 
 # Default target
 all: doc web cat
@@ -115,6 +115,13 @@ $(CAT2_DIR)/%.md: $(MAN2_DIR)/%.2 | $(CAT2_DIR)
 $(CAT3_DIR)/%.md: $(MAN3_DIR)/%.3 | $(CAT3_DIR)
 	$(PANDOC) -s -o markdown $< -o $@
 	sed -i 's/\\\[/\[/g; s/\\]/\]/g; s/\\_/_/g' $@
+
+$(CAT1_DIR)/%.1: $(CAT1_DIR)/%.md
+	mv $< $@
+$(CAT2_DIR)/%.2: $(CAT2_DIR)/%.md
+	mv $< $@
+$(CAT3_DIR)/%.3: $(CAT3_DIR)/%.md
+	mv $< $@
 
 # Phony targets
 .PHONY: all 

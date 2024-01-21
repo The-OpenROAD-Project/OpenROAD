@@ -3,7 +3,7 @@ set MAN_PATH ""
 
 sta::define_cmd_args "man" {name}
 proc man { name } {
-  set DEFAULT_MAN_PATH "../docs/man/cat"
+  set DEFAULT_MAN_PATH "../docs/cat"
   global MAN_PATH
   set MAN_PATH [utl::get_input]
   if { [utl::check_valid_man_path $MAN_PATH] == false } {
@@ -22,7 +22,7 @@ proc man { name } {
   foreach man_section $man_sections {
     set length [string length $man_section]
     # Get suffix for man section
-    set man_suffix "md"
+    set man_suffix [string range $man_section [expr {$length - 1}] $length]
     # Replace all "::" with "_"
     set name1 [string map { "::" "_" } $name]
     append name1 ".$man_suffix"
