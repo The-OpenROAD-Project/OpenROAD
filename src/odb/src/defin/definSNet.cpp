@@ -232,7 +232,13 @@ void definSNet::fixedbump()
   _cur_net->setFixedBump(true);
 }
 
-void definSNet::rect(const char* layer_name, int x1, int y1, int x2, int y2)
+void definSNet::rect(const char* layer_name,
+                     int x1,
+                     int y1,
+                     int x2,
+                     int y2,
+                     const char* type,
+                     uint mask)
 {
   if (_swire == nullptr)
     return;
@@ -245,13 +251,14 @@ void definSNet::rect(const char* layer_name, int x1, int y1, int x2, int y2)
     return;
   }
 
-  dbSBox::create(_swire,
-                 layer,
-                 dbdist(x1),
-                 dbdist(y1),
-                 dbdist(x2),
-                 dbdist(y2),
-                 dbWireShapeType::NONE);
+  dbSBox* box = dbSBox::create(_swire,
+                               layer,
+                               dbdist(x1),
+                               dbdist(y1),
+                               dbdist(x2),
+                               dbdist(y2),
+                               dbWireShapeType(type));
+  box->setLayerMask(mask);
 }
 
 void definSNet::polygon(const char* layer_name, std::vector<defPoint>& points)
@@ -339,7 +346,7 @@ void definSNet::pathShape(const char* shape)
   _wire_shape_type = dbWireShapeType(shape);
 }
 
-void definSNet::pathPoint(int x, int y, int ext)
+void definSNet::pathPoint(int x, int y, int ext, uint mask)
 {
   if ((_skip_shields && (_wire_type == dbWireType::SHIELD))
       || (_skip_block_wires && (_wire_shape_type == dbWireShapeType::BLOCKWIRE))
@@ -366,6 +373,7 @@ void definSNet::pathPoint(int x, int y, int ext)
                  ext,
                  true,
                  _width,
+                 mask,
                  _logger);
 
     _prev_x = cur_x;
@@ -375,7 +383,7 @@ void definSNet::pathPoint(int x, int y, int ext)
   }
 }
 
-void definSNet::pathPoint(int x, int y)
+void definSNet::pathPoint(int x, int y, uint mask)
 {
   if ((_skip_shields && (_wire_type == dbWireType::SHIELD))
       || (_skip_block_wires && (_wire_shape_type == dbWireShapeType::BLOCKWIRE))
@@ -401,6 +409,7 @@ void definSNet::pathPoint(int x, int y)
                  0,
                  false,
                  _width,
+                 mask,
                  _logger);
 
     _prev_x = cur_x;
@@ -410,7 +419,10 @@ void definSNet::pathPoint(int x, int y)
   }
 }
 
-void definSNet::pathVia(const char* via_name)
+void definSNet::pathVia(const char* via_name,
+                        uint bottom_mask,
+                        uint cut_mask,
+                        uint top_mask)
 {
   if ((_skip_shields && (_wire_type == dbWireType::SHIELD))
       || (_skip_block_wires && (_wire_shape_type == dbWireShapeType::BLOCKWIRE))
@@ -431,6 +443,9 @@ void definSNet::pathVia(const char* via_name)
                                     1,
                                     0,
                                     0,
+                                    bottom_mask,
+                                    cut_mask,
+                                    top_mask,
                                     _logger);
       if (_cur_layer == nullptr)
         _errors++;
@@ -456,6 +471,9 @@ void definSNet::pathVia(const char* via_name)
                                     1,
                                     0,
                                     0,
+                                    bottom_mask,
+                                    cut_mask,
+                                    top_mask,
                                     _logger);
       if (_cur_layer == nullptr)
         _errors++;
@@ -491,6 +509,9 @@ void definSNet::pathViaArray(const char* via_name,
                                     numY,
                                     stepX,
                                     stepY,
+                                    /* bottom_mask */ 0,
+                                    /* cut_mask */ 0,
+                                    /* top_mask */ 0,
                                     _logger);
   } else {
     dbVia* via = _block->findVia(via_name);
@@ -516,6 +537,9 @@ void definSNet::pathViaArray(const char* via_name,
                                     numY,
                                     stepX,
                                     stepY,
+                                    /* bottom_mask */ 0,
+                                    /* cut_mask */ 0,
+                                    /* top_mask */ 0,
                                     _logger);
   }
 }
