@@ -101,6 +101,7 @@ struct FrNet  // A Net is a set of connected MazePoints
 
   int getPinX(int idx) const { return pin_x_[idx]; }
   int getPinY(int idx) const { return pin_y_[idx]; }
+  int getPinL(int idx) const { return pin_l_[idx]; }
   const std::vector<int>& getPinX() const { return pin_x_; }
   const std::vector<int>& getPinY() const { return pin_y_; }
   const std::vector<int>& getPinL() const { return pin_l_; }
@@ -223,13 +224,13 @@ struct TreeEdge
 
 struct StTree
 {
-  int num_nodes = 0;
   int num_terminals = 0;
   // The nodes (pin and Steiner nodes) in the tree.
   std::vector<TreeNode> nodes;
   std::vector<TreeEdge> edges;
 
-  int num_edges() const { return num_nodes - 1; }
+  int num_edges() const { return edges.size(); }
+  int num_nodes() const { return nodes.size(); }
 };
 
 struct OrderNetPin

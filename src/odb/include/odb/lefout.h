@@ -95,7 +95,7 @@ class lefout
   void writeTechViaGenerateRule(dbTechViaGenerateRule* rule);
   void writePropertyDefinition(dbProperty* prop);
   void writePropertyDefinitions(dbLib* lib);
-  void writeVersion(const char* version);
+  void writeVersion(const std::string& version);
   void writeNameCaseSensitive(const dbOnOffType on_off_type);
   void writeBusBitChars(char left_bus_delimeter, char right_bus_delimeter);
   void writeUnits(int database_units);

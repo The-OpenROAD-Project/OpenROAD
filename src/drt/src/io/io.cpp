@@ -205,8 +205,7 @@ void io::Parser::setVias(odb::dbBlock* block)
 {
   for (auto via : block->getVias()) {
     if (via->getViaGenerateRule() != nullptr && via->hasParams()) {
-      odb::dbViaParams params;
-      via->getViaParams(params);
+      const odb::dbViaParams params = via->getViaParams();
       frLayerNum cutLayerNum = 0;
       frLayerNum botLayerNum = 0;
       frLayerNum topLayerNum = 0;
@@ -568,11 +567,10 @@ void io::Parser::setNets(odb::dbBlock* block)
         logger_->error(DRT,
                        307,
                        "Net {} of signal type {} cannot be connected to iterm "
-                       "{}/{} with signal type {}",
+                       "{} with signal type {}",
                        net->getName(),
                        net->getSigType().getString(),
-                       term->getInst()->getName(),
-                       term->getMTerm()->getName(),
+                       term->getName(),
                        term->getSigType().getString());
       if (tmpBlock_->name2inst_.find(term->getInst()->getName())
           == tmpBlock_->name2inst_.end())
@@ -582,11 +580,8 @@ void io::Parser::setNets(odb::dbBlock* block)
       // gettin inst term
       auto frterm = inst->getMaster()->getTerm(term->getMTerm()->getName());
       if (frterm == nullptr)
-        logger_->error(DRT,
-                       106,
-                       "Component pin {}/{} not found.",
-                       term->getInst()->getName(),
-                       term->getMTerm()->getName());
+        logger_->error(
+            DRT, 106, "Component pin {} not found.", term->getName());
       int idx = frterm->getIndexInOwner();
       auto& instTerms = inst->getInstTerms();
       auto instTerm = instTerms[idx].get();
@@ -1123,9 +1118,8 @@ void io::Parser::setAccessPoints(odb::dbDatabase* db)
         if (ap_map.find(db_ap) == ap_map.end())
           logger_->error(DRT,
                          1011,
-                         "Access Point not found for iterm {}/{}",
-                         db_inst->getName(),
-                         db_term->getMTerm()->getName());
+                         "Access Point not found for iterm {}",
+                         db_term->getName());
         db_aps_map[db_ap->getMPin()] = db_ap;
       }
       int idx = 0;
@@ -2225,20 +2219,18 @@ void io::Parser::setMasters(odb::dbDatabase* db)
         tree.clear();
       }
       auto tmpMaster = std::make_unique<frMaster>(master->getName());
-      frCoord originX;
-      frCoord originY;
-      master->getOrigin(originX, originY);
+      odb::Point origin = master->getOrigin();
       frCoord sizeX = master->getWidth();
       frCoord sizeY = master->getHeight();
       std::vector<frBoundary> bounds;
       frBoundary bound;
       std::vector<Point> points;
-      points.push_back(Point(originX, originY));
-      points.push_back(Point(sizeX, originY));
-      points.push_back(Point(sizeX, sizeY));
-      points.push_back(Point(originX, sizeY));
+      points.emplace_back(origin);
+      points.emplace_back(sizeX, origin.y());
+      points.emplace_back(sizeX, sizeY);
+      points.emplace_back(origin.x(), sizeY);
       bound.setPoints(points);
-      bounds.push_back(bound);
+      bounds.emplace_back(bound);
       tmpMaster->setBoundaries(bounds);
       tmpMaster->setMasterType(master->getType());
 

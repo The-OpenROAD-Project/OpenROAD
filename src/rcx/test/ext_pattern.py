@@ -17,4 +17,4 @@ rcx_aux.extract_parasitics(ext_model_file="ext_pattern.rules",
 
 spef_file = helpers.make_result_file("ext_pattern.spef")
 rcx_aux.write_spef(filename=spef_file, nets=test_nets)
-helpers.diff_files("ext_pattern.spefok", spef_file)
+helpers.diff_files("ext_pattern.spefok", spef_file, "^\\*(DATE|VERSION)")

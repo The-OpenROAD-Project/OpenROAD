@@ -62,11 +62,14 @@ void deleteOpenRCX(rcx::Ext* extractor)
 
 void initOpenRCX(OpenRoad* openroad)
 {
-  openroad->getOpenRCX()->init(
-      openroad->getDb(), openroad->getLogger(), [openroad] {
-        rcx::Rcx_Init(openroad->tclInterp());
-        sta::evalTclInit(openroad->tclInterp(), sta::rcx_tcl_inits);
-      });
+  openroad->getOpenRCX()->init(openroad->getDb(),
+                               openroad->getLogger(),
+                               ord::OpenRoad::getVersion(),
+                               [openroad] {
+                                 rcx::Rcx_Init(openroad->tclInterp());
+                                 sta::evalTclInit(openroad->tclInterp(),
+                                                  sta::rcx_tcl_inits);
+                               });
 }
 
 }  // namespace ord

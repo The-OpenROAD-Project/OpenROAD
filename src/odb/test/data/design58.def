@@ -26,7 +26,7 @@ END COMPONENTS
 PINS 12 ;
 - inp0 + NET inp0 + DIRECTION INPUT 
   + PORT
-    + LAYER metal1 ( -25 0 ) ( 25 50 ) 
+    + LAYER metal1 MASK 2 ( -25 0 ) ( 25 50 ) 
     + LAYER metal2 ( -10 0 ) ( 10 75 ) 
     + FIXED ( 10000 5000 ) N
   + PORT
@@ -46,11 +46,17 @@ PINS 12 ;
 - out[0] + NET out[0] + DIRECTION OUTPUT ;
 END PINS
 
-SPECIALNETS 1 ;
+SPECIALNETS 2 ;
  - VDD
    ( * vdd )
    + ROUTED metal1 32 + SHAPE IOWIRE ( 50 50 ) M2_M1_via DO 2 BY 4 STEP 2 5
    + USE POWER ;
+ - VSS
+   ( * vss )
+   + FIXED + SHAPE RING + MASK 2 + RECT metal3 ( 0 0 ) ( 10 10 )
+   + ROUTED metal1 2000 ( 10 0 ) MASK 3 ( 10 20 ) M2_M1_via
+     NEW metal2 1000 ( 10 10 ) ( 20 10 ) MASK 1 ( 20 20 ) MASK 031 M2_M1_via
+   + USE GROUND ;
 END SPECIALNETS
 
 NETS 24 ;

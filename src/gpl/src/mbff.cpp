@@ -1116,7 +1116,7 @@ void MBFF::RunSilh(std::vector<std::vector<Tray>>& trays,
   }
 
   // run multistart_ in parallel
-  for (const auto [bit_idx, tray_idx] : ind) {
+  for (const auto& [bit_idx, tray_idx] : ind) {
     const int rows = GetRows(GetBitCnt(bit_idx), bitmask);
     const int cols = GetBitCnt(bit_idx) / rows;
 
@@ -1710,10 +1710,8 @@ void MBFF::ReadFFs()
     sta::Cell* cell = network_->dbToSta(inst->getMaster());
     sta::LibertyCell* lib_cell = network_->libertyCell(cell);
     if (lib_cell && lib_cell->hasSequentials()) {
-      int x_i;
-      int y_i;
-      inst->getOrigin(x_i, y_i);
-      const Point pt{x_i / multiplier_, y_i / multiplier_};
+      const odb::Point origin = inst->getOrigin();
+      const Point pt{origin.x() / multiplier_, origin.y() / multiplier_};
       flops_.push_back({pt, num_flops, 0.0});
       insts_.push_back(inst);
       num_flops++;

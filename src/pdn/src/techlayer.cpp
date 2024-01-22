@@ -198,6 +198,15 @@ std::vector<TechLayer::MinCutRule> TechLayer::getMinCutRules() const
   return rules;
 }
 
+int TechLayer::getMinIncrementStep() const
+{
+  if (layer_->getTech()->hasManufacturingGrid()) {
+    const int grid = layer_->getTech()->getManufacturingGrid();
+    return grid;
+  }
+  return 1;
+}
+
 odb::Rect TechLayer::adjustToMinArea(const odb::Rect& rect) const
 {
   if (!layer_->hasArea()) {

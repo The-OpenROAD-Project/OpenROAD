@@ -560,7 +560,7 @@ void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
                  "have been found", clockBuffers.size());
       // clang-format on
       if (!clockBuffers.empty()) {
-        buffers = clockBuffers;
+        buffers = std::move(clockBuffers);
       }
     }
   }
@@ -608,7 +608,7 @@ void TritonCTS::setRootBuffer(const char* buffers)
   std::istream_iterator<std::string> begin(ss);
   std::istream_iterator<std::string> end;
   std::vector<std::string> bufferList(begin, end);
-  rootBuffers_ = bufferList;
+  rootBuffers_ = std::move(bufferList);
 }
 
 std::string TritonCTS::selectRootBuffer(std::vector<std::string>& buffers)
@@ -650,7 +650,7 @@ void TritonCTS::setSinkBuffer(const char* buffers)
   std::istream_iterator<std::string> begin(ss);
   std::istream_iterator<std::string> end;
   std::vector<std::string> bufferList(begin, end);
-  sinkBuffers_ = bufferList;
+  sinkBuffers_ = std::move(bufferList);
 }
 
 std::string TritonCTS::selectSinkBuffer(std::vector<std::string>& buffers)
@@ -739,7 +739,7 @@ std::string TritonCTS::selectBestMaxCapBuffer(
   }
 
   if (bestBuf.empty()) {
-    bestBuf = nextBestBuf;
+    bestBuf = std::move(nextBestBuf);
   }
 
   return bestBuf;
@@ -1641,12 +1641,12 @@ void TritonCTS::connectDummyCell(const ClockInst* inst,
   subNet.addInst(dummyClock);
 }
 
-void TritonCTS::printClockNetwork(Clock clockNet) const
+void TritonCTS::printClockNetwork(const Clock& clockNet) const
 {
-  clockNet.forEachSubNet([&](ClockSubNet& subNet) {
+  clockNet.forEachSubNet([&](const ClockSubNet& subNet) {
     ClockInst* driver = subNet.getDriver();
     logger_->report("{} has {} sinks", driver->getName(), subNet.getNumSinks());
-    subNet.forEachSink([&](ClockInst* inst) {
+    subNet.forEachSink([&](const ClockInst* inst) {
       logger_->report("{} -> {}", driver->getName(), inst->getName());
     });
   });

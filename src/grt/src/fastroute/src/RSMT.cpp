@@ -84,7 +84,6 @@ void FastRouteCore::copyStTree(const int ind, const Tree& rsmt)
   const int d = rsmt.deg;
   const int numnodes = rsmt.branchCount();
   const int numedges = numnodes - 1;
-  sttrees_[ind].num_nodes = numnodes;
   sttrees_[ind].num_terminals = d;
   sttrees_[ind].nodes.resize(numnodes);
   sttrees_[ind].edges.resize(numedges);
@@ -662,17 +661,6 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
 
     FrNet* net = nets_[i];
 
-    float coeffV = 1.36;
-
-    bool cong;
-    if (congestionDriven) {
-      coeffV = coeffADJ(i);
-      cong = netCongestion(i);
-
-    } else if (HTreeSuite(i)) {
-      coeffV = 1.2;
-    }
-
     int d = net->getNumPins();
 
     if (reRoute) {
@@ -700,10 +688,6 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
       }
     }
 
-    if (noADJ) {
-      coeffV = 1.2;
-    }
-
     // check net alpha because FastRoute has a special implementation of flute
     // TODO: move this flute implementation to SteinerTreeBuilder
     const float net_alpha = stt_builder_->getAlpha(net->getDbNet());
@@ -711,8 +695,13 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
       rsmt = stt_builder_->makeSteinerTree(
           net->getDbNet(), net->getPinX(), net->getPinY(), net->getDriverIdx());
     } else {
+      float coeffV = 1.36;
+
       if (congestionDriven) {
         // call congestion driven flute to generate RSMT
+        bool cong;
+        coeffV = noADJ ? 1.2 : coeffADJ(i);
+        cong = netCongestion(i);
         if (cong) {
           fluteCongest(
               i, net->getPinX(), net->getPinY(), flute_accuracy, coeffV, rsmt);
@@ -725,6 +714,9 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
         }
       } else {
         // call FLUTE to generate RSMT for each net
+        if (noADJ || HTreeSuite(i)) {
+          coeffV = 1.2;
+        }
         fluteNormal(
             i, net->getPinX(), net->getPinY(), flute_accuracy, coeffV, rsmt);
       }

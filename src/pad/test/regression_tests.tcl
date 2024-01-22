@@ -5,6 +5,7 @@ record_tests {
 
   make_corner_sites
   make_io_sites
+  non_top_layer
   place_pad
   place_pad_outsideofrow
   place_bondpad

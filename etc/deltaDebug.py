@@ -20,6 +20,7 @@
 
 import odb
 import os
+import sys
 import signal
 import subprocess
 import argparse
@@ -30,12 +31,22 @@ from math import ceil
 import errno
 import enum
 
+persistence_range = [1, 2, 3, 4, 5, 6]
+persistence_start_range = persistence_range[1:]
 
 parser = argparse.ArgumentParser('Arguments for delta debugging')
 parser.add_argument('--base_db_path', type=str, help='Path to the db file to perform the step on')
 parser.add_argument('--error_string', type=str, help='The output that indicates target error has occured')
 parser.add_argument('--step', type=str, help='Command used to perform step on the input odb file')
-parser.add_argument('--persistence', type=int, default=1, choices=[1, 2, 3, 4, 5, 6], help='Indicates maximum input fragmentation; fragments = 2^persistence; value in [1,6]')
+parser.add_argument('--start', type=int, default=persistence_start_range[0],
+                    choices=persistence_start_range,
+                    help='Starting persistence level')
+parser.add_argument('--persistence', type=int,
+                    default=persistence_range[0],
+                    choices=persistence_range,
+                    help='Indicates maximum input fragmentation; '
+                    'fragments = 2^persistence; value in ' +
+                    ', '.join(map(str, persistence_range)))
 parser.add_argument('--use_stdout', action='store_true', help='Enables reading the error string from standard output')
 parser.add_argument('--exit_early_on_error', action='store_true', help='Exit early on unrelated errors to speed things up, but risks exiting on false negatives.')
 parser.add_argument('--dump_def', action='store_true', help='Determines whether to dumb def at each step in addition to the odb')
@@ -60,6 +71,8 @@ class deltaDebugger:
         self.use_stdout = opt.use_stdout
         self.exit_early_on_error = opt.exit_early_on_error
         self.step_count = 1
+        # Initial Number of cuts
+        self.n = opt.start
 
         # timeout used to measure the time the original input takes
         # to reach an error to use as standard timeout for different 
@@ -103,11 +116,12 @@ class deltaDebugger:
 
         # Perform a step with no cuts to measure timeout
         print("Performing a step with the original input file to calculate timeout.")
-        self.perform_step()
+        if self.perform_step() is None:
+            print("No error found in the original input file.")
+            sys.exit(1)
 
         while (True):
             err = None
-            self.n = 2  # Initial Number of cuts
 
             while self.n <= (2 ** self.persistence):
                 error_in_range = None
