@@ -138,7 +138,7 @@
       ]
     },
     {
-      "name":"_layer_adjustment",
+      "name":"layer_adjustment_",
       "type":"float",
       "flags":[]  
     }

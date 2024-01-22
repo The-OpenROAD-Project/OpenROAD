@@ -32,6 +32,7 @@
 
 #include "util.h"
 
+#include <iostream>
 #include <map>
 #include <numeric>
 #include <string>
@@ -138,15 +139,18 @@ void RUDYCalculator::calculateRUDY()
     if (tech_layer == nullptr) {
       continue;
     }
-    // Greatest layer adjustment value showed better correlation with GRT.
-    rudy_adjustment
-        = std::max(rudy_adjustment, tech_layer->getLayerAdjustment());
+    rudy_adjustment += tech_layer->getLayerAdjustment();
   }
 
   if (rudy_adjustment == 0.0) {
     return;
   }
+
+  if (tech->getRoutingLayerCount() > 1) {
+    rudy_adjustment /= (tech->getRoutingLayerCount() - 1);
+  }
   rudy_adjustment *= 100;
+
   for (int x = 0; x < tileCntX_; ++x) {
     for (int y = 0; y < tileCntY_; ++y) {
       Tile& tile = getEditableTile(x, y);
