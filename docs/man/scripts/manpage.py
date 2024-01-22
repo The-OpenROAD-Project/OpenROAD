@@ -30,7 +30,6 @@ class ManPage():
             self.write_copyright(f)
     
     def write_header(self, f, man_level):
-        print(man_level)
         assert isinstance(f, io.TextIOBase) and\
          f.writable(), "File pointer is not open for writing."
         assert man_level == "man1" or man_level == "man2" or\

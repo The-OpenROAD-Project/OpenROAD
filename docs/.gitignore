@@ -6,3 +6,7 @@ man/man1
 man/man2
 man/man3
 cat
+
+
+# for doc tests
+man/test/results

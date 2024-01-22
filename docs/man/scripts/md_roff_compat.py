@@ -16,7 +16,7 @@ from extract_utils import extract_headers, extract_description, extract_tcl_code
 #       be the description of the function. E.g. `func_name - Useful Function Description` in the roff.
 # sta: documentation is hosted elsewhere. (not currently in RTD also.)
 # odb: documentation is hosted on doxygen. 
-# 
+
 tools = ["ant", "cts", "dbSta", "dft", "dpl", "dpo", "drt",\
         "dst", "fin", "gpl", "grt", "gui", "ifp", "mpl",\
         "mpl2", "odb", "pad", "par", "pdn", "ppl", "psm",\
@@ -33,7 +33,7 @@ exclude = ["sta"] #sta excluded because its format is different, and no severity
 docs3 = [f"{SRC_DIR}/{tool}/messages.txt" for tool in tools if tool not in exclude]
 docs3.append("../messages.txt")
 
-if __name__ == "__main__":
+def man2(path=DEST_DIR2):
     for doc in docs2:
         if not os.path.exists(doc):
             print(f"{doc} doesn't exist. Continuing")
@@ -54,11 +54,12 @@ if __name__ == "__main__":
         # arguments
         func_options, func_args = extract_arguments(text)
 
-        #print(f"Names: {len(func_names)}")
-        #print(f"Desc: {len(func_descs)}")
-        #print(f"Syn: {len(func_synopsis)}")
-        #print(f"Options: {len(func_options)}")
-        #print(f"Args: {len(func_args)}")
+        print(f'{os.path.basename(doc)}')
+        print(f'''Names: {len(func_names)},\
+        Desc: {len(func_descs)},\
+        Syn: {len(func_synopsis)},\
+        Options: {len(func_options)},\
+        Args: {len(func_args)}''')
 
         for func_id in range(len(func_synopsis)):
             manpage = ManPage()
@@ -82,8 +83,9 @@ if __name__ == "__main__":
                     args_dict[key] = val
                 manpage.args = args_dict
 
-            manpage.write_roff_file(DEST_DIR2)
-    count = 0
+            manpage.write_roff_file(path)
+
+def man3(path=DEST_DIR3):
     for doc in docs3:
         if not os.path.exists(doc):
             print(f"{doc} doesn't exist. Continuing")
@@ -91,7 +93,6 @@ if __name__ == "__main__":
         print(f"Processing {doc}")
         with open(doc, 'r') as f:
             for line in f:
-                count += 1
                 parts = line.split()
                 module, num, message, level = parts[0], parts[1],\
                                 " ".join(parts[4:-2]), parts[-2]
@@ -100,10 +101,15 @@ if __name__ == "__main__":
                 if "with-total" in manpage.name: print(parts); exit()
                 manpage.synopsis = "N/A."
                 manpage.desc = f"Severity: {level}\n\n{message}"
-                manpage.write_roff_file(DEST_DIR3)
+                manpage.write_roff_file(path)
 
                 # For individual module folders.
                 #module_path = os.path.join(DEST_DIR3, module)
                 #os.makedirs(module_path, exist_ok = True)
                 #manpage.write_roff_file(module_path)
-    print(count)
+
+
+
+if __name__ == "__main__":
+    man2()
+    man3()

@@ -15,14 +15,13 @@ Adding a new test called `func`, you must create/update the following:
 
 ```
 # Please replace with your path to OR.
-cd ~/OpenROAD/docs/manpages
-
-# if you installed OR via prebuilt binaries, you might need to symlink as the following script only works with OR in a particular directory.
-# mkdir -p ~/OpenROAD/build/src && cd ~/OpenROAD/build/src
-# ln -s /usr/bin/openroad .
+cd ~/OpenROAD/docs/man
 
 # run the tests
 ./test/regression 
+
+# save the ok files
+./test/save_ok <TEST_NAME>
 ```
 
 ## TODO

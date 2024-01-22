@@ -1,3 +1,3 @@
 record_tests {
-  func
+  translator
 }
