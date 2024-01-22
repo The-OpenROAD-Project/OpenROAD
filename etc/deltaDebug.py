@@ -1,7 +1,7 @@
 ################################
 # You need to provide the script with 3 main arguments
 # --base_db_path <the relative path to the db file to perform the step on>
-# --error_string <the output that indicates a target error has occured>
+# --error_string <the output that indicates a target error has occurred>
 # --step <Command used to perform a step on the base_db file>
 # You also have 1 additional argument
 # --persistence <a value in [1,6] indicating maximum granularity where maximum granularity = 2^persistence>
@@ -11,11 +11,11 @@
 # EXAMPLE COMMAND:
 # Assuming running in a directory with the following files in:
 # deltaDebug.py base.odb step.sh
-# openroad -python deltaDebug.py --base_db_path base.odb --error_string <any_possible_error> --step './step.sh' 
-#                                --persistence 5  --use_stdout --dump_def 
+# openroad -python deltaDebug.py --base_db_path base.odb --error_string <any_possible_error> --step './step.sh'
+#                                --persistence 5  --use_stdout --dump_def
 
 # N.B: step.sh shall read base.odb (or base.def in case the flag dump_def = 1) and operate on it
-# where the script manipulates base.odb between steps to reduce its size. 
+# where the script manipulates base.odb between steps to reduce its size.
 ################################
 
 import odb
@@ -36,7 +36,7 @@ persistence_start_range = persistence_range[1:]
 
 parser = argparse.ArgumentParser('Arguments for delta debugging')
 parser.add_argument('--base_db_path', type=str, help='Path to the db file to perform the step on')
-parser.add_argument('--error_string', type=str, help='The output that indicates target error has occured')
+parser.add_argument('--error_string', type=str, help='The output that indicates target error has occurred')
 parser.add_argument('--step', type=str, help='Command used to perform step on the input odb file')
 parser.add_argument('--start', type=int, default=persistence_start_range[0],
                     choices=persistence_start_range,
@@ -99,7 +99,7 @@ class deltaDebugger:
         # A variable to hold the base_db
         self.base_db = None
 
-        # Debugging level 
+        # Debugging level
         # cutLevel.Insts starts with inst then nets, cutLevel.Nets cuts nets only.
         self.cut_level = cutLevel.Insts
 
@@ -107,11 +107,11 @@ class deltaDebugger:
         self.step = opt.step
 
     def debug(self):
-        # copy original base db file to avoid overwritting it
+        # copy original base db file to avoid overwriting it
         print("Backing up original base file.")
         shutil.copy(self.base_db_file, self.original_base_db_file)
 
-        # Rename the base db file to a temp name to keep it from overwritting across the two steps cut
+        # Rename the base db file to a temp name to keep it from overwriting across the two steps cut
         os.rename(self.base_db_file, self.temp_base_db_file)
 
         # Perform a step with no cuts to measure timeout
@@ -160,7 +160,7 @@ class deltaDebugger:
         if os.path.exists(self.temp_base_db_file):
             os.rename(self.temp_base_db_file, self.deltaDebug_result_base_file)
 
-        # Restoring the original base_db file 
+        # Restoring the original base_db file
         if os.path.exists(self.original_base_db_file):
             os.rename(self.original_base_db_file, self.base_db_file)
 
@@ -169,13 +169,13 @@ class deltaDebugger:
         print("Delta Debugging Done!")
 
     # A function that do a cut in the db, writes the base db to disk
-    # and calls the step funtion, then returns the stderr of the step.
+    # and calls the step function, then returns the stderr of the step.
     def perform_step(self, cut_index=-1):
         # read base db in memory
         self.base_db = odb.dbDatabase.create()
         self.base_db = odb.read_db(self.base_db, self.temp_base_db_file)
 
-        # Cut the block with the given step index. 
+        # Cut the block with the given step index.
         # if cut index of -1 is provided it means
         # that no cut will be made.
         if (cut_index != -1):
@@ -198,13 +198,13 @@ class deltaDebugger:
         if (cut_index != -1):
             self.step_count += 1
 
-        # Perform step, and check the error code  
+        # Perform step, and check the error code
         start_time = time.time()
         error_string = self.run_command(self.step)
         end_time = time.time()
 
         # Handling timeout so as not to run the code for time
-        # that is more than the original buggy code or a 
+        # that is more than the original buggy code or a
         # buggy cut.
         if (error_string is not None):
             self.timeout = max(120, 1.2 * (end_time - start_time))
@@ -237,7 +237,7 @@ class deltaDebugger:
         while (True):
             if (poll_obj.poll(0)):  # polling on the output of the process
                 if (self.use_stdout == 0):
-                    output = process.stderr.readline()  
+                    output = process.stderr.readline()
                 else:
                     output = process.stdout.readline()
 
@@ -288,7 +288,7 @@ class deltaDebugger:
 
     # A function that cuts the block according to the given direction
     # and ratio. It also uses the class cut level  to identify
-    # whehter to cut Insts or Nets.
+    # whether to cut Insts or Nets.
     def cut_block(self, index=0):  
         block = self.base_db.getChip().getBlock()
         message = [f"Step {self.step_count}"]
