@@ -201,7 +201,6 @@ void TimingPath::populateNodeList(sta::Path* path,
     sta::Vertex* vertex = ref->vertex(sta);
     const auto pin = vertex->pin();
     const bool pin_is_clock = sta->isClock(pin);
-    const auto slew = ref->slew(sta);
     const bool is_driver = network->isDriver(pin);
     const bool is_rising = ref->transition(sta) == sta::RiseFall::rise();
     const auto arrival = ref->arrival(sta);
@@ -245,18 +244,27 @@ void TimingPath::populateNodeList(sta::Path* path,
     }
     arrival_cur_stage = arrival;
 
-    list.push_back(
-        std::make_unique<TimingPathNode>(pin_object,
-                                         pin,
-                                         pin_is_clock,
-                                         is_rising,
-                                         !is_driver,
-                                         true,
-                                         arrival + offset,
-                                         arrival_cur_stage - arrival_prev_stage,
-                                         slew,
-                                         cap,
-                                         fanout));
+    float node_arrival = 0.0f;
+    float node_delay = 0.0f;
+    float slew = 0.0f;
+
+    if (!sta->isIdealClock(pin)) {
+      node_arrival = arrival + offset;
+      node_delay = arrival_cur_stage - arrival_prev_stage;
+      slew = ref->slew(sta);
+    }
+
+    list.push_back(std::make_unique<TimingPathNode>(pin_object,
+                                                    pin,
+                                                    pin_is_clock,
+                                                    is_rising,
+                                                    !is_driver,
+                                                    true,
+                                                    node_arrival,
+                                                    node_delay,
+                                                    slew,
+                                                    cap,
+                                                    fanout));
     arrival_prev_stage = arrival_cur_stage;
   }
 
