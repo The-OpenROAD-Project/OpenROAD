@@ -213,8 +213,6 @@ class deltaDebugger:
         return error_string
 
     def run_command(self, command):
-        output = ''
-        error_string = None  # None for any error code other than self.error_string
         poll_obj = select.poll()
         if (self.use_stdout == 0):
             process = subprocess.Popen(command,
@@ -234,6 +232,18 @@ class deltaDebugger:
             poll_obj.register(process.stdout, select.POLLIN)
 
         start_time = time.time()
+        try:
+            return self.poll(process, poll_obj, start_time)
+        finally:
+            try:
+                os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+            except ProcessLookupError:
+                # This is an inevitable race condition, ignore
+                pass
+
+    def poll(self, process, poll_obj, start_time):
+        output = ''
+        error_string = None  # None for any error code other than self.error_string
         while (True):
             if (poll_obj.poll(0)):  # polling on the output of the process
                 if (self.use_stdout == 0):
@@ -243,19 +253,16 @@ class deltaDebugger:
 
                 if (output.find(self.error_string) != -1):
                     # found the error code that we are searching for.
-                    os.killpg(os.getpgid(process.pid), signal.SIGKILL)
                     error_string = self.error_string
                     break
                 elif (self.exit_early_on_error and output.find("ERROR") != -1):
                     # Found different error (bad cut) so we can just
                     # terminate early and ignore this cut.
-                    os.killpg(os.getpgid(process.pid), signal.SIGKILL)
                     break
 
             curr_time = time.time()
             if ((curr_time - start_time) > self.timeout):
                 print(f"Step {self.step_count} timed out!", flush=True)
-                os.killpg(os.getpgid(process.pid), signal.SIGKILL)
                 break
 
             if (process.poll() is not None):
