@@ -164,8 +164,6 @@ GlobalRouter::~GlobalRouter()
 std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
                                               int max_routing_layer)
 {
-  initAdjustments();
-
   if (max_routing_layer < layer_for_guide_dimension_) {
     layer_for_guide_dimension_ = max_routing_layer;
   }
@@ -1132,8 +1130,6 @@ void GlobalRouter::computeUserGlobalAdjustments(int min_routing_layer,
     return;
 
   for (int l = min_routing_layer; l <= max_routing_layer; l++) {
-    //    if (adjustments_[l] == 0) {
-    //      adjustments_[l] = adjustment_;
     if (db_->getTech()->findRoutingLayer(l)->getLayerAdjustment() == 0.0) {
       db_->getTech()->findRoutingLayer(l)->setLayerAdjustment(adjustment_);
     }
@@ -1146,7 +1142,6 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
   int y_grids = grid_->getYGrids();
 
   for (int layer = 1; layer <= max_routing_layer; layer++) {
-    //    float adjustment = adjustments_[layer];
     float adjustment
         = db_->getTech()->findRoutingLayer(layer)->getLayerAdjustment();
     if (adjustment != 0) {
@@ -1295,7 +1290,6 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
 
 void GlobalRouter::setAdjustment(const float adjustment)
 {
-  initAdjustments();
   adjustment_ = adjustment;
 }
 
@@ -1333,7 +1327,6 @@ void GlobalRouter::setCriticalNetsPercentage(float critical_nets_percentage)
 
 void GlobalRouter::addLayerAdjustment(int layer, float reduction_percentage)
 {
-  initAdjustments();
   odb::dbTech* tech = db_->getTech();
   odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
   odb::dbTechLayer* max_tech_layer = tech->findRoutingLayer(max_routing_layer_);
@@ -1346,7 +1339,6 @@ void GlobalRouter::addLayerAdjustment(int layer, float reduction_percentage)
                     tech_layer->getName(),
                     max_tech_layer->getName());
   } else {
-    //    adjustments_[layer] = reduction_percentage;
     tech_layer->setLayerAdjustment(reduction_percentage);
   }
 }
@@ -1470,7 +1462,6 @@ void GlobalRouter::initGridAndNets()
     initRoutingLayers();
     initRoutingTracks(max_layer);
     initCoreGrid(max_layer);
-    initAdjustments();
     setCapacities(min_layer, max_layer);
     applyAdjustments(min_layer, max_layer);
   }
@@ -2398,13 +2389,6 @@ odb::Point GlobalRouter::findFakePinPosition(Pin& pin, odb::dbNet* db_net)
   }
 
   return fake_position;
-}
-
-void GlobalRouter::initAdjustments()
-{
-  if (adjustments_.empty()) {
-    adjustments_.resize(db_->getTech()->getRoutingLayerCount() + 1, 0);
-  }
 }
 
 std::vector<Pin*> GlobalRouter::getAllPorts()
