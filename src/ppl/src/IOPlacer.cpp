@@ -410,7 +410,7 @@ int IOPlacer::placeFallbackPins(bool random)
             PPL,
             109,
             "Pin group of size {} does not fit any region in the die "
-            "boundaries. Not enough conmtiguous slots available. The first pin "
+            "boundaries. Not enough contiguous slots available. The first pin "
             "of the group is {}.",
             group.first.size(),
             io_pin.getName());
