@@ -682,9 +682,8 @@ int IOPlacer::micronsToDbu(double microns)
 
 double IOPlacer::areaDbuToMicrons(int64_t dbu)
 {
-  return static_cast<double>(dbu)
-         / ((getBlock()->getDbUnitsPerMicron()
-             * (getBlock()->getDbUnitsPerMicron())));
+  const int units_per_micron = getBlock()->getDbUnitsPerMicron();
+  return static_cast<double>(dbu) / (units_per_micron * units_per_micron);
 }
 
 void IOPlacer::writePinPlacement(const char* file_name)
@@ -931,8 +930,8 @@ void IOPlacer::defineSlots()
       min_dist = std::max(layer_min_dist, min_dist);
     }
 
-    int64_t die_margin = getBlock()->getDieArea().margin();
-    int64_t new_margin
+    const int64_t die_margin = getBlock()->getDieArea().margin();
+    const int64_t new_margin
         = computeIncrease(min_dist, regular_pin_count, die_margin) + die_margin;
 
     logger_->error(
@@ -1794,8 +1793,8 @@ void IOPlacer::initConstraints(bool annealing)
     getPinsFromDirectionConstraint(constraint);
     constraint.sections = createSectionsPerConstraint(constraint);
     int num_slots = 0;
-    int region_begin = constraint.interval.getBegin();
-    int region_end = constraint.interval.getEnd();
+    const int region_begin = constraint.interval.getBegin();
+    const int region_end = constraint.interval.getEnd();
     const std::string region_edge
         = getEdgeString(constraint.interval.getEdge());
 
@@ -1814,9 +1813,9 @@ void IOPlacer::initConstraints(bool annealing)
         logger_->warn(PPL,
                       110,
                       "Constraint has {} pins, but only {} available slots.\n"
-                      "Increase the region {}-{} on the {} edge from {:.2f}um "
-                      "to at least "
-                      "{:.2f}um.",
+                      "Increase the region {:.2f}um-{:.2f}um on the {} edge "
+                      "from {:.2f}um "
+                      "to at least {:.2f}um.",
                       constraint.pin_list.size(),
                       num_slots,
                       dbuToMicrons(region_begin),
