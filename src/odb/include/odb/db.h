@@ -1108,10 +1108,10 @@ class dbBlock : public dbObject
   void writeGuides(const char* filename) const;
 
   //
-  // Utiliy to write macro placement in mpl2 input format for individual
-  // macro placement
+  // Generates a string with the macro placement in mpl2 input format for
+  // individual macro placement
   //
-  void writeMacroPlacement(const std::string& file_name);
+  std::string generateMacroPlacementString();
 
   ///
   /// Find a specific via of this block.

@@ -3453,18 +3453,9 @@ void dbBlock::writeGuides(const char* filename) const
   guide_file.close();
 }
 
-void dbBlock::writeMacroPlacement(const std::string& file_name)
+std::string dbBlock::generateMacroPlacementString()
 {
-  if (file_name.empty()) {
-    return;
-  }
-
-  std::ofstream out(file_name);
-
-  if (!out) {
-    getImpl()->getLogger()->error(
-        utl::ODB, 440, "Cannot open macro placement file {}.", file_name);
-  }
+  std::string macro_placement;
 
   const float dbu = this->getTech()->getDbUnitsPerMicron();
   float x = 0.0f;
@@ -3475,11 +3466,16 @@ void dbBlock::writeMacroPlacement(const std::string& file_name)
       x = (inst->getLocation().x()) / dbu;
       y = (inst->getLocation().y()) / dbu;
 
-      out << "place_macro -macro_name " << inst->getName() << " -location {"
-          << x << " " << y << "} -orientation " << inst->getOrient().getString()
-          << '\n';
+      macro_placement += fmt::format(
+          "place_macro -macro_name {} -location {{{} {}}} -orientation {}\n",
+          inst->getName(),
+          x,
+          y,
+          inst->getOrient().getString());
     }
   }
+
+  return macro_placement;
 }
 
 bool dbBlock::differences(dbBlock* block1,
