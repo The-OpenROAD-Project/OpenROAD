@@ -735,8 +735,8 @@ Edge IOPlacer::getMirroredEdge(const Edge& edge)
   return mirrored_edge;
 }
 
-int IOPlacer::computeRegionIncrease(const Interval& interval,
-                                    const int num_pins)
+int IOPlacer::computeNewRegionLength(const Interval& interval,
+                                     const int num_pins)
 {
   const bool vertical_pin
       = interval.getEdge() == Edge::top || interval.getEdge() == Edge::bottom;
@@ -759,11 +759,11 @@ int IOPlacer::computeRegionIncrease(const Interval& interval,
   }
 
   const int increase = computeIncrease(min_dist, num_pins, interval_length);
-  return increase;
+  return increase + interval_length;
 }
 
 int64_t IOPlacer::computeIncrease(int min_dist,
-                                  const int num_pins,
+                                  const int64_t num_pins,
                                   const int64_t curr_length)
 {
   const bool dist_in_tracks = parms_->getMinDistanceInTracks();
@@ -932,15 +932,18 @@ void IOPlacer::defineSlots()
     }
 
     int64_t die_margin = getBlock()->getDieArea().margin();
-    int64_t increase = computeIncrease(min_dist, regular_pin_count, die_margin);
+    int64_t new_margin
+        = computeIncrease(min_dist, regular_pin_count, die_margin) + die_margin;
 
-    logger_->error(PPL,
-                   24,
-                   "Number of IO pins ({}) exceeds maximum number of available "
-                   "positions ({}). Increase the die width or height in {}um.",
-                   regular_pin_count,
-                   slots_.size(),
-                   dbuToMicrons(increase));
+    logger_->error(
+        PPL,
+        24,
+        "Number of IO pins ({}) exceeds maximum number of available "
+        "positions ({}). Increase the die perimeter from {:.2f}um to {:.2f}um.",
+        regular_pin_count,
+        slots_.size(),
+        dbuToMicrons(die_margin),
+        dbuToMicrons(new_margin));
   }
 
   if (top_layer_pins_count_ > top_layer_slots_.size()) {
@@ -1803,19 +1806,24 @@ void IOPlacer::initConstraints(bool annealing)
       constraint.pins_per_slots
           = static_cast<float>(constraint.pin_list.size()) / num_slots;
       if (constraint.pins_per_slots > 1) {
-        int increase = computeRegionIncrease(constraint.interval,
-                                             constraint.pin_list.size());
+        const Interval& interval = constraint.interval;
+        const int interval_length
+            = std::abs(interval.getEnd() - interval.getBegin());
+        int new_length
+            = computeNewRegionLength(interval, constraint.pin_list.size());
         logger_->warn(PPL,
                       110,
                       "Constraint has {} pins, but only {} available slots.\n"
-                      "Increase the region {}-{} on the {} edge in at least "
-                      "{}um.",
+                      "Increase the region {}-{} on the {} edge from {:.2f}um "
+                      "to at least "
+                      "{:.2f}um.",
                       constraint.pin_list.size(),
                       num_slots,
                       dbuToMicrons(region_begin),
                       dbuToMicrons(region_end),
                       region_edge,
-                      dbuToMicrons(increase));
+                      dbuToMicrons(interval_length),
+                      dbuToMicrons(new_length));
         constraints_no_slots++;
       }
     } else {
