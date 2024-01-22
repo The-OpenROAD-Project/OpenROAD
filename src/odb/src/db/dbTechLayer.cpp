@@ -779,6 +779,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> flags_bit_field;
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
+  stream >> obj._layer_adjustment;
   stream >> *obj.cut_class_rules_tbl_;
   stream >> obj.cut_class_rules_hash_;
   stream >> *obj.spacing_eol_rules_tbl_;
