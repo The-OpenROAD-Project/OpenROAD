@@ -189,8 +189,8 @@ void TimingPath::populateNodeList(sta::Path* path,
                                   bool clock_expanded,
                                   TimingNodeList& list)
 {
-  float arrival_prev_stage = 0;
-  float arrival_cur_stage = 0;
+  float arrival_prev_stage = 0.0f;
+  float arrival_cur_stage = 0.0f;
 
   sta::PathExpanded expand(path, sta);
   auto* graph = sta->graph();
@@ -242,29 +242,26 @@ void TimingPath::populateNodeList(sta::Path* path,
     if (term == nullptr) {
       pin_object = port;
     }
-    arrival_cur_stage = arrival;
 
-    float node_arrival = 0.0f;
-    float node_delay = 0.0f;
     float slew = 0.0f;
 
     if (!sta->isIdealClock(pin)) {
-      node_arrival = arrival + offset;
-      node_delay = arrival_cur_stage - arrival_prev_stage;
+      arrival_cur_stage = arrival;
       slew = ref->slew(sta);
     }
 
-    list.push_back(std::make_unique<TimingPathNode>(pin_object,
-                                                    pin,
-                                                    pin_is_clock,
-                                                    is_rising,
-                                                    !is_driver,
-                                                    true,
-                                                    node_arrival,
-                                                    node_delay,
-                                                    slew,
-                                                    cap,
-                                                    fanout));
+    list.push_back(
+        std::make_unique<TimingPathNode>(pin_object,
+                                         pin,
+                                         pin_is_clock,
+                                         is_rising,
+                                         !is_driver,
+                                         true,
+                                         arrival_cur_stage + offset,
+                                         arrival_cur_stage - arrival_prev_stage,
+                                         slew,
+                                         cap,
+                                         fanout));
     arrival_prev_stage = arrival_cur_stage;
   }
 
