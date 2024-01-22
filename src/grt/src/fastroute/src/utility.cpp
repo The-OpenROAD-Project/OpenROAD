@@ -212,21 +212,29 @@ void FastRouteCore::fillVIA()
             bottom_layer = std::min((int) pin_botL, bottom_layer);
             top_layer = std::max((int) pin_topL, top_layer);
 
-            for (int l = top_layer; l > bottom_layer; l--) {
+            for (int l = bottom_layer; l < top_layer; l++) {
               tmpX[newCNT] = gridsX[0];
               tmpY[newCNT] = gridsY[0];
               tmpL[newCNT] = l;
               newCNT++;
               numVIAT1++;
             }
-          }
-          for (int l = bottom_layer; l < edge_init_layer; l++) {
-            tmpX[newCNT] = gridsX[0];
-            tmpY[newCNT] = gridsY[0];
-            tmpL[newCNT] = l;
-            newCNT++;
-            if (node1_alias >= num_terminals) {
-              numVIAT2++;
+
+            for (int l = top_layer; l > edge_init_layer; l--) {
+              tmpX[newCNT] = gridsX[0];
+              tmpY[newCNT] = gridsY[0];
+              tmpL[newCNT] = l;
+              newCNT++;
+            }
+          } else {
+            for (int l = bottom_layer; l < edge_init_layer; l++) {
+              tmpX[newCNT] = gridsX[0];
+              tmpY[newCNT] = gridsY[0];
+              tmpL[newCNT] = l;
+              newCNT++;
+              if (node1_alias >= num_terminals) {
+                numVIAT2++;
+              }
             }
           }
         }
@@ -253,27 +261,33 @@ void FastRouteCore::fillVIA()
             getViaStackRange(netID, node2_alias, pin_botL, pin_topL);
             bottom_layer = std::min((int) pin_botL, bottom_layer);
             top_layer = std::max((int) pin_topL, top_layer);
-          }
-          if (bottom_layer == tmpL[newCNT - 1]) {
-            bottom_layer++;
-          }
-
-          for (int16_t l = tmpL[newCNT - 1] - 1; l > bottom_layer; l--) {
-            tmpX[newCNT] = tmpX[newCNT - 1];
-            tmpY[newCNT] = tmpY[newCNT - 1];
-            tmpL[newCNT] = l;
-            newCNT++;
-            if (node1_alias >= num_terminals) {
-              numVIAT2++;
+            if (bottom_layer == tmpL[newCNT - 1]) {
+              bottom_layer++;
             }
-          }
-          if (node2_alias < num_terminals) {
+
+            for (int16_t l = tmpL[newCNT - 1] - 1; l > bottom_layer; l--) {
+              tmpX[newCNT] = tmpX[newCNT - 1];
+              tmpY[newCNT] = tmpY[newCNT - 1];
+              tmpL[newCNT] = l;
+              newCNT++;
+            }
+
             for (int l = bottom_layer; l <= top_layer; l++) {
               tmpX[newCNT] = tmpX[newCNT - 1];
               tmpY[newCNT] = tmpY[newCNT - 1];
               tmpL[newCNT] = l;
               newCNT++;
               numVIAT1++;
+            }
+          } else {
+            for (int l = top_layer - 1; l >= bottom_layer; l--) {
+              tmpX[newCNT] = tmpX[newCNT - 1];
+              tmpY[newCNT] = tmpY[newCNT - 1];
+              tmpL[newCNT] = l;
+              newCNT++;
+              if (node1_alias >= num_terminals) {
+                numVIAT2++;
+              }
             }
           }
         }
