@@ -6371,14 +6371,14 @@ void HierRTLMP::setMacroPlacementFile(const std::string& file_name)
 
 void HierRTLMP::writeMacroPlacement(const std::string& file_name)
 {
+  if (file_name.empty()) {
+    return;
+  }
+
   logger_->warn(MPL,
                 39,
                 "The flag -write_macro_placement is deprecated. Use the .tcl "
                 "command write_macro_placement instead.");
-
-  if (file_name.empty()) {
-    return;
-  }
 
   std::ofstream out(file_name);
 
