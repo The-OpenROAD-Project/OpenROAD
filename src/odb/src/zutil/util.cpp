@@ -143,8 +143,10 @@ void RUDYCalculator::calculateRUDY()
         = std::max(rudy_adjustment, tech_layer->getLayerAdjustment());
   }
 
-  if (rudy_adjustment == 0.0)
+  if (rudy_adjustment == 0.0) {
     return;
+  }
+  rudy_adjustment *= 100;
   for (int x = 0; x < tileCntX_; ++x) {
     for (int y = 0; y < tileCntY_; ++y) {
       Tile& tile = getEditableTile(x, y);
