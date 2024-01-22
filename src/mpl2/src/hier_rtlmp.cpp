@@ -2248,13 +2248,15 @@ void HierRTLMP::breakMixedLeaves(
     const std::vector<std::vector<Cluster*>>& mixed_leaves)
 {
   for (const std::vector<Cluster*>& sister_mixed_leaves : mixed_leaves) {
-    Cluster* parent = sister_mixed_leaves[0]->getParent();
+    if (!sister_mixed_leaves.empty()) {
+      Cluster* parent = sister_mixed_leaves.front()->getParent();
 
-    for (Cluster* mixed_leaf : sister_mixed_leaves) {
-      breakMixedLeaf(mixed_leaf);
+      for (Cluster* mixed_leaf : sister_mixed_leaves) {
+        breakMixedLeaf(mixed_leaf);
+      }
+
+      setInstProperty(parent);
     }
-
-    setInstProperty(parent);
   }
 }
 
