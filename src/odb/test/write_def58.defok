@@ -40,7 +40,7 @@ PINS 12 ;
     - out[7] + NET out[7] + DIRECTION OUTPUT + USE SIGNAL ;
     - out[8] + NET out[8] + DIRECTION OUTPUT + USE SIGNAL ;
 END PINS
-SPECIALNETS 1 ;
+SPECIALNETS 2 ;
     - VDD ( * vdd ) + USE POWER
       + ROUTED metal1 0 + SHAPE IOWIRE ( 50 50 ) M2_M1_via
       NEW metal1 0 + SHAPE IOWIRE ( 50 55 ) M2_M1_via
@@ -50,6 +50,13 @@ SPECIALNETS 1 ;
       NEW metal1 0 + SHAPE IOWIRE ( 52 55 ) M2_M1_via
       NEW metal1 0 + SHAPE IOWIRE ( 52 60 ) M2_M1_via
       NEW metal1 0 + SHAPE IOWIRE ( 52 65 ) M2_M1_via ;
+    - VSS + USE GROUND
+      + FIXED metal3 10 + SHAPE RING + MASK 2 + ( 5 0 ) ( 5 10 )
+      + ROUTED metal1 2000 ( 10 0 ) MASK 3 ( 10 20 )
+      NEW metal1 0 ( 10 20 ) M2_M1_via
+      NEW metal2 1000 ( 10 10 ) ( 20 10 )
+      NEW metal2 1000 ( 20 10 ) MASK 1 ( 20 20 )
+      NEW metal1 0 ( 20 20 ) MASK 031 M2_M1_via ;
 END SPECIALNETS
 NETS 24 ;
     - _w0_ ( _g0_ Y ) ( _d1_ D ) ( _d0_ D ) ( _d2_ D ) + USE SIGNAL
