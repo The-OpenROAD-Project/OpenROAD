@@ -31,13 +31,6 @@ Net: req_msg[28]
       Required ratio:  400.00 (Side area) (VIOLATED)
 
 
-Net: resp_msg[11]
-  Pin: _648_/A (sky130_fd_sc_hs__nand2_1)
-    Layer: met2
-      Partial area ratio:  404.81
-      Required ratio:  400.00 (Side area) (VIOLATED)
-
-
 Net: resp_msg[14]
   Pin: _658_/A (sky130_fd_sc_hs__nand2_1)
     Layer: met2
@@ -59,5 +52,5 @@ Net: _229_
       Required ratio:  400.00 (Side area) (VIOLATED)
 
 
-[INFO ANT-0002] Found 7 net violations.
-[INFO ANT-0001] Found 7 pin violations.
+[INFO ANT-0002] Found 6 net violations.
+[INFO ANT-0001] Found 6 pin violations.

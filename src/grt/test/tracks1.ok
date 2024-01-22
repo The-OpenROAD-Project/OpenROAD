@@ -41,8 +41,8 @@ met5       Horizontal       2964          2886          2.63%
 [INFO GRT-0197] Via related to pin nodes: 64
 [INFO GRT-0198] Via related Steiner nodes: 8
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 102
-[INFO GRT-0112] Final usage 3D: 463
+[INFO GRT-0111] Final number of vias: 91
+[INFO GRT-0112] Final usage 3D: 430
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
