@@ -10,6 +10,6 @@
 Found 0 macro blocks.
 Using 2 tracks default min distance between IO pins.
 [WARNING PPL-0110] Constraint has 54 pins, but only 52 available slots.
-Increase the region in at least 0.52um.
+Increase the region 10-30 on the TOP edge in at least 0.52um.
 [ERROR PPL-0111] 1 constraint(s) does not have available slots for the pins.
 PPL-0111

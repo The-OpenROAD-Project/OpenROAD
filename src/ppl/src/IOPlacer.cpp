@@ -762,9 +762,9 @@ int IOPlacer::computeRegionIncrease(const Interval& interval,
   return increase;
 }
 
-int IOPlacer::computeIncrease(int min_dist,
-                              const int num_pins,
-                              const int curr_length)
+int64_t IOPlacer::computeIncrease(int min_dist,
+                                  const int num_pins,
+                                  const int64_t curr_length)
 {
   const bool dist_in_tracks = parms_->getMinDistanceInTracks();
   const int user_min_dist = parms_->getMinDistance();
@@ -777,7 +777,7 @@ int IOPlacer::computeIncrease(int min_dist,
     min_dist *= default_min_dist_;
   }
 
-  const int increase = (num_pins * min_dist) - curr_length;
+  const int64_t increase = (num_pins * min_dist) - curr_length;
   return increase;
 }
 
@@ -921,12 +921,26 @@ void IOPlacer::defineSlots()
   int regular_pin_count = static_cast<int>(netlist_io_pins_->getIOPins().size())
                           - top_layer_pins_count_;
   if (regular_pin_count > slots_.size()) {
+    int min_dist = std::numeric_limits<int>::min();
+    for (int layer_idx : ver_layers_) {
+      const int layer_min_dist = core_->getMinDstPinsX()[layer_idx];
+      min_dist = std::max(layer_min_dist, min_dist);
+    }
+    for (int layer_idx : hor_layers_) {
+      const int layer_min_dist = core_->getMinDstPinsY()[layer_idx];
+      min_dist = std::max(layer_min_dist, min_dist);
+    }
+
+    int64_t die_margin = getBlock()->getDieArea().margin();
+    int64_t increase = computeIncrease(min_dist, regular_pin_count, die_margin);
+
     logger_->error(PPL,
                    24,
                    "Number of IO pins ({}) exceeds maximum number of available "
-                   "positions ({}).",
+                   "positions ({}). Increase the die width or height in {}um.",
                    regular_pin_count,
-                   slots_.size());
+                   slots_.size(),
+                   dbuToMicrons(increase));
   }
 
   if (top_layer_pins_count_ > top_layer_slots_.size()) {
