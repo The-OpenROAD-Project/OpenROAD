@@ -244,8 +244,10 @@ class deltaDebugger:
     def poll(self, process, poll_obj, start_time):
         output = ''
         error_string = None  # None for any error code other than self.error_string
-        while (True):
-            if (poll_obj.poll(0)):  # polling on the output of the process
+        while True:
+            # polling on the output of the process with a timeout of 1 second
+            # to avoid busywaiting
+            if poll_obj.poll(1):
                 if (self.use_stdout == 0):
                     output = process.stderr.readline()  
                 else:
