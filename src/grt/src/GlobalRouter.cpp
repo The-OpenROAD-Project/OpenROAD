@@ -1597,10 +1597,12 @@ void GlobalRouter::updateVias()
       odb::Point seg2_init(seg2.init_x, seg2.init_y);
       odb::Point seg2_final(seg2.final_x, seg2.final_y);
 
-      if (seg1.isVia() && seg1.init_layer < seg2.init_layer
+      // if a via segment is adjacent to the next wire segment, ensure
+      // the via will connect to the segment
+      if (seg1.isVia() && seg1.init_layer == seg2.init_layer - 1
           && (seg1_init == seg2_init || seg1_init == seg2_final)) {
         seg1.final_layer = seg2.init_layer;
-      } else if (seg2.isVia() && seg2.init_layer < seg1.init_layer
+      } else if (seg2.isVia() && seg2.init_layer == seg1.init_layer - 1
                  && (seg2_init == seg1_init || seg2_init == seg1_final)) {
         seg2.init_layer = seg1.final_layer;
       }
