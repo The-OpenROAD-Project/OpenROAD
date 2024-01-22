@@ -1483,6 +1483,9 @@ void RenderThread::drawIOPins(Painter& painter,
     if (restart_) {
       break;
     }
+    if (!viewer_->isNetVisible(term->getNet())) {
+      continue;
+    }
     for (odb::dbBPin* pin : term->getBPins()) {
       odb::dbPlacementStatus status = pin->getPlacementStatus();
       if (!status.isPlaced()) {
@@ -1491,6 +1494,10 @@ void RenderThread::drawIOPins(Painter& painter,
       auto pin_dir = term->getIoType();
       for (odb::dbBox* box : pin->getBoxes()) {
         if (!box) {
+          continue;
+        }
+        odb::dbTechLayer* layer = box->getTechLayer();
+        if (!viewer_->options_->isVisible(layer)) {
           continue;
         }
 
@@ -1529,7 +1536,6 @@ void RenderThread::drawIOPins(Painter& painter,
           }
         }
 
-        odb::dbTechLayer* layer = box->getTechLayer();
         painter.setPen(layer);
         painter.setBrush(layer);
 
@@ -1551,12 +1557,6 @@ void RenderThread::drawIOPins(Painter& painter,
 
         // draw marker to indicate signal direction
         painter.drawPolygon(marker);
-
-        if (!viewer_->isNetVisible(term->getNet())) {
-          // draw pin's geometry only when it's not
-          // already being drawn by its Net
-          painter.drawRect(box->getBox());
-        }
 
         if (draw_names) {
           Point text_anchor_pt = xfm.getOffset();
