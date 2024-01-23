@@ -1,5 +1,5 @@
 tool net total_wl #pins #vias li1_wl met1_wl met2_wl met3_wl met4_wl met5_wl 
-grt: clk 201.6 2 3 0 3 0 3 0 3 144 3 57.6 3 0
+grt: clk 201.6 2 2 0 2 0 2 0 2 144 2 57.6 2 0
 drt: clk 184.95 2 5 0 5 0.215 5 0.185 5 134.97 5 49.58 5 0
-grt: net60 14.4 2 3 0 3 0 3 14.4 3 0 3 0 3 0
+grt: net60 14.4 2 2 0 2 0 2 14.4 2 0 2 0 2 0
 drt: net60 13.39 2 3 0 3 3.77 3 9.62 3 0 3 0 3 0
