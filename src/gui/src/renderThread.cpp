@@ -923,7 +923,7 @@ void RenderThread::drawLayer(QPainter* painter,
       }
     }
 
-    if (draw_shapes && viewer_->options_->areSpecialRoutingViasVisible()) {
+    if (viewer_->options_->areSpecialRoutingViasVisible()) {
       if (layer->getType() == dbTechLayerType::CUT) {
         drawViaShapes(painter, block, layer, layer, bounds, shape_limit);
       } else {

@@ -439,7 +439,7 @@ void Search::addNet(odb::dbNet* net)
 {
   odb::dbWire* wire = net->getWire();
 
-  if (wire == NULL) {
+  if (wire == nullptr) {
     return;
   }
 
