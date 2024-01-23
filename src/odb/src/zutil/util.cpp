@@ -132,22 +132,23 @@ void RUDYCalculator::calculateRUDY()
   }
 
   float rudy_adjustment = 0.0;
+  float total_weight = 0.0;
   odb::dbTech* tech = block_->getTech();
   for (int l = 1; l <= tech->getRoutingLayerCount(); l++) {
     odb::dbTechLayer* tech_layer = tech->findRoutingLayer(l);
     if (tech_layer == nullptr) {
       continue;
     }
-    rudy_adjustment += tech_layer->getLayerAdjustment();
+
+    float pitch = static_cast<float>(tech_layer->getPitch());
+    rudy_adjustment += (tech_layer->getLayerAdjustment() * pitch);
+    total_weight += pitch;
   }
 
-  if (rudy_adjustment == 0.0) {
+  if (total_weight == 0.0) {
     return;
   }
-
-  if (tech->getRoutingLayerCount() > 1) {
-    rudy_adjustment /= (tech->getRoutingLayerCount() - 1);
-  }
+  rudy_adjustment /= total_weight;
   rudy_adjustment *= 100;
 
   for (int x = 0; x < tileCntX_; ++x) {

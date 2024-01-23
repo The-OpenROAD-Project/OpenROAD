@@ -1130,9 +1130,7 @@ void GlobalRouter::computeUserGlobalAdjustments(int min_routing_layer,
     return;
 
   for (int l = min_routing_layer; l <= max_routing_layer; l++) {
-    if (db_->getTech()->findRoutingLayer(l)->getLayerAdjustment() == 0.0) {
-      db_->getTech()->findRoutingLayer(l)->setLayerAdjustment(adjustment_);
-    }
+    db_->getTech()->findRoutingLayer(l)->setLayerAdjustment(adjustment_);
   }
 }
 
