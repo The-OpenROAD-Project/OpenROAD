@@ -884,8 +884,8 @@ void RenderThread::drawLayer(QPainter* painter,
 
   drawObstructions(block, layer, painter, bounds);
 
-  const bool draw_routing = viewer_->options_->isRoutingVisible();
-  const bool draw_vias = viewer_->options_->areViasVisible();
+  const bool draw_routing = viewer_->options_->areRoutingSegmentsVisible();
+  const bool draw_vias = viewer_->options_->areRoutingViasVisible();
   // Now draw the shapes
   QColor color = getColor(layer);
   Qt::BrushStyle brush_pattern = getPattern(layer);
@@ -944,7 +944,7 @@ void RenderThread::drawLayer(QPainter* painter,
       }
     }
 
-    if (viewer_->options_->isSpecialRoutingVisible()) {
+    if (viewer_->options_->areSpecialRoutingSegmentsVisible()) {
       auto polygon_iter = viewer_->search_.searchSNetShapes(block,
                                                             layer,
                                                             bounds.xMin(),

@@ -432,15 +432,25 @@ DisplayControls::DisplayControls(QWidget* parent)
   // Shape type group
   auto shape_types
       = makeParentItem(shape_type_group_, "Shape Types", root, Qt::Checked);
-  makeLeafItem(shape_types_.routing, "Routing", shape_types, Qt::Checked);
-  makeLeafItem(shape_types_.vias, "Vias", shape_types, Qt::Checked);
-  makeLeafItem(shape_types_.special_routing,
-               "Special routing",
-               shape_types,
+  auto shape_types_routing = makeParentItem(
+      shape_types_.routing_group, "Routing", shape_types, Qt::Checked);
+  makeLeafItem(shape_types_.routing.segments,
+               "Segments",
+               shape_types_routing,
                Qt::Checked);
-  makeLeafItem(shape_types_.special_routing_vias,
-               "Special routing vias",
-               shape_types,
+  makeLeafItem(
+      shape_types_.routing.vias, "Vias", shape_types_routing, Qt::Checked);
+  auto shape_types_srouting = makeParentItem(shape_types_.special_routing_group,
+                                             "Special Routing",
+                                             shape_types,
+                                             Qt::Checked);
+  makeLeafItem(shape_types_.special_routing.segments,
+               "Segments",
+               shape_types_srouting,
+               Qt::Checked);
+  makeLeafItem(shape_types_.special_routing.vias,
+               "Vias",
+               shape_types_srouting,
                Qt::Checked);
   makeLeafItem(shape_types_.pins, "Pins", shape_types, Qt::Checked);
   pin_markers_font_ = QApplication::font();  // use default font
@@ -1685,24 +1695,24 @@ bool DisplayControls::areIOPinsVisible() const
   return isModelRowVisible(&shape_types_.pins);
 }
 
-bool DisplayControls::isRoutingVisible() const
+bool DisplayControls::areRoutingSegmentsVisible() const
 {
-  return isModelRowVisible(&shape_types_.routing);
+  return isModelRowVisible(&shape_types_.routing.segments);
 }
 
-bool DisplayControls::areViasVisible() const
+bool DisplayControls::areRoutingViasVisible() const
 {
-  return isModelRowVisible(&shape_types_.vias);
+  return isModelRowVisible(&shape_types_.routing.vias);
 }
 
-bool DisplayControls::isSpecialRoutingVisible() const
+bool DisplayControls::areSpecialRoutingSegmentsVisible() const
 {
-  return isModelRowVisible(&shape_types_.special_routing);
+  return isModelRowVisible(&shape_types_.special_routing.segments);
 }
 
 bool DisplayControls::areSpecialRoutingViasVisible() const
 {
-  return isModelRowVisible(&shape_types_.special_routing_vias);
+  return isModelRowVisible(&shape_types_.special_routing.vias);
 }
 
 bool DisplayControls::areFillsVisible() const

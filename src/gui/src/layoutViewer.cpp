@@ -615,8 +615,8 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
       }
     }
 
-    const bool routing_visible = options_->isRoutingVisible();
-    const bool vias_visible = options_->areViasVisible();
+    const bool routing_visible = options_->areRoutingSegmentsVisible();
+    const bool vias_visible = options_->areRoutingViasVisible();
     if (routing_visible || vias_visible) {
       auto box_shapes = search_.searchBoxShapes(block_,
                                                 layer,
@@ -654,7 +654,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
       }
     }
 
-    if (options_->isSpecialRoutingVisible()) {
+    if (options_->areSpecialRoutingSegmentsVisible()) {
       auto polygon_shapes = search_.searchSNetShapes(block_,
                                                      layer,
                                                      search_line.xMin(),
@@ -833,8 +833,8 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
       }
     }
 
-    const bool routing_visible = options_->isRoutingVisible();
-    const bool vias_visible = options_->areViasVisible();
+    const bool routing_visible = options_->areRoutingSegmentsVisible();
+    const bool vias_visible = options_->areRoutingViasVisible();
     if (routing_visible || vias_visible) {
       auto box_shapes = search_.searchBoxShapes(block_,
                                                 layer,
@@ -870,7 +870,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
       }
     }
 
-    if (options_->isSpecialRoutingVisible()) {
+    if (options_->areSpecialRoutingSegmentsVisible()) {
       auto polygon_shapes = search_.searchSNetShapes(block_,
                                                      layer,
                                                      region.xMin(),

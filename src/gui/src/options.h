@@ -84,9 +84,9 @@ class Options
   virtual bool areNonPrefTracksVisible() = 0;
 
   virtual bool areIOPinsVisible() const = 0;
-  virtual bool isRoutingVisible() const = 0;
-  virtual bool areViasVisible() const = 0;
-  virtual bool isSpecialRoutingVisible() const = 0;
+  virtual bool areRoutingSegmentsVisible() const = 0;
+  virtual bool areRoutingViasVisible() const = 0;
+  virtual bool areSpecialRoutingSegmentsVisible() const = 0;
   virtual bool areSpecialRoutingViasVisible() const = 0;
   virtual bool areFillsVisible() const = 0;
   virtual QFont pinMarkersFont() const = 0;
