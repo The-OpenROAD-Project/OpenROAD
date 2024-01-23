@@ -20,7 +20,8 @@ COMPONENTS 12 ;
 - _d8_ DFFPOSX1 ;
 - _g0_ NOR2X1 ;
 - _g1_ NOR2X1 ;
-- _g2_ NOR2X1 ;
+- _g2_ NOR2X1 
+   + HALO 81 0 81 0 ;
 END COMPONENTS
 
 PINS 12 ;

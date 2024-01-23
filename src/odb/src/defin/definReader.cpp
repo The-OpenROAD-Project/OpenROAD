@@ -479,10 +479,6 @@ int definReader::componentsCallback(defrCallbackType_e /* unused: type */,
     UNSUPPORTED("MASKSHIFT on component is unsupported");
   }
 
-  if (comp->hasHalo() > 0) {
-    UNSUPPORTED("HALO on component is unsupported");
-  }
-
   if (comp->hasRouteHalo() > 0) {
     UNSUPPORTED("ROUTEHALO on component is unsupported");
   }
@@ -496,6 +492,11 @@ int definReader::componentsCallback(defrCallbackType_e /* unused: type */,
   }
   if (comp->hasRegionName()) {
     componentR->region(comp->regionName());
+  }
+  if (comp->hasHalo() > 0) {
+    int left, bottom, right, top;
+    comp->haloEdges(&left, &bottom, &right, &top);
+    componentR->halo(left, bottom, right, top);
   }
 
   componentR->placement(comp->placementStatus(),
@@ -1023,13 +1024,11 @@ int definReader::pinCallback(defrCallbackType_e /* unused: type */,
 
       // For a given port, add all boxes/shapes belonging to that port
       for (int i = 0; i < port->numLayer(); ++i) {
-        if (port->layerMask(i) != 0) {
-          UNSUPPORTED("MASK on pin's layer is unsupported");
-        }
+        uint mask = port->layerMask(i);
 
         int xl, yl, xh, yh;
         port->bounds(i, &xl, &yl, &xh, &yh);
-        pinR->pinRect(port->layer(i), xl, yl, xh, yh);
+        pinR->pinRect(port->layer(i), xl, yl, xh, yh, mask);
 
         if (port->hasLayerSpacing(i)) {
           pinR->pinMinSpacing(port->layerSpacing(i));
@@ -1065,13 +1064,11 @@ int definReader::pinCallback(defrCallbackType_e /* unused: type */,
 
     // Add boxes/shapes for the pin with single port
     for (int i = 0; i < pin->numLayer(); ++i) {
-      if (pin->layerMask(i) != 0) {
-        UNSUPPORTED("MASK on pin's layer is unsupported");
-      }
+      uint mask = pin->layerMask(i);
 
       int xl, yl, xh, yh;
       pin->bounds(i, &xl, &yl, &xh, &yh);
-      pinR->pinRect(pin->layer(i), xl, yl, xh, yh);
+      pinR->pinRect(pin->layer(i), xl, yl, xh, yh, mask);
 
       if (pin->hasLayerSpacing(i)) {
         pinR->pinMinSpacing(pin->layerSpacing(i));
@@ -1535,9 +1532,14 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
 
   if (net->numRectangles()) {
     for (int i = 0; i < net->numRectangles(); i++) {
-      snetR->wire(net->rectShapeType(i), net->rectRouteStatusShieldName(i));
-      snetR->rect(
-          net->rectName(i), net->xl(i), net->yl(i), net->xh(i), net->yh(i));
+      snetR->wire(net->rectRouteStatus(i), net->rectRouteStatusShieldName(i));
+      snetR->rect(net->rectName(i),
+                  net->xl(i),
+                  net->yl(i),
+                  net->xh(i),
+                  net->yh(i),
+                  net->rectShapeType(i),
+                  net->rectMask(i));
       snetR->wireEnd();
     }
   }
@@ -1554,6 +1556,10 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
       std::string layerName;
 
       int pathId;
+      uint next_mask = 0;
+      uint next_via_bottom_mask = 0;
+      uint next_via_cut_mask = 0;
+      uint next_via_top_mask = 0;
       while ((pathId = path->next()) != DEFIPATH_DONE) {
         switch (pathId) {
           case DEFIPATH_LAYER:
@@ -1574,7 +1580,10 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
               path->getViaData(&numX, &numY, &stepX, &stepY);
               snetR->pathViaArray(viaName, numX, numY, stepX, stepY);
             } else {
-              snetR->pathVia(viaName);
+              snetR->pathVia(viaName,
+                             next_via_bottom_mask,
+                             next_via_cut_mask,
+                             next_via_top_mask);
               path->prev();  // put back the token
             }
             break;
@@ -1589,7 +1598,7 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
             int x;
             int y;
             path->getPoint(&x, &y);
-            snetR->pathPoint(x, y);
+            snetR->pathPoint(x, y, next_mask);
             break;
           }
 
@@ -1598,7 +1607,7 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
             int y;
             int ext;
             path->getFlushPoint(&x, &y, &ext);
-            snetR->pathPoint(x, y, ext);
+            snetR->pathPoint(x, y, ext, next_mask);
             break;
           }
 
@@ -1611,12 +1620,26 @@ int definReader::specialNetCallback(defrCallbackType_e /* unused: type */,
             break;
 
           case DEFIPATH_MASK:
+            next_mask = path->getMask();
+            break;
+
           case DEFIPATH_VIAMASK:
-            UNSUPPORTED("MASK in special net's routing is unsupported");
+            next_via_bottom_mask = path->getViaBottomMask();
+            next_via_cut_mask = path->getViaCutMask();
+            next_via_top_mask = path->getViaTopMask();
+            break;
 
           default:
             UNSUPPORTED(
                 "Unknown construct in special net's routing is unsupported");
+        }
+        if (pathId != DEFIPATH_MASK) {
+          next_mask = 0;
+        }
+        if (pathId != DEFIPATH_VIAMASK) {
+          next_via_bottom_mask = 0;
+          next_via_cut_mask = 0;
+          next_via_top_mask = 0;
         }
       }
       snetR->pathEnd();

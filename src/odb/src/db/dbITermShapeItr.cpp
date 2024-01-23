@@ -53,9 +53,7 @@ void dbITermShapeItr::begin(dbITerm* iterm)
   _iterm = iterm;
   dbInst* inst = iterm->getInst();
   _mterm = iterm->getMTerm();
-  int x, y;
-  inst->getOrigin(x, y);
-  _transform = dbTransform(inst->getOrient(), Point(x, y));
+  _transform = inst->getTransform();
   _state = 0;
 }
 
