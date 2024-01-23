@@ -49,6 +49,7 @@ add_executable(fft_test fft_test.cc)
 target_include_directories(fft_test
   PUBLIC
   ${PROJECT_SOURCE_DIR}
+  ${POCKETFFT_INCLUDE_DIR}
 )
 
 target_link_libraries(fft_test

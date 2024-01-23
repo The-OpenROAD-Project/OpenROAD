@@ -38,6 +38,9 @@ include("openroad")
 # For Multithread
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_FFT2D_PTHREADS=1 -DFFT_2D_MAX_THREADS=16 -O3 ${OpenMP_CXX_FLAGS}")
 
+# Enable AVX extension for x86
+set(CMAKE_CXX_FLAGS "-mavx")
+
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 find_package(Eigen3 REQUIRED)
@@ -71,10 +74,17 @@ target_sources(gpl
 
 messages(TARGET gpl)
 
+get_filename_component(
+  POCKETFFT_INCLUDE_DIR
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../third-party/pocketfft
+  ABSOLUTE
+)
+
 target_include_directories(gpl
   PUBLIC
     include
     ${LEMON_INCLUDE_DIRS}
+    ${POCKETFFT_INCLUDE_DIR}
 )
 
 target_link_libraries(gpl
