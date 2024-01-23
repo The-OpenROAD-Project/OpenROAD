@@ -427,16 +427,17 @@ void FastRouteCore::fixEdgeAssignment(int& net_layer,
                                       int k,
                                       int l,
                                       bool vertical,
-                                      int& best_cost)
+                                      int& best_cost,
+                                      multi_array<int, 2>& layer_grid)
 {
   bool is_vertical = layer_directions_[l] == odb::dbTechLayerDir::VERTICAL;
   // if layer direction doesn't match edge direction or
   // if already found a layer for the edge, ignores the remaining layers
   if (is_vertical != vertical || best_cost > 0) {
-    layer_grid_[l][k] = std::numeric_limits<int>::min();
+    layer_grid[l][k] = std::numeric_limits<int>::min();
   } else {
-    layer_grid_[l][k] = edges_3D[l][y][x].cap - edges_3D[l][y][x].usage;
-    best_cost = std::max(best_cost, layer_grid_[l][k]);
+    layer_grid[l][k] = edges_3D[l][y][x].cap - edges_3D[l][y][x].usage;
+    best_cost = std::max(best_cost, layer_grid[l][k]);
     if (best_cost > 0) {
       // set the new min/max routing layer for the net to avoid
       // errors during mazeRouteMSMDOrder3D
@@ -476,6 +477,8 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
     }
   }
 
+  multi_array<int, 2> layer_grid;
+  layer_grid.resize(boost::extents[num_layers_][routelen + 1]);
   for (k = 0; k < routelen; k++) {
     int best_cost = std::numeric_limits<int>::min();
     if (gridsX[k] == gridsX[k + 1]) {
@@ -485,11 +488,11 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         bool is_vertical
             = layer_directions_[l] == odb::dbTechLayerDir::VERTICAL;
         if (is_vertical) {
-          layer_grid_[l][k] = v_edges_3D_[l][min_y][gridsX[k]].cap
-                              - v_edges_3D_[l][min_y][gridsX[k]].usage;
-          best_cost = std::max(best_cost, layer_grid_[l][k]);
+          layer_grid[l][k] = v_edges_3D_[l][min_y][gridsX[k]].cap
+                             - v_edges_3D_[l][min_y][gridsX[k]].usage;
+          best_cost = std::max(best_cost, layer_grid[l][k]);
         } else {
-          layer_grid_[l][k] = std::numeric_limits<int>::min();
+          layer_grid[l][k] = std::numeric_limits<int>::min();
         }
       }
 
@@ -499,22 +502,36 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         // layer
         int min_layer = net->getMinLayer();
         for (l = net->getMinLayer() - 1; l >= 0; l--) {
-          fixEdgeAssignment(
-              min_layer, v_edges_3D_, gridsX[k], min_y, k, l, true, best_cost);
+          fixEdgeAssignment(min_layer,
+                            v_edges_3D_,
+                            gridsX[k],
+                            min_y,
+                            k,
+                            l,
+                            true,
+                            best_cost,
+                            layer_grid);
         }
         net->setMinLayer(min_layer);
         // try to assign the edge to the closest layer above the max routing
         // layer
         int max_layer = net->getMaxLayer();
         for (l = net->getMaxLayer() + 1; l < num_layers_; l++) {
-          fixEdgeAssignment(
-              max_layer, v_edges_3D_, gridsX[k], min_y, k, l, true, best_cost);
+          fixEdgeAssignment(max_layer,
+                            v_edges_3D_,
+                            gridsX[k],
+                            min_y,
+                            k,
+                            l,
+                            true,
+                            best_cost,
+                            layer_grid);
         }
         net->setMaxLayer(max_layer);
       } else {  // the edge was assigned to a layer without causing overflow
         for (l = 0; l < num_layers_; l++) {
           if (l < net->getMinLayer() || l > net->getMaxLayer()) {
-            layer_grid_[l][k] = std::numeric_limits<int>::min();
+            layer_grid[l][k] = std::numeric_limits<int>::min();
           }
         }
       }
@@ -526,11 +543,11 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         bool is_horizontal
             = layer_directions_[l] == odb::dbTechLayerDir::HORIZONTAL;
         if (is_horizontal) {
-          layer_grid_[l][k] = h_edges_3D_[l][gridsY[k]][min_x].cap
-                              - h_edges_3D_[l][gridsY[k]][min_x].usage;
-          best_cost = std::max(best_cost, layer_grid_[l][k]);
+          layer_grid[l][k] = h_edges_3D_[l][gridsY[k]][min_x].cap
+                             - h_edges_3D_[l][gridsY[k]][min_x].usage;
+          best_cost = std::max(best_cost, layer_grid[l][k]);
         } else {
-          layer_grid_[l][k] = std::numeric_limits<int>::min();
+          layer_grid[l][k] = std::numeric_limits<int>::min();
         }
       }
 
@@ -540,22 +557,36 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         // layer
         int min_layer = net->getMinLayer();
         for (l = net->getMinLayer() - 1; l >= 0; l--) {
-          fixEdgeAssignment(
-              min_layer, h_edges_3D_, min_x, gridsY[k], k, l, false, best_cost);
+          fixEdgeAssignment(min_layer,
+                            h_edges_3D_,
+                            min_x,
+                            gridsY[k],
+                            k,
+                            l,
+                            false,
+                            best_cost,
+                            layer_grid);
         }
         net->setMinLayer(min_layer);
         // try to assign the edge to the closest layer above the max routing
         // layer
         int max_layer = net->getMaxLayer();
         for (l = net->getMaxLayer() + 1; l < num_layers_; l++) {
-          fixEdgeAssignment(
-              max_layer, h_edges_3D_, min_x, gridsY[k], k, l, false, best_cost);
+          fixEdgeAssignment(max_layer,
+                            h_edges_3D_,
+                            min_x,
+                            gridsY[k],
+                            k,
+                            l,
+                            false,
+                            best_cost,
+                            layer_grid);
         }
         net->setMaxLayer(max_layer);
       } else {  // the edge was assigned to a layer without causing overflow
         for (l = 0; l < num_layers_; l++) {
           if (l < net->getMinLayer() || l > net->getMaxLayer()) {
-            layer_grid_[l][k] = std::numeric_limits<int>::min();
+            layer_grid[l][k] = std::numeric_limits<int>::min();
           }
         }
       }
@@ -590,9 +621,9 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         }
       }
       for (l = 0; l < num_layers_; l++) {
-        if (layer_grid_[l][k] > 0) {
+        if (layer_grid[l][k] > 0) {
           gridD[l][k + 1] = gridD[l][k] + 1;
-        } else if (layer_grid_[l][k] == std::numeric_limits<int>::min()) {
+        } else if (layer_grid[l][k] == std::numeric_limits<int>::min()) {
           // when the layer orientation doesn't match the edge orientation,
           // set a larger weight to avoid assigning to this layer when the
           // routing has 3D overflow
@@ -705,9 +736,9 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         }
       }
       for (l = 0; l < num_layers_; l++) {
-        if (layer_grid_[l][k - 1] > 0) {
+        if (layer_grid[l][k - 1] > 0) {
           gridD[l][k - 1] = gridD[l][k] + 1;
-        } else if (layer_grid_[l][k] == std::numeric_limits<int>::min()) {
+        } else if (layer_grid[l][k] == std::numeric_limits<int>::min()) {
           // when the layer orientation doesn't match the edge orientation,
           // set a larger weight to avoid assigning to this layer when the
           // routing has 3D overflow
