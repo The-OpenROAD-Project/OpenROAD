@@ -830,7 +830,7 @@ void RenderThread::drawViaShapes(QPainter* painter,
                                  const Rect& bounds,
                                  const int shape_limit)
 {
-  auto via_sbox_iter = viewer_->search_.searchViaSBoxShapes(block,
+  auto via_sbox_iter = viewer_->search_.searchSNetViaShapes(block,
                                                             cut_layer,
                                                             bounds.xMin(),
                                                             bounds.yMin(),
@@ -884,73 +884,89 @@ void RenderThread::drawLayer(QPainter* painter,
 
   drawObstructions(block, layer, painter, bounds);
 
+  const bool draw_routing = viewer_->options_->isRoutingVisible();
+  const bool draw_vias = viewer_->options_->areViasVisible();
+  // Now draw the shapes
+  QColor color = getColor(layer);
+  Qt::BrushStyle brush_pattern = getPattern(layer);
+  painter->setBrush(QBrush(color, brush_pattern));
+  painter->setPen(QPen(color, 0));
   if (draw_shapes) {
-    // Now draw the shapes
-    QColor color = getColor(layer);
-    Qt::BrushStyle brush_pattern = getPattern(layer);
-    painter->setBrush(QBrush(color, brush_pattern));
-    painter->setPen(QPen(color, 0));
-    auto box_iter = viewer_->search_.searchBoxShapes(block,
-                                                     layer,
-                                                     bounds.xMin(),
-                                                     bounds.yMin(),
-                                                     bounds.xMax(),
-                                                     bounds.yMax(),
-                                                     shape_limit);
+    if (draw_routing || draw_vias) {
+      auto box_iter = viewer_->search_.searchBoxShapes(block,
+                                                       layer,
+                                                       bounds.xMin(),
+                                                       bounds.yMin(),
+                                                       bounds.xMax(),
+                                                       bounds.yMax(),
+                                                       shape_limit);
 
-    for (auto& [box, net] : box_iter) {
-      if (restart_) {
-        break;
-      }
-      if (!viewer_->isNetVisible(net)) {
-        continue;
-      }
-      const auto& ll = box.min_corner();
-      const auto& ur = box.max_corner();
-      painter->drawRect(
-          QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
-    }
-
-    if (layer->getType() == dbTechLayerType::CUT) {
-      drawViaShapes(painter, block, layer, layer, bounds, shape_limit);
-    } else {
-      // Get the enclosure shapes from any vias on the cut layers
-      // above or below this one.  Skip enclosure shapes if they
-      // will be too small based on the cut size (enclosure shapes
-      // are generally only slightly larger).
-      if (auto upper = layer->getUpperLayer()) {
-        if (viewer_->cut_maximum_size_[upper] >= shape_limit) {
-          drawViaShapes(painter, block, upper, layer, bounds, shape_limit);
+      for (auto& [box, is_via, net] : box_iter) {
+        if (restart_) {
+          break;
         }
-      }
-      if (auto lower = layer->getLowerLayer()) {
-        if (viewer_->cut_maximum_size_[lower] >= shape_limit) {
-          drawViaShapes(painter, block, lower, layer, bounds, shape_limit);
+        if (!draw_routing && !is_via) {
+          // Don't draw since it's a segment
+          continue;
         }
+        if (!draw_vias && is_via) {
+          // Don't draw since it's a via
+          continue;
+        }
+        if (!viewer_->isNetVisible(net)) {
+          continue;
+        }
+        const auto& ll = box.min_corner();
+        const auto& ur = box.max_corner();
+        painter->drawRect(
+            QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
       }
     }
 
-    auto polygon_iter = viewer_->search_.searchPolygonShapes(block,
-                                                             layer,
-                                                             bounds.xMin(),
-                                                             bounds.yMin(),
-                                                             bounds.xMax(),
-                                                             bounds.yMax(),
-                                                             shape_limit);
+    if (draw_shapes && viewer_->options_->areSpecialRoutingViasVisible()) {
+      if (layer->getType() == dbTechLayerType::CUT) {
+        drawViaShapes(painter, block, layer, layer, bounds, shape_limit);
+      } else {
+        // Get the enclosure shapes from any vias on the cut layers
+        // above or below this one.  Skip enclosure shapes if they
+        // will be too small based on the cut size (enclosure shapes
+        // are generally only slightly larger).
+        if (auto upper = layer->getUpperLayer()) {
+          if (viewer_->cut_maximum_size_[upper] >= shape_limit) {
+            drawViaShapes(painter, block, upper, layer, bounds, shape_limit);
+          }
+        }
+        if (auto lower = layer->getLowerLayer()) {
+          if (viewer_->cut_maximum_size_[lower] >= shape_limit) {
+            drawViaShapes(painter, block, lower, layer, bounds, shape_limit);
+          }
+        }
+      }
+    }
 
-    for (auto& [box, poly, net] : polygon_iter) {
-      if (restart_) {
-        break;
+    if (viewer_->options_->isSpecialRoutingVisible()) {
+      auto polygon_iter = viewer_->search_.searchSNetShapes(block,
+                                                            layer,
+                                                            bounds.xMin(),
+                                                            bounds.yMin(),
+                                                            bounds.xMax(),
+                                                            bounds.yMax(),
+                                                            shape_limit);
+
+      for (auto& [box, poly, net] : polygon_iter) {
+        if (restart_) {
+          break;
+        }
+        if (!viewer_->isNetVisible(net)) {
+          continue;
+        }
+        const int size = poly.outer().size();
+        QPolygon qpoly(size);
+        for (int i = 0; i < size; i++) {
+          qpoly.setPoint(i, poly.outer()[i].x(), poly.outer()[i].y());
+        }
+        painter->drawPolygon(qpoly);
       }
-      if (!viewer_->isNetVisible(net)) {
-        continue;
-      }
-      const int size = poly.outer().size();
-      QPolygon qpoly(size);
-      for (int i = 0; i < size; i++) {
-        qpoly.setPoint(i, poly.outer()[i].x(), poly.outer()[i].y());
-      }
-      painter->drawPolygon(qpoly);
     }
 
     // Now draw the fills
