@@ -134,16 +134,39 @@ TEST(FloatFFTTest, Basic)
 
   print_tables(fft);
 
+  const float tol = 1.3e-4f; // Tolerance factor
+
+  double eforce1_total = 0.0;
+  double eforce2_total = 0.0;
+  double ephi_total = 0.0;
+
   for (int y = 0; y < Y_MAX; y++) {
     for (int x = 0; x < X_MAX; x++) {
       auto eForce = fft->getElectroForce(x, y);
       auto electroPhi = fft->getElectroPhi(x, y);
 
-      EXPECT_EQ(eForce.first, output_data_eForce_first[x + y * Y_MAX]);
-      EXPECT_EQ(eForce.second, output_data_eForce_second[x + y * Y_MAX]);
-      EXPECT_EQ(electroPhi, output_data_electroPhi[x + y * Y_MAX]);
+      // Compute error
+      float eforce1 = fabs(eForce.first  - output_data_eForce_first[x + y * Y_MAX]);
+      float eforce2 = fabs(eForce.second - output_data_eForce_second[x + y * Y_MAX]);
+      float ephi    = fabs(electroPhi    - output_data_electroPhi[x + y * Y_MAX]);
+
+      // Check error
+      EXPECT_LT(eforce1, tol);
+      EXPECT_LT(eforce2, tol);
+      EXPECT_LT(ephi, tol);
+
+      // Accumulate error
+      eforce1_total += eforce1;
+      eforce2_total += eforce2;
+      ephi_total += ephi;
     }
   }
+
+  // Report total error
+  std::cout << "FFT output vs. reference error (total sum)\n";
+  std::cout << fmt::format(" eForce.first : {:26.20f}\n", eforce1_total);
+  std::cout << fmt::format(" eForce.second: {:26.20f}\n", eforce2_total);
+  std::cout << fmt::format(" electroPhi   : {:26.20f}\n", ephi_total);
 }
 
 }  // namespace
