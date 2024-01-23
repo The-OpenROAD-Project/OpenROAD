@@ -146,6 +146,13 @@ class Tapcell
     InnerBottomRight,
     Unknown
   };
+  struct PartialOverlap
+  {
+    bool left = false;
+    int x_start_left;
+    bool right = false;
+    int x_limit_right;
+  };
   struct Corner
   {
     CornerType type;
@@ -169,8 +176,7 @@ class Tapcell
                      const std::set<odb::dbInst*>& row_insts,
                      int site_width,
                      bool disallow_one_site_gaps,
-                     bool& partially_overlap,
-                     int& x_limit);
+                     PartialOverlap& partially_overlap);
   bool isOverlapping(int x,
                      int width,
                      const odb::dbOrientType& orient,
