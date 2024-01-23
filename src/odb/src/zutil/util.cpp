@@ -140,7 +140,10 @@ void RUDYCalculator::calculateRUDY()
       continue;
     }
 
+    if (tech_layer->getLayerAdjustment() == 0.0)
+      continue;
     float pitch = static_cast<float>(tech_layer->getPitch());
+    pitch = 1.0 / pitch;
     rudy_adjustment += (tech_layer->getLayerAdjustment() * pitch);
     total_weight += pitch;
   }
