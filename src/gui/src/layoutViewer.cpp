@@ -435,7 +435,7 @@ void LayoutViewer::searchNearestViaEdge(
     const int shape_limit,
     const std::function<void(const Rect& rect)>& check_rect)
 {
-  auto via_shapes = search_.searchViaSBoxShapes(block_,
+  auto via_shapes = search_.searchSNetViaShapes(block_,
                                                 cut_layer,
                                                 search_line.xMin(),
                                                 search_line.yMin(),
@@ -615,42 +615,57 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
       }
     }
 
-    auto box_shapes = search_.searchBoxShapes(block_,
-                                              layer,
-                                              search_line.xMin(),
-                                              search_line.yMin(),
-                                              search_line.xMax(),
-                                              search_line.yMax(),
-                                              shape_limit);
-    for (auto& [box, net] : box_shapes) {
-      if (isNetVisible(net)) {
-        check_rect(convert_box_to_rect(box));
+    const bool routing_visible = options_->isRoutingVisible();
+    const bool vias_visible = options_->areViasVisible();
+    if (routing_visible || vias_visible) {
+      auto box_shapes = search_.searchBoxShapes(block_,
+                                                layer,
+                                                search_line.xMin(),
+                                                search_line.yMin(),
+                                                search_line.xMax(),
+                                                search_line.yMax(),
+                                                shape_limit);
+      for (auto& [box, is_via, net] : box_shapes) {
+        if (!routing_visible && !is_via) {
+          continue;
+        }
+        if (!vias_visible && is_via) {
+          continue;
+        }
+        if (isNetVisible(net)) {
+          check_rect(convert_box_to_rect(box));
+        }
       }
     }
 
-    if (layer->getType() == dbTechLayerType::CUT) {
-      searchNearestViaEdge(layer, layer, search_line, shape_limit, check_rect);
-    } else {
-      if (auto upper = layer->getUpperLayer()) {
+    if (options_->areSpecialRoutingViasVisible()) {
+      if (layer->getType() == dbTechLayerType::CUT) {
         searchNearestViaEdge(
-            upper, layer, search_line, shape_limit, check_rect);
-      }
-      if (auto lower = layer->getLowerLayer()) {
-        searchNearestViaEdge(
-            lower, layer, search_line, shape_limit, check_rect);
+            layer, layer, search_line, shape_limit, check_rect);
+      } else {
+        if (auto upper = layer->getUpperLayer()) {
+          searchNearestViaEdge(
+              upper, layer, search_line, shape_limit, check_rect);
+        }
+        if (auto lower = layer->getLowerLayer()) {
+          searchNearestViaEdge(
+              lower, layer, search_line, shape_limit, check_rect);
+        }
       }
     }
 
-    auto polygon_shapes = search_.searchPolygonShapes(block_,
-                                                      layer,
-                                                      search_line.xMin(),
-                                                      search_line.yMin(),
-                                                      search_line.xMax(),
-                                                      search_line.yMax(),
-                                                      shape_limit);
-    for (auto& [box, poly, net] : polygon_shapes) {
-      if (isNetVisible(net)) {
-        check_rect(convert_box_to_rect(box));
+    if (options_->isSpecialRoutingVisible()) {
+      auto polygon_shapes = search_.searchSNetShapes(block_,
+                                                     layer,
+                                                     search_line.xMin(),
+                                                     search_line.yMin(),
+                                                     search_line.xMax(),
+                                                     search_line.yMax(),
+                                                     shape_limit);
+      for (auto& [box, poly, net] : polygon_shapes) {
+        if (isNetVisible(net)) {
+          check_rect(convert_box_to_rect(box));
+        }
       }
     }
 
@@ -741,7 +756,7 @@ void LayoutViewer::selectViaShapesAt(dbTechLayer* cut_layer,
                                      const int shape_limit,
                                      std::vector<Selected>& selections)
 {
-  auto via_shapes = search_.searchViaSBoxShapes(block_,
+  auto via_shapes = search_.searchSNetViaShapes(block_,
                                                 cut_layer,
                                                 region.xMin(),
                                                 region.yMin(),
@@ -818,42 +833,56 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
       }
     }
 
-    auto box_shapes = search_.searchBoxShapes(block_,
-                                              layer,
-                                              region.xMin(),
-                                              region.yMin(),
-                                              region.xMax(),
-                                              region.yMax(),
-                                              shape_limit);
+    const bool routing_visible = options_->isRoutingVisible();
+    const bool vias_visible = options_->areViasVisible();
+    if (routing_visible || vias_visible) {
+      auto box_shapes = search_.searchBoxShapes(block_,
+                                                layer,
+                                                region.xMin(),
+                                                region.yMin(),
+                                                region.xMax(),
+                                                region.yMax(),
+                                                shape_limit);
 
-    for (auto& [box, net] : box_shapes) {
-      if (isNetVisible(net) && options_->isNetSelectable(net)) {
-        selections.push_back(gui_->makeSelected(net));
+      for (auto& [box, is_via, net] : box_shapes) {
+        if (!routing_visible && !is_via) {
+          continue;
+        }
+        if (!vias_visible && is_via) {
+          continue;
+        }
+        if (isNetVisible(net) && options_->isNetSelectable(net)) {
+          selections.push_back(gui_->makeSelected(net));
+        }
       }
     }
 
-    if (layer->getType() == dbTechLayerType::CUT) {
-      selectViaShapesAt(layer, layer, region, shape_limit, selections);
-    } else {
-      if (auto upper = layer->getUpperLayer()) {
-        selectViaShapesAt(upper, layer, region, shape_limit, selections);
-      }
-      if (auto lower = layer->getLowerLayer()) {
-        selectViaShapesAt(lower, layer, region, shape_limit, selections);
+    if (options_->areSpecialRoutingViasVisible()) {
+      if (layer->getType() == dbTechLayerType::CUT) {
+        selectViaShapesAt(layer, layer, region, shape_limit, selections);
+      } else {
+        if (auto upper = layer->getUpperLayer()) {
+          selectViaShapesAt(upper, layer, region, shape_limit, selections);
+        }
+        if (auto lower = layer->getLowerLayer()) {
+          selectViaShapesAt(lower, layer, region, shape_limit, selections);
+        }
       }
     }
 
-    auto polygon_shapes = search_.searchPolygonShapes(block_,
-                                                      layer,
-                                                      region.xMin(),
-                                                      region.yMin(),
-                                                      region.xMax(),
-                                                      region.yMax(),
-                                                      shape_limit);
+    if (options_->isSpecialRoutingVisible()) {
+      auto polygon_shapes = search_.searchSNetShapes(block_,
+                                                     layer,
+                                                     region.xMin(),
+                                                     region.yMin(),
+                                                     region.xMax(),
+                                                     region.yMax(),
+                                                     shape_limit);
 
-    for (auto& [box, poly, net] : polygon_shapes) {
-      if (isNetVisible(net) && options_->isNetSelectable(net)) {
-        selections.push_back(gui_->makeSelected(net));
+      for (auto& [box, poly, net] : polygon_shapes) {
+        if (isNetVisible(net) && options_->isNetSelectable(net)) {
+          selections.push_back(gui_->makeSelected(net));
+        }
       }
     }
   }
