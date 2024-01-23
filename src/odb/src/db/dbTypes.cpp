@@ -1436,6 +1436,7 @@ const char* dbWireType::getString() const
 
 dbWireShapeType::dbWireShapeType(const char* value)
 {
+  _value = NONE;
   if (strcasecmp(value, "NONE") == 0)
     _value = NONE;
 

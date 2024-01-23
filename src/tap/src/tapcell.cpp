@@ -219,34 +219,43 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
     x = odb::makeSiteLoc(x, site_width, true, llx);
     // Check if site is filled
     const odb::dbOrientType ori = row->getOrient();
-    bool overlap = checkIfFilled(
-        x, tap_width, ori, row_insts, site_width, disallow_one_site_gaps);
-    if (!overlap) {
+    bool partially_overlap = false;
+    int x_limit;
+    bool overlap = checkIfFilled(x,
+                                 tap_width,
+                                 ori,
+                                 row_insts,
+                                 site_width,
+                                 disallow_one_site_gaps,
+                                 partially_overlap,
+                                 x_limit);
+    int x_loc = partially_overlap ? x_limit - tap_width : x;
+    if (!overlap
+        || (partially_overlap
+            && !isOverlapping(x_loc, tap_width, ori, row_insts))) {
       const int lly = row_bb.yMin();
       auto* inst = makeInstance(
           db_->getChip()->getBlock(),
           tapcell_master,
           ori,
-          x,
+          x_loc,
           lly,
           fmt::format("{}TAPCELL_{}_", tap_prefix_, row->getName()));
       row_insts.insert(inst);
       insts++;
+      x = x_loc;
     }
   }
 
   return insts;
 }
 
-bool Tapcell::checkIfFilled(const int x,
-                            const int width,
-                            const odb::dbOrientType& orient,
-                            const std::set<odb::dbInst*>& row_insts,
-                            const int site_width,
-                            const bool disallow_one_site_gaps)
+inline void findStartEnd(int x,
+                         int width,
+                         const odb::dbOrientType& orient,
+                         int& x_start,
+                         int& x_end)
 {
-  int x_start;
-  int x_end;
   if (orient == odb::dbOrientType::MY || orient == odb::dbOrientType::R180) {
     x_start = x - width;
     x_end = x;
@@ -254,12 +263,46 @@ bool Tapcell::checkIfFilled(const int x,
     x_start = x;
     x_end = x + width;
   }
+}
+
+bool Tapcell::checkIfFilled(const int x,
+                            const int width,
+                            const odb::dbOrientType& orient,
+                            const std::set<odb::dbInst*>& row_insts,
+                            const int site_width,
+                            const bool disallow_one_site_gaps,
+                            bool& partially_overlap,
+                            int& x_limit)
+{
+  int x_start;
+  int x_end;
+  findStartEnd(x, width, orient, x_start, x_end);
 
   if (disallow_one_site_gaps) {
     // The +1 is to convert > to >= (< to <=) below
     x_start -= site_width + 1;
     x_end += site_width + 1;
   }
+
+  for (const auto& inst : row_insts) {
+    const odb::Rect inst_bb = inst->getBBox()->getBox();
+    if (x_end > inst_bb.xMin() && x_start < inst_bb.xMax()) {
+      partially_overlap = x_start < inst_bb.xMin();
+      x_limit = inst_bb.xMin();
+      return true;
+    }
+  }
+  return false;
+}
+
+bool Tapcell::isOverlapping(const int x,
+                            const int width,
+                            const odb::dbOrientType& orient,
+                            const std::set<odb::dbInst*>& row_insts)
+{
+  int x_start;
+  int x_end;
+  findStartEnd(x, width, orient, x_start, x_end);
 
   for (const auto& inst : row_insts) {
     const odb::Rect inst_bb = inst->getBBox()->getBox();
@@ -1425,6 +1468,21 @@ void Tapcell::placeTapcells(const Options& options)
   const int dist = options.dist >= 0 ? options.dist : defaultDistance();
 
   placeTapcells(options.tapcell_master, dist, options.disallow_one_site_gaps);
+}
+
+odb::dbBlock* Tapcell::getBlock() const
+{
+  return db_->getChip()->getBlock();
+}
+
+double Tapcell::dbuToMicrons(int64_t dbu)
+{
+  return static_cast<double>(dbu) / (getBlock()->getDbUnitsPerMicron());
+}
+
+int Tapcell::micronsToDbu(double microns)
+{
+  return (int64_t) (microns * getBlock()->getDbUnitsPerMicron());
 }
 
 }  // namespace tap

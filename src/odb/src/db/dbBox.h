@@ -142,6 +142,8 @@ class _dbBox : public _dbObject
 
     return BOX;
   }
+
+  void checkMask(uint mask);
 };
 
 inline _dbBox::_dbBox(_dbDatabase*)
