@@ -346,7 +346,7 @@ void io::Parser::initCutLayerWidth()
                         layer->getName());
         }
       } else {
-        if (layerNum >= BOTTOM_ROUTING_LAYER) {
+        if (layerNum >= BOTTOM_ROUTING_LAYER && layerNum <= TOP_ROUTING_LAYER) {
           logger_->error(DRT,
                          242,
                          "CUT layer {} does not have default via.",
