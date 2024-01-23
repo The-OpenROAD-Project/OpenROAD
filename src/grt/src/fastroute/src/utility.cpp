@@ -64,8 +64,6 @@ void FastRouteCore::printEdge(int const netID, int const edgeID)
 
 void FastRouteCore::ConvertToFull3DType2()
 {
-  short tmpX[MAXLEN], tmpY[MAXLEN], tmpL[MAXLEN];
-
   for (int netID = 0; netID < netCount(); netID++) {
     if (skipNet(netID)) {
       continue;
@@ -77,6 +75,9 @@ void FastRouteCore::ConvertToFull3DType2()
     for (int edgeID = 0; edgeID < num_edges; edgeID++) {
       TreeEdge* treeedge = &(treeedges[edgeID]);
       if (treeedge->len > 0) {
+        std::vector<int16_t> tmpX;
+        std::vector<int16_t> tmpY;
+        std::vector<int16_t> tmpL;
         int newCNT = 0;
         const int routeLen = treeedge->route.routelen;
         const std::vector<short>& gridsX = treeedge->route.gridsX;
@@ -85,30 +86,30 @@ void FastRouteCore::ConvertToFull3DType2()
         // finish from n1->real route
         int j;
         for (j = 0; j < routeLen; j++) {
-          tmpX[newCNT] = gridsX[j];
-          tmpY[newCNT] = gridsY[j];
-          tmpL[newCNT] = gridsL[j];
+          tmpX.push_back(gridsX[j]);
+          tmpY.push_back(gridsY[j]);
+          tmpL.push_back(gridsL[j]);
           newCNT++;
 
           if (gridsL[j] > gridsL[j + 1]) {
             for (int k = gridsL[j]; k > gridsL[j + 1]; k--) {
-              tmpX[newCNT] = gridsX[j + 1];
-              tmpY[newCNT] = gridsY[j + 1];
-              tmpL[newCNT] = k;
+              tmpX.push_back(gridsX[j + 1]);
+              tmpY.push_back(gridsY[j + 1]);
+              tmpL.push_back(k);
               newCNT++;
             }
           } else if (gridsL[j] < gridsL[j + 1]) {
             for (int k = gridsL[j]; k < gridsL[j + 1]; k++) {
-              tmpX[newCNT] = gridsX[j + 1];
-              tmpY[newCNT] = gridsY[j + 1];
-              tmpL[newCNT] = k;
+              tmpX.push_back(gridsX[j + 1]);
+              tmpY.push_back(gridsY[j + 1]);
+              tmpL.push_back(k);
               newCNT++;
             }
           }
         }
-        tmpX[newCNT] = gridsX[j];
-        tmpY[newCNT] = gridsY[j];
-        tmpL[newCNT] = gridsL[j];
+        tmpX.push_back(gridsX[j]);
+        tmpY.push_back(gridsY[j]);
+        tmpL.push_back(gridsL[j]);
         newCNT++;
         // last grid -> node2 finished
         if (treeedges[edgeID].route.type == RouteType::MazeRoute) {
@@ -174,8 +175,6 @@ void FastRouteCore::netpinOrderInc()
 
 void FastRouteCore::fillVIA()
 {
-  short tmpX[MAXLEN], tmpY[MAXLEN], tmpL[MAXLEN];
-
   int numVIAT1 = 0;
   int numVIAT2 = 0;
 
@@ -191,6 +190,9 @@ void FastRouteCore::fillVIA()
     for (int edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
       TreeEdge* treeedge = &(treeedges[edgeID]);
       if (treeedge->len > 0) {
+        std::vector<int16_t> tmpX;
+        std::vector<int16_t> tmpY;
+        std::vector<int16_t> tmpL;
         int newCNT = 0;
         int routeLen = treeedge->route.routelen;
         const std::vector<short>& gridsX = treeedge->route.gridsX;
@@ -209,16 +211,16 @@ void FastRouteCore::fillVIA()
             pin_botL = std::min(pin_botL, edge_init);
             pin_topL = std::max(pin_topL, edge_init);
             for (int16_t l = pin_botL; l < pin_topL; l++) {
-              tmpX[newCNT] = gridsX[0];
-              tmpY[newCNT] = gridsY[0];
-              tmpL[newCNT] = l;
+              tmpX.push_back(gridsX[0]);
+              tmpY.push_back(gridsY[0]);
+              tmpL.push_back(l);
               newCNT++;
               numVIAT1++;
             }
             for (int l = pin_topL; l > edge_init; l--) {
-              tmpX[newCNT] = gridsX[0];
-              tmpY[newCNT] = gridsY[0];
-              tmpL[newCNT] = l;
+              tmpX.push_back(gridsX[0]);
+              tmpY.push_back(gridsY[0]);
+              tmpL.push_back(l);
               newCNT++;
               numVIAT1++;
             }
@@ -230,9 +232,9 @@ void FastRouteCore::fillVIA()
             for (int k = treenodes[node1_alias].botL;
                  k < treenodes[node1_alias].topL;
                  k++) {
-              tmpX[newCNT] = gridsX[0];
-              tmpY[newCNT] = gridsY[0];
-              tmpL[newCNT] = k;
+              tmpX.push_back(gridsX[0]);
+              tmpY.push_back(gridsY[0]);
+              tmpL.push_back(k);
               newCNT++;
               if (node1_alias < num_terminals) {
                 numVIAT1++;
@@ -246,14 +248,14 @@ void FastRouteCore::fillVIA()
 
           int j;
           for (j = 0; j < routeLen; j++) {
-            tmpX[newCNT] = gridsX[j];
-            tmpY[newCNT] = gridsY[j];
-            tmpL[newCNT] = gridsL[j];
+            tmpX.push_back(gridsX[j]);
+            tmpY.push_back(gridsY[j]);
+            tmpL.push_back(gridsL[j]);
             newCNT++;
           }
-          tmpX[newCNT] = gridsX[j];
-          tmpY[newCNT] = gridsY[j];
-          tmpL[newCNT] = gridsL[j];
+          tmpX.push_back(gridsX[j]);
+          tmpY.push_back(gridsY[j]);
+          tmpL.push_back(gridsL[j]);
           newCNT++;
 
           if (edgeID == treenodes[node2_alias].hID) {
@@ -261,9 +263,9 @@ void FastRouteCore::fillVIA()
               for (int k = treenodes[node2_alias].topL - 1;
                    k >= treenodes[node2_alias].botL;
                    k--) {
-                tmpX[newCNT] = gridsX[routeLen];
-                tmpY[newCNT] = gridsY[routeLen];
-                tmpL[newCNT] = k;
+                tmpX.push_back(gridsX[routeLen]);
+                tmpY.push_back(gridsY[routeLen]);
+                tmpL.push_back(k);
                 newCNT++;
                 if (node2_alias < num_terminals) {
                   numVIAT1++;
@@ -275,9 +277,9 @@ void FastRouteCore::fillVIA()
           // last grid -> node2 finished
         } else {
           for (int j = 0; j <= routeLen; j++) {
-            tmpX[newCNT] = gridsX[j];
-            tmpY[newCNT] = gridsY[j];
-            tmpL[newCNT] = gridsL[j];
+            tmpX.push_back(gridsX[j]);
+            tmpY.push_back(gridsY[j]);
+            tmpL.push_back(gridsL[j]);
             newCNT++;
           }
         }
@@ -293,17 +295,17 @@ void FastRouteCore::fillVIA()
           }
 
           for (int16_t l = tmpL[newCNT - 1] - 1; l > pin_botL; l--) {
-            tmpX[newCNT] = tmpX[newCNT - 1];
-            tmpY[newCNT] = tmpY[newCNT - 1];
-            tmpL[newCNT] = l;
+            tmpX.push_back(tmpX[newCNT - 1]);
+            tmpY.push_back(tmpY[newCNT - 1]);
+            tmpL.push_back(l);
             newCNT++;
             numVIAT1++;
           }
 
           for (int l = pin_botL; l <= pin_topL; l++) {
-            tmpX[newCNT] = tmpX[newCNT - 1];
-            tmpY[newCNT] = tmpY[newCNT - 1];
-            tmpL[newCNT] = l;
+            tmpX.push_back(tmpX[newCNT - 1]);
+            tmpY.push_back(tmpY[newCNT - 1]);
+            tmpL.push_back(l);
             newCNT++;
             numVIAT1++;
           }
