@@ -433,6 +433,7 @@ class FlexDRWorker
   FlexGCWorker* getGCWorker() { return gcWorker_.get(); }
   const FlexDRViaData* getViaData() const { return via_data_; }
   const FlexGridGraph& getGridGraph() const { return gridGraph_; }
+  int getPatchCost(const Rect& patchBox, frLayerNum layerNum, bool isPatchHorz);
   // others
   int main(frDesign* design);
   void distributedMain(frDesign* design);

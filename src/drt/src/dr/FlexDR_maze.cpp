@@ -3384,6 +3384,62 @@ int FlexDRWorker::routeNet_postAstarAddPathMetal_isClean(
   return cost;
 }
 
+int FlexDRWorker::getPatchCost(const Rect& patchBox,
+                               frLayerNum layerNum,
+                               bool isPatchHorz)
+{
+  int cost = 0;
+  if (!getRouteBox().intersects(patchBox)) {
+    cost = std::numeric_limits<int>::max();
+  } else {
+    FlexMazeIdx startIdx, endIdx;
+    startIdx.set(0, 0, layerNum);
+    endIdx.set(0, 0, layerNum);
+    auto z = gridGraph_.getMazeZIdx(layerNum);
+    gridGraph_.getIdxBox(startIdx, endIdx, patchBox, FlexGridGraph::enclose);
+    if (isPatchHorz) {
+      // in gridgraph, the planar cost is checked for xIdx + 1
+      for (auto xIdx = std::max(0, startIdx.x() - 1); xIdx < endIdx.x();
+           ++xIdx) {
+        if (gridGraph_.hasRouteShapeCostAdj(
+                xIdx, startIdx.y(), z, frDirEnum::E)) {
+          cost += gridGraph_.getEdgeLength(xIdx, startIdx.y(), z, frDirEnum::E)
+                  * workerDRCCost_;
+        }
+        if (gridGraph_.hasFixedShapeCostAdj(
+                xIdx, startIdx.y(), z, frDirEnum::E)) {
+          cost += gridGraph_.getEdgeLength(xIdx, startIdx.y(), z, frDirEnum::E)
+                  * workerFixedShapeCost_;
+        }
+        if (gridGraph_.hasMarkerCostAdj(xIdx, startIdx.y(), z, frDirEnum::E)) {
+          cost += gridGraph_.getEdgeLength(xIdx, startIdx.y(), z, frDirEnum::E)
+                  * workerMarkerCost_;
+        }
+      }
+    } else {
+      // in gridgraph, the planar cost is checked for yIdx + 1
+      for (auto yIdx = std::max(0, startIdx.y() - 1); yIdx < endIdx.y();
+           ++yIdx) {
+        if (gridGraph_.hasRouteShapeCostAdj(
+                startIdx.x(), yIdx, z, frDirEnum::N)) {
+          cost += gridGraph_.getEdgeLength(startIdx.x(), yIdx, z, frDirEnum::N)
+                  * workerDRCCost_;
+        }
+        if (gridGraph_.hasFixedShapeCostAdj(
+                startIdx.x(), yIdx, z, frDirEnum::N)) {
+          cost += gridGraph_.getEdgeLength(startIdx.x(), yIdx, z, frDirEnum::N)
+                  * workerFixedShapeCost_;
+        }
+        if (gridGraph_.hasMarkerCostAdj(startIdx.x(), yIdx, z, frDirEnum::N)) {
+          cost += gridGraph_.getEdgeLength(startIdx.x(), yIdx, z, frDirEnum::N)
+                  * workerMarkerCost_;
+        }
+      }
+    }
+  }
+  return cost;
+}
+
 void FlexDRWorker::routeNet_postAstarAddPatchMetal_addPWire(
     drNet* net,
     const FlexMazeIdx& bpIdx,
