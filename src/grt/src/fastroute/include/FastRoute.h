@@ -507,7 +507,7 @@ class FastRouteCore
 
   typedef std::tuple<int, int, int> Tile;
 
-  static const int MAXLEN = 20000;
+  static const int MAXLEN = 100; // Introduce crashes when this limit is overflowed
   static const int BIG_INT = 1e9;  // big integer used as infinity
   static const int HCOST = 5000;
 
