@@ -91,7 +91,7 @@ class Dimension
   std::vector<float> channelX, channelY;
 
   static constexpr float Infty = std::numeric_limits<float>::max();
-  static constexpr float Epsilon_Accuracy = 1e10f;  // = 1e10;
+  static constexpr float Epsilon_Accuracy = 1e10f;
   static constexpr int Undefined = -1;
   static constexpr int Orient_Num = 8;
 };
