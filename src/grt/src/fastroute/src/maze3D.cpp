@@ -388,9 +388,9 @@ int FastRouteCore::copyGrids3D(std::vector<TreeNode>& treenodes,
                                int n2,
                                std::vector<TreeEdge>& treeedges,
                                int edge_n1n2,
-                               int gridsX_n1n2[],
-                               int gridsY_n1n2[],
-                               int gridsL_n1n2[])
+                               std::vector<int>& gridsX_n1n2,
+                               std::vector<int>& gridsY_n1n2,
+                               std::vector<int>& gridsL_n1n2)
 {
   const int n1x = treenodes[n1].x;
   const int n1y = treenodes[n1].y;
@@ -400,9 +400,9 @@ int FastRouteCore::copyGrids3D(std::vector<TreeNode>& treenodes,
   if (treeedges[edge_n1n2].n1 == n1) {  // n1 is the first node of (n1, n2)
     if (treeedges[edge_n1n2].route.routelen > 0) {
       for (int i = 0; i <= treeedges[edge_n1n2].route.routelen; i++) {
-        gridsX_n1n2[cnt] = treeedges[edge_n1n2].route.gridsX[i];
-        gridsY_n1n2[cnt] = treeedges[edge_n1n2].route.gridsY[i];
-        gridsL_n1n2[cnt] = treeedges[edge_n1n2].route.gridsL[i];
+        gridsX_n1n2.push_back(treeedges[edge_n1n2].route.gridsX[i]);
+        gridsY_n1n2.push_back(treeedges[edge_n1n2].route.gridsY[i]);
+        gridsL_n1n2.push_back(treeedges[edge_n1n2].route.gridsL[i]);
         cnt++;
       }
     }  // MazeRoute
@@ -410,9 +410,9 @@ int FastRouteCore::copyGrids3D(std::vector<TreeNode>& treenodes,
     // NoRoute
     {
       fflush(stdout);
-      gridsX_n1n2[cnt] = n1x;
-      gridsY_n1n2[cnt] = n1y;
-      gridsL_n1n2[cnt] = n1l;
+      gridsX_n1n2.push_back(n1x);
+      gridsY_n1n2.push_back(n1y);
+      gridsL_n1n2.push_back(n1l);
       cnt++;
     }
   }     // if n1 is the first node of (n1, n2)
@@ -420,17 +420,17 @@ int FastRouteCore::copyGrids3D(std::vector<TreeNode>& treenodes,
   {
     if (treeedges[edge_n1n2].route.routelen > 0) {
       for (int i = treeedges[edge_n1n2].route.routelen; i >= 0; i--) {
-        gridsX_n1n2[cnt] = treeedges[edge_n1n2].route.gridsX[i];
-        gridsY_n1n2[cnt] = treeedges[edge_n1n2].route.gridsY[i];
-        gridsL_n1n2[cnt] = treeedges[edge_n1n2].route.gridsL[i];
+        gridsX_n1n2.push_back(treeedges[edge_n1n2].route.gridsX[i]);
+        gridsY_n1n2.push_back(treeedges[edge_n1n2].route.gridsY[i]);
+        gridsL_n1n2.push_back(treeedges[edge_n1n2].route.gridsL[i]);
         cnt++;
       }
     }     // MazeRoute
     else  // NoRoute
     {
-      gridsX_n1n2[cnt] = n1x;
-      gridsY_n1n2[cnt] = n1y;
-      gridsL_n1n2[cnt] = n1l;
+      gridsX_n1n2.push_back(n1x);
+      gridsY_n1n2.push_back(n1y);
+      gridsL_n1n2.push_back(n1l);
       cnt++;
     }  // MazeRoute
   }
@@ -449,8 +449,13 @@ void FastRouteCore::updateRouteType13D(int netID,
                                        int edge_n1A1,
                                        int edge_n1A2)
 {
-  int gridsX_n1A1[MAXLEN], gridsY_n1A1[MAXLEN], gridsL_n1A1[MAXLEN],
-      gridsX_n1A2[MAXLEN], gridsY_n1A2[MAXLEN], gridsL_n1A2[MAXLEN];
+  std::vector<int> gridsX_n1A1;
+  std::vector<int> gridsY_n1A1;
+  std::vector<int> gridsL_n1A1;
+  std::vector<int> gridsX_n1A2;
+  std::vector<int> gridsY_n1A2;
+  std::vector<int> gridsL_n1A2;
+      
 
   // copy all the grids on (n1, A1) and (n2, A2) to tmp arrays, and keep the
   // grids order A1->n1->A2 copy (n1, A1)
@@ -671,9 +676,15 @@ void FastRouteCore::updateRouteType23D(int netID,
                                        int edge_C1C2)
 {
   int cnt;
-  int gridsX_n1A1[MAXLEN], gridsY_n1A1[MAXLEN], gridsL_n1A1[MAXLEN];
-  int gridsX_n1A2[MAXLEN], gridsY_n1A2[MAXLEN], gridsL_n1A2[MAXLEN];
-  int gridsX_C1C2[MAXLEN], gridsY_C1C2[MAXLEN], gridsL_C1C2[MAXLEN];
+  std::vector<int> gridsX_n1A1;
+  std::vector<int> gridsY_n1A1;
+  std::vector<int> gridsL_n1A1;
+  std::vector<int> gridsX_n1A2;
+  std::vector<int> gridsY_n1A2;
+  std::vector<int> gridsL_n1A2;
+  std::vector<int> gridsX_C1C2;
+  std::vector<int> gridsY_C1C2;
+  std::vector<int> gridsL_C1C2;
 
   const int A1x = treenodes[A1].x;
   const int A1y = treenodes[A1].y;
