@@ -3453,31 +3453,6 @@ void dbBlock::writeGuides(const char* filename) const
   guide_file.close();
 }
 
-std::string dbBlock::generateMacroPlacementString()
-{
-  std::string macro_placement;
-
-  const float dbu = this->getTech()->getDbUnitsPerMicron();
-  float x = 0.0f;
-  float y = 0.0f;
-
-  for (odb::dbInst* inst : this->getInsts()) {
-    if (inst->isBlock()) {
-      x = (inst->getLocation().x()) / dbu;
-      y = (inst->getLocation().y()) / dbu;
-
-      macro_placement += fmt::format(
-          "place_macro -macro_name {} -location {{{} {}}} -orientation {}\n",
-          inst->getName(),
-          x,
-          y,
-          inst->getOrient().getString());
-    }
-  }
-
-  return macro_placement;
-}
-
 bool dbBlock::differences(dbBlock* block1,
                           dbBlock* block2,
                           FILE* out,

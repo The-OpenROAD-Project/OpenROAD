@@ -533,7 +533,7 @@ proc write_macro_placement { args } {
     utl::error ODB 439 "No design loaded. Cannot write macro placement."
   }
   set block [$chip getBlock]
-  set macro_placement [$block generateMacroPlacementString]
+  set macro_placement [odb::generateMacroPlacementString $block]
 
   set file [open $file_name w]
   puts $file $macro_placement
