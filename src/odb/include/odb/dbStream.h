@@ -424,7 +424,7 @@ class dbIStream
     return *this;
   }
 
-  template <uint32_t I = 0, typename... Ts>
+  template <typename... Ts>
   dbIStream& operator>>(std::variant<Ts...>& v)
   {
     uint32_t index = 0;
@@ -447,9 +447,11 @@ class dbIStream
       return *this;
     } else {
       if (I == index) {
-        *this >> std::get<I>(v);
+        std::variant_alternative_t<I, std::variant<Ts...>> val;
+        *this >> val;
+        v = val;
       }
-      return ((*this).operator>><I + 1>(v));
+      return (*this).variantHelper<I + 1>(index, v);
     }
   }
 };

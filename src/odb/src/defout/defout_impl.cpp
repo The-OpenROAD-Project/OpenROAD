@@ -1015,7 +1015,7 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
       lname = layer->getName();
 
     fprintf(_out, "\n       ");
-    if (_version == defout::DEF_5_5)
+    if (_version == defout::DEF_5_5) {
       fprintf(_out,
               " + LAYER %s ( %d %d ) ( %d %d )",
               lname.c_str(),
@@ -1023,12 +1023,20 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
               yMin,
               xMax,
               yMax);
-    else {
+    } else {
+      std::string layer_name = lname;
+      if (_version == defout::DEF_5_8) {
+        uint mask = box->getLayerMask();
+        if (mask != 0) {
+          // add mask information to layer name
+          layer_name += " MASK " + std::to_string(mask);
+        }
+      }
       if (bpin->hasEffectiveWidth()) {
         int w = defdist(bpin->getEffectiveWidth());
         fprintf(_out,
                 " + LAYER %s DESIGNRULEWIDTH %d ( %d %d ) ( %d %d )",
-                lname.c_str(),
+                layer_name.c_str(),
                 w,
                 xMin,
                 yMin,
@@ -1038,7 +1046,7 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
         int s = defdist(bpin->getMinSpacing());
         fprintf(_out,
                 " + LAYER %s SPACING %d ( %d %d ) ( %d %d )",
-                lname.c_str(),
+                layer_name.c_str(),
                 s,
                 xMin,
                 yMin,
@@ -1047,7 +1055,7 @@ void defout_impl::writeBPin(dbBPin* bpin, int cnt)
       } else {
         fprintf(_out,
                 " + LAYER %s ( %d %d ) ( %d %d )",
-                lname.c_str(),
+                layer_name.c_str(),
                 xMin,
                 yMin,
                 xMax,
@@ -1695,6 +1703,14 @@ void defout_impl::writeSWire(dbSWire* wire)
       int x, y;
       box->getViaXY(x, y);
 
+      if (box->hasViaLayerMasks()) {
+        vn = fmt::format("MASK {}{}{} {}",
+                         box->getViaTopLayerMask(),
+                         box->getViaCutLayerMask(),
+                         box->getViaBottomLayerMask(),
+                         vn);
+      }
+
       if (type.getValue() == dbWireShapeType::NONE)
         fprintf(_out,
                 " %s 0 ( %d %d ) %s",
@@ -1723,6 +1739,14 @@ void defout_impl::writeSWire(dbSWire* wire)
 
       int x, y;
       box->getViaXY(x, y);
+
+      if (box->hasViaLayerMasks()) {
+        vn = fmt::format("MASK {}{}{} {}",
+                         box->getViaTopLayerMask(),
+                         box->getViaCutLayerMask(),
+                         box->getViaBottomLayerMask(),
+                         vn);
+      }
 
       if (type.getValue() == dbWireShapeType::NONE)
         fprintf(_out,
@@ -1760,6 +1784,7 @@ void defout_impl::writeSpecialPath(dbSBox* box)
   uint dx = x2 - x1;
   uint dy = y2 - y1;
   uint w;
+  uint mask = box->getLayerMask();
 
   switch (box->getDirection()) {
     case dbSBox::UNDEFINED: {
@@ -1832,25 +1857,51 @@ void defout_impl::writeSpecialPath(dbSBox* box)
 
   dbWireShapeType type = box->getWireShapeType();
 
-  if (type.getValue() == dbWireShapeType::NONE)
-    fprintf(_out,
-            " %s %d ( %d %d ) ( %d %d )",
-            ln.c_str(),
-            defdist(w),
-            defdist(x1),
-            defdist(y1),
-            defdist(x2),
-            defdist(y2));
-  else
-    fprintf(_out,
-            " %s %d + SHAPE %s ( %d %d ) ( %d %d )",
-            ln.c_str(),
-            defdist(w),
-            type.getString(),
-            defdist(x1),
-            defdist(y1),
-            defdist(x2),
-            defdist(y2));
+  if (mask != 0) {
+    if (type.getValue() == dbWireShapeType::NONE) {
+      fprintf(_out,
+              " %s %d ( %d %d ) MASK %d ( %d %d )",
+              ln.c_str(),
+              defdist(w),
+              defdist(x1),
+              defdist(y1),
+              mask,
+              defdist(x2),
+              defdist(y2));
+    } else {
+      fprintf(_out,
+              " %s %d + SHAPE %s + MASK %d + ( %d %d ) ( %d %d )",
+              ln.c_str(),
+              defdist(w),
+              type.getString(),
+              mask,
+              defdist(x1),
+              defdist(y1),
+              defdist(x2),
+              defdist(y2));
+    }
+  } else {
+    if (type.getValue() == dbWireShapeType::NONE) {
+      fprintf(_out,
+              " %s %d ( %d %d ) ( %d %d )",
+              ln.c_str(),
+              defdist(w),
+              defdist(x1),
+              defdist(y1),
+              defdist(x2),
+              defdist(y2));
+    } else {
+      fprintf(_out,
+              " %s %d + SHAPE %s ( %d %d ) ( %d %d )",
+              ln.c_str(),
+              defdist(w),
+              type.getString(),
+              defdist(x1),
+              defdist(y1),
+              defdist(x2),
+              defdist(y2));
+    }
+  }
 }
 
 void defout_impl::writeNet(dbNet* net)

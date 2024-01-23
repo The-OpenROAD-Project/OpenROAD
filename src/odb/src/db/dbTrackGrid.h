@@ -80,6 +80,13 @@ class _dbTrackGrid : public _dbObject
                    const char* field,
                    const _dbTrackGrid& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+
+  // User Code Begin Methods
+  void getAverageTrackPattern(bool is_x,
+                              int& track_init,
+                              int& num_tracks,
+                              int& track_step);
+  // User Code End Methods
 };
 
 inline _dbTrackGrid::_dbTrackGrid(_dbDatabase*, const _dbTrackGrid& g)

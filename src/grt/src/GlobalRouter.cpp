@@ -1838,10 +1838,12 @@ void GlobalRouter::updateVias()
       odb::Point seg2_init(seg2.init_x, seg2.init_y);
       odb::Point seg2_final(seg2.final_x, seg2.final_y);
 
-      if (seg1.isVia() && seg1.init_layer < seg2.init_layer
+      // if a via segment is adjacent to the next wire segment, ensure
+      // the via will connect to the segment
+      if (seg1.isVia() && seg1.init_layer == seg2.init_layer - 1
           && (seg1_init == seg2_init || seg1_init == seg2_final)) {
         seg1.final_layer = seg2.init_layer;
-      } else if (seg2.isVia() && seg2.init_layer < seg1.init_layer
+      } else if (seg2.isVia() && seg2.init_layer == seg1.init_layer - 1
                  && (seg2_init == seg1_init || seg2_init == seg1_final)) {
         seg2.init_layer = seg1.final_layer;
       }
@@ -2667,8 +2669,7 @@ void GlobalRouter::initGrid(int max_layer)
   odb::dbTechLayer* tech_layer = routing_layers_[layer_for_guide_dimension_];
   odb::dbTrackGrid* track_grid = block_->findTrackGrid(tech_layer);
   int track_spacing, track_init, num_tracks;
-  tech_layer->getAverageTrackSpacing(
-      track_grid, track_spacing, track_init, num_tracks);
+  track_grid->getAverageTrackSpacing(track_spacing, track_init, num_tracks);
 
   odb::Rect rect = block_->getDieArea();
 
@@ -2840,8 +2841,7 @@ void GlobalRouter::initRoutingTracks(int max_routing_layer)
     }
 
     int track_step, track_init, num_tracks;
-    tech_layer->getAverageTrackSpacing(
-        track_grid, track_step, track_init, num_tracks);
+    track_grid->getAverageTrackSpacing(track_step, track_init, num_tracks);
 
     RoutingTracks layer_tracks = RoutingTracks(level,
                                                track_step,

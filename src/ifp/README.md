@@ -17,7 +17,7 @@ specify the utilization/aspect ratio.
 
 #### Method 1: Automatic die size calculation
 
-```tcl
+```
 initialize_floorplan
   [-utilization util]
   [-aspect_ratio ratio]

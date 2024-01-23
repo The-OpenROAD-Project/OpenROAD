@@ -1769,7 +1769,7 @@ DbITermDescriptor::DbITermDescriptor(odb::dbDatabase* db) : db_(db)
 std::string DbITermDescriptor::getName(std::any object) const
 {
   auto iterm = std::any_cast<odb::dbITerm*>(object);
-  return iterm->getInst()->getName() + '/' + iterm->getMTerm()->getName();
+  return iterm->getName();
 }
 
 std::string DbITermDescriptor::getShortName(std::any object) const
