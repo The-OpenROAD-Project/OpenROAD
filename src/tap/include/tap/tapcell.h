@@ -169,8 +169,10 @@ class Tapcell
                      const std::set<odb::dbInst*>& row_insts,
                      int site_width,
                      bool disallow_one_site_gaps,
-                     bool& partially_overlap,
-                     int& x_limit);
+                     bool& partially_overlap_left,
+                     bool& partially_overlap_right,
+                     int& x_start_left,
+                     int& x_limit_right);
   bool isOverlapping(int x,
                      int width,
                      const odb::dbOrientType& orient,
