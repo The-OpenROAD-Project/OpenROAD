@@ -73,8 +73,6 @@ Total             4417          4828          109.30%             8 /  7 / 1645
 [INFO GRT-0018] Total wirelength: 15036 um
 [INFO GRT-0014] Routed nets: 563
 No differences found.
-Differences found at line 2.
-	srcs: net:req_rdy net:resp_msg[4] 
-	srcs: net:resp_msg[10] net:net42 
+No differences found.
 No differences found.
 No differences found.
