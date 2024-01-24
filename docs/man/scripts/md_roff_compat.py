@@ -87,10 +87,11 @@ def man2(path=DEST_DIR2):
 
 def man3(path=DEST_DIR3):
     for doc in docs3:
+        _info, _warn, _error = 0, 0, 0
+        print(f"Processing {doc}")
         if not os.path.exists(doc):
             print(f"{doc} doesn't exist. Continuing")
             continue
-        print(f"Processing {doc}")
         with open(doc, 'r') as f:
             for line in f:
                 parts = line.split()
@@ -103,11 +104,11 @@ def man3(path=DEST_DIR3):
                 manpage.desc = f"Severity: {level}\n\n{message}"
                 manpage.write_roff_file(path)
 
-                # For individual module folders.
-                #module_path = os.path.join(DEST_DIR3, module)
-                #os.makedirs(module_path, exist_ok = True)
-                #manpage.write_roff_file(module_path)
-
+                # tabulate counts
+                if level == 'INFO': _info += 1
+                elif level == 'WARN': _warn += 1
+                elif level == 'ERROR': _error += 1
+            print(f"Info: {_info}, Warn: {_warn}, Error: {_error}")
 
 
 if __name__ == "__main__":

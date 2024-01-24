@@ -1,17 +1,36 @@
 global MAN_PATH 
 set MAN_PATH ""
 
-sta::define_cmd_args "man" {name}
-proc man { name } {
+sta::define_cmd_args "man" { name\
+                            [-manpath manpath]\
+                            [-slow]}
+proc man { args } {
+  sta::parse_key_args "man" args \
+    keys {-manpath} flags {-slow}
+  
+  set name [lindex $args 0]
   set DEFAULT_MAN_PATH "../docs/cat"
   global MAN_PATH
-  set MAN_PATH [utl::get_input]
-  if { [utl::check_valid_man_path $MAN_PATH] == false } {
-    puts "Using default manpath."
+  if { [info exists keys(-manpath) ]} {
+    set MAN_PATH $keys(-manpath)
+    if { [utl::check_valid_man_path $MAN_PATH] == false } {
+      puts "Using default manpath."
+      set MAN_PATH $DEFAULT_MAN_PATH
+    }
+  } else {
     set MAN_PATH $DEFAULT_MAN_PATH
   }
-  puts $DEFAULT_MAN_PATH
-  puts $MAN_PATH
+
+  set slow 0
+  if { [info exists flags(-slow) ]} {
+    set slow 1
+  }
+
+  #set MAN_PATH [utl::get_input]
+  #if { [utl::check_valid_man_path $MAN_PATH] == false } {
+  #  puts "Using default manpath."
+  #  set MAN_PATH $DEFAULT_MAN_PATH
+  #}
 
   set man_path $MAN_PATH
   set man_sections {}
@@ -43,7 +62,7 @@ proc man { name } {
           puts [join $page "\n"]
 
           # Ask user to continue or quit
-          if {[llength $lines] > $page_size} {
+          if {$slow && [llength $lines] > $page_size} {
               puts -nonewline "---\nPress 'q' to quit or any other key to continue: \n---"
               flush stdout;
               set input [gets stdin]
@@ -89,7 +108,7 @@ proc check_valid_path { path } {
 }
 
 proc check_valid_man_path { path } {
-  if {[file isdirectory "$path/man1"]} {
+  if {[file isdirectory "$path/cat1"]} {
     return true
   } else {
     puts "Invalid man path, please retry."
