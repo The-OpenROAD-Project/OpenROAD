@@ -216,9 +216,12 @@ RepairSetup::rebufferBottomUp(const BufferedNetPtr& bnet,
     const BufferedNetSeq& Z1 = rebufferBottomUp(bnet->ref(), level + 1);
     const BufferedNetSeq& Z2 = rebufferBottomUp(bnet->ref2(), level + 1);
     BufferedNetSeq Z;
-    // Combine the options from both branches.
-    for (const BufferedNetPtr& p : Z1) {
-      for (const BufferedNetPtr& q : Z2) {
+    Z.resize(Z1.size()*Z2.size());
+    // Combine the options from both branches.=
+    for (size_t i = 0, base = 0; i < Z1.size(); i++, base += Z2.size()) {
+      const BufferedNetPtr& p = Z1[i];
+      for (size_t j = 0; j < Z2.size(); j++) {
+        const BufferedNetPtr& q = Z2[j];
         const BufferedNetPtr& min_req = fuzzyLess(p->required(sta_),
                                            q->required(sta_)) ? p : q;
         BufferedNetPtr junc = make_shared<BufferedNet>(BufferedNetType::junction,
@@ -227,7 +230,7 @@ RepairSetup::rebufferBottomUp(const BufferedNetPtr& bnet,
         junc->setCapacitance(p->cap() + q->cap());
         junc->setRequiredPath(min_req->requiredPath());
         junc->setRequiredDelay(min_req->requiredDelay());
-        Z.push_back(std::move(junc));
+        Z[base + j] = std::move(junc);
       }
     }
     // Prune the options if there exists another option with
@@ -305,8 +308,10 @@ RepairSetup::addWireAndBuffer(const BufferedNetSeq& Z,
                               int level)
 {
   BufferedNetSeq Z1;
+  Z1.resize(Z.size());
   Point wire_end = bnet_wire->location();
-  for (const BufferedNetPtr& p : Z) {
+  for (int i = 0; i < Z.size(); i++) {
+    const BufferedNetPtr& p = Z[i];
     Point p_loc = p->location();
     int wire_length_dbu = abs(wire_end.x() - p_loc.x())
       + abs(wire_end.y() - p_loc.y());
@@ -333,7 +338,7 @@ RepairSetup::addWireAndBuffer(const BufferedNetSeq& Z,
                "", level,
                wire_length_dbu,
                z->to_string(resizer_));
-    Z1.push_back(z);
+    Z1[i] = z;
   }
   if (!Z1.empty()) {
     BufferedNetSeq buffered_options;
