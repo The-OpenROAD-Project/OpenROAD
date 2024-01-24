@@ -216,7 +216,14 @@ RepairSetup::rebufferBottomUp(const BufferedNetPtr& bnet,
     const BufferedNetSeq& Z1 = rebufferBottomUp(bnet->ref(), level + 1);
     const BufferedNetSeq& Z2 = rebufferBottomUp(bnet->ref2(), level + 1);
     BufferedNetSeq Z;
-    Z.resize(Z1.size()*Z2.size());
+
+    size_t size = Z1.size()*Z2.size();
+    // This assumption is used only in the final loop
+    // but we can quit as early as we know there's nothing to do here.
+    if (size == 0)
+      return Z;
+    Z.resize(size);
+
     // Combine the options from both branches.=
     for (size_t i = 0, base = 0; i < Z1.size(); i++, base += Z2.size()) {
       const BufferedNetPtr& p = Z1[i];
@@ -235,8 +242,8 @@ RepairSetup::rebufferBottomUp(const BufferedNetPtr& bnet,
     }
     // Prune the options if there exists another option with
     // larger required and smaller capacitance.
-    // This is fanout^2.
-    // Presort options to hit better options sooner.
+    // This is fanout*log(fanout) if options are
+    // presorted to hit better options sooner.
     sort(Z.begin(),
          Z.end(),
          [this](const BufferedNetPtr& option1, const BufferedNetPtr& option2) {
@@ -259,26 +266,24 @@ RepairSetup::rebufferBottomUp(const BufferedNetPtr& bnet,
 
            return false;
          });
-    int si = 0;
-    for (size_t pi = 0; pi < Z.size(); pi++) {
+    float Lsmall = Z[0]->cap();
+    size_t si = 1;
+    // Remove options by shifting down with index si.
+    // Because the options are sorted we don't have to look
+    // beyond the first option. We also know that slack
+    // is nonincreasing, so we can remove everything that has
+    // higher capacitance than the lowest found so far.
+    for (size_t pi = si; pi < size; pi++) {
       const BufferedNetPtr& p = Z[pi];
       float Lp = p->cap();
-      // Remove options by shifting down with index si.
-      si = pi + 1;
-      // Because the options are sorted we don't have to look
-      // beyond the first option.
-      for (size_t qi = pi + 1; qi < Z.size(); qi++) {
-        const BufferedNetPtr& q = Z[qi];
-        float Lq = q->cap();
-        // We know Tq <= Tp from the sort so we don't need to check req.
-        // If q is the same or worse than p, remove solution q.
-        if (fuzzyLess(Lq, Lp)) {
-          // Copy survivor down.
-          Z[si++] = q;
-        }
+      // If Tp is the same or worse than Tsmall, remove solution p.
+      if (fuzzyLess(Lp, Lsmall)) {
+        // Otherwise copy the survivor down.
+        Z[si++] = p;
+        Lsmall = Lp;
       }
-      Z.resize(si);
     }
+    Z.resize(si);
     return Z;
   }
   case BufferedNetType::load: {
