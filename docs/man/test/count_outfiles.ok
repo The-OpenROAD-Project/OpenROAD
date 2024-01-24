@@ -154,6 +154,7 @@ Info: 3, Warn: 7, Error: 37
                ^
   unexpected eof
   expecting "%", "\\label", "\\nonumber" or whitespace
+cat/cat1/openroad.1
 Level 1 doc counts are equal to 1.
 Level 2 doc counts are equal to 160.
 Level 3 doc counts are equal to 2783.
