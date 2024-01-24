@@ -460,7 +460,6 @@ void FastRouteCore::updateRouteType13D(int netID,
   std::vector<int> gridsX_n1A2;
   std::vector<int> gridsY_n1A2;
   std::vector<int> gridsL_n1A2;
-      
 
   // copy all the grids on (n1, A1) and (n2, A2) to tmp arrays, and keep the
   // grids order A1->n1->A2 copy (n1, A1)
