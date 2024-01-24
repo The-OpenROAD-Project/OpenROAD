@@ -80,6 +80,10 @@ void FastRouteCore::ConvertToFull3DType2()
         std::vector<int16_t> tmpL;
         int newCNT = 0;
         const int routeLen = treeedge->route.routelen;
+        tmpX.reserve(routeLen + num_layers_);
+        tmpY.reserve(routeLen + num_layers_);
+        tmpL.reserve(routeLen + num_layers_);
+
         const std::vector<short>& gridsX = treeedge->route.gridsX;
         const std::vector<short>& gridsY = treeedge->route.gridsY;
         const std::vector<short>& gridsL = treeedge->route.gridsL;
@@ -195,6 +199,10 @@ void FastRouteCore::fillVIA()
         std::vector<int16_t> tmpL;
         int newCNT = 0;
         int routeLen = treeedge->route.routelen;
+        tmpX.reserve(routeLen + num_layers_);
+        tmpY.reserve(routeLen + num_layers_);
+        tmpL.reserve(routeLen + num_layers_);
+
         const std::vector<short>& gridsX = treeedge->route.gridsX;
         const std::vector<short>& gridsY = treeedge->route.gridsY;
         const std::vector<short>& gridsL = treeedge->route.gridsL;
