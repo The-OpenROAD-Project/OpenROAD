@@ -231,9 +231,10 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
     x_loc = partially_overlap.right
                 ? partially_overlap.x_limit_right - tap_width
                 : x_loc;
-    if (!overlap
-        || ((partially_overlap.left || partially_overlap.right)
-            && !isOverlapping(x_loc, tap_width, ori, row_insts))) {
+    if ((!overlap
+         || ((partially_overlap.left || partially_overlap.right)
+             && !isOverlapping(x_loc, tap_width, ori, row_insts)))
+        && x_loc + tap_width <= urx) {
       const int lly = row_bb.yMin();
       auto* inst = makeInstance(
           db_->getChip()->getBlock(),
