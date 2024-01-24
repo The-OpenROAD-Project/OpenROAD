@@ -206,6 +206,7 @@
 //     }
 //   }
 // }
+@Library('utils@main') _
 
 node {
 
@@ -314,7 +315,7 @@ node {
       //       subject: '$DEFAULT_SUBJECT',
       //       body: '$DEFAULT_CONTENT',
       //       );
-      sendEmail(env.BRANCH_NAME, COMMIT_AUTHOR_EMAIL, "")   
+      sendEmail(env.BRANCH_NAME, COMMIT_AUTHOR_EMAIL)   
     }
   }
 }
