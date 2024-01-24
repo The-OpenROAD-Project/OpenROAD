@@ -705,6 +705,18 @@ NetRouteMap FastRouteCore::getRoutes()
           lastY = yreal;
           lastL = gridsL[i];
           if (net_segs.find(segment) == net_segs.end()) {
+            if (segment.init_layer != segment.final_layer) {
+              GSegment invet_via = GSegment(segment.final_x,
+                                            segment.final_y,
+                                            segment.final_layer,
+                                            segment.init_x,
+                                            segment.init_y,
+                                            segment.init_layer);
+              if (net_segs.find(invet_via) != net_segs.end()) {
+                continue;
+              }
+            }
+
             net_segs.insert(segment);
             route.push_back(segment);
           }
