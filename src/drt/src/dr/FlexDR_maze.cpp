@@ -1772,6 +1772,7 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
         gcWorker_->updateDRNet(net);
         gcWorker_->setEnableSurgicalFix(true);
         gcWorker_->main();
+        routeNet_postRouteAddPathCost(net);
         modEolCosts_poly(gcWorker_->getTargetNet(), ModCostType::addRouteShape);
         // write back GC patches
         drNet* currNet = net;
@@ -2983,7 +2984,6 @@ bool FlexDRWorker::routeNet(drNet* net, std::vector<FlexMazeIdx>& paths)
       gcWorker_->updateGCWorker();
       cleanUnneededPatches_poly(gcWorker_->getTargetNet(), net);
     }
-    routeNet_postRouteAddPathCost(net);
   }
   return searchSuccess;
 }
@@ -3399,8 +3399,7 @@ int FlexDRWorker::getPatchCost(const Rect& patchBox,
     gridGraph_.getIdxBox(startIdx, endIdx, patchBox, FlexGridGraph::enclose);
     if (isPatchHorz) {
       // in gridgraph, the planar cost is checked for xIdx + 1
-      for (auto xIdx = std::max(0, startIdx.x() - 1); xIdx < endIdx.x();
-           ++xIdx) {
+      for (auto xIdx = startIdx.x(); xIdx <= endIdx.x(); ++xIdx) {
         if (gridGraph_.hasRouteShapeCostAdj(
                 xIdx, startIdx.y(), z, frDirEnum::E)) {
           cost += gridGraph_.getEdgeLength(xIdx, startIdx.y(), z, frDirEnum::E)
@@ -3418,8 +3417,7 @@ int FlexDRWorker::getPatchCost(const Rect& patchBox,
       }
     } else {
       // in gridgraph, the planar cost is checked for yIdx + 1
-      for (auto yIdx = std::max(0, startIdx.y() - 1); yIdx < endIdx.y();
-           ++yIdx) {
+      for (auto yIdx = startIdx.y(); yIdx <= endIdx.y(); ++yIdx) {
         if (gridGraph_.hasRouteShapeCostAdj(
                 startIdx.x(), yIdx, z, frDirEnum::N)) {
           cost += gridGraph_.getEdgeLength(startIdx.x(), yIdx, z, frDirEnum::N)
