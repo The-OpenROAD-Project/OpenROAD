@@ -269,6 +269,7 @@ _installUbuntuPackages() {
             qt5-qmake \
             qtbase5-dev \
             qtbase5-dev-tools \
+            libqt5charts5-dev \
             qtchooser
     elif [[ $1 == 22.04 ]]; then
         apt-get install -y \
@@ -276,10 +277,12 @@ _installUbuntuPackages() {
             qt5-qmake \
             qtbase5-dev \
             qtbase5-dev-tools \
+            libqt5charts5-dev \
             qtchooser
     else
         apt-get install -y \
             libpython3.8 \
+            libqt5charts5-dev \
             qt5-default
     fi
 
@@ -328,6 +331,7 @@ _installRHELPackages() {
         python3-pip \
         qt5-qtbase-devel \
         qt5-qtimageformats \
+        qt5-qtcharts-devel \
         readline \
         readline-devel \
         tcl-devel \
@@ -379,6 +383,7 @@ _installCentosPackages() {
         python36-pip \
         qt5-qtbase-devel \
         qt5-qtimageformats \
+        qt5-qtcharts-devel \
         readline-devel \
         rh-python38-python \
         rh-python38-python-libs \
