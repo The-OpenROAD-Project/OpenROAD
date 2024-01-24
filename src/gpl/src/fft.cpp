@@ -32,6 +32,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "fft.h"
+
 #include <pocketfft_hdronly.h>
 
 #include <cfloat>
@@ -137,8 +138,15 @@ void FFT::doFFT()
   const pocketfft::shape_t axes = {0, 1};
   const pocketfft::stride_t stride = {stride_x, stride_y};
 
-  pocketfft::dct<float>(shape, stride, stride, axes, 2,
-                        binDensity_[0], binDensity_[0], 0.25f, false);
+  pocketfft::dct<float>(shape,
+                        stride,
+                        stride,
+                        axes,
+                        2,
+                        binDensity_[0],
+                        binDensity_[0],
+                        0.25f,
+                        false);
 
   for (int i = 0; i < binCntX_; i++) {
     binDensity_[i][0] *= 0.5;
@@ -199,8 +207,15 @@ void FFT::doFFT()
     electroPhi_[0][i] *= 2.0f;
   }
 
-  pocketfft::dct<float>(shape, stride, stride, axes, 3,
-                        electroPhi_[0], electroPhi_[0], 0.25f, false);
+  pocketfft::dct<float>(shape,
+                        stride,
+                        stride,
+                        axes,
+                        3,
+                        electroPhi_[0],
+                        electroPhi_[0],
+                        0.25f,
+                        false);
 
   ddsct2d(binCntX_,
           binCntY_,

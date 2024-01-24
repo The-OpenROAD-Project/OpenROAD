@@ -134,7 +134,7 @@ TEST(FloatFFTTest, Basic)
 
   print_tables(fft);
 
-  const float tol = 1.3e-4f; // Tolerance factor
+  const float tol = 1.3e-4f;  // Tolerance factor
 
   double eforce1_total = 0.0;
   double eforce2_total = 0.0;
@@ -146,9 +146,11 @@ TEST(FloatFFTTest, Basic)
       auto electroPhi = fft->getElectroPhi(x, y);
 
       // Compute error
-      float eforce1 = fabs(eForce.first  - output_data_eForce_first[x + y * Y_MAX]);
-      float eforce2 = fabs(eForce.second - output_data_eForce_second[x + y * Y_MAX]);
-      float ephi    = fabs(electroPhi    - output_data_electroPhi[x + y * Y_MAX]);
+      float eforce1
+          = fabs(eForce.first - output_data_eForce_first[x + y * Y_MAX]);
+      float eforce2
+          = fabs(eForce.second - output_data_eForce_second[x + y * Y_MAX]);
+      float ephi = fabs(electroPhi - output_data_electroPhi[x + y * Y_MAX]);
 
       // Check error
       EXPECT_LT(eforce1, tol);
