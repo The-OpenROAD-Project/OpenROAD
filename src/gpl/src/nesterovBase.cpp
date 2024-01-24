@@ -33,6 +33,8 @@
 
 #include "nesterovBase.h"
 
+#include <omp.h>
+
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -595,6 +597,7 @@ static unsigned int roundDownToPowerOfTwo(unsigned int x)
 
 void BinGrid::initBins()
 {
+  assert(omp_get_thread_num() == 0);
   int64_t totalBinArea
       = static_cast<int64_t>(ux_ - lx_) * static_cast<int64_t>(uy_ - ly_);
 
@@ -650,7 +653,8 @@ void BinGrid::initBins()
   log_->info(GPL, 29, "BinSize: {} {}", binSizeX_, binSizeY_);
 
   // initialize bins_ vector
-  bins_.reserve(binCntX_ * (size_t) binCntY_);
+  bins_.resize(binCntX_ * (size_t) binCntY_);
+#pragma omp parallel for num_threads(num_threads_)
   for (int idxY = 0; idxY < binCntY_; ++idxY) {
     for (int idxX = 0; idxX < binCntX_; ++idxX) {
       const int x = lx_ + idxX * binSizeX_;
@@ -658,8 +662,8 @@ void BinGrid::initBins()
       const int sizeX = std::min(ux_ - x, binSizeX_);
       const int sizeY = std::min(uy_ - y, binSizeY_);
 
-      bins_.emplace_back(
-          idxX, idxY, x, y, x + sizeX, y + sizeY, targetDensity_);
+      bins_[idxY * binCntX_ + idxX]
+          = Bin(idxX, idxY, x, y, x + sizeX, y + sizeY, targetDensity_);
     }
   }
 
@@ -760,6 +764,8 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCell*>& cells)
   overflowAreaUnscaled_ = 0;
   // update density and overflowArea
   // for nesterov use and FFT library
+#pragma omp parallel for num_threads(num_threads_) \
+    reduction(+ : overflowArea_, overflowAreaUnscaled_)
   for (Bin& bin : bins_) {
     int64_t binArea = bin.binArea();
     const float scaledBinArea
@@ -843,8 +849,11 @@ void NesterovPlaceVars::reset()
 
 NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
                                        std::shared_ptr<PlacerBaseCommon> pbc,
-                                       utl::Logger* log)
+                                       utl::Logger* log,
+                                       int num_threads)
+    : num_threads_{num_threads}
 {
+  assert(omp_get_thread_num() == 0);
   nbVars_ = nbVars;
   pbc_ = std::move(pbc);
   log_ = log;
@@ -899,6 +908,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   }
 
   // gCellStor_'s pins_ fill
+#pragma omp parallel for num_threads(num_threads_)
   for (auto& gCell : gCellStor_) {
     if (gCell.isFiller()) {
       continue;
@@ -910,12 +920,14 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
   }
 
   // gPinStor_' GNet and GCell fill
+#pragma omp parallel for num_threads(num_threads_)
   for (auto& gPin : gPinStor_) {
     gPin.setGCell(pbToNb(gPin.pin()->instance()));
     gPin.setGNet(pbToNb(gPin.pin()->net()));
   }
 
   // gNetStor_'s GPin fill
+#pragma omp parallel for num_threads(num_threads_)
   for (auto& gNet : gNetStor_) {
     for (auto& pin : gNet.net()->pins()) {
       gNet.addGPin(pbToNb(pin));
@@ -972,15 +984,16 @@ GNet* NesterovBaseCommon::dbToNb(odb::dbNet* net) const
 // in ePlace paper.
 void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
 {
+  assert(omp_get_thread_num() == 0);
   // clear all WA variables.
-  for (auto& gNet : gNets_) {
-    gNet->clearWaVars();
-  }
+#pragma omp parallel for num_threads(num_threads_)
   for (auto& gPin : gPins_) {
     gPin->clearWaVars();
   }
 
+#pragma omp parallel for num_threads(num_threads_)
   for (auto& gNet : gNets_) {
+    gNet->clearWaVars();
     gNet->updateBox();
 
     for (auto& gPin : gNet->gPins()) {
@@ -1182,6 +1195,8 @@ FloatPoint NesterovBaseCommon::getWireLengthPreconditioner(
 
 void NesterovBaseCommon::updateDbGCells()
 {
+  assert(omp_get_thread_num() == 0);
+#pragma omp parallel for num_threads(num_threads_)
   for (auto& gCell : gCells()) {
     if (gCell->isInstance()) {
       odb::dbInst* inst = gCell->instance()->dbInst();
@@ -1198,7 +1213,9 @@ void NesterovBaseCommon::updateDbGCells()
 
 int64_t NesterovBaseCommon::getHpwl()
 {
+  assert(omp_get_thread_num() == 0);
   int64_t hpwl = 0;
+#pragma omp parallel for num_threads(num_threads_) reduction(+ : hpwl)
   for (auto& gNet : gNets_) {
     gNet->updateBox();
     hpwl += gNet->hpwl();
@@ -1436,8 +1453,10 @@ void NesterovBase::updateGCellDensityCenterLocation(
 
 void NesterovBase::setTargetDensity(float density)
 {
+  assert(omp_get_thread_num() == 0);
   targetDensity_ = density;
   bg_.setTargetDensity(density);
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto& bin : bins()) {
     bin.setTargetDensity(density);
   }
@@ -1540,6 +1559,8 @@ float NesterovBase::targetDensity() const
 // update densitySize and densityScale in each gCell
 void NesterovBase::updateDensitySize()
 {
+  assert(omp_get_thread_num() == 0);
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto& gCell : gCells_) {
     float scaleX = 0, scaleY = 0;
     float densitySizeX = 0, densitySizeY = 0;
@@ -1568,9 +1589,12 @@ void NesterovBase::updateDensitySize()
 
 void NesterovBase::updateAreas()
 {
+  assert(omp_get_thread_num() == 0);
   // bloating can change the following :
   // stdInstsArea and macroInstsArea
   stdInstsArea_ = macroInstsArea_ = 0;
+#pragma omp parallel for num_threads(nbc_->getNumThreads()) \
+    reduction(+ : stdInstsArea_, macroInstsArea_)
   for (auto* gCell : gCells_) {
     if (gCell->isMacroInstance()) {
       macroInstsArea_ += static_cast<int64_t>(gCell->dx())
@@ -1720,7 +1744,9 @@ FloatPoint NesterovBase::getDensityGradient(const GCell* gCell) const
 // Density force cals
 void NesterovBase::updateDensityForceBin()
 {
+  assert(omp_get_thread_num() == 0);
   // copy density to utilize FFT
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (Bin& bin : bg_.bins()) {
     fft_->updateDensity(bin.x(), bin.y(), bin.density());
   }
@@ -1731,6 +1757,8 @@ void NesterovBase::updateDensityForceBin()
   // update electroPhi and electroForce
   // update sumPhi_ for nesterov loop
   sumPhi_ = 0;
+#pragma omp parallel for num_threads(nbc_->getNumThreads()) \
+    reduction(+ : sumPhi_)
   for (Bin& bin : bg_.bins()) {
     auto eForcePair = fft_->getElectroForce(bin.x(), bin.y());
     bin.setElectroForce(eForcePair.first, eForcePair.second);
@@ -1746,6 +1774,7 @@ void NesterovBase::updateDensityForceBin()
 
 void NesterovBase::initDensity1()
 {
+  assert(omp_get_thread_num() == 0);
   const int gCellSize = gCells_.size();
   curSLPCoordi_.resize(gCellSize, FloatPoint());
   curSLPWireLengthGrads_.resize(gCellSize, FloatPoint());
@@ -1767,6 +1796,7 @@ void NesterovBase::initDensity1()
 
   initCoordi_.resize(gCellSize, FloatPoint());
 
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto& gCell : gCells_) {
     updateDensityCoordiLayoutInside(gCell);
     int idx = &gCell - &gCells_[0];
@@ -1860,6 +1890,7 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
                                    float wlCoeffX,
                                    float wlCoeffY)
 {
+  assert(omp_get_thread_num() == 0);
   if (isConverged_) {
     return;
   }
@@ -1872,6 +1903,8 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
   debugPrint(
       log_, GPL, "updateGrad", 1, "DensityPenalty: {:g}", densityPenalty_);
 
+#pragma omp parallel for num_threads(nbc_->getNumThreads()) \
+    reduction(+ : wireLengthGradSum_, densityGradSum_, gradSum)
   for (size_t i = 0; i < gCells_.size(); i++) {
     GCell* gCell = gCells_.at(i);
     wireLengthGrads[i]
@@ -1954,6 +1987,8 @@ void NesterovBase::updateNextGradient(float wlCoeffX, float wlCoeffY)
 
 void NesterovBase::updateInitialPrevSLPCoordi()
 {
+  assert(omp_get_thread_num() == 0);
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (size_t i = 0; i < gCells_.size(); i++) {
     GCell* curGCell = gCells_[i];
 
@@ -2011,6 +2046,7 @@ float NesterovBase::getPhiCoef(float scaledDiffHpwl) const
 
 void NesterovBase::updateNextIter(const int iter)
 {
+  assert(omp_get_thread_num() == 0);
   if (isConverged_) {
     return;
   }
@@ -2022,6 +2058,7 @@ void NesterovBase::updateNextIter(const int iter)
   std::swap(prevSLPSumGrads_, curSLPSumGrads_);
 
   // Prevent locked instances from moving
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (size_t k = 0; k < gCells_.size(); ++k) {
     if (gCells_[k]->isInstance() && gCells_[k]->instance()->isLocked()) {
       nextSLPCoordi_[k] = curSLPCoordi_[k];
@@ -2205,6 +2242,7 @@ void NesterovBase::snapshot()
 
 bool NesterovBase::checkConvergence()
 {
+  assert(omp_get_thread_num() == 0);
   if (isConverged_) {
     return true;
   }
@@ -2219,6 +2257,7 @@ bool NesterovBase::checkConvergence()
                    sumOverflowUnscaled_);
     }
 
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
     for (auto& gCell : gCells_) {
       if (!gCell->isInstance()) {
         continue;
