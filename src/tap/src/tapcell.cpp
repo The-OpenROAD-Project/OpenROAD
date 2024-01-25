@@ -304,13 +304,14 @@ std::optional<int> Tapcell::findValidLocation(
     x_loc = partially_overlap.x_start_left;
   }
 
-  bool in_rows = x_loc ? (*x_loc + tap_width) <= row_urx : false;
+  if (x_loc) {
+    bool in_rows = (*x_loc + tap_width) <= row_urx;
+    const bool location_ok
+        = !overlap || !isOverlapping(*x_loc, tap_width, orient, row_insts);
 
-  const bool location_ok
-      = !overlap || !isOverlapping(*x_loc, tap_width, orient, row_insts);
-
-  if (location_ok && in_rows) {
-    return x_loc;
+    if (location_ok && in_rows) {
+      return x_loc;
+    }
   }
 
   return std::nullopt;
