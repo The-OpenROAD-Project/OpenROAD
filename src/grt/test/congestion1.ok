@@ -47,11 +47,11 @@ metal10    Vertical         2305             0          100.00%
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
 [INFO GRT-0103] Extra Run for hard benchmark.
-[INFO GRT-0197] Via related to pin nodes: 2080
-[INFO GRT-0198] Via related Steiner nodes: 164
+[INFO GRT-0197] Via related to pin nodes: 2631
+[INFO GRT-0198] Via related Steiner nodes: 111
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 3326
-[INFO GRT-0112] Final usage 3D: 14806
+[INFO GRT-0111] Final number of vias: 4273
+[INFO GRT-0112] Final usage 3D: 17647
 [WARNING GRT-0115] Global routing finished with overflow.
 
 [INFO GRT-0096] Final congestion report:
