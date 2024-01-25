@@ -419,16 +419,16 @@ void dbTable<T>::destroy(T* t)
   ZASSERT(t->_oid & DB_ALLOC_BIT);
 
   dbTablePage* page = (dbTablePage*) t->getObjectPage();
+  _dbFreeObject* o = (_dbFreeObject*) t;
 
   page->_alloccnt--;
-  t->_oid &= ~DB_ALLOC_BIT;
   t->~T();  // call destructor
+  o->_oid &= ~DB_ALLOC_BIT;
 
   uint offset = t - (T*) page->_objects;
   uint id = page->_page_addr + offset;
 
   // Add to freelist
-  _dbFreeObject* o = (_dbFreeObject*) t;
   pushQ(_free_list, o);
 
   if (id == _bottom_idx) {
