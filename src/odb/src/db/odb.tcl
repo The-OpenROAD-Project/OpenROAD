@@ -465,6 +465,102 @@ proc report_voltage_domains {} {
   }
 }
 
+
+
+sta::define_cmd_args "report_inst_count" {}
+
+proc report_inst_count {} {
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    utl::error ODB 363 "please load the design before trying to use this command"
+  }
+  set block [$chip getBlock]
+  set insts [$block getInsts]
+  set fill "0"
+  set clock_inverter "0"
+  set clock_buffer "0"
+  set macro "0"
+  set pad "0"
+  set synth "0"
+  set ant "0"
+  set time_repr_inverter "0"
+  set time_repr_buffer "0"
+  
+  utl::report "\nReporting Cells:"
+
+  foreach inst $insts {
+    set master [$inst getMaster]
+    set master_type [$master getType]
+    set source_type [$inst getSourceType]
+    set cell_name [$master getName]
+    if { bool([$master isBlock]) == bool(true) } {
+      incr macro
+    } elseif { bool([$master isPad]) == bool(true) } {
+      incr pad
+    } elseif { bool([$master isEndCap]) == bool(true) } {
+      incr synth
+    } elseif { bool([$master isFiller]) == bool(true) } {
+      incr fill
+    } elseif {($master_type == "CORE_WELLTAP") || (bool([$master isCover]) == bool(true))} {
+      incr synth
+    } elseif {$master_type == "CORE_ANTENNACELL" } {
+      incr ant
+    } elseif {($master_type == "CORE_TIEHIGH") || ($master_type == "CORE_TIELOW")} {
+      incr synth
+    } else {
+      set arg [$master getName]
+      set lib_cell [sta::get_lib_cell_warn "lib_cell" $arg]
+      if { $lib_cell == "NULL" } {
+        incr synth
+      } elseif {(bool([$lib_cell is_inverter]) == bool(true)) || (bool([$lib_cell is_buffer]) == bool(true))} {
+        if {$source_type == "TIMING"} {
+          set is_clock "0"
+          foreach iterm [$inst getITerms] {
+            set net [$iterm getNet]
+            
+            if {($net != "NULL") && ([$net getSigType] == "CLOCK")} {
+              if {bool([$lib_cell is_inverter]) == bool(true)} {
+                incr clock_inverter
+              } else {
+                incr clock_buffer
+              }
+              incr is_clock
+              break
+            }
+          }
+          if {$is_clock == "0"} {
+            if {bool([$lib_cell is_inverter]) == bool(true)} {
+              incr time_repr_inverter
+            } else {
+              incr time_repr_buffer
+            }
+          }
+        } else {
+          incr synth
+        }
+      } else {
+        incr synth
+      }
+    }
+  }
+
+  utl::report " Cells before CTS: "
+  utl::report "   Macro: $macro  "
+  utl::report "   Pad: $pad  "
+  utl::report "   Antenna: $ant  "
+  utl::report "   Other: $synth  "
+  utl::report " Cells added after CTS: "
+  utl::report "    inverter: $clock_inverter  "
+  utl::report "    buffer: $clock_buffer  "
+  utl::report " Cells added after Timming repair: "
+  utl::report "   repair inverter: $time_repr_inverter  "
+  utl::report "   buffer: $time_repr_buffer  "
+  utl::report " Cells added after Fill Cell: "
+  utl::report "   Filler: $fill  "
+ 
+}
+
 proc report_group { group } {
   utl::report "[expr \"[$group getType]\" == \"PHYSICAL_CLUSTER\" ? \"Physical Cluster\": \"Voltage Domain\"]: [$group getName]"
   if { [$group hasBox] } {
