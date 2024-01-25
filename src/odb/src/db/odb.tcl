@@ -473,7 +473,7 @@ proc report_inst_count {} {
   set db [ord::get_db]
   set chip [$db getChip]
   if { $chip == "NULL" } {
-    utl::error ODB 354 "please load the design before trying to use this command"
+    utl::error ODB 363 "please load the design before trying to use this command"
   }
   set block [$chip getBlock]
   set insts [$block getInsts]
