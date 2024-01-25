@@ -331,7 +331,6 @@ _installRHELPackages() {
         python3-pip \
         qt5-qtbase-devel \
         qt5-qtimageformats \
-        qt5-qtcharts-devel \
         readline \
         readline-devel \
         tcl-devel \
@@ -383,7 +382,6 @@ _installCentosPackages() {
         python36-pip \
         qt5-qtbase-devel \
         qt5-qtimageformats \
-        qt5-qtcharts-devel \
         readline-devel \
         rh-python38-python \
         rh-python38-python-libs \
