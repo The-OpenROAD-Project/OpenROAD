@@ -494,15 +494,15 @@ proc report_cell_count {} {
     set master_type [$master getType]
     set source_type [$inst getSourceType]
     set cell_name [$master getName]
-    if { bool([$master isBlock]) == bool(true) } {
+    if { [$master isBlock] } {
       incr macro
-    } elseif { bool([$master isPad]) == bool(true) } {
+    } elseif { [$master isPad] } {
       incr pad
-    } elseif { bool([$master isEndCap]) == bool(true) } {
+    } elseif { [$master isEndCap] } {
       incr synth
-    } elseif { bool([$master isFiller]) == bool(true) } {
+    } elseif { [$master isFiller] } {
       incr fill
-    } elseif {($master_type == "CORE_WELLTAP") || (bool([$master isCover]) == bool(true))} {
+    } elseif {($master_type == "CORE_WELLTAP") || [$master isCover]} {
       incr synth
     } elseif {$master_type == "CORE_ANTENNACELL" } {
       incr ant
@@ -513,7 +513,7 @@ proc report_cell_count {} {
       set lib_cell [sta::get_lib_cell_warn "lib_cell" $arg]
       if { $lib_cell == "NULL" } {
         incr synth
-      } elseif {(bool([$lib_cell is_inverter]) == bool(true)) || (bool([$lib_cell is_buffer]) == bool(true))} {
+      } elseif {[$lib_cell is_inverter] || [$lib_cell is_buffer]} {
         if {$source_type == "TIMING"} {
           set is_clock "0"
           foreach iterm [$inst getITerms] {
@@ -551,10 +551,10 @@ proc report_cell_count {} {
   utl::report "   Antenna: $ant  "
   utl::report "   Other: $synth  "
   utl::report " Cells added after CTS: "
-  utl::report "    inverter: $clock_inverter  "
-  utl::report "    buffer: $clock_buffer  "
+  utl::report "   inverter: $clock_inverter  "
+  utl::report "   buffer: $clock_buffer  "
   utl::report " Cells added after Timming repair: "
-  utl::report "   repair inverter: $time_repr_inverter  "
+  utl::report "   inverter: $time_repr_inverter  "
   utl::report "   buffer: $time_repr_buffer  "
   utl::report " Cells added after Fill Cell: "
   utl::report "   Filler: $fill  "
