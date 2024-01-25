@@ -170,13 +170,13 @@ class Tapcell
                             int x,
                             int y,
                             const std::string& prefix);
-  bool checkIfFilled(int x,
-                     int width,
-                     const odb::dbOrientType& orient,
-                     const std::set<odb::dbInst*>& row_insts,
-                     int site_width,
-                     bool disallow_one_site_gaps,
-                     PartialOverlap& partially_overlap);
+  std::optional<int> findValidLocation(int x,
+                                       int width,
+                                       const odb::dbOrientType& orient,
+                                       const std::set<odb::dbInst*>& row_insts,
+                                       int site_width,
+                                       const int tap_width,
+                                       bool disallow_one_site_gaps);
   bool isOverlapping(int x,
                      int width,
                      const odb::dbOrientType& orient,
