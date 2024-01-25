@@ -467,9 +467,9 @@ proc report_voltage_domains {} {
 
 
 
-sta::define_cmd_args "report_inst_count" {}
+sta::define_cmd_args "report_cell_count" {}
 
-proc report_inst_count {} {
+proc report_cell_count {} {
   set db [ord::get_db]
   set chip [$db getChip]
   if { $chip == "NULL" } {
