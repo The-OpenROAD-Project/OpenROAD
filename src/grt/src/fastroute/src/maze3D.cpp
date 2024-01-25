@@ -397,9 +397,11 @@ int FastRouteCore::copyGrids3D(std::vector<TreeNode>& treenodes,
   const int n1l = treenodes[n1].botL;
   const int routelen = treeedges[edge_n1n2].route.routelen;
 
-  gridsX_n1n2.reserve(routelen + 1);
-  gridsY_n1n2.reserve(routelen + 1);
-  gridsL_n1n2.reserve(routelen + 1);
+  if (routelen > 0) {
+    gridsX_n1n2.reserve(routelen + 1);
+    gridsY_n1n2.reserve(routelen + 1);
+    gridsL_n1n2.reserve(routelen + 1);
+  }
 
   int cnt = 0;
   if (treeedges[edge_n1n2].n1 == n1) {  // n1 is the first node of (n1, n2)
