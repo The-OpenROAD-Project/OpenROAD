@@ -478,12 +478,14 @@ proc report_inst_count {} {
   set block [$chip getBlock]
   set insts [$block getInsts]
   set fill "0"
-  set clock "0"
+  set clock_inverter "0"
+  set clock_buffer "0"
   set macro "0"
   set pad "0"
   set synth "0"
   set ant "0"
-  set time_repr "0"
+  set time_repr_inverter "0"
+  set time_repr_buffer "0"
   
   utl::report "\nReporting Cells:"
 
@@ -518,13 +520,21 @@ proc report_inst_count {} {
             set net [$iterm getNet]
             
             if {($net != "NULL") && ([$net getSigType] == "CLOCK")} {
-              incr clock
+              if {bool([$lib_cell is_inverter]) == bool(true)} {
+                incr clock_inverter
+              } else {
+                incr clock_buffer
+              }
               incr is_clock
               break
             }
           }
           if {$is_clock == "0"} {
-            incr time_repr
+            if {bool([$lib_cell is_inverter]) == bool(true)} {
+              incr time_repr_inverter
+            } else {
+              incr time_repr_buffer
+            }
           }
         } else {
           incr synth
@@ -535,13 +545,19 @@ proc report_inst_count {} {
     }
   }
 
-  utl::report " Macro: $macro  "
-  utl::report " Pad: $pad  "
-  utl::report " Filler Cells: $fill  "
-  utl::report " Antenna: $ant  "
-  utl::report " Synth: $synth  "
-  utl::report " Cells added after CTS: $clock  "
-  utl::report " Cells added after Timming Repair: $time_repr  "
+  utl::report " Cells before CTS: "
+  utl::report "   Macro: $macro  "
+  utl::report "   Pad: $pad  "
+  utl::report "   Antenna: $ant  "
+  utl::report "   Other: $synth  "
+  utl::report " Cells added after CTS: "
+  utl::report "    inverter: $clock_inverter  "
+  utl::report "    buffer: $clock_buffer  "
+  utl::report " Cells added after Timming repair: "
+  utl::report "   repair inverter: $time_repr_inverter  "
+  utl::report "   buffer: $time_repr_buffer  "
+  utl::report " Cells added after Fill Cell: "
+  utl::report "   Filler: $fill  "
  
 }
 
