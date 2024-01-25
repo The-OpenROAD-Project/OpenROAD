@@ -3,7 +3,7 @@ name: Build deb packages
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   builder:
