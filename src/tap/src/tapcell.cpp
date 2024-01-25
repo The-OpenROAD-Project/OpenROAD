@@ -226,6 +226,7 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
                                                  row_insts,
                                                  site_width,
                                                  tap_width,
+                                                 urx,
                                                  disallow_one_site_gaps);
     if (x_loc) {
       const int lly = row_bb.yMin();
@@ -267,6 +268,7 @@ std::optional<int> Tapcell::findValidLocation(
     const std::set<odb::dbInst*>& row_insts,
     const int site_width,
     const int tap_width,
+    const int row_urx,
     const bool disallow_one_site_gaps)
 {
   int x_start;
@@ -293,7 +295,7 @@ std::optional<int> Tapcell::findValidLocation(
     }
   }
 
-  int x_loc;
+  std::optional<int> x_loc;
   if (!overlap) {
     x_loc = x;
   } else if (partially_overlap.right) {
@@ -302,10 +304,12 @@ std::optional<int> Tapcell::findValidLocation(
     x_loc = partially_overlap.x_start_left;
   }
 
-  const bool location_ok
-      = !overlap || !isOverlapping(x_loc, tap_width, orient, row_insts);
+  bool in_rows = x_loc ? (*x_loc + tap_width) <= row_urx : false;
 
-  if (location_ok) {
+  const bool location_ok
+      = !overlap || !isOverlapping(*x_loc, tap_width, orient, row_insts);
+
+  if (location_ok && in_rows) {
     return x_loc;
   }
 
