@@ -144,7 +144,7 @@ void RUDYCalculator::calculateRUDY()
     }
     float pitch = static_cast<float>(tech_layer->getPitch());
     pitch = 1.0 / pitch;
-    rudy_adjustment += (tech_layer->getLayerAdjustment() * pitch);
+    rudy_adjustment += std::log1p(tech_layer->getLayerAdjustment()) * pitch;
     total_weight += pitch;
   }
 
@@ -157,7 +157,11 @@ void RUDYCalculator::calculateRUDY()
   for (int x = 0; x < tileCntX_; ++x) {
     for (int y = 0; y < tileCntY_; ++y) {
       Tile& tile = getEditableTile(x, y);
-      tile.addRUDY(rudy_adjustment);
+      float current_rudy = tile.getRUDY();
+      float sigmoid_scale
+          = rudy_adjustment
+            * (1 - 1 / (1 + std::exp(-(0.1 * (current_rudy - 75)))));
+      tile.addRUDY(sigmoid_scale);
     }
   }
 }
