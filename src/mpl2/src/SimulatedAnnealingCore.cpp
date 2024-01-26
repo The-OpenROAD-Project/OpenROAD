@@ -132,6 +132,20 @@ void SimulatedAnnealingCore<T>::setGuides(const std::map<int, Rect>& guides)
 }
 
 template <class T>
+void SimulatedAnnealingCore<T>::setInitialSequencePair(
+    const SequencePair& sequence_pair)
+{
+  if (sequence_pair.pos_sequence.empty()
+      || sequence_pair.neg_sequence.empty()) {
+    return;
+  }
+
+  pos_seq_ = sequence_pair.pos_sequence;
+  neg_seq_ = sequence_pair.neg_sequence;
+  has_initial_sequence_pair_ = true;
+}
+
+template <class T>
 bool SimulatedAnnealingCore<T>::isValid() const
 {
   return (width_ <= std::ceil(outline_width_))
@@ -469,11 +483,20 @@ void SimulatedAnnealingCore<T>::exchangeMacros()
     return;
   }
 
+  if (number_of_real_macros_ == 0) {
+    number_of_real_macros_ = std::numeric_limits<int>::max();
+  }
+
   // swap positive seq
-  const int index1
-      = (int) (std::floor(distribution_(generator_) * macros_.size()));
+  int index1 = (int) (std::floor(distribution_(generator_) * macros_.size()));
+
+  while (pos_seq_[index1] >= number_of_real_macros_) {
+    index1 = (int) (std::floor(distribution_(generator_) * macros_.size()));
+  }
+
   int index2 = (int) (std::floor(distribution_(generator_) * macros_.size()));
-  while (index1 == index2) {
+
+  while (index1 == index2 || pos_seq_[index2] >= number_of_real_macros_) {
     index2 = (int) (std::floor(distribution_(generator_) * macros_.size()));
   }
 
@@ -510,11 +533,8 @@ void SimulatedAnnealingCore<T>::fastSA()
   if (graphics_) {
     graphics_->startSA();
   }
-  // perturb();  // Perturb from beginning
-  std::iota(pos_seq_.begin(), pos_seq_.end(), 0);
-  std::iota(neg_seq_.begin(), neg_seq_.end(), 0);
-  std::iota(pre_pos_seq_.begin(), pre_pos_seq_.end(), 0);
-  std::iota(pre_neg_seq_.begin(), pre_neg_seq_.end(), 0);
+
+  initSequencePair();
 
   // record the previous status
   float cost = calNormCost();
@@ -578,6 +598,19 @@ void SimulatedAnnealingCore<T>::fastSA()
   if (graphics_) {
     graphics_->endSA();
   }
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::initSequencePair()
+{
+  if (has_initial_sequence_pair_) {
+    return;
+  }
+
+  std::iota(pos_seq_.begin(), pos_seq_.end(), 0);
+  std::iota(neg_seq_.begin(), neg_seq_.end(), 0);
+  std::iota(pre_pos_seq_.begin(), pre_pos_seq_.end(), 0);
+  std::iota(pre_neg_seq_.begin(), pre_neg_seq_.end(), 0);
 }
 
 template <class T>

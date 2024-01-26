@@ -271,6 +271,9 @@ class HierRTLMP
 
   // Hierarchical Macro Placement 2nd stage: Macro Placement
   void hardMacroClusterMacroPlacement(Cluster* cluster);
+  void setArrayTilingSequencePair(Cluster* cluster,
+                                  const std::vector<mpl2::HardMacro> macros,
+                                  SequencePair& initial_seq_pair);
 
   // Orientation Improvement
   void generateTemporaryStdCellsPlacement(Cluster* cluster);

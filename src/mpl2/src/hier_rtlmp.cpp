@@ -5574,7 +5574,7 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
 
   // Use exchange more often when there are more instances of a common
   // master.
-  const float exchange_swap_prob
+  float exchange_swap_prob
       = exchange_swap_prob_ * 5
         * (1 - (masters.size() / (float) hard_macros.size()));
 
@@ -5582,6 +5582,31 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
   const float action_sum = pos_swap_prob_ * 10 + neg_swap_prob_ * 10
                            + double_swap_prob_ + exchange_swap_prob
                            + flip_prob_;
+
+  float pos_swap_prob = pos_swap_prob_ * 10 / action_sum;
+  float neg_swap_prob = neg_swap_prob_ * 10 / action_sum;
+  float double_swap_prob = double_swap_prob_ / action_sum;
+  exchange_swap_prob = exchange_swap_prob / action_sum;
+  float flip_prob = flip_prob_ / action_sum;
+
+  int remaining_runs = num_runs_;
+
+  int number_of_real_macros = 0;
+  SequencePair initial_seq_pair;
+  if (cluster->isArrayOfInterconnectedMacros()) {
+    setArrayTilingSequencePair(cluster, macros, initial_seq_pair);
+
+    number_of_real_macros = cluster->getHardMacros().size();
+
+    pos_swap_prob = 0.0f;
+    neg_swap_prob = 0.0f;
+    double_swap_prob = 0.0f;
+    exchange_swap_prob = 0.95;
+    flip_prob = 0.05;
+
+    remaining_runs = 1;
+  }
+
   // We vary the outline of cluster to generate differnt tilings
   std::vector<float> vary_factor_list{1.0};
   float vary_step
@@ -5593,7 +5618,6 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
   const int num_perturb_per_step = (macros.size() > num_perturb_per_step_ / 10)
                                        ? macros.size()
                                        : num_perturb_per_step_ / 10;
-  int remaining_runs = num_runs_;
   int run_id = 0;
   SACoreHardMacro* best_sa = nullptr;
   std::vector<SACoreHardMacro*> sa_containers;  // store all the SA runs
@@ -5622,11 +5646,11 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
                                 wirelength_weight_ / (run_id + 1),
                                 guidance_weight_,
                                 fence_weight_,
-                                pos_swap_prob_ * 10 / action_sum,
-                                neg_swap_prob_ * 10 / action_sum,
-                                double_swap_prob_ / action_sum,
-                                exchange_swap_prob / action_sum,
-                                flip_prob_ / action_sum,
+                                pos_swap_prob,
+                                neg_swap_prob,
+                                double_swap_prob,
+                                exchange_swap_prob,
+                                flip_prob,
                                 init_prob_,
                                 max_num_step_,
                                 num_perturb_per_step,
@@ -5638,6 +5662,9 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
       sa->setNets(nets);
       sa->setFences(fences);
       sa->setGuides(guides);
+      sa->setInitialSequencePair(initial_seq_pair);
+      sa->setNumOfRealMacros(number_of_real_macros);
+
       sa_vector.push_back(sa);
     }
     if (sa_vector.size() == 1) {
@@ -5700,6 +5727,55 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
   // clean SA to avoid memory leakage
   sa_containers.clear();
   setInstProperty(cluster);
+}
+
+// Suppose we have a 2x2 array such as:
+//      +-----++-----+
+//      |     ||     |
+//      |  0  ||  2  |
+//      |     ||     |
+//      +-----++-----+
+//      +-----++-----+
+//      |     ||     |
+//      |  1  ||  3  |
+//      |     ||     |
+//      +-----++-----+
+//  We can represent it through a sequence pair in which:
+// 1) The positive sequence is made by going each column top
+//    to bottom starting from the upper left corner: 0 1 2 3
+// 2) The negative sequence is made by going each column bottom
+//    to top starting from the lower left corner: 1 0 3 2
+//
+// obs: Our sequence pair representantion includes the fixed terminals
+// but they can be in any position of the sequences, so here, we put
+// them at the end.
+void HierRTLMP::setArrayTilingSequencePair(
+    Cluster* cluster,
+    const std::vector<mpl2::HardMacro> macros,
+    SequencePair& initial_seq_pair)
+{
+  // Set positive sequence
+  for (int i = 0; i < macros.size(); ++i) {
+    initial_seq_pair.pos_sequence.push_back(i);
+  }
+
+  // Set negative sequence
+  const int columns
+      = cluster->getWidth() / cluster->getHardMacros().front()->getWidth();
+  const int rows
+      = cluster->getHeight() / cluster->getHardMacros().front()->getHeight();
+
+  for (int i = 1; i <= columns; ++i) {
+    for (int j = 1; j <= rows; j++) {
+      initial_seq_pair.neg_sequence.push_back(rows * i - j);
+    }
+  }
+
+  const int number_of_hard_macros = cluster->getHardMacros().size();
+
+  for (int i = number_of_hard_macros; i < macros.size(); ++i) {
+    initial_seq_pair.neg_sequence.push_back(i);
+  }
 }
 
 // Align all the macros globally to reduce the waste of standard cell space

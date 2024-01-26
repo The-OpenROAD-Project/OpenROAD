@@ -88,6 +88,11 @@ class SimulatedAnnealingCore
   void setFences(const std::map<int, Rect>& fences);
   // Guidance corresponds to each macro (macro_id, guide)
   void setGuides(const std::map<int, Rect>& guides);
+  void setInitialSequencePair(const SequencePair& sequence_pair);
+  void setNumOfRealMacros(int number_of_real_macros)
+  {
+    number_of_real_macros_ = number_of_real_macros;
+  };
 
   bool isValid() const;
   bool isValid(float outline_width, float outline_height) const;
@@ -109,6 +114,7 @@ class SimulatedAnnealingCore
   virtual void initialize() = 0;
   // Run FastSA algorithm
   void fastSA();
+  void initSequencePair();
   virtual void fillDeadSpace() = 0;
 
  protected:
@@ -221,6 +227,10 @@ class SimulatedAnnealingCore
   // we define accuracy to determine whether the floorplan is valid
   // because the error introduced by the type conversion
   static constexpr float acc_tolerance_ = 0.001;
+
+  bool has_initial_sequence_pair_ = false;
+
+  int number_of_real_macros_ = 0;
 };
 
 // SACore wrapper function

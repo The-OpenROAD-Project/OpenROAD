@@ -865,4 +865,10 @@ struct Rect
   bool fixed_flag = false;
 };
 
+struct SequencePair
+{
+  std::vector<int> pos_sequence;
+  std::vector<int> neg_sequence;
+};
+
 }  // namespace mpl2
