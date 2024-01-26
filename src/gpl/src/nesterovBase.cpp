@@ -683,9 +683,9 @@ void BinGrid::updateBinsNonPlaceArea()
   for (auto& inst : pb_->nonPlaceInsts()) {
     std::pair<int, int> pairX = getMinMaxIdxX(inst);
     std::pair<int, int> pairY = getMinMaxIdxY(inst);
-    for (int i = pairX.first; i < pairX.second; i++) {
-      for (int j = pairY.first; j < pairY.second; j++) {
-        Bin& bin = bins_[j * binCntX_ + i];
+    for (int y = pairY.first; y < pairY.second; y++) {
+      for (int x = pairX.first; x < pairX.second; x++) {
+        Bin& bin = bins_[y * binCntX_ + x];
 
         // Note that nonPlaceArea should have scale-down with
         // target density.
@@ -725,9 +725,9 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCell*>& cells)
       // macro should have
       // scale-down with target-density
       if (cell->isMacroInstance()) {
-        for (int i = pairX.first; i < pairX.second; i++) {
-          for (int j = pairY.first; j < pairY.second; j++) {
-            Bin& bin = bins_[j * binCntX_ + i];
+        for (int y = pairY.first; y < pairY.second; y++) {
+          for (int x = pairX.first; x < pairX.second; x++) {
+            Bin& bin = bins_[y * binCntX_ + x];
 
             const float scaledAvea = getOverlapDensityArea(bin, cell)
                                      * cell->densityScale()
@@ -739,9 +739,9 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCell*>& cells)
       }
       // normal cells
       else if (cell->isStdInstance()) {
-        for (int i = pairX.first; i < pairX.second; i++) {
-          for (int j = pairY.first; j < pairY.second; j++) {
-            Bin& bin = bins_[j * binCntX_ + i];
+        for (int y = pairY.first; y < pairY.second; y++) {
+          for (int x = pairX.first; x < pairX.second; x++) {
+            Bin& bin = bins_[y * binCntX_ + x];
             const float scaledArea
                 = getOverlapDensityArea(bin, cell) * cell->densityScale();
             bin.addInstPlacedArea(scaledArea);
@@ -750,9 +750,9 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCell*>& cells)
         }
       }
     } else if (cell->isFiller()) {
-      for (int i = pairX.first; i < pairX.second; i++) {
-        for (int j = pairY.first; j < pairY.second; j++) {
-          Bin& bin = bins_[j * binCntX_ + i];
+      for (int y = pairY.first; y < pairY.second; y++) {
+        for (int x = pairX.first; x < pairX.second; x++) {
+          Bin& bin = bins_[y * binCntX_ + x];
           bin.addFillerArea(getOverlapDensityArea(bin, cell)
                             * cell->densityScale());
         }
