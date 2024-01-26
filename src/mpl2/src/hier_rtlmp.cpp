@@ -3131,7 +3131,7 @@ void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
       columns = macro_array->getNumMacro() / divider;
       rows = divider;
 
-      tight_packing_tilings.push_back(std::pair<float, float>(
+      tight_packing_tilings.emplace_back(std::pair<float, float>(
           columns * macro_array->getHardMacros().front()->getWidth(),
           rows * macro_array->getHardMacros().front()->getHeight()));
     }
@@ -5751,7 +5751,7 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
 // them at the end.
 void HierRTLMP::setArrayTilingSequencePair(
     Cluster* cluster,
-    const std::vector<mpl2::HardMacro> macros,
+    const std::vector<mpl2::HardMacro>& macros,
     SequencePair& initial_seq_pair)
 {
   // Set positive sequence
