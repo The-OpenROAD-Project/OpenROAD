@@ -1319,6 +1319,7 @@ float FastRouteCore::CalculatePartialSlack()
   auto partial_routes = getPlanarRoutes();
 
   std::vector<float> slacks;
+  slacks.reserve(netCount());
   for (auto& net_route : partial_routes) {
     odb::dbNet* db_net = net_route.first;
     GRoute& route = net_route.second;
@@ -2085,12 +2086,13 @@ int FastRouteCore::edgeShift(Tree& t, int net)
 
   // TODO: check this size
   const int sizeV = 2 * nets_[net]->getNumPins();
-  int nbr[sizeV][3];
-  int nbrCnt[sizeV];
-  int pairN1[nets_[net]->getNumPins()];
-  int pairN2[nets_[net]->getNumPins()];
-  int costH[y_grid_];
-  int costV[x_grid_];
+  multi_array<int, 2> nbr;
+  nbr.resize(boost::extents[sizeV][3]);
+  std::vector<int> nbrCnt(sizeV);
+  std::vector<int> pairN1(nets_[net]->getNumPins());
+  std::vector<int> pairN2(nets_[net]->getNumPins());
+  std::vector<int> costH(y_grid_);
+  std::vector<int> costV(x_grid_);
 
   deg = t.deg;
   // find root of the tree
@@ -2422,8 +2424,8 @@ int FastRouteCore::edgeShiftNew(Tree& t, int net)
   deg = t.deg;
 
   const int sizeV = nets_[net]->getNumPins();
-  int pairN1[sizeV];
-  int pairN2[sizeV];
+  std::vector<int> pairN1(sizeV);
+  std::vector<int> pairN2(sizeV);
 
   iter = 0;
   cur_pairN1 = cur_pairN2 = -1;
