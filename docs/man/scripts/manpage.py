@@ -27,7 +27,6 @@ class ManPage():
             self.write_options(f)
             self.write_arguments(f)
             self.write_placeholder(f) #TODO.
-            self.write_copyright(f)
     
     def write_header(self, f, man_level):
         assert isinstance(f, io.TextIOBase) and\
@@ -37,7 +36,6 @@ class ManPage():
 
         f.write(f"---\n")
         f.write(f"title: {self.name}({man_level[-1]})\n")
-        f.write(f"author: Jack Luar (TODO@TODO.com)\n")
         f.write(f"date: {self.datetime}\n")
         f.write(f"---\n")
 

@@ -101,7 +101,7 @@ def man3(path=DEST_DIR3):
                 manpage.name = f"{module}-{num}"
                 if "with-total" in manpage.name: print(parts); exit()
                 manpage.synopsis = "N/A."
-                manpage.desc = f"Severity: {level}\n\n{message}"
+                manpage.desc = f"Type: {level}\n\n{message}"
                 manpage.write_roff_file(path)
 
                 # tabulate counts
