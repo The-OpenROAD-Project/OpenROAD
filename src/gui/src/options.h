@@ -72,7 +72,6 @@ class Options
   virtual bool areInstancePinsSelectable() = 0;
   virtual bool areInstancePinNamesVisible() = 0;
   virtual bool areInstanceBlockagesVisible() = 0;
-  virtual bool areFillsVisible() = 0;
   virtual bool areBlockagesVisible() = 0;
   virtual bool areBlockagesSelectable() = 0;
   virtual bool areObstructionsVisible() = 0;
@@ -84,6 +83,14 @@ class Options
   virtual bool arePrefTracksVisible() = 0;
   virtual bool areNonPrefTracksVisible() = 0;
 
+  virtual bool areIOPinsVisible() const = 0;
+  virtual bool areRoutingSegmentsVisible() const = 0;
+  virtual bool areRoutingViasVisible() const = 0;
+  virtual bool areSpecialRoutingSegmentsVisible() const = 0;
+  virtual bool areSpecialRoutingViasVisible() const = 0;
+  virtual bool areFillsVisible() const = 0;
+  virtual QFont pinMarkersFont() const = 0;
+
   virtual QColor rulerColor() = 0;
   virtual QFont rulerFont() = 0;
   virtual bool areRulersVisible() = 0;
@@ -94,8 +101,6 @@ class Options
   virtual bool areSelectedVisible() = 0;
 
   virtual bool isScaleBarVisible() const = 0;
-  virtual bool areIOPinsVisible() const = 0;
-  virtual QFont pinMarkersFont() = 0;
   virtual bool areAccessPointsVisible() const = 0;
   virtual bool areRegionsVisible() const = 0;
   virtual bool areRegionsSelectable() const = 0;

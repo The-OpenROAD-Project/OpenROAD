@@ -71,8 +71,8 @@ class PlSP2BTree
   inline bool SPabove(int i, int j) const;
   inline bool SPbelow(int i, int j) const;
 
-  static const float Infty;
-  static const int Undefined;  // = BTree::Undefined;
+  static constexpr float Infty = basepacking_h::Dimension::Infty;
+  static constexpr int Undefined = BTree::Undefined;
 
  private:
   int _blocknum;
