@@ -42,15 +42,16 @@ class Resizer;
 using utl::Logger;
 using dbSta = sta::dbSta;
 
-class PreChecks {
-public:
+class PreChecks
+{
+ public:
   PreChecks(Resizer* resizer);
   void checkSlewLimit(float ref_cap, float max_load_slew);
 
-private:
-  Logger *logger_;
-  dbSta *sta_;
-  Resizer *resizer_;
+ private:
+  Logger* logger_;
+  dbSta* sta_;
+  Resizer* resizer_;
 
   // best slew numbers to ensure the max_slew in SDC is reasonable
   float best_case_slew_;
@@ -58,4 +59,4 @@ private:
   bool best_case_slew_computed_;
 };
 
-} // namespace rsz
+}  // namespace rsz

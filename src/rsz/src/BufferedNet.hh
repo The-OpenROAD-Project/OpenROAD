@@ -38,14 +38,13 @@
 #include <array>
 #include <memory>
 
-#include "utl/Logger.h"
-#include "spdlog/fmt/fmt.h"
 #include "odb/geom.h"
-
-#include "sta/Transition.hh"
-#include "sta/Network.hh"
+#include "spdlog/fmt/fmt.h"
 #include "sta/Delay.hh"
+#include "sta/Network.hh"
 #include "sta/PathRef.hh"
+#include "sta/Transition.hh"
+#include "utl/Logger.h"
 
 namespace rsz {
 
@@ -56,63 +55,68 @@ using utl::Logger;
 
 using odb::Point;
 
+using sta::Corner;
+using sta::DcalcAnalysisPt;
+using sta::Delay;
 using sta::LibertyCell;
+using sta::Network;
+using sta::PathRef;
 using sta::Pin;
 using sta::Required;
 using sta::RiseFall;
-using sta::Network;
+using sta::StaState;
 using sta::Unit;
 using sta::Units;
-using sta::PathRef;
-using sta::Delay;
-using sta::StaState;
-using sta::DcalcAnalysisPt;
-using sta::Corner;
 
 class Resizer;
 
 class BufferedNet;
-using BufferedNetPtr = std::shared_ptr<BufferedNet> ;
+using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 using Requireds = array<Required, RiseFall::index_count>;
 
-enum class BufferedNetType { load, junction, wire, buffer };
+enum class BufferedNetType
+{
+  load,
+  junction,
+  wire,
+  buffer
+};
 
-// The routing tree is represented as a binary tree with the sinks being the leaves
-// of the tree, the junctions being the Steiner nodes and the root being the
-// source of the net.
+// The routing tree is represented as a binary tree with the sinks being the
+// leaves of the tree, the junctions being the Steiner nodes and the root being
+// the source of the net.
 class BufferedNet
 {
-public:
+ public:
   // load
   BufferedNet(BufferedNetType type,
               const Point& location,
-              const Pin *load_pin,
-              const Corner *corner,
-              const Resizer *resizer);
+              const Pin* load_pin,
+              const Corner* corner,
+              const Resizer* resizer);
   // wire
   BufferedNet(BufferedNetType type,
               const Point& location,
               int layer,
               const BufferedNetPtr& ref,
-              const Corner *corner,
-              const Resizer *resizer);
+              const Corner* corner,
+              const Resizer* resizer);
   // junc
   BufferedNet(BufferedNetType type,
               const Point& location,
               const BufferedNetPtr& ref,
               const BufferedNetPtr& ref2,
-              const Resizer *resizer);
+              const Resizer* resizer);
   // buffer
   BufferedNet(BufferedNetType type,
               const Point& location,
-              LibertyCell *buffer_cell,
+              LibertyCell* buffer_cell,
               const BufferedNetPtr& ref,
-              const Corner *corner,
-              const Resizer *resizer);
-  string to_string(const Resizer *resizer) const;
-  void reportTree(const Resizer *resizer) const;
-  void reportTree(int level,
-                  const Resizer *resizer) const;
+              const Corner* corner,
+              const Resizer* resizer);
+  string to_string(const Resizer* resizer) const;
+  void reportTree(const Resizer* resizer) const;
+  void reportTree(int level, const Resizer* resizer) const;
   BufferedNetType type() const { return type_; }
   // junction steiner point location connecting ref/ref2
   // wire     wire is from loc to location(ref_)
@@ -126,18 +130,18 @@ public:
   float maxLoadSlew() const { return max_load_slew_; }
   void setMaxLoadSlew(float max_slew);
   // load
-  const Pin *loadPin() const { return load_pin_; }
+  const Pin* loadPin() const { return load_pin_; }
   // wire
   int length() const;
   // routing level
   int layer() const { return layer_; }
-  void wireRC(const Corner *corner,
-              const Resizer *resizer,
+  void wireRC(const Corner* corner,
+              const Resizer* resizer,
               // Return values.
-              double &res,
-              double &cap);
+              double& res,
+              double& cap);
   // buffer
-  LibertyCell *bufferCell() const { return buffer_cell_; }
+  LibertyCell* bufferCell() const { return buffer_cell_; }
   // junction  left
   // buffer    wire
   // wire      end of wire
@@ -149,9 +153,9 @@ public:
   int maxLoadWireLength() const;
 
   // Rebuffer
-  Required required(const StaState *sta) const;
-  const PathRef &requiredPath() const { return required_path_; }
-  void setRequiredPath(const PathRef &path_ref);
+  Required required(const StaState* sta) const;
+  const PathRef& requiredPath() const { return required_path_; }
+  void setRequiredPath(const PathRef& path_ref);
   Delay requiredDelay() const { return required_delay_; }
   void setRequiredDelay(Delay delay);
   // Downstream buffer count.
@@ -159,13 +163,13 @@ public:
 
   static constexpr int null_layer = -1;
 
-private:
+ private:
   BufferedNetType type_;
   Point location_;
   // only used by load type
-  const Pin *load_pin_;
+  const Pin* load_pin_;
   // only used by buffer type
-  LibertyCell *buffer_cell_;
+  LibertyCell* buffer_cell_;
   // only used by wire type
   int layer_;
   // only used by buffer, wire, and junc types
@@ -185,4 +189,4 @@ private:
   Delay required_delay_;
 };
 
-} // namespace rsz
+}  // namespace rsz
