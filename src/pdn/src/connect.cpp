@@ -746,7 +746,7 @@ void Connect::populateGenerateRules()
         use_fixed_via = true;
       }
     }
-    if (use_fixed_via) {
+    if (use_fixed_via || !fixed_tech_vias_.empty()) {
       continue;
     }
     for (odb::dbTechViaGenerateRule* db_via : tech->getViaGenerateRules()) {
@@ -789,7 +789,7 @@ void Connect::populateTechVias()
         use_fixed_via = true;
       }
     }
-    if (use_fixed_via) {
+    if (use_fixed_via || !fixed_generate_vias_.empty()) {
       continue;
     }
     for (odb::dbTechVia* db_via : tech->getVias()) {
