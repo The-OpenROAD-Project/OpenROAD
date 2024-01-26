@@ -3,10 +3,10 @@ set MAN_PATH ""
 
 sta::define_cmd_args "man" { name\
                             [-manpath manpath]\
-                            [-slow]}
+                            [-no_query]}
 proc man { args } {
   sta::parse_key_args "man" args \
-    keys {-manpath} flags {-slow}
+    keys {-manpath} flags {-no_query}
   
   set name [lindex $args 0]
   set DEFAULT_MAN_PATH "../docs/cat"
@@ -21,9 +21,9 @@ proc man { args } {
     set MAN_PATH $DEFAULT_MAN_PATH
   }
 
-  set slow 0
-  if { [info exists flags(-slow) ]} {
-    set slow 1
+  set no_query 0
+  if { [info exists flags(-no_query) ]} {
+    set no_query 1
   }
 
   #set MAN_PATH [utl::get_input]
@@ -55,14 +55,14 @@ proc man { args } {
         # Display content
         set lines [split $content "\n"]
         set num_lines [llength $lines]
-        set page_size 10
+        set page_size 40
 
         for {set i 0} {$i < $num_lines} {incr i $page_size} {
           set page [lrange $lines $i [expr {$i + $page_size - 1}]]
           puts [join $page "\n"]
 
           # Ask user to continue or quit
-          if {$slow && [llength $lines] > $page_size} {
+          if {!$no_query && [llength $lines] > $page_size} {
               puts -nonewline "---\nPress 'q' to quit or any other key to continue: \n---"
               flush stdout;
               set input [gets stdin]
