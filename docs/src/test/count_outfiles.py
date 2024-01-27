@@ -1,18 +1,14 @@
 import os
 import sys
-sys.path.append('../scripts/')
 
 # Test objective: To count the number of expected files in man2/man3
 
 # This script mimics the build process and checks expected output.
-os.chdir("../../")
+path = os.path.realpath("md_roff_compat.py")
+docs_dir = os.path.dirname(os.path.dirname(os.path.dirname(path)))
+os.chdir(docs_dir)
 os.system("make clean -s && make preprocess -s")
 os.system("make all -j16 -s")
-
-# This tracks how many modules are being generated for man2.
-# Please change this if modules are added!
-MAN2_COUNT = 24
-
 
 # Check if the files in html1 == cat1, html2 == cat2, html3 = cat3
 for i in range(1, 4):

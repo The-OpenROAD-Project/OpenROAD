@@ -1,6 +1,5 @@
 ---
 title: openroad(0)
-author: Jack Luar (TODO@TODO.com)
 date: 2023/11/13
 ---
 
@@ -110,7 +109,3 @@ OpenROAD binary.
 # HISTORY
 
 # BUGS
-
-# COPYRIGHT
-
-Copyright (c) 2024, The Regents of the University of California. All rights reserved.

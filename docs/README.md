@@ -12,11 +12,14 @@ This on-line documentation is available at [https://openroad.readthedocs.io/en/l
 
 ### Build instructions for Pandoc manpages
 
+The `-j16` command is optional for speeding up the manpage compilation process by using multiple jobs
+based on the number of cores in your system.
+
 ```shell
 make clean
 
 # Note this step is important as it regenerates the documentation using latest sources.
-make preprocess && make all #-j16
+make preprocess && make all -j16
 ```
 
 #### To view manpages

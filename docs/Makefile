@@ -11,7 +11,7 @@
 
 # Define variables
 PANDOC = pandoc
-SRC_DIR = man/md
+SRC_DIR = md
 MAN_ROOT_DIR = man
 HTML_ROOT_DIR = html
 CAT_ROOT_DIR = cat
@@ -57,7 +57,7 @@ all: doc web cat
 
 # Target to do symlinks and pandoc-compatible conversion
 preprocess:
-	./man/scripts/link_readmes.sh && python3 man/scripts/md_roff_compat.py
+	./src/scripts/link_readmes.sh && python3 src/scripts/md_roff_compat.py
 
 # Target to generate all man pages
 doc: $(MAN1_PAGES) $(MAN2_PAGES) $(MAN3_PAGES)
@@ -158,6 +158,6 @@ clean:
 	rm -rf $(MAN1_DIR) $(MAN2_DIR) $(MAN3_DIR)
 	rm -rf $(HTML1_DIR) $(HTML2_DIR) $(HTML3_DIR)
 	rm -rf $(CAT1_DIR) $(CAT2_DIR) $(CAT3_DIR)
-	rm -rf ./man/md/man2/*md
-	rm -rf ./man/md/man3/*md
+	rm -rf ./md/man2/*md
+	rm -rf ./md/man3/*md
 	rm -rf $(BUILDDIR)
