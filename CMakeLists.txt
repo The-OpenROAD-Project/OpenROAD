@@ -153,3 +153,20 @@ if(ENABLE_TESTS)
 endif()
 
 add_subdirectory(src)
+
+
+####################################################################
+
+# Build docs
+
+option(BUILD_MAN "Enable building man pages" OFF)
+
+# Check if the optional target should be added
+if(BUILD_MAN)
+  # TODO ADD install path for docs installation too.
+  add_custom_target(
+    man_page ALL
+    COMMAND make clean && make preprocess && make all -j16
+    WORKING_DIRECTORY ${OPENROAD_HOME}/docs
+  )
+endif()
