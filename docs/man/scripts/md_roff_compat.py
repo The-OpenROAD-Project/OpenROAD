@@ -96,7 +96,8 @@ def man3(path=DEST_DIR3):
             for line in f:
                 parts = line.split()
                 module, num, message, level = parts[0], parts[1],\
-                                " ".join(parts[4:-2]), parts[-2]
+                                " ".join(parts[3:-2]), parts[-2]
+                print(module, num, message, level)
                 manpage = ManPage()
                 manpage.name = f"{module}-{num}"
                 if "with-total" in manpage.name: print(parts); exit()
