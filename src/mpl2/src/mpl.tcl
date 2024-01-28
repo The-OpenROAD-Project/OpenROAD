@@ -77,7 +77,7 @@ proc rtl_macro_placer { args } {
         -bus_planning_flag \
         -report_directory \
         -write_macro_placement \
-    } flag {  }
+    } flags {  }
 #
 # Check for valid design
     if {  [ord::get_db_block] == "NULL" } {
@@ -266,6 +266,7 @@ sta::define_cmd_args "place_macro" {-macro_name macro_name \
 proc place_macro { args } {
   sta::parse_key_args "place_macro" args \
   keys {-macro_name -location -orientation} \
+  flag {}
 
   if [info exists keys(-macro_name)] {
     set macro_name $keys(-macro_name)

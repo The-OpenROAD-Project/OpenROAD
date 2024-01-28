@@ -38,7 +38,8 @@ sta::define_cmd_args "define_process_corner" {
 }
 
 proc define_process_corner { args } {
-  sta::parse_key_args "define_process_corner" args keys {-ext_model_index}
+  sta::parse_key_args "define_process_corner" args \
+  keys {-ext_model_index} flags {}
   sta::check_argc_eq1 "define_process_corner" $args
 
   set ext_model_index 0
@@ -160,7 +161,8 @@ proc adjust_rc { args } {
   sta::parse_key_args "adjust_rc" args keys \
       { -res_factor
         -cc_factor
-        -gndc_factor }
+        -gndc_factor } \
+        flags {}
 
   set res_factor 1.0
   if { [info exists keys(-res_factor)] } {

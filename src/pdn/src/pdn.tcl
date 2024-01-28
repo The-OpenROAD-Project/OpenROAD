@@ -89,7 +89,8 @@ sta::define_cmd_args "set_voltage_domain" {-name domain_name \
 
 proc set_voltage_domain {args} {
   sta::parse_key_args "set_voltage_domain" args \
-    keys {-name -region -power -ground -secondary_power -switched_power}
+    keys {-name -region -power -ground -secondary_power -switched_power} \
+    flags {}
 
   sta::check_argc_eq0 "set_voltage_domain" $args
 
@@ -210,7 +211,8 @@ sta::define_cmd_args "define_power_switch_cell" {-name <name> \
 
 proc define_power_switch_cell {args} {
   sta::parse_key_args "define_power_switch_cell" args \
-    keys {-name -control -acknowledge -power_switchable -power -ground} 
+    keys {-name -control -acknowledge -power_switchable -power -ground} \
+    flags {}
 
   sta::check_argc_eq0 "define_power_switch_cell" $args
 

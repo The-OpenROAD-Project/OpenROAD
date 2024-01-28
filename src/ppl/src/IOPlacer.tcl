@@ -43,7 +43,8 @@ sta::define_cmd_args "define_pin_shape_pattern" {[-layer layer] \
 
 proc define_pin_shape_pattern { args } {
   sta::parse_key_args "define_pin_shape_pattern" args \
-  keys {-layer -x_step -y_step -region -size -pin_keepout}
+  keys {-layer -x_step -y_step -region -size -pin_keepout} \
+  flags {}
 
   sta::check_argc_eq0 "define_pin_shape_pattern" $args
 
@@ -254,7 +255,8 @@ sta::define_cmd_args "set_pin_length" {[-hor_length h_length]\
 
 proc set_pin_length { args } {
   sta::parse_key_args "set_pin_length" args \
-  keys {-hor_length -ver_length}
+  keys {-hor_length -ver_length} \
+  flags {}
 
   sta::check_argc_eq0 "set_pin_length" $args
 
@@ -273,7 +275,8 @@ sta::define_cmd_args "set_pin_length_extension" {[-hor_extension h_ext]\
 
 proc set_pin_length_extension { args } {
   sta::parse_key_args "set_pin_length_extension" args \
-  keys {-hor_extension -ver_extension}
+  keys {-hor_extension -ver_extension} \
+  flags {}
 
   sta::check_argc_eq0 "set_pin_length_extension" $args
 
@@ -292,7 +295,8 @@ sta::define_cmd_args "set_pin_thick_multiplier" {[-hor_multiplier h_mult]\
 
 proc set_pin_thick_multiplier { args } {
   sta::parse_key_args "set_pin_thick_multiplier" args \
-  keys {-hor_multiplier -ver_multiplier}
+  keys {-hor_multiplier -ver_multiplier} \
+  flags {}
 
   sta::check_argc_eq0 "set_pin_thick_multiplier" $args
 
@@ -313,7 +317,8 @@ sta::define_cmd_args "set_simulated_annealing" {[-temperature temperature]\
 
 proc set_simulated_annealing { args } {
   sta::parse_key_args "set_simulated_annealing" args \
-  keys {-temperature -max_iterations -perturb_per_iter -alpha}
+  keys {-temperature -max_iterations -perturb_per_iter -alpha} \
+  flags {}
 
   if [info exists keys(-temperature)] {
     set temperature $keys(-temperature)

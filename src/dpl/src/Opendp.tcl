@@ -36,7 +36,8 @@ sta::define_cmd_args "detailed_placement" {[-max_displacement disp|{disp_x disp_
 
 proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
-    keys {-max_displacement -report_file_name} flags {-disallow_one_site_gaps}
+    keys {-max_displacement -report_file_name} flags {-disallow_one_site_gaps} \
+    flags {}
 
 set disallow_one_site_gaps [info exists flags(-disallow_one_site_gaps)]
   if { [info exists keys(-max_displacement)] } {

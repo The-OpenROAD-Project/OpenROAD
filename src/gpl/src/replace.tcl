@@ -329,8 +329,8 @@ sta::define_cmd_args "cluster_flops" {\
 
 proc cluster_flops { args } {
   sta::parse_key_args "cluster_flops" args \
-    keys { -tray_weight -timing_weight -max_split_size }
-
+    keys { -tray_weight -timing_weight -max_split_size } \
+    flags {}
 
   set tray_weight 20.0
   set timing_weight 1.0
@@ -383,7 +383,8 @@ proc global_placement_debug { args } {
 
 proc get_global_placement_uniform_density { args } {
   sta::parse_key_args "get_global_placement_uniform_density" args \
-    keys { -pad_left -pad_right }
+    keys { -pad_left -pad_right } \
+    flags {}
 
   # no need for init IP, TD and RD 
   gpl::set_initial_place_max_iter_cmd 0

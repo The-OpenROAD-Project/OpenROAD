@@ -17,8 +17,8 @@ tools = ["ant", "cts", "dbSta", "dft", "dpl", "dpo", "drt",\
         "rcx", "rmp", "rsz", "sta", "stt", "tap", "upf", "utl"]
 # Process man2 (except odb and sta)
 DEST_DIR2 = SRC_DIR = "./md/man2"
-exclude = ["odb", "sta"]
-docs2 = [f"{SRC_DIR}/{tool}.md" for tool in tools if tool not in exclude]
+exclude2 = ["odb", "sta"]
+docs2 = [f"{SRC_DIR}/{tool}.md" for tool in tools if tool not in exclude2]
 
 # Process man3 (add extra path for ORD messages)
 SRC_DIR = "../src"

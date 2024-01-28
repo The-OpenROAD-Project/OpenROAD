@@ -69,7 +69,7 @@ sta::define_cmd_args "set_global_routing_region_adjustment" { region \
 
 proc set_global_routing_region_adjustment { args } {
   sta::parse_key_args "set_global_routing_region_adjustment" args \
-                 keys {-layer -adjustment}
+                 keys {-layer -adjustment} flags {}
 
   if { ![ord::db_has_tech] } {
     utl::error GRT 47 "Missing dbTech."
@@ -119,7 +119,7 @@ sta::define_cmd_args "set_routing_layers" { [-signal layers] \
 
 proc set_routing_layers { args } {
   sta::parse_key_args "set_routing_layers" args \
-    keys {-signal -clock}
+    keys {-signal -clock} flags {}
 
   sta::check_argc_eq0 "set_routing_layers" $args
 
@@ -163,7 +163,7 @@ sta::define_cmd_args "set_global_routing_random" { [-seed seed] \
 
 proc set_global_routing_random { args } {
   sta::parse_key_args "set_global_routing_random" args \
-    keys { -seed -capacities_perturbation_percentage -perturbation_amount }
+    keys { -seed -capacities_perturbation_percentage -perturbation_amount } flags {}
 
   sta::check_argc_eq0 "set_global_routing_random" $args
 
@@ -290,7 +290,7 @@ sta::define_cmd_args "repair_antennas" { [diode_cell] \
 
 proc repair_antennas { args } {
   sta::parse_key_args "repair_antennas" args \
-                 keys {-iterations -ratio_margin}
+                 keys {-iterations -ratio_margin} flags {}
   if { [grt::have_routes] } {
     if { [llength $args] == 0 } {
       # repairAntennas locates diode
