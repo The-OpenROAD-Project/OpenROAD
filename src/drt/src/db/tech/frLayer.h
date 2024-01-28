@@ -730,6 +730,22 @@ class frLayer
     return (!keepOutZoneConstraints.empty());
   }
 
+  void addSpacingRangeConstraint(frSpacingRangeConstraint* in)
+  {
+    spacingRangeConstraints.push_back(in);
+  }
+
+  const std::vector<frSpacingRangeConstraint*>& getSpacingRangeConstraint()
+      const
+  {
+    return spacingRangeConstraints;
+  }
+
+  bool hasSpacingRangeConstraint() const
+  {
+    return (!spacingRangeConstraints.empty());
+  }
+
   void setLef58SameNetInterCutSpcTblConstraint(
       frLef58CutSpacingTableConstraint* con)
   {
@@ -864,6 +880,7 @@ class frLayer
   std::vector<frMetalWidthViaConstraint*> metalWidthViaConstraints;
   std::vector<frLef58AreaConstraint*> lef58AreaConstraints;
   std::vector<frLef58KeepOutZoneConstraint*> keepOutZoneConstraints;
+  std::vector<frSpacingRangeConstraint*> spacingRangeConstraints;
   drEolSpacingConstraint drEolCon;
 };
 }  // namespace fr

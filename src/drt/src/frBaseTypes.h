@@ -204,7 +204,8 @@ enum class frConstraintTypeEnum
   frcLef58MinimumCutConstraint,
   frcMetalWidthViaConstraint,
   frcLef58AreaConstraint,
-  frcLef58KeepOutZoneConstraint
+  frcLef58KeepOutZoneConstraint,
+  frcSpacingRangeConstraint
 };
 
 std::ostream& operator<<(std::ostream& os, frConstraintTypeEnum type);

@@ -228,6 +228,8 @@ class frConstraint
         return "Lef58Area";
       case frConstraintTypeEnum::frcLef58KeepOutZoneConstraint:
         return "KeepOutZone";
+      case frConstraintTypeEnum::frcSpacingRangeConstraint:
+        return "SpacingRange";
     }
     return "";
   }
@@ -1325,7 +1327,40 @@ class frSpacingTableInfluenceConstraint : public frConstraint
  private:
   fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> tbl;
 };
+// range spacing
+class frSpacingRangeConstraint : public frSpacingConstraint
+{
+ public:
+  // constructor
+  frSpacingRangeConstraint() : frSpacingConstraint(), minWidth(0), maxWidth(0)
+  {
+  }
+  // getters
+  frCoord getMinWidth() const { return minWidth; }
+  frCoord getMaxWidth() const { return minWidth; }
+  // setters
+  void setMinWidth(frCoord in) { minWidth = in; }
+  void setMaxWidth(frCoord in) { maxWidth = in; }
+  // others
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcSpacingRangeConstraint;
+  }
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("Spacing RANGE minWidth {} maxWidth {}", minWidth, maxWidth);
+  }
+  bool inRange(frCoord width) const
+  {
+    return width >= minWidth && width <= maxWidth;
+  }
 
+ protected:
+  frCoord minWidth;
+  frCoord maxWidth;
+};
+
+//
 // EOL spacing
 class frSpacingEndOfLineConstraint : public frSpacingConstraint
 {
