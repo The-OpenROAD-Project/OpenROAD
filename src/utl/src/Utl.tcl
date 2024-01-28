@@ -9,7 +9,19 @@ proc man { args } {
     keys {-manpath} flags {-no_query}
   
   set name [lindex $args 0]
-  set DEFAULT_MAN_PATH "../docs/cat"
+  set DEFAULT_MAN_PATH "/usr/local/share/man/cat"
+
+  # check the default man path based on executable path
+  set exec_output [info nameofexecutable]
+
+  # Check if the output contains 'build/src'
+  if {[string match "*build/src*" $exec_output]} {
+    set executable_path [file normalize [file dirname [info nameofexecutable]]]
+    set man_path [file normalize [file dirname [file dirname $executable_path]]]
+    set DEFAULT_MAN_PATH [file join $man_path "docs" "cat"]
+  }
+  puts "Default man path $DEFAULT_MAN_PATH"
+
   global MAN_PATH
   if { [info exists keys(-manpath) ]} {
     set MAN_PATH $keys(-manpath)

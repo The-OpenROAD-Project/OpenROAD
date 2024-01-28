@@ -157,16 +157,18 @@ add_subdirectory(src)
 
 ####################################################################
 
-# Build docs
+# Build man pages (Optional)
 
 option(BUILD_MAN "Enable building man pages" OFF)
-
-# Check if the optional target should be added
 if(BUILD_MAN)
-  # TODO ADD install path for docs installation too.
   add_custom_target(
     man_page ALL
     COMMAND make clean && make preprocess && make all -j16
     WORKING_DIRECTORY ${OPENROAD_HOME}/docs
   )
+  
+  # Based on ${CMAKE_INSTALL_PREFIX}, we want to go to ${CMAKE_INSTALL_PREFIX}/share/man
+  set(MANPAGE_DIR ${OPENROAD_HOME}/docs/cat)
+  install(DIRECTORY ${MANPAGE_DIR} DESTINATION ${CMAKE_INSTALL_PREFIX}/share/man)
+
 endif()

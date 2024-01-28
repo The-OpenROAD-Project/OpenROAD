@@ -462,6 +462,11 @@ endif()
 # executable
 install(TARGETS openroad DESTINATION bin)
 
+
+if(BUILD_MAN)
+  install(DIRECTORY ${MANPAGE_DIR} DESTINATION ${CMAKE_INSTALL_PREFIX}/share/man)
+endif()
+
 ################################################################
 
 add_custom_target(openroad_tags etags -o TAGS
