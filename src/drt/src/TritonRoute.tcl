@@ -58,7 +58,7 @@ sta::define_cmd_args "detailed_route" {
     [-no_pin_access]
     [-min_access_points count]
     [-save_guide_updates]
-    [-repair_pdn_vias layer]
+    [-repair_pdn_vias begin_layer end_layer]
 }
 
 proc detailed_route { args } {
@@ -79,11 +79,18 @@ proc detailed_route { args } {
   set single_step_dr  [expr [info exists flags(-single_step_dr)]]
   set save_guide_updates  [expr [info exists flags(-save_guide_updates)]]
 
-  if { [info exists keys(-repair_pdn_vias)] } {
-    set repair_pdn_vias $keys(-repair_pdn_vias)
+  if {[info exists keys(-repair_pdn_vias)]} {
+    set repair_pdn_vias $keys(-repair_pdn_vias) 
+    if {[llength $repair_pdn_vias] != 2} {
+      utl::error DRT 556 "-repair_pdn_vias should be a list of 2 layers; the begin via layer and end via layer"
+    } else {
+      lassign $keys(-repair_pdn_vias) repair_pdn_vias_begin repair_pdn_vias_end
+    }
   } else {
-    set repair_pdn_vias ""
+    set repair_pdn_vias_begin "" 
+    set repair_pdn_vias_end ""
   }
+
   if { [info exists keys(-output_maze)] } {
     set output_maze $keys(-output_maze)
   } else {
@@ -195,7 +202,7 @@ proc detailed_route { args } {
     $via_in_pin_bottom_layer $via_in_pin_top_layer \
     $or_seed $or_k $bottom_routing_layer $top_routing_layer $verbose \
     $clean_patches $no_pin_access $single_step_dr $min_access_points \
-    $save_guide_updates $repair_pdn_vias $drc_report_iter_step
+    $save_guide_updates $repair_pdn_vias_begin $repair_pdn_vias_end $drc_report_iter_step
 }
 
 proc detailed_route_num_drvs { args } {

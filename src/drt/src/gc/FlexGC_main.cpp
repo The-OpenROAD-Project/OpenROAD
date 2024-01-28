@@ -785,6 +785,9 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1,
   if (ptr1 == ptr2) {
     return;
   }
+  if (isSkipVia(ptr1) || isSkipVia(ptr2)) {
+    return;
+  }
   gtl::rectangle_data<frCoord> markerRect(*ptr1);
   auto distX = gtl::euclidean_distance(markerRect, *ptr2, gtl::HORIZONTAL);
   auto distY = gtl::euclidean_distance(markerRect, *ptr2, gtl::VERTICAL);

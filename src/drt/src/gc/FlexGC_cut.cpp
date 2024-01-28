@@ -354,9 +354,10 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
   }
 }
 
-inline bool isSkipVia(gcRect* rect)
+bool FlexGCWorker::Impl::isSkipVia(gcRect* rect)
 {
-  return rect->getLayerNum() == GC_IGNORE_PDN_LAYER && rect->isFixed()
+  return rect->getLayerNum() >= GC_IGNORE_PDN_BEGIN_LAYER
+         && rect->getLayerNum() <= GC_IGNORE_PDN_END_LAYER && rect->isFixed()
          && rect->hasNet() && rect->getNet()->getFrNet()
          && rect->getNet()->getFrNet()->getType().isSupply();
 }
@@ -414,12 +415,15 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl(
       continue;
     if (isSkipVia(ptr))
       continue;
+    queryLayerNum = layerNum1;
+
     if (isUpperVia)
       checkLef58CutSpacingTbl_main(viaRect, ptr, con);
     else
       checkLef58CutSpacingTbl_main(ptr, viaRect, con);
   }
 }
+
 void FlexGCWorker::Impl::checKeepOutZone_main(gcRect* rect,
                                               frLef58KeepOutZoneConstraint* con)
 {
