@@ -410,7 +410,7 @@ int IOPlacer::placeFallbackPins(bool random)
             PPL,
             109,
             "Pin group of size {} does not fit any region in the die "
-            "boundaries. Not enough conmtiguous slots available. The first pin "
+            "boundaries. Not enough contiguous slots available. The first pin "
             "of the group is {}.",
             group.first.size(),
             io_pin.getName());
@@ -680,6 +680,12 @@ int IOPlacer::micronsToDbu(double microns)
   return (int64_t) (microns * getBlock()->getDbUnitsPerMicron());
 }
 
+double IOPlacer::areaDbuToMicrons(int64_t dbu)
+{
+  const int units_per_micron = getBlock()->getDbUnitsPerMicron();
+  return static_cast<double>(dbu) / (units_per_micron * units_per_micron);
+}
+
 void IOPlacer::writePinPlacement(const char* file_name)
 {
   std::string filename = file_name;
@@ -728,8 +734,8 @@ Edge IOPlacer::getMirroredEdge(const Edge& edge)
   return mirrored_edge;
 }
 
-int IOPlacer::computeRegionIncrease(const Interval& interval,
-                                    const int num_pins)
+int IOPlacer::computeNewRegionLength(const Interval& interval,
+                                     const int num_pins)
 {
   const bool vertical_pin
       = interval.getEdge() == Edge::top || interval.getEdge() == Edge::bottom;
@@ -745,12 +751,20 @@ int IOPlacer::computeRegionIncrease(const Interval& interval,
       min_dist = std::max(layer_min_dist, min_dist);
     }
   } else {
-    for (int layer_idx : ver_layers_) {
-      const int layer_min_dist = core_->getMinDstPinsX()[layer_idx];
+    for (int layer_idx : hor_layers_) {
+      const int layer_min_dist = core_->getMinDstPinsY()[layer_idx];
       min_dist = std::max(layer_min_dist, min_dist);
     }
   }
 
+  const int increase = computeIncrease(min_dist, num_pins, interval_length);
+  return increase + interval_length;
+}
+
+int64_t IOPlacer::computeIncrease(int min_dist,
+                                  const int64_t num_pins,
+                                  const int64_t curr_length)
+{
   const bool dist_in_tracks = parms_->getMinDistanceInTracks();
   const int user_min_dist = parms_->getMinDistance();
   if (dist_in_tracks) {
@@ -762,8 +776,7 @@ int IOPlacer::computeRegionIncrease(const Interval& interval,
     min_dist *= default_min_dist_;
   }
 
-  const int increase = (num_pins * min_dist) - interval_length;
-
+  const int64_t increase = (num_pins * min_dist) - curr_length;
   return increase;
 }
 
@@ -907,12 +920,29 @@ void IOPlacer::defineSlots()
   int regular_pin_count = static_cast<int>(netlist_io_pins_->getIOPins().size())
                           - top_layer_pins_count_;
   if (regular_pin_count > slots_.size()) {
-    logger_->error(PPL,
-                   24,
-                   "Number of IO pins ({}) exceeds maximum number of available "
-                   "positions ({}).",
-                   regular_pin_count,
-                   slots_.size());
+    int min_dist = std::numeric_limits<int>::min();
+    for (int layer_idx : ver_layers_) {
+      const int layer_min_dist = core_->getMinDstPinsX()[layer_idx];
+      min_dist = std::max(layer_min_dist, min_dist);
+    }
+    for (int layer_idx : hor_layers_) {
+      const int layer_min_dist = core_->getMinDstPinsY()[layer_idx];
+      min_dist = std::max(layer_min_dist, min_dist);
+    }
+
+    const int64_t die_margin = getBlock()->getDieArea().margin();
+    const int64_t new_margin
+        = computeIncrease(min_dist, regular_pin_count, die_margin) + die_margin;
+
+    logger_->error(
+        PPL,
+        24,
+        "Number of IO pins ({}) exceeds maximum number of available "
+        "positions ({}). Increase the die perimeter from {:.2f}um to {:.2f}um.",
+        regular_pin_count,
+        slots_.size(),
+        dbuToMicrons(die_margin),
+        dbuToMicrons(new_margin));
   }
 
   if (top_layer_pins_count_ > top_layer_slots_.size()) {
@@ -1763,6 +1793,11 @@ void IOPlacer::initConstraints(bool annealing)
     getPinsFromDirectionConstraint(constraint);
     constraint.sections = createSectionsPerConstraint(constraint);
     int num_slots = 0;
+    const int region_begin = constraint.interval.getBegin();
+    const int region_end = constraint.interval.getEnd();
+    const std::string region_edge
+        = getEdgeString(constraint.interval.getEdge());
+
     for (const Section& sec : constraint.sections) {
       num_slots += sec.num_slots;
     }
@@ -1770,15 +1805,24 @@ void IOPlacer::initConstraints(bool annealing)
       constraint.pins_per_slots
           = static_cast<float>(constraint.pin_list.size()) / num_slots;
       if (constraint.pins_per_slots > 1) {
-        int increase = computeRegionIncrease(constraint.interval,
-                                             constraint.pin_list.size());
+        const Interval& interval = constraint.interval;
+        const int interval_length
+            = std::abs(interval.getEnd() - interval.getBegin());
+        int new_length
+            = computeNewRegionLength(interval, constraint.pin_list.size());
         logger_->warn(PPL,
                       110,
                       "Constraint has {} pins, but only {} available slots.\n"
-                      "Increase the region in at least {}um.",
+                      "Increase the region {:.2f}um-{:.2f}um on the {} edge "
+                      "from {:.2f}um "
+                      "to at least {:.2f}um.",
                       constraint.pin_list.size(),
                       num_slots,
-                      dbuToMicrons(increase));
+                      dbuToMicrons(region_begin),
+                      dbuToMicrons(region_end),
+                      region_edge,
+                      dbuToMicrons(interval_length),
+                      dbuToMicrons(new_length));
         constraints_no_slots++;
       }
     } else {

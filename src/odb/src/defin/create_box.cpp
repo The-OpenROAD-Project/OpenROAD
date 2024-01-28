@@ -49,6 +49,7 @@ void create_box(dbSWire* wire,
                 int cur_ext,
                 bool has_cur_ext,
                 int width,
+                uint mask,
                 utl::Logger* logger)
 {
   int x1, x2, y1, y2;
@@ -91,7 +92,9 @@ void create_box(dbSWire* wire,
         y2 = prev_y;
     }
 
-    dbSBox::create(wire, layer, x1, y1, x2, y2, type, dbSBox::VERTICAL);
+    odb::dbSBox* box
+        = dbSBox::create(wire, layer, x1, y1, x2, y2, type, dbSBox::VERTICAL);
+    box->setLayerMask(mask);
   } else if (cur_y == prev_y)  // horiz. path
   {
     y1 = cur_y - dw;
@@ -118,17 +121,20 @@ void create_box(dbSWire* wire,
       else
         x2 = prev_x;
     }
-    dbSBox::create(wire, layer, x1, y1, x2, y2, type, dbSBox::HORIZONTAL);
+    odb::dbSBox* box
+        = dbSBox::create(wire, layer, x1, y1, x2, y2, type, dbSBox::HORIZONTAL);
+    box->setLayerMask(mask);
   } else if (abs(cur_x - prev_x) == abs(cur_y - prev_y)) {  // 45-degree path
-    dbSBox::create(wire,
-                   layer,
-                   prev_x,
-                   prev_y,
-                   cur_x,
-                   cur_y,
-                   type,
-                   dbSBox::OCTILINEAR,
-                   width);
+    odb::dbSBox* box = dbSBox::create(wire,
+                                      layer,
+                                      prev_x,
+                                      prev_y,
+                                      cur_x,
+                                      cur_y,
+                                      type,
+                                      dbSBox::OCTILINEAR,
+                                      width);
+    box->setLayerMask(mask);
   } else {
     assert(
         0
@@ -147,6 +153,9 @@ dbTechLayer* create_via_array(dbSWire* wire,
                               int numY,
                               int stepX,
                               int stepY,
+                              uint bottom_mask,
+                              uint cut_mask,
+                              uint top_mask,
                               utl::Logger* logger)
 {
   if (via->getBBox() == nullptr) {
@@ -165,7 +174,8 @@ dbTechLayer* create_via_array(dbSWire* wire,
     int y = orig_y;
 
     for (j = 0; j < numY; ++j) {
-      dbSBox::create(wire, via, x, y, type);
+      odb::dbSBox* box = dbSBox::create(wire, via, x, y, type);
+      box->setViaLayerMask(bottom_mask, cut_mask, top_mask);
       y += stepY;
     }
 
@@ -211,6 +221,9 @@ dbTechLayer* create_via_array(dbSWire* wire,
                               int numY,
                               int stepX,
                               int stepY,
+                              uint bottom_mask,
+                              uint cut_mask,
+                              uint top_mask,
                               utl::Logger* logger)
 {
   if (via->getBBox() == nullptr) {
@@ -229,7 +242,8 @@ dbTechLayer* create_via_array(dbSWire* wire,
     int y = orig_y;
 
     for (j = 0; j < numY; ++j) {
-      dbSBox::create(wire, via, x, y, type);
+      dbSBox* box = dbSBox::create(wire, via, x, y, type);
+      box->setViaLayerMask(bottom_mask, cut_mask, top_mask);
       y += stepY;
     }
 
