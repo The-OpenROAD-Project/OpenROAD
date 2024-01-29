@@ -231,6 +231,7 @@ class FastRouteCore
   NetRouteMap getRoutes();
   NetRouteMap getPlanarRoutes();
 
+  void setTreeNodesVariables(const int netID);
   int fixLoops(bool is_3d_route);
   // maze functions
   // Maze-routing in different orders

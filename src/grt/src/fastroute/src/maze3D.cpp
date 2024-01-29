@@ -843,6 +843,106 @@ void FastRouteCore::updateRouteType23D(int netID,
   }
 }
 
+void FastRouteCore::setTreeNodesVariables(const int netID) {
+  // re statis the node overlap
+  int numpoints = 0;
+  const int num_terminals = sttrees_[netID].num_terminals;
+  auto& treeedges = sttrees_[netID].edges;
+  auto& treenodes = sttrees_[netID].nodes;
+
+  int routeLen;
+  TreeEdge * treeedge;
+  for (int d = 0; d < sttrees_[netID].num_nodes(); d++) {
+    treenodes[d].topL = -1;
+    treenodes[d].botL = num_layers_;
+    treenodes[d].assigned = false;
+    treenodes[d].stackAlias = d;
+    treenodes[d].conCNT = 0;
+    treenodes[d].hID = BIG_INT;
+    treenodes[d].lID = BIG_INT;
+    treenodes[d].status = 0;
+
+    if (d < num_terminals) {
+      treenodes[d].botL = nets_[netID]->getPinL()[d];
+      treenodes[d].topL = nets_[netID]->getPinL()[d];
+      // treenodes[d].l = 0;
+      treenodes[d].assigned = true;
+      treenodes[d].status = 1;
+
+      xcor_[numpoints] = treenodes[d].x;
+      ycor_[numpoints] = treenodes[d].y;
+      dcor_[numpoints] = d;
+      numpoints++;
+    } else {
+      bool redundant = false;
+      for (int k = 0; k < numpoints; k++) {
+        if ((treenodes[d].x == xcor_[k]) && (treenodes[d].y == ycor_[k])) {
+          treenodes[d].stackAlias = dcor_[k];
+
+          redundant = true;
+          break;
+        }
+      }
+      if (!redundant) {
+        xcor_[numpoints] = treenodes[d].x;
+        ycor_[numpoints] = treenodes[d].y;
+        dcor_[numpoints] = d;
+        numpoints++;
+      }
+    }
+  }  // numerating for nodes
+  for (int k = 0; k < sttrees_[netID].num_edges(); k++) {
+    treeedge = &(treeedges[k]);
+
+    if (treeedge->len <= 0) {
+      continue;
+    }
+    routeLen = treeedge->route.routelen;
+
+    int n1 = treeedge->n1;
+    int n2 = treeedge->n2;
+    const std::vector<short>& gridsLtmp = treeedge->route.gridsL;
+
+    int n1a = treenodes[n1].stackAlias;
+
+    int n2a = treenodes[n2].stackAlias;
+
+    treeedge->n1a = n1a;
+    treeedge->n2a = n2a;
+
+    int connectionCNT = treenodes[n1a].conCNT;
+    treenodes[n1a].heights[connectionCNT] = gridsLtmp[0];
+    treenodes[n1a].eID[connectionCNT] = k;
+    treenodes[n1a].conCNT++;
+
+    if (gridsLtmp[0] > treenodes[n1a].topL) {
+      treenodes[n1a].hID = k;
+      treenodes[n1a].topL = gridsLtmp[0];
+    }
+    if (gridsLtmp[0] < treenodes[n1a].botL) {
+      treenodes[n1a].lID = k;
+      treenodes[n1a].botL = gridsLtmp[0];
+    }
+
+    treenodes[n1a].assigned = true;
+
+    connectionCNT = treenodes[n2a].conCNT;
+    treenodes[n2a].heights[connectionCNT] = gridsLtmp[routeLen];
+    treenodes[n2a].eID[connectionCNT] = k;
+    treenodes[n2a].conCNT++;
+    if (gridsLtmp[routeLen] > treenodes[n2a].topL) {
+      treenodes[n2a].hID = k;
+      treenodes[n2a].topL = gridsLtmp[routeLen];
+    }
+    if (gridsLtmp[routeLen] < treenodes[n2a].botL) {
+      treenodes[n2a].lID = k;
+      treenodes[n2a].botL = gridsLtmp[routeLen];
+    }
+
+    treenodes[n2a].assigned = true;
+  }  // eunmerating edges
+}
+
 void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                          int ripupTHlb,
                                          int ripupTHub)
@@ -1275,6 +1375,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       if (n1 < num_terminals && (E1x != n1x || E1y != n1y)) {
         // split neighbor edge and return id new node
         n1 = splitEdge(treeedges, treenodes, n2, n1, edgeID);
+        setTreeNodesVariables(netID);
       }
       if (n1 >= num_terminals && (E1x != n1x || E1y != n1y))
       // n1 is not a pin and E1!=n1, then make change to subtree1,
@@ -1430,6 +1531,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       if (n2 < num_terminals && (E2x != n2x || E2y != n2y)) {
         // split neighbor edge and return id new node
         n2 = splitEdge(treeedges, treenodes, n1, n2, edgeID);
+        setTreeNodesVariables(netID);
       }
       if (n2 >= num_terminals && (E2x != n2x || E2y != n2y))
       // n2 is not a pin and E2!=n2, then make change to subtree2,
