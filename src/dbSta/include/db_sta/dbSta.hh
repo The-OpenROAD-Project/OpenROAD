@@ -125,7 +125,7 @@ class dbSta : public Sta, public ord::OpenRoadObserver
   void highlight(PathRef* path);
 
   // Report Instances Type
-  std::map<InstType, int> getInstancesType();
+  std::map<InstType, int> countInstancesByType();
   void report_inst_count();
 
   using Sta::netSlack;

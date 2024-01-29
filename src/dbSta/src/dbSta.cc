@@ -271,7 +271,7 @@ std::set<dbNet*> dbSta::findClkNets(const Clock* clk)
   return clk_nets;
 }
 
-std::map<dbSta::InstType, int> dbSta::getInstancesType()
+std::map<dbSta::InstType, int> dbSta::countInstancesByType()
 {
   auto insts = db_->getChip()->getBlock()->getInsts();
   std::map<InstType, int> inst_type_count;
@@ -368,7 +368,7 @@ std::map<dbSta::InstType, int> dbSta::getInstancesType()
 
 void dbSta::report_inst_count()
 {
-  std::map<InstType, int> instances_types = getInstancesType();
+  std::map<InstType, int> instances_types = countInstancesByType();
 
   logger_->report("Reporting Cells count:");
   for (auto [type, count] : instances_types) {
