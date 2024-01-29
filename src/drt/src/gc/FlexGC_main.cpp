@@ -888,7 +888,7 @@ void FlexGCWorker::Impl::checkMetalSpacingRange(gcRect* rect,
 void FlexGCWorker::Impl::checkMetalSpacingRange(gcRect* rect)
 {
   auto layer = getTech()->getLayer(rect->getLayerNum());
-  for (auto con : layer->getSpacingRangeConstraint()) {
+  for (auto con : layer->getSpacingRangeConstraints()) {
     if (con->inRange(rect->width())) {
       checkMetalSpacingRange(rect, con);
     }
@@ -941,7 +941,7 @@ void FlexGCWorker::Impl::checkMetalSpacing()
         for (auto& maxrect : pin->getMaxRectangles()) {
           checkMetalSpacing_main(maxrect.get(),
                                  getDRWorker() || !AUTO_TAPER_NDR_NETS);
-          if (currLayer->hasSpacingRangeConstraint()) {
+          if (currLayer->hasSpacingRangeConstraints()) {
             checkMetalSpacingRange(maxrect.get());
           }
         }
@@ -970,7 +970,7 @@ void FlexGCWorker::Impl::checkMetalSpacing()
             // Short, NSMetal, metSpc
             checkMetalSpacing_main(maxrect.get(),
                                    getDRWorker() || !AUTO_TAPER_NDR_NETS);
-            if (currLayer->hasSpacingRangeConstraint()) {
+            if (currLayer->hasSpacingRangeConstraints()) {
               checkMetalSpacingRange(maxrect.get());
             }
           }

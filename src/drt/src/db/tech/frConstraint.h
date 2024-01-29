@@ -1332,9 +1332,7 @@ class frSpacingRangeConstraint : public frSpacingConstraint
 {
  public:
   // constructor
-  frSpacingRangeConstraint() : frSpacingConstraint(), minWidth(0), maxWidth(0)
-  {
-  }
+  frSpacingRangeConstraint() {}
   // getters
   frCoord getMinWidth() const { return minWidth; }
   frCoord getMaxWidth() const { return minWidth; }
@@ -1355,9 +1353,9 @@ class frSpacingRangeConstraint : public frSpacingConstraint
     return width >= minWidth && width <= maxWidth;
   }
 
- protected:
-  frCoord minWidth;
-  frCoord maxWidth;
+ private:
+  frCoord minWidth{0};
+  frCoord maxWidth{0};
 };
 
 //

@@ -735,13 +735,13 @@ class frLayer
     spacingRangeConstraints.push_back(in);
   }
 
-  const std::vector<frSpacingRangeConstraint*>& getSpacingRangeConstraint()
+  const std::vector<frSpacingRangeConstraint*>& getSpacingRangeConstraints()
       const
   {
     return spacingRangeConstraints;
   }
 
-  bool hasSpacingRangeConstraint() const
+  bool hasSpacingRangeConstraints() const
   {
     return (!spacingRangeConstraints.empty());
   }
