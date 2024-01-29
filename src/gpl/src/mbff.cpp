@@ -495,33 +495,37 @@ bool MBFF::IsValidTray(odb::dbInst* tray)
                  == static_cast<int>(tray->getITerms().size()));
 }
 
-int MBFF::PortType(sta::LibertyPort* lib_port, odb::dbInst* inst)
+PortName MBFF::PortType(sta::LibertyPort* lib_port, odb::dbInst* inst)
 {
   odb::dbMTerm* mterm = network_->staToDb(lib_port);
+
   // physical pins
   if (mterm != nullptr) {
     odb::dbITerm* iterm = inst->getITerm(mterm);
     if (iterm != nullptr) {
       if (IsDPin(iterm)) {
-        return 1;
+        return d;
       }
       if (IsScanIn(iterm)) {
-        return 2;
+        return si;
       }
       if (IsScanEnable(iterm)) {
-        return 3;
+        return se;
       }
       if (IsPresetPin(iterm)) {
-        return 4;
+        return preset;
       }
       if (IsClearPin(iterm)) {
-        return 5;
+        return clear;
       }
       if (IsQPin(iterm)) {
-        return (IsInvertingQPin(iterm) ? 7 : 6);
+        return (IsInvertingQPin(iterm) ? qn : q);
       }
       if (IsSupplyPin(iterm)) {
-        return 8;
+        if (iterm->getSigType() == odb::dbSigType::GROUND) {
+          return vss;
+        }
+        return vdd;
       }
     }
   }
@@ -531,11 +535,11 @@ int MBFF::PortType(sta::LibertyPort* lib_port, odb::dbInst* inst)
   for (auto seq : lib_cell->sequentials()) {
     // function
     if (sta::LibertyPort::equiv(lib_port, seq->output())) {
-      return 9;
+      return func;
     }
     // inverting function
     if (sta::LibertyPort::equiv(lib_port, seq->outputInv())) {
-      return 10;
+      return ifunc;
     }
   }
 
@@ -603,18 +607,6 @@ std::vector<int> MBFF::GetArrayMask(odb::dbInst* inst, bool isTray)
   }
 
   ret[6] = IsScanCell(inst);
-
-  log_->info(utl::GPL, 9015, "master name: {}", inst->getMaster()->getName());
-  log_->info(utl::GPL,
-             9016,
-             "Array mask: {}, {}, {}, {}, {}, {}, {}",
-             ret[0],
-             ret[1],
-             ret[2],
-             ret[3],
-             ret[4],
-             ret[5],
-             ret[6]);
 
   return ret;
 }
@@ -911,9 +903,13 @@ float MBFF::RunLP(const std::vector<Flop>& flops,
   }
 
   operations_research::MPObjective* objective = solver->MutableObjective();
+  std::vector<int> coeff(num_flops, 1);
   for (int i = 0; i < num_flops; i++) {
-    objective->SetCoefficient(disp_x[i], 1);
-    objective->SetCoefficient(disp_y[i], 1);
+    if (path_points_.count(flops[i].idx)) {
+      coeff[i] = 1 + occs_[flops[i].idx];
+    }
+    objective->SetCoefficient(disp_x[i], coeff[i]);
+    objective->SetCoefficient(disp_y[i], coeff[i]);
   }
   objective->SetMinimization();
   solver->Solve();
@@ -1018,7 +1014,7 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
   std::vector<int> coeff(num_flops, 1);
   for (int i = 0; i < num_flops; i++) {
     if (path_points_.count(flops[i].idx)) {
-      coeff[i] = occs_[flops[i].idx] + 1;
+      coeff[i] = 2;
     }
   }
 
@@ -1173,7 +1169,7 @@ void MBFF::GetSlots(const Point& tray,
 
 Flop MBFF::GetNewFlop(const std::vector<Flop>& prob_dist, const float tot_dist)
 {
-  const float rand_num = (float) (rand() % 101);
+  const float rand_num = (float) (std::rand() % 101);
   float cum_sum = 0;
   Flop new_flop;
   for (size_t i = 0; i < prob_dist.size(); i++) {
@@ -1194,7 +1190,7 @@ void MBFF::GetStartTrays(std::vector<Flop> flops,
   const int num_flops = static_cast<int>(flops.size());
 
   /* pick a random flop */
-  const int rand_idx = rand() % (num_flops);
+  const int rand_idx = std::rand() % (num_flops);
   Tray tray_zero;
   tray_zero.pt = flops[rand_idx].pt;
 
@@ -1487,7 +1483,7 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
   const int num_flops = static_cast<int>(flops.size());
 
   // choose initial center
-  const int seed = rand() % num_flops;
+  const int seed = std::rand() % num_flops;
   std::set<int> chosen({seed});
 
   std::vector<Flop> centers;
@@ -1511,7 +1507,7 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
       }
     }
 
-    const int rnd = rand() % (int(tot_sum * 100));
+    const int rnd = std::rand() % (int(tot_sum * 100));
     const float prob = rnd / 100.0;
 
     float cum_sum = 0;
@@ -1855,15 +1851,6 @@ void MBFF::SetRatios(const std::vector<int> array_mask)
                       / slot_cnt;
       norm_power_[i]
           = (tray_power_[array_mask][i] / slot_cnt) / single_bit_power_;
-      log_->info(utl::GPL,
-                 1002,
-                 "Information for master {}",
-                 best_master_[array_mask][i]->getName());
-      log_->info(utl::GPL, 1003, "Normalized area-per-bit: {}", norm_area_[i]);
-      log_->info(utl::GPL,
-                 1004,
-                 "Normalized power-per-bit in tray size: {}",
-                 norm_power_[i]);
     }
   }
 }
@@ -1913,7 +1900,7 @@ void MBFF::Run(const int mx_sz, const float alpha, const float beta)
 {
   auto start = std::chrono::high_resolution_clock::now();
 
-  srand(1);
+  std::srand(1);
   omp_set_num_threads(num_threads_);
 
   ReadFFs();
@@ -2105,26 +2092,6 @@ void MBFF::ReadLibs()
       }
     }
   }
-
-  for (auto pairs : best_master_) {
-    std::vector<int> array_mask = pairs.first;
-    for (int i = 1; i < num_sizes_; i++) {
-      if (pairs.second[i] != nullptr) {
-        log_->info(utl::GPL,
-                   1001,
-                   "Name of master with minimum area for size = {}: {}",
-                   GetBitCnt(i),
-                   pairs.second[i]->getName());
-        for (size_t j = 0; j < slot_to_tray_x_[pairs.first][i].size(); j++) {
-          log_->info(utl::GPL,
-                     1010,
-                     "delta x: {}, delta y: {}",
-                     slot_to_tray_x_[pairs.first][i][j],
-                     slot_to_tray_y_[pairs.first][i][j]);
-        }
-      }
-    }
-  }
 }
 
 void MBFF::ReadFFs()
@@ -2144,7 +2111,7 @@ void MBFF::ReadFFs()
   slot_disp_y_.resize(num_flops, 0.0);
 }
 
-// read top_k_ timing-critical path pairs (FF-pair start/end points)
+// read num_paths_ timing-critical path pairs (FF-pair start/end points)
 void MBFF::ReadPaths()
 {
   paths_.resize(flops_.size());
@@ -2164,8 +2131,8 @@ void MBFF::ReadPaths()
                                                    false,
                                                    nullptr,
                                                    sta::MinMaxAll::max(),
-                                                   top_k_,
-                                                   top_k_,
+                                                   num_paths_,
+                                                   num_paths_,
                                                    true,
                                                    -sta::INF,
                                                    sta::INF,
@@ -2200,7 +2167,6 @@ void MBFF::ReadPaths()
     occs_[idx2]++;
     path_points_.insert(idx1);
     path_points_.insert(idx2);
-    log_->info(utl::GPL, 9099, "Path from {} to {}", idx1, idx2);
   }
 }
 
@@ -2210,7 +2176,7 @@ MBFF::MBFF(odb::dbDatabase* db,
            int threads,
            int knn,
            int multistart,
-           int top_k,
+           int num_paths,
            bool debug_graphics)
     : db_(db),
       block_(db_->getChip()->getBlock()),
@@ -2221,7 +2187,7 @@ MBFF::MBFF(odb::dbDatabase* db,
       num_threads_(threads),
       knn_(knn),
       multistart_(multistart),
-      top_k_(top_k),
+      num_paths_(num_paths),
       multiplier_(static_cast<float>(block_->getDbUnitsPerMicron()))
 {
   if (debug_graphics && Graphics::guiActive()) {

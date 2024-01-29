@@ -84,7 +84,7 @@ class Replace
 
   void doIncrementalPlace();
   void doInitialPlace();
-  void runMBFF(int max_sz, float alpha, float beta, int threads, int top_k);
+  void runMBFF(int max_sz, float alpha, float beta, int threads, int num_paths);
 
   int doNesterovPlace(int start_iter = 0);
 

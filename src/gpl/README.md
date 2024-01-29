@@ -92,13 +92,16 @@ cluster_flops
     [-tray_weight tray_weight]
     [-timing_weight timing_weight]
     [-max_split_size max_split_size]
+    [-num_paths num_paths]
 ```
 
 #### Options
 
 - `-tray_weight`: Set the weighting factor for tray cost in flip-flop clustering (recommended to be `[20.0, float]`).
 - `-timing_weight`: Set the weighting factor for timing-critical paths in flip-flop clusering (recommended to be `[1.0. float]`).
-- `-max_split_size`: The maximum size of a single pointset after running the pointset decomposition algorithm for runtime improvement in flop clustering (to not run pointset decomposition, set as `-1`).
+- `-max_split_size`: The maximum size of a single pointset after running the pointset decomposition algorithm for massive
+runtime improvement in flop clustering. To not run pointset decomposition, set as `-1` (default = 250).  
+- `-num_paths`: The number of timing-critical paths (launch-capture flip-flop pairs) to be accounted for in clustering (default = 0).
 
 ## Using the Python interface to gpl
 

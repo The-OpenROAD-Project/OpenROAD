@@ -3,7 +3,7 @@ set test_name clust01
 
 
 read_lef ./asap7/asap7_tech_1x_201209.lef
-read_lef ./SingleBit/asap7sc7p5t_28_L_1x_220121a.lef
+read_lef ./asap7/asap7sc7p5t_28_L_1x_220121a.lef
 read_lib ./SingleBit/asap7sc7p5t_SEQ_LVT_TT_nldm_220123.lib 
 
 read_lef ./2BitTrayH2/asap7sc7p5t_DFFHQNV2X.lef

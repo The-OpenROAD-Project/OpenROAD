@@ -69,7 +69,7 @@ class MBFF
        int threads,
        int knn,
        int multistart,
-       int top_k,
+       int num_paths,
        bool debug_graphics = false);
   ~MBFF();
   void Run(int mx_sz, float alpha, float beta);
@@ -222,8 +222,23 @@ class MBFF
   int num_threads_;
   int knn_;
   int multistart_;
-  int top_k_;
+  int num_paths_;
   float multiplier_;
+
+  enum PortName
+  {
+    d,
+    si,
+    se,
+    preset,
+    clear,
+    q,
+    qn,
+    vss,
+    vgg,
+    func,
+    ifunc
+  };
 
   // single-bit FF vars
   std::vector<Flop> flops_;
@@ -243,6 +258,9 @@ class MBFF
 
   // MBFF vars
   template <typename T>
+  /* ArrayMaskVector[i] = a vector for a certain (MB)FF structure.
+  See GetArrayMask for details on how the structure of an instance is described.
+*/
   using ArrayMaskVector = std::map<std::vector<int>, std::vector<T>>;
   ArrayMaskVector<odb::dbMaster*> best_master_;
   ArrayMaskVector<DataToOutputsMap> pin_mappings_;
