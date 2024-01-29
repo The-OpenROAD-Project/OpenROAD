@@ -544,7 +544,7 @@ PortName MBFF::PortType(sta::LibertyPort* lib_port, odb::dbInst* inst)
   }
 
   log_->error(utl::GPL, 9032, "Could not recognize port {}", lib_port->name());
-  return -1;
+  return d;
 }
 
 // basically a copy-paste of FuncExpr::equiv

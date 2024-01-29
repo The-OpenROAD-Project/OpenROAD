@@ -59,6 +59,20 @@ struct Point;
 struct Tray;
 struct Flop;
 class Graphics;
+enum PortName
+{
+  d,
+  si,
+  se,
+  preset,
+  clear,
+  q,
+  qn,
+  vss,
+  vdd,
+  func,
+  ifunc
+};
 
 class MBFF
 {
@@ -123,7 +137,7 @@ class MBFF
   bool IsValidTray(odb::dbInst* tray);
 
   // (MB)FF funcs
-  int PortType(sta::LibertyPort* lib_port, odb::dbInst* inst);
+  PortName PortType(sta::LibertyPort* lib_port, odb::dbInst* inst);
   bool IsSame(sta::FuncExpr* expr1,
               odb::dbInst* inst1,
               sta::FuncExpr* expr2,
@@ -224,21 +238,6 @@ class MBFF
   int multistart_;
   int num_paths_;
   float multiplier_;
-
-  enum PortName
-  {
-    d,
-    si,
-    se,
-    preset,
-    clear,
-    q,
-    qn,
-    vss,
-    vgg,
-    func,
-    ifunc
-  };
 
   // single-bit FF vars
   std::vector<Flop> flops_;
