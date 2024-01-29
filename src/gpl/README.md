@@ -123,8 +123,27 @@ global_placement
 | `-timing_driven_net_weight_max` | Set the multiplier for the most timing-critical nets. The default value is `1.9`, and the allowed values are floats. |
 | `-timing_driven_nets_percentage` | Set the reweighted percentage of nets in timing-driven mode. The default value is 10. Allowed values are floats `[0, 100]`. |
 
+### Cluster Flops
 
-### Useful Developer Commands
+This command does flop clustering based on parameters.
+
+```tcl
+cluster_flops
+    [-tray_weight tray_weight] \
+    [-timing_weight timing_weight]\
+    [-max_split_size max_split_size]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-tray_weight` | Tray weight, default value is 20.0, type `float`. |
+| `-timing_weight` | Timing weight, default value is 1.0, type `float`. |
+| `-max_split_size` | Maximum split size, default value is -1, type `int`.|
+
+
+## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/replace.cpp) or the [swig file](./src/replace.i).
 

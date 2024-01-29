@@ -100,7 +100,15 @@ or a list of cell names (`wildcards` allowed). For example, `DLY*` says do
 not use cells with names that begin with `DLY` in all libraries.
 
 ```tcl
-set_dont_use lib_cells # unset_dont_use lib_cells
+set_dont_use lib_cells 
+```
+
+### Unset Dont Use
+
+The `unset_dont_use` command reverses the `set_dont_use` command.
+
+```tcl
+unset_dont_use lib_cells
 ```
 
 ### Set Dont Touch
@@ -109,7 +117,15 @@ The `set_dont_touch` command prevents the resizer commands from
 modifying instances or nets.
 
 ```tcl
-set_dont_touch instances_nets # unset_dont_touch instances_nets
+set_dont_touch instances_nets 
+```
+
+### Unset Dont Touch
+
+The `unset_dont_touch` command reverse the `set_dont_touch` command.
+
+```tcl
+unset_dont_touch instances_nets
 ```
 
 ### Buffer Ports

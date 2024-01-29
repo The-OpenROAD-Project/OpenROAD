@@ -241,12 +241,14 @@ proc estimate_parasitics { args } {
 sta::define_cmd_args "set_dont_use" {lib_cells}
 
 proc set_dont_use { args } {
+  sta::parse_key_args "set_dont_use" args keys {} flags {}
   set_dont_use_cmd "set_dont_use" $args 1
 }
 
 sta::define_cmd_args "unset_dont_use" {lib_cells}
 
 proc unset_dont_use { args } {
+  sta::parse_key_args "unset_dont_use" args keys {} flags {}
   set_dont_use_cmd "unset_dont_use" $args 0
 }
 
@@ -260,12 +262,14 @@ proc set_dont_use_cmd { cmd cmd_args dont_use } {
 sta::define_cmd_args "set_dont_touch" {nets_instances}
 
 proc set_dont_touch { args } {
+  sta::parse_key_args "set_dont_touch" args keys {} flags {}
   set_dont_touch_cmd "set_dont_touch" $args 1
 }
 
 sta::define_cmd_args "unset_dont_touch" {nets_instances}
 
 proc unset_dont_touch { args } {
+  sta::parse_key_args "unset_dont_touch" args keys {} flags {}
   set_dont_touch_cmd "unset_dont_touch" $args 0
 }
 
@@ -308,6 +312,7 @@ proc buffer_ports { args } {
 sta::define_cmd_args "remove_buffers" {}
 
 proc remove_buffers { args } {
+  sta::parse_key_args "remove_buffers" args keys {} flags {}
   sta::check_argc_eq0 "remove_buffers" $args
   rsz::remove_buffers_cmd
 }
@@ -354,6 +359,7 @@ proc repair_clock_nets { args } {
 sta::define_cmd_args "repair_clock_inverters" {}
 
 proc repair_clock_inverters { args } {
+  sta::parse_key_args "repair_clock_nets" args keys {} flags {}
   sta::check_argc_eq0 "repair_clock_inverters" $args
   rsz::repair_clk_inverters_cmd
 }
@@ -486,7 +492,8 @@ proc repair_timing { args } {
 
 sta::define_cmd_args "report_design_area" {}
 
-proc report_design_area {} {
+proc report_design_area { args } {
+  sta::parse_key_args "report_design_area" args keys {} flags {}
   set util [format %.0f [expr [rsz::utilization] * 100]]
   set area [sta::format_area [rsz::design_area] 0]
   utl::report "Design area ${area} u^2 ${util}% utilization."
@@ -523,12 +530,12 @@ proc report_floating_nets { args } {
   utl::metric "timing__drv__floating__pins" $floating_pin_count
 }
 
-sta::define_cmd_args "report_long_wires" {count}
+sta::define_cmd_args "report_long_wires" {count};# no docs
 
 sta::proc_redirect report_long_wires {
   global sta_report_default_digits
 
-  sta::parse_key_args "report_long_wires" args keys {-digits} flags {}
+  sta::parse_key_args "report_long_wires" args keys {-digits} flags {};# no docs
 
   set digits $sta_report_default_digits
   if { [info exists keys(-digits)] } {

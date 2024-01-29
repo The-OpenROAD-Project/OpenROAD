@@ -23,8 +23,22 @@ os.chdir(or_home)
 # TODO: THose commands inside namespace eval sta need special regex. define_cmd_args. (e.g. dbsta/dbsta)
 
 # Regexes
-help_pattern = r'sta::define_cmd_args\s+"(.*?)"\s*{([^}]*)}'
-proc_pattern = r'sta::parse_key_args\s+"(.*?)"\s*args\s*(.*?keys.*?})(.*?flags.*?})'
+help_pattern = re.compile(r'''
+                sta::define_cmd_args\s+
+                "(.*?)"\s*
+                {([^}]*)}
+                (\s*;\s*\#\s*no\s*docs)?
+                ''',
+                re.VERBOSE | re.DOTALL)
+proc_pattern = re.compile(r'''
+                sta::parse_key_args\s+
+                "(.*?)"\s*
+                args\s*
+                (.*?keys.*?})
+                (.*?flags.*?})
+                (\s*;\s*\#\s*no\s*docs)?
+                ''',
+                re.VERBOSE | re.DOTALL)
 help_dict, proc_dict, readme_dict = {}, {}, {}  
 
 # Directories to exclude (according to md_roff_compat)
@@ -43,8 +57,12 @@ for path in glob.glob("./src/*/src/*tcl"):
     # Help patterns
     with open(path) as f:
         content = f.read()
-        matches = re.findall(help_pattern, content, re.DOTALL)
+        matches = re.findall(help_pattern, content)
         #print(path, len(matches))
+        # remove nodocs (usually dev commands)
+        matches = [tup for tup in matches if not tup[2].replace(" ","") == ";#nodocs"]
+
+
         help_dict[tool_dir] = len(matches)
         #for match in matches:
         #    help_cmd, help_args = match[0], match[1]
@@ -56,7 +74,10 @@ for path in glob.glob("./src/*/src/*tcl"):
     # Proc patterns
     with open(path) as f:
         content = f.read()
-        matches = re.findall(proc_pattern, content, re.DOTALL)
+        matches = re.findall(proc_pattern, content)
+        # remove nodocs (usually dev commands)
+        matches = [tup for tup in matches if not tup[3].replace(" ","") == ";#nodocs"]
+
         #print(path, len(matches))
         proc_dict[tool_dir] = len(matches)
         #if matches:
@@ -70,8 +91,17 @@ for path in glob.glob("./src/*/src/*tcl"):
 
 for path in glob.glob("./src/*/README.md"):
     if re.search(f".*{'|'.join(e for e in exclude)}.*", path): continue
+    offset = 0
+
     tool_dir = os.path.dirname(path)
-    readme_dict[tool_dir] = len(extract_tcl_code(open(path).read()))
+
+    # for gui, filter out the gui:: for separate processing
+    results = [x for x in extract_tcl_code(open(path).read()) if "gui::" not in x]
+
+    readme_dict[tool_dir] = len(results)
+
+    # for pad, remove `make_fake_io_site`
+    if 'pad' in tool_dir: readme_dict[tool_dir] -= 1
     total += 1
 
 print(total)

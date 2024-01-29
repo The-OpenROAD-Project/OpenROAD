@@ -356,7 +356,7 @@ namespace eval gpl {
 proc global_placement_debug { args } {
   sta::parse_key_args "global_placement_debug" args \
       keys {-pause -update -inst} \
-      flags {-draw_bins -initial}
+      flags {-draw_bins -initial};# no docs
 
   set pause 10
   if { [info exists keys(-pause)] } {
@@ -384,7 +384,7 @@ proc global_placement_debug { args } {
 proc get_global_placement_uniform_density { args } {
   sta::parse_key_args "get_global_placement_uniform_density" args \
     keys { -pad_left -pad_right } \
-    flags {}
+    flags {};# no docs
 
   # no need for init IP, TD and RD 
   gpl::set_initial_place_max_iter_cmd 0

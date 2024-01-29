@@ -347,7 +347,7 @@ sta::define_hidden_cmd_args "make_fake_io_site" {-name name \
 proc make_fake_io_site {args} {
   sta::parse_key_args "make_fake_io_site" args \
     keys {-name -width -height} \
-    flags {}
+    flags {};# no docs
 
   sta::check_argc_eq0 "make_fake_io_site" $args
 

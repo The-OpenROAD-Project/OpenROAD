@@ -286,6 +286,7 @@ proc bench_wires { args } {
 sta::define_cmd_args "bench_verilog" { filename }
 
 proc bench_verilog { args } {
+  sta::parse_key_args "bench_verilog" args keys {} flags{}
   sta::check_argc_eq1 "bench_verilog" $args
   rcx::bench_verilog $args
 }
@@ -293,6 +294,7 @@ proc bench_verilog { args } {
 sta::define_cmd_args "bench_read_spef" { filename }
 
 proc bench_read_spef { args } {
+  sta::parse_key_args "bench_read_spef" args keys {} flags{}
   sta::check_argc_eq1 "bench_read_spef" $args
   rcx::read_spef $args
 }

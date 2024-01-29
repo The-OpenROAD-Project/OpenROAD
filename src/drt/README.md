@@ -184,11 +184,11 @@ Additional setup is required. Please refer to this [guide](./doc/Distributed.md)
 | `-shared_volume` | The mount path of the nfs shared folder. |
 | `-cloud_size` | The number of workers. |
 
-## Useful developer functions
+## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/TritonRoute.cpp) or the [swig file](./src/TritonRoute.i).
 
-| Function Name | Description |
+| Command Name | Description |
 | ----- | ----- |
 | `detailed_route_set_default_via` | Set default via. |
 | `detailed_route_set_unidirectional_layer` | Set unidirectional layer. |

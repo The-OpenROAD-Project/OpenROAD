@@ -184,6 +184,9 @@ sta::define_cmd_args "define_pdn_grid" {[-name <name>] \
                                         [-power_control_network (STAR|DAISY)]}
 
 proc define_pdn_grid {args} {
+  sta::parse_key_args "define_pdn_grid" args \
+    keys {-name -voltage_domains -orient -instances -cells -halo -pins -obstructions -power_switch_cell -power_control -power_control_network}\
+    flags {-macro -existing}
   set is_macro 0
   set is_existing 0
     foreach arg $args {
@@ -786,7 +789,7 @@ sta::define_hidden_cmd_args  "convert_pdn_config" { config_file }
 proc convert_pdn_config { args } {
   sta::parse_key_args "convert_pdn_config" args \
     keys {} \
-    flags {}
+    flags {};# no docs
 
   sta::check_argc_eq1 "convert_pdn_config" $args
 
@@ -843,7 +846,7 @@ namespace eval pdn {
   proc define_pdn_grid { args } {
     sta::parse_key_args "define_pdn_grid" args \
       keys {-name -voltage_domains -pins -starts_with -obstructions -power_switch_cell -power_control -power_control_network} \
-      flags {}
+      flags {};# no docs
 
     sta::check_argc_eq0 "define_pdn_grid" $args
     pdn::check_design_state "define_pdn_grid"
@@ -917,7 +920,7 @@ namespace eval pdn {
   proc define_pdn_grid_existing { args } {
     sta::parse_key_args "define_pdn_grid" args \
       keys {-name -obstructions} \
-      flags {-existing}
+      flags {-existing};#no docs
 
     sta::check_argc_eq0 "define_pdn_grid" $args
     pdn::check_design_state "define_pdn_grid"
@@ -938,7 +941,7 @@ namespace eval pdn {
   proc define_pdn_grid_macro { args } {
     sta::parse_key_args "define_pdn_grid" args \
       keys {-name -voltage_domains -orient -instances -cells -halo -pin_direction -starts_with -obstructions} \
-      flags {-macro -grid_over_pg_pins -grid_over_boundary -default -bump}
+      flags {-macro -grid_over_pg_pins -grid_over_boundary -default -bump};# no docs
 
     sta::check_argc_eq0 "define_pdn_grid" $args
     pdn::check_design_state "define_pdn_grid"

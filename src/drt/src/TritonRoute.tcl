@@ -358,12 +358,12 @@ sta::define_cmd_args "detailed_route_run_worker" {
     [-dump_dir dir]
     [-worker_dir dir]
     [-drc_rpt drc]
-}
+};# no docs
 
 proc detailed_route_run_worker { args } {
   sta::parse_key_args "detailed_route_run_worker" args \
       keys {-dump_dir -worker_dir -drc_rpt} \
-      flags {}
+      flags {};# no docs
   sta::check_argc_eq0 "detailed_route_run_worker" $args
   if { [info exists keys(-dump_dir)] } {
     set dump_dir $keys(-dump_dir)
@@ -393,12 +393,12 @@ sta::define_cmd_args "detailed_route_worker_debug" {
     [-marker_decay m_decay]
     [-ripup_mode mode]
     [-follow_guide f_guide]
-}
+};# no docs
 
 proc detailed_route_worker_debug { args } {
   sta::parse_key_args "detailed_route_worker_debug" args \
       keys {-maze_end_iter -drc_cost -marker_cost -fixed_shape_cost -marker_decay -ripup_mode -follow_guide} \
-      flags {}
+      flags {};# no docs
   if [info exists keys(-maze_end_iter)] {
     set maze_end_iter $keys(-maze_end_iter)
   } else {
@@ -467,11 +467,11 @@ proc step_dr { args } {
 sta::define_cmd_args "check_drc" {
     [-box box]
     [-output_file filename]
-}
+};# no docs
 proc check_drc { args } {
   sta::parse_key_args "check_drc" args \
       keys { -box -output_file } \
-      flags {}
+      flags {};# no docs
   sta::check_argc_eq0 "check_drc" $args
   set box { 0 0 0 0 }
   if [info exists keys(-box)] {

@@ -202,7 +202,7 @@ sta::define_cmd_args "report_cts" {[-out_file file] \
                                   }
 proc report_cts { args } {
   sta::parse_key_args "report_cts" args \
-    keys {-out_file} flags {}
+    keys {-out_file} flags {} ;#no docs
 
   sta::check_argc_eq0 "report_cts" $args
 

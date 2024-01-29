@@ -302,6 +302,7 @@ proc place_macro { args } {
 sta::define_cmd_args "write_macro_placement" { file_name }
 
 proc write_macro_placement { args } {
+  sta::parse_key_args "write_macro_placement" args keys {} flags {}
   set file_name $args
   mpl2::write_macro_placement $file_name
 }

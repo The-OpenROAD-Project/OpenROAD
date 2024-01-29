@@ -424,6 +424,8 @@ proc place_pin { args } {
 sta::define_cmd_args "write_pin_placement" { file_name }
 
 proc write_pin_placement { args } {
+  sta::parse_key_args "write_pin_placement" args \
+    keys {} flags {}
   set file_name $args
   ppl::write_pin_placement $file_name
 }

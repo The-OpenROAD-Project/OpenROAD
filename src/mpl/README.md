@@ -48,7 +48,7 @@ macro_placement
 | `-style` | Placement style, to choose either `corner_max_wl` or `corner_min_wl`. The default value is `corner_max_wl`. |
 
 
-## Useful developer functions
+## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/MacroPlacer.cpp) or the [swig file](./src/MacroPlacer.i).
 
