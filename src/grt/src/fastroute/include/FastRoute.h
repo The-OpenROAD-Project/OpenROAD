@@ -231,6 +231,7 @@ class FastRouteCore
   NetRouteMap getRoutes();
   NetRouteMap getPlanarRoutes();
 
+  int fixLoops(bool is_3d_route);
   // maze functions
   // Maze-routing in different orders
   void mazeRouteMSMD(const int iter,

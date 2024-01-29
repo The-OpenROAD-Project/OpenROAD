@@ -166,17 +166,6 @@ void FastRouteCore::setupHeap3D(int netID,
 
     // find all the grids on tree edges in subtree t1 (connecting to n1) and put
     // them into heap1_3D
-    if (n1 < num_terminals) {  // n1 is a Pin node
-      // just need to put n1 itself into heap1_3D
-      const int nt = treenodes[n1].stackAlias;
-
-      for (int l = treenodes[nt].botL; l <= treenodes[nt].topL; l++) {
-        d1_3D[l][y1][x1] = 0;
-        src_heap_3D.push_back(&d1_3D[l][y1][x1]);
-        directions_3D[l][y1][x1] = Direction::Origin;
-        heapVisited[n1] = true;
-      }
-    } else {  // n1 is a Steiner node
       int queuehead = 0;
       int queuetail = 0;
 
@@ -200,10 +189,8 @@ void FastRouteCore::setupHeap3D(int netID,
         const int cur = heapQueue[queuehead];
         queuehead++;
         heapVisited[cur] = true;
-        if (cur < num_terminals) {  // cur node is a Steiner node
-          continue;
-        }
-        for (int i = 0; i < 3; i++) {
+        const int nbrCount = treenodes[cur].nbr_count;
+        for (int i = 0; i < nbrCount; i++) {
           const int nbr = treenodes[cur].nbr[i];
           const int edge = treenodes[cur].edge[i];
           if (nbr == n2) {
@@ -256,26 +243,14 @@ void FastRouteCore::setupHeap3D(int netID,
 
         }  // loop i (3 neigbors for cur node)
       }    // while heapQueue is not empty
-    }      // else n1 is not a Pin node
 
     // find all the grids on subtree t2 (connect to n2) and put them into
     // dest_heap_3D find all the grids on tree edges in subtree t2 (connecting
     // to n2) and put them into dest_heap_3D
-    if (n2 < num_terminals) {  // n2 is a Pin node
-      const int nt = treenodes[n2].stackAlias;
+      queuehead = 0;
+      queuetail = 0;
 
-      for (int l = treenodes[nt].botL; l <= treenodes[nt].topL; l++) {
-        // just need to put n1 itself into heap1_3D
-        d2_3D[l][y2][x2] = 0;
-        directions_3D[l][y2][x2] = Direction::Origin;
-        dest_heap_3D.push_back(&d2_3D[l][y2][x2]);
-        heapVisited[n2] = true;
-      }
-    } else {  // n2 is a Steiner node
-      int queuehead = 0;
-      int queuetail = 0;
-
-      const int nt = treenodes[n2].stackAlias;
+      nt = treenodes[n2].stackAlias;
       // add n2 into heap2_3D
       for (int l = treenodes[nt].botL; l <= treenodes[nt].topL; l++) {
         d2_3D[l][y2][x2] = 0;
@@ -295,10 +270,8 @@ void FastRouteCore::setupHeap3D(int netID,
         heapVisited[cur] = true;
         queuehead++;
 
-        if (cur < num_terminals) {  // cur node isn't a Steiner node
-          continue;
-        }
-        for (int i = 0; i < 3; i++) {
+        const int nbrCount = treenodes[cur].nbr_count;
+        for (int i = 0; i < nbrCount; i++) {
           const int nbr = treenodes[cur].nbr[i];
           const int edge = treenodes[cur].edge[i];
           if (nbr == n1) {
@@ -353,7 +326,6 @@ void FastRouteCore::setupHeap3D(int netID,
           queuetail++;
         }  // loop i (3 neigbors for cur node)
       }    // while heapQueue is not empty
-    }      // else n2 is not a Pin node
 
     for (int i = regionY1; i <= regionY2; i++) {
       for (int j = regionX1; j <= regionX2; j++) {
@@ -1300,6 +1272,10 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
       const int edge_n1n2 = edgeID;
       // (1) consider subtree1
+      if (n1 < num_terminals && (E1x != n1x || E1y != n1y)) {
+        // split neighbor edge and return id new node
+        n1 = splitEdge(treeedges, treenodes, n2, n1, edgeID);
+      }
       if (n1 >= num_terminals && (E1x != n1x || E1y != n1y))
       // n1 is not a pin and E1!=n1, then make change to subtree1,
       // otherwise, no change to subtree1
@@ -1451,6 +1427,10 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       lastL = gridsL[tailRoom];
 
       // (2) consider subtree2
+      if (n2 < num_terminals && (E2x != n2x || E2y != n2y)) {
+        // split neighbor edge and return id new node
+        n2 = splitEdge(treeedges, treenodes, n1, n2, edgeID);
+      }
       if (n2 >= num_terminals && (E2x != n2x || E2y != n2y))
       // n2 is not a pin and E2!=n2, then make change to subtree2,
       // otherwise, no change to subtree2
