@@ -5396,56 +5396,39 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
              1,
              "Place macros in cluster: {}",
              cluster->getName());
-  // get outline constraint
-  const float lx = cluster->getX();
-  const float ly = cluster->getY();
-  const float outline_width = cluster->getWidth();
-  const float outline_height = cluster->getHeight();
-  const float ux = lx + outline_width;
-  const float uy = ly + outline_height;
-  // the macros for Simulated Annealing Core
-  std::vector<HardMacro> macros;
-  // the clusters for each hard macro.
-  // We need this to calculate the connections with other clusters
-  std::vector<Cluster*> macro_clusters;
-  std::map<int, int> cluster_id_macro_id_map;
+
   std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
-  // we define to verify that all the macros has been placed
-  num_hard_macros_cluster_ += hard_macros.size();
-  // calculate the fences and guides
+  num_hard_macros_cluster_
+      += hard_macros.size();  // we define to verify that all the macros has
+                              // been placed
+
+  std::vector<HardMacro> macros;  // the macros for Simulated Annealing Core
+  std::vector<Cluster*>
+      macro_clusters;  // We need the clusters for each hard macro to calculate
+                       // the connections with other clusters
+  std::map<int, int> cluster_id_macro_id_map;
+  std::set<odb::dbMaster*> masters;
+  createClusterForEachMacro(
+      hard_macros, macros, macro_clusters, cluster_id_macro_id_map, masters);
+
+  const Rect outline(cluster->getX(),
+                     cluster->getY(),
+                     cluster->getX() + cluster->getWidth(),
+                     cluster->getY() + cluster->getHeight());
+
   std::map<int, Rect> fences;
   std::map<int, Rect> guides;
-  std::set<odb::dbMaster*> masters;
-  // create a cluster for each macro
-  // and calculate the fences and guides
-  for (auto& hard_macro : hard_macros) {
-    int macro_id = macros.size();
-    std::string cluster_name = hard_macro->getName();
-    Cluster* macro_cluster = new Cluster(cluster_id_, cluster_name, logger_);
-    macro_cluster->addLeafMacro(hard_macro->getInst());
-    setInstProperty(macro_cluster);
-    cluster_id_macro_id_map[cluster_id_] = macro_id;
-    if (fences_.find(hard_macro->getName()) != fences_.end()) {
-      fences[macro_id] = fences_[hard_macro->getName()];
-      fences[macro_id].relocate(lx, ly, ux, uy);
-    }
-    if (guides_.find(hard_macro->getName()) != guides_.end()) {
-      guides[macro_id] = guides_[hard_macro->getName()];
-      guides[macro_id].relocate(lx, ly, ux, uy);
-    }
-    macros.push_back(*hard_macro);
-    cluster_map_[cluster_id_++] = macro_cluster;
-    macro_clusters.push_back(macro_cluster);
-    masters.insert(hard_macro->getInst()->getMaster());
-  }
-  // calculate the connections with other clusters
+  computeFencesAndGuides(hard_macros, outline, fences, guides);
+
   calculateConnection();
+
   std::set<int> cluster_id_set;
   for (auto macro_cluster : macro_clusters) {
     for (auto [cluster_id, weight] : macro_cluster->getConnection()) {
       cluster_id_set.insert(cluster_id);
     }
   }
+
   // create macros for other clusters
   for (auto cluster_id : cluster_id_set) {
     if (cluster_id_macro_id_map.find(cluster_id)
@@ -5457,10 +5440,13 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
     cluster_id_macro_id_map[cluster_id] = macros.size();
     macros.emplace_back(
         std::pair<float, float>(
-            temp_cluster->getX() + temp_cluster->getWidth() / 2.0 - lx,
-            temp_cluster->getY() + temp_cluster->getHeight() / 2.0 - ly),
+            temp_cluster->getX() + temp_cluster->getWidth() / 2.0
+                - outline.xMin(),
+            temp_cluster->getY() + temp_cluster->getHeight() / 2.0
+                - outline.yMin()),
         temp_cluster->getName());
   }
+
   // create bundled net
   std::vector<BundledNet> nets;
   for (auto macro_cluster : macro_clusters) {
@@ -5508,12 +5494,14 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
       // change the aspect ratio
-      const float width = outline_width * vary_factor_list[run_id++];
-      const float height = outline_width * outline_height / width;
+      const float width = outline.getWidth() * vary_factor_list[run_id++];
+      const float height = outline.getWidth() * outline.getHeight() / width;
 
       if (graphics_) {
-        odb::Rect outline(
-            dbu_ * lx, dbu_ * ly, dbu_ * (lx + width), dbu_ * (ly + height));
+        odb::Rect outline(dbu_ * outline.xMin(),
+                          dbu_ * outline.yMin(),
+                          dbu_ * outline.xMax(),
+                          dbu_ * outline.yMax());
         graphics_->setOutline(outline);
       }
 
@@ -5560,7 +5548,7 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
     // add macro tilings
     for (auto& sa : sa_vector) {
       sa_containers.push_back(sa);  // add SA to containers
-      if (sa->isValid(outline_width, outline_height)
+      if (sa->isValid(outline.getWidth(), outline.getHeight())
           && sa->getNormCost() < best_cost) {
         best_cost = sa->getNormCost();
         best_sa = sa;
@@ -5575,6 +5563,7 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
              1,
              "Summary of macro placement for cluster {}",
              cluster->getName());
+
   // update the hard macro
   if (best_sa == nullptr) {
     for (auto& sa : sa_containers) {
@@ -5594,16 +5583,64 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
       *(hard_macros[i]) = best_macros[i];
     }
   }
+
   // update OpenDB
   for (auto& hard_macro : hard_macros) {
     num_updated_macros_++;
-    hard_macro->setX(hard_macro->getX() + lx);
-    hard_macro->setY(hard_macro->getY() + ly);
-    // hard_macro->updateDb(pitch_x_, pitch_y_);
+    hard_macro->setX(hard_macro->getX() + outline.xMin());
+    hard_macro->setY(hard_macro->getY() + outline.yMin());
   }
+
   // clean SA to avoid memory leakage
   sa_containers.clear();
   setInstProperty(cluster);
+}
+
+void HierRTLMP::createClusterForEachMacro(
+    const std::vector<HardMacro*>& hard_macros,
+    std::vector<HardMacro>& macros,
+    std::vector<Cluster*>& macro_clusters,
+    std::map<int, int>& cluster_id_macro_id_map,
+    std::set<odb::dbMaster*>& masters)
+{
+  int macro_id = 0;
+  std::string cluster_name;
+
+  for (auto& hard_macro : hard_macros) {
+    macro_id = macros.size();
+    cluster_name = hard_macro->getName();
+
+    Cluster* macro_cluster = new Cluster(cluster_id_, cluster_name, logger_);
+    macro_cluster->addLeafMacro(hard_macro->getInst());
+    setInstProperty(macro_cluster);
+
+    macros.push_back(*hard_macro);
+    macro_clusters.push_back(macro_cluster);
+    cluster_id_macro_id_map[cluster_id_] = macro_id;
+    masters.insert(hard_macro->getInst()->getMaster());
+
+    cluster_map_[cluster_id_++] = macro_cluster;
+  }
+}
+
+void HierRTLMP::computeFencesAndGuides(
+    const std::vector<HardMacro*>& hard_macros,
+    const Rect& outline,
+    std::map<int, Rect>& fences,
+    std::map<int, Rect>& guides)
+{
+  for (int i = 0; i < hard_macros.size(); ++i) {
+    if (fences_.find(hard_macros[i]->getName()) != fences_.end()) {
+      fences[i] = fences_[hard_macros[i]->getName()];
+      fences[i].relocate(
+          outline.xMin(), outline.yMin(), outline.xMax(), outline.yMax());
+    }
+    if (guides_.find(hard_macros[i]->getName()) != guides_.end()) {
+      guides[i] = guides_[hard_macros[i]->getName()];
+      guides[i].relocate(
+          outline.xMin(), outline.yMin(), outline.xMax(), outline.yMax());
+    }
+  }
 }
 
 // Align all the macros globally to reduce the waste of standard cell space
