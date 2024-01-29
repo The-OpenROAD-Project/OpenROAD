@@ -331,8 +331,6 @@ std::map<dbSta::InstType, int> dbSta::getInstancesType()
       continue;
     }
     sta::LibertyCell* lib_cell = network->libertyCell(cell);
-    auto sta_cell_name = lib_cell->name();
-    logger_->report("cell name{}: ", sta_cell_name);
     if (lib_cell == nullptr) {
       inst_type_count[OTHER] = inst_type_count[OTHER] + 1;
       continue;
