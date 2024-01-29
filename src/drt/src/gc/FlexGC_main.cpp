@@ -1991,18 +1991,33 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
   bool prefDirIsVert = drWorker_->getDesign()->isVerticalLayer(layer_idx);
   gcSegment* chosenEdg = nullptr;
   Rect chPatchBx;
-  Point chOffset;  // the lower left corner of the patch box
+  Point chOffset;
   auto patch = std::make_unique<drPatchWire>();
   patch->setLayerNum(layer_idx);
   int chCost = std::numeric_limits<int>::max();
+  // First half patch data
+  Rect firstHalfPatchBx;
+  Point firstHalfOffset;
+  Rect halfPatchBx;
+  auto halfPatch = std::make_unique<drPatchWire>();
+  halfPatch->setLayerNum(layer_idx);
+  int countHalf = 0;
+  frCoord halfLength;
+  int halfCost = 0;
+  bool dividedPatchChosen = false;
   // traverse polygon edges, searching for the best edge to amend a patch
   for (auto& edges : pin->getPolygonEdges()) {
     for (auto& e : edges) {
       if (e->isVertical() != prefDirIsVert) {
-        // Make temp patch on this edge
+        // Make temp full patch on this edge
         frCoord length = ceil((float) gapArea / e->length()
                               / getTech()->getManufacturingGrid())
                          * getTech()->getManufacturingGrid();
+        if (countHalf == 0) {
+          halfLength = length / 2;
+        } else {
+          halfLength = length - halfLength;
+        }
         Rect patchBx;
         Point offset;  // the lower left corner of the patch box
         if (prefDirIsVert) {
@@ -2010,10 +2025,18 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
           patchBx.set_xhi(e->length() / 2);
           offset.setX((e->low().x() + e->high().x()) / 2);
           offset.setY(e->low().y());
+          halfPatchBx.set_xlo(-e->length() / 2);
+          halfPatchBx.set_xhi(e->length() / 2);
           if (e->getOuterDir() == frDirEnum::N) {
             patchBx.set_yhi(length);
+            halfPatchBx.set_yhi(halfLength);
+            patchBx.set_ylo(0);
+            halfPatchBx.set_ylo(0);
           } else if (e->getOuterDir() == frDirEnum::S) {
             patchBx.set_ylo(-length);
+            halfPatchBx.set_ylo(-halfLength);
+            patchBx.set_yhi(0);
+            halfPatchBx.set_yhi(0);
           } else {
             logger_->error(
                 DRT, 4500, "Edge outer dir should be either North or South");
@@ -2023,10 +2046,18 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
           patchBx.set_yhi(e->length() / 2);
           offset.setX(e->low().x());
           offset.setY((e->low().y() + e->high().y()) / 2);
+          halfPatchBx.set_ylo(-e->length() / 2);
+          halfPatchBx.set_yhi(e->length() / 2);
           if (e->getOuterDir() == frDirEnum::E) {
             patchBx.set_xhi(length);
+            halfPatchBx.set_xhi(halfLength);
+            patchBx.set_xlo(0);
+            halfPatchBx.set_xlo(0);
           } else if (e->getOuterDir() == frDirEnum::W) {
             patchBx.set_xlo(-length);
+            halfPatchBx.set_xlo(-halfLength);
+            patchBx.set_xhi(0);
+            halfPatchBx.set_xhi(0);
           } else {
             logger_->error(
                 DRT, 4501, "Edge outer dir should be either East or West");
@@ -2036,14 +2067,21 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
         patch->setOrigin(offset);
         patch->setOffsetBox(patchBx);
         auto bbox = patch->getBBox();
+        halfPatch->setOrigin(offset);
+        halfPatch->setOffsetBox(halfPatchBx);
+        auto halfbbox = halfPatch->getBBox();
         if (prefDirIsVert) {
           auto xMiddle = (bbox.xMin() + bbox.xMax()) / 2;
           bbox.set_xlo(xMiddle);
           bbox.set_xhi(xMiddle);
+          halfbbox.set_xlo(xMiddle);
+          halfbbox.set_xhi(xMiddle);
         } else {
           auto yMiddle = (bbox.yMin() + bbox.yMax()) / 2;
           bbox.set_ylo(yMiddle);
           bbox.set_yhi(yMiddle);
+          halfbbox.set_ylo(yMiddle);
+          halfbbox.set_yhi(yMiddle);
         }
         int cost = getDRWorker()->getPatchCost(bbox, layer_idx, !prefDirIsVert);
         if (!chosenEdg || (cost < chCost)
@@ -2054,11 +2092,31 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
           chOffset = offset;
           chCost = cost;
         }
+        if (countHalf == 0) {
+          halfCost = getDRWorker()->getPatchCost(
+              halfbbox, layer_idx, !prefDirIsVert);
+          firstHalfPatchBx = halfPatchBx;
+          firstHalfOffset = offset;
+        } else {
+          cost = halfCost
+                 + getDRWorker()->getPatchCost(
+                     halfbbox, layer_idx, !prefDirIsVert);
+          if (cost < chCost && cost >= 0) {
+            chPatchBx = halfPatchBx;
+            chOffset = offset;
+            dividedPatchChosen = true;
+          }
+        }
+        countHalf++;
       }
     }
   }
   patch->setOrigin(chOffset);
   patch->setOffsetBox(chPatchBx);
+  if (dividedPatchChosen) {
+    halfPatch->setOrigin(firstHalfOffset);
+    halfPatch->setOffsetBox(firstHalfPatchBx);
+  }
   // get drNet for patch
   gcNet* gc_net = pin->getNet();
   frNet* fr_net = gc_net->getFrNet();
@@ -2073,14 +2131,29 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
   }
   if (dr_nets->size() == 1) {
     patch->addToNet((*dr_nets)[0]);
+    if (dividedPatchChosen) {
+      halfPatch->addToNet((*dr_nets)[0]);
+    }
   } else {
     // detect what drNet has objects overlapping with the patch
     checkMetalShape_patchOwner_helper(patch.get(), dr_nets);
+    if (dividedPatchChosen) {
+      checkMetalShape_patchOwner_helper(halfPatch.get(), dr_nets);
+    }
   }
   if (!patch->hasNet())
     return;
-
+  if (dividedPatchChosen) {
+    if (!halfPatch->hasNet()) {
+      return;
+    }
+  }
   pwires_.push_back(std::move(patch));
+  if (dividedPatchChosen) {
+    pwires_.push_back(std::move(halfPatch));
+  } else {
+    halfPatch.~unique_ptr();
+  }
 }
 
 void FlexGCWorker::Impl::checkMetalShape_patchOwner_helper(
