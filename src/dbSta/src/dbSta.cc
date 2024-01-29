@@ -57,6 +57,7 @@
 #include "sta/Clock.hh"
 #include "sta/EquivCells.hh"
 #include "sta/Graph.hh"
+#include "sta/Liberty.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PathRef.hh"
 #include "sta/ReportTcl.hh"
@@ -268,6 +269,131 @@ std::set<dbNet*> dbSta::findClkNets(const Clock* clk)
     }
   }
   return clk_nets;
+}
+
+std::map<dbSta::InstType, int> dbSta::getInstancesType()
+{
+  auto insts = db_->getChip()->getBlock()->getInsts();
+  std::map<InstType, int> inst_type_count;
+
+  inst_type_count[MACRO] = 0;
+  inst_type_count[PAD] = 0;
+  inst_type_count[FILL] = 0;
+  inst_type_count[ANTENNA] = 0;
+  inst_type_count[STD_BUFINV_CLK_TREE] = 0;
+  inst_type_count[STD_BUFINV_TIMING_REPAIR] = 0;
+  inst_type_count[OTHER] = 0;
+
+  for (auto inst : insts) {
+    odb::dbMaster* master = inst->getMaster();
+    const auto master_type = master->getType();
+    const auto source_type = inst->getSourceType();
+    if (master->isBlock()) {
+      inst_type_count[MACRO] = inst_type_count[MACRO] + 1;
+      continue;
+    }
+    if (master->isPad()) {
+      inst_type_count[PAD] = inst_type_count[PAD] + 1;
+      continue;
+    }
+    if (master->isEndCap()) {
+      inst_type_count[OTHER] = inst_type_count[OTHER] + 1;
+      continue;
+    }
+    if (master->isFiller()) {
+      inst_type_count[FILL] = inst_type_count[FILL] + 1;
+      continue;
+    }
+    if (master_type == odb::dbMasterType::CORE_WELLTAP || master->isCover()) {
+      inst_type_count[OTHER] = inst_type_count[OTHER] + 1;
+      continue;
+    }
+    if (master_type == odb::dbMasterType::CORE_ANTENNACELL) {
+      inst_type_count[ANTENNA] = inst_type_count[ANTENNA] + 1;
+      continue;
+    }
+    if (master_type == odb::dbMasterType::CORE_TIEHIGH
+        || master_type == odb::dbMasterType::CORE_TIELOW) {
+      inst_type_count[OTHER] = inst_type_count[OTHER] + 1;
+      continue;
+    }
+    if (source_type == odb::dbSourceType::DIST) {
+      inst_type_count[OTHER] = inst_type_count[OTHER] + 1;
+      continue;
+    }
+
+    sta::dbNetwork* network = getDbNetwork();
+    sta::Cell* cell = network->dbToSta(master);
+    auto master_name = master->getName();
+
+    if (cell == nullptr) {
+      inst_type_count[OTHER] = inst_type_count[OTHER] + 1;
+      continue;
+    }
+    sta::LibertyCell* lib_cell = network->libertyCell(cell);
+    auto sta_cell_name = lib_cell->name();
+    logger_->report("cell name{}: ", sta_cell_name);
+    if (lib_cell == nullptr) {
+      inst_type_count[OTHER] = inst_type_count[OTHER] + 1;
+      continue;
+    }
+
+    if (lib_cell->isInverter() || lib_cell->isBuffer()) {
+      if (source_type == odb::dbSourceType::TIMING) {
+        bool found_clk_inst = false;
+        for (auto* iterm : inst->getITerms()) {
+          // look through iterms and check for clock nets
+          auto* net = iterm->getNet();
+          if (net == nullptr) {
+            continue;
+          }
+          if (net->getSigType() == odb::dbSigType::CLOCK) {
+            inst_type_count[STD_BUFINV_CLK_TREE]
+                = inst_type_count[STD_BUFINV_CLK_TREE] + 1;
+            found_clk_inst = true;
+            break;
+          }
+        }
+        if (!found_clk_inst) {
+          inst_type_count[STD_BUFINV_TIMING_REPAIR]
+              = inst_type_count[STD_BUFINV_TIMING_REPAIR] + 1;
+        }
+        continue;
+      }
+      inst_type_count[OTHER] = inst_type_count[OTHER] + 1;
+    } else {
+      inst_type_count[OTHER] = inst_type_count[OTHER] + 1;
+    }
+  }
+  return inst_type_count;
+}
+
+void dbSta::report_inst_count()
+{
+  std::map<InstType, int> instances_types = getInstancesType();
+
+  logger_->report("Reporting Cells count:");
+  for (auto [type, count] : instances_types) {
+    std::string type_name;
+
+    if (type == MACRO) {
+      type_name = "Macro";
+    } else if (type == PAD) {
+      type_name = "Pad";
+    } else if (type == FILL) {
+      type_name = "Filler";
+    } else if (type == ANTENNA) {
+      type_name = "Antenna";
+    } else if (type == STD_BUFINV_CLK_TREE) {
+      type_name = "Buffer/Inverter from CTS";
+    } else if (type == STD_BUFINV_TIMING_REPAIR) {
+      type_name = "Buffer/Inverter from timing repair";
+    } else if (type == OTHER) {
+      type_name = "Other";
+    }
+
+    logger_->report("  {}: {}", type_name, count);
+  }
 }
 
 ////////////////////////////////////////////////////////////////

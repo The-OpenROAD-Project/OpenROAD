@@ -77,6 +77,17 @@ class dbSta : public Sta, public ord::OpenRoadObserver
  public:
   ~dbSta() override;
 
+  enum InstType
+  {
+    MACRO,
+    PAD,
+    FILL,
+    ANTENNA,
+    STD_BUFINV_CLK_TREE,
+    STD_BUFINV_TIMING_REPAIR,
+    OTHER
+  };
+
   void initVars(Tcl_Interp* tcl_interp,
                 odb::dbDatabase* db,
                 utl::Logger* logger);
@@ -112,6 +123,11 @@ class dbSta : public Sta, public ord::OpenRoadObserver
 
   // Highlight path in the gui.
   void highlight(PathRef* path);
+
+  // Report Instances Type
+  std::map<InstType, int> getInstancesType();
+  void report_inst_count();
+  //std::string getInstanceTypeText(Type type) const;
 
   using Sta::netSlack;
   using Sta::replaceCell;

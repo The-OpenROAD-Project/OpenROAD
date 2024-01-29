@@ -144,6 +144,14 @@ db_network_defined()
   db_network->readDefAfter(block);
 }
 
+void
+report_cell_count()
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->report_inst_count();
+}
+
 // Copied from sta/verilog/Verilog.i because we don't want sta::read_verilog
 // that is in the same file.
 void
