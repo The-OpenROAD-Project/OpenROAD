@@ -874,70 +874,6 @@ void FastRouteCore::updateDbCongestion()
   }
 }
 
-int FastRouteCore::fixLoops(bool is_3d_route) {
-
-  int netFailcnt = 0;
-  for (int netID = 0; netID < netCount(); netID++) {
-
-    if (skipNet(netID)) {
-      continue;
-    }
-
-    std::map<std::pair<int,int>, int> count_aux;
-    std::map<std::vector<int>, int> count_3d;
-
-    //auto fr_net = nets_[netID];
-    //odb::dbNet* db_net = fr_net->getDbNet();
-
-    auto& treeedges = sttrees_[netID].edges;
-    const auto& treenodes = sttrees_[netID].nodes;
-    const int num_nodes = sttrees_[netID].num_nodes();
-
-    std::set<std::pair<int, int>> nodes_pos;
-    for (int nodeID = 0; nodeID < num_nodes; nodeID++) {
-      const TreeNode * treenode = &(treenodes[nodeID]);
-      nodes_pos.insert(std::make_pair(treenode->x, treenode->y));
-    }
-
-    const int num_edges = sttrees_[netID].num_edges();
-
-    bool show = false;
-    for (int edgeID = 0; edgeID < num_edges; edgeID++) {
-      const TreeEdge* treeedge = &(treeedges[edgeID]);
-      if (treeedge->len > 0) {
-        int routeLen = treeedge->route.routelen;
-        const std::vector<short>& gridsX = treeedge->route.gridsX;
-        const std::vector<short>& gridsY = treeedge->route.gridsY;
-        const std::vector<short>& gridsL = treeedge->route.gridsL;
-
-        for (int i = 1; i < routeLen; i++) {
-          const int x = gridsX[i];
-          const int y = gridsY[i];
-          if (!is_3d_route) {
-            count_aux[std::make_pair(x, y)]++;
-            int p_count = count_aux[std::make_pair(x, y)];
-            if (p_count > 1 && nodes_pos.count(std::make_pair(x, y)) == 0) {
-              show = true;
-            }
-          } else {
-            const int layer = gridsL[i];
-            std::vector<int> point_3d = {x, y, layer};
-            count_3d[point_3d]++;
-            int p_count = count_3d[point_3d];
-            if (p_count > 1) {
-              show = true;
-            }
-          } 
-        }
-      }
-    }
-    if (show) {
-      netFailcnt++;
-    }
-  }
-  return netFailcnt;
-}
-
 NetRouteMap FastRouteCore::run()
 {
   if (netCount() == 0) {
@@ -1042,11 +978,6 @@ NetRouteMap FastRouteCore::run()
 
   // check and fix invalid embedded trees
   fixEmbeddedTrees();
-
-  int before_2d_net_overlapped = fixLoops(false);
-  if (before_2d_net_overlapped) {
-    printf("%d nets found with overlapped edges before maze2D\n", before_2d_net_overlapped);
-  }
 
   //  past_cong = getOverflow2Dmaze( &maxOverflow);
 
@@ -1320,11 +1251,6 @@ NetRouteMap FastRouteCore::run()
     }
   }  // end overflow iterations
 
-  int after_2d_net_overlapped = fixLoops(false);
-  if (after_2d_net_overlapped) {
-    printf("%d nets found with overlapped edges after maze2D\n", after_2d_net_overlapped);
-  }
-
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn() && debug_->tree2D_) {
     for (int netID = 0; netID < netCount(); netID++) {
@@ -1367,19 +1293,9 @@ NetRouteMap FastRouteCore::run()
   costheight_ = 3;
   via_cost_ = 1;
 
-  int before_3d_net_overlapped = fixLoops(true);
-  if (before_3d_net_overlapped) {
-    printf("%d nets found with overlapped edges before maze3D\n", before_3d_net_overlapped);
-  }
-
   if (goingLV && past_cong == 0) {
     mazeRouteMSMDOrder3D(enlarge_, 0, 20);
     mazeRouteMSMDOrder3D(enlarge_, 0, 12);
-  }
-
-  int after_3d_net_overlapped = fixLoops(true);
-  if (after_3d_net_overlapped) {
-    printf("%d nets found with overlapped edges after maze3D\n", after_3d_net_overlapped);
   }
 
   fillVIA();

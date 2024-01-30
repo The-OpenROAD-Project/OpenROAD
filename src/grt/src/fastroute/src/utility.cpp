@@ -2623,6 +2623,214 @@ void FastRouteCore::saveCongestion(const int iter)
   }
 }
 
+int FastRouteCore::splitEdge(std::vector<TreeEdge>& treeedges,
+                             std::vector<TreeNode>& treenodes,
+                             const int n1,
+                             const int n2,
+                             const int edge_n1n2)
+{
+  const int n2x = treenodes[n2].x;
+  const int n2y = treenodes[n2].y;
+
+  // create new node
+  const int new_node_id = treenodes.size();
+  TreeNode new_node;
+  new_node.x = n2x;
+  new_node.y = n2y;
+  new_node.stackAlias = treenodes[n2].stackAlias;
+
+  // create new edge
+  const int new_edge_id = treeedges.size();
+  TreeEdge new_edge;
+
+  // find one neighbor node id different to n1
+  int nbr;
+  int edge_n2_nbr;  // edge id that connects the neighbor
+  if (treenodes[n2].nbr[0] == n1) {
+    nbr = treenodes[n2].nbr[1];
+    edge_n2_nbr = treenodes[n2].edge[1];
+  } else {
+    nbr = treenodes[n2].nbr[0];
+    edge_n2_nbr = treenodes[n2].edge[0];
+  }
+
+  // update n2 neighbor
+  int cnt = 0;
+  for (int i = 0; i < treenodes[n2].nbr_count; i++) {
+    if (treenodes[n2].nbr[i] == n1) {
+      continue;
+    }
+    if (treenodes[n2].nbr[i] == nbr) {
+      treenodes[n2].nbr[cnt] = new_node_id;
+      treenodes[n2].edge[cnt] = new_edge_id;
+      cnt++;
+    } else {
+      treenodes[n2].nbr[cnt] = treenodes[n2].nbr[i];
+      treenodes[n2].edge[cnt] = treenodes[n2].edge[i];
+      cnt++;
+    }
+  }
+  treenodes[n2].nbr_count = cnt;
+
+  // change edge neighbor
+  if (treeedges[edge_n2_nbr].n1 == n2) {
+    treeedges[edge_n2_nbr].n1 = new_node_id;
+    treeedges[edge_n2_nbr].n1a = new_node.stackAlias;
+  } else {
+    treeedges[edge_n2_nbr].n2 = new_node_id;
+    treeedges[edge_n2_nbr].n2a = new_node.stackAlias;
+  }
+
+  // change current edge
+  if (treeedges[edge_n1n2].n1 == n2) {
+    treeedges[edge_n1n2].n1 = new_node_id;
+    treeedges[edge_n1n2].n1a = new_node.stackAlias;
+  } else {
+    treeedges[edge_n1n2].n2 = new_node_id;
+    treeedges[edge_n1n2].n2a = new_node.stackAlias;
+  }
+
+  // change node neighbor
+  for (int i = 0; i < treenodes[nbr].nbr_count; i++) {
+    if (treenodes[nbr].nbr[i] == n2) {
+      treenodes[nbr].nbr[i] = new_node_id;
+    }
+  }
+
+  // change n1 node
+  for (int i = 0; i < treenodes[n1].nbr_count; i++) {
+    if (treenodes[n1].nbr[i] == n2) {
+      treenodes[n1].nbr[i] = new_node_id;
+    }
+  }
+
+  // config new edge
+  new_edge.len = 0;
+  new_edge.n1 = new_node_id;
+  new_edge.n1a = new_node.stackAlias;
+  new_edge.n2 = n2;
+  new_edge.n2a = treenodes[n2].stackAlias;
+  new_edge.route.type = RouteType::MazeRoute;
+  new_edge.route.routelen = 0;
+  new_edge.route.gridsX.push_back(n2x);
+  new_edge.route.gridsY.push_back(n2y);
+
+  // config new node
+  new_node.nbr_count = 3;
+  new_node.nbr[0] = nbr;
+  new_node.nbr[1] = n2;
+  new_node.nbr[2] = n1;
+  new_node.edge[0] = edge_n2_nbr;
+  new_node.edge[1] = new_edge_id;
+  new_node.edge[2] = edge_n1n2;
+
+  treeedges.push_back(new_edge);
+  treenodes.push_back(new_node);
+
+  return new_node_id;
+}
+
+void FastRouteCore::setTreeNodesVariables(const int netID) {
+  // re statis the node overlap
+  int numpoints = 0;
+
+  const int num_terminals = sttrees_[netID].num_terminals;
+  auto& treeedges = sttrees_[netID].edges;
+  auto& treenodes = sttrees_[netID].nodes;
+
+  int routeLen;
+  TreeEdge * treeedge;
+  for (int d = 0; d < sttrees_[netID].num_nodes(); d++) {
+    treenodes[d].topL = -1;
+    treenodes[d].botL = num_layers_;
+    treenodes[d].assigned = false;
+    treenodes[d].stackAlias = d;
+    treenodes[d].conCNT = 0;
+    treenodes[d].hID = BIG_INT;
+    treenodes[d].lID = BIG_INT;
+    treenodes[d].status = 0;
+
+    if (d < num_terminals) {
+      treenodes[d].botL = nets_[netID]->getPinL()[d];
+      treenodes[d].topL = nets_[netID]->getPinL()[d];
+      // treenodes[d].l = 0;
+      treenodes[d].assigned = true;
+      treenodes[d].status = 1;
+
+      xcor_[numpoints] = treenodes[d].x;
+      ycor_[numpoints] = treenodes[d].y;
+      dcor_[numpoints] = d;
+      numpoints++;
+    } else {
+      bool redundant = false;
+      for (int k = 0; k < numpoints; k++) {
+        if ((treenodes[d].x == xcor_[k]) && (treenodes[d].y == ycor_[k])) {
+          treenodes[d].stackAlias = dcor_[k];
+
+          redundant = true;
+          break;
+        }
+      }
+      if (!redundant) {
+        xcor_[numpoints] = treenodes[d].x;
+        ycor_[numpoints] = treenodes[d].y;
+        dcor_[numpoints] = d;
+        numpoints++;
+      }
+    }
+  }  // numerating for nodes
+  for (int k = 0; k < sttrees_[netID].num_edges(); k++) {
+    treeedge = &(treeedges[k]);
+
+    if (treeedge->len <= 0) {
+      continue;
+    }
+    routeLen = treeedge->route.routelen;
+
+    int n1 = treeedge->n1;
+    int n2 = treeedge->n2;
+    const std::vector<short>& gridsLtmp = treeedge->route.gridsL;
+
+    int n1a = treenodes[n1].stackAlias;
+
+    int n2a = treenodes[n2].stackAlias;
+
+    treeedge->n1a = n1a;
+    treeedge->n2a = n2a;
+
+    int connectionCNT = treenodes[n1a].conCNT;
+    treenodes[n1a].heights[connectionCNT] = gridsLtmp[0];
+    treenodes[n1a].eID[connectionCNT] = k;
+    treenodes[n1a].conCNT++;
+
+    if (gridsLtmp[0] > treenodes[n1a].topL) {
+      treenodes[n1a].hID = k;
+      treenodes[n1a].topL = gridsLtmp[0];
+    }
+    if (gridsLtmp[0] < treenodes[n1a].botL) {
+      treenodes[n1a].lID = k;
+      treenodes[n1a].botL = gridsLtmp[0];
+    }
+
+    treenodes[n1a].assigned = true;
+
+    connectionCNT = treenodes[n2a].conCNT;
+    treenodes[n2a].heights[connectionCNT] = gridsLtmp[routeLen];
+    treenodes[n2a].eID[connectionCNT] = k;
+    treenodes[n2a].conCNT++;
+    if (gridsLtmp[routeLen] > treenodes[n2a].topL) {
+      treenodes[n2a].hID = k;
+      treenodes[n2a].topL = gridsLtmp[routeLen];
+    }
+    if (gridsLtmp[routeLen] < treenodes[n2a].botL) {
+      treenodes[n2a].lID = k;
+      treenodes[n2a].botL = gridsLtmp[routeLen];
+    }
+
+    treenodes[n2a].assigned = true;
+  }  // eunmerating edges
+}
+
 std::ostream& operator<<(std::ostream& os, RouteType type)
 {
   switch (type) {
