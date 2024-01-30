@@ -104,8 +104,7 @@ class dbSta : public Sta, public ord::OpenRoadObserver
     STD_SEQUENTIAL,
     STD_PHYSICAL,
     STD_COMBINATIONAL,
-    STD_OTHER,
-    OTHER
+    STD_OTHER
   };
 
   void initVars(Tcl_Interp* tcl_interp,

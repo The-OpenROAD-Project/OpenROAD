@@ -384,7 +384,7 @@ std::map<dbSta::InstType, int> dbSta::countInstancesByType()
   inst_type_count[ANTENNA] = 0;
   inst_type_count[STD_BUFINV_CLK_TREE] = 0;
   inst_type_count[STD_BUFINV_TIMING_REPAIR] = 0;
-  inst_type_count[OTHER] = 0;
+  inst_type_count[STD_OTHER] = 0;
 
   for (auto inst : insts) {
     InstType type = getInstanceType(inst);
@@ -393,7 +393,7 @@ std::map<dbSta::InstType, int> dbSta::countInstancesByType()
       if (type >= PAD && type <= PAD_AREAIO) {
         inst_type_count[PAD] = inst_type_count[PAD];
       } else {
-        inst_type_count[OTHER] = inst_type_count[OTHER] + 1;
+        inst_type_count[STD_OTHER] = inst_type_count[STD_OTHER] + 1;
       }
       continue;
     }
@@ -422,7 +422,7 @@ void dbSta::report_inst_count()
       type_name = "Buffer/Inverter from CTS";
     } else if (type == STD_BUFINV_TIMING_REPAIR) {
       type_name = "Buffer/Inverter from timing repair";
-    } else if (type == OTHER) {
+    } else if (type == STD_OTHER) {
       type_name = "Other";
     }
 

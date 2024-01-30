@@ -789,8 +789,6 @@ std::string DbInstDescriptor::getInstanceTypeText(
       return "Combinational";
     case sta::dbSta::InstType::STD_OTHER:
       return "Other";
-    case sta::dbSta::InstType::OTHER:
-      return "Unknown";
   }
 
   return "Unknown";
