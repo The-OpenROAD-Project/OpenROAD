@@ -42,12 +42,14 @@ proc_pattern = re.compile(r'''
 help_dict, proc_dict, readme_dict = {}, {}, {}  
 
 # Directories to exclude (according to md_roff_compat)
-exclude = exclude2
+exclude = ["sta"]
+include = ["./src/odb/src/db/odb.tcl"]
 
 total = 0
-for path in glob.glob("./src/*/src/*tcl"):
+for path in glob.glob("./src/*/src/*tcl") + include:
     # exclude these dirs which are not compiled in man (do not have readmes).
     tool_dir = os.path.dirname(os.path.dirname(path))
+    if "odb" in tool_dir: tool_dir = './src/odb'
     if not os.path.exists(f"{tool_dir}/README.md"): continue
     if re.search(f".*{'|'.join(e for e in exclude)}.*", path): continue
 
@@ -103,8 +105,6 @@ for path in glob.glob("./src/*/README.md"):
     # for pad, remove `make_fake_io_site`
     if 'pad' in tool_dir: readme_dict[tool_dir] -= 1
     total += 1
-
-print(total)
-
+print("Tool Dir", "Help count", "Proc count", "Readme count")
 for path in help_dict:
     print(path, help_dict[path], proc_dict[path], readme_dict[path])

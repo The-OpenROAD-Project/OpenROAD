@@ -120,42 +120,6 @@ set_global_routing_layer_adjustment layer adjustment
 | `adjustment` | Float indicating the percentage reduction of each edge in the specified layer. |
 
 
-### Set Routing Alpha
-
-This command sets routing alphas for a given net `net_name`.
-
-By default the global router uses heuristic rectilinear Steiner minimum
-trees (RSMTs) as an initial basis to construct route guides. An RSMT
-tries to minimize the total wirelength needed to connect a given set
-of pins.  The Prim-Dijkstra heuristic is an alternative net topology
-algorithm that supports a trade-off between total wirelength and maximum
-path depth from the net driver to its loads. The `set_routing_alpha`
-command enables the Prim/Dijkstra algorithm and sets the alpha parameter
-used to trade-off wirelength and path depth.  Alpha is between 0.0
-and 1.0. When alpha is 0.0 the net topology minimizes total wirelength
-(i.e. capacitance).  When alpha is 1.0 it minimizes longest path between
-the driver and loads (i.e., maximum resistance).  Typical values are
-0.4-0.8. You can call it multiple times for different nets.
-
-Example: `set_routing_alpha -net clk 0.3` sets the alpha value of 0.3 for net *clk*.
-
-```tcl
-set_routing_alpha 
-    [-net net_name] 
-    [-min_fanout fanout]
-    [-min_hpwl hpwl]
-    alpha
-```
-
-#### Options
-
-| Switch Name | Description |
-| ----- | ----- |
-| `-net` | Net name. | 
-| `-min_fanout` | Set the minimum number for fanout. | 
-| `-min_hpwl` | Set the minimum half-perimetere wirelength (microns). | 
-| `alpha` | Float between 0 and 1 describing the trade-off between wirelength and path depth. |
-
 ### Set Global Routing Region Adjustment
 
 Set global routing region adjustment.
@@ -258,23 +222,6 @@ repair_antennas
 | `diode_cell` | Diode cell to fix antenna violations. |
 | `-iterations` | Number of iterations. The default value is `1`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-ratio_margin` | Add a margin to the antenna ratios. The default value is `0`, and the allowed values are integers `[0, 100]`. |
-
-### Write Guides
-
-This command writes global routing guides, which can be used as input 
-for global routing.
-
-Example: `write_guides route.guide`.
-
-```tcl
-write_guides file_name
-```
-
-#### Options
-
-| Switch Name | Description |
-| ----- | ----- |
-| `file_name` | Guide file name. |
 
 
 ### Draw Route Guides

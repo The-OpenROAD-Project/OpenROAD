@@ -20,7 +20,6 @@ proc man { args } {
     set man_path [file normalize [file dirname [file dirname $executable_path]]]
     set DEFAULT_MAN_PATH [file join $man_path "docs" "cat"]
   }
-  puts "Default man path $DEFAULT_MAN_PATH"
 
   global MAN_PATH
   if { [info exists keys(-manpath) ]} {

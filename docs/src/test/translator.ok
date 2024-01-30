@@ -16,7 +16,7 @@ File linked from /workspace/src/grt/README.md to /workspace/docs/md/man2/grt.md
 File linked from /workspace/src/gui/README.md to /workspace/docs/md/man2/gui.md
 File linked from /workspace/src/pdn/README.md to /workspace/docs/md/man2/pdn.md
 File linked from /workspace/src/psm/README.md to /workspace/docs/md/man2/psm.md
-ERROR: README.md not found in ../src/stt
+File linked from /workspace/src/stt/README.md to /workspace/docs/md/man2/stt.md
 File linked from /workspace/src/odb/README.md to /workspace/docs/md/man2/odb.md
 File linked from /workspace/src/ppl/README.md to /workspace/docs/md/man2/ppl.md
 File linked from /workspace/src/drt/README.md to /workspace/docs/md/man2/drt.md
@@ -50,9 +50,9 @@ Names: 3,        Desc: 3,        Syn: 3,        Options: 3,        Args: 3
 fin.md
 Names: 1,        Desc: 1,        Syn: 1,        Options: 1,        Args: 1
 gpl.md
-Names: 2,        Desc: 1,        Syn: 1,        Options: 2,        Args: 2
+Names: 2,        Desc: 2,        Syn: 2,        Options: 2,        Args: 2
 grt.md
-Names: 15,        Desc: 15,        Syn: 15,        Options: 15,        Args: 15
+Names: 13,        Desc: 13,        Syn: 13,        Options: 13,        Args: 13
 gui.md
 Names: 46,        Desc: 46,        Syn: 46,        Options: 46,        Args: 46
 ifp.md
@@ -66,7 +66,7 @@ Names: 15,        Desc: 14,        Syn: 14,        Options: 15,        Args: 15
 par.md
 Names: 6,        Desc: 6,        Syn: 6,        Options: 6,        Args: 6
 pdn.md
-Names: 8,        Desc: 8,        Syn: 8,        Options: 8,        Args: 8
+Names: 9,        Desc: 9,        Syn: 9,        Options: 9,        Args: 9
 ppl.md
 Names: 11,        Desc: 11,        Syn: 10,        Options: 11,        Args: 11
 psm.md
@@ -76,8 +76,9 @@ Names: 9,        Desc: 9,        Syn: 9,        Options: 9,        Args: 9
 rmp.md
 Names: 1,        Desc: 1,        Syn: 1,        Options: 1,        Args: 1
 rsz.md
-Names: 14,        Desc: 14,        Syn: 14,        Options: 14,        Args: 14
-./md/man2/stt.md doesn't exist. Continuing
+Names: 16,        Desc: 16,        Syn: 16,        Options: 16,        Args: 16
+stt.md
+Names: 1,        Desc: 1,        Syn: 1,        Options: 1,        Args: 1
 tap.md
 Names: 5,        Desc: 5,        Syn: 5,        Options: 5,        Args: 5
 upf.md
