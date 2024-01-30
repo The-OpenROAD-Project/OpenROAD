@@ -134,6 +134,7 @@ MainWindow::MainWindow(QWidget* parent)
   tabifyDockWidget(inspector_, timing_widget_);
   tabifyDockWidget(inspector_, drc_viewer_);
   tabifyDockWidget(inspector_, clock_viewer_);
+  tabifyDockWidget(inspector_, charts_widget_);
   drc_viewer_->hide();
   clock_viewer_->hide();
 
