@@ -148,12 +148,6 @@ set_macro_placement_file(std::string file_name)
   getMacroPlacer2()->setMacroPlacementFile(file_name);
 }
 
-void
-write_macro_placement(std::string file_name)
-{
-  getMacroPlacer2()->writeMacroPlacement(file_name);
-}
-
 } // namespace
 
 %} // inline
