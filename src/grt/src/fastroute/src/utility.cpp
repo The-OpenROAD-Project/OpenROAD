@@ -2730,7 +2730,8 @@ int FastRouteCore::splitEdge(std::vector<TreeEdge>& treeedges,
   return new_node_id;
 }
 
-void FastRouteCore::setTreeNodesVariables(const int netID) {
+void FastRouteCore::setTreeNodesVariables(const int netID)
+{
   // re statis the node overlap
   int numpoints = 0;
 
@@ -2739,7 +2740,7 @@ void FastRouteCore::setTreeNodesVariables(const int netID) {
   auto& treenodes = sttrees_[netID].nodes;
 
   int routeLen;
-  TreeEdge * treeedge;
+  TreeEdge* treeedge;
   for (int d = 0; d < sttrees_[netID].num_nodes(); d++) {
     treenodes[d].topL = -1;
     treenodes[d].botL = num_layers_;
