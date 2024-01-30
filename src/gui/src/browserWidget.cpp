@@ -393,9 +393,9 @@ BrowserWidget::ModuleStats BrowserWidget::addInstanceItems(
     QStandardItem* item = nullptr;
     ModuleStats stats;
   };
-  std::map<DbInstDescriptor::Type, Leaf> leaf_types;
+  std::map<sta::dbSta::InstType, Leaf> leaf_types;
   for (auto* inst : insts) {
-    auto type = inst_descriptor_->getInstanceType(inst);
+    auto type = sta_->getInstanceType(inst);
     auto& leaf_parent = leaf_types[type];
     if (leaf_parent.item == nullptr) {
       leaf_parent.item

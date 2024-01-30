@@ -79,12 +79,32 @@ class dbSta : public Sta, public ord::OpenRoadObserver
 
   enum InstType
   {
-    MACRO,
+    BLOCK,
     PAD,
+    PAD_INPUT,
+    PAD_OUTPUT,
+    PAD_INOUT,
+    PAD_POWER,
+    PAD_SPACER,
+    PAD_AREAIO,
+    ENDCAP,
     FILL,
+    TAPCELL,
+    BUMP,
+    COVER,
     ANTENNA,
+    TIE,
+    LEF_OTHER,
+    STD_CELL,
+    STD_BUFINV,
     STD_BUFINV_CLK_TREE,
     STD_BUFINV_TIMING_REPAIR,
+    STD_CLOCK_GATE,
+    STD_LEVEL_SHIFT,
+    STD_SEQUENTIAL,
+    STD_PHYSICAL,
+    STD_COMBINATIONAL,
+    STD_OTHER,
     OTHER
   };
 
@@ -126,6 +146,7 @@ class dbSta : public Sta, public ord::OpenRoadObserver
 
   // Report Instances Type
   std::map<InstType, int> countInstancesByType();
+  InstType getInstanceType(odb::dbInst* inst);
   void report_inst_count();
 
   using Sta::netSlack;

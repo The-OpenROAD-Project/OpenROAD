@@ -36,6 +36,7 @@
 #include <set>
 #include <vector>
 
+#include "db_sta/dbSta.hh"
 #include "gui/gui.h"
 #include "odb/dbWireGraph.h"
 
@@ -96,35 +97,6 @@ class DbBlockDescriptor : public Descriptor
 class DbInstDescriptor : public Descriptor
 {
  public:
-  enum Type
-  {
-    BLOCK,
-    PAD,
-    PAD_INPUT,
-    PAD_OUTPUT,
-    PAD_INOUT,
-    PAD_POWER,
-    PAD_SPACER,
-    PAD_AREAIO,
-    ENDCAP,
-    FILL,
-    TAPCELL,
-    BUMP,
-    COVER,
-    ANTENNA,
-    TIE,
-    LEF_OTHER,
-    STD_CELL,
-    STD_BUFINV,
-    STD_BUFINV_CLK_TREE,
-    STD_BUFINV_TIMING_REPAIR,
-    STD_CLOCK_GATE,
-    STD_LEVEL_SHIFT,
-    STD_SEQUENTIAL,
-    STD_PHYSICAL,
-    STD_COMBINATIONAL,
-    STD_OTHER
-  };
   DbInstDescriptor(odb::dbDatabase* db, sta::dbSta* sta);
 
   std::string getName(std::any object) const override;
@@ -143,8 +115,7 @@ class DbInstDescriptor : public Descriptor
 
   bool getAllObjects(SelectionSet& objects) const override;
 
-  Type getInstanceType(odb::dbInst* inst) const;
-  std::string getInstanceTypeText(Type type) const;
+  std::string getInstanceTypeText(sta::dbSta::InstType type) const;
 
  private:
   void makeMasterOptions(odb::dbMaster* master,

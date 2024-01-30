@@ -271,12 +271,114 @@ std::set<dbNet*> dbSta::findClkNets(const Clock* clk)
   return clk_nets;
 }
 
+dbSta::InstType dbSta::getInstanceType(odb::dbInst* inst)
+{
+  odb::dbMaster* master = inst->getMaster();
+  const auto master_type = master->getType();
+  const auto source_type = inst->getSourceType();
+  if (master->isBlock()) {
+    return BLOCK;
+  }
+  if (master->isPad()) {
+    if (master_type == odb::dbMasterType::PAD_INPUT) {
+      return PAD_INPUT;
+    }
+    if (master_type == odb::dbMasterType::PAD_OUTPUT) {
+      return PAD_OUTPUT;
+    }
+    if (master_type == odb::dbMasterType::PAD_INOUT) {
+      return PAD_INOUT;
+    }
+    if (master_type == odb::dbMasterType::PAD_POWER) {
+      return PAD_POWER;
+    }
+    if (master_type == odb::dbMasterType::PAD_SPACER) {
+      return PAD_SPACER;
+    }
+    if (master_type == odb::dbMasterType::PAD_AREAIO) {
+      return PAD_AREAIO;
+    }
+    return PAD;
+  }
+  if (master->isEndCap()) {
+    return ENDCAP;
+  }
+  if (master->isFiller()) {
+    return FILL;
+  }
+  if (master_type == odb::dbMasterType::CORE_WELLTAP) {
+    return TAPCELL;
+  }
+  if (master->isCover()) {
+    if (master_type == odb::dbMasterType::COVER_BUMP) {
+      return BUMP;
+    }
+    return COVER;
+  }
+  if (master_type == odb::dbMasterType::CORE_ANTENNACELL) {
+    return ANTENNA;
+  }
+  if (master_type == odb::dbMasterType::CORE_TIEHIGH
+      || master_type == odb::dbMasterType::CORE_TIELOW) {
+    return TIE;
+  }
+  if (source_type == odb::dbSourceType::DIST) {
+    return LEF_OTHER;
+  }
+
+  sta::dbNetwork* network = getDbNetwork();
+  sta::Cell* cell = network->dbToSta(master);
+  if (cell == nullptr) {
+    return LEF_OTHER;
+  }
+  sta::LibertyCell* lib_cell = network->libertyCell(cell);
+  if (lib_cell == nullptr) {
+    if (master->isCore()) {
+      return STD_CELL;
+    }
+    // default to use overall instance setting if there is no liberty cell and
+    // it's not a core cell.
+    return STD_OTHER;
+  }
+
+  if (lib_cell->isInverter() || lib_cell->isBuffer()) {
+    if (source_type == odb::dbSourceType::TIMING) {
+      for (auto* iterm : inst->getITerms()) {
+        // look through iterms and check for clock nets
+        auto* net = iterm->getNet();
+        if (net == nullptr) {
+          continue;
+        }
+        if (net->getSigType() == odb::dbSigType::CLOCK) {
+          return STD_BUFINV_CLK_TREE;
+        }
+      }
+      return STD_BUFINV_TIMING_REPAIR;
+    }
+    return STD_BUFINV;
+  }
+  if (lib_cell->isClockGate()) {
+    return STD_CLOCK_GATE;
+  }
+  if (lib_cell->isLevelShifter()) {
+    return STD_LEVEL_SHIFT;
+  }
+  if (lib_cell->hasSequentials()) {
+    return STD_SEQUENTIAL;
+  }
+  if (lib_cell->portCount() == 0) {
+    return STD_PHYSICAL;  // generic physical
+  }
+  // not anything else, so combinational
+  return STD_COMBINATIONAL;
+}
+
 std::map<dbSta::InstType, int> dbSta::countInstancesByType()
 {
   auto insts = db_->getChip()->getBlock()->getInsts();
   std::map<InstType, int> inst_type_count;
 
-  inst_type_count[MACRO] = 0;
+  inst_type_count[BLOCK] = 0;
   inst_type_count[PAD] = 0;
   inst_type_count[FILL] = 0;
   inst_type_count[ANTENNA] = 0;
@@ -285,83 +387,17 @@ std::map<dbSta::InstType, int> dbSta::countInstancesByType()
   inst_type_count[OTHER] = 0;
 
   for (auto inst : insts) {
-    odb::dbMaster* master = inst->getMaster();
-    const auto master_type = master->getType();
-    const auto source_type = inst->getSourceType();
-    if (master->isBlock()) {
-      inst_type_count[MACRO] = inst_type_count[MACRO] + 1;
-      continue;
-    }
-    if (master->isPad()) {
-      inst_type_count[PAD] = inst_type_count[PAD] + 1;
-      continue;
-    }
-    if (master->isEndCap()) {
-      inst_type_count[OTHER] = inst_type_count[OTHER] + 1;
-      continue;
-    }
-    if (master->isFiller()) {
-      inst_type_count[FILL] = inst_type_count[FILL] + 1;
-      continue;
-    }
-    if (master_type == odb::dbMasterType::CORE_WELLTAP || master->isCover()) {
-      inst_type_count[OTHER] = inst_type_count[OTHER] + 1;
-      continue;
-    }
-    if (master_type == odb::dbMasterType::CORE_ANTENNACELL) {
-      inst_type_count[ANTENNA] = inst_type_count[ANTENNA] + 1;
-      continue;
-    }
-    if (master_type == odb::dbMasterType::CORE_TIEHIGH
-        || master_type == odb::dbMasterType::CORE_TIELOW) {
-      inst_type_count[OTHER] = inst_type_count[OTHER] + 1;
-      continue;
-    }
-    if (source_type == odb::dbSourceType::DIST) {
-      inst_type_count[OTHER] = inst_type_count[OTHER] + 1;
-      continue;
-    }
-
-    sta::dbNetwork* network = getDbNetwork();
-    sta::Cell* cell = network->dbToSta(master);
-    auto master_name = master->getName();
-
-    if (cell == nullptr) {
-      inst_type_count[OTHER] = inst_type_count[OTHER] + 1;
-      continue;
-    }
-    sta::LibertyCell* lib_cell = network->libertyCell(cell);
-    if (lib_cell == nullptr) {
-      inst_type_count[OTHER] = inst_type_count[OTHER] + 1;
-      continue;
-    }
-
-    if (lib_cell->isInverter() || lib_cell->isBuffer()) {
-      if (source_type == odb::dbSourceType::TIMING) {
-        bool found_clk_inst = false;
-        for (auto* iterm : inst->getITerms()) {
-          // look through iterms and check for clock nets
-          auto* net = iterm->getNet();
-          if (net == nullptr) {
-            continue;
-          }
-          if (net->getSigType() == odb::dbSigType::CLOCK) {
-            inst_type_count[STD_BUFINV_CLK_TREE]
-                = inst_type_count[STD_BUFINV_CLK_TREE] + 1;
-            found_clk_inst = true;
-            break;
-          }
-        }
-        if (!found_clk_inst) {
-          inst_type_count[STD_BUFINV_TIMING_REPAIR]
-              = inst_type_count[STD_BUFINV_TIMING_REPAIR] + 1;
-        }
-        continue;
+    InstType type = getInstanceType(inst);
+    if (type != BLOCK && type != FILL && type != ANTENNA
+        && type != STD_BUFINV_CLK_TREE && type != STD_BUFINV_TIMING_REPAIR) {
+      if (type >= PAD && type <= PAD_AREAIO) {
+        inst_type_count[PAD] = inst_type_count[PAD];
+      } else {
+        inst_type_count[OTHER] = inst_type_count[OTHER] + 1;
       }
-      inst_type_count[OTHER] = inst_type_count[OTHER] + 1;
-    } else {
-      inst_type_count[OTHER] = inst_type_count[OTHER] + 1;
+      continue;
     }
+    inst_type_count[type] = inst_type_count[type] + 1;
   }
   return inst_type_count;
 }
@@ -374,7 +410,7 @@ void dbSta::report_inst_count()
   for (auto [type, count] : instances_types) {
     std::string type_name;
 
-    if (type == MACRO) {
+    if (type == BLOCK) {
       type_name = "Macro";
     } else if (type == PAD) {
       type_name = "Pad";
