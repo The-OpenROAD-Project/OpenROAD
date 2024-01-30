@@ -2151,8 +2151,6 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
   pwires_.push_back(std::move(patch));
   if (dividedPatchChosen) {
     pwires_.push_back(std::move(halfPatch));
-  } else {
-    halfPatch.~unique_ptr();
   }
 }
 
