@@ -644,17 +644,20 @@ BOOST_AUTO_TEST_CASE(spacing_table_twowidth)
 
 // Check for a SPACING RANGE violation.
 BOOST_DATA_TEST_CASE(spacing_range,
-                     bdata::make({0, 200}) ^ bdata::make({false, true}),
+                     bdata::make({0, 200, 200}) ^ bdata::make({200, 200, 100})
+                         ^ bdata::make({false, true, false}),
                      minWidth,
+                     y,
                      legal)
 {
   // Setup
   makeSpacingRangeConstraint(2, 500, minWidth, 400);
 
   frNet* n1 = makeNet("n1");
+  frNet* n2 = makeNet("n2");
 
   makePathseg(n1, 2, {0, 50}, {1000, 50});
-  makePathseg(n1, 2, {0, 200}, {1000, 200});
+  makePathseg(n2, 2, {0, y}, {1000, y});
 
   runGC();
 
@@ -664,6 +667,17 @@ BOOST_DATA_TEST_CASE(spacing_range,
     BOOST_TEST(markers.size() == 0);
   } else {
     BOOST_TEST(markers.size() == 1);
+    auto& markers = worker.getMarkers();
+    BOOST_TEST(markers.size() == 1);
+    if (y == 100) {
+      BOOST_TEST(markers[0]->getConstraint()->typeId()
+                 == frConstraintTypeEnum::frcShortConstraint);
+    } else {
+      testMarker(markers[0].get(),
+                 2,
+                 frConstraintTypeEnum::frcSpacingRangeConstraint,
+                 Rect(0, 100, 1000, y - 50));
+    }
   }
 }
 // Check for a basic end-of-line (EOL) spacing violation.

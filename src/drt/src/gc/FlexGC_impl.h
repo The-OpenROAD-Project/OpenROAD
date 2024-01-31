@@ -225,8 +225,7 @@ class FlexGCWorker::Impl
                  gcSegment* ptr,
                  const gtl::orientation_2d& orient) const;
   void checkMetalSpacing_wrongDir(gcPin* pin, frLayer* layer);
-  void checkMetalSpacingRange(gcRect* rect);
-  void checkMetalSpacingRange(gcRect* rect, frSpacingRangeConstraint* con);
+  void checkMetalSpacingRange(gcRect* rect1, gcRect* rect2);
 
   frCoord checkMetalSpacing_getMaxSpcVal(frLayerNum layerNum,
                                          bool checkNDRs = true);

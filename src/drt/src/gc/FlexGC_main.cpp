@@ -826,72 +826,64 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1,
                           distY,
                           checkNDRs,
                           !isSpcRect);
+    checkMetalSpacingRange(ptr1, ptr2);
   }
 }
 
-void FlexGCWorker::Impl::checkMetalSpacingRange(gcRect* rect,
-                                                frSpacingRangeConstraint* con)
+void FlexGCWorker::Impl::checkMetalSpacingRange(gcRect* rect1, gcRect* rect2)
 {
-  auto minSpc = con->getMinSpacing();
-  frSquaredDistance reqSpcValSquare = minSpc * (frSquaredDistance) minSpc;
-  box_t queryBox;
-  myBloat(*rect, minSpc, queryBox);
-  auto& workerRegionQuery = getWorkerRegionQuery();
-  std::vector<rq_box_value_t<gcRect*>> result;
-  workerRegionQuery.queryMaxRectangle(queryBox, rect->getLayerNum(), result);
-  for (auto& [objBox, ptr] : result) {
-    if (ptr == rect) {
+  auto layer = getTech()->getLayer(rect1->getLayerNum());
+  if (!layer->hasSpacingRangeConstraints()) {
+    return;
+  }
+  if (rect1 == rect2) {
+    return;
+  }
+  if (rect1->isFixed() && rect2->isFixed()) {
+    return;
+  }
+  for (auto con : layer->getSpacingRangeConstraints()) {
+    if (!con->inRange(rect1->width()) || !con->inRange(rect2->width())) {
       continue;
     }
-    if (ptr->isFixed() && rect->isFixed()) {
-      continue;
-    }
-    if (!con->inRange(ptr->width())) {
-      continue;
-    }
-    frSquaredDistance distSquare = gtl::square_euclidean_distance(*rect, *ptr);
+    auto minSpc = con->getMinSpacing();
+    frSquaredDistance reqSpcValSquare = minSpc * (frSquaredDistance) minSpc;
+    frSquaredDistance distSquare
+        = gtl::square_euclidean_distance(*rect1, *rect2);
     if (distSquare >= reqSpcValSquare) {
       continue;
     }
     // Make marker
-    auto net1 = rect->getNet();
-    auto net2 = ptr->getNet();
-    gtl::rectangle_data<frCoord> markerRect(*rect);
-    gtl::generalized_intersect(markerRect, *ptr);
+    auto net1 = rect1->getNet();
+    auto net2 = rect2->getNet();
+    gtl::rectangle_data<frCoord> markerRect(*rect1);
+    gtl::generalized_intersect(markerRect, *rect2);
     auto marker = std::make_unique<frMarker>();
     Rect box(gtl::xl(markerRect),
              gtl::yl(markerRect),
              gtl::xh(markerRect),
              gtl::yh(markerRect));
     marker->setBBox(box);
-    marker->setLayerNum(rect->getLayerNum());
+    marker->setLayerNum(rect1->getLayerNum());
     marker->setConstraint(con);
     marker->addSrc(net1->getOwner());
-    marker->addVictim(
-        net1->getOwner(),
-        std::make_tuple(
-            rect->getLayerNum(),
-            Rect(
-                gtl::xl(*rect), gtl::yl(*rect), gtl::xh(*rect), gtl::yh(*rect)),
-            rect->isFixed()));
+    marker->addVictim(net1->getOwner(),
+                      std::make_tuple(rect1->getLayerNum(),
+                                      Rect(gtl::xl(*rect1),
+                                           gtl::yl(*rect1),
+                                           gtl::xh(*rect1),
+                                           gtl::yh(*rect1)),
+                                      rect1->isFixed()));
     marker->addSrc(net2->getOwner());
-    marker->addAggressor(
-        net2->getOwner(),
-        std::make_tuple(
-            ptr->getLayerNum(),
-            Rect(gtl::xl(*ptr), gtl::yl(*ptr), gtl::xh(*ptr), gtl::yh(*ptr)),
-            ptr->isFixed()));
+    marker->addAggressor(net2->getOwner(),
+                         std::make_tuple(rect2->getLayerNum(),
+                                         Rect(gtl::xl(*rect2),
+                                              gtl::yl(*rect2),
+                                              gtl::xh(*rect2),
+                                              gtl::yh(*rect2)),
+                                         rect2->isFixed()));
     addMarker(std::move(marker));
-  }
-}
-
-void FlexGCWorker::Impl::checkMetalSpacingRange(gcRect* rect)
-{
-  auto layer = getTech()->getLayer(rect->getLayerNum());
-  for (auto con : layer->getSpacingRangeConstraints()) {
-    if (con->inRange(rect->width())) {
-      checkMetalSpacingRange(rect, con);
-    }
+    return;
   }
 }
 
@@ -901,6 +893,12 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* rect,
 {
   auto layerNum = rect->getLayerNum();
   auto maxSpcVal = checkMetalSpacing_getMaxSpcVal(layerNum, checkNDRs);
+  for (const auto& con :
+       getTech()->getLayer(layerNum)->getSpacingRangeConstraints()) {
+    if (con->inRange(rect->width())) {
+      maxSpcVal = std::max(maxSpcVal, con->getMinSpacing());
+    }
+  }
 
   box_t queryBox;
   myBloat(*rect, maxSpcVal, queryBox);
@@ -941,9 +939,6 @@ void FlexGCWorker::Impl::checkMetalSpacing()
         for (auto& maxrect : pin->getMaxRectangles()) {
           checkMetalSpacing_main(maxrect.get(),
                                  getDRWorker() || !AUTO_TAPER_NDR_NETS);
-          if (currLayer->hasSpacingRangeConstraints()) {
-            checkMetalSpacingRange(maxrect.get());
-          }
         }
       }
       for (auto& sr : targetNet_->getSpecialSpcRects())
@@ -970,9 +965,6 @@ void FlexGCWorker::Impl::checkMetalSpacing()
             // Short, NSMetal, metSpc
             checkMetalSpacing_main(maxrect.get(),
                                    getDRWorker() || !AUTO_TAPER_NDR_NETS);
-            if (currLayer->hasSpacingRangeConstraints()) {
-              checkMetalSpacingRange(maxrect.get());
-            }
           }
         }
         for (auto& sr : net->getSpecialSpcRects())
