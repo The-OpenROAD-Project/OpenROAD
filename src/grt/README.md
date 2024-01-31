@@ -25,6 +25,8 @@ global_route
     [-grid_origin {x y}]
     [-critical_nets_percentage percent]
     [-allow_congestion]
+    [-allow_overflow]
+    [-overflow_iterations]
     [-verbose]
     [-start_incremental]
     [-end_incremental]

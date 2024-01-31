@@ -106,7 +106,7 @@ The `check_placement` command checks the placement legality. It returns
 check_placement
     [-verbose]
     [-disallow_one_site_gaps]
-    [-report_filename filename]
+    [-report_file_name filename]
 ```
 
 #### Options
@@ -115,7 +115,7 @@ check_placement
 | ----- | ----- |
 | `-verbose` | Enable verbose logging. |
 | `-disallow_one_site_gaps` | Disable one site gap during placement check. |
-| `-report_filename` | File name for saving the report to (e.g. `report.json`. |
+| `-report_file_name` | File name for saving the report to (e.g. `report.json`. |
 
 ### Optimize Mirroring
 

@@ -49,6 +49,8 @@ Timing-driven arguments
 global_placement
     [-timing_driven]
     [-routability_driven]
+    [-disable_timing_driven]
+    [-disable_routability_driven]
     [-skip_initial_place]
     [-incremental]
     [-bin_grid_count grid_count]
@@ -57,21 +59,21 @@ global_placement
     [-init_wirelength_coef init_wirelength_coef]
     [-min_phi_coef min_phi_conef]
     [-max_phi_coef max_phi_coef]
+    [-reference_hpwl reference_hpwl]
     [-overflow overflow]
     [-initial_place_max_iter initial_place_max_iter]
     [-initial_place_max_fanout initial_place_max_fanout]
     [-pad_left pad_left]
     [-pad_right pad_right]
-    [-verbose_level level]
     [-force_cpu]
     [-skip_io]
+    [-skip_nesterov_place]
     [-routability_check_overflow routability_check_overflow]
     [-routability_max_density routability_max_density]
     [-routability_max_bloat_iter routability_max_bloat_iter]
     [-routability_max_inflation_iter routability_max_inflation_iter]
     [-routability_target_rc_metric routability_target_rc_metric]
     [-routability_inflation_ratio_coef routability_inflation_ratio_coef]
-    [-routability_pitch_scale routability_pitch_scale]
     [-routability_max_inflation_ratio routability_max_inflation_ratio]
     [-routability_rc_coefficients routability_rc_coefficients]
     [-timing_driven_net_reweight_overflow]
@@ -98,7 +100,6 @@ global_placement
 | `-initial_place_max_fanout` | Set net escape condition in initial place when $fanout \geq initial\_place\_max\_fanout$. The default value is 200. Allowed values are integers `[1, MAX_INT]`. |
 | `-pad_left` | Set left padding in terms of number of sites. The default value is 0, and the allowed values are integers `[1, MAX_INT]` |
 | `-pad_right` | Set right padding in terms of number of sites. The default value is 0, and the allowed values are integers `[1, MAX_INT]` |
-| `-verbose_level` | Set verbose level for `gpl`. The default value is 1. Allowed values are integers `[0, 5]`. |
 | `-force_cpu` | Force to use the CPU solver even if the GPU is available. |
 | `-skip_io` | Flag to ignore the IO ports when computing wirelength during placement. The default value is False, allowed values are boolean. |
 

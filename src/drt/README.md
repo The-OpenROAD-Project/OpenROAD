@@ -46,7 +46,7 @@ detailed_route
     [-via_in_pin_bottom_layer layer]
     [-via_in_pin_top_layer layer]
     [-or_seed seed]
-    [-or_k_ k]
+    [-or_k k]
     [-bottom_routing_layer layer]
     [-top_routing_layer layer]
     [-verbose level]
@@ -60,6 +60,7 @@ detailed_route
     [-min_access_points count]
     [-save_guide_updates]
     [-repair_pdn_vias layer]
+    [-single_step_dr]
 ```
 
 #### Options
@@ -110,11 +111,12 @@ detailed_route_debug
     [-maze]
     [-net name]
     [-pin name]
-    [-worker x y]
+    [-box x1 y1 x2 y2]
     [-iter iter]
     [-pa_markers]
     [-dump_dr]
     [-dump_dir dir]
+    [-dump_last_worker]
     [-pa_edge]
     [-pa_commit]
     [-write_net_tracks]
@@ -130,6 +132,7 @@ detailed_route_debug
 | `-maze` | Enable debug for maze routing. | 
 | `-net` | Enable debug for net name. |
 | `-pin` | Enable debug for pin name. |
+| `-box` | Set the box for debugging given by lower left/upper right coordinates. |
 | `-worker` | Debugs routes that pass through the point `{x, y}`. |
 | `-iter` | Specifies the number of debug iterations. The default value is `0`, and the accepted values are integers `[0, MAX_INT`. |
 | `-pa_markers` | Enable pin access markers. |

@@ -27,7 +27,8 @@ def check_function_signatures(text1, text2):
     return False
 
 # Test this tool
-tool = "cts"
+tool = "grt"
+tool = f"./src/{tool}/"
 
 # Test objective: Make sure similar output in all three: help, proc, and readme
 path = os.path.realpath("md_roff_compat.py")
@@ -80,6 +81,7 @@ for path in glob.glob("./src/*/README.md"):
     tool_dir = os.path.dirname(path)
 
     if tool not in path: continue
+    print(path)
 
     # for gui, filter out the gui:: for separate processing
     matches = [x for x in extract_tcl_code(open(path).read()) if "gui::" not in x]
@@ -95,6 +97,7 @@ for path in glob.glob("./src/*/README.md"):
         # print(cmd, rest)
 
 for cmd in help_dict:
+    print("----------")
     print(cmd)
     isValid = True
     if cmd not in help_dict: print("command not parsed in help_dict"); isValid = False

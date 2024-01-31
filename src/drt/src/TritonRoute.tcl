@@ -45,7 +45,7 @@ sta::define_cmd_args "detailed_route" {
     [-via_in_pin_bottom_layer layer]
     [-via_in_pin_top_layer layer]
     [-or_seed seed]
-    [-or_k_ k]
+    [-or_k k]
     [-bottom_routing_layer layer]
     [-top_routing_layer layer]
     [-verbose level]
@@ -59,6 +59,7 @@ sta::define_cmd_args "detailed_route" {
     [-min_access_points count]
     [-save_guide_updates]
     [-repair_pdn_vias layer]
+    [-single_step_dr]
 }
 
 proc detailed_route { args } {
@@ -224,7 +225,7 @@ sta::define_cmd_args "detailed_route_debug" {
 proc detailed_route_debug { args } {
   sta::parse_key_args "detailed_route_debug" args \
       keys {-net -iter -pin -dump_dir -box} \
-      flags {-dr -maze -pa -pa_markers -pa_edge -pa_commit -dump_dr -ta -write_net_tracks}
+      flags {-dr -maze -pa -pa_markers -pa_edge -pa_commit -dump_dr -ta -write_net_tracks -dump_last_worker}
 
   sta::check_argc_eq0 "detailed_route_debug" $args
 
