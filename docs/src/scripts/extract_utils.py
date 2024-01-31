@@ -76,6 +76,38 @@ def extract_tables(text):
 
     return table_matches
 
+def extract_help(text):
+    help_pattern = re.compile(r'''
+                sta::define_cmd_args\s+
+                "(.*?)"\s*
+                {([^}]*)}
+                (\s*;\s*\#\s*no\s*docs)?
+                ''',
+                re.VERBOSE | re.DOTALL)
+
+    matches = re.findall(help_pattern, text)
+    
+    # remove nodocs (usually dev commands)
+    matches = [tup for tup in matches if not tup[2].replace(" ","") == ";#nodocs"]
+    return matches
+
+def extract_proc(text):
+    proc_pattern = re.compile(r'''
+                sta::parse_key_args\s+
+                "(.*?)"\s*
+                args\s*
+                (.*?keys.*?})
+                (.*?flags.*?})
+                (\s*;\s*\#\s*no\s*docs)?
+                ''',
+                re.VERBOSE | re.DOTALL)
+    
+    matches = re.findall(proc_pattern, text)
+
+    # remove nodocs (usually dev commands)
+    matches = [tup for tup in matches if not tup[3].replace(" ","") == ";#nodocs"]
+    return matches
+
 def parse_switch(text):
     # Find the index of the 1nd and last occurrence of "|". Since some content might contain "|"
     switch_name = text.split("|")[1]

@@ -1,26 +1,51 @@
-Tool Dir Help count Proc count Readme count
-./src/ant 1 1 1
-./src/fin 1 1 1
-./src/mpl 2 2 1
-./src/utl 1 1 1
-./src/ifp 3 3 3
-./src/tap 5 5 5
-./src/grt 13 13 13
-./src/gui 7 7 7
-./src/pdn 9 9 9
-./src/psm 4 4 4
-./src/stt 1 1 1
-./src/ppl 10 10 10
-./src/drt 3 3 3
-./src/cts 3 3 3
-./src/dpl 6 6 6
-./src/rmp 1 1 1
-./src/gpl 2 2 2
-./src/mpl2 3 3 3
-./src/par 6 6 6
-./src/dft 4 4 4
-./src/upf 8 8 8
-./src/pad 13 13 13
-./src/rcx 9 9 9
-./src/rsz 16 16 16
-./src/odb 16 16 16
+Tool Dir             Help count      Proc count      Readme count
+./src/ant            1               1               1
+Command counts match.
+./src/fin            1               1               1
+Command counts match.
+./src/mpl            1               1               1
+Command counts match.
+./src/utl            1               1               1
+Command counts match.
+./src/ifp            3               3               3
+Command counts match.
+./src/tap            5               5               5
+Command counts match.
+./src/grt            13              13              13
+Command counts match.
+./src/gui            7               7               7
+Command counts match.
+./src/pdn            9               9               9
+Command counts match.
+./src/psm            4               4               4
+Command counts match.
+./src/stt            1               1               1
+Command counts match.
+./src/ppl            10              10              10
+Command counts match.
+./src/drt            3               3               3
+Command counts match.
+./src/cts            3               3               3
+Command counts match.
+./src/dpl            6               6               6
+Command counts match.
+./src/rmp            1               1               1
+Command counts match.
+./src/gpl            2               2               2
+Command counts match.
+./src/mpl2           3               3               3
+Command counts match.
+./src/par            6               6               6
+Command counts match.
+./src/dft            4               4               4
+Command counts match.
+./src/upf            8               8               8
+Command counts match.
+./src/pad            13              13              13
+Command counts match.
+./src/rcx            9               9               9
+Command counts match.
+./src/rsz            16              16              16
+Command counts match.
+./src/odb            16              16              16
+Command counts match.

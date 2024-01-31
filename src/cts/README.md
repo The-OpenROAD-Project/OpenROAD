@@ -42,20 +42,26 @@ Perform clock tree synthesis.
 
 ```tcl
 clock_tree_synthesis 
-    -buf_list <list_of_buffers>
-    [-root_buf root_buf]
     [-wire_unit wire_unit]
+    [-buf_list <list_of_buffers>]
+    [-root_buf root_buf]
     [-clk_nets <list_of_clk_nets>]
+    [-tree_buf <buf>]
     [-distance_between_buffers]
     [-branching_point_buffers_distance]
     [-clustering_exponent]
     [-clustering_unbalance_ratio]
-    [-sink_clustering_enable]
     [-sink_clustering_size cluster_size]
     [-sink_clustering_max_diameter max_diameter]
+    [-sink_clustering_enable]
     [-balance_levels]
+    [-sink_clustering_levels levels]
     [-num_static_layers]
     [-sink_clustering_buffer]
+    [-obstruction_aware]
+    [-apply_ndr]
+    [-insertion_delay]
+    [-post_cts_disable]
 ```
 
 #### Options

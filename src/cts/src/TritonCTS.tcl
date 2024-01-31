@@ -85,8 +85,9 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-num_static_layers] \
                                              [-sink_clustering_buffer] \
                                              [-obstruction_aware] \
-					     [-apply_ndr] \
-                                             [-insertion_delay]
+					                                   [-apply_ndr] \
+                                             [-insertion_delay] \
+                                             [-post_cts_disable]
                                             }
 
 proc clock_tree_synthesis { args } {
@@ -202,7 +203,7 @@ sta::define_cmd_args "report_cts" {[-out_file file] \
                                   }
 proc report_cts { args } {
   sta::parse_key_args "report_cts" args \
-    keys {-out_file} flags {} ;#no docs
+    keys {-out_file} flags {}
 
   sta::check_argc_eq0 "report_cts" $args
 
@@ -217,7 +218,7 @@ proc report_cts { args } {
 namespace eval cts {
 proc clock_tree_synthesis_debug { args } {
   sta::parse_key_args "clock_tree_synthesis_debug" args \
-    keys {} flags {-plot}
+    keys {} flags {-plot}; # no docs
 
   sta::check_argc_eq0 "clock_tree_synthesis_debug" $args
   cts::set_plot_option [info exists flags(-plot)]
