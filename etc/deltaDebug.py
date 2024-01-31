@@ -159,8 +159,10 @@ class deltaDebugger:
 
             while self.n <= (2**self.persistence):
                 error_in_range = None
-                for j in range(self.n * self.multiplier):
+                j = 0
+                while j < self.get_cuts():
                     current_err = self.perform_step(cut_index=j)
+                    self.step_count += 1
                     if (current_err == "NOCUT"):
                         break
                     elif (current_err is not None):
@@ -171,6 +173,7 @@ class deltaDebugger:
                         err = current_err
                         error_in_range = current_err
                         self.prepare_new_step()
+                    j += 1
 
                 if (error_in_range is None):
                     # Increase the granularity of the cut in case target error not found
@@ -229,9 +232,6 @@ class deltaDebugger:
         # the step code is running
         if (self.base_db is not None):
             self.base_db.destroy(self.base_db)
-
-        if (cut_index != -1):
-            self.step_count += 1
 
         # Perform step, and check the error code
         start_time = time.time()
@@ -330,36 +330,63 @@ class deltaDebugger:
         for iterm in net.getITerms():
             iterm.getInst().setDoNotTouch(False)
 
+    def get_insts(self):
+        return self.base_db.getChip().getBlock().getInsts()
+
+    def get_nets(self):
+        return self.base_db.getChip().getBlock().getNets()
+
+    def get_elms(self):
+        if self.cut_level == cutLevel.Insts:
+            return self.get_insts()
+        return self.get_nets()
+
+    def get_cuts(self):
+        return min(self.n * self.multiplier, len(self.get_elms()))
+
     # A function that cuts the block according to the given direction
     # and ratio. It also uses the class cut level  to identify
     # whether to cut Insts or Nets.
-    def cut_block(self, index=0):  
-        block = self.base_db.getChip().getBlock()
+    def cut_block(self, index=0):
         message = [f"Step {self.step_count}"]
         if (self.cut_level == cutLevel.Insts):  # Insts cut level
-            elms = block.getInsts()
+            elms = self.get_insts()
             message += ["Insts level debugging"]
         elif (self.cut_level == cutLevel.Nets):  # Nets cut level
-            elms = block.getNets()
+            elms = self.get_nets()
             message += ["Nets level debugging"]
 
-        message += [f"Insts {len(block.getInsts())}", f"Nets {len(block.getNets())}"]
+        message += [
+            f"Insts {len(self.get_insts())}", f"Nets {len(self.get_nets())}"
+        ]
 
         num_elms = len(elms)
-
-        cuts = self.n * self.multiplier
-        num_elms_to_cut = int(num_elms * 1.0 / cuts)
-        if (num_elms == 1 or num_elms_to_cut == 0):
+        if (num_elms == 1):
             # No further cuts could be done on the current odb
             return "NOCUT"
 
-        start = index * num_elms_to_cut
-        end = start + num_elms_to_cut
+        cuts = self.get_cuts()
+        start = num_elms * index // cuts
+        end = num_elms * (index + 1) // cuts
 
         cut_position_string = '#' * cuts
-        cut_position_string = cut_position_string[:index] + 'C' + cut_position_string[index+1:]
-        message += [f"cut elements {num_elms_to_cut}"]
+        cut_position_string = (cut_position_string[:index] + 'C' +
+                               cut_position_string[index + 1:])
+        message += [f"cut elements {end-start}"]
         message += [f"timeout {ceil(self.timeout/60.0)} minutes"]
+        self.cut_elements(start, end)
+
+        cuts = self.n * self.multiplier
+        print(", ".join(message), flush=True)
+        print(f"[{cut_position_string}]", flush=True)
+        return 0
+
+    def cut_elements(self, start, end):
+        block = self.base_db.getChip().getBlock()
+        if (self.cut_level == cutLevel.Insts):  # Insts cut level
+            elms = block.getInsts()
+        elif (self.cut_level == cutLevel.Nets):  # Nets cut level
+            elms = block.getNets()
 
         for i in range(start, end):
             elm = elms[i]
@@ -368,11 +395,6 @@ class deltaDebugger:
             elif self.cut_level == cutLevel.Nets:
                 self.clear_dont_touch_net(elm)
             elm.destroy(elm)
-
-        print(", ".join(message), flush=True)
-        print(f"[{cut_position_string}]", flush=True)
-
-        return 0
 
 
 if __name__ == '__main__':
