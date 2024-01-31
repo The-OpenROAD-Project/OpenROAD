@@ -220,17 +220,16 @@ RepairSetup::rebufferBottomUp(const BufferedNetPtr& bnet,
     size_t size = Z1.size()*Z2.size();
     // This assumption is used only in the final loop
     // but we can quit as early as we know there's nothing to do here.
-    if (size == 0)
+    if (size == 0) {
       return Z;
-    Z.resize(size);
+    }
+    Z.reserve(size);
 
     std::unordered_map<BufferedNet*, Slack> slacks;
 
     // Combine the options from both branches.=
-    for (size_t i = 0, base = 0; i < Z1.size(); i++, base += Z2.size()) {
-      const BufferedNetPtr& p = Z1[i];
-      for (size_t j = 0; j < Z2.size(); j++) {
-        const BufferedNetPtr& q = Z2[j];
+    for (const BufferedNetPtr& p : Z1) {
+      for (const BufferedNetPtr& q : Z2) {
         const BufferedNetPtr& min_req = fuzzyLess(p->required(sta_),
                                            q->required(sta_)) ? p : q;
         BufferedNetPtr junc = make_shared<BufferedNet>(BufferedNetType::junction,
@@ -240,7 +239,7 @@ RepairSetup::rebufferBottomUp(const BufferedNetPtr& bnet,
         junc->setRequiredPath(min_req->requiredPath());
         junc->setRequiredDelay(min_req->requiredDelay());
         slacks[junc.get()] = slackPenalized(junc);
-        Z[base + j] = std::move(junc);
+        Z.push_back(std::move(junc));
       }
     }
     // Prune the options if there exists another option with
@@ -249,9 +248,9 @@ RepairSetup::rebufferBottomUp(const BufferedNetPtr& bnet,
     // presorted to hit better options sooner.
     sort(Z.begin(),
          Z.end(),
-         [this, &slacks](const BufferedNetPtr& option1, const BufferedNetPtr& option2) {
-           Slack slack1 = slacks[option1.get()];
-           Slack slack2 = slacks[option2.get()];
+         [&slacks](const BufferedNetPtr& option1, const BufferedNetPtr& option2) {
+           const Slack slack1 = slacks[option1.get()];
+           const Slack slack2 = slacks[option2.get()];
 
            if (slack1 != slack2) {
              return slack1 > slack2;
@@ -269,7 +268,7 @@ RepairSetup::rebufferBottomUp(const BufferedNetPtr& bnet,
     for (size_t pi = si; pi < size; pi++) {
       const BufferedNetPtr& p = Z[pi];
       float Lp = p->cap();
-      // If Tp is the same or worse than Tsmall, remove solution p.
+      // If Lp is the same or worse than Lsmall, remove solution p.
       if (fuzzyLess(Lp, Lsmall)) {
         // Otherwise copy the survivor down.
         Z[si++] = p;
@@ -306,10 +305,9 @@ RepairSetup::addWireAndBuffer(const BufferedNetSeq& Z,
                               int level)
 {
   BufferedNetSeq Z1;
-  Z1.resize(Z.size());
+  Z1.reserve(Z.size());
   Point wire_end = bnet_wire->location();
-  for (int i = 0; i < Z.size(); i++) {
-    const BufferedNetPtr& p = Z[i];
+  for (const BufferedNetPtr& p : Z) {
     Point p_loc = p->location();
     int wire_length_dbu = abs(wire_end.x() - p_loc.x())
       + abs(wire_end.y() - p_loc.y());
@@ -336,7 +334,7 @@ RepairSetup::addWireAndBuffer(const BufferedNetSeq& Z,
                "", level,
                wire_length_dbu,
                z->to_string(resizer_));
-    Z1[i] = z;
+    Z1.push_back(z);
   }
   if (!Z1.empty()) {
     BufferedNetSeq buffered_options;
