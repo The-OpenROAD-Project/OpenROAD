@@ -471,7 +471,7 @@ int InitFloorplan::getOffset(dbSite* base_hybrid_site,
     }
     // Ensure the full pattern matches from this starting point
     int pos = it - base_pattern.begin();
-    for (const auto site_orient : pattern) {
+    for (const auto& site_orient : pattern) {
       if (site_orient != base_pattern[pos++ % base_pattern.size()]) {
         return false;
       }
