@@ -54,6 +54,7 @@ class dbNet;
 class dbITerm;
 class dbMTerm;
 class Rect;
+class dbMaster;
 }  // namespace odb
 
 namespace rsz {
@@ -83,6 +84,7 @@ class StaEngine;
 class TreeBuilder;
 class Clock;
 class ClockSubNet;
+class HTreeBuilder;
 
 class TritonCTS
 {
@@ -143,6 +145,30 @@ class TritonCTS
   void disconnectAllPinsFromNet(odb::dbNet* net);
   void checkUpstreamConnections(odb::dbNet* net);
   void createClockBuffers(Clock& clockNet);
+  bool initClockTreeForMacrosAndRegs(
+      odb::dbNet*& net,
+      const std::unordered_set<odb::dbMaster*>& buffer_masters,
+      Clock& ClockNet,
+      TreeBuilder* parentBuilder,
+      HTreeBuilder*& firstBuilder,
+      HTreeBuilder*& secondBuilder);
+  bool separateMacroRegSinks(
+      odb::dbNet*& net,
+      Clock& clockNet,
+      const std::unordered_set<odb::dbMaster*>& buffer_masters,
+      std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& registerSinks,
+      std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& macroSinks);
+  void addClockSinks(Clock& clockNet,
+                     odb::dbNet* physicalNet,
+                     std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>> sinks,
+                     HTreeBuilder* parentBuilder,
+                     HTreeBuilder*& builder,
+                     std::string macrosOrRegs);
+  Clock forkRegisterClockNetwork(
+      Clock& clockNet,
+      std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>> registerSinks,
+      odb::dbNet*& firstNet,
+      odb::dbNet*& secondNet);
   void computeITermPosition(odb::dbITerm* term, int& x, int& y) const;
   void countSinksPostDbWrite(TreeBuilder* builder,
                              odb::dbNet* net,
@@ -164,6 +190,7 @@ class TritonCTS
   float getInputPinCap(odb::dbITerm* iterm);
   bool isSink(odb::dbITerm* iterm);
   ClockInst* getClockFromInst(odb::dbInst* inst);
+  bool hasInsertionDelay(odb::dbInst* inst, odb::dbMTerm* mterm);
   double computeInsertionDelay(const std::string& name,
                                odb::dbInst* inst,
                                odb::dbMTerm* mterm);

@@ -190,6 +190,9 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
   } else {
     clockBuilder = initClock(driverNet, sdcClockName, parent);
   }
+  // Treat gated clocks as separate clock trees
+  // TODO: include sinks from gated clocks together with other sinks and build
+  // one clock tree
   visitedClockNets_.insert(driverNet);
   odb::dbITerm* driver = driverNet->getFirstOutput();
   odb::dbSet<odb::dbITerm> iterms = driverNet->getITerms();
@@ -825,22 +828,22 @@ void TritonCTS::populateTritonCTS()
   options_->setNumClockRoots(getNumClocks());
 }
 
-TreeBuilder* TritonCTS::initClock(odb::dbNet* net,
+TreeBuilder* TritonCTS::initClock(odb::dbNet* firstNet,
                                   const std::string& sdcClock,
                                   TreeBuilder* parentBuilder)
 {
   std::string driver;
-  odb::dbITerm* iterm = net->getFirstOutput();
+  odb::dbITerm* iterm = firstNet->getFirstOutput();
   int xPin, yPin;
   if (iterm == nullptr) {
-    odb::dbBTerm* bterm = net->get1stBTerm();  // Clock pin
+    odb::dbBTerm* bterm = firstNet->get1stBTerm();  // Clock pin
     if (bterm == nullptr) {
       logger_->info(
           CTS,
           122,
           "Clock net \"{}\" is skipped for CTS because it is not "
           "connected to any output instance pin or input block terminal.",
-          net->getName());
+          firstNet->getName());
       return nullptr;
     }
     driver = bterm->getConstName();
@@ -857,7 +860,7 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* net,
   }
 
   // Initialize clock net
-  Clock clockNet(net->getConstName(), driver, sdcClock, xPin, yPin);
+  Clock clockNet(firstNet->getConstName(), driver, sdcClock, xPin, yPin);
   clockNet.setDriverPin(iterm);
 
   // Build a set of all the clock buffers' masters
@@ -878,6 +881,131 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* net,
     }
   }
 
+  // Build a clock tree to drive macro cells with insertion delays
+  // separated from registers or leaves without insertion delays
+  HTreeBuilder* firstBuilder;
+  HTreeBuilder* secondBuilder;
+  if (!initClockTreeForMacrosAndRegs(firstNet,
+                                     buffer_masters,
+                                     clockNet,
+                                     parentBuilder,
+                                     firstBuilder,
+                                     secondBuilder)) {
+    return nullptr;
+  }
+
+  if (secondBuilder != nullptr) {
+    return secondBuilder;
+  }
+  return firstBuilder;
+}
+
+// Build a separate clock tree to pull macro cells with insertion delays
+// ahead of cells without insertion delays.  If sinks consist of
+// both macros and FFs, clock tree for macros is built first.  A new net and a
+// new buffer are created to drive cells without insertion delays.   New
+// buffer will be sized later based on macro cell insertion delays.
+//
+//                |----|>----[] cells with insertion delays
+//       firstNet |
+//            |   |----|>----[]
+//            v   |
+//   [root]-------|                  |---|>----[] cells without insertion
+//   delays
+//                |----|>------------|
+//                      ^        ^   |
+//                      |        |   |
+//               new buffer secondNet|---|>----[]
+//
+bool TritonCTS::initClockTreeForMacrosAndRegs(
+    odb::dbNet*& firstNet,
+    const std::unordered_set<odb::dbMaster*>& buffer_masters,
+    Clock& clockNet,
+    TreeBuilder* parentBuilder,
+    HTreeBuilder*& firstBuilder,
+    HTreeBuilder*& secondBuilder)
+{
+  firstBuilder = nullptr;
+  secondBuilder = nullptr;
+
+  // Separate sinks into two buckets: one with insertion delays and another
+  // without
+  std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>> macroSinks;
+  std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>> registerSinks;
+  if (!separateMacroRegSinks(
+          firstNet, clockNet, buffer_masters, registerSinks, macroSinks)) {
+    return false;
+  }
+
+  if (macroSinks.empty() || registerSinks.empty()) {
+    // There is no need for separate clock trees
+    for (odb::dbITerm* iterm : firstNet->getITerms()) {
+      odb::dbInst* inst = iterm->getInst();
+      if (iterm->isInputSignal() && inst->isPlaced()) {
+        odb::dbMTerm* mterm = iterm->getMTerm();
+        std::string name = std::string(inst->getConstName()) + "/"
+                           + std::string(mterm->getConstName());
+        int x, y;
+        computeITermPosition(iterm, x, y);
+        float insDelay = computeInsertionDelay(name, inst, mterm);
+        clockNet.addSink(name, x, y, iterm, getInputPinCap(iterm), insDelay);
+      }
+    }
+    if (clockNet.getNumSinks() < 2) {
+      logger_->warn(CTS,
+                    41,
+                    "Net \"{}\" has {} sinks. Skipping...",
+                    clockNet.getName(),
+                    clockNet.getNumSinks());
+      return false;
+    }
+    logger_->info(CTS,
+                  10,
+                  " Clock net \"{}\" has {} sinks.",
+                  firstNet->getConstName(),
+                  clockNet.getNumSinks());
+    int totalSinks = options_->getNumSinks() + clockNet.getNumSinks();
+    options_->setNumSinks(totalSinks);
+    incrementNumClocks();
+    clockNet.setNetObj(firstNet);
+    HTreeBuilder* firstBuilder
+        = new HTreeBuilder(options_, clockNet, parentBuilder, logger_, db_);
+    addBuilder(firstBuilder);
+    return true;
+  }
+
+  // add macro sinks to existing net first
+  addClockSinks(clockNet,
+                firstNet,
+                macroSinks,
+                dynamic_cast<HTreeBuilder*>(parentBuilder),
+                firstBuilder,
+                "macros");
+
+  // create a new net 'secondNet' to drive register sinks
+  odb::dbNet* secondNet;
+  Clock clockNet2
+      = forkRegisterClockNetwork(clockNet, registerSinks, firstNet, secondNet);
+
+  // add register sinks to secondNet
+  addClockSinks(clockNet2,
+                secondNet,
+                registerSinks,
+                firstBuilder,
+                secondBuilder,
+                "registers");
+  return true;
+}
+
+// Separate sinks into registers (no insertion delay) and macros (insertion
+// delay)
+bool TritonCTS::separateMacroRegSinks(
+    odb::dbNet*& net,
+    Clock& clockNet,
+    const std::unordered_set<odb::dbMaster*>& buffer_masters,
+    std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& registerSinks,
+    std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& macroSinks)
+{
   for (odb::dbITerm* iterm : net->getITerms()) {
     odb::dbInst* inst = iterm->getInst();
 
@@ -887,45 +1015,116 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* net,
                     "Net \"{}\" already has clock buffer {}. Skipping...",
                     clockNet.getName(),
                     inst->getName());
-      return nullptr;
+      return false;
     }
 
     if (iterm->isInputSignal() && inst->isPlaced()) {
       odb::dbMTerm* mterm = iterm->getMTerm();
-      std::string name = std::string(inst->getConstName()) + "/"
-                         + std::string(mterm->getConstName());
-      int x, y;
-      computeITermPosition(iterm, x, y);
-      float insDelay = computeInsertionDelay(name, inst, mterm);
-      clockNet.addSink(name, x, y, iterm, getInputPinCap(iterm), insDelay);
+      if (inst->getMaster()->getType().isBlock()
+          && hasInsertionDelay(inst, mterm)) {
+        macroSinks.emplace_back(std::make_pair(inst, mterm));
+      } else {
+        registerSinks.emplace_back(std::make_pair(inst, mterm));
+      }
     }
   }
+  return true;
+}
 
-  if (clockNet.getNumSinks() < 2) {
-    logger_->warn(CTS,
-                  41,
-                  "Net \"{}\" has {} sinks. Skipping...",
-                  clockNet.getName(),
-                  clockNet.getNumSinks());
-    return nullptr;
+void TritonCTS::addClockSinks(
+    Clock& clockNet,
+    odb::dbNet* physicalNet,
+    std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>> sinks,
+    HTreeBuilder* parentBuilder,
+    HTreeBuilder*& builder,
+    std::string macrosOrRegs)
+{
+  for (auto elem : sinks) {
+    odb::dbInst* inst = elem.first;
+    odb::dbMTerm* mterm = elem.second;
+    std::string name = std::string(inst->getConstName()) + "/"
+                       + std::string(mterm->getConstName());
+    int x, y;
+    odb::dbITerm* iterm = inst->getITerm(mterm);
+    computeITermPosition(iterm, x, y);
+    float insDelay = computeInsertionDelay(name, inst, mterm);
+    clockNet.addSink(name, x, y, iterm, getInputPinCap(iterm), insDelay);
   }
-
+  if (clockNet.getNumSinks() < 2) {
+    logger_->info(CTS,
+                  42,
+                  " Clock net \"{}\" for {} has {} sinks. Skipping...",
+                  clockNet.getName(),
+                  macrosOrRegs,
+                  clockNet.getNumSinks());
+    return;
+  }
   logger_->info(CTS,
-                10,
-                " Clock net \"{}\" has {} sinks.",
-                net->getConstName(),
+                11,
+                " Clock net \"{}\" for {} has {} sinks.",
+                physicalNet->getConstName(),
+                macrosOrRegs,
                 clockNet.getNumSinks());
-
   int totalSinks = options_->getNumSinks() + clockNet.getNumSinks();
   options_->setNumSinks(totalSinks);
-
   incrementNumClocks();
-
-  clockNet.setNetObj(net);
-  HTreeBuilder* builder
-      = new HTreeBuilder(options_, clockNet, parentBuilder, logger_, db_);
+  clockNet.setNetObj(physicalNet);
+  builder = new HTreeBuilder(options_, clockNet, parentBuilder, logger_, db_);
   addBuilder(builder);
-  return builder;
+}
+
+Clock TritonCTS::forkRegisterClockNetwork(
+    Clock& clockNet,
+    std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>> registerSinks,
+    odb::dbNet*& firstNet,
+    odb::dbNet*& secondNet)
+{
+  // create a new clock net to drive register sinks
+  std::string newClockName = clockNet.getName() + "_" + "regs";
+  secondNet = odb::dbNet::create(block_, newClockName.c_str());
+  secondNet->setSigType(odb::dbSigType::CLOCK);
+
+  // move register sinks from previous clock net to new clock net
+  for (auto elem : registerSinks) {
+    odb::dbInst* inst = elem.first;
+    odb::dbMTerm* mterm = elem.second;
+    odb::dbITerm* iterm = inst->getITerm(mterm);
+    iterm->disconnect();
+    iterm->connect(secondNet);
+  }
+
+  // create a new clock buffer
+  odb::dbMaster* master = db_->findMaster(options_->getRootBuffer().c_str());
+  int bufIndex = 0;
+  odb::dbInst* clockBuf = nullptr;
+  while (bufIndex >= 0) {
+    std::string cellName = "clkbuf_regs_" + std::to_string(bufIndex++) + "_"
+                           + clockNet.getSdcName();
+    clockBuf = odb::dbInst::create(block_, master, cellName.c_str());
+    if (clockBuf) {
+      break;
+    }
+  }
+  odb::dbITerm* inputTerm = getFirstInput(clockBuf);
+  odb::dbITerm* outputTerm = clockBuf->getFirstOutput();
+  inputTerm->connect(firstNet);
+  outputTerm->connect(secondNet);
+
+  // place new clock buffer near center of mass for registers
+  odb::Rect bbox = secondNet->getTermBBox();
+  clockBuf->setSourceType(odb::dbSourceType::TIMING);
+  clockBuf->setLocation(bbox.xCenter(), bbox.yCenter());
+  clockBuf->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+
+  // initialize new clock net
+  std::string driver = std::string(clockBuf->getConstName()) + "/"
+                       + std::string(outputTerm->getMTerm()->getConstName());
+  int xPin, yPin;
+  computeITermPosition(outputTerm, xPin, yPin);
+  Clock clockNet2(
+      secondNet->getConstName(), driver, clockNet.getSdcName(), xPin, yPin);
+  clockNet2.setDriverPin(outputTerm);
+  return clockNet2;
 }
 
 void TritonCTS::computeITermPosition(odb::dbITerm* term, int& x, int& y) const
@@ -1320,6 +1519,19 @@ bool TritonCTS::isSink(odb::dbITerm* iterm)
     return inputPort->isRegClk();
   }
 
+  return false;
+}
+
+bool TritonCTS::hasInsertionDelay(odb::dbInst* inst, odb::dbMTerm* mterm)
+{
+  if (options_->insertionDelayEnabled()) {
+    sta::LibertyCell* libCell = network_->libertyCell(network_->dbToSta(inst));
+    sta::LibertyPort* libPort = libCell->findLibertyPort(mterm->getConstName());
+    sta::RiseFallMinMax insDelays = libPort->clockTreePathDelays();
+    if (insDelays.hasValue()) {
+      return true;
+    }
+  }
   return false;
 }
 
