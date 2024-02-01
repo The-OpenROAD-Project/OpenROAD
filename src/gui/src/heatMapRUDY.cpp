@@ -57,14 +57,17 @@ double RUDYDataSource::getGridXSize() const
     return default_grid_;
   }
 
-  std::vector<int> grid;
-  gCellGrid->getGridX(grid);
+  int max_gridx = 0;
+  for (int i = 0; i < gCellGrid->getNumGridPatternsX(); i++) {
+    int origin, count, step;
+    gCellGrid->getGridPatternX(i, origin, count, step);
+    max_gridx = std::max(max_gridx, step);
+  }
 
-  if (grid.size() < 2) {
+  if (max_gridx == 0) {
     return default_grid_;
   }
-  const double delta = grid[1] - grid[0];
-  return delta / getBlock()->getDbUnitsPerMicron();
+  return max_gridx / getBlock()->getDbUnitsPerMicron();
 }
 
 double RUDYDataSource::getGridYSize() const
@@ -78,14 +81,17 @@ double RUDYDataSource::getGridYSize() const
     return default_grid_;
   }
 
-  std::vector<int> grid;
-  gCellGrid->getGridY(grid);
+  int max_gridy = 0;
+  for (int i = 0; i < gCellGrid->getNumGridPatternsY(); i++) {
+    int origin, count, step;
+    gCellGrid->getGridPatternY(i, origin, count, step);
+    max_gridy = std::max(max_gridy, step);
+  }
 
-  if (grid.size() < 2) {
+  if (max_gridy == 0) {
     return default_grid_;
   }
-  const double delta = grid[1] - grid[0];
-  return delta / getBlock()->getDbUnitsPerMicron();
+  return max_gridy / getBlock()->getDbUnitsPerMicron();
 }
 
 void RUDYDataSource::combineMapData(bool base_has_value,
