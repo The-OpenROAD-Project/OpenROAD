@@ -367,7 +367,7 @@ void SimulatedAnnealingCore<T>::packFloorplan()
   }
 
   // Each index corresponds to a macro id whose pair is:
-  // < Position in Positive Sequence, Position in Negative Sequence>
+  // <Position in Positive Sequence , Position in Negative Sequence>
   std::vector<std::pair<int, int>> sequence_pair_pos(pos_seq_.size());
 
   // calculate X position
@@ -406,13 +406,13 @@ void SimulatedAnnealingCore<T>::packFloorplan()
   width_ = accumulated_length[pos_seq_.size() - 1];
 
   // calulate Y position
-  std::vector<int> inverted_pos_seq(pos_seq_.size());
-  for (int i = 0; i < inverted_pos_seq.size(); i++) {
-    inverted_pos_seq[i] = pos_seq_[inverted_pos_seq.size() - 1 - i];
+  std::vector<int> reversed_pos_seq(pos_seq_.size());
+  for (int i = 0; i < reversed_pos_seq.size(); i++) {
+    reversed_pos_seq[i] = pos_seq_[reversed_pos_seq.size() - 1 - i];
   }
 
   for (int i = 0; i < pos_seq_.size(); i++) {
-    sequence_pair_pos[inverted_pos_seq[i]].first = i;
+    sequence_pair_pos[reversed_pos_seq[i]].first = i;
     sequence_pair_pos[neg_seq_[i]].second = i;
 
     // This is actually the accumulated height, but we use the same vector
@@ -421,7 +421,7 @@ void SimulatedAnnealingCore<T>::packFloorplan()
   }
 
   for (int i = 0; i < pos_seq_.size(); i++) {
-    const int macro_id = inverted_pos_seq[i];
+    const int macro_id = reversed_pos_seq[i];
 
     // There may exist pin access macros with zero area in our sequence pair
     // when bus planning is on. This check is a temporary approach.
