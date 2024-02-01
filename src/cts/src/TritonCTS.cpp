@@ -1004,11 +1004,10 @@ bool TritonCTS::separateMacroRegSinks(
 
     if (iterm->isInputSignal() && inst->isPlaced()) {
       odb::dbMTerm* mterm = iterm->getMTerm();
-      if (inst->getMaster()->getType().isBlock()
-          && hasInsertionDelay(inst, mterm)) {
-        macroSinks.emplace_back(std::make_pair(inst, mterm));
+      if (hasInsertionDelay(inst, mterm)) {
+        macroSinks.emplace_back(inst, mterm);
       } else {
-        registerSinks.emplace_back(std::make_pair(inst, mterm));
+        registerSinks.emplace_back(inst, mterm);
       }
     }
   }
@@ -1018,9 +1017,9 @@ bool TritonCTS::separateMacroRegSinks(
 HTreeBuilder* TritonCTS::addClockSinks(
     Clock& clockNet,
     odb::dbNet* physicalNet,
-    std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>> sinks,
+    const std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& sinks,
     HTreeBuilder* parentBuilder,
-    std::string macrosOrRegs)
+    const std::string& macrosOrRegs)
 {
   for (auto elem : sinks) {
     odb::dbInst* inst = elem.first;
@@ -1060,7 +1059,7 @@ HTreeBuilder* TritonCTS::addClockSinks(
 
 Clock TritonCTS::forkRegisterClockNetwork(
     Clock& clockNet,
-    std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>> registerSinks,
+    const std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& registerSinks,
     odb::dbNet*& firstNet,
     odb::dbNet*& secondNet)
 {
