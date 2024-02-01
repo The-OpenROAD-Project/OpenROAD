@@ -132,6 +132,9 @@ void SACoreHardMacro::calPenalty()
 
 void SACoreHardMacro::flipMacro()
 {
+  /*
+    TO DO: flip only macros in the sequence pair
+  */
   for (auto& macro : macros_) {
     macro.flip(false);
   }
@@ -186,6 +189,9 @@ void SACoreHardMacro::perturb()
 
 void SACoreHardMacro::restore()
 {
+  /*
+    TO DO: Verify this!
+  */
   if (macros_.empty()) {
     return;
   }
@@ -215,6 +221,8 @@ void SACoreHardMacro::restore()
 
 void SACoreHardMacro::initialize()
 {
+  initSequencePair();
+
   std::vector<float> area_penalty_list;
   std::vector<float> outline_penalty_list;
   std::vector<float> wirelength_list;

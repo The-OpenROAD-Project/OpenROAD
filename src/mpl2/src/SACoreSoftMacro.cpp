@@ -272,6 +272,8 @@ void SACoreSoftMacro::restore()
 
 void SACoreSoftMacro::initialize()
 {
+  initSequencePair();
+
   std::vector<float> outline_penalty_list;
   std::vector<float> wirelength_list;
   std::vector<float> guidance_penalty_list;
@@ -692,6 +694,10 @@ void SACoreSoftMacro::calNotchPenalty()
 
 void SACoreSoftMacro::resize()
 {
+  /*
+    TO DO: resize only macros in the sequence pair
+  */
+
   const int idx = static_cast<int>(
       std::floor(distribution_(generator_) * macros_.size()));
   macro_id_ = idx;
@@ -767,6 +773,10 @@ void SACoreSoftMacro::resize()
 
 void SACoreSoftMacro::shrink()
 {
+  /*
+    TO DO: shrink only macros in the sequence pair
+  */
+
   for (auto& macro : macros_) {
     macro.shrinkArea(shrink_factor_);
   }

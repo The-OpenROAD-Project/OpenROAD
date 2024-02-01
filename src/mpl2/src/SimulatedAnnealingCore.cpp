@@ -103,12 +103,23 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
 
   // macros and nets
   macros_ = macros;
+}
 
-  for (unsigned int i = 0; i < macros.size(); i++) {
-    pos_seq_.push_back(i);
-    neg_seq_.push_back(i);
-    pre_pos_seq_.push_back(i);
-    pre_neg_seq_.push_back(i);
+template <class T>
+void SimulatedAnnealingCore<T>::initSequencePair()
+{
+  const int sequence_pair_size
+      = macros_to_place_ != 0 ? macros_to_place_ : macros_.size();
+
+  int macro_id = 0;
+
+  while (macro_id < sequence_pair_size) {
+    pos_seq_.push_back(macro_id);
+    neg_seq_.push_back(macro_id);
+    pre_pos_seq_.push_back(macro_id);
+    pre_neg_seq_.push_back(macro_id);
+
+    ++macro_id;
   }
 }
 
@@ -355,65 +366,87 @@ void SimulatedAnnealingCore<T>::packFloorplan()
     macro.setY(0.0);
   }
 
+  // Each index corresponds to a macro id whose pair is:
+  // < Position in Positive Sequence, Position in Negative Sequence>
+  std::vector<std::pair<int, int>> sequence_pair_pos(pos_seq_.size());
+
   // calculate X position
-  // store the position of each macro in the pos_seq_ and neg_seq_
-  std::vector<std::pair<int, int>> match(macros_.size());
-  for (int i = 0; i < macros_.size(); i++) {
-    match[pos_seq_[i]].first = i;
-    match[neg_seq_[i]].second = i;
-  }
-  // Initialize current length
-  std::vector<float> length(macros_.size(), 0.0);
   for (int i = 0; i < pos_seq_.size(); i++) {
-    const int b = pos_seq_[i];  // macro_id
-    // add the continue syntax to handle fixed terminals
-    if (macros_[b].getWidth() <= 0 || macros_[b].getHeight() <= 0) {
+    sequence_pair_pos[pos_seq_[i]].first = i;
+    sequence_pair_pos[neg_seq_[i]].second = i;
+  }
+
+  std::vector<float> accumulated_length(pos_seq_.size(), 0.0);
+  for (int i = 0; i < pos_seq_.size(); i++) {
+    const int macro_id = pos_seq_[i];
+
+    // There may exist pin access macros with zero area in our sequence pair
+    // when bus planning is on. This check is a temporary approach.
+    if (macros_[macro_id].getWidth() <= 0
+        || macros_[macro_id].getHeight() <= 0) {
       continue;
     }
-    const int p = match[b].second;  // the position of current macro in neg_seq_
-    macros_[b].setX(length[p]);
-    const float t = macros_[b].getX() + macros_[b].getWidth();
-    for (int j = p; j < neg_seq_.size(); j++) {
-      if (t > length[j]) {
-        length[j] = t;
+
+    const int neg_seq_pos = sequence_pair_pos[macro_id].second;
+
+    macros_[macro_id].setX(accumulated_length[neg_seq_pos]);
+
+    const float current_length
+        = macros_[macro_id].getX() + macros_[macro_id].getWidth();
+
+    for (int j = neg_seq_pos; j < neg_seq_.size(); j++) {
+      if (current_length > accumulated_length[j]) {
+        accumulated_length[j] = current_length;
       } else {
         break;
       }
     }
   }
-  // update width_ of current floorplan
-  width_ = length[macros_.size() - 1];
+
+  width_ = accumulated_length[pos_seq_.size() - 1];
 
   // calulate Y position
-  std::vector<int> pos_seq(pos_seq_.size());
-  for (int i = 0; i < macros_.size(); i++) {
-    pos_seq[i] = pos_seq_[macros_.size() - 1 - i];
+  std::vector<int> inverted_pos_seq(pos_seq_.size());
+  for (int i = 0; i < inverted_pos_seq.size(); i++) {
+    inverted_pos_seq[i] = pos_seq_[inverted_pos_seq.size() - 1 - i];
   }
-  // store the position of each macro in the pos_seq_ and neg_seq_
-  for (int i = 0; i < macros_.size(); i++) {
-    match[pos_seq[i]].first = i;
-    match[neg_seq_[i]].second = i;
-    length[i] = 0.0;  // initialize the length
-  }
+
   for (int i = 0; i < pos_seq_.size(); i++) {
-    const int b = pos_seq[i];  // macro_id
-    // add continue syntax to handle fixed terminals
-    if (macros_[b].getHeight() <= 0 || macros_[b].getWidth() <= 0.0) {
+    sequence_pair_pos[inverted_pos_seq[i]].first = i;
+    sequence_pair_pos[neg_seq_[i]].second = i;
+
+    // This is actually the accumulated height, but we use the same vector
+    // to avoid more allocation.
+    accumulated_length[i] = 0.0;
+  }
+
+  for (int i = 0; i < pos_seq_.size(); i++) {
+    const int macro_id = inverted_pos_seq[i];
+
+    // There may exist pin access macros with zero area in our sequence pair
+    // when bus planning is on. This check is a temporary approach.
+    if (macros_[macro_id].getWidth() <= 0
+        || macros_[macro_id].getHeight() <= 0) {
       continue;
     }
-    const int p = match[b].second;  // the position of current macro in neg_seq_
-    macros_[b].setY(length[p]);
-    const float t = macros_[b].getY() + macros_[b].getHeight();
-    for (int j = p; j < neg_seq_.size(); j++) {
-      if (t > length[j]) {
-        length[j] = t;
+
+    const int neg_seq_pos = sequence_pair_pos[macro_id].second;
+
+    macros_[macro_id].setY(accumulated_length[neg_seq_pos]);
+
+    const float current_height
+        = macros_[macro_id].getY() + macros_[macro_id].getHeight();
+
+    for (int j = neg_seq_pos; j < neg_seq_.size(); j++) {
+      if (current_height > accumulated_length[j]) {
+        accumulated_length[j] = current_height;
       } else {
         break;
       }
     }
   }
-  // update width_ of current floorplan
-  height_ = length[macros_.size() - 1];
+
+  height_ = accumulated_length[pos_seq_.size() - 1];
 
   if (graphics_) {
     graphics_->saStep(macros_);
@@ -428,12 +461,8 @@ void SimulatedAnnealingCore<T>::singleSeqSwap(bool pos)
     return;
   }
 
-  const int index1
-      = (int) (std::floor(distribution_(generator_) * macros_.size()));
-  int index2 = (int) (std::floor(distribution_(generator_) * macros_.size()));
-  while (index1 == index2) {
-    index2 = (int) (std::floor(distribution_(generator_) * macros_.size()));
-  }
+  int index1 = 0, index2 = 0;
+  generateRandomIndices(index1, index2);
 
   if (pos) {
     std::swap(pos_seq_[index1], pos_seq_[index2]);
@@ -450,12 +479,8 @@ void SimulatedAnnealingCore<T>::doubleSeqSwap()
     return;
   }
 
-  const int index1
-      = (int) (std::floor(distribution_(generator_) * macros_.size()));
-  int index2 = (int) (std::floor(distribution_(generator_) * macros_.size()));
-  while (index1 == index2) {
-    index2 = (int) (std::floor(distribution_(generator_) * macros_.size()));
-  }
+  int index1 = 0, index2 = 0;
+  generateRandomIndices(index1, index2);
 
   std::swap(pos_seq_[index1], pos_seq_[index2]);
   std::swap(neg_seq_[index1], neg_seq_[index2]);
@@ -469,19 +494,15 @@ void SimulatedAnnealingCore<T>::exchangeMacros()
     return;
   }
 
-  // swap positive seq
-  const int index1
-      = (int) (std::floor(distribution_(generator_) * macros_.size()));
-  int index2 = (int) (std::floor(distribution_(generator_) * macros_.size()));
-  while (index1 == index2) {
-    index2 = (int) (std::floor(distribution_(generator_) * macros_.size()));
-  }
+  int index1 = 0, index2 = 0;
+  generateRandomIndices(index1, index2);
 
   std::swap(pos_seq_[index1], pos_seq_[index2]);
+
   int neg_index1 = -1;
   int neg_index2 = -1;
-  // swap negative seq
-  for (int i = 0; i < macros_.size(); i++) {
+
+  for (int i = 0; i < pos_seq_.size(); i++) {
     if (pos_seq_[index1] == neg_seq_[i]) {
       neg_index1 = i;
     }
@@ -490,6 +511,17 @@ void SimulatedAnnealingCore<T>::exchangeMacros()
     }
   }
   std::swap(neg_seq_[neg_index1], neg_seq_[neg_index2]);
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::generateRandomIndices(int& index1, int& index2)
+{
+  index1 = (int) (std::floor(distribution_(generator_) * pos_seq_.size()));
+  index2 = (int) (std::floor(distribution_(generator_) * pos_seq_.size()));
+
+  while (index1 == index2) {
+    index2 = (int) (std::floor(distribution_(generator_) * pos_seq_.size()));
+  }
 }
 
 /* static */
@@ -510,11 +542,6 @@ void SimulatedAnnealingCore<T>::fastSA()
   if (graphics_) {
     graphics_->startSA();
   }
-  // perturb();  // Perturb from beginning
-  std::iota(pos_seq_.begin(), pos_seq_.end(), 0);
-  std::iota(neg_seq_.begin(), neg_seq_.end(), 0);
-  std::iota(pre_pos_seq_.begin(), pre_pos_seq_.end(), 0);
-  std::iota(pre_neg_seq_.begin(), pre_neg_seq_.end(), 0);
 
   // record the previous status
   float cost = calNormCost();
