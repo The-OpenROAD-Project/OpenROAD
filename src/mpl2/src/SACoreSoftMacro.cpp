@@ -769,12 +769,8 @@ void SACoreSoftMacro::resize()
 
 void SACoreSoftMacro::shrink()
 {
-  /*
-    TO DO: shrink only macros in the sequence pair
-  */
-
-  for (auto& macro : macros_) {
-    macro.shrinkArea(shrink_factor_);
+  for (auto& macro_id : pos_seq_) {
+    macros_[macro_id].shrinkArea(shrink_factor_);
   }
 }
 
