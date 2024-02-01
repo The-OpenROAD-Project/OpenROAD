@@ -132,11 +132,8 @@ void SACoreHardMacro::calPenalty()
 
 void SACoreHardMacro::flipMacro()
 {
-  /*
-    TO DO: flip only macros in the sequence pair
-  */
-  for (auto& macro : macros_) {
-    macro.flip(false);
+  for (auto& macro_id : pos_seq_) {
+    macros_[macro_id].flip(false);
   }
 }
 
