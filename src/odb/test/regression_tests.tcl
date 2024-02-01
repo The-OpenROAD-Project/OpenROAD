@@ -33,6 +33,7 @@ record_tests {
   gcd_abstract_lef
   gcd_abstract_lef_with_power
   abstract_origin
+  write_macro_placement
 }
 
 record_pass_fail_tests {
