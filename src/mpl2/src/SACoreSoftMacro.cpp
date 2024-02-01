@@ -230,7 +230,7 @@ void SACoreSoftMacro::perturb()
   } else {
     action_id_ = 5;
     pre_macros_ = macros_;
-    resize();  // Flip one macro
+    resizeOneCluster();
   }
 
   // update the macro locations based on Sequence Pair
@@ -692,7 +692,7 @@ void SACoreSoftMacro::calNotchPenalty()
   }
 }
 
-void SACoreSoftMacro::resize()
+void SACoreSoftMacro::resizeOneCluster()
 {
   const int idx = static_cast<int>(
       std::floor(distribution_(generator_) * pos_seq_.size()));

@@ -130,7 +130,7 @@ void SACoreHardMacro::calPenalty()
   }
 }
 
-void SACoreHardMacro::flipMacro()
+void SACoreHardMacro::flipAllMacros()
 {
   for (auto& macro_id : pos_seq_) {
     macros_[macro_id].flip(false);
@@ -175,7 +175,7 @@ void SACoreHardMacro::perturb()
   } else {
     action_id_ = 5;
     pre_macros_ = macros_;
-    flipMacro();  // Flip one macro
+    flipAllMacros();
   }
 
   // update the macro locations based on Sequence Pair
@@ -186,9 +186,6 @@ void SACoreHardMacro::perturb()
 
 void SACoreHardMacro::restore()
 {
-  /*
-    TO DO: Verify this!
-  */
   if (macros_.empty()) {
     return;
   }
