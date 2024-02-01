@@ -1,42 +1,42 @@
-File linked from /workspace/src/ant/README.md to /workspace/docs/md/man2/ant.md
+File linked successfully.
 ERROR: README.md not found in ../src/cmake
-File linked from /workspace/src/cts/README.md to /workspace/docs/md/man2/cts.md
+File linked successfully.
 ERROR: README.md not found in ../src/dbSta
-File linked from /workspace/src/dft/README.md to /workspace/docs/md/man2/dft.md
-File linked from /workspace/src/dpl/README.md to /workspace/docs/md/man2/dpl.md
+File linked successfully.
+File linked successfully.
 ERROR: README.md not found in ../src/dpo
-File linked from /workspace/src/drt/README.md to /workspace/docs/md/man2/drt.md
+File linked successfully.
 ERROR: README.md not found in ../src/dst
-File linked from /workspace/src/fin/README.md to /workspace/docs/md/man2/fin.md
-File linked from /workspace/src/gpl/README.md to /workspace/docs/md/man2/gpl.md
-File linked from /workspace/src/grt/README.md to /workspace/docs/md/man2/grt.md
-File linked from /workspace/src/gui/README.md to /workspace/docs/md/man2/gui.md
-File linked from /workspace/src/ifp/README.md to /workspace/docs/md/man2/ifp.md
-File linked from /workspace/src/mpl/README.md to /workspace/docs/md/man2/mpl.md
-File linked from /workspace/src/mpl2/README.md to /workspace/docs/md/man2/mpl2.md
-File linked from /workspace/src/odb/README.md to /workspace/docs/md/man2/odb.md
-File linked from /workspace/src/pad/README.md to /workspace/docs/md/man2/pad.md
-File linked from /workspace/src/par/README.md to /workspace/docs/md/man2/par.md
-File linked from /workspace/src/pdn/README.md to /workspace/docs/md/man2/pdn.md
-File linked from /workspace/src/ppl/README.md to /workspace/docs/md/man2/ppl.md
-File linked from /workspace/src/psm/README.md to /workspace/docs/md/man2/psm.md
-File linked from /workspace/src/rcx/README.md to /workspace/docs/md/man2/rcx.md
-File linked from /workspace/src/rmp/README.md to /workspace/docs/md/man2/rmp.md
-File linked from /workspace/src/rsz/README.md to /workspace/docs/md/man2/rsz.md
-File linked from /workspace/src/sta/README.md to /workspace/docs/md/man2/sta.md
-File linked from /workspace/src/stt/README.md to /workspace/docs/md/man2/stt.md
-File linked from /workspace/src/tap/README.md to /workspace/docs/md/man2/tap.md
-File linked from /workspace/src/upf/README.md to /workspace/docs/md/man2/upf.md
-File linked from /workspace/src/utl/README.md to /workspace/docs/md/man2/utl.md
+File linked successfully.
+File linked successfully.
+File linked successfully.
+File linked successfully.
+File linked successfully.
+File linked successfully.
+File linked successfully.
+File linked successfully.
+File linked successfully.
+File linked successfully.
+File linked successfully.
+File linked successfully.
+File linked successfully.
+File linked successfully.
+File linked successfully.
+File linked successfully.
+File linked successfully.
+File linked successfully.
+File linked successfully.
+File linked successfully.
+File linked successfully.
 ant.md
 Names: 1,        Desc: 1,        Syn: 1,        Options: 1,        Args: 1
 cts.md
-Names: 4,        Desc: 3,        Syn: 3,        Options: 4,        Args: 4
+Names: 3,        Desc: 3,        Syn: 3,        Options: 3,        Args: 3
 ./md/man2/dbSta.md doesn't exist. Continuing
 dft.md
 Names: 4,        Desc: 4,        Syn: 4,        Options: 4,        Args: 4
 dpl.md
-Names: 7,        Desc: 6,        Syn: 6,        Options: 7,        Args: 7
+Names: 6,        Desc: 6,        Syn: 6,        Options: 6,        Args: 6
 ./md/man2/dpo.md doesn't exist. Continuing
 drt.md
 Names: 3,        Desc: 3,        Syn: 3,        Options: 3,        Args: 3
@@ -56,13 +56,13 @@ Names: 1,        Desc: 1,        Syn: 1,        Options: 1,        Args: 1
 mpl2.md
 Names: 3,        Desc: 3,        Syn: 3,        Options: 3,        Args: 3
 pad.md
-Names: 15,        Desc: 14,        Syn: 14,        Options: 15,        Args: 15
+Names: 14,        Desc: 14,        Syn: 14,        Options: 14,        Args: 14
 par.md
 Names: 6,        Desc: 6,        Syn: 6,        Options: 6,        Args: 6
 pdn.md
 Names: 9,        Desc: 9,        Syn: 9,        Options: 9,        Args: 9
 ppl.md
-Names: 11,        Desc: 11,        Syn: 10,        Options: 11,        Args: 11
+Names: 11,        Desc: 11,        Syn: 11,        Options: 11,        Args: 11
 psm.md
 Names: 4,        Desc: 4,        Syn: 4,        Options: 4,        Args: 4
 rcx.md
@@ -164,5 +164,5 @@ Info: 3, Warn: 7, Error: 37
   To specify a title, use 'title' in metadata or --metadata title="...".
 cat/cat1/openroad.1
 Level 1 doc counts are equal to 1.
-Level 2 doc counts are equal to 166.
+Level 2 doc counts are equal to 167.
 Level 3 doc counts are equal to 2782.

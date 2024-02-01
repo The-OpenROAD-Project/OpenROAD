@@ -2,40 +2,14 @@ import os
 import glob
 import re
 from extract_utils import extract_tcl_code, extract_help, extract_proc
-
-def clean_whitespaces(text):
-    tmp = text.strip().replace("\\", "").replace("\n", "")
-    return " ".join(tmp.split())
-
-def clean_parse_syntax(text):
-    tmp = text.replace("keys", "").replace("flags", "")\
-            .replace("{", "").replace("}", "")
-    return ' '.join([f'[{option}]' for option in tmp.split()])
-
-def check_function_signatures(text1, text2):
-    set1 = set(match.group(1) for \
-                match in re.finditer(r'\[([^\]]+)\]', text1))
-    set1 = {x.split()[0] for x in set1}
-    
-    set2 = set(match.group(1) for \
-                match in re.finditer(r'\[([^\]]+)\]', text2))
-    set2 = {x.split()[0] for x in set2}
-
-    if set1 == set2: return True
-    print(set1)
-    print(set2)
-    return False
-
-# Test this tool
-tool = "grt"
-tool = f"./src/{tool}/"
+from extract_utils import clean_whitespaces, clean_parse_syntax, check_function_signatures
 
 # Test objective: Make sure similar output in all three: help, proc, and readme
 path = os.path.realpath("md_roff_compat.py")
 or_home = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(path))))
 os.chdir(or_home)
 
-# Regexes
+# Store results
 help_dict, proc_dict, readme_dict = {}, {}, {}  
 
 # Directories to exclude (according to md_roff_compat)
@@ -53,8 +27,6 @@ for path in glob.glob("./src/*/src/*tcl") + include:
     if "ICeWall" in path or "PdnGen" in path: continue
 
     with open(path) as f:
-        if tool not in path: continue
-
         # Help patterns
         content = f.read()
         matches = extract_help(content)
@@ -63,7 +35,6 @@ for path in glob.glob("./src/*/src/*tcl") + include:
             cmd, rest = match[0], match[1]
             cmd, rest = clean_whitespaces(cmd), clean_whitespaces(rest)
             help_dict[cmd] = rest
-            #print(cmd, rest)
 
         # Proc patterns
         matches = extract_proc(content)
@@ -73,15 +44,10 @@ for path in glob.glob("./src/*/src/*tcl") + include:
             cmd, rest = clean_whitespaces(cmd), clean_whitespaces(keys + " " + flags)
             rest = clean_parse_syntax(rest)
             proc_dict[cmd] = rest
-            # print(cmd, rest)
-
 
 for path in glob.glob("./src/*/README.md"):
     if re.search(f".*{'|'.join(e for e in exclude)}.*", path): continue
     tool_dir = os.path.dirname(path)
-
-    if tool not in path: continue
-    print(path)
 
     # for gui, filter out the gui:: for separate processing
     matches = [x for x in extract_tcl_code(open(path).read()) if "gui::" not in x]
@@ -94,8 +60,8 @@ for path in glob.glob("./src/*/README.md"):
         cmd = match.split()[0]
         rest = " ".join(match.split()[1:])
         readme_dict[cmd] = rest
-        # print(cmd, rest)
 
+succeeded = 0
 for cmd in help_dict:
     print("----------")
     print(cmd)
@@ -111,6 +77,15 @@ for cmd in help_dict:
 
     # Test switches here
     s1, s2, s3 = help_dict[cmd], proc_dict[cmd], readme_dict[cmd]
-    print(f"Help/Proc: {check_function_signatures(s1,s2)}")
-    print(f"Help/Rdme: {check_function_signatures(s1,s3)}")
-    print(f"Proc/Rdme: {check_function_signatures(s2,s3)}")
+    res1, res2, res3 = check_function_signatures(s1,s2), \
+                        check_function_signatures(s1,s3), \
+                        check_function_signatures(s2,s3)
+    if res1 and res2 and res3:
+        succeeded += 1
+        print("Success.")
+    else:
+        print(f"Help/Proc: {res1}")
+        print(f"Help/Rdme: {res2}")
+        print(f"Proc/Rdme: {res3}")
+
+print(f"----------\nSucceeded: {succeeded} out of {len(help_dict)} tests.")

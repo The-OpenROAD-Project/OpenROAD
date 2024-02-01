@@ -21,8 +21,8 @@ Command counts match.
 Command counts match.
 ./src/stt            1               1               1
 Command counts match.
-./src/ppl            10              10              10
-Command counts match.
+./src/ppl            10              10              11
+Command counts do not match.
 ./src/drt            3               3               3
 Command counts match.
 ./src/cts            3               3               3
@@ -33,8 +33,8 @@ Command counts match.
 Command counts match.
 ./src/gpl            2               2               2
 Command counts match.
-./src/mpl2           3               3               3
-Command counts match.
+./src/mpl2           3               4               3
+Command counts do not match.
 ./src/par            6               6               6
 Command counts match.
 ./src/dft            4               4               4

@@ -31,7 +31,7 @@ for module_path in os.listdir(SRC_BASE_PATH):
         if os.path.exists(src_path):
             # Create a symbolic link from src_path to dest_path
             os.symlink(src_path, dest_path)
-            print(f"File linked from {src_path} to {dest_path}")
+            print(f"File linked successfully.")
         else:
             print(f"ERROR: README.md not found in {full_module_path}")
 
