@@ -694,12 +694,8 @@ void SACoreSoftMacro::calNotchPenalty()
 
 void SACoreSoftMacro::resize()
 {
-  /*
-    TO DO: resize only macros in the sequence pair
-  */
-
   const int idx = static_cast<int>(
-      std::floor(distribution_(generator_) * macros_.size()));
+      std::floor(distribution_(generator_) * pos_seq_.size()));
   macro_id_ = idx;
   SoftMacro& src_macro = macros_[idx];
   if (src_macro.isMacroCluster()) {
