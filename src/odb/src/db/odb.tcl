@@ -522,3 +522,20 @@ proc write_guides { args } {
   $block writeGuides $filename
 }
 
+sta::define_cmd_args "write_macro_placement" { file_name }
+
+proc write_macro_placement { args } {
+  sta::check_argc_eq1  "write_macro_placement" $args
+  set file_name $args
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    utl::error ODB 439 "No design loaded. Cannot write macro placement."
+  }
+  set block [$chip getBlock]
+  set macro_placement [odb::generateMacroPlacementString $block]
+
+  set file [open $file_name w]
+  puts $file $macro_placement
+  close $file
+}

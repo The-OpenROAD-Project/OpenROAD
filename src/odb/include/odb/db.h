@@ -594,6 +594,17 @@ class dbBox : public dbObject
   dbTechLayer* getTechLayer();
 
   ///
+  /// Get the layer mask assigned to this box.
+  /// Returns 0 is not assigned or bbox has no layer
+  ///
+  uint getLayerMask();
+
+  ///
+  /// Sets the layer mask for this box.
+  ///
+  void setLayerMask(uint mask);
+
+  ///
   /// Add a physical pin to a dbBPin.
   /// Returns nullptr if this dbBPin already has a pin.
   ///
@@ -602,7 +613,8 @@ class dbBox : public dbObject
                        int x1,
                        int y1,
                        int x2,
-                       int y2);
+                       int y2,
+                       uint mask = 0);
 
   ///
   /// Add a box to a block-via.
@@ -720,6 +732,31 @@ class dbSBox : public dbBox
   /// Get Oct Wire Shape
   ///
   Oct getOct();
+
+  ///
+  /// Get via mask for bottom layer of via
+  ///
+  uint getViaBottomLayerMask();
+
+  ///
+  /// Get via mask for cut layer of via
+  ///
+  uint getViaCutLayerMask();
+
+  ///
+  /// Get via mask for top layer of via
+  ///
+  uint getViaTopLayerMask();
+
+  ///
+  /// Set via masks
+  ///
+  void setViaLayerMask(uint bottom, uint cut, uint top);
+
+  ///
+  /// Has via mask
+  ///
+  bool hasViaLayerMasks();
 
   ///
   /// Add a rect to a dbSWire.
@@ -5197,6 +5234,8 @@ class dbSite : public dbObject
   {
     dbSite* site;
     dbOrientType orientation;
+    friend bool operator==(const OrientedSite& lhs, const OrientedSite& rhs);
+    friend bool operator!=(const OrientedSite& lhs, const OrientedSite& rhs);
   };
   using RowPattern = std::vector<OrientedSite>;
 

@@ -37,6 +37,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -89,10 +90,10 @@ class Dimension
   std::vector<float> haloX, haloY;
   std::vector<float> channelX, channelY;
 
-  static const float Infty;             // = 1e100;
-  static const float Epsilon_Accuracy;  // = 1e10;
-  static const int Undefined;           // = -1;
-  static const int Orient_Num;          // = 8;
+  static constexpr float Infty = std::numeric_limits<float>::max();
+  static constexpr float Epsilon_Accuracy = 1e10f;
+  static constexpr int Undefined = -1;
+  static constexpr int Orient_Num = 8;
 };
 }  // namespace basepacking_h
 // --------------------------------------------------------
@@ -107,7 +108,7 @@ class HardBlockInfoType
   inline int blocknum() const;
   inline float blockArea() const;
 
-  static const int Orient_Num;  // = basepacking_h::Dimension::Orient_Num;
+  static constexpr int Orient_Num = basepacking_h::Dimension::Orient_Num;
 
   friend class MixedBlockInfoType;
   friend class MixedBlockInfoTypeFromDB;

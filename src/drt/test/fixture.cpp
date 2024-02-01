@@ -442,6 +442,24 @@ frLef58SpacingEndOfLineConstraint* Fixture::makeLef58SpacingEolConstraint(
   return con;
 }
 
+frSpacingRangeConstraint* Fixture::makeSpacingRangeConstraint(
+    frLayerNum layer_num,
+    frCoord spacing,
+    frCoord minWidth,
+    frCoord maxWidth)
+{
+  auto uCon = std::make_unique<frSpacingRangeConstraint>();
+  auto con = uCon.get();
+  con->setMinSpacing(spacing);
+  con->setMinWidth(minWidth);
+  con->setMaxWidth(maxWidth);
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  layer->addSpacingRangeConstraint(con);
+  tech->addUConstraint(std::move(uCon));
+  return con;
+}
+
 std::shared_ptr<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>
 Fixture::makeLef58SpacingEolParEdgeConstraint(
     frLef58SpacingEndOfLineConstraint* con,

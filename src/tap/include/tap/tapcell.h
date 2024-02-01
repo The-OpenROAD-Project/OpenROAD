@@ -146,6 +146,13 @@ class Tapcell
     InnerBottomRight,
     Unknown
   };
+  struct PartialOverlap
+  {
+    bool left = false;
+    int x_start_left;
+    bool right = false;
+    int x_limit_right;
+  };
   struct Corner
   {
     CornerType type;
@@ -163,12 +170,18 @@ class Tapcell
                             int x,
                             int y,
                             const std::string& prefix);
-  bool checkIfFilled(int x,
+  std::optional<int> findValidLocation(int x,
+                                       int width,
+                                       const odb::dbOrientType& orient,
+                                       const std::set<odb::dbInst*>& row_insts,
+                                       int site_width,
+                                       int tap_width,
+                                       int row_urx,
+                                       bool disallow_one_site_gaps);
+  bool isOverlapping(int x,
                      int width,
                      const odb::dbOrientType& orient,
-                     const std::set<odb::dbInst*>& row_insts,
-                     int site_width,
-                     bool disallow_one_site_gaps);
+                     const std::set<odb::dbInst*>& row_insts);
   int placeTapcells(odb::dbMaster* tapcell_master,
                     int dist,
                     bool disallow_one_site_gaps);
@@ -219,6 +232,9 @@ class Tapcell
   odb::dbMaster* getMasterByType(const odb::dbMasterType& type) const;
   std::set<odb::dbMaster*> findMasterByType(
       const odb::dbMasterType& type) const;
+  odb::dbBlock* getBlock() const;
+  double dbuToMicrons(int64_t dbu);
+  int micronsToDbu(double microns);
 
   odb::dbDatabase* db_ = nullptr;
   utl::Logger* logger_ = nullptr;

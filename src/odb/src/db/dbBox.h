@@ -61,7 +61,7 @@ struct _dbBoxFlagsBackwardCompatability
   uint _via_id : 15;
 };
 
-struct _dbBoxFlags
+struct _dbBoxFlagsWithoutMask
 {
   dbBoxOwner::Value _owner_type : 4;
   uint _visited : 1;
@@ -72,6 +72,22 @@ struct _dbBoxFlags
   uint _via_id : 15;
 };
 
+struct _dbBoxFlags
+{
+  dbBoxOwner::Value _owner_type : 4;
+  uint _visited : 1;
+  uint _octilinear : 1;
+  uint _is_tech_via : 1;
+  uint _is_block_via : 1;
+  uint _layer_id : 9;
+  uint _via_id : 13;
+  uint _layer_mask : 2;
+};
+
+static_assert(sizeof(_dbBoxFlagsBackwardCompatability) == 4,
+              "_dbBoxFlagsBackwardCompatability too large");
+static_assert(sizeof(_dbBoxFlagsWithoutMask) == 4,
+              "_dbBoxFlagsWithoutMask too large");
 static_assert(sizeof(_dbBoxFlags) == 4, "_dbBoxFlags too large");
 
 class _dbBox : public _dbObject
@@ -126,6 +142,8 @@ class _dbBox : public _dbObject
 
     return BOX;
   }
+
+  void checkMask(uint mask);
 };
 
 inline _dbBox::_dbBox(_dbDatabase*)
@@ -134,6 +152,7 @@ inline _dbBox::_dbBox(_dbDatabase*)
   _flags._is_tech_via = 0;
   _flags._is_block_via = 0;
   _flags._layer_id = 0;
+  _flags._layer_mask = 0;
   _flags._via_id = 0;
   _flags._visited = 0;
   _flags._octilinear = false;
@@ -173,9 +192,21 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbBox& box)
 
 inline dbIStream& operator>>(dbIStream& stream, _dbBox& box)
 {
-  if (box.getDatabase()->isSchema(db_schema_box_layer_bits)) {
+  if (box.getDatabase()->isSchema(db_schema_dbbox_mask)) {
     uint* bit_field = (uint*) &box._flags;
     stream >> *bit_field;
+  } else if (box.getDatabase()->isSchema(db_schema_box_layer_bits)) {
+    _dbBoxFlagsWithoutMask old;
+    uint* bit_field = (uint*) &old;
+    stream >> *bit_field;
+    box._flags._owner_type = old._owner_type;
+    box._flags._visited = old._visited;
+    box._flags._octilinear = old._octilinear;
+    box._flags._is_tech_via = old._is_tech_via;
+    box._flags._is_block_via = old._is_block_via;
+    box._flags._layer_id = old._layer_id;
+    box._flags._via_id = old._via_id;
+    box._flags._layer_mask = 0;
   } else {
     _dbBoxFlagsBackwardCompatability old;
     uint* bit_field = (uint*) &old;
@@ -187,6 +218,7 @@ inline dbIStream& operator>>(dbIStream& stream, _dbBox& box)
     box._flags._is_block_via = old._is_block_via;
     box._flags._layer_id = old._layer_id;
     box._flags._via_id = old._via_id;
+    box._flags._layer_mask = 0;
   }
 
   if (box.isOct()) {
