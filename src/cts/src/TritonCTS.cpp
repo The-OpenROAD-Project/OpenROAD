@@ -883,21 +883,9 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* firstNet,
 
   // Build a clock tree to drive macro cells with insertion delays
   // separated from registers or leaves without insertion delays
-  HTreeBuilder* firstBuilder;
-  HTreeBuilder* secondBuilder;
-  if (!initClockTreeForMacrosAndRegs(firstNet,
-                                     buffer_masters,
-                                     clockNet,
-                                     parentBuilder,
-                                     firstBuilder,
-                                     secondBuilder)) {
-    return nullptr;
-  }
-
-  if (secondBuilder != nullptr) {
-    return secondBuilder;
-  }
-  return firstBuilder;
+  HTreeBuilder* builder = initClockTreeForMacrosAndRegs(
+      firstNet, buffer_masters, clockNet, parentBuilder);
+  return builder;
 }
 
 // Build a separate clock tree to pull macro cells with insertion delays
@@ -917,24 +905,19 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* firstNet,
 //                      |        |   |
 //               new buffer secondNet|---|>----[]
 //
-bool TritonCTS::initClockTreeForMacrosAndRegs(
+HTreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
     odb::dbNet*& firstNet,
     const std::unordered_set<odb::dbMaster*>& buffer_masters,
     Clock& clockNet,
-    TreeBuilder* parentBuilder,
-    HTreeBuilder*& firstBuilder,
-    HTreeBuilder*& secondBuilder)
+    TreeBuilder* parentBuilder)
 {
-  firstBuilder = nullptr;
-  secondBuilder = nullptr;
-
   // Separate sinks into two buckets: one with insertion delays and another
   // without
   std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>> macroSinks;
   std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>> registerSinks;
   if (!separateMacroRegSinks(
           firstNet, clockNet, buffer_masters, registerSinks, macroSinks)) {
-    return false;
+    return nullptr;
   }
 
   if (macroSinks.empty() || registerSinks.empty()) {
@@ -957,7 +940,7 @@ bool TritonCTS::initClockTreeForMacrosAndRegs(
                     "Net \"{}\" has {} sinks. Skipping...",
                     clockNet.getName(),
                     clockNet.getNumSinks());
-      return false;
+      return nullptr;
     }
     logger_->info(CTS,
                   10,
@@ -968,19 +951,19 @@ bool TritonCTS::initClockTreeForMacrosAndRegs(
     options_->setNumSinks(totalSinks);
     incrementNumClocks();
     clockNet.setNetObj(firstNet);
-    HTreeBuilder* firstBuilder
+    HTreeBuilder* builder
         = new HTreeBuilder(options_, clockNet, parentBuilder, logger_, db_);
-    addBuilder(firstBuilder);
-    return true;
+    addBuilder(builder);
+    return builder;
   }
 
-  // add macro sinks to existing net first
-  addClockSinks(clockNet,
-                firstNet,
-                macroSinks,
-                dynamic_cast<HTreeBuilder*>(parentBuilder),
-                firstBuilder,
-                "macros");
+  // add macro sinks to existing firstNet
+  HTreeBuilder* firstBuilder
+      = addClockSinks(clockNet,
+                      firstNet,
+                      macroSinks,
+                      dynamic_cast<HTreeBuilder*>(parentBuilder),
+                      "macros");
 
   // create a new net 'secondNet' to drive register sinks
   odb::dbNet* secondNet;
@@ -988,13 +971,14 @@ bool TritonCTS::initClockTreeForMacrosAndRegs(
       = forkRegisterClockNetwork(clockNet, registerSinks, firstNet, secondNet);
 
   // add register sinks to secondNet
-  addClockSinks(clockNet2,
-                secondNet,
-                registerSinks,
-                firstBuilder,
-                secondBuilder,
-                "registers");
-  return true;
+  HTreeBuilder* secondBuilder = addClockSinks(
+      clockNet2,
+      secondNet,
+      registerSinks,
+      firstBuilder ? firstBuilder : dynamic_cast<HTreeBuilder*>(parentBuilder),
+      "registers");
+
+  return secondBuilder;
 }
 
 // Separate sinks into registers (no insertion delay) and macros (insertion
@@ -1031,12 +1015,11 @@ bool TritonCTS::separateMacroRegSinks(
   return true;
 }
 
-void TritonCTS::addClockSinks(
+HTreeBuilder* TritonCTS::addClockSinks(
     Clock& clockNet,
     odb::dbNet* physicalNet,
     std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>> sinks,
     HTreeBuilder* parentBuilder,
-    HTreeBuilder*& builder,
     std::string macrosOrRegs)
 {
   for (auto elem : sinks) {
@@ -1057,7 +1040,7 @@ void TritonCTS::addClockSinks(
                   clockNet.getName(),
                   macrosOrRegs,
                   clockNet.getNumSinks());
-    return;
+    return nullptr;
   }
   logger_->info(CTS,
                 11,
@@ -1069,8 +1052,10 @@ void TritonCTS::addClockSinks(
   options_->setNumSinks(totalSinks);
   incrementNumClocks();
   clockNet.setNetObj(physicalNet);
-  builder = new HTreeBuilder(options_, clockNet, parentBuilder, logger_, db_);
+  HTreeBuilder* builder
+      = new HTreeBuilder(options_, clockNet, parentBuilder, logger_, db_);
   addBuilder(builder);
+  return builder;
 }
 
 Clock TritonCTS::forkRegisterClockNetwork(
@@ -1095,16 +1080,8 @@ Clock TritonCTS::forkRegisterClockNetwork(
 
   // create a new clock buffer
   odb::dbMaster* master = db_->findMaster(options_->getRootBuffer().c_str());
-  int bufIndex = 0;
-  odb::dbInst* clockBuf = nullptr;
-  while (bufIndex >= 0) {
-    std::string cellName = "clkbuf_regs_" + std::to_string(bufIndex++) + "_"
-                           + clockNet.getSdcName();
-    clockBuf = odb::dbInst::create(block_, master, cellName.c_str());
-    if (clockBuf) {
-      break;
-    }
-  }
+  std::string cellName = "clkbuf_regs_0_" + clockNet.getSdcName();
+  odb::dbInst* clockBuf = odb::dbInst::create(block_, master, cellName.c_str());
   odb::dbITerm* inputTerm = getFirstInput(clockBuf);
   odb::dbITerm* outputTerm = clockBuf->getFirstOutput();
   inputTerm->connect(firstNet);
@@ -1124,6 +1101,7 @@ Clock TritonCTS::forkRegisterClockNetwork(
   Clock clockNet2(
       secondNet->getConstName(), driver, clockNet.getSdcName(), xPin, yPin);
   clockNet2.setDriverPin(outputTerm);
+
   return clockNet2;
 }
 
@@ -1154,6 +1132,14 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
   odb::dbNet* topClockNet = clockNet.getNetObj();
 
   disconnectAllSinksFromNet(topClockNet);
+
+  // re-connect top buffer that separates macros from registers
+  std::string topRegBufferName = "clkbuf_regs_0_" + clockNet.getName();
+  odb::dbInst* topRegBuffer = block_->findInst(topRegBufferName.c_str());
+  if (topRegBuffer) {
+    odb::dbITerm* topRegBufferInputPin = getFirstInput(topRegBuffer);
+    topRegBufferInputPin->connect(topClockNet);
+  }
 
   createClockBuffers(clockNet);
 

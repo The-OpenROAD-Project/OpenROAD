@@ -145,25 +145,23 @@ class TritonCTS
   void disconnectAllPinsFromNet(odb::dbNet* net);
   void checkUpstreamConnections(odb::dbNet* net);
   void createClockBuffers(Clock& clockNet);
-  bool initClockTreeForMacrosAndRegs(
+  HTreeBuilder* initClockTreeForMacrosAndRegs(
       odb::dbNet*& net,
       const std::unordered_set<odb::dbMaster*>& buffer_masters,
       Clock& ClockNet,
-      TreeBuilder* parentBuilder,
-      HTreeBuilder*& firstBuilder,
-      HTreeBuilder*& secondBuilder);
+      TreeBuilder* parentBuilder);
   bool separateMacroRegSinks(
       odb::dbNet*& net,
       Clock& clockNet,
       const std::unordered_set<odb::dbMaster*>& buffer_masters,
       std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& registerSinks,
       std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& macroSinks);
-  void addClockSinks(Clock& clockNet,
-                     odb::dbNet* physicalNet,
-                     std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>> sinks,
-                     HTreeBuilder* parentBuilder,
-                     HTreeBuilder*& builder,
-                     std::string macrosOrRegs);
+  HTreeBuilder* addClockSinks(
+      Clock& clockNet,
+      odb::dbNet* physicalNet,
+      std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>> sinks,
+      HTreeBuilder* parentBuilder,
+      std::string macrosOrRegs);
   Clock forkRegisterClockNetwork(
       Clock& clockNet,
       std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>> registerSinks,
