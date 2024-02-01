@@ -40,24 +40,24 @@ met5       Horizontal       3403          1640          51.81%
 ---------------------------------------------------------------
 
 [INFO GRT-0101] Running extra iterations to remove overflow.
-[INFO GRT-0197] Via related to pin nodes: 1770
-[INFO GRT-0198] Via related Steiner nodes: 73
+[INFO GRT-0197] Via related to pin nodes: 2181
+[INFO GRT-0198] Via related Steiner nodes: 89
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 2287
-[INFO GRT-0112] Final usage 3D: 9128
+[INFO GRT-0111] Final number of vias: 3110
+[INFO GRT-0112] Final usage 3D: 11541
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
-met1              4924           694           14.09%             0 /  0 /  0
-met2              3308           781           23.61%             0 /  0 /  0
-met3              1688           337           19.96%             0 /  0 /  0
-met4              1680           264           15.71%             0 /  0 /  0
-met5              1640           191           11.65%             0 /  0 /  0
+met1              4924           718           14.58%             0 /  0 /  0
+met2              3308           823           24.88%             0 /  0 /  0
+met3              1688           328           19.43%             0 /  0 /  0
+met4              1680           188           11.19%             0 /  0 /  0
+met5              1640           154            9.39%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            13240          2267           17.12%             0 /  0 /  0
+Total            13240          2211           16.70%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 26424 um
+[INFO GRT-0018] Total wirelength: 25776 um
 [INFO GRT-0014] Routed nets: 348
 No differences found.

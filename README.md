@@ -166,7 +166,7 @@ using OpenROAD;
   - IO pin placement (for designs without pads)
   - Tap cell and well tie insertion
   - PDN- power distribution network creation
-- `Global Placement` - Minimize wirelengths
+- `Global Placement` 
   - Macro placement (RAMs, embedded macros)
   - Standard cell placement
   - Automatic placement optimization and repair for max slew,
@@ -174,14 +174,13 @@ using OpenROAD;
 - `Detailed Placement`
   - Legalize placement - align to grid, adhere to design rules
   - Incremental timing analysis for early estimates
-- `Clock Tree Synthesis` - Generate a balanced tree to meet timing
-  and reduce skews
+- `Clock Tree Synthesis` 
   - Insert buffers and resize for high fanout nets
 - `Optimize setup/hold timing`
-- `Global routing`
+- `Global Routing`
   - Antenna repair
   - Create routing guides
-- `Detailed routing`
+- `Detailed Routing`
   - Legalize routes, DRC-correct routing to meet timing, power
     constraints
 - `Chip Finishing`

@@ -246,6 +246,11 @@ class FastRouteCore
                      const int L,
                      float& slack_th);
   void convertToMazeroute();
+  int splitEdge(std::vector<TreeEdge>& treeedges,
+                std::vector<TreeNode>& treenodes,
+                int n1,
+                int n2,
+                int edge_n1n2);
   void updateCongestionHistory(const int upType, bool stopDEC, int& max_adj);
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
@@ -344,9 +349,9 @@ class FastRouteCore
                   int n2,
                   std::vector<TreeEdge>& treeedges,
                   int edge_n1n2,
-                  int gridsX_n1n2[],
-                  int gridsY_n1n2[],
-                  int gridsL_n1n2[]);
+                  std::vector<int>& gridsX_n1n2,
+                  std::vector<int>& gridsY_n1n2,
+                  std::vector<int>& gridsL_n1n2);
   void updateRouteType13D(int netID,
                           std::vector<TreeNode>& treenodes,
                           int n1,
@@ -468,7 +473,8 @@ class FastRouteCore
                          int k,
                          int l,
                          bool horizontal,
-                         int& best_cost);
+                         int& best_cost,
+                         multi_array<int, 2>& layer_grid);
   bool skipNet(int netID);
   void assignEdge(int netID, int edgeID, bool processDIR);
   void recoverEdge(int netID, int edgeID);
@@ -502,7 +508,6 @@ class FastRouteCore
 
   typedef std::tuple<int, int, int> Tile;
 
-  static const int MAXLEN = 20000;
   static const int BIG_INT = 1e9;  // big integer used as infinity
   static const int HCOST = 5000;
 
@@ -584,8 +589,6 @@ class FastRouteCore
   multi_array<Edge3D, 3> h_edges_3D_;  // The way it is indexed is (Layer, Y, X)
   multi_array<Edge3D, 3> v_edges_3D_;  // The way it is indexed is (Layer, Y, X)
   multi_array<int, 2> corr_edge_;
-  multi_array<int, 2> layer_grid_;
-  multi_array<int, 2> via_link_;
   multi_array<short, 2> parent_x1_;
   multi_array<short, 2> parent_y1_;
   multi_array<short, 2> parent_x3_;

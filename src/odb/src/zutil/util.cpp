@@ -459,4 +459,29 @@ void cutRows(dbBlock* block,
                final_sites_count);
 }
 
+std::string generateMacroPlacementString(dbBlock* block)
+{
+  std::string macro_placement;
+
+  const float dbu = block->getTech()->getDbUnitsPerMicron();
+  float x = 0.0f;
+  float y = 0.0f;
+
+  for (odb::dbInst* inst : block->getInsts()) {
+    if (inst->isBlock()) {
+      x = (inst->getLocation().x()) / dbu;
+      y = (inst->getLocation().y()) / dbu;
+
+      macro_placement += fmt::format(
+          "place_macro -macro_name {} -location {{{} {}}} -orientation {}\n",
+          inst->getName(),
+          x,
+          y,
+          inst->getOrient().getString());
+    }
+  }
+
+  return macro_placement;
+}
+
 }  // namespace odb

@@ -135,18 +135,18 @@ Cluster single bit flops into multi-bit flops.
 cluster_flops
     [-tray_weight tray_weight]
     [-timing_weight timing_weight]
-    [-max_split_size max_split_size]  
-    [-num_paths num_paths]  
+    [-max_split_size max_split_size]
+    [-num_paths num_paths]
 ```
 
 #### General Arguments
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-tray_weight` | Set the weighting factor for tray cost (recommended to be `[20.0, 80.0]`). |
-| `-timing_weight` | Set the weighting factor for timing-critical paths in (recommended to be `1.0`). |
-| `-max_split_size` | The maximum size of a single pointset after running the pointset decomposition algorithm for runtime improvement (to not run pointset decomposition, set as `-1`. Default = 250). |  
-| `-num_paths` | Number of timing-critical paths to consider (default 0). |  
+| `-tray_weight` | Set the weighting factor for tray cost (recommended to be `[20.0, float]`). |
+| `-timing_weight` | Set the weighting factor for timing-critical paths in (recommended to be `[1.0. float]`). |
+| `-max_split_size` | The maximum size of a single pointset after running the pointset decomposition algorithm for runtime improvement (default = 250). |
+| `num_paths` | Number of timing-critical paths to consider (default = 0). |
 
 
 ## Example Scripts
@@ -218,8 +218,8 @@ about this tool.
     D. J.-H. Huang, Y. Luo, C.-C. Teng and C.-K. Cheng, "ePlace-MS:
     Electrostatics based Placement for Mixed-Size Circuits", IEEE TCAD 34(5)
     (2015), pp. 685-698. [(.pdf)](https://cseweb.ucsd.edu/~jlu/papers/eplace-ms-tcad14/paper.pdf)
--   A. B. Kahng, J. Li and L. Wang,
-    "Improved Flop Tray-Based Design Implementation for Power Reduction",
+-   A. B. Kahng, J. Li and L. Wang,   
+    "Improved Flop Tray-Based Design Implementation for Power Reduction",   
     IEEE/ACM ICCAD, 2016, pp. 20:1-20:8.   
 -   The timing-driven mode has been implemented by
     Mingyu Woo (only available in [legacy repo in standalone

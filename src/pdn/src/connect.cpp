@@ -450,7 +450,8 @@ void Connect::makeVia(odb::dbSWire* wire,
   if (!TechLayer::checkIfManufacturingGrid(tech, x)
       || !TechLayer::checkIfManufacturingGrid(tech, y)) {
     DbGenerateDummyVia dummy_via(this, intersection, layer0_, layer1_, true);
-    dummy_via.generate(wire->getBlock(), wire, type, 0, 0, grid_->getLogger());
+    dummy_via.generate(
+        wire->getBlock(), wire, type, 0, 0, ongrid_, grid_->getLogger());
     return;
   }
 
@@ -540,11 +541,11 @@ void Connect::makeVia(odb::dbSWire* wire,
     }
 
     via = std::make_unique<DbGenerateStackedVia>(
-        stack, layer0_, wire->getBlock(), ongrid_);
+        stack, layer0_, wire->getBlock());
   }
 
-  shapes
-      = via->generate(wire->getBlock(), wire, type, x, y, grid_->getLogger());
+  shapes = via->generate(
+      wire->getBlock(), wire, type, x, y, ongrid_, grid_->getLogger());
 
   if (skip_caching) {
     via = nullptr;
@@ -746,7 +747,7 @@ void Connect::populateGenerateRules()
         use_fixed_via = true;
       }
     }
-    if (use_fixed_via) {
+    if (use_fixed_via || !fixed_tech_vias_.empty()) {
       continue;
     }
     for (odb::dbTechViaGenerateRule* db_via : tech->getViaGenerateRules()) {
@@ -789,7 +790,7 @@ void Connect::populateTechVias()
         use_fixed_via = true;
       }
     }
-    if (use_fixed_via) {
+    if (use_fixed_via || !fixed_generate_vias_.empty()) {
       continue;
     }
     for (odb::dbTechVia* db_via : tech->getVias()) {

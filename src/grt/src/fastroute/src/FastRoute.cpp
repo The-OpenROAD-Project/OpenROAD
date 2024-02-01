@@ -139,9 +139,6 @@ void FastRouteCore::clear()
   v_capacity_3D_.clear();
   h_capacity_3D_.clear();
 
-  layer_grid_.resize(boost::extents[0][0]);
-  via_link_.resize(boost::extents[0][0]);
-
   cost_hvh_.clear();
   cost_vhv_.clear();
   cost_h_.clear();
@@ -195,9 +192,6 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
     last_col_v_capacity_3D_[i] = 0;
     last_row_h_capacity_3D_[i] = 0;
   }
-
-  layer_grid_.resize(boost::extents[num_layers_][MAXLEN]);
-  via_link_.resize(boost::extents[num_layers_][MAXLEN]);
 
   hv_.resize(boost::extents[y_range_][x_range_]);
   hyper_v_.resize(boost::extents[y_range_][x_range_]);
@@ -705,6 +699,18 @@ NetRouteMap FastRouteCore::getRoutes()
           lastY = yreal;
           lastL = gridsL[i];
           if (net_segs.find(segment) == net_segs.end()) {
+            if (segment.init_layer != segment.final_layer) {
+              GSegment invet_via = GSegment(segment.final_x,
+                                            segment.final_y,
+                                            segment.final_layer,
+                                            segment.init_x,
+                                            segment.init_y,
+                                            segment.init_layer);
+              if (net_segs.find(invet_via) != net_segs.end()) {
+                continue;
+              }
+            }
+
             net_segs.insert(segment);
             route.push_back(segment);
           }

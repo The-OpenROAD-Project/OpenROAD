@@ -1,0 +1,11 @@
+place_macro -macro_name U1 -location {8.94 7.13} -orientation R0
+place_macro -macro_name U10 -location {224.94 7.13} -orientation MY
+place_macro -macro_name U2 -location {224.94 224.25} -orientation MX
+place_macro -macro_name U3 -location {116.94 224.25} -orientation MX
+place_macro -macro_name U4 -location {116.94 115.21} -orientation R0
+place_macro -macro_name U5 -location {116.94 332.19} -orientation MX
+place_macro -macro_name U6 -location {332.94 8.21} -orientation R180
+place_macro -macro_name U7 -location {224.94 115.21} -orientation MY
+place_macro -macro_name U8 -location {224.94 332.19} -orientation R180
+place_macro -macro_name U9 -location {116.94 7.13} -orientation MY
+

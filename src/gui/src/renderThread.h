@@ -79,6 +79,8 @@ class RenderThread : public QThread
  private:
   void run() override;
 
+  void setupIOPins(odb::dbBlock* block, const odb::Rect& bounds);
+
   void drawBlock(QPainter* painter,
                  odb::dbBlock* block,
                  const odb::Rect& bounds,
@@ -134,7 +136,8 @@ class RenderThread : public QThread
   void drawHighlighted(Painter& painter, const HighlightSet& highlighted);
   void drawIOPins(Painter& painter,
                   odb::dbBlock* block,
-                  const odb::Rect& bounds);
+                  const odb::Rect& bounds,
+                  odb::dbTechLayer* layer);
   void drawAccessPoints(Painter& painter,
                         const std::vector<odb::dbInst*>& insts);
   void drawRouteGuides(Painter& painter, odb::dbTechLayer* layer);
@@ -169,6 +172,13 @@ class RenderThread : public QThread
   bool restart_ = false;
   bool abort_ = false;
   bool is_first_render_done_ = false;
+
+  QFont pin_font_;
+  bool pin_draw_names_ = false;
+  double pin_max_size_ = 0.0;
+  std::map<odb::dbTechLayer*,
+           std::vector<std::pair<odb::dbBTerm*, odb::dbBox*>>>
+      pins_;
 };
 
 }  // namespace gui
