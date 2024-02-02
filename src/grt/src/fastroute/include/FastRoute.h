@@ -323,6 +323,13 @@ class FastRouteCore
 
   // maze3D functions
   void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub);
+  void addNbrPoints(int netID,
+                   int n1,
+                   int n2,
+                   std::vector<int*>& points_heap_3D,
+                   multi_array<int, 3>& dist_3D,
+                   multi_array<Direction, 3>& directions_3D,
+                   multi_array<int, 3>& corr_edge_3D);
   void setupHeap3D(int netID,
                    int edgeID,
                    std::vector<int*>& src_heap_3D,
@@ -453,7 +460,7 @@ class FastRouteCore
   void releaseNetResources(const int netID);
 
   // utility functions
-  void setTreeNodesVariables(const int netID);
+  void setTreeNodesVariables(int netID);
   int splitEdge(std::vector<TreeEdge>& treeedges,
                 std::vector<TreeNode>& treenodes,
                 int n1,

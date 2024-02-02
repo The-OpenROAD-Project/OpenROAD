@@ -113,6 +113,103 @@ static void removeMin3D(std::vector<int*>& array)
   array.pop_back();
 }
 
+void FastRouteCore::addNbrPoints(const int netID,
+                                 const int n1,
+                                 const int n2,
+                                 std::vector<int*>& points_heap_3D,
+                                 multi_array<int, 3>& dist_3D,
+                                 multi_array<Direction, 3>& directions_3D,
+                                 multi_array<int, 3>& corr_edge_3D) {
+
+  const auto& treeedges = sttrees_[netID].edges;
+  const auto& treenodes = sttrees_[netID].nodes;
+
+  const int x1 = treenodes[n1].x;
+  const int y1 = treenodes[n1].y;
+
+  const int numNodes = sttrees_[netID].num_nodes();
+  std::vector<bool> heapVisited(numNodes, false);
+  std::vector<int> heapQueue(numNodes);
+
+  int queuehead = 0;
+  int queuetail = 0;
+
+  int nt = treenodes[n1].stackAlias;
+
+  // add n1 into heap1_3D
+  for (int l = treenodes[nt].botL; l <= treenodes[nt].topL; l++) {
+    dist_3D[l][y1][x1] = 0;
+    directions_3D[l][y1][x1] = Direction::Origin;
+    points_heap_3D.push_back(&dist_3D[l][y1][x1]);
+    heapVisited[n1] = true;
+  }
+
+  // add n1 into the heapQueue
+  heapQueue[queuetail] = n1;
+  queuetail++;
+
+  // loop to find all the edges in subtree t1
+  while (queuetail > queuehead) {
+    // get cur node from the queuehead
+    const int cur = heapQueue[queuehead];
+    queuehead++;
+    heapVisited[cur] = true;
+    const int nbrCount = treenodes[cur].nbr_count;
+    for (int i = 0; i < nbrCount; i++) {
+      const int nbr = treenodes[cur].nbr[i];
+      const int edge = treenodes[cur].edge[i];
+      if (nbr == n2) {
+        continue;
+      }
+      if (heapVisited[nbr]) {
+        continue;
+      }
+      // put all the grids of the adjacent tree edges into
+      // points_heap_3D
+      if (treeedges[edge].route.routelen > 0) {
+        // not a degraded edge
+        // put nbr into points_heap_3D if in enlarged region
+        if (in_region_[treenodes[nbr].y][treenodes[nbr].x]) {
+          const int nbrX = treenodes[nbr].x;
+          const int nbrY = treenodes[nbr].y;
+          nt = treenodes[nbr].stackAlias;
+          for (int l = treenodes[nt].botL; l <= treenodes[nt].topL; l++) {
+            dist_3D[l][nbrY][nbrX] = 0;
+            directions_3D[l][nbrY][nbrX] = Direction::Origin;
+            points_heap_3D.push_back(&dist_3D[l][nbrY][nbrX]);
+            corr_edge_3D[l][nbrY][nbrX] = edge;
+          }
+        }
+
+        // the coordinates of two end nodes of the edge
+
+        const Route* route = &(treeedges[edge].route);
+        if (route->type == RouteType::MazeRoute) {
+          for (int j = 1; j < route->routelen; j++) {
+            // don't put edge_n1 and edge_n2 into points_heap_3D
+            const int x_grid = route->gridsX[j];
+            const int y_grid = route->gridsY[j];
+            const int l_grid = route->gridsL[j];
+
+            if (in_region_[y_grid][x_grid]) {
+              dist_3D[l_grid][y_grid][x_grid] = 0;
+              points_heap_3D.push_back(&dist_3D[l_grid][y_grid][x_grid]);
+              directions_3D[l_grid][y_grid][x_grid] = Direction::Origin;
+              corr_edge_3D[l_grid][y_grid][x_grid] = edge;
+            }
+          }
+
+        }  // if MazeRoute
+      }    // if not a degraded edge (len>0)
+
+      // add the neighbor of cur node into heapQueue
+      heapQueue[queuetail] = nbr;
+      queuetail++;
+
+    }  // loop i (neigbors for cur node)
+  }    // while heapQueue is not empty
+}
+
 void FastRouteCore::setupHeap3D(int netID,
                                 int edgeID,
                                 std::vector<int*>& src_heap_3D,
@@ -159,173 +256,13 @@ void FastRouteCore::setupHeap3D(int netID,
         in_region_[i][j] = true;
       }
     }
-
-    const int numNodes = sttrees_[netID].num_nodes();
-    std::vector<bool> heapVisited(numNodes, false);
-    std::vector<int> heapQueue(numNodes);
-
     // find all the grids on tree edges in subtree t1 (connecting to n1) and put
-    // them into heap1_3D
-    int queuehead = 0;
-    int queuetail = 0;
+    // them into src_heap_3D
+    addNbrPoints(netID, n1, n2, src_heap_3D, d1_3D, directions_3D, corr_edge_3D);
 
-    int nt = treenodes[n1].stackAlias;
-
-    // add n1 into heap1_3D
-    for (int l = treenodes[nt].botL; l <= treenodes[nt].topL; l++) {
-      d1_3D[l][y1][x1] = 0;
-      directions_3D[l][y1][x1] = Direction::Origin;
-      src_heap_3D.push_back(&d1_3D[l][y1][x1]);
-      heapVisited[n1] = true;
-    }
-
-    // add n1 into the heapQueue
-    heapQueue[queuetail] = n1;
-    queuetail++;
-
-    // loop to find all the edges in subtree t1
-    while (queuetail > queuehead) {
-      // get cur node from the queuehead
-      const int cur = heapQueue[queuehead];
-      queuehead++;
-      heapVisited[cur] = true;
-      const int nbrCount = treenodes[cur].nbr_count;
-      for (int i = 0; i < nbrCount; i++) {
-        const int nbr = treenodes[cur].nbr[i];
-        const int edge = treenodes[cur].edge[i];
-        if (nbr == n2) {
-          continue;
-        }
-        if (heapVisited[nbr]) {
-          continue;
-        }
-        // put all the grids on the two adjacent tree edges into
-        // src_heap_3D
-        if (treeedges[edge].route.routelen > 0) {
-          // not a degraded edge
-          // put nbr into src_heap_3D if in enlarged region
-          if (in_region_[treenodes[nbr].y][treenodes[nbr].x]) {
-            const int nbrX = treenodes[nbr].x;
-            const int nbrY = treenodes[nbr].y;
-            nt = treenodes[nbr].stackAlias;
-            for (int l = treenodes[nt].botL; l <= treenodes[nt].topL; l++) {
-              d1_3D[l][nbrY][nbrX] = 0;
-              directions_3D[l][nbrY][nbrX] = Direction::Origin;
-              src_heap_3D.push_back(&d1_3D[l][nbrY][nbrX]);
-              corr_edge_3D[l][nbrY][nbrX] = edge;
-            }
-          }
-
-          // the coordinates of two end nodes of the edge
-
-          const Route* route = &(treeedges[edge].route);
-          if (route->type == RouteType::MazeRoute) {
-            for (int j = 1; j < route->routelen; j++) {
-              // don't put edge_n1 and edge_n2 into heap1_3D
-              const int x_grid = route->gridsX[j];
-              const int y_grid = route->gridsY[j];
-              const int l_grid = route->gridsL[j];
-
-              if (in_region_[y_grid][x_grid]) {
-                d1_3D[l_grid][y_grid][x_grid] = 0;
-                src_heap_3D.push_back(&d1_3D[l_grid][y_grid][x_grid]);
-                directions_3D[l_grid][y_grid][x_grid] = Direction::Origin;
-                corr_edge_3D[l_grid][y_grid][x_grid] = edge;
-              }
-            }
-
-          }  // if MazeRoute
-        }    // if not a degraded edge (len>0)
-
-        // add the neighbor of cur node into heapQueue
-        heapQueue[queuetail] = nbr;
-        queuetail++;
-
-      }  // loop i (3 neigbors for cur node)
-    }    // while heapQueue is not empty
-
-    // find all the grids on subtree t2 (connect to n2) and put them into
-    // dest_heap_3D find all the grids on tree edges in subtree t2 (connecting
+    // find all the grids on tree edges in subtree t2 (connecting
     // to n2) and put them into dest_heap_3D
-    queuehead = 0;
-    queuetail = 0;
-
-    nt = treenodes[n2].stackAlias;
-    // add n2 into heap2_3D
-    for (int l = treenodes[nt].botL; l <= treenodes[nt].topL; l++) {
-      d2_3D[l][y2][x2] = 0;
-      directions_3D[l][y2][x2] = Direction::Origin;
-      dest_heap_3D.push_back(&d2_3D[l][y2][x2]);
-    }
-    heapVisited[n2] = true;
-
-    // add n2 into the heapQueue
-    heapQueue[queuetail] = n2;
-    queuetail++;
-
-    // loop to find all the edges in subtree t2
-    while (queuetail > queuehead) {
-      // get cur node form queuehead
-      const int cur = heapQueue[queuehead];
-      heapVisited[cur] = true;
-      queuehead++;
-
-      const int nbrCount = treenodes[cur].nbr_count;
-      for (int i = 0; i < nbrCount; i++) {
-        const int nbr = treenodes[cur].nbr[i];
-        const int edge = treenodes[cur].edge[i];
-        if (nbr == n1) {
-          continue;
-        }
-        if (heapVisited[nbr]) {
-          continue;
-        }
-        // put all the grids on the two adjacent tree edges into
-        // dest_heap_3D
-        if (treeedges[edge].route.routelen > 0) {
-          // not a degraded edge
-          // put nbr into dest_heap_3D
-          if (in_region_[treenodes[nbr].y][treenodes[nbr].x]) {
-            const int nbrX = treenodes[nbr].x;
-            const int nbrY = treenodes[nbr].y;
-            const int nt = treenodes[nbr].stackAlias;
-            for (int l = treenodes[nt].botL; l <= treenodes[nt].topL; l++) {
-              // nbrL = treenodes[nbr].l;
-
-              d2_3D[l][nbrY][nbrX] = 0;
-              directions_3D[l][nbrY][nbrX] = Direction::Origin;
-              dest_heap_3D.push_back(&d2_3D[l][nbrY][nbrX]);
-              corr_edge_3D[l][nbrY][nbrX] = edge;
-            }
-          }
-
-          // the coordinates of two end nodes of the edge
-
-          const Route* route = &(treeedges[edge].route);
-          if (route->type == RouteType::MazeRoute) {
-            for (int j = 1; j < route->routelen; j++) {
-              // don't put edge_n1 and edge_n2 into
-              // dest_heap_3D
-              const int x_grid = route->gridsX[j];
-              const int y_grid = route->gridsY[j];
-              const int l_grid = route->gridsL[j];
-              if (in_region_[y_grid][x_grid]) {
-                d2_3D[l_grid][y_grid][x_grid] = 0;
-                directions_3D[l_grid][y_grid][x_grid] = Direction::Origin;
-                dest_heap_3D.push_back(&d2_3D[l_grid][y_grid][x_grid]);
-
-                corr_edge_3D[l_grid][y_grid][x_grid] = edge;
-              }
-            }
-
-          }  // if MazeRoute
-        }    // if the edge is not degraded (len>0)
-
-        // add the neighbor of cur node into heapQueue
-        heapQueue[queuetail] = nbr;
-        queuetail++;
-      }  // loop i (3 neigbors for cur node)
-    }    // while heapQueue is not empty
+    addNbrPoints(netID, n2, n1, dest_heap_3D, d2_3D, directions_3D, corr_edge_3D);
 
     for (int i = regionY1; i <= regionY2; i++) {
       for (int j = regionX1; j <= regionX2; j++) {
