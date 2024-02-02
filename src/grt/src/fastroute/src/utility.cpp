@@ -2732,7 +2732,7 @@ int FastRouteCore::splitEdge(std::vector<TreeEdge>& treeedges,
 
 void FastRouteCore::setTreeNodesVariables(const int netID)
 {
-  // re statis the node overlap
+  // Number of nodes without redundancy in their x and y positions
   int numpoints = 0;
 
   const int num_terminals = sttrees_[netID].num_terminals;
@@ -2741,6 +2741,7 @@ void FastRouteCore::setTreeNodesVariables(const int netID)
 
   int routeLen;
   TreeEdge* treeedge;
+  // Setting the values needed for each TreeNode
   for (int d = 0; d < sttrees_[netID].num_nodes(); d++) {
     treenodes[d].topL = -1;
     treenodes[d].botL = num_layers_;
@@ -2754,7 +2755,6 @@ void FastRouteCore::setTreeNodesVariables(const int netID)
     if (d < num_terminals) {
       treenodes[d].botL = nets_[netID]->getPinL()[d];
       treenodes[d].topL = nets_[netID]->getPinL()[d];
-      // treenodes[d].l = 0;
       treenodes[d].assigned = true;
       treenodes[d].status = 1;
 
@@ -2767,7 +2767,6 @@ void FastRouteCore::setTreeNodesVariables(const int netID)
       for (int k = 0; k < numpoints; k++) {
         if ((treenodes[d].x == xcor_[k]) && (treenodes[d].y == ycor_[k])) {
           treenodes[d].stackAlias = dcor_[k];
-
           redundant = true;
           break;
         }
@@ -2779,7 +2778,8 @@ void FastRouteCore::setTreeNodesVariables(const int netID)
         numpoints++;
       }
     }
-  }  // numerating for nodes
+  } // loop nodes
+  // Setting the values needed for TreeNodes and TreeEdges
   for (int k = 0; k < sttrees_[netID].num_edges(); k++) {
     treeedge = &(treeedges[k]);
 
@@ -2790,7 +2790,7 @@ void FastRouteCore::setTreeNodesVariables(const int netID)
 
     int n1 = treeedge->n1;
     int n2 = treeedge->n2;
-    const std::vector<short>& gridsLtmp = treeedge->route.gridsL;
+    const std::vector<int16_t>& gridsLtmp = treeedge->route.gridsL;
 
     int n1a = treenodes[n1].stackAlias;
 
@@ -2829,7 +2829,7 @@ void FastRouteCore::setTreeNodesVariables(const int netID)
     }
 
     treenodes[n2a].assigned = true;
-  }  // eunmerating edges
+  }  // loop edges
 }
 
 std::ostream& operator<<(std::ostream& os, RouteType type)
