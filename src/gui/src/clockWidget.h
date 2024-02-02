@@ -263,10 +263,10 @@ class ClockLeafNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
  public:
   ClockLeafNodeGraphicsViewItem(odb::dbITerm* iterm,
                                 QGraphicsItem* parent = nullptr);
-  ~ClockLeafNodeGraphicsViewItem() = default;
+  ~ClockLeafNodeGraphicsViewItem() override = default;
 
-  virtual QString getType() const override = 0;
-  virtual QColor getColor() const override = 0;
+  QString getType() const override = 0;
+  QColor getColor() const override = 0;
 
   QRectF boundingRect() const override;
   void paint(QPainter* painter,
@@ -293,7 +293,7 @@ class ClockRegisterNodeGraphicsViewItem : public ClockLeafNodeGraphicsViewItem
       : ClockLeafNodeGraphicsViewItem(iterm, parent)
   {
   }
-  ~ClockRegisterNodeGraphicsViewItem() = default;
+  ~ClockRegisterNodeGraphicsViewItem() override = default;
   QString getType() const override { return "Register"; }
   QColor getColor() const override { return leaf_register_color_; }
 };
@@ -307,7 +307,7 @@ class ClockMacroNodeGraphicsViewItem : public ClockLeafNodeGraphicsViewItem
       : ClockLeafNodeGraphicsViewItem(iterm, parent)
   {
   }
-  ~ClockMacroNodeGraphicsViewItem() = default;
+  ~ClockMacroNodeGraphicsViewItem() override = default;
   QString getType() const override { return "Macro"; }
   QColor getColor() const override { return leaf_macro_color_; }
 };
