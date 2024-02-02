@@ -55,10 +55,18 @@ inline constexpr size_t kTemplateRecursionLimit = 16;
 
 class dbOStream
 {
+  using Position = std::ostream::pos_type;
+  struct Scope
+  {
+    std::string name;
+    Position start_pos;
+  };
+
   _dbDatabase* _db;
   std::ostream& _f;
   double _lef_area_factor;
   double _lef_dist_factor;
+  std::vector<Scope> _scopes;
 
   // By default values are written as their string ("255" vs 0xFF)
   // representations when using the << stream method. In dbOstream we are
@@ -248,6 +256,26 @@ class dbOStream
   double lefarea(int value) { return ((double) value * _lef_area_factor); }
 
   double lefdist(int value) { return ((double) value * _lef_dist_factor); }
+
+  Position pos() const { return _f.tellp(); }
+
+  void pushScope(const std::string& name);
+  void popScope();
+};
+
+// RAII class for scoping ostream operations
+class dbOStreamScope
+{
+ public:
+  dbOStreamScope(dbOStream& ostream, const std::string& name)
+      : ostream_(ostream)
+  {
+    ostream_.pushScope(name);
+  }
+
+  ~dbOStreamScope() { ostream_.popScope(); }
+
+  dbOStream& ostream_;
 };
 
 class dbIStream
