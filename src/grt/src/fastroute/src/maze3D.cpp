@@ -119,8 +119,8 @@ void FastRouteCore::addNbrPoints(const int netID,
                                  std::vector<int*>& points_heap_3D,
                                  multi_array<int, 3>& dist_3D,
                                  multi_array<Direction, 3>& directions_3D,
-                                 multi_array<int, 3>& corr_edge_3D) {
-
+                                 multi_array<int, 3>& corr_edge_3D)
+{
   const auto& treeedges = sttrees_[netID].edges;
   const auto& treenodes = sttrees_[netID].nodes;
 
@@ -258,11 +258,13 @@ void FastRouteCore::setupHeap3D(int netID,
     }
     // find all the grids on tree edges in subtree t1 (connecting to n1) and put
     // them into src_heap_3D
-    addNbrPoints(netID, n1, n2, src_heap_3D, d1_3D, directions_3D, corr_edge_3D);
+    addNbrPoints(
+        netID, n1, n2, src_heap_3D, d1_3D, directions_3D, corr_edge_3D);
 
     // find all the grids on tree edges in subtree t2 (connecting
     // to n2) and put them into dest_heap_3D
-    addNbrPoints(netID, n2, n1, dest_heap_3D, d2_3D, directions_3D, corr_edge_3D);
+    addNbrPoints(
+        netID, n2, n1, dest_heap_3D, d2_3D, directions_3D, corr_edge_3D);
 
     for (int i = regionY1; i <= regionY2; i++) {
       for (int j = regionX1; j <= regionX2; j++) {

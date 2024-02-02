@@ -2778,7 +2778,7 @@ void FastRouteCore::setTreeNodesVariables(const int netID)
         numpoints++;
       }
     }
-  } // loop nodes
+  }  // loop nodes
   // Setting the values needed for TreeNodes and TreeEdges
   for (int k = 0; k < sttrees_[netID].num_edges(); k++) {
     treeedge = &(treeedges[k]);
