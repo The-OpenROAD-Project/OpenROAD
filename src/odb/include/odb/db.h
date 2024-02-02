@@ -7072,15 +7072,15 @@ class dbGCellGrid : public dbObject
  public:
   struct GCellData
   {
-    uint horizontal_usage = 0;
-    uint vertical_usage = 0;
-    uint up_usage = 0;
-    uint horizontal_capacity = 0;
-    uint vertical_capacity = 0;
-    uint up_capacity = 0;
-    uint horizontal_blockage = 0;
-    uint vertical_blockage = 0;
-    uint up_blockage = 0;
+    uint8_t horizontal_usage = 0;
+    uint8_t vertical_usage = 0;
+    uint8_t up_usage = 0;
+    uint8_t horizontal_capacity = 0;
+    uint8_t vertical_capacity = 0;
+    uint8_t up_capacity = 0;
+    uint8_t horizontal_blockage = 0;
+    uint8_t vertical_blockage = 0;
+    uint8_t up_blockage = 0;
   };
 
   // User Code Begin dbGCellGrid
@@ -7144,95 +7144,111 @@ class dbGCellGrid : public dbObject
 
   uint getYIdx(int y);
 
-  uint getHorizontalCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+  uint8_t getHorizontalCapacity(dbTechLayer* layer,
+                                uint x_idx,
+                                uint y_idx) const;
 
-  uint getVerticalCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+  uint8_t getVerticalCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
-  uint getUpCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+  uint8_t getUpCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
-  uint getHorizontalUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+  uint8_t getHorizontalUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
-  uint getVerticalUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+  uint8_t getVerticalUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
-  uint getUpUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+  uint8_t getUpUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
-  uint getHorizontalBlockage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+  uint8_t getHorizontalBlockage(dbTechLayer* layer,
+                                uint x_idx,
+                                uint y_idx) const;
 
-  uint getVerticalBlockage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+  uint8_t getVerticalBlockage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
-  uint getUpBlockage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+  uint8_t getUpBlockage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
   void setHorizontalCapacity(dbTechLayer* layer,
                              uint x_idx,
                              uint y_idx,
-                             uint capacity);
+                             uint8_t capacity);
 
   void setVerticalCapacity(dbTechLayer* layer,
                            uint x_idx,
                            uint y_idx,
-                           uint capacity);
+                           uint8_t capacity);
 
-  void setUpCapacity(dbTechLayer* layer, uint x_idx, uint y_idx, uint capacity);
+  void setUpCapacity(dbTechLayer* layer,
+                     uint x_idx,
+                     uint y_idx,
+                     uint8_t capacity);
 
-  void setHorizontalUsage(dbTechLayer* layer, uint x_idx, uint y_idx, uint use);
+  void setHorizontalUsage(dbTechLayer* layer,
+                          uint x_idx,
+                          uint y_idx,
+                          uint8_t use);
 
-  void setVerticalUsage(dbTechLayer* layer, uint x_idx, uint y_idx, uint use);
+  void setVerticalUsage(dbTechLayer* layer,
+                        uint x_idx,
+                        uint y_idx,
+                        uint8_t use);
 
-  void setUpUsage(dbTechLayer* layer, uint x_idx, uint y_idx, uint use);
+  void setUpUsage(dbTechLayer* layer, uint x_idx, uint y_idx, uint8_t use);
 
   void setHorizontalBlockage(dbTechLayer* layer,
                              uint x_idx,
                              uint y_idx,
-                             uint blockage);
+                             uint8_t blockage);
 
   void setVerticalBlockage(dbTechLayer* layer,
                            uint x_idx,
                            uint y_idx,
-                           uint blockage);
+                           uint8_t blockage);
 
-  void setUpBlockage(dbTechLayer* layer, uint x_idx, uint y_idx, uint blockage);
+  void setUpBlockage(dbTechLayer* layer,
+                     uint x_idx,
+                     uint y_idx,
+                     uint8_t blockage);
 
   void setCapacity(dbTechLayer* layer,
                    uint x_idx,
                    uint y_idx,
-                   uint horizontal,
-                   uint vertical,
-                   uint up);
+                   uint8_t horizontal,
+                   uint8_t vertical,
+                   uint8_t up);
 
   void setUsage(dbTechLayer* layer,
                 uint x_idx,
                 uint y_idx,
-                uint horizontal,
-                uint vertical,
-                uint up);
+                uint8_t horizontal,
+                uint8_t vertical,
+                uint8_t up);
 
   void setBlockage(dbTechLayer* layer,
                    uint x_idx,
                    uint y_idx,
-                   uint horizontal,
-                   uint vertical,
-                   uint up);
+                   uint8_t horizontal,
+                   uint8_t vertical,
+                   uint8_t up);
 
   void getCapacity(dbTechLayer* layer,
                    uint x_idx,
                    uint y_idx,
-                   uint& horizontal,
-                   uint& vertical,
-                   uint& up) const;
+                   uint8_t& horizontal,
+                   uint8_t& vertical,
+                   uint8_t& up) const;
 
   void getUsage(dbTechLayer* layer,
                 uint x_idx,
                 uint y_idx,
-                uint& horizontal,
-                uint& vertical,
-                uint& up) const;
+                uint8_t& horizontal,
+                uint8_t& vertical,
+                uint8_t& up) const;
 
   void getBlockage(dbTechLayer* layer,
                    uint x_idx,
                    uint y_idx,
-                   uint& horizontal,
-                   uint& vertical,
-                   uint& up) const;
+                   uint8_t& horizontal,
+                   uint8_t& vertical,
+                   uint8_t& up) const;
 
   void resetCongestionMap();
 

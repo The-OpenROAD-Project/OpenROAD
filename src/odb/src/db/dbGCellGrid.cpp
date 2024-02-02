@@ -204,12 +204,35 @@ dbOStream& operator<<(dbOStream& stream, const _dbGCellGrid& obj)
 
 dbIStream& operator>>(dbIStream& stream, dbGCellGrid::GCellData& obj)
 {
-  stream >> obj.horizontal_usage;
-  stream >> obj.vertical_usage;
-  stream >> obj.up_usage;
-  stream >> obj.horizontal_capacity;
-  stream >> obj.vertical_capacity;
-  stream >> obj.up_capacity;
+  if (stream.getDatabase()->isSchema(db_schema_smaler_gcelldata)) {
+    stream >> obj.horizontal_usage;
+    stream >> obj.vertical_usage;
+    stream >> obj.up_usage;
+    stream >> obj.horizontal_capacity;
+    stream >> obj.vertical_capacity;
+    stream >> obj.up_capacity;
+  } else {
+    uint horizontal_usage;
+    uint vertical_usage;
+    uint up_usage;
+    uint horizontal_capacity;
+    uint vertical_capacity;
+    uint up_capacity;
+
+    stream >> horizontal_usage;
+    stream >> vertical_usage;
+    stream >> up_usage;
+    stream >> horizontal_capacity;
+    stream >> vertical_capacity;
+    stream >> up_capacity;
+
+    obj.horizontal_usage = horizontal_usage;
+    obj.vertical_usage = vertical_usage;
+    obj.up_usage = up_usage;
+    obj.horizontal_capacity = horizontal_capacity;
+    obj.vertical_capacity = vertical_capacity;
+    obj.up_capacity = up_capacity;
+  }
   return stream;
 }
 
@@ -442,79 +465,81 @@ uint dbGCellGrid::getYIdx(int y)
   return (int) std::distance(grid.begin(), pos);
 }
 
-uint dbGCellGrid::getHorizontalCapacity(dbTechLayer* layer,
-                                        uint x_idx,
-                                        uint y_idx) const
+uint8_t dbGCellGrid::getHorizontalCapacity(dbTechLayer* layer,
+                                           uint x_idx,
+                                           uint y_idx) const
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
   return _grid->get(lid)(x_idx, y_idx).horizontal_capacity;
 }
 
-uint dbGCellGrid::getVerticalCapacity(dbTechLayer* layer,
-                                      uint x_idx,
-                                      uint y_idx) const
+uint8_t dbGCellGrid::getVerticalCapacity(dbTechLayer* layer,
+                                         uint x_idx,
+                                         uint y_idx) const
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
   return _grid->get(lid)(x_idx, y_idx).vertical_capacity;
 }
 
-uint dbGCellGrid::getUpCapacity(dbTechLayer* layer,
-                                uint x_idx,
-                                uint y_idx) const
+uint8_t dbGCellGrid::getUpCapacity(dbTechLayer* layer,
+                                   uint x_idx,
+                                   uint y_idx) const
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
   return _grid->get(lid)(x_idx, y_idx).up_capacity;
 }
 
-uint dbGCellGrid::getHorizontalUsage(dbTechLayer* layer,
-                                     uint x_idx,
-                                     uint y_idx) const
+uint8_t dbGCellGrid::getHorizontalUsage(dbTechLayer* layer,
+                                        uint x_idx,
+                                        uint y_idx) const
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
   return _grid->get(lid)(x_idx, y_idx).horizontal_usage;
 }
 
-uint dbGCellGrid::getVerticalUsage(dbTechLayer* layer,
-                                   uint x_idx,
-                                   uint y_idx) const
+uint8_t dbGCellGrid::getVerticalUsage(dbTechLayer* layer,
+                                      uint x_idx,
+                                      uint y_idx) const
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
   return _grid->get(lid)(x_idx, y_idx).vertical_usage;
 }
 
-uint dbGCellGrid::getUpUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const
+uint8_t dbGCellGrid::getUpUsage(dbTechLayer* layer,
+                                uint x_idx,
+                                uint y_idx) const
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
   return _grid->get(lid)(x_idx, y_idx).up_usage;
 }
 
-uint dbGCellGrid::getHorizontalBlockage(dbTechLayer* layer,
-                                        uint x_idx,
-                                        uint y_idx) const
+uint8_t dbGCellGrid::getHorizontalBlockage(dbTechLayer* layer,
+                                           uint x_idx,
+                                           uint y_idx) const
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
   return _grid->get(lid)(x_idx, y_idx).horizontal_blockage;
 }
 
-uint dbGCellGrid::getVerticalBlockage(dbTechLayer* layer,
-                                      uint x_idx,
-                                      uint y_idx) const
+uint8_t dbGCellGrid::getVerticalBlockage(dbTechLayer* layer,
+                                         uint x_idx,
+                                         uint y_idx) const
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
   return _grid->get(lid)(x_idx, y_idx).vertical_blockage;
 }
 
-uint dbGCellGrid::getUpBlockage(dbTechLayer* layer,
-                                uint x_idx,
-                                uint y_idx) const
+uint8_t dbGCellGrid::getUpBlockage(dbTechLayer* layer,
+                                   uint x_idx,
+                                   uint y_idx) const
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
@@ -524,7 +549,7 @@ uint dbGCellGrid::getUpBlockage(dbTechLayer* layer,
 void dbGCellGrid::setHorizontalCapacity(dbTechLayer* layer,
                                         uint x_idx,
                                         uint y_idx,
-                                        uint capacity)
+                                        uint8_t capacity)
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
@@ -534,7 +559,7 @@ void dbGCellGrid::setHorizontalCapacity(dbTechLayer* layer,
 void dbGCellGrid::setVerticalCapacity(dbTechLayer* layer,
                                       uint x_idx,
                                       uint y_idx,
-                                      uint capacity)
+                                      uint8_t capacity)
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
@@ -544,7 +569,7 @@ void dbGCellGrid::setVerticalCapacity(dbTechLayer* layer,
 void dbGCellGrid::setUpCapacity(dbTechLayer* layer,
                                 uint x_idx,
                                 uint y_idx,
-                                uint capacity)
+                                uint8_t capacity)
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
@@ -555,7 +580,7 @@ void dbGCellGrid::setUpCapacity(dbTechLayer* layer,
 void dbGCellGrid::setHorizontalUsage(dbTechLayer* layer,
                                      uint x_idx,
                                      uint y_idx,
-                                     uint use)
+                                     uint8_t use)
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
@@ -565,7 +590,7 @@ void dbGCellGrid::setHorizontalUsage(dbTechLayer* layer,
 void dbGCellGrid::setVerticalUsage(dbTechLayer* layer,
                                    uint x_idx,
                                    uint y_idx,
-                                   uint use)
+                                   uint8_t use)
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
@@ -575,7 +600,7 @@ void dbGCellGrid::setVerticalUsage(dbTechLayer* layer,
 void dbGCellGrid::setUpUsage(dbTechLayer* layer,
                              uint x_idx,
                              uint y_idx,
-                             uint use)
+                             uint8_t use)
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
@@ -585,7 +610,7 @@ void dbGCellGrid::setUpUsage(dbTechLayer* layer,
 void dbGCellGrid::setHorizontalBlockage(dbTechLayer* layer,
                                         uint x_idx,
                                         uint y_idx,
-                                        uint blockage)
+                                        uint8_t blockage)
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
@@ -595,7 +620,7 @@ void dbGCellGrid::setHorizontalBlockage(dbTechLayer* layer,
 void dbGCellGrid::setVerticalBlockage(dbTechLayer* layer,
                                       uint x_idx,
                                       uint y_idx,
-                                      uint blockage)
+                                      uint8_t blockage)
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
@@ -605,7 +630,7 @@ void dbGCellGrid::setVerticalBlockage(dbTechLayer* layer,
 void dbGCellGrid::setUpBlockage(dbTechLayer* layer,
                                 uint x_idx,
                                 uint y_idx,
-                                uint blockage)
+                                uint8_t blockage)
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
@@ -616,9 +641,9 @@ void dbGCellGrid::setUpBlockage(dbTechLayer* layer,
 void dbGCellGrid::setCapacity(dbTechLayer* layer,
                               uint x_idx,
                               uint y_idx,
-                              uint horizontal,
-                              uint vertical,
-                              uint up)
+                              uint8_t horizontal,
+                              uint8_t vertical,
+                              uint8_t up)
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
@@ -631,9 +656,9 @@ void dbGCellGrid::setCapacity(dbTechLayer* layer,
 void dbGCellGrid::setUsage(dbTechLayer* layer,
                            uint x_idx,
                            uint y_idx,
-                           uint horizontal,
-                           uint vertical,
-                           uint up)
+                           uint8_t horizontal,
+                           uint8_t vertical,
+                           uint8_t up)
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
@@ -646,9 +671,9 @@ void dbGCellGrid::setUsage(dbTechLayer* layer,
 void dbGCellGrid::setBlockage(dbTechLayer* layer,
                               uint x_idx,
                               uint y_idx,
-                              uint horizontal,
-                              uint vertical,
-                              uint up)
+                              uint8_t horizontal,
+                              uint8_t vertical,
+                              uint8_t up)
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
@@ -661,9 +686,9 @@ void dbGCellGrid::setBlockage(dbTechLayer* layer,
 void dbGCellGrid::getCapacity(dbTechLayer* layer,
                               uint x_idx,
                               uint y_idx,
-                              uint& horizontal,
-                              uint& vertical,
-                              uint& up) const
+                              uint8_t& horizontal,
+                              uint8_t& vertical,
+                              uint8_t& up) const
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
@@ -676,9 +701,9 @@ void dbGCellGrid::getCapacity(dbTechLayer* layer,
 void dbGCellGrid::getUsage(dbTechLayer* layer,
                            uint x_idx,
                            uint y_idx,
-                           uint& horizontal,
-                           uint& vertical,
-                           uint& up) const
+                           uint8_t& horizontal,
+                           uint8_t& vertical,
+                           uint8_t& up) const
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
@@ -692,9 +717,9 @@ void dbGCellGrid::getUsage(dbTechLayer* layer,
 void dbGCellGrid::getBlockage(dbTechLayer* layer,
                               uint x_idx,
                               uint y_idx,
-                              uint& horizontal,
-                              uint& vertical,
-                              uint& up) const
+                              uint8_t& horizontal,
+                              uint8_t& vertical,
+                              uint8_t& up) const
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
