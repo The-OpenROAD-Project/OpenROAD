@@ -271,6 +271,67 @@ std::set<dbNet*> dbSta::findClkNets(const Clock* clk)
   return clk_nets;
 }
 
+std::string dbSta::getInstanceTypeText(
+    InstType type)
+{
+  switch (type) {
+    case BLOCK:
+      return "Macro";
+    case PAD:
+      return "Pad";
+    case PAD_INPUT:
+      return "Input pad";
+    case PAD_OUTPUT:
+      return "Output pad";
+    case PAD_INOUT:
+      return "Input/output pad";
+    case PAD_POWER:
+      return "Power pad";
+    case PAD_SPACER:
+      return "Pad spacer";
+    case PAD_AREAIO:
+      return "Area IO";
+    case ENDCAP:
+      return "Endcap";
+    case FILL:
+      return "Fill";
+    case TAPCELL:
+      return "Tapcell";
+    case BUMP:
+      return "Bump";
+    case COVER:
+      return "Cover";
+    case ANTENNA:
+      return "Antenna";
+    case TIE:
+      return "Tie";
+    case LEF_OTHER:
+      return "Other";
+    case STD_CELL:
+      return "Standard cell";
+    case STD_BUFINV:
+      return "Buffer/inverter";
+    case STD_BUFINV_CLK_TREE:
+      return "Clock buffer/inverter";
+    case STD_BUFINV_TIMING_REPAIR:
+      return "Buffer/inverter from timing repair";
+    case STD_CLOCK_GATE:
+      return "Clock gate";
+    case STD_LEVEL_SHIFT:
+      return "Level shifter";
+    case STD_SEQUENTIAL:
+      return "Sequential";
+    case STD_PHYSICAL:
+      return "Physical";
+    case STD_COMBINATIONAL:
+      return "Combinational";
+    case STD_OTHER:
+      return "Other";
+  }
+
+  return "Unknown";
+}
+
 dbSta::InstType dbSta::getInstanceType(odb::dbInst* inst)
 {
   odb::dbMaster* master = inst->getMaster();
@@ -378,25 +439,8 @@ std::map<dbSta::InstType, int> dbSta::countInstancesByType()
   auto insts = db_->getChip()->getBlock()->getInsts();
   std::map<InstType, int> inst_type_count;
 
-  inst_type_count[BLOCK] = 0;
-  inst_type_count[PAD] = 0;
-  inst_type_count[FILL] = 0;
-  inst_type_count[ANTENNA] = 0;
-  inst_type_count[STD_BUFINV_CLK_TREE] = 0;
-  inst_type_count[STD_BUFINV_TIMING_REPAIR] = 0;
-  inst_type_count[STD_OTHER] = 0;
-
   for (auto inst : insts) {
     InstType type = getInstanceType(inst);
-    if (type != BLOCK && type != FILL && type != ANTENNA
-        && type != STD_BUFINV_CLK_TREE && type != STD_BUFINV_TIMING_REPAIR) {
-      if (type >= PAD && type <= PAD_AREAIO) {
-        inst_type_count[PAD] = inst_type_count[PAD] + 1;
-      } else {
-        inst_type_count[STD_OTHER] = inst_type_count[STD_OTHER] + 1;
-      }
-      continue;
-    }
     inst_type_count[type] = inst_type_count[type] + 1;
   }
   return inst_type_count;
@@ -408,24 +452,7 @@ void dbSta::report_inst_count()
 
   logger_->report("Reporting Cells count:");
   for (auto [type, count] : instances_types) {
-    std::string type_name;
-
-    if (type == BLOCK) {
-      type_name = "Macro";
-    } else if (type == PAD) {
-      type_name = "Pad";
-    } else if (type == FILL) {
-      type_name = "Filler";
-    } else if (type == ANTENNA) {
-      type_name = "Antenna";
-    } else if (type == STD_BUFINV_CLK_TREE) {
-      type_name = "Buffer/Inverter from CTS";
-    } else if (type == STD_BUFINV_TIMING_REPAIR) {
-      type_name = "Buffer/Inverter from timing repair";
-    } else if (type == STD_OTHER) {
-      type_name = "Other";
-    }
-
+    std::string type_name = getInstanceTypeText(type);
     logger_->report("  {}: {}", type_name, count);
   }
 }

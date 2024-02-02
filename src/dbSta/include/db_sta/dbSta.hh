@@ -145,6 +145,7 @@ class dbSta : public Sta, public ord::OpenRoadObserver
 
   // Report Instances Type
   std::map<InstType, int> countInstancesByType();
+  std::string getInstanceTypeText(InstType type);
   InstType getInstanceType(odb::dbInst* inst);
   void report_inst_count();
 

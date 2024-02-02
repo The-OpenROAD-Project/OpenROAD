@@ -399,7 +399,7 @@ BrowserWidget::ModuleStats BrowserWidget::addInstanceItems(
     auto& leaf_parent = leaf_types[type];
     if (leaf_parent.item == nullptr) {
       leaf_parent.item
-          = make_leaf_item(inst_descriptor_->getInstanceTypeText(type));
+          = make_leaf_item(sta_->getInstanceTypeText(type));
     }
     const bool create_row = !check_instance_limits
                             || leaf_parent.stats.insts < max_visible_leafs_;

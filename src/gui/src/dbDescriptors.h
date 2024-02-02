@@ -115,8 +115,6 @@ class DbInstDescriptor : public Descriptor
 
   bool getAllObjects(SelectionSet& objects) const override;
 
-  std::string getInstanceTypeText(sta::dbSta::InstType type) const;
-
  private:
   void makeMasterOptions(odb::dbMaster* master,
                          std::vector<EditorOption>& options) const;

@@ -532,7 +532,7 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
   }
   props.push_back({"Master", gui->makeSelected(inst->getMaster())});
   props.push_back(
-      {"Description", getInstanceTypeText(sta_->getInstanceType(inst))});
+      {"Description", sta_->getInstanceTypeText(sta_->getInstanceType(inst))});
   props.push_back({"Placement status", placed.getString()});
   props.push_back({"Source type", inst->getSourceType().getString()});
   props.push_back({"Dont Touch", inst->isDoNotTouch()});
@@ -731,67 +731,6 @@ bool DbInstDescriptor::getAllObjects(SelectionSet& objects) const
     objects.insert(makeSelected(inst));
   }
   return true;
-}
-
-std::string DbInstDescriptor::getInstanceTypeText(
-    sta::dbSta::InstType type) const
-{
-  switch (type) {
-    case sta::dbSta::InstType::BLOCK:
-      return "Macro";
-    case sta::dbSta::InstType::PAD:
-      return "Pad";
-    case sta::dbSta::InstType::PAD_INPUT:
-      return "Input pad";
-    case sta::dbSta::InstType::PAD_OUTPUT:
-      return "Output pad";
-    case sta::dbSta::InstType::PAD_INOUT:
-      return "Input/output pad";
-    case sta::dbSta::InstType::PAD_POWER:
-      return "Power pad";
-    case sta::dbSta::InstType::PAD_SPACER:
-      return "Pad spacer";
-    case sta::dbSta::InstType::PAD_AREAIO:
-      return "Area IO";
-    case sta::dbSta::InstType::ENDCAP:
-      return "Endcap";
-    case sta::dbSta::InstType::FILL:
-      return "Fill";
-    case sta::dbSta::InstType::TAPCELL:
-      return "Tapcell";
-    case sta::dbSta::InstType::BUMP:
-      return "Bump";
-    case sta::dbSta::InstType::COVER:
-      return "Cover";
-    case sta::dbSta::InstType::ANTENNA:
-      return "Antenna";
-    case sta::dbSta::InstType::TIE:
-      return "Tie";
-    case sta::dbSta::InstType::LEF_OTHER:
-      return "Other";
-    case sta::dbSta::InstType::STD_CELL:
-      return "Standard cell";
-    case sta::dbSta::InstType::STD_BUFINV:
-      return "Buffer/inverter";
-    case sta::dbSta::InstType::STD_BUFINV_CLK_TREE:
-      return "Clock buffer/inverter";
-    case sta::dbSta::InstType::STD_BUFINV_TIMING_REPAIR:
-      return "Buffer/inverter from timing repair";
-    case sta::dbSta::InstType::STD_CLOCK_GATE:
-      return "Clock gate";
-    case sta::dbSta::InstType::STD_LEVEL_SHIFT:
-      return "Level shifter";
-    case sta::dbSta::InstType::STD_SEQUENTIAL:
-      return "Sequential";
-    case sta::dbSta::InstType::STD_PHYSICAL:
-      return "Physical";
-    case sta::dbSta::InstType::STD_COMBINATIONAL:
-      return "Combinational";
-    case sta::dbSta::InstType::STD_OTHER:
-      return "Other";
-  }
-
-  return "Unknown";
 }
 
 //////////////////////////////////////////////////
