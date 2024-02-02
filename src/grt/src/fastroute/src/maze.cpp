@@ -30,6 +30,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <omp.h>
+
 #include <algorithm>
 
 #include "DataType.h"
@@ -2454,36 +2456,26 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
 int FastRouteCore::getOverflow3D()
 {
   // get overflow
-  int overflow = 0;
   int H_overflow = 0;
   int V_overflow = 0;
-  int max_H_overflow = 0;
-  int max_V_overflow = 0;
 
   int total_usage = 0;
 
-  for (int k = 0; k < num_layers_; k++) {
-    for (int i = 0; i < y_grid_; i++) {
-      for (int j = 0; j < x_grid_ - 1; j++) {
-        total_usage += h_edges_3D_[k][i][j].usage;
-        overflow = h_edges_3D_[k][i][j].usage - h_edges_3D_[k][i][j].cap;
+  int kstep = y_grid_ * x_grid_;
+  int istep = x_grid_;
 
-        if (overflow > 0) {
-          H_overflow += overflow;
-          max_H_overflow = std::max(max_H_overflow, overflow);
-        }
-      }
-    }
-    for (int i = 0; i < y_grid_ - 1; i++) {
-      for (int j = 0; j < x_grid_; j++) {
-        total_usage += v_edges_3D_[k][i][j].usage;
-        overflow = v_edges_3D_[k][i][j].usage - v_edges_3D_[k][i][j].cap;
-        if (overflow > 0) {
-          V_overflow += overflow;
-          max_V_overflow = std::max(max_V_overflow, overflow);
-        }
-      }
-    }
+#pragma omp parallel for schedule(static) reduction(+ : H_overflow) \
+    reduction(+ : V_overflow) reduction(+ : total_usage)
+  for (int iter = 0; iter < num_layers_ * y_grid_ * x_grid_; iter++) {
+    int k = iter / kstep;
+    int i = (iter % kstep) / istep;
+    int j = (iter % kstep) % istep;
+    int overflow = h_edges_3D_[k][i][j].usage - h_edges_3D_[k][i][j].cap;
+    H_overflow += overflow > 0 ? overflow : 0;
+    overflow = v_edges_3D_[k][i][j].usage - v_edges_3D_[k][i][j].cap;
+    V_overflow += overflow > 0 ? overflow : 0;
+    total_usage += h_edges_3D_[k][i][j].usage;
+    total_usage += v_edges_3D_[k][i][j].usage;
   }
 
   total_overflow_ = H_overflow + V_overflow;
