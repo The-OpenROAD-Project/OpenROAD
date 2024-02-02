@@ -5234,6 +5234,8 @@ class dbSite : public dbObject
   {
     dbSite* site;
     dbOrientType orientation;
+    friend bool operator==(const OrientedSite& lhs, const OrientedSite& rhs);
+    friend bool operator!=(const OrientedSite& lhs, const OrientedSite& rhs);
   };
   using RowPattern = std::vector<OrientedSite>;
 
