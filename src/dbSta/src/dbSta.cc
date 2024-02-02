@@ -391,7 +391,7 @@ std::map<dbSta::InstType, int> dbSta::countInstancesByType()
     if (type != BLOCK && type != FILL && type != ANTENNA
         && type != STD_BUFINV_CLK_TREE && type != STD_BUFINV_TIMING_REPAIR) {
       if (type >= PAD && type <= PAD_AREAIO) {
-        inst_type_count[PAD] = inst_type_count[PAD];
+        inst_type_count[PAD] = inst_type_count[PAD] + 1;
       } else {
         inst_type_count[STD_OTHER] = inst_type_count[STD_OTHER] + 1;
       }
