@@ -680,6 +680,42 @@ BOOST_DATA_TEST_CASE(spacing_range,
     }
   }
 }
+
+// Check for a SPACING RANGE SAME/DIFF net violation.
+BOOST_DATA_TEST_CASE(spacing_range_same_diff_net,
+                     bdata::make({true, false}) ^ bdata::make({true, false}),
+                     samenet,
+                     legal)
+{
+  // Setup
+  makeSpacingRangeConstraint(2, 500, 0, 400);
+
+  frNet* n1 = makeNet("n1");
+  frNet* n2 = n1;
+  if (!samenet) {
+    n2 = makeNet("n2");
+  }
+
+  makePathseg(n1, 2, {0, 50}, {1000, 50});
+  makePathseg(n2, 2, {0, 200}, {1000, 200});
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  if (legal) {
+    BOOST_TEST(markers.size() == 0);
+  } else {
+    BOOST_TEST(markers.size() == 1);
+    auto& markers = worker.getMarkers();
+    BOOST_TEST(markers.size() == 1);
+    testMarker(markers[0].get(),
+               2,
+               frConstraintTypeEnum::frcSpacingRangeConstraint,
+               Rect(0, 100, 1000, 150));
+  }
+}
+
 // Check for a basic end-of-line (EOL) spacing violation.
 BOOST_DATA_TEST_CASE(eol_basic, (bdata::make({true, false})), lef58)
 {

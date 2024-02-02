@@ -842,8 +842,34 @@ void FlexGCWorker::Impl::checkMetalSpacingRange(gcRect* rect1, gcRect* rect2)
   if (rect1->isFixed() && rect2->isFixed()) {
     return;
   }
+  auto net1 = rect1->getNet();
+  auto net2 = rect2->getNet();
+  // diff net only check
+  if (net1 == net2) {
+    return;
+  }
+  auto width1 = rect1->width();
+  auto width2 = rect2->width();
+  // override width and spacing
+  if (rect1->getNet()->isBlockage()) {
+    if (USEMINSPACING_OBS) {
+      width1 = layer->getWidth();
+    }
+    if (rect1->getNet()->getDesignRuleWidth() != -1) {
+      width1 = rect1->getNet()->getDesignRuleWidth();
+    }
+  }
+  if (rect2->getNet()->isBlockage()) {
+    if (USEMINSPACING_OBS) {
+      width2 = layer->getWidth();
+    }
+    if (rect2->getNet()->getDesignRuleWidth() != -1) {
+      width2 = rect2->getNet()->getDesignRuleWidth();
+    }
+  }
+
   for (auto con : layer->getSpacingRangeConstraints()) {
-    if (!con->inRange(rect1->width()) || !con->inRange(rect2->width())) {
+    if (!con->inRange(width1) && !con->inRange(width2)) {
       continue;
     }
     auto minSpc = con->getMinSpacing();
@@ -854,8 +880,6 @@ void FlexGCWorker::Impl::checkMetalSpacingRange(gcRect* rect1, gcRect* rect2)
       continue;
     }
     // Make marker
-    auto net1 = rect1->getNet();
-    auto net2 = rect2->getNet();
     gtl::rectangle_data<frCoord> markerRect(*rect1);
     gtl::generalized_intersect(markerRect, *rect2);
     auto marker = std::make_unique<frMarker>();

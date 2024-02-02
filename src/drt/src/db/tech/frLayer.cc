@@ -131,43 +131,47 @@ frCoord frLayer::getMinSpacingValue(frCoord width1,
                                     frCoord prl,
                                     bool use_min_spacing)
 {
-  frCoord minSpc = 0;
+  frCoord rangeSpc = -1;
   if (hasSpacingRangeConstraints()) {
     for (auto con : getSpacingRangeConstraints()) {
-      if (con->inRange(width1) && con->inRange(width2)) {
-        minSpc = std::max(minSpc, con->getMinSpacing());
+      if (use_min_spacing) {
+        if (rangeSpc == -1) {
+          rangeSpc = con->getMinSpacing();
+        } else {
+          rangeSpc = std::min(rangeSpc, con->getMinSpacing());
+        }
+      } else if (con->inRange(width1) || con->inRange(width2)) {
+        rangeSpc = std::max(rangeSpc, con->getMinSpacing());
       }
     }
   }
+
   auto con = getMinSpacing();
   if (!con) {
-    return minSpc;
+    return std::max(rangeSpc, 0);
   }
-
+  frCoord minSpc = 0;
   if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
-    minSpc = std::max(minSpc,
-                      static_cast<frSpacingConstraint*>(con)->getMinSpacing());
+    minSpc = static_cast<frSpacingConstraint*>(con)->getMinSpacing();
   } else if (con->typeId()
              == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
     if (use_min_spacing) {
-      minSpc = std::max(
-          minSpc, static_cast<frSpacingTablePrlConstraint*>(con)->findMin());
+      minSpc = static_cast<frSpacingTablePrlConstraint*>(con)->findMin();
     } else {
-      minSpc = std::max(minSpc,
-                        static_cast<frSpacingTablePrlConstraint*>(con)->find(
-                            std::max(width1, width2), prl));
+      minSpc = static_cast<frSpacingTablePrlConstraint*>(con)->find(
+          std::max(width1, width2), prl);
     }
   } else if (con->typeId()
              == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
     if (use_min_spacing) {
-      minSpc = std::max(
-          minSpc, static_cast<frSpacingTableTwConstraint*>(con)->findMin());
+      minSpc = static_cast<frSpacingTableTwConstraint*>(con)->findMin();
     } else {
-      minSpc = std::max(minSpc,
-                        static_cast<frSpacingTableTwConstraint*>(con)->find(
-                            width1, width2, prl));
+      minSpc = static_cast<frSpacingTableTwConstraint*>(con)->find(
+          width1, width2, prl);
     }
   }
-
-  return minSpc;
+  if (use_min_spacing && rangeSpc != -1) {
+    return std::min(rangeSpc, minSpc);
+  }
+  return std::max(rangeSpc, minSpc);
 }
