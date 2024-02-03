@@ -53,6 +53,8 @@ Q_DECLARE_METATYPE(QStandardItem*);
 
 namespace gui {
 
+const int BrowserWidget::sort_role = Qt::UserRole + 2;
+
 struct BrowserWidget::ModuleStats
 {
   int64_t area = 0;
@@ -150,6 +152,7 @@ BrowserWidget::BrowserWidget(
                                      "Local Instances",
                                      "Local Macros",
                                      "Local Modules"});
+  model_->setSortRole(sort_role);
   view_->setModel(model_);
   view_->setContextMenuPolicy(Qt::CustomContextMenu);
 
@@ -508,6 +511,7 @@ BrowserWidget::ModuleStats BrowserWidget::addInstanceItem(odb::dbInst* inst,
     item->setEditable(false);
     item->setSelectable(true);
     item->setData(QVariant::fromValue(inst));
+    item->setData(inst->getConstName(), sort_role);
 
     makeRowItems(item, inst->getMaster()->getConstName(), stats, parent, true);
   }
@@ -530,6 +534,7 @@ BrowserWidget::ModuleStats BrowserWidget::addModuleItem(odb::dbModule* module,
   item->setEditable(false);
   item->setSelectable(true);
   item->setData(QVariant::fromValue(module));
+  item->setData(item_name, sort_role);
 
   item->setCheckable(true);
   auto& settings = modulesettings_.at(module);
@@ -572,30 +577,38 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
       = QString::number(disp_area, 'f', 3) + " " + units + "m\u00B2";  // m2
 
   auto makeDataItem
-      = [item](const QString& text, bool right_align = true) -> QStandardItem* {
+      = [item](const QString& text,
+               std::optional<int64_t> sort_value) -> QStandardItem* {
     QStandardItem* data_item = new QStandardItem(text);
     data_item->setEditable(false);
-    if (right_align) {
-      data_item->setData(Qt::AlignRight, Qt::TextAlignmentRole);
-    }
     data_item->setData(QVariant::fromValue(item));
+    if (sort_value) {
+      data_item->setData(qint64(sort_value.value()), sort_role);
+      data_item->setData(Qt::AlignRight, Qt::TextAlignmentRole);
+    } else {
+      data_item->setData(text, sort_role);
+    }
     return data_item;
   };
 
-  QStandardItem* master_item
-      = makeDataItem(QString::fromStdString(master), false);
+  QStandardItem* master_item = makeDataItem(QString::fromStdString(master), {});
 
-  QStandardItem* area = makeDataItem(text);
+  QStandardItem* area = makeDataItem(text, stats.area);
 
-  QStandardItem* local_insts = makeDataItem(QString::number(stats.hier_insts));
-  QStandardItem* insts = makeDataItem(QString::number(stats.insts));
+  QStandardItem* local_insts
+      = makeDataItem(QString::number(stats.hier_insts), stats.hier_insts);
+  QStandardItem* insts
+      = makeDataItem(QString::number(stats.insts), stats.insts);
 
   QStandardItem* local_macros
-      = makeDataItem(QString::number(stats.hier_macros));
-  QStandardItem* macros = makeDataItem(QString::number(stats.macros));
+      = makeDataItem(QString::number(stats.hier_macros), stats.hier_macros);
+  QStandardItem* macros
+      = makeDataItem(QString::number(stats.macros), stats.macros);
 
-  QStandardItem* modules = makeDataItem(QString::number(stats.hier_modules));
-  QStandardItem* local_modules = makeDataItem(QString::number(stats.modules));
+  QStandardItem* modules
+      = makeDataItem(QString::number(stats.hier_modules), stats.hier_modules);
+  QStandardItem* local_modules
+      = makeDataItem(QString::number(stats.modules), stats.modules);
 
   parent->appendRow({item,
                      master_item,

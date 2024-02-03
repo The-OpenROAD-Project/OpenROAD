@@ -149,6 +149,8 @@ class BrowserWidget : public QDockWidget,
 
   QMenu* menu_;
   Selected menu_item_;
+  static const int sort_role;
+
   std::set<odb::dbModule*> getChildren(odb::dbModule* parent);
   std::set<odb::dbModule*> getAllChildren(odb::dbModule* parent);
   SelectionSet getMenuItemChildren();
