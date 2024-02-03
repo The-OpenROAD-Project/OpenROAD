@@ -161,7 +161,7 @@ class BrowserWidget : public QDockWidget,
   std::map<odb::dbModule*, QStandardItem*> modulesmap_;
 
   struct ModuleStats;
-  
+
   ModuleStats populateModule(odb::dbModule* module, QStandardItem* parent);
 
   ModuleStats addInstanceItem(odb::dbInst* inst,
