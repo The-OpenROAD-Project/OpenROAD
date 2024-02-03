@@ -4,11 +4,12 @@ import sys
 # Test objective: To count the number of expected files in man2/man3
 
 # This script mimics the build process and checks expected output.
+NUM_CORES = os.cpu_count()
 path = os.path.realpath("md_roff_compat.py")
 docs_dir = os.path.dirname(os.path.dirname(os.path.dirname(path)))
 os.chdir(docs_dir)
 os.system("make clean -s && make preprocess -s")
-os.system("make all -j16 -s")
+os.system(f"make all -j{NUM_CORES} -s")
 
 # Check if the files in html1 == cat1, html2 == cat2, html3 = cat3
 for i in range(1, 4):

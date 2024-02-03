@@ -9,7 +9,6 @@ proc man { args } {
     keys {-manpath} flags {-no_query}
   
   set name [lindex $args 0]
-  set DEFAULT_MAN_PATH "/usr/local/share/man/cat"
 
   # check the default man path based on executable path
   set exec_output [info nameofexecutable]
@@ -19,6 +18,8 @@ proc man { args } {
     set executable_path [file normalize [file dirname [info nameofexecutable]]]
     set man_path [file normalize [file dirname [file dirname $executable_path]]]
     set DEFAULT_MAN_PATH [file join $man_path "docs" "cat"]
+  } else {
+    set DEFAULT_MAN_PATH "/usr/local/share/man/cat"
   }
 
   global MAN_PATH
