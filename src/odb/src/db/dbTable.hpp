@@ -622,6 +622,16 @@ void dbTable<T>::copy_page(uint page_id, dbTablePage* page)
 }
 
 template <class T>
+dbOStream& operator<<(dbOStream& stream, const NamedTable<T>& named_table)
+{
+  dbOStreamScope scope(
+      stream,
+      fmt::format("{}({})", named_table.name, named_table.table->size()));
+  stream << *named_table.table;
+  return stream;
+}
+
+template <class T>
 dbOStream& operator<<(dbOStream& stream, const dbTable<T>& table)
 {
   stream << table._page_mask;

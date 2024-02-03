@@ -6,7 +6,8 @@ read_verilog hybrid_rows.v
 link_design top
 set_debug_level IFP hybrid 1
 initialize_floorplan -die_area "0 0 1100 1100" \
-  -core_area "100 100 1000 1000" 
+  -core_area "100 100 1000 1000" \
+  -site HybridAG
 
 set def_file [make_result_file hybrid_rows.def]
 write_def $def_file
