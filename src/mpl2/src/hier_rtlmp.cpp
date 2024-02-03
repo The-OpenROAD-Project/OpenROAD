@@ -539,7 +539,10 @@ void HierRTLMP::runMultilevelAutoclustering()
 
   } else {
     multilevelAutocluster(root_cluster_);
-    breakMixedLeafCluster(root_cluster_);
+
+    std::vector<std::vector<Cluster*>> mixed_leaves;
+    fetchMixedLeaves(root_cluster_, mixed_leaves);
+    breakMixedLeaves(mixed_leaves);
 
     if (graphics_) {
       graphics_->finishedClustering(root_cluster_);
@@ -2211,207 +2214,124 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
   breakLargeFlatCluster(cluster_part_1);
 }
 
-// Break mixed leaf clusters into a standard-cell cluster and hard-macro
-// clusters.
-// Merge macros based on connection signatures and footprints.
-// Based on types of designs, we support two types of breaking up:
-// Suppose current cluster is A.
-//   1) Replace A by A1, A2, A3
-//   2) Type 2:  Create a subtree:
-//      A  ->        A
-//               |   |   |
-//               A1  A2  A3
-// Split macros and std cells in the leaf clusters. In the normal operation,
-// we call this function after creating the physical hierarchy.
-void HierRTLMP::breakMixedLeafCluster(Cluster* root_cluster)
+// Traverse the physical hierarchy tree in a DFS manner (post-order)
+void HierRTLMP::fetchMixedLeaves(
+    Cluster* parent,
+    std::vector<std::vector<Cluster*>>& mixed_leaves)
 {
-  if (root_cluster->getChildren().empty() || root_cluster->getNumMacro() == 0) {
+  if (parent->getChildren().empty() || parent->getNumMacro() == 0) {
     return;
   }
 
-  // Traverse the physical hierarchy tree in a DFS manner (post-order)
-  std::vector<Cluster*> leaf_clusters;
-  for (auto& child : root_cluster->getChildren()) {
+  std::vector<Cluster*> sister_mixed_leaves;
+
+  for (auto& child : parent->getChildren()) {
     setInstProperty(child);
     if (child->getNumMacro() > 0) {
       if (child->getChildren().empty()) {
-        leaf_clusters.push_back(child);
+        sister_mixed_leaves.push_back(child);
       } else {
-        breakMixedLeafCluster(child);
+        fetchMixedLeaves(child, mixed_leaves);
       }
     } else {
       child->setClusterType(StdCellCluster);
     }
   }
 
-  // after this step, the std cells and macros for leaf cluster has been
-  // seperated. We need to update the metrics of the design if necessary
-  // for each leaf clusters with macros, first group macros based on
-  // connection signatures and macro sizes
-  for (auto& cluster : leaf_clusters) {
-    // based on the type of current cluster,
-    Cluster* parent_cluster = cluster;  // std cell dominated cluster
-    // add a subtree if the cluster is macro dominated cluster
-    // based macro_dominated_cluster_threshold_ (defualt = 0.01)
-    if (cluster->getNumStdCell() * macro_dominated_cluster_threshold_
-        < cluster->getNumMacro()) {
-      parent_cluster = cluster->getParent();  // replacement
-    }
+  // We push the leaves after finishing searching the children so
+  // that each vector of clusters represents the children of one
+  // parent.
+  mixed_leaves.push_back(sister_mixed_leaves);
+}
 
-    // Map macros into the HardMacro objects
-    // and get all the HardMacros
-    mapMacroInCluster2HardMacro(cluster);
-    std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
+void HierRTLMP::breakMixedLeaves(
+    const std::vector<std::vector<Cluster*>>& mixed_leaves)
+{
+  for (const std::vector<Cluster*>& sister_mixed_leaves : mixed_leaves) {
+    if (!sister_mixed_leaves.empty()) {
+      Cluster* parent = sister_mixed_leaves.front()->getParent();
 
-    // create a cluster for each macro
-    std::vector<Cluster*> macro_clusters;
-    for (auto& hard_macro : hard_macros) {
-      std::string cluster_name = hard_macro->getName();
-      Cluster* macro_cluster = new Cluster(cluster_id_, cluster_name, logger_);
-      macro_cluster->addLeafMacro(hard_macro->getInst());
-      setInstProperty(macro_cluster);
-      setClusterMetrics(macro_cluster);
-      cluster_map_[cluster_id_++] = macro_cluster;
-      // modify the physical hierachy tree
-      macro_cluster->setParent(parent_cluster);
-      parent_cluster->addChild(macro_cluster);
-      macro_clusters.push_back(macro_cluster);
-    }
-
-    // classify macros based on size
-    std::vector<int> macro_size_class(hard_macros.size(), -1);
-    for (int i = 0; i < hard_macros.size(); i++) {
-      if (macro_size_class[i] == -1) {
-        for (int j = i + 1; j < hard_macros.size(); j++) {
-          if ((macro_size_class[j] == -1)
-              && ((*hard_macros[i]) == (*hard_macros[j]))) {
-            macro_size_class[j] = i;
-          }
-        }
+      for (Cluster* mixed_leaf : sister_mixed_leaves) {
+        breakMixedLeaf(mixed_leaf);
       }
-    }
 
-    for (int i = 0; i < hard_macros.size(); i++) {
-      macro_size_class[i]
-          = (macro_size_class[i] == -1) ? i : macro_size_class[i];
-    }
-
-    // classify macros based on connection signature
-    calculateConnection();
-    std::vector<int> macro_signature_class(hard_macros.size(), -1);
-    for (int i = 0; i < hard_macros.size(); i++) {
-      if (macro_signature_class[i] == -1) {
-        macro_signature_class[i] = i;
-        for (int j = i + 1; j < hard_macros.size(); j++) {
-          if (macro_signature_class[j] != -1) {
-            continue;
-          }
-          bool flag = macro_clusters[i]->isSameConnSignature(
-              *macro_clusters[j], signature_net_threshold_);
-          if (flag) {
-            macro_signature_class[j] = i;
-          }
-        }
-      }
-    }
-
-    // print the connnection signature
-    if (logger_->debugCheck(MPL, "multilevel_autoclustering", 2)) {
-      logger_->report("\nPrint Connection Signature\n");
-      for (auto& cluster : macro_clusters) {
-        logger_->report("Macro Signature: {}", cluster->getName());
-        for (auto& [cluster_id, weight] : cluster->getConnection()) {
-          logger_->report(
-              " {} {} ", cluster_map_[cluster_id]->getName(), weight);
-        }
-      }
-    }
-
-    // macros with the same size and the same connection signature
-    // belong to the same class
-    std::vector<int> macro_class(hard_macros.size(), -1);
-    for (int i = 0; i < hard_macros.size(); i++) {
-      if (macro_class[i] == -1) {
-        macro_class[i] = i;
-        for (int j = i + 1; j < hard_macros.size(); j++) {
-          if (macro_class[j] == -1 && macro_size_class[i] == macro_size_class[j]
-              && macro_signature_class[i] == macro_signature_class[j]) {
-            macro_class[j] = i;
-            debugPrint(logger_,
-                       MPL,
-                       "multilevel_autoclustering",
-                       1,
-                       "merge {} with {}",
-                       macro_clusters[i]->getName(),
-                       macro_clusters[j]->getName());
-            bool delete_flag = false;
-            macro_clusters[i]->mergeCluster(*macro_clusters[j], delete_flag);
-            if (delete_flag) {
-              // remove the merged macro cluster
-              cluster_map_.erase(macro_clusters[j]->getId());
-              delete macro_clusters[j];
-            }
-          }
-        }
-      }
-    }
-
-    // clear the hard macros in current leaf cluster
-    cluster->clearHardMacros();
-    // Restore the structure of physical hierarchical tree
-    // Thus the order of leaf clusters will not change the final
-    // macro grouping results (This is very important !!!
-    // Don't touch the next line SetInstProperty command!!!)
-    setInstProperty(cluster);
-
-    std::vector<int> virtual_conn_clusters;
-    // Never use SetInstProperty Command in following lines
-    // for above reason!!!
-    // based on different types of designs, we handle differently
-    // whether a replacement or a subtree
-    // Deal with the standard cell cluster
-    if (parent_cluster == cluster) {
-      // If we need a subtree , add standard cell cluster
-      std::string std_cell_cluster_name = cluster->getName();
-      Cluster* std_cell_cluster
-          = new Cluster(cluster_id_, std_cell_cluster_name, logger_);
-      std_cell_cluster->copyInstances(*cluster);
-      std_cell_cluster->clearLeafMacros();
-      std_cell_cluster->setClusterType(StdCellCluster);
-      setClusterMetrics(std_cell_cluster);
-      cluster_map_[cluster_id_++] = std_cell_cluster;
-      // modify the physical hierachy tree
-      std_cell_cluster->setParent(parent_cluster);
-      parent_cluster->addChild(std_cell_cluster);
-      virtual_conn_clusters.push_back(std_cell_cluster->getId());
-    } else {
-      // If we need add a replacement
-      cluster->clearLeafMacros();
-      cluster->setClusterType(StdCellCluster);
-      setClusterMetrics(cluster);
-      virtual_conn_clusters.push_back(cluster->getId());
-      // In this case, we do not to modify the physical hierarchy tree
-    }
-    // Deal with macro clusters
-    for (int i = 0; i < macro_class.size(); i++) {
-      if (macro_class[i] != i) {
-        continue;  // this macro cluster has been merged
-      }
-      macro_clusters[i]->setClusterType(HardMacroCluster);
-      setClusterMetrics(macro_clusters[i]);
-      virtual_conn_clusters.push_back(cluster->getId());
-    }
-
-    // add virtual connections
-    for (int i = 0; i < virtual_conn_clusters.size(); i++) {
-      for (int j = i + 1; j < virtual_conn_clusters.size(); j++) {
-        parent_cluster->addVirtualConnection(virtual_conn_clusters[i],
-                                             virtual_conn_clusters[j]);
-      }
+      setInstProperty(parent);
     }
   }
-  // Set the inst property back
-  setInstProperty(root_cluster);
+}
+
+// Break mixed leaf into standard-cell and hard-macro clusters.
+// Merge macros based on connection signature and footprint.
+// Based on types of designs, we support two types of breaking up:
+//   1) Replace cluster A by A1, A2, A3
+//   2) Create a subtree:
+//      A  ->        A
+//               |   |   |
+//               A1  A2  A3
+void HierRTLMP::breakMixedLeaf(Cluster* mixed_leaf)
+{
+  Cluster* parent = mixed_leaf;
+
+  // Split by replacement if macro dominated.
+  if (mixed_leaf->getNumStdCell() * macro_dominated_cluster_threshold_
+      < mixed_leaf->getNumMacro()) {
+    parent = mixed_leaf->getParent();
+  }
+
+  mapMacroInCluster2HardMacro(mixed_leaf);
+
+  std::vector<HardMacro*> hard_macros = mixed_leaf->getHardMacros();
+  std::vector<Cluster*> macro_clusters;
+
+  createOneClusterForEachMacro(parent, hard_macros, macro_clusters);
+
+  std::vector<int> size_class(hard_macros.size(), -1);
+  classifyMacrosBySize(hard_macros, size_class);
+
+  calculateConnection();
+
+  std::vector<int> signature_class(hard_macros.size(), -1);
+  classifyMacrosByConnSignature(macro_clusters, signature_class);
+
+  std::vector<int> macro_class(hard_macros.size(), -1);
+  // Use both size and connection signature classifications to group
+  // single-macro macro clusters into the same macro cluster.
+  groupSingleMacroClusters(
+      macro_clusters, size_class, signature_class, macro_class);
+
+  mixed_leaf->clearHardMacros();
+
+  // IMPORTANT: Restore the structure of physical hierarchical tree. Thus the
+  // order of leaf clusters will not change the final macro grouping results.
+  setInstProperty(mixed_leaf);
+
+  // Never use SetInstProperty in the following lines for the reason above!
+  std::vector<int> virtual_conn_clusters;
+
+  // Deal with the std cells
+  if (parent == mixed_leaf) {
+    addStdCellClusterToSubTree(parent, mixed_leaf, virtual_conn_clusters);
+  } else {
+    replaceByStdCellCluster(mixed_leaf, virtual_conn_clusters);
+  }
+
+  // Deal with the macros
+  for (int i = 0; i < macro_class.size(); i++) {
+    if (macro_class[i] != i) {
+      continue;  // this macro cluster has been merged
+    }
+    macro_clusters[i]->setClusterType(HardMacroCluster);
+    setClusterMetrics(macro_clusters[i]);
+    virtual_conn_clusters.push_back(mixed_leaf->getId());
+  }
+
+  // add virtual connections
+  for (int i = 0; i < virtual_conn_clusters.size(); i++) {
+    for (int j = i + 1; j < virtual_conn_clusters.size(); j++) {
+      parent->addVirtualConnection(virtual_conn_clusters[i],
+                                   virtual_conn_clusters[j]);
+    }
+  }
 }
 
 // Map all the macros into their HardMacro objects for all the clusters
@@ -2453,6 +2373,147 @@ void HierRTLMP::getHardMacros(odb::dbModule* module,
   for (odb::dbModInst* inst : module->getChildren()) {
     getHardMacros(inst->getMaster(), hard_macros);
   }
+}
+
+void HierRTLMP::createOneClusterForEachMacro(
+    Cluster* parent,
+    const std::vector<HardMacro*>& hard_macros,
+    std::vector<Cluster*>& macro_clusters)
+{
+  for (auto& hard_macro : hard_macros) {
+    std::string cluster_name = hard_macro->getName();
+    Cluster* single_macro_cluster
+        = new Cluster(cluster_id_, cluster_name, logger_);
+
+    single_macro_cluster->addLeafMacro(hard_macro->getInst());
+
+    setInstProperty(single_macro_cluster);
+    setClusterMetrics(single_macro_cluster);
+
+    cluster_map_[cluster_id_++] = single_macro_cluster;
+
+    // modify the physical hierachy tree
+    single_macro_cluster->setParent(parent);
+    parent->addChild(single_macro_cluster);
+    macro_clusters.push_back(single_macro_cluster);
+  }
+}
+
+void HierRTLMP::classifyMacrosBySize(const std::vector<HardMacro*>& hard_macros,
+                                     std::vector<int>& size_class)
+{
+  for (int i = 0; i < hard_macros.size(); i++) {
+    if (size_class[i] == -1) {
+      for (int j = i + 1; j < hard_macros.size(); j++) {
+        if ((size_class[j] == -1) && ((*hard_macros[i]) == (*hard_macros[j]))) {
+          size_class[j] = i;
+        }
+      }
+    }
+  }
+
+  for (int i = 0; i < hard_macros.size(); i++) {
+    size_class[i] = (size_class[i] == -1) ? i : size_class[i];
+  }
+}
+
+void HierRTLMP::classifyMacrosByConnSignature(
+    const std::vector<Cluster*>& macro_clusters,
+    std::vector<int>& signature_class)
+{
+  for (int i = 0; i < macro_clusters.size(); i++) {
+    if (signature_class[i] == -1) {
+      signature_class[i] = i;
+      for (int j = i + 1; j < macro_clusters.size(); j++) {
+        if (signature_class[j] != -1) {
+          continue;
+        }
+
+        if (macro_clusters[i]->isSameConnSignature(*macro_clusters[j],
+                                                   signature_net_threshold_)) {
+          signature_class[j] = i;
+        }
+      }
+    }
+  }
+
+  if (logger_->debugCheck(MPL, "multilevel_autoclustering", 2)) {
+    logger_->report("\nPrint Connection Signature\n");
+    for (auto& cluster : macro_clusters) {
+      logger_->report("Macro Signature: {}", cluster->getName());
+      for (auto& [cluster_id, weight] : cluster->getConnection()) {
+        logger_->report(" {} {} ", cluster_map_[cluster_id]->getName(), weight);
+      }
+    }
+  }
+}
+
+void HierRTLMP::groupSingleMacroClusters(
+    const std::vector<Cluster*>& macro_clusters,
+    const std::vector<int>& size_class,
+    const std::vector<int>& signature_class,
+    std::vector<int>& macro_class)
+{
+  for (int i = 0; i < macro_clusters.size(); i++) {
+    if (macro_class[i] == -1) {
+      macro_class[i] = i;
+      for (int j = i + 1; j < macro_clusters.size(); j++) {
+        if (macro_class[j] == -1 && size_class[i] == size_class[j]
+            && signature_class[i] == signature_class[j]) {
+          macro_class[j] = i;
+          debugPrint(logger_,
+                     MPL,
+                     "multilevel_autoclustering",
+                     1,
+                     "merge {} with {}",
+                     macro_clusters[i]->getName(),
+                     macro_clusters[j]->getName());
+          bool delete_merged = false;
+          macro_clusters[i]->mergeCluster(*macro_clusters[j], delete_merged);
+          if (delete_merged) {
+            // remove the merged macro cluster
+            cluster_map_.erase(macro_clusters[j]->getId());
+            delete macro_clusters[j];
+          }
+        }
+      }
+    }
+  }
+}
+
+void HierRTLMP::addStdCellClusterToSubTree(
+    Cluster* parent,
+    Cluster* mixed_leaf,
+    std::vector<int>& virtual_conn_clusters)
+{
+  std::string std_cell_cluster_name = mixed_leaf->getName();
+  Cluster* std_cell_cluster
+      = new Cluster(cluster_id_, std_cell_cluster_name, logger_);
+
+  std_cell_cluster->copyInstances(*mixed_leaf);
+  std_cell_cluster->clearLeafMacros();
+  std_cell_cluster->setClusterType(StdCellCluster);
+
+  setClusterMetrics(std_cell_cluster);
+
+  cluster_map_[cluster_id_++] = std_cell_cluster;
+
+  // modify the physical hierachy tree
+  std_cell_cluster->setParent(parent);
+  parent->addChild(std_cell_cluster);
+  virtual_conn_clusters.push_back(std_cell_cluster->getId());
+}
+
+// We don't modify the physical hierarchy when spliting by replacement
+void HierRTLMP::replaceByStdCellCluster(Cluster* mixed_leaf,
+                                        std::vector<int>& virtual_conn_clusters)
+{
+  mixed_leaf->clearLeafMacros();
+  mixed_leaf->setClusterType(StdCellCluster);
+
+  setClusterMetrics(mixed_leaf);
+
+  virtual_conn_clusters.push_back(mixed_leaf->getId());
 }
 
 // Print Physical Hierarchy tree in a DFS manner
@@ -6221,7 +6282,7 @@ void HierRTLMP::generateTemporaryStdCellsPlacement(Cluster* cluster)
 
 float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
 {
-  float wirelength = 0.0;
+  float wirelength = 0.0f;
 
   for (odb::dbITerm* iterm : macro->getITerms()) {
     if (iterm->getSigType() != odb::dbSigType::SIGNAL) {
@@ -6230,28 +6291,8 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
 
     odb::dbNet* net = iterm->getNet();
     if (net != nullptr) {
-      const float x1 = dbuToMicron(iterm->getBBox().xCenter(), dbu_);
-      const float y1 = dbuToMicron(iterm->getBBox().yCenter(), dbu_);
-
-      for (odb::dbITerm* net_iterm : net->getITerms()) {
-        if (net_iterm == iterm) {
-          continue;
-        }
-
-        if (net_iterm->getInst()->getPlacementStatus().isPlaced()) {
-          const float x2 = dbuToMicron(net_iterm->getBBox().xCenter(), dbu_);
-          const float y2 = dbuToMicron(net_iterm->getBBox().yCenter(), dbu_);
-
-          wirelength += (std::abs(x2 - x1) + std::abs(y2 - y1));
-        }
-      }
-
-      for (odb::dbBTerm* net_bterm : net->getBTerms()) {
-        const float x2 = dbuToMicron(net_bterm->getBBox().xCenter(), dbu_);
-        const float y2 = dbuToMicron(net_bterm->getBBox().yCenter(), dbu_);
-
-        wirelength += (std::abs(x2 - x1) + std::abs(y2 - y1));
-      }
+      const odb::Rect bbox = net->getTermBBox();
+      wirelength += dbuToMicron(bbox.dx() + bbox.dy(), dbu_);
     }
   }
 
@@ -6283,6 +6324,16 @@ void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip)
     flipRealMacro(inst, is_vertical_flip);
     inst->setLocation(macro_location.getX(), macro_location.getY());
     const float new_wirelength = calculateRealMacroWirelength(inst);
+
+    debugPrint(logger_,
+               MPL,
+               "flipping",
+               1,
+               "Inst {} flip {} orig_WL {} new_WL {}",
+               inst->getName(),
+               is_vertical_flip ? "V" : "H",
+               original_wirelength,
+               new_wirelength);
 
     if (new_wirelength > original_wirelength) {
       flipRealMacro(inst, is_vertical_flip);
@@ -6325,6 +6376,11 @@ void HierRTLMP::writeMacroPlacement(const std::string& file_name)
   if (file_name.empty()) {
     return;
   }
+
+  logger_->warn(MPL,
+                39,
+                "The flag -write_macro_placement is deprecated. Use the .tcl "
+                "command write_macro_placement instead.");
 
   std::ofstream out(file_name);
 

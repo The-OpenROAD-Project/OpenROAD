@@ -5,7 +5,7 @@ wirelengths. Pin placement also creates a metal shape for each pin using
 min-area rules.
 
 For designs with unplaced cells, the net wirelength is computed considering
-the center of the die area as the unplaced cells' position.
+the center of the die area as the unplaced cells position.
 
 ## Commands
 
@@ -22,11 +22,11 @@ the edges of the die boundary.
 
 ```tcl
 define_pin_shape_pattern 
-    -layer layer
-    -x_step x_step
-    -y_step y_step
-    -region {llx lly urx ury}
-    -size {width height}
+    [-layer layer]
+    [-x_step x_step]
+    [-y_step y_step]
+    [-region {llx lly urx ury} | *]
+    [-size {width height}]
     [-pin_keepout dist]
 ```
 
@@ -36,7 +36,7 @@ define_pin_shape_pattern
 | ----- | ----- |
 | `-layer` | The single top-most routing layer of the placement grid. |
 | `-x_step`, `-y_step` | The distance (in microns) between each valid position on the grid in the x- and y-directions, respectively. |
-| `-region` | The `{llx, lly, urx, ury}` region of the placement grid (in microns). |
+| `-region` | The `{llx, lly, urx, ury}` region of the placement grid (in microns). If the `*` is specified, the region will be the entire die area. |
 | `-size` | The width and height (in microns) of the pins assigned to this grid. The centers of the pins are placed on the grid positions. Pins may have half of their shapes outside the defined region. |
 | `-pin_keepout` | The boundary (in microns) around existing routing obstructions that the pins should avoid; this defaults to the `layer` minimum spacing. |
 
@@ -79,7 +79,7 @@ set_io_pin_constraint
 | ----- | ----- |
 | `-direction` | Pin direction (`input`, `output`, `inout`, or `feedthrough`). |
 | `-pin_names` | List of names. Only one of (`-direction`, `-pin_names`) should be used in a single call for the `set_io_pin_constraint` command. |
-| `-region` | Syntax is `-region edge:interval`. The `edge` values are (`top|bottom|left|right`). The `interval` can be the whole edge with the wildcard `*` value or a range of values. |
+| `-region` | Syntax is `-region edge:interval`. The `edge` values are (`top\|bottom\|left\|right`). The `interval` can be the whole edge with the wildcard `*` value or a range of values. |
 | `-mirrored_pins` | List of pins that sets pairs of pins that will be symmetrically placed in the vertical or the horizontal edges. The number of pins in this list **must be even**. For example, in `set_io_pin_constraint -mirrored_pins {pin1 pin2 pin3 pin4 pin5 pin6}`, the pins `pin1` and `pin2` will be placed symmetrically to each other. Same for `pin3` and `pin4`, and for `pin5` and `pin6`. |
 | `-group` | Flag places together on the die boundary the pin list defined in `-pin_names,` similar to the `-group_pins` option on the `place_pins` command. |
 | `-order` | Flag places the pins ordered in ascending x/y position and must be used only when `-group` is also used. |
@@ -205,7 +205,7 @@ place_pin
 | `-pin_name` | The name of a pin of the design. |
 | `-layer` | The routing layer where the pin is placed. |
 | `-location` | The center of the pin (in microns). |
-| `-pin_size` | Tthe width and height of the pin (in microns). |
+| `-pin_size` | The width and height of the pin (in microns). |
 | `-force_to_die_boundary` | When this flag is enabled, the pin will be snapped to the nearest routing track, next to the die boundary. |
 
 ### Place All Pins
@@ -286,23 +286,6 @@ If you are a developer, you might find these useful. More details can be found i
 | `add_pins_to_constraint` | Add pins to constrained region. |
 | `add_pins_to_top_layer` | Add pins to top layer. | 
 
-
-#### Configure Simulated Annealing Solver
-
-The `set_simulated_annealing` command defines the parameters of the Simulated Annealing
-solver.
-
-```
-set_simulated_annealing [-temperature temperature]
-                        [-max_iterations iters]
-                        [-perturb_per_iter perturbs]
-                        [-alpha alpha]
-```
-
-- The `-temperature` sets the initial temperature of the Simulated Annealing solver.
-- The `-max_iterations` sets the number of iterations performed by the Simulated Annealing solver.
-- The `-perturb_per_iter` sets the number of perturbations performed at each iteration.
-- The `-alpha` sets the reduction factor of the temperature at each iteration.
 
 ## Example scripts
 

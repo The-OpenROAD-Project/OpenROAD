@@ -66,9 +66,7 @@ class TimingWidget;
 class DRCWidget;
 class ClockWidget;
 class BrowserWidget;
-#ifdef ENABLE_CHARTS
 class ChartsWidget;
-#endif
 
 // This is the main window for the GUI.  Currently we use a single
 // instance of this class.
@@ -299,9 +297,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   DRCWidget* drc_viewer_;
   ClockWidget* clock_viewer_;
   BrowserWidget* hierarchy_widget_;
-#ifdef ENABLE_CHARTS
   ChartsWidget* charts_widget_;
-#endif
 
   FindObjectDialog* find_dialog_;
   GotoLocationDialog* goto_dialog_;

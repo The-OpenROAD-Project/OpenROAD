@@ -197,11 +197,10 @@ dbSite* dbRow::getSite()
   return (dbSite*) site;
 }
 
-void dbRow::getOrigin(int& x, int& y)
+Point dbRow::getOrigin()
 {
   _dbRow* row = (_dbRow*) this;
-  x = row->_x;
-  y = row->_y;
+  return {row->_x, row->_y};
 }
 
 dbOrientType dbRow::getOrient()
@@ -246,17 +245,16 @@ Rect dbRow::getBBox()
   transform.apply(r);
   int dx = (int) r.dx();
   int dy = (int) r.dy();
-  int x, y;
-  getOrigin(x, y);
+  Point origin = getOrigin();
 
   if (row->_flags._dir == dbRowDir::HORIZONTAL) {
-    int xMax = x + (row->_site_cnt - 1) * row->_spacing + dx;
-    int yMax = y + dy;
-    return Rect(x, y, xMax, yMax);
+    int xMax = origin.x() + (row->_site_cnt - 1) * row->_spacing + dx;
+    int yMax = origin.y() + dy;
+    return Rect(origin.x(), origin.y(), xMax, yMax);
   } else {
-    int xMax = x + dx;
-    int yMax = y + (row->_site_cnt - 1) * row->_spacing + dy;
-    return Rect(x, y, xMax, yMax);
+    int xMax = origin.x() + dx;
+    int yMax = origin.y() + (row->_site_cnt - 1) * row->_spacing + dy;
+    return Rect(origin.x(), origin.y(), xMax, yMax);
   }
 }
 
