@@ -1,13 +1,4 @@
 ----------
-check_antennas
-['-net', '-verbose']
-['-net', '-report_file', '-report_violating_nets', '-verbose']
-['-net', '-report_file', '-report_violating_nets', '-verbose']
-['-net', '-verbose']
-Help/Proc: False
-Help/Rdme: True
-Proc/Rdme: False
-----------
 density_fill
 Success.
 ----------
@@ -46,15 +37,6 @@ Success.
 ----------
 set_global_routing_region_adjustment
 Success.
-----------
-set_routing_layers
-['-clock', '-signal']
-['-clock', '-max', '-signal']
-['-clock', '-signal']
-['-clock', '-max', '-signal']
-Help/Proc: True
-Help/Rdme: False
-Proc/Rdme: False
 ----------
 set_macro_extension
 Success.
@@ -114,15 +96,7 @@ set_voltage_domain
 Success.
 ----------
 define_pdn_grid
-['-cells', '-default', '-existing', '-grid_over_boundary', '-grid_over_pg_pins', '-halo', '-instances', '-macro', '-name', '-obstructions', '-orient', '-pins', '-power_control', '-power_control_network', '-power_switch_cell', '-starts_with', '-voltage_domains']
-['-cells', '-existing', '-halo', '-instances', '-macro', '-name', '-obstructions', '-orient', '-pins', '-power_control', '-power_control_network', '-power_switch_cell', '-voltage_domains']
-['-cells', '-default', '-existing', '-grid_over_boundary', '-grid_over_pg_pins', '-halo', '-instances', '-macro', '-name', '-obstructions', '-orient', '-pins', '-power_control', '-power_control_network', '-power_switch_cell', '-starts_with', '-voltage_domains']
-['-cells', '-default', '-existing', '-grid_over_boundary', '-grid_over_pg_pins', '-halo', '-instances', '-macro', '-name', '-obstructions', '-orient', '-pins', '-power_control', '-power_control_network', '-power_switch_cell', '-starts_with', '-voltage_domain']
-['-cells', '-existing', '-halo', '-instances', '-macro', '-name', '-obstructions', '-orient', '-pins', '-power_control', '-power_control_network', '-power_switch_cell', '-voltage_domains']
-['-cells', '-default', '-existing', '-grid_over_boundary', '-grid_over_pg_pins', '-halo', '-instances', '-macro', '-name', '-obstructions', '-orient', '-pins', '-power_control', '-power_control_network', '-power_switch_cell', '-starts_with', '-voltage_domain']
-Help/Proc: False
-Help/Rdme: False
-Proc/Rdme: False
+Success.
 ----------
 define_power_switch_cell
 Success.
@@ -307,15 +281,6 @@ Success.
 assign_io_bump
 Success.
 ----------
-make_io_sites
-['-corner_site', '-horizontal_site', '-offset', '-ring_index', '-rotation_corner', '-rotation_horizontal', '-rotation_vertical', '-vertical_site']
-['-corner_site', '-horizontal_site', '-offset', '-ring_index', '-rotation', '-rotation_corner', '-rotation_horizontal', '-rotation_vertical', '-vertical_site']
-['-corner_site', '-horizontal_site', '-offset', '-ring_index', '-rotation', '-rotation_corner', '-rotation_horizontal', '-rotation_vertical', '-vertical_site']
-['-corner_site', '-horizontal_site', '-offset', '-ring_index', '-rotation_corner', '-rotation_horizontal', '-rotation_vertical', '-vertical_site']
-Help/Proc: False
-Help/Rdme: True
-Proc/Rdme: False
-----------
 remove_io_rows
 Success.
 ----------
@@ -463,4 +428,4 @@ Success.
 write_guides
 Success.
 ----------
-Succeeded: 142 out of 146 tests.
+Succeeded: 143 out of 143 tests.

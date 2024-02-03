@@ -117,13 +117,13 @@ proc set_global_routing_region_adjustment { args } {
   }
 }
 
-sta::define_cmd_args "set_routing_layers" { [-signal layers] \
-                                            [-clock layers] \
-}
+sta::define_cmd_args "set_routing_layers" { [-signal min-max] \
+                                            [-clock min-max] \
+};# checker off 
 
 proc set_routing_layers { args } {
   sta::parse_key_args "set_routing_layers" args \
-    keys {-signal -clock} flags {}
+    keys {-signal -clock} flags {};# checker off
 
   sta::check_argc_eq0 "set_routing_layers" $args
 

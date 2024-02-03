@@ -113,21 +113,21 @@ define_pdn_grid -name main_grid -existing
 ```tcl
 define_pdn_grid 
     [-name name] 
-    [-voltage_domain list_of_domain_names] 
-    [-pins list_of_pin_layers] 
-    [-starts_with POWER|GROUND] 
-    [-obstructions list_of_layers]
     [-macro]
+    [-existing]
+    [-voltage_domains list_of_domain_names] 
     [-grid_over_pg_pins|-grid_over_boundary]
     [-orient list_of_valid_orientations]
     [-instances list_of_instances]
     [-cells list_of_cells]
     [-default]
     [-halo list_of_halo_values]
+    [-pins list_of_pin_layers] 
+    [-starts_with POWER|GROUND] 
+    [-obstructions list_of_layers]
     [-power_switch_cell name]
     [-power_control signal_name]
     [-power_control_network STAR|DAISY]
-    [-existing]
 ```
 
 #### Options
@@ -135,7 +135,7 @@ define_pdn_grid
 | Switch Name | Description |
 | ----- | ----- |
 | `-name` | Defines a name to use when referring to this grid definition. |
-| `-voltage_domain` | Defines the name of the voltage domain for this grid (Default: Last domain created). |
+| `-voltage_domains` | Defines the name of the voltage domain for this grid (Default: Last domain created). |
 | `-pins` | Defines a list of layers which where the power straps will be promoted to block pins. |
 | `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: GROUND). |
 | `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations. |

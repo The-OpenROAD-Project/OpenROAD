@@ -1,6 +1,6 @@
 Tool Dir             Help count      Proc count      Readme count
-./src/ant            1               1               1
-Command counts match.
+./src/ant            0               0               1
+Command counts do not match.
 ./src/fin            1               1               1
 Command counts match.
 ./src/mpl            1               1               1
@@ -11,8 +11,8 @@ Command counts match.
 Command counts match.
 ./src/tap            5               5               5
 Command counts match.
-./src/grt            13              13              13
-Command counts match.
+./src/grt            12              12              13
+Command counts do not match.
 ./src/gui            7               7               7
 Command counts match.
 ./src/pdn            9               9               9
@@ -41,8 +41,8 @@ Command counts match.
 Command counts match.
 ./src/upf            8               8               8
 Command counts match.
-./src/pad            13              13              13
-Command counts match.
+./src/pad            12              12              13
+Command counts do not match.
 ./src/rcx            9               9               9
 Command counts match.
 ./src/rsz            16              16              16

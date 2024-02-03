@@ -186,8 +186,11 @@ sta::define_cmd_args "define_pdn_grid" {[-name <name>] \
 
 proc define_pdn_grid {args} {
   sta::parse_key_args "define_pdn_grid" args \
-    keys {-name -voltage_domains -orient -instances -cells -halo -pins -obstructions -power_switch_cell -power_control -power_control_network}\
-    flags {-macro -existing}
+    keys {-name -voltage_domains -orient -instances\
+     -cells -halo -pins -obstructions -power_switch_cell\
+     -power_control -power_control_network -starts_with}\
+    flags {-macro -existing -grid_over_pg_pins -grid_over_boundary\
+     -default}
   set is_macro 0
   set is_existing 0
     foreach arg $args {

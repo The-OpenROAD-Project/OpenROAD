@@ -30,12 +30,12 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 sta::define_cmd_args "check_antennas" { [-verbose]\
-                                          [-net net]}
+                                          [-net net]};# checker off
 
 proc check_antennas { args } {
   sta::parse_key_args "check_antennas" args \
     keys {-report_file -net} \
-    flags {-verbose -report_violating_nets}
+    flags {-verbose -report_violating_nets};# checker off
 
   sta::check_argc_eq0 "check_antennas" $args
 

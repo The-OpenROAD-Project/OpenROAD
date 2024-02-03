@@ -137,12 +137,12 @@ sta::define_cmd_args "make_io_sites" {-horizontal_site site \
                                       [-rotation_horizontal rotation] \
                                       [-rotation_vertical rotation] \
                                       [-rotation_corner rotation] \
-                                      [-ring_index index]}
+                                      [-ring_index index]}; # checker off 
 
 proc make_io_sites {args} {
   sta::parse_key_args "make_io_sites" args \
     keys {-horizontal_site -vertical_site -corner_site -offset -rotation -rotation_horizontal -rotation_vertical -rotation_corner -ring_index} \
-    flags {}
+    flags {}; # checker off 
 
   sta::check_argc_eq0 "make_io_sites" $args
   set index -1
