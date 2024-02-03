@@ -125,7 +125,9 @@ proc extract_parasitics { args } {
 
 sta::define_cmd_args "write_spef" { 
   [-net_id net_id]
-  [-nets nets] filename }
+  [-nets nets] 
+  [-coordinates]
+  filename }
 
 proc write_spef { args } {
   sta::parse_key_args "write_spef" args keys \
@@ -304,6 +306,7 @@ sta::define_cmd_args "write_rules" {
     [-dir dir]
     [-name name]
     [-pattern pattern]
+    [-db]
 }
 
 proc write_rules { args } {

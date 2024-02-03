@@ -84,6 +84,7 @@ in the database.
 write_spef
     [-net_id net_id]                
     [-nets nets]
+    [-coordinates]
     filename                     
 ```
 
@@ -93,6 +94,7 @@ write_spef
 | ----- | ----- |
 | `-net_id` | Output the parasitics info for specific net IDs. |
 | `-nets` | Net name. |
+| `coordinates` | Coordinates TBC. |
 | `filename` | Output filename. |
 
 ### Adjust RC
@@ -234,6 +236,7 @@ write_rules
   [-dir dir]
   [-name name]
   [-pattern pattern]
+  [-db]
 ```
 
 #### Options
@@ -244,6 +247,7 @@ write_rules
 | `-dir` | Output file directory. |
 | `-name` | Name of rule. |
 | `-pattern` | Flag to write the pattern to rulefile (0/1). | 
+| `-db` | DB tbc. |
 
 ## Example scripts
 

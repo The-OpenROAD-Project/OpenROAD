@@ -19,14 +19,21 @@ delay of routing wires.  Separate values can be specified for clock and data
 nets with the `-signal` and `-clock` flags. Without either `-signal` or
 `-clock` the resistance and capacitance for clocks and data nets are set.
 
+```
+# Either run 
+set_wire_rc -clock ... -signal ... -layer ...
+
+# Or
+set_wire_rc -resistance ... -capacitance ...
+```
+
 ```tcl
 set_wire_rc 
     [-clock] 
     [-signal]
+    [-data]
+    [-corner corner]
     [-layer layer_name]
-
-or 
-set_wire_rc
     [-resistance res]
     [-capacitance cap]
 ```
@@ -141,6 +148,7 @@ buffer_ports
     [-inputs] 
     [-outputs] 
     [-max_utilization util]
+    [-buffer_cell buf_cell]
 ```
 
 #### Options
@@ -197,6 +205,7 @@ of the tie high/low cell.
 ```tcl
 repair_tie_fanout 
     [-separation dist]
+    [-max_fanout fanout]
     [-verbose]
     lib_port
 ```
@@ -223,10 +232,16 @@ endpoints are repaired to reduced the total negative slack.
 repair_timing 
     [-setup]
     [-hold]
+    [-recover_power percent]
     [-setup_margin setup_margin]
     [-hold_margin hold_margin]
+    [-slack_margin slack_margin]
+    [-libraries libs]
     [-allow_setup_violations]
+    [-skip_pin_swap]
+    [-skip_gate_cloning]
     [-repair_tns tns_end_percent]
+    [-max_passes passes]
     [-max_utilization util]
     [-max_buffer_percent buffer_percent]
     [-verbose]

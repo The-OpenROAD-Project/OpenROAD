@@ -27,6 +27,7 @@ pdngen
     [-ripup]
     [-report_only]
     [-failed_via_report file]
+    [-verbose]
 ```
 
 #### Options
@@ -305,6 +306,9 @@ add_pdn_ring
     [-connect_to_pad_layers layers]
     [-starts_with POWER|GROUND]
     [-nets list_of_nets]
+    [-ground_pads pads]
+    [-power_pads pads]
+
 ```
 
 #### Options

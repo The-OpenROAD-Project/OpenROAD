@@ -982,7 +982,7 @@ proc evaluate_part_design_solution { args } {
 #--------------------------------------------------------------------
 
 sta::define_cmd_args "write_partition_verilog" { \
-  [-port_prefix prefix] [-module_suffix suffix] [file]
+  [-port_prefix prefix] [-module_suffix suffix] [-partitioning_id id] [file]
 }
 
 proc write_partition_verilog { args } {

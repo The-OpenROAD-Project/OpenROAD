@@ -126,7 +126,7 @@ a weak attempt to reduce the total half-perimeter wirelength (HPWL).
 optimize_mirroring
 ```
 
-### Useful Developer Commands
+## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/Opendp.cpp) or the [swig file](./src/Opendp.i).
 

@@ -218,7 +218,7 @@ proc report_cts { args } {
 namespace eval cts {
 proc clock_tree_synthesis_debug { args } {
   sta::parse_key_args "clock_tree_synthesis_debug" args \
-    keys {} flags {-plot}; # no docs
+    keys {} flags {-plot}; # checker off
 
   sta::check_argc_eq0 "clock_tree_synthesis_debug" $args
   cts::set_plot_option [info exists flags(-plot)]

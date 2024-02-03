@@ -203,8 +203,7 @@ sta::define_cmd_args "place_corners" {[-ring_index index] \
 
 proc place_corners {args} {
   sta::parse_key_args "place_corners" args \
-    keys {} \
-    flags {}
+    keys {-ring_index} flags {}
 
   sta::check_argc_eq1 "place_corners" $args
 
@@ -328,7 +327,7 @@ proc place_bondpad {args} {
 sta::define_cmd_args "place_io_terminals" {inst_terms}
 
 proc place_io_terminals {args} {
-  sta::parse_key_args "place_bondpad" args \
+  sta::parse_key_args "place_io_terminals" args \
     keys {} \
     flags {}
 
@@ -347,7 +346,7 @@ sta::define_hidden_cmd_args "make_fake_io_site" {-name name \
 proc make_fake_io_site {args} {
   sta::parse_key_args "make_fake_io_site" args \
     keys {-name -width -height} \
-    flags {};# no docs
+    flags {};# checker off 
 
   sta::check_argc_eq0 "make_fake_io_site" $args
 

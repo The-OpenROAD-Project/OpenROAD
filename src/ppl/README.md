@@ -181,6 +181,24 @@ set_simulated_annealing
 | `-perturb_per_iter` | The number of perturbations per iteration. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-alpha` | The temperature decay factor. The default value is `0.985`, and the allowed values are floats `(0, 1]`. |
 
+### Simulated Annealing Debug
+
+The `simulated_annealing_debug` command allows you to debug the simulated
+annealing pin placement with a pause mode.
+
+```tcl
+simulated_annealing_debug
+    [-iters_between_paintings iters]
+    [-no_pause_mode no_pause_mode]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |                                    
+| `-iters_between_paintings` | Determines the number of iterations between updates. |
+| `-no_pause_mode` | Print solver state every second based on `iters_between_paintings`. |
+                                    
 ### Place Pin
 
 The `place_pin` command places a specific pin in the specified location with the specified size.
@@ -196,6 +214,7 @@ place_pin
     -location {x y}
     [-pin_size {width height}]
     [-force_to_die_boundary]
+    [-placed_status]
 ```
 
 #### Options
@@ -273,7 +292,7 @@ write_pin_placement
 | ----- | ----- |
 | `file_name` | The name of the file with the pin placement. |
 
-### Useful Developer Commands
+## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/IOPlacer.cpp) or the [swig file](./src/IOPlacer.i).
 

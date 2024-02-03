@@ -19,6 +19,7 @@ This command executes the Hier-RTLMP algorithm for macro placement.
 rtl_macro_placer 
     [-halo_width halo_width]
     [-min_num_macro min_num_macro]
+    [-max_num_macro max_num_macro]
     [-max_num_inst max_num_inst]  
     [-min_num_inst min_num_inst] 
     [-tolerance tolerance]     
@@ -28,6 +29,7 @@ rtl_macro_placer
     [-large_net_threshold large_net_threshold]
     [-signature_net_threshold signature_net_threshold]
     [-halo_width halo_width] 
+    [-halo_height halo_height]
     [-fence_lx fence_lx] 
     [-fence_ly fence_ly]
     [-fence_ux fence_ux]
@@ -40,6 +42,7 @@ rtl_macro_placer
     [-boundary_weight boundary_weight]
     [-notch_weight notch_weight]
     [-macro_blockage_weight macro_blockage_weight]
+    [-pin_access_th pin_access_th]
     [-target_util target_util]
     [-target_dead_space target_dead_space]
     [-min_ar min_ar]

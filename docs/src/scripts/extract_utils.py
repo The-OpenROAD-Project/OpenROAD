@@ -81,15 +81,14 @@ def extract_help(text):
     help_pattern = re.compile(r'''
                 sta::define_cmd_args\s+
                 "(.*?)"\s*
-                (.*?)proc
+                (.*?)proc\s
                 ''',
                 re.VERBOSE | re.DOTALL)
 
     matches = re.findall(help_pattern, text)
     
     # remove nodocs (usually dev commands)
-    matches = [tup for tup in matches if ";#nodocs" not in tup[1].replace(" ","")]
-    #matches = [tup for tup in matches if not tup[2].replace(" ","") == ";#nodocs"]
+    matches = [tup for tup in matches if ";#checkeroff" not in tup[1].replace(" ","")]
     return matches
 
 def extract_proc(text):
@@ -99,14 +98,14 @@ def extract_proc(text):
                 args\s*
                 (.*?keys.*?})
                 (.*?flags.*?})
-                (\s*;\s*\#\s*no\s*docs)?
+                (\s*;\s*\#\s*checker\s*off)?
                 ''',
                 re.VERBOSE | re.DOTALL)
     
     matches = re.findall(proc_pattern, text)
 
     # remove nodocs (usually dev commands)
-    matches = [tup for tup in matches if not tup[3].replace(" ","") == ";#nodocs"]
+    matches = [tup for tup in matches if not tup[3].replace(" ","") == ";#checkeroff"]
     return matches
 
 def parse_switch(text):
@@ -118,6 +117,22 @@ def parse_switch(text):
     switch_description = text[second_pipe_index+1: last_pipe_index-1] 
     return switch_name, switch_description
 
+def clean_whitespaces(text):
+    tmp = text.strip().replace("\\", "").replace("\n", "")
+    return " ".join(tmp.split())
+
+def clean_parse_syntax(text):
+    tmp = text.replace("keys", "").replace("flags", "")\
+            .replace("{", "").replace("}", "")
+    return ' '.join([f'[{option}]' for option in tmp.split()])
+
+def check_function_signatures(text1, text2):
+    set1 = set(re.findall(r'-\w+', text1))
+    set2 = set(re.findall(r'-\w+', text2))
+    if set1 == set2: return True
+    print(sorted(list(set1)))
+    print(sorted(list(set2)))
+    return False
 
 if __name__ == "__main__":
     pass

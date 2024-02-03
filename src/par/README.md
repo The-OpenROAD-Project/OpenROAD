@@ -209,6 +209,7 @@ triton_part_hypergraph
     -num_parts num_parts  
     -balance_constraint balance_constraint 
     [-base_balance base_balance]
+    [-scale_factor scale_factor]
     [-seed seed] 
     [-vertex_dimension vertex_dimension] 
     [-hyperedge_dimension hyperedge_dimension] 
@@ -289,6 +290,7 @@ evaluate_hypergraph_solution
   -hypergraph_file hypergraph_file
   -solution_file solution_file
   [-base_balance base_balance]
+  [-scale_factor scale_factor]
   [-vertex_dimension vertex_dimension]
   [-hyperedge_dimension hyperedge_dimension]
   [-fixed_file fixed_file]
@@ -323,6 +325,7 @@ triton_part_design
     [-num_parts num_parts]
     [-balance_constraint balance_constraint]
     [-base_balance base_balance]
+    [-scale_factor scale_factor]
     [-seed seed]
     [-timing_aware_flag timing_aware_flag]
     [-top_n top_n]
@@ -422,6 +425,7 @@ evaluate_part_design_solution
     [-num_parts num_parts]
     [-balance_constraint balance_constraint]
     [-base_balance base_balance]
+    [-scale_factor scale_factor]
     [-timing_aware_flag timing_aware_flag]
     [-top_n top_n]
     [-fence_flag fence_flag]
@@ -482,6 +486,7 @@ This command writes the partition result to verilog.
 write_partition_verilog
     [-port_prefix prefix]
     [-module_suffix suffix]
+    [-partitioning_id id]
     [file]
 ```
 
@@ -491,6 +496,7 @@ write_partition_verilog
 | ----- | ----- |
 | `-port_prefix` | Port name prefix. |
 | `-module_suffix` | Module name suffix. |
+| `-partitioning_id` | TBC. |
 | `file` | Filename to write parition verilog to. |
 
 ### Read Partitioning

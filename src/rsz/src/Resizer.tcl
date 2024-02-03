@@ -124,7 +124,7 @@ proc set_layer_rc {args} {
   }
 }
 
-sta::define_cmd_args "set_wire_rc" {[-clock] [-signal]\
+sta::define_cmd_args "set_wire_rc" {[-clock] [-signal] [-data]\
                                       [-layer layer_name]\
                                       [-resistance res]\
                                       [-capacitance cap]\
@@ -285,7 +285,8 @@ proc set_dont_touch_cmd { cmd cmd_args dont_touch } {
 }
 
 sta::define_cmd_args "buffer_ports" {[-inputs] [-outputs]\
-                                       [-max_utilization util]}
+                                       [-max_utilization util]\
+                                       [-buffer_cell buf_cell]}
 
 proc buffer_ports { args } {
   sta::parse_key_args "buffer_ports" args \
@@ -359,12 +360,15 @@ proc repair_clock_nets { args } {
 sta::define_cmd_args "repair_clock_inverters" {}
 
 proc repair_clock_inverters { args } {
-  sta::parse_key_args "repair_clock_nets" args keys {} flags {}
+  sta::parse_key_args "repair_clock_inverters" args keys {} flags {}
   sta::check_argc_eq0 "repair_clock_inverters" $args
   rsz::repair_clk_inverters_cmd
 }
 
-sta::define_cmd_args "repair_tie_fanout" {lib_port [-separation dist] [-verbose]}
+sta::define_cmd_args "repair_tie_fanout" {lib_port\
+                                         [-separation dist]\
+                                         [-max_fanout fanout]\
+                                         [-verbose]}
 
 proc repair_tie_fanout { args } {
   sta::parse_key_args "repair_tie_fanout" args keys {-separation -max_fanout} \
@@ -395,13 +399,17 @@ proc repair_tie_fanout { args } {
 
 # -max_passes is for developer debugging so intentionally not documented
 # in define_cmd_args
-sta::define_cmd_args "repair_timing" {[-setup] [-hold] [-recover_power percent_of_paths_with_slack]\
+sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
+                                        [-recover_power percent_of_paths_with_slack]\
                                         [-setup_margin setup_margin]\
                                         [-hold_margin hold_margin]\
+                                        [-slack_margin slack_margin]\
+                                        [-libraries libs]\
                                         [-allow_setup_violations]\
                                         [-skip_pin_swap]\
-                                        [-skip_gate_cloning)]\
+                                        [-skip_gate_cloning]\
                                         [-repair_tns tns_end_percent]\
+                                        [-max_passes passes]\
                                         [-max_buffer_percent buffer_percent]\
                                         [-max_utilization util] \
                                         [-verbose]}
@@ -530,12 +538,12 @@ proc report_floating_nets { args } {
   utl::metric "timing__drv__floating__pins" $floating_pin_count
 }
 
-sta::define_cmd_args "report_long_wires" {count};# no docs
+sta::define_cmd_args "report_long_wires" {count};# checker off
 
 sta::proc_redirect report_long_wires {
   global sta_report_default_digits
 
-  sta::parse_key_args "report_long_wires" args keys {-digits} flags {};# no docs
+  sta::parse_key_args "report_long_wires" args keys {-digits} flags {};# checker off
 
   set digits $sta_report_default_digits
   if { [info exists keys(-digits)] } {

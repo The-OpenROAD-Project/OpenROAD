@@ -26,7 +26,9 @@ placement is similar to Figure 2.
 ```tcl
 tapcell 
     [-tapcell_master tapcell_master]
+    [-tap_prefix tap_prefix]
     [-endcap_master endcap_master]
+    [-endcap_prefix endcap_prefix]
     [-distance dist]
     [-halo_width_x halo_x]
     [-halo_width_y halo_y]
@@ -40,8 +42,9 @@ tapcell
     [-cnrcap_nwout_master cnrcap_nwout_master]
     [-incnrcap_nwin_master incnrcap_nwin_master]
     [-incnrcap_nwout_master incnrcap_nwout_master]
-    [-tap_prefix tap_prefix]
-    [-endcap_prefix endcap_prefix]
+    [-tbtie_cpp tbtie_cpp]
+    [-endcap_cpp endcap_cpp]
+    [-no_cell_at_top_bottom]
 ```
 
 #### Options

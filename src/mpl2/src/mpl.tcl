@@ -31,38 +31,38 @@
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ############################################################################
 
-sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
-                                          -min_num_macro  min_num_macro \
-                                          -max_num_inst   max_num_inst  \
-                                          -min_num_inst   min_num_inst  \
-                                          -tolerance      tolerance     \
-                                          -max_num_level  max_num_level \
-                                          -coarsening_ratio coarsening_ratio \
-                                          -num_bundled_ios  num_bundled_ios  \
-                                          -large_net_threshold large_net_threshold \
-                                          -signature_net_threshold signature_net_threshold \
-                                          -halo_width halo_width \
-                                          -halo_height halo_height \
-                                          -fence_lx   fence_lx \
-                                          -fence_ly   fence_ly \
-                                          -fence_ux   fence_ux \
-                                          -fence_uy   fence_uy \
-                                          -area_weight area_weight \
-                                          -outline_weight outline_weight \
-                                          -wirelength_weight wirelength_weight \
-                                          -guidance_weight guidance_weight \
-                                          -fence_weight fence_weight \
-                                          -boundary_weight boundary_weight \
-                                          -notch_weight notch_weight \
-                                          -macro_blockage_weight macro_blockage_weight \
-                                          -pin_access_th pin_access_th \
-                                          -target_util   target_util \
-                                          -target_dead_space target_dead_space \
-                                          -min_ar  min_ar \
-                                          -snap_layer snap_layer \
-                                          -bus_planning_flag bus_planning_flag \
-                                          -report_directory report_directory \
-                                          -write_macro_placement file_name \
+sta::define_cmd_args "rtl_macro_placer" { [-max_num_macro  max_num_macro] \
+                                          [-min_num_macro  min_num_macro] \
+                                          [-max_num_inst   max_num_inst] \
+                                          [-min_num_inst   min_num_inst]  \
+                                          [-tolerance      tolerance]     \
+                                          [-max_num_level  max_num_level] \
+                                          [-coarsening_ratio coarsening_ratio] \
+                                          [-num_bundled_ios  num_bundled_ios]  \
+                                          [-large_net_threshold large_net_threshold] \
+                                          [-signature_net_threshold signature_net_threshold] \
+                                          [-halo_width halo_width] \
+                                          [-halo_height halo_height] \
+                                          [-fence_lx   fence_lx] \
+                                          [-fence_ly   fence_ly] \
+                                          [-fence_ux   fence_ux] \
+                                          [-fence_uy   fence_uy] \
+                                          [-area_weight area_weight] \
+                                          [-outline_weight outline_weight] \
+                                          [-wirelength_weight wirelength_weight] \
+                                          [-guidance_weight guidance_weight] \
+                                          [-fence_weight fence_weight] \
+                                          [-boundary_weight boundary_weight] \
+                                          [-notch_weight notch_weight] \
+                                          [-macro_blockage_weight macro_blockage_weight] \
+                                          [-pin_access_th pin_access_th] \
+                                          [-target_util   target_util] \
+                                          [-target_dead_space target_dead_space] \
+                                          [-min_ar  min_ar] \
+                                          [-snap_layer snap_layer] \
+                                          [-bus_planning_flag bus_planning_flag] \
+                                          [-report_directory report_directory] \
+                                          [-write_macro_placement file_name] \
                                         }
 proc rtl_macro_placer { args } {
     sta::parse_key_args "rtl_macro_placer" args keys { 
@@ -266,7 +266,7 @@ sta::define_cmd_args "place_macro" {-macro_name macro_name \
 proc place_macro { args } {
   sta::parse_key_args "place_macro" args \
   keys {-macro_name -location -orientation} \
-  flag {}
+  flags {}
 
   if [info exists keys(-macro_name)] {
     set macro_name $keys(-macro_name)

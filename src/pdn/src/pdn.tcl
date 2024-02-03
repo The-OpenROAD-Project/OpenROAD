@@ -33,7 +33,8 @@ sta::define_cmd_args "pdngen" {[-skip_trim] \
                                [-reset] \
                                [-ripup] \
                                [-report_only] \
-                               [-failed_via_report file]
+                               [-failed_via_report file] \
+                               [-verbose]
 }
 
 proc pdngen { args } {
@@ -275,7 +276,7 @@ sta::define_cmd_args "add_pdn_stripe" {[-grid grid_name] \
                                        [-pitch pitch_value] \
                                        [-spacing spacing_value] \
                                        [-offset offset_value] \
-                                       [-starts_width (POWER|GROUND)]
+                                       [-starts_with (POWER|GROUND)]
                                        [-extend_to_boundary] \
                                        [-snap_to_grid] \
                                        [-number_of_straps count] \
@@ -399,7 +400,9 @@ sta::define_cmd_args "add_pdn_ring" {[-grid grid_name] \
                                      [-connect_to_pads] \
                                      [-connect_to_pad_layers layers] \
                                      [-starts_with (POWER|GROUND)] \
-                                     [-nets list_of_nets]}
+                                     [-nets list_of_nets] \
+                                     [-ground_pads pads]
+                                     [-power_pads pads]}
 
 proc add_pdn_ring {args} {
   sta::parse_key_args "add_pdn_ring" args \
@@ -789,7 +792,7 @@ sta::define_hidden_cmd_args  "convert_pdn_config" { config_file }
 proc convert_pdn_config { args } {
   sta::parse_key_args "convert_pdn_config" args \
     keys {} \
-    flags {};# no docs
+    flags {};# checker off
 
   sta::check_argc_eq1 "convert_pdn_config" $args
 
@@ -846,7 +849,7 @@ namespace eval pdn {
   proc define_pdn_grid { args } {
     sta::parse_key_args "define_pdn_grid" args \
       keys {-name -voltage_domains -pins -starts_with -obstructions -power_switch_cell -power_control -power_control_network} \
-      flags {};# no docs
+      flags {};# checker off
 
     sta::check_argc_eq0 "define_pdn_grid" $args
     pdn::check_design_state "define_pdn_grid"
@@ -918,9 +921,9 @@ namespace eval pdn {
   }
 
   proc define_pdn_grid_existing { args } {
-    sta::parse_key_args "define_pdn_grid" args \
+    sta::parse_key_args "define_pdn_grid_existing" args \
       keys {-name -obstructions} \
-      flags {-existing};#no docs
+      flags {-existing};# checker off
 
     sta::check_argc_eq0 "define_pdn_grid" $args
     pdn::check_design_state "define_pdn_grid"
@@ -939,9 +942,9 @@ namespace eval pdn {
   }
 
   proc define_pdn_grid_macro { args } {
-    sta::parse_key_args "define_pdn_grid" args \
+    sta::parse_key_args "define_pdn_grid_macro" args \
       keys {-name -voltage_domains -orient -instances -cells -halo -pin_direction -starts_with -obstructions} \
-      flags {-macro -grid_over_pg_pins -grid_over_boundary -default -bump};# no docs
+      flags {-macro -grid_over_pg_pins -grid_over_boundary -default -bump};# checker off
 
     sta::check_argc_eq0 "define_pdn_grid" $args
     pdn::check_design_state "define_pdn_grid"

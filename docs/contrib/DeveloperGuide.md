@@ -134,6 +134,13 @@ examples. Use swig to define internal functions to C++ functionality.
 Tcl files can be included by encoding them in CMake into a string that
 is evaluated at run time (See [`Resizer::init()`](../main/src/rsz/src/Resizer.cc)).
 
+:::{Note}
+Please refer to the top-level Tcl formatting [guide](TclFormat.md).
+Our top-level Tcl files, in particular, have to be formatted in this specific
+manner because of the automatic parsing used to convert the READMEs into
+manpages.
+:::
+
 ## Errors
 
 Tools should report errors to the user using the `ord::error` function
@@ -228,6 +235,13 @@ toolize [-key1 key1] [-flag1] positional_argument1
 Tool commands should be documented in the top-level OpenROAD `README.md`
 file. Detailed documentation should be the `tool/README.md` file.
 
+:::{Note}
+Please refer to the README formatting [guide](ReadmeFormat.md).
+Our top-level READMEs, in particular, have to be formatted in this specific
+manner because of the automatic parsing used to convert the READMEs into
+manpages. 
+:::
+
 ## Tool Flow Namespace
 
 Tool namespaces are usually three-lettered lowercase letters. 
@@ -285,6 +299,7 @@ dependencies make this vastly more complicated.
 1. `regression` script should only write files in a directory that is in the tool's `.gitignore` so the hierarchy does not have modified files in it as a result or running the regressions.
 1. Regressions report no memory errors with `valgrind` (stretch goal).
 1. Regressions report no memory leaks with `valgrind` (difficult).
+1. Ensure the top-level README and Tcl format are compliant. 
 
 ## Code Linting and Formatting
 OpenROAD uses both `clang-tidy` and `clang-format` to perform automatic linting and formatting whenever a pull request is submitted. To run these locally, please first setup Clang Tooling using this [guide](https://clang.llvm.org/docs/HowToSetupToolingForLLVM.html). Thereafter, you may run these commands:

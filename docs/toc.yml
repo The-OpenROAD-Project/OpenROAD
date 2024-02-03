@@ -95,6 +95,10 @@ entries:
     title: Logger
   - file: contrib/CI
     title: CI
+  - file: contrib/ReadmeFormat
+    title: README Format
+  - file: contrib/TclFormat
+    title: Tcl Format
 
 - file: main/CODE_OF_CONDUCT
   title: Code of Conduct   

@@ -30,12 +30,14 @@ Example: `restructure -liberty_file ckt.lib -target delay -tielo_pin ABC -tiehi_
 
 ```tcl
 restructure 
-    -liberty_file liberty_file
-    -target area|delay
-    -tielo_pin  tielo_pin_name
-    -tiehi_pin  tiehi_pin_name
-    -slack_threshold slack_val
-    -depth_threshold depth_threshold
+    [-slack_threshold slack_val]
+    [-depth_threshold depth_threshold]
+    [-target area|delay]
+    [-abc_logfile logfile]
+    [-liberty_file liberty_file]
+    [-tielo_port  tielo_pin_name]
+    [-tiehi_port tiehi_pin_name]
+    [-work_dir work_dir]
 ```
 
 #### Options
@@ -46,8 +48,10 @@ restructure
 | `-target` | Either `area` or `delay`. In area mode, the focus is area reduction, and timing may degrade. In delay mode, delay is likely reduced, but the area may increase. |
 | `-slack_threshold` | Specifies a (setup) timing slack value below which timing paths need to be analyzed for restructuring. |
 | `-depth_threshold` | Specifies the path depth above which a timing path would be considered for restructuring. |
-| `-tielo_pin` | Tie cell pin that can drive constant zero. The format is `lib/cell/pin`. |
-| `-tiehi_pin` | Tie cell pin that can drive constant one. The format is `lib/cell/pin`. |
+| `-tielo_port` | Tie cell pin that can drive constant zero. The format is `lib/cell/pin`. |
+| `-tiehi_port` | Tie cell pin that can drive constant one. The format is `lib/cell/pin`. |
+| `-abc_logfile` | Output file to save abc logs to. |
+| `-work_dir` | Work directory. |
 
 ## Example scripts
 

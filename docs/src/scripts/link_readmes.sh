@@ -14,7 +14,7 @@ for MODULE_PATH in "$SRC_BASE_PATH"/*; do
         # Check if README.md exists before copying
         if [ -e "$SRC_PATH" ]; then
             ln -s -f "$SRC_PATH" "$DEST_PATH"
-            echo "File linked from $SRC_PATH to $DEST_PATH"
+            echo "File linked successfully."
         else
             echo "ERROR: README.md not found in $MODULE_PATH"
         fi

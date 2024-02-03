@@ -160,7 +160,7 @@ set_ndr_rules
 Description TBC.
 
 ```tcl
-set_ndr_rules
+create_ndr
     -name name
     [-spacing val]
     [-width val]

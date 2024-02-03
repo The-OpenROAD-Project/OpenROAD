@@ -63,7 +63,8 @@ This command checks power grid.
 
 ```tcl
 check_power_grid 
-    -net net_name
+    [-net net_name]
+    [-error_file error_file]
 ```
 
 #### Options
@@ -71,6 +72,7 @@ check_power_grid
 | Switch Name | Description |
 | ----- | ----- |
 | `-net` | Name of the net to analyze. Must be a power or ground net name. |
+| `-error_file` | Name of the error file to save output to. |
 
 ### Write PG Spice
 

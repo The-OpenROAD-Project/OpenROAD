@@ -342,7 +342,7 @@ proc set_simulated_annealing { args } {
 
 sta::define_cmd_args "simulated_annealing_debug" {
   [-iters_between_paintings iters]
-  [-no_pause_mode no_pause_mode] # Print solver state every second based on iters_between_paintings
+  [-no_pause_mode no_pause_mode] 
 }
 
 proc simulated_annealing_debug { args } {
@@ -363,7 +363,8 @@ sta::define_cmd_args "place_pin" {[-pin_name pin_name]\
                                   [-layer layer]\
                                   [-location location]\
                                   [-pin_size pin_size]\
-                                  [-force_to_die_boundary]
+                                  [-force_to_die_boundary]\
+                                  [-placed_status]
 }
 
 proc place_pin { args } {
