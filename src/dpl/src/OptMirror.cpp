@@ -36,7 +36,9 @@
 #include <unordered_set>
 
 #include "dpl/Opendp.h"
+#include "dpl/OptMirror.h"
 #include "odb/dbTypes.h"
+#include "odb/util.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -71,11 +73,21 @@ void NetBox::restoreBox()
   box_ = box_saved_;
 }
 
+double OptimizeMirroring::dbuToMicrons(int64_t dbu) const
+{
+  double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
+  return dbu / dbu_micron;
+}
+
 ////////////////////////////////////////////////////////////////
 
-void Opendp::optimizeMirroring()
+OptimizeMirroring::OptimizeMirroring(Logger* logger, odb::dbDatabase* db)
+    : logger_(logger), db_(db), block_(db_->getChip()->getBlock())
 {
-  block_ = db_->getChip()->getBlock();
+}
+
+void OptimizeMirroring::run()
+{
   findNetBoxes();
 
   NetBoxes sorted_boxes;
@@ -91,12 +103,13 @@ void Opendp::optimizeMirroring()
        });
 
   vector<dbInst*> mirror_candidates = findMirrorCandidates(sorted_boxes);
-  int64_t hpwl_before = hpwl();
+  odb::WireLengthEvaluator eval(block_);
+  int64_t hpwl_before = eval.hpwl();
   int mirror_count = mirrorCandidates(mirror_candidates);
 
   if (mirror_count > 0) {
     logger_->info(DPL, 20, "Mirrored {} instances", mirror_count);
-    double hpwl_after = hpwl();
+    double hpwl_after = eval.hpwl();
     logger_->info(
         DPL, 21, "HPWL before          {:8.1f} u", dbuToMicrons(hpwl_before));
     logger_->info(
@@ -108,7 +121,7 @@ void Opendp::optimizeMirroring()
   }
 }
 
-void Opendp::findNetBoxes()
+void OptimizeMirroring::findNetBoxes()
 {
   net_box_map_.clear();
   auto nets = block_->getNets();
@@ -129,7 +142,7 @@ void Opendp::findNetBoxes()
   }
 }
 
-vector<dbInst*> Opendp::findMirrorCandidates(NetBoxes& net_boxes)
+vector<dbInst*> OptimizeMirroring::findMirrorCandidates(NetBoxes& net_boxes)
 {
   vector<dbInst*> mirror_candidates;
   unordered_set<dbInst*> existing;
@@ -162,7 +175,7 @@ vector<dbInst*> Opendp::findMirrorCandidates(NetBoxes& net_boxes)
   return mirror_candidates;
 }
 
-int Opendp::mirrorCandidates(vector<dbInst*>& mirror_candidates)
+int OptimizeMirroring::mirrorCandidates(vector<dbInst*>& mirror_candidates)
 {
   int mirror_count = 0;
   for (dbInst* inst : mirror_candidates) {
@@ -214,7 +227,7 @@ static dbOrientType orientMirrorY(const dbOrientType& orient)
   return dbOrientType::R0;
 }
 
-int64_t Opendp::hpwl(dbInst* inst)
+int64_t OptimizeMirroring::hpwl(dbInst* inst)
 {
   int64_t inst_hpwl = 0;
   for (dbITerm* iterm : inst->getITerms()) {
@@ -229,7 +242,7 @@ int64_t Opendp::hpwl(dbInst* inst)
   return inst_hpwl;
 }
 
-void Opendp::updateNetBoxes(dbInst* inst)
+void OptimizeMirroring::updateNetBoxes(dbInst* inst)
 {
   for (dbITerm* iterm : inst->getITerms()) {
     dbNet* net = iterm->getNet();
@@ -242,7 +255,7 @@ void Opendp::updateNetBoxes(dbInst* inst)
   }
 }
 
-void Opendp::saveNetBoxes(dbInst* inst)
+void OptimizeMirroring::saveNetBoxes(dbInst* inst)
 {
   for (dbITerm* iterm : inst->getITerms()) {
     dbNet* net = iterm->getNet();
@@ -252,7 +265,7 @@ void Opendp::saveNetBoxes(dbInst* inst)
   }
 }
 
-void Opendp::restoreNetBoxes(dbInst* inst)
+void OptimizeMirroring::restoreNetBoxes(dbInst* inst)
 {
   for (dbITerm* iterm : inst->getITerms()) {
     dbNet* net = iterm->getNet();

@@ -245,25 +245,6 @@ class GridInfo
   const dbSite::RowPattern sites_;
 };
 
-// For optimize mirroring.
-class NetBox
-{
- public:
-  NetBox() = default;
-  NetBox(dbNet* net, Rect box, bool ignore);
-  int64_t hpwl();
-  void saveBox();
-  void restoreBox();
-
-  dbNet* net_ = nullptr;
-  Rect box_;
-  Rect box_saved_;
-  bool ignore_ = false;
-};
-
-using NetBoxMap = unordered_map<dbNet*, NetBox>;
-using NetBoxes = vector<NetBox*>;
-
 ////////////////////////////////////////////////////////////////
 
 // Return value for grid searches.
@@ -325,7 +306,6 @@ class Opendp
                        const vector<Cell*>& placement_failures);
   void fillerPlacement(dbMasterSeq* filler_masters, const char* prefix);
   void removeFillers();
-  int64_t hpwl() const;
   void optimizeMirroring();
 
 
@@ -335,7 +315,6 @@ class Opendp
   void findDisplacementStats();
   Point pointOffMacro(const Cell& cell);
   void convertDbToCell(dbInst* db_inst, Cell& cell);
-  int64_t hpwl(dbNet* net) const;
   const vector<Cell>& getCells() const { return cells_; }
   Rect getCore() const { return core_; }
   int getRowHeight() const { return row_height_; }
@@ -552,16 +531,6 @@ class Opendp
                            int row_height,
                            GridInfo grid_info);
 
-  // Optimizing mirroring
-  void findNetBoxes();
-  vector<dbInst*> findMirrorCandidates(NetBoxes& net_boxes);
-  int mirrorCandidates(vector<dbInst*>& mirror_candidates);
-  // Sum of ITerm hpwl's.
-  int64_t hpwl(dbInst* inst);
-  void updateNetBoxes(dbInst* inst);
-  void saveNetBoxes(dbInst* inst);
-  void restoreNetBoxes(dbInst* inst);
-
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;
   dbBlock* block_ = nullptr;
@@ -614,9 +583,6 @@ class Opendp
   int64_t displacement_sum_ = 0;
   int64_t displacement_max_ = 0;
 
-  // Optimiize mirroring.
-  NetBoxMap net_box_map_;
-
   std::unique_ptr<DplObserver> debug_observer_;
 
   // Magic numbers
@@ -624,9 +590,6 @@ class Opendp
   static constexpr double group_refine_percent_ = .05;
   static constexpr double refine_percent_ = .02;
   static constexpr int rand_seed_ = 777;
-  // Net bounding box siaz on nets with more instance terminals
-  // than this are ignored.
-  static constexpr int mirror_max_iterm_count_ = 100;
 };
 
 int divRound(int dividend, int divisor);
