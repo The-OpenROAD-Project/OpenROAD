@@ -287,8 +287,6 @@ class Opendp
   Opendp(const Opendp&&) = delete;
   Opendp& operator=(const Opendp&&) = delete;
 
-  Point pointOffMacro(const Cell& cell);
-  void convertDbToCell(dbInst* db_inst, Cell& cell);
   void legalCellPos(dbInst* db_inst);
   void initMacrosAndGrid();
 
@@ -301,6 +299,7 @@ class Opendp
                          const std::string& report_file_name = std::string(""),
                          bool disallow_one_site_gaps = false);
   void reportLegalizationStats() const;
+
   void setPaddingGlobal(int left, int right);
   void setPadding(dbMaster* master, int left, int right);
   void setPadding(dbInst* inst, int left, int right);
@@ -312,10 +311,7 @@ class Opendp
   // Find instance/master/global padding value for an instance.
   int padRight(dbInst* inst) const;
   int padLeft(dbInst* inst) const;
-  // Return error count.
-  void processViolationsPtree(boost::property_tree::ptree& entry,
-                              const std::vector<Cell*>& failures,
-                              const std::string& violation_type = "") const;
+
   void checkPlacement(bool verbose,
                       bool disallow_one_site_gaps = false,
                       const string& report_file_name = "");
@@ -330,10 +326,16 @@ class Opendp
   void fillerPlacement(dbMasterSeq* filler_masters, const char* prefix);
   void removeFillers();
   int64_t hpwl() const;
-  int64_t hpwl(dbNet* net) const;
-  void findDisplacementStats();
   void optimizeMirroring();
 
+
+ private:
+  friend class OpendpTest_IsPlaced_Test;
+  friend class Graphics;
+  void findDisplacementStats();
+  Point pointOffMacro(const Cell& cell);
+  void convertDbToCell(dbInst* db_inst, Cell& cell);
+  int64_t hpwl(dbNet* net) const;
   const vector<Cell>& getCells() const { return cells_; }
   Rect getCore() const { return core_; }
   int getRowHeight() const { return row_height_; }
@@ -341,9 +343,10 @@ class Opendp
   int getSiteWidth() const { return site_width_; }
   int getRowCount() const { return row_count_; }
   int getRowSiteCount() const { return row_site_count_; }
-
- private:
-  friend class OpendpTest_IsPlaced_Test;
+  // Return error count.
+  void processViolationsPtree(boost::property_tree::ptree& entry,
+                              const std::vector<Cell*>& failures,
+                              const std::string& violation_type = "") const;
   void importDb();
   void importClear();
   Rect getBbox(dbInst* inst);
