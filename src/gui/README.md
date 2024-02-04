@@ -10,7 +10,7 @@ by opening it from the command-line with ``gui::show``.
 - Parameters without square brackets `-param2 param2` are required.
 ```
 
-### Create Toolbar Button
+### Add Buttons to the Toolbar
 
 This command creates toolbar button with name set using the
 `-text` flag and accompanying logic in the `-script` flag.
@@ -34,7 +34,7 @@ create_toolbar_button
 | `-script` | The tcl script to evaluate when the button is pressed. |
 | `-echo` | This indicate that the commands in the ``tcl_script`` should be echoed in the log. |
 
-### gui::Remove Toolbar Button
+### Remove Toolbar Button
 
 To remove toolbar button: 
 
@@ -49,7 +49,7 @@ gui::remove_toolbar_button
 | ---- | ---- |
 | `-name` | The name of the button, used when deleting the button. |
 
-### Create Menu Item
+### Add items to the Menubar
 
 This command add items to the menubar.
 Returns: name of the new item, either ``name`` or ``actionX``.
@@ -76,7 +76,7 @@ create_menu_item
 | `-shortcut`| (optional) key shortcut to trigger this item.|
 | `-echo` | (optional) indicate that the commands in the ``tcl_script`` should be echoed in the log. |
 
-### gui::Remove Menu Item
+### Remove items from the Menubar
 
 To remove menu item: 
 
@@ -139,7 +139,7 @@ save_clocktree_image
 |`-height`| height of the image in pixels, defaults to the height of the GUI widget. |
 |`-width`| width of the image in pixels, defaults to the width of the GUI widget. |
 
-### Select
+### Select Objects
 
 This command selects object based on options.
 Returns: number of objects selected.
@@ -162,7 +162,7 @@ select
 |`-filter`| (optional) filter selection based on the objects' properties. ``attribute`` represents the property's name and ``value`` the property's value. In case the property holds a collection (e. g. BTerms in a Net) or a table (e. g. Layers in a Generate Via Rule) ``value`` can be any element within those. A special case exists for checking whether a collection is empty or not by using the value ``CONNECTED``. This can be useful to select a specific group of elements (e. g. BTerms=CONNECTED will select only Nets connected to Input/Output Pins).|
 |`-highlight`| (optional) add the selection to the specific highlighting group. Values can be 0 to 7. |
 
-### Display Timing Cone
+### Display Timing Cones
 
 This command displays timing cones for a pin given options.
 
@@ -204,7 +204,7 @@ focus_net
 
 ## TCL functions
 
-### gui::Enabled
+### Is GUI Enabled
 
 Determine is the GUI is active:
 
@@ -212,7 +212,7 @@ Determine is the GUI is active:
 gui::enabled
 ```
 
-### gui::Design Created
+### Is Design Created
 
 Announce to the GUI that a design was loaded 
 (note: this is only needed when the design was loaded through the odb API and not via ``read_def`` or ``read_db``):
@@ -221,7 +221,7 @@ Announce to the GUI that a design was loaded
 gui::design_created
 ```
 
-### gui::Load DRC
+### Load DRC Result
 
 To load the results of a DRC report:
 
@@ -236,7 +236,7 @@ gui::load_drc
 | ---- | ---- |
 | `filename` | Filename for DRC report. |
 
-### gui::Show
+### Show GUI
 
 To open the GUI from the command-line (this command does not return until the GUI is closed):
 
@@ -253,7 +253,7 @@ gui::show
 | `script` | TCL script to evaluate in the GUI. |
 | `interactive` | Boolean if true, the GUI should open in an interactive session (default), or if false that the GUI would execute the script and return to the terminal.|
 
-### gui::Hide
+### Hide GUI
 
 To close the GUI and return to the command-line:
 
@@ -261,7 +261,7 @@ To close the GUI and return to the command-line:
 gui::hide
 ```
 
-### gui::Fit
+### Layout Fit
 
 To fit the whole layout in the window:
 
@@ -269,7 +269,7 @@ To fit the whole layout in the window:
 gui::fit
 ```
 
-### gui::Zoom To
+### Zoom to a specific region
 
 To zoom in our out to a specific region:
 
@@ -284,7 +284,7 @@ gui::zoom_to
 | ---- | ---- |
 | `x0, y0, x1, y1`| first and second corner of the layout area in microns.|
 
-### gui::Zoom In
+### Zoom In
 
 To zoom in the layout:
 
@@ -299,7 +299,7 @@ gui::zoom_in
 | ---- | ---- |
 | `x, y` | new center of layout in microns.|
 
-### gui::Zoom Out
+### Zoom Out
 
 To zoom out the layout:
 
@@ -314,7 +314,7 @@ gui::zoom_out
 | ---- | ---- |
 | `x, y` |  new center of layout in microns.|
 
-### gui::Center At
+### Center At
 
 To move the layout to new area:
 
@@ -329,7 +329,7 @@ gui::center_at
 | ---- | ---- |
 | `x, y` | new center of layout in microns.|
 
-### gui::Set Resolution
+### Set Resolution
 
 To change the resolution to a specific value:
 
@@ -344,7 +344,7 @@ gui::set_resolution
 | ---- | ---- |
 | `resolution` | database units per pixel. |
 
-### gui::Selection Add Net
+### Add a single net to selection
 
 To add a single net to the selected items:
 
@@ -359,7 +359,7 @@ gui::selection_add_net
 | ---- | ---- |
 | `name` | name of the net to add.|
 
-### gui::Selection Add Nets
+### Add multiple nets to selection
 
 To add several nets to the selected items using a regex:
 
@@ -374,7 +374,7 @@ gui::selection_add_nets
 | ---- | ---- |
 | `name_regex`| regular expression of the net names to add.| 
 
-### gui::Selection Add Inst
+### Add a single inst to selection
 
 To add a single instance to the selected items:
 
@@ -389,7 +389,7 @@ gui::selection_add_inst
 | ---- | ---- |
 | `name` | name of the instance to add. |
 
-### gui::Selection Add Insts
+### Add multiple insts to selection
 
 To add several instances to the selected items using a regex:
 
@@ -404,7 +404,7 @@ gui::selection_add_insts
 | ---- | ---- |
 | `name_regex` | regular expression of the instance names to add. |
 
-### gui::Select At 
+### Select at point or area
 
 To add items at a specific point or in an area:
 
@@ -436,7 +436,7 @@ gui::select_at
 | `x0, y0, x1, y1`| first and second corner of the layout area in microns. |
 | `append`| if ``true`` (the default value) append the new selections to the current selection list, else replace the selection list with the new selections. |
 
-### gui::Select Next
+### Select next item from selection
 
 To navigate through multiple selected items:
 Returns: current index of the selected item.
@@ -445,7 +445,7 @@ Returns: current index of the selected item.
 gui::select_next
 ```
 
-### gui::Select Previous
+### Select previous item from selection
 
 To navigate through multiple selected items:
 Returns: current index of the selected item.
@@ -454,7 +454,7 @@ Returns: current index of the selected item.
 gui::select_previous 
 ```
 
-### gui::Clear Selections
+### Clear Selection
 
 To clear the current set of selected items:
 
@@ -462,7 +462,7 @@ To clear the current set of selected items:
 gui::clear_selections
 ```
 
-### gui::Get Selection Property
+### Get Selection Property
 
 To get the properties for the current selection in the Inspector:
 
@@ -477,7 +477,7 @@ gui::get_selection_property
 | ---- | ---- |
 | `name` | name of the property. For example, ``Type`` for object type or ``bbox`` for the bounding box of the object. |
 
-### gui::Selection Animate
+### Animate Selection
 
 To animate the current selection in the Inspector:
 
@@ -492,7 +492,7 @@ gui::selection_animate
 | ---- | ---- |
 | `repeat` | indicate how many times the animation should repeat, default value is 0 repeats. If the value is 0, the animation will repeat indefinitely.|
 
-### gui::Highlight net
+### Highlight Net
 
 To highlight a net:
 
@@ -509,7 +509,7 @@ gui::highlight_net
 | `name` |  name of the net to highlight.|
 | `highlight_group` | group to add the highlighted net to, defaults to ``0``, valid groups are ``0 - 7``. |
 
-### gui::Highlight Inst
+### Highlight Instance
 
 To highlight an instance:
 
@@ -526,7 +526,7 @@ gui::highlight_inst
 | `name` | name of the instance to highlight. |
 | `highlight_group` | group to add the highlighted instance to, defaults to ``0``, valid groups are ``0 - 7``. |
 
-### gui::Clear Highlights
+### Clear Highlight Groups
 
 To clear the highlight groups:
 
@@ -541,7 +541,7 @@ gui::clear_highlights
 | ---- | ---- |
 | `highlight_group` | group to clear, defaults to ``0``, valid groups are ``-1 - 7``. Use ``-1`` to clear all groups. |
 
-### gui::Add Ruler
+### Add Ruler to Layout
 
 To add a ruler to the layout:
 
@@ -569,7 +569,7 @@ gui::add_ruler
 | `name` | name of the ruler. |
 | `euclidian` | ``1`` for euclidian ruler, and ``0`` for regular ruler. |
 
-### gui::Delete Ruler
+### Delete a single ruler
 
 To remove a single ruler:
 
@@ -584,7 +584,7 @@ gui::delete_ruler
 | ---- | ---- |
 | `name` | name of the ruler. |
 
-### gui::Clear Rulers
+### Clear All Rulers
 
 To remove all the rulers:
 
@@ -592,7 +592,7 @@ To remove all the rulers:
 gui::clear_rulers
 ```
 
-### gui::Set Heatmap
+### Set Heatmap
 
 To control the settings in the heat maps:
 
@@ -619,7 +619,7 @@ gui::set_heatmap
 | `option` | is the name of the option to modify. If option is ``rebuild`` the map will be destroyed and rebuilt. |
 | `value` | is the new value for the specified option. This is not used when rebuilding map. |
 
-### gui::Dump Heatmap Name
+### Dump Heatmap to file
 
 To save the raw data from the heat maps ins a comma separated value (CSV) format:
 
@@ -636,7 +636,7 @@ gui::dump_heatmap
 |`name` | is the name of the heatmap. |
 |`filename` | path to the file to write the data to. |
 
-### gui::Set Display Controls
+### Set Display Controls
 
 Control the visible and selected elements in the layout:
 
@@ -655,7 +655,7 @@ gui::set_display_controls
 | `display_type` | is either ``visible`` or ``selectable`` |
 | `value` |is either ``true`` or ``false`` |
 
-### gui::Check Display Controls
+### Check Display Controls
 
 To check the visibility or selectability of elements in the layout:
 
@@ -672,7 +672,7 @@ gui::check_display_controls
 | `name` | is the name of the control. For example, for the power nets option this would be ``Signals/Power`` or could be ``Layers/*`` to set the option for all the layers. |
 | `display_type` | is either ``visible`` or ``selectable`` |
 
-### gui::Save Display Controls
+### Save Display Controls
 
 When performing a batch operation changing the display controls settings, 
 the following command can be used to save the current state of the display controls.
@@ -681,7 +681,7 @@ the following command can be used to save the current state of the display contr
 gui::save_display_controls
 ```
 
-### gui::Restore Display Controls
+### Restore Display Controls
 
 This command restores display controls.
 
@@ -689,7 +689,7 @@ This command restores display controls.
 gui::restore_display_controls
 ```
 
-### gui::Input Dialog
+### Input Dialog
 
 To request user input via the GUI:
 Returns: a string with the input, or empty string if canceled.
@@ -707,7 +707,7 @@ gui::input_dialog
 | `title` | is the title of the input message box. |
 | `question` | is the text for the message box. |
 
-### gui::Pause
+### Pause script execution
 
 Pause the execution of the script:
 
@@ -722,7 +722,7 @@ gui::pause
 | ---- | ---- |
 | `timeout` | is specified in milliseconds, if it is not provided the pause will last until the user presses the Continue button.|
 
-### gui::Show widget
+### Show widget
 
 To open a specific layout widget:
 
@@ -737,7 +737,7 @@ gui::show_widget
 | ---- | ---- |
 | `name` | of the widget. For example, the display controls would be "Display Control". |
 
-### gui::Hide widget
+### Hide widget
 
 To close a specific layout widget:
 

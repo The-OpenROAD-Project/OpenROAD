@@ -33,7 +33,7 @@ place_io_terminals
 | ----- | ----- |
 | `inst_pins` | Instance pins to place the terminals on. |
 
-### Make IO Bump Array
+### Defining a Bump Array
 
 This command defines a bump array.
 
@@ -65,7 +65,7 @@ make_io_bump_array
 | `-prefix` | Name prefix for the bump array. The default value is `BUMP_`. |
 
 
-### Remove IO Bump Array
+### Remove Entire Bump Array
 
 This command removes the entire bump array.
 
@@ -86,7 +86,7 @@ remove_io_bump_array
 | ----- | ----- |
 | `-bump` | Name of the bump master. |
 
-### Remove IO Bump
+### Remove a single Bump Instance
 
 This command removes a single bump instance.
 
@@ -101,7 +101,7 @@ remove_io_bump
 | ----- | ----- |
 | `instance_name` | Name of the bump. |
 
-### Assign IO Bump
+### Assign a net to IO Bump
 
 This command assigns a net to a bump instance.
 
@@ -179,7 +179,7 @@ When the padring is complete, the following command can remove the IO rows to av
 remove_io_rows
 ```
 
-### Place Corners
+### Placing Corner Cells
 
 This command places the corner cells.
 
@@ -202,7 +202,7 @@ Example usage:
 place_corners sky130_fd_io__corner_bus_overlay
 ```
 
-### Place Pad
+### Placing Pads
 
 To place a pad into the pad ring.
 
@@ -235,7 +235,7 @@ place_pad
 | `name` | Name of the instance. |
 
 
-### Place IO Fill
+### Placing IO Filler Cells
 
 To place the IO filler cells.
 
@@ -263,7 +263,7 @@ place_io_fill
 | `-permit_overlaps` | Names of the masters for the IO filler cells that allow for overlapping. |
 | `masters` | Names of the masters for the IO filler cells. |
 
-### Connect By Abutment
+### Connecting Ring Signals
 
 Once the ring is complete, use the following command to connect the ring signals.
 
@@ -271,7 +271,7 @@ Once the ring is complete, use the following command to connect the ring signals
 connect_by_abutment
 ```
 
-### Place Bondpad
+### Place Wirebond Pads
 
 To place the wirebond pads over the IO cells.
 
@@ -328,9 +328,9 @@ make_fake_io_site
 | `-height` | Height of the site (in microns). |
 
 
-### RDL Route
+### Redistribution Layer Routing
 
-To route the RDL for the bump arrays.
+To route the Redistribution Layer (RDL) for the bump arrays.
 
 ```tcl
 rdl_route 

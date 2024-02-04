@@ -41,7 +41,7 @@ pdngen
 | `-report_only` | Print the current specifications. |
 | `-failed_via_report` | Generate a report file which can be viewed in the DRC viewer for all the failed vias (ie. those that did not get built or were removed). |
 
-### Set Voltage Domain
+### Define Voltage Domain
 
 Defines a named voltage domain with the names of the power and ground nets for a region.
 
@@ -76,7 +76,7 @@ set_voltage_domain
 | `-secondary_power` | Specifies the name of the secondary power net for this voltage domain. |
 | `-switched_power` | Specifies the name of the switched power net for switched power domains. |
 
-### Define PDN Grid
+### Define Power Grids
 
 ```{warning}
 `define_pdn_grid` is overloaded with two different signatures. Take note of the arguments when using this function!
@@ -153,7 +153,7 @@ define_pdn_grid
 | `-existing` | Flag to enable defining for existing routing solution. |
 
 
-### Define Power Switch Cell
+### Power Switch Cell insertion
 
 Define a power switch cell that will be inserted into a power grid 
 
@@ -184,7 +184,7 @@ define_power_switch_cell
 | `-ground` | Defines the name of the pin that connects to the ground net. |
 | `-acknowledge` | Defines the name of the output control signal of the power control switch if it has one. |
 
-### Add PDN Stripe
+### Add PDN Straps/Stripes
 
 Defines a pattern of power and ground stripes in a single layer to be added to a power grid.
 
@@ -374,7 +374,7 @@ add_pdn_connect
 | `-ongrid` | List of intermediate layers in a via stack to snap onto a routing grid. |
 | `-split_cuts` | Specifies layers to use split cuts on with an associated pitch, for example `{metal3 0.380 metal5 0.500}`. |
 
-### Repair PDN Vias
+### Repairing power grid vias after detailed routing
 
 To remove vias which generate DRC violations after detailed placement
 and routing use `repair_pdn_vias`.

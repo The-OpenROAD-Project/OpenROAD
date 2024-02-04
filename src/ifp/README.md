@@ -84,7 +84,7 @@ make_tracks
 | `-x_pitch`, `-y_pitch` | If set, overrides the LEF technology x-/y- pitch. Use the same unit as in the LEF file. |
 | `-x_offset`, `-y_offset` | If set, overrides the LEF technology x-/y- offset. Use the same unit as in the LEFT file. |
 
-### Insert tiecells
+### Insert tieoff cells
 
 This comamnd inserts tiecells.
 

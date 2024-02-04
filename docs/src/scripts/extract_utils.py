@@ -8,6 +8,12 @@ def extract_headers(text, level = 1):
     #if "Useful Developer Commands" in headers: headers.remove("Useful Developer Commands")
     return headers
 
+def extract_tcl_command(text):
+    # objective is to extract tcl command from the synopsis
+    pattern = r'```tcl\s*(.*?)\s'
+    headers = re.findall(pattern, text, flags=re.MULTILINE)
+    return headers
+
 def extract_description(text):
     # this is so that it always tries to match the longer headers first, to disambiguate
     sorted_headers = sorted(extract_headers(text,3), key=len, reverse=True)

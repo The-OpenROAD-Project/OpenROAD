@@ -98,7 +98,7 @@ Some arguments that are helpful for developers are listed here.
 | `-or_seed` | Random seed for the order of nets to reroute. The default value is `-1`, and the allowed values are integers `[0, MAX_INT]`. | 
 | `-or_k` | Number of swaps is given by $k * sizeof(rerouteNets)$. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 
-### Detailed Route Debug
+### Detailed Route Debugging
 
 The following command and arguments are useful when debugging error
 messages from `drt` and to understand its behavior.
@@ -142,7 +142,7 @@ detailed_route_debug
 | `-pa_commit` | Enable visibility of pin access commits. |
 | `-write_net_tracks` | Enable writing of net track assigments. |
 
-### Pin Access
+### Check Pin Access
 
 This function checks pin access.
 

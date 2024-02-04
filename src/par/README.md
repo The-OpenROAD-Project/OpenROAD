@@ -279,7 +279,7 @@ triton_part_hypergraph
 | `-num_vertices_threshold_ilp` | Describes threshold $t$, the number of vertices used for integer linear programming (ILP) partitioning. if $n_{vertices} > t$, do not use ILP-based partitioning.(default 50, integer). |
 | `-global_net_threshold` | If the net is larger than this, it will be ignored by TritonPart (default 1000, integer). |
 
-### Evaluate Hypergraph Partition
+### Evaluate Hypergraph Solution
 
 This command evaluates hypergraph partition. 
 

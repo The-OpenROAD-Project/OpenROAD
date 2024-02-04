@@ -1,13 +1,10 @@
 import os
 from manpage import ManPage
-from extract_utils import extract_headers, extract_description, extract_tcl_code, extract_arguments, extract_tables, parse_switch
+from extract_utils import extract_tcl_command, extract_description
+from extract_utils import extract_tcl_code, extract_arguments
+from extract_utils import extract_tables, parse_switch
 
-# also you need to change the ### FUNCTION_NAME parsing. Sometimes the 
-#    function name could be something weird like `diff_spef` or `pdngen`
-#    so it would be better to have a more informative header for the RTD docs. 
-# TODO: New function name parsing. Instead of parsing level3 header. 
-#       parse the func_name from the tcl itself. Then the level3 header can be used to
-#       be the description of the function. E.g. `func_name - Useful Function Description` in the roff.
+# Undocumented manpages.
 # sta: documentation is hosted elsewhere. (not currently in RTD also.)
 # odb: documentation is hosted on doxygen. 
 
@@ -15,6 +12,7 @@ tools = ["ant", "cts", "dbSta", "dft", "dpl", "dpo", "drt",\
         "dst", "fin", "gpl", "grt", "gui", "ifp", "mpl",\
         "mpl2", "odb", "pad", "par", "pdn", "ppl", "psm",\
         "rcx", "rmp", "rsz", "sta", "stt", "tap", "upf", "utl"]
+
 # Process man2 (except odb and sta)
 DEST_DIR2 = SRC_DIR = "./md/man2"
 exclude2 = ["odb", "sta"]
@@ -34,8 +32,8 @@ def man2(path=DEST_DIR2):
             continue
         text = open(doc).read()
 
-        # function names (and convert gui:: to gui_)
-        func_names = extract_headers(text, 3)
+        # new function names (reading tcl synopsis + convert gui:: to gui_)
+        func_names = extract_tcl_command(text)
         func_names = ["_".join(s.lower().split()) for s in func_names]
         func_names = [s.replace("::", "_") for s in func_names]
 

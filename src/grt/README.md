@@ -142,7 +142,7 @@ set_global_routing_region_adjustment
 | `-layer` | Integer for the layer number (e.g. for M1 you would use 1). |
 | `-adjustment` | Float indicating the percentage reduction of each edge in the specified layer. |
 
-### Set Global Routing Random
+### Set Global Routing Randomness
 
 The command randomizes global routing by shuffling the order of the nets
 and randomly subtracts or adds to the capacities of a random set of edges. 
@@ -167,7 +167,7 @@ set_global_routing_random
 | `-capacities_perturbation_percentage` | Sets the percentage of edges whose capacities are perturbed. By default, the edge capacities are perturbed by adding or subtracting 1 (track) from the original capacity.  |
 | `-perturbation_amount` | Sets the perturbation value of the edge capacities. This option is only meaningful when `-capacities_perturbation_percentage` is used. |
 
-### Set Nets to Route
+### Set Specific Nets to Route
 
 The `set_nets_to_route` command defines a list of nets to route. Only the nets
 defined in this command are routed, leaving the remaining nets without any
@@ -226,7 +226,7 @@ repair_antennas
 | `-ratio_margin` | Add a margin to the antenna ratios. The default value is `0`, and the allowed values are integers `[0, 100]`. |
 
 
-### Draw Route Guides
+### Plot Global Routing Guides
 
 The `draw_route_guides` command plots the route guides for a set of nets.
 To erase the route guides from the GUI, pass an empty list to this command:
@@ -245,7 +245,7 @@ draw_route_guides
 | `net_names` | Tcl list of set of nets (e.g. `{net1, net2}`). |
 | `-show_pin_locations` | Draw circles for the pin positions on the routing grid. |
 
-### Report Wire Length
+### Report Wirelength
 
 The `report_wire_length` command reports the wire length of the nets. Use the `-global_route`
 and the `-detailed_route` flags to report the wire length from global and detailed routing,
@@ -273,7 +273,7 @@ report_wire_length
 | `-detailed_route` | Report the wire length of the detailed routing. |
 | `-verbose` | This flag enables the full reporting of the layer-wise wirelength information. |
 
-### Global Route Debug
+### Global Route Debug Mode
 
 The `global_route_debug` command allows you to start a debug mode to view the status of the Steiner Trees.
 It also allows you to dump the input positions for the Steiner tree creation of a net.
@@ -301,7 +301,7 @@ global_route_debug
 | `-saveSttInput` | File name to save `stt` input of a net. |
 | `-net` | The name of the net name to be displayed. |
 
-### Read Guides
+### Read Global Routing Guides
 
 This command reads global routing guides. 
 

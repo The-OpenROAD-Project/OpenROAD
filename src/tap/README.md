@@ -9,7 +9,7 @@ Tapcell and endcap insertion.
 - Parameters without square brackets `-param2 param2` are required.
 ```
 
-### Tapcell
+### Add Tapcell/Endcap
 
 This command inserts tapcells or endcaps.
 
@@ -88,7 +88,7 @@ cut_rows
 | `-halo_width_x` | Horizontal halo size (in microns) around macros during cut rows. |
 | `-halo_width_y` | Vertical halo size (in microns) around macros during cut rows. |
 
-### Place Endcaps
+### Only adding boundary/endcap cells
 
 Place endcaps into the design, the naming for the arguments to `place_endcaps` is based on the 
 LEF58 `CLASS` specification foe endcaps.
@@ -138,7 +138,7 @@ place_endcaps
 | `-top_edge` | List of masters for the top row endcaps. (overrides `-endcap_horizontal`). |
 | `-bottom_edge` | List of masters for the bottom row endcaps. (overrides `-endcap_horizontal`). |
 
-### Place Tapcells
+### Only adding Tapcells
 
 This command is used for tapcell placement only.
 
@@ -156,7 +156,7 @@ place_tapcells
 | `-distance` | Distance between tapcells. |
 
 
-### Tapcell Ripup
+### Remove Tapcells/Endcaps
 
 This command is used for removing tapcells or endcaps based on their prefix.
 

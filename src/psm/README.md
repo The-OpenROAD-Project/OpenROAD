@@ -74,7 +74,7 @@ check_power_grid
 | `-net` | Name of the net to analyze. Must be a power or ground net name. |
 | `-error_file` | Name of the error file to save output to. |
 
-### Write PG Spice
+### Write Spice Power Grid
 
 This command writes the `spice` file for power grid.
 

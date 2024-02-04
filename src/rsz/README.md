@@ -99,7 +99,7 @@ estimate_parasitics
 | ----- | ----- |
 | `-placement` or `-global_routing` | Either of these flags must be set. Parasitics are estimated based after placement stage versus after global routing stage. |
 
-### Set Dont Use
+### Set Don't Use
 
 The `set_dont_use` command removes library cells from consideration by
 the `resizer` engine and the `CTS` engine. `lib_cells` is a list of cells returned by `get_lib_cells`
@@ -110,7 +110,7 @@ not use cells with names that begin with `DLY` in all libraries.
 set_dont_use lib_cells 
 ```
 
-### Unset Dont Use
+### Unset Don't Use
 
 The `unset_dont_use` command reverses the `set_dont_use` command.
 
@@ -118,7 +118,7 @@ The `unset_dont_use` command reverses the `set_dont_use` command.
 unset_dont_use lib_cells
 ```
 
-### Set Dont Touch
+### Set Don't Touch
 
 The `set_dont_touch` command prevents the resizer commands from
 modifying instances or nets.
@@ -127,7 +127,7 @@ modifying instances or nets.
 set_dont_touch instances_nets 
 ```
 
-### Unset Dont Touch
+### Unset Don't Touch
 
 The `unset_dont_touch` command reverse the `set_dont_touch` command.
 

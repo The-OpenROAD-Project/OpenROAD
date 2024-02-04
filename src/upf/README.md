@@ -85,7 +85,7 @@ create_power_switch
 | `-on_state` | One of {`state_name`, `input_supply_port`, `boolean_expression`}. |
 | `name` | Power switch name. |
 
-### Set Isolation 
+### Create or Update Isolation Strategy 
 
 This command creates or update isolation strategy.
 
@@ -114,7 +114,7 @@ set_isolation
 | `-update` | Only available if using existing strategy, will error if the strategy doesn't exist. |
 | `name` | Isolation strategy name. |
 
-### Use Interface cell
+### Set Interface cell
 
 This command sets the interface cell.
 
@@ -151,7 +151,7 @@ set_domain_area
 | `-area` | x-/y- coordinates in microns for the lower left and upper right corners of the power domain area. |
 
 
-### Map Power Switch
+### Map existing power switch
 
 This command maps existing power switch.
 

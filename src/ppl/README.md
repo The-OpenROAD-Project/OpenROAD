@@ -50,7 +50,7 @@ and
 [hybrid bonding](https://www.3dincites.com/2018/04/hybrid-bonding-from-concept-to-commercialization/)
 for high density face-to-face interconnect.
 
-### Set IO Pin Constraint
+### Set IO Pin Constraints
 
 The `set_io_pin_constraint` command sets region constraints for pins according
 to the pin direction or the pin name. This command can be called multiple
@@ -142,7 +142,7 @@ set_pin_length_extension
 | `-hor_extension` | The length (in microns) for the horizontal pins. |
 | `-ver_extension` | The length (in microns) for the vertical pins. |
 
-### Set Pin Thick Multiplier
+### Set Pin Thickness Multiplier
 
 The `set_pin_thick_multiplier` command defines a multiplier for the thickness of all
 vertical and horizontal pins.
@@ -160,7 +160,7 @@ set_pin_thick_multiplier
 | `-hor_multiplier` | The thickness multiplier for the horizontal pins. |
 | `-ver_multiplier` | The thickness multiplier for the vertical pins. |
 
-### Set Simulated Annealing Parameters
+### Set Simulated Annealing
 
 The `set_simulated_annealing` command defines the parameters for simulated annealing pin placement.
 
@@ -181,7 +181,7 @@ set_simulated_annealing
 | `-perturb_per_iter` | The number of perturbations per iteration. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-alpha` | The temperature decay factor. The default value is `0.985`, and the allowed values are floats `(0, 1]`. |
 
-### Simulated Annealing Debug
+### Simulated Annealing Debug Mode
 
 The `simulated_annealing_debug` command allows you to debug the simulated
 annealing pin placement with a pause mode.
@@ -199,7 +199,7 @@ simulated_annealing_debug
 | `-iters_between_paintings` | Determines the number of iterations between updates. |
 | `-no_pause_mode` | Print solver state every second based on `iters_between_paintings`. |
                                     
-### Place Pin
+### Place specific Pin
 
 The `place_pin` command places a specific pin in the specified location with the specified size.
 It is recommended that individual pins be placed before the `place_pins` command,
@@ -227,7 +227,7 @@ place_pin
 | `-pin_size` | Tthe width and height of the pin (in microns). |
 | `-force_to_die_boundary` | When this flag is enabled, the pin will be snapped to the nearest routing track, next to the die boundary. |
 
-### Place Pins
+### Place all Pins
 
 The `place_pins` command places all pins together. Use the following command to perform pin placement:
 
@@ -313,7 +313,7 @@ If you are a developer, you might find these useful. More details can be found i
 
 Example scripts of `ppl` running on a sample design of `gcd` as follows:
 
-```tcl
+```
 ./test/gcd.tcl
 ```
 
