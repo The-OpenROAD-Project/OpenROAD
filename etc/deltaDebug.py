@@ -1,7 +1,7 @@
 ################################
 # You need to provide the script with 3 main arguments
 # --base_db_path <the relative path to the db file to perform the step on>
-# --error_string <the output that indicates a target error has occurred>
+# --error_string <the output that indicates a target error has occured>
 # --step <Command used to perform a step on the base_db file>
 # You also have 1 additional argument
 # --persistence <a value in [1,6] indicating maximum granularity where maximum granularity = 2^persistence>
@@ -35,23 +35,46 @@ persistence_range = [1, 2, 3, 4, 5, 6]
 cut_multiple = range(1, 128)
 
 parser = argparse.ArgumentParser('Arguments for delta debugging')
-parser.add_argument('--base_db_path', type=str, help='Path to the db file to perform the step on')
-parser.add_argument('--error_string', type=str, help='The output that indicates target error has occurred')
-parser.add_argument('--step', type=str, help='Command used to perform step on the input odb file')
-parser.add_argument('--timeout', type=int, default=None,
-                    help='Specify initial timeout in seconds, default is to measure it')
-parser.add_argument('--multiplier', type=int, default=cut_multiple[0],
+parser.add_argument('--base_db_path',
+                    type=str,
+                    help='Path to the db file to perform the step on')
+parser.add_argument('--error_string',
+                    type=str,
+                    help='The output that indicates target error has occurred')
+parser.add_argument('--step',
+                    type=str,
+                    help='Command used to perform step on the input odb file')
+parser.add_argument(
+    '--timeout',
+    type=int,
+    default=None,
+    help='Specify initial timeout in seconds, default is to measure it')
+parser.add_argument('--multiplier',
+                    type=int,
+                    default=cut_multiple[0],
                     choices=cut_multiple,
                     help='Multiply number of cuts with this number')
-parser.add_argument('--persistence', type=int,
+parser.add_argument('--persistence',
+                    type=int,
                     default=persistence_range[0],
                     choices=persistence_range,
                     help='Indicates maximum input fragmentation; '
                     'fragments = 2^persistence; value in ' +
                     ', '.join(map(str, persistence_range)))
-parser.add_argument('--use_stdout', action='store_true', help='Enables reading the error string from standard output')
-parser.add_argument('--exit_early_on_error', action='store_true', help='Exit early on unrelated errors to speed things up, but risks exiting on false negatives.')
-parser.add_argument('--dump_def', action='store_true', help='Determines whether to dumb def at each step in addition to the odb')
+parser.add_argument(
+    '--use_stdout',
+    action='store_true',
+    help='Enables reading the error string from standard output')
+parser.add_argument(
+    '--exit_early_on_error',
+    action='store_true',
+    help=
+    'Exit early on unrelated errors to speed things up, but risks exiting on false negatives.'
+)
+parser.add_argument(
+    '--dump_def',
+    action='store_true',
+    help='Determines whether to dumb def at each step in addition to the odb')
 
 
 class cutLevel(enum.Enum):
@@ -60,6 +83,7 @@ class cutLevel(enum.Enum):
 
 
 class deltaDebugger:
+
     def __init__(self, opt):
         if not os.path.exists(opt.base_db_path):
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT),
@@ -81,13 +105,16 @@ class deltaDebugger:
         self.timeout = opt.timeout
 
         # Temporary file names to hold the original base_db file across the run
-        self.original_base_db_file = os.path.join(base_db_directory, f"deltaDebug_base_original_{base_db_name}")
+        self.original_base_db_file = os.path.join(
+            base_db_directory, f"deltaDebug_base_original_{base_db_name}")
 
         # Temporary file used to hold current base_db to ensure its integrity across cuts
-        self.temp_base_db_file = os.path.join(base_db_directory, f"deltaDebug_base_temp_{base_db_name}")
+        self.temp_base_db_file = os.path.join(
+            base_db_directory, f"deltaDebug_base_temp_{base_db_name}")
 
-        # The name of the result file after running deltaDebug 
-        self.deltaDebug_result_base_file = os.path.join(base_db_directory, f"deltaDebug_base_result_{base_db_name}")
+        # The name of the result file after running deltaDebug
+        self.deltaDebug_result_base_file = os.path.join(
+            base_db_directory, f"deltaDebug_base_result_{base_db_name}")
 
         # This determines whether design def shall be dumped or not
         self.dump_def = opt.dump_def
@@ -119,7 +146,9 @@ class deltaDebugger:
             self.timeout = 1e6  # Timeout in seconds
 
             # Perform a step with no cuts to measure timeout
-            print("Performing a step with the original input file to calculate timeout.")
+            print(
+                "Performing a step with the original input file to calculate timeout."
+            )
             if self.perform_step() is None:
                 print("No error found in the original input file.")
                 sys.exit(1)
@@ -128,7 +157,7 @@ class deltaDebugger:
             err = None
             self.n = 2  # Initial Number of cuts
 
-            while self.n <= (2 ** self.persistence):
+            while self.n <= (2**self.persistence):
                 error_in_range = None
                 for j in range(self.n * self.multiplier):
                     current_err = self.perform_step(cut_index=j)
@@ -193,7 +222,8 @@ class deltaDebugger:
         odb.write_db(self.base_db, self.base_db_file)
         if (self.dump_def != 0):
             print("Writing def file")
-            odb.write_def(self.base_db.getChip().getBlock(), self.base_def_file)
+            odb.write_def(self.base_db.getChip().getBlock(),
+                          self.base_def_file)
 
         # Destroy the DB in memory to avoid being out-of-memory when
         # the step code is running
@@ -309,7 +339,6 @@ class deltaDebugger:
         if (self.cut_level == cutLevel.Insts):  # Insts cut level
             elms = block.getInsts()
             message += ["Insts level debugging"]
-
         elif (self.cut_level == cutLevel.Nets):  # Nets cut level
             elms = block.getNets()
             message += ["Nets level debugging"]
