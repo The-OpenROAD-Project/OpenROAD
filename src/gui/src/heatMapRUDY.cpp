@@ -149,6 +149,10 @@ void RUDYDataSource::populateXYGrid()
   gCellGrid->getGridX(gcell_xgrid);
   gCellGrid->getGridY(gcell_ygrid);
 
+  const auto die_area = getBlock()->getDieArea();
+  gcell_xgrid.push_back(die_area.xMax());
+  gcell_ygrid.push_back(die_area.yMax());
+
   setXYMapGrid(gcell_xgrid, gcell_ygrid);
 }
 

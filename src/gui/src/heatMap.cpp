@@ -461,31 +461,39 @@ void HeatMapDataSource::populateXYGrid()
   const int x_grid = std::ceil(bounds.dx() / static_cast<double>(dx));
   const int y_grid = std::ceil(bounds.dy() / static_cast<double>(dy));
 
-  std::set<int> x_grid_set, y_grid_set;
+  std::vector<int> x_grid_set, y_grid_set;
   for (int x = 0; x < x_grid; x++) {
     const int xMin = bounds.xMin() + x * dx;
     const int xMax = std::min(xMin + dx, bounds.xMax());
-    x_grid_set.insert(xMin);
-    x_grid_set.insert(xMax);
+    if (x == 0) {
+      x_grid_set.push_back(xMin);
+    }
+    x_grid_set.push_back(xMax);
   }
   for (int y = 0; y < y_grid; y++) {
     const int yMin = bounds.yMin() + y * dy;
     const int yMax = std::min(yMin + dy, bounds.yMax());
-    y_grid_set.insert(yMin);
-    y_grid_set.insert(yMax);
+    if (y == 0) {
+      y_grid_set.push_back(yMin);
+    }
+    y_grid_set.push_back(yMax);
   }
 
-  map_x_grid_.clear();
-  map_x_grid_.insert(map_x_grid_.end(), x_grid_set.begin(), x_grid_set.end());
-  map_y_grid_.clear();
-  map_y_grid_.insert(map_y_grid_.end(), y_grid_set.begin(), y_grid_set.end());
+  setXYMapGrid(x_grid_set, y_grid_set);
 }
 
 void HeatMapDataSource::setXYMapGrid(const std::vector<int>& x_grid,
                                      const std::vector<int>& y_grid)
 {
-  map_x_grid_ = x_grid;
-  map_y_grid_ = y_grid;
+  // ensure sorted and uniqueness
+  const std::set<int> x_grid_set(x_grid.begin(), x_grid.end());
+  const std::set<int> y_grid_set(y_grid.begin(), y_grid.end());
+
+  map_x_grid_.clear();
+  map_y_grid_.clear();
+
+  map_x_grid_.insert(map_x_grid_.end(), x_grid_set.begin(), x_grid_set.end());
+  map_y_grid_.insert(map_y_grid_.end(), y_grid_set.begin(), y_grid_set.end());
 }
 
 void HeatMapDataSource::destroyMap()
