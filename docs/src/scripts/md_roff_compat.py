@@ -52,6 +52,8 @@ def man2(path=DEST_DIR2):
         Syn: {len(func_synopsis)},\
         Options: {len(func_options)},\
         Args: {len(func_args)}''')
+        assert len(func_names) == len(func_descs) == len(func_synopsis) == len(func_options) == len(func_args),\
+            "Counts for all 5 categories must match up."
 
         for func_id in range(len(func_synopsis)):
             manpage = ManPage()
