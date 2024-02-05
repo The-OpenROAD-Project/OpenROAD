@@ -457,7 +457,7 @@ void SimulatedAnnealingCore<T>::packFloorplan()
 template <class T>
 void SimulatedAnnealingCore<T>::singleSeqSwap(bool pos)
 {
-  if (macros_.size() <= 1) {
+  if (pos_seq_.size() <= 1) {
     return;
   }
 
@@ -475,7 +475,7 @@ void SimulatedAnnealingCore<T>::singleSeqSwap(bool pos)
 template <class T>
 void SimulatedAnnealingCore<T>::doubleSeqSwap()
 {
-  if (macros_.size() <= 1) {
+  if (pos_seq_.size() <= 1) {
     return;
   }
 
@@ -490,7 +490,7 @@ void SimulatedAnnealingCore<T>::doubleSeqSwap()
 template <class T>
 void SimulatedAnnealingCore<T>::exchangeMacros()
 {
-  if (macros_.size() <= 1) {
+  if (pos_seq_.size() <= 1) {
     return;
   }
 
