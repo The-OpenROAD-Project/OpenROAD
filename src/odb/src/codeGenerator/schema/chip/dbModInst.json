@@ -42,14 +42,15 @@
 	    "parent":"dbBlock"
 	},
 	{
-      	    "name":"_pin_vec",
-	    "type":"std::vector<dbId<dbModITerm > >",
-	    "flags": [
-		"no-set",
-		"no-get",	      
-		"no-template"
-	    ]
+      	    "name":"_moditerms",
+	    "type":"dbId<_dbModITerm >",
+	    "flags":["no-get","no-set"],	    
+	    "parent":"dbBlock"
 	}
     ],
-    "cpp_includes":["dbBlock.h","dbModule.h","dbHashTable.hpp", "dbModITerm.h"]
+    "cpp_includes":["dbBlock.h","dbModule.h","dbHashTable.hpp", "dbModITerm.h"],
+    "h_includes": [
+	"dbVector.h",
+	"dbSet.h"
+    ]
 }

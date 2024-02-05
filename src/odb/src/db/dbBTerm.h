@@ -84,6 +84,8 @@ class _dbBTerm : public _dbObject
   dbId<_dbModNet> _mnet;
   dbId<_dbBTerm> _next_bterm;
   dbId<_dbBTerm> _prev_bterm;
+  dbId<_dbBTerm> _next_modnet_bterm;
+  dbId<_dbBTerm> _prev_modnet_bterm;
   dbId<_dbBlock> _parent_block;  // Up hierarchy: TWG
   dbId<_dbITerm> _parent_iterm;  // Up hierarchy: TWG
   dbId<_dbBPin> _bpins;          // Up hierarchy: TWG
@@ -96,7 +98,10 @@ class _dbBTerm : public _dbObject
   ~_dbBTerm();
 
   void connectNet(_dbNet* net, _dbBlock* block);
+  void connectModNet(_dbModNet* net, _dbBlock* block);  
   void disconnectNet(_dbBTerm* bterm, _dbBlock* block);
+  void disconnectModNet(_dbBTerm* bterm, _dbBlock* block);  
+
   bool operator==(const _dbBTerm& rhs) const;
   bool operator!=(const _dbBTerm& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbBTerm& rhs) const;
