@@ -460,20 +460,26 @@ bool HeatMapDataSource::hasData() const
 
 void HeatMapDataSource::ensureMap()
 {
+  std::unique_lock<std::mutex> lock(ensure_mutex_);
+
   if (destroy_map_) {
+    debugPrint(logger_, utl::GUI, "HeatMap", 1, "Destroying map");
     clearMap();
     destroy_map_ = false;
   }
 
   const bool build_map = map_[0][0] == nullptr;
   if (build_map) {
+    debugPrint(logger_, utl::GUI, "HeatMap", 1, "Setting up map");
     setupMap();
   }
 
   if (build_map || !isPopulated()) {
+    debugPrint(logger_, utl::GUI, "HeatMap", 1, "Populating map");
     populated_ = populateMap();
 
     if (isPopulated()) {
+      debugPrint(logger_, utl::GUI, "HeatMap", 1, "Correcting map scale");
       correctMapScale(map_);
     }
 
@@ -486,6 +492,7 @@ void HeatMapDataSource::ensureMap()
   }
 
   if (!colors_correct_ && isPopulated()) {
+    debugPrint(logger_, utl::GUI, "HeatMap", 1, "Assigning map colors");
     assignMapColors();
   }
 }

@@ -37,6 +37,7 @@
 #include <functional>
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <variant>
 #include <vector>
@@ -256,6 +257,8 @@ class HeatMapDataSource
   std::vector<double> color_lower_bounds_;
 
   std::vector<MapSetting> settings_;
+
+  std::mutex ensure_mutex_;
 };
 
 class HeatMapRenderer : public Renderer
