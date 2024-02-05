@@ -102,6 +102,13 @@ void RUDYCalculator::makeGrid()
 
 void RUDYCalculator::calculateRUDY()
 {
+  // Clear previous computation
+  for (auto& gridColumn : grid_) {
+    for (auto& tile : gridColumn) {
+      tile.clearRUDY();
+    }
+  }
+
   // refer: https://ieeexplore.ieee.org/document/4211973
   const int tile_width = gridBlock_.dx() / tileCntX_;
   const int tile_height = gridBlock_.dy() / tileCntY_;

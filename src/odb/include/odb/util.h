@@ -487,6 +487,7 @@ class RUDYCalculator
     void setRect(int lx, int ly, int ux, int uy);
     void addRUDY(float rudy);
     float getRUDY() const { return rudy_; }
+    void clearRUDY() { rudy_ = 0.0; }
 
    private:
     odb::Rect rect_;
