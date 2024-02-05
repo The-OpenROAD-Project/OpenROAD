@@ -132,14 +132,7 @@ add_library(db
     dbGroupModInstItr.cpp
     dbGuideItr.cpp
     dbModuleInstItr.cpp
-    dbModuleModBTermItr.cpp
     dbModuleModInstItr.cpp
-    dbModuleModInstModITermItr.cpp
-    dbModuleModNetBTermItr.cpp
-    dbModuleModNetITermItr.cpp
-    dbModuleModNetItr.cpp
-    dbModuleModNetModBTermItr.cpp
-    dbModuleModNetModITermItr.cpp
     dbNetTrackItr.cpp
     dbRegionGroupItr.cpp
     # Generator Code End cpp

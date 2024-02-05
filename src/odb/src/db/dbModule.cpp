@@ -50,9 +50,7 @@
 #include "dbModInst.h"
 #include "dbModNet.h"
 #include "dbModuleInstItr.h"
-#include "dbModuleModBTermItr.h"
 #include "dbModuleModInstItr.h"
-#include "dbModuleModNetItr.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -76,9 +74,6 @@ bool _dbModule::operator==(const _dbModule& rhs) const
     return false;
   }
   if (_modnets != rhs._modnets) {
-    return false;
-  }
-  if (_modbterms != rhs._modbterms) {
     return false;
   }
 
@@ -105,7 +100,6 @@ void _dbModule::differences(dbDiff& diff,
   DIFF_FIELD(_mod_inst);
   DIFF_FIELD(_modinsts);
   DIFF_FIELD(_modnets);
-  DIFF_FIELD(_modbterms);
   DIFF_END
 }
 
@@ -118,7 +112,6 @@ void _dbModule::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_mod_inst);
   DIFF_OUT_FIELD(_modinsts);
   DIFF_OUT_FIELD(_modnets);
-  DIFF_OUT_FIELD(_modbterms);
 
   DIFF_END
 }
@@ -141,7 +134,6 @@ _dbModule::_dbModule(_dbDatabase* db, const _dbModule& r)
   _mod_inst = r._mod_inst;
   _modinsts = r._modinsts;
   _modnets = r._modnets;
-  _modbterms = r._modbterms;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModule& obj)
@@ -152,7 +144,11 @@ dbIStream& operator>>(dbIStream& stream, _dbModule& obj)
   stream >> obj._mod_inst;
   stream >> obj._modinsts;
   stream >> obj._modnets;
-  stream >> obj._modbterms;
+  stream >> obj._port_vec;
+  stream >> obj._modinst_vec;
+  stream >> obj._dbinst_vec;
+  stream >> obj._port_map;
+  stream >> obj._modnet_map;
   return stream;
 }
 
@@ -164,7 +160,11 @@ dbOStream& operator<<(dbOStream& stream, const _dbModule& obj)
   stream << obj._mod_inst;
   stream << obj._modinsts;
   stream << obj._modnets;
-  stream << obj._modbterms;
+  stream << obj._port_vec;
+  stream << obj._modinst_vec;
+  stream << obj._dbinst_vec;
+  stream << obj._port_map;
+  stream << obj._modnet_map;
   return stream;
 }
 
@@ -187,13 +187,6 @@ const char* dbModule::getName() const
   return obj->_name;
 }
 
-void dbModule::setModInst(dbModInst* mod_inst)
-{
-  _dbModule* obj = (_dbModule*) this;
-
-  obj->_mod_inst = mod_inst->getImpl()->getOID();
-}
-
 dbModInst* dbModule::getModInst() const
 {
   _dbModule* obj = (_dbModule*) this;
@@ -205,6 +198,18 @@ dbModInst* dbModule::getModInst() const
 }
 
 // User Code Begin dbModulePublicMethods
+
+std::vector<dbId<dbModBTerm>>& dbModule::getPortVec() const
+{
+  _dbModule* obj = (_dbModule*) this;
+  return obj->_port_vec;
+}
+
+std::vector<dbId<dbModInst>>& dbModule::getModInstVec() const
+{
+  _dbModule* obj = (_dbModule*) this;
+  return obj->_modinst_vec;
+}
 
 std::string dbModule::getHierarchicalName(std::string& separator)
 {
@@ -288,6 +293,12 @@ void dbModule::highestModWithNetNamed(const char* modbterm_name,
   }
 }
 
+std::vector<dbId<dbInst>>& dbModule::getDbInstVec() const
+{
+  _dbModule* obj = (_dbModule*) this;
+  return obj->_dbinst_vec;
+}
+
 dbModInst* dbModule::getModInst(dbId<dbModInst> el)
 {
   _dbModule* module = (_dbModule*) this;
@@ -304,18 +315,26 @@ dbInst* dbModule::getdbInst(dbId<dbInst> el)
   return ((dbInst*) (block->_inst_tbl->getPtr(converted_el)));
 }
 
-unsigned dbModule::getModInstCount()
+void dbModule::addInstInHierarchy(dbInst* inst)
 {
-  _dbModule* module = (_dbModule*) this;
-  _dbBlock* block = (_dbBlock*) module->getOwner();
-  return (dbSet<dbModInst>(module, block->_module_modinst_itr)).size();
+  _dbInst* _inst = (_dbInst*) inst;
+  _dbModule* _module = (_dbModule*) this;
+
+  unsigned id = _inst->getOID();
+  dbId<dbInst> db_id(id);
+  _module->_dbinst_vec.push_back(db_id);
 }
 
-unsigned dbModule::getDbInstCount()
+size_t dbModule::getModInstCount()
 {
   _dbModule* module = (_dbModule*) this;
-  _dbBlock* block = (_dbBlock*) module->getOwner();
-  return dbSet<dbInst>(module, block->_module_inst_itr).size();
+  return module->_modinst_vec.size();
+}
+
+size_t dbModule::getDbInstCount()
+{
+  _dbModule* module = (_dbModule*) this;
+  return module->_dbinst_vec.size();
 }
 
 void dbModule::addInst(dbInst* inst)
@@ -403,6 +422,7 @@ void _dbModule::removeInst(dbInst* inst)
       prev->_module_next = _inst->_module_next;
     }
   }
+
   _inst->_module = 0;
   _inst->_module_next = 0;
   _inst->_module_prev = 0;
@@ -413,27 +433,6 @@ dbSet<dbModInst> dbModule::getChildren()
   _dbModule* module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) module->getOwner();
   return dbSet<dbModInst>(module, block->_module_modinst_itr);
-}
-
-dbSet<dbModNet> dbModule::getModNets()
-{
-  _dbModule* module = (_dbModule*) this;
-  _dbBlock* block = (_dbBlock*) module->getOwner();
-  return dbSet<dbModNet>(module, block->_module_modnet_itr);
-}
-
-dbSet<dbModInst> dbModule::getModInsts()
-{
-  _dbModule* module = (_dbModule*) this;
-  _dbBlock* block = (_dbBlock*) module->getOwner();
-  return dbSet<dbModInst>(module, block->_module_modinst_itr);
-}
-
-dbSet<dbModBTerm> dbModule::getModBTerms()
-{
-  _dbModule* module = (_dbModule*) this;
-  _dbBlock* block = (_dbBlock*) module->getOwner();
-  return dbSet<dbModBTerm>(module, block->_module_modbterm_itr);
 }
 
 dbSet<dbInst> dbModule::getInsts()
@@ -498,10 +497,6 @@ void dbModule::removeModInst(const char* name)
 {
   _dbModule* cur_module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) cur_module->getOwner();
-  (void) block;
-  (void) cur_module;
-  printf("Unsupported call: removeModInst\n");
-  /*
   for (std::vector<odb::dbId<odb::dbModInst>>::iterator it
        = cur_module->_modinst_vec.begin();
        it != cur_module->_modinst_vec.end();
@@ -513,14 +508,19 @@ void dbModule::removeModInst(const char* name)
       cur_module->_modinst_vec.erase(it);
       return;
     }
-    }*/
+  }
 }
 
 dbModInst* dbModule::findModInst(const char* name)
 {
-  for (dbModInst* mod_inst : getModInsts()) {
-    if (!strcmp(mod_inst->getName(), name))
-      return mod_inst;
+  _dbModule* cur_module = (_dbModule*) this;
+  _dbBlock* block = (_dbBlock*) cur_module->getOwner();
+  for (auto m : cur_module->_modinst_vec) {
+    unsigned id = m.id();
+    dbId<_dbModInst> converted_el(id);
+    dbModInst* mi = (dbModInst*) (block->_modinst_tbl->getPtr(converted_el));
+    if (mi && !strcmp(mi->getName(), name))
+      return (dbModInst*) mi;
   }
   return nullptr;
 }
@@ -529,9 +529,12 @@ dbInst* dbModule::findDbInst(const char* name)
 {
   _dbModule* cur_module = (_dbModule*) this;
   _dbBlock* block = (_dbBlock*) cur_module->getOwner();
-  for (dbInst* inst : getInsts()) {
-    if (!strcmp(inst->getName().c_str(), name))
-      return inst;
+  for (auto m : cur_module->_dbinst_vec) {
+    unsigned id = m.id();
+    dbId<_dbInst> converted_el(id);
+    dbInst* mi = (dbInst*) (block->_inst_tbl->getPtr(converted_el));
+    if (mi && !strcmp(mi->getName().c_str(), name))
+      return (dbInst*) mi;
   }
   return nullptr;
 }
@@ -554,25 +557,13 @@ std::vector<dbInst*> dbModule::getLeafInsts()
   return insts;
 }
 
-dbModBTerm* dbModule::findModBTerm(const char* name)
+bool dbModule::findPortIx(const char* port_name, unsigned& ix) const
 {
-  _dbModule* cur_module = (_dbModule*) this;
-  _dbBlock* block = (_dbBlock*) cur_module->getOwner();
-  for (dbModBTerm* mod_bterm : getModBTerms()) {
-    if (!strcmp(mod_bterm->getName(), name))
-      return mod_bterm;
-  }
-  return nullptr;
-}
-
-bool dbModule::findPortIx(const char* port_name, unsigned& ix)
-{
+  _dbModule* obj = (_dbModule*) this;
   std::string port_name_str(port_name);
-  ix = 0;
-  for (dbModBTerm* mod_bterm : getModBTerms()) {
-    if (!strcmp(mod_bterm->getName(), port_name))
-      return true;
-    ix++;
+  if (obj->_port_map.find(port_name_str) != obj->_port_map.end()) {
+    ix = obj->_port_map[port_name_str];
+    return true;
   }
   return false;
 }
@@ -599,19 +590,35 @@ void dbModule::staSetCell(void* cell)
   module->_sta_cell = cell;
 }
 
+bool dbModule::findModBTerm(const char* port_name, dbModBTerm*& ret)
+{
+  ret = nullptr;
+  _dbModule* _obj = (_dbModule*) this;
+  _dbBlock* block = (_dbBlock*) _obj->getOwner();
+  for (auto el : _obj->_port_vec) {
+    // type conversion
+    unsigned id = el.id();
+    dbId<_dbModBTerm> converted_el(id);
+    dbModBTerm* candidate
+        = (dbModBTerm*) (block->_modbterm_tbl->getPtr(converted_el));
+    if (!strcmp(candidate->getName(), port_name)) {
+      ret = candidate;
+      return true;
+    }
+  }
+  return false;
+}
+
 dbModNet* dbModule::getModNet(const char* name)
 {
   _dbModule* obj = (_dbModule*) this;
   _dbBlock* _block = (_dbBlock*) obj->getOwner();
   std::string name_str(name);
-  /*
   if (obj->_modnet_map.find(name_str) != obj->_modnet_map.end()) {
     dbId<dbModNet> mnet_id = obj->_modnet_map[name_str];
     dbId<_dbModNet> _mnet_id(mnet_id.id());
     return (dbModNet*) (_block->_modnet_tbl->getPtr(_mnet_id));
   }
-  */
-  printf("unsupported: getModNet\n");
   return nullptr;
 }
 
@@ -625,6 +632,7 @@ dbModBTerm* dbModule::getdbModBTerm(dbBlock* block,
                                     dbId<dbModBTerm> modbterm_id)
 {
   _dbBlock* _block = (_dbBlock*) block;
+  // do a weird type conversion
   unsigned id = modbterm_id.id();
   dbId<_dbModBTerm> val(id);
   return (dbModBTerm*) (_block->_modbterm_tbl->getPtr(val));
@@ -634,6 +642,7 @@ dbModBTerm* dbModule::getdbModBTerm(dbId<dbModBTerm> modbterm_id)
 {
   _dbModule* obj = (_dbModule*) this;
   _dbBlock* _block = (_dbBlock*) obj->getOwner();
+  // do a weird type conversion
   unsigned id = modbterm_id.id();
   dbId<_dbModBTerm> val(id);
   return (dbModBTerm*) (_block->_modbterm_tbl->getPtr(val));

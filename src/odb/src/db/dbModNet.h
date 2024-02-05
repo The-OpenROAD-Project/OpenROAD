@@ -65,10 +65,10 @@ class _dbModNet : public _dbObject
   char* _name;
   dbId<_dbModule> _parent;
   dbId<_dbModNet> _next_entry;
-  dbId<_dbModITerm> _moditerms;
-  dbId<_dbModBTerm> _modbterms;
-  dbId<_dbITerm> _iterms;
-  dbId<_dbBTerm> _bterms;
+  dbVector<dbId<_dbModITerm>> _moditerms;
+  dbVector<dbId<_dbModBTerm>> _modbterms;
+  dbVector<dbId<_dbITerm>> _iterms;
+  dbVector<dbId<_dbBTerm>> _bterms;
 };
 dbIStream& operator>>(dbIStream& stream, _dbModNet& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbModNet& obj);

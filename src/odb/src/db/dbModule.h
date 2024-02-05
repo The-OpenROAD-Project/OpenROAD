@@ -49,7 +49,10 @@ class _dbDatabase;
 class _dbInst;
 class _dbModInst;
 class _dbModNet;
-class _dbModBTerm;
+class dbModBTerm;
+class dbModInst;
+class dbInst;
+class dbModNet;
 
 class _dbModule : public _dbObject
 {
@@ -77,7 +80,11 @@ class _dbModule : public _dbObject
   dbId<_dbModInst> _mod_inst;
   dbId<_dbModInst> _modinsts;
   dbId<_dbModNet> _modnets;
-  dbId<_dbModBTerm> _modbterms;
+  std::vector<dbId<dbModBTerm>> _port_vec;
+  std::vector<dbId<dbModInst>> _modinst_vec;
+  std::vector<dbId<dbInst>> _dbinst_vec;
+  std::map<std::string, uint> _port_map;
+  std::map<std::string, dbId<dbModNet>> _modnet_map;
 
   // User Code Begin Fields
   void* _sta_cell;

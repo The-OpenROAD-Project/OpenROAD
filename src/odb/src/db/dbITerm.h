@@ -81,8 +81,6 @@ class _dbITerm : public _dbObject
   dbId<_dbInst> _inst;
   dbId<_dbITerm> _next_net_iterm;
   dbId<_dbITerm> _prev_net_iterm;
-  dbId<_dbITerm> _next_modnet_iterm;
-  dbId<_dbITerm> _prev_modnet_iterm;
   uint32_t _sta_vertex_id;  // not saved
   std::map<dbId<_dbMPin>, dbId<_dbAccessPoint>> aps_;
 
@@ -119,8 +117,6 @@ inline _dbITerm::_dbITerm(_dbDatabase*, const _dbITerm& i)
       _inst(i._inst),
       _next_net_iterm(i._next_net_iterm),
       _prev_net_iterm(i._prev_net_iterm),
-      _next_modnet_iterm(i._next_modnet_iterm),
-      _prev_modnet_iterm(i._prev_modnet_iterm),
       _sta_vertex_id(0)
 {
 }
@@ -135,8 +131,6 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbITerm& iterm)
   stream << iterm._inst;
   stream << iterm._next_net_iterm;
   stream << iterm._prev_net_iterm;
-  stream << iterm._next_modnet_iterm;
-  stream << iterm._prev_modnet_iterm;
   stream << iterm.aps_;
   return stream;
 }
@@ -151,8 +145,6 @@ inline dbIStream& operator>>(dbIStream& stream, _dbITerm& iterm)
   stream >> iterm._inst;
   stream >> iterm._next_net_iterm;
   stream >> iterm._prev_net_iterm;
-  stream >> iterm._next_modnet_iterm;
-  stream >> iterm._prev_modnet_iterm;
   stream >> iterm.aps_;
   return stream;
 }

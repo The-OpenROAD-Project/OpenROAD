@@ -46,12 +46,6 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbVector.h"
-// User Code Begin Includes
-#include "dbModuleModNetBTermItr.h"
-#include "dbModuleModNetITermItr.h"
-#include "dbModuleModNetModBTermItr.h"
-#include "dbModuleModNetModITermItr.h"
-// User Code End Includes
 namespace odb {
 template class dbTable<_dbModNet>;
 
@@ -64,18 +58,6 @@ bool _dbModNet::operator==(const _dbModNet& rhs) const
     return false;
   }
   if (_next_entry != rhs._next_entry) {
-    return false;
-  }
-  if (_moditerms != rhs._moditerms) {
-    return false;
-  }
-  if (_modbterms != rhs._modbterms) {
-    return false;
-  }
-  if (_iterms != rhs._iterms) {
-    return false;
-  }
-  if (_bterms != rhs._bterms) {
     return false;
   }
 
@@ -95,10 +77,6 @@ void _dbModNet::differences(dbDiff& diff,
   DIFF_FIELD(_name);
   DIFF_FIELD(_parent);
   DIFF_FIELD(_next_entry);
-  DIFF_FIELD(_moditerms);
-  DIFF_FIELD(_modbterms);
-  DIFF_FIELD(_iterms);
-  DIFF_FIELD(_bterms);
   DIFF_END
 }
 
@@ -108,10 +86,6 @@ void _dbModNet::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_name);
   DIFF_OUT_FIELD(_parent);
   DIFF_OUT_FIELD(_next_entry);
-  DIFF_OUT_FIELD(_moditerms);
-  DIFF_OUT_FIELD(_modbterms);
-  DIFF_OUT_FIELD(_iterms);
-  DIFF_OUT_FIELD(_bterms);
 
   DIFF_END
 }
@@ -125,10 +99,6 @@ _dbModNet::_dbModNet(_dbDatabase* db, const _dbModNet& r)
   _name = r._name;
   _parent = r._parent;
   _next_entry = r._next_entry;
-  _moditerms = r._moditerms;
-  _modbterms = r._modbterms;
-  _iterms = r._iterms;
-  _bterms = r._bterms;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModNet& obj)
@@ -191,56 +161,30 @@ dbModNet* dbModNet::create(dbModule* parentModule, const char* name)
   // give illusion of scoping.
   _dbModule* parent = (_dbModule*) parentModule;
   _dbBlock* block = (_dbBlock*) parent->getOwner();
+
+  std::string name_str(name);
+  if (parent->_modnet_map.find(name_str) != parent->_modnet_map.end()) {
+    dbId<dbModNet> modnet_id = parent->_modnet_map[name_str];
+    _dbModNet* modnet = block->_modnet_tbl->getPtr(modnet_id.id());
+    return ((dbModNet*) modnet);
+  }
   _dbModNet* modnet = block->_modnet_tbl->create();
-  // defaults
+  parent->_modnet_map[name_str] = modnet->getOID();
   modnet->_name = strdup(name);
   modnet->_parent = parent->getOID();  // dbmodule
   modnet->_next_entry = parent->_modnets;
   parent->_modnets = modnet->getOID();
-  //  printf("Creating modnet %s (%u) in %s (%p)\n",
-  //	 modnet -> _name,
-  //	 modnet -> getOID(),
-  //	 ((dbModule*)parent) -> getName(),
-  //	 ((dbModule*)parent)
-  //	 );
-  //  dbSet<dbModNet> modnets = ((dbModule*)parent) -> getModNets();
-  //  printf("# modnets %u\n",modnets.size());
   return (dbModNet*) modnet;
 }
 
-dbSet<dbModITerm> dbModNet::getModITerms()
-{
-  _dbModNet* _mod_net = (_dbModNet*) this;
-  _dbBlock* _block = (_dbBlock*) _mod_net->getOwner();
-  return dbSet<dbModITerm>(_mod_net, _block->_module_modnet_moditerm_itr);
-}
-
-dbSet<dbModBTerm> dbModNet::getModBTerms()
-{
-  _dbModNet* _mod_net = (_dbModNet*) this;
-  _dbBlock* _block = (_dbBlock*) _mod_net->getOwner();
-  return dbSet<dbModBTerm>(_mod_net, _block->_module_modnet_modbterm_itr);
-}
-
-dbSet<dbBTerm> dbModNet::getBTerms()
-{
-  _dbModNet* _mod_net = (_dbModNet*) this;
-  _dbBlock* _block = (_dbBlock*) _mod_net->getOwner();
-  return dbSet<dbBTerm>(_mod_net, _block->_module_modnet_bterm_itr);
-}
-
-dbSet<dbITerm> dbModNet::getITerms()
-{
-  _dbModNet* _mod_net = (_dbModNet*) this;
-  _dbBlock* _block = (_dbBlock*) _mod_net->getOwner();
-  return dbSet<dbITerm>(_mod_net, _block->_module_modnet_iterm_itr);
-}
-
-dbModBTerm* dbModNet::connectedToModBTerm()
+dbModBTerm* dbModNet::connectedToModBTerm() const
 {
   const char* net_name = getName();
-  dbSet<dbModBTerm> modbterms = getModBTerms();
-  for (dbModBTerm* mbterm : modbterms) {
+  _dbModNet* obj = (_dbModNet*) this;
+  dbModule* module = getParent();
+  for (auto mib : obj->_modbterms) {
+    odb::dbId<odb::dbModBTerm> conv_el(mib.id());
+    dbModBTerm* mbterm = module->getdbModBTerm(conv_el);
     const char* mbterm_name = mbterm->getName();
     if (!strcmp(mbterm_name, net_name))
       return mbterm;

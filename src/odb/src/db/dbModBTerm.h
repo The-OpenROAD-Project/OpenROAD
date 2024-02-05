@@ -64,9 +64,6 @@ class _dbModBTerm : public _dbObject
   uint _flags;
   dbId<_dbModule> _parent;
   dbId<_dbModNet> _net;
-  dbId<_dbModBTerm> _next_net_modbterm;
-  dbId<_dbModBTerm> _prev_net_modbterm;
-  dbId<_dbModBTerm> _next_entry;
 
   // User Code Begin Fields
   void* _sta_port;

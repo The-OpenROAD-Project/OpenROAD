@@ -64,9 +64,6 @@ class _dbModITerm : public _dbObject
   uint _flags;
   dbId<_dbModInst> _parent;
   dbId<_dbModNet> _net;
-  dbId<_dbModITerm> _next_net_moditerm;
-  dbId<_dbModITerm> _prev_net_moditerm;
-  dbId<_dbModITerm> _next_entry;
 };
 dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbModITerm& obj);

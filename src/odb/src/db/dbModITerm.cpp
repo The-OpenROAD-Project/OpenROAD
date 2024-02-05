@@ -59,15 +59,6 @@ bool _dbModITerm::operator==(const _dbModITerm& rhs) const
   if (_net != rhs._net) {
     return false;
   }
-  if (_next_net_moditerm != rhs._next_net_moditerm) {
-    return false;
-  }
-  if (_prev_net_moditerm != rhs._prev_net_moditerm) {
-    return false;
-  }
-  if (_next_entry != rhs._next_entry) {
-    return false;
-  }
 
   return true;
 }
@@ -86,9 +77,6 @@ void _dbModITerm::differences(dbDiff& diff,
   DIFF_FIELD(_flags);
   DIFF_FIELD(_parent);
   DIFF_FIELD(_net);
-  DIFF_FIELD(_next_net_moditerm);
-  DIFF_FIELD(_prev_net_moditerm);
-  DIFF_FIELD(_next_entry);
   DIFF_END
 }
 
@@ -99,9 +87,6 @@ void _dbModITerm::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_flags);
   DIFF_OUT_FIELD(_parent);
   DIFF_OUT_FIELD(_net);
-  DIFF_OUT_FIELD(_next_net_moditerm);
-  DIFF_OUT_FIELD(_prev_net_moditerm);
-  DIFF_OUT_FIELD(_next_entry);
 
   DIFF_END
 }
@@ -116,9 +101,6 @@ _dbModITerm::_dbModITerm(_dbDatabase* db, const _dbModITerm& r)
   _flags = r._flags;
   _parent = r._parent;
   _net = r._net;
-  _next_net_moditerm = r._next_net_moditerm;
-  _prev_net_moditerm = r._prev_net_moditerm;
-  _next_entry = r._next_entry;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj)
@@ -127,9 +109,6 @@ dbIStream& operator>>(dbIStream& stream, _dbModITerm& obj)
   stream >> obj._flags;
   stream >> obj._parent;
   stream >> obj._net;
-  stream >> obj._next_net_moditerm;
-  stream >> obj._prev_net_moditerm;
-  stream >> obj._next_entry;
   return stream;
 }
 
@@ -139,9 +118,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbModITerm& obj)
   stream << obj._flags;
   stream << obj._parent;
   stream << obj._net;
-  stream << obj._next_net_moditerm;
-  stream << obj._prev_net_moditerm;
-  stream << obj._next_entry;
   return stream;
 }
 
@@ -198,57 +174,6 @@ dbModNet* dbModITerm::getNet() const
   return (dbModNet*) par->_modnet_tbl->getPtr(obj->_net);
 }
 
-void dbModITerm::setNextNetModiterm(dbModITerm* next_net_moditerm)
-{
-  _dbModITerm* obj = (_dbModITerm*) this;
-
-  obj->_next_net_moditerm = next_net_moditerm->getImpl()->getOID();
-}
-
-dbModITerm* dbModITerm::getNextNetModiterm() const
-{
-  _dbModITerm* obj = (_dbModITerm*) this;
-  if (obj->_next_net_moditerm == 0) {
-    return nullptr;
-  }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModITerm*) par->_moditerm_tbl->getPtr(obj->_next_net_moditerm);
-}
-
-void dbModITerm::setPrevNetModiterm(dbModITerm* prev_net_moditerm)
-{
-  _dbModITerm* obj = (_dbModITerm*) this;
-
-  obj->_prev_net_moditerm = prev_net_moditerm->getImpl()->getOID();
-}
-
-dbModITerm* dbModITerm::getPrevNetModiterm() const
-{
-  _dbModITerm* obj = (_dbModITerm*) this;
-  if (obj->_prev_net_moditerm == 0) {
-    return nullptr;
-  }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModITerm*) par->_moditerm_tbl->getPtr(obj->_prev_net_moditerm);
-}
-
-void dbModITerm::setNextEntry(dbModITerm* next_entry)
-{
-  _dbModITerm* obj = (_dbModITerm*) this;
-
-  obj->_next_entry = next_entry->getImpl()->getOID();
-}
-
-dbModITerm* dbModITerm::getNextEntry() const
-{
-  _dbModITerm* obj = (_dbModITerm*) this;
-  if (obj->_next_entry == 0) {
-    return nullptr;
-  }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModITerm*) par->_moditerm_tbl->getPtr(obj->_next_entry);
-}
-
 // User Code Begin dbModITermPublicMethods
 
 struct dbModITermFlags_str
@@ -296,48 +221,31 @@ dbIoType dbModITerm::getIoType()
 
 dbModITerm* dbModITerm::create(dbModInst* parentInstance, const char* name)
 {
+  // Axiom: iterms ordered in port order on dbModule
+  // that is in moditerm list (so we can always quickly get a modbterm from a
+  // moditerm)
   _dbModInst* parent = (_dbModInst*) parentInstance;
   _dbBlock* block = (_dbBlock*) parent->getOwner();
   _dbModITerm* moditerm = block->_moditerm_tbl->create();
   // defaults
-  moditerm->_net = 0;
-  moditerm->_next_net_moditerm = 0;
-  moditerm->_prev_net_moditerm = 0;
-
   ((dbModITerm*) moditerm)->setFlags(0U);
   ((dbModITerm*) moditerm)->setIoType(dbIoType::INPUT);
   ((dbModITerm*) moditerm)->setSigType(dbSigType::SIGNAL);
   moditerm->_name = strdup(name);
   ZALLOCATED(moditerm->_name);
-
-  moditerm->_parent = parent->getOID();
-  moditerm->_next_entry = parent->_moditerms;
-  parent->_moditerms = moditerm->getOID();
-
+  moditerm->_parent = parent->getOID();  // dbModInst -- parent
+  parent->_pin_vec.push_back(moditerm->getOID());
   return (dbModITerm*) moditerm;
 }
 
 bool dbModITerm::connect(dbModNet* net)
 {
-  _dbModITerm* _moditerm = (_dbModITerm*) this;
-  _dbModNet* _modnet = (_dbModNet*) net;
-  _dbBlock* _block = (_dbBlock*) _moditerm->getOwner();
-  // already connected.
-  if (_moditerm->_net == _modnet->getId())
+  _dbModITerm* _iterm = (_dbModITerm*) this;
+  dbId<_dbModITerm> dest = _iterm->getOID();
+  if (_iterm->_net == ((_dbModNet*) net)->getOID())
     return true;
-  _moditerm->_net = _modnet->getId();
-  // append to net moditerms
-  if (_modnet->_moditerms != 0) {
-    _dbModITerm* head = _block->_moditerm_tbl->getPtr(_modnet->_moditerms);
-    // next is old head
-    _moditerm->_next_net_moditerm = _modnet->_moditerms;
-    head->_prev_net_moditerm = getId();
-  } else {
-    _moditerm->_next_net_moditerm = 0;
-  }
-  // set up new head
-  _moditerm->_prev_net_moditerm = 0;
-  _modnet->_moditerms = getId();
+  _iterm->_net = ((_dbModNet*) net)->getOID();
+  ((_dbModNet*) net)->_moditerms.push_back(dest);
   return true;
 }
 

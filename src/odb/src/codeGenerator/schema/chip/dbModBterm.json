@@ -21,22 +21,7 @@
 	    "name":"_net",
 	    "type":"dbId<_dbModNet>",
 	    "parent":"dbBlock"
-        },
-        {
-	    "name":"_next_net_modbterm",
-	    "type":"dbId<_dbModBTerm>",
-	    "parent":"dbBlock"
-        },
-        {
-	    "name":"_prev_net_modbterm",
-	    "type":"dbId<_dbModBTerm>",
-	    "parent":"dbBlock"
-        },
-	{
-	    "name":"_next_entry",
-            "type":"dbId<_dbModBTerm>",
-            "parent":"dbBlock"
-	}
+        }
     ],
     "constructors":[],
     "cpp_includes":["dbBlock.h","dbModule.h","dbModNet.h","dbHashTable.hpp"]

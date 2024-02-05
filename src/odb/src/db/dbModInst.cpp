@@ -45,7 +45,6 @@
 // User Code Begin Includes
 #include "dbGroup.h"
 #include "dbModInst.h"
-#include "dbModuleModInstModITermItr.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbModInst>;
@@ -73,9 +72,6 @@ bool _dbModInst::operator==(const _dbModInst& rhs) const
   if (_group != rhs._group) {
     return false;
   }
-  if (_moditerms != rhs._moditerms) {
-    return false;
-  }
 
   return true;
 }
@@ -101,7 +97,6 @@ void _dbModInst::differences(dbDiff& diff,
   DIFF_FIELD(_master);
   DIFF_FIELD(_group_next);
   DIFF_FIELD(_group);
-  DIFF_FIELD(_moditerms);
   DIFF_END
 }
 
@@ -115,7 +110,6 @@ void _dbModInst::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_master);
   DIFF_OUT_FIELD(_group_next);
   DIFF_OUT_FIELD(_group);
-  DIFF_OUT_FIELD(_moditerms);
 
   DIFF_END
 }
@@ -141,7 +135,6 @@ _dbModInst::_dbModInst(_dbDatabase* db, const _dbModInst& r)
   _master = r._master;
   _group_next = r._group_next;
   _group = r._group;
-  _moditerms = r._moditerms;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
@@ -153,7 +146,7 @@ dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
   stream >> obj._master;
   stream >> obj._group_next;
   stream >> obj._group;
-  stream >> obj._moditerms;
+  stream >> obj._pin_vec;
   return stream;
 }
 
@@ -166,7 +159,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbModInst& obj)
   stream << obj._master;
   stream << obj._group_next;
   stream << obj._group;
-  stream << obj._moditerms;
+  stream << obj._pin_vec;
   return stream;
 }
 
@@ -226,8 +219,8 @@ dbModInst* dbModInst::create(dbModule* parentModule,
 {
   _dbModule* module = (_dbModule*) parentModule;
   _dbBlock* block = (_dbBlock*) module->getOwner();
-  _dbModule* master = (_dbModule*) masterModule;
 
+  _dbModule* master = (_dbModule*) masterModule;
   if (master->_mod_inst != 0)
     return nullptr;
 
@@ -246,8 +239,8 @@ dbModInst* dbModInst::create(dbModule* parentModule,
   modinst->_module_next = module->_modinsts;
   module->_modinsts = modinst->getOID();
   master->_mod_inst = modinst->getOID();
+  module->_modinst_vec.push_back(modinst->getOID());
   block->_modinst_hash.insert(modinst);
-  dbSet<dbModInst> mod_inst_set = ((dbModule*) module)->getModInsts();
   return (dbModInst*) modinst;
 }
 
@@ -295,13 +288,6 @@ dbSet<dbModInst>::iterator dbModInst::destroy(dbSet<dbModInst>::iterator& itr)
   return next;
 }
 
-dbSet<dbModITerm> dbModInst::getModITerms()
-{
-  _dbModInst* _mod_inst = (_dbModInst*) this;
-  _dbBlock* _block = (_dbBlock*) _mod_inst->getOwner();
-  return dbSet<dbModITerm>(_mod_inst, _block->_module_modinstmoditerm_itr);
-}
-
 dbModInst* dbModInst::getModInst(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
@@ -334,33 +320,41 @@ dbModITerm* dbModInst::getdbModITerm(dbId<dbModITerm> el)
   return ((dbModITerm*) (block->_moditerm_tbl->getPtr(conv_el)));
 }
 
-bool dbModInst::findModITerm(const char* name, dbModITerm*& ret)
+bool dbModInst::findModITerm(const char* name, dbModITerm*& ret) const
 {
-  dbSet<dbModITerm> moditerms = getModITerms();
-  for (dbModITerm* mod_iterm : moditerms) {
-    if (!strcmp(mod_iterm->getName(), name)) {
-      ret = mod_iterm;
+  static int debug;
+  debug++;
+  _dbModInst* _obj = (_dbModInst*) this;
+  _dbBlock* block = (_dbBlock*) _obj->getOwner();
+  for (auto el : _obj->_pin_vec) {
+    debug++;
+    dbId<_dbModITerm> conv_el(el.id());
+    dbModITerm* candidate
+        = (dbModITerm*) (block->_moditerm_tbl->getPtr(conv_el));
+    if (!strcmp(candidate->getName(), name)) {
+      ret = candidate;
       return true;
     }
   }
   return false;
 }
 
+std::vector<dbId<dbModITerm>>& dbModInst::getPinVec() const
+{
+  _dbModInst* _obj = (_dbModInst*) this;
+  return _obj->_pin_vec;
+}
+
 bool dbModInst::getPinAtIx(unsigned ix, dbModITerm*& ret) const
 {
   _dbModInst* _obj = (_dbModInst*) this;
   _dbBlock* block = (_dbBlock*) _obj->getOwner();
-  (void) block;
-  (void) _obj;
-  printf("TDODO");
-  /*
   if (ix < _obj->_pin_vec.size()) {
     dbId<dbModITerm> el = _obj->_pin_vec.at(ix);
     dbId<_dbModITerm> conv_el(el.id());
     ret = (dbModITerm*) (block->_moditerm_tbl->getPtr(conv_el));
     return true;
   }
-  */
   return false;
 }
 
