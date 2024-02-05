@@ -8,22 +8,26 @@ jobs:
     name: 'Test docs for Tcl syntax and README'
     runs-on: ubuntu-latest
     container:
-      image: openroad/ubuntu22.04-dev
+      image: openroad/ubuntu-cpp20
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
       with:
-        submodules: true
+        submodules: 'recursive'
 
     - name: Install required package
       run: |
         apt-get update && apt-get install -y pandoc
+      
+    - name: Build OpenROAD
+      run: |
+        ./etc/Build.sh -compiler='clang-16' -cmake='-DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20'
 
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'  # Adjust the Python version as needed
+        python-version: '3.10'  
 
     - name: Preprocess files
       run: |
