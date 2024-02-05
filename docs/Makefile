@@ -11,6 +11,7 @@
 
 # Define variables
 PANDOC = pandoc
+NROFF = nroff
 SRC_DIR = md
 MAN_ROOT_DIR = man
 HTML_ROOT_DIR = html
@@ -107,14 +108,13 @@ $(HTML3_DIR)/%.html: $(MAN3_DIR)/%.3 | $(HTML3_DIR)
 
 # Rule to generate a cat file from a corresponding roff file
 $(CAT1_DIR)/%.md: $(MAN1_DIR)/%.1 | $(CAT1_DIR)
-	$(PANDOC) -s -o markdown $< -o $@
-	sed -i 's/\\\[/\[/g; s/\\]/\]/g; s/\\_/_/g' $@
+	nroff -man $< | col -b > $@
 $(CAT2_DIR)/%.md: $(MAN2_DIR)/%.2 | $(CAT2_DIR)
-	$(PANDOC) -s -o markdown $< -o $@
-	sed -i 's/\\\[/\[/g; s/\\]/\]/g; s/\\_/_/g' $@
+	nroff -man $< | col -b > $@
 $(CAT3_DIR)/%.md: $(MAN3_DIR)/%.3 | $(CAT3_DIR)
-	$(PANDOC) -s -o markdown $< -o $@
-	sed -i 's/\\\[/\[/g; s/\\]/\]/g; s/\\_/_/g' $@
+	nroff -man $< | col -b > $@
+#$(PANDOC) -s -o markdown $< -o $@
+#sed -i 's/\\\[/\[/g; s/\\]/\]/g; s/\\_/_/g' $@
 
 $(CAT1_DIR)/%.1: $(CAT1_DIR)/%.md
 	mv $< $@

@@ -162,6 +162,8 @@ Info: 3, Warn: 7, Error: 37
 [WARNING] This document format requires a nonempty <title> element.
   Defaulting to 'utl' as the title.
   To specify a title, use 'title' in metadata or --metadata title="...".
+troff: man/man2/stt.2:109: warning [p 1, 10.0i]: cannot adjust line
+troff: man/man2/utl.2:80: warning [p 1, 7.2i]: cannot adjust line
 cat/cat1/openroad.1
 Level 1 doc counts are equal to 1.
 Level 2 doc counts are equal to 167.
