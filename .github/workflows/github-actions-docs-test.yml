@@ -8,22 +8,17 @@ jobs:
     name: 'Test docs for Tcl syntax and README'
     runs-on: ubuntu-latest
     container:
-      image: openroad/ubuntu-cpp20
+      image: openroad/ubuntu22.04-dev
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
       with:
-        submodules: 'recursive'
+        submodules: true
 
     - name: Install required package
       run: |
         apt-get update && apt-get install -y pandoc
-      
-    - name: Build OpenROAD
-      run: |
-        ./etc/Build.sh -compiler='clang-16' -cmake='-DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20'
-
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -32,7 +27,6 @@ jobs:
     - name: Preprocess files
       run: |
         cd docs && make preprocess -j${nproc}
-
     - name: Run syntax parser
       run: |
-        ./src/test/regression man_tcl_params
+        ./docs/src/test/regression man_tcl_params
