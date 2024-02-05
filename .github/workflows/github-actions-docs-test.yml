@@ -7,8 +7,6 @@ jobs:
   docs-test-job:
     name: 'Test docs for Tcl syntax and README'
     runs-on: ubuntu-latest
-    container:
-      image: openroad/ubuntu22.04-dev
 
     steps:
     - name: Checkout repository
@@ -29,4 +27,4 @@ jobs:
         cd docs && make preprocess -j${nproc}
     - name: Run syntax parser
       run: |
-        ./docs/src/test/regression man_tcl_params
+        python3 docs/src/test/man_tcl_params.py

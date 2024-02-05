@@ -5,9 +5,6 @@ from extract_utils import extract_tcl_code, extract_help, extract_proc
 from extract_utils import clean_whitespaces, clean_parse_syntax, check_function_signatures
 
 # Test objective: Make sure similar output in all three: help, proc, and readme
-path = os.path.realpath("md_roff_compat.py")
-or_home = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(path))))
-os.chdir(or_home)
 
 # Store results
 help_dict, proc_dict, readme_dict = {}, {}, {}  
