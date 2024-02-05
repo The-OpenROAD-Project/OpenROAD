@@ -16,7 +16,7 @@ jobs:
 
     - name: Install required package
       run: |
-        apt-get update && apt-get install -y pandoc
+        sudo apt-get update && sudo apt-get install -y pandoc
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
