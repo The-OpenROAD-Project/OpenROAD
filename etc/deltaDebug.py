@@ -153,42 +153,38 @@ class deltaDebugger:
                 print("No error found in the original input file.")
                 sys.exit(1)
 
-        while (True):
-            err = None
-            self.n = 2  # Initial Number of cuts
+        for self.cut_level in (cutLevel.Insts, cutLevel.Nets):
+            while (True):
+                err = None
+                self.n = 2  # Initial Number of cuts
 
-            while self.n <= (2**self.persistence):
-                error_in_range = None
-                j = 0
-                while j < self.get_cuts():
-                    current_err = self.perform_step(cut_index=j)
-                    self.step_count += 1
-                    if (current_err is not None):
-                        # Found the target error with the cut DB
-                        #
-                        # This is a suitable level of detail to look for more errors,
-                        # complete this level of detail.
-                        err = current_err
-                        error_in_range = current_err
-                        self.prepare_new_step()
-                    j += 1
+                while self.n <= (2**self.persistence):
+                    error_in_range = None
+                    j = 0
+                    while j < self.get_cuts():
+                        current_err = self.perform_step(cut_index=j)
+                        self.step_count += 1
+                        if (current_err is not None):
+                            # Found the target error with the cut DB
+                            #
+                            # This is a suitable level of detail to look
+                            # for more errors, complete this level of detail.
+                            err = current_err
+                            error_in_range = current_err
+                            self.prepare_new_step()
+                        j += 1
 
-                if (error_in_range is None):
-                    # Increase the granularity of the cut in case target error not found
-                    self.n *= 2
-                elif self.n >= 8:
-                    # Found errors, decrease granularity
-                    self.n = int(self.n / 2)
-                else:
-                    break
+                    if (error_in_range is None):
+                        # Increase the granularity of the cut in case target
+                        # error not found
+                        self.n *= 2
+                    elif self.n >= 8:
+                        # Found errors, decrease granularity
+                        self.n = int(self.n / 2)
+                    else:
+                        break
 
-            if err is None or self.get_cuts() == 0:
-                if (self.cut_level == cutLevel.Insts):
-                    # Reduce cut level from inst to nets
-                    self.cut_level = cutLevel.Nets
-                else:
-                    # We are done and we found the smallest input file that
-                    # produces the target error.
+                if err is None or self.get_cuts() == 0:
                     break
 
         # Change deltaDebug resultant base_db file name to a representative name
