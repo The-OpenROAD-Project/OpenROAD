@@ -1389,7 +1389,7 @@ dbInst* dbInst::create(dbBlock* block_,
     else
       block_->getTopModule()->addInst((dbInst*) inst);
   }
-  //Check this out..
+  // Check this out..
   // add to the verilog hierarchy
   /*
   if (parent_module)

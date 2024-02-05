@@ -366,8 +366,6 @@ void dbITerm::clearConnected()
   iterm->_flags._connected = 0;
 }
 
-
-
 void dbITerm::connect(dbNet* net_)
 {
   _dbITerm* iterm = (_dbITerm*) this;
@@ -452,23 +450,21 @@ dbModNet* dbITerm::getModNet()
 
 void dbITerm::connect(dbModNet* mod_net)
 {
-
   _dbITerm* iterm = (_dbITerm*) this;
   _dbModNet* _mod_net = (_dbModNet*) mod_net;
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
-  
-  
-  if (iterm->_mnet == _mod_net -> getId()){
+
+  if (iterm->_mnet == _mod_net->getId()) {
     return;
   }
 
-  if (iterm->_mnet != 0){
+  if (iterm->_mnet != 0) {
     //    printf("Weird disconnecting an iterm\n");
     disconnect();
   }
-  
+
   iterm->_mnet = _mod_net->getId();
-  
+
   _dbInst* inst = iterm->getInst();
   if (inst->_flags._dont_touch) {
     inst->getLogger()->error(
@@ -478,23 +474,20 @@ void dbITerm::connect(dbModNet* mod_net)
         inst->_name);
   }
 
-
   if (_mod_net->_iterms != 0) {
     _dbITerm* head = block->_iterm_tbl->getPtr(_mod_net->_iterms);
     iterm->_next_modnet_iterm = _mod_net->_iterms;
-    //prev is this one
+    // prev is this one
     head->_prev_modnet_iterm = iterm->getOID();
   } else {
     iterm->_next_modnet_iterm = 0;
   }
-  iterm -> _prev_modnet_iterm = 0;
+  iterm->_prev_modnet_iterm = 0;
   _mod_net->_iterms = iterm->getOID();
-  
+
   //  printf("Mod net now connected to %d iterms\n",
   //	 mod_net -> getITerms().size());
 }
-
-
 
 void dbITerm::disconnect()
 {
@@ -513,7 +506,6 @@ void dbITerm::disconnect()
   }
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
   _dbNet* net = block->_net_tbl->getPtr(iterm->_net);
-  
 
   if (net->_flags._dont_touch) {
     inst->getLogger()->error(utl::ODB,
@@ -558,11 +550,11 @@ void dbITerm::disconnect()
   iterm->_net = 0;
   for (auto callback : block->_callbacks)
     callback->inDbITermPostDisconnect(this, (dbNet*) net);
-  
-  //the modnet part
-  if (iterm -> _mnet == 0)
+
+  // the modnet part
+  if (iterm->_mnet == 0)
     return;
-  _dbModNet* mod_net = block->_modnet_tbl->getPtr(iterm-> _mnet);
+  _dbModNet* mod_net = block->_modnet_tbl->getPtr(iterm->_mnet);
   if (mod_net->_iterms == id) {
     mod_net->_iterms = iterm->_next_modnet_iterm;
     if (mod_net->_iterms != 0) {
@@ -581,8 +573,6 @@ void dbITerm::disconnect()
   }
   iterm->_mnet = 0;
 }
-
-
 
 dbSigType dbITerm::getSigType()
 {

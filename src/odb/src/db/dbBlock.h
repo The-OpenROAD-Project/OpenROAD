@@ -111,9 +111,9 @@ class dbModuleModBTermItr;
 class dbModuleModInstModITermItr;
 class dbModuleModNetItr;
 class dbModuleModNetModBTermItr;
-class dbModuleModNetModITermItr;  
+class dbModuleModNetModITermItr;
 class dbModuleModNetITermItr;
-class dbModuleModNetBTermItr;      
+class dbModuleModNetBTermItr;
 class dbRegionGroupItr;
 class dbGlobalConnect;
 class dbGroupItr;
@@ -261,14 +261,13 @@ class _dbBlock : public _dbObject
   dbModuleModInstItr* _module_modinst_itr;
   dbModuleModBTermItr* _module_modbterm_itr;
   dbModuleModInstModITermItr* _module_modinstmoditerm_itr;
-  
+
   dbModuleModNetItr* _module_modnet_itr;
   dbModuleModNetModITermItr* _module_modnet_moditerm_itr;
-  dbModuleModNetModBTermItr* _module_modnet_modbterm_itr;  
+  dbModuleModNetModBTermItr* _module_modnet_modbterm_itr;
   dbModuleModNetITermItr* _module_modnet_iterm_itr;
-  dbModuleModNetBTermItr* _module_modnet_bterm_itr;  
-  
-  
+  dbModuleModNetBTermItr* _module_modnet_bterm_itr;
+
   dbRegionGroupItr* _region_group_itr;
   dbGroupItr* _group_itr;
   dbGuideItr* _guide_itr;

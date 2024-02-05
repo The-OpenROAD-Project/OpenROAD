@@ -90,14 +90,14 @@
 #include "dbModNet.h"
 #include "dbModule.h"
 #include "dbModuleInstItr.h"
+#include "dbModuleModBTermItr.h"
 #include "dbModuleModInstItr.h"
 #include "dbModuleModInstModITermItr.h"
-#include "dbModuleModBTermItr.h"
+#include "dbModuleModNetBTermItr.h"
+#include "dbModuleModNetITermItr.h"
 #include "dbModuleModNetItr.h"
 #include "dbModuleModNetModBTermItr.h"
 #include "dbModuleModNetModITermItr.h"
-#include "dbModuleModNetBTermItr.h"
-#include "dbModuleModNetITermItr.h"
 #include "dbNameCache.h"
 #include "dbNet.h"
 #include "dbNetTrack.h"
@@ -370,19 +370,19 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _region_inst_itr = new dbRegionInstItr(_inst_tbl);
 
   _module_inst_itr = new dbModuleInstItr(_inst_tbl);
-  
+
   _module_modinst_itr = new dbModuleModInstItr(_modinst_tbl);
 
   _module_modinstmoditerm_itr = new dbModuleModInstModITermItr(_moditerm_tbl);
 
   _module_modbterm_itr = new dbModuleModBTermItr(_modbterm_tbl);
-  
+
   _module_modnet_itr = new dbModuleModNetItr(_modnet_tbl);
 
   _module_modnet_modbterm_itr = new dbModuleModNetModBTermItr(_modbterm_tbl);
   _module_modnet_moditerm_itr = new dbModuleModNetModITermItr(_moditerm_tbl);
   _module_modnet_iterm_itr = new dbModuleModNetITermItr(_iterm_tbl);
-  _module_modnet_bterm_itr = new dbModuleModNetBTermItr(_bterm_tbl);      
+  _module_modnet_bterm_itr = new dbModuleModNetBTermItr(_bterm_tbl);
 
   _region_group_itr = new dbRegionGroupItr(_group_tbl);
 
@@ -4072,26 +4072,22 @@ void dbBlock::dumpDebug()
   printf("Debug: Data base tables for block at %p:\n", block);
 
   printf("Db nets (The Flat world)\n");
-  for (auto dbnet: getNets()){
-    printf("dbnet %s (id %u)\n",
-	   dbnet -> getName().c_str(),
-	   dbnet -> getId());
-    dbNetITermItr dbnetiter(block -> _iterm_tbl);
+  for (auto dbnet : getNets()) {
+    printf("dbnet %s (id %u)\n", dbnet->getName().c_str(), dbnet->getId());
+    dbNetITermItr dbnetiter(block->_iterm_tbl);
     dbObject* parent = (dbObject*) dbnet;
     uint id;
-    for (id = dbnetiter.begin(parent);
-	 id != dbnetiter.end(parent);
-	 id = dbnetiter.next(id)){
-      printf("\t-> Db Iterm %u\n",id);
+    for (id = dbnetiter.begin(parent); id != dbnetiter.end(parent);
+         id = dbnetiter.next(id)) {
+      printf("\t-> Db Iterm %u\n", id);
     }
-    dbNetBTermItr dbnetbter(block -> _bterm_tbl);
-    for (id = dbnetbter.begin(parent);
-	 id != dbnetbter.end(parent);
-	 id = dbnetbter.next(id)){
-      printf("\t-> Db Bterm %u\n",id);
+    dbNetBTermItr dbnetbter(block->_bterm_tbl);
+    for (id = dbnetbter.begin(parent); id != dbnetbter.end(parent);
+         id = dbnetbter.next(id)) {
+      printf("\t-> Db Bterm %u\n", id);
     }
   }
-  
+
   printf("Block ports\n");
   // got through the ports and their owner
   printf("\t\tBTerm Ports +++\n");
@@ -4117,10 +4113,10 @@ void dbBlock::dumpDebug()
       printf("\tModule %s\n", ((dbModule*) cur_obj)->getName());
       // got through the ports and their owner
       printf("\t\tModBTerm Ports +++\n");
-      dbSet<dbModBTerm> module_ports = cur_obj -> getModBTerms();
+      dbSet<dbModBTerm> module_ports = cur_obj->getModBTerms();
       for (dbSet<dbModBTerm>::iterator mod_bterm_iter = module_ports.begin();
-	   mod_bterm_iter != module_ports.end();
-	   mod_bterm_iter++){
+           mod_bterm_iter != module_ports.end();
+           mod_bterm_iter++) {
         dbModBTerm* module_port = *mod_bterm_iter;
         printf("\t\tPort %s\n", module_port->getName());
         printf("\t\tPort parent %s\n\n", module_port->getParent()->getName());
@@ -4128,10 +4124,10 @@ void dbBlock::dumpDebug()
       printf("\t\tModBTermPorts ---\n");
 
       printf("\t\tModule instances +++\n");
-      dbSet<dbModInst> module_instances = mi -> getModInsts();
-      for ( dbSet<dbModInst>::iterator  mod_inst_iter = module_instances.begin();
-	    mod_inst_iter != module_instances.end();
-	    mod_inst_iter ++){
+      dbSet<dbModInst> module_instances = mi->getModInsts();
+      for (dbSet<dbModInst>::iterator mod_inst_iter = module_instances.begin();
+           mod_inst_iter != module_instances.end();
+           mod_inst_iter++) {
         dbModInst* module_inst = *mod_inst_iter;
         printf("\t\tMod inst %s ", module_inst->getName());
         dbModule* master = module_inst->getMaster();
@@ -4141,24 +4137,20 @@ void dbBlock::dumpDebug()
         if (owner != current_block)
           printf("\t\t\tMaster owner in wrong block\n");
 
-
         printf("\t\tConnections\n");
-	for (dbModITerm* miterm_pin: module_inst -> getModITerms()){
+        for (dbModITerm* miterm_pin : module_inst->getModITerms()) {
           printf("\t\t\tModIterm : %s (%u) Mod Net %s (%u) \n",
                  miterm_pin->getName(),
                  miterm_pin->getId(),
                  miterm_pin->getNet()
                      ? ((_dbModNet*) miterm_pin->getNet())->_name
                      : "No-net",
-                 miterm_pin->getNet() ?
-		 miterm_pin -> getNet() -> getId():
-		 0
-		 );
+                 miterm_pin->getNet() ? miterm_pin->getNet()->getId() : 0);
         }
       }
       printf("\t\tModule instances ---\n");
       printf("\t\tDb instances +++\n");
-      for (dbInst* db_inst: cur_obj -> getInsts()){
+      for (dbInst* db_inst : cur_obj->getInsts()) {
         printf("\t\tdb inst %s\n", db_inst->getName().c_str());
         printf("\t\tdb iterms:\n");
         dbSet<dbITerm> iterms = db_inst->getITerms();
@@ -4169,7 +4161,7 @@ void dbBlock::dumpDebug()
           dbMTerm* mterm = iterm->getMTerm();
           printf("\t\t\t\t iterm: %s (%u) Net: %s Mod net : %s\n",
                  mterm->getName().c_str(),
-		 iterm -> getId(),
+                 iterm->getId(),
                  iterm->getNet() ? iterm->getNet()->getName().c_str()
                                  : "unk-dbnet",
                  iterm->getModNet() ? iterm->getModNet()->getName()
@@ -4178,41 +4170,38 @@ void dbBlock::dumpDebug()
       }
       printf("\t\tDb instances ---\n");
 
-
       printf("\tModule nets (modnets) +++ \n");
       printf("\t# mod nets %u in %s (%p)\n",
-	     cur_obj->getModNets().size(),
-	     cur_obj -> getName(),
-	     cur_obj
-	     );
-      dbSet<dbModNet> mod_nets = cur_obj -> getModNets();
+             cur_obj->getModNets().size(),
+             cur_obj->getName(),
+             cur_obj);
+      dbSet<dbModNet> mod_nets = cur_obj->getModNets();
       for (dbSet<dbModNet>::iterator mod_net_iter = mod_nets.begin();
-	   mod_net_iter != mod_nets.end();
-	   mod_net_iter++){
+           mod_net_iter != mod_nets.end();
+           mod_net_iter++) {
         dbModNet* mod_net = *mod_net_iter;
-        printf("\t\tNet: %s (%u)\n", mod_net -> getName(), mod_net -> getId());
+        printf("\t\tNet: %s (%u)\n", mod_net->getName(), mod_net->getId());
         printf("\t\tConnections -> modIterms/modbterms/bterms/iterms:\n");
-	printf("\t\t -> %u moditerms\n", mod_net -> getModITerms().size());
-	for (dbModITerm* modi_term: mod_net -> getModITerms()){
-	  printf("\t\t\t%s\n",modi_term -> getName());
-	}
-	printf("\t\t -> %u modbterms\n", mod_net -> getModBTerms().size());	
-	for (dbModBTerm* modb_term: mod_net -> getModBTerms()){
-	  printf("\t\t\t%s\n",modb_term -> getName());
-	}
-	printf("\t\t -> %u iterms\n", mod_net -> getITerms().size());		
-	for (dbITerm* db_iterm: mod_net -> getITerms()){
-	  printf("\t\t\t%s\n",db_iterm -> getName().c_str());
-	}
-	printf("\t\t -> %u bterms\n", mod_net -> getBTerms().size());		
-	for (dbBTerm* db_bterm: mod_net -> getBTerms()){
-	  printf("\t\t\t%s\n",db_bterm -> getName().c_str());
-	}
+        printf("\t\t -> %u moditerms\n", mod_net->getModITerms().size());
+        for (dbModITerm* modi_term : mod_net->getModITerms()) {
+          printf("\t\t\t%s\n", modi_term->getName());
+        }
+        printf("\t\t -> %u modbterms\n", mod_net->getModBTerms().size());
+        for (dbModBTerm* modb_term : mod_net->getModBTerms()) {
+          printf("\t\t\t%s\n", modb_term->getName());
+        }
+        printf("\t\t -> %u iterms\n", mod_net->getITerms().size());
+        for (dbITerm* db_iterm : mod_net->getITerms()) {
+          printf("\t\t\t%s\n", db_iterm->getName().c_str());
+        }
+        printf("\t\t -> %u bterms\n", mod_net->getBTerms().size());
+        for (dbBTerm* db_bterm : mod_net->getBTerms()) {
+          printf("\t\t\t%s\n", db_bterm->getName().c_str());
+        }
       }
     }
   } else
     printf("Empty module table\n");
 }
-
 
 }  // namespace odb

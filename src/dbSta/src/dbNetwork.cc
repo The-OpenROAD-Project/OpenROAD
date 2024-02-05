@@ -44,7 +44,6 @@
 #include "sta/PortDirection.hh"
 #include "utl/Logger.h"
 
-
 //#define DEBUG_DBNW
 //#define DEBUG_BUS
 //#define DEBUG_HNAMES
@@ -148,9 +147,9 @@ DbInstanceChildIterator::DbInstanceChildIterator(const Instance* instance,
 {
   dbBlock* block = network->block();
   module_ = block->getTopModule();
-  modinst_iter_ = ((dbModule*)module_)->getModInsts().begin();
+  modinst_iter_ = ((dbModule*) module_)->getModInsts().begin();
   modinst_end_ = modinst_iter_;
-  dbinst_iter_ = ((dbModule*)module_)->getInsts().begin();
+  dbinst_iter_ = ((dbModule*) module_)->getInsts().begin();
   dbinst_end_ = dbinst_iter_;
 
   if (instance == network->topInstance() && block) {
@@ -404,23 +403,21 @@ class DbNetTermIterator : public NetTermIterator
 DbNetTermIterator::DbNetTermIterator(const Net* net, const dbNetwork* network)
     : network_(network)
 {
-  dbModNet* modnet=nullptr;
+  dbModNet* modnet = nullptr;
   dbNet* dnet = nullptr;
-  network_ -> staToDb(net, dnet, modnet);
-  if (dnet && !modnet){
+  network_->staToDb(net, dnet, modnet);
+  if (dnet && !modnet) {
     dbSet<dbBTerm> terms = dnet->getBTerms();
     iter_ = terms.begin();
     end_ = terms.end();
-  }
-  else if (modnet){
+  } else if (modnet) {
     dbSet<dbBTerm> terms = modnet->getBTerms();
     iter_ = terms.begin();
     end_ = terms.end();
-  }
-  else{
+  } else {
     dbSet<dbBTerm> terms;
-    iter_= terms.begin();
-    end_= terms.end();
+    iter_ = terms.begin();
+    end_ = terms.end();
   }
 }
 
@@ -613,7 +610,7 @@ void dbNetwork::makeVerilogCell(Library* library, dbModInst* mod_inst)
 #ifdef DEBUG_BUS
   printf("Making verilog cell for %s\n", master->getName());
   printf("Terms (modbterms) on master\n");
-  for (auto i = master -> getModBTerms()){
+  for (auto i = master->getModBTerms()) {
     printf("ModBTerm: %s\n", (*i)->getName());
   }
 #endif
@@ -626,11 +623,10 @@ void dbNetwork::makeVerilogCell(Library* library, dbModInst* mod_inst)
   // Handle bus ports
   std::map<std::string, dbModBTerm*> name2modbterm;
 
-
-  for (dbSet<dbModBTerm>::iterator modbterm_iter =  master->getModBTerms().begin();
+  for (dbSet<dbModBTerm>::iterator modbterm_iter
+       = master->getModBTerms().begin();
        modbterm_iter != master->getModBTerms().end();
-       modbterm_iter++
-       ){
+       modbterm_iter++) {
     dbModBTerm* modbterm = *modbterm_iter;
     const char* port_name = modbterm->getName();
     Port* port = ConcreteNetwork::makePort(local_cell, port_name);
@@ -990,9 +986,9 @@ Net* dbNetwork::net(const Pin* pin) const
   dbBTerm* bterm;
   dbModITerm* moditerm;
   dbModBTerm* modbterm;
-#ifdef DEBUG_DBNW  
+#ifdef DEBUG_DBNW
   printf("Getting net for pin %s\n", name(pin));
-#endif  
+#endif
   staToDb(pin, iterm, bterm, moditerm, modbterm);
   if (iterm) {
     dbNet* dnet = iterm->getNet();
@@ -1097,7 +1093,7 @@ Port* dbNetwork::port(const Pin* pin) const
     dbModInst* mod_inst = moditerm->getParent();
     dbModule* module = mod_inst->getMaster();
     dbModBTerm* mod_port = module->findModBTerm(port_name);
-    if (mod_port){
+    if (mod_port) {
       ret = dbToSta(mod_port);
       return ret;
     }
@@ -1368,12 +1364,12 @@ void dbNetwork::visitConnectedPins(const Net* net,
 {
   static int debug;
   debug++;
-  
+
   dbNet* db_net = nullptr;
   dbModNet* mod_net = nullptr;
   staToDb(net, db_net, mod_net);
 
-  if (db_net && !mod_net){
+  if (db_net && !mod_net) {
     for (dbITerm* iterm : db_net->getITerms()) {
       Pin* pin = dbToSta(iterm);
       visitor(pin);
@@ -1382,10 +1378,9 @@ void dbNetwork::visitConnectedPins(const Net* net,
     for (dbBTerm* bterm : db_net->getBTerms()) {
       Pin* pin = dbToSta(bterm);
       visitor(pin);
-      debug++;    
+      debug++;
     }
-  }
-  else if (mod_net){
+  } else if (mod_net) {
     for (dbITerm* iterm : mod_net->getITerms()) {
       Pin* pin = dbToSta(iterm);
       visitor(pin);
@@ -1394,17 +1389,16 @@ void dbNetwork::visitConnectedPins(const Net* net,
     for (dbBTerm* bterm : mod_net->getBTerms()) {
       Pin* pin = dbToSta(bterm);
       visitor(pin);
-      debug++;    
+      debug++;
     }
-  
+
     for (dbModITerm* moditerm : mod_net->getModITerms()) {
       Pin* pin = dbToSta(moditerm);
       visitor(pin);
-      debug++;    
+      debug++;
     }
   }
 }
-
 
 const Net* dbNetwork::highestConnectedNet(Net* net) const
 {
@@ -2144,7 +2138,7 @@ void dbNetwork::staToDb(const Port* port,
           mterm = staToDb(port);
           return;
         } else {
-          if (module->findModBTerm(name(port))){
+          if (module->findModBTerm(name(port))) {
             return;
           }
         }

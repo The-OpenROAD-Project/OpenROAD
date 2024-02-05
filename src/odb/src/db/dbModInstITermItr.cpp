@@ -34,7 +34,6 @@
 #include "dbModInstITermItr.h"
 
 #include "dbModITerm.h"
-#include "dbModITerm.h"
 #include "dbTable.h"
 
 namespace odb {
@@ -83,7 +82,6 @@ uint dbModInstITermItr::begin(dbObject* parent)
   _dbModInst* modinst = (_dbModInst*) parent;
   return modinst->_moditerms;
   // User Code End begin
-
 }
 
 uint dbModInstITermItr::end(dbObject* /* unused: parent */)
@@ -91,7 +89,6 @@ uint dbModInstITermItr::end(dbObject* /* unused: parent */)
   return 0;
 }
 
-  
 uint dbModInstITermItr::next(uint id, ...)
 {
   // User Code Begin next

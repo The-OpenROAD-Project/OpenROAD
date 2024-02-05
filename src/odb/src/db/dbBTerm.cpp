@@ -453,10 +453,10 @@ dbModNet* dbBTerm::getModNet()
 void dbBTerm::connect(dbModNet* mod_net)
 {
   dbModule* parent_module = mod_net->getParent();
-  _dbBlock* block = (_dbBlock*) (parent_module -> getOwner());
-  _dbModNet* _mod_net = (_dbModNet*)mod_net;
+  _dbBlock* block = (_dbBlock*) (parent_module->getOwner());
+  _dbModNet* _mod_net = (_dbModNet*) mod_net;
   _dbBTerm* bterm = (_dbBTerm*) this;
-  if (bterm->_mnet == _mod_net -> getId())
+  if (bterm->_mnet == _mod_net->getId())
     return;
 
   if (bterm->_mnet) {
@@ -464,9 +464,8 @@ void dbBTerm::connect(dbModNet* mod_net)
   }
   bterm->connectModNet(_mod_net, block);
   //  printf("Mod net now connected to %d bterms\n",
-  //	 mod_net -> getBTerms().size());  
+  //	 mod_net -> getBTerms().size());
 }
-
 
 void dbBTerm::connect(dbNet* net_)
 {
@@ -755,7 +754,8 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
 
 void _dbBTerm::connectModNet(_dbModNet* mod_net, _dbBlock* block)
 {
-  //  printf("Connecting mod net %s  to bterm %s\n", ((dbModNet*)mod_net) -> getName(),
+  //  printf("Connecting mod net %s  to bterm %s\n", ((dbModNet*)mod_net) ->
+  //  getName(),
   //	 _name
   //	 );
   _mnet = mod_net->getOID();
@@ -769,8 +769,6 @@ void _dbBTerm::connectModNet(_dbModNet* mod_net, _dbBlock* block)
   _prev_modnet_bterm = 0;
   mod_net->_bterms = getOID();
 }
-
-
 
 void _dbBTerm::connectNet(_dbNet* net, _dbBlock* block)
 {
@@ -873,7 +871,6 @@ void _dbBTerm::disconnectNet(_dbBTerm* bterm, _dbBlock* block)
 
 void _dbBTerm::disconnectModNet(_dbBTerm* bterm, _dbBlock* block)
 {
-
   _dbModNet* mod_net = block->_modnet_tbl->getPtr(bterm->_mnet);
   uint id = bterm->getOID();
   if (mod_net->_bterms == id) {
@@ -894,8 +891,6 @@ void _dbBTerm::disconnectModNet(_dbBTerm* bterm, _dbBlock* block)
   }
   _mnet = 0;
 }
-
-
 
 dbSet<dbBTerm>::iterator dbBTerm::destroy(dbSet<dbBTerm>::iterator& itr)
 {

@@ -165,7 +165,9 @@ class Verilog2db
   void recordBusPortsOrder();
   void recordBusPortsOrder(Cell*);
   void makeDbNets(const Instance* inst);
-  void makeVModNets(const Instance* inst, dbModule* module,std::map<std::string,dbModNet*>& mod_net_set);
+  void makeVModNets(const Instance* inst,
+                    dbModule* module,
+                    std::map<std::string, dbModNet*>& mod_net_set);
   void makeVModNets(
       std::vector<std::pair<const Instance*, dbModule*>>& inst_module_vec);
   void WireUpModNetsForTopInst(const Instance* inst);
@@ -656,17 +658,17 @@ dbIoType Verilog2db::staToDb(PortDirection* dir)
 void Verilog2db::makeVModNets(
     std::vector<std::pair<const Instance*, dbModule*>>& inst_module_vec)
 {
-  std::map<dbModule*,std::set<const Instance*> > module_instance_set;
+  std::map<dbModule*, std::set<const Instance*>> module_instance_set;
   for (auto im : inst_module_vec) {
     const Instance* cur_inst = im.first;
     dbModule* dm = im.second;
     module_instance_set[dm].insert(cur_inst);
   }
-  for (auto& [dm, inst_set] : module_instance_set){
-    //scope mod nets within each module using mod_net_map
-    std::map<std::string,dbModNet*> mod_net_map;
-    for (auto cur_inst: inst_set){ //all instances in this module.
-      makeVModNets(cur_inst, dm,mod_net_map);
+  for (auto& [dm, inst_set] : module_instance_set) {
+    // scope mod nets within each module using mod_net_map
+    std::map<std::string, dbModNet*> mod_net_map;
+    for (auto cur_inst : inst_set) {  // all instances in this module.
+      makeVModNets(cur_inst, dm, mod_net_map);
     }
   }
 }
@@ -718,8 +720,9 @@ void Verilog2db::WireUpModNetsForTopInst(const Instance* inst)
   delete net_iter;
 }
 
-void Verilog2db::makeVModNets(const Instance* inst, dbModule* module,
-			      std::map<std::string,dbModNet*>& mod_net_set)
+void Verilog2db::makeVModNets(const Instance* inst,
+                              dbModule* module,
+                              std::map<std::string, dbModNet*>& mod_net_set)
 {
   Instance* top_instance = network_->topInstance();
 
@@ -775,39 +778,35 @@ void Verilog2db::makeVModNets(const Instance* inst, dbModule* module,
     if (!add_mod_connection)
       continue;
 
-
-
     // Make the module net (if it is not already present)
     dbModNet* db_mod_net = nullptr;
     std::string net_name_str(net_name);
     auto set_iter = mod_net_set.find(net_name_str);
-    if (set_iter != mod_net_set.end()){
-      db_mod_net =  (*set_iter).second;
+    if (set_iter != mod_net_set.end()) {
+      db_mod_net = (*set_iter).second;
 #ifdef DEBUG_VMODNETS
       printf("D %d recycling a mod net %s in module %s\n",
-	     debug,
-	     net_name,
-	     module -> getName());
+             debug,
+             net_name,
+             module->getName());
 #endif
-    }
-    else{
+    } else {
       db_mod_net = dbModNet::create(module, net_name);
-      mod_net_set[net_name_str]= db_mod_net;
+      mod_net_set[net_name_str] = db_mod_net;
 #ifdef DEBUG_VMODNETS
-    debug++;
-    printf(
-        "D %d Making vmod net for net %s (%s) on instance %s pin %s  in module "
-        "%s\n",
-        debug,
-        net_name,
-        network_->name(inst_pin_net),
-        network_->name(inst),
-        network_->name(inst_pin),
-	module -> getName());
+      debug++;
+      printf(
+          "D %d Making vmod net for net %s (%s) on instance %s pin %s  in "
+          "module "
+          "%s\n",
+          debug,
+          net_name,
+          network_->name(inst_pin_net),
+          network_->name(inst),
+          network_->name(inst_pin),
+          module->getName());
 #endif
-      
     }
-
 
     for (const Pin* pin : net_pins) {
       dbITerm* iterm = nullptr;
@@ -817,12 +816,10 @@ void Verilog2db::makeVModNets(const Instance* inst, dbModule* module,
 
       Instance* cur_inst = network_->instance(pin);
 
-      if (!(
-	    (cur_inst == inst) ||
-	    (cur_inst == network_->parent(inst)) ||
-	    (network_ -> parent(inst) == network_ -> parent(cur_inst)) 
-            || (cur_inst == top_instance && network_->parent(inst) == top_instance)))
-	{
+      if (!((cur_inst == inst) || (cur_inst == network_->parent(inst))
+            || (network_->parent(inst) == network_->parent(cur_inst))
+            || (cur_inst == top_instance
+                && network_->parent(inst) == top_instance))) {
 #ifdef DEBUG_VMODNETS
         printf(
             "**D %d Skipping net pin %s on instance %s (entry instance %s)\n",
