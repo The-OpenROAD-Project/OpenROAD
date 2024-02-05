@@ -2,8 +2,6 @@ name: Docs Tester
 
 on:
   push:
-    branches:
-      - master
 
 jobs:
   docs-test-job:
