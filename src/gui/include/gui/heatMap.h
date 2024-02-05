@@ -212,6 +212,10 @@ class HeatMapDataSource
   void assignMapColors();
   void markColorsInvalid() { colors_correct_ = false; }
 
+  virtual void populateXYGrid();
+  void setXYMapGrid(const std::vector<int>& x_grid,
+                    const std::vector<int>& y_grid);
+
   virtual bool destroyMapOnNotVisible() const { return false; }
 
   template <typename T>
@@ -248,6 +252,8 @@ class HeatMapDataSource
   bool show_legend_;
 
   Map map_;
+  std::vector<int> map_x_grid_;
+  std::vector<int> map_y_grid_;
 
   std::unique_ptr<HeatMapRenderer> renderer_;
   HeatMapSetup* setup_;

@@ -33,16 +33,33 @@
 #pragma once
 
 #include "gui/heatMap.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "odb/util.h"
 
 namespace gui {
-class RUDYDataSource : public gui::HeatMapDataSource
+class RUDYDataSource : public gui::HeatMapDataSource,
+                       public odb::dbBlockCallBackObj
 {
  public:
   RUDYDataSource(utl::Logger* logger, odb::dbDatabase* db);
   bool canAdjustGrid() const override { return false; }
   double getGridXSize() const override;
   double getGridYSize() const override;
+
+  virtual void onShow() override;
+  virtual void onHide() override;
+
+  // from dbBlockCallBackObj API
+  virtual void inDbInstCreate(odb::dbInst*) override;
+  virtual void inDbInstCreate(odb::dbInst*, odb::dbRegion*) override;
+  virtual void inDbInstDestroy(odb::dbInst*) override;
+  virtual void inDbInstPlacementStatusBefore(
+      odb::dbInst*,
+      const odb::dbPlacementStatus&) override;
+  virtual void inDbInstSwapMasterBefore(odb::dbInst*, odb::dbMaster*) override;
+  virtual void inDbInstSwapMasterAfter(odb::dbInst*) override;
+  virtual void inDbPreMoveInst(odb::dbInst*) override;
+  virtual void inDbPostMoveInst(odb::dbInst*) override;
 
  protected:
   bool populateMap() override;
@@ -53,6 +70,7 @@ class RUDYDataSource : public gui::HeatMapDataSource
                       const double intersection_area,
                       const double rect_area) override;
   void setBlock(odb::dbBlock* block) override;
+  void populateXYGrid() override;
 
  private:
   static constexpr int default_grid_ = 10;

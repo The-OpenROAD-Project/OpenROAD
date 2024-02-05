@@ -103,21 +103,22 @@ void RUDYDataSource::combineMapData(bool base_has_value,
 {
   base += new_data * intersection_area / rect_area;
 }
+
 bool RUDYDataSource::populateMap()
 {
   if (!getBlock()) {
     return false;
   }
 
-  auto gridSize = rudyInfo_->getGridSize();
-  if (gridSize.first == 0 || gridSize.second == 0) {
+  const auto& [x_grid_size, y_grid_size] = rudyInfo_->getGridSize();
+  if (x_grid_size == 0 || y_grid_size == 0) {
     return false;
   }
 
   rudyInfo_->calculateRUDY();
 
-  for (int x = 0; x < gridSize.first; ++x) {
-    for (int y = 0; y < gridSize.second; ++y) {
+  for (int x = 0; x < x_grid_size; ++x) {
+    for (int y = 0; y < y_grid_size; ++y) {
       auto tile = rudyInfo_->getTile(x, y);
       auto box = tile.getRect();
       const double value = tile.getRUDY();
@@ -126,9 +127,85 @@ bool RUDYDataSource::populateMap()
   }
   return true;
 }
+
 void RUDYDataSource::setBlock(odb::dbBlock* block)
 {
   HeatMapDataSource::setBlock(block);
   rudyInfo_ = std::make_unique<odb::RUDYCalculator>(getBlock());
 }
+
+void RUDYDataSource::populateXYGrid()
+{
+  if (getBlock() == nullptr) {
+    HeatMapDataSource::populateXYGrid();
+  }
+
+  auto* gCellGrid = getBlock()->getGCellGrid();
+  if (gCellGrid == nullptr) {
+    HeatMapDataSource::populateXYGrid();
+  }
+
+  std::vector<int> gcell_xgrid, gcell_ygrid;
+  gCellGrid->getGridX(gcell_xgrid);
+  gCellGrid->getGridY(gcell_ygrid);
+
+  setXYMapGrid(gcell_xgrid, gcell_ygrid);
+}
+
+void RUDYDataSource::onShow()
+{
+  HeatMapDataSource::onShow();
+
+  addOwner(getBlock());
+}
+
+void RUDYDataSource::onHide()
+{
+  HeatMapDataSource::onHide();
+
+  removeOwner();
+}
+
+void RUDYDataSource::inDbInstCreate(odb::dbInst*)
+{
+  destroyMap();
+}
+
+void RUDYDataSource::inDbInstCreate(odb::dbInst*, odb::dbRegion*)
+{
+  destroyMap();
+}
+
+void RUDYDataSource::inDbInstDestroy(odb::dbInst*)
+{
+  destroyMap();
+}
+
+void RUDYDataSource::inDbInstPlacementStatusBefore(
+    odb::dbInst*,
+    const odb::dbPlacementStatus&)
+{
+  destroyMap();
+}
+
+void RUDYDataSource::inDbInstSwapMasterBefore(odb::dbInst*, odb::dbMaster*)
+{
+  destroyMap();
+}
+
+void RUDYDataSource::inDbInstSwapMasterAfter(odb::dbInst*)
+{
+  destroyMap();
+}
+
+void RUDYDataSource::inDbPreMoveInst(odb::dbInst*)
+{
+  destroyMap();
+}
+
+void RUDYDataSource::inDbPostMoveInst(odb::dbInst*)
+{
+  destroyMap();
+}
+
 }  // namespace gui

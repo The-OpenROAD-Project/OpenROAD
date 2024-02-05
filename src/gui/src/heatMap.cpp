@@ -340,24 +340,36 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
 HeatMapDataSource::MapView HeatMapDataSource::getMapView(
     const odb::Rect& bounds)
 {
-  const double dbu_per_micron = getBlock()->getDbUnitsPerMicron();
+  const auto x_low_find = std::find_if(
+      map_x_grid_.begin(), map_x_grid_.end(), [&bounds](const int x) {
+        return x >= bounds.xMin();
+      });
+  const auto x_high_find = std::find_if(
+      map_x_grid_.begin(), map_x_grid_.end(), [&bounds](const int x) {
+        return x > bounds.xMax();
+      });
+  const auto y_low_find = std::find_if(
+      map_y_grid_.begin(), map_y_grid_.end(), [&bounds](const int y) {
+        return y >= bounds.yMin();
+      });
+  const auto y_high_find = std::find_if(
+      map_y_grid_.begin(), map_y_grid_.end(), [&bounds](const int y) {
+        return y > bounds.yMax();
+      });
+
+  const int shape_x = static_cast<int>(map_.shape()[0]);
+  const int shape_y = static_cast<int>(map_.shape()[1]);
 
   const int x_low = std::max(
-      static_cast<int>(
-          std::floor(bounds.xMin() / (getGridXSize() * dbu_per_micron))),
-      0);
+      static_cast<int>(std::distance(map_x_grid_.begin(), x_low_find)) - 1, 0);
   const int x_high = std::min(
-      static_cast<int>(
-          std::ceil(bounds.xMax() / (getGridXSize() * dbu_per_micron))),
-      static_cast<int>(map_.shape()[0]));
+      static_cast<int>(std::distance(map_x_grid_.begin(), x_high_find)),
+      shape_x);
   const int y_low = std::max(
-      static_cast<int>(
-          std::floor(bounds.yMin() / (getGridYSize() * dbu_per_micron))),
-      0);
+      static_cast<int>(std::distance(map_y_grid_.begin(), y_low_find)) - 1, 0);
   const int y_high = std::min(
-      static_cast<int>(
-          std::ceil(bounds.yMax() / (getGridYSize() * dbu_per_micron))),
-      static_cast<int>(map_.shape()[1]));
+      static_cast<int>(std::distance(map_y_grid_.begin(), y_high_find)),
+      shape_y);
 
   return map_[boost::indices[Map::index_range(x_low, x_high)]
                             [Map::index_range(y_low, y_high)]];
@@ -405,33 +417,75 @@ void HeatMapDataSource::setupMap()
     return;
   }
 
-  const int dx = getGridXSize() * getBlock()->getDbUnitsPerMicron();
-  const int dy = getGridYSize() * getBlock()->getDbUnitsPerMicron();
+  populateXYGrid();
 
-  odb::Rect bounds = getBounds();
+  const size_t x_grid_size = map_x_grid_.size() - 1;
+  const size_t y_grid_size = map_y_grid_.size() - 1;
 
-  const int x_grid = std::ceil(bounds.dx() / static_cast<double>(dx));
-  const int y_grid = std::ceil(bounds.dy() / static_cast<double>(dy));
+  debugPrint(logger_,
+             utl::GUI,
+             "HeatMap",
+             1,
+             "Generating {}x{} map",
+             x_grid_size,
+             y_grid_size);
+  map_.resize(boost::extents[x_grid_size][y_grid_size]);
 
-  map_.resize(boost::extents[x_grid][y_grid]);
+  const Painter::Color default_color = getColor(0);
+  for (size_t x = 0; x < x_grid_size; x++) {
+    const int xMin = map_x_grid_[x];
+    const int xMax = map_x_grid_[x + 1];
 
-  for (int x = 0; x < x_grid; x++) {
-    const int xMin = bounds.xMin() + x * dx;
-    const int xMax = std::min(xMin + dx, bounds.xMax());
-
-    for (int y = 0; y < y_grid; y++) {
-      const int yMin = bounds.yMin() + y * dy;
-      const int yMax = std::min(yMin + dy, bounds.yMax());
+    for (size_t y = 0; y < y_grid_size; y++) {
+      const int yMin = map_y_grid_[y];
+      const int yMax = map_y_grid_[y + 1];
 
       auto map_pt = std::make_shared<MapColor>();
       map_pt->rect = odb::Rect(xMin, yMin, xMax, yMax);
       map_pt->has_value = false;
       map_pt->value = 0.0;
-      map_pt->color = getColor(0);
+      map_pt->color = default_color;
 
       map_[x][y] = map_pt;
     }
   }
+}
+
+void HeatMapDataSource::populateXYGrid()
+{
+  const int dx = getGridXSize() * getBlock()->getDbUnitsPerMicron();
+  const int dy = getGridYSize() * getBlock()->getDbUnitsPerMicron();
+
+  const odb::Rect bounds = getBounds();
+
+  const int x_grid = std::ceil(bounds.dx() / static_cast<double>(dx));
+  const int y_grid = std::ceil(bounds.dy() / static_cast<double>(dy));
+
+  std::set<int> x_grid_set, y_grid_set;
+  for (int x = 0; x < x_grid; x++) {
+    const int xMin = bounds.xMin() + x * dx;
+    const int xMax = std::min(xMin + dx, bounds.xMax());
+    x_grid_set.insert(xMin);
+    x_grid_set.insert(xMax);
+  }
+  for (int y = 0; y < y_grid; y++) {
+    const int yMin = bounds.yMin() + y * dy;
+    const int yMax = std::min(yMin + dy, bounds.yMax());
+    y_grid_set.insert(yMin);
+    y_grid_set.insert(yMax);
+  }
+
+  map_x_grid_.clear();
+  map_x_grid_.insert(map_x_grid_.end(), x_grid_set.begin(), x_grid_set.end());
+  map_y_grid_.clear();
+  map_y_grid_.insert(map_y_grid_.end(), y_grid_set.begin(), y_grid_set.end());
+}
+
+void HeatMapDataSource::setXYMapGrid(const std::vector<int>& x_grid,
+                                     const std::vector<int>& y_grid)
+{
+  map_x_grid_ = x_grid;
+  map_y_grid_ = y_grid;
 }
 
 void HeatMapDataSource::destroyMap()

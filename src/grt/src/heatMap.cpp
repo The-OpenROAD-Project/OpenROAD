@@ -313,4 +313,22 @@ void RoutingCongestionDataSource::combineMapData(bool base_has_value,
   base += new_data * intersection_area / rect_area;
 }
 
+void RoutingCongestionDataSource::populateXYGrid()
+{
+  if (getBlock() == nullptr) {
+    HeatMapDataSource::populateXYGrid();
+  }
+
+  auto* gCellGrid = getBlock()->getGCellGrid();
+  if (gCellGrid == nullptr) {
+    HeatMapDataSource::populateXYGrid();
+  }
+
+  std::vector<int> gcell_xgrid, gcell_ygrid;
+  gCellGrid->getGridX(gcell_xgrid);
+  gCellGrid->getGridY(gcell_ygrid);
+
+  setXYMapGrid(gcell_xgrid, gcell_ygrid);
+}
+
 }  // namespace grt
