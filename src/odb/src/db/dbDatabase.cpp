@@ -265,6 +265,7 @@ _dbDatabase::~_dbDatabase()
 
 dbOStream& operator<<(dbOStream& stream, const _dbDatabase& db)
 {
+  dbOStreamScope scope(stream, "dbDatabase");
   stream << db._magic1;
   stream << db._magic2;
   stream << db._schema_major;
@@ -274,7 +275,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbDatabase& db)
   stream << *db._tech_tbl;
   stream << *db._lib_tbl;
   stream << *db._chip_tbl;
-  stream << *db._prop_tbl;
+  stream << NamedTable("prop_tbl", db._prop_tbl);
   stream << *db._name_cache;
   return stream;
 }

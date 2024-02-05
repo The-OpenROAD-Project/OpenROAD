@@ -136,6 +136,7 @@ cluster_flops
     [-tray_weight tray_weight]
     [-timing_weight timing_weight]
     [-max_split_size max_split_size]
+    [-num_paths num_paths]
 ```
 
 #### General Arguments
@@ -144,7 +145,9 @@ cluster_flops
 | ----- | ----- |
 | `-tray_weight` | Set the weighting factor for tray cost (recommended to be `[20.0, float]`). |
 | `-timing_weight` | Set the weighting factor for timing-critical paths in (recommended to be `[1.0. float]`). |
-| `-max_split_size` | The maximum size of a single pointset after running the pointset decomposition algorithm for runtime improvement (to not run pointset decomposition, set as `-1`). |
+| `-max_split_size` | The maximum size of a single pointset after running the pointset decomposition algorithm for runtime improvement (default = 250). |
+| `num_paths` | Number of timing-critical paths to consider (default = 0). |
+
 
 ## Example Scripts
 
