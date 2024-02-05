@@ -34,6 +34,8 @@
 #pragma once
 
 #include "dbCore.h"
+#include "dbSet.h"
+#include "dbVector.h"
 #include "odb.h"
 
 namespace odb {
@@ -43,6 +45,7 @@ class dbDiff;
 class _dbDatabase;
 class _dbModule;
 class _dbGroup;
+class _dbModITerm;
 // User Code Begin Classes
 class dbModITerm;
 // User Code End Classes
@@ -70,7 +73,7 @@ class _dbModInst : public _dbObject
   dbId<_dbModule> _master;
   dbId<_dbModInst> _group_next;
   dbId<_dbGroup> _group;
-  std::vector<dbId<dbModITerm>> _pin_vec;
+  dbId<_dbModITerm> _moditerms;
 };
 dbIStream& operator>>(dbIStream& stream, _dbModInst& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbModInst& obj);

@@ -7540,6 +7540,18 @@ class dbModBTerm : public dbObject
 
   dbModNet* getNet() const;
 
+  void setNextNetModbterm(dbModBTerm* next_net_modbterm);
+
+  dbModBTerm* getNextNetModbterm() const;
+
+  void setPrevNetModbterm(dbModBTerm* prev_net_modbterm);
+
+  dbModBTerm* getPrevNetModbterm() const;
+
+  void setNextEntry(dbModBTerm* next_entry);
+
+  dbModBTerm* getNextEntry() const;
+
   // User Code Begin dbModBTerm
 
   void setSigType(dbSigType type);
@@ -7549,7 +7561,8 @@ class dbModBTerm : public dbObject
 
   static dbModBTerm* create(dbModule* parentModule, const char* name);
 
-  bool connect(dbModNet*);
+  void connect(dbModNet*);
+  void disconnect();
 
   char* getName();
 
@@ -7586,9 +7599,9 @@ class dbModInst : public dbObject
   std::string getHierarchicalName() const;
 
   bool getPinAtIx(unsigned ix, dbModITerm*& ret) const;
-  bool findModITerm(const char* name, dbModITerm*& ret) const;
+  bool findModITerm(const char* name, dbModITerm*& ret);
 
-  std::vector<dbId<dbModITerm>>& getPinVec() const;
+  dbSet<dbModITerm> getModITerms();
 
   // User Code End dbModInst
 };
@@ -7605,6 +7618,18 @@ class dbModITerm : public dbObject
   void setNet(dbModNet* net);
 
   dbModNet* getNet() const;
+
+  void setNextNetModiterm(dbModITerm* next_net_moditerm);
+
+  dbModITerm* getNextNetModiterm() const;
+
+  void setPrevNetModiterm(dbModITerm* prev_net_moditerm);
+
+  dbModITerm* getPrevNetModiterm() const;
+
+  void setNextEntry(dbModITerm* next_entry);
+
+  dbModITerm* getNextEntry() const;
 
   // User Code Begin dbModITerm
   void setSigType(dbSigType type);
@@ -7624,9 +7649,14 @@ class dbModNet : public dbObject
   dbModule* getParent() const;
 
   // User Code Begin dbModNet
+  dbSet<dbModITerm> getModITerms();
+  dbSet<dbModBTerm> getModBTerms();
+  dbSet<dbITerm> getITerms();
+  dbSet<dbBTerm> getBTerms();
+
   static dbModNet* create(dbModule* parentModule, const char* name);
   const char* getName() const;
-  dbModBTerm* connectedToModBTerm() const;
+  dbModBTerm* connectedToModBTerm();
   // User Code End dbModNet
 };
 
@@ -7634,6 +7664,8 @@ class dbModule : public dbObject
 {
  public:
   const char* getName() const;
+
+  void setModInst(dbModInst* mod_inst);
 
   dbModInst* getModInst() const;
 
@@ -7648,17 +7680,19 @@ class dbModule : public dbObject
   // Adding an inst to a new module will remove it from its previous
   // module.
   void addInst(dbInst* inst);
-  void addInstInHierarchy(dbInst* inst);
 
   dbBlock* getOwner();
 
-  dbSet<dbInst> getInsts();
-
   dbSet<dbModInst> getChildren();
+  dbSet<dbModInst> getModInsts();
+  dbSet<dbModNet> getModNets();
+  dbSet<dbModBTerm> getModBTerms();
+  dbSet<dbInst> getInsts();
 
   dbModInst* findModInst(const char* name);
   void removeModInst(const char* name);
   dbInst* findDbInst(const char* name);
+  dbModBTerm* findModBTerm(const char* name);
 
   std::vector<dbInst*> getLeafInsts();
 
@@ -7668,22 +7702,16 @@ class dbModule : public dbObject
 
   static dbModule* getModule(dbBlock* block_, uint dbid_);
 
-  bool findPortIx(const char* port_name, unsigned& ix) const;
-
-  std::vector<dbId<dbModBTerm>>& getPortVec() const;
-  std::vector<dbId<dbModInst>>& getModInstVec() const;
-  std::vector<dbId<dbInst>>& getDbInstVec() const;
-
   dbModInst* getModInst(dbId<dbModInst>);
   dbInst* getdbInst(dbId<dbInst>);
-  size_t getModInstCount();
-  size_t getDbInstCount();
+  unsigned getModInstCount();
+  unsigned getDbInstCount();
 
   dbModBTerm* getdbModBTerm(dbId<dbModBTerm>);
   dbModBTerm* getdbModBTerm(dbBlock*, dbId<dbModBTerm>);
   dbModNet* getModNet(const char* net_name);
 
-  bool findModBTerm(const char* port_name, dbModBTerm*& ret);
+  bool findPortIx(const char* port_name, unsigned& ix);
 
   void staSetCell(void* cell);
   void* getStaCell();

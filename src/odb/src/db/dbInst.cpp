@@ -1383,13 +1383,20 @@ dbInst* dbInst::create(dbBlock* block_,
 
   inst->_flags._physical_only = physical_only;
   if (!physical_only) {
-    block_->getTopModule()->addInst((dbInst*) inst);
+    //    block_->getTopModule()->addInst((dbInst*) inst);
+    if (parent_module)
+      parent_module->addInst((dbInst*) inst);
+    else
+      block_->getTopModule()->addInst((dbInst*) inst);
   }
+  // Check this out..
   // add to the verilog hierarchy
+  /*
   if (parent_module)
     parent_module->addInstInHierarchy((dbInst*) inst);
   else
     block_->getTopModule()->addInstInHierarchy((dbInst*) inst);
+  */
 
   if (region) {
     region->addInst((dbInst*) inst);

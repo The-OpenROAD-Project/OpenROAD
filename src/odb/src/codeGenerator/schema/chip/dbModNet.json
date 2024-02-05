@@ -20,22 +20,22 @@
           },
 	  {
 	      "name": "_moditerms",
-	      "type": "dbVector<dbId<_dbModITerm>>",
+	      "type": "dbId<_dbModITerm>",
 	      "flags":["no-set","no-get"]
 	  },
 	  {
 	      "name": "_modbterms",
-	      "type": "dbVector<dbId<_dbModBTerm>>",
+	      "type": "dbId<_dbModBTerm>",
 	      "flags":["no-set","no-get"]
 	  },
 	  {
 	      "name": "_iterms",
-	      "type": "dbVector<dbId<_dbITerm>>",
+	      "type": "dbId<_dbITerm>",
 	      "flags":["no-set","no-get"]
 	  },
 	  {
 	      "name": "_bterms",
-	      "type": "dbVector<dbId<_dbBTerm>>",
+	      "type": "dbId<_dbBTerm>",
 	      "flags":["no-set","no-get"]
 	  }
 	      

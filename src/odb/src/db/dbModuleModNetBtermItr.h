@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2022, The Regents of the University of California
+// Copyright (c) 2020, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -33,44 +33,44 @@
 // Generator Code Begin Header
 #pragma once
 
-#include "dbCore.h"
-#include "dbVector.h"
+#include "dbIterator.h"
 #include "odb.h"
+// User Code Begin Includes
+// User Code End Includes
 
 namespace odb {
-class dbIStream;
-class dbOStream;
-class dbDiff;
-class _dbDatabase;
-class _dbModule;
-class _dbModITerm;
-class _dbModBTerm;
-class _dbITerm;
-class _dbBTerm;
+class _dbModNet;
 
-class _dbModNet : public _dbObject
+template <class T>
+class dbTable;
+
+// User Code Begin classes
+// User Code End classes
+
+class dbModuleModNetBtermItr : public dbIterator
 {
  public:
-  _dbModNet(_dbDatabase*, const _dbModNet& r);
-  _dbModNet(_dbDatabase*);
+  dbModuleModNetBtermItr(dbTable<_dbModNet>* bterm_tbl)
+  {
+    _bterm_tbl = bterm_tbl;
+  }
 
-  ~_dbModNet();
-
-  bool operator==(const _dbModNet& rhs) const;
-  bool operator!=(const _dbModNet& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbModNet& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbModNet& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-
-  char* _name;
-  dbId<_dbModule> _parent;
-  dbId<_dbModNet> _next_entry;
-  dbId<_dbModITerm> _moditerms;
-  dbId<_dbModBTerm> _modbterms;
-  dbId<_dbITerm> _iterms;
-  dbId<_dbBTerm> _bterms;
+  bool reversible() override;
+  bool orderReversed() override;
+  void reverse(dbObject* parent) override;
+  uint sequential() override;
+  uint size(dbObject* parent) override;
+  uint begin(dbObject* parent) override;
+  uint end(dbObject* parent) override;
+  uint next(uint id, ...) override;
+  dbObject* getObject(uint id, ...) override;
+  // User Code Begin Methods
+  // User Code End Methods
+ private:
+  dbTable<_dbModNet>* _bterm_tbl;
+  // User Code Begin Fields
+  // User Code End Fields
 };
-dbIStream& operator>>(dbIStream& stream, _dbModNet& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbModNet& obj);
+
 }  // namespace odb
    // Generator Code End Header

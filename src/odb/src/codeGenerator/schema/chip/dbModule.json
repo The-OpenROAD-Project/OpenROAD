@@ -21,7 +21,6 @@
 	{
 	    "name":"_mod_inst",
 	    "type":"dbId<_dbModInst>",
-	    "flags":["no-set"],
 	    "parent":"dbBlock"
 	},
 	{
@@ -37,29 +36,9 @@
 	    "parent":"dbBlock"
 	},
 	{
-	    "name":"_port_vec",
-	    "type":"std::vector< dbId<dbModBTerm> >",
+	    "name":"_modbterms",
+	    "type":"dbId<_dbModBTerm>",
 	    "flags":["no-set","no-get"]	    
-	},
-	{
-	    "name":"_modinst_vec",
-	    "type":"std::vector< dbId<dbModInst> >",
-	    "flags":["no-set","no-get"]	    
-	},
-	{
-	    "name":"_dbinst_vec",
-	    "type":"std::vector< dbId<dbInst> >",
-	    "flags":["no-set","no-get"]	    	    
-	},
-	{
-      	    "name":"_port_map",
-	    "type":"std::map<std::string, uint > ",
-	    "flags": ["no-set","no-get","no-template" ]
-	},
-	{
-	    "name":"_modnet_map",
-	    "type":"std::map<std::string,dbId<dbModNet> >",
-	    "flags":["no-set","no-get"]
 	}
     ],
     "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbModBTerm.h", "dbModInst.h", "dbInst.h"],
