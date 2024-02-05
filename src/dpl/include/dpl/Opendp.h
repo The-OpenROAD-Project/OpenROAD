@@ -308,7 +308,6 @@ class Opendp
   void removeFillers();
   void optimizeMirroring();
 
-
  private:
   friend class OpendpTest_IsPlaced_Test;
   friend class Graphics;

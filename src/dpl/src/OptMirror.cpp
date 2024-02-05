@@ -32,11 +32,12 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "dpl/OptMirror.h"
+
 #include <cstdlib>
 #include <unordered_set>
 
 #include "dpl/Opendp.h"
-#include "dpl/OptMirror.h"
 #include "odb/dbTypes.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
