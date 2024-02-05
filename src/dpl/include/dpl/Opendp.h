@@ -245,25 +245,6 @@ class GridInfo
   const dbSite::RowPattern sites_;
 };
 
-// For optimize mirroring.
-class NetBox
-{
- public:
-  NetBox() = default;
-  NetBox(dbNet* net, Rect box, bool ignore);
-  int64_t hpwl();
-  void saveBox();
-  void restoreBox();
-
-  dbNet* net_ = nullptr;
-  Rect box_;
-  Rect box_saved_;
-  bool ignore_ = false;
-};
-
-using NetBoxMap = unordered_map<dbNet*, NetBox>;
-using NetBoxes = vector<NetBox*>;
-
 ////////////////////////////////////////////////////////////////
 
 // Return value for grid searches.
@@ -274,6 +255,70 @@ class PixelPt
   PixelPt(Pixel* pixel, int grid_x, int grid_y);
   Pixel* pixel = nullptr;
   Point pt;  // grid locataion
+};
+
+/**
+ * This legalizer is for comparing with OpenDP legalizer
+ * \Refer:
+ * [Abacus] Fast Legalization of Standard Cell Circuits with Minimal Movement
+ * [DREAMPlace]
+ * https://github.com/limbo018/DREAMPlace/tree/master/dreamplace/ops/abacus_legalize
+ * This is the simple and fast legalizer
+ * */
+class AbacusLegalizer
+{
+  using InstsInRow = std::vector<odb::dbInst*>;
+  using Rows = std::vector<InstsInRow>;
+  struct AbacusCluster
+  {
+    std::vector<odb::dbInst*> instSet;
+    AbacusCluster* predecessor;
+    AbacusCluster* successor;
+
+    double e;  // weight of displacement in the objective
+    double q;  // x = q/e
+    double w;  // cluster width
+    double x;  // optimal location (cluster's left edge coordinate)
+  };
+
+ public:
+  /**
+   * @brief
+   * Algorithm1 of Abacus
+   * */
+  void runAbacus(odb::dbBlock* block);
+
+ private:
+  /**
+   * @brief Algorithm2 of Abacus
+   * */
+  uint placeRow(InstsInRow* instsInRow, bool trial);
+  void addCell(AbacusCluster* cluster, odb::dbInst* inst);
+  void addCluster(AbacusCluster* predecessor, AbacusCluster* cluster);
+  void collapse(AbacusLegalizer::AbacusCluster& cluster,
+                vector<AbacusCluster>& abacusClusters);
+
+  void initRow();
+
+  /**
+   * \brief
+   * Cost evaluation for algorithm1.
+   * This will evaluate the HPWL.
+   * */
+  uint getCost();
+
+  /**
+   * @brief
+   * This function returns the index of row for the cell
+   * */
+  int getRowIdx(dbInst* cell);
+  InstsInRow* getAboveRow(InstsInRow* rowTmp);
+  InstsInRow* getBelowRow(InstsInRow* row);
+
+  odb::dbBlock* targetBlock_ = nullptr;
+  std::map<odb::dbInst*, InstsInRow*> cellToRowMap_;
+  std::map<InstsInRow*, int> rowToRowIdxMap_;
+  Rows rows_;
 };
 
 class Opendp
@@ -287,8 +332,6 @@ class Opendp
   Opendp(const Opendp&&) = delete;
   Opendp& operator=(const Opendp&&) = delete;
 
-  Point pointOffMacro(const Cell& cell);
-  void convertDbToCell(dbInst* db_inst, Cell& cell);
   void legalCellPos(dbInst* db_inst);
   void initMacrosAndGrid();
 
@@ -301,6 +344,7 @@ class Opendp
                          const std::string& report_file_name = std::string(""),
                          bool disallow_one_site_gaps = false);
   void reportLegalizationStats() const;
+
   void setPaddingGlobal(int left, int right);
   void setPadding(dbMaster* master, int left, int right);
   void setPadding(dbInst* inst, int left, int right);
@@ -312,10 +356,7 @@ class Opendp
   // Find instance/master/global padding value for an instance.
   int padRight(dbInst* inst) const;
   int padLeft(dbInst* inst) const;
-  // Return error count.
-  void processViolationsPtree(boost::property_tree::ptree& entry,
-                              const std::vector<Cell*>& failures,
-                              const std::string& violation_type = "") const;
+
   void checkPlacement(bool verbose,
                       bool disallow_one_site_gaps = false,
                       const string& report_file_name = "");
@@ -329,11 +370,15 @@ class Opendp
                        const vector<Cell*>& placement_failures);
   void fillerPlacement(dbMasterSeq* filler_masters, const char* prefix);
   void removeFillers();
-  int64_t hpwl() const;
-  int64_t hpwl(dbNet* net) const;
-  void findDisplacementStats();
   void optimizeMirroring();
+  void runAbacus() { abacusLegalizer_.runAbacus(db_->getChip()->getBlock()); }
 
+ private:
+  friend class OpendpTest_IsPlaced_Test;
+  friend class Graphics;
+  void findDisplacementStats();
+  Point pointOffMacro(const Cell& cell);
+  void convertDbToCell(dbInst* db_inst, Cell& cell);
   const vector<Cell>& getCells() const { return cells_; }
   Rect getCore() const { return core_; }
   int getRowHeight() const { return row_height_; }
@@ -341,9 +386,10 @@ class Opendp
   int getSiteWidth() const { return site_width_; }
   int getRowCount() const { return row_count_; }
   int getRowSiteCount() const { return row_site_count_; }
-
- private:
-  friend class OpendpTest_IsPlaced_Test;
+  // Return error count.
+  void processViolationsPtree(boost::property_tree::ptree& entry,
+                              const std::vector<Cell*>& failures,
+                              const std::string& violation_type = "") const;
   void importDb();
   void importClear();
   Rect getBbox(dbInst* inst);
@@ -549,16 +595,6 @@ class Opendp
                            int row_height,
                            GridInfo grid_info);
 
-  // Optimizing mirroring
-  void findNetBoxes();
-  vector<dbInst*> findMirrorCandidates(NetBoxes& net_boxes);
-  int mirrorCandidates(vector<dbInst*>& mirror_candidates);
-  // Sum of ITerm hpwl's.
-  int64_t hpwl(dbInst* inst);
-  void updateNetBoxes(dbInst* inst);
-  void saveNetBoxes(dbInst* inst);
-  void restoreNetBoxes(dbInst* inst);
-
   Logger* logger_ = nullptr;
   dbDatabase* db_ = nullptr;
   dbBlock* block_ = nullptr;
@@ -611,9 +647,6 @@ class Opendp
   int64_t displacement_sum_ = 0;
   int64_t displacement_max_ = 0;
 
-  // Optimiize mirroring.
-  NetBoxMap net_box_map_;
-
   std::unique_ptr<DplObserver> debug_observer_;
 
   // Magic numbers
@@ -621,9 +654,9 @@ class Opendp
   static constexpr double group_refine_percent_ = .05;
   static constexpr double refine_percent_ = .02;
   static constexpr int rand_seed_ = 777;
-  // Net bounding box siaz on nets with more instance terminals
-  // than this are ignored.
-  static constexpr int mirror_max_iterm_count_ = 100;
+
+  // Abacus Engine
+  AbacusLegalizer abacusLegalizer_;
 };
 
 int divRound(int dividend, int divisor);

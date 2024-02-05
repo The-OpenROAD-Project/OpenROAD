@@ -166,6 +166,12 @@ optimize_mirroring_cmd()
   opendp->optimizeMirroring();
 }
 
+void runAbacus()
+{
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->runAbacus();
+}
+
 void
 set_debug_cmd(float min_displacement,
               const odb::dbInst* debug_instance)

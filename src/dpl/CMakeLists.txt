@@ -48,6 +48,7 @@ add_library(dpl_lib
   src/Place.cpp
   src/FillerPlacement.cpp
   src/OptMirror.cpp
+        src/AbacusLegalizer.cpp
 )
 
 target_link_libraries(dpl_lib
