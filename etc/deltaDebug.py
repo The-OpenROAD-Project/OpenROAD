@@ -163,9 +163,7 @@ class deltaDebugger:
                 while j < self.get_cuts():
                     current_err = self.perform_step(cut_index=j)
                     self.step_count += 1
-                    if (current_err == "NOCUT"):
-                        break
-                    elif (current_err is not None):
+                    if (current_err is not None):
                         # Found the target error with the cut DB
                         #
                         # This is a suitable level of detail to look for more errors,
@@ -184,7 +182,7 @@ class deltaDebugger:
                 else:
                     break
 
-            if (err is None or err == "NOCUT"):
+            if err is None or self.get_cuts() == 0:
                 if (self.cut_level == cutLevel.Insts):
                     # Reduce cut level from inst to nets
                     self.cut_level = cutLevel.Nets
@@ -216,10 +214,7 @@ class deltaDebugger:
         # if cut index of -1 is provided it means
         # that no cut will be made.
         if (cut_index != -1):
-            cut_result = self.cut_block(index=cut_index)
-            if (cut_result == "NOCUT"):
-                # No more cuts are possible
-                return cut_result
+            self.cut_block(index=cut_index)
 
         # Write DB
         odb.write_db(self.base_db, self.base_db_file)
@@ -361,9 +356,7 @@ class deltaDebugger:
         ]
 
         num_elms = len(elms)
-        if (num_elms == 1):
-            # No further cuts could be done on the current odb
-            return "NOCUT"
+        assert (num_elms > 0)
 
         cuts = self.get_cuts()
         start = num_elms * index // cuts
@@ -379,7 +372,6 @@ class deltaDebugger:
         cuts = self.n * self.multiplier
         print(", ".join(message), flush=True)
         print(f"[{cut_position_string}]", flush=True)
-        return 0
 
     def cut_elements(self, start, end):
         block = self.base_db.getChip().getBlock()

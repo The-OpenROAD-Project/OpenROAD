@@ -31,10 +31,7 @@ def mock_get_nets(mock_self):
 def mock_perform_step(mock_self, cut_index=-1):
     if cut_index == -1:
         return mock_self.error_string
-    cut_result = mock_self.cut_block(index=cut_index)
-    if (cut_result == "NOCUT"):
-        # No more cuts are possible
-        return cut_result
+    mock_self.cut_block(index=cut_index)
 
     if mock_self.check_error(mock_self.insts, mock_self.nets):
         print(f"Error Code found: {mock_self.error_string}")
@@ -170,3 +167,33 @@ class TestDeltaDebug(TestCase):
         self.debugger.debug()
         self.assertEqual(set(self.debugger.insts), set(error_insts))
         self.assertEqual(set(self.debugger.nets), set(error_nets))
+
+    def test_no_insts(self):
+        self.debugger.insts = list(range(100))
+        self.debugger.nets = list(range(100))
+        error_nets = set(range(70, 90))
+
+        def check_error(insts, nets):
+            return (len(insts) >= 0
+                    and all(map(lambda x: x in nets, error_nets)))
+
+        self.debugger.check_error = check_error
+        self.debugger.persistence = 6
+        self.debugger.debug()
+        self.assertEqual(len(self.debugger.insts), 0)
+        self.assertEqual(set(self.debugger.nets), set(error_nets))
+
+    def test_no_nets(self):
+        self.debugger.insts = list(range(100))
+        self.debugger.nets = list(range(100))
+        error_insts = set(range(70, 90))
+
+        def check_error(insts, nets):
+            return (len(nets) >= 0
+                    and all(map(lambda x: x in insts, error_insts)))
+
+        self.debugger.check_error = check_error
+        self.debugger.persistence = 6
+        self.debugger.debug()
+        self.assertEqual(set(self.debugger.insts), set(error_insts))
+        self.assertEqual(len(self.debugger.nets), 0)
