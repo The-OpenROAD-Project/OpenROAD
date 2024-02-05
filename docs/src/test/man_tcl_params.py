@@ -71,21 +71,15 @@ for cmd in help_dict:
     if cmd not in readme_dict: print("command not parsed in readme_dict"); isValid = False
 
     # If invalid, don't need to test further.
-    if not isValid: 
-        print("Skipping keys/flag testing")
-        continue
+    assert isValid, "Keys/flags are missing in one of Help/Proc/Readme."
 
     # Test switches here
     s1, s2, s3 = help_dict[cmd], proc_dict[cmd], readme_dict[cmd]
     res1, res2, res3 = check_function_signatures(s1,s2), \
                         check_function_signatures(s1,s3), \
                         check_function_signatures(s2,s3)
-    if res1 and res2 and res3:
-        succeeded += 1
-        print("Success.")
-    else:
-        print(f"Help/Proc: {res1}")
-        print(f"Help/Rdme: {res2}")
-        print(f"Proc/Rdme: {res3}")
+    assert res1 and res2 and res3, print(f"Help/Proc: {res1}\nHelp/Rdme: {res2}\nProc/Rdme: {res3}")
+    succeeded += 1
+    print("Success.")
 
 print(f"----------\nSucceeded: {succeeded} out of {len(help_dict)} tests.")
