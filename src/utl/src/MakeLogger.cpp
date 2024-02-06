@@ -41,7 +41,7 @@
 #include "utl/Logger.h"
 
 namespace sta {
-  extern const char* utl_tcl_inits[];
+extern const char* utl_tcl_inits[];
 }
 
 extern "C" {
