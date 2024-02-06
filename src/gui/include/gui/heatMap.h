@@ -37,6 +37,7 @@
 #include <functional>
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <variant>
 #include <vector>
@@ -211,6 +212,10 @@ class HeatMapDataSource
   void assignMapColors();
   void markColorsInvalid() { colors_correct_ = false; }
 
+  virtual void populateXYGrid();
+  void setXYMapGrid(const std::vector<int>& x_grid,
+                    const std::vector<int>& y_grid);
+
   virtual bool destroyMapOnNotVisible() const { return false; }
 
   template <typename T>
@@ -247,6 +252,8 @@ class HeatMapDataSource
   bool show_legend_;
 
   Map map_;
+  std::vector<int> map_x_grid_;
+  std::vector<int> map_y_grid_;
 
   std::unique_ptr<HeatMapRenderer> renderer_;
   HeatMapSetup* setup_;
@@ -256,6 +263,8 @@ class HeatMapDataSource
   std::vector<double> color_lower_bounds_;
 
   std::vector<MapSetting> settings_;
+
+  std::mutex ensure_mutex_;
 };
 
 class HeatMapRenderer : public Renderer
@@ -321,6 +330,26 @@ class RealValueHeatMapDataSource : public HeatMapDataSource
   double scale_;
 
   double getValueRange() const;
+};
+
+class GlobalRoutingDataSource : public HeatMapDataSource
+{
+ public:
+  GlobalRoutingDataSource(utl::Logger* logger,
+                          const std::string& name,
+                          const std::string& short_name,
+                          const std::string& settings_group = "");
+  bool canAdjustGrid() const override { return false; }
+  double getGridXSize() const override;
+  double getGridYSize() const override;
+
+ protected:
+  void populateXYGrid() override;
+
+ private:
+  static constexpr int default_grid_ = 10;
+
+  std::pair<double, double> getReportableXYGrid() const;
 };
 
 }  // namespace gui
