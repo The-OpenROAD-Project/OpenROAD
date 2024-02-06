@@ -1363,11 +1363,9 @@ std::vector<int> FastRouteCore::getOriginalResources()
 {
   std::vector<int> original_resources(num_layers_ + 1);
   for (int l = 1; l <= num_layers_; l++) {
-    std::string l_dir;
     bool is_horizontal
         = layer_directions_[l] == odb::dbTechLayerDir::HORIZONTAL;
     if (is_horizontal) {
-      l_dir = "Horizontal";
       if (!regular_y_) {
         original_resources[l] += (v_capacity_3D_[l] + h_capacity_3D_[l])
                                  * (y_grid_) * (x_grid_ - 1);
@@ -1378,7 +1376,6 @@ std::vector<int> FastRouteCore::getOriginalResources()
             += (v_capacity_3D_[l] + h_capacity_3D_[l]) * (y_grid_) * (x_grid_);
       }
     } else {
-      l_dir = "Vertical";
       if (!regular_x_) {
         original_resources[l] += (v_capacity_3D_[l] + h_capacity_3D_[l])
                                  * (y_grid_ - 1) * (x_grid_);
@@ -1389,15 +1386,6 @@ std::vector<int> FastRouteCore::getOriginalResources()
             += (v_capacity_3D_[l] + h_capacity_3D_[l]) * (y_grid_) * (x_grid_);
       }
     }
-
-    /*if(l == 1) {
-      logger_->report("Layer 1:");
-      logger_->report(" Direction: {}", l_dir);
-      logger_->report(" v_capacity_3D_: {}", v_capacity_3D_[l]);
-      logger_->report(" h_capacity_3D_: {}", h_capacity_3D_[l]);
-      logger_->report(" last_col_v_capacity_3D_: {}", last_col_v_capacity_3D_[l]);
-      logger_->report(" last_row_h_capacity_3D_: {}", last_row_h_capacity_3D_[l]);
-    }*/
   }
 
   return original_resources;
