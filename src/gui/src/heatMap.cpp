@@ -32,6 +32,7 @@
 
 #include "gui/heatMap.h"
 
+#include <algorithm>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -340,22 +341,14 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
 HeatMapDataSource::MapView HeatMapDataSource::getMapView(
     const odb::Rect& bounds)
 {
-  const auto x_low_find = std::find_if(
-      map_x_grid_.begin(), map_x_grid_.end(), [&bounds](const int x) {
-        return x >= bounds.xMin();
-      });
+  const auto x_low_find
+      = std::lower_bound(map_x_grid_.begin(), map_x_grid_.end(), bounds.xMin());
   const auto x_high_find
-      = std::find_if(x_low_find, map_x_grid_.end(), [&bounds](const int x) {
-          return x > bounds.xMax();
-        });
-  const auto y_low_find = std::find_if(
-      map_y_grid_.begin(), map_y_grid_.end(), [&bounds](const int y) {
-        return y >= bounds.yMin();
-      });
+      = std::upper_bound(x_low_find, map_x_grid_.end(), bounds.xMax());
+  const auto y_low_find
+      = std::lower_bound(map_y_grid_.begin(), map_y_grid_.end(), bounds.yMin());
   const auto y_high_find
-      = std::find_if(y_low_find, map_y_grid_.end(), [&bounds](const int y) {
-          return y > bounds.yMax();
-        });
+      = std::upper_bound(y_low_find, map_y_grid_.end(), bounds.yMax());
 
   const int shape_x = static_cast<int>(map_.shape()[0]);
   const int shape_y = static_cast<int>(map_.shape()[1]);
