@@ -2144,10 +2144,12 @@ void GlobalRouter::mergeSegments(const std::vector<Pin>& pins, GRoute& route)
     segs_at_point[pinPt] += 1;
   }
 
-  size_t i = 0;
-  while (i < segments.size() - 1) {
-    GSegment& segment0 = segments[i];
-    GSegment& segment1 = segments[i + 1];
+  size_t read = 0;
+  size_t write = 0;
+
+  while (read < segments.size() - 1) {
+    GSegment& segment0 = segments[read];
+    GSegment& segment1 = segments[read + 1];
 
     // both segments are not vias
     if (segment0.init_layer == segment0.final_layer
@@ -2155,17 +2157,18 @@ void GlobalRouter::mergeSegments(const std::vector<Pin>& pins, GRoute& route)
         // segments are on the same layer
         segment0.init_layer == segment1.init_layer) {
       // if segment 0 connects to the end of segment 1
-      GSegment& new_seg = segments[i];
-      if (segmentsConnect(segment0, segment1, new_seg, segs_at_point)) {
-        segments[i] = new_seg;
-        segments.erase(segments.begin() + i + 1);
-      } else {
-        i++;
+      if (!segmentsConnect(segment0, segment1, segment1, segs_at_point)) {
+        segments[write++] = segment0;
       }
     } else {
-      i++;
+      segments[write++] = segment0;
     }
+    read++;
   }
+
+  segments[write] = segments[read];
+
+  segments.resize(write + 1);
 }
 
 bool GlobalRouter::segmentsConnect(const GSegment& seg0,
