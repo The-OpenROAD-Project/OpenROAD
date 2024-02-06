@@ -130,4 +130,24 @@ void RUDYDataSource::inDbPostMoveInst(odb::dbInst*)
   destroyMap();
 }
 
+void RUDYDataSource::inDbITermPostDisconnect(odb::dbITerm*, odb::dbNet*)
+{
+  destroyMap();
+}
+
+void RUDYDataSource::inDbITermPostConnect(odb::dbITerm*)
+{
+  destroyMap();
+}
+
+void RUDYDataSource::inDbBTermPostConnect(odb::dbBTerm*)
+{
+  destroyMap();
+}
+
+void RUDYDataSource::inDbBTermPostDisConnect(odb::dbBTerm*, odb::dbNet*)
+{
+  destroyMap();
+}
+
 }  // namespace gui

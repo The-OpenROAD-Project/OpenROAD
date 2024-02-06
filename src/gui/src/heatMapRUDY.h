@@ -59,6 +59,10 @@ class RUDYDataSource : public GlobalRoutingDataSource,
                                      const odb::dbPlacementStatus&) override;
   void inDbInstSwapMasterAfter(odb::dbInst*) override;
   void inDbPostMoveInst(odb::dbInst*) override;
+  void inDbITermPostDisconnect(odb::dbITerm*, odb::dbNet*) override;
+  void inDbITermPostConnect(odb::dbITerm*) override;
+  void inDbBTermPostConnect(odb::dbBTerm*) override;
+  void inDbBTermPostDisConnect(odb::dbBTerm*, odb::dbNet*) override;
 
  protected:
   bool populateMap() override;
