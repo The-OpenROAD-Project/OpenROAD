@@ -64,10 +64,9 @@ proc create_child_physical_clusters { args } {
   }
 }
 
-sta::define_cmd_args "set_ndr_layer_rule" {tech ndr layerName input isSpacing}
+sta::define_cmd_args "set_ndr_layer_rule" {tech ndr layerName input isSpacing};# checker off
 
 proc set_ndr_layer_rule { tech ndr layerName input isSpacing} {
-  sta::parse_key_args "set_ndr_layer_rule" args keys {} flags {}
   set layer [$tech findLayer $layerName]
   if { $layer == "NULL" } {
     utl::warn ODB 1000 "Layer ${layerName} not found, skipping NDR for this layer"
@@ -100,10 +99,9 @@ proc set_ndr_layer_rule { tech ndr layerName input isSpacing} {
   }
 }
 
-sta::define_cmd_args "set_ndr_rules" {tech ndr values isSpacing}
+sta::define_cmd_args "set_ndr_rules" {tech ndr values isSpacing};#checker off
 
 proc set_ndr_rules { tech ndr values isSpacing } {
-  sta::parse_key_args "set_ndr_rules" args keys {} flags {}
   if { [llength $values] == 1 } {
     # Omitting layers
     set value [lindex $values 0]
@@ -236,10 +234,9 @@ proc create_voltage_domain { args } {
   $group setType VOLTAGE_DOMAIN
 }
 
-sta::define_cmd_args "delete_physical_cluster" {cluster_name}
+sta::define_cmd_args "delete_physical_cluster" {cluster_name};# checker off
 
 proc delete_physical_cluster { args } {
-  sta::parse_key_args "delete_physical_cluster" args keys {} flags {}
   sta::check_argc_eq1 "delete_physical_cluster" $args
   set cluster_name $args
   set db [ord::get_db]
@@ -444,7 +441,7 @@ proc remove_from_physical_cluster { args } {
 
 sta::define_cmd_args "report_physical_clusters" {}
 
-proc report_physical_clusters {} {
+proc report_physical_clusters { args } {
   sta::parse_key_args "report_physical_clusters" args keys {} flags {}
   set db [ord::get_db]
   set chip [$db getChip]
@@ -463,7 +460,7 @@ proc report_physical_clusters {} {
 
 sta::define_cmd_args "report_voltage_domains" {}
 
-proc report_voltage_domains {} {
+proc report_voltage_domains { args } {
   sta::parse_key_args "report_voltage_domains" args keys {} flags {}
   set db [ord::get_db]
   set chip [$db getChip]
@@ -480,9 +477,8 @@ proc report_voltage_domains {} {
   }
 }
 
-sta::define_cmd_args "report_group" {group}
+sta::define_cmd_args "report_group" {group};# checker off
 proc report_group { group } {
-  sta::parse_key_args "report_group" args keys {} flags {}
   utl::report "[expr \"[$group getType]\" == \"PHYSICAL_CLUSTER\" ? \"Physical Cluster\": \"Voltage Domain\"]: [$group getName]"
   if { [$group hasBox] } {
     set rect [$group getBox]

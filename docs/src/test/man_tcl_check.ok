@@ -15,7 +15,7 @@ Command counts match.
 Command counts do not match.
 ./src/gui            7               7               7
 Command counts match.
-./src/pdn            8               8               9
+./src/pdn            8               9               9
 Command counts do not match.
 ./src/psm            4               4               4
 Command counts match.
@@ -47,5 +47,5 @@ Command counts do not match.
 Command counts match.
 ./src/rsz            17              17              17
 Command counts match.
-./src/odb            17              17              17
-Command counts match.
+./src/odb            13              13              17
+Command counts do not match.

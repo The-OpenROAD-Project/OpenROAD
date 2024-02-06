@@ -90,8 +90,7 @@ sta::define_cmd_args "set_voltage_domain" {-name domain_name \
 
 proc set_voltage_domain {args} {
   sta::parse_key_args "set_voltage_domain" args \
-    keys {-name -region -power -ground -secondary_power -switched_power} \
-    flags {}
+    keys {-name -region -power -ground -secondary_power -switched_power} flags {}
 
   sta::check_argc_eq0 "set_voltage_domain" $args
 
@@ -184,15 +183,9 @@ sta::define_cmd_args "define_pdn_grid" {[-name <name>] \
                                         [-obstructions <list_of_layers>] \
                                         [-power_switch_cell <name>] \
                                         [-power_control <signal_name>] \
-                                        [-power_control_network (STAR|DAISY)]}; # checker off
+                                        [-power_control_network (STAR|DAISY)]};#checker off
 
 proc define_pdn_grid {args} {
-  sta::parse_key_args "define_pdn_grid" args \
-    keys {-name -voltage_domains -orient -instances\
-     -cells -halo -pins -obstructions -power_switch_cell\
-     -power_control -power_control_network -starts_with}\
-    flags {-macro -existing -grid_over_pg_pins -grid_over_boundary\
-     -default}; # checker off
   set is_macro 0
   set is_existing 0
   foreach arg $args {
@@ -220,8 +213,7 @@ sta::define_cmd_args "define_power_switch_cell" {-name <name> \
 
 proc define_power_switch_cell {args} {
   sta::parse_key_args "define_power_switch_cell" args \
-    keys {-name -control -acknowledge -power_switchable -power -ground} \
-    flags {}
+    keys {-name -control -acknowledge -power_switchable -power -ground} flags {}
 
   sta::check_argc_eq0 "define_power_switch_cell" $args
 
@@ -403,14 +395,14 @@ sta::define_cmd_args "add_pdn_ring" {[-grid grid_name] \
                                      -spacings (spacing_value|list_of_spacing_values) \
                                      [-core_offsets (offset_value|list_of_offset_values)] \
                                      [-pad_offsets (offset_value|list_of_offset_values)] \
+                                     [-ground_pads list_of_gnd_pads] \
+                                     [-power_pads list_of_pwr_pads] \
                                      [-add_connect] \
                                      [-extend_to_boundary] \
                                      [-connect_to_pads] \
                                      [-connect_to_pad_layers layers] \
                                      [-starts_with (POWER|GROUND)] \
-                                     [-nets list_of_nets] \
-                                     [-ground_pads pads]
-                                     [-power_pads pads]}
+                                     [-nets list_of_nets]}
 
 proc add_pdn_ring {args} {
   sta::parse_key_args "add_pdn_ring" args \
@@ -808,7 +800,7 @@ sta::define_hidden_cmd_args "convert_pdn_config" { config_file }
 proc convert_pdn_config { args } {
   sta::parse_key_args "convert_pdn_config" args \
     keys {} \
-    flags {};# checker off
+    flags {}
 
   sta::check_argc_eq1 "convert_pdn_config" $args
 
@@ -940,7 +932,7 @@ proc define_pdn_grid { args } {
 proc define_pdn_grid_existing { args } {
   sta::parse_key_args "define_pdn_grid" args \
     keys {-name -obstructions} \
-    flags {-existing}; # checker off 
+    flags {-existing};# checker off
 
   sta::check_argc_eq0 "define_pdn_grid" $args
   pdn::check_design_state "define_pdn_grid"
@@ -962,7 +954,7 @@ proc define_pdn_grid_macro { args } {
   sta::parse_key_args "define_pdn_grid" args \
     keys {-name -voltage_domains -orient -instances -cells -halo -pin_direction -starts_with \
       -obstructions} \
-    flags {-macro -grid_over_pg_pins -grid_over_boundary -default -bump}; # checker off
+    flags {-macro -grid_over_pg_pins -grid_over_boundary -default -bump};# checker off
 
   sta::check_argc_eq0 "define_pdn_grid" $args
   pdn::check_design_state "define_pdn_grid"
