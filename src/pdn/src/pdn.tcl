@@ -184,7 +184,7 @@ sta::define_cmd_args "define_pdn_grid" {[-name <name>] \
                                         [-obstructions <list_of_layers>] \
                                         [-power_switch_cell <name>] \
                                         [-power_control <signal_name>] \
-                                        [-power_control_network (STAR|DAISY)]}
+                                        [-power_control_network (STAR|DAISY)]}; # checker off
 
 proc define_pdn_grid {args} {
   sta::parse_key_args "define_pdn_grid" args \
@@ -192,7 +192,7 @@ proc define_pdn_grid {args} {
      -cells -halo -pins -obstructions -power_switch_cell\
      -power_control -power_control_network -starts_with}\
     flags {-macro -existing -grid_over_pg_pins -grid_over_boundary\
-     -default}
+     -default}; # checker off
   set is_macro 0
   set is_existing 0
   foreach arg $args {
@@ -865,7 +865,7 @@ proc define_pdn_grid { args } {
   sta::parse_key_args "define_pdn_grid" args \
     keys {-name -voltage_domains -pins -starts_with -obstructions -power_switch_cell \
       -power_control -power_control_network} \
-    flags {}
+    flags {};# checker off
 
   sta::check_argc_eq0 "define_pdn_grid" $args
   pdn::check_design_state "define_pdn_grid"
@@ -940,7 +940,7 @@ proc define_pdn_grid { args } {
 proc define_pdn_grid_existing { args } {
   sta::parse_key_args "define_pdn_grid" args \
     keys {-name -obstructions} \
-    flags {-existing}
+    flags {-existing}; # checker off 
 
   sta::check_argc_eq0 "define_pdn_grid" $args
   pdn::check_design_state "define_pdn_grid"
@@ -962,7 +962,7 @@ proc define_pdn_grid_macro { args } {
   sta::parse_key_args "define_pdn_grid" args \
     keys {-name -voltage_domains -orient -instances -cells -halo -pin_direction -starts_with \
       -obstructions} \
-    flags {-macro -grid_over_pg_pins -grid_over_boundary -default -bump}
+    flags {-macro -grid_over_pg_pins -grid_over_boundary -default -bump}; # checker off
 
   sta::check_argc_eq0 "define_pdn_grid" $args
   pdn::check_design_state "define_pdn_grid"

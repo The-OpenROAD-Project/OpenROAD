@@ -90,20 +90,6 @@ Do note that while action probabilities are normalized to 1.0, the weights are n
 | `-notch_weight` | Weight for the notch, or the existence of dead space that cannot be used for placement & routing. Note that this cost applies only to hard macro clusters.  The allowed values are floats, and the default value is `10.0`. |
 | `-macro_blockage_weight` | Weight for macro blockage, or the overlapping instances of the macro.  The allowed values are floats, and the default value is `10.0`. |
 
-### Write Macro Placement
-
-Command to generate a file with the placement of the macros in the design using multiple calls for the `place_macro` command:
-
-```tcl
-write_macro_placement file_name
-```
-
-#### Options
-
-| Switch Name | Description |
-| ----- | ----- |
-| `filename` | Filename to write the macro placement flow commands to. |
-
 ### Place Macro
 
 Command for placement of one specific macro.

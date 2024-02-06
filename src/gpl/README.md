@@ -129,9 +129,10 @@ This command does flop clustering based on parameters.
 
 ```tcl
 cluster_flops
-    [-tray_weight tray_weight] \
+    [-tray_weight tray_weight]\
     [-timing_weight timing_weight]\
-    [-max_split_size max_split_size]
+    [-max_split_size max_split_size]\
+    [-num_paths num_paths]
 ```
 
 #### Options
@@ -141,6 +142,7 @@ cluster_flops
 | `-tray_weight` | Tray weight, default value is 20.0, type `float`. |
 | `-timing_weight` | Timing weight, default value is 1.0, type `float`. |
 | `-max_split_size` | Maximum split size, default value is -1, type `int`.|
+| `-num_paths` | KIV, default value is 0, type `int`. |
 
 
 ## Useful Developer Commands

@@ -315,6 +315,7 @@ proc remove_buffers { args } {
 sta::define_cmd_args "balance_row_usage" {}
 
 proc balance_row_usage { args } {
+  sta::parse_key_args "balance_row_usage" args keys {} flags {}
   sta::check_argc_eq0 "balance_row_usage" $args
   rsz::balance_row_usage_cmd
 }

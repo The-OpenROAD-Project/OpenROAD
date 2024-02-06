@@ -55,10 +55,10 @@ initialize_floorplan
   [-utilization util]
   [-aspect_ratio ratio]
   [-core_space space | {bottom top left right}]
-  [-sites site_name]
   [-die_area {llx lly urx ury}]
   [-core_area {llx lly urx ury}]
-  [-sites site_name]
+  [-additional_sites site_names]
+  [-site site_name]
 ```
 
 #### Options
@@ -68,7 +68,8 @@ initialize_floorplan
 | `-utilization` | Percentage utilization. Allowed values are `double` in the range `(0-100]`. |
 | `-aspect_ratio` | Ratio $\frac{height}{width}$. The default value is `1.0` and the allowed values are floats `[0, 1.0]`. |
 | `-core_space` | Space around the core, default `0.0` microns. Allowed values are either one value for all margins or a set of four values, one for each margin. The order of the four values are: `{bottom top left right}`. |
-| `-sites` | Tcl list of sites to make rows for (e.g. `{SITEXX, SITEYY}`) |
+| `-additional_sites` | Tcl list of sites to make rows for (e.g. `{SITEXX, SITEYY}`) |
+| `-site` | Site name. |
 | `-die_area` | Die area coordinates in microns (lower left x/y and upper right x/y coordinates). |
 | `-core_area` | Core area coordinates in microns (lower left x/y and upper right x/y coordinates). |
 

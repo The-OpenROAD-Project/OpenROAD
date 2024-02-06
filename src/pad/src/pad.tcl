@@ -330,7 +330,8 @@ proc place_bondpad {args} {
     $offset_y
 }
 
-sta::define_cmd_args "place_io_terminals" {inst_terms}
+sta::define_cmd_args "place_io_terminals" {inst_terms
+                                        [-allow_non_top_layer]}
 
 proc place_io_terminals {args} {
   sta::parse_key_args "place_io_terminals" args \

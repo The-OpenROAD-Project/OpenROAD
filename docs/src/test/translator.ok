@@ -60,7 +60,7 @@ Names: 3,        Desc: 3,        Syn: 3,        Options: 3,        Args: 3
 mpl.md
 Names: 1,        Desc: 1,        Syn: 1,        Options: 1,        Args: 1
 mpl2.md
-Names: 3,        Desc: 3,        Syn: 3,        Options: 3,        Args: 3
+Names: 2,        Desc: 2,        Syn: 2,        Options: 2,        Args: 2
 pad.md
 Names: 14,        Desc: 14,        Syn: 14,        Options: 14,        Args: 14
 par.md
@@ -76,13 +76,13 @@ Names: 9,        Desc: 9,        Syn: 9,        Options: 9,        Args: 9
 rmp.md
 Names: 1,        Desc: 1,        Syn: 1,        Options: 1,        Args: 1
 rsz.md
-Names: 16,        Desc: 16,        Syn: 16,        Options: 16,        Args: 16
+Names: 17,        Desc: 17,        Syn: 17,        Options: 17,        Args: 17
 stt.md
 Names: 1,        Desc: 1,        Syn: 1,        Options: 1,        Args: 1
 tap.md
 Names: 5,        Desc: 5,        Syn: 5,        Options: 5,        Args: 5
 upf.md
-Names: 8,        Desc: 8,        Syn: 8,        Options: 8,        Args: 8
+Names: 11,        Desc: 11,        Syn: 11,        Options: 11,        Args: 11
 utl.md
 Names: 1,        Desc: 1,        Syn: 1,        Options: 1,        Args: 1
 Processing ../src/ant/messages.txt

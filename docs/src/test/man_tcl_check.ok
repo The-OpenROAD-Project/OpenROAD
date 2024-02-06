@@ -15,37 +15,37 @@ Command counts match.
 Command counts do not match.
 ./src/gui            7               7               7
 Command counts match.
-./src/pdn            9               9               9
-Command counts match.
+./src/pdn            8               8               9
+Command counts do not match.
 ./src/psm            4               4               4
 Command counts match.
 ./src/stt            1               1               1
 Command counts match.
-./src/ppl            10              10              11
-Command counts do not match.
+./src/ppl            11              11              11
+Command counts match.
 ./src/drt            3               3               3
 Command counts match.
-./src/cts            3               3               3
-Command counts match.
+./src/cts            2               2               3
+Command counts do not match.
 ./src/dpl            6               6               6
 Command counts match.
 ./src/rmp            1               1               1
 Command counts match.
 ./src/gpl            2               2               2
 Command counts match.
-./src/mpl2           3               4               3
-Command counts do not match.
+./src/mpl2           2               2               2
+Command counts match.
 ./src/par            6               6               6
 Command counts match.
 ./src/dft            4               4               4
 Command counts match.
-./src/upf            8               8               8
+./src/upf            11              11              11
 Command counts match.
 ./src/pad            12              12              13
 Command counts do not match.
 ./src/rcx            9               9               9
 Command counts match.
-./src/rsz            16              16              16
+./src/rsz            17              17              17
 Command counts match.
-./src/odb            16              16              16
+./src/odb            17              17              17
 Command counts match.

@@ -168,6 +168,14 @@ in buffering nets.
 remove_buffers
 ```
 
+### Balance Row Usage
+
+Command description pending.
+
+```tcl
+balance_row_usage
+```
+
 ### Repair Design
 
 The `repair_design` command inserts buffers on nets to repair max slew, max

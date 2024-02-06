@@ -543,6 +543,7 @@ proc write_guides { args } {
 sta::define_cmd_args "write_macro_placement" { file_name }
 
 proc write_macro_placement { args } {
+  sta::parse_key_args "write_macro_placement" args keys {} flags {}
   sta::check_argc_eq1  "write_macro_placement" $args
   set file_name $args
   set db [ord::get_db]

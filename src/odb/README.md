@@ -358,6 +358,19 @@ write_guides file_name
 | ----- | ----- |
 | `file_name` | Guide file name. |
 
+### Write Macro Placement
+
+This command writes macro placement.
+
+```tcl
+write_macro_placement file_name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `file_name` | Macro placement file name. |
 
 
 
