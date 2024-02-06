@@ -40,7 +40,7 @@
 #include "sta/StaMain.hh"
 #include "utl/Logger.h"
 
-namespace sta{
+namespace sta {
   extern const char* utl_tcl_inits[];
 }
 
