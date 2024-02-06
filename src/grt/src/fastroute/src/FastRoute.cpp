@@ -172,7 +172,7 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   x_grid_ = x;
   y_grid_ = y;
   num_layers_ = nLayers;
-  layer_directions_.resize(num_layers_);
+  layer_directions_.resize(num_layers_ + 1);
   if (std::max(x_grid_, y_grid_) >= 1000) {
     x_range_ = std::max(x_grid_, y_grid_);
     y_range_ = std::max(x_grid_, y_grid_);
@@ -181,12 +181,12 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
     y_range_ = 1000;
   }
 
-  v_capacity_3D_.resize(num_layers_);
-  h_capacity_3D_.resize(num_layers_);
-  last_col_v_capacity_3D_.resize(num_layers_);
-  last_row_h_capacity_3D_.resize(num_layers_);
+  v_capacity_3D_.resize(num_layers_ + 1);
+  h_capacity_3D_.resize(num_layers_ + 1);
+  last_col_v_capacity_3D_.resize(num_layers_ + 1);
+  last_row_h_capacity_3D_.resize(num_layers_ + 1);
 
-  for (int i = 0; i < num_layers_; i++) {
+  for (int i = 1; i <= num_layers_; i++) {
     v_capacity_3D_[i] = 0;
     h_capacity_3D_[i] = 0;
     last_col_v_capacity_3D_[i] = 0;
@@ -214,14 +214,14 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
 
 void FastRouteCore::addVCapacity(short verticalCapacity, int layer)
 {
-  v_capacity_3D_[layer - 1] = verticalCapacity;
-  v_capacity_ += v_capacity_3D_[layer - 1];
+  v_capacity_3D_[layer] = verticalCapacity;
+  v_capacity_ += v_capacity_3D_[layer];
 }
 
 void FastRouteCore::addHCapacity(short horizontalCapacity, int layer)
 {
-  h_capacity_3D_[layer - 1] = horizontalCapacity;
-  h_capacity_ += h_capacity_3D_[layer - 1];
+  h_capacity_3D_[layer] = horizontalCapacity;
+  h_capacity_ += h_capacity_3D_[layer];
 }
 
 void FastRouteCore::setLowerLeft(int x, int y)
@@ -319,8 +319,8 @@ void FastRouteCore::initEdges()
   h_edges_.resize(boost::extents[y_grid_][x_grid_ - 1]);
   v_edges_.resize(boost::extents[y_grid_ - 1][x_grid_]);
 
-  v_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
-  h_edges_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
+  v_edges_3D_.resize(boost::extents[num_layers_  + 1][y_grid_][x_grid_]);
+  h_edges_3D_.resize(boost::extents[num_layers_ + 1][y_grid_][x_grid_]);
 
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_ - 1; j++) {
@@ -332,7 +332,7 @@ void FastRouteCore::initEdges()
       h_edges_[i][j].last_usage = 0;
 
       // 3D edge initialization
-      for (int k = 0; k < num_layers_; k++) {
+      for (int k = 1; k <= num_layers_; k++) {
         h_edges_3D_[k][i][j].cap = h_capacity_3D_[k];
         h_edges_3D_[k][i][j].usage = 0;
         h_edges_3D_[k][i][j].red = 0;
@@ -349,7 +349,7 @@ void FastRouteCore::initEdges()
       v_edges_[i][j].last_usage = 0;
 
       // 3D edge initialization
-      for (int k = 0; k < num_layers_; k++) {
+      for (int k = 1; k <= num_layers_; k++) {
         v_edges_3D_[k][i][j].cap = v_capacity_3D_[k];
         v_edges_3D_[k][i][j].usage = 0;
         v_edges_3D_[k][i][j].red = 0;
@@ -376,11 +376,10 @@ void FastRouteCore::addAdjustment(int x1,
                                   int reducedCap,
                                   bool isReduce)
 {
-  const int k = layer - 1;
 
   if (y1 == y2) {
     // horizontal edge
-    const int cap = h_edges_3D_[k][y1][x1].cap;
+    const int cap = h_edges_3D_[layer][y1][x1].cap;
     int reduce;
 
     if (cap - reducedCap < 0) {
@@ -397,20 +396,20 @@ void FastRouteCore::addAdjustment(int x1,
       reduce = cap - reducedCap;
     }
 
-    h_edges_3D_[k][y1][x1].cap = reducedCap;
+    h_edges_3D_[layer][y1][x1].cap = reducedCap;
 
     if (!isReduce) {
       const int increase = reducedCap - cap;
       h_edges_[y1][x1].cap += increase;
     } else {
-      h_edges_3D_[k][y1][x1].red += reduce;
+      h_edges_3D_[layer][y1][x1].red += reduce;
     }
 
     h_edges_[y1][x1].cap -= reduce;
     h_edges_[y1][x1].red += reduce;
 
   } else if (x1 == x2) {  // vertical edge
-    const int cap = v_edges_3D_[k][y1][x1].cap;
+    const int cap = v_edges_3D_[layer][y1][x1].cap;
     int reduce;
 
     if (cap - reducedCap < 0) {
@@ -427,13 +426,13 @@ void FastRouteCore::addAdjustment(int x1,
       reduce = cap - reducedCap;
     }
 
-    v_edges_3D_[k][y1][x1].cap = reducedCap;
+    v_edges_3D_[layer][y1][x1].cap = reducedCap;
 
     if (!isReduce) {
       int increase = reducedCap - cap;
       v_edges_[y1][x1].cap += increase;
     } else {
-      v_edges_3D_[k][y1][x1].red += reduce;
+      v_edges_3D_[layer][y1][x1].red += reduce;
     }
 
     v_edges_[y1][x1].cap -= reduce;
@@ -585,12 +584,11 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
 
 int FastRouteCore::getEdgeCapacity(int x1, int y1, int x2, int y2, int layer)
 {
-  const int k = layer - 1;
 
   if (y1 == y2) {  // horizontal edge
-    return h_edges_3D_[k][y1][x1].cap;
+    return h_edges_3D_[layer][y1][x1].cap;
   } else if (x1 == x2) {  // vertical edge
-    return v_edges_3D_[k][y1][x1].cap;
+    return v_edges_3D_[layer][y1][x1].cap;
   } else {
     logger_->error(
         GRT,
@@ -625,15 +623,14 @@ void FastRouteCore::incrementEdge3DUsage(int x1,
                                          int y2,
                                          int layer)
 {
-  const int k = layer - 1;
 
   if (y1 == y2) {  // horizontal edge
     for (int x = x1; x < x2; x++) {
-      h_edges_3D_[k][y1][x].usage++;
+      h_edges_3D_[layer][y1][x].usage++;
     }
   } else if (x1 == x2) {  // vertical edge
     for (int y = y1; y < y2; y++) {
-      v_edges_3D_[k][y][x1].usage++;
+      v_edges_3D_[layer][y][x1].usage++;
     }
   }
 }
@@ -693,8 +690,11 @@ NetRouteMap FastRouteCore::getRoutes()
           const int yreal = tile_size_ * (gridsY[i] + 0.5) + y_corner_;
 
           GSegment segment
-              = GSegment(lastX, lastY, lastL + 1, xreal, yreal, gridsL[i] + 1);
-
+              = GSegment(lastX, lastY, lastL, xreal, yreal, gridsL[i]);
+          if(gridsL[i] == 0) {
+            logger_->report("Net tem layer 0: {}");
+            logger_->report("   edge: {}",edgeID);
+          }
           lastX = xreal;
           lastY = yreal;
           lastL = gridsL[i];
@@ -775,7 +775,7 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
             // if change direction add a via to change the layer
             if (lastL == layer_h) {
               segment = GSegment(
-                  lastX, lastY, lastL + 1, lastX, lastY, layer_v + 1);
+                  lastX, lastY, lastL, lastX, lastY, layer_v);
               if (net_segs.find(segment) == net_segs.end()) {
                 net_segs.insert(segment);
                 route.push_back(segment);
@@ -783,12 +783,12 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
             }
             lastL = layer_v;
             segment
-                = GSegment(lastX, lastY, lastL + 1, xreal, yreal, lastL + 1);
+                = GSegment(lastX, lastY, lastL, xreal, yreal, lastL);
           } else {
             // if change direction add a via to change the layer
             if (lastL == layer_v) {
               segment = GSegment(
-                  lastX, lastY, lastL + 1, lastX, lastY, layer_h + 1);
+                  lastX, lastY, lastL, lastX, lastY, layer_h);
               if (net_segs.find(segment) == net_segs.end()) {
                 net_segs.insert(segment);
                 route.push_back(segment);
@@ -796,7 +796,7 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
             }
             lastL = layer_h;
             segment
-                = GSegment(lastX, lastY, lastL + 1, xreal, yreal, lastL + 1);
+                = GSegment(lastX, lastY, lastL, xreal, yreal, lastL);
           }
           lastX = xreal;
           lastY = yreal;
@@ -824,8 +824,8 @@ void FastRouteCore::updateDbCongestion()
   db_gcell->addGridPatternX(x_corner_, x_grid_, tile_size_);
   db_gcell->addGridPatternY(y_corner_, y_grid_, tile_size_);
   auto db_tech = db_->getTech();
-  for (int k = 0; k < num_layers_; k++) {
-    auto layer = db_tech->findRoutingLayer(k + 1);
+  for (int k = 1; k <= num_layers_; k++) {
+    auto layer = db_tech->findRoutingLayer(k);
     if (layer == nullptr) {
       continue;
     }
@@ -1361,11 +1361,13 @@ void FastRouteCore::setGridMax(int x_max, int y_max)
 
 std::vector<int> FastRouteCore::getOriginalResources()
 {
-  std::vector<int> original_resources(num_layers_);
-  for (int l = 0; l < num_layers_; l++) {
+  std::vector<int> original_resources(num_layers_ + 1);
+  for (int l = 1; l <= num_layers_; l++) {
+    std::string l_dir;
     bool is_horizontal
         = layer_directions_[l] == odb::dbTechLayerDir::HORIZONTAL;
     if (is_horizontal) {
+      l_dir = "Horizontal";
       if (!regular_y_) {
         original_resources[l] += (v_capacity_3D_[l] + h_capacity_3D_[l])
                                  * (y_grid_) * (x_grid_ - 1);
@@ -1376,6 +1378,7 @@ std::vector<int> FastRouteCore::getOriginalResources()
             += (v_capacity_3D_[l] + h_capacity_3D_[l]) * (y_grid_) * (x_grid_);
       }
     } else {
+      l_dir = "Vertical";
       if (!regular_x_) {
         original_resources[l] += (v_capacity_3D_[l] + h_capacity_3D_[l])
                                  * (y_grid_ - 1) * (x_grid_);
@@ -1386,6 +1389,15 @@ std::vector<int> FastRouteCore::getOriginalResources()
             += (v_capacity_3D_[l] + h_capacity_3D_[l]) * (y_grid_) * (x_grid_);
       }
     }
+
+    /*if(l == 1) {
+      logger_->report("Layer 1:");
+      logger_->report(" Direction: {}", l_dir);
+      logger_->report(" v_capacity_3D_: {}", v_capacity_3D_[l]);
+      logger_->report(" h_capacity_3D_: {}", h_capacity_3D_[l]);
+      logger_->report(" last_col_v_capacity_3D_: {}", last_col_v_capacity_3D_[l]);
+      logger_->report(" last_row_h_capacity_3D_: {}", last_row_h_capacity_3D_[l]);
+    }*/
   }
 
   return original_resources;
@@ -1393,13 +1405,13 @@ std::vector<int> FastRouteCore::getOriginalResources()
 
 void FastRouteCore::computeCongestionInformation()
 {
-  cap_per_layer_.resize(num_layers_);
-  usage_per_layer_.resize(num_layers_);
-  overflow_per_layer_.resize(num_layers_);
-  max_h_overflow_.resize(num_layers_);
-  max_v_overflow_.resize(num_layers_);
+  cap_per_layer_.resize(num_layers_ + 1);
+  usage_per_layer_.resize(num_layers_ + 1);
+  overflow_per_layer_.resize(num_layers_ + 1);
+  max_h_overflow_.resize(num_layers_ + 1);
+  max_v_overflow_.resize(num_layers_ + 1);
 
-  for (int l = 0; l < num_layers_; l++) {
+  for (int l = 1; l <= num_layers_; l++) {
     cap_per_layer_[l] = 0;
     usage_per_layer_[l] = 0;
     overflow_per_layer_[l] = 0;

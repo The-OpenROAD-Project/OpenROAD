@@ -2569,7 +2569,7 @@ int FastRouteCore::getOverflow3D()
 
   int total_usage = 0;
 
-  for (int k = 0; k < num_layers_; k++) {
+  for (int k = 1; k <= num_layers_; k++) {
     for (int i = 0; i < y_grid_; i++) {
       for (int j = 0; j < x_grid_ - 1; j++) {
         total_usage += h_edges_3D_[k][i][j].usage;

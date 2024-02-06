@@ -327,9 +327,9 @@ void FastRouteCore::fillVIA()
                      && treenodes[treeedge->n2].lID == BIG_INT)) {
         int node1 = treeedge->n1;
         int node2 = treeedge->n2;
-        if ((treenodes[node1].botL == num_layers_
+        if ((treenodes[node1].botL == num_layers_ + 1
              && treenodes[node1].topL == -1)
-            || (treenodes[node2].botL == num_layers_
+            || (treenodes[node2].botL == num_layers_ + 1
                 && treenodes[node2].topL == -1)) {
           continue;
         }
@@ -461,7 +461,8 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
 {
   std::vector<std::vector<long>> gridD;
   int i, k, l, min_x, min_y, routelen, n1a, n2a, last_layer;
-  int min_result, endLayer = 0;
+  int min_result = 0;
+  int endLayer = 1;
 
   FrNet* net = nets_[netID];
   auto& treeedges = sttrees_[netID].edges;
@@ -476,14 +477,14 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
   n1a = treeedge->n1a;
   n2a = treeedge->n2a;
 
-  gridD.resize(num_layers_);
-  for (int i = 0; i < num_layers_; i++) {
+  gridD.resize(num_layers_ + 1);
+  for (int i = 1; i <= num_layers_; i++) {
     gridD[i].resize(treeedge->route.routelen + 1);
   }
 
   multi_array<int, 2> via_link;
-  via_link.resize(boost::extents[num_layers_][routelen + 1]);
-  for (l = 0; l < num_layers_; l++) {
+  via_link.resize(boost::extents[num_layers_ + 1][routelen + 1]);
+  for (l = 1; l <= num_layers_; l++) {
     for (k = 0; k <= routelen; k++) {
       gridD[l][k] = BIG_INT;
       via_link[l][k] = BIG_INT;
@@ -491,7 +492,7 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
   }
 
   multi_array<int, 2> layer_grid;
-  layer_grid.resize(boost::extents[num_layers_][routelen + 1]);
+  layer_grid.resize(boost::extents[num_layers_ + 1][routelen + 1]);
   for (k = 0; k < routelen; k++) {
     int best_cost = std::numeric_limits<int>::min();
     if (gridsX[k] == gridsX[k + 1]) {
@@ -514,7 +515,7 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         // try to assign the edge to the closest layer below the min routing
         // layer
         int min_layer = net->getMinLayer();
-        for (l = net->getMinLayer() - 1; l >= 0; l--) {
+        for (l = net->getMinLayer() - 1; l > 0; l--) {
           fixEdgeAssignment(min_layer,
                             v_edges_3D_,
                             gridsX[k],
@@ -529,7 +530,7 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         // try to assign the edge to the closest layer above the max routing
         // layer
         int max_layer = net->getMaxLayer();
-        for (l = net->getMaxLayer() + 1; l < num_layers_; l++) {
+        for (l = net->getMaxLayer() + 1; l <= num_layers_; l++) {
           fixEdgeAssignment(max_layer,
                             v_edges_3D_,
                             gridsX[k],
@@ -542,7 +543,7 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         }
         net->setMaxLayer(max_layer);
       } else {  // the edge was assigned to a layer without causing overflow
-        for (l = 0; l < num_layers_; l++) {
+        for (l = 1; l <= num_layers_; l++) {
           if (l < net->getMinLayer() || l > net->getMaxLayer()) {
             layer_grid[l][k] = std::numeric_limits<int>::min();
           }
@@ -569,7 +570,7 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         // try to assign the edge to the closest layer below the min routing
         // layer
         int min_layer = net->getMinLayer();
-        for (l = net->getMinLayer() - 1; l >= 0; l--) {
+        for (l = net->getMinLayer() - 1; l > 0; l--) {
           fixEdgeAssignment(min_layer,
                             h_edges_3D_,
                             min_x,
@@ -584,7 +585,7 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         // try to assign the edge to the closest layer above the max routing
         // layer
         int max_layer = net->getMaxLayer();
-        for (l = net->getMaxLayer() + 1; l < num_layers_; l++) {
+        for (l = net->getMaxLayer() + 1; l <= num_layers_; l++) {
           fixEdgeAssignment(max_layer,
                             h_edges_3D_,
                             min_x,
@@ -597,7 +598,7 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         }
         net->setMaxLayer(max_layer);
       } else {  // the edge was assigned to a layer without causing overflow
-        for (l = 0; l < num_layers_; l++) {
+        for (l = 1; l <= num_layers_; l++) {
           if (l < net->getMinLayer() || l > net->getMaxLayer()) {
             layer_grid[l][k] = std::numeric_limits<int>::min();
           }
@@ -616,10 +617,9 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         logger_->warn(GRT, 200, "Start point not assigned.");
       fflush(stdout);
     }
-
     for (k = 0; k < routelen; k++) {
-      for (l = 0; l < num_layers_; l++) {
-        for (i = 0; i < num_layers_; i++) {
+      for (l = 1; l <= num_layers_; l++) {
+        for (i = 1; i <= num_layers_; i++) {
           if (k == 0) {
             if (gridD[i][k] > gridD[l][k] + abs(i - l) * 2) {
               gridD[i][k] = gridD[l][k] + abs(i - l) * 2;
@@ -633,7 +633,7 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
           }
         }
       }
-      for (l = 0; l < num_layers_; l++) {
+      for (l = 1; l <= num_layers_; l++) {
         if (layer_grid[l][k] > 0) {
           gridD[l][k + 1] = gridD[l][k] + 1;
         } else if (layer_grid[l][k] == std::numeric_limits<int>::min()) {
@@ -646,9 +646,8 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         }
       }
     }
-
-    for (l = 0; l < num_layers_; l++) {
-      for (i = 0; i < num_layers_; i++) {
+    for (l = 1; l <= num_layers_; l++) {
+      for (i = 1; i <= num_layers_; i++) {
         if (gridD[i][k] > gridD[l][k] + abs(i - l) * 1) {
           gridD[i][k] = gridD[l][k] + abs(i - l) * 1;
           via_link[i][k] = l;
@@ -667,9 +666,9 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         }
       }
     } else {
-      min_result = gridD[0][routelen];
-      endLayer = 0;
-      for (i = 0; i < num_layers_; i++) {
+      min_result = gridD[1][routelen];
+      endLayer = 1;
+      for (i = 1; i <= num_layers_; i++) {
         if (gridD[i][routelen] < min_result || (min_result == BIG_INT)) {
           min_result = gridD[i][routelen];
           endLayer = i;
@@ -733,8 +732,8 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
     }
 
     for (k = routelen; k > 0; k--) {
-      for (l = 0; l < num_layers_; l++) {
-        for (i = 0; i < num_layers_; i++) {
+      for (l = 1; l <= num_layers_; l++) {
+        for (i = 1; i <= num_layers_; i++) {
           if (k == routelen) {
             if (gridD[i][k] > gridD[l][k] + abs(i - l) * 2) {
               gridD[i][k] = gridD[l][k] + abs(i - l) * 2;
@@ -748,7 +747,7 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
           }
         }
       }
-      for (l = 0; l < num_layers_; l++) {
+      for (l = 1; l <= num_layers_; l++) {
         if (layer_grid[l][k - 1] > 0) {
           gridD[l][k - 1] = gridD[l][k] + 1;
         } else if (layer_grid[l][k] == std::numeric_limits<int>::min()) {
@@ -762,8 +761,8 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
       }
     }
 
-    for (l = 0; l < num_layers_; l++) {
-      for (i = 0; i < num_layers_; i++) {
+    for (l = 1; l <= num_layers_; l++) {
+      for (i = 1; i <= num_layers_; i++) {
         if (gridD[i][0] > gridD[l][0] + abs(i - l) * 1) {
           gridD[i][0] = gridD[l][0] + abs(i - l) * 1;
           via_link[i][0] = l;
@@ -781,9 +780,9 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
       }
 
     } else {
-      min_result = gridD[0][k];
-      endLayer = 0;
-      for (i = 0; i < num_layers_; i++) {
+      min_result = gridD[1][k];
+      endLayer = 1;
+      for (i = 1; i <= num_layers_; i++) {
         if (gridD[i][k] < min_result || (min_result == BIG_INT)) {
           min_result = gridD[i][k];
           endLayer = i;
@@ -928,7 +927,7 @@ void FastRouteCore::layerAssignmentV4()
 
     for (nodeID = 0; nodeID < sttrees_[netID].num_nodes(); nodeID++) {
       treenodes[nodeID].topL = -1;
-      treenodes[nodeID].botL = num_layers_;
+      treenodes[nodeID].botL = num_layers_ + 1;
       treenodes[nodeID].conCNT = 0;
       treenodes[nodeID].hID = BIG_INT;
       treenodes[nodeID].lID = BIG_INT;
@@ -1008,7 +1007,7 @@ void FastRouteCore::layerAssignment()
 
     for (d = 0; d < sttrees_[netID].num_nodes(); d++) {
       treenodes[d].topL = -1;
-      treenodes[d].botL = num_layers_;
+      treenodes[d].botL = num_layers_ + 1;
       // treenodes[d].l = 0;
       treenodes[d].assigned = false;
       treenodes[d].stackAlias = d;
@@ -1107,16 +1106,11 @@ void FastRouteCore::printTree3D(int netID)
   for (int nodeID = 0; nodeID < sttrees_[netID].num_nodes(); nodeID++) {
     int x = tile_size_ * (sttrees_[netID].nodes[nodeID].x + 0.5) + x_corner_;
     int y = tile_size_ * (sttrees_[netID].nodes[nodeID].y + 0.5) + y_corner_;
-    int l = num_layers_;
-    if (nodeID < sttrees_[netID].num_terminals) {
-      l = nets_[netID]->getPinL()[nodeID];
-    }
 
-    logger_->report("nodeID {},  [{}, {}, {}], status: {}",
+    logger_->report("nodeID {},  [{}, {}], status: {}",
                     nodeID,
                     x,
                     y,
-                    l,
                     sttrees_[netID].nodes[nodeID].status);
   }
 
@@ -1497,9 +1491,9 @@ void FastRouteCore::verifyEdgeUsage()
   multi_array<int, 2> h_edges(boost::extents[y_grid_][x_grid_ - 1]);
 
   multi_array<int, 3> v_edges_3D(
-      boost::extents[num_layers_][y_grid_ - 1][x_grid_]);
+      boost::extents[num_layers_ + 1][y_grid_ - 1][x_grid_]);
   multi_array<int, 3> h_edges_3D(
-      boost::extents[num_layers_][y_grid_][x_grid_ - 1]);
+      boost::extents[num_layers_ + 1][y_grid_][x_grid_ - 1]);
 
   for (int netID = 0; netID < netCount(); netID++) {
     if (nets_[netID] == nullptr) {
@@ -1538,7 +1532,7 @@ void FastRouteCore::verifyEdgeUsage()
     }
   }
 
-  for (int k = 0; k < num_layers_; k++) {
+  for (int k = 1; k <= num_layers_; k++) {
     for (int y = 0; y < y_grid_ - 1; ++y) {
       for (int x = 0; x < x_grid_; ++x) {
         if (v_edges_3D[k][y][x] != v_edges_3D_[k][y][x].usage) {
@@ -1551,7 +1545,7 @@ void FastRouteCore::verifyEdgeUsage()
       }
     }
   }
-  for (int k = 0; k < num_layers_; k++) {
+  for (int k = 1; k <= num_layers_; k++) {
     for (int y = 0; y < y_grid_; ++y) {
       for (int x = 0; x < x_grid_ - 1; ++x) {
         if (h_edges_3D[k][y][x] != h_edges_3D_[k][y][x].usage) {

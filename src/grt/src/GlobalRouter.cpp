@@ -472,7 +472,7 @@ void GlobalRouter::initCoreGrid(int max_routing_layer)
   odb::dbTech* tech = db_->getTech();
   for (int l = 1; l <= max_routing_layer; l++) {
     odb::dbTechLayer* tech_layer = tech->findRoutingLayer(l);
-    fastroute_->addLayerDirection(l - 1, tech_layer->getDirection());
+    fastroute_->addLayerDirection(l, tech_layer->getDirection());
   }
 }
 
@@ -857,8 +857,8 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
                                        is_clock,
                                        root_idx,
                                        edge_cost_for_net,
-                                       min_layer - 1,
-                                       max_layer - 1,
+                                       min_layer,
+                                       max_layer,
                                        net->getSlack(),
                                        edge_cost_per_layer);
     // TODO: improve net layer range with more dynamic layer restrictions
@@ -868,7 +868,7 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     // for a detailed discussion
 
     for (RoutePt& pin_pos : pins_on_grid) {
-      fr_net->addPin(pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
+      fr_net->addPin(pin_pos.x(), pin_pos.y(), pin_pos.layer());
     }
 
     // Save stt input on debug file
@@ -997,14 +997,14 @@ void GlobalRouter::computeGridAdjustments(int min_routing_layer,
     fastroute_->setNumAdjustments(num_adjustments);
 
     if (!grid_->isPerfectRegularX()) {
-      fastroute_->setLastColVCapacity(new_v_capacity, level - 1);
+      fastroute_->setLastColVCapacity(new_v_capacity, level);
       for (int i = 1; i < y_grids; i++) {
         fastroute_->addAdjustment(
             x_grids - 1, i - 1, x_grids - 1, i, level, new_v_capacity, false);
       }
     }
     if (!grid_->isPerfectRegularY()) {
-      fastroute_->setLastRowHCapacity(new_h_capacity, level - 1);
+      fastroute_->setLastRowHCapacity(new_h_capacity, level);
       for (int i = 1; i < x_grids; i++) {
         fastroute_->addAdjustment(
             i - 1, y_grids - 1, i, y_grids - 1, level, new_h_capacity, false);
@@ -3496,8 +3496,8 @@ void GlobalRouter::reportResources()
   logger_->report(
       "---------------------------------------------------------------");
 
-  for (size_t l = 0; l < original_resources.size(); l++) {
-    odb::dbTechLayer* layer = routing_layers_[l + 1];
+  for (size_t l = 1; l < original_resources.size(); l++) {
+    odb::dbTechLayer* layer = routing_layers_[l];
     std::string routing_direction
         = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL)
               ? "Horizontal"
@@ -3549,7 +3549,7 @@ void GlobalRouter::reportCongestion()
       "------------------------------------------------------------------------"
       "---------------");
 
-  for (size_t l = 0; l < resources.size(); l++) {
+  for (size_t l = 1; l < resources.size(); l++) {
     float usage_percentage;
     if (resources[l] == 0) {
       usage_percentage = 0.0;
@@ -3564,7 +3564,7 @@ void GlobalRouter::reportCongestion()
     total_h_overflow += max_h_overflows[l];
     total_v_overflow += max_v_overflows[l];
 
-    odb::dbTechLayer* layer = routing_layers_[l + 1];
+    odb::dbTechLayer* layer = routing_layers_[l];
     logger_->report(
         "{:7s}      {:9}       {:7}        {:8.2f}%            {:2} / {:2} / "
         "{:2}",

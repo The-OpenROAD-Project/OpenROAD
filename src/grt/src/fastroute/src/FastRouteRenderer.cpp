@@ -109,7 +109,7 @@ void FastRouteRenderer::drawTreeEdges(gui::Painter& painter)
 
       if (is3DVisualization_) {
         drawLineObject(
-            lastX, lastY, lastL + 1, xreal, yreal, gridsL[i] + 1, painter);
+            lastX, lastY, lastL, xreal, yreal, gridsL[i], painter);
         lastL = gridsL[i];
       } else {
         drawLineObject(
@@ -127,7 +127,7 @@ void FastRouteRenderer::drawCircleObjects(gui::Painter& painter)
     const int xreal = tile_size_ * (pinX_[i] + 0.5) + x_corner_;
     const int yreal = tile_size_ * (pinY_[i] + 0.5) + y_corner_;
 
-    odb::dbTechLayer* layer = tech_->findRoutingLayer(pinL_[i] + 1);
+    odb::dbTechLayer* layer = tech_->findRoutingLayer(pinL_[i]);
     painter.setPen(layer);
     painter.setBrush(layer);
     painter.drawCircle(xreal, yreal, 1500);
