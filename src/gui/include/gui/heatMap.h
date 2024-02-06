@@ -332,4 +332,24 @@ class RealValueHeatMapDataSource : public HeatMapDataSource
   double getValueRange() const;
 };
 
+class GlobalRoutingDataSource : public HeatMapDataSource
+{
+ public:
+  GlobalRoutingDataSource(utl::Logger* logger,
+                          const std::string& name,
+                          const std::string& short_name,
+                          const std::string& settings_group = "");
+  bool canAdjustGrid() const override { return false; }
+  double getGridXSize() const override;
+  double getGridYSize() const override;
+
+ protected:
+  void populateXYGrid() override;
+
+ private:
+  static constexpr int default_grid_ = 10;
+
+  std::pair<double, double> getReportableXYGrid() const;
+};
+
 }  // namespace gui

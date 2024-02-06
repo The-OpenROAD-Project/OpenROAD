@@ -134,6 +134,15 @@ odb::Rect HeatMapDataSource::getBounds() const
   return {};
 }
 
+void HeatMapDataSource::populateXYGrid()
+{
+}
+
+void HeatMapDataSource::setXYMapGrid(const std::vector<int>& x_grid,
+                                     const std::vector<int>& y_grid)
+{
+}
+
 //////////
 
 RealValueHeatMapDataSource::RealValueHeatMapDataSource(

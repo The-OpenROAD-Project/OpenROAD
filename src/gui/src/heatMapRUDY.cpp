@@ -36,62 +36,12 @@
 
 namespace gui {
 
-RUDYDataSource::RUDYDataSource(utl::Logger* logger, odb::dbDatabase* db)
-    : gui::HeatMapDataSource(logger,
-                             "Estimated Congestion (RUDY)",
-                             "RUDY",
-                             "RUDY")
+RUDYDataSource::RUDYDataSource(utl::Logger* logger)
+    : GlobalRoutingDataSource(logger,
+                              "Estimated Congestion (RUDY)",
+                              "RUDY",
+                              "RUDY")
 {
-  logger_ = logger;
-  db_ = db;
-}
-
-double RUDYDataSource::getGridXSize() const
-{
-  if (getBlock() == nullptr) {
-    return default_grid_;
-  }
-
-  auto* gCellGrid = getBlock()->getGCellGrid();
-  if (gCellGrid == nullptr) {
-    return default_grid_;
-  }
-
-  int max_gridx = 0;
-  for (int i = 0; i < gCellGrid->getNumGridPatternsX(); i++) {
-    int origin, count, step;
-    gCellGrid->getGridPatternX(i, origin, count, step);
-    max_gridx = std::max(max_gridx, step);
-  }
-
-  if (max_gridx == 0) {
-    return default_grid_;
-  }
-  return max_gridx / getBlock()->getDbUnitsPerMicron();
-}
-
-double RUDYDataSource::getGridYSize() const
-{
-  if (getBlock() == nullptr) {
-    return default_grid_;
-  }
-
-  auto* gCellGrid = getBlock()->getGCellGrid();
-  if (gCellGrid == nullptr) {
-    return default_grid_;
-  }
-
-  int max_gridy = 0;
-  for (int i = 0; i < gCellGrid->getNumGridPatternsY(); i++) {
-    int origin, count, step;
-    gCellGrid->getGridPatternY(i, origin, count, step);
-    max_gridy = std::max(max_gridy, step);
-  }
-
-  if (max_gridy == 0) {
-    return default_grid_;
-  }
-  return max_gridy / getBlock()->getDbUnitsPerMicron();
 }
 
 void RUDYDataSource::combineMapData(bool base_has_value,
@@ -134,28 +84,6 @@ void RUDYDataSource::setBlock(odb::dbBlock* block)
   rudyInfo_ = std::make_unique<odb::RUDYCalculator>(getBlock());
 }
 
-void RUDYDataSource::populateXYGrid()
-{
-  if (getBlock() == nullptr) {
-    HeatMapDataSource::populateXYGrid();
-  }
-
-  auto* gCellGrid = getBlock()->getGCellGrid();
-  if (gCellGrid == nullptr) {
-    HeatMapDataSource::populateXYGrid();
-  }
-
-  std::vector<int> gcell_xgrid, gcell_ygrid;
-  gCellGrid->getGridX(gcell_xgrid);
-  gCellGrid->getGridY(gcell_ygrid);
-
-  const auto die_area = getBlock()->getDieArea();
-  gcell_xgrid.push_back(die_area.xMax());
-  gcell_ygrid.push_back(die_area.yMax());
-
-  setXYMapGrid(gcell_xgrid, gcell_ygrid);
-}
-
 void RUDYDataSource::onShow()
 {
   HeatMapDataSource::onShow();
@@ -192,17 +120,7 @@ void RUDYDataSource::inDbInstPlacementStatusBefore(
   destroyMap();
 }
 
-void RUDYDataSource::inDbInstSwapMasterBefore(odb::dbInst*, odb::dbMaster*)
-{
-  destroyMap();
-}
-
 void RUDYDataSource::inDbInstSwapMasterAfter(odb::dbInst*)
-{
-  destroyMap();
-}
-
-void RUDYDataSource::inDbPreMoveInst(odb::dbInst*)
 {
   destroyMap();
 }

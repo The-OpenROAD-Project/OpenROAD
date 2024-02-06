@@ -957,4 +957,96 @@ double RealValueHeatMapDataSource::getDisplayRangeIncrement() const
   return getValueRange() / 100.0;
 }
 
+///////////////////////////
+
+GlobalRoutingDataSource::GlobalRoutingDataSource(
+    utl::Logger* logger,
+    const std::string& name,
+    const std::string& short_name,
+    const std::string& settings_group)
+    : HeatMapDataSource(logger, name, short_name, settings_group)
+{
+}
+
+std::pair<double, double> GlobalRoutingDataSource::getReportableXYGrid() const
+{
+  if (getBlock() == nullptr) {
+    return {default_grid_, default_grid_};
+  }
+
+  auto* gCellGrid = getBlock()->getGCellGrid();
+  if (gCellGrid == nullptr) {
+    return {default_grid_, default_grid_};
+  }
+
+  auto grid_mode = [gCellGrid](int num_grids,
+                               void (odb::dbGCellGrid::*get_grid)(
+                                   int, int&, int&, int&)) -> int {
+    std::map<int, int> grid_pitch_count;
+    for (int i = 0; i < num_grids; i++) {
+      int origin, count, step;
+      (gCellGrid->*get_grid)(i, origin, count, step);
+      grid_pitch_count[step] += count;
+    }
+
+    if (grid_pitch_count.empty()) {
+      return default_grid_;
+    }
+
+    auto mode = grid_pitch_count.begin();
+    for (auto check_mode = grid_pitch_count.begin();
+         check_mode != grid_pitch_count.end();
+         check_mode++) {
+      if (mode->second < check_mode->second) {
+        mode = check_mode;
+      }
+    }
+    return mode->first;
+  };
+
+  const double x_grid = grid_mode(gCellGrid->getNumGridPatternsX(),
+                                  &odb::dbGCellGrid::getGridPatternX);
+  const double y_grid = grid_mode(gCellGrid->getNumGridPatternsY(),
+                                  &odb::dbGCellGrid::getGridPatternY);
+
+  const double dbus = getBlock()->getDbUnitsPerMicron();
+  return {x_grid / dbus, y_grid / dbus};
+}
+
+double GlobalRoutingDataSource::getGridXSize() const
+{
+  const auto& [x, y] = getReportableXYGrid();
+  return x;
+}
+
+double GlobalRoutingDataSource::getGridYSize() const
+{
+  const auto& [x, y] = getReportableXYGrid();
+  return y;
+}
+
+void GlobalRoutingDataSource::populateXYGrid()
+{
+  if (getBlock() == nullptr) {
+    HeatMapDataSource::populateXYGrid();
+    return;
+  }
+
+  auto* gCellGrid = getBlock()->getGCellGrid();
+  if (gCellGrid == nullptr) {
+    HeatMapDataSource::populateXYGrid();
+    return;
+  }
+
+  std::vector<int> gcell_xgrid, gcell_ygrid;
+  gCellGrid->getGridX(gcell_xgrid);
+  gCellGrid->getGridY(gcell_ygrid);
+
+  const auto die_area = getBlock()->getDieArea();
+  gcell_xgrid.push_back(die_area.xMax());
+  gcell_ygrid.push_back(die_area.yMax());
+
+  setXYMapGrid(gcell_xgrid, gcell_ygrid);
+}
+
 }  // namespace gui

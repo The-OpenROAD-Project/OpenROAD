@@ -36,10 +36,10 @@ namespace grt {
 
 RoutingCongestionDataSource::RoutingCongestionDataSource(utl::Logger* logger,
                                                          odb::dbDatabase* db)
-    : gui::HeatMapDataSource(logger,
-                             "Routing Congestion",
-                             "Routing",
-                             "RoutingCongestion"),
+    : gui::GlobalRoutingDataSource(logger,
+                                   "Routing Congestion",
+                                   "Routing",
+                                   "RoutingCongestion"),
       db_(db),
       direction_(ALL),
       layer_(nullptr),
@@ -131,50 +131,6 @@ RoutingCongestionDataSource::RoutingCongestionDataSource(utl::Logger* logger,
           type_ = Usage;
         }
       });
-}
-
-double RoutingCongestionDataSource::getGridXSize() const
-{
-  if (getBlock() == nullptr) {
-    return default_grid_;
-  }
-
-  auto* gcellgrid = getBlock()->getGCellGrid();
-  if (gcellgrid == nullptr) {
-    return default_grid_;
-  }
-
-  std::vector<int> grid;
-  gcellgrid->getGridX(grid);
-
-  if (grid.size() < 2) {
-    return default_grid_;
-  } else {
-    const double delta = grid[1] - grid[0];
-    return delta / getBlock()->getDbUnitsPerMicron();
-  }
-}
-
-double RoutingCongestionDataSource::getGridYSize() const
-{
-  if (getBlock() == nullptr) {
-    return default_grid_;
-  }
-
-  auto* gcellgrid = getBlock()->getGCellGrid();
-  if (gcellgrid == nullptr) {
-    return default_grid_;
-  }
-
-  std::vector<int> grid;
-  gcellgrid->getGridY(grid);
-
-  if (grid.size() < 2) {
-    return default_grid_;
-  } else {
-    const double delta = grid[1] - grid[0];
-    return delta / getBlock()->getDbUnitsPerMicron();
-  }
 }
 
 bool RoutingCongestionDataSource::populateMap()
@@ -311,28 +267,6 @@ void RoutingCongestionDataSource::combineMapData(bool base_has_value,
                                                  const double rect_area)
 {
   base += new_data * intersection_area / rect_area;
-}
-
-void RoutingCongestionDataSource::populateXYGrid()
-{
-  if (getBlock() == nullptr) {
-    HeatMapDataSource::populateXYGrid();
-  }
-
-  auto* gCellGrid = getBlock()->getGCellGrid();
-  if (gCellGrid == nullptr) {
-    HeatMapDataSource::populateXYGrid();
-  }
-
-  std::vector<int> gcell_xgrid, gcell_ygrid;
-  gCellGrid->getGridX(gcell_xgrid);
-  gCellGrid->getGridY(gcell_ygrid);
-
-  const auto die_area = getBlock()->getDieArea();
-  gcell_xgrid.push_back(die_area.xMax());
-  gcell_ygrid.push_back(die_area.yMax());
-
-  setXYMapGrid(gcell_xgrid, gcell_ygrid);
 }
 
 }  // namespace grt

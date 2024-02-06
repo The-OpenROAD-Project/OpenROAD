@@ -37,15 +37,11 @@
 
 namespace grt {
 
-class RoutingCongestionDataSource : public gui::HeatMapDataSource,
+class RoutingCongestionDataSource : public gui::GlobalRoutingDataSource,
                                     public AbstractRoutingCongestionDataSource
 {
  public:
   RoutingCongestionDataSource(utl::Logger* logger, odb::dbDatabase* db);
-
-  virtual bool canAdjustGrid() const override { return false; }
-  virtual double getGridXSize() const override;
-  virtual double getGridYSize() const override;
 
   void registerHeatMap() override { gui::HeatMapDataSource::registerHeatMap(); }
   void update() override { gui::HeatMapDataSource::update(); }
@@ -60,7 +56,6 @@ class RoutingCongestionDataSource : public gui::HeatMapDataSource,
                               const double rect_area) override;
   virtual void correctMapScale(HeatMapDataSource::Map& map) override;
   virtual std::string formatValue(double value, bool legend) const override;
-  void populateXYGrid() override;
 
  private:
   enum Direction
@@ -82,8 +77,6 @@ class RoutingCongestionDataSource : public gui::HeatMapDataSource,
 
   MapType type_;
   double max_;
-
-  static constexpr double default_grid_ = 10.0;
 };
 
 }  // namespace grt
