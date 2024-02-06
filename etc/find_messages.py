@@ -80,7 +80,7 @@ warn_regexp_c = \
       \s*,\s*                                          # ,
       (?P<id>\d+)                                      # id
       \s*,\s*                                          # ,
-      (?P<message>("(?:[^"\\]|\\.)+?"(?:\s*\\n\s*"(?:[^"\\]|\\.)+?")*\s*))  # message
+      (?P<message>("((?:[^"\\]|\\.)+?\s*)+" ))          # message
     ''', re.VERBOSE | re.MULTILINE)
 
 

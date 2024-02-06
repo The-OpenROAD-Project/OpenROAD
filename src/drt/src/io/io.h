@@ -69,6 +69,7 @@ class Parser
   bool readGuide();
   void postProcess();
   void postProcessGuide();
+  frLayerNum getTopPinLayer();
   void initDefaultVias();
   void initRPin();
   auto& getTrackOffsetMap() { return trackOffsetMap_; }
@@ -76,6 +77,7 @@ class Parser
   {
     return prefTrackPatterns_;
   }
+  void buildGCellPatterns(odb::dbDatabase* db);
 
  private:
   void setMasters(odb::dbDatabase*);
@@ -121,7 +123,6 @@ class Parser
                 bool& foundCenterTracks,
                 bool& hasPolys);
   void checkPins();
-  void buildGCellPatterns(odb::dbDatabase* db);
   void buildGCellPatterns_helper(frCoord& GCELLGRIDX,
                                  frCoord& GCELLGRIDY,
                                  frCoord& GCELLOFFSETX,
@@ -147,7 +148,7 @@ class Parser
                                       T* trueTerm,
                                       frInst* inst,
                                       dbTransform& shiftXform,
-                                      vector<frRect>& rects);
+                                      std::vector<frRect>& rects);
   void patchGuides(frNet* net, frBlockObject* pin, std::vector<frRect>& rects);
   static int distL1(const Rect& b, const Point& p);
   static void getClosestPoint(const frRect& r,

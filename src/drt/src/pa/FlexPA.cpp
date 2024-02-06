@@ -33,6 +33,7 @@
 #include <boost/io/ios_state.hpp>
 #include <boost/serialization/export.hpp>
 #include <chrono>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 
@@ -47,7 +48,6 @@
 #include "gc/FlexGC.h"
 #include "serialization.h"
 
-using namespace std;
 using namespace fr;
 BOOST_CLASS_EXPORT(PinAccessJobDescription)
 

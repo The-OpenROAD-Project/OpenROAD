@@ -64,7 +64,18 @@
       "name": "_y2",
       "type": "int",
       "flags":["no-set","no-get"]
-    } 
+    },
+    {
+      "name":"_levelshifters",
+      "type":"dbVector<dbId<_dbLevelShifter>>",
+      "flags":["no-set","no-get", "no-serial"],
+      "parent":"dbBlock"
+    } ,
+    {
+      "name": "_voltage",
+      "type": "float",
+      "flags":["no-serial"]
+    }
   ],
   "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbVector.h", "dbIsolation.h", "dbPowerSwitch.h", "dbModInst.h"],
   "h_includes": [

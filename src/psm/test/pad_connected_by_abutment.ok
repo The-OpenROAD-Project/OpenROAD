@@ -1,0 +1,26 @@
+[INFO ODB-0222] Reading LEF file: ihp-sg13g2_data/sg13g2_tech.lef
+[INFO ODB-0223]     Created 19 technology layers
+[INFO ODB-0224]     Created 300 technology vias
+[INFO ODB-0226] Finished LEF file:  ihp-sg13g2_data/sg13g2_tech.lef
+[INFO ODB-0222] Reading LEF file: ihp-sg13g2_data/sg13g2_stdcell.lef
+[INFO ODB-0225]     Created 78 library cells
+[INFO ODB-0226] Finished LEF file:  ihp-sg13g2_data/sg13g2_stdcell.lef
+[INFO ODB-0222] Reading LEF file: ihp-sg13g2_data/IOLib.lef
+[INFO ODB-0225]     Created 34 library cells
+[INFO ODB-0226] Finished LEF file:  ihp-sg13g2_data/IOLib.lef
+[INFO ODB-0128] Design: CantConnect
+[INFO ODB-0130]     Created 5 pins.
+[INFO ODB-0131]     Created 64 components and 281 component-terminals.
+[INFO ODB-0132]     Created 11 special nets and 249 connections.
+[INFO ODB-0133]     Created 11 nets and 27 connections.
+[INFO PSM-0022] Using 1.200V for VDD
+[INFO PSM-0076] Setting metal node density to be standard cell height times 5.
+[INFO PSM-0031] Number of PDN nodes on net VDD = 3463.
+[INFO PSM-0064] Number of voltage sources = 255.
+[INFO PSM-0040] All PDN stripes on net VDD are connected.
+########## IR report #################
+Corner: default
+Worstcase voltage: 1.20e+00 V
+Average IR drop  : 1.41e-09 V
+Worstcase IR drop: 1.06e-06 V
+######################################

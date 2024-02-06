@@ -149,6 +149,19 @@ void Grid::makeShapes(const ShapeTreeMap& global_shapes,
     component->getShapes(local_shapes);
   }
 
+  // refine shapes
+  bool modified = false;
+  do {
+    modified = false;
+    for (auto* component : getGridComponents()) {
+      // attempt to refine shapes
+      const bool comp_modified
+          = component->refineShapes(local_shapes, local_obstructions);
+
+      modified |= comp_modified;
+    }
+  } while (modified);
+
   ShapeTreeMap all_shapes = global_shapes;
   // insert power switches
   if (switched_power_cell_ != nullptr) {
@@ -1278,8 +1291,7 @@ odb::Rect InstanceGrid::getDomainBoundary() const
   odb::Rect pin_box;
   pin_box.mergeInit();
 
-  odb::dbTransform transform;
-  inst_->getTransform(transform);
+  const odb::dbTransform transform = inst_->getTransform();
 
   for (auto* pin : inst_->getMaster()->getMTerms()) {
     if (!pin->getSigType().isSupply()) {
@@ -1339,8 +1351,7 @@ ShapeTreeMap InstanceGrid::getInstanceObstructions(
 {
   ShapeTreeMap obs;
 
-  odb::dbTransform transform;
-  inst->getTransform(transform);
+  const odb::dbTransform transform = inst->getTransform();
 
   auto* master = inst->getMaster();
 
@@ -1410,8 +1421,7 @@ ShapeTreeMap InstanceGrid::getInstancePins(odb::dbInst* inst)
 {
   // add instance pins
   std::vector<ShapePtr> pins;
-  odb::dbTransform transform;
-  inst->getTransform(transform);
+  const odb::dbTransform transform = inst->getTransform();
   for (auto* iterm : inst->getITerms()) {
     odb::dbNet* net = iterm->getNet();
     for (auto* mpin : iterm->getMTerm()->getMPins()) {

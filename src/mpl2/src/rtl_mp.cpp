@@ -89,7 +89,7 @@ bool MacroPlacer2::place(const int num_threads,
                          const float target_dead_space,
                          const float min_ar,
                          const int snap_layer,
-                         const bool bus_planning_flag,
+                         const bool bus_planning_on,
                          const char* report_directory)
 {
   hier_rtlmp_->setClusterSize(
@@ -116,10 +116,10 @@ bool MacroPlacer2::place(const int num_threads,
   hier_rtlmp_->setTargetDeadSpace(target_dead_space);
   hier_rtlmp_->setMinAR(min_ar);
   hier_rtlmp_->setSnapLayer(snap_layer);
-  hier_rtlmp_->setBusPlanningFlag(bus_planning_flag);
+  hier_rtlmp_->setBusPlanningOn(bus_planning_on);
   hier_rtlmp_->setReportDirectory(report_directory);
   hier_rtlmp_->setNumThreads(num_threads);
-  hier_rtlmp_->hierRTLMacroPlacer();
+  hier_rtlmp_->run();
 
   return true;
 }
@@ -198,11 +198,6 @@ void MacroPlacer2::placeMacro(odb::dbInst* inst,
 void MacroPlacer2::setMacroPlacementFile(const std::string& file_name)
 {
   hier_rtlmp_->setMacroPlacementFile(file_name);
-}
-
-void MacroPlacer2::writeMacroPlacement(const std::string& file_name)
-{
-  hier_rtlmp_->writeMacroPlacement(file_name);
 }
 
 void MacroPlacer2::setDebug(std::unique_ptr<Mpl2Observer>& graphics)

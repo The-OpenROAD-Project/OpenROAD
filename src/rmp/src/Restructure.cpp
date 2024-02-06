@@ -661,7 +661,7 @@ bool Restructure::readAbcLog(std::string abc_file_name,
           }
           break;
         }
-        prev_token = token;
+        prev_token = std::move(token);
       }
     }
   }

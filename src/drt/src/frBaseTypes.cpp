@@ -263,6 +263,8 @@ std::ostream& operator<<(std::ostream& os, frConstraintTypeEnum type)
     case frConstraintTypeEnum::
         frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint:
       return os << "frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint";
+    case frConstraintTypeEnum::frcLef58SpacingWrongDirConstraint:
+      return os << "frcLef58SpacingWrongDirConstraint";
     case frConstraintTypeEnum::frcLef58CutClassConstraint:
       return os << "frcLef58CutClassConstraint";
     case frConstraintTypeEnum::frcNonSufficientMetalConstraint:
@@ -289,6 +291,8 @@ std::ostream& operator<<(std::ostream& os, frConstraintTypeEnum type)
       return os << "frcLef58AreaConstraint";
     case frConstraintTypeEnum::frcLef58KeepOutZoneConstraint:
       return os << "frcLef58KeepOutZoneConstraint";
+    case frConstraintTypeEnum::frcSpacingRangeConstraint:
+      return os << "frcSpacingRangeConstraint";
   }
   return os << "Bad frConstraintTypeEnum";
 }

@@ -39,6 +39,7 @@
 
 #include "isotropy.h"
 #include "odb.h"
+#include "utl/Logger.h"
 
 namespace odb {
 
@@ -844,5 +845,9 @@ inline std::vector<Point> Oct::getPoints() const
   }
   return points;
 }
+
+#ifndef SWIG
+using utl::format_as;
+#endif
 
 }  // namespace odb

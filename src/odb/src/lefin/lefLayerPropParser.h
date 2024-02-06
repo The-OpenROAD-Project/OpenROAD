@@ -46,6 +46,12 @@ class lefTechLayerSpacingEolParser
   static void parse(const std::string&, dbTechLayer*, lefin*);
 };
 
+class lefTechLayerWrongDirSpacingParser
+{
+ public:
+  static void parse(std::string, dbTechLayer*, lefin*);
+};
+
 class lefTechLayerMinStepParser
 {
  public:

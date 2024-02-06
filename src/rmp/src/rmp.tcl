@@ -36,12 +36,12 @@
 # Restructuring could be done targeting area or timing.
 # 
 # Argument Description
-# target:            "area"|"delay". In area mode focus is area reduction and timing may degrade. In delay mode delay would be reduced but area may increase.
+# target:            "area"|"timing". In area mode focus is area reduction and timing may degrade. In timing mode delay would be reduced but area may increase.
 # slack_threshold: specifies slack value below which timing paths need to be analyzed for restructuring
 # depth_threshold: specifies the path depth above which a timing path would be considered for restructuring
 # tielo_port:      specifies port name of tie low cell in format <cell_name>/<port_name>
 # tielo_port:      specifies port name of tie high cell in format <cell_name>/<port_name>
-# work_dir:        Name of working directory for tmporary files. If not provided run directory would be used
+# work_dir:        Name of working directory for temporary files. If not provided run directory would be used
 #
 # Note that for delay mode slack_threshold and depth_threshold are both considered together.
 # Even if slack_threshold is violated, path may not be considered for re-synthesis unless

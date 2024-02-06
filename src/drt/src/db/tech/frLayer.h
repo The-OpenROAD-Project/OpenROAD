@@ -341,6 +341,24 @@ class frLayer
   {
     lef58SpacingEndOfLineConstraints.push_back(constraintIn);
   }
+
+  // spacing wrong direction
+  bool hasLef58SpacingWrongDirConstraints() const
+  {
+    return !lef58SpacingWrongDirConstraints.empty();
+  }
+  const frCollection<frLef58SpacingWrongDirConstraint*>&
+  getLef58SpacingWrongDirConstraints() const
+  {
+    return lef58SpacingWrongDirConstraints;
+  }
+
+  void addLef58SpacingWrongDirConstraint(
+      frLef58SpacingWrongDirConstraint* constraintIn)
+  {
+    lef58SpacingWrongDirConstraints.push_back(constraintIn);
+  }
+
   // new functions
   bool hasMinSpacing() const { return (minSpc); }
   frConstraint* getMinSpacing() const { return minSpc; }
@@ -529,7 +547,7 @@ class frLayer
   {
     frCoord s = 0;
     for (auto con : getCutSpacing()) {
-      s = max(s, con->getCutSpacing());
+      s = std::max(s, con->getCutSpacing());
     }
     return s;
   }
@@ -712,6 +730,22 @@ class frLayer
     return (!keepOutZoneConstraints.empty());
   }
 
+  void addSpacingRangeConstraint(frSpacingRangeConstraint* in)
+  {
+    spacingRangeConstraints.push_back(in);
+  }
+
+  const std::vector<frSpacingRangeConstraint*>& getSpacingRangeConstraints()
+      const
+  {
+    return spacingRangeConstraints;
+  }
+
+  bool hasSpacingRangeConstraints() const
+  {
+    return (!spacingRangeConstraints.empty());
+  }
+
   void setLef58SameNetInterCutSpcTblConstraint(
       frLef58CutSpacingTableConstraint* con)
   {
@@ -796,6 +830,9 @@ class frLayer
   frCollection<frLef58SpacingEndOfLineConstraint*>
       lef58SpacingEndOfLineConstraints;
 
+  frCollection<frLef58SpacingWrongDirConstraint*>
+      lef58SpacingWrongDirConstraints;
+
   frConstraint* minSpc;
   frSpacingSamenetConstraint* spacingSamenet;
   frSpacingTableInfluenceConstraint* spacingInfluence;
@@ -843,6 +880,7 @@ class frLayer
   std::vector<frMetalWidthViaConstraint*> metalWidthViaConstraints;
   std::vector<frLef58AreaConstraint*> lef58AreaConstraints;
   std::vector<frLef58KeepOutZoneConstraint*> keepOutZoneConstraints;
+  std::vector<frSpacingRangeConstraint*> spacingRangeConstraints;
   drEolSpacingConstraint drEolCon;
 };
 }  // namespace fr

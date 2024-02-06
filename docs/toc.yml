@@ -54,9 +54,8 @@ entries:
         title: VSRC Description
   - file: main/src/gpl/README
     title: Global Placement
-    entries:
-    - file: main/src/gpl/doc/TclCommands
-      title: Tcl Commands
+  - file: main/src/sta/README
+    title: Static Timing Analyzer (external)
   - file: main/src/rsz/README
     title: Gate Resizing
   - file: main/src/dpl/README
@@ -79,8 +78,6 @@ entries:
     entries:
     - file: main/src/rcx/doc/calibration
       title: Calibration
-  - file: main/src/sta/README
-    title: Static Timing Analyzer (external)
   - file: user/MessagesFinal.md
     title: Messages Glossary
 

@@ -35,8 +35,11 @@
 
 #include "ord/OpenRoad.hh"
 
+#include <fstream>
 #include <iostream>
 #include <thread>
+
+#include "ord/Version.hh"
 #ifdef ENABLE_PYTHON3
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
@@ -484,11 +487,12 @@ void OpenRoad::readDb(const char* filename)
 
 void OpenRoad::writeDb(const char* filename)
 {
-  FILE* stream = fopen(filename, "w");
-  if (stream) {
-    db_->write(stream);
-    fclose(stream);
-  }
+  std::ofstream stream;
+  stream.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                    | std::ios::eofbit);
+  stream.open(filename, std::ios::binary);
+
+  db_->write(stream);
 }
 
 void OpenRoad::diffDbs(const char* filename1,
@@ -613,6 +617,16 @@ void OpenRoad::setThreadCount(const char* threads, bool printInfo)
 int OpenRoad::getThreadCount()
 {
   return threads_;
+}
+
+const char* OpenRoad::getVersion()
+{
+  return OPENROAD_VERSION;
+}
+
+const char* OpenRoad::getGitDescribe()
+{
+  return OPENROAD_GIT_DESCRIBE;
 }
 
 }  // namespace ord

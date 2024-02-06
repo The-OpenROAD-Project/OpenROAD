@@ -23,7 +23,8 @@ place_io_terminals u_*/VDD
 ```
 
 ```tcl
-place_io_terminals 
+place_io_terminals
+    -allow_non_top_layer
     inst_pins
 ```
 
@@ -31,6 +32,7 @@ place_io_terminals
 
 | Switch Name | Description |
 | ----- | ----- |
+| `-allow_non_top_layer` | Allow the terminal to be placed below the top layer. |
 | `inst_pins` | Instance pins to place the terminals on. |
 
 ### Defining a Bump Array

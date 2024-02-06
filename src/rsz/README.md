@@ -232,7 +232,7 @@ endpoints are repaired to reduced the total negative slack.
 repair_timing 
     [-setup]
     [-hold]
-    [-recover_power percent]
+    [-recover_power percent_of_paths_with_slack]
     [-setup_margin setup_margin]
     [-hold_margin hold_margin]
     [-slack_margin slack_margin]
@@ -253,9 +253,12 @@ repair_timing
 | ----- | ----- |
 | `-setup` | Repair setup timing. |
 | `-hold` | Repair hold timing. |
+| `-recover_power` | Set the percentage of paths to recover power for. The default value is `0`, and the allowed values are floats `(0, 100]`. |
 | `-setup_margin` | Add additional setup slack margin. |
 | `-hold_margin` | Add additional hold slack margin. |
 | `-allow_setup_violations` | While repairing hold violations, buffers are not inserted that will cause setup violations unless `-allow_setup_violations` is specified. |
+| `-skip_pin_swap` | Flag to skip pin swap. The default value is `False`, and the allowed values are bools. |
+| `-skip_gate_cloning` | Flag to skip gate cloning. The default value is `False`, and the allowed values are bools. |
 | `-repair_tns` | Percentage of violating endpoints to repair (0-100). When `tns_end_percent` is zero (the default), only the worst endpoint is repaired. When `tns_end_percent` is 100, all violating endpoints are repaired. |
 | `-max_utilization` | Defines the percentage of core area used. |
 | `-max_buffer_percent` | Specify a maximum number of buffers to insert to repair hold violations as a percentage of the number of instances in the design. The default value is `20`, and the allowed values are integers `[0, 100]`. |
@@ -287,7 +290,10 @@ repair_clock_nets
 
 ### Repair Clock Inverters
 
-This command repairs clock inverters.
+The repair_clock_inverters command replaces an inverter in the clock
+tree with multiple fanouts with one inverter per fanout.  This
+prevents the inverter from splitting up the clock tree seen by CTS.
+It should be run before clock_tree_synthesis.
 
 ```tcl
 repair_clock_inverters

@@ -14,5 +14,5 @@
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
 [INFO GRT-0043] No OR_DEFAULT vias defined.
-[ERROR GRT-0147] Vertical tracks for layer li1 not found.
-GRT-0147
+[ERROR ODB-0415] Vertical tracks for layer li1 not found.
+ODB-0415

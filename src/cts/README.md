@@ -61,7 +61,7 @@ clock_tree_synthesis
     [-obstruction_aware]
     [-apply_ndr]
     [-insertion_delay]
-    [-post_cts_disable]
+    [-use_dummy_load]
 ```
 
 #### Options
@@ -86,6 +86,7 @@ clock_tree_synthesis
 | `-obstruction_aware` | Enables obstruction-aware buffering such that clock buffers are not placed on top of blockages or hard macros. This option may reduce legalizer displacement, leading to better latency, skew or timing QoR.  The default value is `False`, and the allowed values are bool. |
 | `-apply_ndr` | Applies 2X spacing non-default rule to all clock nets except leaf-level nets. The default value is `False`. |
 | `-insertion_delay` | Considers insertion delays in macro timing models to improve clustering. The default value is `False`. |
+| `-use_dummy_load` | Applies dummy buffer or inverter cells at clock tree leaves to balance loads.  The default values is `False`. |
 
 ### Report CTS
 

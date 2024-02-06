@@ -17,7 +17,7 @@ This command executes the Hier-RTLMP algorithm for macro placement.
 
 ```tcl
 rtl_macro_placer 
-    [-halo_width halo_width]
+    [-max_num_macro max_num_macro]
     [-min_num_macro min_num_macro]
     [-max_num_macro max_num_macro]
     [-max_num_inst max_num_inst]  
@@ -47,7 +47,7 @@ rtl_macro_placer
     [-target_dead_space target_dead_space]
     [-min_ar min_ar]
     [-snap_layer snap_layer]
-    [-bus_planning_flag bus_planning_flag]
+    [-bus_planning]
     [-report_directory report_directory]
     [-write_macro_placement file_name]
 ```
@@ -64,15 +64,16 @@ rtl_macro_placer
 | `-num_bundled_ios` | Specifies the number of bundled pins for the left, right, top, and bottom boundaries. The default value is `3`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-large_net_threshold` | Ignore nets with many connections during clustering, such as global nets. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-signature_net_threshold` | Minimum number of connections between two clusters to be identified as connected. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
-| `-halo_width` | iHorizontal/vertical halo around macros (microns). The allowed values are floats, and the default value is `0.0`. |
+| `-halo_width` | Horizontal/vertical halo around macros (microns). The allowed values are floats, and the default value is `0.0`. |
 | `-fence_lx`, `-fence_ly`, `-fence_ux`, `-fence_uy` | Defines the global fence bounding box coordinates. The default values are the core area coordinates). |
+| `-pin_access_th` | Specifies the pin access threshold value of macros. The default value is `0.0`, and the allowed values are floats [0,1]. |
 | `-target_util` | Specifies the target utilization of `MixedCluster` and has higher priority than target_dead_space. The allowed values are floats, and the default value is `0.25`. |
 | `-target_dead_space` | Specifies the target dead space percentage, which influences the utilization of `StandardCellCluster`. The allowed values are floats, and the default value is `0.05`. |
 | `-min_ar` | Specifies the minimum aspect ratio $a$, or the ratio of its width to height of a `StandardCellCluster` from $[a, \frac{1}{a}]$. The allowed values are floats, and the default value is `0.33`. |
 | `-snap_layer` | Snap macro origins to this routing layer track. The default value is 4, and the allowed values are integers `[1, MAX_LAYER]`). |
-| `-bus_planning_flag` | Flag to enable bus planning. The recommendation is to turn on bus planning for SKY130 and off for NanGate45/ASAP7. The default value is disabled. |
+| `-bus_planning` | Flag to enable bus planning. We recommend to enable bus planning for technologies with very limited routing layers such as SKY130 and GF180. As for technologies such as NanGate45 and ASAP7, we recommend to keep it disabled. |
 | `-report_directory` | Save reports to this directory. |
-| `-write_macro_placement` | Generates a file with the macro placement in the format of multiple calls for the `place_macro` command. |
+| `-write_macro_placement` | Generates a file with the placement of the macros placed by HierRTLMP flow in the format of multiple calls for the `place_macro` command. |
 
 #### Simulated Annealing Weight parameters
 
@@ -91,8 +92,7 @@ Do note that while action probabilities are normalized to 1.0, the weights are n
 
 ### Write Macro Placement
 
-Command to write a file with the macro placement in the format of
-multiple calls for the `place_macro` command:
+Command to generate a file with the placement of the macros in the design using multiple calls for the `place_macro` command:
 
 ```tcl
 write_macro_placement file_name

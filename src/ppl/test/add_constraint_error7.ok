@@ -1,0 +1,15 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 135 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 88 components and 422 component-terminals.
+[INFO ODB-0133]     Created 54 nets and 88 connections.
+Found 0 macro blocks.
+Using 2 tracks default min distance between IO pins.
+[WARNING PPL-0110] Constraint has 54 pins, but only 52 available slots.
+Increase the region 10.00um-30.00um on the TOP edge from 20.00um to at least 20.52um.
+[ERROR PPL-0111] 1 constraint(s) does not have available slots for the pins.
+PPL-0111

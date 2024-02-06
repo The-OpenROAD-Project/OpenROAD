@@ -82,6 +82,7 @@
 #include "dbIntHashTable.hpp"
 #include "dbIsolation.h"
 #include "dbJournal.h"
+#include "dbLevelShifter.h"
 #include "dbLogicPort.h"
 #include "dbModInst.h"
 #include "dbModule.h"
@@ -202,6 +203,9 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _isolation_tbl = new dbTable<_dbIsolation>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbIsolationObj);
 
+  _levelshifter_tbl = new dbTable<_dbLevelShifter>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbLevelShifterObj);
+
   _group_tbl = new dbTable<_dbGroup>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbGroupObj);
 
@@ -318,6 +322,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _logicport_hash.setTable(_logicport_tbl);
   _powerswitch_hash.setTable(_powerswitch_tbl);
   _isolation_hash.setTable(_isolation_tbl);
+  _levelshifter_hash.setTable(_levelshifter_tbl);
   _group_hash.setTable(_group_tbl);
   _inst_hdr_hash.setTable(_inst_hdr_tbl);
   _bterm_hash.setTable(_bterm_tbl);
@@ -402,6 +407,7 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
       _logicport_hash(block._logicport_hash),
       _powerswitch_hash(block._powerswitch_hash),
       _isolation_hash(block._isolation_hash),
+      _levelshifter_hash(block._levelshifter_hash),
       _group_hash(block._group_hash),
       _inst_hdr_hash(block._inst_hdr_hash),
       _bterm_hash(block._bterm_hash),
@@ -440,6 +446,9 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
       = new dbTable<_dbPowerSwitch>(db, this, *block._powerswitch_tbl);
 
   _isolation_tbl = new dbTable<_dbIsolation>(db, this, *block._isolation_tbl);
+
+  _levelshifter_tbl
+      = new dbTable<_dbLevelShifter>(db, this, *block._levelshifter_tbl);
 
   _group_tbl = new dbTable<_dbGroup>(db, this, *block._group_tbl);
 
@@ -516,6 +525,7 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
   _logicport_hash.setTable(_logicport_tbl);
   _powerswitch_hash.setTable(_powerswitch_tbl);
   _isolation_hash.setTable(_isolation_tbl);
+  _levelshifter_hash.setTable(_levelshifter_tbl);
 
   _net_bterm_itr = new dbNetBTermItr(_bterm_tbl);
 
@@ -591,6 +601,7 @@ _dbBlock::~_dbBlock()
   delete _logicport_tbl;
   delete _powerswitch_tbl;
   delete _isolation_tbl;
+  delete _levelshifter_tbl;
   delete _group_tbl;
   delete ap_tbl_;
   delete global_connect_tbl_;
@@ -762,6 +773,9 @@ dbObjectTable* _dbBlock::getObjectTable(dbObjectType type)
     case dbIsolationObj:
       return _isolation_tbl;
 
+    case dbLevelShifterObj:
+      return _levelshifter_tbl;
+
     case dbGroupObj:
       return _group_tbl;
 
@@ -860,6 +874,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
     (**cbitr)().inDbBlockStreamOutBefore(
         (dbBlock*) &block);  // client ECO initialization  - payam
 
+  dbOStreamScope scope(stream, "dbBlock");
   stream << block._def_units;
   stream << block._dbu_per_micron;
   stream << block._hier_delimeter;
@@ -887,6 +902,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._logicport_hash;
   stream << block._powerswitch_hash;
   stream << block._isolation_hash;
+  stream << block._levelshifter_hash;
   stream << block._group_hash;
   stream << block._inst_hdr_hash;
   stream << block._bterm_hash;
@@ -896,46 +912,47 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._children;
   stream << block._component_mask_shift;
   stream << block._currentCcAdjOrder;
-  stream << *block._bterm_tbl;
-  stream << *block._iterm_tbl;
-  stream << *block._net_tbl;
-  stream << *block._inst_hdr_tbl;
-  stream << *block._inst_tbl;
-  stream << *block._module_tbl;
-  stream << *block._modinst_tbl;
-  stream << *block._powerdomain_tbl;
-  stream << *block._logicport_tbl;
-  stream << *block._powerswitch_tbl;
-  stream << *block._isolation_tbl;
-  stream << *block._group_tbl;
-  stream << *block.ap_tbl_;
-  stream << *block.global_connect_tbl_;
-  stream << *block._guide_tbl;
-  stream << *block._net_tracks_tbl;
-  stream << *block._box_tbl;
-  stream << *block._via_tbl;
-  stream << *block._gcell_grid_tbl;
-  stream << *block._track_grid_tbl;
-  stream << *block._obstruction_tbl;
-  stream << *block._blockage_tbl;
-  stream << *block._wire_tbl;
-  stream << *block._swire_tbl;
-  stream << *block._sbox_tbl;
-  stream << *block._row_tbl;
-  stream << *block._fill_tbl;
-  stream << *block._region_tbl;
-  stream << *block._hier_tbl;
-  stream << *block._bpin_tbl;
-  stream << *block._non_default_rule_tbl;
-  stream << *block._layer_rule_tbl;
-  stream << *block._prop_tbl;
+  stream << NamedTable("bterm_tbl", block._bterm_tbl);
+  stream << NamedTable("iterm_tbl", block._iterm_tbl);
+  stream << NamedTable("net_tbl", block._net_tbl);
+  stream << NamedTable("inst_hdr_tbl", block._inst_hdr_tbl);
+  stream << NamedTable("inst_tbl", block._inst_tbl);
+  stream << NamedTable("module_tbl", block._module_tbl);
+  stream << NamedTable("modinst_tbl", block._modinst_tbl);
+  stream << NamedTable("powerdomain_tbl", block._powerdomain_tbl);
+  stream << NamedTable("logicport_tbl", block._logicport_tbl);
+  stream << NamedTable("powerswitch_tbl", block._powerswitch_tbl);
+  stream << NamedTable("isolation_tbl", block._isolation_tbl);
+  stream << NamedTable("levelshifter_tbl", block._levelshifter_tbl);
+  stream << NamedTable("group_tbl", block._group_tbl);
+  stream << NamedTable("ap_tbl", block.ap_tbl_);
+  stream << NamedTable("global_connect_tbl", block.global_connect_tbl_);
+  stream << NamedTable("guide_tbl", block._guide_tbl);
+  stream << NamedTable("net_tracks_tbl", block._net_tracks_tbl);
+  stream << NamedTable("box_tbl", block._box_tbl);
+  stream << NamedTable("via_tbl", block._via_tbl);
+  stream << NamedTable("gcell_grid_tbl", block._gcell_grid_tbl);
+  stream << NamedTable("track_grid_tbl", block._track_grid_tbl);
+  stream << NamedTable("obstruction_tbl", block._obstruction_tbl);
+  stream << NamedTable("blockage_tbl", block._blockage_tbl);
+  stream << NamedTable("wire_tbl", block._wire_tbl);
+  stream << NamedTable("swire_tbl", block._swire_tbl);
+  stream << NamedTable("sbox_tbl", block._sbox_tbl);
+  stream << NamedTable("row_tbl", block._row_tbl);
+  stream << NamedTable("fill_tbl", block._fill_tbl);
+  stream << NamedTable("region_tbl", block._region_tbl);
+  stream << NamedTable("hier_tbl", block._hier_tbl);
+  stream << NamedTable("bpin_tbl", block._bpin_tbl);
+  stream << NamedTable("non_default_rule_tbl", block._non_default_rule_tbl);
+  stream << NamedTable("layer_rule_tbl", block._layer_rule_tbl);
+  stream << NamedTable("prop_tbl", block._prop_tbl);
   stream << *block._name_cache;
   stream << *block._r_val_tbl;
   stream << *block._c_val_tbl;
   stream << *block._cc_val_tbl;
-  stream << *block._cap_node_tbl;  // DKF - 2/21/05
-  stream << *block._r_seg_tbl;     // DKF - 2/21/05
-  stream << *block._cc_seg_tbl;
+  stream << NamedTable("cap_node_tbl", block._cap_node_tbl);
+  stream << NamedTable("r_seg_tbl", block._r_seg_tbl);
+  stream << NamedTable("cc_seg_tbl", block._cc_seg_tbl);
   stream << *block._extControl;
 
   //---------------------------------------------------------- stream out
@@ -989,6 +1006,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block._logicport_hash;
   stream >> block._powerswitch_hash;
   stream >> block._isolation_hash;
+  if (db->isSchema(db_schema_level_shifter)) {
+    stream >> block._levelshifter_hash;
+  }
   stream >> block._group_hash;
   stream >> block._inst_hdr_hash;
   stream >> block._bterm_hash;
@@ -1017,6 +1037,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block._logicport_tbl;
   stream >> *block._powerswitch_tbl;
   stream >> *block._isolation_tbl;
+  if (db->isSchema(db_schema_level_shifter)) {
+    stream >> *block._levelshifter_tbl;
+  }
   stream >> *block._group_tbl;
   stream >> *block.ap_tbl_;
   if (db->isSchema(db_schema_add_global_connect)) {
@@ -1184,6 +1207,10 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
   if (_isolation_hash != rhs._isolation_hash)
     return false;
 
+  if (_levelshifter_hash != rhs._levelshifter_hash) {
+    return false;
+  }
+
   if (_group_hash != rhs._group_hash)
     return false;
 
@@ -1243,6 +1270,12 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
 
   if (*_isolation_tbl != *rhs._isolation_tbl)
     return false;
+
+  if (*_levelshifter_tbl != *rhs._levelshifter_tbl) {
+    {
+      return false;
+    }
+  }
 
   if (*_group_tbl != *rhs._group_tbl)
     return false;
@@ -1366,6 +1399,7 @@ void _dbBlock::differences(dbDiff& diff,
     DIFF_HASH_TABLE(_logicport_hash);
     DIFF_HASH_TABLE(_powerswitch_hash);
     DIFF_HASH_TABLE(_isolation_hash);
+    DIFF_HASH_TABLE(_levelshifter_hash);
     DIFF_HASH_TABLE(_group_hash);
     DIFF_HASH_TABLE(_inst_hdr_hash);
     DIFF_HASH_TABLE(_bterm_hash);
@@ -1388,6 +1422,7 @@ void _dbBlock::differences(dbDiff& diff,
   DIFF_TABLE(_logicport_tbl);
   DIFF_TABLE(_powerswitch_tbl);
   DIFF_TABLE(_isolation_tbl);
+  DIFF_TABLE(_levelshifter_tbl);
   DIFF_TABLE(_group_tbl);
   DIFF_TABLE(ap_tbl_);
   DIFF_TABLE(global_connect_tbl_);
@@ -1460,6 +1495,7 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
     DIFF_OUT_HASH_TABLE(_logicport_hash);
     DIFF_OUT_HASH_TABLE(_powerswitch_hash);
     DIFF_OUT_HASH_TABLE(_isolation_hash);
+    DIFF_OUT_HASH_TABLE(_levelshifter_hash);
     DIFF_OUT_HASH_TABLE(_group_hash);
     DIFF_OUT_HASH_TABLE(_inst_hdr_hash);
     DIFF_OUT_HASH_TABLE(_bterm_hash);
@@ -1482,6 +1518,7 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE(_logicport_tbl);
   DIFF_OUT_TABLE(_powerswitch_tbl);
   DIFF_OUT_TABLE(_isolation_tbl);
+  DIFF_OUT_TABLE(_levelshifter_tbl);
   DIFF_OUT_TABLE(_group_tbl);
   DIFF_OUT_TABLE(ap_tbl_);
   DIFF_OUT_TABLE(global_connect_tbl_);
@@ -1600,13 +1637,11 @@ void dbBlock::ComputeBBox()
   }
 
   dbSet<dbWire> wires(block, block->_wire_tbl);
-  dbSet<dbWire>::iterator witr;
 
-  for (witr = wires.begin(); witr != wires.end(); ++witr) {
-    dbWire* wire = *witr;
-    Rect r;
-    if (wire->getBBox(r)) {
-      bbox->_shape._rect.merge(r);
+  for (dbWire* wire : wires) {
+    const auto opt_bbox = wire->getBBox();
+    if (opt_bbox) {
+      bbox->_shape._rect.merge(opt_bbox.value());
     }
   }
 
@@ -1744,6 +1779,12 @@ dbSet<dbIsolation> dbBlock::getIsolations()
   return dbSet<dbIsolation>(block, block->_isolation_tbl);
 }
 
+dbSet<dbLevelShifter> dbBlock::getLevelShifters()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return dbSet<dbLevelShifter>(block, block->_levelshifter_tbl);
+}
+
 dbSet<dbGroup> dbBlock::getGroups()
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -1815,6 +1856,12 @@ dbIsolation* dbBlock::findIsolation(const char* name)
 {
   _dbBlock* block = (_dbBlock*) this;
   return (dbIsolation*) block->_isolation_hash.find(name);
+}
+
+dbLevelShifter* dbBlock::findLevelShifter(const char* name)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return (dbLevelShifter*) block->_levelshifter_hash.find(name);
 }
 
 dbModInst* dbBlock::findModInst(const char* path)
@@ -3351,24 +3398,13 @@ void dbBlock::writeDb(char* filename, int allNode)
       dbname = fmt::format("{}.remote.{}.db", filename, getpid());
   } else
     dbname = fmt::format("{}.db", filename);
-  FILE* file = fopen(dbname.c_str(), "wb");
+  std::ofstream file(dbname, std::ios::binary);
   if (!file) {
     getImpl()->getLogger()->warn(
         utl::ODB, 19, "Can not open file {} to write!", dbname);
     return;
   }
-  int io_bufsize = 65536;
-  char* buffer = (char*) malloc(io_bufsize);
-  if (buffer == nullptr) {
-    getImpl()->getLogger()->warn(
-        utl::ODB, 20, "Memory allocation failed for io buffer");
-    fclose(file);
-    return;
-  }
-  setvbuf(file, buffer, _IOFBF, io_bufsize);
   getDataBase()->write(file);
-  free((void*) buffer);
-  fclose(file);
   if (block->_journal) {
     debugPrint(getImpl()->getLogger(),
                utl::ODB,

@@ -1,0 +1,28 @@
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0225]     Created 437 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0222] Reading LEF file: blocked_region.lef
+[INFO ODB-0225]     Created 1 library cells
+[INFO ODB-0226] Finished LEF file:  blocked_region.lef
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 253 components and 1357 component-terminals.
+[INFO ODB-0133]     Created 54 nets and 155 connections.
+[INFO PPL-0070] Pin clk placed at (40.02um, 0.40um).
+[INFO PPL-0070] Pin resp_rdy placed at (1.25um, 15.30um).
+[WARNING PPL-0015] Macro macro_nop_0_ is not placed.
+Found 0 macro blocks.
+Using 2 tracks default min distance between IO pins.
+[INFO PPL-0010] Tentative 0 to set up sections.
+[INFO PPL-0001] Number of slots           1016
+[INFO PPL-0002] Number of I/O             52
+[INFO PPL-0003] Number of I/O w/sink      52
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0006] Slots increase factor     0.01
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 8198.32 um.

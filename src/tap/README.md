@@ -42,8 +42,9 @@ tapcell
     [-cnrcap_nwout_master cnrcap_nwout_master]
     [-incnrcap_nwin_master incnrcap_nwin_master]
     [-incnrcap_nwout_master incnrcap_nwout_master]
+    [-tap_prefix tap_prefix]
+    [-endcap_prefix endcap_prefix]
     [-tbtie_cpp tbtie_cpp]
-    [-endcap_cpp endcap_cpp]
     [-no_cell_at_top_bottom]
 ```
 
@@ -68,6 +69,8 @@ tapcell
 | `-cnrcap_nwout_master` | Macro cell placed at the corners the core area according the row orientation. |
 | `-tap_prefix` | Prefix for the tapcell instances. The default value is `TAP_`. |
 | `-endcap_prefix` | Prefix for the endcaps instances. The default value is `PHY_`. |
+| `-tbtie_cpp` | Option is deprecated. |
+| `-no_cell_at_top_bottom` | Option is deprecated. |
 
 ### Cut Rows
 

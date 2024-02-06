@@ -479,11 +479,11 @@ void lefTechLayerSpacingEolParser::parse(const std::string& s,
       continue;
     }
     if (!lefTechLayerSpacingEol::parse(rule.begin(), rule.end(), layer, l))
-      l->warning(
-          255,
-          "parse mismatch in layer propery LEF58_SPACING for layer {} :\"{}\"",
-          layer->getName(),
-          rule);
+      l->warning(255,
+                 "parse mismatch in layer propery LEF58_SPACING ENDOFLINE for "
+                 "layer {} :\"{}\"",
+                 layer->getName(),
+                 rule);
   }
 }
 

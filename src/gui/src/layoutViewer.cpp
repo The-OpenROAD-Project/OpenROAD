@@ -272,6 +272,10 @@ void LayoutViewer::updateCenter(int dx, int dy)
   // modify the center according to the dx and dy
   center_.setX(center_.x() - dx / pixels_per_dbu_);
   center_.setY(center_.y() + dy / pixels_per_dbu_);
+
+  if (!scroller_->isScrollingWithCursor()) {
+    updateCursorCoordinates();
+  }
 }
 
 void LayoutViewer::centerAt(const odb::Point& focus)
@@ -327,6 +331,12 @@ bool LayoutViewer::isCursorInsideViewport()
   }
 
   return false;
+}
+
+void LayoutViewer::updateCursorCoordinates()
+{
+  Point mouse = screenToDBU(mapFromGlobal(QCursor::pos()));
+  emit location(mouse.x(), mouse.y());
 }
 
 void LayoutViewer::zoomIn()
@@ -425,7 +435,7 @@ void LayoutViewer::searchNearestViaEdge(
     const int shape_limit,
     const std::function<void(const Rect& rect)>& check_rect)
 {
-  auto via_shapes = search_.searchViaSBoxShapes(block_,
+  auto via_shapes = search_.searchSNetViaShapes(block_,
                                                 cut_layer,
                                                 search_line.xMin(),
                                                 search_line.yMin(),
@@ -587,8 +597,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
       if (inst_boxes == nullptr) {
         continue;
       }
-      dbTransform inst_xfm;
-      inst->getTransform(inst_xfm);
+      const dbTransform inst_xfm = inst->getTransform();
 
       if (inst_osb_visible) {
         for (auto& box : inst_boxes->obs) {
@@ -606,42 +615,57 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
       }
     }
 
-    auto box_shapes = search_.searchBoxShapes(block_,
-                                              layer,
-                                              search_line.xMin(),
-                                              search_line.yMin(),
-                                              search_line.xMax(),
-                                              search_line.yMax(),
-                                              shape_limit);
-    for (auto& [box, net] : box_shapes) {
-      if (isNetVisible(net)) {
-        check_rect(convert_box_to_rect(box));
+    const bool routing_visible = options_->areRoutingSegmentsVisible();
+    const bool vias_visible = options_->areRoutingViasVisible();
+    if (routing_visible || vias_visible) {
+      auto box_shapes = search_.searchBoxShapes(block_,
+                                                layer,
+                                                search_line.xMin(),
+                                                search_line.yMin(),
+                                                search_line.xMax(),
+                                                search_line.yMax(),
+                                                shape_limit);
+      for (auto& [box, is_via, net] : box_shapes) {
+        if (!routing_visible && !is_via) {
+          continue;
+        }
+        if (!vias_visible && is_via) {
+          continue;
+        }
+        if (isNetVisible(net)) {
+          check_rect(convert_box_to_rect(box));
+        }
       }
     }
 
-    if (layer->getType() == dbTechLayerType::CUT) {
-      searchNearestViaEdge(layer, layer, search_line, shape_limit, check_rect);
-    } else {
-      if (auto upper = layer->getUpperLayer()) {
+    if (options_->areSpecialRoutingViasVisible()) {
+      if (layer->getType() == dbTechLayerType::CUT) {
         searchNearestViaEdge(
-            upper, layer, search_line, shape_limit, check_rect);
-      }
-      if (auto lower = layer->getLowerLayer()) {
-        searchNearestViaEdge(
-            lower, layer, search_line, shape_limit, check_rect);
+            layer, layer, search_line, shape_limit, check_rect);
+      } else {
+        if (auto upper = layer->getUpperLayer()) {
+          searchNearestViaEdge(
+              upper, layer, search_line, shape_limit, check_rect);
+        }
+        if (auto lower = layer->getLowerLayer()) {
+          searchNearestViaEdge(
+              lower, layer, search_line, shape_limit, check_rect);
+        }
       }
     }
 
-    auto polygon_shapes = search_.searchPolygonShapes(block_,
-                                                      layer,
-                                                      search_line.xMin(),
-                                                      search_line.yMin(),
-                                                      search_line.xMax(),
-                                                      search_line.yMax(),
-                                                      shape_limit);
-    for (auto& [box, poly, net] : polygon_shapes) {
-      if (isNetVisible(net)) {
-        check_rect(convert_box_to_rect(box));
+    if (options_->areSpecialRoutingSegmentsVisible()) {
+      auto polygon_shapes = search_.searchSNetShapes(block_,
+                                                     layer,
+                                                     search_line.xMin(),
+                                                     search_line.yMin(),
+                                                     search_line.xMax(),
+                                                     search_line.yMax(),
+                                                     shape_limit);
+      for (auto& [box, poly, net] : polygon_shapes) {
+        if (isNetVisible(net)) {
+          check_rect(convert_box_to_rect(box));
+        }
       }
     }
 
@@ -732,7 +756,7 @@ void LayoutViewer::selectViaShapesAt(dbTechLayer* cut_layer,
                                      const int shape_limit,
                                      std::vector<Selected>& selections)
 {
-  auto via_shapes = search_.searchViaSBoxShapes(block_,
+  auto via_shapes = search_.searchSNetViaShapes(block_,
                                                 cut_layer,
                                                 region.xMin(),
                                                 region.yMin(),
@@ -809,42 +833,56 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
       }
     }
 
-    auto box_shapes = search_.searchBoxShapes(block_,
-                                              layer,
-                                              region.xMin(),
-                                              region.yMin(),
-                                              region.xMax(),
-                                              region.yMax(),
-                                              shape_limit);
+    const bool routing_visible = options_->areRoutingSegmentsVisible();
+    const bool vias_visible = options_->areRoutingViasVisible();
+    if (routing_visible || vias_visible) {
+      auto box_shapes = search_.searchBoxShapes(block_,
+                                                layer,
+                                                region.xMin(),
+                                                region.yMin(),
+                                                region.xMax(),
+                                                region.yMax(),
+                                                shape_limit);
 
-    for (auto& [box, net] : box_shapes) {
-      if (isNetVisible(net) && options_->isNetSelectable(net)) {
-        selections.push_back(gui_->makeSelected(net));
+      for (auto& [box, is_via, net] : box_shapes) {
+        if (!routing_visible && !is_via) {
+          continue;
+        }
+        if (!vias_visible && is_via) {
+          continue;
+        }
+        if (isNetVisible(net) && options_->isNetSelectable(net)) {
+          selections.push_back(gui_->makeSelected(net));
+        }
       }
     }
 
-    if (layer->getType() == dbTechLayerType::CUT) {
-      selectViaShapesAt(layer, layer, region, shape_limit, selections);
-    } else {
-      if (auto upper = layer->getUpperLayer()) {
-        selectViaShapesAt(upper, layer, region, shape_limit, selections);
-      }
-      if (auto lower = layer->getLowerLayer()) {
-        selectViaShapesAt(lower, layer, region, shape_limit, selections);
+    if (options_->areSpecialRoutingViasVisible()) {
+      if (layer->getType() == dbTechLayerType::CUT) {
+        selectViaShapesAt(layer, layer, region, shape_limit, selections);
+      } else {
+        if (auto upper = layer->getUpperLayer()) {
+          selectViaShapesAt(upper, layer, region, shape_limit, selections);
+        }
+        if (auto lower = layer->getLowerLayer()) {
+          selectViaShapesAt(lower, layer, region, shape_limit, selections);
+        }
       }
     }
 
-    auto polygon_shapes = search_.searchPolygonShapes(block_,
-                                                      layer,
-                                                      region.xMin(),
-                                                      region.yMin(),
-                                                      region.xMax(),
-                                                      region.yMax(),
-                                                      shape_limit);
+    if (options_->areSpecialRoutingSegmentsVisible()) {
+      auto polygon_shapes = search_.searchSNetShapes(block_,
+                                                     layer,
+                                                     region.xMin(),
+                                                     region.yMin(),
+                                                     region.xMax(),
+                                                     region.yMax(),
+                                                     shape_limit);
 
-    for (auto& [box, poly, net] : polygon_shapes) {
-      if (isNetVisible(net) && options_->isNetSelectable(net)) {
-        selections.push_back(gui_->makeSelected(net));
+      for (auto& [box, poly, net] : polygon_shapes) {
+        if (isNetVisible(net) && options_->isNetSelectable(net)) {
+          selections.push_back(gui_->makeSelected(net));
+        }
       }
     }
   }
@@ -871,8 +909,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
       }
       if (options_->areInstancePinsVisible()
           && options_->areInstancePinsSelectable()) {
-        odb::dbTransform xform;
-        inst->getTransform(xform);
+        const odb::dbTransform xform = inst->getTransform();
         for (auto* iterm : inst->getITerms()) {
           for (auto* mpin : iterm->getMTerm()->getMPins()) {
             for (auto* geom : mpin->getGeometry()) {
@@ -1345,9 +1382,7 @@ std::vector<std::pair<odb::dbObject*, odb::Rect>> LayoutViewer::getRowRects(
 
   std::vector<std::pair<odb::dbObject*, odb::Rect>> rects;
   for (auto& [box, row] : rows) {
-    int x;
-    int y;
-    row->getOrigin(x, y);
+    odb::Point pt = row->getOrigin();
 
     rects.emplace_back(row, row->getBBox());
 
@@ -1391,16 +1426,16 @@ std::vector<std::pair<odb::dbObject*, odb::Rect>> LayoutViewer::getRowRects(
     if (h_visible) {
       // row height can be seen
       for (int i = 0; i < count; ++i) {
-        const Rect row_rect(x, y, x + w, y + h);
+        const Rect row_rect(pt.x(), pt.y(), pt.x() + w, pt.y() + h);
         if (row_rect.intersects(bounds)) {
           // only paint rows that can be seen
           rects.emplace_back(obj, row_rect);
         }
 
         if (dir == dbRowDir::HORIZONTAL) {
-          x += spacing;
+          pt.addX(spacing);
         } else {
-          y += spacing;
+          pt.addY(spacing);
         }
       }
     }
@@ -2308,7 +2343,7 @@ void LayoutViewer::executionPaused()
 
 ////// LayoutScroll ///////
 LayoutScroll::LayoutScroll(LayoutViewer* viewer, QWidget* parent)
-    : QScrollArea(parent), viewer_(viewer)
+    : QScrollArea(parent), viewer_(viewer), scrolling_with_cursor_(false)
 {
   setWidgetResizable(false);
   setWidget(viewer);
@@ -2350,6 +2385,41 @@ void LayoutScroll::wheelEvent(QWheelEvent* event)
   // ensure changes are processed before the next wheel event to prevent
   // zoomIn and Out from jumping around on the ScrollBars
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+}
+
+bool LayoutScroll::eventFilter(QObject* object, QEvent* event)
+{
+  if (event->type() == QEvent::MouseButtonPress) {
+    QMouseEvent* press_event = static_cast<QMouseEvent*>(event);
+
+    if (press_event->button() == Qt::LeftButton) {
+      if (object == this->horizontalScrollBar()
+          || object == this->verticalScrollBar()) {
+        scrolling_with_cursor_ = true;
+      }
+    }
+  }
+
+  if (event->type() == QEvent::MouseButtonRelease) {
+    QMouseEvent* release_event = static_cast<QMouseEvent*>(event);
+
+    if (release_event->button() == Qt::LeftButton && scrolling_with_cursor_) {
+      scrolling_with_cursor_ = false;
+
+      // handle the case in which a user might click on one of the
+      // scrollbars, hold the button and move the cursor away
+      if (viewer_->isCursorInsideViewport()) {
+        viewer_->updateCursorCoordinates();
+      }
+    }
+  }
+
+  return QScrollArea::eventFilter(object, event);
+}
+
+bool LayoutScroll::isScrollingWithCursor()
+{
+  return scrolling_with_cursor_;
 }
 
 }  // namespace gui

@@ -279,11 +279,6 @@ class GlobalRouter : public ant::GlobalRouteSource
                                     int max_routing_layer);
   std::vector<std::pair<int, int>> calcLayerPitches(int max_layer);
   void initRoutingTracks(int max_routing_layer);
-  void averageTrackPattern(odb::dbTrackGrid* grid,
-                           bool is_x,
-                           int& track_init,
-                           int& num_tracks,
-                           int& track_step);
   void setCapacities(int min_routing_layer, int max_routing_layer);
   void initNets(std::vector<Net*>& nets);
   bool makeFastrouteNet(Net* net);
@@ -320,6 +315,7 @@ class GlobalRouter : public ant::GlobalRouteSource
                              GRoute& route,
                              int min_routing_layer,
                              int max_routing_layer);
+  void connectTopLevelPins(odb::dbNet* db_net, GRoute& route);
   void addRemainingGuides(NetRouteMap& routes,
                           std::vector<Net*>& nets,
                           int min_routing_layer,
@@ -394,7 +390,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   void makeBtermPins(Net* net, odb::dbNet* db_net, const odb::Rect& die_area);
   void initClockNets();
   bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
-  int trackSpacing();
   void initGridAndNets();
 
   utl::Logger* logger_;

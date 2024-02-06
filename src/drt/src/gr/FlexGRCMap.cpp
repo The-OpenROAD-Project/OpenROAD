@@ -32,7 +32,6 @@
 #include <iostream>
 #include <iterator>
 
-using namespace std;
 using namespace fr;
 
 void FlexGRCMap::initFrom3D(FlexGRCMap* cmap3D)
@@ -83,8 +82,8 @@ void FlexGRCMap::initFrom3D(FlexGRCMap* cmap3D)
         }
       }
     } else {
-      cout << "Warning: unsupported routing direction for layerIdx = "
-           << layerIdx << "\n";
+      std::cout << "Warning: unsupported routing direction for layerIdx = "
+                << layerIdx << "\n";
     }
     zIdx++;
   }
@@ -183,16 +182,16 @@ void FlexGRCMap::init()
         }
       }
     } else {
-      cout << "Warning: unsupported routing direction for layerIdx = "
-           << layerIdx << "\n";
+      std::cout << "Warning: unsupported routing direction for layerIdx = "
+                << layerIdx << "\n";
     }
     cmapLayerIdx++;
   }
 
   // update demand for fixed objects (only for pref routing direction)
   cmapLayerIdx = 0;
-  set<frCoord> trackLocs;
-  vector<rq_box_value_t<frBlockObject*>> queryResult;
+  std::set<frCoord> trackLocs;
+  std::vector<rq_box_value_t<frBlockObject*>> queryResult;
   auto regionQuery = design_->getRegionQuery();
   unsigned numBlkTracks = 0;
   // layerIdx == tech layer num
@@ -258,7 +257,7 @@ void FlexGRCMap::init()
 
   // update demand for rpins (only for pref routing direction)
   cmapLayerIdx = 0;
-  vector<rq_box_value_t<frRPin*>> rpinQueryResult;
+  std::vector<rq_box_value_t<frRPin*>> rpinQueryResult;
   // layerIdx == tech layer num
   for (auto& [layerIdx, dir] : zMap_) {
     if (dir == dbTechLayerDir::HORIZONTAL) {
@@ -329,11 +328,11 @@ void FlexGRCMap::init()
 unsigned FlexGRCMap::getNumBlkTracks(
     bool isHorz,
     frLayerNum lNum,
-    const set<frCoord>& trackLocs,
-    const vector<rq_box_value_t<frBlockObject*>>& results,
+    const std::set<frCoord>& trackLocs,
+    const std::vector<rq_box_value_t<frBlockObject*>>& results,
     const frCoord bloatDist = 0)
 {
-  set<frCoord> openTrackLocs = trackLocs;
+  std::set<frCoord> openTrackLocs = trackLocs;
   frCoord low, high;
   frCoord actBloatDist;
   auto layer = getDesign()->getTech()->getLayer(lNum);
@@ -383,7 +382,7 @@ frCoord FlexGRCMap::calcBloatDist(frBlockObject* obj,
   frCoord width = layer->getWidth();
   // use width if minSpc does not exist
   frCoord bloatDist = width;
-  frCoord objWidth = min(box.xMax() - box.xMin(), box.yMax() - box.yMin());
+  frCoord objWidth = std::min(box.xMax() - box.xMin(), box.yMax() - box.yMin());
   frCoord prl = (layer->getDir() == dbTechLayerDir::HORIZONTAL)
                     ? (box.xMax() - box.xMin())
                     : (box.yMax() - box.yMin());
@@ -412,10 +411,10 @@ frCoord FlexGRCMap::calcBloatDist(frBlockObject* obj,
 }
 
 unsigned FlexGRCMap::getNumPins(
-    const vector<rq_box_value_t<frBlockObject*>>& results)
+    const std::vector<rq_box_value_t<frBlockObject*>>& results)
 {
   unsigned numPins = 0;
-  set<frBlockObject*> pins;
+  std::set<frBlockObject*> pins;
   for (auto& [box, obj] : results) {
     if (obj->typeId() == frcInstTerm) {
       auto instTerm = static_cast<frInstTerm*>(obj);
@@ -433,11 +432,12 @@ unsigned FlexGRCMap::getNumPins(
   return numPins;
 }
 
-void FlexGRCMap::getTrackLocs(const vector<unique_ptr<frTrackPattern>>& tps,
-                              bool isHorz,
-                              frCoord low,
-                              frCoord high,
-                              set<frCoord>& trackLocs)
+void FlexGRCMap::getTrackLocs(
+    const std::vector<std::unique_ptr<frTrackPattern>>& tps,
+    bool isHorz,
+    frCoord low,
+    frCoord high,
+    std::set<frCoord>& trackLocs)
 {
   for (auto& tp : tps) {
     bool skip = true;
@@ -470,11 +470,12 @@ void FlexGRCMap::getTrackLocs(const vector<unique_ptr<frTrackPattern>>& tps,
 
 // when line2ViaPitch != 0, the function is used to calculate estimated track
 // numbers for transition layer
-unsigned FlexGRCMap::getNumTracks(const vector<unique_ptr<frTrackPattern>>& tps,
-                                  bool isHorz,
-                                  frCoord low,
-                                  frCoord high,
-                                  frCoord line2ViaPitch)
+unsigned FlexGRCMap::getNumTracks(
+    const std::vector<std::unique_ptr<frTrackPattern>>& tps,
+    bool isHorz,
+    frCoord low,
+    frCoord high,
+    frCoord line2ViaPitch)
 {
   unsigned numTrack = 0;
   if (line2ViaPitch == 0) {
@@ -540,23 +541,23 @@ unsigned FlexGRCMap::getNumTracks(const vector<unique_ptr<frTrackPattern>>& tps,
 
 void FlexGRCMap::printLayers()
 {
-  cout << "start printing layers in CMap\n";
+  std::cout << "start printing layers in CMap\n";
 
   for (auto& [layerNum, dir] : zMap_) {
-    cout << "  layerNum = " << layerNum << " dir = ";
+    std::cout << "  layerNum = " << layerNum << " dir = ";
     if (dir == dbTechLayerDir::HORIZONTAL) {
-      cout << "H";
+      std::cout << "H";
     } else if (dir == dbTechLayerDir::VERTICAL) {
-      cout << "V";
+      std::cout << "V";
     }
-    cout << endl;
+    std::cout << std::endl;
   }
 }
 
 void FlexGRCMap::print(bool isAll)
 {
-  ofstream congMap;
-  cout << "printing congestion map...\n";
+  std::ofstream congMap;
+  std::cout << "printing congestion map...\n";
 
   if (!CMAP_FILE.empty()) {
     congMap.open(CMAP_FILE.c_str());
@@ -565,7 +566,7 @@ void FlexGRCMap::print(bool isAll)
   if (congMap.is_open()) {
     congMap << "#     Area              demand/supply tracks\n";
   } else {
-    cout << "#     Area              demand/supply tracks\n";
+    std::cout << "#     Area              demand/supply tracks\n";
   }
 
   unsigned layerIdx = 0;
@@ -575,9 +576,9 @@ void FlexGRCMap::print(bool isAll)
               << design_->getTech()->getLayer(layerNum)->getName()
               << "----------------------\n";
     } else {
-      cout << "----------------------"
-           << design_->getTech()->getLayer(layerNum)->getName()
-           << "----------------------\n";
+      std::cout << "----------------------"
+                << design_->getTech()->getLayer(layerNum)->getName()
+                << "----------------------\n";
     }
     for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
       for (unsigned xIdx = 0; xIdx < xgp_->getCount(); xIdx++) {
@@ -595,10 +596,11 @@ void FlexGRCMap::print(bool isAll)
                     << " V: " << demandV << "/" << supplyV << " H: " << demandH
                     << "/" << supplyH << "\n";
           } else {
-            cout << "(" << gcellBox.xMin() << ", " << gcellBox.yMin() << ") ("
-                 << gcellBox.xMax() << ", " << gcellBox.yMax() << ")"
-                 << " V: " << demandV << "/" << supplyV << " H: " << demandH
-                 << "/" << supplyH << "\n";
+            std::cout << "(" << gcellBox.xMin() << ", " << gcellBox.yMin()
+                      << ") (" << gcellBox.xMax() << ", " << gcellBox.yMax()
+                      << ")"
+                      << " V: " << demandV << "/" << supplyV
+                      << " H: " << demandH << "/" << supplyH << "\n";
           }
         }
       }
@@ -612,8 +614,8 @@ void FlexGRCMap::print(bool isAll)
 
 void FlexGRCMap::print2D(bool isAll)
 {
-  cout << "printing 2D congestion map...\n";
-  ofstream congMap;
+  std::cout << "printing 2D congestion map...\n";
+  std::ofstream congMap;
   if (!CMAP_FILE.empty()) {
     congMap.open(CMAP_FILE.c_str());
   }
@@ -621,7 +623,7 @@ void FlexGRCMap::print2D(bool isAll)
   if (congMap.is_open()) {
     congMap << "#     Area              demand/supply tracks\n";
   } else {
-    cout << "#     Area              demand/supply tracks\n";
+    std::cout << "#     Area              demand/supply tracks\n";
   }
 
   for (unsigned yIdx = 0; yIdx < ygp_->getCount(); yIdx++) {
@@ -646,10 +648,11 @@ void FlexGRCMap::print2D(bool isAll)
                   << " V: " << demandV << "/" << supplyV << " H: " << demandH
                   << "/" << supplyH << "\n";
         } else {
-          cout << "(" << gcellBox.xMin() << ", " << gcellBox.yMin() << ") ("
-               << gcellBox.xMax() << ", " << gcellBox.yMax() << ")"
-               << " V: " << demandV << "/" << supplyV << " H: " << demandH
-               << "/" << supplyH << "\n";
+          std::cout << "(" << gcellBox.xMin() << ", " << gcellBox.yMin()
+                    << ") (" << gcellBox.xMax() << ", " << gcellBox.yMax()
+                    << ")"
+                    << " V: " << demandV << "/" << supplyV << " H: " << demandH
+                    << "/" << supplyH << "\n";
         }
       }
     }

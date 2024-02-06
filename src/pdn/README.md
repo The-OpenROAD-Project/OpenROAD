@@ -15,7 +15,7 @@ be defined over the stdcell area, and over areas occupied by macros.
 - Parameters without square brackets `-param2 param2` are required.
 ```
 
-### PDNGen
+### Build Power Grid
 
 Build a power grid in accordance with the information specified.
 
@@ -69,7 +69,7 @@ set_voltage_domain
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-name` | Defines the name of the voltage domain, default is "Core" or region name if provided. |
+| `-name` | Defines the name of the voltage domain. The default is "Core" or region name if provided. |
 | `-power` | Specifies the name of the power net for this voltage domain. |
 | `-ground` | Specifies the name of the ground net for this voltage domain. |
 | `-region` | Specifies a region of the design occupied by this voltage domain. |

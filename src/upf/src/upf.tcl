@@ -392,3 +392,240 @@ proc map_power_switch { args } {
     }
 
 }
+
+# Define command arguments for set_level_shifter
+sta::define_cmd_args "set_level_shifter" { \
+    [-domain domain] \
+    [-elements elements] \
+    [-exclude_elements exclude_elements] \
+    [-source source] \
+    [-sink sink] \
+    [-use_functional_equivalence use_functional_equivalence] \
+    [-applies_to applies_to] \
+    [-applies_to_boundary applies_to_boundary] \
+    [-rule rule] \
+    [-threshold threshold] \
+    [-no_shift] \
+    [-force_shift] \
+    [-location location] \
+    [-input_supply input_supply] \
+    [-output_supply output_supply] \
+    [-internal_supply internal_supply] \
+    [-name_prefix name_prefix] \
+    [-name_suffix name_suffix] \
+    [-instance instance] \
+    [-update] \
+    [-use_equivalence use_equivalence] \
+    name 
+}
+
+# Procedure to set or update a level shifter
+proc set_level_shifter { args } {
+    check_block_exists
+
+    sta::parse_key_args "set_level_shifter" args \
+        keys {-domain -elements -exclude_elements -source -sink -use_functional_equivalence -applies_to -applies_to_boundary -rule -threshold  -location -input_supply -output_supply -internal_supply -name_prefix -name_suffix -instance  -use_equivalence} flags {-update -no_shift -force_shift}
+
+    sta::check_argc_eq1 "set_level_shifter" $args
+
+    set name [lindex $args 0]
+
+    set domain ""
+    set elements {}
+    set exclude_elements {}
+    set source ""
+    set sink ""
+    set use_functional_equivalence "TRUE"
+    set applies_to ""
+    set applies_to_boundary ""
+    set rule ""
+    set threshold ""
+    set no_shift ""
+    set force_shift ""
+    set location ""
+    set input_supply ""
+    set output_supply ""
+    set internal_supply ""
+    set name_prefix ""
+    set name_suffix ""
+    set instance {}
+    set update 0
+
+    if { [info exists keys(-domain)] } {
+        set domain $keys(-domain)
+    }
+
+    if { [info exists keys(-elements)] } {
+        set elements $keys(-elements)
+    }
+
+    if { [info exists keys(-exclude_elements)] } {
+        set exclude_elements $keys(-exclude_elements)
+    }
+
+    if { [info exists keys(-source)] } {
+        set source $keys(-source)
+    }
+
+    if { [info exists keys(-sink)] } {
+        set sink $keys(-sink)
+    }
+
+    if { [info exists keys(-use_functional_equivalence)] } {
+        set use_functional_equivalence $keys(-use_functional_equivalence)
+    }
+
+    if { [info exists keys(-applies_to)] } {
+        set applies_to $keys(-applies_to)
+    }
+
+    if { [info exists keys(-applies_to_boundary)] } {
+        set applies_to_boundary $keys(-applies_to_boundary)
+    }
+
+    if { [info exists keys(-rule)] } {
+        set rule $keys(-rule)
+    }
+
+    if { [info exists keys(-threshold)] } {
+        set threshold $keys(-threshold)
+    }
+
+    if { [info exists keys(-location)] } {
+        set location $keys(-location)
+    }
+
+    if { [info exists keys(-input_supply)] } {
+        set input_supply $keys(-input_supply)
+    }
+
+    if { [info exists keys(-output_supply)] } {
+        set output_supply $keys(-output_supply)
+    }   
+
+    if { [info exists keys(-internal_supply)] } {
+        set internal_supply $keys(-internal_supply)
+    }
+
+    if { [info exists keys(-name_prefix)] } {
+        set name_prefix $keys(-name_prefix)
+    }
+
+    if { [info exists keys(-name_suffix)] } {
+        set name_suffix $keys(-name_suffix)
+    }
+
+    if { [info exists keys(-instance)] } {
+        set instance $keys(-instance)
+    }
+
+    if { [info exists keys(-use_equivalence)] } {
+        utl::warn UPF 57 "-use_equivalence is deprecated in UPF and not supported in OpenROAD"
+    }
+
+    if { [info exists flags(-update)] } {
+        set update 1
+    }
+
+    if { [info exists flags(-no_shift)] } {
+        set no_shift "1"
+    }
+
+    if { [info exists flags(-force_shift)] } {
+        set force_shift "1"
+    }
+
+    set ok [upf::create_or_update_level_shifter_cmd $name $domain $source $sink $use_functional_equivalence $applies_to $applies_to_boundary $rule $threshold $no_shift $force_shift $location $input_supply $output_supply $internal_supply $name_prefix $name_suffix $update]
+
+    if { $ok == 0 } {
+        return
+    }
+
+    foreach element $elements {
+        upf::add_level_shifter_element_cmd $name $element
+    }
+
+    foreach exclude_element $exclude_elements {
+        upf::exclude_level_shifter_element_cmd $name $exclude_element
+    }
+
+    foreach {instance_name port_name} $instance {
+        upf::handle_level_shifter_instance_cmd $name $instance_name $port_name
+    }
+
+}
+
+
+# Procedure to set the voltage of a power domain which takes a float voltage
+# Arguments: -domain, -voltage
+
+sta::define_cmd_args "set_domain_voltage" { \
+    [-domain domain] \
+    [-voltage voltage] 
+}
+
+proc set_domain_voltage { args } {
+    check_block_exists
+
+    sta::parse_key_args "set_domain_voltage" args \
+        keys {-domain -voltage} flags {}
+
+    sta::check_argc_eq0 "set_domain_voltage" $args
+
+    set domain ""
+    set voltage 0.0
+
+    if { [info exists keys(-domain)] } {
+        set domain $keys(-domain)
+    }
+
+    if { [info exists keys(-voltage)] } {
+        set voltage $keys(-voltage)
+    }
+
+    upf::set_domain_voltage_cmd $domain $voltage
+}
+
+# Procedure to set the library cell used for level shifter identifying cell_name, input_port, output_port for a given 
+# level_shifter strategy
+
+# Arguments: -level_shifter, -cell_name, -input_port, -output_port
+
+sta::define_cmd_args "set_level_shifter_cell" { \
+    [-level_shifter level_shifter] \
+    [-cell_name cell_name] \
+    [-input_port input_port] \
+    [-output_port output_port] 
+}
+
+proc set_level_shifter_cell { args } {
+    check_block_exists
+
+    sta::parse_key_args "set_level_shifter_cell" args \
+        keys {-level_shifter -cell_name -input_port -output_port} flags {}
+
+    sta::check_argc_eq0 "set_level_shifter_cell" $args
+
+    set level_shifter ""
+    set cell_name ""
+    set input_port ""
+    set output_port ""
+
+    if { [info exists keys(-level_shifter)] } {
+        set level_shifter $keys(-level_shifter)
+    }
+
+    if { [info exists keys(-cell_name)] } {
+        set cell_name $keys(-cell_name)
+    }
+
+    if { [info exists keys(-input_port)] } {
+        set input_port $keys(-input_port)
+    }
+
+    if { [info exists keys(-output_port)] } {
+        set output_port $keys(-output_port)
+    }
+
+    upf::set_level_shifter_cell_cmd $level_shifter $cell_name $input_port $output_port
+} 

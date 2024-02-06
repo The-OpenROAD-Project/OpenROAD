@@ -33,10 +33,37 @@
 #include "dbStream.h"
 
 #include <iostream>
+#include <sstream>
 
 #include "db.h"
+#include "dbDatabase.h"
 
 namespace odb {
+
+void dbOStream::pushScope(const std::string& name)
+{
+  _scopes.push_back({name, pos()});
+}
+
+void dbOStream::popScope()
+{
+  auto logger = _db->getLogger();
+  if (logger->debugCheck(utl::ODB, "io_size", 1)) {
+    auto size = pos() - _scopes.back().start_pos;
+    if (size >= 1024) {  // hide tiny contributors
+      std::ostringstream scope_name;
+
+      std::transform(_scopes.begin(),
+                     _scopes.end(),
+                     std::ostream_iterator<std::string>(scope_name, "/"),
+                     [](const Scope& scope) { return scope.name; });
+
+      logger->report("{:8.1f} MB in {}", size / 1048576.0, scope_name.str());
+    }
+  }
+
+  _scopes.pop_back();
+}
 
 dbOStream& operator<<(dbOStream& stream, const Rect& r)
 {
@@ -86,10 +113,9 @@ dbIStream& operator>>(dbIStream& stream, Oct& o)
   return stream;
 }
 
-dbOStream::dbOStream(_dbDatabase* db, FILE* f)
+dbOStream::dbOStream(_dbDatabase* db, std::ostream& f) : _f(f)
 {
   _db = db;
-  _f = f;
   _lef_dist_factor = 0.001;
   _lef_area_factor = 0.000001;
 
@@ -101,7 +127,7 @@ dbOStream::dbOStream(_dbDatabase* db, FILE* f)
   }
 }
 
-dbIStream::dbIStream(_dbDatabase* db, std::ifstream& f) : _f(f)
+dbIStream::dbIStream(_dbDatabase* db, std::istream& f) : _f(f)
 {
   _db = db;
 

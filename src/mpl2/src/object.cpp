@@ -623,7 +623,10 @@ void Cluster::setPinAccess(int cluster_id,
                            float net_weight)
 {
   if (cluster_id < 0) {
-    logger_->report("Error !!! Cluster id is less than 0 in SetPinAccess");
+    logger_->error(MPL,
+                   38,
+                   "Cannot set pin access for {} boundary.",
+                   toString(pin_access));
   }
   pin_access_map_[cluster_id]
       = std::pair<PinAccess, float>(pin_access, net_weight);
@@ -830,49 +833,6 @@ void HardMacro::setY(float y)
 const std::pair<float, float> HardMacro::getLocation() const
 {
   return std::pair<float, float>(x_, y_);
-}
-
-float HardMacro::getX() const
-{
-  return x_;
-}
-
-float HardMacro::getY() const
-{
-  return y_;
-}
-
-// The position of pins relative to the lower left of the instance
-float HardMacro::getPinX() const
-{
-  return x_ + pin_x_;
-}
-
-float HardMacro::getPinY() const
-{
-  return y_ + pin_y_;
-}
-
-// The position of pins relative to the origin of the canvas;
-float HardMacro::getAbsPinX() const
-{
-  return pin_x_;
-}
-
-float HardMacro::getAbsPinY() const
-{
-  return pin_y_;
-}
-
-// width and height
-float HardMacro::getWidth() const
-{
-  return width_;
-}
-
-float HardMacro::getHeight() const
-{
-  return height_;
 }
 
 // Note that the real X and Y does NOT include halo_width
@@ -1210,15 +1170,6 @@ const std::string SoftMacro::getName() const
 // Physical Information
 void SoftMacro::setX(float x)
 {
-  if (refer_lx_ > 0.0 && refer_ly_ > 0.0) {
-    if (x > refer_lx_) {
-      x_ = x;
-    } else {
-      x_ = refer_lx_;
-    }
-    return;
-  }
-
   if (!fixed_) {
     x_ = x;
   }
@@ -1226,15 +1177,6 @@ void SoftMacro::setX(float x)
 
 void SoftMacro::setY(float y)
 {
-  if (refer_lx_ > 0.0 && refer_ly_ > 0.0) {
-    if (y > refer_ly_) {
-      y_ = y;
-    } else {
-      y_ = refer_ly_;
-    }
-    return;
-  }
-
   if (!fixed_) {
     y_ = y;
   }
@@ -1434,41 +1376,6 @@ void SoftMacro::setShapes(
   }
   width_ = width_list_[0].first;
   height_ = height_list_[0].first;
-}
-
-float SoftMacro::getX() const
-{
-  return x_;
-}
-
-float SoftMacro::getY() const
-{
-  return y_;
-}
-
-float SoftMacro::getPinX() const
-{
-  return x_ + width_ / 2.0;
-}
-
-float SoftMacro::getPinY() const
-{
-  return y_ + height_ / 2.0;
-}
-
-const std::pair<float, float> SoftMacro::getLocation() const
-{
-  return std::pair<float, float>(x_, y_);
-}
-
-float SoftMacro::getWidth() const
-{
-  return width_;
-}
-
-float SoftMacro::getHeight() const
-{
-  return height_;
 }
 
 float SoftMacro::getArea() const

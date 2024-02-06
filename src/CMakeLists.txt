@@ -67,6 +67,7 @@ set(GUI_HOME ${PROJECT_SOURCE_DIR}/src/gui)
 
 set(OPENROAD_SOURCE
   Design.cc
+  Timing.cc
   Tech.cc
   OpenRoad.cc
   Main.cc
@@ -191,6 +192,9 @@ add_compile_options(
   -Wno-sign-compare
   -Wp,-D_GLIBCXX_ASSERTIONS
   $<$<CXX_COMPILER_ID:Clang>:-Wno-gnu-zero-variadic-macro-arguments>
+  # Needed for floating point stability in FFT (fft_test will check this).
+  # See also https://kristerw.github.io/2021/11/09/fp-contract/
+  -ffp-contract=off
   # Apple clang 14.0.0 deprecates sprintf, which generates 900 warnings.
   $<$<CXX_COMPILER_ID:AppleClang>:-Wno-deprecated-declarations>
   $<$<BOOL:${ASAN}>:-fsanitize=address>

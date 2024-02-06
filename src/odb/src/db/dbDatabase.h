@@ -69,7 +69,26 @@ namespace odb {
 //
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
-const uint db_schema_minor = 71;  // Current revision number
+const uint db_schema_minor = 78;  // Current revision number
+
+// Revision where _dbBox / flags.mask was added
+const uint db_schema_dbbox_mask = 78;
+
+const uint db_schema_level_shifter_cell = 77;
+
+const uint db_schema_power_domain_voltage = 76;
+
+// Revision where _dbTechLayer::wrongdir_spacing_rules_tbl_ was added
+const uint db_schema_wrongdir_spacing = 75;
+
+// Revision where _dbLevelShifter was added
+const uint db_schema_level_shifter = 74;
+
+// Revision where _dbSite::_row_pattern/_parent_lib/_parent_site were added
+const uint db_schema_site_row_pattern = 73;
+
+// Revision where _dbMaster::_lib_for_site was added
+const uint db_schema_dbmaster_lib_for_site = 72;
 
 // Revision where _dbObstruction::_except_pg_nets was added
 const uint db_schema_except_pg_nets_obstruction = 71;

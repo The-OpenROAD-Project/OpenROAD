@@ -191,6 +191,7 @@ enum class frConstraintTypeEnum
   frcLef58SpacingEndOfLineWithinEncloseCutConstraint,
   frcLef58SpacingEndOfLineWithinParallelEdgeConstraint,
   frcLef58SpacingEndOfLineWithinMaxMinLengthConstraint,
+  frcLef58SpacingWrongDirConstraint,
   frcLef58CutClassConstraint,  // not supported
   frcNonSufficientMetalConstraint,
   frcSpacingSamenetConstraint,
@@ -203,7 +204,8 @@ enum class frConstraintTypeEnum
   frcLef58MinimumCutConstraint,
   frcMetalWidthViaConstraint,
   frcLef58AreaConstraint,
-  frcLef58KeepOutZoneConstraint
+  frcLef58KeepOutZoneConstraint,
+  frcSpacingRangeConstraint
 };
 
 std::ostream& operator<<(std::ostream& os, frConstraintTypeEnum type);
@@ -365,5 +367,7 @@ inline bool is_loading(const Archive& ar)
 {
   return std::is_same<typename Archive::is_loading, boost::mpl::true_>::value;
 }
+
+using utl::format_as;
 
 }  // namespace fr

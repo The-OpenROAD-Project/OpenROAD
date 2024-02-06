@@ -36,6 +36,7 @@
 #include "tap/tapcell.h"
 
 #include <map>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -119,7 +120,9 @@ void Tapcell::run(const Options& options)
   placeTapcells(options);
 }
 
-int Tapcell::placeTapcells(odb::dbMaster* tapcell_master, const int dist)
+int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
+                           const int dist,
+                           const bool disallow_one_site_gaps)
 {
   std::vector<Edge> edges;
 
@@ -159,16 +162,18 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master, const int dist)
   int inst = 0;
   for (auto* row : db_->getChip()->getBlock()->getRows()) {
     const bool is_edge = edge_rows.find(row) != edge_rows.end();
-    inst += placeTapcells(tapcell_master, dist, row, is_edge);
+    inst += placeTapcells(
+        tapcell_master, dist, row, is_edge, disallow_one_site_gaps);
   }
   logger_->info(utl::TAP, 5, "Inserted {} tapcells.", inst);
   return inst;
 }
 
 int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
-                           int dist,
+                           const int dist,
                            odb::dbRow* row,
-                           bool is_edge)
+                           const bool is_edge,
+                           const bool disallow_one_site_gaps)
 {
   if (row->getSite()->getName() != tapcell_master->getSite()->getName()) {
     return 0;
@@ -215,31 +220,38 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
     x = odb::makeSiteLoc(x, site_width, true, llx);
     // Check if site is filled
     const odb::dbOrientType ori = row->getOrient();
-    bool overlap = checkIfFilled(x, tap_width, ori, row_insts);
-    if (!overlap) {
+    std::optional<int> x_loc = findValidLocation(x,
+                                                 tap_width,
+                                                 ori,
+                                                 row_insts,
+                                                 site_width,
+                                                 tap_width,
+                                                 urx,
+                                                 disallow_one_site_gaps);
+    if (x_loc) {
       const int lly = row_bb.yMin();
       auto* inst = makeInstance(
           db_->getChip()->getBlock(),
           tapcell_master,
           ori,
-          x,
+          *x_loc,
           lly,
           fmt::format("{}TAPCELL_{}_", tap_prefix_, row->getName()));
       row_insts.insert(inst);
       insts++;
+      x = *x_loc;
     }
   }
 
   return insts;
 }
 
-bool Tapcell::checkIfFilled(const int x,
-                            const int width,
-                            const odb::dbOrientType& orient,
-                            const std::set<odb::dbInst*>& row_insts)
+inline void findStartEnd(int x,
+                         int width,
+                         const odb::dbOrientType& orient,
+                         int& x_start,
+                         int& x_end)
 {
-  int x_start;
-  int x_end;
   if (orient == odb::dbOrientType::MY || orient == odb::dbOrientType::R180) {
     x_start = x - width;
     x_end = x;
@@ -247,6 +259,72 @@ bool Tapcell::checkIfFilled(const int x,
     x_start = x;
     x_end = x + width;
   }
+}
+
+std::optional<int> Tapcell::findValidLocation(
+    const int x,
+    const int width,
+    const odb::dbOrientType& orient,
+    const std::set<odb::dbInst*>& row_insts,
+    const int site_width,
+    const int tap_width,
+    const int row_urx,
+    const bool disallow_one_site_gaps)
+{
+  int x_start;
+  int x_end;
+  findStartEnd(x, width, orient, x_start, x_end);
+
+  if (disallow_one_site_gaps) {
+    // The +1 is to convert > to >= (< to <=) below
+    x_start -= site_width + 1;
+    x_end += site_width + 1;
+  }
+
+  PartialOverlap partially_overlap;
+  bool overlap = false;
+  for (const auto& inst : row_insts) {
+    const odb::Rect inst_bb = inst->getBBox()->getBox();
+    if (x_end > inst_bb.xMin() && x_start < inst_bb.xMax()) {
+      partially_overlap.left = x_end > inst_bb.xMax();
+      partially_overlap.x_start_left = inst_bb.xMax();
+      partially_overlap.right = x_start < inst_bb.xMin();
+      partially_overlap.x_limit_right = inst_bb.xMin();
+      overlap = true;
+      break;
+    }
+  }
+
+  std::optional<int> x_loc;
+  if (!overlap) {
+    x_loc = x;
+  } else if (partially_overlap.right) {
+    x_loc = partially_overlap.x_limit_right - tap_width;
+  } else if (partially_overlap.left) {
+    x_loc = partially_overlap.x_start_left;
+  }
+
+  if (x_loc) {
+    bool in_rows = (*x_loc + tap_width) <= row_urx;
+    const bool location_ok
+        = !overlap || !isOverlapping(*x_loc, tap_width, orient, row_insts);
+
+    if (location_ok && in_rows) {
+      return x_loc;
+    }
+  }
+
+  return std::nullopt;
+}
+
+bool Tapcell::isOverlapping(const int x,
+                            const int width,
+                            const odb::dbOrientType& orient,
+                            const std::set<odb::dbInst*>& row_insts)
+{
+  int x_start;
+  int x_end;
+  findStartEnd(x, width, orient, x_start, x_end);
 
   for (const auto& inst : row_insts) {
     const odb::Rect inst_bb = inst->getBBox()->getBox();
@@ -1411,7 +1489,22 @@ void Tapcell::placeTapcells(const Options& options)
 
   const int dist = options.dist >= 0 ? options.dist : defaultDistance();
 
-  placeTapcells(options.tapcell_master, dist);
+  placeTapcells(options.tapcell_master, dist, options.disallow_one_site_gaps);
+}
+
+odb::dbBlock* Tapcell::getBlock() const
+{
+  return db_->getChip()->getBlock();
+}
+
+double Tapcell::dbuToMicrons(int64_t dbu)
+{
+  return static_cast<double>(dbu) / (getBlock()->getDbUnitsPerMicron());
+}
+
+int Tapcell::micronsToDbu(double microns)
+{
+  return (int64_t) (microns * getBlock()->getDbUnitsPerMicron());
 }
 
 }  // namespace tap

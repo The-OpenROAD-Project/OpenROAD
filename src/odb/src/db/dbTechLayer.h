@@ -64,12 +64,14 @@ class _dbTechLayerMinCutRule;
 class _dbTechLayerAreaRule;
 class _dbTechLayerForbiddenSpacingRule;
 class _dbTechLayerKeepOutZoneRule;
+class _dbTechLayerWrongDirSpacingRule;
 // User Code Begin Classes
 class _dbTechLayerSpacingRule;
 class _dbTechMinCutRule;
 class _dbTechMinEncRule;
 class _dbTechV55InfluenceEntry;
 class _dbTechLayerAntennaRule;
+class dbTrackGrid;
 // User Code End Classes
 
 struct dbTechLayerFlags
@@ -98,6 +100,7 @@ class _dbTechLayer : public _dbObject
  public:
   _dbTechLayer(_dbDatabase*, const _dbTechLayer& r);
   _dbTechLayer(_dbDatabase*);
+
   ~_dbTechLayer();
 
   bool operator==(const _dbTechLayer& rhs) const;
@@ -151,6 +154,8 @@ class _dbTechLayer : public _dbObject
   dbTable<_dbTechLayerForbiddenSpacingRule>* forbidden_spacing_rules_tbl_;
 
   dbTable<_dbTechLayerKeepOutZoneRule>* keepout_zone_rules_tbl_;
+
+  dbTable<_dbTechLayerWrongDirSpacingRule>* wrongdir_spacing_rules_tbl_;
 
   // User Code Begin Fields
 

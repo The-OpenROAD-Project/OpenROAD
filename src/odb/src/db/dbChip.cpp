@@ -132,9 +132,10 @@ _dbChip::~_dbChip()
 
 dbOStream& operator<<(dbOStream& stream, const _dbChip& chip)
 {
+  dbOStreamScope scope(stream, "dbChip");
   stream << chip._top;
   stream << *chip._block_tbl;
-  stream << *chip._prop_tbl;
+  stream << NamedTable("prop_tbl", chip._prop_tbl);
   stream << *chip._name_cache;
   return stream;
 }

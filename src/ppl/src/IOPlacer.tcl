@@ -236,7 +236,6 @@ proc set_io_pin_constraint { args } {
     }
 
     foreach {pin1 pin2} $mirrored_pins {
-      utl::info PPL 80 "Mirroring pins $pin1 and $pin2."
       set bterm1 [ppl::parse_pin_names "set_io_pin_constraint -mirrored_pins" $pin1]
       set bterm2 [ppl::parse_pin_names "set_io_pin_constraint -mirrored_pins" $pin2]
       ppl::add_mirrored_pins $bterm1 $bterm2
@@ -320,18 +319,25 @@ proc set_simulated_annealing { args } {
   keys {-temperature -max_iterations -perturb_per_iter -alpha} \
   flags {}
 
+  set temperature 0
   if [info exists keys(-temperature)] {
     set temperature $keys(-temperature)
     sta::check_positive_float "-temperature" $temperature
   }
+
+  set max_iterations 0
   if [info exists keys(-max_iterations)] {
     set max_iterations $keys(-max_iterations)
     sta::check_positive_int "-max_iterations" $max_iterations
   }
+
+  set perturb_per_iter 0
   if [info exists keys(-perturb_per_iter)] {
     set perturb_per_iter $keys(-perturb_per_iter)
     sta::check_positive_int "-perturb_per_iter" $perturb_per_iter
   }
+
+  set alpha 0
   if [info exists keys(-alpha)] {
     set alpha $keys(-alpha)
     sta::check_positive_float "-alpha" $alpha
@@ -470,7 +476,7 @@ proc place_pins { args } {
 
   foreach inst [$dbBlock getInsts] {
     if { [$inst isBlock] } {
-      if { ![$inst isPlaced] } {
+      if { ![$inst isPlaced] && ![info exists flags(-random)]} {
         utl::warn PPL 15 "Macro [$inst getName] is not placed."
       } else {
         lappend blockages $inst
