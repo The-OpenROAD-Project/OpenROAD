@@ -195,4 +195,29 @@ void RealValueHeatMapDataSource::determineMinMax(
 {
 }
 
+//////////
+
+GlobalRoutingDataSource::GlobalRoutingDataSource(
+    utl::Logger* logger,
+    const std::string& name,
+    const std::string& short_name,
+    const std::string& settings_group)
+    : HeatMapDataSource(logger, name, short_name, settings_group)
+{
+}
+
+void GlobalRoutingDataSource::populateXYGrid()
+{
+}
+
+double GlobalRoutingDataSource::getGridXSize() const
+{
+  return HeatMapDataSource::getGridXSize();
+}
+
+double GlobalRoutingDataSource::getGridYSize() const
+{
+  return HeatMapDataSource::getGridYSize();
+}
+
 }  // namespace gui
