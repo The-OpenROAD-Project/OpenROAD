@@ -69,7 +69,7 @@ rtl_macro_placer
 | `-snap_layer` | Snap macro origins to this routing layer track. The default value is 4, and the allowed values are integers `[1, MAX_LAYER]`). |
 | `-bus_planning` | Flag to enable bus planning. We recommend to enable bus planning for technologies with very limited routing layers such as SKY130 and GF180. As for technologies such as NanGate45 and ASAP7, we recommend to keep it disabled. |
 | `-report_directory` | Save reports to this directory. |
-| `-write_macro_placement` | Generates a file with the macro placement in the format of multiple calls for the `place_macro` command. |
+| `-write_macro_placement` | Generates a file with the placement of the macros placed by HierRTLMP flow in the format of multiple calls for the `place_macro` command. |
 
 
 #### Simulated Annealing Weight parameters
@@ -89,7 +89,7 @@ Do note that while action probabilities are normalized to 1.0, the weights are n
 
 ### Write Macro Placement
 
-Command to write a file with the macro placement in the format of multiple calls for the `place_macro` command:
+Command to generate a file with the placement of the macros in the design using multiple calls for the `place_macro` command:
 
 ```tcl
 write_macro_placement file_name

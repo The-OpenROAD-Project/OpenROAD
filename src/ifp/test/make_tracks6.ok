@@ -7,5 +7,5 @@
 [WARNING ORD-2011] LEF master BUF_X1 has no liberty cell.
 [WARNING ORD-2011] LEF master AND2_X1 has no liberty cell.
 [WARNING IFP-0028] Core area lower left (100.000, 100.000) snapped to (100.130, 100.800).
-[INFO IFP-0001] Added 570 rows of 4209 site FreePDK45_38x28_10R_NP_162NW_34O with height 1.
+[INFO IFP-0001] Added 570 rows of 4209 site FreePDK45_38x28_10R_NP_162NW_34O.
 No differences found.

@@ -117,6 +117,11 @@ class Fixture
       frCoord end_prl_spacing = 0,
       frCoord end_prl = 0);
 
+  frSpacingRangeConstraint* makeSpacingRangeConstraint(frLayerNum layer_num,
+                                                       frCoord spacing,
+                                                       frCoord minWidth,
+                                                       frCoord maxWidth);
+
   std::shared_ptr<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>
   makeLef58SpacingEolParEdgeConstraint(frLef58SpacingEndOfLineConstraint* con,
                                        frCoord par_space,

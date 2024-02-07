@@ -450,6 +450,7 @@ _dbTech::~_dbTech()
 
 dbOStream& operator<<(dbOStream& stream, const _dbTech& tech)
 {
+  dbOStreamScope scope(stream, "dbTech");
   stream << tech._name;
   stream << tech._via_cnt;
   stream << tech._layer_cnt;
@@ -467,18 +468,19 @@ dbOStream& operator<<(dbOStream& stream, const _dbTech& tech)
   stream << tech._non_default_rules;
   stream << tech._samenet_rules;
   stream << tech._samenet_matrix;
-  stream << *tech._layer_tbl;
-  stream << *tech._via_tbl;
-  stream << *tech._non_default_rule_tbl;
-  stream << *tech._layer_rule_tbl;
-  stream << *tech._box_tbl;
-  stream << *tech._samenet_rule_tbl;
-  stream << *tech._antenna_rule_tbl;
-  stream << *tech._via_rule_tbl;
-  stream << *tech._via_layer_rule_tbl;
-  stream << *tech._via_generate_rule_tbl;
-  stream << *tech._prop_tbl;
-  stream << *tech._metal_width_via_map_tbl;
+  stream << NamedTable("layer_tbl", tech._layer_tbl);
+  stream << NamedTable("via_tbl", tech._via_tbl);
+  stream << NamedTable("non_default_rule_tbl", tech._non_default_rule_tbl);
+  stream << NamedTable("layer_rule_tbl", tech._layer_rule_tbl);
+  stream << NamedTable("box_tbl", tech._box_tbl);
+  stream << NamedTable("samenet_rule_tbl", tech._samenet_rule_tbl);
+  stream << NamedTable("antenna_rule_tbl", tech._antenna_rule_tbl);
+  stream << NamedTable("via_rule_tbl", tech._via_rule_tbl);
+  stream << NamedTable("via_layer_rule_tbl", tech._via_layer_rule_tbl);
+  stream << NamedTable("via_generate_rule_tbl", tech._via_generate_rule_tbl);
+  stream << NamedTable("prop_tbl", tech._prop_tbl);
+  stream << NamedTable("metal_width_via_map_tbl",
+                       tech._metal_width_via_map_tbl);
   stream << *tech._name_cache;
   stream << tech._via_hash;
   return stream;

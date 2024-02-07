@@ -459,4 +459,48 @@ void cutRows(dbBlock* block,
                final_sites_count);
 }
 
+std::string generateMacroPlacementString(dbBlock* block)
+{
+  std::string macro_placement;
+
+  const float dbu = block->getTech()->getDbUnitsPerMicron();
+  float x = 0.0f;
+  float y = 0.0f;
+
+  for (odb::dbInst* inst : block->getInsts()) {
+    if (inst->isBlock()) {
+      x = (inst->getLocation().x()) / dbu;
+      y = (inst->getLocation().y()) / dbu;
+
+      macro_placement += fmt::format(
+          "place_macro -macro_name {} -location {{{} {}}} -orientation {}\n",
+          inst->getName(),
+          x,
+          y,
+          inst->getOrient().getString());
+    }
+  }
+
+  return macro_placement;
+}
+
+int64_t WireLengthEvaluator::hpwl() const
+{
+  int64_t hpwl_sum = 0;
+  for (dbNet* net : block_->getNets()) {
+    hpwl_sum += hpwl(net);
+  }
+  return hpwl_sum;
+}
+
+int64_t WireLengthEvaluator::hpwl(dbNet* net) const
+{
+  if (net->getSigType().isSupply()) {
+    return 0;
+  }
+
+  Rect bbox = net->getTermBBox();
+  return bbox.dx() + bbox.dy();
+}
+
 }  // namespace odb
