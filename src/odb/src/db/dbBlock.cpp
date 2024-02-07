@@ -4065,6 +4065,7 @@ void dbBlock::getChildModules(std::vector<dbModule*>& child_modules)
     child_modules.push_back((dbModule*) dbm);
   }
 }
+
 void dbBlock::dumpDebug()
 {
   _dbBlock* block = (_dbBlock*) this;

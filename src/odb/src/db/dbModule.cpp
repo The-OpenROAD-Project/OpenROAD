@@ -320,8 +320,6 @@ unsigned dbModule::getDbInstCount()
 
 void dbModule::addInst(dbInst* inst)
 {
-  static int debug;
-  debug++;
   _dbModule* module = (_dbModule*) this;
   _dbInst* _inst = (_dbInst*) inst;
   _dbBlock* block = (_dbBlock*) module->getOwner();
@@ -354,17 +352,32 @@ void dbModule::addInst(dbInst* inst)
 
   _inst->_module = module->getOID();
 
+  //
+  // Hack: so order appears same as that in block -> Insts().
+  // TODO: add end marker to module schema and fix disconnect
+  // to avoid this additional run time
+  //
+
   if (module->_insts != 0) {
-    _dbInst* tail = block->_inst_tbl->getPtr(module->_insts);
-    _inst->_module_next = module->_insts;
-    _inst->_module_prev = 0;
-    tail->_module_prev = _inst->getOID();
+    //
+    // skip to end of list: TODO replace with sentinel in module
+    //
+    _dbInst* cur_el = block->_inst_tbl->getPtr(module->_insts);
+    while (cur_el->_module_next != 0)
+      cur_el = block->_inst_tbl->getPtr(cur_el->_module_next);
+    cur_el->_module_next = _inst->getOID();
+    _inst->_module_prev = cur_el->getOID();
+    _inst->_module_next = 0;
+    //    _dbInst* tail = block->_inst_tbl->getPtr(module->_insts);
+    //    _inst->_module_next = module->_insts;
+    //    _inst->_module_prev = 0;
+    //    tail->_module_prev = _inst->getOID();
   } else {
     _inst->_module_next = 0;
     _inst->_module_prev = 0;
+    module->_insts = _inst->getOID();
   }
-
-  module->_insts = _inst->getOID();
+  // module->_insts = _inst->getOID();
 }
 
 void _dbModule::removeInst(dbInst* inst)
@@ -557,7 +570,6 @@ std::vector<dbInst*> dbModule::getLeafInsts()
 dbModBTerm* dbModule::findModBTerm(const char* name)
 {
   _dbModule* cur_module = (_dbModule*) this;
-  _dbBlock* block = (_dbBlock*) cur_module->getOwner();
   for (dbModBTerm* mod_bterm : getModBTerms()) {
     if (!strcmp(mod_bterm->getName(), name))
       return mod_bterm;

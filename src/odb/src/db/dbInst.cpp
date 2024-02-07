@@ -1383,7 +1383,10 @@ dbInst* dbInst::create(dbBlock* block_,
 
   inst->_flags._physical_only = physical_only;
   if (!physical_only) {
+    // old code
     //    block_->getTopModule()->addInst((dbInst*) inst);
+    // now we insert into scope of module...
+    // might screw things up..
     if (parent_module)
       parent_module->addInst((dbInst*) inst);
     else

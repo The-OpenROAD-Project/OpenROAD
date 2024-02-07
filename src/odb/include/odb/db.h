@@ -7594,7 +7594,6 @@ class dbModInst : public dbObject
   static dbSet<dbModInst>::iterator destroy(dbSet<dbModInst>::iterator& itr);
 
   static dbModInst* getModInst(dbBlock* block_, uint dbid_);
-  dbModITerm* getdbModITerm(dbId<dbModITerm>);
 
   std::string getHierarchicalName() const;
 

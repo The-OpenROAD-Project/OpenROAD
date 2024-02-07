@@ -555,6 +555,7 @@ void dbITerm::disconnect()
   if (iterm->_mnet == 0)
     return;
   _dbModNet* mod_net = block->_modnet_tbl->getPtr(iterm->_mnet);
+
   if (mod_net->_iterms == id) {
     mod_net->_iterms = iterm->_next_modnet_iterm;
     if (mod_net->_iterms != 0) {

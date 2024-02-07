@@ -326,14 +326,6 @@ std::string dbModInst::getHierarchicalName() const
     return parent->getModInst()->getHierarchicalName() + "/" + inst_name;
 }
 
-dbModITerm* dbModInst::getdbModITerm(dbId<dbModITerm> el)
-{
-  _dbModInst* _obj = (_dbModInst*) this;
-  _dbBlock* block = (_dbBlock*) _obj->getOwner();
-  dbId<_dbModITerm> conv_el(el.id());
-  return ((dbModITerm*) (block->_moditerm_tbl->getPtr(conv_el)));
-}
-
 bool dbModInst::findModITerm(const char* name, dbModITerm*& ret)
 {
   dbSet<dbModITerm> moditerms = getModITerms();
