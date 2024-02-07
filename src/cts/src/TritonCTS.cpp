@@ -2051,7 +2051,7 @@ void TritonCTS::computeTopBufferDelay(TreeBuilder* builder)
 // new buffer. Output pin of new buffer will be connected later.
 odb::dbInst* TritonCTS::insertDelayBuffer(odb::dbInst* driver,
                                           int index,
-                                          std::string clockName,
+                                          const std::string& clockName,
                                           int locX,
                                           int locY)
 {
