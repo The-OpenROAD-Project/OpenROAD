@@ -517,16 +517,16 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
     }
 
     // Add more bins to the queue if we have not yet collected enough cells.
-    if (currPtr->i_ - 1 >= 0) {
+    if (currPtr->i_ > 0) {
       Q.push(grid_[currPtr->i_ - 1][currPtr->j_]);
     }
-    if (currPtr->i_ + 1 <= dimW_ - 1) {
+    if (currPtr->i_ + 1 < dimW_) {
       Q.push(grid_[currPtr->i_ + 1][currPtr->j_]);
     }
-    if (currPtr->j_ - 1 >= 0) {
+    if (currPtr->j_ > 0) {
       Q.push(grid_[currPtr->i_][currPtr->j_ - 1]);
     }
-    if (currPtr->j_ + 1 <= dimH_ - 1) {
+    if (currPtr->j_ + 1 < dimH_) {
       Q.push(grid_[currPtr->i_][currPtr->j_ + 1]);
     }
   }
