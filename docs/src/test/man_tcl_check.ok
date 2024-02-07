@@ -45,7 +45,7 @@ Command counts match.
 Command counts do not match.
 ./src/rcx            9               9               9
 Command counts match.
-./src/rsz            17              17              17
-Command counts match.
+./src/rsz            16              16              17
+Command counts do not match.
 ./src/odb            13              13              17
 Command counts do not match.

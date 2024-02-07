@@ -509,10 +509,10 @@ proc report_design_area { args } {
   utl::report "Design area ${area} u^2 ${util}% utilization."
 }
 
-sta::define_cmd_args "report_floating_nets" {[-verbose] [> filename] [>> filename]}
+sta::define_cmd_args "report_floating_nets" {[-verbose] [> filename] [>> filename]};# checker off
 
 sta::proc_redirect report_floating_nets {
-  sta::parse_key_args "report_floating_nets" args keys {} flags {-verbose}
+  sta::parse_key_args "report_floating_nets" args keys {} flags {-verbose};# checker off
 
   set verbose [info exists flags(-verbose)]
   set floating_nets [rsz::find_floating_nets]

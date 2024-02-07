@@ -183,7 +183,8 @@ sta::define_cmd_args "define_pdn_grid" {[-name <name>] \
                                         [-obstructions <list_of_layers>] \
                                         [-power_switch_cell <name>] \
                                         [-power_control <signal_name>] \
-                                        [-power_control_network (STAR|DAISY)]};#checker off
+                                        [-power_control_network (STAR|DAISY)]
+};#checker off
 
 proc define_pdn_grid {args} {
   set is_macro 0

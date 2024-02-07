@@ -138,7 +138,8 @@ sta::define_cmd_args "make_io_sites" {-horizontal_site site \
                                       [-rotation_horizontal rotation] \
                                       [-rotation_vertical rotation] \
                                       [-rotation_corner rotation] \
-                                      [-ring_index index]}; # checker off 
+                                      [-ring_index index]
+};# checker off
 
 proc make_io_sites {args} {
   sta::parse_key_args "make_io_sites" args \
@@ -353,7 +354,7 @@ sta::define_hidden_cmd_args "make_fake_io_site" {-name name \
 proc make_fake_io_site {args} {
   sta::parse_key_args "make_fake_io_site" args \
     keys {-name -width -height} \
-    flags {};# checker off 
+    flags {};# checker off
 
   sta::check_argc_eq0 "make_fake_io_site" $args
 
