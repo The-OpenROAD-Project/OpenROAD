@@ -1522,10 +1522,15 @@ bool TritonCTS::hasInsertionDelay(odb::dbInst* inst, odb::dbMTerm* mterm)
 {
   if (options_->insertionDelayEnabled()) {
     sta::LibertyCell* libCell = network_->libertyCell(network_->dbToSta(inst));
-    sta::LibertyPort* libPort = libCell->findLibertyPort(mterm->getConstName());
-    sta::RiseFallMinMax insDelays = libPort->clockTreePathDelays();
-    if (insDelays.hasValue()) {
-      return true;
+    if (libCell) {
+      sta::LibertyPort* libPort
+          = libCell->findLibertyPort(mterm->getConstName());
+      if (libPort) {
+        sta::RiseFallMinMax insDelays = libPort->clockTreePathDelays();
+        if (insDelays.hasValue()) {
+          return true;
+        }
+      }
     }
   }
   return false;
@@ -1537,41 +1542,47 @@ double TritonCTS::computeInsertionDelay(const std::string& name,
 {
   double insDelayPerMicron = 0.0;
 
-  if (options_->insertionDelayEnabled()) {
-    sta::LibertyCell* libCell = network_->libertyCell(network_->dbToSta(inst));
-    sta::LibertyPort* libPort = libCell->findLibertyPort(mterm->getConstName());
-    sta::RiseFallMinMax insDelays = libPort->clockTreePathDelays();
-    if (insDelays.hasValue()) {
-      // use average of max rise and max fall
-      // TODO: do we need to look at min insertion delays?
-      double delayPerSec
-          = (insDelays.value(sta::RiseFall::rise(), sta::MinMax::max())
-             + insDelays.value(sta::RiseFall::fall(), sta::MinMax::max()))
-            / 2.0;
-      // convert delay to length because HTree uses lengths
-      sta::Corner* corner = openSta_->cmdCorner();
-      double capPerMicron = resizer_->wireSignalCapacitance(corner) * 1e-6;
-      double resPerMicron = resizer_->wireSignalResistance(corner) * 1e-6;
-      if (sta::fuzzyEqual(capPerMicron, 1e-18)
-          || sta::fuzzyEqual(resPerMicron, 1e-18)) {
-        logger_->warn(CTS,
-                      203,
-                      "Insertion delay cannot be used because unit "
-                      "capacitance or unit resistance is zero.  Check "
-                      "layer RC settings.");
-        return 0.0;
-      }
-      insDelayPerMicron = delayPerSec / (capPerMicron * resPerMicron);
-      // clang-format off
-      debugPrint(logger_, CTS, "clustering", 1, "sink {} has ins delay={:.2e} and "
-		 "micron leng={:0.1f} dbUnits/um={}", name, delayPerSec,
-		 insDelayPerMicron, block_->getDbUnitsPerMicron());
-      debugPrint(logger_, CTS, "clustering", 1, "capPerMicron={:.2e} resPerMicron={:.2e}",
-		 capPerMicron, resPerMicron);
-      // clang-format on
-    }
+  if (!options_->insertionDelayEnabled()) {
+    return insDelayPerMicron;
   }
 
+  sta::LibertyCell* libCell = network_->libertyCell(network_->dbToSta(inst));
+  if (libCell) {
+    sta::LibertyPort* libPort = libCell->findLibertyPort(mterm->getConstName());
+    if (libPort) {
+      sta::RiseFallMinMax insDelays = libPort->clockTreePathDelays();
+      if (insDelays.hasValue()) {
+        // use average of max rise and max fall
+        // TODO: do we need to look at min insertion delays?
+        double delayPerSec
+            = (insDelays.value(sta::RiseFall::rise(), sta::MinMax::max())
+               + insDelays.value(sta::RiseFall::fall(), sta::MinMax::max()))
+              / 2.0;
+        // convert delay to length because HTree uses lengths
+        sta::Corner* corner = openSta_->cmdCorner();
+        double capPerMicron = resizer_->wireSignalCapacitance(corner) * 1e-6;
+        double resPerMicron = resizer_->wireSignalResistance(corner) * 1e-6;
+        if (sta::fuzzyEqual(capPerMicron, 1e-18)
+            || sta::fuzzyEqual(resPerMicron, 1e-18)) {
+          logger_->warn(CTS,
+                        203,
+                        "Insertion delay cannot be used because unit "
+                        "capacitance or unit resistance is zero.  Check "
+                        "layer RC settings.");
+          return 0.0;
+        }
+        insDelayPerMicron = delayPerSec / (capPerMicron * resPerMicron);
+        // clang-format off
+          debugPrint(logger_, CTS, "clustering", 1, "sink {} has ins "
+                     "delay={:.2e} and micron leng={:0.1f} dbUnits/um={}",
+                     name, delayPerSec, insDelayPerMicron,
+                     block_->getDbUnitsPerMicron());
+          debugPrint(logger_, CTS, "clustering", 1, "capPerMicron={:.2e} "
+                     "resPerMicron={:.2e}", capPerMicron, resPerMicron);
+        // clang-format on
+      }
+    }
+  }
   return insDelayPerMicron;
 }
 
