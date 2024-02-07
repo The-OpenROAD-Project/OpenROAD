@@ -2000,6 +2000,7 @@ void TritonCTS::adjustLatencies(TreeBuilder* macroBuilder,
     odb::dbInst* buffer
         = insertDelayBuffer(driver,
                             i,
+                            builder->getClock().getSdcName(),
                             legalBufferLoc.getX() * scalingFactor,
                             legalBufferLoc.getY() * scalingFactor);
     driver = buffer;
@@ -2050,16 +2051,19 @@ void TritonCTS::computeTopBufferDelay(TreeBuilder* builder)
 // new buffer. Output pin of new buffer will be connected later.
 odb::dbInst* TritonCTS::insertDelayBuffer(odb::dbInst* driver,
                                           int index,
+                                          std::string clockName,
                                           int locX,
                                           int locY)
 {
   // creat a new input net
-  std::string newNetName = "delaynet_" + std::to_string(index);
+  std::string newNetName
+      = "delaynet_" + std::to_string(index) + "_" + clockName;
   odb::dbNet* newNet = odb::dbNet::create(block_, newNetName.c_str());
   newNet->setSigType(odb::dbSigType::CLOCK);
 
   // create a new delay buffer
-  std::string newBufName = "delaybuf_" + std::to_string(index);
+  std::string newBufName
+      = "delaybuf_" + std::to_string(index) + "_" + clockName;
   odb::dbMaster* master = db_->findMaster(options_->getRootBuffer().c_str());
   odb::dbInst* newBuf = odb::dbInst::create(block_, master, newBufName.c_str());
   newBuf->setSourceType(odb::dbSourceType::TIMING);

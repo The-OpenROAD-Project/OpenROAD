@@ -213,6 +213,7 @@ class TritonCTS
   void computeTopBufferDelay(TreeBuilder* builder);
   odb::dbInst* insertDelayBuffer(odb::dbInst* driver,
                                  int index,
+                                 std::string clockName,
                                  int locX,
                                  int locY);
 
