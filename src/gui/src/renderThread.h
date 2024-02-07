@@ -152,7 +152,7 @@ class RenderThread : public QThread
   QColor getColor(odb::dbTechLayer* layer);
   Qt::BrushStyle getPattern(odb::dbTechLayer* layer);
 
-  void drawRenderIndication(Painter& painter, const odb::Rect& bounds);
+  void drawDesignLoadingMessage(Painter& painter, const odb::Rect& bounds);
 
   utl::Logger* logger_ = nullptr;
   LayoutViewer* viewer_;
