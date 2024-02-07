@@ -207,6 +207,14 @@ class TritonCTS
                         ClockSubNet& subNet,
                         ClockInst& dummyClock);
   void printClockNetwork(const Clock& clockNet) const;
+  void balanceMacroRegisterLatencies();
+  void computeAveSinkArrivals(TreeBuilder* builder);
+  void adjustLatencies(TreeBuilder* macroBuilder, TreeBuilder* registerBuilder);
+  void computeTopBufferDelay(TreeBuilder* builder);
+  odb::dbInst* insertDelayBuffer(odb::dbInst* driver,
+                                 int index,
+                                 int locX,
+                                 int locY);
 
   sta::dbSta* openSta_;
   sta::dbNetwork* network_;

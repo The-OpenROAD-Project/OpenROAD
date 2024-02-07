@@ -73,6 +73,13 @@ struct pointEqual
   }
 };
 
+typedef enum TreeType
+{
+  regularTree = 0,  // regular tree that drives both macros and registers
+  macroTree = 1,    // parent tree that drives only macro cells with ins delays
+  registerTree = 2  // child tree that drives only registers without ins delays
+} TreeType;
+
 class TreeBuilder
 {
  public:
@@ -219,6 +226,14 @@ class TreeBuilder
     return x.computeDist(y) + getSinkInsertionDelay(x)
            + getSinkInsertionDelay(y);
   }
+  TreeType getTreeType() { return type_; }
+  void setTreeType(TreeType type) { type_ = type; }
+  float getAveSinkArrival() { return aveArrival_; }
+  void setAveSinkArrival(float arrival) { aveArrival_ = arrival; }
+  float getTopBufferDelay() { return topBufferDelay_; }
+  void setTopBufferDelay(float delay) { topBufferDelay_ = delay; }
+  odb::dbInst* getTopBuffer() { return topBuffer_; }
+  void setTopBuffer(odb::dbInst* inst) { topBuffer_ = inst; }
 
  protected:
   CtsOptions* options_ = nullptr;
@@ -244,6 +259,10 @@ class TreeBuilder
   // keep track of insertion delays at sink pins
   boost::unordered_map<Point<double>, double, pointHash, pointEqual>
       insertionDelays_;
+  TreeType type_ = regularTree;
+  float aveArrival_ = 0.0;
+  float topBufferDelay_ = 0.0;
+  odb::dbInst* topBuffer_ = nullptr;
 };
 
 }  // namespace cts

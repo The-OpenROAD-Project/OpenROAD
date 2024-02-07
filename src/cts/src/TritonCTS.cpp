@@ -100,6 +100,7 @@ void TritonCTS::runTritonCts()
     checkCharacterization();
     buildClockTrees();
     writeDataToDb();
+    balanceMacroRegisterLatencies();
   }
 }
 
@@ -170,7 +171,10 @@ void TritonCTS::buildClockTrees()
 
   if (options_->getBalanceLevels()) {
     for (TreeBuilder* builder : *builders_) {
-      if (!builder->getParent() && !builder->getChildren().empty()) {
+      if (!builder->getParent()
+          && !builder->getChildren().empty()
+          // don't balance levels for macro cell tree
+          && builder->getTreeType() != macroTree) {
         LevelBalancer balancer(
             builder, options_, logger_, techChar_->getLengthUnit());
         balancer.run();
@@ -899,7 +903,7 @@ TreeBuilder* TritonCTS::initClock(odb::dbNet* firstNet,
 //            |   |----|>----[]
 //            v   |
 //   [root]-------|                  |---|>----[] cells without insertion
-//   delays
+//                |
 //                |----|>------------|
 //                      ^        ^   |
 //                      |        |   |
@@ -920,7 +924,8 @@ HTreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
     return nullptr;
   }
 
-  if (macroSinks.empty() || registerSinks.empty()) {
+  if (!options_->insertionDelayEnabled() || macroSinks.empty()
+      || registerSinks.empty()) {
     // There is no need for separate clock trees
     for (odb::dbITerm* iterm : firstNet->getITerms()) {
       odb::dbInst* inst = iterm->getInst();
@@ -964,6 +969,9 @@ HTreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
                       macroSinks,
                       dynamic_cast<HTreeBuilder*>(parentBuilder),
                       "macros");
+  if (firstBuilder) {
+    firstBuilder->setTreeType(macroTree);
+  }
 
   // create a new net 'secondNet' to drive register sinks
   odb::dbNet* secondNet;
@@ -977,6 +985,9 @@ HTreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
       registerSinks,
       firstBuilder ? firstBuilder : dynamic_cast<HTreeBuilder*>(parentBuilder),
       "registers");
+  if (secondBuilder) {
+    secondBuilder->setTreeType(registerTree);
+  }
 
   return secondBuilder;
 }
@@ -1847,6 +1858,220 @@ void TritonCTS::printClockNetwork(const Clock& clockNet) const
       logger_->report("{} -> {}", driver->getName(), inst->getName());
     });
   });
+}
+
+// Balance macro cell latencies with register latencies.
+// This is needed only if special insertion delay handling
+// is invoked.
+void TritonCTS::balanceMacroRegisterLatencies()
+{
+  if (!options_->insertionDelayEnabled()) {
+    return;
+  }
+
+  for (TreeBuilder* registerBuilder : *builders_) {
+    if (registerBuilder->getTreeType() == registerTree) {
+      TreeBuilder* macroBuilder = registerBuilder->getParent();
+      if (macroBuilder) {
+        computeAveSinkArrivals(registerBuilder);
+        computeAveSinkArrivals(macroBuilder);
+        adjustLatencies(macroBuilder, registerBuilder);
+      }
+    }
+  }
+}
+
+void TritonCTS::computeAveSinkArrivals(TreeBuilder* builder)
+{
+  Clock clock = builder->getClock();
+  // compute average input arrival at all sinks
+  float arrival = 0.0;
+  float ins_delay = 0.0;
+  clock.forEachSink([&](const ClockInst& sink) {
+    odb::dbITerm* iterm = sink.getDbInputPin();
+    odb::dbInst* inst = iterm->getInst();
+    sta::Pin* pin = network_->dbToSta(iterm);
+    // ignore arrival fall (no inverters in current clock tree)
+    arrival
+        += openSta_->pinArrival(pin, sta::RiseFall::rise(), sta::MinMax::max());
+    // add insertion delay
+    ins_delay = 0.0;
+    sta::LibertyCell* libCell = network_->libertyCell(network_->dbToSta(inst));
+    odb::dbMTerm* mterm = iterm->getMTerm();
+    if (libCell && mterm) {
+      sta::LibertyPort* libPort
+          = libCell->findLibertyPort(mterm->getConstName());
+      if (libPort) {
+        sta::RiseFallMinMax insDelays = libPort->clockTreePathDelays();
+        if (insDelays.hasValue()) {
+          ins_delay
+              = (insDelays.value(sta::RiseFall::rise(), sta::MinMax::max())
+                 + insDelays.value(sta::RiseFall::fall(), sta::MinMax::max()))
+                / 2.0;
+        }
+      }
+    }
+    arrival += ins_delay;
+  });
+  arrival = arrival / (float) clock.getNumSinks();
+  builder->setAveSinkArrival(arrival);
+  debugPrint(
+      logger_,
+      CTS,
+      "insertion delay",
+      1,
+      "{} {}: average sink arrival is {:0.3e}",
+      (builder->getTreeType() == macroTree) ? "macro tree" : "register tree",
+      clock.getName(),
+      builder->getAveSinkArrival());
+}
+
+// Balance latencies between macro tree and register tree
+// by adding delay buffers to one tree
+void TritonCTS::adjustLatencies(TreeBuilder* macroBuilder,
+                                TreeBuilder* registerBuilder)
+{
+  // compute top buffer delays
+  computeTopBufferDelay(registerBuilder);
+  computeTopBufferDelay(macroBuilder);
+
+  float latencyDiff = macroBuilder->getAveSinkArrival()
+                      - registerBuilder->getAveSinkArrival();
+  int numBuffers = 0;
+  TreeBuilder* builder = nullptr;
+  if (latencyDiff > 0) {
+    // add buffers to register tree
+    numBuffers = (int) (latencyDiff / registerBuilder->getTopBufferDelay());
+    builder = registerBuilder;
+  } else {
+    // add buffers to macro tree (not common but why not?)
+    numBuffers
+        = (int) (std::abs(latencyDiff) / macroBuilder->getTopBufferDelay());
+    builder = macroBuilder;
+  }
+
+  numBuffers = numBuffers * options_->getDelayBufferDerate();
+  if (numBuffers == 0) {
+    // clang-format off
+    debugPrint(logger_, CTS, "insertion delay", 1, "no delay buffers are needed"
+               " to adjust latencies");
+    // clang-format on
+    return;
+  }
+  // clang-format off
+  debugPrint(logger_, CTS, "insertion delay", 1, "{} delay buffers are needed"
+             " to adjust latencies at {} tree", numBuffers,
+             (builder->getTreeType() == macroTree)? "macro" : "register");
+  // clang-format on
+
+  // disconnect driver output
+  odb::dbInst* driver = builder->getTopBuffer();
+  odb::dbITerm* driverOutputTerm = driver->getFirstOutput();
+  odb::dbNet* outputNet = driverOutputTerm->getNet();
+
+  // get bbox of current load pins without driver output pin
+  driverOutputTerm->disconnect();
+  odb::Rect bbox = outputNet->getTermBBox();
+  int destX = bbox.xCenter();
+  int destY = bbox.yCenter();
+  int sourceX, sourceY;
+  driver->getLocation(sourceX, sourceY);
+  float offsetX = (float) (destX - sourceX) / (numBuffers + 1);
+  float offsetY = (float) (destY - sourceY) / (numBuffers + 1);
+
+  double scalingFactor = techChar_->getLengthUnit();
+  for (int i = 0; i < numBuffers; i++) {
+    double locX = (double) (sourceX + offsetX * (i + 1)) / scalingFactor;
+    double locY = (double) (sourceY + offsetY * (i + 1)) / scalingFactor;
+    Point<double> bufferLoc(locX, locY);
+    Point<double> legalBufferLoc
+        = builder->legalizeOneBuffer(bufferLoc, options_->getRootBuffer());
+    odb::dbInst* buffer
+        = insertDelayBuffer(driver,
+                            i,
+                            legalBufferLoc.getX() * scalingFactor,
+                            legalBufferLoc.getY() * scalingFactor);
+    driver = buffer;
+  }
+  // take care of output pin connections
+  // driver is now the last delay buffer
+  driverOutputTerm = driver->getFirstOutput();
+  driverOutputTerm->disconnect();
+  driverOutputTerm->connect(outputNet);
+}
+
+void TritonCTS::computeTopBufferDelay(TreeBuilder* builder)
+{
+  Clock clock = builder->getClock();
+  std::string topBufferName;
+  if (builder->getTreeType() == registerTree) {
+    topBufferName = "clkbuf_regs_0_" + clock.getSdcName();
+  } else {
+    topBufferName = "clkbuf_0_" + clock.getName();
+  }
+  odb::dbInst* topBuffer = block_->findInst(topBufferName.c_str());
+  if (topBuffer) {
+    builder->setTopBuffer(topBuffer);
+    odb::dbITerm* inputTerm = getFirstInput(topBuffer);
+    odb::dbITerm* outputTerm = topBuffer->getFirstOutput();
+    sta::Pin* inputPin = network_->dbToSta(inputTerm);
+    sta::Pin* outputPin = network_->dbToSta(outputTerm);
+
+    float inputArrival = openSta_->pinArrival(
+        inputPin, sta::RiseFall::rise(), sta::MinMax::max());
+    float outputArrival = openSta_->pinArrival(
+        outputPin, sta::RiseFall::rise(), sta::MinMax::max());
+    float bufferDelay = outputArrival - inputArrival;
+    builder->setTopBufferDelay(bufferDelay);
+    debugPrint(
+        logger_,
+        CTS,
+        "insertion delay",
+        1,
+        "top buffer delay for {} {} is {:0.3e}",
+        (builder->getTreeType() == macroTree) ? "macro tree" : "register tree",
+        topBuffer->getName(),
+        builder->getTopBufferDelay());
+  }
+}
+
+// Create a new delay buffer and connect output pin of driver to input pin of
+// new buffer. Output pin of new buffer will be connected later.
+odb::dbInst* TritonCTS::insertDelayBuffer(odb::dbInst* driver,
+                                          int index,
+                                          int locX,
+                                          int locY)
+{
+  // creat a new input net
+  std::string newNetName = "delaynet_" + std::to_string(index);
+  odb::dbNet* newNet = odb::dbNet::create(block_, newNetName.c_str());
+  newNet->setSigType(odb::dbSigType::CLOCK);
+
+  // create a new delay buffer
+  std::string newBufName = "delaybuf_" + std::to_string(index);
+  odb::dbMaster* master = db_->findMaster(options_->getRootBuffer().c_str());
+  odb::dbInst* newBuf = odb::dbInst::create(block_, master, newBufName.c_str());
+  newBuf->setSourceType(odb::dbSourceType::TIMING);
+  newBuf->setLocation(locX, locY);
+  newBuf->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+
+  // connect driver output with new buffer input
+  odb::dbITerm* driverOutTerm = driver->getFirstOutput();
+  odb::dbITerm* newBufInTerm = getFirstInput(newBuf);
+  driverOutTerm->disconnect();
+  driverOutTerm->connect(newNet);
+  newBufInTerm->connect(newNet);
+
+  debugPrint(logger_,
+             CTS,
+             "insertion delay",
+             1,
+             "new delay buffer {} is inserted at ({} {})",
+             newBuf->getName(),
+             locX,
+             locY);
+
+  return newBuf;
 }
 
 }  // namespace cts
