@@ -184,7 +184,7 @@ class Replace
 
   float routabilityCheckOverflow_ = 0.2;
   float routabilityMaxDensity_ = 0.99;
-  float routabilityTargetRcMetric_ = 1.0;
+  float routabilityTargetRcMetric_ = 1.1;
   float routabilityInflationRatioCoef_ = 2.5;
   float routabilityMaxInflationRatio_ = 2.5;
 
