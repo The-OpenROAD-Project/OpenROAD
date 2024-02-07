@@ -480,8 +480,6 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
     // Scan all the cells in this bucket.  If they are compatible with the
     // original cell, then add them to the neighbour list.
     for (Node* ndj : currPtr->nodes_) {
-      const int spanned_j = std::lround(ndj->getHeight() / singleRowHeight);
-
       // Check to make sure the cell is not the original, that they have
       // the same region, that they have the same size (if applicable),
       // and that they have the same color (if applicable).
@@ -501,6 +499,7 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
         continue;
 
       // Must span the same number of rows and also be voltage compatible.
+      const int spanned_j = std::lround(ndj->getHeight() / singleRowHeight);
       if (spanned_i != spanned_j
           || ndi->getBottomPower() != ndj->getBottomPower()
           || ndi->getTopPower() != ndj->getTopPower())
