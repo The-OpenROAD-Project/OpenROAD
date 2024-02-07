@@ -54,7 +54,7 @@
 #include <lemon/smart_graph.h>
 
 #include <boost/tokenizer.hpp>
-#include <deque>
+#include <queue>
 #include <vector>
 
 #include "architecture.h"
@@ -465,12 +465,12 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
 
   const int spanned_i = std::lround(ndi->getHeight() / singleRowHeight);
 
-  std::deque<Bucket*> Q;
-  Q.push_back(it->second);
+  std::queue<Bucket*> Q;
+  Q.push(it->second);
   ++traversal_;
   while (!Q.empty()) {
     Bucket* currPtr = Q.front();
-    Q.pop_front();
+    Q.pop();
 
     if (currPtr->travId_ == traversal_) {
       continue;
@@ -520,16 +520,16 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
 
     // Add more bins to the queue if we have not yet collected enough cells.
     if (currPtr->i_ - 1 >= 0) {
-      Q.push_back(grid_[currPtr->i_ - 1][currPtr->j_]);
+      Q.push(grid_[currPtr->i_ - 1][currPtr->j_]);
     }
     if (currPtr->i_ + 1 <= dimW_ - 1) {
-      Q.push_back(grid_[currPtr->i_ + 1][currPtr->j_]);
+      Q.push(grid_[currPtr->i_ + 1][currPtr->j_]);
     }
     if (currPtr->j_ - 1 >= 0) {
-      Q.push_back(grid_[currPtr->i_][currPtr->j_ - 1]);
+      Q.push(grid_[currPtr->i_][currPtr->j_ - 1]);
     }
     if (currPtr->j_ + 1 <= dimH_ - 1) {
-      Q.push_back(grid_[currPtr->i_][currPtr->j_ + 1]);
+      Q.push(grid_[currPtr->i_][currPtr->j_ + 1]);
     }
   }
   return true;
