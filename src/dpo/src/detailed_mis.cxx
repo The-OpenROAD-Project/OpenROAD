@@ -485,33 +485,33 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
       // Check to make sure the cell is not the original, that they have
       // the same region, that they have the same size (if applicable),
       // and that they have the same color (if applicable).
-      bool compat = ndj != ndi;  // diff nodes
-      if (compat) {
-        // Must be the same color to avoid sharing nets.
-        compat
-            = !useSameColor_ || colors_[ndi->getId()] == colors_[ndj->getId()];
-      }
-      if (compat) {
-        // Must be the same size.
-        compat = !useSameSize_
-                 || (ndi->getWidth() == ndj->getWidth()
-                     && ndi->getHeight() == ndj->getHeight());
-      }
-      if (compat) {
-        // Must span the same number of rows and also be voltage compatible.
-        compat = spanned_i == spanned_j
-                 && ndi->getBottomPower() == ndj->getBottomPower()
-                 && ndi->getTopPower() == ndj->getTopPower();
-      }
-      if (compat) {
-        // Must be in the same region.
-        compat = ndj->getRegionId() == ndi->getRegionId();
-      }
+
+      // diff nodes
+      if (ndj == ndi)
+        continue;
+
+      // Must be the same color to avoid sharing nets.
+      if (useSameColor_ && colors_[ndi->getId()] != colors_[ndj->getId()])
+        continue;
+
+      // Must be the same size.
+      if (useSameSize_
+          && (ndi->getWidth() != ndj->getWidth()
+              || ndi->getHeight() != ndj->getHeight()))
+        continue;
+
+      // Must span the same number of rows and also be voltage compatible.
+      if (spanned_i != spanned_j
+          || ndi->getBottomPower() != ndj->getBottomPower()
+          || ndi->getTopPower() != ndj->getTopPower())
+        continue;
+
+      // Must be in the same region.
+      if (ndj->getRegionId() != ndi->getRegionId())
+        continue;
 
       // If compatible, include this current cell.
-      if (compat) {
-        neighbours_.push_back(ndj);
-      }
+      neighbours_.push_back(ndj);
     }
 
     if (neighbours_.size() >= maxProblemSize_) {
