@@ -1181,7 +1181,7 @@ ClockNodeGraphicsViewItem* ClockTreeView::addLeafToScene(
       }
     }
   }
-  
+
   node->setPos({x, convertDelayToY(input_pin.delay + ins_delay)});
   node->setExtraToolTip("Arrival: "
                         + convertDelayToString(input_pin.delay + ins_delay));
