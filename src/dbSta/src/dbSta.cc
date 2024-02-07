@@ -271,8 +271,7 @@ std::set<dbNet*> dbSta::findClkNets(const Clock* clk)
   return clk_nets;
 }
 
-std::string dbSta::getInstanceTypeText(
-    InstType type)
+std::string dbSta::getInstanceTypeText(InstType type)
 {
   switch (type) {
     case BLOCK:
