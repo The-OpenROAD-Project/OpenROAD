@@ -498,15 +498,14 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
               || ndi->getHeight() != ndj->getHeight()))
         continue;
 
-      // Must span the same number of rows and also be voltage compatible.
-      const int spanned_j = std::lround(ndj->getHeight() / singleRowHeight);
-      if (spanned_i != spanned_j
-          || ndi->getBottomPower() != ndj->getBottomPower()
-          || ndi->getTopPower() != ndj->getTopPower())
-        continue;
-
       // Must be in the same region.
       if (ndj->getRegionId() != ndi->getRegionId())
+        continue;
+
+      // Must span the same number of rows and also be voltage compatible.
+      if (ndi->getBottomPower() != ndj->getBottomPower()
+          || ndi->getTopPower() != ndj->getTopPower()
+          || spanned_i != std::lround(ndj->getHeight() / singleRowHeight))
         continue;
 
       // If compatible, include this current cell.
