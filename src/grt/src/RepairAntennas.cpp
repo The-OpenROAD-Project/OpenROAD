@@ -327,8 +327,8 @@ void RepairAntennas::addWireTerms(Net* net,
 
 void RepairAntennas::makeWire(odb::dbWireEncoder& wire_encoder,
                               odb::dbTechLayer* layer,
-                              odb::Point start,
-                              odb::Point end)
+                              const odb::Point& start,
+                              const odb::Point& end)
 {
   wire_encoder.newPath(layer, odb::dbWireType::ROUTED);
   wire_encoder.addPoint(start.x(), start.y());
