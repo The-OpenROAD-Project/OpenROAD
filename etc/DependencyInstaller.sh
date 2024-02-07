@@ -220,7 +220,11 @@ _installOrTools() {
 
     orToolsPath=${PREFIX:-"/opt/or-tools"}
     if [ "$(uname -m)" == "aarch64" ]; then
-        LIST=($(sudo find / -type f -name "libortools.so*" 2>/dev/null))
+        # Disable exit on error for 'find' command, as it might return non zero
+        set +euo pipefail
+        LIST=($(find / -type f -name "libortools.so*" 2>/dev/null))
+        # Bring back exit on error
+        set -euo pipefail
         if [ ${#LIST[@]} -eq 0 ]; then
             echo "OR-TOOLS NOT FOUND"
             echo "Installing  OR-Tools for aarch64..."
