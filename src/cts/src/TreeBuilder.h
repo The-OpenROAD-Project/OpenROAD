@@ -73,12 +73,11 @@ struct pointEqual
   }
 };
 
-typedef enum TreeType
-{
+using TreeType = enum TreeType {
   regularTree = 0,  // regular tree that drives both macros and registers
   macroTree = 1,    // parent tree that drives only macro cells with ins delays
   registerTree = 2  // child tree that drives only registers without ins delays
-} TreeType;
+};
 
 class TreeBuilder
 {
