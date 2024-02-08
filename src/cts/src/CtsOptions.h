@@ -242,10 +242,7 @@ class CtsOptions
   {
     return sinkBufferMaxCapDerateSet_;
   }
-  void setDelayBufferDerate(float derate)
-  {
-    delayBufferDerate_ = derate;
-  }
+  void setDelayBufferDerate(float derate) { delayBufferDerate_ = derate; }
   float getDelayBufferDerate() const { return delayBufferDerate_; }
   void enableDummyLoad(bool dummyLoad) { dummyLoad_ = dummyLoad; }
   bool dummyLoadEnabled() const { return dummyLoad_; }
@@ -309,7 +306,3 @@ class CtsOptions
 };
 
 }  // namespace cts
-
-
-
-
