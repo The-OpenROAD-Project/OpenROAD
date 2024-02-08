@@ -674,4 +674,588 @@ bool Restructure::readAbcLog(std::string abc_file_name,
   }
   return status;
 }
+
+
+//
+//Cut Based Restructuring code
+//---------------------------
+//with abc source integration 
+//
+//
+//Flags:
+//head_pin -- if set, start cut from pin (single output cut)
+//         -- if null,generate a blob.
+//unconstrained:
+//         -- if true, walk back to primary inputs/state elements in cut generation
+//            else walk back through inverters to first level of logic. Generate
+//            cut as cartesian product.
+//
+
+
+void Restructure::cutresynthrun(char* target_library,//todo: pass in library object
+                                char* script,       //optional script
+				sta::Pin* head_pin, //passed in by user. ok to be null !
+				bool unconstrained, //controls cut generation 
+                                bool verbose)
+{
+  bool single_op=false;
+  if (head_pin)
+    single_op = true;
+  (void)single_op;
+  
+  reset();
+  logger_->report("Cut based Restructuring.");
+
+#ifdef REGRESS_RESTRUCT
+  {
+    FILE* cond_file = fopen("cmd.txt", "w+");
+    std::string tl = target_library;
+    size_t last_idx = tl.find_last_of('/');
+    if (last_idx != std::string::npos)
+      tl = tl.substr(last_idx + 1);
+    std::string default_script
+        = "read_lib " + tl + " ;strash ; balance; amap -Q 9.9 ";
+    fprintf(
+        cond_file, "Script: %s \n", script ? script : default_script.c_str());
+    fclose(cond_file);
+  }
+#endif
+  
+  LibRead liberty_library(logger_, target_library, verbose);
+
+  Cut* cut_to_remap = nullptr;
+  sta::Sta* sta = sta::Sta::sta();
+  sta::Network* network = sta->network();
+  std::vector<Cut*> cut_set;
+
+  //
+  //Just generate any cuts for discussion with Cho.
+  //
+  generateUnconstrainedCuts(cut_set);
+  
+  logger_->report("Generated {} cuts.", cut_set.size());
+
+  //
+  // For demo just pick one cut: choice one with biggest volume
+  //
+
+  Cut* best_cut = nullptr;
+  for (auto c : cut_set) {
+    if (best_cut == nullptr)
+      best_cut = c;
+    else if (c->volume_.size() > best_cut->volume_.size())
+      best_cut = c;
+  }
+  if (!best_cut)
+    return;
+
+  // remap the cut set.
+  // only remap non-trivial cuts
+  if (best_cut->volume_.size() > 0) {
+    logger_->report(
+        "Processing cut {} of volume {} with {} roots and {} leaves.",
+        best_cut->id_,
+        best_cut->volume_.size(),
+        best_cut->roots_.size(),
+        best_cut->leaves_.size());
+    cut_to_remap = best_cut;
+
+
+    // Get the timing numbers for the cut from the sta
+    std::vector<std::pair<const sta::Pin*, TimingRecord*>> timing_requirements;
+    annotateCutTiming(cut_to_remap, timing_requirements);
+
+    // Remap the cut with the physical timing constraints
+    // onto the target library.
+    bool script_present = false;
+    std::string script_name;
+    if (script && strlen(script) > 0) {
+      script_name = script;
+      script_present = true;
+    }
+    logger_->report("PhysRemapping cut {}.", cut_to_remap->id_);
+    PhysRemap prm(logger_,
+                  network,
+                  cut_to_remap, //the cut to remap
+                  timing_requirements, //the actual timing requirements for the cut
+                  target_library,
+                  liberty_library,
+                  script_present,
+                  script_name,
+                  true);
+    prm.Remap();
+  }
+}
+
+
+
+//Homebrew way of getting start/end points for cut generation
+
+class AccumulateSortedSlackEndPoints : public sta::VertexVisitor
+{
+ public:
+  AccumulateSortedSlackEndPoints(
+      sta::Network* nwk,
+      std::multimap<float, sta::Vertex*>& sorted_slack_times,
+      std::multimap<sta::Vertex*, float>& vertex_slack_times,
+      std::set<sta::Vertex*>& end_points)
+      : nwk_(nwk),
+        sorted_slack_times_(sorted_slack_times),
+        vertex_slack_times_(vertex_slack_times),
+        end_points_(end_points)
+  {
+  }
+  void visit(sta::Vertex* visit);
+  VertexVisitor* copy() const { return nullptr; }
+
+ private:
+  sta::Network* nwk_;
+  std::multimap<float, sta::Vertex*>& sorted_slack_times_;
+  std::multimap<sta::Vertex*, float>& vertex_slack_times_;
+  std::set<sta::Vertex*>& end_points_;
+  friend class Restructure;
+};
+void AccumulateSortedSlackEndPoints::visit(sta::Vertex* v)
+{
+  sta::Sta* sta = sta::Sta::sta();
+
+  sta::Pin* cur_pin = v->pin();
+  sta::Slack max_s = sta->pinSlack(cur_pin, sta::MinMax::max());
+  sta::Slack min_s = sta->pinSlack(cur_pin, sta::MinMax::min());
+  sta::Slack s = (max_s == sta::INF || max_s == -sta::INF) ? min_s : max_s;
+
+#ifdef DEBUG_RESTRUCT
+  printf("Design Worst Slack time %s\n", delayAsString(s, sta));
+#endif
+
+  if (Restructure::isRegInput(nwk_, v) || Restructure::isPrimary(nwk_, v)) {
+    sorted_slack_times_.insert(std::pair<float, sta::Vertex*>(s, v));
+    vertex_slack_times_.insert(std::pair<sta::Vertex*, float>(v, s));
+    end_points_.insert(v);
+  }
+}
+
+class AccumulateSortedSlackStartPoints : public sta::VertexVisitor
+{
+ public:
+  AccumulateSortedSlackStartPoints(std::set<sta::Vertex*>& end_points)
+      : end_points_(end_points)
+  {
+  }
+  void visit(sta::Vertex* visit);
+  VertexVisitor* copy() const { return nullptr; }
+
+ private:
+  std::set<sta::Vertex*>& end_points_;
+  friend class Restructure;
+};
+void AccumulateSortedSlackStartPoints::visit(sta::Vertex* v)
+{
+  end_points_.insert(v);
+}
+
+bool Restructure::isRegInput(sta::Network* nwk, sta::Vertex* v)
+{
+  sta::LibertyPort* port = nwk->libertyPort(v->pin());
+  if (port) {
+    sta::LibertyCell* cell = port->libertyCell();
+    for (auto arc_set : cell->timingArcSets(nullptr, port)){
+        if (arc_set->role()->genericRole() == sta::TimingRole::setup())
+          return true;
+      }
+  }
+  return false;
+}
+
+bool Restructure::isRegOutput(sta::Network* nwk, sta::Vertex* v)
+{
+  sta::LibertyPort* port = nwk->libertyPort(v->pin());
+  if (port) {
+    sta::LibertyCell* cell = port->libertyCell();
+    for (auto arc_set : cell->timingArcSets(nullptr, port)){
+      if (arc_set->role()->genericRole() == sta::TimingRole::regClkToQ())
+        return true;
+    }
+  }
+  return false;
+}
+
+bool Restructure::isPrimary(sta::Network* nwk, sta::Vertex* v)
+{
+  return (nwk->isTopLevelPort(v->pin()));
+}
+
+
+
+//
+//Cut Generation interfaces
+//
+
+
+/*
+  Single output cut generation
+  ----------------------------
+  Walk back through instance input, building cut set. 
+  Constrained to last level of non-inverter type gates
+*/
+
+//start from an instance
+void Restructure::generateWaveFrontSingleOpCutSet(sta::Network* nwk,
+						  sta::Instance* root,
+						  std::vector<Cut*>& cut_set)
+{
+  CutGen cut_generator(nwk, nullptr);
+  cut_generator.GenerateInstanceWaveFrontCutSet(root, cut_set);
+}
+
+//start from a pin
+void Restructure::generateWaveFrontSingleOpCutSet(sta::Network* nwk,
+                                      sta::Pin* root,
+                                      std::vector<Cut*>& cut_set)
+{
+  if (nwk->direction(root)->isOutput()) {
+    sta::Instance* cur_inst = nwk ->instance(root);
+    generateWaveFrontSingleOpCutSet(nwk,cur_inst, cut_set);
+  }
+}
+
+//
+//Generate a big cut (like a blob)l
+//
+
+
+/*
+  Generic Timing Driven Multiple output cut generation
+  ---------------------------------------------------
+  1. queue = Set up end points sorted by criticallity
+  2. Pick most critical end point
+  3. Walk back to invariant drivers. Set up cut Leaves
+  4. Walk forwards to end points. Set up cut roots. 
+     (note we might have to then add some extra leaves).
+  5. Extract cut and add to cut set.
+  6. Remove cut roots from queue.
+  7. If queue not empty go to step 1.
+  8. Return cut set.
+  (This is equivalent to a blob in OpenROAD speak).
+*/
+
+void Restructure::generateUnconstrainedCuts(std::vector<Cut*>& cut_set)
+{
+  sta::Graph* graph = open_sta_->ensureGraph();
+  open_sta_->ensureLevelized();
+  open_sta_->searchPreamble();
+  int cut_id = 0;
+  std::set<sta::Vertex*> end_points;
+  sta::Network* nwk = open_sta_->getDbNetwork();
+
+  // sort based on slack time: most negative first.
+  std::multimap<float, sta::Vertex*> sorted_slack_times;  // slack -> vertex
+  std::multimap<sta::Vertex*, float> vertex_slack_times;  // vertex -> slack
+
+  // visitor
+  AccumulateSortedSlackEndPoints accumulate_sorted_slack_end_points(
+      nwk, sorted_slack_times, vertex_slack_times, end_points);
+  sta::Sta* sta = sta::Sta::sta();
+
+  // accumulate the start and end points
+  open_sta_->visitEndpoints(&accumulate_sorted_slack_end_points);
+#ifdef DEBUG_RESTRUCT
+  printf("Dump of end points\n");
+  for (auto sst : sorted_slack_times)
+    printf("Vertex %d slack time %s\n",
+           graph->id(sst.second),
+           delayAsString(sst.first, sta));
+#endif
+  AccumulateSortedSlackStartPoints accumulate_sorted_slack_start_points(
+      end_points);
+  open_sta_->visitStartpoints(&accumulate_sorted_slack_start_points);
+
+#ifdef DEBUG_RESTRUCT
+  printf("Starting cut construction for end point list of size %d\n",
+         vertex_slack_times.size());
+#endif
+
+  logger_->report("Worst slack {}  Best slack {} Size of end point list {}",
+                    delayAsString((*sorted_slack_times.begin()).first, sta),
+                    delayAsString((*sorted_slack_times.end()).first, sta),
+                    vertex_slack_times.size());
+    // map stores smallest item first, so this is by default the least slack
+    sta::Vertex* head_vertex = (*sorted_slack_times.begin()).second;
+    sta::Pin* cur_pin = head_vertex->pin();
+#ifdef DEBUG_RESTRUCT
+    printf("Generating cut from pin %s on instance %s\n",
+           nwk->pathName(cur_pin),
+           nwk->name(nwk->instance(cur_pin)));
+#endif
+    
+      ResetCutTemporaries();
+      // harvest the leaves
+      walkBackwardsToTimingEndPointsR(graph, nwk, cur_pin, 0);
+      pin_visited_.clear();
+      // walk forward from each leaf. Harvest the volume in forward pass
+      for (auto leaf_pin_int : leaves_) {
+        walkForwardsToTimingEndPointsR(graph, nwk, leaf_pin_int.first, 0);
+      }
+      //as we walked forwards there might be orphaned inputs,
+      //these are the incidental inputs not in the original
+      //leaf set, add them to the leaf set
+      AmendCutForEscapeLeaves(nwk);
+      
+      // check if cut degenerate.
+      Cut* cut = extractCut(cut_id);
+      logger_->report(
+          "Extracted cut {} with {} roots and {} leaves and Volume {} ",
+          cut->id_,
+          cut->roots_.size(),
+          cut->leaves_.size(),
+          cut->volume_.size());
+      if (!cut || cut->roots_.size() == 0) {
+        logger_->report("done with cut generation. Generated {} cuts", cut_id);
+        return;
+      }
+      cut_set.push_back(cut);
+      cut_id++;
+      // Check cut meets all required rules
+      cut->Check(nwk);
+      // just consider one cut for now.
+      // so break from loop. Original idea:
+      // keep on generating cuts until we have covered the
+      // whole chip -- we repeatedly remove from the end vertex set..
+      return;
+}
+
+void Restructure::AmendCutForEscapeLeaves(sta::Network* nwk)
+{
+  std::set<sta::Pin*> cut_leaves;
+  std::set<sta::Instance*> cut_volume;
+  for (auto i : cut_volume_) {
+    cut_volume.insert(i);
+  }
+  for (auto l : leaves_) {
+    cut_leaves.insert(l.first);
+  }
+  for (auto i : cut_volume_) {
+    sta::InstancePinIterator* pin_it = nwk->pinIterator(i);
+    while (pin_it->hasNext()) {
+      sta::Pin* cur_pin = pin_it->next();
+      // Check that every driver is either driven by something in the volume
+      // or a leaf
+      if (nwk->direction(cur_pin)->isInput()) {
+        sta::PinSet* drivers = nwk->drivers(cur_pin);
+        sta::PinSet::Iterator drvr_iter(drivers);
+        if (drivers) {
+          sta::Pin* driving_pin = const_cast<sta::Pin*>(drvr_iter.next());
+          sta::Instance* driving_instance = nwk->instance(driving_pin);
+          // leaf or volume...
+          if (!(cut_leaves.find(driving_pin) != cut_leaves.end()
+                || cut_volume.find(driving_instance) != cut_volume.end())) {
+            leaves_[driving_pin] = leaves_.size();
+            cut_leaves.insert(driving_pin);
+          }
+        }
+      }
+    }
+  }
+}
+
+
+Cut* Restructure::extractCut(int cut_id)
+{
+  Cut* ret = new Cut();
+  ret->leaves_.resize(leaves_.size());
+  for (auto i : leaves_)
+    ret->leaves_[i.second] = i.first;
+  ret->roots_.resize(roots_.size());
+  for (auto i : roots_)
+    ret->roots_[i.second] = i.first;
+  for (auto i : cut_volume_)
+    ret->volume_.push_back(i);
+  ret->id_ = cut_id;
+  return ret;
+}
+
+void Restructure::walkBackwardsToTimingEndPointsR(sta::Graph* graph,
+                                                  sta::Network* nwk,
+                                                  sta::Pin* start_pin,
+                                                  int depth)
+{
+  if (start_pin && pin_visited_.find(start_pin) == pin_visited_.end()) {
+    pin_visited_.insert(start_pin);
+    sta::Port* start_port = nwk->port(start_pin);
+    sta::Vertex* vertex = graph->vertex(nwk->vertexId(start_pin));
+    sta::Instance* cur_inst = nwk->instance(start_pin);
+
+    // hit an invariant end point
+    // include q outputs of registers as invariants
+    if (isRegOutput(nwk, vertex)
+        || ((end_points_.find(vertex) != end_points_.end()) && depth != 0)) {
+      leaves_[start_pin] = leaves_.size();
+      return;
+    }
+    // hit an invariant point: the output of a primary port (top level port)
+    else if (nwk->direction(start_port) == sta::PortDirection::input()
+             && isPrimary(nwk, vertex) && depth != 0) {
+      leaves_[start_pin] = leaves_.size();
+      return;
+    }
+    // a primary output at depth 0, walk
+    else if (nwk->direction(start_port) == sta::PortDirection::output()
+             && isPrimary(nwk, vertex) && depth == 0) {
+      // traverse back
+      sta::PinSet* drivers = nwk->drivers(start_pin);
+      if (drivers) {
+        sta::PinSet::Iterator drvr_iter(drivers);
+        sta::Pin* driving_pin = const_cast<sta::Pin*>(drvr_iter.next());
+        walkBackwardsToTimingEndPointsR(graph, nwk, driving_pin, depth + 1);
+      }
+      return;
+    }
+
+    // an instance input
+    else if (nwk->direction(start_port) == sta::PortDirection::input()
+             && !isPrimary(nwk, vertex)) {
+      // traverse back
+      sta::PinSet* drivers = nwk->drivers(start_pin);
+      if (drivers) {
+        sta::PinSet::Iterator drvr_iter(drivers);
+        sta::Pin* driving_pin = const_cast<sta::Pin*>(drvr_iter.next());
+        walkBackwardsToTimingEndPointsR(graph, nwk, driving_pin, depth + 1);
+      }
+      return;
+    }
+    //
+    // an instance output
+    // go through all the other instance inputs too
+    //
+    else if (nwk->direction(start_port) == sta::PortDirection::output()
+             && !isPrimary(nwk, vertex)) {
+      // push up to parent and walk back through input pins
+      sta::Instance* cur_inst = nwk->instance(start_pin);
+      // insert in volume knowing this is not an end point
+      // now go check out the inputs and start backward traversing
+      sta::InstancePinIterator* pi = nwk->pinIterator(cur_inst);
+      while (pi->hasNext()) {
+        sta::Pin* cur_pin = pi->next();
+        if (nwk->direction(cur_pin) == sta::PortDirection::input()) {
+          // get the drivers
+          // walk through
+          // traverse back
+          sta::PinSet* drivers = nwk->drivers(cur_pin);
+          if (drivers) {
+            sta::PinSet::Iterator drvr_iter(drivers);
+            sta::Pin* driving_pin = const_cast<sta::Pin*>(drvr_iter.next());
+            walkBackwardsToTimingEndPointsR(graph, nwk, driving_pin, depth + 1);
+          }
+        }
+      }
+    }
+  }
+}
+
+void Restructure::walkForwardsToTimingEndPointsR(sta::Graph* graph,
+                                                 sta::Network* nwk,
+                                                 sta::Pin* start_pin,
+                                                 int depth)
+{
+  if (start_pin && pin_visited_.find(start_pin) == pin_visited_.end()) {
+    sta::Instance* cur_inst = nwk->instance(start_pin);
+
+    pin_visited_.insert(start_pin);
+
+    sta::Port* start_port = nwk->port(start_pin);
+    sta::Vertex* vertex = graph->vertex(nwk->vertexId(start_pin));
+
+    // hit an end point. we are done
+    if ((end_points_.find(vertex) != end_points_.end()) && depth != 0) {
+      // avoid make clock and reset lines points for resynthesis
+      if (!((strstr(nwk->pathName(start_pin), "CK"))
+            || (strstr(nwk->pathName(start_pin), "RN"))
+            || (strstr(nwk->pathName(start_pin), "QN"))
+            || (strstr(nwk->pathName(start_pin), "SN"))
+            || (strstr(nwk->pathName(start_pin), "Q")))) {
+        if (roots_.find(start_pin) == roots_.end())
+          roots_[start_pin] = roots_.size();
+      }
+      return;
+    }
+
+    // primary input
+    if (nwk->direction(start_port) == sta::PortDirection::input()
+        && isPrimary(nwk, vertex)) {
+      // traverse forwards
+      sta::PinConnectedPinIterator* connected_pin_iter
+          = nwk->connectedPinIterator(start_pin);
+      while (connected_pin_iter->hasNext()) {
+        sta::Pin* connected_pin
+            = const_cast<sta::Pin*>(connected_pin_iter->next());
+        walkForwardsToTimingEndPointsR(graph, nwk, connected_pin, depth + 1);
+      }
+    }
+
+    // output of an instance
+    else if (nwk->direction(start_port) == sta::PortDirection::output()) {
+      sta::PinConnectedPinIterator* connected_pin_iter
+          = nwk->connectedPinIterator(start_pin);
+      sta::Instance* cur_inst = nwk->instance(start_pin);
+      if (depth != 0)
+        cut_volume_.insert(cur_inst);
+      while (connected_pin_iter->hasNext()) {
+        sta::Pin* connected_pin
+            = const_cast<sta::Pin*>(connected_pin_iter->next());
+        walkForwardsToTimingEndPointsR(graph, nwk, connected_pin, depth + 1);
+      }
+    }
+
+    // an instance input. Walk through to the output. Then explore fanout
+    else if (nwk->direction(start_port) == sta::PortDirection::input()
+             && !isPrimary(nwk, vertex)) {
+      sta::Instance* cur_inst = nwk->instance(start_pin);
+      if (depth != 0)
+        cut_volume_.insert(cur_inst);
+
+      sta::InstancePinIterator* pi = nwk->pinIterator(cur_inst);
+      while (pi->hasNext()) {
+        sta::Pin* cur_pin = pi->next();
+        if (nwk->direction(nwk->port(cur_pin))
+            == sta::PortDirection::output()) {
+          // get the fanout of the pin
+          sta::Net* cur_net = nwk->net(cur_pin);
+          if (cur_net) {
+            sta::NetPinIterator* fanout_pin_iter = nwk->pinIterator(cur_net);
+            while (fanout_pin_iter->hasNext()) {
+              const sta::Pin* fanout_pin = fanout_pin_iter->next();
+              if (fanout_pin != cur_pin) {
+                sta::Vertex* vertex = graph->vertex(nwk->vertexId(fanout_pin));
+                if (isPrimary(nwk, vertex) || isRegInput(nwk, vertex)) {
+                  if ((strstr(nwk->pathName(fanout_pin), "CK"))
+                      || (strstr(nwk->pathName(fanout_pin), "RN"))
+                      || (strstr(nwk->pathName(fanout_pin), "QN"))
+                      || (strstr(nwk->pathName(fanout_pin), "SN"))
+                      || (strstr(nwk->pathName(fanout_pin), "Q")))
+                    continue;
+                  else {
+                    if (roots_.find(const_cast<sta::Pin*>(fanout_pin))
+                        == roots_.end())
+                      roots_[const_cast<sta::Pin*>(fanout_pin)] = roots_.size();
+                  }
+                } else {
+                  if (nwk->direction(fanout_pin)
+                      == sta::PortDirection::input()) {
+                    walkForwardsToTimingEndPointsR(
+                        graph,
+                        nwk,
+                        const_cast<sta::Pin*>(fanout_pin),
+                        depth + 1);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
 }  // namespace rmp
