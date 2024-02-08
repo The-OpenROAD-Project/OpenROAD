@@ -1220,7 +1220,8 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
     rubber_band_dbu.set_yhi(qMin(rubber_band_dbu.yMax(), bbox.yMax()));
 
     if (event->button() == Qt::LeftButton) {
-      should_indicate_rendering_ = true;
+      // show loading indicator while waiting for selection
+      should_indicate_loading_ = true;
       repaint();
 
       auto selection = selectAt(rubber_band_dbu);
@@ -1695,28 +1696,27 @@ void LayoutViewer::updatePixmap(const QImage& image, const QRect& bounds)
   update();
 }
 
-void LayoutViewer::drawRenderingIndication(QPainter* painter,
-                                           const QRect& bounds)
+void LayoutViewer::drawLoadingIndicator(QPainter* painter, const QRect& bounds)
 {
-  const QRect background = computeIndicationBackground(painter, bounds);
+  const QRect background = computeIndicatorBackground(painter, bounds);
 
   painter->fillRect(background, Qt::black);  // to help visualize
 
   painter->setPen(QPen(Qt::white, 2));
   painter->drawText(background.left(),
                     background.bottom(),
-                    QString::fromStdString(rendering_indication_));
+                    QString::fromStdString(loading_indicator_));
 }
 
-QRect LayoutViewer::computeIndicationBackground(QPainter* painter,
-                                                const QRect& bounds)
+QRect LayoutViewer::computeIndicatorBackground(QPainter* painter,
+                                               const QRect& bounds)
 {
   painter->setFont(painter->font());
 
   QFontMetrics font_metrics(painter->font());
 
-  const QRect rect = font_metrics.boundingRect(
-      QString::fromStdString(rendering_indication_));
+  const QRect rect
+      = font_metrics.boundingRect(QString::fromStdString(loading_indicator_));
   const QRect background(bounds.left() + 2 /* px */,
                          bounds.top() + 2 /* px */,
                          rect.width(),
@@ -1746,14 +1746,14 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
 
   const QRect draw_bounds = event->rect();
 
-  // we only draw the rendering indication when before a full repaint
-  if (should_indicate_rendering_) {
-    drawRenderingIndication(&painter, draw_bounds);
+  // we draw the loading indicator before full repaint or selection
+  if (should_indicate_loading_) {
+    drawLoadingIndicator(&painter, draw_bounds);
 
-    should_indicate_rendering_ = false;
+    should_indicate_loading_ = false;
   } else {
-    // erase indication
-    const QRect background = computeIndicationBackground(&painter, draw_bounds);
+    // erase indicator
+    const QRect background = computeIndicatorBackground(&painter, draw_bounds);
     painter.fillRect(background, Qt::transparent);
   }
 
@@ -1832,7 +1832,7 @@ void LayoutViewer::fullRepaint()
   }
 
   if (viewer_thread_.isFirstRenderDone()) {
-    should_indicate_rendering_ = true;
+    should_indicate_loading_ = true;
   }
 
   update();

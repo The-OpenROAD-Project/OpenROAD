@@ -353,8 +353,8 @@ class LayoutViewer : public QWidget
   bool isNetVisible(odb::dbNet* net);
 
   void drawScaleBar(QPainter* painter, const QRect& rect);
-  void drawRenderingIndication(QPainter* painter, const QRect& bounds);
-  QRect computeIndicationBackground(QPainter* painter, const QRect& bounds);
+  void drawLoadingIndicator(QPainter* painter, const QRect& bounds);
+  QRect computeIndicatorBackground(QPainter* painter, const QRect& bounds);
 
   void populateModuleColors();
 
@@ -439,12 +439,12 @@ class LayoutViewer : public QWidget
   const std::set<odb::dbNet*>& route_guides_;
   const std::set<odb::dbNet*>& net_tracks_;
 
-  bool should_indicate_rendering_ = false;
+  bool should_indicate_loading_ = false;
 
   RenderThread viewer_thread_;
   QPixmap draw_pixmap_;
   QRect draw_pixmap_bounds_;
-  const std::string rendering_indication_ = "...";
+  const std::string loading_indicator_ = "...";
 
   static constexpr qreal zoom_scale_factor_ = 1.2;
 
