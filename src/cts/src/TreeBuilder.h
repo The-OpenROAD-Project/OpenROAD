@@ -225,13 +225,13 @@ class TreeBuilder
     return x.computeDist(y) + getSinkInsertionDelay(x)
            + getSinkInsertionDelay(y);
   }
-  TreeType getTreeType() { return type_; }
+  TreeType getTreeType() const { return type_; }
   void setTreeType(TreeType type) { type_ = type; }
-  float getAveSinkArrival() { return aveArrival_; }
+  float getAveSinkArrival() const { return aveArrival_; }
   void setAveSinkArrival(float arrival) { aveArrival_ = arrival; }
-  float getTopBufferDelay() { return topBufferDelay_; }
+  float getTopBufferDelay() const { return topBufferDelay_; }
   void setTopBufferDelay(float delay) { topBufferDelay_ = delay; }
-  odb::dbInst* getTopBuffer() { return topBuffer_; }
+  odb::dbInst* getTopBuffer() const { return topBuffer_; }
   void setTopBuffer(odb::dbInst* inst) { topBuffer_ = inst; }
 
  protected:

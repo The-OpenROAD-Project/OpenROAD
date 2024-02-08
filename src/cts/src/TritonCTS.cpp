@@ -1961,6 +1961,8 @@ void TritonCTS::adjustLatencies(TreeBuilder* macroBuilder,
     builder = macroBuilder;
   }
 
+  // We don't want to add more delay buffers than needed because
+  // wire delays are not considered.  The fewer the delay buffers, the better.
   numBuffers = numBuffers * options_->getDelayBufferDerate();
   if (numBuffers == 0) {
     // clang-format off

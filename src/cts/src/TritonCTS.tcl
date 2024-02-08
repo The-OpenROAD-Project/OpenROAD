@@ -201,7 +201,7 @@ proc clock_tree_synthesis { args } {
   if { [info exists keys(-delay_buffer_derate)] } {
     set buffer_derate $keys(-delay_buffer_derate)
     if {[expr {$buffer_derate < 0.0 }]} {
-      utl::error CTS 123 "delay_buffer_derate needs to be greater than 0."
+      utl::error CTS 123 "delay_buffer_derate needs to be greater than or equal to 0."
     }
     cts::set_delay_buffer_derate $buffer_derate
   }
