@@ -1049,7 +1049,7 @@ void FastRouteCore::spiralRouteAll()
 
     for (int d = 0; d < sttrees_[netID].num_nodes(); d++) {
       treenodes[d].topL = -1;
-      treenodes[d].botL = num_layers_;
+      treenodes[d].botL = num_layers_ + 1;
       // treenodes[d].l = 0;
       treenodes[d].assigned = false;
       treenodes[d].stackAlias = d;

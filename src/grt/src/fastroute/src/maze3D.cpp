@@ -138,9 +138,9 @@ void FastRouteCore::addNeighborPoints(const int netID,
 
   // add n1 into heap1_3D
   for (int l = treenodes[nt].botL; l <= treenodes[nt].topL; l++) {
-    dist_3D[l][y1][x1] = 0;
-    directions_3D[l][y1][x1] = Direction::Origin;
-    points_heap_3D.push_back(&dist_3D[l][y1][x1]);
+    dist_3D[l - 1][y1][x1] = 0;
+    directions_3D[l - 1][y1][x1] = Direction::Origin;
+    points_heap_3D.push_back(&dist_3D[l - 1][y1][x1]);
     heapVisited[n1] = true;
   }
 
@@ -174,10 +174,10 @@ void FastRouteCore::addNeighborPoints(const int netID,
           const int nbrY = treenodes[nbr].y;
           nt = treenodes[nbr].stackAlias;
           for (int l = treenodes[nt].botL; l <= treenodes[nt].topL; l++) {
-            dist_3D[l][nbrY][nbrX] = 0;
-            directions_3D[l][nbrY][nbrX] = Direction::Origin;
-            points_heap_3D.push_back(&dist_3D[l][nbrY][nbrX]);
-            corr_edge_3D[l][nbrY][nbrX] = edge;
+            dist_3D[l - 1][nbrY][nbrX] = 0;
+            directions_3D[l - 1][nbrY][nbrX] = Direction::Origin;
+            points_heap_3D.push_back(&dist_3D[l - 1][nbrY][nbrX]);
+            corr_edge_3D[l - 1][nbrY][nbrX] = edge;
           }
         }
 
@@ -192,10 +192,10 @@ void FastRouteCore::addNeighborPoints(const int netID,
             const int l_grid = route->gridsL[j];
 
             if (in_region_[y_grid][x_grid]) {
-              dist_3D[l_grid][y_grid][x_grid] = 0;
-              points_heap_3D.push_back(&dist_3D[l_grid][y_grid][x_grid]);
-              directions_3D[l_grid][y_grid][x_grid] = Direction::Origin;
-              corr_edge_3D[l_grid][y_grid][x_grid] = edge;
+              dist_3D[l_grid - 1][y_grid][x_grid] = 0;
+              points_heap_3D.push_back(&dist_3D[l_grid - 1][y_grid][x_grid]);
+              directions_3D[l_grid - 1][y_grid][x_grid] = Direction::Origin;
+              corr_edge_3D[l_grid - 1][y_grid][x_grid] = edge;
             }
           }
 
@@ -244,12 +244,12 @@ void FastRouteCore::setupHeap3D(int netID,
     const int node1_access_layer = nets_[netID]->getPinL()[node1_alias];
     const int node2_access_layer = nets_[netID]->getPinL()[node2_alias];
 
-    d1_3D[node1_access_layer][y1][x1] = 0;
-    directions_3D[node1_access_layer][y1][x1] = Direction::Origin;
-    src_heap_3D.push_back(&d1_3D[node1_access_layer][y1][x1]);
-    d2_3D[node2_access_layer][y2][x2] = 0;
-    directions_3D[node2_access_layer][y2][x2] = Direction::Origin;
-    dest_heap_3D.push_back(&d2_3D[node2_access_layer][y2][x2]);
+    d1_3D[node1_access_layer - 1][y1][x1] = 0;
+    directions_3D[node1_access_layer - 1][y1][x1] = Direction::Origin;
+    src_heap_3D.push_back(&d1_3D[node1_access_layer - 1][y1][x1]);
+    d2_3D[node2_access_layer - 1][y2][x2] = 0;
+    directions_3D[node2_access_layer - 1][y2][x2] = Direction::Origin;
+    dest_heap_3D.push_back(&d2_3D[node2_access_layer - 1][y2][x2]);
   } else {  // net with more than 2 pins
     for (int i = regionY1; i <= regionY2; i++) {
       for (int j = regionX1; j <= regionX2; j++) {
@@ -919,7 +919,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             const float tmp = d1_3D[curL][curY][curX] + 1;
             if (h_edges_3D_[curL][curY][curX - 1].usage
                     < h_edges_3D_[curL][curY][curX - 1].cap
-                && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
+                && net->getMinLayer() - 1 <= curL && curL <= net->getMaxLayer() - 1) {
               const int tmpX = curX - 1;  // the left neighbor
 
               if (d1_3D[curL][curY][tmpX] >= BIG_INT)  // left neighbor not been
@@ -957,7 +957,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
             if (h_edges_3D_[curL][curY][curX].usage
                     < h_edges_3D_[curL][curY][curX].cap
-                && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
+                && net->getMinLayer() - 1 <= curL && curL <= net->getMaxLayer() - 1) {
               if (d1_3D[curL][curY][tmpX]
                   >= BIG_INT)  // right neighbor not been put into
                                // src_heap_3D
@@ -994,7 +994,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             const int tmpY = curY - 1;  // the bottom neighbor
             if (v_edges_3D_[curL][curY - 1][curX].usage
                     < v_edges_3D_[curL][curY - 1][curX].cap
-                && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
+                && net->getMinLayer() - 1 <= curL && curL <= net->getMaxLayer() - 1) {
               if (d1_3D[curL][tmpY][curX]
                   >= BIG_INT)  // bottom neighbor not been put into
                                // src_heap_3D
@@ -1030,7 +1030,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             const int tmpY = curY + 1;  // the top neighbor
             if (v_edges_3D_[curL][curY][curX].usage
                     < v_edges_3D_[curL][curY][curX].cap
-                && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
+                && net->getMinLayer() - 1 <= curL && curL <= net->getMaxLayer() - 1) {
               if (d1_3D[curL][tmpY][curX]
                   >= BIG_INT)  // top neighbor not been put into src_heap_3D
               {
@@ -1167,7 +1167,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         fflush(stdout);
         tmp_gridsX.push_back(curX);
         tmp_gridsY.push_back(curY);
-        tmp_gridsL.push_back(curL);
+        tmp_gridsL.push_back(curL + 1);
         cnt++;
       }
 
@@ -1178,7 +1178,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       // add the connection point (crossX, crossY)
       gridsX.push_back(crossX);
       gridsY.push_back(crossY);
-      gridsL.push_back(crossL);
+      gridsL.push_back(crossL + 1);
       cnt++;
 
       curX = crossX;
@@ -1221,7 +1221,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       // otherwise, no change to subtree1
       {
         n1Shift = true;
-        const int corE1 = corr_edge_3D[origL][E1y][E1x];
+        const int corE1 = corr_edge_3D[origL - 1][E1y][E1x];
 
         const int endpt1 = treeedges[corE1].n1;
         const int endpt2 = treeedges[corE1].n2;
@@ -1276,7 +1276,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         {
           const int C1 = endpt1;
           const int C2 = endpt2;
-          const int edge_C1C2 = corr_edge_3D[origL][E1y][E1x];
+          const int edge_C1C2 = corr_edge_3D[origL - 1][E1y][E1x];
 
           // update route for edge (n1, C1), (n1, C2) and (A1, A2)
           updateRouteType23D(netID,
@@ -1380,7 +1380,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         // find the endpoints of the edge E1 is on
 
         n2Shift = true;
-        const int corE2 = corr_edge_3D[origL][E2y][E2x];
+        const int corE2 = corr_edge_3D[origL - 1][E2y][E2x];
         const int endpt1 = treeedges[corE2].n1;
         const int endpt2 = treeedges[corE2].n2;
 
@@ -1432,7 +1432,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         {
           const int D1 = endpt1;
           const int D2 = endpt2;
-          const int edge_D1D2 = corr_edge_3D[origL][E2y][E2x];
+          const int edge_D1D2 = corr_edge_3D[origL - 1][E2y][E2x];
 
           // update route for edge (n2, d1_3D), (n2, d2_3D) and (B1, B2)
           updateRouteType23D(netID,
@@ -1547,14 +1547,14 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             const int min_y = std::min(gridsY[i], gridsY[i + 1]);
             v_edges_[min_y][gridsX[i]].usage += net->getEdgeCost();
             v_used_ggrid_.insert(std::make_pair(min_y, gridsX[i]));
-            v_edges_3D_[gridsL[i]][min_y][gridsX[i]].usage
+            v_edges_3D_[gridsL[i] - 1][min_y][gridsX[i]].usage
                 += net->getLayerEdgeCost(gridsL[i]);
           } else  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
           {
             const int min_x = std::min(gridsX[i], gridsX[i + 1]);
             h_edges_[gridsY[i]][min_x].usage += net->getEdgeCost();
             h_used_ggrid_.insert(std::make_pair(gridsY[i], min_x));
-            h_edges_3D_[gridsL[i]][gridsY[i]][min_x].usage
+            h_edges_3D_[gridsL[i] - 1][gridsY[i]][min_x].usage
                 += net->getLayerEdgeCost(gridsL[i]);
           }
         }

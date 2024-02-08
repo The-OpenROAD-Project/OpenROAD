@@ -166,11 +166,11 @@ class FastRouteCore
   const multi_array<Edge3D, 3>& getVerticalEdges3D() { return v_edges_3D_; }
   void setLastColVCapacity(short cap, int layer)
   {
-    last_col_v_capacity_3D_[layer] = cap;
+    last_col_v_capacity_3D_[layer - 1] = cap;
   }
   void setLastRowHCapacity(short cap, int layer)
   {
-    last_row_h_capacity_3D_[layer] = cap;
+    last_row_h_capacity_3D_[layer - 1] = cap;
   }
   void setRegularX(bool regular_x) { regular_x_ = regular_x; }
   void setRegularY(bool regular_y) { regular_y_ = regular_y; }
