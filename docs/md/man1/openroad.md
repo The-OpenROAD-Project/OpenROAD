@@ -1,6 +1,6 @@
 ---
 title: openroad(0)
-date: 2023/11/13
+date: 2024/02/09
 ---
 
 # NAME
@@ -9,9 +9,10 @@ openroad - OpenROAD command-line-interface.
 
 # SYNOPSIS
 
-openroad  [-help]  [-version] [-no_init] [-exit] [-gui]
-       [-threads   count|max]   [-log   file_name]   [-metrics
-       file_name] cmd_file
+openroad [-help] [-version] [-no_init] [-exit] [-gui]
+       [-threads count|max] [-log file_name] 
+       [-metrics file_name] [-python]
+       cmd_file
 
 openroad [-python] cmd_file
 

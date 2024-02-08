@@ -212,7 +212,7 @@ Determine is the GUI is active:
 gui::enabled
 ```
 
-### Is Design Created
+### Trigger GUI to Load Design
 
 Announce to the GUI that a design was loaded 
 (note: this is only needed when the design was loaded through the odb API and not via ``read_def`` or ``read_db``):
@@ -242,8 +242,8 @@ To open the GUI from the command-line (this command does not return until the GU
 
 ```tcl
 gui::show 
-    [script]
-    [interactive]
+    script
+    interactive
 ```
 
 #### Options
@@ -275,7 +275,7 @@ To zoom in our out to a specific region:
 
 ```tcl
 gui::zoom_to 
-    [x0 y0 x1 y1]
+    x0 y0 x1 y1
 ```
 
 #### Options
@@ -289,8 +289,8 @@ gui::zoom_to
 To zoom in the layout:
 
 ```tcl
-gui::zoom_in
-    [x y]
+gui::zoom_in 
+    x y
 ```
 
 #### Options
@@ -305,7 +305,7 @@ To zoom out the layout:
 
 ```tcl
 gui::zoom_out 
-    [x y]
+    x y
 ```
 
 #### Options
@@ -320,7 +320,7 @@ To move the layout to new area:
 
 ```tcl
 gui::center_at 
-    [x y]
+    x y
 ```
 
 #### Options
@@ -335,7 +335,7 @@ To change the resolution to a specific value:
 
 ```tcl
 gui::set_resolution
-    [resolution]
+    resolution
 ```
 
 #### Options

@@ -7,5 +7,5 @@ set manpath_dir [file normalize [file dirname [file dirname [file normalize $tes
 set manpath_dir "$manpath_dir/cat"
 set output [man openroad -manpath $manpath_dir -no_query]
 
-# Test 2) Running manpath with no set manpath variable. #TODO
-## KIV: Need to find out interactively is the OR folders. 
+# Test 2) Running manpath with no set manpath variable.
+set output [man openroad -no_query]

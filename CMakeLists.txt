@@ -159,11 +159,16 @@ add_subdirectory(src)
 
 # Build man pages (Optional)
 
+# Use the processor_count command to get the number of cores
+include(ProcessorCount)
+ProcessorCount(PROCESSOR_COUNT)
+message("Number of processor cores: ${PROCESSOR_COUNT}")
+
 option(BUILD_MAN "Enable building man pages" OFF)
 if(BUILD_MAN)
   add_custom_target(
     man_page ALL
-    COMMAND make clean && make preprocess && make all -j16
+    COMMAND make clean && make preprocess && make all -j${PROCESSOR_COUNT}
     WORKING_DIRECTORY ${OPENROAD_HOME}/docs
   )
   
