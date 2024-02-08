@@ -564,7 +564,7 @@ QPainterPath ClockRootNodeGraphicsViewItem::shape() const
 
 ////////////////
 
-ClockRegisterNodeGraphicsViewItem::ClockRegisterNodeGraphicsViewItem(
+ClockLeafNodeGraphicsViewItem::ClockLeafNodeGraphicsViewItem(
     odb::dbITerm* iterm,
     QGraphicsItem* parent)
     : ClockNodeGraphicsViewItem(parent),
@@ -576,7 +576,7 @@ ClockRegisterNodeGraphicsViewItem::ClockRegisterNodeGraphicsViewItem(
   menu_.addAction(highlight_path_);
 }
 
-QPolygonF ClockRegisterNodeGraphicsViewItem::getClockInputPolygon() const
+QPolygonF ClockLeafNodeGraphicsViewItem::getClockInputPolygon() const
 {
   const qreal size = getSize();
   QPolygonF poly;
@@ -587,7 +587,7 @@ QPolygonF ClockRegisterNodeGraphicsViewItem::getClockInputPolygon() const
   return poly;
 }
 
-QRectF ClockRegisterNodeGraphicsViewItem::getOutlineRect() const
+QRectF ClockLeafNodeGraphicsViewItem::getOutlineRect() const
 {
   const qreal size = getSize();
   const QPointF ll(-size / 2, size);
@@ -596,17 +596,17 @@ QRectF ClockRegisterNodeGraphicsViewItem::getOutlineRect() const
   return rect.normalized();
 }
 
-QRectF ClockRegisterNodeGraphicsViewItem::boundingRect() const
+QRectF ClockLeafNodeGraphicsViewItem::boundingRect() const
 {
   return getOutlineRect();
 }
 
-void ClockRegisterNodeGraphicsViewItem::paint(
+void ClockLeafNodeGraphicsViewItem::paint(
     QPainter* painter,
     const QStyleOptionGraphicsItem* option,
     QWidget* widget)
 {
-  const QColor outline = leaf_color_;
+  const QColor outline = getColor();
   const QColor fill(outline.lighter());
 
   QPen pen(outline);
@@ -627,7 +627,7 @@ void ClockRegisterNodeGraphicsViewItem::paint(
   painter->drawPolygon(getClockInputPolygon());
 }
 
-void ClockRegisterNodeGraphicsViewItem::contextMenuEvent(
+void ClockLeafNodeGraphicsViewItem::contextMenuEvent(
     QGraphicsSceneContextMenuEvent* event)
 {
   event->accept();
@@ -1155,12 +1155,36 @@ ClockNodeGraphicsViewItem* ClockTreeView::addLeafToScene(
   odb::dbBTerm* bterm;
   network->staToDb(input_pin.pin, iterm, bterm);
 
-  ClockRegisterNodeGraphicsViewItem* node
-      = new ClockRegisterNodeGraphicsViewItem(iterm);
+  // distinguish between registers and macros
+  ClockLeafNodeGraphicsViewItem* node;
+  odb::dbInst* inst = iterm->getInst();
+  if (inst->getMaster()->getType().isBlock()) {
+    node = new ClockMacroNodeGraphicsViewItem(iterm);
+  } else {
+    node = new ClockRegisterNodeGraphicsViewItem(iterm);
+  }
   node->scaleSize(leaf_scale_);
 
-  node->setPos({x, convertDelayToY(input_pin.delay)});
-  node->setExtraToolTip("Arrival: " + convertDelayToString(input_pin.delay));
+  // add insertion delay at macro cell input pin
+  float ins_delay = 0.0;
+  sta::LibertyCell* libCell = network->libertyCell(network->dbToSta(inst));
+  odb::dbMTerm* mterm = iterm->getMTerm();
+  if (libCell && mterm) {
+    sta::LibertyPort* libPort = libCell->findLibertyPort(mterm->getConstName());
+    if (libPort) {
+      sta::RiseFallMinMax insDelays = libPort->clockTreePathDelays();
+      if (insDelays.hasValue()) {
+        ins_delay
+            = (insDelays.value(sta::RiseFall::rise(), sta::MinMax::max())
+               + insDelays.value(sta::RiseFall::fall(), sta::MinMax::max()))
+              / 2.0;
+      }
+    }
+  }
+
+  node->setPos({x, convertDelayToY(input_pin.delay + ins_delay)});
+  node->setExtraToolTip("Arrival: "
+                        + convertDelayToString(input_pin.delay + ins_delay));
   scene_->addItem(node);
 
   connect(node->getHighlightAction(), &QAction::triggered, [this, iterm]() {

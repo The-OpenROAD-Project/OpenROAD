@@ -88,7 +88,8 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
 					                                   [-apply_ndr] \
                                              [-insertion_delay] \
                                              [-sink_buffer_max_cap_derate] \
-                                             [-use_dummy_load]
+                                             [-use_dummy_load] \
+                                             [-delay_buffer_derate] \
                                             };# checker off
 
 proc clock_tree_synthesis { args } {
@@ -96,7 +97,7 @@ proc clock_tree_synthesis { args } {
     keys {-root_buf -buf_list -wire_unit -clk_nets -sink_clustering_size -num_static_layers\
           -sink_clustering_buffer -distance_between_buffers -branching_point_buffers_distance -clustering_exponent\
           -clustering_unbalance_ratio -sink_clustering_max_diameter -sink_clustering_levels -tree_buf\
-          -sink_buffer_max_cap_derate}\
+          -sink_buffer_max_cap_derate -delay_buffer_derate}\
       flags {-post_cts_disable -sink_clustering_enable -balance_levels \
 	     -obstruction_aware -apply_ndr -insertion_delay -use_dummy_load};# checker off
 
@@ -195,6 +196,14 @@ proc clock_tree_synthesis { args } {
       utl::error CTS 109 "sink_buffer_max_cap_derate needs to be between 0 and 1.0."
     }
     cts::set_sink_buffer_max_cap_derate $derate
+  }
+
+  if { [info exists keys(-delay_buffer_derate)] } {
+    set buffer_derate $keys(-delay_buffer_derate)
+    if {[expr {$buffer_derate < 0.0 }]} {
+      utl::error CTS 123 "delay_buffer_derate needs to be greater than or equal to 0."
+    }
+    cts::set_delay_buffer_derate $buffer_derate
   }
 
   cts::set_obstruction_aware [info exists flags(-obstruction_aware)]
