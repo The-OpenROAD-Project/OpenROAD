@@ -1220,6 +1220,9 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
     rubber_band_dbu.set_yhi(qMin(rubber_band_dbu.yMax(), bbox.yMax()));
 
     if (event->button() == Qt::LeftButton) {
+      should_indicate_rendering_ = true;
+      repaint();
+
       auto selection = selectAt(rubber_band_dbu);
       if (!(qGuiApp->keyboardModifiers() & Qt::ShiftModifier)) {
         emit selected(Selected());  // remove previous selections
