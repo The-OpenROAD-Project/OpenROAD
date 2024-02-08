@@ -1692,6 +1692,36 @@ void LayoutViewer::updatePixmap(const QImage& image, const QRect& bounds)
   update();
 }
 
+void LayoutViewer::drawRenderingIndication(QPainter* painter,
+                                           const QRect& bounds)
+{
+  const QRect background = computeIndicationBackground(painter, bounds);
+
+  painter->fillRect(background, Qt::black);  // to help visualize
+
+  painter->setPen(QPen(Qt::white, 2));
+  painter->drawText(background.left(),
+                    background.bottom(),
+                    QString::fromStdString(rendering_indication_));
+}
+
+QRect LayoutViewer::computeIndicationBackground(QPainter* painter,
+                                                const QRect& bounds)
+{
+  painter->setFont(painter->font());
+
+  QFontMetrics font_metrics(painter->font());
+
+  const QRect rect = font_metrics.boundingRect(
+      QString::fromStdString(rendering_indication_));
+  const QRect background(bounds.left() + 2 /* px */,
+                         bounds.top() + 2 /* px */,
+                         rect.width(),
+                         rect.height() / 2);
+
+  return background;
+}
+
 void LayoutViewer::paintEvent(QPaintEvent* event)
 {
   if (!hasDesign()) {
@@ -1707,13 +1737,28 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
 
   painter.drawPixmap(event->rect().topLeft(), draw_pixmap_);
 
+  if (!viewer_thread_.isFirstRenderDone()) {
+    return;
+  }
+
+  const QRect draw_bounds = event->rect();
+
+  // we only draw the rendering indication when before a full repaint
+  if (should_indicate_rendering_) {
+    drawRenderingIndication(&painter, draw_bounds);
+
+    should_indicate_rendering_ = false;
+  } else {
+    // erase indication
+    const QRect background = computeIndicationBackground(&painter, draw_bounds);
+    painter.fillRect(background, Qt::transparent);
+  }
+
   if (rubber_band_showing_) {
     painter.setPen(QPen(Qt::white, 0));
     painter.setBrush(QBrush());
     painter.drawRect(rubber_band_.normalized());
   }
-
-  const QRect draw_bounds = event->rect();
 
   // buffer outputs during paint to prevent recursive calls
   output_widget_->bufferOutputs(true);
@@ -1782,6 +1827,11 @@ void LayoutViewer::fullRepaint()
         5 /*ms*/, this, &LayoutViewer::fullRepaint);  // retry later
     return;
   }
+
+  if (viewer_thread_.isFirstRenderDone()) {
+    should_indicate_rendering_ = true;
+  }
+
   update();
   if (hasDesign()) {
     QRect rect = scroller_->viewport()->geometry();

@@ -130,6 +130,10 @@ void RenderThread::run()
          Qt::transparent);
     if (!restart_) {
       emit done(image, draw_bounds);
+
+      if (!is_first_render_done_) {
+        is_first_render_done_ = true;
+      }
     }
     if (abort_) {
       return;
@@ -199,7 +203,6 @@ void RenderThread::draw(QImage& image,
   if (!is_first_render_done_ && !restart_) {
     drawDesignLoadingMessage(gui_painter, dbu_bounds);
     emit done(image, draw_bounds);
-    is_first_render_done_ = true;
 
     // Erase the first render indication so it does not remain on the screen
     // when the design is drawn for the first time

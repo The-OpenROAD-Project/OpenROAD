@@ -73,6 +73,8 @@ class RenderThread : public QThread
             qreal render_ratio,
             const QColor& background);
 
+  bool isFirstRenderDone() { return is_first_render_done_; };
+
  signals:
   void done(const QImage& image, const QRect& bounds);
 
