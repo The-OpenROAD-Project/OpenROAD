@@ -9376,6 +9376,18 @@ class dbTechLayerMinStepRule : public dbObject
 
   bool isExceptSameCorners() const;
 
+  void setConcaveCorner(bool concave_corner);
+
+  bool isConcaveCorner() const;
+
+  void setExceptRectangle(bool except_rectangle);
+
+  bool isExceptRectangle() const;
+
+  void setNoAdjacentEol(bool no_adjacent_eol);
+
+  bool isNoAdjacentEol() const;
+
   // User Code Begin dbTechLayerMinStepRule
   static dbTechLayerMinStepRule* create(dbTechLayer* layer);
 
