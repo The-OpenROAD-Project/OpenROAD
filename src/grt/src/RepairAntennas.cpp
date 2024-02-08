@@ -179,6 +179,8 @@ odb::dbWire* RepairAntennas::makeNetWire(
                          default_vias,
                          false);
             wire_segments.insert(seg);
+          } else if (prev_conn_layer == -1) {
+            prev_conn_layer = std::max(l1, l2);
           }
         } else {
           // Add wire
