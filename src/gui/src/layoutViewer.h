@@ -354,7 +354,8 @@ class LayoutViewer : public QWidget
 
   void drawScaleBar(QPainter* painter, const QRect& rect);
   void drawLoadingIndicator(QPainter* painter, const QRect& bounds);
-  QRect computeIndicatorBackground(QPainter* painter, const QRect& bounds);
+  QRect computeIndicatorBackground(QPainter* painter,
+                                   const QRect& bounds) const;
 
   void populateModuleColors();
 

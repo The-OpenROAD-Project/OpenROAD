@@ -1709,7 +1709,7 @@ void LayoutViewer::drawLoadingIndicator(QPainter* painter, const QRect& bounds)
 }
 
 QRect LayoutViewer::computeIndicatorBackground(QPainter* painter,
-                                               const QRect& bounds)
+                                               const QRect& bounds) const
 {
   painter->setFont(painter->font());
 
