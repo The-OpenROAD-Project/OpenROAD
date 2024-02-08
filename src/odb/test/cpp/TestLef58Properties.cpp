@@ -353,7 +353,7 @@ BOOST_AUTO_TEST_CASE(test_default)
   layer = dbTech->findLayer("metal2");
   // Check LEF57_MINSTEP
   auto minStepRules_57 = layer->getTechLayerMinStepRules();
-  BOOST_TEST(minStepRules_57.size() == 4);
+  BOOST_TEST(minStepRules_57.size() == 7);
   auto itr_57 = minStepRules_57.begin();
   odb::dbTechLayerMinStepRule* step_rule_57
       = (odb::dbTechLayerMinStepRule*) *itr_57;
