@@ -1158,31 +1158,33 @@ ClockNodeGraphicsViewItem* ClockTreeView::addLeafToScene(
   // distinguish between registers and macros
   ClockLeafNodeGraphicsViewItem* node;
   odb::dbInst* inst = iterm->getInst();
+  float ins_delay = 0.0;
   if (inst->getMaster()->getType().isBlock()) {
-    node = new ClockMacroNodeGraphicsViewItem(iterm);
+    // add insertion delay at macro cell input pin
+    sta::LibertyCell* libCell = network->libertyCell(network->dbToSta(inst));
+    odb::dbMTerm* mterm = iterm->getMTerm();
+    if (libCell && mterm) {
+      sta::LibertyPort* libPort
+          = libCell->findLibertyPort(mterm->getConstName());
+      if (libPort) {
+        sta::RiseFallMinMax insDelays = libPort->clockTreePathDelays();
+        if (insDelays.hasValue()) {
+          ins_delay
+              = (insDelays.value(sta::RiseFall::rise(), sta::MinMax::max())
+                 + insDelays.value(sta::RiseFall::fall(), sta::MinMax::max()))
+                / 2.0;
+        }
+      }
+    }
+
+    node
+        = new ClockMacroNodeGraphicsViewItem(iterm, convertDelayToY(ins_delay));
   } else {
     node = new ClockRegisterNodeGraphicsViewItem(iterm);
   }
   node->scaleSize(leaf_scale_);
 
-  // add insertion delay at macro cell input pin
-  float ins_delay = 0.0;
-  sta::LibertyCell* libCell = network->libertyCell(network->dbToSta(inst));
-  odb::dbMTerm* mterm = iterm->getMTerm();
-  if (libCell && mterm) {
-    sta::LibertyPort* libPort = libCell->findLibertyPort(mterm->getConstName());
-    if (libPort) {
-      sta::RiseFallMinMax insDelays = libPort->clockTreePathDelays();
-      if (insDelays.hasValue()) {
-        ins_delay
-            = (insDelays.value(sta::RiseFall::rise(), sta::MinMax::max())
-               + insDelays.value(sta::RiseFall::fall(), sta::MinMax::max()))
-              / 2.0;
-      }
-    }
-  }
-
-  node->setPos({x, convertDelayToY(input_pin.delay + ins_delay)});
+  node->setPos({x, convertDelayToY(input_pin.delay)});
   node->setExtraToolTip("Arrival: "
                         + convertDelayToString(input_pin.delay + ins_delay));
   scene_->addItem(node);
@@ -1192,6 +1194,15 @@ ClockNodeGraphicsViewItem* ClockTreeView::addLeafToScene(
   });
 
   return node;
+}
+
+QRectF ClockMacroNodeGraphicsViewItem::getOutlineRect() const
+{
+  const qreal size = getSize();
+  const QPointF ll(-size / 2, std::max(size, insertion_delay_as_height_));
+  const QPointF ur(size / 2, 0);
+  QRectF rect(ll, ur);
+  return rect.normalized();
 }
 
 ClockNodeGraphicsViewItem* ClockTreeView::addCellToScene(
