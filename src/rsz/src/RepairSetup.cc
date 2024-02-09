@@ -890,7 +890,7 @@ RepairSetup::getEquivPortList2(sta::FuncExpr *expr,
     using Operator = sta::FuncExpr::Operator ;
     const Operator curr_op = expr->op();
 
-    if (curr_op == Operator::op_not) {
+    if (status == Operator::op_zero && curr_op == Operator::op_not) {
         getEquivPortList2(expr->left(), ports, status);
     }
     else if (status == Operator::op_zero &&
