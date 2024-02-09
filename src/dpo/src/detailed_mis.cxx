@@ -485,28 +485,33 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
       // and that they have the same color (if applicable).
 
       // diff nodes
-      if (ndj == ndi)
+      if (ndj == ndi) {
         continue;
+      }
 
       // Must be the same color to avoid sharing nets.
-      if (useSameColor_ && colors_[ndi->getId()] != colors_[ndj->getId()])
+      if (useSameColor_ && colors_[ndi->getId()] != colors_[ndj->getId()]) {
         continue;
+      }
 
       // Must be the same size.
       if (useSameSize_
           && (ndi->getWidth() != ndj->getWidth()
-              || ndi->getHeight() != ndj->getHeight()))
+              || ndi->getHeight() != ndj->getHeight())) {
         continue;
+      }
 
       // Must be in the same region.
-      if (ndj->getRegionId() != ndi->getRegionId())
+      if (ndj->getRegionId() != ndi->getRegionId()) {
         continue;
+      }
 
       // Must span the same number of rows and also be voltage compatible.
       if (ndi->getBottomPower() != ndj->getBottomPower()
           || ndi->getTopPower() != ndj->getTopPower()
-          || spanned_i != std::lround(ndj->getHeight() / singleRowHeight))
+          || spanned_i != std::lround(ndj->getHeight() / singleRowHeight)) {
         continue;
+      }
 
       // If compatible, include this current cell.
       neighbours_.push_back(ndj);
