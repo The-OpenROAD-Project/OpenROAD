@@ -44,7 +44,6 @@
 #include "db_sta/dbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbReadVerilog.hh"
-#include "ord/Version.hh"
 #include "utl/Logger.h"
 #include "ord/OpenRoad.hh"
 
@@ -295,13 +294,13 @@ using odb::dbTech;
 const char *
 openroad_version()
 {
-  return OPENROAD_VERSION;
+  return ord::OpenRoad::getVersion();
 }
 
 const char *
 openroad_git_describe()
 {
-  return OPENROAD_GIT_DESCRIBE;
+  return ord::OpenRoad::getGitDescribe();
 }
 
 void

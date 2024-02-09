@@ -361,17 +361,17 @@ class HardMacro
   void setX(float x);
   void setY(float y);
   const std::pair<float, float> getLocation() const;
-  float getX() const;
-  float getY() const;
+  float getX() const { return x_; }
+  float getY() const { return y_; }
   // The position of pins relative to the lower left of the instance
-  float getPinX() const;
-  float getPinY() const;
+  float getPinX() const { return x_ + pin_x_; }
+  float getPinY() const { return y_ + pin_y_; }
   // The position of pins relative to the origin of the canvas;
-  float getAbsPinX() const;
-  float getAbsPinY() const;
+  float getAbsPinX() const { return pin_x_; }
+  float getAbsPinY() const { return pin_y_; }
   // width, height (include halo_width)
-  float getWidth() const;
-  float getHeight() const;
+  float getWidth() const { return width_; }
+  float getHeight() const { return height_; }
 
   // Note that the real X and Y does NOT include halo_width
   void setRealLocation(const std::pair<float, float>& location);
@@ -521,14 +521,7 @@ class SoftMacro
 
   // name
   const std::string getName() const;
-  // Physical Information
-  void setReference(float refer_lx, float refer_ly)
-  {
-    refer_lx_ = refer_lx;
-    refer_ly_ = refer_ly;
-    x_ = refer_lx;
-    y_ = refer_ly;
-  }
+
   void setX(float x);
   void setY(float y);
   void setLocation(const std::pair<float, float>& location);
@@ -547,13 +540,19 @@ class SoftMacro
   // for StdCellCluster and MixedCluster
   void setShapes(const std::vector<std::pair<float, float>>& width_list,
                  float area);
-  float getX() const;
-  float getY() const;
-  float getPinX() const;
-  float getPinY() const;
-  const std::pair<float, float> getLocation() const;
-  float getWidth() const;
-  float getHeight() const;
+  float getX() const { return x_; }
+  float getY() const { return y_; }
+
+  // The position of pins relative to the lower left of the instance
+  float getPinX() const { return x_ + 0.5f * width_; }
+  float getPinY() const { return y_ + 0.5f * height_; }
+
+  std::pair<float, float> getLocation() const
+  {
+    return std::pair<float, float>(x_, y_);
+  }
+  float getWidth() const { return width_; }
+  float getHeight() const { return height_; }
   float getArea() const;
   // Num Macros
   bool isMacroCluster() const;
@@ -591,8 +590,6 @@ class SoftMacro
   // Interfaces with hard macro
   Cluster* cluster_ = nullptr;
   bool fixed_ = false;  // if the macro is fixed
-  float refer_lx_ = -1.0;
-  float refer_ly_ = -1.0;
 
   // Alignment support
   // if the cluster has been aligned related to other macro_cluster or
@@ -667,9 +664,9 @@ struct Rect
 
   float getY() const { return (ly + uy) / 2.0; }
 
-  inline float getWidth() const { return ux - lx; }
+  float getWidth() const { return ux - lx; }
 
-  inline float getHeight() const { return uy - ly; }
+  float getHeight() const { return uy - ly; }
 
   void setLoc(float x,
               float y,
@@ -709,24 +706,24 @@ struct Rect
     }
   }
 
-  inline void moveHor(float dist)
+  void moveHor(float dist)
   {
     lx = lx + dist;
     ux = ux + dist;
   }
 
-  inline void moveVer(float dist)
+  void moveVer(float dist)
   {
     ly = ly + dist;
     uy = uy + dist;
   }
 
-  inline void move(float x_dist,
-                   float y_dist,
-                   float core_lx,
-                   float core_ly,
-                   float core_ux,
-                   float core_uy)
+  void move(float x_dist,
+            float y_dist,
+            float core_lx,
+            float core_ly,
+            float core_ux,
+            float core_uy)
   {
     if (fixed_flag == true) {
       return;
@@ -765,7 +762,7 @@ struct Rect
     }
   }
 
-  inline void resetForce()
+  void resetForce()
   {
     f_x_a = 0.0;
     f_y_a = 0.0;
@@ -775,7 +772,7 @@ struct Rect
     f_y = 0.0;
   }
 
-  inline void makeSquare(float ar = 1.0)
+  void makeSquare(float ar = 1.0)
   {
     if (fixed_flag == true) {
       return;
@@ -790,19 +787,19 @@ struct Rect
     uy = y + height / 2.0;
   }
 
-  inline void addAttractiveForce(float f_x, float f_y)
+  void addAttractiveForce(float f_x, float f_y)
   {
     f_x_a += f_x;
     f_y_a += f_y;
   }
 
-  inline void addRepulsiveForce(float f_x, float f_y)
+  void addRepulsiveForce(float f_x, float f_y)
   {
     f_x_r += f_x;
     f_y_r += f_y;
   }
 
-  inline void setForce(float f_x_, float f_y_)
+  void setForce(float f_x_, float f_y_)
   {
     f_x = f_x_;
     f_y = f_y_;

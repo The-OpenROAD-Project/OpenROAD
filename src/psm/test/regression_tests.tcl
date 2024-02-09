@@ -22,4 +22,5 @@ record_tests {
   zerosoc_pads
   zerosoc_pads_check_only
   zerosoc_pads_check_only_disconnected
+  pad_connected_by_abutment
 }

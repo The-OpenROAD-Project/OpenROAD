@@ -1095,9 +1095,9 @@ bool DbNetDescriptor::getBBox(std::any object, odb::Rect& bbox) const
   bool has_box = false;
   bbox.mergeInit();
   if (wire) {
-    odb::Rect wire_box;
-    if (wire->getBBox(wire_box)) {
-      bbox.merge(wire_box);
+    const auto opt_bbox = wire->getBBox();
+    if (opt_bbox) {
+      bbox.merge(opt_bbox.value());
       has_box = true;
     }
   }
@@ -1167,16 +1167,14 @@ void DbNetDescriptor::findSourcesAndSinks(odb::dbNet* net,
   // find sources and sinks on this net
   for (auto* iterm : net->getITerms()) {
     if (iterm == sink) {
-      odb::dbTransform transform;
-      iterm->getInst()->getTransform(transform);
+      const odb::dbTransform transform = iterm->getInst()->getTransform();
       get_graph_iterm_targets(iterm->getMTerm(), transform, sinks);
       continue;
     }
 
     auto iotype = iterm->getIoType();
     if (iotype == odb::dbIoType::OUTPUT || iotype == odb::dbIoType::INOUT) {
-      odb::dbTransform transform;
-      iterm->getInst()->getTransform(transform);
+      const odb::dbTransform transform = iterm->getInst()->getTransform();
       get_graph_iterm_targets(iterm->getMTerm(), transform, sources);
     }
   }
@@ -1771,7 +1769,7 @@ DbITermDescriptor::DbITermDescriptor(odb::dbDatabase* db) : db_(db)
 std::string DbITermDescriptor::getName(std::any object) const
 {
   auto iterm = std::any_cast<odb::dbITerm*>(object);
-  return iterm->getInst()->getName() + '/' + iterm->getMTerm()->getName();
+  return iterm->getName();
 }
 
 std::string DbITermDescriptor::getShortName(std::any object) const
@@ -1803,8 +1801,7 @@ void DbITermDescriptor::highlight(std::any object, Painter& painter) const
     return;
   }
 
-  odb::dbTransform inst_xfm;
-  iterm->getInst()->getTransform(inst_xfm);
+  const odb::dbTransform inst_xfm = iterm->getInst()->getTransform();
 
   auto mterm = iterm->getMTerm();
   for (auto mpin : mterm->getMPins()) {
@@ -2035,8 +2032,7 @@ Descriptor::Properties DbViaDescriptor::getProperties(std::any object) const
       {"Tech Via Generate Rule", gui->makeSelected(via->getViaGenerateRule())});
 
   if (via->hasParams()) {
-    odb::dbViaParams via_params;
-    via->getViaParams(via_params);
+    const odb::dbViaParams via_params = via->getViaParams();
 
     props.push_back(
         {"Cut Size",
@@ -4091,11 +4087,10 @@ Descriptor::Properties DbRowDescriptor::getProperties(std::any object) const
 
   Properties props({{"Block", gui->makeSelected(row->getBlock())},
                     {"Site", gui->makeSelected(row->getSite())}});
-  int x, y;
-  row->getOrigin(x, y);
+  odb::Point origin_pt = row->getOrigin();
   PropertyList origin;
-  origin.push_back({"X", Property::convert_dbu(x, true)});
-  origin.push_back({"Y", Property::convert_dbu(y, true)});
+  origin.push_back({"X", Property::convert_dbu(origin_pt.x(), true)});
+  origin.push_back({"Y", Property::convert_dbu(origin_pt.y(), true)});
   props.push_back({"Origin", origin});
 
   props.push_back({"Orientation", row->getOrient().getString()});

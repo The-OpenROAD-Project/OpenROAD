@@ -323,6 +323,13 @@ class FastRouteCore
 
   // maze3D functions
   void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub);
+  void addNeighborPoints(int netID,
+                         int n1,
+                         int n2,
+                         std::vector<int*>& points_heap_3D,
+                         multi_array<int, 3>& dist_3D,
+                         multi_array<Direction, 3>& directions_3D,
+                         multi_array<int, 3>& corr_edge_3D);
   void setupHeap3D(int netID,
                    int edgeID,
                    std::vector<int*>& src_heap_3D,
@@ -344,9 +351,9 @@ class FastRouteCore
                   int n2,
                   std::vector<TreeEdge>& treeedges,
                   int edge_n1n2,
-                  int gridsX_n1n2[],
-                  int gridsY_n1n2[],
-                  int gridsL_n1n2[]);
+                  std::vector<int>& gridsX_n1n2,
+                  std::vector<int>& gridsY_n1n2,
+                  std::vector<int>& gridsL_n1n2);
   void updateRouteType13D(int netID,
                           std::vector<TreeNode>& treenodes,
                           int n1,
@@ -405,9 +412,7 @@ class FastRouteCore
   void newrouteZ_edge(int netID, int edgeID);
   void newrouteLAll(bool firstTime, bool viaGuided);
   void newrouteZAll(int threshold);
-  void routeMonotonicAll(int threshold);
-  void routeMonotonic(int netID, int edgeID, int threshold);
-  void routeLVAll(int threshold, int expand, float logis_cof);
+  void routeMonotonicAll(int threshold, int expand, float logis_cof);
   void spiralRouteAll();
   void newrouteLInMaze(int netID);
   void estimateOneSeg(Segment* seg);
@@ -415,12 +420,12 @@ class FastRouteCore
   void routeSegH(Segment* seg);
   void routeSegLFirstTime(Segment* seg);
   void spiralRoute(int netID, int edgeID);
-  void routeLVEnew(int netID,
-                   int edgeID,
-                   multi_array<float, 2>& d1,
-                   multi_array<float, 2>& d2,
-                   int threshold,
-                   int enlarge);
+  void routeMonotonic(int netID,
+                      int edgeID,
+                      multi_array<float, 2>& d1,
+                      multi_array<float, 2>& d2,
+                      int threshold,
+                      int enlarge);
 
   // ripup functions
   void ripupSegL(const Segment* seg);
@@ -455,9 +460,19 @@ class FastRouteCore
   void releaseNetResources(const int netID);
 
   // utility functions
+  void setTreeNodesVariables(int netID);
+  int splitEdge(std::vector<TreeEdge>& treeedges,
+                std::vector<TreeNode>& treenodes,
+                int n1,
+                int n2,
+                int edge_n1n2);
   void printEdge(const int netID, const int edgeID);
   void ConvertToFull3DType2();
   void fillVIA();
+  void getViaStackRange(int netID,
+                        int nodeID,
+                        int16_t& bot_pin_l,
+                        int16_t& top_pin_l);
   int threeDVIA();
   void fixEdgeAssignment(int& net_layer,
                          multi_array<Edge3D, 3>& edges_3D,
@@ -466,7 +481,8 @@ class FastRouteCore
                          int k,
                          int l,
                          bool horizontal,
-                         int& best_cost);
+                         int& best_cost,
+                         multi_array<int, 2>& layer_grid);
   bool skipNet(int netID);
   void assignEdge(int netID, int edgeID, bool processDIR);
   void recoverEdge(int netID, int edgeID);
@@ -500,7 +516,6 @@ class FastRouteCore
 
   typedef std::tuple<int, int, int> Tile;
 
-  static const int MAXLEN = 20000;
   static const int BIG_INT = 1e9;  // big integer used as infinity
   static const int HCOST = 5000;
 
@@ -582,8 +597,6 @@ class FastRouteCore
   multi_array<Edge3D, 3> h_edges_3D_;  // The way it is indexed is (Layer, Y, X)
   multi_array<Edge3D, 3> v_edges_3D_;  // The way it is indexed is (Layer, Y, X)
   multi_array<int, 2> corr_edge_;
-  multi_array<int, 2> layer_grid_;
-  multi_array<int, 2> via_link_;
   multi_array<short, 2> parent_x1_;
   multi_array<short, 2> parent_y1_;
   multi_array<short, 2> parent_x3_;

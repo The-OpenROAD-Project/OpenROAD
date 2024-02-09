@@ -266,7 +266,7 @@ int Opendp::distToRect(const Cell* cell, const Rect* rect) const
 class CellPlaceOrderLess
 {
  public:
-  explicit CellPlaceOrderLess(Opendp* opendp);
+  explicit CellPlaceOrderLess(const Rect& core);
   bool operator()(const Cell* cell1, const Cell* cell2) const;
 
  private:
@@ -276,9 +276,8 @@ class CellPlaceOrderLess
   int center_y_;
 };
 
-CellPlaceOrderLess::CellPlaceOrderLess(Opendp* opendp)
+CellPlaceOrderLess::CellPlaceOrderLess(const Rect& core)
 {
-  Rect core = opendp->getCore();
   center_x_ = (core.xMin() + core.xMax()) / 2;
   center_y_ = (core.yMin() + core.yMax()) / 2;
 }
@@ -319,7 +318,7 @@ void Opendp::place()
       }
     }
   }
-  sort(sorted_cells.begin(), sorted_cells.end(), CellPlaceOrderLess(this));
+  sort(sorted_cells.begin(), sorted_cells.end(), CellPlaceOrderLess(getCore()));
 
   // Place multi-row instances first.
   if (have_multi_row_cells_) {
@@ -364,7 +363,7 @@ void Opendp::placeGroups2()
         group_cells.push_back(cell);
       }
     }
-    sort(group_cells.begin(), group_cells.end(), CellPlaceOrderLess(this));
+    sort(group_cells.begin(), group_cells.end(), CellPlaceOrderLess(getCore()));
 
     // Place multi-row cells in each group region.
     bool multi_pass = true;

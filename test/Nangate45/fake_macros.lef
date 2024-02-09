@@ -97,14 +97,14 @@ MACRO HM_100x100_1x1
 END HM_100x100_1x1 
 
 SITE DoubleHeightSite
-  SYMMETRY y ;
+  SYMMETRY X Y ;
   CLASS core ;
   SIZE 0.19 BY 2.8 ;
 END DoubleHeightSite
 
 
 SITE TripleHeightSite
-  SYMMETRY y ;
+  SYMMETRY Y ;
   CLASS core ;
   SIZE 0.19 BY 4.2 ;
 END TripleHeightSite
@@ -129,11 +129,18 @@ SITE HybridAG
   ROWPATTERN HybridA N HybridG FS ;
 END HybridAG
 
+SITE HybridAG2
+  SYMMETRY X Y ;
+  CLASS core ;
+  SIZE 0.19 BY 3.2 ;
+  ROWPATTERN HybridA FS HybridG N ;
+END HybridAG2
+
 SITE HybridGA
   SYMMETRY X Y ;
   CLASS core ;
   SIZE 0.19 BY 3.2 ;
-  ROWPATTERN HybridG N HybridA FS ;
+  ROWPATTERN HybridG FS HybridA N ;
 END HybridGA
 
 MACRO MOCK_SINGLE

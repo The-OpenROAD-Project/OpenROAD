@@ -45,6 +45,36 @@ using namespace boost::polygon::operators;
 using Rectangle = boost::polygon::rectangle_data<int>;
 namespace gtl = boost::polygon;
 
+int io::Parser::getTopPinLayer()
+{
+  frLayerNum topPinLayer = 0;
+  if (design_->getTopBlock()) {
+    for (const auto& bTerm : design_->getTopBlock()->getTerms()) {
+      if (bTerm->getNet() && !bTerm->getNet()->isSpecial()) {
+        for (const auto& pin : bTerm->getPins()) {
+          for (const auto& fig : pin->getFigs()) {
+            topPinLayer = std::max(topPinLayer,
+                                   ((frShape*) (fig.get()))->getLayerNum());
+          }
+        }
+      }
+    }
+    for (const auto& inst : design_->getTopBlock()->getInsts()) {
+      for (const auto& iTerm : inst->getInstTerms()) {
+        if (iTerm->getNet() && !iTerm->getNet()->isSpecial()) {
+          for (const auto& pin : iTerm->getTerm()->getPins()) {
+            for (const auto& fig : pin->getFigs()) {
+              topPinLayer = std::max(topPinLayer,
+                                     ((frShape*) (fig.get()))->getLayerNum());
+            }
+          }
+        }
+      }
+    }
+  }
+  return topPinLayer;
+}
+
 void io::Parser::initDefaultVias()
 {
   for (auto& uViaDef : tech_->getVias()) {
@@ -59,6 +89,9 @@ void io::Parser::initDefaultVias()
     auto viaDef = tech_->getVia(userDefinedVia);
     tech_->getLayer(viaDef->getCutLayerNum())->setDefaultViaDef(viaDef);
   }
+  // Check whether there are pins above top routing layer
+  frLayerNum topPinLayer = getTopPinLayer();
+
   for (auto layerNum = design_->getTech()->getBottomLayerNum();
        layerNum <= design_->getTech()->getTopLayerNum();
        ++layerNum) {
@@ -96,7 +129,8 @@ void io::Parser::initDefaultVias()
                        tech_->getLayer(layerNum)->getName());
       }
     } else {
-      if (layerNum >= BOTTOM_ROUTING_LAYER) {
+      if (layerNum >= BOTTOM_ROUTING_LAYER
+          && (layerNum <= std::max(TOP_ROUTING_LAYER, topPinLayer))) {
         logger_->error(DRT,
                        233,
                        "{} does not have any vias.",
@@ -312,7 +346,7 @@ void io::Parser::initCutLayerWidth()
                         layer->getName());
         }
       } else {
-        if (layerNum >= BOTTOM_ROUTING_LAYER) {
+        if (layerNum >= BOTTOM_ROUTING_LAYER && layerNum <= TOP_ROUTING_LAYER) {
           logger_->error(DRT,
                          242,
                          "CUT layer {} does not have default via.",

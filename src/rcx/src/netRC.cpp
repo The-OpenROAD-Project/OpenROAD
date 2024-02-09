@@ -640,12 +640,11 @@ dbRSeg* extMain::addRSeg(dbNet* net,
   uint length;
   const uint pathDir = computePathDir(prevPoint, pshape.point, &length);
 
-  int jx = 0;
-  int jy = 0;
+  Point pt;
   if (pshape.junction_id) {
-    net->getWire()->getCoord(pshape.junction_id, jx, jy);
+    pt = net->getWire()->getCoord(pshape.junction_id);
   }
-  dbRSeg* rc = dbRSeg::create(net, jx, jy, pathDir, true);
+  dbRSeg* rc = dbRSeg::create(net, pt.x(), pt.y(), pathDir, true);
 
   const uint jidl = rsegJid.size();
   const uint rsid = rc->getId();

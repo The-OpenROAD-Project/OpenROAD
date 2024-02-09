@@ -293,13 +293,6 @@ proc place_macro { args } {
   mpl2::place_macro $macro $x_origin $y_origin $orientation
 }
 
-sta::define_cmd_args "write_macro_placement" { file_name }
-
-proc write_macro_placement { args } {
-  set file_name $args
-  mpl2::write_macro_placement $file_name
-}
-
 namespace eval mpl2 {
 
 proc parse_macro_name {cmd macro_name} {

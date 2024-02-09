@@ -17,13 +17,16 @@ In the case where the bond pads are integrated into the padcell, the IO terminal
 To place a terminals on the padring
 
 ```tcl
-place_io_terminals inst_pins
+place_io_terminals
+    -allow_non_top_layer
+    inst_pins
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
+| `-allow_non_top_layer` | Allow the terminal to be placed below the top layer. |
 | `inst_pins` | Instance pins to place the terminals on. |
 
 #### Examples

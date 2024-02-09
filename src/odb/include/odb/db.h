@@ -35,6 +35,7 @@
 #include <cstdint>
 #include <list>
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 #include <variant>
@@ -593,6 +594,17 @@ class dbBox : public dbObject
   dbTechLayer* getTechLayer();
 
   ///
+  /// Get the layer mask assigned to this box.
+  /// Returns 0 is not assigned or bbox has no layer
+  ///
+  uint getLayerMask();
+
+  ///
+  /// Sets the layer mask for this box.
+  ///
+  void setLayerMask(uint mask);
+
+  ///
   /// Add a physical pin to a dbBPin.
   /// Returns nullptr if this dbBPin already has a pin.
   ///
@@ -601,7 +613,8 @@ class dbBox : public dbObject
                        int x1,
                        int y1,
                        int x2,
-                       int y2);
+                       int y2,
+                       uint mask = 0);
 
   ///
   /// Add a box to a block-via.
@@ -719,6 +732,31 @@ class dbSBox : public dbBox
   /// Get Oct Wire Shape
   ///
   Oct getOct();
+
+  ///
+  /// Get via mask for bottom layer of via
+  ///
+  uint getViaBottomLayerMask();
+
+  ///
+  /// Get via mask for cut layer of via
+  ///
+  uint getViaCutLayerMask();
+
+  ///
+  /// Get via mask for top layer of via
+  ///
+  uint getViaTopLayerMask();
+
+  ///
+  /// Set via masks
+  ///
+  void setViaLayerMask(uint bottom, uint cut, uint top);
+
+  ///
+  /// Has via mask
+  ///
+  bool hasViaLayerMasks();
 
   ///
   /// Add a rect to a dbSWire.
@@ -2806,7 +2844,7 @@ class dbInst : public dbObject
   ///
   /// Get the "placed" origin of this instance.
   ///
-  void getOrigin(int& x, int& y);
+  Point getOrigin();
 
   ///
   /// Set the "placed" origin of this instance.
@@ -2860,7 +2898,7 @@ class dbInst : public dbObject
   /// Get the transform of this instance.
   /// Equivalent to getOrient() and getOrigin()
   ///
-  void getTransform(dbTransform& t);
+  dbTransform getTransform();
 
   ///
   /// Set the transform of this instance.
@@ -3266,6 +3304,12 @@ class dbITerm : public dbObject
   dbMTerm* getMTerm() const;
 
   ///
+  /// Get the name of this iterm.  This is not persistently stored
+  /// and is constructed on the fly.
+  ///
+  std::string getName(char separator = '/') const;
+
+  ///
   /// Get bbox of this iterm (ie the transfromed bbox of the mterm)
   ///
   Rect getBBox();
@@ -3498,7 +3542,7 @@ class dbVia : public dbObject
   ///
   /// Get the via params used to generate this via.
   ///
-  void getViaParams(dbViaParams& params_return);
+  dbViaParams getViaParams();
 
   ///
   /// Get the block this via belongs too.
@@ -3690,7 +3734,7 @@ class dbWire : public dbObject
   ///
   /// Get the bounding box of this wire
   ///
-  bool getBBox(Rect& r);
+  std::optional<Rect> getBBox();
 
   ///
   /// Get the total path length contained in this wire.
@@ -3706,10 +3750,11 @@ class dbWire : public dbObject
   /// Get the count of wire segments contained in this wire.
   ///
   uint count();
+
   ///
   /// Get junction coordinate.
   ///
-  void getCoord(int jid, int& x, int& y);
+  Point getCoord(int jid);
 
   ///
   /// Get junction property
@@ -3908,6 +3953,14 @@ class dbTrackGrid : public dbObject
   /// Returns nullptr if a the grid for this layer already exists.
   ///
   static dbTrackGrid* create(dbBlock* block, dbTechLayer* layer);
+
+  ///
+  /// Get the spacing between tracks for this grid.
+  /// If the layer has a multi pattern spacing, returns the average.
+  ///
+  void getAverageTrackSpacing(int& track_step,
+                              int& track_init,
+                              int& num_tracks);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -4850,7 +4903,7 @@ class dbRow : public dbObject
   ///
   /// Get the origin of this row
   ///
-  void getOrigin(int& x, int& y);
+  Point getOrigin();
 
   ///
   /// Get the site-orientation of this row
@@ -5181,6 +5234,8 @@ class dbSite : public dbObject
   {
     dbSite* site;
     dbOrientType orientation;
+    friend bool operator==(const OrientedSite& lhs, const OrientedSite& rhs);
+    friend bool operator!=(const OrientedSite& lhs, const OrientedSite& rhs);
   };
   using RowPattern = std::vector<OrientedSite>;
 
@@ -5312,7 +5367,7 @@ class dbMaster : public dbObject
   ///
   /// Get the x,y origin of this master
   ///
-  void getOrigin(int& x, int& y);
+  Point getOrigin();
 
   ///
   /// Set the x,y origin of this master, default is (0,0)
@@ -5839,7 +5894,7 @@ class dbTech : public dbObject
   /// Get the LEF version in this technology as a number or as a string.
   ///
   double getLefVersion() const;
-  const char* getLefVersionStr() const;
+  std::string getLefVersionStr() const;
 
   ///
   /// Set the LEF version of this technology, in both number and string form.
@@ -6057,7 +6112,7 @@ class dbTechVia : public dbObject
   ///
   /// Get the via params used to generate this via.
   ///
-  void getViaParams(dbViaParams& params_return);
+  dbViaParams getViaParams();
 
   ///
   /// Get the technology this via belongs too.
@@ -7396,6 +7451,18 @@ class dbLevelShifter : public dbObject
 
   std::string getNameSuffix() const;
 
+  void setCellName(std::string cell_name);
+
+  std::string getCellName() const;
+
+  void setCellInput(std::string cell_input);
+
+  std::string getCellInput() const;
+
+  void setCellOutput(std::string cell_output);
+
+  std::string getCellOutput() const;
+
   // User Code Begin dbLevelShifter
 
   static dbLevelShifter* create(dbBlock* block,
@@ -7564,6 +7631,10 @@ class dbPowerDomain : public dbObject
   void setParent(dbPowerDomain* parent);
 
   dbPowerDomain* getParent() const;
+
+  void setVoltage(float voltage);
+
+  float getVoltage() const;
 
   // User Code Begin dbPowerDomain
   void setGroup(dbGroup* group);
@@ -7813,6 +7884,7 @@ class dbTechLayer : public dbObject
   void getMaxWideDRCRange(int& owidth, int& olength);
   void getMinWideDRCRange(int& owidth, int& olength);
 
+  ///
   /// Get the collection of spacing rules for the object, assuming
   /// coding in LEF 5.4 format.
   ///
@@ -7873,7 +7945,6 @@ class dbTechLayer : public dbObject
   dbTechLayerAntennaRule* getOxide2AntennaRule() const;
   void writeAntennaRulesLef(lefout& writer) const;
 
-  ///
   ///
   /// Get collection of minimum cuts, minimum enclosure rules, if exist
   ///
@@ -9304,6 +9375,18 @@ class dbTechLayerMinStepRule : public dbObject
   void setExceptSameCorners(bool except_same_corners);
 
   bool isExceptSameCorners() const;
+
+  void setConcaveCorner(bool concave_corner);
+
+  bool isConcaveCorner() const;
+
+  void setExceptRectangle(bool except_rectangle);
+
+  bool isExceptRectangle() const;
+
+  void setNoAdjacentEol(bool no_adjacent_eol);
+
+  bool isNoAdjacentEol() const;
 
   // User Code Begin dbTechLayerMinStepRule
   static dbTechLayerMinStepRule* create(dbTechLayer* layer);

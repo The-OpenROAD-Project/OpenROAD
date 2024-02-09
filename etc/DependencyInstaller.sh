@@ -10,7 +10,7 @@ _versionCompare() {
 
 _equivalenceDeps() {
     yosysVersion=yosys-0.33
-    eqyVersion=0cc2ff0
+    eqyVersion=8327ac7
 
     # yosys
     yosysPrefix=${PREFIX:-"/usr/local"}
@@ -269,6 +269,7 @@ _installUbuntuPackages() {
             qt5-qmake \
             qtbase5-dev \
             qtbase5-dev-tools \
+            libqt5charts5-dev \
             qtchooser
     elif [[ $1 == 22.04 ]]; then
         apt-get install -y \
@@ -276,10 +277,12 @@ _installUbuntuPackages() {
             qt5-qmake \
             qtbase5-dev \
             qtbase5-dev-tools \
+            libqt5charts5-dev \
             qtchooser
     else
         apt-get install -y \
             libpython3.8 \
+            libqt5charts5-dev \
             qt5-default
     fi
 

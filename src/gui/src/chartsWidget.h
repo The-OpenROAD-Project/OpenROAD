@@ -32,9 +32,11 @@
 
 #pragma once
 
-#include <QComboBox>
 #include <QDockWidget>
 #include <QLabel>
+
+#ifdef ENABLE_CHARTS
+#include <QComboBox>
 #include <QPushButton>
 #include <QString>
 #include <QtCharts>
@@ -45,6 +47,7 @@
 namespace sta {
 class dbSta;
 }
+#endif
 
 namespace gui {
 
@@ -53,31 +56,56 @@ class ChartsWidget : public QDockWidget
   Q_OBJECT
 
  public:
+  ChartsWidget(QWidget* parent = nullptr);
+#ifdef ENABLE_CHARTS
   enum Mode
   {
     SELECT,
     SLACK_HISTOGRAM
   };
-  ChartsWidget(QWidget* parent = nullptr);
-
-  void setSTA(sta::dbSta* sta) { sta_ = sta; };
+  void setSTA(sta::dbSta* sta)
+  {
+    sta_ = sta;
+  };
   void setLogger(utl::Logger* logger);
-  void setSlackMode();
-  void clearChart();
 
  private slots:
   void changeMode();
+  void showToolTip(bool is_hovering, int bar_index);
 
  private:
+  void setSlackMode();
+  void clearChart();
+  void getSlackForAllEndpoints(std::vector<float>& all_slack) const;
+  void populateBuckets(const std::vector<float>& all_slack,
+                       std::deque<int>& neg_buckets,
+                       std::deque<int>& pos_buckets);
+  int computeSnapBucketInterval(float exact_interval);
+  void setBucketInterval(float bucket_interval);
+  void setNegativeCountOffset(int neg_count_offset);
+  void setXAxisConfig(int all_bars_count);
+  void setYAxisConfig();
+  int computeMaxYSnap();
+  int computeNumberOfDigits(int value);
+  int computeFirstDigit(int value, int digits);
+  int computeYInterval();
+
   utl::Logger* logger_;
   sta::dbSta* sta_;
 
-  QLabel* label_;
   QComboBox* mode_menu_;
   QChart* chart_;
   QChartView* display_;
-  QBarCategoryAxis* axis_x_;
+  QValueAxis* axis_x_;
   QValueAxis* axis_y_;
+
+  const int number_of_buckets_ = 15;
+  int largest_slack_count_ = 0;  // Used to configure the y axis.
+
+  float bucket_interval_ = 0;
+  int neg_count_offset_ = 0;
+#endif
+  QLabel* label_;
 };
 
 }  // namespace gui
