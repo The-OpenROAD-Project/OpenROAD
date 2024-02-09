@@ -282,6 +282,7 @@ class LayoutViewer : public QWidget
  private slots:
   void setBlock(odb::dbBlock* block);
   void updatePixmap(const QImage& image, const QRect& bounds);
+  void handleLoadingIndication();
 
  private:
   struct Boxes
@@ -356,6 +357,7 @@ class LayoutViewer : public QWidget
   void drawLoadingIndicator(QPainter* painter, const QRect& bounds);
   QRect computeIndicatorBackground(QPainter* painter,
                                    const QRect& bounds) const;
+  void setLoadingState();
 
   void populateModuleColors();
 
@@ -440,12 +442,11 @@ class LayoutViewer : public QWidget
   const std::set<odb::dbNet*>& route_guides_;
   const std::set<odb::dbNet*>& net_tracks_;
 
-  bool should_indicate_loading_ = false;
-
   RenderThread viewer_thread_;
   QPixmap draw_pixmap_;
   QRect draw_pixmap_bounds_;
-  const std::string loading_indicator_ = "...";
+  QTimer* loading_timer_;
+  std::string loading_indicator_;
 
   static constexpr qreal zoom_scale_factor_ = 1.2;
 

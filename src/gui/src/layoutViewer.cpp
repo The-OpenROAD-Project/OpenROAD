@@ -148,18 +148,42 @@ LayoutViewer::LayoutViewer(
       focus_nets_(focus_nets),
       route_guides_(route_guides),
       net_tracks_(net_tracks),
-      viewer_thread_(this)
+      viewer_thread_(this),
+      loading_timer_(new QTimer(this))
 {
   setMouseTracking(true);
 
   addMenuAndActions();
 
+  loading_timer_->setInterval(300 /*ms*/);
+
   connect(
       &viewer_thread_, &RenderThread::done, this, &LayoutViewer::updatePixmap);
+
+  connect(loading_timer_,
+          &QTimer::timeout,
+          this,
+          &LayoutViewer::handleLoadingIndication);
 
   connect(&search_, &Search::modified, this, &LayoutViewer::fullRepaint);
 
   connect(&search_, &Search::newBlock, this, &LayoutViewer::setBlock);
+}
+
+void LayoutViewer::handleLoadingIndication()
+{
+  if (!viewer_thread_.isRendering()) {
+    loading_timer_->stop();
+    return;
+  }
+
+  update();
+}
+
+void LayoutViewer::setLoadingState()
+{
+  loading_indicator_.clear();
+  loading_timer_->start();
 }
 
 void LayoutViewer::setBlock(odb::dbBlock* block)
@@ -1220,10 +1244,6 @@ void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
     rubber_band_dbu.set_yhi(qMin(rubber_band_dbu.yMax(), bbox.yMax()));
 
     if (event->button() == Qt::LeftButton) {
-      // show loading indicator while waiting for selection
-      should_indicate_loading_ = true;
-      repaint();
-
       auto selection = selectAt(rubber_band_dbu);
       if (!(qGuiApp->keyboardModifiers() & Qt::ShiftModifier)) {
         emit selected(Selected());  // remove previous selections
@@ -1706,6 +1726,13 @@ void LayoutViewer::drawLoadingIndicator(QPainter* painter, const QRect& bounds)
   painter->drawText(background.left(),
                     background.bottom(),
                     QString::fromStdString(loading_indicator_));
+
+  if (loading_indicator_.size() == 3) {
+    loading_indicator_.clear();
+    return;
+  }
+
+  loading_indicator_ += ".";
 }
 
 QRect LayoutViewer::computeIndicatorBackground(QPainter* painter,
@@ -1746,11 +1773,8 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
 
   const QRect draw_bounds = event->rect();
 
-  // we draw the loading indicator before full repaint or selection
-  if (should_indicate_loading_) {
+  if (viewer_thread_.isRendering()) {
     drawLoadingIndicator(&painter, draw_bounds);
-
-    should_indicate_loading_ = false;
   } else {
     // erase indicator
     const QRect background = computeIndicatorBackground(&painter, draw_bounds);
@@ -1829,10 +1853,6 @@ void LayoutViewer::fullRepaint()
     QTimer::singleShot(
         5 /*ms*/, this, &LayoutViewer::fullRepaint);  // retry later
     return;
-  }
-
-  if (viewer_thread_.isFirstRenderDone()) {
-    should_indicate_loading_ = true;
   }
 
   update();

@@ -86,6 +86,9 @@ void RenderThread::render(const QRect& draw_rect,
     return;
   }
 
+  is_rendering_ = true;
+  viewer_->setLoadingState();
+
   QMutexLocker locker(&mutex_);
   draw_rect_ = draw_rect;
   selected_ = selected;
@@ -129,6 +132,8 @@ void RenderThread::run()
          1.0,
          Qt::transparent);
     if (!restart_) {
+      is_rendering_ = false;
+
       emit done(image, draw_bounds);
 
       if (!is_first_render_done_) {

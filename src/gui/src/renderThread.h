@@ -74,6 +74,7 @@ class RenderThread : public QThread
             const QColor& background);
 
   bool isFirstRenderDone() { return is_first_render_done_; };
+  bool isRendering() { return is_rendering_; };
 
  signals:
   void done(const QImage& image, const QRect& bounds);
@@ -173,6 +174,7 @@ class RenderThread : public QThread
   QWaitCondition condition_;
   bool restart_ = false;
   bool abort_ = false;
+  bool is_rendering_ = false;
   bool is_first_render_done_ = false;
 
   QFont pin_font_;
