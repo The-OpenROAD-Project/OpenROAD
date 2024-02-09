@@ -282,9 +282,6 @@ void AbacusLegalizer::initRow()
   auto numRows = targetBlock_->getRows().size();
   rows_.resize(numRows);
   for (auto inst : targetBlock_->getInsts()) {
-    // for debugging
-    auto instName = inst->getName();
-
     auto rowSample = (*targetBlock_->getRows().begin());
     auto rowIdx = getRowIdx(inst);
     auto rowHeight = rowSample->getBBox().dy();
