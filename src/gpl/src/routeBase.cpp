@@ -314,7 +314,7 @@ void RouteBase::getGlobalRouterResult()
 
   // these two options must be on
   grouter_->setAllowCongestion(true);
-  grouter_->setOverflowIterations(1);
+  grouter_->setOverflowIterations(0);
 
   // this option must be off
   grouter_->setCriticalNetsPercentage(0);
