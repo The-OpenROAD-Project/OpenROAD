@@ -635,7 +635,8 @@ void FlexTAWorker::sortIroutes()
 void FlexTAWorker::initFixedObjs_helper(const Rect& box,
                                         frCoord bloatDist,
                                         frLayerNum lNum,
-                                        frNet* net)
+                                        frNet* net,
+                                        bool isViaCost)
 {
   Rect bloatBox;
   box.bloat(bloatDist, bloatBox);
@@ -664,7 +665,11 @@ void FlexTAWorker::initFixedObjs_helper(const Rect& box,
     } else {
       tmpBox.init(trackLoc, bloatBox.yMin(), trackLoc, bloatBox.yMax());
     }
-    workerRegionQuery.addCost(tmpBox, lNum, net, con);
+    if (isViaCost) {
+      workerRegionQuery.addViaCost(tmpBox, lNum, net, con);
+    } else {
+      workerRegionQuery.addCost(tmpBox, lNum, net, con);
+    }
   }
 }
 
@@ -722,7 +727,7 @@ void FlexTAWorker::initFixedObjs()
             if (viaWidth > width) {
               bloatDist = initFixedObjs_calcOBSBloatDistVia(
                   cutLayer->getDefaultViaDef(), layerNum, bounds, false);
-              initFixedObjs_helper(box, bloatDist, layerNum, netPtr);
+              initFixedObjs_helper(box, bloatDist, layerNum, netPtr, true);
             }
           }
           // up-via
@@ -737,7 +742,7 @@ void FlexTAWorker::initFixedObjs()
             if (viaWidth > width) {
               bloatDist = initFixedObjs_calcOBSBloatDistVia(
                   cutLayer->getDefaultViaDef(), layerNum, bounds, false);
-              initFixedObjs_helper(box, bloatDist, layerNum, netPtr);
+              initFixedObjs_helper(box, bloatDist, layerNum, netPtr, true);
             }
           }
         }
@@ -777,16 +782,16 @@ void FlexTAWorker::initFixedObjs()
 
             Rect borderBox(
                 bloatBox.xMin(), bloatBox.yMin(), box.xMin(), bloatBox.yMax());
-            initFixedObjs_helper(borderBox, 0, layerNum, nullptr);
+            initFixedObjs_helper(borderBox, 0, layerNum, nullptr, true);
             borderBox.init(
                 bloatBox.xMin(), box.yMax(), bloatBox.xMax(), bloatBox.yMax());
-            initFixedObjs_helper(borderBox, 0, layerNum, nullptr);
+            initFixedObjs_helper(borderBox, 0, layerNum, nullptr, true);
             borderBox.init(
                 box.xMax(), bloatBox.yMin(), bloatBox.xMax(), bloatBox.yMax());
-            initFixedObjs_helper(borderBox, 0, layerNum, nullptr);
+            initFixedObjs_helper(borderBox, 0, layerNum, nullptr, true);
             borderBox.init(
                 bloatBox.xMin(), bloatBox.yMin(), bloatBox.xMax(), box.yMin());
-            initFixedObjs_helper(borderBox, 0, layerNum, nullptr);
+            initFixedObjs_helper(borderBox, 0, layerNum, nullptr, true);
             break;
           }
           default:

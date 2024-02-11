@@ -92,6 +92,19 @@ class FlexTAWorkerRegionQuery
       frLayerNum layerNum,
       std::vector<rq_box_value_t<std::pair<frBlockObject*, frConstraint*>>>&
           result) const;
+  void addViaCost(const Rect& box,
+                  frLayerNum layerNum,
+                  frBlockObject* obj,
+                  frConstraint* con);
+  void removeViaCost(const Rect& box,
+                     frLayerNum layerNum,
+                     frBlockObject* obj,
+                     frConstraint* con);
+  void queryViaCost(
+      const Rect& box,
+      frLayerNum layerNum,
+      std::vector<rq_box_value_t<std::pair<frBlockObject*, frConstraint*>>>&
+          result) const;
 
   void init();
 
@@ -213,7 +226,8 @@ class FlexTAWorker
   void initFixedObjs_helper(const Rect& box,
                             frCoord bloatDist,
                             frLayerNum lNum,
-                            frNet* net);
+                            frNet* net,
+                            bool isViaCost = false);
   void initTracks();
   void initIroutes();
   void initIroute(frGuide* guide);

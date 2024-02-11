@@ -302,12 +302,12 @@ void FlexTAWorker::modMinSpacingCostVia(
 
     auto con = layer->getMinSpacing();
     if (isAddCost) {
-      workerRegionQuery.addCost(blockBox, cutLNum, fig, con);
+      workerRegionQuery.addViaCost(blockBox, cutLNum, fig, con);
       if (pinS) {
         workerRegionQuery.query(blockBox, cutLNum, *pinS);
       }
     } else {
-      workerRegionQuery.removeCost(blockBox, cutLNum, fig, con);
+      workerRegionQuery.removeViaCost(blockBox, cutLNum, fig, con);
       if (pinS) {
         workerRegionQuery.query(blockBox, cutLNum, *pinS);
       }
@@ -501,12 +501,12 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
       }
       if (hasViol) {
         if (isAddCost) {
-          workerRegionQuery.addCost(blockBox, lNum, fig, con);
+          workerRegionQuery.addViaCost(blockBox, lNum, fig, con);
           if (pinS) {
             workerRegionQuery.query(blockBox, lNum, *pinS);
           }
         } else {
-          workerRegionQuery.removeCost(blockBox, lNum, fig, con);
+          workerRegionQuery.removeViaCost(blockBox, lNum, fig, con);
           if (pinS) {
             workerRegionQuery.query(blockBox, lNum, *pinS);
           }
@@ -727,6 +727,21 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
     box.bloat(r, box);
   }
   workerRegionQuery.queryCost(box, lNum, result);
+
+  std::vector<rq_box_value_t<std::pair<frBlockObject*, frConstraint*>>>
+      tmpResult;
+  Rect tmpBox = getDesign()->getTopBlock()->getGCellBox(
+      iroute->getGuide()->getBeginPoint());
+  tmpBox = box.intersect(tmpBox);
+  workerRegionQuery.queryViaCost(tmpBox, lNum, tmpResult);
+  result.insert(result.end(), tmpResult.begin(), tmpResult.end());
+  tmpResult.clear();
+  tmpBox = getDesign()->getTopBlock()->getGCellBox(
+      iroute->getGuide()->getEndPoint());
+  tmpBox = box.intersect(tmpBox);
+  workerRegionQuery.queryViaCost(tmpBox, lNum, tmpResult);
+  result.insert(result.end(), tmpResult.begin(), tmpResult.end());
+
   bool isCut = false;
 
   // save same net overlaps
