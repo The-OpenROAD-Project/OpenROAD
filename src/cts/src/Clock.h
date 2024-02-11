@@ -243,6 +243,7 @@ class Clock
   }
 
   std::string getName() const { return netName_; }
+  std::string getSdcName() const { return sdcClockName_; }
   unsigned getNumSinks() const { return sinks_.size(); }
 
   Box<int> computeSinkRegion();

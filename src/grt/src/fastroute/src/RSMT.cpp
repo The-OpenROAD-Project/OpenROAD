@@ -93,7 +93,7 @@ void FastRouteCore::copyStTree(const int ind, const Tree& rsmt)
 
   // initialize the nbrcnt for treenodes
   const int sizeV = 2 * nets_[ind]->getNumPins();
-  int nbrcnt[sizeV];
+  std::vector<int> nbrcnt(sizeV);
   for (int i = 0; i < numnodes; i++)
     nbrcnt[i] = 0;
 

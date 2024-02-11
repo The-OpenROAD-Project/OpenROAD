@@ -1,7 +1,7 @@
 ################################
 # You need to provide the script with 3 main arguments
 # --base_db_path <the relative path to the db file to perform the step on>
-# --error_string <the output that indicates a target error has occurred>
+# --error_string <the output that indicates a target error has occured>
 # --step <Command used to perform a step on the base_db file>
 # You also have 1 additional argument
 # --persistence <a value in [1,6] indicating maximum granularity where maximum granularity = 2^persistence>
@@ -32,24 +32,49 @@ import errno
 import enum
 
 persistence_range = [1, 2, 3, 4, 5, 6]
-persistence_start_range = persistence_range[1:]
+cut_multiple = range(1, 128)
 
 parser = argparse.ArgumentParser('Arguments for delta debugging')
-parser.add_argument('--base_db_path', type=str, help='Path to the db file to perform the step on')
-parser.add_argument('--error_string', type=str, help='The output that indicates target error has occurred')
-parser.add_argument('--step', type=str, help='Command used to perform step on the input odb file')
-parser.add_argument('--start', type=int, default=persistence_start_range[0],
-                    choices=persistence_start_range,
-                    help='Starting persistence level')
-parser.add_argument('--persistence', type=int,
+parser.add_argument('--base_db_path',
+                    type=str,
+                    help='Path to the db file to perform the step on')
+parser.add_argument('--error_string',
+                    type=str,
+                    help='The output that indicates target error has occurred')
+parser.add_argument('--step',
+                    type=str,
+                    help='Command used to perform step on the input odb file')
+parser.add_argument(
+    '--timeout',
+    type=int,
+    default=None,
+    help='Specify initial timeout in seconds, default is to measure it')
+parser.add_argument('--multiplier',
+                    type=int,
+                    default=cut_multiple[0],
+                    choices=cut_multiple,
+                    help='Multiply number of cuts with this number')
+parser.add_argument('--persistence',
+                    type=int,
                     default=persistence_range[0],
                     choices=persistence_range,
                     help='Indicates maximum input fragmentation; '
                     'fragments = 2^persistence; value in ' +
                     ', '.join(map(str, persistence_range)))
-parser.add_argument('--use_stdout', action='store_true', help='Enables reading the error string from standard output')
-parser.add_argument('--exit_early_on_error', action='store_true', help='Exit early on unrelated errors to speed things up, but risks exiting on false negatives.')
-parser.add_argument('--dump_def', action='store_true', help='Determines whether to dumb def at each step in addition to the odb')
+parser.add_argument(
+    '--use_stdout',
+    action='store_true',
+    help='Enables reading the error string from standard output')
+parser.add_argument(
+    '--exit_early_on_error',
+    action='store_true',
+    help=
+    'Exit early on unrelated errors to speed things up, but risks exiting on false negatives.'
+)
+parser.add_argument(
+    '--dump_def',
+    action='store_true',
+    help='Determines whether to dumb def at each step in addition to the odb')
 
 
 class cutLevel(enum.Enum):
@@ -58,6 +83,7 @@ class cutLevel(enum.Enum):
 
 
 class deltaDebugger:
+
     def __init__(self, opt):
         if not os.path.exists(opt.base_db_path):
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT),
@@ -71,25 +97,24 @@ class deltaDebugger:
         self.use_stdout = opt.use_stdout
         self.exit_early_on_error = opt.exit_early_on_error
         self.step_count = 1
-        # Initial Number of cuts
-        self.n = opt.start
-
-        # timeout used to measure the time the original input takes
-        # to reach an error to use as standard timeout for different 
-        # cuts.
-        self.timeout = 1e6  # Timeout in seconds
 
         # Setting persistence for the run
         self.persistence = opt.persistence
 
+        self.multiplier = opt.multiplier
+        self.timeout = opt.timeout
+
         # Temporary file names to hold the original base_db file across the run
-        self.original_base_db_file = os.path.join(base_db_directory, f"deltaDebug_base_original_{base_db_name}")
+        self.original_base_db_file = os.path.join(
+            base_db_directory, f"deltaDebug_base_original_{base_db_name}")
 
         # Temporary file used to hold current base_db to ensure its integrity across cuts
-        self.temp_base_db_file = os.path.join(base_db_directory, f"deltaDebug_base_temp_{base_db_name}")
+        self.temp_base_db_file = os.path.join(
+            base_db_directory, f"deltaDebug_base_temp_{base_db_name}")
 
-        # The name of the result file after running deltaDebug 
-        self.deltaDebug_result_base_file = os.path.join(base_db_directory, f"deltaDebug_base_result_{base_db_name}")
+        # The name of the result file after running deltaDebug
+        self.deltaDebug_result_base_file = os.path.join(
+            base_db_directory, f"deltaDebug_base_result_{base_db_name}")
 
         # This determines whether design def shall be dumped or not
         self.dump_def = opt.dump_def
@@ -114,46 +139,52 @@ class deltaDebugger:
         # Rename the base db file to a temp name to keep it from overwriting across the two steps cut
         os.rename(self.base_db_file, self.temp_base_db_file)
 
-        # Perform a step with no cuts to measure timeout
-        print("Performing a step with the original input file to calculate timeout.")
-        if self.perform_step() is None:
-            print("No error found in the original input file.")
-            sys.exit(1)
+        if self.timeout is None:
+            # timeout used to measure the time the original input takes
+            # to reach an error to use as standard timeout for different
+            # cuts.
+            self.timeout = 1e6  # Timeout in seconds
 
-        while (True):
-            err = None
+            # Perform a step with no cuts to measure timeout
+            print(
+                "Performing a step with the original input file to calculate timeout."
+            )
+            if self.perform_step() is None:
+                print("No error found in the original input file.")
+                sys.exit(1)
 
-            while self.n <= (2 ** self.persistence):
-                error_in_range = None
-                for j in range(self.n):
-                    current_err = self.perform_step(cut_index=j)
-                    if (current_err == "NOCUT"):
+        for self.cut_level in (cutLevel.Insts, cutLevel.Nets):
+            while (True):
+                err = None
+                self.n = 2  # Initial Number of cuts
+
+                while self.n <= (2**self.persistence):
+                    error_in_range = None
+                    j = 0
+                    while j < self.get_cuts():
+                        current_err = self.perform_step(cut_index=j)
+                        self.step_count += 1
+                        if (current_err is not None):
+                            # Found the target error with the cut DB
+                            #
+                            # This is a suitable level of detail to look
+                            # for more errors, complete this level of detail.
+                            err = current_err
+                            error_in_range = current_err
+                            self.prepare_new_step()
+                        j += 1
+
+                    if (error_in_range is None):
+                        # Increase the granularity of the cut in case target
+                        # error not found
+                        self.n *= 2
+                    elif self.n >= 8:
+                        # Found errors, decrease granularity
+                        self.n = int(self.n / 2)
+                    else:
                         break
-                    elif (current_err is not None):
-                        # Found the target error with the cut DB
-                        #
-                        # This is a suitable level of detail to look for more errors,
-                        # complete this level of detail.
-                        err = current_err
-                        error_in_range = current_err
-                        self.prepare_new_step()
 
-                if (error_in_range is None):
-                    # Increase the granularity of the cut in case target error not found
-                    self.n *= 2
-                elif self.n >= 8:
-                    # Found errors, decrease granularity
-                    self.n = int(self.n / 2)
-                else:
-                    break
-
-            if (err is None or err == "NOCUT"):
-                if (self.cut_level == cutLevel.Insts):
-                    # Reduce cut level from inst to nets
-                    self.cut_level = cutLevel.Nets
-                else:
-                    # We are done and we found the smallest input file that
-                    # produces the target error.
+                if err is None or self.get_cuts() == 0:
                     break
 
         # Change deltaDebug resultant base_db file name to a representative name
@@ -179,24 +210,19 @@ class deltaDebugger:
         # if cut index of -1 is provided it means
         # that no cut will be made.
         if (cut_index != -1):
-            cut_result = self.cut_block(index=cut_index)
-            if (cut_result == "NOCUT"):
-                # No more cuts are possible
-                return cut_result
+            self.cut_block(index=cut_index)
 
         # Write DB
         odb.write_db(self.base_db, self.base_db_file)
         if (self.dump_def != 0):
             print("Writing def file")
-            odb.write_def(self.base_db.getChip().getBlock(), self.base_def_file)
+            odb.write_def(self.base_db.getChip().getBlock(),
+                          self.base_def_file)
 
         # Destroy the DB in memory to avoid being out-of-memory when
         # the step code is running
         if (self.base_db is not None):
             self.base_db.destroy(self.base_db)
-
-        if (cut_index != -1):
-            self.step_count += 1
 
         # Perform step, and check the error code
         start_time = time.time()
@@ -295,35 +321,60 @@ class deltaDebugger:
         for iterm in net.getITerms():
             iterm.getInst().setDoNotTouch(False)
 
+    def get_insts(self):
+        return self.base_db.getChip().getBlock().getInsts()
+
+    def get_nets(self):
+        return self.base_db.getChip().getBlock().getNets()
+
+    def get_elms(self):
+        if self.cut_level == cutLevel.Insts:
+            return self.get_insts()
+        return self.get_nets()
+
+    def get_cuts(self):
+        return min(self.n * self.multiplier, len(self.get_elms()))
+
     # A function that cuts the block according to the given direction
     # and ratio. It also uses the class cut level  to identify
     # whether to cut Insts or Nets.
-    def cut_block(self, index=0):  
-        block = self.base_db.getChip().getBlock()
+    def cut_block(self, index=0):
         message = [f"Step {self.step_count}"]
         if (self.cut_level == cutLevel.Insts):  # Insts cut level
-            elms = block.getInsts()
+            elms = self.get_insts()
             message += ["Insts level debugging"]
-
         elif (self.cut_level == cutLevel.Nets):  # Nets cut level
-            elms = block.getNets()
+            elms = self.get_nets()
             message += ["Nets level debugging"]
 
-        message += [f"Insts {len(block.getInsts())}", f"Nets {len(block.getNets())}"]
+        message += [
+            f"Insts {len(self.get_insts())}", f"Nets {len(self.get_nets())}"
+        ]
 
         num_elms = len(elms)
-        num_elms_to_cut = int(num_elms * 1.0 / self.n)
-        if (num_elms == 1 or num_elms_to_cut == 0):
-            # No further cuts could be done on the current odb
-            return "NOCUT"
+        assert (num_elms > 0)
 
-        start = index * num_elms_to_cut
-        end = start + num_elms_to_cut
+        cuts = self.get_cuts()
+        start = num_elms * index // cuts
+        end = num_elms * (index + 1) // cuts
 
-        cut_position_string = '#' * self.n
-        cut_position_string = cut_position_string[:index] + 'C' + cut_position_string[index+1:]
-        message += [f"cut elements {num_elms_to_cut}"]
+        cut_position_string = '#' * cuts
+        cut_position_string = (cut_position_string[:index] + 'C' +
+                               cut_position_string[index + 1:])
+        message += [f"cut elements {end-start}"]
         message += [f"timeout {ceil(self.timeout/60.0)} minutes"]
+        self.cut_elements(start, end)
+
+        cuts = self.n * self.multiplier
+        print(", ".join(message), flush=True)
+        print(f"[{cut_position_string}]", flush=True)
+
+    def cut_elements(self, start, end):
+        block = self.base_db.getChip().getBlock()
+        if (self.cut_level == cutLevel.Insts):  # Insts cut level
+            elms = block.getInsts()
+        elif (self.cut_level == cutLevel.Nets):  # Nets cut level
+            elms = block.getNets()
 
         for i in range(start, end):
             elm = elms[i]
@@ -332,11 +383,6 @@ class deltaDebugger:
             elif self.cut_level == cutLevel.Nets:
                 self.clear_dont_touch_net(elm)
             elm.destroy(elm)
-
-        print(", ".join(message), flush=True)
-        print(f"[{cut_position_string}]", flush=True)
-
-        return 0
 
 
 if __name__ == '__main__':
