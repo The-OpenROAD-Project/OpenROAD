@@ -62,6 +62,7 @@
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
+#include "sta/Corner.hh"
 #include "utl/Logger.h"
 
 using utl::RMP;
@@ -691,7 +692,6 @@ bool Restructure::readAbcLog(std::string abc_file_name,
 //            cut as cartesian product.
 //
 
-
 void Restructure::cutresynthrun(char* target_library,//todo: pass in library object
                                 char* script,       //optional script
 				sta::Pin* head_pin, //passed in by user. ok to be null !
@@ -885,6 +885,109 @@ bool Restructure::isPrimary(sta::Network* nwk, sta::Vertex* v)
   return (nwk->isTopLevelPort(v->pin()));
 }
 
+void Restructure::annotateCutTiming(
+    Cut* cut,
+    std::vector<std::pair<const sta::Pin*, TimingRecord*>>& timing_requirements)
+{
+  sta::Sta* sta = sta::Sta::sta();
+  sta::NetworkReader* network = sta->networkReader();
+  sta::Arrival max_arrival_rise = 0.0;
+  sta::Arrival max_arrival_fall = 0.0;
+  sta::Required min_required_rise;
+  sta::Required min_required_fall;
+
+  // Get the arrival and required times for the exceptions for each vertex.
+  sta::Sdc* sdc_nwk = sta->sdc();
+  sta::ClockSeq* clock_seq = sdc_nwk->clocks();
+  sta::Graph* graph = sta->graph();
+
+  int ip_ix = 0;
+  TimingRecord* tr = nullptr;
+
+  //
+  // cut inputs: allow for delayed arrival time
+  //
+  for (auto leaf_pin : cut->leaves_) {
+    sta::VertexId v_id = network->vertexId(leaf_pin);
+    sta::Vertex* v = graph->vertex(v_id);
+    tr = nullptr;
+    if (v) {
+      //TODO: check out how to get the max arrival time without going through all the path refs
+      sta::MinMax* min_max_arrival;
+      sta::MinMax* min_max = sta::MinMax::find("max");
+      sta::RiseFall* rf_arrival_rise = sta::RiseFall::find("rise");
+      sta::RiseFall* rf_arrival_fall = sta::RiseFall::find("fall");
+      max_arrival_rise = 0;//sta->vertexArrival(v, rf_arrival_rise, min_max,path);
+      max_arrival_fall = 0;//sta->vertexArrival(v, rf_arrival_fall, min_max,path);
+      for (auto clk : *clock_seq) {
+        sta::ClockEdge* clk_edge_fall = clk->edge(rf_arrival_fall);
+        sta::ClockEdge* clk_edge_rise = clk->edge(rf_arrival_rise);
+        for (auto path_ap : sta->corners()->pathAnalysisPts()) {
+          sta::Arrival v_arrival_rise = sta->vertexArrival(
+              v, rf_arrival_rise, clk_edge_rise, path_ap, min_max);
+          sta::Arrival v_arrival_fall = sta->vertexArrival(
+              v, rf_arrival_fall, clk_edge_fall, path_ap, min_max);
+          if (v_arrival_rise > max_arrival_rise)
+            max_arrival_rise = v_arrival_rise;
+          if (v_arrival_fall > max_arrival_fall)
+            max_arrival_fall = v_arrival_fall;
+        }
+      }
+    }
+    TimingRecord* tr = nullptr;
+    if (graph && v) {
+      tr = new TimingRecord();
+      tr->arrival_rise = atof(delayAsString(max_arrival_rise, sta));
+      tr->arrival_fall = atof(delayAsString(max_arrival_fall, sta));
+    }
+    timing_requirements.push_back(
+        std::pair<const sta::Pin*, TimingRecord*>(leaf_pin, tr));
+    ip_ix++;
+
+#ifdef DEBUG_RESTRUCT
+    printf("Pin %s Setting arrival rise %s\n",
+           network->pathName(leaf_pin),
+           delayAsString(tr->arrival_rise, sta));
+    printf("Pin %s Setting arrival fall %s\n",
+           network->pathName(leaf_pin),
+           delayAsString(tr->arrival_fall, sta));
+#endif
+  }
+  // cut outputs: set required time
+  for (auto root_pin : cut->roots_) {
+    sta::VertexId v_id = network->vertexId(root_pin);
+    sta::Vertex* v = graph->vertex(v_id);
+    bool got_required = false;
+
+    if (v) {
+      sta::MinMax* min_max_arrival;
+      sta::MinMax* min_max = sta::MinMax::find("max");
+      min_required_rise = sta->vertexRequired(v, min_max);
+      min_required_fall = sta->vertexRequired(v, min_max);
+      got_required = true;
+    }
+
+    TimingRecord* tr = nullptr;
+    if (graph && v && got_required) {
+      tr = new TimingRecord();
+      tr->required_rise = atof(delayAsString(min_required_rise, sta));
+      tr->required_fall = atof(delayAsString(min_required_fall, sta));
+    }
+    timing_requirements.push_back(
+        std::pair<const sta::Pin*, TimingRecord*>(root_pin, tr));
+
+#ifdef DEBUG_RESTRUCT
+    printf("Pin %s required rise %s (%f)\n",
+           network->pathName(root_pin),
+           delayAsString(tr->required_rise, sta),
+           atof(delayAsString(tr->required_rise, sta)));
+    printf("Pin %s required fall %s (%f) \n",
+           network->pathName(root_pin),
+           delayAsString(tr->required_fall, sta),
+           atof(delayAsString(tr->required_fall, sta)));
+#endif
+  }
+}
 
 
 //

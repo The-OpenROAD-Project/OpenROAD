@@ -84,30 +84,8 @@ namespace rmp {
     sta::LibertyCell* cut_cell_;
     void Print(sta::Network* nwk);
     bool Check(sta::Network* nwk);
-
-    
-    //Build logic expression for cut.Each root has a FuncExpr, ordered in root order.
-    void BuildFuncExpr(sta::Network* nwk,
-		       sta::LibertyLibrary* cut_library,
-		       std::vector<sta::FuncExpr*>& root_fns);
-    
     bool LeafPin(const sta::Pin* cur_pin);
     
-    sta::FuncExpr* ExpandFunctionExprR(sta::Network* nwk,
-				       const sta::Pin* op_pin,
-				       sta::FuncExpr* op_pin_fe,
-				       std::map<const sta::Pin*,
-				       sta::LibertyPort*>& leaf_pin_to_port,
-				       std::map<const sta::Pin*, sta::FuncExpr*>& visited,
-				       sta::LibertyBuilder& lib_builder
-				       );
-    sta::FuncExpr*  BuildFuncExprR(sta::Network* nwk,
-				   sta::Instance* cur_inst,
-				   const sta::Pin* op_pin,
-				   sta::FuncExpr* op_pin_fe,
-				   std::map<const sta::Pin*,sta::LibertyPort*>& leaf_pin2port,
-				   std::map<const sta::Pin*, sta::FuncExpr*>& visited_pins,
-				   sta::LibertyBuilder &lib_builder);
   };
 
 
