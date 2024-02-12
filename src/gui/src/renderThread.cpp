@@ -86,6 +86,9 @@ void RenderThread::render(const QRect& draw_rect,
     return;
   }
 
+  is_rendering_ = true;
+  viewer_->setLoadingState();
+
   QMutexLocker locker(&mutex_);
   draw_rect_ = draw_rect;
   selected_ = selected;
@@ -129,7 +132,13 @@ void RenderThread::run()
          1.0,
          Qt::transparent);
     if (!restart_) {
+      is_rendering_ = false;
+
       emit done(image, draw_bounds);
+
+      if (!is_first_render_done_) {
+        is_first_render_done_ = true;
+      }
     }
     if (abort_) {
       return;
@@ -144,20 +153,20 @@ void RenderThread::run()
   }
 }
 
-void RenderThread::drawRenderIndication(Painter& painter,
-                                        const odb::Rect& bounds)
+void RenderThread::drawDesignLoadingMessage(Painter& painter,
+                                            const odb::Rect& bounds)
 {
   QPainter* qpainter = static_cast<GuiPainter&>(painter).getPainter();
   const QFont initial_font = qpainter->font();
-  QFont indication_render_font = qpainter->font();
-  indication_render_font.setPointSize(16);
+  QFont design_loading_font = qpainter->font();
+  design_loading_font.setPointSize(16);
 
-  qpainter->setFont(indication_render_font);
+  qpainter->setFont(design_loading_font);
 
-  std::string rendering_message = "Design loading...";
+  std::string message = "Design loading...";
   painter.setPen(gui::Painter::white, true);
   painter.drawString(
-      bounds.xCenter(), bounds.yCenter(), Painter::CENTER, rendering_message);
+      bounds.xCenter(), bounds.yCenter(), Painter::CENTER, message);
 
   qpainter->setFont(initial_font);
 }
@@ -197,9 +206,8 @@ void RenderThread::draw(QImage& image,
                          viewer_->block_->getDbUnitsPerMicron());
 
   if (!is_first_render_done_ && !restart_) {
-    drawRenderIndication(gui_painter, dbu_bounds);
+    drawDesignLoadingMessage(gui_painter, dbu_bounds);
     emit done(image, draw_bounds);
-    is_first_render_done_ = true;
 
     // Erase the first render indication so it does not remain on the screen
     // when the design is drawn for the first time
