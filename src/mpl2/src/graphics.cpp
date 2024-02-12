@@ -244,7 +244,7 @@ void Graphics::drawBlockage(const Rect& blockage, gui::Painter& painter)
 void Graphics::drawObjects(gui::Painter& painter)
 {
   if (root_) {
-    painter.setPen(gui::Painter::yellow, true);
+    painter.setPen(gui::Painter::red, true);
     painter.setBrush(gui::Painter::transparent);
     drawCluster(root_, painter);
   }
@@ -276,7 +276,7 @@ void Graphics::drawObjects(gui::Painter& painter)
   }
 
   painter.setPen(gui::Painter::white, true);
-  // dark red 
+  // dark red
   painter.setBrush(gui::Painter::Color(0x80, 0x00, 0x00, 150));
 
   i = 0;
@@ -344,7 +344,8 @@ void Graphics::drawObjects(gui::Painter& painter)
 
 // Give some transparency to mixed and hard so we can see overlap with
 // macro blockages.
-void Graphics::setSoftMacroBrush(gui::Painter& painter, const SoftMacro& soft_macro)
+void Graphics::setSoftMacroBrush(gui::Painter& painter,
+                                 const SoftMacro& soft_macro)
 {
   if (soft_macro.getCluster()->getClusterType() == StdCellCluster) {
     // dark blue
