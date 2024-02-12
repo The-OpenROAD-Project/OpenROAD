@@ -549,6 +549,10 @@ proc repair_setup_pin { end_pin } {
   repair_setup_pin_cmd $end_pin
 }
 
+proc report_swappable_pins { } {
+  report_swappable_pins_cmd
+}
+
 proc check_parasitics { } {
   if { ![have_estimated_parasitics] } {
     utl::warn RSZ 21 "no estimated parasitics. Using wire load models."
