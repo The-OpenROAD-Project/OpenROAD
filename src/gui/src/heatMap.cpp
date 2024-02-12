@@ -532,6 +532,7 @@ void HeatMapDataSource::ensureMap()
 
   if (build_map || !isPopulated()) {
     debugPrint(logger_, utl::GUI, "HeatMap", 1, "Populating map");
+    
     QApplication::setOverrideCursor(Qt::WaitCursor);    
     populated_ = populateMap();
     QApplication::restoreOverrideCursor();
