@@ -244,7 +244,7 @@ void Graphics::drawBlockage(const Rect& blockage, gui::Painter& painter)
 void Graphics::drawObjects(gui::Painter& painter)
 {
   if (root_) {
-    painter.setPen(gui::Painter::red, true);
+    painter.setPen(gui::Painter::yellow, true);
     painter.setBrush(gui::Painter::transparent);
     drawCluster(root_, painter);
   }
@@ -254,11 +254,12 @@ void Graphics::drawObjects(gui::Painter& painter)
     drawAllBlockages(painter);
   }
 
-  painter.setPen(gui::Painter::yellow, true);
-  painter.setBrush(gui::Painter::gray);
+  painter.setPen(gui::Painter::white, true);
 
   int i = 0;
   for (const auto& macro : soft_macros_) {
+    setSoftMacroBrush(painter, macro);
+
     const int lx = dbu_ * macro.getX();
     const int ly = dbu_ * macro.getY();
     const int ux = lx + dbu_ * macro.getWidth();
@@ -273,6 +274,10 @@ void Graphics::drawObjects(gui::Painter& painter)
                        gui::Painter::CENTER,
                        std::to_string(i++));
   }
+
+  painter.setPen(gui::Painter::white, true);
+  // dark red 
+  painter.setBrush(gui::Painter::Color(0x80, 0x00, 0x00, 150));
 
   i = 0;
   for (const auto& macro : hard_macros_) {
@@ -334,6 +339,22 @@ void Graphics::drawObjects(gui::Painter& painter)
     painter.setPen(gui::Painter::cyan, true);
     painter.setBrush(gui::Painter::transparent);
     painter.drawRect(outline_);
+  }
+}
+
+// Give some transparency to mixed and hard so we can see overlap with
+// macro blockages.
+void Graphics::setSoftMacroBrush(gui::Painter& painter, const SoftMacro& soft_macro)
+{
+  if (soft_macro.getCluster()->getClusterType() == StdCellCluster) {
+    // dark blue
+    painter.setBrush(gui::Painter::Color(0x00, 0x00, 0x80, 255));
+  } else if (soft_macro.getCluster()->getClusterType() == HardMacroCluster) {
+    // dark red
+    painter.setBrush(gui::Painter::Color(0x80, 0x00, 0x00, 150));
+  } else {
+    // dark purple
+    painter.setBrush(gui::Painter::Color(0x80, 0x00, 0x80, 150));
   }
 }
 
