@@ -514,7 +514,7 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         // try to assign the edge to the closest layer below the min routing
         // layer
         int min_layer = net->getMinLayer();
-        for (l = net->getMinLayer() - 1; l >= 0; l--) {
+        for (l = net->getMinLayer() - 1; l > 0; l--) {
           fixEdgeAssignment(min_layer,
                             v_edges_3D_,
                             gridsX[k],
@@ -529,7 +529,7 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         // try to assign the edge to the closest layer above the max routing
         // layer
         int max_layer = net->getMaxLayer();
-        for (l = net->getMaxLayer() + 1; l < num_layers_; l++) {
+        for (l = net->getMaxLayer() + 1; l <= num_layers_; l++) {
           fixEdgeAssignment(max_layer,
                             v_edges_3D_,
                             gridsX[k],
@@ -569,7 +569,7 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         // try to assign the edge to the closest layer below the min routing
         // layer
         int min_layer = net->getMinLayer();
-        for (l = net->getMinLayer() - 1; l >= 0; l--) {
+        for (l = net->getMinLayer() - 1; l > 0; l--) {
           fixEdgeAssignment(min_layer,
                             h_edges_3D_,
                             min_x,
@@ -584,7 +584,7 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
         // try to assign the edge to the closest layer above the max routing
         // layer
         int max_layer = net->getMaxLayer();
-        for (l = net->getMaxLayer() + 1; l < num_layers_; l++) {
+        for (l = net->getMaxLayer() + 1; l <= num_layers_; l++) {
           fixEdgeAssignment(max_layer,
                             h_edges_3D_,
                             min_x,
