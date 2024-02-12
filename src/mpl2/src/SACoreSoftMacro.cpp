@@ -417,21 +417,21 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
   }
 
   int tot_num_macros = 0;
-  for (const auto& soft_macro : macros_) {
-    tot_num_macros += soft_macro.getNumMacro();
+  for (const auto& macro_id : pos_seq_) {
+    tot_num_macros += macros_[macro_id].getNumMacro();
   }
   if (tot_num_macros <= 0) {
     return;
   }
 
   for (auto& blockage : blockages_) {
-    for (const auto& soft_macro : macros_) {
-      if (soft_macro.getNumMacro() > 0) {
-        const float soft_macro_x_min = soft_macro.getX();
-        const float soft_macro_x_max = soft_macro_x_min + soft_macro.getWidth();
-        const float soft_macro_y_min = soft_macro.getY();
+    for (const auto& macro_id : pos_seq_) {
+      if (macros_[macro_id].getNumMacro() > 0) {
+        const float soft_macro_x_min = macros_[macro_id].getX();
+        const float soft_macro_x_max = soft_macro_x_min + macros_[macro_id].getWidth();
+        const float soft_macro_y_min = macros_[macro_id].getY();
         const float soft_macro_y_max
-            = soft_macro_y_min + soft_macro.getHeight();
+            = soft_macro_y_min + macros_[macro_id].getHeight();
 
         const float overlap_width
             = std::min(blockage.xMax(), soft_macro_x_max)
@@ -449,7 +449,7 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
         // will be no overlap, we consider the number of macros in the cluster
         // to prioritize clusters with more macros.
         macro_blockage_penalty_
-            += overlap_width * overlap_height * soft_macro.getNumMacro();
+            += overlap_width * overlap_height * macros_[macro_id].getNumMacro();
       }
     }
   }
