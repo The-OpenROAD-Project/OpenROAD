@@ -470,12 +470,12 @@ void SACoreSoftMacro::alignMacroClusters()
   // update threshold value
   adjust_h_th_ = notch_h_th_;
   adjust_v_th_ = notch_v_th_;
-  for (auto& macro : macros_) {
-    if (macro.isMacroCluster()) {
-      adjust_h_th_
-          = std::min(adjust_h_th_, macro.getWidth() * (1 - acc_tolerance_));
-      adjust_v_th_
-          = std::min(adjust_v_th_, macro.getHeight() * (1 - acc_tolerance_));
+  for (auto& macro_id : pos_seq_) {
+    if (macros_[macro_id].isMacroCluster()) {
+      adjust_h_th_ = std::min(
+          adjust_h_th_, macros_[macro_id].getWidth() * (1 - acc_tolerance_));
+      adjust_v_th_ = std::min(
+          adjust_v_th_, macros_[macro_id].getHeight() * (1 - acc_tolerance_));
     }
   }
   const float ratio = 0.1;
@@ -483,23 +483,23 @@ void SACoreSoftMacro::alignMacroClusters()
   adjust_v_th_ = std::min(adjust_v_th_, outline_width_ * ratio);
 
   // Align macro clusters to boundaries
-  for (auto& macro : macros_) {
-    if (macro.isMacroCluster()) {
-      const float lx = macro.getX();
-      const float ly = macro.getY();
-      const float ux = lx + macro.getWidth();
-      const float uy = ly + macro.getHeight();
+  for (auto& macro_id : pos_seq_) {
+    if (macros_[macro_id].isMacroCluster()) {
+      const float lx = macros_[macro_id].getX();
+      const float ly = macros_[macro_id].getY();
+      const float ux = lx + macros_[macro_id].getWidth();
+      const float uy = ly + macros_[macro_id].getHeight();
       // align to left / right boundaries
       if (lx <= adjust_h_th_) {
-        macro.setX(0.0);
+        macros_[macro_id].setX(0.0);
       } else if (outline_width_ - ux <= adjust_h_th_) {
-        macro.setX(outline_width_ - macro.getWidth());
+        macros_[macro_id].setX(outline_width_ - macros_[macro_id].getWidth());
       }
       // align to top / bottom boundaries
       if (ly <= adjust_v_th_) {
-        macro.setY(0.0);
+        macros_[macro_id].setY(0.0);
       } else if (outline_height_ - uy <= adjust_v_th_) {
-        macro.setY(outline_height_ - macro.getHeight());
+        macros_[macro_id].setY(outline_height_ - macros_[macro_id].getHeight());
       }
     }
   }
@@ -889,14 +889,14 @@ void SACoreSoftMacro::fillDeadSpace()
   // Step1 : Divide the entire floorplan into grids
   std::set<float> x_point;
   std::set<float> y_point;
-  for (auto& macro : macros_) {
-    if (macro.getArea() <= 0.0) {
+  for (auto& macro_id : pos_seq_) {
+    if (macros_[macro_id].getArea() <= 0.0) {
       continue;
     }
-    x_point.insert(macro.getX());
-    x_point.insert(macro.getX() + macro.getWidth());
-    y_point.insert(macro.getY());
-    y_point.insert(macro.getY() + macro.getHeight());
+    x_point.insert(macros_[macro_id].getX());
+    x_point.insert(macros_[macro_id].getX() + macros_[macro_id].getWidth());
+    y_point.insert(macros_[macro_id].getY());
+    y_point.insert(macros_[macro_id].getY() + macros_[macro_id].getHeight());
   }
   x_point.insert(0.0);
   y_point.insert(0.0);
@@ -914,7 +914,7 @@ void SACoreSoftMacro::fillDeadSpace()
     grids.push_back(macro_ids);
   }
 
-  for (int macro_id = 0; macro_id < macros_.size(); macro_id++) {
+  for (int macro_id = 0; macro_id < pos_seq_.size(); macro_id++) {
     if (macros_[macro_id].getArea() <= 0.0) {
       continue;
     }
@@ -940,7 +940,7 @@ void SACoreSoftMacro::fillDeadSpace()
   }
   // propagate from the MixedCluster and then StdCellCluster
   for (int order = 0; order <= 1; order++) {
-    for (int macro_id = 0; macro_id < macros_.size(); macro_id++) {
+    for (int macro_id = 0; macro_id < pos_seq_.size(); macro_id++) {
       if (macros_[macro_id].getArea() <= 0.0) {
         continue;
       }
