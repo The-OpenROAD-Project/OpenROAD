@@ -39,6 +39,7 @@
 
 #include "heatMapSetup.h"
 #include "utl/Logger.h"
+#include <QApplication>
 
 namespace gui {
 
@@ -531,8 +532,10 @@ void HeatMapDataSource::ensureMap()
 
   if (build_map || !isPopulated()) {
     debugPrint(logger_, utl::GUI, "HeatMap", 1, "Populating map");
+    QApplication::setOverrideCursor(Qt::WaitCursor);    
     populated_ = populateMap();
-
+    QApplication::restoreOverrideCursor();
+    
     if (isPopulated()) {
       debugPrint(logger_, utl::GUI, "HeatMap", 1, "Correcting map scale");
       correctMapScale(map_);
