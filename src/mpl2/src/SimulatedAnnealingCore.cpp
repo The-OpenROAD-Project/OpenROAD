@@ -361,9 +361,9 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
 template <class T>
 void SimulatedAnnealingCore<T>::packFloorplan()
 {
-  for (auto& macro : macros_) {
-    macro.setX(0.0);
-    macro.setY(0.0);
+  for (auto& macro_id : pos_seq_) {
+    macros_[macro_id].setX(0.0);
+    macros_[macro_id].setY(0.0);
   }
 
   // Each index corresponds to a macro id whose pair is:
