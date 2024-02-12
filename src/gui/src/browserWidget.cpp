@@ -467,7 +467,7 @@ BrowserWidget::ModuleStats BrowserWidget::addInstanceItems(
     if (leaf_parent.item == nullptr) {
       leaf_parent.item = make_leaf_item(sta_->getInstanceTypeText(type));
     }
-    const bool create_row = type == DbInstDescriptor::BLOCK;
+    const bool create_row = type == sta::dbSta::InstType::BLOCK;
     leaf_parent.stats += addInstanceItem(inst, leaf_parent.item, create_row);
   }
 
