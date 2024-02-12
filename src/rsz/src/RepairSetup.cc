@@ -34,6 +34,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "RepairSetup.hh"
+
+#include <sstream>
+
 #include "rsz/Resizer.hh"
 
 #include "sta/Corner.hh"
@@ -947,18 +950,25 @@ RepairSetup::getEquivPortList(sta::FuncExpr *expr, sta::LibertyPortSet &ports)
 void
 RepairSetup::equivCellPins(const LibertyCell *cell, sta::LibertyPortSet &ports)
 {
+    if (cell->hasSequentials()) {
+        ports.clear();
+        return;
+    }
     sta::LibertyCellPortIterator port_iter(cell);
-    unsigned outputs = 0;
+    int outputs = 0;
+    int inputs = 0;
 
     // count number of output ports. Skip ports with > 1 output for now.
     while (port_iter.hasNext()) {
         LibertyPort *port = port_iter.next();
         if (port->direction()->isOutput()) {
             ++outputs;
+        } else {
+          ++inputs;
         }
     }
 
-    if (outputs == 1) {
+    if (outputs == 1 && inputs >= 2) {
         sta::LibertyCellPortIterator port_iter2(cell);
         while (port_iter2.hasNext()) {
             LibertyPort *port = port_iter2.next();
@@ -968,6 +978,28 @@ RepairSetup::equivCellPins(const LibertyCell *cell, sta::LibertyPortSet &ports)
             }
         }
     }
+}
+
+void
+RepairSetup::reportSwappablePins()
+{
+  init();
+  std::unique_ptr<sta::LibertyLibraryIterator> iter(
+    db_network_->libertyLibraryIterator());
+  while (iter->hasNext()) {
+    sta::LibertyLibrary* library = iter->next();
+    sta::LibertyCellIterator cell_iter(library);
+    while (cell_iter.hasNext()) {
+      sta::LibertyCell* cell = cell_iter.next();
+      sta::LibertyPortSet ports;
+      equivCellPins(cell, ports);
+      std::ostringstream ostr;
+      for (auto port : ports) {
+        ostr << ' ' << port->name();
+      }
+      logger_->report("{} ->{}", cell->name(), ostr.str());
+    }
+  }
 }
 
 void
