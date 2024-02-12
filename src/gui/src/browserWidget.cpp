@@ -410,7 +410,7 @@ void BrowserWidget::updateModel()
 
     insts.push_back(inst);
   }
-  addInstanceItems(insts, "Physical only", root, true);
+  addInstanceItems(insts, "Physical only", root);
 
   view_->header()->resizeSections(QHeaderView::ResizeToContents);
   model_modified_ = false;
@@ -438,7 +438,7 @@ BrowserWidget::ModuleStats BrowserWidget::populateModule(odb::dbModule* module,
   for (auto* inst : module->getInsts()) {
     insts.push_back(inst);
   }
-  stats += addInstanceItems(insts, "Leaf instances", parent, false);
+  stats += addInstanceItems(insts, "Leaf instances", parent);
 
   return stats;
 }
@@ -446,8 +446,7 @@ BrowserWidget::ModuleStats BrowserWidget::populateModule(odb::dbModule* module,
 BrowserWidget::ModuleStats BrowserWidget::addInstanceItems(
     const std::vector<odb::dbInst*>& insts,
     const std::string& title,
-    QStandardItem* parent,
-    bool check_instance_limits)
+    QStandardItem* parent)
 {
   auto make_leaf_item = [](const std::string& title) -> QStandardItem* {
     QStandardItem* leaf = new QStandardItem(QString::fromStdString(title));
@@ -468,8 +467,7 @@ BrowserWidget::ModuleStats BrowserWidget::addInstanceItems(
     if (leaf_parent.item == nullptr) {
       leaf_parent.item = make_leaf_item(sta_->getInstanceTypeText(type));
     }
-    const bool create_row = !check_instance_limits
-                            || leaf_parent.stats.insts < max_visible_leafs_;
+    const bool create_row = type == DbInstDescriptor::BLOCK;
     leaf_parent.stats += addInstanceItem(inst, leaf_parent.item, create_row);
   }
 

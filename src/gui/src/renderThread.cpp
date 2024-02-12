@@ -1180,7 +1180,13 @@ void RenderThread::drawGCellGrid(QPainter* painter, const odb::Rect& bounds)
     return;
   }
 
-  const odb::Rect draw_bounds = bounds.intersect(viewer_->block_->getDieArea());
+  const auto die_area = viewer_->block_->getDieArea();
+
+  if (!bounds.intersects(die_area)) {
+    return;
+  }
+
+  const odb::Rect draw_bounds = bounds.intersect(die_area);
 
   std::vector<int> x_grid, y_grid;
   grid->getGridX(x_grid);
