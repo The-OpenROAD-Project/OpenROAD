@@ -16,6 +16,7 @@ record_tests {
   make_parasitics4
   make_parasitics5
   make_parasitics6
+  pin_swap1
   resize1
   resize4
   resize5

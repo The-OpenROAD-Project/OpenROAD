@@ -73,6 +73,9 @@ class RenderThread : public QThread
             qreal render_ratio,
             const QColor& background);
 
+  bool isFirstRenderDone() { return is_first_render_done_; };
+  bool isRendering() { return is_rendering_; };
+
  signals:
   void done(const QImage& image, const QRect& bounds);
 
@@ -152,7 +155,7 @@ class RenderThread : public QThread
   QColor getColor(odb::dbTechLayer* layer);
   Qt::BrushStyle getPattern(odb::dbTechLayer* layer);
 
-  void drawRenderIndication(Painter& painter, const odb::Rect& bounds);
+  void drawDesignLoadingMessage(Painter& painter, const odb::Rect& bounds);
 
   utl::Logger* logger_ = nullptr;
   LayoutViewer* viewer_;
@@ -171,6 +174,7 @@ class RenderThread : public QThread
   QWaitCondition condition_;
   bool restart_ = false;
   bool abort_ = false;
+  bool is_rendering_ = false;
   bool is_first_render_done_ = false;
 
   QFont pin_font_;
