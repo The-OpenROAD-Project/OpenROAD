@@ -493,9 +493,9 @@ proc report_design_area {} {
   utl::report "Design area ${area} u^2 ${util}% utilization."
 }
 
-sta::define_cmd_args "report_floating_nets" {[-verbose]}
+sta::define_cmd_args "report_floating_nets" {[-verbose] [> filename] [>> filename]}
 
-proc report_floating_nets { args } {
+sta::proc_redirect report_floating_nets {
   sta::parse_key_args "report_floating_nets" args keys {} flags {-verbose}
 
   set verbose [info exists flags(-verbose)]
@@ -524,7 +524,7 @@ proc report_floating_nets { args } {
   utl::metric_int "timing__drv__floating__pins" $floating_pin_count
 }
 
-sta::define_cmd_args "report_long_wires" {count}
+sta::define_cmd_args "report_long_wires" {count [> filename] [>> filename]}
 
 sta::proc_redirect report_long_wires {
   global sta_report_default_digits
