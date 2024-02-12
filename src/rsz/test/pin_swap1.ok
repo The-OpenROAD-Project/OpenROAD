@@ -83,24 +83,24 @@ sky130_fd_sc_hd__and2_0 -> A B
 sky130_fd_sc_hd__and2_1 -> A B
 sky130_fd_sc_hd__and2_2 -> A B
 sky130_fd_sc_hd__and2_4 -> A B
-sky130_fd_sc_hd__and2b_1 -> A_N B
-sky130_fd_sc_hd__and2b_2 -> A_N B
-sky130_fd_sc_hd__and2b_4 -> A_N B
+sky130_fd_sc_hd__and2b_1 ->
+sky130_fd_sc_hd__and2b_2 ->
+sky130_fd_sc_hd__and2b_4 ->
 sky130_fd_sc_hd__and3_1 -> A B C
 sky130_fd_sc_hd__and3_2 -> A B C
 sky130_fd_sc_hd__and3_4 -> A B C
-sky130_fd_sc_hd__and3b_1 -> A_N B C
-sky130_fd_sc_hd__and3b_2 -> A_N B C
-sky130_fd_sc_hd__and3b_4 -> A_N B C
+sky130_fd_sc_hd__and3b_1 -> B C
+sky130_fd_sc_hd__and3b_2 -> B C
+sky130_fd_sc_hd__and3b_4 -> B C
 sky130_fd_sc_hd__and4_1 -> A B C D
 sky130_fd_sc_hd__and4_2 -> A B C D
 sky130_fd_sc_hd__and4_4 -> A B C D
-sky130_fd_sc_hd__and4b_1 -> A_N B C D
-sky130_fd_sc_hd__and4b_2 -> A_N B C D
-sky130_fd_sc_hd__and4b_4 -> A_N B C D
-sky130_fd_sc_hd__and4bb_1 -> A_N B_N C D
-sky130_fd_sc_hd__and4bb_2 -> A_N B_N C D
-sky130_fd_sc_hd__and4bb_4 -> A_N B_N C D
+sky130_fd_sc_hd__and4b_1 -> B C D
+sky130_fd_sc_hd__and4b_2 -> B C D
+sky130_fd_sc_hd__and4b_4 -> B C D
+sky130_fd_sc_hd__and4bb_1 -> C D
+sky130_fd_sc_hd__and4bb_2 -> C D
+sky130_fd_sc_hd__and4bb_4 -> C D
 sky130_fd_sc_hd__buf_1 ->
 sky130_fd_sc_hd__buf_12 ->
 sky130_fd_sc_hd__buf_16 ->
@@ -231,17 +231,17 @@ sky130_fd_sc_hd__lpflow_decapkapwr_3 ->
 sky130_fd_sc_hd__lpflow_decapkapwr_4 ->
 sky130_fd_sc_hd__lpflow_decapkapwr_6 ->
 sky130_fd_sc_hd__lpflow_decapkapwr_8 ->
-sky130_fd_sc_hd__lpflow_inputiso0n_1 -> A SLEEP_B
-sky130_fd_sc_hd__lpflow_inputiso0p_1 -> A SLEEP
-sky130_fd_sc_hd__lpflow_inputiso1n_1 -> A SLEEP_B
-sky130_fd_sc_hd__lpflow_inputiso1p_1 -> A SLEEP
+sky130_fd_sc_hd__lpflow_inputiso0n_1 ->
+sky130_fd_sc_hd__lpflow_inputiso0p_1 ->
+sky130_fd_sc_hd__lpflow_inputiso1n_1 ->
+sky130_fd_sc_hd__lpflow_inputiso1p_1 ->
 sky130_fd_sc_hd__lpflow_inputisolatch_1 ->
-sky130_fd_sc_hd__lpflow_isobufsrc_1 -> A SLEEP
-sky130_fd_sc_hd__lpflow_isobufsrc_16 -> A SLEEP
-sky130_fd_sc_hd__lpflow_isobufsrc_2 -> A SLEEP
-sky130_fd_sc_hd__lpflow_isobufsrc_4 -> A SLEEP
-sky130_fd_sc_hd__lpflow_isobufsrc_8 -> A SLEEP
-sky130_fd_sc_hd__lpflow_isobufsrckapwr_16 -> A SLEEP
+sky130_fd_sc_hd__lpflow_isobufsrc_1 ->
+sky130_fd_sc_hd__lpflow_isobufsrc_16 ->
+sky130_fd_sc_hd__lpflow_isobufsrc_2 ->
+sky130_fd_sc_hd__lpflow_isobufsrc_4 ->
+sky130_fd_sc_hd__lpflow_isobufsrc_8 ->
+sky130_fd_sc_hd__lpflow_isobufsrckapwr_16 ->
 sky130_fd_sc_hd__lpflow_lsbuf_lh_hl_isowell_tap_1 ->
 sky130_fd_sc_hd__lpflow_lsbuf_lh_hl_isowell_tap_2 ->
 sky130_fd_sc_hd__lpflow_lsbuf_lh_hl_isowell_tap_4 ->
@@ -267,46 +267,46 @@ sky130_fd_sc_hd__nand2_1 -> A B
 sky130_fd_sc_hd__nand2_2 -> A B
 sky130_fd_sc_hd__nand2_4 -> A B
 sky130_fd_sc_hd__nand2_8 -> A B
-sky130_fd_sc_hd__nand2b_1 -> A_N B
-sky130_fd_sc_hd__nand2b_2 -> A_N B
-sky130_fd_sc_hd__nand2b_4 -> A_N B
+sky130_fd_sc_hd__nand2b_1 ->
+sky130_fd_sc_hd__nand2b_2 ->
+sky130_fd_sc_hd__nand2b_4 ->
 sky130_fd_sc_hd__nand3_1 -> A B C
 sky130_fd_sc_hd__nand3_2 -> A B C
 sky130_fd_sc_hd__nand3_4 -> A B C
-sky130_fd_sc_hd__nand3b_1 -> A_N B C
-sky130_fd_sc_hd__nand3b_2 -> A_N B C
-sky130_fd_sc_hd__nand3b_4 -> A_N B C
+sky130_fd_sc_hd__nand3b_1 -> B C
+sky130_fd_sc_hd__nand3b_2 -> B C
+sky130_fd_sc_hd__nand3b_4 -> B C
 sky130_fd_sc_hd__nand4_1 -> A B C D
 sky130_fd_sc_hd__nand4_2 -> A B C D
 sky130_fd_sc_hd__nand4_4 -> A B C D
-sky130_fd_sc_hd__nand4b_1 -> A_N B C D
-sky130_fd_sc_hd__nand4b_2 -> A_N B C D
-sky130_fd_sc_hd__nand4b_4 -> A_N B C D
-sky130_fd_sc_hd__nand4bb_1 -> A_N B_N C D
-sky130_fd_sc_hd__nand4bb_2 -> A_N B_N C D
-sky130_fd_sc_hd__nand4bb_4 -> A_N B_N C D
+sky130_fd_sc_hd__nand4b_1 -> B C D
+sky130_fd_sc_hd__nand4b_2 -> B C D
+sky130_fd_sc_hd__nand4b_4 -> B C D
+sky130_fd_sc_hd__nand4bb_1 -> A_N B_N
+sky130_fd_sc_hd__nand4bb_2 -> A_N B_N
+sky130_fd_sc_hd__nand4bb_4 -> A_N B_N
 sky130_fd_sc_hd__nor2_1 -> A B
 sky130_fd_sc_hd__nor2_2 -> A B
 sky130_fd_sc_hd__nor2_4 -> A B
 sky130_fd_sc_hd__nor2_8 -> A B
-sky130_fd_sc_hd__nor2b_1 -> A B_N
-sky130_fd_sc_hd__nor2b_2 -> A B_N
-sky130_fd_sc_hd__nor2b_4 -> A B_N
+sky130_fd_sc_hd__nor2b_1 ->
+sky130_fd_sc_hd__nor2b_2 ->
+sky130_fd_sc_hd__nor2b_4 ->
 sky130_fd_sc_hd__nor3_1 -> A B C
 sky130_fd_sc_hd__nor3_2 -> A B C
 sky130_fd_sc_hd__nor3_4 -> A B C
-sky130_fd_sc_hd__nor3b_1 -> A B C_N
-sky130_fd_sc_hd__nor3b_2 -> A B C_N
-sky130_fd_sc_hd__nor3b_4 -> A B C_N
+sky130_fd_sc_hd__nor3b_1 -> A B
+sky130_fd_sc_hd__nor3b_2 -> A B
+sky130_fd_sc_hd__nor3b_4 -> A B
 sky130_fd_sc_hd__nor4_1 -> A B C D
 sky130_fd_sc_hd__nor4_2 -> A B C D
 sky130_fd_sc_hd__nor4_4 -> A B C D
-sky130_fd_sc_hd__nor4b_1 -> A B C D_N
-sky130_fd_sc_hd__nor4b_2 -> A B C D_N
-sky130_fd_sc_hd__nor4b_4 -> A B C D_N
-sky130_fd_sc_hd__nor4bb_1 -> A B C_N D_N
-sky130_fd_sc_hd__nor4bb_2 -> A B C_N D_N
-sky130_fd_sc_hd__nor4bb_4 -> A B C_N D_N
+sky130_fd_sc_hd__nor4b_1 -> A B C
+sky130_fd_sc_hd__nor4b_2 -> A B C
+sky130_fd_sc_hd__nor4b_4 -> A B C
+sky130_fd_sc_hd__nor4bb_1 -> C_N D_N
+sky130_fd_sc_hd__nor4bb_2 -> C_N D_N
+sky130_fd_sc_hd__nor4bb_4 -> C_N D_N
 sky130_fd_sc_hd__o2111a_1 ->
 sky130_fd_sc_hd__o2111a_2 ->
 sky130_fd_sc_hd__o2111a_4 ->
@@ -379,24 +379,24 @@ sky130_fd_sc_hd__or2_0 -> A B
 sky130_fd_sc_hd__or2_1 -> A B
 sky130_fd_sc_hd__or2_2 -> A B
 sky130_fd_sc_hd__or2_4 -> A B
-sky130_fd_sc_hd__or2b_1 -> A B_N
-sky130_fd_sc_hd__or2b_2 -> A B_N
-sky130_fd_sc_hd__or2b_4 -> A B_N
+sky130_fd_sc_hd__or2b_1 ->
+sky130_fd_sc_hd__or2b_2 ->
+sky130_fd_sc_hd__or2b_4 ->
 sky130_fd_sc_hd__or3_1 -> A B C
 sky130_fd_sc_hd__or3_2 -> A B C
 sky130_fd_sc_hd__or3_4 -> A B C
-sky130_fd_sc_hd__or3b_1 -> A B C_N
-sky130_fd_sc_hd__or3b_2 -> A B C_N
-sky130_fd_sc_hd__or3b_4 -> A B C_N
+sky130_fd_sc_hd__or3b_1 -> A B
+sky130_fd_sc_hd__or3b_2 -> A B
+sky130_fd_sc_hd__or3b_4 -> A B
 sky130_fd_sc_hd__or4_1 -> A B C D
 sky130_fd_sc_hd__or4_2 -> A B C D
 sky130_fd_sc_hd__or4_4 -> A B C D
-sky130_fd_sc_hd__or4b_1 -> A B C D_N
-sky130_fd_sc_hd__or4b_2 -> A B C D_N
-sky130_fd_sc_hd__or4b_4 -> A B C D_N
-sky130_fd_sc_hd__or4bb_1 -> A B C_N D_N
-sky130_fd_sc_hd__or4bb_2 -> A B C_N D_N
-sky130_fd_sc_hd__or4bb_4 -> A B C_N D_N
+sky130_fd_sc_hd__or4b_1 -> A B C
+sky130_fd_sc_hd__or4b_2 -> A B C
+sky130_fd_sc_hd__or4b_4 -> A B C
+sky130_fd_sc_hd__or4bb_1 -> A B
+sky130_fd_sc_hd__or4bb_2 -> A B
+sky130_fd_sc_hd__or4bb_4 -> A B
 sky130_fd_sc_hd__probe_p_8 ->
 sky130_fd_sc_hd__probec_p_8 ->
 sky130_fd_sc_hd__sdfbbn_1 ->

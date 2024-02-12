@@ -888,13 +888,14 @@ RepairSetup::fanout(Vertex *vertex)
 void
 RepairSetup::getEquivPortList2(sta::FuncExpr *expr,
                                sta::LibertyPortSet &ports,
+                               sta::LibertyPortSet &inv_ports,
                                sta::FuncExpr::Operator &status)
 {
     using Operator = sta::FuncExpr::Operator ;
     const Operator curr_op = expr->op();
 
     if (curr_op == Operator::op_not) {
-        getEquivPortList2(expr->left(), ports, status);
+        getEquivPortList2(expr->left(), inv_ports, ports, status);
     }
     else if (status == Operator::op_zero &&
              (curr_op == Operator::op_and ||
@@ -902,11 +903,11 @@ RepairSetup::getEquivPortList2(sta::FuncExpr *expr,
               curr_op == Operator::op_xor)) {
         // Start parsing the equivalent pins (if it is simple or/and/xor)
         status = curr_op;
-        getEquivPortList2(expr->left(), ports, status);
+        getEquivPortList2(expr->left(), ports, inv_ports, status);
         if (status == Operator::op_port) {
           return;
         }
-        getEquivPortList2(expr->right(), ports, status);
+        getEquivPortList2(expr->right(), ports, inv_ports, status);
         if (status == Operator::op_port) {
           return;
         }
@@ -914,11 +915,11 @@ RepairSetup::getEquivPortList2(sta::FuncExpr *expr,
     }
     else if (status == curr_op) {
         // handle > 2 input scenarios (up to any arbitrary number)
-        getEquivPortList2(expr->left(), ports, status);
+        getEquivPortList2(expr->left(), ports, inv_ports, status);
         if (status == Operator::op_port) {
             return;
         }
-        getEquivPortList2(expr->right(), ports, status);
+        getEquivPortList2(expr->right(), ports, inv_ports, status);
         if (status == Operator::op_port) {
             return;
         }
@@ -929,6 +930,7 @@ RepairSetup::getEquivPortList2(sta::FuncExpr *expr,
     else {
         status = Operator::op_port; // moved to some other operator.
         ports.clear();
+        inv_ports.clear();
     }
 }
 
@@ -937,8 +939,12 @@ RepairSetup::getEquivPortList(sta::FuncExpr *expr, sta::LibertyPortSet &ports)
 {
     sta::FuncExpr::Operator status = sta::FuncExpr::op_zero;
     ports.clear();
-    getEquivPortList2(expr, ports, status);
-    if (status == sta::FuncExpr::op_port) {
+    sta::LibertyPortSet inv_ports;
+    getEquivPortList2(expr, ports, inv_ports, status);
+    if (inv_ports.size() > ports.size()) {
+        ports = inv_ports;
+    }
+    if (status == sta::FuncExpr::op_port || ports.size() == 1) {
         ports.clear();
     }
 }
@@ -950,7 +956,7 @@ RepairSetup::getEquivPortList(sta::FuncExpr *expr, sta::LibertyPortSet &ports)
 void
 RepairSetup::equivCellPins(const LibertyCell *cell, sta::LibertyPortSet &ports)
 {
-    if (cell->hasSequentials()) {
+    if (cell->hasSequentials() || cell->isIsolationCell()) {
         ports.clear();
         return;
     }
