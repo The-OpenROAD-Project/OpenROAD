@@ -447,7 +447,8 @@ void FastRouteCore::fixEdgeAssignment(int& net_layer,
   if (is_vertical != vertical || best_cost > 0) {
     layer_grid[l - 1][k] = std::numeric_limits<int>::min();
   } else {
-    layer_grid[l - 1][k] = edges_3D[l - 1][y][x].cap - edges_3D[l - 1][y][x].usage;
+    layer_grid[l - 1][k]
+        = edges_3D[l - 1][y][x].cap - edges_3D[l - 1][y][x].usage;
     best_cost = std::max(best_cost, layer_grid[l - 1][k]);
     if (best_cost > 0) {
       // set the new min/max routing layer for the net to avoid
@@ -502,7 +503,7 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
             = layer_directions_[l - 1] == odb::dbTechLayerDir::VERTICAL;
         if (is_vertical) {
           layer_grid[l - 1][k] = v_edges_3D_[l - 1][min_y][gridsX[k]].cap
-                             - v_edges_3D_[l - 1][min_y][gridsX[k]].usage;
+                                 - v_edges_3D_[l - 1][min_y][gridsX[k]].usage;
           best_cost = std::max(best_cost, layer_grid[l - 1][k]);
         } else {
           layer_grid[l - 1][k] = std::numeric_limits<int>::min();
@@ -557,7 +558,7 @@ void FastRouteCore::assignEdge(int netID, int edgeID, bool processDIR)
             = layer_directions_[l - 1] == odb::dbTechLayerDir::HORIZONTAL;
         if (is_horizontal) {
           layer_grid[l - 1][k] = h_edges_3D_[l - 1][gridsY[k]][min_x].cap
-                             - h_edges_3D_[l - 1][gridsY[k]][min_x].usage;
+                                 - h_edges_3D_[l - 1][gridsY[k]][min_x].usage;
           best_cost = std::max(best_cost, layer_grid[l - 1][k]);
         } else {
           layer_grid[l - 1][k] = std::numeric_limits<int>::min();

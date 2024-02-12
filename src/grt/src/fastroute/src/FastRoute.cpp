@@ -774,29 +774,25 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
           if (lastX == xreal) {
             // if change direction add a via to change the layer
             if (lastL == layer_h) {
-              segment = GSegment(
-                  lastX, lastY, lastL, lastX, lastY, layer_v);
+              segment = GSegment(lastX, lastY, lastL, lastX, lastY, layer_v);
               if (net_segs.find(segment) == net_segs.end()) {
                 net_segs.insert(segment);
                 route.push_back(segment);
               }
             }
             lastL = layer_v;
-            segment
-                = GSegment(lastX, lastY, lastL, xreal, yreal, lastL);
+            segment = GSegment(lastX, lastY, lastL, xreal, yreal, lastL);
           } else {
             // if change direction add a via to change the layer
             if (lastL == layer_v) {
-              segment = GSegment(
-                  lastX, lastY, lastL, lastX, lastY, layer_h);
+              segment = GSegment(lastX, lastY, lastL, lastX, lastY, layer_h);
               if (net_segs.find(segment) == net_segs.end()) {
                 net_segs.insert(segment);
                 route.push_back(segment);
               }
             }
             lastL = layer_h;
-            segment
-                = GSegment(lastX, lastY, lastL, xreal, yreal, lastL);
+            segment = GSegment(lastX, lastY, lastL, xreal, yreal, lastL);
           }
           lastX = xreal;
           lastY = yreal;
