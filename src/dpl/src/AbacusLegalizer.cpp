@@ -46,6 +46,11 @@
 
 namespace dpl {
 
+void Opendp::runAbacus()
+{
+  abacusLegalizer_.runAbacus(db_->getChip()->getBlock());
+}
+
 // clang-format off
 /**
  * @brief Algorithm 1: Modified Abacus Legalization Approach
