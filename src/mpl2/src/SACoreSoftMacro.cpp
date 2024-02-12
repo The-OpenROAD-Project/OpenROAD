@@ -428,7 +428,8 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
     for (const auto& macro_id : pos_seq_) {
       if (macros_[macro_id].getNumMacro() > 0) {
         const float soft_macro_x_min = macros_[macro_id].getX();
-        const float soft_macro_x_max = soft_macro_x_min + macros_[macro_id].getWidth();
+        const float soft_macro_x_max
+            = soft_macro_x_min + macros_[macro_id].getWidth();
         const float soft_macro_y_min = macros_[macro_id].getY();
         const float soft_macro_y_max
             = soft_macro_y_min + macros_[macro_id].getHeight();
