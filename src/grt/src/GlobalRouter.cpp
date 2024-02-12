@@ -3902,6 +3902,7 @@ void GlobalRouter::updateDirtyRoutes(bool save_guides)
     const float old_critical_nets_percentage
         = fastroute_->getCriticalNetsPercentage();
     fastroute_->setCriticalNetsPercentage(0);
+    fastroute_->setCongestionReportIterStep(0);
 
     initFastRouteIncr(dirty_nets);
 
@@ -3944,6 +3945,7 @@ void GlobalRouter::updateDirtyRoutes(bool save_guides)
       }
     }
     fastroute_->setCriticalNetsPercentage(old_critical_nets_percentage);
+    fastroute_->setCongestionReportIterStep(congestion_report_iter_step_);
     if (save_guides) {
       saveGuides();
     }
