@@ -381,22 +381,23 @@ void SACoreSoftMacro::calBoundaryPenalty()
   }
 
   int tot_num_macros = 0;
-  for (const auto& macro : macros_) {
-    tot_num_macros += macro.getNumMacro();
+  for (const auto& macro_id : pos_seq_) {
+    tot_num_macros += macros_[macro_id].getNumMacro();
   }
   if (tot_num_macros <= 0) {
     return;
   }
 
-  for (const auto& macro : macros_) {
-    if (macro.getNumMacro() > 0) {
-      const float lx = macro.getX();
-      const float ly = macro.getY();
-      const float ux = lx + macro.getWidth();
-      const float uy = ly + macro.getHeight();
+  for (const auto& macro_id : pos_seq_) {
+    if (macros_[macro_id].getNumMacro() > 0) {
+      const float lx = macros_[macro_id].getX();
+      const float ly = macros_[macro_id].getY();
+      const float ux = lx + macros_[macro_id].getWidth();
+      const float uy = ly + macros_[macro_id].getHeight();
       const float x_dist = std::min(lx, std::abs(outline_width_ - ux));
       const float y_dist = std::min(ly, std::abs(outline_height_ - uy));
-      boundary_penalty_ += std::min(x_dist, y_dist) * macro.getNumMacro();
+      boundary_penalty_
+          += std::min(x_dist, y_dist) * macros_[macro_id].getNumMacro();
     }
   }
   // normalization
