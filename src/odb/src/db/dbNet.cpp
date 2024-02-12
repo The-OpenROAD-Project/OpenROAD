@@ -1808,8 +1808,7 @@ bool dbNet::isConnectedByAbutment()
 
     dbInst* inst = iterm->getInst();
     if (inst->isPlaced()) {
-      dbTransform transform;
-      inst->getTransform(transform);
+      const dbTransform transform = inst->getTransform();
 
       for (dbMPin* mpin : mterm->getMPins()) {
         for (dbBox* box : mpin->getGeometry()) {

@@ -97,6 +97,9 @@ bool FlexGridGraph::outOfDieVia(frMIdx x,
   if (lNum > getTech()->getTopLayerNum())
     return false;
   frViaDef* via = getTech()->getLayer(lNum)->getDefaultViaDef();
+  if (!via) {
+    return true;
+  }
   Rect viaBox(via->getLayer1ShapeBox());
   viaBox.merge(via->getLayer2ShapeBox());
   viaBox.moveDelta(xCoords_[x], yCoords_[y]);

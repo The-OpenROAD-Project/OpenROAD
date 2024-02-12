@@ -266,7 +266,7 @@ int Opendp::distToRect(const Cell* cell, const Rect* rect) const
 class CellPlaceOrderLess
 {
  public:
-  explicit CellPlaceOrderLess(Opendp* opendp);
+  explicit CellPlaceOrderLess(const Rect& core);
   bool operator()(const Cell* cell1, const Cell* cell2) const;
 
  private:
@@ -276,9 +276,8 @@ class CellPlaceOrderLess
   int center_y_;
 };
 
-CellPlaceOrderLess::CellPlaceOrderLess(Opendp* opendp)
+CellPlaceOrderLess::CellPlaceOrderLess(const Rect& core)
 {
-  Rect core = opendp->getCore();
   center_x_ = (core.xMin() + core.xMax()) / 2;
   center_y_ = (core.yMin() + core.yMax()) / 2;
 }
@@ -319,7 +318,7 @@ void Opendp::place()
       }
     }
   }
-  sort(sorted_cells.begin(), sorted_cells.end(), CellPlaceOrderLess(this));
+  sort(sorted_cells.begin(), sorted_cells.end(), CellPlaceOrderLess(getCore()));
 
   // Place multi-row instances first.
   if (have_multi_row_cells_) {
@@ -364,7 +363,7 @@ void Opendp::placeGroups2()
         group_cells.push_back(cell);
       }
     }
-    sort(group_cells.begin(), group_cells.end(), CellPlaceOrderLess(this));
+    sort(group_cells.begin(), group_cells.end(), CellPlaceOrderLess(getCore()));
 
     // Place multi-row cells in each group region.
     bool multi_pass = true;
@@ -869,8 +868,16 @@ void Opendp::diamondSearchSide(const Cell* cell,
   int bin_y = min(y_max, max(y_min, y + y_offset));
   PixelPt avail_pt = binSearch(x, cell, bin_x, bin_y);
   if (avail_pt.pixel) {
-    int avail_dist = abs(x - avail_pt.pt.getX()) * getSiteWidth(cell)
-                     + abs(y - avail_pt.pt.getY()) * getRowHeight(cell);
+    int y_dist = 0;
+    if (cell->isHybrid() && !cell->isHybridParent()) {
+      auto gmk = getGridMapKey(cell);
+
+      y_dist = abs(coordinateToHeight(y, gmk)
+                   - coordinateToHeight(avail_pt.pt.getY(), gmk));
+    } else {
+      y_dist = abs(y - avail_pt.pt.getY()) * getRowHeight(cell);
+    }
+    int avail_dist = abs(x - avail_pt.pt.getX()) * getSiteWidth(cell) + y_dist;
     if (best_pt.pixel == nullptr || avail_dist < best_dist) {
       best_pt = avail_pt;
       best_dist = avail_dist;
@@ -902,7 +909,7 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
     return PixelPt();
   }
 
-  int height = gridHeight(cell, row_height);
+  int height = gridHeight(cell);
   int y_end = bin_y + height;
 
   if (debug_observer_) {

@@ -642,6 +642,30 @@ BOOST_AUTO_TEST_CASE(spacing_table_twowidth)
              Rect(0, 100, 500, 140));
 }
 
+// Check for a SPACING RANGE violation.
+BOOST_DATA_TEST_CASE(spacing_range,
+                     bdata::make({0, 200}) ^ bdata::make({false, true}),
+                     minWidth,
+                     legal)
+{
+  // Setup
+  makeSpacingRangeConstraint(2, 500, minWidth, 400);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 50}, {1000, 50});
+  makePathseg(n1, 2, {0, 200}, {1000, 200});
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  if (legal) {
+    BOOST_TEST(markers.size() == 0);
+  } else {
+    BOOST_TEST(markers.size() == 1);
+  }
+}
 // Check for a basic end-of-line (EOL) spacing violation.
 BOOST_DATA_TEST_CASE(eol_basic, (bdata::make({true, false})), lef58)
 {

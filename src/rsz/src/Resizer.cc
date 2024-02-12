@@ -434,11 +434,9 @@ void Resizer::balanceRowUsage()
       continue;
     }
 
-    int x;
-    int y;
-    inst->getOrigin(x, y);
-    const int x_bin = (x - core_.xMin()) / x_step;
-    const int y_bin = (y - core_.yMin()) / y_step;
+    const Point origin = inst->getOrigin();
+    const int x_bin = (origin.x() - core_.xMin()) / x_step;
+    const int y_bin = (origin.y() - core_.yMin()) / y_step;
     grid[x_bin][y_bin].push_back(inst);
   }
 
@@ -1524,7 +1522,7 @@ Resizer::dontTouch(const Instance *inst)
   if (!db_inst) {
     return false;
   }
-  return db_inst->isDoNotTouch();
+  return db_inst->isDoNotTouch() || db_inst->isPad();
 }
 
 void
@@ -2715,6 +2713,12 @@ Resizer::repairSetup(double setup_margin,
   repair_setup_->repairSetup(setup_margin, repair_tns_end_percent,
                              max_passes, verbose,
                              skip_pin_swap, skip_gate_cloning);
+}
+
+void Resizer::reportSwappablePins()
+{
+  resizePreamble();
+  repair_setup_->reportSwappablePins();
 }
 
 void

@@ -104,8 +104,7 @@ bool PlacementDensityDataSource::populateMap()
       odb::dbBlock* child;
       if (has_child_blocks
           && (child = inst->getBlock()->findChild(master->getName().c_str()))) {
-        odb::dbTransform child_transform;
-        inst->getTransform(child_transform);
+        const odb::dbTransform child_transform = inst->getTransform();
         blocks.emplace_back(child, child_transform);
         continue;
       }

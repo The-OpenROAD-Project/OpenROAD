@@ -436,14 +436,18 @@ void FlexDR::init_halfViaEncArea()
     if (i + 1 <= topLayerNum
         && getTech()->getLayer(i + 1)->getType() == dbTechLayerType::CUT) {
       auto viaDef = getTech()->getLayer(i + 1)->getDefaultViaDef();
-      frVia via(viaDef);
-      Rect layer1Box = via.getLayer1BBox();
-      Rect layer2Box = via.getLayer2BBox();
-      auto layer1HalfArea = layer1Box.area() / 2;
-      auto layer2HalfArea = layer2Box.area() / 2;
-      halfViaEncArea.push_back(std::make_pair(layer1HalfArea, layer2HalfArea));
+      if (viaDef) {
+        frVia via(viaDef);
+        Rect layer1Box = via.getLayer1BBox();
+        Rect layer2Box = via.getLayer2BBox();
+        auto layer1HalfArea = layer1Box.area() / 2;
+        auto layer2HalfArea = layer2Box.area() / 2;
+        halfViaEncArea.emplace_back(layer1HalfArea, layer2HalfArea);
+      } else {
+        halfViaEncArea.emplace_back(0, 0);
+      }
     } else {
-      halfViaEncArea.push_back(std::make_pair(0, 0));
+      halfViaEncArea.emplace_back(0, 0);
     }
   }
 }
@@ -1200,7 +1204,7 @@ int FlexDR::main()
     }
     if (logger_->debugCheck(DRT, "snapshot", 1)) {
       io::Writer writer(getDesign(), logger_);
-      writer.updateDb(db_, true);
+      writer.updateDb(db_, false, true);
       // insert the stack of vias for bterms above max layer again.
       // all routing is deleted in updateDb, so it is necessary to insert the
       // stack again.

@@ -575,11 +575,7 @@ void tmg_conn::detachTilePins()
         continue;
       }
       dbMTerm* mterm = tx->_iterm->getMTerm();
-      int px, py;
-      tx->_iterm->getInst()->getOrigin(px, py);
-      const Point origin = Point(px, py);
-      const dbOrientType orient = tx->_iterm->getInst()->getOrient();
-      const dbTransform transform(orient, origin);
+      const dbTransform transform = tx->_iterm->getInst()->getTransform();
       for (dbMPin* mpin : mterm->getMPins()) {
         for (dbBox* box : mpin->getGeometry()) {
           Rect recti = box->getBox();
@@ -806,11 +802,7 @@ void tmg_conn::findConnections()
     tmg_rcterm* x = _termV + j;
     if (x->_iterm) {
       dbMTerm* mterm = x->_iterm->getMTerm();
-      int px, py;
-      x->_iterm->getInst()->getOrigin(px, py);
-      const Point origin(px, py);
-      const dbOrientType orient = x->_iterm->getInst()->getOrient();
-      const dbTransform transform(orient, origin);
+      const dbTransform transform = x->_iterm->getInst()->getTransform();
       for (dbMPin* mpin : mterm->getMPins()) {
         dbSet<dbBox> boxes = mpin->getGeometry();
         for (int ipass = 0; ipass < 2; ipass++) {

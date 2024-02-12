@@ -38,6 +38,8 @@
 #include <istream>
 #include <ostream>
 #include <string>
+#include <unordered_map>
+#include <variant>
 
 #include "ZException.h"
 #include "dbObject.h"
@@ -49,12 +51,22 @@ namespace odb {
 
 class _dbDatabase;
 
+inline constexpr size_t kTemplateRecursionLimit = 16;
+
 class dbOStream
 {
+  using Position = std::ostream::pos_type;
+  struct Scope
+  {
+    std::string name;
+    Position start_pos;
+  };
+
   _dbDatabase* _db;
   std::ostream& _f;
   double _lef_area_factor;
   double _lef_dist_factor;
+  std::vector<Scope> _scopes;
 
   // By default values are written as their string ("255" vs 0xFF)
   // representations when using the << stream method. In dbOstream we are
@@ -172,6 +184,9 @@ class dbOStream
   template <size_t I = 0, typename... Ts>
   constexpr dbOStream& operator<<(const std::tuple<Ts...>& tup)
   {
+    static_assert(I <= kTemplateRecursionLimit,
+                  "OpenROAD disallows of std::tuple larger than 16 "
+                  "elements. You should look into alternate solutions");
     if constexpr (I == sizeof...(Ts)) {
       return *this;
     } else {
@@ -182,6 +197,18 @@ class dbOStream
 
   template <class T1, class T2>
   dbOStream& operator<<(const std::map<T1, T2>& m)
+  {
+    uint sz = m.size();
+    *this << sz;
+    for (auto const& [key, val] : m) {
+      *this << key;
+      *this << val;
+    }
+    return *this;
+  }
+
+  template <class T1, class T2>
+  dbOStream& operator<<(const std::unordered_map<T1, T2>& m)
   {
     uint sz = m.size();
     *this << sz;
@@ -209,9 +236,46 @@ class dbOStream
     return *this;
   }
 
+  template <uint32_t I = 0, typename... Ts>
+  dbOStream& operator<<(const std::variant<Ts...>& v)
+  {
+    static_assert(I <= kTemplateRecursionLimit,
+                  "OpenROAD disallows of std::variants larger than 16 "
+                  "elements. You should look into alternate solutions");
+    if constexpr (I == sizeof...(Ts)) {
+      return *this;
+    } else {
+      if (I == v.index()) {
+        *this << (uint32_t) v.index();
+        *this << std::get<I>(v);
+      }
+      return ((*this).operator<< <I + 1>(v));
+    }
+  }
+
   double lefarea(int value) { return ((double) value * _lef_area_factor); }
 
   double lefdist(int value) { return ((double) value * _lef_dist_factor); }
+
+  Position pos() const { return _f.tellp(); }
+
+  void pushScope(const std::string& name);
+  void popScope();
+};
+
+// RAII class for scoping ostream operations
+class dbOStreamScope
+{
+ public:
+  dbOStreamScope(dbOStream& ostream, const std::string& name)
+      : ostream_(ostream)
+  {
+    ostream_.pushScope(name);
+  }
+
+  ~dbOStreamScope() { ostream_.popScope(); }
+
+  dbOStream& ostream_;
 };
 
 class dbIStream
@@ -342,6 +406,20 @@ class dbIStream
     }
     return *this;
   }
+  template <class T1, class T2>
+  dbIStream& operator>>(std::unordered_map<T1, T2>& m)
+  {
+    uint sz;
+    *this >> sz;
+    for (uint i = 0; i < sz; i++) {
+      T1 key;
+      T2 val;
+      *this >> key;
+      *this >> val;
+      m[key] = val;
+    }
+    return *this;
+  }
   template <class T, std::size_t SIZE>
   dbIStream& operator>>(std::array<T, SIZE>& a)
   {
@@ -354,6 +432,9 @@ class dbIStream
   template <size_t I = 0, typename... Ts>
   constexpr dbIStream& operator>>(std::tuple<Ts...>& tup)
   {
+    static_assert(I <= kTemplateRecursionLimit,
+                  "OpenROAD disallows of std::tuple larger than 16 "
+                  "elements. You should look into alternate solutions");
     if constexpr (I == sizeof...(Ts)) {
       return *this;
     } else {
@@ -371,9 +452,36 @@ class dbIStream
     return *this;
   }
 
+  template <typename... Ts>
+  dbIStream& operator>>(std::variant<Ts...>& v)
+  {
+    uint32_t index = 0;
+    *this >> index;
+    return variantHelper(index, v);
+  }
+
   double lefarea(int value) { return ((double) value * _lef_area_factor); }
 
   double lefdist(int value) { return ((double) value * _lef_dist_factor); }
+
+ private:
+  template <uint32_t I = 0, typename... Ts>
+  dbIStream& variantHelper(uint32_t index, std::variant<Ts...>& v)
+  {
+    static_assert(I <= kTemplateRecursionLimit,
+                  "OpenROAD disallows of std::variants larger than 16 "
+                  "elements. You should look into alternate solutions");
+    if constexpr (I == sizeof...(Ts)) {
+      return *this;
+    } else {
+      if (I == index) {
+        std::variant_alternative_t<I, std::variant<Ts...>> val;
+        *this >> val;
+        v = val;
+      }
+      return (*this).variantHelper<I + 1>(index, v);
+    }
+  }
 };
 
 }  // namespace odb

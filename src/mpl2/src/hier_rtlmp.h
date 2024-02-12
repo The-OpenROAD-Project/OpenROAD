@@ -203,8 +203,30 @@ class HierRTLMP
   void mergeClusters(std::vector<Cluster*>& candidate_clusters);
   void updateSubTree(Cluster* parent);
   void breakLargeFlatCluster(Cluster* parent);
-  void breakMixedLeafCluster(Cluster* root_cluster);
+
+  void fetchMixedLeaves(Cluster* parent,
+                        std::vector<std::vector<Cluster*>>& mixed_leaves);
+  void breakMixedLeaves(const std::vector<std::vector<Cluster*>>& mixed_leaves);
+
+  void breakMixedLeaf(Cluster* mixed_leaf);
   void mapMacroInCluster2HardMacro(Cluster* cluster);
+  void createOneClusterForEachMacro(Cluster* parent,
+                                    const std::vector<HardMacro*>& hard_macros,
+                                    std::vector<Cluster*>& macro_clusters);
+  void classifyMacrosBySize(const std::vector<HardMacro*>& hard_macros,
+                            std::vector<int>& size_class);
+  void classifyMacrosByConnSignature(
+      const std::vector<Cluster*>& macro_clusters,
+      std::vector<int>& signature_class);
+  void groupSingleMacroClusters(const std::vector<Cluster*>& macro_clusters,
+                                const std::vector<int>& size_class,
+                                const std::vector<int>& signature_class,
+                                std::vector<int>& macro_class);
+  void addStdCellClusterToSubTree(Cluster* parent,
+                                  Cluster* mixed_leaf,
+                                  std::vector<int>& virtual_conn_clusters);
+  void replaceByStdCellCluster(Cluster* mixed_leaf,
+                               std::vector<int>& virtual_conn_clusters);
 
   // Coarse Shaping
   void runCoarseShaping();

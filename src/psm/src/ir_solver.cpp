@@ -184,6 +184,14 @@ void IRSolver::solveIR()
   Map<VectorXd> b(J.data(), J.size());
   SparseLU<SparseMatrix<double>> solver;
   debugPrint(logger_, utl::PSM, "IR Solver", 1, "Factorizing the G matrix");
+  debugPrint(logger_,
+             utl::PSM,
+             "IR Solver",
+             2,
+             "Gmat/rows {}, Gmat/cols {}, J/size {}",
+             Gmat->num_rows,
+             Gmat->num_cols,
+             J.size());
   solver.compute(A);
   if (solver.info() != Success) {
     // decomposition failed
@@ -386,7 +394,6 @@ bool IRSolver::addSources()
   size_t it = 0;
   for (auto [node_loc, voltage_value] : source_nodes_) {
     Gmat_->addSource(node_loc, it++);  // add the  bump
-    J_.push_back(voltage_value);       // push back  vdd
   }
   return true;
 }
@@ -625,8 +632,7 @@ bool IRSolver::createSourcesFromPads()
       continue;
     }
 
-    odb::dbTransform xform;
-    inst->getTransform(xform);
+    const odb::dbTransform xform = inst->getTransform();
 
     auto* mterm = iterm->getMTerm();
     for (auto* mpin : mterm->getMPins()) {
@@ -653,11 +659,61 @@ bool IRSolver::createSourcesFromPads()
   return added;
 }
 
+std::pair<bool, std::set<psm::Node*>> IRSolver::getInstNodes(
+    odb::dbInst* inst) const
+{
+  // Find the pin layers for the macro
+  std::set<Node*> nodes_J;
+  bool is_connected = false;
+  for (auto* iterm : inst->getITerms()) {
+    if (iterm->getNet() != net_) {
+      continue;
+    }
+
+    auto find_abutment_iterm = iterms_connected_by_abutment_.find(iterm);
+    if (find_abutment_iterm != iterms_connected_by_abutment_.end()) {
+      debugPrint(logger_,
+                 utl::PSM,
+                 "IR Solver",
+                 2,
+                 "Using {} instead of {} due to abutment.",
+                 find_abutment_iterm->second->getName(),
+                 iterm->getName());
+      iterm = find_abutment_iterm->second;
+    }
+
+    debugPrint(logger_,
+               utl::PSM,
+               "IR Solver",
+               3,
+               "Collecting nodes for {}",
+               iterm->getName());
+    is_connected = true;
+    const odb::dbTransform xform = iterm->getInst()->getTransform();
+    for (auto mpin : iterm->getMTerm()->getMPins()) {
+      for (auto box : mpin->getGeometry()) {
+        dbTechLayer* pin_layer = box->getTechLayer();
+        if (pin_layer) {
+          odb::Rect pin_shape = box->getBox();
+          xform.apply(pin_shape);
+          Gmat_->foreachNode(pin_layer->getRoutingLevel(),
+                             pin_shape.xMin(),
+                             pin_shape.xMax(),
+                             pin_shape.yMin(),
+                             pin_shape.yMax(),
+                             [&](Node* node) { nodes_J.insert(node); });
+        }
+      }
+    }
+  }
+
+  return {is_connected, nodes_J};
+}
+
 //! Function to create a J vector from the current map
-bool IRSolver::createJ()
+bool IRSolver::createJ(size_t gmat_nodes)
 {  // take current_map as an input?
-  const int num_nodes = Gmat_->getNumNodes();
-  J_.resize(num_nodes, 0);
+  J_.resize(gmat_nodes, 0);
 
   for (auto [inst, power] : getPower()) {
     if (!inst->isPlaced()) {
@@ -670,44 +726,15 @@ bool IRSolver::createJ()
                     inst->getName());
       continue;
     }
-    int x, y;
-    inst->getLocation(x, y);
     // Special condition to distribute power across multiple nodes for macro
     // blocks
     // TODO: The condition for PADs needs to be handled sperately once an
     // appropriate testcase is found. Conditionally treated the same as a macro.
     if (inst->isBlock() || inst->isPad()) {
-      std::set<Node*> nodes_J;
-      std::set<int> pin_layers;
-      // Find the pin layers for the macro
-      bool is_connected = false;
-      for (auto* iterm : inst->getITerms()) {
-        if (iterm->getNet() != net_) {
-          continue;
-        }
-        is_connected = true;
-        odb::dbTransform xform;
-        inst->getTransform(xform);
-        for (auto mpin : iterm->getMTerm()->getMPins()) {
-          for (auto box : mpin->getGeometry()) {
-            dbTechLayer* pin_layer = box->getTechLayer();
-            if (pin_layer) {
-              odb::Rect pin_shape = box->getBox();
-              xform.apply(pin_shape);
-              Gmat_->foreachNode(pin_layer->getRoutingLevel(),
-                                 pin_shape.xMin(),
-                                 pin_shape.xMax(),
-                                 pin_shape.yMin(),
-                                 pin_shape.yMax(),
-                                 [&](Node* node) { nodes_J.insert(node); });
-            }
-          }
-        }
-      }
-      const double num_nodes = nodes_J.size();
+      const auto& [is_connected, nodes_J] = getInstNodes(inst);
       // If nodes are not found on the pin layers we search for the lowest
       // metal layer that overlaps the macro
-      if (is_connected && num_nodes == 0) {
+      if (is_connected && nodes_J.empty()) {
         logger_->error(utl::PSM,
                        42,
                        "Unable to connect macro/pad Instance {} "
@@ -716,11 +743,13 @@ bool IRSolver::createJ()
       }
       // Distribute the power across all nodes within the bounding box
       for (auto node_J : nodes_J) {
-        node_J->addCurrentSrc(power / num_nodes);
+        node_J->addCurrentSrc(power / nodes_J.size());
         node_J->addInstance(inst);
       }
-      // For normal instances we only attach the current source to one node
     } else {
+      // For normal instances we only attach the current source to one node
+      int x, y;
+      inst->getLocation(x, y);
       Node* node_J = Gmat_->getNode(x, y, bottom_layer_, true);
       const Point node_loc = node_J->getLoc();
       if (abs(node_loc.getX() - x) > node_density_
@@ -742,7 +771,7 @@ bool IRSolver::createJ()
     }
   }
   // Creating the J matrix
-  for (int i = 0; i < num_nodes; ++i) {
+  for (int i = 0; i < gmat_nodes; ++i) {
     const Node* node_J = Gmat_->getNode(i);
     if (net_->getSigType() == dbSigType::GROUND) {
       J_[i] = (node_J->getCurrent());
@@ -750,6 +779,10 @@ bool IRSolver::createJ()
       J_[i] = -1 * (node_J->getCurrent());
     }
   }
+  for (const auto& [node_loc, voltage_value] : source_nodes_) {
+    J_.push_back(voltage_value);
+  }
+
   debugPrint(logger_, utl::PSM, "IR Solver", 1, "Created J vector");
   return true;
 }
@@ -897,14 +930,14 @@ void IRSolver::createGmatViaNodes()
       via_top_layer = via->getTopLayer();
       via_bottom_layer = via->getBottomLayer();
       via_boxes = via->getBoxes();
-      via->getViaParams(params);
+      params = via->getViaParams();
       has_params = via->hasParams();
     } else {
       dbTechVia* via = curWire->getTechVia();
       via_top_layer = via->getTopLayer();
       via_bottom_layer = via->getBottomLayer();
       via_boxes = via->getBoxes();
-      via->getViaParams(params);
+      params = via->getViaParams();
       has_params = via->hasParams();
     }
     const Point loc = curWire->getViaXY();
@@ -967,8 +1000,7 @@ void IRSolver::createGmatWireNodes()
     // and add node if there is an overlap with the current shape
     for (auto* iterm : macros_terms) {
       if (iterm->getBBox().intersects(curWire->getBox())) {
-        odb::dbTransform xform;
-        iterm->getInst()->getTransform(xform);
+        const odb::dbTransform xform = iterm->getInst()->getTransform();
         for (auto* mpin : iterm->getMTerm()->getMPins()) {
           for (auto* geom : mpin->getGeometry()) {
             if (geom->getTechLayer() != wire_layer) {
@@ -1088,7 +1120,7 @@ void IRSolver::createGmatConnections(bool connection_only)
         has_params = via->hasParams();
         via_boxes = via->getBoxes();
         if (has_params) {
-          via->getViaParams(params);
+          params = via->getViaParams();
         }
         via_top_layer = via->getTopLayer();
         via_bottom_layer = via->getBottomLayer();
@@ -1097,7 +1129,7 @@ void IRSolver::createGmatConnections(bool connection_only)
         has_params = via->hasParams();
         via_boxes = via->getBoxes();
         if (has_params) {
-          via->getViaParams(params);
+          params = via->getViaParams();
         }
         via_top_layer = via->getTopLayer();
         via_bottom_layer = via->getBottomLayer();
@@ -1510,8 +1542,7 @@ bool IRSolver::isStdCell(odb::dbInst* inst) const
 
 bool IRSolver::isConnected(odb::dbITerm* iterm) const
 {
-  odb::dbTransform xform;
-  iterm->getInst()->getTransform(xform);
+  const odb::dbTransform xform = iterm->getInst()->getTransform();
 
   for (auto* mpin : iterm->getMTerm()->getMPins()) {
     for (auto* geom : mpin->getGeometry()) {
@@ -1566,9 +1597,6 @@ void IRSolver::findUnconnectedInstancesByITerms(
   for (auto itr = iterms.begin(); itr != iterms.end();) {
     odb::dbInst* inst = itr->first;
 
-    odb::dbTransform xform;
-    inst->getTransform(xform);
-
     bool all_connected = true;
     for (auto* iterm : itr->second) {
       if (!isConnected(iterm)) {
@@ -1588,6 +1616,8 @@ void IRSolver::findUnconnectedInstancesByAbutment(
     ITermMap& iterms,
     std::set<odb::dbInst*>& connected_insts)
 {
+  iterms_connected_by_abutment_.clear();
+
   std::set<odb::dbInst*> inst_set;
   std::set<odb::dbITerm*> terminals_connected_to_grid;
   for (auto* iterm : net_->getITerms()) {
@@ -1640,6 +1670,14 @@ void IRSolver::findUnconnectedInstancesByAbutment(
             != terminals_connected_to_grid.end()) {
           connected = true;
           terminals_connected_to_grid.insert(iterm);
+
+          odb::dbITerm* grid_iterm = check_term;
+          // check if iterm is also an abutment and use its connection
+          auto find_abutment = iterms_connected_by_abutment_.find(check_term);
+          if (find_abutment != iterms_connected_by_abutment_.end()) {
+            grid_iterm = find_abutment->second;
+          }
+          iterms_connected_by_abutment_[iterm] = grid_iterm;
           break;
         } else {
           for (auto* next_iterm : connections[check_term]) {
@@ -1882,14 +1920,12 @@ bool IRSolver::build(const std::string& error_file, bool connectivity_only)
   readSourceData(!connectivity_only);
 
   bool res = createGmat(connectivity_only);
-  if (Gmat_->getNumNodes() == 0) {
+  const size_t gmat_nodes = Gmat_->getNumNodes();
+  if (gmat_nodes == 0) {
     connection_ = true;
     return false;
   }
 
-  if (res && !connectivity_only) {
-    res = createJ();
-  }
   if (res) {
     res = addSources();
   }
@@ -1904,6 +1940,9 @@ bool IRSolver::build(const std::string& error_file, bool connectivity_only)
     if (!connectivity_only) {
       res = connection_;
     }
+  }
+  if (res && !connectivity_only) {
+    res = createJ(gmat_nodes);
   }
   return res;
 }

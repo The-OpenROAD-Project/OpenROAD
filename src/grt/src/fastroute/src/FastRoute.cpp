@@ -139,9 +139,6 @@ void FastRouteCore::clear()
   v_capacity_3D_.clear();
   h_capacity_3D_.clear();
 
-  layer_grid_.resize(boost::extents[0][0]);
-  via_link_.resize(boost::extents[0][0]);
-
   cost_hvh_.clear();
   cost_vhv_.clear();
   cost_h_.clear();
@@ -195,9 +192,6 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
     last_col_v_capacity_3D_[i] = 0;
     last_row_h_capacity_3D_[i] = 0;
   }
-
-  layer_grid_.resize(boost::extents[num_layers_][MAXLEN]);
-  via_link_.resize(boost::extents[num_layers_][MAXLEN]);
 
   hv_.resize(boost::extents[y_range_][x_range_]);
   hyper_v_.resize(boost::extents[y_range_][x_range_]);
@@ -686,7 +680,7 @@ NetRouteMap FastRouteCore::getRoutes()
 
     for (int edgeID = 0; edgeID < num_edges; edgeID++) {
       const TreeEdge* treeedge = &(treeedges[edgeID]);
-      if (treeedge->len > 0) {
+      if (treeedge->len > 0 || treeedge->route.routelen > 0) {
         int routeLen = treeedge->route.routelen;
         const std::vector<short>& gridsX = treeedge->route.gridsX;
         const std::vector<short>& gridsY = treeedge->route.gridsY;
@@ -700,36 +694,23 @@ NetRouteMap FastRouteCore::getRoutes()
 
           GSegment segment
               = GSegment(lastX, lastY, lastL + 1, xreal, yreal, gridsL[i] + 1);
+
           lastX = xreal;
           lastY = yreal;
           lastL = gridsL[i];
           if (net_segs.find(segment) == net_segs.end()) {
-            net_segs.insert(segment);
-            route.push_back(segment);
-          }
-        }
-      } else {
-        int num_terminals = sttrees_[netID].num_terminals;
-        const auto& nodes = sttrees_[netID].nodes;
-        int x1 = tile_size_ * (nodes[treeedge->n1].x + 0.5) + x_corner_;
-        int y1 = tile_size_ * (nodes[treeedge->n1].y + 0.5) + y_corner_;
-        int l1 = nodes[treeedge->n1].botL;
-        int x2 = tile_size_ * (nodes[treeedge->n2].x + 0.5) + x_corner_;
-        int y2 = tile_size_ * (nodes[treeedge->n2].y + 0.5) + y_corner_;
-        int l2 = nodes[treeedge->n2].botL;
-        GSegment segment(x1, y1, l1 + 1, x2, y2, l2 + 1);
-        // It is possible to have nodes that are not in adjacent layers if one
-        // of the nodes is steiner node, this check only adds the segment
-        // if the nodes are in adjacent layer
-        if (net_segs.find(segment) == net_segs.end()
-            && std::abs(l1 - l2) == 1) {
-          net_segs.insert(segment);
-          route.push_back(segment);
-        } else if (treeedge->n1 < num_terminals && treeedge->n2 < num_terminals
-                   && std::abs(l1 - l2) > 1) {
-          auto [bottom_layer, top_layer] = std::minmax(l1, l2);
-          for (int l = bottom_layer; l < top_layer; l++) {
-            GSegment segment(x1, y1, l + 1, x2, y2, l + 2);
+            if (segment.init_layer != segment.final_layer) {
+              GSegment invet_via = GSegment(segment.final_x,
+                                            segment.final_y,
+                                            segment.final_layer,
+                                            segment.init_x,
+                                            segment.init_y,
+                                            segment.init_layer);
+              if (net_segs.find(invet_via) != net_segs.end()) {
+                continue;
+              }
+            }
+
             net_segs.insert(segment);
             route.push_back(segment);
           }
@@ -984,7 +965,7 @@ NetRouteMap FastRouteCore::run()
                "LV routing round {}, enlarge {}.",
                i,
                enlarge_);
-    routeLVAll(newTH, enlarge_, LOGIS_COF);
+    routeMonotonicAll(newTH, enlarge_, LOGIS_COF);
 
     past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
 

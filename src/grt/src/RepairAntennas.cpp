@@ -79,7 +79,7 @@ bool RepairAntennas::checkAntennaViolations(NetRouteMap& routing,
       std::vector<ant::Violation> net_violations
           = arc_->getAntennaViolations(db_net, diode_mterm, ratio_margin);
       if (!net_violations.empty()) {
-        antenna_violations_[db_net] = net_violations;
+        antenna_violations_[db_net] = std::move(net_violations);
         debugPrint(logger_,
                    GRT,
                    "repair_antennas",
@@ -123,20 +123,39 @@ odb::dbWire* RepairAntennas::makeNetWire(
     std::unordered_set<GSegment, GSegmentHash> wire_segments;
     int prev_conn_layer = -1;
     for (GSegment& seg : route) {
+      int l1 = seg.init_layer;
+      int l2 = seg.final_layer;
+      auto [bottom_layer, top_layer] = std::minmax(l1, l2);
+
+      odb::dbTechLayer* bottom_tech_layer
+          = tech->findRoutingLayer(bottom_layer);
+      odb::dbTechLayer* top_tech_layer = tech->findRoutingLayer(top_layer);
+
       if (std::abs(seg.init_layer - seg.final_layer) > 1) {
-        logger_->error(GRT, 68, "Global route segment not valid.");
+        debugPrint(logger_,
+                   GRT,
+                   "check_antennas",
+                   1,
+                   "invalid seg: ({}, {})um to ({}, {})um",
+                   grouter_->dbuToMicrons(seg.init_x),
+                   grouter_->dbuToMicrons(seg.init_y),
+                   grouter_->dbuToMicrons(seg.final_x),
+                   grouter_->dbuToMicrons(seg.final_y));
+
+        logger_->error(GRT,
+                       68,
+                       "Global route segment for net {} not "
+                       "valid. The layers {} and {} "
+                       "are not adjacent.",
+                       net->getName(),
+                       bottom_tech_layer->getName(),
+                       top_tech_layer->getName());
       }
       if (wire_segments.find(seg) == wire_segments.end()) {
         int x1 = seg.init_x;
         int y1 = seg.init_y;
-        int l1 = seg.init_layer;
-        int l2 = seg.final_layer;
 
         if (seg.isVia()) {
-          auto [bottom_layer, top_layer] = std::minmax(l1, l2);
-          odb::dbTechLayer* bottom_tech_layer
-              = tech->findRoutingLayer(bottom_layer);
-          odb::dbTechLayer* top_tech_layer = tech->findRoutingLayer(top_layer);
           if (bottom_layer >= grouter_->getMinRoutingLayer()) {
             if (bottom_layer == prev_conn_layer) {
               wire_encoder.newPath(bottom_tech_layer, odb::dbWireType::ROUTED);
@@ -549,18 +568,12 @@ void RepairAntennas::setInstsPlacementStatus(
 
 odb::Rect RepairAntennas::getInstRect(odb::dbInst* inst, odb::dbITerm* iterm)
 {
-  int min = std::numeric_limits<int>::min();
-  int max = std::numeric_limits<int>::max();
-
-  int x, y;
-  inst->getOrigin(x, y);
-  odb::Point origin = odb::Point(x, y);
-  odb::dbTransform transform(inst->getOrient(), origin);
+  const odb::dbTransform transform = inst->getTransform();
 
   odb::Rect inst_rect;
 
   if (inst->getMaster()->isBlock()) {
-    inst_rect = odb::Rect(max, max, min, min);
+    inst_rect.mergeInit();
     odb::dbMTerm* mterm = iterm->getMTerm();
     if (mterm != nullptr) {
       for (odb::dbMPin* mterm_pin : mterm->getMPins()) {

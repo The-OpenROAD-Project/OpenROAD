@@ -208,9 +208,9 @@ void FastRouteCore::fixOverlappingEdge(
         h_used_ggrid_.insert(std::make_pair(new_route_y[k], min_x));
       }
     }
-    treeedge->route.gridsX = new_route_x;
-    treeedge->route.gridsY = new_route_y;
     treeedge->route.routelen = new_route_x.size() - 1;
+    treeedge->route.gridsX = std::move(new_route_x);
+    treeedge->route.gridsY = std::move(new_route_y);
   }
 }
 
@@ -769,170 +769,150 @@ void FastRouteCore::setupHeap(const int netID,
     d2[y2][x2] = 0;
     dest_heap.push_back(&d2[y2][x2]);
   } else {  // net with more than 2 pins
-    const int numNodes = sttrees_[netID].num_nodes;
+    const int numNodes = sttrees_[netID].num_nodes();
 
     std::vector<bool> visited(numNodes, false);
     std::vector<int> queue(numNodes);
 
     // find all the grids on tree edges in subtree t1 (connecting to n1) and put
     // them into src_heap
-    if (n1 < num_terminals) {  // n1 is a Pin node
-      // just need to put n1 itself into src_heap
-      d1[y1][x1] = 0;
-      src_heap.push_back(&d1[y1][x1]);
-      visited[n1] = true;
-    } else {  // n1 is a Steiner node
-      int queuehead = 0;
-      int queuetail = 0;
+    int queuehead = 0;
+    int queuetail = 0;
 
-      // add n1 into src_heap
-      d1[y1][x1] = 0;
-      src_heap.push_back(&d1[y1][x1]);
-      visited[n1] = true;
+    // add n1 into src_heap
+    d1[y1][x1] = 0;
+    src_heap.push_back(&d1[y1][x1]);
+    visited[n1] = true;
 
-      // add n1 into the queue
-      queue[queuetail] = n1;
-      queuetail++;
+    // add n1 into the queue
+    queue[queuetail] = n1;
+    queuetail++;
 
-      // loop to find all the edges in subtree t1
-      while (queuetail > queuehead) {
-        // get cur node from the queuehead
-        const int cur = queue[queuehead];
-        queuehead++;
-        visited[cur] = true;
-        if (cur < num_terminals) {  // cur node isn't a Steiner node
+    // loop to find all the edges in subtree t1
+    while (queuetail > queuehead) {
+      // get cur node from the queuehead
+      const int cur = queue[queuehead];
+      queuehead++;
+      visited[cur] = true;
+
+      const int nbrcnt = treenodes[cur].nbr_count;
+      for (int i = 0; i < nbrcnt; i++) {
+        const int nbr = treenodes[cur].nbr[i];
+        const int edge = treenodes[cur].edge[i];
+
+        if (nbr == n2) {
           continue;
         }
-        const int nbrcnt = treenodes[cur].nbr_count;
-        for (int i = 0; i < nbrcnt; i++) {
-          const int nbr = treenodes[cur].nbr[i];
-          const int edge = treenodes[cur].edge[i];
 
-          if (nbr == n2) {
-            continue;
+        if (visited[nbr]) {
+          continue;
+        }
+
+        // put all the grids on the two adjacent tree edges into src_heap
+        if (treeedges[edge].route.routelen > 0) {  // not a degraded edge
+          // put nbr into src_heap if in enlarged region
+          const TreeNode& nbr_node = treenodes[nbr];
+          if (in_region_[nbr_node.y][nbr_node.x]) {
+            const int nbrX = nbr_node.x;
+            const int nbrY = nbr_node.y;
+            d1[nbrY][nbrX] = 0;
+            src_heap.push_back(&d1[nbrY][nbrX]);
+            corr_edge_[nbrY][nbrX] = edge;
+          }
+          const Route* route = &(treeedges[edge].route);
+          if (route->type != RouteType::MazeRoute) {
+            logger_->error(GRT, 125, "Setup heap: not maze routing.");
           }
 
-          if (visited[nbr]) {
-            continue;
+          // don't put edge_n1 and edge_n2 into src_heap
+          for (int j = 1; j < route->routelen; j++) {
+            const int x_grid = route->gridsX[j];
+            const int y_grid = route->gridsY[j];
+
+            if (in_region_[y_grid][x_grid]) {
+              d1[y_grid][x_grid] = 0;
+              src_heap.push_back(&d1[y_grid][x_grid]);
+              corr_edge_[y_grid][x_grid] = edge;
+            }
           }
+        }  // if not a degraded edge (len>0)
 
-          // put all the grids on the two adjacent tree edges into src_heap
-          if (treeedges[edge].route.routelen > 0) {  // not a degraded edge
-            // put nbr into src_heap if in enlarged region
-            const TreeNode& nbr_node = treenodes[nbr];
-            if (in_region_[nbr_node.y][nbr_node.x]) {
-              const int nbrX = nbr_node.x;
-              const int nbrY = nbr_node.y;
-              d1[nbrY][nbrX] = 0;
-              src_heap.push_back(&d1[nbrY][nbrX]);
-              corr_edge_[nbrY][nbrX] = edge;
-            }
-
-            const Route* route = &(treeedges[edge].route);
-            if (route->type != RouteType::MazeRoute) {
-              logger_->error(GRT, 125, "Setup heap: not maze routing.");
-            }
-
-            // don't put edge_n1 and edge_n2 into src_heap
-            for (int j = 1; j < route->routelen; j++) {
-              const int x_grid = route->gridsX[j];
-              const int y_grid = route->gridsY[j];
-
-              if (in_region_[y_grid][x_grid]) {
-                d1[y_grid][x_grid] = 0;
-                src_heap.push_back(&d1[y_grid][x_grid]);
-                corr_edge_[y_grid][x_grid] = edge;
-              }
-            }
-          }  // if not a degraded edge (len>0)
-
-          // add the neighbor of cur node into queue
-          queue[queuetail] = nbr;
-          queuetail++;
-        }  // loop i (3 neigbors for cur node)
-      }    // while queue is not empty
-    }      // else n1 is not a Pin node
+        // add the neighbor of cur node into queue
+        queue[queuetail] = nbr;
+        queuetail++;
+      }  // loop i (3 neighbors for cur node)
+    }    // while queue is not empty
 
     // find all the grids on subtree t2 (connect to n2) and put them into
     // dest_heap find all the grids on tree edges in subtree t2 (connecting to
     // n2) and put them into dest_heap
-    if (n2 < num_terminals) {  // n2 is a Pin node
-      // just need to put n1 itself into src_heap
-      d2[y2][x2] = 0;
-      dest_heap.push_back(&d2[y2][x2]);
-      visited[n2] = true;
-    } else {  // n2 is a Steiner node
-      int queuehead = 0;
-      int queuetail = 0;
+    queuehead = 0;
+    queuetail = 0;
 
-      // add n2 into dest_heap
-      d2[y2][x2] = 0;
-      dest_heap.push_back(&d2[y2][x2]);
-      visited[n2] = true;
+    // add n2 into dest_heap
+    d2[y2][x2] = 0;
+    dest_heap.push_back(&d2[y2][x2]);
+    visited[n2] = true;
 
-      // add n2 into the queue
-      queue[queuetail] = n2;
-      queuetail++;
+    // add n2 into the queue
+    queue[queuetail] = n2;
+    queuetail++;
 
-      // loop to find all the edges in subtree t2
-      while (queuetail > queuehead) {
-        // get cur node form queuehead
-        const int cur = queue[queuehead];
-        visited[cur] = true;
-        queuehead++;
+    // loop to find all the edges in subtree t2
+    while (queuetail > queuehead) {
+      // get cur node form queuehead
+      const int cur = queue[queuehead];
+      visited[cur] = true;
+      queuehead++;
 
-        if (cur < num_terminals) {  // cur node isn't a Steiner node
+      const int nbrcnt = treenodes[cur].nbr_count;
+      for (int i = 0; i < nbrcnt; i++) {
+        const int nbr = treenodes[cur].nbr[i];
+        const int edge = treenodes[cur].edge[i];
+
+        if (nbr == n1) {
           continue;
         }
-        const int nbrcnt = treenodes[cur].nbr_count;
-        for (int i = 0; i < nbrcnt; i++) {
-          const int nbr = treenodes[cur].nbr[i];
-          const int edge = treenodes[cur].edge[i];
 
-          if (nbr == n1) {
-            continue;
+        if (visited[nbr]) {
+          continue;
+        }
+
+        // put all the grids on the two adjacent tree edges into dest_heap
+        if (treeedges[edge].route.routelen > 0) {  // not a degraded edge
+          // put nbr into dest_heap
+          const TreeNode& nbr_node = treenodes[nbr];
+          if (in_region_[nbr_node.y][nbr_node.x]) {
+            const int nbrX = nbr_node.x;
+            const int nbrY = nbr_node.y;
+            d2[nbrY][nbrX] = 0;
+            dest_heap.push_back(&d2[nbrY][nbrX]);
+            corr_edge_[nbrY][nbrX] = edge;
           }
 
-          if (visited[nbr]) {
-            continue;
+          const Route* route = &(treeedges[edge].route);
+          if (route->type != RouteType::MazeRoute) {
+            logger_->error(GRT, 201, "Setup heap: not maze routing.");
           }
 
-          // put all the grids on the two adjacent tree edges into dest_heap
-          if (treeedges[edge].route.routelen > 0) {  // not a degraded edge
-            // put nbr into dest_heap
-            const TreeNode& nbr_node = treenodes[nbr];
-            if (in_region_[nbr_node.y][nbr_node.x]) {
-              const int nbrX = nbr_node.x;
-              const int nbrY = nbr_node.y;
-              d2[nbrY][nbrX] = 0;
-              dest_heap.push_back(&d2[nbrY][nbrX]);
-              corr_edge_[nbrY][nbrX] = edge;
+          // don't put edge_n1 and edge_n2 into dest_heap
+          for (int j = 1; j < route->routelen; j++) {
+            const int x_grid = route->gridsX[j];
+            const int y_grid = route->gridsY[j];
+            if (in_region_[y_grid][x_grid]) {
+              d2[y_grid][x_grid] = 0;
+              dest_heap.push_back(&d2[y_grid][x_grid]);
+              corr_edge_[y_grid][x_grid] = edge;
             }
+          }
+        }  // if the edge is not degraded (len>0)
 
-            const Route* route = &(treeedges[edge].route);
-            if (route->type != RouteType::MazeRoute) {
-              logger_->error(GRT, 201, "Setup heap: not maze routing.");
-            }
-
-            // don't put edge_n1 and edge_n2 into dest_heap
-            for (int j = 1; j < route->routelen; j++) {
-              const int x_grid = route->gridsX[j];
-              const int y_grid = route->gridsY[j];
-              if (in_region_[y_grid][x_grid]) {
-                d2[y_grid][x_grid] = 0;
-                dest_heap.push_back(&d2[y_grid][x_grid]);
-                corr_edge_[y_grid][x_grid] = edge;
-              }
-            }
-          }  // if the edge is not degraded (len>0)
-
-          // add the neighbor of cur node into queue
-          queue[queuetail] = nbr;
-          queuetail++;
-        }  // loop i (3 neigbors for cur node)
-      }    // while queue is not empty
-    }      // else n2 is not a Pin node
-  }        // net with more than two pins
+        // add the neighbor of cur node into queue
+        queue[queuetail] = nbr;
+        queuetail++;
+      }  // loop i (3 neigbors for cur node)
+    }    // while queue is not empty
+  }      // net with more than two pins
 
   for (int i = regionY1; i <= regionY2; i++) {
     for (int j = regionX1; j <= regionX2; j++)
@@ -1401,8 +1381,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
       const int edgeID = net_eo_[edgeREC].edgeID;
       TreeEdge* treeedge = &(treeedges[edgeID]);
 
-      const int n1 = treeedge->n1;
-      const int n2 = treeedge->n2;
+      int n1 = treeedge->n1;
+      int n2 = treeedge->n2;
       const int n1x = treenodes[n1].x;
       const int n1y = treenodes[n1].y;
       const int n2x = treenodes[n2].x;
@@ -1808,6 +1788,10 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
       const int edge_n1n2 = edgeID;
       // (1) consider subtree1
+      if (n1 < num_terminals && (E1x != n1x || E1y != n1y)) {
+        // split neighbor edge and return id new node
+        n1 = splitEdge(treeedges, treenodes, n2, n1, edgeID);
+      }
       if (n1 >= num_terminals && (E1x != n1x || E1y != n1y))
       // n1 is not a pin and E1!=n1, then make change to subtree1,
       // otherwise, no change to subtree1
@@ -1959,6 +1943,10 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
       }    // n1 is not a pin and E1!=n1
 
       // (2) consider subtree2
+      if (n2 < num_terminals && (E2x != n2x || E2y != n2y)) {
+        // split neighbor edge and return id new node
+        n2 = splitEdge(treeedges, treenodes, n1, n2, edgeID);
+      }
       if (n2 >= num_terminals && (E2x != n2x || E2y != n2y))
       // n2 is not a pin and E2!=n2, then make change to subtree2,
       // otherwise, no change to subtree2

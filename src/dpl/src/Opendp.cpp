@@ -48,6 +48,8 @@
 #include <map>
 
 #include "DplObserver.h"
+#include "dpl/OptMirror.h"
+#include "odb/util.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -164,7 +166,8 @@ void Opendp::detailedPlacement(int max_displacement_x,
                     "the -disallow_one_site_gaps flag.");
     }
   }
-  hpwl_before_ = hpwl();
+  odb::WireLengthEvaluator eval(block_);
+  hpwl_before_ = eval.hpwl();
   detailedPlacement();
   // Save displacement stats before updating instance DB locations.
   findDisplacementStats();
@@ -224,7 +227,8 @@ void Opendp::reportLegalizationStats() const
                   dbuToMicrons(displacement_max_));
   logger_->report("original HPWL        {:10.1f} u",
                   dbuToMicrons(hpwl_before_));
-  double hpwl_legal = hpwl();
+  odb::WireLengthEvaluator eval(block_);
+  double hpwl_legal = eval.hpwl();
   logger_->report("legalized HPWL       {:10.1f} u", dbuToMicrons(hpwl_legal));
   logger_->metric("route__wirelength__estimated", dbuToMicrons(hpwl_legal));
   int hpwl_delta
@@ -257,27 +261,13 @@ void Opendp::findDisplacementStats()
   }
 }
 
-// Note that this does NOT use cell/core coordinates.
-int64_t Opendp::hpwl() const
-{
-  int64_t hpwl_sum = 0;
-  for (dbNet* net : block_->getNets()) {
-    hpwl_sum += hpwl(net);
-  }
-  return hpwl_sum;
-}
-
-int64_t Opendp::hpwl(dbNet* net) const
-{
-  if (net->getSigType().isSupply()) {
-    return 0;
-  }
-
-  Rect bbox = net->getTermBBox();
-  return bbox.dx() + bbox.dy();
-}
-
 ////////////////////////////////////////////////////////////////
+
+void Opendp::optimizeMirroring()
+{
+  OptimizeMirroring opt(logger_, db_);
+  opt.run();
+}
 
 Point Opendp::initialLocation(const Cell* cell, bool padded) const
 {
@@ -478,9 +468,27 @@ int Opendp::gridPaddedWidth(const Cell* cell) const
   return divCeil(paddedWidth(cell), site_width);
 }
 
-int Opendp::gridHeight(const Cell* cell, int row_height) const
+int Opendp::coordinateToHeight(int y_coordinate, GridMapKey gmk) const
 {
-  return std::max(1, divCeil(cell->height_, row_height));
+  // gets a coordinate and its grid, and returns the height of the coordinate.
+  // This is useful for hybrid sites
+  auto grid_info = grid_info_map_.at(gmk);
+  if (grid_info.isHybrid()) {
+    auto& grid_sites = grid_info.getSites();
+    const int total_height = grid_info.getSitesTotalHeight();
+    int patterns_below = divFloor(y_coordinate, grid_sites.size());
+    int remaining_rows = y_coordinate % grid_sites.size();
+    int remaining_rows_height
+        = std::accumulate(grid_sites.begin(),
+                          grid_sites.begin() + remaining_rows,
+                          0,
+                          [](int sum, const dbSite::OrientedSite& entry) {
+                            return sum + entry.site->getHeight();
+                          });
+    int height = patterns_below * total_height + remaining_rows_height;
+    return height;
+  }
+  return y_coordinate * grid_info.getSitesTotalHeight();
 }
 
 int Opendp::gridHeight(const Cell* cell) const

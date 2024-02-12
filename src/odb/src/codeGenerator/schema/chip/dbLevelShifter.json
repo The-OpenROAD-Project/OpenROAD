@@ -107,6 +107,21 @@
       "name": "_instances", 
       "type": "dbVector<std::pair<std::string, std::string>>",
       "flags": ["no-set", "no-get","no-template"]
+    },
+    {
+      "name" : "_cell_name",
+      "type" : "std::string",
+      "flags": ["no-serial"]
+    },
+    {
+      "name" : "_cell_input",
+      "type" : "std::string",
+      "flags": ["no-serial"]
+    },
+    {
+      "name": "_cell_output",
+      "type": "std::string",
+      "flags": ["no-serial"]
     }
   ],
   "cpp_includes": [

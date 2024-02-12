@@ -200,11 +200,6 @@ void MacroPlacer2::setMacroPlacementFile(const std::string& file_name)
   hier_rtlmp_->setMacroPlacementFile(file_name);
 }
 
-void MacroPlacer2::writeMacroPlacement(const std::string& file_name)
-{
-  hier_rtlmp_->writeMacroPlacement(file_name);
-}
-
 void MacroPlacer2::setDebug(std::unique_ptr<Mpl2Observer>& graphics)
 {
   hier_rtlmp_->setDebug(graphics);
