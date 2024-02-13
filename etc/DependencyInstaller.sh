@@ -326,7 +326,6 @@ _installRHELPackages() {
         llvm7.0-devel \
         llvm7.0-libs \
         make \
-        pandoc \
         pcre-devel \
         pcre2-devel \
         pkgconf \
