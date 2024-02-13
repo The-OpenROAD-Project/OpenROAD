@@ -298,6 +298,9 @@ _installRHELCleanUp() {
 }
 
 _installRHELPackages() {
+    arch=amd64
+    version=3.1.11.1
+
     yum -y update
     if [[ $(yum repolist | egrep -c "rhel-8-for-x86_64-appstream-rpms") -eq 0 ]]; then
         yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-8-6.el8.noarch.rpm
@@ -317,7 +320,6 @@ _installRHELPackages() {
         gdb \
         git \
         glibc-devel \
-        groff \
         libtool \
         libffi-devel \
         llvm7.0 \
@@ -348,6 +350,10 @@ _installRHELPackages() {
     yum install -y \
         http://repo.okay.com.mx/centos/8/x86_64/release/bison-3.0.4-10.el8.x86_64.rpm \
         https://forensics.cert.org/centos/cert/7/x86_64/flex-2.6.1-9.el7.x86_64.rpm
+
+    wget https://github.com/jgm/pandoc/releases/download/${version}/pandoc-${version}-linux-${arch}.tar.gz &&\
+    sudo tar xvzf pandoc-${version}-linux-${arch}.tar.gz --strip-components 1 -C /usr/local/ &&\
+    rm -rf pandoc-${version}-linux-${arch}.tar.gz
 }
 
 _installCentosCleanUp() {
