@@ -1,8 +1,9 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
+/////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2021, The Regents of the University of California
+// Copyright (c) 2024, Parallax Software, Inc.
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -29,54 +30,76 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-#include "AbstractRoutingCongestionDataSource.h"
-#include "gui/heatMap.h"
+#include <unordered_map>
+#include <vector>
 
-namespace grt {
+namespace utl {
+class Logger;
+}
 
-class RoutingCongestionDataSource : public gui::GlobalRoutingDataSource,
-                                    public AbstractRoutingCongestionDataSource
+#include "odb/db.h"
+
+namespace dpl {
+
+using odb::dbInst;
+using odb::dbNet;
+using odb::Rect;
+
+using std::unordered_map;
+using std::vector;
+
+using utl::Logger;
+
+class NetBox
 {
  public:
-  RoutingCongestionDataSource(utl::Logger* logger, odb::dbDatabase* db);
+  NetBox() = default;
+  NetBox(dbNet* net, Rect box, bool ignore);
+  int64_t hpwl();
+  void saveBox();
+  void restoreBox();
 
-  void registerHeatMap() override { gui::HeatMapDataSource::registerHeatMap(); }
-  void update() override { gui::HeatMapDataSource::update(); }
-
- protected:
-  virtual bool populateMap() override;
-  virtual void combineMapData(bool base_has_value,
-                              double& base,
-                              const double new_data,
-                              const double data_area,
-                              const double intersection_area,
-                              const double rect_area) override;
-  virtual void correctMapScale(HeatMapDataSource::Map& map) override;
-  virtual std::string formatValue(double value, bool legend) const override;
-
- private:
-  enum Direction
-  {
-    ALL,
-    HORIZONTAL,
-    VERTICAL
-  };
-  enum MapType
-  {
-    Congestion,
-    Usage,
-    Capacity
-  };
-
-  odb::dbDatabase* db_;
-  Direction direction_;
-  odb::dbTechLayer* layer_;
-
-  MapType type_;
-  double max_;
+  dbNet* net_ = nullptr;
+  Rect box_;
+  Rect box_saved_;
+  bool ignore_ = false;
 };
 
-}  // namespace grt
+using NetBoxMap = unordered_map<dbNet*, NetBox>;
+using NetBoxes = vector<NetBox*>;
+
+class OptimizeMirroring
+{
+ public:
+  OptimizeMirroring(Logger* logger, odb::dbDatabase* db);
+
+  void run();
+
+ private:
+  int mirrorCandidates(vector<dbInst*>& mirror_candidates);
+  void findNetBoxes();
+  std::vector<dbInst*> findMirrorCandidates(NetBoxes& net_boxes);
+
+  void updateNetBoxes(dbInst* inst);
+  void saveNetBoxes(dbInst* inst);
+  void restoreNetBoxes(dbInst* inst);
+
+  int64_t hpwl(dbInst* inst);  // Sum of ITerm hpwl's.
+  double dbuToMicrons(int64_t dbu) const;
+
+  Logger* logger_ = nullptr;
+  odb::dbDatabase* db_ = nullptr;
+  odb::dbBlock* block_ = nullptr;
+
+  NetBoxMap net_box_map_;
+
+  // Net bounding box size on nets with more instance terminals
+  // than this are ignored.
+  static constexpr int mirror_max_iterm_count_ = 100;
+};
+
+}  // namespace dpl

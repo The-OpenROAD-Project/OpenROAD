@@ -50,8 +50,8 @@ void lefTechLayerMinStepParser::setMinAdjacentLength2(double length,
   curRule->setMinAdjLength2(l->dbdist(length));
   curRule->setMinAdjLength2Valid(true);
 }
-void lefTechLayerMinStepParser::minBetweenLngthParser(double length,
-                                                      odb::lefin* l)
+void lefTechLayerMinStepParser::minBetweenLengthParser(double length,
+                                                       odb::lefin* l)
 {
   curRule->setMinBetweenLength(l->dbdist(length));
   curRule->setMinBetweenLengthValid(true);
@@ -61,6 +61,13 @@ void lefTechLayerMinStepParser::noBetweenEolParser(double width, odb::lefin* l)
   curRule->setEolWidth(l->dbdist(width));
   curRule->setNoBetweenEol(true);
 }
+
+void lefTechLayerMinStepParser::noAdjacentEolParser(double width, odb::lefin* l)
+{
+  curRule->setEolWidth(l->dbdist(width));
+  curRule->setNoAdjacentEol(true);
+}
+
 void lefTechLayerMinStepParser::minStepLengthParser(double length,
                                                     odb::lefin* l)
 {
@@ -72,9 +79,19 @@ void lefTechLayerMinStepParser::maxEdgesParser(int edges, odb::lefin* l)
   curRule->setMaxEdgesValid(true);
 }
 
+void lefTechLayerMinStepParser::setExceptRectangle()
+{
+  curRule->setExceptRectangle(true);
+}
+
 void lefTechLayerMinStepParser::setConvexCorner()
 {
   curRule->setConvexCorner(true);
+}
+
+void lefTechLayerMinStepParser::setConcaveCorner()
+{
+  curRule->setConcaveCorner(true);
 }
 
 void lefTechLayerMinStepParser::setExceptSameCorners()
@@ -86,25 +103,37 @@ bool lefTechLayerMinStepParser::parse(std::string s,
                                       dbTechLayer* layer,
                                       odb::lefin* l)
 {
+  qi::rule<std::string::iterator, space_type> convexConcaveRule
+      = (string("CONVEXCORNER")[boost::bind(
+             &lefTechLayerMinStepParser::setConvexCorner, this)]
+         | string("CONCAVECORNER")[boost::bind(
+             &lefTechLayerMinStepParser::setConcaveCorner, this)]);
   qi::rule<std::string::iterator, space_type> minAdjacentRule
       = (lit("MINADJACENTLENGTH") >> double_[boost::bind(
              &lefTechLayerMinStepParser::setMinAdjacentLength1, this, _1, l)]
-         >> -(string("CONVEXCORNER")[boost::bind(
-                  &lefTechLayerMinStepParser::setConvexCorner, this)]
+         >> -(convexConcaveRule
               | double_[boost::bind(
                   &lefTechLayerMinStepParser::setMinAdjacentLength2,
                   this,
                   _1,
                   l)]));
 
-  qi::rule<std::string::iterator, space_type> minBetweenLngthRule
+  qi::rule<std::string::iterator, space_type> minBetweenLengthRule
       = (lit("MINBETWEENLENGTH") >> (double_[boost::bind(
-             &lefTechLayerMinStepParser::minBetweenLngthParser, this, _1, l)])
+             &lefTechLayerMinStepParser::minBetweenLengthParser, this, _1, l)])
          >> -(lit("EXCEPTSAMECORNERS")[boost::bind(
              &lefTechLayerMinStepParser::setExceptSameCorners, this)]));
   qi::rule<std::string::iterator, space_type> noBetweenEolRule
       = (lit("NOBETWEENEOL") >> double_)[boost::bind(
           &lefTechLayerMinStepParser::noBetweenEolParser, this, _1, l)];
+  qi::rule<std::string::iterator, space_type> noAdjacentEolRule
+      = (lit("NOADJACENTEOL") >> double_)[boost::bind(
+            &lefTechLayerMinStepParser::noAdjacentEolParser, this, _1, l)]
+        >> -(lit("MINADJACENTLENGTH") >> double_[boost::bind(
+                 &lefTechLayerMinStepParser::setMinAdjacentLength1,
+                 this,
+                 _1,
+                 l)]);
   qi::rule<std::string::iterator, space_type> minstepRule
       = (+(lit("MINSTEP")[boost::bind(
                &lefTechLayerMinStepParser::createSubRule, this, layer)]
@@ -112,7 +141,10 @@ bool lefTechLayerMinStepParser::parse(std::string s,
                &lefTechLayerMinStepParser::minStepLengthParser, this, _1, l)]
            >> -(lit("MAXEDGES") >> int_[boost::bind(
                     &lefTechLayerMinStepParser::maxEdgesParser, this, _1, l)])
-           >> -(minAdjacentRule | minBetweenLngthRule | noBetweenEolRule)
+           >> -(lit("EXCEPTRECTANGLE")[boost::bind(
+               &lefTechLayerMinStepParser::setExceptRectangle, this)])
+           >> -(minAdjacentRule | minBetweenLengthRule | noAdjacentEolRule
+                | noBetweenEolRule)
            >> lit(";")));
   auto first = s.begin();
   auto last = s.end();

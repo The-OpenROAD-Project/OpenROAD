@@ -51,8 +51,9 @@ class Logger;
 namespace odb {
 class dbBlock;
 class dbBox;
-class dbMaster;
 class dbInst;
+class dbMaster;
+class dbNet;
 using uint = unsigned int;
 
 // Simple list
@@ -487,6 +488,7 @@ class RUDYCalculator
     void setRect(int lx, int ly, int ux, int uy);
     void addRUDY(float rudy);
     float getRUDY() const { return rudy_; }
+    void clearRUDY() { rudy_ = 0.0; }
 
    private:
     odb::Rect rect_;
@@ -554,5 +556,17 @@ void cutRows(dbBlock* block,
 // Generates a string with the macro placement in mpl2 input format for
 // individual macro placement
 std::string generateMacroPlacementString(dbBlock* block);
+
+class WireLengthEvaluator
+{
+ public:
+  WireLengthEvaluator(dbBlock* block) : block_(block) {}
+  int64_t hpwl() const;
+
+ private:
+  int64_t hpwl(dbNet* net) const;
+
+  dbBlock* block_;
+};
 
 }  // namespace odb
