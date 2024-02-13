@@ -232,11 +232,12 @@ bool isPG(frBlockObject* obj)
   }
 }
 
-frCoord FlexGCWorker::Impl::checkMetalSpacing_prl_getReqSpcVal(
-    gcRect* rect1,
-    gcRect* rect2,
-    frCoord prl /*, bool &hasRoute*/)
+frCoord FlexGCWorker::Impl::checkMetalSpacing_prl_getReqSpcVal(gcRect* rect1,
+                                                               gcRect* rect2,
+                                                               frCoord prl,
+                                                               bool& isSpcRange)
 {
+  isSpcRange = false;
   auto layerNum = rect1->getLayerNum();
   frCoord reqSpcVal = 0;
   auto currLayer = getTech()->getLayer(layerNum);
@@ -300,7 +301,10 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_prl_getReqSpcVal(
       && rect2->getNet() != rect1->getNet()) {
     for (const auto& con : currLayer->getSpacingRangeConstraints()) {
       if (con->inRange(width1) || con->inRange(width2)) {
-        reqSpcVal = std::max(reqSpcVal, con->getMinSpacing());
+        if (con->getMinSpacing() > reqSpcVal) {
+          isSpcRange = true;
+          reqSpcVal = con->getMinSpacing();
+        }
       }
     }
   }
@@ -417,8 +421,9 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(
   auto layerNum = rect1->getLayerNum();
   auto net1 = rect1->getNet();
   auto net2 = rect2->getNet();
-
-  auto reqSpcVal = checkMetalSpacing_prl_getReqSpcVal(rect1, rect2, prl);
+  bool isSpcRange = false;
+  auto reqSpcVal
+      = checkMetalSpacing_prl_getReqSpcVal(rect1, rect2, prl, isSpcRange);
   if (checkNDRs) {
     frCoord ndrSpc1 = 0, ndrSpc2 = 0;
     if (!rect1->isFixed() && net1->isNondefault() && !rect1->isTapered())
@@ -543,7 +548,12 @@ void FlexGCWorker::Impl::checkMetalSpacing_prl(
            gtl::yh(markerRect));
   marker->setBBox(box);
   marker->setLayerNum(layerNum);
-  marker->setConstraint(getTech()->getLayer(layerNum)->getMinSpacing());
+  if (isSpcRange) {
+    marker->setConstraint(
+        getTech()->getLayer(layerNum)->getSpacingRangeConstraints().at(0));
+  } else {
+    marker->setConstraint(getTech()->getLayer(layerNum)->getMinSpacing());
+  }
   marker->addSrc(net1->getOwner());
   marker->addVictim(net1->getOwner(),
                     std::make_tuple(rect1->getLayerNum(),

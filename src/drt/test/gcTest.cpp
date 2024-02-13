@@ -667,8 +667,6 @@ BOOST_DATA_TEST_CASE(spacing_range,
     BOOST_TEST(markers.size() == 0);
   } else {
     BOOST_TEST(markers.size() == 1);
-    auto& markers = worker.getMarkers();
-    BOOST_TEST(markers.size() == 1);
     if (y == 100) {
       BOOST_TEST(markers[0]->getConstraint()->typeId()
                  == frConstraintTypeEnum::frcShortConstraint);
@@ -706,8 +704,6 @@ BOOST_DATA_TEST_CASE(spacing_range_same_diff_net,
   if (legal) {
     BOOST_TEST(markers.size() == 0);
   } else {
-    BOOST_TEST(markers.size() == 1);
-    auto& markers = worker.getMarkers();
     BOOST_TEST(markers.size() == 1);
     testMarker(markers[0].get(),
                2,

@@ -257,7 +257,8 @@ class FlexGCWorker::Impl
       const gtl::rectangle_data<frCoord>& markerRect);
   frCoord checkMetalSpacing_prl_getReqSpcVal(gcRect* rect1,
                                              gcRect* rect2,
-                                             frCoord prl);
+                                             frCoord prl,
+                                             bool& isSpcRange);
   bool checkMetalSpacing_prl_hasPolyEdge(
       gcRect* rect1,
       gcRect* rect2,
