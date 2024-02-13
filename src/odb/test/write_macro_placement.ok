@@ -1,0 +1,11 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45_tech.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45_tech.lef
+[INFO ODB-0222] Reading LEF file: Nangate45/fake_macros.lef
+[INFO ODB-0225]     Created 9 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/fake_macros.lef
+[INFO ODB-0128] Design: fake_macros
+[INFO ODB-0131]     Created 10 components and 32 component-terminals.
+[INFO ODB-0133]     Created 12 nets and 24 connections.
+No differences found.

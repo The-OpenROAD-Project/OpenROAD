@@ -189,8 +189,8 @@ void TimingPath::populateNodeList(sta::Path* path,
                                   bool clock_expanded,
                                   TimingNodeList& list)
 {
-  float arrival_prev_stage = 0;
-  float arrival_cur_stage = 0;
+  float arrival_prev_stage = 0.0f;
+  float arrival_cur_stage = 0.0f;
 
   sta::PathExpanded expand(path, sta);
   auto* graph = sta->graph();
@@ -201,7 +201,6 @@ void TimingPath::populateNodeList(sta::Path* path,
     sta::Vertex* vertex = ref->vertex(sta);
     const auto pin = vertex->pin();
     const bool pin_is_clock = sta->isClock(pin);
-    const auto slew = ref->slew(sta);
     const bool is_driver = network->isDriver(pin);
     const bool is_rising = ref->transition(sta) == sta::RiseFall::rise();
     const auto arrival = ref->arrival(sta);
@@ -246,7 +245,13 @@ void TimingPath::populateNodeList(sta::Path* path,
     if (term == nullptr) {
       pin_object = port;
     }
-    arrival_cur_stage = arrival;
+
+    float slew = 0.0f;
+
+    if (!sta->isIdealClock(pin)) {
+      arrival_cur_stage = arrival;
+      slew = ref->slew(sta);
+    }
 
     list.push_back(
         std::make_unique<TimingPathNode>(pin_object,
@@ -255,7 +260,7 @@ void TimingPath::populateNodeList(sta::Path* path,
                                          is_rising,
                                          !is_driver,
                                          true,
-                                         arrival + offset,
+                                         arrival_cur_stage + offset,
                                          arrival_cur_stage - arrival_prev_stage,
                                          slew,
                                          cap,

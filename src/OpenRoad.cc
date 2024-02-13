@@ -38,6 +38,8 @@
 #include <fstream>
 #include <iostream>
 #include <thread>
+
+#include "ord/Version.hh"
 #ifdef ENABLE_PYTHON3
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
@@ -616,6 +618,16 @@ void OpenRoad::setThreadCount(const char* threads, bool printInfo)
 int OpenRoad::getThreadCount()
 {
   return threads_;
+}
+
+const char* OpenRoad::getVersion()
+{
+  return OPENROAD_VERSION;
+}
+
+const char* OpenRoad::getGitDescribe()
+{
+  return OPENROAD_GIT_DESCRIBE;
 }
 
 }  // namespace ord

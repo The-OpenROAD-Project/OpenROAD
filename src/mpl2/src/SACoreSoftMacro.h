@@ -106,7 +106,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void perturb() override;
   void restore() override;
   // actions used
-  void resize();
+  void resizeOneCluster();
 
   void shrink() override;
 

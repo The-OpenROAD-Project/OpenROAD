@@ -1886,7 +1886,16 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     frCoord eolWidth(_eolWidth), eolWithin(_eolWithin), parSpace(_parSpace),
         parWithin(_parWithin);
     if (rule->hasRange()) {
-      logger_->warn(DRT, 140, "SpacingRange unsupported.");
+      std::unique_ptr<frSpacingRangeConstraint> uCon
+          = std::make_unique<frSpacingRangeConstraint>();
+      uCon->setMinSpacing(minSpacing);
+      frUInt4 minWidth, maxWidth;
+      rule->getRange(minWidth, maxWidth);
+      uCon->setMinWidth(minWidth);
+      uCon->setMaxWidth(maxWidth);
+      uCon->setLayer(tmpLayer);
+      tmpLayer->addSpacingRangeConstraint(uCon.get());
+      tech_->addUConstraint(std::move(uCon));
     } else if (rule->hasLengthThreshold()) {
       logger_->warn(DRT, 141, "SpacingLengthThreshold unsupported.");
     } else if (rule->hasSpacingNotchLength()) {

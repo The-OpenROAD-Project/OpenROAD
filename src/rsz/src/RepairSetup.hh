@@ -90,7 +90,10 @@ class RepairSetup : StaState
                    bool skip_pin_swap,
                    bool skip_gate_cloning);
   // For testing.
-  void repairSetup(const Pin* end_pin);
+  void repairSetup(const Pin *end_pin);
+  // For testing.
+  void reportSwappablePins();
+
   // Rebuffer one net (for testing).
   // resizerPreamble() required.
   void rebufferNet(const Pin* drvr_pin);
@@ -103,21 +106,22 @@ class RepairSetup : StaState
                   bool skip_gate_cloning);
   void debugCheckMultipleBuffers(PathRef& path, PathExpanded* expanded);
 
-  void getEquivPortList2(sta::FuncExpr* expr,
-                         sta::LibertyPortSet& ports,
-                         sta::FuncExpr::Operator& status);
-  void getEquivPortList(sta::FuncExpr* expr, sta::LibertyPortSet& ports);
-  void equivCellPins(const LibertyCell* cell, sta::LibertyPortSet& ports);
-  bool swapPins(PathRef* drvr_path, int drvr_index, PathExpanded* expanded);
-  bool upsizeDrvr(PathRef* drvr_path, int drvr_index, PathExpanded* expanded);
-  Point computeCloneGateLocation(
-      const Pin* drvr_pin,
-      const vector<pair<Vertex*, Slack>>& fanout_slacks);
-  bool cloneDriver(PathRef* drvr_path,
-                   int drvr_index,
-                   Slack drvr_slack,
-                   PathExpanded* expanded);
-  void splitLoads(PathRef* drvr_path,
+
+  void getEquivPortList2(sta::FuncExpr *expr, sta::LibertyPortSet &ports,
+                         sta::LibertyPortSet &inv_ports,
+                         sta::FuncExpr::Operator &status);
+  void getEquivPortList(sta::FuncExpr *expr, sta::LibertyPortSet &ports);
+  void equivCellPins(const LibertyCell *cell, sta::LibertyPortSet &ports);
+  bool swapPins(PathRef *drvr_path, int drvr_index, PathExpanded *expanded);
+  bool upsizeDrvr(PathRef *drvr_path,
+                  int drvr_index,
+                  PathExpanded *expanded);
+  Point computeCloneGateLocation(const Pin *drvr_pin,
+                                 const vector<pair<Vertex*, Slack>> &fanout_slacks);
+  bool cloneDriver(PathRef* drvr_path, int drvr_index,
+                   Slack drvr_slack, PathExpanded *expanded);
+  void splitLoads(PathRef *drvr_path,
+
                   int drvr_index,
                   Slack drvr_slack,
                   PathExpanded* expanded);

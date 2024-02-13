@@ -71,7 +71,7 @@
 [INFO ODB-0222] Reading LEF file: skywater130_io_fd/lef/sky130io_fill.lef
 [INFO ODB-0225]     Created 2 library cells
 [INFO ODB-0226] Finished LEF file:  skywater130_io_fd/lef/sky130io_fill.lef
-[INFO IFP-0001] Added 1265 rows of 10416 site unit with height 1.
+[INFO IFP-0001] Added 1265 rows of 10416 site unit.
 [INFO PAD-0116] Creating terminal for rocc_resp_v_i on met5 at (2626.345um, 52.985um) - (2647.885um, 74.530um)
 [INFO PAD-0116] Creating terminal for rocc_resp_ready_o on met5 at (3506.345um, 52.985um) - (3527.885um, 74.530um)
 [INFO PAD-0116] Creating terminal for rocc_resp_data_i[7] on met5 at (3426.345um, 52.985um) - (3447.885um, 74.530um)

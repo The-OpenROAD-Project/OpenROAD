@@ -907,6 +907,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
     (**cbitr)().inDbBlockStreamOutBefore(
         (dbBlock*) &block);  // client ECO initialization  - payam
 
+  dbOStreamScope scope(stream, "dbBlock");
   stream << block._def_units;
   stream << block._dbu_per_micron;
   stream << block._hier_delimeter;
@@ -947,6 +948,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._children;
   stream << block._component_mask_shift;
   stream << block._currentCcAdjOrder;
+
   stream << *block._bterm_tbl;
   stream << *block._iterm_tbl;
   stream << *block._net_tbl;
@@ -985,13 +987,14 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << *block._non_default_rule_tbl;
   stream << *block._layer_rule_tbl;
   stream << *block._prop_tbl;
+
   stream << *block._name_cache;
   stream << *block._r_val_tbl;
   stream << *block._c_val_tbl;
   stream << *block._cc_val_tbl;
-  stream << *block._cap_node_tbl;  // DKF - 2/21/05
-  stream << *block._r_seg_tbl;     // DKF - 2/21/05
-  stream << *block._cc_seg_tbl;
+  stream << NamedTable("cap_node_tbl", block._cap_node_tbl);
+  stream << NamedTable("r_seg_tbl", block._r_seg_tbl);
+  stream << NamedTable("cc_seg_tbl", block._cc_seg_tbl);
   stream << *block._extControl;
 
   //---------------------------------------------------------- stream out

@@ -527,6 +527,14 @@ repair_setup_pin_cmd(Pin *end_pin)
 }
 
 void
+report_swappable_pins_cmd()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->reportSwappablePins();
+}
+
+void
 repair_hold(double setup_margin,
             double hold_margin,
             bool allow_setup_violations,
