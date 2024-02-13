@@ -319,7 +319,7 @@ void FastRouteCore::initEdges()
   h_edges_.resize(boost::extents[y_grid_][x_grid_ - 1]);
   v_edges_.resize(boost::extents[y_grid_ - 1][x_grid_]);
 
-  v_edges_3D_.resize(boost::extents[num_layers_  + 1][y_grid_][x_grid_]);
+  v_edges_3D_.resize(boost::extents[num_layers_ + 1][y_grid_][x_grid_]);
   h_edges_3D_.resize(boost::extents[num_layers_ + 1][y_grid_][x_grid_]);
 
   for (int i = 0; i < y_grid_; i++) {
@@ -376,7 +376,6 @@ void FastRouteCore::addAdjustment(int x1,
                                   int reducedCap,
                                   bool isReduce)
 {
-
   if (y1 == y2) {
     // horizontal edge
     const int cap = h_edges_3D_[layer][y1][x1].cap;
@@ -584,7 +583,6 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
 
 int FastRouteCore::getEdgeCapacity(int x1, int y1, int x2, int y2, int layer)
 {
-
   if (y1 == y2) {  // horizontal edge
     return h_edges_3D_[layer][y1][x1].cap;
   } else if (x1 == x2) {  // vertical edge
@@ -623,7 +621,6 @@ void FastRouteCore::incrementEdge3DUsage(int x1,
                                          int y2,
                                          int layer)
 {
-
   if (y1 == y2) {  // horizontal edge
     for (int x = x1; x < x2; x++) {
       h_edges_3D_[layer][y1][x].usage++;
@@ -691,9 +688,9 @@ NetRouteMap FastRouteCore::getRoutes()
 
           GSegment segment
               = GSegment(lastX, lastY, lastL, xreal, yreal, gridsL[i]);
-          if(gridsL[i] == 0) {
+          if (gridsL[i] == 0) {
             logger_->report("Net tem layer 0: {}");
-            logger_->report("   edge: {}",edgeID);
+            logger_->report("   edge: {}", edgeID);
           }
           lastX = xreal;
           lastY = yreal;
@@ -774,29 +771,25 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
           if (lastX == xreal) {
             // if change direction add a via to change the layer
             if (lastL == layer_h) {
-              segment = GSegment(
-                  lastX, lastY, lastL, lastX, lastY, layer_v);
+              segment = GSegment(lastX, lastY, lastL, lastX, lastY, layer_v);
               if (net_segs.find(segment) == net_segs.end()) {
                 net_segs.insert(segment);
                 route.push_back(segment);
               }
             }
             lastL = layer_v;
-            segment
-                = GSegment(lastX, lastY, lastL, xreal, yreal, lastL);
+            segment = GSegment(lastX, lastY, lastL, xreal, yreal, lastL);
           } else {
             // if change direction add a via to change the layer
             if (lastL == layer_v) {
-              segment = GSegment(
-                  lastX, lastY, lastL, lastX, lastY, layer_h);
+              segment = GSegment(lastX, lastY, lastL, lastX, lastY, layer_h);
               if (net_segs.find(segment) == net_segs.end()) {
                 net_segs.insert(segment);
                 route.push_back(segment);
               }
             }
             lastL = layer_h;
-            segment
-                = GSegment(lastX, lastY, lastL, xreal, yreal, lastL);
+            segment = GSegment(lastX, lastY, lastL, xreal, yreal, lastL);
           }
           lastX = xreal;
           lastY = yreal;
