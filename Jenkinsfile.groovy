@@ -61,6 +61,7 @@ node {
           }
           tasks["Local centos7 gcc without GUI"] = {
             node {
+              sleep(5)
               checkout scm
               stage('Build centos7 gcc without GUI') {
                 sh './etc/Build.sh -no-warnings -no-gui -dir=build-without-gui'; 
@@ -76,6 +77,7 @@ node {
             for (compiler in matrix_axes.COMPILER) {
               tasks["Docker ${os} ${compiler}"] = {
                 node {
+                  sleep(5)
                   checkout scm
                   stage("Pull ${os}") {
                     retry(3) {
