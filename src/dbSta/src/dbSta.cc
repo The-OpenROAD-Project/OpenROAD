@@ -313,7 +313,7 @@ std::string dbSta::getInstanceTypeText(InstType type)
     case STD_BUFINV_CLK_TREE:
       return "Clock buffer/inverter";
     case STD_BUFINV_TIMING_REPAIR:
-      return "Timming Repair Buffer/inverter";
+      return "Timing Repair Buffer/inverter";
     case STD_CLOCK_GATE:
       return "Clock gate cell";
     case STD_LEVEL_SHIFT:
