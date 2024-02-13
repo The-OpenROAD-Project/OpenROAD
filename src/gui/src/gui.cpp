@@ -1266,7 +1266,7 @@ void Gui::init(odb::dbDatabase* db, utl::Logger* logger)
   placement_density_heat_map_
       = std::make_unique<PlacementDensityDataSource>(logger);
   placement_density_heat_map_->registerHeatMap();
-  rudy_heat_map_ = std::make_unique<RUDYDataSource>(logger, db_);
+  rudy_heat_map_ = std::make_unique<RUDYDataSource>(logger);
   rudy_heat_map_->registerHeatMap();
 }
 

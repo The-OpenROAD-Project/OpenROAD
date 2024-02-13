@@ -3304,20 +3304,17 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
 
   findOverlappingBlockages(macro_blockages, placement_blockages, outline);
 
+  // We store the bundled io clusters to push them into the macros' vector
+  // only after it is already populated with the clusters we're trying to
+  // place. This will facilitate how we deal with fixed terminals in SA moves.
+  std::vector<Cluster*> io_clusters;
+
   // Each cluster is modeled as Soft Macro
   // The fences or guides for each cluster is created by merging
   // the fences and guides for hard macros in each cluster
   for (auto& cluster : parent->getChildren()) {
-    // for IO cluster
     if (cluster->isIOCluster()) {
-      soft_macro_id_map[cluster->getName()] = macros.size();
-      macros.emplace_back(
-          std::pair<float, float>(cluster->getX() - outline.xMin(),
-                                  cluster->getY() - outline.yMin()),
-          cluster->getName(),
-          cluster->getWidth(),
-          cluster->getHeight(),
-          cluster);
+      io_clusters.push_back(cluster);
       continue;
     }
     // for other clusters
@@ -3357,19 +3354,14 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
     }
   }
 
-  // update the connnection
-
   calculateConnection();
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
              1,
              "Finished calculating connection");
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             1,
-             "Finished updating dataflow");
+
+  int number_of_pin_access = 0;
   // Handle the pin access
   // Get the connections between pin accesses
   if (parent->getParent() != nullptr) {
@@ -3382,6 +3374,8 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
     for (auto& pin : pins) {
       soft_macro_id_map[toString(pin)] = macros.size();
       macros.emplace_back(0.0, 0.0, toString(pin));
+
+      ++number_of_pin_access;
     }
     // add the connections between pin accesses, for example, L to R
     for (auto& [src_pin, pin_map] : parent->getBoundaryConnection()) {
@@ -3392,6 +3386,9 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
       }
     }
   }
+
+  int num_of_macros_to_place = static_cast<int>(macros.size());
+
   // add the virtual connections (the weight related to IOs and macros belong to
   // the same cluster)
   for (const auto& [cluster1, cluster2] : parent->getVirtualConnections()) {
@@ -3609,6 +3606,18 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
     }
   }
 
+  for (Cluster* io_cluster : io_clusters) {
+    soft_macro_id_map[io_cluster->getName()] = macros.size();
+
+    macros.emplace_back(
+        std::pair<float, float>(io_cluster->getX() - outline.xMin(),
+                                io_cluster->getY() - outline.yMin()),
+        io_cluster->getName(),
+        io_cluster->getWidth(),
+        io_cluster->getHeight(),
+        io_cluster);
+  }
+
   // Write the connections between macros
   std::ofstream file;
   std::string file_name = parent->getName();
@@ -3763,6 +3772,7 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
           random_seed_,
           graphics_.get(),
           logger_);
+      sa->setNumberOfMacrosToPlace(num_of_macros_to_place);
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
@@ -3918,6 +3928,11 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
                       0.0,
                       nullptr);
     }
+
+    // Exclude the pin access macros from the sequence pair now that
+    // they were converted to macro blockages.
+    num_of_macros_to_place -= number_of_pin_access;
+
     macros = shaped_macros;
     remaining_runs = target_util_list.size();
     run_id = 0;
@@ -4013,6 +4028,7 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
             random_seed_,
             graphics_.get(),
             logger_);
+        sa->setNumberOfMacrosToPlace(num_of_macros_to_place);
         sa->setFences(fences);
         sa->setGuides(guides);
         sa->setNets(nets);
@@ -4237,20 +4253,17 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
 
   findOverlappingBlockages(macro_blockages, placement_blockages, outline);
 
+  // We store the bundled io clusters to push them into the macros' vector
+  // only after it is already populated with the clusters we're trying to
+  // place. This will facilitate how we deal with fixed terminals in SA moves.
+  std::vector<Cluster*> io_clusters;
+
   // Each cluster is modeled as Soft Macro
   // The fences or guides for each cluster is created by merging
   // the fences and guides for hard macros in each cluster
   for (auto& cluster : parent->getChildren()) {
-    // for IO cluster
     if (cluster->isIOCluster()) {
-      soft_macro_id_map[cluster->getName()] = macros.size();
-      macros.emplace_back(
-          std::pair<float, float>(cluster->getX() - outline.xMin(),
-                                  cluster->getY() - outline.yMin()),
-          cluster->getName(),
-          cluster->getWidth(),
-          cluster->getHeight(),
-          cluster);
+      io_clusters.push_back(cluster);
       continue;
     }
     // for other clusters
@@ -4289,6 +4302,20 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
       // current macro id is macros.size() - 1
       guides[macros.size() - 1] = guide;
     }
+  }
+
+  const int num_of_macros_to_place = static_cast<int>(macros.size());
+
+  for (Cluster* io_cluster : io_clusters) {
+    soft_macro_id_map[io_cluster->getName()] = macros.size();
+
+    macros.emplace_back(
+        std::pair<float, float>(io_cluster->getX() - outline.xMin(),
+                                io_cluster->getY() - outline.yMin()),
+        io_cluster->getName(),
+        io_cluster->getWidth(),
+        io_cluster->getHeight(),
+        io_cluster);
   }
 
   // model other clusters as fixed terminals
@@ -4539,6 +4566,7 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
           random_seed_,
           graphics_.get(),
           logger_);
+      sa->setNumberOfMacrosToPlace(num_of_macros_to_place);
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
@@ -4729,20 +4757,17 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
 
   findOverlappingBlockages(macro_blockages, placement_blockages, outline);
 
+  // We store the bundled io clusters to push them into the macros' vector
+  // only after it is already populated with the clusters we're trying to
+  // place. This will facilitate how we deal with fixed terminals in SA moves.
+  std::vector<Cluster*> io_clusters;
+
   // Each cluster is modeled as Soft Macro
   // The fences or guides for each cluster is created by merging
   // the fences and guides for hard macros in each cluster
   for (auto& cluster : parent->getChildren()) {
-    // for IO cluster
     if (cluster->isIOCluster()) {
-      soft_macro_id_map[cluster->getName()] = macros.size();
-      macros.emplace_back(
-          std::pair<float, float>(cluster->getX() - outline.xMin(),
-                                  cluster->getY() - outline.yMin()),
-          cluster->getName(),
-          cluster->getWidth(),
-          cluster->getHeight(),
-          cluster);
+      io_clusters.push_back(cluster);
       continue;
     }
     // for other clusters
@@ -4780,6 +4805,18 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
       // current macro id is macros.size() - 1
       guides[macros.size() - 1] = guide;
     }
+  }
+
+  for (Cluster* io_cluster : io_clusters) {
+    soft_macro_id_map[io_cluster->getName()] = macros.size();
+
+    macros.emplace_back(
+        std::pair<float, float>(io_cluster->getX() - outline.xMin(),
+                                io_cluster->getY() - outline.yMin()),
+        io_cluster->getName(),
+        io_cluster->getWidth(),
+        io_cluster->getHeight(),
+        io_cluster);
   }
 
   // model other clusters as fixed terminals
@@ -5539,6 +5576,7 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
                                 random_seed_ + run_id,
                                 graphics_.get(),
                                 logger_);
+      sa->setNumberOfMacrosToPlace(static_cast<int>(hard_macros.size()));
       sa->setNets(nets);
       sa->setFences(fences);
       sa->setGuides(guides);
@@ -6376,6 +6414,11 @@ void HierRTLMP::writeMacroPlacement(const std::string& file_name)
   if (file_name.empty()) {
     return;
   }
+
+  logger_->warn(MPL,
+                39,
+                "The flag -write_macro_placement is deprecated. Use the .tcl "
+                "command write_macro_placement instead.");
 
   std::ofstream out(file_name);
 

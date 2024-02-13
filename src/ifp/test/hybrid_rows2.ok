@@ -10,17 +10,9 @@
 [WARNING ORD-2011] LEF master MOCK_HYBRID_AG has no liberty cell.
 [WARNING ORD-2011] LEF master MOCK_HYBRID_G has no liberty cell.
 [WARNING ORD-2011] LEF master MOCK_HYBRID_GA has no liberty cell.
-[WARNING IFP-0028] Core area lower left (100.000, 100.000) snapped to (100.130, 100.800).
 [WARNING IFP-0028] Core area lower left (100.000, 100.000) snapped to (100.130, 102.400).
-[DEBUG IFP-hybrid] Site HybridA with width 380 and height 3600
-[DEBUG IFP-hybrid] Site HybridG with width 380 and height 2800
-[DEBUG IFP-hybrid] Pattern [HybridA,HybridG] with 2 sites
-[DEBUG IFP-hybrid] Pattern [HybridAG] with 1 sites
-[WARNING IFP-0028] Core area lower left (100.000, 100.000) snapped to (100.130, 100.800).
-[WARNING IFP-0028] Core area lower left (100.000, 100.000) snapped to (100.130, 102.400).
-[DEBUG IFP-hybrid] Site HybridG with width 380 and height 2800
-[DEBUG IFP-hybrid] Site HybridA with width 380 and height 3600
-[DEBUG IFP-hybrid] Pattern [] with 0 sites
-[DEBUG IFP-hybrid] Pattern [HybridGA] with 1 sites
-[DEBUG IFP-hybrid] Found a match for parent-hybrid cell HybridGA at offset 1 of a previously constucted pattern
+[INFO IFP-0049] Added 560 rows from site HybridAG row pattern.
+[INFO IFP-0050] Added 280 rows of site HybridAG.
+[INFO IFP-0050] Added 279 rows of site HybridAG2.
+[INFO IFP-0050] Added 279 rows of site HybridGA.
 No differences found.

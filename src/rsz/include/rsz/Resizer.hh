@@ -238,6 +238,8 @@ public:
                    bool skip_gate_cloning);
   // For testing.
   void repairSetup(const Pin *end_pin);
+  // For testing.
+  void reportSwappablePins();
   // Rebuffer one net (for testing).
   // resizerPreamble() required.
   void rebufferNet(const Pin *drvr_pin);

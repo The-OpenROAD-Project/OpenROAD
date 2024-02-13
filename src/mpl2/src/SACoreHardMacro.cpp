@@ -130,10 +130,10 @@ void SACoreHardMacro::calPenalty()
   }
 }
 
-void SACoreHardMacro::flipMacro()
+void SACoreHardMacro::flipAllMacros()
 {
-  for (auto& macro : macros_) {
-    macro.flip(false);
+  for (auto& macro_id : pos_seq_) {
+    macros_[macro_id].flip(false);
   }
 }
 
@@ -175,7 +175,7 @@ void SACoreHardMacro::perturb()
   } else {
     action_id_ = 5;
     pre_macros_ = macros_;
-    flipMacro();  // Flip one macro
+    flipAllMacros();
   }
 
   // update the macro locations based on Sequence Pair
@@ -215,6 +215,8 @@ void SACoreHardMacro::restore()
 
 void SACoreHardMacro::initialize()
 {
+  initSequencePair();
+
   std::vector<float> area_penalty_list;
   std::vector<float> outline_penalty_list;
   std::vector<float> wirelength_list;
