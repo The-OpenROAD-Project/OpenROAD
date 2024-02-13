@@ -296,6 +296,14 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_prl_getReqSpcVal(
       }
     }
   }
+  if (currLayer->hasSpacingRangeConstraints()
+      && rect2->getNet() != rect1->getNet()) {
+    for (const auto& con : currLayer->getSpacingRangeConstraints()) {
+      if (con->inRange(width1) || con->inRange(width2)) {
+        reqSpcVal = std::max(reqSpcVal, con->getMinSpacing());
+      }
+    }
+  }
   return reqSpcVal;
 }
 
@@ -826,88 +834,6 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1,
                           distY,
                           checkNDRs,
                           !isSpcRect);
-    checkMetalSpacingRange(ptr1, ptr2);
-  }
-}
-
-void FlexGCWorker::Impl::checkMetalSpacingRange(gcRect* rect1, gcRect* rect2)
-{
-  auto layer = getTech()->getLayer(rect1->getLayerNum());
-  if (!layer->hasSpacingRangeConstraints()) {
-    return;
-  }
-  if (rect1 == rect2) {
-    return;
-  }
-  if (rect1->isFixed() && rect2->isFixed()) {
-    return;
-  }
-  auto net1 = rect1->getNet();
-  auto net2 = rect2->getNet();
-  // diff net only check
-  if (net1 == net2) {
-    return;
-  }
-  auto width1 = rect1->width();
-  auto width2 = rect2->width();
-  // override width and spacing
-  if (rect1->getNet()->isBlockage()) {
-    if (USEMINSPACING_OBS) {
-      width1 = layer->getWidth();
-    }
-    if (rect1->getNet()->getDesignRuleWidth() != -1) {
-      width1 = rect1->getNet()->getDesignRuleWidth();
-    }
-  }
-  if (rect2->getNet()->isBlockage()) {
-    if (USEMINSPACING_OBS) {
-      width2 = layer->getWidth();
-    }
-    if (rect2->getNet()->getDesignRuleWidth() != -1) {
-      width2 = rect2->getNet()->getDesignRuleWidth();
-    }
-  }
-
-  for (auto con : layer->getSpacingRangeConstraints()) {
-    if (!con->inRange(width1) && !con->inRange(width2)) {
-      continue;
-    }
-    auto minSpc = con->getMinSpacing();
-    frSquaredDistance reqSpcValSquare = minSpc * (frSquaredDistance) minSpc;
-    frSquaredDistance distSquare
-        = gtl::square_euclidean_distance(*rect1, *rect2);
-    if (distSquare >= reqSpcValSquare) {
-      continue;
-    }
-    // Make marker
-    gtl::rectangle_data<frCoord> markerRect(*rect1);
-    gtl::generalized_intersect(markerRect, *rect2);
-    auto marker = std::make_unique<frMarker>();
-    Rect box(gtl::xl(markerRect),
-             gtl::yl(markerRect),
-             gtl::xh(markerRect),
-             gtl::yh(markerRect));
-    marker->setBBox(box);
-    marker->setLayerNum(rect1->getLayerNum());
-    marker->setConstraint(con);
-    marker->addSrc(net1->getOwner());
-    marker->addVictim(net1->getOwner(),
-                      std::make_tuple(rect1->getLayerNum(),
-                                      Rect(gtl::xl(*rect1),
-                                           gtl::yl(*rect1),
-                                           gtl::xh(*rect1),
-                                           gtl::yh(*rect1)),
-                                      rect1->isFixed()));
-    marker->addSrc(net2->getOwner());
-    marker->addAggressor(net2->getOwner(),
-                         std::make_tuple(rect2->getLayerNum(),
-                                         Rect(gtl::xl(*rect2),
-                                              gtl::yl(*rect2),
-                                              gtl::xh(*rect2),
-                                              gtl::yh(*rect2)),
-                                         rect2->isFixed()));
-    addMarker(std::move(marker));
-    return;
   }
 }
 
