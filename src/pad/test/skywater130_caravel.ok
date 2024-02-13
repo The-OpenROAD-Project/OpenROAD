@@ -144,8 +144,7 @@ The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/l
 [WARNING ORD-2011] LEF master sky130_ef_io__vssio_hvc_pad has no liberty cell.
 [WARNING ORD-2011] LEF master sky130_fd_io__top_xres4v2 has no liberty cell.
 [WARNING IFP-0028] Core area lower left (250.000, 250.000) snapped to (250.240, 250.240).
-[INFO IFP-0001] Added 1723 rows of 6712 site unithd with height 1.
-
+[INFO IFP-0001] Added 1723 rows of 6712 site unithd.
 [INFO PAD-0116] Creating terminal for resetb on met5 at (741.010um, 54.375um) - (753.305um, 72.885um)
 [INFO PAD-0116] Creating terminal for mprj_io[27] on met5 at (32.990um, 3496.200um) - (95.440um, 3558.800um)
 [INFO PAD-0116] Creating terminal for mprj_io[26] on met5 at (32.990um, 3712.200um) - (95.440um, 3774.800um)
