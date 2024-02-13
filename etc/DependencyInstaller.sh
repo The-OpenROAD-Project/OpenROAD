@@ -246,6 +246,7 @@ _installUbuntuPackages() {
         g++ \
         gcc \
         git \
+        groff \
         lcov \
         libffi-dev \
         libgomp1 \
@@ -254,6 +255,7 @@ _installUbuntuPackages() {
         libpcre3-dev \
         libreadline-dev \
         libtcl \
+        pandoc \
         python3-dev \
         qt5-image-formats-plugins \
         tcl \
@@ -315,12 +317,14 @@ _installRHELPackages() {
         gdb \
         git \
         glibc-devel \
+        groff \
         libtool \
         libffi-devel \
         llvm7.0 \
         llvm7.0-devel \
         llvm7.0-libs \
         make \
+        pandoc \
         pcre-devel \
         pcre2-devel \
         pkgconf \
@@ -368,11 +372,13 @@ _installCentosPackages() {
     yum install -y \
         devtoolset-8 \
         devtoolset-8-libatomic-devel \
+        groff \
         libffi-devel \
         libgomp \
         libstdc++ \
         llvm-toolset-7.0 \
         llvm-toolset-7.0-libomp-devel \
+        pandoc \
         pcre-devel \
         pcre2-devel \
         python-devel \
@@ -414,6 +420,7 @@ _installOpenSusePackages() {
         gcc \
         gcc11-c++ \
         git \
+        groff \
         gzip \
         lcov \
         libffi-devel \
@@ -425,6 +432,7 @@ _installOpenSusePackages() {
         libqt5-qtstyleplugins \
         libstdc++6-devel-gcc8 \
         llvm \
+        pandoc \
         pcre-devel \
         pcre2-devel \
         python3-devel \
@@ -477,7 +485,7 @@ Then, rerun this script.
 EOF
       exit 1
     fi
-    brew install bison boost cmake eigen flex libomp pyqt5 python swig tcl-tk zlib
+    brew install bison boost cmake eigen flex groff libomp pandoc pyqt5 python swig tcl-tk zlib
 
     # Some systems neeed this to correclty find OpenMP package during build
     brew link --force libomp
@@ -513,6 +521,7 @@ _installDebianPackages() {
         g++ \
         gcc \
         git \
+        groff \
         lcov \
         libgomp1 \
         libomp-dev \
@@ -520,6 +529,7 @@ _installDebianPackages() {
         libpcre3-dev \
         libreadline-dev \
         libtcl \
+        pandoc \
         python3-dev \
         qt5-image-formats-plugins \
         tcl-dev \
