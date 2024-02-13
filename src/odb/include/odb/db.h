@@ -7689,7 +7689,6 @@ class dbModule : public dbObject
   dbSet<dbInst> getInsts();
 
   dbModInst* findModInst(const char* name);
-  void removeModInst(const char* name);
   dbInst* findDbInst(const char* name);
   dbModBTerm* findModBTerm(const char* name);
 

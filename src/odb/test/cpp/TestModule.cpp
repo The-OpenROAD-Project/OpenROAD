@@ -24,6 +24,7 @@ struct F_DEFAULT
   dbLib* lib;
   dbBlock* block;
 };
+
 BOOST_FIXTURE_TEST_CASE(test_default, F_DEFAULT)
 {
   // dbModule::create() Succeed
@@ -70,6 +71,7 @@ BOOST_FIXTURE_TEST_CASE(test_default, F_DEFAULT)
   dbInst::destroy(inst1);
   BOOST_TEST(parent_mod->getInsts().size() == 0);
 }
+
 BOOST_FIXTURE_TEST_CASE(test_find_modinst, F_DEFAULT)
 {
   auto top = block->getTopModule();
@@ -132,6 +134,7 @@ BOOST_FIXTURE_TEST_CASE(test_destroy, F_DETAILED)
   BOOST_TEST(block->findModule("parent_mod") == nullptr);
   BOOST_TEST(block->getModInsts().size() == 0);
 }
+
 BOOST_FIXTURE_TEST_CASE(test_iterators, F_DETAILED)
 {
   int i;
@@ -175,13 +178,13 @@ BOOST_FIXTURE_TEST_CASE(test_iterators, F_DETAILED)
          ++inst_itr, i = i + (j ? 1 : -1)) {
       switch (i) {
         case 1:
-          BOOST_TEST(*inst_itr == inst1);
+          BOOST_TEST(*inst_itr == inst3);
           break;
         case 2:
           BOOST_TEST(*inst_itr == inst2);
           break;
         case 3:
-          BOOST_TEST(*inst_itr == inst3);
+          BOOST_TEST(*inst_itr == inst1);
           break;
         default:
           BOOST_TEST(false);

@@ -257,9 +257,6 @@ void dbModInst::destroy(dbModInst* modinst)
   _dbBlock* block = (_dbBlock*) _modinst->getOwner();
   _dbModule* module = (_dbModule*) modinst->getParent();
 
-  // remove from module vector
-  modinst->getParent()->removeModInst(modinst->getName());
-
   _dbModule* master = (_dbModule*) modinst->getMaster();
   master->_mod_inst = dbId<_dbModInst>();  // clear
   dbModule::destroy((dbModule*) master);

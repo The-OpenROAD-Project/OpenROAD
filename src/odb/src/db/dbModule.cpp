@@ -507,28 +507,6 @@ dbModule* dbModule::getModule(dbBlock* block_, uint dbid_)
   return (dbModule*) block->_module_tbl->getPtr(dbid_);
 }
 
-void dbModule::removeModInst(const char* name)
-{
-  _dbModule* cur_module = (_dbModule*) this;
-  _dbBlock* block = (_dbBlock*) cur_module->getOwner();
-  (void) block;
-  (void) cur_module;
-  printf("Unsupported call: removeModInst\n");
-  /*
-  for (std::vector<odb::dbId<odb::dbModInst>>::iterator it
-       = cur_module->_modinst_vec.begin();
-       it != cur_module->_modinst_vec.end();
-       it++) {
-    unsigned id = (*it).id();
-    dbId<_dbModInst> converted_el(id);
-    dbModInst* mi = (dbModInst*) (block->_modinst_tbl->getPtr(converted_el));
-    if (mi && !strcmp(mi->getName(), name)) {
-      cur_module->_modinst_vec.erase(it);
-      return;
-    }
-    }*/
-}
-
 dbModInst* dbModule::findModInst(const char* name)
 {
   for (dbModInst* mod_inst : getModInsts()) {
