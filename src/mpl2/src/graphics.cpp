@@ -347,6 +347,10 @@ void Graphics::drawObjects(gui::Painter& painter)
 void Graphics::setSoftMacroBrush(gui::Painter& painter,
                                  const SoftMacro& soft_macro)
 {
+  if (soft_macro.getCluster() == nullptr) {  // fixed terminals
+    return;
+  }
+
   if (soft_macro.getCluster()->getClusterType() == StdCellCluster) {
     // dark blue
     painter.setBrush(gui::Painter::Color(0x00, 0x00, 0x80, 255));
