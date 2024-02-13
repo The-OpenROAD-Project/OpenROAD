@@ -277,7 +277,7 @@ void Graphics::drawObjects(gui::Painter& painter)
 
   painter.setPen(gui::Painter::white, true);
   // dark red
-  painter.setBrush(gui::Painter::Color(0x80, 0x00, 0x00, 150));
+  painter.setBrush(gui::Painter::Color(0x80, 0x00, 0x00, 255));
 
   i = 0;
   for (const auto& macro : hard_macros_) {
