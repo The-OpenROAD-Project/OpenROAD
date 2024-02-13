@@ -291,19 +291,19 @@ std::string dbSta::getInstanceTypeText(InstType type)
     case PAD_AREAIO:
       return "Area IO";
     case ENDCAP:
-      return "Endcap";
+      return "Endcap cell";
     case FILL:
-      return "Fill";
+      return "Fill cell";
     case TAPCELL:
-      return "Tapcell";
+      return "Tap cell";
     case BUMP:
       return "Bump";
     case COVER:
       return "Cover";
     case ANTENNA:
-      return "Antenna";
+      return "Antenna cell";
     case TIE:
-      return "Tie";
+      return "Tie cell";
     case LEF_OTHER:
       return "Other";
     case STD_CELL:
@@ -313,17 +313,17 @@ std::string dbSta::getInstanceTypeText(InstType type)
     case STD_BUFINV_CLK_TREE:
       return "Clock buffer/inverter";
     case STD_BUFINV_TIMING_REPAIR:
-      return "Buffer/inverter from timing repair";
+      return "Timming Repair Buffer/inverter";
     case STD_CLOCK_GATE:
-      return "Clock gate";
+      return "Clock gate cell";
     case STD_LEVEL_SHIFT:
-      return "Level shifter";
+      return "Level shifter cell";
     case STD_SEQUENTIAL:
-      return "Sequential";
+      return "Sequential cell";
     case STD_PHYSICAL:
-      return "Physical";
+      return "Generic Physical";
     case STD_COMBINATIONAL:
-      return "Combinational";
+      return "Complex combinational cell";
     case STD_OTHER:
       return "Other";
   }
@@ -445,14 +445,14 @@ std::map<dbSta::InstType, int> dbSta::countInstancesByType()
   return inst_type_count;
 }
 
-void dbSta::report_inst_count()
+void dbSta::report_cell_usage()
 {
   std::map<InstType, int> instances_types = countInstancesByType();
 
-  logger_->report("Reporting Cells count:");
+  logger_->report("Cell usage report:");
   for (auto [type, count] : instances_types) {
     std::string type_name = getInstanceTypeText(type);
-    logger_->report("  {}: {}", type_name, count);
+    logger_->report("  {}s: {}", type_name, count);
   }
 }
 
