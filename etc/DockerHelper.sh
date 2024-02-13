@@ -33,6 +33,8 @@ usage: $0 [CMD] [OPTIONS]
                                   'latest'.
   -h -help                      Show this message and exits
   -local                        Installs with prefix /home/openroad-deps
+  -username                     Docker Username
+  -password                     Docker Password
 
 EOF
     exit "${1:-1}"
@@ -280,6 +282,12 @@ while [ "$#" -gt 0 ]; do
             ;;
         -local )
             isLocal=yes
+            ;;
+        -username=* )
+            username="${1#*=}"
+            ;;
+        -password=* )
+            password="${1#*=}"
             ;;
         -no_eqy )
             equivalenceDeps=no
