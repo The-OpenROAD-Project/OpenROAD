@@ -108,8 +108,7 @@ void FastRouteRenderer::drawTreeEdges(gui::Painter& painter)
       const int yreal = tile_size_ * (gridsY[i] + 0.5) + y_corner_;
 
       if (is3DVisualization_) {
-        drawLineObject(
-            lastX, lastY, lastL, xreal, yreal, gridsL[i], painter);
+        drawLineObject(lastX, lastY, lastL, xreal, yreal, gridsL[i], painter);
         lastL = gridsL[i];
       } else {
         drawLineObject(
