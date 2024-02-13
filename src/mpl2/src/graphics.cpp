@@ -276,8 +276,7 @@ void Graphics::drawObjects(gui::Painter& painter)
   }
 
   painter.setPen(gui::Painter::white, true);
-  // dark red
-  painter.setBrush(gui::Painter::Color(0x80, 0x00, 0x00, 255));
+  painter.setBrush(gui::Painter::dark_red);
 
   i = 0;
   for (const auto& macro : hard_macros_) {
@@ -352,8 +351,7 @@ void Graphics::setSoftMacroBrush(gui::Painter& painter,
   }
 
   if (soft_macro.getCluster()->getClusterType() == StdCellCluster) {
-    // dark blue
-    painter.setBrush(gui::Painter::Color(0x00, 0x00, 0x80, 255));
+    painter.setBrush(gui::Painter::dark_blue);
   } else if (soft_macro.getCluster()->getClusterType() == HardMacroCluster) {
     // dark red
     painter.setBrush(gui::Painter::Color(0x80, 0x00, 0x00, 150));
