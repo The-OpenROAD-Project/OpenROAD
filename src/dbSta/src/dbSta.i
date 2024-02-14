@@ -19,6 +19,7 @@ using sta::Instance;
 %import "odb.i"
 %include "../../Exception.i"
 // OpenSTA swig files
+%include "tcl/StaTclTypes.i"
 %include "tcl/StaTcl.i"
 %include "tcl/NetworkEdit.i"
 %include "sdf/Sdf.i"

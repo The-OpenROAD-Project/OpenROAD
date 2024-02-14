@@ -122,6 +122,8 @@ using sta::ArcDelayCalc;
 using sta::Corners;
 using sta::InputDrive;
 using sta::PinConnectedPinIterator;
+using sta::ArcDcalcResult;
+using sta::LoadPinIndexMap;
 
 Resizer::Resizer()
     : recover_power_(new RecoverPower(this)),
@@ -1601,7 +1603,9 @@ Resizer::findTargetLoad(LibertyCell *cell)
     TimingRole *role = arc_set->role();
     if (!role->isTimingCheck()
         && role != TimingRole::tristateDisable()
-        && role != TimingRole::tristateEnable()) {
+        && role != TimingRole::tristateEnable()
+        && role != TimingRole::clockTreePathMin()
+        && role != TimingRole::clockTreePathMax()) {
       for (TimingArc *arc : arc_set->arcs()) {
         int in_rf_index = arc->fromEdge()->asRiseFall()->index();
         int out_rf_index = arc->toEdge()->asRiseFall()->index();
@@ -1684,7 +1688,7 @@ Resizer::gateSlewDiff(LibertyCell *cell,
   const Pvt *pvt = tgt_slew_dcalc_ap_->operatingConditions();
   ArcDelay arc_delay;
   Slew arc_slew;
-  model->gateDelay(pvt, in_slew, load_cap, 0.0, false,
+  model->gateDelay(pvt, in_slew, load_cap, false,
                    arc_delay, arc_slew);
   return arc_slew - out_slew;
 }
@@ -1752,9 +1756,9 @@ Resizer::findBufferTargetSlews(LibertyCell *buffer,
         float load_cap = in_cap * tgt_slew_load_cap_factor;
         ArcDelay arc_delay;
         Slew arc_slew;
-        model->gateDelay(pvt, 0.0, load_cap, 0.0, false,
+        model->gateDelay(pvt, 0.0, load_cap, false,
                         arc_delay, arc_slew);
-        model->gateDelay(pvt, arc_slew, load_cap, 0.0, false,
+        model->gateDelay(pvt, arc_slew, load_cap, false,
                         arc_delay, arc_slew);
         slews[out_rf->index()] += arc_slew;
         counts[out_rf->index()]++;
@@ -2448,29 +2452,28 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
   delay = -INF;
   slew = -INF;
 
+  LoadPinIndexMap load_pin_index_map(network_);
+  load_pin_index_map[load_pin] = 0;
   for (Corner *corner : *corners) {
     const DcalcAnalysisPt *dcalc_ap = corner->findDcalcAnalysisPt(max_);
-    const Pvt *pvt = dcalc_ap->operatingConditions();
-
     makeWireParasitic(net, drvr_pin, load_pin, wire_length, corner, parasitics);
-    // Let delay calc reduce parasitic network as it sees fit.
-    Parasitic *drvr_parasitic = arc_delay_calc->findParasitic(drvr_pin,
-                                                              RiseFall::rise(),
-                                                              dcalc_ap);
+
     for (TimingArcSet *arc_set : drvr_cell->timingArcSets()) {
       if (arc_set->to() == drvr_port) {
         for (TimingArc *arc : arc_set->arcs()) {
           RiseFall *in_rf = arc->fromEdge()->asRiseFall();
+          RiseFall *drvr_rf = arc->toEdge()->asRiseFall();
           double in_slew = tgt_slews_[in_rf->index()];
-          ArcDelay gate_delay;
-          Slew drvr_slew;
-          arc_delay_calc->gateDelay(arc, in_slew, 0.0,
-                                    drvr_parasitic, 0.0, pvt, dcalc_ap,
-                                    gate_delay,
-                                    drvr_slew);
-          ArcDelay wire_delay;
-          Slew load_slew;
-          arc_delay_calc->loadDelay(load_pin, wire_delay, load_slew);
+          Parasitic *drvr_parasitic =
+            arc_delay_calc->findParasitic(drvr_pin, drvr_rf, dcalc_ap);
+          float load_cap = parasitics_->capacitance(drvr_parasitic);
+          ArcDcalcResult dcalc_result =
+            arc_delay_calc->gateDelay(drvr_pin, arc, in_slew, load_cap,
+                                      drvr_parasitic, load_pin_index_map, dcalc_ap);
+          ArcDelay gate_delay = dcalc_result.gateDelay();
+          // Only one load pin, so load_idx is 0.
+          ArcDelay wire_delay = dcalc_result.wireDelay(0);
+          ArcDelay load_slew = dcalc_result.loadSlew(0);
           delay = max(delay, gate_delay + wire_delay);
           slew = max(slew, load_slew);
         }
@@ -2499,13 +2502,13 @@ Resizer::makeWireParasitic(Net *net,
     corner->findParasiticAnalysisPt(max_);
   Parasitic *parasitic = parasitics->makeParasiticNetwork(net, false,
                                                           parasitics_ap);
-  ParasiticNode *n1 = parasitics->ensureParasiticNode(parasitic, drvr_pin);
-  ParasiticNode *n2 = parasitics->ensureParasiticNode(parasitic, load_pin);
+  ParasiticNode *n1 = parasitics->ensureParasiticNode(parasitic, drvr_pin, network_);
+  ParasiticNode *n2 = parasitics->ensureParasiticNode(parasitic, load_pin, network_);
   double wire_cap = wire_length * wireSignalCapacitance(corner);
   double wire_res = wire_length * wireSignalResistance(corner);
-  parasitics->incrCap(n1, wire_cap / 2.0, parasitics_ap);
-  parasitics->makeResistor(nullptr, n1, n2, wire_res, parasitics_ap);
-  parasitics->incrCap(n2, wire_cap / 2.0, parasitics_ap);
+  parasitics->incrCap(n1, wire_cap / 2.0);
+  parasitics->makeResistor(parasitic, 1, wire_res, n1, n2);
+  parasitics->incrCap(n2, wire_cap / 2.0);
 }
 
 ////////////////////////////////////////////////////////////////
