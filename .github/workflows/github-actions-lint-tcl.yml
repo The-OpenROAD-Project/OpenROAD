@@ -33,11 +33,11 @@ jobs:
             src/fin/src/finale.tcl \
             src/gpl/src/replace.tcl \
             src/grt/src/GlobalRouter.tcl \
-            src/gui/src/gui.tcl \
+            src/gui/ \
             src/ifp/src/InitFloorplan.tcl \
             src/mpl/src/MacroPlacer.tcl \
             src/mpl2/src/mpl.tcl \
-            src/pad/src/pad.tcl \
+            src/pad/ \
             src/par/src/partitionmgr.tcl \
             src/pdn/src/pdn.tcl \
             src/ppl/src/IOPlacer.tcl \
