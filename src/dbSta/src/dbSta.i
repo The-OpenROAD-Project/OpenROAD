@@ -144,6 +144,7 @@ db_network_defined()
   db_network->readDefAfter(block);
 }
 
+// Report the usage of cell types in the design
 void
 report_cell_usage()
 {
