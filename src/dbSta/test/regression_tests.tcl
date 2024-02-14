@@ -29,6 +29,8 @@ record_tests {
   read_verilog9
   read_verilog10
 
+  report_cell_usage
+
   write_verilog1
   write_verilog2
   write_verilog3
