@@ -351,7 +351,7 @@ _installRHELPackages() {
         https://forensics.cert.org/centos/cert/7/x86_64/flex-2.6.1-9.el7.x86_64.rpm
 
     wget https://github.com/jgm/pandoc/releases/download/${version}/pandoc-${version}-linux-${arch}.tar.gz &&\
-    sudo tar xvzf pandoc-${version}-linux-${arch}.tar.gz --strip-components 1 -C /usr/local/ &&\
+    tar xvzf pandoc-${version}-linux-${arch}.tar.gz --strip-components 1 -C /usr/local/ &&\
     rm -rf pandoc-${version}-linux-${arch}.tar.gz
 }
 
