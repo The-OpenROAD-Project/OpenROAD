@@ -78,6 +78,7 @@ target_link_libraries(rsz_lib
     dbSta_lib
     grt_lib
     utl_lib
+    Boost::boost
 )
 
 target_link_libraries(rsz
