@@ -6,7 +6,7 @@ read_lef nangate_macros/fakeram45_64x32.lef
 
 read_def nangate_existing/floorplan.def
 
-define_pdn_grid -existing 
+define_pdn_grid -existing
 
 add_pdn_connect -layers {metal1 metal4}
 add_pdn_connect -layers {metal4 metal7}

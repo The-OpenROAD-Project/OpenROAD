@@ -39,7 +39,7 @@ jobs:
             src/mpl2/src/mpl.tcl \
             src/pad/ \
             src/par/src/partitionmgr.tcl \
-            src/pdn/src/pdn.tcl \
+            src/pdn/ \
             src/ppl/src/IOPlacer.tcl \
             src/psm/src/pdnsim.tcl \
             src/rcx/src/OpenRCX.tcl \
