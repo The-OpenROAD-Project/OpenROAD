@@ -288,21 +288,6 @@ void dbModule::highestModWithNetNamed(const char* modbterm_name,
   }
 }
 
-dbModInst* dbModule::getModInst(dbId<dbModInst> el)
-{
-  _dbModule* module = (_dbModule*) this;
-  _dbBlock* block = (_dbBlock*) module->getOwner();
-  dbId<_dbModInst> converted_el(el.id());
-  return ((dbModInst*) (block->_modinst_tbl->getPtr(converted_el)));
-}
-
-dbInst* dbModule::getdbInst(dbId<dbInst> el)
-{
-  _dbModule* module = (_dbModule*) this;
-  _dbBlock* block = (_dbBlock*) module->getOwner();
-  dbId<_dbInst> converted_el(el.id());
-  return ((dbInst*) (block->_inst_tbl->getPtr(converted_el)));
-}
 
 unsigned dbModule::getModInstCount()
 {
@@ -435,6 +420,17 @@ dbSet<dbModNet> dbModule::getModNets()
   return dbSet<dbModNet>(module, block->_module_modnet_itr);
 }
 
+//This should be in a map some place,
+//but we are using the dbSet to store the mod nets in a module
+dbModNet* dbModule::getModNet(const char* net_name){
+  for (auto mnet: getModNets()){
+    if (!strcmp(net_name,mnet -> getName()))
+      return mnet;
+  }
+  return nullptr;
+}
+
+
 dbSet<dbModInst> dbModule::getModInsts()
 {
   _dbModule* module = (_dbModule*) this;
@@ -518,8 +514,6 @@ dbModInst* dbModule::findModInst(const char* name)
 
 dbInst* dbModule::findDbInst(const char* name)
 {
-  _dbModule* cur_module = (_dbModule*) this;
-  _dbBlock* block = (_dbBlock*) cur_module->getOwner();
   for (dbInst* inst : getInsts()) {
     if (!strcmp(inst->getName().c_str(), name))
       return inst;
@@ -547,7 +541,6 @@ std::vector<dbInst*> dbModule::getLeafInsts()
 
 dbModBTerm* dbModule::findModBTerm(const char* name)
 {
-  _dbModule* cur_module = (_dbModule*) this;
   for (dbModBTerm* mod_bterm : getModBTerms()) {
     if (!strcmp(mod_bterm->getName(), name))
       return mod_bterm;
@@ -566,6 +559,8 @@ bool dbModule::findPortIx(const char* port_name, unsigned& ix)
   }
   return false;
 }
+
+
 
 std::string dbModule::getHierarchicalName() const
 {
@@ -589,45 +584,12 @@ void dbModule::staSetCell(void* cell)
   module->_sta_cell = cell;
 }
 
-dbModNet* dbModule::getModNet(const char* name)
-{
-  _dbModule* obj = (_dbModule*) this;
-  _dbBlock* _block = (_dbBlock*) obj->getOwner();
-  std::string name_str(name);
-  /*
-  if (obj->_modnet_map.find(name_str) != obj->_modnet_map.end()) {
-    dbId<dbModNet> mnet_id = obj->_modnet_map[name_str];
-    dbId<_dbModNet> _mnet_id(mnet_id.id());
-    return (dbModNet*) (_block->_modnet_tbl->getPtr(_mnet_id));
-  }
-  */
-  printf("unsupported: getModNet\n");
-  return nullptr;
-}
-
 dbBlock* dbModule::getOwner()
 {
   _dbModule* obj = (_dbModule*) this;
   return (dbBlock*) obj->getOwner();
 }
 
-dbModBTerm* dbModule::getdbModBTerm(dbBlock* block,
-                                    dbId<dbModBTerm> modbterm_id)
-{
-  _dbBlock* _block = (_dbBlock*) block;
-  unsigned id = modbterm_id.id();
-  dbId<_dbModBTerm> val(id);
-  return (dbModBTerm*) (_block->_modbterm_tbl->getPtr(val));
-}
-
-dbModBTerm* dbModule::getdbModBTerm(dbId<dbModBTerm> modbterm_id)
-{
-  _dbModule* obj = (_dbModule*) this;
-  _dbBlock* _block = (_dbBlock*) obj->getOwner();
-  unsigned id = modbterm_id.id();
-  dbId<_dbModBTerm> val(id);
-  return (dbModBTerm*) (_block->_modbterm_tbl->getPtr(val));
-}
 
 // User Code End dbModulePublicMethods
 }  // namespace odb

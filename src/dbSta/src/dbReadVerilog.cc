@@ -681,7 +681,6 @@ void Verilog2db::WireUpModNetsForTopInst(const Instance* inst)
   while (net_iter->hasNext()) {
     Net* net = net_iter->next();
     const char* net_name = network_->pathName(net);
-
     dbModNet* mod_net = top_module->getModNet(net_name);
 
     if (mod_net) {

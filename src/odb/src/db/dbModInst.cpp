@@ -335,23 +335,6 @@ bool dbModInst::findModITerm(const char* name, dbModITerm*& ret)
   return false;
 }
 
-bool dbModInst::getPinAtIx(unsigned ix, dbModITerm*& ret) const
-{
-  _dbModInst* _obj = (_dbModInst*) this;
-  _dbBlock* block = (_dbBlock*) _obj->getOwner();
-  (void) block;
-  (void) _obj;
-  printf("TDODO");
-  /*
-  if (ix < _obj->_pin_vec.size()) {
-    dbId<dbModITerm> el = _obj->_pin_vec.at(ix);
-    dbId<_dbModITerm> conv_el(el.id());
-    ret = (dbModITerm*) (block->_moditerm_tbl->getPtr(conv_el));
-    return true;
-  }
-  */
-  return false;
-}
 
 // User Code End dbModInstPublicMethods
 }  // namespace odb
