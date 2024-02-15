@@ -24,4 +24,6 @@ Traversed logical hierarchy
 [WARNING MPL-0026] Design has no IO pins!
 [WARNING MPL-0025] Design has no standard cells!
 [WARNING MPL-0027] Design has only macros!
-No differences found.
+Differences found at line 343.
+    - U10 HM_100x100_1x1 + FIXED ( 233880 664380 ) FS ;
+    - U10 HM_100x100_1x1 + FIXED ( 233880 230420 ) N ;

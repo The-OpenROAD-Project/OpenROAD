@@ -288,7 +288,6 @@ void dbModule::highestModWithNetNamed(const char* modbterm_name,
   }
 }
 
-
 unsigned dbModule::getModInstCount()
 {
   _dbModule* module = (_dbModule*) this;
@@ -420,16 +419,16 @@ dbSet<dbModNet> dbModule::getModNets()
   return dbSet<dbModNet>(module, block->_module_modnet_itr);
 }
 
-//This should be in a map some place,
-//but we are using the dbSet to store the mod nets in a module
-dbModNet* dbModule::getModNet(const char* net_name){
-  for (auto mnet: getModNets()){
-    if (!strcmp(net_name,mnet -> getName()))
+// This should be in a map some place,
+// but we are using the dbSet to store the mod nets in a module
+dbModNet* dbModule::getModNet(const char* net_name)
+{
+  for (auto mnet : getModNets()) {
+    if (!strcmp(net_name, mnet->getName()))
       return mnet;
   }
   return nullptr;
 }
-
 
 dbSet<dbModInst> dbModule::getModInsts()
 {
@@ -560,8 +559,6 @@ bool dbModule::findPortIx(const char* port_name, unsigned& ix)
   return false;
 }
 
-
-
 std::string dbModule::getHierarchicalName() const
 {
   dbModInst* inst = getModInst();
@@ -589,7 +586,6 @@ dbBlock* dbModule::getOwner()
   _dbModule* obj = (_dbModule*) this;
   return (dbBlock*) obj->getOwner();
 }
-
 
 // User Code End dbModulePublicMethods
 }  // namespace odb

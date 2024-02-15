@@ -953,7 +953,7 @@ class dbBlock : public dbObject
   dbSet<dbModInst> getModInsts();
   dbSet<dbModNet> getModNets();
   dbSet<dbModBTerm> getModBTerms();
-  
+
   ///
   /// Get the Power Domains of this block.
   ///
@@ -7636,7 +7636,6 @@ class dbModInst : public dbObject
 
   std::string getHierarchicalName() const;
 
-
   bool findModITerm(const char* name, dbModITerm*& ret);
 
   dbSet<dbModITerm> getModITerms();
@@ -7740,10 +7739,8 @@ class dbModule : public dbObject
 
   static dbModule* getModule(dbBlock* block_, uint dbid_);
 
-
   unsigned getModInstCount();
   unsigned getDbInstCount();
-
 
   bool findPortIx(const char* port_name, unsigned& ix);
 

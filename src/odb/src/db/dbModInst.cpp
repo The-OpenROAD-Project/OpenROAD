@@ -335,7 +335,6 @@ bool dbModInst::findModITerm(const char* name, dbModITerm*& ret)
   return false;
 }
 
-
 // User Code End dbModInstPublicMethods
 }  // namespace odb
 // Generator Code End Cpp

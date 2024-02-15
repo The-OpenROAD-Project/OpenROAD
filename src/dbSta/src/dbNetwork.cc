@@ -819,15 +819,13 @@ Pin* dbNetwork::findPin(const Instance* instance, const char* port_name) const
   if (mod_inst) {
     dbModule* module = mod_inst->getMaster();
     dbModITerm* miterm = nullptr;
-    //removed indexing by port ix (which is most efficient)
-    //to calm OR personnel...
-    if (mod_inst->findModITerm(port_name,miterm))
+    // removed indexing by port ix (which is most efficient)
+    // to calm OR personnel...
+    if (mod_inst->findModITerm(port_name, miterm))
       return dbToSta(miterm);
   }
   return nullptr;  // no pins on dbModInst in odb currently
 }
-
-  
 
 Pin* dbNetwork::findPin(const Instance* instance, const Port* port) const
 {
