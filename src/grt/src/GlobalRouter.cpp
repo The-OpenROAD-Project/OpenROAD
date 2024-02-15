@@ -2121,49 +2121,50 @@ void GlobalRouter::computeWirelength()
 
 void GlobalRouter::mergeSegments(const std::vector<Pin>& pins, GRoute& route)
 {
-  if (!route.empty()) {
-    GRoute& segments = route;
-    std::map<RoutePt, int> segs_at_point;
-    for (const GSegment& seg : segments) {
-      RoutePt pt0 = RoutePt(seg.init_x, seg.init_y, seg.init_layer);
-      RoutePt pt1 = RoutePt(seg.final_x, seg.final_y, seg.final_layer);
-      segs_at_point[pt0] += 1;
-      segs_at_point[pt1] += 1;
-    }
-
-    for (const Pin& pin : pins) {
-      RoutePt pinPt = RoutePt(pin.getOnGridPosition().x(),
-                              pin.getOnGridPosition().y(),
-                              pin.getConnectionLayer());
-      segs_at_point[pinPt] += 1;
-    }
-
-    size_t i = 0;
-    while (i < segments.size() - 1) {
-      GSegment& segment0 = segments[i];
-      GSegment& segment1 = segments[i + 1];
-
-      // both segments are not vias
-      if (segment0.init_layer == segment0.final_layer
-          && segment1.init_layer == segment1.final_layer &&
-          // segments are on the same layer
-          segment0.init_layer == segment1.init_layer) {
-        // if segment 0 connects to the end of segment 1
-        GSegment& new_seg = segments[i];
-        if (segmentsConnect(segment0, segment1, new_seg, segs_at_point)) {
-          segments[i] = new_seg;
-          for (int idx = i + 1; idx < segments.size() - 1; idx++) {
-            segments[idx] = segments[idx + 1];
-          }
-          segments.pop_back();
-        } else {
-          i++;
-        }
-      } else {
-        i++;
-      }
-    }
+  if (route.empty()) {
+    return;
   }
+  GRoute& segments = route;
+  std::map<RoutePt, int> segs_at_point;
+  for (const GSegment& seg : segments) {
+    RoutePt pt0 = RoutePt(seg.init_x, seg.init_y, seg.init_layer);
+    RoutePt pt1 = RoutePt(seg.final_x, seg.final_y, seg.final_layer);
+    segs_at_point[pt0] += 1;
+    segs_at_point[pt1] += 1;
+  }
+
+  for (const Pin& pin : pins) {
+    RoutePt pinPt = RoutePt(pin.getOnGridPosition().x(),
+                            pin.getOnGridPosition().y(),
+                            pin.getConnectionLayer());
+    segs_at_point[pinPt] += 1;
+  }
+
+  size_t read = 0;
+  size_t write = 0;
+
+  while (read < segments.size() - 1) {
+    GSegment& segment0 = segments[read];
+    GSegment& segment1 = segments[read + 1];
+
+    // both segments are not vias
+    if (segment0.init_layer == segment0.final_layer
+        && segment1.init_layer == segment1.final_layer &&
+        // segments are on the same layer
+        segment0.init_layer == segment1.init_layer) {
+      // if segment 0 connects to the end of segment 1
+      if (!segmentsConnect(segment0, segment1, segment1, segs_at_point)) {
+        segments[write++] = segment0;
+      }
+    } else {
+      segments[write++] = segment0;
+    }
+    read++;
+  }
+
+  segments[write] = segments[read];
+
+  segments.resize(write + 1);
 }
 
 bool GlobalRouter::segmentsConnect(const GSegment& seg0,
@@ -3890,6 +3891,7 @@ void GlobalRouter::updateDirtyRoutes(bool save_guides)
     const float old_critical_nets_percentage
         = fastroute_->getCriticalNetsPercentage();
     fastroute_->setCriticalNetsPercentage(0);
+    fastroute_->setCongestionReportIterStep(0);
 
     initFastRouteIncr(dirty_nets);
 
@@ -3932,6 +3934,7 @@ void GlobalRouter::updateDirtyRoutes(bool save_guides)
       }
     }
     fastroute_->setCriticalNetsPercentage(old_critical_nets_percentage);
+    fastroute_->setCongestionReportIterStep(congestion_report_iter_step_);
     if (save_guides) {
       saveGuides();
     }

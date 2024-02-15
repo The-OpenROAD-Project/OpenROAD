@@ -90,7 +90,7 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
   void perturb() override;
   void restore() override;
   // actions used
-  void flipMacro();  // flip hard macros
+  void flipAllMacros();
 
   float flip_prob_ = 0.0;
 };

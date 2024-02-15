@@ -5234,6 +5234,8 @@ class dbSite : public dbObject
   {
     dbSite* site;
     dbOrientType orientation;
+    friend bool operator==(const OrientedSite& lhs, const OrientedSite& rhs);
+    friend bool operator!=(const OrientedSite& lhs, const OrientedSite& rhs);
   };
   using RowPattern = std::vector<OrientedSite>;
 
@@ -9377,6 +9379,18 @@ class dbTechLayerMinStepRule : public dbObject
   void setExceptSameCorners(bool except_same_corners);
 
   bool isExceptSameCorners() const;
+
+  void setConcaveCorner(bool concave_corner);
+
+  bool isConcaveCorner() const;
+
+  void setExceptRectangle(bool except_rectangle);
+
+  bool isExceptRectangle() const;
+
+  void setNoAdjacentEol(bool no_adjacent_eol);
+
+  bool isNoAdjacentEol() const;
 
   // User Code Begin dbTechLayerMinStepRule
   static dbTechLayerMinStepRule* create(dbTechLayer* layer);

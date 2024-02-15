@@ -93,6 +93,7 @@ record_tests {
   asap7_offcenter_via
   asap7_no_via_generate_v1_snapped
   asap7_failed_macro_grid
+  asap7_vias_fixed_vias
 
   existing
 
