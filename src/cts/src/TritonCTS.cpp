@@ -924,8 +924,8 @@ HTreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
     return nullptr;
   }
 
-  if (!options_->insertionDelayEnabled() || macroSinks.empty()
-      || registerSinks.empty()) {
+  if (!options_->insertionDelayEnabled() || (macroSinks.size() < 2)
+      || (registerSinks.size() < 2)) {
     // There is no need for separate clock trees
     for (odb::dbITerm* iterm : firstNet->getITerms()) {
       odb::dbInst* inst = iterm->getInst();
