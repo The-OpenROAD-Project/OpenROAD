@@ -2675,27 +2675,10 @@ void GlobalRouter::computeSpacingsAndMinWidth(int max_layer)
           GRT, 90, "Track for layer {} not found.", tech_layer->getName());
     }
 
-    int min_spacing = 0;
-    int min_width = 0;
-    int track_step_x = -1;
-    int track_step_y = -1;
-    int init_track_x, num_tracks_x;
-    int init_track_y, num_tracks_y;
-    if (track->getNumGridPatternsX() > 0) {
-      track->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
-    }
-    if (track->getNumGridPatternsY() > 0) {
-      track->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
-    }
+    int track_step, track_init, num_tracks;
+    track->getAverageTrackSpacing(track_step, track_init, num_tracks);
 
-    if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-      min_width = track_step_y;
-    } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-      min_width = track_step_x;
-    }
-
-    grid_->addSpacing(min_spacing, level - 1);
-    grid_->addMinWidth(min_width, level - 1);
+    grid_->addMinWidth(track_step, level - 1);
   }
 }
 
