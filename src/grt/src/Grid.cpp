@@ -54,14 +54,14 @@ void Grid::init(const odb::Rect& die_area,
   perfect_regular_x_ = perfect_regular_x;
   perfect_regular_y_ = perfect_regular_y;
   num_layers_ = num_layers;
-  min_widths_.resize(num_layers);
+  min_spacings_.resize(num_layers);
   horizontal_edges_capacities_.resize(num_layers);
   vertical_edges_capacities_.resize(num_layers);
 }
 
 void Grid::clear()
 {
-  min_widths_.clear();
+  min_spacings_.clear();
   horizontal_edges_capacities_.clear();
   vertical_edges_capacities_.clear();
 }

@@ -208,7 +208,7 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
   computeGridAdjustments(min_routing_layer, max_routing_layer);
   computeTrackAdjustments(min_routing_layer, max_routing_layer);
   computeObstructionsAdjustments();
-  std::vector<int> track_space = grid_->getMinWidths();
+  std::vector<int> track_space = grid_->getMinSpacings();
   fastroute_->initBlockedIntervals(track_space);
   computeUserGlobalAdjustments(min_routing_layer, max_routing_layer);
   computeUserLayerAdjustments(max_routing_layer);
@@ -460,7 +460,7 @@ void GlobalRouter::initCoreGrid(int max_routing_layer)
   initGrid(max_routing_layer);
 
   computeCapacities(max_routing_layer);
-  computeSpacingsAndMinWidth(max_routing_layer);
+  computeSpacings(max_routing_layer);
 
   fastroute_->setLowerLeft(grid_->getXMin(), grid_->getYMin());
   fastroute_->setTileSize(grid_->getTileSize());
@@ -984,10 +984,10 @@ void GlobalRouter::computeGridAdjustments(int min_routing_layer,
     int new_h_capacity = 0;
 
     if (routing_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-      h_space = grid_->getMinWidths()[level - 1];
+      h_space = grid_->getMinSpacings()[level - 1];
       new_h_capacity = std::floor((grid_->getTileSize() + y_extra) / h_space);
     } else if (routing_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-      v_space = grid_->getMinWidths()[level - 1];
+      v_space = grid_->getMinSpacings()[level - 1];
       new_v_capacity = std::floor((grid_->getTileSize() + x_extra) / v_space);
     } else {
       logger_->error(GRT, 71, "Layer spacing not found.");
@@ -1259,7 +1259,7 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
 
   int layer = tech_layer->getRoutingLevel();
 
-  int track_space = grid_->getMinWidths()[layer - 1];
+  int track_space = grid_->getMinSpacings()[layer - 1];
 
   interval<int>::type first_tile_reduce_interval
       = grid_->computeTileReduceInterval(obstruction_rect,
@@ -2661,7 +2661,7 @@ void GlobalRouter::computeCapacities(int max_layer)
   }
 }
 
-void GlobalRouter::computeSpacingsAndMinWidth(int max_layer)
+void GlobalRouter::computeSpacings(int max_layer)
 {
   for (auto const& [level, tech_layer] : routing_layers_) {
     if (level > max_layer && max_layer > -1) {
@@ -2678,7 +2678,7 @@ void GlobalRouter::computeSpacingsAndMinWidth(int max_layer)
     int track_step, track_init, num_tracks;
     track->getAverageTrackSpacing(track_step, track_init, num_tracks);
 
-    grid_->addMinWidth(track_step, level - 1);
+    grid_->addMinSpacing(track_step, level - 1);
   }
 }
 
