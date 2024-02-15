@@ -306,9 +306,7 @@ sky130_fd_sc_hd__a41oi_4/A2 -> A1 A3 A4
 sky130_fd_sc_hd__a41oi_4/A3 -> A1 A2 A4
 sky130_fd_sc_hd__a41oi_4/A4 -> A1 A2 A3
 sky130_fd_sc_hd__a41oi_4/B1 ->
-[INFO RSZ-1000] sup
 sky130_fd_sc_hd__and2_0/A -> B
-[INFO RSZ-1000] sup
 sky130_fd_sc_hd__and2_0/B -> A
 sky130_fd_sc_hd__and2_1/A -> B
 sky130_fd_sc_hd__and2_1/B -> A
