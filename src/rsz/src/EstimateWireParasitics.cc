@@ -56,7 +56,6 @@ using utl::RSZ;
 using sta::PinSet;
 using sta::NetIterator;
 using sta::NetConnectedPinIterator;
-using sta::ReducedParasiticType;
 using sta::OperatingConditions;
 
 using odb::dbInst;
@@ -321,7 +320,7 @@ Resizer::estimateWireParasitics()
   if (!wire_signal_cap_.empty()) {
     sta_->ensureClkNetwork();
     // Make separate parasitics for each corner, same for min/max.
-    sta_->setParasiticAnalysisPts(true, false);
+    sta_->setParasiticAnalysisPts(true);
 
     NetIterator *net_iter = network_->netIterator(network_->topInstance());
     while (net_iter->hasNext()) {
@@ -385,16 +384,12 @@ Resizer::makePadParasitic(const Net *net)
   for (Corner *corner : *sta_->corners()) {
     const ParasiticAnalysisPt *parasitics_ap = corner->findParasiticAnalysisPt(max_);
     Parasitic *parasitic = sta_->makeParasiticNetwork(net, false, parasitics_ap);
-    ParasiticNode *n1 = parasitics_->ensureParasiticNode(parasitic, pin1);
-    ParasiticNode *n2 = parasitics_->ensureParasiticNode(parasitic, pin2);
+    ParasiticNode *n1 = parasitics_->ensureParasiticNode(parasitic, pin1, network_);
+    ParasiticNode *n2 = parasitics_->ensureParasiticNode(parasitic, pin2, network_);
 
     // Use a small resistor to keep the connectivity intact.
-    parasitics_->makeResistor(nullptr, n1, n2, .001, parasitics_ap);
-
-    ReducedParasiticType reduce_to = sta_->arcDelayCalc()->reducedParasiticType();
-    const OperatingConditions *op_cond = sdc_->operatingConditions(max_);
-    parasitics_->reduceTo(parasitic, net, reduce_to, op_cond,
-                          corner, max_, parasitics_ap);
+    parasitics_->makeResistor(parasitic, 1, .001, n1, n2);
+    arc_delay_calc_->reduceParasitic(parasitic, net, corner, sta::MinMaxAll::all());
   }
   parasitics_->deleteParasiticNetworks(net);
 }
@@ -414,6 +409,7 @@ Resizer::estimateWireParasiticSteiner(const Pin *drvr_pin,
       double wire_cap=is_clk ? wireClkCapacitance(corner) : wireSignalCapacitance(corner);
       double wire_res=is_clk ? wireClkResistance(corner) : wireSignalResistance(corner);
       int branch_count = tree->branchCount();
+      size_t resistor_id = 1;
       for (int i = 0; i < branch_count; i++) {
         Point pt1, pt2;
         SteinerPt steiner_pt1, steiner_pt2;
@@ -422,11 +418,13 @@ Resizer::estimateWireParasiticSteiner(const Pin *drvr_pin,
                      pt1, steiner_pt1,
                      pt2, steiner_pt2,
                      wire_length_dbu);
-        ParasiticNode *n1 = parasitics_->ensureParasiticNode(parasitic, net, steiner_pt1);
-        ParasiticNode *n2 = parasitics_->ensureParasiticNode(parasitic, net, steiner_pt2);
+        ParasiticNode *n1 = parasitics_->ensureParasiticNode(parasitic, net,
+                                                             steiner_pt1, network_);
+        ParasiticNode *n2 = parasitics_->ensureParasiticNode(parasitic, net,
+                                                             steiner_pt2, network_);
         if (wire_length_dbu == 0) {
           // Use a small resistor to keep the connectivity intact.
-          parasitics_->makeResistor(nullptr, n1, n2, 1.0e-3, parasitics_ap);
+          parasitics_->makeResistor(parasitic, resistor_id++, 1.0e-3, n1, n2);
         } else {
           double length = dbuToMeters(wire_length_dbu);
           double cap = length * wire_cap;
@@ -440,17 +438,14 @@ Resizer::estimateWireParasiticSteiner(const Pin *drvr_pin,
                      units_->resistanceUnit()->asString(res),
                      units_->capacitanceUnit()->asString(cap / 2.0),
                      parasitics_->name(n2));
-          parasitics_->incrCap(n1, cap / 2.0, parasitics_ap);
-          parasitics_->makeResistor(nullptr, n1, n2, res, parasitics_ap);
-          parasitics_->incrCap(n2, cap / 2.0, parasitics_ap);
+          parasitics_->incrCap(n1, cap / 2.0);
+          parasitics_->makeResistor(parasitic, resistor_id++, res, n1, n2);
+          parasitics_->incrCap(n2, cap / 2.0);
         }
-        parasiticNodeConnectPins(parasitic, n1, tree, steiner_pt1, parasitics_ap);
-        parasiticNodeConnectPins(parasitic, n2, tree, steiner_pt2, parasitics_ap);
+        parasiticNodeConnectPins(parasitic, n1, tree, steiner_pt1, resistor_id);
+        parasiticNodeConnectPins(parasitic, n2, tree, steiner_pt2, resistor_id);
       }
-      ReducedParasiticType reduce_to = ReducedParasiticType::pi_elmore;
-      const OperatingConditions *op_cond = sdc_->operatingConditions(max_);
-      parasitics_->reduceTo(parasitic, net, reduce_to, op_cond,
-                            corner, max_, parasitics_ap);
+      arc_delay_calc_->reduceParasitic(parasitic, net, nullptr, sta::MinMaxAll::all());
     }
     parasitics_->deleteParasiticNetworks(net);
     delete tree;
@@ -530,14 +525,15 @@ Resizer::parasiticNodeConnectPins(Parasitic *parasitic,
                                   ParasiticNode *node,
                                   SteinerTree *tree,
                                   SteinerPt pt,
-                                  const ParasiticAnalysisPt *parasitics_ap)
+                                  size_t &resistor_id)
 {
   const PinSeq *pins = tree->pins(pt);
   if (pins) {
     for (const Pin *pin : *pins) {
-      ParasiticNode *pin_node = parasitics_->ensureParasiticNode(parasitic, pin);
+      ParasiticNode *pin_node =
+        parasitics_->ensureParasiticNode(parasitic, pin, network_);
       // Use a small resistor to keep the connectivity intact.
-      parasitics_->makeResistor(nullptr, node, pin_node, 1.0e-3, parasitics_ap);
+      parasitics_->makeResistor(parasitic, resistor_id++, 1.0e-3, node, pin_node);
     }
   }
 }
