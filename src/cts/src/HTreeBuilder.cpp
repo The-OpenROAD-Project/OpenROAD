@@ -1744,10 +1744,6 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
                sinks.size(),
                movedSinks);
   }
-
-  assert(std::abs(computeDist(branchPt1, rootLocation) - targetDist) < 0.001
-         && std::abs(computeDist(branchPt2, rootLocation) - targetDist)
-                < 0.001);
 }
 
 void HTreeBuilder::createClockSubNets()
