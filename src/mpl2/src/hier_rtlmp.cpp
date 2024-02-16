@@ -5631,10 +5631,10 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
 
   int remaining_runs = num_runs_;
 
-  int number_of_real_macros = 0;
   SequencePair initial_seq_pair;
+  const int macros_to_place = static_cast<int>(hard_macros.size());
   if (cluster->isArrayOfInterconnectedMacros()) {
-    setArrayTilingSequencePair(cluster, macros, initial_seq_pair);
+    setArrayTilingSequencePair(cluster, macros_to_place, initial_seq_pair);
 
     pos_swap_prob = 0.0f;
     neg_swap_prob = 0.0f;
@@ -5642,7 +5642,7 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
     exchange_swap_prob = 0.95;
     flip_prob = 0.05;
 
-    remaining_runs = 1;
+    remaining_runs = 2;
   }
 
   // We vary the outline of cluster to generate differnt tilings
@@ -5697,7 +5697,7 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
                                 random_seed_ + run_id,
                                 graphics_.get(),
                                 logger_);
-      sa->setNumberOfMacrosToPlace(static_cast<int>(hard_macros.size()));
+      sa->setNumberOfMacrosToPlace(macros_to_place);
       sa->setNets(nets);
       sa->setFences(fences);
       sa->setGuides(guides);
@@ -5789,11 +5789,11 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
 // them at the end.
 void HierRTLMP::setArrayTilingSequencePair(
     Cluster* cluster,
-    const std::vector<mpl2::HardMacro>& macros,
+    const int macros_to_place,
     SequencePair& initial_seq_pair)
 {
   // Set positive sequence
-  for (int i = 0; i < macros.size(); ++i) {
+  for (int i = 0; i < macros_to_place; ++i) {
     initial_seq_pair.pos_sequence.push_back(i);
   }
 
@@ -5807,12 +5807,6 @@ void HierRTLMP::setArrayTilingSequencePair(
     for (int j = 1; j <= rows; j++) {
       initial_seq_pair.neg_sequence.push_back(rows * i - j);
     }
-  }
-
-  const int number_of_hard_macros = cluster->getHardMacros().size();
-
-  for (int i = number_of_hard_macros; i < macros.size(); ++i) {
-    initial_seq_pair.neg_sequence.push_back(i);
   }
 }
 

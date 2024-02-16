@@ -231,6 +231,8 @@ class SimulatedAnnealingCore
   // we define accuracy to determine whether the floorplan is valid
   // because the error introduced by the type conversion
   static constexpr float acc_tolerance_ = 0.001;
+
+  bool has_initial_sequence_pair_ = false;
 };
 
 // SACore wrapper function
