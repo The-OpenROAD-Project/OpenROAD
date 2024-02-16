@@ -1071,8 +1071,11 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
 
 void GlobalRouter::computePinOffsetAdjustments()
 {
-  for (auto const& map_obj : pad_pins_connections_) {
-    for (const auto& segment : map_obj.second) {
+  for (auto& net_route_fake_pins : pad_pins_connections_) {
+    std::vector<Pin>& pins = db_net_map_[net_route_fake_pins.first]->getPins();
+    GRoute& route = net_route_fake_pins.second;
+    mergeSegments(pins, route);
+    for (auto& segment : net_route_fake_pins.second) {
       int tile_size = grid_->getTileSize();
       int die_area_min_x = grid_->getXMin();
       int die_area_min_y = grid_->getYMin();
@@ -2354,6 +2357,16 @@ void GlobalRouter::createFakePin(Pin pin,
   pin_connection.final_x = std::max(x_tmp, pin_connection.final_x);
   pin_connection.final_y = std::max(y_tmp, pin_connection.final_y);
 
+  // if there is already a pin with that fake position, don't add the gcell
+  // capacity adjustment.
+  auto& net_pad_pin_connection = pad_pins_connections_[net->getDbNet()];
+  if (std::find(net_pad_pin_connection.begin(),
+                net_pad_pin_connection.end(),
+                pin_connection)
+      != net_pad_pin_connection.end()) {
+    return;
+  }
+
   int pin_conn_init_x = pin_connection.init_x;
   int pin_conn_init_y = pin_connection.init_y;
 
@@ -2361,7 +2374,8 @@ void GlobalRouter::createFakePin(Pin pin,
   int pin_conn_final_y = pin_connection.final_y;
 
   for (Pin& net_pin : net->getPins()) {
-    if (net_pin.getName() != pin.getName()) {
+    if (net_pin.getName() != pin.getName()
+        && !(net_pin.isConnectedToPadOrMacro() || net_pin.isPort())) {
       auto net_pin_pos = net_pin.getOnGridPosition();
       if (pin_connection.init_y == pin_connection.final_y) {
         if ((net_pin_pos.x() >= pin_conn_init_x)
