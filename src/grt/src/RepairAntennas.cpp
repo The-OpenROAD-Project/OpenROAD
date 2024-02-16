@@ -324,6 +324,7 @@ void RepairAntennas::addWireTerms(Net* net,
         }
       }
     }
+    route_pt_pins.erase(RoutePt(grid_x, grid_y, layer));
   }
 }
 
