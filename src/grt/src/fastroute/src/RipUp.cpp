@@ -357,7 +357,7 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
   const int n2a = treeedge->n2a;
 
   int bl = (n1a < num_terminals) ? nets_[netID]->getPinL()[n1a] : BIG_INT;
-  int hl = (n1a < num_terminals) ? nets_[netID]->getPinL()[n1a] : 0;
+  int hl = (n1a < num_terminals) ? nets_[netID]->getPinL()[n1a] : 1;
   int hid = BIG_INT;
   int bid = BIG_INT;
 
@@ -395,7 +395,7 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
   treenodes[n1a].hID = hid;
 
   bl = (n2a < num_terminals) ? nets_[netID]->getPinL()[n2a] : BIG_INT;
-  hl = (n2a < num_terminals) ? nets_[netID]->getPinL()[n2a] : 0;
+  hl = (n2a < num_terminals) ? nets_[netID]->getPinL()[n2a] : 1;
   hid = bid = BIG_INT;
 
   for (int i = 0; i < treenodes[n2a].conCNT; i++) {

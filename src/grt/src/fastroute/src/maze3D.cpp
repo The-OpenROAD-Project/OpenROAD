@@ -787,17 +787,17 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                          int ripupTHub)
 {
   static multi_array<Direction, 3> directions_3D(
-      boost::extents[num_layers_][y_grid_][x_grid_]);
+      boost::extents[num_layers_ + 1][y_grid_][x_grid_]);
   static multi_array<int, 3> corr_edge_3D(
-      boost::extents[num_layers_][y_grid_][x_grid_]);
+      boost::extents[num_layers_ + 1][y_grid_][x_grid_]);
   static multi_array<parent3D, 3> pr_3D_(
-      boost::extents[num_layers_][y_grid_][x_grid_]);
+      boost::extents[num_layers_ + 1][y_grid_][x_grid_]);
 
-  int64 total_size = static_cast<int64>(num_layers_) * y_range_ * x_range_;
+  int64 total_size = static_cast<int64>(num_layers_ + 1) * y_range_ * x_range_;
   static std::vector<bool> pop_heap2_3D(total_size, false);
 
   // allocate memory for priority queue
-  total_size = static_cast<int64>(y_grid_) * x_grid_ * num_layers_;
+  total_size = static_cast<int64>(y_grid_) * x_grid_ * (num_layers_ + 1);
   static std::vector<int*> src_heap_3D(total_size);
   static std::vector<int*> dest_heap_3D(total_size);
 
@@ -810,9 +810,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
   const int endIND = tree_order_pv_.size() * 0.9;
 
   static multi_array<int, 3> d1_3D(
-      boost::extents[num_layers_][y_range_][x_range_]);
+      boost::extents[num_layers_ + 1][y_range_][x_range_]);
   static multi_array<int, 3> d2_3D(
-      boost::extents[num_layers_][y_range_][x_range_]);
+      boost::extents[num_layers_ + 1][y_range_][x_range_]);
 
   for (int orderIndex = 0; orderIndex < endIND; orderIndex++) {
     const int netID = tree_order_pv_[orderIndex].treeIndex;
@@ -867,7 +867,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       // initialize pop_src_heap_3D_[] and pop_heap2_3D[] as false (for
       // detecting the shortest path is found or not)
 
-      for (int k = 0; k < num_layers_; k++) {
+      for (int k = 1; k <= num_layers_; k++) {
         for (int i = regionY1; i <= regionY2; i++) {
           for (int j = regionX1; j <= regionX2; j++) {
             d1_3D[k][i][j] = BIG_INT;
@@ -1093,7 +1093,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         }
 
         // up
-        if (curL < num_layers_ - 1
+        if (curL < num_layers_
             && directions_3D[curL][curY][curX] != Direction::Down) {
           const float tmp = d1_3D[curL][curY][curX] + via_cost_;
           const int tmpL = curL + 1;  // the bottom neighbor
