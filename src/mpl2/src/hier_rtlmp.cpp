@@ -5599,8 +5599,6 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
   if (cluster->isArrayOfInterconnectedMacros()) {
     setArrayTilingSequencePair(cluster, macros, initial_seq_pair);
 
-    number_of_real_macros = cluster->getHardMacros().size();
-
     pos_swap_prob = 0.0f;
     neg_swap_prob = 0.0f;
     double_swap_prob = 0.0f;
@@ -5666,7 +5664,6 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setInitialSequencePair(initial_seq_pair);
-      sa->setNumOfRealMacros(number_of_real_macros);
 
       sa_vector.push_back(sa);
     }
