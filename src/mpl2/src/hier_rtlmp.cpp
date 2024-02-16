@@ -2483,7 +2483,6 @@ void HierRTLMP::classifyMacrosByConnSignature(
 // We determine if the macros belong to the same class based on:
 // 1. Size && and Interconnection (Directly connected macro clusters
 //    should be grouped)
-//    * We prioritize this type of grouping.
 // 2. Size && Connection Signature (Macros with same connection
 //    signature should be grouped)
 void HierRTLMP::groupSingleMacroClusters(
@@ -3133,6 +3132,8 @@ void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
       columns = macro_array->getNumMacro() / divider;
       rows = divider;
 
+      // We don't consider tilings for right angle rotation orientations,
+      // because they're not allowed in our macro placer.
       tight_packing_tilings.emplace_back(std::pair<float, float>(
           columns * macro_array->getHardMacros().front()->getWidth(),
           rows * macro_array->getHardMacros().front()->getHeight()));
