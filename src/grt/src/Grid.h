@@ -93,9 +93,9 @@ class Grid
 
   int getPitchesInTile() const { return pitches_in_tile_; }
 
-  const std::vector<int>& getMinSpacings() const { return min_spacings_; }
+  const std::vector<int>& getTrackPitches() const { return track_pitches; }
 
-  void addMinSpacing(int value, int layer) { min_spacings_[layer] = value; }
+  void addTrackPitch(int value, int layer) { track_pitches[layer] = value; }
 
   const std::vector<int>& getHorizontalEdgesCapacities()
   {
@@ -157,7 +157,7 @@ class Grid
   bool perfect_regular_y_;
   int num_layers_;
   int pitches_in_tile_ = 15;
-  std::vector<int> min_spacings_;
+  std::vector<int> track_pitches;
   std::vector<int> horizontal_edges_capacities_;
   std::vector<int> vertical_edges_capacities_;
 };
