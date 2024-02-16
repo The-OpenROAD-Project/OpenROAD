@@ -2724,6 +2724,12 @@ Resizer::repairSetup(double setup_margin,
                              skip_pin_swap, skip_gate_cloning);
 }
 
+void Resizer::reportSwappablePins()
+{
+  resizePreamble();
+  repair_setup_->reportSwappablePins();
+}
+
 void
 Resizer::repairSetup(const Pin *end_pin)
 {

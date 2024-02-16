@@ -208,7 +208,7 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
   computeGridAdjustments(min_routing_layer, max_routing_layer);
   computeTrackAdjustments(min_routing_layer, max_routing_layer);
   computeObstructionsAdjustments();
-  std::vector<int> track_space = grid_->getMinWidths();
+  std::vector<int> track_space = grid_->getTrackPitches();
   fastroute_->initBlockedIntervals(track_space);
   computeUserGlobalAdjustments(min_routing_layer, max_routing_layer);
   computeUserLayerAdjustments(max_routing_layer);
@@ -460,7 +460,7 @@ void GlobalRouter::initCoreGrid(int max_routing_layer)
   initGrid(max_routing_layer);
 
   computeCapacities(max_routing_layer);
-  computeSpacingsAndMinWidth(max_routing_layer);
+  findTrackPitches(max_routing_layer);
 
   fastroute_->setLowerLeft(grid_->getXMin(), grid_->getYMin());
   fastroute_->setTileSize(grid_->getTileSize());
@@ -984,10 +984,10 @@ void GlobalRouter::computeGridAdjustments(int min_routing_layer,
     int new_h_capacity = 0;
 
     if (routing_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-      h_space = grid_->getMinWidths()[level - 1];
+      h_space = grid_->getTrackPitches()[level - 1];
       new_h_capacity = std::floor((grid_->getTileSize() + y_extra) / h_space);
     } else if (routing_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-      v_space = grid_->getMinWidths()[level - 1];
+      v_space = grid_->getTrackPitches()[level - 1];
       new_v_capacity = std::floor((grid_->getTileSize() + x_extra) / v_space);
     } else {
       logger_->error(GRT, 71, "Layer spacing not found.");
@@ -1259,7 +1259,7 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
 
   int layer = tech_layer->getRoutingLevel();
 
-  int track_space = grid_->getMinWidths()[layer - 1];
+  int track_space = grid_->getTrackPitches()[layer - 1];
 
   interval<int>::type first_tile_reduce_interval
       = grid_->computeTileReduceInterval(obstruction_rect,
@@ -2661,7 +2661,7 @@ void GlobalRouter::computeCapacities(int max_layer)
   }
 }
 
-void GlobalRouter::computeSpacingsAndMinWidth(int max_layer)
+void GlobalRouter::findTrackPitches(int max_layer)
 {
   for (auto const& [level, tech_layer] : routing_layers_) {
     if (level > max_layer && max_layer > -1) {
@@ -2675,27 +2675,10 @@ void GlobalRouter::computeSpacingsAndMinWidth(int max_layer)
           GRT, 90, "Track for layer {} not found.", tech_layer->getName());
     }
 
-    int min_spacing = 0;
-    int min_width = 0;
-    int track_step_x = -1;
-    int track_step_y = -1;
-    int init_track_x, num_tracks_x;
-    int init_track_y, num_tracks_y;
-    if (track->getNumGridPatternsX() > 0) {
-      track->getGridPatternX(0, init_track_x, num_tracks_x, track_step_x);
-    }
-    if (track->getNumGridPatternsY() > 0) {
-      track->getGridPatternY(0, init_track_y, num_tracks_y, track_step_y);
-    }
+    int track_step, track_init, num_tracks;
+    track->getAverageTrackSpacing(track_step, track_init, num_tracks);
 
-    if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-      min_width = track_step_y;
-    } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-      min_width = track_step_x;
-    }
-
-    grid_->addSpacing(min_spacing, level - 1);
-    grid_->addMinWidth(min_width, level - 1);
+    grid_->addTrackPitch(track_step, level - 1);
   }
 }
 
