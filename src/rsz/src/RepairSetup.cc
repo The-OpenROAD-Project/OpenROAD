@@ -524,13 +524,13 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
         }
 
         // Find the equivalent pins for a cell (simple implementation for now)
-        // stash them
-        auto cell_port_pair = std::pair(cell, input_port);
-        if (equiv_pin_map_.find(cell_port_pair) == equiv_pin_map_.end()) {
+        // stash them. Ports are unique to a cell so we can just cache by port
+        // and that should apply to all instances of that cell with this input_port.
+        if (equiv_pin_map_.find(input_port) == equiv_pin_map_.end()) {
           equivCellPins(cell, input_port, ports);
-          equiv_pin_map_.insert(cell_port_pair, ports);
+          equiv_pin_map_.insert(input_port, ports);
         }
-        ports = equiv_pin_map_[cell_port_pair];
+        ports = equiv_pin_map_[input_port];
         if (ports.size() > 1) {
             resizer_->findSwapPinCandidate(input_port, drvr_port, load_cap,
                                            dcalc_ap, &swap_port);
@@ -936,6 +936,10 @@ bool RepairSetup::isPortEqiv(sta::FuncExpr* expr,
                              const LibertyPort* port_a,
                              const LibertyPort* port_b)
 {
+  if (port_a->libertyCell() != cell || port_a->libertyCell() != cell) {
+    return false;
+  }
+
   sta::LibertyCellPortIterator port_iter(cell);
   sta::UnorderedMap<const LibertyPort*, std::vector<bool>> port_stimulus;
   size_t input_port_count = 0;
@@ -964,14 +968,7 @@ bool RepairSetup::isPortEqiv(sta::FuncExpr* expr,
     }
     var_index++;
   }
-
-  if (port_stimulus.find(port_a) == port_stimulus.end()) {
-    return false;
-  }
-  if (port_stimulus.find(port_b) == port_stimulus.end()) {
-    return false;
-  }
-
+  
   std::vector<bool> result_no_swap = simulateExpr(expr, port_stimulus);
 
   // Swap pins
@@ -1006,36 +1003,61 @@ void RepairSetup::equivCellPins(const LibertyCell* cell,
     int outputs = 0;
     int inputs = 0;
 
-    // count number of output ports. Skip ports with > 1 output for now.
-    LibertyPort* output_port = nullptr;
+    // count number of output ports.
     while (port_iter.hasNext()) {
         LibertyPort *port = port_iter.next();
         if (port->direction()->isOutput()) {
-          output_port = port;
           ++outputs;
         } else {
           ++inputs;
         }
     }
 
-    if (output_port == nullptr) {
-      return;
-    }
+    if (outputs >= 1 && inputs >= 2) {
+      sta::LibertyCellPortIterator port_iter2(cell);
+      while (port_iter2.hasNext()) {
+        LibertyPort* candidate_port = port_iter2.next();
+        if (!candidate_port->direction()->isInput()) {
+          continue;
+        }
 
-    sta::FuncExpr* expr = output_port->function();
-    if (outputs == 1 && inputs >= 2) {
-        sta::LibertyCellPortIterator port_iter2(cell);
-        while (port_iter2.hasNext()) {
-          LibertyPort* candidate_port = port_iter2.next();
-          if (!candidate_port->direction()->isInput()) {
+        sta::LibertyCellPortIterator output_port_iter(cell);
+        std::optional<bool> is_equivalent;
+        // Loop through all the output ports and make sure they are equivalent
+        // under swaps of candidate_port and input_port. For multi-ouput gates
+        // like full adders.
+        while (output_port_iter.hasNext()) {
+          LibertyPort* output_candidate_port = output_port_iter.next();
+          sta::FuncExpr* output_expr = output_candidate_port->function();
+          if (!output_candidate_port->direction()->isOutput()) {
             continue;
           }
 
-          if (expr != nullptr && input_port != candidate_port
-              && isPortEqiv(expr, cell, input_port, candidate_port)) {
-            ports.insert(candidate_port);
+          if (output_expr == nullptr) {
+            continue;
           }
+
+          if (input_port == candidate_port) {
+            continue;
+          }
+
+          bool is_equivalent_result
+              = isPortEqiv(output_expr, cell, input_port, candidate_port);
+
+          if (!is_equivalent.has_value()) {
+            is_equivalent = is_equivalent_result;
+            continue;
+          }
+
+          is_equivalent = is_equivalent.value() && is_equivalent_result;
         }
+        
+        // candidate_port is equivalent to input_port under all output ports
+        // of this cell.
+        if (is_equivalent.has_value() && is_equivalent.value()) {
+          ports.insert(candidate_port);
+        }
+      }
     }
 }
 

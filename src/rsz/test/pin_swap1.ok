@@ -549,30 +549,30 @@ sky130_fd_sc_hd__einvp_4/A ->
 sky130_fd_sc_hd__einvp_4/TE ->
 sky130_fd_sc_hd__einvp_8/A ->
 sky130_fd_sc_hd__einvp_8/TE ->
-sky130_fd_sc_hd__fa_1/A ->
-sky130_fd_sc_hd__fa_1/B ->
-sky130_fd_sc_hd__fa_1/CIN ->
-sky130_fd_sc_hd__fa_2/A ->
-sky130_fd_sc_hd__fa_2/B ->
-sky130_fd_sc_hd__fa_2/CIN ->
-sky130_fd_sc_hd__fa_4/A ->
-sky130_fd_sc_hd__fa_4/B ->
-sky130_fd_sc_hd__fa_4/CIN ->
-sky130_fd_sc_hd__fah_1/A ->
-sky130_fd_sc_hd__fah_1/B ->
-sky130_fd_sc_hd__fah_1/CI ->
-sky130_fd_sc_hd__fahcin_1/A ->
-sky130_fd_sc_hd__fahcin_1/B ->
+sky130_fd_sc_hd__fa_1/A -> B CIN
+sky130_fd_sc_hd__fa_1/B -> A CIN
+sky130_fd_sc_hd__fa_1/CIN -> A B
+sky130_fd_sc_hd__fa_2/A -> B CIN
+sky130_fd_sc_hd__fa_2/B -> A CIN
+sky130_fd_sc_hd__fa_2/CIN -> A B
+sky130_fd_sc_hd__fa_4/A -> B CIN
+sky130_fd_sc_hd__fa_4/B -> A CIN
+sky130_fd_sc_hd__fa_4/CIN -> A B
+sky130_fd_sc_hd__fah_1/A -> B CI
+sky130_fd_sc_hd__fah_1/B -> A CI
+sky130_fd_sc_hd__fah_1/CI -> A B
+sky130_fd_sc_hd__fahcin_1/A -> B
+sky130_fd_sc_hd__fahcin_1/B -> A
 sky130_fd_sc_hd__fahcin_1/CIN ->
-sky130_fd_sc_hd__fahcon_1/A ->
-sky130_fd_sc_hd__fahcon_1/B ->
-sky130_fd_sc_hd__fahcon_1/CI ->
-sky130_fd_sc_hd__ha_1/A ->
-sky130_fd_sc_hd__ha_1/B ->
-sky130_fd_sc_hd__ha_2/A ->
-sky130_fd_sc_hd__ha_2/B ->
-sky130_fd_sc_hd__ha_4/A ->
-sky130_fd_sc_hd__ha_4/B ->
+sky130_fd_sc_hd__fahcon_1/A -> B CI
+sky130_fd_sc_hd__fahcon_1/B -> A CI
+sky130_fd_sc_hd__fahcon_1/CI -> A B
+sky130_fd_sc_hd__ha_1/A -> B
+sky130_fd_sc_hd__ha_1/B -> A
+sky130_fd_sc_hd__ha_2/A -> B
+sky130_fd_sc_hd__ha_2/B -> A
+sky130_fd_sc_hd__ha_4/A -> B
+sky130_fd_sc_hd__ha_4/B -> A
 sky130_fd_sc_hd__inv_1/A ->
 sky130_fd_sc_hd__inv_12/A ->
 sky130_fd_sc_hd__inv_16/A ->

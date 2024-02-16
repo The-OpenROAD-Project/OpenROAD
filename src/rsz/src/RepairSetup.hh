@@ -178,10 +178,7 @@ private:
   const MinMax *min_;
   const MinMax *max_;
 
-  sta::UnorderedMap<std::pair<LibertyCell*, LibertyPort*>,
-                    sta::LibertyPortSet,
-                    boost::hash<std::pair<LibertyCell*, LibertyPort*>>>
-      equiv_pin_map_;
+  sta::UnorderedMap<LibertyPort*, sta::LibertyPortSet> equiv_pin_map_;
 
   static constexpr int decreasing_slack_max_passes_ = 50;
   static constexpr int rebuffer_max_fanout_ = 20;
