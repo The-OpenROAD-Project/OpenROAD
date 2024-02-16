@@ -119,7 +119,7 @@ odb::dbWire* RepairAntennas::makeNetWire(
     odb::dbTech* tech = db_->getTech();
     odb::dbWireEncoder wire_encoder;
     wire_encoder.begin(wire);
-    RoutePtPins route_pt_pins = findRoutePtPins(net);
+    RoutePtPinsMap route_pt_pins = findRoutePtPins(net);
     std::unordered_set<GSegment, GSegmentHash> wire_segments;
     int prev_conn_layer = -1;
     for (GSegment& seg : route) {
@@ -229,14 +229,15 @@ odb::dbWire* RepairAntennas::makeNetWire(
   }
 }
 
-RoutePtPins RepairAntennas::findRoutePtPins(Net* net)
+RoutePtPinsMap RepairAntennas::findRoutePtPins(Net* net)
 {
-  RoutePtPins route_pt_pins;
+  RoutePtPinsMap route_pt_pins;
   for (Pin& pin : net->getPins()) {
     int conn_layer = pin.getConnectionLayer();
     odb::Point grid_pt = pin.getOnGridPosition();
-    route_pt_pins[RoutePt(grid_pt.x(), grid_pt.y(), conn_layer)].push_back(
-        &pin);
+    RoutePt route_pt(grid_pt.x(), grid_pt.y(), conn_layer);
+    route_pt_pins[route_pt].pins.push_back(&pin);
+    route_pt_pins[route_pt].connected = false;
   }
   return route_pt_pins;
 }
@@ -247,7 +248,7 @@ void RepairAntennas::addWireTerms(Net* net,
                                   int grid_y,
                                   int layer,
                                   odb::dbTechLayer* tech_layer,
-                                  RoutePtPins& route_pt_pins,
+                                  RoutePtPinsMap& route_pt_pins,
                                   odb::dbWireEncoder& wire_encoder,
                                   std::map<int, odb::dbTechVia*>& default_vias,
                                   bool connect_to_segment)
@@ -256,8 +257,9 @@ void RepairAntennas::addWireTerms(Net* net,
     layer--;
   }
   auto itr = route_pt_pins.find(RoutePt(grid_x, grid_y, layer));
-  if (itr != route_pt_pins.end()) {
-    for (const Pin* pin : itr->second) {
+  if (itr != route_pt_pins.end() && !itr->second.connected) {
+    for (const Pin* pin : itr->second.pins) {
+      itr->second.connected = true;
       int conn_layer = pin->getConnectionLayer();
       std::vector<odb::Rect> pin_boxes = pin->getBoxes().at(conn_layer);
       odb::Point grid_pt = pin->getOnGridPosition();
@@ -324,7 +326,6 @@ void RepairAntennas::addWireTerms(Net* net,
         }
       }
     }
-    route_pt_pins.erase(RoutePt(grid_x, grid_y, layer));
   }
 }
 
