@@ -171,6 +171,17 @@ class dbTable : public dbObjectTable, public dbIterator
   dbObject* getObject(uint id, ...) override;
   void getObjects(std::vector<T*>& objects);
 
+  template <class OutputIterator>
+  void getObjects(OutputIterator back_inserter)
+  {
+    uint i;
+    for (i = _bottom_idx; i <= _top_idx; ++i) {
+      if (validId(i)) {
+        back_inserter = getPtr(i);
+      }
+    }
+  }
+
  private:
   void copy_pages(const dbTable<T>&);
   void copy_page(uint page_id, dbTablePage* page);

@@ -823,14 +823,7 @@ void dbTable<T>::getObjects(std::vector<T*>& objects)
 {
   objects.clear();
   objects.reserve(size());
-
-  uint i;
-
-  for (i = _bottom_idx; i <= _top_idx; ++i) {
-    if (validId(i)) {
-      objects.push_back(getPtr(i));
-    }
-  }
+  getObjects(std::back_inserter(objects));
 }
 
 }  // namespace odb
