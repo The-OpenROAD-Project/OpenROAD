@@ -446,7 +446,6 @@ void HierRTLMP::computeMetricsForModules(float core_area)
 
   // Check if placement is feasible in the core area when considering
   // the macro halos
-  float macro_with_halo_area = 0;
   int unfixed_macros = 0;
   for (auto inst : block_->getInsts()) {
     auto master = inst->getMaster();
@@ -455,29 +454,27 @@ void HierRTLMP::computeMetricsForModules(float core_area)
           = dbuToMicron(master->getWidth(), dbu_) + 2 * halo_width_;
       const auto height
           = dbuToMicron(master->getHeight(), dbu_) + 2 * halo_width_;
-      macro_with_halo_area += width * height;
+      macro_with_halo_area_ += width * height;
       unfixed_macros += !inst->getPlacementStatus().isFixed();
     }
   }
-  reportLogicalHierarchyInformation(
-      macro_with_halo_area, core_area, util, core_util);
+  reportLogicalHierarchyInformation(core_area, util, core_util);
 
   if (unfixed_macros == 0) {
     logger_->info(MPL, 17, "No unfixed macros. Skipping placement.");
     return;
   }
 
-  if (macro_with_halo_area + metrics_->getStdCellArea() > core_area) {
+  if (macro_with_halo_area_ + metrics_->getStdCellArea() > core_area) {
     logger_->error(MPL,
                    16,
                    "The instance area with halos {} exceeds the core area {}",
-                   macro_with_halo_area + metrics_->getStdCellArea(),
+                   macro_with_halo_area_ + metrics_->getStdCellArea(),
                    core_area);
   }
 }
 
-void HierRTLMP::reportLogicalHierarchyInformation(float macro_with_halo_area,
-                                                  float core_area,
+void HierRTLMP::reportLogicalHierarchyInformation(float core_area,
                                                   float util,
                                                   float core_util)
 {
@@ -497,7 +494,7 @@ void HierRTLMP::reportLogicalHierarchyInformation(float macro_with_halo_area,
       metrics_->getStdCellArea(),
       metrics_->getNumMacro(),
       metrics_->getMacroArea(),
-      macro_with_halo_area,
+      macro_with_halo_area_,
       metrics_->getStdCellArea() + metrics_->getMacroArea(),
       core_area,
       util,
@@ -3150,7 +3147,11 @@ void HierRTLMP::setIOClustersBlockages()
   }
   max_width = num_hor_access > 0 ? max_width / num_hor_access : max_width;
   max_height = num_ver_access > 0 ? max_height / num_ver_access : max_height;
-  const float depth = std_cell_area / sum_length;
+  const float macro_dominance_factor
+      = macro_with_halo_area_
+        / (root_cluster_->getWidth() * root_cluster_->getHeight());
+  const float depth
+      = (std_cell_area / sum_length) * (1 - macro_dominance_factor);
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
