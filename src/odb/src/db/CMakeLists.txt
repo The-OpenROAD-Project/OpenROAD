@@ -88,6 +88,7 @@ add_library(db
     dbGroupGroundNetItr.cpp
     # Generator Code Begin cpp
     dbAccessPoint.cpp
+    dbDft.cpp
     dbGCellGrid.cpp
     dbGlobalConnect.cpp
     dbGroup.cpp

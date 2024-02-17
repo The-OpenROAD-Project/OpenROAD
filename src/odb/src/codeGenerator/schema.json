@@ -182,6 +182,31 @@
       "type":"1_n",
       "tbl_name":"wrongdir_spacing_rules_tbl_",
       "schema":"db_schema_wrongdir_spacing"
+    },
+    {
+      "first": "dbDft",
+      "second": "dbScanPin",
+      "type": "1_n",
+      "tbl_name": "scan_pins_",
+      "flags": ["no-get"]
+    },
+    {
+      "first": "dbScanChain",
+      "second": "dbScanPartition",
+      "type": "1_n",
+      "tbl_name": "scan_partitions_"
+    },
+    {
+      "first": "dbScanChain",
+      "second": "dbScanInst",
+      "type": "1_n",
+      "tbl_name": "scan_insts_"
+    },
+    {
+      "first": "dbDft",
+      "second": "dbScanChain",
+      "type": "1_n",
+      "tbl_name": "scan_chains_"
     }
   ]
 }
