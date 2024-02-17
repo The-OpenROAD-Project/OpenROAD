@@ -535,24 +535,33 @@ Instance* Resizer::bufferInput(const Pin* top_pin, LibertyCell* buffer_cell)
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
 
+  bool has_non_buffer = false;
   bool has_dont_touch = false;
   NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(input_net);
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
     // Leave input port pin connected to input_net.
-    if (pin != top_pin && dontTouch(network_->instance(pin))) {
-      has_dont_touch = true;
-      logger_->warn(RSZ,
-                    85,
-                    "Input {} can't be buffered due to dont-touch fanout {}",
-                    network_->name(input_net),
-                    network_->name(pin));
-      break;
+    if (pin != top_pin) {
+      auto inst = network_->instance(pin);
+      if (dontTouch(inst)) {
+        has_dont_touch = true;
+        logger_->warn(RSZ,
+                      85,
+                      "Input {} can't be buffered due to dont-touch fanout {}",
+                      network_->name(input_net),
+                      network_->name(pin));
+        break;
+      }
+      auto cell = network_->cell(inst);
+      auto lib = network_->libertyCell(cell);
+      if (lib && !lib->isBuffer()) {
+        has_non_buffer = true;
+      }
     }
   }
   delete pin_iter;
 
-  if (has_dont_touch) {
+  if (has_dont_touch || !has_non_buffer) {
     return nullptr;
   }
 
