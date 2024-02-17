@@ -91,6 +91,7 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbBPin",
                                  // Generator Code Begin ObjectNames
                                  "dbAccessPoint",
+                                 "dbDft",
                                  "dbGCellGrid",
                                  "dbGlobalConnect",
                                  "dbGroup",

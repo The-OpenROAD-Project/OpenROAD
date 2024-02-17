@@ -22,6 +22,8 @@
     "dbScanPin.h"
   ],
   "cpp_includes": [
-    "dbScanPin.h"
+    "dbScanPin.h",
+    "dbScanChain.h",
+    "dbDft.h"
   ]
 }

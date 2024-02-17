@@ -33,42 +33,42 @@
 // Generator Code Begin Header
 #pragma once
 
-#include "dbBTerm.h"
+#include "dbBlock.h"
 #include "dbCore.h"
-#include "dbITerm.h"
 #include "odb.h"
-// User Code Begin Includes
-#include <variant>
-// User Code End Includes
 
 namespace odb {
 class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-class dbScanPin;
-class dbBTerm;
-class dbITerm;
+class _dbScanPin;
+template <class T>
+class dbTable;
+class _dbScanChain;
 
-class _dbScanPin : public _dbObject
+class _dbDft : public _dbObject
 {
  public:
-  _dbScanPin(_dbDatabase*, const _dbScanPin& r);
-  _dbScanPin(_dbDatabase*);
+  _dbDft(_dbDatabase*, const _dbDft& r);
+  _dbDft(_dbDatabase*);
 
-  ~_dbScanPin() = default;
+  ~_dbDft();
 
-  bool operator==(const _dbScanPin& rhs) const;
-  bool operator!=(const _dbScanPin& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbScanPin& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbScanPin& rhs) const;
+  bool operator==(const _dbDft& rhs) const;
+  bool operator!=(const _dbDft& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbDft& rhs) const;
+  void differences(dbDiff& diff, const char* field, const _dbDft& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  dbObjectTable* getObjectTable(dbObjectType type);
 
-  std::variant<dbId<_dbBTerm>, dbId<_dbITerm>> pin_;
+  bool scan_inserted_;
+
+  dbTable<_dbScanPin>* scan_pins_;
+
+  dbTable<_dbScanChain>* scan_chains_;
 };
-dbIStream& operator>>(dbIStream& stream, _dbScanPin& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbScanPin& obj);
+dbIStream& operator>>(dbIStream& stream, _dbDft& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbDft& obj);
 }  // namespace odb
-   // Generator Code End Header
+// Generator Code End Header

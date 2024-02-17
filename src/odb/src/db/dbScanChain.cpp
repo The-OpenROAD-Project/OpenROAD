@@ -34,9 +34,14 @@
 #include "dbScanChain.h"
 
 #include "db.h"
+#include "dbBlock.h"
 #include "dbDatabase.h"
+#include "dbDft.h"
 #include "dbDiff.hpp"
+#include "dbScanInst.h"
+#include "dbScanPartition.h"
 #include "dbScanPin.h"
+#include "dbSet.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
 namespace odb {
@@ -47,22 +52,22 @@ bool _dbScanChain::operator==(const _dbScanChain& rhs) const
   if (name_ != rhs.name_) {
     return false;
   }
-  if (length_ != rhs.length_) {
-    return false;
-  }
   if (scan_in_ != rhs.scan_in_) {
     return false;
   }
   if (scan_out_ != rhs.scan_out_) {
     return false;
   }
-  if (scan_clock_ != rhs.scan_clock_) {
-    return false;
-  }
   if (scan_enable_ != rhs.scan_enable_) {
     return false;
   }
   if (test_mode_ != rhs.test_mode_) {
+    return false;
+  }
+  if (*scan_partitions_ != *rhs.scan_partitions_) {
+    return false;
+  }
+  if (*scan_insts_ != *rhs.scan_insts_) {
     return false;
   }
 
@@ -80,12 +85,12 @@ void _dbScanChain::differences(dbDiff& diff,
 {
   DIFF_BEGIN
   DIFF_FIELD(name_);
-  DIFF_FIELD(length_);
   DIFF_FIELD(scan_in_);
   DIFF_FIELD(scan_out_);
-  DIFF_FIELD(scan_clock_);
   DIFF_FIELD(scan_enable_);
   DIFF_FIELD(test_mode_);
+  DIFF_TABLE(scan_partitions_);
+  DIFF_TABLE(scan_insts_);
   DIFF_END
 }
 
@@ -93,59 +98,80 @@ void _dbScanChain::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
   DIFF_OUT_FIELD(name_);
-  DIFF_OUT_FIELD(length_);
   DIFF_OUT_FIELD(scan_in_);
   DIFF_OUT_FIELD(scan_out_);
-  DIFF_OUT_FIELD(scan_clock_);
   DIFF_OUT_FIELD(scan_enable_);
   DIFF_OUT_FIELD(test_mode_);
+  DIFF_OUT_TABLE(scan_partitions_);
+  DIFF_OUT_TABLE(scan_insts_);
 
   DIFF_END
 }
 
 _dbScanChain::_dbScanChain(_dbDatabase* db)
 {
+  scan_partitions_ = new dbTable<_dbScanPartition>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbScanChain::getObjectTable,
+      dbScanPartitionObj);
+  scan_insts_ = new dbTable<_dbScanInst>(
+      db, this, (GetObjTbl_t) &_dbScanChain::getObjectTable, dbScanInstObj);
 }
 
 _dbScanChain::_dbScanChain(_dbDatabase* db, const _dbScanChain& r)
 {
   name_ = r.name_;
-  length_ = r.length_;
   scan_in_ = r.scan_in_;
   scan_out_ = r.scan_out_;
-  scan_clock_ = r.scan_clock_;
   scan_enable_ = r.scan_enable_;
   test_mode_ = r.test_mode_;
+  scan_partitions_
+      = new dbTable<_dbScanPartition>(db, this, *r.scan_partitions_);
+  scan_insts_ = new dbTable<_dbScanInst>(db, this, *r.scan_insts_);
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbScanChain& obj)
 {
   stream >> obj.name_;
-  stream >> obj.length_;
-  stream >> obj.cells_;
   stream >> obj.scan_in_;
   stream >> obj.scan_out_;
-  stream >> obj.scan_clock_;
   stream >> obj.scan_enable_;
   stream >> obj.test_mode_;
-  stream >> obj.partitions_;
-  stream >> obj.scan_insts_;
+  stream >> *obj.scan_partitions_;
+  stream >> *obj.scan_insts_;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbScanChain& obj)
 {
   stream << obj.name_;
-  stream << obj.length_;
-  stream << obj.cells_;
   stream << obj.scan_in_;
   stream << obj.scan_out_;
-  stream << obj.scan_clock_;
   stream << obj.scan_enable_;
   stream << obj.test_mode_;
-  stream << obj.partitions_;
-  stream << obj.scan_insts_;
+  stream << *obj.scan_partitions_;
+  stream << *obj.scan_insts_;
   return stream;
+}
+
+dbObjectTable* _dbScanChain::getObjectTable(dbObjectType type)
+{
+  switch (type) {
+    case dbScanPartitionObj:
+      return scan_partitions_;
+    case dbScanInstObj:
+      return scan_insts_;
+    default:
+      break;
+  }
+  return getTable()->getObjectTable(type);
+}
+
+_dbScanChain::~_dbScanChain()
+{
+  delete scan_partitions_;
+  delete scan_insts_;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -154,5 +180,127 @@ dbOStream& operator<<(dbOStream& stream, const _dbScanChain& obj)
 //
 ////////////////////////////////////////////////////////////////////
 
+dbSet<dbScanPartition> dbScanChain::getScanPartitions() const
+{
+  _dbScanChain* obj = (_dbScanChain*) this;
+  return dbSet<dbScanPartition>(obj, obj->scan_partitions_);
+}
+
+dbSet<dbScanInst> dbScanChain::getScanInsts() const
+{
+  _dbScanChain* obj = (_dbScanChain*) this;
+  return dbSet<dbScanInst>(obj, obj->scan_insts_);
+}
+
+// User Code Begin dbScanChainPublicMethods
+
+std::string_view dbScanChain::getName() const
+{
+  _dbScanChain* scan_chain = (_dbScanChain*) this;
+  return scan_chain->name_;
+}
+
+void dbScanChain::setName(std::string_view name)
+{
+  _dbScanChain* scan_chain = (_dbScanChain*) this;
+  scan_chain->name_ = name;
+}
+
+dbBTerm* _dbScanChain::getPin(_dbScanChain* scan_chain,
+                              dbId<dbBTerm> _dbScanChain::*field)
+{
+  _dbDft* dft = (_dbDft*) scan_chain->getOwner();
+  _dbBlock* block = (_dbBlock*) dft->getOwner();
+
+  return (dbBTerm*) block->_bterm_tbl->getPtr(
+      (dbId<_dbBTerm>) (scan_chain->*field));
+}
+
+void _dbScanChain::setPin(_dbScanChain* scan_chain,
+                          dbId<dbBTerm> _dbScanChain::*field,
+                          dbBTerm* pin)
+{
+  _dbBTerm* bterm = (_dbBTerm*) pin;
+  scan_chain->*field = bterm->getId();
+}
+
+void dbScanChain::setScanIn(dbBTerm* scan_in)
+{
+  _dbScanChain::setPin((_dbScanChain*) this, &_dbScanChain::scan_in_, scan_in);
+}
+
+dbBTerm* dbScanChain::getScanIn() const
+{
+  return _dbScanChain::getPin((_dbScanChain*) this, &_dbScanChain::scan_in_);
+}
+
+void dbScanChain::setScanOut(dbBTerm* scan_out)
+{
+  _dbScanChain::setPin(
+      (_dbScanChain*) this, &_dbScanChain::scan_out_, scan_out);
+}
+
+dbBTerm* dbScanChain::getScanOut() const
+{
+  return _dbScanChain::getPin((_dbScanChain*) this, &_dbScanChain::scan_out_);
+}
+
+void dbScanChain::setScanEnable(dbBTerm* scan_enable)
+{
+  _dbScanChain::setPin(
+      (_dbScanChain*) this, &_dbScanChain::scan_enable_, scan_enable);
+}
+
+dbBTerm* dbScanChain::getScanEnable() const
+{
+  return _dbScanChain::getPin((_dbScanChain*) this,
+                              &_dbScanChain::scan_enable_);
+}
+
+void dbScanChain::setTestMode(std::string_view test_mode)
+{
+  _dbScanChain* scan_chain = (_dbScanChain*) this;
+  scan_chain->test_mode_ = test_mode;
+}
+
+std::string_view dbScanChain::getTestMode() const
+{
+  _dbScanChain* scan_chain = (_dbScanChain*) this;
+  return scan_chain->test_mode_;
+}
+
+dbScanPartition* dbScanChain::createScanPartition()
+{
+  _dbScanChain* scan_chain = (_dbScanChain*) this;
+  return (dbScanPartition*) (scan_chain->scan_partitions_->create());
+}
+
+dbScanInst* dbScanChain::createScanInst(dbInst* inst)
+{
+  _dbScanChain* scan_chain = (_dbScanChain*) this;
+  _dbInst* _inst = (_dbInst*) inst;
+
+  _dbScanInst* scan_inst = (_dbScanInst*) scan_chain->scan_insts_->create();
+  scan_inst->insts_.reserve(1);
+  scan_inst->insts_.push_back(_inst->getId());
+
+  return (dbScanInst*) scan_inst;
+}
+
+dbScanInst* dbScanChain::createScanInst(const std::vector<dbInst*>& insts)
+{
+  _dbScanChain* scan_chain = (_dbScanChain*) this;
+
+  _dbScanInst* scan_inst = (_dbScanInst*) scan_chain->scan_insts_->create();
+  scan_inst->insts_.reserve(insts.size());
+
+  for (const dbInst* inst : insts) {
+    scan_inst->insts_.push_back(inst->getId());
+  }
+
+  return (dbScanInst*) scan_inst;
+}
+
+// User Code End dbScanChainPublicMethods
 }  // namespace odb
    // Generator Code End Cpp

@@ -3,37 +3,71 @@
   "type": "dbObject",
   "fields": [
     {
-      "name": "bits",
+      "name": "bits_",
       "type": "uint",
       "flags": ["private"]
     },
     {
-      "name": "scanIn",
+      "name": "access_pins_",
+      "type": "std::pair<dbId<dbScanPin>, dbId<dbScanPin>>",
+      "flags": ["private", "no-template"]
+    },
+    {
+      "name": "scan_enable_",
       "type": "dbId<dbScanPin>",
       "flags": ["private"]
     },
     {
-      "name": "scanOut",
-      "type": "dbId<dbScanPin>",
+      "name": "insts_",
+      "type": "dbVector<dbId<dbInst>>",
+      "flags": ["private"]
+    },
+    {
+      "name": "scan_clock_",
+      "type": "std::string",
+      "flags": ["private"]
+    },
+    {
+      "name": "clock_edge_",
+      "type": "uint",
       "flags": ["private"]
     }
   ],
   "enums": [
     {
-      "name": "SCAN_INST_TYPE",
-      "public": true,
+      "name": "ClockEdge",
       "class": true,
       "values": [
-        "OneBit",
-        "ShiftRegister",
-        "BlackBox"
-      ]
+        "Rising",
+        "Falling"
+      ],
+      "public": true
+    }
+  ],
+  "structs": [
+    {
+    "name": "AccessPins",
+    "public": true,
+    "fields": [
+      {
+        "name": "scan_in",
+        "type": "std::variant<dbBTerm*, dbITerm*>"
+      },
+      {
+        "name": "scan_out",
+        "type": "std::variant<dbBTerm*, dbITerm*>"
+      }
+    ]
     }
   ],
   "h_includes": [
-    "dbScanPin.h"
+    "dbScanPin.h",
+    "dbInst.h",
+    "dbVector.h"
   ],
   "cpp_includes": [
-    "dbScanPin.h"
+    "dbScanPin.h",
+    "dbDft.h",
+    "dbScanChain.h"
   ]
 }

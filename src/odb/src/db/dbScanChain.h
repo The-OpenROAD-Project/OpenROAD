@@ -43,10 +43,12 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-class dbInst;
-class dbScanPin;
 class dbScanPartition;
-class dbScanInst;
+class _dbScanPartition;
+template <class T>
+class dbTable;
+class _dbScanInst;
+class dbBTerm;
 
 class _dbScanChain : public _dbObject
 {
@@ -54,7 +56,7 @@ class _dbScanChain : public _dbObject
   _dbScanChain(_dbDatabase*, const _dbScanChain& r);
   _dbScanChain(_dbDatabase*);
 
-  ~_dbScanChain() = default;
+  ~_dbScanChain();
 
   bool operator==(const _dbScanChain& rhs) const;
   bool operator!=(const _dbScanChain& rhs) const { return !operator==(rhs); }
@@ -63,17 +65,24 @@ class _dbScanChain : public _dbObject
                    const char* field,
                    const _dbScanChain& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
+  dbObjectTable* getObjectTable(dbObjectType type);
+  // User Code Begin Methods
+  static dbBTerm* getPin(_dbScanChain* scan_chain,
+                         dbId<dbBTerm> _dbScanChain::*field);
+  static void setPin(_dbScanChain* scan_chain,
+                     dbId<dbBTerm> _dbScanChain::*field,
+                     dbBTerm* pin);
+  // User Code End Methods
 
   std::string name_;
-  uint length_;
-  dbVector<dbId<dbInst>> cells_;
-  dbId<dbScanPin> scan_in_;
-  dbId<dbScanPin> scan_out_;
-  dbId<dbScanPin> scan_clock_;
-  dbId<dbScanPin> scan_enable_;
+  dbId<dbBTerm> scan_in_;
+  dbId<dbBTerm> scan_out_;
+  dbId<dbBTerm> scan_enable_;
   std::string test_mode_;
-  dbVector<dbId<dbScanPartition>> partitions_;
-  dbVector<dbId<dbScanInst>> scan_insts_;
+
+  dbTable<_dbScanPartition>* scan_partitions_;
+
+  dbTable<_dbScanInst>* scan_insts_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbScanChain& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbScanChain& obj);

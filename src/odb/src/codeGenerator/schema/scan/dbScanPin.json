@@ -10,7 +10,15 @@
   ],
   "h_includes": [
     "dbBTerm.h",
-    "dbITerm.h",
-    "dbBlock.h"
+    "dbITerm.h"
+  ],
+  "cpp_includes": [
+    "dbBlock.h",
+    "dbDft.h"
+  ],
+  "classes": [
+    "dbScanPin",
+    "dbBTerm",
+    "dbITerm"
   ]
 }

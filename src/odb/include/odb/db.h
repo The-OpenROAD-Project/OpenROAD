@@ -128,6 +128,7 @@ class dbViaParams;
 
 // Generator Code Begin ClassDeclarations
 class dbAccessPoint;
+class dbDft;
 class dbGCellGrid;
 class dbGlobalConnect;
 class dbGroup;
@@ -1365,6 +1366,16 @@ class dbBlock : public dbObject
   /// Get the extraction control settings
   ///
   dbExtControl* getExtControl();
+
+  ///
+  /// Get the dbDft object for persistent dft structs
+  ///
+  dbDft* createDft();
+
+  ///
+  /// Get the dbDft object for persistent dft structs
+  ///
+  dbDft* getDft() const;
 
   ///
   /// Get the extraction corner names
@@ -7084,6 +7095,22 @@ class dbAccessPoint : public dbObject
   // User Code End dbAccessPoint
 };
 
+class dbDft : public dbObject
+{
+ public:
+  void setScanInserted(bool scan_inserted);
+
+  bool isScanInserted() const;
+
+  dbSet<dbScanChain> getScanChains() const;
+
+  // User Code Begin dbDft
+  dbId<dbScanPin> CreateScanPin(dbBTerm* bterm);
+  dbId<dbScanPin> CreateScanPin(dbITerm* iterm);
+  dbScanChain* CreateScanChain();
+  // User Code End dbDft
+};
+
 class dbGCellGrid : public dbObject
 {
  public:
@@ -7743,22 +7770,91 @@ class dbPowerSwitch : public dbObject
 class dbScanChain : public dbObject
 {
  public:
+  dbSet<dbScanPartition> getScanPartitions() const;
+
+  dbSet<dbScanInst> getScanInsts() const;
+
+  // User Code Begin dbScanChain
+  std::string_view getName() const;
+
+  void setName(std::string_view name);
+
+  void setScanIn(dbBTerm* scan_in);
+  dbBTerm* getScanIn() const;
+
+  void setScanOut(dbBTerm* scan_out);
+  dbBTerm* getScanOut() const;
+
+  void setScanEnable(dbBTerm* scan_enable);
+
+  dbBTerm* getScanEnable() const;
+
+  std::string_view getTestMode() const;
+  void setTestMode(std::string_view test_mode);
+
+  dbScanPartition* createScanPartition();
+  dbScanInst* createScanInst(dbInst* inst);
+  dbScanInst* createScanInst(const std::vector<dbInst*>& insts);
+  // User Code End dbScanChain
 };
 
 class dbScanInst : public dbObject
 {
  public:
-  enum class SCAN_INST_TYPE
+  struct AccessPins
   {
-    OneBit,
-    ShiftRegister,
-    BlackBox
+    std::variant<dbBTerm*, dbITerm*> scan_in;
+    std::variant<dbBTerm*, dbITerm*> scan_out;
   };
+  enum class ClockEdge
+  {
+    Rising,
+    Falling
+  };
+
+  // User Code Begin dbScanInst
+  void setScanClock(std::string_view scan_clock);
+  std::string_view getScanClock() const;
+
+  void setClockEdge(ClockEdge clock_edge);
+  ClockEdge getClockEdge() const;
+
+  void setBits(uint bits);
+
+  uint getBits() const;
+
+  void setScanEnable(dbBTerm* scan_enable);
+  void setScanEnable(dbITerm* scan_enable);
+  std::variant<dbBTerm*, dbITerm*> getScanEnable() const;
+
+  void setAccessPins(const AccessPins& access_pins);
+
+  AccessPins getAccessPins() const;
+
+  std::vector<dbInst*> getInsts() const;
+  // User Code End dbScanInst
 };
 
 class dbScanPartition : public dbObject
 {
  public:
+  // User Code Begin dbScanPartition
+  void setStart(dbBTerm* bterm);
+
+  void setStart(dbITerm* iterm);
+
+  void setStop(dbBTerm* bterm);
+
+  void setStop(dbITerm* iterm);
+
+  std::variant<dbBTerm*, dbITerm*> getStart() const;
+
+  std::variant<dbBTerm*, dbITerm*> getStop() const;
+
+  std::string_view getName() const;
+
+  void setName(std::string_view name);
+  // User Code End dbScanPartition
 };
 
 class dbScanPin : public dbObject

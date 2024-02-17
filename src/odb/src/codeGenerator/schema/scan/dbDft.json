@@ -1,0 +1,13 @@
+{
+  "name": "dbDft",
+  "type": "dbObject",
+  "fields": [
+    {
+      "name": "scan_inserted_",
+      "type": "bool"
+    }
+  ],
+  "h_includes": [
+    "dbBlock.h"
+  ]
+}
