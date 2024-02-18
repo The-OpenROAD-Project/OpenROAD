@@ -222,30 +222,30 @@ proc rtl_macro_placer { args } {
     mpl2::set_macro_placement_file $keys(-write_macro_placement)
   }
 
-  if {![mpl2::rtl_macro_placer_cmd  $max_num_macro  \
-                                    $min_num_macro  \
-                                    $max_num_inst   \
-                                    $min_num_inst   \
-                                    $tolerance      \
-                                    $max_num_level  \
-                                    $coarsening_ratio \
-                                    $num_bundled_ios  \
-                                    $large_net_threshold \
-                                    $signature_net_threshold \
-                                    $halo_width \
-                                    $halo_height \
-                                    $fence_lx   $fence_ly  $fence_ux  $fence_uy  \
-                                    $area_weight $outline_weight $wirelength_weight \
-                                    $guidance_weight $fence_weight $boundary_weight \
-                                    $notch_weight $macro_blockage_weight \
-                                    $pin_access_th \
-                                    $target_util \
-                                    $target_dead_space \
-                                    $min_ar \
-                                    $snap_layer \
-                                    [info exists flags(-bus_planning)] \
-                                    $report_directory \
-                                    ]} {
+  if {![mpl2::rtl_macro_placer_cmd $max_num_macro  \
+                                   $min_num_macro  \
+                                   $max_num_inst   \
+                                   $min_num_inst   \
+                                   $tolerance      \
+                                   $max_num_level  \
+                                   $coarsening_ratio \
+                                   $num_bundled_ios  \
+                                   $large_net_threshold \
+                                   $signature_net_threshold \
+                                   $halo_width \
+                                   $halo_height \
+                                   $fence_lx $fence_ly $fence_ux $fence_uy  \
+                                   $area_weight $outline_weight $wirelength_weight \
+                                   $guidance_weight $fence_weight $boundary_weight \
+                                   $notch_weight $macro_blockage_weight \
+                                   $pin_access_th \
+                                   $target_util \
+                                   $target_dead_space \
+                                   $min_ar \
+                                   $snap_layer \
+                                   [info exists flags(-bus_planning)] \
+                                   $report_directory \
+                                   ]} {
 
     return false
   }
@@ -262,7 +262,7 @@ proc place_macro { args } {
   sta::parse_key_args "place_macro" args \
     keys {-macro_name -location -orientation}
 
-  if [info exists keys(-macro_name)] {
+  if {[info exists keys(-macro_name)]} {
     set macro_name $keys(-macro_name)
   } else {
     utl::error MPL 19 "-macro_name is required."
@@ -270,7 +270,7 @@ proc place_macro { args } {
 
   set macro [mpl2::parse_macro_name "place_macro" $macro_name]
 
-  if [info exists keys(-location)] {
+  if {[info exists keys(-location)]} {
     set location $keys(-location)
   } else {
     utl::error MPL 22 "-location is required."
@@ -284,7 +284,7 @@ proc place_macro { args } {
   set y_origin $y_origin
 
   set orientation R0
-  if [info exists keys(-orientation)] {
+  if {[info exists keys(-orientation)]} {
     set orientation $keys(-orientation)
   } else {
     utl::warn MPL 18 "No orientation specified for [$macro getName], defaulting to R0."
