@@ -36,7 +36,7 @@ macro_placement
 | `-halo` | Horizontal and vertical halo around macros (microns). |
 | `-channel` | Horizontal and vertical channel width between macros (microns). |
 | `-fence_region` | Restrict macro placements to a region (microns). Defaults to the core area. |
-| `-snap_layer_number` | Snap macro origins to this routing layer track. |
+| `-snap_layer` | Snap macro origins to this routing layer track. |
 | `-style` | Placement style, to choose either `corner_max_wl` or `corner_min_wl`. The default value is `corner_max_wl`. |
 
 For placement style, `corner_max_wl` means that choosing the partitions that maximise the wirelength 

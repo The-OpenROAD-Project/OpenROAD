@@ -139,6 +139,10 @@ class RepairAntennas
                     odb::dbWireEncoder& wire_encoder,
                     std::map<int, odb::dbTechVia*>& default_vias,
                     bool connect_to_segment);
+  void makeWire(odb::dbWireEncoder& wire_encoder,
+                odb::dbTechLayer* layer,
+                const odb::Point& start,
+                const odb::Point& end);
   bool pinOverlapsGSegment(const odb::Point& pin_position,
                            const int pin_layer,
                            const std::vector<odb::Rect>& pin_boxes,

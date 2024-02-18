@@ -1122,9 +1122,7 @@ static bool insert_level_shifter(utl::Logger* logger,
   }
 
   // create dbInst
-  std::string inst_name = inst->getName() + "_" + iterm->getMTerm()->getName()
-                          + "_" + target_iterm->getInst()->getName() + "_"
-                          + target_iterm->getMTerm()->getName()
+  std::string inst_name = iterm->getName('_') + "_" + target_iterm->getName('_')
                           + "_level_shifter";
 
   odb::dbInst* shifter_inst

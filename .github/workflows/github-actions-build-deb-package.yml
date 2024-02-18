@@ -1,9 +1,9 @@
 name: Build deb packages
 
 on:
-  workflow_dispatch:
   push:
-  pull_request:
+    branches:
+      - master
 
 jobs:
   builder:
@@ -44,3 +44,40 @@ jobs:
         with:
           name: ${{ steps.artifact.outputs.name }}
           path: ${{ steps.artifact.outputs.file }}
+
+      - name: Set release version
+        id: set_version
+        run: echo "RELEASE_VERSION=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+
+      - name: Get release info
+        uses: cardinalby/git-get-release-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.RELEASE_VERSION }}
+          release_name: Release ${{ env.RELEASE_VERSION }}
+          doNotFailIfNotFound: true
+        id: release_info
+
+      - name: Create release if not exists
+        if: steps.release_info.outputs.name == ''
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.RELEASE_VERSION }}
+          release_name: Release ${{ env.RELEASE_VERSION }}
+          body: "Release"
+        id: create_release
+
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release_info.outputs.upload_url || steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.artifact.outputs.file }}
+          asset_name: ${{ steps.artifact.outputs.name }}-${{ env.RELEASE_VERSION }}.deb
+          asset_content_type: application/octet-stream
+

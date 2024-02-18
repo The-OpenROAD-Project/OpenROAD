@@ -1,6 +1,6 @@
 # Git Quickstart
 
-This tutorial serves as a quickstart to Git and contributing to our repository. If you have not already set up OpenROAD, please follow the instructions [here](user/Build.md). 
+This tutorial serves as a quickstart to Git and contributing to our repository. If you have not already set up OpenROAD, please follow the instructions [here](../user/Build.md). 
 
 ```{tip} This basic tutorial gives instruction for basic password Git authentication.
 If you would like to setup SSH authentication, please follow this [guide](https://help.github.com/set-up-git-redirect).

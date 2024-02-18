@@ -69,7 +69,10 @@ namespace odb {
 //
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
-const uint db_schema_minor = 77;  // Current revision number
+const uint db_schema_minor = 78;  // Current revision number
+
+// Revision where _dbBox / flags.mask was added
+const uint db_schema_dbbox_mask = 78;
 
 const uint db_schema_level_shifter_cell = 77;
 
