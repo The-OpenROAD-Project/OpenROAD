@@ -459,7 +459,6 @@ void dbITerm::connect(dbModNet* mod_net)
   }
 
   if (iterm->_mnet != 0) {
-    //    printf("Weird disconnecting an iterm\n");
     disconnect();
   }
 
@@ -484,9 +483,6 @@ void dbITerm::connect(dbModNet* mod_net)
   }
   iterm->_prev_modnet_iterm = 0;
   _mod_net->_iterms = iterm->getOID();
-
-  //  printf("Mod net now connected to %d iterms\n",
-  //	 mod_net -> getITerms().size());
 }
 
 void dbITerm::disconnect()

@@ -9,10 +9,10 @@ Instance b1/r1
  Library: liberty1
  Path cells: snl_ffqx1
  Input pins:
-  D input b1/u1out
-  CP input clk1
+  D input u1out
+  CP input clk
  Output pins:
-  Q output b1/r1q
+  Q output r1q
 Net b1out
  Pin capacitance: 0.00
  Wire capacitance: 0.00

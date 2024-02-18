@@ -80,6 +80,26 @@ using odb::dbPlacementStatus;
 using odb::dbSet;
 using odb::dbSigType;
 
+// Turns out OR use full port names (instance name + port name)
+// on DbITerms.
+// So we have this duplicated helper to build the port names.
+// This is just plain stupid. (Originally we used STL and indexes)
+// so could always quickly go from port to index and fish out
+// the port.
+
+std::string makePinName(std::string inst_name, std::string port_name)
+{
+  std::string i_name = inst_name;
+  size_t last_idx = i_name.find_last_of("/");
+  if (last_idx != string::npos)
+    i_name = i_name.substr(last_idx + 1);
+  std::string p_name = port_name;
+  last_idx = p_name.find_last_of("/");
+  if (last_idx != string::npos)
+    p_name = p_name.substr(last_idx + 1);
+  return (i_name + "/" + p_name);
+}
+
 // TODO: move to StringUtil
 char* tmpStringCopy(const char* str)
 {
@@ -817,11 +837,13 @@ Pin* dbNetwork::findPin(const Instance* instance, const char* port_name) const
     return dbToSta(iterm);
   }
   if (mod_inst) {
-    dbModule* module = mod_inst->getMaster();
     dbModITerm* miterm = nullptr;
     // removed indexing by port ix (which is most efficient)
-    // to calm OR personnel...
-    if (mod_inst->findModITerm(port_name, miterm))
+    // This is *really really* stupid and done solely to shut up OR morons
+    std::string instance_name = mod_inst->getName();
+    std::string p_name = port_name;
+    std::string full_port_name = makePinName(instance_name, p_name);
+    if (mod_inst->findModITerm(full_port_name.c_str(), miterm))
       return dbToSta(miterm);
   }
   return nullptr;  // no pins on dbModInst in odb currently
@@ -1259,16 +1281,6 @@ ObjectId dbNetwork::id(const Net* net) const
 {
   return staToDb(net)->getId();
 }
-/*
-const char* dbNetwork::name(const Port* port) const
-{
-  printf("Unsupported...\n");
-  ConcretePort* cport = reinterpret_cast<ConcretePort*>(port);
-  Port* sta_port = cport -> getExtPort();
-  printf("Port name is %s\n",ret);
-  return ret;
-}
-*/
 
 const char* dbNetwork::name(const Net* net) const
 {
@@ -1281,50 +1293,7 @@ const char* dbNetwork::name(const Net* net) const
     return tmpStringCopy(name);
   } else if (modnet) {
     std::string net_name = modnet->getName();
-    std::string full_name;
-    dbModBTerm* modbterm = modnet->connectedToModBTerm();
-    dbModule* highest_module = modnet->getParent();
-
-    // in case when net is connected to a block terminal
-    // on the module go up to find the highest named port on that net and
-    // use that net name.
-    // otherwise construct full hierarchical name.
-    if (modbterm && highest_module) {
-#ifdef DEBUG_HNAMES
-      static int debug;
-      debug++;
-      printf("D %d Seeking highest module with bterm %s starting from %s\n",
-             debug,
-             modbterm->getName(),
-             highest_module->getName());
-#endif
-      // hierarchy port Modbterm -> instance pin are not real nets
-      // traverse up until we either reach the root
-      // or a net which is driven by a real gate.
-      highest_module->highestModWithNetNamed(
-          modbterm->getName(), highest_module, net_name);
-#ifdef DEBUG_HNAMES
-      printf("Highest module is %s", highest_module->getName());
-#endif
-    }
-#ifdef DEBUG_HNAMES
-    printf("Getting hierarchical name for net %s in module %s\n",
-           net_name.c_str(),
-           highest_module->getName());
-#endif
-    std::string module_name;
-    std::string separator{block_->getHierarchyDelimeter()};
-
-    if (highest_module == block()->getTopModule()) {
-      // module_name is empty
-    } else {
-      module_name = std::string(highest_module->getHierarchicalName(separator));
-    }
-    if (!module_name.empty())
-      full_name = module_name + separator + net_name;
-    else
-      full_name = net_name;
-    return tmpStringCopy(full_name.c_str());
+    return net_name.c_str();
   }
   return nullptr;
 }

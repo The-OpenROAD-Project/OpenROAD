@@ -4083,7 +4083,8 @@ void dbBlock::dumpDebug()
     uint id;
     for (id = dbnetiter.begin(parent); id != dbnetiter.end(parent);
          id = dbnetiter.next(id)) {
-      printf("\t-> Db Iterm %u\n", id);
+      dbITerm* db_iterm = (dbITerm*) (block->_iterm_tbl->getPtr(id));
+      printf("\t-> Db Iterm %u (%s)\n", id, db_iterm->getName().c_str());
     }
     dbNetBTermItr dbnetbter(block->_bterm_tbl);
     for (id = dbnetbter.begin(parent); id != dbnetbter.end(parent);

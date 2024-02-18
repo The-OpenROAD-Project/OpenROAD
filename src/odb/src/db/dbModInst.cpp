@@ -304,13 +304,7 @@ dbModInst* dbModInst::getModInst(dbBlock* block_, uint dbid_)
   _dbBlock* block = (_dbBlock*) block_;
   return (dbModInst*) block->_modinst_tbl->getPtr(dbid_);
 }
-/*
-std::string dbModInst::getName() const
-{
-_dbModInst* _obj = (_dbModInst*) this;
-return std::string(_obj->_name);
-}
-*/
+
 std::string dbModInst::getHierarchicalName() const
 {
   _dbModInst* _obj = (_dbModInst*) this;

@@ -393,8 +393,7 @@ void Verilog2db::makeDbModule(
     CellPortIterator* cp_iter = network_->portIterator(cell);
     while (cp_iter->hasNext()) {
       Port* port = cp_iter->next();
-      /* Check are ports really prefixed eg port name on module andy is andy/p1
-       * ?? */
+      /* Ports are prefixed by instance name*/
       if (network_->isBus(port)) {
         const char* port_name = network_->name(port);
         const char* cell_name = network_->name(cell);
@@ -430,7 +429,8 @@ void Verilog2db::makeDbModule(
       Pin* cur_pin = ip_iter->next();
       std::string pin_name_string(network_->name(cur_pin));
       std::string inst_name = modinst->getName();
-      std::string port_name = pin_name_string;  // assumption:
+      std::string port_name = pin_name_string;
+      // assumption: iterm is inst name + pin name
       pin_name_string = makePinName(inst_name, pin_name_string);
       dbModITerm* moditerm
           = dbModITerm::create(modinst, pin_name_string.c_str());
@@ -812,7 +812,6 @@ void Verilog2db::makeVModNets(const Instance* inst,
       dbBTerm* bterm = nullptr;
       dbModITerm* mod_iterm = nullptr;
       dbModBTerm* mod_bterm = nullptr;
-
       Instance* cur_inst = network_->instance(pin);
 
       if (!((cur_inst == inst) || (cur_inst == network_->parent(inst))

@@ -1,4 +1,5 @@
 record_tests {
+  hier2
   constant1
   make_port
   network_edit1

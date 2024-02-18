@@ -1,0 +1,29 @@
+module top (a,
+    b,
+    out);
+ input a;
+ input b;
+ output out;
+
+ wire a_int;
+
+ INV_X1 _4_ (.ZN(a_int),
+    .A(a));
+ gate1 gate2_inst (.zn(out),
+    .a2(b),
+    .a1(a_int));
+ assign out = out;
+endmodule
+module gate1 (zn,
+    a2,
+    a1);
+ output zn;
+ input a2;
+ input a1;
+
+
+ AND2_X1 \gate2_inst/_5_  (.ZN(zn),
+    .A1(a1),
+    .A2(a2));
+ assign zn = out;
+endmodule
