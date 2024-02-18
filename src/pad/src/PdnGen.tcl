@@ -98,7 +98,8 @@ proc check_orientations {orientations} {
     } elseif {[dict exists $lef_orientations $orient]} {
       lappend checked_orientations [dict get $lef_orientations $orient]
     } else {
-      utl::error PDN 9074 "Invalid orientation $orient specified, must be one of [join $valid_orientations {, }]."
+      utl::error PDN 9074 "Invalid orientation $orient specified,\
+        must be one of [join $valid_orientations {, }]."
     }
   }
   return $checked_orientations
@@ -129,10 +130,12 @@ proc check_layer_width {layer_name width} {
   set maxWidth [$layer getMaxWidth]
 
   if {[ord::microns_to_dbu $width] < $minWidth} {
-    utl::error PDN 9077 "Width ($width) specified for layer $layer_name is less than minimum width ([ord::dbu_to_microns $minWidth])."
+    utl::error PDN 9077 "Width ($width) specified for layer $layer_name\
+      is less than minimum width ([ord::dbu_to_microns $minWidth])."
   }
   if {[ord::microns_to_dbu $width] > $maxWidth} {
-    utl::error PDN 9078 "Width ($width) specified for layer $layer_name is greater than maximum width ([ord::dbu_to_microns $maxWidth])."
+    utl::error PDN 9078 "Width ($width) specified for layer $layer_name\
+      is greater than maximum width ([ord::dbu_to_microns $maxWidth])."
   }
   return $width
 }
