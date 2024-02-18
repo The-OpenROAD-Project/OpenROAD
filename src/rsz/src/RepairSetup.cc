@@ -500,20 +500,6 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
         LibertyPort *swap_port = input_port;
         sta::LibertyPortSet ports;
 
-        // Results for > 2 input gates are unpredictable. Only swap pins for
-        // 2 input gates for now.
-        int input_port_count = 0;
-        sta::LibertyCellPortIterator port_iter(cell);
-        while (port_iter.hasNext()) {
-            LibertyPort *port = port_iter.next();
-            if (port->direction()->isInput()) {
-                ++input_port_count;
-            }
-        }
-        if (input_port_count > 2) {
-          return false;
-        }
-
         // Check if we have already dealt with this instance
         // and prevent any further swaps.
         if (swap_pin_inst_set_.find(drvr) == swap_pin_inst_set_.end()) {
@@ -532,17 +518,22 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
         }
         ports = equiv_pin_map_[input_port];
         if (ports.size() > 1) {
-            resizer_->findSwapPinCandidate(input_port, drvr_port, load_cap,
-                                           dcalc_ap, &swap_port);
-            if (!sta::LibertyPort::equiv(swap_port, input_port)) {
-                debugPrint(logger_, RSZ, "repair_setup", 3,
-                           "Swap {} ({}) {} {}",
-                           network_->name(drvr), cell->name(),
-                           input_port->name(), swap_port->name());
-                resizer_->swapPins(drvr, input_port, swap_port, true);
-                swap_pin_count_++;
-                return true;
-            }
+          resizer_->findSwapPinCandidate(
+              input_port, drvr_port, ports, load_cap, dcalc_ap, &swap_port);
+          if (!sta::LibertyPort::equiv(swap_port, input_port)) {
+            debugPrint(logger_,
+                       RSZ,
+                       "repair_setup",
+                       3,
+                       "Swap {} ({}) {} {}",
+                       network_->name(drvr),
+                       cell->name(),
+                       input_port->name(),
+                       swap_port->name());
+            resizer_->swapPins(drvr, input_port, swap_port, true);
+            swap_pin_count_++;
+            return true;
+          }
         }
     }
     return false;
@@ -968,7 +959,7 @@ bool RepairSetup::isPortEqiv(sta::FuncExpr* expr,
     }
     var_index++;
   }
-  
+
   std::vector<bool> result_no_swap = simulateExpr(expr, port_stimulus);
 
   // Swap pins
