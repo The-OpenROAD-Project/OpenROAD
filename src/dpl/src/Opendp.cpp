@@ -139,7 +139,8 @@ void Opendp::setDebug(std::unique_ptr<DplObserver>& observer)
 void Opendp::detailedPlacement(int max_displacement_x,
                                int max_displacement_y,
                                const std::string& report_file_name,
-                               bool disallow_one_site_gaps)
+                               bool disallow_one_site_gaps,
+                               bool abacus)
 {
   importDb();
 
@@ -168,24 +169,28 @@ void Opendp::detailedPlacement(int max_displacement_x,
   }
   odb::WireLengthEvaluator eval(block_);
   hpwl_before_ = eval.hpwl();
-  detailedPlacement();
-  // Save displacement stats before updating instance DB locations.
-  findDisplacementStats();
-  updateDbInstLocations();
-  if (!placement_failures_.empty()) {
-    logger_->info(DPL,
-                  34,
-                  "Detailed placement failed on the following {} instances:",
-                  placement_failures_.size());
-    for (auto cell : placement_failures_) {
-      logger_->info(DPL, 35, " {}", cell->name());
-    }
+  if (!abacus) {
+    detailedPlacement();
+    // Save displacement stats before updating instance DB locations.
+    findDisplacementStats();
+    updateDbInstLocations();
+    if (!placement_failures_.empty()) {
+      logger_->info(DPL,
+                    34,
+                    "Detailed placement failed on the following {} instances:",
+                    placement_failures_.size());
+      for (auto cell : placement_failures_) {
+        logger_->info(DPL, 35, " {}", cell->name());
+      }
 
-    if (!report_file_name.empty()) {
-      writeJsonReport(
-          report_file_name, {}, {}, {}, {}, {}, {}, placement_failures_);
+      if (!report_file_name.empty()) {
+        writeJsonReport(
+            report_file_name, {}, {}, {}, {}, {}, {}, placement_failures_);
+      }
+      logger_->error(DPL, 36, "Detailed placement failed.");
     }
-    logger_->error(DPL, 36, "Detailed placement failed.");
+  } else {
+    runAbacus();
   }
 }
 

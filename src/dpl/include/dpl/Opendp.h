@@ -257,6 +257,70 @@ class PixelPt
   Point pt;  // grid locataion
 };
 
+/**
+ * This legalizer is for comparing with OpenDP legalizer
+ * \Refer:
+ * [Abacus] Fast Legalization of Standard Cell Circuits with Minimal Movement
+ * [DREAMPlace]
+ * https://github.com/limbo018/DREAMPlace/tree/master/dreamplace/ops/abacus_legalize
+ * This is the simple and fast legalizer
+ * */
+class AbacusLegalizer
+{
+  using InstsInRow = std::vector<odb::dbInst*>;
+  using Rows = std::vector<InstsInRow>;
+  struct AbacusCluster
+  {
+    std::vector<odb::dbInst*> instSet;
+    AbacusCluster* predecessor;
+    AbacusCluster* successor;
+
+    double e;  // weight of displacement in the objective
+    double q;  // x = q/e
+    double w;  // cluster width
+    double x;  // optimal location (cluster's left edge coordinate)
+  };
+
+ public:
+  /**
+   * @brief
+   * Algorithm1 of Abacus
+   * */
+  void runAbacus(odb::dbBlock* block);
+
+ private:
+  /**
+   * @brief Algorithm2 of Abacus
+   * */
+  uint placeRow(InstsInRow* instsInRow, bool trial);
+  void addCell(AbacusCluster* cluster, odb::dbInst* inst);
+  void addCluster(AbacusCluster* predecessor, AbacusCluster* cluster);
+  void collapse(AbacusLegalizer::AbacusCluster& cluster,
+                vector<AbacusCluster>& abacusClusters);
+
+  void initRow();
+
+  /**
+   * \brief
+   * Cost evaluation for algorithm1.
+   * This will evaluate the HPWL.
+   * */
+  uint getCost();
+
+  /**
+   * @brief
+   * This function returns the index of row for the cell
+   * */
+  int getRowIdx(dbInst* cell);
+  InstsInRow* getAboveRow(InstsInRow* rowTmp);
+  InstsInRow* getBelowRow(InstsInRow* row);
+
+  odb::dbBlock* targetBlock_ = nullptr;
+  std::map<odb::dbInst*, InstsInRow*> cellToRowMap_;
+  std::map<InstsInRow*, int> rowToRowIdxMap_;
+  Rows rows_;
+};
+
 class Opendp
 {
  public:
@@ -278,7 +342,8 @@ class Opendp
   void detailedPlacement(int max_displacement_x,
                          int max_displacement_y,
                          const std::string& report_file_name = std::string(""),
-                         bool disallow_one_site_gaps = false);
+                         bool disallow_one_site_gaps = false,
+                         bool abacus = false);
   void reportLegalizationStats() const;
 
   void setPaddingGlobal(int left, int right);
@@ -307,6 +372,7 @@ class Opendp
   void fillerPlacement(dbMasterSeq* filler_masters, const char* prefix);
   void removeFillers();
   void optimizeMirroring();
+  void runAbacus();
 
  private:
   friend class OpendpTest_IsPlaced_Test;
@@ -589,6 +655,9 @@ class Opendp
   static constexpr double group_refine_percent_ = .05;
   static constexpr double refine_percent_ = .02;
   static constexpr int rand_seed_ = 777;
+
+  // Abacus Engine
+  AbacusLegalizer abacusLegalizer_;
 };
 
 int divRound(int dividend, int divisor);
