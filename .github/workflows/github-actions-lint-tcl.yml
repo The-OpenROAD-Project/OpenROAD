@@ -12,7 +12,7 @@ jobs:
 
       - name: Install tclint
         run: |
-          python -m pip install tclint==0.1.6
+          python -m pip install tclint==0.2.0
 
       # TODO: hardcoded list of files while we incrementally lint codebase
       # See issue #4347 for tracking
@@ -33,15 +33,15 @@ jobs:
             src/fin/src/finale.tcl \
             src/gpl/src/replace.tcl \
             src/grt/src/GlobalRouter.tcl \
-            src/gui/src/gui.tcl \
+            src/gui/ \
             src/ifp/src/InitFloorplan.tcl \
             src/mpl/src/MacroPlacer.tcl \
             src/mpl2/src/mpl.tcl \
-            src/pad/src/pad.tcl \
+            src/pad/ \
             src/par/src/partitionmgr.tcl \
-            src/pdn/src/pdn.tcl \
+            src/pdn/ \
             src/ppl/src/IOPlacer.tcl \
-            src/psm/src/pdnsim.tcl \
+            src/psm/ \
             src/rcx/src/OpenRCX.tcl \
             src/rmp/src/rmp.tcl \
             src/rsz/src/Resizer.tcl \
