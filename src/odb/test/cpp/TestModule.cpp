@@ -194,6 +194,198 @@ BOOST_FIXTURE_TEST_CASE(test_iterators, F_DETAILED)
   }
 }
 
+struct F_HIERARCHY
+{
+  F_HIERARCHY()
+  {
+    db = createSimpleDB();
+    block = db->getChip()->getBlock();
+    lib = db->findLib("lib1");
+
+    // Top level object
+    parent_mod = dbModule::create(block, "parent_mod");
+    // Top level ports
+    parent_modbterm_ip1 = dbModBTerm::create(parent_mod, "ip1");
+    parent_modbterm_ip2 = dbModBTerm::create(parent_mod, "ip2");
+    parent_modbterm_ip3 = dbModBTerm::create(parent_mod, "ip3");
+    parent_modbterm_ip4 = dbModBTerm::create(parent_mod, "ip4");
+    parent_modbterm_op1 = dbModBTerm::create(parent_mod, "op1");
+    // Top level nets
+    mod_net_ip1 = dbModNet::create(parent_mod, "ip1");
+    mod_net_ip2 = dbModNet::create(parent_mod, "ip2");
+    mod_net_ip3 = dbModNet::create(parent_mod, "ip3");
+    mod_net_ip4 = dbModNet::create(parent_mod, "ip4");
+    mod_net_int1 = dbModNet::create(parent_mod, "int1");
+    mod_net_int2 = dbModNet::create(parent_mod, "int2");
+    mod_net_op1 = dbModNet::create(parent_mod, "op1");
+
+    parent_modbterm_ip1->connect(mod_net_ip1);
+    parent_modbterm_ip2->connect(mod_net_ip2);
+    parent_modbterm_ip3->connect(mod_net_ip3);
+    parent_modbterm_ip4->connect(mod_net_ip4);
+    parent_modbterm_op1->connect(mod_net_op1);
+
+    // child instances
+    master_mod1 = dbModule::create(block, "master_mod1");
+    master_mod2 = dbModule::create(block, "master_mod2");
+    master_mod3 = dbModule::create(block, "master_mod3");
+
+    i1 = dbModInst::create(parent_mod, master_mod1, "i1");
+    mod_i1_a1 = dbModITerm::create(i1, "a1");
+    mod_i1_a2 = dbModITerm::create(i1, "a2");
+    mod_i1_z = dbModITerm::create(i1, "z");
+
+    // hook up i1
+    mod_i1_a1->connect(mod_net_ip1);
+    mod_i1_a2->connect(mod_net_ip2);
+    mod_i1_z->connect(mod_net_int1);
+
+    i2 = dbModInst::create(parent_mod, master_mod2, "i2");
+    mod_i2_a1 = dbModITerm::create(i2, "a1");
+    mod_i2_a2 = dbModITerm::create(i2, "a2");
+    mod_i2_z = dbModITerm::create(i2, "z");
+
+    // hook up i2
+    mod_i2_a1->connect(mod_net_ip3);
+    mod_i2_a2->connect(mod_net_ip4);
+    mod_i2_z->connect(mod_net_int2);
+
+    i3 = dbModInst::create(parent_mod, master_mod3, "i3");
+    mod_i3_a1 = dbModITerm::create(i3, "a1");
+    mod_i3_a2 = dbModITerm::create(i3, "a2");
+    mod_i3_z = dbModITerm::create(i3, "z");
+
+    // hook up i3
+    mod_i3_a1->connect(mod_net_int1);
+    mod_i3_a2->connect(mod_net_int2);
+    mod_i3_z->connect(mod_net_op1);
+
+    inst1 = dbInst::create(block, lib->findMaster("and2"), "inst1");
+    inst2 = dbInst::create(block, lib->findMaster("and2"), "inst2");
+    inst3 = dbInst::create(block, lib->findMaster("and2"), "inst3");
+
+    parent_mod->addInst(inst1);
+    parent_mod->addInst(inst2);
+    parent_mod->addInst(inst3);
+  }
+  ~F_HIERARCHY() { dbDatabase::destroy(db); }
+  dbDatabase* db;
+  dbLib* lib;
+  dbBlock* block;
+
+  // 2 and gates -> and gate -> op1
+  dbModBTerm* parent_modbterm_ip1;
+  dbModBTerm* parent_modbterm_ip2;
+  dbModBTerm* parent_modbterm_ip3;
+  dbModBTerm* parent_modbterm_ip4;
+  dbModBTerm* parent_modbterm_op1;
+
+  dbModITerm* mod_i1_a1;
+  dbModITerm* mod_i1_a2;
+  dbModITerm* mod_i1_z;
+
+  dbModITerm* mod_i2_a1;
+  dbModITerm* mod_i2_a2;
+  dbModITerm* mod_i2_z;
+
+  dbModITerm* mod_i3_a1;
+  dbModITerm* mod_i3_a2;
+  dbModITerm* mod_i3_z;
+
+  dbModNet* mod_net_ip1;
+  dbModNet* mod_net_ip2;
+  dbModNet* mod_net_ip3;
+  dbModNet* mod_net_ip4;
+  dbModNet* mod_net_int1;
+  dbModNet* mod_net_int2;
+  dbModNet* mod_net_op1;
+
+  dbModule* master_mod1;
+  dbModule* master_mod2;
+  dbModule* master_mod3;
+  dbModule* parent_mod;
+
+  dbModInst* i1;
+  dbModInst* i2;
+  dbModInst* i3;
+
+  dbInst* inst1;
+  dbInst* inst2;
+  dbInst* inst3;
+};
+
+BOOST_FIXTURE_TEST_CASE(test_hierarchy, F_HIERARCHY)
+{
+  // TODO: Think of more things to nets (like writing out verilog).
+
+  dbSet<dbModNet> parent_modnets = parent_mod->getModNets();
+  BOOST_TEST(parent_modnets.size() == 7);
+  dbSet<dbModBTerm> parent_modbterms = parent_mod->getModBTerms();
+  BOOST_TEST(parent_modbterms.size() == 5);
+  dbSet<dbModITerm> i1_moditerms = i1->getModITerms();
+  BOOST_TEST(i1_moditerms.size() == 3);
+  dbSet<dbModITerm> i2_moditerms = i2->getModITerms();
+  BOOST_TEST(i2_moditerms.size() == 3);
+  dbSet<dbModITerm> i3_moditerms = i3->getModITerms();
+  BOOST_TEST(i3_moditerms.size() == 3);
+
+  int i;
+  dbSet<dbModInst> children = parent_mod->getChildren();
+  dbSet<dbModInst>::iterator modinst_itr;
+  BOOST_TEST(children.size() == 3);
+  BOOST_TEST(children.reversible());
+  for (int j = 0; j < 2; j++) {
+    if (j == 1) {
+      children.reverse();
+    }
+    for (modinst_itr = children.begin(), i = j ? 1 : 3;
+         modinst_itr != children.end();
+         ++modinst_itr, i = i + (j ? 1 : -1)) {
+      switch (i) {
+        case 1:
+          BOOST_TEST(*modinst_itr == i1);
+          break;
+        case 2:
+          BOOST_TEST(*modinst_itr == i2);
+          break;
+        case 3:
+          BOOST_TEST(*modinst_itr == i3);
+          break;
+        default:
+          BOOST_TEST(false);
+          break;
+      }
+    }
+  }
+
+  dbSet<dbInst> insts = parent_mod->getInsts();
+  dbSet<dbInst>::iterator inst_itr;
+  BOOST_TEST(insts.size() == 3);
+  BOOST_TEST(insts.reversible());
+  for (int j = 0; j < 2; j++) {
+    if (j == 1) {
+      insts.reverse();
+    }
+    for (inst_itr = insts.begin(), i = j ? 1 : 3; inst_itr != insts.end();
+         ++inst_itr, i = i + (j ? 1 : -1)) {
+      switch (i) {
+        case 1:
+          BOOST_TEST(*inst_itr == inst3);
+          break;
+        case 2:
+          BOOST_TEST(*inst_itr == inst2);
+          break;
+        case 3:
+          BOOST_TEST(*inst_itr == inst1);
+          break;
+        default:
+          BOOST_TEST(false);
+          break;
+      }
+    }
+  }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 }  // namespace
