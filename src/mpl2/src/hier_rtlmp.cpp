@@ -3150,8 +3150,8 @@ void HierRTLMP::setIOClustersBlockages()
   const float macro_dominance_factor
       = macro_with_halo_area_
         / (root_cluster_->getWidth() * root_cluster_->getHeight());
-  const float depth
-      = (std_cell_area / sum_length) * std::pow((1 - macro_dominance_factor), 2);
+  const float depth = (std_cell_area / sum_length)
+                      * std::pow((1 - macro_dominance_factor), 2);
   debugPrint(logger_,
              MPL,
              "hierarchical_macro_placement",
