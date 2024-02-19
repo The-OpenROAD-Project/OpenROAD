@@ -26,7 +26,7 @@ node {
     sh 'sudo yum -y update'
     sh 'sudo yum install -y ccache'
     // sh 'export PATH="/usr/lib/ccache:$PATH"'
-    stash includes: '/usr/bin/ninja', name: 'ninja-stash'
+    stash includes: '/usr/local/bin/ninja', name: 'ninja-stash'
     stash includes: '/usr/bin/ccache', name: 'ccache-stash'
   }
 
