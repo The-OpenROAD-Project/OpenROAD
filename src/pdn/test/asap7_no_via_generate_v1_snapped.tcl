@@ -1,4 +1,4 @@
-# test for no via generate statements in LEF using just fixed vias
+# test for no via generate statements in LEF using just fixed vias and snapping VIA12 to M1 tracks
 source "helpers.tcl"
 
 read_lef asap7_vias/asap7_tech_1x_noviarules.lef
@@ -17,7 +17,8 @@ add_pdn_stripe -followpins -layer M2 -width 0.090
 add_pdn_stripe -layer M3 -width 0.936 -spacing 1.512 -pitch 8.00 -offset 1.000
 add_pdn_stripe -layer M6 -width 1.152 -spacing 2.500 -pitch 8.00 -offset 1.000
 
-add_pdn_connect -layers {M1 M2} -cut_pitch 0.288 -fixed_vias "VIA12" -ongrid {M1}
+# Choose cut_pitch which is not a multiple of the M1 tracks (36nm)
+add_pdn_connect -layers {M1 M2} -cut_pitch 0.200 -fixed_vias "VIA12" -ongrid {M1}
 add_pdn_connect -layers {M2 M3} -fixed_vias "VIA23"
 add_pdn_connect -layers {M3 M6} -fixed_vias "VIA34 VIA45 VIA56"
 

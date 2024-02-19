@@ -43,7 +43,7 @@ sta::define_cmd_args "define_pin_shape_pattern" {[-layer layer] \
 
 proc define_pin_shape_pattern { args } {
   sta::parse_key_args "define_pin_shape_pattern" args \
-  keys {-layer -x_step -y_step -region -size -pin_keepout}
+    keys {-layer -x_step -y_step -region -size -pin_keepout}
 
   sta::check_argc_eq0 "define_pin_shape_pattern" $args
 
@@ -67,7 +67,9 @@ proc define_pin_shape_pattern { args } {
 
   if [info exists keys(-region)] {
     set region $keys(-region)
-    if [regexp -all {([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*)} $region - llx lly urx ury] {
+    if [regexp -all \
+            {([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*)} \
+            $region - llx lly urx ury] {
       set llx [ord::microns_to_dbu $llx]
       set lly [ord::microns_to_dbu $lly]
       set urx [ord::microns_to_dbu $urx]
@@ -122,8 +124,8 @@ sta::define_cmd_args "set_io_pin_constraint" {[-direction direction] \
 
 proc set_io_pin_constraint { args } {
   sta::parse_key_args "set_io_pin_constraint" args \
-  keys {-direction -pin_names -region -mirrored_pins} \
-  flags {-group -order}
+    keys {-direction -pin_names -region -mirrored_pins} \
+    flags {-group -order}
 
   sta::check_argc_eq0 "set_io_pin_constraint" $args
 
@@ -168,7 +170,9 @@ proc set_io_pin_constraint { args } {
       if [info exists keys(-direction)] {
         set direction $keys(-direction)
         set dir [ppl::parse_direction "set_io_pin_constraint" $direction]
-        utl::info PPL 49 "Restrict $direction pins to region [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u, in the $edge edge."
+        utl::info PPL 49 "Restrict $direction pins to region\
+          [ord::dbu_to_microns $begin]u-[ord::dbu_to_microns $end]u,\
+          in the $edge edge."
         ppl::add_direction_constraint $dir $edge_ $begin $end
       }
 
@@ -183,7 +187,9 @@ proc set_io_pin_constraint { args } {
         set lly [$die_area yMin]
         set urx [$die_area xMax]
         set ury [$die_area yMax]
-      } elseif [regexp -all {([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*)} $box - llx lly urx ury] {
+      } elseif [regexp -all \
+                    {([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*) ([0-9]+[.]*[0-9]*)} \
+                    $box - llx lly urx ury] {
         set llx [ord::microns_to_dbu $llx]
         set lly [ord::microns_to_dbu $lly]
         set urx [ord::microns_to_dbu $urx]
@@ -203,7 +209,7 @@ proc set_io_pin_constraint { args } {
 
   if [info exists flags(-group)] {
     if [info exists keys(-pin_names)] {
-        set group $keys(-pin_names)
+      set group $keys(-pin_names)
     } else {
       utl::error PPL 58 "The -pin_names argument is required when using -group flag."
     }
@@ -253,7 +259,7 @@ sta::define_cmd_args "set_pin_length" {[-hor_length h_length]\
 
 proc set_pin_length { args } {
   sta::parse_key_args "set_pin_length" args \
-  keys {-hor_length -ver_length}
+    keys {-hor_length -ver_length}
 
   sta::check_argc_eq0 "set_pin_length" $args
 
@@ -272,7 +278,7 @@ sta::define_cmd_args "set_pin_length_extension" {[-hor_extension h_ext]\
 
 proc set_pin_length_extension { args } {
   sta::parse_key_args "set_pin_length_extension" args \
-  keys {-hor_extension -ver_extension}
+    keys {-hor_extension -ver_extension}
 
   sta::check_argc_eq0 "set_pin_length_extension" $args
 
@@ -291,7 +297,7 @@ sta::define_cmd_args "set_pin_thick_multiplier" {[-hor_multiplier h_mult]\
 
 proc set_pin_thick_multiplier { args } {
   sta::parse_key_args "set_pin_thick_multiplier" args \
-  keys {-hor_multiplier -ver_multiplier}
+    keys {-hor_multiplier -ver_multiplier}
 
   sta::check_argc_eq0 "set_pin_thick_multiplier" $args
 
@@ -312,7 +318,7 @@ sta::define_cmd_args "set_simulated_annealing" {[-temperature temperature]\
 
 proc set_simulated_annealing { args } {
   sta::parse_key_args "set_simulated_annealing" args \
-  keys {-temperature -max_iterations -perturb_per_iter -alpha}
+    keys {-temperature -max_iterations -perturb_per_iter -alpha}
 
   set temperature 0
   if [info exists keys(-temperature)] {
@@ -348,8 +354,8 @@ sta::define_cmd_args "simulated_annealing_debug" {
 
 proc simulated_annealing_debug { args } {
   sta::parse_key_args "simulated_annealing_debug" args \
-  keys {-iters_between_paintings} \
-  flags {-no_pause_mode}
+    keys {-iters_between_paintings} \
+    flags {-no_pause_mode}
 
   if [info exists keys(-iters_between_paintings)] {
     set iters $keys(-iters_between_paintings)
@@ -369,8 +375,8 @@ sta::define_cmd_args "place_pin" {[-pin_name pin_name]\
 
 proc place_pin { args } {
   sta::parse_key_args "place_pin" args \
-  keys {-pin_name -layer -location -pin_size}\
-  flags {-force_to_die_boundary -placed_status}
+    keys {-pin_name -layer -location -pin_size}\
+    flags {-force_to_die_boundary -placed_status}
 
   sta::check_argc_eq0 "place_pin" $args
 
@@ -446,9 +452,9 @@ proc place_pins { args } {
   set regions [ppl::parse_excludes_arg $args]
   set pin_groups [ppl::parse_group_pins_arg $args]
   sta::parse_key_args "place_pins" args \
-  keys {-hor_layers -ver_layers -random_seed -corner_avoidance \
-        -min_distance -exclude -group_pins -write_pin_placement} \
-  flags {-random -min_distance_in_tracks -annealing}
+    keys {-hor_layers -ver_layers -random_seed -corner_avoidance \
+          -min_distance -exclude -group_pins -write_pin_placement} \
+    flags {-random -min_distance_in_tracks -annealing}
 
   sta::check_argc_eq0 "place_pins" $args
 
@@ -591,7 +597,8 @@ proc place_pins { args } {
           utl::error PPL 25 "-exclude: $interval is an invalid region."
         }
       } else {
-        utl::error PPL 26 "-exclude: invalid syntax in $region. Use (top|bottom|left|right):interval."
+        utl::error PPL 26 "-exclude: invalid syntax in $region.\
+          Use (top|bottom|left|right):interval."
       }
     }
   }
@@ -729,13 +736,17 @@ proc add_pins_to_constraint {cmd names edge begin end edge_name} {
 proc add_pins_to_top_layer {cmd names llx lly urx ury} {
   set tech [ord::get_db_tech]
   set top_layer [ppl::get_top_layer]
-  
+
   if {$top_layer == "NULL"} {
-    utl::error PPL 99 "Constraint up:{$llx $lly $urx $ury} cannot be created. Pin placement grid on top layer not created."
+    utl::error PPL 99 "Constraint up:{$llx $lly $urx $ury} cannot be created.\
+      Pin placement grid on top layer not created."
   }
 
   set top_layer_name [$top_layer getConstName]
-  utl::info PPL 60 "Restrict pins \[$names\] to region ([ord::dbu_to_microns $llx]u, [ord::dbu_to_microns $lly]u)-([ord::dbu_to_microns $urx]u, [ord::dbu_to_microns $urx]u) at routing layer $top_layer_name."
+  utl::info PPL 60 "Restrict pins \[$names\] to region\
+    ([ord::dbu_to_microns $llx]u, [ord::dbu_to_microns $lly]u)-\
+    ([ord::dbu_to_microns $urx]u, [ord::dbu_to_microns $urx]u) at\
+    routing layer $top_layer_name."
   set pin_list [ppl::parse_pin_names $cmd $names]
   ppl::add_top_layer_constraint $pin_list $llx $lly $urx $ury
 }

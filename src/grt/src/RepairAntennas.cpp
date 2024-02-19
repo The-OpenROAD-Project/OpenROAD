@@ -179,6 +179,8 @@ odb::dbWire* RepairAntennas::makeNetWire(
                          default_vias,
                          false);
             wire_segments.insert(seg);
+          } else if (prev_conn_layer == -1) {
+            prev_conn_layer = std::max(l1, l2);
           }
         } else {
           // Add wire
@@ -285,38 +287,54 @@ void RepairAntennas::addWireTerms(Net* net,
             = tech->findRoutingLayer(grouter_->getMinRoutingLayer());
         odb::dbTechLayer* layer2
             = tech->findRoutingLayer(grouter_->getMinRoutingLayer() + 1);
-        odb::dbTechLayer* h_layer
-            = layer1->getDirection() == odb::dbTechLayerDir::HORIZONTAL
-                  ? layer1
-                  : layer2;
-        odb::dbTechLayer* v_layer
-            = layer1->getDirection() == odb::dbTechLayerDir::VERTICAL ? layer1
-                                                                      : layer2;
-        // create horizontal wire to connect to the pin
-        if (connect_to_segment && tech_layer != h_layer) {
+
+        if (connect_to_segment && tech_layer != layer2) {
           // if wire to pin connects to a segment in a different layer, create a
           // via to connect both wires
           wire_encoder.newPath(tech_layer, odb::dbWireType::ROUTED);
           wire_encoder.addPoint(grid_pt.x(), grid_pt.y());
           wire_encoder.addTechVia(default_vias[grouter_->getMinRoutingLayer()]);
         }
-        wire_encoder.newPath(h_layer, odb::dbWireType::ROUTED);
-        wire_encoder.addPoint(grid_pt.x(), grid_pt.y());
-        wire_encoder.addPoint(pin_pt.x(), grid_pt.y());
-        wire_encoder.addTechVia(default_vias[grouter_->getMinRoutingLayer()]);
 
-        // create vertical wire to connect to the pin
-        wire_encoder.newPath(v_layer, odb::dbWireType::ROUTED);
-        wire_encoder.addPoint(pin_pt.x(), grid_pt.y());
-        wire_encoder.addPoint(pin_pt.x(), pin_pt.y());
+        if (layer2->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+          makeWire(wire_encoder,
+                   layer2,
+                   grid_pt,
+                   odb::Point(grid_pt.x(), pin_pt.y()));
+          wire_encoder.addTechVia(default_vias[grouter_->getMinRoutingLayer()]);
+          makeWire(wire_encoder,
+                   layer1,
+                   odb::Point(grid_pt.x(), pin_pt.y()),
+                   pin_pt);
+        } else {
+          makeWire(wire_encoder,
+                   layer2,
+                   grid_pt,
+                   odb::Point(pin_pt.x(), grid_pt.y()));
+          wire_encoder.addTechVia(default_vias[grouter_->getMinRoutingLayer()]);
+          makeWire(wire_encoder,
+                   layer1,
+                   odb::Point(pin_pt.x(), grid_pt.y()),
+                   pin_pt);
+        }
 
         // create vias to reach the pin
-        for (int i = v_layer->getRoutingLevel() - 1; i >= conn_layer; i--) {
+        for (int i = layer1->getRoutingLevel() - 1; i >= conn_layer; i--) {
           wire_encoder.addTechVia(default_vias[i]);
         }
       }
     }
   }
+}
+
+void RepairAntennas::makeWire(odb::dbWireEncoder& wire_encoder,
+                              odb::dbTechLayer* layer,
+                              const odb::Point& start,
+                              const odb::Point& end)
+{
+  wire_encoder.newPath(layer, odb::dbWireType::ROUTED);
+  wire_encoder.addPoint(start.x(), start.y());
+  wire_encoder.addPoint(end.x(), end.y());
 }
 
 bool RepairAntennas::pinOverlapsGSegment(
