@@ -366,4 +366,17 @@ dbIStream& operator>>(dbIStream& stream, _dbSite& site)
   return stream;
 }
 
+bool operator==(const dbSite::OrientedSite& lhs,
+                const dbSite::OrientedSite& rhs)
+{
+  return std::tie(lhs.site, lhs.orientation)
+         == std::tie(rhs.site, rhs.orientation);
+}
+
+bool operator!=(const dbSite::OrientedSite& lhs,
+                const dbSite::OrientedSite& rhs)
+{
+  return !(lhs == rhs);
+}
+
 }  // namespace odb

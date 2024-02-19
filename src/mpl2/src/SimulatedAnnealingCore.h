@@ -77,12 +77,13 @@ class SimulatedAnnealingCore
       float init_prob,
       int max_num_step,
       int num_perturb_per_step,
-      int k,
-      int c,
       unsigned seed,
       Mpl2Observer* graphics,
       utl::Logger* logger);
-
+  void setNumberOfMacrosToPlace(int macros_to_place)
+  {
+    macros_to_place_ = macros_to_place;
+  };
   void setNets(const std::vector<BundledNet>& nets);
   // Fence corresponds to each macro (macro_id, fence)
   void setFences(const std::map<int, Rect>& fences);
@@ -112,6 +113,8 @@ class SimulatedAnnealingCore
   virtual void fillDeadSpace() = 0;
 
  protected:
+  void initSequencePair();
+
   virtual float calNormCost() const = 0;
   virtual void calPenalty() = 0;
   void calOutlinePenalty();
@@ -127,6 +130,7 @@ class SimulatedAnnealingCore
   void singleSeqSwap(bool pos);
   void doubleSeqSwap();
   void exchangeMacros();
+  void generateRandomIndices(int& index1, int& index2);
 
   virtual void shrink() = 0;  // Shrink the size of macros
 
@@ -139,6 +143,9 @@ class SimulatedAnnealingCore
   // boundary constraints
   float outline_width_ = 0.0;
   float outline_height_ = 0.0;
+
+  // Number of macros that will actually be part of the sequence pair
+  int macros_to_place_ = 0;
 
   // nets, fences, guides, blockages
   std::vector<BundledNet> nets_;
@@ -160,10 +167,6 @@ class SimulatedAnnealingCore
   float init_temperature_ = 1.0;
   int max_num_step_ = 0;
   int num_perturb_per_step_ = 0;
-  // if step < k_, T = init_T_ / (c_ * step_);
-  // else T = init_T_ / step
-  int k_ = 0;
-  int c_ = 0;
 
   // shrink_factor for dynamic weight
   const float shrink_factor_ = 0.8;

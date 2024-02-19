@@ -15,7 +15,8 @@ add_global_connection -net VSS -pin_pattern {^VSSE$}
 set_voltage_domain -power VDD -ground VSS
 
 define_pdn_grid -name "Core"
-add_pdn_ring -grid "Core" -layers {metal8 metal9} -widths 5.0 -spacings 2.0 -core_offsets 4.5 -connect_to_pads
+add_pdn_ring -grid "Core" -layers {metal8 metal9} -widths 5.0 \
+  -spacings 2.0 -core_offsets 4.5 -connect_to_pads
 add_pdn_stripe -followpins -layer metal1 -extend_to_core_ring
 
 add_pdn_stripe -layer metal4 -width 0.48 -pitch 56.0 -offset 2.0 -extend_to_core_ring

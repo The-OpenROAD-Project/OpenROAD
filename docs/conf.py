@@ -123,7 +123,7 @@ html_theme_options = {
         },
         {
             "name": "Email",
-            "url": "mailto:openroad@eng.ucsd.edu",
+            "url": "mailto:openroad@ucsd.edu",
             "icon": "fa-solid fa-envelope",
         },
         {

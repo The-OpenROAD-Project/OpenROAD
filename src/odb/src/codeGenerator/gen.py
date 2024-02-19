@@ -125,7 +125,7 @@ for relation in schema["relations"]:
     inParentField["table"] = True
     inParentField["dbSetGetter"] = True
     inParentField["components"] = [inParentField["name"]]
-    inParentField["flags"] = ["cmp", "serial", "diff", "no-set", "get"]
+    inParentField["flags"] = ["cmp", "serial", "diff", "no-set", "get"] + relation.get("flags", [])
     if "schema" in relation:
         inParentField["schema"] = relation["schema"]
 
