@@ -3245,7 +3245,7 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
   }
   // If the parent is a HardMacroCluster
   if (parent->getClusterType() == HardMacroCluster) {
-    hardMacroClusterMacroPlacement(parent);
+    placeMacros(parent);
     return;
   }
 
@@ -4188,7 +4188,7 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
   }
   // If the parent is a HardMacroCluster
   if (parent->getClusterType() == HardMacroCluster) {
-    hardMacroClusterMacroPlacement(parent);
+    placeMacros(parent);
     return;
   }
 
@@ -5405,7 +5405,7 @@ void HierRTLMP::callBusPlanning(std::vector<SoftMacro>& shaped_macros,
 }
 
 // place macros within the HardMacroCluster
-void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
+void HierRTLMP::placeMacros(Cluster* cluster)
 {
   debugPrint(logger_,
              MPL,

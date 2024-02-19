@@ -266,7 +266,7 @@ class HierRTLMP
   void alignHardMacroGlobal(Cluster* parent);
 
   // Hierarchical Macro Placement 2nd stage: Macro Placement
-  void hardMacroClusterMacroPlacement(Cluster* cluster);
+  void placeMacros(Cluster* cluster);
   void createClusterForEachMacro(const std::vector<HardMacro*>& hard_macros,
                                  std::vector<HardMacro>& macros,
                                  std::vector<Cluster*>& macro_clusters,
