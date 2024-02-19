@@ -5415,14 +5415,10 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
              cluster->getName());
 
   std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
-  num_hard_macros_cluster_
-      += hard_macros.size();  // we define to verify that all the macros has
-                              // been placed
+  num_hard_macros_cluster_ += hard_macros.size();
 
   std::vector<HardMacro> macros;  // the macros for Simulated Annealing Core
-  std::vector<Cluster*>
-      macro_clusters;  // We need the clusters for each hard macro to calculate
-                       // the connections with other clusters
+  std::vector<Cluster*> macro_clusters;  // needed to calculate connections
   std::map<int, int> cluster_id_macro_id_map;
   std::set<odb::dbMaster*> masters;
   createClusterForEachMacro(
