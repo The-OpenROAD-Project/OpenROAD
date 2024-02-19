@@ -19,7 +19,18 @@ node {
     }
   }
 
-  docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside {
+  stage('Install Ninja') {
+    sh 'curl -L https://github.com/ninja-build/ninja/releases/download/v1.10.2/ninja-linux.zip -o ninja-linux.zip'
+    sh 'unzip ninja-linux.zip -d /usr/local/bin/'
+    sh 'chmod +x /usr/local/bin/ninja'
+    sh 'sudo apt-get update -qy'
+    sh 'sudo apt-get install -y ccache'
+    // sh 'export PATH="/usr/lib/ccache:$PATH"'
+    stash includes: '/usr/bin/ninja', name: 'ninja-stash'
+    stash includes: '/usr/bin/ccache', name: 'ccache-stash'
+  }
+
+  // docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside {
     try {
       timeout(time: 9, unit: 'HOURS') {  
         stage('Build and test') {
@@ -68,6 +79,19 @@ node {
               }
             }
           }
+          tasks["C++ Unit Tests"] = {
+            node {
+              sleep(5)
+              checkout scm
+              unstash 'ninja-stash'
+              unstash 'ccache-stash'
+              stage('C++ Unit Tests') {
+                sh 'cmake -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -GNinja -B build .';
+                sh 'cd build';
+                sh 'CLICOLOR_FORCE=1 ninja build_and_test';
+              }
+            }
+          }
           Map matrix_axes = [
             OS: ['ubuntu20.04', 'ubuntu22.04', 'centos7'],
             COMPILER: ['gcc', 'clang'],
@@ -108,5 +132,5 @@ node {
         sendEmail(env.BRANCH_NAME, COMMIT_AUTHOR_EMAIL, "")
       }
     }
-  }
+  // }
 }
