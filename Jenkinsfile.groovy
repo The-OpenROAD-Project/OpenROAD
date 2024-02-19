@@ -26,8 +26,12 @@ node {
     sh 'sudo yum -y update'
     sh 'sudo yum install -y ccache'
     // sh 'export PATH="/usr/lib/ccache:$PATH"'
-    stash includes: '/usr/local/bin/ninja', name: 'ninja-stash'
-    stash includes: '/usr/bin/ccache', name: 'ccache-stash'
+    // stash includes: '/usr/local/bin/ninja', name: 'ninja-stash'
+    // stash includes: '/usr/bin/ccache', name: 'ccache-stash'
+    sh 'cp /usr/local/bin/ninja stashed-files/'
+    sh 'cp /usr/bin/ccache stashed-files/'
+
+    stash includes: 'stashed-files/*', name: 'tools-stash'
   }
 
   // docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside {
@@ -83,12 +87,19 @@ node {
             node {
               sleep(5)
               checkout scm
-              unstash 'ninja-stash'
-              unstash 'ccache-stash'
+              unstash 'tools-stash'
               stage('C++ Unit Tests') {
                 sh 'cmake -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -GNinja -B build .';
                 sh 'cd build';
                 sh 'CLICOLOR_FORCE=1 ninja build_and_test';
+              }
+            }
+          }
+          tasks["Test C++20 Compile"] = {
+            node {
+              checkout scm
+              stage('Test C++20 Compile') {
+                sh "./etc/Build.sh -compiler='clang-16' -cmake='-DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20'";
               }
             }
           }
