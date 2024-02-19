@@ -21,12 +21,12 @@ node {
 
   stage('Install Ninja') {
     sh 'curl -L https://github.com/ninja-build/ninja/releases/download/v1.10.2/ninja-linux.zip -o ninja-linux.zip'
-    sh 'unzip ninja-linux.zip -d /usr/local/bin/'
-    sh 'chmod +x /usr/local/bin/ninja'
+    sh 'unzip ninja-linux.zip'
+    sh 'chmod +x ./ninja'
     sh 'sudo apt-get update -qy'
     sh 'sudo apt-get install -y ccache'
     // sh 'export PATH="/usr/lib/ccache:$PATH"'
-    stash includes: '/usr/bin/ninja', name: 'ninja-stash'
+    stash includes: './ninja', name: 'ninja-stash'
     stash includes: '/usr/bin/ccache', name: 'ccache-stash'
   }
 
@@ -88,7 +88,7 @@ node {
               stage('C++ Unit Tests') {
                 sh 'cmake -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -GNinja -B build .';
                 sh 'cd build';
-                sh 'CLICOLOR_FORCE=1 ninja build_and_test';
+                sh 'CLICOLOR_FORCE=1 ./ninja build_and_test';
               }
             }
           }
