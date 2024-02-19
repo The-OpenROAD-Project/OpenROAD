@@ -873,7 +873,7 @@ class FlexDRWorker
 
   void mazeNetInit(drNet* net);
   void mazeNetEnd(drNet* net);
-  bool routeNet(drNet* net);
+  bool routeNet(drNet* net, std::vector<FlexMazeIdx>& paths);
   void routeNet_prep(drNet* net,
                      std::set<drPin*, frBlockObjectComp>& pins,
                      std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp>>&
