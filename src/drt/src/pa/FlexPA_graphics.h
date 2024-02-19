@@ -95,8 +95,7 @@ class FlexPAGraphics : public gui::Renderer
   void status(const std::string& message);
 
   // From Renderer API
-  void drawLayer(odb::dbTechLayer* layer,
-                 gui::Painter& painter) override;
+  void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter) override;
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();

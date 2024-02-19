@@ -1130,7 +1130,7 @@ bool FlexPA::prepPoint_pin_checkPoint_viaDir_helper(
       return false;
     }
     if (!upperlayer->isHorizontal()
-               && (dir == frDirEnum::W || dir == frDirEnum::E)) {
+        && (dir == frDirEnum::W || dir == frDirEnum::E)) {
       return false;
     }
   }
@@ -1536,7 +1536,7 @@ void FlexPA::prepPoint()
   ThreadException exception;
   const auto& unique = unique_insts_.getUnique();
 #pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < (int) unique.size(); i++) { // NOLINT
+  for (int i = 0; i < (int) unique.size(); i++) {  // NOLINT
     try {
       auto& inst = unique[i];
       // only do for core and block cells
@@ -1592,8 +1592,9 @@ void FlexPA::prepPoint()
   if (target_insts_.empty()) {
     omp_set_num_threads(MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
-    for (unsigned i = 0; // NOLINT
-         i < getDesign()->getTopBlock()->getTerms().size();  i++) { 
+    for (unsigned i = 0;  // NOLINT
+         i < getDesign()->getTopBlock()->getTerms().size();
+         i++) {
       try {
         auto& term = getDesign()->getTopBlock()->getTerms()[i];
         if (term->getType().isSupply()) {
@@ -1705,7 +1706,7 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows)
     // choose access pattern of a row of insts
     int rowIdx = 0;
 #pragma omp parallel for schedule(dynamic)
-    for (int i = 0; i < (int) inst_rows.size(); i++) { // NOLINT
+    for (int i = 0; i < (int) inst_rows.size(); i++) {  // NOLINT
       try {
         auto& instRow = inst_rows[i];
         genInstRowPattern(instRow);
@@ -1834,7 +1835,7 @@ void FlexPA::prepPattern()
     const Point originB = b->getOrigin();
     if (originA.y() == originB.y()) {
       return (originA.x() < originB.x());
-    } 
+    }
     return (originA.y() < originB.y());
   };
 

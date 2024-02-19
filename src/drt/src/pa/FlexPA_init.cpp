@@ -159,4 +159,4 @@ void FlexPA::initTrackCoords()
   }
 }
 
-}
+}  // namespace fr

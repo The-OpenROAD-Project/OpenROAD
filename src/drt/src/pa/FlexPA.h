@@ -284,9 +284,7 @@ class FlexPA
 
   void prepPattern();
   void prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows);
-  int prepPattern_inst(frInst* inst,
-                       int currUniqueInstIdx,
-                       double xWeight);
+  int prepPattern_inst(frInst* inst, int currUniqueInstIdx, double xWeight);
   int genPatterns(const std::vector<std::pair<frMPin*, frInstTerm*>>& pins,
                   int currUniqueInstIdx);
   void genPatterns_init(
