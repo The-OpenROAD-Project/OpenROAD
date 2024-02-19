@@ -5630,6 +5630,9 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
   float flip_prob = flip_prob_ / action_sum;
 
   int remaining_runs = num_runs_;
+  int num_perturb_per_step = (macros.size() > num_perturb_per_step_ / 10)
+                                 ? macros.size()
+                                 : num_perturb_per_step_ / 10;
 
   SequencePair initial_seq_pair;
   const int macros_to_place = static_cast<int>(hard_macros.size());
@@ -5642,7 +5645,7 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
     exchange_swap_prob = 0.95;
     flip_prob = 0.05;
 
-    remaining_runs = 2;
+    num_perturb_per_step = num_perturb_per_step_;
   }
 
   // We vary the outline of cluster to generate differnt tilings
@@ -5653,9 +5656,7 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
     vary_factor_list.push_back(1.0 + i * vary_step);
     vary_factor_list.push_back(1.0 - i * vary_step);
   }
-  const int num_perturb_per_step = (macros.size() > num_perturb_per_step_ / 10)
-                                       ? macros.size()
-                                       : num_perturb_per_step_ / 10;
+
   int run_id = 0;
   SACoreHardMacro* best_sa = nullptr;
   std::vector<SACoreHardMacro*> sa_containers;  // store all the SA runs
@@ -5787,10 +5788,9 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
 // obs: Our sequence pair representantion includes the fixed terminals
 // but they can be in any position of the sequences, so here, we put
 // them at the end.
-void HierRTLMP::setArrayTilingSequencePair(
-    Cluster* cluster,
-    const int macros_to_place,
-    SequencePair& initial_seq_pair)
+void HierRTLMP::setArrayTilingSequencePair(Cluster* cluster,
+                                           const int macros_to_place,
+                                           SequencePair& initial_seq_pair)
 {
   // Set positive sequence
   for (int i = 0; i < macros_to_place; ++i) {
