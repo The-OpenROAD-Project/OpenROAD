@@ -231,11 +231,8 @@ NETS 8 ;
       NEW met1 TAPER ( 152030 150450 ) ( 154330 * )
       NEW met2 ( 154330 118490 210 ) ( * 150450 210 )
       NEW met2 ( 152030 150450 210 ) ( * 169830 210 )
-      NEW met1 ( 144900 118490 210 ) ( 167900 * 210 )
-      NEW met2 ( 144900 118490 210 ) ( * 118660 210 )
-      NEW met3 ( 115690 118660 450 ) ( 144900 * 450 )
-      NEW met2 ( 115690 118490 210 ) ( * 118660 210 )
-      NEW met1 TAPER ( 115690 118490 ) ( 116610 * )
+      NEW met1 TAPER ( 116610 118490 ) ( 118220 * )
+      NEW met1 ( 118220 118490 210 ) ( 167900 * 210 )
       NEW li1 TAPER ( 169510 169830 ) L1M1_PR_R
       NEW li1 TAPER ( 169510 118490 ) L1M1_PR_R
       NEW met1 ( 152030 169830 ) M1M2_PR_R
@@ -245,13 +242,7 @@ NETS 8 ;
       NEW met1 TAPER ( 154330 150450 ) M1M2_PR_R
       NEW met1 ( 154330 118490 ) M1M2_PR_R
       NEW met1 TAPER ( 152030 150450 ) M1M2_PR_R
-      NEW met1 ( 144900 118490 ) M1M2_PR_R
-      NEW met2 ( 144900 118660 ) M2M3_PR
-      NEW met2 ( 115690 118660 ) M2M3_PR
-      NEW met1 TAPER ( 115690 118490 ) M1M2_PR_R
-      NEW li1 TAPER ( 116610 118490 ) L1M1_PR_R
-      NEW met1 TAPER ( 154330 118490 ) RECT ( -490 -70 0 70 ) 
-      NEW met1 TAPER ( 152030 150450 ) RECT ( -490 -70 0 70 )  ;
+      NEW li1 TAPER ( 116610 118490 ) L1M1_PR_R ;
     - clknet_2_0__leaf_clk ( _414_ CLK ) ( _418_ CLK ) ( _428_ CLK ) ( _429_ CLK ) ( _432_ CLK ) ( _434_ CLK ) ( _444_ CLK )
       ( _445_ CLK ) ( clkbuf_2_0__f_clk X ) + USE CLOCK + NONDEFAULTRULE NDR_3W_3S
       + ROUTED met1 ( 87630 120870 210 ) ( 91540 * 210 )
@@ -298,16 +289,7 @@ NETS 8 ;
       NEW li1 TAPER ( 111090 134470 ) L1M1_PR_R
       NEW met1 TAPER ( 111090 134470 ) M1M2_PR_R
       NEW met1 TAPER ( 111090 120870 ) M1M2_PR_R
-      NEW met1 ( 136850 115430 ) M1M2_PR_R
-      NEW met2 TAPER ( 87630 117810 ) RECT ( -70 -305 70 0 ) 
-      NEW met1 TAPER ( 136850 148070 ) RECT ( -355 -70 0 70 ) 
-      NEW met1 TAPER ( 143750 115430 ) RECT ( -355 -70 0 70 ) 
-      NEW met1 TAPER ( 117530 117810 ) RECT ( 0 -70 355 70 ) 
-      NEW met1 TAPER ( 125350 120870 ) RECT ( -355 -70 0 70 ) 
-      NEW met1 TAPER ( 125350 115430 ) RECT ( -490 -70 0 70 ) 
-      NEW met1 TAPER ( 111090 134470 ) RECT ( -355 -70 0 70 ) 
-      NEW met1 TAPER ( 111090 120870 ) RECT ( -490 -70 0 70 ) 
-      NEW met1 TAPER ( 136850 115430 ) RECT ( -490 -70 0 70 )  ;
+      NEW met1 ( 136850 115430 ) M1M2_PR_R ;
     - clknet_2_1__leaf_clk ( _423_ CLK ) ( _424_ CLK ) ( _425_ CLK ) ( _426_ CLK ) ( _427_ CLK ) ( _440_ CLK ) ( _441_ CLK )
       ( _442_ CLK ) ( _443_ CLK ) ( clkbuf_2_1__f_clk X ) + USE CLOCK + NONDEFAULTRULE NDR_3W_3S
       + ROUTED met1 ( 199870 117130 210 ) ( 205850 * 210 )
@@ -363,17 +345,7 @@ NETS 8 ;
       NEW met1 TAPER ( 164450 88570 ) M1M2_PR_R
       NEW met1 ( 164450 96390 ) M1M2_PR_R
       NEW li1 TAPER ( 178710 91290 ) L1M1_PR_R
-      NEW met1 ( 174570 91290 ) M1M2_PR_R
-      NEW met1 TAPER ( 205850 96730 ) RECT ( -355 -70 0 70 ) 
-      NEW met2 TAPER ( 205850 113050 ) RECT ( -70 -305 70 0 ) 
-      NEW met1 TAPER ( 199410 137190 ) RECT ( -355 -70 0 70 ) 
-      NEW met1 TAPER ( 199410 117470 ) RECT ( -490 -70 0 70 ) 
-      NEW met2 TAPER ( 199410 129030 ) RECT ( -70 -305 70 0 ) 
-      NEW met1 TAPER ( 152950 148070 ) RECT ( -355 -70 0 70 ) 
-      NEW met1 TAPER ( 156170 129370 ) RECT ( -490 -70 0 70 ) 
-      NEW met1 TAPER ( 158010 101830 ) RECT ( -355 -70 0 70 ) 
-      NEW met1 TAPER ( 164450 88570 ) RECT ( -355 -70 0 70 ) 
-      NEW met1 TAPER ( 164450 96390 ) RECT ( -490 -70 0 70 )  ;
+      NEW met1 ( 174570 91290 ) M1M2_PR_R ;
     - clknet_2_2__leaf_clk ( _411_ CLK ) ( _413_ CLK ) ( _415_ CLK ) ( _416_ CLK ) ( _417_ CLK ) ( _421_ CLK ) ( _430_ CLK )
       ( _431_ CLK ) ( _433_ CLK ) ( _437_ CLK ) ( clkbuf_2_2__f_clk X ) + USE CLOCK + NONDEFAULTRULE NDR_3W_3S
       + ROUTED met1 ( 131330 208250 210 ) ( * 210630 210 )
@@ -442,14 +414,7 @@ NETS 8 ;
       NEW met1 TAPER ( 131790 172210 ) M1M2_PR_R
       NEW li1 TAPER ( 143750 159290 ) L1M1_PR_R
       NEW met1 ( 140990 159290 ) M1M2_PR_R
-      NEW met1 TAPER ( 140990 175610 ) M1M2_PR_R
-      NEW met2 TAPER ( 125810 199750 ) RECT ( -70 -305 70 0 ) 
-      NEW met1 TAPER ( 96830 186150 ) RECT ( 0 -70 355 70 ) 
-      NEW met2 TAPER ( 96830 183430 ) RECT ( -70 -305 70 0 ) 
-      NEW met1 TAPER ( 109250 183430 ) RECT ( -490 -70 0 70 ) 
-      NEW met1 TAPER ( 125810 183430 ) RECT ( -490 -70 0 70 ) 
-      NEW met1 TAPER ( 131790 172210 ) RECT ( -490 -70 0 70 ) 
-      NEW met1 TAPER ( 140990 175610 ) RECT ( -490 -70 0 70 )  ;
+      NEW met1 TAPER ( 140990 175610 ) M1M2_PR_R ;
     - clknet_2_3__leaf_clk ( _412_ CLK ) ( _419_ CLK ) ( _420_ CLK ) ( _422_ CLK ) ( _435_ CLK ) ( _436_ CLK ) ( _438_ CLK )
       ( _439_ CLK ) ( clkbuf_2_3__f_clk X ) + USE CLOCK + NONDEFAULTRULE NDR_3W_3S
       + ROUTED met1 ( 192050 194310 210 ) ( 204010 * 210 )
@@ -491,14 +456,7 @@ NETS 8 ;
       NEW met1 ( 171350 175610 ) M1M2_PR_R
       NEW li1 TAPER ( 192050 153850 ) L1M1_PR_R
       NEW met1 TAPER ( 192050 153850 ) M1M2_PR_R
-      NEW li1 TAPER ( 154790 177990 ) L1M1_PR_R
-      NEW met1 TAPER ( 192050 191590 ) RECT ( -355 -70 0 70 ) 
-      NEW met2 TAPER ( 192050 191590 ) RECT ( -70 -305 70 0 ) 
-      NEW met2 TAPER ( 192050 194310 ) RECT ( -70 -305 70 0 ) 
-      NEW met2 TAPER ( 192050 177990 ) RECT ( -70 -305 70 0 ) 
-      NEW met1 TAPER ( 171350 169830 ) RECT ( -355 -70 0 70 ) 
-      NEW met1 TAPER ( 171350 175610 ) RECT ( -490 -70 0 70 ) 
-      NEW met1 TAPER ( 192050 153850 ) RECT ( -355 -70 0 70 )  ;
+      NEW li1 TAPER ( 154790 177990 ) L1M1_PR_R ;
     - ctrl.state.out\[1\] ( _412_ Q ) ( _290_ B2 ) ( _285_ A ) + USE SIGNAL
       + ROUTED met2 ( 170890 205530 ) ( * 209950 )
       NEW met1 ( 167670 207910 ) ( 170890 * )

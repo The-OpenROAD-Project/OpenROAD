@@ -433,6 +433,7 @@ class FlexDRWorker
   FlexGCWorker* getGCWorker() { return gcWorker_.get(); }
   const FlexDRViaData* getViaData() const { return via_data_; }
   const FlexGridGraph& getGridGraph() const { return gridGraph_; }
+  int getPatchCost(const Rect& patchBox, frLayerNum layerNum, bool isPatchHorz);
   // others
   int main(frDesign* design);
   void distributedMain(frDesign* design);
@@ -873,7 +874,7 @@ class FlexDRWorker
 
   void mazeNetInit(drNet* net);
   void mazeNetEnd(drNet* net);
-  bool routeNet(drNet* net);
+  bool routeNet(drNet* net, std::vector<FlexMazeIdx>& paths);
   void routeNet_prep(drNet* net,
                      std::set<drPin*, frBlockObjectComp>& pins,
                      std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp>>&

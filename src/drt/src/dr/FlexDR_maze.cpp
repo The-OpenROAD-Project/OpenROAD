@@ -1735,7 +1735,8 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
         logger_->info(DRT, 2002, "Routing net {}", net->getFrNet()->getName());
       // route
       mazeNetInit(net);
-      bool isRouted = routeNet(net);
+      std::vector<FlexMazeIdx> paths;
+      bool isRouted = routeNet(net, paths);
       if (isRouted == false) {
         if (OUT_MAZE_FILE == std::string("")) {
           if (VERBOSE > 0) {
@@ -1771,19 +1772,37 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
         gcWorker_->updateDRNet(net);
         gcWorker_->setEnableSurgicalFix(true);
         gcWorker_->main();
+        routeNet_postRouteAddPathCost(net);
         modEolCosts_poly(gcWorker_->getTargetNet(), ModCostType::addRouteShape);
         // write back GC patches
         drNet* currNet = net;
         for (auto& pwire : gcWorker_->getPWires()) {
           auto net = pwire->getNet();
-          if (!net)
+          if (!net) {
             net = currNet;
+          }
           auto tmpPWire = std::make_unique<drPatchWire>();
           tmpPWire->setLayerNum(pwire->getLayerNum());
           Point origin = pwire->getOrigin();
-          tmpPWire->setOrigin(origin);
           Rect box = pwire->getOffsetBox();
-          tmpPWire->setOffsetBox(box);
+          // Find closest path point
+          Point closest;
+          frCoord closestDist = INT_MAX;
+          for (auto p : paths) {
+            Point pp;
+            gridGraph_.getPoint(pp, p.x(), p.y());
+            frCoord pathLength = Point::squaredDistance(origin, pp);
+            if (pathLength < closestDist) {
+              closestDist = pathLength;
+              closest = pp;
+            }
+          }
+          tmpPWire->setOrigin(closest);
+          tmpPWire->setOffsetBox(
+              Rect(origin.getX() - closest.getX() + box.xMin(),
+                   origin.getY() - closest.getY() + box.yMin(),
+                   origin.getX() - closest.getX() + box.xMax(),
+                   origin.getY() - closest.getY() + box.yMax()));
           tmpPWire->addToNet(net);
           pwire->addToNet(net);
 
@@ -2878,7 +2897,7 @@ void FlexDRWorker::routeNet_prepAreaMap(drNet* net,
   }
 }
 
-bool FlexDRWorker::routeNet(drNet* net)
+bool FlexDRWorker::routeNet(drNet* net, std::vector<FlexMazeIdx>& paths)
 {
   //  ProfileTask profile("DR:routeNet");
 
@@ -2937,9 +2956,11 @@ bool FlexDRWorker::routeNet(drNet* net)
           path, connComps, unConnPins, mazeIdx2unConnPins, isFirstConn);
       routeNet_postAstarWritePath(
           net, path, realPinAPMazeIdx, mazeIdx2TaperBox, apMazeIdx);
-      routeNet_postAstarPatchMinAreaVio(net, path, areaMap);
+      // routeNet_postAstarPatchMinAreaVio(net, path, areaMap);
       routeNet_AddCutSpcCost(path);
       isFirstConn = false;
+      // Add current pin path point to drNet paths
+      paths.insert(paths.end(), path.begin(), path.end());
     } else {
       searchSuccess = false;
       logger_->report("Failed to find a path between pin " + nextPin->getName()
@@ -2963,7 +2984,6 @@ bool FlexDRWorker::routeNet(drNet* net)
       gcWorker_->updateGCWorker();
       cleanUnneededPatches_poly(gcWorker_->getTargetNet(), net);
     }
-    routeNet_postRouteAddPathCost(net);
   }
   return searchSuccess;
 }
@@ -3356,6 +3376,60 @@ int FlexDRWorker::routeNet_postAstarAddPathMetal_isClean(
                 bpIdx.x(), yIdx, bpIdx.z(), frDirEnum::N)) {
           cost += gridGraph_.getEdgeLength(
                       bpIdx.x(), yIdx, bpIdx.z(), frDirEnum::N)
+                  * workerMarkerCost_;
+        }
+      }
+    }
+  }
+  return cost;
+}
+
+int FlexDRWorker::getPatchCost(const Rect& patchBox,
+                               frLayerNum layerNum,
+                               bool isPatchHorz)
+{
+  int cost = 0;
+  if (!getRouteBox().intersects(patchBox)) {
+    cost = std::numeric_limits<int>::max();
+  } else {
+    FlexMazeIdx startIdx, endIdx;
+    startIdx.set(0, 0, layerNum);
+    endIdx.set(0, 0, layerNum);
+    auto z = gridGraph_.getMazeZIdx(layerNum);
+    gridGraph_.getIdxBox(startIdx, endIdx, patchBox, FlexGridGraph::enclose);
+    if (isPatchHorz) {
+      // in gridgraph, the planar cost is checked for xIdx + 1
+      for (auto xIdx = startIdx.x(); xIdx <= endIdx.x(); ++xIdx) {
+        if (gridGraph_.hasRouteShapeCostAdj(
+                xIdx, startIdx.y(), z, frDirEnum::E)) {
+          cost += gridGraph_.getEdgeLength(xIdx, startIdx.y(), z, frDirEnum::E)
+                  * workerDRCCost_;
+        }
+        if (gridGraph_.hasFixedShapeCostAdj(
+                xIdx, startIdx.y(), z, frDirEnum::E)) {
+          cost += gridGraph_.getEdgeLength(xIdx, startIdx.y(), z, frDirEnum::E)
+                  * workerFixedShapeCost_;
+        }
+        if (gridGraph_.hasMarkerCostAdj(xIdx, startIdx.y(), z, frDirEnum::E)) {
+          cost += gridGraph_.getEdgeLength(xIdx, startIdx.y(), z, frDirEnum::E)
+                  * workerMarkerCost_;
+        }
+      }
+    } else {
+      // in gridgraph, the planar cost is checked for yIdx + 1
+      for (auto yIdx = startIdx.y(); yIdx <= endIdx.y(); ++yIdx) {
+        if (gridGraph_.hasRouteShapeCostAdj(
+                startIdx.x(), yIdx, z, frDirEnum::N)) {
+          cost += gridGraph_.getEdgeLength(startIdx.x(), yIdx, z, frDirEnum::N)
+                  * workerDRCCost_;
+        }
+        if (gridGraph_.hasFixedShapeCostAdj(
+                startIdx.x(), yIdx, z, frDirEnum::N)) {
+          cost += gridGraph_.getEdgeLength(startIdx.x(), yIdx, z, frDirEnum::N)
+                  * workerFixedShapeCost_;
+        }
+        if (gridGraph_.hasMarkerCostAdj(startIdx.x(), yIdx, z, frDirEnum::N)) {
+          cost += gridGraph_.getEdgeLength(startIdx.x(), yIdx, z, frDirEnum::N)
                   * workerMarkerCost_;
         }
       }
