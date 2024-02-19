@@ -1071,11 +1071,11 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
 
 void GlobalRouter::computePinOffsetAdjustments()
 {
-  for (auto& net_route_fake_pins : pad_pins_connections_) {
-    std::vector<Pin>& pins = db_net_map_[net_route_fake_pins.first]->getPins();
-    GRoute& route = net_route_fake_pins.second;
+  for (auto& [db_net, segments] : pad_pins_connections_) {
+    std::vector<Pin>& pins = db_net_map_[db_net]->getPins();
+    GRoute& route = segments;
     mergeSegments(pins, route);
-    for (auto& segment : net_route_fake_pins.second) {
+    for (auto& segment : segments) {
       int tile_size = grid_->getTileSize();
       int die_area_min_x = grid_->getXMin();
       int die_area_min_y = grid_->getYMin();
