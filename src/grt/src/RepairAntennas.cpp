@@ -188,9 +188,6 @@ odb::dbWire* RepairAntennas::makeNetWire(
           int y2 = seg.final_y;
           if (x1 != x2 || y1 != y2) {
             odb::dbTechLayer* tech_layer = tech->findRoutingLayer(l1);
-            wire_encoder.newPath(tech_layer, odb::dbWireType::ROUTED);
-            wire_encoder.addPoint(x1, y1);
-            wire_encoder.addPoint(x2, y2);
             addWireTerms(net,
                          route,
                          x1,
@@ -201,6 +198,9 @@ odb::dbWire* RepairAntennas::makeNetWire(
                          wire_encoder,
                          default_vias,
                          true);
+            wire_encoder.newPath(tech_layer, odb::dbWireType::ROUTED);
+            wire_encoder.addPoint(x1, y1);
+            wire_encoder.addPoint(x2, y2);
             addWireTerms(net,
                          route,
                          x2,
