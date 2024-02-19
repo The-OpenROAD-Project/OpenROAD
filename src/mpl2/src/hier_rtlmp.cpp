@@ -5455,14 +5455,7 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
   const float action_sum = pos_swap_prob_ * 10 + neg_swap_prob_ * 10
                            + double_swap_prob_ + exchange_swap_prob
                            + flip_prob_;
-  // We vary the outline of cluster to generate differnt tilings
-  std::vector<float> vary_factor_list{1.0};
-  float vary_step
-      = 0.0 / num_runs_;  // change the outline by at most 10 percent
-  for (int i = 1; i <= num_runs_ / 2 + 1; i++) {
-    vary_factor_list.push_back(1.0 + i * vary_step);
-    vary_factor_list.push_back(1.0 - i * vary_step);
-  }
+
   const int num_perturb_per_step = (macros.size() > num_perturb_per_step_ / 10)
                                        ? macros.size()
                                        : num_perturb_per_step_ / 10;
@@ -5475,11 +5468,8 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
     std::vector<SACoreHardMacro*> sa_vector;
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
-    for (int i = 0; i < run_thread; i++) {
-      // change the aspect ratio
-      const float width = outline.getWidth() * vary_factor_list[run_id++];
-      const float height = outline.getWidth() * outline.getHeight() / width;
 
+    for (int i = 0; i < run_thread; i++) {
       if (graphics_) {
         odb::Rect outline(dbu_ * outline.xMin(),
                           dbu_ * outline.yMin(),
@@ -5489,8 +5479,8 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
       }
 
       SACoreHardMacro* sa
-          = new SACoreHardMacro(width,
-                                height,
+          = new SACoreHardMacro(outline.getWidth(),
+                                outline.getHeight(),
                                 macros,
                                 area_weight_,
                                 outline_weight_ * (run_id + 1) * 10,
@@ -5517,41 +5507,37 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
     if (sa_vector.size() == 1) {
       runSA<SACoreHardMacro>(sa_vector[0]);
     } else {
-      // multi threads
       std::vector<std::thread> threads;
       threads.reserve(sa_vector.size());
+
       for (auto& sa : sa_vector) {
         threads.emplace_back(runSA<SACoreHardMacro>, sa);
       }
+
       for (auto& th : threads) {
         th.join();
       }
     }
-    // add macro tilings
+
     for (auto& sa : sa_vector) {
-      sa_containers.push_back(sa);  // add SA to containers
+      sa_containers.push_back(sa);
+
       if (sa->isValid(outline.getWidth(), outline.getHeight())
           && sa->getNormCost() < best_cost) {
         best_cost = sa->getNormCost();
         best_sa = sa;
       }
     }
+
     sa_vector.clear();
     remaining_runs -= run_thread;
   }
-  debugPrint(logger_,
-             MPL,
-             "hierarchical_macro_placement",
-             1,
-             "Summary of macro placement for cluster {}",
-             cluster->getName());
 
-  // update the hard macro
   if (best_sa == nullptr) {
     for (auto& sa : sa_containers) {
       sa->printResults();
-      // need
     }
+
     sa_containers.clear();
     logger_->error(MPL,
                    10,
@@ -5561,20 +5547,20 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
     std::vector<HardMacro> best_macros;
     best_sa->getMacros(best_macros);
     best_sa->printResults();
+
     for (int i = 0; i < hard_macros.size(); i++) {
       *(hard_macros[i]) = best_macros[i];
     }
   }
 
-  // update OpenDB
   for (auto& hard_macro : hard_macros) {
     num_updated_macros_++;
     hard_macro->setX(hard_macro->getX() + outline.xMin());
     hard_macro->setY(hard_macro->getY() + outline.yMin());
   }
 
-  // clean SA to avoid memory leakage
   sa_containers.clear();
+
   setInstProperty(cluster);
 }
 
