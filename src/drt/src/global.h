@@ -111,8 +111,10 @@ extern int MISALIGNMENTCOST;
 extern int HISTCOST;
 extern int CONGCOST;
 
-extern std::string REPAIR_PDN_LAYER_NAME;
-extern fr::frLayerNum GC_IGNORE_PDN_LAYER;
+extern std::string REPAIR_PDN_LAYER_BEGIN_NAME;
+extern std::string REPAIR_PDN_LAYER_END_NAME;
+extern fr::frLayerNum GC_IGNORE_PDN_BEGIN_LAYER;
+extern fr::frLayerNum GC_IGNORE_PDN_END_LAYER;
 
 #define DIRBITSIZE 3
 #define WAVEFRONTBUFFERSIZE 2

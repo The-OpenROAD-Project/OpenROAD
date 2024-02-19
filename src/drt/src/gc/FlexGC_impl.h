@@ -535,5 +535,6 @@ class FlexGCWorker::Impl
                        const gtl::rectangle_data<frCoord>& rect);
   bool isOppositeDir(gcCorner* corner, gcSegment* seg);
   bool isWrongDir(gcSegment* edge);
+  bool isSkipVia(gcRect* rect);
 };
 }  // namespace fr

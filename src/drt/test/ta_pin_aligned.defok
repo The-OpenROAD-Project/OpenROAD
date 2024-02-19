@@ -121,6 +121,9 @@ NETS 2 ;
     - Metal2_in ( PIN Metal2_out ) ( PIN Metal2_in ) + USE SIGNAL
       + ROUTED metal2 ( 97850 19740 0 ) ( * 180180 0 ) ;
     - Metal3_in ( PIN Metal3_out ) ( PIN Metal3_in ) + USE SIGNAL
-      + ROUTED metal3 ( 19790 97860 0 ) ( 180510 * 0 ) ;
+      + ROUTED metal3 ( 176400 97580 ) ( * 97860 )
+      NEW metal3 ( 180510 97580 ) ( * 97860 0 )
+      NEW metal3 ( 176400 97580 ) ( 180510 * )
+      NEW metal3 ( 19790 97860 0 ) ( 176400 * ) ;
 END NETS
 END DESIGN

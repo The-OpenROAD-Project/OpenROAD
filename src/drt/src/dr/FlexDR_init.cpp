@@ -3087,6 +3087,22 @@ void FlexDRWorker::initMazeCost_planarTerm(const frDesign* design)
       // term no bloat
       switch (obj->typeId()) {
         case frcBTerm: {
+          auto bterm = static_cast<frBTerm*>(obj);
+          bool hasHorizontalAccess = false;
+          bool hasVerticalAccess = false;
+          for (const auto& pin : bterm->getPins()) {
+            for (int i = 0; i < pin->getNumPinAccess(); i++) {
+              const auto& pa = pin->getPinAccess(i);
+              for (const auto& ap : pa->getAccessPoints()) {
+                if (ap->getLayerNum() != layerNum)
+                  continue;
+                hasVerticalAccess |= ap->hasAccess(frDirEnum::N);
+                hasVerticalAccess |= ap->hasAccess(frDirEnum::S);
+                hasHorizontalAccess |= ap->hasAccess(frDirEnum::W);
+                hasHorizontalAccess |= ap->hasAccess(frDirEnum::E);
+              }
+            }
+          }
           FlexMazeIdx mIdx1, mIdx2;
           gridGraph_.getIdxBox(mIdx1, mIdx2, box);
           const bool isLayerHorz = layer->isHorizontal();
@@ -3095,10 +3111,10 @@ void FlexDRWorker::initMazeCost_planarTerm(const frDesign* design)
               FlexMazeIdx mIdx(i, j, zIdx);
               gridGraph_.setBlocked(i, j, zIdx, frDirEnum::U);
               gridGraph_.setBlocked(i, j, zIdx, frDirEnum::D);
-              if (isLayerHorz) {
+              if (isLayerHorz && hasHorizontalAccess) {
                 gridGraph_.setBlocked(i, j, zIdx, frDirEnum::N);
                 gridGraph_.setBlocked(i, j, zIdx, frDirEnum::S);
-              } else {
+              } else if (!isLayerHorz && hasVerticalAccess) {
                 gridGraph_.setBlocked(i, j, zIdx, frDirEnum::W);
                 gridGraph_.setBlocked(i, j, zIdx, frDirEnum::E);
               }

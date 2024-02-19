@@ -94,7 +94,8 @@ void detailed_route_cmd(const char* outputMazeFile,
                         bool singleStepDR,
                         int minAccessPoints,
                         bool saveGuideUpdates,
-                        const char* repairPDNLayerName,
+                        const char* repairPDNLayerBeginName,
+                        const char* repairPDNLayerEndName,
                         int drcReportIterStep)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
@@ -122,7 +123,8 @@ void detailed_route_cmd(const char* outputMazeFile,
                     singleStepDR,
                     minAccessPoints,
                     saveGuideUpdates,
-                    repairPDNLayerName});
+                    repairPDNLayerBeginName,
+                    repairPDNLayerEndName});
   router->main();
   router->setDistributed(false);
 }
