@@ -5439,30 +5439,8 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
 
   calculateConnection();
 
-  std::set<int> cluster_id_set;
-  for (auto macro_cluster : macro_clusters) {
-    for (auto [cluster_id, weight] : macro_cluster->getConnection()) {
-      cluster_id_set.insert(cluster_id);
-    }
-  }
-
-  // create macros for other clusters
-  for (auto cluster_id : cluster_id_set) {
-    if (cluster_id_macro_id_map.find(cluster_id)
-        != cluster_id_macro_id_map.end()) {
-      continue;
-    }
-    auto& temp_cluster = cluster_map_[cluster_id];
-    // model other cluster as a fixed macro with zero size
-    cluster_id_macro_id_map[cluster_id] = macros.size();
-    macros.emplace_back(
-        std::pair<float, float>(
-            temp_cluster->getX() + temp_cluster->getWidth() / 2.0
-                - outline.xMin(),
-            temp_cluster->getY() + temp_cluster->getHeight() / 2.0
-                - outline.yMin()),
-        temp_cluster->getName());
-  }
+  createFixedTerminals(
+      outline, macro_clusters, cluster_id_macro_id_map, macros);
 
   // create bundled net
   std::vector<BundledNet> nets;
@@ -5656,6 +5634,38 @@ void HierRTLMP::computeFencesAndGuides(
       guides[i].relocate(
           outline.xMin(), outline.yMin(), outline.xMax(), outline.yMax());
     }
+  }
+}
+
+void HierRTLMP::createFixedTerminals(
+    const Rect& outline,
+    const std::vector<Cluster*>& macro_clusters,
+    std::map<int, int>& cluster_to_macro,
+    std::vector<HardMacro>& macros)
+{
+  std::set<int> cluster_id_set;
+
+  for (auto macro_cluster : macro_clusters) {
+    for (auto [cluster_id, weight] : macro_cluster->getConnection()) {
+      cluster_id_set.insert(cluster_id);
+    }
+  }
+
+  for (auto cluster_id : cluster_id_set) {
+    if (cluster_to_macro.find(cluster_id) != cluster_to_macro.end()) {
+      continue;
+    }
+    auto& temp_cluster = cluster_map_[cluster_id];
+
+    // model other cluster as a fixed macro with zero size
+    cluster_to_macro[cluster_id] = macros.size();
+    macros.emplace_back(
+        std::pair<float, float>(
+            temp_cluster->getX() + temp_cluster->getWidth() / 2.0
+                - outline.xMin(),
+            temp_cluster->getY() + temp_cluster->getHeight() / 2.0
+                - outline.yMin()),
+        temp_cluster->getName());
   }
 }
 
