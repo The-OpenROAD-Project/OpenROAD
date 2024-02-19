@@ -23,7 +23,7 @@ node {
     sh 'curl -L https://github.com/ninja-build/ninja/releases/download/v1.10.2/ninja-linux.zip -o ninja-linux.zip'
     sh 'sudo unzip ninja-linux.zip -d /usr/local/bin/'
     sh 'sudo chmod +x /usr/local/bin/ninja'
-    sh 'sudo yum update'
+    sh 'sudo yum -y update'
     sh 'sudo yum install -y ccache'
     // sh 'export PATH="/usr/lib/ccache:$PATH"'
     stash includes: '/usr/bin/ninja', name: 'ninja-stash'
