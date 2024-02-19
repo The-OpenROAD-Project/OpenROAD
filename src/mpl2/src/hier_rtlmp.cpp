@@ -5442,20 +5442,8 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
   createFixedTerminals(
       outline, macro_clusters, cluster_id_macro_id_map, macros);
 
-  // create bundled net
-  std::vector<BundledNet> nets;
-  for (auto macro_cluster : macro_clusters) {
-    const int src_id = macro_cluster->getId();
-    for (auto [cluster_id, weight] : macro_cluster->getConnection()) {
-      BundledNet net(cluster_id_macro_id_map[src_id],
-                     cluster_id_macro_id_map[cluster_id],
-                     weight);
-      net.src_cluster_id = src_id;
-      net.target_cluster_id = cluster_id;
-      nets.push_back(net);
-    }  // end connection
-  }    // end macro cluster
-  // set global configuration
+  std::vector<BundledNet> nets
+      = computeBundledNets(macro_clusters, cluster_id_macro_id_map);
 
   // Use exchange more often when there are more instances of a common
   // master.
@@ -5667,6 +5655,28 @@ void HierRTLMP::createFixedTerminals(
                 - outline.yMin()),
         temp_cluster->getName());
   }
+}
+
+std::vector<BundledNet> HierRTLMP::computeBundledNets(
+    const std::vector<Cluster*>& macro_clusters,
+    const std::map<int, int>& cluster_to_macro)
+{
+  std::vector<BundledNet> nets;
+
+  for (auto macro_cluster : macro_clusters) {
+    const int src_id = macro_cluster->getId();
+
+    for (auto [cluster_id, weight] : macro_cluster->getConnection()) {
+      BundledNet net(
+          cluster_to_macro.at(src_id), cluster_to_macro.at(cluster_id), weight);
+
+      net.src_cluster_id = src_id;
+      net.target_cluster_id = cluster_id;
+      nets.push_back(net);
+    }
+  }
+
+  return nets;
 }
 
 // Align all the macros globally to reduce the waste of standard cell space

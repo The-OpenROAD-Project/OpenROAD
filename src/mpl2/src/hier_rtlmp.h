@@ -280,6 +280,9 @@ class HierRTLMP
                             const std::vector<Cluster*>& macro_clusters,
                             std::map<int, int>& cluster_to_macro,
                             std::vector<HardMacro>& macros);
+  std::vector<BundledNet> computeBundledNets(
+      const std::vector<Cluster*>& macro_clusters,
+      const std::map<int, int>& cluster_to_macro);
 
   // Orientation Improvement
   void generateTemporaryStdCellsPlacement(Cluster* cluster);
