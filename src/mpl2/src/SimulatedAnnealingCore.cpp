@@ -66,8 +66,6 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
     float init_prob,
     int max_num_step,
     int num_perturb_per_step,
-    int k,
-    int c,
     unsigned seed,
     Mpl2Observer* graphics,
     utl::Logger* logger)
@@ -90,8 +88,6 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
   init_prob_ = init_prob;
   max_num_step_ = max_num_step;
   num_perturb_per_step_ = num_perturb_per_step;
-  k_ = k;
-  c_ = c;
 
   // generate random
   std::mt19937 rand_gen(seed);
@@ -100,8 +96,6 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
   distribution_ = distribution;
 
   logger_ = logger;
-
-  // macros and nets
   macros_ = macros;
 }
 
