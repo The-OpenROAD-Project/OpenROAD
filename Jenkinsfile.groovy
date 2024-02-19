@@ -28,6 +28,7 @@ node {
     // sh 'export PATH="/usr/lib/ccache:$PATH"'
     // stash includes: '/usr/local/bin/ninja', name: 'ninja-stash'
     // stash includes: '/usr/bin/ccache', name: 'ccache-stash'
+    sh 'mkdir -p stashed-files'
     sh 'cp /usr/local/bin/ninja stashed-files/'
     sh 'cp /usr/bin/ccache stashed-files/'
 
