@@ -2014,48 +2014,75 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
   frCoord gapArea = min_area - curr_area;
   bool prefDirIsVert = drWorker_->getDesign()->isVerticalLayer(layer_idx);
   gcSegment* chosenEdg = nullptr;
+  Rect chPatchBx;
+  Point chOffset;  // the lower left corner of the patch box
+  auto patch = std::make_unique<drPatchWire>();
+  patch->setLayerNum(layer_idx);
+  int chCost = std::numeric_limits<int>::max();
   // traverse polygon edges, searching for the best edge to amend a patch
   for (auto& edges : pin->getPolygonEdges()) {
     for (auto& e : edges) {
-      if (e->isVertical() != prefDirIsVert
-          && (!chosenEdg || bestSuitable(e.get(), chosenEdg) == e.get()))
-        chosenEdg = e.get();
+      if (e->isVertical() != prefDirIsVert) {
+        // Make temp patch on this edge
+        frCoord length = ceil((float) gapArea / e->length()
+                              / getTech()->getManufacturingGrid())
+                         * getTech()->getManufacturingGrid();
+        Rect patchBx;
+        Point offset;  // the lower left corner of the patch box
+        if (prefDirIsVert) {
+          patchBx.set_xlo(-e->length() / 2);
+          patchBx.set_xhi(e->length() / 2);
+          offset.setX((e->low().x() + e->high().x()) / 2);
+          offset.setY(e->low().y());
+          if (e->getOuterDir() == frDirEnum::N) {
+            patchBx.set_yhi(length);
+          } else if (e->getOuterDir() == frDirEnum::S) {
+            patchBx.set_ylo(-length);
+          } else {
+            logger_->error(
+                DRT, 4500, "Edge outer dir should be either North or South");
+          }
+        } else {
+          patchBx.set_ylo(-e->length() / 2);
+          patchBx.set_yhi(e->length() / 2);
+          offset.setX(e->low().x());
+          offset.setY((e->low().y() + e->high().y()) / 2);
+          if (e->getOuterDir() == frDirEnum::E) {
+            patchBx.set_xhi(length);
+          } else if (e->getOuterDir() == frDirEnum::W) {
+            patchBx.set_xlo(-length);
+          } else {
+            logger_->error(
+                DRT, 4501, "Edge outer dir should be either East or West");
+          }
+        }
+        // Get cost of this patch
+        patch->setOrigin(offset);
+        patch->setOffsetBox(patchBx);
+        auto bbox = patch->getBBox();
+        if (prefDirIsVert) {
+          auto xMiddle = (bbox.xMin() + bbox.xMax()) / 2;
+          bbox.set_xlo(xMiddle);
+          bbox.set_xhi(xMiddle);
+        } else {
+          auto yMiddle = (bbox.yMin() + bbox.yMax()) / 2;
+          bbox.set_ylo(yMiddle);
+          bbox.set_yhi(yMiddle);
+        }
+        int cost = getDRWorker()->getPatchCost(bbox, layer_idx, !prefDirIsVert);
+        if (!chosenEdg || (cost < chCost)
+            || ((cost == chCost)
+                && (bestSuitable(chosenEdg, e.get()) == e.get()))) {
+          chosenEdg = e.get();
+          chPatchBx = patchBx;
+          chOffset = offset;
+          chCost = cost;
+        }
+      }
     }
   }
-  frCoord length = ceil((float) gapArea / chosenEdg->length()
-                        / getTech()->getManufacturingGrid())
-                   * getTech()->getManufacturingGrid();
-  Rect patchBx;
-  Point offset;  // the lower left corner of the patch box
-  if (prefDirIsVert) {
-    patchBx.set_xlo(-chosenEdg->length() / 2);
-    patchBx.set_xhi(chosenEdg->length() / 2);
-    patchBx.set_yhi(length);
-    offset.setX((chosenEdg->low().x() + chosenEdg->high().x()) / 2);
-    if (chosenEdg->getOuterDir() == frDirEnum::N) {
-      offset.setY(chosenEdg->low().y());
-    } else if (chosenEdg->getOuterDir() == frDirEnum::S) {
-      offset.setY(chosenEdg->low().y() - length);
-    } else
-      logger_->error(
-          DRT, 4500, "Edge outer dir should be either North or South");
-  } else {
-    patchBx.set_xhi(length);
-    patchBx.set_ylo(-chosenEdg->length() / 2);
-    patchBx.set_yhi(chosenEdg->length() / 2);
-    offset.setY((chosenEdg->low().y() + chosenEdg->high().y()) / 2);
-    if (chosenEdg->getOuterDir() == frDirEnum::E) {
-      offset.setX(chosenEdg->low().x());
-    } else if (chosenEdg->getOuterDir() == frDirEnum::W) {
-      offset.setX(chosenEdg->low().x() - length);
-    } else
-      logger_->error(DRT, 4501, "Edge outer dir should be either East or West");
-  }
-  auto patch = std::make_unique<drPatchWire>();
-  patch->setLayerNum(layer_idx);
-  patch->setOrigin(offset);
-  patch->setOffsetBox(patchBx);
-
+  patch->setOrigin(chOffset);
+  patch->setOffsetBox(chPatchBx);
   // get drNet for patch
   gcNet* gc_net = pin->getNet();
   frNet* fr_net = gc_net->getFrNet();
@@ -2077,8 +2104,6 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
   if (!patch->hasNet())
     return;
 
-  Rect shiftedPatch = patchBx;
-  shiftedPatch.moveTo(offset.x(), offset.y());
   pwires_.push_back(std::move(patch));
 }
 

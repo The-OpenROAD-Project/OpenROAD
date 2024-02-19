@@ -341,13 +341,19 @@ class FlexGridGraph
     // if (isValid(x, y, z, dir)) {
     switch (dir) {
       case frDirEnum::E:
-        sol = xCoords_[x + 1] - xCoords_[x];
+        if (x + 1 < xCoords_.size()) {
+          sol = xCoords_[x + 1] - xCoords_[x];
+        }
         break;
       case frDirEnum::N:
-        sol = yCoords_[y + 1] - yCoords_[y];
+        if (y + 1 < yCoords_.size()) {
+          sol = yCoords_[y + 1] - yCoords_[y];
+        }
         break;
       case frDirEnum::U:
-        sol = zHeights_[z + 1] - zHeights_[z];
+        if (z + 1 < zCoords_.size()) {
+          sol = zHeights_[z + 1] - zHeights_[z];
+        }
         break;
       default:;
     }
