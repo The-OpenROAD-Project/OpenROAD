@@ -5467,11 +5467,11 @@ void HierRTLMP::placeMacros(Cluster* cluster)
 
     for (int i = 0; i < run_thread; i++) {
       if (graphics_) {
-        odb::Rect outline(dbu_ * outline.xMin(),
-                          dbu_ * outline.yMin(),
-                          dbu_ * outline.xMax(),
-                          dbu_ * outline.yMax());
-        graphics_->setOutline(outline);
+        odb::Rect dbu_outline(dbu_ * outline.xMin(),
+                              dbu_ * outline.yMin(),
+                              dbu_ * outline.xMax(),
+                              dbu_ * outline.yMax());
+        graphics_->setOutline(dbu_outline);
       }
 
       SACoreHardMacro* sa
