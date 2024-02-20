@@ -3,6 +3,8 @@ Checks: >
   clang-diagnostic-*,
   clang-analyzer-*,
   -clang-analyzer-core.NonNullParamChecker,
+  -clang-analyzer-core.CallAndMessage,
+  -clang-analyzer-core.uninitialized.UndefReturn,
   -clang-analyzer-cplusplus.NewDeleteLeaks,
   -clang-analyzer-optin.performance.Padding,
   readability-*,

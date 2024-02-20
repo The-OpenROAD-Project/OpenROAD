@@ -28,7 +28,7 @@
 
 #include "io.h"
 
-using namespace fr;
+namespace fr {
 
 void io::Parser::instAnalysis()
 {
@@ -136,3 +136,5 @@ void io::Parser::instAnalysis()
     logger_->info(DRT, 164, "Number of unique instances = {}.", cnt);
   }
 }
+
+}  // namespace fr

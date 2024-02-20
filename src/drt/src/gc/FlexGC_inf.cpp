@@ -27,7 +27,8 @@
 
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
-using namespace fr;
+
+namespace fr {
 
 void FlexGCWorker::Impl::checkRectMetSpcTblInf_queryBox(
     const gtl::rectangle_data<frCoord>& rect,
@@ -70,7 +71,7 @@ void FlexGCWorker::Impl::checkOrthRectsMetSpcTblInf(
     const std::vector<gcRect*>& rects,
     const gtl::rectangle_data<frCoord>& queryRect,
     const frCoord spacing,
-    const gtl::orientation_2d orient)
+    const gtl::orientation_2d& orient)
 {
   frSquaredDistance spacingSq = spacing * (frSquaredDistance) spacing;
   /*
@@ -87,10 +88,12 @@ void FlexGCWorker::Impl::checkOrthRectsMetSpcTblInf(
           = gtl::square_euclidean_distance(*rects[i], *rects[j]);
       if (distSquared < spacingSq) {
         // Violation
-        if (distSquared == 0)  // short!
+        if (distSquared == 0) {  // short!
           continue;  // shorts are already checked in checkMetalSpacing_main
-        if (rects[i]->isFixed() && rects[j]->isFixed())
+        }
+        if (rects[i]->isFixed() && rects[j]->isFixed()) {
           continue;
+        }
         auto lNum = rects[i]->getLayerNum();
         gtl::rectangle_data<frCoord> rect1(queryRect);
         gtl::rectangle_data<frCoord> rect2(queryRect);
@@ -124,9 +127,10 @@ void FlexGCWorker::Impl::checkOrthRectsMetSpcTblInf(
                                                   gtl::yh(rect2)),
                                              rects[j]->isFixed()));
         addMarker(std::move(marker));
-      } else
+      } else {
         break;  // spacing is larger than required, no need to check other
                 // wires.
+      }
     }
   }
 }
@@ -149,8 +153,9 @@ void FlexGCWorker::Impl::checkRectMetSpcTblInf(
   if (rect->getNet()->getDesignRuleWidth() != -1) {
     width = rect->getNet()->getDesignRuleWidth();
   }
-  if (width < con->getMinWidth())
+  if (width < con->getMinWidth()) {
     return;
+  }
   auto val = con->find(width);
   frCoord within, spacing;
   within = val.first;
@@ -174,22 +179,27 @@ void FlexGCWorker::Impl::checkRectMetSpcTblInf(
     auto& workerRegionQuery = getWorkerRegionQuery();
     std::vector<rq_box_value_t<gcRect*>> result;
     workerRegionQuery.queryMaxRectangle(queryBox, lNum, result);
-    if (result.size() < 2)
+    if (result.size() < 2) {
       continue;
+    }
     std::vector<gcRect*> rects;
     for (auto& [objBox, objPtr] : result) {
-      if (!gtl::intersects(*objPtr, queryRect, false))
+      if (!gtl::intersects(*objPtr, queryRect, false)) {
         continue;  // ignore if it only touches the query region
-      if (gtl::guess_orientation(*objPtr) == dir)
+      }
+      if (gtl::guess_orientation(*objPtr) == dir) {
         continue;  // ignore if not orthogonal
+      }
       rects.push_back(objPtr);
     }
-    if (rects.size() < 2)
+    if (rects.size() < 2) {
       continue;  // At least two orthogonal rectangle are required for checking
-    if (dir == gtl::HORIZONTAL)
+    }
+    if (dir == gtl::HORIZONTAL) {
       std::sort(rects.begin(), rects.end(), compareHorizontal);
-    else
+    } else {
       std::sort(rects.begin(), rects.end(), compareVertical);
+    }
     // <rects> should be a sorted vector of all the wires found in the region
     // It should be sorted in the orientation we are checking
     checkOrthRectsMetSpcTblInf(rects, queryRect, spacing, dir);
@@ -215,8 +225,9 @@ void FlexGCWorker::Impl::checkMetalSpacingTableInfluence()
       if (currLayer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
-      if (!currLayer->hasSpacingTableInfluence())
+      if (!currLayer->hasSpacingTableInfluence()) {
         continue;
+      }
       for (auto& pin : targetNet_->getPins(i)) {
         checkPinMetSpcTblInf(pin.get());
       }
@@ -232,12 +243,16 @@ void FlexGCWorker::Impl::checkMetalSpacingTableInfluence()
       if (currLayer->getType() != dbTechLayerType::ROUTING) {
         continue;
       }
-      if (!currLayer->hasSpacingTableInfluence())
+      if (!currLayer->hasSpacingTableInfluence()) {
         continue;
-      for (auto& uNet : getNets())
-        for (auto& pin : uNet.get()->getPins(i)) {
+      }
+      for (auto& uNet : getNets()) {
+        for (auto& pin : uNet->getPins(i)) {
           checkPinMetSpcTblInf(pin.get());
         }
+      }
     }
   }
 }
+
+}  // namespace fr
