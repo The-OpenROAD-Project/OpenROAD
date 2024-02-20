@@ -41,8 +41,8 @@ sta::define_cmd_args "set_routing_alpha" { alpha \
 
 proc set_routing_alpha { args } {
   sta::parse_key_args "set_routing_alpha" args \
-                 keys {-net -min_fanout -min_hpwl}\
-                 flags {-clock_nets}
+    keys {-net -min_fanout -min_hpwl}\
+    flags {-clock_nets}
 
   set alpha [lindex $args 0]
   if { ![string is double $alpha] || $alpha < 0.0 || $alpha > 1.0 } {

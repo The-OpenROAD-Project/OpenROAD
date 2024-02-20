@@ -367,11 +367,16 @@ void dbITerm::connect(dbNet* net_)
   _dbNet* net = (_dbNet*) net_;
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
 
+  _dbInst* inst = iterm->getInst();
+  if (!net_) {
+    inst->getLogger()->error(
+        utl::ODB, 440, "Attempt to connect iterm {} to a null net", getName());
+  }
+
   // Do Nothing if already connected
   if (iterm->_net == net->getOID())
     return;
 
-  _dbInst* inst = iterm->getInst();
   if (inst->_flags._dont_touch) {
     inst->getLogger()->error(
         utl::ODB,

@@ -66,7 +66,7 @@ proc read_lef { args } {
   } elseif { $make_tech } {
     set tech_name $lib_name
   }
-  
+
   ord::read_lef_cmd $filename $lib_name $tech_name $make_tech $make_lib
 }
 
@@ -77,8 +77,8 @@ sta::define_cmd_args "read_def" {[-floorplan_initialize|-incremental|-child]\
 
 proc read_def { args } {
   sta::parse_key_args "read_def" args keys {-tech} \
-      flags {-floorplan_initialize -incremental \
-             -order_wires -continue_on_errors -child}
+    flags {-floorplan_initialize -incremental \
+           -order_wires -continue_on_errors -child}
   sta::check_argc_eq1 "read_def" $args
   set filename [file nativename [lindex $args 0]]
   if { ![file exists $filename] } {
@@ -101,10 +101,11 @@ proc read_def { args } {
   set incremental [info exists flags(-incremental)]
   set child [info exists flags(-child)]
   if { $floorplan_init + $incremental + $child > 1} {
-    utl::error ORD 16 "Options -incremental, -floorplan_initialization, and -child are mutually exclusive."
+    utl::error ORD 16 "Options -incremental, -floorplan_initialization,\
+      and -child are mutually exclusive."
   }
   ord::read_def_cmd $filename $tech_name $continue_on_errors $floorplan_init \
-      $incremental $child
+    $incremental $child
 }
 
 sta::define_cmd_args "write_def" {[-version version] filename}
@@ -145,16 +146,17 @@ proc write_abstract_lef { args } {
   sta::parse_key_args "write_abstract_lef" args keys {-bloat_factor} flags {-bloat_occupied_layers}
 
   set bloat_factor 10
-  if { [info exists keys(-bloat_factor)] } { 
+  if { [info exists keys(-bloat_factor)] } {
     set bloat_factor $keys(-bloat_factor)
     sta::check_positive_float "bloat_factor" $bloat_factor
   }
 
   set bloat_occupied_layers [info exists flags(-bloat_occupied_layers)]
   if { [info exists keys(-bloat_factor)] && $bloat_occupied_layers } {
-    utl::error ORD 1050 "Options -bloat and -bloat_occupied_layers are both set. At most one should be used."
+    utl::error ORD 1050 "Options -bloat and -bloat_occupied_layers are\
+      both set. At most one should be used."
   }
-  
+
   sta::check_argc_eq1 "write_abstract_lef" $args
   set filename [file nativename [lindex $args 0]]
   ord::write_abstract_lef_cmd $filename $bloat_factor $bloat_occupied_layers
@@ -293,7 +295,8 @@ proc add_global_connection {args} {
   sta::check_argc_eq0 "add_global_connection" $args
 
   if {[info exists flags(-power)] && [info exists flags(-ground)]} {
-    utl::error ORD 41 "The flags -power and -ground of the add_global_connection command are mutually exclusive."
+    utl::error ORD 41 "The flags -power and -ground of the\
+      add_global_connection command are mutually exclusive."
   }
 
   if {![info exists keys(-net)]} {
@@ -312,7 +315,8 @@ proc add_global_connection {args} {
   if {$net == "NULL"} {
     set net [odb::dbNet_create [ord::get_db_block] $keys(-net)]
     if {![info exists flags(-power)] && ![info exists flags(-ground)]} {
-      utl::warn ORD 44 "Net created for $keys(-net), if intended as power or ground net add the -power/-ground switch as appropriate."
+      utl::warn ORD 44 "Net created for $keys(-net), if intended as power\
+        or ground net add the -power/-ground switch as appropriate."
     }
   }
 
@@ -338,56 +342,58 @@ proc add_global_connection {args} {
     }
   }
 
-  [ord::get_db_block] addGlobalConnect $region $keys(-inst_pattern) $keys(-pin_pattern) $net $do_connect
+  [ord::get_db_block] addGlobalConnect $region $keys(-inst_pattern) \
+    $keys(-pin_pattern) $net $do_connect
 }
 
 ################################################################
 
 namespace eval ord {
 
-  proc ensure_units_initialized { } {
-    if { ![units_initialized] } {
-      utl::error "ORD" 13 "Command units uninitialized. Use the read_liberty or set_cmd_units command to set units."
-    }
+proc ensure_units_initialized { } {
+  if { ![units_initialized] } {
+    utl::error "ORD" 13 "Command units uninitialized. Use the\
+      read_liberty or set_cmd_units command to set units."
   }
+}
 
-  proc clear {} {
-    sta::clear_network
-    sta::clear_sta
-    grt::clear
-    [get_db] clear
+proc clear {} {
+  sta::clear_network
+  sta::clear_sta
+  grt::clear
+  [get_db] clear
+}
+
+proc profile_cmd {filename args} {
+  utl::info 99 "Profiling $args > $filename."
+  profile -commands on
+  if {[catch "{*}$args"]} { ;# tclint-disable-line command-args
+    global errorInfo
+    puts $errorInfo
   }
+  profile off profarray
+  profrep profarray cpu $filename
+}
 
-  proc profile_cmd {filename args} {
-    utl::info 99 "Profiling $args > $filename."
-    profile -commands on
-    if {[catch "{*}$args"]} {
-      global errorInfo
-      puts $errorInfo
-    }
-    profile off profarray
-    profrep profarray cpu $filename
-  }
+proc get_die_area { } {
+  set area {}
+  set rect [[ord::get_db_block] getDieArea]
+  lappend area [ord::dbu_to_microns [$rect xMin]]
+  lappend area [ord::dbu_to_microns [$rect yMin]]
+  lappend area [ord::dbu_to_microns [$rect xMax]]
+  lappend area [ord::dbu_to_microns [$rect yMax]]
+  return $area
+}
 
-  proc get_die_area { } {
-    set area {}
-    set rect [[ord::get_db_block] getDieArea]
-    lappend area [ord::dbu_to_microns [$rect xMin]]
-    lappend area [ord::dbu_to_microns [$rect yMin]]
-    lappend area [ord::dbu_to_microns [$rect xMax]]
-    lappend area [ord::dbu_to_microns [$rect yMax]]
-    return $area
-  }
+proc get_core_area { } {
+  set area {}
+  set rect [[ord::get_db_block] getCoreArea]
+  lappend area [ord::dbu_to_microns [$rect xMin]]
+  lappend area [ord::dbu_to_microns [$rect yMin]]
+  lappend area [ord::dbu_to_microns [$rect xMax]]
+  lappend area [ord::dbu_to_microns [$rect yMax]]
+  return $area
+}
 
-  proc get_core_area { } {
-    set area {}
-    set rect [[ord::get_db_block] getCoreArea]
-    lappend area [ord::dbu_to_microns [$rect xMin]]
-    lappend area [ord::dbu_to_microns [$rect yMin]]
-    lappend area [ord::dbu_to_microns [$rect xMax]]
-    lappend area [ord::dbu_to_microns [$rect yMax]]
-    return $area
-  }
-
-    # namespace ord
+# namespace ord
 }
