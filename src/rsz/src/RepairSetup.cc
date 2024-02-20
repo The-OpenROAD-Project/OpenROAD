@@ -533,7 +533,7 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
           equiv_pin_map_.insert(input_port, ports);
         }
         ports = equiv_pin_map_[input_port];
-        if (ports.size() > 1) {
+        if (!ports.empty()) {
             resizer_->findSwapPinCandidate(input_port, drvr_port, load_cap,
                                            dcalc_ap, &swap_port);
             if (!sta::LibertyPort::equiv(swap_port, input_port)) {
