@@ -109,8 +109,10 @@ node {
             node {
               checkout scm
               stage('Test C++20 Compile') {
-                sh 'sudo dnf config-manager --set-enabled PowerTools'
-                sh 'sudo dnf install clang-16'
+                sh 'sudo yum install wget lsb-release gnupg'
+                sh 'wget -O - [^2^][2] | sudo apt-key add -'
+                sh 'sudo wget [^3^][3] -O /etc/yum.repos.d/llvm.repo'
+                sh 'sudo yum update && sudo yum install clang-16'
                 sh "./etc/Build.sh -compiler='clang-16' -cmake='-DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20'";
               }
             }
