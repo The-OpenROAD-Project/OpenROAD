@@ -71,15 +71,16 @@ class GlobalRouter;
 class Net;
 class Pin;
 
-typedef std::map<odb::dbNet*, std::vector<ant::Violation>, cmpById>
-    AntennaViolations;
+using AntennaViolations
+    = std::map<odb::dbNet*, std::vector<ant::Violation>, cmpById>;
 
-struct RoutePtPins{
+struct RoutePtPins
+{
   std::vector<Pin*> pins;
   bool connected;
 };
 
-typedef std::map<RoutePt, RoutePtPins> RoutePtPinsMap;
+using RoutePtPinsMap = std::map<RoutePt, RoutePtPins>;
 
 class RepairAntennas
 {
