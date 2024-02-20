@@ -88,7 +88,16 @@ node {
             node {
               sleep(5)
               checkout scm
-              unstash 'tools-stash'
+              stage('Install Ninja') {
+                sh 'curl -L https://github.com/ninja-build/ninja/releases/download/v1.10.2/ninja-linux.zip -o ninja-linux.zip'
+                sh 'sudo unzip ninja-linux.zip -d /usr/local/bin/'
+                sh 'sudo chmod +x /usr/local/bin/ninja'
+                sh 'sudo yum -y update'
+                sh 'sudo yum install -y ccache'
+                // sh 'export PATH="/usr/lib/ccache:$PATH"'
+                // stash includes: '/usr/local/bin/ninja', name: 'ninja-stash'
+                // stash includes: '/usr/bin/ccache', name: 'ccache-stash'
+              }
               stage('C++ Unit Tests') {
                 sh 'cmake -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -GNinja -B build .';
                 sh 'cd build';
@@ -100,6 +109,8 @@ node {
             node {
               checkout scm
               stage('Test C++20 Compile') {
+                sh 'sudo dnf config-manager --set-enabled PowerTools'
+                sh 'sudo dnf install clang-16'
                 sh "./etc/Build.sh -compiler='clang-16' -cmake='-DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20'";
               }
             }
