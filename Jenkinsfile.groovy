@@ -108,7 +108,7 @@ node {
             node {
               checkout scm
               stage('Test C++20 Compile') {
-                sh 'sudo yum install git cmake ninja-build python'
+                sh 'sudo yum install -y git cmake ninja-build python'
                 sh 'git clone --depth=1 https://github.com/llvm/llvm-project.git'
                 sh 'cd llvm-project && mkdir build && cd build && cmake -G "Unix Makefiles" -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" -DCMAKE_INSTALL_PREFIX=~/tools/llvm -DCMAKE_BUILD_TYPE=Release ../llvm'
                 sh 'make -j$(nproc) && sudo make install'
