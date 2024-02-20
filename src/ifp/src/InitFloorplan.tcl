@@ -50,7 +50,7 @@ proc initialize_floorplan { args } {
   sta::check_argc_eq0 "initialize_floorplan" $args
 
   set site ""
-  if [info exists keys(-site)] {
+  if {[info exists keys(-site)]} {
     set site [ifp::find_site $keys(-site)]
   } else {
     utl::warn IFP 11 "use -site to add placement rows."
@@ -64,9 +64,9 @@ proc initialize_floorplan { args } {
   }
 
   sta::check_argc_eq0 "initialize_floorplan" $args
-  if [info exists keys(-utilization)] {
+  if {[info exists keys(-utilization)]} {
     set util $keys(-utilization)
-    if [info exists keys(-core_space)] {
+    if {[info exists keys(-core_space)]} {
       set core_sp $keys(-core_space)
       if { [llength $core_sp] == 1} {
         sta::check_positive_float "-core_space" $core_sp
@@ -89,7 +89,7 @@ proc initialize_floorplan { args } {
       set core_sp_left 0.0
       set core_sp_right 0.0
     }
-    if [info exists keys(-aspect_ratio)] {
+    if {[info exists keys(-aspect_ratio)]} {
       set aspect_ratio $keys(-aspect_ratio)
       sta::check_positive_float "-aspect_ratio" $aspect_ratio
     } else {
@@ -102,7 +102,7 @@ proc initialize_floorplan { args } {
       [ord::microns_to_dbu $core_sp_right] \
       $site \
       $additional_sites
-  } elseif [info exists keys(-die_area)] {
+  } elseif {[info exists keys(-die_area)]} {
     set die_area $keys(-die_area)
     if { [llength $die_area] != 4 } {
       utl::error IFP 15 "-die_area is a list of 4 coordinates."
@@ -114,7 +114,7 @@ proc initialize_floorplan { args } {
     sta::check_positive_float "-die_area" $die_uy
 
     ord::ensure_linked
-    if [info exists keys(-core_area)] {
+    if {[info exists keys(-core_area)]} {
       set core_area $keys(-core_area)
       if { [llength $core_area] != 4 } {
         utl::error IFP 16 "-core_area is a list of 4 coordinates."
