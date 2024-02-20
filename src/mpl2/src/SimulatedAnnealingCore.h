@@ -80,10 +80,16 @@ class SimulatedAnnealingCore
       unsigned seed,
       Mpl2Observer* graphics,
       utl::Logger* logger);
+
   void setNumberOfMacrosToPlace(int macros_to_place)
   {
     macros_to_place_ = macros_to_place;
   };
+  void setCentralizationAttemptOn(bool centralization_on)
+  {
+    centralization_on_ = centralization_on;
+  };
+
   void setNets(const std::vector<BundledNet>& nets);
   // Fence corresponds to each macro (macro_id, fence)
   void setFences(const std::map<int, Rect>& fences);
@@ -226,7 +232,8 @@ class SimulatedAnnealingCore
   // because the error introduced by the type conversion
   static constexpr float acc_tolerance_ = 0.001;
 
-  bool centralization_attempt_ = false;
+  bool centralization_on_ = false;
+  bool attempting_centralization_ = false;
 };
 
 // SACore wrapper function

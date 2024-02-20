@@ -3762,6 +3762,7 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
                                 graphics_.get(),
                                 logger_);
       sa->setNumberOfMacrosToPlace(num_of_macros_to_place);
+      sa->setCentralizationAttemptOn(true);
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
@@ -4015,6 +4016,7 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
                                   graphics_.get(),
                                   logger_);
         sa->setNumberOfMacrosToPlace(num_of_macros_to_place);
+        sa->setCentralizationAttemptOn(true);
         sa->setFences(fences);
         sa->setGuides(guides);
         sa->setNets(nets);
@@ -4550,6 +4552,7 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
                                 graphics_.get(),
                                 logger_);
       sa->setNumberOfMacrosToPlace(num_of_macros_to_place);
+      sa->setCentralizationAttemptOn(true);
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
@@ -5033,6 +5036,7 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
                                 random_seed_,
                                 graphics_.get(),
                                 logger_);
+      sa->setCentralizationAttemptOn(true);
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
