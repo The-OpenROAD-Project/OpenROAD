@@ -370,8 +370,12 @@ void SACoreSoftMacro::initialize()
 // Note that we do not push MixedCluster into boundaries
 void SACoreSoftMacro::calBoundaryPenalty()
 {
-  // Initialization
   boundary_penalty_ = 0.0;
+
+  if (centralization_attempt_) {
+    return;
+  }
+
   if (boundary_weight_ <= 0.0) {
     return;
   }

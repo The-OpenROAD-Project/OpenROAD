@@ -114,6 +114,7 @@ class SimulatedAnnealingCore
 
  protected:
   void initSequencePair();
+  void attemptCentralization(float pre_cost);
 
   virtual float calNormCost() const = 0;
   virtual void calPenalty() = 0;
@@ -224,6 +225,8 @@ class SimulatedAnnealingCore
   // we define accuracy to determine whether the floorplan is valid
   // because the error introduced by the type conversion
   static constexpr float acc_tolerance_ = 0.001;
+
+  bool centralization_attempt_ = false;
 };
 
 // SACore wrapper function

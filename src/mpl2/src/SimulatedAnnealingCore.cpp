@@ -596,8 +596,40 @@ void SimulatedAnnealingCore<T>::fastSA()
   // update the final results
   packFloorplan();
   calPenalty();
+
+  attemptCentralization(pre_cost);
+
   if (graphics_) {
     graphics_->endSA();
+  }
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::attemptCentralization(const float pre_cost)
+{
+  centralization_attempt_ = true;
+
+  float offset_x = (outline_width_ - width_) / 2;
+  float offset_y = (outline_height_ - height_) / 2;
+
+  for (auto& macro : macros_) {
+    macro.setX(macro.getX() + offset_x);
+    macro.setY(macro.getY() + offset_y);
+  }
+
+  if (graphics_) {
+    graphics_->saStep(macros_);
+  }
+
+  // Here we don't take boundary penalty into account as we'll
+  // inevitably move clusters away from the boundaries.
+  calPenalty();
+
+  if (calNormCost() > pre_cost) {
+    for (auto& macro : macros_) {
+      macro.setX(macro.getX() - offset_x);
+      macro.setY(macro.getY() - offset_y);
+    }
   }
 }
 
