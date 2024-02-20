@@ -100,8 +100,7 @@ node {
               }
               stage('C++ Unit Tests') {
                 sh 'cmake -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -GNinja -B build .';
-                sh 'cd build';
-                sh 'CLICOLOR_FORCE=1 ninja build_and_test';
+                sh 'cd build && CLICOLOR_FORCE=1 ninja build_and_test';
               }
             }
           }
@@ -109,10 +108,11 @@ node {
             node {
               checkout scm
               stage('Test C++20 Compile') {
-                sh 'sudo yum install wget lsb-release gnupg'
-                sh 'wget -O - [^2^][2] | sudo apt-key add -'
-                sh 'sudo wget [^3^][3] -O /etc/yum.repos.d/llvm.repo'
-                sh 'sudo yum update && sudo yum install clang-16'
+                sh 'sudo yum install git cmake ninja-build python'
+                sh 'git clone --depth=1 https://github.com/llvm/llvm-project.git'
+                sh 'cd llvm-project && mkdir build && cd build && cmake -G "Unix Makefiles" -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" -DCMAKE_INSTALL_PREFIX=~/tools/llvm -DCMAKE_BUILD_TYPE=Release ../llvm'
+                sh 'make -j$(nproc) && sudo make install'
+                sh 'export PATH=~/tools/llvm/bin:$PATH'
                 sh "./etc/Build.sh -compiler='clang-16' -cmake='-DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20'";
               }
             }
