@@ -43,7 +43,8 @@ std::string testTmpPath(const std::string& path, const std::string& file)
   if (!base_dir) {
     const char* pwd = std::getenv("PWD");
     if (!pwd) {
-      throw std::runtime_error("BASE_DIR and PWD environment variables are not set");
+      throw std::runtime_error(
+          "BASE_DIR and PWD environment variables are not set");
     }
     return std::string(pwd) + file;
   }
