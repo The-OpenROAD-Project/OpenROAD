@@ -502,6 +502,11 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
         LibertyPort *swap_port = input_port;
         sta::LibertyPortSet ports;
 
+        //Skip output to output paths
+        if (input_port->direction()->isOutput()) {
+          return false;
+        }
+
         // Results for > 2 input gates are unpredictable. Only swap pins for
         // 2 input gates for now.
         int input_port_count = 0;
@@ -938,7 +943,7 @@ bool RepairSetup::isPortEqiv(sta::FuncExpr* expr,
                              const LibertyPort* port_a,
                              const LibertyPort* port_b)
 {
-  if (port_a->libertyCell() != cell || port_a->libertyCell() != cell) {
+  if (port_a->libertyCell() != cell || port_b->libertyCell() != cell) {
     return false;
   }
 
