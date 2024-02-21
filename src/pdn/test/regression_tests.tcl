@@ -38,6 +38,7 @@ record_tests {
   core_grid_extend_to_boundary
   core_grid_extend_to_boundary_no_pins
   core_grid_with_M7_pins
+  core_grid_with_M6_min_area
 
   core_grid_strap_count
 
