@@ -368,7 +368,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   // db functions
   void initGrid(int max_layer);
   void computeCapacities(int max_layer);
-  void computeSpacingsAndMinWidth(int max_layer);
+  void findTrackPitches(int max_layer);
   std::vector<Net*> initNetlist();
   void computeObstructionsAdjustments();
   void findLayerExtensions(std::vector<int>& layer_extensions);

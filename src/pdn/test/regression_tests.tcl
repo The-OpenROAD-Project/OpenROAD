@@ -42,7 +42,7 @@ record_tests {
   core_grid_strap_count
 
   core_grid_no_trim
-  
+
   core_grid_offset_strap
   core_grid_with_rings_with_limit_straps
 
@@ -102,7 +102,7 @@ record_tests {
   power_switch_daisy
   power_switch_regions
   power_switch_cut_rows
-  
+
   repair_vias
 
   sroute_test

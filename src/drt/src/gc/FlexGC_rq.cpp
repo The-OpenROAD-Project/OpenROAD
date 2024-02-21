@@ -31,7 +31,7 @@
 #include "frRTree.h"
 #include "gc/FlexGC_impl.h"
 
-using namespace fr;
+namespace fr {
 
 struct FlexGCWorkerRegionQuery::Impl
 {
@@ -221,8 +221,9 @@ void FlexGCWorkerRegionQuery::Impl::init(int numLayers)
         }
       }
     }
-    for (auto& spcRect : net->getSpecialSpcRects())
+    for (auto& spcRect : net->getSpecialSpcRects()) {
       addSpcRectangle(spcRect.get(), allSpcRectangles);
+    }
   }
 
   for (int i = 0; i < numLayers; i++) {
@@ -270,3 +271,5 @@ void FlexGCWorkerRegionQuery::removeFromRegionQuery(gcNet* net)
     removeSpcRectangle(spcR.get());
   }
 }
+
+}  // namespace fr

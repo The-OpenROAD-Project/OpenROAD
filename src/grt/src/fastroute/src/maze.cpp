@@ -2463,25 +2463,21 @@ int FastRouteCore::getOverflow3D()
   int total_usage = 0;
 
   for (int k = 0; k < num_layers_; k++) {
-    for (int i = 0; i < y_grid_; i++) {
-      for (int j = 0; j < x_grid_ - 1; j++) {
-        total_usage += h_edges_3D_[k][i][j].usage;
-        overflow = h_edges_3D_[k][i][j].usage - h_edges_3D_[k][i][j].cap;
+    for (const auto& [i, j] : h_used_ggrid_) {
+      total_usage += h_edges_3D_[k][i][j].usage;
+      overflow = h_edges_3D_[k][i][j].usage - h_edges_3D_[k][i][j].cap;
 
-        if (overflow > 0) {
-          H_overflow += overflow;
-          max_H_overflow = std::max(max_H_overflow, overflow);
-        }
+      if (overflow > 0) {
+        H_overflow += overflow;
+        max_H_overflow = std::max(max_H_overflow, overflow);
       }
     }
-    for (int i = 0; i < y_grid_ - 1; i++) {
-      for (int j = 0; j < x_grid_; j++) {
-        total_usage += v_edges_3D_[k][i][j].usage;
-        overflow = v_edges_3D_[k][i][j].usage - v_edges_3D_[k][i][j].cap;
-        if (overflow > 0) {
-          V_overflow += overflow;
-          max_V_overflow = std::max(max_V_overflow, overflow);
-        }
+    for (const auto& [i, j] : v_used_ggrid_) {
+      total_usage += v_edges_3D_[k][i][j].usage;
+      overflow = v_edges_3D_[k][i][j].usage - v_edges_3D_[k][i][j].cap;
+      if (overflow > 0) {
+        V_overflow += overflow;
+        max_V_overflow = std::max(max_V_overflow, overflow);
       }
     }
   }
@@ -2571,7 +2567,7 @@ void FastRouteCore::InitLastUsage(const int upType)
 void FastRouteCore::SaveLastRouteLen()
 {
   for (int netID = 0; netID < netCount(); netID++) {
-    if (nets_[netID] == nullptr) {
+    if (skipNet(netID)) {
       continue;
     }
     auto& treeedges = sttrees_[netID].edges;

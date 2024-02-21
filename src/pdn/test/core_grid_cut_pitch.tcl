@@ -13,7 +13,7 @@ define_pdn_grid -name "Core"
 add_pdn_stripe -followpins -layer metal1
 add_pdn_stripe -followpins -layer metal2
 
-add_pdn_connect -layers {metal1 metal2} -cut_pitch 0.5 
+add_pdn_connect -layers {metal1 metal2} -cut_pitch 0.5
 
 pdngen
 

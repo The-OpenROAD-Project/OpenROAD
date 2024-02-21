@@ -195,7 +195,7 @@ class frAccessPoint : public frBlockObject
   frCoord x() const { return point_.x(); }
   frCoord y() const { return point_.y(); }
 
-  void addPathSeg(frPathSeg ps) { pathSegs_.push_back(std::move(ps)); }
+  void addPathSeg(const frPathSeg& ps) { pathSegs_.emplace_back(ps); }
   std::vector<frPathSeg>& getPathSegs() { return pathSegs_; }
 
  private:

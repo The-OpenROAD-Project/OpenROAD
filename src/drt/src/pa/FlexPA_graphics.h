@@ -89,14 +89,13 @@ class FlexPAGraphics : public gui::Renderer
   void setObjsAndMakers(
       const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
       const std::vector<std::unique_ptr<frMarker>>& markers,
-      const FlexPA::PatternType type);
+      FlexPA::PatternType type);
 
   // Show a message in the status bar
   void status(const std::string& message);
 
   // From Renderer API
-  virtual void drawLayer(odb::dbTechLayer* layer,
-                         gui::Painter& painter) override;
+  void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter) override;
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
