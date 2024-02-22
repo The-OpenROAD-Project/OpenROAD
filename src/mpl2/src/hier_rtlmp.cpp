@@ -5415,12 +5415,12 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
              "Place macros in cluster: {}",
              cluster->getName());
   // get outline constraint
-  const float lx = cluster->getX();
-  const float ly = cluster->getY();
-  const float outline_width = cluster->getWidth();
-  const float outline_height = cluster->getHeight();
-  const float ux = lx + outline_width;
-  const float uy = ly + outline_height;
+
+  const Rect outline(cluster->getX(),
+                     cluster->getY(),
+                     cluster->getX() + cluster->getWidth(),
+                     cluster->getY() + cluster->getHeight());
+
   // the macros for Simulated Annealing Core
   std::vector<HardMacro> macros;
   // the clusters for each hard macro.
@@ -5445,11 +5445,13 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
     cluster_id_macro_id_map[cluster_id_] = macro_id;
     if (fences_.find(hard_macro->getName()) != fences_.end()) {
       fences[macro_id] = fences_[hard_macro->getName()];
-      fences[macro_id].relocate(lx, ly, ux, uy);
+      fences[macro_id].relocate(
+          outline.xMin(), outline.yMin(), outline.xMax(), outline.yMax());
     }
     if (guides_.find(hard_macro->getName()) != guides_.end()) {
       guides[macro_id] = guides_[hard_macro->getName()];
-      guides[macro_id].relocate(lx, ly, ux, uy);
+      guides[macro_id].relocate(
+          outline.xMin(), outline.yMin(), outline.xMax(), outline.yMax());
     }
     macros.push_back(*hard_macro);
     cluster_map_[cluster_id_++] = macro_cluster;
@@ -5475,8 +5477,10 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
     cluster_id_macro_id_map[cluster_id] = macros.size();
     macros.emplace_back(
         std::pair<float, float>(
-            temp_cluster->getX() + temp_cluster->getWidth() / 2.0 - lx,
-            temp_cluster->getY() + temp_cluster->getHeight() / 2.0 - ly),
+            temp_cluster->getX() + temp_cluster->getWidth() / 2.0
+                - outline.xMin(),
+            temp_cluster->getY() + temp_cluster->getHeight() / 2.0
+                - outline.yMin()),
         temp_cluster->getName());
   }
   // create bundled net
@@ -5526,13 +5530,15 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
       // change the aspect ratio
-      const float width = outline_width * vary_factor_list[run_id++];
-      const float height = outline_width * outline_height / width;
+      const float width = outline.getWidth() * vary_factor_list[run_id++];
+      const float height = outline.getWidth() * outline.getHeight() / width;
 
       if (graphics_) {
-        odb::Rect outline(
-            dbu_ * lx, dbu_ * ly, dbu_ * (lx + width), dbu_ * (ly + height));
-        graphics_->setOutline(outline);
+        odb::Rect dbu_outline(dbu_ * outline.xMin(),
+                              dbu_ * outline.yMin(),
+                              dbu_ * outline.xMax(),
+                              dbu_ * outline.yMax());
+        graphics_->setOutline(dbu_outline);
       }
 
       SACoreHardMacro* sa
@@ -5577,7 +5583,7 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
     // add macro tilings
     for (auto& sa : sa_vector) {
       sa_containers.push_back(sa);  // add SA to containers
-      if (sa->isValid(outline_width, outline_height)
+      if (sa->isValid(outline.getWidth(), outline.getHeight())
           && sa->getNormCost() < best_cost) {
         best_cost = sa->getNormCost();
         best_sa = sa;
@@ -5614,8 +5620,8 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
   // update OpenDB
   for (auto& hard_macro : hard_macros) {
     num_updated_macros_++;
-    hard_macro->setX(hard_macro->getX() + lx);
-    hard_macro->setY(hard_macro->getY() + ly);
+    hard_macro->setX(hard_macro->getX() + outline.xMin());
+    hard_macro->setY(hard_macro->getY() + outline.yMin());
     // hard_macro->updateDb(pitch_x_, pitch_y_);
   }
   // clean SA to avoid memory leakage
