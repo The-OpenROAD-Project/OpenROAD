@@ -43,6 +43,7 @@ using utl::MPL;
 // Class SACoreSoftMacro
 // constructors
 SACoreSoftMacro::SACoreSoftMacro(
+    Cluster* root,
     const Rect& outline,
     const std::vector<SoftMacro>& macros,
     // weight for different penalty
@@ -86,7 +87,8 @@ SACoreSoftMacro::SACoreSoftMacro(
                                         num_perturb_per_step,
                                         seed,
                                         graphics,
-                                        logger)
+                                        logger),
+      root_(root)
 {
   boundary_weight_ = boundary_weight;
   macro_blockage_weight_ = macro_blockage_weight;

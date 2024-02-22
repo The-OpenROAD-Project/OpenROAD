@@ -2661,7 +2661,8 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
       const Rect new_outline(0, 0, width, height);
 
       SACoreSoftMacro* sa
-          = new SACoreSoftMacro(new_outline,
+          = new SACoreSoftMacro(root_cluster_,
+                                new_outline,
                                 macros,
                                 1.0,     // area weight
                                 1000.0,  // outline weight
@@ -2724,7 +2725,8 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
       const Rect new_outline(0, 0, width, height);
 
       SACoreSoftMacro* sa
-          = new SACoreSoftMacro(new_outline,
+          = new SACoreSoftMacro(root_cluster_,
+                                new_outline,
                                 macros,
                                 1.0,     // area weight
                                 1000.0,  // outline weight
@@ -3746,7 +3748,8 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
       SACoreSoftMacro* sa
-          = new SACoreSoftMacro(outline,
+          = new SACoreSoftMacro(root_cluster_,
+                                outline,
                                 shaped_macros,
                                 area_weight_,
                                 outline_weight_,
@@ -3998,7 +4001,8 @@ void HierRTLMP::runHierarchicalMacroPlacement(Cluster* parent)
         // of 1.0. Note that the weight are not necessaries summarized to 1.0,
         // i.e., not normalized.
         SACoreSoftMacro* sa
-            = new SACoreSoftMacro(outline,
+            = new SACoreSoftMacro(root_cluster_,
+                                  outline,
                                   shaped_macros,
                                   area_weight_,
                                   outline_weight_,
@@ -4532,7 +4536,8 @@ void HierRTLMP::runHierarchicalMacroPlacementWithoutBusPlanning(Cluster* parent)
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
       SACoreSoftMacro* sa
-          = new SACoreSoftMacro(outline,
+          = new SACoreSoftMacro(root_cluster_,
+                                outline,
                                 shaped_macros,
                                 area_weight_,
                                 outline_weight_,
@@ -5015,7 +5020,8 @@ void HierRTLMP::runEnhancedHierarchicalMacroPlacement(Cluster* parent)
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
       SACoreSoftMacro* sa
-          = new SACoreSoftMacro(outline,
+          = new SACoreSoftMacro(root_cluster_,
+                                outline,
                                 shaped_macros,
                                 area_weight_,
                                 outline_weight_,
