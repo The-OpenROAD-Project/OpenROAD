@@ -71,7 +71,7 @@ class TestScanChain : public testing::Test
     db_ = create2LevetDbWithBTerms();
     block_ = db_->getChip()->getBlock();
     tmp_path_ = testTmpPath("results", "TestScanChain");
-    dft_ = block_->createDft();
+    dft_ = block_->getDft();
 
     std::vector<std::string> instances_names = {"i1", "i2", "i3"};
 

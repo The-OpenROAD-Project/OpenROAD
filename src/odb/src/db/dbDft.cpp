@@ -135,6 +135,13 @@ _dbDft::~_dbDft()
   delete scan_chains_;
 }
 
+// User Code Begin PrivateMethods
+void _dbDft::initialize()
+{
+  scan_inserted_ = false;
+}
+// User Code End PrivateMethods
+
 ////////////////////////////////////////////////////////////////////
 //
 // dbDft - Methods

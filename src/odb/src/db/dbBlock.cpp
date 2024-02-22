@@ -335,7 +335,10 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _extControl = new dbExtControl();
 
   _dft_tbl = new dbTable<_dbDft>(
-      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbDftObj);
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbDftObj, 4096, 12);
+  _dbDft* dft_ptr = _dft_tbl->create();
+  dft_ptr->initialize();
+  _dft = dft_ptr->getId();
 
   _net_hash.setTable(_net_tbl);
   _inst_hash.setTable(_inst_tbl);
@@ -2304,14 +2307,6 @@ dbExtControl* dbBlock::getExtControl()
 {
   _dbBlock* block = (_dbBlock*) this;
   return (block->_extControl);
-}
-
-dbDft* dbBlock::createDft()
-{
-  _dbBlock* block = (_dbBlock*) this;
-  _dbDft* dft = block->_dft_tbl->create();
-  block->_dft = dft->getId();
-  return (dbDft*) dft;
 }
 
 dbDft* dbBlock::getDft() const
