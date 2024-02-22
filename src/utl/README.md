@@ -1,7 +1,6 @@
 # Utilities
 
-The utility module houses of the manpage command in OpenROAD,
-available from the `man` command.
+The utility module contains the `man` command.
 
 ## Commands
 
@@ -13,9 +12,9 @@ available from the `man` command.
 ### Man
 
 This can be used for a range of commands in different levels as follows:
-- `man1`: Top-level openroad command (e.g. `man openroad`)
-- `man2`: Individual module commands (e.g. `man clock_tree_synthesis`)
-- `man3`: Info, error, warning messages (e.g. `man CTS-0001`)
+- Level 1: Top-level openroad command (e.g. `man openroad`)
+- Level 2: Individual module commands (e.g. `man clock_tree_synthesis`)
+- Level 3: Info, error, warning messages (e.g. `man CTS-0001`)
 
 ```tcl
 man

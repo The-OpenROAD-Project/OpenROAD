@@ -9,8 +9,6 @@ SYNOPSIS
        openroad	  [-help]   [-version]	[-no_init]  [-exit]  [-gui]  [-threads
        count|max] [-log file_name] [-metrics file_name] [-python] cmd_file
 
-       openroad [-python] cmd_file
-
 DESCRIPTION
        The openroad command is the command-line	 interface  for	 OpenROAD,  an
        open-source initiative for chip design and optimization.	 It provides a
@@ -36,6 +34,7 @@ OPTIONS
        -metrics file_name: Save performance metrics to the specified file.
 
        -python: Execute the cmd_file as a Python script.
+
 ARGUMENTS
        cmd_file: The command file containing OpenROAD commands to be executed.
 
@@ -94,12 +93,16 @@ TCL COMMANDS
 	 • Write abstract Library Exchange Format (.lef) files based  on  cur‐
 	   rent database.
 
+       • write_cdl [-include_fillers] -masters out_filename
+
+	 • Write Circuit Design Language (.cdl) netlist file.
+
 ENVIRONMENT
 FILES
 SEE ALSO
 HISTORY
 BUGS
-				  2023/11/13			   openroad(0)
+				  2024/02/09			   openroad(0)
 
 openroad(0)							   openroad(0)
 
@@ -112,8 +115,6 @@ SYNOPSIS
        openroad	  [-help]   [-version]	[-no_init]  [-exit]  [-gui]  [-threads
        count|max] [-log file_name] [-metrics file_name] [-python] cmd_file
 
-       openroad [-python] cmd_file
-
 DESCRIPTION
        The openroad command is the command-line	 interface  for	 OpenROAD,  an
        open-source initiative for chip design and optimization.	 It provides a
@@ -139,6 +140,7 @@ OPTIONS
        -metrics file_name: Save performance metrics to the specified file.
 
        -python: Execute the cmd_file as a Python script.
+
 ARGUMENTS
        cmd_file: The command file containing OpenROAD commands to be executed.
 
@@ -197,10 +199,14 @@ TCL COMMANDS
 	 • Write abstract Library Exchange Format (.lef) files based  on  cur‐
 	   rent database.
 
+       • write_cdl [-include_fillers] -masters out_filename
+
+	 • Write Circuit Design Language (.cdl) netlist file.
+
 ENVIRONMENT
 FILES
 SEE ALSO
 HISTORY
 BUGS
-				  2023/11/13			   openroad(0)
+				  2024/02/09			   openroad(0)
 

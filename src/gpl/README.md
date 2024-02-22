@@ -163,12 +163,6 @@ Example scripts demonstrating how to run `gpl` on a sample design on `core01` as
 ./test/core01.tcl
 ```
 
-Example scripts demonstrating how to run `gpl` on a sample design on `core01` as follows:
-
-```shell
-./test/core01.tcl
-```
-
 ## Regression tests
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).

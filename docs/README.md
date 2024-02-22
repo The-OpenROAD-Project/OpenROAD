@@ -1,7 +1,8 @@
 # OpenROAD Documentation
 
-This repo houses code and raw files to build the on-line documentation (using Sphinx)
-and manual pages using (using Pandoc)
+This `docs/` hierarchy houses code and raw files to 
+build the on-line documentation (using Sphinx) and 
+manual pages using (using Pandoc)
 
 This on-line documentation is available at [https://openroad.readthedocs.io/en/latest/](https://openroad.readthedocs.io/en/latest/).
 

@@ -41,8 +41,8 @@ Command counts match.
 Command counts match.
 ./src/upf            11              11              11
 Command counts match.
-./src/pad            12              12              13
-Command counts do not match.
+./src/pad            13              13              13
+Command counts match.
 ./src/rcx            9               9               9
 Command counts match.
 ./src/rsz            16              16              17

@@ -137,34 +137,7 @@ Processing ../src/utl/messages.txt
 Info: 1, Warn: 2, Error: 7
 Processing ../messages.txt
 Info: 3, Warn: 7, Error: 38
-[WARNING] Could not convert TeX math '\frac{height}{width}', rendering as TeX
-[WARNING] Could not convert TeX math '[a, \frac{1}{a}]', rendering as TeX
-[WARNING] Could not convert TeX math '\frac{resistanceUnit}{distanceUnit}', rendering as TeX
-[WARNING] Could not convert TeX math '\frac{capacitanceUnit}{distanceUnit}', rendering as TeX
-[WARNING] Could not convert TeX math '{signal}_', rendering as TeX:
-  {signal}_
-           ^
-  unexpected eof
-  expecting "%", "\\label", "\\nonumber", whitespace, "{", letter, digit, ".", "\\mbox", "\\text", "\\textbf", "\\textit", "\\textrm", "\\textsf", "\\texttt", "\\bm", "\\boldsymbol", "\\mathbb", "\\mathbf", "\\mathbfcal", "\\mathbffrak", "\\mathbfit", "\\mathbfscr", "\\mathbfsfit", "\\mathbfsfup", "\\mathbfup", "\\mathbold", "\\mathcal", "\\mathds", "\\mathfrak", "\\mathit", "\\mathrm", "\\mathscr", "\\mathsf", "\\mathsfit", "\\mathsfup", "\\mathtt", "\\mathup", "\\pmb", "\\symbf", "\\texttt", "\\sqrt", "\\surd", "\\mspace", "\\hspace", "\\mathop", "\\mathrel", "\\mathbin", "\\mathord", "\\mathopen", "\\mathclose", "\\mathpunct", "\\phantom", "\\boxed", "\\overset", "\\stackrel", "\\underset", "\\frac", "\\tfrac", "\\dfrac", "\\binom", "\\genfrac", "\\substack", "_", "^", "\\begin", "\\ensuremath", "\\bigg", "\\Bigg", "\\big", "\\Big", "\\biggr", "\\Biggr", "\\bigr", "\\Bigr", "\\biggl", "\\Biggl", "\\bigl", "\\", "\\left", "\\not", "!", "'", "''", "'''", "''''", "*", "+", ",", "-", ".", "/", ":", ":=", ";", "<", "=", ">", "?", "@", "~", white space, "\\displaystyle" or "\\operatorname"
-[WARNING] Could not convert TeX math 'orient, must be one of \"', rendering as TeX:
-  , must be one of \"
-                     ^
-  unexpected eof
-  expecting "%", "\\label", "\\nonumber" or whitespace
-[WARNING] Could not convert TeX math 'group_idx: \[', rendering as TeX:
-  group_idx: \[
-               ^
-  unexpected eof
-  expecting "%", "\\label", "\\nonumber" or whitespace
-[WARNING] This document format requires a nonempty <title> element.
-  Defaulting to 'stt' as the title.
-  To specify a title, use 'title' in metadata or --metadata title="...".
-[WARNING] This document format requires a nonempty <title> element.
-  Defaulting to 'utl' as the title.
-  To specify a title, use 'title' in metadata or --metadata title="...".
-troff: man/man2/stt.2:109: warning [p 1, 10.0i]: cannot adjust line
-troff: man/man2/utl.2:80: warning [p 1, 7.2i]: cannot adjust line
 cat/cat1/openroad.1
 Level 1 doc counts are equal to 1.
-Level 2 doc counts are equal to 170.
+Level 2 doc counts are equal to 168.
 Level 3 doc counts are equal to 2660.

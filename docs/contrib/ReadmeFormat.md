@@ -24,12 +24,14 @@ for the same command.
 necessary square brackets. Also, keys have to be followed with a specifier
 whereas flags only require the `-flag` itself.
 
+As far as possible, do place the positional arguments last.
+
 ```tcl
 command_abc
-    arg1
     -key1 key1   
     [-flag1]
     [-flagDev]
+    arg1
 ```
 
 #### Options

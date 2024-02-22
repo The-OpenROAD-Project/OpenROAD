@@ -347,14 +347,14 @@ proc place_io_terminals {args} {
   pad::place_terminals $iterms [info exists flags(-allow_non_top_layer)]
 }
 
-sta::define_hidden_cmd_args "make_fake_io_site" {-name name \
-                                                 -width width \
-                                                 -height height}
+sta::define_cmd_args "make_fake_io_site" {-name name \
+                                          -width width \
+                                          -height height}
 
 proc make_fake_io_site {args} {
   sta::parse_key_args "make_fake_io_site" args \
     keys {-name -width -height} \
-    flags {};# checker off
+    flags {}
 
   sta::check_argc_eq0 "make_fake_io_site" $args
 

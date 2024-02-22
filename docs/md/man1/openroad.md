@@ -14,7 +14,6 @@ openroad [-help] [-version] [-no_init] [-exit] [-gui]
        [-metrics file_name] [-python]
        cmd_file
 
-openroad [-python] cmd_file
 
 # DESCRIPTION
 
@@ -88,6 +87,7 @@ OpenROAD binary.
 - write_verilog filename
 
   - Write Verilog (.v) file based on current database.
+
 - read_db filename
 
   - Read OpenDB (.odb) database files.
@@ -100,6 +100,10 @@ OpenROAD binary.
 
   - Write abstract Library Exchange Format (.lef) files
     based on current database.
+
+- write_cdl [-include_fillers] -masters out_filename
+
+  - Write Circuit Design Language (.cdl) netlist file.
 
 # ENVIRONMENT
 

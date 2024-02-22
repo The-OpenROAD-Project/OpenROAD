@@ -22,7 +22,8 @@ MAN3 = man3
 
 # Exclude these set of keywords
 EXCLUDE_KEYWORDS = ant cts dft dpl drt fin gpl grt gui ifp mpl \
-				   mpl2 odb pad par pdn ppl psm rcx rmp rsz sta tap upf
+				   mpl2 odb pad par pdn ppl psm rcx rmp rsz sta \
+				   stt tap upf utl
 EXCLUDE_FILES := $(addsuffix .md,$(EXCLUDE_KEYWORDS))
 
 MAN1_DIR = $(MAN_ROOT_DIR)/$(MAN1)
@@ -92,19 +93,19 @@ $(CAT3_DIR):
 
 # Rule to generate a roff file from a corresponding Markdown file
 $(MAN1_DIR)/%.1: $(SRC1_DIR)/%.md | $(MAN1_DIR)
-	$(PANDOC) -s -t man $< -o $@
+	$(PANDOC) -s -t man $< -o $@ --quiet
 $(MAN2_DIR)/%.2: $(SRC2_DIR)/%.md | $(MAN2_DIR)
-	$(PANDOC) -s -t man $< -o $@
+	$(PANDOC) -s -t man $< -o $@ --quiet
 $(MAN3_DIR)/%.3: $(SRC3_DIR)/%.md | $(MAN3_DIR)
-	$(PANDOC) -s -t man $< -o $@
+	$(PANDOC) -s -t man $< -o $@ --quiet
 
 # Rule to generate a html file from a corresponding roff file
 $(HTML1_DIR)/%.html: $(MAN1_DIR)/%.1 | $(HTML1_DIR)
-	$(PANDOC) -s -o html $< -o $@
+	$(PANDOC) -s -o html $< -o $@ --quiet
 $(HTML2_DIR)/%.html: $(MAN2_DIR)/%.2 | $(HTML2_DIR)
-	$(PANDOC) -s -o html $< -o $@
+	$(PANDOC) -s -o html $< -o $@ --quiet
 $(HTML3_DIR)/%.html: $(MAN3_DIR)/%.3 | $(HTML3_DIR)
-	$(PANDOC) -s -o html $< -o $@
+	$(PANDOC) -s -o html $< -o $@ --quiet
 
 # Rule to generate a cat file from a corresponding roff file
 $(CAT1_DIR)/%.md: $(MAN1_DIR)/%.1 | $(CAT1_DIR)
