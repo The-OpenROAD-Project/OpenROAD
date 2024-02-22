@@ -50,8 +50,7 @@ class Graphics;
 class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 {
  public:
-  SACoreSoftMacro(float outline_width,
-                  float outline_height,  // boundary constraints
+  SACoreSoftMacro(const Rect& outline,
                   const std::vector<SoftMacro>& macros,
                   // weight for different penalty
                   float area_weight,
