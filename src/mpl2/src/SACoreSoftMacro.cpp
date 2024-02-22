@@ -366,33 +366,46 @@ void SACoreSoftMacro::initialize()
   }
 }
 
-// We only push hard macro clusters to boundaries
-// Note that we do not push MixedCluster into boundaries
+// Independently of the current parent's level, we always compute
+// the boundary penalty based on the boundaries of the root (core).
+// The macros we're trying to place i.e. the ones from the sequence pair,
+// have their lower left corner based on the parent's outline.
 void SACoreSoftMacro::calBoundaryPenalty()
 {
-  // Initialization
   boundary_penalty_ = 0.0;
+
   if (boundary_weight_ <= 0.0) {
     return;
   }
 
   int tot_num_macros = 0;
-  for (const auto& macro : macros_) {
-    tot_num_macros += macro.getNumMacro();
+
+  for (const auto& macro_id : pos_seq_) {
+    tot_num_macros += macros_[macro_id].getNumMacro();
   }
+
   if (tot_num_macros <= 0) {
     return;
   }
 
-  for (const auto& macro : macros_) {
-    if (macro.getNumMacro() > 0) {
-      const float lx = macro.getX();
-      const float ly = macro.getY();
-      const float ux = lx + macro.getWidth();
-      const float uy = ly + macro.getHeight();
-      const float x_dist = std::min(lx, std::abs(outline_.getWidth() - ux));
-      const float y_dist = std::min(ly, std::abs(outline_.getHeight() - uy));
-      boundary_penalty_ += std::min(x_dist, y_dist) * macro.getNumMacro();
+  float global_lx = 0.0f, global_ly = 0.0f;
+  float global_ux = 0.0f, global_uy = 0.0f;
+  float x_dist_from_root = 0.0f, y_dist_from_root = 0.0f;
+
+  for (const auto& macro_id : pos_seq_) {
+    if (macros_[macro_id].getNumMacro() > 0) {
+      global_lx = macros_[macro_id].getX() + outline_.xMin() - root_->getX();
+      global_ly = macros_[macro_id].getY() + outline_.yMin() - root_->getY();
+      global_ux = global_lx + macros_[macro_id].getWidth();
+      global_uy = global_ly + macros_[macro_id].getHeight();
+
+      x_dist_from_root
+          = std::min(global_lx, std::abs(root_->getWidth() - global_ux));
+      y_dist_from_root
+          = std::min(global_ly, std::abs(root_->getHeight() - global_uy));
+
+      boundary_penalty_ += std::min(x_dist_from_root, y_dist_from_root)
+                           * macros_[macro_id].getNumMacro();
     }
   }
   // normalization
