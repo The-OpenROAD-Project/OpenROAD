@@ -32,13 +32,16 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 #############################################################################
 
-sta::define_cmd_args "detailed_placement" {[-max_displacement disp|{disp_x disp_y}] [-disallow_one_site_gaps] [-report_file_name file_name]}
+sta::define_cmd_args "detailed_placement" { \
+                           [-max_displacement disp|{disp_x disp_y}] \
+                           [-disallow_one_site_gaps] \
+                           [-report_file_name file_name]}
 
 proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
     keys {-max_displacement -report_file_name} flags {-disallow_one_site_gaps}
 
-set disallow_one_site_gaps [info exists flags(-disallow_one_site_gaps)]
+  set disallow_one_site_gaps [info exists flags(-disallow_one_site_gaps)]
   if { [info exists keys(-max_displacement)] } {
     set max_displacement $keys(-max_displacement)
     if { [llength $max_displacement] == 1 } {
@@ -71,7 +74,7 @@ set disallow_one_site_gaps [info exists flags(-disallow_one_site_gaps)]
     set max_displacement_y [expr [ord::microns_to_dbu $max_displacement_y] \
                               / [$site getHeight]]
     dpl::detailed_placement_cmd $max_displacement_x $max_displacement_y \
-                                $disallow_one_site_gaps $file_name 
+      $disallow_one_site_gaps $file_name
     dpl::report_legalization_stats
   } else {
     utl::error "DPL" 27 "no rows defined in design. Use initialize_floorplan to add rows."
@@ -122,12 +125,12 @@ sta::define_cmd_args "filler_placement" { [-prefix prefix] filler_masters }
 proc filler_placement { args } {
   sta::parse_key_args "filler_placement" args \
     keys {-prefix} flags {}
-  
+
   set prefix "FILLER_"
   if { [info exists keys(-prefix)] } {
     set prefix $keys(-prefix)
   }
-  
+
   sta::check_argc_eq1 "filler_placement" $args
   set filler_masters [dpl::get_masters_arg "filler_masters" [lindex $args 0]]
   dpl::filler_placement_cmd $filler_masters $prefix
@@ -141,14 +144,16 @@ proc remove_fillers { args } {
   dpl::remove_fillers_cmd
 }
 
-sta::define_cmd_args "check_placement" {[-verbose] [-disallow_one_site_gaps] [-report_file_name file_name]}
+sta::define_cmd_args "check_placement" {[-verbose] \
+                                        [-disallow_one_site_gaps] \
+                                        [-report_file_name file_name]}
 
 proc check_placement { args } {
   sta::parse_key_args "check_placement" args \
     keys {-report_file_name} flags {-verbose -disallow_one_site_gaps}
   set verbose [info exists flags(-verbose)]
   set disallow_one_site_gaps [info exists flags(-disallow_one_site_gaps)]
-  sta::check_argc_eq0 "check_placement" $args 
+  sta::check_argc_eq0 "check_placement" $args
   set file_name ""
   if { [info exists keys(-report_file_name) ] } {
     set file_name $keys(-report_file_name)
@@ -170,24 +175,24 @@ namespace eval dpl {
 # measured as a multiple of row_height.
 proc detailed_placement_debug { args } {
   sta::parse_key_args "detailed_placement_debug" args \
-      keys {-instance -min_displacement}
+    keys {-instance -min_displacement}
 
 
   if { [info exists keys(-min_displacement)] } {
     set min_displacement $keys(-min_displacement)
   } else {
-      set min_displacement 0
+    set min_displacement 0
   }
 
   if { [info exists keys(-instance)] } {
-      set instance_name $keys(-instance)
-      set block [ord::get_db_block]
-      set debug_instance [$block findInst $instance_name]
-      if {$debug_instance == "NULL"} {
-          utl::error DPL 32 "Debug instance $instance_name not found."
-      }
+    set instance_name $keys(-instance)
+    set block [ord::get_db_block]
+    set debug_instance [$block findInst $instance_name]
+    if {$debug_instance == "NULL"} {
+      utl::error DPL 32 "Debug instance $instance_name not found."
+    }
   } else {
-      set debug_instance "NULL"
+    set debug_instance "NULL"
   }
 
   dpl::set_debug_cmd $min_displacement $debug_instance
@@ -239,7 +244,8 @@ proc get_inst_grid_bbox { inst_name } {
   set height [$site getHeight]
   if { $inst != "NULL" } {
     set bbox [$inst getBBox]
-    return "[format_grid [$bbox xMin] $width] [format_grid [$bbox yMin] $height] [format_grid [$bbox xMax] $width] [format_grid [$bbox yMax] $height]"
+    return "[format_grid [$bbox xMin] $width] [format_grid [$bbox yMin] $height]\
+            [format_grid [$bbox xMax] $width] [format_grid [$bbox yMax] $height]"
   } else {
     utl::error "DPL" 30 "cannot find instance $inst_name"
   }

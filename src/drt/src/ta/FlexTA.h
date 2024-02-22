@@ -225,8 +225,8 @@ class FlexTAWorker
                          int& nextIrouteDir,
                          frCoord& pinCoord);
   void initIroute_helper_generic(frGuide* guide,
-                                 frCoord& maxBegin,
-                                 frCoord& minEnd,
+                                 frCoord& minBegin,
+                                 frCoord& maxEnd,
                                  std::set<frCoord>& downViaCoordSet,
                                  std::set<frCoord>& upViaCoordSet,
                                  int& nextIrouteDir,

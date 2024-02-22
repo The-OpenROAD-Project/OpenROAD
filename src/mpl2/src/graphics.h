@@ -88,6 +88,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   void drawCluster(Cluster* cluster, gui::Painter& painter);
   void drawAllBlockages(gui::Painter& painter);
   void drawBlockage(const Rect& blockage, gui::Painter& painter);
+  void setSoftMacroBrush(gui::Painter& painter, const SoftMacro& soft_macro);
 
   template <typename T>
   void report(const char* name, const std::optional<T>& value);

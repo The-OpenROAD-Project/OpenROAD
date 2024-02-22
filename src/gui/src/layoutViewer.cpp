@@ -148,18 +148,42 @@ LayoutViewer::LayoutViewer(
       focus_nets_(focus_nets),
       route_guides_(route_guides),
       net_tracks_(net_tracks),
-      viewer_thread_(this)
+      viewer_thread_(this),
+      loading_timer_(new QTimer(this))
 {
   setMouseTracking(true);
 
   addMenuAndActions();
 
+  loading_timer_->setInterval(300 /*ms*/);
+
   connect(
       &viewer_thread_, &RenderThread::done, this, &LayoutViewer::updatePixmap);
+
+  connect(loading_timer_,
+          &QTimer::timeout,
+          this,
+          &LayoutViewer::handleLoadingIndication);
 
   connect(&search_, &Search::modified, this, &LayoutViewer::fullRepaint);
 
   connect(&search_, &Search::newBlock, this, &LayoutViewer::setBlock);
+}
+
+void LayoutViewer::handleLoadingIndication()
+{
+  if (!viewer_thread_.isRendering()) {
+    loading_timer_->stop();
+    return;
+  }
+
+  update();
+}
+
+void LayoutViewer::setLoadingState()
+{
+  loading_indicator_.clear();
+  loading_timer_->start();
 }
 
 void LayoutViewer::setBlock(odb::dbBlock* block)
@@ -1093,7 +1117,7 @@ odb::Point LayoutViewer::findNextSnapPoint(const odb::Point& end_pt,
 
 void LayoutViewer::mousePressEvent(QMouseEvent* event)
 {
-  if (!hasDesign()) {
+  if (!hasDesign() || !viewer_thread_.isFirstRenderDone()) {
     return;
   }
 
@@ -1124,7 +1148,7 @@ void LayoutViewer::mousePressEvent(QMouseEvent* event)
 
 void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
 {
-  if (!hasDesign()) {
+  if (!hasDesign() || !viewer_thread_.isFirstRenderDone()) {
     return;
   }
 
@@ -1187,7 +1211,7 @@ void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
 
 void LayoutViewer::mouseReleaseEvent(QMouseEvent* event)
 {
-  if (!hasDesign()) {
+  if (!hasDesign() || !viewer_thread_.isFirstRenderDone()) {
     return;
   }
 
@@ -1692,6 +1716,42 @@ void LayoutViewer::updatePixmap(const QImage& image, const QRect& bounds)
   update();
 }
 
+void LayoutViewer::drawLoadingIndicator(QPainter* painter, const QRect& bounds)
+{
+  const QRect background = computeIndicatorBackground(painter, bounds);
+
+  painter->fillRect(background, Qt::black);  // to help visualize
+
+  painter->setPen(QPen(Qt::white, 2));
+  painter->drawText(background.left(),
+                    background.bottom(),
+                    QString::fromStdString(loading_indicator_));
+
+  if (loading_indicator_.size() == 3) {
+    loading_indicator_.clear();
+    return;
+  }
+
+  loading_indicator_ += ".";
+}
+
+QRect LayoutViewer::computeIndicatorBackground(QPainter* painter,
+                                               const QRect& bounds) const
+{
+  painter->setFont(painter->font());
+
+  QFontMetrics font_metrics(painter->font());
+
+  const QRect rect
+      = font_metrics.boundingRect(QString::fromStdString(loading_indicator_));
+  const QRect background(bounds.left() + 2 /* px */,
+                         bounds.top() + 2 /* px */,
+                         rect.width(),
+                         rect.height() / 2);
+
+  return background;
+}
+
 void LayoutViewer::paintEvent(QPaintEvent* event)
 {
   if (!hasDesign()) {
@@ -1707,13 +1767,25 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
 
   painter.drawPixmap(event->rect().topLeft(), draw_pixmap_);
 
+  if (!viewer_thread_.isFirstRenderDone()) {
+    return;
+  }
+
+  const QRect draw_bounds = event->rect();
+
+  if (viewer_thread_.isRendering()) {
+    drawLoadingIndicator(&painter, draw_bounds);
+  } else {
+    // erase indicator
+    const QRect background = computeIndicatorBackground(&painter, draw_bounds);
+    painter.fillRect(background, Qt::transparent);
+  }
+
   if (rubber_band_showing_) {
     painter.setPen(QPen(Qt::white, 0));
     painter.setBrush(QBrush());
     painter.drawRect(rubber_band_.normalized());
   }
-
-  const QRect draw_bounds = event->rect();
 
   // buffer outputs during paint to prevent recursive calls
   output_widget_->bufferOutputs(true);
@@ -1782,6 +1854,7 @@ void LayoutViewer::fullRepaint()
         5 /*ms*/, this, &LayoutViewer::fullRepaint);  // retry later
     return;
   }
+
   update();
   if (hasDesign()) {
     QRect rect = scroller_->viewport()->geometry();
