@@ -33,7 +33,7 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
 
-using namespace fr;
+namespace fr {
 
 gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
 {
@@ -107,24 +107,25 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
 
   if (isFloatingVSS) {
     return nets_[0].get();
-  } else if (isFloatingVDD) {
-    return nets_[1].get();
-  } else {
-    auto it = owner2nets_.find(owner);
-    gcNet* currNet = nullptr;
-    if (it == owner2nets_.end()) {
-      currNet = addNet(owner);
-    } else {
-      currNet = it->second;
-    }
-    return currNet;
   }
+  if (isFloatingVDD) {
+    return nets_[1].get();
+  }
+  auto it = owner2nets_.find(owner);
+  gcNet* currNet = nullptr;
+  if (it == owner2nets_.end()) {
+    currNet = addNet(owner);
+  } else {
+    currNet = it->second;
+  }
+  return currNet;
 }
 gcNet* FlexGCWorker::Impl::getNet(frNet* net)
 {
   auto it = owner2nets_.find(net);
-  if (it == owner2nets_.end())
+  if (it == owner2nets_.end()) {
     return nullptr;
+  }
   return it->second;
 }
 
@@ -288,11 +289,12 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
     auto pathSeg = static_cast<drPathSeg*>(obj);
     Rect box = pathSeg->getBBox();
     currNet->addPolygon(box, pathSeg->getLayerNum());
-    if (pathSeg->isTapered())
+    if (pathSeg->isTapered()) {
       currNet->addTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);
-    else if (pathSeg->hasNet() && pathSeg->getNet()->hasNDR()
-             && AUTO_TAPER_NDR_NETS)
+    } else if (pathSeg->hasNet() && pathSeg->getNet()->hasNDR()
+               && AUTO_TAPER_NDR_NETS) {
       currNet->addNonTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);
+    }
   } else if (obj->typeId() == drcVia) {
     auto via = static_cast<drVia*>(obj);
     layerNum = via->getViaDef()->getLayer1Num();
@@ -300,10 +302,12 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
       Rect box = fig->getBBox();
       xform.apply(box);
-      if (via->isTapered())
+      if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
-      else if (via->hasNet() && via->getNet()->hasNDR() && AUTO_TAPER_NDR_NETS)
+      } else if (via->hasNet() && via->getNet()->hasNDR()
+                 && AUTO_TAPER_NDR_NETS) {
         currNet->addNonTaperedRect(box, layerNum / 2 - 1);
+      }
       currNet->addPolygon(box, layerNum);
     }
     // push cut layer rect
@@ -318,10 +322,12 @@ gcNet* FlexGCWorker::Impl::initDRObj(drConnFig* obj, gcNet* currNet)
     for (auto& fig : via->getViaDef()->getLayer2Figs()) {
       Rect box = fig->getBBox();
       xform.apply(box);
-      if (via->isTapered())
+      if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
-      else if (via->hasNet() && via->getNet()->hasNDR() && AUTO_TAPER_NDR_NETS)
+      } else if (via->hasNet() && via->getNet()->hasNDR()
+                 && AUTO_TAPER_NDR_NETS) {
         currNet->addNonTaperedRect(box, layerNum / 2 - 1);
+      }
       currNet->addPolygon(box, layerNum);
     }
   } else if (obj->typeId() == drcPatchWire) {
@@ -341,11 +347,12 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
     auto pathSeg = static_cast<frPathSeg*>(obj);
     Rect box = pathSeg->getBBox();
     currNet->addPolygon(box, pathSeg->getLayerNum());
-    if (pathSeg->isTapered())
+    if (pathSeg->isTapered()) {
       currNet->addTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);
-    else if (pathSeg->hasNet() && pathSeg->getNet()->hasNDR()
-             && AUTO_TAPER_NDR_NETS)
+    } else if (pathSeg->hasNet() && pathSeg->getNet()->hasNDR()
+               && AUTO_TAPER_NDR_NETS) {
       currNet->addNonTaperedRect(box, pathSeg->getLayerNum() / 2 - 1);
+    }
   } else if (obj->typeId() == frcVia) {
     auto via = static_cast<frVia*>(obj);
     layerNum = via->getViaDef()->getLayer1Num();
@@ -353,10 +360,12 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
       Rect box = fig->getBBox();
       xform.apply(box);
-      if (via->isTapered())
+      if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
-      else if (via->hasNet() && via->getNet()->hasNDR() && AUTO_TAPER_NDR_NETS)
+      } else if (via->hasNet() && via->getNet()->hasNDR()
+                 && AUTO_TAPER_NDR_NETS) {
         currNet->addNonTaperedRect(box, layerNum / 2 - 1);
+      }
       currNet->addPolygon(box, layerNum);
     }
     // push cut layer rect
@@ -371,10 +380,12 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
     for (auto& fig : via->getViaDef()->getLayer2Figs()) {
       Rect box = fig->getBBox();
       xform.apply(box);
-      if (via->isTapered())
+      if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
-      else if (via->hasNet() && via->getNet()->hasNDR() && AUTO_TAPER_NDR_NETS)
+      } else if (via->hasNet() && via->getNet()->hasNDR()
+                 && AUTO_TAPER_NDR_NETS) {
         currNet->addNonTaperedRect(box, layerNum / 2 - 1);
+      }
       currNet->addPolygon(box, layerNum);
     }
   } else if (obj->typeId() == frcPatchWire) {
@@ -430,7 +441,7 @@ void FlexGCWorker::Impl::initNetsFromDesign(const frDesign* design)
       }
     }
   }
-  for (auto [gNet, patches] : pwires) {
+  for (const auto& [gNet, patches] : pwires) {
     for (auto pwire : patches) {
       Rect box = pwire->getBBox();
       int z = pwire->getLayerNum() / 2 - 1;
@@ -452,7 +463,7 @@ void FlexGCWorker::Impl::initNet_pins_polygon(gcNet* net)
   std::vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
   for (int i = 0; i < numLayers; i++) {
     polys.clear();
-    using namespace gtl::operators;
+    using gtl::operators::operator+=;
     layerPolys[i] += net->getPolygons(i, false);
     layerPolys[i] += net->getPolygons(i, true);
     layerPolys[i].get(polys);
@@ -714,8 +725,7 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
     auto prevEdge = edges.back().get();
     auto layerNum = prevEdge->getLayerNum();
     gcCorner* prevCorner = nullptr;
-    for (int i = 0; i < (int) edges.size(); i++) {
-      auto nextEdge = edges[i].get();
+    for (auto& nextEdge : edges) {
       auto uCurrCorner = std::make_unique<gcCorner>();
       auto currCorner = uCurrCorner.get();
       tmpCorners.push_back(std::move(uCurrCorner));
@@ -724,7 +734,7 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
       nextEdge->setLowCorner(currCorner);
       // set currCorner attributes
       currCorner->setPrevEdge(prevEdge);
-      currCorner->setNextEdge(nextEdge);
+      currCorner->setNextEdge(nextEdge.get());
       currCorner->x(prevEdge->high().x());
       currCorner->y(prevEdge->high().y());
       int orient = gtl::orientation(*prevEdge, *nextEdge);
@@ -785,7 +795,7 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
         currCorner->setPrevCorner(prevCorner);
       }
       prevCorner = currCorner;
-      prevEdge = nextEdge;
+      prevEdge = nextEdge.get();
     }
     // update attributes between first and last corners
     auto currCorner = tmpCorners.front().get();
@@ -1008,3 +1018,5 @@ void FlexGCWorker::updateDRNet(drNet* net)
 {
   impl_->modifiedDRNets_.push_back(net);
 }
+
+}  // namespace fr

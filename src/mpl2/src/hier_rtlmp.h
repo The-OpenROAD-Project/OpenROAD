@@ -141,8 +141,7 @@ class HierRTLMP
   // General Hier-RTLMP flow functions
   void initMacroPlacer();
   void computeMetricsForModules(float core_area);
-  void reportLogicalHierarchyInformation(float macro_with_halo_area,
-                                         float core_area,
+  void reportLogicalHierarchyInformation(float core_area,
                                          float util,
                                          float core_util);
   void updateDataFlow();
@@ -374,10 +373,6 @@ class HierRTLMP
   float init_prob_ = 0.9;
   const int max_num_step_ = 2000;
   const int num_perturb_per_step_ = 500;
-  // if step < k_, T = init_T_ / (c_ * step_);
-  // else T = init_T_ / step
-  const int k_ = 5000000;
-  const int c_ = 1000.0;
 
   // the virtual weight between std cell part and corresponding macro part
   // to force them stay together
@@ -397,6 +392,7 @@ class HierRTLMP
   float floorplan_ly_ = 0.0;
   float floorplan_ux_ = 0.0;
   float floorplan_uy_ = 0.0;
+  float macro_with_halo_area_ = 0.0;
 
   // dataflow parameters and store the dataflow
   int max_num_ff_dist_ = 5;  // maximum number of FF distances between

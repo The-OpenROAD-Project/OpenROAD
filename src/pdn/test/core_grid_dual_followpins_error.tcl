@@ -19,7 +19,7 @@ add_pdn_connect -layers {metal1 metal3}
 catch {pdngen} err
 puts $err
 
-## error due to missing connect statement 
+## error due to missing connect statement
 add_pdn_stripe -followpins -layer metal3
 catch {pdngen} err
 puts $err

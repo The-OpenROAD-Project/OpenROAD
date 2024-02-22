@@ -77,8 +77,6 @@ class SimulatedAnnealingCore
       float init_prob,
       int max_num_step,
       int num_perturb_per_step,
-      int k,
-      int c,
       unsigned seed,
       Mpl2Observer* graphics,
       utl::Logger* logger);
@@ -170,10 +168,6 @@ class SimulatedAnnealingCore
   float init_temperature_ = 1.0;
   int max_num_step_ = 0;
   int num_perturb_per_step_ = 0;
-  // if step < k_, T = init_T_ / (c_ * step_);
-  // else T = init_T_ / step
-  int k_ = 0;
-  int c_ = 0;
 
   // shrink_factor for dynamic weight
   const float shrink_factor_ = 0.8;

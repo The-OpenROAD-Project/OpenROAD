@@ -133,7 +133,7 @@ class Parser
                                     frCoord& GCELLOFFSETX,
                                     frCoord& GCELLOFFSETY);
   void getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority);
-  void initDefaultVias_GF14(const std::string& in);
+  void initDefaultVias_GF14(const std::string& node);
   void initCutLayerWidth();
   void initConstraintLayerIdx();
 
@@ -149,12 +149,12 @@ class Parser
                                       frInst* inst,
                                       dbTransform& shiftXform,
                                       std::vector<frRect>& rects);
-  void patchGuides(frNet* net, frBlockObject* pin, std::vector<frRect>& rects);
+  void patchGuides(frNet* net, frBlockObject* pin, std::vector<frRect>& guides);
   static int distL1(const Rect& b, const Point& p);
   static void getClosestPoint(const frRect& r,
                               const Point3D& p,
                               Point3D& result);
-  void genGuides_pinEnclosure(frNet* net, std::vector<frRect>& rects);
+  void genGuides_pinEnclosure(frNet* net, std::vector<frRect>& guides);
   void checkPinForGuideEnclosure(frBlockObject* pin,
                                  frNet* net,
                                  std::vector<frRect>& guides);

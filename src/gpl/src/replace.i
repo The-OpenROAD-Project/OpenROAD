@@ -40,7 +40,8 @@ void
 replace_nesterov_place_cmd()
 {
   Replace* replace = getReplace();
-  replace->doNesterovPlace();
+  int threads = ord::OpenRoad::openRoad()->getThreadCount();
+  replace->doNesterovPlace(threads);
 }
 
 
@@ -141,7 +142,8 @@ void
 replace_incremental_place_cmd()
 {
   Replace* replace = getReplace();
-  replace->doIncrementalPlace();
+  int threads = ord::OpenRoad::openRoad()->getThreadCount();
+  replace->doIncrementalPlace(threads);
 }
 
 
@@ -251,7 +253,8 @@ float
 get_global_placement_uniform_density_cmd() 
 {
   Replace* replace = getReplace();
-  return replace->getUniformTargetDensity();
+  int threads = ord::OpenRoad::openRoad()->getThreadCount();
+  return replace->getUniformTargetDensity(threads);
 }
 
 void 

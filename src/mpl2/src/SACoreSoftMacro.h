@@ -76,8 +76,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                   float init_prob,
                   int max_num_step,
                   int num_perturb_per_step,
-                  int k,
-                  int c,
                   unsigned seed,
                   Mpl2Observer* graphics,
                   utl::Logger* logger);
