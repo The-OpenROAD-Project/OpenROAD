@@ -1364,11 +1364,6 @@ class dbBlock : public dbObject
   ///
   /// Get the dbDft object for persistent dft structs
   ///
-  dbDft* createDft();
-
-  ///
-  /// Get the dbDft object for persistent dft structs
-  ///
   dbDft* getDft() const;
 
   ///
