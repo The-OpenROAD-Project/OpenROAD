@@ -2655,10 +2655,10 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
-      const float width = outline.getWidth() * vary_factor_list[run_id++];
-      const float height = outline.getHeight();
-
-      const Rect new_outline(0, 0, width, height);
+      const Rect new_outline(0,
+                             0,
+                             outline.getWidth() * vary_factor_list[run_id++],
+                             outline.getHeight());
 
       SACoreSoftMacro* sa
           = new SACoreSoftMacro(root_cluster_,
@@ -2719,10 +2719,10 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
-      const float width = outline.getWidth();
-      const float height = outline.getHeight() * vary_factor_list[run_id++];
-
-      const Rect new_outline(0, 0, width, height);
+      const Rect new_outline(0,
+                             0,
+                             outline.getWidth(),
+                             outline.getHeight() * vary_factor_list[run_id++]);
 
       SACoreSoftMacro* sa
           = new SACoreSoftMacro(root_cluster_,
@@ -2894,10 +2894,10 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
-      const float width = outline.getWidth() * vary_factor_list[run_id++];
-      const float height = outline.getHeight();
-
-      const Rect new_outline(0, 0, width, height);
+      const Rect new_outline(0,
+                             0,
+                             outline.getWidth() * vary_factor_list[run_id++],
+                             outline.getHeight());
 
       SACoreHardMacro* sa
           = new SACoreHardMacro(new_outline,
@@ -2952,10 +2952,10 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
-      const float width = outline.getWidth();
-      const float height = outline.getHeight() * vary_factor_list[run_id++];
-
-      const Rect new_outline(0, 0, width, height);
+      const Rect new_outline(0,
+                             0,
+                             outline.getWidth(),
+                             outline.getHeight() * vary_factor_list[run_id++]);
 
       SACoreHardMacro* sa
           = new SACoreHardMacro(new_outline,
