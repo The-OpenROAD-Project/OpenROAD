@@ -5564,6 +5564,8 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
       sa->setFences(fences);
       sa->setGuides(guides);
       sa_vector.push_back(sa);
+
+      run_id++;
     }
     if (sa_vector.size() == 1) {
       runSA<SACoreHardMacro>(sa_vector[0]);
