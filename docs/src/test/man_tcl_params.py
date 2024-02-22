@@ -49,10 +49,6 @@ for path in glob.glob("./src/*/README.md"):
     # for gui, filter out the gui:: for separate processing
     matches = [x for x in extract_tcl_code(open(path).read()) if "gui::" not in x]
 
-    # for pad, remove `make_fake_io_site`
-    if 'pad' in tool_dir:
-        matches = [x for x in matches if "make_fake_io_site" not in x]
-
     for match in matches:
         cmd = match.split()[0]
         rest = " ".join(match.split()[1:])

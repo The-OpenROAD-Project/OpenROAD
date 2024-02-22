@@ -358,7 +358,7 @@ proc map_power_switch { args } {
   check_block_exists
 
   sta::parse_key_args "map_power_switch" args \
-    keys {switch_name_list -lib_cells -port_map} flags {}
+    keys {-switch_name_list -lib_cells -port_map} flags {}
 
   sta::check_argc_eq1 "map_power_switch" $args
 
