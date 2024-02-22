@@ -352,7 +352,7 @@ proc set_simulated_annealing { args } {
 
 sta::define_cmd_args "simulated_annealing_debug" {
   [-iters_between_paintings iters]
-  [-no_pause_mode no_pause_mode] 
+  [-no_pause_mode no_pause_mode]
 }
 
 proc simulated_annealing_debug { args } {

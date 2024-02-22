@@ -82,7 +82,7 @@ Names: 1,        Desc: 1,        Syn: 1,        Options: 1,        Args: 1
 Processing ../src/ant/messages.txt
 Info: 2, Warn: 4, Error: 3
 Processing ../src/cts/messages.txt
-Info: 59, Warn: 10, Error: 33
+Info: 61, Warn: 10, Error: 34
 Processing ../src/dbSta/messages.txt
 Info: 0, Warn: 7, Error: 3
 Processing ../src/dft/messages.txt
@@ -100,25 +100,25 @@ Info: 5, Warn: 1, Error: 4
 Processing ../src/gpl/messages.txt
 Info: 70, Warn: 10, Error: 14
 Processing ../src/grt/messages.txt
-Info: 29, Warn: 42, Error: 93
+Info: 29, Warn: 42, Error: 88
 Processing ../src/gui/messages.txt
 Info: 1, Warn: 33, Error: 64
 Processing ../src/ifp/messages.txt
 Info: 4, Warn: 7, Error: 17
 Processing ../src/mpl/messages.txt
-Info: 12, Warn: 7, Error: 9
+Info: 12, Warn: 7, Error: 8
 Processing ../src/mpl2/messages.txt
 Info: 2, Warn: 6, Error: 21
 Processing ../src/odb/messages.txt
-Info: 64, Warn: 199, Error: 136
+Info: 64, Warn: 199, Error: 137
 Processing ../src/pad/messages.txt
-Info: 18, Warn: 59, Error: 356
+Info: 18, Warn: 59, Error: 353
 Processing ../src/par/messages.txt
 Info: 13, Warn: 9, Error: 16
 Processing ../src/pdn/messages.txt
 Info: 3, Warn: 18, Error: 86
 Processing ../src/ppl/messages.txt
-Info: 19, Warn: 17, Error: 68
+Info: 17, Warn: 17, Error: 66
 Processing ../src/psm/messages.txt
 Info: 10, Warn: 18, Error: 39
 Processing ../src/rcx/messages.txt
@@ -136,8 +136,8 @@ Info: 0, Warn: 44, Error: 8
 Processing ../src/utl/messages.txt
 Info: 1, Warn: 2, Error: 7
 Processing ../messages.txt
-Info: 3, Warn: 7, Error: 38
+Info: 3, Warn: 6, Error: 34
 cat/cat1/openroad.1
 Level 1 doc counts are equal to 1.
 Level 2 doc counts are equal to 168.
-Level 3 doc counts are equal to 2660.
+Level 3 doc counts are equal to 2646.

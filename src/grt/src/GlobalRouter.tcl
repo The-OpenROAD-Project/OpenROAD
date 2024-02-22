@@ -37,8 +37,8 @@ sta::define_cmd_args "set_global_routing_layer_adjustment" { layer adj }
 
 proc set_global_routing_layer_adjustment { args } {
   sta::parse_key_args "set_global_routing_layer_adjustment" args \
-                 keys {} \
-                 flags {}
+    keys {} \
+    flags {}
 
   if {[llength $args] == 2} {
     lassign $args layer adj
@@ -123,7 +123,7 @@ proc set_global_routing_region_adjustment { args } {
 
 sta::define_cmd_args "set_routing_layers" { [-signal min-max] \
                                             [-clock min-max] \
-};# checker off 
+};# checker off
 
 proc set_routing_layers { args } {
   sta::parse_key_args "set_routing_layers" args \
@@ -144,8 +144,8 @@ sta::define_cmd_args "set_macro_extension" { extension }
 
 proc set_macro_extension { args } {
   sta::parse_key_args "set_macro_extension" args \
-                 keys {} \
-                 flags {}
+    keys {} \
+    flags {}
   if {[llength $args] == 1} {
     lassign $args extension
     sta::check_positive_integer "macro_extension" $extension
@@ -159,8 +159,8 @@ sta::define_cmd_args "set_pin_offset" { offset }
 
 proc set_pin_offset { args } {
   sta::parse_key_args "set_pin_offset" args \
-                 keys {} \
-                 flags {}
+    keys {} \
+    flags {}
   if {[llength $args] == 1} {
     lassign $args offset
     sta::check_positive_integer "pin_offset" $offset
@@ -307,11 +307,7 @@ sta::define_cmd_args "repair_antennas" { diode_cell \
 
 proc repair_antennas { args } {
   sta::parse_key_args "repair_antennas" args \
-<<<<<<< HEAD
-                 keys {-iterations -ratio_margin} flags {}
-=======
-    keys {-iterations -ratio_margin}
->>>>>>> origin/master
+    keys {-iterations -ratio_margin} flags {}
   if { [grt::have_routes] } {
     if { [llength $args] == 0 } {
       # repairAntennas locates diode
@@ -385,8 +381,8 @@ sta::define_cmd_args "read_guides" { file_name }
 
 proc read_guides { args } {
   sta::parse_key_args "read_guides" args \
-                 keys {} \
-                 flags {}
+    keys {} \
+    flags {}
   set file_name $args
   grt::read_guides $file_name
 }

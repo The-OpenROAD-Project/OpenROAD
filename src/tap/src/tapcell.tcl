@@ -357,11 +357,11 @@ sta::define_cmd_args "place_tapcells" {
 }
 
 proc place_tapcells {args } {
-  
+
   sta::parse_key_args "place_tapcells" args \
     keys {-master -distance} \
     flags {}
-  
+
   sta::check_argc_eq0 "place_tapcells" $args
 
   set dist -1

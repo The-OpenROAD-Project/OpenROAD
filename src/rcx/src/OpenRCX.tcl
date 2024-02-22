@@ -39,7 +39,7 @@ sta::define_cmd_args "define_process_corner" {
 
 proc define_process_corner { args } {
   sta::parse_key_args "define_process_corner" args \
-  keys {-ext_model_index} flags {}
+    keys {-ext_model_index} flags {}
   sta::check_argc_eq1 "define_process_corner" $args
 
   set ext_model_index 0
@@ -125,7 +125,7 @@ proc extract_parasitics { args } {
 
 sta::define_cmd_args "write_spef" {
   [-net_id net_id]
-  [-nets nets] 
+  [-nets nets]
   [-coordinates]
   filename }
 

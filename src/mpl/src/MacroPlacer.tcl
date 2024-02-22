@@ -122,7 +122,7 @@ sta::define_cmd_args "macro_placement_debug" {
 }; # checker off
 
 proc macro_placement_debug { args } {
-# This seg faults if the gui is not present -cherry
+  # This seg faults if the gui is not present -cherry
   sta::parse_key_args "macro_placement_debug" args \
     keys {} \
     flags {-partitions};# checker off
