@@ -166,6 +166,14 @@ The `report_global_connect` command is used print out the currently defined glob
 report_global_connect
 ```
 
+#### Report cell type usage
+
+The `report_cell_usage` command is used to print out the usage of cells for each type of cell.
+
+```
+report_cell_usage
+```
+
 ## TCL functions
 
 Get the die and core areas as a list in microns: `llx lly urx ury`

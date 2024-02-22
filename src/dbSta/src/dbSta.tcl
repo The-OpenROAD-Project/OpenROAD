@@ -76,6 +76,12 @@ proc highlight_path { args } {
   }
 }
 
+define_cmd_args "report_cell_usage" {}
+
+proc report_cell_usage {} {
+  report_cell_usage_cmd
+}
+
 # redefine sta::sta_warn/error to call utl::warn/error
 proc sta_error { id msg } {
   utl::error STA $id $msg
