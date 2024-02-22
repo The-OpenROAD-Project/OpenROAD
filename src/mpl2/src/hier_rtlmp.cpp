@@ -2631,10 +2631,10 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   // the probability of all actions should be summed to 1.0.
   const float action_sum = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
                            + exchange_swap_prob_ + resize_prob_;
-  // get outline constraint
-  // Here we use the floorplan size as the outline constraint
-  const float outline_width = root_cluster_->getWidth();
-  const float outline_height = root_cluster_->getHeight();
+
+  const Rect outline(
+      0, 0, root_cluster_->getWidth(), root_cluster_->getHeight());
+
   const int num_perturb_per_step = (macros.size() > num_perturb_per_step_ / 10)
                                        ? macros.size()
                                        : num_perturb_per_step_ / 10;
@@ -2655,8 +2655,8 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
-      const float width = outline_width * vary_factor_list[run_id++];
-      const float height = outline_height;
+      const float width = outline.getWidth() * vary_factor_list[run_id++];
+      const float height = outline.getHeight();
       SACoreSoftMacro* sa
           = new SACoreSoftMacro(width,
                                 height,
@@ -2700,7 +2700,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     // add macro tilings
     for (auto& sa : sa_vector) {
       sa_containers.push_back(sa);
-      if (sa->isValid(outline_width, outline_height) == true) {
+      if (sa->isValid(outline.getWidth(), outline.getHeight())) {
         macro_tilings.insert(
             std::pair<float, float>(sa->getWidth(), sa->getHeight()));
       }
@@ -2716,8 +2716,8 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
-      const float width = outline_width;
-      const float height = outline_height * vary_factor_list[run_id++];
+      const float width = outline.getWidth();
+      const float height = outline.getHeight() * vary_factor_list[run_id++];
       SACoreSoftMacro* sa
           = new SACoreSoftMacro(width,
                                 height,
@@ -2761,7 +2761,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
     // add macro tilings
     for (auto& sa : sa_vector) {
       sa_containers.push_back(sa);
-      if (sa->isValid(outline_width, outline_height) == true) {
+      if (sa->isValid(outline.getWidth(), outline.getHeight())) {
         macro_tilings.insert(
             std::pair<float, float>(sa->getWidth(), sa->getHeight()));
       }
@@ -2852,10 +2852,10 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
   // set the action probabilities
   const float action_sum = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
                            + exchange_swap_prob_;
-  // get outline constraint
-  // In this stage, we use the floorplan size as the outline
-  const float outline_width = root_cluster_->getWidth();
-  const float outline_height = root_cluster_->getHeight();
+
+  const Rect outline(
+      0, 0, root_cluster_->getWidth(), root_cluster_->getHeight());
+
   // update macros
   std::vector<HardMacro> macros;
   macros.reserve(hard_macros.size());
@@ -2888,8 +2888,8 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
-      const float width = outline_width * vary_factor_list[run_id++];
-      const float height = outline_height;
+      const float width = outline.getWidth() * vary_factor_list[run_id++];
+      const float height = outline.getHeight();
       SACoreHardMacro* sa
           = new SACoreHardMacro(width,
                                 height,
@@ -2928,7 +2928,7 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
     // add macro tilings
     for (auto& sa : sa_vector) {
       sa_containers.push_back(sa);
-      if (sa->isValid(outline_width, outline_height) == true) {
+      if (sa->isValid(outline.getWidth(), outline.getHeight())) {
         macro_tilings.insert(
             std::pair<float, float>(sa->getWidth(), sa->getHeight()));
       }
@@ -2944,8 +2944,8 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
     const int run_thread
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
-      const float width = outline_width;
-      const float height = outline_height * vary_factor_list[run_id++];
+      const float width = outline.getWidth();
+      const float height = outline.getHeight() * vary_factor_list[run_id++];
       SACoreHardMacro* sa
           = new SACoreHardMacro(width,
                                 height,
@@ -2984,7 +2984,7 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
     // add macro tilings
     for (auto& sa : sa_vector) {
       sa_containers.push_back(sa);
-      if (sa->isValid(outline_width, outline_height) == true) {
+      if (sa->isValid(outline.getWidth(), outline.getHeight())) {
         macro_tilings.insert(
             std::pair<float, float>(sa->getWidth(), sa->getHeight()));
       }
