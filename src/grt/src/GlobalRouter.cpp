@@ -3856,9 +3856,6 @@ void IncrementalGRoute::updateRoutes(bool save_guides)
 
 IncrementalGRoute::~IncrementalGRoute()
 {
-  // Updating DB congestion is slow and only used for gui so
-  // don't bother updating it.
-  // groute_->updateDbCongestion();
   db_cbk_.removeOwner();
 }
 
