@@ -54,7 +54,7 @@
 #include <lemon/smart_graph.h>
 
 #include <boost/tokenizer.hpp>
-#include <deque>
+#include <queue>
 #include <vector>
 
 #include "architecture.h"
@@ -465,12 +465,12 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
 
   const int spanned_i = std::lround(ndi->getHeight() / singleRowHeight);
 
-  std::deque<Bucket*> Q;
-  Q.push_back(it->second);
+  std::queue<Bucket*> Q;
+  Q.push(it->second);
   ++traversal_;
   while (!Q.empty()) {
     Bucket* currPtr = Q.front();
-    Q.pop_front();
+    Q.pop();
 
     if (currPtr->travId_ == traversal_) {
       continue;
@@ -480,38 +480,41 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
     // Scan all the cells in this bucket.  If they are compatible with the
     // original cell, then add them to the neighbour list.
     for (Node* ndj : currPtr->nodes_) {
-      const int spanned_j = std::lround(ndj->getHeight() / singleRowHeight);
-
       // Check to make sure the cell is not the original, that they have
       // the same region, that they have the same size (if applicable),
       // and that they have the same color (if applicable).
-      bool compat = ndj != ndi;  // diff nodes
-      if (compat) {
-        // Must be the same color to avoid sharing nets.
-        compat
-            = !useSameColor_ || colors_[ndi->getId()] == colors_[ndj->getId()];
+
+      // diff nodes
+      if (ndj == ndi) {
+        continue;
       }
-      if (compat) {
-        // Must be the same size.
-        compat = !useSameSize_
-                 || (ndi->getWidth() == ndj->getWidth()
-                     && ndi->getHeight() == ndj->getHeight());
+
+      // Must be the same color to avoid sharing nets.
+      if (useSameColor_ && colors_[ndi->getId()] != colors_[ndj->getId()]) {
+        continue;
       }
-      if (compat) {
-        // Must span the same number of rows and also be voltage compatible.
-        compat = spanned_i == spanned_j
-                 && ndi->getBottomPower() == ndj->getBottomPower()
-                 && ndi->getTopPower() == ndj->getTopPower();
+
+      // Must be the same size.
+      if (useSameSize_
+          && (ndi->getWidth() != ndj->getWidth()
+              || ndi->getHeight() != ndj->getHeight())) {
+        continue;
       }
-      if (compat) {
-        // Must be in the same region.
-        compat = ndj->getRegionId() == ndi->getRegionId();
+
+      // Must be in the same region.
+      if (ndj->getRegionId() != ndi->getRegionId()) {
+        continue;
+      }
+
+      // Must span the same number of rows and also be voltage compatible.
+      if (ndi->getBottomPower() != ndj->getBottomPower()
+          || ndi->getTopPower() != ndj->getTopPower()
+          || spanned_i != std::lround(ndj->getHeight() / singleRowHeight)) {
+        continue;
       }
 
       // If compatible, include this current cell.
-      if (compat) {
-        neighbours_.push_back(ndj);
-      }
+      neighbours_.push_back(ndj);
     }
 
     if (neighbours_.size() >= maxProblemSize_) {
@@ -519,17 +522,17 @@ bool DetailedMis::gatherNeighbours(Node* ndi)
     }
 
     // Add more bins to the queue if we have not yet collected enough cells.
-    if (currPtr->i_ - 1 >= 0) {
-      Q.push_back(grid_[currPtr->i_ - 1][currPtr->j_]);
+    if (currPtr->i_ > 0) {
+      Q.push(grid_[currPtr->i_ - 1][currPtr->j_]);
     }
-    if (currPtr->i_ + 1 <= dimW_ - 1) {
-      Q.push_back(grid_[currPtr->i_ + 1][currPtr->j_]);
+    if (currPtr->i_ + 1 < dimW_) {
+      Q.push(grid_[currPtr->i_ + 1][currPtr->j_]);
     }
-    if (currPtr->j_ - 1 >= 0) {
-      Q.push_back(grid_[currPtr->i_][currPtr->j_ - 1]);
+    if (currPtr->j_ > 0) {
+      Q.push(grid_[currPtr->i_][currPtr->j_ - 1]);
     }
-    if (currPtr->j_ + 1 <= dimH_ - 1) {
-      Q.push_back(grid_[currPtr->i_][currPtr->j_ + 1]);
+    if (currPtr->j_ + 1 < dimH_) {
+      Q.push(grid_[currPtr->i_][currPtr->j_ + 1]);
     }
   }
   return true;
