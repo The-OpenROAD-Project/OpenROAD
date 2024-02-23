@@ -169,17 +169,16 @@ bool RoutingCongestionDataSource::populateMap()
 
       const odb::Rect gcell_rect(x_grid[x_idx], y_grid[y_idx], next_x, next_y);
 
-      const auto hor_capacity = cong_data.horizontal_capacity;
+      const auto capacity = cong_data.capacity;
       const auto hor_usage = cong_data.horizontal_usage;
-      const auto ver_capacity = cong_data.vertical_capacity;
       const auto ver_usage = cong_data.vertical_usage;
 
       //-1 indicates capacity is not well defined...
       const double hor_congestion
-          = hor_capacity != 0 ? static_cast<double>(hor_usage) / hor_capacity
+          = capacity != 0 ? static_cast<double>(hor_usage) / capacity
                               : -1;
       const double ver_congestion
-          = ver_capacity != 0 ? static_cast<double>(ver_usage) / ver_capacity
+          = capacity != 0 ? static_cast<double>(ver_usage) / capacity
                               : -1;
 
       double value = 0.0;
@@ -204,13 +203,7 @@ bool RoutingCongestionDataSource::populateMap()
           }
           break;
         case Capacity:
-          if (direction_ == ALL) {
-            value = std::max(hor_capacity, ver_capacity);
-          } else if (direction_ == HORIZONTAL) {
-            value = hor_capacity;
-          } else {
-            value = ver_capacity;
-          }
+          value = capacity;
           break;
       }
 
