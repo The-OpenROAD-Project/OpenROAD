@@ -349,10 +349,8 @@ static float getUsageCapacityRatio(Tile* tile,
                                    odb::dbGCellGrid* gGrid,
                                    float ignoreEdgeRatio)
 {
-  uint8_t capH = 0, capV = 0, capU = 0;
   uint8_t useH = 0, useV = 0, useU = 0;
   uint8_t blockH = 0, blockV = 0, blockU = 0;
-  gGrid->getCapacity(layer, tile->x(), tile->y(), capH, capV, capU);
   gGrid->getUsage(layer, tile->x(), tile->y(), useH, useV, useU);
   gGrid->getBlockage(layer, tile->x(), tile->y(), blockH, blockV, blockU);
 
@@ -369,7 +367,7 @@ static float getUsageCapacityRatio(Tile* tile,
   // RePlAce/RC metric need 'blockage' because
   // if blockage ratio is larger than certain ratio,
   // need to skip.
-  uint8_t curCap = (isHorizontal) ? capH : capV;
+  uint8_t curCap = gGrid->getCapacity(layer, tile->x(), tile->y());
   uint8_t curUse = (isHorizontal) ? useH : useV;
   uint8_t blockage = (isHorizontal) ? blockH : blockV;
 
