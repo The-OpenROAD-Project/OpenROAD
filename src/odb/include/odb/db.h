@@ -7075,9 +7075,7 @@ class dbGCellGrid : public dbObject
     uint8_t horizontal_usage = 0;
     uint8_t vertical_usage = 0;
     uint8_t up_usage = 0;
-    uint8_t horizontal_capacity = 0;
-    uint8_t vertical_capacity = 0;
-    uint8_t up_capacity = 0;
+    uint8_t capacity = 0;
     uint8_t horizontal_blockage = 0;
     uint8_t vertical_blockage = 0;
     uint8_t up_blockage = 0;
@@ -7144,13 +7142,9 @@ class dbGCellGrid : public dbObject
 
   uint getYIdx(int y);
 
-  uint8_t getHorizontalCapacity(dbTechLayer* layer,
+  uint8_t getCapacity(dbTechLayer* layer,
                                 uint x_idx,
                                 uint y_idx) const;
-
-  uint8_t getVerticalCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
-
-  uint8_t getUpCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
   uint8_t getHorizontalUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
@@ -7166,20 +7160,10 @@ class dbGCellGrid : public dbObject
 
   uint8_t getUpBlockage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
-  void setHorizontalCapacity(dbTechLayer* layer,
-                             uint x_idx,
-                             uint y_idx,
-                             uint8_t capacity);
-
-  void setVerticalCapacity(dbTechLayer* layer,
-                           uint x_idx,
-                           uint y_idx,
-                           uint8_t capacity);
-
-  void setUpCapacity(dbTechLayer* layer,
-                     uint x_idx,
-                     uint y_idx,
-                     uint8_t capacity);
+  void setCapacity(dbTechLayer* layer,
+                   uint x_idx,
+                   uint y_idx,
+                   uint8_t capacity);
 
   void setHorizontalUsage(dbTechLayer* layer,
                           uint x_idx,
@@ -7208,13 +7192,6 @@ class dbGCellGrid : public dbObject
                      uint y_idx,
                      uint8_t blockage);
 
-  void setCapacity(dbTechLayer* layer,
-                   uint x_idx,
-                   uint y_idx,
-                   uint8_t horizontal,
-                   uint8_t vertical,
-                   uint8_t up);
-
   void setUsage(dbTechLayer* layer,
                 uint x_idx,
                 uint y_idx,
@@ -7228,13 +7205,6 @@ class dbGCellGrid : public dbObject
                    uint8_t horizontal,
                    uint8_t vertical,
                    uint8_t up);
-
-  void getCapacity(dbTechLayer* layer,
-                   uint x_idx,
-                   uint y_idx,
-                   uint8_t& horizontal,
-                   uint8_t& vertical,
-                   uint8_t& up) const;
 
   void getUsage(dbTechLayer* layer,
                 uint x_idx,

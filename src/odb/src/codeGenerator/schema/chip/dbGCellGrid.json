@@ -104,19 +104,7 @@
           "default": 0
         },
         {
-          "name": "horizontal_capacity",
-          "type": "uint8_t",
-          "flags": ["no-serial"],
-          "default": 0
-        },
-        {
-          "name": "vertical_capacity",
-          "type": "uint8_t",
-          "flags": ["no-serial"],
-          "default": 0
-        },
-        {
-          "name": "up_capacity",
+          "name": "capacity",
           "type": "uint8_t",
           "flags": ["no-serial"],
           "default": 0
