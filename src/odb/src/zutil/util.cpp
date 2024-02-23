@@ -102,6 +102,13 @@ void RUDYCalculator::makeGrid()
 
 void RUDYCalculator::calculateRUDY()
 {
+  // Clear previous computation
+  for (auto& gridColumn : grid_) {
+    for (auto& tile : gridColumn) {
+      tile.clearRUDY();
+    }
+  }
+
   // refer: https://ieeexplore.ieee.org/document/4211973
   const int tile_width = gridBlock_.dx() / tileCntX_;
   const int tile_height = gridBlock_.dy() / tileCntY_;
@@ -482,6 +489,25 @@ std::string generateMacroPlacementString(dbBlock* block)
   }
 
   return macro_placement;
+}
+
+int64_t WireLengthEvaluator::hpwl() const
+{
+  int64_t hpwl_sum = 0;
+  for (dbNet* net : block_->getNets()) {
+    hpwl_sum += hpwl(net);
+  }
+  return hpwl_sum;
+}
+
+int64_t WireLengthEvaluator::hpwl(dbNet* net) const
+{
+  if (net->getSigType().isSupply()) {
+    return 0;
+  }
+
+  Rect bbox = net->getTermBBox();
+  return bbox.dx() + bbox.dy();
 }
 
 }  // namespace odb

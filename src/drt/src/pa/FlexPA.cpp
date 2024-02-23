@@ -48,8 +48,9 @@
 #include "gc/FlexGC.h"
 #include "serialization.h"
 
-using namespace fr;
-BOOST_CLASS_EXPORT(PinAccessJobDescription)
+BOOST_CLASS_EXPORT(fr::PinAccessJobDescription)
+
+namespace fr {
 
 FlexPA::FlexPA(frDesign* in, Logger* logger, dst::Distributed* dist)
     : design_(in),
@@ -116,6 +117,7 @@ void FlexPA::prep()
       for (const auto& term : master->getTerms()) {
         for (const auto& pin : term->getPins()) {
           std::vector<std::unique_ptr<frPinAccess>> pa;
+          pa.reserve(pin->getNumPinAccess());
           for (int i = 0; i < pin->getNumPinAccess(); i++) {
             pa.push_back(std::make_unique<frPinAccess>(*pin->getPinAccess(i)));
           }
@@ -126,6 +128,7 @@ void FlexPA::prep()
     for (const auto& term : design_->getTopBlock()->getTerms()) {
       for (const auto& pin : term->getPins()) {
         std::vector<std::unique_ptr<frPinAccess>> pa;
+        pa.reserve(pin->getNumPinAccess());
         for (int i = 0; i < pin->getNumPinAccess(); i++) {
           pa.push_back(std::make_unique<frPinAccess>(*pin->getPinAccess(i)));
         }
@@ -145,8 +148,9 @@ void FlexPA::prep()
     msg.setJobDescription(std::move(uDesc));
     const bool ok
         = dist_->sendJob(msg, remote_host_.c_str(), remote_port_, result);
-    if (!ok)
+    if (!ok) {
       logger_->error(utl::DRT, 331, "Error sending UPDATE_PA Job to cloud");
+    }
   }
   prepPattern();
 }
@@ -251,3 +255,5 @@ template void FlexPinAccessPattern::serialize<frIArchive>(
 template void FlexPinAccessPattern::serialize<frOArchive>(
     frOArchive& ar,
     const unsigned int file_version);
+
+}  // namespace fr

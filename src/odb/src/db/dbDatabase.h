@@ -173,7 +173,7 @@ class _dbDatabase : public _dbObject
   _dbDatabase(_dbDatabase* db, const _dbDatabase& d);
   ~_dbDatabase();
 
-  inline utl::Logger* getLogger() const { return _logger; }
+  utl::Logger* getLogger() const;
 
   bool operator==(const _dbDatabase& rhs) const;
   bool operator!=(const _dbDatabase& rhs) const { return !operator==(rhs); }

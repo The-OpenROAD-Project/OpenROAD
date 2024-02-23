@@ -33,16 +33,36 @@
 #pragma once
 
 #include "gui/heatMap.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "odb/util.h"
 
+namespace odb {
+class dbDatabase;
+}
+
 namespace gui {
-class RUDYDataSource : public gui::HeatMapDataSource
+
+class RUDYDataSource : public GlobalRoutingDataSource,
+                       public odb::dbBlockCallBackObj
 {
  public:
-  RUDYDataSource(utl::Logger* logger, odb::dbDatabase* db);
-  bool canAdjustGrid() const override { return false; }
-  double getGridXSize() const override;
-  double getGridYSize() const override;
+  RUDYDataSource(utl::Logger* logger);
+
+  void onShow() override;
+  void onHide() override;
+
+  // from dbBlockCallBackObj API
+  void inDbInstCreate(odb::dbInst*) override;
+  void inDbInstCreate(odb::dbInst*, odb::dbRegion*) override;
+  void inDbInstDestroy(odb::dbInst*) override;
+  void inDbInstPlacementStatusBefore(odb::dbInst*,
+                                     const odb::dbPlacementStatus&) override;
+  void inDbInstSwapMasterAfter(odb::dbInst*) override;
+  void inDbPostMoveInst(odb::dbInst*) override;
+  void inDbITermPostDisconnect(odb::dbITerm*, odb::dbNet*) override;
+  void inDbITermPostConnect(odb::dbITerm*) override;
+  void inDbBTermPostConnect(odb::dbBTerm*) override;
+  void inDbBTermPostDisConnect(odb::dbBTerm*, odb::dbNet*) override;
 
  protected:
   bool populateMap() override;
@@ -55,10 +75,7 @@ class RUDYDataSource : public gui::HeatMapDataSource
   void setBlock(odb::dbBlock* block) override;
 
  private:
-  static constexpr int default_grid_ = 10;
   std::unique_ptr<odb::RUDYCalculator> rudyInfo_;
-  odb::dbDatabase* db_;
-  utl::Logger* logger_;
 };
 
 }  // namespace gui

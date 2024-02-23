@@ -1,8 +1,8 @@
 # test for errors when domain and grid names are used more than once
 source "helpers.tcl"
 
-read_lef sky130hvl/sky130_fd_sc_hvl.tlef 
-read_lef sky130hvl/sky130_fd_sc_hvl_merged.lef 
+read_lef sky130hvl/sky130_fd_sc_hvl.tlef
+read_lef sky130hvl/sky130_fd_sc_hvl_merged.lef
 read_lef sky130_secondary_nets/capacitor_test_nf.lef
 read_lef sky130_secondary_nets/LDO_COMPARATOR_LATCH.lef
 read_lef sky130_secondary_nets/PMOS.lef
@@ -23,6 +23,7 @@ set_voltage_domain -power VDD -ground VSS
 set_voltage_domain -power VDD -ground VSS
 
 set_voltage_domain -power VDD -ground VSS -region "test_domain" -secondary_power "VREG1 VREG2"
+# tclint-disable-next-line line-length
 catch {set_voltage_domain -power VDD -ground VSS -region "test_domain" -secondary_power "VREG1 VREG2"} err
 puts $err
 

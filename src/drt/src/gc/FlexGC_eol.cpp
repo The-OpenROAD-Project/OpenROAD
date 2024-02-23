@@ -30,7 +30,8 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
 
-using namespace fr;
+namespace fr {
+
 bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_isEolEdge(
     gcSegment* edge,
     frConstraint* constraint)
@@ -76,11 +77,13 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasMinMaxLength(
     frConstraint* constraint)
 {
   if (constraint->typeId()
-      != frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint)
+      != frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint) {
     return true;
+  }
   auto con = (frLef58SpacingEndOfLineConstraint*) constraint;
-  if (!con->getWithinConstraint()->hasMaxMinLengthConstraint())
+  if (!con->getWithinConstraint()->hasMaxMinLengthConstraint()) {
     return true;
+  }
   auto minMaxCon = con->getWithinConstraint()->getMaxMinLengthConstraint();
   auto prevEdgeLen = gtl::length(*edge->getPrevEdge());
   auto nextEdgeLen = gtl::length(*edge->getNextEdge());
@@ -88,19 +91,16 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasMinMaxLength(
     if (minMaxCon->isTwoSides()) {
       return prevEdgeLen <= minMaxCon->getLength()
              && nextEdgeLen <= minMaxCon->getLength();
-    } else {
-      return prevEdgeLen <= minMaxCon->getLength()
-             || nextEdgeLen <= minMaxCon->getLength();
     }
-  } else {
-    if (minMaxCon->isTwoSides()) {
-      return prevEdgeLen >= minMaxCon->getLength()
-             && nextEdgeLen >= minMaxCon->getLength();
-    } else {
-      return prevEdgeLen >= minMaxCon->getLength()
-             || nextEdgeLen >= minMaxCon->getLength();
-    }
+    return prevEdgeLen <= minMaxCon->getLength()
+           || nextEdgeLen <= minMaxCon->getLength();
   }
+  if (minMaxCon->isTwoSides()) {
+    return prevEdgeLen >= minMaxCon->getLength()
+           && nextEdgeLen >= minMaxCon->getLength();
+  }
+  return prevEdgeLen >= minMaxCon->getLength()
+         || nextEdgeLen >= minMaxCon->getLength();
 }
 
 // TODO check for hasRoute
@@ -110,11 +110,13 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEncloseCut(
     frConstraint* constraint)
 {
   if (constraint->typeId()
-      != frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint)
+      != frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint) {
     return true;
+  }
   auto con = (frLef58SpacingEndOfLineConstraint*) constraint;
-  if (!con->getWithinConstraint()->hasEncloseCutConstraint())
+  if (!con->getWithinConstraint()->hasEncloseCutConstraint()) {
     return true;
+  }
   auto encCutCon = con->getWithinConstraint()->getEncloseCutConstraint();
   frSquaredDistance cutToMetalSpaceSquared
       = encCutCon->getCutToMetalSpace()
@@ -124,12 +126,16 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEncloseCut(
       edge1, encCutCon.get(), queryBox);
 
   std::vector<int> layers;  // cutLayers to search for the vias
-  if (encCutCon->isAboveAndBelow() || encCutCon->isAboveOnly())
-    if (edge1->getLayerNum() + 1 <= getMaxLayerNum())
+  if (encCutCon->isAboveAndBelow() || encCutCon->isAboveOnly()) {
+    if (edge1->getLayerNum() + 1 <= getMaxLayerNum()) {
       layers.push_back(edge1->getLayerNum() + 1);
-  if (encCutCon->isAboveAndBelow() || encCutCon->isBelowOnly())
-    if (edge1->getLayerNum() - 1 >= getMinLayerNum())
+    }
+  }
+  if (encCutCon->isAboveAndBelow() || encCutCon->isBelowOnly()) {
+    if (edge1->getLayerNum() - 1 >= getMinLayerNum()) {
       layers.push_back(edge1->getLayerNum() - 1);
+    }
+  }
   // edge2 segment as a rectangle for getting distance
   gtl::rectangle_data<frCoord> metRect(edge2->getLowCorner()->x(),
                                        edge2->getLowCorner()->y(),
@@ -144,8 +150,9 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEncloseCut(
     auto& workerRegionQuery = getWorkerRegionQuery();
     workerRegionQuery.queryPolygonEdge(queryBox, layerNum, results);
     for (auto& [boostSeg, ptr] : results) {
-      if (edge1->getDir() != ptr->getDir())
+      if (edge1->getDir() != ptr->getDir()) {
         continue;
+      }
       gtl::rectangle_data<frCoord> rect(ptr->getLowCorner()->x(),
                                         ptr->getLowCorner()->y(),
                                         ptr->getHighCorner()->x(),
@@ -153,12 +160,14 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEncloseCut(
       frSquaredDistance distSquared
           = gtl::square_euclidean_distance(metRect, rect);
       if (distSquared < cutToMetalSpaceSquared) {
-        if (encCutCon->isAllCuts())
+        if (encCutCon->isAllCuts()) {
           found = true;
-        else
+        } else {
           return true;
-      } else if (encCutCon->isAllCuts())
+        }
+      } else if (encCutCon->isAllCuts()) {
         return false;
+      }
     }
   }
   return found;
@@ -359,7 +368,8 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasParallelEdge_oneDir(
       // checkMetalEndOfLine_eol_hasParallelEdge_oneDir_getParallelEdgeRect(ptr,
       // triggerRect);
       //  tmpPoly is the intersection of queryRect and minimum paralleledge rect
-      using namespace boost::polygon::operators;
+      using boost::polygon::operators::operator+=;
+      using boost::polygon::operators::operator&=;
       tmpPoly += queryRect;
       tmpPoly &= triggerRect;
       auto& polys = ptr->getNet()->getPolygons(layerNum, false);
@@ -391,10 +401,11 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasParallelEdge(
     case frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint: {
       auto con = (frLef58SpacingEndOfLineConstraint*) constraint;
       hasParallelEdge = con->getWithinConstraint()->hasParallelEdgeConstraint();
-      if (hasParallelEdge)
+      if (hasParallelEdge) {
         hasTwoEdges = con->getWithinConstraint()
                           ->getParallelEdgeConstraint()
                           ->hasTwoEdges();
+      }
       break;
     }
     default:
@@ -538,8 +549,9 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_helper(
       return;
     }
   }
-  if (!checkMetalEndOfLine_eol_hasEncloseCut(edge1, edge2, constraint))
+  if (!checkMetalEndOfLine_eol_hasEncloseCut(edge1, edge2, constraint)) {
     return;
+  }
 
   auto marker = std::make_unique<frMarker>();
   Rect box(gtl::xl(markerRect),
@@ -580,12 +592,14 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_endToEndHelper(
     frConstraint* constraint)
 {
   if (constraint->typeId()
-      != frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint)
+      != frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint) {
     return true;
+  }
   auto con = (frLef58SpacingEndOfLineConstraint*) constraint;
   frCoord eolSpace = con->getEolSpace();
-  if (isWrongDir(edge1) && con->hasWrongDirSpacing())
+  if (isWrongDir(edge1) && con->hasWrongDirSpacing()) {
     eolSpace = con->getWrongDirSpace();
+  }
   gtl::rectangle_data<frCoord> rect1;
   gtl::set_points(rect1, edge1->low(), edge1->high());
   gtl::rectangle_data<frCoord> rect2;
@@ -595,11 +609,13 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_endToEndHelper(
   if (con->getWithinConstraint()->hasEndToEndConstraint() && edge2isEol) {
     auto endToEndCon = con->getWithinConstraint()->getEndToEndConstraint();
     frCoord endSpace = endToEndCon->getEndToEndSpace();
-    if (dist < endSpace)
+    if (dist < endSpace) {
       return true;
+    }
   } else {
-    if (dist < eolSpace)
+    if (dist < eolSpace) {
       return true;
+    }
   }
   return false;
 }
@@ -616,10 +632,12 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_check(
   auto layerNum = edge->getLayerNum();
   gtl::polygon_90_set_data<frCoord> tmpPoly;
   gtl::rectangle_data<frCoord> triggerRect;
-  if (ptr->getPin() == edge->getPin())
+  if (ptr->getPin() == edge->getPin()) {
     return;
-  if (edge->isFixed() && ptr->isFixed())
+  }
+  if (edge->isFixed() && ptr->isFixed()) {
     return;
+  }
 
   // skip if non oppo-dir edge
   if ((int) edge->getDir() + (int) ptr->getDir() != OPPOSITEDIR) {
@@ -635,7 +653,8 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_check(
   if (!hasRoute && !ptr->isFixed()) {
     tmpPoly.clear();
     // tmpPoly is the intersection of queryRect and minimum paralleledge rect
-    using namespace boost::polygon::operators;
+    using boost::polygon::operators::operator+=;
+    using boost::polygon::operators::operator&=;
     tmpPoly += queryRect;
     tmpPoly &= triggerRect;
     auto& polys = ptr->getNet()->getPolygons(layerNum, false);
@@ -668,8 +687,10 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_check(
 
   // check endtoend
   if (!checkPrl
-      && !checkMetalEndOfLine_eol_hasEol_endToEndHelper(edge, ptr, constraint))
+      && !checkMetalEndOfLine_eol_hasEol_endToEndHelper(
+          edge, ptr, constraint)) {
     return;
+  }
   checkMetalEndOfLine_eol_hasEol_helper(edge, ptr, constraint);
 }
 void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol(
@@ -722,7 +743,8 @@ bool FlexGCWorker::Impl::qualifiesAsEol(gcSegment* edge,
     checkMetalEndOfLine_eol_hasParallelEdge_oneDir_getParallelEdgeRect(
         edge, triggerRect);
     // tmpPoly is the intersection of queryRect and minimum paralleledge rect
-    using namespace boost::polygon::operators;
+    using boost::polygon::operators::operator+=;
+    using boost::polygon::operators::operator&=;
     tmpPoly += triggerRect;
     auto& polys = edge->getNet()->getPolygons(layerNum, false);
     // tmpPoly should have route shapes in order to be considered route
@@ -909,15 +931,18 @@ void FlexGCWorker::Impl::getEolKeepOutExceptWithinRects(
 void FlexGCWorker::Impl::checkMetalEOLkeepout_helper(
     gcSegment* edge,
     gcRect* rect,
-    gtl::rectangle_data<frCoord> queryRect,
+    const gtl::rectangle_data<frCoord>& queryRect,
     frLef58EolKeepOutConstraint* constraint)
 {
-  if (rect->getPin() == edge->getPin())
+  if (rect->getPin() == edge->getPin()) {
     return;
-  if (edge->isFixed() && rect->isFixed())
+  }
+  if (edge->isFixed() && rect->isFixed()) {
     return;
-  if (!gtl::intersects(queryRect, *rect, false))
+  }
+  if (!gtl::intersects(queryRect, *rect, false)) {
     return;
+  }
   /*
   if CORNERONLY, then rect is actually a polygon edge.
   We check which corners we should consider in our marked violation.(Either both
@@ -925,15 +950,17 @@ void FlexGCWorker::Impl::checkMetalEOLkeepout_helper(
   */
   if (constraint->isCornerOnly()) {
     if (gtl::contains(queryRect, gtl::ll(*rect), false)) {
-      if (!gtl::contains(queryRect, gtl::ur(*rect), false))
+      if (!gtl::contains(queryRect, gtl::ur(*rect), false)) {
         rect->setRect(
             gtl::xl(*rect), gtl::yl(*rect), gtl::xl(*rect), gtl::yl(*rect));
+      }
       // else, then both corners should be considered. nothing to change
     } else if (gtl::contains(queryRect, gtl::ur(*rect), false)) {
       rect->setRect(
           gtl::xh(*rect), gtl::yh(*rect), gtl::xh(*rect), gtl::yh(*rect));
-    } else
+    } else {
       return;
+    }
   }
   /*
   If EXCEPTWITHIN, we get the side rectangles according to the rule.
@@ -944,8 +971,9 @@ void FlexGCWorker::Impl::checkMetalEOLkeepout_helper(
     gtl::rectangle_data<frCoord> rect1, rect2;
     getEolKeepOutExceptWithinRects(edge, constraint, rect1, rect2);
     if (gtl::intersects(rect1, *rect, false)
-        || gtl::intersects(rect2, *rect, false))
+        || gtl::intersects(rect2, *rect, false)) {
       return;
+    }
   }
   // mark violation
 
@@ -1015,8 +1043,9 @@ void FlexGCWorker::Impl::checkMetalEOLkeepout_main(
     std::vector<rq_box_value_t<gcRect*>> results;
     auto& workerRegionQuery = getWorkerRegionQuery();
     workerRegionQuery.queryMaxRectangle(queryBox, layerNum, results);
-    for (auto& [box, ptr] : results)
+    for (auto& [box, ptr] : results) {
       checkMetalEOLkeepout_helper(edge, ptr, queryRect, constraint);
+    }
   }
 }
 void FlexGCWorker::Impl::getMetalEolExtQueryRegion(
@@ -1090,8 +1119,9 @@ bool segIntersect(gtl::rectangle_data<frCoord>& rect1,
   bool intersect
       = gtl::xl(rect1) < gtl::xh(rect2) && gtl::xh(rect1) > gtl::xl(rect2)
         && gtl::yl(rect1) < gtl::yh(rect2) && gtl::yh(rect1) > gtl::yl(rect2);
-  if (!intersect)
+  if (!intersect) {
     return false;
+  }
   gtl::rectangle_data<frCoord> tmpRect(rect1);
   gtl::xl(tmpRect, std::max(gtl::xl(rect1), gtl::xl(rect2)));
   gtl::yl(tmpRect, std::max(gtl::yl(rect1), gtl::yl(rect2)));
@@ -1111,10 +1141,12 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_ext_helper(
   frSquaredDistance reqDistSqr
       = constraint->getMinSpacing()
         * (frSquaredDistance) constraint->getMinSpacing();
-  if (edge1->isFixed() && edge2->isFixed())
+  if (edge1->isFixed() && edge2->isFixed()) {
     return;
-  if (edge1->getPin() == edge2->getPin())
+  }
+  if (edge1->getPin() == edge2->getPin()) {
     return;
+  }
   gtl::rectangle_data<frCoord> rect2;
   gtl::set_points(rect2, edge2->low(), edge2->high());
   gtl::rectangle_data<frCoord> markerRect(rect2);
@@ -1143,14 +1175,17 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_ext_helper(
     }
   } else {
     if (constraint->isParallelOnly()
-        && (int) edge1->getDir() + (int) edge2->getDir() != OPPOSITEDIR)
+        && (int) edge1->getDir() + (int) edge2->getDir() != OPPOSITEDIR) {
       return;
+    }
   }
-  if (!segIntersect(rect2, queryRect))
+  if (!segIntersect(rect2, queryRect)) {
     return;
+  }
   if ((frSquaredDistance) gtl::square_euclidean_distance(rect1, rect2)
-      >= reqDistSqr)
+      >= reqDistSqr) {
     return;
+  }
   // VIOLATION
   gtl::rectangle_data<frCoord> edgeRect;
   gtl::set_points(edgeRect, edge1->low(), edge1->high());
@@ -1311,3 +1346,5 @@ void FlexGCWorker::Impl::checkMetalEndOfLine()
     }
   }
 }
+
+}  // namespace fr
