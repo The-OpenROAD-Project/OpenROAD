@@ -6,11 +6,12 @@ NAME
        openroad - OpenROAD command-line-interface.
 
 SYNOPSIS
-       openroad	  [-help]   [-version]	[-no_init]  [-exit]  [-gui]  [-threads
-       count|max] [-log file_name] [-metrics file_name] [-python] cmd_file
+       openroad	 [-help]  [-version]  [-no_init]  [-no_splash]	[-exit] [-gui]
+       [-threads count|max] [-log file_name]  [-metrics	 file_name]  [-python]
+       cmd_file
 
 DESCRIPTION
-       The openroad command is the command-line	 interface  for	 OpenROAD,  an
+       The  openroad  command  is  the command-line interface for OpenROAD, an
        open-source initiative for chip design and optimization.	 It provides a
        range of options to control its behavior and execute commands specified
        in the cmd_file.
@@ -22,11 +23,13 @@ OPTIONS
 
        -no_init: Skip initialization steps.
 
+       -no_splash: Do not show the license splash at startup.
+
        -exit: Exit after executing commands in cmd_file.
 
        -gui: Launch the graphical user interface (GUI).
 
-       -threads	  count|max:  Specify the number of threads to use (or use max
+       -threads	 count|max: Specify the number of threads to use (or  use  max
        available).
 
        -log file_name: Log output to the specified file.
@@ -41,14 +44,14 @@ ARGUMENTS
 EXAMPLES
        openroad -help: Prints the help information
 
-       openroad -version -exit: Prints the version information, and exits  the
+       openroad	 -version -exit: Prints the version information, and exits the
        program thereafter.
 
-       openroad	 -threads  max -log test.log -metrics test.metrics: Prints the
-       log and metric respectively to test.log and  test.metrics.   Also  runs
+       openroad -threads max -log test.log -metrics test.metrics:  Prints  the
+       log  and	 metric	 respectively to test.log and test.metrics.  Also runs
        the script with maximum available number of threads.
 
-       openroad	 -gui:	Launches  OpenROAD  GUI, which further interactive Tcl
+       openroad -gui: Launches OpenROAD GUI,  which  further  interactive  Tcl
        commands can be run.
 
 TCL COMMANDS
@@ -73,7 +76,6 @@ TCL COMMANDS
 	 • version 5.8|5.7|5.6|5.5|5.4|5.3: Corresponding DEF version to use.
 
        • read_verilog filename
-
 	 • Read Verilog (.v) input file.
 
        • write_verilog filename
@@ -90,7 +92,7 @@ TCL COMMANDS
 
        • write_abstract_lef filename
 
-	 • Write abstract Library Exchange Format (.lef) files based  on  cur‐
+	 • Write  abstract  Library Exchange Format (.lef) files based on cur‐
 	   rent database.
 
        • write_cdl [-include_fillers] -masters out_filename
@@ -112,11 +114,12 @@ NAME
        openroad - OpenROAD command-line-interface.
 
 SYNOPSIS
-       openroad	  [-help]   [-version]	[-no_init]  [-exit]  [-gui]  [-threads
-       count|max] [-log file_name] [-metrics file_name] [-python] cmd_file
+       openroad	 [-help]  [-version]  [-no_init]  [-no_splash]	[-exit] [-gui]
+       [-threads count|max] [-log file_name]  [-metrics	 file_name]  [-python]
+       cmd_file
 
 DESCRIPTION
-       The openroad command is the command-line	 interface  for	 OpenROAD,  an
+       The  openroad  command  is  the command-line interface for OpenROAD, an
        open-source initiative for chip design and optimization.	 It provides a
        range of options to control its behavior and execute commands specified
        in the cmd_file.
@@ -128,11 +131,13 @@ OPTIONS
 
        -no_init: Skip initialization steps.
 
+       -no_splash: Do not show the license splash at startup.
+
        -exit: Exit after executing commands in cmd_file.
 
        -gui: Launch the graphical user interface (GUI).
 
-       -threads	  count|max:  Specify the number of threads to use (or use max
+       -threads	 count|max: Specify the number of threads to use (or  use  max
        available).
 
        -log file_name: Log output to the specified file.
@@ -147,14 +152,14 @@ ARGUMENTS
 EXAMPLES
        openroad -help: Prints the help information
 
-       openroad -version -exit: Prints the version information, and exits  the
+       openroad	 -version -exit: Prints the version information, and exits the
        program thereafter.
 
-       openroad	 -threads  max -log test.log -metrics test.metrics: Prints the
-       log and metric respectively to test.log and  test.metrics.   Also  runs
+       openroad -threads max -log test.log -metrics test.metrics:  Prints  the
+       log  and	 metric	 respectively to test.log and test.metrics.  Also runs
        the script with maximum available number of threads.
 
-       openroad	 -gui:	Launches  OpenROAD  GUI, which further interactive Tcl
+       openroad -gui: Launches OpenROAD GUI,  which  further  interactive  Tcl
        commands can be run.
 
 TCL COMMANDS
@@ -179,7 +184,6 @@ TCL COMMANDS
 	 • version 5.8|5.7|5.6|5.5|5.4|5.3: Corresponding DEF version to use.
 
        • read_verilog filename
-
 	 • Read Verilog (.v) input file.
 
        • write_verilog filename
@@ -196,7 +200,7 @@ TCL COMMANDS
 
        • write_abstract_lef filename
 
-	 • Write abstract Library Exchange Format (.lef) files based  on  cur‐
+	 • Write  abstract  Library Exchange Format (.lef) files based on cur‐
 	   rent database.
 
        • write_cdl [-include_fillers] -masters out_filename

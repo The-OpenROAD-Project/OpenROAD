@@ -11,7 +11,14 @@ They can be found in `.github/workflows/github-actions-docs-test.yml` file.
 
 ## Regression tests 
 
-### Translator
+This is divided into static and dynamic regression tests.
+Static tests are designed to test the script functionality, whereas
+dynamic tests are designed to test the documentation compatibitity with the 
+script and will be housed in individual module folders.
+
+### Static Test
+
+#### Translator
 
 The code file can be found [here](translator.py). 
 The objective of this test is to test if the underlying `README.md`
@@ -19,13 +26,7 @@ file can be converted to roff format via regex extraction. Namely,
 the script checks for equality in the number of function names,
 descriptors, synopsis, options and arguments detected per Tcl command.
 
-### Count output files
-
-The code file can be found [here](count_outfiles.py). 
-The objective of this test is to count if the expected number of files
-in `man2` and `man3` are as expected. 
-
-### Man functionality check
+#### Man functionality check
 
 The code file can be found [here](man_func.tcl). 
 The objective of this test is to check the functionality of the Tcl
@@ -37,9 +38,21 @@ is where we do not specify the `-manpath` argument and just run
 This check makes sure that the files are compiled in the correct location
 and viewable by the `man` command.
 
+### Dynamic Test
+
+For all the tests below, do make sure to update it locally every 
+time you make a change to the `README.md`, update messages, or 
+make a change to the top-level `Tcl` code. 
+
+#### README-messages check
+
+The name of this test is `{MODULE}_readme_msgs_check.py`.
+The objective of this test is to check the number of
+parsed module commands and messages.
+
 ### Man-to-Tcl check
 
-The code file can be found [here](man_tcl_check.py). 
+The name of this test is `{MODULE}_man_tcl_check.py`
 The objective of this test is to ensure that there are similar counts of 
 command in the following: `proc`, `help`, `man`. 
 

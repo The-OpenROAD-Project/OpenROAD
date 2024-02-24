@@ -9,9 +9,9 @@ openroad - OpenROAD command-line-interface.
 
 # SYNOPSIS
 
-openroad [-help] [-version] [-no_init] [-exit] [-gui]
-       [-threads count|max] [-log file_name] 
-       [-metrics file_name] [-python]
+openroad [-help] [-version] [-no_init] [-no_splash]
+       [-exit] [-gui] [-threads count|max]
+       [-log file_name] [-metrics file_name] [-python]
        cmd_file
 
 
@@ -26,6 +26,8 @@ The **openroad** command is the command-line interface for OpenROAD, an open-sou
 `-version`: Display version information.
 
 `-no_init`: Skip initialization steps.
+
+`-no_splash`: Do not show the license splash at startup.
 
 `-exit`: Exit after executing commands in cmd_file.
 

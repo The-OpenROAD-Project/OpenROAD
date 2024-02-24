@@ -41,13 +41,15 @@ import datetime
 
 # identify key section and stored in ManPage class. 
 class ManPage():
-    def __init__(self):
+    def __init__(self, man_level = 2):
+        assert man_level in [2,3], "only writable for man2/man3"
         self.name = ""
         self.desc = ""
         self.synopsis = ""
         self.switches = {}
         self.args = {}
         self.datetime = datetime.datetime.now().strftime("%y/%m/%d")
+        self.man_level = f"man{man_level}"
 
     def write_roff_file(self, dst_dir = './md/man2'):
         assert self.name, print("func name not set")
@@ -56,9 +58,8 @@ class ManPage():
         # it is okay for a function to have no switches.
         #assert self.switches, print("func switches not set")
         filepath = f"{dst_dir}/{self.name}.md"
-        man_level = dst_dir.split("/")[-1]
         with open(filepath, "w") as f:
-            self.write_header(f, man_level)
+            self.write_header(f)
             self.write_name(f)
             self.write_synopsis(f)
             self.write_description(f)
@@ -66,14 +67,12 @@ class ManPage():
             self.write_arguments(f)
             self.write_placeholder(f) #TODO.
     
-    def write_header(self, f, man_level):
+    def write_header(self, f):
         assert isinstance(f, io.TextIOBase) and\
          f.writable(), "File pointer is not open for writing."
-        assert man_level == "man1" or man_level == "man2" or\
-                 man_level == "man3", print("must be either man1|man2|man3")
 
         f.write(f"---\n")
-        f.write(f"title: {self.name}({man_level[-1]})\n")
+        f.write(f"title: {self.name}({self.man_level[-1]})\n")
         f.write(f"date: {self.datetime}\n")
         f.write(f"---\n")
 

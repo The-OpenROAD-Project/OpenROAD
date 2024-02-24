@@ -68,8 +68,11 @@ def man2(path=DEST_DIR2):
         if not os.path.exists(doc):
             print(f"{doc} doesn't exist. Continuing")
             continue
-        text = open(doc).read()
+        man2_translate(doc, path)
 
+def man2_translate(doc, path):
+    with open(doc) as f:
+        text = f.read()
         # new function names (reading tcl synopsis + convert gui:: to gui_)
         func_names = extract_tcl_command(text)
         func_names = ["_".join(s.lower().split()) for s in func_names]
@@ -106,7 +109,7 @@ def man2(path=DEST_DIR2):
                     key, val = parse_switch(line)
                     switches_dict[key] = val
                 manpage.switches = switches_dict
-            
+
             if func_args[func_id]:
                 # convert it to dict
                 args_dict = {}
@@ -119,29 +122,31 @@ def man2(path=DEST_DIR2):
 
 def man3(path=DEST_DIR3):
     for doc in docs3:
-        _info, _warn, _error = 0, 0, 0
         print(f"Processing {doc}")
         if not os.path.exists(doc):
             print(f"{doc} doesn't exist. Continuing")
             continue
-        with open(doc, 'r') as f:
-            for line in f:
-                parts = line.split()
-                module, num, message, level = parts[0], parts[1],\
-                                " ".join(parts[3:-2]), parts[-2]
-                manpage = ManPage()
-                manpage.name = f"{module}-{num}"
-                if "with-total" in manpage.name: print(parts); exit()
-                manpage.synopsis = "N/A."
-                manpage.desc = f"Type: {level}\n\n{message}"
-                manpage.write_roff_file(path)
+        man3_translate(doc, path)
 
-                # tabulate counts
-                if level == 'INFO': _info += 1
-                elif level == 'WARN': _warn += 1
-                elif level == 'ERROR': _error += 1
-            print(f"Info: {_info}, Warn: {_warn}, Error: {_error}")
+def man3_translate(doc, path):
+    _info, _warn, _error = 0, 0, 0
+    with open(doc) as f:
+        for line in f:
+            parts = line.split()
+            module, num, message, level = parts[0], parts[1],\
+                            " ".join(parts[3:-2]), parts[-2]
+            manpage = ManPage()
+            manpage.name = f"{module}-{num}"
+            if "with-total" in manpage.name: print(parts); exit()
+            manpage.synopsis = "N/A."
+            manpage.desc = f"Type: {level}\n\n{message}"
+            manpage.write_roff_file(path)
 
+            # tabulate counts
+            if level == 'INFO': _info += 1
+            elif level == 'WARN': _warn += 1
+            elif level == 'ERROR': _error += 1
+        print(f"Info: {_info}, Warn: {_warn}, Error: {_error}")
 
 if __name__ == "__main__":
     man2()
