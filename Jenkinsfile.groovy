@@ -68,12 +68,12 @@ node {
                         )
                     }
                   }
-                }
-                finally {
-                    always {
-                        sh "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
-                        archiveArtifacts artifacts: '**/results.tgz', allowEmptyArchive: true;
-                    }
+                  finally {
+                      always {
+                          sh "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
+                          archiveArtifacts artifacts: '**/results.tgz', allowEmptyArchive: true;
+                      }
+                  }
                 }
             }
           }
