@@ -233,7 +233,6 @@ class SimulatedAnnealingCore
   static constexpr float acc_tolerance_ = 0.001;
 
   bool centralization_on_ = false;
-  bool attempting_centralization_ = false;
 };
 
 // SACore wrapper function

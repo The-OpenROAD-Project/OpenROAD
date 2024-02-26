@@ -372,10 +372,6 @@ void SACoreSoftMacro::calBoundaryPenalty()
 {
   boundary_penalty_ = 0.0;
 
-  if (attempting_centralization_) {
-    return;
-  }
-
   if (boundary_weight_ <= 0.0) {
     return;
   }
