@@ -19,4 +19,4 @@ mkdir test_delta_debug
 cd test_delta_debug
 tar --strip-components=1 -xzf ../$latest_file
 sed -i 's/openroad -no_init/openroad -exit -no_init/g' run-me-$testname-asap7-base.sh
-openroad -exit -python ../tools/OpenROAD/etc/deltaDebug.py --persistence 3 --use_stdout --error_string "Iter: 100 " --base_db_path results/asap7/$testname/base/3_2_place_iop.odb --step ./run-me-$testname-asap7-base.sh --multiplier 2
+openroad -exit -python ../../tools/OpenROAD/etc/deltaDebug.py --persistence 3 --use_stdout --error_string "Iter: 100 " --base_db_path results/asap7/$testname/base/3_2_place_iop.odb --step ./run-me-$testname-asap7-base.sh --multiplier 2
