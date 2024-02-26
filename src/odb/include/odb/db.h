@@ -7142,9 +7142,7 @@ class dbGCellGrid : public dbObject
 
   uint getYIdx(int y);
 
-  uint8_t getCapacity(dbTechLayer* layer,
-                                uint x_idx,
-                                uint y_idx) const;
+  uint8_t getCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
   uint8_t getHorizontalUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
@@ -7224,8 +7222,8 @@ class dbGCellGrid : public dbObject
 
   void resetGrid();
 
-  dbMatrix<dbGCellGrid::GCellData> getCongestionMap(dbTechLayer* layer
-                                                    = nullptr);
+  dbMatrix<dbGCellGrid::GCellData> getCongestionMap(dbTechLayer* layer,
+                                                    dbTechLayerDir direction);
   // User Code End dbGCellGrid
 };
 

@@ -144,7 +144,16 @@ bool RoutingCongestionDataSource::populateMap()
     return false;
   }
 
-  auto gcell_congestion_data = grid->getCongestionMap(layer_);
+  odb::dbTechLayerDir dir;
+  if (direction_ == ALL) {
+    dir = odb::dbTechLayerDir(odb::dbTechLayerDir::NONE);
+  } else if (direction_ == HORIZONTAL) {
+    dir = odb::dbTechLayerDir(odb::dbTechLayerDir::HORIZONTAL);
+  } else {
+    dir = odb::dbTechLayerDir(odb::dbTechLayerDir::VERTICAL);
+  }
+
+  auto gcell_congestion_data = grid->getCongestionMap(layer_, dir);
   if (gcell_congestion_data.numElems() == 0) {
     return false;
   }
@@ -175,11 +184,9 @@ bool RoutingCongestionDataSource::populateMap()
 
       //-1 indicates capacity is not well defined...
       const double hor_congestion
-          = capacity != 0 ? static_cast<double>(hor_usage) / capacity
-                              : -1;
+          = capacity != 0 ? static_cast<double>(hor_usage) / capacity : -1;
       const double ver_congestion
-          = capacity != 0 ? static_cast<double>(ver_usage) / capacity
-                              : -1;
+          = capacity != 0 ? static_cast<double>(ver_usage) / capacity : -1;
 
       double value = 0.0;
       switch (type_) {

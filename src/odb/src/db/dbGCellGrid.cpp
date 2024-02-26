@@ -42,6 +42,7 @@
 #include "dbHashTable.h"
 #include "dbTable.h"
 #include "dbTable.hpp"
+#include "dbTech.h"
 #include "dbTechLayer.h"
 // User Code Begin Includes
 #include <algorithm>
@@ -270,6 +271,14 @@ dbMatrix<dbGCellGrid::GCellData>& _dbGCellGrid::get(
   auto [iter, ins]
       = congestion_map_.emplace(std::make_pair(lid, std::move(data)));
   return iter->second;
+}
+
+dbTechLayer* _dbGCellGrid::getLayer(dbId<_dbTechLayer> lid) const
+{
+  _dbGCellGrid* obj = (_dbGCellGrid*) this;
+  dbDatabase* db = (dbDatabase*) obj->getDatabase();
+  _dbTech* tech = (_dbTech*) db->getTech();
+  return (dbTechLayer*) tech->_layer_tbl->getPtr(lid);
 }
 
 // User Code End PrivateMethods
@@ -523,9 +532,9 @@ uint8_t dbGCellGrid::getUpBlockage(dbTechLayer* layer,
 }
 
 void dbGCellGrid::setCapacity(dbTechLayer* layer,
-                                        uint x_idx,
-                                        uint y_idx,
-                                        uint8_t capacity)
+                              uint x_idx,
+                              uint y_idx,
+                              uint8_t capacity)
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
@@ -678,7 +687,8 @@ void dbGCellGrid::resetGrid()
 }
 
 dbMatrix<dbGCellGrid::GCellData> dbGCellGrid::getCongestionMap(
-    dbTechLayer* layer)
+    dbTechLayer* layer,
+    dbTechLayerDir direction)
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   const auto& cmap = _grid->congestion_map_;
@@ -691,6 +701,7 @@ dbMatrix<dbGCellGrid::GCellData> dbGCellGrid::getCongestionMap(
     const int num_cols = iter->second.numCols();
     dbMatrix<dbGCellGrid::GCellData> congestion(num_rows, num_cols);
     for (auto& [lid, matrix] : cmap) {
+      dbTechLayer* tech_layer = _grid->getLayer(lid);
       for (int row = 0; row < num_rows; ++row) {
         for (int col = 0; col < num_cols; ++col) {
           congestion(row, col).horizontal_usage
@@ -698,7 +709,10 @@ dbMatrix<dbGCellGrid::GCellData> dbGCellGrid::getCongestionMap(
           congestion(row, col).vertical_usage
               += matrix(row, col).vertical_usage;
           congestion(row, col).up_usage += matrix(row, col).up_usage;
-          congestion(row, col).capacity += matrix(row, col).capacity;
+          if (direction == odb::dbTechLayerDir::NONE
+              || direction == tech_layer->getDirection()) {
+            congestion(row, col).capacity += matrix(row, col).capacity;
+          }
         }
       }
     }
