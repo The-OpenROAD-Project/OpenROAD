@@ -162,6 +162,7 @@ class dbNetwork : public ConcreteNetwork
 
   Pin* dbToSta(dbITerm* iterm) const;
   Pin* dbToSta(dbModITerm* iterm) const;
+  Pin* dbToStaPin(dbModBTerm* modbterm) const;
 
   Instance* dbToSta(dbInst* inst) const;
   Instance* dbToSta(dbModInst* inst) const;
@@ -172,6 +173,7 @@ class dbNetwork : public ConcreteNetwork
   Cell* dbToSta(dbModule* master) const;
   Port* dbToSta(dbMTerm* mterm) const;
   Port* dbToSta(dbModBTerm* modbterm) const;
+
   PortDirection* dbToSta(const dbSigType& sig_type,
                          const dbIoType& io_type) const;
   // dbStaCbk::inDbBTermCreate

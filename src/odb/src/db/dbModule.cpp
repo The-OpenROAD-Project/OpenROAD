@@ -540,9 +540,15 @@ std::vector<dbInst*> dbModule::getLeafInsts()
 
 dbModBTerm* dbModule::findModBTerm(const char* name)
 {
+  std::string bterm_name(name);
+  size_t last_idx = bterm_name.find_last_of("/");
+  if (last_idx != std::string::npos)
+    bterm_name = bterm_name.substr(last_idx + 1);
+
   for (dbModBTerm* mod_bterm : getModBTerms()) {
-    if (!strcmp(mod_bterm->getName(), name))
+    if (!strcmp(mod_bterm->getName(), bterm_name.c_str())) {
       return mod_bterm;
+    }
   }
   return nullptr;
 }

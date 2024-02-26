@@ -10,7 +10,7 @@ Instance b1/r1
  Path cells: snl_ffqx1
  Input pins:
   D input u1out
-  CP input clk
+  CP input clk1
  Output pins:
   Q output r1q
 Net b1out

@@ -45,6 +45,8 @@ namespace dft::utils {
 // <old_port_name, new_port_name>. Returns the new instance and deletes the old
 // one. The name of the new instance is going to be the same as the old one.
 odb::dbInst* ReplaceCell(
+    sta::dbSta* sta,
+    sta::dbNetwork* db_network,
     odb::dbBlock* top_block,
     odb::dbInst* old_instance,
     odb::dbMaster* new_master,

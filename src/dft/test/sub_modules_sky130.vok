@@ -14,19 +14,35 @@ module sub_modules (clock,
  output scan_out_1;
 
  wire \my_shift_register/net1 ;
- wire \my_shift_register/set_b ;
 
- sky130_fd_sc_hd__sdfsbp_1 \my_shift_register/ff2  (.D(\my_shift_register/net1 ),
-    .Q(output1),
-    .SCD(scan_in_1),
-    .SCE(scan_enable_1),
-    .SET_B(\my_shift_register/set_b ),
-    .CLK(clock));
- sky130_fd_sc_hd__sdfsbp_1 \my_shift_register/ff1  (.D(port1),
-    .Q(\my_shift_register/net1 ),
+ shift_register_2b my_shift_register (.clock(clock),
+    .set_b(set_b),
+    .to(output1),
+    .from(port1));
+ assign output1 = output1;
+ assign scan_out_1 = \my_shift_register/net1 ;
+endmodule
+module shift_register_2b (clock,
+    set_b,
+    to,
+    from);
+ input clock;
+ input set_b;
+ output to;
+ input from;
+
+
+ sky130_fd_sc_hd__sdfsbp_1 \my_shift_register/ff1  (.D(from),
+    .Q(net1),
     .SCD(output1),
     .SCE(scan_enable_1),
-    .SET_B(\my_shift_register/set_b ),
+    .SET_B(set_b),
     .CLK(clock));
- assign scan_out_1 = \my_shift_register/net1 ;
+ sky130_fd_sc_hd__sdfsbp_1 \my_shift_register/ff2  (.D(net1),
+    .Q(to),
+    .SCD(scan_in_1),
+    .SCE(scan_enable_1),
+    .SET_B(set_b),
+    .CLK(clock));
+ assign to = output1;
 endmodule

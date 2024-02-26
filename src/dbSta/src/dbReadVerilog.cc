@@ -192,6 +192,7 @@ void dbLinkDesign(const char* top_cell_name,
   bool link_make_black_boxes = true;
   bool success = verilog_network->linkNetwork(
       top_cell_name, link_make_black_boxes, verilog_network->report());
+
   if (success) {
     Verilog2db v2db(verilog_network, db, logger);
     v2db.makeBlock();

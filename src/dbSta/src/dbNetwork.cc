@@ -81,11 +81,7 @@ using odb::dbSet;
 using odb::dbSigType;
 
 // Turns out OR use full port names (instance name + port name)
-// on DbITerms.
-// So we have this duplicated helper to build the port names.
-// This is just plain stupid. (Originally we used STL and indexes)
-// so could always quickly go from port to index and fish out
-// the port.
+// So we have this helper to build the port names.
 
 std::string makePinName(std::string inst_name, std::string port_name)
 {
@@ -407,6 +403,8 @@ Pin* DbNetPinIterator::next()
 
 ////////////////////////////////////////////////////////////////
 
+// A term is either a bterm or a modbterm
+//
 class DbNetTermIterator : public NetTermIterator
 {
  public:
@@ -418,6 +416,8 @@ class DbNetTermIterator : public NetTermIterator
   const dbNetwork* network_;
   dbSet<dbBTerm>::iterator iter_;
   dbSet<dbBTerm>::iterator end_;
+  dbSet<dbModBTerm>::iterator mod_iter_;
+  dbSet<dbModBTerm>::iterator mod_end_;
 };
 
 DbNetTermIterator::DbNetTermIterator(const Net* net, const dbNetwork* network)
@@ -425,6 +425,7 @@ DbNetTermIterator::DbNetTermIterator(const Net* net, const dbNetwork* network)
 {
   dbModNet* modnet = nullptr;
   dbNet* dnet = nullptr;
+
   network_->staToDb(net, dnet, modnet);
   if (dnet && !modnet) {
     dbSet<dbBTerm> terms = dnet->getBTerms();
@@ -434,6 +435,9 @@ DbNetTermIterator::DbNetTermIterator(const Net* net, const dbNetwork* network)
     dbSet<dbBTerm> terms = modnet->getBTerms();
     iter_ = terms.begin();
     end_ = terms.end();
+    dbSet<dbModBTerm> modbterms = modnet->getModBTerms();
+    mod_iter_ = modbterms.begin();
+    mod_end_ = modbterms.end();
   } else {
     dbSet<dbBTerm> terms;
     iter_ = terms.begin();
@@ -443,14 +447,23 @@ DbNetTermIterator::DbNetTermIterator(const Net* net, const dbNetwork* network)
 
 bool DbNetTermIterator::hasNext()
 {
-  return iter_ != end_;
+  if (mod_iter_ != mod_end_ || iter_ != end_)
+    return true;
+  return false;
 }
 
 Term* DbNetTermIterator::next()
 {
-  dbBTerm* bterm = *iter_;
-  iter_++;
-  return network_->dbToStaTerm(bterm);
+  if (iter_ != end_) {
+    dbBTerm* bterm = *iter_;
+    iter_++;
+    return network_->dbToStaTerm(bterm);
+  } else if (mod_iter_ != mod_end_) {
+    dbModBTerm* modbterm = *mod_iter_;
+    mod_iter_++;
+    return network_->dbToStaTerm(modbterm);
+  }
+  return nullptr;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -946,6 +959,9 @@ Instance* dbNetwork::instance(const Pin* pin) const
     return dbToSta(mod_inst);
   }
   if (modbterm) {
+    dbModule* module = modbterm->getParent();
+    dbModInst* mod_inst = module->getModInst();
+    return dbToSta(mod_inst);
 #ifdef DEBUG_DBNWK
     printf(
         "Unsupported modbter to inst conversion. Ports don't have instances\n");
@@ -1007,6 +1023,7 @@ Net* dbNetwork::net(const Pin* pin) const
   dbBTerm* bterm;
   dbModITerm* moditerm;
   dbModBTerm* modbterm;
+
 #ifdef DEBUG_DBNW
   printf("Getting net for pin %s\n", name(pin));
 #endif
@@ -1019,6 +1036,19 @@ Net* dbNetwork::net(const Pin* pin) const
     // that we have both a mod net and a dbinst net.
     // In the case of writing out a hierachical network we always
     // choose the mnet.
+
+    if (dnet && mnet) {
+      return dbToSta(mnet);
+    }
+    if (mnet)
+      return dbToSta(mnet);
+    if (dnet)
+      return dbToSta(dnet);
+  }
+
+  if (bterm) {
+    dbNet* dnet = bterm->getNet();
+    dbModNet* mnet = bterm->getModNet();
 
     if (dnet && mnet) {
       return dbToSta(mnet);
@@ -1043,10 +1073,10 @@ Net* dbNetwork::net(const Pin* pin) const
 
 Term* dbNetwork::term(const Pin* pin) const
 {
-  dbITerm* iterm;
-  dbBTerm* bterm;
-  dbModITerm* moditerm;
-  dbModBTerm* modbterm;
+  dbITerm* iterm = nullptr;
+  dbBTerm* bterm = nullptr;
+  dbModITerm* moditerm = nullptr;
+  dbModBTerm* modbterm = nullptr;
 
   staToDb(pin, iterm, bterm, moditerm, modbterm);
   if (iterm) {
@@ -1055,9 +1085,12 @@ Term* dbNetwork::term(const Pin* pin) const
   if (bterm) {
     return dbToStaTerm(bterm);
   }
-  if (moditerm)
-    return dbToStaTerm(moditerm);
 
+  // probably wrong: term should be modbterm for this moditerm
+  if (moditerm) {
+    return dbToStaTerm(moditerm);
+  }
+  // ok
   if (modbterm)
     return dbToStaTerm(modbterm);
 
@@ -1090,7 +1123,9 @@ Port* dbNetwork::port(const Pin* pin) const
   dbModITerm* moditerm;
   dbModBTerm* modbterm;
   Port* ret = nullptr;
-
+  static int debug;
+  debug++;
+  // Will return the bterm for a top level pin
   staToDb(pin, iterm, bterm, moditerm, modbterm);
 
   if (iterm) {
@@ -1326,44 +1361,63 @@ NetTermIterator* dbNetwork::termIterator(const Net* net) const
 }
 
 // override ConcreteNetwork::visitConnectedPins
+// This traverses through the module hierarchy
 void dbNetwork::visitConnectedPins(const Net* net,
                                    PinVisitor& visitor,
                                    NetSet& visited_nets) const
 {
   static int debug;
   debug++;
+  if (!visited_nets.hasKey(net)) {
+    visited_nets.insert(net);
 
-  dbNet* db_net = nullptr;
-  dbModNet* mod_net = nullptr;
-  staToDb(net, db_net, mod_net);
+    dbNet* db_net = nullptr;
+    dbModNet* mod_net = nullptr;
+    staToDb(net, db_net, mod_net);
 
-  if (db_net && !mod_net) {
-    for (dbITerm* iterm : db_net->getITerms()) {
-      Pin* pin = dbToSta(iterm);
-      visitor(pin);
-      debug++;
-    }
-    for (dbBTerm* bterm : db_net->getBTerms()) {
-      Pin* pin = dbToSta(bterm);
-      visitor(pin);
-      debug++;
-    }
-  } else if (mod_net) {
-    for (dbITerm* iterm : mod_net->getITerms()) {
-      Pin* pin = dbToSta(iterm);
-      visitor(pin);
-      debug++;
-    }
-    for (dbBTerm* bterm : mod_net->getBTerms()) {
-      Pin* pin = dbToSta(bterm);
-      visitor(pin);
-      debug++;
-    }
-
-    for (dbModITerm* moditerm : mod_net->getModITerms()) {
-      Pin* pin = dbToSta(moditerm);
-      visitor(pin);
-      debug++;
+    if (db_net && !mod_net) {
+      for (dbITerm* iterm : db_net->getITerms()) {
+        Pin* pin = dbToSta(iterm);
+        visitor(pin);
+        debug++;
+      }
+      for (dbBTerm* bterm : db_net->getBTerms()) {
+        Pin* pin = dbToSta(bterm);
+        visitor(pin);
+        debug++;
+      }
+    } else if (mod_net) {
+      for (dbITerm* iterm : mod_net->getITerms()) {
+        Pin* pin = dbToSta(iterm);
+        visitor(pin);
+        debug++;
+      }
+      for (dbBTerm* bterm : mod_net->getBTerms()) {
+        Pin* pin = dbToSta(bterm);
+        visitor(pin);
+        debug++;
+      }
+      for (dbModITerm* moditerm : mod_net->getModITerms()) {
+        Pin* pin = dbToSta(moditerm);
+        visitor(pin);
+        debug++;
+      }
+      // visit below nets
+      for (dbModITerm* moditerm : mod_net->getModITerms()) {
+        dbModInst* mod_inst = moditerm->getParent();
+        // note we are deailing with a uniquified hierarchy
+        // so one master per instance..
+        dbModule* module = mod_inst->getMaster();
+        std::string pin_name = moditerm->getName();
+        dbModBTerm* mod_bterm = module->findModBTerm(pin_name.c_str());
+        Pin* below_pin = dbToStaPin(mod_bterm);
+        pin_name = name(below_pin);
+        visitor(below_pin);
+        // traverse along rest of net
+        Net* below_net = this->net(below_pin);
+        visitConnectedPins(below_net, visitor, visited_nets);
+        debug++;
+      }
     }
   }
 }
@@ -1383,7 +1437,27 @@ ObjectId dbNetwork::id(const Term* term) const
 Pin* dbNetwork::pin(const Term* term) const
 {
   // Only terms are for top level instance pins, which are also BTerms.
-  return reinterpret_cast<Pin*>(const_cast<Term*>(term));
+  // Note this will screw up hierarchical level when starting from top
+  // net
+  dbBTerm* bterm = nullptr;
+  dbModBTerm* modbterm = nullptr;
+  dbITerm* iterm = nullptr;
+  dbModITerm* moditerm = nullptr;
+  staToDb(term, iterm, bterm, moditerm, modbterm);
+  if (bterm) {
+    return (dbToSta(bterm));
+  } else if (modbterm) {
+    // get the moditerm
+    dbModule* cur_module = modbterm->getParent();
+    dbModInst* cur_mod_inst = cur_module->getModInst();
+    dbModITerm* parent_moditerm = nullptr;
+    ;
+    std::string pin_name
+        = makePinName(cur_mod_inst->getName(), modbterm->getName());
+    if (cur_mod_inst->findModITerm(pin_name.c_str(), parent_moditerm))
+      return dbToSta(parent_moditerm);
+  }
+  return nullptr;
 }
 
 //
@@ -1398,6 +1472,9 @@ Net* dbNetwork::net(const Term* term) const
 
   staToDb(term, iterm, bterm, moditerm, modbterm);
   if (moditerm) {
+    // need to push down in hierachy
+    // get modbterm
+    // get net off mod bterm
     return dbToSta(moditerm->getNet());
   }
   if (modbterm) {
@@ -2003,7 +2080,8 @@ void dbNetwork::staToDb(const Pin* pin,
     } else if (type == dbModITermObj) {
       moditerm = static_cast<dbModITerm*>(obj);
     } else {
-      logger_->warn(ORD, 2018, "pin is not ITerm or BTerm");
+      logger_->warn(
+          ORD, 2018, "pin is not ITerm or BTerm or modITerm or ModBTerm");
     }
   }
 }
@@ -2036,17 +2114,6 @@ void dbNetwork::staToDb(const Cell* cell,
     }
   }
 }
-
-/*
-    dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Cell*>(cell));
-    dbObjectType obj_typ = obj -> getObjectType();
-    if (obj_typ == odb::dbModuleObj)
-      module = reinterpret_cast<dbModule*>(const_cast<Cell*>(cell));
-    if (obj_typ == odb::dbMasterObj)
-      master = reinterpret_cast<dbMaster*>(const_cast<Cell*>(cell));
-  }
-}
-*/
 
 dbMaster* dbNetwork::staToDb(const LibertyCell* cell) const
 {
@@ -2160,6 +2227,11 @@ Instance* dbNetwork::dbToSta(dbModInst* inst) const
 Pin* dbNetwork::dbToSta(dbModITerm* mod_iterm) const
 {
   return reinterpret_cast<Pin*>(mod_iterm);
+}
+
+Pin* dbNetwork::dbToStaPin(dbModBTerm* mod_bterm) const
+{
+  return reinterpret_cast<Pin*>(mod_bterm);
 }
 
 Net* dbNetwork::dbToSta(dbNet* net) const
