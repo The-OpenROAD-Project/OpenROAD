@@ -634,6 +634,10 @@ void SimulatedAnnealingCore<T>::attemptCentralization(const float pre_cost)
       macros_[id].setY(macros_[id].getY() - offset_y);
     }
 
+    if (graphics_) {
+      graphics_->saStep(macros_);
+    }
+
     calPenalty();
   }
 }
