@@ -187,12 +187,15 @@ bool RoutingCongestionDataSource::populateMap()
           = capacity != 0 ? static_cast<double>(hor_usage) / capacity : -1;
       const double ver_congestion
           = capacity != 0 ? static_cast<double>(ver_usage) / capacity : -1;
+      const double congestion
+          = (static_cast<double>(hor_usage) + static_cast<double>(ver_usage))
+            / capacity;
 
       double value = 0.0;
       switch (type_) {
         case Congestion:
           if (direction_ == ALL) {
-            value = std::max(hor_congestion, ver_congestion);
+            value = congestion;
           } else if (direction_ == HORIZONTAL) {
             value = hor_congestion;
           } else {
