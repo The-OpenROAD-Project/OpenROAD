@@ -610,6 +610,8 @@ Usage: $0
                                 #    "$HOME/.local". Only used with
                                 #    -common. This flag cannot be used with
                                 #    sudo or with root access.
+       $0 -ci
+                                # Installs CI tools
 
 EOF
     exit "${1:-1}"
