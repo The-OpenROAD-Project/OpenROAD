@@ -19,21 +19,21 @@ node {
     }
   }
 
-  stage('Install Ninja') {
-    sh 'curl -L https://github.com/ninja-build/ninja/releases/download/v1.10.2/ninja-linux.zip -o ninja-linux.zip'
-    sh 'sudo unzip ninja-linux.zip -d /usr/local/bin/'
-    sh 'sudo chmod +x /usr/local/bin/ninja'
-    sh 'sudo yum -y update'
-    sh 'sudo yum install -y ccache'
-    // sh 'export PATH="/usr/lib/ccache:$PATH"'
-    // stash includes: '/usr/local/bin/ninja', name: 'ninja-stash'
-    // stash includes: '/usr/bin/ccache', name: 'ccache-stash'
-    sh 'mkdir -p stashed-files'
-    sh 'cp /usr/local/bin/ninja stashed-files/'
-    sh 'cp /usr/bin/ccache stashed-files/'
+  // stage('Install Ninja') {
+  //   sh 'curl -L https://github.com/ninja-build/ninja/releases/download/v1.10.2/ninja-linux.zip -o ninja-linux.zip'
+  //   sh 'sudo unzip ninja-linux.zip -d /usr/local/bin/'
+  //   sh 'sudo chmod +x /usr/local/bin/ninja'
+  //   sh 'sudo yum -y update'
+  //   sh 'sudo yum install -y ccache'
+  //   // sh 'export PATH="/usr/lib/ccache:$PATH"'
+  //   // stash includes: '/usr/local/bin/ninja', name: 'ninja-stash'
+  //   // stash includes: '/usr/bin/ccache', name: 'ccache-stash'
+  //   sh 'mkdir -p stashed-files'
+  //   sh 'cp /usr/local/bin/ninja stashed-files/'
+  //   sh 'cp /usr/bin/ccache stashed-files/'
 
-    stash includes: 'stashed-files/*', name: 'tools-stash'
-  }
+  //   stash includes: 'stashed-files/*', name: 'tools-stash'
+  // }
 
   // docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside {
     try {
@@ -91,16 +91,16 @@ node {
             node {
               checkout scm
               docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside {
-                stage('Install Ninja') {
-                  sh 'curl -L https://github.com/ninja-build/ninja/releases/download/v1.10.2/ninja-linux.zip -o ninja-linux.zip'
-                  sh 'sudo unzip ninja-linux.zip -d /usr/local/bin/'
-                  sh 'sudo chmod +x /usr/local/bin/ninja'
-                  sh 'sudo yum -y update'
-                  sh 'sudo yum install -y ccache'
-                  // sh 'export PATH="/usr/lib/ccache:$PATH"'
-                  // stash includes: '/usr/local/bin/ninja', name: 'ninja-stash'
-                  // stash includes: '/usr/bin/ccache', name: 'ccache-stash'
-                }
+                // stage('Install Ninja') {
+                //   sh 'curl -L https://github.com/ninja-build/ninja/releases/download/v1.10.2/ninja-linux.zip -o ninja-linux.zip'
+                //   sh 'sudo unzip ninja-linux.zip -d /usr/local/bin/'
+                //   sh 'sudo chmod +x /usr/local/bin/ninja'
+                //   sh 'sudo yum -y update'
+                //   sh 'sudo yum install -y ccache'
+                //   // sh 'export PATH="/usr/lib/ccache:$PATH"'
+                //   // stash includes: '/usr/local/bin/ninja', name: 'ninja-stash'
+                //   // stash includes: '/usr/bin/ccache', name: 'ccache-stash'
+                // }
                 stage('C++ Unit Tests') {
                   sh 'cmake -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -GNinja -B build .';
                   sh 'cd build && CLICOLOR_FORCE=1 ninja build_and_test';

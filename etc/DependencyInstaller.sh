@@ -262,6 +262,7 @@ _installUbuntuPackages() {
         tcllib \
         wget \
         zlib1g-dev \
+        ccache \
 
     if _versionCompare $1 -ge 22.10; then
         apt-get install -y \
@@ -393,6 +394,7 @@ _installCentosPackages() {
         tcl-tclreadline-devel \
         tcllib \
         wget \
+        ccache \
         zlib-devel
     }
 
@@ -542,6 +544,38 @@ _installDebianPackages() {
     fi
 }
 
+_installCI() {
+    # ninja
+    ninjaCheckSum="817e12e06e2463aeb5cb4e1d19ced606"
+    ninjaVersion=1.10.2
+    ninjaPrefix=${PREFIX:-"/usr/local"}
+    ninjaBin=${ninjaPrefix}/bin/ninja
+    if [[ ! -d ${ninjaBin} ]]; then
+        cd "${baseDir}"
+        curl -L https://github.com/ninja-build/ninja/releases/download/v${ninjaVersion}/ninja-linux.zip -o ninja-linux.zip
+        md5sum -c <(echo "${ninjaCheckSum} ninja-linux.zip") || exit 1
+        unzip -o ninja-linux.zip -d ${ninjaPrefix}/bin/
+        chmod +x ${ninjaBin}
+    else
+        echo "ninja already installed."
+    fi
+
+
+    apt-get -y update
+
+    #docker
+    apt-get -y install ca-certificates curl
+    install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+    chmod a+r /etc/apt/keyrings/docker.asc
+    echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+    $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+    tee /etc/apt/sources.list.d/docker.list > /dev/null
+    apt-get -y update
+    apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+}
+
 _checkIsLocal() {
     if [[ "${isLocal}" == "true" ]]; then
         echo "ERROR: cannot install base packages locally; you need privileged access." >&2
@@ -586,6 +620,7 @@ PREFIX=""
 option="all"
 isLocal="false"
 equivalenceDeps="no"
+CI="no"
 # temp dir to download and compile
 baseDir=$(mktemp -d /tmp/DependencyInstaller-XXXXXX)
 
@@ -615,6 +650,9 @@ while [ "$#" -gt 0 ]; do
             ;;
         -eqy)
             equivalenceDeps="yes"
+            ;;
+        -ci)
+            CI="yes"
             ;;
         -local)
             if [[ $(id -u) == 0 ]]; then
@@ -697,6 +735,9 @@ EOF
                 version=22.10
             fi
             _installOrTools "ubuntu" "${version}" "amd64"
+        fi
+        if [[ ${CI} == "yes" ]]; then
+            _installCI
         fi
         ;;
     "Red Hat Enterprise Linux")
