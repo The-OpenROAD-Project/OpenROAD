@@ -35,7 +35,7 @@
 #include "io/io.h"
 #include "utl/exception.h"
 
-using namespace fr;
+namespace fr {
 
 using utl::ThreadException;
 
@@ -46,8 +46,7 @@ void FlexDRConnectivityChecker::pin2epMap_helper(
     const frLayerNum lNum,
     std::map<frBlockObject*,
              std::set<std::pair<Point, frLayerNum>>,
-             frBlockObjectComp>& pin2epMap,
-    const bool isPathSeg)
+             frBlockObjectComp>& pin2epMap)
 {
   auto regionQuery = getRegionQuery();
   frRegionQuery::Objects<frBlockObject> result;
@@ -90,13 +89,13 @@ void FlexDRConnectivityChecker::buildPin2epMap(
     }
     auto obj = static_cast<frPathSeg*>(connFig);
     const auto [bp, ep] = obj->getPoints();
-    frSegStyle style = obj->getStyle();
+    const frSegStyle& style = obj->getStyle();
     auto lNum = obj->getLayerNum();
     if (style.getBeginStyle() == frEndStyle(frcTruncateEndStyle)) {
-      pin2epMap_helper(net, bp, lNum, pin2epMap, true);
+      pin2epMap_helper(net, bp, lNum, pin2epMap);
     }
     if (style.getEndStyle() == frEndStyle(frcTruncateEndStyle)) {
-      pin2epMap_helper(net, ep, lNum, pin2epMap, true);
+      pin2epMap_helper(net, ep, lNum, pin2epMap);
     }
   }
 
@@ -108,10 +107,12 @@ void FlexDRConnectivityChecker::buildPin2epMap(
     const Point origin = obj->getOrigin();
     auto l1Num = obj->getViaDef()->getLayer1Num();
     auto l2Num = obj->getViaDef()->getLayer2Num();
-    if (obj->isBottomConnected())
-      pin2epMap_helper(net, origin, l1Num, pin2epMap, false);
-    if (obj->isTopConnected())
-      pin2epMap_helper(net, origin, l2Num, pin2epMap, false);
+    if (obj->isBottomConnected()) {
+      pin2epMap_helper(net, origin, l1Num, pin2epMap);
+    }
+    if (obj->isTopConnected()) {
+      pin2epMap_helper(net, origin, l2Num, pin2epMap);
+    }
   }
 }
 
@@ -211,8 +212,7 @@ void FlexDRConnectivityChecker::nodeMap_routeObjSplit(
       horzMergeHelper[lNum][bp.y()][ep.x()] = std::make_pair(bp.x(), i);
     }
   }
-  for (int i = 0; i < (int) netRouteObjs.size(); i++) {
-    const auto connFig = netRouteObjs[i];
+  for (const auto connFig : netRouteObjs) {
     // ep on pathseg
     if (connFig->typeId() == frcPathSeg) {
       auto obj = static_cast<const frPathSeg*>(connFig);
@@ -329,9 +329,8 @@ bool FlexDRConnectivityChecker::astar(
     {
       if (cost == b.cost) {
         return nodeIdx > b.nodeIdx;
-      } else {
-        return cost > b.cost;
       }
+      return cost > b.cost;
     }
   };
   for (int findNode = nNetRouteObjs; findNode < nNetObjs - 1; findNode++) {
@@ -498,9 +497,8 @@ void FlexDRConnectivityChecker::finish(
         if (bp == pr.first || ep == pr.first) {
           hasPinEP = true;
           break;
-        } else {
-          psIdx = idx;
         }
+        psIdx = idx;
       } else if (netRouteObjs[idx]->typeId() == frcVia) {
         hasPinEP = true;
         break;
@@ -838,15 +836,17 @@ void FlexDRConnectivityChecker::splitPathSegs(
   frPathSeg* highestPs = nullptr;  // overlapping ps with the highest endPoint
   int first = 0;
   std::vector<int> splitPoints;
-  if (segSpans.empty())
+  if (segSpans.empty()) {
     return;
+  }
   for (int i = 0; i < segSpans.size(); i++) {
     auto& curr = segSpans[i];
     frPathSeg* currPs = static_cast<frPathSeg*>(netRouteObjs[curr.second]);
     if (!highestPs || curr.first.lo >= highestPs->high()) {
-      if (!splitPoints.empty())
+      if (!splitPoints.empty()) {
         splitPathSegs_commit(
             splitPoints, highestPs, first, i, segSpans, netRouteObjs);
+      }
       first = i;
       highestPs = currPs;
     } else {
@@ -856,18 +856,22 @@ void FlexDRConnectivityChecker::splitPathSegs(
       frPathSeg* prevPs = static_cast<frPathSeg*>(netRouteObjs[prev.second]);
       if (curr.first.lo != segSpans[first].first.lo
           && currPs->isBeginTruncated()
-          && !isRedundant(splitPoints, curr.first.lo))
+          && !isRedundant(splitPoints, curr.first.lo)) {
         splitPoints.push_back(curr.first.lo);
-      if (currPs->isEndTruncated() && !isRedundant(splitPoints, curr.first.hi))
+      }
+      if (currPs->isEndTruncated()
+          && !isRedundant(splitPoints, curr.first.hi)) {
         splitPoints.push_back(curr.first.hi);
+      }
       if (i - 1 == first) {
         if (prevPs->isEndTruncated()
             && !isRedundant(splitPoints, prevPs->high())) {
           splitPoints.push_back(prevPs->high());
         }
       }
-      if (highestPs->high() < curr.first.hi)
+      if (highestPs->high() < curr.first.hi) {
         highestPs = currPs;
+      }
     }
   }
   if (!splitPoints.empty()) {
@@ -886,9 +890,10 @@ void FlexDRConnectivityChecker::splitPathSegs_commit(
 {
   sort(splitPoints.begin(), splitPoints.end());
   if (splitPoints[splitPoints.size() - 1]
-      == highestPs->high())  // we don't need this split point, only those
-                             // inside the overlapping interval
+      == highestPs->high()) {  // we don't need this split point, only those
+                               // inside the overlapping interval
     splitPoints.erase(std::prev(splitPoints.end()));
+  }
   if (!splitPoints.empty()) {
     frEndStyle highestPsEndStyle = highestPs->getEndStyle();
     int highestHi = highestPs->high();
@@ -930,8 +935,9 @@ void FlexDRConnectivityChecker::splitPathSegs_commit(
           segSpans[segSpnIdx].first.hi = highestHi;
           // if we have 2 or more splitting pathsegs than split points. This
           // will create redundant pathsegs that will be merged later
-          if (currIdxSplitSpanIdxs < splitSpanIdxs.size() - 1)
+          if (currIdxSplitSpanIdxs < splitSpanIdxs.size() - 1) {
             s--;
+          }
         } else {
           segSpans[segSpnIdx].first.hi = splitPoints[s];
           ps->setHigh(splitPoints[s]);
@@ -975,7 +981,7 @@ void FlexDRConnectivityChecker::splitPathSegs_commit(
         if (save_updates_) {
           drUpdate update(drUpdate::ADD_SHAPE);
           update.setNet(highestPs->getNet());
-          update.setPathSeg(*newPs.get());
+          update.setPathSeg(*newPs);
           design_->addUpdate(update);
         }
       }
@@ -1027,10 +1033,12 @@ void FlexDRConnectivityChecker::merge_perform_helper(
       localVictims.push_back(segSpan.second);
       currEnd = std::max(currEnd, segSpan.first.hi);
       if (currEnd == currEndPs->high()) {
-        if (currEnd == ps->high() && !currEndPs->isEndTruncated())
+        if (currEnd == ps->high() && !currEndPs->isEndTruncated()) {
           currEndPs = ps;
-      } else
+        }
+      } else {
         currEndPs = ps;
+      }
     }
   }
   if (hasOverlap) {
@@ -1119,7 +1127,7 @@ void FlexDRConnectivityChecker::addMarker(frNet* net,
   marker->addAggressor(net, std::make_tuple(lNum, bbox, false));
   if (save_updates_) {
     drUpdate update(drUpdate::ADD_SHAPE);
-    update.setMarker(*marker.get());
+    update.setMarker(*marker);
     design_->addUpdate(update);
   }
   regionQuery->addMarker(marker.get());
@@ -1145,7 +1153,7 @@ void FlexDRConnectivityChecker::check(int iter)
     if ((int) batches.back().size() < batchSize) {
       batches.back().push_back(net);
     } else {
-      batches.push_back(std::vector<frNet*>());
+      batches.emplace_back(std::vector<frNet*>());
       batches.back().reserve(batchSize);
       batches.back().push_back(net);
     }
@@ -1294,10 +1302,11 @@ void FlexDRConnectivityChecker::check(int iter)
                   << "Objs not visited:\n";
         for (int idx = 0; idx < (int) adjVisited.size(); idx++) {
           if (!adjVisited[idx]) {
-            if (idx < (int) netRouteObjs.size())
+            if (idx < (int) netRouteObjs.size()) {
               std::cout << *(netRouteObjs[idx]) << "\n";
-            else
+            } else {
               std::cout << *(netPins[idx - netRouteObjs.size()]) << "\n";
+            }
           }
         }
         isWrong = true;
@@ -1332,3 +1341,5 @@ FlexDRConnectivityChecker::FlexDRConnectivityChecker(frDesign* design,
       save_updates_(save_updates)
 {
 }
+
+}  // namespace fr
