@@ -270,7 +270,7 @@ dbMatrix<dbGCellGrid::GCellData>& _dbGCellGrid::get(
   return iter->second;
 }
 
-dbTechLayer* _dbGCellGrid::getLayer(dbId<_dbTechLayer> lid) const
+dbTechLayer* _dbGCellGrid::getLayer(const dbId<_dbTechLayer>& lid) const
 {
   _dbGCellGrid* obj = (_dbGCellGrid*) this;
   dbDatabase* db = (dbDatabase*) obj->getDatabase();
@@ -573,7 +573,7 @@ void dbGCellGrid::resetGrid()
 
 dbMatrix<dbGCellGrid::GCellData> dbGCellGrid::getCongestionMap(
     dbTechLayer* layer,
-    dbTechLayerDir direction)
+    const dbTechLayerDir& direction)
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   const auto& cmap = _grid->congestion_map_;
