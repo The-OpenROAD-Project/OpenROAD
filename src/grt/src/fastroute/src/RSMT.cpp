@@ -654,8 +654,7 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
 
   const int flute_accuracy = 2;
 
-  for (int & i : dirty_net_ids_) {
-
+  for (int& i : dirty_net_ids_) {
     FrNet* net = nets_[i];
 
     int d = net->getNumPins();
