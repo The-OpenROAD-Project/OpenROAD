@@ -812,6 +812,22 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
   return routes;
 }
 
+void FastRouteCore::getBlockage(odb::dbTechLayer* layer,
+                                int x,
+                                int y,
+                                uint8_t& blockage_h,
+                                uint8_t& blockage_v)
+{
+  int l = layer->getRoutingLevel() - 1;
+  if (x == x_grid_ - 1 && y == y_grid_ - 1 && x_grid_ > 1 && y_grid_ > 1) {
+    blockage_h = h_edges_3D_[l][y][x - 1].red;
+    blockage_v = v_edges_3D_[l][y - 1][x].red;
+  } else {
+    blockage_h = h_edges_3D_[l][y][x].red;
+    blockage_v = v_edges_3D_[l][y][x].red;
+  }
+}
+
 void FastRouteCore::updateDbCongestion()
 {
   auto block = db_->getChip()->getBlock();
@@ -855,10 +871,8 @@ void FastRouteCore::updateDbCongestion()
             && y_grid_ > 1) {
           uint8_t blockageH = h_edges_3D_[k][y][x - 1].red;
           uint8_t blockageV = v_edges_3D_[k][y - 1][x].red;
-          uint8_t usageH
-              = h_edges_3D_[k][y - 1][x - 1].usage + blockageH;
-          uint8_t usageV
-              = v_edges_3D_[k][y - 1][x - 1].usage + blockageV;
+          uint8_t usageH = h_edges_3D_[k][y - 1][x - 1].usage + blockageH;
+          uint8_t usageV = v_edges_3D_[k][y - 1][x - 1].usage + blockageV;
           db_gcell->setUsage(layer, x, y, usageH, usageV);
           db_gcell->setBlockage(layer, x, y, blockageH, blockageV);
         } else {

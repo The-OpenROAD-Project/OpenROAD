@@ -3379,6 +3379,15 @@ std::vector<odb::dbNet*> GlobalRouter::getNetsToRoute()
   return nets_to_route_;
 }
 
+void GlobalRouter::getBlockage(odb::dbTechLayer* layer,
+                               int x,
+                               int y,
+                               uint8_t& blockage_h,
+                               uint8_t& blockage_v)
+{
+  fastroute_->getBlockage(layer, x, y, blockage_h, blockage_v);
+}
+
 std::map<int, odb::dbTechVia*> GlobalRouter::getDefaultVias(
     int max_routing_layer)
 {

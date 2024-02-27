@@ -352,7 +352,7 @@ static float getUsageCapacityRatio(Tile* tile,
   uint8_t useH = 0, useV = 0;
   uint8_t blockH = 0, blockV = 0;
   gGrid->getUsage(layer, tile->x(), tile->y(), useH, useV);
-  gGrid->getBlockage(layer, tile->x(), tile->y(), blockH, blockV);
+  grouter_->getBlockage(layer, tile->x(), tile->y(), blockH, blockV);
 
   bool isHorizontal
       = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);
