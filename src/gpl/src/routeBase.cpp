@@ -347,12 +347,13 @@ int RouteBase::inflationIterCnt() const
 static float getUsageCapacityRatio(Tile* tile,
                                    odb::dbTechLayer* layer,
                                    odb::dbGCellGrid* gGrid,
+                                   grt::GlobalRouter* grouter,
                                    float ignoreEdgeRatio)
 {
   uint8_t useH = 0, useV = 0;
   uint8_t blockH = 0, blockV = 0;
   gGrid->getUsage(layer, tile->x(), tile->y(), useH, useV);
-  grouter_->getBlockage(layer, tile->x(), tile->y(), blockH, blockV);
+  grouter->getBlockage(layer, tile->x(), tile->y(), blockH, blockV);
 
   bool isHorizontal
       = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);
@@ -424,7 +425,7 @@ void RouteBase::updateRoute()
 
       // first extract current tiles' usage
       float ratio
-          = getUsageCapacityRatio(tile, layer, gGrid, rbVars_.ignoreEdgeRatio);
+          = getUsageCapacityRatio(tile, layer, gGrid, grouter_, rbVars_.ignoreEdgeRatio);
 
       // if horizontal layer (i.e., vertical edges)
       // should consider LEFT tile's RIGHT edge == current 'tile's LEFT edge
@@ -433,7 +434,7 @@ void RouteBase::updateRoute()
         Tile* leftTile
             = tg_->tiles()[tile->y() * tg_->tileCntX() + tile->x() - 1];
         float leftRatio = getUsageCapacityRatio(
-            leftTile, layer, gGrid, rbVars_.ignoreEdgeRatio);
+            leftTile, layer, gGrid, grouter_, rbVars_.ignoreEdgeRatio);
         ratio = std::fmax(leftRatio, ratio);
       }
 
@@ -444,7 +445,7 @@ void RouteBase::updateRoute()
         Tile* downTile
             = tg_->tiles()[(tile->y() - 1) * tg_->tileCntX() + tile->x()];
         float downRatio = getUsageCapacityRatio(
-            downTile, layer, gGrid, rbVars_.ignoreEdgeRatio);
+            downTile, layer, gGrid, grouter_, rbVars_.ignoreEdgeRatio);
         ratio = std::fmax(downRatio, ratio);
       }
 
@@ -717,7 +718,7 @@ float RouteBase::getRC() const
 
       // extract the ratio in the same way as inflation ratio cals
       float ratio
-          = getUsageCapacityRatio(tile, layer, gGrid, rbVars_.ignoreEdgeRatio);
+          = getUsageCapacityRatio(tile, layer, gGrid, grouter_, rbVars_.ignoreEdgeRatio);
 
       // escape the case when blockageRatio is too huge
       if (ratio >= 0.0f) {
