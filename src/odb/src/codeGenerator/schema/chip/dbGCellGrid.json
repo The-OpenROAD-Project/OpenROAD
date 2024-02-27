@@ -102,18 +102,6 @@
           "type": "uint8_t",
           "flags": ["no-serial"],
           "default": 0
-        },
-        {
-          "name": "horizontal_blockage",
-          "type": "uint8_t",
-          "flags": ["no-serial"],
-          "default": 0
-        },
-        {
-          "name": "vertical_blockage",
-          "type": "uint8_t",
-          "flags": ["no-serial"],
-          "default": 0
         }
       ],
       "public": true
