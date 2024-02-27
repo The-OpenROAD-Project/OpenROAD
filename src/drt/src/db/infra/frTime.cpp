@@ -31,7 +31,7 @@
 #include <boost/io/ios_state.hpp>
 #include <iomanip>
 
-using namespace fr;
+namespace fr {
 
 void frTime::print(Logger* logger)
 {
@@ -58,8 +58,6 @@ void frTime::print(Logger* logger)
                getCurrentRSS() / (1024.0 * 1024.0),
                getPeakRSS() / (1024.0 * 1024.0));
 }
-
-namespace fr {
 
 std::ostream& operator<<(std::ostream& os, const frTime& t)
 {

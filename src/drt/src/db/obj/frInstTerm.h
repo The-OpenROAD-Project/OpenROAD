@@ -46,13 +46,10 @@ class frInstTerm : public frBlockObject
  public:
   // constructors
   frInstTerm(frInst* inst, frMTerm* term)
-      : inst_(inst), term_(term), net_(nullptr), ap_()
+      : inst_(inst), term_(term)
   {
   }
-  frInstTerm(const frInstTerm& in)
-      : frBlockObject(), inst_(in.inst_), term_(in.term_), net_(in.net_), ap_()
-  {
-  }
+  frInstTerm(const frInstTerm& in) = delete;
   // getters
   bool hasNet() const { return (net_); }
   frNet* getNet() const { return net_; }
@@ -82,7 +79,7 @@ class frInstTerm : public frBlockObject
   int index_in_owner_{0};
   frInst* inst_;
   frMTerm* term_;
-  frNet* net_;
+  frNet* net_{nullptr};
   std::vector<frAccessPoint*> ap_;  // follows pin index
 };
 

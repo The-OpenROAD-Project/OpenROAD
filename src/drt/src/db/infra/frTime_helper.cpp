@@ -53,8 +53,8 @@
 
 #elif defined(__linux__) || defined(__linux) || defined(linux) \
     || defined(__gnu_linux__)
-#include <stdio.h>
-
+#include <cstdint>
+#include <cstdio>
 #endif
 
 #else
@@ -133,10 +133,11 @@ size_t getCurrentRSS()
 #elif defined(__linux__) || defined(__linux) || defined(linux) \
     || defined(__gnu_linux__)
   /* Linux ---------------------------------------------------- */
-  long rss = 0L;
-  FILE* fp = NULL;
-  if ((fp = fopen("/proc/self/statm", "r")) == NULL)
+  int64_t rss = 0L;
+  FILE* fp = nullptr;
+  if ((fp = fopen("/proc/self/statm", "r")) == nullptr) {
     return (size_t) 0L; /* Can't open? */
+  }
   if (fscanf(fp, "%*s%ld", &rss) != 1) {
     fclose(fp);
     return (size_t) 0L; /* Can't read? */
