@@ -424,8 +424,8 @@ void RouteBase::updateRoute()
       // TileGrid setup.
 
       // first extract current tiles' usage
-      float ratio
-          = getUsageCapacityRatio(tile, layer, gGrid, grouter_, rbVars_.ignoreEdgeRatio);
+      float ratio = getUsageCapacityRatio(
+          tile, layer, gGrid, grouter_, rbVars_.ignoreEdgeRatio);
 
       // if horizontal layer (i.e., vertical edges)
       // should consider LEFT tile's RIGHT edge == current 'tile's LEFT edge
@@ -717,8 +717,8 @@ float RouteBase::getRC() const
           = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);
 
       // extract the ratio in the same way as inflation ratio cals
-      float ratio
-          = getUsageCapacityRatio(tile, layer, gGrid, grouter_, rbVars_.ignoreEdgeRatio);
+      float ratio = getUsageCapacityRatio(
+          tile, layer, gGrid, grouter_, rbVars_.ignoreEdgeRatio);
 
       // escape the case when blockageRatio is too huge
       if (ratio >= 0.0f) {
