@@ -817,10 +817,6 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
   for (int orderIndex = 0; orderIndex < endIND; orderIndex++) {
     const int netID = tree_order_pv_[orderIndex].treeIndex;
 
-    if (skipNet(netID)) {
-      continue;
-    }
-
     FrNet* net = nets_[netID];
 
     int enlarge = expand;

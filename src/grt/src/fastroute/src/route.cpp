@@ -229,20 +229,14 @@ void FastRouteCore::routeLAll(bool firstTime)
 {
   if (firstTime) {  // no previous route
     // estimate congestion with 0.5+0.5 L
-    for (int i = 0; i < netCount(); i++) {
-      if (skipNet(i)) {
-        continue;
-      }
+    for (int & i : dirty_net_ids_) {
 
       for (auto& seg : seglist_[i]) {
         estimateOneSeg(&seg);
       }
     }
     // L route
-    for (int i = 0; i < netCount(); i++) {
-      if (skipNet(i)) {
-        continue;
-      }
+    for (int & i : dirty_net_ids_) {
 
       for (auto& seg : seglist_[i]) {
         // no need to reroute the H or V segs
@@ -251,10 +245,7 @@ void FastRouteCore::routeLAll(bool firstTime)
       }
     }
   } else {  // previous is L-route
-    for (int i = 0; i < netCount(); i++) {
-      if (skipNet(i)) {
-        continue;
-      }
+    for (int & i : dirty_net_ids_) {
 
       for (auto& seg : seglist_[i]) {
         // no need to reroute the H or V segs
@@ -418,16 +409,12 @@ void FastRouteCore::newrouteL(int netID, RouteType ripuptype, bool viaGuided)
 void FastRouteCore::newrouteLAll(bool firstTime, bool viaGuided)
 {
   if (firstTime) {
-    for (int i = 0; i < netCount(); i++) {
-      if (!skipNet(i)) {
-        newrouteL(i, RouteType::NoRoute, viaGuided);  // do L-routing
-      }
+    for (int & i : dirty_net_ids_) {
+      newrouteL(i, RouteType::NoRoute, viaGuided);  // do L-routing
     }
   } else {
-    for (int i = 0; i < netCount(); i++) {
-      if (!skipNet(i)) {
-        newrouteL(i, RouteType::LRoute, viaGuided);
-      }
+    for (int & i : dirty_net_ids_) {
+      newrouteL(i, RouteType::LRoute, viaGuided);
     }
   }
 }
@@ -858,10 +845,8 @@ void FastRouteCore::newrouteZ(int netID, int threshold)
 // first
 void FastRouteCore::newrouteZAll(int threshold)
 {
-  for (int i = 0; i < netCount(); i++) {
-    if (!skipNet(i)) {
-      newrouteZ(i, threshold);  // ripup previous route and do Z-routing
-    }
+  for (int & i : dirty_net_ids_) {
+    newrouteZ(i, threshold);  // ripup previous route and do Z-routing
   }
 }
 
@@ -1037,10 +1022,7 @@ void FastRouteCore::spiralRoute(int netID, int edgeID)
 
 void FastRouteCore::spiralRouteAll()
 {
-  for (int netID = 0; netID < netCount(); netID++) {
-    if (skipNet(netID)) {
-      continue;
-    }
+  for (int & netID : dirty_net_ids_) {
 
     auto& treenodes = sttrees_[netID].nodes;
     const int num_terminals = sttrees_[netID].num_terminals;
@@ -1088,10 +1070,7 @@ void FastRouteCore::spiralRouteAll()
     }
   }
 
-  for (int netID = 0; netID < netCount(); netID++) {
-    if (skipNet(netID)) {
-      continue;
-    }
+  for (int & netID : dirty_net_ids_) {
 
     auto& treeedges = sttrees_[netID].edges;
     auto& treenodes = sttrees_[netID].nodes;
@@ -1118,10 +1097,7 @@ void FastRouteCore::spiralRouteAll()
   }
 
   std::queue<int> edgeQueue;
-  for (int netID = 0; netID < netCount(); netID++) {
-    if (skipNet(netID)) {
-      continue;
-    }
+  for (int & netID : dirty_net_ids_) {
 
     newRipupNet(netID);
 
@@ -1174,10 +1150,7 @@ void FastRouteCore::spiralRouteAll()
     }
   }
 
-  for (int netID = 0; netID < netCount(); netID++) {
-    if (skipNet(netID)) {
-      continue;
-    }
+  for (int & netID : dirty_net_ids_) {
 
     auto& treenodes = sttrees_[netID].nodes;
 
@@ -1514,10 +1487,7 @@ void FastRouteCore::routeMonotonicAll(int threshold,
   multi_array<float, 2> d1(boost::extents[y_range_][x_range_]);
   multi_array<float, 2> d2(boost::extents[y_range_][x_range_]);
 
-  for (int netID = 0; netID < netCount(); netID++) {
-    if (skipNet(netID)) {
-      continue;
-    }
+  for (int & netID : dirty_net_ids_) {
 
     const int numEdges = sttrees_[netID].num_edges();
     for (int edgeID = 0; edgeID < numEdges; edgeID++) {

@@ -622,6 +622,7 @@ class FastRouteCore
 
   std::set<std::pair<int, int>> h_used_ggrid_;
   std::set<std::pair<int, int>> v_used_ggrid_;
+  std::vector<int> dirty_net_ids_;
 };
 
 }  // namespace grt

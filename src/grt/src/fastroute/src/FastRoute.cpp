@@ -665,10 +665,7 @@ void FastRouteCore::initNetAuxVars()
 NetRouteMap FastRouteCore::getRoutes()
 {
   NetRouteMap routes;
-  for (int netID = 0; netID < netCount(); netID++) {
-    if (skipNet(netID)) {
-      continue;
-    }
+  for (int & netID : dirty_net_ids_) {
 
     nets_[netID]->setIsRouted(true);
     odb::dbNet* db_net = nets_[netID]->getDbNet();
@@ -728,10 +725,7 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
 
   // Get routes before layer assignment
 
-  for (int netID = 0; netID < netCount(); netID++) {
-    if (skipNet(netID)) {
-      continue;
-    }
+  for (int & netID : dirty_net_ids_) {
 
     auto fr_net = nets_[netID];
     odb::dbNet* db_net = fr_net->getDbNet();
@@ -883,6 +877,13 @@ NetRouteMap FastRouteCore::run()
   v_used_ggrid_.clear();
   h_used_ggrid_.clear();
 
+  dirty_net_ids_.clear();
+  for (int netID = 0; netID < netCount(); netID++) {
+    if (!skipNet(netID)) {
+      dirty_net_ids_.push_back(netID);
+    }
+  }
+
   int tUsage;
   int cost_step;
   int maxOverflow = 0;
@@ -1002,10 +1003,8 @@ NetRouteMap FastRouteCore::run()
 
   // debug mode Rectilinear Steiner Tree before overflow iterations
   if (debug_->isOn() && debug_->rectilinearSTree_) {
-    for (int netID = 0; netID < netCount(); netID++) {
-      if (nets_[netID]->getDbNet() == debug_->net_ && !skipNet(netID)) {
-        StTreeVisualization(sttrees_[netID], nets_[netID], false);
-      }
+    for (int & netID : dirty_net_ids_) {
+      StTreeVisualization(sttrees_[netID], nets_[netID], false);
     }
   }
 
@@ -1253,10 +1252,8 @@ NetRouteMap FastRouteCore::run()
 
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn() && debug_->tree2D_) {
-    for (int netID = 0; netID < netCount(); netID++) {
-      if (nets_[netID]->getDbNet() == debug_->net_ && !skipNet(netID)) {
-        StTreeVisualization(sttrees_[netID], nets_[netID], false);
-      }
+    for (int & netID : dirty_net_ids_) {
+      StTreeVisualization(sttrees_[netID], nets_[netID], false);
     }
   }
 
@@ -1310,10 +1307,8 @@ NetRouteMap FastRouteCore::run()
 
   // Debug mode Tree 3D after layer assignament
   if (debug_->isOn() && debug_->tree3D_) {
-    for (int netID = 0; netID < netCount(); netID++) {
-      if (nets_[netID]->getDbNet() == debug_->net_ && !skipNet(netID)) {
-        StTreeVisualization(sttrees_[netID], nets_[netID], true);
-      }
+    for (int & netID : dirty_net_ids_) {
+      StTreeVisualization(sttrees_[netID], nets_[netID], true);
     }
   }
 
