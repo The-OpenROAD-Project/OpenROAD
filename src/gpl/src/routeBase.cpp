@@ -349,10 +349,10 @@ static float getUsageCapacityRatio(Tile* tile,
                                    odb::dbGCellGrid* gGrid,
                                    float ignoreEdgeRatio)
 {
-  uint8_t useH = 0, useV = 0, useU = 0;
-  uint8_t blockH = 0, blockV = 0, blockU = 0;
-  gGrid->getUsage(layer, tile->x(), tile->y(), useH, useV, useU);
-  gGrid->getBlockage(layer, tile->x(), tile->y(), blockH, blockV, blockU);
+  uint8_t useH = 0, useV = 0;
+  uint8_t blockH = 0, blockV = 0;
+  gGrid->getUsage(layer, tile->x(), tile->y(), useH, useV);
+  gGrid->getBlockage(layer, tile->x(), tile->y(), blockH, blockV);
 
   bool isHorizontal
       = (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);

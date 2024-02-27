@@ -98,12 +98,6 @@
           "default": 0
         },
         {
-          "name": "up_usage",
-          "type": "uint8_t",
-          "flags": ["no-serial"],
-          "default": 0
-        },
-        {
           "name": "capacity",
           "type": "uint8_t",
           "flags": ["no-serial"],
@@ -117,12 +111,6 @@
         },
         {
           "name": "vertical_blockage",
-          "type": "uint8_t",
-          "flags": ["no-serial"],
-          "default": 0
-        },
-        {
-          "name": "up_blockage",
           "type": "uint8_t",
           "flags": ["no-serial"],
           "default": 0
