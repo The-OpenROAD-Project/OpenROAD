@@ -51,7 +51,7 @@ class Distributed;
 namespace odb {
 class dbDatabase;
 }
-namespace ord {
+namespace utl {
 class Logger;
 }
 
@@ -116,7 +116,7 @@ class FlexDR
   // distributed
   void setDistributed(dst::Distributed* dist,
                       const std::string& remote_ip,
-                      unsigned short remote_port,
+                      uint16_t remote_port,
                       const std::string& dir)
   {
     dist_on_ = true;
@@ -151,7 +151,7 @@ class FlexDR
   dst::Distributed* dist_;
   bool dist_on_;
   std::string dist_ip_;
-  unsigned short dist_port_;
+  uint16_t dist_port_;
   std::string dist_dir_;
   std::string globals_path_;
   bool increaseClipsize_;
@@ -167,7 +167,10 @@ class FlexDR
 
   void removeGCell2BoundaryPin();
   std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
-  initDR_mergeBoundaryPin(int i, int j, int size, const Rect& routeBox);
+  initDR_mergeBoundaryPin(int startX,
+                          int startY,
+                          int size,
+                          const Rect& routeBox);
 };
 
 class FlexDRWorker;
@@ -179,10 +182,10 @@ class FlexDRWorkerRegionQuery
   void add(drConnFig* connFig);
   void remove(drConnFig* connFig);
   void query(const Rect& box,
-             const frLayerNum layerNum,
+             frLayerNum layerNum,
              std::vector<drConnFig*>& result) const;
   void query(const Rect& box,
-             const frLayerNum layerNum,
+             frLayerNum layerNum,
              std::vector<rq_box_value_t<drConnFig*>>& result) const;
   void init();
   void cleanup();
@@ -197,7 +200,7 @@ class FlexDRMinAreaVio
 {
  public:
   // constructors
-  FlexDRMinAreaVio() : net_(nullptr), gapArea_(0) {}
+  FlexDRMinAreaVio() = default;
   FlexDRMinAreaVio(drNet* netIn,
                    FlexMazeIdx bpIn,
                    FlexMazeIdx epIn,
@@ -224,9 +227,9 @@ class FlexDRMinAreaVio
   frCoord getGapArea() const { return gapArea_; }
 
  private:
-  drNet* net_;
+  drNet* net_ = nullptr;
   FlexMazeIdx bp_, ep_;
-  frCoord gapArea_;
+  frCoord gapArea_ = 0;
 };
 
 class FlexGCWorker;
@@ -237,69 +240,19 @@ class FlexDRWorker
   FlexDRWorker(FlexDRViaData* via_data, frDesign* design, Logger* logger)
       : design_(design),
         logger_(logger),
-        graphics_(nullptr),
-        debugSettings_(nullptr),
         via_data_(via_data),
-        routeBox_(),
-        extBox_(),
-        drcBox_(),
-        drIter_(0),
         mazeEndIter_(1),
-        followGuide_(false),
-        needRecheck_(false),
-        skipRouting_(false),
         ripupMode_(RipUpMode::ALL),
         workerDRCCost_(ROUTESHAPECOST),
         workerMarkerCost_(MARKERCOST),
-        workerFixedShapeCost_(0),
-        workerMarkerDecay_(0),
-        boundaryPin_(),
-        pinCnt_(0),
-        initNumMarkers_(0),
-        apSVia_(),
-        planarHistoryMarkers_(),
-        viaHistoryMarkers_(),
         historyMarkers_(std::vector<std::set<FlexMazeIdx>>(3)),
-        nets_(),
-        owner2nets_(),
         gridGraph_(design->getTech(), logger, this),
-        markers_(),
-        rq_(this),
-        gcWorker_(nullptr),
-        dist_(nullptr),
-        dist_port_(0),
-        dist_on_(false),
-        isCongested_(false),
-        save_updates_(false)
+        rq_(this)
   {
   }
   FlexDRWorker()
       :  // for serialization
-        design_(nullptr),
-        logger_(nullptr),
-        graphics_(nullptr),
-        debugSettings_(nullptr),
-        via_data_(nullptr),
-        drIter_(0),
-        mazeEndIter_(0),
-        followGuide_(false),
-        needRecheck_(false),
-        skipRouting_(false),
-        ripupMode_(RipUpMode::DRC),
-        workerDRCCost_(0),
-        workerMarkerCost_(0),
-        workerFixedShapeCost_(0),
-        workerMarkerDecay_(0),
-        boundaryPin_(),
-        pinCnt_(0),
-        initNumMarkers_(0),
-        rq_(this),
-        gcWorker_(nullptr),
-        dist_(nullptr),
-        dist_port_(0),
-        dist_on_(false),
-        isCongested_(false),
-        save_updates_(false)
+        rq_(this)
   {
   }
   // setters
@@ -415,9 +368,8 @@ class FlexDRWorker
     auto it = owner2nets_.find(net);
     if (it != owner2nets_.end()) {
       return &(it->second);
-    } else {
-      return nullptr;
     }
+    return nullptr;
   }
   frDesign* getDesign() { return design_; }
   void setDesign(frDesign* design) { design_ = design; }
@@ -448,7 +400,7 @@ class FlexDRWorker
     gridGraph_.setLogger(logger);
   }
 
-  static std::unique_ptr<FlexDRWorker> load(const std::string& file_name,
+  static std::unique_ptr<FlexDRWorker> load(const std::string& workerStr,
                                             utl::Logger* logger,
                                             frDesign* design,
                                             FlexDRGraphics* graphics);
@@ -456,7 +408,7 @@ class FlexDRWorker
   // distributed
   void setDistributed(dst::Distributed* dist,
                       const std::string& remote_ip,
-                      unsigned short remote_port,
+                      uint16_t remote_port,
                       const std::string& dir)
   {
     dist_on_ = true;
@@ -488,35 +440,37 @@ class FlexDRWorker
   };
 
  private:
-  typedef struct
+  struct RouteQueueEntry
   {
     frBlockObject* block;
     int numReroute;
     bool doRoute;
-  } RouteQueueEntry;
-  frDesign* design_;
-  Logger* logger_;
-  FlexDRGraphics* graphics_;  // owned by FlexDR
-  frDebugSettings* debugSettings_;
-  FlexDRViaData* via_data_;
+  };
+  frDesign* design_ = nullptr;
+  Logger* logger_ = nullptr;
+  FlexDRGraphics* graphics_ = nullptr;  // owned by FlexDR
+  frDebugSettings* debugSettings_ = nullptr;
+  FlexDRViaData* via_data_ = nullptr;
   Rect routeBox_;
   Rect extBox_;
   Rect drcBox_;
   Rect gcellBox_;
-  int drIter_;
-  int mazeEndIter_;
-  bool followGuide_;
-  bool needRecheck_;
-  bool skipRouting_;
-  RipUpMode ripupMode_;
+  int drIter_ = 0;
+  int mazeEndIter_ = 0;
+  bool followGuide_ = false;
+  bool needRecheck_ = false;
+  bool skipRouting_ = false;
+  RipUpMode ripupMode_ = RipUpMode::DRC;
   // drNetOrderingEnum netOrderingMode;
-  frUInt4 workerDRCCost_, workerMarkerCost_, workerFixedShapeCost_;
-  float workerMarkerDecay_;
+  frUInt4 workerDRCCost_ = 0;
+  frUInt4 workerMarkerCost_ = 0;
+  frUInt4 workerFixedShapeCost_ = 0;
+  float workerMarkerDecay_ = 0;
   // used in init route as gr boundary pin
   std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
       boundaryPin_;
-  int pinCnt_;
-  int initNumMarkers_;
+  int pinCnt_ = 0;
+  int initNumMarkers_ = 0;
   std::map<FlexMazeIdx, drAccessPattern*> apSVia_;
   std::set<FlexMazeIdx> planarHistoryMarkers_;
   std::set<FlexMazeIdx> viaHistoryMarkers_;
@@ -537,13 +491,13 @@ class FlexDRWorker
   std::vector<Point3D> specialAccessAPs;
 
   // distributed
-  dst::Distributed* dist_;
+  dst::Distributed* dist_ = nullptr;
   std::string dist_ip_;
-  unsigned short dist_port_;
+  uint16_t dist_port_ = 0;
   std::string dist_dir_;
-  bool dist_on_;
-  bool isCongested_;
-  bool save_updates_;
+  bool dist_on_ = false;
+  bool isCongested_ = false;
+  bool save_updates_ = false;
 
   // hellpers
   bool isRoutePatchWire(const frPatchWire* pwire) const;
@@ -752,7 +706,7 @@ class FlexDRWorker
                   frCoord high,
                   frCoord line,
                   bool isVertical,
-                  bool innerIsHigh,
+                  bool innerDirIsIncreasing,
                   frLayer* layer,
                   ModCostType modType);
   void route_queue_resetRipup();
@@ -875,7 +829,7 @@ class FlexDRWorker
   void mazeNetEnd(drNet* net);
   bool routeNet(drNet* net);
   void routeNet_prep(drNet* net,
-                     std::set<drPin*, frBlockObjectComp>& pins,
+                     std::set<drPin*, frBlockObjectComp>& unConnPins,
                      std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp>>&
                          mazeIdx2unConnPins,
                      std::set<FlexMazeIdx>& apMazeIdx,
@@ -962,7 +916,7 @@ class FlexDRWorker
                          frSegStyle& style,
                          const std::set<FlexMazeIdx>& apMazeIdx,
                          const FlexMazeIdx& idx);
-  void checkViaConnectivityToAP(drVia* ps,
+  void checkViaConnectivityToAP(drVia* via,
                                 bool isBottom,
                                 frNet* net,
                                 const std::set<FlexMazeIdx>& apMazeIdx,
@@ -977,8 +931,8 @@ class FlexDRWorker
                                        const FlexMazeIdx& epIdx,
                                        frCoord gapArea,
                                        frCoord patchWidth,
-                                       bool bpPatchStyle = true,
-                                       bool epPatchStyle = false);
+                                       bool bpPatchLeft = true,
+                                       bool epPatchLeft = false);
   int routeNet_postAstarAddPathMetal_isClean(const FlexMazeIdx& bpIdx,
                                              bool isPatchHorz,
                                              bool isPatchLeft,
@@ -1022,11 +976,10 @@ class FlexDRWorker
   void endAddMarkers(frDesign* design);
 
   // helper functions
-  frCoord snapCoordToManufacturingGrid(const frCoord coord,
-                                       const int lowerLeftCoord);
+  frCoord snapCoordToManufacturingGrid(frCoord coord, int lowerLeftCoord);
 
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
+  void serialize(Archive& ar, unsigned int version);
   friend class boost::serialization::access;
 };
 }  // namespace fr
