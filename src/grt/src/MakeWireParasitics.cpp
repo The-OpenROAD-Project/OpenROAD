@@ -102,7 +102,8 @@ void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
     makeRouteParasitics(
         net, route, sta_net, corner, analysis_point, parasitic, node_map);
     makeParasiticsToPins(pins, node_map, corner, analysis_point, parasitic);
-    arc_delay_calc_->reduceParasitic(parasitic, sta_net, corner, sta::MinMaxAll::all());
+    arc_delay_calc_->reduceParasitic(
+        parasitic, sta_net, corner, sta::MinMaxAll::all());
   }
   parasitics_->deleteParasiticNetworks(sta_net);
 }
@@ -138,7 +139,8 @@ void MakeWireParasitics::estimateParasitcs(odb::dbNet* net, GRoute& route)
         net, route, sta_net, corner, analysis_point, parasitic, node_map);
     makePartialParasiticsToPins(
         grt_net->getPins(), node_map, corner, analysis_point, parasitic, net);
-    arc_delay_calc_->reduceParasitic(parasitic, sta_net, corner, sta::MinMaxAll::all());
+    arc_delay_calc_->reduceParasitic(
+        parasitic, sta_net, corner, sta::MinMaxAll::all());
   }
 
   parasitics_->deleteParasiticNetworks(sta_net);
@@ -264,7 +266,7 @@ void MakeWireParasitics::makeParasiticsToPin(
 {
   sta::Pin* sta_pin = staPin(pin);
   sta::ParasiticNode* pin_node
-    = parasitics_->ensureParasiticNode(parasitic, sta_pin, network_);
+      = parasitics_->ensureParasiticNode(parasitic, sta_pin, network_);
 
   odb::Point pt = pin.getPosition();
   odb::Point grid_pt = pin.getOnGridPosition();
@@ -334,8 +336,8 @@ void MakeWireParasitics::makeParasiticsToPin(
     // but that would require an extra node and the accuracy of all
     // this is not that high.  Instead we just lump them together.
     parasitics_->incrCap(pin_node, cap / 2.0);
-    parasitics_->makeResistor(parasitic, resistor_id_++, res + via_res,
-                              pin_node, grid_node);
+    parasitics_->makeResistor(
+        parasitic, resistor_id_++, res + via_res, pin_node, grid_node);
     parasitics_->incrCap(grid_node, cap / 2.0);
   } else {
     logger_->warn(GRT, 26, "Missing route to pin {}.", pin.getName());
@@ -367,7 +369,7 @@ void MakeWireParasitics::makePartialParasiticsToPin(
 {
   sta::Pin* sta_pin = staPin(pin);
   sta::ParasiticNode* pin_node
-    = parasitics_->ensureParasiticNode(parasitic, sta_pin, network_);
+      = parasitics_->ensureParasiticNode(parasitic, sta_pin, network_);
 
   odb::Point pt = pin.getPosition();
   odb::Point grid_pt = pin.getOnGridPosition();
@@ -442,8 +444,8 @@ void MakeWireParasitics::makePartialParasiticsToPin(
     // but that would require an extra node and the accuracy of all
     // this is not that high.  Instead we just lump them together.
     parasitics_->incrCap(pin_node, cap / 2.0);
-    parasitics_->makeResistor(parasitic, resistor_id_++, res + via_res,
-                              pin_node, grid_node);
+    parasitics_->makeResistor(
+        parasitic, resistor_id_++, res + via_res, pin_node, grid_node);
     parasitics_->incrCap(grid_node, cap / 2.0);
   } else {
     logger_->warn(GRT, 350, "Missing route to pin {}.", pin.getName());
@@ -495,7 +497,8 @@ sta::ParasiticNode* MakeWireParasitics::ensureParasiticNode(
   RoutePt pin_loc(x, y, layer);
   sta::ParasiticNode* node = node_map[pin_loc];
   if (node == nullptr) {
-    node = parasitics_->ensureParasiticNode(parasitic, net, node_map.size(), network_);
+    node = parasitics_->ensureParasiticNode(
+        parasitic, net, node_map.size(), network_);
     node_map[pin_loc] = node;
   }
   return node;
