@@ -4175,6 +4175,10 @@ void HierRTLMP::mergeNets(std::vector<BundledNet>& nets)
   }
   nets.clear();
   nets = merged_nets;
+
+  if (graphics_) {
+    graphics_->setBundledNets(nets);
+  }
 }
 
 // Multilevel macro placement without bus planning
@@ -5493,6 +5497,10 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
     }  // end connection
   }    // end macro cluster
   // set global configuration
+
+  if (graphics_) {
+    graphics_->setBundledNets(nets);
+  }
 
   // Use exchange more often when there are more instances of a common
   // master.

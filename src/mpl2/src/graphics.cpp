@@ -333,11 +333,28 @@ void Graphics::drawObjects(gui::Painter& painter)
     }
   }
 
-  if (root_) {
-    // Hightlight outline so we see where SA is working
-    painter.setPen(gui::Painter::cyan, true);
-    painter.setBrush(gui::Painter::transparent);
-    painter.drawRect(outline_);
+  painter.setPen(gui::Painter::yellow, true);
+  if (!hard_macros_.empty()) {
+    drawBundledNets(painter, hard_macros_);
+  } else if (!soft_macros_.empty()) {
+    drawBundledNets(painter, soft_macros_);
+  }
+
+  // Hightlight outline so we see where SA is working
+  painter.setPen(gui::Painter::cyan, true);
+  painter.setBrush(gui::Painter::transparent);
+  painter.drawRect(outline_);
+}
+
+template <typename T>
+void Graphics::drawBundledNets(gui::Painter& painter,
+                               const std::vector<T>& macros)
+{
+  for (const auto& bundled_net : bundled_nets_) {
+    painter.drawLine(macros[bundled_net.terminals.first].getPinX() * dbu_,
+                     macros[bundled_net.terminals.first].getPinY() * dbu_,
+                     macros[bundled_net.terminals.second].getPinX() * dbu_,
+                     macros[bundled_net.terminals.second].getPinY() * dbu_);
   }
 }
 
@@ -372,6 +389,11 @@ void Graphics::setPlacementBlockages(
   placement_blockages_ = placement_blockages;
 }
 
+void Graphics::setBundledNets(const std::vector<BundledNet>& bundled_nets)
+{
+  bundled_nets_ = bundled_nets;
+}
+
 void Graphics::setOutline(const odb::Rect& outline)
 {
   outline_ = outline;
@@ -386,6 +408,7 @@ void Graphics::eraseDrawing()
   hard_macros_.clear();
   macro_blockages_.clear();
   placement_blockages_.clear();
+  bundled_nets_.clear();
 }
 
 }  // namespace mpl2
