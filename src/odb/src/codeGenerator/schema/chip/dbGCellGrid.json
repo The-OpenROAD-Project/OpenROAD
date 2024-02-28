@@ -86,13 +86,7 @@
       "name": "GCellData",
       "fields": [
         {
-          "name": "horizontal_usage",
-          "type": "uint8_t",
-          "flags": ["no-serial"],
-          "default": 0
-        },
-        {
-          "name": "vertical_usage",
+          "name": "usage",
           "type": "uint8_t",
           "flags": ["no-serial"],
           "default": 0

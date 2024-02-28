@@ -873,13 +873,13 @@ void FastRouteCore::updateDbCongestion()
           uint8_t blockageV = v_edges_3D_[k][y - 1][x].red;
           uint8_t usageH = h_edges_3D_[k][y - 1][x - 1].usage + blockageH;
           uint8_t usageV = v_edges_3D_[k][y - 1][x - 1].usage + blockageV;
-          db_gcell->setUsage(layer, x, y, usageH, usageV);
+          db_gcell->setUsage(layer, x, y, usageH + usageV);
         } else {
           uint8_t blockageH = h_edges_3D_[k][y][x].red;
           uint8_t blockageV = v_edges_3D_[k][y][x].red;
           uint8_t usageH = h_edges_3D_[k][y][x].usage + blockageH;
           uint8_t usageV = v_edges_3D_[k][y][x].usage + blockageV;
-          db_gcell->setUsage(layer, x, y, usageH, usageV);
+          db_gcell->setUsage(layer, x, y, usageH + usageV);
         }
       }
     }

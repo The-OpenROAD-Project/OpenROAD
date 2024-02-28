@@ -701,7 +701,7 @@ void FlexGR::updateDbCongestion(odb::dbDatabase* db, FlexGRCMap* cmap)
             = cmap->getRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::N);
         gcell->setCapacity(
             layer, xIdx, yIdx, horizontal_capacity + vertical_capacity);
-        gcell->setUsage(layer, xIdx, yIdx, horizontal_usage, vertical_usage);
+        gcell->setUsage(layer, xIdx, yIdx, horizontal_usage + vertical_usage);
       }
     cmapLayerIdx++;
   }

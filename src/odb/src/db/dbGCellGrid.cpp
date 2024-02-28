@@ -206,8 +206,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbGCellGrid& obj)
 dbIStream& operator>>(dbIStream& stream, dbGCellGrid::GCellData& obj)
 {
   if (stream.getDatabase()->isSchema(db_schema_smaler_gcelldata)) {
-    stream >> obj.horizontal_usage;
-    stream >> obj.vertical_usage;
+    stream >> obj.usage;
     stream >> obj.capacity;
   } else {
     uint horizontal_usage;
@@ -224,8 +223,7 @@ dbIStream& operator>>(dbIStream& stream, dbGCellGrid::GCellData& obj)
     stream >> vertical_capacity;
     stream >> up_capacity;
 
-    obj.horizontal_usage = horizontal_usage;
-    obj.vertical_usage = vertical_usage;
+    obj.usage = vertical_usage + horizontal_usage + up_usage;
     obj.capacity = horizontal_capacity + vertical_capacity + up_capacity;
   }
   return stream;
@@ -233,8 +231,7 @@ dbIStream& operator>>(dbIStream& stream, dbGCellGrid::GCellData& obj)
 
 dbOStream& operator<<(dbOStream& stream, const dbGCellGrid::GCellData& obj)
 {
-  stream << obj.horizontal_usage;
-  stream << obj.vertical_usage;
+  stream << obj.usage;
   stream << obj.capacity;
   return stream;
 }
@@ -474,22 +471,11 @@ uint8_t dbGCellGrid::getCapacity(dbTechLayer* layer,
   return _grid->get(lid)(x_idx, y_idx).capacity;
 }
 
-uint8_t dbGCellGrid::getHorizontalUsage(dbTechLayer* layer,
-                                        uint x_idx,
-                                        uint y_idx) const
+uint8_t dbGCellGrid::getUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  return _grid->get(lid)(x_idx, y_idx).horizontal_usage;
-}
-
-uint8_t dbGCellGrid::getVerticalUsage(dbTechLayer* layer,
-                                      uint x_idx,
-                                      uint y_idx) const
-{
-  _dbGCellGrid* _grid = (_dbGCellGrid*) this;
-  uint lid = layer->getId();
-  return _grid->get(lid)(x_idx, y_idx).vertical_usage;
+  return _grid->get(lid)(x_idx, y_idx).usage;
 }
 
 void dbGCellGrid::setCapacity(dbTechLayer* layer,
@@ -502,51 +488,14 @@ void dbGCellGrid::setCapacity(dbTechLayer* layer,
   _grid->get(lid)(x_idx, y_idx).capacity = capacity;
 }
 
-void dbGCellGrid::setHorizontalUsage(dbTechLayer* layer,
-                                     uint x_idx,
-                                     uint y_idx,
-                                     uint8_t use)
-{
-  _dbGCellGrid* _grid = (_dbGCellGrid*) this;
-  uint lid = layer->getId();
-  _grid->get(lid)(x_idx, y_idx).horizontal_usage = use;
-}
-
-void dbGCellGrid::setVerticalUsage(dbTechLayer* layer,
-                                   uint x_idx,
-                                   uint y_idx,
-                                   uint8_t use)
-{
-  _dbGCellGrid* _grid = (_dbGCellGrid*) this;
-  uint lid = layer->getId();
-  _grid->get(lid)(x_idx, y_idx).vertical_usage = use;
-}
-
 void dbGCellGrid::setUsage(dbTechLayer* layer,
                            uint x_idx,
                            uint y_idx,
-                           uint8_t horizontal,
-                           uint8_t vertical)
+                           uint8_t use)
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  dbGCellGrid::GCellData& gcell = _grid->get(lid)(x_idx, y_idx);
-  gcell.horizontal_usage = horizontal;
-  gcell.vertical_usage = vertical;
-}
-
-void dbGCellGrid::getUsage(dbTechLayer* layer,
-                           uint x_idx,
-                           uint y_idx,
-                           uint8_t& horizontal,
-                           uint8_t& vertical) const
-{
-  _dbGCellGrid* _grid = (_dbGCellGrid*) this;
-  uint lid = layer->getId();
-  auto data = _grid->get(lid)(x_idx, y_idx);
-
-  horizontal = data.horizontal_usage;
-  vertical = data.vertical_usage;
+  _grid->get(lid)(x_idx, y_idx).usage = use;
 }
 
 void dbGCellGrid::resetCongestionMap()
@@ -589,12 +538,9 @@ dbMatrix<dbGCellGrid::GCellData> dbGCellGrid::getCongestionMap(
       dbTechLayer* tech_layer = _grid->getLayer(lid);
       for (int row = 0; row < num_rows; ++row) {
         for (int col = 0; col < num_cols; ++col) {
-          congestion(row, col).horizontal_usage
-              += matrix(row, col).horizontal_usage;
-          congestion(row, col).vertical_usage
-              += matrix(row, col).vertical_usage;
           if (direction == odb::dbTechLayerDir::NONE
               || direction == tech_layer->getDirection()) {
+            congestion(row, col).usage += matrix(row, col).usage;
             congestion(row, col).capacity += matrix(row, col).capacity;
           }
         }

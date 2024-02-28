@@ -350,9 +350,7 @@ static float getUsageCapacityRatio(Tile* tile,
                                    grt::GlobalRouter* grouter,
                                    float ignoreEdgeRatio)
 {
-  uint8_t useH = 0, useV = 0;
   uint8_t blockH = 0, blockV = 0;
-  gGrid->getUsage(layer, tile->x(), tile->y(), useH, useV);
   grouter->getBlockage(layer, tile->x(), tile->y(), blockH, blockV);
 
   bool isHorizontal
@@ -369,7 +367,7 @@ static float getUsageCapacityRatio(Tile* tile,
   // if blockage ratio is larger than certain ratio,
   // need to skip.
   uint8_t curCap = gGrid->getCapacity(layer, tile->x(), tile->y());
-  uint8_t curUse = (isHorizontal) ? useH : useV;
+  uint8_t curUse = gGrid->getUsage(layer, tile->x(), tile->y());
   uint8_t blockage = (isHorizontal) ? blockH : blockV;
 
   // escape tile ratio cals when capacity = 0

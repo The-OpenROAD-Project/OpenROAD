@@ -7072,8 +7072,7 @@ class dbGCellGrid : public dbObject
  public:
   struct GCellData
   {
-    uint8_t horizontal_usage = 0;
-    uint8_t vertical_usage = 0;
+    uint8_t usage = 0;
     uint8_t capacity = 0;
   };
 
@@ -7140,36 +7139,14 @@ class dbGCellGrid : public dbObject
 
   uint8_t getCapacity(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
-  uint8_t getHorizontalUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
-
-  uint8_t getVerticalUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
+  uint8_t getUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
   void setCapacity(dbTechLayer* layer,
                    uint x_idx,
                    uint y_idx,
                    uint8_t capacity);
 
-  void setHorizontalUsage(dbTechLayer* layer,
-                          uint x_idx,
-                          uint y_idx,
-                          uint8_t use);
-
-  void setVerticalUsage(dbTechLayer* layer,
-                        uint x_idx,
-                        uint y_idx,
-                        uint8_t use);
-
-  void setUsage(dbTechLayer* layer,
-                uint x_idx,
-                uint y_idx,
-                uint8_t horizontal,
-                uint8_t vertical);
-
-  void getUsage(dbTechLayer* layer,
-                uint x_idx,
-                uint y_idx,
-                uint8_t& horizontal,
-                uint8_t& vertical) const;
+  void setUsage(dbTechLayer* layer, uint x_idx, uint y_idx, uint8_t use);
 
   void resetCongestionMap();
 

@@ -1658,7 +1658,7 @@ void GlobalRouter::updateDbCongestionFromGuides()
         const unsigned short usageH = h_edges_3D[k][y][x].usage + blockageH;
         const unsigned short usageV = v_edges_3D[k][y][x].usage + blockageV;
         db_gcell->setCapacity(layer, x, y, capH + capV);
-        db_gcell->setUsage(layer, x, y, usageH, usageV);
+        db_gcell->setUsage(layer, x, y, usageH + usageV);
       }
     }
   }
