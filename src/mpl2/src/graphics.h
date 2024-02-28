@@ -79,6 +79,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   void setPlacementBlockages(
       const std::vector<mpl2::Rect>& placement_blockages) override;
   void setBundledNets(const std::vector<BundledNet>& bundled_nets) override;
+  void setShowBundledNets(bool show_bundled_nets) override;
 
   void setOutline(const odb::Rect& outline) override;
 
@@ -106,6 +107,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
   bool active_ = true;
   bool coarse_;
   bool fine_;
+  bool show_bundled_nets_;
   int dbu_ = 0;
   utl::Logger* logger_;
   std::optional<float> outline_penalty_;

@@ -40,7 +40,11 @@
 namespace mpl2 {
 
 Graphics::Graphics(bool coarse, bool fine, int dbu, utl::Logger* logger)
-    : coarse_(coarse), fine_(fine), dbu_(dbu), logger_(logger)
+    : coarse_(coarse),
+      fine_(fine),
+      show_bundled_nets_(false),
+      dbu_(dbu),
+      logger_(logger)
 {
   gui::Gui::get()->registerRenderer(this);
 }
@@ -333,11 +337,15 @@ void Graphics::drawObjects(gui::Painter& painter)
     }
   }
 
-  painter.setPen(gui::Painter::yellow, true);
-  if (!hard_macros_.empty()) {
-    drawBundledNets(painter, hard_macros_);
-  } else if (!soft_macros_.empty()) {
-    drawBundledNets(painter, soft_macros_);
+  if (show_bundled_nets_) {
+    painter.setPen(gui::Painter::yellow, true);
+
+    if (!hard_macros_.empty()) {
+      drawBundledNets(painter, hard_macros_);
+    }
+    if (!soft_macros_.empty()) {
+      drawBundledNets(painter, soft_macros_);
+    }
   }
 
   // Hightlight outline so we see where SA is working
@@ -351,10 +359,17 @@ void Graphics::drawBundledNets(gui::Painter& painter,
                                const std::vector<T>& macros)
 {
   for (const auto& bundled_net : bundled_nets_) {
-    painter.drawLine(macros[bundled_net.terminals.first].getPinX() * dbu_,
-                     macros[bundled_net.terminals.first].getPinY() * dbu_,
-                     macros[bundled_net.terminals.second].getPinX() * dbu_,
-                     macros[bundled_net.terminals.second].getPinY() * dbu_);
+    odb::Point from(macros[bundled_net.terminals.first].getPinX() * dbu_,
+                    macros[bundled_net.terminals.first].getPinY() * dbu_);
+    odb::Point to(macros[bundled_net.terminals.second].getPinX() * dbu_,
+                  macros[bundled_net.terminals.second].getPinY() * dbu_);
+
+    from.addX(outline_.xMin());
+    from.addY(outline_.yMin());
+    to.addX(outline_.xMin());
+    to.addY(outline_.yMin());
+
+    painter.drawLine(from, to);
   }
 }
 
@@ -387,6 +402,11 @@ void Graphics::setPlacementBlockages(
     const std::vector<mpl2::Rect>& placement_blockages)
 {
   placement_blockages_ = placement_blockages;
+}
+
+void Graphics::setShowBundledNets(bool show_bundled_nets)
+{
+  show_bundled_nets_ = show_bundled_nets;
 }
 
 void Graphics::setBundledNets(const std::vector<BundledNet>& bundled_nets)

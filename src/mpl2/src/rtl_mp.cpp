@@ -205,4 +205,9 @@ void MacroPlacer2::setDebug(std::unique_ptr<Mpl2Observer>& graphics)
   hier_rtlmp_->setDebug(graphics);
 }
 
+void MacroPlacer2::setDebugShowBundledNets(bool show_bundled_nets)
+{
+  hier_rtlmp_->setDebugShowBundledNets(show_bundled_nets);
+}
+
 }  // namespace mpl2

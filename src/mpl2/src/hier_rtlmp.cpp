@@ -6462,4 +6462,9 @@ void HierRTLMP::setDebug(std::unique_ptr<Mpl2Observer>& graphics)
   graphics_ = std::move(graphics);
 }
 
+void HierRTLMP::setDebugShowBundledNets(bool show_bundled_nets)
+{
+  graphics_->setShowBundledNets(show_bundled_nets);
+}
+
 }  // namespace mpl2

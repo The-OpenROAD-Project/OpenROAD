@@ -70,6 +70,7 @@ class Mpl2Observer
   {
   }
   virtual void setBundledNets(const std::vector<BundledNet>& bundled_nets) {}
+  virtual void setShowBundledNets(bool show_bundled_nets) {}
   virtual void setOutline(const odb::Rect& outline) {}
 
   virtual void setAreaPenalty(float area) {}
