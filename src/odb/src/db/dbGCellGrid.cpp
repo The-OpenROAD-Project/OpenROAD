@@ -538,8 +538,7 @@ dbMatrix<dbGCellGrid::GCellData> dbGCellGrid::getCongestionMap(
       dbTechLayer* tech_layer = _grid->getLayer(lid);
       for (int row = 0; row < num_rows; ++row) {
         for (int col = 0; col < num_cols; ++col) {
-          if (direction == odb::dbTechLayerDir::NONE
-              || direction == tech_layer->getDirection()) {
+          if (direction == tech_layer->getDirection()) {
             congestion(row, col).usage += matrix(row, col).usage;
             congestion(row, col).capacity += matrix(row, col).capacity;
           }

@@ -144,17 +144,12 @@ bool RoutingCongestionDataSource::populateMap()
     return false;
   }
 
-  odb::dbTechLayerDir dir;
-  if (direction_ == ALL) {
-    dir = odb::dbTechLayerDir(odb::dbTechLayerDir::NONE);
-  } else if (direction_ == HORIZONTAL) {
-    dir = odb::dbTechLayerDir(odb::dbTechLayerDir::HORIZONTAL);
-  } else {
-    dir = odb::dbTechLayerDir(odb::dbTechLayerDir::VERTICAL);
-  }
-
-  auto gcell_congestion_data = grid->getCongestionMap(layer_, dir);
-  if (gcell_congestion_data.numElems() == 0) {
+  auto gcell_hor_congestion_data
+      = grid->getCongestionMap(layer_, odb::dbTechLayerDir::HORIZONTAL);
+  auto gcell_ver_congestion_data
+      = grid->getCongestionMap(layer_, odb::dbTechLayerDir::VERTICAL);
+  if (gcell_hor_congestion_data.numElems() == 0
+      || gcell_ver_congestion_data.numElems() == 0) {
     return false;
   }
 
@@ -164,10 +159,12 @@ bool RoutingCongestionDataSource::populateMap()
   grid->getGridY(y_grid);
   const odb::uint y_grid_sz = y_grid.size();
 
-  for (odb::uint x_idx = 0; x_idx < gcell_congestion_data.numRows(); ++x_idx) {
-    for (odb::uint y_idx = 0; y_idx < gcell_congestion_data.numCols();
+  for (odb::uint x_idx = 0; x_idx < gcell_hor_congestion_data.numRows();
+       ++x_idx) {
+    for (odb::uint y_idx = 0; y_idx < gcell_hor_congestion_data.numCols();
          ++y_idx) {
-      const auto& cong_data = gcell_congestion_data(x_idx, y_idx);
+      const auto& hor_cong_data = gcell_hor_congestion_data(x_idx, y_idx);
+      const auto& ver_cong_data = gcell_ver_congestion_data(x_idx, y_idx);
 
       const int next_x = (x_idx + 1) == x_grid_sz
                              ? getBlock()->getDieArea().xMax()
@@ -178,23 +175,58 @@ bool RoutingCongestionDataSource::populateMap()
 
       const odb::Rect gcell_rect(x_grid[x_idx], y_grid[y_idx], next_x, next_y);
 
-      const auto capacity = cong_data.capacity;
-      const auto usage = cong_data.usage;
+      auto hor_capacity = hor_cong_data.capacity;
+      auto hor_usage = hor_cong_data.usage;
+      auto ver_capacity = ver_cong_data.capacity;
+      auto ver_usage = ver_cong_data.usage;
+
+      if (layer_ != nullptr
+          && layer_->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+        ver_capacity = 0;
+        ver_usage = 0;
+      } else if (layer_ != nullptr
+                 && layer_->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+        hor_capacity = 0;
+        hor_usage = 0;
+      }
 
       //-1 indicates capacity is not well defined...
-      const double congestion = static_cast<double>(usage) / capacity;
+      const double hor_congestion
+          = hor_capacity != 0 ? static_cast<double>(hor_usage) / hor_capacity
+                              : -1;
+      const double ver_congestion
+          = ver_capacity != 0 ? static_cast<double>(ver_usage) / ver_capacity
+                              : -1;
 
       double value = 0.0;
       switch (type_) {
         case Congestion:
-          value = congestion;
+          if (direction_ == ALL) {
+            value = std::max(hor_congestion, ver_congestion);
+          } else if (direction_ == HORIZONTAL) {
+            value = hor_congestion;
+          } else {
+            value = ver_congestion;
+          }
           value *= 100.0;
           break;
         case Usage:
-          value = usage;
+          if (direction_ == ALL) {
+            value = hor_usage + ver_usage;
+          } else if (direction_ == HORIZONTAL) {
+            value = hor_usage;
+          } else {
+            value = ver_usage;
+          }
           break;
         case Capacity:
-          value = capacity;
+          if (direction_ == ALL) {
+            value = hor_capacity + ver_capacity;
+          } else if (direction_ == HORIZONTAL) {
+            value = hor_capacity;
+          } else {
+            value = ver_capacity;
+          }
           break;
       }
 
