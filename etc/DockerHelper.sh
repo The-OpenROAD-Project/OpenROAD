@@ -31,6 +31,7 @@ usage: $0 [CMD] [OPTIONS]
                                   Default = \$(nproc)
   -sha                          Use git commit sha as the tag image. Default is
                                   'latest'.
+  -ci                           Install CI tools in image
   -h -help                      Show this message and exits
   -local                        Installs with prefix /home/openroad-deps
   -username                     Docker Username
@@ -105,6 +106,9 @@ _setup() {
             if [[ "${equivalenceDeps}" == "yes" ]]; then
                 buildArgs="${buildArgs} -eqy"
             fi
+            if [[ "$CI" == "yes" ]]; then
+                buildArgs="${buildArgs} -ci"
+            fi
             if [[ "${buildArgs}" != "" ]]; then
                 buildArgs="--build-arg INSTALLER_ARGS='${buildArgs}'"
             fi
@@ -144,7 +148,8 @@ _test() {
 
 _create() {
     echo "Create docker image ${imagePath} using ${file}"
-    eval docker build --file "${file}" --tag "${imagePath}" ${buildArgs} "${context}"
+    echo ${buildArgs}
+    eval docker build --file "${file}" --tag "${imagePath}" ${buildArgs} "${context}" --progress plain
 }
 
 _push() {
@@ -247,6 +252,7 @@ compiler="gcc"
 useCommitSha="no"
 isLocal="no"
 equivalenceDeps="yes"
+CI="no"
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   numThreads=$(nproc --all)
 elif [[ "$OSTYPE" == "darwin"* ]]; then
@@ -279,6 +285,9 @@ while [ "$#" -gt 0 ]; do
             ;;
         -sha )
             useCommitSha=yes
+            ;;
+        -ci )
+            CI="yes"
             ;;
         -local )
             isLocal=yes
