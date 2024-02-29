@@ -39,6 +39,7 @@
 
 #include "defiDebug.hpp"
 #include "defiDefs.hpp"
+#include "defiPath.hpp"
 #include "defrCallBacks.hpp"
 #include "defrData.hpp"
 #include "defrSettings.hpp"
@@ -1652,7 +1653,6 @@ void defrData::pathIsDone(int sh, int reset, int osNet, int* needCbk)
     // defrPath->reverseOrder();
     (*callbacks->PathCbk)(defrPathCbkType, &PathObj, session->UserData);
     PathObj.Destroy();
-    free((char*) &PathObj);
   }
 
   PathObj.Init();
