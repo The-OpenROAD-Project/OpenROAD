@@ -147,11 +147,11 @@ void FastRouteCore::netpinOrderInc()
 {
   tree_order_pv_.clear();
 
-  for (int& j : dirty_net_ids_) {
+  for (int& netID : dirty_net_ids_) {
     int xmin = BIG_INT;
     int totalLength = 0;
-    const auto& treenodes = sttrees_[j].nodes;
-    StTree* stree = &(sttrees_[j]);
+    const auto& treenodes = sttrees_[netID].nodes;
+    StTree* stree = &(sttrees_[netID]);
     const int num_edges = stree->num_edges();
     for (int ind = 0; ind < num_edges; ind++) {
       totalLength += stree->edges[ind].len;
@@ -162,7 +162,7 @@ void FastRouteCore::netpinOrderInc()
 
     float npvalue = (float) totalLength / stree->num_terminals;
 
-    tree_order_pv_.push_back({j, xmin, npvalue});
+    tree_order_pv_.push_back({netID, xmin, npvalue});
   }
 
   std::stable_sort(tree_order_pv_.begin(), tree_order_pv_.end(), comparePVMINX);
@@ -1215,7 +1215,7 @@ void FastRouteCore::StNetOrder()
 
   tree_order_cong_.clear();
 
-  tree_order_cong_.resize(dirty_net_ids_.size());  // netCount());
+  tree_order_cong_.resize(dirty_net_ids_.size());
 
   i = 0;
   for (int j = 0; j < dirty_net_ids_.size(); j++) {

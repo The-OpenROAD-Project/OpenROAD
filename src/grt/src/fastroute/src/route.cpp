@@ -229,22 +229,22 @@ void FastRouteCore::routeLAll(bool firstTime)
 {
   if (firstTime) {  // no previous route
     // estimate congestion with 0.5+0.5 L
-    for (int& i : dirty_net_ids_) {
-      for (auto& seg : seglist_[i]) {
+    for (int& netID : dirty_net_ids_) {
+      for (auto& seg : seglist_[netID]) {
         estimateOneSeg(&seg);
       }
     }
     // L route
-    for (int& i : dirty_net_ids_) {
-      for (auto& seg : seglist_[i]) {
+    for (int& netID : dirty_net_ids_) {
+      for (auto& seg : seglist_[netID]) {
         // no need to reroute the H or V segs
         if (seg.x1 != seg.x2 || seg.y1 != seg.y2)
           routeSegLFirstTime(&seg);
       }
     }
   } else {  // previous is L-route
-    for (int& i : dirty_net_ids_) {
-      for (auto& seg : seglist_[i]) {
+    for (int& netID : dirty_net_ids_) {
+      for (auto& seg : seglist_[netID]) {
         // no need to reroute the H or V segs
         if (seg.x1 != seg.x2 || seg.y1 != seg.y2) {
           ripupSegL(&seg);
@@ -406,12 +406,12 @@ void FastRouteCore::newrouteL(int netID, RouteType ripuptype, bool viaGuided)
 void FastRouteCore::newrouteLAll(bool firstTime, bool viaGuided)
 {
   if (firstTime) {
-    for (int& i : dirty_net_ids_) {
-      newrouteL(i, RouteType::NoRoute, viaGuided);  // do L-routing
+    for (int& netID : dirty_net_ids_) {
+      newrouteL(netID, RouteType::NoRoute, viaGuided);  // do L-routing
     }
   } else {
-    for (int& i : dirty_net_ids_) {
-      newrouteL(i, RouteType::LRoute, viaGuided);
+    for (int& netID : dirty_net_ids_) {
+      newrouteL(netID, RouteType::LRoute, viaGuided);
     }
   }
 }
@@ -842,8 +842,8 @@ void FastRouteCore::newrouteZ(int netID, int threshold)
 // first
 void FastRouteCore::newrouteZAll(int threshold)
 {
-  for (int& i : dirty_net_ids_) {
-    newrouteZ(i, threshold);  // ripup previous route and do Z-routing
+  for (int& netID : dirty_net_ids_) {
+    newrouteZ(netID, threshold);  // ripup previous route and do Z-routing
   }
 }
 
