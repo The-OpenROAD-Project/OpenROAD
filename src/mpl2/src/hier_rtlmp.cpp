@@ -5404,7 +5404,6 @@ void HierRTLMP::callBusPlanning(std::vector<SoftMacro>& shaped_macros,
   }
 }
 
-// place macros within the HardMacroCluster
 void HierRTLMP::placeMacros(Cluster* cluster)
 {
   debugPrint(logger_,
@@ -5499,6 +5498,8 @@ void HierRTLMP::placeMacros(Cluster* cluster)
       sa->setFences(fences);
       sa->setGuides(guides);
       sa_vector.push_back(sa);
+
+      run_id++;
     }
     if (sa_vector.size() == 1) {
       runSA<SACoreHardMacro>(sa_vector[0]);
