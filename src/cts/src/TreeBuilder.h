@@ -228,6 +228,19 @@ class TreeBuilder
   }
   TreeType getTreeType() const { return type_; }
   void setTreeType(TreeType type) { type_ = type; }
+  std::string getTreeTypeAsString() const
+  {
+    switch (type_) {
+      case regularTree:
+        return "regular";
+      case macroTree:
+        return "macro";
+      default:
+        break;
+    }
+    return "register";
+  }
+
   float getAveSinkArrival() const { return aveArrival_; }
   void setAveSinkArrival(float arrival) { aveArrival_ = arrival; }
   float getTopBufferDelay() const { return topBufferDelay_; }

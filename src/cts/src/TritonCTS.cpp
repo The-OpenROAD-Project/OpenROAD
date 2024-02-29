@@ -208,7 +208,7 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
           odb::dbNet* outputNet = outputPin->getNet();
           if (visitedClockNets_.find(outputNet) == visitedClockNets_.end()
               && !openSta_->sdc()->isLeafPinClock(
-                  network_->dbToSta(outputPin))) {
+                     network_->dbToSta(outputPin))) {
             initOneClockTree(outputNet, sdcClockName, clockBuilder);
           }
         }
@@ -265,12 +265,41 @@ void TritonCTS::countSinksPostDbWrite(
       int receiverX, receiverY;
       iterm->getAvgXY(&receiverX, &receiverY);
       unsigned dist = abs(driverX - receiverX) + abs(driverY - receiverY);
-      bool terminate
-          = fullTree
-                ? (sinks.find(iterm) != sinks.end())
-                : !builder->isAnyTreeBuffer(getClockFromInst(iterm->getInst()));
+      odb::dbInst* inst = iterm->getInst();
+      bool terminate = fullTree
+                           ? (sinks.find(iterm) != sinks.end())
+                           : !builder->isAnyTreeBuffer(getClockFromInst(inst));
+      odb::dbITerm* outputPin = iterm->getInst()->getFirstOutput();
+      bool trueSink = true;
+      if (outputPin && outputPin->getNet() == net) {
+        // Skip feedback loop.  When input pin and output pin are
+        // connected to the same net this can lead to infinite recursion. For
+        // example, some designs have Q pin connected to SI pin.
+        terminate = true;
+        trueSink = false;
+      }
+
+      if (!terminate && inst) {
+        if (inst->isBlock()) {
+          // Skip non-sink macro blocks
+          terminate = true;
+          trueSink = false;
+        } else {
+          sta::Cell* masterCell = network_->dbToSta(inst->getMaster());
+          if (masterCell) {
+            sta::LibertyCell* libCell = network_->libertyCell(masterCell);
+            if (libCell) {
+              if (libCell->hasSequentials()) {
+                // Skip non-sink registers
+                terminate = true;
+                trueSink = false;
+              }
+            }
+          }
+        }
+      }
+
       if (!terminate) {
-        odb::dbITerm* outputPin = iterm->getInst()->getFirstOutput();
         // ignore dummy buffer and inverters added to balance loads
         if (outputPin && outputPin->getNet() != nullptr) {
           countSinksPostDbWrite(builder,
@@ -304,7 +333,7 @@ void TritonCTS::countSinksPostDbWrite(
         if (builder->isLeafBuffer(getClockFromInst(iterm->getInst()))) {
           leafSinks++;
         }
-      } else {
+      } else if (trueSink) {
         sinks_cnt++;
         double currSinkWl
             = (dist + currWireLength) / double(options_->getDbUnits());
