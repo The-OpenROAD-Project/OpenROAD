@@ -1308,7 +1308,7 @@ class frSpacingTableConstraint : public frConstraint
   {
   }
   // getter
-  const std::shared_ptr<Table> getParallelRunLengthConstraint() const
+  std::shared_ptr<Table> getParallelRunLengthConstraint() const
   {
     return parallelRunLengthConstraint_;
   }

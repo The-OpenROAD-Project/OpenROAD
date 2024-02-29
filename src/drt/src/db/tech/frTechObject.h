@@ -85,8 +85,8 @@ class frTechObject
   {
     name2layer_[in->getName()] = in.get();
     layers_.push_back(std::move(in));
-    layer2Name2CutClass_.push_back(std::map<std::string, frLef58CutClass*>());
-    layerCutClass_.push_back(std::vector<std::unique_ptr<frLef58CutClass>>());
+    layer2Name2CutClass_.emplace_back();
+    layerCutClass_.emplace_back();
   }
   void addVia(std::unique_ptr<frViaDef> in)
   {
@@ -122,8 +122,9 @@ class frTechObject
   }
   frConstraint* getConstraint(int idx)
   {
-    if (idx < uConstraints_.size())
+    if (idx < uConstraints_.size()) {
       return uConstraints_[idx].get();
+    }
     return nullptr;
   }
   void setUnidirectionalLayer(odb::dbTechLayer* dbLayer)
@@ -186,7 +187,7 @@ class frTechObject
     return viaForbiddenThrough_[tableLayerIdx][tableEntryIdx];
   }
 
-  frViaDef* getVia(frString name) const { return name2via_.at(name); }
+  frViaDef* getVia(const frString& name) const { return name2via_.at(name); }
 
   frViaRuleGenerate* getViaRule(frString name) const
   {
