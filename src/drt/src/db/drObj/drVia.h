@@ -35,44 +35,17 @@
 #include "dr/FlexMazeTypes.h"
 
 namespace fr {
+
 class drNet;
 class frVia;
+
 class drVia : public drRef
 {
  public:
   // constructors
-  drVia()
-      : viaDef_(nullptr),
-        owner_(nullptr),
-        tapered_(false),
-        bottomConnected_(false),
-        topConnected_(false)
-  {
-  }
-  drVia(frViaDef* in)
-      : drRef(),
-        origin_(),
-        viaDef_(in),
-        owner_(nullptr),
-        beginMazeIdx_(),
-        endMazeIdx_(),
-        tapered_(false),
-        bottomConnected_(false),
-        topConnected_(false)
-  {
-  }
-  drVia(const drVia& in)
-      : drRef(in),
-        origin_(in.origin_),
-        viaDef_(in.viaDef_),
-        owner_(in.owner_),
-        beginMazeIdx_(in.beginMazeIdx_),
-        endMazeIdx_(in.endMazeIdx_),
-        tapered_(in.tapered_),
-        bottomConnected_(in.bottomConnected_),
-        topConnected_(in.topConnected_)
-  {
-  }
+  drVia() = default;
+  drVia(frViaDef* in) : viaDef_(in) {}
+  drVia(const drVia& in) = default;
   drVia(const frVia& in);
   // getters
   frViaDef* getViaDef() const { return viaDef_; }
@@ -167,68 +140,7 @@ class drVia : public drRef
    * overlaps
    */
 
-  Rect getBBox() const override
-  {
-    auto& layer1Figs = viaDef_->getLayer1Figs();
-    auto& layer2Figs = viaDef_->getLayer2Figs();
-    auto& cutFigs = viaDef_->getCutFigs();
-    bool isFirst = true;
-    frCoord xl = 0;
-    frCoord yl = 0;
-    frCoord xh = 0;
-    frCoord yh = 0;
-    for (auto& fig : layer1Figs) {
-      Rect box = fig->getBBox();
-      if (isFirst) {
-        xl = box.xMin();
-        yl = box.yMin();
-        xh = box.xMax();
-        yh = box.yMax();
-        isFirst = false;
-      } else {
-        xl = std::min(xl, box.xMin());
-        yl = std::min(yl, box.yMin());
-        xh = std::max(xh, box.xMax());
-        yh = std::max(yh, box.yMax());
-      }
-    }
-    for (auto& fig : layer2Figs) {
-      Rect box = fig->getBBox();
-      if (isFirst) {
-        xl = box.xMin();
-        yl = box.yMin();
-        xh = box.xMax();
-        yh = box.yMax();
-        isFirst = false;
-      } else {
-        xl = std::min(xl, box.xMin());
-        yl = std::min(yl, box.yMin());
-        xh = std::max(xh, box.xMax());
-        yh = std::max(yh, box.yMax());
-      }
-    }
-    for (auto& fig : cutFigs) {
-      Rect box = fig->getBBox();
-      if (isFirst) {
-        xl = box.xMin();
-        yl = box.yMin();
-        xh = box.xMax();
-        yh = box.yMax();
-        isFirst = false;
-      } else {
-        xl = std::min(xl, box.xMin());
-        yl = std::min(yl, box.yMin());
-        xh = std::max(xh, box.xMax());
-        yh = std::max(yh, box.yMax());
-      }
-    }
-    Rect box(xl, yl, xh, yh);
-    dbTransform xform;
-    xform.setOffset(origin_);
-    xform.apply(box);
-    return box;
-  }
-
+  Rect getBBox() const override;
   bool hasMazeIdx() const { return (!beginMazeIdx_.empty()); }
   std::pair<FlexMazeIdx, FlexMazeIdx> getMazeIdx() const
   {
@@ -251,17 +163,18 @@ class drVia : public drRef
 
  protected:
   Point origin_;
-  frViaDef* viaDef_;
-  drBlockObject* owner_;
+  frViaDef* viaDef_{nullptr};
+  drBlockObject* owner_{nullptr};
   FlexMazeIdx beginMazeIdx_;
   FlexMazeIdx endMazeIdx_;
-  bool tapered_ : 1;
-  bool bottomConnected_ : 1;
-  bool topConnected_ : 1;
+  bool tapered_{false};
+  bool bottomConnected_{false};
+  bool topConnected_{false};
 
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
+  void serialize(Archive& ar, unsigned int version);
 
   friend class boost::serialization::access;
 };
+
 }  // namespace fr
