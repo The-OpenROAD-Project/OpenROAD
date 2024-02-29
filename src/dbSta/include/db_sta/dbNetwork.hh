@@ -167,6 +167,7 @@ class dbNetwork : public ConcreteNetwork
   Instance* dbToSta(dbInst* inst) const;
   Instance* dbToSta(dbModInst* inst) const;
   Net* dbToSta(dbNet* net) const;
+
   const Net* dbToSta(const dbNet* net) const;
   Net* dbToSta(dbModNet* net) const;
   Cell* dbToSta(dbMaster* master) const;
@@ -226,7 +227,6 @@ class dbNetwork : public ConcreteNetwork
   Port* port(const Pin* pin) const override;
   Instance* instance(const Pin* pin) const override;
   Net* net(const Pin* pin) const override;
-  Net* hnet(const Pin* pin) const;
   Term* term(const Pin* pin) const override;
   PortDirection* direction(const Pin* pin) const override;
   PortDirection* direction(const Port* pin) const override;
@@ -305,6 +305,7 @@ class dbNetwork : public ConcreteNetwork
   void visitConnectedPins(const Net* net,
                           PinVisitor& visitor,
                           NetSet& visited_nets) const override;
+
   bool portMsbFirst(const char* port_name, const char* cell_name);
 
   dbDatabase* db_ = nullptr;
