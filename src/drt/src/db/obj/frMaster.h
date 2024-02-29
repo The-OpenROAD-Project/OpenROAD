@@ -42,13 +42,12 @@ class frMaster : public frBlockObject
 {
  public:
   // constructors
-  frMaster(const frString& name)
-      : frBlockObject(), name_(name), masterType_(dbMasterType::NONE){};
+  frMaster(const frString& name) : name_(name) {}
   // getters
   Rect getBBox() const
   {
     Rect box;
-    if (boundaries_.size()) {
+    if (!boundaries_.empty()) {
       box = boundaries_.begin()->getBBox();
     }
     frCoord llx = box.xMin();
@@ -104,7 +103,7 @@ class frMaster : public frBlockObject
     in->setMaster(this);
     terms_.push_back(std::move(in));
   }
-  void setBoundaries(const std::vector<frBoundary> in)
+  void setBoundaries(const std::vector<frBoundary>& in)
   {
     boundaries_ = in;
     if (!boundaries_.empty()) {
@@ -143,7 +142,7 @@ class frMaster : public frBlockObject
   std::vector<frBoundary> boundaries_;
   Rect dieBox_;
   frString name_;
-  dbMasterType masterType_;
+  dbMasterType masterType_{dbMasterType::NONE};
 
   friend class io::Parser;
 };

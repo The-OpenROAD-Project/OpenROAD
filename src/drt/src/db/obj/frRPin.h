@@ -41,12 +41,10 @@ class frRPin : public frBlockObject
 {
  public:
   // constructors
-  frRPin() : frBlockObject(), term(nullptr), accessPoint(nullptr), net(nullptr)
-  {
-  }
+  frRPin() = default;
   // setters
   void setFrTerm(frBlockObject* in) { term = in; }
-  void setAccessPoint(frAccessPoint*& in) { accessPoint = std::move(in); }
+  void setAccessPoint(frAccessPoint* in) { accessPoint = in; }
   void addToNet(frNet* in) { net = in; }
   // getters
   bool hasFrTerm() const { return (term); }
@@ -62,8 +60,8 @@ class frRPin : public frBlockObject
   frBlockObjectEnum typeId() const override { return frcRPin; }
 
  protected:
-  frBlockObject* term;         // either frBTerm or frInstTerm
-  frAccessPoint* accessPoint;  // pref AP for frBTerm and frInstTerm
-  frNet* net;
+  frBlockObject* term{nullptr};         // either frBTerm or frInstTerm
+  frAccessPoint* accessPoint{nullptr};  // pref AP for frBTerm and frInstTerm
+  frNet* net{nullptr};
 };
 }  // namespace fr
