@@ -42,14 +42,13 @@ class gcNet : public gcBlockObject
 {
  public:
   // constructors
-  gcNet(int numLayers)
+  gcNet(const int numLayers)
       : gcBlockObject(),
         fixedPolygons_(numLayers),
         routePolygons_(numLayers),
         fixedRectangles_(numLayers),
         routeRectangles_(numLayers),
         pins_(numLayers),
-        owner_(nullptr),
         taperedRects(numLayers),
         nonTaperedRects(numLayers)
   {
@@ -266,7 +265,7 @@ class gcNet : public gcBlockObject
   std::vector<std::vector<gtl::rectangle_data<frCoord>>>
       routeRectangles_;  // only cut layer
   std::vector<std::vector<std::unique_ptr<gcPin>>> pins_;
-  frBlockObject* owner_;
+  frBlockObject* owner_{nullptr};
   std::vector<std::vector<Rect>> taperedRects;     //(only routing layer)
   std::vector<std::vector<Rect>> nonTaperedRects;  //(only routing layer)
   // A non-tapered rect within a tapered max rectangle still require nondefault

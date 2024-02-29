@@ -40,153 +40,122 @@ namespace fr {
 class frLef58CutClass
 {
  public:
-  // constructors
-  frLef58CutClass() : name(""), viaWidth(0), viaLength(0), numCut(1) {}
   // getters
-  void getName(std::string& in) const { in = name; }
-  std::string getName() const { return name; }
-  frCoord getViaWidth() const { return viaWidth; }
-  bool hasViaLength() const { return (viaLength == viaWidth) ? false : true; }
-  frCoord getViaLength() const { return viaLength; }
-  frUInt4 getNumCut() const { return numCut; }
+  void getName(std::string& in) const { in = name_; }
+  std::string getName() const { return name_; }
+  frCoord getViaWidth() const { return viaWidth_; }
+  bool hasViaLength() const { return (viaLength_ == viaWidth_) ? false : true; }
+  frCoord getViaLength() const { return viaLength_; }
+  frUInt4 getNumCut() const { return numCut_; }
   // setters
-  void setName(frString& in) { name = in; }
-  void setViaWidth(frCoord in) { viaWidth = in; }
-  void setViaLength(frCoord in) { viaLength = in; }
-  void setNumCut(frUInt4 in) { numCut = in; }
+  void setName(frString& in) { name_ = in; }
+  void setViaWidth(frCoord in) { viaWidth_ = in; }
+  void setViaLength(frCoord in) { viaLength_ = in; }
+  void setNumCut(frUInt4 in) { numCut_ = in; }
   void report(utl::Logger* logger)
   {
     logger->report("CUTCLASS name {} viaWidth {} viaLength {} numCut {}",
-                   name,
-                   viaWidth,
-                   viaLength,
-                   numCut);
+                   name_,
+                   viaWidth_,
+                   viaLength_,
+                   numCut_);
   }
 
  private:
-  std::string name;
-  frCoord viaWidth;
-  frCoord viaLength;
-  frUInt4 numCut;  // this value is not equal to #multi cuts, only used for
-                   // calculating resistance, currently ignored in rule checking
-                   // process
+  std::string name_;
+  frCoord viaWidth_{0};
+  frCoord viaLength_{0};
+  frUInt4 numCut_{1};  // this value is not equal to #multi cuts, only used for
+                       // calculating resistance, currently ignored in rule
+                       // checking process
 };
 
 class frViaDef
 {
  public:
   // constructors
-  frViaDef()
-      : id_(0),
-        name(),
-        isDefault(false),
-        layer1Figs(),
-        layer2Figs(),
-        cutFigs(),
-        cutClass(nullptr),
-        cutClassIdx(-1),
-        addedByRouter(false),
-        layer1ShapeBox(),
-        layer2ShapeBox(),
-        cutShapeBox()
-  {
-  }
-  frViaDef(const std::string& nameIn)
-      : id_(0),
-        name(nameIn),
-        isDefault(false),
-        layer1Figs(),
-        layer2Figs(),
-        cutFigs(),
-        cutClass(nullptr),
-        cutClassIdx(-1),
-        addedByRouter(false),
-        layer1ShapeBox(),
-        layer2ShapeBox(),
-        cutShapeBox()
-  {
-  }
+  frViaDef() = default;
+  frViaDef(const std::string& nameIn) : name_(nameIn) {}
   // getters
-  void getName(std::string& nameIn) const { nameIn = name; }
-  std::string getName() const { return name; }
+  void getName(std::string& nameIn) const { nameIn = name_; }
+  std::string getName() const { return name_; }
   frLayerNum getLayer1Num() const
   {
-    if (layer1Figs.size()) {
-      return (layer1Figs.at(0))->getLayerNum();
-    } else {
-      std::cout << "Error: via does not have shape on layer 1" << std::endl;
-      exit(1);
+    if (!layer1Figs_.empty()) {
+      return (layer1Figs_.at(0))->getLayerNum();
     }
+    std::cout << "Error: via does not have shape on layer 1" << std::endl;
+    exit(1);
   }
   frLayerNum getLayer2Num() const
   {
-    if (layer2Figs.size()) {
-      return (layer2Figs.at(0))->getLayerNum();
-    } else {
-      std::cout << "Error: via does not have shape on layer 2" << std::endl;
-      exit(1);
+    if (!layer2Figs_.empty()) {
+      return (layer2Figs_.at(0))->getLayerNum();
     }
+    std::cout << "Error: via does not have shape on layer 2" << std::endl;
+    exit(1);
   }
   frLayerNum getCutLayerNum() const
   {
-    if (cutFigs.size()) {
-      return (cutFigs.at(0))->getLayerNum();
-    } else {
-      std::cout << "Error: via does not have shape on layer cut" << std::endl;
-      exit(1);
+    if (!cutFigs_.empty()) {
+      return (cutFigs_.at(0))->getLayerNum();
     }
+    std::cout << "Error: via does not have shape on layer cut" << std::endl;
+    exit(1);
   }
   const std::vector<std::unique_ptr<frShape>>& getLayer1Figs() const
   {
-    return layer1Figs;
+    return layer1Figs_;
   }
   const std::vector<std::unique_ptr<frShape>>& getLayer2Figs() const
   {
-    return layer2Figs;
+    return layer2Figs_;
   }
   const std::vector<std::unique_ptr<frShape>>& getCutFigs() const
   {
-    return cutFigs;
+    return cutFigs_;
   }
-  bool getDefault() const { return isDefault; }
-  int getNumCut() const { return cutFigs.size(); }
-  bool hasCutClass() const { return (cutClass != nullptr); }
-  frLef58CutClass* getCutClass() const { return cutClass; }
-  int getCutClassIdx() const { return cutClassIdx; }
-  bool isAddedByRouter() const { return addedByRouter; }
-  bool isMultiCut() const { return (cutFigs.size() > 1) ? true : false; }
+  bool getDefault() const { return isDefault_; }
+  int getNumCut() const { return cutFigs_.size(); }
+  bool hasCutClass() const { return (cutClass_ != nullptr); }
+  frLef58CutClass* getCutClass() const { return cutClass_; }
+  int getCutClassIdx() const { return cutClassIdx_; }
+  bool isAddedByRouter() const { return addedByRouter_; }
+  bool isMultiCut() const { return (cutFigs_.size() > 1); }
   // setters
   void addLayer1Fig(std::unique_ptr<frShape> figIn)
   {
     Rect box = figIn->getBBox();
-    layer1ShapeBox.merge(box);
-    layer1Figs.push_back(std::move(figIn));
+    layer1ShapeBox_.merge(box);
+    layer1Figs_.push_back(std::move(figIn));
   }
   void addLayer2Fig(std::unique_ptr<frShape> figIn)
   {
     Rect box = figIn->getBBox();
-    layer2ShapeBox.merge(box);
-    layer2Figs.push_back(std::move(figIn));
+    layer2ShapeBox_.merge(box);
+    layer2Figs_.push_back(std::move(figIn));
   }
   void addCutFig(std::unique_ptr<frShape> figIn)
   {
     Rect box = figIn->getBBox();
-    cutShapeBox.merge(box);
-    cutFigs.push_back(std::move(figIn));
+    cutShapeBox_.merge(box);
+    cutFigs_.push_back(std::move(figIn));
   }
-  void setDefault(bool isDefaultIn) { isDefault = isDefaultIn; }
-  void setCutClass(frLef58CutClass* in) { cutClass = in; }
-  void setCutClassIdx(int in) { cutClassIdx = in; }
-  void setAddedByRouter(bool in) { addedByRouter = in; }
-  const Rect& getLayer1ShapeBox() const { return layer1ShapeBox; }
-  const Rect& getLayer2ShapeBox() const { return layer2ShapeBox; }
-  const Rect& getCutShapeBox() const { return cutShapeBox; }
+  void setDefault(bool isDefaultIn) { isDefault_ = isDefaultIn; }
+  void setCutClass(frLef58CutClass* in) { cutClass_ = in; }
+  void setCutClassIdx(int in) { cutClassIdx_ = in; }
+  void setAddedByRouter(bool in) { addedByRouter_ = in; }
+  const Rect& getLayer1ShapeBox() const { return layer1ShapeBox_; }
+  const Rect& getLayer2ShapeBox() const { return layer2ShapeBox_; }
+  const Rect& getCutShapeBox() const { return cutShapeBox_; }
   const Rect& getShapeBox(frLayerNum lNum)
   {
-    if (lNum == getLayer1Num())
-      return layer1ShapeBox;
-    if (lNum == getLayer2Num())
-      return layer2ShapeBox;
+    if (lNum == getLayer1Num()) {
+      return layer1ShapeBox_;
+    }
+    if (lNum == getLayer2Num()) {
+      return layer2ShapeBox_;
+    }
     throw std::invalid_argument("Error: via does not have shape on layer "
                                 + std::to_string(lNum));
   }
@@ -194,18 +163,18 @@ class frViaDef
   int getId() const { return id_; }
 
  private:
-  int id_;
-  std::string name;
-  bool isDefault;
-  std::vector<std::unique_ptr<frShape>> layer1Figs;
-  std::vector<std::unique_ptr<frShape>> layer2Figs;
-  std::vector<std::unique_ptr<frShape>> cutFigs;
-  frLef58CutClass* cutClass;
-  int cutClassIdx;
-  bool addedByRouter;
+  int id_{0};
+  std::string name_;
+  bool isDefault_{false};
+  std::vector<std::unique_ptr<frShape>> layer1Figs_;
+  std::vector<std::unique_ptr<frShape>> layer2Figs_;
+  std::vector<std::unique_ptr<frShape>> cutFigs_;
+  frLef58CutClass* cutClass_{nullptr};
+  int cutClassIdx_{-1};
+  bool addedByRouter_{false};
 
-  Rect layer1ShapeBox;
-  Rect layer2ShapeBox;
-  Rect cutShapeBox;
+  Rect layer1ShapeBox_;
+  Rect layer2ShapeBox_;
+  Rect cutShapeBox_;
 };
 }  // namespace fr

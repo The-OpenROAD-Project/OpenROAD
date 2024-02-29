@@ -36,14 +36,6 @@
 namespace fr {
 class gcFig : public gcBlockObject
 {
- public:
-  // getters
-  // setters
-  // others
- protected:
-  // constructors
-  gcFig() : gcBlockObject() {}
-  gcFig(const gcFig& in) : gcBlockObject(in) {}
 };
 
 class gcNet;
@@ -63,10 +55,6 @@ class gcConnFig : public gcFig
    * move
    * overlaps
    */
- protected:
-  // constructors
-  gcConnFig() : gcFig() {}
-  gcConnFig(const gcConnFig& in) : gcFig(in) {}
 };
 
 class gcPin;
@@ -93,9 +81,6 @@ class gcPinFig : public gcConnFig
    * move
    * overlaps
    */
- protected:
-  gcPinFig() : gcConnFig() {}
-  gcPinFig(const gcPinFig& in) : gcConnFig(in) {}
 };
 
 }  // namespace fr

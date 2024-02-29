@@ -35,12 +35,12 @@
 #include "db/obj/frTerm.h"
 
 namespace fr {
+
 class drNet;
+
 class drPin : public drBlockObject
 {
  public:
-  // constructors
-  drPin() : drBlockObject(), term_(nullptr), accessPatterns_(), net_(nullptr) {}
   // setters
   void setFrTerm(frBlockObject* in) { term_ = in; }
   void addAccessPattern(std::unique_ptr<drAccessPattern> in)
@@ -58,44 +58,28 @@ class drPin : public drBlockObject
   }
   drNet* getNet() const { return net_; }
   bool isInstPin() { return hasFrTerm() && term_->typeId() == frcInstTerm; }
-  std::pair<FlexMazeIdx, FlexMazeIdx> getAPBbox()
-  {
-    FlexMazeIdx l(std::numeric_limits<frMIdx>::max(),
-                  std::numeric_limits<frMIdx>::max(),
-                  std::numeric_limits<frMIdx>::max());
-    FlexMazeIdx h(std::numeric_limits<frMIdx>::min(),
-                  std::numeric_limits<frMIdx>::min(),
-                  std::numeric_limits<frMIdx>::min());
-    for (auto& ap : getAccessPatterns()) {
-      FlexMazeIdx mi = ap->getMazeIdx();
-      l.set(std::min(l.x(), mi.x()),
-            std::min(l.y(), mi.y()),
-            std::min(l.z(), mi.z()));
-      h.set(std::max(h.x(), mi.x()),
-            std::max(h.y(), mi.y()),
-            std::max(h.z(), mi.z()));
-    }
-    return {l, h};
-  }
+  std::pair<FlexMazeIdx, FlexMazeIdx> getAPBbox();
   // others
   frBlockObjectEnum typeId() const override { return drcPin; }
   std::string getName()
   {
     if (hasFrTerm()) {
-      if (term_->typeId() == frcInstTerm)
+      if (term_->typeId() == frcInstTerm) {
         return static_cast<frInstTerm*>(term_)->getName();
+      }
       return static_cast<frTerm*>(term_)->getName();
     }
     return "";
   }
 
  private:
-  frBlockObject* term_;  // either frTerm or frInstTerm
+  frBlockObject* term_{nullptr};  // either frTerm or frInstTerm
   std::vector<std::unique_ptr<drAccessPattern>> accessPatterns_;
-  drNet* net_;
+  drNet* net_{nullptr};
 
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
+  void serialize(Archive& ar, unsigned int version);
   friend class boost::serialization::access;
 };
+
 }  // namespace fr

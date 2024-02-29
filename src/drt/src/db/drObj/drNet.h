@@ -43,37 +43,18 @@ class drNet : public drBlockObject
 {
  public:
   // constructors
-  drNet(frNet* net)
-      : drBlockObject(),
-        pins_(),
-        extConnFigs_(),
-        routeConnFigs_(),
-        bestRouteConnFigs_(),
-        fNetTerms_(),
-        fNet_(net),
-        modified_(false),
-        numMarkers_(0),
-        numPinsIn_(0),
-        markerDist_(std::numeric_limits<frCoord>::max()),
-        allowRipup_(true),
-        pinBox_(),
-        ripup_(false),
-        numReroutes_(0),
-        nRipupAvoids_(0),
-        maxRipupAvoids_(0),
-        inQueue_(false),
-        routed_(false),
-        origGuides_(),
-        priority_(0)
+  drNet(frNet* net) : fNet_(net)
   {
-    if (hasNDR())
+    if (hasNDR()) {
       maxRipupAvoids_ = NDR_NETS_RIPUP_HARDINESS;
-    if (isClockNetTrunk())
+    }
+    if (isClockNetTrunk()) {
       maxRipupAvoids_
           = std::max((int) maxRipupAvoids_, CLOCK_NETS_TRUNK_RIPUP_HARDINESS);
-    else if (isClockNetLeaf())
+    } else if (isClockNetLeaf()) {
       maxRipupAvoids_
           = std::max((int) maxRipupAvoids_, CLOCK_NETS_LEAF_RIPUP_HARDINESS);
+    }
   }
   // getters
   const std::vector<std::unique_ptr<drPin>>& getPins() const { return pins_; }
@@ -108,8 +89,9 @@ class drNet : public drBlockObject
   // setters
   void incPriority()
   {
-    if (priority_ < std::numeric_limits<uint16_t>::max())
+    if (priority_ < std::numeric_limits<uint16_t>::max()) {
       priority_++;
+    }
   }
   void setPriority(uint16_t in) { priority_ = in; }
   void addPin(std::unique_ptr<drPin> pinIn)
@@ -127,37 +109,8 @@ class drNet : public drBlockObject
       routeConnFigs_.push_back(std::move(in));
     }
   }
-  void setBestRouteConnFigs()
-  {
-    bestRouteConnFigs_.clear();
-    for (auto& uConnFig : routeConnFigs_) {
-      if (uConnFig->typeId() == drcPathSeg) {
-        std::unique_ptr<drConnFig> uPtr = std::make_unique<drPathSeg>(
-            *static_cast<drPathSeg*>(uConnFig.get()));
-        bestRouteConnFigs_.push_back(std::move(uPtr));
-      } else if (uConnFig->typeId() == drcVia) {
-        std::unique_ptr<drConnFig> uPtr
-            = std::make_unique<drVia>(*static_cast<drVia*>(uConnFig.get()));
-        bestRouteConnFigs_.push_back(std::move(uPtr));
-      } else if (uConnFig->typeId() == drcPatchWire) {
-        std::unique_ptr<drConnFig> uPtr = std::make_unique<drPatchWire>(
-            *static_cast<drPatchWire*>(uConnFig.get()));
-        bestRouteConnFigs_.push_back(std::move(uPtr));
-      }
-    }
-  }
-  void removeShape(drConnFig* shape, bool isExt = false)
-  {
-    std::vector<std::unique_ptr<drConnFig>>* v
-        = isExt ? &extConnFigs_ : &routeConnFigs_;
-    for (int i = 0; i < v->size(); i++) {
-      auto& s = (*v)[i];
-      if (s.get() == shape) {
-        v->erase(v->begin() + i);
-        return;
-      }
-    }
-  }
+  void setBestRouteConnFigs();
+  void removeShape(drConnFig* shape, bool isExt = false);
   void clear()
   {
     routeConnFigs_.clear();
@@ -198,18 +151,7 @@ class drNet : public drBlockObject
   {
     origGuides_.assign(in.begin(), in.end());
   }
-  void cleanup()
-  {
-    pins_.clear();
-    pins_.shrink_to_fit();
-    extConnFigs_.clear();
-    extConnFigs_.shrink_to_fit();
-    routeConnFigs_.clear();
-    routeConnFigs_.shrink_to_fit();
-    fNetTerms_.clear();
-    origGuides_.clear();
-    origGuides_.shrink_to_fit();
-  }
+  void cleanup();
   int getNRipupAvoids() const { return nRipupAvoids_; }
   void setNRipupAvoids(int n) { nRipupAvoids_ = n; }
   void incNRipupAvoids();
@@ -223,79 +165,44 @@ class drNet : public drBlockObject
                                           : (numMarkers_ > b.numMarkers_);
   }
   bool canAvoidRipup() const { return nRipupAvoids_ < maxRipupAvoids_; }
-  unsigned short getMaxRipupAvoids() const { return maxRipupAvoids_; }
-  void setMaxRipupAvoids(unsigned short n) { maxRipupAvoids_ = n; }
+  uint16_t getMaxRipupAvoids() const { return maxRipupAvoids_; }
+  void setMaxRipupAvoids(uint16_t n) { maxRipupAvoids_ = n; }
 
   frAccessPoint* getFrAccessPoint(frCoord x,
                                   frCoord y,
                                   frLayerNum lNum,
-                                  frBlockObject** owner = nullptr)
-  {
-    for (auto& term : fNetTerms_) {
-      if (term->typeId() == frBlockObjectEnum::frcInstTerm) {
-        frInstTerm* it = static_cast<frInstTerm*>(term);
-        frAccessPoint* ap = it->getAccessPoint(x, y, lNum);
-        if (ap) {
-          if (owner)
-            (*owner) = term;
-          return ap;
-        }
-      } else if (term->typeId() == frBlockObjectEnum::frcBTerm) {
-        frBTerm* t = static_cast<frBTerm*>(term);
-        frAccessPoint* ap = t->getAccessPoint(x, y, lNum, 0);
-        if (ap) {
-          if (owner)
-            (*owner) = term;
-          return ap;
-        }
-      }
-    }
-    return nullptr;
-  }
+                                  frBlockObject** owner = nullptr);
 
  private:
+  drNet() = default;  // for serialization
+
   std::vector<std::unique_ptr<drPin>> pins_;
   std::vector<std::unique_ptr<drConnFig>> extConnFigs_;
   std::vector<std::unique_ptr<drConnFig>> routeConnFigs_;
   std::vector<std::unique_ptr<drConnFig>> bestRouteConnFigs_;
   std::set<frBlockObject*> fNetTerms_;
-  frNet* fNet_;
+  frNet* fNet_{nullptr};
   // old
-  bool modified_;
-  int numMarkers_;
-  int numPinsIn_;
-  frCoord markerDist_;
-  bool allowRipup_;
+  bool modified_{false};
+  int numMarkers_{0};
+  int numPinsIn_{0};
+  frCoord markerDist_{std::numeric_limits<frCoord>::max()};
+  bool allowRipup_{true};
   Rect pinBox_;
-  bool ripup_;
+  bool ripup_{false};
   // new
-  int numReroutes_;
-  unsigned short
-      nRipupAvoids_;  // the number of times this net avoided to be ripped up
-  unsigned short maxRipupAvoids_;
-  bool inQueue_;
-  bool routed_;
+  int numReroutes_{0};
+  // the number of times this net avoided to be ripped up
+  uint16_t nRipupAvoids_{0};
+  uint16_t maxRipupAvoids_{0};
+  bool inQueue_{false};
+  bool routed_{false};
 
   std::vector<frRect> origGuides_;
   uint16_t priority_{0};
 
-  drNet()
-      : fNet_(nullptr),
-        modified_(false),
-        numMarkers_(0),
-        numPinsIn_(0),
-        markerDist_(0),
-        allowRipup_(false),
-        ripup_(false),
-        numReroutes_(0),
-        nRipupAvoids_(0),
-        maxRipupAvoids_(0),
-        inQueue_(false),
-        routed_(false)
-  {
-  }  // for serialization
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
+  void serialize(Archive& ar, unsigned int version);
 
   friend class boost::serialization::access;
 };

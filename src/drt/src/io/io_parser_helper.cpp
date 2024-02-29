@@ -81,7 +81,7 @@ void io::Parser::initDefaultVias()
     tech_->getLayer(viaDef->getCutLayerNum())->addViaDef(viaDef);
   }
   for (auto& userDefinedVia : design_->getUserSelectedVias()) {
-    if (tech_->name2via.find(userDefinedVia) == tech_->name2via.end()) {
+    if (tech_->name2via_.find(userDefinedVia) == tech_->name2via_.end()) {
       logger_->error(
           DRT, 608, "Could not find user defined via {}", userDefinedVia);
     }

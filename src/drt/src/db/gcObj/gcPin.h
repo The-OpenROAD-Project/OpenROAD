@@ -36,24 +36,12 @@ class gcPin : public gcBlockObject
 {
  public:
   // constructors
-  gcPin()
-      : gcBlockObject(),
-        polygon_(nullptr),
-        net_(nullptr) /*, dirty_(false)*/,
-        polygon_edges_(),
-        polygon_corners_(),
-        max_rectangles_()
-  {
-  }
+  gcPin() = default;
   gcPin(const gtl::polygon_90_with_holes_data<frCoord>& shapeIn,
         frLayerNum layerNumIn,
         gcNet* netIn)
-      : gcBlockObject(),
-        polygon_(std::make_unique<gcPolygon>(shapeIn, layerNumIn, this, netIn)),
-        net_(netIn) /*, dirty_(true)*/,
-        polygon_edges_(),
-        polygon_corners_(),
-        max_rectangles_()
+      : polygon_(std::make_unique<gcPolygon>(shapeIn, layerNumIn, this, netIn)),
+        net_(netIn)
   {
   }
   // setters
@@ -94,7 +82,7 @@ class gcPin : public gcBlockObject
 
  private:
   std::unique_ptr<gcPolygon> polygon_;
-  gcNet* net_;
+  gcNet* net_{nullptr};
   // assisting structures
   std::vector<std::vector<std::unique_ptr<gcSegment>>> polygon_edges_;
   std::vector<std::vector<std::unique_ptr<gcCorner>>> polygon_corners_;

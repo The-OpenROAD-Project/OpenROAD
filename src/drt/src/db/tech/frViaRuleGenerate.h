@@ -37,18 +37,7 @@ class frViaRuleGenerate
 {
  public:
   // constructors
-  frViaRuleGenerate(const frString& nameIn)
-      : name(nameIn),
-        isDefault(false),
-        botEnc(),
-        cutRect(),
-        cutSpacing(),
-        topEnc(),
-        botLayerNum(0),
-        cutLayerNum(0),
-        topLayerNum(0)
-  {
-  }
+  frViaRuleGenerate(const frString& nameIn) : name(nameIn) {}
   // getters
   const frString& getName() const { return name; }
   bool getDefault() const { return isDefault; }
@@ -71,13 +60,13 @@ class frViaRuleGenerate
 
  private:
   frString name;
-  bool isDefault;
+  bool isDefault{false};
   Point botEnc;
   Rect cutRect;
   Point cutSpacing;
   Point topEnc;
-  frLayerNum botLayerNum;
-  frLayerNum cutLayerNum;
-  frLayerNum topLayerNum;
+  frLayerNum botLayerNum{0};
+  frLayerNum cutLayerNum{0};
+  frLayerNum topLayerNum{0};
 };
 }  // namespace fr
