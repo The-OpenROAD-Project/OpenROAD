@@ -80,9 +80,7 @@ class frShape : public frPinFig
  protected:
   // constructors
   frShape() = default;
-  frShape(frBlockObject* owner) : owner_(owner)
-  {
-  }
+  frShape(frBlockObject* owner) : owner_(owner) {}
 
   frBlockObject* owner_{nullptr};  // general back pointer 0
   int index_in_owner_{0};
@@ -598,7 +596,7 @@ class frPathSeg : public frShape
                   begin_.y() - width / 2,
                   end_.x() + endExt,
                   end_.y() + width / 2);
-    } 
+    }
     return Rect(begin_.x() - width / 2,
                 begin_.y() - beginExt,
                 end_.x() + width / 2,

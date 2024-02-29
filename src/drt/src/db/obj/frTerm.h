@@ -65,13 +65,10 @@ class frTerm : public frBlockObject
 
  protected:
   // constructors
-  frTerm(const frString& name)
-      : name_(name)
-  {
-  }
+  frTerm(const frString& name) : name_(name) {}
 
-  frString name_;  // A, B, Z, VSS, VDD
-  frNet* net_{nullptr};     // set later, term in instTerm does not have net
+  frString name_;        // A, B, Z, VSS, VDD
+  frNet* net_{nullptr};  // set later, term in instTerm does not have net
   dbSigType type_{dbSigType::SIGNAL};
   dbIoType direction_{dbIoType::INPUT};
   int index_in_owner_{0};

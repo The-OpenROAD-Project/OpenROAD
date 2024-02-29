@@ -180,7 +180,7 @@ class Parser
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
       T* term,
       frBlockObject* origTerm,
-      dbTransform xform);
+      const dbTransform& xform);
   bool genGuides_gCell2APInstTermMap(
       std::map<std::pair<Point, frLayerNum>,
                std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,

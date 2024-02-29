@@ -39,7 +39,7 @@ class frMPin : public frPin
  public:
   // constructors
   frMPin() = default;
-  frMPin(const frMPin& in) = default;
+  frMPin(const frMPin& in) = delete;
   frMPin& operator=(const frMPin&) = delete;
 
   // getters
