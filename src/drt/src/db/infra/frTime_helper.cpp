@@ -134,8 +134,8 @@ size_t getCurrentRSS()
     || defined(__gnu_linux__)
   /* Linux ---------------------------------------------------- */
   int64_t rss = 0L;
-  FILE* fp = nullptr;
-  if ((fp = fopen("/proc/self/statm", "r")) == nullptr) {
+  FILE* fp = fopen("/proc/self/statm", "r");
+  if (fp == nullptr) {
     return (size_t) 0L; /* Can't open? */
   }
   if (fscanf(fp, "%*s%ld", &rss) != 1) {

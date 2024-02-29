@@ -128,10 +128,11 @@ class frNode : public frBlockObject
 
  protected:
   frNet* net{nullptr};
-  Point loc;               // == prefAP bp if exist for pin
-  frLayerNum layerNum{0};     // == prefAP bp if exist for pin
+  Point loc;                        // == prefAP bp if exist for pin
+  frLayerNum layerNum{0};           // == prefAP bp if exist for pin
   frBlockObject* connFig{nullptr};  // wire / via / patch to parent
-  frBlockObject* pin{nullptr};      // term / instTerm / null if boundary pin or steiner
+  frBlockObject* pin{
+      nullptr};  // term / instTerm / null if boundary pin or steiner
   frNodeTypeEnum type{frNodeTypeEnum::frcSteiner};
 
   frNode* parent{nullptr};

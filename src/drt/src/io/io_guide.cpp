@@ -549,7 +549,7 @@ void io::Parser::genGuides_gCell2TermMap(
              std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
     T* term,
     frBlockObject* origTerm,
-    dbTransform xform)
+    const dbTransform& xform)
 {
   for (auto& uPin : term->getPins()) {
     for (auto& uFig : uPin->getFigs()) {

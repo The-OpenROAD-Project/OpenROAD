@@ -45,10 +45,7 @@ class frInstTerm : public frBlockObject
 {
  public:
   // constructors
-  frInstTerm(frInst* inst, frMTerm* term)
-      : inst_(inst), term_(term)
-  {
-  }
+  frInstTerm(frInst* inst, frMTerm* term) : inst_(inst), term_(term) {}
   frInstTerm(const frInstTerm& in) = delete;
   // getters
   bool hasNet() const { return (net_); }
