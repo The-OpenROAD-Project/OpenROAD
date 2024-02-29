@@ -46,7 +46,7 @@ class frRef : public frPinFig
 
  protected:
   // constructors
-  frRef() : frPinFig() {}
+  frRef() = default;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)

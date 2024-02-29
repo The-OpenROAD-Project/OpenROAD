@@ -8994,7 +8994,7 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
 
   bool isPrlForAlignedCutClasses(std::string cutClass1, std::string cutClass2);
 
-  int getPrlEntry(std::string cutClass1, std::string cutClass2);
+  int getPrlEntry(const std::string& cutClass1, const std::string& cutClass2);
 
   void setSpacingTable(std::vector<std::vector<std::pair<int, int>>> table,
                        std::map<std::string, uint> row_map,
@@ -9375,6 +9375,18 @@ class dbTechLayerMinStepRule : public dbObject
   void setExceptSameCorners(bool except_same_corners);
 
   bool isExceptSameCorners() const;
+
+  void setConcaveCorner(bool concave_corner);
+
+  bool isConcaveCorner() const;
+
+  void setExceptRectangle(bool except_rectangle);
+
+  bool isExceptRectangle() const;
+
+  void setNoAdjacentEol(bool no_adjacent_eol);
+
+  bool isNoAdjacentEol() const;
 
   // User Code Begin dbTechLayerMinStepRule
   static dbTechLayerMinStepRule* create(dbTechLayer* layer);

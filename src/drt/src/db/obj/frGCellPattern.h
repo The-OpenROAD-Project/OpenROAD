@@ -34,10 +34,6 @@ namespace fr {
 class frGCellPattern : public frBlockObject
 {
  public:
-  // constructors
-  frGCellPattern() : horizontal_(false), startCoord_(0), spacing_(0), count_(0)
-  {
-  }
   // getters
   bool isHorizontal() const { return horizontal_; }
   frCoord getStartCoord() const { return startCoord_; }
@@ -52,9 +48,9 @@ class frGCellPattern : public frBlockObject
   frBlockObjectEnum typeId() const override { return frcGCellPattern; }
 
  private:
-  bool horizontal_;
-  frCoord startCoord_;
-  frUInt4 spacing_;
-  frUInt4 count_;
+  bool horizontal_{false};
+  frCoord startCoord_{0};
+  frUInt4 spacing_{0};
+  frUInt4 count_{0};
 };
 }  // namespace fr

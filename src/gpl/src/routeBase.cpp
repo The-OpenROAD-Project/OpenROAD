@@ -314,7 +314,7 @@ void RouteBase::getGlobalRouterResult()
 
   // these two options must be on
   grouter_->setAllowCongestion(true);
-  grouter_->setOverflowIterations(1);
+  grouter_->setOverflowIterations(0);
 
   // this option must be off
   grouter_->setCriticalNetsPercentage(0);
@@ -557,10 +557,16 @@ std::pair<bool, bool> RouteBase::routability()
       continue;
     }
 
-    int idxX = (gCell->dCx() - tg_->lx()) / tg_->tileSizeX();
-    int idxY = (gCell->dCy() - tg_->ly()) / tg_->tileSizeY();
+    int idxX = std::min((gCell->dCx() - tg_->lx()) / tg_->tileSizeX(),
+                        tg_->tileCntX() - 1);
+    int idxY = std::min((gCell->dCy() - tg_->ly()) / tg_->tileSizeY(),
+                        tg_->tileCntY() - 1);
 
-    Tile* tile = tg_->tiles()[idxY * tg_->tileCntX() + idxX];
+    size_t index = idxY * tg_->tileCntX() + idxX;
+    if (index >= tg_->tiles().size()) {
+      continue;
+    }
+    Tile* tile = tg_->tiles()[index];
 
     // Don't care when inflRatio <= 1
     if (tile->inflatedRatio() <= 1.0) {

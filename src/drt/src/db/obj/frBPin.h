@@ -37,24 +37,19 @@ class frBTerm;
 class frBPin : public frPin
 {
  public:
-  // constructors
-  frBPin() : frPin(), term_(nullptr) {}
-  frBPin(const frBPin& in) : frPin(in), term_(in.term_) {}
-  frBPin(const frBPin& in, const dbTransform& xform)
-      : frPin(in, xform), term_(in.term_)
-  {
-  }
+  frBPin() = default;
+  frBPin(const frBPin&) = delete;
+  frBPin& operator=(const frBPin&) = delete;
 
   // getters
   frBTerm* getTerm() const { return term_; }
 
   // setters
-  // cannot have setterm, must be available when creating
   void setTerm(frBTerm* in) { term_ = in; }
   // others
   frBlockObjectEnum typeId() const override { return frcBPin; }
 
  protected:
-  frBTerm* term_;
+  frBTerm* term_{nullptr};
 };
 }  // namespace fr

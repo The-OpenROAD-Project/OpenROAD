@@ -953,8 +953,8 @@ bool dbTechLayerCutSpacingTableDefRule::isPrlForAlignedCutClasses(
   return false;
 }
 
-int dbTechLayerCutSpacingTableDefRule::getPrlEntry(std::string cutClass1,
-                                                   std::string cutClass2)
+int dbTechLayerCutSpacingTableDefRule::getPrlEntry(const std::string& cutClass1,
+                                                   const std::string& cutClass2)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
       = (_dbTechLayerCutSpacingTableDefRule*) this;

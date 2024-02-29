@@ -34,7 +34,7 @@ namespace fr {
 class FlexMazeIdx
 {
  public:
-  FlexMazeIdx() : xIdx_(-1), yIdx_(-1), zIdx_(-1) {}
+  FlexMazeIdx() = default;
   FlexMazeIdx(frMIdx xIn, frMIdx yIn, frMIdx zIn)
       : xIdx_(xIn), yIdx_(yIn), zIdx_(zIn)
   {
@@ -65,11 +65,11 @@ class FlexMazeIdx
   {
     if (xIdx_ != rhs.x()) {
       return xIdx_ < rhs.x();
-    } else if (yIdx_ != rhs.y()) {
-      return yIdx_ < rhs.y();
-    } else {
-      return zIdx_ < rhs.z();
     }
+    if (yIdx_ != rhs.y()) {
+      return yIdx_ < rhs.y();
+    }
+    return zIdx_ < rhs.z();
   }
   bool operator==(const FlexMazeIdx& rhs) const
   {
@@ -83,9 +83,9 @@ class FlexMazeIdx
   }
 
  private:
-  frMIdx xIdx_;
-  frMIdx yIdx_;
-  frMIdx zIdx_;
+  frMIdx xIdx_ = -1;
+  frMIdx yIdx_ = -1;
+  frMIdx zIdx_ = -1;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)

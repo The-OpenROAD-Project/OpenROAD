@@ -62,8 +62,6 @@ SACoreHardMacro::SACoreHardMacro(
     float init_prob,
     int max_num_step,
     int num_perturb_per_step,
-    int k,
-    int c,
     unsigned seed,
     Mpl2Observer* graphics,
     utl::Logger* logger)
@@ -82,8 +80,6 @@ SACoreHardMacro::SACoreHardMacro(
                                         init_prob,
                                         max_num_step,
                                         num_perturb_per_step,
-                                        k,
-                                        c,
                                         seed,
                                         graphics,
                                         logger)
@@ -130,10 +126,10 @@ void SACoreHardMacro::calPenalty()
   }
 }
 
-void SACoreHardMacro::flipMacro()
+void SACoreHardMacro::flipAllMacros()
 {
-  for (auto& macro : macros_) {
-    macro.flip(false);
+  for (auto& macro_id : pos_seq_) {
+    macros_[macro_id].flip(false);
   }
 }
 
@@ -175,7 +171,7 @@ void SACoreHardMacro::perturb()
   } else {
     action_id_ = 5;
     pre_macros_ = macros_;
-    flipMacro();  // Flip one macro
+    flipAllMacros();
   }
 
   // update the macro locations based on Sequence Pair
@@ -215,6 +211,8 @@ void SACoreHardMacro::restore()
 
 void SACoreHardMacro::initialize()
 {
+  initSequencePair();
+
   std::vector<float> area_penalty_list;
   std::vector<float> outline_penalty_list;
   std::vector<float> wirelength_list;
