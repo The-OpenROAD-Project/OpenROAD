@@ -194,6 +194,7 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   }
 
   std::vector<Net*> nets = initNetlist();
+  checkPinPlacement();
   initNets(nets);
 
   applyAdjustments(min_routing_layer, max_routing_layer);
@@ -755,7 +756,6 @@ float GlobalRouter::getNetSlack(Net* net)
 
 void GlobalRouter::initNets(std::vector<Net*>& nets)
 {
-  checkPinPlacement();
   pad_pins_connections_.clear();
 
   int min_degree = std::numeric_limits<int>::max();
