@@ -14,5 +14,5 @@ buffer_ports -outputs
 set_load -pin_load 2000 out
 repair_design
 
-report_net -connections -verbose out
+report_net out
 report_check_types -max_slew -max_capacitance
