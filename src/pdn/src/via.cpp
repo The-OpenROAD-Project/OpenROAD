@@ -2761,6 +2761,11 @@ void Via::writeToDb(odb::dbSWire* wire,
   DbVia::ViaLayerShape shapes;
   connect_->makeVia(wire, lower_, upper_, type, shapes);
 
+  if (shapes.bottom.empty() && shapes.middle.empty() && shapes.top.empty()) {
+    markFailed(failedViaReason::BUILD);
+    return;
+  }
+
   auto check_shapes
       = [this, obstructions](
             const ShapePtr& shape,
