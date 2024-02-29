@@ -125,49 +125,101 @@ proc set_layer_rc {args} {
 }
 
 sta::define_cmd_args "set_wire_rc" {[-clock] [-signal]\
-                                      [-layer layer_name]\
-                                      [-resistance res]\
-                                      [-capacitance cap]\
+                                      [-layers layers]\
+                                      [-h_resistance res]\
+                                      [-h_capacitance cap]\
+                                      [-v_resistance res]\
+                                      [-v_capacitance cap]\
                                       [-corner corner]}
 
 proc set_wire_rc { args } {
   sta::parse_key_args "set_wire_rc" args \
-    keys {-layer -resistance -capacitance -corner} \
+    keys {-layers -resistance -capacitance -corner} \
     flags {-clock -signal -data}
 
   set corner [sta::parse_corner_or_all keys]
 
-  set wire_res 0.0
-  set wire_cap 0.0
-  if { [info exists keys(-layer)] } {
+  set h_wire_res 0.0
+  set h_wire_cap 0.0
+  set v_wire_res 0.0
+  set v_wire_cap 0.0
+
+  if { [info exists keys(-layers)] } {
     if { [info exists keys(-resistance)] \
            || [info exists keys(-capacitance)] } {
-      utl::error RSZ 1 "Use -layer or -resistance/-capacitance but not both."
+      utl::error RSZ 1 "Use -layers or -resistance/-capacitance but not both."
     }
-    set layer_name $keys(-layer)
-    set layer [[ord::get_db_tech] findLayer $layer_name]
-    if { $layer == "NULL" } {
-      utl::error RSZ 2 "layer $layer_name not found."
-    }
+    set total_h_wire_res 0.0
+    set total_h_wire_cap 0.0
+    set total_v_wire_res 0.0
+    set total_v_wire_cap 0.0
 
-    if { $corner == "NULL" } {
-      lassign [rsz::dblayer_wire_rc $layer] wire_res wire_cap
-    } else {
-      set wire_res [rsz::layer_resistance $layer $corner]
-      set wire_cap [rsz::layer_capacitance $layer $corner]
+    set layers $keys(-layers)
+
+    set h_layers 0
+    set v_layers 0
+
+    foreach layer_name $layers {
+      set layer [[ord::get_db_tech] findLayer $layer_name]
+      if { $layer == "NULL" } {
+        utl::error RSZ 2 "layer $layer_name not found."
+      }
+      if { $corner == "NULL" } {
+        lassign [rsz::dblayer_wire_rc $layer] layer_wire_res layer_wire_cap
+      } else {
+        set layer_wire_res [rsz::layer_resistance $layer $corner]
+        set layer_wire_cap [rsz::layer_capacitance $layer $corner]
+      }
+      set layer_direction [$layer getDirection]
+      if {$layer_direction == "HORIZONTAL"} {
+        set total_h_wire_res [expr {$total_h_wire_res + $layer_wire_res}]
+        set total_h_wire_cap [expr {$total_h_wire_cap + $layer_wire_cap}]
+        incr h_layers
+      } elseif {$layer_direction == "VERTICAL"} {
+        set total_v_wire_res [expr {$total_v_wire_res + $layer_wire_res}]
+        set total_v_wire_cap [expr {$total_v_wire_cap + $layer_wire_cap}]
+        incr v_layers
+      } else {
+        set total_h_wire_res [expr {$total_h_wire_res + $layer_wire_res}]
+        set total_h_wire_cap [expr {$total_h_wire_cap + $layer_wire_cap}]
+        incr h_layers
+        set total_v_wire_res [expr {$total_v_wire_res + $layer_wire_res}]
+        set total_v_wire_cap [expr {$total_v_wire_cap + $layer_wire_cap}]
+        incr v_layers
+      }
     }
+    set h_wire_res [expr $total_h_wire_res / $h_layers]
+    set h_wire_cap [expr $total_h_wire_cap / $h_layers]
+    set v_wire_res [expr $total_v_wire_res / $v_layers]
+    set v_wire_cap [expr $total_v_wire_cap / $v_layers]
+
+    utl::report "h_wire_res $h_wire_res"
+    utl::report "h_wire_cap $h_wire_cap"
+    utl::report "v_wire_res $v_wire_res"
+    utl::report "v_wire_cap $v_wire_cap"
   } else {
     ord::ensure_units_initialized
-    if { [info exists keys(-resistance)] } {
-      set res $keys(-resistance)
-      sta::check_positive_float "-resistance" $res
-      set wire_res [expr [sta::resistance_ui_sta $res] / [sta::distance_ui_sta 1.0]]
+    if { [info exists keys(-h_resistance)] } {
+      set res $keys(-h_resistance)
+      sta::check_positive_float "-h_resistance" $res
+      set h_wire_res [expr [sta::resistance_ui_sta $res] / [sta::distance_ui_sta 1.0]]
     }
 
-    if { [info exists keys(-capacitance)] } {
-      set cap $keys(-capacitance)
-      sta::check_positive_float "-capacitance" $cap
-      set wire_cap [expr [sta::capacitance_ui_sta $cap] / [sta::distance_ui_sta 1.0]]
+    if { [info exists keys(-h_capacitance)] } {
+      set cap $keys(-h_capacitance)
+      sta::check_positive_float "-h_capacitance" $cap
+      set h_wire_cap [expr [sta::capacitance_ui_sta $cap] / [sta::distance_ui_sta 1.0]]
+    }
+    if { [info exists keys(-v_resistance)] } {
+      set res $keys(-v_resistance)
+      sta::check_positive_float "-v_resistance" $res
+      set v_wire_res [expr [sta::resistance_ui_sta $res] / [sta::distance_ui_sta 1.0]]
+    }
+
+    if { [info exists keys(-v_capacitance)] } {
+      set cap $keys(-v_capacitance)
+      sta::check_positive_float "-v_capacitance" $cap
+      set v_wire_cap [expr [sta::capacitance_ui_sta $cap] / [sta::distance_ui_sta 1.0]]
     }
   }
 
@@ -201,10 +253,12 @@ proc set_wire_rc { args } {
   }
   foreach corner $corners {
     if { $signal } {
-      rsz::set_wire_signal_rc_cmd $corner $wire_res $wire_cap
+      rsz::set_h_wire_signal_rc_cmd $corner $h_wire_res $h_wire_cap
+      rsz::set_v_wire_signal_rc_cmd $corner $v_wire_res $v_wire_cap
     }
     if { $clk } {
-      rsz::set_wire_clk_rc_cmd $corner $wire_res $wire_cap
+      rsz::set_h_wire_clk_rc_cmd $corner $h_wire_res $h_wire_cap
+      rsz::set_v_wire_clk_rc_cmd $corner $v_wire_res $v_wire_cap
     }
   }
 }

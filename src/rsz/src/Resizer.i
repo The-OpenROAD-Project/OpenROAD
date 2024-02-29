@@ -257,23 +257,43 @@ layer_capacitance(odb::dbTechLayer *layer,
 }
 
 void
-set_wire_signal_rc_cmd(const Corner *corner,
-                       float res,
-                       float cap)
+set_h_wire_signal_rc_cmd(const Corner *corner,
+                         float res,
+                         float cap)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->setWireSignalRC(corner, res, cap);
+  resizer->setHWireSignalRC(corner, res, cap);
 }
 
 void
-set_wire_clk_rc_cmd(const Corner *corner,
-                    float res,
-                    float cap)
+set_v_wire_signal_rc_cmd(const Corner *corner,
+                         float res,
+                         float cap)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->setWireClkRC(corner, res, cap);
+  resizer->setVWireSignalRC(corner, res, cap);
+}
+
+void
+set_h_wire_clk_rc_cmd(const Corner *corner,
+                      float res,
+                      float cap)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->setHWireClkRC(corner, res, cap);
+}
+
+void
+set_v_wire_clk_rc_cmd(const Corner *corner,
+                      float res,
+                      float cap)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->setVWireClkRC(corner, res, cap);
 }
 
 // ohms/meter

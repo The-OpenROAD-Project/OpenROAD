@@ -147,6 +147,18 @@ using TgtSlews = array<Slew, RiseFall::index_count>;
 
 enum class ParasiticsSrc { none, placement, global_routing };
 
+struct ParasiticsResistence
+{
+  double h_res;
+  double v_res;
+};
+
+struct ParasiticsCapacity
+{
+  double h_cap;
+  double v_cap;
+};
+
 class Resizer : public StaState
 {
 public:
@@ -168,12 +180,20 @@ public:
                // Return values.
                double &res,
                double &cap) const;
-  // Set the resistance and capacitance used for parasitics on signal nets.
-  void setWireSignalRC(const Corner *corner,
+  // Set the resistance and capacitance used for horizontal parasitics on signal nets.
+  void setHWireSignalRC(const Corner *corner,
+                       double res, // ohms/meter
+                       double cap); // farads/meter
+  // Set the resistance and capacitance used for vertical wires parasitics on signal nets.
+  void setVWireSignalRC(const Corner *corner,
                        double res, // ohms/meter
                        double cap); // farads/meter
   // Set the resistance and capacitance used for parasitics on clock nets.
-  void setWireClkRC(const Corner *corner,
+  void setHWireClkRC(const Corner *corner,
+                    double res,
+                    double cap); // farads/meter
+  // Set the resistance and capacitance used for parasitics on clock nets.
+  void setVWireClkRC(const Corner *corner,
                     double res,
                     double cap); // farads/meter
   // ohms/meter, farads/meter
@@ -602,11 +622,11 @@ protected:
   vector<vector<double>> layer_res_; // ohms/meter
   vector<vector<double>> layer_cap_; // Farads/meter
   // Signal wire RC indexed by corner->index
-  vector<double> wire_signal_res_;  // ohms/metre
-  vector<double> wire_signal_cap_;  // Farads/meter
+  vector<ParasiticsResistence> wire_signal_res_;  // ohms/metre
+  vector<ParasiticsCapacity> wire_signal_cap_;  // Farads/meter
   // Clock wire RC.
-  vector<double> wire_clk_res_;     // ohms/metre
-  vector<double> wire_clk_cap_;     // Farads/meter
+  vector<ParasiticsResistence> wire_clk_res_;     // ohms/metre
+  vector<ParasiticsCapacity> wire_clk_cap_;     // Farads/meter
   LibertyCellSet dont_use_;
   double max_area_ = 0.0;
 

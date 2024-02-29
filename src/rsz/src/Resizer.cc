@@ -1559,7 +1559,6 @@ Resizer::findTargetLoads()
   if (target_load_map_ == nullptr) {
     // Find target slew across all buffers in the libraries.
     findBufferTargetSlews();
-
     target_load_map_ = new CellTargetLoadMap;
     // Find target loads at the tgt_slew_corner.
     int lib_ap_index = tgt_slew_corner_->libertyIndex(max_);
