@@ -49,31 +49,7 @@ class frNet : public frBlockObject
 {
  public:
   // constructors
-  frNet(const frString& in)
-      : frBlockObject(),
-        name_(in),
-        instTerms_(),
-        bterms_(),
-        shapes_(),
-        vias_(),
-        pwires_(),
-        grShapes_(),
-        grVias_(),
-        nodes_(),
-        root_(nullptr),
-        rootGCellNode_(nullptr),
-        firstNonRPinNode_(nullptr),
-        rpins_(),
-        guides_(),
-        type_(dbSigType::SIGNAL),
-        modified_(false),
-        isFakeNet_(false),
-        ndr_(nullptr),
-        absPriorityLvl(0),
-        isClock_(false),
-        isSpecial_(false)
-  {
-  }
+  frNet(const frString& in) : name_(in) {}
   // getters
   const frString& getName() const { return name_; }
   const std::vector<frInstTerm*>& getInstTerms() const { return instTerms_; }
@@ -205,8 +181,8 @@ class frNet : public frBlockObject
   void setIsFake(bool in) { isFakeNet_ = in; }
   // others
   dbSigType getType() const { return type_; }
-  void setType(dbSigType in) { type_ = in; }
-  virtual frBlockObjectEnum typeId() const override { return frcNet; }
+  void setType(const dbSigType& in) { type_ = in; }
+  frBlockObjectEnum typeId() const override { return frcNet; }
   void updateNondefaultRule(frNonDefaultRule* n)
   {
     ndr_ = n;
@@ -224,10 +200,12 @@ class frNet : public frBlockObject
   void updateAbsPriority()
   {
     int max = absPriorityLvl;
-    if (hasNDR())
+    if (hasNDR()) {
       max = std::max(max, NDR_NETS_ABS_PRIORITY);
-    if (isClock())
+    }
+    if (isClock()) {
       max = std::max(max, CLOCK_NETS_ABS_PRIORITY);
+    }
     absPriorityLvl = max;
   }
   bool isSpecial() const { return isSpecial_; }
@@ -254,20 +232,20 @@ class frNet : public frBlockObject
   std::list<std::unique_ptr<frNode>>
       nodes_;  // the nodes at the beginning of the list correspond to rpins
                // there is no guarantee that first element is root
-  frNode* root_;
-  frNode* rootGCellNode_;
-  frNode* firstNonRPinNode_;
+  frNode* root_{nullptr};
+  frNode* rootGCellNode_{nullptr};
+  frNode* firstNonRPinNode_{nullptr};
   std::vector<std::unique_ptr<frRPin>> rpins_;
   std::vector<std::unique_ptr<frGuide>> guides_;
   std::vector<frRect> orig_guides_;
-  dbSigType type_;
-  bool modified_;
-  bool isFakeNet_;  // indicate floating PG nets
-  frNonDefaultRule* ndr_;
-  int absPriorityLvl;  // absolute priority level: will be checked in net
-                       // ordering before other criteria
-  bool isClock_;
-  bool isSpecial_;
+  dbSigType type_{dbSigType::SIGNAL};
+  bool modified_{false};
+  bool isFakeNet_{false};  // indicate floating PG nets
+  frNonDefaultRule* ndr_{nullptr};
+  int absPriorityLvl{0};  // absolute priority level: will be checked in net
+                          // ordering before other criteria
+  bool isClock_{false};
+  bool isSpecial_{false};
 
   std::vector<frPinFig*> all_pinfigs_;
 };
