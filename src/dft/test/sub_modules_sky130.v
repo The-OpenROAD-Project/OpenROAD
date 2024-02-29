@@ -4,14 +4,16 @@ module sub_modules(port1, clock, output1, set_b);
   input set_b;
   output output1;
 
- shift_register_2b my_shift_register(port1, output1, clock);
+ shift_register_2b my_shift_register(port1, output1, set_b,clock);
 
 endmodule
 
-module shift_register_2b(from, to, clock);
+module shift_register_2b(from, to, set_b, clock);
   input from;
   output to;
   input clock;
+  input set_b;
+   
   wire net1;
 
   sky130_fd_sc_hd__dfstp_1 ff1(

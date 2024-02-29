@@ -19,7 +19,6 @@ module sub_modules (clock,
     .set_b(set_b),
     .to(output1),
     .from(port1));
- assign output1 = output1;
  assign scan_out_1 = \my_shift_register/net1 ;
 endmodule
 module shift_register_2b (clock,
@@ -44,5 +43,4 @@ module shift_register_2b (clock,
     .SCE(scan_enable_1),
     .SET_B(set_b),
     .CLK(clock));
- assign to = output1;
 endmodule
