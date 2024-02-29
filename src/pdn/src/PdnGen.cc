@@ -140,6 +140,8 @@ void PdnGen::buildGrids(bool trim)
         logger_, utl::PDN, "Make", 2, "Build end grid - {}", grid->getName());
   }
 
+  updateVias();
+
   if (trim) {
     trimShapes();
 
@@ -171,18 +173,13 @@ void PdnGen::cleanupVias()
   for (auto* grid : getGrids()) {
     grid->removeInvalidVias();
   }
+  updateVias();
   debugPrint(logger_, utl::PDN, "Make", 2, "Cleanup vias - end");
 }
 
-void PdnGen::trimShapes()
+void PdnGen::updateVias()
 {
-  debugPrint(logger_, utl::PDN, "Make", 2, "Trim shapes - start");
-  auto grids = getGrids();
-
-  std::vector<ViaPtr> all_vias;
-  for (auto* grid : grids) {
-    grid->getVias(all_vias);
-  }
+  const auto grids = getGrids();
 
   for (auto* grid : grids) {
     for (const auto& [layer, shapes] : grid->getShapes()) {
@@ -190,12 +187,21 @@ void PdnGen::trimShapes()
         shape->clearVias();
       }
     }
-  }
 
-  for (const auto& via : all_vias) {
-    via->getLowerShape()->addVia(via);
-    via->getUpperShape()->addVia(via);
+    std::vector<ViaPtr> all_vias;
+    grid->getVias(all_vias);
+
+    for (const auto& via : all_vias) {
+      via->getLowerShape()->addVia(via);
+      via->getUpperShape()->addVia(via);
+    }
   }
+}
+
+void PdnGen::trimShapes()
+{
+  debugPrint(logger_, utl::PDN, "Make", 2, "Trim shapes - start");
+  auto grids = getGrids();
 
   for (auto* grid : grids) {
     if (grid->type() == Grid::Existing) {
