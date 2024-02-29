@@ -84,7 +84,6 @@ class frConstraint
  protected:
   int id_{-1};
   frLayer* layer_{nullptr};
-  frConstraint() = default;
 };
 
 class frLef58CutClassConstraint : public frConstraint

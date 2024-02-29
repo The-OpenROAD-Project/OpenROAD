@@ -35,9 +35,6 @@ namespace fr {
 
 class taBlockObject : public frBlockObject
 {
- protected:
-  taBlockObject() = default;
-  taBlockObject(const taBlockObject& in) = default;
 };
 
 }  // namespace fr
