@@ -45,8 +45,7 @@ class frFig : public frBlockObject
   virtual bool intersects(const Rect& box) const = 0;
 
  protected:
-  // constructors
-  frFig() : frBlockObject() {}
+  frFig() = default;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
@@ -75,8 +74,7 @@ class frConnFig : public frFig
    * overlaps
    */
  protected:
-  // constructors
-  frConnFig() : frFig() {}
+  frConnFig() = default;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
@@ -114,7 +112,7 @@ class frPinFig : public frConnFig
    * overlaps
    */
  protected:
-  frPinFig() : frConnFig() {}
+  frPinFig() = default;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)

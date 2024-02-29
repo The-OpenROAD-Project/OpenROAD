@@ -50,13 +50,13 @@ class frBlock : public frBlockObject
 {
  public:
   // constructors
-  frBlock(const frString& name) : frBlockObject(), name_(name), dbUnit_(0){};
+  frBlock(const frString& name) : name_(name) {}
   // getters
   frUInt4 getDBUPerUU() const { return dbUnit_; }
   Rect getBBox() const
   {
     Rect box;
-    if (boundaries_.size()) {
+    if (!boundaries_.empty()) {
       box = boundaries_.begin()->getBBox();
     }
     frCoord llx = box.xMin();
@@ -114,34 +114,37 @@ class frBlock : public frBlockObject
   {
     return insts_;
   }
-  frInst* findInst(std::string name) const
+  frInst* findInst(const std::string& name) const
   {
-    if (name2inst_.find(name) != name2inst_.end())
+    if (name2inst_.find(name) != name2inst_.end()) {
       return name2inst_.at(name);
-    else
-      return nullptr;
+    }
+    return nullptr;
   }
   frNet* getNet(int id) const
   {
-    if (id >= nets_.size())
+    if (id >= nets_.size()) {
       return nullptr;
+    }
     return nets_[id].get();
   }
   frNet* getSNet(int id) const
   {
-    if (id >= snets_.size())
+    if (id >= snets_.size()) {
       return nullptr;
+    }
     return snets_[id].get();
   }
   const std::vector<std::unique_ptr<frNet>>& getNets() const { return nets_; }
-  frNet* findNet(std::string name) const
+  frNet* findNet(const std::string& name) const
   {
-    if (name2net_.find(name) != name2net_.end())
+    if (name2net_.find(name) != name2net_.end()) {
       return name2net_.at(name);
-    else if (name2snet_.find(name) != name2snet_.end())
+    }
+    if (name2snet_.find(name) != name2snet_.end()) {
       return name2snet_.at(name);
-    else
-      return nullptr;
+    }
+    return nullptr;
   }
   const std::vector<std::unique_ptr<frNet>>& getSNets() const { return snets_; }
   std::vector<frTrackPattern*> getTrackPatterns() const
@@ -160,8 +163,9 @@ class frBlock : public frBlockObject
   {
     std::vector<frTrackPattern*> tps;
     for (auto& t : trackPatterns_.at(layerNum)) {
-      if (t->isHorizontal() == isHorizontal)
+      if (t->isHorizontal() == isHorizontal) {
         tps.push_back(t.get());
+      }
     }
     return tps;
   }
@@ -179,18 +183,16 @@ class frBlock : public frBlockObject
     auto it = name2term_.find(in);
     if (it == name2term_.end()) {
       return nullptr;
-    } else {
-      return it->second;
     }
+    return it->second;
   }
   frInst* getInst(const std::string& in) const
   {
     auto it = name2inst_.find(in);
     if (it == name2inst_.end()) {
       return nullptr;
-    } else {
-      return it->second;
     }
+    return it->second;
   }
   frCoord getGCellSizeHorizontal()
   {
@@ -310,8 +312,9 @@ class frBlock : public frBlockObject
   {
     for (const auto& iterm : inst->getInstTerms()) {
       auto net = iterm->getNet();
-      if (net != nullptr)
+      if (net != nullptr) {
         net->removeInstTerm(iterm.get());
+      }
     }
     name2inst_.erase(inst->getName());
     inst->setToBeDeleted(true);
@@ -325,8 +328,9 @@ class frBlock : public frBlockObject
                                 }),
                  insts_.end());
     int id = 0;
-    for (const auto& inst : insts_)
+    for (const auto& inst : insts_) {
       inst->setId(id++);
+    }
   }
   void addNet(std::unique_ptr<frNet> in)
   {
@@ -341,10 +345,10 @@ class frBlock : public frBlockObject
     snets_.push_back(std::move(in));
   }
   const Rect& getDieBox() const { return dieBox_; }
-  void setBoundaries(const std::vector<frBoundary> in)
+  void setBoundaries(const std::vector<frBoundary>& in)
   {
     boundaries_ = in;
-    if (boundaries_.size()) {
+    if (!boundaries_.empty()) {
       dieBox_ = boundaries_.begin()->getBBox();
     }
     frCoord llx = dieBox_.xMin();
@@ -391,11 +395,10 @@ class frBlock : public frBlockObject
   }
   // others
   frBlockObjectEnum typeId() const override { return frcBlock; }
-  ~frBlock() {}
 
  private:
   frString name_;
-  frUInt4 dbUnit_;
+  frUInt4 dbUnit_{0};
 
   std::map<std::string, frInst*> name2inst_;
   std::vector<std::unique_ptr<frInst>> insts_;

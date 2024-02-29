@@ -794,7 +794,8 @@ Resizer::halfDrivingPowerCell(LibertyCell* cell)
 bool
 Resizer::isSingleOutputCombinational(Instance* inst) const
 {
-  if (inst == network_->topInstance()) {
+  dbInst *db_inst = db_network_->staToDb(inst);
+  if (inst == network_->topInstance() || db_inst->isBlock()) {
     return false;
   }
   return isSingleOutputCombinational(network_->libertyCell(inst));
