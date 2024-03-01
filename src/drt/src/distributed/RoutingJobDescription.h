@@ -34,7 +34,7 @@
 namespace boost::serialization {
 class access;
 }
-namespace fr {
+namespace drt {
 
 class RoutingJobDescription : public dst::JobDescription
 {
@@ -95,4 +95,4 @@ class RoutingJobDescription : public dst::JobDescription
   friend class boost::serialization::access;
 };
 
-}  // namespace fr
+}  // namespace drt

@@ -88,7 +88,7 @@ namespace cts {
 class TritonCTS;
 }
 
-namespace fr {
+namespace drt {
 class TritonRoute;
 }
 
@@ -181,7 +181,7 @@ class Design
   ppl::IOPlacer* getIOPlacer();
   tap::Tapcell* getTapcell();
   cts::TritonCTS* getTritonCts();
-  fr::TritonRoute* getTritonRoute();
+  drt::TritonRoute* getTritonRoute();
   dpo::Optdp* getOptdp();
   fin::Finale* getFinale();
   par::PartitionMgr* getPartitionMgr();

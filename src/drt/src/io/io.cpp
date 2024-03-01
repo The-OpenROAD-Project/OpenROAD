@@ -43,7 +43,7 @@
 #include "triton_route/TritonRoute.h"
 #include "utl/Logger.h"
 
-namespace fr {
+namespace drt {
 
 io::Parser::Parser(odb::dbDatabase* dbIn, frDesign* designIn, Logger* loggerIn)
     : db_(dbIn),
@@ -3538,4 +3538,4 @@ void io::Writer::updateDb(odb::dbDatabase* db, bool pin_access, bool snapshot)
   }
 }
 
-}  // namespace fr
+}  // namespace drt

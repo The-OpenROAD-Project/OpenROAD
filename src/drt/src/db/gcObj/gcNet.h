@@ -36,7 +36,7 @@
 #include "db/obj/frInstBlockage.h"
 #include "db/obj/frNet.h"
 
-namespace fr {
+namespace drt {
 class frNet;
 class gcNet : public gcBlockObject
 {
@@ -269,4 +269,4 @@ class gcNet : public gcBlockObject
 
   void init();
 };
-}  // namespace fr
+}  // namespace drt

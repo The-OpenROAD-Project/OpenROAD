@@ -33,7 +33,7 @@
 #include "db/grObj/grBlockObject.h"
 #include "db/infra/frBox.h"
 
-namespace fr {
+namespace drt {
 
 class grFig : public grBlockObject
 {
@@ -98,4 +98,4 @@ class grPinFig : public grConnFig
    */
 };
 
-}  // namespace fr
+}  // namespace drt

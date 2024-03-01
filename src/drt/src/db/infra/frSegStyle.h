@@ -30,7 +30,7 @@
 
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class frEndStyle
 {
  public:
@@ -103,4 +103,4 @@ class frSegStyle
   friend class boost::serialization::access;
 };
 
-}  // namespace fr
+}  // namespace drt

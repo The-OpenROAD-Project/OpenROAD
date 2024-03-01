@@ -32,7 +32,7 @@
 #include "db/taObj/taShape.h"
 #include "db/taObj/taVia.h"
 
-namespace fr {
+namespace drt {
 class frGuide;
 
 class taPin : public taBlockObject
@@ -94,4 +94,4 @@ struct taPinComp
     return *lhs < *rhs;
   }
 };
-}  // namespace fr
+}  // namespace drt

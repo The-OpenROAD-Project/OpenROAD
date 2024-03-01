@@ -28,7 +28,7 @@
 
 #include "db/tech/frLayer.h"
 
-namespace fr {
+namespace drt {
 
 void frLayer::printAllConstraints(utl::Logger* logger)
 {
@@ -181,4 +181,4 @@ frCoord frLayer::getMinSpacingValue(frCoord width1,
   return std::max(rangeSpc, minSpc);
 }
 
-}  // namespace fr
+}  // namespace drt

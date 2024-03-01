@@ -31,7 +31,7 @@
 #include "frDesign.h"
 #include "triton_route/TritonRoute.h"
 
-namespace fr {
+namespace drt {
 
 static inline int defdist(odb::dbBlock* block, int x)
 {
@@ -78,4 +78,4 @@ void DesignCallBack::inDbInstDestroy(odb::dbInst* db_inst)
   }
 }
 
-}  // namespace fr
+}  // namespace drt

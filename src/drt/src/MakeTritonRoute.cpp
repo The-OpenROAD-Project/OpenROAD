@@ -38,12 +38,12 @@
 
 namespace ord {
 
-fr::TritonRoute* makeTritonRoute()
+drt::TritonRoute* makeTritonRoute()
 {
-  return new fr::TritonRoute();
+  return new drt::TritonRoute();
 }
 
-void deleteTritonRoute(fr::TritonRoute* router)
+void deleteTritonRoute(drt::TritonRoute* router)
 {
   delete router;
 }

@@ -31,7 +31,7 @@
 #include "gr/FlexGR.h"
 #include "gr/FlexGRGridGraph.h"
 
-using namespace fr;
+using namespace drt;
 
 bool FlexGRGridGraph::search(std::vector<FlexMazeIdx>& connComps,
                              grNode* nextPinNode,

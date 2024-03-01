@@ -28,7 +28,7 @@
 
 #include "frDesign.h"
 
-using namespace fr;
+using namespace drt;
 
 namespace odb {
 class dbTechLayerCutSpacingTableDefRule;
@@ -221,7 +221,7 @@ class Fixture
       frLayerNum layer_num,
       odb::dbTechLayerWrongDirSpacingRule* dbRule);
   // Public data members are accessible from inside the test function
-  std::unique_ptr<fr::Logger> logger;
+  std::unique_ptr<Logger> logger;
   std::unique_ptr<frDesign> design;
   frUInt4 numBlockages, numTerms, numMasters, numInsts;
   odb::dbTech* db_tech;

@@ -55,12 +55,12 @@ namespace asio = boost::asio;
 namespace odb {
 class dbDatabase;
 }
-namespace fr {
+namespace drt {
 
 class RoutingCallBack : public dst::JobCallBack
 {
  public:
-  RoutingCallBack(fr::TritonRoute* router,
+  RoutingCallBack(TritonRoute* router,
                   dst::Distributed* dist,
                   utl::Logger* logger)
       : router_(router),
@@ -253,7 +253,7 @@ class RoutingCallBack : public dst::JobCallBack
     return instRows;
   }
 
-  fr::TritonRoute* router_;
+  TritonRoute* router_;
   dst::Distributed* dist_;
   utl::Logger* logger_;
   std::string design_path_;
@@ -263,4 +263,4 @@ class RoutingCallBack : public dst::JobCallBack
   FlexPA pa_;
 };
 
-}  // namespace fr
+}  // namespace drt

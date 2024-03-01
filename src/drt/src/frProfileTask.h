@@ -32,7 +32,7 @@
 #include <ittnotify.h>
 #endif
 
-namespace fr {
+namespace drt {
 
 #ifdef HAS_VTUNE
 // This class make a VTune task in its scope (RAII).  This is useful
@@ -80,4 +80,4 @@ class ProfileTask
 };
 #endif
 
-}  // namespace fr
+}  // namespace drt

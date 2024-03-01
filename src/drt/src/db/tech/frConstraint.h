@@ -41,7 +41,7 @@
 #include "odb/db.h"
 #include "utl/Logger.h"
 
-namespace fr {
+namespace drt {
 class frLayer;
 namespace io {
 class Parser;
@@ -2276,4 +2276,4 @@ class frNonDefaultRule
   friend class frTechObject;
 };
 
-}  // namespace fr
+}  // namespace drt

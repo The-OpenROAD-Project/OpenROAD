@@ -35,7 +35,7 @@ class Point;
 class Rect;
 }  // namespace odb
 
-namespace fr {
+namespace drt {
 using odb::Rect;
 class frBlockObject;
 struct frBlockObjectComp;
@@ -140,4 +140,4 @@ class frRegionQuery
 
   frRegionQuery();
 };
-}  // namespace fr
+}  // namespace drt

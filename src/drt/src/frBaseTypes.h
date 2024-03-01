@@ -48,7 +48,7 @@ namespace boost::serialization {
 class access;
 }
 
-namespace fr {
+namespace drt {
 using Logger = utl::Logger;
 const utl::ToolId DRT = utl::DRT;
 using frLayerNum = int;
@@ -345,4 +345,4 @@ inline bool is_loading(const Archive& ar)
 
 using utl::format_as;
 
-}  // namespace fr
+}  // namespace drt

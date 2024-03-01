@@ -31,7 +31,7 @@
 #include "db/grObj/grFig.h"
 #include "odb/dbTypes.h"
 
-namespace fr {
+namespace drt {
 
 class grRef : public grPinFig
 {
@@ -47,4 +47,4 @@ class grRef : public grPinFig
   frBlockObjectEnum typeId() const override { return grcRef; }
 };
 
-}  // namespace fr
+}  // namespace drt

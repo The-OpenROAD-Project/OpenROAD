@@ -32,7 +32,7 @@
 
 #include "gr/FlexGR.h"
 
-using namespace fr;
+using namespace drt;
 
 void FlexGRGridGraph::init()
 {

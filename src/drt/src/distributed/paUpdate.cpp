@@ -32,7 +32,7 @@
 
 #include "distributed/frArchive.h"
 #include "serialization.h"
-using namespace fr;
+using namespace drt;
 
 void paUpdate::serialize(const paUpdate& update, const std::string& path)
 {

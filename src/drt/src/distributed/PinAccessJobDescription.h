@@ -36,7 +36,7 @@
 namespace boost::serialization {
 class access;
 }
-namespace fr {
+namespace drt {
 
 class PinAccessJobDescription : public dst::JobDescription
 {
@@ -67,4 +67,4 @@ class PinAccessJobDescription : public dst::JobDescription
   friend class boost::serialization::access;
 };
 
-}  // namespace fr
+}  // namespace drt

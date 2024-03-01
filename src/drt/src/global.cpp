@@ -38,7 +38,7 @@
 #include "db/obj/frMaster.h"
 #include "frDesign.h"
 
-using namespace fr;
+namespace drt {
 
 std::string OUT_MAZE_FILE;
 std::string DRC_RPT_FILE;
@@ -114,7 +114,6 @@ int CONGCOST = 8;
 int HISTCOST = 32;
 std::string REPAIR_PDN_LAYER_NAME;
 frLayerNum GC_IGNORE_PDN_LAYER = -1;
-namespace fr {
 
 std::ostream& operator<<(std::ostream& os, const frRect& pinFigIn)
 {
@@ -494,4 +493,4 @@ std::ostream& operator<<(std::ostream& os, const frMarker& m)
   }
 }
 
-}  // end namespace fr
+}  // end namespace drt

@@ -39,7 +39,7 @@
 #include "frBaseTypes.h"
 #include "global.h"
 
-namespace fr {
+namespace drt {
 class frInstTerm;
 class frTerm;
 class frBTerm;
@@ -249,4 +249,4 @@ class frNet : public frBlockObject
 
   std::vector<frPinFig*> all_pinfigs_;
 };
-}  // namespace fr
+}  // namespace drt

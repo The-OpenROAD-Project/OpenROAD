@@ -28,18 +28,18 @@
 
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
-namespace fr {
+namespace drt {
 class TritonRoute;
 }
-namespace fr {
+namespace drt {
 class DesignCallBack : public odb::dbBlockCallBackObj
 {
  public:
-  DesignCallBack(fr::TritonRoute* router) : router_(router) {}
+  DesignCallBack(TritonRoute* router) : router_(router) {}
   void inDbPostMoveInst(odb::dbInst* inst) override;
   void inDbInstDestroy(odb::dbInst* inst) override;
 
  private:
-  fr::TritonRoute* router_;
+  TritonRoute* router_;
 };
-}  // namespace fr
+}  // namespace drt

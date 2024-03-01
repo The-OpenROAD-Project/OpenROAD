@@ -41,7 +41,7 @@
 #include "odb/db.h"
 #include "utl/exception.h"
 
-using namespace fr;
+using namespace drt;
 
 using utl::ThreadException;
 

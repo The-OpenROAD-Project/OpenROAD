@@ -35,7 +35,7 @@
 
 #pragma once
 
-namespace fr {
+namespace drt {
 class TritonRoute;
 }
 
@@ -43,9 +43,9 @@ namespace ord {
 
 class OpenRoad;
 
-fr::TritonRoute* makeTritonRoute();
+drt::TritonRoute* makeTritonRoute();
 
-void deleteTritonRoute(fr::TritonRoute* router);
+void deleteTritonRoute(drt::TritonRoute* router);
 
 void initTritonRoute(OpenRoad* openroad);
 

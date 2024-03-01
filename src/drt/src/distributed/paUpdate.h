@@ -30,7 +30,7 @@
 #include <boost/serialization/access.hpp>
 
 #include "db/obj/frAccess.h"
-namespace fr {
+namespace drt {
 class frInst;
 class frInstTerm;
 class frDesign;
@@ -89,4 +89,4 @@ class paUpdate
 
   friend class boost::serialization::access;
 };
-}  // namespace fr
+}  // namespace drt

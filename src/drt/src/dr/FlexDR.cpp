@@ -55,9 +55,9 @@
 #include "serialization.h"
 #include "utl/exception.h"
 
-BOOST_CLASS_EXPORT(fr::RoutingJobDescription)
+BOOST_CLASS_EXPORT(drt::RoutingJobDescription)
 
-namespace fr {
+namespace drt {
 
 using utl::ThreadException;
 
@@ -100,7 +100,7 @@ void serializeViaData(const FlexDRViaData& viaData, std::string& serializedStr)
   serializedStr = stream.str();
 }
 
-FlexDR::FlexDR(fr::TritonRoute* router,
+FlexDR::FlexDR(TritonRoute* router,
                frDesign* designIn,
                Logger* loggerIn,
                odb::dbDatabase* dbIn)
@@ -1386,4 +1386,4 @@ template void FlexDRWorker::serialize<frOArchive>(
     frOArchive& ar,
     const unsigned int file_version);
 
-}  // namespace fr
+}  // namespace drt

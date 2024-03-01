@@ -32,7 +32,7 @@
 #include "FlexGR.h"
 #include "FlexGRCMap.h"
 
-using namespace fr;
+using namespace drt;
 
 void FlexGR::init()
 {

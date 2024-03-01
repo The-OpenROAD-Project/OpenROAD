@@ -31,7 +31,7 @@
 #include "db/obj/frNet.h"
 #include "distributed/frArchive.h"
 #include "serialization.h"
-using namespace fr;
+using namespace drt;
 
 void drUpdate::setPathSeg(const frPathSeg& seg)
 {

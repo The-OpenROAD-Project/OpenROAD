@@ -33,7 +33,7 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
 
-namespace fr {
+namespace drt {
 
 gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
 {
@@ -1019,4 +1019,4 @@ void FlexGCWorker::updateDRNet(drNet* net)
   impl_->modifiedDRNets_.push_back(net);
 }
 
-}  // namespace fr
+}  // namespace drt

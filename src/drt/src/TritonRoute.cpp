@@ -67,7 +67,7 @@ extern "C" {
 extern int Drt_Init(Tcl_Interp* interp);
 }
 
-namespace fr {
+namespace drt {
 
 TritonRoute::TritonRoute()
     : debug_(std::make_unique<frDebugSettings>()),
@@ -1401,4 +1401,4 @@ void TritonRoute::reportDRC(const std::string& file_name,
   }
 }
 
-}  // namespace fr
+}  // namespace drt

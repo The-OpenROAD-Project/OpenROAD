@@ -31,7 +31,7 @@
 #include "db/infra/frPoint.h"
 #include "odb/dbTransform.h"
 
-namespace fr {
+namespace drt {
 
 using odb::dbOrientType;
 using odb::dbTransform;
@@ -73,4 +73,4 @@ class frBox3D : public Rect
 
   friend class boost::serialization::access;
 };
-}  // namespace fr
+}  // namespace drt

@@ -45,7 +45,7 @@
 #include "gc/FlexGC.h"
 #include "odb/db.h"
 
-using namespace fr;
+using namespace drt;
 namespace bdata = boost::unit_test::data;
 
 // Fixture for GC tests

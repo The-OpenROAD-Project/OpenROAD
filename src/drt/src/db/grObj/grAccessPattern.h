@@ -31,7 +31,7 @@
 #include "db/grObj/grBlockObject.h"
 #include "db/infra/frPoint.h"
 
-namespace fr {
+namespace drt {
 class grPin;
 class frViaDef;
 class grAccessPattern : public grBlockObject
@@ -108,4 +108,4 @@ class grAccessPattern : public grBlockObject
   int vUIdx{0};
   int vDIdx{0};
 };
-}  // namespace fr
+}  // namespace drt

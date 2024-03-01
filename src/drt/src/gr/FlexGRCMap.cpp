@@ -32,7 +32,7 @@
 #include <iostream>
 #include <iterator>
 
-using namespace fr;
+using namespace drt;
 
 void FlexGRCMap::initFrom3D(FlexGRCMap* cmap3D)
 {

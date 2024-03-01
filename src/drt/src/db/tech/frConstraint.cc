@@ -1,7 +1,7 @@
 #include "frConstraint.h"
 
 #include "frLayer.h"
-namespace fr {
+namespace drt {
 
 std::string frConstraint::getViolName() const
 {
@@ -193,4 +193,4 @@ frCoord frSpacingTableTwConstraint::find(frCoord width1,
   return dbLayer->findTwSpacing(width1, width2, prl);
 }
 
-}  // namespace fr
+}  // namespace drt

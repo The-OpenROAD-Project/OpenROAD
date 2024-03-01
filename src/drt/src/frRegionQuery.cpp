@@ -36,7 +36,7 @@
 #include "global.h"
 #include "utl/algorithms.h"
 
-namespace fr {
+namespace drt {
 
 using utl::enumerate;
 namespace gtl = boost::polygon;
@@ -1055,4 +1055,4 @@ void frRegionQuery::clearGuides()
   }
 }
 
-}  // namespace fr
+}  // namespace drt

@@ -35,7 +35,7 @@
 // #include "db/obj/frNode.h"
 #include "db/grObj/grBlockObject.h"
 
-namespace fr {
+namespace drt {
 class frNet;
 class grNet;
 class frNode;
@@ -137,4 +137,4 @@ class grNode : public grBlockObject
 
   friend class frNode;
 };
-}  // namespace fr
+}  // namespace drt

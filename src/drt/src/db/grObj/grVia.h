@@ -33,7 +33,7 @@
 #include "db/grObj/grRef.h"
 #include "db/tech/frViaDef.h"
 
-namespace fr {
+namespace drt {
 
 class grVia : public grRef
 {
@@ -156,4 +156,4 @@ class grVia : public grRef
   frBlockObject* owner{nullptr};
   frListIter<std::unique_ptr<grVia>> iter;
 };
-}  // namespace fr
+}  // namespace drt

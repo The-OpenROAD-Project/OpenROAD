@@ -39,7 +39,7 @@
 #include "global.h"
 #include "io/io.h"
 
-namespace fr {
+namespace drt {
 
 using Rectangle = boost::polygon::rectangle_data<int>;
 namespace gtl = boost::polygon;
@@ -1239,4 +1239,4 @@ void io::Parser::saveGuidesUpdates()
   }
 }
 
-}  // namespace fr
+}  // namespace drt

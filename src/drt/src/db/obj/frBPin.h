@@ -31,7 +31,7 @@
 
 #include "db/obj/frPin.h"
 
-namespace fr {
+namespace drt {
 class frBTerm;
 
 class frBPin : public frPin
@@ -52,4 +52,4 @@ class frBPin : public frPin
  protected:
   frBTerm* term_{nullptr};
 };
-}  // namespace fr
+}  // namespace drt

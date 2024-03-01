@@ -40,7 +40,32 @@
 #include <vector>
 
 #include "odb/geom.h"
-namespace fr {
+
+namespace odb {
+class dbDatabase;
+class dbInst;
+class dbBTerm;
+class dbNet;
+}  // namespace odb
+
+namespace utl {
+class Logger;
+}
+
+namespace gui {
+class Gui;
+}
+
+namespace stt {
+class SteinerTreeBuilder;
+}
+
+namespace dst {
+class Distributed;
+}
+
+namespace drt {
+
 class frDesign;
 class DesignCallBack;
 class FlexDR;
@@ -50,27 +75,6 @@ struct frDebugSettings;
 class FlexDR;
 struct FlexDRViaData;
 class frMarker;
-}  // namespace fr
-
-namespace odb {
-class dbDatabase;
-class dbInst;
-class dbBTerm;
-class dbNet;
-}  // namespace odb
-namespace utl {
-class Logger;
-}
-namespace gui {
-class Gui;
-}
-namespace stt {
-class SteinerTreeBuilder;
-}
-namespace dst {
-class Distributed;
-}
-namespace fr {
 
 struct ParamStruct
 {
@@ -108,7 +112,7 @@ class TritonRoute
             dst::Distributed* dist,
             stt::SteinerTreeBuilder* stt_builder);
 
-  fr::frDesign* getDesign() const { return design_.get(); }
+  frDesign* getDesign() const { return design_.get(); }
 
   int main();
   void endFR();
@@ -157,11 +161,11 @@ class TritonRoute
   void setParams(const ParamStruct& params);
   void addUserSelectedVia(const std::string& viaName);
   void setUnidirectionalLayer(const std::string& layerName);
-  fr::frDebugSettings* getDebugSettings() const { return debug_.get(); }
+  frDebugSettings* getDebugSettings() const { return debug_.get(); }
   // This runs a serialized worker from file_name.  It is intended
   // for debugging and not general usage.
   std::string runDRWorker(const std::string& workerStr,
-                          fr::FlexDRViaData* viaData);
+                          FlexDRViaData* viaData);
   void debugSingleWorker(const std::string& dumpDir, const std::string& drcRpt);
   void updateGlobals(const char* file_name);
   void resetDb(const char* file_name);
@@ -178,7 +182,7 @@ class TritonRoute
   void sendGlobalsUpdates(const std::string& globals_path,
                           const std::string& serializedViaData);
   void reportDRC(const std::string& file_name,
-                 const std::list<std::unique_ptr<fr::frMarker>>& markers,
+                 const std::list<std::unique_ptr<frMarker>>& markers,
                  odb::Rect drcBox = odb::Rect(0, 0, 0, 0));
   void checkDRC(const char* filename, int x1, int y1, int x2, int y2);
   bool initGuide();
@@ -186,12 +190,12 @@ class TritonRoute
   void processBTermsAboveTopLayer(bool has_routing = false);
 
  private:
-  std::unique_ptr<fr::frDesign> design_;
-  std::unique_ptr<fr::frDebugSettings> debug_;
-  std::unique_ptr<fr::DesignCallBack> db_callback_;
+  std::unique_ptr<frDesign> design_;
+  std::unique_ptr<frDebugSettings> debug_;
+  std::unique_ptr<DesignCallBack> db_callback_;
   odb::dbDatabase* db_{nullptr};
   utl::Logger* logger_{nullptr};
-  std::unique_ptr<fr::FlexDR> dr_;  // kept for single stepping
+  std::unique_ptr<FlexDR> dr_;  // kept for single stepping
   stt::SteinerTreeBuilder* stt_builder_{nullptr};
   int num_drvs_{-1};
   gui::Gui* gui_{nullptr};
@@ -210,8 +214,8 @@ class TritonRoute
   void gr();
   void ta();
   void dr();
-  void applyUpdates(const std::vector<std::vector<fr::drUpdate>>& updates);
-  void getDRCMarkers(std::list<std::unique_ptr<fr::frMarker>>& markers,
+  void applyUpdates(const std::vector<std::vector<drUpdate>>& updates);
+  void getDRCMarkers(std::list<std::unique_ptr<frMarker>>& markers,
                      const odb::Rect& requiredDrcBox);
   void stackVias(odb::dbBTerm* bterm,
                  int top_layer_idx,
@@ -219,7 +223,7 @@ class TritonRoute
                  bool has_routing);
   int countNetBTermsAboveMaxLayer(odb::dbNet* net);
   bool netHasStackedVias(odb::dbNet* net);
-  friend class fr::FlexDR;
+  friend class FlexDR;
 };
 
-}  // namespace fr
+}  // namespace drt

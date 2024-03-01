@@ -30,7 +30,7 @@
 #include "db/obj/frMarker.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
-namespace fr {
+namespace drt {
 
 class frNet;
 
@@ -87,4 +87,4 @@ class drUpdate
   friend class boost::serialization::access;
 };
 
-}  // namespace fr
+}  // namespace drt

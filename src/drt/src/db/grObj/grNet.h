@@ -36,7 +36,7 @@
 #include "db/grObj/grShape.h"
 #include "db/grObj/grVia.h"
 
-namespace fr {
+namespace drt {
 class frNet;
 class grNet : public grBlockObject
 {
@@ -237,4 +237,4 @@ class grNet : public grBlockObject
   bool routed{false};
   bool trivial{false};
 };
-}  // namespace fr
+}  // namespace drt

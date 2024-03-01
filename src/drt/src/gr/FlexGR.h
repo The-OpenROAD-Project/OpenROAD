@@ -44,7 +44,7 @@ class Rect;
 namespace stt {
 class SteinerTreeBuilder;
 }
-namespace fr {
+namespace drt {
 using odb::Rect;
 
 class FlexGR
@@ -353,7 +353,7 @@ class FlexGRWorker
   int workerHistCost_{0};
   double congThresh_{1.0};
   bool is2DRouting_{false};
-  RipUpMode ripupMode_{fr::RipUpMode::DRC};
+  RipUpMode ripupMode_{RipUpMode::DRC};
 
   // local storage
   std::vector<std::unique_ptr<grNet>> nets_;
@@ -475,4 +475,4 @@ class FlexGRWorker
   // debug
   void routeNet_printNet(grNet* net);
 };
-}  // namespace fr
+}  // namespace drt

@@ -39,7 +39,7 @@
 #include "frRegionQuery.h"
 #include "global.h"
 
-namespace fr {
+namespace drt {
 namespace io {
 class Parser;
 }
@@ -133,4 +133,4 @@ class frDesign
   std::vector<std::string> user_selected_vias_;
   int version_;
 };
-}  // namespace fr
+}  // namespace drt

@@ -37,7 +37,7 @@
 #include "frBaseTypes.h"
 #include "global.h"
 
-namespace fr {
+namespace drt {
 class FlexGRWavefrontGrid
 {
  public:
@@ -141,4 +141,4 @@ class FlexGRWavefront
  private:
   std::priority_queue<FlexGRWavefrontGrid> wavefrontPQ_;
 };
-}  // namespace fr
+}  // namespace drt

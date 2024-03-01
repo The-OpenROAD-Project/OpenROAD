@@ -31,7 +31,7 @@
 #include "frBaseTypes.h"
 #include "odb/geom.h"
 
-namespace fr {
+namespace drt {
 using odb::Point;
 
 class Point3D : public Point
@@ -68,4 +68,4 @@ class Point3D : public Point
 
   friend class boost::serialization::access;
 };
-}  // namespace fr
+}  // namespace drt

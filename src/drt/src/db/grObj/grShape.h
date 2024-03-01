@@ -31,7 +31,7 @@
 #include "db/grObj/grFig.h"
 #include "db/infra/frSegStyle.h"
 
-namespace fr {
+namespace drt {
 class frNet;
 class grPin;
 class frPathSeg;
@@ -197,4 +197,4 @@ class grPathSeg : public grShape
   frBlockObject* owner{nullptr};
   frListIter<std::unique_ptr<grShape>> iter;
 };
-}  // namespace fr
+}  // namespace drt

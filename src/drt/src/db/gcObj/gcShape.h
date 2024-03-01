@@ -34,29 +34,29 @@
 
 namespace gtl = boost::polygon;
 
-namespace fr {
+namespace drt {
 class gcSegment;
 class gcRect;
 class gcPolygon;
-}  // namespace fr
+}  // namespace drt
 
 template <>
-struct gtl::geometry_concept<fr::gcSegment>
+struct gtl::geometry_concept<drt::gcSegment>
 {
   using type = segment_concept;
 };
 template <>
-struct gtl::geometry_concept<fr::gcRect>
+struct gtl::geometry_concept<drt::gcRect>
 {
   using type = gtl::rectangle_concept;
 };
 template <>
-struct gtl::geometry_concept<fr::gcPolygon>
+struct gtl::geometry_concept<drt::gcPolygon>
 {
   using type =  polygon_90_with_holes_concept;
 };
 
-namespace fr {
+namespace drt {
 
 class gcShape : public gcPinFig
 {
@@ -432,4 +432,4 @@ class gcPolygon : public gtl::polygon_90_with_holes_data<frCoord>,
   gcNet* net_{nullptr};
 };
 
-}  // namespace fr
+}  // namespace drt

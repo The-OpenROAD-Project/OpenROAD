@@ -36,7 +36,7 @@
 #include "db/obj/frNet.h"
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class frNet;
 class frInst;
 class frAccessPoint;
@@ -80,4 +80,4 @@ class frInstTerm : public frBlockObject
   std::vector<frAccessPoint*> ap_;  // follows pin index
 };
 
-}  // namespace fr
+}  // namespace drt

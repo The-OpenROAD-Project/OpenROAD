@@ -36,7 +36,7 @@
 #include "frBaseTypes.h"
 #include "frDesign.h"
 
-namespace fr {
+namespace drt {
 class frTrackPattern;
 class FlexGRCMap
 {
@@ -659,4 +659,4 @@ class FlexGRCMap
                         const Rect& box,
                         bool isOBS);
 };
-}  // namespace fr
+}  // namespace drt

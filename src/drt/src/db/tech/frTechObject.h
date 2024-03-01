@@ -44,7 +44,7 @@
 namespace odb {
 class dbTechLayer;
 }
-namespace fr {
+namespace drt {
 namespace io {
 class Parser;
 }
@@ -412,4 +412,4 @@ class frTechObject
 
   friend class FlexRP;
 };
-}  // namespace fr
+}  // namespace drt

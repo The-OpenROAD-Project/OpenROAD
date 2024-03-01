@@ -30,7 +30,7 @@
 
 #include "db/obj/frShape.h"
 
-namespace fr {
+namespace drt {
 
 taPathSeg::taPathSeg(const frPathSeg& in)
 {
@@ -40,4 +40,4 @@ taPathSeg::taPathSeg(const frPathSeg& in)
   owner_ = nullptr;
 }
 
-}  // namespace fr
+}  // namespace drt

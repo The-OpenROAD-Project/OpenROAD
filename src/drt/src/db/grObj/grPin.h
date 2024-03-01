@@ -31,7 +31,7 @@
 #include "db/grObj/grAccessPattern.h"
 #include "db/grObj/grBlockObject.h"
 
-namespace fr {
+namespace drt {
 class grNet;
 class grPin : public grBlockObject
 {
@@ -55,4 +55,4 @@ class grPin : public grBlockObject
   grAccessPattern* accessPattern{nullptr};
   grNet* net{nullptr};
 };
-}  // namespace fr
+}  // namespace drt

@@ -32,7 +32,7 @@
 #include "FlexGR.h"
 #include "stt/SteinerTreeBuilder.h"
 
-using namespace fr;
+using namespace drt;
 
 // pinGCellNodes size always >= 2
 void FlexGR::genSTTopology_FLUTE(std::vector<frNode*>& pinGCellNodes,

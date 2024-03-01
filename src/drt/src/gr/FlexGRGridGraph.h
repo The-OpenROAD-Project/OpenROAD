@@ -42,7 +42,7 @@
 #include "frDesign.h"
 #include "gr/FlexGRWavefront.h"
 
-namespace fr {
+namespace drt {
 class FlexGRWorker;
 class FlexGRGridGraph
 {
@@ -804,4 +804,4 @@ class FlexGRGridGraph
 
   friend class FlexGRWorker;
 };
-}  // namespace fr
+}  // namespace drt

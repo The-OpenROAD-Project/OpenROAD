@@ -30,7 +30,7 @@
 #include "dr/FlexDR_graphics.h"
 #include "dr/FlexGridGraph.h"
 
-namespace fr {
+namespace drt {
 
 int debugMazeIter = std::numeric_limits<int>::max();
 void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
@@ -927,4 +927,4 @@ bool FlexGridGraph::search(std::vector<FlexMazeIdx>& connComps,
   return false;
 }
 
-}  // namespace fr
+}  // namespace drt

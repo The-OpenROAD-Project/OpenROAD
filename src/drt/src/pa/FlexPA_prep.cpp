@@ -45,7 +45,7 @@
 #include "serialization.h"
 #include "utl/exception.h"
 
-namespace fr {
+namespace drt {
 
 using utl::ThreadException;
 
@@ -2944,4 +2944,4 @@ int FlexPA::getFlatEdgeIdx(const int prevIdx1,
   return ((prevIdx1 + 1) * idx2Dim + prevIdx2) * idx2Dim + currIdx2;
 }
 
-}  // namespace fr
+}  // namespace drt

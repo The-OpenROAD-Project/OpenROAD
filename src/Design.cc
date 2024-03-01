@@ -287,7 +287,7 @@ cts::TritonCTS* Design::getTritonCts()
   return app->getTritonCts();
 }
 
-fr::TritonRoute* Design::getTritonRoute()
+drt::TritonRoute* Design::getTritonRoute()
 {
   auto app = OpenRoad::openRoad();
   return app->getTritonRoute();

@@ -47,7 +47,7 @@ namespace boost::serialization {
 class access;
 }
 
-namespace fr {
+namespace drt {
 // not default via, upperWidth, lowerWidth, not align upper, upperArea,
 // lowerArea, not align lower, via name
 using ViaRawPriorityTuple
@@ -426,4 +426,4 @@ class FlexDPNode
   int nodeCost_ = std::numeric_limits<int>::max();
   int prevNodeIdx_ = -1;
 };
-}  // namespace fr
+}  // namespace drt
