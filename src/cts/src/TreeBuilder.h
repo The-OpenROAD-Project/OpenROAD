@@ -236,9 +236,9 @@ class TreeBuilder
       case macroTree:
         return "macro";
       default:
-        break;
+        return "register";
     }
-    return "register";
+    return "unknown";
   }
 
   float getAveSinkArrival() const { return aveArrival_; }
