@@ -512,22 +512,17 @@ void GlobalRouter::setCapacities(int min_routing_layer, int max_routing_layer)
       horizontal_capacities_.push_back(0);
       vertical_capacities_.push_back(0);
     } else {
-      fastroute_->addHCapacity(grid_->getHorizontalEdgesCapacities()[l - 1], l);
-      fastroute_->addVCapacity(grid_->getVerticalEdgesCapacities()[l - 1], l);
+      const int h_cap = grid_->getHorizontalEdgesCapacities()[l - 1];
+      const int v_cap = grid_->getVerticalEdgesCapacities()[l - 1];
+      fastroute_->addHCapacity(h_cap, l);
+      fastroute_->addVCapacity(v_cap, l);
 
-      horizontal_capacities_.push_back(
-          grid_->getHorizontalEdgesCapacities()[l - 1]);
-      vertical_capacities_.push_back(
-          grid_->getVerticalEdgesCapacities()[l - 1]);
+      horizontal_capacities_.push_back(h_cap);
+      vertical_capacities_.push_back(v_cap);
+
+      grid_->setHorizontalCapacity(h_cap * 100, l - 1);
+      grid_->setVerticalCapacity(v_cap * 100, l - 1);
     }
-  }
-
-  for (int l = 1; l <= grid_->getNumLayers(); l++) {
-    int new_cap_h = grid_->getHorizontalEdgesCapacities()[l - 1] * 100;
-    grid_->updateHorizontalEdgesCapacities(l - 1, new_cap_h);
-
-    int new_cap_v = grid_->getVerticalEdgesCapacities()[l - 1] * 100;
-    grid_->updateVerticalEdgesCapacities(l - 1, new_cap_v);
   }
 }
 
@@ -1139,7 +1134,7 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
       if (horizontal_capacities_[layer - 1] != 0) {
         int newCap = grid_->getHorizontalEdgesCapacities()[layer - 1]
                      * (1 - adjustment);
-        grid_->updateHorizontalEdgesCapacities(layer - 1, newCap);
+        grid_->setHorizontalCapacity(newCap, layer - 1);
 
         for (int y = 1; y <= y_grids; y++) {
           for (int x = 1; x < x_grids; x++) {
@@ -1159,7 +1154,7 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
       if (vertical_capacities_[layer - 1] != 0) {
         int newCap
             = grid_->getVerticalEdgesCapacities()[layer - 1] * (1 - adjustment);
-        grid_->updateVerticalEdgesCapacities(layer - 1, newCap);
+        grid_->setVerticalCapacity(newCap, layer - 1);
 
         for (int x = 1; x <= x_grids; x++) {
           for (int y = 1; y < y_grids; y++) {
@@ -1418,7 +1413,7 @@ void GlobalRouter::perturbCapacities()
         int newCap
             = grid_->getHorizontalEdgesCapacities()[layer - 1] + perturbation;
         newCap = newCap < 0 ? 0 : newCap;
-        grid_->updateHorizontalEdgesCapacities(layer - 1, newCap);
+        grid_->setHorizontalCapacity(newCap, layer - 1);
         int edge_cap
             = fastroute_->getEdgeCapacity(x - 1, y - 1, x, y - 1, layer);
         int new_h_capacity = (edge_cap + perturbation);
@@ -1429,7 +1424,7 @@ void GlobalRouter::perturbCapacities()
         int newCap
             = grid_->getVerticalEdgesCapacities()[layer - 1] + perturbation;
         newCap = newCap < 0 ? 0 : newCap;
-        grid_->updateVerticalEdgesCapacities(layer - 1, newCap);
+        grid_->setVerticalCapacity(newCap, layer - 1);
         int edge_cap
             = fastroute_->getEdgeCapacity(x - 1, y - 1, x - 1, y, layer);
         int new_v_capacity = (edge_cap + perturbation);
@@ -2663,8 +2658,8 @@ void GlobalRouter::computeCapacities(int max_layer)
     if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
       h_capacity = std::floor((float) grid_->getTileSize() / track_spacing);
 
-      grid_->addHorizontalCapacity(h_capacity, level - 1);
-      grid_->addVerticalCapacity(0, level - 1);
+      grid_->setHorizontalCapacity(h_capacity, level - 1);
+      grid_->setVerticalCapacity(0, level - 1);
       debugPrint(logger_,
                  GRT,
                  "graph",
@@ -2675,8 +2670,8 @@ void GlobalRouter::computeCapacities(int max_layer)
     } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
       v_capacity = std::floor((float) grid_->getTileSize() / track_spacing);
 
-      grid_->addHorizontalCapacity(0, level - 1);
-      grid_->addVerticalCapacity(v_capacity, level - 1);
+      grid_->setHorizontalCapacity(0, level - 1);
+      grid_->setVerticalCapacity(v_capacity, level - 1);
       debugPrint(logger_,
                  GRT,
                  "graph",
