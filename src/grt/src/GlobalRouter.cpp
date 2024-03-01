@@ -175,8 +175,8 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   initCoreGrid(max_routing_layer);
   setCapacities(min_routing_layer, max_routing_layer);
 
-  std::vector<Net*> nets = initNetlist();
-  initNets(nets);
+  std::vector<Net*> nets = findNets();
+  initNetlist(nets);
 
   applyAdjustments(min_routing_layer, max_routing_layer);
   perturbCapacities();
@@ -735,7 +735,7 @@ float GlobalRouter::getNetSlack(Net* net)
   return slack;
 }
 
-void GlobalRouter::initNets(std::vector<Net*>& nets)
+void GlobalRouter::initNetlist(std::vector<Net*>& nets)
 {
   checkPinPlacement();
   pad_pins_connections_.clear();
@@ -1454,8 +1454,8 @@ void GlobalRouter::initGridAndNets()
     setCapacities(min_layer, max_layer);
     applyAdjustments(min_layer, max_layer);
   }
-  std::vector<Net*> nets = initNetlist();
-  initNets(nets);
+  std::vector<Net*> nets = findNets();
+  initNetlist(nets);
 }
 
 void GlobalRouter::ensureLayerForGuideDimension(int max_routing_layer)
@@ -2709,7 +2709,7 @@ static bool nameLess(const Net* a, const Net* b)
   return a->getName() < b->getName();
 }
 
-std::vector<Net*> GlobalRouter::initNetlist()
+std::vector<Net*> GlobalRouter::findNets()
 {
   initClockNets();
 
@@ -3959,7 +3959,7 @@ void GlobalRouter::updateDirtyRoutes(bool save_guides)
 
 void GlobalRouter::initFastRouteIncr(std::vector<Net*>& nets)
 {
-  initNets(nets);
+  initNetlist(nets);
   fastroute_->initAuxVar();
 }
 

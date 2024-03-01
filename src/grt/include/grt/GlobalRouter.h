@@ -280,7 +280,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   std::vector<std::pair<int, int>> calcLayerPitches(int max_layer);
   void initRoutingTracks(int max_routing_layer);
   void setCapacities(int min_routing_layer, int max_routing_layer);
-  void initNets(std::vector<Net*>& nets);
+  void initNetlist(std::vector<Net*>& nets);
   bool makeFastrouteNet(Net* net);
   bool checkPinPositions(Net* net, std::vector<odb::Point>& last_pos);
   void computeGridAdjustments(int min_routing_layer, int max_routing_layer);
@@ -369,7 +369,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   void initGrid(int max_layer);
   void computeCapacities(int max_layer);
   void findTrackPitches(int max_layer);
-  std::vector<Net*> initNetlist();
+  std::vector<Net*> findNets();
   void computeObstructionsAdjustments();
   void findLayerExtensions(std::vector<int>& layer_extensions);
   int findObstructions(odb::Rect& die_area);
