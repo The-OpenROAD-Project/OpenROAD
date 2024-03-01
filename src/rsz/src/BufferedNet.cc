@@ -536,20 +536,18 @@ static bool routePtLocEq(const RoutePt& p1, const RoutePt& p2)
   return p1.x() == p2.x() && p1.y() == p2.y();
 }
 
-
 using RoutePtSet = std::unordered_set<RoutePt, RoutePtHash, RoutePtEqual>;
 
-static BufferedNetPtr
-makeBufferedNet(RoutePt &from,
-                RoutePt &to,
-                GRoutePtAdjacents &adjacents,
-                LocPinMap &loc_pin_map,
-                int level,
-                const Corner *corner,
-                const Resizer *resizer,
-                Logger *logger,
-                dbNetwork *db_network,
-                RoutePtSet& visited)
+static BufferedNetPtr makeBufferedNet(RoutePt& from,
+                                      RoutePt& to,
+                                      GRoutePtAdjacents& adjacents,
+                                      LocPinMap& loc_pin_map,
+                                      int level,
+                                      const Corner* corner,
+                                      const Resizer* resizer,
+                                      Logger* logger,
+                                      dbNetwork* db_network,
+                                      RoutePtSet& visited)
 
 {
   if (visited.find(to) != visited.end()) {
@@ -584,10 +582,16 @@ makeBufferedNet(RoutePt &from,
   }
   for (RoutePt& adj : adjacents[to]) {
     if (!routePtLocEq(adj, from)) {
-      BufferedNetPtr bnet1 = makeBufferedNet(to, adj, adjacents,
-                                             loc_pin_map, level + 1,
-                                             corner, resizer, logger,
-                                             db_network, visited);
+      BufferedNetPtr bnet1 = makeBufferedNet(to,
+                                             adj,
+                                             adjacents,
+                                             loc_pin_map,
+                                             level + 1,
+                                             corner,
+                                             resizer,
+                                             logger,
+                                             db_network,
+                                             visited);
       if (bnet1) {
         if (bnet) {
           bnet = make_shared<BufferedNet>(
@@ -671,11 +675,16 @@ BufferedNetPtr Resizer::makeBufferedNetGroute(const Pin* drvr_pin,
     if (found_drvr_route_pt) {
       RoutePt null_route_pt(0, 0, 0);
       RoutePtSet visited;
-      return rsz::makeBufferedNet(null_route_pt, drvr_route_pt,
-                                  adjacents, loc_pin_map, 0,
-                                  corner, this, logger_, db_network_,
+      return rsz::makeBufferedNet(null_route_pt,
+                                  drvr_route_pt,
+                                  adjacents,
+                                  loc_pin_map,
+                                  0,
+                                  corner,
+                                  this,
+                                  logger_,
+                                  db_network_,
                                   visited);
-
     }
 
     logger_->warn(RSZ,

@@ -1,0 +1,45 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 135 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+Startpoint: U1/_38_ (rising edge-triggered flip-flop clocked by sys_clk)
+Endpoint: U1/_40_ (rising edge-triggered flip-flop clocked by sys_clk)
+Path Group: sys_clk
+Path Type: max
+
+Fanout     Cap    Slew   Delay    Time   Description
+-----------------------------------------------------------------------------
+                  0.00    0.00    0.00   clock sys_clk (rise edge)
+                          0.00    0.00   clock network delay (ideal)
+                  0.00    0.00    0.00 ^ U1/_38_/CK (DFF_X1)
+     9   10.63    0.03    0.10    0.10 ^ U1/_38_/Q (DFF_X1)
+                                         clk1_int (net)
+                  0.03    0.00    0.10 ^ U1/_32_/A2 (AND3_X1)
+     2    4.24    0.02    0.06    0.16 ^ U1/_32_/ZN (AND3_X1)
+                                         _13_ (net)
+                  0.02    0.00    0.16 ^ U1/_35_/B (XNOR2_X1)
+     1    1.65    0.02    0.04    0.20 ^ U1/_35_/ZN (XNOR2_X1)
+                                         _15_ (net)
+                  0.02    0.00    0.20 ^ U1/_36_/A2 (NOR2_X1)
+     1    1.06    0.01    0.01    0.21 v U1/_36_/ZN (NOR2_X1)
+                                         _06_ (net)
+                  0.01    0.00    0.21 v U1/_40_/D (DFF_X1)
+                                  0.21   data arrival time
+
+                  0.00    1.00    1.00   clock sys_clk (rise edge)
+                          0.00    1.00   clock network delay (ideal)
+                          0.00    1.00   clock reconvergence pessimism
+                                  1.00 ^ U1/_40_/CK (DFF_X1)
+                         -0.04    0.96   library setup time
+                                  0.96   data required time
+-----------------------------------------------------------------------------
+                                  0.96   data required time
+                                 -0.21   data arrival time
+-----------------------------------------------------------------------------
+                                  0.75   slack (MET)
+
+
+[INFO RSZ-0058] Using max wire length 720um.
+[INFO RSZ-0039] Resized 2 instances.
+No differences found.

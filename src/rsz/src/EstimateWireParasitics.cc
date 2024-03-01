@@ -36,6 +36,7 @@
 #include "SteinerTree.hh"
 #include "db_sta/dbNetwork.hh"
 #include "grt/GlobalRouter.h"
+#include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Corner.hh"
@@ -542,52 +543,56 @@ bool Resizer::isPadPin(const Pin* pin) const
 
 bool Resizer::isPad(const Instance* inst) const
 {
-  dbInst* db_inst = db_network_->staToDb(inst);
-  dbMasterType type = db_inst->getMaster()->getType();
-  // Use switch so if new types are added we get a compiler warning.
-  switch (type) {
-    case dbMasterType::CORE:
-    case dbMasterType::CORE_ANTENNACELL:
-    case dbMasterType::CORE_FEEDTHRU:
-    case dbMasterType::CORE_TIEHIGH:
-    case dbMasterType::CORE_TIELOW:
-    case dbMasterType::CORE_WELLTAP:
-    case dbMasterType::ENDCAP:
-    case dbMasterType::ENDCAP_PRE:
-    case dbMasterType::ENDCAP_POST:
-    case dbMasterType::CORE_SPACER:
-    case dbMasterType::BLOCK:
-    case dbMasterType::BLOCK_BLACKBOX:
-    case dbMasterType::BLOCK_SOFT:
-    case dbMasterType::ENDCAP_TOPLEFT:
-    case dbMasterType::ENDCAP_TOPRIGHT:
-    case dbMasterType::ENDCAP_BOTTOMLEFT:
-    case dbMasterType::ENDCAP_BOTTOMRIGHT:
-    case dbMasterType::ENDCAP_LEF58_BOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_TOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTTOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_LEFTTOPEDGE:
-    case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMCORNER:
-    case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMCORNER:
-    case dbMasterType::ENDCAP_LEF58_RIGHTTOPCORNER:
-    case dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER:
-    case dbMasterType::COVER:
-    case dbMasterType::RING:
-      return false;
-    case dbMasterType::COVER_BUMP:
-    case dbMasterType::PAD:
-    case dbMasterType::PAD_AREAIO:
-    case dbMasterType::PAD_INPUT:
-    case dbMasterType::PAD_OUTPUT:
-    case dbMasterType::PAD_INOUT:
-    case dbMasterType::PAD_POWER:
-    case dbMasterType::PAD_SPACER:
-    case dbMasterType::NONE:
-      return true;
+  dbInst* db_inst;
+  odb::dbModInst* mod_inst;
+  db_network_->staToDb(inst, db_inst, mod_inst);
+  if (db_inst) {
+    dbMasterType type = db_inst->getMaster()->getType();
+    // Use switch so if new types are added we get a compiler warning.
+    switch (type) {
+      case dbMasterType::CORE:
+      case dbMasterType::CORE_ANTENNACELL:
+      case dbMasterType::CORE_FEEDTHRU:
+      case dbMasterType::CORE_TIEHIGH:
+      case dbMasterType::CORE_TIELOW:
+      case dbMasterType::CORE_WELLTAP:
+      case dbMasterType::ENDCAP:
+      case dbMasterType::ENDCAP_PRE:
+      case dbMasterType::ENDCAP_POST:
+      case dbMasterType::CORE_SPACER:
+      case dbMasterType::BLOCK:
+      case dbMasterType::BLOCK_BLACKBOX:
+      case dbMasterType::BLOCK_SOFT:
+      case dbMasterType::ENDCAP_TOPLEFT:
+      case dbMasterType::ENDCAP_TOPRIGHT:
+      case dbMasterType::ENDCAP_BOTTOMLEFT:
+      case dbMasterType::ENDCAP_BOTTOMRIGHT:
+      case dbMasterType::ENDCAP_LEF58_BOTTOMEDGE:
+      case dbMasterType::ENDCAP_LEF58_TOPEDGE:
+      case dbMasterType::ENDCAP_LEF58_RIGHTEDGE:
+      case dbMasterType::ENDCAP_LEF58_LEFTEDGE:
+      case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMEDGE:
+      case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMEDGE:
+      case dbMasterType::ENDCAP_LEF58_RIGHTTOPEDGE:
+      case dbMasterType::ENDCAP_LEF58_LEFTTOPEDGE:
+      case dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMCORNER:
+      case dbMasterType::ENDCAP_LEF58_LEFTBOTTOMCORNER:
+      case dbMasterType::ENDCAP_LEF58_RIGHTTOPCORNER:
+      case dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER:
+      case dbMasterType::COVER:
+      case dbMasterType::RING:
+        return false;
+      case dbMasterType::COVER_BUMP:
+      case dbMasterType::PAD:
+      case dbMasterType::PAD_AREAIO:
+      case dbMasterType::PAD_INPUT:
+      case dbMasterType::PAD_OUTPUT:
+      case dbMasterType::PAD_INOUT:
+      case dbMasterType::PAD_POWER:
+      case dbMasterType::PAD_SPACER:
+      case dbMasterType::NONE:
+        return true;
+    }
   }
   // gcc warniing
   return false;

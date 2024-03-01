@@ -37,6 +37,7 @@
 
 #include "BufferedNet.hh"
 #include "db_sta/dbNetwork.hh"
+#include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/Fuzzy.hh"
@@ -185,8 +186,10 @@ void RepairDesign::repairDesign(
     printProgress(print_iteration, false, false, repaired_net_count);
   }
   int max_length = resizer_->metersToDbu(max_wire_length);
+  static int local_debug;
   for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
     print_iteration++;
+    local_debug++;
     if (verbose) {
       printProgress(print_iteration, false, false, repaired_net_count);
     }
@@ -195,12 +198,20 @@ void RepairDesign::repairDesign(
     Net* net = network_->isTopLevelPort(drvr_pin)
                    ? network_->net(network_->term(drvr_pin))
                    : network_->net(drvr_pin);
-    dbNet* net_db = db_network_->staToDb(net);
+    // a mod net (hierarchical), but this code assume flat.
+    // this wont work... cannot coerce modnet to dbNet
+    dbNet* net_db;
+    odb::dbModNet* mod_net;
+    // AF change
+    db_network_->staToDb(net, net_db, mod_net);
+    //    dbNet* net_db = db_network_->staToDb(net);
     bool debug = (drvr_pin == resizer_->debug_pin_);
     if (debug) {
       logger_->setDebugLevel(RSZ, "repair_net", 3);
     }
-    if (net && !resizer_->dontTouch(net) && !net_db->isConnectedByAbutment()
+    // AF change
+    if (net && !resizer_->dontTouch(net)
+        && !(net_db && net_db->isConnectedByAbutment())
         && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells and supply nets.
         && !drvr->isConstant()) {

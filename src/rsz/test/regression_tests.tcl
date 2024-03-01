@@ -1,4 +1,5 @@
 record_tests {
+  hierclock
   buffer_ports1
   buffer_ports3
   buffer_ports4
