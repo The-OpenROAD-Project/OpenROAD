@@ -71,9 +71,8 @@ class FlexGR
   {
     if (is2DCMap) {
       return cmap2D_.get();
-    } else {
-      return cmap_.get();
-    }
+    } 
+    return cmap_.get();
   }
 
   // others
@@ -253,10 +252,10 @@ class FlexGRWorkerRegionQuery
            std::vector<std::vector<rq_box_value_t<grConnFig*>>>& allShapes);
   void remove(grConnFig* connFig);
   void query(const Rect& box,
-             const frLayerNum layerNum,
+             frLayerNum layerNum,
              std::vector<grConnFig*>& result) const;
   void query(const Rect& box,
-             const frLayerNum layerNum,
+             frLayerNum layerNum,
              std::vector<rq_box_value_t<grConnFig*>>& result) const;
   void init(bool includeExt = false);
   void cleanup()
@@ -285,19 +284,6 @@ class FlexGRWorker
   FlexGRWorker(FlexGR* grIn)
       : design_(grIn->getDesign()),
         gr_(grIn),
-        routeGCellIdxLL_(),
-        routeGCellIdxUR_(),
-        extBox_(),
-        routeBox_(),
-        grIter_(0),
-        mazeEndIter_(1),
-        workerCongCost_(0),
-        workerHistCost_(0),
-        congThresh_(1.0),
-        is2DRouting_(false),
-        nets_(),
-        owner2nets_(), /*owner2extBoundPtNodes(), owner2routeBoundPtNodes(),
-                          owner2pinGCellNodes(),*/
         gridGraph_(grIn->getDesign(), this),
         rq_(this)
   {
@@ -342,9 +328,8 @@ class FlexGRWorker
     auto it = owner2nets_.find(net);
     if (it != owner2nets_.end()) {
       return &(it->second);
-    } else {
-      return nullptr;
-    }
+    } 
+    return nullptr;
   }
   const FlexGRWorkerRegionQuery& getWorkerRegionQuery() const { return rq_; }
   FlexGRWorkerRegionQuery& getWorkerRegionQuery() { return rq_; }
@@ -356,18 +341,18 @@ class FlexGRWorker
   void cleanup();
 
  private:
-  frDesign* design_;
-  FlexGR* gr_;
+  frDesign* design_{nullptr};
+  FlexGR* gr_{nullptr};
   Point routeGCellIdxLL_;
   Point routeGCellIdxUR_;
   Rect extBox_;
   Rect routeBox_;
-  int grIter_;
-  int mazeEndIter_;
-  int workerCongCost_;
-  int workerHistCost_;
-  double congThresh_;
-  bool is2DRouting_;
+  int grIter_{0};
+  int mazeEndIter_{1};
+  int workerCongCost_{0};
+  int workerHistCost_{0};
+  double congThresh_{1.0};
+  bool is2DRouting_{false};
   RipUpMode ripupMode_{fr::RipUpMode::DRC};
 
   // local storage

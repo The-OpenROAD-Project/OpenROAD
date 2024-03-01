@@ -50,22 +50,7 @@ class FlexGRGridGraph
   // constructors
   FlexGRGridGraph(frDesign* designIn, FlexGRWorker* workerIn)
       : design_(designIn),
-        grWorker_(workerIn),
-        xgp_(nullptr),
-        ygp_(nullptr),
-        bits_(),
-        prevDirs_(),
-        srcs_(),
-        dsts_(),
-        xCoords_(),
-        yCoords_(),
-        zCoords_(),
-        zHeights_(),
-        zDirs_(),
-        ggCongCost_(0),
-        ggHistCost_(0),
-        wavefront_(),
-        is2DRouting_(false)
+        grWorker_(workerIn)
   {
   }
   // getters
@@ -200,9 +185,8 @@ class FlexGRGridGraph
     }
     if (isRaw) {
       return supply << GRFRACSIZE;
-    } else {
-      return supply;
-    }
+    } 
+    return supply;
   }
 
   unsigned getRawSupply(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
@@ -263,9 +247,9 @@ class FlexGRGridGraph
   frDirEnum getPrevAstarNodeDir(frMIdx x, frMIdx y, frMIdx z) const
   {
     auto baseIdx = 3 * getIdx(x, y, z);
-    return (frDirEnum) (((unsigned short) (prevDirs_[baseIdx]) << 2)
-                        + ((unsigned short) (prevDirs_[baseIdx + 1]) << 1)
-                        + ((unsigned short) (prevDirs_[baseIdx + 2]) << 0));
+    return (frDirEnum) (((uint16_t) (prevDirs_[baseIdx]) << 2)
+                        + ((uint16_t) (prevDirs_[baseIdx + 1]) << 1)
+                        + ((uint16_t) (prevDirs_[baseIdx + 2]) << 0));
   }
 
   // unsafe access, no check
@@ -556,26 +540,26 @@ class FlexGRGridGraph
   void setPrevAstarNodeDir(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir)
   {
     auto baseIdx = 3 * getIdx(x, y, z);
-    prevDirs_[baseIdx] = ((unsigned short) dir >> 2) & 1;
-    prevDirs_[baseIdx + 1] = ((unsigned short) dir >> 1) & 1;
-    prevDirs_[baseIdx + 2] = ((unsigned short) dir) & 1;
+    prevDirs_[baseIdx] = ((uint16_t) dir >> 2) & 1;
+    prevDirs_[baseIdx + 1] = ((uint16_t) dir >> 1) & 1;
+    prevDirs_[baseIdx + 2] = ((uint16_t) dir) & 1;
   }
   // unsafe access, no idx check
-  void setSrc(frMIdx x, frMIdx y, frMIdx z) { srcs_[getIdx(x, y, z)] = 1; }
+  void setSrc(frMIdx x, frMIdx y, frMIdx z) { srcs_[getIdx(x, y, z)] = true; }
   void setSrc(const FlexMazeIdx& mi)
   {
-    srcs_[getIdx(mi.x(), mi.y(), mi.z())] = 1;
+    srcs_[getIdx(mi.x(), mi.y(), mi.z())] = true;
   }
   // unsafe access, no idx check
-  void setDst(frMIdx x, frMIdx y, frMIdx z) { dsts_[getIdx(x, y, z)] = 1; }
+  void setDst(frMIdx x, frMIdx y, frMIdx z) { dsts_[getIdx(x, y, z)] = true; }
   void setDst(const FlexMazeIdx& mi)
   {
-    dsts_[getIdx(mi.x(), mi.y(), mi.z())] = 1;
+    dsts_[getIdx(mi.x(), mi.y(), mi.z())] = true;
   }
-  void resetDst(frMIdx x, frMIdx y, frMIdx z) { dsts_[getIdx(x, y, z)] = 0; }
+  void resetDst(frMIdx x, frMIdx y, frMIdx z) { dsts_[getIdx(x, y, z)] = false; }
   void resetDst(const FlexMazeIdx& mi)
   {
-    dsts_[getIdx(mi.x(), mi.y(), mi.z())] = 0;
+    dsts_[getIdx(mi.x(), mi.y(), mi.z())] = false;
   }
 
   void setCost(frUInt4 ggCongCostIn, frUInt4 ggHistCostIn)
@@ -622,10 +606,10 @@ class FlexGRGridGraph
   }
 
  private:
-  frDesign* design_;
-  FlexGRWorker* grWorker_;
-  frGCellPattern* xgp_;
-  frGCellPattern* ygp_;
+  frDesign* design_{nullptr};
+  FlexGRWorker* grWorker_{nullptr};
+  frGCellPattern* xgp_{nullptr};
+  frGCellPattern* ygp_{nullptr};
 
   // [0] hasEEdge; [1] hasNEdge; [2] hasUEdge
   // [3] blockE;   [4] blockN;   [5] blockU
@@ -633,7 +617,7 @@ class FlexGRGridGraph
   // [15-8]  history cost
   // [31-24] supply H; [23-16] supply V // last bit is fractional
   // [63-48] demand H; [47-32] demand V // last bit is fractional
-  std::vector<unsigned long long> bits_;
+  std::vector<uint64_t> bits_;
   std::vector<bool> prevDirs_;
   std::vector<bool> srcs_;
   std::vector<bool> dsts_;
@@ -642,13 +626,13 @@ class FlexGRGridGraph
   std::vector<frLayerNum> zCoords_;
   std::vector<frCoord> zHeights_;
   std::vector<bool> zDirs_;  // is horz dir
-  unsigned ggCongCost_;
-  unsigned ggHistCost_;
+  unsigned ggCongCost_{0};
+  unsigned ggHistCost_{0};
 
   FlexGRWavefront wavefront_;
 
   // flags
-  bool is2DRouting_;
+  bool is2DRouting_{false};
 
   // internal getters
   bool getBit(frMIdx idx, frMIdx pos) const { return (bits_[idx] >> pos) & 1; }
@@ -707,7 +691,7 @@ class FlexGRGridGraph
   void setBits(frMIdx idx, frMIdx pos, frUInt4 length, frUInt4 val)
   {
     bits_[idx] &= ~(((1ull << length) - 1) << pos);  // clear related bits to 0
-    bits_[idx] |= ((unsigned long long) val & ((1ull << length) - 1))
+    bits_[idx] |= ((uint64_t) val & ((1ull << length) - 1))
                   << pos;  // only get last length bits of val
   }
 
@@ -729,7 +713,6 @@ class FlexGRGridGraph
         break;
       default:;
     }
-    return;
   }
   void correctU(frMIdx& x, frMIdx& y, frMIdx& z, frDirEnum& dir) const
   {
@@ -740,7 +723,6 @@ class FlexGRGridGraph
         break;
       default:;
     }
-    return;
   }
 
   void reverse(frMIdx& x, frMIdx& y, frMIdx& z, frDirEnum& dir) const
@@ -772,24 +754,22 @@ class FlexGRGridGraph
         break;
       default:;
     }
-    return;
   }
   void getPrevGrid(frMIdx& gridX,
                    frMIdx& gridY,
                    frMIdx& gridZ,
-                   const frDirEnum dir) const;
+                   frDirEnum dir) const;
   void getNextGrid(frMIdx& gridX,
                    frMIdx& gridY,
                    frMIdx& gridZ,
-                   const frDirEnum dir);
+                   frDirEnum dir);
   bool isValid(frMIdx x, frMIdx y, frMIdx z) const
   {
     if (x < 0 || y < 0 || z < 0 || x >= (frMIdx) xCoords_.size()
         || y >= (frMIdx) yCoords_.size() || z >= (frMIdx) zCoords_.size()) {
       return false;
-    } else {
-      return true;
-    }
+    } 
+    return true;
   }
 
   // internal init utility

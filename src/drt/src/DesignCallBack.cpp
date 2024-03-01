@@ -30,7 +30,8 @@
 
 #include "frDesign.h"
 #include "triton_route/TritonRoute.h"
-using namespace fr;
+
+namespace fr {
 
 static inline int defdist(odb::dbBlock* block, int x)
 {
@@ -43,10 +44,12 @@ void DesignCallBack::inDbPostMoveInst(odb::dbInst* db_inst)
   auto design = router_->getDesign();
   if (design != nullptr && design->getTopBlock() != nullptr) {
     auto inst = design->getTopBlock()->getInst(db_inst->getName());
-    if (inst == nullptr)
+    if (inst == nullptr) {
       return;
-    if (design->getRegionQuery() != nullptr)
+    }
+    if (design->getRegionQuery() != nullptr) {
       design->getRegionQuery()->removeBlockObj(inst);
+    }
     int x, y;
     db_inst->getLocation(x, y);
     auto block = db_inst->getBlock();
@@ -54,8 +57,9 @@ void DesignCallBack::inDbPostMoveInst(odb::dbInst* db_inst)
     y = defdist(block, y);
     inst->setOrigin({x, y});
     inst->setOrient(db_inst->getOrient());
-    if (design->getRegionQuery() != nullptr)
+    if (design->getRegionQuery() != nullptr) {
       design->getRegionQuery()->addBlockObj(inst);
+    }
   }
 }
 
@@ -64,10 +68,14 @@ void DesignCallBack::inDbInstDestroy(odb::dbInst* db_inst)
   auto design = router_->getDesign();
   if (design != nullptr && design->getTopBlock() != nullptr) {
     auto inst = design->getTopBlock()->getInst(db_inst->getName());
-    if (inst == nullptr)
+    if (inst == nullptr) {
       return;
-    if (design->getRegionQuery() != nullptr)
+    }
+    if (design->getRegionQuery() != nullptr) {
       design->getRegionQuery()->removeBlockObj(inst);
+    }
     design->getTopBlock()->removeInst(inst);
   }
 }
+
+}  // namespace fr

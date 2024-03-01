@@ -35,8 +35,8 @@ class frEndStyle
 {
  public:
   // constructor
-  frEndStyle() : style_(frcExtendEndStyle) {}
-  frEndStyle(const frEndStyle& styleIn) : style_(styleIn.style_) {}
+  frEndStyle() = default;
+  frEndStyle(const frEndStyle& styleIn) = default;
   frEndStyle(frEndStyleEnum styleIn) : style_(styleIn) {}
   // setters
   void set(frEndStyleEnum styleIn) { style_ = styleIn; }
@@ -45,7 +45,7 @@ class frEndStyle
   operator frEndStyleEnum() const { return style_; }
 
  private:
-  frEndStyleEnum style_;
+  frEndStyleEnum style_{frcExtendEndStyle};
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
@@ -60,17 +60,8 @@ class frSegStyle
 {
  public:
   // constructor
-  frSegStyle() : beginExt_(0), endExt_(0), width_(0), beginStyle_(), endStyle_()
-  {
-  }
-  frSegStyle(const frSegStyle& in)
-      : beginExt_(in.beginExt_),
-        endExt_(in.endExt_),
-        width_(in.width_),
-        beginStyle_(in.beginStyle_),
-        endStyle_(in.endStyle_)
-  {
-  }
+  frSegStyle() = default;
+  frSegStyle(const frSegStyle& in) = default;
   // setters
   void setWidth(frUInt4 widthIn) { width_ = widthIn; }
   void setBeginStyle(const frEndStyle& style, frUInt4 ext = 0)
@@ -93,9 +84,9 @@ class frSegStyle
   frEndStyle getEndStyle() const { return endStyle_; }
 
  private:
-  frUInt4 beginExt_;
-  frUInt4 endExt_;
-  frUInt4 width_;
+  frUInt4 beginExt_{0};
+  frUInt4 endExt_{0};
+  frUInt4 width_{0};
   frEndStyle beginStyle_;
   frEndStyle endStyle_;
 

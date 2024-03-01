@@ -36,10 +36,6 @@ class grNet;
 class grPin : public grBlockObject
 {
  public:
-  // constructors
-  grPin() : grBlockObject(), term(nullptr), accessPattern(nullptr), net(nullptr)
-  {
-  }
   // setters
   void setFrTerm(frBlockObject* in) { term = in; }
   void setAccessPattern(grAccessPattern* in) { accessPattern = in; }
@@ -55,8 +51,8 @@ class grPin : public grBlockObject
   frBlockObjectEnum typeId() const override { return grcPin; }
 
  protected:
-  frBlockObject* term;  // either frTerm or frInstTerm
-  grAccessPattern* accessPattern;
-  grNet* net;
+  frBlockObject* term{nullptr};  // either frTerm or frInstTerm
+  grAccessPattern* accessPattern{nullptr};
+  grNet* net{nullptr};
 };
 }  // namespace fr

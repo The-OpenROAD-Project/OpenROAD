@@ -63,60 +63,60 @@ class frRegionQuery
   frDesign* getDesign() const;
 
   // setters
-  void addDRObj(frShape* in);
-  void addDRObj(frVia* in);
+  void addDRObj(frShape* shape);
+  void addDRObj(frVia* via);
   void addMarker(frMarker* in);
-  void addGRObj(grShape* in);
-  void addGRObj(grVia* in);
+  void addGRObj(grShape* shape);
+  void addGRObj(grVia* via);
   void addBlockObj(frBlockObject* obj);
 
   // Queries
   void query(const box_t& boostb,
-             const frLayerNum layerNum,
+             frLayerNum layerNum,
              Objects<frBlockObject>& result) const;
   void query(const Rect& box,
-             const frLayerNum layerNum,
+             frLayerNum layerNum,
              Objects<frBlockObject>& result) const;
   void queryGuide(const Rect& box,
-                  const frLayerNum layerNum,
+                  frLayerNum layerNum,
                   Objects<frGuide>& result) const;
   void queryGuide(const Rect& box,
-                  const frLayerNum layerNum,
+                  frLayerNum layerNum,
                   std::vector<frGuide*>& result) const;
   void queryGuide(const Rect& box, std::vector<frGuide*>& result) const;
   void queryOrigGuide(const Rect& box,
-                      const frLayerNum layerNum,
+                      frLayerNum layerNum,
                       Objects<frNet>& result) const;
   void queryRPin(const Rect& box,
-                 const frLayerNum layerNum,
+                 frLayerNum layerNum,
                  Objects<frRPin>& result) const;
   void queryGRPin(const Rect& box, std::vector<frBlockObject*>& result) const;
   void queryDRObj(const box_t& boostb,
-                  const frLayerNum layerNum,
+                  frLayerNum layerNum,
                   Objects<frBlockObject>& result) const;
   void queryDRObj(const Rect& box,
-                  const frLayerNum layerNum,
+                  frLayerNum layerNum,
                   Objects<frBlockObject>& result) const;
   void queryDRObj(const Rect& box,
-                  const frLayerNum layerNum,
+                  frLayerNum layerNum,
                   std::vector<frBlockObject*>& result) const;
   void queryDRObj(const Rect& box, std::vector<frBlockObject*>& result) const;
   void queryGRObj(const Rect& box,
-                  const frLayerNum layerNum,
+                  frLayerNum layerNum,
                   Objects<grBlockObject>& result) const;
   void queryGRObj(const Rect& box, std::vector<grBlockObject*>& result) const;
   void queryMarker(const Rect& box,
-                   const frLayerNum layerNum,
+                   frLayerNum layerNum,
                    std::vector<frMarker*>& result) const;
   void queryMarker(const Rect& box, std::vector<frMarker*>& result) const;
 
   void clearGuides();
-  void removeDRObj(frShape* in);
-  void removeDRObj(frVia* in);
-  void removeGRObj(grShape* in);
-  void removeGRObj(grVia* in);
+  void removeDRObj(frShape* shape);
+  void removeDRObj(frVia* via);
+  void removeGRObj(grShape* shape);
+  void removeGRObj(grVia* via);
   void removeMarker(frMarker* in);
-  void removeBlockObj(frBlockObject* in);
+  void removeBlockObj(frBlockObject* obj);
 
   // init
   void init();

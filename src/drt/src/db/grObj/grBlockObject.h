@@ -32,15 +32,9 @@
 #include "frBaseTypes.h"
 
 namespace fr {
+
 class grBlockObject : public frBlockObject
 {
- public:
-  // constructors
-  grBlockObject() {}
-  virtual ~grBlockObject() {}
-  // getters
-  // setter
-  // others
- protected:
 };
+
 }  // namespace fr

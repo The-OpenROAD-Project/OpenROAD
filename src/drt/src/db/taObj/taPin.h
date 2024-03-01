@@ -73,9 +73,8 @@ class taPin : public taBlockObject
   {
     if (this->cost_ != b.cost_) {
       return this->getCost() > b.getCost();
-    } else {
-      return this->getId() < b.getId();
-    }
+    } 
+    return this->getId() < b.getId();
   }
 
  protected:

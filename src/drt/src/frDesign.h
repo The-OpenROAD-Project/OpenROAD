@@ -103,8 +103,9 @@ class frDesign
 
   void addUpdate(const drUpdate& update)
   {
-    if (updates_.size() == 0)
+    if (updates_.empty()) {
       updates_.resize(MAX_THREADS * 2);
+    }
     auto num_batches = updates_.size();
     updates_[updates_sz_++ % num_batches].push_back(update);
   }
@@ -120,8 +121,6 @@ class frDesign
   }
   void incrementVersion() { ++version_; }
   int getVersion() const { return version_; }
-
-  ~frDesign() {}
 
  private:
   std::unique_ptr<frBlock> topBlock_;

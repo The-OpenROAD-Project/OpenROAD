@@ -28,8 +28,8 @@
 
 #pragma once
 #include <omp.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 
 #include <boost/asio/post.hpp>
 #include <boost/asio/thread_pool.hpp>
@@ -60,7 +60,7 @@ namespace fr {
 class RoutingCallBack : public dst::JobCallBack
 {
  public:
-  RoutingCallBack(triton_route::TritonRoute* router,
+  RoutingCallBack(fr::TritonRoute* router,
                   dst::Distributed* dist,
                   utl::Logger* logger)
       : router_(router),
@@ -72,8 +72,9 @@ class RoutingCallBack : public dst::JobCallBack
   }
   void onRoutingJobReceived(dst::JobMessage& msg, dst::socket& sock) override
   {
-    if (msg.getJobType() != dst::JobMessage::ROUTING)
+    if (msg.getJobType() != dst::JobMessage::ROUTING) {
       return;
+    }
     RoutingJobDescription* desc
         = static_cast<RoutingJobDescription*>(msg.getJobDescription());
     if (init_) {
@@ -87,7 +88,7 @@ class RoutingCallBack : public dst::JobCallBack
     int prev_perc = 0;
     int cnt = 0;
 #pragma omp parallel for schedule(dynamic)
-    for (int i = 0; i < workers.size(); i++) {
+    for (int i = 0; i < workers.size(); i++) { // NOLINT
       std::pair<int, std::string> result
           = {workers.at(i).first,
              router_->runDRWorker(workers.at(i).second, &via_data_)};
@@ -116,12 +117,13 @@ class RoutingCallBack : public dst::JobCallBack
 
   void onFrDesignUpdated(dst::JobMessage& msg, dst::socket& sock) override
   {
-    if (msg.getJobType() != dst::JobMessage::UPDATE_DESIGN)
+    if (msg.getJobType() != dst::JobMessage::UPDATE_DESIGN) {
       return;
+    }
     dst::JobMessage result(dst::JobMessage::UPDATE_DESIGN);
     RoutingJobDescription* desc
         = static_cast<RoutingJobDescription*>(msg.getJobDescription());
-    if (desc->getGlobalsPath() != "") {
+    if (!desc->getGlobalsPath().empty()) {
       if (globals_path_ != desc->getGlobalsPath()) {
         globals_path_ = desc->getGlobalsPath();
         router_->setSharedVolume(desc->getSharedDir());
@@ -129,13 +131,14 @@ class RoutingCallBack : public dst::JobCallBack
       }
     }
     if ((desc->isDesignUpdate() && !desc->getUpdates().empty())
-        || desc->getDesignPath() != "") {
+        || !desc->getDesignPath().empty()) {
       frTime t;
       logger_->report("Design Update");
-      if (desc->isDesignUpdate())
+      if (desc->isDesignUpdate()) {
         router_->updateDesign(desc->getUpdates());
-      else
+      } else {
         router_->resetDb(desc->getDesignPath().c_str());
+      }
       t.print(logger_);
     }
     if (!desc->getViaData().empty()) {
@@ -151,8 +154,9 @@ class RoutingCallBack : public dst::JobCallBack
 
   void onPinAccessJobReceived(dst::JobMessage& msg, dst::socket& sock) override
   {
-    if (msg.getJobType() != dst::JobMessage::PIN_ACCESS)
+    if (msg.getJobType() != dst::JobMessage::PIN_ACCESS) {
       return;
+    }
     PinAccessJobDescription* desc
         = static_cast<PinAccessJobDescription*>(msg.getJobDescription());
     logger_->report("Received PA Job");
@@ -183,7 +187,7 @@ class RoutingCallBack : public dst::JobCallBack
         auto instRows = deserializeInstRows(desc->getPath());
         omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
 #pragma omp parallel for schedule(dynamic)
-        for (int i = 0; i < instRows.size(); i++) {
+        for (int i = 0; i < instRows.size(); i++) { // NOLINT
           pa_.genInstRowPattern(instRows.at(i));
         }
         paUpdate update;
@@ -207,8 +211,9 @@ class RoutingCallBack : public dst::JobCallBack
   }
   void onGRDRInitJobReceived(dst::JobMessage& msg, dst::socket& sock) override
   {
-    if (msg.getJobType() != dst::JobMessage::GRDR_INIT)
+    if (msg.getJobType() != dst::JobMessage::GRDR_INIT) {
       return;
+    }
     router_->initGuide();
     router_->prep();
     router_->getDesign()->getRegionQuery()->initDRObj();
@@ -218,26 +223,28 @@ class RoutingCallBack : public dst::JobCallBack
   }
 
  private:
-  void sendResult(std::vector<std::pair<int, std::string>> results,
+  void sendResult(const std::vector<std::pair<int, std::string>>& results,
                   dst::socket& sock,
                   bool finish,
                   int cnt)
   {
     dst::JobMessage result;
-    if (finish)
+    if (finish) {
       result.setJobType(dst::JobMessage::SUCCESS);
-    else
+    } else {
       result.setJobType(dst::JobMessage::NONE);
+    }
     auto uResultDesc = std::make_unique<RoutingJobDescription>();
     auto resultDesc = static_cast<RoutingJobDescription*>(uResultDesc.get());
     resultDesc->setWorkers(results);
     result.setJobDescription(std::move(uResultDesc));
     dist_->sendResult(result, sock);
-    if (finish)
+    if (finish) {
       sock.close();
+    }
   }
 
-  std::vector<std::vector<frInst*>> deserializeInstRows(std::string file_path)
+  std::vector<std::vector<frInst*>> deserializeInstRows(const std::string& file_path)
   {
     std::vector<std::vector<frInst*>> instRows;
     paUpdate update;
@@ -246,7 +253,7 @@ class RoutingCallBack : public dst::JobCallBack
     return instRows;
   }
 
-  triton_route::TritonRoute* router_;
+  fr::TritonRoute* router_;
   dst::Distributed* dist_;
   utl::Logger* logger_;
   std::string design_path_;

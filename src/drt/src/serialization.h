@@ -477,33 +477,38 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         (ar) & id;
         (ar) & modified;
         if (fake) {
-          if (id == 0)
+          if (id == 0) {
             obj = design->getTopBlock()->getFakeVSSNet();
-          else
+          } else {
             obj = design->getTopBlock()->getFakeVDDNet();
+          }
         } else {
-          if (special)
+          if (special) {
             obj = design->getTopBlock()->getSNet(id);
-          else
+          } else {
             obj = design->getTopBlock()->getNet(id);
+          }
         }
-        if (obj != nullptr && modified)
+        if (obj != nullptr && modified) {
           ((frNet*) obj)->setModified(true);
+        }
         break;
       }
       case frcBTerm: {
         int id = -1;
         (ar) & id;
-        if (!inBounds(id, design->getTopBlock()->getTerms().size()))
+        if (!inBounds(id, design->getTopBlock()->getTerms().size())) {
           exit(1);  // should throw error
+        }
         obj = design->getTopBlock()->getTerms().at(id).get();
         break;
       }
       case frcBlockage: {
         int id = -1;
         (ar) & id;
-        if (!inBounds(id, design->getTopBlock()->getBlockages().size()))
+        if (!inBounds(id, design->getTopBlock()->getBlockages().size())) {
           exit(1);
+        }
         obj = design->getTopBlock()->getBlockages().at(id).get();
         break;
       }
@@ -521,11 +526,13 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         int id = 0;
         (ar) & inst_id;
         (ar) & id;
-        if (!inBounds(inst_id, design->getTopBlock()->getInsts().size()))
+        if (!inBounds(inst_id, design->getTopBlock()->getInsts().size())) {
           exit(1);
+        }
         auto inst = design->getTopBlock()->getInsts().at(inst_id).get();
-        if (!inBounds(id, inst->getInstTerms().size()))
+        if (!inBounds(id, inst->getInstTerms().size())) {
           exit(1);
+        }
         obj = inst->getInstTerms().at(id).get();
         break;
       }
@@ -534,11 +541,13 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         int id = 0;
         (ar) & inst_id;
         (ar) & id;
-        if (!inBounds(inst_id, design->getTopBlock()->getInsts().size()))
+        if (!inBounds(inst_id, design->getTopBlock()->getInsts().size())) {
           exit(1);
+        }
         auto inst = design->getTopBlock()->getInsts().at(inst_id).get();
-        if (!inBounds(id, inst->getInstBlockages().size()))
+        if (!inBounds(id, inst->getInstBlockages().size())) {
           exit(1);
+        }
         obj = inst->getInstBlockages().at(id).get();
         break;
       }
@@ -546,8 +555,9 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         int id = 0;
         (ar) & id;
         id--;
-        if (!inBounds(id, design->getMasters().size()))
+        if (!inBounds(id, design->getMasters().size())) {
           exit(1);
+        }
         obj = design->getMasters().at(id).get();
         break;
       }
@@ -624,10 +634,11 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
     }
   } else {
     frBlockObjectEnum type;
-    if (obj != nullptr)
+    if (obj != nullptr) {
       type = obj->typeId();
-    else
+    } else {
       type = frcBlock;
+    }
     (ar) & type;
     switch (type) {
       case frcNet: {
@@ -638,10 +649,11 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         (ar) & fake;
         (ar) & special;
         if (fake) {
-          if (((frNet*) obj)->getType() == odb::dbSigType::GROUND)
+          if (((frNet*) obj)->getType() == odb::dbSigType::GROUND) {
             id = 0;
-          else
+          } else {
             id = 1;
+          }
         }
         (ar) & id;
         (ar) & modified;
@@ -732,16 +744,18 @@ void serializeViaDef(Archive& ar, frViaDef*& viadef)
   if (is_loading(ar)) {
     int via_id = -1;
     (ar) & via_id;
-    if (via_id >= 0)
+    if (via_id >= 0) {
       viadef = design->getTech()->getVias().at(via_id).get();
-    else
+    } else {
       viadef = nullptr;
+    }
   } else {
     int via_id;
-    if (viadef != nullptr)
+    if (viadef != nullptr) {
       via_id = viadef->getId();
-    else
+    } else {
       via_id = -1;
+    }
     (ar) & via_id;
   }
 }

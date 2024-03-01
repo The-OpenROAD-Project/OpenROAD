@@ -43,17 +43,17 @@ class gcPolygon;
 template <>
 struct gtl::geometry_concept<fr::gcSegment>
 {
-  typedef segment_concept type;
+  using type = segment_concept;
 };
 template <>
 struct gtl::geometry_concept<fr::gcRect>
 {
-  typedef gtl::rectangle_concept type;
+  using type = gtl::rectangle_concept;
 };
 template <>
 struct gtl::geometry_concept<fr::gcPolygon>
 {
-  typedef polygon_90_with_holes_concept type;
+  using type =  polygon_90_with_holes_concept;
 };
 
 namespace fr {
@@ -382,7 +382,7 @@ class gcPolygon : public gtl::polygon_90_with_holes_data<frCoord>,
     gtl::polygon_90_data<frCoord> poly;
     poly.set(points.begin(), points.end());
     gtl::polygon_90_set_data<frCoord> ps;
-    using namespace gtl::operators;
+    using gtl::operators::operator+=;
     ps += poly;
     std::vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
     ps.get(polys);

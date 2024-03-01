@@ -32,11 +32,10 @@
 #include "odb/dbTypes.h"
 
 namespace fr {
+
 class grRef : public grPinFig
 {
  public:
-  // constructors
-  grRef() : grPinFig() {}
   // getters
   virtual dbOrientType getOrient() const = 0;
   virtual Point getOrigin() const = 0;
@@ -47,4 +46,5 @@ class grRef : public grPinFig
   virtual void setTransform(const dbTransform& xform) = 0;
   frBlockObjectEnum typeId() const override { return grcRef; }
 };
+
 }  // namespace fr

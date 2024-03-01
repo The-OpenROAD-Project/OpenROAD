@@ -100,7 +100,7 @@ void serializeViaData(const FlexDRViaData& viaData, std::string& serializedStr)
   serializedStr = stream.str();
 }
 
-FlexDR::FlexDR(triton_route::TritonRoute* router,
+FlexDR::FlexDR(fr::TritonRoute* router,
                frDesign* designIn,
                Logger* loggerIn,
                odb::dbDatabase* dbIn)

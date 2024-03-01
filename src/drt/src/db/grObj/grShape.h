@@ -38,8 +38,6 @@ class frPathSeg;
 class grShape : public grPinFig
 {
  public:
-  // constructors
-  grShape() : grPinFig() {}
   // setters
   virtual void setLayerNum(frLayerNum tmpLayerNum) = 0;
   // getters
@@ -76,24 +74,13 @@ class grShape : public grPinFig
 
   virtual void setIter(frListIter<std::unique_ptr<grShape>>& in) = 0;
   virtual frListIter<std::unique_ptr<grShape>> getIter() const = 0;
-
- protected:
 };
 
 class grPathSeg : public grShape
 {
  public:
   // constructors
-  grPathSeg()
-      : grShape(),
-        begin(),
-        end(),
-        layer(0),
-        child(nullptr),
-        parent(nullptr),
-        owner(nullptr)
-  {
-  }
+  grPathSeg() = default;
   grPathSeg(const grPathSeg& in)
       : begin(in.begin),
         end(in.end),
@@ -204,10 +191,10 @@ class grPathSeg : public grShape
  protected:
   Point begin;
   Point end;
-  frLayerNum layer;
-  frBlockObject* child;
-  frBlockObject* parent;
-  frBlockObject* owner;
+  frLayerNum layer{0};
+  frBlockObject* child{nullptr};
+  frBlockObject* parent{nullptr};
+  frBlockObject* owner{nullptr};
   frListIter<std::unique_ptr<grShape>> iter;
 };
 }  // namespace fr

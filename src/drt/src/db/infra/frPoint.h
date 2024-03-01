@@ -37,7 +37,7 @@ using odb::Point;
 class Point3D : public Point
 {
  public:
-  Point3D() : Point(0, 0), z_(0) {}
+  Point3D() = default;
   Point3D(int x, int y, int z) : Point(x, y), z_(z) {}
   Point3D(const Point3D& p) : Point(p.getX(), p.getY()), z_(p.getZ()) {}
 
@@ -58,7 +58,7 @@ class Point3D : public Point
   bool operator!=(const Point3D& pIn) const { return !(*this == pIn); }
 
  private:
-  int z_;
+  int z_{0};
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {

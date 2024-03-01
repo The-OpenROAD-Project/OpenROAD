@@ -50,7 +50,7 @@ std::string GUIDE_REPORT_FILE;
 int OR_SEED = -1;
 double OR_K = 0;
 
-std::string DBPROCESSNODE = "";
+std::string DBPROCESSNODE;
 int MAX_THREADS = 1;
 int BATCHSIZE = 1024;
 int BATCHSIZETA = 8;
@@ -244,7 +244,7 @@ std::ostream& operator<<(std::ostream& os, const frInst& instIn)
 {
   Point tmpPoint = instIn.getOrigin();
   auto tmpOrient = instIn.getOrient();
-  frString tmpName = instIn.getName();
+  const frString& tmpName = instIn.getName();
   frString tmpString = instIn.getMaster()->getName();
   os << "- " << tmpName << " " << tmpString << " + STATUS + ( " << tmpPoint.x()
      << " " << tmpPoint.y() << " ) " << tmpOrient.getString() << std::endl;

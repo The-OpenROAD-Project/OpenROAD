@@ -30,15 +30,17 @@
 
 #include "db/infra/frPoint.h"
 #include "odb/dbTransform.h"
+
+namespace fr {
+
 using odb::dbOrientType;
 using odb::dbTransform;
 using odb::Rect;
 
-namespace fr {
 class frBox3D : public Rect
 {
  public:
-  frBox3D() : Rect(), zl_(0), zh_(0) {}
+  frBox3D() = default;
   frBox3D(int llx, int lly, int urx, int ury, int zl, int zh)
       : Rect(llx, lly, urx, ury), zl_(zl), zh_(zh)
   {
@@ -59,8 +61,8 @@ class frBox3D : public Rect
   int zHigh() const { return zh_; }
 
  private:
-  int zl_;
-  int zh_;
+  int zl_{0};
+  int zh_{0};
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {

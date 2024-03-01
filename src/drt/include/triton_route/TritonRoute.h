@@ -70,7 +70,7 @@ class SteinerTreeBuilder;
 namespace dst {
 class Distributed;
 }
-namespace triton_route {
+namespace fr {
 
 struct ParamStruct
 {
@@ -112,7 +112,7 @@ class TritonRoute
 
   int main();
   void endFR();
-  void pinAccess(std::vector<odb::dbInst*> target_insts
+  void pinAccess(const std::vector<odb::dbInst*>& target_insts
                  = std::vector<odb::dbInst*>());
   void stepDR(int size,
               int offset,
@@ -167,7 +167,7 @@ class TritonRoute
   void resetDb(const char* file_name);
   void clearDesign();
   void updateDesign(const std::vector<std::string>& updates);
-  void updateDesign(const std::string& updates);
+  void updateDesign(const std::string& path);
   void addWorkerResults(
       const std::vector<std::pair<int, std::string>>& results);
   bool getWorkerResults(std::vector<std::pair<int, std::string>>& results);
@@ -179,8 +179,8 @@ class TritonRoute
                           const std::string& serializedViaData);
   void reportDRC(const std::string& file_name,
                  const std::list<std::unique_ptr<fr::frMarker>>& markers,
-                 odb::Rect bbox = odb::Rect(0, 0, 0, 0));
-  void checkDRC(const char* drc_file, int x0, int y0, int x1, int y1);
+                 odb::Rect drcBox = odb::Rect(0, 0, 0, 0));
+  void checkDRC(const char* filename, int x1, int y1, int x2, int y2);
   bool initGuide();
   void prep();
   void processBTermsAboveTopLayer(bool has_routing = false);
@@ -189,22 +189,22 @@ class TritonRoute
   std::unique_ptr<fr::frDesign> design_;
   std::unique_ptr<fr::frDebugSettings> debug_;
   std::unique_ptr<fr::DesignCallBack> db_callback_;
-  odb::dbDatabase* db_;
-  utl::Logger* logger_;
+  odb::dbDatabase* db_{nullptr};
+  utl::Logger* logger_{nullptr};
   std::unique_ptr<fr::FlexDR> dr_;  // kept for single stepping
-  stt::SteinerTreeBuilder* stt_builder_;
-  int num_drvs_;
-  gui::Gui* gui_;
-  dst::Distributed* dist_;
-  bool distributed_;
+  stt::SteinerTreeBuilder* stt_builder_{nullptr};
+  int num_drvs_{-1};
+  gui::Gui* gui_{nullptr};
+  dst::Distributed* dist_{nullptr};
+  bool distributed_{false};
   std::string dist_ip_;
-  unsigned short dist_port_;
+  uint16_t dist_port_{0};
   std::string shared_volume_;
   std::vector<std::pair<int, std::string>> workers_results_;
   std::mutex results_mutex_;
-  int results_sz_;
-  unsigned int cloud_sz_;
-  boost::asio::thread_pool dist_pool_;
+  int results_sz_{0};
+  unsigned int cloud_sz_{0};
+  boost::asio::thread_pool dist_pool_{1};
 
   void initDesign();
   void gr();
@@ -221,4 +221,5 @@ class TritonRoute
   bool netHasStackedVias(odb::dbNet* net);
   friend class fr::FlexDR;
 };
-}  // namespace triton_route
+
+}  // namespace fr

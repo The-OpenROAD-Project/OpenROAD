@@ -50,8 +50,9 @@ class ProfileTask
 
   ~ProfileTask()
   {
-    if (!done_)
+    if (!done_) {
       __itt_task_end(domain_);
+    }
   }
 
   // Useful if you don't want to have to introduce a scope

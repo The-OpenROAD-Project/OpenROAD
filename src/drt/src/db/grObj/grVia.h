@@ -39,15 +39,7 @@ class grVia : public grRef
 {
  public:
   // constructor
-  grVia()
-      : grRef(),
-        origin(),
-        viaDef(nullptr),
-        child(nullptr),
-        parent(nullptr),
-        owner(nullptr)
-  {
-  }
+  grVia() = default;
   grVia(const grVia& in)
       : grRef(in),
         origin(in.origin),
@@ -158,10 +150,10 @@ class grVia : public grRef
 
  protected:
   Point origin;
-  frViaDef* viaDef;
-  frBlockObject* child;
-  frBlockObject* parent;
-  frBlockObject* owner;
+  frViaDef* viaDef{nullptr};
+  frBlockObject* child{nullptr};
+  frBlockObject* parent{nullptr};
+  frBlockObject* owner{nullptr};
   frListIter<std::unique_ptr<grVia>> iter;
 };
 }  // namespace fr

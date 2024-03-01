@@ -36,7 +36,8 @@
 #include "global.h"
 #include "utl/algorithms.h"
 
-using namespace fr;
+namespace fr {
+
 using utl::enumerate;
 namespace gtl = boost::polygon;
 
@@ -72,23 +73,23 @@ struct frRegionQuery::Impl
   void initDRObj();
   void initGRObj();
 
-  void add(frShape* in, ObjectsByLayer<frBlockObject>& allShapes);
-  void add(frVia* in, ObjectsByLayer<frBlockObject>& allShapes);
-  void add(frInstTerm* in, ObjectsByLayer<frBlockObject>& allShapes);
-  void add(frBTerm* in, ObjectsByLayer<frBlockObject>& allShapes);
-  void add(frBlockage* in, ObjectsByLayer<frBlockObject>& allShapes);
-  void add(frInstBlockage* in, ObjectsByLayer<frBlockObject>& allShapes);
-  void addGuide(frGuide* in, ObjectsByLayer<frGuide>& allShapes);
+  void add(frShape* shape, ObjectsByLayer<frBlockObject>& allShapes);
+  void add(frVia* via, ObjectsByLayer<frBlockObject>& allShapes);
+  void add(frInstTerm* instTerm, ObjectsByLayer<frBlockObject>& allShapes);
+  void add(frBTerm* term, ObjectsByLayer<frBlockObject>& allShapes);
+  void add(frBlockage* blk, ObjectsByLayer<frBlockObject>& allShapes);
+  void add(frInstBlockage* instBlk, ObjectsByLayer<frBlockObject>& allShapes);
+  void addGuide(frGuide* guide, ObjectsByLayer<frGuide>& allShapes);
   void addOrigGuide(frNet* net,
                     const frRect& rect,
                     ObjectsByLayer<frNet>& allShapes);
-  void addDRObj(frShape* in, ObjectsByLayer<frBlockObject>& allShapes);
-  void addDRObj(frVia* in, ObjectsByLayer<frBlockObject>& allShapes);
+  void addDRObj(frShape* shape, ObjectsByLayer<frBlockObject>& allShapes);
+  void addDRObj(frVia* via, ObjectsByLayer<frBlockObject>& allShapes);
   void addRPin(frRPin* rpin, ObjectsByLayer<frRPin>& allRPins);
-  void addGRObj(grShape* in, ObjectsByLayer<grBlockObject>& allShapes);
-  void addGRObj(grVia* in, ObjectsByLayer<grBlockObject>& allShapes);
-  void addGRObj(grShape* in);
-  void addGRObj(grVia* in);
+  void addGRObj(grShape* shape, ObjectsByLayer<grBlockObject>& allShapes);
+  void addGRObj(grVia* via, ObjectsByLayer<grBlockObject>& allShapes);
+  void addGRObj(grShape* shape);
+  void addGRObj(grVia* via);
 };
 
 frRegionQuery::frRegionQuery(frDesign* design, Logger* logger)
@@ -195,14 +196,14 @@ void frRegionQuery::addBlockObj(frBlockObject* obj)
           std::vector<gtl::point_data<frCoord>> points;
           for (Point pt : ((frPolygon*) shape)->getPoints()) {
             xform.apply(pt);
-            points.push_back({pt.x(), pt.y()});
+            points.emplace_back(pt.x(), pt.y());
           }
           gtl::polygon_90_data<frCoord> poly;
           poly.set(points.begin(), points.end());
           // Add the polygon to a polygon set
           gtl::polygon_90_set_data<frCoord> polySet;
           {
-            using namespace boost::polygon::operators;
+            using boost::polygon::operators::operator+=;
             polySet += poly;
           }
           // Decompose the polygon set to rectanges
@@ -220,10 +221,12 @@ void frRegionQuery::addBlockObj(frBlockObject* obj)
     }
     case frcInst: {
       auto inst = static_cast<frInst*>(obj);
-      for (auto& instTerm : inst->getInstTerms())
+      for (auto& instTerm : inst->getInstTerms()) {
         addBlockObj(instTerm.get());
-      for (auto& blkg : inst->getInstBlockages())
+      }
+      for (auto& blkg : inst->getInstBlockages()) {
         addBlockObj(blkg.get());
+      }
       break;
     }
     default:
@@ -266,14 +269,14 @@ void frRegionQuery::removeBlockObj(frBlockObject* obj)
           std::vector<gtl::point_data<frCoord>> points;
           for (Point pt : ((frPolygon*) shape)->getPoints()) {
             xform.apply(pt);
-            points.push_back({pt.x(), pt.y()});
+            points.emplace_back(pt.x(), pt.y());
           }
           gtl::polygon_90_data<frCoord> poly;
           poly.set(points.begin(), points.end());
           // Add the polygon to a polygon set
           gtl::polygon_90_set_data<frCoord> polySet;
           {
-            using namespace boost::polygon::operators;
+            using boost::polygon::operators::operator+=;
             polySet += poly;
           }
           // Decompose the polygon set to rectanges
@@ -291,10 +294,12 @@ void frRegionQuery::removeBlockObj(frBlockObject* obj)
     }
     case frcInst: {
       auto inst = static_cast<frInst*>(obj);
-      for (auto& instTerm : inst->getInstTerms())
+      for (auto& instTerm : inst->getInstTerms()) {
         removeBlockObj(instTerm.get());
-      for (auto& blkg : inst->getInstBlockages())
+      }
+      for (auto& blkg : inst->getInstBlockages()) {
         removeBlockObj(blkg.get());
+      }
       break;
     }
     default:
@@ -485,14 +490,14 @@ void frRegionQuery::Impl::add(frInstBlockage* instBlk,
       std::vector<gtl::point_data<frCoord>> points;
       for (Point pt : ((frPolygon*) shape)->getPoints()) {
         xform.apply(pt);
-        points.push_back({pt.x(), pt.y()});
+        points.emplace_back(pt.x(), pt.y());
       }
       gtl::polygon_90_data<frCoord> poly;
       poly.set(points.begin(), points.end());
       // Add the polygon to a polygon set
       gtl::polygon_90_set_data<frCoord> polySet;
       {
-        using namespace boost::polygon::operators;
+        using boost::polygon::operators::operator+=;
         polySet += poly;
       }
       // Decompose the polygon set to rectanges
@@ -1049,3 +1054,5 @@ void frRegionQuery::clearGuides()
     m.clear();
   }
 }
+
+}  // namespace fr

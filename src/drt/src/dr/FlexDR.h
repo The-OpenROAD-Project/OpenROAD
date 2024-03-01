@@ -91,7 +91,7 @@ class FlexDR
   };
 
   // constructors
-  FlexDR(triton_route::TritonRoute* router,
+  FlexDR(fr::TritonRoute* router,
          frDesign* designIn,
          Logger* loggerIn,
          odb::dbDatabase* dbIn);
@@ -132,7 +132,7 @@ class FlexDR
   void reportGuideCoverage();
 
  private:
-  triton_route::TritonRoute* router_;
+  fr::TritonRoute* router_;
   frDesign* design_;
   Logger* logger_;
   odb::dbDatabase* db_;

@@ -42,7 +42,7 @@ class FlexGRCMap
 {
  public:
   // constructors
-  FlexGRCMap(frDesign* designIn) : design_(designIn), bits_()
+  FlexGRCMap(frDesign* designIn) : design_(designIn)
   {
     auto& gCellPatterns = design_->getTopBlock()->getGCellPatterns();
     numLayers_ = design_->getTech()->getLayers().size();
@@ -92,9 +92,8 @@ class FlexGRCMap
     }
     if (isRaw) {
       return supply << CMAPFRACSIZE;
-    } else {
-      return supply;
-    }
+    }   
+    return supply;
   }
 
   unsigned getRawSupply(unsigned x, unsigned y, unsigned z, frDirEnum dir) const
@@ -127,9 +126,8 @@ class FlexGRCMap
     }
     if (isRaw) {
       return supply << CMAPFRACSIZE;
-    } else {
-      return supply;
-    }
+    } 
+    return supply;
   }
 
   unsigned getRawSupply2D(unsigned x, unsigned y, frDirEnum dir) const
@@ -161,9 +159,8 @@ class FlexGRCMap
     }
     if (isRaw) {
       return demand;
-    } else {
-      return demand >> CMAPFRACSIZE;
-    }
+    } 
+    return demand >> CMAPFRACSIZE;
   }
 
   unsigned getRawDemand(unsigned x, unsigned y, unsigned z, frDirEnum dir) const
@@ -196,9 +193,8 @@ class FlexGRCMap
     }
     if (isRaw) {
       return demand;
-    } else {
-      return demand >> CMAPFRACSIZE;
-    }
+    } 
+    return demand >> CMAPFRACSIZE;
   }
 
   unsigned getRawDemand2D(unsigned x, unsigned y, frDirEnum dir) const
@@ -527,7 +523,7 @@ class FlexGRCMap
   // [31-24] supply E; [23-16] supply N
   // [15-8] cong history
   // [3] block E [2] block N [1] overflow E; [0] overflow N
-  std::vector<unsigned long long> bits_;
+  std::vector<uint64_t> bits_;
   std::map<frLayerNum, dbTechLayerDir> zMap_;
   std::vector<frCoord> layerTrackPitches_;
   std::vector<frCoord> layerLine2ViaPitches_;
@@ -567,7 +563,7 @@ class FlexGRCMap
   void setBits(unsigned idx, unsigned pos, unsigned length, unsigned val)
   {
     bits_[idx] &= ~(((1ull << length) - 1) << pos);  // clear related bits to 0
-    bits_[idx] |= ((unsigned long long) val & ((1ull << length) - 1))
+    bits_[idx] |= ((uint64_t) val & ((1ull << length) - 1))
                   << pos;  // only get last length bits of val
   }
 
@@ -589,7 +585,6 @@ class FlexGRCMap
         break;
       default:;
     }
-    return;
   }
 
   void reverse(unsigned& x, unsigned& y, unsigned& z, frDirEnum& dir) const
@@ -621,7 +616,6 @@ class FlexGRCMap
         break;
       default:;
     }
-    return;
   }
 
   bool isValid(unsigned x, unsigned y, unsigned z) const
@@ -630,9 +624,8 @@ class FlexGRCMap
         || y >= ygp_->getCount()
         || z >= design_->getTech()->getLayers().size()) {
       return false;
-    } else {
-      return true;
-    }
+    } 
+    return true;
   }
 
   bool isValid(unsigned x, unsigned y, unsigned z, frDirEnum dir) const
@@ -653,7 +646,7 @@ class FlexGRCMap
       frLayerNum lNum,
       const std::set<frCoord>& trackLocs,
       const std::vector<rq_box_value_t<frBlockObject*>>& results,
-      const frCoord bloatDist);
+      frCoord bloatDist);
   void getTrackLocs(const std::vector<std::unique_ptr<frTrackPattern>>& tps,
                     bool isHorz,
                     frCoord low,
@@ -662,7 +655,7 @@ class FlexGRCMap
   unsigned getNumPins(
       const std::vector<rq_box_value_t<frBlockObject*>>& results);
   frCoord calcBloatDist(frBlockObject* obj,
-                        const frLayerNum lNum,
+                        frLayerNum lNum,
                         const Rect& box,
                         bool isOBS);
 };
