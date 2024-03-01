@@ -548,81 +548,82 @@ void io::Parser::genGuides_gCell2TermMap(
     std::map<std::pair<Point, frLayerNum>,
              std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
     T* term,
-    frBlockObject* origTerm)
+    frBlockObject* origTerm,
+    const dbTransform& xform)
 {
   for (auto& uPin : term->getPins()) {
     for (auto& uFig : uPin->getFigs()) {
       auto fig = uFig.get();
-      if (fig->typeId() == frcRect) {
-        auto shape = static_cast<frRect*>(fig);
-        auto lNum = shape->getLayerNum();
-        auto layer = design_->getTech()->getLayer(lNum);
-        Rect box = shape->getBBox();
-        Point pt(box.xMin() + 1, box.yMin() + 1);
-        Point idx = design_->getTopBlock()->getGCellIdx(pt);
-        frCoord x1 = idx.x();
-        frCoord y1 = idx.y();
-        pt = {box.ur().x() - 1, box.ur().y() - 1};
-        idx = design_->getTopBlock()->getGCellIdx(pt);
-        frCoord x2 = idx.x();
-        frCoord y2 = idx.y();
-        // ispd18_test4 and ispd18_test5 have zero overlap guide
-        // excludes double-zero overlap area on the upper-right corner due to
-        // initDR requirements
-        bool condition2 = false;  // upper right corner has zero-length
-                                  // overlapped with gcell
-        Point tmpIdx = design_->getTopBlock()->getGCellIdx(box.ll());
-        Rect gcellBox = design_->getTopBlock()->getGCellBox(tmpIdx);
-        if (box.ll() == gcellBox.ll()) {
-          condition2 = true;
-        }
+      if (fig->typeId() != frcRect) {
+        logger_->error(DRT, 232, "genGuides_gCell2TermMap unsupported pinfig.");
+      }
+      auto shape = static_cast<frRect*>(fig);
+      auto lNum = shape->getLayerNum();
+      auto layer = design_->getTech()->getLayer(lNum);
+      Rect box = shape->getBBox();
+      xform.apply(box);
+      Point pt(box.xMin() + 1, box.yMin() + 1);
+      Point idx = design_->getTopBlock()->getGCellIdx(pt);
+      frCoord x1 = idx.x();
+      frCoord y1 = idx.y();
+      pt = {box.ur().x() - 1, box.ur().y() - 1};
+      idx = design_->getTopBlock()->getGCellIdx(pt);
+      frCoord x2 = idx.x();
+      frCoord y2 = idx.y();
+      // ispd18_test4 and ispd18_test5 have zero overlap guide
+      // excludes double-zero overlap area on the upper-right corner due to
+      // initDR requirements
+      bool condition2 = false;  // upper right corner has zero-length
+                                // overlapped with gcell
+      Point tmpIdx = design_->getTopBlock()->getGCellIdx(box.ll());
+      Rect gcellBox = design_->getTopBlock()->getGCellBox(tmpIdx);
+      if (box.ll() == gcellBox.ll()) {
+        condition2 = true;
+      }
 
-        bool condition3 = false;  // GR implies wrongway connection but
-                                  // technology does not allow
-        if ((layer->getDir() == dbTechLayerDir::VERTICAL
-             && (!USENONPREFTRACKS || layer->isUnidirectional())
-             && box.xMin() == gcellBox.xMin())
-            || (layer->getDir() == dbTechLayerDir::HORIZONTAL
-                && (!USENONPREFTRACKS || layer->isUnidirectional())
-                && box.yMin() == gcellBox.yMin())) {
-          condition3 = true;
-        }
-        for (int x = x1; x <= x2; x++) {
-          for (int y = y1; y <= y2; y++) {
-            if (condition2 && x == tmpIdx.x() - 1 && y == tmpIdx.y() - 1) {
-              if (VERBOSE > 0) {
-                frString name = (origTerm->typeId() == frcInstTerm)
-                                    ? ((frInstTerm*) origTerm)->getName()
-                                    : term->getName();
-                logger_->warn(DRT,
-                              230,
-                              "genGuides_gCell2TermMap avoid condition2, may "
-                              "result in guide open: {}.",
-                              name);
-              }
-            } else if (condition3
-                       && ((x == tmpIdx.x() - 1
-                            && layer->getDir() == dbTechLayerDir::VERTICAL)
-                           || (y == tmpIdx.y() - 1
-                               && layer->getDir()
-                                      == dbTechLayerDir::HORIZONTAL))) {
-              if (VERBOSE > 0) {
-                frString name = (origTerm->typeId() == frcInstTerm)
-                                    ? ((frInstTerm*) origTerm)->getName()
-                                    : term->getName();
-                logger_->warn(DRT,
-                              231,
-                              "genGuides_gCell2TermMap avoid condition3, may "
-                              "result in guide open: {}.",
-                              name);
-              }
-            } else {
-              gCell2PinMap[std::make_pair(Point(x, y), lNum)].insert(origTerm);
+      bool condition3 = false;  // GR implies wrongway connection but
+                                // technology does not allow
+      if ((layer->getDir() == dbTechLayerDir::VERTICAL
+           && (!USENONPREFTRACKS || layer->isUnidirectional())
+           && box.xMin() == gcellBox.xMin())
+          || (layer->getDir() == dbTechLayerDir::HORIZONTAL
+              && (!USENONPREFTRACKS || layer->isUnidirectional())
+              && box.yMin() == gcellBox.yMin())) {
+        condition3 = true;
+      }
+      for (int x = x1; x <= x2; x++) {
+        for (int y = y1; y <= y2; y++) {
+          if (condition2 && x == tmpIdx.x() - 1 && y == tmpIdx.y() - 1) {
+            if (VERBOSE > 0) {
+              frString name = (origTerm->typeId() == frcInstTerm)
+                                  ? ((frInstTerm*) origTerm)->getName()
+                                  : term->getName();
+              logger_->warn(DRT,
+                            230,
+                            "genGuides_gCell2TermMap avoid condition2, may "
+                            "result in guide open: {}.",
+                            name);
             }
+          } else if (condition3
+                     && ((x == tmpIdx.x() - 1
+                          && layer->getDir() == dbTechLayerDir::VERTICAL)
+                         || (y == tmpIdx.y() - 1
+                             && layer->getDir()
+                                    == dbTechLayerDir::HORIZONTAL))) {
+            if (VERBOSE > 0) {
+              frString name = (origTerm->typeId() == frcInstTerm)
+                                  ? ((frInstTerm*) origTerm)->getName()
+                                  : term->getName();
+              logger_->warn(DRT,
+                            231,
+                            "genGuides_gCell2TermMap avoid condition3, may "
+                            "result in guide open: {}.",
+                            name);
+            }
+          } else {
+            gCell2PinMap[std::make_pair(Point(x, y), lNum)].insert(origTerm);
           }
         }
-      } else {
-        logger_->error(DRT, 232, "genGuides_gCell2TermMap unsupported pinfig.");
       }
     }
   }
@@ -635,24 +636,22 @@ void io::Parser::genGuides_gCell2PinMap(
 {
   for (auto& instTerm : net->getInstTerms()) {
     dbTransform xform = instTerm->getInst()->getUpdatedXform();
-    auto origTerm = instTerm->getTerm();
-    auto uTerm = std::make_unique<frMTerm>(*origTerm, xform);
-    auto term = uTerm.get();
+    auto term = instTerm->getTerm();
     if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
       if (!genGuides_gCell2APInstTermMap(gCell2PinMap, instTerm)) {
-        genGuides_gCell2TermMap(gCell2PinMap, term, instTerm);
+        genGuides_gCell2TermMap(gCell2PinMap, term, instTerm, xform);
       }
     } else {
-      genGuides_gCell2TermMap(gCell2PinMap, term, instTerm);
+      genGuides_gCell2TermMap(gCell2PinMap, term, instTerm, xform);
     }
   }
   for (auto& term : net->getBTerms()) {
     if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
       if (!genGuides_gCell2APTermMap(gCell2PinMap, term)) {
-        genGuides_gCell2TermMap(gCell2PinMap, term, term);
+        genGuides_gCell2TermMap(gCell2PinMap, term, term, {});
       }
     } else {
-      genGuides_gCell2TermMap(gCell2PinMap, term, term);
+      genGuides_gCell2TermMap(gCell2PinMap, term, term, {});
     }
   }
 }

@@ -37,14 +37,9 @@ namespace fr {
 class drFig : public drBlockObject
 {
  public:
-  // getters
   virtual Rect getBBox() const = 0;
-  // setters
-  // others
- protected:
-  // constructors
-  drFig() : drBlockObject() {}
 
+ protected:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
@@ -58,23 +53,19 @@ class drNet;
 class drConnFig : public drFig
 {
  public:
-  // getters
   virtual bool hasNet() const = 0;
   virtual drNet* getNet() const = 0;
-  // setters
+
   virtual void addToNet(drNet* in) = 0;
   virtual void removeFromNet() = 0;
-  // others
 
   /* drom drFig
    * getBBox
    * move
    * overlaps
    */
- protected:
-  // constructors
-  drConnFig() : drFig() {}
 
+ protected:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
@@ -88,13 +79,11 @@ class drPin;
 class drPinFig : public drConnFig
 {
  public:
-  // getters
   virtual bool hasPin() const = 0;
   virtual drPin* getPin() const = 0;
-  // setters
+
   virtual void addToPin(drPin* in) = 0;
   virtual void removeFromPin() = 0;
-  // others
 
   /* drom drConnFig
    * hasNet
@@ -108,9 +97,8 @@ class drPinFig : public drConnFig
    * move
    * overlaps
    */
- protected:
-  drPinFig() : drConnFig() {}
 
+ protected:
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {

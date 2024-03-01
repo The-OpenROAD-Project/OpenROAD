@@ -42,28 +42,8 @@ class frNode : public frBlockObject
 {
  public:
   // constructors
-  frNode()
-      : frBlockObject(),
-        net(nullptr),
-        loc(),
-        layerNum(0),
-        connFig(nullptr),
-        pin(nullptr),
-        type(frNodeTypeEnum::frcSteiner),
-        parent(nullptr),
-        children()
-  {
-  }
-  frNode(frNode& in)
-      : frBlockObject(),
-        net(in.net),
-        loc(in.loc),
-        layerNum(in.layerNum),
-        connFig(in.connFig),
-        pin(in.pin),
-        type(in.type)
-  {
-  }
+  frNode() = default;
+  frNode(frNode& in) = delete;
   frNode(grNode& in);
   // setters
   void addToNet(frNet* in) { net = in; }
@@ -147,14 +127,15 @@ class frNode : public frBlockObject
   frBlockObjectEnum typeId() const override { return frcNode; }
 
  protected:
-  frNet* net;
-  Point loc;               // == prefAP bp if exist for pin
-  frLayerNum layerNum;     // == prefAP bp if exist for pin
-  frBlockObject* connFig;  // wire / via / patch to parent
-  frBlockObject* pin;      // term / instTerm / null if boundary pin or steiner
-  frNodeTypeEnum type;
+  frNet* net{nullptr};
+  Point loc;                        // == prefAP bp if exist for pin
+  frLayerNum layerNum{0};           // == prefAP bp if exist for pin
+  frBlockObject* connFig{nullptr};  // wire / via / patch to parent
+  frBlockObject* pin{
+      nullptr};  // term / instTerm / null if boundary pin or steiner
+  frNodeTypeEnum type{frNodeTypeEnum::frcSteiner};
 
-  frNode* parent;
+  frNode* parent{nullptr};
   std::list<frNode*> children;
 
   frListIter<std::unique_ptr<frNode>> iter;
