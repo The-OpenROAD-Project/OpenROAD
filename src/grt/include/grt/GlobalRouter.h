@@ -274,7 +274,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   void applyAdjustments(int min_routing_layer, int max_routing_layer);
   // main functions
   void initCoreGrid(int max_routing_layer);
-  void initRoutingLayers();
+  void initRoutingLayers(int min_routing_layer, int max_routing_layer);
   void checkAdjacentLayersDirection(int min_routing_layer,
                                     int max_routing_layer);
   std::vector<std::pair<int, int>> calcLayerPitches(int max_layer);
@@ -391,6 +391,8 @@ class GlobalRouter : public ant::GlobalRouteSource
   void initClockNets();
   bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
   void initGridAndNets();
+  void ensureLayerForGuideDimension(int max_routing_layer);
+  void configFastRoute();
 
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;

@@ -165,33 +165,15 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
                                               int max_routing_layer)
 {
   initAdjustments();
+  ensureLayerForGuideDimension(max_routing_layer);
 
-  if (max_routing_layer < layer_for_guide_dimension_) {
-    layer_for_guide_dimension_ = max_routing_layer;
-  }
+  configFastRoute();
 
-  fastroute_->setVerbose(verbose_);
-  fastroute_->setOverflowIterations(overflow_iterations_);
-  fastroute_->setCongestionReportIterStep(congestion_report_iter_step_);
-
-  if (congestion_file_name_ != nullptr) {
-    fastroute_->setCongestionReportFile(congestion_file_name_);
-  }
-
-  initRoutingLayers();
-  checkAdjacentLayersDirection(min_routing_layer, max_routing_layer);
+  initRoutingLayers(min_routing_layer, max_routing_layer);
   reportLayerSettings(min_routing_layer, max_routing_layer);
   initRoutingTracks(max_routing_layer);
   initCoreGrid(max_routing_layer);
   setCapacities(min_routing_layer, max_routing_layer);
-
-  if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
-    logger_->warn(
-        GRT,
-        300,
-        "Timing is not available, setting critical nets percentage to 0.");
-    fastroute_->setCriticalNetsPercentage(0);
-  }
 
   std::vector<Net*> nets = initNetlist();
   initNets(nets);
@@ -476,7 +458,7 @@ void GlobalRouter::initCoreGrid(int max_routing_layer)
   }
 }
 
-void GlobalRouter::initRoutingLayers()
+void GlobalRouter::initRoutingLayers(int min_routing_layer, int max_routing_layer)
 {
   odb::dbTech* tech = db_->getTech();
 
@@ -498,6 +480,7 @@ void GlobalRouter::initRoutingLayers()
       valid_layers++;
     }
   }
+  checkAdjacentLayersDirection(min_routing_layer, max_routing_layer);
 }
 
 void GlobalRouter::checkAdjacentLayersDirection(int min_routing_layer,
@@ -555,7 +538,11 @@ void GlobalRouter::setPerturbationAmount(int perturbation)
 
 void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
 {
-  initRoutingLayers();
+  int min_layer = min_layer_for_clock_ > 0
+                        ? std::min(min_routing_layer_, min_layer_for_clock_)
+                        : min_routing_layer_;
+  int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
+  initRoutingLayers(min_layer, max_layer);
   for (odb::dbNet* db_net : dirty_nets_) {
     Net* net = db_net_map_[db_net];
     // get last pin positions
@@ -1465,7 +1452,7 @@ void GlobalRouter::initGridAndNets()
                         : min_routing_layer_;
     int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
 
-    initRoutingLayers();
+    initRoutingLayers(min_layer, max_layer);
     initRoutingTracks(max_layer);
     initCoreGrid(max_layer);
     initAdjustments();
@@ -1474,6 +1461,32 @@ void GlobalRouter::initGridAndNets()
   }
   std::vector<Net*> nets = initNetlist();
   initNets(nets);
+}
+
+void GlobalRouter::ensureLayerForGuideDimension(int max_routing_layer)
+{
+  if (max_routing_layer < layer_for_guide_dimension_) {
+    layer_for_guide_dimension_ = max_routing_layer;
+  }
+}
+
+void GlobalRouter::configFastRoute()
+{
+  fastroute_->setVerbose(verbose_);
+  fastroute_->setOverflowIterations(overflow_iterations_);
+  fastroute_->setCongestionReportIterStep(congestion_report_iter_step_);
+
+  if (congestion_file_name_ != nullptr) {
+    fastroute_->setCongestionReportFile(congestion_file_name_);
+  }
+
+  if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
+    logger_->warn(
+        GRT,
+        300,
+        "Timing is not available, setting critical nets percentage to 0.");
+    fastroute_->setCriticalNetsPercentage(0);
+  }
 }
 
 void GlobalRouter::readGuides(const char* file_name)
