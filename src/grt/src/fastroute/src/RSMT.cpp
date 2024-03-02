@@ -743,8 +743,9 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
     }
 
     if (congestionDriven) {
-      for (int j = 0; j < sttrees_[netID].num_edges(); j++)
+      for (int j = 0; j < sttrees_[netID].num_edges(); j++) {
         wl1 += sttrees_[netID].edges[j].len;
+      }
     }
 
     for (int j = 0; j < rsmt.branchCount(); j++) {
