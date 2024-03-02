@@ -32,16 +32,9 @@
 #include "frBaseTypes.h"
 
 namespace fr {
+
 class taBlockObject : public frBlockObject
 {
- public:
-  virtual ~taBlockObject() {}
-  // getters
-  // setters
-  // others
- protected:
-  // constructors
-  taBlockObject() {}
-  taBlockObject(const taBlockObject& in) : frBlockObject(in) {}
 };
+
 }  // namespace fr

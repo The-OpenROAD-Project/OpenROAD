@@ -40,8 +40,6 @@ class frNet;
 class taRef : public taPinFig
 {
  public:
-  // constructors
-  taRef() : taPinFig() {}
   // getters
   virtual dbOrientType getOrient() const = 0;
   virtual Point getOrigin() const = 0;
@@ -50,15 +48,14 @@ class taRef : public taPinFig
   virtual void setOrient(const dbOrientType& tmpOrient) = 0;
   virtual void setOrigin(const Point& tmpPoint) = 0;
   virtual void setTransform(const dbTransform& xform) = 0;
-
- protected:
 };
+
 class taVia : public taRef
 {
  public:
   // constructors
-  taVia() : viaDef_(nullptr), owner_(nullptr) {}
-  taVia(frViaDef* in) : taRef(), origin_(), viaDef_(in), owner_(nullptr) {}
+  taVia() = default;
+  taVia(frViaDef* in) : viaDef_(in) {}
   // getters
   frViaDef* getViaDef() const { return viaDef_; }
   Rect getLayer1BBox() const
@@ -218,7 +215,7 @@ class taVia : public taRef
 
  protected:
   Point origin_;
-  frViaDef* viaDef_;
-  frBlockObject* owner_;
+  frViaDef* viaDef_{nullptr};
+  frBlockObject* owner_{nullptr};
 };
 }  // namespace fr

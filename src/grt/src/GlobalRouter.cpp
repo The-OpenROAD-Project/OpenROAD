@@ -420,8 +420,8 @@ void GlobalRouter::estimateRC()
   // Remove any existing parasitics.
   sta_->deleteParasitics();
 
-  // Make separate parasitics for each corner, same for min/max.
-  sta_->setParasiticAnalysisPts(true, false);
+  // Make separate parasitics for each corner.
+  sta_->setParasiticAnalysisPts(true);
 
   MakeWireParasitics builder(logger_, resizer_, sta_, db_->getTech(), this);
   for (auto& net_route : routes_) {

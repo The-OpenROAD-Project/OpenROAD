@@ -9,6 +9,12 @@ Instance ff1
  Cell: sky130_fd_sc_hd__dfstp_1
  Library: sky130_fd_sc_hd_merged
  Path cells: sky130_fd_sc_hd__dfstp_1
+ Input pins:
+  D input port1
+  SET_B input set_b
+  CLK input clock
+ Output pins:
+  Q output output1
 ***************************
 Preview DFT Report
 Number of chains: 1
@@ -24,8 +30,23 @@ Instance ff1
  Cell: sky130_fd_sc_hd__dfstp_1
  Library: sky130_fd_sc_hd_merged
  Path cells: sky130_fd_sc_hd__dfstp_1
+ Input pins:
+  D input port1
+  SET_B input set_b
+  CLK input clock
+ Output pins:
+  Q output output1
 Instance ff1
  Cell: sky130_fd_sc_hd__sdfsbp_1
  Library: sky130_fd_sc_hd_merged
  Path cells: sky130_fd_sc_hd__sdfsbp_1
+ Input pins:
+  D input port1
+  SCD input scan_in_1
+  SCE input scan_enable_1
+  SET_B input set_b
+  CLK input clock
+ Output pins:
+  Q output output1
+  Q_N output (unconnected)
 No differences found.

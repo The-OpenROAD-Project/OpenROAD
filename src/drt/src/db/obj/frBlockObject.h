@@ -35,17 +35,13 @@ class frBlockObject
 {
  public:
   virtual ~frBlockObject() = default;
-  // getters
-  int getId() const { return id_; }
-  // setters
-  void setId(int in) { id_ = in; }
-  // others
-  virtual frBlockObjectEnum typeId() const = 0;
-  bool operator<(const frBlockObject& rhs) const { return id_ < rhs.id_; }
 
- protected:
-  frBlockObject() = default;
-  frBlockObject(const frBlockObject& in) = default;
+  virtual frBlockObjectEnum typeId() const = 0;
+
+  int getId() const { return id_; }
+  void setId(int in) { id_ = in; }
+
+  bool operator<(const frBlockObject& rhs) const { return id_ < rhs.id_; }
 
  private:
   int id_{-1};
