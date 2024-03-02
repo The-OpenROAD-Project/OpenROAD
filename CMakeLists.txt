@@ -159,7 +159,6 @@ add_subdirectory(src)
 if(NOT OPENROAD_GPU_COMPILED)
   include(GetCompileFlags)
   get_compile_flags()
-  message( STATUS "bbaVariable GPU  = ${OPENROAD_GPU_COMPILED} ${OPENROAD_PYTHON_COMPILED} ${OPENROAD_GUI_COMPILED}" )
   
   # configure a header file for compile flags
   configure_file(
