@@ -1282,7 +1282,7 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
         }
       }
     }
-  });    
+  });
 
   logger_->info(
       CTS, 12, "    Minimum number of buffers in the clock path: {}.", minPath);
