@@ -24,7 +24,7 @@ node {
         stage('Build and test') {
           Map tasks = [failFast: false]
 
-          Map matrix_axes = [
+          Map matrix_axes_tests = [
             TEST_SLUG: ["Unit tests",
                         "aes_nangate45",
                         "gcd_nangate45",
@@ -38,7 +38,7 @@ node {
                         "ibex_sky130hs",
                         "jpeg_sky130hs"]
           ]
-          def axes = matrix_axes.TEST_SLUG
+          def axes = matrix_axes_tests.TEST_SLUG
 
           for (axisValue in axes) {
               def currentSlug = axisValue
