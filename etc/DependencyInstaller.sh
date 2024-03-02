@@ -188,6 +188,23 @@ _installCommonDev() {
         _equivalenceDeps
     fi
 
+    if [[ ${CI} == "yes" ]]; then
+        # ninja
+        ninjaCheckSum="817e12e06e2463aeb5cb4e1d19ced606"
+        ninjaVersion=1.10.2
+        ninjaPrefix=${PREFIX:-"/usr/local"}
+        ninjaBin=${ninjaPrefix}/bin/ninja
+        if [[ ! -d ${ninjaBin} ]]; then
+            cd "${baseDir}"
+            curl -L https://github.com/ninja-build/ninja/releases/download/v${ninjaVersion}/ninja-linux.zip -o ninja-linux.zip
+            md5sum -c <(echo "${ninjaCheckSum} ninja-linux.zip") || exit 1
+            unzip -o ninja-linux.zip -d ${ninjaPrefix}/bin/
+            chmod +x ${ninjaBin}
+        else
+            echo "ninja already installed."
+        fi
+    fi
+
     cd "${lastDir}"
     rm -rf "${baseDir}"
 
@@ -545,22 +562,6 @@ _installDebianPackages() {
 }
 
 _installCI() {
-    # ninja
-    ninjaCheckSum="817e12e06e2463aeb5cb4e1d19ced606"
-    ninjaVersion=1.10.2
-    ninjaPrefix=${PREFIX:-"/usr/local"}
-    ninjaBin=${ninjaPrefix}/bin/ninja
-    if [[ ! -d ${ninjaBin} ]]; then
-        cd "${baseDir}"
-        curl -L https://github.com/ninja-build/ninja/releases/download/v${ninjaVersion}/ninja-linux.zip -o ninja-linux.zip
-        md5sum -c <(echo "${ninjaCheckSum} ninja-linux.zip") || exit 1
-        unzip -o ninja-linux.zip -d ${ninjaPrefix}/bin/
-        chmod +x ${ninjaBin}
-    else
-        echo "ninja already installed."
-    fi
-
-
     apt-get -y update
 
     #docker
