@@ -483,7 +483,6 @@ class FastRouteCore
                          bool horizontal,
                          int& best_cost,
                          multi_array<int, 2>& layer_grid);
-  bool skipNet(int netID);
   void assignEdge(int netID, int edgeID, bool processDIR);
   void recoverEdge(int netID, int edgeID);
   void layerAssignmentV4();
