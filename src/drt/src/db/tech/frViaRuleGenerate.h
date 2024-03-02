@@ -32,7 +32,7 @@
 
 #include "db/infra/frBox.h"
 
-namespace fr {
+namespace drt {
 class frViaRuleGenerate
 {
  public:
@@ -69,4 +69,4 @@ class frViaRuleGenerate
   frLayerNum cutLayerNum{0};
   frLayerNum topLayerNum{0};
 };
-}  // namespace fr
+}  // namespace drt

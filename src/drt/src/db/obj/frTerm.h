@@ -34,7 +34,7 @@
 #include "db/obj/frNet.h"
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class frTerm : public frBlockObject
 {
  public:
@@ -75,4 +75,4 @@ class frTerm : public frBlockObject
   Rect bbox_;
 };
 
-}  // namespace fr
+}  // namespace drt

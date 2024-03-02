@@ -31,7 +31,7 @@
 #include "db/infra/frSegStyle.h"
 #include "db/taObj/taFig.h"
 
-namespace fr {
+namespace drt {
 class frNet;
 class taPin;
 class frPathSeg;
@@ -177,4 +177,4 @@ class taPathSeg : public taShape
   frBlockObject* owner_{nullptr};
 };
 
-}  // namespace fr
+}  // namespace drt

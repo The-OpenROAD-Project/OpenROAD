@@ -30,7 +30,7 @@
 
 #include "db/gcObj/gcShape.h"
 
-namespace fr {
+namespace drt {
 class gcNet;
 class gcPin : public gcBlockObject
 {
@@ -88,4 +88,4 @@ class gcPin : public gcBlockObject
   std::vector<std::vector<std::unique_ptr<gcCorner>>> polygon_corners_;
   std::vector<std::unique_ptr<gcRect>> max_rectangles_;
 };
-}  // namespace fr
+}  // namespace drt

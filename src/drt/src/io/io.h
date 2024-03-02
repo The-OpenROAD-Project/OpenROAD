@@ -46,7 +46,7 @@ namespace utl {
 class Logger;
 }
 
-namespace fr::io {
+namespace drt::io {
 using viaRawPriorityTuple = std::tuple<bool,          // not default via
                                        frCoord,       // lowerWidth
                                        frCoord,       // upperWidth
@@ -298,4 +298,4 @@ class Writer
   std::vector<frViaDef*> viaDefs_;
 };
 
-}  // namespace fr::io
+}  // namespace drt::io

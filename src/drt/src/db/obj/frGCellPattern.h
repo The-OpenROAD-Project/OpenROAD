@@ -30,7 +30,7 @@
 
 #include "db/obj/frBlockObject.h"
 
-namespace fr {
+namespace drt {
 class frGCellPattern : public frBlockObject
 {
  public:
@@ -53,4 +53,4 @@ class frGCellPattern : public frBlockObject
   frUInt4 spacing_{0};
   frUInt4 count_{0};
 };
-}  // namespace fr
+}  // namespace drt

@@ -33,7 +33,7 @@
 #include "db/obj/frBPin.h"
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class frBlockage : public frBlockObject
 {
  public:
@@ -53,4 +53,4 @@ class frBlockage : public frBlockObject
   frCoord design_rule_width_{-1};
   int index_in_owner_{0};
 };
-}  // namespace fr
+}  // namespace drt

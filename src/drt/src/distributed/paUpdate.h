@@ -30,7 +30,7 @@
 #include <boost/serialization/access.hpp>
 
 #include "db/obj/frAccess.h"
-namespace fr {
+namespace drt {
 class frInst;
 class frInstTerm;
 class frDesign;
@@ -41,7 +41,7 @@ class paUpdate
 
   void addPinAccess(frPin* pin, std::vector<std::unique_ptr<frPinAccess>> pa)
   {
-    pin_access_.push_back({pin, std::move(pa)});
+    pin_access_.emplace_back(pin, std::move(pa));
   }
   void setInstRows(const std::vector<std::vector<frInst*>>& in)
   {
@@ -85,8 +85,8 @@ class paUpdate
       group_results_;
 
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
+  void serialize(Archive& ar, unsigned int version);
 
   friend class boost::serialization::access;
 };
-}  // namespace fr
+}  // namespace drt

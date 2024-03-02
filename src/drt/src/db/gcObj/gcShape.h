@@ -34,29 +34,29 @@
 
 namespace gtl = boost::polygon;
 
-namespace fr {
+namespace drt {
 class gcSegment;
 class gcRect;
 class gcPolygon;
-}  // namespace fr
+}  // namespace drt
 
 template <>
-struct gtl::geometry_concept<fr::gcSegment>
+struct gtl::geometry_concept<drt::gcSegment>
 {
-  typedef segment_concept type;
+  using type = segment_concept;
 };
 template <>
-struct gtl::geometry_concept<fr::gcRect>
+struct gtl::geometry_concept<drt::gcRect>
 {
-  typedef gtl::rectangle_concept type;
+  using type = gtl::rectangle_concept;
 };
 template <>
-struct gtl::geometry_concept<fr::gcPolygon>
+struct gtl::geometry_concept<drt::gcPolygon>
 {
-  typedef polygon_90_with_holes_concept type;
+  using type = polygon_90_with_holes_concept;
 };
 
-namespace fr {
+namespace drt {
 
 class gcShape : public gcPinFig
 {
@@ -382,7 +382,7 @@ class gcPolygon : public gtl::polygon_90_with_holes_data<frCoord>,
     gtl::polygon_90_data<frCoord> poly;
     poly.set(points.begin(), points.end());
     gtl::polygon_90_set_data<frCoord> ps;
-    using namespace gtl::operators;
+    using gtl::operators::operator+=;
     ps += poly;
     std::vector<gtl::polygon_90_with_holes_data<frCoord>> polys;
     ps.get(polys);
@@ -432,4 +432,4 @@ class gcPolygon : public gtl::polygon_90_with_holes_data<frCoord>,
   gcNet* net_{nullptr};
 };
 
-}  // namespace fr
+}  // namespace drt

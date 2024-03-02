@@ -34,7 +34,7 @@
 #include "db/obj/frMTerm.h"
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 namespace io {
 class Parser;
 }
@@ -146,4 +146,4 @@ class frMaster : public frBlockObject
 
   friend class io::Parser;
 };
-}  // namespace fr
+}  // namespace drt

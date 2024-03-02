@@ -33,7 +33,7 @@
 #include "db/gcObj/gcBlockObject.h"
 #include "db/infra/frBox.h"
 
-namespace fr {
+namespace drt {
 class gcFig : public gcBlockObject
 {
 };
@@ -83,4 +83,4 @@ class gcPinFig : public gcConnFig
    */
 };
 
-}  // namespace fr
+}  // namespace drt

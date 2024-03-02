@@ -31,7 +31,7 @@
 #include "db/drObj/drNet.h"
 #include "db/obj/frShape.h"
 
-namespace fr {
+namespace drt {
 
 Rect drPathSeg::getBBox() const
 {
@@ -68,4 +68,4 @@ drPatchWire::drPatchWire(const frPatchWire& in)
   origin_ = in.getOrigin();
 }
 
-}  // namespace fr
+}  // namespace drt

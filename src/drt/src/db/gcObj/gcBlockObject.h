@@ -31,8 +31,8 @@
 #include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class gcBlockObject : public frBlockObject
 {
 };
-}  // namespace fr
+}  // namespace drt

@@ -36,7 +36,7 @@
 #include "frBaseTypes.h"
 #include "utl/Logger.h"
 
-namespace fr {
+namespace drt {
 class frLef58CutClass
 {
  public:
@@ -177,4 +177,4 @@ class frViaDef
   Rect layer2ShapeBox_;
   Rect cutShapeBox_;
 };
-}  // namespace fr
+}  // namespace drt

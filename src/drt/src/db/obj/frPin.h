@@ -35,7 +35,7 @@
 #include "db/obj/frShape.h"
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class frTerm;
 
 class frPin : public frBlockObject
@@ -81,4 +81,4 @@ class frPin : public frBlockObject
   std::vector<std::unique_ptr<frPinAccess>> aps_;
 };
 
-}  // namespace fr
+}  // namespace drt
