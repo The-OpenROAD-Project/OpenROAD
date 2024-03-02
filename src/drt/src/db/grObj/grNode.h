@@ -31,14 +31,13 @@
 #include <iostream>
 #include <memory>
 
-#include "frBaseTypes.h"
-// #include "db/obj/frNode.h"
 #include "db/grObj/grBlockObject.h"
+#include "db/obj/frNode.h"
+#include "frBaseTypes.h"
 
 namespace drt {
 class frNet;
 class grNet;
-class frNode;
 
 class grNode : public grBlockObject
 {

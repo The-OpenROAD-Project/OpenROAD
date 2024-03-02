@@ -32,7 +32,8 @@
 
 #include "distributed/frArchive.h"
 #include "serialization.h"
-using namespace drt;
+
+namespace drt {
 
 void paUpdate::serialize(const paUpdate& update, const std::string& path)
 {
@@ -67,13 +68,13 @@ void paUpdate::serialize(Archive& ar, const unsigned int version)
       frPin* pin = (frPin*) obj;
       std::vector<std::unique_ptr<frPinAccess>> pa;
       (ar) & pa;
-      pin_access_.push_back({pin, std::move(pa)});
+      pin_access_.emplace_back(pin, std::move(pa));
     }
 
     // inst_rows_
     (ar) & sz;
     while (sz--) {
-      inst_rows_.push_back({});
+      inst_rows_.emplace_back();
       int innerSz = 0;
       (ar) & innerSz;
       while (innerSz--) {
@@ -95,7 +96,7 @@ void paUpdate::serialize(Archive& ar, const unsigned int version)
         serializeBlockObject(ar, obj);
         aps.push_back((frAccessPoint*) obj);
       }
-      group_results_.push_back({term, aps});
+      group_results_.emplace_back(term, aps);
     }
 
   } else {
@@ -139,3 +140,5 @@ template void paUpdate::serialize<frIArchive>(frIArchive& ar,
 
 template void paUpdate::serialize<frOArchive>(frOArchive& ar,
                                               const unsigned int file_version);
+
+}  // namespace drt
