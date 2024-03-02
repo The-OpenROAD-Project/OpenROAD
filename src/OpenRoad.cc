@@ -645,4 +645,9 @@ const char* OpenRoad::getGUICompileOption()
   return OPENROAD_GUI_COMPILED;
 }
 
+const char* OpenRoad::getChartsCompileOption()
+{
+  return OPENROAD_CHARTS_COMPILED;
+}
+
 }  // namespace ord

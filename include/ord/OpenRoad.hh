@@ -253,6 +253,7 @@ class OpenRoad
   static const char* getGPUCompileOption();
   static const char* getPythonCompileOption();
   static const char* getGUICompileOption();
+  static const char* getChartsCompileOption();
 
  protected:
   ~OpenRoad();
