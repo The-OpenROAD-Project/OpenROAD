@@ -137,6 +137,7 @@ configure_file(
   ${OPENROAD_HOME}/include/ord/Version.hh
   )
 
+
 ################################################################
 
 # Ask CMake to output a compile_commands.json file for use with things like clang-tidy
@@ -153,3 +154,17 @@ if(ENABLE_TESTS)
 endif()
 
 add_subdirectory(src)
+
+# After all compiled, look for the respective flags
+if(NOT OPENROAD_GPU_COMPILED)
+  include(GetCompileFlags)
+  get_compile_flags()
+  message( STATUS "bbaVariable GPU  = ${OPENROAD_GPU_COMPILED} ${OPENROAD_PYTHON_COMPILED} ${OPENROAD_GUI_COMPILED}" )
+  
+  # configure a header file for compile flags
+  configure_file(
+    ${OPENROAD_HOME}/include/ord/CompileOptions.hh.cmake
+    ${OPENROAD_HOME}/include/ord/CompileOptions.hh
+  )
+
+endif()

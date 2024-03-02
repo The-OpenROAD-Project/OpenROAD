@@ -21,6 +21,7 @@ Makefile
 __pycache__
 
 include/ord/Version.hh
+include/ord/CompileOptions.hh
 
 build
 test/results

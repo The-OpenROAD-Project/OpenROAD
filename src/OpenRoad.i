@@ -303,6 +303,24 @@ openroad_git_describe()
   return ord::OpenRoad::getGitDescribe();
 }
 
+const char * 
+openroad_gpu_compiled()
+{
+  return ord::OpenRoad::getGUICompileOption();
+}
+
+const char *
+openroad_python_compiled()
+{
+  return ord::OpenRoad::getPythonCompileOption();
+}
+
+const char *
+openroad_gui_compiled()
+{
+  return ord::OpenRoad::getGUICompileOption();
+}
+
 void
 read_lef_cmd(const char *filename,
 	     const char *lib_name,
