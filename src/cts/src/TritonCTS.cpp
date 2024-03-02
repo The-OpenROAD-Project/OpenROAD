@@ -383,25 +383,31 @@ void TritonCTS::writeDataToDb()
     builder->getClock().forEachSink([&sinks](const ClockInst& inst) {
       sinks.insert(inst.getDbInputPin());
     });
-    countSinksPostDbWrite(builder,
-                          topClockNet,
-                          sinkCount,
-                          leafSinks,
-                          0,
-                          allSinkDistance,
-                          minDepth,
-                          maxDepth,
-                          0,
-                          reportFullTree,
-                          sinks);
-    logger_->info(CTS, 98, "Clock net \"{}\"", builder->getClock().getName());
-    logger_->info(CTS, 99, " Sinks {}", sinkCount);
-    logger_->info(CTS, 100, " Leaf buffers {}", leafSinks);
-    double avgWL = allSinkDistance / sinkCount;
-    logger_->info(CTS, 101, " Average sink wire length {:.2f} um", avgWL);
-    logger_->info(CTS, 102, " Path depth {} - {}", minDepth, maxDepth);
-    if (options_->dummyLoadEnabled()) {
-      logger_->info(CTS, 207, " Leaf load cells {}", dummyLoadIndex_);
+    if (sinks.size() < 2) {
+      logger_->info(
+          CTS, 124, "Clock net \"{}\"", builder->getClock().getName());
+      logger_->info(CTS, 125, " Sinks {}", sinks.size());
+    } else {
+      countSinksPostDbWrite(builder,
+                            topClockNet,
+                            sinkCount,
+                            leafSinks,
+                            0,
+                            allSinkDistance,
+                            minDepth,
+                            maxDepth,
+                            0,
+                            reportFullTree,
+                            sinks);
+      logger_->info(CTS, 98, "Clock net \"{}\"", builder->getClock().getName());
+      logger_->info(CTS, 99, " Sinks {}", sinkCount);
+      logger_->info(CTS, 100, " Leaf buffers {}", leafSinks);
+      double avgWL = allSinkDistance / sinkCount;
+      logger_->info(CTS, 101, " Average sink wire length {:.2f} um", avgWL);
+      logger_->info(CTS, 102, " Path depth {} - {}", minDepth, maxDepth);
+      if (options_->dummyLoadEnabled()) {
+        logger_->info(CTS, 207, " Leaf load cells {}", dummyLoadIndex_);
+      }
     }
   }
 }
@@ -1072,15 +1078,6 @@ HTreeBuilder* TritonCTS::addClockSinks(
     float insDelay = computeInsertionDelay(name, inst, mterm);
     clockNet.addSink(name, x, y, iterm, getInputPinCap(iterm), insDelay);
   }
-  if (clockNet.getNumSinks() < 2) {
-    logger_->info(CTS,
-                  42,
-                  " Clock net \"{}\" for {} has {} sinks. Skipping...",
-                  clockNet.getName(),
-                  macrosOrRegs,
-                  clockNet.getNumSinks());
-    return nullptr;
-  }
   logger_->info(CTS,
                 11,
                 " Clock net \"{}\" for {} has {} sinks.",
@@ -1195,6 +1192,7 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
   numClkNets_ = 0;
   numFixedNets_ = 0;
   const ClockSubNet* rootSubNet = nullptr;
+  std::unordered_set<ClockInst*> removedSinks;
   clockNet.forEachSubNet([&](const ClockSubNet& subNet) {
     bool outputPinFound = true;
     bool inputPinFound = true;
@@ -1258,6 +1256,7 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
       ++numFixedNets_;
       --numClkNets_;
       odb::dbInst::destroy(driver);
+      removedSinks.insert(subNet.getDriver());
       checkUpstreamConnections(inputNet);
     }
   });
@@ -1270,17 +1269,20 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet,
   int minPath = std::numeric_limits<int>::max();
   int maxPath = std::numeric_limits<int>::min();
   rootSubNet->forEachSink([&](ClockInst* inst) {
-    if (inst->isClockBuffer()) {
-      std::pair<int, int> resultsForBranch
-          = branchBufferCount(inst, 1, clockNet);
-      if (resultsForBranch.first < minPath) {
-        minPath = resultsForBranch.first;
-      }
-      if (resultsForBranch.second > maxPath) {
-        maxPath = resultsForBranch.second;
+    // skip removed sinks
+    if (removedSinks.find(inst) == removedSinks.end()) {
+      if (inst->isClockBuffer()) {
+        std::pair<int, int> resultsForBranch
+            = branchBufferCount(inst, 1, clockNet);
+        if (resultsForBranch.first < minPath) {
+          minPath = resultsForBranch.first;
+        }
+        if (resultsForBranch.second > maxPath) {
+          maxPath = resultsForBranch.second;
+        }
       }
     }
-  });
+  });    
 
   logger_->info(
       CTS, 12, "    Minimum number of buffers in the clock path: {}.", minPath);
