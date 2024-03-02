@@ -28,12 +28,12 @@
 
 #pragma once
 #include <omp.h>
-#include <cstdio>
-#include <cstdlib>
 
 #include <boost/asio/post.hpp>
 #include <boost/asio/thread_pool.hpp>
 #include <boost/bind/bind.hpp>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <mutex>
 
@@ -88,7 +88,7 @@ class RoutingCallBack : public dst::JobCallBack
     int prev_perc = 0;
     int cnt = 0;
 #pragma omp parallel for schedule(dynamic)
-    for (int i = 0; i < workers.size(); i++) { // NOLINT
+    for (int i = 0; i < workers.size(); i++) {  // NOLINT
       std::pair<int, std::string> result
           = {workers.at(i).first,
              router_->runDRWorker(workers.at(i).second, &via_data_)};
@@ -187,7 +187,7 @@ class RoutingCallBack : public dst::JobCallBack
         auto instRows = deserializeInstRows(desc->getPath());
         omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
 #pragma omp parallel for schedule(dynamic)
-        for (int i = 0; i < instRows.size(); i++) { // NOLINT
+        for (int i = 0; i < instRows.size(); i++) {  // NOLINT
           pa_.genInstRowPattern(instRows.at(i));
         }
         paUpdate update;
@@ -244,7 +244,8 @@ class RoutingCallBack : public dst::JobCallBack
     }
   }
 
-  std::vector<std::vector<frInst*>> deserializeInstRows(const std::string& file_path)
+  std::vector<std::vector<frInst*>> deserializeInstRows(
+      const std::string& file_path)
   {
     std::vector<std::vector<frInst*>> instRows;
     paUpdate update;

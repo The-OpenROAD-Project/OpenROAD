@@ -71,7 +71,7 @@ class FlexGR
   {
     if (is2DCMap) {
       return cmap2D_.get();
-    } 
+    }
     return cmap_.get();
   }
 
@@ -328,7 +328,7 @@ class FlexGRWorker
     auto it = owner2nets_.find(net);
     if (it != owner2nets_.end()) {
       return &(it->second);
-    } 
+    }
     return nullptr;
   }
   const FlexGRWorkerRegionQuery& getWorkerRegionQuery() const { return rq_; }

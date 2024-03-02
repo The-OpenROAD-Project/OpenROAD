@@ -53,7 +53,7 @@ struct gtl::geometry_concept<drt::gcRect>
 template <>
 struct gtl::geometry_concept<drt::gcPolygon>
 {
-  using type =  polygon_90_with_holes_concept;
+  using type = polygon_90_with_holes_concept;
 };
 
 namespace drt {

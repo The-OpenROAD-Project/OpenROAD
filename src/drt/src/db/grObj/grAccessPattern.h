@@ -70,14 +70,14 @@ class grAccessPattern : public grBlockObject
   {
     if (dir == frDirEnum::U) {
       return !(vU == nullptr);
-    } 
+    }
     return !(vD == nullptr);
   }
   frViaDef* getAccessViaDef(const frDirEnum& dir = frDirEnum::U)
   {
     if (dir == frDirEnum::U) {
       return (*vU)[vUIdx];
-    } 
+    }
     return (*vD)[vDIdx];
   }
 

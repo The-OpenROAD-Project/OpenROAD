@@ -58,10 +58,7 @@ class grNode : public grBlockObject
   {
   }
   grNode(frNode& in)
-      : loc(in.loc),
-        layerNum(in.layerNum),
-        pin(in.pin),
-        type(in.type)
+      : loc(in.loc), layerNum(in.layerNum), pin(in.pin), type(in.type)
   {
   }
 
@@ -126,7 +123,8 @@ class grNode : public grBlockObject
   Point loc;
   frLayerNum layerNum{0};
   grBlockObject* connFig{nullptr};  // wire / via / patch to parent
-  frBlockObject* pin{nullptr};      // term / instTerm / null if boundary pin or steiner
+  frBlockObject* pin{
+      nullptr};  // term / instTerm / null if boundary pin or steiner
   frNodeTypeEnum type{frNodeTypeEnum::frcSteiner};
 
   // frNode *fNode; // corresponding frNode

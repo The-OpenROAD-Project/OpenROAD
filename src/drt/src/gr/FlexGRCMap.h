@@ -92,7 +92,7 @@ class FlexGRCMap
     }
     if (isRaw) {
       return supply << CMAPFRACSIZE;
-    }   
+    }
     return supply;
   }
 
@@ -126,7 +126,7 @@ class FlexGRCMap
     }
     if (isRaw) {
       return supply << CMAPFRACSIZE;
-    } 
+    }
     return supply;
   }
 
@@ -159,7 +159,7 @@ class FlexGRCMap
     }
     if (isRaw) {
       return demand;
-    } 
+    }
     return demand >> CMAPFRACSIZE;
   }
 
@@ -193,7 +193,7 @@ class FlexGRCMap
     }
     if (isRaw) {
       return demand;
-    } 
+    }
     return demand >> CMAPFRACSIZE;
   }
 
@@ -624,7 +624,7 @@ class FlexGRCMap
         || y >= ygp_->getCount()
         || z >= design_->getTech()->getLayers().size()) {
       return false;
-    } 
+    }
     return true;
   }
 

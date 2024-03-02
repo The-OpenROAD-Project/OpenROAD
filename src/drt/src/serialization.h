@@ -186,7 +186,7 @@ void serialize(Archive& ar,
     polygon.set_compact(coordinates.begin(), coordinates.end());
   } else {
     std::vector<drt::frCoord> coordinates(polygon.begin_compact(),
-                                         polygon.end_compact());
+                                          polygon.end_compact());
     (ar) & coordinates;
   }
 }
@@ -209,7 +209,7 @@ void serialize(Archive& ar,
     outside.set(polygon.begin(), polygon.end());
     (ar) & outside;
     std::list<gtl::polygon_90_data<drt::frCoord>> holes(polygon.begin_holes(),
-                                                       polygon.end_holes());
+                                                        polygon.end_holes());
     (ar) & holes;
   }
 }

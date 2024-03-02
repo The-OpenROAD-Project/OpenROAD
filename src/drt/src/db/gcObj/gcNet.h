@@ -114,7 +114,7 @@ class gcNet : public gcBlockObject
   {
     if (isFixed) {
       return fixedPolygons_;
-    } 
+    }
     return routePolygons_;
   }
   const gtl::polygon_90_set_data<frCoord>& getPolygons(frLayerNum layerNum,
@@ -140,7 +140,7 @@ class gcNet : public gcBlockObject
   {
     if (isFixed) {
       return fixedRectangles_[layerNum];
-    } 
+    }
     return routeRectangles_[layerNum];
   }
   const std::vector<std::vector<std::unique_ptr<gcPin>>>& getPins() const

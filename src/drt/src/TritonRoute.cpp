@@ -1004,7 +1004,7 @@ void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
   omp_set_num_threads(MAX_THREADS);
   for (auto& workers : workersBatches) {
 #pragma omp parallel for schedule(dynamic)
-    for (int i = 0; i < workers.size(); i++) { // NOLINT
+    for (int i = 0; i < workers.size(); i++) {  // NOLINT
       workers[i]->init(design_.get());
       workers[i]->main();
     }

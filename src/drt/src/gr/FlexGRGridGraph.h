@@ -49,8 +49,7 @@ class FlexGRGridGraph
  public:
   // constructors
   FlexGRGridGraph(frDesign* designIn, FlexGRWorker* workerIn)
-      : design_(designIn),
-        grWorker_(workerIn)
+      : design_(designIn), grWorker_(workerIn)
   {
   }
   // getters
@@ -185,7 +184,7 @@ class FlexGRGridGraph
     }
     if (isRaw) {
       return supply << GRFRACSIZE;
-    } 
+    }
     return supply;
   }
 
@@ -556,7 +555,10 @@ class FlexGRGridGraph
   {
     dsts_[getIdx(mi.x(), mi.y(), mi.z())] = true;
   }
-  void resetDst(frMIdx x, frMIdx y, frMIdx z) { dsts_[getIdx(x, y, z)] = false; }
+  void resetDst(frMIdx x, frMIdx y, frMIdx z)
+  {
+    dsts_[getIdx(x, y, z)] = false;
+  }
   void resetDst(const FlexMazeIdx& mi)
   {
     dsts_[getIdx(mi.x(), mi.y(), mi.z())] = false;
@@ -759,16 +761,13 @@ class FlexGRGridGraph
                    frMIdx& gridY,
                    frMIdx& gridZ,
                    frDirEnum dir) const;
-  void getNextGrid(frMIdx& gridX,
-                   frMIdx& gridY,
-                   frMIdx& gridZ,
-                   frDirEnum dir);
+  void getNextGrid(frMIdx& gridX, frMIdx& gridY, frMIdx& gridZ, frDirEnum dir);
   bool isValid(frMIdx x, frMIdx y, frMIdx z) const
   {
     if (x < 0 || y < 0 || z < 0 || x >= (frMIdx) xCoords_.size()
         || y >= (frMIdx) yCoords_.size() || z >= (frMIdx) zCoords_.size()) {
       return false;
-    } 
+    }
     return true;
   }
 
