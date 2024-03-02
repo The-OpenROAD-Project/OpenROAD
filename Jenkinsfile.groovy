@@ -19,63 +19,58 @@ node {
     }
   }
 
-  // stage('Install Ninja') {
-  //   sh 'curl -L https://github.com/ninja-build/ninja/releases/download/v1.10.2/ninja-linux.zip -o ninja-linux.zip'
-  //   sh 'sudo unzip ninja-linux.zip -d /usr/local/bin/'
-  //   sh 'sudo chmod +x /usr/local/bin/ninja'
-  //   sh 'sudo yum -y update'
-  //   sh 'sudo yum install -y ccache'
-  //   // sh 'export PATH="/usr/lib/ccache:$PATH"'
-  //   // stash includes: '/usr/local/bin/ninja', name: 'ninja-stash'
-  //   // stash includes: '/usr/bin/ccache', name: 'ccache-stash'
-  //   sh 'mkdir -p stashed-files'
-  //   sh 'cp /usr/local/bin/ninja stashed-files/'
-  //   sh 'cp /usr/bin/ccache stashed-files/'
-
-  //   stash includes: 'stashed-files/*', name: 'tools-stash'
-  // }
-
-  // docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside {
-    try {
+  try {
       timeout(time: 9, unit: 'HOURS') {  
         stage('Build and test') {
           Map tasks = [failFast: false]
-          tasks["Local centos7 gcc"] = {
-            node {
-                checkout scm
-                docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside {
-                  try {
-                    stage('Build centos7 gcc') {
-                        sh './etc/Build.sh -no-warnings';
-                    }
-                    stage('Check message IDs') {
-                        sh 'cd src && ../etc/find_messages.py > messages.txt';
-                    }
-                    stage('Test centos7 gcc') {
-                        parallel (
-                            'Unit tests':           { sh './test/regression' },
-                            'nangate45 aes':        { sh './test/regression aes_nangate45' },
-                            'nangate45 gcd':        { sh './test/regression gcd_nangate45' },
-                            'nangate45 tinyRocket': { sh './test/regression tinyRocket_nangate45' },
-                            'sky130hd aes':         { sh './test/regression aes_sky130hd' },
-                            'sky130hd gcd':         { sh './test/regression gcd_sky130hd' },
-                            'sky130hd ibex':        { sh './test/regression ibex_sky130hd' },
-                            'sky130hd jpeg':        { sh './test/regression jpeg_sky130hd' },
-                            'sky130hs aes':         { sh './test/regression aes_sky130hs' },
-                            'sky130hs gcd':         { sh './test/regression gcd_sky130hs' },
-                            'sky130hs ibex':        { sh './test/regression ibex_sky130hs' },
-                            'sky130hs jpeg':        { sh './test/regression jpeg_sky130hs' },
-                        )
-                    }
-                  }
-                  finally {
-                      always {
-                          sh "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
-                          archiveArtifacts artifacts: '**/results.tgz', allowEmptyArchive: true;
+
+          Map matrix_axes = [
+            TEST_SLUG: ["Unit tests",
+                        "aes_nangate45",
+                        "gcd_nangate45",
+                        "tinyRocket_nangate45",
+                        "aes_sky130hd",
+                        "gcd_sky130hd",
+                        "ibex_sky130hd",
+                        "jpeg_sky130hd",
+                        "aes_sky130hs",
+                        "gcd_sky130hs",
+                        "ibex_sky130hs",
+                        "jpeg_sky130hs"]
+          ]
+          def axes = matrix_axes.TEST_SLUG
+
+          for (axisValue in axes) {
+              def currentSlug = axisValue
+              tasks["Local centos7 gcc - ${currentSlug}"] = {
+                node {
+                    checkout scm
+                    docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside {
+                      try {
+                        stage('Build centos7 gcc') {
+                            sh './etc/Build.sh -no-warnings';
+                        }
+                        stage('Check message IDs') {
+                            sh 'cd src && ../etc/find_messages.py > messages.txt';
+                        }
+                        stage('Test centos7 gcc') {
+                            if ("${currentSlug}" == 'Unit tests') {
+                              sh './test/regression'
+                            }
+                            else {
+                              sh "./test/regression ${currentSlug}"
+                            }
+                        }
                       }
-                  }
+                      finally {
+                          always {
+                              sh "find . -name results -type d -exec tar zcvf {}.tgz {} ';'";
+                              archiveArtifacts artifacts: '**/results.tgz', allowEmptyArchive: true;
+                          }
+                      }
+                    }
                 }
-            }
+              }
           }
           tasks["Local centos7 gcc without GUI"] = {
             node {
@@ -91,16 +86,6 @@ node {
             node {
               checkout scm
               docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside {
-                // stage('Install Ninja') {
-                //   sh 'curl -L https://github.com/ninja-build/ninja/releases/download/v1.10.2/ninja-linux.zip -o ninja-linux.zip'
-                //   sh 'sudo unzip ninja-linux.zip -d /usr/local/bin/'
-                //   sh 'sudo chmod +x /usr/local/bin/ninja'
-                //   sh 'sudo yum -y update'
-                //   sh 'sudo yum install -y ccache'
-                //   // sh 'export PATH="/usr/lib/ccache:$PATH"'
-                //   // stash includes: '/usr/local/bin/ninja', name: 'ninja-stash'
-                //   // stash includes: '/usr/bin/ccache', name: 'ccache-stash'
-                // }
                 stage('C++ Unit Tests') {
                   sh 'cmake -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -GNinja -B build .';
                   sh 'cd build && CLICOLOR_FORCE=1 ninja build_and_test';
@@ -113,11 +98,6 @@ node {
               checkout scm
               docker.image("openroad/ubuntu-cpp20").inside {
                 stage('Test C++20 Compile') {
-                  // sh 'sudo yum install -y git cmake ninja-build python'
-                  // sh 'git clone --depth=1 https://github.com/llvm/llvm-project.git'
-                  // sh 'cd llvm-project && mkdir build && cd build && cmake -G "Unix Makefiles" -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" -DCMAKE_INSTALL_PREFIX=~/tools/llvm -DCMAKE_BUILD_TYPE=Release ../llvm'
-                  // sh 'cd llvm-project && make -j$(nproc) && sudo make install'
-                  // sh 'export PATH=~/tools/llvm/bin:$PATH'
                   sh "./etc/Build.sh -compiler='clang-16' -cmake='-DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20'";
                 }
               }
@@ -164,5 +144,4 @@ node {
         sendEmail(env.BRANCH_NAME, COMMIT_AUTHOR_EMAIL, "")
       }
     }
-  // }
 }
