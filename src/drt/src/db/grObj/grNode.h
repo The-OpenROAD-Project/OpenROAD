@@ -32,6 +32,7 @@
 #include <memory>
 
 #include "db/grObj/grBlockObject.h"
+#include "db/infra/frPoint.h"
 #include "db/obj/frNode.h"
 #include "frBaseTypes.h"
 

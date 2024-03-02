@@ -32,7 +32,7 @@
 #include <iostream>
 #include <iterator>
 
-using namespace drt;
+namespace drt {
 
 void FlexGRCMap::initFrom3D(FlexGRCMap* cmap3D)
 {
@@ -661,3 +661,5 @@ void FlexGRCMap::print2D(bool isAll)
     congMap.close();
   }
 }
+
+}  // namespace drt

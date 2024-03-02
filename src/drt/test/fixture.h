@@ -28,11 +28,12 @@
 
 #include "frDesign.h"
 
-using namespace drt;
-
 namespace odb {
 class dbTechLayerCutSpacingTableDefRule;
 }
+
+namespace drt {
+
 // General Fixture for tests using db objects.
 class Fixture
 {
@@ -232,3 +233,5 @@ class Fixture
 // Just compare them as integers to avoid this requirement.
 #define TEST_ENUM_EQUAL(L, R) \
   BOOST_TEST(static_cast<int>(L) == static_cast<int>(R))
+
+}  // namespace drt

@@ -161,11 +161,12 @@ class FlexGR
       frNode* currNode,
       frNet* net,
       std::vector<std::vector<unsigned>>& bestLayerCosts,
-      std::vector<std::vector<unsigned>>& bestLayers);
-  void layerAssign_node_commit(frNode* currNode,
-                               frNet* net,
-                               frLayerNum layerNum,
-                               std::vector<std::vector<unsigned>>& bestLayers);
+      std::vector<std::vector<unsigned>>& bestLayerCombs);
+  void layerAssign_node_commit(
+      frNode* currNode,
+      frNet* net,
+      frLayerNum layerNum,
+      std::vector<std::vector<unsigned>>& bestLayerCombs);
 
   // cost
   double getCongCost(unsigned supply, unsigned demand);

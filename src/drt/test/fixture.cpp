@@ -32,7 +32,7 @@
 
 #include "odb/db.h"
 
-using namespace drt;
+namespace drt {
 
 Fixture::Fixture()
     : logger(std::make_unique<Logger>()),
@@ -714,3 +714,5 @@ void Fixture::makeLef58WrongDirSpcConstraint(
   layer->addLef58SpacingWrongDirConstraint(con.get());
   design->getTech()->addUConstraint(std::move(con));
 }
+
+}  // namespace drt

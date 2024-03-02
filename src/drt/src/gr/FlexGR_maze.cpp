@@ -28,7 +28,7 @@
 
 #include "gr/FlexGR.h"
 
-using namespace drt;
+namespace drt {
 
 void FlexGRWorker::route()
 {
@@ -266,8 +266,9 @@ void FlexGRWorker::mazeNetInit_addHistCost(grNet* net)
         || gridGraph_.getRawDemand(pt.x(), pt.y(), pt.z(), frDirEnum::N)
                > getCongThresh()
                      * gridGraph_.getRawSupply(
-                         pt.x(), pt.y(), pt.z(), frDirEnum::N))
+                         pt.x(), pt.y(), pt.z(), frDirEnum::N)) {
       gridGraph_.addHistoryCost(pt.x(), pt.y(), pt.z(), 1);
+    }
   }
 }
 
@@ -1069,3 +1070,5 @@ void FlexGRWorker::route_decayHistCost()
     }
   }
 }
+
+}  // namespace drt

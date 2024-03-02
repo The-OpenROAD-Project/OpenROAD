@@ -28,7 +28,7 @@
 
 #include "gr/FlexGR.h"
 
-using namespace drt;
+namespace drt {
 
 frDesign* FlexGRWorkerRegionQuery::getDesign() const
 {
@@ -230,3 +230,5 @@ void FlexGRWorkerRegionQuery::init(bool includeExt)
     allShapes.at(i).shrink_to_fit();
   }
 }
+
+}  // namespace drt

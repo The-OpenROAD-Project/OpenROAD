@@ -32,7 +32,7 @@
 #include "FlexGR.h"
 #include "FlexGRCMap.h"
 
-using namespace drt;
+namespace drt {
 
 void FlexGR::init()
 {
@@ -245,6 +245,10 @@ void FlexGR::initGCell()
     ygp.setStartCoord(startCoordY);
     frCoord GCELLGRIDY = pitch * 15;
     ygp.setSpacing(GCELLGRIDY);
+    if (GCELLGRIDY == 0) {
+      std::cout << "Pitch is zero for " << layer->getName() << "\n";
+      exit(1);
+    }
     ygp.setCount((dieBox.yMax() - startCoordY) / GCELLGRIDY);
 
     design_->getTopBlock()->setGCellPatterns({xgp, ygp});
@@ -574,7 +578,7 @@ void FlexGRWorker::initNet_initNodes(grNet* net, frNode* fRoot)
   std::map<grNode*, frNode*, frBlockObjectComp> gr2FrPinNode;
   // parent grNode to children frNode
   std::deque<std::pair<grNode*, frNode*>> nodeQ;
-  nodeQ.push_back(std::make_pair(nullptr, fRoot));
+  nodeQ.emplace_back(nullptr, fRoot);
 
   grNode* parent = nullptr;
   frNode* child = nullptr;
@@ -670,7 +674,7 @@ void FlexGRWorker::initNet_initNodes(grNet* net, frNode* fRoot)
       // add to pinNodePairs
       if (child->getType() == frNodeTypeEnum::frcBoundaryPin
           || child->getType() == frNodeTypeEnum::frcPin) {
-        pinNodePairs.push_back(std::make_pair(child, childNode));
+        pinNodePairs.emplace_back(child, childNode);
         gr2FrPinNode[childNode] = child;
 
         if (isRoot) {
@@ -681,13 +685,13 @@ void FlexGRWorker::initNet_initNodes(grNet* net, frNode* fRoot)
 
     // push edge to queue
     if (needGenParentGCellNode) {
-      nodeQ.push_back(std::make_pair(newNode, child));
+      nodeQ.emplace_back(newNode, child);
     } else if (needGenChildGCellNode) {
-      nodeQ.push_back(std::make_pair(newNode, child));
+      nodeQ.emplace_back(newNode, child);
     } else {
       if (isRoot || child->getType() == frNodeTypeEnum::frcSteiner) {
         for (auto grandChild : child->getChildren()) {
-          nodeQ.push_back(std::make_pair(newNode, grandChild));
+          nodeQ.emplace_back(newNode, grandChild);
         }
       }
     }
@@ -883,7 +887,7 @@ void FlexGRWorker::initNet_initPinGCellNodes(grNet* net)
     }
 
     if (gcellNode) {
-      pinGCellNodePairs.push_back(std::make_pair(node, gcellNode));
+      pinGCellNodePairs.emplace_back(node, gcellNode);
       if (gcell2PinNodes.find(gcellNode) == gcell2PinNodes.end()) {
         pinGCellNodes.push_back(gcellNode);
       }
@@ -1168,3 +1172,5 @@ void FlexGRWorker::initGridGraph_fromCMap()
     }
   }
 }
+
+}  // namespace drt

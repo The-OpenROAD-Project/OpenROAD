@@ -29,7 +29,7 @@
 #include "db/obj/frNode.h"
 #include "gr/FlexGR.h"
 
-using namespace drt;
+namespace drt {
 
 void FlexGRWorker::end()
 {
@@ -234,7 +234,7 @@ void FlexGRWorker::endAddNets_addNet(grNet* net, frNet* fnet)
 
   // start bfs deep copy nodes from gr to fr
   std::deque<std::pair<frNode*, grNode*>> nodeQ;
-  nodeQ.push_back(std::make_pair(nullptr, rootNode));
+  nodeQ.emplace_back(nullptr, rootNode);
 
   while (!nodeQ.empty()) {
     auto parentFrNode = nodeQ.front().first;
@@ -317,7 +317,7 @@ void FlexGRWorker::endAddNets_addNet(grNet* net, frNet* fnet)
 
     // push grand children to queue
     for (auto grandChild : childGRNode->getChildren()) {
-      nodeQ.push_back(std::make_pair(childFrNode, grandChild));
+      nodeQ.emplace_back(childFrNode, grandChild);
     }
   }
 }
@@ -455,3 +455,5 @@ void FlexGRWorker::cleanup()
   owner2nets_.clear();
   rq_.cleanup();
 }
+
+}  // namespace drt
