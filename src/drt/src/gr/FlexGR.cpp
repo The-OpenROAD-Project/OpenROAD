@@ -381,7 +381,7 @@ void FlexGR::searchRepair(int iter,
         // multi thread
         ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
-        for (int i = 0; i < (int) workersInBatch.size(); i++) { // NOLINT
+        for (int i = 0; i < (int) workersInBatch.size(); i++) {  // NOLINT
           try {
             workersInBatch[i]->main_mt();
           } catch (...) {
@@ -1884,7 +1884,7 @@ void FlexGR::layerAssign()
     {
       if (left.first == right.first) {
         return (left.second->getId() < right.second->getId());
-      } 
+      }
       return (left.first < right.first);
     }
   };

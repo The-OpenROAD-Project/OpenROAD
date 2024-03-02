@@ -91,7 +91,7 @@ bool FlexGRGridGraph::search(std::vector<FlexMazeIdx>& connComps,
     if (isDst(currGrid.x(), currGrid.y(), currGrid.z())) {
       traceBackPath(currGrid, path, connComps, ccMazeIdx1, ccMazeIdx2);
       return true;
-    } 
+    }
     // expand and update wavefront
     expandWavefront(currGrid, dstMazeIdx1, dstMazeIdx2, centerPt);
   }
@@ -271,7 +271,7 @@ bool FlexGRGridGraph::isExpandable(const FlexGRWavefrontGrid& currGrid,
       || getPrevAstarNodeDir(gridX, gridY, gridZ) != frDirEnum::UNKNOWN
       || currGrid.getLastDir() == dir) {
     return false;
-  } 
+  }
   return true;
 }
 
