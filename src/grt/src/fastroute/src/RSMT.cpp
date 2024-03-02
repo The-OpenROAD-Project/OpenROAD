@@ -699,11 +699,19 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
         coeffV = noADJ ? 1.2 : coeffADJ(netID);
         cong = netCongestion(netID);
         if (cong) {
-          fluteCongest(
-              netID, net->getPinX(), net->getPinY(), flute_accuracy, coeffV, rsmt);
+          fluteCongest(netID,
+                       net->getPinX(),
+                       net->getPinY(),
+                       flute_accuracy,
+                       coeffV,
+                       rsmt);
         } else {
-          fluteNormal(
-              netID, net->getPinX(), net->getPinY(), flute_accuracy, coeffV, rsmt);
+          fluteNormal(netID,
+                      net->getPinX(),
+                      net->getPinY(),
+                      flute_accuracy,
+                      coeffV,
+                      rsmt);
         }
         if (d > 3) {
           numShift += edgeShiftNew(rsmt, netID);
@@ -713,8 +721,12 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
         if (noADJ || HTreeSuite(netID)) {
           coeffV = 1.2;
         }
-        fluteNormal(
-            netID, net->getPinX(), net->getPinY(), flute_accuracy, coeffV, rsmt);
+        fluteNormal(netID,
+                    net->getPinX(),
+                    net->getPinY(),
+                    flute_accuracy,
+                    coeffV,
+                    rsmt);
       }
     }
     if (debug_->isOn() && debug_->steinerTree_
