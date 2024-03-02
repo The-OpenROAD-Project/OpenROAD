@@ -164,8 +164,7 @@ class TritonRoute
   frDebugSettings* getDebugSettings() const { return debug_.get(); }
   // This runs a serialized worker from file_name.  It is intended
   // for debugging and not general usage.
-  std::string runDRWorker(const std::string& workerStr,
-                          FlexDRViaData* viaData);
+  std::string runDRWorker(const std::string& workerStr, FlexDRViaData* viaData);
   void debugSingleWorker(const std::string& dumpDir, const std::string& drcRpt);
   void updateGlobals(const char* file_name);
   void resetDb(const char* file_name);
