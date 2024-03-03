@@ -250,10 +250,10 @@ class OpenRoad
   static const char* getVersion();
   static const char* getGitDescribe();
 
-  static const bool getGPUCompileOption();
-  static const bool getPythonCompileOption();
-  static const bool getGUICompileOption();
-  static const bool getChartsCompileOption();
+  static bool getGPUCompileOption();
+  static bool getPythonCompileOption();
+  static bool getGUICompileOption();
+  static bool getChartsCompileOption();
 
  protected:
   ~OpenRoad();

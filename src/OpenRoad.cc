@@ -630,22 +630,22 @@ const char* OpenRoad::getGitDescribe()
   return OPENROAD_GIT_DESCRIBE;
 }
 
-const bool OpenRoad::getGPUCompileOption()
+bool OpenRoad::getGPUCompileOption()
 {
   return OPENROAD_GPU_COMPILED;
 }
 
-const bool OpenRoad::getPythonCompileOption()
+bool OpenRoad::getPythonCompileOption()
 {
   return OPENROAD_PYTHON_COMPILED;
 }
 
-const bool OpenRoad::getGUICompileOption()
+bool OpenRoad::getGUICompileOption()
 {
   return OPENROAD_GUI_COMPILED;
 }
 
-const bool OpenRoad::getChartsCompileOption()
+bool OpenRoad::getChartsCompileOption()
 {
   return OPENROAD_CHARTS_COMPILED;
 }
