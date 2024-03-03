@@ -196,7 +196,7 @@ _installCommonDev() {
         ninjaBin=${ninjaPrefix}/bin/ninja
         if [[ ! -d ${ninjaBin} ]]; then
             cd "${baseDir}"
-            curl -L https://github.com/ninja-build/ninja/releases/download/v${ninjaVersion}/ninja-linux.zip -o ninja-linux.zip
+            wget -O ninja-linux.zip https://github.com/ninja-build/ninja/releases/download/v${ninjaVersion}/ninja-linux.zip
             md5sum -c <(echo "${ninjaCheckSum} ninja-linux.zip") || exit 1
             unzip -o ninja-linux.zip -d ${ninjaPrefix}/bin/
             chmod +x ${ninjaBin}

@@ -45,7 +45,8 @@ node {
               tasks["Local centos7 gcc - ${currentSlug}"] = {
                 node {
                     checkout scm
-                    docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside {
+                    docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside('--user root') {
+                      sh "git config --system --add safe.directory '*'"
                       try {
                         stage('Build centos7 gcc') {
                             sh './etc/Build.sh -no-warnings';
@@ -75,8 +76,9 @@ node {
           tasks["Local centos7 gcc without GUI"] = {
             node {
               checkout scm
-              docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside {
+              docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside('--user root') {
                 stage('Build centos7 gcc without GUI') {
+                  sh "git config --system --add safe.directory '*'"
                   sh './etc/Build.sh -no-warnings -no-gui -dir=build-without-gui'; 
                 }
               }
@@ -85,8 +87,9 @@ node {
           tasks["C++ Unit Tests"] = {
             node {
               checkout scm
-              docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside {
+              docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside('--user root') {
                 stage('C++ Unit Tests') {
+                  sh "git config --system --add safe.directory '*'"
                   sh 'cmake -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -GNinja -B build .';
                   sh 'cd build && CLICOLOR_FORCE=1 ninja build_and_test';
                 }
@@ -96,8 +99,9 @@ node {
           tasks["Test C++20 Compile"] = {
             node {
               checkout scm
-              docker.image("openroad/ubuntu-cpp20").inside {
+              docker.image("openroad/ubuntu-cpp20").inside('--user root') {
                 stage('Test C++20 Compile') {
+                  sh "git config --system --add safe.directory '*'"
                   sh "./etc/Build.sh -compiler='clang-16' -cmake='-DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20'";
                 }
               }
@@ -113,8 +117,9 @@ node {
               tasks["Docker ${os} ${compiler}"] = {
                 node {
                   checkout scm
-                  docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside {
+                  docker.image("openroad/ubuntu22.04-dev:${DOCKER_IMAGE_TAG}").inside('--user root') {
                     stage("Pull ${os}") {
+                      sh "git config --system --add safe.directory '*'"
                       retry(3) {
                         try {
                           sh "docker pull openroad/${os}-dev"
