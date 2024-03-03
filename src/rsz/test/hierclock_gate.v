@@ -405,7 +405,7 @@ module hierclock(clk_i, rst_n_i, a_i, b_i, a_ld_i, b_ld_i, a_count_o, a_count_va
   wire clk2_int;
   (* src = "hierclock.v:21.31-21.36" *)
   input clk_i;
-  wire clk_i;
+
   (* src = "hierclock.v:22.31-22.38" *)
   input rst_n_i;
   wire rst_n_i;
