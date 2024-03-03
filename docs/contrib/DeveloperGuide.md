@@ -306,6 +306,8 @@ Our preferred syntax for Doxygen comments can be found in this
 documentation for more information on what you can include in your Doxygen
 comments [here](https://www.doxygen.nl/manual/docblocks.html).
 
+Below shows an example snippet taken from `./src/odb/include/odb/db.h`:
+
 ```cpp
 ///
 /// dbProperty - Int property.
