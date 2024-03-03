@@ -39,8 +39,8 @@
 #include <iostream>
 #include <thread>
 
-#include "ord/Version.hh"
 #include "ord/CompileOptions.hh"
+#include "ord/Version.hh"
 #ifdef ENABLE_PYTHON3
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
@@ -630,22 +630,22 @@ const char* OpenRoad::getGitDescribe()
   return OPENROAD_GIT_DESCRIBE;
 }
 
-const char* OpenRoad::getGPUCompileOption()
+const bool OpenRoad::getGPUCompileOption()
 {
   return OPENROAD_GPU_COMPILED;
 }
 
-const char* OpenRoad::getPythonCompileOption()
+const bool OpenRoad::getPythonCompileOption()
 {
   return OPENROAD_PYTHON_COMPILED;
 }
 
-const char* OpenRoad::getGUICompileOption()
+const bool OpenRoad::getGUICompileOption()
 {
   return OPENROAD_GUI_COMPILED;
 }
 
-const char* OpenRoad::getChartsCompileOption()
+const bool OpenRoad::getChartsCompileOption()
 {
   return OPENROAD_CHARTS_COMPILED;
 }
