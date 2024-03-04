@@ -32,7 +32,7 @@
 
 #include "odb/db.h"
 
-using namespace fr;
+namespace drt {
 
 Fixture::Fixture()
     : logger(std::make_unique<Logger>()),
@@ -463,8 +463,8 @@ frSpacingRangeConstraint* Fixture::makeSpacingRangeConstraint(
 std::shared_ptr<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>
 Fixture::makeLef58SpacingEolParEdgeConstraint(
     frLef58SpacingEndOfLineConstraint* con,
-    fr::frCoord par_space,
-    fr::frCoord par_within,
+    drt::frCoord par_space,
+    drt::frCoord par_within,
     bool two_edges)
 {
   auto parallelEdge
@@ -478,7 +478,7 @@ Fixture::makeLef58SpacingEolParEdgeConstraint(
 std::shared_ptr<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>
 Fixture::makeLef58SpacingEolMinMaxLenConstraint(
     frLef58SpacingEndOfLineConstraint* con,
-    fr::frCoord min_max_length,
+    drt::frCoord min_max_length,
     bool max,
     bool two_sides)
 {
@@ -714,3 +714,5 @@ void Fixture::makeLef58WrongDirSpcConstraint(
   layer->addLef58SpacingWrongDirConstraint(con.get());
   design->getTech()->addUConstraint(std::move(con));
 }
+
+}  // namespace drt

@@ -32,7 +32,7 @@
 
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 enum class frInterpolateType
 {
   frcSnapDown,
@@ -53,57 +53,47 @@ class fr1DLookupTbl
 {
  public:
   // constructor
-  fr1DLookupTbl()  // for serialization
-      : interpolateTypeRow(frInterpolateType::frcSnapDown),
-        interpolateTypeCol(frInterpolateType::frcSnapDown),
-        extrapolateTypeRowLower(frExtrapolateType::frcSnapDown),
-        extrapolateTypeRowUpper(frExtrapolateType::frcSnapDown)
-  {
-  }
+  fr1DLookupTbl() = default;
 
   fr1DLookupTbl(const fr1DLookupTbl& in)
-      : rows(in.rows),
-        vals(in.vals),
-        rowName(in.rowName),
-        interpolateTypeRow(in.interpolateTypeRow),
-        interpolateTypeCol(in.interpolateTypeCol),
-        extrapolateTypeRowLower(in.extrapolateTypeRowLower),
-        extrapolateTypeRowUpper(in.extrapolateTypeRowUpper),
-        lowerBound(in.lowerBound)
+      : rows_(in.rows_),
+        vals_(in.vals_),
+        rowName_(in.rowName_),
+        interpolateTypeRow_(in.interpolateTypeRow_),
+        interpolateTypeCol_(in.interpolateTypeCol_),
+        extrapolateTypeRowLower_(in.extrapolateTypeRowLower_),
+        extrapolateTypeRowUpper_(in.extrapolateTypeRowUpper_),
+        lowerBound_(in.lowerBound_)
   {
   }
   fr1DLookupTbl(const frString& rowNameIn,
                 const frCollection<rowClass>& rowsIn,
                 const frCollection<valClass>& valsIn,
                 bool lowerBoundIn = true)
+      : rows_(rowsIn),
+        vals_(valsIn),
+        rowName_(rowNameIn),
+        extrapolateTypeRowLower_(frExtrapolateType::frcSnapUp),
+        extrapolateTypeRowUpper_(frExtrapolateType::frcSnapUp),
+        lowerBound_(lowerBoundIn)
   {
-    rowName = rowNameIn;
-    rows = rowsIn;
-    vals = valsIn;
-    interpolateTypeRow = frInterpolateType::frcSnapDown;
-    interpolateTypeCol = frInterpolateType::frcSnapDown;
-    extrapolateTypeRowLower = frExtrapolateType::frcSnapUp;
-    extrapolateTypeRowUpper = frExtrapolateType::frcSnapUp;
-    lowerBound = lowerBoundIn;
   }
 
   // getters
-  frString getRowName() const { return rowName; }
-  frCollection<rowClass> getRows() const { return rows; }
-  frCollection<valClass> getValues() const { return vals; }
+  frString getRowName() const { return rowName_; }
+  frCollection<rowClass> getRows() const { return rows_; }
+  frCollection<valClass> getValues() const { return vals_; }
 
   // others
   valClass find(const rowClass& rowVal) const
   {
-    valClass retVal;
     frUInt4 rowIdx = getRowIdx(rowVal);
-    retVal = vals[rowIdx];
-    return retVal;
+    return vals_[rowIdx];
   }
-  valClass findMin() const { return vals.front(); }
-  valClass findMax() const { return vals.back(); }
-  rowClass getMinRow() const { return rows.front(); }
-  rowClass getMaxRow() const { return rows.back(); }
+  valClass findMin() const { return vals_.front(); }
+  valClass findMax() const { return vals_.back(); }
+  rowClass getMinRow() const { return rows_.front(); }
+  rowClass getMaxRow() const { return rows_.back(); }
 
  private:
   frUInt4 getRowIdx(const rowClass& rowVal) const
@@ -111,50 +101,36 @@ class fr1DLookupTbl
     // currently only implement spacingtable style
     // interpolation
     frUInt4 retIdx;
-    if (rowVal >= rows.front() && rowVal <= rows.back()) {
-      if (lowerBound) {
-        // if (interpolateTypeRow == frInterpolateType::frcSnapDown) {
-        auto pos = lower_bound(rows.begin(), rows.end(), rowVal);
-        // if (*pos != rowVal && pos != rows.begin()) {
-        //   --pos;
-        // }
-        if (pos != rows.begin()) {
+    if (rowVal >= rows_.front() && rowVal <= rows_.back()) {
+      if (lowerBound_) {
+        auto pos = lower_bound(rows_.begin(), rows_.end(), rowVal);
+        if (pos != rows_.begin()) {
           --pos;
         }
-        retIdx = pos - rows.begin();
+        retIdx = pos - rows_.begin();
       } else {
-        auto pos = upper_bound(rows.begin(), rows.end(), rowVal);
+        auto pos = upper_bound(rows_.begin(), rows_.end(), rowVal);
         retIdx
-            = std::min((frUInt4) (pos - rows.begin()), (frUInt4) rows.size());
+            = std::min((frUInt4) (pos - rows_.begin()), (frUInt4) rows_.size());
       }
-    }
-    // lower extrapolation
-    else if (rowVal < rows.front()) {
-      if (true) {
-        // if (extrapolateTypeRowLower == frExtrapolateType::frcSnapUp) {
-        retIdx = 0;
-      }
-    }
-    // upper extrapolation
-    else {
-      if (true) {
-        // if (extrapolateTypeRowUpper == frExtrapolateType::frcSnapDown) {
-        retIdx = rows.size() - 1;
-      }
+    } else if (rowVal < rows_.front()) {  // lower extrapolation
+      retIdx = 0;
+    } else {  // upper extrapolation
+      retIdx = rows_.size() - 1;
     }
     return retIdx;
   }
 
-  frCollection<rowClass> rows;
-  frCollection<valClass> vals;
+  frCollection<rowClass> rows_;
+  frCollection<valClass> vals_;
 
-  frString rowName;
+  frString rowName_;
 
-  frInterpolateType interpolateTypeRow;
-  frInterpolateType interpolateTypeCol;
-  frExtrapolateType extrapolateTypeRowLower;
-  frExtrapolateType extrapolateTypeRowUpper;
-  bool lowerBound;
+  frInterpolateType interpolateTypeRow_{frInterpolateType::frcSnapDown};
+  frInterpolateType interpolateTypeCol_{frInterpolateType::frcSnapDown};
+  frExtrapolateType extrapolateTypeRowLower_{frExtrapolateType::frcSnapDown};
+  frExtrapolateType extrapolateTypeRowUpper_{frExtrapolateType::frcSnapDown};
+  bool lowerBound_{false};
 };
 
 // fr2DLookupTbl
@@ -164,27 +140,19 @@ class fr2DLookupTbl
  public:
   friend class frLef58SpacingTableConstraint;
   // constructor
-  fr2DLookupTbl()
-      : interpolateTypeRow(frInterpolateType::frcSnapDown),
-        interpolateTypeCol(frInterpolateType::frcSnapDown),
-        extrapolateTypeRowLower(frExtrapolateType::frcSnapDown),
-        extrapolateTypeRowUpper(frExtrapolateType::frcSnapDown),
-        extrapolateTypeColLower(frExtrapolateType::frcSnapDown),
-        extrapolateTypeColUpper(frExtrapolateType::frcSnapDown)
-  {
-  }
+  fr2DLookupTbl() = default;
   fr2DLookupTbl(const fr2DLookupTbl& in)
-      : rows(in.rows),
-        cols(in.cols),
-        vals(in.vals),
-        rowName(in.rowName),
-        colName(in.colName),
-        interpolateTypeRow(in.interpolateTypeRow),
-        interpolateTypeCol(in.interpolateTypeCol),
-        extrapolateTypeRowLower(in.extrapolateTypeRowLower),
-        extrapolateTypeRowUpper(in.extrapolateTypeRowUpper),
-        extrapolateTypeColLower(in.extrapolateTypeColLower),
-        extrapolateTypeColUpper(in.extrapolateTypeColUpper)
+      : rows_(in.rows_),
+        cols_(in.cols_),
+        vals_(in.vals_),
+        rowName_(in.rowName_),
+        colName_(in.colName_),
+        interpolateTypeRow_(in.interpolateTypeRow_),
+        interpolateTypeCol_(in.interpolateTypeCol_),
+        extrapolateTypeRowLower_(in.extrapolateTypeRowLower_),
+        extrapolateTypeRowUpper_(in.extrapolateTypeRowUpper_),
+        extrapolateTypeColLower_(in.extrapolateTypeColLower_),
+        extrapolateTypeColUpper_(in.extrapolateTypeColUpper_)
   {
   }
   fr2DLookupTbl(const frString& rowNameIn,
@@ -192,27 +160,23 @@ class fr2DLookupTbl
                 const frString& colNameIn,
                 const frCollection<colClass>& colsIn,
                 const frCollection<frCollection<valClass>>& valsIn)
+      : rows_(rowsIn),
+        cols_(colsIn),
+        vals_(valsIn),
+        rowName_(rowNameIn),
+        colName_(colNameIn),
+        extrapolateTypeRowLower_(frExtrapolateType::frcSnapUp),
+        extrapolateTypeRowUpper_(frExtrapolateType::frcSnapUp)
   {
-    rowName = rowNameIn;
-    rows = rowsIn;
-    colName = colNameIn;
-    cols = colsIn;
-    vals = valsIn;
-    interpolateTypeRow = frInterpolateType::frcSnapDown;
-    interpolateTypeCol = frInterpolateType::frcSnapDown;
-    extrapolateTypeRowLower = frExtrapolateType::frcSnapUp;
-    extrapolateTypeRowUpper = frExtrapolateType::frcSnapUp;
-    extrapolateTypeColLower = frExtrapolateType::frcSnapDown;
-    extrapolateTypeColUpper = frExtrapolateType::frcSnapDown;
   }
 
   // getters
-  frString getRowName() const { return rowName; }
-  frString getColName() const { return colName; }
+  frString getRowName() const { return rowName_; }
+  frString getColName() const { return colName_; }
 
-  frCollection<rowClass> getRows() { return rows; }
-  frCollection<colClass> getCols() { return cols; }
-  frCollection<frCollection<valClass>> getValues() { return vals; }
+  frCollection<rowClass> getRows() { return rows_; }
+  frCollection<colClass> getCols() { return cols_; }
+  frCollection<frCollection<valClass>> getValues() { return vals_; }
 
   // others
   valClass find(const rowClass& rowVal, const colClass& colVal) const
@@ -220,27 +184,25 @@ class fr2DLookupTbl
     valClass retVal;
     frUInt4 rowIdx = getRowIdx(rowVal);
     frUInt4 colIdx = getColIdx(colVal);
-    // std::cout << "rowIdx = " << rowIdx << ", colIdx = " << colIdx <<
-    // std::endl <<std::flush;
-    retVal = vals[rowIdx][colIdx];
+    retVal = vals_[rowIdx][colIdx];
     return retVal;
   }
-  valClass findMin() const { return vals.front().front(); }
-  valClass findMax() const { return vals.back().back(); }
+  valClass findMin() const { return vals_.front().front(); }
+  valClass findMax() const { return vals_.back().back(); }
 
   // debug
   void printTbl() const
   {
-    std::cout << "rowName: " << rowName << std::endl;
-    for (auto& m : rows) {
+    std::cout << "rowName: " << rowName_ << std::endl;
+    for (auto& m : rows_) {
       std::cout << m << " ";
     }
-    std::cout << "\n colName: " << colName << std::endl;
-    for (auto& m : cols) {
+    std::cout << "\n colName: " << colName_ << std::endl;
+    for (auto& m : cols_) {
       std::cout << m << " ";
     }
     std::cout << "\n vals: " << std::endl;
-    for (auto& m : vals) {
+    for (auto& m : vals_) {
       for (auto& n : m) {
         std::cout << n << " ";
       }
@@ -252,29 +214,29 @@ class fr2DLookupTbl
   frUInt4 getRowIdx(const rowClass& rowVal) const
   {
     // currently only implement spacingtable style
-    auto pos = --(std::lower_bound(rows.begin(), rows.end(), rowVal));
-    return std::max(0, (int) std::distance(rows.begin(), pos));
+    auto pos = --(std::lower_bound(rows_.begin(), rows_.end(), rowVal));
+    return std::max(0, (int) std::distance(rows_.begin(), pos));
   }
   frUInt4 getColIdx(const colClass& colVal) const
   {
     // currently only implement spacingtable style
-    auto pos = --(std::lower_bound(cols.begin(), cols.end(), colVal));
-    return std::max(0, (int) std::distance(cols.begin(), pos));
+    auto pos = --(std::lower_bound(cols_.begin(), cols_.end(), colVal));
+    return std::max(0, (int) std::distance(cols_.begin(), pos));
   }
 
-  frCollection<rowClass> rows;
-  frCollection<colClass> cols;
-  frCollection<frCollection<valClass>> vals;
+  frCollection<rowClass> rows_;
+  frCollection<colClass> cols_;
+  frCollection<frCollection<valClass>> vals_;
 
-  frString rowName;
-  frString colName;
+  frString rowName_;
+  frString colName_;
 
-  frInterpolateType interpolateTypeRow;
-  frInterpolateType interpolateTypeCol;
-  frExtrapolateType extrapolateTypeRowLower;
-  frExtrapolateType extrapolateTypeRowUpper;
-  frExtrapolateType extrapolateTypeColLower;
-  frExtrapolateType extrapolateTypeColUpper;
+  frInterpolateType interpolateTypeRow_{frInterpolateType::frcSnapDown};
+  frInterpolateType interpolateTypeCol_{frInterpolateType::frcSnapDown};
+  frExtrapolateType extrapolateTypeRowLower_{frExtrapolateType::frcSnapDown};
+  frExtrapolateType extrapolateTypeRowUpper_{frExtrapolateType::frcSnapDown};
+  frExtrapolateType extrapolateTypeColLower_{frExtrapolateType::frcSnapDown};
+  frExtrapolateType extrapolateTypeColUpper_{frExtrapolateType::frcSnapDown};
 };
 
-}  // namespace fr
+}  // namespace drt

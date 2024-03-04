@@ -4185,6 +4185,10 @@ void HierRTLMP::mergeNets(std::vector<BundledNet>& nets)
   }
   nets.clear();
   nets = merged_nets;
+
+  if (graphics_) {
+    graphics_->setBundledNets(nets);
+  }
 }
 
 // Multilevel macro placement without bus planning
@@ -5508,6 +5512,10 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
   }    // end macro cluster
   // set global configuration
 
+  if (graphics_) {
+    graphics_->setBundledNets(nets);
+  }
+
   // Use exchange more often when there are more instances of a common
   // master.
   const float exchange_swap_prob
@@ -6457,6 +6465,11 @@ void HierRTLMP::setBusPlanningOn(bool bus_planning_on)
 void HierRTLMP::setDebug(std::unique_ptr<Mpl2Observer>& graphics)
 {
   graphics_ = std::move(graphics);
+}
+
+void HierRTLMP::setDebugShowBundledNets(bool show_bundled_nets)
+{
+  graphics_->setShowBundledNets(show_bundled_nets);
 }
 
 }  // namespace mpl2

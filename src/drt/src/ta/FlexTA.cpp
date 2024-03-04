@@ -41,7 +41,7 @@
 #include "global.h"
 #include "utl/exception.h"
 
-namespace fr {
+namespace drt {
 
 int FlexTAWorker::main_mt()
 {
@@ -351,4 +351,4 @@ int FlexTA::main()
   return 0;
 }
 
-}  // namespace fr
+}  // namespace drt
