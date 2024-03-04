@@ -29,7 +29,7 @@
 
 #include <iostream>
 
-namespace fr {
+namespace drt {
 
 std::ostream& operator<<(std::ostream& os, frMinstepTypeEnum type)
 {
@@ -297,4 +297,4 @@ std::ostream& operator<<(std::ostream& os, frConstraintTypeEnum type)
   return os << "Bad frConstraintTypeEnum";
 }
 
-}  // namespace fr
+}  // namespace drt

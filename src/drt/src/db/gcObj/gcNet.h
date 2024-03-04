@@ -36,20 +36,18 @@
 #include "db/obj/frInstBlockage.h"
 #include "db/obj/frNet.h"
 
-namespace fr {
+namespace drt {
 class frNet;
 class gcNet : public gcBlockObject
 {
  public:
   // constructors
-  gcNet(int numLayers)
-      : gcBlockObject(),
-        fixedPolygons_(numLayers),
+  gcNet(const int numLayers)
+      : fixedPolygons_(numLayers),
         routePolygons_(numLayers),
         fixedRectangles_(numLayers),
         routeRectangles_(numLayers),
         pins_(numLayers),
-        owner_(nullptr),
         taperedRects(numLayers),
         nonTaperedRects(numLayers)
   {
@@ -59,7 +57,7 @@ class gcNet : public gcBlockObject
   {
     gtl::rectangle_data<frCoord> rect(
         box.xMin(), box.yMin(), box.xMax(), box.yMax());
-    using namespace gtl::operators;
+    using gtl::operators::operator+=;
     if (isFixed) {
       fixedPolygons_[layerNum] += rect;
     } else {
@@ -116,9 +114,8 @@ class gcNet : public gcBlockObject
   {
     if (isFixed) {
       return fixedPolygons_;
-    } else {
-      return routePolygons_;
     }
+    return routePolygons_;
   }
   const gtl::polygon_90_set_data<frCoord>& getPolygons(frLayerNum layerNum,
                                                        bool isFixed
@@ -126,18 +123,16 @@ class gcNet : public gcBlockObject
   {
     if (isFixed) {
       return fixedPolygons_[layerNum];
-    } else {
-      return routePolygons_[layerNum];
     }
+    return routePolygons_[layerNum];
   }
   const std::vector<std::vector<gtl::rectangle_data<frCoord>>>& getRectangles(
       bool isFixed = false) const
   {
     if (isFixed) {
       return fixedRectangles_;
-    } else {
-      return routeRectangles_;
     }
+    return routeRectangles_;
   }
   const std::vector<gtl::rectangle_data<frCoord>>& getRectangles(
       frLayerNum layerNum,
@@ -145,9 +140,8 @@ class gcNet : public gcBlockObject
   {
     if (isFixed) {
       return fixedRectangles_[layerNum];
-    } else {
-      return routeRectangles_[layerNum];
     }
+    return routeRectangles_[layerNum];
   }
   const std::vector<std::vector<std::unique_ptr<gcPin>>>& getPins() const
   {
@@ -266,7 +260,7 @@ class gcNet : public gcBlockObject
   std::vector<std::vector<gtl::rectangle_data<frCoord>>>
       routeRectangles_;  // only cut layer
   std::vector<std::vector<std::unique_ptr<gcPin>>> pins_;
-  frBlockObject* owner_;
+  frBlockObject* owner_{nullptr};
   std::vector<std::vector<Rect>> taperedRects;     //(only routing layer)
   std::vector<std::vector<Rect>> nonTaperedRects;  //(only routing layer)
   // A non-tapered rect within a tapered max rectangle still require nondefault
@@ -275,4 +269,4 @@ class gcNet : public gcBlockObject
 
   void init();
 };
-}  // namespace fr
+}  // namespace drt

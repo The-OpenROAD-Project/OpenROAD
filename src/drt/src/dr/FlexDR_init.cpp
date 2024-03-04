@@ -31,7 +31,7 @@
 #include "dr/FlexDR.h"
 #include "frRTree.h"
 
-namespace fr {
+namespace drt {
 
 namespace bgi = boost::geometry::index;
 
@@ -3292,4 +3292,4 @@ frCoord FlexDRWorker::snapCoordToManufacturingGrid(const frCoord coord,
   return onGridCoord;
 }
 
-}  // namespace fr
+}  // namespace drt

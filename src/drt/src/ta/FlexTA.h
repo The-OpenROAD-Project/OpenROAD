@@ -35,7 +35,7 @@
 #include "db/taObj/taPin.h"
 #include "frDesign.h"
 
-namespace fr {
+namespace drt {
 class FlexTAGraphics;
 
 class FlexTA
@@ -316,4 +316,4 @@ class FlexTAWorker
   friend class FlexTA;
 };
 
-}  // namespace fr
+}  // namespace drt
