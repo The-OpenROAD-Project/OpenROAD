@@ -490,6 +490,16 @@ void dbMTerm::getDiffArea(std::vector<std::pair<double, dbTechLayer*>>& data)
       mterm->getDatabase(), mterm->_diffarea, data);
 }
 
+bool dbMTerm::hasDiffArea()
+{
+  std::vector<std::pair<double, dbTechLayer*>> diff_areas;
+  getDiffArea(diff_areas);
+  if (diff_areas.size() > 0)
+    return true;
+  else
+    return false;
+}
+
 void dbMTerm::writeAntennaLef(lefout& writer) const
 {
   _dbMTerm* mterm = (_dbMTerm*) this;

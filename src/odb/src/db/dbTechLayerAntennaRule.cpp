@@ -985,6 +985,16 @@ void _dbTechAntennaPinModel::getAntennaValues(
   }
 }
 
+bool dbTechAntennaPinModel::hasGateArea()
+{
+  vector<std::pair<double, dbTechLayer*>> gate_areas;
+  getGateArea(gate_areas);
+  if (gate_areas.size() > 0)
+    return true;
+  else
+    return false;
+}
+
 void dbTechAntennaPinModel::getGateArea(
     std::vector<std::pair<double, dbTechLayer*>>& data)
 {
