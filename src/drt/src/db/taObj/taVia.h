@@ -35,7 +35,7 @@
 #include "db/tech/frViaDef.h"
 #include "odb/dbTypes.h"
 
-namespace fr {
+namespace drt {
 class frNet;
 class taRef : public taPinFig
 {
@@ -218,4 +218,4 @@ class taVia : public taRef
   frViaDef* viaDef_{nullptr};
   frBlockObject* owner_{nullptr};
 };
-}  // namespace fr
+}  // namespace drt

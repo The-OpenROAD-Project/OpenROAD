@@ -29,7 +29,7 @@
 
 #include "FlexTA.h"
 
-namespace fr {
+namespace drt {
 
 FlexTAGraphics::FlexTAGraphics(frDebugSettings* settings,
                                frDesign* design,
@@ -117,4 +117,4 @@ bool FlexTAGraphics::guiActive()
   return gui::Gui::enabled();
 }
 
-}  // namespace fr
+}  // namespace drt

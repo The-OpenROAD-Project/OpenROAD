@@ -31,7 +31,7 @@
 #include "db/drObj/drFig.h"
 #include "odb/dbTypes.h"
 
-namespace fr {
+namespace drt {
 
 class drRef : public drPinFig
 {
@@ -55,4 +55,4 @@ class drRef : public drPinFig
   friend class boost::serialization::access;
 };
 
-}  // namespace fr
+}  // namespace drt

@@ -41,7 +41,7 @@
 #include "odb/db.h"
 #include "utl/exception.h"
 
-using namespace fr;
+namespace drt {
 
 using utl::ThreadException;
 
@@ -145,8 +145,9 @@ void FlexGR::main(odb::dbDatabase* db)
                RipUpMode::ALL,
                /*TEST*/ false);
   reportCong3D();
-  if (db != nullptr)
+  if (db != nullptr) {
     updateDbCongestion(db, cmap_.get());
+  }
 
   writeToGuide();
 
@@ -243,10 +244,10 @@ void FlexGR::searchRepairMacro(int iter,
 
   // omp_set_num_threads(1);
   // currently this is not mt-safe
-  for (int i = 0; i < (int) uworkers.size(); i++) {
-    uworkers[i]->initBoundary();
-    uworkers[i]->main_mt();
-    uworkers[i]->end();
+  for (auto& worker : uworkers) {
+    worker->initBoundary();
+    worker->main_mt();
+    worker->end();
   }
   uworkers.clear();
 }
@@ -374,13 +375,13 @@ void FlexGR::searchRepair(int iter,
       for (auto& workersInBatch : workerBatch) {
         // single thread
         // split cross-worker boundary pathSeg
-        for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          workersInBatch[i]->initBoundary();
+        for (auto& worker : workersInBatch) {
+          worker->initBoundary();
         }
         // multi thread
         ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
-        for (int i = 0; i < (int) workersInBatch.size(); i++) {
+        for (int i = 0; i < (int) workersInBatch.size(); i++) {  // NOLINT
           try {
             workersInBatch[i]->main_mt();
           } catch (...) {
@@ -389,8 +390,8 @@ void FlexGR::searchRepair(int iter,
         }
         exception.rethrow();
         // single thread
-        for (int i = 0; i < (int) workersInBatch.size(); i++) {
-          workersInBatch[i]->end();
+        for (auto& worker : workersInBatch) {
+          worker->end();
         }
         workersInBatch.clear();
       }
@@ -653,14 +654,15 @@ void FlexGR::reportCong3DGolden(FlexGRCMap* baseCMap)
 void FlexGR::updateDbCongestion(odb::dbDatabase* db, FlexGRCMap* cmap)
 {
   if (db->getChip() == nullptr || db->getChip()->getBlock() == nullptr
-      || db->getTech() == nullptr)
+      || db->getTech() == nullptr) {
     logger_->error(utl::DRT, 201, "Must load design before global routing.");
+  }
   auto block = db->getChip()->getBlock();
   auto tech = db->getTech();
   auto gcell = block->getGCellGrid();
-  if (gcell == nullptr)
+  if (gcell == nullptr) {
     gcell = odb::dbGCellGrid::create(block);
-  else {
+  } else {
     logger_->warn(
         utl::DRT,
         203,
@@ -689,7 +691,7 @@ void FlexGR::updateDbCongestion(odb::dbDatabase* db, FlexGRCMap* cmap)
       cmapLayerIdx++;
       continue;
     }
-    for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++)
+    for (unsigned xIdx = 0; xIdx < xgp->getCount(); xIdx++) {
       for (unsigned yIdx = 0; yIdx < ygp->getCount(); yIdx++) {
         auto horizontal_capacity
             = cmap->getRawSupply(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
@@ -703,6 +705,7 @@ void FlexGR::updateDbCongestion(odb::dbDatabase* db, FlexGRCMap* cmap)
             layer, xIdx, yIdx, horizontal_capacity + vertical_capacity);
         gcell->setUsage(layer, xIdx, yIdx, horizontal_usage + vertical_usage);
       }
+    }
     cmapLayerIdx++;
   }
 }
@@ -1137,8 +1140,7 @@ void FlexGR::initGR_patternRoute_init(
         continue;
       }
 
-      patternRoutes.push_back(
-          std::make_pair(std::make_pair(node.get(), parentNode), 0));
+      patternRoutes.emplace_back(std::make_pair(node.get(), parentNode), 0);
     }
   }
 }
@@ -1549,7 +1551,7 @@ void FlexGR::initGR_genTopology()
 // to be followed by layer assignment
 void FlexGR::initGR_genTopology_net(frNet* net)
 {
-  if (net->getNodes().size() == 0) {
+  if (net->getNodes().empty()) {
     return;
   }
 
@@ -1843,7 +1845,7 @@ void FlexGR::initGR_genTopology_net(frNet* net)
                 << net->getName() << '\n';
     }
   }
-  if (nodes.size() > 1 && nodes[0]->getChildren().size() == 0) {
+  if (nodes.size() > 1 && nodes[0]->getChildren().empty()) {
     std::cout << "Error: root does not have any children\n";
   }
 }
@@ -1871,7 +1873,7 @@ void FlexGR::layerAssign()
     }
     int numRPins = net->getRPins().size();
     int ratio = ((urx - llx) + (ury - lly)) / (numRPins);
-    sortedNets.push_back(std::make_pair(ratio, net));
+    sortedNets.emplace_back(ratio, net);
   }
 
   // sort
@@ -1882,9 +1884,8 @@ void FlexGR::layerAssign()
     {
       if (left.first == right.first) {
         return (left.second->getId() < right.second->getId());
-      } else {
-        return (left.first < right.first);
       }
+      return (left.first < right.first);
     }
   };
   sort(sortedNets.begin(), sortedNets.end(), sort_net());
@@ -2535,8 +2536,9 @@ void FlexGR::updateDb()
       }
     }
     auto dbGuides = dbNet->getGuides();
-    if (dbGuides.orderReversed() && dbGuides.reversible())
+    if (dbGuides.orderReversed() && dbGuides.reversible()) {
       dbGuides.reverse();
+    }
   }
 }
 
@@ -2552,3 +2554,5 @@ void FlexGRWorker::main_mt()
   init();
   route();
 }
+
+}  // namespace drt

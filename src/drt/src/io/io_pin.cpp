@@ -28,7 +28,7 @@
 
 #include "io.h"
 
-namespace fr {
+namespace drt {
 
 void io::Parser::instAnalysis()
 {
@@ -137,4 +137,4 @@ void io::Parser::instAnalysis()
   }
 }
 
-}  // namespace fr
+}  // namespace drt

@@ -34,7 +34,7 @@
 
 #include "dr/FlexDR.h"
 
-namespace fr {
+namespace drt {
 
 void FlexGridGraph::initGrids(
     const std::map<frCoord, std::map<frLayerNum, frTrackPattern*>>& xMap,
@@ -529,4 +529,4 @@ void FlexGridGraph::print() const
   }
 }
 
-}  // namespace fr
+}  // namespace drt

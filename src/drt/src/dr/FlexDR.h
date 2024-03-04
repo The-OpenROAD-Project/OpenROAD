@@ -55,7 +55,7 @@ namespace utl {
 class Logger;
 }
 
-namespace fr {
+namespace drt {
 
 class frConstraint;
 struct SearchRepairArgs;
@@ -91,7 +91,7 @@ class FlexDR
   };
 
   // constructors
-  FlexDR(triton_route::TritonRoute* router,
+  FlexDR(TritonRoute* router,
          frDesign* designIn,
          Logger* loggerIn,
          odb::dbDatabase* dbIn);
@@ -132,7 +132,7 @@ class FlexDR
   void reportGuideCoverage();
 
  private:
-  triton_route::TritonRoute* router_;
+  TritonRoute* router_;
   frDesign* design_;
   Logger* logger_;
   odb::dbDatabase* db_;
@@ -982,4 +982,4 @@ class FlexDRWorker
   void serialize(Archive& ar, unsigned int version);
   friend class boost::serialization::access;
 };
-}  // namespace fr
+}  // namespace drt

@@ -32,7 +32,7 @@
 #include "db/obj/frBPin.h"
 #include "db/obj/frTerm.h"
 
-namespace fr {
+namespace drt {
 class frBlock;
 
 class frBTerm : public frTerm
@@ -111,4 +111,4 @@ class frBTerm : public frTerm
   bool isAboveTopLayer_{false};
 };
 
-}  // namespace fr
+}  // namespace drt

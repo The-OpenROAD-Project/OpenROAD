@@ -32,7 +32,7 @@
 #include "db/infra/frPoint.h"
 #include "dr/FlexMazeTypes.h"
 
-namespace fr {
+namespace drt {
 
 class drPin;
 class frViaDef;
@@ -110,4 +110,4 @@ class drAccessPattern : public drBlockObject
   friend class boost::serialization::access;
 };
 
-}  // namespace fr
+}  // namespace drt

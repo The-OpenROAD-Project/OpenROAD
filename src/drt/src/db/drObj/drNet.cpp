@@ -32,7 +32,7 @@
 #include "dr/FlexDR.h"
 #include "serialization.h"
 
-namespace fr {
+namespace drt {
 
 void drNet::setBestRouteConnFigs()
 {
@@ -156,4 +156,4 @@ template void drNet::serialize<frIArchive>(frIArchive& ar,
 template void drNet::serialize<frOArchive>(frOArchive& ar,
                                            const unsigned int file_version);
 
-}  // namespace fr
+}  // namespace drt

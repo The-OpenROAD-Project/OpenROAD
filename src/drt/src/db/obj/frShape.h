@@ -31,7 +31,7 @@
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frFig.h"
 
-namespace fr {
+namespace drt {
 class frNet;
 class frPin;
 class drPathSeg;
@@ -648,4 +648,4 @@ class frPathSeg : public frShape
 
   friend class boost::serialization::access;
 };
-}  // namespace fr
+}  // namespace drt

@@ -39,7 +39,7 @@ namespace odb {
 class dbTechLayerCutSpacingTableDefRule;
 }
 
-namespace fr {
+namespace drt {
 class FlexGCWorkerRegionQuery
 {
  public:
@@ -537,4 +537,4 @@ class FlexGCWorker::Impl
   bool isOppositeDir(gcCorner* corner, gcSegment* seg);
   bool isWrongDir(gcSegment* edge);
 };
-}  // namespace fr
+}  // namespace drt

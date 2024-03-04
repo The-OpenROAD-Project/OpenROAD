@@ -31,7 +31,7 @@
 #include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
 
-namespace fr {
+namespace drt {
 class frTrackPattern : public frBlockObject
 {
  public:
@@ -76,4 +76,4 @@ class frTrackPattern : public frBlockObject
   frLayerNum layerNum_{0};
 };
 
-}  // namespace fr
+}  // namespace drt

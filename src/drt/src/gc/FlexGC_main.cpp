@@ -32,7 +32,7 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
 
-namespace fr {
+namespace drt {
 
 using polygon_t = bg::model::polygon<point_t>;
 using mpolygon_t = bg::model::multi_polygon<polygon_t>;
@@ -3938,4 +3938,4 @@ int FlexGCWorker::Impl::main()
   return 0;
 }
 
-}  // namespace fr
+}  // namespace drt

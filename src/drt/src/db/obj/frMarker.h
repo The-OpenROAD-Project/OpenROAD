@@ -33,7 +33,7 @@
 
 #include "db/obj/frFig.h"
 
-namespace fr {
+namespace drt {
 class frConstraint;
 class frMarker : public frFig
 {
@@ -135,4 +135,4 @@ class frMarker : public frFig
 
   friend class boost::serialization::access;
 };
-}  // namespace fr
+}  // namespace drt

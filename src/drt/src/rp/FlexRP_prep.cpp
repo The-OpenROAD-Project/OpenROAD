@@ -38,7 +38,7 @@
 #include "gc/FlexGC.h"
 #include "odb/db.h"
 
-namespace fr {
+namespace drt {
 
 void FlexRP::prep()
 {
@@ -1716,4 +1716,4 @@ void FlexRP::prep_via2viaPRL(frLayerNum lNum,
   }
 }
 
-}  // namespace fr
+}  // namespace drt

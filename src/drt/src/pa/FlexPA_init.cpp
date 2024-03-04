@@ -34,7 +34,7 @@
 #include "db/infra/frTime.h"
 #include "gc/FlexGC.h"
 
-namespace fr {
+namespace drt {
 
 void FlexPA::initViaRawPriority()
 {
@@ -159,4 +159,4 @@ void FlexPA::initTrackCoords()
   }
 }
 
-}  // namespace fr
+}  // namespace drt

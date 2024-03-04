@@ -30,7 +30,7 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC_impl.h"
 
-namespace fr {
+namespace drt {
 
 bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_isEolEdge(
     gcSegment* edge,
@@ -1347,4 +1347,4 @@ void FlexGCWorker::Impl::checkMetalEndOfLine()
   }
 }
 
-}  // namespace fr
+}  // namespace drt
