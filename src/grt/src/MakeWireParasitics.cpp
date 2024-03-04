@@ -272,7 +272,8 @@ void MakeWireParasitics::makeParasiticsToPin(
   odb::Point grid_pt = pin.getOnGridPosition();
 
   std::vector<std::pair<odb::Point, odb::Point>> ap_positions;
-  bool has_access_points = grouter_->findPinAccessPointPositions(pin, ap_positions);
+  bool has_access_points
+      = grouter_->findPinAccessPointPositions(pin, ap_positions);
   if (has_access_points) {
     auto ap_position = ap_positions.front();
     pt = ap_position.first;
@@ -375,7 +376,8 @@ void MakeWireParasitics::makePartialParasiticsToPin(
   odb::Point grid_pt = pin.getOnGridPosition();
 
   std::vector<std::pair<odb::Point, odb::Point>> ap_positions;
-  bool has_access_points = grouter_->findPinAccessPointPositions(pin, ap_positions);
+  bool has_access_points
+      = grouter_->findPinAccessPointPositions(pin, ap_positions);
   if (has_access_points) {
     auto ap_position = ap_positions.front();
     pt = ap_position.first;

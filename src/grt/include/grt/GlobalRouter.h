@@ -307,7 +307,9 @@ class GlobalRouter : public ant::GlobalRouteSource
                                               odb::Point& pos_on_grid);
   int getNetMaxRoutingLayer(const Net* net);
   void findPins(Net* net);
-  void findFastRoutePins(Net* net, std::vector<RoutePt>& pins_on_grid, int& root_idx);
+  void findFastRoutePins(Net* net,
+                         std::vector<RoutePt>& pins_on_grid,
+                         int& root_idx);
   float getNetSlack(Net* net);
   odb::dbTechLayer* getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);

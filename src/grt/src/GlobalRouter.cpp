@@ -443,7 +443,8 @@ void GlobalRouter::initCoreGrid(int max_routing_layer)
   }
 }
 
-void GlobalRouter::initRoutingLayers(int min_routing_layer, int max_routing_layer)
+void GlobalRouter::initRoutingLayers(int min_routing_layer,
+                                     int max_routing_layer)
 {
   odb::dbTech* tech = db_->getTech();
 
@@ -665,8 +666,8 @@ int GlobalRouter::getNetMaxRoutingLayer(const Net* net)
 }
 
 void GlobalRouter::findFastRoutePins(Net* net,
-                            std::vector<RoutePt>& pins_on_grid,
-                            int& root_idx)
+                                     std::vector<RoutePt>& pins_on_grid,
+                                     int& root_idx)
 {
   root_idx = 0;
   const int max_routing_layer = getNetMaxRoutingLayer(net);
@@ -767,7 +768,7 @@ void GlobalRouter::initNetlist(std::vector<Net*>& nets)
 }
 
 bool GlobalRouter::pinPositionsChanged(Net* net,
-                                     std::vector<odb::Point>& last_pos)
+                                       std::vector<odb::Point>& last_pos)
 {
   bool is_diferent = false;
   std::map<odb::Point, int> cnt_pos;
@@ -1112,7 +1113,8 @@ void GlobalRouter::computeUserLayerAdjustments(int max_routing_layer)
   int x_grids = grid_->getXGrids();
   int y_grids = grid_->getYGrids();
 
-  const std::vector<int>& hor_capacities = grid_->getHorizontalEdgesCapacities();
+  const std::vector<int>& hor_capacities
+      = grid_->getHorizontalEdgesCapacities();
   const std::vector<int>& ver_capacities = grid_->getVerticalEdgesCapacities();
 
   for (int layer = 1; layer <= max_routing_layer; layer++) {
@@ -1304,7 +1306,8 @@ void GlobalRouter::addLayerAdjustment(int layer, float reduction_percentage)
     if (verbose_) {
       odb::dbTech* tech = db_->getTech();
       odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
-      odb::dbTechLayer* max_tech_layer = tech->findRoutingLayer(max_routing_layer_);
+      odb::dbTechLayer* max_tech_layer
+          = tech->findRoutingLayer(max_routing_layer_);
       logger_->warn(GRT,
                     30,
                     "Specified layer {} for adjustment is greater than max "
@@ -1471,8 +1474,8 @@ void GlobalRouter::configFastRoute()
 void GlobalRouter::getMinMaxLayer(int& min_layer, int& max_layer)
 {
   min_layer = min_layer_for_clock_ > 0
-                      ? std::min(min_routing_layer_, min_layer_for_clock_)
-                      : min_routing_layer_;
+                  ? std::min(min_routing_layer_, min_layer_for_clock_)
+                  : min_routing_layer_;
   max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
 }
 
