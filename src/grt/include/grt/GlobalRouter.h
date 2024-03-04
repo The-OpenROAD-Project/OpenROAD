@@ -254,7 +254,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   void createWLReportFile(const char* file_name, bool verbose);
   std::vector<PinGridLocation> getPinGridPositions(odb::dbNet* db_net);
 
-  bool pinAccessPointPositions(
+  bool findPinAccessPointPositions(
       const Pin& pin,
       std::vector<std::pair<odb::Point, odb::Point>>& ap_positions);
   odb::Point findFakePinPosition(Pin& pin, odb::dbNet* db_net);
@@ -282,7 +282,7 @@ class GlobalRouter : public ant::GlobalRouteSource
   void setCapacities(int min_routing_layer, int max_routing_layer);
   void initNetlist(std::vector<Net*>& nets);
   bool makeFastrouteNet(Net* net);
-  bool checkPinPositions(Net* net, std::vector<odb::Point>& last_pos);
+  bool pinPositionsChanged(Net* net, std::vector<odb::Point>& last_pos);
   void computeGridAdjustments(int min_routing_layer, int max_routing_layer);
   void computeTrackAdjustments(int min_routing_layer, int max_routing_layer);
   void computeUserGlobalAdjustments(int min_routing_layer,
@@ -307,7 +307,7 @@ class GlobalRouter : public ant::GlobalRouteSource
                                               odb::Point& pos_on_grid);
   int getNetMaxRoutingLayer(const Net* net);
   void findPins(Net* net);
-  void findPins(Net* net, std::vector<RoutePt>& pins_on_grid, int& root_idx);
+  void findFastRoutePins(Net* net, std::vector<RoutePt>& pins_on_grid, int& root_idx);
   float getNetSlack(Net* net);
   odb::dbTechLayer* getRoutingLayerByIndex(int index);
   RoutingTracks getRoutingTracksByIndex(int layer);
@@ -393,6 +393,8 @@ class GlobalRouter : public ant::GlobalRouteSource
   void initGridAndNets();
   void ensureLayerForGuideDimension(int max_routing_layer);
   void configFastRoute();
+  void getMinMaxLayer(int& min_layer, int& max_layer);
+  void checkOverflow();
 
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
