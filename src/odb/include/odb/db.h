@@ -5703,7 +5703,6 @@ class dbMTerm : public dbObject
 
   // From LEF's ANTENNADIFFAREA on the MACRO's PIN
   void getDiffArea(std::vector<std::pair<double, dbTechLayer*>>& data);
-
   bool hasDiffArea();
 
   void* staPort();

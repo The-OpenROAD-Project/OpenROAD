@@ -494,10 +494,10 @@ bool dbMTerm::hasDiffArea()
 {
   std::vector<std::pair<double, dbTechLayer*>> diff_areas;
   getDiffArea(diff_areas);
-  if (diff_areas.size() > 0)
+  if (!diff_areas.empty()) {
     return true;
-  else
-    return false;
+  }
+  return false;
 }
 
 void dbMTerm::writeAntennaLef(lefout& writer) const
