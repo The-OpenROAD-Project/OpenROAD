@@ -137,6 +137,40 @@ void RUDYCalculator::calculateRUDY()
       processMacroObstruction(master, instance);
     }
   }
+
+  float rudy_adjustment = 0.0;
+  float total_weight = 0.0;
+  odb::dbTech* tech = block_->getTech();
+  for (int l = 1; l <= tech->getRoutingLayerCount(); l++) {
+    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(l);
+    if (tech_layer == nullptr) {
+      continue;
+    }
+    if (tech_layer->getLayerAdjustment() == 0.0) {
+      continue;
+    }
+    float pitch = static_cast<float>(tech_layer->getPitch());
+    pitch = 1.0 / pitch;
+    rudy_adjustment += std::log1p(tech_layer->getLayerAdjustment()) * pitch;
+    total_weight += pitch;
+  }
+
+  if (total_weight == 0.0) {
+    return;
+  }
+  rudy_adjustment /= total_weight;
+  rudy_adjustment *= 100;
+
+  for (int x = 0; x < tileCntX_; ++x) {
+    for (int y = 0; y < tileCntY_; ++y) {
+      Tile& tile = getEditableTile(x, y);
+      float current_rudy = tile.getRUDY();
+      float sigmoid_scale
+          = rudy_adjustment
+            * (1 - 1 / (1 + std::exp(-(0.1 * (current_rudy - 75)))));
+      tile.addRUDY(sigmoid_scale);
+    }
+  }
 }
 
 void RUDYCalculator::processMacroObstruction(odb::dbMaster* macro,

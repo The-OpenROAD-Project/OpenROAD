@@ -333,7 +333,6 @@ class GlobalRouter : public ant::GlobalRouteSource
                      odb::Point& pin_position,
                      odb::dbTechLayer* layer,
                      Net* net);
-  void initAdjustments();
   odb::Point getRectMiddle(const odb::Rect& rect);
   NetRouteMap findRouting(std::vector<Net*>& nets,
                           int min_routing_layer,
@@ -420,9 +419,6 @@ class GlobalRouter : public ant::GlobalRouteSource
   std::vector<int> vertical_capacities_;
   std::vector<int> horizontal_capacities_;
   int macro_extension_;
-
-  // Layer adjustment variables
-  std::vector<float> adjustments_;
 
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;
